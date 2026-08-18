@@ -1,117 +1,163 @@
-# Day 1 Combat Spike
+# 初日 Combat Spike
 
-## Purpose
+## 目的
 
-This is a one-day experiment, not production combat.
+これはproduction combatを完成させる日ではない。
 
-The question is not "can we build a combat framework?" The question is:
+答える質問は:
 
-> Is ProjectS normal-attack combat more fun when weapons own their own attack rhythm and geometry instead of inheriting Vanilla Minecraft melee behavior?
+> ProjectS独自の通常攻撃・攻撃速度・明示的な攻撃判定・回避は、Vanilla Minecraftの戦闘よりこのゲームに合っていて、本当に触って楽しいか？
 
-## Test weapons
+一日触って面白くなければ、方式を惜しまず変更/破棄する。
 
-### Heavy blade
+## 基準視点
 
-Goal: commitment, weight, deliberate openings.
+**一人称。**
 
-Prototype features:
+三人称はこの試験の評価基準にしない。
 
-- basic heavy normal attack sequence,
-- large/forgiving forward attack shape,
-- slower cadence,
-- attack-speed variants,
-- clear slash VFX,
-- impact sound/sparks/camera impulse.
+## 試験武器
 
-### Tonfa-like twin rods
+### 重い剣
 
-Goal: fast close-range pressure and satisfying attack-speed scaling.
+狙い:
+- 重い。
+- 一撃ごとのCommitmentがある。
+- 攻撃速度を積んでも軽量武器のような高速連打にはならない。
+- 攻撃後の隙/次行動への移行が短くなることでAttack Speedの価値を感じられる。
 
-Prototype features:
+最低限:
+- 長押し通常攻撃。
+- 広めの前方攻撃判定。
+- 明確な斬撃VFX。
+- 空振り音/命中音の差。
+- Attack Speed切替。
 
-- fast repeated normal strikes,
-- smaller/closer attack geometry,
-- stronger attack-speed scaling,
-- optional step-follow-up only if time permits,
-- clear alternating strike VFX.
+### 穿龍棍系
 
-These are experiments, not guaranteed launch weapons.
+狙い:
+- 高速な近距離Pressure。
+- Attack Speedと強く噛み合う。
+- Bossへ張り付いて攻撃を続けたい感覚がある。
 
-## Required comparison
+最低限:
+- 長押し高速通常攻撃。
+- 重い剣より小さい近距離判定。
+- 交互/連続打撃のVFX。
+- Attack Speed切替。
 
-Both weapons must be testable at several attack-speed levels, for example:
+この2武器は試験用で、正式Launch武器とは限らない。
 
-- baseline,
-- clearly faster,
-- extreme test value.
+## Attack Speed比較
 
-The player should not need to click faster just because attack speed increased. Holding the attack input may continue the basic sequence for the prototype.
+最低でも:
+- Baseline。
+- 明確に速い値。
+- 極端な試験値。
 
-## Damage geometry
+を即時切替可能にする。
 
-Start simple.
+確認すること:
+- 高速クリックを要求していないか。
+- 数値だけでなく武器そのものが強く/速くなった感覚があるか。
+- 重い剣と穿龍棍でAttack Speedの価値が違って感じられるか。
 
-Heavy blade:
-- broad forward sector/capsule-like melee region.
+## 攻撃判定
 
-Twin rods:
-- shorter and narrower close-range strike region.
+最初は簡単な形でよい。
 
-Server decides hits.
+重い剣:
+- 広い前方sector/capsule系。
 
-Do not implement precise moving blade simulation unless the simple shapes make the prototype misleading.
+穿龍棍:
+- 短く狭い近距離判定。
 
-## Enemy prototype
+ServerがHitを決める。
 
-If time allows, include one basic attack enemy in addition to a dummy.
+最初から精密なBlade Sweepや骨軌跡を作らない。簡易判定が見た目と違いすぎてCombat評価を壊す場合だけ精度を上げる。
 
-It should have only two readable attacks, for example:
+## 回避
 
-- side sweep,
-- forward slam.
+初日Prototype仕様:
+- 現在押しているWASD + 回避キー。
+- 8方向。
+- 約3ブロック。
+- 2.0 / 2.5 / 3.0等を即比較可能にする。
+- 無敵時間なし。
+- スタミナなし。
+- ステップ中の再ステップ不可。
+- 地上のみ。
+- 壁で停止。
+- 視点自由。
 
-Critical rule: touching/standing next to the enemy does not deal damage. Damage occurs only when its explicit attack region intersects the player.
+時間が許せば、重い剣は攻撃途中の回避移行を遅く、穿龍棍は早くする。
 
-This is used to test the desired play pattern:
+## 敵Prototype
 
-`stay close → read enemy attack → move only enough to avoid the attack → continue attacking`
+Dummyだけでなく、可能なら2種類だけ攻撃を持つ簡単な敵を置く。
+
+例:
+- 横薙ぎ。
+- 正面叩きつけ。
+
+絶対ルール:
+- 敵に触れてもDamageなし。
+- 敵の近くに立ってもDamageなし。
+- 敵が明示的攻撃を行い、その攻撃判定へPlayerが入った時だけDamage。
+
+試す遊び:
+
+`Boss/Mobへ張り付く → 攻撃を読む → 必要最小限だけステップ → 攻撃継続`
 
 ## Presentation
 
-No bespoke character animation system.
+専用攻撃Animationは不要。
 
-Attack readability comes from:
+使うもの:
+- 読みやすい斬撃/打撃形状。
+- Sound。
+- Contact Sparks。
+- 小さいCamera反応。
+- 空振りと命中の差。
 
-- slash/strike shape,
-- timing,
-- sound,
-- contact sparks,
-- small camera impulse,
-- different empty-swing vs confirmed-hit feedback.
+Server/Worldを止めるHit Stopは使わない。
 
-Do not freeze the server/world for hitstop.
+## マナ/Skill
 
-## Success criteria
+この一日で本格Skill Systemを作る必要はない。
 
-At the end of the day, answer:
+現在の正式方向は:
+- 全員マナを持つ。
+- Skill 1〜3は原則マナ消費。
+- 通常攻撃/回避はマナ不要。
+- 固有ゲージはクラスらしい成功への報酬。
 
-1. Is ProjectS-owned normal attack feel better than Vanilla-style melee for this game?
-2. Does holding attack feel good or too automatic?
-3. Does attack speed create a fun build fantasy rather than input spam?
-4. Do Heavy Blade and Twin Rods feel meaningfully different with the same high-level combat rules?
-5. Is VFX-led combat readable without handcrafted animations?
-6. Is staying close and dodging explicit mob attacks fun?
+ただし初日の第一目的は通常攻撃/回避/敵攻撃の手触りなので、Skill/マナ実装がそれを遅らせるなら後回しにする。
 
-If the answer is no, discard/change the approach instead of polishing it for another week.
+## 成功条件
 
-## Not part of this spike
+一日の終わりに答える:
 
-- full class system,
-- final skills,
-- full equipment system,
-- final stamina/dodge rules,
-- guard system,
-- boss production framework,
-- advanced animation,
-- launcher,
-- generic combat editor.
+1. ProjectS独自通常攻撃はVanilla meleeより楽しいか。
+2. 長押し通常攻撃は気持ちいいか、それとも自動すぎるか。
+3. Attack Speed Buildは「数字が増えただけ」でなくプレイ体験を変えるか。
+4. 重い剣と穿龍棍系は同じCombat基盤でも明確に違うか。
+5. 手作業AnimationなしでもVFX/Soundで攻撃が読めるか。
+6. 接触Damageなしの敵へ張り付き、攻撃判定だけ避ける遊びが楽しいか。
+7. 約3ブロックの方向ステップが長すぎ/短すぎないか。
+8. 無敵なし回避で理不尽さより上達感が勝つか。
+
+## 初日には作らない
+
+- 完成版Class System。
+- 全Skill。
+- 完成版Mana Balance。
+- 完成版固有ゲージ。
+- Full Equipment。
+- Guard System。
+- Production Boss Framework。
+- AI 3D Boss Pipeline。
+- Animation Editor。
+- VFX Editor。
+- Launcher。
+- Generic Combat Editor。
