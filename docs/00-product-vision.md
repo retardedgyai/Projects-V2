@@ -1,56 +1,99 @@
 # ProjectS v2 — Product Vision
 
-## What ProjectS is
+## ProjectSとは
 
-ProjectS v2 is an online action MMO built on the Minecraft protocol/client ecosystem, but its combat, progression and hunt structure are ProjectS-owned rather than Vanilla-owned.
+ProjectS v2 は、Minecraft Javaの世界/操作/プロトコルを土台にしつつ、戦闘・Mob・進行・装備・討伐構造をProjectS自身で持つオンラインAction MMO。
 
-The initial game is not an open-world MMO. It is a dense hunt-focused game with a shared harbor/social hub.
+Minecraft特有の一人称の没入感は残すが、Vanillaの戦闘ルールへゲーム全体を合わせることはしない。
 
-## Initial player loop
+## 初期ゲーム構造
 
-1. Spawn in the harbor.
-2. Choose a hunt/quest.
-3. Prepare party and equipment.
-4. Enter a dedicated 1–4 player hunt space.
-5. Explore a compact map, fight minor enemies/gather optional resources, then fight the boss.
-6. Receive personal rewards/materials.
-7. Return to the harbor.
-8. Craft, modify or enhance equipment.
-9. Attempt harder hunts.
+初期版は巨大オープンワールドMMOではない。
 
-## Scope boundaries
+共有の港町をSocial Hubとして使い、1〜4人で専用討伐空間へ出発するBoss Hunt中心の構造にする。
 
-### In v2 initial scope
+基本ループ:
 
-- One harbor/social hub.
-- Party size 1–4.
-- Personal loot.
-- Compact reusable hunt maps.
-- Boss-centered progression.
-- Weapon identity and build progression.
-- Crafting/upgrading from boss materials.
-- Dedicated client presentation through Fabric.
-- Minestom server candidate.
-- Mob Editor only.
+1. 港町にいる。
+2. クエスト/討伐を選ぶ。
+3. Party/装備を準備する。
+4. 1〜4人専用討伐空間へ入る。
+5. 小規模探索、必要なら雑魚戦/採取を行う。
+6. Bossと戦う。
+7. 個人Loot/素材を受け取る。
+8. 港町へ戻る。
+9. Craft/MOD/強化で装備を更新する。
+10. より難しい討伐へ進む。
 
-### Deferred
+## 初期Scope
 
-- Large open world.
-- Many towns.
-- Guild warfare/GvG.
-- Full market/economy services.
-- Large server microservice split.
-- Launcher before the game loop is fun.
-- General-purpose editors.
+含める:
+- 港町1つ。
+- 1〜4人Party。
+- 個人Loot。
+- 密度の高い再利用可能な討伐Map。
+- Boss中心の進行。
+- 武器個性。
+- Build/装備更新。
+- Boss素材からのCraft/強化。
+- Fabricを使う専用ProjectS Client。
+- Minestom Server。
+- Mob Editorのみ。
 
-## First complete slice
+後回し:
+- 巨大Open World。
+- 多数の都市。
+- Marketplace/大規模経済。
+- Guild Warfare/GvG。
+- 大量のMicroservice。
+- Launcher。
+- 汎用Editor群。
+- 統合版対応。
 
-The first complete slice is:
+## 最初の完全な遊び
 
-`Launch ProjectS → take one quest in the harbor → enter one hunt → kill one boss → return with one material → craft/upgrade one weapon → fight again, with persistence.`
+`ProjectS起動 → 港町 → 1クエスト受注 → 1討伐Map → 1Boss撃破 → 1素材入手 → 1武器Craft/強化 → 永続保存 → 再挑戦`
 
-No broader system earns priority over completing this loop.
+これより広いSystemを、この一周より先に完成させない。
 
-## Design principle
+## 戦闘の核
 
-ProjectS should feel like its own game using Minecraft as the protocol/world/client foundation, not like a Paper plugin trying to overwrite Vanilla behavior one event at a time.
+- 一人称基準。
+- ロックオンなし。
+- 通常攻撃は武器ごとに独自定義。
+- 近接通常攻撃は一旦長押し継続を試す。
+- Attack Speedは高速クリック要求ではなく武器テンポを変える。
+- Player/Mobとも明示的な空間攻撃判定を使う。
+- Mobとの単純接触Damageは原則なし。
+- 敵から逃げるのではなく、攻撃判定そのものを避けて至近距離戦闘を継続できる。
+- Skill 1〜3 + Ultから開始。
+- 全Playerにマナ概念を持たせるが、クラスごとにマナ重要度は大きく変えてよい。
+- 固有ゲージはクラス/武器らしい成功への報酬にする。
+
+## 技術方向
+
+- Minecraft Java Edition 26.2。
+- Java 25。
+- Kotlin-first。
+- Gradle Kotlin DSL。
+- Minestom 26.2系Server。
+- Fabric 26.2 Client。
+- Server authoritative。
+- ClientはProjectS UI/VFX/Camera/Audio/Presentationを担当。
+- 初期からRedis/Microservice分割を行わない。
+
+## 将来像
+
+v2が成功した場合、港町+討伐を土台として完全Open World MMOへ発展させる可能性がある。
+
+その場合でも、自動的にFabric Dedicated Serverへ移るとは決めない。ProjectSがMinecraft Vanilla Server機能をあまり使わないまま成長するなら、Minestomを拡張し、必要になった時だけProjectS専用Fork/Server Platformへ育てる方向も有力。
+
+将来GvGはAlbion Online型の大規模集団戦を強い参考にするが、初期v2の成功条件には含めない。
+
+## 制作原則
+
+**FrameworkをFeatureより先に作らない。**
+
+まず一つの本物の遊びを作り、実際にゲームが必要とした共通部分だけを後から抽出する。
+
+ゲームが面白くないなら、既に作った量を理由に設計を守らない。
