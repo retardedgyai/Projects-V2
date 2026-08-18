@@ -1,43 +1,53 @@
 # ProjectS v2
 
-ProjectS v2 is a clean rewrite of ProjectS as a Minecraft-protocol action MMO built around a shared harbor hub and 1–4 player boss-hunt instances.
+ProjectS v2 は、旧ProjectSを引き継ぎつつコードはゼロから作り直す、Minecraft Java基盤のオンラインAction MMOです。
 
-This repository is the new source of truth for the rewrite. Legacy ProjectS repositories remain reference/history only; new implementation should not copy the old architecture by default.
+このrepoをv2の新しい基準書・実装場所として扱います。旧repoは資料/歴史/失敗例/テスト観点として残し、新アーキテクチャへそのまま移植しません。
 
-## Product direction
+## 現在のゲーム方向
 
-Core loop:
+基本ループ:
 
-`Harbor → choose hunt → enter party hunt space → fight boss → receive personal materials → craft/upgrade gear → attempt harder hunts`
+`港町 → クエスト選択 → 1〜4人専用討伐空間 → Boss → 個人素材 → Craft/強化 → より難しい討伐`
 
-Open world is deferred until this loop is fun and stable.
+巨大オープンワールドは、この一周が面白く安定してから後続で検討します。
 
-## Technical direction
+## 技術方向
 
-- Kotlin-first codebase.
-- Minestom is the preferred server runtime, pending the rewrite technical spike.
-- Fabric is the client runtime layer; the eventual product should feel like a dedicated ProjectS client rather than “install a Fabric mod”.
-- Server remains authoritative for damage, hits, rewards and progression.
-- Human-facing authoring tools are intentionally limited to the Mob Editor. Skill/VFX/Studio/World Builder/Balance editors are not part of v2.
-- VFX is authored through code/data/AI and rendered by the client, not through a general VFX editor.
+- Minecraft Java Edition 26.2。
+- Java 25。
+- Kotlin-first。
+- Gradle Kotlin DSL。
+- Server: Minestom 26.2系。
+- Client: Fabric 26.2を内部基盤とした専用ProjectS Client。
+- ServerがDamage/Hit/Reward/Progressionを最終判定。
+- 人間向けEditorはMob Editorのみ。
+- Skill/VFX/Studio/World Builder/Balance Editorはv2では作らない。
+- VFXはコード/データ/AIで制作し、Clientで描画する。
+- 統合版対応は初期Scopeに入れない。
 
-## First milestone
+## 最初の完成単位
 
-The first playable vertical slice is intentionally tiny:
+`起動 → 港町 → 1クエスト受注 → 1討伐Map → 1Boss撃破 → 1素材入手 → 1武器Craft/強化 → 再挑戦、永続保存あり`
 
-`Launch → harbor → take one hunt → enter one hunt map → kill one boss → return with one material → craft/upgrade one weapon → repeat, with persistence.`
+ただしその前に、一日のCombat Spikeで「戦闘そのものが本当に面白いか」を確認します。
 
-Before that full loop, development starts with a one-day combat spike whose only question is: **is ProjectS combat actually fun?**
+## まず読む文書
 
-## Documentation
+- [`docs/decisions/2026-08-19-current-decisions.md`](docs/decisions/2026-08-19-current-decisions.md) — **現在決まっていること全部の基準書**。
+- [`docs/game/combat-principles.md`](docs/game/combat-principles.md) — 一人称、通常攻撃、攻撃判定、Mob攻撃、回避等。
+- [`docs/game/mana-and-class-resources.md`](docs/game/mana-and-class-resources.md) — マナ/Cooldown/固有ゲージ。
+- [`docs/development/environment.md`](docs/development/environment.md) — Minecraft/Java/Minestom/Fabric/Gradle環境。
+- [`docs/architecture/hunt-session-lifecycle.md`](docs/architecture/hunt-session-lifecycle.md) — 討伐空間の寿命。
+- [`docs/research/minestom-case-studies.md`](docs/research/minestom-case-studies.md) — Minestom事例から持ってくる設計。
+- [`docs/research/ai-boss-model-pipeline.md`](docs/research/ai-boss-model-pipeline.md) — AI大型Mob制作の研究方針。
+- [`docs/future/gvg-principles.md`](docs/future/gvg-principles.md) — 将来のAlbion型大規模GvG方向。
+- [`docs/development/day-1-combat-spike.md`](docs/development/day-1-combat-spike.md) — 初日の戦闘実験。
+- [`docs/development/rewrite-rules.md`](docs/development/rewrite-rules.md) — リライト規則。
+- [`legacy/README.md`](legacy/README.md) — 旧ProjectSの扱い。
 
-- `docs/00-product-vision.md` — current game vision and scope boundaries.
-- `docs/game/` — gameplay rules and combat principles.
-- `docs/architecture/` — server/client/runtime boundaries and hunt lifecycle.
-- `docs/research/` — external projects studied and lessons worth carrying forward.
-- `docs/development/` — rewrite rules and first-day spike.
-- `legacy/README.md` — how old ProjectS code should be treated.
+## 最重要原則
 
-## Rewrite principle
+**FrameworkをFeatureより先に作らない。**
 
-Do not build a framework before a feature. Implement one real piece of gameplay first, then extract reusable structure from what the game actually needs.
+まず実際に遊べる一つの機能を作り、ゲームが本当に必要とした共通部分だけを後から抽出します。
