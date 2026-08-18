@@ -14,10 +14,11 @@
 - Generic Framework、完成版Ability Runtime、Editor基盤を先に作らない。
 - 各タスクは「そのタスクだけで確認できる成果」を持つ。
 - GUI操作が必要なMinecraft内確認はUserが行う。Agentはコード・自動Test・Buildまで担当する。
+- Task 0後のCombat通信契約はLane A/B/Cから原則変更しない。変更が必要なら独断で書き換えず、一度止めて統合判断へ戻す。
 
 ---
 
-# Task 0 — Project bootstrap + 最小通信
+# Task 0 — Project bootstrap + 最小通信契約
 
 ## 推奨
 
@@ -27,7 +28,7 @@
 
 ## 目的
 
-ProjectS v2を最小構成で起動し、Fabric ClientからMinestom Serverへ接続し、ProjectS独自通信を1往復通す。
+ProjectS v2を最小構成で起動し、Fabric ClientからMinestom Serverへ接続し、ProjectS独自通信を1往復通す。さらにDay 1 Combatで使う最小Messageだけをここで固定する。
 
 ## 変更対象
 
@@ -48,28 +49,61 @@ ProjectS v2を最小構成で起動し、Fabric ClientからMinestom Serverへ�
 - Version不一致はServer/Client双方で分かる形で失敗する。
 - 共有通信定義は `protocol/` に置く。
 
+### Day 1で固定する最小Combat契約
+
+原則この3Messageのみ。
+
+- `AttackInput`
+  - Client → Server。
+  - `PRESS` / `RELEASE` の状態変化だけを送る。
+  - 保持中を毎tick送らない。
+  - 必要最小限のinput sequence番号を持たせてよい。
+- `AttackStarted`
+  - Server → Client。
+  - Serverが開始を認めた一撃を識別する `attackExecutionId` を含む。
+- `AttackHitConfirmed`
+  - Server → Client。
+  - `attackExecutionId` とHit対象を関連付ける。
+
+ClientからHit対象IDや「当たった」という申告は送らない。
+
 ## 非対象
 
-- Combat。
+- Combat実装本体。
 - Ability Runtime。
 - Persistence。
 - Content loader。
 - Mob Editor。
 - Launcher。
 - 汎用Network Framework。
+- 将来使うかもしれないMessageの先行定義。
+
+## Test
+
+- protocol version一致/不一致。
+- 上記3Messageのencode/decode round trip。
+- 不正/未知versionをfail closedできること。
 
 ## 受け入れ条件
 
 - Serverが開発コマンドで起動できる。
 - Clientが開発コマンドで起動できる。
-- ClientがServerへ接続できる。
-- ProjectS protocol version handshakeが成功する。
-- 不一致versionをTestで拒否できる。
+- ProjectS protocol version handshake用実装が存在する。
+- Combat最小契約が `protocol/` に固定されている。
+- 自動Testが通る。
 - `./gradlew build` または相当するroot buildが成功する。
 
-## 完了後
+## Agent完了後のGate
 
-このTaskがmergeされたcommitを、Lane A/B/Cすべての共通Baseにする。
+1. Sol Review。
+2. User Manual Smoke。
+   - Minecraft Clientを実際に起動。
+   - Local Minestom Serverへ接続。
+   - handshake成功を確認。
+   - Crash/切断ループがないことを確認。
+3. 通過したcommitをLane A/B/Cすべての共通Baseにする。
+
+User Manual Smokeが終わる前にTask 1A/B/Cへ進まない。
 
 ---
 
@@ -83,7 +117,7 @@ ProjectS v2を最小構成で起動し、Fabric ClientからMinestom Serverへ�
 
 ## 依存
 
-Task 0 完了後。
+Task 0 + User Manual Smoke完了後。
 
 ## 目的
 
@@ -91,20 +125,35 @@ Clientの通常攻撃入力を受け、Serverが自分で攻撃を開始し、Du
 
 ## 変更対象
 
-原則 `server-minestom/` のCombat周辺のみ。共有Protocol変更が必要なら最小限に留め、Lane B/Cと衝突しないよう報告する。
+原則 `server-minestom/` のCombat周辺のみ。
+
+`protocol/` はTask 0で固定済みなので変更しない。契約変更が必要と判断した場合は実装を止め、その理由と必要変更を報告する。
 
 ## 実装内容
 
-- Playerの現在攻撃状態を持つ。
-- 通常攻撃の押下/保持/解放を受け取る。
+- Playerの「通常攻撃を押し続けているか」をServerが保持する。
+- `AttackInput.PRESS` / `RELEASE` を処理する。
 - Clientから「この敵にHitした」という申告は受け付けない。
 - ServerがPlayer位置・照準・武器定義から攻撃判定を生成する。
 - Dummyを1体Spawnできる。
 - 初期攻撃形状は単純な前方近接形状でよい。
 - 1回の攻撃で同じ対象へ意図せず複数Hitしない。
-- Hit確定時にProtocol経由でHit通知を送るための出力境界を作る。
+- Serverが一撃ごとに一意な `attackExecutionId` を発行する。
+- 一撃開始時に `AttackStarted`、Hit確定時に `AttackHitConfirmed` を送れる。
 - 通常攻撃長押し中は現在の一撃終了後に次の一撃へ進む。
-- 解放された場合も現在の一撃は完了してから停止する。
+- `RELEASE`後も現在の一撃は完了してから停止する。
+
+### 一撃の最低限の時間構造
+
+万能Timelineを作らず、最初は3段階だけ持つ。
+
+1. 攻撃が出るまでの時間。
+2. 攻撃判定が出ている時間。
+3. 攻撃後の隙。
+
+一撃終了 = 攻撃後の隙まで完了した時点。
+
+将来Skill/回避入力が来た場合も、この一撃終了後に処理する前提で状態を壊さない。
 
 ## 非対象
 
@@ -114,15 +163,23 @@ Clientの通常攻撃入力を受け、Serverが自分で攻撃を開始し、Du
 - 完成版Damage Formula。
 - 精密な刃Sweep。
 - Ability Runtime抽出。
+- 汎用Action Timeline。
+
+## Test
+
+- 範囲内DummyへHit。
+- 範囲外Dummyへmiss。
+- 背後Dummyへmiss。
+- 同一 `attackExecutionId` で同じDummyへ1回だけDamage。
+- 別 `attackExecutionId` なら再Hit可能。
+- `PRESS`保持中は一撃完了後に次攻撃。
+- `RELEASE`後は現在の一撃完了後に停止。
 
 ## 受け入れ条件
 
-- 範囲内DummyへHitする。
-- 範囲外DummyへHitしない。
-- 背後Dummyへ前方攻撃がHitしない。
-- 同一攻撃で同じDummyへ1回だけDamage。
-- Clientが対象IDを偽装してもHit結果を決められない設計。
-- 自動Testが通る。
+- 上記Testが通る。
+- Clientが対象IDを偽装してHit結果を決められない。
+- `protocol/` を変更していない。
 
 ---
 
@@ -136,7 +193,7 @@ Clientの通常攻撃入力を受け、Serverが自分で攻撃を開始し、Du
 
 ## 依存
 
-Task 0 完了後。Task 1Aと並列可能。
+Task 0 + User Manual Smoke完了後。Task 1A/1Cと並列可能。
 
 ## 目的
 
@@ -146,66 +203,77 @@ Task 0 完了後。Task 1Aと並列可能。
 
 原則 `client-fabric/` のみ。
 
+`protocol/` は変更しない。変更が必要なら止めて報告する。
+
 ## 実装内容
 
-- 通常攻撃ボタンの押下/保持/解放を検出。
-- ServerへProjectS通常攻撃入力を送る。
+- 通常攻撃ボタンの状態変化を検出。
+- `PRESS`時に1回、`RELEASE`時に1回だけ `AttackInput` を送る。
+- 保持中に毎tickPacketを送らない。
 - Client側でHit対象を決めない。
 - 入力直後に最低限の空振り斬撃表現を出す。
-- ServerからHit確定通知を受けたら:
+- `AttackHitConfirmed` を受けたら:
   - 小さい命中火花。
   - 命中音。
-  - 小さいCamera feedback。
+  - 短時間で実装可能なら小さいCamera feedback。
 - 空振りと命中の感覚を分ける。
 - Server/Worldを停止するHit Stopは実装しない。
+
+## 表示の時間制限
+
+高品質VFXを作るTaskではない。
+
+- 既存Particle。
+- 単純な線/弧。
+- Sound。
+
+で十分。
+
+Camera feedbackや斬撃Rendererで30分以上詰まる場合は、その項目を後回しにしてCombatの一本を優先する。
 
 ## 非対象
 
 - 高品質VFX。
 - VFX Editor。
+- 汎用Renderer基盤。
 - Animation system。
 - Damage number完成版。
 - HUD完成版。
 
 ## 受け入れ条件
 
-- Press/Hold/Releaseが通信される。
+- `PRESS` / `RELEASE`だけが状態変化時に送信される。
 - Client単独ではDamage確定しない。
 - Server Hit通知が無ければ命中演出を出さない。
 - 攻撃入力への見た目反応はServer往復を待たず出る。
+- `protocol/` を変更していない。
 - Build成功。
 
 ---
 
-# Task 1C — Protocol Contract + Combat Regression Tests
+# Task 1C — Combat Regression Tests
 
 ## 推奨
 
 - Model: Luna Max
 - 推論強度: Medium
-- 理由: 通信契約と回帰TestをLane A/Bから独立して固定するため。
+- 理由: Task 0で通信契約は固定済みなので、Lane A/Bを止めずに壊れやすい条件をTestへ固定できるため。
 
 ## 依存
 
-Task 0 完了後。Task 1A/Bと並列可能。
+Task 0 + User Manual Smoke完了後。Task 1A/Bと並列可能。
 
 ## 目的
 
-Day 1で実際に必要なCombat通信だけを明文化し、Server Combatの壊れやすい条件を自動Testで固定する。
+Task 0で固定した通信契約を変更せず、Day 1 Combatの重要な回帰条件を自動Testで守る。
 
 ## 変更対象
 
-- `protocol/`
-- Server側Test
-- 必要最小限のtest fixture
+- Server側Test。
+- Protocol既存契約のTest。
+- 必要最小限のtest fixture。
 
-## 最小Message候補
-
-- `AttackInput` — press / release、必要ならsequence番号。
-- `AttackStarted` — Serverが開始を認めた攻撃ID/実行ID。
-- `AttackHitConfirmed` — Server確定Hit。
-
-実装途中で不要と判明したMessageは増やさない。
+`protocol/` の製品コードは原則変更しない。
 
 ## Test
 
@@ -213,11 +281,14 @@ Day 1で実際に必要なCombat通信だけを明文化し、Server Combatの�
 
 - Protocol encode/decode round trip。
 - Protocol version mismatch拒否。
+- `AttackInput` は状態変化モデルであること。
 - 前方範囲内Hit。
 - 範囲外miss。
 - 背後miss。
 - 1攻撃1対象への二重Hit防止。
-- 異なる攻撃実行なら再度Hit可能。
+- 異なる `attackExecutionId` なら再度Hit可能。
+
+Lane Aの実装がまだ存在せず直接Testできない項目は、勝手に架空APIを作らない。最小fixtureを用意するか、Lane A統合後に追加すべきTestとして明確に報告する。
 
 ## 非対象
 
@@ -225,12 +296,13 @@ Day 1で実際に必要なCombat通信だけを明文化し、Server Combatの�
 - Schema Registry。
 - 全ゲームイベントの先行定義。
 - Load Test完成版。
+- Protocol再設計。
 
 ## 受け入れ条件
 
-- A/Bが使える最小通信契約が存在する。
-- Combatの重要Regression Testが自動で通る。
-- 不要な将来Messageを作っていない。
+- Task 0の通信契約を壊していない。
+- 実装済み範囲の重要Regression Testが通る。
+- 未実装依存を埋めるためだけのGeneric Frameworkを追加していない。
 
 ---
 
@@ -242,7 +314,7 @@ Task 1A / 1B / 1C完了後、Sol Reviewで統合する。
 
 ゲーム内で:
 
-`通常攻撃入力 → Serverで攻撃開始 → Server判定 → DummyへHit → Hit確定通知 → Client命中演出`
+`通常攻撃PRESS → Serverで一撃開始 → Server判定 → DummyへHit → Hit確定通知 → Client命中演出 → RELEASE後に現在攻撃完了して停止`
 
 が一本通る。
 
@@ -271,18 +343,38 @@ Task 1A / 1B / 1C完了後、Sol Reviewで統合する。
 
 ## 実装内容
 
-- Heavy Blade:
-  - 遅い。
-  - 広い。
-  - 一撃が重い。
-- Twin Rods:
-  - 速い。
-  - 短い。
-  - 狭い。
-  - 連撃感。
-- Attack Speedを最低3段階で即切替可能にする。
+### Heavy Blade
+- 遅い。
+- 広い。
+- 一撃が重い。
+- Attack Speedは主に攻撃後の隙/次攻撃への移行へ強く効かせる。
+- 攻撃自体の重量感は残す。
+
+### Twin Rods
+- 速い。
+- 短い。
+- 狭い。
+- 連撃感。
+- Attack Speedは一撃全体のテンポへ比較的強く反映する。
+
+### 共通
+- 一撃は `攻撃が出るまで / 攻撃判定中 / 攻撃後の隙` の3段階。
+- Baseline / +50% / +100%程度を即比較可能にする。
 - 高ASでもクリック速度を要求しない。
 - AS変更が次の攻撃/Skill/回避へ移れる頻度に影響する。
+- 複数段階が同一Server tickへ潰れる極端値は初回試験に使わない。
+
+## 開発用即時切替
+
+Hot Reload基盤やEditorは作らない。
+
+最低限、開発コマンド等で:
+- `heavy / twin` 切替。
+- Attack Speed `1.0 / 1.5 / 2.0` 切替。
+
+を再コンパイルなしで試せるようにする。
+
+例: `/psdev weapon ...`, `/psdev attackspeed ...`。正確なコマンド名は実装時に決めてよい。
 
 ## 重要
 
@@ -306,12 +398,14 @@ Task 1A / 1B / 1C完了後、Sol Reviewで統合する。
 - WASD + Dodgeキー。
 - 8方向。
 - 対角移動距離を正規化。
-- 2.0 / 2.5 / 3.0 blockを即比較できる。
+- 2.0 / 2.5 / 3.0 blockを開発コマンド等で即比較できる。
 - 無敵なし。
 - staminaなし。
 - step中の再stepなし。
 - wall stop。
-- 攻撃中に入力した場合、現在の一撃終了後に実行。
+- 攻撃中に入力した場合、現在の一撃を途中キャンセルせず、一撃終了後に実行。
+
+武器ごとの途中Cancel Windowは作らない。実Playtestで必要になった場合だけ後から追加する。
 
 ---
 
@@ -349,10 +443,10 @@ Mob攻撃は2個だけ:
 Task 0:
 - `rewrite/bootstrap`
 
-Task 0 merge後、同じBaseから:
+Task 0 merge + Manual Smoke後、同じBaseから:
 - `combat/server-slice`
 - `combat/client-presentation`
-- `combat/protocol-tests`
+- `combat/regression-tests`
 
 Integration 1後:
 - `combat/weapon-comparison`
@@ -371,7 +465,15 @@ Review pointは原則:
 2. Lane A/B/C統合前。
 3. Day 1 Playtest前。
 
-重大な設計変更やProtocol変更が発生した時のみ途中Reviewを入れる。
+重大な設計変更やProtocol変更が必要になった時のみ途中Reviewを入れる。
+
+## 時間の扱い
+
+AIが速く終われば予定時間まで待たず即次へ進む。
+
+最初のCombat一本は成功ケースなら1〜2時間台でもよい。一方で初回依存取得、Fabric/Minestom接続、Branch統合、Minecraft再起動を含め2〜4時間程度は正常範囲とする。
+
+4時間以上経ってDummyへ攻撃できる一本が通っていない場合は、Framework/Renderer/Network基盤を作りすぎていないかを確認する。
 
 ---
 
@@ -395,13 +497,5 @@ Review pointは原則:
 2. 変更File。
 3. Test / Build結果。
 4. 未解決事項。
-5. Manual Smokeが必要なら具体的な手順と期待結果。
-6. Branch / Commit。
-
-## 最優先原則
-
-Day 1は「Combat Frameworkを完成させる日」ではない。
-
-**ProjectSの通常攻撃が本当に楽しいかを、Server↔Clientの実際の一本を通して判断する日。**
-
-面白くない場合は、その日の実装を守るために仕様を固定しない。
+5. 手動確認が必要な項目。
+6. Protocolや他Laneとの衝突が発生したか。
