@@ -1,140 +1,187 @@
-# Combat Principles
+# ProjectS v2 戦闘原則
 
-This document records the current v2 combat direction. Values/timings are not final until playtested.
+この文書は戦闘の現在方針をまとめる。具体的な数値は初回プレイテストで変更してよい。
 
-## 1. ProjectS owns normal attacks
+## 一人称を基準にする
 
-Vanilla Minecraft's normal attack rules are not the universal rule for every ProjectS weapon.
+ProjectSの戦闘は一人称を正式基準にする。Minecraft特有の没入感を残すため、攻撃の見え方、視覚エフェクト、Boss予兆、距離感は一人称で調整する。
 
-A normal-attack input means: **perform this weapon family's basic combat action**.
+三人称は使いたい人が使えてよいが、三人称専用の最適化は初期Scopeに入れない。
 
-Examples:
+## 通常攻撃は武器ごとの基本行動
 
-- Sword: alternating slashes/basic chain.
-- Greatsword/heavy blade: slow, committed heavy swings.
-- Tonfa-like twin rods: fast close-range repeated strikes.
-- Spear: narrow long thrusts.
-- Bow: may preserve Minecraft's intuitive hold-to-draw/release-to-fire behavior.
-- Staff: basic magic projectile or another weapon-specific action.
+Vanilla Minecraftの近接攻撃ルールを全武器へ共通適用しない。
 
-Normal attacks do not have to share identical timings, shapes or attack-speed behavior.
+通常攻撃入力は「その武器の最も基本的な戦闘動作を行う」という意味にする。
 
-## 2. Attack-speed builds must improve weapon feel, not demand faster clicking
+例:
+- 剣: 基本斬撃。
+- 重い剣: 大きく重い斬撃。
+- 穿龍棍系: 高速な近距離連撃。
+- 槍: 細く長い突き。
+- 弓: Minecraftの長押しで引いて離して撃つ感覚を活かす候補。
+- 杖: 基本魔法弾など武器固有行動。
 
-Avoid making high attack speed mean "the player must physically spam clicks faster".
+### 長押し
 
-Candidate behavior:
+近接通常攻撃は一旦「押している間、武器固有テンポで攻撃を継続する」を採用する。
 
-- Holding the normal-attack input may continue the weapon's basic sequence.
-- One press may still produce one action when precise stopping is desired.
-- Attack speed changes the weapon's action tempo.
-- Attack speed does not necessarily scale every phase of every weapon equally.
+Attack Speedを積んでも高速クリックを要求しない。Attack Speedは武器そのもののテンポを変える。
 
-Examples:
+武器ごとにAttack Speedの効き方を変えてよい。
+- 重い剣: 振りの重量感は残し、攻撃後の隙や次行動への移行を主に短縮。
+- 穿龍棍系: 連撃速度へ強く反映。
+- 弓: 引き絞り/次射撃準備を短縮。
 
-- Heavy blade: retain swing weight; reduce recovery/transition time more strongly than the visible heavy swing itself.
-- Twin rods: strike cadence can scale strongly.
-- Bow: draw/ready time can become faster.
+## 攻撃は空間に判定を出す
 
-Exact formulas are intentionally deferred until the combat spike is played.
+Vanilla melee hitを主判定にしない。
 
-## 3. Damage uses explicit spatial attack shapes
+各攻撃は明示的な空間形状を持つ。
+- 横薙ぎ: 扇/太い軌跡。
+- 突き: 細い直線/カプセル。
+- 近距離打撃: 小さい前方領域。
+- 叩きつけ: 直撃+着地点の円。
+- 突進: 移動する攻撃領域。
+- 弓/魔法弾: Projectile。
 
-Do not rely on Vanilla melee-hit behavior as the main combat system.
+視覚エフェクトとServer側の判定は可能な限り一致させる。
 
-Each attack owns an explicit spatial definition such as:
+一回の攻撃で同じ対象へ意図せず複数Hitしない。多段技は明示的に複数Hitを定義する。
 
-- sweeping arc,
-- narrow thrust,
-- close-range strike,
-- impact circle,
-- moving charge volume,
-- projectile trajectory.
+## PlayerとMobは同じ戦闘文法
 
-The visual attack trail and the server-side damage region should correspond closely enough that players can learn the geometry by sight.
+Mobに触れた/近づいたこと自体では原則Damageを受けない。
 
-For early prototypes a simplified sector/capsule/box is acceptable. More precise moving sweep tests can be added only if they improve feel enough to justify the complexity.
+Mobも必ず明示的な攻撃を行う。
+- 爪
+- 牙
+- 拳
+- 角
+- 尻尾
+- 武器
+- 魔法
+- 突進用の攻撃領域
 
-## 4. The server is authoritative
+PlayerがBossの至近距離にいても、その攻撃判定を避け続けられるなら攻撃し続けてよい。
 
-The client can show swing VFX immediately so latency does not make input feel delayed.
+大型Mobの身体は物理的にPlayerを押し出してよいが、身体衝突とDamageは別概念。
 
-The server decides:
+## ロックオンなし
 
-- whether the attack was legal,
-- where the attacker/target were,
-- whether the attack shape intersected the target,
-- final damage,
-- weak-point/part hits,
-- rewards.
+ロックオン、自動敵向き補正、攻撃の磁石化は基本的に使わない。
 
-The client must not be trusted when it claims that a target was hit.
+攻撃はPlayerが見ている方向へ出す。必要ならMinecraft操作に合わせて攻撃形状を少し寛容にするが、自動命中にはしない。
 
-## 5. One attack does not hit the same target repeatedly by accident
+## 回避
 
-Each attack execution tracks which targets it has already hit. A moving sweep overlapping the same enemy for several ticks still produces the intended number of hits.
+初期試作では、現在押しているWASD方向+回避キーでその方向へステップする。
 
-True multi-hit attacks define multiple intentional hit moments/actions rather than exploiting repeated overlap.
+仮仕様:
+- 8方向。
+- 約3ブロック。
+- 無敵時間なし。
+- スタミナなし。
+- ステップ中の再ステップ不可。
+- 地上のみ。
+- 壁に当たったら停止。
+- 視点自由。
 
-## 6. Mob damage follows the same explicit-attack rule
+2.0 / 2.5 / 3.0ブロック等をすぐ比較できるようにする。
 
-Default contact damage is rejected.
+攻撃中いつでも回避できるのではなく、攻撃ごとに「回避へ移れる時間」を持たせる候補。重い武器は遅く、軽い武器は早くできる。
 
-Being close to a mob is not itself a damage event. The mob must perform an attack with a readable attack definition and the player must intersect that attack.
+## Skill構成
 
-Enemy "weapons" are broader than inventory weapons and can include:
+初期構成は:
+- 通常攻撃
+- Skill 1
+- Skill 2
+- Skill 3
+- Ult
+- 回避
 
-- claws,
-- teeth,
-- tail,
-- horn,
-- fist,
-- magic,
-- a charge/ram body volume.
+Skill数が少なすぎて単調だと実際に感じた場合だけ増やす。
 
-A player who remains close to a boss but correctly avoids every attack is allowed to keep attacking.
+## マナ / Cooldown / 固有ゲージ
 
-## 7. Body collision and damage are separate concepts
+- 全Playerに共通のマナ概念を持たせる。
+- Skill 1〜3は原則マナ消費。
+- 通常攻撃と回避はマナ不要。
+- Cooldownは個々の技の使用頻度を決める。
+- マナは長期的なSkill使用量/Skill燃料を決める。
+- 固有ゲージはクラス/武器らしく上手く戦った報酬にする。
 
-Large enemies may physically block/push players so players cannot stand inside their body.
+クラスによってマナ重要度を大きく変えてよい。
+- 戦士型: 普通に使えばほぼ枯れず、主にCooldownや固有ゲージを見る。
+- Mage型: 最大マナ、回復、消費軽減がBuildの中心になり得る。
+- 特殊Mage: Cooldownを極端に短くし、マナさえあれば連射できる設計も許容する。
 
-That body collision does not automatically deal damage.
+マナと固有ゲージを同じSkillへ毎回二重課税するような設計は避ける。
 
-A charge attack, fiery aura or similar hazard must be represented as an explicit attack/hazard with its own readable rules.
+## Serverが最終判定
 
-## 8. Avoidance is about avoiding the attack, not escaping the enemy
+Clientは入力直後に視覚エフェクト/音/カメラ反応を出してよい。
 
-The desired mastery curve is:
+Serverが決める:
+- 攻撃可能状態。
+- 攻撃者/対象の位置。
+- 攻撃判定との交差。
+- 最終Damage。
+- 弱点/部位Hit。
+- Reward。
 
-- beginner: back away when the boss starts moving,
-- experienced: recognize the attack and step outside its region,
-- expert: use minimum movement to avoid the hit while preserving attack uptime.
+Clientの「当たった」という申告だけでDamageを入れない。
 
-No lock-on and no automatic facing/magnetism are currently planned for the combat spike. Attacks go where the player aims, with deliberately forgiving geometry where needed for Minecraft controls.
+## 通信遅延
 
-## 9. Hit feedback does not freeze the server/world
+初期は高度な時間巻き戻しHit判定を実装しない。
 
-Do not implement true server/world hitstop.
+Serverの現在状態でHit/回避を決め、高Pingによる多少の不利は許容する。
 
-Weight on confirmed hits comes from client presentation:
+代わりに:
+- Client入力反応を即時にする。
+- Boss攻撃に十分な読みやすさを持たせる。
+- 見た目より不自然に大きい攻撃判定を避ける。
 
-- contact sparks/burst,
-- impact sound,
-- small camera impulse,
-- damage number,
-- brief visual emphasis on heavy impacts.
+実測で100〜150ms程度でも理不尽な被弾が多い場合のみ、後から軽い補正を検討する。
 
-World simulation, bosses and other players continue normally.
+## 命中の重さ
 
-## 10. Combat presentation does not depend on handcrafted character animations
+Server/Worldを止める本物のHit Stopは使わない。
 
-Initial combat can work with no bespoke attack animation system.
+Client側で:
+- 火花/接触Burst。
+- Impact Sound。
+- 小さいCamera反応。
+- Damage Number。
+- 重い攻撃だけ短い視覚強調。
 
-The attack itself is communicated primarily by:
+を使う。
 
-- clear slash/thrust/impact VFX shapes,
-- sound,
-- contact feedback,
-- weapon-specific rhythm.
+空振りと命中は明確に違う感触にする。
 
-Do not build an animation editor/engine before the combat proves it needs one.
+## 視覚エフェクト
+
+手作業の攻撃Animationがなくても戦闘を成立させる。
+
+攻撃は主に:
+- 明確な斬撃/突き/衝撃の形。
+- 音。
+- 命中反応。
+- 武器固有テンポ。
+
+で表現する。
+
+大量の粒子より形の可読性を優先する。Human-facing VFX Editorは作らない。
+
+## 目指す熟練曲線
+
+初心者:
+- Bossが動いたら大きく離れる。
+
+慣れたPlayer:
+- どの攻撃か判別して、その攻撃範囲だけ避ける。
+
+上級者:
+- 最小限のステップだけで攻撃を避け、Bossへの攻撃継続時間を最大化する。
