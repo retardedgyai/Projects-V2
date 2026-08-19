@@ -37,6 +37,25 @@ Examples:
 
 Extract reusable structure after at least one concrete feature proves what needs to be reusable.
 
+## Learn while building rule
+
+ProjectS v2 uses AI heavily for implementation, but important systems must not become black boxes to the User.
+
+The goal is not for the User to hand-write every line. The goal is to understand enough to direct, review and debug the game:
+
+- what the system does,
+- which side owns the decision (Client/Server),
+- how data flows through the feature,
+- what is likely to break,
+- what a change will affect,
+- whether an AI implementation is over-engineered.
+
+For important implementation tasks, the completion report should include a short **Learning Brief** with 1–3 concepts the User should understand, the main data flow, the most important files/classes, and where to look first when the feature breaks.
+
+Do not stop ProjectS development to complete a broad programming curriculum first. Learn concepts when the real feature needs them.
+
+Full rules: `docs/development/learning-while-building.md`.
+
 ## Language/runtime direction
 
 - Kotlin-first.
