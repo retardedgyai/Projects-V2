@@ -4,6 +4,52 @@ import dev.projects.protocol.AttackInputState
 import net.minestom.server.coordinate.Point
 import net.minestom.server.coordinate.Vec
 import java.util.UUID
+import kotlin.math.round
+
+enum class WeaponType {
+    HEAVY_BLADE,
+    TWIN_RODS,
+    ;
+
+    fun profile(attackSpeed: Double): WeaponProfile {
+        require(attackSpeed > 0.0) { "Attack Speed must be positive" }
+        return when (this) {
+            HEAVY_BLADE -> WeaponProfile(
+                weapon = this,
+                startupTicks = scaledTicks(7.0 / (1.0 + 0.25 * (attackSpeed - 1.0))),
+                activeTicks = 2,
+                recoveryTicks = scaledTicks(11.0 / attackSpeed),
+                range = 4.0,
+                minForwardDot = 0.45,
+                verticalRange = 2.0,
+            )
+            TWIN_RODS -> WeaponProfile(
+                weapon = this,
+                startupTicks = scaledTicks(3.0 / attackSpeed),
+                activeTicks = 1,
+                recoveryTicks = scaledTicks(4.0 / attackSpeed),
+                range = 2.8,
+                minForwardDot = 0.65,
+                verticalRange = 1.75,
+            )
+        }
+    }
+
+    private fun scaledTicks(value: Double): Int = round(value).toInt().coerceAtLeast(1)
+}
+
+data class WeaponProfile(
+    val weapon: WeaponType,
+    val startupTicks: Int,
+    val activeTicks: Int,
+    val recoveryTicks: Int,
+    val range: Double,
+    val minForwardDot: Double,
+    val verticalRange: Double,
+) {
+    val totalTicks: Int
+        get() = startupTicks + activeTicks + recoveryTicks
+}
 
 data class CombatTarget(val id: UUID, val position: Point)
 
@@ -12,19 +58,25 @@ sealed interface CombatEvent {
     data class HitConfirmed(val attackExecutionId: Long, val targetId: UUID) : CombatEvent
 }
 
-private enum class AttackPhase(val durationTicks: Int) {
-    WINDUP(4),
-    ACTIVE(2),
-    RECOVERY(6),
+private enum class AttackPhase {
+    WINDUP,
+    ACTIVE,
+    RECOVERY,
 }
 
 /** Minimal server-owned state machine for the normal attack. */
-class CombatState(private val executionIdSource: () -> Long = ExecutionIds::next) {
+class CombatState(
+    private val executionIdSource: () -> Long = ExecutionIds::next,
+    private val weaponSource: () -> WeaponType = { WeaponType.HEAVY_BLADE },
+    private val attackSpeedSource: () -> Double = { 1.0 },
+) {
     private var held = false
     private var phase: AttackPhase? = null
     private var phaseTicks = 0
     private var executionId = 0L
     private val hitTargets = mutableSetOf<UUID>()
+    var activeProfile: WeaponProfile? = null
+        private set
 
     fun input(state: AttackInputState): List<CombatEvent> {
         held = state == AttackInputState.PRESS
@@ -41,7 +93,7 @@ class CombatState(private val executionIdSource: () -> Long = ExecutionIds::next
         phaseTicks--
         if (phase == AttackPhase.ACTIVE) {
             for (target in targets) {
-                if (target.id !in hitTargets && isInAttackRange(position, direction, target.position)) {
+                if (target.id !in hitTargets && isInAttackRange(activeProfile!!, position, direction, target.position)) {
                     hitTargets += target.id
                     events += CombatEvent.HitConfirmed(executionId, target.id)
                 }
@@ -54,8 +106,14 @@ class CombatState(private val executionIdSource: () -> Long = ExecutionIds::next
                 AttackPhase.RECOVERY -> null
                 null -> null
             }
-            phaseTicks = phase?.durationTicks ?: 0
+            phaseTicks = when (phase) {
+                AttackPhase.WINDUP -> activeProfile!!.startupTicks
+                AttackPhase.ACTIVE -> activeProfile!!.activeTicks
+                AttackPhase.RECOVERY -> activeProfile!!.recoveryTicks
+                null -> 0
+            }
             if (phase == null) {
+                activeProfile = null
                 hitTargets.clear()
                 if (held) events += startAttack()
             }
@@ -65,25 +123,22 @@ class CombatState(private val executionIdSource: () -> Long = ExecutionIds::next
 
     private fun startAttack(): List<CombatEvent> {
         executionId = executionIdSource()
+        activeProfile = weaponSource().profile(attackSpeedSource())
         phase = AttackPhase.WINDUP
-        phaseTicks = AttackPhase.WINDUP.durationTicks
+        phaseTicks = activeProfile!!.startupTicks
         hitTargets.clear()
         return listOf(CombatEvent.Started(executionId))
     }
 
     companion object {
-        private const val ATTACK_RANGE = 3.5
-        private const val MIN_FORWARD_DOT = 0.72
-        private const val VERTICAL_RANGE = 1.75
-
-        fun isInAttackRange(position: Point, direction: Vec, target: Point): Boolean {
+        fun isInAttackRange(profile: WeaponProfile, position: Point, direction: Vec, target: Point): Boolean {
             val offset = Vec(target.x() - position.x(), target.y() - position.y(), target.z() - position.z())
             val horizontalDistance = kotlin.math.sqrt(offset.x() * offset.x() + offset.z() * offset.z())
-            if (horizontalDistance > ATTACK_RANGE || kotlin.math.abs(offset.y()) > VERTICAL_RANGE) return false
+            if (horizontalDistance > profile.range || kotlin.math.abs(offset.y()) > profile.verticalRange) return false
             if (horizontalDistance == 0.0) return true
             val forward = Vec(direction.x(), 0.0, direction.z()).normalize()
             val toTarget = Vec(offset.x(), 0.0, offset.z()).normalize()
-            return forward.x() * toTarget.x() + forward.z() * toTarget.z() >= MIN_FORWARD_DOT
+            return forward.x() * toTarget.x() + forward.z() * toTarget.z() >= profile.minForwardDot
         }
     }
 }

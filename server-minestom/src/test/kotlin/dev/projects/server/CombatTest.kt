@@ -51,12 +51,81 @@ class CombatTest {
         assertTrue(events.any { it is CombatEvent.Started && it.attackExecutionId == 2L })
     }
 
+    @Test
+    fun `heavy blade is slower and reaches farther than twin rods at default speed`() {
+        val heavy = WeaponType.HEAVY_BLADE.profile(1.0)
+        val rods = WeaponType.TWIN_RODS.profile(1.0)
+
+        assertTrue(heavy.totalTicks > rods.totalTicks)
+        assertTrue(CombatState.isInAttackRange(heavy, origin, forward, Pos(0.0, 0.0, 3.5)))
+        assertTrue(!CombatState.isInAttackRange(rods, origin, forward, Pos(0.0, 0.0, 3.5)))
+        assertTrue(CombatState.isInAttackRange(heavy, origin, forward, Pos(2.0, 0.0, 1.5)))
+        assertTrue(!CombatState.isInAttackRange(rods, origin, forward, Pos(2.0, 0.0, 1.5)))
+    }
+
+    @Test
+    fun `attack speed shortens both weapon timings from 1 to 2`() {
+        for (weapon in WeaponType.entries) {
+            val atOne = attackLength(weapon, 1.0)
+            val atOneAndHalf = attackLength(weapon, 1.5)
+            val atTwo = attackLength(weapon, 2.0)
+            assertTrue(atOne > atOneAndHalf)
+            assertTrue(atOneAndHalf > atTwo)
+        }
+    }
+
+    @Test
+    fun `heavy blade keeps more startup while attack speed reduces recovery`() {
+        val atOne = WeaponType.HEAVY_BLADE.profile(1.0)
+        val atTwo = WeaponType.HEAVY_BLADE.profile(2.0)
+
+        assertTrue(atOne.startupTicks - atTwo.startupTicks < atOne.recoveryTicks - atTwo.recoveryTicks)
+    }
+
+    @Test
+    fun `weapon slot changes do not alter the active attack profile`() {
+        var weapon = WeaponType.HEAVY_BLADE
+        val combat = CombatState(
+            executionIdSource = sequence(),
+            weaponSource = { weapon },
+            attackSpeedSource = { 1.0 },
+        )
+        combat.input(AttackInputState.PRESS)
+        val startedProfile = combat.activeProfile
+        assertEquals(WeaponType.HEAVY_BLADE, startedProfile?.weapon)
+
+        weapon = WeaponType.TWIN_RODS
+        repeat(startedProfile!!.totalTicks - 1) {
+            combat.tick(origin, forward, emptyList())
+            assertEquals(startedProfile, combat.activeProfile)
+        }
+        combat.input(AttackInputState.RELEASE)
+        combat.tick(origin, forward, emptyList())
+        assertEquals(null, combat.activeProfile)
+    }
+
     private fun finishAttack(combat: CombatState, targets: Collection<CombatTarget>): List<UUID> =
         buildList {
-            repeat(12) {
+            repeat(combat.activeProfile!!.totalTicks) {
                 addAll(combat.tick(origin, forward, targets).filterIsInstance<CombatEvent.HitConfirmed>().map { it.targetId })
             }
         }
+
+    private fun attackLength(weapon: WeaponType, attackSpeed: Double): Int {
+        val combat = CombatState(
+            executionIdSource = sequence(),
+            weaponSource = { weapon },
+            attackSpeedSource = { attackSpeed },
+        )
+        combat.input(AttackInputState.PRESS)
+        var ticks = 0
+        while (true) {
+            ticks++
+            if (combat.tick(origin, forward, emptyList()).any { it is CombatEvent.Started && it.attackExecutionId == 2L }) {
+                return ticks
+            }
+        }
+    }
 
     private fun sequence(): () -> Long {
         var id = 0L

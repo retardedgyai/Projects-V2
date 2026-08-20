@@ -14,6 +14,7 @@ import net.minestom.server.MinecraftServer
 import net.minestom.server.coordinate.Pos
 import net.minestom.server.entity.Entity
 import net.minestom.server.entity.EntityType
+import net.minestom.server.entity.EquipmentSlot
 import net.minestom.server.event.player.AsyncPlayerConfigurationEvent
 import net.minestom.server.event.player.PlayerPluginMessageEvent
 import net.minestom.server.event.player.PlayerSpawnEvent
@@ -21,11 +22,20 @@ import net.minestom.server.event.player.PlayerTickEvent
 import net.minestom.server.instance.block.Block
 import net.minestom.server.instance.LightingChunk
 import net.minestom.server.instance.Weather
+import net.minestom.server.item.ItemStack
+import net.minestom.server.item.Material
 import net.minestom.server.network.packet.server.common.PluginMessagePacket
 import java.nio.charset.StandardCharsets
+import java.util.UUID
+import net.minestom.server.command.CommandSender
+import net.minestom.server.command.builder.Command
+import net.minestom.server.command.builder.CommandContext
+import net.minestom.server.command.builder.arguments.ArgumentType
 
 private const val SERVER_ADDRESS = "127.0.0.1"
 private const val SERVER_PORT = 25565
+private const val DEFAULT_ATTACK_SPEED = 1.0
+private val SUPPORTED_ATTACK_SPEEDS = setOf(1.0, 1.5, 2.0)
 
 fun main() {
     val server = MinecraftServer.init(Auth.Offline())
@@ -37,15 +47,46 @@ fun main() {
     instance.setGenerator { unit -> unit.modifier().fillHeight(0, 40, Block.GRASS_BLOCK) }
 
     val events = MinecraftServer.getGlobalEventHandler()
-    val combatStates = mutableMapOf<java.util.UUID, CombatState>()
+    val combatStates = mutableMapOf<UUID, CombatState>()
+    val attackSpeeds = mutableMapOf<UUID, Double>()
     var dummy: Entity? = null
+
+    val speedArgument = ArgumentType.Double("speed")
+    fun handleAttackSpeed(sender: CommandSender, context: CommandContext) {
+        val player = sender as? net.minestom.server.entity.Player
+        if (player == null) {
+            sender.sendMessage(Component.text("/as can only be used by a player"))
+            return
+        }
+        val speed = context.get<Double>(speedArgument)
+        if (speed !in SUPPORTED_ATTACK_SPEEDS) {
+            player.sendMessage(Component.text("Use /as 1.0, /as 1.5, or /as 2.0"))
+            return
+        }
+        attackSpeeds[player.uuid] = speed
+        player.sendMessage(Component.text("Attack Speed set to $speed"))
+    }
+    MinecraftServer.getCommandManager().register(
+        Command("as").apply { addSyntax(::handleAttackSpeed, speedArgument) },
+    )
+
     events.addListener(AsyncPlayerConfigurationEvent::class.java) { event ->
         event.spawningInstance = instance
         event.player.respawnPoint = Pos(0.0, 41.0, 0.0)
     }
     events.addListener(PlayerSpawnEvent::class.java) { event ->
         if (event.isFirstSpawn) {
-            combatStates[event.player.uuid] = CombatState()
+            attackSpeeds[event.player.uuid] = DEFAULT_ATTACK_SPEED
+            combatStates[event.player.uuid] = CombatState(
+                weaponSource = { weaponFor(event.player) },
+                attackSpeedSource = { attackSpeeds[event.player.uuid] ?: DEFAULT_ATTACK_SPEED },
+            )
+            event.player.inventory.addItemStack(
+                ItemStack.builder(Material.NETHERITE_SWORD).customName(Component.text("Heavy Blade")).build(),
+            )
+            event.player.inventory.addItemStack(
+                ItemStack.builder(Material.BLAZE_ROD).customName(Component.text("Twin Rods")).build(),
+            )
             if (dummy == null) {
                 dummy = Entity(EntityType.PIG).apply {
                     customName = Component.text("Dummy")
@@ -106,4 +147,12 @@ private fun publishCombatEvents(player: net.minestom.server.entity.Player, event
         }
         player.sendPluginMessage(PROJECTS_CHANNEL, ProtocolCodec.encode(message))
     }
+}
+
+private fun weaponFor(player: net.minestom.server.entity.Player): WeaponType = when (
+    player.getEquipment(EquipmentSlot.MAIN_HAND).material()
+) {
+    Material.BLAZE_ROD -> WeaponType.TWIN_RODS
+    Material.NETHERITE_SWORD -> WeaponType.HEAVY_BLADE
+    else -> WeaponType.HEAVY_BLADE
 }
