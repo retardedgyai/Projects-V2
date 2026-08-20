@@ -113,11 +113,11 @@ fun main() {
                     isCustomNameVisible = true
                     setNoGravity(true)
                     setHasPhysics(false)
+                    val spawnPos = event.player.position
+                        .add(event.player.position.direction().mul(3.0))
                     setInstance(
                         instance,
-                        event.player.position
-                            .add(event.player.position.direction().mul(3.0))
-                            .withDirection(event.player.position),
+                        spawnPos.withDirection(directionFrom(spawnPos, event.player.position)),
                     )
                 }
             }
@@ -373,7 +373,7 @@ private fun showWeakpointHit(
     )
 }
 
-private fun directionFrom(origin: Pos, target: Pos): Vec =
+internal fun directionFrom(origin: Pos, target: Pos): Vec =
     FixedAttackTester.normalizeHorizontal(
         Vec(target.x() - origin.x(), 0.0, target.z() - origin.z()),
     )

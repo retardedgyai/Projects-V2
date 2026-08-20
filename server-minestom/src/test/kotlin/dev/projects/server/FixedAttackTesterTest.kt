@@ -152,6 +152,14 @@ class FixedAttackTesterTest {
         assertEquals(0.0, back.z())
     }
 
+    @Test
+    fun `direction from origin to target is horizontal and normalized`() {
+        assertEquals(Vec(0.0, 0.0, 1.0), directionFrom(origin, Pos(0.0, 9.0, 4.0)))
+        assertEquals(Vec(0.0, 0.0, -1.0), directionFrom(origin, Pos(0.0, -9.0, -4.0)))
+        assertEquals(Vec(1.0, 0.0, 0.0), directionFrom(origin, Pos(4.0, 9.0, 0.0)))
+        assertEquals(Vec(-1.0, 0.0, 0.0), directionFrom(origin, Pos(-4.0, -9.0, 0.0)))
+    }
+
     private fun inRegion(attack: FixedAttackType, target: Pos): Boolean =
         FixedAttackTester.isInAttackRegion(attack, origin, forward, target)
 
