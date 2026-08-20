@@ -14,6 +14,7 @@ OpenCodeはこのRepositoryでは「実装端末」として使う。全体設�
 - ServerがDamage / Hit / Reward / Progressionの最終判定を持つ。
 - Clientから「Hitした対象」を信用しない。
 - GUIやMinecraft内Manual SmokeはUserが行う。Agentはコード、静的確認、自動Test、Buildまで。
+- Issueに推奨Model / 推論強度が指定されている場合は、それを実行条件として扱う。自動実行ではModelとvariantを明示し、指定を満たせない場合は黙ってdefaultへfallbackしない。
 - Task完了後は、そのTask専用の作業branchへの通常`git push`まで行ってよい。
 - `main`への直接pushは禁止。
 - force push（`--force` / `--force-with-lease`）は禁止。
@@ -55,5 +56,6 @@ Issueで指定されたTest / Buildを実行する。
 7. 一番重要なFile / Class
 8. 壊れた時に最初に見る場所
 9. commit SHA / push先branch
+10. 実際に使用したModel / variant（Issue指定がある場合）
 
 Issueがcommitを要求している場合はcommitまで行う。Task専用作業branchへの通常pushも行ってよい。`main`への直接pushやforce pushは行わない。
