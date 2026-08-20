@@ -150,8 +150,9 @@ class FixedAttackTester(
         const val FORWARD_SLAM_HALF_WIDTH = 1.0
         const val VERTICAL_RANGE = 2.0
         const val WEAKPOINT_RADIUS = 0.45
-        private const val HEAD_FORWARD_OFFSET = 0.55
-        private const val BACK_FORWARD_OFFSET = -0.55
+        // Keep the hit centers just outside the Ravager model so the marker is not occluded.
+        private const val HEAD_FORWARD_OFFSET = 0.9
+        private const val BACK_FORWARD_OFFSET = -0.9
         private const val HEAD_HEIGHT = 2.0
         private const val BACK_HEIGHT = 1.45
 

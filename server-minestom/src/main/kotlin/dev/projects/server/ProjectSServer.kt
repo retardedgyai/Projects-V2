@@ -316,17 +316,19 @@ private fun showWeakpointMarkers(player: net.minestom.server.entity.Player, orig
     val right = Vec(-forward.z(), 0.0, forward.x())
     for (weakpoint in FixedWeakpoint.entries) {
         val center = FixedAttackTester.weakpointCenter(origin, forward, weakpoint)
-        sendTesterParticle(player, Particle.END_ROD, center)
-        sendTesterParticle(
-            player,
-            Particle.END_ROD,
-            center.add(right.x() * 0.14, 0.08, right.z() * 0.14),
-        )
-        sendTesterParticle(
-            player,
-            Particle.END_ROD,
-            center.add(-right.x() * 0.14, -0.08, -right.z() * 0.14),
-        )
+        for (step in 0..5) {
+            val angle = step * Math.PI / 3.0
+            val radial = Vec(
+                right.x() * kotlin.math.cos(angle) + forward.x() * kotlin.math.sin(angle),
+                0.0,
+                right.z() * kotlin.math.cos(angle) + forward.z() * kotlin.math.sin(angle),
+            )
+            sendTesterParticle(
+                player,
+                Particle.GLOW,
+                center.add(radial.x() * 0.18, kotlin.math.cos(angle) * 0.08, radial.z() * 0.18),
+            )
+        }
     }
 }
 

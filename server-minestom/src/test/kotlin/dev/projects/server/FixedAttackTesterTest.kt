@@ -146,8 +146,8 @@ class FixedAttackTesterTest {
         val head = FixedAttackTester.weakpointCenter(origin, Vec(1.0, 0.0, 0.0), FixedWeakpoint.HEAD)
         val back = FixedAttackTester.weakpointCenter(origin, Vec(1.0, 0.0, 0.0), FixedWeakpoint.BACK)
 
-        assertEquals(0.55, head.x())
-        assertEquals(-0.55, back.x())
+        assertEquals(0.9, head.x())
+        assertEquals(-0.9, back.x())
         assertEquals(0.0, head.z())
         assertEquals(0.0, back.z())
     }
