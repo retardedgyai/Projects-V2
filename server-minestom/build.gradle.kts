@@ -10,6 +10,7 @@ kotlin {
 dependencies {
     implementation(project(":protocol"))
     implementation("net.minestom:minestom:${property("minestom_version")}")
+    testImplementation(kotlin("test"))
 }
 
 application {
@@ -19,4 +20,8 @@ application {
 tasks.named<JavaExec>("run") {
     workingDir = file("run")
     doFirst { workingDir.mkdirs() }
+}
+
+tasks.test {
+    useJUnitPlatform()
 }

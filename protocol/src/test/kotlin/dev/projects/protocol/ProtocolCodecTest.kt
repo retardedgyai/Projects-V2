@@ -45,6 +45,18 @@ class ProtocolCodecTest {
     }
 
     @Test
+    fun `attack input represents press and release state changes`() {
+        assertEquals(listOf(AttackInputState.PRESS, AttackInputState.RELEASE), AttackInputState.entries)
+        val transitions = listOf(
+            AttackInput(AttackInputState.PRESS, 42),
+            AttackInput(AttackInputState.RELEASE, 43),
+        )
+        assertEquals(AttackInputState.PRESS, transitions.first().state)
+        assertEquals(AttackInputState.RELEASE, transitions.last().state)
+        assertEquals(listOf(42L, 43L), transitions.map { it.sequence })
+    }
+
+    @Test
     fun `attack started round trips`() {
         assertRoundTrip(AttackStarted(9001))
     }
