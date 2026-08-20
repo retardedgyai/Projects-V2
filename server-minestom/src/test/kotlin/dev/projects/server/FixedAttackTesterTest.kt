@@ -75,6 +75,91 @@ class FixedAttackTesterTest {
         assertEquals(FixedAttackType.FORWARD_SLAM, next.filterIsInstance<FixedAttackEvent.Started>().single().attack)
     }
 
+    @Test
+    fun `ray through head selects head`() {
+        val selection = FixedAttackTester.selectWeakpoint(
+            playerPosition = Pos(0.0, 2.0, 3.0),
+            playerDirection = Vec(0.0, 0.0, -1.0),
+            testerOrigin = origin,
+            testerFacing = forward,
+            weaponRange = 4.5,
+        )
+
+        assertEquals(FixedWeakpoint.HEAD, selection?.weakpoint)
+    }
+
+    @Test
+    fun `aiming outside head radius falls back to body`() {
+        val selection = FixedAttackTester.selectWeakpoint(
+            playerPosition = Pos(1.0, 2.0, 3.0),
+            playerDirection = Vec(0.0, 0.0, -1.0),
+            testerOrigin = origin,
+            testerFacing = forward,
+            weaponRange = 4.5,
+        )
+
+        assertEquals(null, selection)
+    }
+
+    @Test
+    fun `ray from behind selects back`() {
+        val selection = FixedAttackTester.selectWeakpoint(
+            playerPosition = Pos(0.0, 1.45, -3.0),
+            playerDirection = forward,
+            testerOrigin = origin,
+            testerFacing = forward,
+            weaponRange = 4.5,
+        )
+
+        assertEquals(FixedWeakpoint.BACK, selection?.weakpoint)
+    }
+
+    @Test
+    fun `weakpoint outside range falls back to body`() {
+        val selection = FixedAttackTester.selectWeakpoint(
+            playerPosition = Pos(0.0, 2.0, 6.0),
+            playerDirection = Vec(0.0, 0.0, -1.0),
+            testerOrigin = origin,
+            testerFacing = forward,
+            weaponRange = 2.0,
+        )
+
+        assertEquals(null, selection)
+    }
+
+    @Test
+    fun `overlapping weakpoints choose only the ray closest candidate`() {
+        val selection = FixedAttackTester.selectWeakpoint(
+            playerPosition = Pos(0.0, 1.7, -3.0),
+            playerDirection = forward,
+            testerOrigin = origin,
+            testerFacing = forward,
+            weaponRange = 5.0,
+            weakpointRadius = 1.0,
+        )
+
+        assertEquals(FixedWeakpoint.BACK, selection?.weakpoint)
+    }
+
+    @Test
+    fun `weakpoint center rotates with tester facing`() {
+        val head = FixedAttackTester.weakpointCenter(origin, Vec(1.0, 0.0, 0.0), FixedWeakpoint.HEAD)
+        val back = FixedAttackTester.weakpointCenter(origin, Vec(1.0, 0.0, 0.0), FixedWeakpoint.BACK)
+
+        assertEquals(0.9, head.x())
+        assertEquals(-0.9, back.x())
+        assertEquals(0.0, head.z())
+        assertEquals(0.0, back.z())
+    }
+
+    @Test
+    fun `direction from origin to target is horizontal and normalized`() {
+        assertEquals(Vec(0.0, 0.0, 1.0), directionFrom(origin, Pos(0.0, 9.0, 4.0)))
+        assertEquals(Vec(0.0, 0.0, -1.0), directionFrom(origin, Pos(0.0, -9.0, -4.0)))
+        assertEquals(Vec(1.0, 0.0, 0.0), directionFrom(origin, Pos(4.0, 9.0, 0.0)))
+        assertEquals(Vec(-1.0, 0.0, 0.0), directionFrom(origin, Pos(-4.0, -9.0, 0.0)))
+    }
+
     private fun inRegion(attack: FixedAttackType, target: Pos): Boolean =
         FixedAttackTester.isInAttackRegion(attack, origin, forward, target)
 
