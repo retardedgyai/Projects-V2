@@ -139,7 +139,12 @@ fun main() {
             twinRodsAir.onAttackHit(hit.weapon, event.player.isOnGround, hit.attackExecutionId)
         }
         publishCombatEvents(event.player, combatEvents)
-        val sustainedVelocity = applyAerialSustain(event.player.velocity, twinRodsAir.isSustainActive)
+        val currentWeapon = weaponFor(event.player)
+        if (currentWeapon != WeaponType.TWIN_RODS) twinRodsAir.clearSustain()
+        val sustainedVelocity = applyAerialSustain(
+            event.player.velocity,
+            currentWeapon == WeaponType.TWIN_RODS && twinRodsAir.isSustainActive,
+        )
         if (sustainedVelocity != event.player.velocity) event.player.setVelocity(sustainedVelocity)
         val velocityWasApplied = dodgeVelocityActive[event.player.uuid] == true
         val movement = dodge.tick(

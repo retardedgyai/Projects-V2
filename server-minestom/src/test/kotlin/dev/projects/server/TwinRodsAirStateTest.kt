@@ -59,6 +59,21 @@ class TwinRodsAirStateTest {
     }
 
     @Test
+    fun `switching away clears sustain and re-equipping does not restore it`() {
+        val air = TwinRodsAirState()
+        air.onAttackHit(WeaponType.TWIN_RODS, isGrounded = false, attackExecutionId = 1L)
+        assertTrue(air.isSustainActive)
+
+        air.clearSustain()
+
+        assertFalse(air.isSustainActive)
+        assertEquals(
+            Vec(0.0, -0.4, 0.0),
+            applyAerialSustain(Vec(0.0, -0.4, 0.0), air.isSustainActive),
+        )
+    }
+
+    @Test
     fun `air dodge starts with two charges and recovers once per execution`() {
         val air = TwinRodsAirState()
         assertEquals(2, air.airDodgeCharges)

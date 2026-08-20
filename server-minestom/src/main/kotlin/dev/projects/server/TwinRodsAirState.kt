@@ -24,6 +24,10 @@ class TwinRodsAirState {
         }
     }
 
+    fun clearSustain() {
+        sustainTicksRemaining = 0
+    }
+
     fun onAttackHit(weapon: WeaponType, isGrounded: Boolean, attackExecutionId: Long) {
         if (isGrounded || weapon != WeaponType.TWIN_RODS) return
 
