@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "id": "projects",
+  "version": "${version}",
+  "name": "ProjectS Client",
+  "description": "ProjectS dedicated client bootstrap",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      {
+        "adapter": "kotlin",
+        "value": "dev.projects.client.ProjectSClient"
+      }
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=0.19.3",
+    "fabric-language-kotlin": "*",
+    "fabric-api": "*",
+    "minecraft": "~26.2",
+    "java": ">=25"
+  }
+}
