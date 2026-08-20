@@ -10,9 +10,10 @@ enum class FixedAttackType(
     val telegraphTicks: Int,
     val activeTicks: Int,
     val recoveryTicks: Int,
+    val damage: Int,
 ) {
-    SIDE_SWEEP(14, 2, 18),
-    FORWARD_SLAM(18, 2, 22),
+    SIDE_SWEEP(14, 2, 18, 6),
+    FORWARD_SLAM(18, 2, 22, 8),
     ;
 }
 
@@ -49,7 +50,11 @@ sealed interface FixedAttackEvent {
         val direction: Vec,
     ) : FixedAttackEvent
 
-    data class HitConfirmed(val executionId: Long, val targetId: UUID) : FixedAttackEvent
+    data class HitConfirmed(
+        val executionId: Long,
+        val targetId: UUID,
+        val attack: FixedAttackType,
+    ) : FixedAttackEvent
 }
 
 private enum class TesterPhase {
@@ -107,7 +112,7 @@ class FixedAttackTester(
                 for (target in targets) {
                     if (target.id !in hitTargets && isInAttackRegion(attack, origin, attackDirection, target.position)) {
                         hitTargets += target.id
-                        events += FixedAttackEvent.HitConfirmed(executionId, target.id)
+                        events += FixedAttackEvent.HitConfirmed(executionId, target.id, attack)
                     }
                 }
                 phaseTicks--
@@ -140,6 +145,15 @@ class FixedAttackTester(
         phaseTicks = nextAttack.telegraphTicks
         hitTargets.clear()
         events += FixedAttackEvent.Started(executionId, nextAttack, attackDirection)
+    }
+
+    fun reset() {
+        phase = TesterPhase.PAUSE
+        phaseTicks = initialPauseTicks
+        nextAttack = FixedAttackType.SIDE_SWEEP
+        executionId = 0L
+        attackDirection = Vec(0.0, 0.0, 1.0)
+        hitTargets.clear()
     }
 
     companion object {
