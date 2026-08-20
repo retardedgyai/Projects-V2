@@ -123,7 +123,7 @@ fun main() {
             ?: emptyList()
         publishCombatEvents(event.player, state.tick(event.player.position, event.player.position.direction(), targets))
         val movement = dodge.tick(canStart = event.player.isOnGround && !state.isAttacking)
-        if (movement != null) moveDodge(event.player, movement)
+        if (movement != null) moveDodge(event.player, dodge, movement)
     }
     events.addListener(PlayerPluginMessageEvent::class.java) { event ->
         if (event.identifier != PROJECTS_CHANNEL) return@addListener
@@ -202,21 +202,60 @@ internal fun dodgeDirection(facing: net.minestom.server.coordinate.Vec, input: D
     }
 }
 
-private fun moveDodge(player: net.minestom.server.entity.Player, movement: net.minestom.server.coordinate.Vec) {
+private fun moveDodge(
+    player: net.minestom.server.entity.Player,
+    dodge: DodgeState,
+    movement: net.minestom.server.coordinate.Vec,
+) {
     val current = player.position
     val target = current.add(movement.x(), 0.0, movement.z())
     val instance = player.instance
-    val samples = 4
-    for (sample in 1..samples) {
-        val progress = sample.toDouble() / samples
+    if (isDodgePathClear(instance, current, target)) {
+        player.refreshPosition(target, true)
+        return
+    }
+
+    var safeProgress = 0.0
+    var blockedProgress = 1.0
+    repeat(8) {
+        val progress = (safeProgress + blockedProgress) / 2.0
         val samplePosition = current.add(
             (target.x() - current.x()) * progress,
             0.0,
             (target.z() - current.z()) * progress,
         )
-        if (!isDodgePositionClear(instance, samplePosition)) return
+        if (isDodgePathClear(instance, current, samplePosition)) {
+            safeProgress = progress
+        } else {
+            blockedProgress = progress
+        }
     }
-    player.teleport(target)
+
+    dodge.stop()
+    if (safeProgress > 0.0) {
+        player.refreshPosition(
+            current.add(
+                (target.x() - current.x()) * safeProgress,
+                0.0,
+                (target.z() - current.z()) * safeProgress,
+            ),
+            true,
+        )
+    }
+}
+
+private fun isDodgePathClear(instance: Instance, start: Pos, end: Pos): Boolean {
+    val samples = 4
+    for (sample in 1..samples) {
+        val progress = sample.toDouble() / samples
+        val samplePosition = start.add(
+            (end.x() - start.x()) * progress,
+            0.0,
+            (end.z() - start.z()) * progress,
+        )
+        if (!isDodgePositionClear(instance, samplePosition)) return false
+    }
+    return true
 }
 
 private fun isDodgePositionClear(instance: Instance, position: Pos): Boolean {

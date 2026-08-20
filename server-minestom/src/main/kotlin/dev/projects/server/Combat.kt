@@ -154,12 +154,13 @@ class CombatState(
 }
 
 class DodgeState {
-    private var remainingTicks = 0
+    private var active = false
+    private var elapsedTicks = 0
     private var direction = Vec.ZERO
     private var pendingDirection: Vec? = null
 
     val isActive: Boolean
-        get() = remainingTicks > 0
+        get() = active
 
     val hasPending: Boolean
         get() = pendingDirection != null
@@ -185,18 +186,32 @@ class DodgeState {
         }
         if (!isActive) return null
 
-        remainingTicks--
-        return direction.mul(DISTANCE / DURATION_TICKS)
+        val previousProgress = progress(elapsedTicks.toDouble() / DURATION_TICKS)
+        elapsedTicks++
+        val currentProgress = progress(elapsedTicks.toDouble() / DURATION_TICKS)
+        if (elapsedTicks == DURATION_TICKS) active = false
+        return direction.mul(DISTANCE * (currentProgress - previousProgress))
     }
 
     private fun start(direction: Vec) {
         this.direction = direction
-        remainingTicks = DURATION_TICKS
+        elapsedTicks = 0
+        active = true
+    }
+
+    internal fun stop() {
+        active = false
+        elapsedTicks = DURATION_TICKS
     }
 
     companion object {
         const val DISTANCE = 2.5
-        const val DURATION_TICKS = 4
+        const val DURATION_TICKS = 8
+
+        private fun progress(time: Double): Double {
+            val t = time.coerceIn(0.0, 1.0)
+            return t * t * (3.0 - 2.0 * t)
+        }
 
         fun normalizeDirection(direction: Vec): Vec {
             val length = kotlin.math.sqrt(direction.x() * direction.x() + direction.z() * direction.z())

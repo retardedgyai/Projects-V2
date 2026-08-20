@@ -54,6 +54,20 @@ class DodgeTest {
     }
 
     @Test
+    fun `dodge accelerates in the middle and eases at the ends`() {
+        val dodge = DodgeState()
+        assertTrue(dodge.request(Vec(0.0, 0.0, 1.0), canStart = true))
+
+        val movement = (1..DodgeState.DURATION_TICKS)
+            .map { assertNotNull(dodge.tick(canStart = true)) }
+            .map { sqrt(it.x() * it.x() + it.z() * it.z()) }
+
+        assertTrue(movement.first() < movement[DodgeState.DURATION_TICKS / 2])
+        assertTrue(movement.last() < movement[DodgeState.DURATION_TICKS / 2])
+        assertEquals(DodgeState.DISTANCE, movement.sum(), 1.0e-9)
+    }
+
+    @Test
     fun `dodge rejects re-dodge while active and allows it after completion`() {
         val dodge = DodgeState()
         assertTrue(dodge.request(Vec(0.0, 0.0, 1.0), canStart = true))
