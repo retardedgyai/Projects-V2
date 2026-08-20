@@ -7,11 +7,17 @@
   "subagent_depth": 1,
   "share": "manual",
 
-  // Fast by default, but block/confirm commands that can damage history
-  // or publish work without an explicit user decision.
+  // Task branches may be pushed automatically after tests/build pass.
+  // Protect main and history rewriting.
   "permission": {
     "bash": {
-      "git push*": "deny",
+      "git push*": "allow",
+      "git push origin main*": "deny",
+      "git push * main*": "deny",
+      "git push --force*": "deny",
+      "git push * --force*": "deny",
+      "git push --force-with-lease*": "deny",
+      "git push * --force-with-lease*": "deny",
       "git reset --hard*": "ask",
       "git clean*": "ask",
       "rm -rf*": "ask"
