@@ -83,6 +83,23 @@ class ProtocolCodecTest {
         assertFailsWith<IllegalArgumentException> { ProtocolCodec.decode(malformed) }
     }
 
+    @Test
+    fun `air jump input round trips`() {
+        assertRoundTrip(AirJumpInput(-1.0, 1.0))
+        assertRoundTrip(AirJumpInput(0.0, 0.0))
+    }
+
+    @Test
+    fun `invalid air jump direction is rejected`() {
+        assertFailsWith<IllegalArgumentException> { AirJumpInput(Double.NaN, 0.0) }
+        assertFailsWith<IllegalArgumentException> { AirJumpInput(1.1, 0.0) }
+
+        val malformed = ProtocolCodec.encode(AirJumpInput(0.0, 0.0)).copyOf().also { bytes ->
+            java.nio.ByteBuffer.wrap(bytes, 1, Double.SIZE_BYTES).putDouble(Double.POSITIVE_INFINITY)
+        }
+        assertFailsWith<IllegalArgumentException> { ProtocolCodec.decode(malformed) }
+    }
+
     private fun assertRoundTrip(message: ProtocolMessage) {
         assertEquals(message, ProtocolCodec.decode(ProtocolCodec.encode(message)))
     }

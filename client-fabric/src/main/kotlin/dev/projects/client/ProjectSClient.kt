@@ -5,6 +5,7 @@ import dev.projects.protocol.AttackHitConfirmed
 import dev.projects.protocol.AttackInput
 import dev.projects.protocol.AttackInputState
 import dev.projects.protocol.AttackStarted
+import dev.projects.protocol.AirJumpInput
 import dev.projects.protocol.DodgeInput
 import dev.projects.protocol.ProtocolCodec
 import dev.projects.protocol.ProtocolHello
@@ -32,6 +33,7 @@ object ProjectSClient : ClientModInitializer {
     private val logger = LoggerFactory.getLogger("projects")
     private var attackHeld = false
     private var dodgeHeld = false
+    private var jumpHeld = false
     private var inputSequence = 0L
     private var suppressNextAttackStarted = false
     private var twinRodSide = false
@@ -83,9 +85,25 @@ object ProjectSClient : ClientModInitializer {
         val player = client.player ?: run {
             attackHeld = false
             dodgeHeld = false
+            jumpHeld = false
             suppressNextAttackStarted = false
             twinRodSide = false
             return
+        }
+        val jumpPressed = client.options.keyJump.isDown()
+        if (jumpPressed != jumpHeld) {
+            jumpHeld = jumpPressed
+            if (jumpPressed && !player.onGround() && client.getConnection() != null &&
+                ClientPlayNetworking.canSend(ProjectSPayload.TYPE)
+            ) {
+                val directionX = (if (client.options.keyRight.isDown()) 1.0 else 0.0) -
+                    (if (client.options.keyLeft.isDown()) 1.0 else 0.0)
+                val directionZ = (if (client.options.keyUp.isDown()) 1.0 else 0.0) -
+                    (if (client.options.keyDown.isDown()) 1.0 else 0.0)
+                ClientPlayNetworking.send(
+                    ProjectSPayload(ProtocolCodec.encode(AirJumpInput(directionX, directionZ))),
+                )
+            }
         }
         val dodgePressed = dodgeKey.isDown()
         if (dodgePressed != dodgeHeld) {

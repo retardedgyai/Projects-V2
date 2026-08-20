@@ -1,41 +1,45 @@
 package dev.projects.server
 
-import net.minestom.server.coordinate.Vec
-
 /** Server-owned aerial state used only while Twin Rods is equipped. */
 class TwinRodsAirState {
-    private var sustainTicksRemaining = 0
+    private var airJumpChargesValue = 0
     private var airDodgeChargesValue = MAX_AIR_DODGE_CHARGES
-    private var chargeRecoveryExecutionId: Long? = null
+    private var rewardExecutionId: Long? = null
+
+    val airJumpCharges: Int
+        get() = airJumpChargesValue
 
     val airDodgeCharges: Int
         get() = airDodgeChargesValue
 
-    val isSustainActive: Boolean
-        get() = sustainTicksRemaining > 0
-
     fun tick(isGrounded: Boolean) {
         if (isGrounded) {
-            sustainTicksRemaining = 0
+            airJumpChargesValue = 0
             airDodgeChargesValue = MAX_AIR_DODGE_CHARGES
-            chargeRecoveryExecutionId = null
-        } else if (sustainTicksRemaining > 0) {
-            sustainTicksRemaining--
+            rewardExecutionId = null
         }
     }
 
-    fun clearSustain() {
-        sustainTicksRemaining = 0
+    fun clearAirJump() {
+        airJumpChargesValue = 0
     }
 
     fun onAttackHit(weapon: WeaponType, isGrounded: Boolean, attackExecutionId: Long) {
         if (isGrounded || weapon != WeaponType.TWIN_RODS) return
 
-        sustainTicksRemaining = SUSTAIN_WINDOW_TICKS
-        if (chargeRecoveryExecutionId != attackExecutionId) {
-            chargeRecoveryExecutionId = attackExecutionId
+        if (rewardExecutionId != attackExecutionId) {
+            rewardExecutionId = attackExecutionId
+            airJumpChargesValue = MAX_AIR_JUMP_CHARGES
             airDodgeChargesValue = (airDodgeChargesValue + 1).coerceAtMost(MAX_AIR_DODGE_CHARGES)
         }
+    }
+
+    fun canStartAirJump(): Boolean = airJumpChargesValue > 0
+
+    fun consumeAirJump(): Boolean {
+        if (!canStartAirJump()) return false
+        airJumpChargesValue--
+        return true
     }
 
     fun canStartAirDodge(): Boolean = airDodgeChargesValue > 0
@@ -47,12 +51,7 @@ class TwinRodsAirState {
     }
 
     companion object {
+        const val MAX_AIR_JUMP_CHARGES = 1
         const val MAX_AIR_DODGE_CHARGES = 2
-        const val SUSTAIN_WINDOW_TICKS = 10
     }
-}
-
-internal fun applyAerialSustain(velocity: Vec, sustainActive: Boolean): Vec {
-    if (!sustainActive || velocity.y() >= 0.0) return velocity
-    return Vec(velocity.x(), 0.0, velocity.z())
 }

@@ -4,6 +4,7 @@ import dev.projects.protocol.PROJECTS_CHANNEL
 import dev.projects.protocol.AttackHitConfirmed
 import dev.projects.protocol.AttackInput
 import dev.projects.protocol.AttackStarted
+import dev.projects.protocol.AirJumpInput
 import dev.projects.protocol.DodgeInput
 import dev.projects.protocol.ProtocolCodec
 import dev.projects.protocol.ProtocolHello
@@ -140,12 +141,7 @@ fun main() {
         }
         publishCombatEvents(event.player, combatEvents)
         val currentWeapon = weaponFor(event.player)
-        if (currentWeapon != WeaponType.TWIN_RODS) twinRodsAir.clearSustain()
-        val sustainedVelocity = applyAerialSustain(
-            event.player.velocity,
-            currentWeapon == WeaponType.TWIN_RODS && twinRodsAir.isSustainActive,
-        )
-        if (sustainedVelocity != event.player.velocity) event.player.setVelocity(sustainedVelocity)
+        if (currentWeapon != WeaponType.TWIN_RODS) twinRodsAir.clearAirJump()
         val velocityWasApplied = dodgeVelocityActive[event.player.uuid] == true
         val movement = dodge.tick(
             canStart = !state.isAttacking,
@@ -197,6 +193,17 @@ fun main() {
                             if (!event.player.isOnGround) check(twinRodsAir.consumeAirDodge())
                         },
                     )
+                }
+                is AirJumpInput -> {
+                    val twinRodsAir = twinRodsAirStates[event.player.uuid] ?: return@addListener
+                    if (!event.player.isOnGround &&
+                        weaponFor(event.player) == WeaponType.TWIN_RODS &&
+                        twinRodsAir.consumeAirJump()
+                    ) {
+                        event.player.setVelocity(
+                            airJumpVelocity(event.player.velocity, event.player.position.direction(), message),
+                        )
+                    }
                 }
                 else -> throw IllegalArgumentException("Unexpected ProjectS message")
             }
@@ -396,6 +403,23 @@ internal fun dodgeVelocity(movement: Vec, verticalVelocity: Double): Vec = Vec(
     verticalVelocity,
     movement.z() * ServerFlag.SERVER_TICKS_PER_SECOND,
 )
+
+internal fun airJumpVelocity(velocity: Vec, facing: Vec, input: AirJumpInput): Vec {
+    val verticalVelocity = maxOf(velocity.y(), AIR_JUMP_VERTICAL_SPEED)
+    if (input.directionX == 0.0 && input.directionZ == 0.0) {
+        return Vec(velocity.x(), verticalVelocity, velocity.z())
+    }
+
+    val direction = dodgeDirection(facing, DodgeInput(input.directionX, input.directionZ))
+    return Vec(
+        direction.x() * AIR_JUMP_HORIZONTAL_SPEED,
+        verticalVelocity,
+        direction.z() * AIR_JUMP_HORIZONTAL_SPEED,
+    )
+}
+
+private val AIR_JUMP_VERTICAL_SPEED = 8.4 / ServerFlag.SERVER_TICKS_PER_SECOND
+private val AIR_JUMP_HORIZONTAL_SPEED = 5.0 / ServerFlag.SERVER_TICKS_PER_SECOND
 
 private fun stopDodgeVelocity(player: net.minestom.server.entity.Player) {
     player.setVelocity(stopDodgeVelocity(player.velocity))
