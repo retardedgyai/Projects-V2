@@ -11,6 +11,7 @@ import dev.projects.protocol.ProtocolHello
 import dev.projects.protocol.ProtocolHelloAck
 import dev.projects.protocol.ProtocolVersion
 import net.kyori.adventure.text.Component
+import net.kyori.adventure.bossbar.BossBar
 import net.minestom.server.Auth
 import net.minestom.server.MinecraftServer
 import net.minestom.server.ServerFlag
@@ -65,9 +66,66 @@ fun main() {
     val twinRodsAirStates = mutableMapOf<UUID, TwinRodsAirState>()
     val dodgeVelocityActive = mutableMapOf<UUID, Boolean>()
     val attackSpeeds = mutableMapOf<UUID, Double>()
+    val prototypeBoss = PrototypeBossState()
+    val bossBar = BossBar.bossBar(
+        Component.text("Prototype Hunt Boss ${prototypeBoss.currentHealth} / ${prototypeBoss.maxHealth}"),
+        prototypeBoss.healthProgress,
+        BossBar.Color.RED,
+        BossBar.Overlay.PROGRESS,
+    )
     var dummy: Entity? = null
     var testerMarkerTick = 0L
     val fixedTester = FixedAttackTester()
+
+    fun updateBossBar() {
+        val status = when {
+            prototypeBoss.isVictory -> "VICTORY"
+            prototypeBoss.isDefeat -> "DEFEAT"
+            else -> null
+        }
+        val label = buildString {
+            append("Prototype Hunt Boss")
+            if (status != null) append(" - $status")
+            append(" ${prototypeBoss.currentHealth} / ${prototypeBoss.maxHealth}")
+        }
+        bossBar.name(Component.text(label))
+        bossBar.progress(prototypeBoss.healthProgress)
+    }
+
+    fun stopPlayerActions() {
+        combatStates.values.forEach { it.reset() }
+        dodgeStates.values.forEach { it.reset() }
+        twinRodsAirStates.values.forEach { it.tick(true) }
+        instance.players.forEach { player ->
+            player.setVelocity(Vec.ZERO)
+        }
+        dodgeVelocityActive.clear()
+    }
+
+    fun resetPlayers() {
+        stopPlayerActions()
+        instance.players.forEach { player ->
+            player.setHealth(prototypeBoss.playerMaxHealth.toFloat())
+            player.teleport(player.respawnPoint)
+            player.showBossBar(bossBar)
+        }
+    }
+
+    fun finishEncounter() {
+        fixedTester.reset()
+        stopPlayerActions()
+        updateBossBar()
+        val result = if (prototypeBoss.isVictory) "VICTORY" else "DEFEAT"
+        instance.players.forEach { it.sendMessage(Component.text(result)) }
+    }
+
+    fun resetEncounter() {
+        prototypeBoss.reset()
+        fixedTester.reset()
+        resetPlayers()
+        updateBossBar()
+        instance.players.forEach { it.sendMessage(Component.text("Prototype Hunt Boss reset")) }
+    }
 
     val speedArgument = ArgumentType.Double("speed")
     fun handleAttackSpeed(sender: CommandSender, context: CommandContext) {
@@ -87,12 +145,19 @@ fun main() {
     MinecraftServer.getCommandManager().register(
         Command("as").apply { addSyntax(::handleAttackSpeed, speedArgument) },
     )
+    MinecraftServer.getCommandManager().register(
+        Command("bossreset").apply { setDefaultExecutor { _, _ -> resetEncounter() } },
+    )
 
     events.addListener(AsyncPlayerConfigurationEvent::class.java) { event ->
         event.spawningInstance = instance
         event.player.respawnPoint = Pos(0.0, 41.0, 0.0)
     }
     events.addListener(PlayerSpawnEvent::class.java) { event ->
+        prototypeBoss.registerPlayer(event.player.uuid)
+        event.player.setHealth(prototypeBoss.playerMaxHealth.toFloat())
+        updateBossBar()
+        event.player.showBossBar(bossBar)
         if (event.isFirstSpawn) {
             attackSpeeds[event.player.uuid] = DEFAULT_ATTACK_SPEED
             combatStates[event.player.uuid] = CombatState(
@@ -109,7 +174,7 @@ fun main() {
             )
             if (dummy == null) {
                 dummy = Entity(EntityType.RAVAGER).apply {
-                    customName = Component.text("Fixed Attack Tester")
+                    customName = Component.text("Prototype Hunt Boss")
                     isCustomNameVisible = true
                     setNoGravity(true)
                     setHasPhysics(false)
@@ -137,8 +202,15 @@ fun main() {
         val dodge = dodgeStates[event.player.uuid] ?: return@addListener
         val twinRodsAir = twinRodsAirStates[event.player.uuid] ?: return@addListener
         if (event.player == instance.players.firstOrNull()) {
-            tickFixedTester(instance, dummy, fixedTester, testerMarkerTick++)
+            if (prototypeBoss.isActive) {
+                tickFixedTester(instance, dummy, fixedTester, prototypeBoss, testerMarkerTick++)
+                if (!prototypeBoss.isActive) {
+                    finishEncounter()
+                    return@addListener
+                }
+            }
         }
+        if (!prototypeBoss.isActive) return@addListener
         twinRodsAir.tick(event.player.isOnGround)
         if (dodge.hasPending) state.deferAttackRestart()
         val tester = dummy?.takeIf { it.instance == event.player.instance && !it.isRemoved }
@@ -158,12 +230,22 @@ fun main() {
         val targets = tester?.let { listOf(CombatTarget(it.uuid, weakpoint?.center ?: it.position)) } ?: emptyList()
         val combatEvents = state.tick(event.player.position, event.player.position.direction(), targets)
         combatEvents.filterIsInstance<CombatEvent.HitConfirmed>().forEach { hit ->
+            val damage = prototypeBoss.applyPlayerAttack(
+                attackExecutionId = hit.attackExecutionId,
+                weapon = hit.weapon,
+                weakpoint = weakpoint?.weakpoint,
+            )
             twinRodsAir.onAttackHit(hit.weapon, event.player.isOnGround, hit.attackExecutionId)
-        }
-        if (weakpoint != null && combatEvents.any { it is CombatEvent.HitConfirmed && it.targetId == testerId }) {
-            showWeakpointHit(event.player, weakpoint)
+            if (damage > 0) {
+                updateBossBar()
+                if (weakpoint != null) showWeakpointHit(event.player, weakpoint)
+            }
         }
         publishCombatEvents(event.player, combatEvents)
+        if (!prototypeBoss.isActive) {
+            finishEncounter()
+            return@addListener
+        }
         val currentWeapon = weaponFor(event.player)
         if (currentWeapon != WeaponType.TWIN_RODS) twinRodsAir.clearAirJump()
         val velocityWasApplied = dodgeVelocityActive[event.player.uuid] == true
@@ -198,10 +280,12 @@ fun main() {
                     println("ProjectS handshake complete for ${event.player.username}")
                 }
                 is AttackInput -> {
+                    if (!prototypeBoss.isActive) return@addListener
                     val state = combatStates[event.player.uuid] ?: return@addListener
                     publishCombatEvents(event.player, state.input(message.state))
                 }
                 is DodgeInput -> {
+                    if (!prototypeBoss.isActive) return@addListener
                     val state = combatStates[event.player.uuid] ?: return@addListener
                     val dodge = dodgeStates[event.player.uuid] ?: return@addListener
                     val twinRodsAir = twinRodsAirStates[event.player.uuid] ?: return@addListener
@@ -219,6 +303,7 @@ fun main() {
                     )
                 }
                 is AirJumpInput -> {
+                    if (!prototypeBoss.isActive) return@addListener
                     val twinRodsAir = twinRodsAirStates[event.player.uuid] ?: return@addListener
                     if (!event.player.isOnGround &&
                         weaponFor(event.player) == WeaponType.TWIN_RODS &&
@@ -258,7 +343,13 @@ private fun weaponFor(player: net.minestom.server.entity.Player): WeaponType = w
     else -> WeaponType.HEAVY_BLADE
 }
 
-private fun tickFixedTester(instance: Instance, testerEntity: Entity?, tester: FixedAttackTester, markerTick: Long) {
+private fun tickFixedTester(
+    instance: Instance,
+    testerEntity: Entity?,
+    tester: FixedAttackTester,
+    bossState: PrototypeBossState,
+    markerTick: Long,
+) {
     if (testerEntity == null || testerEntity.isRemoved || testerEntity.instance != instance) return
     val players = instance.players.filter { it.isOnline }
     if (players.isEmpty()) return
@@ -291,6 +382,9 @@ private fun tickFixedTester(instance: Instance, testerEntity: Entity?, tester: F
             }
             is FixedAttackEvent.HitConfirmed -> {
                 instance.getPlayerByUuid(event.targetId)?.let { player ->
+                    val damage = bossState.applyBossAttack(player.uuid, event.executionId, event.attack)
+                    if (damage == 0) return@let
+                    player.setHealth(bossState.playerEntityHealth(player.uuid))
                     player.sendMessage(Component.text("[Tester] HIT"))
                     player.sendPacket(
                         ParticlePacket(

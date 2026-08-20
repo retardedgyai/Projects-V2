@@ -98,6 +98,16 @@ class CombatState(
         if (phase != null) deferAttackRestart = true
     }
 
+    fun reset() {
+        held = false
+        phase = null
+        phaseTicks = 0
+        executionId = 0L
+        deferAttackRestart = false
+        hitTargets.clear()
+        activeProfile = null
+    }
+
     fun tick(position: Point, direction: Vec, targets: Collection<CombatTarget>): List<CombatEvent> {
         if (phase == null) {
             if (held) return startAttack()
@@ -243,6 +253,13 @@ class DodgeState {
     internal fun stop() {
         active = false
         elapsedTicks = DURATION_TICKS
+    }
+
+    fun reset() {
+        active = false
+        elapsedTicks = 0
+        direction = Vec.ZERO
+        pendingInput = null
     }
 
     companion object {
