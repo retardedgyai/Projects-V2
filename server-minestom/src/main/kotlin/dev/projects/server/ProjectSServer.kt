@@ -32,6 +32,9 @@ import net.minestom.server.item.Material
 import net.minestom.server.network.packet.server.common.PluginMessagePacket
 import net.minestom.server.network.packet.server.play.ParticlePacket
 import net.minestom.server.particle.Particle
+import net.minestom.server.sound.SoundEvent
+import net.kyori.adventure.sound.Sound
+import net.kyori.adventure.key.Key
 import java.nio.charset.StandardCharsets
 import java.util.UUID
 import kotlin.math.floor
@@ -63,6 +66,7 @@ fun main() {
     val dodgeVelocityActive = mutableMapOf<UUID, Boolean>()
     val attackSpeeds = mutableMapOf<UUID, Double>()
     var dummy: Entity? = null
+    var testerMarkerTick = 0L
     val fixedTester = FixedAttackTester()
 
     val speedArgument = ArgumentType.Double("speed")
@@ -104,12 +108,17 @@ fun main() {
                 ItemStack.builder(Material.BLAZE_ROD).customName(Component.text("Twin Rods")).build(),
             )
             if (dummy == null) {
-                dummy = Entity(EntityType.PIG).apply {
+                dummy = Entity(EntityType.RAVAGER).apply {
                     customName = Component.text("Fixed Attack Tester")
                     isCustomNameVisible = true
                     setNoGravity(true)
                     setHasPhysics(false)
-                    setInstance(instance, event.player.position.add(event.player.position.direction().mul(3.0)))
+                    setInstance(
+                        instance,
+                        event.player.position
+                            .add(event.player.position.direction().mul(3.0))
+                            .withDirection(event.player.position),
+                    )
                 }
             }
             event.player.sendPacket(
@@ -128,16 +137,31 @@ fun main() {
         val dodge = dodgeStates[event.player.uuid] ?: return@addListener
         val twinRodsAir = twinRodsAirStates[event.player.uuid] ?: return@addListener
         if (event.player == instance.players.firstOrNull()) {
-            tickFixedTester(instance, dummy, fixedTester)
+            tickFixedTester(instance, dummy, fixedTester, testerMarkerTick++)
         }
         twinRodsAir.tick(event.player.isOnGround)
         if (dodge.hasPending) state.deferAttackRestart()
-        val targets = dummy?.takeIf { it.instance == event.player.instance && !it.isRemoved }
-            ?.let { listOf(CombatTarget(it.uuid, it.position)) }
-            ?: emptyList()
+        val tester = dummy?.takeIf { it.instance == event.player.instance && !it.isRemoved }
+        val testerId = tester?.uuid
+        val weakpoint = tester?.let {
+            val weapon = state.activeProfile?.weapon ?: weaponFor(event.player)
+            val range = state.activeProfile?.range
+                ?: weapon.profile(attackSpeeds[event.player.uuid] ?: DEFAULT_ATTACK_SPEED).range
+            FixedAttackTester.selectWeakpoint(
+                playerPosition = event.player.position,
+                playerDirection = event.player.position.direction(),
+                testerOrigin = it.position,
+                testerFacing = it.position.direction(),
+                weaponRange = range,
+            )
+        }
+        val targets = tester?.let { listOf(CombatTarget(it.uuid, weakpoint?.center ?: it.position)) } ?: emptyList()
         val combatEvents = state.tick(event.player.position, event.player.position.direction(), targets)
         combatEvents.filterIsInstance<CombatEvent.HitConfirmed>().forEach { hit ->
             twinRodsAir.onAttackHit(hit.weapon, event.player.isOnGround, hit.attackExecutionId)
+        }
+        if (weakpoint != null && combatEvents.any { it is CombatEvent.HitConfirmed && it.targetId == testerId }) {
+            showWeakpointHit(event.player, weakpoint)
         }
         publishCombatEvents(event.player, combatEvents)
         val currentWeapon = weaponFor(event.player)
@@ -234,10 +258,14 @@ private fun weaponFor(player: net.minestom.server.entity.Player): WeaponType = w
     else -> WeaponType.HEAVY_BLADE
 }
 
-private fun tickFixedTester(instance: Instance, testerEntity: Entity?, tester: FixedAttackTester) {
+private fun tickFixedTester(instance: Instance, testerEntity: Entity?, tester: FixedAttackTester, markerTick: Long) {
     if (testerEntity == null || testerEntity.isRemoved || testerEntity.instance != instance) return
     val players = instance.players.filter { it.isOnline }
     if (players.isEmpty()) return
+    if (markerTick % 2L == 0L) {
+        val weakpointFacing = testerEntity.position.direction()
+        players.forEach { player -> showWeakpointMarkers(player, testerEntity.position, weakpointFacing) }
+    }
     val targets = players.map { FixedAttackTarget(it.uuid, it.position) }
     val facing = players.firstOrNull()?.let { directionFrom(testerEntity.position, it.position) }
         ?: testerEntity.position.direction()
@@ -281,6 +309,68 @@ private fun tickFixedTester(instance: Instance, testerEntity: Entity?, tester: F
             }
         }
     }
+}
+
+private fun showWeakpointMarkers(player: net.minestom.server.entity.Player, origin: Pos, facing: Vec) {
+    val forward = FixedAttackTester.normalizeHorizontal(facing)
+    val right = Vec(-forward.z(), 0.0, forward.x())
+    for (weakpoint in FixedWeakpoint.entries) {
+        val center = FixedAttackTester.weakpointCenter(origin, forward, weakpoint)
+        sendTesterParticle(player, Particle.END_ROD, center)
+        sendTesterParticle(
+            player,
+            Particle.END_ROD,
+            center.add(right.x() * 0.14, 0.08, right.z() * 0.14),
+        )
+        sendTesterParticle(
+            player,
+            Particle.END_ROD,
+            center.add(-right.x() * 0.14, -0.08, -right.z() * 0.14),
+        )
+    }
+}
+
+private fun showWeakpointHit(
+    player: net.minestom.server.entity.Player,
+    selection: FixedWeakpointSelection,
+) {
+    val center = selection.center
+    player.sendMessage(Component.text("[Tester] WEAKPOINT: ${selection.weakpoint}"))
+    player.sendPacket(
+        ParticlePacket(
+            Particle.CRIT,
+            center.x(),
+            center.y(),
+            center.z(),
+            0.45f,
+            0.45f,
+            0.45f,
+            0.18f,
+            18,
+        ),
+    )
+    player.sendPacket(
+        ParticlePacket(
+            Particle.DAMAGE_INDICATOR,
+            center.x(),
+            center.y(),
+            center.z(),
+            0.2f,
+            0.2f,
+            0.2f,
+            0.1f,
+            10,
+        ),
+    )
+    player.playSound(
+        Sound.sound(
+            requireNotNull(SoundEvent.fromKey(Key.key("minecraft", "entity.player.attack.crit"))),
+            Sound.Source.PLAYER,
+            1.0f,
+            1.2f,
+        ),
+        center,
+    )
 }
 
 private fun directionFrom(origin: Pos, target: Pos): Vec =

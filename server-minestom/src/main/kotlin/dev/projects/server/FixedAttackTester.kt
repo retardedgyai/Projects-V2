@@ -16,6 +16,17 @@ enum class FixedAttackType(
     ;
 }
 
+enum class FixedWeakpoint {
+    HEAD,
+    BACK,
+    ;
+}
+
+data class FixedWeakpointSelection(
+    val weakpoint: FixedWeakpoint,
+    val center: Point,
+)
+
 data class FixedAttackTarget(val id: UUID, val position: Point)
 
 sealed interface FixedAttackEvent {
@@ -138,6 +149,11 @@ class FixedAttackTester(
         const val FORWARD_SLAM_MIN_FORWARD = 0.5
         const val FORWARD_SLAM_HALF_WIDTH = 1.0
         const val VERTICAL_RANGE = 2.0
+        const val WEAKPOINT_RADIUS = 0.45
+        private const val HEAD_FORWARD_OFFSET = 0.55
+        private const val BACK_FORWARD_OFFSET = -0.55
+        private const val HEAD_HEIGHT = 2.0
+        private const val BACK_HEIGHT = 1.45
 
         fun isInAttackRegion(attack: FixedAttackType, origin: Point, direction: Vec, target: Point): Boolean {
             val offsetX = target.x() - origin.x()
@@ -169,6 +185,82 @@ class FixedAttackTester(
             val length = sqrt(direction.x() * direction.x() + direction.z() * direction.z())
             return if (length > 1.0e-9) {
                 Vec(direction.x() / length, 0.0, direction.z() / length)
+            } else {
+                Vec(0.0, 0.0, 1.0)
+            }
+        }
+
+        fun weakpointCenter(origin: Point, facing: Vec, weakpoint: FixedWeakpoint): Point {
+            val forward = normalizeHorizontal(facing)
+            val forwardOffset = when (weakpoint) {
+                FixedWeakpoint.HEAD -> HEAD_FORWARD_OFFSET
+                FixedWeakpoint.BACK -> BACK_FORWARD_OFFSET
+            }
+            val height = when (weakpoint) {
+                FixedWeakpoint.HEAD -> HEAD_HEIGHT
+                FixedWeakpoint.BACK -> BACK_HEIGHT
+            }
+            return origin.add(forward.x() * forwardOffset, height, forward.z() * forwardOffset)
+        }
+
+        /** Selects one server-owned weakpoint from the player's current forward ray. */
+        fun selectWeakpoint(
+            playerPosition: Point,
+            playerDirection: Vec,
+            testerOrigin: Point,
+            testerFacing: Vec,
+            weaponRange: Double,
+            weakpointRadius: Double = WEAKPOINT_RADIUS,
+        ): FixedWeakpointSelection? {
+            require(weaponRange >= 0.0) { "Weapon range must not be negative" }
+            require(weakpointRadius >= 0.0) { "Weakpoint radius must not be negative" }
+
+            val ray = normalize(playerDirection)
+            val radiusSquared = weakpointRadius * weakpointRadius
+            val rangeSquared = weaponRange * weaponRange
+            data class Candidate(
+                val selection: FixedWeakpointSelection,
+                val rayDistanceSquared: Double,
+                val playerDistanceSquared: Double,
+            )
+
+            val candidates = FixedWeakpoint.entries.mapNotNull { weakpoint ->
+                val center = weakpointCenter(testerOrigin, testerFacing, weakpoint)
+                val offsetX = center.x() - playerPosition.x()
+                val offsetY = center.y() - playerPosition.y()
+                val offsetZ = center.z() - playerPosition.z()
+                val projection = offsetX * ray.x() + offsetY * ray.y() + offsetZ * ray.z()
+                if (projection < 0.0) return@mapNotNull null
+
+                val closestX = offsetX - ray.x() * projection
+                val closestY = offsetY - ray.y() * projection
+                val closestZ = offsetZ - ray.z() * projection
+                val rayDistanceSquared =
+                    closestX * closestX + closestY * closestY + closestZ * closestZ
+                val playerDistanceSquared = offsetX * offsetX + offsetY * offsetY + offsetZ * offsetZ
+                if (playerDistanceSquared > rangeSquared || rayDistanceSquared > radiusSquared) {
+                    return@mapNotNull null
+                }
+                Candidate(
+                    FixedWeakpointSelection(weakpoint, center),
+                    rayDistanceSquared,
+                    playerDistanceSquared,
+                )
+            }
+
+            return candidates.minWithOrNull(
+                compareBy<Candidate> { it.rayDistanceSquared }.thenBy { it.playerDistanceSquared },
+            )?.selection
+        }
+
+        private fun normalize(direction: Vec): Vec {
+            val length = sqrt(
+                direction.x() * direction.x() +
+                    direction.y() * direction.y() +
+                    direction.z() * direction.z(),
+            )
+            return if (length > 1.0e-9) {
+                Vec(direction.x() / length, direction.y() / length, direction.z() / length)
             } else {
                 Vec(0.0, 0.0, 1.0)
             }

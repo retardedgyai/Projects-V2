@@ -24,6 +24,22 @@ class CombatTest {
     }
 
     @Test
+    fun `weakpoint target position still hits only once per execution`() {
+        val combat = CombatState(sequence())
+        val selection = FixedAttackTester.selectWeakpoint(
+            playerPosition = Pos(0.0, 2.0, 3.0),
+            playerDirection = Vec(0.0, 0.0, -1.0),
+            testerOrigin = origin,
+            testerFacing = forward,
+            weaponRange = 4.5,
+        )
+        val target = CombatTarget(targetId, selection!!.center)
+
+        combat.input(AttackInputState.PRESS)
+        assertEquals(listOf(targetId), finishAttack(combat, listOf(target)))
+    }
+
+    @Test
     fun `out of range and behind targets miss`() {
         val combat = CombatState(sequence())
         val targets = listOf(
