@@ -418,8 +418,8 @@ internal fun airJumpVelocity(velocity: Vec, facing: Vec, input: AirJumpInput): V
     )
 }
 
-private val AIR_JUMP_VERTICAL_SPEED = 8.4 / ServerFlag.SERVER_TICKS_PER_SECOND
-private val AIR_JUMP_HORIZONTAL_SPEED = 5.0 / ServerFlag.SERVER_TICKS_PER_SECOND
+private const val AIR_JUMP_VERTICAL_SPEED = 8.4
+private const val AIR_JUMP_HORIZONTAL_SPEED = 5.0
 
 private fun stopDodgeVelocity(player: net.minestom.server.entity.Player) {
     player.setVelocity(stopDodgeVelocity(player.velocity))

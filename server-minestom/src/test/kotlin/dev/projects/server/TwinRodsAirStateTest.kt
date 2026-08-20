@@ -85,15 +85,15 @@ class TwinRodsAirStateTest {
             AirJumpInput(0.0, 0.0),
         )
         assertEquals(1.0, falling.x())
-        assertEquals(0.42, falling.y(), 1.0e-9)
+        assertEquals(8.4, falling.y(), 1.0e-9)
         assertEquals(-2.0, falling.z())
 
         val rising = airJumpVelocity(
-            Vec(1.0, 0.8, -2.0),
+            Vec(1.0, 9.0, -2.0),
             Vec(0.0, 0.0, 1.0),
             AirJumpInput(0.0, 0.0),
         )
-        assertEquals(0.8, rising.y())
+        assertEquals(9.0, rising.y())
     }
 
     @Test
@@ -115,7 +115,7 @@ class TwinRodsAirStateTest {
             Vec(0.0, 0.0, 1.0),
             AirJumpInput(1.0, 0.0),
         )
-        assertEquals(-0.25, right.x(), 1.0e-9)
+        assertEquals(-5.0, right.x(), 1.0e-9)
         assertEquals(0.0, right.z(), 1.0e-9)
 
         val diagonal = airJumpVelocity(
@@ -123,8 +123,8 @@ class TwinRodsAirStateTest {
             Vec(0.0, 0.0, 1.0),
             AirJumpInput(1.0, 1.0),
         )
-        assertEquals(0.25 / sqrt(2.0), kotlin.math.abs(diagonal.x()), 1.0e-9)
-        assertEquals(0.25 / sqrt(2.0), diagonal.z(), 1.0e-9)
+        assertEquals(5.0 / sqrt(2.0), kotlin.math.abs(diagonal.x()), 1.0e-9)
+        assertEquals(5.0 / sqrt(2.0), diagonal.z(), 1.0e-9)
     }
 
     @Test
