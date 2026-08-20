@@ -10,6 +10,11 @@ kotlin {
 dependencies {
     implementation(project(":protocol"))
     implementation("net.minestom:minestom:${property("minestom_version")}")
+    testImplementation(kotlin("test"))
+}
+
+tasks.test {
+    useJUnitPlatform()
 }
 
 application {
