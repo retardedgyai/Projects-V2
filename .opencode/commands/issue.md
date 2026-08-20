@@ -17,7 +17,7 @@ ProjectS v2 の GitHub Issue #$1 を実装してください。
 7. Issue指定の自動Test / Buildを実行する。
 8. Issueがcommitを要求している場合はcommitする。
 9. Test / Build成功後、そのTask専用の現在branchへ通常pushする。`main`への直接pushやforce pushはしない。
-10. Issue本文にManual Smoke対象がある場合、実装、Test、Build、push成功後に同じworktreeで `scripts/manual-smoke-launch.sh` を実行し、Server + Fabric Clientを起動する。起動失敗は実装commitの失敗にはせず、`Manual Smoke launch: BLOCKED` と理由・log pathを報告する。
+10. Issue本文にManual Smoke対象がある場合、実装、Test、Build、push成功後に同じworktreeで `scripts/manual-smoke-launch.sh` を実行し、Server + Fabric Clientを起動する。ただし `PROJECTS_V2_SUPPRESS_MANUAL_SMOKE=1` が設定されている場合は子Taskとして自動起動せず、親オーケストレーターへ委譲したことを報告する。起動失敗は実装commitの失敗にはせず、`Manual Smoke launch: BLOCKED` と理由・log pathを報告する。
 
 重要:
 - Issue外の機能を追加しない。

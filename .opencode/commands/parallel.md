@@ -26,9 +26,9 @@ ProjectS v2 の GitHub Issues `$ARGUMENTS` を、Userが追加操作しなくて
    - 推奨Modelを一意に解決できる場合のみ `--model` を付ける。
    - 推論強度/variantを安全に一意解決できる場合のみ `--variant` を付ける。
    - 解決が曖昧な場合は、Model選択のために全体を止めず、その子TaskはOpenCodeの現在/default Modelで実行し、最終報告に明記する。
-8. 各Issueを別々の `opencode run` プロセスとして、同時に開始する。
+8. 各Issueを別々の `opencode run` プロセスとして、同時に開始する。子Taskには必ず `PROJECTS_V2_SUPPRESS_MANUAL_SMOKE=1` を明示的に設定し、子 `/issue` が自動起動せず親だけが起動を担当する。
    - `--dir <worktree>` を必ず使う。
-   - `--command issue` を使い、Issue番号を引数として渡す。
+   - `PROJECTS_V2_SUPPRESS_MANUAL_SMOKE=1 opencode run --dir <worktree> --command issue <Issue番号>` の形で起動し、Issue番号を引数として渡す。
    - 非対話実行なので `--auto` を使ってよい。ただし設定でdenyされている操作は迂回しない。
    - 各プロセスのstdout/stderrは `/tmp/projects-v2-opencode/issue-<番号>.log` へ分離する。
    - 1つのIssueが失敗しても他Issueは止めない。
@@ -39,7 +39,7 @@ ProjectS v2 の GitHub Issues `$ARGUMENTS` を、Userが追加操作しなくて
    - remoteへ通常push済みか
    - Test / Build結果が子Task報告に含まれているか
 11. merge / cherry-pick / main更新はしない。統合はSol Review後。
-12. 引数が1つだけで、Issue本文にManual Smoke対象があり、子Taskの実装、Test、Build、commit、pushが成功した場合は、成功した子Taskの同じworktreeで `scripts/manual-smoke-launch.sh` を実行する。起動失敗は実装commitの失敗にはせず、`Manual Smoke launch: BLOCKED` と理由・log pathを報告する。複数IssueではMinecraft Clientを自動起動しない。
+12. 全子Taskの終了後、引数が1つだけで、Issue本文にManual Smoke対象があり、子Taskの実装、Test、Build、commit、pushが成功した場合に限り、成功した子Taskの同じworktreeで `scripts/manual-smoke-launch.sh` を1回だけ実行する。起動失敗は実装commitの失敗にはせず、`Manual Smoke launch: BLOCKED` と理由・log pathを報告する。複数IssueではMinecraft Clientを自動起動せず、起動試行は0回とする。
 
 並列実行の原則:
 - 1 Branch = 1 worktree = 1 editing OpenCode process。

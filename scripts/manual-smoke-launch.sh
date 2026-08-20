@@ -2,7 +2,7 @@
 set -Eeuo pipefail
 
 ROOT_DIR=$(git rev-parse --show-toplevel)
-STATE_DIR="${TMPDIR:-/tmp}/projects-v2-manual-smoke"
+STATE_DIR="${MANUAL_SMOKE_STATE_DIR:-${TMPDIR:-/tmp}/projects-v2-manual-smoke}"
 SERVER_LOG="$STATE_DIR/server.log"
 CLIENT_LOG="$STATE_DIR/client.log"
 INSTALL_LOG="$STATE_DIR/server-install.log"
@@ -42,13 +42,13 @@ process_command() {
 managed_process_matches() {
     local kind=$1
     local pid=$2
-    local expected_worktree=$3
+    local recorded_worktree=$3
     [[ "$pid" =~ ^[0-9]+$ ]] || return 1
     [[ -d "/proc/$pid" ]] || return 1
 
     local process_worktree
     process_worktree=$(readlink -f "/proc/$pid/cwd" 2>/dev/null || true)
-    [[ "$process_worktree" == "$expected_worktree" ]] || return 1
+    [[ -n "$recorded_worktree" && "$process_worktree" == "$recorded_worktree" ]] || return 1
 
     local command
     command=$(process_command "$pid")
@@ -68,6 +68,13 @@ read_pid() {
     printf '%s\n' "$pid"
 }
 
+read_pid_field() {
+    local file=$1
+    local field=$2
+    [[ -r "$file" ]] || return 1
+    sed -n "s/^${field}=//p" "$file"
+}
+
 stop_managed_process() {
     local kind=$1
     local pid_file=$2
@@ -80,7 +87,11 @@ stop_managed_process() {
         rm -f "$pid_file"
         return 0
     fi
-    if ! managed_process_matches "$kind" "$pid" "$ROOT_DIR"; then
+    local recorded_kind
+    local recorded_worktree
+    recorded_kind=$(read_pid_field "$pid_file" kind || true)
+    recorded_worktree=$(read_pid_field "$pid_file" worktree || true)
+    if [[ "$recorded_kind" != "$kind" ]] || ! managed_process_matches "$kind" "$pid" "$recorded_worktree"; then
         printf 'Ignoring stale or mismatched %s PID file for PID %s; no process was killed.\n' "$kind" "$pid" >&2
         rm -f "$pid_file"
         return 0
@@ -105,7 +116,6 @@ stop_managed_process() {
 }
 
 port_occupants() {
-    local pid
     if command -v lsof >/dev/null 2>&1; then
         lsof -nP -t -iTCP:"$SERVER_PORT" -sTCP:LISTEN 2>/dev/null || true
         return
@@ -119,6 +129,68 @@ port_occupants() {
         return
     fi
     printf 'Cannot inspect TCP port %s: neither lsof nor fuser is installed.\n' "$SERVER_PORT" >&2
+    return 1
+}
+
+server_port_ready() {
+    local expected_pid=$1
+    local occupants
+    local found_expected=false
+    occupants=$(port_occupants || true)
+    [[ -n "$occupants" ]] || return 1
+    while read -r pid; do
+        [[ -n "$pid" ]] || continue
+        if [[ "$pid" == "$expected_pid" ]]; then
+            found_expected=true
+        else
+            return 1
+        fi
+    done <<< "$occupants"
+    "$found_expected"
+}
+
+process_descendants() {
+    local parent_pid=$1
+    local child_pid
+    local children=()
+    [[ -r "/proc/$parent_pid/task/$parent_pid/children" ]] || return 0
+    read -r -a children < "/proc/$parent_pid/task/$parent_pid/children" || true
+    for child_pid in "${children[@]}"; do
+        printf '%s\n' "$child_pid"
+        process_descendants "$child_pid"
+    done
+}
+
+client_process_pid() {
+    local launcher_pid=$1
+    local candidate
+    local command
+    while read -r candidate; do
+        [[ -n "$candidate" ]] || continue
+        command=$(process_command "$candidate")
+        case "$command" in
+            *KnotClient*|*net.fabricmc.loader*)
+                printf '%s\n' "$candidate"
+                return 0
+                ;;
+        esac
+    done < <(
+        printf '%s\n' "$launcher_pid"
+        process_descendants "$launcher_pid"
+    )
+    return 1
+}
+
+client_log_has_startup() {
+    local line
+    [[ -r "$CLIENT_LOG" ]] || return 1
+    while IFS= read -r line; do
+        case "$line" in
+            *"Starting Minecraft "*|*"Fabric Loader"*|*"Loading Minecraft"*)
+                return 0
+                ;;
+        esac
+    done < "$CLIENT_LOG"
     return 1
 }
 
@@ -156,98 +228,128 @@ start_detached() {
     printf '%s started with PID %s; log: %s\n' "$kind" "$pid" "$log_file"
 }
 
-if [[ ${1:-} == --help || ${1:-} == -h ]]; then
-    print_usage
-    exit 0
-fi
-DRY_RUN=false
-if [[ ${1:-} == --dry-run ]]; then
-    DRY_RUN=true
-    shift
-fi
-if (( $# != 0 )); then
-    print_usage >&2
-    exit 2
-fi
-
-BRANCH=$(git -C "$ROOT_DIR" branch --show-current)
-BRANCH=${BRANCH:-detached}
-COMMIT=$(git -C "$ROOT_DIR" rev-parse HEAD)
-GRADLE="$ROOT_DIR/gradlew"
-SERVER_LAUNCHER="$ROOT_DIR/server-minestom/build/install/server-minestom/bin/server-minestom"
-
-printf 'Manual Smoke worktree: %s\n' "$ROOT_DIR"
-printf 'Manual Smoke branch: %s\n' "$BRANCH"
-printf 'Manual Smoke commit: %s\n' "$COMMIT"
-printf 'Manual Smoke state: %s\n' "$STATE_DIR"
-
-if "$DRY_RUN"; then
-    printf 'Dry run server build: %s --no-daemon -Dorg.gradle.jvmargs="-Xmx768m -XX:MaxMetaspaceSize=256m" :server-minestom:installDist\n' "$GRADLE"
-    printf 'Dry run server command: JAVA_OPTS="-Xms128m -Xmx512m -XX:MaxMetaspaceSize=256m" %s\n' "$SERVER_LAUNCHER"
-    printf 'Dry run client command: %s --no-daemon :client-fabric:runClient\n' "$GRADLE"
-    exit 0
-fi
-
-mkdir -p "$STATE_DIR"
-stop_managed_process client "$CLIENT_PID_FILE"
-stop_managed_process server "$SERVER_PID_FILE"
-
-existing_pids=$(port_occupants || true)
-if [[ -n "$existing_pids" ]]; then
-    report_port_block "$existing_pids"
-    exit 1
-fi
-
-if [[ ! -x "$GRADLE" ]]; then
-    printf 'Manual Smoke launch: BLOCKED\nGradle wrapper is not executable: %s\n' "$GRADLE" >&2
-    exit 1
-fi
-
-printf 'Building the server distribution with a bounded Gradle heap.\n'
-if ! "$GRADLE" --no-daemon -Dorg.gradle.jvmargs='-Xmx768m -XX:MaxMetaspaceSize=256m' :server-minestom:installDist > "$INSTALL_LOG" 2>&1; then
-    printf 'Manual Smoke launch: BLOCKED\nServer distribution build failed. Log: %s\n' "$INSTALL_LOG" >&2
-    log_excerpt "$INSTALL_LOG" >&2
-    exit 1
-fi
-if [[ ! -x "$SERVER_LAUNCHER" ]]; then
-    printf 'Manual Smoke launch: BLOCKED\nGenerated server launcher is missing: %s\n' "$SERVER_LAUNCHER" >&2
-    exit 1
-fi
-
-start_detached server "$SERVER_PID_FILE" "$SERVER_LOG" \
-    env JAVA_OPTS='-Xms128m -Xmx512m -XX:MaxMetaspaceSize=256m' "$SERVER_LAUNCHER"
-
-server_pid=$(read_pid "$SERVER_PID_FILE")
-server_ready=false
-for _ in {1..120}; do
-    if ! kill -0 "$server_pid" 2>/dev/null; then
-        break
+main() {
+    if [[ ${1:-} == --help || ${1:-} == -h ]]; then
+        print_usage
+        exit 0
     fi
-    if [[ -n "$(port_occupants || true)" ]]; then
-        server_ready=true
-        break
+    DRY_RUN=false
+    if [[ ${1:-} == --dry-run ]]; then
+        DRY_RUN=true
+        shift
     fi
-    sleep 0.5
-done
-if ! "$server_ready"; then
-    printf 'Manual Smoke launch: BLOCKED\nServer did not become ready. Log: %s\n' "$SERVER_LOG" >&2
-    log_excerpt "$SERVER_LOG" >&2
-    stop_managed_process server "$SERVER_PID_FILE" || true
-    exit 1
-fi
+    if (( $# != 0 )); then
+        print_usage >&2
+        exit 2
+    fi
 
-start_detached client "$CLIENT_PID_FILE" "$CLIENT_LOG" \
-    "$GRADLE" --no-daemon :client-fabric:runClient
-client_pid=$(read_pid "$CLIENT_PID_FILE")
-sleep 2
-if ! kill -0 "$client_pid" 2>/dev/null; then
-    printf 'Manual Smoke launch: BLOCKED\nClient exited during startup. Log: %s\n' "$CLIENT_LOG" >&2
-    log_excerpt "$CLIENT_LOG" >&2
-    stop_managed_process server "$SERVER_PID_FILE" || true
-    rm -f "$CLIENT_PID_FILE"
-    exit 1
-fi
+    BRANCH=$(git -C "$ROOT_DIR" branch --show-current)
+    BRANCH=${BRANCH:-detached}
+    COMMIT=$(git -C "$ROOT_DIR" rev-parse HEAD)
+    GRADLE="$ROOT_DIR/gradlew"
+    SERVER_LAUNCHER="$ROOT_DIR/server-minestom/build/install/server-minestom/bin/server-minestom"
 
-printf 'Manual Smoke launch: READY\n'
-printf 'Server log: %s\nClient log: %s\n' "$SERVER_LOG" "$CLIENT_LOG"
-printf 'Minecraft GUI is ready for User Manual Smoke; no in-game operation was performed.\n'
+    printf 'Manual Smoke worktree: %s\n' "$ROOT_DIR"
+    printf 'Manual Smoke branch: %s\n' "$BRANCH"
+    printf 'Manual Smoke commit: %s\n' "$COMMIT"
+    printf 'Manual Smoke state: %s\n' "$STATE_DIR"
+
+    if "$DRY_RUN"; then
+        printf 'Dry run server build: %s --no-daemon -Dorg.gradle.jvmargs="-Xmx768m -XX:MaxMetaspaceSize=256m" :server-minestom:installDist\n' "$GRADLE"
+        printf 'Dry run server command: JAVA_OPTS="-Xms128m -Xmx512m -XX:MaxMetaspaceSize=256m" %s\n' "$SERVER_LAUNCHER"
+        printf 'Dry run client command: %s --no-daemon :client-fabric:runClient\n' "$GRADLE"
+        exit 0
+    fi
+
+    mkdir -p "$STATE_DIR"
+    stop_managed_process client "$CLIENT_PID_FILE"
+    stop_managed_process server "$SERVER_PID_FILE"
+
+    existing_pids=$(port_occupants || true)
+    if [[ -n "$existing_pids" ]]; then
+        report_port_block "$existing_pids"
+        exit 1
+    fi
+
+    if [[ ! -x "$GRADLE" ]]; then
+        printf 'Manual Smoke launch: BLOCKED\nGradle wrapper is not executable: %s\n' "$GRADLE" >&2
+        exit 1
+    fi
+
+    printf 'Building the server distribution with a bounded Gradle heap.\n'
+    if ! "$GRADLE" --no-daemon -Dorg.gradle.jvmargs='-Xmx768m -XX:MaxMetaspaceSize=256m' :server-minestom:installDist > "$INSTALL_LOG" 2>&1; then
+        printf 'Manual Smoke launch: BLOCKED\nServer distribution build failed. Log: %s\n' "$INSTALL_LOG" >&2
+        log_excerpt "$INSTALL_LOG" >&2
+        exit 1
+    fi
+    if [[ ! -x "$SERVER_LAUNCHER" ]]; then
+        printf 'Manual Smoke launch: BLOCKED\nGenerated server launcher is missing: %s\n' "$SERVER_LAUNCHER" >&2
+        exit 1
+    fi
+
+    start_detached server "$SERVER_PID_FILE" "$SERVER_LOG" \
+        env JAVA_OPTS='-Xms128m -Xmx512m -XX:MaxMetaspaceSize=256m' "$SERVER_LAUNCHER"
+
+    server_pid=$(read_pid "$SERVER_PID_FILE")
+    server_ready=false
+    for _ in {1..120}; do
+        if ! kill -0 "$server_pid" 2>/dev/null; then
+            break
+        fi
+        if server_port_ready "$server_pid"; then
+            server_ready=true
+            break
+        fi
+        sleep 0.5
+    done
+    if ! "$server_ready"; then
+        printf 'Manual Smoke launch: BLOCKED\nManaged server PID %s did not become the listener on %s. Log: %s\n' "$server_pid" "$SERVER_PORT" "$SERVER_LOG" >&2
+        log_excerpt "$SERVER_LOG" >&2
+        stop_managed_process server "$SERVER_PID_FILE" || true
+        exit 1
+    fi
+
+    start_detached client "$CLIENT_PID_FILE" "$CLIENT_LOG" \
+        "$GRADLE" --no-daemon :client-fabric:runClient
+    client_pid=$(read_pid "$CLIENT_PID_FILE")
+    client_ready=false
+    last_client_process=
+    client_observations=0
+    for _ in {1..240}; do
+        if ! kill -0 "$client_pid" 2>/dev/null; then
+            break
+        fi
+        actual_client_pid=$(client_process_pid "$client_pid" || true)
+        if [[ -n "$actual_client_pid" ]] && client_log_has_startup; then
+            if [[ "$actual_client_pid" == "$last_client_process" ]]; then
+                client_observations=$((client_observations + 1))
+            else
+                last_client_process=$actual_client_pid
+                client_observations=1
+            fi
+            if (( client_observations >= 2 )) && kill -0 "$actual_client_pid" 2>/dev/null; then
+                client_ready=true
+                break
+            fi
+        else
+            last_client_process=
+            client_observations=0
+        fi
+        sleep 0.5
+    done
+    if ! "$client_ready"; then
+        printf 'Manual Smoke launch: BLOCKED\nMinecraft client startup/log was not confirmed before timeout. Client log: %s\n' "$CLIENT_LOG" >&2
+        log_excerpt "$CLIENT_LOG" >&2
+        stop_managed_process client "$CLIENT_PID_FILE" || true
+        stop_managed_process server "$SERVER_PID_FILE" || true
+        exit 1
+    fi
+
+    printf 'Manual Smoke launch: READY\n'
+    printf 'Server log: %s\nClient log: %s\n' "$SERVER_LOG" "$CLIENT_LOG"
+    printf 'Minecraft client startup was confirmed; GUI and in-game operation remain for User Manual Smoke.\n'
+}
+
+if [[ ${MANUAL_SMOKE_LAUNCH_SOURCE_ONLY:-0} != 1 ]]; then
+    main "$@"
+fi
