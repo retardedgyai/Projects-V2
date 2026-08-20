@@ -19,8 +19,8 @@ enum class WeaponType {
                 startupTicks = scaledTicks(7.0 / (1.0 + 0.25 * (attackSpeed - 1.0))),
                 activeTicks = 2,
                 recoveryTicks = scaledTicks(11.0 / attackSpeed),
-                range = 4.0,
-                minForwardDot = 0.45,
+                range = 4.5,
+                minForwardDot = 0.40,
                 verticalRange = 2.0,
             )
             TWIN_RODS -> WeaponProfile(

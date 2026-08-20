@@ -57,10 +57,14 @@ class CombatTest {
         val rods = WeaponType.TWIN_RODS.profile(1.0)
 
         assertTrue(heavy.totalTicks > rods.totalTicks)
+        assertEquals(4.5, heavy.range)
+        assertEquals(0.40, heavy.minForwardDot)
+        assertTrue(CombatState.isInAttackRange(heavy, origin, forward, Pos(0.0, 0.0, 4.25)))
         assertTrue(CombatState.isInAttackRange(heavy, origin, forward, Pos(0.0, 0.0, 3.5)))
         assertTrue(!CombatState.isInAttackRange(rods, origin, forward, Pos(0.0, 0.0, 3.5)))
-        assertTrue(CombatState.isInAttackRange(heavy, origin, forward, Pos(2.0, 0.0, 1.5)))
-        assertTrue(!CombatState.isInAttackRange(rods, origin, forward, Pos(2.0, 0.0, 1.5)))
+        val wideTarget = Pos(4.0, 0.0, 1.8)
+        assertTrue(CombatState.isInAttackRange(heavy, origin, forward, wideTarget))
+        assertTrue(!CombatState.isInAttackRange(rods, origin, forward, wideTarget))
     }
 
     @Test
