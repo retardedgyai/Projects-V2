@@ -19,6 +19,7 @@ import net.minestom.server.event.player.PlayerPluginMessageEvent
 import net.minestom.server.event.player.PlayerSpawnEvent
 import net.minestom.server.event.player.PlayerTickEvent
 import net.minestom.server.instance.block.Block
+import net.minestom.server.instance.Weather
 import net.minestom.server.network.packet.server.common.PluginMessagePacket
 import java.nio.charset.StandardCharsets
 
@@ -28,6 +29,9 @@ private const val SERVER_PORT = 25565
 fun main() {
     val server = MinecraftServer.init(Auth.Offline())
     val instance = MinecraftServer.getInstanceManager().createInstanceContainer()
+    instance.setTime(6000)
+    instance.defaultClock()?.pause()
+    instance.setWeather(Weather.CLEAR)
     instance.setGenerator { unit -> unit.modifier().fillHeight(0, 40, Block.GRASS_BLOCK) }
 
     val events = MinecraftServer.getGlobalEventHandler()
