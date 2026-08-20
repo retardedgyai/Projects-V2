@@ -1,0 +1,7 @@
+.gradle/
+build/
+*/build/
+client-fabric/run/
+server-minestom/run/
+.idea/
+*.iml

@@ -51,3 +51,9 @@ ProjectS v2 は、旧ProjectSを引き継ぎつつコードはゼロから作り
 **FrameworkをFeatureより先に作らない。**
 
 まず実際に遊べる一つの機能を作り、ゲームが本当に必要とした共通部分だけを後から抽出します。
+
+## 開発起動
+
+- Server: `./gradlew :server-minestom:run`
+- Client: `./gradlew :client-fabric:runClient`
+- Test / Build: `./gradlew build`
