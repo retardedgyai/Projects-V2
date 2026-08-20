@@ -54,6 +54,19 @@ class PrototypeBossStateTest {
     }
 
     @Test
+    fun `defeat keeps entity health above zero while logical health reaches zero`() {
+        val boss = PrototypeBossState()
+
+        boss.applyBossAttack(playerId, 1L, FixedAttackType.SIDE_SWEEP)
+        boss.applyBossAttack(playerId, 2L, FixedAttackType.FORWARD_SLAM)
+        boss.applyBossAttack(playerId, 3L, FixedAttackType.SIDE_SWEEP)
+
+        assertEquals(0, boss.playerHealth(playerId))
+        assertEquals(1.0f, boss.playerEntityHealth(playerId))
+        assertTrue(boss.isDefeat)
+    }
+
+    @Test
     fun `player defeat stops attacks and reset restores encounter`() {
         val boss = PrototypeBossState()
 

@@ -50,6 +50,8 @@ class PrototypeBossState(
 
     fun playerHealth(playerId: UUID): Int = playerHealth[playerId] ?: playerMaxHealth
 
+    fun playerEntityHealth(playerId: UUID): Float = playerHealth(playerId).coerceAtLeast(1).toFloat()
+
     /** Applies one explicit boss attack to one player, once per execution. */
     fun applyBossAttack(playerId: UUID, executionId: Long, attack: FixedAttackType): Int {
         if (!isActive) return 0

@@ -236,7 +236,10 @@ fun main() {
                 weakpoint = weakpoint?.weakpoint,
             )
             twinRodsAir.onAttackHit(hit.weapon, event.player.isOnGround, hit.attackExecutionId)
-            if (damage > 0 && weakpoint != null) showWeakpointHit(event.player, weakpoint)
+            if (damage > 0) {
+                updateBossBar()
+                if (weakpoint != null) showWeakpointHit(event.player, weakpoint)
+            }
         }
         publishCombatEvents(event.player, combatEvents)
         if (!prototypeBoss.isActive) {
@@ -381,7 +384,7 @@ private fun tickFixedTester(
                 instance.getPlayerByUuid(event.targetId)?.let { player ->
                     val damage = bossState.applyBossAttack(player.uuid, event.executionId, event.attack)
                     if (damage == 0) return@let
-                    player.setHealth(bossState.playerHealth(player.uuid).toFloat())
+                    player.setHealth(bossState.playerEntityHealth(player.uuid))
                     player.sendMessage(Component.text("[Tester] HIT"))
                     player.sendPacket(
                         ParticlePacket(
