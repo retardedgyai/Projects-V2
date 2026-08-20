@@ -32,7 +32,6 @@ import net.minestom.server.network.packet.server.common.PluginMessagePacket
 import java.nio.charset.StandardCharsets
 import java.util.UUID
 import kotlin.math.floor
-import kotlin.math.sqrt
 import net.minestom.server.command.CommandSender
 import net.minestom.server.command.builder.Command
 import net.minestom.server.command.builder.CommandContext
@@ -126,7 +125,10 @@ fun main() {
             ?: emptyList()
         publishCombatEvents(event.player, state.tick(event.player.position, event.player.position.direction(), targets))
         val velocityWasApplied = dodgeVelocityActive[event.player.uuid] == true
-        val movement = dodge.tick(canStart = event.player.isOnGround && !state.isAttacking)
+        val movement = dodge.tick(
+            canStart = event.player.isOnGround && !state.isAttacking,
+            facing = event.player.position.direction(),
+        )
         if (movement != null) {
             moveDodge(event.player, dodge, movement)
             dodgeVelocityActive[event.player.uuid] = true
@@ -155,8 +157,9 @@ fun main() {
                     val dodge = dodgeStates[event.player.uuid] ?: return@addListener
                     if (!event.player.isOnGround) return@addListener
                     dodge.request(
-                        dodgeDirection(event.player.position, message),
+                        message,
                         canStart = !state.isAttacking,
+                        facing = event.player.position.direction(),
                     )
                 }
                 else -> throw IllegalArgumentException("Unexpected ProjectS message")
@@ -186,30 +189,6 @@ private fun weaponFor(player: net.minestom.server.entity.Player): WeaponType = w
     Material.BLAZE_ROD -> WeaponType.TWIN_RODS
     Material.NETHERITE_SWORD -> WeaponType.HEAVY_BLADE
     else -> WeaponType.HEAVY_BLADE
-}
-
-private fun dodgeDirection(position: Pos, input: DodgeInput): net.minestom.server.coordinate.Vec {
-    return dodgeDirection(position.direction(), input)
-}
-
-internal fun dodgeDirection(facing: net.minestom.server.coordinate.Vec, input: DodgeInput): net.minestom.server.coordinate.Vec {
-    val horizontalLength = sqrt(facing.x() * facing.x() + facing.z() * facing.z())
-    val forward = if (horizontalLength > 1.0e-9) {
-        net.minestom.server.coordinate.Vec(facing.x() / horizontalLength, 0.0, facing.z() / horizontalLength)
-    } else {
-        net.minestom.server.coordinate.Vec(0.0, 0.0, 1.0)
-    }
-    val right = net.minestom.server.coordinate.Vec(-forward.z(), 0.0, forward.x())
-    val worldDirection = net.minestom.server.coordinate.Vec(
-        right.x() * input.directionX + forward.x() * input.directionZ,
-        0.0,
-        right.z() * input.directionX + forward.z() * input.directionZ,
-    )
-    return if (input.directionX == 0.0 && input.directionZ == 0.0) {
-        forward
-    } else {
-        DodgeState.normalizeDirection(worldDirection)
-    }
 }
 
 private fun moveDodge(

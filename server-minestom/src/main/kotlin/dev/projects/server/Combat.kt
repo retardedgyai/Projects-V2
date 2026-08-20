@@ -1,10 +1,12 @@
 package dev.projects.server
 
 import dev.projects.protocol.AttackInputState
+import dev.projects.protocol.DodgeInput
 import net.minestom.server.coordinate.Point
 import net.minestom.server.coordinate.Vec
 import java.util.UUID
 import kotlin.math.round
+import kotlin.math.sqrt
 
 enum class WeaponType {
     HEAVY_BLADE,
@@ -153,35 +155,53 @@ class CombatState(
     }
 }
 
+internal fun dodgeDirection(facing: Vec, input: DodgeInput): Vec {
+    val horizontalLength = sqrt(facing.x() * facing.x() + facing.z() * facing.z())
+    val forward = if (horizontalLength > 1.0e-9) {
+        Vec(facing.x() / horizontalLength, 0.0, facing.z() / horizontalLength)
+    } else {
+        Vec(0.0, 0.0, 1.0)
+    }
+    if (input.directionX == 0.0 && input.directionZ == 0.0) return forward
+
+    val right = Vec(-forward.z(), 0.0, forward.x())
+    return DodgeState.normalizeDirection(
+        Vec(
+            right.x() * input.directionX + forward.x() * input.directionZ,
+            0.0,
+            right.z() * input.directionX + forward.z() * input.directionZ,
+        ),
+    )
+}
+
 class DodgeState {
     private var active = false
     private var elapsedTicks = 0
     private var direction = Vec.ZERO
-    private var pendingDirection: Vec? = null
+    private var pendingInput: DodgeInput? = null
 
     val isActive: Boolean
         get() = active
 
     val hasPending: Boolean
-        get() = pendingDirection != null
+        get() = pendingInput != null
 
-    fun request(direction: Vec, canStart: Boolean): Boolean {
-        val normalized = normalizeDirection(direction)
-        if (isActive || pendingDirection != null) return false
+    fun request(input: DodgeInput, canStart: Boolean, facing: Vec): Boolean {
+        if (isActive || pendingInput != null) return false
 
         if (canStart) {
-            start(normalized)
+            start(dodgeDirection(facing, input))
         } else {
-            pendingDirection = normalized
+            pendingInput = input
         }
         return true
     }
 
-    fun tick(canStart: Boolean): Vec? {
+    fun tick(canStart: Boolean, facing: Vec): Vec? {
         if (!isActive && canStart) {
-            pendingDirection?.let {
-                pendingDirection = null
-                start(it)
+            pendingInput?.let {
+                pendingInput = null
+                start(dodgeDirection(facing, it))
             }
         }
         if (!isActive) return null
@@ -205,12 +225,12 @@ class DodgeState {
     }
 
     companion object {
-        const val DISTANCE = 2.5
+        const val DISTANCE = 3.0
         const val DURATION_TICKS = 8
 
         private fun progress(time: Double): Double {
             val t = time.coerceIn(0.0, 1.0)
-            return t * t * (3.0 - 2.0 * t)
+            return 1.0 - (1.0 - t) * (1.0 - t)
         }
 
         fun normalizeDirection(direction: Vec): Vec {
