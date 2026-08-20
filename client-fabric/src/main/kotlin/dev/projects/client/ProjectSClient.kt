@@ -95,8 +95,28 @@ object ProjectSClient : ClientModInitializer {
     private fun showHitEffect(client: Minecraft, message: AttackHitConfirmed) {
         val level = client.level ?: return
         val target = level.getEntity(message.targetId) ?: return
-        level.addParticle(ParticleTypes.CRIT, target.x, target.y + target.bbHeight * 0.6, target.z, 0.0, 0.1, 0.0)
-        level.addParticle(ParticleTypes.CRIT, target.x, target.y + target.bbHeight * 0.6, target.z, 0.0, 0.1, 0.0)
+        val hitY = target.y + target.bbHeight * 0.65
+        val offsets = arrayOf(
+            doubleArrayOf(-0.18, -0.12),
+            doubleArrayOf(0.0, -0.16),
+            doubleArrayOf(0.18, -0.12),
+            doubleArrayOf(-0.2, 0.08),
+            doubleArrayOf(0.2, 0.08),
+            doubleArrayOf(-0.12, 0.2),
+            doubleArrayOf(0.12, 0.2),
+            doubleArrayOf(0.0, 0.0),
+        )
+        for ((offsetX, offsetZ) in offsets) {
+            level.addParticle(
+                ParticleTypes.CRIT,
+                target.x + offsetX,
+                hitY,
+                target.z + offsetZ,
+                offsetX * 0.35,
+                0.08,
+                offsetZ * 0.35,
+            )
+        }
         client.player?.playSound(SoundEvents.PLAYER_ATTACK_CRIT, 0.6f, 1.1f)
     }
 }
