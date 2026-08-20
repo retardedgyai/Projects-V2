@@ -58,6 +58,7 @@ fun main() {
     val events = MinecraftServer.getGlobalEventHandler()
     val combatStates = mutableMapOf<UUID, CombatState>()
     val dodgeStates = mutableMapOf<UUID, DodgeState>()
+    val twinRodsAirStates = mutableMapOf<UUID, TwinRodsAirState>()
     val dodgeVelocityActive = mutableMapOf<UUID, Boolean>()
     val attackSpeeds = mutableMapOf<UUID, Double>()
     var dummy: Entity? = null
@@ -94,6 +95,7 @@ fun main() {
                 attackSpeedSource = { attackSpeeds[event.player.uuid] ?: DEFAULT_ATTACK_SPEED },
             )
             dodgeStates[event.player.uuid] = DodgeState()
+            twinRodsAirStates[event.player.uuid] = TwinRodsAirState()
             event.player.inventory.addItemStack(
                 ItemStack.builder(Material.NETHERITE_SWORD).customName(Component.text("Heavy Blade")).build(),
             )
@@ -123,18 +125,33 @@ fun main() {
     events.addListener(PlayerTickEvent::class.java) { event ->
         val state = combatStates[event.player.uuid] ?: return@addListener
         val dodge = dodgeStates[event.player.uuid] ?: return@addListener
+        val twinRodsAir = twinRodsAirStates[event.player.uuid] ?: return@addListener
         if (event.player == instance.players.firstOrNull()) {
             tickFixedTester(instance, dummy, fixedTester)
         }
+        twinRodsAir.tick(event.player.isOnGround)
         if (dodge.hasPending) state.deferAttackRestart()
         val targets = dummy?.takeIf { it.instance == event.player.instance && !it.isRemoved }
             ?.let { listOf(CombatTarget(it.uuid, it.position)) }
             ?: emptyList()
-        publishCombatEvents(event.player, state.tick(event.player.position, event.player.position.direction(), targets))
+        val combatEvents = state.tick(event.player.position, event.player.position.direction(), targets)
+        combatEvents.filterIsInstance<CombatEvent.HitConfirmed>().forEach { hit ->
+            twinRodsAir.onAttackHit(hit.weapon, event.player.isOnGround, hit.attackExecutionId)
+        }
+        publishCombatEvents(event.player, combatEvents)
+        val sustainedVelocity = applyAerialSustain(event.player.velocity, twinRodsAir.isSustainActive)
+        if (sustainedVelocity != event.player.velocity) event.player.setVelocity(sustainedVelocity)
         val velocityWasApplied = dodgeVelocityActive[event.player.uuid] == true
         val movement = dodge.tick(
-            canStart = event.player.isOnGround && !state.isAttacking,
+            canStart = !state.isAttacking,
             facing = event.player.position.direction(),
+            startAllowed = {
+                event.player.isOnGround ||
+                    (weaponFor(event.player) == WeaponType.TWIN_RODS && twinRodsAir.canStartAirDodge())
+            },
+            onStart = {
+                if (!event.player.isOnGround) check(twinRodsAir.consumeAirDodge())
+            },
         )
         if (movement != null) {
             moveDodge(event.player, dodge, movement)
@@ -162,11 +179,18 @@ fun main() {
                 is DodgeInput -> {
                     val state = combatStates[event.player.uuid] ?: return@addListener
                     val dodge = dodgeStates[event.player.uuid] ?: return@addListener
-                    if (!event.player.isOnGround) return@addListener
+                    val twinRodsAir = twinRodsAirStates[event.player.uuid] ?: return@addListener
                     dodge.request(
                         message,
                         canStart = !state.isAttacking,
                         facing = event.player.position.direction(),
+                        startAllowed = {
+                            event.player.isOnGround ||
+                                (weaponFor(event.player) == WeaponType.TWIN_RODS && twinRodsAir.canStartAirDodge())
+                        },
+                        onStart = {
+                            if (!event.player.isOnGround) check(twinRodsAir.consumeAirDodge())
+                        },
                     )
                 }
                 else -> throw IllegalArgumentException("Unexpected ProjectS message")

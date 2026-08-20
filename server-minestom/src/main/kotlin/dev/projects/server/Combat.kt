@@ -57,7 +57,11 @@ data class CombatTarget(val id: UUID, val position: Point)
 
 sealed interface CombatEvent {
     data class Started(val attackExecutionId: Long) : CombatEvent
-    data class HitConfirmed(val attackExecutionId: Long, val targetId: UUID) : CombatEvent
+    data class HitConfirmed(
+        val attackExecutionId: Long,
+        val targetId: UUID,
+        val weapon: WeaponType,
+    ) : CombatEvent
 }
 
 private enum class AttackPhase {
@@ -106,7 +110,7 @@ class CombatState(
             for (target in targets) {
                 if (target.id !in hitTargets && isInAttackRange(activeProfile!!, position, direction, target.position)) {
                     hitTargets += target.id
-                    events += CombatEvent.HitConfirmed(executionId, target.id)
+                    events += CombatEvent.HitConfirmed(executionId, target.id, activeProfile!!.weapon)
                 }
             }
         }
@@ -186,22 +190,39 @@ class DodgeState {
     val hasPending: Boolean
         get() = pendingInput != null
 
-    fun request(input: DodgeInput, canStart: Boolean, facing: Vec): Boolean {
+    fun request(
+        input: DodgeInput,
+        canStart: Boolean,
+        facing: Vec,
+        startAllowed: () -> Boolean = { true },
+        onStart: () -> Unit = {},
+    ): Boolean {
         if (isActive || pendingInput != null) return false
 
         if (canStart) {
+            if (!startAllowed()) return false
             start(dodgeDirection(facing, input))
         } else {
+            if (!startAllowed()) return false
             pendingInput = input
         }
+        if (canStart) onStart()
         return true
     }
 
-    fun tick(canStart: Boolean, facing: Vec): Vec? {
+    fun tick(
+        canStart: Boolean,
+        facing: Vec,
+        startAllowed: () -> Boolean = { true },
+        onStart: () -> Unit = {},
+    ): Vec? {
         if (!isActive && canStart) {
             pendingInput?.let {
                 pendingInput = null
-                start(dodgeDirection(facing, it))
+                if (startAllowed()) {
+                    start(dodgeDirection(facing, it))
+                    onStart()
+                }
             }
         }
         if (!isActive) return null
