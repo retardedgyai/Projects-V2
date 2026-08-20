@@ -11,7 +11,7 @@ import kotlin.math.abs
 const val PROJECTS_CHANNEL = "projects:protocol"
 
 object ProtocolVersion {
-    const val CURRENT = 1
+    const val CURRENT = 2
 
     fun requireCompatible(version: Int) {
         if (version != CURRENT) {
@@ -47,6 +47,13 @@ data class DodgeInput(val directionX: Double, val directionZ: Double) : Protocol
     }
 }
 
+data class AirJumpInput(val directionX: Double, val directionZ: Double) : ProtocolMessage {
+    init {
+        require(directionX.isFinite() && directionZ.isFinite()) { "Air Jump direction must be finite" }
+        require(abs(directionX) <= 1.0 && abs(directionZ) <= 1.0) { "Air Jump direction is out of range" }
+    }
+}
+
 object ProtocolCodec {
     private const val MAX_PACKET_SIZE = 1024
     private const val HELLO = 1
@@ -55,6 +62,7 @@ object ProtocolCodec {
     private const val ATTACK_STARTED = 11
     private const val ATTACK_HIT_CONFIRMED = 12
     private const val DODGE_INPUT = 13
+    private const val AIR_JUMP_INPUT = 14
 
     fun encode(message: ProtocolMessage): ByteArray {
         val output = ByteArrayOutputStream()
@@ -85,6 +93,11 @@ object ProtocolCodec {
                 }
                 is DodgeInput -> {
                     data.writeByte(DODGE_INPUT)
+                    data.writeDouble(message.directionX)
+                    data.writeDouble(message.directionZ)
+                }
+                is AirJumpInput -> {
+                    data.writeByte(AIR_JUMP_INPUT)
                     data.writeDouble(message.directionX)
                     data.writeDouble(message.directionZ)
                 }
@@ -121,6 +134,7 @@ object ProtocolCodec {
                 UUID(input.readLong(), input.readLong()),
             )
             DODGE_INPUT -> DodgeInput(input.readDouble(), input.readDouble())
+            AIR_JUMP_INPUT -> AirJumpInput(input.readDouble(), input.readDouble())
             else -> throw IllegalArgumentException("Unknown ProjectS message type: $type")
         }
         require(input.available() == 0) { "Unexpected trailing ProjectS protocol data" }

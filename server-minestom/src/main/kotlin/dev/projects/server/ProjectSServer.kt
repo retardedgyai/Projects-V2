@@ -4,6 +4,7 @@ import dev.projects.protocol.PROJECTS_CHANNEL
 import dev.projects.protocol.AttackHitConfirmed
 import dev.projects.protocol.AttackInput
 import dev.projects.protocol.AttackStarted
+import dev.projects.protocol.AirJumpInput
 import dev.projects.protocol.DodgeInput
 import dev.projects.protocol.ProtocolCodec
 import dev.projects.protocol.ProtocolHello
@@ -58,6 +59,7 @@ fun main() {
     val events = MinecraftServer.getGlobalEventHandler()
     val combatStates = mutableMapOf<UUID, CombatState>()
     val dodgeStates = mutableMapOf<UUID, DodgeState>()
+    val twinRodsAirStates = mutableMapOf<UUID, TwinRodsAirState>()
     val dodgeVelocityActive = mutableMapOf<UUID, Boolean>()
     val attackSpeeds = mutableMapOf<UUID, Double>()
     var dummy: Entity? = null
@@ -94,6 +96,7 @@ fun main() {
                 attackSpeedSource = { attackSpeeds[event.player.uuid] ?: DEFAULT_ATTACK_SPEED },
             )
             dodgeStates[event.player.uuid] = DodgeState()
+            twinRodsAirStates[event.player.uuid] = TwinRodsAirState()
             event.player.inventory.addItemStack(
                 ItemStack.builder(Material.NETHERITE_SWORD).customName(Component.text("Heavy Blade")).build(),
             )
@@ -123,18 +126,33 @@ fun main() {
     events.addListener(PlayerTickEvent::class.java) { event ->
         val state = combatStates[event.player.uuid] ?: return@addListener
         val dodge = dodgeStates[event.player.uuid] ?: return@addListener
+        val twinRodsAir = twinRodsAirStates[event.player.uuid] ?: return@addListener
         if (event.player == instance.players.firstOrNull()) {
             tickFixedTester(instance, dummy, fixedTester)
         }
+        twinRodsAir.tick(event.player.isOnGround)
         if (dodge.hasPending) state.deferAttackRestart()
         val targets = dummy?.takeIf { it.instance == event.player.instance && !it.isRemoved }
             ?.let { listOf(CombatTarget(it.uuid, it.position)) }
             ?: emptyList()
-        publishCombatEvents(event.player, state.tick(event.player.position, event.player.position.direction(), targets))
+        val combatEvents = state.tick(event.player.position, event.player.position.direction(), targets)
+        combatEvents.filterIsInstance<CombatEvent.HitConfirmed>().forEach { hit ->
+            twinRodsAir.onAttackHit(hit.weapon, event.player.isOnGround, hit.attackExecutionId)
+        }
+        publishCombatEvents(event.player, combatEvents)
+        val currentWeapon = weaponFor(event.player)
+        if (currentWeapon != WeaponType.TWIN_RODS) twinRodsAir.clearAirJump()
         val velocityWasApplied = dodgeVelocityActive[event.player.uuid] == true
         val movement = dodge.tick(
-            canStart = event.player.isOnGround && !state.isAttacking,
+            canStart = !state.isAttacking,
             facing = event.player.position.direction(),
+            startAllowed = {
+                event.player.isOnGround ||
+                    (weaponFor(event.player) == WeaponType.TWIN_RODS && twinRodsAir.canStartAirDodge())
+            },
+            onStart = {
+                if (!event.player.isOnGround) check(twinRodsAir.consumeAirDodge())
+            },
         )
         if (movement != null) {
             moveDodge(event.player, dodge, movement)
@@ -162,12 +180,30 @@ fun main() {
                 is DodgeInput -> {
                     val state = combatStates[event.player.uuid] ?: return@addListener
                     val dodge = dodgeStates[event.player.uuid] ?: return@addListener
-                    if (!event.player.isOnGround) return@addListener
+                    val twinRodsAir = twinRodsAirStates[event.player.uuid] ?: return@addListener
                     dodge.request(
                         message,
                         canStart = !state.isAttacking,
                         facing = event.player.position.direction(),
+                        startAllowed = {
+                            event.player.isOnGround ||
+                                (weaponFor(event.player) == WeaponType.TWIN_RODS && twinRodsAir.canStartAirDodge())
+                        },
+                        onStart = {
+                            if (!event.player.isOnGround) check(twinRodsAir.consumeAirDodge())
+                        },
                     )
+                }
+                is AirJumpInput -> {
+                    val twinRodsAir = twinRodsAirStates[event.player.uuid] ?: return@addListener
+                    if (!event.player.isOnGround &&
+                        weaponFor(event.player) == WeaponType.TWIN_RODS &&
+                        twinRodsAir.consumeAirJump()
+                    ) {
+                        event.player.setVelocity(
+                            airJumpVelocity(event.player.velocity, event.player.position.direction(), message),
+                        )
+                    }
                 }
                 else -> throw IllegalArgumentException("Unexpected ProjectS message")
             }
@@ -367,6 +403,23 @@ internal fun dodgeVelocity(movement: Vec, verticalVelocity: Double): Vec = Vec(
     verticalVelocity,
     movement.z() * ServerFlag.SERVER_TICKS_PER_SECOND,
 )
+
+internal fun airJumpVelocity(velocity: Vec, facing: Vec, input: AirJumpInput): Vec {
+    val verticalVelocity = maxOf(velocity.y(), AIR_JUMP_VERTICAL_SPEED)
+    if (input.directionX == 0.0 && input.directionZ == 0.0) {
+        return Vec(velocity.x(), verticalVelocity, velocity.z())
+    }
+
+    val direction = dodgeDirection(facing, DodgeInput(input.directionX, input.directionZ))
+    return Vec(
+        direction.x() * AIR_JUMP_HORIZONTAL_SPEED,
+        verticalVelocity,
+        direction.z() * AIR_JUMP_HORIZONTAL_SPEED,
+    )
+}
+
+private const val AIR_JUMP_VERTICAL_SPEED = 8.4
+private const val AIR_JUMP_HORIZONTAL_SPEED = 5.0
 
 private fun stopDodgeVelocity(player: net.minestom.server.entity.Player) {
     player.setVelocity(stopDodgeVelocity(player.velocity))
