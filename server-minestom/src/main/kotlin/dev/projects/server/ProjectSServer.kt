@@ -29,6 +29,8 @@ import net.minestom.server.instance.Weather
 import net.minestom.server.item.ItemStack
 import net.minestom.server.item.Material
 import net.minestom.server.network.packet.server.common.PluginMessagePacket
+import net.minestom.server.network.packet.server.play.ParticlePacket
+import net.minestom.server.particle.Particle
 import java.nio.charset.StandardCharsets
 import java.util.UUID
 import kotlin.math.floor
@@ -59,6 +61,7 @@ fun main() {
     val dodgeVelocityActive = mutableMapOf<UUID, Boolean>()
     val attackSpeeds = mutableMapOf<UUID, Double>()
     var dummy: Entity? = null
+    val fixedTester = FixedAttackTester()
 
     val speedArgument = ArgumentType.Double("speed")
     fun handleAttackSpeed(sender: CommandSender, context: CommandContext) {
@@ -99,9 +102,10 @@ fun main() {
             )
             if (dummy == null) {
                 dummy = Entity(EntityType.PIG).apply {
-                    customName = Component.text("Dummy")
+                    customName = Component.text("Fixed Attack Tester")
                     isCustomNameVisible = true
                     setNoGravity(true)
+                    setHasPhysics(false)
                     setInstance(instance, event.player.position.add(event.player.position.direction().mul(3.0)))
                 }
             }
@@ -119,6 +123,9 @@ fun main() {
     events.addListener(PlayerTickEvent::class.java) { event ->
         val state = combatStates[event.player.uuid] ?: return@addListener
         val dodge = dodgeStates[event.player.uuid] ?: return@addListener
+        if (event.player == instance.players.firstOrNull()) {
+            tickFixedTester(instance, dummy, fixedTester)
+        }
         if (dodge.hasPending) state.deferAttackRestart()
         val targets = dummy?.takeIf { it.instance == event.player.instance && !it.isRemoved }
             ?.let { listOf(CombatTarget(it.uuid, it.position)) }
@@ -189,6 +196,137 @@ private fun weaponFor(player: net.minestom.server.entity.Player): WeaponType = w
     Material.BLAZE_ROD -> WeaponType.TWIN_RODS
     Material.NETHERITE_SWORD -> WeaponType.HEAVY_BLADE
     else -> WeaponType.HEAVY_BLADE
+}
+
+private fun tickFixedTester(instance: Instance, testerEntity: Entity?, tester: FixedAttackTester) {
+    if (testerEntity == null || testerEntity.isRemoved || testerEntity.instance != instance) return
+    val players = instance.players.filter { it.isOnline }
+    if (players.isEmpty()) return
+    val targets = players.map { FixedAttackTarget(it.uuid, it.position) }
+    val facing = players.firstOrNull()?.let { directionFrom(testerEntity.position, it.position) }
+        ?: testerEntity.position.direction()
+    val events = tester.tick(testerEntity.position, facing, targets)
+    for (event in events) {
+        when (event) {
+            is FixedAttackEvent.Started -> {
+                val label = event.attack.displayName()
+                players.forEach { player ->
+                    player.sendMessage(Component.text("[Tester] $label: telegraph"))
+                }
+            }
+            is FixedAttackEvent.Telegraph -> {
+                players.forEach { player ->
+                    showTesterTelegraph(player, testerEntity.position, event.attack, event.direction)
+                }
+            }
+            is FixedAttackEvent.Active -> {
+                players.forEach { player ->
+                    showTesterActive(player, testerEntity.position, event.attack, event.direction)
+                    player.sendMessage(Component.text("[Tester] ${event.attack.displayName()}: ACTIVE"))
+                }
+            }
+            is FixedAttackEvent.HitConfirmed -> {
+                instance.getPlayerByUuid(event.targetId)?.let { player ->
+                    player.sendMessage(Component.text("[Tester] HIT"))
+                    player.sendPacket(
+                        ParticlePacket(
+                            Particle.DAMAGE_INDICATOR,
+                            player.position.x(),
+                            player.position.y() + 1.0,
+                            player.position.z(),
+                            0.35f,
+                            0.45f,
+                            0.35f,
+                            0.1f,
+                            8,
+                        ),
+                    )
+                }
+            }
+        }
+    }
+}
+
+private fun directionFrom(origin: Pos, target: Pos): Vec =
+    FixedAttackTester.normalizeHorizontal(
+        Vec(target.x() - origin.x(), 0.0, target.z() - origin.z()),
+    )
+
+private fun showTesterTelegraph(
+    player: net.minestom.server.entity.Player,
+    origin: Pos,
+    attack: FixedAttackType,
+    direction: Vec,
+) {
+    val right = Vec(-direction.z(), 0.0, direction.x())
+    when (attack) {
+        FixedAttackType.SIDE_SWEEP -> {
+            for (step in 0..8) {
+                val angle = -1.15 + 2.3 * step / 8.0
+                val radial = Vec(
+                    direction.x() * kotlin.math.cos(angle) + right.x() * kotlin.math.sin(angle),
+                    0.0,
+                    direction.z() * kotlin.math.cos(angle) + right.z() * kotlin.math.sin(angle),
+                )
+                sendTesterParticle(player, Particle.ELECTRIC_SPARK, origin.add(radial.x() * 4.5, 0.08, radial.z() * 4.5))
+            }
+        }
+        FixedAttackType.FORWARD_SLAM -> {
+            for (step in 1..5) {
+                val distance = step.toDouble()
+                for (side in -1..1) {
+                    val point = origin.add(
+                        direction.x() * distance + right.x() * side * 0.9,
+                        0.08,
+                        direction.z() * distance + right.z() * side * 0.9,
+                    )
+                    sendTesterParticle(player, Particle.END_ROD, point)
+                }
+            }
+        }
+    }
+}
+
+private fun showTesterActive(
+    player: net.minestom.server.entity.Player,
+    origin: Pos,
+    attack: FixedAttackType,
+    direction: Vec,
+) {
+    val right = Vec(-direction.z(), 0.0, direction.x())
+    when (attack) {
+        FixedAttackType.SIDE_SWEEP -> {
+            for (step in 0..10) {
+                val angle = -1.15 + 2.3 * step / 10.0
+                val radial = Vec(
+                    direction.x() * kotlin.math.cos(angle) + right.x() * kotlin.math.sin(angle),
+                    0.0,
+                    direction.z() * kotlin.math.cos(angle) + right.z() * kotlin.math.sin(angle),
+                )
+                sendTesterParticle(player, Particle.SWEEP_ATTACK, origin.add(radial.x() * 3.0, 1.0, radial.z() * 3.0))
+            }
+        }
+        FixedAttackType.FORWARD_SLAM -> {
+            sendTesterParticle(
+                player,
+                Particle.EXPLOSION,
+                origin.add(direction.x() * 3.0, 0.5, direction.z() * 3.0),
+            )
+        }
+    }
+}
+
+private fun sendTesterParticle(
+    player: net.minestom.server.entity.Player,
+    particle: Particle,
+    point: net.minestom.server.coordinate.Point,
+) {
+    player.sendPacket(ParticlePacket(particle, point.x(), point.y(), point.z(), 0f, 0f, 0f, 0f, 1))
+}
+
+private fun FixedAttackType.displayName(): String = when (this) {
+    FixedAttackType.SIDE_SWEEP -> "Side Sweep"
+    FixedAttackType.FORWARD_SLAM -> "Forward Slam"
 }
 
 private fun moveDodge(
