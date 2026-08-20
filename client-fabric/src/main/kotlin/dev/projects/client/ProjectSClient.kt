@@ -21,6 +21,7 @@ import net.minecraft.resources.Identifier
 import net.minecraft.network.chat.Component
 import net.minecraft.core.particles.ParticleTypes
 import net.minecraft.sounds.SoundEvents
+import net.minecraft.world.item.Items
 import org.slf4j.LoggerFactory
 
 object ProjectSClient : ClientModInitializer {
@@ -28,6 +29,7 @@ object ProjectSClient : ClientModInitializer {
     private var attackHeld = false
     private var inputSequence = 0L
     private var suppressNextAttackStarted = false
+    private var twinRodSide = false
 
     override fun onInitializeClient() {
         PayloadTypeRegistry.clientboundPlay().register(ProjectSPayload.TYPE, ProjectSPayload.CODEC)
@@ -69,6 +71,7 @@ object ProjectSClient : ClientModInitializer {
         val player = client.player ?: run {
             attackHeld = false
             suppressNextAttackStarted = false
+            twinRodSide = false
             return
         }
         val pressed = client.options.keyAttack.isDown()
@@ -88,8 +91,24 @@ object ProjectSClient : ClientModInitializer {
     private fun showSwingEffect(client: Minecraft, player: net.minecraft.client.player.LocalPlayer) {
         val level = client.level ?: return
         val position = player.position().add(player.lookAngle.scale(1.0)).add(0.0, 1.0, 0.0)
-        level.addParticle(ParticleTypes.SWEEP_ATTACK, position.x, position.y, position.z, 0.0, 0.0, 0.0)
-        player.playSound(SoundEvents.PLAYER_ATTACK_SWEEP, 0.45f, 1.0f)
+        when (player.mainHandItem.item) {
+            Items.NETHERITE_SWORD -> {
+                level.addParticle(ParticleTypes.SWEEP_ATTACK, position.x, position.y, position.z, 0.0, 0.0, 0.0)
+                level.addParticle(ParticleTypes.SWEEP_ATTACK, position.x, position.y + 0.18, position.z, 0.0, 0.0, 0.0)
+                level.addParticle(ParticleTypes.SWEEP_ATTACK, position.x, position.y - 0.18, position.z, 0.0, 0.0, 0.0)
+                player.playSound(SoundEvents.PLAYER_ATTACK_STRONG, 0.8f, 0.7f)
+            }
+            Items.BLAZE_ROD -> {
+                twinRodSide = !twinRodSide
+                val side = if (twinRodSide) 0.28 else -0.28
+                level.addParticle(ParticleTypes.SWEEP_ATTACK, position.x + side, position.y, position.z, 0.0, 0.0, 0.0)
+                player.playSound(SoundEvents.PLAYER_ATTACK_WEAK, 0.45f, 1.35f)
+            }
+            else -> {
+                level.addParticle(ParticleTypes.SWEEP_ATTACK, position.x, position.y, position.z, 0.0, 0.0, 0.0)
+                player.playSound(SoundEvents.PLAYER_ATTACK_SWEEP, 0.45f, 1.0f)
+            }
+        }
     }
 
     private fun showHitEffect(client: Minecraft, message: AttackHitConfirmed) {
