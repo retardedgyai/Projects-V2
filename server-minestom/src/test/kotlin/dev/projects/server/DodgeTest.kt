@@ -68,6 +68,19 @@ class DodgeTest {
     }
 
     @Test
+    fun `dodge velocity converts one tick movement and stops only horizontally`() {
+        val velocity = dodgeVelocity(Vec(0.25, 0.0, -0.5), verticalVelocity = 0.2)
+        assertEquals(5.0, velocity.x(), 1.0e-9)
+        assertEquals(0.2, velocity.y(), 1.0e-9)
+        assertEquals(-10.0, velocity.z(), 1.0e-9)
+
+        val stopped = stopDodgeVelocity(Vec(5.0, -0.3, -10.0))
+        assertEquals(0.0, stopped.x(), 1.0e-9)
+        assertEquals(-0.3, stopped.y(), 1.0e-9)
+        assertEquals(0.0, stopped.z(), 1.0e-9)
+    }
+
+    @Test
     fun `dodge rejects re-dodge while active and allows it after completion`() {
         val dodge = DodgeState()
         assertTrue(dodge.request(Vec(0.0, 0.0, 1.0), canStart = true))

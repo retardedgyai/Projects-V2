@@ -12,7 +12,9 @@ import dev.projects.protocol.ProtocolVersion
 import net.kyori.adventure.text.Component
 import net.minestom.server.Auth
 import net.minestom.server.MinecraftServer
+import net.minestom.server.ServerFlag
 import net.minestom.server.coordinate.Pos
+import net.minestom.server.coordinate.Vec
 import net.minestom.server.entity.Entity
 import net.minestom.server.entity.EntityType
 import net.minestom.server.entity.EquipmentSlot
@@ -55,6 +57,7 @@ fun main() {
     val events = MinecraftServer.getGlobalEventHandler()
     val combatStates = mutableMapOf<UUID, CombatState>()
     val dodgeStates = mutableMapOf<UUID, DodgeState>()
+    val dodgeVelocityActive = mutableMapOf<UUID, Boolean>()
     val attackSpeeds = mutableMapOf<UUID, Double>()
     var dummy: Entity? = null
 
@@ -122,8 +125,15 @@ fun main() {
             ?.let { listOf(CombatTarget(it.uuid, it.position)) }
             ?: emptyList()
         publishCombatEvents(event.player, state.tick(event.player.position, event.player.position.direction(), targets))
+        val velocityWasApplied = dodgeVelocityActive[event.player.uuid] == true
         val movement = dodge.tick(canStart = event.player.isOnGround && !state.isAttacking)
-        if (movement != null) moveDodge(event.player, dodge, movement)
+        if (movement != null) {
+            moveDodge(event.player, dodge, movement)
+            dodgeVelocityActive[event.player.uuid] = true
+        } else if (velocityWasApplied) {
+            stopDodgeVelocity(event.player)
+            dodgeVelocityActive[event.player.uuid] = false
+        }
     }
     events.addListener(PlayerPluginMessageEvent::class.java) { event ->
         if (event.identifier != PROJECTS_CHANNEL) return@addListener
@@ -211,7 +221,7 @@ private fun moveDodge(
     val target = current.add(movement.x(), 0.0, movement.z())
     val instance = player.instance
     if (isDodgePathClear(instance, current, target)) {
-        player.refreshPosition(target, true)
+        player.setVelocity(dodgeVelocity(movement, player.velocity.y()))
         return
     }
 
@@ -232,17 +242,20 @@ private fun moveDodge(
     }
 
     dodge.stop()
-    if (safeProgress > 0.0) {
-        player.refreshPosition(
-            current.add(
-                (target.x() - current.x()) * safeProgress,
-                0.0,
-                (target.z() - current.z()) * safeProgress,
-            ),
-            true,
-        )
-    }
+    player.setVelocity(dodgeVelocity(movement.mul(safeProgress), player.velocity.y()))
 }
+
+internal fun dodgeVelocity(movement: Vec, verticalVelocity: Double): Vec = Vec(
+    movement.x() * ServerFlag.SERVER_TICKS_PER_SECOND,
+    verticalVelocity,
+    movement.z() * ServerFlag.SERVER_TICKS_PER_SECOND,
+)
+
+private fun stopDodgeVelocity(player: net.minestom.server.entity.Player) {
+    player.setVelocity(stopDodgeVelocity(player.velocity))
+}
+
+internal fun stopDodgeVelocity(velocity: Vec): Vec = Vec(0.0, velocity.y(), 0.0)
 
 private fun isDodgePathClear(instance: Instance, start: Pos, end: Pos): Boolean {
     val samples = 4
