@@ -15,7 +15,8 @@ ProjectS v2 の GitHub Issue #$1 を実装してください。
 5. 受け入れ条件と非対象を守って、そのまま自分で実装する。
 6. 別の実装Agentへ丸投げしない。必要ならExplore/Scoutを短い読み取り専用調査にだけ使う。
 7. Issue指定の自動Test / Buildを実行する。
-8. Issueがcommitを要求している場合はcommitする。pushはしない。
+8. Issueがcommitを要求している場合はcommitする。
+9. Test / Build成功後、そのTask専用の現在branchへ通常pushする。`main`への直接pushやforce pushはしない。
 
 重要:
 - Issue外の機能を追加しない。
@@ -32,4 +33,5 @@ ProjectS v2 の GitHub Issue #$1 を実装してください。
 6. 主な処理の流れ
 7. 一番重要なFile / Class
 8. 壊れた時に最初に見る場所
-9. commit SHA（commitした場合）
+9. commit SHA
+10. push先branch
