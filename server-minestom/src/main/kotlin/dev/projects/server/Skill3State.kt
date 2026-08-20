@@ -1,0 +1,209 @@
+package dev.projects.server
+
+import net.minestom.server.coordinate.Point
+import net.minestom.server.coordinate.Vec
+import kotlin.math.sqrt
+import java.util.UUID
+
+enum class Skill3Phase {
+    IDLE,
+    DASH,
+    HOVER,
+}
+
+data class Skill3Tick(
+    val phase: Skill3Phase,
+    val dashDirection: Vec?,
+    val dashActive: Boolean,
+    val velocityY: Double,
+)
+
+/** Small server-owned state machine for the Skill3 aerial loop prototype. */
+class Skill3State(
+    private val castIdSource: () -> Long = Skill3ExecutionIds::next,
+) {
+    var phase: Skill3Phase = Skill3Phase.IDLE
+        private set
+
+    var dashDirection: Vec? = null
+        private set
+
+    var dashTicksRemaining: Int = 0
+        private set
+
+    var hoverTicksRemaining: Int = 0
+        private set
+
+    var cooldownTicksRemaining: Int = 0
+        private set
+
+    var castId: Long = 0L
+        private set
+
+    private val hitTargets = mutableSetOf<UUID>()
+    private val reducedNormalAttackExecutions = mutableSetOf<Long>()
+
+    val isReady: Boolean
+        get() = phase == Skill3Phase.IDLE && cooldownTicksRemaining == 0
+
+    fun tryCast(facing: Vec, input: ClassSkillDirection): Long? {
+        if (!isReady) return null
+        dashDirection = skill3Direction(facing, input)
+        castId = castIdSource()
+        phase = Skill3Phase.DASH
+        dashTicksRemaining = DASH_TICKS
+        hoverTicksRemaining = 0
+        hitTargets.clear()
+        return castId
+    }
+
+    fun tick(isGrounded: Boolean, velocityY: Double): Skill3Tick {
+        require(velocityY.isFinite()) { "Skill3 velocity must be finite" }
+        val wasDashing = phase == Skill3Phase.DASH
+        val tick = when (phase) {
+            Skill3Phase.DASH -> {
+                val result = Skill3Tick(
+                    phase = Skill3Phase.DASH,
+                    dashDirection = dashDirection,
+                    dashActive = true,
+                    velocityY = maxOf(velocityY, 0.0),
+                )
+                dashTicksRemaining--
+                if (dashTicksRemaining == 0) {
+                    phase = Skill3Phase.HOVER
+                    hoverTicksRemaining = HOVER_TICKS
+                    cooldownTicksRemaining = COOLDOWN_TICKS
+                }
+                result
+            }
+            Skill3Phase.HOVER -> {
+                if (isGrounded) {
+                    phase = Skill3Phase.IDLE
+                    hoverTicksRemaining = 0
+                    Skill3Tick(Skill3Phase.HOVER, dashDirection, false, velocityY)
+                } else {
+                    val result = Skill3Tick(
+                        phase = Skill3Phase.HOVER,
+                        dashDirection = dashDirection,
+                        dashActive = false,
+                        velocityY = maxOf(velocityY, -HOVER_FALL_SPEED),
+                    )
+                    hoverTicksRemaining--
+                    if (hoverTicksRemaining == 0) phase = Skill3Phase.IDLE
+                    result
+                }
+            }
+            Skill3Phase.IDLE -> Skill3Tick(Skill3Phase.IDLE, null, false, velocityY)
+        }
+
+        if (!wasDashing && cooldownTicksRemaining > 0) {
+            cooldownTicksRemaining--
+        }
+        return tick
+    }
+
+    /** Returns true only for the first confirmed target hit by this normal execution. */
+    fun reduceCooldownForNormalAttack(attackExecutionId: Long): Boolean {
+        if (!reducedNormalAttackExecutions.add(attackExecutionId)) return false
+        cooldownTicksRemaining = (cooldownTicksRemaining - NORMAL_ATTACK_REDUCTION_TICKS).coerceAtLeast(0)
+        return true
+    }
+
+    /** Capsule-like horizontal/vertical segment check; each target is consumed once per cast. */
+    fun hitTargetsOnSegment(
+        start: Point,
+        end: Point,
+        targets: Collection<CombatTarget>,
+        radius: Double = DASH_HIT_RADIUS,
+    ): List<UUID> {
+        require(radius >= 0.0 && radius.isFinite()) { "Skill3 hit radius must be finite and non-negative" }
+        return targets.filter { target ->
+            target.id !in hitTargets && distanceSquaredToSegment(target.position, start, end) <= radius * radius
+        }.map { target ->
+            hitTargets += target.id
+            target.id
+        }
+    }
+
+    fun reset() {
+        phase = Skill3Phase.IDLE
+        dashDirection = null
+        dashTicksRemaining = 0
+        hoverTicksRemaining = 0
+        cooldownTicksRemaining = 0
+        castId = 0L
+        hitTargets.clear()
+        reducedNormalAttackExecutions.clear()
+    }
+
+    companion object {
+        const val DASH_TICKS = 4
+        const val HOVER_TICKS = 20
+        const val COOLDOWN_TICKS = 80
+        const val DASH_SPEED = 25.0
+        const val DASH_HIT_RADIUS = 1.0
+        const val HOVER_FALL_SPEED = 0.4
+        const val NORMAL_ATTACK_REDUCTION_TICKS = 20
+
+        private fun distanceSquaredToSegment(point: Point, start: Point, end: Point): Double {
+            val segmentX = end.x() - start.x()
+            val segmentY = end.y() - start.y()
+            val segmentZ = end.z() - start.z()
+            val lengthSquared = segmentX * segmentX + segmentY * segmentY + segmentZ * segmentZ
+            if (lengthSquared == 0.0) {
+                return distanceSquared(point, start)
+            }
+            val pointX = point.x() - start.x()
+            val pointY = point.y() - start.y()
+            val pointZ = point.z() - start.z()
+            val projection = (
+                pointX * segmentX + pointY * segmentY + pointZ * segmentZ
+            ) / lengthSquared
+            val clamped = projection.coerceIn(0.0, 1.0)
+            return distanceSquared(
+                point,
+                start.add(segmentX * clamped, segmentY * clamped, segmentZ * clamped),
+            )
+        }
+
+        private fun distanceSquared(first: Point, second: Point): Double {
+            val x = first.x() - second.x()
+            val y = first.y() - second.y()
+            val z = first.z() - second.z()
+            return x * x + y * y + z * z
+        }
+    }
+}
+
+data class ClassSkillDirection(val x: Double, val z: Double) {
+    init {
+        require(x.isFinite() && z.isFinite()) { "Skill direction must be finite" }
+        require(kotlin.math.abs(x) <= 1.0 && kotlin.math.abs(z) <= 1.0) { "Skill direction is out of range" }
+    }
+}
+
+internal fun skill3Direction(facing: Vec, input: ClassSkillDirection): Vec {
+    val horizontalLength = sqrt(facing.x() * facing.x() + facing.z() * facing.z())
+    val forward = if (horizontalLength > 1.0e-9) {
+        Vec(facing.x() / horizontalLength, 0.0, facing.z() / horizontalLength)
+    } else {
+        Vec(0.0, 0.0, 1.0)
+    }
+    if (input.x == 0.0 && input.z == 0.0) return forward
+
+    val right = Vec(-forward.z(), 0.0, forward.x())
+    val direction = Vec(
+        right.x() * input.x + forward.x() * input.z,
+        0.0,
+        right.z() * input.x + forward.z() * input.z,
+    )
+    val length = sqrt(direction.x() * direction.x() + direction.z() * direction.z())
+    return Vec(direction.x() / length, 0.0, direction.z() / length)
+}
+
+private object Skill3ExecutionIds {
+    private var nextId = 0L
+
+    @Synchronized
+    fun next(): Long = ++nextId
+}

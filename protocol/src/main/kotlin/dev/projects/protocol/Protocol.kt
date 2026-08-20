@@ -11,7 +11,7 @@ import kotlin.math.abs
 const val PROJECTS_CHANNEL = "projects:protocol"
 
 object ProtocolVersion {
-    const val CURRENT = 3
+    const val CURRENT = 4
 
     fun requireCompatible(version: Int) {
         if (version != CURRENT) {
@@ -72,18 +72,16 @@ data class ClassSkillInput(
     }
 }
 
-data class AerialHoldInput(val active: Boolean) : ProtocolMessage
-
 data class ClassResourceSnapshot(
     val mana: Int,
     val maxMana: Int,
-    val aerialGauge: Int,
-    val maxAerialGauge: Int,
+    val skill3CooldownTicks: Int,
+    val skill3CooldownMaxTicks: Int,
 ) : ProtocolMessage {
     init {
-        require(maxMana > 0 && maxAerialGauge > 0) { "Resource maximums must be positive" }
+        require(maxMana > 0 && skill3CooldownMaxTicks > 0) { "Resource maximums must be positive" }
         require(mana in 0..maxMana) { "Mana is out of range" }
-        require(aerialGauge in 0..maxAerialGauge) { "Aerial Gauge is out of range" }
+        require(skill3CooldownTicks in 0..skill3CooldownMaxTicks) { "Skill3 cooldown is out of range" }
     }
 }
 
@@ -97,7 +95,6 @@ object ProtocolCodec {
     private const val DODGE_INPUT = 13
     private const val AIR_JUMP_INPUT = 14
     private const val CLASS_SKILL_INPUT = 15
-    private const val AERIAL_HOLD_INPUT = 16
     private const val CLASS_RESOURCE_SNAPSHOT = 17
 
     fun encode(message: ProtocolMessage): ByteArray {
@@ -143,16 +140,12 @@ object ProtocolCodec {
                     data.writeDouble(message.directionX)
                     data.writeDouble(message.directionZ)
                 }
-                is AerialHoldInput -> {
-                    data.writeByte(AERIAL_HOLD_INPUT)
-                    data.writeByte(if (message.active) 1 else 0)
-                }
                 is ClassResourceSnapshot -> {
                     data.writeByte(CLASS_RESOURCE_SNAPSHOT)
                     data.writeInt(message.mana)
                     data.writeInt(message.maxMana)
-                    data.writeInt(message.aerialGauge)
-                    data.writeInt(message.maxAerialGauge)
+                    data.writeInt(message.skill3CooldownTicks)
+                    data.writeInt(message.skill3CooldownMaxTicks)
                 }
             }
         }
@@ -193,13 +186,6 @@ object ProtocolCodec {
                 val slot = ClassSkillSlot.entries.getOrNull(slotId)
                     ?: throw IllegalArgumentException("Unknown ClassSkillInput slot: $slotId")
                 ClassSkillInput(slot, input.readDouble(), input.readDouble())
-            }
-            AERIAL_HOLD_INPUT -> {
-                when (val active = input.readUnsignedByte()) {
-                    0 -> AerialHoldInput(false)
-                    1 -> AerialHoldInput(true)
-                    else -> throw IllegalArgumentException("Unknown AerialHoldInput state: $active")
-                }
             }
             CLASS_RESOURCE_SNAPSHOT -> ClassResourceSnapshot(
                 input.readInt(),

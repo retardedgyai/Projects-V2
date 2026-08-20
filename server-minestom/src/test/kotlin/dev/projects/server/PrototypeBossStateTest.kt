@@ -44,6 +44,16 @@ class PrototypeBossStateTest {
     }
 
     @Test
+    fun `skill3 deals thirty damage once per cast and target`() {
+        val boss = PrototypeBossState()
+        val targetId = UUID.randomUUID()
+
+        assertEquals(30, boss.applySkill3Attack(1L, targetId))
+        assertEquals(0, boss.applySkill3Attack(1L, targetId))
+        assertEquals(270, boss.currentHealth)
+    }
+
+    @Test
     fun `boss attack damages player once per execution with attack values`() {
         val boss = PrototypeBossState()
 

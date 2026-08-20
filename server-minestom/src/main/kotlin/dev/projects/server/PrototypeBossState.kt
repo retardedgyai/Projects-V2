@@ -28,6 +28,7 @@ class PrototypeBossState(
     private val playerHealth = mutableMapOf<UUID, Int>()
     private val playerDamageExecutions = mutableMapOf<UUID, MutableSet<Long>>()
     private val bossDamageExecutions = mutableSetOf<Long>()
+    private val skill3DamageExecutions = mutableSetOf<Pair<Long, UUID>>()
 
     val isActive: Boolean
         get() = encounterState == PrototypeEncounterState.ACTIVE
@@ -83,11 +84,21 @@ class PrototypeBossState(
         return damage
     }
 
+    /** Applies one server-confirmed Skill3 hit per cast and target. */
+    fun applySkill3Attack(castId: Long, targetId: UUID): Int {
+        if (!isActive || !skill3DamageExecutions.add(castId to targetId)) return 0
+
+        currentHealth = (currentHealth - SKILL_3_DAMAGE).coerceAtLeast(0)
+        if (currentHealth == 0) encounterState = PrototypeEncounterState.VICTORY
+        return SKILL_3_DAMAGE
+    }
+
     /** Restores the prototype encounter and every registered player to its test-start state. */
     fun reset() {
         currentHealth = maxHealth
         encounterState = PrototypeEncounterState.ACTIVE
         bossDamageExecutions.clear()
+        skill3DamageExecutions.clear()
         playerDamageExecutions.clear()
         playerHealth.keys.toList().forEach { playerHealth[it] = playerMaxHealth }
     }
@@ -97,6 +108,7 @@ class PrototypeBossState(
         const val DEFAULT_PLAYER_MAX_HEALTH = 20
         const val HEAVY_BLADE_BODY_DAMAGE = 20
         const val TWIN_RODS_BODY_DAMAGE = 10
+        const val SKILL_3_DAMAGE = 30
         const val WEAKPOINT_MULTIPLIER = 1.5
     }
 }

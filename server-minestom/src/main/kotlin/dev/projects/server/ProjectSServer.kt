@@ -5,8 +5,8 @@ import dev.projects.protocol.AttackHitConfirmed
 import dev.projects.protocol.AttackInput
 import dev.projects.protocol.AttackStarted
 import dev.projects.protocol.AirJumpInput
-import dev.projects.protocol.AerialHoldInput
 import dev.projects.protocol.ClassSkillInput
+import dev.projects.protocol.ClassSkillSlot
 import dev.projects.protocol.DodgeInput
 import dev.projects.protocol.ProtocolCodec
 import dev.projects.protocol.ProtocolHello
@@ -68,10 +68,9 @@ fun main() {
     val dodgeStates = mutableMapOf<UUID, DodgeState>()
     val twinRodsAirStates = mutableMapOf<UUID, TwinRodsAirState>()
     val classResources = mutableMapOf<UUID, ClassResourceState>()
-    val aerialHovers = mutableMapOf<UUID, AerialHoverState>()
-    val aerialGaugeRewards = mutableMapOf<UUID, AerialGaugeRewardState>()
+    val skill3States = mutableMapOf<UUID, Skill3State>()
     val resourceSyncTicks = mutableMapOf<UUID, Int>()
-    val lastSentResourceGauge = mutableMapOf<UUID, Int>()
+    val lastSentSkill3Cooldown = mutableMapOf<UUID, Int>()
     val dodgeVelocityActive = mutableMapOf<UUID, Boolean>()
     val attackSpeeds = mutableMapOf<UUID, Double>()
     val prototypeBoss = PrototypeBossState()
@@ -87,8 +86,12 @@ fun main() {
 
     fun sendResourceSnapshot(player: net.minestom.server.entity.Player) {
         val resources = classResources[player.uuid] ?: return
-        player.sendPluginMessage(PROJECTS_CHANNEL, ProtocolCodec.encode(resources.snapshot()))
-        lastSentResourceGauge[player.uuid] = resources.aerialGaugeDisplay
+        val skill3 = skill3States[player.uuid] ?: return
+        player.sendPluginMessage(
+            PROJECTS_CHANNEL,
+            ProtocolCodec.encode(resources.snapshot(skill3.cooldownTicksRemaining)),
+        )
+        lastSentSkill3Cooldown[player.uuid] = skill3.cooldownTicksRemaining
     }
 
     fun updateBossBar() {
@@ -110,7 +113,7 @@ fun main() {
         combatStates.values.forEach { it.reset() }
         dodgeStates.values.forEach { it.reset() }
         twinRodsAirStates.values.forEach { it.tick(true) }
-        aerialHovers.values.forEach { it.reset() }
+        skill3States.values.forEach { it.reset() }
         instance.players.forEach { player ->
             player.setVelocity(Vec.ZERO)
         }
@@ -121,7 +124,6 @@ fun main() {
         stopPlayerActions()
         instance.players.forEach { player ->
             classResources[player.uuid]?.reset()
-            aerialGaugeRewards[player.uuid]?.reset()
             resourceSyncTicks[player.uuid] = 0
             player.setHealth(prototypeBoss.playerMaxHealth.toFloat())
             player.teleport(player.respawnPoint)
@@ -135,7 +137,10 @@ fun main() {
         stopPlayerActions()
         updateBossBar()
         val result = if (prototypeBoss.isVictory) "VICTORY" else "DEFEAT"
-        instance.players.forEach { it.sendMessage(Component.text(result)) }
+        instance.players.forEach {
+            sendResourceSnapshot(it)
+            it.sendMessage(Component.text(result))
+        }
     }
 
     fun resetEncounter() {
@@ -176,12 +181,10 @@ fun main() {
         prototypeBoss.registerPlayer(event.player.uuid)
         event.player.setHealth(prototypeBoss.playerMaxHealth.toFloat())
         val resources = classResources.getOrPut(event.player.uuid) { ClassResourceState() }
-        val hover = aerialHovers.getOrPut(event.player.uuid) { AerialHoverState() }
-        val rewards = aerialGaugeRewards.getOrPut(event.player.uuid) { AerialGaugeRewardState() }
+        val skill3 = skill3States.getOrPut(event.player.uuid) { Skill3State() }
         if (!event.isFirstSpawn) {
             resources.reset()
-            hover.reset()
-            rewards.reset()
+            skill3.reset()
         }
         resourceSyncTicks[event.player.uuid] = 0
         sendResourceSnapshot(event.player)
@@ -232,10 +235,9 @@ fun main() {
         dodgeStates.remove(playerId)
         twinRodsAirStates.remove(playerId)
         classResources.remove(playerId)
-        aerialHovers.remove(playerId)
-        aerialGaugeRewards.remove(playerId)
+        skill3States.remove(playerId)
         resourceSyncTicks.remove(playerId)
-        lastSentResourceGauge.remove(playerId)
+        lastSentSkill3Cooldown.remove(playerId)
         attackSpeeds.remove(playerId)
     }
     events.addListener(PlayerTickEvent::class.java) { event ->
@@ -243,8 +245,7 @@ fun main() {
         val dodge = dodgeStates[event.player.uuid] ?: return@addListener
         val twinRodsAir = twinRodsAirStates[event.player.uuid] ?: return@addListener
         val resources = classResources[event.player.uuid] ?: return@addListener
-        val aerialHover = aerialHovers[event.player.uuid] ?: return@addListener
-        val aerialRewards = aerialGaugeRewards[event.player.uuid] ?: return@addListener
+        val skill3 = skill3States[event.player.uuid] ?: return@addListener
         if (event.player == instance.players.firstOrNull()) {
             if (prototypeBoss.isActive) {
                 tickFixedTester(instance, dummy, fixedTester, prototypeBoss, testerMarkerTick++)
@@ -280,7 +281,7 @@ fun main() {
                 weakpoint = weakpoint?.weakpoint,
             )
             twinRodsAir.onAttackHit(hit.weapon, event.player.isOnGround, hit.attackExecutionId)
-            if (aerialRewards.onNormalHit(resources, hit.attackExecutionId, weakpoint?.weakpoint)) {
+            if (skill3.reduceCooldownForNormalAttack(hit.attackExecutionId)) {
                 sendResourceSnapshot(event.player)
             }
             if (damage > 0) {
@@ -289,6 +290,38 @@ fun main() {
             }
         }
         publishCombatEvents(event.player, combatEvents)
+        if (!prototypeBoss.isActive) {
+            finishEncounter()
+            return@addListener
+        }
+        val previousSkill3Cooldown = skill3.cooldownTicksRemaining
+        val skill3Tick = skill3.tick(event.player.isOnGround, event.player.velocity.y())
+        if (skill3Tick.dashActive) {
+            val direction = requireNotNull(skill3Tick.dashDirection)
+            val start = event.player.position
+            val end = start.add(
+                direction.x() * Skill3State.DASH_SPEED / ServerFlag.SERVER_TICKS_PER_SECOND,
+                0.0,
+                direction.z() * Skill3State.DASH_SPEED / ServerFlag.SERVER_TICKS_PER_SECOND,
+            )
+            val skillTargets = tester?.let { listOf(CombatTarget(it.uuid, it.position)) } ?: emptyList()
+            skill3.hitTargetsOnSegment(start, end, skillTargets).forEach { targetId ->
+                val damage = prototypeBoss.applySkill3Attack(skill3.castId, targetId)
+                if (damage > 0) updateBossBar()
+            }
+            event.player.setVelocity(
+                Vec(
+                    direction.x() * Skill3State.DASH_SPEED,
+                    skill3Tick.velocityY,
+                    direction.z() * Skill3State.DASH_SPEED,
+                ),
+            )
+        } else if (skill3Tick.phase == Skill3Phase.HOVER) {
+            event.player.setVelocity(Vec(0.0, skill3Tick.velocityY, 0.0))
+        }
+        if (previousSkill3Cooldown != skill3.cooldownTicksRemaining) {
+            sendResourceSnapshot(event.player)
+        }
         if (!prototypeBoss.isActive) {
             finishEncounter()
             return@addListener
@@ -314,19 +347,10 @@ fun main() {
             stopDodgeVelocity(event.player)
             dodgeVelocityActive[event.player.uuid] = false
         }
-        val hoverTick = aerialHover.tick(
-            isGrounded = event.player.isOnGround,
-            velocityY = event.player.velocity.y(),
-            resources = resources,
-        )
-        if (hoverTick.drained > 0.0) {
-            val velocity = event.player.velocity
-            event.player.setVelocity(Vec(velocity.x(), hoverTick.velocityY, velocity.z()))
-        }
         val syncTick = (resourceSyncTicks[event.player.uuid] ?: 0) + 1
-        if (syncTick >= 2) {
+        if (syncTick >= 4) {
             resourceSyncTicks[event.player.uuid] = 0
-            if (resources.aerialGaugeDisplay != lastSentResourceGauge[event.player.uuid]) {
+            if (skill3.cooldownTicksRemaining != lastSentSkill3Cooldown[event.player.uuid]) {
                 sendResourceSnapshot(event.player)
             }
         } else {
@@ -380,14 +404,14 @@ fun main() {
                     }
                 }
                 is ClassSkillInput -> {
-                    // Skill effects are intentionally not part of this foundation.
-                }
-                is AerialHoldInput -> {
-                    val hover = aerialHovers[event.player.uuid] ?: return@addListener
-                    if (!prototypeBoss.isActive) {
-                        hover.reset()
-                    } else {
-                        hover.request(message.active, event.player.isOnGround)
+                    if (!prototypeBoss.isActive || message.slot != ClassSkillSlot.SKILL_3) return@addListener
+                    val skill3 = skill3States[event.player.uuid] ?: return@addListener
+                    val castId = skill3.tryCast(
+                        event.player.position.direction(),
+                        ClassSkillDirection(message.directionX, message.directionZ),
+                    )
+                    if (castId != null) {
+                        sendResourceSnapshot(event.player)
                     }
                 }
                 else -> throw IllegalArgumentException("Unexpected ProjectS message")

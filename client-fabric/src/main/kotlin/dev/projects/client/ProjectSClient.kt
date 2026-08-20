@@ -6,7 +6,6 @@ import dev.projects.protocol.AttackInput
 import dev.projects.protocol.AttackInputState
 import dev.projects.protocol.AttackStarted
 import dev.projects.protocol.AirJumpInput
-import dev.projects.protocol.AerialHoldInput
 import dev.projects.protocol.ClassResourceSnapshot
 import dev.projects.protocol.ClassSkillInput
 import dev.projects.protocol.ClassSkillSlot
@@ -42,16 +41,13 @@ object ProjectSClient : ClientModInitializer {
     private var attackHeld = false
     private var dodgeHeld = false
     private var jumpHeld = false
-    private var aerialHoldTicks = 0
-    private var aerialHoldEligible = false
-    private var aerialHoldSent = false
     private var inputSequence = 0L
     private var suppressNextAttackStarted = false
     private var twinRodSide = false
     private var mana = 0
     private var maxMana = 100
-    private var aerialGauge = 0
-    private var maxAerialGauge = 100
+    private var skill3CooldownTicks = 0
+    private var skill3CooldownMaxTicks = 80
     private val skillCategory = KeyMapping.Category.register(
         Identifier.fromNamespaceAndPath("projects", "skills"),
     )
@@ -98,8 +94,8 @@ object ProjectSClient : ClientModInitializer {
                     is ClassResourceSnapshot -> context.client().execute {
                         mana = message.mana
                         maxMana = message.maxMana
-                        aerialGauge = message.aerialGauge
-                        maxAerialGauge = message.maxAerialGauge
+                        skill3CooldownTicks = message.skill3CooldownTicks
+                        skill3CooldownMaxTicks = message.skill3CooldownMaxTicks
                     }
                     else -> require(false) { "Unexpected ProjectS clientbound message" }
                 }
@@ -123,13 +119,10 @@ object ProjectSClient : ClientModInitializer {
             attackHeld = false
             dodgeHeld = false
             jumpHeld = false
-            aerialHoldTicks = 0
-            aerialHoldEligible = false
-            aerialHoldSent = false
             suppressNextAttackStarted = false
             twinRodSide = false
             mana = 0
-            aerialGauge = 0
+            skill3CooldownTicks = 0
             return
         }
         val jumpPressed = client.options.keyJump.isDown()
@@ -138,32 +131,10 @@ object ProjectSClient : ClientModInitializer {
             if (jumpPressed && !player.onGround() && client.getConnection() != null &&
                 ClientPlayNetworking.canSend(ProjectSPayload.TYPE)
             ) {
-                aerialHoldEligible = true
-                aerialHoldTicks = 0
-                val directionX = (if (client.options.keyRight.isDown()) 1.0 else 0.0) -
-                    (if (client.options.keyLeft.isDown()) 1.0 else 0.0)
-                val directionZ = (if (client.options.keyUp.isDown()) 1.0 else 0.0) -
-                    (if (client.options.keyDown.isDown()) 1.0 else 0.0)
                 ClientPlayNetworking.send(
-                    ProjectSPayload(ProtocolCodec.encode(AirJumpInput(directionX, directionZ))),
+                    ProjectSPayload(ProtocolCodec.encode(AirJumpInput(movementX(client), movementZ(client)))),
                 )
-            } else if (jumpPressed) {
-                aerialHoldEligible = false
-                aerialHoldTicks = 0
-            } else {
-                aerialHoldEligible = false
-                aerialHoldTicks = 0
-                sendAerialHold(client, false)
             }
-        }
-        if (jumpPressed && aerialHoldEligible && !player.onGround()) {
-            aerialHoldTicks++
-            if (aerialHoldTicks >= 4 && !aerialHoldSent) sendAerialHold(client, true)
-        }
-        if (player.onGround()) {
-            aerialHoldEligible = false
-            aerialHoldTicks = 0
-            if (aerialHoldSent) sendAerialHold(client, false)
         }
         sendSkillInputs(client)
         val dodgePressed = dodgeKey.isDown()
@@ -210,15 +181,6 @@ object ProjectSClient : ClientModInitializer {
         }
     }
 
-    private fun sendAerialHold(client: Minecraft, active: Boolean) {
-        if (client.getConnection() == null || !ClientPlayNetworking.canSend(ProjectSPayload.TYPE)) return
-        if (active == aerialHoldSent) return
-        aerialHoldSent = active
-        ClientPlayNetworking.send(
-            ProjectSPayload(ProtocolCodec.encode(AerialHoldInput(active))),
-        )
-    }
-
     private fun movementX(client: Minecraft): Double =
         (if (client.options.keyRight.isDown()) 1.0 else 0.0) -
             (if (client.options.keyLeft.isDown()) 1.0 else 0.0)
@@ -233,17 +195,12 @@ object ProjectSClient : ClientModInitializer {
         val x = (context.guiWidth() - barWidth) / 2
         val y = context.guiHeight() - 52
         drawResourceBar(context, "MANA $mana / $maxMana", mana, maxMana, x, y, barWidth, barHeight, 0xFF4C9BFF.toInt())
-        drawResourceBar(
-            context,
-            "AIR $aerialGauge / $maxAerialGauge",
-            aerialGauge,
-            maxAerialGauge,
-            x,
-            y + 19,
-            barWidth,
-            barHeight,
-            0xFF72E0D0.toInt(),
-        )
+        val cooldownText = if (skill3CooldownTicks == 0) {
+            "S3 READY"
+        } else {
+            "S3 %.1fs".format(skill3CooldownTicks / 20.0)
+        }
+        context.text(Minecraft.getInstance().font, cooldownText, x, y + 19, 0xFFFFFFFF.toInt(), true)
     }
 
     private fun drawResourceBar(

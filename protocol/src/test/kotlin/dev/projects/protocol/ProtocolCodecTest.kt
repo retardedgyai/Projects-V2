@@ -123,15 +123,15 @@ class ProtocolCodecTest {
     }
 
     @Test
-    fun `aerial hold and resource snapshot round trip`() {
-        assertRoundTrip(AerialHoldInput(true))
-        assertRoundTrip(AerialHoldInput(false))
-        assertRoundTrip(ClassResourceSnapshot(75, 100, 40, 100))
+    fun `resource snapshot round trips mana and skill3 cooldown`() {
+        assertRoundTrip(ClassResourceSnapshot(75, 100, 40, 80))
     }
 
     @Test
-    fun `malformed aerial hold fails closed`() {
-        val malformed = ProtocolCodec.encode(AerialHoldInput(true)).copyOf().also { bytes -> bytes[1] = 2 }
+    fun `malformed resource snapshot fails closed`() {
+        val malformed = ProtocolCodec.encode(ClassResourceSnapshot(75, 100, 40, 80)).copyOf().also { bytes ->
+            java.nio.ByteBuffer.wrap(bytes, 9, Int.SIZE_BYTES).putInt(81)
+        }
         assertFailsWith<IllegalArgumentException> { ProtocolCodec.decode(malformed) }
     }
 
