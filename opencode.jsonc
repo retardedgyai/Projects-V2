@@ -1,0 +1,30 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+
+  // Keep orchestration shallow. Primary agent may use read-only helpers,
+  // but helpers must not recursively create more agents.
+  "default_agent": "build",
+  "subagent_depth": 1,
+  "share": "manual",
+
+  // Fast by default, but block/confirm commands that can damage history
+  // or publish work without an explicit user decision.
+  "permission": {
+    "bash": {
+      "git push*": "deny",
+      "git reset --hard*": "ask",
+      "git clean*": "ask",
+      "rm -rf*": "ask"
+    }
+  },
+
+  // Do not let the generic helper become a second implementation agent
+  // inside the same worktree.
+  "agent": {
+    "general": {
+      "permission": {
+        "edit": "deny"
+      }
+    }
+  }
+}
