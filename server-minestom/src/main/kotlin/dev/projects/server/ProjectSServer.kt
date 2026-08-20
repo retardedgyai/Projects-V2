@@ -148,7 +148,7 @@ fun main() {
             val range = state.activeProfile?.range
                 ?: weapon.profile(attackSpeeds[event.player.uuid] ?: DEFAULT_ATTACK_SPEED).range
             FixedAttackTester.selectWeakpoint(
-                playerPosition = event.player.position,
+                playerPosition = event.player.position.add(0.0, event.player.eyeHeight, 0.0),
                 playerDirection = event.player.position.direction(),
                 testerOrigin = it.position,
                 testerFacing = it.position.direction(),
