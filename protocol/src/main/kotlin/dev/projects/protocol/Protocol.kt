@@ -11,7 +11,7 @@ import kotlin.math.abs
 const val PROJECTS_CHANNEL = "projects:protocol"
 
 object ProtocolVersion {
-    const val CURRENT = 2
+    const val CURRENT = 3
 
     fun requireCompatible(version: Int) {
         if (version != CURRENT) {
@@ -54,6 +54,39 @@ data class AirJumpInput(val directionX: Double, val directionZ: Double) : Protoc
     }
 }
 
+enum class ClassSkillSlot {
+    SKILL_1,
+    SKILL_2,
+    SKILL_3,
+    ULTIMATE,
+}
+
+data class ClassSkillInput(
+    val slot: ClassSkillSlot,
+    val directionX: Double,
+    val directionZ: Double,
+) : ProtocolMessage {
+    init {
+        require(directionX.isFinite() && directionZ.isFinite()) { "Skill direction must be finite" }
+        require(abs(directionX) <= 1.0 && abs(directionZ) <= 1.0) { "Skill direction is out of range" }
+    }
+}
+
+data class AerialHoldInput(val active: Boolean) : ProtocolMessage
+
+data class ClassResourceSnapshot(
+    val mana: Int,
+    val maxMana: Int,
+    val aerialGauge: Int,
+    val maxAerialGauge: Int,
+) : ProtocolMessage {
+    init {
+        require(maxMana > 0 && maxAerialGauge > 0) { "Resource maximums must be positive" }
+        require(mana in 0..maxMana) { "Mana is out of range" }
+        require(aerialGauge in 0..maxAerialGauge) { "Aerial Gauge is out of range" }
+    }
+}
+
 object ProtocolCodec {
     private const val MAX_PACKET_SIZE = 1024
     private const val HELLO = 1
@@ -63,6 +96,9 @@ object ProtocolCodec {
     private const val ATTACK_HIT_CONFIRMED = 12
     private const val DODGE_INPUT = 13
     private const val AIR_JUMP_INPUT = 14
+    private const val CLASS_SKILL_INPUT = 15
+    private const val AERIAL_HOLD_INPUT = 16
+    private const val CLASS_RESOURCE_SNAPSHOT = 17
 
     fun encode(message: ProtocolMessage): ByteArray {
         val output = ByteArrayOutputStream()
@@ -101,6 +137,23 @@ object ProtocolCodec {
                     data.writeDouble(message.directionX)
                     data.writeDouble(message.directionZ)
                 }
+                is ClassSkillInput -> {
+                    data.writeByte(CLASS_SKILL_INPUT)
+                    data.writeByte(message.slot.ordinal)
+                    data.writeDouble(message.directionX)
+                    data.writeDouble(message.directionZ)
+                }
+                is AerialHoldInput -> {
+                    data.writeByte(AERIAL_HOLD_INPUT)
+                    data.writeByte(if (message.active) 1 else 0)
+                }
+                is ClassResourceSnapshot -> {
+                    data.writeByte(CLASS_RESOURCE_SNAPSHOT)
+                    data.writeInt(message.mana)
+                    data.writeInt(message.maxMana)
+                    data.writeInt(message.aerialGauge)
+                    data.writeInt(message.maxAerialGauge)
+                }
             }
         }
         return output.toByteArray()
@@ -135,6 +188,25 @@ object ProtocolCodec {
             )
             DODGE_INPUT -> DodgeInput(input.readDouble(), input.readDouble())
             AIR_JUMP_INPUT -> AirJumpInput(input.readDouble(), input.readDouble())
+            CLASS_SKILL_INPUT -> {
+                val slotId = input.readUnsignedByte()
+                val slot = ClassSkillSlot.entries.getOrNull(slotId)
+                    ?: throw IllegalArgumentException("Unknown ClassSkillInput slot: $slotId")
+                ClassSkillInput(slot, input.readDouble(), input.readDouble())
+            }
+            AERIAL_HOLD_INPUT -> {
+                when (val active = input.readUnsignedByte()) {
+                    0 -> AerialHoldInput(false)
+                    1 -> AerialHoldInput(true)
+                    else -> throw IllegalArgumentException("Unknown AerialHoldInput state: $active")
+                }
+            }
+            CLASS_RESOURCE_SNAPSHOT -> ClassResourceSnapshot(
+                input.readInt(),
+                input.readInt(),
+                input.readInt(),
+                input.readInt(),
+            )
             else -> throw IllegalArgumentException("Unknown ProjectS message type: $type")
         }
         require(input.available() == 0) { "Unexpected trailing ProjectS protocol data" }

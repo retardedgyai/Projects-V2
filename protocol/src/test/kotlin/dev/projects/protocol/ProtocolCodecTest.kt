@@ -100,6 +100,41 @@ class ProtocolCodecTest {
         assertFailsWith<IllegalArgumentException> { ProtocolCodec.decode(malformed) }
     }
 
+    @Test
+    fun `class skill input round trips`() {
+        assertRoundTrip(ClassSkillInput(ClassSkillSlot.SKILL_1, -1.0, 1.0))
+        assertRoundTrip(ClassSkillInput(ClassSkillSlot.ULTIMATE, 0.0, 0.0))
+    }
+
+    @Test
+    fun `invalid class skill input fails closed`() {
+        assertFailsWith<IllegalArgumentException> { ClassSkillInput(ClassSkillSlot.SKILL_1, Double.NaN, 0.0) }
+        assertFailsWith<IllegalArgumentException> { ClassSkillInput(ClassSkillSlot.SKILL_1, 1.1, 0.0) }
+
+        val unknownSlot = ProtocolCodec.encode(ClassSkillInput(ClassSkillSlot.SKILL_1, 0.0, 0.0)).also { bytes ->
+            bytes[1] = 99
+        }
+        assertFailsWith<IllegalArgumentException> { ProtocolCodec.decode(unknownSlot) }
+
+        val malformed = ProtocolCodec.encode(ClassSkillInput(ClassSkillSlot.SKILL_1, 0.0, 0.0)).copyOf().also { bytes ->
+            java.nio.ByteBuffer.wrap(bytes, 2, Double.SIZE_BYTES).putDouble(Double.POSITIVE_INFINITY)
+        }
+        assertFailsWith<IllegalArgumentException> { ProtocolCodec.decode(malformed) }
+    }
+
+    @Test
+    fun `aerial hold and resource snapshot round trip`() {
+        assertRoundTrip(AerialHoldInput(true))
+        assertRoundTrip(AerialHoldInput(false))
+        assertRoundTrip(ClassResourceSnapshot(75, 100, 40, 100))
+    }
+
+    @Test
+    fun `malformed aerial hold fails closed`() {
+        val malformed = ProtocolCodec.encode(AerialHoldInput(true)).copyOf().also { bytes -> bytes[1] = 2 }
+        assertFailsWith<IllegalArgumentException> { ProtocolCodec.decode(malformed) }
+    }
+
     private fun assertRoundTrip(message: ProtocolMessage) {
         assertEquals(message, ProtocolCodec.decode(ProtocolCodec.encode(message)))
     }

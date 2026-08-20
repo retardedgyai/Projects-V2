@@ -6,6 +6,10 @@ import dev.projects.protocol.AttackInput
 import dev.projects.protocol.AttackInputState
 import dev.projects.protocol.AttackStarted
 import dev.projects.protocol.AirJumpInput
+import dev.projects.protocol.AerialHoldInput
+import dev.projects.protocol.ClassResourceSnapshot
+import dev.projects.protocol.ClassSkillInput
+import dev.projects.protocol.ClassSkillSlot
 import dev.projects.protocol.DodgeInput
 import dev.projects.protocol.ProtocolCodec
 import dev.projects.protocol.ProtocolHello
@@ -13,11 +17,15 @@ import dev.projects.protocol.ProtocolHelloAck
 import dev.projects.protocol.ProtocolVersion
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper
+import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry
+import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements
 import net.fabricmc.api.ClientModInitializer
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry
 import net.minecraft.client.Minecraft
 import net.minecraft.client.KeyMapping
+import net.minecraft.client.DeltaTracker
+import net.minecraft.client.gui.GuiGraphicsExtractor
 import com.mojang.blaze3d.platform.InputConstants
 import net.minecraft.network.RegistryFriendlyByteBuf
 import net.minecraft.network.codec.StreamCodec
@@ -34,18 +42,36 @@ object ProjectSClient : ClientModInitializer {
     private var attackHeld = false
     private var dodgeHeld = false
     private var jumpHeld = false
+    private var aerialHoldTicks = 0
+    private var aerialHoldEligible = false
+    private var aerialHoldSent = false
     private var inputSequence = 0L
     private var suppressNextAttackStarted = false
     private var twinRodSide = false
+    private var mana = 0
+    private var maxMana = 100
+    private var aerialGauge = 0
+    private var maxAerialGauge = 100
+    private val skillCategory = KeyMapping.Category.register(
+        Identifier.fromNamespaceAndPath("projects", "skills"),
+    )
     private val dodgeKey = KeyMapping(
         "key.projects.dodge",
         InputConstants.Type.KEYSYM,
         InputConstants.KEY_R,
         KeyMapping.Category.GAMEPLAY,
     )
+    private val skill1Key = skillKey("key.projects.skill_1", InputConstants.KEY_Z)
+    private val skill2Key = skillKey("key.projects.skill_2", InputConstants.KEY_X)
+    private val skill3Key = skillKey("key.projects.skill_3", InputConstants.KEY_C)
+    private val ultimateKey = skillKey("key.projects.ultimate", InputConstants.KEY_V)
 
     override fun onInitializeClient() {
         KeyMappingHelper.registerKeyMapping(dodgeKey)
+        KeyMappingHelper.registerKeyMapping(skill1Key)
+        KeyMappingHelper.registerKeyMapping(skill2Key)
+        KeyMappingHelper.registerKeyMapping(skill3Key)
+        KeyMappingHelper.registerKeyMapping(ultimateKey)
         PayloadTypeRegistry.clientboundPlay().register(ProjectSPayload.TYPE, ProjectSPayload.CODEC)
         PayloadTypeRegistry.serverboundPlay().register(ProjectSPayload.TYPE, ProjectSPayload.CODEC)
 
@@ -69,6 +95,12 @@ object ProjectSClient : ClientModInitializer {
                     is AttackHitConfirmed -> context.client().execute {
                         showHitEffect(context.client(), message)
                     }
+                    is ClassResourceSnapshot -> context.client().execute {
+                        mana = message.mana
+                        maxMana = message.maxMana
+                        aerialGauge = message.aerialGauge
+                        maxAerialGauge = message.maxAerialGauge
+                    }
                     else -> require(false) { "Unexpected ProjectS clientbound message" }
                 }
             } catch (error: IllegalArgumentException) {
@@ -78,6 +110,11 @@ object ProjectSClient : ClientModInitializer {
             }
         }
 
+        HudElementRegistry.attachElementAfter(
+            VanillaHudElements.HOTBAR,
+            Identifier.fromNamespaceAndPath("projects", "class_resources"),
+            ::renderResourceHud,
+        )
         ClientTickEvents.END_CLIENT_TICK.register(::handleAttackInput)
     }
 
@@ -86,8 +123,13 @@ object ProjectSClient : ClientModInitializer {
             attackHeld = false
             dodgeHeld = false
             jumpHeld = false
+            aerialHoldTicks = 0
+            aerialHoldEligible = false
+            aerialHoldSent = false
             suppressNextAttackStarted = false
             twinRodSide = false
+            mana = 0
+            aerialGauge = 0
             return
         }
         val jumpPressed = client.options.keyJump.isDown()
@@ -96,6 +138,8 @@ object ProjectSClient : ClientModInitializer {
             if (jumpPressed && !player.onGround() && client.getConnection() != null &&
                 ClientPlayNetworking.canSend(ProjectSPayload.TYPE)
             ) {
+                aerialHoldEligible = true
+                aerialHoldTicks = 0
                 val directionX = (if (client.options.keyRight.isDown()) 1.0 else 0.0) -
                     (if (client.options.keyLeft.isDown()) 1.0 else 0.0)
                 val directionZ = (if (client.options.keyUp.isDown()) 1.0 else 0.0) -
@@ -103,8 +147,25 @@ object ProjectSClient : ClientModInitializer {
                 ClientPlayNetworking.send(
                     ProjectSPayload(ProtocolCodec.encode(AirJumpInput(directionX, directionZ))),
                 )
+            } else if (jumpPressed) {
+                aerialHoldEligible = false
+                aerialHoldTicks = 0
+            } else {
+                aerialHoldEligible = false
+                aerialHoldTicks = 0
+                sendAerialHold(client, false)
             }
         }
+        if (jumpPressed && aerialHoldEligible && !player.onGround()) {
+            aerialHoldTicks++
+            if (aerialHoldTicks >= 4 && !aerialHoldSent) sendAerialHold(client, true)
+        }
+        if (player.onGround()) {
+            aerialHoldEligible = false
+            aerialHoldTicks = 0
+            if (aerialHoldSent) sendAerialHold(client, false)
+        }
+        sendSkillInputs(client)
         val dodgePressed = dodgeKey.isDown()
         if (dodgePressed != dodgeHeld) {
             dodgeHeld = dodgePressed
@@ -131,6 +192,83 @@ object ProjectSClient : ClientModInitializer {
         }
         if (pressed) showSwingEffect(client, player)
     }
+
+    private fun sendSkillInputs(client: Minecraft) {
+        val keys = listOf(
+            skill1Key to ClassSkillSlot.SKILL_1,
+            skill2Key to ClassSkillSlot.SKILL_2,
+            skill3Key to ClassSkillSlot.SKILL_3,
+            ultimateKey to ClassSkillSlot.ULTIMATE,
+        )
+        if (client.getConnection() == null || !ClientPlayNetworking.canSend(ProjectSPayload.TYPE)) return
+        for ((key, slot) in keys) {
+            if (key.consumeClick()) {
+                ClientPlayNetworking.send(
+                    ProjectSPayload(ProtocolCodec.encode(ClassSkillInput(slot, movementX(client), movementZ(client)))),
+                )
+            }
+        }
+    }
+
+    private fun sendAerialHold(client: Minecraft, active: Boolean) {
+        if (client.getConnection() == null || !ClientPlayNetworking.canSend(ProjectSPayload.TYPE)) return
+        if (active == aerialHoldSent) return
+        aerialHoldSent = active
+        ClientPlayNetworking.send(
+            ProjectSPayload(ProtocolCodec.encode(AerialHoldInput(active))),
+        )
+    }
+
+    private fun movementX(client: Minecraft): Double =
+        (if (client.options.keyRight.isDown()) 1.0 else 0.0) -
+            (if (client.options.keyLeft.isDown()) 1.0 else 0.0)
+
+    private fun movementZ(client: Minecraft): Double =
+        (if (client.options.keyUp.isDown()) 1.0 else 0.0) -
+            (if (client.options.keyDown.isDown()) 1.0 else 0.0)
+
+    private fun renderResourceHud(context: GuiGraphicsExtractor, tickCounter: DeltaTracker) {
+        val barWidth = 130
+        val barHeight = 5
+        val x = (context.guiWidth() - barWidth) / 2
+        val y = context.guiHeight() - 52
+        drawResourceBar(context, "MANA $mana / $maxMana", mana, maxMana, x, y, barWidth, barHeight, 0xFF4C9BFF.toInt())
+        drawResourceBar(
+            context,
+            "AIR $aerialGauge / $maxAerialGauge",
+            aerialGauge,
+            maxAerialGauge,
+            x,
+            y + 19,
+            barWidth,
+            barHeight,
+            0xFF72E0D0.toInt(),
+        )
+    }
+
+    private fun drawResourceBar(
+        context: GuiGraphicsExtractor,
+        label: String,
+        value: Int,
+        maximum: Int,
+        x: Int,
+        y: Int,
+        width: Int,
+        height: Int,
+        color: Int,
+    ) {
+        context.fill(x, y, x + width, y + height, 0xAA10151C.toInt())
+        val filled = if (maximum > 0) width * value.coerceIn(0, maximum) / maximum else 0
+        if (filled > 0) context.fill(x, y, x + filled, y + height, color)
+        context.text(Minecraft.getInstance().font, label, x, y + 6, 0xFFFFFFFF.toInt(), true)
+    }
+
+    private fun skillKey(name: String, defaultKey: Int): KeyMapping = KeyMapping(
+        name,
+        InputConstants.Type.KEYSYM,
+        defaultKey,
+        skillCategory,
+    )
 
     private fun showSwingEffect(client: Minecraft, player: net.minecraft.client.player.LocalPlayer) {
         val level = client.level ?: return
