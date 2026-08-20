@@ -105,7 +105,10 @@ class Skill3State(
     /** Returns true only for the first confirmed target hit by this normal execution. */
     fun reduceCooldownForNormalAttack(attackExecutionId: Long): Boolean {
         if (!reducedNormalAttackExecutions.add(attackExecutionId)) return false
-        cooldownTicksRemaining = (cooldownTicksRemaining - NORMAL_ATTACK_REDUCTION_TICKS).coerceAtLeast(0)
+        if (cooldownTicksRemaining == 0) return false
+        val reducedCooldown = (cooldownTicksRemaining - NORMAL_ATTACK_REDUCTION_TICKS).coerceAtLeast(0)
+        if (reducedCooldown == cooldownTicksRemaining) return false
+        cooldownTicksRemaining = reducedCooldown
         return true
     }
 
@@ -118,7 +121,7 @@ class Skill3State(
     ): List<UUID> {
         require(radius >= 0.0 && radius.isFinite()) { "Skill3 hit radius must be finite and non-negative" }
         return targets.filter { target ->
-            target.id !in hitTargets && distanceSquaredToSegment(target.position, start, end) <= radius * radius
+            target.id !in hitTargets && segmentIntersectsTarget(start, end, target.position, target.halfExtent, radius)
         }.map { target ->
             hitTargets += target.id
             target.id
@@ -145,32 +148,54 @@ class Skill3State(
         const val HOVER_FALL_SPEED = 0.4
         const val NORMAL_ATTACK_REDUCTION_TICKS = 20
 
-        private fun distanceSquaredToSegment(point: Point, start: Point, end: Point): Double {
-            val segmentX = end.x() - start.x()
-            val segmentY = end.y() - start.y()
-            val segmentZ = end.z() - start.z()
-            val lengthSquared = segmentX * segmentX + segmentY * segmentY + segmentZ * segmentZ
-            if (lengthSquared == 0.0) {
-                return distanceSquared(point, start)
-            }
-            val pointX = point.x() - start.x()
-            val pointY = point.y() - start.y()
-            val pointZ = point.z() - start.z()
-            val projection = (
-                pointX * segmentX + pointY * segmentY + pointZ * segmentZ
-            ) / lengthSquared
-            val clamped = projection.coerceIn(0.0, 1.0)
-            return distanceSquared(
-                point,
-                start.add(segmentX * clamped, segmentY * clamped, segmentZ * clamped),
-            )
-        }
+        private fun segmentIntersectsTarget(
+            start: Point,
+            end: Point,
+            center: Point,
+            halfExtent: Vec,
+            radius: Double,
+        ): Boolean {
+            require(
+                halfExtent.x().isFinite() && halfExtent.y().isFinite() && halfExtent.z().isFinite() &&
+                    halfExtent.x() >= 0.0 && halfExtent.y() >= 0.0 && halfExtent.z() >= 0.0,
+            ) { "Skill3 target half extents must be finite and non-negative" }
 
-        private fun distanceSquared(first: Point, second: Point): Double {
-            val x = first.x() - second.x()
-            val y = first.y() - second.y()
-            val z = first.z() - second.z()
-            return x * x + y * y + z * z
+            var minimum = 0.0
+            var maximum = 1.0
+
+            fun clip(startValue: Double, delta: Double, lower: Double, upper: Double): Boolean {
+                if (kotlin.math.abs(delta) < 1.0e-9) return startValue in lower..upper
+                var enter = (lower - startValue) / delta
+                var exit = (upper - startValue) / delta
+                if (enter > exit) {
+                    val swap = enter
+                    enter = exit
+                    exit = swap
+                }
+                minimum = maxOf(minimum, enter)
+                maximum = minOf(maximum, exit)
+                return minimum <= maximum
+            }
+
+            val deltaX = end.x() - start.x()
+            val deltaY = end.y() - start.y()
+            val deltaZ = end.z() - start.z()
+            return clip(
+                start.x(),
+                deltaX,
+                center.x() - halfExtent.x() - radius,
+                center.x() + halfExtent.x() + radius,
+            ) && clip(
+                start.y(),
+                deltaY,
+                center.y() - halfExtent.y() - radius,
+                center.y() + halfExtent.y() + radius,
+            ) && clip(
+                start.z(),
+                deltaZ,
+                center.z() - halfExtent.z() - radius,
+                center.z() + halfExtent.z() + radius,
+            )
         }
     }
 }

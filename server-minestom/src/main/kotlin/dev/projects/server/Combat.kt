@@ -53,7 +53,11 @@ data class WeaponProfile(
         get() = startupTicks + activeTicks + recoveryTicks
 }
 
-data class CombatTarget(val id: UUID, val position: Point)
+data class CombatTarget(
+    val id: UUID,
+    val position: Point,
+    val halfExtent: Vec = Vec.ZERO,
+)
 
 sealed interface CombatEvent {
     data class Started(val attackExecutionId: Long) : CombatEvent

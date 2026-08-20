@@ -42,6 +42,8 @@ import net.kyori.adventure.key.Key
 import java.nio.charset.StandardCharsets
 import java.util.UUID
 import kotlin.math.floor
+import net.minestom.server.collision.BoundingBox
+import net.minestom.server.coordinate.Point
 import net.minestom.server.command.CommandSender
 import net.minestom.server.command.builder.Command
 import net.minestom.server.command.builder.CommandContext
@@ -304,7 +306,7 @@ fun main() {
                 0.0,
                 direction.z() * Skill3State.DASH_SPEED / ServerFlag.SERVER_TICKS_PER_SECOND,
             )
-            val skillTargets = tester?.let { listOf(CombatTarget(it.uuid, it.position)) } ?: emptyList()
+            val skillTargets = tester?.let { listOf(combatTarget(it)) } ?: emptyList()
             skill3.hitTargetsOnSegment(start, end, skillTargets).forEach { targetId ->
                 val damage = prototypeBoss.applySkill3Attack(skill3.castId, targetId)
                 if (damage > 0) updateBossBar()
@@ -317,9 +319,9 @@ fun main() {
                 ),
             )
         } else if (skill3Tick.phase == Skill3Phase.HOVER) {
-            event.player.setVelocity(Vec(0.0, skill3Tick.velocityY, 0.0))
+            event.player.setVelocity(skill3HoverVelocity(event.player.velocity, skill3Tick.velocityY))
         }
-        if (previousSkill3Cooldown != skill3.cooldownTicksRemaining) {
+        if (previousSkill3Cooldown == 0 && skill3.cooldownTicksRemaining > 0) {
             sendResourceSnapshot(event.player)
         }
         if (!prototypeBoss.isActive) {
@@ -350,7 +352,12 @@ fun main() {
         val syncTick = (resourceSyncTicks[event.player.uuid] ?: 0) + 1
         if (syncTick >= 4) {
             resourceSyncTicks[event.player.uuid] = 0
-            if (skill3.cooldownTicksRemaining != lastSentSkill3Cooldown[event.player.uuid]) {
+            if (shouldSyncSkill3Cooldown(
+                    syncTick,
+                    skill3.cooldownTicksRemaining,
+                    lastSentSkill3Cooldown[event.player.uuid],
+                )
+            ) {
                 sendResourceSnapshot(event.player)
             }
         } else {
@@ -442,6 +449,36 @@ private fun weaponFor(player: net.minestom.server.entity.Player): WeaponType = w
     Material.NETHERITE_SWORD -> WeaponType.HEAVY_BLADE
     else -> WeaponType.HEAVY_BLADE
 }
+
+private fun combatTarget(entity: Entity): CombatTarget {
+    return combatTargetFromBoundingBox(entity.uuid, entity.position, entity.boundingBox)
+}
+
+internal fun combatTargetFromBoundingBox(id: UUID, origin: Point, relativeBox: BoundingBox): CombatTarget {
+    val box = relativeBox.withOffset(origin)
+    return CombatTarget(
+        id = id,
+        position = Pos(
+            (box.minX() + box.maxX()) / 2.0,
+            (box.minY() + box.maxY()) / 2.0,
+            (box.minZ() + box.maxZ()) / 2.0,
+        ),
+        halfExtent = Vec(
+            (box.maxX() - box.minX()) / 2.0,
+            (box.maxY() - box.minY()) / 2.0,
+            (box.maxZ() - box.minZ()) / 2.0,
+        ),
+    )
+}
+
+internal fun skill3HoverVelocity(currentVelocity: Vec, velocityY: Double): Vec = Vec(
+    currentVelocity.x(),
+    velocityY,
+    currentVelocity.z(),
+)
+
+internal fun shouldSyncSkill3Cooldown(syncTick: Int, currentCooldown: Int, lastSentCooldown: Int?): Boolean =
+    syncTick >= 4 && currentCooldown != lastSentCooldown
 
 private fun tickFixedTester(
     instance: Instance,

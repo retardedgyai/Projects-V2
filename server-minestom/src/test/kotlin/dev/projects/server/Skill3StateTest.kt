@@ -1,5 +1,7 @@
 package dev.projects.server
 
+import dev.projects.protocol.AirJumpInput
+import net.minestom.server.collision.BoundingBox
 import net.minestom.server.coordinate.Pos
 import net.minestom.server.coordinate.Vec
 import java.util.UUID
@@ -31,6 +33,14 @@ class Skill3StateTest {
     }
 
     @Test
+    fun `dash preserves positive vertical velocity`() {
+        val skill3 = Skill3State(sequence())
+        skill3.tryCast(facing, ClassSkillDirection(0.0, 1.0))
+
+        assertEquals(2.5, skill3.tick(false, 2.5).velocityY)
+    }
+
+    @Test
     fun `direction uses facing relative diagonal and falls back to forward`() {
         val diagonal = Skill3State(sequence())
         diagonal.tryCast(Vec(1.0, 0.0, 0.0), ClassSkillDirection(1.0, 1.0))
@@ -57,6 +67,7 @@ class Skill3StateTest {
         repeat(20) { skill3.tick(false, -1.0) }
         assertEquals(0, skill3.cooldownTicksRemaining)
         assertTrue(skill3.isReady)
+        assertFalse(skill3.reduceCooldownForNormalAttack(13L))
     }
 
     @Test
@@ -89,6 +100,53 @@ class Skill3StateTest {
         })
         skill3.reset()
         assertTrue(skill3.isReady)
+    }
+
+    @Test
+    fun `hover preserves Twin Rods air jump and air dodge horizontal velocity`() {
+        val airJump = airJumpVelocity(
+            Vec(0.3, -0.2, -0.4),
+            facing,
+            AirJumpInput(0.0, 0.0),
+        )
+        val airDodge = dodgeVelocity(Vec(0.15, 0.0, -0.2), 0.0)
+        val airJumpAfterHover = skill3HoverVelocity(airJump, -0.4)
+        val airDodgeAfterHover = skill3HoverVelocity(airDodge, -0.4)
+
+        assertEquals(0.3, airJumpAfterHover.x())
+        assertEquals(-0.4, airJumpAfterHover.z())
+        assertEquals(3.0, airDodgeAfterHover.x())
+        assertEquals(-4.0, airDodgeAfterHover.z())
+    }
+
+    @Test
+    fun `body bounding box catches an aerial segment above the boss origin`() {
+        val skill3 = Skill3State(sequence())
+        skill3.tryCast(facing, ClassSkillDirection(0.0, 1.0))
+        val targetId = UUID.randomUUID()
+        val target = combatTargetFromBoundingBox(
+            targetId,
+            Pos(0.0, 0.0, 2.0),
+            BoundingBox(Vec(-0.7, 0.0, -0.7), Vec(0.7, 2.0, 0.7)),
+        )
+        assertEquals(1.0, target.position.y())
+        assertEquals(1.0, target.halfExtent.y())
+
+        assertEquals(
+            listOf(targetId),
+            skill3.hitTargetsOnSegment(Pos(0.0, 1.75, 0.0), Pos(0.0, 1.75, 4.0), listOf(target)),
+        )
+        assertTrue(
+            skill3.hitTargetsOnSegment(Pos(0.0, 1.75, 4.0), Pos(0.0, 1.75, 6.0), listOf(target)).isEmpty(),
+        )
+    }
+
+    @Test
+    fun `natural cooldown synchronization waits for four ticks`() {
+        assertFalse(shouldSyncSkill3Cooldown(1, 79, 80))
+        assertFalse(shouldSyncSkill3Cooldown(3, 77, 80))
+        assertTrue(shouldSyncSkill3Cooldown(4, 76, 80))
+        assertFalse(shouldSyncSkill3Cooldown(4, 80, 80))
     }
 
     private fun sequence(): () -> Long {
