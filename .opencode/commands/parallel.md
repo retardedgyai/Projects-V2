@@ -21,14 +21,18 @@ ProjectS v2 の GitHub Issues `$ARGUMENTS` を、Userが追加操作しなくて
    - worktree clean
    - `origin/<branch>` を追跡
    - Issueが要求する共有境界/ProtocolのBaseを含む
-7. Issue本文の推奨Model / 推論強度を確認する。
-   - `opencode models` で利用可能Modelを1回だけ確認してよい。
-   - 推奨Modelを一意に解決できる場合のみ `--model` を付ける。
-   - 推論強度/variantを安全に一意解決できる場合のみ `--variant` を付ける。
-   - 解決が曖昧な場合は、Model選択のために全体を止めず、その子TaskはOpenCodeの現在/default Modelで実行し、最終報告に明記する。
+7. Issue本文の推奨Model / 推論強度を**実行条件として必ず解決する**。
+   - `opencode models --verbose` を1回だけ実行し、利用可能な正確なModel IDを確認する。
+   - ProjectS Issueの表記例 `Luna Max / High` は、利用可能なら `openai/gpt-5.6-luna` + variant `high` として実行する。
+   - `Luna Max / Medium` は `openai/gpt-5.6-luna` + variant `medium` として実行する。
+   - 今後IssueがTerra/Sol等を指定した場合も、利用可能Model一覧から対応する正確なModel IDを解決し、Issue指定の推論強度を小文字variantへ対応させる。
+   - OpenCodeの非対話実行では `--model <provider/model>` と `--variant <variant>` を明示する。
+   - Issueに推論強度が指定されているのにvariant無しで実行してはいけない。
+   - 指定Modelまたはvariantが利用不可・曖昧な場合は、default Modelへ黙ってfallbackしない。そのIssueだけ `Blocked` として理由を報告し、他Issueは継続する。
 8. 各Issueを別々の `opencode run` プロセスとして、同時に開始する。
    - `--dir <worktree>` を必ず使う。
    - `--command issue` を使い、Issue番号を引数として渡す。
+   - 7で解決した `--model` と `--variant` を必ず付ける。
    - 非対話実行なので `--auto` を使ってよい。ただし設定でdenyされている操作は迂回しない。
    - 各プロセスのstdout/stderrは `/tmp/projects-v2-opencode/issue-<番号>.log` へ分離する。
    - 1つのIssueが失敗しても他Issueは止めない。
@@ -38,6 +42,7 @@ ProjectS v2 の GitHub Issues `$ARGUMENTS` を、Userが追加操作しなくて
    - 最新commit SHA
    - remoteへ通常push済みか
    - Test / Build結果が子Task報告に含まれているか
+   - 実際に使用したModel / variantがIssue指定と一致しているか
 11. merge / cherry-pick / main更新はしない。統合はSol Review後。
 
 並列実行の原則:
@@ -48,15 +53,19 @@ ProjectS v2 の GitHub Issues `$ARGUMENTS` を、Userが追加操作しなくて
 - 子Taskは既存 `/issue` のScope、Test、commit、作業Branchへの通常push規則に従う。
 - `main` へのpush、force push、mergeは禁止。
 - GUI Manual SmokeはUserが行う。
+- 推奨Model / 推論強度を指定したIssueでは、Modelまたはvariantの黙示fallbackを禁止する。
 
 最後に日本語で、Issueごとに以下だけをまとめてください。
 - Issue番号 / Branch / worktree
-- 使用Model / variant（分かる場合）
+- Issue指定Model / 推論強度
+- 実際に使用したModel / variant
 - 成功 / 失敗 / Blocked
 - commit SHA
 - push済みか
 - Test / Build結果の要約
 - 残った懸念
 - 詳細log path
+
+IssueにModel / 推論強度指定があるのに実際のvariantが `未指定` の場合、そのIssueを成功扱いにしないでください。
 
 最後に `次にSol Reviewへ渡せるIssue` を列挙してください。
