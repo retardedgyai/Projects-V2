@@ -6,6 +6,7 @@ import java.io.DataInputStream
 import java.io.DataOutputStream
 import java.io.IOException
 import java.util.UUID
+import kotlin.math.abs
 
 const val PROJECTS_CHANNEL = "projects:protocol"
 
@@ -39,6 +40,13 @@ data class AttackStarted(val attackExecutionId: Long) : ProtocolMessage
 
 data class AttackHitConfirmed(val attackExecutionId: Long, val targetId: UUID) : ProtocolMessage
 
+data class DodgeInput(val directionX: Double, val directionZ: Double) : ProtocolMessage {
+    init {
+        require(directionX.isFinite() && directionZ.isFinite()) { "Dodge direction must be finite" }
+        require(abs(directionX) <= 1.0 && abs(directionZ) <= 1.0) { "Dodge direction is out of range" }
+    }
+}
+
 object ProtocolCodec {
     private const val MAX_PACKET_SIZE = 1024
     private const val HELLO = 1
@@ -46,6 +54,7 @@ object ProtocolCodec {
     private const val ATTACK_INPUT = 10
     private const val ATTACK_STARTED = 11
     private const val ATTACK_HIT_CONFIRMED = 12
+    private const val DODGE_INPUT = 13
 
     fun encode(message: ProtocolMessage): ByteArray {
         val output = ByteArrayOutputStream()
@@ -73,6 +82,11 @@ object ProtocolCodec {
                     data.writeLong(message.attackExecutionId)
                     data.writeLong(message.targetId.mostSignificantBits)
                     data.writeLong(message.targetId.leastSignificantBits)
+                }
+                is DodgeInput -> {
+                    data.writeByte(DODGE_INPUT)
+                    data.writeDouble(message.directionX)
+                    data.writeDouble(message.directionZ)
                 }
             }
         }
@@ -106,6 +120,7 @@ object ProtocolCodec {
                 input.readLong(),
                 UUID(input.readLong(), input.readLong()),
             )
+            DODGE_INPUT -> DodgeInput(input.readDouble(), input.readDouble())
             else -> throw IllegalArgumentException("Unknown ProjectS message type: $type")
         }
         require(input.available() == 0) { "Unexpected trailing ProjectS protocol data" }

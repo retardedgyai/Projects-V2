@@ -5,15 +5,19 @@ import dev.projects.protocol.AttackHitConfirmed
 import dev.projects.protocol.AttackInput
 import dev.projects.protocol.AttackInputState
 import dev.projects.protocol.AttackStarted
+import dev.projects.protocol.DodgeInput
 import dev.projects.protocol.ProtocolCodec
 import dev.projects.protocol.ProtocolHello
 import dev.projects.protocol.ProtocolHelloAck
 import dev.projects.protocol.ProtocolVersion
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents
+import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper
 import net.fabricmc.api.ClientModInitializer
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry
 import net.minecraft.client.Minecraft
+import net.minecraft.client.KeyMapping
+import com.mojang.blaze3d.platform.InputConstants
 import net.minecraft.network.RegistryFriendlyByteBuf
 import net.minecraft.network.codec.StreamCodec
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload
@@ -27,11 +31,19 @@ import org.slf4j.LoggerFactory
 object ProjectSClient : ClientModInitializer {
     private val logger = LoggerFactory.getLogger("projects")
     private var attackHeld = false
+    private var dodgeHeld = false
     private var inputSequence = 0L
     private var suppressNextAttackStarted = false
     private var twinRodSide = false
+    private val dodgeKey = KeyMapping(
+        "key.projects.dodge",
+        InputConstants.Type.KEYSYM,
+        InputConstants.KEY_R,
+        KeyMapping.Category.GAMEPLAY,
+    )
 
     override fun onInitializeClient() {
+        KeyMappingHelper.registerKeyMapping(dodgeKey)
         PayloadTypeRegistry.clientboundPlay().register(ProjectSPayload.TYPE, ProjectSPayload.CODEC)
         PayloadTypeRegistry.serverboundPlay().register(ProjectSPayload.TYPE, ProjectSPayload.CODEC)
 
@@ -70,9 +82,23 @@ object ProjectSClient : ClientModInitializer {
     private fun handleAttackInput(client: Minecraft) {
         val player = client.player ?: run {
             attackHeld = false
+            dodgeHeld = false
             suppressNextAttackStarted = false
             twinRodSide = false
             return
+        }
+        val dodgePressed = dodgeKey.isDown()
+        if (dodgePressed != dodgeHeld) {
+            dodgeHeld = dodgePressed
+            if (dodgePressed && client.getConnection() != null && ClientPlayNetworking.canSend(ProjectSPayload.TYPE)) {
+                val directionX = (if (client.options.keyRight.isDown()) 1.0 else 0.0) -
+                    (if (client.options.keyLeft.isDown()) 1.0 else 0.0)
+                val directionZ = (if (client.options.keyUp.isDown()) 1.0 else 0.0) -
+                    (if (client.options.keyDown.isDown()) 1.0 else 0.0)
+                ClientPlayNetworking.send(
+                    ProjectSPayload(ProtocolCodec.encode(DodgeInput(directionX, directionZ))),
+                )
+            }
         }
         val pressed = client.options.keyAttack.isDown()
         if (pressed == attackHeld) return

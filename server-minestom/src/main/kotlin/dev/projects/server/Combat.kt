@@ -74,13 +74,22 @@ class CombatState(
     private var phase: AttackPhase? = null
     private var phaseTicks = 0
     private var executionId = 0L
+    private var deferAttackRestart = false
     private val hitTargets = mutableSetOf<UUID>()
     var activeProfile: WeaponProfile? = null
         private set
 
+    val isAttacking: Boolean
+        get() = phase != null
+
     fun input(state: AttackInputState): List<CombatEvent> {
         held = state == AttackInputState.PRESS
+        if (state == AttackInputState.RELEASE) deferAttackRestart = false
         return if (state == AttackInputState.PRESS && phase == null) startAttack() else emptyList()
+    }
+
+    fun deferAttackRestart() {
+        if (phase != null) deferAttackRestart = true
     }
 
     fun tick(position: Point, direction: Vec, targets: Collection<CombatTarget>): List<CombatEvent> {
@@ -115,7 +124,8 @@ class CombatState(
             if (phase == null) {
                 activeProfile = null
                 hitTargets.clear()
-                if (held) events += startAttack()
+                if (held && !deferAttackRestart) events += startAttack()
+                deferAttackRestart = false
             }
         }
         return events
@@ -139,6 +149,59 @@ class CombatState(
             val forward = Vec(direction.x(), 0.0, direction.z()).normalize()
             val toTarget = Vec(offset.x(), 0.0, offset.z()).normalize()
             return forward.x() * toTarget.x() + forward.z() * toTarget.z() >= profile.minForwardDot
+        }
+    }
+}
+
+class DodgeState {
+    private var remainingTicks = 0
+    private var direction = Vec.ZERO
+    private var pendingDirection: Vec? = null
+
+    val isActive: Boolean
+        get() = remainingTicks > 0
+
+    val hasPending: Boolean
+        get() = pendingDirection != null
+
+    fun request(direction: Vec, canStart: Boolean): Boolean {
+        val normalized = normalizeDirection(direction)
+        if (isActive || pendingDirection != null) return false
+
+        if (canStart) {
+            start(normalized)
+        } else {
+            pendingDirection = normalized
+        }
+        return true
+    }
+
+    fun tick(canStart: Boolean): Vec? {
+        if (!isActive && canStart) {
+            pendingDirection?.let {
+                pendingDirection = null
+                start(it)
+            }
+        }
+        if (!isActive) return null
+
+        remainingTicks--
+        return direction.mul(DISTANCE / DURATION_TICKS)
+    }
+
+    private fun start(direction: Vec) {
+        this.direction = direction
+        remainingTicks = DURATION_TICKS
+    }
+
+    companion object {
+        const val DISTANCE = 2.5
+        const val DURATION_TICKS = 4
+
+        fun normalizeDirection(direction: Vec): Vec {
+            val length = kotlin.math.sqrt(direction.x() * direction.x() + direction.z() * direction.z())
+            require(length > 1.0e-9) { "Dodge direction must not be zero" }
+            return Vec(direction.x() / length, 0.0, direction.z() / length)
         }
     }
 }

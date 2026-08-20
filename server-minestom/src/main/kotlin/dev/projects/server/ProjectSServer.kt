@@ -4,6 +4,7 @@ import dev.projects.protocol.PROJECTS_CHANNEL
 import dev.projects.protocol.AttackHitConfirmed
 import dev.projects.protocol.AttackInput
 import dev.projects.protocol.AttackStarted
+import dev.projects.protocol.DodgeInput
 import dev.projects.protocol.ProtocolCodec
 import dev.projects.protocol.ProtocolHello
 import dev.projects.protocol.ProtocolHelloAck
@@ -20,6 +21,7 @@ import net.minestom.server.event.player.PlayerPluginMessageEvent
 import net.minestom.server.event.player.PlayerSpawnEvent
 import net.minestom.server.event.player.PlayerTickEvent
 import net.minestom.server.instance.block.Block
+import net.minestom.server.instance.Instance
 import net.minestom.server.instance.LightingChunk
 import net.minestom.server.instance.Weather
 import net.minestom.server.item.ItemStack
@@ -27,6 +29,8 @@ import net.minestom.server.item.Material
 import net.minestom.server.network.packet.server.common.PluginMessagePacket
 import java.nio.charset.StandardCharsets
 import java.util.UUID
+import kotlin.math.floor
+import kotlin.math.sqrt
 import net.minestom.server.command.CommandSender
 import net.minestom.server.command.builder.Command
 import net.minestom.server.command.builder.CommandContext
@@ -36,6 +40,8 @@ private const val SERVER_ADDRESS = "127.0.0.1"
 private const val SERVER_PORT = 25565
 private const val DEFAULT_ATTACK_SPEED = 1.0
 private val SUPPORTED_ATTACK_SPEEDS = setOf(1.0, 1.5, 2.0)
+private const val DODGE_PLAYER_WIDTH = 0.6
+private const val DODGE_PLAYER_HEIGHT = 1.8
 
 fun main() {
     val server = MinecraftServer.init(Auth.Offline())
@@ -48,6 +54,7 @@ fun main() {
 
     val events = MinecraftServer.getGlobalEventHandler()
     val combatStates = mutableMapOf<UUID, CombatState>()
+    val dodgeStates = mutableMapOf<UUID, DodgeState>()
     val attackSpeeds = mutableMapOf<UUID, Double>()
     var dummy: Entity? = null
 
@@ -81,6 +88,7 @@ fun main() {
                 weaponSource = { weaponFor(event.player) },
                 attackSpeedSource = { attackSpeeds[event.player.uuid] ?: DEFAULT_ATTACK_SPEED },
             )
+            dodgeStates[event.player.uuid] = DodgeState()
             event.player.inventory.addItemStack(
                 ItemStack.builder(Material.NETHERITE_SWORD).customName(Component.text("Heavy Blade")).build(),
             )
@@ -108,10 +116,14 @@ fun main() {
     }
     events.addListener(PlayerTickEvent::class.java) { event ->
         val state = combatStates[event.player.uuid] ?: return@addListener
+        val dodge = dodgeStates[event.player.uuid] ?: return@addListener
+        if (dodge.hasPending) state.deferAttackRestart()
         val targets = dummy?.takeIf { it.instance == event.player.instance && !it.isRemoved }
             ?.let { listOf(CombatTarget(it.uuid, it.position)) }
             ?: emptyList()
         publishCombatEvents(event.player, state.tick(event.player.position, event.player.position.direction(), targets))
+        val movement = dodge.tick(canStart = event.player.isOnGround && !state.isAttacking)
+        if (movement != null) moveDodge(event.player, movement)
     }
     events.addListener(PlayerPluginMessageEvent::class.java) { event ->
         if (event.identifier != PROJECTS_CHANNEL) return@addListener
@@ -127,6 +139,15 @@ fun main() {
                 is AttackInput -> {
                     val state = combatStates[event.player.uuid] ?: return@addListener
                     publishCombatEvents(event.player, state.input(message.state))
+                }
+                is DodgeInput -> {
+                    val state = combatStates[event.player.uuid] ?: return@addListener
+                    val dodge = dodgeStates[event.player.uuid] ?: return@addListener
+                    if (!event.player.isOnGround) return@addListener
+                    dodge.request(
+                        dodgeDirection(event.player.position, message),
+                        canStart = !state.isAttacking,
+                    )
                 }
                 else -> throw IllegalArgumentException("Unexpected ProjectS message")
             }
@@ -155,4 +176,60 @@ private fun weaponFor(player: net.minestom.server.entity.Player): WeaponType = w
     Material.BLAZE_ROD -> WeaponType.TWIN_RODS
     Material.NETHERITE_SWORD -> WeaponType.HEAVY_BLADE
     else -> WeaponType.HEAVY_BLADE
+}
+
+private fun dodgeDirection(position: Pos, input: DodgeInput): net.minestom.server.coordinate.Vec {
+    val facing = position.direction()
+    val horizontalLength = sqrt(facing.x() * facing.x() + facing.z() * facing.z())
+    val forward = if (horizontalLength > 1.0e-9) {
+        net.minestom.server.coordinate.Vec(facing.x() / horizontalLength, 0.0, facing.z() / horizontalLength)
+    } else {
+        net.minestom.server.coordinate.Vec(0.0, 0.0, 1.0)
+    }
+    val right = net.minestom.server.coordinate.Vec(forward.z(), 0.0, -forward.x())
+    val worldDirection = net.minestom.server.coordinate.Vec(
+        right.x() * input.directionX + forward.x() * input.directionZ,
+        0.0,
+        right.z() * input.directionX + forward.z() * input.directionZ,
+    )
+    return if (input.directionX == 0.0 && input.directionZ == 0.0) {
+        forward
+    } else {
+        DodgeState.normalizeDirection(worldDirection)
+    }
+}
+
+private fun moveDodge(player: net.minestom.server.entity.Player, movement: net.minestom.server.coordinate.Vec) {
+    val current = player.position
+    val target = current.add(movement.x(), 0.0, movement.z())
+    val instance = player.instance
+    val samples = 4
+    for (sample in 1..samples) {
+        val progress = sample.toDouble() / samples
+        val samplePosition = current.add(
+            (target.x() - current.x()) * progress,
+            0.0,
+            (target.z() - current.z()) * progress,
+        )
+        if (!isDodgePositionClear(instance, samplePosition)) return
+    }
+    player.teleport(target)
+}
+
+private fun isDodgePositionClear(instance: Instance, position: Pos): Boolean {
+    val minX = floor(position.x() - DODGE_PLAYER_WIDTH / 2.0).toInt()
+    val maxX = floor(position.x() + DODGE_PLAYER_WIDTH / 2.0 - 1.0e-6).toInt()
+    val minY = floor(position.y()).toInt()
+    val maxY = floor(position.y() + DODGE_PLAYER_HEIGHT - 1.0e-6).toInt()
+    val minZ = floor(position.z() - DODGE_PLAYER_WIDTH / 2.0).toInt()
+    val maxZ = floor(position.z() + DODGE_PLAYER_WIDTH / 2.0 - 1.0e-6).toInt()
+
+    for (x in minX..maxX) {
+        for (y in minY..maxY) {
+            for (z in minZ..maxZ) {
+                if (instance.getBlock(x, y, z).blocksMotion()) return false
+            }
+        }
+    }
+    return true
 }

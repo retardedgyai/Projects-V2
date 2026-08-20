@@ -66,6 +66,23 @@ class ProtocolCodecTest {
         assertRoundTrip(AttackHitConfirmed(9001, UUID.fromString("58e6f12d-cf60-4cb2-9147-6f503fe24098")))
     }
 
+    @Test
+    fun `dodge input round trips`() {
+        assertRoundTrip(DodgeInput(-1.0, 1.0))
+        assertRoundTrip(DodgeInput(0.0, 0.0))
+    }
+
+    @Test
+    fun `invalid dodge direction is rejected`() {
+        assertFailsWith<IllegalArgumentException> { DodgeInput(Double.NaN, 0.0) }
+        assertFailsWith<IllegalArgumentException> { DodgeInput(1.1, 0.0) }
+
+        val malformed = ProtocolCodec.encode(DodgeInput(0.0, 0.0)).copyOf().also { bytes ->
+            java.nio.ByteBuffer.wrap(bytes, 1, Double.SIZE_BYTES).putDouble(Double.POSITIVE_INFINITY)
+        }
+        assertFailsWith<IllegalArgumentException> { ProtocolCodec.decode(malformed) }
+    }
+
     private fun assertRoundTrip(message: ProtocolMessage) {
         assertEquals(message, ProtocolCodec.decode(ProtocolCodec.encode(message)))
     }
