@@ -143,7 +143,7 @@ class Skill3State(
         const val DASH_TICKS = 4
         const val HOVER_TICKS = 20
         const val COOLDOWN_TICKS = 80
-        const val DASH_SPEED = 25.0
+        const val DASH_SPEED = 15.0
         const val DASH_HIT_RADIUS = 1.0
         const val HOVER_FALL_SPEED = 0.4
         const val NORMAL_ATTACK_REDUCTION_TICKS = 20
