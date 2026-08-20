@@ -1,6 +1,7 @@
 package dev.projects.server
 
 import net.minestom.server.coordinate.Vec
+import dev.projects.protocol.DodgeInput
 import kotlin.math.sqrt
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -10,6 +11,26 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class DodgeTest {
+    @Test
+    fun `dodge input follows the player's local directions`() {
+        assertDirection(dodgeDirection(Vec(0.0, 0.0, 1.0), DodgeInput(0.0, 1.0)), 0.0, 1.0)
+        assertDirection(dodgeDirection(Vec(0.0, 0.0, 1.0), DodgeInput(0.0, -1.0)), 0.0, -1.0)
+        assertDirection(dodgeDirection(Vec(0.0, 0.0, 1.0), DodgeInput(1.0, 0.0)), -1.0, 0.0)
+        assertDirection(dodgeDirection(Vec(0.0, 0.0, 1.0), DodgeInput(-1.0, 0.0)), 1.0, 0.0)
+
+        assertDirection(dodgeDirection(Vec(0.0, 0.0, -1.0), DodgeInput(1.0, 0.0)), 1.0, 0.0)
+        assertDirection(dodgeDirection(Vec(0.0, 0.0, -1.0), DodgeInput(-1.0, 0.0)), -1.0, 0.0)
+    }
+
+    @Test
+    fun `diagonal dodge input is normalized and zero input falls back to forward`() {
+        val diagonal = dodgeDirection(Vec(0.0, 0.0, 1.0), DodgeInput(1.0, 1.0))
+        assertEquals(-1.0 / sqrt(2.0), diagonal.x(), 1.0e-9)
+        assertEquals(1.0 / sqrt(2.0), diagonal.z(), 1.0e-9)
+
+        assertDirection(dodgeDirection(Vec(1.0, 0.0, 0.0), DodgeInput(0.0, 0.0)), 1.0, 0.0)
+    }
+
     @Test
     fun `all eight directions keep the same normalized distance`() {
         val directions = listOf(
@@ -68,5 +89,10 @@ class DodgeTest {
     private fun sequence(): () -> Long {
         var id = 0L
         return { ++id }
+    }
+
+    private fun assertDirection(direction: Vec, expectedX: Double, expectedZ: Double) {
+        assertEquals(expectedX, direction.x(), 1.0e-9)
+        assertEquals(expectedZ, direction.z(), 1.0e-9)
     }
 }

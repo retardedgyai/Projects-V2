@@ -179,14 +179,17 @@ private fun weaponFor(player: net.minestom.server.entity.Player): WeaponType = w
 }
 
 private fun dodgeDirection(position: Pos, input: DodgeInput): net.minestom.server.coordinate.Vec {
-    val facing = position.direction()
+    return dodgeDirection(position.direction(), input)
+}
+
+internal fun dodgeDirection(facing: net.minestom.server.coordinate.Vec, input: DodgeInput): net.minestom.server.coordinate.Vec {
     val horizontalLength = sqrt(facing.x() * facing.x() + facing.z() * facing.z())
     val forward = if (horizontalLength > 1.0e-9) {
         net.minestom.server.coordinate.Vec(facing.x() / horizontalLength, 0.0, facing.z() / horizontalLength)
     } else {
         net.minestom.server.coordinate.Vec(0.0, 0.0, 1.0)
     }
-    val right = net.minestom.server.coordinate.Vec(forward.z(), 0.0, -forward.x())
+    val right = net.minestom.server.coordinate.Vec(-forward.z(), 0.0, forward.x())
     val worldDirection = net.minestom.server.coordinate.Vec(
         right.x() * input.directionX + forward.x() * input.directionZ,
         0.0,
