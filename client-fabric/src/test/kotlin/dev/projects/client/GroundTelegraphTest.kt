@@ -36,6 +36,21 @@ class GroundTelegraphTest {
     }
 
     @Test
+    fun `radial borders retain their width across sector angles`() {
+        listOf(90.0, 180.0, 360.0).forEach { angle ->
+            val mesh = SectorTelegraphGeometry.build(
+                ClientGroundTelegraph(telegraph().copy(angleDegrees = angle), 0),
+            )
+            val radialBorders = mesh.borderQuads.takeLast(2)
+            radialBorders.forEach { quad ->
+                val width = distance(quad[0], quad[3])
+                assertTrue(width > 0.11, "border width collapsed for $angle degrees: $width")
+                assertTrue(width < 0.13, "border width changed for $angle degrees: $width")
+            }
+        }
+    }
+
+    @Test
     fun `client state upserts expires removes and clears`() {
         val state = GroundTelegraphClientState()
         state.start(telegraph().copy(durationTicks = 2))
@@ -64,4 +79,10 @@ class GroundTelegraphTest {
         angleDegrees = 90.0,
         durationTicks = 20,
     )
+
+    private fun distance(first: SectorPoint, second: SectorPoint): Double {
+        val dx = first.x - second.x
+        val dz = first.z - second.z
+        return kotlin.math.sqrt(dx * dx + dz * dz)
+    }
 }

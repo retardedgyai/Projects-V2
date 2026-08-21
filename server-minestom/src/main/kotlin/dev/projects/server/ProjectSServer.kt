@@ -235,7 +235,7 @@ fun main() {
             GroundTelegraphStart.clamped(
                 telegraphId = ++nextGroundTelegraphId,
                 centerX = player.position.x() + horizontalFacing.x() * 5.0,
-                centerY = player.position.y() - 1.0,
+                centerY = player.position.y(),
                 centerZ = player.position.z() + horizontalFacing.z() * 5.0,
                 facingX = horizontalFacing.x(),
                 facingZ = horizontalFacing.z(),

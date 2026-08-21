@@ -101,8 +101,8 @@ object SectorTelegraphGeometry {
             for (index in 0 until segments) {
                 add(listOf(arc[index], arc[index + 1], innerArc[index + 1], innerArc[index]))
             }
-            add(radialQuad(center, arc.first(), rightX, rightZ))
-            add(radialQuad(center, arc.last(), rightX, rightZ))
+            add(radialQuad(center, arc.first()))
+            add(radialQuad(center, arc.last()))
         }
         return SectorMesh(listOf(center) + arc, border)
     }
@@ -110,9 +110,12 @@ object SectorTelegraphGeometry {
     private fun radialQuad(
         start: SectorPoint,
         end: SectorPoint,
-        perpendicularX: Double,
-        perpendicularZ: Double,
     ): List<SectorPoint> {
+        val directionX = end.x - start.x
+        val directionZ = end.z - start.z
+        val length = sqrt(directionX * directionX + directionZ * directionZ)
+        val perpendicularX = if (length > 1.0e-9) -directionZ / length else 0.0
+        val perpendicularZ = if (length > 1.0e-9) directionX / length else 1.0
         val halfWidth = BORDER_WIDTH / 2.0
         return listOf(
             SectorPoint(start.x + perpendicularX * halfWidth, start.y, start.z + perpendicularZ * halfWidth),
