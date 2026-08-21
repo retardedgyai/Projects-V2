@@ -140,15 +140,7 @@ class Skill3StateTest {
 
         val firstHoverTick = skill3.tick(false, -1.0)
         assertTrue(firstHoverTick.stopHorizontalVelocity)
-        assertEquals(
-            Vec(0.0, -0.4, 0.0),
-            skill3HoverVelocity(Vec(0.0, -1.0, 15.0), firstHoverTick.velocityY, true, firstHoverTick.dashMomentum),
-        )
-
-        assertEquals(
-            Vec(2.0, 8.4, -3.0),
-            skill3HoverVelocity(Vec(2.0, 8.4, -3.0), 8.4, true, firstHoverTick.dashMomentum),
-        )
+        assertEquals(-0.4, firstHoverTick.velocityY)
 
         val secondHoverTick = skill3.tick(false, -1.0)
         assertFalse(secondHoverTick.stopHorizontalVelocity)

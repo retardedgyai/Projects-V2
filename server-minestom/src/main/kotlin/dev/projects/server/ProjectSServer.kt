@@ -384,14 +384,11 @@ fun main() {
                 ),
             )
         } else if (skill3Tick.phase == Skill3Phase.HOVER) {
-            event.player.setVelocity(
-                skill3HoverVelocity(
-                    event.player.velocity,
-                    skill3Tick.velocityY,
-                    skill3Tick.stopHorizontalVelocity,
-                    skill3Tick.dashMomentum,
-                ),
-            )
+            if (skill3Tick.stopHorizontalVelocity) {
+                event.player.setVelocity(Vec.ZERO)
+            } else {
+                event.player.setVelocity(skill3HoverVelocity(event.player.velocity, skill3Tick.velocityY))
+            }
         }
         if (previousSkill3Cooldown == 0 && skill3.cooldownTicksRemaining > 0) {
             sendResourceSnapshot(event.player)
@@ -563,22 +560,11 @@ internal fun combatTargetFromBoundingBox(id: UUID, origin: Point, relativeBox: B
     )
 }
 
-internal fun skill3HoverVelocity(
-    currentVelocity: Vec,
-    velocityY: Double,
-    stopHorizontalVelocity: Boolean = false,
-    dashMomentum: Vec? = null,
-): Vec = Vec(
-    if (stopHorizontalVelocity) stopDashComponent(currentVelocity.x(), dashMomentum?.x()) else currentVelocity.x(),
-    if (stopHorizontalVelocity) stopDashVerticalComponent(currentVelocity.y(), dashMomentum?.y(), velocityY) else velocityY,
-    if (stopHorizontalVelocity) stopDashComponent(currentVelocity.z(), dashMomentum?.z()) else currentVelocity.z(),
+internal fun skill3HoverVelocity(currentVelocity: Vec, velocityY: Double): Vec = Vec(
+    currentVelocity.x(),
+    velocityY,
+    currentVelocity.z(),
 )
-
-private fun stopDashComponent(current: Double, dash: Double?, replacement: Double = 0.0): Double =
-    if (dash == null || kotlin.math.abs(current - dash) < 1.0e-9) replacement else current
-
-private fun stopDashVerticalComponent(current: Double, dash: Double?, replacement: Double): Double =
-    if (dash != null && current > 0.0 && kotlin.math.abs(current - dash) >= 1.0e-9) current else replacement
 
 internal fun shouldSyncSkill3Cooldown(syncTick: Int, currentCooldown: Int, lastSentCooldown: Int?): Boolean =
     syncTick >= 4 && currentCooldown != lastSentCooldown

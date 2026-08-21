@@ -17,7 +17,6 @@ data class Skill3Tick(
     val dashActive: Boolean,
     val velocityY: Double,
     val stopHorizontalVelocity: Boolean = false,
-    val dashMomentum: Vec? = null,
 )
 
 /** Small server-owned state machine for the Skill3 aerial loop prototype. */
@@ -91,7 +90,6 @@ class Skill3State(
                         dashActive = false,
                         velocityY = maxOf(velocityY, -HOVER_FALL_SPEED),
                         stopHorizontalVelocity = isFirstHoverTick,
-                        dashMomentum = if (isFirstHoverTick) dashDirection?.mul(DASH_SPEED) else null,
                     )
                     hoverTicksRemaining--
                     if (hoverTicksRemaining == 0) phase = Skill3Phase.IDLE
