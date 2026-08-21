@@ -103,6 +103,71 @@ class CombatTest {
     }
 
     @Test
+    fun `twin rods uses body bounding box surface from eye origin`() {
+        val rods = WeaponType.TWIN_RODS.profile(1.0)
+        val eyeOrigin = Pos(0.0, 1.6, 0.0)
+        val inside = CombatTarget(
+            UUID.randomUUID(),
+            Pos(0.0, 1.6, 4.0),
+            Vec(1.0, 1.0, 1.0),
+        )
+        val outside = CombatTarget(
+            UUID.randomUUID(),
+            Pos(0.0, 1.6, 4.6),
+            Vec(1.0, 1.0, 1.0),
+        )
+
+        assertTrue(CombatState.isInAttackRange(rods, eyeOrigin, forward, inside))
+        assertTrue(!CombatState.isInAttackRange(rods, eyeOrigin, forward, outside))
+    }
+
+    @Test
+    fun `twin rods uses eye origin for upward and downward attacks`() {
+        val rods = WeaponType.TWIN_RODS.profile(1.0)
+        val eyeOrigin = Pos(0.0, 1.6, 0.0)
+        val upward = Vec(0.0, 1.0, 1.0)
+        val downward = Vec(0.0, -1.0, 1.0)
+
+        assertTrue(
+            CombatState.isInAttackRange(
+                rods,
+                eyeOrigin,
+                upward,
+                CombatTarget(UUID.randomUUID(), Pos(0.0, 3.6, 2.0)),
+            ),
+        )
+        assertTrue(
+            CombatState.isInAttackRange(
+                rods,
+                eyeOrigin,
+                downward,
+                CombatTarget(UUID.randomUUID(), Pos(0.0, -0.4, 2.0)),
+            ),
+        )
+    }
+
+    @Test
+    fun `twin rods uses weakpoint sphere surface and keeps cone rejection`() {
+        val rods = WeaponType.TWIN_RODS.profile(1.0)
+        val eyeOrigin = Pos(0.0, 1.6, 0.0)
+        val weakpointInside = CombatTarget(
+            UUID.randomUUID(),
+            Pos(0.0, 1.6, 3.8),
+            sphereRadius = FixedAttackTester.WEAKPOINT_RADIUS,
+        )
+        val weakpointOutside = CombatTarget(
+            UUID.randomUUID(),
+            Pos(0.0, 1.6, 4.0),
+            sphereRadius = FixedAttackTester.WEAKPOINT_RADIUS,
+        )
+        val outsideCone = CombatTarget(UUID.randomUUID(), Pos(2.5, 1.6, 2.0))
+
+        assertTrue(CombatState.isInAttackRange(rods, eyeOrigin, forward, weakpointInside))
+        assertTrue(!CombatState.isInAttackRange(rods, eyeOrigin, forward, weakpointOutside))
+        assertTrue(!CombatState.isInAttackRange(rods, eyeOrigin, forward, outsideCone))
+    }
+
+    @Test
     fun `active event carries the server attack position direction and profile`() {
         val combat = CombatState(
             executionIdSource = sequence(),

@@ -276,20 +276,39 @@ fun main() {
         if (dodge.hasPending) state.deferAttackRestart()
         val tester = dummy?.takeIf { it.instance == event.player.instance && !it.isRemoved }
         val testerId = tester?.uuid
+        val weapon = state.activeProfile?.weapon ?: weaponFor(event.player)
+        val profileRange = state.activeProfile?.range
+            ?: weapon.profile(attackSpeeds[event.player.uuid] ?: DEFAULT_ATTACK_SPEED).range
+        val eyePosition = event.player.position.add(0.0, event.player.eyeHeight, 0.0)
+        val attackOrigin = if (weapon == WeaponType.TWIN_RODS) eyePosition else event.player.position
         val weakpoint = tester?.let {
-            val weapon = state.activeProfile?.weapon ?: weaponFor(event.player)
-            val range = state.activeProfile?.range
-                ?: weapon.profile(attackSpeeds[event.player.uuid] ?: DEFAULT_ATTACK_SPEED).range
             FixedAttackTester.selectWeakpoint(
-                playerPosition = event.player.position.add(0.0, event.player.eyeHeight, 0.0),
+                playerPosition = eyePosition,
                 playerDirection = event.player.position.direction(),
                 testerOrigin = it.position,
                 testerFacing = it.position.direction(),
-                weaponRange = range,
+                weaponRange = if (weapon == WeaponType.TWIN_RODS) {
+                    profileRange + FixedAttackTester.WEAKPOINT_RADIUS
+                } else {
+                    profileRange
+                },
             )
         }
-        val targets = tester?.let { listOf(CombatTarget(it.uuid, weakpoint?.center ?: it.position)) } ?: emptyList()
-        val combatEvents = state.tick(event.player.position, event.player.position.direction(), targets)
+        val targets = tester?.let {
+            val target = if (weapon == WeaponType.TWIN_RODS) {
+                weakpoint?.let { selection ->
+                    CombatTarget(
+                        id = it.uuid,
+                        position = selection.center,
+                        sphereRadius = FixedAttackTester.WEAKPOINT_RADIUS,
+                    )
+                } ?: combatTarget(it)
+            } else {
+                CombatTarget(it.uuid, weakpoint?.center ?: it.position)
+            }
+            listOf(target)
+        } ?: emptyList()
+        val combatEvents = state.tick(attackOrigin, event.player.position.direction(), targets)
         publishCombatEvents(
             event.player,
             combatEvents.filter { it is CombatEvent.Started || it is CombatEvent.Active },
