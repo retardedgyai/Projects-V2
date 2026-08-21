@@ -50,6 +50,9 @@ object ProjectSClient : ClientModInitializer {
     private const val ATTACK_DEBUG_TICKS = 5
     private val attackDebugDust = DustParticleOptions(0xFF0000, 0.65f)
     private val hitCoreDust = DustParticleOptions(0xFFFFFF, 0.9f)
+    private val twinSlashOuterDust = DustParticleOptions(0xD71900, 0.72f)
+    private val twinSlashMidDust = DustParticleOptions(0xFF7300, 0.8f)
+    private val twinSlashCoreDust = DustParticleOptions(0xFFF200, 0.9f)
     private val logger = LoggerFactory.getLogger("projects")
     private var attackHeld = false
     private var dodgeHeld = false
@@ -616,48 +619,116 @@ object ProjectSClient : ClientModInitializer {
         val upX = normalY * normalizedRightZ - normalZ * normalizedRightY
         val upY = normalZ * normalizedRightX - normalX * normalizedRightZ
         val upZ = normalX * normalizedRightY - normalY * normalizedRightX
-        val expansion = if (effect.age == 0) 0.16 else 0.29
         val centerX = target.x + normalX * 0.44
         val centerY = hitY + normalY * 0.44
         val centerZ = target.z + normalZ * 0.44
 
-        level.addParticle(ParticleTypes.END_ROD, centerX, centerY, centerZ, 0.0, 0.0, 0.0)
-        for (arm in -1..1) {
-            val offset = arm * expansion
-            level.addParticle(
-                hitCoreDust,
-                centerX + normalizedRightX * offset,
-                centerY + normalizedRightY * offset,
-                centerZ + normalizedRightZ * offset,
-                0.0,
-                0.0,
-                0.0,
-            )
-            level.addParticle(
-                hitCoreDust,
-                centerX + upX * offset,
-                centerY + upY * offset,
-                centerZ + upZ * offset,
-                0.0,
-                0.0,
-                0.0,
-            )
-        }
-        val sparkVelocity = 0.12 + effect.age * 0.08
-        for (spark in -1..1) {
-            val side = spark * expansion * 0.9
-            level.addParticle(
-                ParticleTypes.ELECTRIC_SPARK,
-                centerX + normalizedRightX * side + normalX * 0.06,
-                centerY + normalizedRightY * side + normalY * 0.06,
-                centerZ + normalizedRightZ * side + normalZ * 0.06,
-                normalizedRightX * side * sparkVelocity,
-                upY * sparkVelocity + 0.02,
-                normalizedRightZ * side * sparkVelocity,
-            )
+        val slashLength = 1.8
+        val axisLength = sqrt(2.0)
+        val slashX = (normalizedRightX + upX) / axisLength
+        val slashY = (normalizedRightY + upY) / axisLength
+        val slashZ = (normalizedRightZ + upZ) / axisLength
+        val edgeX = (normalizedRightX - upX) / axisLength
+        val edgeY = (normalizedRightY - upY) / axisLength
+        val edgeZ = (normalizedRightZ - upZ) / axisLength
+        val surfaceX = centerX + normalX * 0.04
+        val surfaceY = centerY + normalY * 0.04
+        val surfaceZ = centerZ + normalZ * 0.04
+
+        when (effect.age) {
+            0 -> {
+                // Sample one fixed diagonal instead of building a radial hit shape.
+                for (sample in 0..10) {
+                    val along = (sample / 10.0 - 0.5) * slashLength
+                    val lineX = surfaceX + slashX * along
+                    val lineY = surfaceY + slashY * along
+                    val lineZ = surfaceZ + slashZ * along
+                    for (side in -1..1) {
+                        val edgeOffset = side * 0.055
+                        level.addParticle(
+                            twinSlashOuterDust,
+                            lineX + edgeX * edgeOffset,
+                            lineY + edgeY * edgeOffset,
+                            lineZ + edgeZ * edgeOffset,
+                            0.0,
+                            0.0,
+                            0.0,
+                        )
+                    }
+                    level.addParticle(
+                        twinSlashMidDust,
+                        lineX,
+                        lineY,
+                        lineZ,
+                        0.0,
+                        0.0,
+                        0.0,
+                    )
+                    level.addParticle(
+                        twinSlashCoreDust,
+                        lineX + edgeX * 0.025,
+                        lineY + edgeY * 0.025,
+                        lineZ + edgeZ * 0.025,
+                        0.0,
+                        0.0,
+                        0.0,
+                    )
+                }
+                for (core in -1..1) {
+                    val compact = core * 0.045
+                    level.addParticle(
+                        twinSlashCoreDust,
+                        surfaceX + edgeX * compact,
+                        surfaceY + edgeY * compact,
+                        surfaceZ + edgeZ * compact,
+                        0.0,
+                        0.0,
+                        0.0,
+                    )
+                }
+            }
+            1 -> {
+                for (sample in 0..4) {
+                    val along = (sample / 4.0 - 0.5) * slashLength
+                    level.addParticle(
+                        twinSlashOuterDust,
+                        surfaceX + slashX * along + edgeX * 0.075,
+                        surfaceY + slashY * along + edgeY * 0.075,
+                        surfaceZ + slashZ * along + edgeZ * 0.075,
+                        0.0,
+                        0.0,
+                        0.0,
+                    )
+                    if (sample % 2 == 0) {
+                        level.addParticle(
+                            twinSlashMidDust,
+                            surfaceX + slashX * along - edgeX * 0.075,
+                            surfaceY + slashY * along - edgeY * 0.075,
+                            surfaceZ + slashZ * along - edgeZ * 0.075,
+                            0.0,
+                            0.0,
+                            0.0,
+                        )
+                    }
+                }
+            }
+            else -> {
+                for (spark in -1..1) {
+                    val along = spark * 0.18
+                    level.addParticle(
+                        ParticleTypes.ELECTRIC_SPARK,
+                        surfaceX + slashX * along,
+                        surfaceY + slashY * along,
+                        surfaceZ + slashZ * along,
+                        -slashX * 0.12,
+                        -slashY * 0.12,
+                        -slashZ * 0.12,
+                    )
+                }
+            }
         }
         effect.age++
-        if (effect.age >= 2) twinRodHitEffect = null
+        if (effect.age >= 3) twinRodHitEffect = null
     }
 
     private fun showHeavyBladeHitEffect(client: Minecraft, message: AttackHitConfirmed) {
