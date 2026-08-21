@@ -43,7 +43,9 @@ import net.kyori.adventure.sound.Sound
 import net.kyori.adventure.key.Key
 import java.nio.charset.StandardCharsets
 import java.util.UUID
+import kotlin.math.abs
 import kotlin.math.floor
+import kotlin.math.sqrt
 import net.minestom.server.collision.BoundingBox
 import net.minestom.server.coordinate.Point
 import net.minestom.server.command.CommandSender
@@ -436,7 +438,7 @@ fun main() {
             }
         }
         if (previousSkill3Phase == Skill3Phase.DASH && skill3.phase == Skill3Phase.HOVER) {
-            showSkill3Snap(event.player)
+            showSkill3Snap(event.player, requireNotNull(skill3Tick.dashDirection))
             showSkill3Hover(event.player)
             sendResourceSnapshot(event.player)
         }
@@ -549,6 +551,7 @@ fun main() {
                                 skill1.cancelActiveMovement()
                                 skill3.cancelActiveMovement()
                                 event.player.setVelocity(Vec(0.0, -Skill2State.DOWNWARD_SPEED, 0.0))
+                                showSkill2Cast(event.player)
                             }
                         }
                         ClassSkillSlot.SKILL_3 -> {
@@ -559,7 +562,10 @@ fun main() {
                                 event.player.position.direction(),
                                 ClassSkillDirection(message.directionX, message.directionZ),
                             )
-                            if (castId != null) sendResourceSnapshot(event.player)
+                            if (castId != null) {
+                                showSkill3Cast(event.player)
+                                sendResourceSnapshot(event.player)
+                            }
                         }
                         ClassSkillSlot.ULTIMATE -> return@addListener
                     }
@@ -772,46 +778,115 @@ private fun showWeakpointHit(
 
 private fun showSkill1Cast(player: net.minestom.server.entity.Player) {
     val origin = player.position.add(0.0, 0.12, 0.0)
+    val direction = FixedAttackTester.normalizeHorizontal(player.position.direction())
     sendSkillParticle(player, Particle.END_ROD, origin)
+    sendSkillParticle(player, Particle.ENCHANT, origin.add(direction.x() * 0.35, 0.2, direction.z() * 0.35))
     sendSkillParticle(player, Particle.END_ROD, origin.add(0.25, 0.0, 0.0))
     sendSkillParticle(player, Particle.END_ROD, origin.add(-0.25, 0.0, 0.0))
+    sendSkillArc(player, Particle.END_ROD, origin.add(0.0, 0.12, 0.0), direction, 0.62, -1.1, 1.1, 7)
+    sendSkillArc(player, Particle.ENCHANT, origin.add(0.0, 0.18, 0.0), direction, 0.45, -0.85, 0.85, 5)
+    playSkillSound(player, "entity.player.attack.sweep", origin, 0.75f, 1.35f)
 }
 
 private fun showSkill1Trail(player: net.minestom.server.entity.Player, position: Pos, direction: Vec) {
-    sendSkillParticle(player, Particle.END_ROD, position.add(direction.x() * 0.35, 0.45, direction.z() * 0.35))
+    val origin = position.add(0.0, 0.45, 0.0)
+    for (step in 0..3) {
+        val distance = 0.12 + step * 0.22
+        sendSkillParticle(
+            player,
+            Particle.END_ROD,
+            origin.add(direction.x() * distance, 0.0, direction.z() * distance),
+        )
+        if (step < 3) {
+            sendSkillParticle(
+                player,
+                Particle.ENCHANT,
+                origin.add(-direction.x() * step * 0.16, 0.1, -direction.z() * step * 0.16),
+            )
+        }
+    }
+    sendSkillParticle(player, Particle.ELECTRIC_SPARK, origin.add(-direction.x() * 0.25, -0.12, -direction.z() * 0.25))
 }
 
 private fun showSkill1Impact(player: net.minestom.server.entity.Player, position: Point) {
-    sendSkillParticle(player, Particle.CRIT, position.add(0.0, 1.0, 0.0))
-    sendSkillParticle(player, Particle.CRIT, position.add(0.25, 1.15, 0.0))
-    sendSkillParticle(player, Particle.CRIT, position.add(-0.25, 0.9, 0.0))
-    sendSkillParticle(player, Particle.EXPLOSION, position.add(0.0, 1.0, 0.0))
+    val center = position.add(0.0, 1.0, 0.0)
+    sendSkillParticle(player, Particle.EXPLOSION, center)
+    sendSkillParticle(player, Particle.END_ROD, center)
+    sendSkillParticle(player, Particle.CRIT, center.add(0.45, 0.0, 0.0))
+    sendSkillParticle(player, Particle.CRIT, center.add(-0.45, 0.0, 0.0))
+    sendSkillParticle(player, Particle.CRIT, center.add(0.0, 0.45, 0.0))
+    sendSkillParticle(player, Particle.CRIT, center.add(0.0, -0.45, 0.0))
+    sendSkillArc(player, Particle.END_ROD, center, Vec(0.0, 0.0, 1.0), 0.58, -Math.PI, Math.PI, 10)
+    playSkillSound(player, "entity.player.attack.crit", center, 0.9f, 0.9f)
 }
 
 private fun showSkill1Launch(player: net.minestom.server.entity.Player) {
     val origin = player.position.add(0.0, 0.15, 0.0)
-    for (step in 0..3) {
-        sendSkillParticle(player, Particle.END_ROD, origin.add(0.0, step * 0.35, 0.0))
+    for (step in 0..7) {
+        val progress = step / 7.0
+        val angle = progress * Math.PI * 2.2
+        val radius = 0.12 + progress * 0.2
+        val point = origin.add(
+            kotlin.math.cos(angle) * radius,
+            step * 0.34,
+            kotlin.math.sin(angle) * radius,
+        )
+        sendSkillParticle(player, Particle.END_ROD, point)
+        if (step % 2 == 0) sendSkillParticle(player, Particle.ENCHANT, point.add(0.0, 0.12, 0.0))
     }
+    playSkillSound(player, "entity.player.levelup", origin.add(0.0, 0.8, 0.0), 0.5f, 1.65f)
+}
+
+private fun showSkill2Cast(player: net.minestom.server.entity.Player) {
+    val origin = player.position.add(0.0, 0.3, 0.0)
+    sendSkillParticle(player, Particle.END_ROD, origin)
+    sendSkillParticle(player, Particle.ENCHANT, origin.add(0.0, 0.4, 0.0))
+    sendSkillParticle(player, Particle.ELECTRIC_SPARK, origin.add(0.18, 0.2, 0.0))
+    sendSkillParticle(player, Particle.ELECTRIC_SPARK, origin.add(-0.18, 0.2, 0.0))
+    playSkillSound(player, "entity.phantom.flap", origin, 0.45f, 1.2f)
 }
 
 private fun showSkill2DiveTrail(player: net.minestom.server.entity.Player) {
     val position = player.position
-    sendSkillParticle(player, Particle.END_ROD, position.add(0.0, 0.8, 0.0))
-    sendSkillParticle(player, Particle.END_ROD, position.add(0.0, 0.25, 0.0))
+    for (step in 0..4) {
+        val progress = step / 4.0
+        val y = 0.18 + progress * 1.15
+        val radius = 0.2 - progress * 0.12
+        sendSkillParticle(player, Particle.END_ROD, position.add(0.0, y, 0.0))
+        sendSkillParticle(player, Particle.ELECTRIC_SPARK, position.add(radius, y - 0.08, 0.0))
+        sendSkillParticle(player, Particle.ELECTRIC_SPARK, position.add(-radius, y - 0.08, 0.0))
+    }
+    sendSkillParticle(player, Particle.CLOUD, position.add(0.0, 1.25, 0.0))
 }
 
 private fun showSkill2Landing(player: net.minestom.server.entity.Player) {
     val center = player.position.add(0.0, 0.12, 0.0)
-    for (step in 0..11) {
-        val angle = step * Math.PI / 6.0
-        sendSkillParticle(
-            player,
-            Particle.END_ROD,
-            center.add(kotlin.math.cos(angle) * 3.5, 0.0, kotlin.math.sin(angle) * 3.5),
-        )
+    sendSkillRing(player, Particle.END_ROD, center, 4.0, 18)
+    sendSkillRing(player, Particle.ENCHANT, center, 3.15, 14)
+    for (spoke in 0..7) {
+        val angle = spoke * Math.PI / 4.0
+        for (step in 1..4) {
+            val radius = step.toDouble()
+            sendSkillParticle(
+                player,
+                if (step % 2 == 0) Particle.END_ROD else Particle.ELECTRIC_SPARK,
+                center.add(kotlin.math.cos(angle) * radius, 0.0, kotlin.math.sin(angle) * radius),
+            )
+        }
     }
     sendSkillParticle(player, Particle.EXPLOSION, center)
+    sendSkillParticle(player, Particle.END_ROD, center.add(0.0, 0.35, 0.0))
+    playSkillSound(player, "entity.generic.explode", center, 0.85f, 0.85f)
+    playSkillSound(player, "entity.player.attack.crit", center, 0.5f, 1.3f)
+}
+
+private fun showSkill3Cast(player: net.minestom.server.entity.Player) {
+    val origin = player.position.add(0.0, 0.8, 0.0)
+    val (forward, _, _) = directionBasis(player.position.direction())
+    for (step in 0..2) {
+        sendSkillParticle(player, Particle.END_ROD, origin.add(forward.x() * step * 0.3, forward.y() * step * 0.3, forward.z() * step * 0.3))
+    }
+    playSkillSound(player, "entity.enderman.teleport", origin, 0.65f, 1.25f)
 }
 
 private fun showSkill3DashTrail(
@@ -819,24 +894,139 @@ private fun showSkill3DashTrail(
     position: Pos,
     direction: Vec,
 ) {
-    sendSkillParticle(
-        player,
-        Particle.END_ROD,
-        position.add(direction.x() * 0.4, direction.y() * 0.4 + 0.8, direction.z() * 0.4),
-    )
+    val origin = position.add(0.0, 0.8, 0.0)
+    val (forward, right, up) = directionBasis(direction)
+    for (step in 0..3) {
+        val progress = step / 3.0
+        val distance = 0.12 + progress * 0.9
+        val core = origin.add(
+            forward.x() * distance,
+            forward.y() * distance,
+            forward.z() * distance,
+        )
+        sendSkillParticle(player, Particle.END_ROD, core)
+        for (ribbon in 0..1) {
+            val phase = progress * Math.PI * 1.4 + ribbon * Math.PI
+            val radial = Vec(
+                right.x() * kotlin.math.cos(phase) * 0.22 + up.x() * kotlin.math.sin(phase) * 0.22,
+                right.y() * kotlin.math.cos(phase) * 0.22 + up.y() * kotlin.math.sin(phase) * 0.22,
+                right.z() * kotlin.math.cos(phase) * 0.22 + up.z() * kotlin.math.sin(phase) * 0.22,
+            )
+            sendSkillParticle(
+                player,
+                if (ribbon == 0) Particle.ENCHANT else Particle.ELECTRIC_SPARK,
+                core.add(radial.x(), radial.y(), radial.z()),
+            )
+        }
+    }
 }
 
-private fun showSkill3Snap(player: net.minestom.server.entity.Player) {
+private fun showSkill3Snap(player: net.minestom.server.entity.Player, direction: Vec) {
     val position = player.position.add(0.0, 0.8, 0.0)
+    val (_, right, up) = directionBasis(direction)
     sendSkillParticle(player, Particle.EXPLOSION, position)
-    sendSkillParticle(player, Particle.CRIT, position.add(0.25, 0.0, 0.0))
-    sendSkillParticle(player, Particle.CRIT, position.add(-0.25, 0.0, 0.0))
+    sendSkillParticle(player, Particle.END_ROD, position)
+    sendSkillParticle(player, Particle.CRIT, position.add(right.x() * 0.45, right.y() * 0.45, right.z() * 0.45))
+    sendSkillParticle(player, Particle.CRIT, position.add(-right.x() * 0.45, -right.y() * 0.45, -right.z() * 0.45))
+    sendSkillParticle(player, Particle.CRIT, position.add(up.x() * 0.45, up.y() * 0.45, up.z() * 0.45))
+    sendSkillParticle(player, Particle.CRIT, position.add(-up.x() * 0.45, -up.y() * 0.45, -up.z() * 0.45))
+    for (step in 0..11) {
+        val angle = step * Math.PI / 6.0
+        val radial = Vec(
+            right.x() * kotlin.math.cos(angle) + up.x() * kotlin.math.sin(angle),
+            right.y() * kotlin.math.cos(angle) + up.y() * kotlin.math.sin(angle),
+            right.z() * kotlin.math.cos(angle) + up.z() * kotlin.math.sin(angle),
+        )
+        sendSkillParticle(player, Particle.END_ROD, position.add(radial.x() * 0.62, radial.y() * 0.62, radial.z() * 0.62))
+    }
+    playSkillSound(player, "block.amethyst_block.hit", position, 0.75f, 1.55f)
 }
 
 private fun showSkill3Hover(player: net.minestom.server.entity.Player) {
     val position = player.position.add(0.0, 1.0, 0.0)
-    sendSkillParticle(player, Particle.END_ROD, position.add(0.0, 0.35, 0.0))
-    sendSkillParticle(player, Particle.END_ROD, position.add(0.0, -0.35, 0.0))
+    for (step in 0..7) {
+        val angle = step * Math.PI / 4.0
+        val radial = 0.32
+        sendSkillParticle(
+            player,
+            if (step % 2 == 0) Particle.GLOW else Particle.END_ROD,
+            position.add(
+                kotlin.math.cos(angle) * radial,
+                kotlin.math.sin(angle * 1.5) * 0.18,
+                kotlin.math.sin(angle) * radial,
+            ),
+        )
+    }
+}
+
+private fun sendSkillArc(
+    player: net.minestom.server.entity.Player,
+    particle: Particle,
+    center: Point,
+    direction: Vec,
+    radius: Double,
+    startAngle: Double,
+    endAngle: Double,
+    segments: Int,
+) {
+    val forward = FixedAttackTester.normalizeHorizontal(direction)
+    val right = Vec(-forward.z(), 0.0, forward.x())
+    for (step in 0..segments) {
+        val angle = startAngle + (endAngle - startAngle) * step / segments
+        val radial = Vec(
+            forward.x() * kotlin.math.cos(angle) + right.x() * kotlin.math.sin(angle),
+            0.0,
+            forward.z() * kotlin.math.cos(angle) + right.z() * kotlin.math.sin(angle),
+        )
+        sendSkillParticle(player, particle, center.add(radial.x() * radius, 0.0, radial.z() * radius))
+    }
+}
+
+private fun sendSkillRing(
+    player: net.minestom.server.entity.Player,
+    particle: Particle,
+    center: Point,
+    radius: Double,
+    segments: Int,
+) {
+    for (step in 0 until segments) {
+        val angle = 2.0 * Math.PI * step / segments
+        sendSkillParticle(
+            player,
+            particle,
+            center.add(kotlin.math.cos(angle) * radius, 0.0, kotlin.math.sin(angle) * radius),
+        )
+    }
+}
+
+private fun directionBasis(direction: Vec): Triple<Vec, Vec, Vec> {
+    val length = sqrt(direction.x() * direction.x() + direction.y() * direction.y() + direction.z() * direction.z())
+    val forward = Vec(direction.x() / length, direction.y() / length, direction.z() / length)
+    val reference = if (abs(forward.y()) < 0.9) Vec(0.0, 1.0, 0.0) else Vec(1.0, 0.0, 0.0)
+    val rawRight = Vec(
+        forward.y() * reference.z() - forward.z() * reference.y(),
+        forward.z() * reference.x() - forward.x() * reference.z(),
+        forward.x() * reference.y() - forward.y() * reference.x(),
+    )
+    val rightLength = sqrt(rawRight.x() * rawRight.x() + rawRight.y() * rawRight.y() + rawRight.z() * rawRight.z())
+    val right = Vec(rawRight.x() / rightLength, rawRight.y() / rightLength, rawRight.z() / rightLength)
+    val up = Vec(
+        forward.y() * right.z() - forward.z() * right.y(),
+        forward.z() * right.x() - forward.x() * right.z(),
+        forward.x() * right.y() - forward.y() * right.x(),
+    )
+    return Triple(forward, right, up)
+}
+
+private fun playSkillSound(
+    player: net.minestom.server.entity.Player,
+    key: String,
+    point: Point,
+    volume: Float,
+    pitch: Float,
+) {
+    val soundEvent = SoundEvent.fromKey(Key.key("minecraft", key)) ?: return
+    player.playSound(Sound.sound(soundEvent, Sound.Source.PLAYER, volume, pitch), point)
 }
 
 private fun sendSkillParticle(
