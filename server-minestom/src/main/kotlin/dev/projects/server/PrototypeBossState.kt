@@ -126,7 +126,7 @@ class PrototypeBossState(
     }
 
     companion object {
-        const val DEFAULT_MAX_HEALTH = 300
+        const val DEFAULT_MAX_HEALTH = 10000
         const val DEFAULT_PLAYER_MAX_HEALTH = 20
         const val HEAVY_BLADE_BODY_DAMAGE = 20
         const val TWIN_RODS_BODY_DAMAGE = 10
