@@ -51,7 +51,10 @@ class ParticleImage(
     val lod: Int = 1,
     val resolution: Int = 1,
     val centered: Boolean = true,
+    /** World-space width and height; this does not change the sampled raster. */
     val dimensions: Vec? = null,
+    /** Optional source raster resize, independent from world-space dimensions. */
+    val rasterDimensions: Vec? = null,
     val planeNormal: Vec = Vec(0.0, 1.0, 0.0),
     val planeRight: Vec? = null,
     val blendMode: BlendMode = NamedBlendMode.REPLACE,
@@ -61,7 +64,7 @@ class ParticleImage(
     private val precomputedSampledImage: BufferedImage? = null,
 ) : ParticleEffect {
     private val step = max(1, max(lod, resolution))
-    private val sampledImage: BufferedImage by lazy { precomputedSampledImage ?: resize(image, dimensions) }
+    private val sampledImage: BufferedImage by lazy { precomputedSampledImage ?: resize(image, rasterDimensions) }
     private val pixels: List<ImageParticlePixel> by lazy { samplePixels(sampledImage, step, alphaThreshold) }
 
     init {
@@ -132,6 +135,7 @@ class ParticleImage(
             resolution: Int = 1,
             centered: Boolean = true,
             dimensions: Vec? = null,
+            rasterDimensions: Vec? = null,
             planeNormal: Vec = Vec(0.0, 1.0, 0.0),
             planeRight: Vec? = null,
             blendMode: BlendMode = NamedBlendMode.REPLACE,
@@ -144,11 +148,27 @@ class ParticleImage(
                 ImageIO.read(ByteArrayInputStream(bytes)) ?: error("PNG data could not be decoded")
             } }
             val resized = synchronized(resizedCache) {
-                val width = dimensions?.x()?.toInt()?.takeIf { it > 0 } ?: image.width
-                val height = dimensions?.y()?.toInt()?.takeIf { it > 0 } ?: image.height
-                resizedCache.getOrPut("$digest:$width:$height") { resize(image, dimensions) }
+                val width = rasterDimensions?.x()?.toInt()?.takeIf { it > 0 } ?: image.width
+                val height = rasterDimensions?.y()?.toInt()?.takeIf { it > 0 } ?: image.height
+                resizedCache.getOrPut("$digest:$width:$height") { resize(image, rasterDimensions) }
             }
-            return ParticleImage(image, origin, alphaThreshold, lod, resolution, centered, dimensions, planeNormal, planeRight, blendMode, overlayColor, dustScale, durationTicks, resized)
+            return ParticleImage(
+                image = image,
+                origin = origin,
+                alphaThreshold = alphaThreshold,
+                lod = lod,
+                resolution = resolution,
+                centered = centered,
+                dimensions = dimensions,
+                rasterDimensions = rasterDimensions,
+                planeNormal = planeNormal,
+                planeRight = planeRight,
+                blendMode = blendMode,
+                overlayColor = overlayColor,
+                dustScale = dustScale,
+                durationTicks = durationTicks,
+                precomputedSampledImage = resized,
+            )
         }
 
         fun clearCache() {

@@ -15,8 +15,9 @@ fun startParticleDemo(
     values: List<Double> = emptyList(),
     manager: ParticleManager? = null,
 ) {
-    val origin = player.position.add(player.position.direction().x() * 3.0, 1.2, player.position.direction().z() * 3.0)
     val direction = player.position.direction()
+    val origin = player.position.add(direction.x() * 3.0, 1.2, direction.z() * 3.0)
+    val flowerOrigin = player.position.add(direction.x() * 3.0, direction.y() * 3.0, direction.z() * 3.0)
     val sink = manager?.sink(ParticleViewer(player.position, player), PlayerParticleSink(player)) ?: PlayerParticleSink(player)
     val effect = when (type) {
         "line" -> {
@@ -43,9 +44,13 @@ fun startParticleDemo(
         "explosion" -> ParticleGeometry.drawParticleCircleExplosion(origin, 1.8, 28, durationTicks = 4)
         "sphere" -> ParticleUtils.sphere(origin, values.getOrNull(0) ?: 1.4, 72, ParticleStyle(Particle.END_ROD))
         "dome" -> ParticleUtils.dome(origin, values.getOrNull(0) ?: 1.4, 48, style = ParticleStyle(Particle.END_ROD))
-        "flower" -> ParticleUtils.flowerPattern(origin, values.getOrNull(0)?.toInt()?.coerceAtLeast(1) ?: 5, values.getOrNull(1) ?: 1.6, normal = direction, style = ParticleStyle(dust(0xff55dd, 0.45f)))
+        "flower" -> repeatDiagnostic(
+            ParticleUtils.flowerPattern(flowerOrigin, values.getOrNull(0)?.toInt()?.coerceAtLeast(1) ?: 5, values.getOrNull(1) ?: 1.6, normal = direction, style = ParticleStyle(dust(0xff55dd, 0.45f))),
+        )
         "prism" -> ParticleUtils.rectangleTelegraph(origin, 3.0, 2.0, style = ParticleStyle(dust(0x55aaff, 0.4f)))
-        "image" -> ParticleImage(demoImage(), origin, alphaThreshold = 20, dimensions = Vec(4.0, 4.0, 0.0), planeNormal = direction, dustScale = 0.35f)
+        "image" -> repeatDiagnostic(
+            ParticleImage(demoImage(), origin, alphaThreshold = 20, dimensions = Vec(2.4, 2.4, 0.0), planeNormal = direction, dustScale = 0.35f),
+        )
         "slash" -> ParticleGeometry.drawParticleLineSlash(origin, direction, 35.0, values.getOrNull(0) ?: 3.0, 0.18, values.getOrNull(1)?.toInt()?.coerceAtLeast(1) ?: 4) { _, middle, end, _ ->
             ParticleStyle(dust(lerpColor(0xff2020, 0xffff55, middle), 0.3f + middle.toFloat() * 0.35f), if (end > 0.5) 2 else 1)
         }
@@ -61,6 +66,14 @@ fun startParticleDemo(
         else -> return
     }
     scheduler.start(effect, sink)
+}
+
+private fun repeatDiagnostic(effect: ParticleEffect): ParticleEffect = object : ParticleEffect {
+    override val durationTicks: Int = 8
+
+    override fun emit(tick: Int, sink: ParticleSink) {
+        effect.emit(0, sink)
+    }
 }
 
 private fun demoImage(): BufferedImage {

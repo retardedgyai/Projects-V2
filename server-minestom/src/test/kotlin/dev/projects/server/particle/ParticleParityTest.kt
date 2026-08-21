@@ -41,9 +41,25 @@ class ParticleParityTest {
         val image = BufferedImage(4, 2, BufferedImage.TYPE_INT_ARGB)
         image.setRGB(0, 0, Color(0xff0000).rgb or (0xff shl 24))
         image.setRGB(2, 0, Color(0x00ff00).rgb)
-        val effect = ParticleImage(image, Pos.ZERO, alphaThreshold = 128, lod = 2, dimensions = Vec(2.0, 2.0, 0.0))
+        val effect = ParticleImage(image, Pos.ZERO, alphaThreshold = 128, lod = 2, rasterDimensions = Vec(2.0, 2.0, 0.0), dimensions = Vec(2.0, 2.0, 0.0))
         assertEquals(1, effect.pixels().size)
         assertEquals(1, effect.points().size)
+    }
+
+    @Test
+    fun `image world scale is independent from explicit raster resize`() {
+        val image = BufferedImage(8, 8, BufferedImage.TYPE_INT_ARGB)
+        for (y in 0 until 8) for (x in 0 until 8) {
+            image.setRGB(x, y, if (x in 1..6 && y in 1..6) Color(0x66ddff).rgb or (0xff shl 24) else 0)
+        }
+        val compact = ParticleImage(image, Pos.ZERO, alphaThreshold = 20, dimensions = Vec(2.0, 2.0, 0.0))
+        val wide = ParticleImage(image, Pos.ZERO, alphaThreshold = 20, dimensions = Vec(8.0, 8.0, 0.0))
+        val resized = ParticleImage(image, Pos.ZERO, alphaThreshold = 20, rasterDimensions = Vec(4.0, 4.0, 0.0), dimensions = Vec(8.0, 8.0, 0.0))
+        assertEquals(36, compact.pixels().size)
+        assertEquals(compact.pixels().size, wide.pixels().size)
+        assertTrue(resized.pixels().size < compact.pixels().size)
+        assertEquals(compact.points().size, wide.points().size)
+        assertTrue(wide.points().all { it.x().isFinite() && it.y().isFinite() && it.z().isFinite() })
     }
 
     @Test
