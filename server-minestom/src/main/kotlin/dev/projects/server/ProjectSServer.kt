@@ -290,7 +290,10 @@ fun main() {
         }
         val targets = tester?.let { listOf(CombatTarget(it.uuid, weakpoint?.center ?: it.position)) } ?: emptyList()
         val combatEvents = state.tick(event.player.position, event.player.position.direction(), targets)
-        publishCombatEvents(event.player, combatEvents.filterIsInstance<CombatEvent.Active>())
+        publishCombatEvents(
+            event.player,
+            combatEvents.filter { it is CombatEvent.Started || it is CombatEvent.Active },
+        )
         combatEvents.filterIsInstance<CombatEvent.HitConfirmed>().forEach { hit ->
             val damage = prototypeBoss.applyPlayerAttack(
                 attackExecutionId = hit.attackExecutionId,

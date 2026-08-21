@@ -110,7 +110,8 @@ class CombatTest {
         )
         val direction = Vec(1.0, 1.0, 0.0)
 
-        combat.input(AttackInputState.PRESS)
+        val started = combat.input(AttackInputState.PRESS)
+        assertEquals(listOf(CombatEvent.Started(1L)), started)
         repeat(3) { combat.tick(origin, direction, emptyList()) }
 
         val active = combat.tick(origin, direction, emptyList()).filterIsInstance<CombatEvent.Active>().single()
