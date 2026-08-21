@@ -30,7 +30,7 @@ enum class WeaponType {
                 startupTicks = scaledTicks(3.0 / attackSpeed),
                 activeTicks = 1,
                 recoveryTicks = scaledTicks(4.0 / attackSpeed),
-                range = 2.8,
+                range = 3.5,
                 minForwardDot = 0.65,
                 verticalRange = 1.75,
             )
