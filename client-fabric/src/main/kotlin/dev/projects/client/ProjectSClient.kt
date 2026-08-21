@@ -47,6 +47,8 @@ import kotlin.math.sqrt
 object ProjectSClient : ClientModInitializer {
     private const val ATTACK_DEBUG_TICKS = 5
     private val attackDebugDust = DustParticleOptions(0xFF0000, 0.65f)
+    private val twinRodCoreDust = DustParticleOptions(0xC8F8FF, 0.72f)
+    private val hitCoreDust = DustParticleOptions(0xFFFFFF, 0.9f)
     private val logger = LoggerFactory.getLogger("projects")
     private var attackHeld = false
     private var dodgeHeld = false
@@ -507,21 +509,12 @@ object ProjectSClient : ClientModInitializer {
             }
             Items.BLAZE_ROD -> {
                 twinRodSide = !twinRodSide
-                val side = if (twinRodSide) 0.28 else -0.28
-                val look = player.lookAngle
-                val horizontalLength = kotlin.math.sqrt(look.x * look.x + look.z * look.z)
-                val rightX = if (horizontalLength > 1.0e-6) look.z / horizontalLength else 1.0
-                val rightZ = if (horizontalLength > 1.0e-6) -look.x / horizontalLength else 0.0
-                level.addParticle(
-                    ParticleTypes.SWEEP_ATTACK,
-                    position.x + rightX * side,
-                    position.y,
-                    position.z + rightZ * side,
-                    0.0,
-                    0.0,
-                    0.0,
+                renderTwinRodSwing(client, player, twinRodSide)
+                player.playSound(
+                    SoundEvents.PLAYER_ATTACK_SWEEP,
+                    0.58f,
+                    if (twinRodSide) 1.16f else 1.32f,
                 )
-                player.playSound(SoundEvents.PLAYER_ATTACK_WEAK, 0.45f, 1.35f)
             }
             else -> {
                 level.addParticle(ParticleTypes.SWEEP_ATTACK, position.x, position.y, position.z, 0.0, 0.0, 0.0)
@@ -533,29 +526,139 @@ object ProjectSClient : ClientModInitializer {
     private fun showHitEffect(client: Minecraft, message: AttackHitConfirmed) {
         val level = client.level ?: return
         val target = level.getEntity(message.targetId) ?: return
-        val hitY = target.y + target.bbHeight * 0.65
-        val offsets = arrayOf(
-            doubleArrayOf(-0.18, -0.12),
-            doubleArrayOf(0.0, -0.16),
-            doubleArrayOf(0.18, -0.12),
-            doubleArrayOf(-0.2, 0.08),
-            doubleArrayOf(0.2, 0.08),
-            doubleArrayOf(-0.12, 0.2),
-            doubleArrayOf(0.12, 0.2),
-            doubleArrayOf(0.0, 0.0),
-        )
-        for ((offsetX, offsetZ) in offsets) {
+        val player = client.player
+        val hitY = target.y + target.bbHeight * 0.66
+        val attackerX = player?.x ?: target.x
+        val attackerY = player?.let { it.y + it.eyeHeight } ?: hitY
+        val attackerZ = player?.z ?: target.z
+        val towardAttackerX = attackerX - target.x
+        val towardAttackerY = attackerY - hitY
+        val towardAttackerZ = attackerZ - target.z
+        val distance = sqrt(
+            towardAttackerX * towardAttackerX +
+                towardAttackerY * towardAttackerY +
+                towardAttackerZ * towardAttackerZ,
+        ).coerceAtLeast(1.0e-6)
+        val normalX = towardAttackerX / distance
+        val normalY = towardAttackerY / distance
+        val normalZ = towardAttackerZ / distance
+        val referenceX: Double
+        val referenceY: Double
+        val referenceZ: Double
+        if (abs(normalY) < 0.9) {
+            referenceX = 0.0
+            referenceY = 1.0
+            referenceZ = 0.0
+        } else {
+            referenceX = 1.0
+            referenceY = 0.0
+            referenceZ = 0.0
+        }
+        val rightX = referenceY * normalZ - referenceZ * normalY
+        val rightY = referenceZ * normalX - referenceX * normalZ
+        val rightZ = referenceX * normalY - referenceY * normalX
+        val rightLength = sqrt(rightX * rightX + rightY * rightY + rightZ * rightZ)
+        val normalizedRightX = rightX / rightLength
+        val normalizedRightY = rightY / rightLength
+        val normalizedRightZ = rightZ / rightLength
+        val upX = normalY * normalizedRightZ - normalZ * normalizedRightY
+        val upY = normalZ * normalizedRightX - normalX * normalizedRightZ
+        val upZ = normalX * normalizedRightY - normalY * normalizedRightX
+        val surfaceDistance = 0.42
+        val centerX = target.x + normalX * surfaceDistance
+        val centerY = hitY + normalY * surfaceDistance
+        val centerZ = target.z + normalZ * surfaceDistance
+
+        level.addParticle(ParticleTypes.END_ROD, centerX, centerY, centerZ, 0.0, 0.0, 0.0)
+        for (arm in -1..1) {
+            val offset = arm * 0.22
             level.addParticle(
-                ParticleTypes.CRIT,
-                target.x + offsetX,
-                hitY,
-                target.z + offsetZ,
-                offsetX * 0.35,
-                0.08,
-                offsetZ * 0.35,
+                hitCoreDust,
+                centerX + normalizedRightX * offset,
+                centerY + normalizedRightY * offset,
+                centerZ + normalizedRightZ * offset,
+                0.0,
+                0.0,
+                0.0,
+            )
+            level.addParticle(
+                hitCoreDust,
+                centerX + upX * offset,
+                centerY + upY * offset,
+                centerZ + upZ * offset,
+                0.0,
+                0.0,
+                0.0,
             )
         }
-        client.player?.playSound(SoundEvents.PLAYER_ATTACK_CRIT, 0.6f, 1.1f)
+        for (spark in -1..1) {
+            val side = spark * 0.17
+            level.addParticle(
+                ParticleTypes.ELECTRIC_SPARK,
+                centerX + normalizedRightX * side + normalX * 0.05,
+                centerY + normalizedRightY * side + normalY * 0.05,
+                centerZ + normalizedRightZ * side + normalZ * 0.05,
+                normalizedRightX * side * 1.8,
+                0.06 + abs(side) * 0.2,
+                normalizedRightZ * side * 1.8,
+            )
+        }
+        player?.playSound(SoundEvents.PLAYER_ATTACK_CRIT, 0.82f, 1.02f)
+    }
+
+    private fun renderTwinRodSwing(
+        client: Minecraft,
+        player: net.minecraft.client.player.LocalPlayer,
+        rightHandStrike: Boolean,
+    ) {
+        val level = client.level ?: return
+        val look = player.lookAngle
+        val forwardX = look.x
+        val forwardY = look.y
+        val forwardZ = look.z
+        val referenceX: Double
+        val referenceY: Double
+        val referenceZ: Double
+        if (abs(forwardY) < 0.9) {
+            referenceX = 0.0
+            referenceY = 1.0
+            referenceZ = 0.0
+        } else {
+            referenceX = 1.0
+            referenceY = 0.0
+            referenceZ = 0.0
+        }
+        val rightX = referenceY * forwardZ - referenceZ * forwardY
+        val rightY = referenceZ * forwardX - referenceX * forwardZ
+        val rightZ = referenceX * forwardY - referenceY * forwardX
+        val rightLength = sqrt(rightX * rightX + rightY * rightY + rightZ * rightZ)
+        val normalizedRightX = rightX / rightLength
+        val normalizedRightY = rightY / rightLength
+        val normalizedRightZ = rightZ / rightLength
+        val upX = forwardY * normalizedRightZ - forwardZ * normalizedRightY
+        val upY = forwardZ * normalizedRightX - forwardX * normalizedRightZ
+        val upZ = forwardX * normalizedRightY - forwardY * normalizedRightX
+        val side = if (rightHandStrike) 1.0 else -1.0
+        val eyeX = player.x
+        val eyeY = player.y + player.eyeHeight
+        val eyeZ = player.z
+
+        for (index in 0..6) {
+            val progress = index / 6.0
+            val angle = -0.78 + progress * 1.56
+            val sin = sin(angle)
+            val cos = cos(angle)
+            val depth = 1.03 + cos * 0.11
+            val lateral = side * (0.2 + sin * 0.34)
+            val vertical = sin * 0.16
+            val x = eyeX + forwardX * depth + normalizedRightX * lateral + upX * vertical
+            val y = eyeY + forwardY * depth + normalizedRightY * lateral + upY * vertical
+            val z = eyeZ + forwardZ * depth + normalizedRightZ * lateral + upZ * vertical
+            level.addParticle(twinRodCoreDust, x, y, z, 0.0, 0.0, 0.0)
+            if (index % 2 == 0) {
+                level.addParticle(ParticleTypes.ELECTRIC_SPARK, x, y, z, 0.0, 0.0, 0.0)
+            }
+        }
     }
 }
 
