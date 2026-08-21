@@ -65,6 +65,12 @@ class Skill1StateTest {
     }
 
     @Test
+    fun `skill1 hit launch uses the updated vertical speed`() {
+        assertEquals(20.0, Skill1State.LAUNCH_SPEED_Y)
+        assertEquals(2.5, Skill1State.LAUNCH_HORIZONTAL_SPEED)
+    }
+
+    @Test
     fun `skill2 cast cancels skill1 movement but preserves its cooldown`() {
         val skill1 = Skill1State(sequence())
         val skill2 = Skill2State(sequence())

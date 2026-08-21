@@ -117,7 +117,7 @@ class Skill1State(
         const val DASH_TICKS = 4
         const val COOLDOWN_TICKS = 80
         const val DASH_SPEED = 12.0
-        const val LAUNCH_SPEED_Y = 8.4
+        const val LAUNCH_SPEED_Y = 20.0
         const val LAUNCH_HORIZONTAL_SPEED = 2.5
         const val HIT_RADIUS = 1.0
     }
