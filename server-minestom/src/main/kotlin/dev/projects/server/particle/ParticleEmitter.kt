@@ -59,8 +59,13 @@ class ParticleEmitter(
             val rangeSpeed = if (speedRange.start == speedRange.endInclusive) speedRange.start
             else random.nextDouble(speedRange.start.toDouble(), speedRange.endInclusive.toDouble()).toFloat()
             val style = styleCurve.sample(progress)
-            // A configured range supplies the base speed; otherwise the animated style speed does.
-            val speed = if (speedRange.start != 0f || speedRange.endInclusive != 0f) rangeSpeed else style.speed
+            // An explicit speed curve is authoritative; otherwise use the configured range,
+            // falling back to the style's base speed when no range was supplied.
+            val speed = when {
+                styleCurve.speed != null -> style.speed
+                speedRange.start != 0f || speedRange.endInclusive != 0f -> rangeSpeed
+                else -> style.speed
+            }
             emitStyle(position, style.copy(offset = direction, speed = speed, directional = true), index + tick * max(1, count), sink)
         }
     }

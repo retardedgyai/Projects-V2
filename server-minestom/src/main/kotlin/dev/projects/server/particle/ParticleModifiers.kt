@@ -32,8 +32,10 @@ fun ParticleEffect.rotated(transform: ParticleTransform): ParticleEffect = Modif
     pivot.add(rotated.x(), rotated.y(), rotated.z())
 })
 
-fun ParticleEffect.transformed(transform: ParticleTransform): ParticleEffect = localCoordinates(transform)
+/** Full local-to-world mapping, including the transform origin, basis, and scale. */
+fun ParticleEffect.transformed(transform: ParticleTransform): ParticleEffect = ModifiedParticleEffect(this, transform = transform::localPoint)
 
+/** Maps positions authored in the effect's local frame into world coordinates. */
 fun ParticleEffect.localCoordinates(transform: ParticleTransform): ParticleEffect = ModifiedParticleEffect(this, transform = transform::localPoint)
 
 fun ParticleEffect.scaled(factor: Double, pivot: Point = Vec.ZERO): ParticleEffect {
