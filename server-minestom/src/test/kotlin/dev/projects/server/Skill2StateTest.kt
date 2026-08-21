@@ -16,6 +16,7 @@ class Skill2StateTest {
 
         assertEquals(null, skill2.tryCast(true))
         assertTrue(skill2.isReady)
+        assertEquals(0, ClassResourceState().snapshot(0, skill2.cooldownTicksRemaining, 0).skill2CooldownTicks)
         assertNotNull(skill2.tryCast(false))
         repeat(3) {
             val tick = skill2.tick(false)

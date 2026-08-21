@@ -14,10 +14,15 @@ dependencies {
     implementation("net.fabricmc:fabric-language-kotlin:${property("fabric_kotlin_version")}")
     implementation(project(":protocol"))
     include(project(":protocol"))
+    testImplementation(kotlin("test"))
 }
 
 kotlin {
     jvmToolchain(25)
+}
+
+tasks.test {
+    useJUnitPlatform()
 }
 
 tasks.processResources {

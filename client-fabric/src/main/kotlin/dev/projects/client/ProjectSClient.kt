@@ -56,6 +56,10 @@ object ProjectSClient : ClientModInitializer {
     private var twinRodSide = false
     private var mana = 0
     private var maxMana = 100
+    private var skill1CooldownTicks = 0
+    private var skill1CooldownMaxTicks = 80
+    private var skill2CooldownTicks = 0
+    private var skill2CooldownMaxTicks = 100
     private var skill3CooldownTicks = 0
     private var skill3CooldownMaxTicks = 60
     private var attackDebugShape: AttackDebugShape? = null
@@ -110,6 +114,10 @@ object ProjectSClient : ClientModInitializer {
                     is ClassResourceSnapshot -> context.client().execute {
                         mana = message.mana
                         maxMana = message.maxMana
+                        skill1CooldownTicks = message.skill1CooldownTicks
+                        skill1CooldownMaxTicks = message.skill1CooldownMaxTicks
+                        skill2CooldownTicks = message.skill2CooldownTicks
+                        skill2CooldownMaxTicks = message.skill2CooldownMaxTicks
                         skill3CooldownTicks = message.skill3CooldownTicks
                         skill3CooldownMaxTicks = message.skill3CooldownMaxTicks
                     }
@@ -138,6 +146,8 @@ object ProjectSClient : ClientModInitializer {
             suppressNextAttackStarted = false
             twinRodSide = false
             mana = 0
+            skill1CooldownTicks = 0
+            skill2CooldownTicks = 0
             skill3CooldownTicks = 0
             attackDebugShape = null
             attackDebugTicksRemaining = 0
@@ -214,12 +224,63 @@ object ProjectSClient : ClientModInitializer {
         val x = (context.guiWidth() - barWidth) / 2
         val y = context.guiHeight() - 52
         drawResourceBar(context, "MANA $mana / $maxMana", mana, maxMana, x, y, barWidth, barHeight, 0xFF4C9BFF.toInt())
-        val cooldownText = if (skill3CooldownTicks == 0) {
-            "S3 READY"
-        } else {
-            "S3 %.1fs".format(skill3CooldownTicks / 20.0)
+        renderSkillHud(context)
+    }
+
+    private fun renderSkillHud(context: GuiGraphicsExtractor) {
+        val slotWidth = 38
+        val slotHeight = 28
+        val gap = 4
+        val totalWidth = slotWidth * 4 + gap * 3
+        val startX = (context.guiWidth() - totalWidth) / 2
+        val y = context.guiHeight() - 84
+        val slots = listOf(
+            SkillHudSlot("S1", skill1Key, skill1CooldownTicks, skill1CooldownMaxTicks, true),
+            SkillHudSlot("S2", skill2Key, skill2CooldownTicks, skill2CooldownMaxTicks, true),
+            SkillHudSlot("S3", skill3Key, skill3CooldownTicks, skill3CooldownMaxTicks, true),
+            SkillHudSlot("ULT", ultimateKey, 0, 1, false),
+        )
+        for ((index, slot) in slots.withIndex()) {
+            val slotX = startX + index * (slotWidth + gap)
+            drawSkillSlot(context, slot, slotX, y, slotWidth, slotHeight)
         }
-        context.text(Minecraft.getInstance().font, cooldownText, x, y + 19, 0xFFFFFFFF.toInt(), true)
+    }
+
+    private fun drawSkillSlot(
+        context: GuiGraphicsExtractor,
+        slot: SkillHudSlot,
+        x: Int,
+        y: Int,
+        width: Int,
+        height: Int,
+    ) {
+        val ready = slot.implemented && slot.remainingTicks == 0
+        val background = if (ready) 0xDD1E6B78.toInt() else 0xDD18202A.toInt()
+        context.fill(x, y, x + width, y + height, background)
+        if (!ready) {
+            val fillHeight = (height * cooldownFillRatio(slot.remainingTicks, slot.maxTicks)).toInt()
+            if (fillHeight > 0) {
+                context.fill(x, y, x + width, y + fillHeight, 0xAA080B10.toInt())
+            }
+        }
+        val keyLabel = slot.key.getTranslatedKeyMessage().getString()
+        val keyColor = if (slot.implemented) 0xFFFFFFFF.toInt() else 0xFF707780.toInt()
+        context.text(Minecraft.getInstance().font, slot.name, x + 3, y + 3, keyColor, true)
+        context.text(Minecraft.getInstance().font, keyLabel, x + 3, y + height - 10, keyColor, true)
+        val centerText = when {
+            !slot.implemented -> "--"
+            ready -> "READY"
+            else -> cooldownSecondsText(slot.remainingTicks)
+        }
+        val textWidth = Minecraft.getInstance().font.width(centerText)
+        context.text(
+            Minecraft.getInstance().font,
+            centerText,
+            x + (width - textWidth) / 2,
+            y + 9,
+            keyColor,
+            true,
+        )
     }
 
     private fun drawResourceBar(
@@ -424,6 +485,14 @@ object ProjectSClient : ClientModInitializer {
         InputConstants.Type.KEYSYM,
         defaultKey,
         skillCategory,
+    )
+
+    private data class SkillHudSlot(
+        val name: String,
+        val key: KeyMapping,
+        val remainingTicks: Int,
+        val maxTicks: Int,
+        val implemented: Boolean,
     )
 
     private fun showSwingEffect(client: Minecraft, player: net.minecraft.client.player.LocalPlayer) {

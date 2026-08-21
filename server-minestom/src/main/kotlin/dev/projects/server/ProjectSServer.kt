@@ -43,7 +43,9 @@ import net.kyori.adventure.sound.Sound
 import net.kyori.adventure.key.Key
 import java.nio.charset.StandardCharsets
 import java.util.UUID
+import kotlin.math.abs
 import kotlin.math.floor
+import kotlin.math.sqrt
 import net.minestom.server.collision.BoundingBox
 import net.minestom.server.coordinate.Point
 import net.minestom.server.command.CommandSender
@@ -57,6 +59,12 @@ private const val DEFAULT_ATTACK_SPEED = 1.0
 private val SUPPORTED_ATTACK_SPEEDS = setOf(1.0, 1.5, 2.0)
 private const val DODGE_PLAYER_WIDTH = 0.6
 private const val DODGE_PLAYER_HEIGHT = 1.8
+
+internal data class SkillCooldowns(
+    val skill1: Int,
+    val skill2: Int,
+    val skill3: Int,
+)
 
 fun main() {
     val server = MinecraftServer.init(Auth.Offline())
@@ -76,7 +84,7 @@ fun main() {
     val skill2States = mutableMapOf<UUID, Skill2State>()
     val skill3States = mutableMapOf<UUID, Skill3State>()
     val resourceSyncTicks = mutableMapOf<UUID, Int>()
-    val lastSentSkill3Cooldown = mutableMapOf<UUID, Int>()
+    val lastSentCooldowns = mutableMapOf<UUID, SkillCooldowns>()
     val dodgeVelocityActive = mutableMapOf<UUID, Boolean>()
     val attackSpeeds = mutableMapOf<UUID, Double>()
     val prototypeBoss = PrototypeBossState()
@@ -92,12 +100,19 @@ fun main() {
 
     fun sendResourceSnapshot(player: net.minestom.server.entity.Player) {
         val resources = classResources[player.uuid] ?: return
+        val skill1 = skill1States[player.uuid] ?: return
+        val skill2 = skill2States[player.uuid] ?: return
         val skill3 = skill3States[player.uuid] ?: return
+        val cooldowns = SkillCooldowns(
+            skill1 = skill1.cooldownTicksRemaining,
+            skill2 = skill2.cooldownTicksRemaining,
+            skill3 = skill3.cooldownTicksRemaining,
+        )
         player.sendPluginMessage(
             PROJECTS_CHANNEL,
-            ProtocolCodec.encode(resources.snapshot(skill3.cooldownTicksRemaining)),
+            ProtocolCodec.encode(resources.snapshot(cooldowns.skill1, cooldowns.skill2, cooldowns.skill3)),
         )
-        lastSentSkill3Cooldown[player.uuid] = skill3.cooldownTicksRemaining
+        lastSentCooldowns[player.uuid] = cooldowns
     }
 
     fun updateBossBar() {
@@ -251,7 +266,7 @@ fun main() {
         skill2States.remove(playerId)
         skill3States.remove(playerId)
         resourceSyncTicks.remove(playerId)
-        lastSentSkill3Cooldown.remove(playerId)
+        lastSentCooldowns.remove(playerId)
         attackSpeeds.remove(playerId)
     }
     events.addListener(PlayerTickEvent::class.java) { event ->
@@ -349,6 +364,7 @@ fun main() {
                     direction.z() * Skill1State.DASH_SPEED,
                 ),
             )
+            showSkill1Trail(event.player, start, direction)
             val skillTargets = tester?.let { listOf(combatTarget(it)) } ?: emptyList()
             val hitTargets = skill1.hitTargetsOnSegment(start, end, skillTargets)
             if (hitTargets.isNotEmpty()) {
@@ -356,6 +372,8 @@ fun main() {
                     val damage = prototypeBoss.applySkill1Attack(skill1.castId, targetId)
                     if (damage > 0) updateBossBar()
                 }
+                showSkill1Impact(event.player, tester?.position ?: end)
+                showSkill1Launch(event.player)
                 event.player.setVelocity(
                     Vec(
                         direction.x() * Skill1State.LAUNCH_HORIZONTAL_SPEED,
@@ -374,19 +392,22 @@ fun main() {
         val skill2Tick = skill2.tick(event.player.isOnGround)
         if (skill2Tick.diveActive) {
             event.player.setVelocity(Vec(0.0, -Skill2State.DOWNWARD_SPEED, 0.0))
+            showSkill2DiveTrail(event.player)
         } else if (skill2Tick.landed) {
             val skillTargets = tester?.let { listOf(combatTarget(it)) } ?: emptyList()
             skill2.hitTargetsAtLanding(event.player.position, skillTargets).forEach { targetId ->
                 val damage = prototypeBoss.applySkill2Attack(skill2.castId, targetId)
                 if (damage > 0) updateBossBar()
             }
+            showSkill2Landing(event.player)
+            sendResourceSnapshot(event.player)
             event.player.setVelocity(Vec.ZERO)
         }
         if (!prototypeBoss.isActive) {
             finishEncounter()
             return@addListener
         }
-        val previousSkill3Cooldown = skill3.cooldownTicksRemaining
+        val previousSkill3Phase = skill3.phase
         val skill3Tick = skill3.tick(event.player.isOnGround, event.player.velocity.y())
         if (skill3Tick.dashActive) {
             val direction = requireNotNull(skill3Tick.dashDirection)
@@ -408,6 +429,7 @@ fun main() {
                     direction.z() * Skill3State.DASH_SPEED,
                 ),
             )
+            showSkill3DashTrail(event.player, start, direction)
         } else if (skill3Tick.phase == Skill3Phase.HOVER) {
             if (skill3Tick.stopHorizontalVelocity) {
                 event.player.setVelocity(Vec.ZERO)
@@ -415,7 +437,9 @@ fun main() {
                 event.player.setVelocity(skill3HoverVelocity(event.player.velocity, skill3Tick.velocityY))
             }
         }
-        if (previousSkill3Cooldown == 0 && skill3.cooldownTicksRemaining > 0) {
+        if (previousSkill3Phase == Skill3Phase.DASH && skill3.phase == Skill3Phase.HOVER) {
+            showSkill3Snap(event.player, requireNotNull(skill3Tick.dashDirection))
+            showSkill3Hover(event.player)
             sendResourceSnapshot(event.player)
         }
         if (!prototypeBoss.isActive) {
@@ -446,10 +470,14 @@ fun main() {
         val syncTick = (resourceSyncTicks[event.player.uuid] ?: 0) + 1
         if (syncTick >= 4) {
             resourceSyncTicks[event.player.uuid] = 0
-            if (shouldSyncSkill3Cooldown(
+            if (shouldSyncSkillCooldowns(
                     syncTick,
-                    skill3.cooldownTicksRemaining,
-                    lastSentSkill3Cooldown[event.player.uuid],
+                    SkillCooldowns(
+                        skill1 = skill1.cooldownTicksRemaining,
+                        skill2 = skill2.cooldownTicksRemaining,
+                        skill3 = skill3.cooldownTicksRemaining,
+                    ),
+                    lastSentCooldowns[event.player.uuid],
                 )
             ) {
                 sendResourceSnapshot(event.player)
@@ -512,7 +540,10 @@ fun main() {
                     when (message.slot) {
                         ClassSkillSlot.SKILL_1 -> {
                             if (skill2.phase == Skill2Phase.DIVE || skill3.phase != Skill3Phase.IDLE) return@addListener
-                            skill1.tryCast(event.player.position.direction())
+                            if (skill1.tryCast(event.player.position.direction()) != null) {
+                                showSkill1Cast(event.player)
+                                sendResourceSnapshot(event.player)
+                            }
                         }
                         ClassSkillSlot.SKILL_2 -> {
                             val castId = skill2.tryCast(event.player.isOnGround)
@@ -520,6 +551,7 @@ fun main() {
                                 skill1.cancelActiveMovement()
                                 skill3.cancelActiveMovement()
                                 event.player.setVelocity(Vec(0.0, -Skill2State.DOWNWARD_SPEED, 0.0))
+                                showSkill2Cast(event.player)
                             }
                         }
                         ClassSkillSlot.SKILL_3 -> {
@@ -530,7 +562,10 @@ fun main() {
                                 event.player.position.direction(),
                                 ClassSkillDirection(message.directionX, message.directionZ),
                             )
-                            if (castId != null) sendResourceSnapshot(event.player)
+                            if (castId != null) {
+                                showSkill3Cast(event.player)
+                                sendResourceSnapshot(event.player)
+                            }
                         }
                         ClassSkillSlot.ULTIMATE -> return@addListener
                     }
@@ -608,6 +643,12 @@ internal fun skill3HoverVelocity(currentVelocity: Vec, velocityY: Double): Vec =
 
 internal fun shouldSyncSkill3Cooldown(syncTick: Int, currentCooldown: Int, lastSentCooldown: Int?): Boolean =
     syncTick >= 4 && currentCooldown != lastSentCooldown
+
+internal fun shouldSyncSkillCooldowns(
+    syncTick: Int,
+    currentCooldowns: SkillCooldowns,
+    lastSentCooldowns: SkillCooldowns?,
+): Boolean = syncTick >= 4 && currentCooldowns != lastSentCooldowns
 
 private fun tickFixedTester(
     instance: Instance,
@@ -733,6 +774,267 @@ private fun showWeakpointHit(
         ),
         center,
     )
+}
+
+private fun showSkill1Cast(player: net.minestom.server.entity.Player) {
+    val origin = player.position.add(0.0, 0.12, 0.0)
+    val direction = FixedAttackTester.normalizeHorizontal(player.position.direction())
+    sendSkillParticle(player, Particle.END_ROD, origin)
+    sendSkillParticle(player, Particle.ENCHANT, origin.add(direction.x() * 0.35, 0.2, direction.z() * 0.35))
+    sendSkillParticle(player, Particle.END_ROD, origin.add(0.25, 0.0, 0.0))
+    sendSkillParticle(player, Particle.END_ROD, origin.add(-0.25, 0.0, 0.0))
+    sendSkillArc(player, Particle.END_ROD, origin.add(0.0, 0.12, 0.0), direction, 0.62, -1.1, 1.1, 7)
+    sendSkillArc(player, Particle.ENCHANT, origin.add(0.0, 0.18, 0.0), direction, 0.45, -0.85, 0.85, 5)
+    playSkillSound(player, "entity.player.attack.sweep", origin, 0.75f, 1.35f)
+}
+
+private fun showSkill1Trail(player: net.minestom.server.entity.Player, position: Pos, direction: Vec) {
+    val origin = position.add(0.0, 0.45, 0.0)
+    for (step in 0..3) {
+        val distance = 0.12 + step * 0.22
+        sendSkillParticle(
+            player,
+            Particle.END_ROD,
+            origin.add(direction.x() * distance, 0.0, direction.z() * distance),
+        )
+        if (step < 3) {
+            sendSkillParticle(
+                player,
+                Particle.ENCHANT,
+                origin.add(-direction.x() * step * 0.16, 0.1, -direction.z() * step * 0.16),
+            )
+        }
+    }
+    sendSkillParticle(player, Particle.ELECTRIC_SPARK, origin.add(-direction.x() * 0.25, -0.12, -direction.z() * 0.25))
+}
+
+private fun showSkill1Impact(player: net.minestom.server.entity.Player, position: Point) {
+    val center = position.add(0.0, 1.0, 0.0)
+    sendSkillParticle(player, Particle.EXPLOSION, center)
+    sendSkillParticle(player, Particle.END_ROD, center)
+    sendSkillParticle(player, Particle.CRIT, center.add(0.45, 0.0, 0.0))
+    sendSkillParticle(player, Particle.CRIT, center.add(-0.45, 0.0, 0.0))
+    sendSkillParticle(player, Particle.CRIT, center.add(0.0, 0.45, 0.0))
+    sendSkillParticle(player, Particle.CRIT, center.add(0.0, -0.45, 0.0))
+    sendSkillArc(player, Particle.END_ROD, center, Vec(0.0, 0.0, 1.0), 0.58, -Math.PI, Math.PI, 10)
+    playSkillSound(player, "entity.player.attack.crit", center, 0.9f, 0.9f)
+}
+
+private fun showSkill1Launch(player: net.minestom.server.entity.Player) {
+    val origin = player.position.add(0.0, 0.15, 0.0)
+    for (step in 0..7) {
+        val progress = step / 7.0
+        val angle = progress * Math.PI * 2.2
+        val radius = 0.12 + progress * 0.2
+        val point = origin.add(
+            kotlin.math.cos(angle) * radius,
+            step * 0.34,
+            kotlin.math.sin(angle) * radius,
+        )
+        sendSkillParticle(player, Particle.END_ROD, point)
+        if (step % 2 == 0) sendSkillParticle(player, Particle.ENCHANT, point.add(0.0, 0.12, 0.0))
+    }
+    playSkillSound(player, "entity.player.levelup", origin.add(0.0, 0.8, 0.0), 0.5f, 1.65f)
+}
+
+private fun showSkill2Cast(player: net.minestom.server.entity.Player) {
+    val origin = player.position.add(0.0, 0.3, 0.0)
+    sendSkillParticle(player, Particle.END_ROD, origin)
+    sendSkillParticle(player, Particle.ENCHANT, origin.add(0.0, 0.4, 0.0))
+    sendSkillParticle(player, Particle.ELECTRIC_SPARK, origin.add(0.18, 0.2, 0.0))
+    sendSkillParticle(player, Particle.ELECTRIC_SPARK, origin.add(-0.18, 0.2, 0.0))
+    playSkillSound(player, "entity.phantom.flap", origin, 0.45f, 1.2f)
+}
+
+private fun showSkill2DiveTrail(player: net.minestom.server.entity.Player) {
+    val position = player.position
+    for (step in 0..4) {
+        val progress = step / 4.0
+        val y = 0.18 + progress * 1.15
+        val radius = 0.2 - progress * 0.12
+        sendSkillParticle(player, Particle.END_ROD, position.add(0.0, y, 0.0))
+        sendSkillParticle(player, Particle.ELECTRIC_SPARK, position.add(radius, y - 0.08, 0.0))
+        sendSkillParticle(player, Particle.ELECTRIC_SPARK, position.add(-radius, y - 0.08, 0.0))
+    }
+    sendSkillParticle(player, Particle.CLOUD, position.add(0.0, 1.25, 0.0))
+}
+
+private fun showSkill2Landing(player: net.minestom.server.entity.Player) {
+    val center = player.position.add(0.0, 0.12, 0.0)
+    sendSkillRing(player, Particle.END_ROD, center, 4.0, 18)
+    sendSkillRing(player, Particle.ENCHANT, center, 3.15, 14)
+    for (spoke in 0..7) {
+        val angle = spoke * Math.PI / 4.0
+        for (step in 1..4) {
+            val radius = step.toDouble()
+            sendSkillParticle(
+                player,
+                if (step % 2 == 0) Particle.END_ROD else Particle.ELECTRIC_SPARK,
+                center.add(kotlin.math.cos(angle) * radius, 0.0, kotlin.math.sin(angle) * radius),
+            )
+        }
+    }
+    sendSkillParticle(player, Particle.EXPLOSION, center)
+    sendSkillParticle(player, Particle.END_ROD, center.add(0.0, 0.35, 0.0))
+    playSkillSound(player, "entity.generic.explode", center, 0.85f, 0.85f)
+    playSkillSound(player, "entity.player.attack.crit", center, 0.5f, 1.3f)
+}
+
+private fun showSkill3Cast(player: net.minestom.server.entity.Player) {
+    val origin = player.position.add(0.0, 0.8, 0.0)
+    val (forward, _, _) = directionBasis(player.position.direction())
+    for (step in 0..2) {
+        sendSkillParticle(player, Particle.END_ROD, origin.add(forward.x() * step * 0.3, forward.y() * step * 0.3, forward.z() * step * 0.3))
+    }
+    playSkillSound(player, "entity.enderman.teleport", origin, 0.65f, 1.25f)
+}
+
+private fun showSkill3DashTrail(
+    player: net.minestom.server.entity.Player,
+    position: Pos,
+    direction: Vec,
+) {
+    val origin = position.add(0.0, 0.8, 0.0)
+    val (forward, right, up) = directionBasis(direction)
+    for (step in 0..3) {
+        val progress = step / 3.0
+        val distance = 0.12 + progress * 0.9
+        val core = origin.add(
+            forward.x() * distance,
+            forward.y() * distance,
+            forward.z() * distance,
+        )
+        sendSkillParticle(player, Particle.END_ROD, core)
+        for (ribbon in 0..1) {
+            val phase = progress * Math.PI * 1.4 + ribbon * Math.PI
+            val radial = Vec(
+                right.x() * kotlin.math.cos(phase) * 0.22 + up.x() * kotlin.math.sin(phase) * 0.22,
+                right.y() * kotlin.math.cos(phase) * 0.22 + up.y() * kotlin.math.sin(phase) * 0.22,
+                right.z() * kotlin.math.cos(phase) * 0.22 + up.z() * kotlin.math.sin(phase) * 0.22,
+            )
+            sendSkillParticle(
+                player,
+                if (ribbon == 0) Particle.ENCHANT else Particle.ELECTRIC_SPARK,
+                core.add(radial.x(), radial.y(), radial.z()),
+            )
+        }
+    }
+}
+
+private fun showSkill3Snap(player: net.minestom.server.entity.Player, direction: Vec) {
+    val position = player.position.add(0.0, 0.8, 0.0)
+    val (_, right, up) = directionBasis(direction)
+    sendSkillParticle(player, Particle.EXPLOSION, position)
+    sendSkillParticle(player, Particle.END_ROD, position)
+    sendSkillParticle(player, Particle.CRIT, position.add(right.x() * 0.45, right.y() * 0.45, right.z() * 0.45))
+    sendSkillParticle(player, Particle.CRIT, position.add(-right.x() * 0.45, -right.y() * 0.45, -right.z() * 0.45))
+    sendSkillParticle(player, Particle.CRIT, position.add(up.x() * 0.45, up.y() * 0.45, up.z() * 0.45))
+    sendSkillParticle(player, Particle.CRIT, position.add(-up.x() * 0.45, -up.y() * 0.45, -up.z() * 0.45))
+    for (step in 0..11) {
+        val angle = step * Math.PI / 6.0
+        val radial = Vec(
+            right.x() * kotlin.math.cos(angle) + up.x() * kotlin.math.sin(angle),
+            right.y() * kotlin.math.cos(angle) + up.y() * kotlin.math.sin(angle),
+            right.z() * kotlin.math.cos(angle) + up.z() * kotlin.math.sin(angle),
+        )
+        sendSkillParticle(player, Particle.END_ROD, position.add(radial.x() * 0.62, radial.y() * 0.62, radial.z() * 0.62))
+    }
+    playSkillSound(player, "block.amethyst_block.hit", position, 0.75f, 1.55f)
+}
+
+private fun showSkill3Hover(player: net.minestom.server.entity.Player) {
+    val position = player.position.add(0.0, 1.0, 0.0)
+    for (step in 0..7) {
+        val angle = step * Math.PI / 4.0
+        val radial = 0.32
+        sendSkillParticle(
+            player,
+            if (step % 2 == 0) Particle.GLOW else Particle.END_ROD,
+            position.add(
+                kotlin.math.cos(angle) * radial,
+                kotlin.math.sin(angle * 1.5) * 0.18,
+                kotlin.math.sin(angle) * radial,
+            ),
+        )
+    }
+}
+
+private fun sendSkillArc(
+    player: net.minestom.server.entity.Player,
+    particle: Particle,
+    center: Point,
+    direction: Vec,
+    radius: Double,
+    startAngle: Double,
+    endAngle: Double,
+    segments: Int,
+) {
+    val forward = FixedAttackTester.normalizeHorizontal(direction)
+    val right = Vec(-forward.z(), 0.0, forward.x())
+    for (step in 0..segments) {
+        val angle = startAngle + (endAngle - startAngle) * step / segments
+        val radial = Vec(
+            forward.x() * kotlin.math.cos(angle) + right.x() * kotlin.math.sin(angle),
+            0.0,
+            forward.z() * kotlin.math.cos(angle) + right.z() * kotlin.math.sin(angle),
+        )
+        sendSkillParticle(player, particle, center.add(radial.x() * radius, 0.0, radial.z() * radius))
+    }
+}
+
+private fun sendSkillRing(
+    player: net.minestom.server.entity.Player,
+    particle: Particle,
+    center: Point,
+    radius: Double,
+    segments: Int,
+) {
+    for (step in 0 until segments) {
+        val angle = 2.0 * Math.PI * step / segments
+        sendSkillParticle(
+            player,
+            particle,
+            center.add(kotlin.math.cos(angle) * radius, 0.0, kotlin.math.sin(angle) * radius),
+        )
+    }
+}
+
+private fun directionBasis(direction: Vec): Triple<Vec, Vec, Vec> {
+    val length = sqrt(direction.x() * direction.x() + direction.y() * direction.y() + direction.z() * direction.z())
+    val forward = Vec(direction.x() / length, direction.y() / length, direction.z() / length)
+    val reference = if (abs(forward.y()) < 0.9) Vec(0.0, 1.0, 0.0) else Vec(1.0, 0.0, 0.0)
+    val rawRight = Vec(
+        forward.y() * reference.z() - forward.z() * reference.y(),
+        forward.z() * reference.x() - forward.x() * reference.z(),
+        forward.x() * reference.y() - forward.y() * reference.x(),
+    )
+    val rightLength = sqrt(rawRight.x() * rawRight.x() + rawRight.y() * rawRight.y() + rawRight.z() * rawRight.z())
+    val right = Vec(rawRight.x() / rightLength, rawRight.y() / rightLength, rawRight.z() / rightLength)
+    val up = Vec(
+        forward.y() * right.z() - forward.z() * right.y(),
+        forward.z() * right.x() - forward.x() * right.z(),
+        forward.x() * right.y() - forward.y() * right.x(),
+    )
+    return Triple(forward, right, up)
+}
+
+private fun playSkillSound(
+    player: net.minestom.server.entity.Player,
+    key: String,
+    point: Point,
+    volume: Float,
+    pitch: Float,
+) {
+    val soundEvent = SoundEvent.fromKey(Key.key("minecraft", key)) ?: return
+    player.playSound(Sound.sound(soundEvent, Sound.Source.PLAYER, volume, pitch), point)
+}
+
+private fun sendSkillParticle(
+    player: net.minestom.server.entity.Player,
+    particle: Particle,
+    point: Point,
+) {
+    player.sendPacket(ParticlePacket(particle, point.x(), point.y(), point.z(), 0f, 0f, 0f, 0f, 1))
 }
 
 internal fun directionFrom(origin: Pos, target: Pos): Vec =

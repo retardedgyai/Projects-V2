@@ -155,14 +155,14 @@ class ProtocolCodecTest {
     }
 
     @Test
-    fun `resource snapshot round trips mana and skill3 cooldown`() {
-        assertRoundTrip(ClassResourceSnapshot(75, 100, 40, 60))
+    fun `resource snapshot round trips mana and all skill cooldowns`() {
+        assertRoundTrip(ClassResourceSnapshot(75, 100, 20, 80, 50, 100, 40, 60))
     }
 
     @Test
     fun `malformed resource snapshot fails closed`() {
-        val malformed = ProtocolCodec.encode(ClassResourceSnapshot(75, 100, 40, 60)).copyOf().also { bytes ->
-            java.nio.ByteBuffer.wrap(bytes, 9, Int.SIZE_BYTES).putInt(61)
+        val malformed = ProtocolCodec.encode(ClassResourceSnapshot(75, 100, 20, 80, 50, 100, 40, 60)).copyOf().also { bytes ->
+            java.nio.ByteBuffer.wrap(bytes, 25, Int.SIZE_BYTES).putInt(61)
         }
         assertFailsWith<IllegalArgumentException> { ProtocolCodec.decode(malformed) }
     }
