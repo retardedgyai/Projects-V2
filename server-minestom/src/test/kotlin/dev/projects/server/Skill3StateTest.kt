@@ -33,23 +33,22 @@ class Skill3StateTest {
     }
 
     @Test
-    fun `dash preserves positive vertical velocity`() {
+    fun `dash direction includes the full normalized look vector and ignores wasd input`() {
         val skill3 = Skill3State(sequence())
-        skill3.tryCast(facing, ClassSkillDirection(0.0, 1.0))
+        skill3.tryCast(Vec(1.0, 2.0, 2.0), ClassSkillDirection(-1.0, -1.0))
 
-        assertEquals(2.5, skill3.tick(false, 2.5).velocityY)
+        assertEquals(Vec(1.0 / 3.0, 2.0 / 3.0, 2.0 / 3.0), skill3.dashDirection)
+        assertEquals(2.0 / 3.0, skill3.tick(false, 2.5).dashDirection!!.y())
     }
 
     @Test
-    fun `direction uses facing relative diagonal and falls back to forward`() {
+    fun `direction uses full vertical facing and falls back to forward`() {
         val diagonal = Skill3State(sequence())
         diagonal.tryCast(Vec(1.0, 0.0, 0.0), ClassSkillDirection(1.0, 1.0))
-        val direction = diagonal.dashDirection!!
-        assertEquals(0.7071067811865475, direction.x(), 0.000001)
-        assertEquals(0.7071067811865475, direction.z(), 0.000001)
+        assertEquals(Vec(1.0, 0.0, 0.0), diagonal.dashDirection)
 
         val noInput = Skill3State(sequence())
-        noInput.tryCast(Vec(0.0, 0.0, 0.0), ClassSkillDirection(0.0, 0.0))
+        noInput.tryCast(Vec(0.0, 0.0, 0.0), ClassSkillDirection(0.0, 1.0))
         assertEquals(Vec(0.0, 0.0, 1.0), noInput.dashDirection)
     }
 
@@ -85,6 +84,19 @@ class Skill3StateTest {
 
         assertEquals(listOf(first, second), skill3.hitTargetsOnSegment(Pos(0.0, 0.0, 0.0), Pos(0.0, 0.0, 2.0), targets))
         assertTrue(skill3.hitTargetsOnSegment(Pos(0.0, 0.0, 2.0), Pos(0.0, 0.0, 4.0), targets).isEmpty())
+    }
+
+    @Test
+    fun `dash segment checks the vertical look direction`() {
+        val skill3 = Skill3State(sequence())
+        skill3.tryCast(Vec(0.0, 1.0, 0.0), ClassSkillDirection(1.0, 0.0))
+        val targetId = UUID.randomUUID()
+        val target = CombatTarget(targetId, Pos(0.0, 1.5, 0.0), Vec(0.5, 0.5, 0.5))
+
+        assertEquals(
+            listOf(targetId),
+            skill3.hitTargetsOnSegment(Pos(0.0, 0.0, 0.0), Pos(0.0, 3.0, 0.0), listOf(target)),
+        )
     }
 
     @Test
@@ -128,7 +140,15 @@ class Skill3StateTest {
 
         val firstHoverTick = skill3.tick(false, -1.0)
         assertTrue(firstHoverTick.stopHorizontalVelocity)
-        assertEquals(Vec(0.0, -0.4, 0.0), skill3HoverVelocity(Vec(15.0, -1.0, 0.0), firstHoverTick.velocityY, true))
+        assertEquals(
+            Vec(0.0, -0.4, 0.0),
+            skill3HoverVelocity(Vec(0.0, -1.0, 15.0), firstHoverTick.velocityY, true, firstHoverTick.dashMomentum),
+        )
+
+        assertEquals(
+            Vec(2.0, 8.4, -3.0),
+            skill3HoverVelocity(Vec(2.0, 8.4, -3.0), 8.4, true, firstHoverTick.dashMomentum),
+        )
 
         val secondHoverTick = skill3.tick(false, -1.0)
         assertFalse(secondHoverTick.stopHorizontalVelocity)

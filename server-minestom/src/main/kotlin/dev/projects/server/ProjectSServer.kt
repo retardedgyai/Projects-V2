@@ -368,7 +368,7 @@ fun main() {
             val start = event.player.position
             val end = start.add(
                 direction.x() * Skill3State.DASH_SPEED / ServerFlag.SERVER_TICKS_PER_SECOND,
-                0.0,
+                direction.y() * Skill3State.DASH_SPEED / ServerFlag.SERVER_TICKS_PER_SECOND,
                 direction.z() * Skill3State.DASH_SPEED / ServerFlag.SERVER_TICKS_PER_SECOND,
             )
             val skillTargets = tester?.let { listOf(combatTarget(it)) } ?: emptyList()
@@ -379,7 +379,7 @@ fun main() {
             event.player.setVelocity(
                 Vec(
                     direction.x() * Skill3State.DASH_SPEED,
-                    skill3Tick.velocityY,
+                    direction.y() * Skill3State.DASH_SPEED,
                     direction.z() * Skill3State.DASH_SPEED,
                 ),
             )
@@ -389,6 +389,7 @@ fun main() {
                     event.player.velocity,
                     skill3Tick.velocityY,
                     skill3Tick.stopHorizontalVelocity,
+                    skill3Tick.dashMomentum,
                 ),
             )
         }
@@ -566,11 +567,18 @@ internal fun skill3HoverVelocity(
     currentVelocity: Vec,
     velocityY: Double,
     stopHorizontalVelocity: Boolean = false,
+    dashMomentum: Vec? = null,
 ): Vec = Vec(
-    if (stopHorizontalVelocity) 0.0 else currentVelocity.x(),
-    velocityY,
-    if (stopHorizontalVelocity) 0.0 else currentVelocity.z(),
+    if (stopHorizontalVelocity) stopDashComponent(currentVelocity.x(), dashMomentum?.x()) else currentVelocity.x(),
+    if (stopHorizontalVelocity) stopDashVerticalComponent(currentVelocity.y(), dashMomentum?.y(), velocityY) else velocityY,
+    if (stopHorizontalVelocity) stopDashComponent(currentVelocity.z(), dashMomentum?.z()) else currentVelocity.z(),
 )
+
+private fun stopDashComponent(current: Double, dash: Double?, replacement: Double = 0.0): Double =
+    if (dash == null || kotlin.math.abs(current - dash) < 1.0e-9) replacement else current
+
+private fun stopDashVerticalComponent(current: Double, dash: Double?, replacement: Double): Double =
+    if (dash != null && current > 0.0 && kotlin.math.abs(current - dash) >= 1.0e-9) current else replacement
 
 internal fun shouldSyncSkill3Cooldown(syncTick: Int, currentCooldown: Int, lastSentCooldown: Int?): Boolean =
     syncTick >= 4 && currentCooldown != lastSentCooldown

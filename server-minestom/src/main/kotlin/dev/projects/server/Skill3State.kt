@@ -2,8 +2,8 @@ package dev.projects.server
 
 import net.minestom.server.coordinate.Point
 import net.minestom.server.coordinate.Vec
-import kotlin.math.sqrt
 import java.util.UUID
+import kotlin.math.sqrt
 
 enum class Skill3Phase {
     IDLE,
@@ -17,6 +17,7 @@ data class Skill3Tick(
     val dashActive: Boolean,
     val velocityY: Double,
     val stopHorizontalVelocity: Boolean = false,
+    val dashMomentum: Vec? = null,
 )
 
 /** Small server-owned state machine for the Skill3 aerial loop prototype. */
@@ -90,6 +91,7 @@ class Skill3State(
                         dashActive = false,
                         velocityY = maxOf(velocityY, -HOVER_FALL_SPEED),
                         stopHorizontalVelocity = isFirstHoverTick,
+                        dashMomentum = if (isFirstHoverTick) dashDirection?.mul(DASH_SPEED) else null,
                     )
                     hoverTicksRemaining--
                     if (hoverTicksRemaining == 0) phase = Skill3Phase.IDLE
@@ -214,23 +216,13 @@ data class ClassSkillDirection(val x: Double, val z: Double) {
     }
 }
 
-internal fun skill3Direction(facing: Vec, input: ClassSkillDirection): Vec {
-    val horizontalLength = sqrt(facing.x() * facing.x() + facing.z() * facing.z())
-    val forward = if (horizontalLength > 1.0e-9) {
-        Vec(facing.x() / horizontalLength, 0.0, facing.z() / horizontalLength)
+internal fun skill3Direction(facing: Vec, @Suppress("UNUSED_PARAMETER") input: ClassSkillDirection): Vec {
+    val length = sqrt(facing.x() * facing.x() + facing.y() * facing.y() + facing.z() * facing.z())
+    return if (length > 1.0e-9) {
+        Vec(facing.x() / length, facing.y() / length, facing.z() / length)
     } else {
         Vec(0.0, 0.0, 1.0)
     }
-    if (input.x == 0.0 && input.z == 0.0) return forward
-
-    val right = Vec(-forward.z(), 0.0, forward.x())
-    val direction = Vec(
-        right.x() * input.x + forward.x() * input.z,
-        0.0,
-        right.z() * input.x + forward.z() * input.z,
-    )
-    val length = sqrt(direction.x() * direction.x() + direction.z() * direction.z())
-    return Vec(direction.x() / length, 0.0, direction.z() / length)
 }
 
 private object Skill3ExecutionIds {
