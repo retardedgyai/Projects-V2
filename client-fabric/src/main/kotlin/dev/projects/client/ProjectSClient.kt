@@ -642,21 +642,21 @@ object ProjectSClient : ClientModInitializer {
         val centerX = target.x + normalX * 0.44
         val centerY = hitY + normalY * 0.44
         val centerZ = target.z + normalZ * 0.44
+        val slashLength = sqrt(2.0)
+        val slashX = (normalizedRightX + upX) / slashLength
+        val slashY = (normalizedRightY + upY) / slashLength
+        val slashZ = (normalizedRightZ + upZ) / slashLength
 
         when (effect.age) {
             0 -> {
                 level.addParticle(ParticleTypes.END_ROD, centerX, centerY, centerZ, 0.0, 0.0, 0.0)
-                for (arm in 0..3) {
-                    val angle = arm * Math.PI / 2.0
-                    val directionX = normalizedRightX * cos(angle) + upX * sin(angle)
-                    val directionY = normalizedRightY * cos(angle) + upY * sin(angle)
-                    val directionZ = normalizedRightZ * cos(angle) + upZ * sin(angle)
-                    val offset = 0.1
+                for (point in -1..1) {
+                    val offset = point * 0.06
                     level.addParticle(
                         hitCoreDust,
-                        centerX + directionX * offset,
-                        centerY + directionY * offset,
-                        centerZ + directionZ * offset,
+                        centerX + slashX * offset,
+                        centerY + slashY * offset,
+                        centerZ + slashZ * offset,
                         0.0,
                         0.0,
                         0.0,
@@ -664,50 +664,31 @@ object ProjectSClient : ClientModInitializer {
                 }
             }
             1 -> {
-                val angleOffset = ((effect.variationSeed and 0xFFFFL).toDouble() / 65535.0 - 0.5) * 0.3
-                for (ray in 0..8) {
-                    val angle = angleOffset + ray * Math.PI * 2.0 / 9.0
-                    val directionX = normalizedRightX * cos(angle) + upX * sin(angle) + normalX * 0.14
-                    val directionY = normalizedRightY * cos(angle) + upY * sin(angle) + normalY * 0.14
-                    val directionZ = normalizedRightZ * cos(angle) + upZ * sin(angle) + normalZ * 0.14
-                    val directionLength = sqrt(
-                        directionX * directionX + directionY * directionY + directionZ * directionZ,
-                    )
-                    val normalizedDirectionX = directionX / directionLength
-                    val normalizedDirectionY = directionY / directionLength
-                    val normalizedDirectionZ = directionZ / directionLength
-                    val variation = (sin(effect.variationSeed.toDouble() * 0.001 + ray * 1.7) + 1.0) * 0.5
-                    val rayLength = 1.2 + variation * 0.65
-                    for (sample in 1..4) {
-                        val distanceAlongRay = rayLength * sample / 4.0
-                        val x = centerX + normalizedDirectionX * distanceAlongRay
-                        val y = centerY + normalizedDirectionY * distanceAlongRay
-                        val z = centerZ + normalizedDirectionZ * distanceAlongRay
-                        val particle = if (sample % 2 == 0) hitCoreDust else twinRodCoreDust
-                        level.addParticle(particle, x, y, z, 0.0, 0.0, 0.0)
-                    }
+                for (sample in -6..6) {
+                    val distanceAlongSlash = sample * 0.17
+                    val x = centerX + slashX * distanceAlongSlash + normalX * 0.03
+                    val y = centerY + slashY * distanceAlongSlash + normalY * 0.03
+                    val z = centerZ + slashZ * distanceAlongSlash + normalZ * 0.03
+                    val particle = if (abs(sample) <= 1) hitCoreDust else twinRodCoreDust
+                    level.addParticle(particle, x, y, z, 0.0, 0.0, 0.0)
                 }
             }
             2 -> {
-                for (fragment in 0..5) {
-                    val angle = fragment * Math.PI * 2.0 / 6.0
-                    val directionX = normalizedRightX * cos(angle) + upX * sin(angle) + normalX * 0.2
-                    val directionY = normalizedRightY * cos(angle) + upY * sin(angle) + normalY * 0.2
-                    val directionZ = normalizedRightZ * cos(angle) + upZ * sin(angle) + normalZ * 0.2
-                    val directionLength = sqrt(
-                        directionX * directionX + directionY * directionY + directionZ * directionZ,
-                    )
-                    val normalizedDirectionX = directionX / directionLength
-                    val normalizedDirectionY = directionY / directionLength
-                    val normalizedDirectionZ = directionZ / directionLength
+                for (spark in 0..2) {
+                    val side = if (spark == 1) -1.0 else 1.0
+                    val distanceAlongSlash = 0.55 + abs(sin(effect.variationSeed.toDouble() * 0.001 + spark)) * 0.22
+                    val offset = (spark - 1) * 0.08
+                    val sparkX = centerX + slashX * side * distanceAlongSlash + normalizedRightX * offset
+                    val sparkY = centerY + slashY * side * distanceAlongSlash + normalizedRightY * offset
+                    val sparkZ = centerZ + slashZ * side * distanceAlongSlash + normalizedRightZ * offset
                     level.addParticle(
                         ParticleTypes.ELECTRIC_SPARK,
-                        centerX + normalizedDirectionX * 0.42,
-                        centerY + normalizedDirectionY * 0.42,
-                        centerZ + normalizedDirectionZ * 0.42,
-                        normalizedDirectionX * 0.18,
-                        normalizedDirectionY * 0.18,
-                        normalizedDirectionZ * 0.18,
+                        sparkX,
+                        sparkY,
+                        sparkZ,
+                        slashX * side * 0.16 + normalX * 0.05,
+                        slashY * side * 0.16 + normalY * 0.05,
+                        slashZ * side * 0.16 + normalZ * 0.05,
                     )
                 }
             }
