@@ -24,7 +24,7 @@ abstract class ItemInHandRendererMixin {
             shift = At.Shift.AFTER,
         )],
     )
-    private fun applyTwinRodPose(
+    private fun applyTwinRodPunchPose(
         player: AbstractClientPlayer,
         frameInterp: Float,
         xRot: Float,
@@ -41,13 +41,44 @@ abstract class ItemInHandRendererMixin {
 
         val pose = TwinRodFirstPersonAnimationState.pose(frameInterp)
         val mirror = if (player.mainArm == HumanoidArm.RIGHT) 1f else -1f
-        // This transform is applied before vanilla submits either the arm or item.
-        poseStack.translate(-0.08f * mirror, 0.04f, -0.10f)
-        poseStack.mulPose(com.mojang.math.Axis.XP.rotationDegrees(78f))
-        poseStack.mulPose(com.mojang.math.Axis.YP.rotationDegrees(8f * mirror))
+        // Apply only the shared punch motion before vanilla submits the arm and item.
         poseStack.translate(pose.translateX * mirror, pose.translateY, pose.translateZ)
         poseStack.mulPose(com.mojang.math.Axis.XP.rotationDegrees(pose.rotateX))
         poseStack.mulPose(com.mojang.math.Axis.YP.rotationDegrees(pose.rotateY * mirror))
         poseStack.mulPose(com.mojang.math.Axis.ZP.rotationDegrees(pose.rotateZ * mirror))
+    }
+
+    @Inject(
+        method = ["submitArmWithItem"],
+        at = [At(
+            value = "INVOKE",
+            target = "Lnet/minecraft/client/renderer/ItemInHandRenderer;renderItem(" +
+                "Lnet/minecraft/world/entity/LivingEntity;" +
+                "Lnet/minecraft/world/item/ItemStack;" +
+                "Lnet/minecraft/world/item/ItemDisplayContext;" +
+                "Lcom/mojang/blaze3d/vertex/PoseStack;" +
+                "Lnet/minecraft/client/renderer/SubmitNodeCollector;I)V",
+        )],
+    )
+    private fun applyTwinRodBasePose(
+        player: AbstractClientPlayer,
+        frameInterp: Float,
+        xRot: Float,
+        hand: InteractionHand,
+        attack: Float,
+        itemStack: ItemStack,
+        inverseArmHeight: Float,
+        poseStack: PoseStack,
+        submitNodeCollector: SubmitNodeCollector,
+        lightCoords: Int,
+        callbackInfo: CallbackInfo,
+    ) {
+        if (hand != InteractionHand.MAIN_HAND || itemStack.item != Items.BLAZE_ROD) return
+
+        val mirror = if (player.mainArm == HumanoidArm.RIGHT) 1f else -1f
+        // Keep the rod's depth-axis alignment item-only, after vanilla arm placement.
+        poseStack.translate(-0.08f * mirror, 0.04f, -0.10f)
+        poseStack.mulPose(com.mojang.math.Axis.XP.rotationDegrees(78f))
+        poseStack.mulPose(com.mojang.math.Axis.YP.rotationDegrees(8f * mirror))
     }
 }
