@@ -35,6 +35,7 @@ import net.minestom.server.instance.LightingChunk
 import net.minestom.server.instance.Weather
 import net.minestom.server.item.ItemStack
 import net.minestom.server.item.Material
+import net.minestom.server.tag.Tag
 import net.minestom.server.network.packet.server.common.PluginMessagePacket
 import net.minestom.server.network.packet.server.play.ParticlePacket
 import net.minestom.server.particle.Particle
@@ -59,6 +60,7 @@ private const val DEFAULT_ATTACK_SPEED = 1.0
 private val SUPPORTED_ATTACK_SPEEDS = setOf(1.0, 1.5, 2.0)
 private const val DODGE_PLAYER_WIDTH = 0.6
 private const val DODGE_PLAYER_HEIGHT = 1.8
+private val TWIN_BLADES_AUTO_OFFHAND = Tag.Boolean("projects_twin_blades_auto_offhand").defaultValue(false)
 
 internal data class SkillCooldowns(
     val skill1: Int,
@@ -229,7 +231,7 @@ fun main() {
                 ItemStack.builder(Material.NETHERITE_SWORD).customName(Component.text("Heavy Blade")).build(),
             )
             event.player.inventory.addItemStack(
-                ItemStack.builder(Material.BLAZE_ROD).customName(Component.text("Twin Rods")).build(),
+                ItemStack.builder(Material.IRON_SWORD).customName(Component.text("Twin Blades")).build(),
             )
             if (dummy == null) {
                 dummy = Entity(EntityType.RAVAGER).apply {
@@ -270,6 +272,7 @@ fun main() {
         attackSpeeds.remove(playerId)
     }
     events.addListener(PlayerTickEvent::class.java) { event ->
+        synchronizeTwinBladesOffhand(event.player)
         val state = combatStates[event.player.uuid] ?: return@addListener
         val dodge = dodgeStates[event.player.uuid] ?: return@addListener
         val twinRodsAir = twinRodsAirStates[event.player.uuid] ?: return@addListener
@@ -607,9 +610,26 @@ private fun publishCombatEvents(player: net.minestom.server.entity.Player, event
 private fun weaponFor(player: net.minestom.server.entity.Player): WeaponType = when (
     player.getEquipment(EquipmentSlot.MAIN_HAND).material()
 ) {
-    Material.BLAZE_ROD -> WeaponType.TWIN_RODS
+    Material.IRON_SWORD -> WeaponType.TWIN_RODS
     Material.NETHERITE_SWORD -> WeaponType.HEAVY_BLADE
     else -> WeaponType.HEAVY_BLADE
+}
+
+private fun synchronizeTwinBladesOffhand(player: net.minestom.server.entity.Player) {
+    val offhand = player.getEquipment(EquipmentSlot.OFF_HAND)
+    if (weaponFor(player) == WeaponType.TWIN_RODS) {
+        if (offhand.isAir) {
+            player.setEquipment(
+                EquipmentSlot.OFF_HAND,
+                ItemStack.builder(Material.IRON_SWORD)
+                    .customName(Component.text("Twin Blades"))
+                    .set(TWIN_BLADES_AUTO_OFFHAND, true)
+                    .build(),
+            )
+        }
+    } else if (offhand.getTag(TWIN_BLADES_AUTO_OFFHAND)) {
+        player.setEquipment(EquipmentSlot.OFF_HAND, ItemStack.AIR)
+    }
 }
 
 internal fun canStartDodge(isGrounded: Boolean, weapon: WeaponType): Boolean =
