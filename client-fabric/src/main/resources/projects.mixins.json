@@ -1,0 +1,10 @@
+{
+  "required": true,
+  "package": "dev.projects.client.mixin",
+  "client": [
+    "ItemInHandRendererMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

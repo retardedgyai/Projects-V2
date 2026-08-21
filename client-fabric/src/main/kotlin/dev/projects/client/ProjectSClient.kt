@@ -161,6 +161,7 @@ object ProjectSClient : ClientModInitializer {
             suppressNextAttackStarted = false
             twinRodStrikeIndex = -1
             twinRodSwings.clear()
+            TwinRodFirstPersonAnimationState.reset()
             twinRodHitEffect = null
             hitMarkerTicksRemaining = 0
             mana = 0
@@ -172,6 +173,7 @@ object ProjectSClient : ClientModInitializer {
             return
         }
         renderAttackDebugShape(client)
+        TwinRodFirstPersonAnimationState.tick()
         renderSwingEffects(client)
         renderTwinRodHitEffect(client)
         if (hitMarkerTicksRemaining > 0) hitMarkerTicksRemaining--
@@ -553,6 +555,7 @@ object ProjectSClient : ClientModInitializer {
             }
             Items.BLAZE_ROD -> {
                 twinRodStrikeIndex = (twinRodStrikeIndex + 1) % 4
+                TwinRodFirstPersonAnimationState.start(twinRodStrikeIndex)
                 if (twinRodSwings.size >= 3) twinRodSwings.removeAt(0)
                 twinRodSwings += TwinRodSwing(twinRodStrikeIndex, 0)
                 player.playSound(
@@ -581,6 +584,7 @@ object ProjectSClient : ClientModInitializer {
     private fun showHitEffect(client: Minecraft, message: AttackHitConfirmed) {
         val player = client.player
         if (player?.mainHandItem?.item == Items.BLAZE_ROD) {
+            TwinRodFirstPersonAnimationState.confirmHit()
             twinRodHitEffect = TwinRodHitEffect(message.targetId, 0)
             hitMarkerTicksRemaining = 3
             player.playSound(SoundEvents.PLAYER_ATTACK_CRIT, 0.9f, 1.08f)
