@@ -65,7 +65,8 @@ fun startParticleDemo(
             ParticleGeometry.drawParticleCircleExplosion(origin, 1.4, 14, durationTicks = 3),
         )
         "evolved" -> {
-            val anchor = ParticleAnchor.player(player, ParticleAnchorPoint.CENTER)
+            val anchor = ParticleAnchor.player(player, ParticleAnchorPoint.EYE)
+                .withOffsets(local = Vec(0.0, 0.0, 3.0))
             val slashStyle = ParticleStyleCurve(
                 base = ParticleStyle(dust(0xff2020, 0.35f)),
                 color = KeyframeCurve.color(
@@ -79,7 +80,8 @@ fun startParticleDemo(
             val ribbon = ParticleRibbon(
                 path = { progress ->
                     val point = anchor.position() ?: origin
-                    point.add(direction.x() * (progress - 0.5) * 2.6, 0.65 + sin(progress * PI) * 0.35, direction.z() * (progress - 0.5) * 2.6)
+                    val anchorDirection = anchor.direction()
+                    point.add(anchorDirection.x() * (progress - 0.5) * 2.6, sin(progress * PI) * 0.35, anchorDirection.z() * (progress - 0.5) * 2.6)
                 },
                 particle = Particle.DUST,
                 sampleCount = 18,
