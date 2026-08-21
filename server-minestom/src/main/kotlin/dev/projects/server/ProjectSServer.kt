@@ -58,6 +58,7 @@ import dev.projects.server.particle.ParticleAnimationScheduler
 import dev.projects.server.particle.ParticleBatch
 import dev.projects.server.particle.ParticleGeometry
 import dev.projects.server.particle.ParticleStyle
+import dev.projects.server.particle.ParticleManager
 import dev.projects.server.particle.PlayerParticleSink
 import dev.projects.server.particle.dust
 import dev.projects.server.particle.lerpColor
@@ -109,6 +110,7 @@ fun main() {
     var testerMarkerTick = 0L
     val fixedTester = FixedAttackTester()
     val particleAnimations = ParticleAnimationScheduler()
+    val particleManager = ParticleManager()
 
     fun sendResourceSnapshot(player: net.minestom.server.entity.Player) {
         val resources = classResources[player.uuid] ?: return
@@ -208,17 +210,63 @@ fun main() {
         Command("bossreset").apply { setDefaultExecutor { _, _ -> resetEncounter() } },
     )
     val vfxTypeArgument = ArgumentType.Word("type")
+    val vfxImageArgument = ArgumentType.Word("bundledDemoId")
+    val vfxLengthArgument = ArgumentType.Double("length")
+    val vfxDensityArgument = ArgumentType.Double("density")
+    val vfxRadiusArgument = ArgumentType.Double("radius")
+    val vfxStartDegreesArgument = ArgumentType.Double("startDeg")
+    val vfxEndDegreesArgument = ArgumentType.Double("endDeg")
+    val vfxDurationArgument = ArgumentType.Double("duration")
+    val vfxPetalsArgument = ArgumentType.Double("petals")
     fun handleVfxDemo(sender: CommandSender, context: CommandContext) {
         val player = sender as? net.minestom.server.entity.Player ?: return
         val type = context.get<String>(vfxTypeArgument).lowercase()
-        if (type !in setOf("line", "circle", "arc", "bezier", "spiral", "lightning", "explosion", "slash", "cleave", "all")) {
-            player.sendMessage(Component.text("Use /vfxdemo line|circle|arc|bezier|spiral|lightning|explosion|slash|cleave|all"))
+        if (type !in setOf("line", "circle", "arc", "bezier", "spiral", "lightning", "explosion", "slash", "cleave", "sphere", "dome", "flower", "prism", "all")) {
+            player.sendMessage(Component.text("Use /vfxdemo line|circle|arc|bezier|spiral|lightning|explosion|slash|cleave|sphere|dome|flower|prism|all"))
             return
         }
-        startParticleDemo(player, type, particleAnimations)
+        startParticleDemo(player, type, particleAnimations, manager = particleManager)
+    }
+    fun handleVfxImageDemo(sender: CommandSender, context: CommandContext) {
+        val player = sender as? net.minestom.server.entity.Player ?: return
+        val bundledDemoId = context.get<String>(vfxImageArgument).lowercase()
+        if (bundledDemoId !in setOf("demo", "default")) {
+            player.sendMessage(Component.text("Use /vfxdemo image demo"))
+            return
+        }
+        startParticleDemo(player, "image", particleAnimations, manager = particleManager)
+    }
+    fun handleVfxParameterized(sender: CommandSender, context: CommandContext) {
+        val player = sender as? net.minestom.server.entity.Player ?: return
+        val type = context.get<String>(vfxTypeArgument).lowercase()
+        val values = when (type) {
+            "line" -> listOf(context.get<Double>(vfxLengthArgument), context.get<Double>(vfxDensityArgument))
+            "circle", "sphere", "dome" -> listOf(context.get<Double>(vfxRadiusArgument))
+            "arc" -> listOf(context.get<Double>(vfxRadiusArgument), context.get<Double>(vfxStartDegreesArgument), context.get<Double>(vfxEndDegreesArgument))
+            "slash" -> listOf(context.get<Double>(vfxLengthArgument), context.get<Double>(vfxDurationArgument))
+            "flower" -> listOf(context.get<Double>(vfxPetalsArgument), context.get<Double>(vfxRadiusArgument))
+            else -> emptyList()
+        }
+        startParticleDemo(player, type, particleAnimations, values, particleManager)
     }
     MinecraftServer.getCommandManager().register(
-        Command("vfxdemo").apply { addSyntax(::handleVfxDemo, vfxTypeArgument) },
+        Command("vfxstats").apply {
+            setDefaultExecutor { sender, _ ->
+                val counters = particleManager.counters
+                sender.sendMessage(Component.text("VFX particles attempted=${counters.attempted} dispatched=${counters.dispatched} dropped=${counters.dropped}"))
+            }
+        },
+    )
+    MinecraftServer.getCommandManager().register(
+        Command("vfxdemo").apply {
+            addSyntax(::handleVfxDemo, vfxTypeArgument)
+            addSyntax(::handleVfxImageDemo, vfxTypeArgument, vfxImageArgument)
+            addSyntax(::handleVfxParameterized, vfxTypeArgument, vfxLengthArgument, vfxDensityArgument)
+            addSyntax(::handleVfxParameterized, vfxTypeArgument, vfxRadiusArgument)
+            addSyntax(::handleVfxParameterized, vfxTypeArgument, vfxRadiusArgument, vfxStartDegreesArgument, vfxEndDegreesArgument)
+            addSyntax(::handleVfxParameterized, vfxTypeArgument, vfxLengthArgument, vfxDurationArgument)
+            addSyntax(::handleVfxParameterized, vfxTypeArgument, vfxPetalsArgument, vfxRadiusArgument)
+        },
     )
 
     events.addListener(AsyncPlayerConfigurationEvent::class.java) { event ->
@@ -296,7 +344,10 @@ fun main() {
         attackSpeeds.remove(playerId)
     }
     events.addListener(InstanceTickEvent::class.java) { event ->
-        if (event.instance === instance) particleAnimations.tick()
+        if (event.instance === instance) {
+            particleManager.beginTick()
+            particleAnimations.tick()
+        }
     }
     events.addListener(PlayerTickEvent::class.java) { event ->
         synchronizeTwinBladesOffhand(event.player)

@@ -1,0 +1,158 @@
+package dev.projects.server.particle
+
+import net.minestom.server.coordinate.Point
+import net.minestom.server.entity.Player
+import kotlin.math.floor
+import kotlin.math.max
+
+data class ParticleQuality(
+    val ownActiveMultiplier: Double = 1.0,
+    val otherActiveMultiplier: Double = 1.0,
+    val enemyMultiplier: Double = 1.0,
+    val bossMultiplier: Double = 1.0,
+    val fullMultiplier: Double = 1.0,
+    val maximumMultiplier: Double = 1.0,
+    val minimumCount: Int = 0,
+    val distanceFalloffStart: Double = 0.0,
+    val distanceFalloffEnd: Double = 64.0,
+    val skipBelowMultiplier: Double = 0.0,
+) {
+    init {
+        require(listOf(ownActiveMultiplier, otherActiveMultiplier, enemyMultiplier, bossMultiplier, fullMultiplier).all { it >= 0.0 })
+        require(maximumMultiplier >= 0.0 && minimumCount >= 0 && distanceFalloffStart >= 0.0)
+        require(distanceFalloffEnd >= distanceFalloffStart && skipBelowMultiplier >= 0.0)
+    }
+
+    fun multiplier(category: ParticleCategory): Double = when (category) {
+        ParticleCategory.OWN_ACTIVE -> ownActiveMultiplier
+        ParticleCategory.OTHER_ACTIVE -> otherActiveMultiplier
+        ParticleCategory.ENEMY -> enemyMultiplier
+        ParticleCategory.BOSS -> bossMultiplier
+        ParticleCategory.FULL -> fullMultiplier
+    }.coerceAtMost(maximumMultiplier)
+
+    fun distanceMultiplier(distance: Double): Double {
+        if (distanceFalloffEnd <= distanceFalloffStart || distance <= distanceFalloffStart) return 1.0
+        if (distance >= distanceFalloffEnd) return 0.0
+        return 1.0 - (distance - distanceFalloffStart) / (distanceFalloffEnd - distanceFalloffStart)
+    }
+}
+
+data class ParticleBudget(val particlesPerTick: Int = Int.MAX_VALUE) {
+    init {
+        require(particlesPerTick >= 0)
+    }
+}
+
+data class ParticleViewer(
+    val position: Point,
+    val player: Player? = null,
+)
+
+data class ParticleCounters(
+    val attempted: Int = 0,
+    val dispatched: Int = 0,
+    val dropped: Int = 0,
+    val byCategory: Map<ParticleCategory, Int> = emptyMap(),
+)
+
+/** Applies viewer quality and a per-tick density budget before packet dispatch. */
+class ParticleManager(
+    var quality: ParticleQuality = ParticleQuality(),
+    var budget: ParticleBudget = ParticleBudget(),
+    var viewerCondition: (ParticleViewer) -> Boolean = { true },
+    var viewerFilter: (ParticleViewer, ParticleSpawn) -> Boolean = { _, _ -> true },
+) {
+    private var attempted = 0
+    private var dispatched = 0
+    private var dropped = 0
+    private val categoryCounts = mutableMapOf<ParticleCategory, Int>()
+    private var tickBudgetUsed = 0
+
+    val counters: ParticleCounters
+        get() = ParticleCounters(attempted, dispatched, dropped, categoryCounts.toMap())
+
+    fun beginTick() {
+        tickBudgetUsed = 0
+    }
+
+    fun resetCounters() {
+        attempted = 0
+        dispatched = 0
+        dropped = 0
+        categoryCounts.clear()
+        tickBudgetUsed = 0
+    }
+
+    fun qualityMultiplier(category: ParticleCategory): Double = quality.multiplier(category)
+
+    fun dispatch(viewer: ParticleViewer, spawn: ParticleSpawn, sink: ParticleSink): Boolean {
+        attempted++
+        if (!viewerCondition(viewer) || !viewerFilter(viewer, spawn)) {
+            dropped++
+            return false
+        }
+        val distance = viewer.position.distance(spawn.position)
+        val multiplier = quality.multiplier(spawn.category) * quality.distanceMultiplier(distance)
+        if (multiplier < quality.skipBelowMultiplier || multiplier <= 0.0) {
+            dropped++
+            return false
+        }
+        val logicalCount = scaledCountForManager(spawn.count, multiplier, attempted, quality.minimumCount)
+        val packetCount = if (spawn.directional) logicalCount else if (logicalCount > 0) 1 else 0
+        if (packetCount == 0) {
+            dropped++
+            return false
+        }
+        val available = (budget.particlesPerTick - tickBudgetUsed).coerceAtLeast(0)
+        val acceptedPackets = minOf(packetCount, available)
+        if (acceptedPackets == 0) {
+            dropped++
+            return false
+        }
+        val acceptedCount = if (spawn.directional) acceptedPackets else logicalCount
+        try {
+            sink.spawn(spawn.copy(count = acceptedCount))
+        } catch (_: RuntimeException) {
+            dropped++
+            return false
+        }
+        tickBudgetUsed += acceptedPackets
+        dispatched += acceptedPackets
+        categoryCounts[spawn.category] = (categoryCounts[spawn.category] ?: 0) + acceptedPackets
+        if (acceptedPackets < packetCount) dropped += packetCount - acceptedPackets
+        return true
+    }
+
+    fun dispatch(viewerPosition: Point, spawn: ParticleSpawn, sink: ParticleSink): Boolean =
+        dispatch(ParticleViewer(viewerPosition), spawn, sink)
+
+    fun dispatch(player: Player, spawn: ParticleSpawn): Boolean =
+        dispatch(ParticleViewer(player.position, player), spawn, PlayerParticleSink(player))
+
+    fun sink(viewer: ParticleViewer, delegate: ParticleSink): ParticleSink = ParticleSink { spawn ->
+        dispatch(viewer, spawn, delegate)
+    }
+
+    fun dispatchAll(viewer: ParticleViewer, spawns: Iterable<ParticleSpawn>, sink: ParticleSink) {
+        // Spend the finite budget on gameplay-critical categories first.
+        spawns.sortedByDescending { priority(it.category) }.forEach { dispatch(viewer, it, sink) }
+    }
+
+    private fun priority(category: ParticleCategory): Int = when (category) {
+        ParticleCategory.BOSS -> 4
+        ParticleCategory.ENEMY -> 3
+        ParticleCategory.OWN_ACTIVE -> 2
+        ParticleCategory.OTHER_ACTIVE -> 1
+        ParticleCategory.FULL -> 0
+    }
+}
+
+private fun scaledCountForManager(count: Int, multiplier: Double, index: Int, minimum: Int): Int {
+    if (count <= 0) return 0
+    val exact = count * multiplier
+    val base = floor(exact).toInt()
+    val fractional = exact - base
+    val rounded = base + if (fractional > 0.0 && ((index * 1103515245L + 12345L) and 0x7fffffff) / 2147483648.0 < fractional) 1 else 0
+    return max(if (multiplier > 0.0) minimum else 0, rounded)
+}

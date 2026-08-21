@@ -112,7 +112,7 @@ interface ParticleEffect {
     fun emit(tick: Int, sink: ParticleSink)
 }
 
-private fun frameRange(total: Int, duration: Int, tick: Int): IntRange {
+internal fun frameRange(total: Int, duration: Int, tick: Int): IntRange {
     if (total <= 0 || tick !in 0 until duration) return IntRange.EMPTY
     val start = total * tick / duration
     val end = total * (tick + 1) / duration - 1
@@ -153,6 +153,29 @@ class PartialParticle(
         val scaled = max(minimumCount, scaledCount(count, densityMultiplier, 0))
         if (scaled > 0) sink.spawn(ParticleSpawn(particle, origin, scaled, offset, speed, category))
     }
+}
+
+class PartialParticleBuilder(private val particle: Particle) {
+    var origin: Point = Vec.ZERO
+    var count: Int = 1
+    var offset: Vec = Vec.ZERO
+    var speed: Float = 0f
+    var minimumCount: Int = 0
+    var densityMultiplier: Double = 1.0
+    var durationTicks: Int = 1
+    var category: ParticleCategory = ParticleCategory.FULL
+
+    fun build(): PartialParticle = PartialParticle(
+        particle = particle,
+        origin = origin,
+        count = count,
+        offset = offset,
+        speed = speed,
+        minimumCount = minimumCount,
+        densityMultiplier = densityMultiplier,
+        durationTicks = durationTicks,
+        category = category,
+    )
 }
 
 class ParticleLine(
