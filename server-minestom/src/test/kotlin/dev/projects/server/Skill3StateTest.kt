@@ -120,6 +120,21 @@ class Skill3StateTest {
     }
 
     @Test
+    fun `dash horizontal velocity stops once when hover starts`() {
+        val skill3 = Skill3State(sequence())
+        skill3.tryCast(facing, ClassSkillDirection(0.0, 1.0))
+        repeat(4) { skill3.tick(false, 0.0) }
+
+        val firstHoverTick = skill3.tick(false, -1.0)
+        assertTrue(firstHoverTick.stopHorizontalVelocity)
+        assertEquals(Vec(0.0, -0.4, 0.0), skill3HoverVelocity(Vec(15.0, -1.0, 0.0), firstHoverTick.velocityY, true))
+
+        val secondHoverTick = skill3.tick(false, -1.0)
+        assertFalse(secondHoverTick.stopHorizontalVelocity)
+        assertEquals(Vec(15.0, -0.4, 0.0), skill3HoverVelocity(Vec(15.0, -1.0, 0.0), secondHoverTick.velocityY))
+    }
+
+    @Test
     fun `body bounding box catches an aerial segment above the boss origin`() {
         val skill3 = Skill3State(sequence())
         skill3.tryCast(facing, ClassSkillDirection(0.0, 1.0))

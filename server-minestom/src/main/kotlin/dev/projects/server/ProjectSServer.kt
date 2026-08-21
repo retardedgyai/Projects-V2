@@ -319,7 +319,13 @@ fun main() {
                 ),
             )
         } else if (skill3Tick.phase == Skill3Phase.HOVER) {
-            event.player.setVelocity(skill3HoverVelocity(event.player.velocity, skill3Tick.velocityY))
+            event.player.setVelocity(
+                skill3HoverVelocity(
+                    event.player.velocity,
+                    skill3Tick.velocityY,
+                    skill3Tick.stopHorizontalVelocity,
+                ),
+            )
         }
         if (previousSkill3Cooldown == 0 && skill3.cooldownTicksRemaining > 0) {
             sendResourceSnapshot(event.player)
@@ -471,10 +477,14 @@ internal fun combatTargetFromBoundingBox(id: UUID, origin: Point, relativeBox: B
     )
 }
 
-internal fun skill3HoverVelocity(currentVelocity: Vec, velocityY: Double): Vec = Vec(
-    currentVelocity.x(),
+internal fun skill3HoverVelocity(
+    currentVelocity: Vec,
+    velocityY: Double,
+    stopHorizontalVelocity: Boolean = false,
+): Vec = Vec(
+    if (stopHorizontalVelocity) 0.0 else currentVelocity.x(),
     velocityY,
-    currentVelocity.z(),
+    if (stopHorizontalVelocity) 0.0 else currentVelocity.z(),
 )
 
 internal fun shouldSyncSkill3Cooldown(syncTick: Int, currentCooldown: Int, lastSentCooldown: Int?): Boolean =
