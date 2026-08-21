@@ -418,17 +418,23 @@ fun main() {
                 direction.z() * Skill3State.DASH_SPEED / ServerFlag.SERVER_TICKS_PER_SECOND,
             )
             val skillTargets = tester?.let { listOf(combatTarget(it)) } ?: emptyList()
-            skill3.hitTargetsOnSegment(start, end, skillTargets).forEach { targetId ->
+            val hitTargets = skill3.hitTargetsOnSegment(start, end, skillTargets)
+            hitTargets.forEach { targetId ->
                 val damage = prototypeBoss.applySkill3Attack(skill3.castId, targetId)
                 if (damage > 0) updateBossBar()
             }
-            event.player.setVelocity(
-                Vec(
-                    direction.x() * Skill3State.DASH_SPEED,
-                    direction.y() * Skill3State.DASH_SPEED,
-                    direction.z() * Skill3State.DASH_SPEED,
-                ),
-            )
+            if (hitTargets.isNotEmpty()) {
+                skill3.finishDashOnHit()
+                event.player.setVelocity(skill3HitBounceVelocity(direction))
+            } else {
+                event.player.setVelocity(
+                    Vec(
+                        direction.x() * Skill3State.DASH_SPEED,
+                        direction.y() * Skill3State.DASH_SPEED,
+                        direction.z() * Skill3State.DASH_SPEED,
+                    ),
+                )
+            }
             showSkill3DashTrail(event.player, start, direction)
         } else if (skill3Tick.phase == Skill3Phase.HOVER) {
             if (skill3Tick.stopHorizontalVelocity) {
@@ -453,11 +459,7 @@ fun main() {
             canStart = !state.isAttacking,
             facing = event.player.position.direction(),
             startAllowed = {
-                event.player.isOnGround ||
-                    (weaponFor(event.player) == WeaponType.TWIN_RODS && twinRodsAir.canStartAirDodge())
-            },
-            onStart = {
-                if (!event.player.isOnGround) check(twinRodsAir.consumeAirDodge())
+                canStartDodge(event.player.isOnGround, weaponFor(event.player))
             },
         )
         if (movement != null) {
@@ -512,11 +514,7 @@ fun main() {
                         canStart = !state.isAttacking,
                         facing = event.player.position.direction(),
                         startAllowed = {
-                            event.player.isOnGround ||
-                                (weaponFor(event.player) == WeaponType.TWIN_RODS && twinRodsAir.canStartAirDodge())
-                        },
-                        onStart = {
-                            if (!event.player.isOnGround) check(twinRodsAir.consumeAirDodge())
+                            canStartDodge(event.player.isOnGround, weaponFor(event.player))
                         },
                     )
                 }
@@ -613,6 +611,9 @@ private fun weaponFor(player: net.minestom.server.entity.Player): WeaponType = w
     Material.NETHERITE_SWORD -> WeaponType.HEAVY_BLADE
     else -> WeaponType.HEAVY_BLADE
 }
+
+internal fun canStartDodge(isGrounded: Boolean, weapon: WeaponType): Boolean =
+    isGrounded || weapon == WeaponType.TWIN_RODS
 
 private fun combatTarget(entity: Entity): CombatTarget {
     return combatTargetFromBoundingBox(entity.uuid, entity.position, entity.boundingBox)

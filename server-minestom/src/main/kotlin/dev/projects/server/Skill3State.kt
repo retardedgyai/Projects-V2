@@ -105,6 +105,16 @@ class Skill3State(
         return tick
     }
 
+    /** Ends the dash at its first confirmed hit and starts the shared hover/cooldown window. */
+    fun finishDashOnHit(): Boolean {
+        if (phase != Skill3Phase.DASH) return false
+        phase = Skill3Phase.HOVER
+        dashTicksRemaining = 0
+        hoverTicksRemaining = HOVER_TICKS
+        cooldownTicksRemaining = COOLDOWN_TICKS
+        return true
+    }
+
     /** Returns true only for the first confirmed target hit by this normal execution. */
     fun reduceCooldownForNormalAttack(attackExecutionId: Long): Boolean {
         if (!reducedNormalAttackExecutions.add(attackExecutionId)) return false
@@ -115,7 +125,7 @@ class Skill3State(
         return true
     }
 
-    /** Capsule-like horizontal/vertical segment check; each target is consumed once per cast. */
+    /** Returns only the nearest unconsumed target intersected by this dash segment. */
     fun hitTargetsOnSegment(
         start: Point,
         end: Point,
@@ -123,12 +133,17 @@ class Skill3State(
         radius: Double = DASH_HIT_RADIUS,
     ): List<UUID> {
         require(radius >= 0.0 && radius.isFinite()) { "Skill3 hit radius must be finite and non-negative" }
-        return targets.filter { target ->
-            target.id !in hitTargets && segmentIntersectsTarget(start, end, target.position, target.halfExtent, radius)
-        }.map { target ->
-            hitTargets += target.id
-            target.id
-        }
+        if (hitTargets.isNotEmpty()) return emptyList()
+        val nearest = targets.asSequence()
+            .mapNotNull { target ->
+                segmentIntersectionProgress(start, end, target.position, target.halfExtent, radius)
+                    ?.let { progress -> target to progress }
+            }
+            .minWithOrNull(compareBy { it.second })
+            ?.first
+            ?: return emptyList()
+        hitTargets += nearest.id
+        return listOf(nearest.id)
     }
 
     fun cancelActiveMovement() {
@@ -154,14 +169,16 @@ class Skill3State(
         const val DASH_HIT_RADIUS = 1.0
         const val HOVER_FALL_SPEED = 0.4
         const val NORMAL_ATTACK_REDUCTION_TICKS = 20
+        const val HIT_BOUNCE_SPEED_Y = 6.0
+        const val HIT_BOUNCE_HORIZONTAL_SPEED = 1.5
 
-        private fun segmentIntersectsTarget(
+        private fun segmentIntersectionProgress(
             start: Point,
             end: Point,
             center: Point,
             halfExtent: Vec,
             radius: Double,
-        ): Boolean {
+        ): Double? {
             require(
                 halfExtent.x().isFinite() && halfExtent.y().isFinite() && halfExtent.z().isFinite() &&
                     halfExtent.x() >= 0.0 && halfExtent.y() >= 0.0 && halfExtent.z() >= 0.0,
@@ -187,24 +204,37 @@ class Skill3State(
             val deltaX = end.x() - start.x()
             val deltaY = end.y() - start.y()
             val deltaZ = end.z() - start.z()
-            return clip(
+            if (!clip(
                 start.x(),
                 deltaX,
                 center.x() - halfExtent.x() - radius,
                 center.x() + halfExtent.x() + radius,
-            ) && clip(
+            )) return null
+            if (!clip(
                 start.y(),
                 deltaY,
                 center.y() - halfExtent.y() - radius,
                 center.y() + halfExtent.y() + radius,
-            ) && clip(
+            )) return null
+            if (!clip(
                 start.z(),
                 deltaZ,
                 center.z() - halfExtent.z() - radius,
                 center.z() + halfExtent.z() + radius,
-            )
+            )) return null
+            return minimum
         }
     }
+}
+
+internal fun skill3HitBounceVelocity(direction: Vec): Vec {
+    val horizontalLength = sqrt(direction.x() * direction.x() + direction.z() * direction.z())
+    if (horizontalLength <= 1.0e-9) return Vec(0.0, Skill3State.HIT_BOUNCE_SPEED_Y, 0.0)
+    return Vec(
+        -direction.x() / horizontalLength * Skill3State.HIT_BOUNCE_HORIZONTAL_SPEED,
+        Skill3State.HIT_BOUNCE_SPEED_Y,
+        -direction.z() / horizontalLength * Skill3State.HIT_BOUNCE_HORIZONTAL_SPEED,
+    )
 }
 
 data class ClassSkillDirection(val x: Double, val z: Double) {

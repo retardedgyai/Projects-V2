@@ -96,6 +96,33 @@ class DodgeTest {
     }
 
     @Test
+    fun `airborne Twin Rods dodge can restart without a charge while Heavy Blade is rejected`() {
+        assertTrue(canStartDodge(isGrounded = false, weapon = WeaponType.TWIN_RODS))
+        assertFalse(canStartDodge(isGrounded = false, weapon = WeaponType.HEAVY_BLADE))
+
+        val dodge = DodgeState()
+        repeat(3) {
+            assertTrue(
+                dodge.request(
+                    DodgeInput(0.0, 1.0),
+                    canStart = true,
+                    facing = Vec(0.0, 0.0, 1.0),
+                    startAllowed = { canStartDodge(false, WeaponType.TWIN_RODS) },
+                ),
+            )
+            repeat(DodgeState.DURATION_TICKS) {
+                assertNotNull(
+                    dodge.tick(
+                        canStart = true,
+                        facing = Vec(0.0, 0.0, 1.0),
+                        startAllowed = { canStartDodge(false, WeaponType.TWIN_RODS) },
+                    ),
+                )
+            }
+        }
+    }
+
+    @Test
     fun `dodge queues once until attack fully ends`() {
         val combat = CombatState(executionIdSource = sequence())
         val dodge = DodgeState()
