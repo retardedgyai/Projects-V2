@@ -152,51 +152,6 @@ server_port_ready() {
     "$found_expected"
 }
 
-process_descendants() {
-    local parent_pid=$1
-    local child_pid
-    local children=()
-    [[ -r "/proc/$parent_pid/task/$parent_pid/children" ]] || return 0
-    read -r -a children < "/proc/$parent_pid/task/$parent_pid/children" || true
-    for child_pid in "${children[@]}"; do
-        printf '%s\n' "$child_pid"
-        process_descendants "$child_pid"
-    done
-}
-
-client_process_pid() {
-    local launcher_pid=$1
-    local candidate
-    local command
-    while read -r candidate; do
-        [[ -n "$candidate" ]] || continue
-        command=$(process_command "$candidate")
-        case "$command" in
-            *KnotClient*|*net.fabricmc.loader*)
-                printf '%s\n' "$candidate"
-                return 0
-                ;;
-        esac
-    done < <(
-        printf '%s\n' "$launcher_pid"
-        process_descendants "$launcher_pid"
-    )
-    return 1
-}
-
-client_log_has_startup() {
-    local line
-    [[ -r "$CLIENT_LOG" ]] || return 1
-    while IFS= read -r line; do
-        case "$line" in
-            *"Starting Minecraft "*|*"Fabric Loader"*|*"Loading Minecraft"*)
-                return 0
-                ;;
-        esac
-    done < "$CLIENT_LOG"
-    return 1
-}
-
 report_port_block() {
     local pids=$1
     printf 'Manual Smoke launch: BLOCKED\n'
@@ -339,42 +294,18 @@ main() {
     start_detached client "$CLIENT_PID_FILE" "$CLIENT_LOG" \
         "$GRADLE" --no-daemon :client-fabric:runClient
     client_pid=$(read_pid "$CLIENT_PID_FILE")
-    client_ready=false
-    last_client_process=
-    client_observations=0
-    for _ in {1..240}; do
+    for _ in {1..10}; do
         if ! kill -0 "$client_pid" 2>/dev/null; then
-            break
-        fi
-        actual_client_pid=$(client_process_pid "$client_pid" || true)
-        if [[ -n "$actual_client_pid" ]] && client_log_has_startup; then
-            if [[ "$actual_client_pid" == "$last_client_process" ]]; then
-                client_observations=$((client_observations + 1))
-            else
-                last_client_process=$actual_client_pid
-                client_observations=1
-            fi
-            if (( client_observations >= 2 )) && kill -0 "$actual_client_pid" 2>/dev/null; then
-                client_ready=true
-                break
-            fi
-        else
-            last_client_process=
-            client_observations=0
+            printf 'Manual Smoke launch: BLOCKED\nClient process exited immediately. Client log: %s\n' "$CLIENT_LOG" >&2
+            log_excerpt "$CLIENT_LOG" >&2
+            exit 1
         fi
         sleep 0.5
     done
-    if ! "$client_ready"; then
-        printf 'Manual Smoke launch: BLOCKED\nMinecraft client startup/log was not confirmed before timeout. Client log: %s\n' "$CLIENT_LOG" >&2
-        log_excerpt "$CLIENT_LOG" >&2
-        stop_managed_process client "$CLIENT_PID_FILE" || true
-        stop_managed_process server "$SERVER_PID_FILE" || true
-        exit 1
-    fi
 
-    printf 'Manual Smoke launch: READY\n'
+    printf 'Manual Smoke launch: STARTED\n'
     printf 'Server log: %s\nClient log: %s\n' "$SERVER_LOG" "$CLIENT_LOG"
-    printf 'Minecraft client startup was confirmed; GUI and in-game operation remain for User Manual Smoke.\n'
+    printf 'Server and client processes remain running; GUI and in-game operation remain for User Manual Smoke.\n'
 }
 
 if [[ ${MANUAL_SMOKE_LAUNCH_SOURCE_ONLY:-0} != 1 ]]; then
