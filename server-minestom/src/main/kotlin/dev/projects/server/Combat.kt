@@ -163,6 +163,17 @@ class CombatState(
     companion object {
         fun isInAttackRange(profile: WeaponProfile, position: Point, direction: Vec, target: Point): Boolean {
             val offset = Vec(target.x() - position.x(), target.y() - position.y(), target.z() - position.z())
+            if (profile.weapon == WeaponType.TWIN_RODS) {
+                val distance = sqrt(offset.x() * offset.x() + offset.y() * offset.y() + offset.z() * offset.z())
+                if (distance > profile.range) return false
+                if (distance == 0.0) return true
+                val directionLength = sqrt(direction.x() * direction.x() + direction.y() * direction.y() + direction.z() * direction.z())
+                if (directionLength == 0.0) return false
+                val forwardDot = (
+                    direction.x() * offset.x() + direction.y() * offset.y() + direction.z() * offset.z()
+                    ) / (directionLength * distance)
+                return forwardDot >= profile.minForwardDot
+            }
             val horizontalDistance = kotlin.math.sqrt(offset.x() * offset.x() + offset.z() * offset.z())
             if (horizontalDistance > profile.range || kotlin.math.abs(offset.y()) > profile.verticalRange) return false
             if (horizontalDistance == 0.0) return true

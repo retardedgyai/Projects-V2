@@ -91,6 +91,18 @@ class CombatTest {
     }
 
     @Test
+    fun `twin rods follows full 3d look direction within reach and cone`() {
+        val rods = WeaponType.TWIN_RODS.profile(1.0)
+        val upward = Vec(1.0, 1.0, 0.0)
+        val downward = Vec(1.0, -1.0, 0.0)
+
+        assertTrue(CombatState.isInAttackRange(rods, origin, upward, Pos(2.0, 2.0, 0.0)))
+        assertTrue(CombatState.isInAttackRange(rods, origin, downward, Pos(2.0, -2.0, 0.0)))
+        assertTrue(!CombatState.isInAttackRange(rods, origin, upward, Pos(2.5, 2.5, 0.0)))
+        assertTrue(!CombatState.isInAttackRange(rods, origin, upward, Pos(3.0, -1.0, 0.0)))
+    }
+
+    @Test
     fun `attack speed shortens both weapon timings from 1 to 2`() {
         for (weapon in WeaponType.entries) {
             val atOne = attackLength(weapon, 1.0)
