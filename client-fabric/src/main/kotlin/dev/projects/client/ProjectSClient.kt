@@ -43,11 +43,13 @@ import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.math.sqrt
+import java.util.UUID
 
 object ProjectSClient : ClientModInitializer {
     private const val ATTACK_DEBUG_TICKS = 5
     private val attackDebugDust = DustParticleOptions(0xFF0000, 0.65f)
     private val twinRodCoreDust = DustParticleOptions(0xC8F8FF, 0.72f)
+    private val twinRodAccentDust = DustParticleOptions(0x7FDDE8, 0.28f)
     private val hitCoreDust = DustParticleOptions(0xFFFFFF, 0.9f)
     private val logger = LoggerFactory.getLogger("projects")
     private var attackHeld = false
@@ -55,7 +57,10 @@ object ProjectSClient : ClientModInitializer {
     private var jumpHeld = false
     private var inputSequence = 0L
     private var suppressNextAttackStarted = false
-    private var twinRodSide = false
+    private var twinRodStrikeIndex = -1
+    private val twinRodSwings = mutableListOf<TwinRodSwing>()
+    private var twinRodHitEffect: TwinRodHitEffect? = null
+    private var hitMarkerTicksRemaining = 0
     private var mana = 0
     private var maxMana = 100
     private var skill1CooldownTicks = 0
@@ -66,6 +71,7 @@ object ProjectSClient : ClientModInitializer {
     private var skill3CooldownMaxTicks = 60
     private var attackDebugShape: AttackDebugShape? = null
     private var attackDebugTicksRemaining = 0
+    private var attackDebugEnabled = true
     private val skillCategory = KeyMapping.Category.register(
         Identifier.fromNamespaceAndPath("projects", "skills"),
     )
@@ -75,6 +81,12 @@ object ProjectSClient : ClientModInitializer {
         InputConstants.KEY_R,
         KeyMapping.Category.GAMEPLAY,
     )
+    private val attackDebugKey = KeyMapping(
+        "key.projects.attack_debug",
+        InputConstants.Type.KEYSYM,
+        InputConstants.KEY_F6,
+        KeyMapping.Category.GAMEPLAY,
+    )
     private val skill1Key = skillKey("key.projects.skill_1", InputConstants.KEY_Z)
     private val skill2Key = skillKey("key.projects.skill_2", InputConstants.KEY_X)
     private val skill3Key = skillKey("key.projects.skill_3", InputConstants.KEY_C)
@@ -82,6 +94,7 @@ object ProjectSClient : ClientModInitializer {
 
     override fun onInitializeClient() {
         KeyMappingHelper.registerKeyMapping(dodgeKey)
+        KeyMappingHelper.registerKeyMapping(attackDebugKey)
         KeyMappingHelper.registerKeyMapping(skill1Key)
         KeyMappingHelper.registerKeyMapping(skill2Key)
         KeyMappingHelper.registerKeyMapping(skill3Key)
@@ -146,7 +159,10 @@ object ProjectSClient : ClientModInitializer {
             dodgeHeld = false
             jumpHeld = false
             suppressNextAttackStarted = false
-            twinRodSide = false
+            twinRodStrikeIndex = -1
+            twinRodSwings.clear()
+            twinRodHitEffect = null
+            hitMarkerTicksRemaining = 0
             mana = 0
             skill1CooldownTicks = 0
             skill2CooldownTicks = 0
@@ -156,6 +172,15 @@ object ProjectSClient : ClientModInitializer {
             return
         }
         renderAttackDebugShape(client)
+        renderSwingEffects(client)
+        renderTwinRodHitEffect(client)
+        if (hitMarkerTicksRemaining > 0) hitMarkerTicksRemaining--
+        if (attackDebugKey.consumeClick()) {
+            attackDebugEnabled = !attackDebugEnabled
+            player.sendSystemMessage(
+                Component.literal("Attack Debug: ${if (attackDebugEnabled) "ON" else "OFF"}"),
+            )
+        }
         val jumpPressed = client.options.keyJump.isDown()
         if (jumpPressed != jumpHeld) {
             jumpHeld = jumpPressed
@@ -227,6 +252,20 @@ object ProjectSClient : ClientModInitializer {
         val y = context.guiHeight() - 52
         drawResourceBar(context, "MANA $mana / $maxMana", mana, maxMana, x, y, barWidth, barHeight, 0xFF4C9BFF.toInt())
         renderSkillHud(context)
+        renderHitMarker(context)
+    }
+
+    private fun renderHitMarker(context: GuiGraphicsExtractor) {
+        if (hitMarkerTicksRemaining <= 0) return
+        val centerX = context.guiWidth() / 2
+        val centerY = context.guiHeight() / 2
+        val spread = 3 + (3 - hitMarkerTicksRemaining)
+        val arm = 3
+        val color = 0xDDF5FFFF.toInt()
+        context.fill(centerX - spread - arm, centerY - 1, centerX - spread, centerY + 2, color)
+        context.fill(centerX + spread, centerY - 1, centerX + spread + arm, centerY + 2, color)
+        context.fill(centerX - 1, centerY - spread - arm, centerX + 2, centerY - spread, color)
+        context.fill(centerX - 1, centerY + spread, centerX + 2, centerY + spread + arm, color)
     }
 
     private fun renderSkillHud(context: GuiGraphicsExtractor) {
@@ -303,6 +342,11 @@ object ProjectSClient : ClientModInitializer {
     }
 
     private fun renderAttackDebugShape(client: Minecraft) {
+        if (!attackDebugEnabled) {
+            attackDebugShape = null
+            attackDebugTicksRemaining = 0
+            return
+        }
         val shape = attackDebugShape ?: return
         if (client.level == null) return
         when (shape.kind) {
@@ -508,12 +552,13 @@ object ProjectSClient : ClientModInitializer {
                 player.playSound(SoundEvents.PLAYER_ATTACK_STRONG, 0.8f, 0.7f)
             }
             Items.BLAZE_ROD -> {
-                twinRodSide = !twinRodSide
-                renderTwinRodSwing(client, player, twinRodSide)
+                twinRodStrikeIndex = (twinRodStrikeIndex + 1) % 4
+                if (twinRodSwings.size >= 3) twinRodSwings.removeAt(0)
+                twinRodSwings += TwinRodSwing(twinRodStrikeIndex, 0)
                 player.playSound(
-                    SoundEvents.PLAYER_ATTACK_SWEEP,
-                    0.58f,
-                    if (twinRodSide) 1.16f else 1.32f,
+                    SoundEvents.PLAYER_ATTACK_STRONG,
+                    0.42f,
+                    if (twinRodStrikeIndex % 2 == 0) 1.22f else 1.34f,
                 )
             }
             else -> {
@@ -523,7 +568,118 @@ object ProjectSClient : ClientModInitializer {
         }
     }
 
+    private fun renderSwingEffects(client: Minecraft) {
+        val player = client.player ?: return
+        if (twinRodSwings.isEmpty()) return
+        for (swing in twinRodSwings) {
+            renderTwinRodSwing(client, player, swing)
+            swing.age++
+        }
+        twinRodSwings.removeAll { it.age >= 3 }
+    }
+
     private fun showHitEffect(client: Minecraft, message: AttackHitConfirmed) {
+        val player = client.player
+        if (player?.mainHandItem?.item == Items.BLAZE_ROD) {
+            twinRodHitEffect = TwinRodHitEffect(message.targetId, 0)
+            hitMarkerTicksRemaining = 3
+            player.playSound(SoundEvents.PLAYER_ATTACK_CRIT, 0.9f, 1.08f)
+            return
+        }
+        showHeavyBladeHitEffect(client, message)
+    }
+
+    private fun renderTwinRodHitEffect(client: Minecraft) {
+        val effect = twinRodHitEffect ?: return
+        val level = client.level ?: return
+        val target = level.getEntity(effect.targetId)
+        if (target == null) {
+            twinRodHitEffect = null
+            return
+        }
+        val player = client.player
+        val hitY = target.y + target.bbHeight * 0.66
+        val attackerX = player?.x ?: target.x
+        val attackerY = player?.let { it.y + it.eyeHeight } ?: hitY
+        val attackerZ = player?.z ?: target.z
+        val towardAttackerX = attackerX - target.x
+        val towardAttackerY = attackerY - hitY
+        val towardAttackerZ = attackerZ - target.z
+        val distance = sqrt(
+            towardAttackerX * towardAttackerX +
+                towardAttackerY * towardAttackerY +
+                towardAttackerZ * towardAttackerZ,
+        ).coerceAtLeast(1.0e-6)
+        val normalX = towardAttackerX / distance
+        val normalY = towardAttackerY / distance
+        val normalZ = towardAttackerZ / distance
+        val referenceX: Double
+        val referenceY: Double
+        val referenceZ: Double
+        if (abs(normalY) < 0.9) {
+            referenceX = 0.0
+            referenceY = 1.0
+            referenceZ = 0.0
+        } else {
+            referenceX = 1.0
+            referenceY = 0.0
+            referenceZ = 0.0
+        }
+        val rightX = referenceY * normalZ - referenceZ * normalY
+        val rightY = referenceZ * normalX - referenceX * normalZ
+        val rightZ = referenceX * normalY - referenceY * normalX
+        val rightLength = sqrt(rightX * rightX + rightY * rightY + rightZ * rightZ)
+        val normalizedRightX = rightX / rightLength
+        val normalizedRightY = rightY / rightLength
+        val normalizedRightZ = rightZ / rightLength
+        val upX = normalY * normalizedRightZ - normalZ * normalizedRightY
+        val upY = normalZ * normalizedRightX - normalX * normalizedRightZ
+        val upZ = normalX * normalizedRightY - normalY * normalizedRightX
+        val expansion = if (effect.age == 0) 0.16 else 0.29
+        val centerX = target.x + normalX * 0.44
+        val centerY = hitY + normalY * 0.44
+        val centerZ = target.z + normalZ * 0.44
+
+        level.addParticle(ParticleTypes.END_ROD, centerX, centerY, centerZ, 0.0, 0.0, 0.0)
+        for (arm in -1..1) {
+            val offset = arm * expansion
+            level.addParticle(
+                hitCoreDust,
+                centerX + normalizedRightX * offset,
+                centerY + normalizedRightY * offset,
+                centerZ + normalizedRightZ * offset,
+                0.0,
+                0.0,
+                0.0,
+            )
+            level.addParticle(
+                hitCoreDust,
+                centerX + upX * offset,
+                centerY + upY * offset,
+                centerZ + upZ * offset,
+                0.0,
+                0.0,
+                0.0,
+            )
+        }
+        val sparkVelocity = 0.12 + effect.age * 0.08
+        for (spark in -1..1) {
+            val side = spark * expansion * 0.9
+            level.addParticle(
+                ParticleTypes.ELECTRIC_SPARK,
+                centerX + normalizedRightX * side + normalX * 0.06,
+                centerY + normalizedRightY * side + normalY * 0.06,
+                centerZ + normalizedRightZ * side + normalZ * 0.06,
+                normalizedRightX * side * sparkVelocity,
+                upY * sparkVelocity + 0.02,
+                normalizedRightZ * side * sparkVelocity,
+            )
+        }
+        effect.age++
+        if (effect.age >= 2) twinRodHitEffect = null
+    }
+
+    private fun showHeavyBladeHitEffect(client: Minecraft, message: AttackHitConfirmed) {
         val level = client.level ?: return
         val target = level.getEntity(message.targetId) ?: return
         val player = client.player
@@ -609,7 +765,7 @@ object ProjectSClient : ClientModInitializer {
     private fun renderTwinRodSwing(
         client: Minecraft,
         player: net.minecraft.client.player.LocalPlayer,
-        rightHandStrike: Boolean,
+        swing: TwinRodSwing,
     ) {
         val level = client.level ?: return
         val look = player.lookAngle
@@ -638,28 +794,43 @@ object ProjectSClient : ClientModInitializer {
         val upX = forwardY * normalizedRightZ - forwardZ * normalizedRightY
         val upY = forwardZ * normalizedRightX - forwardX * normalizedRightZ
         val upZ = forwardX * normalizedRightY - forwardY * normalizedRightX
-        val side = if (rightHandStrike) 1.0 else -1.0
+        val side = if (swing.beat % 2 == 0) -1.0 else 1.0
+        val crossStrike = swing.beat >= 2
+        val phase = (swing.age + 1) / 3.0
+        val travel = -0.32 + phase * 0.64
         val eyeX = player.x
         val eyeY = player.y + player.eyeHeight
         val eyeZ = player.z
 
-        for (index in 0..6) {
-            val progress = index / 6.0
-            val angle = -0.78 + progress * 1.56
-            val sin = sin(angle)
-            val cos = cos(angle)
-            val depth = 1.03 + cos * 0.11
-            val lateral = side * (0.2 + sin * 0.34)
-            val vertical = sin * 0.16
+        for (index in 0..4) {
+            val progress = index / 4.0
+            val local = (progress - 0.5) * 0.24
+            val depth = 0.84 + progress * 0.34 + if (crossStrike) abs(local) * 0.22 else 0.0
+            val lateral = if (crossStrike) travel + local else side * (0.2 + travel * 0.7 + local)
+            val vertical = if (crossStrike) (progress - 0.5) * 0.32 else sin(progress * Math.PI) * 0.13
             val x = eyeX + forwardX * depth + normalizedRightX * lateral + upX * vertical
             val y = eyeY + forwardY * depth + normalizedRightY * lateral + upY * vertical
             val z = eyeZ + forwardZ * depth + normalizedRightZ * lateral + upZ * vertical
-            level.addParticle(twinRodCoreDust, x, y, z, 0.0, 0.0, 0.0)
-            if (index % 2 == 0) {
-                level.addParticle(ParticleTypes.ELECTRIC_SPARK, x, y, z, 0.0, 0.0, 0.0)
+            val accentX = x - forwardX * 0.08
+            val accentY = y - forwardY * 0.08
+            val accentZ = z - forwardZ * 0.08
+            level.addParticle(twinRodAccentDust, accentX, accentY, accentZ, 0.0, 0.0, 0.0)
+            level.addParticle(twinRodCoreDust, x, y, z, forwardX * 0.02, forwardY * 0.02, forwardZ * 0.02)
+            if (index == 1 || index == 3) {
+                level.addParticle(ParticleTypes.END_ROD, x, y, z, 0.0, 0.0, 0.0)
             }
         }
     }
+
+    private data class TwinRodSwing(
+        val beat: Int,
+        var age: Int,
+    )
+
+    private data class TwinRodHitEffect(
+        val targetId: UUID,
+        var age: Int,
+    )
 }
 
 data class ProjectSPayload(val data: ByteArray) : CustomPacketPayload {
