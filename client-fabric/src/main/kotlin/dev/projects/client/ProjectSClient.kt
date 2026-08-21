@@ -44,7 +44,6 @@ import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.math.sqrt
-import java.util.UUID
 
 object ProjectSClient : ClientModInitializer {
     private const val ATTACK_DEBUG_TICKS = 5
@@ -57,7 +56,6 @@ object ProjectSClient : ClientModInitializer {
     private var inputSequence = 0L
     private var suppressNextAttackStarted = false
     private var twinRodSwingOffhand = false
-    private var twinRodHitEffect: TwinRodHitEffect? = null
     private var hitMarkerTicksRemaining = 0
     private var mana = 0
     private var maxMana = 100
@@ -158,7 +156,6 @@ object ProjectSClient : ClientModInitializer {
             jumpHeld = false
             suppressNextAttackStarted = false
             twinRodSwingOffhand = false
-            twinRodHitEffect = null
             hitMarkerTicksRemaining = 0
             mana = 0
             skill1CooldownTicks = 0
@@ -169,7 +166,6 @@ object ProjectSClient : ClientModInitializer {
             return
         }
         renderAttackDebugShape(client)
-        renderTwinRodHitEffect(client)
         if (hitMarkerTicksRemaining > 0) hitMarkerTicksRemaining--
         if (attackDebugKey.consumeClick()) {
             attackDebugEnabled = !attackDebugEnabled
@@ -562,102 +558,11 @@ object ProjectSClient : ClientModInitializer {
     private fun showHitEffect(client: Minecraft, message: AttackHitConfirmed) {
         val player = client.player
         if (player?.mainHandItem?.item == Items.IRON_SWORD) {
-            twinRodHitEffect = TwinRodHitEffect(message.targetId, 0)
             hitMarkerTicksRemaining = 3
             player.playSound(SoundEvents.PLAYER_ATTACK_CRIT, 0.9f, 1.08f)
             return
         }
         showHeavyBladeHitEffect(client, message)
-    }
-
-    private fun renderTwinRodHitEffect(client: Minecraft) {
-        val effect = twinRodHitEffect ?: return
-        val level = client.level ?: return
-        val target = level.getEntity(effect.targetId)
-        if (target == null) {
-            twinRodHitEffect = null
-            return
-        }
-        val player = client.player
-        val hitY = target.y + target.bbHeight * 0.66
-        val attackerX = player?.x ?: target.x
-        val attackerY = player?.let { it.y + it.eyeHeight } ?: hitY
-        val attackerZ = player?.z ?: target.z
-        val towardAttackerX = attackerX - target.x
-        val towardAttackerY = attackerY - hitY
-        val towardAttackerZ = attackerZ - target.z
-        val distance = sqrt(
-            towardAttackerX * towardAttackerX +
-                towardAttackerY * towardAttackerY +
-                towardAttackerZ * towardAttackerZ,
-        ).coerceAtLeast(1.0e-6)
-        val normalX = towardAttackerX / distance
-        val normalY = towardAttackerY / distance
-        val normalZ = towardAttackerZ / distance
-        val referenceX: Double
-        val referenceY: Double
-        val referenceZ: Double
-        if (abs(normalY) < 0.9) {
-            referenceX = 0.0
-            referenceY = 1.0
-            referenceZ = 0.0
-        } else {
-            referenceX = 1.0
-            referenceY = 0.0
-            referenceZ = 0.0
-        }
-        val rightX = referenceY * normalZ - referenceZ * normalY
-        val rightY = referenceZ * normalX - referenceX * normalZ
-        val rightZ = referenceX * normalY - referenceY * normalX
-        val rightLength = sqrt(rightX * rightX + rightY * rightY + rightZ * rightZ)
-        val normalizedRightX = rightX / rightLength
-        val normalizedRightY = rightY / rightLength
-        val normalizedRightZ = rightZ / rightLength
-        val upX = normalY * normalizedRightZ - normalZ * normalizedRightY
-        val upY = normalZ * normalizedRightX - normalX * normalizedRightZ
-        val upZ = normalX * normalizedRightY - normalY * normalizedRightX
-        val expansion = if (effect.age == 0) 0.16 else 0.29
-        val centerX = target.x + normalX * 0.44
-        val centerY = hitY + normalY * 0.44
-        val centerZ = target.z + normalZ * 0.44
-
-        level.addParticle(ParticleTypes.END_ROD, centerX, centerY, centerZ, 0.0, 0.0, 0.0)
-        for (arm in -1..1) {
-            val offset = arm * expansion
-            level.addParticle(
-                hitCoreDust,
-                centerX + normalizedRightX * offset,
-                centerY + normalizedRightY * offset,
-                centerZ + normalizedRightZ * offset,
-                0.0,
-                0.0,
-                0.0,
-            )
-            level.addParticle(
-                hitCoreDust,
-                centerX + upX * offset,
-                centerY + upY * offset,
-                centerZ + upZ * offset,
-                0.0,
-                0.0,
-                0.0,
-            )
-        }
-        val sparkVelocity = 0.12 + effect.age * 0.08
-        for (spark in -1..1) {
-            val side = spark * expansion * 0.9
-            level.addParticle(
-                ParticleTypes.ELECTRIC_SPARK,
-                centerX + normalizedRightX * side + normalX * 0.06,
-                centerY + normalizedRightY * side + normalY * 0.06,
-                centerZ + normalizedRightZ * side + normalZ * 0.06,
-                normalizedRightX * side * sparkVelocity,
-                upY * sparkVelocity + 0.02,
-                normalizedRightZ * side * sparkVelocity,
-            )
-        }
-        effect.age++
-        if (effect.age >= 2) twinRodHitEffect = null
     }
 
     private fun showHeavyBladeHitEffect(client: Minecraft, message: AttackHitConfirmed) {
@@ -743,10 +648,6 @@ object ProjectSClient : ClientModInitializer {
         player?.playSound(SoundEvents.PLAYER_ATTACK_CRIT, 0.82f, 1.02f)
     }
 
-    private data class TwinRodHitEffect(
-        val targetId: UUID,
-        var age: Int,
-    )
 }
 
 data class ProjectSPayload(val data: ByteArray) : CustomPacketPayload {

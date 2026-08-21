@@ -53,6 +53,14 @@ import net.minestom.server.command.CommandSender
 import net.minestom.server.command.builder.Command
 import net.minestom.server.command.builder.CommandContext
 import net.minestom.server.command.builder.arguments.ArgumentType
+import dev.projects.server.particle.ParticleAnimationScheduler
+import dev.projects.server.particle.ParticleBatch
+import dev.projects.server.particle.ParticleGeometry
+import dev.projects.server.particle.ParticleStyle
+import dev.projects.server.particle.PlayerParticleSink
+import dev.projects.server.particle.dust
+import dev.projects.server.particle.lerpColor
+import dev.projects.server.particle.startParticleDemo
 
 private const val SERVER_ADDRESS = "127.0.0.1"
 private const val SERVER_PORT = 25565
@@ -99,6 +107,7 @@ fun main() {
     var dummy: Entity? = null
     var testerMarkerTick = 0L
     val fixedTester = FixedAttackTester()
+    val particleAnimations = ParticleAnimationScheduler()
 
     fun sendResourceSnapshot(player: net.minestom.server.entity.Player) {
         val resources = classResources[player.uuid] ?: return
@@ -197,6 +206,19 @@ fun main() {
     MinecraftServer.getCommandManager().register(
         Command("bossreset").apply { setDefaultExecutor { _, _ -> resetEncounter() } },
     )
+    val vfxTypeArgument = ArgumentType.Word("type")
+    fun handleVfxDemo(sender: CommandSender, context: CommandContext) {
+        val player = sender as? net.minestom.server.entity.Player ?: return
+        val type = context.get<String>(vfxTypeArgument).lowercase()
+        if (type !in setOf("line", "circle", "arc", "bezier", "spiral", "lightning", "explosion", "slash", "cleave", "all")) {
+            player.sendMessage(Component.text("Use /vfxdemo line|circle|arc|bezier|spiral|lightning|explosion|slash|cleave|all"))
+            return
+        }
+        startParticleDemo(player, type, particleAnimations)
+    }
+    MinecraftServer.getCommandManager().register(
+        Command("vfxdemo").apply { addSyntax(::handleVfxDemo, vfxTypeArgument) },
+    )
 
     events.addListener(AsyncPlayerConfigurationEvent::class.java) { event ->
         event.spawningInstance = instance
@@ -260,6 +282,7 @@ fun main() {
     }
     events.addListener(PlayerDisconnectEvent::class.java) { event ->
         val playerId = event.player.uuid
+        particleAnimations.cancelFor(event.player)
         combatStates.remove(playerId)
         dodgeStates.remove(playerId)
         twinRodsAirStates.remove(playerId)
@@ -272,6 +295,7 @@ fun main() {
         attackSpeeds.remove(playerId)
     }
     events.addListener(PlayerTickEvent::class.java) { event ->
+        if (event.player == instance.players.firstOrNull()) particleAnimations.tick()
         synchronizeTwinBladesOffhand(event.player)
         val state = combatStates[event.player.uuid] ?: return@addListener
         val dodge = dodgeStates[event.player.uuid] ?: return@addListener
@@ -344,6 +368,19 @@ fun main() {
             if (damage > 0) {
                 updateBossBar()
                 if (weakpoint != null) showWeakpointHit(event.player, weakpoint)
+                if (hit.weapon == WeaponType.TWIN_RODS) {
+                    val target = tester ?: return@forEach
+                    showTwinRodsHitVfx(
+                        event.player,
+                        weakpoint?.center ?: target.position.add(0.0, 1.1, 0.0),
+                        Vec(
+                            event.player.position.x() - target.position.x(),
+                            event.player.position.y() + event.player.eyeHeight - target.position.y() - 1.1,
+                            event.player.position.z() - target.position.z(),
+                        ),
+                        particleAnimations,
+                    )
+                }
             }
         }
         publishCombatEvents(event.player, combatEvents.filterIsInstance<CombatEvent.HitConfirmed>())
@@ -795,6 +832,45 @@ private fun showWeakpointHit(
         ),
         center,
     )
+}
+
+private fun showTwinRodsHitVfx(
+    player: net.minestom.server.entity.Player,
+    center: Point,
+    facing: Vec,
+    scheduler: ParticleAnimationScheduler,
+) {
+    val slash = ParticleGeometry.drawParticleLineSlash(
+        origin = center,
+        direction = facing,
+        angleDegrees = 35.0,
+        length = 1.65,
+        spacing = 0.12,
+        durationTicks = 4,
+    ) { _, middle, end, middleSample ->
+        val color = when {
+            middleSample -> lerpColor(0xffff66, 0xffffff, middle)
+            end > 0.65 -> lerpColor(0xff2020, 0xffff44, end)
+            else -> 0xff2020
+        }
+        ParticleStyle(
+            particle = dust(color, if (middleSample) 0.52f else 0.34f),
+            count = if (middleSample) 2 else 1,
+        )
+    }
+    val accent = ParticleGeometry.drawCleaveArc(
+        originFacing = center,
+        radius = 0.56,
+        tiltAngle = 18.0,
+        startDegrees = -42.0,
+        endDegrees = 42.0,
+        rings = 1,
+        degreesPerTick = 28.0,
+        degreeStep = 12.0,
+    ) { _, _, progress ->
+        ParticleStyle(dust(lerpColor(0xff2020, 0x00ff5522, progress), 0.24f))
+    }
+    scheduler.start(ParticleBatch.of(slash, accent), PlayerParticleSink(player))
 }
 
 private fun showSkill1Cast(player: net.minestom.server.entity.Player) {
