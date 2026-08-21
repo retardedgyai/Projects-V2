@@ -13,7 +13,7 @@ OpenCodeはこのRepositoryでは「実装端末」として使う。全体設�
 - Kotlin-first。
 - ServerがDamage / Hit / Reward / Progressionの最終判定を持つ。
 - Clientから「Hitした対象」を信用しない。
-- GUIやMinecraft内Manual SmokeはUserが行う。Agentはコード、静的確認、自動Test、Buildまで。
+- Minecraft内Manual Smokeの操作と最終判定はUserだけが行う。Manual Smoke準備のServer/Clientプロセス起動・停止はAgentが行ってよい。Issueの実装、Test、Build、pushが成功した場合、可能なら対象worktreeを起動済みにしてUserへ渡す。
 - Task完了後は、そのTask専用の作業branchへの通常`git push`まで行ってよい。
 - `main`への直接pushは禁止。
 - force push（`--force` / `--force-with-lease`）は禁止。

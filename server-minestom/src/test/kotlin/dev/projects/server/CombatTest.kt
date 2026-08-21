@@ -75,12 +75,134 @@ class CombatTest {
         assertTrue(heavy.totalTicks > rods.totalTicks)
         assertEquals(4.5, heavy.range)
         assertEquals(0.40, heavy.minForwardDot)
+        assertEquals(3, rods.startupTicks)
+        assertEquals(1, rods.activeTicks)
+        assertEquals(4, rods.recoveryTicks)
+        assertEquals(3.5, rods.range)
+        assertEquals(0.65, rods.minForwardDot)
+        assertEquals(1.75, rods.verticalRange)
         assertTrue(CombatState.isInAttackRange(heavy, origin, forward, Pos(0.0, 0.0, 4.25)))
         assertTrue(CombatState.isInAttackRange(heavy, origin, forward, Pos(0.0, 0.0, 3.5)))
-        assertTrue(!CombatState.isInAttackRange(rods, origin, forward, Pos(0.0, 0.0, 3.5)))
+        assertTrue(CombatState.isInAttackRange(rods, origin, forward, Pos(0.0, 0.0, 3.5)))
+        assertTrue(!CombatState.isInAttackRange(rods, origin, forward, Pos(0.0, 0.0, 3.51)))
         val wideTarget = Pos(4.0, 0.0, 1.8)
         assertTrue(CombatState.isInAttackRange(heavy, origin, forward, wideTarget))
         assertTrue(!CombatState.isInAttackRange(rods, origin, forward, wideTarget))
+    }
+
+    @Test
+    fun `twin rods follows full 3d look direction within reach and cone`() {
+        val rods = WeaponType.TWIN_RODS.profile(1.0)
+        val upward = Vec(1.0, 1.0, 0.0)
+        val downward = Vec(1.0, -1.0, 0.0)
+
+        assertTrue(CombatState.isInAttackRange(rods, origin, upward, Pos(2.0, 2.0, 0.0)))
+        assertTrue(CombatState.isInAttackRange(rods, origin, downward, Pos(2.0, -2.0, 0.0)))
+        assertTrue(!CombatState.isInAttackRange(rods, origin, upward, Pos(2.5, 2.5, 0.0)))
+        assertTrue(!CombatState.isInAttackRange(rods, origin, upward, Pos(3.0, -1.0, 0.0)))
+    }
+
+    @Test
+    fun `twin rods uses body bounding box surface from eye origin`() {
+        val rods = WeaponType.TWIN_RODS.profile(1.0)
+        val eyeOrigin = Pos(0.0, 1.6, 0.0)
+        val inside = CombatTarget(
+            UUID.randomUUID(),
+            Pos(0.0, 1.6, 4.0),
+            Vec(1.0, 1.0, 1.0),
+        )
+        val outside = CombatTarget(
+            UUID.randomUUID(),
+            Pos(0.0, 1.6, 4.6),
+            Vec(1.0, 1.0, 1.0),
+        )
+
+        assertTrue(CombatState.isInAttackRange(rods, eyeOrigin, forward, inside))
+        assertTrue(!CombatState.isInAttackRange(rods, eyeOrigin, forward, outside))
+    }
+
+    @Test
+    fun `twin rods uses eye origin for upward and downward attacks`() {
+        val rods = WeaponType.TWIN_RODS.profile(1.0)
+        val eyeOrigin = Pos(0.0, 1.6, 0.0)
+        val upward = Vec(0.0, 1.0, 1.0)
+        val downward = Vec(0.0, -1.0, 1.0)
+
+        assertTrue(
+            CombatState.isInAttackRange(
+                rods,
+                eyeOrigin,
+                upward,
+                CombatTarget(UUID.randomUUID(), Pos(0.0, 3.6, 2.0)),
+            ),
+        )
+        assertTrue(
+            CombatState.isInAttackRange(
+                rods,
+                eyeOrigin,
+                downward,
+                CombatTarget(UUID.randomUUID(), Pos(0.0, -0.4, 2.0)),
+            ),
+        )
+    }
+
+    @Test
+    fun `twin rods uses weakpoint sphere surface and keeps cone rejection`() {
+        val rods = WeaponType.TWIN_RODS.profile(1.0)
+        val eyeOrigin = Pos(0.0, 1.6, 0.0)
+        val weakpointInside = CombatTarget(
+            UUID.randomUUID(),
+            Pos(0.0, 1.6, 3.8),
+            sphereRadius = FixedAttackTester.WEAKPOINT_RADIUS,
+        )
+        val weakpointOutside = CombatTarget(
+            UUID.randomUUID(),
+            Pos(0.0, 1.6, 4.0),
+            sphereRadius = FixedAttackTester.WEAKPOINT_RADIUS,
+        )
+        val outsideCone = CombatTarget(UUID.randomUUID(), Pos(2.5, 1.6, 2.0))
+
+        assertTrue(CombatState.isInAttackRange(rods, eyeOrigin, forward, weakpointInside))
+        assertTrue(!CombatState.isInAttackRange(rods, eyeOrigin, forward, weakpointOutside))
+        assertTrue(!CombatState.isInAttackRange(rods, eyeOrigin, forward, outsideCone))
+    }
+
+    @Test
+    fun `active event carries the server attack position direction and profile`() {
+        val combat = CombatState(
+            executionIdSource = sequence(),
+            weaponSource = { WeaponType.TWIN_RODS },
+        )
+        val direction = Vec(1.0, 1.0, 0.0)
+
+        val started = combat.input(AttackInputState.PRESS)
+        assertEquals(listOf(CombatEvent.Started(1L)), started)
+        repeat(3) { combat.tick(origin, direction, emptyList()) }
+
+        val active = combat.tick(origin, direction, emptyList()).filterIsInstance<CombatEvent.Active>().single()
+        assertEquals(origin, active.position)
+        assertEquals(direction, active.direction)
+        assertEquals(WeaponType.TWIN_RODS, active.profile.weapon)
+        assertEquals(3.5, active.profile.range)
+        assertEquals(0.65, active.profile.minForwardDot)
+        assertEquals(1.75, active.profile.verticalRange)
+    }
+
+    @Test
+    fun `active event carries heavy blade profile shape parameters`() {
+        val combat = CombatState(
+            executionIdSource = sequence(),
+            weaponSource = { WeaponType.HEAVY_BLADE },
+        )
+
+        combat.input(AttackInputState.PRESS)
+        repeat(7) { combat.tick(origin, forward, emptyList()) }
+
+        val active = combat.tick(origin, forward, emptyList()).filterIsInstance<CombatEvent.Active>().single()
+        assertEquals(WeaponType.HEAVY_BLADE, active.profile.weapon)
+        assertEquals(4.5, active.profile.range)
+        assertEquals(0.40, active.profile.minForwardDot)
+        assertEquals(2.0, active.profile.verticalRange)
     }
 
     @Test

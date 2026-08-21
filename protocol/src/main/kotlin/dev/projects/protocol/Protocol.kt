@@ -7,6 +7,7 @@ import java.io.DataOutputStream
 import java.io.IOException
 import java.util.UUID
 import kotlin.math.abs
+import kotlin.math.sqrt
 
 const val PROJECTS_CHANNEL = "projects:protocol"
 
@@ -39,6 +40,41 @@ data class AttackInput(val state: AttackInputState, val sequence: Long) : Protoc
 data class AttackStarted(val attackExecutionId: Long) : ProtocolMessage
 
 data class AttackHitConfirmed(val attackExecutionId: Long, val targetId: UUID) : ProtocolMessage
+
+enum class AttackDebugShapeKind {
+    TWIN_RODS,
+    HEAVY_BLADE,
+}
+
+data class AttackDebugShape(
+    val kind: AttackDebugShapeKind,
+    val originX: Double,
+    val originY: Double,
+    val originZ: Double,
+    val directionX: Double,
+    val directionY: Double,
+    val directionZ: Double,
+    val range: Double,
+    val minForwardDot: Double,
+    val verticalRange: Double,
+) : ProtocolMessage {
+    init {
+        require(
+            originX.isFinite() && originY.isFinite() && originZ.isFinite() &&
+                directionX.isFinite() && directionY.isFinite() && directionZ.isFinite(),
+        ) { "Attack debug shape coordinates must be finite" }
+        require(range > 0.0 && range.isFinite()) { "Attack debug shape range must be positive" }
+        require(minForwardDot in -1.0..1.0 && minForwardDot.isFinite()) {
+            "Attack debug shape forward dot must be between -1 and 1"
+        }
+        require(verticalRange >= 0.0 && verticalRange.isFinite()) {
+            "Attack debug shape vertical range must be non-negative"
+        }
+        require(sqrt(directionX * directionX + directionY * directionY + directionZ * directionZ) > 0.0) {
+            "Attack debug shape direction must not be zero"
+        }
+    }
+}
 
 data class DodgeInput(val directionX: Double, val directionZ: Double) : ProtocolMessage {
     init {
@@ -105,6 +141,7 @@ object ProtocolCodec {
     private const val AIR_JUMP_INPUT = 14
     private const val CLASS_SKILL_INPUT = 15
     private const val CLASS_RESOURCE_SNAPSHOT = 17
+    private const val ATTACK_DEBUG_SHAPE = 18
 
     fun encode(message: ProtocolMessage): ByteArray {
         val output = ByteArrayOutputStream()
@@ -132,6 +169,19 @@ object ProtocolCodec {
                     data.writeLong(message.attackExecutionId)
                     data.writeLong(message.targetId.mostSignificantBits)
                     data.writeLong(message.targetId.leastSignificantBits)
+                }
+                is AttackDebugShape -> {
+                    data.writeByte(ATTACK_DEBUG_SHAPE)
+                    data.writeByte(message.kind.ordinal)
+                    data.writeDouble(message.originX)
+                    data.writeDouble(message.originY)
+                    data.writeDouble(message.originZ)
+                    data.writeDouble(message.directionX)
+                    data.writeDouble(message.directionY)
+                    data.writeDouble(message.directionZ)
+                    data.writeDouble(message.range)
+                    data.writeDouble(message.minForwardDot)
+                    data.writeDouble(message.verticalRange)
                 }
                 is DodgeInput -> {
                     data.writeByte(DODGE_INPUT)
@@ -192,6 +242,23 @@ object ProtocolCodec {
                 input.readLong(),
                 UUID(input.readLong(), input.readLong()),
             )
+            ATTACK_DEBUG_SHAPE -> {
+                val kindId = input.readUnsignedByte()
+                val kind = AttackDebugShapeKind.entries.getOrNull(kindId)
+                    ?: throw IllegalArgumentException("Unknown AttackDebugShape kind: $kindId")
+                AttackDebugShape(
+                    kind,
+                    input.readDouble(),
+                    input.readDouble(),
+                    input.readDouble(),
+                    input.readDouble(),
+                    input.readDouble(),
+                    input.readDouble(),
+                    input.readDouble(),
+                    input.readDouble(),
+                    input.readDouble(),
+                )
+            }
             DODGE_INPUT -> DodgeInput(input.readDouble(), input.readDouble())
             AIR_JUMP_INPUT -> AirJumpInput(input.readDouble(), input.readDouble())
             CLASS_SKILL_INPUT -> {
