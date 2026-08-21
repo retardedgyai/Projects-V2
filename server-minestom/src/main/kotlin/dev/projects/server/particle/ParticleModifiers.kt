@@ -32,9 +32,9 @@ fun ParticleEffect.rotated(transform: ParticleTransform): ParticleEffect = Modif
     pivot.add(rotated.x(), rotated.y(), rotated.z())
 })
 
-fun ParticleEffect.transformed(transform: ParticleTransform): ParticleEffect = rotated(transform)
+fun ParticleEffect.transformed(transform: ParticleTransform): ParticleEffect = localCoordinates(transform)
 
-fun ParticleEffect.localCoordinates(transform: ParticleTransform): ParticleEffect = rotated(transform)
+fun ParticleEffect.localCoordinates(transform: ParticleTransform): ParticleEffect = ModifiedParticleEffect(this, transform = transform::localPoint)
 
 fun ParticleEffect.scaled(factor: Double, pivot: Point = Vec.ZERO): ParticleEffect {
     require(factor.isFinite() && factor >= 0.0)

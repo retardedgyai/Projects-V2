@@ -2,6 +2,8 @@ package dev.projects.server.particle
 
 import net.minestom.server.coordinate.Point
 import net.minestom.server.entity.Player
+import java.util.IdentityHashMap
+import java.util.UUID
 import kotlin.math.floor
 import kotlin.math.max
 
@@ -71,6 +73,9 @@ class ParticleManager(
     private val tickBudgetUsed = mutableMapOf<Any, Int>()
     private data class Pending(val viewer: ParticleViewer, val spawn: ParticleSpawn, val sink: ParticleSink, val effectId: String)
     private val pending = mutableListOf<Pending>()
+    private var nextViewerId = 0
+    private val playerViewerIds = mutableMapOf<UUID, String>()
+    private val snapshotViewerIds = IdentityHashMap<ParticleViewer, String>()
 
     val counters: ParticleCounters
         get() = ParticleCounters(attempted, dispatched, dropped, categoryCounts.toMap())
@@ -133,7 +138,7 @@ class ParticleManager(
         if (acceptedCount < logicalCount) dropped += logicalCount - acceptedCount
         profiler?.record(
             effectId = effectId,
-            viewerKey = if (viewer.player != null) "viewer" else "fixed",
+            viewerKey = profilerViewerKey(viewer),
             category = spawn.category,
             requestedCount = logicalCount,
             sentCount = acceptedCount,
@@ -147,8 +152,9 @@ class ParticleManager(
     fun dispatch(player: Player, spawn: ParticleSpawn): Boolean =
         dispatch(ParticleViewer(player.position, player), spawn, PlayerParticleSink(player))
 
-    fun sink(viewer: ParticleViewer, delegate: ParticleSink, effectId: String = "particle"): ParticleSink = ParticleSink { spawn ->
-        pending += Pending(viewer, spawn, delegate, effectId)
+    fun sink(viewer: ParticleViewer, delegate: ParticleSink, effectId: String = "particle"): ParticleSink {
+        val queued = ParticleSink { spawn -> pending += Pending(viewer, spawn, delegate, effectId) }
+        return if (viewer.player != null) ManagedParticleSink(viewer.player, queued) else queued
     }
 
     fun flush() {
@@ -180,6 +186,13 @@ class ParticleManager(
         ParticleCategory.OWN_ACTIVE -> 2
         ParticleCategory.OTHER_ACTIVE -> 1
         ParticleCategory.FULL -> 0
+    }
+
+    private fun profilerViewerKey(viewer: ParticleViewer): String {
+        if (viewer.player != null) {
+            return playerViewerIds.getOrPut(viewer.player.uuid) { "viewer-${++nextViewerId}" }
+        }
+        return snapshotViewerIds.getOrPut(viewer) { "viewer-${++nextViewerId}" }
     }
 }
 

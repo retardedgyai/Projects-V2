@@ -50,7 +50,7 @@ class ParticleEmitter(
         if (count == 0) return
         val sample = anchor.sample()
         val transform = ParticleTransform.fromDirection(sample.position, initialDirection ?: sample.direction)
-        val progress = ((tick + 1).toDouble() / durationTicks).coerceIn(0.0, 1.0)
+        val progress = ParticleFrame(tick, durationTicks).progress
         repeat(count) { index ->
             val random = Random(seed xor (tick.toLong() * 1_000_003L) xor index.toLong())
             val local = sampleLocal(random)
@@ -59,7 +59,8 @@ class ParticleEmitter(
             val rangeSpeed = if (speedRange.start == speedRange.endInclusive) speedRange.start
             else random.nextDouble(speedRange.start.toDouble(), speedRange.endInclusive.toDouble()).toFloat()
             val style = styleCurve.sample(progress)
-            val speed = if (styleCurve.speed == null) rangeSpeed else rangeSpeed * style.speed
+            // A configured range supplies the base speed; otherwise the animated style speed does.
+            val speed = if (speedRange.start != 0f || speedRange.endInclusive != 0f) rangeSpeed else style.speed
             emitStyle(position, style.copy(offset = direction, speed = speed, directional = true), index + tick * max(1, count), sink)
         }
     }
@@ -93,7 +94,7 @@ class ParticleEmitter(
     private fun emissionDirection(local: Vec, transform: ParticleTransform): Vec {
         val base = initialDirection?.let { emitterNormalize(it) } ?: when (shape) {
             SpawnShape.CONE -> emitterNormalize(local)
-            SpawnShape.DISC -> Vec(0.0, 0.0, 1.0)
+            SpawnShape.DISC -> transform.forward
             else -> transform.forward
         }
         return when {

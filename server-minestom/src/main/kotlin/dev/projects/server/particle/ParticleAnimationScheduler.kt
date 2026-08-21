@@ -31,19 +31,19 @@ class ParticleAnimationScheduler {
 
     fun cancelFor(player: Player) {
         active.removeIf {
-            val matches = (it.sink as? PlayerParticleSink)?.belongsTo(player) == true
+            val matches = (it.sink as? PlayerOwnedParticleSink)?.owner === player
             if (matches) it.handle.cancel()
             matches
         }
     }
 
     fun pauseFor(player: Player) {
-        active.filter { (it.sink as? PlayerParticleSink)?.belongsTo(player) == true }
+        active.filter { (it.sink as? PlayerOwnedParticleSink)?.owner === player }
             .forEach { it.handle.pause() }
     }
 
     fun resumeFor(player: Player) {
-        active.filter { (it.sink as? PlayerParticleSink)?.belongsTo(player) == true }
+        active.filter { (it.sink as? PlayerOwnedParticleSink)?.owner === player }
             .forEach { it.handle.resume() }
     }
 

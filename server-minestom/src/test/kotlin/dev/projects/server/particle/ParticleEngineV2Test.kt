@@ -34,6 +34,15 @@ class ParticleEngineV2Test {
     }
 
     @Test
+    fun `local coordinates map local points through origin and basis`() {
+        val transform = ParticleTransform.fromDirection(Pos(10.0, 2.0, -4.0), Vec(0.3, 0.4, 0.8))
+        val sink = RecordingParticleSink()
+        PartialParticle(Particle.END_ROD, Pos(1.0, 2.0, 3.0)).localCoordinates(transform).emit(0, sink)
+        val expected = transform.localPoint(Pos(1.0, 2.0, 3.0))
+        assertEquals(expected, sink.spawns.single().position)
+    }
+
+    @Test
     fun `follow anchor samples current position and invalidates safely`() {
         var point: Point? = Pos.ZERO
         val anchor = ParticleAnchor.follow({ point })
@@ -100,6 +109,25 @@ class ParticleEngineV2Test {
     }
 
     @Test
+    fun `emitter uses anchor direction disc direction speed curve and progress endpoints`() {
+        val anchor = ParticleAnchor.fixed(Pos.ZERO, Vec(1.0, 0.0, 0.0))
+        val speeds = mutableListOf<Float>()
+        val effect = ParticleEmitter(
+            anchor,
+            shape = SpawnShape.DISC,
+            durationTicks = 2,
+            styleCurve = ParticleStyleCurve(
+                ParticleStyle(Particle.END_ROD),
+                speed = KeyframeCurve.float(CurveKeyframe(0.0, 0.2f), CurveKeyframe(1.0, 0.8f)),
+            ),
+        )
+        val sink = RecordingParticleSink()
+        repeat(2) { tick -> effect.emit(tick) { spawn -> speeds += spawn.speed; sink.spawn(spawn) } }
+        assertTrue(sink.spawns.all { it.offset.x() > 0.99 && kotlin.math.abs(it.offset.y()) < 1.0e-9 })
+        assertEquals(listOf(0.2f, 0.8f), speeds)
+    }
+
+    @Test
     fun `trail resets history after teleport`() {
         var point = Pos.ZERO
         val anchor = ParticleAnchor.follow({ point })
@@ -135,5 +163,28 @@ class ParticleEngineV2Test {
         manager.flush()
         assertEquals(ParticleCategory.BOSS, sink.spawns.single().category)
         assertEquals("telegraph", profiler.snapshot().topEffectIds.single().first)
+    }
+
+    @Test
+    fun `profiler keeps anonymous viewer totals separate`() {
+        val profiler = ParticleProfiler()
+        val manager = ParticleManager(profiler = profiler)
+        val spawn = ParticleSpawn(Particle.END_ROD, Pos.ZERO)
+        manager.dispatch(ParticleViewer(Pos.ZERO), spawn, RecordingParticleSink())
+        manager.dispatch(ParticleViewer(Pos(5.0, 0.0, 0.0)), spawn, RecordingParticleSink())
+        assertEquals(2, profiler.snapshot().byViewer.size)
+        assertTrue(profiler.snapshot().byViewer.keys.all { it.startsWith("viewer-") })
+    }
+
+    @Test
+    fun `surface projection and beam stop at fake wall`() {
+        val hit = ParticleRaycastHit(Pos(0.0, 2.0, 0.0), Vec(0.0, 1.0, 0.0), 2.0)
+        val raycast = ParticleRaycast { _, _, _ -> hit }
+        assertEquals(SurfaceProjection(hit.position, hit.normal), SurfaceProjector(raycast).project(Pos.ZERO, maxDistance = 4.0))
+
+        val sink = RecordingParticleSink()
+        ParticleBeam(ParticleAnchor.fixed(Pos.ZERO, Vec(0.0, 0.0, 1.0)), Vec(0.0, 0.0, 1.0), 6.0, raycast, ParticleCollisionMode.STOP_AT_WALL)
+            .emit(0, sink)
+        assertEquals(2.0, sink.spawns.maxOf { it.position.distance(Pos.ZERO) }, absoluteTolerance = 1.0e-9)
     }
 }

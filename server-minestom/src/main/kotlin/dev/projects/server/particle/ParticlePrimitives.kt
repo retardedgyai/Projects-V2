@@ -75,13 +75,17 @@ fun interface ParticleSink {
     fun spawn(spawn: ParticleSpawn)
 }
 
-class PlayerParticleSink(private val player: Player) : ParticleSink {
-    fun belongsTo(candidate: Player): Boolean = player === candidate
+interface PlayerOwnedParticleSink : ParticleSink {
+    val owner: Player
+}
+
+class PlayerParticleSink(override val owner: Player) : PlayerOwnedParticleSink {
+    fun belongsTo(candidate: Player): Boolean = owner === candidate
 
     override fun spawn(spawn: ParticleSpawn) {
-        if (!player.isOnline) return
+        if (!owner.isOnline) return
         repeat(packetEmissionCount(spawn)) {
-            player.sendPacket(
+            owner.sendPacket(
                 ParticlePacket(
                     spawn.particle,
                     spawn.position.x(),
@@ -96,6 +100,13 @@ class PlayerParticleSink(private val player: Player) : ParticleSink {
             )
         }
     }
+}
+
+class ManagedParticleSink(
+    override val owner: Player,
+    private val delegate: ParticleSink,
+) : PlayerOwnedParticleSink {
+    override fun spawn(spawn: ParticleSpawn) = delegate.spawn(spawn)
 }
 
 internal fun packetEmissionCount(spawn: ParticleSpawn): Int =
