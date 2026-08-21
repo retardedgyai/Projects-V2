@@ -585,7 +585,7 @@ object ProjectSClient : ClientModInitializer {
         val player = client.player
         if (player?.mainHandItem?.item == Items.BLAZE_ROD) {
             TwinRodFirstPersonAnimationState.confirmHit()
-            twinRodHitEffect = TwinRodHitEffect(message.targetId, 0)
+            twinRodHitEffect = TwinRodHitEffect(message.targetId, message.attackExecutionId, 0)
             hitMarkerTicksRemaining = 3
             player.playSound(SoundEvents.PLAYER_ATTACK_CRIT, 0.9f, 1.08f)
             return
@@ -639,48 +639,81 @@ object ProjectSClient : ClientModInitializer {
         val upX = normalY * normalizedRightZ - normalZ * normalizedRightY
         val upY = normalZ * normalizedRightX - normalX * normalizedRightZ
         val upZ = normalX * normalizedRightY - normalY * normalizedRightX
-        val expansion = if (effect.age == 0) 0.16 else 0.29
         val centerX = target.x + normalX * 0.44
         val centerY = hitY + normalY * 0.44
         val centerZ = target.z + normalZ * 0.44
 
-        level.addParticle(ParticleTypes.END_ROD, centerX, centerY, centerZ, 0.0, 0.0, 0.0)
-        for (arm in -1..1) {
-            val offset = arm * expansion
-            level.addParticle(
-                hitCoreDust,
-                centerX + normalizedRightX * offset,
-                centerY + normalizedRightY * offset,
-                centerZ + normalizedRightZ * offset,
-                0.0,
-                0.0,
-                0.0,
-            )
-            level.addParticle(
-                hitCoreDust,
-                centerX + upX * offset,
-                centerY + upY * offset,
-                centerZ + upZ * offset,
-                0.0,
-                0.0,
-                0.0,
-            )
-        }
-        val sparkVelocity = 0.12 + effect.age * 0.08
-        for (spark in -1..1) {
-            val side = spark * expansion * 0.9
-            level.addParticle(
-                ParticleTypes.ELECTRIC_SPARK,
-                centerX + normalizedRightX * side + normalX * 0.06,
-                centerY + normalizedRightY * side + normalY * 0.06,
-                centerZ + normalizedRightZ * side + normalZ * 0.06,
-                normalizedRightX * side * sparkVelocity,
-                upY * sparkVelocity + 0.02,
-                normalizedRightZ * side * sparkVelocity,
-            )
+        when (effect.age) {
+            0 -> {
+                level.addParticle(ParticleTypes.END_ROD, centerX, centerY, centerZ, 0.0, 0.0, 0.0)
+                for (arm in 0..3) {
+                    val angle = arm * Math.PI / 2.0
+                    val directionX = normalizedRightX * cos(angle) + upX * sin(angle)
+                    val directionY = normalizedRightY * cos(angle) + upY * sin(angle)
+                    val directionZ = normalizedRightZ * cos(angle) + upZ * sin(angle)
+                    val offset = 0.1
+                    level.addParticle(
+                        hitCoreDust,
+                        centerX + directionX * offset,
+                        centerY + directionY * offset,
+                        centerZ + directionZ * offset,
+                        0.0,
+                        0.0,
+                        0.0,
+                    )
+                }
+            }
+            1 -> {
+                val angleOffset = ((effect.variationSeed and 0xFFFFL).toDouble() / 65535.0 - 0.5) * 0.3
+                for (ray in 0..8) {
+                    val angle = angleOffset + ray * Math.PI * 2.0 / 9.0
+                    val directionX = normalizedRightX * cos(angle) + upX * sin(angle) + normalX * 0.14
+                    val directionY = normalizedRightY * cos(angle) + upY * sin(angle) + normalY * 0.14
+                    val directionZ = normalizedRightZ * cos(angle) + upZ * sin(angle) + normalZ * 0.14
+                    val directionLength = sqrt(
+                        directionX * directionX + directionY * directionY + directionZ * directionZ,
+                    )
+                    val normalizedDirectionX = directionX / directionLength
+                    val normalizedDirectionY = directionY / directionLength
+                    val normalizedDirectionZ = directionZ / directionLength
+                    val variation = (sin(effect.variationSeed.toDouble() * 0.001 + ray * 1.7) + 1.0) * 0.5
+                    val rayLength = 1.2 + variation * 0.65
+                    for (sample in 1..4) {
+                        val distanceAlongRay = rayLength * sample / 4.0
+                        val x = centerX + normalizedDirectionX * distanceAlongRay
+                        val y = centerY + normalizedDirectionY * distanceAlongRay
+                        val z = centerZ + normalizedDirectionZ * distanceAlongRay
+                        val particle = if (sample % 2 == 0) hitCoreDust else twinRodCoreDust
+                        level.addParticle(particle, x, y, z, 0.0, 0.0, 0.0)
+                    }
+                }
+            }
+            2 -> {
+                for (fragment in 0..5) {
+                    val angle = fragment * Math.PI * 2.0 / 6.0
+                    val directionX = normalizedRightX * cos(angle) + upX * sin(angle) + normalX * 0.2
+                    val directionY = normalizedRightY * cos(angle) + upY * sin(angle) + normalY * 0.2
+                    val directionZ = normalizedRightZ * cos(angle) + upZ * sin(angle) + normalZ * 0.2
+                    val directionLength = sqrt(
+                        directionX * directionX + directionY * directionY + directionZ * directionZ,
+                    )
+                    val normalizedDirectionX = directionX / directionLength
+                    val normalizedDirectionY = directionY / directionLength
+                    val normalizedDirectionZ = directionZ / directionLength
+                    level.addParticle(
+                        ParticleTypes.ELECTRIC_SPARK,
+                        centerX + normalizedDirectionX * 0.42,
+                        centerY + normalizedDirectionY * 0.42,
+                        centerZ + normalizedDirectionZ * 0.42,
+                        normalizedDirectionX * 0.18,
+                        normalizedDirectionY * 0.18,
+                        normalizedDirectionZ * 0.18,
+                    )
+                }
+            }
         }
         effect.age++
-        if (effect.age >= 2) twinRodHitEffect = null
+        if (effect.age >= 3) twinRodHitEffect = null
     }
 
     private fun showHeavyBladeHitEffect(client: Minecraft, message: AttackHitConfirmed) {
@@ -830,6 +863,7 @@ object ProjectSClient : ClientModInitializer {
 
     private data class TwinRodHitEffect(
         val targetId: UUID,
+        val variationSeed: Long,
         var age: Int,
     )
 }
