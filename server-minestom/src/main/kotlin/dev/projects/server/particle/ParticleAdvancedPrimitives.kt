@@ -36,8 +36,10 @@ class ParticleMulti(
     }
 
     override fun emit(tick: Int, sink: ParticleSink) {
-        if (tick != 0) return
-        points().forEachIndexed { index, point -> emitStyle(point, style, index, sink) }
+        val values = points()
+        for (index in frameRange(values.size, durationTicks, tick)) {
+            emitStyle(values[index], style, index, sink)
+        }
     }
 }
 
@@ -233,7 +235,8 @@ class ParticleFlower(
                     (point.y() - center.y()) * (point.y() - center.y()) +
                     (point.z() - center.z()) * (point.z() - center.z()),
             )
-            val progress = (radialDistance / radius.coerceAtLeast(1.0e-9)).coerceIn(0.0, 1.0)
+            val inner = innerRadius.coerceIn(0.0, radius)
+            val progress = if (radius <= inner) 0.0 else ((radialDistance - inner) / (radius - inner)).coerceIn(0.0, 1.0)
             val particleStyle = if (startColor != null) {
                 style.copy(particle = dust(lerpColor(startColor, endColor ?: startColor, progress)))
             } else style

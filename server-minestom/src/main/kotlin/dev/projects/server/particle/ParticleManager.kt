@@ -67,13 +67,13 @@ class ParticleManager(
     private var dispatched = 0
     private var dropped = 0
     private val categoryCounts = mutableMapOf<ParticleCategory, Int>()
-    private var tickBudgetUsed = 0
+    private val tickBudgetUsed = mutableMapOf<Any, Int>()
 
     val counters: ParticleCounters
         get() = ParticleCounters(attempted, dispatched, dropped, categoryCounts.toMap())
 
     fun beginTick() {
-        tickBudgetUsed = 0
+        tickBudgetUsed.clear()
     }
 
     fun resetCounters() {
@@ -81,7 +81,7 @@ class ParticleManager(
         dispatched = 0
         dropped = 0
         categoryCounts.clear()
-        tickBudgetUsed = 0
+        tickBudgetUsed.clear()
     }
 
     fun qualityMultiplier(category: ParticleCategory): Double = quality.multiplier(category)
@@ -99,28 +99,28 @@ class ParticleManager(
             return false
         }
         val logicalCount = scaledCountForManager(spawn.count, multiplier, attempted, quality.minimumCount)
-        val packetCount = if (spawn.directional) logicalCount else if (logicalCount > 0) 1 else 0
-        if (packetCount == 0) {
+        if (logicalCount == 0) {
             dropped++
             return false
         }
-        val available = (budget.particlesPerTick - tickBudgetUsed).coerceAtLeast(0)
-        val acceptedPackets = minOf(packetCount, available)
-        if (acceptedPackets == 0) {
+        val viewerKey = ViewerBudgetKey(viewer)
+        val used = tickBudgetUsed[viewerKey] ?: 0
+        val acceptedCount = minOf(logicalCount, (budget.particlesPerTick - used).coerceAtLeast(0))
+        if (acceptedCount == 0) {
             dropped++
             return false
         }
-        val acceptedCount = if (spawn.directional) acceptedPackets else logicalCount
         try {
             sink.spawn(spawn.copy(count = acceptedCount))
         } catch (_: RuntimeException) {
             dropped++
             return false
         }
-        tickBudgetUsed += acceptedPackets
+        tickBudgetUsed[viewerKey] = used + acceptedCount
+        val acceptedPackets = if (spawn.directional) acceptedCount else 1
         dispatched += acceptedPackets
         categoryCounts[spawn.category] = (categoryCounts[spawn.category] ?: 0) + acceptedPackets
-        if (acceptedPackets < packetCount) dropped += packetCount - acceptedPackets
+        if (acceptedCount < logicalCount) dropped += logicalCount - acceptedCount
         return true
     }
 
@@ -146,6 +146,15 @@ class ParticleManager(
         ParticleCategory.OTHER_ACTIVE -> 1
         ParticleCategory.FULL -> 0
     }
+}
+
+private class ViewerBudgetKey(private val viewer: ParticleViewer) {
+    override fun equals(other: Any?): Boolean = other is ViewerBudgetKey && when {
+        viewer.player != null && other.viewer.player != null -> viewer.player.uuid == other.viewer.player.uuid
+        else -> viewer === other.viewer
+    }
+
+    override fun hashCode(): Int = viewer.player?.uuid?.hashCode() ?: System.identityHashCode(viewer)
 }
 
 private fun scaledCountForManager(count: Int, multiplier: Double, index: Int, minimum: Int): Int {

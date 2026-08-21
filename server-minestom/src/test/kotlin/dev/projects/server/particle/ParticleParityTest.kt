@@ -8,6 +8,8 @@ import java.awt.image.BufferedImage
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import kotlin.test.assertNotEquals
+import kotlin.random.Random
 
 class ParticleParityTest {
     @Test
@@ -48,6 +50,8 @@ class ParticleParityTest {
     fun `blend modes are exact and manager degrades low priority first`() {
         assertEquals(0x000808, NamedBlendMode.MULTIPLY.blend(0x804020, 0x002040))
         assertEquals(0x002040, ParticleImage.blend(0x804020, 0x002040, NamedBlendMode.REPLACE))
+        assertEquals(0x011010, NamedBlendMode.OVERLAY.blend(0x804020, 0x002040))
+        assertEquals(0x806060, NamedBlendMode.XOR.blend(0x804020, 0x002040))
 
         val manager = ParticleManager(budget = ParticleBudget(1))
         val sink = RecordingParticleSink()
@@ -57,5 +61,39 @@ class ParticleParityTest {
         ), sink)
         assertEquals(1, sink.spawns.size)
         assertEquals(ParticleCategory.BOSS, sink.spawns.single().category)
+    }
+
+    @Test
+    fun `manager budgets regular logical count independently per viewer`() {
+        val manager = ParticleManager(budget = ParticleBudget(3))
+        val sink = RecordingParticleSink()
+        val spawn = ParticleSpawn(Particle.END_ROD, Pos.ZERO, count = 10)
+        manager.dispatch(ParticleViewer(Pos.ZERO), spawn, sink)
+        manager.dispatch(ParticleViewer(Pos.ZERO), spawn, sink)
+        assertEquals(listOf(3, 3), sink.spawns.map { it.count })
+    }
+
+    @Test
+    fun `multi distributes samples over its duration`() {
+        val effect = ParticleMulti((0 until 6).map { Pos(it.toDouble(), 0.0, 0.0) }, durationTicks = 3)
+        val sink = RecordingParticleSink()
+        repeat(effect.durationTicks) { effect.emit(it, sink) }
+        assertEquals(6, sink.spawns.size)
+        assertEquals(6, sink.spawns.map { it.position }.toSet().size)
+    }
+
+    @Test
+    fun `advanced utility defaults and color helpers preserve their contracts`() {
+        val sink = RecordingParticleSink()
+        ParticleUtils.circleDirectionalExplosion(Pos.ZERO, 1.0, count = 1).emit(0, sink)
+        assertTrue(sink.spawns.single().speed > 0f)
+
+        val flowerSink = RecordingParticleSink()
+        ParticleFlower(Pos.ZERO, 2, 2.0, sharp = true, count = 9, innerRadius = 1.0, startColor = 0xff0000, endColor = 0x0000ff).emit(0, flowerSink)
+        assertTrue(flowerSink.spawns.any { it.particle is Particle.Dust && (it.particle as Particle.Dust).color.red() == 255 })
+
+        val first = ParticleUtils.nearbyHueColor(0xff0000, amount = 30, random = Random(7))
+        assertEquals(first, ParticleUtils.nearbyHueColor(0xff0000, amount = 30, random = Random(7)))
+        assertNotEquals(0xff0000, first)
     }
 }

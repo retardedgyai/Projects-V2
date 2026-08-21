@@ -218,6 +218,12 @@ fun main() {
     val vfxEndDegreesArgument = ArgumentType.Double("endDeg")
     val vfxDurationArgument = ArgumentType.Double("duration")
     val vfxPetalsArgument = ArgumentType.Double("petals")
+    val vfxLineLiteral = ArgumentType.Literal("line")
+    val vfxCircleLiteral = ArgumentType.Literal("circle")
+    val vfxArcLiteral = ArgumentType.Literal("arc")
+    val vfxSlashLiteral = ArgumentType.Literal("slash")
+    val vfxFlowerLiteral = ArgumentType.Literal("flower")
+    val vfxImageLiteral = ArgumentType.Literal("image")
     fun handleVfxDemo(sender: CommandSender, context: CommandContext) {
         val player = sender as? net.minestom.server.entity.Player ?: return
         val type = context.get<String>(vfxTypeArgument).lowercase()
@@ -236,12 +242,11 @@ fun main() {
         }
         startParticleDemo(player, "image", particleAnimations, manager = particleManager)
     }
-    fun handleVfxParameterized(sender: CommandSender, context: CommandContext) {
+    fun handleVfxParameterized(type: String, sender: CommandSender, context: CommandContext) {
         val player = sender as? net.minestom.server.entity.Player ?: return
-        val type = context.get<String>(vfxTypeArgument).lowercase()
         val values = when (type) {
             "line" -> listOf(context.get<Double>(vfxLengthArgument), context.get<Double>(vfxDensityArgument))
-            "circle", "sphere", "dome" -> listOf(context.get<Double>(vfxRadiusArgument))
+            "circle" -> listOf(context.get<Double>(vfxRadiusArgument))
             "arc" -> listOf(context.get<Double>(vfxRadiusArgument), context.get<Double>(vfxStartDegreesArgument), context.get<Double>(vfxEndDegreesArgument))
             "slash" -> listOf(context.get<Double>(vfxLengthArgument), context.get<Double>(vfxDurationArgument))
             "flower" -> listOf(context.get<Double>(vfxPetalsArgument), context.get<Double>(vfxRadiusArgument))
@@ -260,12 +265,12 @@ fun main() {
     MinecraftServer.getCommandManager().register(
         Command("vfxdemo").apply {
             addSyntax(::handleVfxDemo, vfxTypeArgument)
-            addSyntax(::handleVfxImageDemo, vfxTypeArgument, vfxImageArgument)
-            addSyntax(::handleVfxParameterized, vfxTypeArgument, vfxLengthArgument, vfxDensityArgument)
-            addSyntax(::handleVfxParameterized, vfxTypeArgument, vfxRadiusArgument)
-            addSyntax(::handleVfxParameterized, vfxTypeArgument, vfxRadiusArgument, vfxStartDegreesArgument, vfxEndDegreesArgument)
-            addSyntax(::handleVfxParameterized, vfxTypeArgument, vfxLengthArgument, vfxDurationArgument)
-            addSyntax(::handleVfxParameterized, vfxTypeArgument, vfxPetalsArgument, vfxRadiusArgument)
+            addSyntax(::handleVfxImageDemo, vfxImageLiteral, vfxImageArgument)
+            addSyntax({ sender, context -> handleVfxParameterized("line", sender, context) }, vfxLineLiteral, vfxLengthArgument, vfxDensityArgument)
+            addSyntax({ sender, context -> handleVfxParameterized("circle", sender, context) }, vfxCircleLiteral, vfxRadiusArgument)
+            addSyntax({ sender, context -> handleVfxParameterized("arc", sender, context) }, vfxArcLiteral, vfxRadiusArgument, vfxStartDegreesArgument, vfxEndDegreesArgument)
+            addSyntax({ sender, context -> handleVfxParameterized("slash", sender, context) }, vfxSlashLiteral, vfxLengthArgument, vfxDurationArgument)
+            addSyntax({ sender, context -> handleVfxParameterized("flower", sender, context) }, vfxFlowerLiteral, vfxPetalsArgument, vfxRadiusArgument)
         },
     )
 

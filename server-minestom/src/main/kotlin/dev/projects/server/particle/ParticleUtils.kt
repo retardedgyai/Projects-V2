@@ -65,7 +65,7 @@ object ParticleUtils {
         return ParticleMulti(points, style = style, durationTicks = durationTicks)
     }
 
-    fun circleDirectionalExplosion(center: Point, radius: Double, count: Int = 24, style: ParticleStyle = ParticleStyle(Particle.ELECTRIC_SPARK), durationTicks: Int = 1, seed: Long = 0L): ParticleEffect =
+    fun circleDirectionalExplosion(center: Point, radius: Double, count: Int = 24, style: ParticleStyle = ParticleStyle(Particle.ELECTRIC_SPARK, speed = 1f), durationTicks: Int = 1, seed: Long = 0L): ParticleEffect =
         ParticleExplosion(center, radius, sphere = false, particle = style.particle, count = count, speed = style.speed, spawnOffset = radius, seed = seed, durationTicks = durationTicks)
 
     fun animatedLineSlash(origin: Point, direction: Vec, length: Double, durationTicks: Int, style: ParticleStyle = ParticleStyle(Particle.END_ROD)): ParticleEffect =
@@ -131,11 +131,35 @@ object ParticleUtils {
     fun randomColor(random: Random = Random.Default): Int =
         (random.nextInt(256) shl 16) or (random.nextInt(256) shl 8) or random.nextInt(256)
 
-    fun nearbyHueColor(color: Int, amount: Int = 24, random: Random = Random.Default): Int = {
-        val shift = random.nextInt(-amount, amount + 1)
-        fun channel(offset: Int) = ((color shr offset and 0xff) + shift).coerceIn(0, 255)
-        (channel(16) shl 16) or (channel(8) shl 8) or channel(0)
-    }()
+    fun nearbyHueColor(color: Int, amount: Int = 24, random: Random = Random.Default): Int {
+        val red = (color shr 16 and 0xff) / 255.0
+        val green = (color shr 8 and 0xff) / 255.0
+        val blue = (color and 0xff) / 255.0
+        val max = maxOf(red, green, blue)
+        val min = minOf(red, green, blue)
+        val delta = max - min
+        val hue = when {
+            delta == 0.0 -> 0.0
+            max == red -> ((green - blue) / delta).mod(6.0)
+            max == green -> (blue - red) / delta + 2.0
+            else -> (red - green) / delta + 4.0
+        } * 60.0
+        val shiftedHue = (hue + random.nextInt(-amount, amount + 1)).mod(360.0)
+        val saturation = if (max == 0.0) 0.0 else delta / max
+        val chroma = max * saturation
+        val second = chroma * (1.0 - abs((shiftedHue / 60.0).mod(2.0) - 1.0))
+        val (r1, g1, b1) = when (shiftedHue / 60.0) {
+            in 0.0..1.0 -> Triple(chroma, second, 0.0)
+            in 1.0..2.0 -> Triple(second, chroma, 0.0)
+            in 2.0..3.0 -> Triple(0.0, chroma, second)
+            in 3.0..4.0 -> Triple(0.0, second, chroma)
+            in 4.0..5.0 -> Triple(second, 0.0, chroma)
+            else -> Triple(chroma, 0.0, second)
+        }
+        val match = max - chroma
+        fun channel(value: Double) = ((value + match) * 255.0).toInt().coerceIn(0, 255)
+        return (channel(r1) shl 16) or (channel(g1) shl 8) or channel(b1)
+    }
 
     private fun spherePoints(center: Point, radius: Double, count: Int, seed: Long): List<Point> = List(count.coerceAtLeast(0)) { index ->
         val random = Random(seed + index)

@@ -55,13 +55,13 @@ class ParticleImage(
     val planeNormal: Vec = Vec(0.0, 1.0, 0.0),
     val planeRight: Vec? = null,
     val blendMode: BlendMode = NamedBlendMode.REPLACE,
-    val backgroundColor: Int = 0,
     val overlayColor: Int? = null,
     val dustScale: Float = 1f,
     override val durationTicks: Int = 1,
+    private val precomputedSampledImage: BufferedImage? = null,
 ) : ParticleEffect {
     private val step = max(1, max(lod, resolution))
-    private val sampledImage: BufferedImage by lazy { resize(image, dimensions) }
+    private val sampledImage: BufferedImage by lazy { precomputedSampledImage ?: resize(image, dimensions) }
     private val pixels: List<ImageParticlePixel> by lazy { samplePixels(sampledImage, step, alphaThreshold) }
 
     init {
@@ -114,6 +114,7 @@ class ParticleImage(
                 right.y() * horizontal + up.y() * vertical,
                 right.z() * horizontal + up.z() * vertical,
             )
+            // The configured overlay is the blend base; the image pixel is the overlay operand.
             val color = overlayColor?.let { blendMode.blend(it, pixel.color) } ?: pixel.color
             emitStyle(point, style = ParticleStyle(dust(color, dustScale)), index, sink)
         }
@@ -121,6 +122,7 @@ class ParticleImage(
 
     companion object {
         private val cache = mutableMapOf<String, BufferedImage>()
+        private val resizedCache = mutableMapOf<String, BufferedImage>()
 
         fun fromPng(
             bytes: ByteArray,
@@ -133,7 +135,6 @@ class ParticleImage(
             planeNormal: Vec = Vec(0.0, 1.0, 0.0),
             planeRight: Vec? = null,
             blendMode: BlendMode = NamedBlendMode.REPLACE,
-            backgroundColor: Int = 0,
             overlayColor: Int? = null,
             dustScale: Float = 1f,
             durationTicks: Int = 1,
@@ -142,10 +143,18 @@ class ParticleImage(
             val image = synchronized(cache) { cache.getOrPut(digest) {
                 ImageIO.read(ByteArrayInputStream(bytes)) ?: error("PNG data could not be decoded")
             } }
-            return ParticleImage(image, origin, alphaThreshold, lod, resolution, centered, dimensions, planeNormal, planeRight, blendMode, backgroundColor, overlayColor, dustScale, durationTicks)
+            val resized = synchronized(resizedCache) {
+                val width = dimensions?.x()?.toInt()?.takeIf { it > 0 } ?: image.width
+                val height = dimensions?.y()?.toInt()?.takeIf { it > 0 } ?: image.height
+                resizedCache.getOrPut("$digest:$width:$height") { resize(image, dimensions) }
+            }
+            return ParticleImage(image, origin, alphaThreshold, lod, resolution, centered, dimensions, planeNormal, planeRight, blendMode, overlayColor, dustScale, durationTicks, resized)
         }
 
-        fun clearCache() = synchronized(cache) { cache.clear() }
+        fun clearCache() {
+            synchronized(cache) { cache.clear() }
+            synchronized(resizedCache) { resizedCache.clear() }
+        }
 
         fun blend(base: Int, overlay: Int, mode: BlendMode = NamedBlendMode.REPLACE): Int = mode.blend(base, overlay)
 
