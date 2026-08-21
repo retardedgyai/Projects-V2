@@ -66,7 +66,7 @@ object ParticleGeometry {
             durationTicks = durationTicks,
             styleAt = { t ->
                 val middleProgress = (1.0 - kotlin.math.abs(t - 0.5) * 2.0).coerceIn(0.0, 1.0)
-                val endProgress = minOf(t, 1.0 - t).coerceIn(0.0, 0.5) * 2.0
+                val endProgress = t.coerceIn(0.0, 1.0)
                 sample(
                     origin.add(line.x() * ((t - 0.5) * length), line.y() * ((t - 0.5) * length), line.z() * ((t - 0.5) * length)),
                     middleProgress,

@@ -30,6 +30,7 @@ data class ParticleStyle(
     val count: Int = 1,
     val offset: Vec = Vec.ZERO,
     val speed: Float = 0f,
+    val directional: Boolean = false,
     val densityMultiplier: Double = 1.0,
     val category: ParticleCategory = ParticleCategory.FULL,
 ) {
@@ -46,6 +47,7 @@ data class ParticleSpawn(
     val offset: Vec = Vec.ZERO,
     val speed: Float = 0f,
     val category: ParticleCategory = ParticleCategory.FULL,
+    val directional: Boolean = false,
 ) {
     init {
         require(count >= 0) { "count must be non-negative" }
@@ -59,6 +61,7 @@ data class ParticleSpawn(
             offset = style.offset,
             speed = style.speed,
             category = style.category,
+            directional = style.directional,
         )
     }
 }
@@ -82,7 +85,7 @@ class PlayerParticleSink(private val player: Player) : ParticleSink {
                 spawn.offset.y().toFloat(),
                 spawn.offset.z().toFloat(),
                 spawn.speed,
-                spawn.count,
+                if (spawn.directional) 0 else spawn.count,
             ),
         )
     }
@@ -382,7 +385,7 @@ class ParticleExplosion(
     val count: Int = 24,
     val speed: Float = 0.35f,
     val speedVariance: Float = 0f,
-    val spawnOffset: Double = 0.0,
+    val spawnOffset: Double? = null,
     val seed: Long = 0L,
     override val durationTicks: Int = 1,
 ) : ParticleEffect {
@@ -410,8 +413,17 @@ class ParticleExplosion(
                 Random(seed + index + 91).nextDouble(-speedVariance.toDouble(), speedVariance.toDouble()).toFloat()
             }
             val actualSpeed = speed + variance
-            val offsetDistance = if (spawnOffset == 0.0) radius else spawnOffset
-            sink.spawn(ParticleSpawn(particle, center.add(direction.x() * offsetDistance, direction.y() * offsetDistance, direction.z() * offsetDistance), 1, Vec.ZERO, actualSpeed))
+            val offsetDistance = spawnOffset ?: 0.0
+            sink.spawn(
+                ParticleSpawn(
+                    particle = particle,
+                    position = center.add(direction.x() * offsetDistance, direction.y() * offsetDistance, direction.z() * offsetDistance),
+                    count = 0,
+                    offset = direction,
+                    speed = actualSpeed,
+                    directional = true,
+                ),
+            )
         }
     }
 }
@@ -509,17 +521,23 @@ class ParticleBatch(private val effects: List<ParticleEffect>) : ParticleEffect 
 
 class ParticlePeriodic(
     private val effect: ParticleEffect,
-    private val period: Int,
-    private val phase: Int = 0,
+    private val densityMultiplier: Double,
 ) : ParticleEffect {
+    private var remainder = 0.0
+
     init {
-        require(period >= 1)
+        require(densityMultiplier in 0.0..1.0)
     }
 
     override val durationTicks: Int = effect.durationTicks
 
     override fun emit(tick: Int, sink: ParticleSink) {
-        if ((tick + phase) % period == 0) effect.emit(tick, sink)
+        effect.emit(tick) { spawn ->
+            val exact = spawn.count * densityMultiplier + remainder
+            val count = floor(exact).toInt()
+            remainder = exact - count
+            if (count > 0) sink.spawn(spawn.copy(count = count))
+        }
     }
 }
 

@@ -75,6 +75,16 @@ class ParticlePrimitivesTest {
         val sink = RecordingParticleSink()
         ParticleExplosion(origin, count = 8, speed = 1.0f, seed = 9L).emit(0, sink)
         assertTrue(sink.spawns.all { it.speed >= 0f && it.position.x().isFinite() })
+        assertTrue(sink.spawns.all { it.directional && it.count == 0 && kotlin.math.abs(it.offset.length() - 1.0) < 1.0e-9 })
+    }
+
+    @Test
+    fun `explosion defaults to center and accepts explicit spawn offset`() {
+        val sink = RecordingParticleSink()
+        ParticleExplosion(origin, radius = 2.0, count = 1, seed = 1L).emit(0, sink)
+        assertEquals(origin, sink.spawns.single().position)
+        ParticleExplosion(origin, radius = 2.0, count = 1, spawnOffset = 2.0, seed = 1L).emit(0, sink)
+        assertEquals(2.0, sink.spawns.last().position.distance(origin), absoluteTolerance = 1.0e-9)
     }
 
     @Test
@@ -110,5 +120,28 @@ class ParticlePrimitivesTest {
         assertTrue(afterFirstTick > 0)
         assertTrue(progress.max() > progress.min())
         assertEquals(0, scheduler.activeAnimationCount)
+
+        val path = mutableListOf<Double>()
+        ParticleGeometry.drawParticleLineSlash(origin, Vec(0.0, 0.0, 1.0), 0.0, 2.0, 0.5, 1) { _, _, end, _ ->
+            path += end
+            ParticleStyle(Particle.END_ROD)
+        }.emit(0, RecordingParticleSink())
+        assertEquals(listOf(0.0, 0.25, 0.5, 0.75, 1.0), path)
+        assertEquals(path.sorted(), path)
+    }
+
+    @Test
+    fun `periodic thins counts without skipping the wrapped timeline`() {
+        val sink = RecordingParticleSink()
+        val effect = object : ParticleEffect {
+            override val durationTicks: Int = 4
+            override fun emit(tick: Int, sink: ParticleSink) {
+                sink.spawn(ParticleSpawn(Particle.END_ROD, origin))
+            }
+        }
+        val periodic = ParticlePeriodic(effect, 0.25)
+        repeat(4) { periodic.emit(it, sink) }
+        assertEquals(1, sink.spawns.size)
+        assertEquals(1, sink.spawns.single().count)
     }
 }

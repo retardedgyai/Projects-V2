@@ -29,6 +29,7 @@ import net.minestom.server.event.player.PlayerPluginMessageEvent
 import net.minestom.server.event.player.PlayerDisconnectEvent
 import net.minestom.server.event.player.PlayerSpawnEvent
 import net.minestom.server.event.player.PlayerTickEvent
+import net.minestom.server.event.instance.InstanceTickEvent
 import net.minestom.server.instance.block.Block
 import net.minestom.server.instance.Instance
 import net.minestom.server.instance.LightingChunk
@@ -294,8 +295,10 @@ fun main() {
         lastSentCooldowns.remove(playerId)
         attackSpeeds.remove(playerId)
     }
+    events.addListener(InstanceTickEvent::class.java) { event ->
+        if (event.instance === instance) particleAnimations.tick()
+    }
     events.addListener(PlayerTickEvent::class.java) { event ->
-        if (event.player == instance.players.firstOrNull()) particleAnimations.tick()
         synchronizeTwinBladesOffhand(event.player)
         val state = combatStates[event.player.uuid] ?: return@addListener
         val dodge = dodgeStates[event.player.uuid] ?: return@addListener
@@ -851,7 +854,7 @@ private fun showTwinRodsHitVfx(
         val color = when {
             middleSample -> lerpColor(0xffff66, 0xffffff, middle)
             end > 0.65 -> lerpColor(0xff2020, 0xffff44, end)
-            else -> 0xff2020
+            else -> lerpColor(0xff2020, 0xff7722, end)
         }
         ParticleStyle(
             particle = dust(color, if (middleSample) 0.52f else 0.34f),
