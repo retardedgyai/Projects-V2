@@ -45,11 +45,10 @@ abstract class ItemInHandRendererMixin {
 
         val pose = TwinRodFirstPersonAnimationState.pose(frameInterp)
         val mirror = if (player.mainArm == HumanoidArm.RIGHT) 1f else -1f
-        // Keep the idle held item closer to a horizontal grip and extended forearm.
+        // Align the rod with the fist and forearm depth axis instead of across the screen.
         poseStack.translate(-0.08f * mirror, 0.04f, -0.10f)
-        poseStack.mulPose(com.mojang.math.Axis.XP.rotationDegrees(-12f))
+        poseStack.mulPose(com.mojang.math.Axis.XP.rotationDegrees(78f))
         poseStack.mulPose(com.mojang.math.Axis.YP.rotationDegrees(8f * mirror))
-        poseStack.mulPose(com.mojang.math.Axis.ZP.rotationDegrees(78f * mirror))
         poseStack.translate(pose.translateX * mirror, pose.translateY, pose.translateZ)
         poseStack.mulPose(com.mojang.math.Axis.XP.rotationDegrees(pose.rotateX))
         poseStack.mulPose(com.mojang.math.Axis.YP.rotationDegrees(pose.rotateY * mirror))
