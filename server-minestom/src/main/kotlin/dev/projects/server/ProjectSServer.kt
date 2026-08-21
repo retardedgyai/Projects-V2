@@ -494,8 +494,8 @@ fun main() {
                         ClassSkillSlot.SKILL_2 -> {
                             val castId = skill2.tryCast(event.player.isOnGround)
                             if (castId != null) {
-                                skill1.reset()
-                                skill3.reset()
+                                skill1.cancelActiveMovement()
+                                skill3.cancelActiveMovement()
                                 event.player.setVelocity(Vec(0.0, -Skill2State.DOWNWARD_SPEED, 0.0))
                             }
                         }

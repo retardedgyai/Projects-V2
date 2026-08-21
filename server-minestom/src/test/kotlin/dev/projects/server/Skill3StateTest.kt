@@ -136,6 +136,42 @@ class Skill3StateTest {
     }
 
     @Test
+    fun `skill2 cast cancels skill3 hover but preserves its cooldown`() {
+        val skill3 = Skill3State(sequence())
+        val skill2 = Skill2State(sequence())
+        skill3.tryCast(facing, ClassSkillDirection(0.0, 1.0))
+        repeat(4) { skill3.tick(false, 0.0) }
+        assertEquals(Skill3Phase.HOVER, skill3.phase)
+        assertEquals(60, skill3.cooldownTicksRemaining)
+
+        assertNotNull(skill2.tryCast(false))
+        skill3.cancelActiveMovement()
+
+        assertEquals(Skill3Phase.IDLE, skill3.phase)
+        assertEquals(0, skill3.hoverTicksRemaining)
+        assertEquals(60, skill3.cooldownTicksRemaining)
+        assertFalse(skill3.tick(false, -1.0).dashActive)
+        assertEquals(Skill3Phase.IDLE, skill3.phase)
+    }
+
+    @Test
+    fun `skill2 cast during skill3 cooldown preserves the remaining cooldown`() {
+        val skill3 = Skill3State(sequence())
+        val skill2 = Skill2State(sequence())
+        skill3.tryCast(facing, ClassSkillDirection(0.0, 1.0))
+        repeat(4) { skill3.tick(false, 0.0) }
+        repeat(20) { skill3.tick(false, -1.0) }
+        assertEquals(Skill3Phase.IDLE, skill3.phase)
+        assertEquals(40, skill3.cooldownTicksRemaining)
+
+        assertNotNull(skill2.tryCast(false))
+        skill3.cancelActiveMovement()
+
+        assertEquals(40, skill3.cooldownTicksRemaining)
+        assertTrue(skill3.isReady.not())
+    }
+
+    @Test
     fun `body bounding box catches an aerial segment above the boss origin`() {
         val skill3 = Skill3State(sequence())
         skill3.tryCast(facing, ClassSkillDirection(0.0, 1.0))

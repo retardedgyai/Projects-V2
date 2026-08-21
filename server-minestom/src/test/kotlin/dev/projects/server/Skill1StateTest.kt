@@ -64,6 +64,27 @@ class Skill1StateTest {
         )
     }
 
+    @Test
+    fun `skill2 cast cancels skill1 movement but preserves its cooldown`() {
+        val skill1 = Skill1State(sequence())
+        val skill2 = Skill2State(sequence())
+        skill1.tryCast(Vec(0.0, 0.0, 1.0))
+        assertEquals(Skill1Phase.DASH, skill1.phase)
+        assertEquals(80, skill1.cooldownTicksRemaining)
+
+        assertNotNull(skill2.tryCast(false))
+        skill1.cancelActiveMovement()
+
+        assertEquals(Skill1Phase.IDLE, skill1.phase)
+        assertEquals(0, skill1.dashTicksRemaining)
+        assertEquals(80, skill1.cooldownTicksRemaining)
+        assertTrue(skill1.hitTargetsOnSegment(
+            Pos.ZERO,
+            Pos(0.0, 0.0, 2.0),
+            listOf(CombatTarget(UUID.randomUUID(), Pos(0.0, 0.0, 1.0))),
+        ).isEmpty())
+    }
+
     private fun sequence(): () -> Long {
         var id = 0L
         return { ++id }

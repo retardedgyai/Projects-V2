@@ -99,14 +99,18 @@ class Skill1State(
         return listOf(target.id)
     }
 
-    fun reset() {
+    fun cancelActiveMovement() {
         phase = Skill1Phase.IDLE
         dashDirection = null
         dashTicksRemaining = 0
-        cooldownTicksRemaining = 0
         castId = 0L
         hitWindowOpen = false
         hitTargets.clear()
+    }
+
+    fun reset() {
+        cancelActiveMovement()
+        cooldownTicksRemaining = 0
     }
 
     companion object {

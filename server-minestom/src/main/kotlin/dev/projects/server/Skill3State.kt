@@ -131,14 +131,18 @@ class Skill3State(
         }
     }
 
-    fun reset() {
+    fun cancelActiveMovement() {
         phase = Skill3Phase.IDLE
         dashDirection = null
         dashTicksRemaining = 0
         hoverTicksRemaining = 0
-        cooldownTicksRemaining = 0
         castId = 0L
         hitTargets.clear()
+    }
+
+    fun reset() {
+        cancelActiveMovement()
+        cooldownTicksRemaining = 0
         reducedNormalAttackExecutions.clear()
     }
 
