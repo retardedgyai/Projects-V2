@@ -41,6 +41,8 @@ class Skill3State(
     var castId: Long = 0L
         private set
 
+    private var hitEndedDash = false
+
     private val hitTargets = mutableSetOf<UUID>()
     private val reducedNormalAttackExecutions = mutableSetOf<Long>()
 
@@ -54,6 +56,7 @@ class Skill3State(
         phase = Skill3Phase.DASH
         dashTicksRemaining = DASH_TICKS
         hoverTicksRemaining = 0
+        hitEndedDash = false
         hitTargets.clear()
         return castId
     }
@@ -89,7 +92,7 @@ class Skill3State(
                         dashDirection = dashDirection,
                         dashActive = false,
                         velocityY = maxOf(velocityY, -HOVER_FALL_SPEED),
-                        stopHorizontalVelocity = isFirstHoverTick,
+                        stopHorizontalVelocity = isFirstHoverTick && !hitEndedDash,
                     )
                     hoverTicksRemaining--
                     if (hoverTicksRemaining == 0) phase = Skill3Phase.IDLE
@@ -112,6 +115,7 @@ class Skill3State(
         dashTicksRemaining = 0
         hoverTicksRemaining = HOVER_TICKS
         cooldownTicksRemaining = COOLDOWN_TICKS
+        hitEndedDash = true
         return true
     }
 
@@ -152,6 +156,7 @@ class Skill3State(
         dashTicksRemaining = 0
         hoverTicksRemaining = 0
         castId = 0L
+        hitEndedDash = false
         hitTargets.clear()
     }
 

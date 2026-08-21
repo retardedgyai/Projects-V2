@@ -181,6 +181,21 @@ class Skill3StateTest {
     }
 
     @Test
+    fun `hit dash preserves bounce velocity on first hover tick`() {
+        val skill3 = Skill3State(sequence())
+        skill3.tryCast(facing, ClassSkillDirection(0.0, 1.0))
+        assertTrue(skill3.finishDashOnHit())
+
+        val firstHoverTick = skill3.tick(false, 6.0)
+
+        assertFalse(firstHoverTick.stopHorizontalVelocity)
+        assertEquals(
+            skill3HitBounceVelocity(facing),
+            skill3HoverVelocity(skill3HitBounceVelocity(facing), firstHoverTick.velocityY),
+        )
+    }
+
+    @Test
     fun `skill2 cast cancels skill3 hover but preserves its cooldown`() {
         val skill3 = Skill3State(sequence())
         val skill2 = Skill2State(sequence())
