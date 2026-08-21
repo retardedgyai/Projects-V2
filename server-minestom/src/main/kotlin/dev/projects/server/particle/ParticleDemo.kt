@@ -7,6 +7,7 @@ import net.minestom.server.particle.Particle
 import java.awt.Color
 import java.awt.image.BufferedImage
 import kotlin.math.PI
+import kotlin.math.sin
 
 fun startParticleDemo(
     player: Player,
@@ -63,6 +64,34 @@ fun startParticleDemo(
             ParticleLightning(origin, origin.add(direction.x() * 3.0, direction.y() * 3.0, direction.z() * 3.0), durationTicks = 3),
             ParticleGeometry.drawParticleCircleExplosion(origin, 1.4, 14, durationTicks = 3),
         )
+        "evolved" -> {
+            val anchor = ParticleAnchor.player(player, ParticleAnchorPoint.CENTER)
+            val slashStyle = ParticleStyleCurve(
+                base = ParticleStyle(dust(0xff2020, 0.35f)),
+                color = KeyframeCurve.color(
+                    CurveKeyframe(0.0, 0xff2020),
+                    CurveKeyframe(0.5, 0xff8822),
+                    CurveKeyframe(1.0, 0xffff66),
+                    easing = Easing.SMOOTHSTEP,
+                ),
+                size = KeyframeCurve.float(CurveKeyframe(0.0, 0.25f), CurveKeyframe(1.0, 0.6f), easing = Easing.EASE_OUT_QUAD),
+            )
+            val ribbon = ParticleRibbon(
+                path = { progress ->
+                    val point = anchor.position() ?: origin
+                    point.add(direction.x() * (progress - 0.5) * 2.6, 0.65 + sin(progress * PI) * 0.35, direction.z() * (progress - 0.5) * 2.6)
+                },
+                particle = Particle.DUST,
+                sampleCount = 18,
+                lanes = 3,
+                width = constantCurve(0.18),
+                styleAt = { progress, _ -> slashStyle.sample(progress) },
+                durationTicks = 8,
+            )
+            val trail = ParticleTrail(anchor, particle = Particle.END_ROD, maxAgeTicks = 12, maxLength = 5.0, density = 5.0, durationTicks = 20)
+            val burst = ParticleEmitter(anchor, particle = Particle.ELECTRIC_SPARK, rate = EmitterRate.BURST, shape = SpawnShape.CONE, durationTicks = 1, burstCount = 18, radius = 0.8, seed = 55L, styleCurve = ParticleStyleCurve(ParticleStyle(Particle.ELECTRIC_SPARK, directional = true, speed = 0.3f)))
+            ParticleSequenceBuilder().apply { parallel { play(trail); play(ribbon); play(burst, delayTicks = 1) } }.build()
+        }
         else -> return
     }
     scheduler.start(effect, sink)

@@ -25,6 +25,8 @@ enum class ParticleCategory {
     FULL,
 }
 
+enum class ParticleImportance { GAMEPLAY_TELEGRAPH, COMBAT_FEEDBACK, COSMETIC }
+
 data class ParticleStyle(
     val particle: Particle,
     val count: Int = 1,
@@ -33,6 +35,7 @@ data class ParticleStyle(
     val directional: Boolean = false,
     val densityMultiplier: Double = 1.0,
     val category: ParticleCategory = ParticleCategory.FULL,
+    val importance: ParticleImportance = ParticleImportance.COSMETIC,
 ) {
     init {
         require(count >= 0) { "count must be non-negative" }
@@ -48,6 +51,7 @@ data class ParticleSpawn(
     val speed: Float = 0f,
     val category: ParticleCategory = ParticleCategory.FULL,
     val directional: Boolean = false,
+    val importance: ParticleImportance = ParticleImportance.COSMETIC,
 ) {
     init {
         require(count >= 0) { "count must be non-negative" }
@@ -62,6 +66,7 @@ data class ParticleSpawn(
             speed = style.speed,
             category = style.category,
             directional = style.directional,
+            importance = style.importance,
         )
     }
 }

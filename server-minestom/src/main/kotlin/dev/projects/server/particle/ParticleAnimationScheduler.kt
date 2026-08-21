@@ -3,30 +3,53 @@ package dev.projects.server.particle
 import net.minestom.server.entity.Player
 
 class ParticleAnimationScheduler {
-    private data class Active(val effect: ParticleEffect, val sink: ParticleSink, var tick: Int = 0)
+    private data class Active(val handle: ParticleEffectHandle, val sink: ParticleSink)
 
     private val active = mutableListOf<Active>()
 
     val activeAnimationCount: Int get() = active.size
 
-    fun start(effect: ParticleEffect, sink: ParticleSink) {
+    fun start(
+        effect: ParticleEffect,
+        sink: ParticleSink,
+        id: String = "particle-effect-${nextId++}",
+        anchors: List<ParticleAnchor> = emptyList(),
+        onComplete: (() -> Unit)? = null,
+    ): ParticleEffectHandle {
         require(effect.durationTicks >= 1) { "durationTicks must be at least one" }
-        active += Active(effect, sink)
+        val attached = if (anchors.isEmpty()) defaultAnchors(effect) else anchors
+        return ParticleEffectHandle(id, effect, attached, onComplete).also { active += Active(it, sink) }
     }
 
     fun tick() {
         val iterator = active.iterator()
         while (iterator.hasNext()) {
             val animation = iterator.next()
-            animation.effect.emit(animation.tick, animation.sink)
-            animation.tick++
-            if (animation.tick >= animation.effect.durationTicks) iterator.remove()
+            if (animation.handle.tick(animation.sink)) iterator.remove()
         }
     }
 
     fun cancelFor(player: Player) {
-        active.removeIf { (it.sink as? PlayerParticleSink)?.belongsTo(player) == true }
+        active.removeIf {
+            val matches = (it.sink as? PlayerParticleSink)?.belongsTo(player) == true
+            if (matches) it.handle.cancel()
+            matches
+        }
     }
 
-    fun cancelAll() = active.clear()
+    fun cancelAll() {
+        active.forEach { it.handle.cancel() }
+        active.clear()
+    }
+
+    companion object {
+        private var nextId = 0L
+    }
+
+    private fun defaultAnchors(effect: ParticleEffect): List<ParticleAnchor> = when (effect) {
+        is ParticleEmitter -> listOf(effect.anchor)
+        is ParticleTrail -> listOf(effect.anchor)
+        is ParticleBeam -> listOf(effect.start)
+        else -> emptyList()
+    }
 }

@@ -62,6 +62,7 @@ class ParticleManager(
     var budget: ParticleBudget = ParticleBudget(),
     var viewerCondition: (ParticleViewer) -> Boolean = { true },
     var viewerFilter: (ParticleViewer, ParticleSpawn) -> Boolean = { _, _ -> true },
+    var profiler: ParticleProfiler? = null,
 ) {
     private var attempted = 0
     private var dispatched = 0
@@ -92,7 +93,9 @@ class ParticleManager(
             dropped++
             return false
         }
-        val distance = viewer.position.distance(spawn.position)
+        // A live Player is the distance origin; position is only the fixed/snapshot fallback.
+        val distanceOrigin = viewer.player?.position ?: viewer.position
+        val distance = distanceOrigin.distance(spawn.position)
         val multiplier = quality.multiplier(spawn.category) * quality.distanceMultiplier(distance)
         if (multiplier < quality.skipBelowMultiplier || multiplier <= 0.0) {
             dropped++
@@ -121,6 +124,13 @@ class ParticleManager(
         dispatched += acceptedPackets
         categoryCounts[spawn.category] = (categoryCounts[spawn.category] ?: 0) + acceptedPackets
         if (acceptedCount < logicalCount) dropped += logicalCount - acceptedCount
+        profiler?.record(
+            effectId = "particle",
+            viewerKey = viewer.player?.uuid?.toString() ?: "fixed",
+            category = spawn.category,
+            requestedCount = logicalCount,
+            sentCount = acceptedCount,
+        )
         return true
     }
 
@@ -136,7 +146,15 @@ class ParticleManager(
 
     fun dispatchAll(viewer: ParticleViewer, spawns: Iterable<ParticleSpawn>, sink: ParticleSink) {
         // Spend the finite budget on gameplay-critical categories first.
-        spawns.sortedByDescending { priority(it.category) }.forEach { dispatch(viewer, it, sink) }
+        spawns.sortedWith(compareByDescending<ParticleSpawn> { importancePriority(it.importance) }
+            .thenByDescending { priority(it.category) })
+            .forEach { dispatch(viewer, it, sink) }
+    }
+
+    private fun importancePriority(importance: ParticleImportance): Int = when (importance) {
+        ParticleImportance.GAMEPLAY_TELEGRAPH -> 3
+        ParticleImportance.COMBAT_FEEDBACK -> 2
+        ParticleImportance.COSMETIC -> 1
     }
 
     private fun priority(category: ParticleCategory): Int = when (category) {

@@ -59,6 +59,7 @@ import dev.projects.server.particle.ParticleBatch
 import dev.projects.server.particle.ParticleGeometry
 import dev.projects.server.particle.ParticleStyle
 import dev.projects.server.particle.ParticleManager
+import dev.projects.server.particle.ParticleProfiler
 import dev.projects.server.particle.PlayerParticleSink
 import dev.projects.server.particle.dust
 import dev.projects.server.particle.lerpColor
@@ -110,7 +111,8 @@ fun main() {
     var testerMarkerTick = 0L
     val fixedTester = FixedAttackTester()
     val particleAnimations = ParticleAnimationScheduler()
-    val particleManager = ParticleManager()
+    val particleProfiler = ParticleProfiler()
+    val particleManager = ParticleManager(profiler = particleProfiler)
 
     fun sendResourceSnapshot(player: net.minestom.server.entity.Player) {
         val resources = classResources[player.uuid] ?: return
@@ -227,8 +229,8 @@ fun main() {
     fun handleVfxDemo(sender: CommandSender, context: CommandContext) {
         val player = sender as? net.minestom.server.entity.Player ?: return
         val type = context.get<String>(vfxTypeArgument).lowercase()
-        if (type !in setOf("line", "circle", "arc", "bezier", "spiral", "lightning", "explosion", "slash", "cleave", "sphere", "dome", "flower", "prism", "all")) {
-            player.sendMessage(Component.text("Use /vfxdemo line|circle|arc|bezier|spiral|lightning|explosion|slash|cleave|sphere|dome|flower|prism|all"))
+        if (type !in setOf("line", "circle", "arc", "bezier", "spiral", "lightning", "explosion", "slash", "cleave", "sphere", "dome", "flower", "prism", "all", "evolved")) {
+            player.sendMessage(Component.text("Use /vfxdemo line|circle|arc|bezier|spiral|lightning|explosion|slash|cleave|sphere|dome|flower|prism|all|evolved"))
             return
         }
         startParticleDemo(player, type, particleAnimations, manager = particleManager)
@@ -258,8 +260,10 @@ fun main() {
         Command("vfxstats").apply {
             setDefaultExecutor { sender, _ ->
                 val counters = particleManager.counters
-                sender.sendMessage(Component.text("VFX particles attempted=${counters.attempted} dispatched=${counters.dispatched} dropped=${counters.dropped}"))
+                val profile = particleProfiler.snapshot()
+                sender.sendMessage(Component.text("VFX active=${particleAnimations.activeAnimationCount} requested=${profile.particlesRequested} sent=${profile.particlesSent} degraded=${profile.particlesDegraded} attempted=${counters.attempted} dropped=${counters.dropped}"))
             }
+            addSyntax({ sender, _ -> particleProfiler.reset(); particleManager.resetCounters(); sender.sendMessage(Component.text("VFX stats reset")) }, ArgumentType.Literal("reset"))
         },
     )
     MinecraftServer.getCommandManager().register(
@@ -351,6 +355,7 @@ fun main() {
     events.addListener(InstanceTickEvent::class.java) { event ->
         if (event.instance === instance) {
             particleManager.beginTick()
+            particleProfiler.setActiveEffects(particleAnimations.activeAnimationCount)
             particleAnimations.tick()
         }
     }
