@@ -75,21 +75,26 @@ class PlayerParticleSink(private val player: Player) : ParticleSink {
 
     override fun spawn(spawn: ParticleSpawn) {
         if (!player.isOnline) return
-        player.sendPacket(
-            ParticlePacket(
-                spawn.particle,
-                spawn.position.x(),
-                spawn.position.y(),
-                spawn.position.z(),
-                spawn.offset.x().toFloat(),
-                spawn.offset.y().toFloat(),
-                spawn.offset.z().toFloat(),
-                spawn.speed,
-                if (spawn.directional) 0 else spawn.count,
-            ),
-        )
+        repeat(packetEmissionCount(spawn)) {
+            player.sendPacket(
+                ParticlePacket(
+                    spawn.particle,
+                    spawn.position.x(),
+                    spawn.position.y(),
+                    spawn.position.z(),
+                    spawn.offset.x().toFloat(),
+                    spawn.offset.y().toFloat(),
+                    spawn.offset.z().toFloat(),
+                    spawn.speed,
+                    if (spawn.directional) 0 else spawn.count,
+                ),
+            )
+        }
     }
 }
+
+internal fun packetEmissionCount(spawn: ParticleSpawn): Int =
+    if (spawn.directional) spawn.count else if (spawn.count > 0) 1 else 0
 
 class RecordingParticleSink : ParticleSink {
     val spawns = mutableListOf<ParticleSpawn>()
@@ -418,7 +423,7 @@ class ParticleExplosion(
                 ParticleSpawn(
                     particle = particle,
                     position = center.add(direction.x() * offsetDistance, direction.y() * offsetDistance, direction.z() * offsetDistance),
-                    count = 0,
+                    count = 1,
                     offset = direction,
                     speed = actualSpeed,
                     directional = true,

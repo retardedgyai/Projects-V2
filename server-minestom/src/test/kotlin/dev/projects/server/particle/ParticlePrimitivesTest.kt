@@ -75,7 +75,15 @@ class ParticlePrimitivesTest {
         val sink = RecordingParticleSink()
         ParticleExplosion(origin, count = 8, speed = 1.0f, seed = 9L).emit(0, sink)
         assertTrue(sink.spawns.all { it.speed >= 0f && it.position.x().isFinite() })
-        assertTrue(sink.spawns.all { it.directional && it.count == 0 && kotlin.math.abs(it.offset.length() - 1.0) < 1.0e-9 })
+        assertTrue(sink.spawns.all { it.directional && it.count == 1 && kotlin.math.abs(it.offset.length() - 1.0) < 1.0e-9 })
+    }
+
+    @Test
+    fun `directional logical count expands to one protocol packet per particle`() {
+        val directional = ParticleSpawn(Particle.END_ROD, origin, count = 3, offset = Vec(1.0, 0.0, 0.0), directional = true)
+        val regular = ParticleSpawn(Particle.END_ROD, origin, count = 3)
+        assertEquals(3, packetEmissionCount(directional))
+        assertEquals(1, packetEmissionCount(regular))
     }
 
     @Test
@@ -143,5 +151,24 @@ class ParticlePrimitivesTest {
         repeat(4) { periodic.emit(it, sink) }
         assertEquals(1, sink.spawns.size)
         assertEquals(1, sink.spawns.single().count)
+    }
+
+    @Test
+    fun `periodic preserves directional logical particles`() {
+        val sink = RecordingParticleSink()
+        val effect = object : ParticleEffect {
+            override val durationTicks: Int = 4
+            override fun emit(tick: Int, sink: ParticleSink) {
+                sink.spawn(ParticleSpawn(Particle.END_ROD, origin, count = 1, offset = Vec(1.0, 0.0, 0.0), directional = true))
+            }
+        }
+
+        val periodic = ParticlePeriodic(effect, 0.25)
+        repeat(4) { periodic.emit(it, sink) }
+
+        assertEquals(1, sink.spawns.size)
+        assertTrue(sink.spawns.single().directional)
+        assertEquals(1, sink.spawns.single().count)
+        assertEquals(1, packetEmissionCount(sink.spawns.single()))
     }
 }
