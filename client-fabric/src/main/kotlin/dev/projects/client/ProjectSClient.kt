@@ -635,96 +635,83 @@ object ProjectSClient : ClientModInitializer {
         val surfaceY = centerY + normalY * 0.04
         val surfaceZ = centerZ + normalZ * 0.04
 
-        when (effect.age) {
-            0 -> {
-                // Sample one fixed diagonal instead of building a radial hit shape.
-                for (sample in 0..10) {
-                    val along = (sample / 10.0 - 0.5) * slashLength
-                    val lineX = surfaceX + slashX * along
-                    val lineY = surfaceY + slashY * along
-                    val lineZ = surfaceZ + slashZ * along
-                    for (side in -1..1) {
-                        val edgeOffset = side * 0.055
-                        level.addParticle(
-                            twinSlashOuterDust,
-                            lineX + edgeX * edgeOffset,
-                            lineY + edgeY * edgeOffset,
-                            lineZ + edgeZ * edgeOffset,
-                            0.0,
-                            0.0,
-                            0.0,
-                        )
-                    }
-                    level.addParticle(
-                        twinSlashMidDust,
-                        lineX,
-                        lineY,
-                        lineZ,
-                        0.0,
-                        0.0,
-                        0.0,
-                    )
-                    level.addParticle(
-                        twinSlashCoreDust,
-                        lineX + edgeX * 0.025,
-                        lineY + edgeY * 0.025,
-                        lineZ + edgeZ * 0.025,
-                        0.0,
-                        0.0,
-                        0.0,
-                    )
-                }
-                for (core in -1..1) {
-                    val compact = core * 0.045
-                    level.addParticle(
-                        twinSlashCoreDust,
-                        surfaceX + edgeX * compact,
-                        surfaceY + edgeY * compact,
-                        surfaceZ + edgeZ * compact,
-                        0.0,
-                        0.0,
-                        0.0,
-                    )
-                }
+        val previousProgress = when (effect.age) {
+            0 -> 0.0
+            1 -> 0.35
+            else -> 0.72
+        }
+        val currentProgress = when (effect.age) {
+            0 -> 0.35
+            1 -> 0.72
+            else -> 1.0
+        }
+        val startAlong = slashLength * 0.5
+        val sampleCount = 5
+        for (sample in 0 until sampleCount) {
+            val sampleProgress = previousProgress +
+                (currentProgress - previousProgress) * (sample / (sampleCount - 1.0))
+            val headAlong = startAlong - slashLength * sampleProgress
+            val headX = surfaceX + slashX * headAlong
+            val headY = surfaceY + slashY * headAlong
+            val headZ = surfaceZ + slashZ * headAlong
+
+            // Older layers stay just behind the moving yellow head.
+            val redAlong = startAlong - slashLength * (sampleProgress - 0.13).coerceAtLeast(0.0)
+            val orangeAlong = startAlong - slashLength * (sampleProgress - 0.055).coerceAtLeast(0.0)
+            level.addParticle(
+                twinSlashOuterDust,
+                surfaceX + slashX * redAlong - edgeX * 0.045,
+                surfaceY + slashY * redAlong - edgeY * 0.045,
+                surfaceZ + slashZ * redAlong - edgeZ * 0.045,
+                0.0,
+                0.0,
+                0.0,
+            )
+            level.addParticle(
+                twinSlashMidDust,
+                surfaceX + slashX * orangeAlong + edgeX * 0.02,
+                surfaceY + slashY * orangeAlong + edgeY * 0.02,
+                surfaceZ + slashZ * orangeAlong + edgeZ * 0.02,
+                0.0,
+                0.0,
+                0.0,
+            )
+            level.addParticle(
+                twinSlashCoreDust,
+                headX + edgeX * 0.025,
+                headY + edgeY * 0.025,
+                headZ + edgeZ * 0.025,
+                0.0,
+                0.0,
+                0.0,
+            )
+        }
+        if (effect.age == 0) {
+            for (flash in -1..1) {
+                val flashOffset = flash * 0.04
+                level.addParticle(
+                    twinSlashCoreDust,
+                    surfaceX + slashX * startAlong + edgeX * flashOffset,
+                    surfaceY + slashY * startAlong + edgeY * flashOffset,
+                    surfaceZ + slashZ * startAlong + edgeZ * flashOffset,
+                    0.0,
+                    0.0,
+                    0.0,
+                )
             }
-            1 -> {
-                for (sample in 0..4) {
-                    val along = (sample / 4.0 - 0.5) * slashLength
-                    level.addParticle(
-                        twinSlashOuterDust,
-                        surfaceX + slashX * along + edgeX * 0.075,
-                        surfaceY + slashY * along + edgeY * 0.075,
-                        surfaceZ + slashZ * along + edgeZ * 0.075,
-                        0.0,
-                        0.0,
-                        0.0,
-                    )
-                    if (sample % 2 == 0) {
-                        level.addParticle(
-                            twinSlashMidDust,
-                            surfaceX + slashX * along - edgeX * 0.075,
-                            surfaceY + slashY * along - edgeY * 0.075,
-                            surfaceZ + slashZ * along - edgeZ * 0.075,
-                            0.0,
-                            0.0,
-                            0.0,
-                        )
-                    }
-                }
-            }
-            else -> {
-                for (spark in -1..1) {
-                    val along = spark * 0.18
-                    level.addParticle(
-                        ParticleTypes.ELECTRIC_SPARK,
-                        surfaceX + slashX * along,
-                        surfaceY + slashY * along,
-                        surfaceZ + slashZ * along,
-                        -slashX * 0.12,
-                        -slashY * 0.12,
-                        -slashZ * 0.12,
-                    )
-                }
+        }
+        if (effect.age == 2) {
+            for (spark in -1..1) {
+                val along = slashLength * (0.5 - 0.92) + spark * 0.06
+                level.addParticle(
+                    ParticleTypes.ELECTRIC_SPARK,
+                    surfaceX + slashX * along,
+                    surfaceY + slashY * along,
+                    surfaceZ + slashZ * along,
+                    -slashX * 0.12,
+                    -slashY * 0.12,
+                    -slashZ * 0.12,
+                )
             }
         }
         effect.age++
