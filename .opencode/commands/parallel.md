@@ -39,7 +39,7 @@ ProjectS v2 の GitHub Issues `$ARGUMENTS` を、Userが追加操作しなくて
    - remoteへ通常push済みか
    - Test / Build結果が子Task報告に含まれているか
 11. merge / cherry-pick / main更新はしない。統合はSol Review後。
-12. 全子Taskの終了後、引数が1つだけで、Issue本文にManual Smoke対象があり、子Taskの実装、Test、Build、commit、pushが成功した場合に限り、成功した子Taskの同じworktreeで `scripts/manual-smoke-launch.sh` を1回だけ実行する。起動失敗は実装commitの失敗にはせず、`Manual Smoke launch: BLOCKED` と理由・log pathを報告する。複数IssueではMinecraft Clientを自動起動せず、起動試行は0回とする。
+12. 全子Taskの終了後、引数が1つだけで、Issue本文にManual Smoke対象があり、子Taskの実装、Test、Build、commit、pushが成功した場合に限り、成功した子Taskのworktree pathを解決し、**このオーケストレーター側worktreeの** `scripts/manual-smoke-launch.sh --worktree <成功した子Taskのworktree>` を1回だけ実行する。target worktree内のlauncher scriptは参照・要求しない。Server/Clientのbuild/runはlauncherに渡したtarget worktreeから行う。起動失敗は実装commitの失敗にはせず、`Manual Smoke launch: BLOCKED` と理由・log pathを報告する。複数IssueではMinecraft Clientを自動起動せず、起動試行は0回とする。
 
 並列実行の原則:
 - 1 Branch = 1 worktree = 1 editing OpenCode process。

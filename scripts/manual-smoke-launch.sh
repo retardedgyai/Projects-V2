@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-ROOT_DIR=$(git rev-parse --show-toplevel)
+SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)
+DEFAULT_WORKTREE=$(git rev-parse --show-toplevel)
 STATE_DIR="${MANUAL_SMOKE_STATE_DIR:-${TMPDIR:-/tmp}/projects-v2-manual-smoke}"
 SERVER_LOG="$STATE_DIR/server.log"
 CLIENT_LOG="$STATE_DIR/client.log"
@@ -12,9 +13,11 @@ SERVER_PORT=25565
 
 print_usage() {
     cat <<'EOF'
-Usage: scripts/manual-smoke-launch.sh [--dry-run]
+Usage: scripts/manual-smoke-launch.sh [--dry-run] [--worktree <path>]
 
-Start the ProjectS server and Fabric client from this worktree for Manual Smoke.
+Start the ProjectS server and Fabric client from the target worktree for Manual Smoke.
+The launcher can be run from another worktree; --worktree selects the build/run target.
+When omitted, the current worktree is used.
 Logs and managed PID files are stored under /tmp/projects-v2-manual-smoke.
 EOF
 }
@@ -222,7 +225,7 @@ start_detached() {
     local pid_file=$2
     local log_file=$3
     shift 3
-    setsid "$@" > "$log_file" 2>&1 < /dev/null &
+    setsid bash -c "cd \"\$1\" && shift && exec \"\$@\"" bash "$ROOT_DIR" "$@" > "$log_file" 2>&1 < /dev/null &
     local pid=$!
     write_pid_file "$pid_file" "$kind" "$pid"
     printf '%s started with PID %s; log: %s\n' "$kind" "$pid" "$log_file"
@@ -234,15 +237,38 @@ main() {
         exit 0
     fi
     DRY_RUN=false
-    if [[ ${1:-} == --dry-run ]]; then
-        DRY_RUN=true
-        shift
-    fi
-    if (( $# != 0 )); then
-        print_usage >&2
-        exit 2
-    fi
+    requested_worktree=$DEFAULT_WORKTREE
+    while (( $# > 0 )); do
+        case "$1" in
+            --dry-run)
+                DRY_RUN=true
+                shift
+                ;;
+            --worktree)
+                if (( $# < 2 )); then
+                    printf '%s\n' '--worktree requires a path.' >&2
+                    print_usage >&2
+                    exit 2
+                fi
+                requested_worktree=$2
+                shift 2
+                ;;
+            --help|-h)
+                print_usage
+                exit 0
+                ;;
+            *)
+                print_usage >&2
+                exit 2
+                ;;
+        esac
+    done
 
+    if ! ROOT_DIR=$(git -C "$requested_worktree" rev-parse --show-toplevel 2>/dev/null); then
+        printf 'Manual Smoke launch: BLOCKED\nTarget is not a git worktree: %s\n' "$requested_worktree" >&2
+        exit 1
+    fi
+    ROOT_DIR=$(cd -- "$ROOT_DIR" && pwd -P)
     BRANCH=$(git -C "$ROOT_DIR" branch --show-current)
     BRANCH=${BRANCH:-detached}
     COMMIT=$(git -C "$ROOT_DIR" rev-parse HEAD)
@@ -255,6 +281,7 @@ main() {
     printf 'Manual Smoke state: %s\n' "$STATE_DIR"
 
     if "$DRY_RUN"; then
+        printf 'Manual Smoke launcher: %s\n' "$SCRIPT_DIR/manual-smoke-launch.sh"
         printf 'Dry run server build: %s --no-daemon -Dorg.gradle.jvmargs="-Xmx768m -XX:MaxMetaspaceSize=256m" :server-minestom:installDist\n' "$GRADLE"
         printf 'Dry run server command: JAVA_OPTS="-Xms128m -Xmx512m -XX:MaxMetaspaceSize=256m" %s\n' "$SERVER_LAUNCHER"
         printf 'Dry run client command: %s --no-daemon :client-fabric:runClient\n' "$GRADLE"
@@ -277,7 +304,7 @@ main() {
     fi
 
     printf 'Building the server distribution with a bounded Gradle heap.\n'
-    if ! "$GRADLE" --no-daemon -Dorg.gradle.jvmargs='-Xmx768m -XX:MaxMetaspaceSize=256m' :server-minestom:installDist > "$INSTALL_LOG" 2>&1; then
+    if ! (cd "$ROOT_DIR" && "$GRADLE" --no-daemon -Dorg.gradle.jvmargs='-Xmx768m -XX:MaxMetaspaceSize=256m' :server-minestom:installDist) > "$INSTALL_LOG" 2>&1; then
         printf 'Manual Smoke launch: BLOCKED\nServer distribution build failed. Log: %s\n' "$INSTALL_LOG" >&2
         log_excerpt "$INSTALL_LOG" >&2
         exit 1
