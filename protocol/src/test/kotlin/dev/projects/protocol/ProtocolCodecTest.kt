@@ -67,6 +67,38 @@ class ProtocolCodecTest {
     }
 
     @Test
+    fun `attack debug shape round trips server supplied shape parameters`() {
+        assertRoundTrip(
+            AttackDebugShape(
+                AttackDebugShapeKind.TWIN_RODS,
+                1.0,
+                2.0,
+                3.0,
+                0.5,
+                0.7071067811865476,
+                0.5,
+                3.5,
+                0.65,
+                1.75,
+            ),
+        )
+        assertRoundTrip(
+            AttackDebugShape(
+                AttackDebugShapeKind.HEAVY_BLADE,
+                -1.0,
+                0.0,
+                4.0,
+                0.0,
+                0.0,
+                1.0,
+                4.5,
+                0.40,
+                2.0,
+            ),
+        )
+    }
+
+    @Test
     fun `dodge input round trips`() {
         assertRoundTrip(DodgeInput(-1.0, 1.0))
         assertRoundTrip(DodgeInput(0.0, 0.0))

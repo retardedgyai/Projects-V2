@@ -61,6 +61,12 @@ data class CombatTarget(
 
 sealed interface CombatEvent {
     data class Started(val attackExecutionId: Long) : CombatEvent
+    data class Active(
+        val attackExecutionId: Long,
+        val position: Point,
+        val direction: Vec,
+        val profile: WeaponProfile,
+    ) : CombatEvent
     data class HitConfirmed(
         val attackExecutionId: Long,
         val targetId: UUID,
@@ -121,10 +127,12 @@ class CombatState(
         val events = mutableListOf<CombatEvent>()
         phaseTicks--
         if (phase == AttackPhase.ACTIVE) {
+            val profile = requireNotNull(activeProfile)
+            events += CombatEvent.Active(executionId, position, direction, profile)
             for (target in targets) {
-                if (target.id !in hitTargets && isInAttackRange(activeProfile!!, position, direction, target.position)) {
+                if (target.id !in hitTargets && isInAttackRange(profile, position, direction, target.position)) {
                     hitTargets += target.id
-                    events += CombatEvent.HitConfirmed(executionId, target.id, activeProfile!!.weapon)
+                    events += CombatEvent.HitConfirmed(executionId, target.id, profile.weapon)
                 }
             }
         }

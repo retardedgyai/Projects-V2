@@ -103,6 +103,43 @@ class CombatTest {
     }
 
     @Test
+    fun `active event carries the server attack position direction and profile`() {
+        val combat = CombatState(
+            executionIdSource = sequence(),
+            weaponSource = { WeaponType.TWIN_RODS },
+        )
+        val direction = Vec(1.0, 1.0, 0.0)
+
+        combat.input(AttackInputState.PRESS)
+        repeat(3) { combat.tick(origin, direction, emptyList()) }
+
+        val active = combat.tick(origin, direction, emptyList()).filterIsInstance<CombatEvent.Active>().single()
+        assertEquals(origin, active.position)
+        assertEquals(direction, active.direction)
+        assertEquals(WeaponType.TWIN_RODS, active.profile.weapon)
+        assertEquals(3.5, active.profile.range)
+        assertEquals(0.65, active.profile.minForwardDot)
+        assertEquals(1.75, active.profile.verticalRange)
+    }
+
+    @Test
+    fun `active event carries heavy blade profile shape parameters`() {
+        val combat = CombatState(
+            executionIdSource = sequence(),
+            weaponSource = { WeaponType.HEAVY_BLADE },
+        )
+
+        combat.input(AttackInputState.PRESS)
+        repeat(7) { combat.tick(origin, forward, emptyList()) }
+
+        val active = combat.tick(origin, forward, emptyList()).filterIsInstance<CombatEvent.Active>().single()
+        assertEquals(WeaponType.HEAVY_BLADE, active.profile.weapon)
+        assertEquals(4.5, active.profile.range)
+        assertEquals(0.40, active.profile.minForwardDot)
+        assertEquals(2.0, active.profile.verticalRange)
+    }
+
+    @Test
     fun `attack speed shortens both weapon timings from 1 to 2`() {
         for (weapon in WeaponType.entries) {
             val atOne = attackLength(weapon, 1.0)

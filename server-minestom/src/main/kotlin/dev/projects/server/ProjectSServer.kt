@@ -1,6 +1,8 @@
 package dev.projects.server
 
 import dev.projects.protocol.PROJECTS_CHANNEL
+import dev.projects.protocol.AttackDebugShape
+import dev.projects.protocol.AttackDebugShapeKind
 import dev.projects.protocol.AttackHitConfirmed
 import dev.projects.protocol.AttackInput
 import dev.projects.protocol.AttackStarted
@@ -288,6 +290,7 @@ fun main() {
         }
         val targets = tester?.let { listOf(CombatTarget(it.uuid, weakpoint?.center ?: it.position)) } ?: emptyList()
         val combatEvents = state.tick(event.player.position, event.player.position.direction(), targets)
+        publishCombatEvents(event.player, combatEvents.filterIsInstance<CombatEvent.Active>())
         combatEvents.filterIsInstance<CombatEvent.HitConfirmed>().forEach { hit ->
             val damage = prototypeBoss.applyPlayerAttack(
                 attackExecutionId = hit.attackExecutionId,
@@ -303,7 +306,7 @@ fun main() {
                 if (weakpoint != null) showWeakpointHit(event.player, weakpoint)
             }
         }
-        publishCombatEvents(event.player, combatEvents)
+        publishCombatEvents(event.player, combatEvents.filterIsInstance<CombatEvent.HitConfirmed>())
         if (!prototypeBoss.isActive) {
             finishEncounter()
             return@addListener
@@ -525,6 +528,21 @@ private fun publishCombatEvents(player: net.minestom.server.entity.Player, event
     for (event in events) {
         val message = when (event) {
             is CombatEvent.Started -> AttackStarted(event.attackExecutionId)
+            is CombatEvent.Active -> AttackDebugShape(
+                kind = when (event.profile.weapon) {
+                    WeaponType.TWIN_RODS -> AttackDebugShapeKind.TWIN_RODS
+                    WeaponType.HEAVY_BLADE -> AttackDebugShapeKind.HEAVY_BLADE
+                },
+                originX = event.position.x(),
+                originY = event.position.y(),
+                originZ = event.position.z(),
+                directionX = event.direction.x(),
+                directionY = event.direction.y(),
+                directionZ = event.direction.z(),
+                range = event.profile.range,
+                minForwardDot = event.profile.minForwardDot,
+                verticalRange = event.profile.verticalRange,
+            )
             is CombatEvent.HitConfirmed -> AttackHitConfirmed(event.attackExecutionId, event.targetId)
         }
         player.sendPluginMessage(PROJECTS_CHANNEL, ProtocolCodec.encode(message))
