@@ -25,6 +25,7 @@ class ParticlePresetsTest {
             val sink = RecordingParticleSink()
             repeat(effect.durationTicks) { tick -> effect.emit(tick, sink) }
             assertTrue(effect.durationTicks >= 1, preset.id)
+            assertTrue(sink.spawns.isNotEmpty(), preset.id)
             assertTrue(sink.spawns.all { spawn ->
                 spawn.position.x().isFinite() && spawn.position.y().isFinite() && spawn.position.z().isFinite() &&
                     spawn.offset.x().isFinite() && spawn.offset.y().isFinite() && spawn.offset.z().isFinite() &&

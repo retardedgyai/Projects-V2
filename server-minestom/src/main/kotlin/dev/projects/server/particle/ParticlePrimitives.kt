@@ -394,6 +394,7 @@ class ParticleSpiral(
     val radius: Double,
     val curveAngle: Double,
     val curves: Double,
+    val axialLength: Double = 1.0,
     val angleOffset: Double = 0.0,
     override val durationTicks: Int = 1,
     val reversed: Boolean = false,
@@ -401,7 +402,7 @@ class ParticleSpiral(
     val style: ParticleStyle = ParticleStyle(Particle.END_ROD),
 ) : ParticleEffect {
     init {
-        require(radius >= 0.0 && curves >= 0.0 && durationTicks >= 1)
+        require(radius >= 0.0 && curves >= 0.0 && axialLength >= 0.0 && durationTicks >= 1)
     }
 
     fun points(): List<Point> {
@@ -411,7 +412,7 @@ class ParticleSpiral(
             val progress = if (reversed) 1.0 - t else t
             val angle = angleOffset + curveAngle * curves * progress
             val radial = right.mul(cos(angle) * radius * progress).add(up.mul(sin(angle) * radius * progress))
-            origin.add(forward.x() * progress + radial.x(), forward.y() * progress + radial.y(), forward.z() * progress + radial.z())
+            origin.add(forward.x() * progress * axialLength + radial.x(), forward.y() * progress * axialLength + radial.y(), forward.z() * progress * axialLength + radial.z())
         }
     }
 

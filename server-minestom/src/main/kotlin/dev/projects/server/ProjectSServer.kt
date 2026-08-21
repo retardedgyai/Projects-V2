@@ -1243,11 +1243,11 @@ private fun showTesterTelegraph(
 ) {
     when (attack) {
         FixedAttackType.SIDE_SWEEP -> {
-            startParticlePreset(player, "projects:combat/shockwave_ring", scheduler, origin.add(0.0, 0.08, 0.0), direction, manager, mapOf("radius" to 4.5, "duration" to 8.0))
+            startParticlePreset(player, "projects:combat/shockwave_ring", scheduler, origin.add(0.0, 0.08, 0.0), Vec(0.0, 1.0, 0.0), manager, mapOf("radius" to 4.5, "duration" to 8.0))
         }
         FixedAttackType.FORWARD_SLAM -> {
             val center = origin.add(direction.x() * 3.0, 0.08, direction.z() * 3.0)
-            startParticlePreset(player, "projects:combat/charge_inward", scheduler, center, direction, manager, mapOf("radius" to 2.5, "duration" to 8.0))
+            startParticlePreset(player, "projects:combat/charge_inward", scheduler, center, Vec(0.0, 1.0, 0.0), manager, mapOf("radius" to 2.5, "duration" to 8.0))
         }
     }
 }
