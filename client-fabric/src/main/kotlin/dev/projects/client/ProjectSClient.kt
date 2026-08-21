@@ -47,7 +47,7 @@ object ProjectSClient : ClientModInitializer {
     private var mana = 0
     private var maxMana = 100
     private var skill3CooldownTicks = 0
-    private var skill3CooldownMaxTicks = 80
+    private var skill3CooldownMaxTicks = 60
     private val skillCategory = KeyMapping.Category.register(
         Identifier.fromNamespaceAndPath("projects", "skills"),
     )

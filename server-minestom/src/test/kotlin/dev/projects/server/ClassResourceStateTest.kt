@@ -24,6 +24,6 @@ class ClassResourceStateTest {
         assertFalse(resources.trySpend(101))
         assertEquals(100, resources.mana)
         assertEquals(100, resources.snapshot(0).mana)
-        assertEquals(80, resources.snapshot(0).skill3CooldownMaxTicks)
+        assertEquals(60, resources.snapshot(0).skill3CooldownMaxTicks)
     }
 }

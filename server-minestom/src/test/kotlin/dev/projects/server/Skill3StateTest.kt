@@ -29,7 +29,7 @@ class Skill3StateTest {
             assertEquals(if (tick == 3) 0 else 4 - tick - 1, skill3.dashTicksRemaining)
         }
         assertEquals(Skill3Phase.HOVER, skill3.phase)
-        assertEquals(80, skill3.cooldownTicksRemaining)
+        assertEquals(60, skill3.cooldownTicksRemaining)
     }
 
     @Test
@@ -60,10 +60,11 @@ class Skill3StateTest {
         repeat(4) { skill3.tick(false, 0.0) }
         assertTrue(skill3.reduceCooldownForNormalAttack(10L))
         assertFalse(skill3.reduceCooldownForNormalAttack(10L))
-        assertEquals(60, skill3.cooldownTicksRemaining)
+        assertEquals(40, skill3.cooldownTicksRemaining)
         assertTrue(skill3.reduceCooldownForNormalAttack(11L))
-        assertTrue(skill3.reduceCooldownForNormalAttack(12L))
         assertEquals(20, skill3.cooldownTicksRemaining)
+        assertTrue(skill3.reduceCooldownForNormalAttack(12L))
+        assertEquals(0, skill3.cooldownTicksRemaining)
         repeat(20) { skill3.tick(false, -1.0) }
         assertEquals(0, skill3.cooldownTicksRemaining)
         assertTrue(skill3.isReady)
@@ -158,10 +159,10 @@ class Skill3StateTest {
 
     @Test
     fun `natural cooldown synchronization waits for four ticks`() {
-        assertFalse(shouldSyncSkill3Cooldown(1, 79, 80))
-        assertFalse(shouldSyncSkill3Cooldown(3, 77, 80))
-        assertTrue(shouldSyncSkill3Cooldown(4, 76, 80))
-        assertFalse(shouldSyncSkill3Cooldown(4, 80, 80))
+        assertFalse(shouldSyncSkill3Cooldown(1, 59, 60))
+        assertFalse(shouldSyncSkill3Cooldown(3, 57, 60))
+        assertTrue(shouldSyncSkill3Cooldown(4, 56, 60))
+        assertFalse(shouldSyncSkill3Cooldown(4, 60, 60))
     }
 
     private fun sequence(): () -> Long {
