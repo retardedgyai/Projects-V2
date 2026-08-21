@@ -26,7 +26,10 @@ fun ParticleEffect.translated(offset: Vec): ParticleEffect = ModifiedParticleEff
 })
 
 fun ParticleEffect.rotated(transform: ParticleTransform): ParticleEffect = ModifiedParticleEffect(this, transform = {
-    transform.localPoint(Vec(it.x(), it.y(), it.z()))
+    val pivot = transform.origin
+    val delta = Vec(it.x() - pivot.x(), it.y() - pivot.y(), it.z() - pivot.z())
+    val rotated = transform.localDirection(delta)
+    pivot.add(rotated.x(), rotated.y(), rotated.z())
 })
 
 fun ParticleEffect.transformed(transform: ParticleTransform): ParticleEffect = rotated(transform)
@@ -75,3 +78,36 @@ fun ParticleEffect.colorMap(map: (Int) -> Int): ParticleEffect = ModifiedParticl
 })
 
 fun ParticleEffect.tint(color: Int): ParticleEffect = colorMap { color }
+
+/** Per-frame geometry curves for authored offsets, rotation and radius/length scaling. */
+fun ParticleEffect.animatedTransform(
+    positionOffset: Curve<Vec> = constantCurve(Vec.ZERO),
+    rotationDegrees: Curve<Double> = constantCurve(0.0),
+    scale: Curve<Double> = constantCurve(1.0),
+    pivot: Point = Vec.ZERO,
+): ParticleEffect = object : ParticleEffect {
+    override val durationTicks: Int = this@animatedTransform.durationTicks
+
+    override fun emit(tick: Int, sink: ParticleSink) {
+        if (tick !in 0 until durationTicks) return
+        val progress = ParticleFrame(tick, durationTicks).progress
+        val angle = Math.toRadians(rotationDegrees.sample(progress))
+        val factor = scale.sample(progress)
+        require(factor.isFinite() && factor >= 0.0)
+        this@animatedTransform.emit(tick) { spawn ->
+            val dx = spawn.position.x() - pivot.x()
+            val dz = spawn.position.z() - pivot.z()
+            val rotated = Vec(
+                dx * kotlin.math.cos(angle) - dz * kotlin.math.sin(angle),
+                spawn.position.y() - pivot.y(),
+                dx * kotlin.math.sin(angle) + dz * kotlin.math.cos(angle),
+            )
+            val offset = positionOffset.sample(progress)
+            sink.spawn(spawn.copy(position = pivot.add(
+                rotated.x() * factor + offset.x(),
+                rotated.y() * factor + offset.y(),
+                rotated.z() * factor + offset.z(),
+            )))
+        }
+    }
+}

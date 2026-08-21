@@ -69,12 +69,15 @@ class ParticleManager(
     private var dropped = 0
     private val categoryCounts = mutableMapOf<ParticleCategory, Int>()
     private val tickBudgetUsed = mutableMapOf<Any, Int>()
+    private data class Pending(val viewer: ParticleViewer, val spawn: ParticleSpawn, val sink: ParticleSink, val effectId: String)
+    private val pending = mutableListOf<Pending>()
 
     val counters: ParticleCounters
         get() = ParticleCounters(attempted, dispatched, dropped, categoryCounts.toMap())
 
     fun beginTick() {
         tickBudgetUsed.clear()
+        pending.clear()
     }
 
     fun resetCounters() {
@@ -83,11 +86,15 @@ class ParticleManager(
         dropped = 0
         categoryCounts.clear()
         tickBudgetUsed.clear()
+        pending.clear()
     }
 
     fun qualityMultiplier(category: ParticleCategory): Double = quality.multiplier(category)
 
-    fun dispatch(viewer: ParticleViewer, spawn: ParticleSpawn, sink: ParticleSink): Boolean {
+    fun dispatch(viewer: ParticleViewer, spawn: ParticleSpawn, sink: ParticleSink): Boolean =
+        dispatchNow(viewer, spawn, sink, "particle")
+
+    private fun dispatchNow(viewer: ParticleViewer, spawn: ParticleSpawn, sink: ParticleSink, effectId: String): Boolean {
         attempted++
         if (!viewerCondition(viewer) || !viewerFilter(viewer, spawn)) {
             dropped++
@@ -125,8 +132,8 @@ class ParticleManager(
         categoryCounts[spawn.category] = (categoryCounts[spawn.category] ?: 0) + acceptedPackets
         if (acceptedCount < logicalCount) dropped += logicalCount - acceptedCount
         profiler?.record(
-            effectId = "particle",
-            viewerKey = viewer.player?.uuid?.toString() ?: "fixed",
+            effectId = effectId,
+            viewerKey = if (viewer.player != null) "viewer" else "fixed",
             category = spawn.category,
             requestedCount = logicalCount,
             sentCount = acceptedCount,
@@ -140,15 +147,25 @@ class ParticleManager(
     fun dispatch(player: Player, spawn: ParticleSpawn): Boolean =
         dispatch(ParticleViewer(player.position, player), spawn, PlayerParticleSink(player))
 
-    fun sink(viewer: ParticleViewer, delegate: ParticleSink): ParticleSink = ParticleSink { spawn ->
-        dispatch(viewer, spawn, delegate)
+    fun sink(viewer: ParticleViewer, delegate: ParticleSink, effectId: String = "particle"): ParticleSink = ParticleSink { spawn ->
+        pending += Pending(viewer, spawn, delegate, effectId)
+    }
+
+    fun flush() {
+        val queued = pending.toList()
+        pending.clear()
+        queued.groupBy { it.viewer.player?.uuid ?: it.viewer }.values.forEach { entries ->
+            entries.sortedWith(compareByDescending<Pending> { importancePriority(it.spawn.importance) }
+                .thenByDescending { priority(it.spawn.category) })
+                .forEach { dispatchNow(it.viewer, it.spawn, it.sink, it.effectId) }
+        }
     }
 
     fun dispatchAll(viewer: ParticleViewer, spawns: Iterable<ParticleSpawn>, sink: ParticleSink) {
         // Spend the finite budget on gameplay-critical categories first.
         spawns.sortedWith(compareByDescending<ParticleSpawn> { importancePriority(it.importance) }
             .thenByDescending { priority(it.category) })
-            .forEach { dispatch(viewer, it, sink) }
+            .forEach { dispatchNow(viewer, it, sink, "particle") }
     }
 
     private fun importancePriority(importance: ParticleImportance): Int = when (importance) {

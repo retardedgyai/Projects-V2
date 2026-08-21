@@ -58,10 +58,9 @@ class ParticleTrail(
     private fun estimatedSampleCount(): Double = max(1.0, samples.zipWithNext().sumOf { (a, b) -> a.point.distance(b.point) * density } + 1.0)
 
     private fun trimLength() {
-        var length = 0.0
         while (samples.size > 1) {
-            length += samples[samples.lastIndex - 1].point.distance(samples.last().point)
-            if (length <= maxLength) break
+            val length = samples.zipWithNext().sumOf { (a, b) -> a.point.distance(b.point) }
+            if (length <= maxLength) return
             samples.removeAt(samples.lastIndex)
         }
     }

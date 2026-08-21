@@ -261,7 +261,7 @@ fun main() {
             setDefaultExecutor { sender, _ ->
                 val counters = particleManager.counters
                 val profile = particleProfiler.snapshot()
-                sender.sendMessage(Component.text("VFX active=${particleAnimations.activeAnimationCount} requested=${profile.particlesRequested} sent=${profile.particlesSent} degraded=${profile.particlesDegraded} attempted=${counters.attempted} dropped=${counters.dropped}"))
+                sender.sendMessage(Component.text("VFX active=${profile.activeEffects} animations=${profile.currentAnimations} requested=${profile.particlesRequested} sent=${profile.particlesSent} degraded=${profile.particlesDegraded} attempted=${counters.attempted} dropped=${counters.dropped} categories=${profile.byCategory} viewers=${profile.byViewer.size} top=${profile.topEffectIds}"))
             }
             addSyntax({ sender, _ -> particleProfiler.reset(); particleManager.resetCounters(); sender.sendMessage(Component.text("VFX stats reset")) }, ArgumentType.Literal("reset"))
         },
@@ -269,6 +269,9 @@ fun main() {
     MinecraftServer.getCommandManager().register(
         Command("vfxdemo").apply {
             addSyntax(::handleVfxDemo, vfxTypeArgument)
+            addSyntax({ sender, _ -> (sender as? net.minestom.server.entity.Player)?.let { particleAnimations.pauseFor(it) } }, ArgumentType.Literal("evolved"), ArgumentType.Literal("pause"))
+            addSyntax({ sender, _ -> (sender as? net.minestom.server.entity.Player)?.let { particleAnimations.resumeFor(it) } }, ArgumentType.Literal("evolved"), ArgumentType.Literal("resume"))
+            addSyntax({ sender, _ -> (sender as? net.minestom.server.entity.Player)?.let { particleAnimations.cancelFor(it) } }, ArgumentType.Literal("evolved"), ArgumentType.Literal("cancel"))
             addSyntax(::handleVfxImageDemo, vfxImageLiteral, vfxImageArgument)
             addSyntax({ sender, context -> handleVfxParameterized("line", sender, context) }, vfxLineLiteral, vfxLengthArgument, vfxDensityArgument)
             addSyntax({ sender, context -> handleVfxParameterized("circle", sender, context) }, vfxCircleLiteral, vfxRadiusArgument)
@@ -357,6 +360,7 @@ fun main() {
             particleManager.beginTick()
             particleProfiler.setActiveEffects(particleAnimations.activeAnimationCount)
             particleAnimations.tick()
+            particleManager.flush()
         }
     }
     events.addListener(PlayerTickEvent::class.java) { event ->

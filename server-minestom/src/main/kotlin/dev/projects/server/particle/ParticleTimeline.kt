@@ -2,6 +2,11 @@ package dev.projects.server.particle
 
 enum class ParticleEffectState { RUNNING, PAUSED, COMPLETED, CANCELLED }
 
+/** Shared authored time context; all children of a composition can use the same playhead. */
+data class ParticleFrame(val tick: Int, val durationTicks: Int) {
+    val progress: Double get() = if (durationTicks <= 1) 1.0 else (tick.toDouble() / (durationTicks - 1)).coerceIn(0.0, 1.0)
+}
+
 class ParticleEffectHandle(
     val id: String,
     private val effect: ParticleEffect,

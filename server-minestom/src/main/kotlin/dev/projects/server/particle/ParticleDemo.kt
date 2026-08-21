@@ -19,7 +19,7 @@ fun startParticleDemo(
     val direction = player.position.direction()
     val origin = player.position.add(direction.x() * 3.0, 1.2, direction.z() * 3.0)
     val flowerOrigin = player.position.add(direction.x() * 3.0, direction.y() * 3.0, direction.z() * 3.0)
-    val sink = manager?.sink(ParticleViewer(player.position, player), PlayerParticleSink(player)) ?: PlayerParticleSink(player)
+    val sink = manager?.sink(ParticleViewer(player.position, player), PlayerParticleSink(player), "vfx-$type") ?: PlayerParticleSink(player)
     val effect = when (type) {
         "line" -> {
             val length = values.getOrNull(0) ?: 3.0

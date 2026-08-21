@@ -17,7 +17,7 @@ data class ParticleTransform(
         require(abs(forward.length() - 1.0) < 1.0e-6)
         require(abs(right.length() - 1.0) < 1.0e-6)
         require(abs(up.length() - 1.0) < 1.0e-6)
-        require(uniformScale.isFinite() && uniformScale >= 0.0)
+        require(uniformScale.isFinite() && uniformScale > 0.0)
     }
 
     fun localPoint(point: Point): Point = origin.add(
@@ -58,16 +58,29 @@ data class ParticleTransform(
 
     /** Rotations are author-facing degrees, applied in local yaw, pitch, roll order. */
     fun rotate(yaw: Double = 0.0, pitch: Double = 0.0, roll: Double = 0.0): ParticleTransform {
-        fun rotateLocal(vector: Vec): Vec {
-            var result = vector.rotateAroundY(Math.toRadians(yaw))
-            result = result.rotateAroundX(Math.toRadians(pitch))
-            return result.rotateAroundZ(Math.toRadians(roll))
+        var f = forward
+        var r = right
+        var u = up
+        if (yaw != 0.0) {
+            val angle = Math.toRadians(yaw)
+            f = f.rotateAroundAxis(u, angle)
+            r = r.rotateAroundAxis(u, angle)
         }
-        return fromDirection(origin, rotateLocal(forward), rotateLocal(up)).copy(uniformScale = uniformScale)
+        if (pitch != 0.0) {
+            val angle = Math.toRadians(pitch)
+            f = f.rotateAroundAxis(r, angle)
+            u = u.rotateAroundAxis(r, angle)
+        }
+        if (roll != 0.0) {
+            val angle = Math.toRadians(roll)
+            r = r.rotateAroundAxis(f, angle)
+            u = u.rotateAroundAxis(f, angle)
+        }
+        return ParticleTransform(origin, safeNormalize(f, forward), safeNormalize(r, right), safeNormalize(u, up), uniformScale)
     }
 
     fun scale(factor: Double): ParticleTransform {
-        require(factor.isFinite() && factor >= 0.0)
+        require(factor.isFinite() && factor > 0.0)
         return copy(uniformScale = factor)
     }
 
@@ -76,8 +89,8 @@ data class ParticleTransform(
             val forward = safeNormalize(direction, Vec(0.0, 0.0, 1.0))
             val projectedUp = upHint.sub(forward.mul(upHint.dot(forward)))
             val up = safeNormalize(projectedUp, transformPerpendicular(forward))
-            val right = safeNormalize(forward.cross(up), transformPerpendicular(forward))
-            val correctedUp = safeNormalize(right.cross(forward), up)
+            val right = safeNormalize(up.cross(forward), transformPerpendicular(forward))
+            val correctedUp = safeNormalize(forward.cross(right), up)
             return ParticleTransform(origin, forward, right, correctedUp)
         }
 

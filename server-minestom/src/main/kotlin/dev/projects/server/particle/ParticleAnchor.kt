@@ -17,8 +17,19 @@ class ParticleAnchor private constructor(
     val cancelWhenInvalid: Boolean = true,
     val localOffset: Vec = Vec.ZERO,
     val relativeOffset: Vec = Vec.ZERO,
+    private val coherentSampleProvider: (() -> ParticleAnchorSample)? = null,
 ) {
     fun sample(): ParticleAnchorSample {
+        coherentSampleProvider?.let { provider ->
+            val base = runCatching { provider() }.getOrNull()
+                ?: return ParticleAnchorSample(Vec.ZERO, Vec(0.0, 0.0, 1.0), false)
+            if (!base.valid || !finite(base.position)) return base.copy(valid = false)
+            val transform = ParticleTransform.fromDirection(base.position, base.direction)
+            val local = transform.localDirection(localOffset)
+            return base.copy(position = base.position.add(
+                local.x() + relativeOffset.x(), local.y() + relativeOffset.y(), local.z() + relativeOffset.z(),
+            ))
+        }
         val valid = runCatching { validityProvider() }.getOrDefault(false)
         val position = runCatching { positionProvider() }.getOrNull()
         if (!valid || position == null || !finite(position)) return ParticleAnchorSample(Vec.ZERO, Vec(0.0, 0.0, 1.0), false)
@@ -38,7 +49,7 @@ class ParticleAnchor private constructor(
     fun direction(): Vec = sample().direction
 
     fun withOffsets(local: Vec = localOffset, relative: Vec = relativeOffset): ParticleAnchor =
-        ParticleAnchor(positionProvider, directionProvider, validityProvider, cancelWhenInvalid, local, relative)
+        ParticleAnchor(positionProvider, directionProvider, validityProvider, cancelWhenInvalid, local, relative, coherentSampleProvider)
 
     companion object {
         fun fixed(point: Point, direction: Vec = Vec(0.0, 0.0, 1.0)): ParticleAnchor =
@@ -48,7 +59,8 @@ class ParticleAnchor private constructor(
             position: () -> Point?,
             direction: () -> Vec = { Vec(0.0, 0.0, 1.0) },
             cancelWhenInvalid: Boolean = true,
-        ): ParticleAnchor = ParticleAnchor(position, direction, { position() != null }, cancelWhenInvalid)
+            validity: () -> Boolean = { position() != null },
+        ): ParticleAnchor = ParticleAnchor(position, direction, validity, cancelWhenInvalid)
 
         fun player(
             player: Player,
@@ -86,15 +98,20 @@ class ParticleAnchor private constructor(
             source: ParticleAnchor,
             target: ParticleAnchor,
             cancelWhenInvalid: Boolean = true,
-        ): ParticleAnchor = follow(
-            position = { source.position() },
-            direction = {
-                val from = source.position()
-                val to = target.position()
-                if (from == null || to == null) Vec(0.0, 0.0, 1.0)
-                else Vec(to.x() - from.x(), to.y() - from.y(), to.z() - from.z())
-            },
+        ): ParticleAnchor = ParticleAnchor(
+            positionProvider = { null },
+            directionProvider = { Vec(0.0, 0.0, 1.0) },
+            validityProvider = { true },
             cancelWhenInvalid = cancelWhenInvalid,
+            coherentSampleProvider = {
+                val from = source.sample()
+                val to = target.sample()
+                if (!from.valid || !to.valid) ParticleAnchorSample(Vec.ZERO, Vec(0.0, 0.0, 1.0), false)
+                else ParticleAnchorSample(
+                    from.position,
+                    Vec(to.position.x() - from.position.x(), to.position.y() - from.position.y(), to.position.z() - from.position.z()),
+                )
+            },
         )
     }
 }

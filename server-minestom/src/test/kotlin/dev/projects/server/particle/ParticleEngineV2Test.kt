@@ -7,6 +7,7 @@ import net.minestom.server.particle.Particle
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
 class ParticleEngineV2Test {
@@ -23,6 +24,16 @@ class ParticleEngineV2Test {
     }
 
     @Test
+    fun `transform uses right handed frame and local rotations`() {
+        val transform = ParticleTransform.fromDirection(Pos.ZERO, Vec(0.3, 0.4, 0.8))
+        assertTrue(transform.right.dot(transform.up.cross(transform.forward)) > 0.99)
+        val rotated = transform.rotate(yaw = 37.0, pitch = 19.0, roll = 11.0)
+        assertEquals(1.0, rotated.forward.length(), 1.0e-9)
+        assertEquals(0.0, rotated.forward.dot(rotated.right), 1.0e-9)
+        assertFailsWith<IllegalArgumentException> { transform.scale(0.0) }
+    }
+
+    @Test
     fun `follow anchor samples current position and invalidates safely`() {
         var point: Point? = Pos.ZERO
         val anchor = ParticleAnchor.follow({ point })
@@ -30,6 +41,19 @@ class ParticleEngineV2Test {
         point = Pos(2.0, 3.0, 4.0)
         assertEquals(point, anchor.position())
         point = null
+        assertFalse(anchor.sample().valid)
+    }
+
+    @Test
+    fun `source target anchor invalidates when either endpoint disappears`() {
+        var source: Point? = Pos.ZERO
+        var target: Point? = Pos(0.0, 0.0, 2.0)
+        val anchor = ParticleAnchor.sourceToTarget(ParticleAnchor.follow({ source }), ParticleAnchor.follow({ target }))
+        assertTrue(anchor.sample().valid)
+        target = null
+        assertFalse(anchor.sample().valid)
+        target = Pos(0.0, 0.0, 2.0)
+        source = null
         assertFalse(anchor.sample().valid)
     }
 
@@ -88,5 +112,28 @@ class ParticleEngineV2Test {
         point = Pos(10.0, 0.0, 0.0)
         trail.emit(2, sink)
         assertEquals(1, trail.history.size)
+    }
+
+    @Test
+    fun `trail keeps cumulative length within limit`() {
+        var point = Pos.ZERO
+        val trail = ParticleTrail(ParticleAnchor.follow({ point }), maxLength = 2.0, teleportDistance = 100.0, durationTicks = 8)
+        val sink = RecordingParticleSink()
+        repeat(8) { tick -> point = Pos(tick.toDouble() * 0.5, 0.0, 0.0); trail.emit(tick, sink) }
+        assertTrue(trail.history.zipWithNext().sumOf { (a, b) -> a.distance(b) } <= 2.0 + 1.0e-9)
+    }
+
+    @Test
+    fun `sink flush applies priority and profiler effect id`() {
+        val profiler = ParticleProfiler()
+        val manager = ParticleManager(budget = ParticleBudget(1), profiler = profiler)
+        val viewer = ParticleViewer(Pos.ZERO)
+        val sink = RecordingParticleSink()
+        val queued = manager.sink(viewer, sink, "telegraph")
+        queued.spawn(ParticleSpawn(Particle.END_ROD, Pos.ZERO, category = ParticleCategory.FULL))
+        queued.spawn(ParticleSpawn(Particle.END_ROD, Pos.ZERO, category = ParticleCategory.BOSS, importance = ParticleImportance.GAMEPLAY_TELEGRAPH))
+        manager.flush()
+        assertEquals(ParticleCategory.BOSS, sink.spawns.single().category)
+        assertEquals("telegraph", profiler.snapshot().topEffectIds.single().first)
     }
 }

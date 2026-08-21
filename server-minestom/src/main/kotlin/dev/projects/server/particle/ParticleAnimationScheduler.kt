@@ -37,6 +37,16 @@ class ParticleAnimationScheduler {
         }
     }
 
+    fun pauseFor(player: Player) {
+        active.filter { (it.sink as? PlayerParticleSink)?.belongsTo(player) == true }
+            .forEach { it.handle.pause() }
+    }
+
+    fun resumeFor(player: Player) {
+        active.filter { (it.sink as? PlayerParticleSink)?.belongsTo(player) == true }
+            .forEach { it.handle.resume() }
+    }
+
     fun cancelAll() {
         active.forEach { it.handle.cancel() }
         active.clear()

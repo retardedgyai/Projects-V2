@@ -56,9 +56,10 @@ class ParticleEmitter(
             val local = sampleLocal(random)
             val position = transform.localPoint(local)
             val direction = emissionDirection(local, transform)
-            val speed = if (speedRange.start == speedRange.endInclusive) speedRange.start
+            val rangeSpeed = if (speedRange.start == speedRange.endInclusive) speedRange.start
             else random.nextDouble(speedRange.start.toDouble(), speedRange.endInclusive.toDouble()).toFloat()
             val style = styleCurve.sample(progress)
+            val speed = if (styleCurve.speed == null) rangeSpeed else rangeSpeed * style.speed
             emitStyle(position, style.copy(offset = direction, speed = speed, directional = true), index + tick * max(1, count), sink)
         }
     }
@@ -95,7 +96,11 @@ class ParticleEmitter(
             SpawnShape.DISC -> Vec(0.0, 0.0, 1.0)
             else -> transform.forward
         }
-        return emitterNormalize(transform.localDirection(base))
+        return when {
+            initialDirection != null -> emitterNormalize(initialDirection)
+            shape == SpawnShape.CONE -> emitterNormalize(transform.localDirection(base))
+            else -> emitterNormalize(base)
+        }
     }
 }
 
