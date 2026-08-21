@@ -55,14 +55,12 @@ import net.minestom.server.command.builder.Command
 import net.minestom.server.command.builder.CommandContext
 import net.minestom.server.command.builder.arguments.ArgumentType
 import dev.projects.server.particle.ParticleAnimationScheduler
-import dev.projects.server.particle.ParticleBatch
-import dev.projects.server.particle.ParticleGeometry
-import dev.projects.server.particle.ParticleStyle
 import dev.projects.server.particle.ParticleManager
 import dev.projects.server.particle.ParticleProfiler
-import dev.projects.server.particle.PlayerParticleSink
-import dev.projects.server.particle.dust
-import dev.projects.server.particle.lerpColor
+import dev.projects.server.particle.ParticlePresetRegistry
+import dev.projects.server.particle.parseParticlePresetOverrides
+import dev.projects.server.particle.startParticlePreset
+import net.minestom.server.command.builder.suggestion.SuggestionEntry
 import dev.projects.server.particle.startParticleDemo
 
 private const val SERVER_ADDRESS = "127.0.0.1"
@@ -280,6 +278,59 @@ fun main() {
             addSyntax({ sender, context -> handleVfxParameterized("flower", sender, context) }, vfxFlowerLiteral, vfxPetalsArgument, vfxRadiusArgument)
         },
     )
+    val presetIdArgument = ArgumentType.Word("id").setSuggestionCallback { _, _, suggestion ->
+        ParticlePresetRegistry.all.forEach { suggestion.addEntry(SuggestionEntry(it.id)) }
+    }
+    val presetTagArgument = ArgumentType.Word("tag").setSuggestionCallback { _, _, suggestion ->
+        ParticlePresetRegistry.all.flatMap { it.tags }.toSet().sorted().forEach { suggestion.addEntry(SuggestionEntry(it)) }
+    }
+    val presetValuesArgument = ArgumentType.StringArray("parameters").setSuggestionCallback { _, context, suggestion ->
+        val id = runCatching { context.get<String>(presetIdArgument) }.getOrNull()
+        id?.let { ParticlePresetRegistry[it] }?.parameters?.forEach { parameter ->
+            suggestion.addEntry(SuggestionEntry("${parameter.name}="))
+        }
+    }
+    fun handlePresetList(sender: CommandSender, context: CommandContext) {
+        val tag = if (context.has(presetTagArgument)) context.get<String>(presetTagArgument) else null
+        val presets = ParticlePresetRegistry.list(tag)
+        if (presets.isEmpty()) {
+            sender.sendMessage(Component.text(if (tag == null) "No VFX presets registered" else "No VFX presets for tag $tag"))
+            return
+        }
+        sender.sendMessage(Component.text("VFX presets (${presets.size})"))
+        presets.forEach { preset ->
+            val schema = if (preset.parameters.isEmpty()) "" else " params=${preset.parameters.joinToString(",") { it.name }}"
+            sender.sendMessage(Component.text("${preset.id} - ${preset.displayName} [${preset.tags.joinToString(",")}]$schema"))
+        }
+    }
+    fun handlePresetPlay(sender: CommandSender, context: CommandContext) {
+        val player = sender as? net.minestom.server.entity.Player ?: return
+        val id = context.get<String>(presetIdArgument).lowercase()
+        val preset = ParticlePresetRegistry[id]
+        if (preset == null) {
+            player.sendMessage(Component.text("Unknown VFX preset: $id. Use /vfxpreset list"))
+            return
+        }
+        val rawValues = if (context.has(presetValuesArgument)) context.get<Array<String>>(presetValuesArgument) else emptyArray()
+        val parsed = parseParticlePresetOverrides(preset, rawValues)
+        if (parsed.error != null) {
+            player.sendMessage(Component.text(parsed.error!!))
+            return
+        }
+        val direction = player.position.direction()
+        val origin = player.position.add(direction.x() * 3.0, 1.2, direction.z() * 3.0)
+        startParticlePreset(player, id, particleAnimations, origin, direction, particleManager, parsed.values)
+        player.sendMessage(Component.text("Playing ${preset.displayName} ($id)"))
+    }
+    MinecraftServer.getCommandManager().register(
+        Command("vfxpreset").apply {
+            setDefaultExecutor { sender, _ -> handlePresetList(sender, CommandContext("vfxpreset")) }
+            addSyntax(::handlePresetList, ArgumentType.Literal("list"))
+            addSyntax(::handlePresetList, ArgumentType.Literal("list"), presetTagArgument)
+            addSyntax(::handlePresetPlay, ArgumentType.Literal("play"), presetIdArgument)
+            addSyntax(::handlePresetPlay, ArgumentType.Literal("play"), presetIdArgument, presetValuesArgument)
+        },
+    )
 
     events.addListener(AsyncPlayerConfigurationEvent::class.java) { event ->
         event.spawningInstance = instance
@@ -374,7 +425,7 @@ fun main() {
         val skill3 = skill3States[event.player.uuid] ?: return@addListener
         if (event.player == instance.players.firstOrNull()) {
             if (prototypeBoss.isActive) {
-                tickFixedTester(instance, dummy, fixedTester, prototypeBoss, testerMarkerTick++)
+                tickFixedTester(instance, dummy, fixedTester, prototypeBoss, testerMarkerTick++, particleAnimations, particleManager)
                 if (!prototypeBoss.isActive) {
                     finishEncounter()
                     return@addListener
@@ -472,7 +523,7 @@ fun main() {
                     direction.z() * Skill1State.DASH_SPEED,
                 ),
             )
-            showSkill1Trail(event.player, start, direction)
+            showSkill1Trail(event.player, start, direction, particleAnimations, particleManager)
             val skillTargets = tester?.let { listOf(combatTarget(it)) } ?: emptyList()
             val hitTargets = skill1.hitTargetsOnSegment(start, end, skillTargets)
             if (hitTargets.isNotEmpty()) {
@@ -507,7 +558,7 @@ fun main() {
                 val damage = prototypeBoss.applySkill2Attack(skill2.castId, targetId)
                 if (damage > 0) updateBossBar()
             }
-            showSkill2Landing(event.player)
+            showSkill2Landing(event.player, particleAnimations, particleManager)
             sendResourceSnapshot(event.player)
             event.player.setVelocity(Vec.ZERO)
         }
@@ -782,6 +833,8 @@ private fun tickFixedTester(
     tester: FixedAttackTester,
     bossState: PrototypeBossState,
     markerTick: Long,
+    scheduler: ParticleAnimationScheduler,
+    manager: ParticleManager,
 ) {
     if (testerEntity == null || testerEntity.isRemoved || testerEntity.instance != instance) return
     val players = instance.players.filter { it.isOnline }
@@ -804,7 +857,7 @@ private fun tickFixedTester(
             }
             is FixedAttackEvent.Telegraph -> {
                 players.forEach { player ->
-                    showTesterTelegraph(player, testerEntity.position, event.attack, event.direction)
+                    showTesterTelegraph(player, testerEntity.position, event.attack, event.direction, scheduler, manager)
                 }
             }
             is FixedAttackEvent.Active -> {
@@ -908,37 +961,14 @@ private fun showTwinRodsHitVfx(
     facing: Vec,
     scheduler: ParticleAnimationScheduler,
 ) {
-    val slash = ParticleGeometry.drawParticleLineSlash(
+    startParticlePreset(
+        player = player,
+        id = "projects:combat/slash_light",
+        scheduler = scheduler,
         origin = center,
         direction = facing,
-        angleDegrees = 35.0,
-        length = 1.65,
-        spacing = 0.12,
-        durationTicks = 4,
-    ) { _, middle, end, middleSample ->
-        val color = when {
-            middleSample -> lerpColor(0xffff66, 0xffffff, middle)
-            end > 0.65 -> lerpColor(0xff2020, 0xffff44, end)
-            else -> lerpColor(0xff2020, 0xff7722, end)
-        }
-        ParticleStyle(
-            particle = dust(color, if (middleSample) 0.52f else 0.34f),
-            count = if (middleSample) 2 else 1,
-        )
-    }
-    val accent = ParticleGeometry.drawCleaveArc(
-        originFacing = center,
-        radius = 0.56,
-        tiltAngle = 18.0,
-        startDegrees = -42.0,
-        endDegrees = 42.0,
-        rings = 1,
-        degreesPerTick = 28.0,
-        degreeStep = 12.0,
-    ) { _, _, progress ->
-        ParticleStyle(dust(lerpColor(0xff2020, 0x00ff5522, progress), 0.24f))
-    }
-    scheduler.start(ParticleBatch.of(slash, accent), PlayerParticleSink(player))
+        values = mapOf("length" to 1.65, "duration" to 4.0, "colorPrimary" to 0xffff66, "colorSecondary" to 0xff2020),
+    )
 }
 
 private fun showSkill1Cast(player: net.minestom.server.entity.Player) {
@@ -953,24 +983,22 @@ private fun showSkill1Cast(player: net.minestom.server.entity.Player) {
     playSkillSound(player, "entity.player.attack.sweep", origin, 0.75f, 1.35f)
 }
 
-private fun showSkill1Trail(player: net.minestom.server.entity.Player, position: Pos, direction: Vec) {
-    val origin = position.add(0.0, 0.45, 0.0)
-    for (step in 0..3) {
-        val distance = 0.12 + step * 0.22
-        sendSkillParticle(
-            player,
-            Particle.END_ROD,
-            origin.add(direction.x() * distance, 0.0, direction.z() * distance),
-        )
-        if (step < 3) {
-            sendSkillParticle(
-                player,
-                Particle.ENCHANT,
-                origin.add(-direction.x() * step * 0.16, 0.1, -direction.z() * step * 0.16),
-            )
-        }
-    }
-    sendSkillParticle(player, Particle.ELECTRIC_SPARK, origin.add(-direction.x() * 0.25, -0.12, -direction.z() * 0.25))
+private fun showSkill1Trail(
+    player: net.minestom.server.entity.Player,
+    position: Pos,
+    direction: Vec,
+    scheduler: ParticleAnimationScheduler,
+    manager: ParticleManager,
+) {
+    startParticlePreset(
+        player = player,
+        id = "projects:combat/projectile_trail",
+        scheduler = scheduler,
+        origin = position.add(0.0, 0.45, 0.0),
+        direction = direction,
+        manager = manager,
+        values = mapOf("length" to 1.0, "duration" to 3.0),
+    )
 }
 
 private fun showSkill1Impact(player: net.minestom.server.entity.Player, position: Point) {
@@ -1024,23 +1052,21 @@ private fun showSkill2DiveTrail(player: net.minestom.server.entity.Player) {
     sendSkillParticle(player, Particle.CLOUD, position.add(0.0, 1.25, 0.0))
 }
 
-private fun showSkill2Landing(player: net.minestom.server.entity.Player) {
+private fun showSkill2Landing(
+    player: net.minestom.server.entity.Player,
+    scheduler: ParticleAnimationScheduler,
+    manager: ParticleManager,
+) {
     val center = player.position.add(0.0, 0.12, 0.0)
-    sendSkillRing(player, Particle.END_ROD, center, 4.0, 18)
-    sendSkillRing(player, Particle.ENCHANT, center, 3.15, 14)
-    for (spoke in 0..7) {
-        val angle = spoke * Math.PI / 4.0
-        for (step in 1..4) {
-            val radius = step.toDouble()
-            sendSkillParticle(
-                player,
-                if (step % 2 == 0) Particle.END_ROD else Particle.ELECTRIC_SPARK,
-                center.add(kotlin.math.cos(angle) * radius, 0.0, kotlin.math.sin(angle) * radius),
-            )
-        }
-    }
-    sendSkillParticle(player, Particle.EXPLOSION, center)
-    sendSkillParticle(player, Particle.END_ROD, center.add(0.0, 0.35, 0.0))
+    startParticlePreset(
+        player = player,
+        id = "projects:combat/landing_burst",
+        scheduler = scheduler,
+        origin = center,
+        direction = Vec(0.0, 1.0, 0.0),
+        manager = manager,
+        values = mapOf("radius" to 4.0, "duration" to 5.0),
+    )
     playSkillSound(player, "entity.generic.explode", center, 0.85f, 0.85f)
     playSkillSound(player, "entity.player.attack.crit", center, 0.5f, 1.3f)
 }
@@ -1212,32 +1238,16 @@ private fun showTesterTelegraph(
     origin: Pos,
     attack: FixedAttackType,
     direction: Vec,
+    scheduler: ParticleAnimationScheduler,
+    manager: ParticleManager,
 ) {
-    val right = Vec(-direction.z(), 0.0, direction.x())
     when (attack) {
         FixedAttackType.SIDE_SWEEP -> {
-            for (step in 0..8) {
-                val angle = -1.15 + 2.3 * step / 8.0
-                val radial = Vec(
-                    direction.x() * kotlin.math.cos(angle) + right.x() * kotlin.math.sin(angle),
-                    0.0,
-                    direction.z() * kotlin.math.cos(angle) + right.z() * kotlin.math.sin(angle),
-                )
-                sendTesterParticle(player, Particle.ELECTRIC_SPARK, origin.add(radial.x() * 4.5, 0.08, radial.z() * 4.5))
-            }
+            startParticlePreset(player, "projects:combat/shockwave_ring", scheduler, origin.add(0.0, 0.08, 0.0), direction, manager, mapOf("radius" to 4.5, "duration" to 8.0))
         }
         FixedAttackType.FORWARD_SLAM -> {
-            for (step in 1..5) {
-                val distance = step.toDouble()
-                for (side in -1..1) {
-                    val point = origin.add(
-                        direction.x() * distance + right.x() * side * 0.9,
-                        0.08,
-                        direction.z() * distance + right.z() * side * 0.9,
-                    )
-                    sendTesterParticle(player, Particle.END_ROD, point)
-                }
-            }
+            val center = origin.add(direction.x() * 3.0, 0.08, direction.z() * 3.0)
+            startParticlePreset(player, "projects:combat/charge_inward", scheduler, center, direction, manager, mapOf("radius" to 2.5, "duration" to 8.0))
         }
     }
 }
