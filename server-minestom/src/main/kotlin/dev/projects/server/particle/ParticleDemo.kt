@@ -99,6 +99,73 @@ fun startParticleDemo(
     scheduler.start(effect, sink)
 }
 
+fun startParticleV2Diagnostic(
+    player: Player,
+    type: String,
+    scheduler: ParticleAnimationScheduler,
+    manager: ParticleManager? = null,
+) {
+    val direction = player.position.direction()
+    val origin = player.position.add(direction.x() * 4.0, 1.2, direction.z() * 4.0)
+    val sink = manager?.sink(ParticleViewer(player.position, player), PlayerParticleSink(player), "vfxv2-$type")
+        ?: PlayerParticleSink(player)
+    val effect = when (type) {
+        "anchor" -> {
+            val anchor = ParticleAnchor.player(player, ParticleAnchorPoint.EYE).withOffsets(local = Vec(0.0, 0.0, 3.5))
+            ParticleEmitter(anchor, Particle.END_ROD, EmitterRate.STEADY, SpawnShape.POINT, durationTicks = 60, particlesPerTick = 3)
+        }
+        "easing" -> ParticleEmitter(
+            ParticleAnchor.fixed(origin), Particle.DUST, EmitterRate.STEADY, SpawnShape.DISC,
+            durationTicks = 60, particlesPerTick = 12, radius = 1.0,
+            styleCurve = ParticleStyleCurve(
+                base = ParticleStyle(dust(0xff2020, 0.2f)),
+                color = KeyframeCurve.color(CurveKeyframe(0.0, 0xff2020), CurveKeyframe(1.0, 0xffff00), easing = Easing.EASE_IN_OUT_QUAD),
+                size = KeyframeCurve.float(CurveKeyframe(0.0, 0.2f), CurveKeyframe(1.0, 0.9f), easing = Easing.EASE_OUT_QUAD),
+            ),
+        )
+        "timeline" -> ParticleSequence.of(
+            ParticleLine(origin.add(-1.5, 0.0, 0.0), origin.add(-0.2, 0.0, 0.0), Particle.DUST, style = ParticleStyle(dust(0xff3333, 0.55f)), durationTicks = 8),
+            ParticleDelay(8),
+            ParticleLine(origin.add(0.2, 0.0, 0.0), origin.add(1.5, 0.0, 0.0), Particle.DUST, style = ParticleStyle(dust(0xffff33, 0.55f)), durationTicks = 8),
+            ParticleParallel.of(
+                ParticleCircle(origin.add(0.0, 1.0, 0.0), 0.55, style = ParticleStyle(dust(0x33ddff, 0.45f)), durationTicks = 10),
+                ParticleCircle(origin.add(0.0, -1.0, 0.0), 0.55, style = ParticleStyle(dust(0xff33dd, 0.45f)), durationTicks = 10),
+            ),
+        )
+        "trail" -> movingTrailDiagnostic(origin, direction)
+        "ribbon" -> ParticleRibbon(
+            path = { progress -> origin.add((progress - 0.5) * 3.0, sin(progress * PI) * 1.5, 0.0) },
+            particle = Particle.DUST, sampleCount = 18, lanes = 3, width = constantCurve(0.55), durationTicks = 1,
+            styleAt = { _, _ -> ParticleStyle(dust(0x55aaff, 0.5f)) },
+        )
+        "lifecycle" -> ParticleEmitter(
+            ParticleAnchor.player(player, ParticleAnchorPoint.EYE).withOffsets(local = Vec(0.0, 0.0, 3.0)),
+            Particle.ELECTRIC_SPARK, EmitterRate.STEADY, SpawnShape.CONE, durationTicks = 240, particlesPerTick = 5,
+            radius = 0.6, seed = 58L, styleCurve = ParticleStyleCurve(ParticleStyle(Particle.ELECTRIC_SPARK, directional = true, speed = 0.15f)),
+        )
+        else -> return
+    }
+    scheduler.start(effect, sink)
+}
+
+private fun movingTrailDiagnostic(origin: Point, direction: Vec): ParticleEffect {
+    var movingPoint = origin
+    val anchor = ParticleAnchor.follow({ movingPoint }, { direction }, cancelWhenInvalid = false)
+    val trail = ParticleTrail(anchor, particle = Particle.END_ROD, maxAgeTicks = 24, maxLength = 6.0, density = 8.0, durationTicks = 120)
+    return object : ParticleEffect {
+        override val durationTicks: Int = 120
+
+        override fun emit(tick: Int, sink: ParticleSink) {
+            movingPoint = origin.add(
+                direction.x() * tick * 0.06,
+                0.35 * sin(tick * 0.18),
+                direction.z() * tick * 0.06,
+            )
+            trail.emit(tick, sink)
+        }
+    }
+}
+
 private fun repeatDiagnostic(effect: ParticleEffect): ParticleEffect = object : ParticleEffect {
     override val durationTicks: Int = 8
 

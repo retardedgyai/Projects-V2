@@ -62,6 +62,7 @@ import dev.projects.server.particle.parseParticlePresetOverrides
 import dev.projects.server.particle.startParticlePreset
 import net.minestom.server.command.builder.suggestion.SuggestionEntry
 import dev.projects.server.particle.startParticleDemo
+import dev.projects.server.particle.startParticleV2Diagnostic
 
 private const val SERVER_ADDRESS = "127.0.0.1"
 private const val SERVER_PORT = 25565
@@ -223,6 +224,8 @@ fun main() {
     val vfxArcLiteral = ArgumentType.Literal("arc")
     val vfxSlashLiteral = ArgumentType.Literal("slash")
     val vfxFlowerLiteral = ArgumentType.Literal("flower")
+    val vfxV2TypeArgument = ArgumentType.Word("diagnostic")
+    val vfxV2Types = setOf("anchor", "easing", "timeline", "trail", "ribbon", "lifecycle")
     val vfxImageLiteral = ArgumentType.Literal("image")
     fun handleVfxDemo(sender: CommandSender, context: CommandContext) {
         val player = sender as? net.minestom.server.entity.Player ?: return
@@ -276,6 +279,23 @@ fun main() {
             addSyntax({ sender, context -> handleVfxParameterized("arc", sender, context) }, vfxArcLiteral, vfxRadiusArgument, vfxStartDegreesArgument, vfxEndDegreesArgument)
             addSyntax({ sender, context -> handleVfxParameterized("slash", sender, context) }, vfxSlashLiteral, vfxLengthArgument, vfxDurationArgument)
             addSyntax({ sender, context -> handleVfxParameterized("flower", sender, context) }, vfxFlowerLiteral, vfxPetalsArgument, vfxRadiusArgument)
+        },
+    )
+    fun handleVfxV2(sender: CommandSender, context: CommandContext) {
+        val player = sender as? net.minestom.server.entity.Player ?: return
+        val type = context.get<String>(vfxV2TypeArgument).lowercase()
+        if (type !in vfxV2Types) {
+            player.sendMessage(Component.text("Use /vfxv2 anchor|easing|timeline|trail|ribbon|lifecycle"))
+            return
+        }
+        startParticleV2Diagnostic(player, type, particleAnimations, particleManager)
+    }
+    MinecraftServer.getCommandManager().register(
+        Command("vfxv2").apply {
+            addSyntax(::handleVfxV2, vfxV2TypeArgument)
+            addSyntax({ sender, _ -> (sender as? net.minestom.server.entity.Player)?.let { particleAnimations.pauseFor(it) } }, ArgumentType.Literal("pause"))
+            addSyntax({ sender, _ -> (sender as? net.minestom.server.entity.Player)?.let { particleAnimations.resumeFor(it) } }, ArgumentType.Literal("resume"))
+            addSyntax({ sender, _ -> (sender as? net.minestom.server.entity.Player)?.let { particleAnimations.cancelFor(it) } }, ArgumentType.Literal("cancel"))
         },
     )
     val presetIdArgument = ArgumentType.Word("id").setSuggestionCallback { _, _, suggestion ->
