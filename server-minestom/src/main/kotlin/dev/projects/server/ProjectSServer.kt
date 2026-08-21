@@ -10,6 +10,8 @@ import dev.projects.protocol.AirJumpInput
 import dev.projects.protocol.ClassSkillInput
 import dev.projects.protocol.ClassSkillSlot
 import dev.projects.protocol.DodgeInput
+import dev.projects.protocol.GroundTelegraphRemove
+import dev.projects.protocol.GroundTelegraphStart
 import dev.projects.protocol.ProtocolCodec
 import dev.projects.protocol.ProtocolHello
 import dev.projects.protocol.ProtocolHelloAck
@@ -112,6 +114,8 @@ fun main() {
     val particleAnimations = ParticleAnimationScheduler()
     val particleProfiler = ParticleProfiler()
     val particleManager = ParticleManager(profiler = particleProfiler)
+    var nextGroundTelegraphId = 0L
+    val lastGroundTelegraphIds = mutableMapOf<UUID, Long>()
 
     fun sendResourceSnapshot(player: net.minestom.server.entity.Player) {
         val resources = classResources[player.uuid] ?: return
@@ -209,6 +213,73 @@ fun main() {
     )
     MinecraftServer.getCommandManager().register(
         Command("bossreset").apply { setDefaultExecutor { _, _ -> resetEncounter() } },
+    )
+    val aoeSectorLiteral = ArgumentType.Literal("sector")
+    val aoeClearLiteral = ArgumentType.Literal("clear")
+    val aoeRadiusArgument = ArgumentType.Double("radius")
+    val aoeAngleArgument = ArgumentType.Double("angle")
+    val aoeDurationArgument = ArgumentType.Integer("durationTicks")
+
+    fun startAoeSector(
+        sender: CommandSender,
+        radius: Double = 6.0,
+        angleDegrees: Double = 100.0,
+        durationTicks: Int = 140,
+    ) {
+        val player = sender as? net.minestom.server.entity.Player ?: return
+        val horizontalFacing = FixedAttackTester.normalizeHorizontal(player.position.direction())
+        lastGroundTelegraphIds.remove(player.uuid)?.let { previousId ->
+            player.sendPluginMessage(PROJECTS_CHANNEL, ProtocolCodec.encode(GroundTelegraphRemove(previousId)))
+        }
+        val message = runCatching {
+            GroundTelegraphStart.clamped(
+                telegraphId = ++nextGroundTelegraphId,
+                centerX = player.position.x() + horizontalFacing.x() * 5.0,
+                centerY = player.position.y() - 1.0,
+                centerZ = player.position.z() + horizontalFacing.z() * 5.0,
+                facingX = horizontalFacing.x(),
+                facingZ = horizontalFacing.z(),
+                radius = radius,
+                angleDegrees = angleDegrees,
+                durationTicks = durationTicks,
+            )
+        }.getOrElse {
+            player.sendMessage(Component.text("/aoedemo sector values must be finite"))
+            return
+        }
+        lastGroundTelegraphIds[player.uuid] = message.telegraphId
+        player.sendPluginMessage(PROJECTS_CHANNEL, ProtocolCodec.encode(message))
+        player.sendMessage(Component.text("Ground sector telegraph started"))
+    }
+
+    MinecraftServer.getCommandManager().register(
+        Command("aoedemo").apply {
+            addSyntax({ sender, _ -> startAoeSector(sender) }, aoeSectorLiteral)
+            addSyntax(
+                { sender, context ->
+                    startAoeSector(
+                        sender,
+                        context.get<Double>(aoeRadiusArgument),
+                        context.get<Double>(aoeAngleArgument),
+                        context.get<Int>(aoeDurationArgument),
+                    )
+                },
+                aoeSectorLiteral,
+                aoeRadiusArgument,
+                aoeAngleArgument,
+                aoeDurationArgument,
+            )
+            addSyntax({ sender, _ ->
+                val player = sender as? net.minestom.server.entity.Player ?: return@addSyntax
+                val id = lastGroundTelegraphIds.remove(player.uuid)
+                if (id == null) {
+                    player.sendMessage(Component.text("No ground telegraph is active"))
+                } else {
+                    player.sendPluginMessage(PROJECTS_CHANNEL, ProtocolCodec.encode(GroundTelegraphRemove(id)))
+                    player.sendMessage(Component.text("Ground telegraph cleared"))
+                }
+            }, aoeClearLiteral)
+        },
     )
     val vfxTypeArgument = ArgumentType.Word("type")
     val vfxImageArgument = ArgumentType.Word("bundledDemoId")
@@ -425,6 +496,7 @@ fun main() {
         resourceSyncTicks.remove(playerId)
         lastSentCooldowns.remove(playerId)
         attackSpeeds.remove(playerId)
+        lastGroundTelegraphIds.remove(playerId)
     }
     events.addListener(InstanceTickEvent::class.java) { event ->
         if (event.instance === instance) {

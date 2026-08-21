@@ -12,6 +12,8 @@ import dev.projects.protocol.ClassResourceSnapshot
 import dev.projects.protocol.ClassSkillInput
 import dev.projects.protocol.ClassSkillSlot
 import dev.projects.protocol.DodgeInput
+import dev.projects.protocol.GroundTelegraphRemove
+import dev.projects.protocol.GroundTelegraphStart
 import dev.projects.protocol.ProtocolCodec
 import dev.projects.protocol.ProtocolHello
 import dev.projects.protocol.ProtocolHelloAck
@@ -97,6 +99,7 @@ object ProjectSClient : ClientModInitializer {
         KeyMappingHelper.registerKeyMapping(ultimateKey)
         PayloadTypeRegistry.clientboundPlay().register(ProjectSPayload.TYPE, ProjectSPayload.CODEC)
         PayloadTypeRegistry.serverboundPlay().register(ProjectSPayload.TYPE, ProjectSPayload.CODEC)
+        GroundTelegraphRenderer.register()
 
         ClientPlayNetworking.registerGlobalReceiver(ProjectSPayload.TYPE) { payload, context ->
             try {
@@ -131,6 +134,12 @@ object ProjectSClient : ClientModInitializer {
                         skill2CooldownMaxTicks = message.skill2CooldownMaxTicks
                         skill3CooldownTicks = message.skill3CooldownTicks
                         skill3CooldownMaxTicks = message.skill3CooldownMaxTicks
+                    }
+                    is GroundTelegraphStart -> context.client().execute {
+                        GroundTelegraphRenderer.start(message)
+                    }
+                    is GroundTelegraphRemove -> context.client().execute {
+                        GroundTelegraphRenderer.remove(message.telegraphId)
                     }
                     else -> require(false) { "Unexpected ProjectS clientbound message" }
                 }

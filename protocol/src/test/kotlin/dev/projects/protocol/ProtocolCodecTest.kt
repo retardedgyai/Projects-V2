@@ -167,6 +167,39 @@ class ProtocolCodecTest {
         assertFailsWith<IllegalArgumentException> { ProtocolCodec.decode(malformed) }
     }
 
+    @Test
+    fun `ground telegraph messages round trip`() {
+        assertRoundTrip(
+            GroundTelegraphStart(
+                telegraphId = 17,
+                centerX = 1.0,
+                centerY = 40.0,
+                centerZ = -2.0,
+                facingX = 0.6,
+                facingZ = 0.8,
+                radius = 6.0,
+                angleDegrees = 90.0,
+                durationTicks = 140,
+            ),
+        )
+        assertRoundTrip(GroundTelegraphRemove(17))
+    }
+
+    @Test
+    fun `ground telegraph rejects non finite values and clamps wire bounds`() {
+        assertFailsWith<IllegalArgumentException> {
+            GroundTelegraphStart(1, Double.NaN, 0.0, 0.0, 0.0, 1.0, 1.0, 90.0, 20)
+        }
+        val malformed = ProtocolCodec.encode(
+            GroundTelegraphStart(1, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 90.0, 20),
+        ).copyOf().also { bytes ->
+            java.nio.ByteBuffer.wrap(bytes, 1 + Long.SIZE_BYTES + Double.SIZE_BYTES * 5, Double.SIZE_BYTES)
+                .putDouble(1000.0)
+        }
+        val decoded = ProtocolCodec.decode(malformed) as GroundTelegraphStart
+        assertEquals(64.0, decoded.radius)
+    }
+
     private fun assertRoundTrip(message: ProtocolMessage) {
         assertEquals(message, ProtocolCodec.decode(ProtocolCodec.encode(message)))
     }

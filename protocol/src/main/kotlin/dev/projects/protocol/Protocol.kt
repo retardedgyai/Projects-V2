@@ -12,7 +12,7 @@ import kotlin.math.sqrt
 const val PROJECTS_CHANNEL = "projects:protocol"
 
 object ProtocolVersion {
-    const val CURRENT = 6
+    const val CURRENT = 7
 
     fun requireCompatible(version: Int) {
         if (version != CURRENT) {
@@ -130,6 +130,81 @@ data class ClassResourceSnapshot(
     }
 }
 
+private object GroundTelegraphLimits {
+    const val MAX_RADIUS = 64.0
+    const val MIN_ANGLE_DEGREES = 1.0
+    const val MAX_ANGLE_DEGREES = 360.0
+    const val MAX_DURATION_TICKS = 1200
+}
+
+data class GroundTelegraphStart(
+    val telegraphId: Long,
+    val centerX: Double,
+    val centerY: Double,
+    val centerZ: Double,
+    val facingX: Double,
+    val facingZ: Double,
+    val radius: Double,
+    val angleDegrees: Double,
+    val durationTicks: Int,
+) : ProtocolMessage {
+    init {
+        require(telegraphId >= 0L) { "Ground telegraph id must not be negative" }
+        require(
+            centerX.isFinite() && centerY.isFinite() && centerZ.isFinite() &&
+                facingX.isFinite() && facingZ.isFinite(),
+        ) { "Ground telegraph coordinates and facing must be finite" }
+        require(radius.isFinite() && radius in 0.0..GroundTelegraphLimits.MAX_RADIUS) {
+            "Ground telegraph radius is out of range"
+        }
+        require(angleDegrees.isFinite() && angleDegrees in GroundTelegraphLimits.MIN_ANGLE_DEGREES..GroundTelegraphLimits.MAX_ANGLE_DEGREES) {
+            "Ground telegraph angle is out of range"
+        }
+        require(durationTicks in 1..GroundTelegraphLimits.MAX_DURATION_TICKS) {
+            "Ground telegraph duration is out of range"
+        }
+    }
+
+    companion object {
+        fun clamped(
+            telegraphId: Long,
+            centerX: Double,
+            centerY: Double,
+            centerZ: Double,
+            facingX: Double,
+            facingZ: Double,
+            radius: Double,
+            angleDegrees: Double,
+            durationTicks: Int,
+        ): GroundTelegraphStart {
+            require(
+                centerX.isFinite() && centerY.isFinite() && centerZ.isFinite() &&
+                    facingX.isFinite() && facingZ.isFinite() && radius.isFinite() && angleDegrees.isFinite(),
+            ) { "Ground telegraph values must be finite" }
+            return GroundTelegraphStart(
+                telegraphId = telegraphId,
+                centerX = centerX,
+                centerY = centerY,
+                centerZ = centerZ,
+                facingX = facingX,
+                facingZ = facingZ,
+                radius = radius.coerceIn(0.0, GroundTelegraphLimits.MAX_RADIUS),
+                angleDegrees = angleDegrees.coerceIn(
+                    GroundTelegraphLimits.MIN_ANGLE_DEGREES,
+                    GroundTelegraphLimits.MAX_ANGLE_DEGREES,
+                ),
+                durationTicks = durationTicks.coerceIn(1, GroundTelegraphLimits.MAX_DURATION_TICKS),
+            )
+        }
+    }
+}
+
+data class GroundTelegraphRemove(val telegraphId: Long) : ProtocolMessage {
+    init {
+        require(telegraphId >= 0L) { "Ground telegraph id must not be negative" }
+    }
+}
+
 object ProtocolCodec {
     private const val MAX_PACKET_SIZE = 1024
     private const val HELLO = 1
@@ -142,6 +217,8 @@ object ProtocolCodec {
     private const val CLASS_SKILL_INPUT = 15
     private const val CLASS_RESOURCE_SNAPSHOT = 17
     private const val ATTACK_DEBUG_SHAPE = 18
+    private const val GROUND_TELEGRAPH_START = 19
+    private const val GROUND_TELEGRAPH_REMOVE = 20
 
     fun encode(message: ProtocolMessage): ByteArray {
         val output = ByteArrayOutputStream()
@@ -210,6 +287,22 @@ object ProtocolCodec {
                     data.writeInt(message.skill3CooldownTicks)
                     data.writeInt(message.skill3CooldownMaxTicks)
                 }
+                is GroundTelegraphStart -> {
+                    data.writeByte(GROUND_TELEGRAPH_START)
+                    data.writeLong(message.telegraphId)
+                    data.writeDouble(message.centerX)
+                    data.writeDouble(message.centerY)
+                    data.writeDouble(message.centerZ)
+                    data.writeDouble(message.facingX)
+                    data.writeDouble(message.facingZ)
+                    data.writeDouble(message.radius)
+                    data.writeDouble(message.angleDegrees)
+                    data.writeInt(message.durationTicks)
+                }
+                is GroundTelegraphRemove -> {
+                    data.writeByte(GROUND_TELEGRAPH_REMOVE)
+                    data.writeLong(message.telegraphId)
+                }
             }
         }
         return output.toByteArray()
@@ -277,6 +370,18 @@ object ProtocolCodec {
                 input.readInt(),
                 input.readInt(),
             )
+            GROUND_TELEGRAPH_START -> GroundTelegraphStart.clamped(
+                telegraphId = input.readLong(),
+                centerX = input.readDouble(),
+                centerY = input.readDouble(),
+                centerZ = input.readDouble(),
+                facingX = input.readDouble(),
+                facingZ = input.readDouble(),
+                radius = input.readDouble(),
+                angleDegrees = input.readDouble(),
+                durationTicks = input.readInt(),
+            )
+            GROUND_TELEGRAPH_REMOVE -> GroundTelegraphRemove(input.readLong())
             else -> throw IllegalArgumentException("Unknown ProjectS message type: $type")
         }
         require(input.available() == 0) { "Unexpected trailing ProjectS protocol data" }
