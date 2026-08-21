@@ -10,12 +10,20 @@ class PrototypeBossStateTest {
     private val playerId = UUID.randomUUID()
 
     @Test
+    fun `default boss health is ten thousand`() {
+        val boss = PrototypeBossState()
+
+        assertEquals(10000, boss.maxHealth)
+        assertEquals(10000, boss.currentHealth)
+    }
+
+    @Test
     fun `body damage uses weapon values`() {
         val boss = PrototypeBossState()
 
         assertEquals(20, boss.applyPlayerAttack(1L, WeaponType.HEAVY_BLADE))
         assertEquals(10, boss.applyPlayerAttack(2L, WeaponType.TWIN_RODS))
-        assertEquals(270, boss.currentHealth)
+        assertEquals(9970, boss.currentHealth)
     }
 
     @Test
@@ -24,12 +32,12 @@ class PrototypeBossStateTest {
 
         assertEquals(30, boss.applyPlayerAttack(1L, WeaponType.HEAVY_BLADE, FixedWeakpoint.HEAD))
         assertEquals(15, boss.applyPlayerAttack(2L, WeaponType.TWIN_RODS, FixedWeakpoint.BACK))
-        assertEquals(255, boss.currentHealth)
+        assertEquals(9955, boss.currentHealth)
     }
 
     @Test
     fun `same player attack execution damages boss once and clamps victory`() {
-        val boss = PrototypeBossState()
+        val boss = PrototypeBossState(maxHealth = 440)
 
         assertEquals(20, boss.applyPlayerAttack(1L, WeaponType.HEAVY_BLADE))
         assertEquals(0, boss.applyPlayerAttack(1L, WeaponType.HEAVY_BLADE))
@@ -41,6 +49,32 @@ class PrototypeBossStateTest {
         assertTrue(boss.isVictory)
         assertTrue(boss.isDefeated)
         assertEquals(0, boss.applyPlayerAttack(99L, WeaponType.TWIN_RODS))
+    }
+
+    @Test
+    fun `skill3 deals thirty damage once per cast and target`() {
+        val boss = PrototypeBossState()
+        val targetId = UUID.randomUUID()
+
+        assertEquals(30, boss.applySkill3Attack(1L, targetId))
+        assertEquals(0, boss.applySkill3Attack(1L, targetId))
+        assertEquals(9970, boss.currentHealth)
+    }
+
+    @Test
+    fun `skill1 and skill2 damage are server-owned and reset`() {
+        val boss = PrototypeBossState()
+        val targetId = UUID.randomUUID()
+
+        assertEquals(20, boss.applySkill1Attack(1L, targetId))
+        assertEquals(0, boss.applySkill1Attack(1L, targetId))
+        assertEquals(25, boss.applySkill2Attack(2L, targetId))
+        assertEquals(9955, boss.currentHealth)
+
+        boss.reset()
+
+        assertEquals(20, boss.applySkill1Attack(1L, targetId))
+        assertEquals(9980, boss.currentHealth)
     }
 
     @Test

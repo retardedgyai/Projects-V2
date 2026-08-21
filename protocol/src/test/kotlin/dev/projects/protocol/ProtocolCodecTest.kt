@@ -67,6 +67,38 @@ class ProtocolCodecTest {
     }
 
     @Test
+    fun `attack debug shape round trips server supplied shape parameters`() {
+        assertRoundTrip(
+            AttackDebugShape(
+                AttackDebugShapeKind.TWIN_RODS,
+                1.0,
+                2.0,
+                3.0,
+                0.5,
+                0.7071067811865476,
+                0.5,
+                3.5,
+                0.65,
+                1.75,
+            ),
+        )
+        assertRoundTrip(
+            AttackDebugShape(
+                AttackDebugShapeKind.HEAVY_BLADE,
+                -1.0,
+                0.0,
+                4.0,
+                0.0,
+                0.0,
+                1.0,
+                4.5,
+                0.40,
+                2.0,
+            ),
+        )
+    }
+
+    @Test
     fun `dodge input round trips`() {
         assertRoundTrip(DodgeInput(-1.0, 1.0))
         assertRoundTrip(DodgeInput(0.0, 0.0))
@@ -96,6 +128,41 @@ class ProtocolCodecTest {
 
         val malformed = ProtocolCodec.encode(AirJumpInput(0.0, 0.0)).copyOf().also { bytes ->
             java.nio.ByteBuffer.wrap(bytes, 1, Double.SIZE_BYTES).putDouble(Double.POSITIVE_INFINITY)
+        }
+        assertFailsWith<IllegalArgumentException> { ProtocolCodec.decode(malformed) }
+    }
+
+    @Test
+    fun `class skill input round trips`() {
+        assertRoundTrip(ClassSkillInput(ClassSkillSlot.SKILL_1, -1.0, 1.0))
+        assertRoundTrip(ClassSkillInput(ClassSkillSlot.ULTIMATE, 0.0, 0.0))
+    }
+
+    @Test
+    fun `invalid class skill input fails closed`() {
+        assertFailsWith<IllegalArgumentException> { ClassSkillInput(ClassSkillSlot.SKILL_1, Double.NaN, 0.0) }
+        assertFailsWith<IllegalArgumentException> { ClassSkillInput(ClassSkillSlot.SKILL_1, 1.1, 0.0) }
+
+        val unknownSlot = ProtocolCodec.encode(ClassSkillInput(ClassSkillSlot.SKILL_1, 0.0, 0.0)).also { bytes ->
+            bytes[1] = 99
+        }
+        assertFailsWith<IllegalArgumentException> { ProtocolCodec.decode(unknownSlot) }
+
+        val malformed = ProtocolCodec.encode(ClassSkillInput(ClassSkillSlot.SKILL_1, 0.0, 0.0)).copyOf().also { bytes ->
+            java.nio.ByteBuffer.wrap(bytes, 2, Double.SIZE_BYTES).putDouble(Double.POSITIVE_INFINITY)
+        }
+        assertFailsWith<IllegalArgumentException> { ProtocolCodec.decode(malformed) }
+    }
+
+    @Test
+    fun `resource snapshot round trips mana and skill3 cooldown`() {
+        assertRoundTrip(ClassResourceSnapshot(75, 100, 40, 60))
+    }
+
+    @Test
+    fun `malformed resource snapshot fails closed`() {
+        val malformed = ProtocolCodec.encode(ClassResourceSnapshot(75, 100, 40, 60)).copyOf().also { bytes ->
+            java.nio.ByteBuffer.wrap(bytes, 9, Int.SIZE_BYTES).putInt(61)
         }
         assertFailsWith<IllegalArgumentException> { ProtocolCodec.decode(malformed) }
     }

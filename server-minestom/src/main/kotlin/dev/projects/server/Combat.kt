@@ -30,7 +30,7 @@ enum class WeaponType {
                 startupTicks = scaledTicks(3.0 / attackSpeed),
                 activeTicks = 1,
                 recoveryTicks = scaledTicks(4.0 / attackSpeed),
-                range = 2.8,
+                range = 3.5,
                 minForwardDot = 0.65,
                 verticalRange = 1.75,
             )
@@ -53,10 +53,21 @@ data class WeaponProfile(
         get() = startupTicks + activeTicks + recoveryTicks
 }
 
-data class CombatTarget(val id: UUID, val position: Point)
+data class CombatTarget(
+    val id: UUID,
+    val position: Point,
+    val halfExtent: Vec = Vec.ZERO,
+    val sphereRadius: Double = 0.0,
+)
 
 sealed interface CombatEvent {
     data class Started(val attackExecutionId: Long) : CombatEvent
+    data class Active(
+        val attackExecutionId: Long,
+        val position: Point,
+        val direction: Vec,
+        val profile: WeaponProfile,
+    ) : CombatEvent
     data class HitConfirmed(
         val attackExecutionId: Long,
         val targetId: UUID,
@@ -117,10 +128,12 @@ class CombatState(
         val events = mutableListOf<CombatEvent>()
         phaseTicks--
         if (phase == AttackPhase.ACTIVE) {
+            val profile = requireNotNull(activeProfile)
+            events += CombatEvent.Active(executionId, position, direction, profile)
             for (target in targets) {
-                if (target.id !in hitTargets && isInAttackRange(activeProfile!!, position, direction, target.position)) {
+                if (target.id !in hitTargets && isInAttackRange(profile, position, direction, target)) {
                     hitTargets += target.id
-                    events += CombatEvent.HitConfirmed(executionId, target.id, activeProfile!!.weapon)
+                    events += CombatEvent.HitConfirmed(executionId, target.id, profile.weapon)
                 }
             }
         }
@@ -157,14 +170,161 @@ class CombatState(
     }
 
     companion object {
+        private const val RANGE_EPSILON = 1.0e-9
+
+        fun isInAttackRange(profile: WeaponProfile, position: Point, direction: Vec, target: CombatTarget): Boolean {
+            if (profile.weapon == WeaponType.TWIN_RODS) {
+                return if (target.sphereRadius > 0.0) {
+                    isInTwinRodsSphereRange(profile, position, direction, target.position, target.sphereRadius)
+                } else {
+                    isInTwinRodsBoxRange(profile, position, direction, target.position, target.halfExtent)
+                }
+            }
+            return isInAttackRange(profile, position, direction, target.position)
+        }
+
         fun isInAttackRange(profile: WeaponProfile, position: Point, direction: Vec, target: Point): Boolean {
             val offset = Vec(target.x() - position.x(), target.y() - position.y(), target.z() - position.z())
+            if (profile.weapon == WeaponType.TWIN_RODS) {
+                return isInTwinRodsPointRange(profile, position, direction, target)
+            }
             val horizontalDistance = kotlin.math.sqrt(offset.x() * offset.x() + offset.z() * offset.z())
             if (horizontalDistance > profile.range || kotlin.math.abs(offset.y()) > profile.verticalRange) return false
             if (horizontalDistance == 0.0) return true
             val forward = Vec(direction.x(), 0.0, direction.z()).normalize()
             val toTarget = Vec(offset.x(), 0.0, offset.z()).normalize()
             return forward.x() * toTarget.x() + forward.z() * toTarget.z() >= profile.minForwardDot
+        }
+
+        private fun isInTwinRodsPointRange(
+            profile: WeaponProfile,
+            position: Point,
+            direction: Vec,
+            target: Point,
+        ): Boolean {
+            val normalizedDirection = normalizeDirection(direction) ?: return false
+            val offsetX = target.x() - position.x()
+            val offsetY = target.y() - position.y()
+            val offsetZ = target.z() - position.z()
+            return isInTwinRodsPointRange(profile, normalizedDirection, offsetX, offsetY, offsetZ)
+        }
+
+        private fun isInTwinRodsBoxRange(
+            profile: WeaponProfile,
+            position: Point,
+            direction: Vec,
+            target: Point,
+            halfExtent: Vec,
+        ): Boolean {
+            val normalizedDirection = normalizeDirection(direction) ?: return false
+            val minX = target.x() - halfExtent.x()
+            val minY = target.y() - halfExtent.y()
+            val minZ = target.z() - halfExtent.z()
+            val maxX = target.x() + halfExtent.x()
+            val maxY = target.y() + halfExtent.y()
+            val maxZ = target.z() + halfExtent.z()
+            fun containsAttackPoint(x: Double, y: Double, z: Double): Boolean =
+                isInTwinRodsPointRange(
+                    profile,
+                    normalizedDirection,
+                    x - position.x(),
+                    y - position.y(),
+                    z - position.z(),
+                )
+
+            val closestX = position.x().coerceIn(minX, maxX)
+            val closestY = position.y().coerceIn(minY, maxY)
+            val closestZ = position.z().coerceIn(minZ, maxZ)
+            if (containsAttackPoint(closestX, closestY, closestZ)) return true
+            if (containsAttackPoint(target.x(), target.y(), target.z())) return true
+
+            for (x in doubleArrayOf(minX, maxX)) {
+                for (y in doubleArrayOf(minY, maxY)) {
+                    for (z in doubleArrayOf(minZ, maxZ)) {
+                        if (containsAttackPoint(x, y, z)) return true
+                    }
+                }
+            }
+
+            val centerOffsetX = target.x() - position.x()
+            val centerOffsetY = target.y() - position.y()
+            val centerOffsetZ = target.z() - position.z()
+            val axisProjection = maxOf(
+                0.0,
+                centerOffsetX * normalizedDirection.x() +
+                    centerOffsetY * normalizedDirection.y() +
+                    centerOffsetZ * normalizedDirection.z(),
+            )
+            val axisX = position.x() + normalizedDirection.x() * axisProjection
+            val axisY = position.y() + normalizedDirection.y() * axisProjection
+            val axisZ = position.z() + normalizedDirection.z() * axisProjection
+            return containsAttackPoint(
+                axisX.coerceIn(minX, maxX),
+                axisY.coerceIn(minY, maxY),
+                axisZ.coerceIn(minZ, maxZ),
+            )
+        }
+
+        private fun isInTwinRodsSphereRange(
+            profile: WeaponProfile,
+            position: Point,
+            direction: Vec,
+            target: Point,
+            radius: Double,
+        ): Boolean {
+            val normalizedDirection = normalizeDirection(direction) ?: return false
+            val offsetX = target.x() - position.x()
+            val offsetY = target.y() - position.y()
+            val offsetZ = target.z() - position.z()
+            val distance = sqrt(offsetX * offsetX + offsetY * offsetY + offsetZ * offsetZ)
+            if (distance <= radius + RANGE_EPSILON) return true
+            if (distance - radius > profile.range + RANGE_EPSILON) return false
+
+            val centerDot = (
+                normalizedDirection.x() * offsetX +
+                    normalizedDirection.y() * offsetY +
+                    normalizedDirection.z() * offsetZ
+                ) / distance
+            val centerAngle = kotlin.math.acos(centerDot.coerceIn(-1.0, 1.0))
+            val coneAngle = kotlin.math.acos(profile.minForwardDot.coerceIn(-1.0, 1.0))
+            val closestConeAngle = maxOf(0.0, centerAngle - coneAngle)
+            val closestConeProjection = distance * kotlin.math.cos(closestConeAngle)
+            if (closestConeProjection <= 0.0) return false
+            val discriminant = radius * radius - distance * distance + closestConeProjection * closestConeProjection
+            if (discriminant < -RANGE_EPSILON) return false
+            val nearDistance = closestConeProjection - sqrt(maxOf(0.0, discriminant))
+            return nearDistance <= profile.range + RANGE_EPSILON
+        }
+
+        private fun isInTwinRodsPointRange(
+            profile: WeaponProfile,
+            direction: Vec,
+            offsetX: Double,
+            offsetY: Double,
+            offsetZ: Double,
+        ): Boolean {
+            val distance = sqrt(offsetX * offsetX + offsetY * offsetY + offsetZ * offsetZ)
+            if (distance > profile.range + RANGE_EPSILON) return false
+            if (distance <= RANGE_EPSILON) return true
+            val forwardDot = (
+                direction.x() * offsetX +
+                    direction.y() * offsetY +
+                    direction.z() * offsetZ
+                ) / distance
+            return forwardDot >= profile.minForwardDot
+        }
+
+        private fun normalizeDirection(direction: Vec): Vec? {
+            val length = sqrt(
+                direction.x() * direction.x() +
+                    direction.y() * direction.y() +
+                    direction.z() * direction.z(),
+            )
+            return if (length > RANGE_EPSILON) {
+                Vec(direction.x() / length, direction.y() / length, direction.z() / length)
+            } else {
+                null
+            }
         }
     }
 }

@@ -7,11 +7,12 @@ import java.io.DataOutputStream
 import java.io.IOException
 import java.util.UUID
 import kotlin.math.abs
+import kotlin.math.sqrt
 
 const val PROJECTS_CHANNEL = "projects:protocol"
 
 object ProtocolVersion {
-    const val CURRENT = 2
+    const val CURRENT = 5
 
     fun requireCompatible(version: Int) {
         if (version != CURRENT) {
@@ -40,6 +41,41 @@ data class AttackStarted(val attackExecutionId: Long) : ProtocolMessage
 
 data class AttackHitConfirmed(val attackExecutionId: Long, val targetId: UUID) : ProtocolMessage
 
+enum class AttackDebugShapeKind {
+    TWIN_RODS,
+    HEAVY_BLADE,
+}
+
+data class AttackDebugShape(
+    val kind: AttackDebugShapeKind,
+    val originX: Double,
+    val originY: Double,
+    val originZ: Double,
+    val directionX: Double,
+    val directionY: Double,
+    val directionZ: Double,
+    val range: Double,
+    val minForwardDot: Double,
+    val verticalRange: Double,
+) : ProtocolMessage {
+    init {
+        require(
+            originX.isFinite() && originY.isFinite() && originZ.isFinite() &&
+                directionX.isFinite() && directionY.isFinite() && directionZ.isFinite(),
+        ) { "Attack debug shape coordinates must be finite" }
+        require(range > 0.0 && range.isFinite()) { "Attack debug shape range must be positive" }
+        require(minForwardDot in -1.0..1.0 && minForwardDot.isFinite()) {
+            "Attack debug shape forward dot must be between -1 and 1"
+        }
+        require(verticalRange >= 0.0 && verticalRange.isFinite()) {
+            "Attack debug shape vertical range must be non-negative"
+        }
+        require(sqrt(directionX * directionX + directionY * directionY + directionZ * directionZ) > 0.0) {
+            "Attack debug shape direction must not be zero"
+        }
+    }
+}
+
 data class DodgeInput(val directionX: Double, val directionZ: Double) : ProtocolMessage {
     init {
         require(directionX.isFinite() && directionZ.isFinite()) { "Dodge direction must be finite" }
@@ -54,6 +90,37 @@ data class AirJumpInput(val directionX: Double, val directionZ: Double) : Protoc
     }
 }
 
+enum class ClassSkillSlot {
+    SKILL_1,
+    SKILL_2,
+    SKILL_3,
+    ULTIMATE,
+}
+
+data class ClassSkillInput(
+    val slot: ClassSkillSlot,
+    val directionX: Double,
+    val directionZ: Double,
+) : ProtocolMessage {
+    init {
+        require(directionX.isFinite() && directionZ.isFinite()) { "Skill direction must be finite" }
+        require(abs(directionX) <= 1.0 && abs(directionZ) <= 1.0) { "Skill direction is out of range" }
+    }
+}
+
+data class ClassResourceSnapshot(
+    val mana: Int,
+    val maxMana: Int,
+    val skill3CooldownTicks: Int,
+    val skill3CooldownMaxTicks: Int,
+) : ProtocolMessage {
+    init {
+        require(maxMana > 0 && skill3CooldownMaxTicks > 0) { "Resource maximums must be positive" }
+        require(mana in 0..maxMana) { "Mana is out of range" }
+        require(skill3CooldownTicks in 0..skill3CooldownMaxTicks) { "Skill3 cooldown is out of range" }
+    }
+}
+
 object ProtocolCodec {
     private const val MAX_PACKET_SIZE = 1024
     private const val HELLO = 1
@@ -63,6 +130,9 @@ object ProtocolCodec {
     private const val ATTACK_HIT_CONFIRMED = 12
     private const val DODGE_INPUT = 13
     private const val AIR_JUMP_INPUT = 14
+    private const val CLASS_SKILL_INPUT = 15
+    private const val CLASS_RESOURCE_SNAPSHOT = 17
+    private const val ATTACK_DEBUG_SHAPE = 18
 
     fun encode(message: ProtocolMessage): ByteArray {
         val output = ByteArrayOutputStream()
@@ -91,6 +161,19 @@ object ProtocolCodec {
                     data.writeLong(message.targetId.mostSignificantBits)
                     data.writeLong(message.targetId.leastSignificantBits)
                 }
+                is AttackDebugShape -> {
+                    data.writeByte(ATTACK_DEBUG_SHAPE)
+                    data.writeByte(message.kind.ordinal)
+                    data.writeDouble(message.originX)
+                    data.writeDouble(message.originY)
+                    data.writeDouble(message.originZ)
+                    data.writeDouble(message.directionX)
+                    data.writeDouble(message.directionY)
+                    data.writeDouble(message.directionZ)
+                    data.writeDouble(message.range)
+                    data.writeDouble(message.minForwardDot)
+                    data.writeDouble(message.verticalRange)
+                }
                 is DodgeInput -> {
                     data.writeByte(DODGE_INPUT)
                     data.writeDouble(message.directionX)
@@ -100,6 +183,19 @@ object ProtocolCodec {
                     data.writeByte(AIR_JUMP_INPUT)
                     data.writeDouble(message.directionX)
                     data.writeDouble(message.directionZ)
+                }
+                is ClassSkillInput -> {
+                    data.writeByte(CLASS_SKILL_INPUT)
+                    data.writeByte(message.slot.ordinal)
+                    data.writeDouble(message.directionX)
+                    data.writeDouble(message.directionZ)
+                }
+                is ClassResourceSnapshot -> {
+                    data.writeByte(CLASS_RESOURCE_SNAPSHOT)
+                    data.writeInt(message.mana)
+                    data.writeInt(message.maxMana)
+                    data.writeInt(message.skill3CooldownTicks)
+                    data.writeInt(message.skill3CooldownMaxTicks)
                 }
             }
         }
@@ -133,8 +229,37 @@ object ProtocolCodec {
                 input.readLong(),
                 UUID(input.readLong(), input.readLong()),
             )
+            ATTACK_DEBUG_SHAPE -> {
+                val kindId = input.readUnsignedByte()
+                val kind = AttackDebugShapeKind.entries.getOrNull(kindId)
+                    ?: throw IllegalArgumentException("Unknown AttackDebugShape kind: $kindId")
+                AttackDebugShape(
+                    kind,
+                    input.readDouble(),
+                    input.readDouble(),
+                    input.readDouble(),
+                    input.readDouble(),
+                    input.readDouble(),
+                    input.readDouble(),
+                    input.readDouble(),
+                    input.readDouble(),
+                    input.readDouble(),
+                )
+            }
             DODGE_INPUT -> DodgeInput(input.readDouble(), input.readDouble())
             AIR_JUMP_INPUT -> AirJumpInput(input.readDouble(), input.readDouble())
+            CLASS_SKILL_INPUT -> {
+                val slotId = input.readUnsignedByte()
+                val slot = ClassSkillSlot.entries.getOrNull(slotId)
+                    ?: throw IllegalArgumentException("Unknown ClassSkillInput slot: $slotId")
+                ClassSkillInput(slot, input.readDouble(), input.readDouble())
+            }
+            CLASS_RESOURCE_SNAPSHOT -> ClassResourceSnapshot(
+                input.readInt(),
+                input.readInt(),
+                input.readInt(),
+                input.readInt(),
+            )
             else -> throw IllegalArgumentException("Unknown ProjectS message type: $type")
         }
         require(input.available() == 0) { "Unexpected trailing ProjectS protocol data" }

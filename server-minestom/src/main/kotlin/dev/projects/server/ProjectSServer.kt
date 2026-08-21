@@ -1,10 +1,14 @@
 package dev.projects.server
 
 import dev.projects.protocol.PROJECTS_CHANNEL
+import dev.projects.protocol.AttackDebugShape
+import dev.projects.protocol.AttackDebugShapeKind
 import dev.projects.protocol.AttackHitConfirmed
 import dev.projects.protocol.AttackInput
 import dev.projects.protocol.AttackStarted
 import dev.projects.protocol.AirJumpInput
+import dev.projects.protocol.ClassSkillInput
+import dev.projects.protocol.ClassSkillSlot
 import dev.projects.protocol.DodgeInput
 import dev.projects.protocol.ProtocolCodec
 import dev.projects.protocol.ProtocolHello
@@ -22,6 +26,7 @@ import net.minestom.server.entity.EntityType
 import net.minestom.server.entity.EquipmentSlot
 import net.minestom.server.event.player.AsyncPlayerConfigurationEvent
 import net.minestom.server.event.player.PlayerPluginMessageEvent
+import net.minestom.server.event.player.PlayerDisconnectEvent
 import net.minestom.server.event.player.PlayerSpawnEvent
 import net.minestom.server.event.player.PlayerTickEvent
 import net.minestom.server.instance.block.Block
@@ -39,6 +44,8 @@ import net.kyori.adventure.key.Key
 import java.nio.charset.StandardCharsets
 import java.util.UUID
 import kotlin.math.floor
+import net.minestom.server.collision.BoundingBox
+import net.minestom.server.coordinate.Point
 import net.minestom.server.command.CommandSender
 import net.minestom.server.command.builder.Command
 import net.minestom.server.command.builder.CommandContext
@@ -64,6 +71,12 @@ fun main() {
     val combatStates = mutableMapOf<UUID, CombatState>()
     val dodgeStates = mutableMapOf<UUID, DodgeState>()
     val twinRodsAirStates = mutableMapOf<UUID, TwinRodsAirState>()
+    val classResources = mutableMapOf<UUID, ClassResourceState>()
+    val skill1States = mutableMapOf<UUID, Skill1State>()
+    val skill2States = mutableMapOf<UUID, Skill2State>()
+    val skill3States = mutableMapOf<UUID, Skill3State>()
+    val resourceSyncTicks = mutableMapOf<UUID, Int>()
+    val lastSentSkill3Cooldown = mutableMapOf<UUID, Int>()
     val dodgeVelocityActive = mutableMapOf<UUID, Boolean>()
     val attackSpeeds = mutableMapOf<UUID, Double>()
     val prototypeBoss = PrototypeBossState()
@@ -76,6 +89,16 @@ fun main() {
     var dummy: Entity? = null
     var testerMarkerTick = 0L
     val fixedTester = FixedAttackTester()
+
+    fun sendResourceSnapshot(player: net.minestom.server.entity.Player) {
+        val resources = classResources[player.uuid] ?: return
+        val skill3 = skill3States[player.uuid] ?: return
+        player.sendPluginMessage(
+            PROJECTS_CHANNEL,
+            ProtocolCodec.encode(resources.snapshot(skill3.cooldownTicksRemaining)),
+        )
+        lastSentSkill3Cooldown[player.uuid] = skill3.cooldownTicksRemaining
+    }
 
     fun updateBossBar() {
         val status = when {
@@ -96,6 +119,9 @@ fun main() {
         combatStates.values.forEach { it.reset() }
         dodgeStates.values.forEach { it.reset() }
         twinRodsAirStates.values.forEach { it.tick(true) }
+        skill1States.values.forEach { it.reset() }
+        skill2States.values.forEach { it.reset() }
+        skill3States.values.forEach { it.reset() }
         instance.players.forEach { player ->
             player.setVelocity(Vec.ZERO)
         }
@@ -105,9 +131,12 @@ fun main() {
     fun resetPlayers() {
         stopPlayerActions()
         instance.players.forEach { player ->
+            classResources[player.uuid]?.reset()
+            resourceSyncTicks[player.uuid] = 0
             player.setHealth(prototypeBoss.playerMaxHealth.toFloat())
             player.teleport(player.respawnPoint)
             player.showBossBar(bossBar)
+            sendResourceSnapshot(player)
         }
     }
 
@@ -116,7 +145,10 @@ fun main() {
         stopPlayerActions()
         updateBossBar()
         val result = if (prototypeBoss.isVictory) "VICTORY" else "DEFEAT"
-        instance.players.forEach { it.sendMessage(Component.text(result)) }
+        instance.players.forEach {
+            sendResourceSnapshot(it)
+            it.sendMessage(Component.text(result))
+        }
     }
 
     fun resetEncounter() {
@@ -156,6 +188,18 @@ fun main() {
     events.addListener(PlayerSpawnEvent::class.java) { event ->
         prototypeBoss.registerPlayer(event.player.uuid)
         event.player.setHealth(prototypeBoss.playerMaxHealth.toFloat())
+        val resources = classResources.getOrPut(event.player.uuid) { ClassResourceState() }
+        val skill1 = skill1States.getOrPut(event.player.uuid) { Skill1State() }
+        val skill2 = skill2States.getOrPut(event.player.uuid) { Skill2State() }
+        val skill3 = skill3States.getOrPut(event.player.uuid) { Skill3State() }
+        if (!event.isFirstSpawn) {
+            resources.reset()
+            skill1.reset()
+            skill2.reset()
+            skill3.reset()
+        }
+        resourceSyncTicks[event.player.uuid] = 0
+        sendResourceSnapshot(event.player)
         updateBossBar()
         event.player.showBossBar(bossBar)
         if (event.isFirstSpawn) {
@@ -197,10 +241,27 @@ fun main() {
             )
         }
     }
+    events.addListener(PlayerDisconnectEvent::class.java) { event ->
+        val playerId = event.player.uuid
+        combatStates.remove(playerId)
+        dodgeStates.remove(playerId)
+        twinRodsAirStates.remove(playerId)
+        classResources.remove(playerId)
+        skill1States.remove(playerId)
+        skill2States.remove(playerId)
+        skill3States.remove(playerId)
+        resourceSyncTicks.remove(playerId)
+        lastSentSkill3Cooldown.remove(playerId)
+        attackSpeeds.remove(playerId)
+    }
     events.addListener(PlayerTickEvent::class.java) { event ->
         val state = combatStates[event.player.uuid] ?: return@addListener
         val dodge = dodgeStates[event.player.uuid] ?: return@addListener
         val twinRodsAir = twinRodsAirStates[event.player.uuid] ?: return@addListener
+        val resources = classResources[event.player.uuid] ?: return@addListener
+        val skill1 = skill1States[event.player.uuid] ?: return@addListener
+        val skill2 = skill2States[event.player.uuid] ?: return@addListener
+        val skill3 = skill3States[event.player.uuid] ?: return@addListener
         if (event.player == instance.players.firstOrNull()) {
             if (prototypeBoss.isActive) {
                 tickFixedTester(instance, dummy, fixedTester, prototypeBoss, testerMarkerTick++)
@@ -215,20 +276,43 @@ fun main() {
         if (dodge.hasPending) state.deferAttackRestart()
         val tester = dummy?.takeIf { it.instance == event.player.instance && !it.isRemoved }
         val testerId = tester?.uuid
+        val weapon = state.activeProfile?.weapon ?: weaponFor(event.player)
+        val profileRange = state.activeProfile?.range
+            ?: weapon.profile(attackSpeeds[event.player.uuid] ?: DEFAULT_ATTACK_SPEED).range
+        val eyePosition = event.player.position.add(0.0, event.player.eyeHeight, 0.0)
+        val attackOrigin = if (weapon == WeaponType.TWIN_RODS) eyePosition else event.player.position
         val weakpoint = tester?.let {
-            val weapon = state.activeProfile?.weapon ?: weaponFor(event.player)
-            val range = state.activeProfile?.range
-                ?: weapon.profile(attackSpeeds[event.player.uuid] ?: DEFAULT_ATTACK_SPEED).range
             FixedAttackTester.selectWeakpoint(
-                playerPosition = event.player.position.add(0.0, event.player.eyeHeight, 0.0),
+                playerPosition = eyePosition,
                 playerDirection = event.player.position.direction(),
                 testerOrigin = it.position,
                 testerFacing = it.position.direction(),
-                weaponRange = range,
+                weaponRange = if (weapon == WeaponType.TWIN_RODS) {
+                    profileRange + FixedAttackTester.WEAKPOINT_RADIUS
+                } else {
+                    profileRange
+                },
             )
         }
-        val targets = tester?.let { listOf(CombatTarget(it.uuid, weakpoint?.center ?: it.position)) } ?: emptyList()
-        val combatEvents = state.tick(event.player.position, event.player.position.direction(), targets)
+        val targets = tester?.let {
+            val target = if (weapon == WeaponType.TWIN_RODS) {
+                weakpoint?.let { selection ->
+                    CombatTarget(
+                        id = it.uuid,
+                        position = selection.center,
+                        sphereRadius = FixedAttackTester.WEAKPOINT_RADIUS,
+                    )
+                } ?: combatTarget(it)
+            } else {
+                CombatTarget(it.uuid, weakpoint?.center ?: it.position)
+            }
+            listOf(target)
+        } ?: emptyList()
+        val combatEvents = state.tick(attackOrigin, event.player.position.direction(), targets)
+        publishCombatEvents(
+            event.player,
+            combatEvents.filter { it is CombatEvent.Started || it is CombatEvent.Active },
+        )
         combatEvents.filterIsInstance<CombatEvent.HitConfirmed>().forEach { hit ->
             val damage = prototypeBoss.applyPlayerAttack(
                 attackExecutionId = hit.attackExecutionId,
@@ -236,12 +320,104 @@ fun main() {
                 weakpoint = weakpoint?.weakpoint,
             )
             twinRodsAir.onAttackHit(hit.weapon, event.player.isOnGround, hit.attackExecutionId)
+            if (skill3.reduceCooldownForNormalAttack(hit.attackExecutionId)) {
+                sendResourceSnapshot(event.player)
+            }
             if (damage > 0) {
                 updateBossBar()
                 if (weakpoint != null) showWeakpointHit(event.player, weakpoint)
             }
         }
-        publishCombatEvents(event.player, combatEvents)
+        publishCombatEvents(event.player, combatEvents.filterIsInstance<CombatEvent.HitConfirmed>())
+        if (!prototypeBoss.isActive) {
+            finishEncounter()
+            return@addListener
+        }
+        val skill1Tick = skill1.tick()
+        if (skill1Tick.dashActive) {
+            val direction = requireNotNull(skill1Tick.dashDirection)
+            val start = event.player.position
+            val end = start.add(
+                direction.x() * Skill1State.DASH_SPEED / ServerFlag.SERVER_TICKS_PER_SECOND,
+                0.0,
+                direction.z() * Skill1State.DASH_SPEED / ServerFlag.SERVER_TICKS_PER_SECOND,
+            )
+            event.player.setVelocity(
+                Vec(
+                    direction.x() * Skill1State.DASH_SPEED,
+                    event.player.velocity.y(),
+                    direction.z() * Skill1State.DASH_SPEED,
+                ),
+            )
+            val skillTargets = tester?.let { listOf(combatTarget(it)) } ?: emptyList()
+            val hitTargets = skill1.hitTargetsOnSegment(start, end, skillTargets)
+            if (hitTargets.isNotEmpty()) {
+                hitTargets.forEach { targetId ->
+                    val damage = prototypeBoss.applySkill1Attack(skill1.castId, targetId)
+                    if (damage > 0) updateBossBar()
+                }
+                event.player.setVelocity(
+                    Vec(
+                        direction.x() * Skill1State.LAUNCH_HORIZONTAL_SPEED,
+                        Skill1State.LAUNCH_SPEED_Y,
+                        direction.z() * Skill1State.LAUNCH_HORIZONTAL_SPEED,
+                    ),
+                )
+            } else if (skill1Tick.stopHorizontalVelocity) {
+                event.player.setVelocity(Vec(0.0, event.player.velocity.y(), 0.0))
+            }
+        }
+        if (!prototypeBoss.isActive) {
+            finishEncounter()
+            return@addListener
+        }
+        val skill2Tick = skill2.tick(event.player.isOnGround)
+        if (skill2Tick.diveActive) {
+            event.player.setVelocity(Vec(0.0, -Skill2State.DOWNWARD_SPEED, 0.0))
+        } else if (skill2Tick.landed) {
+            val skillTargets = tester?.let { listOf(combatTarget(it)) } ?: emptyList()
+            skill2.hitTargetsAtLanding(event.player.position, skillTargets).forEach { targetId ->
+                val damage = prototypeBoss.applySkill2Attack(skill2.castId, targetId)
+                if (damage > 0) updateBossBar()
+            }
+            event.player.setVelocity(Vec.ZERO)
+        }
+        if (!prototypeBoss.isActive) {
+            finishEncounter()
+            return@addListener
+        }
+        val previousSkill3Cooldown = skill3.cooldownTicksRemaining
+        val skill3Tick = skill3.tick(event.player.isOnGround, event.player.velocity.y())
+        if (skill3Tick.dashActive) {
+            val direction = requireNotNull(skill3Tick.dashDirection)
+            val start = event.player.position
+            val end = start.add(
+                direction.x() * Skill3State.DASH_SPEED / ServerFlag.SERVER_TICKS_PER_SECOND,
+                direction.y() * Skill3State.DASH_SPEED / ServerFlag.SERVER_TICKS_PER_SECOND,
+                direction.z() * Skill3State.DASH_SPEED / ServerFlag.SERVER_TICKS_PER_SECOND,
+            )
+            val skillTargets = tester?.let { listOf(combatTarget(it)) } ?: emptyList()
+            skill3.hitTargetsOnSegment(start, end, skillTargets).forEach { targetId ->
+                val damage = prototypeBoss.applySkill3Attack(skill3.castId, targetId)
+                if (damage > 0) updateBossBar()
+            }
+            event.player.setVelocity(
+                Vec(
+                    direction.x() * Skill3State.DASH_SPEED,
+                    direction.y() * Skill3State.DASH_SPEED,
+                    direction.z() * Skill3State.DASH_SPEED,
+                ),
+            )
+        } else if (skill3Tick.phase == Skill3Phase.HOVER) {
+            if (skill3Tick.stopHorizontalVelocity) {
+                event.player.setVelocity(Vec.ZERO)
+            } else {
+                event.player.setVelocity(skill3HoverVelocity(event.player.velocity, skill3Tick.velocityY))
+            }
+        }
+        if (previousSkill3Cooldown == 0 && skill3.cooldownTicksRemaining > 0) {
+            sendResourceSnapshot(event.player)
+        }
         if (!prototypeBoss.isActive) {
             finishEncounter()
             return@addListener
@@ -266,6 +442,20 @@ fun main() {
         } else if (velocityWasApplied) {
             stopDodgeVelocity(event.player)
             dodgeVelocityActive[event.player.uuid] = false
+        }
+        val syncTick = (resourceSyncTicks[event.player.uuid] ?: 0) + 1
+        if (syncTick >= 4) {
+            resourceSyncTicks[event.player.uuid] = 0
+            if (shouldSyncSkill3Cooldown(
+                    syncTick,
+                    skill3.cooldownTicksRemaining,
+                    lastSentSkill3Cooldown[event.player.uuid],
+                )
+            ) {
+                sendResourceSnapshot(event.player)
+            }
+        } else {
+            resourceSyncTicks[event.player.uuid] = syncTick
         }
     }
     events.addListener(PlayerPluginMessageEvent::class.java) { event ->
@@ -314,6 +504,37 @@ fun main() {
                         )
                     }
                 }
+                is ClassSkillInput -> {
+                    if (!prototypeBoss.isActive) return@addListener
+                    val skill1 = skill1States[event.player.uuid] ?: return@addListener
+                    val skill2 = skill2States[event.player.uuid] ?: return@addListener
+                    val skill3 = skill3States[event.player.uuid] ?: return@addListener
+                    when (message.slot) {
+                        ClassSkillSlot.SKILL_1 -> {
+                            if (skill2.phase == Skill2Phase.DIVE || skill3.phase != Skill3Phase.IDLE) return@addListener
+                            skill1.tryCast(event.player.position.direction())
+                        }
+                        ClassSkillSlot.SKILL_2 -> {
+                            val castId = skill2.tryCast(event.player.isOnGround)
+                            if (castId != null) {
+                                skill1.cancelActiveMovement()
+                                skill3.cancelActiveMovement()
+                                event.player.setVelocity(Vec(0.0, -Skill2State.DOWNWARD_SPEED, 0.0))
+                            }
+                        }
+                        ClassSkillSlot.SKILL_3 -> {
+                            if (skill1.phase == Skill1Phase.DASH || skill2.phase == Skill2Phase.DIVE) {
+                                return@addListener
+                            }
+                            val castId = skill3.tryCast(
+                                event.player.position.direction(),
+                                ClassSkillDirection(message.directionX, message.directionZ),
+                            )
+                            if (castId != null) sendResourceSnapshot(event.player)
+                        }
+                        ClassSkillSlot.ULTIMATE -> return@addListener
+                    }
+                }
                 else -> throw IllegalArgumentException("Unexpected ProjectS message")
             }
         } catch (error: IllegalArgumentException) {
@@ -329,6 +550,21 @@ private fun publishCombatEvents(player: net.minestom.server.entity.Player, event
     for (event in events) {
         val message = when (event) {
             is CombatEvent.Started -> AttackStarted(event.attackExecutionId)
+            is CombatEvent.Active -> AttackDebugShape(
+                kind = when (event.profile.weapon) {
+                    WeaponType.TWIN_RODS -> AttackDebugShapeKind.TWIN_RODS
+                    WeaponType.HEAVY_BLADE -> AttackDebugShapeKind.HEAVY_BLADE
+                },
+                originX = event.position.x(),
+                originY = event.position.y(),
+                originZ = event.position.z(),
+                directionX = event.direction.x(),
+                directionY = event.direction.y(),
+                directionZ = event.direction.z(),
+                range = event.profile.range,
+                minForwardDot = event.profile.minForwardDot,
+                verticalRange = event.profile.verticalRange,
+            )
             is CombatEvent.HitConfirmed -> AttackHitConfirmed(event.attackExecutionId, event.targetId)
         }
         player.sendPluginMessage(PROJECTS_CHANNEL, ProtocolCodec.encode(message))
@@ -342,6 +578,36 @@ private fun weaponFor(player: net.minestom.server.entity.Player): WeaponType = w
     Material.NETHERITE_SWORD -> WeaponType.HEAVY_BLADE
     else -> WeaponType.HEAVY_BLADE
 }
+
+private fun combatTarget(entity: Entity): CombatTarget {
+    return combatTargetFromBoundingBox(entity.uuid, entity.position, entity.boundingBox)
+}
+
+internal fun combatTargetFromBoundingBox(id: UUID, origin: Point, relativeBox: BoundingBox): CombatTarget {
+    val box = relativeBox.withOffset(origin)
+    return CombatTarget(
+        id = id,
+        position = Pos(
+            (box.minX() + box.maxX()) / 2.0,
+            (box.minY() + box.maxY()) / 2.0,
+            (box.minZ() + box.maxZ()) / 2.0,
+        ),
+        halfExtent = Vec(
+            (box.maxX() - box.minX()) / 2.0,
+            (box.maxY() - box.minY()) / 2.0,
+            (box.maxZ() - box.minZ()) / 2.0,
+        ),
+    )
+}
+
+internal fun skill3HoverVelocity(currentVelocity: Vec, velocityY: Double): Vec = Vec(
+    currentVelocity.x(),
+    velocityY,
+    currentVelocity.z(),
+)
+
+internal fun shouldSyncSkill3Cooldown(syncTick: Int, currentCooldown: Int, lastSentCooldown: Int?): Boolean =
+    syncTick >= 4 && currentCooldown != lastSentCooldown
 
 private fun tickFixedTester(
     instance: Instance,
