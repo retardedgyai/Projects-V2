@@ -88,7 +88,7 @@ fun startParticleDemo(
                 styleAt = { progress, _ -> slashStyle.sample(progress) },
                 durationTicks = 8,
             )
-            val trail = ParticleTrail(anchor, particle = Particle.END_ROD, maxAgeTicks = 12, maxLength = 5.0, density = 5.0, durationTicks = 20)
+            val trail = ParticleTrail(anchor, particle = Particle.END_ROD, maxAgeTicks = 12, maxLength = 5.0, density = 5.0, durationTicks = 200)
             val burst = ParticleEmitter(anchor, particle = Particle.ELECTRIC_SPARK, rate = EmitterRate.BURST, shape = SpawnShape.CONE, durationTicks = 1, burstCount = 18, radius = 0.8, seed = 55L, styleCurve = ParticleStyleCurve(ParticleStyle(Particle.ELECTRIC_SPARK, directional = true, speed = 0.3f)))
             ParticleSequenceBuilder().apply { parallel { play(trail); play(ribbon); play(burst, delayTicks = 1) } }.build()
         }
