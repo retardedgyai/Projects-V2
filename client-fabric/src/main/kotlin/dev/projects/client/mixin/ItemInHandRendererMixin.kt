@@ -20,12 +20,8 @@ abstract class ItemInHandRendererMixin {
         method = ["submitArmWithItem"],
         at = [At(
             value = "INVOKE",
-            target = "Lnet/minecraft/client/renderer/ItemInHandRenderer;renderItem(" +
-                "Lnet/minecraft/world/entity/LivingEntity;" +
-                "Lnet/minecraft/world/item/ItemStack;" +
-                "Lnet/minecraft/world/item/ItemDisplayContext;" +
-                "Lcom/mojang/blaze3d/vertex/PoseStack;" +
-                "Lnet/minecraft/client/renderer/SubmitNodeCollector;I)V",
+            target = "Lcom/mojang/blaze3d/vertex/PoseStack;pushPose()V",
+            shift = At.Shift.AFTER,
         )],
     )
     private fun applyTwinRodPose(
@@ -45,7 +41,7 @@ abstract class ItemInHandRendererMixin {
 
         val pose = TwinRodFirstPersonAnimationState.pose(frameInterp)
         val mirror = if (player.mainArm == HumanoidArm.RIGHT) 1f else -1f
-        // Align the rod with the fist and forearm depth axis instead of across the screen.
+        // This transform is applied before vanilla submits either the arm or item.
         poseStack.translate(-0.08f * mirror, 0.04f, -0.10f)
         poseStack.mulPose(com.mojang.math.Axis.XP.rotationDegrees(78f))
         poseStack.mulPose(com.mojang.math.Axis.YP.rotationDegrees(8f * mirror))
