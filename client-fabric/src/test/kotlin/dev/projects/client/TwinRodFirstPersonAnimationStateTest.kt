@@ -3,6 +3,7 @@ package dev.projects.client
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
+import kotlin.test.assertTrue
 
 class TwinRodFirstPersonAnimationStateTest {
     @Test
@@ -22,6 +23,22 @@ class TwinRodFirstPersonAnimationStateTest {
             TwinRodFirstPersonAnimationState.poseAt(0.5f, 0),
             TwinRodFirstPersonAnimationState.poseAt(0.5f, 1),
         )
+    }
+
+    @Test
+    fun `beats describe jab cross hook and uppercut trajectories`() {
+        val jabStart = TwinRodFirstPersonAnimationState.poseAt(0f, 0)
+        val jabStrike = TwinRodFirstPersonAnimationState.poseAt(0.5f, 0)
+        val crossStrike = TwinRodFirstPersonAnimationState.poseAt(0.5f, 1)
+        val hook = TwinRodFirstPersonAnimationState.poseAt(0.5f, 2)
+        val uppercutStart = TwinRodFirstPersonAnimationState.poseAt(0f, 3)
+        val uppercutStrike = TwinRodFirstPersonAnimationState.poseAt(0.5f, 3)
+
+        assertTrue(jabStart.translateX > 0f && jabStart.translateY < 0f)
+        assertTrue(jabStrike.translateX < 0f && jabStrike.translateY > 0f)
+        assertTrue(crossStrike.translateX > 0.25f)
+        assertTrue(hook.translateX > 0.3f && hook.translateY > 0.1f)
+        assertTrue(uppercutStart.translateY < 0f && uppercutStrike.translateY > 0.25f)
     }
 
     @Test

@@ -806,8 +806,8 @@ object ProjectSClient : ClientModInitializer {
         val eyeY = player.y + player.eyeHeight
         val eyeZ = player.z
 
-        for (index in 0..4) {
-            val progress = index / 4.0
+        for (index in 0..2) {
+            val progress = index / 2.0
             val local = (progress - 0.5) * 0.24
             val depth = 0.84 + progress * 0.34 + if (crossStrike) abs(local) * 0.22 else 0.0
             val lateral = if (crossStrike) travel + local else side * (0.2 + travel * 0.7 + local)
@@ -820,9 +820,6 @@ object ProjectSClient : ClientModInitializer {
             val accentZ = z - forwardZ * 0.08
             level.addParticle(twinRodAccentDust, accentX, accentY, accentZ, 0.0, 0.0, 0.0)
             level.addParticle(twinRodCoreDust, x, y, z, forwardX * 0.02, forwardY * 0.02, forwardZ * 0.02)
-            if (index == 1 || index == 3) {
-                level.addParticle(ParticleTypes.END_ROD, x, y, z, 0.0, 0.0, 0.0)
-            }
         }
     }
 
