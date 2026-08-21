@@ -27,9 +27,17 @@ class ClassResourceState(
         return true
     }
 
-    fun snapshot(skill3CooldownTicks: Int): ClassResourceSnapshot = ClassResourceSnapshot(
+    fun snapshot(
+        skill1CooldownTicks: Int,
+        skill2CooldownTicks: Int,
+        skill3CooldownTicks: Int,
+    ): ClassResourceSnapshot = ClassResourceSnapshot(
         mana = mana,
         maxMana = maxMana,
+        skill1CooldownTicks = skill1CooldownTicks,
+        skill1CooldownMaxTicks = Skill1State.COOLDOWN_TICKS,
+        skill2CooldownTicks = skill2CooldownTicks,
+        skill2CooldownMaxTicks = Skill2State.COOLDOWN_TICKS,
         skill3CooldownTicks = skill3CooldownTicks,
         skill3CooldownMaxTicks = Skill3State.COOLDOWN_TICKS,
     )

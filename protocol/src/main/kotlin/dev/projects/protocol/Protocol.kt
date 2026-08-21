@@ -11,7 +11,7 @@ import kotlin.math.abs
 const val PROJECTS_CHANNEL = "projects:protocol"
 
 object ProtocolVersion {
-    const val CURRENT = 4
+    const val CURRENT = 5
 
     fun requireCompatible(version: Int) {
         if (version != CURRENT) {
@@ -75,12 +75,21 @@ data class ClassSkillInput(
 data class ClassResourceSnapshot(
     val mana: Int,
     val maxMana: Int,
+    val skill1CooldownTicks: Int,
+    val skill1CooldownMaxTicks: Int,
+    val skill2CooldownTicks: Int,
+    val skill2CooldownMaxTicks: Int,
     val skill3CooldownTicks: Int,
     val skill3CooldownMaxTicks: Int,
 ) : ProtocolMessage {
     init {
-        require(maxMana > 0 && skill3CooldownMaxTicks > 0) { "Resource maximums must be positive" }
+        require(
+            maxMana > 0 && skill1CooldownMaxTicks > 0 && skill2CooldownMaxTicks > 0 &&
+                skill3CooldownMaxTicks > 0,
+        ) { "Resource maximums must be positive" }
         require(mana in 0..maxMana) { "Mana is out of range" }
+        require(skill1CooldownTicks in 0..skill1CooldownMaxTicks) { "Skill1 cooldown is out of range" }
+        require(skill2CooldownTicks in 0..skill2CooldownMaxTicks) { "Skill2 cooldown is out of range" }
         require(skill3CooldownTicks in 0..skill3CooldownMaxTicks) { "Skill3 cooldown is out of range" }
     }
 }
@@ -144,6 +153,10 @@ object ProtocolCodec {
                     data.writeByte(CLASS_RESOURCE_SNAPSHOT)
                     data.writeInt(message.mana)
                     data.writeInt(message.maxMana)
+                    data.writeInt(message.skill1CooldownTicks)
+                    data.writeInt(message.skill1CooldownMaxTicks)
+                    data.writeInt(message.skill2CooldownTicks)
+                    data.writeInt(message.skill2CooldownMaxTicks)
                     data.writeInt(message.skill3CooldownTicks)
                     data.writeInt(message.skill3CooldownMaxTicks)
                 }
@@ -188,6 +201,10 @@ object ProtocolCodec {
                 ClassSkillInput(slot, input.readDouble(), input.readDouble())
             }
             CLASS_RESOURCE_SNAPSHOT -> ClassResourceSnapshot(
+                input.readInt(),
+                input.readInt(),
+                input.readInt(),
+                input.readInt(),
                 input.readInt(),
                 input.readInt(),
                 input.readInt(),

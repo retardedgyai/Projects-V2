@@ -211,6 +211,8 @@ class Skill3StateTest {
         assertFalse(shouldSyncSkill3Cooldown(3, 57, 60))
         assertTrue(shouldSyncSkill3Cooldown(4, 56, 60))
         assertFalse(shouldSyncSkill3Cooldown(4, 60, 60))
+        assertFalse(shouldSyncSkillCooldowns(3, SkillCooldowns(79, 99, 59), SkillCooldowns(80, 100, 60)))
+        assertTrue(shouldSyncSkillCooldowns(4, SkillCooldowns(76, 96, 56), SkillCooldowns(80, 100, 60)))
     }
 
     private fun sequence(): () -> Long {
