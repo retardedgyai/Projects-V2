@@ -70,6 +70,8 @@ fun main() {
     val dodgeStates = mutableMapOf<UUID, DodgeState>()
     val twinRodsAirStates = mutableMapOf<UUID, TwinRodsAirState>()
     val classResources = mutableMapOf<UUID, ClassResourceState>()
+    val skill1States = mutableMapOf<UUID, Skill1State>()
+    val skill2States = mutableMapOf<UUID, Skill2State>()
     val skill3States = mutableMapOf<UUID, Skill3State>()
     val resourceSyncTicks = mutableMapOf<UUID, Int>()
     val lastSentSkill3Cooldown = mutableMapOf<UUID, Int>()
@@ -115,6 +117,8 @@ fun main() {
         combatStates.values.forEach { it.reset() }
         dodgeStates.values.forEach { it.reset() }
         twinRodsAirStates.values.forEach { it.tick(true) }
+        skill1States.values.forEach { it.reset() }
+        skill2States.values.forEach { it.reset() }
         skill3States.values.forEach { it.reset() }
         instance.players.forEach { player ->
             player.setVelocity(Vec.ZERO)
@@ -183,9 +187,13 @@ fun main() {
         prototypeBoss.registerPlayer(event.player.uuid)
         event.player.setHealth(prototypeBoss.playerMaxHealth.toFloat())
         val resources = classResources.getOrPut(event.player.uuid) { ClassResourceState() }
+        val skill1 = skill1States.getOrPut(event.player.uuid) { Skill1State() }
+        val skill2 = skill2States.getOrPut(event.player.uuid) { Skill2State() }
         val skill3 = skill3States.getOrPut(event.player.uuid) { Skill3State() }
         if (!event.isFirstSpawn) {
             resources.reset()
+            skill1.reset()
+            skill2.reset()
             skill3.reset()
         }
         resourceSyncTicks[event.player.uuid] = 0
@@ -237,6 +245,8 @@ fun main() {
         dodgeStates.remove(playerId)
         twinRodsAirStates.remove(playerId)
         classResources.remove(playerId)
+        skill1States.remove(playerId)
+        skill2States.remove(playerId)
         skill3States.remove(playerId)
         resourceSyncTicks.remove(playerId)
         lastSentSkill3Cooldown.remove(playerId)
@@ -247,6 +257,8 @@ fun main() {
         val dodge = dodgeStates[event.player.uuid] ?: return@addListener
         val twinRodsAir = twinRodsAirStates[event.player.uuid] ?: return@addListener
         val resources = classResources[event.player.uuid] ?: return@addListener
+        val skill1 = skill1States[event.player.uuid] ?: return@addListener
+        val skill2 = skill2States[event.player.uuid] ?: return@addListener
         val skill3 = skill3States[event.player.uuid] ?: return@addListener
         if (event.player == instance.players.firstOrNull()) {
             if (prototypeBoss.isActive) {
@@ -292,6 +304,59 @@ fun main() {
             }
         }
         publishCombatEvents(event.player, combatEvents)
+        if (!prototypeBoss.isActive) {
+            finishEncounter()
+            return@addListener
+        }
+        val skill1Tick = skill1.tick()
+        if (skill1Tick.dashActive) {
+            val direction = requireNotNull(skill1Tick.dashDirection)
+            val start = event.player.position
+            val end = start.add(
+                direction.x() * Skill1State.DASH_SPEED / ServerFlag.SERVER_TICKS_PER_SECOND,
+                0.0,
+                direction.z() * Skill1State.DASH_SPEED / ServerFlag.SERVER_TICKS_PER_SECOND,
+            )
+            event.player.setVelocity(
+                Vec(
+                    direction.x() * Skill1State.DASH_SPEED,
+                    event.player.velocity.y(),
+                    direction.z() * Skill1State.DASH_SPEED,
+                ),
+            )
+            val skillTargets = tester?.let { listOf(combatTarget(it)) } ?: emptyList()
+            val hitTargets = skill1.hitTargetsOnSegment(start, end, skillTargets)
+            if (hitTargets.isNotEmpty()) {
+                hitTargets.forEach { targetId ->
+                    val damage = prototypeBoss.applySkill1Attack(skill1.castId, targetId)
+                    if (damage > 0) updateBossBar()
+                }
+                event.player.setVelocity(
+                    Vec(
+                        direction.x() * Skill1State.LAUNCH_HORIZONTAL_SPEED,
+                        Skill1State.LAUNCH_SPEED_Y,
+                        direction.z() * Skill1State.LAUNCH_HORIZONTAL_SPEED,
+                    ),
+                )
+            } else if (skill1Tick.stopHorizontalVelocity) {
+                event.player.setVelocity(Vec(0.0, event.player.velocity.y(), 0.0))
+            }
+        }
+        if (!prototypeBoss.isActive) {
+            finishEncounter()
+            return@addListener
+        }
+        val skill2Tick = skill2.tick(event.player.isOnGround)
+        if (skill2Tick.diveActive) {
+            event.player.setVelocity(Vec(0.0, -Skill2State.DOWNWARD_SPEED, 0.0))
+        } else if (skill2Tick.landed) {
+            val skillTargets = tester?.let { listOf(combatTarget(it)) } ?: emptyList()
+            skill2.hitTargetsAtLanding(event.player.position, skillTargets).forEach { targetId ->
+                val damage = prototypeBoss.applySkill2Attack(skill2.castId, targetId)
+                if (damage > 0) updateBossBar()
+            }
+            event.player.setVelocity(Vec.ZERO)
+        }
         if (!prototypeBoss.isActive) {
             finishEncounter()
             return@addListener
@@ -417,14 +482,34 @@ fun main() {
                     }
                 }
                 is ClassSkillInput -> {
-                    if (!prototypeBoss.isActive || message.slot != ClassSkillSlot.SKILL_3) return@addListener
+                    if (!prototypeBoss.isActive) return@addListener
+                    val skill1 = skill1States[event.player.uuid] ?: return@addListener
+                    val skill2 = skill2States[event.player.uuid] ?: return@addListener
                     val skill3 = skill3States[event.player.uuid] ?: return@addListener
-                    val castId = skill3.tryCast(
-                        event.player.position.direction(),
-                        ClassSkillDirection(message.directionX, message.directionZ),
-                    )
-                    if (castId != null) {
-                        sendResourceSnapshot(event.player)
+                    when (message.slot) {
+                        ClassSkillSlot.SKILL_1 -> {
+                            if (skill2.phase == Skill2Phase.DIVE || skill3.phase != Skill3Phase.IDLE) return@addListener
+                            skill1.tryCast(event.player.position.direction())
+                        }
+                        ClassSkillSlot.SKILL_2 -> {
+                            val castId = skill2.tryCast(event.player.isOnGround)
+                            if (castId != null) {
+                                skill1.reset()
+                                skill3.reset()
+                                event.player.setVelocity(Vec(0.0, -Skill2State.DOWNWARD_SPEED, 0.0))
+                            }
+                        }
+                        ClassSkillSlot.SKILL_3 -> {
+                            if (skill1.phase == Skill1Phase.DASH || skill2.phase == Skill2Phase.DIVE) {
+                                return@addListener
+                            }
+                            val castId = skill3.tryCast(
+                                event.player.position.direction(),
+                                ClassSkillDirection(message.directionX, message.directionZ),
+                            )
+                            if (castId != null) sendResourceSnapshot(event.player)
+                        }
+                        ClassSkillSlot.ULTIMATE -> return@addListener
                     }
                 }
                 else -> throw IllegalArgumentException("Unexpected ProjectS message")

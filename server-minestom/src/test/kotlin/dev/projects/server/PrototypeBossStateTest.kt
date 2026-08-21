@@ -54,6 +54,22 @@ class PrototypeBossStateTest {
     }
 
     @Test
+    fun `skill1 and skill2 damage are server-owned and reset`() {
+        val boss = PrototypeBossState()
+        val targetId = UUID.randomUUID()
+
+        assertEquals(20, boss.applySkill1Attack(1L, targetId))
+        assertEquals(0, boss.applySkill1Attack(1L, targetId))
+        assertEquals(25, boss.applySkill2Attack(2L, targetId))
+        assertEquals(255, boss.currentHealth)
+
+        boss.reset()
+
+        assertEquals(20, boss.applySkill1Attack(1L, targetId))
+        assertEquals(280, boss.currentHealth)
+    }
+
+    @Test
     fun `boss attack damages player once per execution with attack values`() {
         val boss = PrototypeBossState()
 
