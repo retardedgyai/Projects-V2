@@ -12,7 +12,7 @@ import kotlin.math.sqrt
 const val PROJECTS_CHANNEL = "projects:protocol"
 
 object ProtocolVersion {
-    const val CURRENT = 5
+    const val CURRENT = 6
 
     fun requireCompatible(version: Int) {
         if (version != CURRENT) {
