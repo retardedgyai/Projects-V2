@@ -56,6 +56,21 @@ class Skill2StateTest {
     }
 
     @Test
+    fun `skill2 pulse uses three dimensional distance`() {
+        val skill2 = Skill2State(sequence())
+        val farAbove = UUID.randomUUID()
+        val withinRadius = UUID.randomUUID()
+        skill2.tryCast(false)
+
+        assertEquals(1, skill2.tick(false).pulseIndex)
+        val targets = listOf(
+            CombatTarget(farAbove, Pos(0.0, 3.0, 0.0)),
+            CombatTarget(withinRadius, Pos(0.0, 2.5, 0.0)),
+        )
+        assertEquals(listOf(withinRadius), skill2.hitTargetsAtPulse(1, Pos.ZERO, targets))
+    }
+
+    @Test
     fun `early landing closes the storm without residual pulses`() {
         val skill2 = Skill2State(sequence())
         skill2.tryCast(false)
