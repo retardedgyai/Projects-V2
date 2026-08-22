@@ -36,4 +36,10 @@ class TwinBladesVfxTest {
         assertEquals(1.5, twinBladesVisualScale(3.0, 3.0))
         assertEquals(1.25, twinBladesVisualScale(1.25, 2.0))
     }
+
+    @Test
+    fun `weakpoint radius is stronger than normal hit and respects preset bound`() {
+        assertEquals(1.35, twinBladesWeakpointRadius(1.0))
+        assertEquals(2.0, twinBladesWeakpointRadius(1.5))
+    }
 }

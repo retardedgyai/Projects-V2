@@ -645,8 +645,12 @@ fun main() {
                 if (hit.weapon == WeaponType.TWIN_RODS) {
                     val target = tester ?: return@forEach
                     val vfxPlan = twinBladesHitVfxPlan(hit.weapon, confirmed = true, weakpoint = weakpoint != null)
+                    val visualScale = twinBladesVisualScale(
+                        width = target.boundingBox.maxX() - target.boundingBox.minX(),
+                        height = target.boundingBox.maxY() - target.boundingBox.minY(),
+                    )
                     if ("projects:class/twin_blades/weakpoint_hit" in vfxPlan.presets && weakpoint != null) {
-                        showTwinBladesWeakpointVfx(event.player, weakpoint, particleAnimations, particleManager)
+                        showTwinBladesWeakpointVfx(event.player, weakpoint, visualScale, particleAnimations, particleManager)
                     }
                     showTwinRodsHitVfx(
                         event.player,
@@ -658,7 +662,7 @@ fun main() {
                         ),
                         particleAnimations,
                         particleManager,
-                        twinBladesVisualScale(width = target.boundingBox.maxX() - target.boundingBox.minX(), height = target.boundingBox.maxY() - target.boundingBox.minY()),
+                        visualScale,
                     )
                 }
             }
@@ -1222,6 +1226,7 @@ private fun showWeakpointLabel(player: net.minestom.server.entity.Player, select
 private fun showTwinBladesWeakpointVfx(
     player: net.minestom.server.entity.Player,
     selection: FixedWeakpointSelection,
+    visualScale: Double,
     scheduler: ParticleAnimationScheduler,
     manager: ParticleManager,
 ) {
@@ -1234,7 +1239,12 @@ private fun showTwinBladesWeakpointVfx(
         origin = center,
         direction = player.position.direction(),
         manager = manager,
-        values = mapOf("duration" to 5.0, "colorPrimary" to 0xfffff5, "colorSecondary" to 0x25d9e8),
+        values = mapOf(
+            "radius" to twinBladesWeakpointRadius(visualScale),
+            "duration" to 5.0,
+            "colorPrimary" to 0xfffff5,
+            "colorSecondary" to 0x25d9e8,
+        ),
     )
 }
 

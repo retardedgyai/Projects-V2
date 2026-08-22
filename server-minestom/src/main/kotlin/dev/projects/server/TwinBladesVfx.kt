@@ -16,3 +16,6 @@ internal fun twinBladesHitVfxPlan(weapon: WeaponType, confirmed: Boolean, weakpo
 
 internal fun twinBladesVisualScale(width: Double, height: Double): Double =
     max(width, height * 0.55).coerceIn(1.0, 1.5)
+
+internal fun twinBladesWeakpointRadius(visualScale: Double): Double =
+    (1.35 * visualScale).coerceIn(0.0, 2.0)
