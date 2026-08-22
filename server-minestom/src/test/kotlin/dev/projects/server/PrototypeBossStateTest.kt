@@ -65,14 +65,19 @@ class PrototypeBossStateTest {
     }
 
     @Test
-    fun `skill1 and skill2 damage are server-owned and reset`() {
+    fun `skill1 and blade storm damage are server-owned and reset`() {
         val boss = PrototypeBossState()
         val targetId = UUID.randomUUID()
 
         assertEquals(20, boss.applySkill1Attack(1L, targetId))
         assertEquals(0, boss.applySkill1Attack(1L, targetId))
-        assertEquals(25, boss.applySkill2Attack(2L, targetId))
-        assertEquals(2955, boss.currentHealth)
+        (1..4).forEach { pulse ->
+            assertEquals(4, boss.applySkill2Pulse(2L, pulse, targetId))
+            assertEquals(0, boss.applySkill2Pulse(2L, pulse, targetId))
+        }
+        assertEquals(12, boss.applySkill2Landing(2L, targetId))
+        assertEquals(0, boss.applySkill2Landing(2L, targetId))
+        assertEquals(2952, boss.currentHealth)
 
         boss.reset()
 
@@ -149,7 +154,7 @@ class PrototypeBossStateTest {
         assertEquals(30, boss.applyPlayerAttack(1L, WeaponType.HEAVY_BLADE))
         assertEquals(30, boss.applySkill1Attack(2L, targetId))
         boss.setBreakActive(false)
-        assertEquals(25, boss.applySkill2Attack(3L, targetId))
+        assertEquals(12, boss.applySkill2Landing(3L, targetId))
     }
 
     @Test

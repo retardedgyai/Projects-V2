@@ -740,12 +740,20 @@ fun main() {
         }
         val skill2Tick = skill2.tick(event.player.isOnGround)
         if (skill2Tick.diveActive) {
-            event.player.setVelocity(Vec(0.0, -Skill2State.DOWNWARD_SPEED, 0.0))
+            event.player.setVelocity(Vec(0.0, skill2Tick.velocityY, 0.0))
             showSkill2DiveTrail(event.player)
+            skill2Tick.pulseIndex?.let { pulseIndex ->
+                val skillTargets = tester?.let { listOf(combatTarget(it)) } ?: emptyList()
+                skill2.hitTargetsAtPulse(pulseIndex, event.player.position, skillTargets).forEach { targetId ->
+                    val damage = prototypeBoss.applySkill2Pulse(skill2.castId, pulseIndex, targetId)
+                    if (damage > 0) updateBossBar()
+                }
+                showSkill2Pulse(event.player, pulseIndex, particleAnimations, particleManager)
+            }
         } else if (skill2Tick.landed) {
             val skillTargets = tester?.let { listOf(combatTarget(it)) } ?: emptyList()
             skill2.hitTargetsAtLanding(event.player.position, skillTargets).forEach { targetId ->
-                val damage = prototypeBoss.applySkill2Attack(skill2.castId, targetId)
+                val damage = prototypeBoss.applySkill2Landing(skill2.castId, targetId)
                 if (damage > 0) updateBossBar()
             }
             showSkill2Landing(event.player, particleAnimations, particleManager)
@@ -909,7 +917,7 @@ fun main() {
                                 skill1.cancelActiveMovement()
                                 skill3.cancelActiveMovement()
                                 event.player.setVelocity(Vec(0.0, -Skill2State.DOWNWARD_SPEED, 0.0))
-                                showSkill2Cast(event.player)
+                                showSkill2Cast(event.player, particleAnimations, particleManager)
                             }
                         }
                         ClassSkillSlot.SKILL_3 -> {
@@ -1445,13 +1453,31 @@ private fun showSkill1Launch(
     }
 }
 
-private fun showSkill2Cast(player: net.minestom.server.entity.Player) {
+private fun showSkill2Cast(
+    player: net.minestom.server.entity.Player,
+    scheduler: ParticleAnimationScheduler,
+    manager: ParticleManager,
+) {
     val origin = player.position.add(0.0, 0.3, 0.0)
+    startParticlePreset(
+        player = player,
+        id = "projects:combat/charge_inward",
+        scheduler = scheduler,
+        origin = origin,
+        direction = Vec(0.0, 1.0, 0.0),
+        manager = manager,
+        values = mapOf(
+            "radius" to 2.25,
+            "duration" to 4.0,
+            "colorPrimary" to 0x168cff,
+            "colorSecondary" to 0x071525,
+        ),
+    )
     sendSkillParticle(player, Particle.END_ROD, origin)
     sendSkillParticle(player, Particle.ENCHANT, origin.add(0.0, 0.4, 0.0))
     sendSkillParticle(player, Particle.ELECTRIC_SPARK, origin.add(0.18, 0.2, 0.0))
     sendSkillParticle(player, Particle.ELECTRIC_SPARK, origin.add(-0.18, 0.2, 0.0))
-    playSkillSound(player, "entity.phantom.flap", origin, 0.45f, 1.2f)
+    playSkillSound(player, "item.trident.throw", origin, 0.24f, 0.78f)
 }
 
 private fun showSkill2DiveTrail(player: net.minestom.server.entity.Player) {
@@ -1464,7 +1490,36 @@ private fun showSkill2DiveTrail(player: net.minestom.server.entity.Player) {
         sendSkillParticle(player, Particle.ELECTRIC_SPARK, position.add(radius, y - 0.08, 0.0))
         sendSkillParticle(player, Particle.ELECTRIC_SPARK, position.add(-radius, y - 0.08, 0.0))
     }
-    sendSkillParticle(player, Particle.CLOUD, position.add(0.0, 1.25, 0.0))
+}
+
+private fun showSkill2Pulse(
+    player: net.minestom.server.entity.Player,
+    pulseIndex: Int,
+    scheduler: ParticleAnimationScheduler,
+    manager: ParticleManager,
+) {
+    val center = player.position.add(0.0, 0.9, 0.0)
+    val direction = FixedAttackTester.normalizeHorizontal(player.position.direction())
+    startParticlePreset(
+        player = player,
+        id = "projects:class/twin_blades/skill2_pulse",
+        scheduler = scheduler,
+        origin = center,
+        direction = direction,
+        manager = manager,
+        values = mapOf(
+            "pulse" to pulseIndex,
+            "duration" to 2.0,
+            "colorPrimary" to when (pulseIndex) {
+                1 -> 0x168cff
+                2 -> 0x70e9ff
+                3 -> 0x8fffff
+                else -> 0xe8fdff
+            },
+            "colorSecondary" to 0x071525,
+        ),
+    )
+    playTwinBladesSounds(player, center, twinBladesSkill2PulseSoundPlan(pulseIndex))
 }
 
 private fun showSkill2Landing(
@@ -1475,15 +1530,19 @@ private fun showSkill2Landing(
     val center = player.position.add(0.0, 0.12, 0.0)
     startParticlePreset(
         player = player,
-        id = "projects:combat/landing_burst",
+        id = "projects:class/twin_blades/skill2_finisher",
         scheduler = scheduler,
         origin = center,
         direction = Vec(0.0, 1.0, 0.0),
         manager = manager,
-        values = mapOf("radius" to 4.0, "duration" to 5.0),
+        values = mapOf(
+            "radius" to 4.0,
+            "duration" to 6.0,
+            "colorPrimary" to 0xe8fdff,
+            "colorSecondary" to 0x071525,
+        ),
     )
-    playSkillSound(player, "entity.generic.explode", center, 0.85f, 0.85f)
-    playSkillSound(player, "entity.player.attack.crit", center, 0.5f, 1.3f)
+    playTwinBladesSounds(player, center, twinBladesSkill2LandingSoundPlan())
 }
 
 private fun showSkill3Cast(player: net.minestom.server.entity.Player) {

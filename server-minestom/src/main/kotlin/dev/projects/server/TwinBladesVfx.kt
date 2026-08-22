@@ -17,6 +17,28 @@ internal data class TwinBladesSoundPlan(
     val weakpointAccent: List<TwinBladesSoundCue>,
 )
 
+internal fun twinBladesSkill2PulseSoundPlan(pulseIndex: Int): List<TwinBladesSoundCue> = when (pulseIndex.coerceIn(1, 4)) {
+    1 -> listOf(TwinBladesSoundCue("item.trident.throw", 0.18f, 0.92f))
+    2 -> listOf(TwinBladesSoundCue("item.trident.throw", 0.20f, 1.06f))
+    3 -> listOf(
+        TwinBladesSoundCue("item.trident.throw", 0.24f, 0.82f),
+        TwinBladesSoundCue("item.axe.scrape", 0.13f, 1.12f),
+    )
+    else -> listOf(
+        TwinBladesSoundCue("item.trident.throw", 0.28f, 0.70f),
+        TwinBladesSoundCue("item.axe.scrape", 0.18f, 0.96f),
+        TwinBladesSoundCue("item.trident.riptide_1", 0.12f, 1.34f),
+    )
+}
+
+internal fun twinBladesSkill2LandingSoundPlan(): List<TwinBladesSoundCue> = listOf(
+    TwinBladesSoundCue("item.trident.throw", 0.42f, 0.52f),
+    TwinBladesSoundCue("item.trident.throw", 0.30f, 1.18f),
+    TwinBladesSoundCue("item.trident.hit", 0.52f, 0.74f),
+    TwinBladesSoundCue("item.trident.riptide_1", 0.24f, 0.96f),
+    TwinBladesSoundCue("item.axe.scrape", 0.16f, 0.72f),
+)
+
 internal const val TWIN_BLADES_COMBO_RESET_TICKS = 12
 internal const val TWIN_BLADES_SWING_FORWARD_OFFSET = 1.25
 
