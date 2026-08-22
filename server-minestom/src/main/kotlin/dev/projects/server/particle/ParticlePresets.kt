@@ -965,44 +965,50 @@ private fun twinBladesSkill3Pulse(
 ): ParticleEffect {
     val (forward, right, up) = basis(parameters.direction)
     return when (pulse) {
-        1 -> twinBladesSkill3Slash(parameters, parameters.origin, 42.0, 4.6, durationTicks, 0x126bff)
+        1 -> ParticleParallel.of(
+            twinBladesSkill3Slash(parameters, parameters.origin, 42.0, 5.4, durationTicks, 0x126bff),
+            twinBladesSkill3Slash(parameters, parameters.origin.add(right.x() * -0.22, up.y() * 0.18, right.z() * -0.22), 18.0, 2.45, 1, 0x168cff),
+        )
         2 -> ParticleParallel.of(
-            twinBladesSkill3Slash(parameters, parameters.origin, -48.0, 4.35, durationTicks, 0x168cff),
+            twinBladesSkill3Slash(parameters, parameters.origin, -48.0, 5.15, durationTicks, 0x168cff),
             ParticleSequence.of(
                 ParticleDelay(1),
-                twinBladesSkill3Slash(parameters, parameters.origin.add(right.x() * 0.28, up.y() * 0.18, right.z() * 0.28), -28.0, 3.1, 1, 0x1259d8),
+                twinBladesSkill3Slash(parameters, parameters.origin.add(right.x() * 0.34, up.y() * 0.18, right.z() * 0.34), -28.0, 3.85, 1, 0x1259d8),
             ),
+            ParticleGeometry.drawCleaveArc(parameters.origin, parameters.direction, 1.35, 0.0, -58.0, 20.0, 1, degreesPerTick = 78.0) { _, _, progress -> ParticleStyle(dust(lerpColor(0x071525, 0x70e9ff, progress), 0.22f)) },
         )
         3 -> ParticleParallel.of(
             ParticleCircle(
                 parameters.origin,
-                radius = 1.15,
+                radius = 1.45,
                 axis1 = right,
                 axis2 = up,
-                countPerMeter = 8.0,
+                countPerMeter = 10.0,
                 includeEnd = false,
                 startDegrees = -25.0,
                 endDegrees = 205.0,
                 style = ParticleStyle(dust(0x168cff, 0.30f), importance = ParticleImportance.COMBAT_FEEDBACK),
             ),
-            twinBladesSkill3Slash(parameters, parameters.origin, 0.0, 3.8, durationTicks, 0x1259d8),
-            twinBladesSkill3Slash(parameters, parameters.origin, 180.0, 3.3, durationTicks, 0x071525),
+            twinBladesSkill3Slash(parameters, parameters.origin, 0.0, 4.85, durationTicks, 0x1259d8),
+            twinBladesSkill3Slash(parameters, parameters.origin, 180.0, 4.25, durationTicks, 0x071525),
+            ParticleGeometry.drawCleaveArc(parameters.origin, parameters.direction, 1.7, 0.0, 35.0, 145.0, 2, degreesPerTick = 55.0) { _, _, progress -> ParticleStyle(dust(lerpColor(0x126bff, 0x8fffff, progress), 0.2f)) },
         )
         else -> ParticleParallel.of(
-            twinBladesSkill3Slash(parameters, parameters.origin, 90.0, 4.9, durationTicks, 0x46dfff),
+            twinBladesSkill3Slash(parameters, parameters.origin, 90.0, 5.85, durationTicks, 0x46dfff),
             ParticleLine(
-                parameters.origin.add(up.x() * -1.9, up.y() * -1.9, up.z() * -1.9),
-                parameters.origin.add(up.x() * 2.0, up.y() * 2.0, up.z() * 2.0),
+                parameters.origin.add(up.x() * -2.25, up.y() * -2.25, up.z() * -2.25),
+                parameters.origin.add(up.x() * 2.35, up.y() * 2.35, up.z() * 2.35),
                 countPerMeter = 13.0,
                 durationTicks = durationTicks,
                 style = ParticleStyle(dust(0x8fffff, 0.34f), importance = ParticleImportance.COMBAT_FEEDBACK),
             ),
+            twinBladesSkill3Slash(parameters, parameters.origin.add(right.x() * 0.3, up.y() * -0.2, right.z() * 0.3), 118.0, 3.2, 1, 0x168cff),
             ParticleExplosion(
                 parameters.origin.add(forward.x() * 0.2, forward.y() * 0.2, forward.z() * 0.2),
                 radius = 0.55,
                 sphere = true,
                 particle = Particle.ELECTRIC_SPARK,
-                count = 12,
+                count = 16,
                 speed = 0.14f,
                 seed = parameters.seedValue() + 71,
             ),
@@ -1165,39 +1171,59 @@ private fun buildCatalogue(): List<ParticlePreset> {
                val transform = ParticleTransform.fromDirection(p.origin, p.direction)
                ParticleParallel.of(
                    ParticleRibbon(
-                       path = { progress -> transform.localPoint(Vec(0.0, 0.0, -(0.12 + progress * 1.25))) },
-                       sampleCount = 10,
-                       lanes = 3,
-                       width = KeyframeCurve.double(
-                           CurveKeyframe(0.0, 0.22),
-                           CurveKeyframe(0.5, 0.14),
-                           CurveKeyframe(1.0, 0.02),
+                        path = { progress -> transform.localPoint(Vec(0.0, 0.0, -(0.12 + progress * 2.05))) },
+                        sampleCount = 14,
+                        lanes = 4,
+                        width = KeyframeCurve.double(
+                            CurveKeyframe(0.0, 0.3),
+                            CurveKeyframe(0.5, 0.19),
+                            CurveKeyframe(1.0, 0.03),
                           easing = Easing.SINE,
                       ),
                       durationTicks = p.ticks(),
                       styleAt = { progress, laneProgress ->
                           val color = if (laneProgress == 0.5) p.color("colorPrimary", 0x168cff) else p.color("colorSecondary", 0x050a14)
-                          ParticleStyle(dust(color, (0.26 * (1.0 - progress)).coerceAtLeast(0.08).toFloat()))
-                       },
-                   ),
-                   ParticleSpiral(
+                           ParticleStyle(dust(color, (0.32 * (1.0 - progress)).coerceAtLeast(0.09).toFloat()))
+                        },
+                    ),
+                    ParticleRibbon(
+                        path = { progress -> transform.localPoint(Vec(0.34, 0.08, -(0.2 + progress * 1.8))) },
+                        sampleCount = 12,
+                        lanes = 2,
+                        width = KeyframeCurve.double(
+                            CurveKeyframe(0.0, 0.16),
+                            CurveKeyframe(0.55, 0.1),
+                            CurveKeyframe(1.0, 0.01),
+                            easing = Easing.SINE,
+                        ),
+                        durationTicks = p.ticks(),
+                        styleAt = { progress, _ -> ParticleStyle(dust(p.color("colorPrimary", 0x168cff), (0.24 * (1.0 - progress)).coerceAtLeast(0.07).toFloat())) },
+                    ),
+                    ParticleSpiral(
                        origin = p.origin,
                        axis = p.direction,
-                       radius = 0.18,
+                        radius = 0.28,
                        curveAngle = PI * 1.5,
                        curves = 1.0,
-                       axialLength = 0.9,
+                        axialLength = 1.35,
                        durationTicks = p.ticks(),
-                       style = ParticleStyle(dust(p.color("colorPrimary", 0x168cff), 0.18f)),
+                        style = ParticleStyle(dust(p.color("colorPrimary", 0x168cff), 0.22f)),
+                    ),
+                    ParticleExplosion(
+                       transform.localPoint(Vec(0.0, 0.0, -0.32)),
+                       count = 4,
+                       speed = 0.045f,
+                       particle = Particle.ELECTRIC_SPARK,
+                       seed = p.seedValue(),
                    ),
                    ParticleExplosion(
-                      transform.localPoint(Vec(0.0, 0.0, -0.28)),
-                      count = 2,
-                      speed = 0.035f,
-                      particle = Particle.ELECTRIC_SPARK,
-                      seed = p.seedValue(),
-                  ),
-              )
+                       transform.localPoint(Vec(0.0, 0.0, -0.85)),
+                       count = 3,
+                       speed = 0.06f,
+                       particle = Particle.END_ROD,
+                       seed = p.seedValue() + 17,
+                   ),
+               )
           },
           preset(
               "projects:class/twin_blades/skill3_hit",
