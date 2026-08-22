@@ -212,7 +212,7 @@ private fun twinBladesRibbon(
     val angle = Math.toRadians(angleDegrees)
     val slashDirection = right.mul(cos(angle)).add(up.mul(sin(angle)))
     val safeLength = length.coerceAtLeast(0.01)
-    val samples = ceil(safeLength / 0.08).toInt().coerceIn(16, 48)
+    val samples = ceil(safeLength / 0.065).toInt().coerceIn(16, 48)
     return ParticleRibbon(
         path = { progress ->
             val distance = (progress - 0.5) * safeLength
@@ -235,9 +235,9 @@ private fun twinBladesRibbon(
                 else -> lerpColor(0x126bff, 0x168cff, progress)
             }
             val dustScale = when {
-                edge -> 1.2f
-                core -> 0.72f
-                else -> 0.96f
+                edge -> 1.45f
+                core -> 0.84f
+                else -> 1.12f
             }
             ParticleStyle(dust(color, dustScale), count = if (core) 2 else 1)
         },
@@ -305,7 +305,7 @@ private fun buildCatalogue(): List<ParticlePreset> {
               combat + setOf("class", "twin_blades"),
               listOf(number("length", 2.4, 0.0, 4.0), number("angle", 35.0, -180.0, 180.0)) + colors + common,
           ) { p ->
-               twinBladesRibbon(p, p.number("angle", 35.0), p.length(2.4), 0.4, p.ticks().coerceAtMost(3))
+               twinBladesRibbon(p, p.number("angle", 35.0), p.length(2.4), 0.68, p.ticks().coerceAtMost(3))
           },
          preset(
              "projects:class/twin_blades/aa_hit",
@@ -315,7 +315,7 @@ private fun buildCatalogue(): List<ParticlePreset> {
           ) { p ->
               val duration = p.ticks()
               ParticleBatch.of(
-                  twinBladesRibbon(p, p.number("angle", 35.0), p.length(3.2), 0.58, duration),
+                   twinBladesRibbon(p, p.number("angle", 35.0), p.length(3.35), 0.9, duration),
                   ParticleGeometry.drawCleaveArc(
                       p.origin,
                       p.direction,
@@ -323,11 +323,24 @@ private fun buildCatalogue(): List<ParticlePreset> {
                       0.0,
                       -52.0,
                       52.0,
-                      2,
-                      ringSpacing = 0.16,
+                       3,
+                       ringSpacing = 0.18,
                       degreesPerTick = 104.0 / duration,
                   ) { _, ring, progress ->
-                       ParticleStyle(dust(if (ring == 0) lerpColor(0x168cff, 0x70e9ff, progress) else 0x071525, if (ring == 0) 0.62f else 0.9f))
+                        ParticleStyle(
+                            dust(
+                                when (ring) {
+                                    0 -> lerpColor(0x168cff, 0x70e9ff, progress)
+                                    1 -> lerpColor(0x126bff, 0x168cff, progress)
+                                    else -> 0x071525
+                                },
+                                when (ring) {
+                                    0 -> 0.82f
+                                    1 -> 1.0f
+                                    else -> 1.25f
+                                },
+                            ),
+                        )
                   },
                   ParticleExplosion(p.origin, count = 5, speed = 0.1f, particle = Particle.ELECTRIC_SPARK, seed = p.seedValue()),
               )
@@ -341,9 +354,9 @@ private fun buildCatalogue(): List<ParticlePreset> {
               val duration = p.ticks().coerceIn(4, 6)
               val radius = p.radius(1.35)
               ParticleBatch.of(
-                  twinBladesRibbon(p, 42.0, radius, 0.72, duration),
-                  twinBladesRibbon(p, -42.0, radius, 0.72, duration),
-                  ParticleExplosion(p.origin, radius = radius * 0.45, sphere = true, count = 7, speed = 0.08f, particle = Particle.END_ROD, seed = p.seedValue()),
+                  twinBladesRibbon(p, 42.0, radius, 1.05, duration),
+                  twinBladesRibbon(p, -42.0, radius, 1.05, duration),
+                  ParticleExplosion(p.origin, radius = radius * 0.5, sphere = true, count = 7, speed = 0.08f, particle = Particle.END_ROD, seed = p.seedValue()),
               )
           },
          preset("projects:combat/slash_heavy", "Slash Heavy", combat, listOf(number("length", 3.0, 0.0, 10.0)) + colors + common) { p -> ParticleBatch.of(ParticleGeometry.drawParticleLineSlash(p.origin, p.direction, -28.0, p.length(3.0), 0.16, p.ticks()) { _, middle, _, _ -> ParticleStyle(dust(lerpColor(p.color("colorSecondary", 0xff5522), p.color("colorPrimary", 0xffffff), middle), 0.38f), if (middle > 0.6) 3 else 1) }, ParticleGeometry.drawCleaveArc(p.origin, p.direction, p.radius(1.0), 0.0, -75.0, 75.0, 2, degreesPerTick = 150.0 / p.ticks()), ParticleExplosion(p.origin, radius = 0.4, sphere = true, count = 8, particle = Particle.CRIT, speed = 0.12f, seed = p.seedValue())) },

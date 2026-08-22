@@ -1263,7 +1263,7 @@ private fun showTwinRodsHitVfx(
         origin = center,
         direction = facing,
         manager = manager,
-        values = mapOf("length" to 3.2 * scale, "radius" to 1.25 * scale, "duration" to 4.0, "colorPrimary" to 0x168cff, "colorSecondary" to 0x071525),
+        values = mapOf("length" to 3.35, "radius" to 1.3, "scale" to scale, "duration" to 4.0, "colorPrimary" to 0x168cff, "colorSecondary" to 0x071525),
     )
     playSkillSound(player, "entity.player.attack.sweep", center, 0.35f, 1.55f)
     playSkillSound(player, "entity.player.attack.crit", center, 0.3f, 1.1f)
@@ -1294,7 +1294,7 @@ private fun showTwinBladesSwingVfx(
         direction = direction,
         manager = manager,
         values = mapOf(
-            "length" to 2.1,
+            "length" to 2.45,
             "angle" to angle,
             "duration" to 3.0,
             "colorPrimary" to 0x70e9ff,
