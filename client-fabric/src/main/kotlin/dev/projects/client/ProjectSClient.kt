@@ -568,7 +568,6 @@ object ProjectSClient : ClientModInitializer {
         val player = client.player
         if (player?.mainHandItem?.item == Items.IRON_SWORD) {
             hitMarkerTicksRemaining = 3
-            player.playSound(SoundEvents.PLAYER_ATTACK_CRIT, 0.9f, 1.08f)
             return
         }
         showHeavyBladeHitEffect(client, message)

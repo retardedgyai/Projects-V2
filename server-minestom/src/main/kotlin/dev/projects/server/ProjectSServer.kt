@@ -638,10 +638,16 @@ fun main() {
             }
             if (damage > 0) {
                 updateBossBar()
-                if (weakpoint != null) showWeakpointHit(event.player, weakpoint)
+                if (weakpoint != null) {
+                    if (hit.weapon == WeaponType.TWIN_RODS) showWeakpointLabel(event.player, weakpoint)
+                    else showWeakpointHit(event.player, weakpoint)
+                }
                 if (hit.weapon == WeaponType.TWIN_RODS) {
                     val target = tester ?: return@forEach
-                    if (weakpoint != null) showTwinBladesWeakpointVfx(event.player, weakpoint, particleAnimations, particleManager)
+                    val vfxPlan = twinBladesHitVfxPlan(hit.weapon, confirmed = true, weakpoint = weakpoint != null)
+                    if ("projects:class/twin_blades/weakpoint_hit" in vfxPlan.presets && weakpoint != null) {
+                        showTwinBladesWeakpointVfx(event.player, weakpoint, particleAnimations, particleManager)
+                    }
                     showTwinRodsHitVfx(
                         event.player,
                         weakpoint?.center ?: target.position.add(0.0, 1.1, 0.0),
@@ -652,6 +658,7 @@ fun main() {
                         ),
                         particleAnimations,
                         particleManager,
+                        twinBladesVisualScale(width = target.boundingBox.maxX() - target.boundingBox.minX(), height = target.boundingBox.maxY() - target.boundingBox.minY()),
                     )
                 }
             }
@@ -1170,7 +1177,7 @@ private fun showWeakpointHit(
     selection: FixedWeakpointSelection,
 ) {
     val center = selection.center
-    player.sendMessage(Component.text("[Tester] WEAKPOINT: ${selection.weakpoint}"))
+    showWeakpointLabel(player, selection)
     player.sendPacket(
         ParticlePacket(
             Particle.CRIT,
@@ -1208,6 +1215,10 @@ private fun showWeakpointHit(
     )
 }
 
+private fun showWeakpointLabel(player: net.minestom.server.entity.Player, selection: FixedWeakpointSelection) {
+    player.sendMessage(Component.text("[Tester] WEAKPOINT: ${selection.weakpoint}"))
+}
+
 private fun showTwinBladesWeakpointVfx(
     player: net.minestom.server.entity.Player,
     selection: FixedWeakpointSelection,
@@ -1233,6 +1244,7 @@ private fun showTwinRodsHitVfx(
     facing: Vec,
     scheduler: ParticleAnimationScheduler,
     manager: ParticleManager,
+    scale: Double,
 ) {
     startParticlePreset(
         player = player,
@@ -1241,7 +1253,7 @@ private fun showTwinRodsHitVfx(
         origin = center,
         direction = facing,
         manager = manager,
-        values = mapOf("length" to 1.65, "duration" to 4.0, "colorPrimary" to 0xfffff0, "colorSecondary" to 0xff3a12),
+        values = mapOf("length" to 2.55 * scale, "radius" to 1.1 * scale, "duration" to 4.0, "colorPrimary" to 0x168cff, "colorSecondary" to 0x071525),
     )
     playSkillSound(player, "entity.player.attack.sweep", center, 0.35f, 1.55f)
     playSkillSound(player, "entity.player.attack.crit", center, 0.3f, 1.1f)
@@ -1257,8 +1269,8 @@ private fun showTwinBladesSwingVfx(
 ) {
     if (state.activeProfile?.weapon != WeaponType.TWIN_RODS || events.none { it is CombatEvent.Started }) return
     val direction = player.position.direction()
-    val angle = angles[player.uuid] ?: 35.0
-    angles[player.uuid] = -angle
+    val angle = nextTwinBladesSwingAngle(angles[player.uuid])
+    angles[player.uuid] = angle
     val origin = player.position.add(
         direction.x() * 0.8,
         player.eyeHeight * 0.72 + direction.y() * 0.8,
@@ -1272,11 +1284,11 @@ private fun showTwinBladesSwingVfx(
         direction = direction,
         manager = manager,
         values = mapOf(
-            "length" to 1.75,
+            "length" to 2.1,
             "angle" to angle,
             "duration" to 3.0,
-            "colorPrimary" to 0xeaffff,
-            "colorSecondary" to 0x27dbe8,
+            "colorPrimary" to 0x70e9ff,
+            "colorSecondary" to 0x071525,
         ),
     )
 }
