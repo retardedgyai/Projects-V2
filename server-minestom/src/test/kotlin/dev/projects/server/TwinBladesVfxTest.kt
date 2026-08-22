@@ -206,4 +206,15 @@ class TwinBladesVfxTest {
         )
         assertTrue(plan.confirmedHit.maxOf { it.volume } > plan.bounce.maxOf { it.volume })
     }
+
+    @Test
+    fun `skill3 pulse sound layers crescendo into a distinct finisher`() {
+        val pulses = (1..4).map(::twinBladesSkill3PulseSoundPlan)
+        assertTrue(pulses[0].size < pulses[3].size)
+        assertTrue(pulses[3].any { it.key == "item.trident.riptide_1" })
+        val finisher = twinBladesSkill3FinisherSoundPlan()
+        assertTrue(finisher.any { it.key == "entity.player.attack.strong" })
+        assertTrue(finisher.none { it.key == "block.note_block.chime" })
+        assertTrue(finisher.maxOf { it.volume } > pulses[3].maxOf { it.volume })
+    }
 }

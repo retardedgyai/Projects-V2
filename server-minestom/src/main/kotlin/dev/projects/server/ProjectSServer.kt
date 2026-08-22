@@ -764,55 +764,90 @@ fun main() {
             finishEncounter()
             return@addListener
         }
-        val previousSkill3Phase = skill3.phase
-        val skill3Tick = skill3.tick(event.player.isOnGround, event.player.velocity.y())
-        if (skill3Tick.dashActive) {
-            val direction = requireNotNull(skill3Tick.dashDirection)
-            val start = event.player.position
-            val end = start.add(
-                direction.x() * Skill3State.DASH_SPEED / ServerFlag.SERVER_TICKS_PER_SECOND,
-                direction.y() * Skill3State.DASH_SPEED / ServerFlag.SERVER_TICKS_PER_SECOND,
-                direction.z() * Skill3State.DASH_SPEED / ServerFlag.SERVER_TICKS_PER_SECOND,
-            )
-            val skillTargets = tester?.let { listOf(combatTarget(it)) } ?: emptyList()
-            val hitTargets = skill3.hitTargetsOnSegment(start, end, skillTargets)
-            hitTargets.forEach { targetId ->
-                val damage = prototypeBoss.applySkill3Attack(skill3.castId, targetId)
-                if (damage > 0) updateBossBar()
-            }
-            if (hitTargets.isNotEmpty()) {
-                skill3.finishDashOnHit()
-                event.player.setVelocity(skill3HitBounceVelocity(direction))
-                skillTargets.firstOrNull { it.id in hitTargets }?.let { target ->
-                    showSkill3HitVfx(
-                        event.player,
-                        start,
-                        direction,
-                        target,
-                        particleAnimations,
-                        particleManager,
+        val skill3Target = tester?.let(::combatTarget)
+        if (skill3.phase == Skill3Phase.MULTIHIT && skill3.primaryTargetId != skill3Target?.id) {
+            // A removed target must not receive delayed pulses or a finisher.
+            skill3.cancelActiveMovement()
+        } else {
+            val previousSkill3Phase = skill3.phase
+            val skill3Tick = skill3.tick(event.player.isOnGround, event.player.velocity.y())
+            if (skill3Tick.dashActive) {
+                val direction = requireNotNull(skill3Tick.dashDirection)
+                val start = event.player.position
+                val end = start.add(
+                    direction.x() * Skill3State.DASH_SPEED / ServerFlag.SERVER_TICKS_PER_SECOND,
+                    direction.y() * Skill3State.DASH_SPEED / ServerFlag.SERVER_TICKS_PER_SECOND,
+                    direction.z() * Skill3State.DASH_SPEED / ServerFlag.SERVER_TICKS_PER_SECOND,
+                )
+                val skillTargets = skill3Target?.let(::listOf) ?: emptyList()
+                val hitTargets = skill3.hitTargetsOnSegment(start, end, skillTargets)
+                if (hitTargets.isNotEmpty()) {
+                    val target = skillTargets.first { it.id == hitTargets.first() }
+                    if (skill3.finishDashOnHit(target.id)) {
+                        event.player.setVelocity(Vec.ZERO)
+                        showSkill3CatchVfx(
+                            event.player,
+                            start,
+                            direction,
+                            target,
+                            particleAnimations,
+                            particleManager,
+                        )
+                    }
+                } else {
+                    event.player.setVelocity(
+                        Vec(
+                            direction.x() * Skill3State.DASH_SPEED,
+                            direction.y() * Skill3State.DASH_SPEED,
+                            direction.z() * Skill3State.DASH_SPEED,
+                        ),
                     )
                 }
-            } else {
-                event.player.setVelocity(
-                    Vec(
-                        direction.x() * Skill3State.DASH_SPEED,
-                        direction.y() * Skill3State.DASH_SPEED,
-                        direction.z() * Skill3State.DASH_SPEED,
-                    ),
-                )
+                showSkill3DashTrail(event.player, start, direction, particleAnimations, particleManager)
+            } else if (skill3Tick.phase == Skill3Phase.MULTIHIT) {
+                val target = skill3Target?.takeIf { it.id == skill3.primaryTargetId }
+                if (target == null) {
+                    skill3.cancelActiveMovement()
+                } else {
+                    skill3Tick.pulseIndex?.let { pulseIndex ->
+                        val damage = prototypeBoss.applySkill3Pulse(skill3.castId, pulseIndex, target.id)
+                        if (damage > 0) updateBossBar()
+                        showSkill3PulseVfx(
+                            event.player,
+                            target,
+                            requireNotNull(skill3Tick.dashDirection),
+                            pulseIndex,
+                            particleAnimations,
+                            particleManager,
+                        )
+                    }
+                    if (skill3Tick.finisherActive) {
+                        val damage = prototypeBoss.applySkill3Finisher(skill3.castId, target.id)
+                        if (damage > 0) updateBossBar()
+                        sendResourceSnapshot(event.player)
+                        event.player.setVelocity(skill3HitBounceVelocity(requireNotNull(skill3Tick.dashDirection)))
+                        showSkill3FinisherVfx(
+                            event.player,
+                            target,
+                            requireNotNull(skill3Tick.dashDirection),
+                            particleAnimations,
+                            particleManager,
+                        )
+                    } else {
+                        event.player.setVelocity(Vec.ZERO)
+                    }
+                }
+            } else if (skill3Tick.phase == Skill3Phase.HOVER) {
+                if (skill3Tick.stopHorizontalVelocity) {
+                    event.player.setVelocity(Vec.ZERO)
+                } else {
+                    event.player.setVelocity(skill3HoverVelocity(event.player.velocity, skill3Tick.velocityY))
+                }
             }
-            showSkill3DashTrail(event.player, start, direction, particleAnimations, particleManager)
-        } else if (skill3Tick.phase == Skill3Phase.HOVER) {
-            if (skill3Tick.stopHorizontalVelocity) {
-                event.player.setVelocity(Vec.ZERO)
-            } else {
-                event.player.setVelocity(skill3HoverVelocity(event.player.velocity, skill3Tick.velocityY))
+            if (previousSkill3Phase == Skill3Phase.DASH && skill3.phase == Skill3Phase.HOVER) {
+                showSkill3Hover(event.player)
+                sendResourceSnapshot(event.player)
             }
-        }
-        if (previousSkill3Phase == Skill3Phase.DASH && skill3.phase == Skill3Phase.HOVER) {
-            showSkill3Hover(event.player)
-            sendResourceSnapshot(event.player)
         }
         if (!prototypeBoss.isEncounterRunning) {
             finishEncounter()
@@ -1581,7 +1616,7 @@ private fun showSkill3DashTrail(
     )
 }
 
-private fun showSkill3HitVfx(
+private fun showSkill3CatchVfx(
     player: net.minestom.server.entity.Player,
     dashOrigin: Pos,
     dashDirection: Vec,
@@ -1604,19 +1639,62 @@ private fun showSkill3HitVfx(
             "duration" to visual.primaryDuration.toDouble(),
         ),
     )
+    playTwinBladesSounds(player, contact, twinBladesSkill3SoundPlan().confirmedHit)
+}
+
+private fun showSkill3PulseVfx(
+    player: net.minestom.server.entity.Player,
+    target: CombatTarget,
+    direction: Vec,
+    pulseIndex: Int,
+    scheduler: ParticleAnimationScheduler,
+    manager: ParticleManager,
+) {
+    startParticlePreset(
+        player = player,
+        id = "projects:class/twin_blades/skill3_pulse",
+        scheduler = scheduler,
+        origin = target.position,
+        direction = direction,
+        manager = manager,
+        values = mapOf(
+            "pulse" to pulseIndex.toDouble(),
+            "duration" to 2.0,
+        ),
+    )
+    playTwinBladesSounds(player, target.position, twinBladesSkill3PulseSoundPlan(pulseIndex))
+}
+
+private fun showSkill3FinisherVfx(
+    player: net.minestom.server.entity.Player,
+    target: CombatTarget,
+    direction: Vec,
+    scheduler: ParticleAnimationScheduler,
+    manager: ParticleManager,
+) {
+    val contact = target.position
+    val visual = TwinBladesSkill3Visual()
+    startParticlePreset(
+        player = player,
+        id = "projects:class/twin_blades/skill3_finisher",
+        scheduler = scheduler,
+        origin = contact,
+        direction = direction,
+        manager = manager,
+        values = mapOf("length" to visual.finisherLength, "duration" to visual.finisherDuration.toDouble()),
+    )
     val recoilOrigin = player.position.add(0.0, 0.8, 0.0)
     startParticlePreset(
         player = player,
         id = "projects:class/twin_blades/skill3_recoil",
         scheduler = scheduler,
         origin = recoilOrigin,
-        direction = dashDirection.mul(-1.0),
+        direction = direction.mul(-1.0),
         manager = manager,
         values = mapOf("duration" to visual.recoilDuration.toDouble()),
     )
-    val sounds = twinBladesSkill3SoundPlan()
-    playTwinBladesSounds(player, contact, sounds.confirmedHit)
-    playTwinBladesSounds(player, recoilOrigin, sounds.bounce)
+    playTwinBladesSounds(player, contact, twinBladesSkill3FinisherSoundPlan())
+    playTwinBladesSounds(player, recoilOrigin, twinBladesSkill3SoundPlan().bounce)
 }
 
 private fun showSkill3Hover(player: net.minestom.server.entity.Player) {

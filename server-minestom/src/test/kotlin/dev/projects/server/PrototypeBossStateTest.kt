@@ -55,13 +55,17 @@ class PrototypeBossStateTest {
     }
 
     @Test
-    fun `skill3 deals thirty damage once per cast and target`() {
+    fun `skill3 deals four pulses and one finisher once per execution`() {
         val boss = PrototypeBossState()
         val targetId = UUID.randomUUID()
 
-        assertEquals(30, boss.applySkill3Attack(1L, targetId))
-        assertEquals(0, boss.applySkill3Attack(1L, targetId))
-        assertEquals(2970, boss.currentHealth)
+        (1..4).forEach { pulse ->
+            assertEquals(6, boss.applySkill3Pulse(1L, pulse, targetId))
+            assertEquals(0, boss.applySkill3Pulse(1L, pulse, targetId))
+        }
+        assertEquals(12, boss.applySkill3Finisher(1L, targetId))
+        assertEquals(0, boss.applySkill3Finisher(1L, targetId))
+        assertEquals(2964, boss.currentHealth)
     }
 
     @Test

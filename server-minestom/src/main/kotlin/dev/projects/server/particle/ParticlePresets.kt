@@ -958,6 +958,93 @@ private fun twinBladesSkill3Slash(
     ) { _, middle, _, _ -> ParticleStyle(dust(parameters.color("colorPrimary", 0x8fffff), (0.16 + middle * 0.12).toFloat())) },
 )
 
+private fun twinBladesSkill3Pulse(
+    parameters: ParticlePresetParameters,
+    pulse: Int,
+    durationTicks: Int,
+): ParticleEffect {
+    val (forward, right, up) = basis(parameters.direction)
+    return when (pulse) {
+        1 -> twinBladesSkill3Slash(parameters, parameters.origin, 42.0, 4.6, durationTicks, 0x126bff)
+        2 -> ParticleParallel.of(
+            twinBladesSkill3Slash(parameters, parameters.origin, -48.0, 4.35, durationTicks, 0x168cff),
+            ParticleSequence.of(
+                ParticleDelay(1),
+                twinBladesSkill3Slash(parameters, parameters.origin.add(right.x() * 0.28, up.y() * 0.18, right.z() * 0.28), -28.0, 3.1, 1, 0x1259d8),
+            ),
+        )
+        3 -> ParticleParallel.of(
+            ParticleCircle(
+                parameters.origin,
+                radius = 1.15,
+                axis1 = right,
+                axis2 = up,
+                countPerMeter = 8.0,
+                includeEnd = false,
+                startDegrees = -25.0,
+                endDegrees = 205.0,
+                style = ParticleStyle(dust(0x168cff, 0.30f), importance = ParticleImportance.COMBAT_FEEDBACK),
+            ),
+            twinBladesSkill3Slash(parameters, parameters.origin, 0.0, 3.8, durationTicks, 0x1259d8),
+            twinBladesSkill3Slash(parameters, parameters.origin, 180.0, 3.3, durationTicks, 0x071525),
+        )
+        else -> ParticleParallel.of(
+            twinBladesSkill3Slash(parameters, parameters.origin, 90.0, 4.9, durationTicks, 0x46dfff),
+            ParticleLine(
+                parameters.origin.add(up.x() * -1.9, up.y() * -1.9, up.z() * -1.9),
+                parameters.origin.add(up.x() * 2.0, up.y() * 2.0, up.z() * 2.0),
+                countPerMeter = 13.0,
+                durationTicks = durationTicks,
+                style = ParticleStyle(dust(0x8fffff, 0.34f), importance = ParticleImportance.COMBAT_FEEDBACK),
+            ),
+            ParticleExplosion(
+                parameters.origin.add(forward.x() * 0.2, forward.y() * 0.2, forward.z() * 0.2),
+                radius = 0.55,
+                sphere = true,
+                particle = Particle.ELECTRIC_SPARK,
+                count = 12,
+                speed = 0.14f,
+                seed = parameters.seedValue() + 71,
+            ),
+        )
+    }
+}
+
+private fun twinBladesSkill3Finisher(parameters: ParticlePresetParameters): ParticleEffect {
+    val (_, right, up) = basis(parameters.direction)
+    val primary = twinBladesSkill3Slash(parameters, parameters.origin, 18.0, parameters.length(6.2), parameters.ticks(), 0x168cff)
+    val aftercut = twinBladesSkill3Slash(
+        parameters,
+        parameters.origin.add(right.x() * 0.5, up.y() * -0.25, right.z() * 0.5),
+        -18.0,
+        4.8,
+        4,
+        0x46dfff,
+    )
+    return ParticleParallel.of(
+        primary,
+        ParticleSequence.of(ParticleDelay(1), aftercut),
+        ParticleCircle(
+            parameters.origin,
+            radius = 1.45,
+            axis1 = right,
+            axis2 = up,
+            countPerMeter = 11.0,
+            includeEnd = false,
+            style = ParticleStyle(dust(0x071525, 0.26f), importance = ParticleImportance.COMBAT_FEEDBACK),
+        ),
+        ParticleExplosion(
+            parameters.origin,
+            radius = 0.85,
+            sphere = true,
+            particle = Particle.ELECTRIC_SPARK,
+            count = 30,
+            speed = 0.22f,
+            seed = parameters.seedValue() + 89,
+        ),
+    )
+}
+
 private fun twinBladesSkill3RecoilRibbon(parameters: ParticlePresetParameters, durationTicks: Int): ParticleEffect {
     val transform = ParticleTransform.fromDirection(parameters.origin, parameters.direction)
     return ParticleBatch.of(
@@ -1159,8 +1246,20 @@ private fun buildCatalogue(): List<ParticlePreset> {
                   ),
               )
           },
-          preset(
-              "projects:class/twin_blades/skill3_recoil",
+           preset(
+               "projects:class/twin_blades/skill3_pulse",
+               "Twin Blades Skill3 Execution Pulse",
+               combat + setOf("class", "twin_blades"),
+               listOf(number("pulse", 1.0, 1.0, 4.0), duration(2.0), color("colorPrimary", 0x8fffff), color("colorSecondary", 0x168cff)) + common.filter { it.name !in setOf("duration", "colorPrimary", "colorSecondary") },
+           ) { p -> twinBladesSkill3Pulse(p, p.number("pulse", 1.0).roundToInt().coerceIn(1, 4), p.ticks().coerceIn(1, 2)) },
+           preset(
+               "projects:class/twin_blades/skill3_finisher",
+               "Twin Blades Skill3 Finisher",
+               combat + setOf("class", "twin_blades"),
+               listOf(number("length", 6.2, 5.5, 6.5), duration(6.0), color("colorPrimary", 0x8fffff), color("colorSecondary", 0x168cff)) + common.filter { it.name !in setOf("duration", "colorPrimary", "colorSecondary") },
+           ) { p -> twinBladesSkill3Finisher(p) },
+           preset(
+               "projects:class/twin_blades/skill3_recoil",
               "Twin Blades Skill3 Recoil Ribbon",
               combat + setOf("class", "twin_blades"),
               listOf(duration(4.0), color("colorPrimary", 0x168cff), color("colorSecondary", 0x050a14)) + common.filter { it.name != "duration" },

@@ -41,7 +41,8 @@ class PrototypeBossState(
     private val playerHealth = mutableMapOf<UUID, Int>()
     private val playerDamageExecutions = mutableMapOf<UUID, MutableSet<Long>>()
     private val bossDamageExecutions = mutableSetOf<Long>()
-    private val skill3DamageExecutions = mutableSetOf<Pair<Long, UUID>>()
+    private val skill3PulseDamageExecutions = mutableSetOf<Triple<Long, Int, UUID>>()
+    private val skill3FinisherDamageExecutions = mutableSetOf<Pair<Long, UUID>>()
     private val skill1DamageExecutions = mutableSetOf<Pair<Long, UUID>>()
     private val skill2PulseDamageExecutions = mutableSetOf<Triple<Long, Int, UUID>>()
     private val skill2LandingDamageExecutions = mutableSetOf<Pair<Long, UUID>>()
@@ -109,10 +110,17 @@ class PrototypeBossState(
         return applyPlayerDamage(bodyDamage, weakpoint != null)
     }
 
-    /** Applies one server-confirmed Skill3 hit per cast and target. */
-    fun applySkill3Attack(castId: Long, targetId: UUID): Int {
-        if (!isActive || !skill3DamageExecutions.add(castId to targetId)) return 0
-        return applyPlayerDamage(SKILL_3_DAMAGE)
+    /** Applies one server-confirmed Skill3 pulse per cast, pulse, and target. */
+    fun applySkill3Pulse(castId: Long, pulseIndex: Int, targetId: UUID): Int {
+        require(pulseIndex in 1..Skill3State.PULSE_COUNT) { "Skill3 pulse index is out of range" }
+        if (!isActive || !skill3PulseDamageExecutions.add(Triple(castId, pulseIndex, targetId))) return 0
+        return applyPlayerDamage(SKILL_3_PULSE_DAMAGE)
+    }
+
+    /** Applies the Skill3 finisher once per cast and target. */
+    fun applySkill3Finisher(castId: Long, targetId: UUID): Int {
+        if (!isActive || !skill3FinisherDamageExecutions.add(castId to targetId)) return 0
+        return applyPlayerDamage(SKILL_3_FINISHER_DAMAGE)
     }
 
     /** Applies one server-confirmed Skill1 hit per cast and target. */
@@ -149,7 +157,8 @@ class PrototypeBossState(
         breakActive = false
         playerDamageExecutions.clear()
         bossDamageExecutions.clear()
-        skill3DamageExecutions.clear()
+        skill3PulseDamageExecutions.clear()
+        skill3FinisherDamageExecutions.clear()
         skill1DamageExecutions.clear()
         skill2PulseDamageExecutions.clear()
         skill2LandingDamageExecutions.clear()
@@ -179,7 +188,8 @@ class PrototypeBossState(
         breakActive = false
         playerDamageExecutions.clear()
         bossDamageExecutions.clear()
-        skill3DamageExecutions.clear()
+        skill3PulseDamageExecutions.clear()
+        skill3FinisherDamageExecutions.clear()
         skill1DamageExecutions.clear()
         skill2PulseDamageExecutions.clear()
         skill2LandingDamageExecutions.clear()
@@ -192,7 +202,8 @@ class PrototypeBossState(
         phase = PrototypeBossPhase.DUEL
         breakActive = false
         bossDamageExecutions.clear()
-        skill3DamageExecutions.clear()
+        skill3PulseDamageExecutions.clear()
+        skill3FinisherDamageExecutions.clear()
         skill1DamageExecutions.clear()
         skill2PulseDamageExecutions.clear()
         skill2LandingDamageExecutions.clear()
@@ -225,7 +236,8 @@ class PrototypeBossState(
         const val DEFAULT_PLAYER_MAX_HEALTH = 20
         const val HEAVY_BLADE_BODY_DAMAGE = 20
         const val TWIN_RODS_BODY_DAMAGE = 10
-        const val SKILL_3_DAMAGE = 30
+        const val SKILL_3_PULSE_DAMAGE = 6
+        const val SKILL_3_FINISHER_DAMAGE = 12
         const val SKILL_1_DAMAGE = 20
         const val SKILL_2_PULSE_DAMAGE = 4
         const val SKILL_2_LANDING_DAMAGE = 12

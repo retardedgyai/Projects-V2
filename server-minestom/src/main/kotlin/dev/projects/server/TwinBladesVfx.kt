@@ -45,6 +45,8 @@ internal data class TwinBladesSkill3Visual(
     val primaryDuration: Int = 4,
     val aftercutLength: Double = 3.1,
     val aftercutDuration: Int = 2,
+    val finisherLength: Double = 6.2,
+    val finisherDuration: Int = 6,
     val recoilDuration: Int = 4,
 )
 
@@ -212,6 +214,31 @@ internal fun twinBladesSkill3SoundPlan(): TwinBladesSkill3SoundPlan = TwinBlades
         TwinBladesSoundCue("item.trident.hit", 0.42f, 1.02f),
     ),
     bounce = listOf(TwinBladesSoundCue("item.trident.riptide_1", 0.22f, 1.22f)),
+)
+
+internal fun twinBladesSkill3PulseSoundPlan(pulseIndex: Int): List<TwinBladesSoundCue> = when (pulseIndex.coerceIn(1, 4)) {
+    1 -> listOf(TwinBladesSoundCue("item.trident.throw", 0.22f, 0.82f))
+    2 -> listOf(
+        TwinBladesSoundCue("item.trident.throw", 0.24f, 0.96f),
+        TwinBladesSoundCue("item.axe.scrape", 0.12f, 1.08f),
+    )
+    3 -> listOf(
+        TwinBladesSoundCue("item.trident.throw", 0.27f, 0.74f),
+        TwinBladesSoundCue("item.axe.scrape", 0.16f, 0.92f),
+    )
+    else -> listOf(
+        TwinBladesSoundCue("item.trident.throw", 0.31f, 0.64f),
+        TwinBladesSoundCue("item.axe.scrape", 0.20f, 0.84f),
+        TwinBladesSoundCue("item.trident.riptide_1", 0.14f, 1.18f),
+    )
+}
+
+internal fun twinBladesSkill3FinisherSoundPlan(): List<TwinBladesSoundCue> = listOf(
+    TwinBladesSoundCue("item.trident.throw", 0.42f, 0.52f),
+    TwinBladesSoundCue("item.trident.throw", 0.30f, 1.08f),
+    TwinBladesSoundCue("entity.player.attack.strong", 0.50f, 0.78f),
+    TwinBladesSoundCue("item.trident.hit", 0.46f, 0.72f),
+    TwinBladesSoundCue("item.axe.scrape", 0.24f, 0.68f),
 )
 
 internal fun twinBladesSoundPlan(

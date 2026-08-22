@@ -174,6 +174,31 @@ class ParticlePresetsTest {
     }
 
     @Test
+    fun `skill3 pulses use distinct slash grammar and finisher stays oversized`() {
+        val preset = requireNotNull(ParticlePresetRegistry["projects:class/twin_blades/skill3_pulse"])
+        fun emitted(pulse: Int): List<ParticleSpawn> {
+            val effect = preset.create(context.with("pulse", pulse).with("duration", 2.0))
+            return buildList {
+                repeat(effect.durationTicks) { tick ->
+                    addAll(RecordingParticleSink().also { effect.emit(tick, it) }.spawns)
+                }
+            }
+        }
+
+        val pulses = (1..4).map(::emitted)
+        assertTrue(pulses.all { it.isNotEmpty() })
+        assertTrue(pulses.zipWithNext().all { (first, second) -> first != second })
+
+        val finisher = requireNotNull(ParticlePresetRegistry["projects:class/twin_blades/skill3_finisher"])
+        val effect = finisher.create(context)
+        val sink = RecordingParticleSink()
+        repeat(effect.durationTicks) { tick -> effect.emit(tick, sink) }
+        assertEquals(6, effect.durationTicks)
+        assertTrue(sink.spawns.isNotEmpty())
+        assertTrue(sink.spawns.none { it.particle == Particle.CLOUD })
+    }
+
+    @Test
     fun `twin blades arc has visible curvature and uses its angle`() {
         val start = twinBladesArcPoint(Pos.ZERO, context.direction, 35.0, 2.1, 0.0)
         val middle = twinBladesArcPoint(Pos.ZERO, context.direction, 35.0, 2.1, 0.5)
