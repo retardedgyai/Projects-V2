@@ -3,6 +3,8 @@ package dev.projects.server
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import net.minestom.server.coordinate.Pos
+import net.minestom.server.coordinate.Vec
 
 class TwinBladesVfxTest {
     @Test
@@ -10,6 +12,20 @@ class TwinBladesVfxTest {
         var previous: Double? = null
         val angles = (0..2).map { nextTwinBladesSwingAngle(previous).also { previous = it } }
         assertEquals(listOf(35.0, -35.0, 35.0), angles)
+    }
+
+    @Test
+    fun `swing origin stays ahead of the camera and mirrors hand side`() {
+        val direction = Vec(0.3, 0.4, 0.8)
+        val eye = Pos.ZERO.add(0.0, 1.62, 0.0)
+        val positive = twinBladesSwingOrigin(Pos.ZERO, 1.62, direction, 35.0)
+        val negative = twinBladesSwingOrigin(Pos.ZERO, 1.62, direction, -35.0)
+        val positiveDelta = Vec(positive.x() - eye.x(), positive.y() - eye.y(), positive.z() - eye.z())
+        val negativeDelta = Vec(negative.x() - eye.x(), negative.y() - eye.y(), negative.z() - eye.z())
+
+        assertTrue(positiveDelta.dot(direction) / direction.length() > 1.0)
+        assertTrue(negativeDelta.dot(direction) / direction.length() > 1.0)
+        assertTrue(positive.distance(negative) > 0.3)
     }
 
     @Test

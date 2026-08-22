@@ -1,5 +1,8 @@
 package dev.projects.server
 
+import dev.projects.server.particle.ParticleTransform
+import net.minestom.server.coordinate.Point
+import net.minestom.server.coordinate.Vec
 import kotlin.math.max
 
 internal data class TwinBladesHitVfxPlan(val presets: List<String>)
@@ -46,6 +49,13 @@ internal class TwinBladesComboState {
 }
 
 internal fun nextTwinBladesSwingAngle(previous: Double?): Double = -(previous ?: -35.0)
+
+internal fun twinBladesSwingOrigin(position: Point, eyeHeight: Double, direction: Vec, angleDegrees: Double): Point {
+    val eye = position.add(0.0, eyeHeight, 0.0)
+    val transform = ParticleTransform.fromDirection(eye, direction)
+    val handSide = if (angleDegrees >= 0.0) 1.0 else -1.0
+    return transform.localPoint(Vec(handSide * 0.22, -0.38, 1.15))
+}
 
 internal fun twinBladesComboVisual(step: Int): TwinBladesComboVisual = when (step.coerceIn(1, 3)) {
     1 -> TwinBladesComboVisual(

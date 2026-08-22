@@ -7,6 +7,7 @@ import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
+import kotlin.test.assertNotEquals
 import kotlin.test.assertTrue
 
 class ParticlePresetsTest {
@@ -92,6 +93,25 @@ class ParticlePresetsTest {
         val positive = twinBladesArcPoint(Pos.ZERO, context.direction, 35.0, 2.1, 0.0)
         val negative = twinBladesArcPoint(Pos.ZERO, context.direction, -35.0, 2.1, 0.0)
         assertTrue(positive.distance(negative) > 0.3)
+    }
+
+    @Test
+    fun `twin blades combo steps use different geometry families`() {
+        val preset = requireNotNull(ParticlePresetRegistry["projects:class/twin_blades/aa_swing"])
+
+        fun emittedPositions(step: Int): List<net.minestom.server.coordinate.Point> {
+            val effect = preset.create(context.with("step", step).with("duration", 3.0))
+            val sink = RecordingParticleSink()
+            repeat(effect.durationTicks) { tick -> effect.emit(tick, sink) }
+            return sink.spawns.map { it.position }
+        }
+
+        val quickDraw = emittedPositions(1)
+        val reverseHook = emittedPositions(2)
+        val scissorCross = emittedPositions(3)
+        assertNotEquals(quickDraw, reverseHook)
+        assertNotEquals(reverseHook, scissorCross)
+        assertNotEquals(quickDraw, scissorCross)
     }
 
     @Test

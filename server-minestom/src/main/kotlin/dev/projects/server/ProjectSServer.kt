@@ -1276,6 +1276,7 @@ private fun showTwinBladesWeakpointVfx(
         manager = manager,
         values = mapOf(
             "radius" to twinBladesWeakpointRadius(visualScale),
+            "step" to visual.step,
             "duration" to visual.weakpointDuration.toDouble(),
             "colorPrimary" to visual.weakpointPrimary,
             "colorSecondary" to visual.weakpointSecondary,
@@ -1304,6 +1305,7 @@ private fun showTwinRodsHitVfx(
             "length" to dimensions.length,
             "radius" to dimensions.radius,
             "scale" to scale,
+            "step" to visual.step,
             "duration" to visual.hitDuration.toDouble(),
             "colorPrimary" to visual.hitPrimary,
             "colorSecondary" to visual.hitSecondary,
@@ -1330,11 +1332,7 @@ private fun showTwinBladesSwingVfx(
     val direction = player.position.direction()
     val angle = nextTwinBladesSwingAngle(angles[player.uuid])
     angles[player.uuid] = angle
-    val origin = player.position.add(
-        direction.x() * 0.8,
-        player.eyeHeight * 0.72 + direction.y() * 0.8,
-        direction.z() * 0.8,
-    )
+    val origin = twinBladesSwingOrigin(player.position, player.eyeHeight, direction, angle)
     startParticlePreset(
         player = player,
         id = "projects:class/twin_blades/aa_swing",
@@ -1345,6 +1343,7 @@ private fun showTwinBladesSwingVfx(
         values = mapOf(
             "length" to visual.swingLength,
             "angle" to angle,
+            "step" to visual.step,
             "duration" to visual.swingDuration.toDouble(),
             "colorPrimary" to visual.swingPrimary,
             "colorSecondary" to visual.swingSecondary,
