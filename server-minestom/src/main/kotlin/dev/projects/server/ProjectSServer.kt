@@ -16,6 +16,15 @@ import dev.projects.protocol.ProtocolCodec
 import dev.projects.protocol.ProtocolHello
 import dev.projects.protocol.ProtocolHelloAck
 import dev.projects.protocol.ProtocolVersion
+import dev.projects.protocol.SlashEditorParameters
+import dev.projects.protocol.VfxEditorNotice
+import dev.projects.protocol.VfxEditorOpen
+import dev.projects.protocol.VfxSlashDraft
+import dev.projects.protocol.VfxSlashDraftList
+import dev.projects.protocol.VfxSlashDraftLoadRequest
+import dev.projects.protocol.VfxSlashPreviewRequest
+import dev.projects.protocol.VfxSlashPreviewCancel
+import dev.projects.protocol.VfxSlashSaveRequest
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.bossbar.BossBar
 import net.minestom.server.Auth
@@ -46,6 +55,7 @@ import net.minestom.server.sound.SoundEvent
 import net.kyori.adventure.sound.Sound
 import net.kyori.adventure.key.Key
 import java.nio.charset.StandardCharsets
+import java.nio.file.Path
 import java.util.UUID
 import kotlin.math.abs
 import kotlin.math.floor
@@ -65,6 +75,9 @@ import dev.projects.server.particle.startParticlePreset
 import net.minestom.server.command.builder.suggestion.SuggestionEntry
 import dev.projects.server.particle.startParticleDemo
 import dev.projects.server.particle.startParticleV2Diagnostic
+import dev.projects.server.particle.ParticleEffectHandle
+import dev.projects.server.particle.ParticleViewer
+import dev.projects.server.particle.PlayerParticleSink
 
 private const val SERVER_ADDRESS = "127.0.0.1"
 private const val SERVER_PORT = 25565
@@ -121,6 +134,41 @@ fun main() {
     val lastGroundTelegraphIds = mutableMapOf<UUID, Long>()
     val bossGroundTelegraphIds = mutableSetOf<Long>()
     val bossRiftTelegraphIds = mutableMapOf<Long, Long>()
+    val slashDraftStore = SlashDraftStore(Path.of("config", "projects", "vfx-editor", "slash-drafts.json"))
+    val slashPreviewHandles = mutableMapOf<UUID, ParticleEffectHandle>()
+
+    fun sendSlashDraftList(player: net.minestom.server.entity.Player) {
+        player.sendPluginMessage(
+            PROJECTS_CHANNEL,
+            ProtocolCodec.encode(VfxSlashDraftList(slashDraftStore.list())),
+        )
+    }
+
+    fun openSlashEditor(player: net.minestom.server.entity.Player) {
+        player.sendPluginMessage(PROJECTS_CHANNEL, ProtocolCodec.encode(VfxEditorOpen()))
+        sendSlashDraftList(player)
+    }
+
+    fun previewSlash(player: net.minestom.server.entity.Player, parameters: SlashEditorParameters) {
+        particleAnimations.cancel(slashPreviewHandles.remove(player.uuid))
+        val direction = player.position.direction()
+        val forward = FixedAttackTester.normalizeHorizontal(direction)
+        val origin = player.position.add(
+            forward.x() * parameters.forwardOffset,
+            parameters.originY,
+            forward.z() * parameters.forwardOffset,
+        )
+        val sink = particleManager.sink(
+            ParticleViewer(player.position, player),
+            PlayerParticleSink(player),
+            "editor:slash",
+        )
+        slashPreviewHandles[player.uuid] = particleAnimations.start(
+            SlashEditorPreview.create(origin, direction, parameters),
+            sink,
+            id = "editor:slash:${player.uuid}",
+        )
+    }
 
     fun clearBossTelegraphs() {
         bossGroundTelegraphIds.toList().forEach { telegraphId ->
@@ -384,6 +432,14 @@ fun main() {
         },
     )
     MinecraftServer.getCommandManager().register(
+        Command("vfxedit").apply {
+            addSyntax(
+                { sender, _ -> (sender as? net.minestom.server.entity.Player)?.let(::openSlashEditor) },
+                ArgumentType.Literal("slash"),
+            )
+        },
+    )
+    MinecraftServer.getCommandManager().register(
         Command("vfxdemo").apply {
             addSyntax(::handleVfxDemo, vfxTypeArgument)
             addSyntax({ sender, _ -> (sender as? net.minestom.server.entity.Player)?.let { particleAnimations.pauseFor(it) } }, ArgumentType.Literal("evolved"), ArgumentType.Literal("pause"))
@@ -531,6 +587,7 @@ fun main() {
     }
     events.addListener(PlayerDisconnectEvent::class.java) { event ->
         val playerId = event.player.uuid
+        particleAnimations.cancel(slashPreviewHandles.remove(playerId))
         particleAnimations.cancelFor(event.player)
         combatStates.remove(playerId)
         dodgeStates.remove(playerId)
@@ -979,6 +1036,29 @@ fun main() {
                         }
                         ClassSkillSlot.ULTIMATE -> return@addListener
                     }
+                }
+                is VfxSlashPreviewRequest -> previewSlash(event.player, message.parameters)
+                VfxSlashPreviewCancel -> particleAnimations.cancel(slashPreviewHandles.remove(event.player.uuid))
+                is VfxSlashSaveRequest -> {
+                    val saved = slashDraftStore.save(message.name, message.parameters)
+                    event.player.sendPluginMessage(
+                        PROJECTS_CHANNEL,
+                        ProtocolCodec.encode(
+                            if (saved) VfxEditorNotice("Saved draft '${message.name}'")
+                            else VfxEditorNotice("Draft name is invalid or storage is full"),
+                        ),
+                    )
+                    if (saved) sendSlashDraftList(event.player)
+                }
+                is VfxSlashDraftLoadRequest -> {
+                    val parameters = slashDraftStore.load(message.name)
+                    event.player.sendPluginMessage(
+                        PROJECTS_CHANNEL,
+                        ProtocolCodec.encode(
+                            if (parameters == null) VfxEditorNotice("Draft not found")
+                            else VfxSlashDraft(message.name, parameters),
+                        ),
+                    )
                 }
                 else -> throw IllegalArgumentException("Unexpected ProjectS message")
             }

@@ -12,7 +12,7 @@ import kotlin.math.sqrt
 const val PROJECTS_CHANNEL = "projects:protocol"
 
 object ProtocolVersion {
-    const val CURRENT = 7
+    const val CURRENT = 8
 
     fun requireCompatible(version: Int) {
         if (version != CURRENT) {
@@ -205,6 +205,148 @@ data class GroundTelegraphRemove(val telegraphId: Long) : ProtocolMessage {
     }
 }
 
+private object SlashEditorLimits {
+    const val MAX_NAME_LENGTH = 32
+    const val MAX_DRAFTS = 16
+    const val MIN_ORIGIN_Y = -4.0
+    const val MAX_ORIGIN_Y = 8.0
+    const val MIN_FORWARD_OFFSET = 0.0
+    const val MAX_FORWARD_OFFSET = 8.0
+    const val MIN_LENGTH = 0.5
+    const val MAX_LENGTH = 12.0
+    const val MIN_ARC_SPAN = 10.0
+    const val MAX_ARC_SPAN = 350.0
+    const val MIN_CURVATURE = 0.0
+    const val MAX_CURVATURE = 4.0
+    const val MIN_TILT = -90.0
+    const val MAX_TILT = 90.0
+    const val MIN_YAW = -180.0
+    const val MAX_YAW = 180.0
+    const val MIN_WIDTH = 0.0
+    const val MAX_WIDTH = 1.5
+    const val MIN_PARTICLE_SIZE = 0.05
+    const val MAX_PARTICLE_SIZE = 2.0
+    const val MIN_SPACING = 0.05
+    const val MAX_SPACING = 2.0
+    const val MIN_DURATION_TICKS = 1
+    const val MAX_DURATION_TICKS = 80
+    const val MAX_TARGET_DISTANCE = 32.0
+}
+
+data class SlashEditorParameters(
+    val originY: Double = 1.2,
+    val forwardOffset: Double = 0.2,
+    val length: Double = 5.0,
+    val arcSpan: Double = 160.0,
+    val curvature: Double = 0.35,
+    val tilt: Double = 12.0,
+    val yaw: Double = 0.0,
+    val width: Double = 0.28,
+    val particleSize: Double = 0.28,
+    val spacing: Double = 0.18,
+    val durationTicks: Int = 8,
+    val color: Int = 0x123bdb,
+    val targetDistance: Double = 5.0,
+) {
+    init {
+        require(listOf(originY, forwardOffset, length, arcSpan, curvature, tilt, yaw, width, particleSize, spacing, targetDistance).all { it.isFinite() }) {
+            "Slash editor values must be finite"
+        }
+        require(durationTicks in SlashEditorLimits.MIN_DURATION_TICKS..SlashEditorLimits.MAX_DURATION_TICKS) {
+            "Slash editor duration is out of range"
+        }
+        require(color in 0..0xffffff) { "Slash editor color is out of range" }
+    }
+
+    companion object {
+        fun clamped(
+            originY: Double,
+            forwardOffset: Double,
+            length: Double,
+            arcSpan: Double,
+            curvature: Double,
+            tilt: Double,
+            yaw: Double,
+            width: Double,
+            particleSize: Double,
+            spacing: Double,
+            durationTicks: Int,
+            color: Int,
+            targetDistance: Double,
+        ): SlashEditorParameters {
+            require(listOf(originY, forwardOffset, length, arcSpan, curvature, tilt, yaw, width, particleSize, spacing, targetDistance).all { it.isFinite() }) {
+                "Slash editor values must be finite"
+            }
+            return SlashEditorParameters(
+                originY.coerceIn(SlashEditorLimits.MIN_ORIGIN_Y, SlashEditorLimits.MAX_ORIGIN_Y),
+                forwardOffset.coerceIn(SlashEditorLimits.MIN_FORWARD_OFFSET, SlashEditorLimits.MAX_FORWARD_OFFSET),
+                length.coerceIn(SlashEditorLimits.MIN_LENGTH, SlashEditorLimits.MAX_LENGTH),
+                arcSpan.coerceIn(SlashEditorLimits.MIN_ARC_SPAN, SlashEditorLimits.MAX_ARC_SPAN),
+                curvature.coerceIn(SlashEditorLimits.MIN_CURVATURE, SlashEditorLimits.MAX_CURVATURE),
+                tilt.coerceIn(SlashEditorLimits.MIN_TILT, SlashEditorLimits.MAX_TILT),
+                yaw.coerceIn(SlashEditorLimits.MIN_YAW, SlashEditorLimits.MAX_YAW),
+                width.coerceIn(SlashEditorLimits.MIN_WIDTH, SlashEditorLimits.MAX_WIDTH),
+                particleSize.coerceIn(SlashEditorLimits.MIN_PARTICLE_SIZE, SlashEditorLimits.MAX_PARTICLE_SIZE),
+                spacing.coerceIn(SlashEditorLimits.MIN_SPACING, SlashEditorLimits.MAX_SPACING),
+                durationTicks.coerceIn(SlashEditorLimits.MIN_DURATION_TICKS, SlashEditorLimits.MAX_DURATION_TICKS),
+                color.coerceIn(0, 0xffffff),
+                targetDistance.coerceIn(SlashEditorLimits.MIN_FORWARD_OFFSET, SlashEditorLimits.MAX_TARGET_DISTANCE),
+            )
+        }
+    }
+}
+
+data class VfxEditorOpen(val parameters: SlashEditorParameters = SlashEditorParameters()) : ProtocolMessage
+
+data class VfxSlashPreviewRequest(
+    val requestId: Long,
+    val parameters: SlashEditorParameters,
+) : ProtocolMessage
+
+object VfxSlashPreviewCancel : ProtocolMessage
+
+data class VfxSlashSaveRequest(
+    val name: String,
+    val parameters: SlashEditorParameters,
+) : ProtocolMessage {
+    init {
+        require(name.isNotBlank() && name.length <= SlashEditorLimits.MAX_NAME_LENGTH) {
+            "Slash draft name is invalid"
+        }
+    }
+}
+
+data class VfxSlashDraftList(val names: List<String>) : ProtocolMessage {
+    init {
+        require(names.size <= SlashEditorLimits.MAX_DRAFTS) { "Too many slash drafts" }
+        require(names.all { it.isNotBlank() && it.length <= SlashEditorLimits.MAX_NAME_LENGTH }) {
+            "Slash draft name is invalid"
+        }
+    }
+}
+
+data class VfxSlashDraftLoadRequest(val name: String) : ProtocolMessage {
+    init {
+        require(name.isNotBlank() && name.length <= SlashEditorLimits.MAX_NAME_LENGTH) {
+            "Slash draft name is invalid"
+        }
+    }
+}
+
+data class VfxSlashDraft(val name: String, val parameters: SlashEditorParameters) : ProtocolMessage {
+    init {
+        require(name.isNotBlank() && name.length <= SlashEditorLimits.MAX_NAME_LENGTH) {
+            "Slash draft name is invalid"
+        }
+    }
+}
+
+data class VfxEditorNotice(val text: String) : ProtocolMessage {
+    init {
+        require(text.length <= 160) { "Editor notice is too long" }
+    }
+}
+
 object ProtocolCodec {
     private const val MAX_PACKET_SIZE = 1024
     private const val HELLO = 1
@@ -219,6 +361,14 @@ object ProtocolCodec {
     private const val ATTACK_DEBUG_SHAPE = 18
     private const val GROUND_TELEGRAPH_START = 19
     private const val GROUND_TELEGRAPH_REMOVE = 20
+    private const val VFX_EDITOR_OPEN = 21
+    private const val VFX_SLASH_PREVIEW_REQUEST = 22
+    private const val VFX_SLASH_SAVE_REQUEST = 23
+    private const val VFX_SLASH_DRAFT_LIST = 24
+    private const val VFX_SLASH_DRAFT_LOAD_REQUEST = 25
+    private const val VFX_SLASH_DRAFT = 26
+    private const val VFX_EDITOR_NOTICE = 27
+    private const val VFX_SLASH_PREVIEW_CANCEL = 28
 
     fun encode(message: ProtocolMessage): ByteArray {
         val output = ByteArrayOutputStream()
@@ -303,9 +453,44 @@ object ProtocolCodec {
                     data.writeByte(GROUND_TELEGRAPH_REMOVE)
                     data.writeLong(message.telegraphId)
                 }
+                is VfxEditorOpen -> {
+                    data.writeByte(VFX_EDITOR_OPEN)
+                    writeSlashParameters(data, message.parameters)
+                }
+                is VfxSlashPreviewRequest -> {
+                    data.writeByte(VFX_SLASH_PREVIEW_REQUEST)
+                    data.writeLong(message.requestId)
+                    writeSlashParameters(data, message.parameters)
+                }
+                VfxSlashPreviewCancel -> data.writeByte(VFX_SLASH_PREVIEW_CANCEL)
+                is VfxSlashSaveRequest -> {
+                    data.writeByte(VFX_SLASH_SAVE_REQUEST)
+                    writeString(data, message.name)
+                    writeSlashParameters(data, message.parameters)
+                }
+                is VfxSlashDraftList -> {
+                    data.writeByte(VFX_SLASH_DRAFT_LIST)
+                    data.writeByte(message.names.size)
+                    message.names.forEach { writeString(data, it) }
+                }
+                is VfxSlashDraftLoadRequest -> {
+                    data.writeByte(VFX_SLASH_DRAFT_LOAD_REQUEST)
+                    writeString(data, message.name)
+                }
+                is VfxSlashDraft -> {
+                    data.writeByte(VFX_SLASH_DRAFT)
+                    writeString(data, message.name)
+                    writeSlashParameters(data, message.parameters)
+                }
+                is VfxEditorNotice -> {
+                    data.writeByte(VFX_EDITOR_NOTICE)
+                    writeString(data, message.text)
+                }
             }
         }
-        return output.toByteArray()
+        return output.toByteArray().also {
+            require(it.size <= MAX_PACKET_SIZE) { "ProjectS protocol packet exceeds $MAX_PACKET_SIZE bytes" }
+        }
     }
 
     fun decode(bytes: ByteArray): ProtocolMessage {
@@ -382,9 +567,66 @@ object ProtocolCodec {
                 durationTicks = input.readInt(),
             )
             GROUND_TELEGRAPH_REMOVE -> GroundTelegraphRemove(input.readLong())
+            VFX_EDITOR_OPEN -> VfxEditorOpen(readSlashParameters(input))
+            VFX_SLASH_PREVIEW_REQUEST -> VfxSlashPreviewRequest(input.readLong(), readSlashParameters(input))
+            VFX_SLASH_PREVIEW_CANCEL -> VfxSlashPreviewCancel
+            VFX_SLASH_SAVE_REQUEST -> VfxSlashSaveRequest(readString(input), readSlashParameters(input))
+            VFX_SLASH_DRAFT_LIST -> {
+                val count = input.readUnsignedByte()
+                require(count <= SlashEditorLimits.MAX_DRAFTS) { "Too many slash drafts" }
+                VfxSlashDraftList(List(count) { readString(input) })
+            }
+            VFX_SLASH_DRAFT_LOAD_REQUEST -> VfxSlashDraftLoadRequest(readString(input))
+            VFX_SLASH_DRAFT -> VfxSlashDraft(readString(input), readSlashParameters(input))
+            VFX_EDITOR_NOTICE -> VfxEditorNotice(readString(input))
             else -> throw IllegalArgumentException("Unknown ProjectS message type: $type")
         }
         require(input.available() == 0) { "Unexpected trailing ProjectS protocol data" }
         return message
+    }
+
+    private fun writeSlashParameters(data: DataOutputStream, parameters: SlashEditorParameters) {
+        data.writeDouble(parameters.originY)
+        data.writeDouble(parameters.forwardOffset)
+        data.writeDouble(parameters.length)
+        data.writeDouble(parameters.arcSpan)
+        data.writeDouble(parameters.curvature)
+        data.writeDouble(parameters.tilt)
+        data.writeDouble(parameters.yaw)
+        data.writeDouble(parameters.width)
+        data.writeDouble(parameters.particleSize)
+        data.writeDouble(parameters.spacing)
+        data.writeInt(parameters.durationTicks)
+        data.writeInt(parameters.color)
+        data.writeDouble(parameters.targetDistance)
+    }
+
+    private fun readSlashParameters(input: DataInputStream): SlashEditorParameters = SlashEditorParameters.clamped(
+        originY = input.readDouble(),
+        forwardOffset = input.readDouble(),
+        length = input.readDouble(),
+        arcSpan = input.readDouble(),
+        curvature = input.readDouble(),
+        tilt = input.readDouble(),
+        yaw = input.readDouble(),
+        width = input.readDouble(),
+        particleSize = input.readDouble(),
+        spacing = input.readDouble(),
+        durationTicks = input.readInt(),
+        color = input.readInt(),
+        targetDistance = input.readDouble(),
+    )
+
+    private fun writeString(data: DataOutputStream, value: String) {
+        val bytes = value.toByteArray(Charsets.UTF_8)
+        require(bytes.size <= SlashEditorLimits.MAX_NAME_LENGTH * 4) { "ProjectS string is too long" }
+        data.writeShort(bytes.size)
+        data.write(bytes)
+    }
+
+    private fun readString(input: DataInputStream): String {
+        val size = input.readUnsignedShort()
+        require(size <= SlashEditorLimits.MAX_NAME_LENGTH * 4) { "ProjectS string is too long" }
+        return ByteArray(size).also(input::readFully).toString(Charsets.UTF_8)
     }
 }

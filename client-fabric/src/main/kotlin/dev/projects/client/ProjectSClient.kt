@@ -18,6 +18,11 @@ import dev.projects.protocol.ProtocolCodec
 import dev.projects.protocol.ProtocolHello
 import dev.projects.protocol.ProtocolHelloAck
 import dev.projects.protocol.ProtocolVersion
+import dev.projects.protocol.SlashEditorParameters
+import dev.projects.protocol.VfxEditorNotice
+import dev.projects.protocol.VfxEditorOpen
+import dev.projects.protocol.VfxSlashDraft
+import dev.projects.protocol.VfxSlashDraftList
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry
@@ -70,6 +75,7 @@ object ProjectSClient : ClientModInitializer {
     private var attackDebugShape: AttackDebugShape? = null
     private var attackDebugTicksRemaining = 0
     private var attackDebugEnabled = true
+    private var slashDraftNames: List<String> = emptyList()
     private val skillCategory = KeyMapping.Category.register(
         Identifier.fromNamespaceAndPath("projects", "skills"),
     )
@@ -141,6 +147,29 @@ object ProjectSClient : ClientModInitializer {
                     is GroundTelegraphRemove -> context.client().execute {
                         GroundTelegraphRenderer.remove(message.telegraphId)
                     }
+                    is VfxEditorOpen -> context.client().execute {
+                        val client = context.client()
+                        if (client.gui.screen() is SlashEditorScreen) return@execute
+                        client.gui.setScreen(
+                            SlashEditorScreen(message.parameters) { outgoing ->
+                                if (outgoing is dev.projects.protocol.ProtocolMessage &&
+                                    ClientPlayNetworking.canSend(ProjectSPayload.TYPE)
+                                ) {
+                                    ClientPlayNetworking.send(ProjectSPayload(ProtocolCodec.encode(outgoing)))
+                                }
+                            }.also { it.setDraftNames(slashDraftNames) },
+                        )
+                    }
+                    is VfxSlashDraftList -> context.client().execute {
+                        slashDraftNames = message.names
+                        (context.client().gui.screen() as? SlashEditorScreen)?.setDraftNames(message.names)
+                    }
+                    is VfxSlashDraft -> context.client().execute {
+                        (context.client().gui.screen() as? SlashEditorScreen)?.applyDraft(message.parameters)
+                    }
+                    is VfxEditorNotice -> context.client().execute {
+                        context.client().player?.sendSystemMessage(Component.literal(message.text))
+                    }
                     else -> require(false) { "Unexpected ProjectS clientbound message" }
                 }
             } catch (error: IllegalArgumentException) {
@@ -172,6 +201,8 @@ object ProjectSClient : ClientModInitializer {
             skill3CooldownTicks = 0
             attackDebugShape = null
             attackDebugTicksRemaining = 0
+            slashDraftNames = emptyList()
+            if (client.gui.screen() is SlashEditorScreen) client.gui.setScreen(null)
             return
         }
         renderAttackDebugShape(client)

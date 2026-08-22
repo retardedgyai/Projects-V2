@@ -37,6 +37,12 @@ class ParticleAnimationScheduler {
         }
     }
 
+    fun cancel(handle: ParticleEffectHandle?) {
+        if (handle == null) return
+        handle.cancel()
+        active.removeIf { it.handle === handle }
+    }
+
     fun pauseFor(player: Player) {
         active.filter { (it.sink as? PlayerOwnedParticleSink)?.owner === player }
             .forEach { it.handle.pause() }
