@@ -1,5 +1,6 @@
 package dev.projects.server.particle
 
+import net.minestom.server.particle.Particle
 import net.minestom.server.coordinate.Pos
 import net.minestom.server.coordinate.Vec
 import kotlin.test.Test
@@ -119,6 +120,19 @@ class ParticlePresetsTest {
         assertNotEquals(quickDraw, reverseHook)
         assertNotEquals(reverseHook, scissorCross)
         assertNotEquals(quickDraw, scissorCross)
+    }
+
+    @Test
+    fun `twin blades reverse hook endpoint accent matches hook endpoint`() {
+        val preset = requireNotNull(ParticlePresetRegistry["projects:class/twin_blades/aa_swing"])
+        val length = 2.9
+        val angle = 35.0
+        val expected = twinBladesReverseHookEndpoint(Pos.ZERO, context.direction, angle, length)
+        val effect = preset.create(context.with("step", 2).with("angle", angle).with("length", length).with("duration", 3.0))
+        val sink = RecordingParticleSink()
+        effect.emit(effect.durationTicks - 1, sink)
+
+        assertTrue(sink.spawns.any { it.particle == Particle.END_ROD && it.position.distance(expected) < 0.000001 })
     }
 
     @Test

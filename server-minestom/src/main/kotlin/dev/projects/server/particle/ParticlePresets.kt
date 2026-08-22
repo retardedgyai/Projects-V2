@@ -299,7 +299,7 @@ private fun twinBladesReverseHook(
 
     val main = ParticleBezier(
         start = local(0.18, -0.28, 0.0),
-        end = local(-0.22, -0.04, 0.62),
+        end = twinBladesReverseHookEndpoint(parameters.origin, parameters.direction, angleDegrees, length),
         controlPoints = if (swingGeometry) {
             listOf(local(0.78, 0.52, 0.18), local(-0.86, 0.82, 0.42))
         } else {
@@ -320,6 +320,18 @@ private fun twinBladesReverseHook(
         styleAt = { ParticleStyle(dust(parameters.color("colorSecondary", 0x126bff), 0.22f)) },
     )
     return ParticleParallel.of(main, ParticleSequence.of(ParticleDelay(1), echo))
+}
+
+internal fun twinBladesReverseHookEndpoint(
+    origin: Point,
+    direction: Vec,
+    angleDegrees: Double,
+    length: Double,
+): Point {
+    val transform = ParticleTransform.fromDirection(origin, direction)
+    val side = if (angleDegrees >= 0.0) 1.0 else -1.0
+    val scale = length / 2.1
+    return transform.localPoint(Vec(side * -0.22 * scale, -0.04 * scale, 0.62 * scale))
 }
 
 private fun twinBladesDelayedBurst(
@@ -421,7 +433,7 @@ private fun twinBladesStepEffect(
     2 -> ParticleParallel.of(
         twinBladesReverseHook(parameters, angleDegrees, length, durationTicks, swingGeometry),
         twinBladesDelayedBurst(
-            twinBladesArcPoint(parameters.origin, parameters.direction, angleDegrees, length, 1.0, if (swingGeometry) 0.55 else 0.46),
+            twinBladesReverseHookEndpoint(parameters.origin, parameters.direction, angleDegrees, length),
             durationTicks - 1,
             Particle.END_ROD,
             count = 3,
