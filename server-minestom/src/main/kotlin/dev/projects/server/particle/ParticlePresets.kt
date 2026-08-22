@@ -206,13 +206,16 @@ internal fun twinBladesArcPoint(origin: Point, direction: Vec, angleDegrees: Dou
     val side = if (angleDegrees >= 0.0) 1.0 else -1.0
     val theta = Math.toRadians(-side * 48.0 + side * 96.0 * progress.coerceIn(0.0, 1.0))
     val radius = length.coerceAtLeast(0.01) * 0.46
-    val lateral = side * 0.22 + sin(theta) * radius
-    val vertical = -0.22 + (1.0 - cos(theta)) * 0.22
-    val depth = cos(theta) * 0.12
+    val localLateral = side * 0.28 + sin(theta) * radius
+    val localVertical = -0.28 + (1.0 - cos(theta)) * radius * 0.55
+    val localDepth = (1.0 - cos(theta)) * radius * 0.22
+    val orientation = Math.toRadians(angleDegrees)
+    val lateral = localLateral * cos(orientation) - localVertical * sin(orientation)
+    val vertical = localLateral * sin(orientation) + localVertical * cos(orientation)
     return origin.add(
-        forward.x() * depth + right.x() * lateral + up.x() * vertical,
-        forward.y() * depth + right.y() * lateral + up.y() * vertical,
-        forward.z() * depth + right.z() * lateral + up.z() * vertical,
+        forward.x() * localDepth + right.x() * lateral + up.x() * vertical,
+        forward.y() * localDepth + right.y() * lateral + up.y() * vertical,
+        forward.z() * localDepth + right.z() * lateral + up.z() * vertical,
     )
 }
 

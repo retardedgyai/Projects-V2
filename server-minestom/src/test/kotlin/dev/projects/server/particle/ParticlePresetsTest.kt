@@ -95,6 +95,18 @@ class ParticlePresetsTest {
     }
 
     @Test
+    fun `twin blades arc has visible curvature and uses its angle`() {
+        val start = twinBladesArcPoint(Pos.ZERO, context.direction, 35.0, 2.1, 0.0)
+        val middle = twinBladesArcPoint(Pos.ZERO, context.direction, 35.0, 2.1, 0.5)
+        val end = twinBladesArcPoint(Pos.ZERO, context.direction, 35.0, 2.1, 1.0)
+        val chordMidpoint = start.add((end.x() - start.x()) * 0.5, (end.y() - start.y()) * 0.5, (end.z() - start.z()) * 0.5)
+        assertTrue(middle.distance(chordMidpoint) >= 0.15)
+
+        val differentAngle = twinBladesArcPoint(Pos.ZERO, context.direction, 70.0, 2.1, 0.5)
+        assertTrue(middle.distance(differentAngle) > 0.1)
+    }
+
+    @Test
     fun `override parser rejects unknown and malformed parameters`() {
         val preset = requireNotNull(ParticlePresetRegistry["projects:combat/slash_light"])
         assertNotNull(parseParticlePresetOverrides(preset, arrayOf("length=2")))
