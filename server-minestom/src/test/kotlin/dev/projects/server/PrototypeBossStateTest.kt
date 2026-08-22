@@ -10,11 +10,11 @@ class PrototypeBossStateTest {
     private val playerId = UUID.randomUUID()
 
     @Test
-    fun `default boss health is ten thousand`() {
+    fun `default boss health is three thousand`() {
         val boss = PrototypeBossState()
 
-        assertEquals(10000, boss.maxHealth)
-        assertEquals(10000, boss.currentHealth)
+        assertEquals(3000, boss.maxHealth)
+        assertEquals(3000, boss.currentHealth)
     }
 
     @Test
@@ -23,7 +23,7 @@ class PrototypeBossStateTest {
 
         assertEquals(20, boss.applyPlayerAttack(1L, WeaponType.HEAVY_BLADE))
         assertEquals(10, boss.applyPlayerAttack(2L, WeaponType.TWIN_RODS))
-        assertEquals(9970, boss.currentHealth)
+        assertEquals(2970, boss.currentHealth)
     }
 
     @Test
@@ -32,7 +32,7 @@ class PrototypeBossStateTest {
 
         assertEquals(30, boss.applyPlayerAttack(1L, WeaponType.HEAVY_BLADE, FixedWeakpoint.HEAD))
         assertEquals(15, boss.applyPlayerAttack(2L, WeaponType.TWIN_RODS, FixedWeakpoint.BACK))
-        assertEquals(9955, boss.currentHealth)
+        assertEquals(2955, boss.currentHealth)
     }
 
     @Test
@@ -61,7 +61,7 @@ class PrototypeBossStateTest {
 
         assertEquals(30, boss.applySkill3Attack(1L, targetId))
         assertEquals(0, boss.applySkill3Attack(1L, targetId))
-        assertEquals(9970, boss.currentHealth)
+        assertEquals(2970, boss.currentHealth)
     }
 
     @Test
@@ -72,12 +72,12 @@ class PrototypeBossStateTest {
         assertEquals(20, boss.applySkill1Attack(1L, targetId))
         assertEquals(0, boss.applySkill1Attack(1L, targetId))
         assertEquals(25, boss.applySkill2Attack(2L, targetId))
-        assertEquals(9955, boss.currentHealth)
+        assertEquals(2955, boss.currentHealth)
 
         boss.reset()
 
         assertEquals(20, boss.applySkill1Attack(1L, targetId))
-        assertEquals(9980, boss.currentHealth)
+        assertEquals(2980, boss.currentHealth)
     }
 
     @Test
