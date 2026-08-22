@@ -34,6 +34,9 @@ ProjectS v2 は、旧ProjectSを引き継ぎつつコードはゼロから作り
 
 ## まず読む文書
 
+- [`docs/development/onboarding.md`](docs/development/onboarding.md) — 新しいCreatorのcloneから開始まで。
+- [`docs/development/creator-workflow.md`](docs/development/creator-workflow.md) — PlaygroundとProductionの使い分け。
+- [`docs/development/sol-review.md`](docs/development/sol-review.md) — 共通Sol Review手順。
 - [`docs/decisions/2026-08-19-current-decisions.md`](docs/decisions/2026-08-19-current-decisions.md) — **現在決まっていること全部の基準書**。
 - [`docs/game/combat-principles.md`](docs/game/combat-principles.md) — 一人称、通常攻撃、攻撃判定、Mob攻撃、回避等。
 - [`docs/game/mana-and-class-resources.md`](docs/game/mana-and-class-resources.md) — マナ/Cooldown/固有ゲージ。
