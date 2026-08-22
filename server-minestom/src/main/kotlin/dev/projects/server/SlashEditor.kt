@@ -12,7 +12,6 @@ import net.minestom.server.coordinate.Point
 import net.minestom.server.coordinate.Vec
 import java.nio.file.Files
 import java.nio.file.Path
-import kotlin.math.roundToInt
 
 private const val DRAFT_SCHEMA_VERSION = 1
 private const val MAX_DRAFTS = 16
@@ -128,10 +127,9 @@ object SlashEditorPreview {
             ringSpacing = parameters.width.coerceAtLeast(0.04),
             degreesPerTick = parameters.arcSpan / parameters.durationTicks,
             degreeStep = degreeStep,
-        ) { _, ring, progress ->
-            val color = if (ring == 0) parameters.color else blendTowardWhite(parameters.color, progress)
+        ) { _, ring, _ ->
             ParticleStyle(
-                dust(color, parameters.particleSize.toFloat() * if (ring == 0) 1.0f else 0.72f),
+                dust(parameters.color, parameters.particleSize.toFloat() * if (ring == 0) 1.0f else 0.72f),
                 count = if (ring == 0) 2 else 1,
             )
         }
@@ -149,13 +147,5 @@ object SlashEditorPreview {
             style = ParticleStyle(dust(parameters.color, (parameters.particleSize * 0.7).toFloat())),
         )
         return ParticleParallel.of(arc, targetMarker)
-    }
-
-    private fun blendTowardWhite(color: Int, progress: Double): Int {
-        fun channel(shift: Int): Int {
-            val value = color shr shift and 0xff
-            return (value + (255 - value) * (progress * 0.35).coerceIn(0.0, 1.0)).roundToInt()
-        }
-        return channel(16) shl 16 or (channel(8) shl 8) or channel(0)
     }
 }
