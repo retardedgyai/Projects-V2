@@ -69,10 +69,10 @@ internal fun twinBladesSwingOrigin(position: Point, eyeHeight: Double, direction
 internal fun twinBladesComboVisual(step: Int): TwinBladesComboVisual = when (step.coerceIn(1, 3)) {
     1 -> TwinBladesComboVisual(
         step = 1,
-        swingLength = 2.9,
+        swingLength = 3.2,
         swingDuration = 3,
-        swingPrimary = 0xa8ffff,
-        swingSecondary = 0x168cff,
+        swingPrimary = 0x1677ff,
+        swingSecondary = 0x071525,
         hitLength = 3.0,
         hitDuration = 3,
         hitPrimary = 0x8fffff,
@@ -83,10 +83,10 @@ internal fun twinBladesComboVisual(step: Int): TwinBladesComboVisual = when (ste
     )
     2 -> TwinBladesComboVisual(
         step = 2,
-        swingLength = 3.4,
+        swingLength = 3.7,
         swingDuration = 3,
-        swingPrimary = 0x70e9ff,
-        swingSecondary = 0x126bff,
+        swingPrimary = 0x1259d8,
+        swingSecondary = 0x0a1c34,
         hitLength = 3.4,
         hitDuration = 4,
         hitPrimary = 0x70e9ff,
@@ -97,10 +97,10 @@ internal fun twinBladesComboVisual(step: Int): TwinBladesComboVisual = when (ste
     )
     else -> TwinBladesComboVisual(
         step = 3,
-        swingLength = 4.0,
+        swingLength = 4.3,
         swingDuration = 3,
-        swingPrimary = 0xe8fdff,
-        swingSecondary = 0x168cff,
+        swingPrimary = 0x46dfff,
+        swingSecondary = 0x050a14,
         hitLength = 4.0,
         hitDuration = 4,
         hitPrimary = 0xe8fdff,

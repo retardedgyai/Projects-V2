@@ -72,12 +72,29 @@ class TwinBladesVfxTest {
         assertTrue(first.swingPrimary != second.swingPrimary)
         assertTrue(second.swingPrimary != third.swingPrimary)
         assertTrue(first.weakpointDuration < third.weakpointDuration)
-        assertEquals(2.9, first.swingLength)
-        assertEquals(3.4, second.swingLength)
-        assertEquals(4.0, third.swingLength)
+        assertEquals(3.2, first.swingLength)
+        assertEquals(3.7, second.swingLength)
+        assertEquals(4.3, third.swingLength)
         assertTrue(first.hitLength >= 2.8)
         assertTrue(second.hitLength >= 3.2)
         assertTrue(third.hitLength >= 3.8)
+    }
+
+    @Test
+    fun `swing palette is dark blue while hit palette remains separate`() {
+        val first = twinBladesComboVisual(1)
+        val second = twinBladesComboVisual(2)
+        val third = twinBladesComboVisual(3)
+
+        assertTrue(first.swingSecondary <= 0x0a1c34)
+        assertTrue(second.swingSecondary <= 0x0a1c34)
+        assertTrue(third.swingSecondary <= 0x0a1c34)
+        assertTrue(first.swingPrimary in 0x1259d8..0x46dfff)
+        assertTrue(second.swingPrimary in 0x1259d8..0x46dfff)
+        assertTrue(third.swingPrimary in 0x1259d8..0x46dfff)
+        assertTrue(first.hitPrimary != first.swingPrimary)
+        assertTrue(second.hitPrimary != second.swingPrimary)
+        assertTrue(third.hitPrimary != third.swingPrimary)
     }
 
     @Test

@@ -269,14 +269,19 @@ private fun twinBladesCrescent(
         val progress = if (this.durationTicks == 1) 1.0 else tick.toDouble() / (this.durationTicks - 1)
         val leadingStart = (progress - 0.22).coerceAtLeast(0.0)
         val bodyStart = (progress - 0.48).coerceAtLeast(0.0)
+        val bodyColor = if (swingGeometry) {
+            lerpColor(parameters.color("colorSecondary", 0x071525), 0x1259d8, 0.42)
+        } else {
+            parameters.color("colorSecondary", 0x126bff)
+        }
         val body = ParticleParallel.of(
-            twinBladesArcRibbon(parameters, angleDegrees, length, 0.18, bodyStart, progress, parameters.color("colorSecondary", 0x126bff), 0.38f, swingGeometry),
+            twinBladesArcRibbon(parameters, angleDegrees, length, 0.18, bodyStart, progress, bodyColor, 0.38f, swingGeometry),
             twinBladesArcRibbon(parameters, angleDegrees, length, 0.12, leadingStart, progress, parameters.color("colorPrimary", 0x70e9ff), 0.24f, swingGeometry),
             twinBladesArcRibbon(parameters, angleDegrees, length, 0.07, progress, minOf(1.0, progress + 0.08), 0xe8fdff, 0.20f, swingGeometry),
         )
         if (swingGeometry) {
             ParticleParallel.of(
-                twinBladesArcRibbon(parameters, angleDegrees, length, 0.14, bodyStart, progress, 0x071525, 0.16f, true),
+                twinBladesArcRibbon(parameters, angleDegrees, length, 0.14, bodyStart, progress, 0x050a14, 0.20f, true),
                 body,
             ).emit(0, sink)
         } else {
@@ -372,7 +377,7 @@ private fun twinBladesFinisherAccent(
                     sharp = true,
                     planeNormal = parameters.direction,
                     count = 16,
-                    style = ParticleStyle(dust(parameters.color("colorPrimary", 0xe8fdff), 0.2f), importance = ParticleImportance.COMBAT_FEEDBACK),
+                    style = ParticleStyle(dust(if (swingGeometry) 0x46dfff else parameters.color("colorPrimary", 0xe8fdff), 0.2f), importance = ParticleImportance.COMBAT_FEEDBACK),
                 ),
                 ParticleExplosion(
                     center,
@@ -424,7 +429,7 @@ private fun twinBladesStepEffect(
         twinBladesDelayedBurst(
             twinBladesArcPoint(parameters.origin, parameters.direction, angleDegrees, length, 1.0, if (swingGeometry) 0.55 else 0.46),
             durationTicks - 1,
-            Particle.ENCHANT,
+            if (swingGeometry) Particle.ELECTRIC_SPARK else Particle.ENCHANT,
             count = 3,
             speed = 0.03f,
             seed = parameters.seedValue(),
