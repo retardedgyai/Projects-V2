@@ -10,6 +10,14 @@
   // Task branches may be pushed automatically after tests/build pass.
   // Protect main and history rewriting.
   "permission": {
+    // Allow API/dependency inspection from Gradle's shared cache while
+    // keeping that external directory read-only for Agent file edits.
+    "external_directory": {
+      "~/.gradle/caches/**": "allow"
+    },
+    "edit": {
+      "~/.gradle/caches/**": "deny"
+    },
     "bash": {
       "git push*": "allow",
       "git push origin main*": "deny",
