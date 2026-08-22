@@ -1027,14 +1027,16 @@ private fun tickRiftExecutioner(
                     val payload = ProtocolCodec.encode(message)
                     players.forEach { player -> player.sendPluginMessage(PROJECTS_CHANNEL, payload) }
                 } else {
-                    showTesterTelegraph(
-                        players.first(),
-                        testerEntity.position,
-                        FixedAttackType.FORWARD_SLAM,
-                        event.facing,
-                        scheduler,
-                        manager,
-                    )
+                    players.forEach { player ->
+                        showTesterTelegraph(
+                            player,
+                            testerEntity.position,
+                            FixedAttackType.FORWARD_SLAM,
+                            event.facing,
+                            scheduler,
+                            manager,
+                        )
+                    }
                 }
             }
             is RiftExecutionerEvent.SectorActive -> {

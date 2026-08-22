@@ -65,6 +65,71 @@ class RiftExecutionerControllerTest {
     }
 
     @Test
+    fun `rift pulses pass boss damage dedupe with unique executions`() {
+        val controller = RiftExecutionerController(initialPauseTicks = 0)
+        val boss = PrototypeBossState(playerMaxHealth = 100)
+        val events = mutableListOf<RiftExecutionerEvent>()
+
+        repeat(60) {
+            events += controller.tick(origin, Vec(1.0, 0.0, 0.0), listOf(target), PrototypeBossPhase.RIFT_PRESSURE)
+        }
+
+        events.filterIsInstance<RiftExecutionerEvent.AttackHit>()
+            .filter { it.damage == RiftExecutionerController.RIFT_DAMAGE }
+            .forEach { boss.applyBossDamage(it.targetId, it.executionId, it.damage) }
+
+        assertEquals(96, boss.playerHealth(playerId))
+        assertEquals(2, events.filterIsInstance<RiftExecutionerEvent.AttackHit>()
+            .filter { it.damage == RiftExecutionerController.RIFT_DAMAGE }
+            .map { it.executionId }
+            .distinct()
+            .size)
+    }
+
+    @Test
+    fun `forward slam uses its narrow rectangle instead of sector`() {
+        val controller = RiftExecutionerController(initialPauseTicks = 0)
+        val outsideRectangle = RiftExecutionerTarget(playerId, Vec(3.0, 0.0, 3.0))
+        val insideRectangle = RiftExecutionerTarget(playerId, Vec(3.0, 0.0, 0.5))
+        var slamStarted = false
+
+        while (!slamStarted) {
+            val events = controller.tick(origin, Vec(1.0, 0.0, 0.0), listOf(target), PrototypeBossPhase.DUEL)
+            slamStarted = events.any {
+                it is RiftExecutionerEvent.SectorTelegraph && it.attack == RiftExecutionerAttack.FORWARD_SLAM
+            }
+        }
+        repeat(RiftExecutionerController.SLAM_TELEGRAPH_TICKS) {
+            controller.tick(origin, Vec(1.0, 0.0, 0.0), listOf(outsideRectangle), PrototypeBossPhase.DUEL)
+        }
+        val outsideHits = controller.tick(
+            origin,
+            Vec(1.0, 0.0, 0.0),
+            listOf(outsideRectangle),
+            PrototypeBossPhase.DUEL,
+        )
+        assertFalse(outsideHits.any { it is RiftExecutionerEvent.AttackHit && it.damage == RiftExecutionerController.SLAM_DAMAGE })
+
+        val insideController = RiftExecutionerController(initialPauseTicks = 0)
+        while (true) {
+            val events = insideController.tick(origin, Vec(1.0, 0.0, 0.0), listOf(target), PrototypeBossPhase.DUEL)
+            if (events.any {
+                    it is RiftExecutionerEvent.SectorTelegraph && it.attack == RiftExecutionerAttack.FORWARD_SLAM
+                }) break
+        }
+        repeat(RiftExecutionerController.SLAM_TELEGRAPH_TICKS) {
+            insideController.tick(origin, Vec(1.0, 0.0, 0.0), listOf(insideRectangle), PrototypeBossPhase.DUEL)
+        }
+        val insideHits = insideController.tick(
+            origin,
+            Vec(1.0, 0.0, 0.0),
+            listOf(insideRectangle),
+            PrototypeBossPhase.DUEL,
+        )
+        assertTrue(insideHits.any { it is RiftExecutionerEvent.AttackHit && it.damage == RiftExecutionerController.SLAM_DAMAGE })
+    }
+
+    @Test
     fun `dash hit continues chain while miss starts forty tick break`() {
         val hitController = RiftExecutionerController(initialPauseTicks = 0)
         reachDashTelegraph(hitController, target)

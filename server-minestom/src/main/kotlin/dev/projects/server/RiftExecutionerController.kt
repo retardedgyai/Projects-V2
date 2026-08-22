@@ -32,6 +32,7 @@ data class RiftZone(
     val facing: Vec,
     val remainingTicks: Int,
     internal val damageTicks: Int,
+    internal val damagePulse: Long = 0,
 )
 
 enum class RiftExecutionerAttack {
@@ -309,7 +310,18 @@ class RiftExecutionerController(
     }
 
     private fun hitSectorTargets(targets: Collection<RiftExecutionerTarget>, events: MutableList<RiftExecutionerEvent>) {
-        targets.filter { isInsideSector(attackOrigin, attackFacing, SECTOR_RADIUS, SECTOR_ANGLE, it.position) }
+        targets.filter {
+            if (nextAttack == 1) {
+                FixedAttackTester.isInAttackRegion(
+                    FixedAttackType.FORWARD_SLAM,
+                    attackOrigin,
+                    attackFacing,
+                    it.position,
+                )
+            } else {
+                isInsideSector(attackOrigin, attackFacing, SECTOR_RADIUS, SECTOR_ANGLE, it.position)
+            }
+        }
             .filter { dashHitTargets.add(it.id) }
             .forEach { events += RiftExecutionerEvent.AttackHit(executionId, it.id, if (nextAttack == 1) SLAM_DAMAGE else SECTOR_DAMAGE) }
     }
@@ -461,8 +473,14 @@ class RiftExecutionerController(
             val damageTicks = zone.damageTicks + 1
             if (damageTicks >= RIFT_DAMAGE_PERIOD) {
                 targets.filter { isInsideSector(zone.origin, zone.facing, SECTOR_RADIUS, SECTOR_ANGLE, it.position) }
-                    .forEach { events += RiftExecutionerEvent.AttackHit(zone.id * 1_000_000L + damageTicks, it.id, RIFT_DAMAGE) }
-                updated += zone.copy(remainingTicks = remaining, damageTicks = 0)
+                    .forEach {
+                        events += RiftExecutionerEvent.AttackHit(
+                            zone.id * 1_000_000L + zone.damagePulse + 1,
+                            it.id,
+                            RIFT_DAMAGE,
+                        )
+                    }
+                updated += zone.copy(remainingTicks = remaining, damageTicks = 0, damagePulse = zone.damagePulse + 1)
             } else {
                 updated += zone.copy(remainingTicks = remaining, damageTicks = damageTicks)
             }
