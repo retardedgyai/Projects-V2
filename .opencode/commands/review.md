@@ -5,7 +5,7 @@ agent: plan
 
 現在のBranchの変更を読み取り専用でレビューしてください。ファイルは変更しないでください。
 
-最初に `AGENTS.md` を読む。
+最初に `AGENTS.md` と `docs/development/sol-review.md` を読む。
 その後 `git status`、`git diff --stat`、`git diff`、必要なら `git log` / `git show` を使って確認する。
 
 重点:
@@ -17,6 +17,8 @@ agent: plan
 - lifecycle / cleanup漏れがないか
 - Test不足や明確なedge caseがないか
 - ProjectSの現在の設計判断と矛盾していないか
+
+判定は `PASS` / `FIX-FIRST` / `BLOCKED` のいずれかに統一する。Playgroundでは `DROP` も可。細かいstyle好みだけで `FIX-FIRST` にせず、Manual Visual / Feelは人間Creatorの判断とする。
 
 細かい好みより、実際に壊れる問題・手戻りになる問題を優先する。
 
