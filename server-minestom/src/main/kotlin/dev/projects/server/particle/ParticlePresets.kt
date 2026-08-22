@@ -232,6 +232,7 @@ private fun twinBladesArcRibbon(
     color: Int,
     dustScale: Float,
     swingGeometry: Boolean,
+    durationTicks: Int = 1,
 ): ParticleEffect = ParticleRibbon(
     path = { progress ->
         twinBladesArcPoint(
@@ -254,6 +255,7 @@ private fun twinBladesArcRibbon(
     styleAt = { _, laneProgress ->
         ParticleStyle(dust(lerpColor(color, 0xe8fdff, if (laneProgress == 0.5) 0.35 else 0.0), dustScale), count = if (laneProgress == 0.5) 2 else 1)
     },
+    durationTicks = durationTicks,
 )
 
 private fun twinBladesCrescent(
@@ -495,15 +497,38 @@ private fun skill1TrailRibbon(
     )
 }
 
+private fun skill1TravelOrbit(parameters: ParticlePresetParameters, length: Double, durationTicks: Int): ParticleEffect =
+    ParticleParallel.of(
+        ParticleSpiral(
+            origin = parameters.origin,
+            axis = parameters.direction,
+            radius = 0.28,
+            curveAngle = PI * 2.0,
+            curves = 1.15,
+            axialLength = length * 0.8,
+            durationTicks = durationTicks,
+            style = ParticleStyle(dust(0x126bff, 0.18f), importance = ParticleImportance.COMBAT_FEEDBACK),
+        ),
+        ParticleExplosion(
+            parameters.origin,
+            radius = 0.32,
+            sphere = true,
+            particle = Particle.END_ROD,
+            count = 3,
+            speed = 0.025f,
+            seed = parameters.seedValue() + 7,
+        ),
+    )
+
 private fun skill1StompShards(parameters: ParticlePresetParameters, durationTicks: Int): ParticleEffect {
     val transform = ParticleTransform.fromDirection(parameters.origin, parameters.direction)
-    val shards = (-2..2).map { index ->
-        val side = index * 0.22
-        val vertical = (index % 2) * 0.08 - 0.04
+    val shards = (-3..3).map { index ->
+        val side = index * 0.25
+        val vertical = (index % 2) * 0.1 - 0.05
         ParticleLine(
             start = transform.localPoint(Vec(side, vertical, 0.05)),
-            end = transform.localPoint(Vec(side * 1.45, vertical + index * 0.06, -0.82)),
-            countPerMeter = 8.0,
+            end = transform.localPoint(Vec(side * 1.55, vertical + index * 0.08, -1.08)),
+            countPerMeter = 9.0,
             durationTicks = durationTicks,
             style = ParticleStyle(
                 dust(lerpColor(0x071525, 0x168cff, (index + 2) / 4.0), 0.28f),
@@ -515,10 +540,11 @@ private fun skill1StompShards(parameters: ParticlePresetParameters, durationTick
 }
 
 private fun skill1StompEffect(parameters: ParticlePresetParameters): ParticleEffect {
-    val radius = parameters.radius(0.82)
+    val radius = parameters.radius(0.82) * 1.28
     val duration = parameters.ticks().coerceIn(4, 6)
     val compressionTicks = 2
-    val burstTicks = (duration - compressionTicks).coerceAtLeast(1)
+    val peakTicks = 1
+    val burstTicks = (duration - compressionTicks - peakTicks).coerceAtLeast(1)
     val (_, right, up) = basis(parameters.direction)
     val shadow = ParticleStyle(
         dust(0x020813, 0.46f),
@@ -538,10 +564,10 @@ private fun skill1StompEffect(parameters: ParticlePresetParameters): ParticleEff
     return ParticleSequence.of(
         ParticleParallel.of(
             shrinkingRing(parameters.origin, parameters.direction, radius * 0.82, compressionTicks, shadow),
-            pulseRing(parameters.origin, parameters.direction, radius * 0.38, compressionTicks, body),
+            pulseRing(parameters.origin, parameters.direction, radius * 0.46, compressionTicks, body),
             ParticleCircle(
                 parameters.origin,
-                radius * 0.22,
+                radius * 0.25,
                 axis1 = right,
                 axis2 = up,
                 countPerMeter = 12.0,
@@ -550,10 +576,37 @@ private fun skill1StompEffect(parameters: ParticlePresetParameters): ParticleEff
             ),
         ),
         ParticleParallel.of(
-            pulseRing(parameters.origin, parameters.direction, radius, burstTicks, body),
+            ParticleCircle(
+                parameters.origin,
+                radius * 0.7,
+                axis1 = right,
+                axis2 = up,
+                countPerMeter = 18.0,
+                style = shadow,
+            ),
             ParticleCircle(
                 parameters.origin,
                 radius * 0.32,
+                axis1 = right,
+                axis2 = up,
+                countPerMeter = 20.0,
+                style = core,
+            ),
+            ParticleExplosion(
+                parameters.origin,
+                radius = radius * 0.3,
+                sphere = true,
+                particle = Particle.ELECTRIC_SPARK,
+                count = 6,
+                speed = 0.04f,
+                seed = parameters.seedValue() + 13,
+            ),
+        ),
+        ParticleParallel.of(
+            pulseRing(parameters.origin, parameters.direction, radius, burstTicks, body),
+            ParticleCircle(
+                parameters.origin,
+                radius * 0.38,
                 axis1 = right,
                 axis2 = up,
                 countPerMeter = 14.0,
@@ -565,7 +618,7 @@ private fun skill1StompEffect(parameters: ParticlePresetParameters): ParticleEff
                 radius = radius * 0.45,
                 sphere = false,
                 particle = Particle.ELECTRIC_SPARK,
-                count = 7,
+                count = 12,
                 speed = 0.12f,
                 seed = parameters.seedValue(),
             ),
@@ -575,22 +628,30 @@ private fun skill1StompEffect(parameters: ParticlePresetParameters): ParticleEff
 
 private fun skill1EscapeEffect(parameters: ParticlePresetParameters): ParticleEffect {
     val duration = parameters.ticks().coerceIn(3, 6)
-    val length = parameters.length(1.7)
-    val backward = normalize(parameters.direction).mul(-length * 0.72)
+    val length = parameters.length(1.7) * 1.3
+    val backward = normalize(parameters.direction).mul(-length * 0.78)
     return ParticleParallel.of(
-        skill1TrailRibbon(parameters, length, 1.0, 0x071525, 0.12),
-        skill1TrailRibbon(parameters, length, -1.0, 0x126bff, 0.09),
+        skill1TrailRibbon(parameters, length, 1.0, 0x071525, 0.17),
+        skill1TrailRibbon(parameters, length, -1.0, 0x126bff, 0.13),
         ParticleLine(
             start = parameters.origin,
             end = parameters.origin.add(backward.x(), backward.y(), backward.z()),
-            countPerMeter = 10.0,
+            countPerMeter = 13.0,
             durationTicks = duration,
             style = ParticleStyle(dust(0x70e9ff, 0.20f), importance = ParticleImportance.COMBAT_FEEDBACK),
         ),
+        ParticleCircle(
+            parameters.origin,
+            radius = 0.26,
+            axis1 = basis(parameters.direction).second,
+            axis2 = basis(parameters.direction).third,
+            countPerMeter = 14.0,
+            style = ParticleStyle(dust(0x126bff, 0.18f), importance = ParticleImportance.COMBAT_FEEDBACK),
+        ),
         ParticleExplosion(
             parameters.origin,
-            radius = 0.16,
-            count = 4,
+            radius = 0.22,
+            count = 7,
             speed = 0.04f,
             particle = Particle.ELECTRIC_SPARK,
             seed = parameters.seedValue() + 41,
@@ -598,14 +659,76 @@ private fun skill1EscapeEffect(parameters: ParticlePresetParameters): ParticleEf
     )
 }
 
+private fun twinBladesSkill2StormField(
+    parameters: ParticlePresetParameters,
+    pulse: Int,
+    durationTicks: Int,
+): ParticleEffect {
+    val (_, right, up) = basis(parameters.direction)
+    val radius = 0.42 + pulse * 0.035
+    return ParticleParallel.of(
+        ParticleSpiral(
+            origin = parameters.origin,
+            axis = parameters.direction,
+            radius = radius,
+            curveAngle = PI * 2.0,
+            curves = 1.25,
+            axialLength = 0.7,
+            angleOffset = pulse * PI / 2.0,
+            durationTicks = durationTicks,
+            style = ParticleStyle(dust(0x071525, 0.24f), count = 2),
+        ),
+        ParticleCircle(
+            parameters.origin,
+            radius = 0.8 + pulse * 0.08,
+            axis1 = right,
+            axis2 = up,
+            startDegrees = pulse * 37.0,
+            endDegrees = pulse * 37.0 + 250.0,
+            countPerMeter = 7.0,
+            durationTicks = durationTicks,
+            style = ParticleStyle(dust(0x126bff, 0.16f), importance = ParticleImportance.COMBAT_FEEDBACK),
+        ),
+        ParticleExplosion(
+            parameters.origin,
+            radius = 0.65,
+            sphere = true,
+            particle = if (pulse >= 3) Particle.ELECTRIC_SPARK else Particle.END_ROD,
+            count = 3 + pulse,
+            speed = 0.025f,
+            seed = parameters.seedValue() + pulse * 29L,
+        ),
+    )
+}
+
+private fun twinBladesConvergingStreaks(parameters: ParticlePresetParameters, durationTicks: Int): ParticleEffect {
+    val (forward, right, up) = basis(parameters.direction)
+    val streaks = listOf(-1.0, -0.55, 0.55, 1.0).mapIndexed { index, lateral ->
+        val vertical = -0.35 - index * 0.12
+        val start = parameters.origin.add(
+            right.x() * lateral + up.x() * vertical + forward.x() * 0.65,
+            right.y() * lateral + up.y() * vertical + forward.y() * 0.65,
+            right.z() * lateral + up.z() * vertical + forward.z() * 0.65,
+        )
+        ParticleLine(
+            start = start,
+            end = parameters.origin.add(forward.x() * 0.12, forward.y() * 0.12, forward.z() * 0.12),
+            countPerMeter = 10.0,
+            durationTicks = durationTicks,
+            style = ParticleStyle(dust(lerpColor(0x071525, 0x70e9ff, index / 3.0), 0.26f), importance = ParticleImportance.COMBAT_FEEDBACK),
+        )
+    }
+    return ParticleBatch.of(*streaks.toTypedArray())
+}
+
 private fun twinBladesSkill2Pulse(parameters: ParticlePresetParameters): ParticleEffect {
     val pulse = parameters.number("pulse", 1.0).roundToInt().coerceIn(1, 4)
     val duration = parameters.ticks().coerceIn(1, 3)
     val length = when (pulse) {
-        1 -> 3.1
-        2 -> 3.35
-        3 -> 3.8
-        else -> 4.1
+        1 -> 4.0
+        2 -> 4.25
+        3 -> 4.65
+        else -> 4.9
     }
     val primary = parameters.color("colorPrimary", 0x168cff)
     val secondary = parameters.color("colorSecondary", 0x071525)
@@ -619,6 +742,7 @@ private fun twinBladesSkill2Pulse(parameters: ParticlePresetParameters): Particl
     )
     return when (pulse) {
         1 -> ParticleParallel.of(
+            twinBladesSkill2StormField(parameters, pulse, duration),
             twinBladesCrescent(parameters, 42.0, length, duration, swingGeometry = false),
             ParticleGeometry.drawParticleLineSlash(
                 parameters.origin,
@@ -631,27 +755,30 @@ private fun twinBladesSkill2Pulse(parameters: ParticlePresetParameters): Particl
             spark,
         )
         2 -> ParticleParallel.of(
+            twinBladesSkill2StormField(parameters, pulse, duration),
             twinBladesReverseHook(parameters, -48.0, length, duration, swingGeometry = false),
+            ParticleSequence.of(ParticleDelay(1), twinBladesCrescent(parameters, -42.0, length * 0.88, 1, swingGeometry = false)),
             ParticleExplosion(parameters.origin, radius = 0.4, count = 5, speed = 0.04f, particle = Particle.ENCHANT, seed = parameters.seedValue() + 19),
             spark,
         )
         3 -> ParticleParallel.of(
+            twinBladesSkill2StormField(parameters, pulse, duration),
             ParticleGeometry.drawCleaveArc(
                 parameters.origin,
                 parameters.direction,
                 parameters.radius(2.75),
                 0.0,
-                -108.0,
-                108.0,
+                -150.0,
+                150.0,
                 2,
                 ringSpacing = 0.18,
-                degreesPerTick = 216.0 / duration,
+                degreesPerTick = 300.0 / duration,
             ) { _, ring, progress ->
                 ParticleStyle(dust(if (ring == 0) lerpColor(secondary, primary, progress) else 0x168cff, if (ring == 0) 0.36f else 0.24f))
             },
             ParticleCircle(
                 parameters.origin,
-                parameters.radius(1.9),
+                parameters.radius(2.15),
                 axis1 = basis(parameters.direction).second,
                 axis2 = basis(parameters.direction).third,
                 countPerMeter = 9.0,
@@ -660,25 +787,27 @@ private fun twinBladesSkill2Pulse(parameters: ParticlePresetParameters): Particl
             spark,
         )
         else -> ParticleParallel.of(
+            twinBladesSkill2StormField(parameters, pulse, duration),
             twinBladesReverseHook(parameters, -56.0, length, duration, swingGeometry = false),
             ParticleGeometry.drawParticleLineSlash(
                 parameters.origin,
                 parameters.direction,
                 -68.0,
-                length * 0.92,
+                length,
                 0.12,
                 duration,
             ) { _, middle, _, _ -> ParticleStyle(dust(lerpColor(secondary, 0xe8fdff, middle), 0.3f)) },
             ParticleGeometry.drawCleaveArc(
                 parameters.origin,
                 parameters.direction,
-                parameters.radius(2.2),
+                parameters.radius(2.55),
                 -18.0,
                 -86.0,
                 28.0,
                 1,
                 degreesPerTick = 114.0 / duration,
             ) { _, _, progress -> ParticleStyle(dust(lerpColor(primary, 0xe8fdff, progress), 0.24f)) },
+            twinBladesConvergingStreaks(parameters, duration),
             spark,
         )
     }
@@ -686,7 +815,7 @@ private fun twinBladesSkill2Pulse(parameters: ParticlePresetParameters): Particl
 
 private fun twinBladesSkill2Finisher(parameters: ParticlePresetParameters): ParticleEffect {
     val duration = parameters.ticks().coerceIn(4, 8)
-    val radius = parameters.radius(4.0)
+    val radius = parameters.radius(4.0) * 1.2
     val primary = parameters.color("colorPrimary", 0xe8fdff)
     val secondary = parameters.color("colorSecondary", 0x071525)
     val arcStyle: (Point, Int, Double) -> ParticleStyle = { _, ring, progress ->
@@ -724,12 +853,30 @@ private fun twinBladesSkill2Finisher(parameters: ParticlePresetParameters): Part
             duration,
             ParticleStyle(dust(0x168cff, 0.34f), count = 2),
         ),
+        pulseRing(
+            parameters.origin,
+            parameters.direction,
+            radius * 0.78,
+            duration,
+            ParticleStyle(dust(0x071525, 0.44f), count = 2),
+        ),
+        twinBladesLandingShards(parameters, duration),
+        ParticleSpiral(
+            origin = parameters.origin,
+            axis = parameters.direction,
+            radius = radius * 0.42,
+            curveAngle = PI * 2.0,
+            curves = 1.6,
+            axialLength = 0.55,
+            durationTicks = duration,
+            style = ParticleStyle(dust(0x126bff, 0.2f), count = 2),
+        ),
         ParticleExplosion(
             parameters.origin,
             radius = radius * 0.55,
             sphere = true,
             particle = Particle.END_ROD,
-            count = 28,
+            count = 42,
             speed = 0.24f,
             seed = parameters.seedValue() + 41,
         ),
@@ -738,7 +885,7 @@ private fun twinBladesSkill2Finisher(parameters: ParticlePresetParameters): Part
             radius = radius * 0.7,
             sphere = true,
             particle = Particle.ENCHANT,
-            count = 14,
+            count = 22,
             speed = 0.18f,
             seed = parameters.seedValue() + 47,
         ),
@@ -747,12 +894,32 @@ private fun twinBladesSkill2Finisher(parameters: ParticlePresetParameters): Part
              radius = radius * 0.35,
              sphere = true,
              particle = Particle.ELECTRIC_SPARK,
-             count = 18,
+             count = 26,
              speed = 0.2f,
              seed = parameters.seedValue() + 53,
          ),
-     )
- }
+      )
+  }
+
+private fun twinBladesLandingShards(parameters: ParticlePresetParameters, durationTicks: Int): ParticleEffect {
+    val (forward, right, up) = basis(parameters.direction)
+    val shards = (0 until 6).map { index ->
+        val angle = index * PI / 3.0
+        val radial = right.mul(cos(angle) * 0.72).add(up.mul(sin(angle) * 0.72))
+        ParticleLine(
+            start = parameters.origin.add(radial.x(), radial.y(), radial.z()),
+            end = parameters.origin.add(
+                radial.x() * 0.28 + forward.x() * 1.15,
+                radial.y() * 0.28 + forward.y() * 1.15,
+                radial.z() * 0.28 + forward.z() * 1.15,
+            ),
+            countPerMeter = 11.0,
+            durationTicks = durationTicks,
+            style = ParticleStyle(dust(if (index % 2 == 0) 0x70e9ff else 0xe8fdff, 0.26f), importance = ParticleImportance.COMBAT_FEEDBACK),
+        )
+    }
+    return ParticleBatch.of(*shards.toTypedArray())
+}
 
 private fun twinBladesSkill3Slash(
     parameters: ParticlePresetParameters,
@@ -762,6 +929,9 @@ private fun twinBladesSkill3Slash(
     durationTicks: Int,
     bodyColor: Int,
 ): ParticleEffect = ParticleBatch.of(
+    twinBladesArcRibbon(parameters.copy(origin = origin), angleDegrees, length, 0.42, 0.0, 1.0, 0x030811, 0.28f, false, durationTicks),
+    twinBladesArcRibbon(parameters.copy(origin = origin), angleDegrees, length, 0.3, 0.0, 1.0, bodyColor, 0.42f, false, durationTicks),
+    twinBladesArcRibbon(parameters.copy(origin = origin), angleDegrees, length, 0.1, 0.0, 1.0, parameters.color("colorPrimary", 0x8fffff), 0.24f, false, durationTicks),
     ParticleGeometry.drawParticleLineSlash(
         origin,
         parameters.direction,
@@ -792,12 +962,12 @@ private fun twinBladesSkill3RecoilRibbon(parameters: ParticlePresetParameters, d
     val transform = ParticleTransform.fromDirection(parameters.origin, parameters.direction)
     return ParticleBatch.of(
         ParticleRibbon(
-            path = { progress -> transform.localPoint(Vec(0.0, 0.0, progress * 0.9)) },
-            sampleCount = 10,
-            lanes = 3,
-            width = KeyframeCurve.double(
-                CurveKeyframe(0.0, 0.18),
-                CurveKeyframe(0.55, 0.12),
+             path = { progress -> transform.localPoint(Vec(0.0, 0.0, progress * 1.35)) },
+             sampleCount = 10,
+             lanes = 4,
+             width = KeyframeCurve.double(
+                 CurveKeyframe(0.0, 0.3),
+                 CurveKeyframe(0.55, 0.2),
                 CurveKeyframe(1.0, 0.0),
                 easing = Easing.SINE,
             ),
@@ -806,6 +976,16 @@ private fun twinBladesSkill3RecoilRibbon(parameters: ParticlePresetParameters, d
                 val color = if (laneProgress == 0.5) parameters.color("colorPrimary", 0x168cff) else 0x050a14
                 ParticleStyle(dust(color, (0.34 * (1.0 - progress)).coerceAtLeast(0.08).toFloat()))
             },
+        ),
+        ParticleSpiral(
+            origin = parameters.origin,
+            axis = parameters.direction,
+            radius = 0.22,
+            curveAngle = PI * 1.5,
+            curves = 1.0,
+            axialLength = 1.1,
+            durationTicks = durationTicks,
+            style = ParticleStyle(dust(parameters.color("colorPrimary", 0x168cff), 0.22f)),
         ),
         ParticleExplosion(
             parameters.origin,
@@ -894,26 +1074,36 @@ private fun buildCatalogue(): List<ParticlePreset> {
               "Twin Blades Skill3 Dash Trail",
               combat + setOf("class", "twin_blades"),
               listOf(duration(2.0), color("colorPrimary", 0x168cff), color("colorSecondary", 0x050a14)) + common.filter { it.name != "duration" },
-          ) { p ->
-              val transform = ParticleTransform.fromDirection(p.origin, p.direction)
-              ParticleParallel.of(
-                  ParticleRibbon(
-                      path = { progress -> transform.localPoint(Vec(0.0, 0.0, -(0.12 + progress * 0.9))) },
-                      sampleCount = 10,
-                      lanes = 2,
-                      width = KeyframeCurve.double(
-                          CurveKeyframe(0.0, 0.14),
-                          CurveKeyframe(0.5, 0.09),
-                          CurveKeyframe(1.0, 0.02),
+           ) { p ->
+               val transform = ParticleTransform.fromDirection(p.origin, p.direction)
+               ParticleParallel.of(
+                   ParticleRibbon(
+                       path = { progress -> transform.localPoint(Vec(0.0, 0.0, -(0.12 + progress * 1.25))) },
+                       sampleCount = 10,
+                       lanes = 3,
+                       width = KeyframeCurve.double(
+                           CurveKeyframe(0.0, 0.22),
+                           CurveKeyframe(0.5, 0.14),
+                           CurveKeyframe(1.0, 0.02),
                           easing = Easing.SINE,
                       ),
                       durationTicks = p.ticks(),
                       styleAt = { progress, laneProgress ->
                           val color = if (laneProgress == 0.5) p.color("colorPrimary", 0x168cff) else p.color("colorSecondary", 0x050a14)
                           ParticleStyle(dust(color, (0.26 * (1.0 - progress)).coerceAtLeast(0.08).toFloat()))
-                      },
-                  ),
-                  ParticleExplosion(
+                       },
+                   ),
+                   ParticleSpiral(
+                       origin = p.origin,
+                       axis = p.direction,
+                       radius = 0.18,
+                       curveAngle = PI * 1.5,
+                       curves = 1.0,
+                       axialLength = 0.9,
+                       durationTicks = p.ticks(),
+                       style = ParticleStyle(dust(p.color("colorPrimary", 0x168cff), 0.18f)),
+                   ),
+                   ParticleExplosion(
                       transform.localPoint(Vec(0.0, 0.0, -0.28)),
                       count = 2,
                       speed = 0.035f,
@@ -927,8 +1117,8 @@ private fun buildCatalogue(): List<ParticlePreset> {
               "Twin Blades Skill3 Slash Through",
               combat + setOf("class", "twin_blades"),
               listOf(
-                  number("length", 4.8, 4.5, 5.0),
-                  number("aftercutLength", 2.8, 2.25, 3.25),
+                   number("length", 5.8, 5.5, 6.0),
+                   number("aftercutLength", 3.1, 2.5, 3.4),
                   duration(4.0),
                   color("colorPrimary", 0x8fffff),
                   color("colorSecondary", 0x168cff),
@@ -1042,19 +1232,20 @@ private fun buildCatalogue(): List<ParticlePreset> {
               "Twin Blades Skill1 Travel",
               combat + setOf("class", "twin_blades", "skill1"),
               listOf(number("length", 1.35, 0.0, 3.0), number("duration", 2.0, 1.0, 6.0)) + colors + skillCommon,
-          ) { p ->
-              val length = p.length(1.35)
-              val backward = normalize(p.direction).mul(-length)
-              ParticleParallel.of(
+           ) { p ->
+               val length = p.length(1.35) * 1.3
+               val backward = normalize(p.direction).mul(-length)
+               ParticleParallel.of(
                   skill1TrailRibbon(p, length, 1.0, p.color("colorSecondary", 0x071525), 0.11),
                   skill1TrailRibbon(p, length, -1.0, p.color("colorPrimary", 0x168cff), 0.08),
-                  ParticleLine(
+                   ParticleLine(
                       p.origin,
                       p.origin.add(backward.x(), backward.y(), backward.z()),
                       countPerMeter = 8.0,
                       durationTicks = p.ticks(),
-                      style = ParticleStyle(dust(p.color("colorSecondary", 0x071525), 0.18f), importance = ParticleImportance.COMBAT_FEEDBACK),
-                  ),
+                       style = ParticleStyle(dust(p.color("colorSecondary", 0x071525), 0.18f), importance = ParticleImportance.COMBAT_FEEDBACK),
+                   ),
+                   skill1TravelOrbit(p, length, p.ticks()),
                    ParticleExplosion(p.origin, radius = 0.12, count = 3, speed = 0.025f, particle = Particle.ELECTRIC_SPARK, seed = p.seedValue()),
                )
            },
