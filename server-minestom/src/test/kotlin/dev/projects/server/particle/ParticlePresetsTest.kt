@@ -3,6 +3,8 @@ package dev.projects.server.particle
 import net.minestom.server.coordinate.Pos
 import net.minestom.server.coordinate.Vec
 import kotlin.test.Test
+import kotlin.math.cos
+import kotlin.math.sin
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
@@ -55,6 +57,22 @@ class ParticlePresetsTest {
             return sink.spawns
         }
         assertEquals(emit(), emit())
+    }
+
+    @Test
+    fun `twin blades swing emits a finite ribbon with visible width`() {
+        val preset = requireNotNull(ParticlePresetRegistry["projects:class/twin_blades/aa_swing"])
+        val sink = RecordingParticleSink()
+        preset.create(context.with("angle", 35.0).with("length", 2.4).with("duration", 3.0)).emit(0, sink)
+
+        val (_, right, up) = basis(context.direction)
+        val angle = Math.toRadians(35.0)
+        val slashDirection = right.mul(cos(angle)).add(up.mul(sin(angle)))
+        val distances = sink.spawns.map { spawn ->
+            val relative = Vec(spawn.position.x(), spawn.position.y(), spawn.position.z())
+            relative.sub(slashDirection.mul(relative.dot(slashDirection))).length()
+        }
+        assertTrue(distances.maxOrNull()!! >= 0.18)
     }
 
     @Test
