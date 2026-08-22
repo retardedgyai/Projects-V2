@@ -286,6 +286,39 @@ private fun twinBladesReverseHook(
     return ParticleParallel.of(main, ParticleSequence.of(ParticleDelay(1), echo))
 }
 
+private fun twinBladesDelayedBurst(
+    point: Point,
+    delayTicks: Int,
+    particle: Particle,
+    count: Int,
+    speed: Float,
+    seed: Long,
+): ParticleEffect = ParticleSequence.of(
+    ParticleDelay(delayTicks.coerceAtLeast(0)),
+    ParticleExplosion(point, count = count, speed = speed, particle = particle, seed = seed),
+)
+
+private fun twinBladesFinisherAccent(
+    parameters: ParticlePresetParameters,
+    angleDegrees: Double,
+    length: Double,
+    durationTicks: Int,
+): ParticleEffect {
+    val center = twinBladesArcPoint(parameters.origin, parameters.direction, angleDegrees, length, 0.5)
+    return ParticleSequence.of(
+        ParticleDelay((durationTicks - 1).coerceAtLeast(0)),
+        ParticleFlower(
+            center = center,
+            petals = 4,
+            radius = 0.24,
+            sharp = true,
+            planeNormal = parameters.direction,
+            count = 20,
+            style = ParticleStyle(dust(parameters.color("colorPrimary", 0xe8fdff), 0.2f), importance = ParticleImportance.COMBAT_FEEDBACK),
+        ),
+    )
+}
+
 private fun twinBladesScissor(
     parameters: ParticlePresetParameters,
     angleDegrees: Double,
@@ -306,9 +339,32 @@ private fun twinBladesStepEffect(
     durationTicks: Int,
     step: Int,
 ): ParticleEffect = when (step.coerceIn(1, 3)) {
-    1 -> twinBladesCrescent(parameters, angleDegrees, length, durationTicks)
-    2 -> twinBladesReverseHook(parameters, angleDegrees, length, durationTicks)
-    else -> twinBladesScissor(parameters, angleDegrees, length, durationTicks)
+    1 -> ParticleParallel.of(
+        twinBladesCrescent(parameters, angleDegrees, length, durationTicks),
+        twinBladesDelayedBurst(
+            twinBladesArcPoint(parameters.origin, parameters.direction, angleDegrees, length, 1.0),
+            durationTicks - 1,
+            Particle.ENCHANT,
+            count = 3,
+            speed = 0.03f,
+            seed = parameters.seedValue(),
+        ),
+    )
+    2 -> ParticleParallel.of(
+        twinBladesReverseHook(parameters, angleDegrees, length, durationTicks),
+        twinBladesDelayedBurst(
+            twinBladesArcPoint(parameters.origin, parameters.direction, angleDegrees, length, 1.0),
+            durationTicks - 1,
+            Particle.END_ROD,
+            count = 3,
+            speed = 0.03f,
+            seed = parameters.seedValue() + 17,
+        ),
+    )
+    else -> ParticleParallel.of(
+        twinBladesScissor(parameters, angleDegrees, length, durationTicks),
+        twinBladesFinisherAccent(parameters, angleDegrees, length, durationTicks),
+    )
 }
 
 private fun twinBladesContactEmitter(parameters: ParticlePresetParameters, count: Int, radius: Double): ParticleEffect =

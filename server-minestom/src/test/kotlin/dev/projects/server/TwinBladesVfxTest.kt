@@ -29,6 +29,22 @@ class TwinBladesVfxTest {
     }
 
     @Test
+    fun `swing origin uses a camera-safe forward offset`() {
+        assertEquals(1.25, TWIN_BLADES_SWING_FORWARD_OFFSET)
+        listOf(
+            Vec(0.0, 0.0, 1.0),
+            Vec(-0.7, 0.2, 0.68),
+            Vec(0.25, -0.8, 0.55),
+        ).forEach { direction ->
+            val eye = Pos.ZERO.add(0.0, 1.62, 0.0)
+            val origin = twinBladesSwingOrigin(Pos.ZERO, 1.62, direction, 35.0)
+            val forwardDistance = Vec(origin.x() - eye.x(), origin.y() - eye.y(), origin.z() - eye.z())
+                .dot(direction) / direction.length()
+            assertTrue(forwardDistance >= 1.2)
+        }
+    }
+
+    @Test
     fun `combo steps cycle from one through three`() {
         val state = TwinBladesComboState()
         assertEquals(listOf(1, 2, 3, 1), (0..3).map { state.start() })
@@ -51,11 +67,17 @@ class TwinBladesVfxTest {
 
         assertTrue(first.swingLength < second.swingLength)
         assertTrue(second.swingLength < third.swingLength)
-        assertTrue(first.swingDuration < second.swingDuration)
+        assertTrue(first.swingDuration <= second.swingDuration)
         assertTrue(second.hitLength < third.hitLength)
         assertTrue(first.swingPrimary != second.swingPrimary)
         assertTrue(second.swingPrimary != third.swingPrimary)
         assertTrue(first.weakpointDuration < third.weakpointDuration)
+        assertEquals(2.9, first.swingLength)
+        assertEquals(3.4, second.swingLength)
+        assertEquals(4.0, third.swingLength)
+        assertTrue(first.hitLength >= 2.8)
+        assertTrue(second.hitLength >= 3.2)
+        assertTrue(third.hitLength >= 3.8)
     }
 
     @Test
@@ -95,9 +117,9 @@ class TwinBladesVfxTest {
         val dimensions = twinBladesHitVisualDimensions(twinBladesComboVisual(3))
         val visualScale = 1.5
 
-        assertEquals(3.2, dimensions.length)
+        assertEquals(4.0, dimensions.length)
         assertEquals(1.1, dimensions.radius)
-        assertEquals(4.8, dimensions.length * visualScale, absoluteTolerance = 0.000001)
+        assertEquals(6.0, dimensions.length * visualScale, absoluteTolerance = 0.000001)
         assertEquals(1.65, dimensions.radius * visualScale, absoluteTolerance = 0.000001)
     }
 }

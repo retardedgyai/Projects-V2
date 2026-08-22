@@ -10,6 +10,7 @@ internal data class TwinBladesHitVfxPlan(val presets: List<String>)
 internal data class TwinBladesHitVisualDimensions(val length: Double, val radius: Double)
 
 internal const val TWIN_BLADES_COMBO_RESET_TICKS = 12
+internal const val TWIN_BLADES_SWING_FORWARD_OFFSET = 1.25
 
 internal data class TwinBladesComboVisual(
     val step: Int,
@@ -54,17 +55,17 @@ internal fun twinBladesSwingOrigin(position: Point, eyeHeight: Double, direction
     val eye = position.add(0.0, eyeHeight, 0.0)
     val transform = ParticleTransform.fromDirection(eye, direction)
     val handSide = if (angleDegrees >= 0.0) 1.0 else -1.0
-    return transform.localPoint(Vec(handSide * 0.22, -0.38, 1.15))
+    return transform.localPoint(Vec(handSide * 0.22, -0.38, TWIN_BLADES_SWING_FORWARD_OFFSET))
 }
 
 internal fun twinBladesComboVisual(step: Int): TwinBladesComboVisual = when (step.coerceIn(1, 3)) {
     1 -> TwinBladesComboVisual(
         step = 1,
-        swingLength = 1.9,
-        swingDuration = 2,
+        swingLength = 2.9,
+        swingDuration = 3,
         swingPrimary = 0xa8ffff,
         swingSecondary = 0x168cff,
-        hitLength = 2.7,
+        hitLength = 3.0,
         hitDuration = 3,
         hitPrimary = 0x8fffff,
         hitSecondary = 0x168cff,
@@ -74,11 +75,11 @@ internal fun twinBladesComboVisual(step: Int): TwinBladesComboVisual = when (ste
     )
     2 -> TwinBladesComboVisual(
         step = 2,
-        swingLength = 2.1,
+        swingLength = 3.4,
         swingDuration = 3,
         swingPrimary = 0x70e9ff,
         swingSecondary = 0x126bff,
-        hitLength = 3.0,
+        hitLength = 3.4,
         hitDuration = 4,
         hitPrimary = 0x70e9ff,
         hitSecondary = 0x126bff,
@@ -88,11 +89,11 @@ internal fun twinBladesComboVisual(step: Int): TwinBladesComboVisual = when (ste
     )
     else -> TwinBladesComboVisual(
         step = 3,
-        swingLength = 2.3,
+        swingLength = 4.0,
         swingDuration = 3,
         swingPrimary = 0xe8fdff,
         swingSecondary = 0x168cff,
-        hitLength = 3.2,
+        hitLength = 4.0,
         hitDuration = 4,
         hitPrimary = 0xe8fdff,
         hitSecondary = 0x126bff,

@@ -115,6 +115,20 @@ class ParticlePresetsTest {
     }
 
     @Test
+    fun `twin blades finisher delays its second stroke and accent`() {
+        val preset = requireNotNull(ParticlePresetRegistry["projects:class/twin_blades/aa_swing"])
+        val effect = preset.create(context.with("step", 3).with("duration", 3.0))
+        val ticks = (0 until effect.durationTicks).map { tick ->
+            RecordingParticleSink().also { effect.emit(tick, it) }.spawns
+        }
+
+        assertEquals(3, ticks.size)
+        assertTrue(ticks.all { it.isNotEmpty() })
+        assertNotEquals(ticks[0], ticks[1])
+        assertTrue(ticks[2].size > ticks[0].size)
+    }
+
+    @Test
     fun `twin blades arc has visible curvature and uses its angle`() {
         val start = twinBladesArcPoint(Pos.ZERO, context.direction, 35.0, 2.1, 0.0)
         val middle = twinBladesArcPoint(Pos.ZERO, context.direction, 35.0, 2.1, 0.5)
