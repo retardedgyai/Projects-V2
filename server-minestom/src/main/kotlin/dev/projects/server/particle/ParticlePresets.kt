@@ -1173,7 +1173,7 @@ private fun buildCatalogue(): List<ParticlePreset> {
                    ParticleRibbon(
                         path = { progress -> transform.localPoint(Vec(0.0, 0.0, -(0.12 + progress * 2.05))) },
                         sampleCount = 14,
-                        lanes = 4,
+                        lanes = 5,
                         width = KeyframeCurve.double(
                             CurveKeyframe(0.0, 0.3),
                             CurveKeyframe(0.5, 0.19),
