@@ -960,17 +960,31 @@ private fun twinBladesSkill3Ribbon(
     durationTicks: Int,
 ): ParticleEffect = ParticleRibbon(
     path = { progress -> twinBladesSkill3EnvelopePoint(parameters, progress, angleDegrees, length) },
-    sampleCount = 14,
+    sampleCount = 8,
     lanes = lanes,
     width = constantCurve(width),
     durationTicks = durationTicks,
     styleAt = { _, laneProgress ->
         ParticleStyle(
             dust(color, dustScale),
-            count = if (lanes > 3 && laneProgress == 0.5) 2 else 1,
+            count = 1,
             importance = ParticleImportance.COMBAT_FEEDBACK,
         )
     },
+)
+
+private fun twinBladesSkill3Sweep(
+    parameters: ParticlePresetParameters,
+    angleDegrees: Double,
+    length: Double,
+    durationTicks: Int,
+): ParticleEffect = ParticleRibbon(
+    path = { progress -> twinBladesSkill3EnvelopePoint(parameters, progress, angleDegrees, length) },
+    sampleCount = 4,
+    lanes = 1,
+    width = constantCurve(0.0),
+    durationTicks = durationTicks,
+    styleAt = { _, _ -> ParticleStyle(Particle.SWEEP_ATTACK, importance = ParticleImportance.COMBAT_FEEDBACK) },
 )
 
 private fun twinBladesSkill3Slash(
@@ -980,9 +994,10 @@ private fun twinBladesSkill3Slash(
     durationTicks: Int,
     bodyColor: Int,
 ): ParticleEffect = ParticleBatch.of(
-    twinBladesSkill3Ribbon(parameters, angleDegrees, length, 0.72, 0x020813, 0.96f, 5, durationTicks),
-    twinBladesSkill3Ribbon(parameters, angleDegrees, length, 0.54, bodyColor, 0.82f, 5, durationTicks),
-    twinBladesSkill3Ribbon(parameters, angleDegrees, length, 0.3, parameters.color("colorPrimary", 0xffffff), 0.64f, 3, durationTicks),
+    twinBladesSkill3Ribbon(parameters, angleDegrees, length, 0.64, 0x020813, 0.68f, 2, durationTicks),
+    twinBladesSkill3Ribbon(parameters, angleDegrees, length, 0.34, bodyColor, 0.58f, 1, durationTicks),
+    twinBladesSkill3Ribbon(parameters, angleDegrees, length, 0.08, parameters.color("colorPrimary", 0xffffff), 0.5f, 1, durationTicks),
+    twinBladesSkill3Sweep(parameters, angleDegrees, length, durationTicks),
 )
 
 private fun twinBladesSkill3Pulse(
@@ -1002,7 +1017,7 @@ private fun twinBladesSkill3Pulse(
                 ParticleDelay(1),
                 twinBladesSkill3Slash(parameters, -28.0, 5.4, 1, 0x1259d8),
             ),
-            ParticleGeometry.drawCleaveArc(parameters.origin.add(0.0, 1.7, 0.0), parameters.direction, 1.35, 0.0, -58.0, 20.0, 1, degreesPerTick = 78.0) { _, _, progress -> ParticleStyle(dust(lerpColor(0x071525, 0x70e9ff, progress), 0.42f)) },
+            ParticleGeometry.drawCleaveArc(parameters.origin.add(0.0, 1.7, 0.0), parameters.direction, 1.35, 0.0, -58.0, 20.0, 1, degreesPerTick = 78.0) { _, _, progress -> ParticleStyle(dust(lerpColor(0x071525, 0x70e9ff, progress), 0.34f)) },
         )
         3 -> ParticleParallel.of(
             ParticleCircle(
@@ -1010,7 +1025,7 @@ private fun twinBladesSkill3Pulse(
                 radius = 1.45,
                 axis1 = right,
                 axis2 = up,
-                countPerMeter = 10.0,
+                countPerMeter = 5.0,
                 includeEnd = false,
                 startDegrees = -25.0,
                 endDegrees = 205.0,
@@ -1018,14 +1033,14 @@ private fun twinBladesSkill3Pulse(
             ),
             twinBladesSkill3Slash(parameters, 0.0, 6.4, durationTicks, 0x1259d8),
             twinBladesSkill3Slash(parameters, 180.0, 5.8, durationTicks, 0x071525),
-            ParticleGeometry.drawCleaveArc(parameters.origin.add(0.0, 1.7, 0.0), parameters.direction, 1.7, 0.0, 35.0, 145.0, 2, degreesPerTick = 55.0) { _, _, progress -> ParticleStyle(dust(lerpColor(0x126bff, 0x8fffff, progress), 0.34f)) },
+            ParticleGeometry.drawCleaveArc(parameters.origin.add(0.0, 1.7, 0.0), parameters.direction, 1.7, 0.0, 35.0, 145.0, 1, degreesPerTick = 55.0) { _, _, progress -> ParticleStyle(dust(lerpColor(0x126bff, 0x8fffff, progress), 0.3f)) },
         )
         else -> ParticleParallel.of(
             twinBladesSkill3Slash(parameters, 90.0, 6.9, durationTicks, 0x46dfff),
             ParticleLine(
                 parameters.origin.add(0.0, 0.6, 0.0),
                 parameters.origin.add(0.0, 3.45, 0.0),
-                countPerMeter = 13.0,
+                countPerMeter = 5.0,
                 durationTicks = durationTicks,
                 style = ParticleStyle(dust(0xffffff, 0.62f), importance = ParticleImportance.COMBAT_FEEDBACK),
             ),
@@ -1035,7 +1050,7 @@ private fun twinBladesSkill3Pulse(
                 radius = 0.55,
                 sphere = true,
                 particle = Particle.ELECTRIC_SPARK,
-                count = 16,
+                count = 6,
                 speed = 0.14f,
                 seed = parameters.seedValue() + 71,
             ),
@@ -1060,7 +1075,7 @@ private fun twinBladesSkill3Finisher(parameters: ParticlePresetParameters): Part
             radius = 1.45,
             axis1 = basis(parameters.direction).second,
             axis2 = basis(parameters.direction).third,
-            countPerMeter = 11.0,
+            countPerMeter = 5.0,
             includeEnd = false,
             style = ParticleStyle(dust(0x071525, 0.48f), importance = ParticleImportance.COMBAT_FEEDBACK),
         ),
@@ -1069,7 +1084,7 @@ private fun twinBladesSkill3Finisher(parameters: ParticlePresetParameters): Part
             radius = 0.85,
             sphere = true,
             particle = Particle.ELECTRIC_SPARK,
-            count = 30,
+            count = 10,
             speed = 0.22f,
             seed = parameters.seedValue() + 89,
         ),
