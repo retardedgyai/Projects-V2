@@ -775,6 +775,16 @@ fun main() {
             if (hitTargets.isNotEmpty()) {
                 skill3.finishDashOnHit()
                 event.player.setVelocity(skill3HitBounceVelocity(direction))
+                skillTargets.firstOrNull { it.id in hitTargets }?.let { target ->
+                    showSkill3HitVfx(
+                        event.player,
+                        start,
+                        direction,
+                        target,
+                        particleAnimations,
+                        particleManager,
+                    )
+                }
             } else {
                 event.player.setVelocity(
                     Vec(
@@ -784,7 +794,7 @@ fun main() {
                     ),
                 )
             }
-            showSkill3DashTrail(event.player, start, direction)
+            showSkill3DashTrail(event.player, start, direction, particleAnimations, particleManager)
         } else if (skill3Tick.phase == Skill3Phase.HOVER) {
             if (skill3Tick.stopHorizontalVelocity) {
                 event.player.setVelocity(Vec.ZERO)
@@ -793,7 +803,6 @@ fun main() {
             }
         }
         if (previousSkill3Phase == Skill3Phase.DASH && skill3.phase == Skill3Phase.HOVER) {
-            showSkill3Snap(event.player, requireNotNull(skill3Tick.dashDirection))
             showSkill3Hover(event.player)
             sendResourceSnapshot(event.player)
         }
@@ -1469,60 +1478,63 @@ private fun showSkill3Cast(player: net.minestom.server.entity.Player) {
     for (step in 0..2) {
         sendSkillParticle(player, Particle.END_ROD, origin.add(forward.x() * step * 0.3, forward.y() * step * 0.3, forward.z() * step * 0.3))
     }
-    playSkillSound(player, "entity.enderman.teleport", origin, 0.65f, 1.25f)
+    playTwinBladesSounds(player, origin, twinBladesSkill3SoundPlan().travel)
 }
 
 private fun showSkill3DashTrail(
     player: net.minestom.server.entity.Player,
     position: Pos,
     direction: Vec,
+    scheduler: ParticleAnimationScheduler,
+    manager: ParticleManager,
 ) {
-    val origin = position.add(0.0, 0.8, 0.0)
-    val (forward, right, up) = directionBasis(direction)
-    for (step in 0..3) {
-        val progress = step / 3.0
-        val distance = 0.12 + progress * 0.9
-        val core = origin.add(
-            forward.x() * distance,
-            forward.y() * distance,
-            forward.z() * distance,
-        )
-        sendSkillParticle(player, Particle.END_ROD, core)
-        for (ribbon in 0..1) {
-            val phase = progress * Math.PI * 1.4 + ribbon * Math.PI
-            val radial = Vec(
-                right.x() * kotlin.math.cos(phase) * 0.22 + up.x() * kotlin.math.sin(phase) * 0.22,
-                right.y() * kotlin.math.cos(phase) * 0.22 + up.y() * kotlin.math.sin(phase) * 0.22,
-                right.z() * kotlin.math.cos(phase) * 0.22 + up.z() * kotlin.math.sin(phase) * 0.22,
-            )
-            sendSkillParticle(
-                player,
-                if (ribbon == 0) Particle.ENCHANT else Particle.ELECTRIC_SPARK,
-                core.add(radial.x(), radial.y(), radial.z()),
-            )
-        }
-    }
+    startParticlePreset(
+        player = player,
+        id = "projects:class/twin_blades/skill3_dash_trail",
+        scheduler = scheduler,
+        origin = position.add(0.0, 0.8, 0.0),
+        direction = direction,
+        manager = manager,
+        values = mapOf("duration" to 2.0),
+    )
 }
 
-private fun showSkill3Snap(player: net.minestom.server.entity.Player, direction: Vec) {
-    val position = player.position.add(0.0, 0.8, 0.0)
-    val (_, right, up) = directionBasis(direction)
-    sendSkillParticle(player, Particle.EXPLOSION, position)
-    sendSkillParticle(player, Particle.END_ROD, position)
-    sendSkillParticle(player, Particle.CRIT, position.add(right.x() * 0.45, right.y() * 0.45, right.z() * 0.45))
-    sendSkillParticle(player, Particle.CRIT, position.add(-right.x() * 0.45, -right.y() * 0.45, -right.z() * 0.45))
-    sendSkillParticle(player, Particle.CRIT, position.add(up.x() * 0.45, up.y() * 0.45, up.z() * 0.45))
-    sendSkillParticle(player, Particle.CRIT, position.add(-up.x() * 0.45, -up.y() * 0.45, -up.z() * 0.45))
-    for (step in 0..11) {
-        val angle = step * Math.PI / 6.0
-        val radial = Vec(
-            right.x() * kotlin.math.cos(angle) + up.x() * kotlin.math.sin(angle),
-            right.y() * kotlin.math.cos(angle) + up.y() * kotlin.math.sin(angle),
-            right.z() * kotlin.math.cos(angle) + up.z() * kotlin.math.sin(angle),
-        )
-        sendSkillParticle(player, Particle.END_ROD, position.add(radial.x() * 0.62, radial.y() * 0.62, radial.z() * 0.62))
-    }
-    playSkillSound(player, "block.amethyst_block.hit", position, 0.75f, 1.55f)
+private fun showSkill3HitVfx(
+    player: net.minestom.server.entity.Player,
+    dashOrigin: Pos,
+    dashDirection: Vec,
+    target: CombatTarget,
+    scheduler: ParticleAnimationScheduler,
+    manager: ParticleManager,
+) {
+    val contact = twinBladesSkill3ContactPoint(dashOrigin, dashDirection, target.position, target.halfExtent)
+    val visual = TwinBladesSkill3Visual()
+    startParticlePreset(
+        player = player,
+        id = "projects:class/twin_blades/skill3_hit",
+        scheduler = scheduler,
+        origin = contact,
+        direction = dashDirection,
+        manager = manager,
+        values = mapOf(
+            "length" to visual.primaryLength,
+            "aftercutLength" to visual.aftercutLength,
+            "duration" to visual.primaryDuration.toDouble(),
+        ),
+    )
+    val recoilOrigin = player.position.add(0.0, 0.8, 0.0)
+    startParticlePreset(
+        player = player,
+        id = "projects:class/twin_blades/skill3_recoil",
+        scheduler = scheduler,
+        origin = recoilOrigin,
+        direction = dashDirection.mul(-1.0),
+        manager = manager,
+        values = mapOf("duration" to visual.recoilDuration.toDouble()),
+    )
+    val sounds = twinBladesSkill3SoundPlan()
+    playTwinBladesSounds(player, contact, sounds.confirmedHit)
+    playTwinBladesSounds(player, recoilOrigin, sounds.bounce)
 }
 
 private fun showSkill3Hover(player: net.minestom.server.entity.Player) {

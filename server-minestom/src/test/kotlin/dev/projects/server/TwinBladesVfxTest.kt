@@ -163,4 +163,33 @@ class TwinBladesVfxTest {
         assertEquals(6.0, dimensions.length * visualScale, absoluteTolerance = 0.000001)
         assertEquals(1.65, dimensions.radius * visualScale, absoluteTolerance = 0.000001)
     }
+
+    @Test
+    fun `skill3 contact is placed on the ingress surface and remains finite in 3d`() {
+        val contact = twinBladesSkill3ContactPoint(
+            dashOrigin = Pos.ZERO,
+            dashDirection = Vec(0.3, 0.4, 0.8),
+            targetCenter = Pos(0.9, 1.2, 2.4),
+            targetHalfExtent = Vec(0.5, 0.8, 0.5),
+        )
+        assertTrue(listOf(contact.x(), contact.y(), contact.z()).all { it.isFinite() })
+        assertTrue(contact.distance(Pos.ZERO) < Pos(0.9, 1.2, 2.4).distance(Pos.ZERO))
+    }
+
+    @Test
+    fun `skill3 sound plan keeps impact louder than the short bounce accent`() {
+        val plan = twinBladesSkill3SoundPlan()
+        assertEquals(listOf("item.trident.throw"), plan.travel.map { it.key })
+        assertEquals(
+            listOf(
+                "item.trident.throw",
+                "item.trident.throw",
+                "item.axe.scrape",
+                "entity.player.attack.strong",
+                "item.trident.hit",
+            ),
+            plan.confirmedHit.map { it.key },
+        )
+        assertTrue(plan.confirmedHit.maxOf { it.volume } > plan.bounce.maxOf { it.volume })
+    }
 }
