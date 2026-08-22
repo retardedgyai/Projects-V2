@@ -103,19 +103,31 @@ fun main() {
     val attackSpeeds = mutableMapOf<UUID, Double>()
     val prototypeBoss = PrototypeBossState()
     val bossBar = BossBar.bossBar(
-        Component.text("Prototype Hunt Boss ${prototypeBoss.currentHealth} / ${prototypeBoss.maxHealth}"),
+        Component.text("Rift Executioner ${prototypeBoss.currentHealth} / ${prototypeBoss.maxHealth}"),
         prototypeBoss.healthProgress,
         BossBar.Color.RED,
         BossBar.Overlay.PROGRESS,
     )
     var dummy: Entity? = null
     var testerMarkerTick = 0L
-    val fixedTester = FixedAttackTester()
+    val riftExecutioner = RiftExecutionerController()
     val particleAnimations = ParticleAnimationScheduler()
     val particleProfiler = ParticleProfiler()
     val particleManager = ParticleManager(profiler = particleProfiler)
     var nextGroundTelegraphId = 0L
     val lastGroundTelegraphIds = mutableMapOf<UUID, Long>()
+    val bossGroundTelegraphIds = mutableSetOf<Long>()
+    val bossRiftTelegraphIds = mutableMapOf<Long, Long>()
+
+    fun clearBossTelegraphs() {
+        bossGroundTelegraphIds.toList().forEach { telegraphId ->
+            instance.players.forEach { player ->
+                player.sendPluginMessage(PROJECTS_CHANNEL, ProtocolCodec.encode(GroundTelegraphRemove(telegraphId)))
+            }
+        }
+        bossGroundTelegraphIds.clear()
+        bossRiftTelegraphIds.clear()
+    }
 
     fun sendResourceSnapshot(player: net.minestom.server.entity.Player) {
         val resources = classResources[player.uuid] ?: return
@@ -138,10 +150,11 @@ fun main() {
         val status = when {
             prototypeBoss.isVictory -> "VICTORY"
             prototypeBoss.isDefeat -> "DEFEAT"
+            prototypeBoss.encounterState == PrototypeEncounterState.FINAL_STRUGGLE -> "FINAL STRUGGLE"
             else -> null
         }
         val label = buildString {
-            append("Prototype Hunt Boss")
+            append("Rift Executioner")
             if (status != null) append(" - $status")
             append(" ${prototypeBoss.currentHealth} / ${prototypeBoss.maxHealth}")
         }
@@ -175,7 +188,9 @@ fun main() {
     }
 
     fun finishEncounter() {
-        fixedTester.reset()
+        clearBossTelegraphs()
+        riftExecutioner.reset()
+        prototypeBoss.setBreakActive(false)
         stopPlayerActions()
         updateBossBar()
         val result = if (prototypeBoss.isVictory) "VICTORY" else "DEFEAT"
@@ -187,10 +202,14 @@ fun main() {
 
     fun resetEncounter() {
         prototypeBoss.reset()
-        fixedTester.reset()
+        clearBossTelegraphs()
+        riftExecutioner.reset()
+        dummy?.let { boss ->
+            instance.players.firstOrNull()?.let { player -> boss.teleport(player.respawnPoint) }
+        }
         resetPlayers()
         updateBossBar()
-        instance.players.forEach { it.sendMessage(Component.text("Prototype Hunt Boss reset")) }
+        instance.players.forEach { it.sendMessage(Component.text("Rift Executioner reset")) }
     }
 
     val speedArgument = ArgumentType.Double("speed")
@@ -213,6 +232,27 @@ fun main() {
     )
     MinecraftServer.getCommandManager().register(
         Command("bossreset").apply { setDefaultExecutor { _, _ -> resetEncounter() } },
+    )
+    val bossPhaseArgument = ArgumentType.Word("phase")
+    fun handleBossPhase(sender: CommandSender, context: CommandContext) {
+        val player = sender as? net.minestom.server.entity.Player ?: return
+        when (context.get<String>(bossPhaseArgument).lowercase()) {
+            "1" -> prototypeBoss.forcePhase(PrototypeBossPhase.DUEL)
+            "2" -> prototypeBoss.forcePhase(PrototypeBossPhase.RIFT_PRESSURE)
+            "3" -> prototypeBoss.forcePhase(PrototypeBossPhase.EXECUTION)
+            "final" -> prototypeBoss.forceFinalStruggle()
+            else -> {
+                player.sendMessage(Component.text("Use /bossphase 1|2|3|final"))
+                return
+            }
+        }
+        clearBossTelegraphs()
+        riftExecutioner.reset()
+        updateBossBar()
+        player.sendMessage(Component.text("Rift Executioner phase ${context.get<String>(bossPhaseArgument)}"))
+    }
+    MinecraftServer.getCommandManager().register(
+        Command("bossphase").apply { addSyntax(::handleBossPhase, bossPhaseArgument) },
     )
     val aoeSectorLiteral = ArgumentType.Literal("sector")
     val aoeClearLiteral = ArgumentType.Literal("clear")
@@ -460,7 +500,7 @@ fun main() {
             )
             if (dummy == null) {
                 dummy = Entity(EntityType.RAVAGER).apply {
-                    customName = Component.text("Prototype Hunt Boss")
+                        customName = Component.text("Rift Executioner")
                     isCustomNameVisible = true
                     setNoGravity(true)
                     setHasPhysics(false)
@@ -497,6 +537,11 @@ fun main() {
         lastSentCooldowns.remove(playerId)
         attackSpeeds.remove(playerId)
         lastGroundTelegraphIds.remove(playerId)
+        if (instance.players.none { it.uuid != playerId }) {
+            clearBossTelegraphs()
+            riftExecutioner.reset()
+            prototypeBoss.reset()
+        }
     }
     events.addListener(InstanceTickEvent::class.java) { event ->
         if (event.instance === instance) {
@@ -516,15 +561,27 @@ fun main() {
         val skill2 = skill2States[event.player.uuid] ?: return@addListener
         val skill3 = skill3States[event.player.uuid] ?: return@addListener
         if (event.player == instance.players.firstOrNull()) {
-            if (prototypeBoss.isActive) {
-                tickFixedTester(instance, dummy, fixedTester, prototypeBoss, testerMarkerTick++, particleAnimations, particleManager)
-                if (!prototypeBoss.isActive) {
+            if (prototypeBoss.isEncounterRunning) {
+                tickRiftExecutioner(
+                    instance,
+                    dummy,
+                    riftExecutioner,
+                    prototypeBoss,
+                    testerMarkerTick++,
+                    particleAnimations,
+                    particleManager,
+                    bossGroundTelegraphIds,
+                    bossRiftTelegraphIds,
+                ) {
+                    nextGroundTelegraphId++
+                }
+                if (!prototypeBoss.isEncounterRunning) {
                     finishEncounter()
                     return@addListener
                 }
             }
         }
-        if (!prototypeBoss.isActive) return@addListener
+        if (!prototypeBoss.isEncounterRunning) return@addListener
         twinRodsAir.tick(event.player.isOnGround)
         if (dodge.hasPending) state.deferAttackRestart()
         val tester = dummy?.takeIf { it.instance == event.player.instance && !it.isRemoved }
@@ -595,7 +652,7 @@ fun main() {
             }
         }
         publishCombatEvents(event.player, combatEvents.filterIsInstance<CombatEvent.HitConfirmed>())
-        if (!prototypeBoss.isActive) {
+        if (!prototypeBoss.isEncounterRunning) {
             finishEncounter()
             return@addListener
         }
@@ -636,7 +693,7 @@ fun main() {
                 event.player.setVelocity(Vec(0.0, event.player.velocity.y(), 0.0))
             }
         }
-        if (!prototypeBoss.isActive) {
+        if (!prototypeBoss.isEncounterRunning) {
             finishEncounter()
             return@addListener
         }
@@ -654,7 +711,7 @@ fun main() {
             sendResourceSnapshot(event.player)
             event.player.setVelocity(Vec.ZERO)
         }
-        if (!prototypeBoss.isActive) {
+        if (!prototypeBoss.isEncounterRunning) {
             finishEncounter()
             return@addListener
         }
@@ -699,7 +756,7 @@ fun main() {
             showSkill3Hover(event.player)
             sendResourceSnapshot(event.player)
         }
-        if (!prototypeBoss.isActive) {
+        if (!prototypeBoss.isEncounterRunning) {
             finishEncounter()
             return@addListener
         }
@@ -919,14 +976,17 @@ internal fun shouldSyncSkillCooldowns(
     lastSentCooldowns: SkillCooldowns?,
 ): Boolean = syncTick >= 4 && currentCooldowns != lastSentCooldowns
 
-private fun tickFixedTester(
+private fun tickRiftExecutioner(
     instance: Instance,
     testerEntity: Entity?,
-    tester: FixedAttackTester,
+    controller: RiftExecutionerController,
     bossState: PrototypeBossState,
     markerTick: Long,
     scheduler: ParticleAnimationScheduler,
     manager: ParticleManager,
+    bossGroundTelegraphIds: MutableSet<Long>,
+    bossRiftTelegraphIds: MutableMap<Long, Long>,
+    nextTelegraphId: () -> Long,
 ) {
     if (testerEntity == null || testerEntity.isRemoved || testerEntity.instance != instance) return
     val players = instance.players.filter { it.isOnline }
@@ -935,35 +995,85 @@ private fun tickFixedTester(
         val weakpointFacing = testerEntity.position.direction()
         players.forEach { player -> showWeakpointMarkers(player, testerEntity.position, weakpointFacing) }
     }
-    val targets = players.map { FixedAttackTarget(it.uuid, it.position) }
+    val targets = players.map { RiftExecutionerTarget(it.uuid, it.position) }
     val facing = players.firstOrNull()?.let { directionFrom(testerEntity.position, it.position) }
         ?: testerEntity.position.direction()
-    val events = tester.tick(testerEntity.position, facing, targets)
+    val events = controller.tick(
+        origin = testerEntity.position,
+        facing = facing,
+        targets = targets,
+        bossPhase = bossState.phase,
+        encounterState = bossState.encounterState,
+    )
     for (event in events) {
         when (event) {
-            is FixedAttackEvent.Started -> {
+            is RiftExecutionerEvent.SectorTelegraph -> {
                 val label = event.attack.displayName()
-                players.forEach { player ->
-                    player.sendMessage(Component.text("[Tester] $label: telegraph"))
+                players.forEach { player -> player.sendMessage(Component.text("[Rift Executioner] $label: telegraph")) }
+                if (event.attack == RiftExecutionerAttack.SECTOR_CLEAVE) {
+                    val telegraphId = nextTelegraphId()
+                    val message = GroundTelegraphStart.clamped(
+                        telegraphId = telegraphId,
+                        centerX = event.origin.x(),
+                        centerY = event.origin.y(),
+                        centerZ = event.origin.z(),
+                        facingX = event.facing.x(),
+                        facingZ = event.facing.z(),
+                        radius = RiftExecutionerController.SECTOR_RADIUS,
+                        angleDegrees = RiftExecutionerController.SECTOR_ANGLE,
+                        durationTicks = event.durationTicks,
+                    )
+                    bossGroundTelegraphIds += telegraphId
+                    val payload = ProtocolCodec.encode(message)
+                    players.forEach { player -> player.sendPluginMessage(PROJECTS_CHANNEL, payload) }
+                } else {
+                    showTesterTelegraph(
+                        players.first(),
+                        testerEntity.position,
+                        FixedAttackType.FORWARD_SLAM,
+                        event.facing,
+                        scheduler,
+                        manager,
+                    )
                 }
             }
-            is FixedAttackEvent.Telegraph -> {
+            is RiftExecutionerEvent.SectorActive -> {
+                val attack = if (event.attack == RiftExecutionerAttack.FORWARD_SLAM) {
+                    FixedAttackType.FORWARD_SLAM
+                } else {
+                    FixedAttackType.SIDE_SWEEP
+                }
                 players.forEach { player ->
-                    showTesterTelegraph(player, testerEntity.position, event.attack, event.direction, scheduler, manager)
+                    showTesterActive(player, Pos(event.origin.x(), event.origin.y(), event.origin.z()), attack, event.facing)
                 }
             }
-            is FixedAttackEvent.Active -> {
+            is RiftExecutionerEvent.DashTelegraph -> {
                 players.forEach { player ->
-                    showTesterActive(player, testerEntity.position, event.attack, event.direction)
-                    player.sendMessage(Component.text("[Tester] ${event.attack.displayName()}: ACTIVE"))
+                    player.sendMessage(Component.text("[Rift Executioner] Chain Dash: telegraph"))
+                    startParticlePreset(
+                        player,
+                        "projects:combat/projectile_trail",
+                        scheduler,
+                        event.origin.add(0.0, 0.8, 0.0),
+                        FixedAttackTester.normalizeHorizontal(Vec(
+                            event.target.x() - event.origin.x(),
+                            0.0,
+                            event.target.z() - event.origin.z(),
+                        )),
+                        manager,
+                        mapOf("length" to 3.0, "duration" to 18.0),
+                    )
                 }
             }
-            is FixedAttackEvent.HitConfirmed -> {
+            is RiftExecutionerEvent.DashPosition -> {
+                testerEntity.teleport(Pos(event.position.x(), event.position.y(), event.position.z()).withDirection(event.facing))
+            }
+            is RiftExecutionerEvent.AttackHit -> {
                 instance.getPlayerByUuid(event.targetId)?.let { player ->
-                    val damage = bossState.applyBossAttack(player.uuid, event.executionId, event.attack)
+                    val damage = bossState.applyBossDamage(player.uuid, event.executionId, event.damage)
                     if (damage == 0) return@let
                     player.setHealth(bossState.playerEntityHealth(player.uuid))
-                    player.sendMessage(Component.text("[Tester] HIT"))
+                    player.sendMessage(Component.text("[Rift Executioner] HIT $damage"))
                     player.sendPacket(
                         ParticlePacket(
                             Particle.DAMAGE_INDICATOR,
@@ -979,6 +1089,48 @@ private fun tickFixedTester(
                     )
                 }
             }
+            is RiftExecutionerEvent.RiftCreated -> {
+                val telegraphId = nextTelegraphId()
+                bossRiftTelegraphIds[event.zone.id] = telegraphId
+                bossGroundTelegraphIds += telegraphId
+                val message = GroundTelegraphStart.clamped(
+                    telegraphId = telegraphId,
+                    centerX = event.zone.origin.x(),
+                    centerY = event.zone.origin.y(),
+                    centerZ = event.zone.origin.z(),
+                    facingX = event.zone.facing.x(),
+                    facingZ = event.zone.facing.z(),
+                    radius = RiftExecutionerController.SECTOR_RADIUS,
+                    angleDegrees = RiftExecutionerController.SECTOR_ANGLE,
+                    durationTicks = event.zone.remainingTicks,
+                )
+                val payload = ProtocolCodec.encode(message)
+                players.forEach { player -> player.sendPluginMessage(PROJECTS_CHANNEL, payload) }
+            }
+            is RiftExecutionerEvent.RiftRemoved -> {
+                bossRiftTelegraphIds.remove(event.zoneId)?.let { telegraphId ->
+                    bossGroundTelegraphIds.remove(telegraphId)
+                    val payload = ProtocolCodec.encode(GroundTelegraphRemove(telegraphId))
+                    players.forEach { player -> player.sendPluginMessage(PROJECTS_CHANNEL, payload) }
+                }
+            }
+            RiftExecutionerEvent.BreakStarted -> {
+                bossState.setBreakActive(true)
+                players.forEach { player ->
+                    player.sendMessage(Component.text("[Rift Executioner] BREAK"))
+                    startParticlePreset(
+                        player,
+                        "projects:combat/projectile_impact",
+                        scheduler,
+                        testerEntity.position.add(0.0, 0.9, 0.0),
+                        Vec(0.0, 1.0, 0.0),
+                        manager,
+                        mapOf("radius" to 1.4, "duration" to 10.0),
+                    )
+                }
+            }
+            RiftExecutionerEvent.BreakEnded -> bossState.setBreakActive(false)
+            RiftExecutionerEvent.FinalStruggleComplete -> bossState.completeFinalStruggle()
         }
     }
 }
@@ -1384,6 +1536,12 @@ private fun sendTesterParticle(
 private fun FixedAttackType.displayName(): String = when (this) {
     FixedAttackType.SIDE_SWEEP -> "Side Sweep"
     FixedAttackType.FORWARD_SLAM -> "Forward Slam"
+}
+
+private fun RiftExecutionerAttack.displayName(): String = when (this) {
+    RiftExecutionerAttack.SECTOR_CLEAVE -> "Sector Cleave"
+    RiftExecutionerAttack.FORWARD_SLAM -> "Forward Slam"
+    RiftExecutionerAttack.CHAIN_DASH -> "Chain Dash"
 }
 
 private fun moveDodge(

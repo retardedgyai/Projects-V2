@@ -36,7 +36,7 @@ class PrototypeBossStateTest {
     }
 
     @Test
-    fun `same player attack execution damages boss once and clamps victory`() {
+    fun `same player attack execution damages boss once and enters final struggle`() {
         val boss = PrototypeBossState(maxHealth = 440)
 
         assertEquals(20, boss.applyPlayerAttack(1L, WeaponType.HEAVY_BLADE))
@@ -46,9 +46,12 @@ class PrototypeBossStateTest {
         }
 
         assertEquals(0, boss.currentHealth)
-        assertTrue(boss.isVictory)
+        assertTrue(boss.isFinalStruggle)
         assertTrue(boss.isDefeated)
         assertEquals(0, boss.applyPlayerAttack(99L, WeaponType.TWIN_RODS))
+
+        boss.completeFinalStruggle()
+        assertTrue(boss.isVictory)
     }
 
     @Test
@@ -118,5 +121,47 @@ class PrototypeBossStateTest {
         assertTrue(boss.isActive)
         assertEquals(boss.maxHealth, boss.currentHealth)
         assertEquals(boss.playerMaxHealth, boss.playerHealth(playerId))
+    }
+
+    @Test
+    fun `health thresholds advance phases once and hp zero starts final struggle`() {
+        val boss = PrototypeBossState(maxHealth = 100)
+
+        boss.applyPlayerAttack(1L, WeaponType.HEAVY_BLADE)
+        assertEquals(PrototypeBossPhase.DUEL, boss.phase)
+        boss.applyPlayerAttack(2L, WeaponType.HEAVY_BLADE)
+        assertEquals(PrototypeBossPhase.RIFT_PRESSURE, boss.phase)
+        boss.applyPlayerAttack(3L, WeaponType.HEAVY_BLADE)
+        boss.applyPlayerAttack(4L, WeaponType.HEAVY_BLADE)
+        assertEquals(PrototypeBossPhase.EXECUTION, boss.phase)
+        boss.applyPlayerAttack(5L, WeaponType.HEAVY_BLADE)
+
+        assertEquals(PrototypeEncounterState.FINAL_STRUGGLE, boss.encounterState)
+        assertEquals(0, boss.applySkill1Attack(6L, playerId))
+    }
+
+    @Test
+    fun `break multiplier applies to normal and skill damage and clears`() {
+        val boss = PrototypeBossState()
+        val targetId = UUID.randomUUID()
+
+        boss.setBreakActive(true)
+        assertEquals(30, boss.applyPlayerAttack(1L, WeaponType.HEAVY_BLADE))
+        assertEquals(30, boss.applySkill1Attack(2L, targetId))
+        boss.setBreakActive(false)
+        assertEquals(25, boss.applySkill2Attack(3L, targetId))
+    }
+
+    @Test
+    fun `final struggle player death defeats and reset clears lifecycle`() {
+        val boss = PrototypeBossState()
+        boss.forceFinalStruggle()
+
+        assertEquals(20, boss.applyBossDamage(playerId, 1L, 20))
+        assertTrue(boss.isDefeat)
+        boss.reset()
+        assertEquals(PrototypeEncounterState.ACTIVE, boss.encounterState)
+        assertEquals(PrototypeBossPhase.DUEL, boss.phase)
+        assertFalse(boss.breakActive)
     }
 }
