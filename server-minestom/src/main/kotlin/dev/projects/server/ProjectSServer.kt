@@ -1292,6 +1292,7 @@ private fun showTwinRodsHitVfx(
     scale: Double,
     visual: TwinBladesComboVisual,
 ) {
+    val dimensions = twinBladesHitVisualDimensions(visual)
     startParticlePreset(
         player = player,
         id = "projects:class/twin_blades/aa_hit",
@@ -1300,8 +1301,8 @@ private fun showTwinRodsHitVfx(
         direction = facing,
         manager = manager,
         values = mapOf(
-            "length" to visual.hitLength * scale,
-            "radius" to 1.1 * scale,
+            "length" to dimensions.length,
+            "radius" to dimensions.radius,
             "scale" to scale,
             "duration" to visual.hitDuration.toDouble(),
             "colorPrimary" to visual.hitPrimary,

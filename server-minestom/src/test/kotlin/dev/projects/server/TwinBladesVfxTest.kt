@@ -73,4 +73,15 @@ class TwinBladesVfxTest {
         assertEquals(1.35, twinBladesWeakpointRadius(1.0))
         assertEquals(2.0, twinBladesWeakpointRadius(1.5))
     }
+
+    @Test
+    fun `hit dimensions rely on preset scale exactly once`() {
+        val dimensions = twinBladesHitVisualDimensions(twinBladesComboVisual(3))
+        val visualScale = 1.5
+
+        assertEquals(3.2, dimensions.length)
+        assertEquals(1.1, dimensions.radius)
+        assertEquals(4.8, dimensions.length * visualScale, absoluteTolerance = 0.000001)
+        assertEquals(1.65, dimensions.radius * visualScale, absoluteTolerance = 0.000001)
+    }
 }

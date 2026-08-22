@@ -4,6 +4,8 @@ import kotlin.math.max
 
 internal data class TwinBladesHitVfxPlan(val presets: List<String>)
 
+internal data class TwinBladesHitVisualDimensions(val length: Double, val radius: Double)
+
 internal const val TWIN_BLADES_COMBO_RESET_TICKS = 12
 
 internal data class TwinBladesComboVisual(
@@ -103,3 +105,6 @@ internal fun twinBladesVisualScale(width: Double, height: Double): Double =
 
 internal fun twinBladesWeakpointRadius(visualScale: Double): Double =
     (1.35 * visualScale).coerceIn(0.0, 2.0)
+
+internal fun twinBladesHitVisualDimensions(visual: TwinBladesComboVisual): TwinBladesHitVisualDimensions =
+    TwinBladesHitVisualDimensions(length = visual.hitLength, radius = 1.1)
