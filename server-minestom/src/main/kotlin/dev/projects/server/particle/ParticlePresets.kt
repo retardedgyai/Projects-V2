@@ -430,7 +430,7 @@ private fun buildCatalogue(): List<ParticlePreset> {
                             ),
                         )
                   },
-                   if (step == 3) twinBladesContactEmitter(p, count = 8, radius = 0.45) else ParticleExplosion(p.origin, count = 5, speed = 0.1f, particle = Particle.ELECTRIC_SPARK, seed = p.seedValue()),
+                   if (step == 3) ParticleSequence.of(ParticleDelay(1), twinBladesContactEmitter(p, count = 8, radius = 0.45)) else ParticleExplosion(p.origin, count = 5, speed = 0.1f, particle = Particle.ELECTRIC_SPARK, seed = p.seedValue()),
                )
            },
          preset(
