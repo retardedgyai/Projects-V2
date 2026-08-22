@@ -89,6 +89,13 @@ class ParticlePresetsTest {
     }
 
     @Test
+    fun `twin blades authored swing has a readable reach`() {
+        val start = twinBladesArcPoint(Pos.ZERO, context.direction, 35.0, 2.9, 0.0, radiusFactor = 0.55)
+        val end = twinBladesArcPoint(Pos.ZERO, context.direction, 35.0, 2.9, 1.0, radiusFactor = 0.55)
+        assertTrue(start.distance(end) > 2.1)
+    }
+
+    @Test
     fun `twin blades swing mirrors its hand-side origin`() {
         val positive = twinBladesArcPoint(Pos.ZERO, context.direction, 35.0, 2.1, 0.0)
         val negative = twinBladesArcPoint(Pos.ZERO, context.direction, -35.0, 2.1, 0.0)

@@ -201,11 +201,18 @@ private fun wave(origin: Point, direction: Vec, length: Double, amplitude: Doubl
     )
 }
 
-internal fun twinBladesArcPoint(origin: Point, direction: Vec, angleDegrees: Double, length: Double, progress: Double): Point {
+internal fun twinBladesArcPoint(
+    origin: Point,
+    direction: Vec,
+    angleDegrees: Double,
+    length: Double,
+    progress: Double,
+    radiusFactor: Double = 0.46,
+): Point {
     val transform = ParticleTransform.fromDirection(origin, direction)
     val side = if (angleDegrees >= 0.0) 1.0 else -1.0
     val theta = Math.toRadians(-side * 48.0 + side * 96.0 * progress.coerceIn(0.0, 1.0))
-    val radius = length.coerceAtLeast(0.01) * 0.46
+    val radius = length.coerceAtLeast(0.01) * radiusFactor.coerceAtLeast(0.01)
     val localLateral = side * 0.28 + sin(theta) * radius
     val localVertical = -0.28 + (1.0 - cos(theta)) * radius * 0.55
     val localDepth = (1.0 - cos(theta)) * radius * 0.22
@@ -224,8 +231,18 @@ private fun twinBladesArcRibbon(
     end: Double,
     color: Int,
     dustScale: Float,
+    swingGeometry: Boolean,
 ): ParticleEffect = ParticleRibbon(
-    path = { progress -> twinBladesArcPoint(parameters.origin, parameters.direction, angleDegrees, length, start + (end - start) * progress) },
+    path = { progress ->
+        twinBladesArcPoint(
+            parameters.origin,
+            parameters.direction,
+            angleDegrees,
+            length,
+            start + (end - start) * progress,
+            radiusFactor = if (swingGeometry) 0.55 else 0.46,
+        )
+    },
     sampleCount = 12,
     lanes = 3,
     width = KeyframeCurve.double(
@@ -239,18 +256,32 @@ private fun twinBladesArcRibbon(
     },
 )
 
-private fun twinBladesCrescent(parameters: ParticlePresetParameters, angleDegrees: Double, length: Double, durationTicks: Int): ParticleEffect = object : ParticleEffect {
+private fun twinBladesCrescent(
+    parameters: ParticlePresetParameters,
+    angleDegrees: Double,
+    length: Double,
+    durationTicks: Int,
+    swingGeometry: Boolean,
+): ParticleEffect = object : ParticleEffect {
     override val durationTicks: Int = durationTicks.coerceAtLeast(1)
 
     override fun emit(tick: Int, sink: ParticleSink) {
         val progress = if (this.durationTicks == 1) 1.0 else tick.toDouble() / (this.durationTicks - 1)
         val leadingStart = (progress - 0.22).coerceAtLeast(0.0)
         val bodyStart = (progress - 0.48).coerceAtLeast(0.0)
-        ParticleParallel.of(
-            twinBladesArcRibbon(parameters, angleDegrees, length, 0.18, bodyStart, progress, parameters.color("colorSecondary", 0x126bff), 0.38f),
-            twinBladesArcRibbon(parameters, angleDegrees, length, 0.12, leadingStart, progress, parameters.color("colorPrimary", 0x70e9ff), 0.24f),
-            twinBladesArcRibbon(parameters, angleDegrees, length, 0.07, progress, minOf(1.0, progress + 0.08), 0xe8fdff, 0.20f),
-        ).emit(0, sink)
+        val body = ParticleParallel.of(
+            twinBladesArcRibbon(parameters, angleDegrees, length, 0.18, bodyStart, progress, parameters.color("colorSecondary", 0x126bff), 0.38f, swingGeometry),
+            twinBladesArcRibbon(parameters, angleDegrees, length, 0.12, leadingStart, progress, parameters.color("colorPrimary", 0x70e9ff), 0.24f, swingGeometry),
+            twinBladesArcRibbon(parameters, angleDegrees, length, 0.07, progress, minOf(1.0, progress + 0.08), 0xe8fdff, 0.20f, swingGeometry),
+        )
+        if (swingGeometry) {
+            ParticleParallel.of(
+                twinBladesArcRibbon(parameters, angleDegrees, length, 0.14, bodyStart, progress, 0x071525, 0.16f, true),
+                body,
+            ).emit(0, sink)
+        } else {
+            body.emit(0, sink)
+        }
     }
 }
 
@@ -259,6 +290,7 @@ private fun twinBladesReverseHook(
     angleDegrees: Double,
     length: Double,
     durationTicks: Int,
+    swingGeometry: Boolean,
 ): ParticleEffect {
     val transform = ParticleTransform.fromDirection(parameters.origin, parameters.direction)
     val side = if (angleDegrees >= 0.0) 1.0 else -1.0
@@ -268,7 +300,11 @@ private fun twinBladesReverseHook(
     val main = ParticleBezier(
         start = local(0.18, -0.28, 0.0),
         end = local(-0.22, -0.04, 0.62),
-        controlPoints = listOf(local(0.62, 0.42, 0.16), local(-0.72, 0.7, 0.38)),
+        controlPoints = if (swingGeometry) {
+            listOf(local(0.78, 0.52, 0.18), local(-0.86, 0.82, 0.42))
+        } else {
+            listOf(local(0.62, 0.42, 0.16), local(-0.72, 0.7, 0.38))
+        },
         sampleCount = 24,
         durationTicks = durationTicks,
         styleAt = { progress ->
@@ -303,19 +339,49 @@ private fun twinBladesFinisherAccent(
     angleDegrees: Double,
     length: Double,
     durationTicks: Int,
+    swingGeometry: Boolean,
 ): ParticleEffect {
-    val center = twinBladesArcPoint(parameters.origin, parameters.direction, angleDegrees, length, 0.5)
+    val center = twinBladesArcPoint(
+        parameters.origin,
+        parameters.direction,
+        angleDegrees,
+        length,
+        0.5,
+        radiusFactor = if (swingGeometry) 0.55 else 0.46,
+    )
     return ParticleSequence.of(
         ParticleDelay((durationTicks - 1).coerceAtLeast(0)),
-        ParticleFlower(
-            center = center,
-            petals = 4,
-            radius = 0.24,
-            sharp = true,
-            planeNormal = parameters.direction,
-            count = 20,
-            style = ParticleStyle(dust(parameters.color("colorPrimary", 0xe8fdff), 0.2f), importance = ParticleImportance.COMBAT_FEEDBACK),
-        ),
+        if (swingGeometry) {
+            ParticleParallel.of(
+                ParticleFlower(
+                    center = center,
+                    petals = 4,
+                    radius = 0.24,
+                    sharp = true,
+                    planeNormal = parameters.direction,
+                    count = 16,
+                    style = ParticleStyle(dust(parameters.color("colorPrimary", 0xe8fdff), 0.2f), importance = ParticleImportance.COMBAT_FEEDBACK),
+                ),
+                ParticleExplosion(
+                    center,
+                    radius = 0.14,
+                    count = 4,
+                    speed = 0.03f,
+                    particle = Particle.ELECTRIC_SPARK,
+                    seed = parameters.seedValue() + 31,
+                ),
+            )
+        } else {
+            ParticleFlower(
+                center = center,
+                petals = 4,
+                radius = 0.24,
+                sharp = true,
+                planeNormal = parameters.direction,
+                count = 20,
+                style = ParticleStyle(dust(parameters.color("colorPrimary", 0xe8fdff), 0.2f), importance = ParticleImportance.COMBAT_FEEDBACK),
+            )
+        },
     )
 }
 
@@ -324,11 +390,12 @@ private fun twinBladesScissor(
     angleDegrees: Double,
     length: Double,
     durationTicks: Int,
+    swingGeometry: Boolean,
 ): ParticleEffect = ParticleParallel.of(
-    twinBladesCrescent(parameters, angleDegrees, length, durationTicks),
+    twinBladesCrescent(parameters, angleDegrees, length, durationTicks, swingGeometry),
     ParticleSequence.of(
         ParticleDelay(1),
-        twinBladesCrescent(parameters, -angleDegrees, length * 0.9, (durationTicks - 1).coerceAtLeast(1)),
+        twinBladesCrescent(parameters, -angleDegrees, length * 0.9, (durationTicks - 1).coerceAtLeast(1), swingGeometry),
     ),
 )
 
@@ -338,11 +405,12 @@ private fun twinBladesStepEffect(
     length: Double,
     durationTicks: Int,
     step: Int,
+    swingGeometry: Boolean = false,
 ): ParticleEffect = when (step.coerceIn(1, 3)) {
     1 -> ParticleParallel.of(
-        twinBladesCrescent(parameters, angleDegrees, length, durationTicks),
+        twinBladesCrescent(parameters, angleDegrees, length, durationTicks, swingGeometry),
         twinBladesDelayedBurst(
-            twinBladesArcPoint(parameters.origin, parameters.direction, angleDegrees, length, 1.0),
+            twinBladesArcPoint(parameters.origin, parameters.direction, angleDegrees, length, 1.0, if (swingGeometry) 0.55 else 0.46),
             durationTicks - 1,
             Particle.ENCHANT,
             count = 3,
@@ -351,9 +419,9 @@ private fun twinBladesStepEffect(
         ),
     )
     2 -> ParticleParallel.of(
-        twinBladesReverseHook(parameters, angleDegrees, length, durationTicks),
+        twinBladesReverseHook(parameters, angleDegrees, length, durationTicks, swingGeometry),
         twinBladesDelayedBurst(
-            twinBladesArcPoint(parameters.origin, parameters.direction, angleDegrees, length, 1.0),
+            twinBladesArcPoint(parameters.origin, parameters.direction, angleDegrees, length, 1.0, if (swingGeometry) 0.55 else 0.46),
             durationTicks - 1,
             Particle.END_ROD,
             count = 3,
@@ -362,8 +430,8 @@ private fun twinBladesStepEffect(
         ),
     )
     else -> ParticleParallel.of(
-        twinBladesScissor(parameters, angleDegrees, length, durationTicks),
-        twinBladesFinisherAccent(parameters, angleDegrees, length, durationTicks),
+        twinBladesScissor(parameters, angleDegrees, length, durationTicks, swingGeometry),
+        twinBladesFinisherAccent(parameters, angleDegrees, length, durationTicks, swingGeometry),
     )
 }
 
@@ -445,10 +513,11 @@ private fun buildCatalogue(): List<ParticlePreset> {
                  twinBladesStepEffect(
                      p,
                      p.number("angle", 35.0),
-                     p.length(2.4),
-                     p.ticks().coerceAtMost(3),
-                     p.number("step", 1.0).roundToInt(),
-                 )
+                      p.length(2.4),
+                      p.ticks().coerceAtMost(3),
+                      p.number("step", 1.0).roundToInt(),
+                      swingGeometry = true,
+                  )
            },
          preset(
              "projects:class/twin_blades/aa_hit",
