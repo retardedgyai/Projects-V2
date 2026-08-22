@@ -8,6 +8,7 @@ import kotlin.math.sqrt
 enum class Skill3Phase {
     IDLE,
     DASH,
+    MULTIHIT,
     HOVER,
 }
 
@@ -17,9 +18,11 @@ data class Skill3Tick(
     val dashActive: Boolean,
     val velocityY: Double,
     val stopHorizontalVelocity: Boolean = false,
+    val pulseIndex: Int? = null,
+    val finisherActive: Boolean = false,
 )
 
-/** Small server-owned state machine for the Skill3 aerial loop prototype. */
+/** Server-owned state machine for the Skill3 dash, execution pulses, and recoil. */
 class Skill3State(
     private val castIdSource: () -> Long = Skill3ExecutionIds::next,
 ) {
@@ -41,8 +44,14 @@ class Skill3State(
     var castId: Long = 0L
         private set
 
+    var primaryTargetId: UUID? = null
+        private set
+
     private val hitTargets = mutableSetOf<UUID>()
     private val reducedNormalAttackExecutions = mutableSetOf<Long>()
+    private var nextPulseIndex = 1
+    private var ticksUntilNextPulse = 0
+    private var finisherPending = false
 
     val isReady: Boolean
         get() = phase == Skill3Phase.IDLE && cooldownTicksRemaining == 0
@@ -54,7 +63,11 @@ class Skill3State(
         phase = Skill3Phase.DASH
         dashTicksRemaining = DASH_TICKS
         hoverTicksRemaining = 0
+        primaryTargetId = null
         hitTargets.clear()
+        nextPulseIndex = 1
+        ticksUntilNextPulse = 0
+        finisherPending = false
         return castId
     }
 
@@ -77,6 +90,48 @@ class Skill3State(
                 }
                 result
             }
+            Skill3Phase.MULTIHIT -> {
+                when {
+                    finisherPending -> {
+                        finisherPending = false
+                        phase = Skill3Phase.HOVER
+                        hoverTicksRemaining = HOVER_TICKS
+                        cooldownTicksRemaining = COOLDOWN_TICKS
+                        Skill3Tick(
+                            phase = Skill3Phase.MULTIHIT,
+                            dashDirection = dashDirection,
+                            dashActive = false,
+                            velocityY = 0.0,
+                            stopHorizontalVelocity = true,
+                            finisherActive = true,
+                        )
+                    }
+                    ticksUntilNextPulse > 0 -> {
+                        ticksUntilNextPulse--
+                        Skill3Tick(
+                            phase = Skill3Phase.MULTIHIT,
+                            dashDirection = dashDirection,
+                            dashActive = false,
+                            velocityY = 0.0,
+                            stopHorizontalVelocity = true,
+                        )
+                    }
+                    nextPulseIndex <= PULSE_COUNT -> {
+                        val pulse = nextPulseIndex++
+                        ticksUntilNextPulse = PULSE_INTERVAL_TICKS - 1
+                        if (pulse == PULSE_COUNT) finisherPending = true
+                        Skill3Tick(
+                            phase = Skill3Phase.MULTIHIT,
+                            dashDirection = dashDirection,
+                            dashActive = false,
+                            velocityY = 0.0,
+                            stopHorizontalVelocity = true,
+                            pulseIndex = pulse,
+                        )
+                    }
+                    else -> error("Skill3 multihit reached an invalid pulse state")
+                }
+            }
             Skill3Phase.HOVER -> {
                 if (isGrounded) {
                     phase = Skill3Phase.IDLE
@@ -89,7 +144,7 @@ class Skill3State(
                         dashDirection = dashDirection,
                         dashActive = false,
                         velocityY = maxOf(velocityY, -HOVER_FALL_SPEED),
-                        stopHorizontalVelocity = isFirstHoverTick,
+                        stopHorizontalVelocity = isFirstHoverTick && primaryTargetId == null,
                     )
                     hoverTicksRemaining--
                     if (hoverTicksRemaining == 0) phase = Skill3Phase.IDLE
@@ -99,10 +154,23 @@ class Skill3State(
             Skill3Phase.IDLE -> Skill3Tick(Skill3Phase.IDLE, null, false, velocityY)
         }
 
-        if (!wasDashing && cooldownTicksRemaining > 0) {
+        if (!wasDashing && cooldownTicksRemaining > 0 && !tick.finisherActive) {
             cooldownTicksRemaining--
         }
         return tick
+    }
+
+    /** Ends the dash at its first confirmed hit and starts the four-pulse execution. */
+    fun finishDashOnHit(targetId: UUID? = hitTargets.firstOrNull()): Boolean {
+        if (phase != Skill3Phase.DASH) return false
+        if (targetId == null || targetId !in hitTargets) return false
+        phase = Skill3Phase.MULTIHIT
+        dashTicksRemaining = 0
+        primaryTargetId = targetId
+        nextPulseIndex = 1
+        ticksUntilNextPulse = 0
+        finisherPending = false
+        return true
     }
 
     /** Returns true only for the first confirmed target hit by this normal execution. */
@@ -115,7 +183,7 @@ class Skill3State(
         return true
     }
 
-    /** Capsule-like horizontal/vertical segment check; each target is consumed once per cast. */
+    /** Returns only the nearest unconsumed target intersected by this dash segment. */
     fun hitTargetsOnSegment(
         start: Point,
         end: Point,
@@ -123,12 +191,17 @@ class Skill3State(
         radius: Double = DASH_HIT_RADIUS,
     ): List<UUID> {
         require(radius >= 0.0 && radius.isFinite()) { "Skill3 hit radius must be finite and non-negative" }
-        return targets.filter { target ->
-            target.id !in hitTargets && segmentIntersectsTarget(start, end, target.position, target.halfExtent, radius)
-        }.map { target ->
-            hitTargets += target.id
-            target.id
-        }
+        if (phase != Skill3Phase.DASH || hitTargets.isNotEmpty()) return emptyList()
+        val nearest = targets.asSequence()
+            .mapNotNull { target ->
+                segmentIntersectionProgress(start, end, target.position, target.halfExtent, radius)
+                    ?.let { progress -> target to progress }
+            }
+            .minWithOrNull(compareBy { it.second })
+            ?.first
+            ?: return emptyList()
+        hitTargets += nearest.id
+        return listOf(nearest.id)
     }
 
     fun cancelActiveMovement() {
@@ -137,7 +210,11 @@ class Skill3State(
         dashTicksRemaining = 0
         hoverTicksRemaining = 0
         castId = 0L
+        primaryTargetId = null
         hitTargets.clear()
+        nextPulseIndex = 1
+        ticksUntilNextPulse = 0
+        finisherPending = false
     }
 
     fun reset() {
@@ -154,14 +231,18 @@ class Skill3State(
         const val DASH_HIT_RADIUS = 1.0
         const val HOVER_FALL_SPEED = 0.4
         const val NORMAL_ATTACK_REDUCTION_TICKS = 20
+        const val HIT_BOUNCE_SPEED_Y = 6.0
+        const val HIT_BOUNCE_HORIZONTAL_SPEED = 1.5
+        const val PULSE_COUNT = 4
+        const val PULSE_INTERVAL_TICKS = 2
 
-        private fun segmentIntersectsTarget(
+        private fun segmentIntersectionProgress(
             start: Point,
             end: Point,
             center: Point,
             halfExtent: Vec,
             radius: Double,
-        ): Boolean {
+        ): Double? {
             require(
                 halfExtent.x().isFinite() && halfExtent.y().isFinite() && halfExtent.z().isFinite() &&
                     halfExtent.x() >= 0.0 && halfExtent.y() >= 0.0 && halfExtent.z() >= 0.0,
@@ -187,24 +268,37 @@ class Skill3State(
             val deltaX = end.x() - start.x()
             val deltaY = end.y() - start.y()
             val deltaZ = end.z() - start.z()
-            return clip(
+            if (!clip(
                 start.x(),
                 deltaX,
                 center.x() - halfExtent.x() - radius,
                 center.x() + halfExtent.x() + radius,
-            ) && clip(
+            )) return null
+            if (!clip(
                 start.y(),
                 deltaY,
                 center.y() - halfExtent.y() - radius,
                 center.y() + halfExtent.y() + radius,
-            ) && clip(
+            )) return null
+            if (!clip(
                 start.z(),
                 deltaZ,
                 center.z() - halfExtent.z() - radius,
                 center.z() + halfExtent.z() + radius,
-            )
+            )) return null
+            return minimum
         }
     }
+}
+
+internal fun skill3HitBounceVelocity(direction: Vec): Vec {
+    val horizontalLength = sqrt(direction.x() * direction.x() + direction.z() * direction.z())
+    if (horizontalLength <= 1.0e-9) return Vec(0.0, Skill3State.HIT_BOUNCE_SPEED_Y, 0.0)
+    return Vec(
+        -direction.x() / horizontalLength * Skill3State.HIT_BOUNCE_HORIZONTAL_SPEED,
+        Skill3State.HIT_BOUNCE_SPEED_Y,
+        -direction.z() / horizontalLength * Skill3State.HIT_BOUNCE_HORIZONTAL_SPEED,
+    )
 }
 
 data class ClassSkillDirection(val x: Double, val z: Double) {

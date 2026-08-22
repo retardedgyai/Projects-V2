@@ -1,0 +1,220 @@
+package dev.projects.server
+
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertTrue
+import net.minestom.server.coordinate.Pos
+import net.minestom.server.coordinate.Vec
+
+class TwinBladesVfxTest {
+    @Test
+    fun `started swings alternate plus and minus 35 degrees`() {
+        var previous: Double? = null
+        val angles = (0..2).map { nextTwinBladesSwingAngle(previous).also { previous = it } }
+        assertEquals(listOf(35.0, -35.0, 35.0), angles)
+    }
+
+    @Test
+    fun `swing origin stays ahead of the camera and mirrors hand side`() {
+        val direction = Vec(0.3, 0.4, 0.8)
+        val eye = Pos.ZERO.add(0.0, 1.62, 0.0)
+        val positive = twinBladesSwingOrigin(Pos.ZERO, 1.62, direction, 35.0)
+        val negative = twinBladesSwingOrigin(Pos.ZERO, 1.62, direction, -35.0)
+        val positiveDelta = Vec(positive.x() - eye.x(), positive.y() - eye.y(), positive.z() - eye.z())
+        val negativeDelta = Vec(negative.x() - eye.x(), negative.y() - eye.y(), negative.z() - eye.z())
+
+        assertTrue(positiveDelta.dot(direction) / direction.length() > 1.0)
+        assertTrue(negativeDelta.dot(direction) / direction.length() > 1.0)
+        assertTrue(positive.distance(negative) > 0.3)
+    }
+
+    @Test
+    fun `swing origin uses a camera-safe forward offset`() {
+        assertEquals(1.25, TWIN_BLADES_SWING_FORWARD_OFFSET)
+        listOf(
+            Vec(0.0, 0.0, 1.0),
+            Vec(-0.7, 0.2, 0.68),
+            Vec(0.25, -0.8, 0.55),
+        ).forEach { direction ->
+            val eye = Pos.ZERO.add(0.0, 1.62, 0.0)
+            val origin = twinBladesSwingOrigin(Pos.ZERO, 1.62, direction, 35.0)
+            val forwardDistance = Vec(origin.x() - eye.x(), origin.y() - eye.y(), origin.z() - eye.z())
+                .dot(direction) / direction.length()
+            assertTrue(forwardDistance >= 1.2)
+        }
+    }
+
+    @Test
+    fun `combo steps cycle from one through three`() {
+        val state = TwinBladesComboState()
+        assertEquals(listOf(1, 2, 3, 1), (0..3).map { state.start() })
+    }
+
+    @Test
+    fun `combo resets to step one after twelve idle ticks`() {
+        val state = TwinBladesComboState()
+        assertEquals(1, state.start())
+        assertEquals(2, state.start())
+        repeat(TWIN_BLADES_COMBO_RESET_TICKS) { state.tick() }
+        assertEquals(1, state.start())
+    }
+
+    @Test
+    fun `each combo step has a distinct visual plan`() {
+        val first = twinBladesComboVisual(1)
+        val second = twinBladesComboVisual(2)
+        val third = twinBladesComboVisual(3)
+
+        assertTrue(first.swingLength < second.swingLength)
+        assertTrue(second.swingLength < third.swingLength)
+        assertTrue(first.swingDuration <= second.swingDuration)
+        assertTrue(second.hitLength < third.hitLength)
+        assertTrue(first.swingPrimary != second.swingPrimary)
+        assertTrue(second.swingPrimary != third.swingPrimary)
+        assertTrue(first.weakpointDuration < third.weakpointDuration)
+        assertEquals(3.2, first.swingLength)
+        assertEquals(3.7, second.swingLength)
+        assertEquals(4.3, third.swingLength)
+        assertTrue(first.hitLength >= 2.8)
+        assertTrue(second.hitLength >= 3.2)
+        assertTrue(third.hitLength >= 3.8)
+    }
+
+    @Test
+    fun `swing palette is dark blue while hit palette remains separate`() {
+        val first = twinBladesComboVisual(1)
+        val second = twinBladesComboVisual(2)
+        val third = twinBladesComboVisual(3)
+
+        assertTrue(first.swingSecondary <= 0x0a1c34)
+        assertTrue(second.swingSecondary <= 0x0a1c34)
+        assertTrue(third.swingSecondary <= 0x0a1c34)
+        assertTrue(first.swingPrimary in 0x1259d8..0x46dfff)
+        assertTrue(second.swingPrimary in 0x1259d8..0x46dfff)
+        assertTrue(third.swingPrimary in 0x1259d8..0x46dfff)
+        assertTrue(first.hitPrimary != first.swingPrimary)
+        assertTrue(second.hitPrimary != second.swingPrimary)
+        assertTrue(third.hitPrimary != third.swingPrimary)
+    }
+
+    @Test
+    fun `miss has no contact presets`() {
+        assertEquals(emptyList(), twinBladesHitVfxPlan(WeaponType.TWIN_RODS, false, false).presets)
+    }
+
+    @Test
+    fun `normal and weakpoint confirmed hits route through twin presets`() {
+        assertEquals(listOf("projects:class/twin_blades/aa_hit"), twinBladesHitVfxPlan(WeaponType.TWIN_RODS, true, false).presets)
+        assertEquals(
+            listOf("projects:class/twin_blades/aa_hit", "projects:class/twin_blades/weakpoint_hit"),
+            twinBladesHitVfxPlan(WeaponType.TWIN_RODS, true, true).presets,
+        )
+    }
+
+    @Test
+    fun `heavy blade never routes through twin presets`() {
+        assertEquals(emptyList(), twinBladesHitVfxPlan(WeaponType.HEAVY_BLADE, true, true).presets)
+    }
+
+    @Test
+    fun `twin blades sound plan separates swing contact and weakpoint accent`() {
+        val miss = twinBladesSoundPlan(WeaponType.TWIN_RODS, 1, confirmed = false, weakpoint = false)
+        val normal = twinBladesSoundPlan(WeaponType.TWIN_RODS, 2, confirmed = true, weakpoint = false)
+        val weakpoint = twinBladesSoundPlan(WeaponType.TWIN_RODS, 3, confirmed = true, weakpoint = true)
+
+        assertEquals(3, miss.swing.size)
+        assertTrue(miss.contact.isEmpty())
+        assertTrue(miss.weakpointAccent.isEmpty())
+        assertEquals(listOf("item.trident.hit", "item.axe.scrape"), normal.contact.map { it.key })
+        assertTrue(normal.weakpointAccent.isEmpty())
+        assertEquals(listOf("block.note_block.chime"), weakpoint.weakpointAccent.map { it.key })
+        assertTrue(weakpoint.swing != normal.swing)
+    }
+
+    @Test
+    fun `heavy blade never gets twin blades sounds`() {
+        val plan = twinBladesSoundPlan(WeaponType.HEAVY_BLADE, 3, confirmed = true, weakpoint = true)
+
+        assertTrue(plan.swing.isEmpty())
+        assertTrue(plan.contact.isEmpty())
+        assertTrue(plan.weakpointAccent.isEmpty())
+    }
+
+    @Test
+    fun `blade storm sound rhythm grows into a layered landing`() {
+        val pulses = (1..4).map(::twinBladesSkill2PulseSoundPlan)
+        assertEquals(listOf("item.trident.throw"), pulses[0].map { it.key })
+        assertTrue(pulses[2].any { it.key == "item.axe.scrape" })
+        assertTrue(pulses[3].any { it.key == "item.trident.riptide_1" })
+
+        val landing = twinBladesSkill2LandingSoundPlan()
+        assertTrue(landing.size >= 4)
+        assertTrue(landing.any { it.key == "item.trident.hit" })
+        assertTrue(landing.none { it.key == "block.note_block.chime" })
+        assertTrue((pulses.flatten() + landing).all { it.volume <= 0.55f })
+    }
+
+    @Test
+    fun `target scale is bounded and leaves small targets at baseline`() {
+        assertEquals(1.0, twinBladesVisualScale(0.6, 1.8))
+        assertEquals(1.5, twinBladesVisualScale(3.0, 3.0))
+        assertEquals(1.25, twinBladesVisualScale(1.25, 2.0))
+    }
+
+    @Test
+    fun `weakpoint radius is stronger than normal hit and respects preset bound`() {
+        assertEquals(1.35, twinBladesWeakpointRadius(1.0))
+        assertEquals(2.0, twinBladesWeakpointRadius(1.5))
+    }
+
+    @Test
+    fun `hit dimensions rely on preset scale exactly once`() {
+        val dimensions = twinBladesHitVisualDimensions(twinBladesComboVisual(3))
+        val visualScale = 1.5
+
+        assertEquals(4.0, dimensions.length)
+        assertEquals(1.1, dimensions.radius)
+        assertEquals(6.0, dimensions.length * visualScale, absoluteTolerance = 0.000001)
+        assertEquals(1.65, dimensions.radius * visualScale, absoluteTolerance = 0.000001)
+    }
+
+    @Test
+    fun `skill3 contact is placed on the ingress surface and remains finite in 3d`() {
+        val contact = twinBladesSkill3ContactPoint(
+            dashOrigin = Pos.ZERO,
+            dashDirection = Vec(0.3, 0.4, 0.8),
+            targetCenter = Pos(0.9, 1.2, 2.4),
+            targetHalfExtent = Vec(0.5, 0.8, 0.5),
+        )
+        assertTrue(listOf(contact.x(), contact.y(), contact.z()).all { it.isFinite() })
+        assertTrue(contact.distance(Pos.ZERO) < Pos(0.9, 1.2, 2.4).distance(Pos.ZERO))
+    }
+
+    @Test
+    fun `skill3 sound plan keeps impact louder than the short bounce accent`() {
+        val plan = twinBladesSkill3SoundPlan()
+        assertEquals(listOf("item.trident.throw"), plan.travel.map { it.key })
+        assertEquals(
+            listOf(
+                "item.trident.throw",
+                "item.trident.throw",
+                "item.axe.scrape",
+                "entity.player.attack.strong",
+                "item.trident.hit",
+            ),
+            plan.confirmedHit.map { it.key },
+        )
+        assertTrue(plan.confirmedHit.maxOf { it.volume } > plan.bounce.maxOf { it.volume })
+    }
+
+    @Test
+    fun `skill3 pulse sound layers crescendo into a distinct finisher`() {
+        val pulses = (1..4).map(::twinBladesSkill3PulseSoundPlan)
+        assertTrue(pulses[0].size < pulses[3].size)
+        assertTrue(pulses[3].any { it.key == "item.trident.riptide_1" })
+        val finisher = twinBladesSkill3FinisherSoundPlan()
+        assertTrue(finisher.any { it.key == "entity.player.attack.strong" })
+        assertTrue(finisher.none { it.key == "block.note_block.chime" })
+        assertTrue(finisher.maxOf { it.volume } > pulses[3].maxOf { it.volume })
+    }
+}

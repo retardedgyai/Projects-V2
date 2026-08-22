@@ -12,6 +12,8 @@ import dev.projects.protocol.ClassResourceSnapshot
 import dev.projects.protocol.ClassSkillInput
 import dev.projects.protocol.ClassSkillSlot
 import dev.projects.protocol.DodgeInput
+import dev.projects.protocol.GroundTelegraphRemove
+import dev.projects.protocol.GroundTelegraphStart
 import dev.projects.protocol.ProtocolCodec
 import dev.projects.protocol.ProtocolHello
 import dev.projects.protocol.ProtocolHelloAck
@@ -37,6 +39,7 @@ import net.minecraft.core.particles.DustParticleOptions
 import net.minecraft.core.particles.ParticleTypes
 import net.minecraft.sounds.SoundEvents
 import net.minecraft.world.item.Items
+import net.minecraft.world.InteractionHand
 import org.slf4j.LoggerFactory
 import kotlin.math.acos
 import kotlin.math.abs
@@ -47,13 +50,15 @@ import kotlin.math.sqrt
 object ProjectSClient : ClientModInitializer {
     private const val ATTACK_DEBUG_TICKS = 5
     private val attackDebugDust = DustParticleOptions(0xFF0000, 0.65f)
+    private val hitCoreDust = DustParticleOptions(0xFFFFFF, 0.9f)
     private val logger = LoggerFactory.getLogger("projects")
     private var attackHeld = false
     private var dodgeHeld = false
     private var jumpHeld = false
     private var inputSequence = 0L
     private var suppressNextAttackStarted = false
-    private var twinRodSide = false
+    private var twinRodSwingOffhand = false
+    private var hitMarkerTicksRemaining = 0
     private var mana = 0
     private var maxMana = 100
     private var skill1CooldownTicks = 0
@@ -64,6 +69,7 @@ object ProjectSClient : ClientModInitializer {
     private var skill3CooldownMaxTicks = 60
     private var attackDebugShape: AttackDebugShape? = null
     private var attackDebugTicksRemaining = 0
+    private var attackDebugEnabled = true
     private val skillCategory = KeyMapping.Category.register(
         Identifier.fromNamespaceAndPath("projects", "skills"),
     )
@@ -73,6 +79,12 @@ object ProjectSClient : ClientModInitializer {
         InputConstants.KEY_R,
         KeyMapping.Category.GAMEPLAY,
     )
+    private val attackDebugKey = KeyMapping(
+        "key.projects.attack_debug",
+        InputConstants.Type.KEYSYM,
+        InputConstants.KEY_F6,
+        KeyMapping.Category.GAMEPLAY,
+    )
     private val skill1Key = skillKey("key.projects.skill_1", InputConstants.KEY_Z)
     private val skill2Key = skillKey("key.projects.skill_2", InputConstants.KEY_X)
     private val skill3Key = skillKey("key.projects.skill_3", InputConstants.KEY_C)
@@ -80,12 +92,14 @@ object ProjectSClient : ClientModInitializer {
 
     override fun onInitializeClient() {
         KeyMappingHelper.registerKeyMapping(dodgeKey)
+        KeyMappingHelper.registerKeyMapping(attackDebugKey)
         KeyMappingHelper.registerKeyMapping(skill1Key)
         KeyMappingHelper.registerKeyMapping(skill2Key)
         KeyMappingHelper.registerKeyMapping(skill3Key)
         KeyMappingHelper.registerKeyMapping(ultimateKey)
         PayloadTypeRegistry.clientboundPlay().register(ProjectSPayload.TYPE, ProjectSPayload.CODEC)
         PayloadTypeRegistry.serverboundPlay().register(ProjectSPayload.TYPE, ProjectSPayload.CODEC)
+        GroundTelegraphRenderer.register()
 
         ClientPlayNetworking.registerGlobalReceiver(ProjectSPayload.TYPE) { payload, context ->
             try {
@@ -121,6 +135,12 @@ object ProjectSClient : ClientModInitializer {
                         skill3CooldownTicks = message.skill3CooldownTicks
                         skill3CooldownMaxTicks = message.skill3CooldownMaxTicks
                     }
+                    is GroundTelegraphStart -> context.client().execute {
+                        GroundTelegraphRenderer.start(message)
+                    }
+                    is GroundTelegraphRemove -> context.client().execute {
+                        GroundTelegraphRenderer.remove(message.telegraphId)
+                    }
                     else -> require(false) { "Unexpected ProjectS clientbound message" }
                 }
             } catch (error: IllegalArgumentException) {
@@ -144,7 +164,8 @@ object ProjectSClient : ClientModInitializer {
             dodgeHeld = false
             jumpHeld = false
             suppressNextAttackStarted = false
-            twinRodSide = false
+            twinRodSwingOffhand = false
+            hitMarkerTicksRemaining = 0
             mana = 0
             skill1CooldownTicks = 0
             skill2CooldownTicks = 0
@@ -154,6 +175,13 @@ object ProjectSClient : ClientModInitializer {
             return
         }
         renderAttackDebugShape(client)
+        if (hitMarkerTicksRemaining > 0) hitMarkerTicksRemaining--
+        if (attackDebugKey.consumeClick()) {
+            attackDebugEnabled = !attackDebugEnabled
+            player.sendSystemMessage(
+                Component.literal("Attack Debug: ${if (attackDebugEnabled) "ON" else "OFF"}"),
+            )
+        }
         val jumpPressed = client.options.keyJump.isDown()
         if (jumpPressed != jumpHeld) {
             jumpHeld = jumpPressed
@@ -225,6 +253,20 @@ object ProjectSClient : ClientModInitializer {
         val y = context.guiHeight() - 52
         drawResourceBar(context, "MANA $mana / $maxMana", mana, maxMana, x, y, barWidth, barHeight, 0xFF4C9BFF.toInt())
         renderSkillHud(context)
+        renderHitMarker(context)
+    }
+
+    private fun renderHitMarker(context: GuiGraphicsExtractor) {
+        if (hitMarkerTicksRemaining <= 0) return
+        val centerX = context.guiWidth() / 2
+        val centerY = context.guiHeight() / 2
+        val spread = 3 + (3 - hitMarkerTicksRemaining)
+        val arm = 3
+        val color = 0xDDF5FFFF.toInt()
+        context.fill(centerX - spread - arm, centerY - 1, centerX - spread, centerY + 2, color)
+        context.fill(centerX + spread, centerY - 1, centerX + spread + arm, centerY + 2, color)
+        context.fill(centerX - 1, centerY - spread - arm, centerX + 2, centerY - spread, color)
+        context.fill(centerX - 1, centerY + spread, centerX + 2, centerY + spread + arm, color)
     }
 
     private fun renderSkillHud(context: GuiGraphicsExtractor) {
@@ -301,6 +343,11 @@ object ProjectSClient : ClientModInitializer {
     }
 
     private fun renderAttackDebugShape(client: Minecraft) {
+        if (!attackDebugEnabled) {
+            attackDebugShape = null
+            attackDebugTicksRemaining = 0
+            return
+        }
         val shape = attackDebugShape ?: return
         if (client.level == null) return
         when (shape.kind) {
@@ -505,58 +552,110 @@ object ProjectSClient : ClientModInitializer {
                 level.addParticle(ParticleTypes.SWEEP_ATTACK, position.x, position.y - 0.18, position.z, 0.0, 0.0, 0.0)
                 player.playSound(SoundEvents.PLAYER_ATTACK_STRONG, 0.8f, 0.7f)
             }
-            Items.BLAZE_ROD -> {
-                twinRodSide = !twinRodSide
-                val side = if (twinRodSide) 0.28 else -0.28
-                val look = player.lookAngle
-                val horizontalLength = kotlin.math.sqrt(look.x * look.x + look.z * look.z)
-                val rightX = if (horizontalLength > 1.0e-6) look.z / horizontalLength else 1.0
-                val rightZ = if (horizontalLength > 1.0e-6) -look.x / horizontalLength else 0.0
-                level.addParticle(
-                    ParticleTypes.SWEEP_ATTACK,
-                    position.x + rightX * side,
-                    position.y,
-                    position.z + rightZ * side,
-                    0.0,
-                    0.0,
-                    0.0,
-                )
-                player.playSound(SoundEvents.PLAYER_ATTACK_WEAK, 0.45f, 1.35f)
+            Items.IRON_SWORD -> {
+                val hand = if (twinRodSwingOffhand) InteractionHand.OFF_HAND else InteractionHand.MAIN_HAND
+                player.swing(hand, true)
+                twinRodSwingOffhand = !twinRodSwingOffhand
             }
             else -> {
-                level.addParticle(ParticleTypes.SWEEP_ATTACK, position.x, position.y, position.z, 0.0, 0.0, 0.0)
-                player.playSound(SoundEvents.PLAYER_ATTACK_SWEEP, 0.45f, 1.0f)
+                player.swing(InteractionHand.MAIN_HAND, true)
+                twinRodSwingOffhand = false
             }
         }
     }
 
     private fun showHitEffect(client: Minecraft, message: AttackHitConfirmed) {
+        val player = client.player
+        if (player?.mainHandItem?.item == Items.IRON_SWORD) {
+            hitMarkerTicksRemaining = 3
+            return
+        }
+        showHeavyBladeHitEffect(client, message)
+    }
+
+    private fun showHeavyBladeHitEffect(client: Minecraft, message: AttackHitConfirmed) {
         val level = client.level ?: return
         val target = level.getEntity(message.targetId) ?: return
-        val hitY = target.y + target.bbHeight * 0.65
-        val offsets = arrayOf(
-            doubleArrayOf(-0.18, -0.12),
-            doubleArrayOf(0.0, -0.16),
-            doubleArrayOf(0.18, -0.12),
-            doubleArrayOf(-0.2, 0.08),
-            doubleArrayOf(0.2, 0.08),
-            doubleArrayOf(-0.12, 0.2),
-            doubleArrayOf(0.12, 0.2),
-            doubleArrayOf(0.0, 0.0),
-        )
-        for ((offsetX, offsetZ) in offsets) {
+        val player = client.player
+        val hitY = target.y + target.bbHeight * 0.66
+        val attackerX = player?.x ?: target.x
+        val attackerY = player?.let { it.y + it.eyeHeight } ?: hitY
+        val attackerZ = player?.z ?: target.z
+        val towardAttackerX = attackerX - target.x
+        val towardAttackerY = attackerY - hitY
+        val towardAttackerZ = attackerZ - target.z
+        val distance = sqrt(
+            towardAttackerX * towardAttackerX +
+                towardAttackerY * towardAttackerY +
+                towardAttackerZ * towardAttackerZ,
+        ).coerceAtLeast(1.0e-6)
+        val normalX = towardAttackerX / distance
+        val normalY = towardAttackerY / distance
+        val normalZ = towardAttackerZ / distance
+        val referenceX: Double
+        val referenceY: Double
+        val referenceZ: Double
+        if (abs(normalY) < 0.9) {
+            referenceX = 0.0
+            referenceY = 1.0
+            referenceZ = 0.0
+        } else {
+            referenceX = 1.0
+            referenceY = 0.0
+            referenceZ = 0.0
+        }
+        val rightX = referenceY * normalZ - referenceZ * normalY
+        val rightY = referenceZ * normalX - referenceX * normalZ
+        val rightZ = referenceX * normalY - referenceY * normalX
+        val rightLength = sqrt(rightX * rightX + rightY * rightY + rightZ * rightZ)
+        val normalizedRightX = rightX / rightLength
+        val normalizedRightY = rightY / rightLength
+        val normalizedRightZ = rightZ / rightLength
+        val upX = normalY * normalizedRightZ - normalZ * normalizedRightY
+        val upY = normalZ * normalizedRightX - normalX * normalizedRightZ
+        val upZ = normalX * normalizedRightY - normalY * normalizedRightX
+        val surfaceDistance = 0.42
+        val centerX = target.x + normalX * surfaceDistance
+        val centerY = hitY + normalY * surfaceDistance
+        val centerZ = target.z + normalZ * surfaceDistance
+
+        level.addParticle(ParticleTypes.END_ROD, centerX, centerY, centerZ, 0.0, 0.0, 0.0)
+        for (arm in -1..1) {
+            val offset = arm * 0.22
             level.addParticle(
-                ParticleTypes.CRIT,
-                target.x + offsetX,
-                hitY,
-                target.z + offsetZ,
-                offsetX * 0.35,
-                0.08,
-                offsetZ * 0.35,
+                hitCoreDust,
+                centerX + normalizedRightX * offset,
+                centerY + normalizedRightY * offset,
+                centerZ + normalizedRightZ * offset,
+                0.0,
+                0.0,
+                0.0,
+            )
+            level.addParticle(
+                hitCoreDust,
+                centerX + upX * offset,
+                centerY + upY * offset,
+                centerZ + upZ * offset,
+                0.0,
+                0.0,
+                0.0,
             )
         }
-        client.player?.playSound(SoundEvents.PLAYER_ATTACK_CRIT, 0.6f, 1.1f)
+        for (spark in -1..1) {
+            val side = spark * 0.17
+            level.addParticle(
+                ParticleTypes.ELECTRIC_SPARK,
+                centerX + normalizedRightX * side + normalX * 0.05,
+                centerY + normalizedRightY * side + normalY * 0.05,
+                centerZ + normalizedRightZ * side + normalZ * 0.05,
+                normalizedRightX * side * 1.8,
+                0.06 + abs(side) * 0.2,
+                normalizedRightZ * side * 1.8,
+            )
+        }
+        player?.playSound(SoundEvents.PLAYER_ATTACK_CRIT, 0.82f, 1.02f)
     }
+
 }
 
 data class ProjectSPayload(val data: ByteArray) : CustomPacketPayload {

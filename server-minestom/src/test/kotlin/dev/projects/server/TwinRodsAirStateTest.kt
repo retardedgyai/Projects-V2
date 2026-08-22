@@ -1,13 +1,11 @@
 package dev.projects.server
 
 import dev.projects.protocol.AirJumpInput
-import dev.projects.protocol.DodgeInput
 import net.minestom.server.coordinate.Vec
 import kotlin.math.sqrt
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
-import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class TwinRodsAirStateTest {
@@ -20,7 +18,6 @@ class TwinRodsAirStateTest {
         air.tick(isGrounded = true)
 
         assertEquals(0, air.airJumpCharges)
-        assertEquals(2, air.airDodgeCharges)
     }
 
     @Test
@@ -38,21 +35,16 @@ class TwinRodsAirStateTest {
     @Test
     fun `one attack execution grants air rewards only once`() {
         val air = TwinRodsAirState()
-        check(air.consumeAirDodge())
-        check(air.consumeAirDodge())
 
         air.onAttackHit(WeaponType.TWIN_RODS, isGrounded = false, attackExecutionId = 10L)
         assertEquals(1, air.airJumpCharges)
-        assertEquals(1, air.airDodgeCharges)
 
         check(air.consumeAirJump())
         air.onAttackHit(WeaponType.TWIN_RODS, isGrounded = false, attackExecutionId = 10L)
         assertEquals(0, air.airJumpCharges)
-        assertEquals(1, air.airDodgeCharges)
 
         air.onAttackHit(WeaponType.TWIN_RODS, isGrounded = false, attackExecutionId = 11L)
         assertEquals(1, air.airJumpCharges)
-        assertEquals(2, air.airDodgeCharges)
     }
 
     @Test
@@ -127,56 +119,4 @@ class TwinRodsAirStateTest {
         assertEquals(5.0 / sqrt(2.0), diagonal.z(), 1.0e-9)
     }
 
-    @Test
-    fun `air dodge starts with two charges and recovers once per execution`() {
-        val air = TwinRodsAirState()
-        assertEquals(2, air.airDodgeCharges)
-        assertTrue(air.consumeAirDodge())
-        assertTrue(air.consumeAirDodge())
-        assertFalse(air.consumeAirDodge())
-
-        air.onAttackHit(WeaponType.TWIN_RODS, isGrounded = false, attackExecutionId = 10L)
-        air.onAttackHit(WeaponType.TWIN_RODS, isGrounded = false, attackExecutionId = 10L)
-        assertEquals(1, air.airDodgeCharges)
-
-        air.onAttackHit(WeaponType.TWIN_RODS, isGrounded = false, attackExecutionId = 11L)
-        assertEquals(2, air.airDodgeCharges)
-    }
-
-    @Test
-    fun `grounding resets air dodge charges`() {
-        val air = TwinRodsAirState()
-        check(air.consumeAirDodge())
-        air.tick(isGrounded = true)
-        assertEquals(2, air.airDodgeCharges)
-    }
-
-    @Test
-    fun `air dodge queue consumes only when it starts`() {
-        val air = TwinRodsAirState()
-        val dodge = DodgeState()
-        val input = DodgeInput(1.0, 0.0)
-
-        assertTrue(
-            dodge.request(
-                input,
-                canStart = false,
-                facing = Vec(0.0, 0.0, 1.0),
-                startAllowed = air::canStartAirDodge,
-                onStart = { check(air.consumeAirDodge()) },
-            ),
-        )
-        assertEquals(2, air.airDodgeCharges)
-        assertFalse(dodge.request(input, canStart = false, facing = Vec(0.0, 0.0, 1.0)))
-
-        assertNotNull(
-            dodge.tick(
-                canStart = true,
-                facing = Vec(-1.0, 0.0, 0.0),
-                startAllowed = air::canStartAirDodge,
-                onStart = { check(air.consumeAirDodge()) },
-            ),
-        )
-        assertEquals(1, air.airDodgeCharges)
-    }
 }

@@ -10,6 +10,8 @@ import dev.projects.protocol.AirJumpInput
 import dev.projects.protocol.ClassSkillInput
 import dev.projects.protocol.ClassSkillSlot
 import dev.projects.protocol.DodgeInput
+import dev.projects.protocol.GroundTelegraphRemove
+import dev.projects.protocol.GroundTelegraphStart
 import dev.projects.protocol.ProtocolCodec
 import dev.projects.protocol.ProtocolHello
 import dev.projects.protocol.ProtocolHelloAck
@@ -29,12 +31,14 @@ import net.minestom.server.event.player.PlayerPluginMessageEvent
 import net.minestom.server.event.player.PlayerDisconnectEvent
 import net.minestom.server.event.player.PlayerSpawnEvent
 import net.minestom.server.event.player.PlayerTickEvent
+import net.minestom.server.event.instance.InstanceTickEvent
 import net.minestom.server.instance.block.Block
 import net.minestom.server.instance.Instance
 import net.minestom.server.instance.LightingChunk
 import net.minestom.server.instance.Weather
 import net.minestom.server.item.ItemStack
 import net.minestom.server.item.Material
+import net.minestom.server.tag.Tag
 import net.minestom.server.network.packet.server.common.PluginMessagePacket
 import net.minestom.server.network.packet.server.play.ParticlePacket
 import net.minestom.server.particle.Particle
@@ -52,6 +56,15 @@ import net.minestom.server.command.CommandSender
 import net.minestom.server.command.builder.Command
 import net.minestom.server.command.builder.CommandContext
 import net.minestom.server.command.builder.arguments.ArgumentType
+import dev.projects.server.particle.ParticleAnimationScheduler
+import dev.projects.server.particle.ParticleManager
+import dev.projects.server.particle.ParticleProfiler
+import dev.projects.server.particle.ParticlePresetRegistry
+import dev.projects.server.particle.parseParticlePresetOverrides
+import dev.projects.server.particle.startParticlePreset
+import net.minestom.server.command.builder.suggestion.SuggestionEntry
+import dev.projects.server.particle.startParticleDemo
+import dev.projects.server.particle.startParticleV2Diagnostic
 
 private const val SERVER_ADDRESS = "127.0.0.1"
 private const val SERVER_PORT = 25565
@@ -59,6 +72,7 @@ private const val DEFAULT_ATTACK_SPEED = 1.0
 private val SUPPORTED_ATTACK_SPEEDS = setOf(1.0, 1.5, 2.0)
 private const val DODGE_PLAYER_WIDTH = 0.6
 private const val DODGE_PLAYER_HEIGHT = 1.8
+private val TWIN_BLADES_AUTO_OFFHAND = Tag.Boolean("projects_twin_blades_auto_offhand").defaultValue(false)
 
 internal data class SkillCooldowns(
     val skill1: Int,
@@ -87,16 +101,36 @@ fun main() {
     val lastSentCooldowns = mutableMapOf<UUID, SkillCooldowns>()
     val dodgeVelocityActive = mutableMapOf<UUID, Boolean>()
     val attackSpeeds = mutableMapOf<UUID, Double>()
+    val twinBladesSwingAngles = mutableMapOf<UUID, Double>()
+    val twinBladesComboStates = mutableMapOf<UUID, TwinBladesComboState>()
+    val twinBladesAttackSteps = mutableMapOf<UUID, Int>()
     val prototypeBoss = PrototypeBossState()
     val bossBar = BossBar.bossBar(
-        Component.text("Prototype Hunt Boss ${prototypeBoss.currentHealth} / ${prototypeBoss.maxHealth}"),
+        Component.text("Rift Executioner ${prototypeBoss.currentHealth} / ${prototypeBoss.maxHealth}"),
         prototypeBoss.healthProgress,
         BossBar.Color.RED,
         BossBar.Overlay.PROGRESS,
     )
     var dummy: Entity? = null
     var testerMarkerTick = 0L
-    val fixedTester = FixedAttackTester()
+    val riftExecutioner = RiftExecutionerController()
+    val particleAnimations = ParticleAnimationScheduler()
+    val particleProfiler = ParticleProfiler()
+    val particleManager = ParticleManager(profiler = particleProfiler)
+    var nextGroundTelegraphId = 0L
+    val lastGroundTelegraphIds = mutableMapOf<UUID, Long>()
+    val bossGroundTelegraphIds = mutableSetOf<Long>()
+    val bossRiftTelegraphIds = mutableMapOf<Long, Long>()
+
+    fun clearBossTelegraphs() {
+        bossGroundTelegraphIds.toList().forEach { telegraphId ->
+            instance.players.forEach { player ->
+                player.sendPluginMessage(PROJECTS_CHANNEL, ProtocolCodec.encode(GroundTelegraphRemove(telegraphId)))
+            }
+        }
+        bossGroundTelegraphIds.clear()
+        bossRiftTelegraphIds.clear()
+    }
 
     fun sendResourceSnapshot(player: net.minestom.server.entity.Player) {
         val resources = classResources[player.uuid] ?: return
@@ -119,10 +153,11 @@ fun main() {
         val status = when {
             prototypeBoss.isVictory -> "VICTORY"
             prototypeBoss.isDefeat -> "DEFEAT"
+            prototypeBoss.encounterState == PrototypeEncounterState.FINAL_STRUGGLE -> "FINAL STRUGGLE"
             else -> null
         }
         val label = buildString {
-            append("Prototype Hunt Boss")
+            append("Rift Executioner")
             if (status != null) append(" - $status")
             append(" ${prototypeBoss.currentHealth} / ${prototypeBoss.maxHealth}")
         }
@@ -132,6 +167,8 @@ fun main() {
 
     fun stopPlayerActions() {
         combatStates.values.forEach { it.reset() }
+        twinBladesComboStates.values.forEach { it.reset() }
+        twinBladesAttackSteps.clear()
         dodgeStates.values.forEach { it.reset() }
         twinRodsAirStates.values.forEach { it.tick(true) }
         skill1States.values.forEach { it.reset() }
@@ -156,7 +193,9 @@ fun main() {
     }
 
     fun finishEncounter() {
-        fixedTester.reset()
+        clearBossTelegraphs()
+        riftExecutioner.reset()
+        prototypeBoss.setBreakActive(false)
         stopPlayerActions()
         updateBossBar()
         val result = if (prototypeBoss.isVictory) "VICTORY" else "DEFEAT"
@@ -168,10 +207,14 @@ fun main() {
 
     fun resetEncounter() {
         prototypeBoss.reset()
-        fixedTester.reset()
+        clearBossTelegraphs()
+        riftExecutioner.reset()
+        dummy?.let { boss ->
+            instance.players.firstOrNull()?.let { player -> boss.teleport(player.respawnPoint) }
+        }
         resetPlayers()
         updateBossBar()
-        instance.players.forEach { it.sendMessage(Component.text("Prototype Hunt Boss reset")) }
+        instance.players.forEach { it.sendMessage(Component.text("Rift Executioner reset")) }
     }
 
     val speedArgument = ArgumentType.Double("speed")
@@ -194,6 +237,235 @@ fun main() {
     )
     MinecraftServer.getCommandManager().register(
         Command("bossreset").apply { setDefaultExecutor { _, _ -> resetEncounter() } },
+    )
+    val bossPhaseArgument = ArgumentType.Word("phase")
+    fun handleBossPhase(sender: CommandSender, context: CommandContext) {
+        val player = sender as? net.minestom.server.entity.Player ?: return
+        when (context.get<String>(bossPhaseArgument).lowercase()) {
+            "1" -> prototypeBoss.forcePhase(PrototypeBossPhase.DUEL)
+            "2" -> prototypeBoss.forcePhase(PrototypeBossPhase.RIFT_PRESSURE)
+            "3" -> prototypeBoss.forcePhase(PrototypeBossPhase.EXECUTION)
+            "final" -> prototypeBoss.forceFinalStruggle()
+            else -> {
+                player.sendMessage(Component.text("Use /bossphase 1|2|3|final"))
+                return
+            }
+        }
+        clearBossTelegraphs()
+        riftExecutioner.reset()
+        updateBossBar()
+        player.sendMessage(Component.text("Rift Executioner phase ${context.get<String>(bossPhaseArgument)}"))
+    }
+    MinecraftServer.getCommandManager().register(
+        Command("bossphase").apply { addSyntax(::handleBossPhase, bossPhaseArgument) },
+    )
+    val aoeSectorLiteral = ArgumentType.Literal("sector")
+    val aoeClearLiteral = ArgumentType.Literal("clear")
+    val aoeRadiusArgument = ArgumentType.Double("radius")
+    val aoeAngleArgument = ArgumentType.Double("angle")
+    val aoeDurationArgument = ArgumentType.Integer("durationTicks")
+
+    fun startAoeSector(
+        sender: CommandSender,
+        radius: Double = 6.0,
+        angleDegrees: Double = 100.0,
+        durationTicks: Int = 140,
+    ) {
+        val player = sender as? net.minestom.server.entity.Player ?: return
+        val horizontalFacing = FixedAttackTester.normalizeHorizontal(player.position.direction())
+        lastGroundTelegraphIds.remove(player.uuid)?.let { previousId ->
+            player.sendPluginMessage(PROJECTS_CHANNEL, ProtocolCodec.encode(GroundTelegraphRemove(previousId)))
+        }
+        val message = runCatching {
+            GroundTelegraphStart.clamped(
+                telegraphId = ++nextGroundTelegraphId,
+                centerX = player.position.x() + horizontalFacing.x() * 5.0,
+                centerY = player.position.y(),
+                centerZ = player.position.z() + horizontalFacing.z() * 5.0,
+                facingX = horizontalFacing.x(),
+                facingZ = horizontalFacing.z(),
+                radius = radius,
+                angleDegrees = angleDegrees,
+                durationTicks = durationTicks,
+            )
+        }.getOrElse {
+            player.sendMessage(Component.text("/aoedemo sector values must be finite"))
+            return
+        }
+        lastGroundTelegraphIds[player.uuid] = message.telegraphId
+        player.sendPluginMessage(PROJECTS_CHANNEL, ProtocolCodec.encode(message))
+        player.sendMessage(Component.text("Ground sector telegraph started"))
+    }
+
+    MinecraftServer.getCommandManager().register(
+        Command("aoedemo").apply {
+            addSyntax({ sender, _ -> startAoeSector(sender) }, aoeSectorLiteral)
+            addSyntax(
+                { sender, context ->
+                    startAoeSector(
+                        sender,
+                        context.get<Double>(aoeRadiusArgument),
+                        context.get<Double>(aoeAngleArgument),
+                        context.get<Int>(aoeDurationArgument),
+                    )
+                },
+                aoeSectorLiteral,
+                aoeRadiusArgument,
+                aoeAngleArgument,
+                aoeDurationArgument,
+            )
+            addSyntax({ sender, _ ->
+                val player = sender as? net.minestom.server.entity.Player ?: return@addSyntax
+                val id = lastGroundTelegraphIds.remove(player.uuid)
+                if (id == null) {
+                    player.sendMessage(Component.text("No ground telegraph is active"))
+                } else {
+                    player.sendPluginMessage(PROJECTS_CHANNEL, ProtocolCodec.encode(GroundTelegraphRemove(id)))
+                    player.sendMessage(Component.text("Ground telegraph cleared"))
+                }
+            }, aoeClearLiteral)
+        },
+    )
+    val vfxTypeArgument = ArgumentType.Word("type")
+    val vfxImageArgument = ArgumentType.Word("bundledDemoId")
+    val vfxLengthArgument = ArgumentType.Double("length")
+    val vfxDensityArgument = ArgumentType.Double("density")
+    val vfxRadiusArgument = ArgumentType.Double("radius")
+    val vfxStartDegreesArgument = ArgumentType.Double("startDeg")
+    val vfxEndDegreesArgument = ArgumentType.Double("endDeg")
+    val vfxDurationArgument = ArgumentType.Double("duration")
+    val vfxPetalsArgument = ArgumentType.Double("petals")
+    val vfxLineLiteral = ArgumentType.Literal("line")
+    val vfxCircleLiteral = ArgumentType.Literal("circle")
+    val vfxArcLiteral = ArgumentType.Literal("arc")
+    val vfxSlashLiteral = ArgumentType.Literal("slash")
+    val vfxFlowerLiteral = ArgumentType.Literal("flower")
+    val vfxV2TypeArgument = ArgumentType.Word("diagnostic")
+    val vfxV2Types = setOf("anchor", "easing", "timeline", "trail", "ribbon", "lifecycle")
+    val vfxImageLiteral = ArgumentType.Literal("image")
+    fun handleVfxDemo(sender: CommandSender, context: CommandContext) {
+        val player = sender as? net.minestom.server.entity.Player ?: return
+        val type = context.get<String>(vfxTypeArgument).lowercase()
+        if (type !in setOf("line", "circle", "arc", "bezier", "spiral", "lightning", "explosion", "slash", "cleave", "sphere", "dome", "flower", "prism", "all", "evolved")) {
+            player.sendMessage(Component.text("Use /vfxdemo line|circle|arc|bezier|spiral|lightning|explosion|slash|cleave|sphere|dome|flower|prism|all|evolved"))
+            return
+        }
+        startParticleDemo(player, type, particleAnimations, manager = particleManager)
+    }
+    fun handleVfxImageDemo(sender: CommandSender, context: CommandContext) {
+        val player = sender as? net.minestom.server.entity.Player ?: return
+        val bundledDemoId = context.get<String>(vfxImageArgument).lowercase()
+        if (bundledDemoId !in setOf("demo", "default")) {
+            player.sendMessage(Component.text("Use /vfxdemo image demo"))
+            return
+        }
+        startParticleDemo(player, "image", particleAnimations, manager = particleManager)
+    }
+    fun handleVfxParameterized(type: String, sender: CommandSender, context: CommandContext) {
+        val player = sender as? net.minestom.server.entity.Player ?: return
+        val values = when (type) {
+            "line" -> listOf(context.get<Double>(vfxLengthArgument), context.get<Double>(vfxDensityArgument))
+            "circle" -> listOf(context.get<Double>(vfxRadiusArgument))
+            "arc" -> listOf(context.get<Double>(vfxRadiusArgument), context.get<Double>(vfxStartDegreesArgument), context.get<Double>(vfxEndDegreesArgument))
+            "slash" -> listOf(context.get<Double>(vfxLengthArgument), context.get<Double>(vfxDurationArgument))
+            "flower" -> listOf(context.get<Double>(vfxPetalsArgument), context.get<Double>(vfxRadiusArgument))
+            else -> emptyList()
+        }
+        startParticleDemo(player, type, particleAnimations, values, particleManager)
+    }
+    MinecraftServer.getCommandManager().register(
+        Command("vfxstats").apply {
+            setDefaultExecutor { sender, _ ->
+                val counters = particleManager.counters
+                val profile = particleProfiler.snapshot()
+                sender.sendMessage(Component.text("VFX active=${profile.activeEffects} animations=${profile.currentAnimations} requested=${profile.particlesRequested} sent=${profile.particlesSent} degraded=${profile.particlesDegraded} attempted=${counters.attempted} dropped=${counters.dropped} categories=${profile.byCategory} viewers=${profile.byViewer} top=${profile.topEffectIds}"))
+            }
+            addSyntax({ sender, _ -> particleProfiler.reset(); particleManager.resetCounters(); sender.sendMessage(Component.text("VFX stats reset")) }, ArgumentType.Literal("reset"))
+        },
+    )
+    MinecraftServer.getCommandManager().register(
+        Command("vfxdemo").apply {
+            addSyntax(::handleVfxDemo, vfxTypeArgument)
+            addSyntax({ sender, _ -> (sender as? net.minestom.server.entity.Player)?.let { particleAnimations.pauseFor(it) } }, ArgumentType.Literal("evolved"), ArgumentType.Literal("pause"))
+            addSyntax({ sender, _ -> (sender as? net.minestom.server.entity.Player)?.let { particleAnimations.resumeFor(it) } }, ArgumentType.Literal("evolved"), ArgumentType.Literal("resume"))
+            addSyntax({ sender, _ -> (sender as? net.minestom.server.entity.Player)?.let { particleAnimations.cancelFor(it) } }, ArgumentType.Literal("evolved"), ArgumentType.Literal("cancel"))
+            addSyntax(::handleVfxImageDemo, vfxImageLiteral, vfxImageArgument)
+            addSyntax({ sender, context -> handleVfxParameterized("line", sender, context) }, vfxLineLiteral, vfxLengthArgument, vfxDensityArgument)
+            addSyntax({ sender, context -> handleVfxParameterized("circle", sender, context) }, vfxCircleLiteral, vfxRadiusArgument)
+            addSyntax({ sender, context -> handleVfxParameterized("arc", sender, context) }, vfxArcLiteral, vfxRadiusArgument, vfxStartDegreesArgument, vfxEndDegreesArgument)
+            addSyntax({ sender, context -> handleVfxParameterized("slash", sender, context) }, vfxSlashLiteral, vfxLengthArgument, vfxDurationArgument)
+            addSyntax({ sender, context -> handleVfxParameterized("flower", sender, context) }, vfxFlowerLiteral, vfxPetalsArgument, vfxRadiusArgument)
+        },
+    )
+    fun handleVfxV2(sender: CommandSender, context: CommandContext) {
+        val player = sender as? net.minestom.server.entity.Player ?: return
+        val type = context.get<String>(vfxV2TypeArgument).lowercase()
+        if (type !in vfxV2Types) {
+            player.sendMessage(Component.text("Use /vfxv2 anchor|easing|timeline|trail|ribbon|lifecycle"))
+            return
+        }
+        startParticleV2Diagnostic(player, type, particleAnimations, particleManager)
+    }
+    MinecraftServer.getCommandManager().register(
+        Command("vfxv2").apply {
+            addSyntax(::handleVfxV2, vfxV2TypeArgument)
+            addSyntax({ sender, _ -> (sender as? net.minestom.server.entity.Player)?.let { particleAnimations.pauseFor(it) } }, ArgumentType.Literal("pause"))
+            addSyntax({ sender, _ -> (sender as? net.minestom.server.entity.Player)?.let { particleAnimations.resumeFor(it) } }, ArgumentType.Literal("resume"))
+            addSyntax({ sender, _ -> (sender as? net.minestom.server.entity.Player)?.let { particleAnimations.cancelFor(it) } }, ArgumentType.Literal("cancel"))
+        },
+    )
+    val presetIdArgument = ArgumentType.Word("id").setSuggestionCallback { _, _, suggestion ->
+        ParticlePresetRegistry.all.forEach { suggestion.addEntry(SuggestionEntry(it.id)) }
+    }
+    val presetTagArgument = ArgumentType.Word("tag").setSuggestionCallback { _, _, suggestion ->
+        ParticlePresetRegistry.all.flatMap { it.tags }.toSet().sorted().forEach { suggestion.addEntry(SuggestionEntry(it)) }
+    }
+    val presetValuesArgument = ArgumentType.StringArray("parameters").setSuggestionCallback { _, context, suggestion ->
+        val id = runCatching { context.get<String>(presetIdArgument) }.getOrNull()
+        id?.let { ParticlePresetRegistry[it] }?.parameters?.forEach { parameter ->
+            suggestion.addEntry(SuggestionEntry("${parameter.name}="))
+        }
+    }
+    fun handlePresetList(sender: CommandSender, context: CommandContext) {
+        val tag = if (context.has(presetTagArgument)) context.get<String>(presetTagArgument) else null
+        val presets = ParticlePresetRegistry.list(tag)
+        if (presets.isEmpty()) {
+            sender.sendMessage(Component.text(if (tag == null) "No VFX presets registered" else "No VFX presets for tag $tag"))
+            return
+        }
+        sender.sendMessage(Component.text("VFX presets (${presets.size})"))
+        presets.forEach { preset ->
+            val schema = if (preset.parameters.isEmpty()) "" else " params=${preset.parameters.joinToString(",") { it.name }}"
+            sender.sendMessage(Component.text("${preset.id} - ${preset.displayName} [${preset.tags.joinToString(",")}]$schema"))
+        }
+    }
+    fun handlePresetPlay(sender: CommandSender, context: CommandContext) {
+        val player = sender as? net.minestom.server.entity.Player ?: return
+        val id = context.get<String>(presetIdArgument).lowercase()
+        val preset = ParticlePresetRegistry[id]
+        if (preset == null) {
+            player.sendMessage(Component.text("Unknown VFX preset: $id. Use /vfxpreset list"))
+            return
+        }
+        val rawValues = if (context.has(presetValuesArgument)) context.get<Array<String>>(presetValuesArgument) else emptyArray()
+        val parsed = parseParticlePresetOverrides(preset, rawValues)
+        if (parsed.error != null) {
+            player.sendMessage(Component.text(parsed.error!!))
+            return
+        }
+        val direction = player.position.direction()
+        val origin = player.position.add(direction.x() * 3.0, 1.2, direction.z() * 3.0)
+        startParticlePreset(player, id, particleAnimations, origin, direction, particleManager, parsed.values)
+        player.sendMessage(Component.text("Playing ${preset.displayName} ($id)"))
+    }
+    MinecraftServer.getCommandManager().register(
+        Command("vfxpreset").apply {
+            setDefaultExecutor { sender, _ -> handlePresetList(sender, CommandContext("vfxpreset")) }
+            addSyntax(::handlePresetList, ArgumentType.Literal("list"))
+            addSyntax(::handlePresetList, ArgumentType.Literal("list"), presetTagArgument)
+            addSyntax(::handlePresetPlay, ArgumentType.Literal("play"), presetIdArgument)
+            addSyntax(::handlePresetPlay, ArgumentType.Literal("play"), presetIdArgument, presetValuesArgument)
+        },
     )
 
     events.addListener(AsyncPlayerConfigurationEvent::class.java) { event ->
@@ -219,6 +491,7 @@ fun main() {
         event.player.showBossBar(bossBar)
         if (event.isFirstSpawn) {
             attackSpeeds[event.player.uuid] = DEFAULT_ATTACK_SPEED
+            twinBladesComboStates[event.player.uuid] = TwinBladesComboState()
             combatStates[event.player.uuid] = CombatState(
                 weaponSource = { weaponFor(event.player) },
                 attackSpeedSource = { attackSpeeds[event.player.uuid] ?: DEFAULT_ATTACK_SPEED },
@@ -229,11 +502,11 @@ fun main() {
                 ItemStack.builder(Material.NETHERITE_SWORD).customName(Component.text("Heavy Blade")).build(),
             )
             event.player.inventory.addItemStack(
-                ItemStack.builder(Material.BLAZE_ROD).customName(Component.text("Twin Rods")).build(),
+                ItemStack.builder(Material.IRON_SWORD).customName(Component.text("Twin Blades")).build(),
             )
             if (dummy == null) {
                 dummy = Entity(EntityType.RAVAGER).apply {
-                    customName = Component.text("Prototype Hunt Boss")
+                        customName = Component.text("Rift Executioner")
                     isCustomNameVisible = true
                     setNoGravity(true)
                     setHasPhysics(false)
@@ -258,6 +531,7 @@ fun main() {
     }
     events.addListener(PlayerDisconnectEvent::class.java) { event ->
         val playerId = event.player.uuid
+        particleAnimations.cancelFor(event.player)
         combatStates.remove(playerId)
         dodgeStates.remove(playerId)
         twinRodsAirStates.remove(playerId)
@@ -268,8 +542,26 @@ fun main() {
         resourceSyncTicks.remove(playerId)
         lastSentCooldowns.remove(playerId)
         attackSpeeds.remove(playerId)
+        twinBladesSwingAngles.remove(playerId)
+        twinBladesComboStates.remove(playerId)
+        twinBladesAttackSteps.remove(playerId)
+        lastGroundTelegraphIds.remove(playerId)
+        if (instance.players.none { it.uuid != playerId }) {
+            clearBossTelegraphs()
+            riftExecutioner.reset()
+            prototypeBoss.reset()
+        }
+    }
+    events.addListener(InstanceTickEvent::class.java) { event ->
+        if (event.instance === instance) {
+            particleManager.beginTick()
+            particleProfiler.setActiveEffects(particleAnimations.activeAnimationCount)
+            particleAnimations.tick()
+            particleManager.flush()
+        }
     }
     events.addListener(PlayerTickEvent::class.java) { event ->
+        synchronizeTwinBladesOffhand(event.player)
         val state = combatStates[event.player.uuid] ?: return@addListener
         val dodge = dodgeStates[event.player.uuid] ?: return@addListener
         val twinRodsAir = twinRodsAirStates[event.player.uuid] ?: return@addListener
@@ -278,15 +570,28 @@ fun main() {
         val skill2 = skill2States[event.player.uuid] ?: return@addListener
         val skill3 = skill3States[event.player.uuid] ?: return@addListener
         if (event.player == instance.players.firstOrNull()) {
-            if (prototypeBoss.isActive) {
-                tickFixedTester(instance, dummy, fixedTester, prototypeBoss, testerMarkerTick++)
-                if (!prototypeBoss.isActive) {
+            if (prototypeBoss.isEncounterRunning) {
+                tickRiftExecutioner(
+                    instance,
+                    dummy,
+                    riftExecutioner,
+                    prototypeBoss,
+                    testerMarkerTick++,
+                    particleAnimations,
+                    particleManager,
+                    bossGroundTelegraphIds,
+                    bossRiftTelegraphIds,
+                ) {
+                    nextGroundTelegraphId++
+                }
+                if (!prototypeBoss.isEncounterRunning) {
                     finishEncounter()
                     return@addListener
                 }
             }
         }
-        if (!prototypeBoss.isActive) return@addListener
+        if (!prototypeBoss.isEncounterRunning) return@addListener
+        twinBladesComboStates[event.player.uuid]?.tick()
         twinRodsAir.tick(event.player.isOnGround)
         if (dodge.hasPending) state.deferAttackRestart()
         val tester = dummy?.takeIf { it.instance == event.player.instance && !it.isRemoved }
@@ -324,6 +629,16 @@ fun main() {
             listOf(target)
         } ?: emptyList()
         val combatEvents = state.tick(attackOrigin, event.player.position.direction(), targets)
+        showTwinBladesSwingVfx(
+            event.player,
+            state,
+            combatEvents,
+            twinBladesSwingAngles,
+            twinBladesComboStates,
+            twinBladesAttackSteps,
+            particleAnimations,
+            particleManager,
+        )
         publishCombatEvents(
             event.player,
             combatEvents.filter { it is CombatEvent.Started || it is CombatEvent.Active },
@@ -340,11 +655,45 @@ fun main() {
             }
             if (damage > 0) {
                 updateBossBar()
-                if (weakpoint != null) showWeakpointHit(event.player, weakpoint)
+                if (weakpoint != null) {
+                    if (hit.weapon == WeaponType.TWIN_RODS) showWeakpointLabel(event.player, weakpoint)
+                    else showWeakpointHit(event.player, weakpoint)
+                }
+                if (hit.weapon == WeaponType.TWIN_RODS) {
+                    val target = tester ?: return@forEach
+                    val vfxPlan = twinBladesHitVfxPlan(hit.weapon, confirmed = true, weakpoint = weakpoint != null)
+                    val visualScale = twinBladesVisualScale(
+                        width = target.boundingBox.maxX() - target.boundingBox.minX(),
+                        height = target.boundingBox.maxY() - target.boundingBox.minY(),
+                    )
+                    if ("projects:class/twin_blades/weakpoint_hit" in vfxPlan.presets && weakpoint != null) {
+                        showTwinBladesWeakpointVfx(
+                            event.player,
+                            weakpoint,
+                            visualScale,
+                            twinBladesComboVisual(twinBladesAttackSteps[event.player.uuid] ?: 1),
+                            particleAnimations,
+                            particleManager,
+                        )
+                    }
+                    showTwinRodsHitVfx(
+                        event.player,
+                        weakpoint?.center ?: target.position.add(0.0, 1.1, 0.0),
+                        Vec(
+                            event.player.position.x() - target.position.x(),
+                            event.player.position.y() + event.player.eyeHeight - target.position.y() - 1.1,
+                            event.player.position.z() - target.position.z(),
+                        ),
+                        particleAnimations,
+                        particleManager,
+                        visualScale,
+                        twinBladesComboVisual(twinBladesAttackSteps[event.player.uuid] ?: 1),
+                    )
+                }
             }
         }
         publishCombatEvents(event.player, combatEvents.filterIsInstance<CombatEvent.HitConfirmed>())
-        if (!prototypeBoss.isActive) {
+        if (!prototypeBoss.isEncounterRunning) {
             finishEncounter()
             return@addListener
         }
@@ -364,7 +713,7 @@ fun main() {
                     direction.z() * Skill1State.DASH_SPEED,
                 ),
             )
-            showSkill1Trail(event.player, start, direction)
+            showSkill1Trail(event.player, start, direction, particleAnimations, particleManager)
             val skillTargets = tester?.let { listOf(combatTarget(it)) } ?: emptyList()
             val hitTargets = skill1.hitTargetsOnSegment(start, end, skillTargets)
             if (hitTargets.isNotEmpty()) {
@@ -372,8 +721,8 @@ fun main() {
                     val damage = prototypeBoss.applySkill1Attack(skill1.castId, targetId)
                     if (damage > 0) updateBossBar()
                 }
-                showSkill1Impact(event.player, tester?.position ?: end)
-                showSkill1Launch(event.player)
+                showSkill1Impact(event.player, tester?.position ?: end, direction, particleAnimations, particleManager)
+                showSkill1Launch(event.player, direction, particleAnimations, particleManager)
                 event.player.setVelocity(
                     Vec(
                         direction.x() * Skill1State.LAUNCH_HORIZONTAL_SPEED,
@@ -385,64 +734,122 @@ fun main() {
                 event.player.setVelocity(Vec(0.0, event.player.velocity.y(), 0.0))
             }
         }
-        if (!prototypeBoss.isActive) {
+        if (!prototypeBoss.isEncounterRunning) {
             finishEncounter()
             return@addListener
         }
         val skill2Tick = skill2.tick(event.player.isOnGround)
         if (skill2Tick.diveActive) {
-            event.player.setVelocity(Vec(0.0, -Skill2State.DOWNWARD_SPEED, 0.0))
+            event.player.setVelocity(Vec(0.0, skill2Tick.velocityY, 0.0))
             showSkill2DiveTrail(event.player)
+            skill2Tick.pulseIndex?.let { pulseIndex ->
+                val skillTargets = tester?.let { listOf(combatTarget(it)) } ?: emptyList()
+                skill2.hitTargetsAtPulse(pulseIndex, event.player.position, skillTargets).forEach { targetId ->
+                    val damage = prototypeBoss.applySkill2Pulse(skill2.castId, pulseIndex, targetId)
+                    if (damage > 0) updateBossBar()
+                }
+                showSkill2Pulse(event.player, pulseIndex, particleAnimations, particleManager)
+            }
         } else if (skill2Tick.landed) {
             val skillTargets = tester?.let { listOf(combatTarget(it)) } ?: emptyList()
             skill2.hitTargetsAtLanding(event.player.position, skillTargets).forEach { targetId ->
-                val damage = prototypeBoss.applySkill2Attack(skill2.castId, targetId)
+                val damage = prototypeBoss.applySkill2Landing(skill2.castId, targetId)
                 if (damage > 0) updateBossBar()
             }
-            showSkill2Landing(event.player)
+            showSkill2Landing(event.player, particleAnimations, particleManager)
             sendResourceSnapshot(event.player)
             event.player.setVelocity(Vec.ZERO)
         }
-        if (!prototypeBoss.isActive) {
+        if (!prototypeBoss.isEncounterRunning) {
             finishEncounter()
             return@addListener
         }
-        val previousSkill3Phase = skill3.phase
-        val skill3Tick = skill3.tick(event.player.isOnGround, event.player.velocity.y())
-        if (skill3Tick.dashActive) {
-            val direction = requireNotNull(skill3Tick.dashDirection)
-            val start = event.player.position
-            val end = start.add(
-                direction.x() * Skill3State.DASH_SPEED / ServerFlag.SERVER_TICKS_PER_SECOND,
-                direction.y() * Skill3State.DASH_SPEED / ServerFlag.SERVER_TICKS_PER_SECOND,
-                direction.z() * Skill3State.DASH_SPEED / ServerFlag.SERVER_TICKS_PER_SECOND,
-            )
-            val skillTargets = tester?.let { listOf(combatTarget(it)) } ?: emptyList()
-            skill3.hitTargetsOnSegment(start, end, skillTargets).forEach { targetId ->
-                val damage = prototypeBoss.applySkill3Attack(skill3.castId, targetId)
-                if (damage > 0) updateBossBar()
+        val skill3Target = tester?.let(::combatTarget)
+        if (skill3.phase == Skill3Phase.MULTIHIT && skill3.primaryTargetId != skill3Target?.id) {
+            // A removed target must not receive delayed pulses or a finisher.
+            skill3.cancelActiveMovement()
+        } else {
+            val previousSkill3Phase = skill3.phase
+            val skill3Tick = skill3.tick(event.player.isOnGround, event.player.velocity.y())
+            if (skill3Tick.dashActive) {
+                val direction = requireNotNull(skill3Tick.dashDirection)
+                val start = event.player.position
+                val end = start.add(
+                    direction.x() * Skill3State.DASH_SPEED / ServerFlag.SERVER_TICKS_PER_SECOND,
+                    direction.y() * Skill3State.DASH_SPEED / ServerFlag.SERVER_TICKS_PER_SECOND,
+                    direction.z() * Skill3State.DASH_SPEED / ServerFlag.SERVER_TICKS_PER_SECOND,
+                )
+                val skillTargets = skill3Target?.let(::listOf) ?: emptyList()
+                val hitTargets = skill3.hitTargetsOnSegment(start, end, skillTargets)
+                if (hitTargets.isNotEmpty()) {
+                    val target = skillTargets.first { it.id == hitTargets.first() }
+                    if (skill3.finishDashOnHit(target.id)) {
+                        event.player.setVelocity(Vec.ZERO)
+                        showSkill3CatchVfx(
+                            event.player,
+                            start,
+                            direction,
+                            target,
+                            particleAnimations,
+                            particleManager,
+                        )
+                    }
+                } else {
+                    event.player.setVelocity(
+                        Vec(
+                            direction.x() * Skill3State.DASH_SPEED,
+                            direction.y() * Skill3State.DASH_SPEED,
+                            direction.z() * Skill3State.DASH_SPEED,
+                        ),
+                    )
+                }
+                showSkill3DashTrail(event.player, start, direction, particleAnimations, particleManager)
+            } else if (skill3Tick.phase == Skill3Phase.MULTIHIT) {
+                val target = skill3Target?.takeIf { it.id == skill3.primaryTargetId }
+                if (target == null) {
+                    skill3.cancelActiveMovement()
+                } else {
+                    skill3Tick.pulseIndex?.let { pulseIndex ->
+                        val damage = prototypeBoss.applySkill3Pulse(skill3.castId, pulseIndex, target.id)
+                        if (damage > 0) updateBossBar()
+                        showSkill3PulseVfx(
+                            event.player,
+                            target,
+                            requireNotNull(skill3Tick.dashDirection),
+                            pulseIndex,
+                            particleAnimations,
+                            particleManager,
+                        )
+                    }
+                    if (skill3Tick.finisherActive) {
+                        val damage = prototypeBoss.applySkill3Finisher(skill3.castId, target.id)
+                        if (damage > 0) updateBossBar()
+                        sendResourceSnapshot(event.player)
+                        event.player.setVelocity(skill3HitBounceVelocity(requireNotNull(skill3Tick.dashDirection)))
+                        showSkill3FinisherVfx(
+                            event.player,
+                            target,
+                            requireNotNull(skill3Tick.dashDirection),
+                            particleAnimations,
+                            particleManager,
+                        )
+                    } else {
+                        event.player.setVelocity(Vec.ZERO)
+                    }
+                }
+            } else if (skill3Tick.phase == Skill3Phase.HOVER) {
+                if (skill3Tick.stopHorizontalVelocity) {
+                    event.player.setVelocity(Vec.ZERO)
+                } else {
+                    event.player.setVelocity(skill3HoverVelocity(event.player.velocity, skill3Tick.velocityY))
+                }
             }
-            event.player.setVelocity(
-                Vec(
-                    direction.x() * Skill3State.DASH_SPEED,
-                    direction.y() * Skill3State.DASH_SPEED,
-                    direction.z() * Skill3State.DASH_SPEED,
-                ),
-            )
-            showSkill3DashTrail(event.player, start, direction)
-        } else if (skill3Tick.phase == Skill3Phase.HOVER) {
-            if (skill3Tick.stopHorizontalVelocity) {
-                event.player.setVelocity(Vec.ZERO)
-            } else {
-                event.player.setVelocity(skill3HoverVelocity(event.player.velocity, skill3Tick.velocityY))
+            if (previousSkill3Phase == Skill3Phase.DASH && skill3.phase == Skill3Phase.HOVER) {
+                showSkill3Hover(event.player)
+                sendResourceSnapshot(event.player)
             }
         }
-        if (previousSkill3Phase == Skill3Phase.DASH && skill3.phase == Skill3Phase.HOVER) {
-            showSkill3Snap(event.player, requireNotNull(skill3Tick.dashDirection))
-            showSkill3Hover(event.player)
-            sendResourceSnapshot(event.player)
-        }
-        if (!prototypeBoss.isActive) {
+        if (!prototypeBoss.isEncounterRunning) {
             finishEncounter()
             return@addListener
         }
@@ -453,11 +860,7 @@ fun main() {
             canStart = !state.isAttacking,
             facing = event.player.position.direction(),
             startAllowed = {
-                event.player.isOnGround ||
-                    (weaponFor(event.player) == WeaponType.TWIN_RODS && twinRodsAir.canStartAirDodge())
-            },
-            onStart = {
-                if (!event.player.isOnGround) check(twinRodsAir.consumeAirDodge())
+                canStartDodge(event.player.isOnGround, weaponFor(event.player))
             },
         )
         if (movement != null) {
@@ -500,7 +903,18 @@ fun main() {
                 is AttackInput -> {
                     if (!prototypeBoss.isActive) return@addListener
                     val state = combatStates[event.player.uuid] ?: return@addListener
-                    publishCombatEvents(event.player, state.input(message.state))
+                    val combatEvents = state.input(message.state)
+                    showTwinBladesSwingVfx(
+                        event.player,
+                        state,
+                        combatEvents,
+                        twinBladesSwingAngles,
+                        twinBladesComboStates,
+                        twinBladesAttackSteps,
+                        particleAnimations,
+                        particleManager,
+                    )
+                    publishCombatEvents(event.player, combatEvents)
                 }
                 is DodgeInput -> {
                     if (!prototypeBoss.isActive) return@addListener
@@ -512,11 +926,7 @@ fun main() {
                         canStart = !state.isAttacking,
                         facing = event.player.position.direction(),
                         startAllowed = {
-                            event.player.isOnGround ||
-                                (weaponFor(event.player) == WeaponType.TWIN_RODS && twinRodsAir.canStartAirDodge())
-                        },
-                        onStart = {
-                            if (!event.player.isOnGround) check(twinRodsAir.consumeAirDodge())
+                            canStartDodge(event.player.isOnGround, weaponFor(event.player))
                         },
                     )
                 }
@@ -541,7 +951,7 @@ fun main() {
                         ClassSkillSlot.SKILL_1 -> {
                             if (skill2.phase == Skill2Phase.DIVE || skill3.phase != Skill3Phase.IDLE) return@addListener
                             if (skill1.tryCast(event.player.position.direction()) != null) {
-                                showSkill1Cast(event.player)
+                                showSkill1Cast(event.player, particleAnimations, particleManager)
                                 sendResourceSnapshot(event.player)
                             }
                         }
@@ -550,8 +960,8 @@ fun main() {
                             if (castId != null) {
                                 skill1.cancelActiveMovement()
                                 skill3.cancelActiveMovement()
-                                event.player.setVelocity(Vec(0.0, -Skill2State.DOWNWARD_SPEED, 0.0))
-                                showSkill2Cast(event.player)
+                                event.player.setVelocity(Vec(0.0, -Skill2State.DESCENT_SPEED, 0.0))
+                                showSkill2Cast(event.player, particleAnimations, particleManager)
                             }
                         }
                         ClassSkillSlot.SKILL_3 -> {
@@ -609,10 +1019,30 @@ private fun publishCombatEvents(player: net.minestom.server.entity.Player, event
 private fun weaponFor(player: net.minestom.server.entity.Player): WeaponType = when (
     player.getEquipment(EquipmentSlot.MAIN_HAND).material()
 ) {
-    Material.BLAZE_ROD -> WeaponType.TWIN_RODS
+    Material.IRON_SWORD -> WeaponType.TWIN_RODS
     Material.NETHERITE_SWORD -> WeaponType.HEAVY_BLADE
     else -> WeaponType.HEAVY_BLADE
 }
+
+private fun synchronizeTwinBladesOffhand(player: net.minestom.server.entity.Player) {
+    val offhand = player.getEquipment(EquipmentSlot.OFF_HAND)
+    if (weaponFor(player) == WeaponType.TWIN_RODS) {
+        if (offhand.isAir) {
+            player.setEquipment(
+                EquipmentSlot.OFF_HAND,
+                ItemStack.builder(Material.IRON_SWORD)
+                    .customName(Component.text("Twin Blades"))
+                    .set(TWIN_BLADES_AUTO_OFFHAND, true)
+                    .build(),
+            )
+        }
+    } else if (offhand.getTag(TWIN_BLADES_AUTO_OFFHAND)) {
+        player.setEquipment(EquipmentSlot.OFF_HAND, ItemStack.AIR)
+    }
+}
+
+internal fun canStartDodge(isGrounded: Boolean, weapon: WeaponType): Boolean =
+    isGrounded || weapon == WeaponType.TWIN_RODS
 
 private fun combatTarget(entity: Entity): CombatTarget {
     return combatTargetFromBoundingBox(entity.uuid, entity.position, entity.boundingBox)
@@ -650,12 +1080,17 @@ internal fun shouldSyncSkillCooldowns(
     lastSentCooldowns: SkillCooldowns?,
 ): Boolean = syncTick >= 4 && currentCooldowns != lastSentCooldowns
 
-private fun tickFixedTester(
+private fun tickRiftExecutioner(
     instance: Instance,
     testerEntity: Entity?,
-    tester: FixedAttackTester,
+    controller: RiftExecutionerController,
     bossState: PrototypeBossState,
     markerTick: Long,
+    scheduler: ParticleAnimationScheduler,
+    manager: ParticleManager,
+    bossGroundTelegraphIds: MutableSet<Long>,
+    bossRiftTelegraphIds: MutableMap<Long, Long>,
+    nextTelegraphId: () -> Long,
 ) {
     if (testerEntity == null || testerEntity.isRemoved || testerEntity.instance != instance) return
     val players = instance.players.filter { it.isOnline }
@@ -664,35 +1099,87 @@ private fun tickFixedTester(
         val weakpointFacing = testerEntity.position.direction()
         players.forEach { player -> showWeakpointMarkers(player, testerEntity.position, weakpointFacing) }
     }
-    val targets = players.map { FixedAttackTarget(it.uuid, it.position) }
+    val targets = players.map { RiftExecutionerTarget(it.uuid, it.position) }
     val facing = players.firstOrNull()?.let { directionFrom(testerEntity.position, it.position) }
         ?: testerEntity.position.direction()
-    val events = tester.tick(testerEntity.position, facing, targets)
+    val events = controller.tick(
+        origin = testerEntity.position,
+        facing = facing,
+        targets = targets,
+        bossPhase = bossState.phase,
+        encounterState = bossState.encounterState,
+    )
     for (event in events) {
         when (event) {
-            is FixedAttackEvent.Started -> {
+            is RiftExecutionerEvent.SectorTelegraph -> {
                 val label = event.attack.displayName()
-                players.forEach { player ->
-                    player.sendMessage(Component.text("[Tester] $label: telegraph"))
+                players.forEach { player -> player.sendMessage(Component.text("[Rift Executioner] $label: telegraph")) }
+                if (event.attack == RiftExecutionerAttack.SECTOR_CLEAVE) {
+                    val telegraphId = nextTelegraphId()
+                    val message = GroundTelegraphStart.clamped(
+                        telegraphId = telegraphId,
+                        centerX = event.origin.x(),
+                        centerY = event.origin.y(),
+                        centerZ = event.origin.z(),
+                        facingX = event.facing.x(),
+                        facingZ = event.facing.z(),
+                        radius = RiftExecutionerController.SECTOR_RADIUS,
+                        angleDegrees = RiftExecutionerController.SECTOR_ANGLE,
+                        durationTicks = event.durationTicks,
+                    )
+                    bossGroundTelegraphIds += telegraphId
+                    val payload = ProtocolCodec.encode(message)
+                    players.forEach { player -> player.sendPluginMessage(PROJECTS_CHANNEL, payload) }
+                } else {
+                    players.forEach { player ->
+                        showTesterTelegraph(
+                            player,
+                            testerEntity.position,
+                            FixedAttackType.FORWARD_SLAM,
+                            event.facing,
+                            scheduler,
+                            manager,
+                        )
+                    }
                 }
             }
-            is FixedAttackEvent.Telegraph -> {
+            is RiftExecutionerEvent.SectorActive -> {
+                val attack = if (event.attack == RiftExecutionerAttack.FORWARD_SLAM) {
+                    FixedAttackType.FORWARD_SLAM
+                } else {
+                    FixedAttackType.SIDE_SWEEP
+                }
                 players.forEach { player ->
-                    showTesterTelegraph(player, testerEntity.position, event.attack, event.direction)
+                    showTesterActive(player, Pos(event.origin.x(), event.origin.y(), event.origin.z()), attack, event.facing)
                 }
             }
-            is FixedAttackEvent.Active -> {
+            is RiftExecutionerEvent.DashTelegraph -> {
                 players.forEach { player ->
-                    showTesterActive(player, testerEntity.position, event.attack, event.direction)
-                    player.sendMessage(Component.text("[Tester] ${event.attack.displayName()}: ACTIVE"))
+                    player.sendMessage(Component.text("[Rift Executioner] Chain Dash: telegraph"))
+                    startParticlePreset(
+                        player,
+                        "projects:combat/projectile_trail",
+                        scheduler,
+                        event.origin.add(0.0, 0.8, 0.0),
+                        FixedAttackTester.normalizeHorizontal(Vec(
+                            event.target.x() - event.origin.x(),
+                            0.0,
+                            event.target.z() - event.origin.z(),
+                        )),
+                        manager,
+                        mapOf("length" to 3.0, "duration" to 18.0),
+                    )
                 }
             }
-            is FixedAttackEvent.HitConfirmed -> {
+            is RiftExecutionerEvent.DashPosition -> {
+                testerEntity.teleport(Pos(event.position.x(), event.position.y(), event.position.z()).withDirection(event.facing))
+            }
+            is RiftExecutionerEvent.AttackHit -> {
                 instance.getPlayerByUuid(event.targetId)?.let { player ->
-                    val damage = bossState.applyBossAttack(player.uuid, event.executionId, event.attack)
+                    val damage = bossState.applyBossDamage(player.uuid, event.executionId, event.damage)
                     if (damage == 0) return@let
                     player.setHealth(bossState.playerEntityHealth(player.uuid))
-                    player.sendMessage(Component.text("[Tester] HIT"))
+                    player.sendMessage(Component.text("[Rift Executioner] HIT $damage"))
                     player.sendPacket(
                         ParticlePacket(
                             Particle.DAMAGE_INDICATOR,
@@ -708,6 +1195,48 @@ private fun tickFixedTester(
                     )
                 }
             }
+            is RiftExecutionerEvent.RiftCreated -> {
+                val telegraphId = nextTelegraphId()
+                bossRiftTelegraphIds[event.zone.id] = telegraphId
+                bossGroundTelegraphIds += telegraphId
+                val message = GroundTelegraphStart.clamped(
+                    telegraphId = telegraphId,
+                    centerX = event.zone.origin.x(),
+                    centerY = event.zone.origin.y(),
+                    centerZ = event.zone.origin.z(),
+                    facingX = event.zone.facing.x(),
+                    facingZ = event.zone.facing.z(),
+                    radius = RiftExecutionerController.SECTOR_RADIUS,
+                    angleDegrees = RiftExecutionerController.SECTOR_ANGLE,
+                    durationTicks = event.zone.remainingTicks,
+                )
+                val payload = ProtocolCodec.encode(message)
+                players.forEach { player -> player.sendPluginMessage(PROJECTS_CHANNEL, payload) }
+            }
+            is RiftExecutionerEvent.RiftRemoved -> {
+                bossRiftTelegraphIds.remove(event.zoneId)?.let { telegraphId ->
+                    bossGroundTelegraphIds.remove(telegraphId)
+                    val payload = ProtocolCodec.encode(GroundTelegraphRemove(telegraphId))
+                    players.forEach { player -> player.sendPluginMessage(PROJECTS_CHANNEL, payload) }
+                }
+            }
+            RiftExecutionerEvent.BreakStarted -> {
+                bossState.setBreakActive(true)
+                players.forEach { player ->
+                    player.sendMessage(Component.text("[Rift Executioner] BREAK"))
+                    startParticlePreset(
+                        player,
+                        "projects:combat/projectile_impact",
+                        scheduler,
+                        testerEntity.position.add(0.0, 0.9, 0.0),
+                        Vec(0.0, 1.0, 0.0),
+                        manager,
+                        mapOf("radius" to 1.4, "duration" to 10.0),
+                    )
+                }
+            }
+            RiftExecutionerEvent.BreakEnded -> bossState.setBreakActive(false)
+            RiftExecutionerEvent.FinalStruggleComplete -> bossState.completeFinalStruggle()
         }
     }
 }
@@ -738,7 +1267,7 @@ private fun showWeakpointHit(
     selection: FixedWeakpointSelection,
 ) {
     val center = selection.center
-    player.sendMessage(Component.text("[Tester] WEAKPOINT: ${selection.weakpoint}"))
+    showWeakpointLabel(player, selection)
     player.sendPacket(
         ParticlePacket(
             Particle.CRIT,
@@ -776,74 +1305,223 @@ private fun showWeakpointHit(
     )
 }
 
-private fun showSkill1Cast(player: net.minestom.server.entity.Player) {
-    val origin = player.position.add(0.0, 0.12, 0.0)
+private fun showWeakpointLabel(player: net.minestom.server.entity.Player, selection: FixedWeakpointSelection) {
+    player.sendMessage(Component.text("[Tester] WEAKPOINT: ${selection.weakpoint}"))
+}
+
+private fun showTwinBladesWeakpointVfx(
+    player: net.minestom.server.entity.Player,
+    selection: FixedWeakpointSelection,
+    visualScale: Double,
+    visual: TwinBladesComboVisual,
+    scheduler: ParticleAnimationScheduler,
+    manager: ParticleManager,
+) {
+    val center = selection.center
+    playTwinBladesSounds(
+        player,
+        center,
+        twinBladesSoundPlan(WeaponType.TWIN_RODS, visual.step, confirmed = true, weakpoint = true).weakpointAccent,
+    )
+    startParticlePreset(
+        player = player,
+        id = "projects:class/twin_blades/weakpoint_hit",
+        scheduler = scheduler,
+        origin = center,
+        direction = player.position.direction(),
+        manager = manager,
+        values = mapOf(
+            "radius" to twinBladesWeakpointRadius(visualScale),
+            "step" to visual.step,
+            "duration" to visual.weakpointDuration.toDouble(),
+            "colorPrimary" to visual.weakpointPrimary,
+            "colorSecondary" to visual.weakpointSecondary,
+        ),
+    )
+}
+
+private fun showTwinRodsHitVfx(
+    player: net.minestom.server.entity.Player,
+    center: Point,
+    facing: Vec,
+    scheduler: ParticleAnimationScheduler,
+    manager: ParticleManager,
+    scale: Double,
+    visual: TwinBladesComboVisual,
+) {
+    val dimensions = twinBladesHitVisualDimensions(visual)
+    startParticlePreset(
+        player = player,
+        id = "projects:class/twin_blades/aa_hit",
+        scheduler = scheduler,
+        origin = center,
+        direction = facing,
+        manager = manager,
+        values = mapOf(
+            "length" to dimensions.length,
+            "radius" to dimensions.radius,
+            "scale" to scale,
+            "step" to visual.step,
+            "duration" to visual.hitDuration.toDouble(),
+            "colorPrimary" to visual.hitPrimary,
+            "colorSecondary" to visual.hitSecondary,
+        ),
+    )
+    playTwinBladesSounds(
+        player,
+        center,
+        twinBladesSoundPlan(WeaponType.TWIN_RODS, visual.step, confirmed = true, weakpoint = false).contact,
+    )
+}
+
+private fun showTwinBladesSwingVfx(
+    player: net.minestom.server.entity.Player,
+    state: CombatState,
+    events: List<CombatEvent>,
+    angles: MutableMap<UUID, Double>,
+    comboStates: MutableMap<UUID, TwinBladesComboState>,
+    attackSteps: MutableMap<UUID, Int>,
+    scheduler: ParticleAnimationScheduler,
+    manager: ParticleManager,
+) {
+    if (state.activeProfile?.weapon != WeaponType.TWIN_RODS || events.none { it is CombatEvent.Started }) return
+    val step = comboStates.getOrPut(player.uuid) { TwinBladesComboState() }.start()
+    attackSteps[player.uuid] = step
+    val visual = twinBladesComboVisual(step)
+    val direction = player.position.direction()
+    val angle = nextTwinBladesSwingAngle(angles[player.uuid])
+    angles[player.uuid] = angle
+    val origin = twinBladesSwingOrigin(player.position, player.eyeHeight, direction, angle)
+    startParticlePreset(
+        player = player,
+        id = "projects:class/twin_blades/aa_swing",
+        scheduler = scheduler,
+        origin = origin,
+        direction = direction,
+        manager = manager,
+        values = mapOf(
+            "length" to visual.swingLength,
+            "angle" to angle,
+            "step" to visual.step,
+            "duration" to visual.swingDuration.toDouble(),
+            "colorPrimary" to visual.swingPrimary,
+            "colorSecondary" to visual.swingSecondary,
+        ),
+    )
+    playTwinBladesSounds(
+        player,
+        origin,
+        twinBladesSoundPlan(WeaponType.TWIN_RODS, step, confirmed = false, weakpoint = false).swing,
+    )
+}
+
+private fun showSkill1Cast(
+    player: net.minestom.server.entity.Player,
+    scheduler: ParticleAnimationScheduler,
+    manager: ParticleManager,
+) {
+    val origin = player.position.add(0.0, 0.45, 0.0)
     val direction = FixedAttackTester.normalizeHorizontal(player.position.direction())
-    sendSkillParticle(player, Particle.END_ROD, origin)
-    sendSkillParticle(player, Particle.ENCHANT, origin.add(direction.x() * 0.35, 0.2, direction.z() * 0.35))
-    sendSkillParticle(player, Particle.END_ROD, origin.add(0.25, 0.0, 0.0))
-    sendSkillParticle(player, Particle.END_ROD, origin.add(-0.25, 0.0, 0.0))
-    sendSkillArc(player, Particle.END_ROD, origin.add(0.0, 0.12, 0.0), direction, 0.62, -1.1, 1.1, 7)
-    sendSkillArc(player, Particle.ENCHANT, origin.add(0.0, 0.18, 0.0), direction, 0.45, -0.85, 0.85, 5)
-    playSkillSound(player, "entity.player.attack.sweep", origin, 0.75f, 1.35f)
-}
-
-private fun showSkill1Trail(player: net.minestom.server.entity.Player, position: Pos, direction: Vec) {
-    val origin = position.add(0.0, 0.45, 0.0)
-    for (step in 0..3) {
-        val distance = 0.12 + step * 0.22
-        sendSkillParticle(
-            player,
-            Particle.END_ROD,
-            origin.add(direction.x() * distance, 0.0, direction.z() * distance),
-        )
-        if (step < 3) {
-            sendSkillParticle(
-                player,
-                Particle.ENCHANT,
-                origin.add(-direction.x() * step * 0.16, 0.1, -direction.z() * step * 0.16),
-            )
-        }
+    startParticlePreset(
+        player = player,
+        id = SKILL1_TRAVEL_VFX,
+        scheduler = scheduler,
+        origin = origin,
+        direction = direction,
+        manager = manager,
+        values = mapOf("length" to 1.0, "duration" to 2.0, "colorPrimary" to 0x168cff, "colorSecondary" to 0x071525),
+    )
+    skill1SoundPlan(confirmedHit = false).travel.forEach { cue ->
+        playSkillSound(player, cue.key, origin, cue.volume, cue.pitch)
     }
-    sendSkillParticle(player, Particle.ELECTRIC_SPARK, origin.add(-direction.x() * 0.25, -0.12, -direction.z() * 0.25))
 }
 
-private fun showSkill1Impact(player: net.minestom.server.entity.Player, position: Point) {
-    val center = position.add(0.0, 1.0, 0.0)
-    sendSkillParticle(player, Particle.EXPLOSION, center)
-    sendSkillParticle(player, Particle.END_ROD, center)
-    sendSkillParticle(player, Particle.CRIT, center.add(0.45, 0.0, 0.0))
-    sendSkillParticle(player, Particle.CRIT, center.add(-0.45, 0.0, 0.0))
-    sendSkillParticle(player, Particle.CRIT, center.add(0.0, 0.45, 0.0))
-    sendSkillParticle(player, Particle.CRIT, center.add(0.0, -0.45, 0.0))
-    sendSkillArc(player, Particle.END_ROD, center, Vec(0.0, 0.0, 1.0), 0.58, -Math.PI, Math.PI, 10)
-    playSkillSound(player, "entity.player.attack.crit", center, 0.9f, 0.9f)
+private fun showSkill1Trail(
+    player: net.minestom.server.entity.Player,
+    position: Pos,
+    direction: Vec,
+    scheduler: ParticleAnimationScheduler,
+    manager: ParticleManager,
+) {
+    startParticlePreset(
+        player = player,
+        id = SKILL1_TRAVEL_VFX,
+        scheduler = scheduler,
+        origin = position.add(0.0, 0.45, 0.0),
+        direction = direction,
+        manager = manager,
+        values = mapOf("length" to 1.35, "duration" to 2.0, "colorPrimary" to 0x168cff, "colorSecondary" to 0x071525),
+    )
 }
 
-private fun showSkill1Launch(player: net.minestom.server.entity.Player) {
-    val origin = player.position.add(0.0, 0.15, 0.0)
-    for (step in 0..7) {
-        val progress = step / 7.0
-        val angle = progress * Math.PI * 2.2
-        val radius = 0.12 + progress * 0.2
-        val point = origin.add(
-            kotlin.math.cos(angle) * radius,
-            step * 0.34,
-            kotlin.math.sin(angle) * radius,
-        )
-        sendSkillParticle(player, Particle.END_ROD, point)
-        if (step % 2 == 0) sendSkillParticle(player, Particle.ENCHANT, point.add(0.0, 0.12, 0.0))
+private fun showSkill1Impact(
+    player: net.minestom.server.entity.Player,
+    position: Point,
+    direction: Vec,
+    scheduler: ParticleAnimationScheduler,
+    manager: ParticleManager,
+) {
+    val center = position.add(0.0, 1.05, 0.0)
+    startParticlePreset(
+        player = player,
+        id = SKILL1_STOMP_VFX,
+        scheduler = scheduler,
+        origin = center,
+        direction = direction,
+        manager = manager,
+        values = mapOf("radius" to 0.82, "duration" to 5.0, "colorPrimary" to 0x168cff, "colorSecondary" to 0x071525),
+    )
+    skill1SoundPlan(confirmedHit = true).stomp.forEach { cue ->
+        playSkillSound(player, cue.key, center, cue.volume, cue.pitch)
     }
-    playSkillSound(player, "entity.player.levelup", origin.add(0.0, 0.8, 0.0), 0.5f, 1.65f)
 }
 
-private fun showSkill2Cast(player: net.minestom.server.entity.Player) {
+private fun showSkill1Launch(
+    player: net.minestom.server.entity.Player,
+    direction: Vec,
+    scheduler: ParticleAnimationScheduler,
+    manager: ParticleManager,
+) {
+    val origin = player.position.add(0.0, 0.65, 0.0)
+    startParticlePreset(
+        player = player,
+        id = SKILL1_ESCAPE_VFX,
+        scheduler = scheduler,
+        origin = origin,
+        direction = direction,
+        manager = manager,
+        values = mapOf("length" to 1.7, "duration" to 4.0, "colorPrimary" to 0x168cff, "colorSecondary" to 0x071525),
+    )
+    skill1SoundPlan(confirmedHit = true).escape.forEach { cue ->
+        playSkillSound(player, cue.key, origin, cue.volume, cue.pitch)
+    }
+}
+
+private fun showSkill2Cast(
+    player: net.minestom.server.entity.Player,
+    scheduler: ParticleAnimationScheduler,
+    manager: ParticleManager,
+) {
     val origin = player.position.add(0.0, 0.3, 0.0)
+    startParticlePreset(
+        player = player,
+        id = "projects:combat/charge_inward",
+        scheduler = scheduler,
+        origin = origin,
+        direction = Vec(0.0, 1.0, 0.0),
+        manager = manager,
+        values = mapOf(
+            "radius" to 2.25,
+            "duration" to 4.0,
+            "colorPrimary" to 0x168cff,
+            "colorSecondary" to 0x071525,
+        ),
+    )
     sendSkillParticle(player, Particle.END_ROD, origin)
     sendSkillParticle(player, Particle.ENCHANT, origin.add(0.0, 0.4, 0.0))
     sendSkillParticle(player, Particle.ELECTRIC_SPARK, origin.add(0.18, 0.2, 0.0))
     sendSkillParticle(player, Particle.ELECTRIC_SPARK, origin.add(-0.18, 0.2, 0.0))
-    playSkillSound(player, "entity.phantom.flap", origin, 0.45f, 1.2f)
+    playSkillSound(player, "item.trident.throw", origin, 0.24f, 0.78f)
 }
 
 private fun showSkill2DiveTrail(player: net.minestom.server.entity.Player) {
@@ -856,28 +1534,59 @@ private fun showSkill2DiveTrail(player: net.minestom.server.entity.Player) {
         sendSkillParticle(player, Particle.ELECTRIC_SPARK, position.add(radius, y - 0.08, 0.0))
         sendSkillParticle(player, Particle.ELECTRIC_SPARK, position.add(-radius, y - 0.08, 0.0))
     }
-    sendSkillParticle(player, Particle.CLOUD, position.add(0.0, 1.25, 0.0))
 }
 
-private fun showSkill2Landing(player: net.minestom.server.entity.Player) {
+private fun showSkill2Pulse(
+    player: net.minestom.server.entity.Player,
+    pulseIndex: Int,
+    scheduler: ParticleAnimationScheduler,
+    manager: ParticleManager,
+) {
+    val center = player.position.add(0.0, 0.9, 0.0)
+    val direction = FixedAttackTester.normalizeHorizontal(player.position.direction())
+    startParticlePreset(
+        player = player,
+        id = "projects:class/twin_blades/skill2_pulse",
+        scheduler = scheduler,
+        origin = center,
+        direction = direction,
+        manager = manager,
+        values = mapOf(
+            "pulse" to pulseIndex,
+            "duration" to 2.0,
+            "colorPrimary" to when (pulseIndex) {
+                1 -> 0x168cff
+                2 -> 0x70e9ff
+                3 -> 0x8fffff
+                else -> 0xe8fdff
+            },
+            "colorSecondary" to 0x071525,
+        ),
+    )
+    playTwinBladesSounds(player, center, twinBladesSkill2PulseSoundPlan(pulseIndex))
+}
+
+private fun showSkill2Landing(
+    player: net.minestom.server.entity.Player,
+    scheduler: ParticleAnimationScheduler,
+    manager: ParticleManager,
+) {
     val center = player.position.add(0.0, 0.12, 0.0)
-    sendSkillRing(player, Particle.END_ROD, center, 4.0, 18)
-    sendSkillRing(player, Particle.ENCHANT, center, 3.15, 14)
-    for (spoke in 0..7) {
-        val angle = spoke * Math.PI / 4.0
-        for (step in 1..4) {
-            val radius = step.toDouble()
-            sendSkillParticle(
-                player,
-                if (step % 2 == 0) Particle.END_ROD else Particle.ELECTRIC_SPARK,
-                center.add(kotlin.math.cos(angle) * radius, 0.0, kotlin.math.sin(angle) * radius),
-            )
-        }
-    }
-    sendSkillParticle(player, Particle.EXPLOSION, center)
-    sendSkillParticle(player, Particle.END_ROD, center.add(0.0, 0.35, 0.0))
-    playSkillSound(player, "entity.generic.explode", center, 0.85f, 0.85f)
-    playSkillSound(player, "entity.player.attack.crit", center, 0.5f, 1.3f)
+    startParticlePreset(
+        player = player,
+        id = "projects:class/twin_blades/skill2_finisher",
+        scheduler = scheduler,
+        origin = center,
+        direction = Vec(0.0, 1.0, 0.0),
+        manager = manager,
+        values = mapOf(
+            "radius" to 4.0,
+            "duration" to 6.0,
+            "colorPrimary" to 0xe8fdff,
+            "colorSecondary" to 0x071525,
+        ),
+    )
+    playTwinBladesSounds(player, center, twinBladesSkill2LandingSoundPlan())
 }
 
 private fun showSkill3Cast(player: net.minestom.server.entity.Player) {
@@ -886,60 +1595,115 @@ private fun showSkill3Cast(player: net.minestom.server.entity.Player) {
     for (step in 0..2) {
         sendSkillParticle(player, Particle.END_ROD, origin.add(forward.x() * step * 0.3, forward.y() * step * 0.3, forward.z() * step * 0.3))
     }
-    playSkillSound(player, "entity.enderman.teleport", origin, 0.65f, 1.25f)
+    playTwinBladesSounds(player, origin, twinBladesSkill3SoundPlan().travel)
 }
 
 private fun showSkill3DashTrail(
     player: net.minestom.server.entity.Player,
     position: Pos,
     direction: Vec,
+    scheduler: ParticleAnimationScheduler,
+    manager: ParticleManager,
 ) {
-    val origin = position.add(0.0, 0.8, 0.0)
-    val (forward, right, up) = directionBasis(direction)
-    for (step in 0..3) {
-        val progress = step / 3.0
-        val distance = 0.12 + progress * 0.9
-        val core = origin.add(
-            forward.x() * distance,
-            forward.y() * distance,
-            forward.z() * distance,
-        )
-        sendSkillParticle(player, Particle.END_ROD, core)
-        for (ribbon in 0..1) {
-            val phase = progress * Math.PI * 1.4 + ribbon * Math.PI
-            val radial = Vec(
-                right.x() * kotlin.math.cos(phase) * 0.22 + up.x() * kotlin.math.sin(phase) * 0.22,
-                right.y() * kotlin.math.cos(phase) * 0.22 + up.y() * kotlin.math.sin(phase) * 0.22,
-                right.z() * kotlin.math.cos(phase) * 0.22 + up.z() * kotlin.math.sin(phase) * 0.22,
-            )
-            sendSkillParticle(
-                player,
-                if (ribbon == 0) Particle.ENCHANT else Particle.ELECTRIC_SPARK,
-                core.add(radial.x(), radial.y(), radial.z()),
-            )
-        }
-    }
+    startParticlePreset(
+        player = player,
+        id = "projects:class/twin_blades/skill3_dash_trail",
+        scheduler = scheduler,
+        origin = position.add(0.0, 0.8, 0.0),
+        direction = direction,
+        manager = manager,
+        values = mapOf("duration" to 2.0),
+    )
 }
 
-private fun showSkill3Snap(player: net.minestom.server.entity.Player, direction: Vec) {
-    val position = player.position.add(0.0, 0.8, 0.0)
-    val (_, right, up) = directionBasis(direction)
-    sendSkillParticle(player, Particle.EXPLOSION, position)
-    sendSkillParticle(player, Particle.END_ROD, position)
-    sendSkillParticle(player, Particle.CRIT, position.add(right.x() * 0.45, right.y() * 0.45, right.z() * 0.45))
-    sendSkillParticle(player, Particle.CRIT, position.add(-right.x() * 0.45, -right.y() * 0.45, -right.z() * 0.45))
-    sendSkillParticle(player, Particle.CRIT, position.add(up.x() * 0.45, up.y() * 0.45, up.z() * 0.45))
-    sendSkillParticle(player, Particle.CRIT, position.add(-up.x() * 0.45, -up.y() * 0.45, -up.z() * 0.45))
-    for (step in 0..11) {
-        val angle = step * Math.PI / 6.0
-        val radial = Vec(
-            right.x() * kotlin.math.cos(angle) + up.x() * kotlin.math.sin(angle),
-            right.y() * kotlin.math.cos(angle) + up.y() * kotlin.math.sin(angle),
-            right.z() * kotlin.math.cos(angle) + up.z() * kotlin.math.sin(angle),
-        )
-        sendSkillParticle(player, Particle.END_ROD, position.add(radial.x() * 0.62, radial.y() * 0.62, radial.z() * 0.62))
+private fun showSkill3CatchVfx(
+    player: net.minestom.server.entity.Player,
+    dashOrigin: Pos,
+    dashDirection: Vec,
+    target: CombatTarget,
+    scheduler: ParticleAnimationScheduler,
+    manager: ParticleManager,
+) {
+    val contact = twinBladesSkill3ContactPoint(dashOrigin, dashDirection, target.position, target.halfExtent)
+    val visual = TwinBladesSkill3Visual()
+    val started = startParticlePreset(
+        player = player,
+        id = "projects:class/twin_blades/skill3_hit",
+        scheduler = scheduler,
+        origin = contact,
+        direction = dashDirection,
+        manager = manager,
+        values = mapOf(
+            "length" to visual.primaryLength,
+            "aftercutLength" to visual.aftercutLength,
+            "duration" to visual.primaryDuration.toDouble(),
+        ),
+    )
+    if (!started) {
+        System.err.println("Skill3 VFX preset failed to start: projects:class/twin_blades/skill3_hit")
     }
-    playSkillSound(player, "block.amethyst_block.hit", position, 0.75f, 1.55f)
+    playTwinBladesSounds(player, contact, twinBladesSkill3SoundPlan().confirmedHit)
+}
+
+private fun showSkill3PulseVfx(
+    player: net.minestom.server.entity.Player,
+    target: CombatTarget,
+    direction: Vec,
+    pulseIndex: Int,
+    scheduler: ParticleAnimationScheduler,
+    manager: ParticleManager,
+) {
+    val started = startParticlePreset(
+        player = player,
+        id = "projects:class/twin_blades/skill3_pulse",
+        scheduler = scheduler,
+        origin = target.position,
+        direction = direction,
+        manager = manager,
+        values = mapOf(
+            "pulse" to pulseIndex.toDouble(),
+            "duration" to 2.0,
+        ),
+    )
+    if (!started) {
+        System.err.println("Skill3 VFX preset failed to start: projects:class/twin_blades/skill3_pulse")
+    }
+    playTwinBladesSounds(player, target.position, twinBladesSkill3PulseSoundPlan(pulseIndex))
+}
+
+private fun showSkill3FinisherVfx(
+    player: net.minestom.server.entity.Player,
+    target: CombatTarget,
+    direction: Vec,
+    scheduler: ParticleAnimationScheduler,
+    manager: ParticleManager,
+) {
+    val contact = target.position
+    val visual = TwinBladesSkill3Visual()
+    val started = startParticlePreset(
+        player = player,
+        id = "projects:class/twin_blades/skill3_finisher",
+        scheduler = scheduler,
+        origin = contact,
+        direction = direction,
+        manager = manager,
+        values = mapOf("length" to visual.finisherLength, "duration" to visual.finisherDuration.toDouble()),
+    )
+    if (!started) {
+        System.err.println("Skill3 VFX preset failed to start: projects:class/twin_blades/skill3_finisher")
+    }
+    val recoilOrigin = player.position.add(0.0, 0.8, 0.0)
+    startParticlePreset(
+        player = player,
+        id = "projects:class/twin_blades/skill3_recoil",
+        scheduler = scheduler,
+        origin = recoilOrigin,
+        direction = direction.mul(-1.0),
+        manager = manager,
+        values = mapOf("duration" to visual.recoilDuration.toDouble()),
+    )
+    playTwinBladesSounds(player, contact, twinBladesSkill3FinisherSoundPlan())
+    playTwinBladesSounds(player, recoilOrigin, twinBladesSkill3SoundPlan().bounce)
 }
 
 private fun showSkill3Hover(player: net.minestom.server.entity.Player) {
@@ -1029,6 +1793,16 @@ private fun playSkillSound(
     player.playSound(Sound.sound(soundEvent, Sound.Source.PLAYER, volume, pitch), point)
 }
 
+private fun playTwinBladesSounds(
+    player: net.minestom.server.entity.Player,
+    point: Point,
+    cues: List<TwinBladesSoundCue>,
+) {
+    cues.forEach { cue ->
+        playSkillSound(player, cue.key, point, cue.volume, cue.pitch)
+    }
+}
+
 private fun sendSkillParticle(
     player: net.minestom.server.entity.Player,
     particle: Particle,
@@ -1047,32 +1821,16 @@ private fun showTesterTelegraph(
     origin: Pos,
     attack: FixedAttackType,
     direction: Vec,
+    scheduler: ParticleAnimationScheduler,
+    manager: ParticleManager,
 ) {
-    val right = Vec(-direction.z(), 0.0, direction.x())
     when (attack) {
         FixedAttackType.SIDE_SWEEP -> {
-            for (step in 0..8) {
-                val angle = -1.15 + 2.3 * step / 8.0
-                val radial = Vec(
-                    direction.x() * kotlin.math.cos(angle) + right.x() * kotlin.math.sin(angle),
-                    0.0,
-                    direction.z() * kotlin.math.cos(angle) + right.z() * kotlin.math.sin(angle),
-                )
-                sendTesterParticle(player, Particle.ELECTRIC_SPARK, origin.add(radial.x() * 4.5, 0.08, radial.z() * 4.5))
-            }
+            startParticlePreset(player, "projects:combat/shockwave_ring", scheduler, origin.add(0.0, 0.08, 0.0), Vec(0.0, 1.0, 0.0), manager, mapOf("radius" to 4.5, "duration" to 8.0))
         }
         FixedAttackType.FORWARD_SLAM -> {
-            for (step in 1..5) {
-                val distance = step.toDouble()
-                for (side in -1..1) {
-                    val point = origin.add(
-                        direction.x() * distance + right.x() * side * 0.9,
-                        0.08,
-                        direction.z() * distance + right.z() * side * 0.9,
-                    )
-                    sendTesterParticle(player, Particle.END_ROD, point)
-                }
-            }
+            val center = origin.add(direction.x() * 3.0, 0.08, direction.z() * 3.0)
+            startParticlePreset(player, "projects:combat/charge_inward", scheduler, center, Vec(0.0, 1.0, 0.0), manager, mapOf("radius" to 2.5, "duration" to 8.0))
         }
     }
 }
@@ -1117,6 +1875,12 @@ private fun sendTesterParticle(
 private fun FixedAttackType.displayName(): String = when (this) {
     FixedAttackType.SIDE_SWEEP -> "Side Sweep"
     FixedAttackType.FORWARD_SLAM -> "Forward Slam"
+}
+
+private fun RiftExecutionerAttack.displayName(): String = when (this) {
+    RiftExecutionerAttack.SECTOR_CLEAVE -> "Sector Cleave"
+    RiftExecutionerAttack.FORWARD_SLAM -> "Forward Slam"
+    RiftExecutionerAttack.CHAIN_DASH -> "Chain Dash"
 }
 
 private fun moveDodge(

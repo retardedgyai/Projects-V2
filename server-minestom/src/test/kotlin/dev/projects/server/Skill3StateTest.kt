@@ -5,6 +5,7 @@ import net.minestom.server.collision.BoundingBox
 import net.minestom.server.coordinate.Pos
 import net.minestom.server.coordinate.Vec
 import java.util.UUID
+import kotlin.math.sqrt
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -71,7 +72,7 @@ class Skill3StateTest {
     }
 
     @Test
-    fun `dash segment hits each target once and can hit multiple targets`() {
+    fun `dash segment selects the nearest target and only one target per cast`() {
         val skill3 = Skill3State(sequence())
         skill3.tryCast(facing, ClassSkillDirection(0.0, 1.0))
         val first = UUID.randomUUID()
@@ -82,8 +83,42 @@ class Skill3StateTest {
             CombatTarget(UUID.randomUUID(), Pos(4.0, 0.0, 0.0)),
         )
 
-        assertEquals(listOf(first, second), skill3.hitTargetsOnSegment(Pos(0.0, 0.0, 0.0), Pos(0.0, 0.0, 2.0), targets))
+        assertEquals(listOf(first), skill3.hitTargetsOnSegment(Pos(0.0, 0.0, 0.0), Pos(0.0, 0.0, 2.0), targets))
         assertTrue(skill3.hitTargetsOnSegment(Pos(0.0, 0.0, 2.0), Pos(0.0, 0.0, 4.0), targets).isEmpty())
+    }
+
+    @Test
+    fun `skill3 hit ends dash and starts the multihit phase`() {
+        val skill3 = Skill3State(sequence())
+        skill3.tryCast(facing, ClassSkillDirection(0.0, 1.0))
+        val target = CombatTarget(UUID.randomUUID(), Pos(0.0, 0.0, 1.0))
+
+        assertEquals(
+            listOf(target.id),
+            skill3.hitTargetsOnSegment(Pos(0.0, 0.0, 0.0), Pos(0.0, 0.0, 2.0), listOf(target)),
+        )
+        assertTrue(skill3.finishDashOnHit())
+        assertEquals(Skill3Phase.MULTIHIT, skill3.phase)
+        assertEquals(0, skill3.dashTicksRemaining)
+        assertEquals(target.id, skill3.primaryTargetId)
+        assertEquals(0, skill3.cooldownTicksRemaining)
+        assertFalse(skill3.finishDashOnHit())
+    }
+
+    @Test
+    fun `multihit emits four pulses every two ticks then one finisher`() {
+        val skill3 = Skill3State(sequence())
+        val target = CombatTarget(UUID.randomUUID(), Pos(0.0, 0.0, 1.0))
+        skill3.tryCast(facing, ClassSkillDirection(0.0, 1.0))
+        skill3.hitTargetsOnSegment(Pos.ZERO, Pos(0.0, 0.0, 2.0), listOf(target))
+        assertTrue(skill3.finishDashOnHit(target.id))
+
+        val ticks = (0..7).map { skill3.tick(false, 0.0) }
+        assertEquals(listOf(1, 2, 3, 4), ticks.mapNotNull { it.pulseIndex })
+        assertEquals(listOf(0, 2, 4, 6), ticks.mapIndexedNotNull { index, tick -> tick.pulseIndex?.let { index } })
+        assertTrue(ticks.last().finisherActive)
+        assertEquals(Skill3Phase.HOVER, skill3.phase)
+        assertEquals(Skill3State.COOLDOWN_TICKS, skill3.cooldownTicksRemaining)
     }
 
     @Test
@@ -97,6 +132,20 @@ class Skill3StateTest {
             listOf(targetId),
             skill3.hitTargetsOnSegment(Pos(0.0, 0.0, 0.0), Pos(0.0, 3.0, 0.0), listOf(target)),
         )
+    }
+
+    @Test
+    fun `skill3 hit bounce reverses horizontal cast direction`() {
+        val bounce = skill3HitBounceVelocity(Vec(1.0, 2.0, 2.0))
+
+        assertEquals(-1.5 / sqrt(5.0), bounce.x(), 1.0e-9)
+        assertEquals(6.0, bounce.y())
+        assertEquals(-3.0 / sqrt(5.0), bounce.z(), 1.0e-9)
+    }
+
+    @Test
+    fun `vertical skill3 hit bounce has no horizontal recoil`() {
+        assertEquals(Vec(0.0, 6.0, 0.0), skill3HitBounceVelocity(Vec(0.0, 1.0, 0.0)))
     }
 
     @Test
@@ -145,6 +194,25 @@ class Skill3StateTest {
         val secondHoverTick = skill3.tick(false, -1.0)
         assertFalse(secondHoverTick.stopHorizontalVelocity)
         assertEquals(Vec(15.0, -0.4, 0.0), skill3HoverVelocity(Vec(15.0, -1.0, 0.0), secondHoverTick.velocityY))
+    }
+
+    @Test
+    fun `finisher enters hover and preserves bounce velocity`() {
+        val skill3 = Skill3State(sequence())
+        skill3.tryCast(facing, ClassSkillDirection(0.0, 1.0))
+        val target = CombatTarget(UUID.randomUUID(), Pos(0.0, 0.0, 1.0))
+        skill3.hitTargetsOnSegment(Pos.ZERO, Pos(0.0, 0.0, 2.0), listOf(target))
+        assertTrue(skill3.finishDashOnHit(target.id))
+        repeat(7) { skill3.tick(false, 0.0) }
+        assertTrue(skill3.tick(false, 0.0).finisherActive)
+
+        val firstHoverTick = skill3.tick(false, 6.0)
+
+        assertFalse(firstHoverTick.stopHorizontalVelocity)
+        assertEquals(
+            skill3HitBounceVelocity(facing),
+            skill3HoverVelocity(skill3HitBounceVelocity(facing), firstHoverTick.velocityY),
+        )
     }
 
     @Test

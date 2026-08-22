@@ -3,6 +3,7 @@ package dev.projects.server
 import net.minestom.server.coordinate.Point
 import java.util.UUID
 import kotlin.math.hypot
+import kotlin.math.sqrt
 
 enum class Skill2Phase {
     IDLE,
@@ -14,9 +15,10 @@ data class Skill2Tick(
     val diveActive: Boolean,
     val velocityY: Double,
     val landed: Boolean = false,
+    val pulseIndex: Int? = null,
 )
 
-/** Small server-owned state machine for the Dive AoE prototype. */
+/** Server-owned state machine for the falling Blade Storm multi-hit prototype. */
 class Skill2State(
     private val castIdSource: () -> Long = Skill2ExecutionIds::next,
 ) {
@@ -30,7 +32,11 @@ class Skill2State(
         private set
 
     private var landingWindowOpen = false
-    private val hitTargets = mutableSetOf<UUID>()
+    private var elapsedTicks = 0
+    private var nextPulse = 0
+    private var activePulse: Int? = null
+    private val pulseHitTargets = mutableMapOf<Int, MutableSet<UUID>>()
+    private val landingHitTargets = mutableSetOf<UUID>()
 
     val isReady: Boolean
         get() = phase == Skill2Phase.IDLE && cooldownTicksRemaining == 0
@@ -40,7 +46,11 @@ class Skill2State(
         castId = castIdSource()
         phase = Skill2Phase.DIVE
         landingWindowOpen = false
-        hitTargets.clear()
+        elapsedTicks = 0
+        nextPulse = 0
+        activePulse = null
+        pulseHitTargets.clear()
+        landingHitTargets.clear()
         return castId
     }
 
@@ -50,14 +60,44 @@ class Skill2State(
                 phase = Skill2Phase.IDLE
                 cooldownTicksRemaining = COOLDOWN_TICKS
                 landingWindowOpen = true
+                activePulse = null
                 return Skill2Tick(Skill2Phase.DIVE, false, 0.0, landed = true)
             }
-            return Skill2Tick(Skill2Phase.DIVE, true, -DOWNWARD_SPEED)
+            val pulse = if (elapsedTicks % PULSE_INTERVAL_TICKS == 0 && nextPulse < PULSE_COUNT) {
+                nextPulse++
+                nextPulse
+            } else {
+                null
+            }
+            activePulse = pulse
+            val velocity = if (elapsedTicks >= FINAL_DIVE_TICK) -FINAL_DIVE_SPEED else -DESCENT_SPEED
+            elapsedTicks++
+            return Skill2Tick(Skill2Phase.DIVE, true, velocity, pulseIndex = pulse)
         }
 
+        activePulse = null
         landingWindowOpen = false
         if (cooldownTicksRemaining > 0) cooldownTicksRemaining--
         return Skill2Tick(Skill2Phase.IDLE, false, 0.0)
+    }
+
+    /** Consumes the current pulse and returns each target at most once for that pulse. */
+    fun hitTargetsAtPulse(
+        pulseIndex: Int,
+        center: Point,
+        targets: Collection<CombatTarget>,
+        radius: Double = PULSE_RADIUS,
+    ): List<UUID> {
+        require(pulseIndex in 1..PULSE_COUNT) { "Skill2 pulse index is out of range" }
+        require(radius >= 0.0 && radius.isFinite()) { "Skill2 pulse radius must be finite and non-negative" }
+        if (activePulse != pulseIndex) return emptyList()
+        activePulse = null
+        val hitTargets = pulseHitTargets.getOrPut(pulseIndex) { mutableSetOf() }
+        val result = targets.filter {
+            it.id !in hitTargets && isWithinPulseRadius(center, it, radius)
+        }.map { it.id }
+        hitTargets += result
+        return result
     }
 
     /** Returns each target at most once for the landing of this cast. */
@@ -69,9 +109,9 @@ class Skill2State(
         require(radius >= 0.0 && radius.isFinite()) { "Skill2 landing radius must be finite and non-negative" }
         if (!landingWindowOpen) return emptyList()
         val result = targets.filter {
-            it.id !in hitTargets && isWithinLandingRadius(center, it, radius)
+            it.id !in landingHitTargets && isWithinLandingRadius(center, it, radius)
         }.map { it.id }
-        hitTargets += result
+        landingHitTargets += result
         landingWindowOpen = false
         return result
     }
@@ -81,14 +121,35 @@ class Skill2State(
         cooldownTicksRemaining = 0
         castId = 0L
         landingWindowOpen = false
-        hitTargets.clear()
+        elapsedTicks = 0
+        nextPulse = 0
+        activePulse = null
+        pulseHitTargets.clear()
+        landingHitTargets.clear()
     }
 
     companion object {
         const val COOLDOWN_TICKS = 100
-        const val DOWNWARD_SPEED = 18.0
+        const val PULSE_COUNT = 4
+        const val PULSE_INTERVAL_TICKS = 2
+        const val PULSE_RADIUS = 2.75
+        const val DESCENT_SPEED = 10.0
+        const val FINAL_DIVE_SPEED = 18.0
+        const val FINAL_DIVE_TICK = 6
         const val LANDING_RADIUS = 4.0
     }
+}
+
+internal fun isWithinPulseRadius(center: Point, target: CombatTarget, radius: Double): Boolean {
+    require(radius >= 0.0 && radius.isFinite()) { "Skill2 pulse radius must be finite and non-negative" }
+    require(
+        target.halfExtent.x().isFinite() && target.halfExtent.y().isFinite() && target.halfExtent.z().isFinite() &&
+            target.halfExtent.x() >= 0.0 && target.halfExtent.y() >= 0.0 && target.halfExtent.z() >= 0.0,
+    ) { "Skill2 target half extents must be finite and non-negative" }
+    val distanceX = distanceToAxis(center.x(), target.position.x(), target.halfExtent.x())
+    val distanceY = distanceToAxis(center.y(), target.position.y(), target.halfExtent.y())
+    val distanceZ = distanceToAxis(center.z(), target.position.z(), target.halfExtent.z())
+    return sqrt(distanceX * distanceX + distanceY * distanceY + distanceZ * distanceZ) <= radius
 }
 
 internal fun isWithinLandingRadius(center: Point, target: CombatTarget, radius: Double): Boolean {
@@ -112,6 +173,16 @@ internal fun isWithinLandingRadius(center: Point, target: CombatTarget, radius: 
         else -> 0.0
     }
     return hypot(distanceX, distanceZ) <= radius
+}
+
+private fun distanceToAxis(center: Double, target: Double, halfExtent: Double): Double {
+    val min = target - halfExtent
+    val max = target + halfExtent
+    return when {
+        center < min -> min - center
+        center > max -> center - max
+        else -> 0.0
+    }
 }
 
 private object Skill2ExecutionIds {
