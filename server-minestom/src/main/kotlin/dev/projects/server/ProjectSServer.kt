@@ -35,6 +35,7 @@ import net.minestom.server.coordinate.Vec
 import net.minestom.server.entity.Entity
 import net.minestom.server.entity.EntityType
 import net.minestom.server.entity.EquipmentSlot
+import net.minestom.server.entity.GameMode
 import net.minestom.server.event.player.AsyncPlayerConfigurationEvent
 import net.minestom.server.event.player.PlayerPluginMessageEvent
 import net.minestom.server.event.player.PlayerDisconnectEvent
@@ -280,8 +281,29 @@ fun main() {
         attackSpeeds[player.uuid] = speed
         player.sendMessage(Component.text("Attack Speed set to $speed"))
     }
+
+    fun handleGameMode(sender: CommandSender, mode: GameMode) {
+        val player = sender as? net.minestom.server.entity.Player
+        if (player == null) {
+            sender.sendMessage(Component.text("This command can only be used by a player"))
+            return
+        }
+        player.setGameMode(mode)
+        player.sendMessage(Component.text("Game mode set to ${mode.name.lowercase()}"))
+    }
+
     MinecraftServer.getCommandManager().register(
         Command("as").apply { addSyntax(::handleAttackSpeed, speedArgument) },
+    )
+    MinecraftServer.getCommandManager().register(
+        Command("creative").apply {
+            setDefaultExecutor { sender, _ -> handleGameMode(sender, GameMode.CREATIVE) }
+        },
+    )
+    MinecraftServer.getCommandManager().register(
+        Command("survival").apply {
+            setDefaultExecutor { sender, _ -> handleGameMode(sender, GameMode.SURVIVAL) }
+        },
     )
     MinecraftServer.getCommandManager().register(
         Command("bossreset").apply { setDefaultExecutor { _, _ -> resetEncounter() } },
