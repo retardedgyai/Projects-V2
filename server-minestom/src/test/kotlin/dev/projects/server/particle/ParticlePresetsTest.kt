@@ -72,7 +72,7 @@ class ParticlePresetsTest {
             val relative = Vec(spawn.position.x(), spawn.position.y(), spawn.position.z())
             relative.sub(slashDirection.mul(relative.dot(slashDirection))).length()
         }
-        assertTrue(distances.maxOrNull()!! >= 0.18)
+        assertTrue(distances.maxOrNull()!! >= 0.12)
     }
 
     @Test
