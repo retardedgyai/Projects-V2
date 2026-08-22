@@ -45,10 +45,11 @@ Creatorが「これを作りたい」「これ試したい」「実装しよう�
 1. `git status`と現在Branchを確認する。
 2. Creator slugを`git config --get projects.creator`で読む。
 3. 未設定なら一度だけ短いCreator名を聞き、`git config projects.creator <slug>`でこのcloneに保存する。
-4. 現在が`main`で作業ツリーがcleanなら`main`を`git pull --ff-only`で最新化する。
-5. 内容から短いslugを決め、`play/<creator>/<slug>`を作成して移動する。
-6. 作成直後に`git push -u origin HEAD`まで行い、GitHubから現在の作業branchが見える状態にする。
-7. そのまま調査・実装を開始する。
+4. Creator slugとTask slugはbranch用に小文字ASCIIへ正規化し、基本形を`[a-z0-9][a-z0-9-]*`にする。空白、`_`、その他の区切りは`-`へ寄せ、無効/空になる場合だけCreatorへ短く確認する。
+5. 現在が`main`で作業ツリーがcleanなら`main`を`git pull --ff-only`で最新化する。
+6. 内容から短いTask slugを決め、`play/<creator>/<slug>`を作成して移動する。
+7. 作成直後に`git push -u origin HEAD`まで行い、GitHubから現在の作業branchが見える状態にする。
+8. そのまま調査・実装を開始する。
 
 Creatorが「なんかやりたい」「何か作りたい」のように対象をまだ決めていない場合は、Agentが短く候補を出すか何を作りたいか聞きます。対象が決まるまではbranchを作りません。
 
