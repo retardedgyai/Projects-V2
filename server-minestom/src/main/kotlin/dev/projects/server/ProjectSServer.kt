@@ -1626,7 +1626,7 @@ private fun showSkill3CatchVfx(
 ) {
     val contact = twinBladesSkill3ContactPoint(dashOrigin, dashDirection, target.position, target.halfExtent)
     val visual = TwinBladesSkill3Visual()
-    startParticlePreset(
+    val started = startParticlePreset(
         player = player,
         id = "projects:class/twin_blades/skill3_hit",
         scheduler = scheduler,
@@ -1639,6 +1639,9 @@ private fun showSkill3CatchVfx(
             "duration" to visual.primaryDuration.toDouble(),
         ),
     )
+    if (!started) {
+        System.err.println("Skill3 VFX preset failed to start: projects:class/twin_blades/skill3_hit")
+    }
     playTwinBladesSounds(player, contact, twinBladesSkill3SoundPlan().confirmedHit)
 }
 
@@ -1650,7 +1653,7 @@ private fun showSkill3PulseVfx(
     scheduler: ParticleAnimationScheduler,
     manager: ParticleManager,
 ) {
-    startParticlePreset(
+    val started = startParticlePreset(
         player = player,
         id = "projects:class/twin_blades/skill3_pulse",
         scheduler = scheduler,
@@ -1662,6 +1665,9 @@ private fun showSkill3PulseVfx(
             "duration" to 2.0,
         ),
     )
+    if (!started) {
+        System.err.println("Skill3 VFX preset failed to start: projects:class/twin_blades/skill3_pulse")
+    }
     playTwinBladesSounds(player, target.position, twinBladesSkill3PulseSoundPlan(pulseIndex))
 }
 
@@ -1674,7 +1680,7 @@ private fun showSkill3FinisherVfx(
 ) {
     val contact = target.position
     val visual = TwinBladesSkill3Visual()
-    startParticlePreset(
+    val started = startParticlePreset(
         player = player,
         id = "projects:class/twin_blades/skill3_finisher",
         scheduler = scheduler,
@@ -1683,6 +1689,9 @@ private fun showSkill3FinisherVfx(
         manager = manager,
         values = mapOf("length" to visual.finisherLength, "duration" to visual.finisherDuration.toDouble()),
     )
+    if (!started) {
+        System.err.println("Skill3 VFX preset failed to start: projects:class/twin_blades/skill3_finisher")
+    }
     val recoilOrigin = player.position.add(0.0, 0.8, 0.0)
     startParticlePreset(
         player = player,

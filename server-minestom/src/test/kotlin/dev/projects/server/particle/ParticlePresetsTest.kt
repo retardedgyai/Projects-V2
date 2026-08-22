@@ -199,6 +199,36 @@ class ParticlePresetsTest {
     }
 
     @Test
+    fun `skill3 hit presets dispatch through scheduler and particle manager`() {
+        val presetIds = listOf(
+            "projects:class/twin_blades/skill3_hit",
+            "projects:class/twin_blades/skill3_pulse",
+            "projects:class/twin_blades/skill3_finisher",
+        )
+
+        presetIds.forEach { id ->
+            val preset = requireNotNull(ParticlePresetRegistry[id])
+            val scheduler = ParticleAnimationScheduler()
+            val manager = ParticleManager()
+            val sink = RecordingParticleSink()
+            val viewer = ParticleViewer(Pos.ZERO)
+            val effectSink = manager.sink(viewer, sink, "preset:$id")
+            val effect = preset.create(context)
+
+            scheduler.start(effect, effectSink, id = id)
+            repeat(effect.durationTicks) {
+                manager.beginTick()
+                scheduler.tick()
+                manager.flush()
+            }
+
+            assertTrue(sink.spawns.isNotEmpty(), id)
+            assertTrue(manager.counters.dispatched > 0, id)
+            assertEquals(0, scheduler.activeAnimationCount, id)
+        }
+    }
+
+    @Test
     fun `twin blades arc has visible curvature and uses its angle`() {
         val start = twinBladesArcPoint(Pos.ZERO, context.direction, 35.0, 2.1, 0.0)
         val middle = twinBladesArcPoint(Pos.ZERO, context.direction, 35.0, 2.1, 0.5)
