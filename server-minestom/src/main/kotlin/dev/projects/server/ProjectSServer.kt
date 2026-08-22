@@ -916,7 +916,7 @@ fun main() {
                             if (castId != null) {
                                 skill1.cancelActiveMovement()
                                 skill3.cancelActiveMovement()
-                                event.player.setVelocity(Vec(0.0, -Skill2State.DOWNWARD_SPEED, 0.0))
+                                event.player.setVelocity(Vec(0.0, -Skill2State.DESCENT_SPEED, 0.0))
                                 showSkill2Cast(event.player, particleAnimations, particleManager)
                             }
                         }

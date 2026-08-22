@@ -3,6 +3,7 @@ package dev.projects.server
 import net.minestom.server.coordinate.Point
 import java.util.UUID
 import kotlin.math.hypot
+import kotlin.math.sqrt
 
 enum class Skill2Phase {
     IDLE,
@@ -93,7 +94,7 @@ class Skill2State(
         activePulse = null
         val hitTargets = pulseHitTargets.getOrPut(pulseIndex) { mutableSetOf() }
         val result = targets.filter {
-            it.id !in hitTargets && isWithinLandingRadius(center, it, radius)
+            it.id !in hitTargets && isWithinPulseRadius(center, it, radius)
         }.map { it.id }
         hitTargets += result
         return result
@@ -135,9 +136,20 @@ class Skill2State(
         const val DESCENT_SPEED = 10.0
         const val FINAL_DIVE_SPEED = 18.0
         const val FINAL_DIVE_TICK = 6
-        const val DOWNWARD_SPEED = FINAL_DIVE_SPEED
         const val LANDING_RADIUS = 4.0
     }
+}
+
+internal fun isWithinPulseRadius(center: Point, target: CombatTarget, radius: Double): Boolean {
+    require(radius >= 0.0 && radius.isFinite()) { "Skill2 pulse radius must be finite and non-negative" }
+    require(
+        target.halfExtent.x().isFinite() && target.halfExtent.y().isFinite() && target.halfExtent.z().isFinite() &&
+            target.halfExtent.x() >= 0.0 && target.halfExtent.y() >= 0.0 && target.halfExtent.z() >= 0.0,
+    ) { "Skill2 target half extents must be finite and non-negative" }
+    val distanceX = distanceToAxis(center.x(), target.position.x(), target.halfExtent.x())
+    val distanceY = distanceToAxis(center.y(), target.position.y(), target.halfExtent.y())
+    val distanceZ = distanceToAxis(center.z(), target.position.z(), target.halfExtent.z())
+    return sqrt(distanceX * distanceX + distanceY * distanceY + distanceZ * distanceZ) <= radius
 }
 
 internal fun isWithinLandingRadius(center: Point, target: CombatTarget, radius: Double): Boolean {
@@ -161,6 +173,16 @@ internal fun isWithinLandingRadius(center: Point, target: CombatTarget, radius: 
         else -> 0.0
     }
     return hypot(distanceX, distanceZ) <= radius
+}
+
+private fun distanceToAxis(center: Double, target: Double, halfExtent: Double): Double {
+    val min = target - halfExtent
+    val max = target + halfExtent
+    return when {
+        center < min -> min - center
+        center > max -> center - max
+        else -> 0.0
+    }
 }
 
 private object Skill2ExecutionIds {
