@@ -76,6 +76,25 @@ class ParticlePresetsTest {
     }
 
     @Test
+    fun `twin blades swing advances along a crescent instead of replaying one line`() {
+        val preset = requireNotNull(ParticlePresetRegistry["projects:class/twin_blades/aa_swing"])
+        val effect = preset.create(context.with("angle", 35.0).with("duration", 3.0))
+        val first = RecordingParticleSink().also { effect.emit(0, it) }.spawns.map { it.position }
+        val last = RecordingParticleSink().also { effect.emit(2, it) }.spawns.map { it.position }
+        fun centroid(points: List<net.minestom.server.coordinate.Point>) = points.reduce { a, b ->
+            a.add(b.x(), b.y(), b.z())
+        }.let { sum -> sum.div(points.size.toDouble()) }
+        assertTrue(centroid(first).distance(centroid(last)) > 0.1)
+    }
+
+    @Test
+    fun `twin blades swing mirrors its hand-side origin`() {
+        val positive = twinBladesArcPoint(Pos.ZERO, context.direction, 35.0, 2.1, 0.0)
+        val negative = twinBladesArcPoint(Pos.ZERO, context.direction, -35.0, 2.1, 0.0)
+        assertTrue(positive.distance(negative) > 0.3)
+    }
+
+    @Test
     fun `override parser rejects unknown and malformed parameters`() {
         val preset = requireNotNull(ParticlePresetRegistry["projects:combat/slash_light"])
         assertNotNull(parseParticlePresetOverrides(preset, arrayOf("length=2")))

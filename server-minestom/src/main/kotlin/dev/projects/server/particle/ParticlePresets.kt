@@ -201,47 +201,53 @@ private fun wave(origin: Point, direction: Vec, length: Double, amplitude: Doubl
     )
 }
 
-private fun twinBladesRibbon(
+internal fun twinBladesArcPoint(origin: Point, direction: Vec, angleDegrees: Double, length: Double, progress: Double): Point {
+    val (forward, right, up) = basis(direction)
+    val side = if (angleDegrees >= 0.0) 1.0 else -1.0
+    val theta = Math.toRadians(-side * 48.0 + side * 96.0 * progress.coerceIn(0.0, 1.0))
+    val radius = length.coerceAtLeast(0.01) * 0.46
+    val lateral = side * 0.22 + sin(theta) * radius
+    val vertical = -0.22 + (1.0 - cos(theta)) * 0.22
+    val depth = cos(theta) * 0.12
+    return origin.add(
+        forward.x() * depth + right.x() * lateral + up.x() * vertical,
+        forward.y() * depth + right.y() * lateral + up.y() * vertical,
+        forward.z() * depth + right.z() * lateral + up.z() * vertical,
+    )
+}
+
+private fun twinBladesArcRibbon(
     parameters: ParticlePresetParameters,
     angleDegrees: Double,
     length: Double,
     width: Double,
-    durationTicks: Int,
-): ParticleEffect {
-    val (_, right, up) = basis(parameters.direction)
-    val angle = Math.toRadians(angleDegrees)
-    val slashDirection = right.mul(cos(angle)).add(up.mul(sin(angle)))
-    val safeLength = length.coerceAtLeast(0.01)
-    val samples = ceil(safeLength / 0.12).toInt().coerceIn(16, 48)
-    return ParticleRibbon(
-        path = { progress ->
-            val distance = (progress - 0.5) * safeLength
-            parameters.origin.add(
-                slashDirection.x() * distance,
-                slashDirection.y() * distance,
-                slashDirection.z() * distance,
-            )
-        },
-        sampleCount = samples,
-        lanes = 5,
-        width = constantCurve(width.coerceAtLeast(0.0)),
-        durationTicks = durationTicks,
-        styleAt = { progress, laneProgress ->
-            val edge = laneProgress <= 0.25 || laneProgress >= 0.75
-            val core = !edge && laneProgress == 0.5
-            val color = when {
-                edge -> lerpColor(parameters.color("colorSecondary", 0x071525), 0x05080f, progress)
-                core -> lerpColor(parameters.color("colorPrimary", 0x70e9ff), 0xe8fdff, progress)
-                else -> lerpColor(0x126bff, 0x168cff, progress)
-            }
-            val dustScale = when {
-                edge -> 0.28f
-                core -> 0.24f
-                else -> 0.5f
-            }
-            ParticleStyle(dust(color, dustScale), count = if (core) 2 else 1)
-        },
-    )
+    start: Double,
+    end: Double,
+    color: Int,
+    dustScale: Float,
+): ParticleEffect = ParticleRibbon(
+    path = { progress -> twinBladesArcPoint(parameters.origin, parameters.direction, angleDegrees, length, start + (end - start) * progress) },
+    sampleCount = 12,
+    lanes = 3,
+    width = constantCurve(width.coerceAtLeast(0.0)),
+    styleAt = { _, laneProgress ->
+        ParticleStyle(dust(lerpColor(color, 0xe8fdff, if (laneProgress == 0.5) 0.35 else 0.0), dustScale), count = if (laneProgress == 0.5) 2 else 1)
+    },
+)
+
+private fun twinBladesCrescent(parameters: ParticlePresetParameters, angleDegrees: Double, length: Double, durationTicks: Int): ParticleEffect = object : ParticleEffect {
+    override val durationTicks: Int = durationTicks.coerceAtLeast(1)
+
+    override fun emit(tick: Int, sink: ParticleSink) {
+        val progress = if (this.durationTicks == 1) 1.0 else tick.toDouble() / (this.durationTicks - 1)
+        val leadingStart = (progress - 0.22).coerceAtLeast(0.0)
+        val bodyStart = (progress - 0.48).coerceAtLeast(0.0)
+        ParticleParallel.of(
+            twinBladesArcRibbon(parameters, angleDegrees, length, 0.18, bodyStart, progress, 0x126bff, 0.38f),
+            twinBladesArcRibbon(parameters, angleDegrees, length, 0.12, leadingStart, progress, parameters.color("colorPrimary", 0x70e9ff), 0.24f),
+            twinBladesArcRibbon(parameters, angleDegrees, length, 0.07, progress, minOf(1.0, progress + 0.08), 0xe8fdff, 0.20f),
+        ).emit(0, sink)
+    }
 }
 
 private fun pulseRing(origin: Point, direction: Vec, radius: Double, durationTicks: Int, style: ParticleStyle): ParticleEffect = object : ParticleEffect {
@@ -305,7 +311,7 @@ private fun buildCatalogue(): List<ParticlePreset> {
               combat + setOf("class", "twin_blades"),
               listOf(number("length", 2.4, 0.0, 4.0), number("angle", 35.0, -180.0, 180.0)) + colors + common,
           ) { p ->
-               twinBladesRibbon(p, p.number("angle", 35.0), p.length(2.4), 0.26, p.ticks().coerceAtMost(3))
+                twinBladesCrescent(p, p.number("angle", 35.0), p.length(2.4), p.ticks().coerceAtMost(3))
           },
          preset(
              "projects:class/twin_blades/aa_hit",
@@ -315,7 +321,7 @@ private fun buildCatalogue(): List<ParticlePreset> {
           ) { p ->
               val duration = p.ticks()
               ParticleBatch.of(
-                   twinBladesRibbon(p, p.number("angle", 35.0), p.length(3.0), 0.42, duration),
+                    twinBladesCrescent(p, p.number("angle", 35.0), p.length(3.0), duration),
                   ParticleGeometry.drawCleaveArc(
                       p.origin,
                       p.direction,
@@ -354,8 +360,8 @@ private fun buildCatalogue(): List<ParticlePreset> {
               val duration = p.ticks().coerceIn(4, 6)
               val radius = p.radius(1.35)
               ParticleBatch.of(
-                  twinBladesRibbon(p, 42.0, radius, 0.52, duration),
-                  twinBladesRibbon(p, -42.0, radius, 0.52, duration),
+                   twinBladesCrescent(p, 42.0, radius, duration),
+                   twinBladesCrescent(p, -42.0, radius, duration),
                   ParticleExplosion(p.origin, radius = radius * 0.5, sphere = true, count = 7, speed = 0.08f, particle = Particle.END_ROD, seed = p.seedValue()),
               )
           },
