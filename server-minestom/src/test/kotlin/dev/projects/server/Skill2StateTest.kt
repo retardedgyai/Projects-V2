@@ -5,37 +5,45 @@ import net.minestom.server.coordinate.Vec
 import java.util.UUID
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class Skill2StateTest {
     @Test
-    fun `skill2 rejects grounded cast and dives vertically when airborne`() {
+    fun `skill2 rejects grounded cast and emits four timed pulses while accelerating`() {
         val skill2 = Skill2State(sequence())
 
         assertEquals(null, skill2.tryCast(true))
         assertTrue(skill2.isReady)
         assertEquals(0, ClassResourceState().snapshot(0, skill2.cooldownTicksRemaining, 0).skill2CooldownTicks)
         assertNotNull(skill2.tryCast(false))
-        repeat(3) {
-            val tick = skill2.tick(false)
-            assertTrue(tick.diveActive)
-            assertEquals(-18.0, tick.velocityY)
-        }
+        val ticks = (0 until 8).map { skill2.tick(false) }
+        assertTrue(ticks.all { it.diveActive })
+        assertEquals(listOf(1, 2, 3, 4), ticks.mapNotNull { it.pulseIndex })
+        assertEquals(-10.0, ticks.first().velocityY)
+        assertEquals(-18.0, ticks[6].velocityY)
         assertEquals(Skill2Phase.DIVE, skill2.phase)
         assertEquals(null, skill2.tryCast(false))
     }
 
     @Test
-    fun `skill2 only lands once and hits targets whose bounding box is within radius`() {
+    fun `skill2 hits one target per pulse and only lands once`() {
         val skill2 = Skill2State(sequence())
         val inside = UUID.randomUUID()
         val outside = UUID.randomUUID()
         skill2.tryCast(false)
 
-        assertFalse(skill2.tick(false).landed)
-        assertTrue(skill2.hitTargetsAtLanding(Pos.ZERO, listOf(CombatTarget(inside, Pos(1.0, 0.0, 1.0)))).isEmpty())
+        assertEquals(1, skill2.tick(false).pulseIndex)
+        val pulseTargets = listOf(
+            CombatTarget(inside, Pos(2.5, 0.0, 0.0)),
+            CombatTarget(outside, Pos(3.0, 0.0, 0.0)),
+        )
+        assertEquals(listOf(inside), skill2.hitTargetsAtPulse(1, Pos.ZERO, pulseTargets))
+        assertTrue(skill2.hitTargetsAtPulse(1, Pos.ZERO, pulseTargets).isEmpty())
+
+        skill2.tick(false)
+        assertEquals(2, skill2.tick(false).pulseIndex)
+        assertEquals(listOf(inside), skill2.hitTargetsAtPulse(2, Pos.ZERO, pulseTargets))
 
         assertTrue(skill2.tick(true).landed)
         val targets = listOf(
@@ -45,6 +53,15 @@ class Skill2StateTest {
         assertEquals(listOf(inside), skill2.hitTargetsAtLanding(Pos.ZERO, targets))
         assertTrue(skill2.hitTargetsAtLanding(Pos.ZERO, targets).isEmpty())
         assertEquals(100, skill2.cooldownTicksRemaining)
+    }
+
+    @Test
+    fun `early landing closes the storm without residual pulses`() {
+        val skill2 = Skill2State(sequence())
+        skill2.tryCast(false)
+
+        assertTrue(skill2.tick(true).landed)
+        assertTrue((0 until 8).all { skill2.tick(false).pulseIndex == null })
     }
 
     @Test

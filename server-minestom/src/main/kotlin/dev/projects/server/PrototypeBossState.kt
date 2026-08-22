@@ -43,7 +43,8 @@ class PrototypeBossState(
     private val bossDamageExecutions = mutableSetOf<Long>()
     private val skill3DamageExecutions = mutableSetOf<Pair<Long, UUID>>()
     private val skill1DamageExecutions = mutableSetOf<Pair<Long, UUID>>()
-    private val skill2DamageExecutions = mutableSetOf<Pair<Long, UUID>>()
+    private val skill2PulseDamageExecutions = mutableSetOf<Triple<Long, Int, UUID>>()
+    private val skill2LandingDamageExecutions = mutableSetOf<Pair<Long, UUID>>()
 
     val isActive: Boolean
         get() = encounterState == PrototypeEncounterState.ACTIVE
@@ -120,10 +121,17 @@ class PrototypeBossState(
         return applyPlayerDamage(SKILL_1_DAMAGE)
     }
 
-    /** Applies one server-confirmed Skill2 hit per cast and target. */
-    fun applySkill2Attack(castId: Long, targetId: UUID): Int {
-        if (!isActive || !skill2DamageExecutions.add(castId to targetId)) return 0
-        return applyPlayerDamage(SKILL_2_DAMAGE)
+    /** Applies one server-confirmed Skill2 pulse hit per cast, pulse, and target. */
+    fun applySkill2Pulse(castId: Long, pulseIndex: Int, targetId: UUID): Int {
+        require(pulseIndex in 1..Skill2State.PULSE_COUNT) { "Skill2 pulse index is out of range" }
+        if (!isActive || !skill2PulseDamageExecutions.add(Triple(castId, pulseIndex, targetId))) return 0
+        return applyPlayerDamage(SKILL_2_PULSE_DAMAGE)
+    }
+
+    /** Applies the server-confirmed Skill2 landing finisher once per cast and target. */
+    fun applySkill2Landing(castId: Long, targetId: UUID): Int {
+        if (!isActive || !skill2LandingDamageExecutions.add(castId to targetId)) return 0
+        return applyPlayerDamage(SKILL_2_LANDING_DAMAGE)
     }
 
     fun setBreakActive(active: Boolean) {
@@ -143,7 +151,8 @@ class PrototypeBossState(
         bossDamageExecutions.clear()
         skill3DamageExecutions.clear()
         skill1DamageExecutions.clear()
-        skill2DamageExecutions.clear()
+        skill2PulseDamageExecutions.clear()
+        skill2LandingDamageExecutions.clear()
         when (targetPhase) {
             PrototypeBossPhase.DUEL -> {
                 currentHealth = (maxHealth * 0.85).roundToInt().coerceAtLeast(1)
@@ -172,7 +181,8 @@ class PrototypeBossState(
         bossDamageExecutions.clear()
         skill3DamageExecutions.clear()
         skill1DamageExecutions.clear()
-        skill2DamageExecutions.clear()
+        skill2PulseDamageExecutions.clear()
+        skill2LandingDamageExecutions.clear()
     }
 
     /** Restores the prototype encounter and every registered player to its test-start state. */
@@ -184,7 +194,8 @@ class PrototypeBossState(
         bossDamageExecutions.clear()
         skill3DamageExecutions.clear()
         skill1DamageExecutions.clear()
-        skill2DamageExecutions.clear()
+        skill2PulseDamageExecutions.clear()
+        skill2LandingDamageExecutions.clear()
         playerDamageExecutions.clear()
         playerHealth.keys.toList().forEach { playerHealth[it] = playerMaxHealth }
     }
@@ -216,7 +227,8 @@ class PrototypeBossState(
         const val TWIN_RODS_BODY_DAMAGE = 10
         const val SKILL_3_DAMAGE = 30
         const val SKILL_1_DAMAGE = 20
-        const val SKILL_2_DAMAGE = 25
+        const val SKILL_2_PULSE_DAMAGE = 4
+        const val SKILL_2_LANDING_DAMAGE = 12
         const val WEAKPOINT_MULTIPLIER = 1.5
         const val BREAK_MULTIPLIER = 1.5
     }

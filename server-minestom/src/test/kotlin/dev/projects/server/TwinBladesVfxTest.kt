@@ -141,6 +141,20 @@ class TwinBladesVfxTest {
     }
 
     @Test
+    fun `blade storm sound rhythm grows into a layered landing`() {
+        val pulses = (1..4).map(::twinBladesSkill2PulseSoundPlan)
+        assertEquals(listOf("item.trident.throw"), pulses[0].map { it.key })
+        assertTrue(pulses[2].any { it.key == "item.axe.scrape" })
+        assertTrue(pulses[3].any { it.key == "item.trident.riptide_1" })
+
+        val landing = twinBladesSkill2LandingSoundPlan()
+        assertTrue(landing.size >= 4)
+        assertTrue(landing.any { it.key == "item.trident.hit" })
+        assertTrue(landing.none { it.key == "block.note_block.chime" })
+        assertTrue((pulses.flatten() + landing).all { it.volume <= 0.55f })
+    }
+
+    @Test
     fun `target scale is bounded and leaves small targets at baseline`() {
         assertEquals(1.0, twinBladesVisualScale(0.6, 1.8))
         assertEquals(1.5, twinBladesVisualScale(3.0, 3.0))
