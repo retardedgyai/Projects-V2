@@ -100,6 +100,30 @@ class TwinBladesVfxTest {
     }
 
     @Test
+    fun `twin blades sound plan separates swing contact and weakpoint accent`() {
+        val miss = twinBladesSoundPlan(WeaponType.TWIN_RODS, 1, confirmed = false, weakpoint = false)
+        val normal = twinBladesSoundPlan(WeaponType.TWIN_RODS, 2, confirmed = true, weakpoint = false)
+        val weakpoint = twinBladesSoundPlan(WeaponType.TWIN_RODS, 3, confirmed = true, weakpoint = true)
+
+        assertEquals(3, miss.swing.size)
+        assertTrue(miss.contact.isEmpty())
+        assertTrue(miss.weakpointAccent.isEmpty())
+        assertEquals(listOf("item.trident.hit", "item.axe.scrape"), normal.contact.map { it.key })
+        assertTrue(normal.weakpointAccent.isEmpty())
+        assertEquals(listOf("block.note_block.chime"), weakpoint.weakpointAccent.map { it.key })
+        assertTrue(weakpoint.swing != normal.swing)
+    }
+
+    @Test
+    fun `heavy blade never gets twin blades sounds`() {
+        val plan = twinBladesSoundPlan(WeaponType.HEAVY_BLADE, 3, confirmed = true, weakpoint = true)
+
+        assertTrue(plan.swing.isEmpty())
+        assertTrue(plan.contact.isEmpty())
+        assertTrue(plan.weakpointAccent.isEmpty())
+    }
+
+    @Test
     fun `target scale is bounded and leaves small targets at baseline`() {
         assertEquals(1.0, twinBladesVisualScale(0.6, 1.8))
         assertEquals(1.5, twinBladesVisualScale(3.0, 3.0))

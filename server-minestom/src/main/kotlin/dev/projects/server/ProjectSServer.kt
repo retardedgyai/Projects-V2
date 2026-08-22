@@ -1266,7 +1266,11 @@ private fun showTwinBladesWeakpointVfx(
     manager: ParticleManager,
 ) {
     val center = selection.center
-    playSkillSound(player, "block.note_block.chime", center, 0.45f, 1.65f)
+    playTwinBladesSounds(
+        player,
+        center,
+        twinBladesSoundPlan(WeaponType.TWIN_RODS, visual.step, confirmed = true, weakpoint = true).weakpointAccent,
+    )
     startParticlePreset(
         player = player,
         id = "projects:class/twin_blades/weakpoint_hit",
@@ -1311,8 +1315,11 @@ private fun showTwinRodsHitVfx(
             "colorSecondary" to visual.hitSecondary,
         ),
     )
-    playSkillSound(player, "entity.player.attack.sweep", center, 0.35f, 1.55f)
-    playSkillSound(player, "entity.player.attack.crit", center, 0.3f, 1.1f)
+    playTwinBladesSounds(
+        player,
+        center,
+        twinBladesSoundPlan(WeaponType.TWIN_RODS, visual.step, confirmed = true, weakpoint = false).contact,
+    )
 }
 
 private fun showTwinBladesSwingVfx(
@@ -1348,6 +1355,11 @@ private fun showTwinBladesSwingVfx(
             "colorPrimary" to visual.swingPrimary,
             "colorSecondary" to visual.swingSecondary,
         ),
+    )
+    playTwinBladesSounds(
+        player,
+        origin,
+        twinBladesSoundPlan(WeaponType.TWIN_RODS, step, confirmed = false, weakpoint = false).swing,
     )
 }
 
@@ -1598,6 +1610,16 @@ private fun playSkillSound(
 ) {
     val soundEvent = SoundEvent.fromKey(Key.key("minecraft", key)) ?: return
     player.playSound(Sound.sound(soundEvent, Sound.Source.PLAYER, volume, pitch), point)
+}
+
+private fun playTwinBladesSounds(
+    player: net.minestom.server.entity.Player,
+    point: Point,
+    cues: List<TwinBladesSoundCue>,
+) {
+    cues.forEach { cue ->
+        playSkillSound(player, cue.key, point, cue.volume, cue.pitch)
+    }
 }
 
 private fun sendSkillParticle(

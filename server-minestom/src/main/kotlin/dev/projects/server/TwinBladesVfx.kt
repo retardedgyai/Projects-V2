@@ -9,6 +9,14 @@ internal data class TwinBladesHitVfxPlan(val presets: List<String>)
 
 internal data class TwinBladesHitVisualDimensions(val length: Double, val radius: Double)
 
+internal data class TwinBladesSoundCue(val key: String, val volume: Float, val pitch: Float)
+
+internal data class TwinBladesSoundPlan(
+    val swing: List<TwinBladesSoundCue>,
+    val contact: List<TwinBladesSoundCue>,
+    val weakpointAccent: List<TwinBladesSoundCue>,
+)
+
 internal const val TWIN_BLADES_COMBO_RESET_TICKS = 12
 internal const val TWIN_BLADES_SWING_FORWARD_OFFSET = 1.25
 
@@ -119,3 +127,46 @@ internal fun twinBladesWeakpointRadius(visualScale: Double): Double =
 
 internal fun twinBladesHitVisualDimensions(visual: TwinBladesComboVisual): TwinBladesHitVisualDimensions =
     TwinBladesHitVisualDimensions(length = visual.hitLength, radius = 1.1)
+
+internal fun twinBladesSoundPlan(
+    weapon: WeaponType,
+    step: Int,
+    confirmed: Boolean,
+    weakpoint: Boolean,
+): TwinBladesSoundPlan {
+    if (weapon != WeaponType.TWIN_RODS) return TwinBladesSoundPlan(emptyList(), emptyList(), emptyList())
+
+    val swing = when (step.coerceIn(1, 3)) {
+        1 -> listOf(
+            TwinBladesSoundCue("item.trident.throw", 0.36f, 0.92f),
+            TwinBladesSoundCue("item.trident.throw", 0.18f, 1.75f),
+            TwinBladesSoundCue("item.axe.scrape", 0.10f, 1.40f),
+        )
+        2 -> listOf(
+            TwinBladesSoundCue("item.trident.throw", 0.45f, 0.72f),
+            TwinBladesSoundCue("item.trident.throw", 0.21f, 1.55f),
+            TwinBladesSoundCue("item.axe.scrape", 0.15f, 1.22f),
+            TwinBladesSoundCue("entity.player.attack.sweep", 0.14f, 0.95f),
+        )
+        else -> listOf(
+            TwinBladesSoundCue("item.trident.throw", 0.55f, 0.58f),
+            TwinBladesSoundCue("item.trident.throw", 0.26f, 1.35f),
+            TwinBladesSoundCue("item.trident.riptide_1", 0.20f, 1.68f),
+            TwinBladesSoundCue("item.axe.scrape", 0.20f, 1.00f),
+        )
+    }
+    if (!confirmed) return TwinBladesSoundPlan(swing, emptyList(), emptyList())
+
+    return TwinBladesSoundPlan(
+        swing = swing,
+        contact = listOf(
+            TwinBladesSoundCue("item.trident.hit", 0.32f, 1.0f),
+            TwinBladesSoundCue("item.axe.scrape", 0.18f, 0.82f),
+        ),
+        weakpointAccent = if (weakpoint) {
+            listOf(TwinBladesSoundCue("block.note_block.chime", 0.24f, 1.90f))
+        } else {
+            emptyList()
+        },
+    )
+}
