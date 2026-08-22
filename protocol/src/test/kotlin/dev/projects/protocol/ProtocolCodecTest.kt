@@ -200,6 +200,50 @@ class ProtocolCodecTest {
         assertEquals(64.0, decoded.radius)
     }
 
+    @Test
+    fun `slash editor parameters reject non finite values and clamp bounds`() {
+        assertFailsWith<IllegalArgumentException> {
+            SlashEditorParameters.clamped(
+                Double.NaN, 0.0, 1.0, 90.0, 0.0, 0.0, 0.0, 0.1, 0.1, 0.1, 8, 0xffffff, 1.0,
+            )
+        }
+        val parameters = SlashEditorParameters.clamped(
+            -100.0, 100.0, 100.0, -100.0, 100.0, -100.0, 100.0, 100.0, 100.0, -100.0, 1000, -1, 100.0,
+        )
+        assertEquals(-4.0, parameters.originY)
+        assertEquals(8.0, parameters.forwardOffset)
+        assertEquals(12.0, parameters.length)
+        assertEquals(10.0, parameters.arcSpan)
+        assertEquals(4.0, parameters.curvature)
+        assertEquals(0.05, parameters.spacing)
+        assertEquals(80, parameters.durationTicks)
+        assertEquals(0, parameters.color)
+        assertEquals(32.0, parameters.targetDistance)
+    }
+
+    @Test
+    fun `vfx editor messages round trip`() {
+        val parameters = SlashEditorParameters()
+        listOf<ProtocolMessage>(
+            VfxEditorOpen(parameters),
+            VfxSlashPreviewRequest(42L, parameters),
+            VfxSlashPreviewCancel,
+            VfxSlashSaveRequest("blue slash", parameters),
+            VfxSlashDraftList(listOf("blue slash")),
+            VfxSlashDraftLoadRequest("blue slash"),
+            VfxSlashDraft("blue slash", parameters),
+            VfxEditorNotice("saved"),
+        ).forEach(::assertRoundTrip)
+    }
+
+    @Test
+    fun `vfx editor parameter decode rejects non finite values`() {
+        val malformed = ProtocolCodec.encode(VfxSlashPreviewRequest(1L, SlashEditorParameters())).copyOf().also { bytes ->
+            java.nio.ByteBuffer.wrap(bytes, 1 + Long.SIZE_BYTES, Double.SIZE_BYTES).putDouble(Double.NaN)
+        }
+        assertFailsWith<IllegalArgumentException> { ProtocolCodec.decode(malformed) }
+    }
+
     private fun assertRoundTrip(message: ProtocolMessage) {
         assertEquals(message, ProtocolCodec.decode(ProtocolCodec.encode(message)))
     }
