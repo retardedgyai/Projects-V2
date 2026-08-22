@@ -17,7 +17,7 @@ Playgroundでも`protocol/`、networking / handshake、persistence format、Part
 
 ### Creator identity
 
-各cloneで一度だけ短いCreator slugを設定します。
+各cloneで一度だけ短いCreator slugを設定します。branch名に使うため、小文字英数字と`-`の短い名前を推奨します。
 
 ```bash
 git config projects.creator <name>
@@ -35,7 +35,7 @@ git config projects.creator mei
 git config --get projects.creator
 ```
 
-この値はGitHubへcommitされず、そのcloneだけに保存されます。未設定のままPlaygroundを始めようとした場合はAgentが一度だけCreator名を聞きます。
+この値はGitHubへcommitされず、そのcloneだけに保存されます。未設定のままPlaygroundを始めようとした場合はAgentが一度だけCreator名を聞きます。空白や`_`等が含まれていても、Agentはbranch用に安全な小文字slugへ正規化します。
 
 ### 自動でPlaygroundを開始する
 
