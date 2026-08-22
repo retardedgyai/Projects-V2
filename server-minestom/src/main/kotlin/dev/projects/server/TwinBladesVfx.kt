@@ -3,6 +3,7 @@ package dev.projects.server
 import dev.projects.server.particle.ParticleTransform
 import net.minestom.server.coordinate.Point
 import net.minestom.server.coordinate.Vec
+import kotlin.math.abs
 import kotlin.math.max
 
 internal data class TwinBladesHitVfxPlan(val presets: List<String>)
@@ -39,8 +40,23 @@ internal fun twinBladesSkill2LandingSoundPlan(): List<TwinBladesSoundCue> = list
     TwinBladesSoundCue("item.axe.scrape", 0.16f, 0.72f),
 )
 
+internal data class TwinBladesSkill3Visual(
+    val primaryLength: Double = 4.8,
+    val primaryDuration: Int = 4,
+    val aftercutLength: Double = 2.8,
+    val aftercutDuration: Int = 2,
+    val recoilDuration: Int = 4,
+)
+
+internal data class TwinBladesSkill3SoundPlan(
+    val travel: List<TwinBladesSoundCue>,
+    val confirmedHit: List<TwinBladesSoundCue>,
+    val bounce: List<TwinBladesSoundCue>,
+)
+
 internal const val TWIN_BLADES_COMBO_RESET_TICKS = 12
 internal const val TWIN_BLADES_SWING_FORWARD_OFFSET = 1.25
+internal const val TWIN_BLADES_SKILL3_MIN_CONTACT_DISTANCE = 0.6
 
 internal data class TwinBladesComboVisual(
     val step: Int,
@@ -149,6 +165,54 @@ internal fun twinBladesWeakpointRadius(visualScale: Double): Double =
 
 internal fun twinBladesHitVisualDimensions(visual: TwinBladesComboVisual): TwinBladesHitVisualDimensions =
     TwinBladesHitVisualDimensions(length = visual.hitLength, radius = 1.1)
+
+internal fun twinBladesSkill3ContactPoint(
+    dashOrigin: Point,
+    dashDirection: Vec,
+    targetCenter: Point,
+    targetHalfExtent: Vec,
+): Point {
+    require(
+        listOf(
+            dashOrigin.x(), dashOrigin.y(), dashOrigin.z(),
+            targetCenter.x(), targetCenter.y(), targetCenter.z(),
+            targetHalfExtent.x(), targetHalfExtent.y(), targetHalfExtent.z(),
+        ).all { it.isFinite() } &&
+            targetHalfExtent.x() >= 0.0 && targetHalfExtent.y() >= 0.0 && targetHalfExtent.z() >= 0.0,
+    ) { "Skill3 contact geometry must be finite and non-negative" }
+    val directionLength = dashDirection.length()
+    val forward = if (directionLength.isFinite() && directionLength > 1.0e-9) {
+        dashDirection.mul(1.0 / directionLength)
+    } else {
+        Vec(0.0, 0.0, 1.0)
+    }
+    val delta = Vec(
+        targetCenter.x() - dashOrigin.x(),
+        targetCenter.y() - dashOrigin.y(),
+        targetCenter.z() - dashOrigin.z(),
+    )
+    val projectedDistance = delta.dot(forward)
+    val targetSurfaceExtent = abs(forward.x()) * targetHalfExtent.x() +
+        abs(forward.y()) * targetHalfExtent.y() + abs(forward.z()) * targetHalfExtent.z()
+    val surfaceDistance = (projectedDistance - targetSurfaceExtent).coerceAtLeast(TWIN_BLADES_SKILL3_MIN_CONTACT_DISTANCE)
+    return dashOrigin.add(
+        forward.x() * surfaceDistance,
+        forward.y() * surfaceDistance,
+        forward.z() * surfaceDistance,
+    )
+}
+
+internal fun twinBladesSkill3SoundPlan(): TwinBladesSkill3SoundPlan = TwinBladesSkill3SoundPlan(
+    travel = listOf(TwinBladesSoundCue("item.trident.throw", 0.28f, 0.78f)),
+    confirmedHit = listOf(
+        TwinBladesSoundCue("item.trident.throw", 0.52f, 0.62f),
+        TwinBladesSoundCue("item.trident.throw", 0.34f, 1.28f),
+        TwinBladesSoundCue("item.axe.scrape", 0.34f, 0.92f),
+        TwinBladesSoundCue("entity.player.attack.strong", 0.65f, 0.88f),
+        TwinBladesSoundCue("item.trident.hit", 0.42f, 1.02f),
+    ),
+    bounce = listOf(TwinBladesSoundCue("item.trident.riptide_1", 0.22f, 1.22f)),
+)
 
 internal fun twinBladesSoundPlan(
     weapon: WeaponType,

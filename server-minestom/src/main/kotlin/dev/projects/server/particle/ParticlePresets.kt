@@ -743,13 +743,77 @@ private fun twinBladesSkill2Finisher(parameters: ParticlePresetParameters): Part
             seed = parameters.seedValue() + 47,
         ),
         ParticleExplosion(
+             parameters.origin,
+             radius = radius * 0.35,
+             sphere = true,
+             particle = Particle.ELECTRIC_SPARK,
+             count = 18,
+             speed = 0.2f,
+             seed = parameters.seedValue() + 53,
+         ),
+     )
+ }
+
+private fun twinBladesSkill3Slash(
+    parameters: ParticlePresetParameters,
+    origin: Point,
+    angleDegrees: Double,
+    length: Double,
+    durationTicks: Int,
+    bodyColor: Int,
+): ParticleEffect = ParticleBatch.of(
+    ParticleGeometry.drawParticleLineSlash(
+        origin,
+        parameters.direction,
+        angleDegrees,
+        length * 1.04,
+        spacing = 0.15,
+        durationTicks = durationTicks,
+    ) { _, _, _, _ -> ParticleStyle(dust(0x030811, 0.34f), count = 1) },
+    ParticleGeometry.drawParticleLineSlash(
+        origin,
+        parameters.direction,
+        angleDegrees,
+        length,
+        spacing = 0.09,
+        durationTicks = durationTicks,
+    ) { _, middle, _, _ -> ParticleStyle(dust(bodyColor, (0.3 + middle * 0.18).toFloat()), count = if (middle > 0.55) 2 else 1) },
+    ParticleGeometry.drawParticleLineSlash(
+        origin,
+        parameters.direction,
+        angleDegrees,
+        length * 0.92,
+        spacing = 0.045,
+        durationTicks = durationTicks,
+    ) { _, middle, _, _ -> ParticleStyle(dust(parameters.color("colorPrimary", 0x8fffff), (0.16 + middle * 0.12).toFloat())) },
+)
+
+private fun twinBladesSkill3RecoilRibbon(parameters: ParticlePresetParameters, durationTicks: Int): ParticleEffect {
+    val transform = ParticleTransform.fromDirection(parameters.origin, parameters.direction)
+    return ParticleBatch.of(
+        ParticleRibbon(
+            path = { progress -> transform.localPoint(Vec(0.0, 0.0, progress * 0.9)) },
+            sampleCount = 10,
+            lanes = 3,
+            width = KeyframeCurve.double(
+                CurveKeyframe(0.0, 0.18),
+                CurveKeyframe(0.55, 0.12),
+                CurveKeyframe(1.0, 0.0),
+                easing = Easing.SINE,
+            ),
+            durationTicks = durationTicks,
+            styleAt = { progress, laneProgress ->
+                val color = if (laneProgress == 0.5) parameters.color("colorPrimary", 0x168cff) else 0x050a14
+                ParticleStyle(dust(color, (0.34 * (1.0 - progress)).coerceAtLeast(0.08).toFloat()))
+            },
+        ),
+        ParticleExplosion(
             parameters.origin,
-            radius = radius * 0.35,
-            sphere = true,
+            radius = 0.18,
+            count = 3,
+            speed = 0.04f,
             particle = Particle.ELECTRIC_SPARK,
-            count = 18,
-            speed = 0.2f,
-            seed = parameters.seedValue() + 53,
+            seed = parameters.seedValue(),
         ),
     )
 }
@@ -823,8 +887,96 @@ private fun buildCatalogue(): List<ParticlePreset> {
                       p.ticks().coerceAtMost(3),
                       p.number("step", 1.0).roundToInt(),
                       swingGeometry = true,
+                   )
+            },
+          preset(
+              "projects:class/twin_blades/skill3_dash_trail",
+              "Twin Blades Skill3 Dash Trail",
+              combat + setOf("class", "twin_blades"),
+              listOf(duration(2.0), color("colorPrimary", 0x168cff), color("colorSecondary", 0x050a14)) + common.filter { it.name != "duration" },
+          ) { p ->
+              val transform = ParticleTransform.fromDirection(p.origin, p.direction)
+              ParticleParallel.of(
+                  ParticleRibbon(
+                      path = { progress -> transform.localPoint(Vec(0.0, 0.0, -(0.12 + progress * 0.9))) },
+                      sampleCount = 10,
+                      lanes = 2,
+                      width = KeyframeCurve.double(
+                          CurveKeyframe(0.0, 0.14),
+                          CurveKeyframe(0.5, 0.09),
+                          CurveKeyframe(1.0, 0.02),
+                          easing = Easing.SINE,
+                      ),
+                      durationTicks = p.ticks(),
+                      styleAt = { progress, laneProgress ->
+                          val color = if (laneProgress == 0.5) p.color("colorPrimary", 0x168cff) else p.color("colorSecondary", 0x050a14)
+                          ParticleStyle(dust(color, (0.26 * (1.0 - progress)).coerceAtLeast(0.08).toFloat()))
+                      },
+                  ),
+                  ParticleExplosion(
+                      transform.localPoint(Vec(0.0, 0.0, -0.28)),
+                      count = 2,
+                      speed = 0.035f,
+                      particle = Particle.ELECTRIC_SPARK,
+                      seed = p.seedValue(),
+                  ),
+              )
+          },
+          preset(
+              "projects:class/twin_blades/skill3_hit",
+              "Twin Blades Skill3 Slash Through",
+              combat + setOf("class", "twin_blades"),
+              listOf(
+                  number("length", 4.8, 4.5, 5.0),
+                  number("aftercutLength", 2.8, 2.25, 3.25),
+                  duration(4.0),
+                  color("colorPrimary", 0x8fffff),
+                  color("colorSecondary", 0x168cff),
+              ) + common.filter { it.name !in setOf("duration", "colorPrimary", "colorSecondary") },
+          ) { p ->
+              val duration = p.ticks().coerceIn(3, 4)
+              val transform = ParticleTransform.fromDirection(p.origin, p.direction)
+              val aftercutOrigin = transform.localPoint(Vec(0.42, -0.2, 0.08))
+              val primary = twinBladesSkill3Slash(
+                  p,
+                  p.origin,
+                  angleDegrees = 24.0,
+                  length = p.number("length", 4.8),
+                  durationTicks = duration,
+                  bodyColor = p.color("colorSecondary", 0x168cff),
+              )
+              val aftercut = twinBladesSkill3Slash(
+                  p,
+                  aftercutOrigin,
+                  angleDegrees = -24.0,
+                  length = p.number("aftercutLength", 2.8),
+                  durationTicks = 2,
+                  bodyColor = p.color("colorSecondary", 0x126bff),
+              )
+              ParticleParallel.of(
+                  primary,
+                  ParticleSequence.of(ParticleDelay(1), aftercut),
+                  ParticleSequence.of(
+                      ParticleDelay(1),
+                      ParticleExplosion(
+                          p.origin,
+                          radius = 0.32,
+                          count = 6,
+                          speed = 0.06f,
+                          particle = Particle.ELECTRIC_SPARK,
+                          seed = p.seedValue(),
+                      ),
+                  ),
+              )
+          },
+          preset(
+              "projects:class/twin_blades/skill3_recoil",
+              "Twin Blades Skill3 Recoil Ribbon",
+              combat + setOf("class", "twin_blades"),
+              listOf(duration(4.0), color("colorPrimary", 0x168cff), color("colorSecondary", 0x050a14)) + common.filter { it.name != "duration" },
+          ) { p -> twinBladesSkill3RecoilRibbon(p, p.ticks().coerceIn(3, 4)) },
            preset(
-             "projects:class/twin_blades/aa_hit",
+               "projects:class/twin_blades/aa_hit",
                "Twin Blades AA Hit",
                combat + setOf("class", "twin_blades"),
                listOf(number("length", 3.2, 0.0, 4.0), number("radius", 1.25, 0.0, 2.0), number("angle", 35.0, -180.0, 180.0), number("step", 1.0, 1.0, 3.0)) + colors + common,
@@ -859,10 +1011,10 @@ private fun buildCatalogue(): List<ParticlePreset> {
                             ),
                         )
                   },
-                   if (step == 3) ParticleSequence.of(ParticleDelay(1), twinBladesContactEmitter(p, count = 8, radius = 0.45)) else ParticleExplosion(p.origin, count = 5, speed = 0.1f, particle = Particle.ELECTRIC_SPARK, seed = p.seedValue()),
-               )
-           },
-          preset(
+                    if (step == 3) ParticleSequence.of(ParticleDelay(1), twinBladesContactEmitter(p, count = 8, radius = 0.45)) else ParticleExplosion(p.origin, count = 5, speed = 0.1f, particle = Particle.ELECTRIC_SPARK, seed = p.seedValue()),
+                )
+            },
+           preset(
               "projects:class/twin_blades/weakpoint_hit",
                "Twin Blades Weakpoint Hit",
                combat + setOf("class", "twin_blades"),
@@ -881,11 +1033,11 @@ private fun buildCatalogue(): List<ParticlePreset> {
                         planeNormal = p.direction,
                         count = 24,
                         style = ParticleStyle(dust(p.color("colorPrimary", 0xffffff), 0.28f)),
-                    ),
-                    ParticleExplosion(p.origin, radius = radius * 0.5, sphere = true, count = 7, speed = 0.08f, particle = Particle.END_ROD, seed = p.seedValue()),
-               )
-           },
-          preset(
+                     ),
+                     ParticleExplosion(p.origin, radius = radius * 0.5, sphere = true, count = 7, speed = 0.08f, particle = Particle.END_ROD, seed = p.seedValue()),
+                )
+            },
+            preset(
               "projects:class/twin_blades/skill1_travel",
               "Twin Blades Skill1 Travel",
               combat + setOf("class", "twin_blades", "skill1"),
@@ -903,10 +1055,10 @@ private fun buildCatalogue(): List<ParticlePreset> {
                       durationTicks = p.ticks(),
                       style = ParticleStyle(dust(p.color("colorSecondary", 0x071525), 0.18f), importance = ParticleImportance.COMBAT_FEEDBACK),
                   ),
-                  ParticleExplosion(p.origin, radius = 0.12, count = 3, speed = 0.025f, particle = Particle.ELECTRIC_SPARK, seed = p.seedValue()),
-              )
-          },
-          preset(
+                   ParticleExplosion(p.origin, radius = 0.12, count = 3, speed = 0.025f, particle = Particle.ELECTRIC_SPARK, seed = p.seedValue()),
+               )
+           },
+           preset(
               "projects:class/twin_blades/skill1_stomp",
               "Twin Blades Skill1 Stomp",
               combat + setOf("class", "twin_blades", "skill1"),
@@ -917,10 +1069,8 @@ private fun buildCatalogue(): List<ParticlePreset> {
               "Twin Blades Skill1 Escape",
               combat + setOf("class", "twin_blades", "skill1"),
               listOf(number("length", 1.7, 0.0, 3.5), number("duration", 4.0, 3.0, 6.0)) + colors + skillCommon,
-          ) { p -> skill1EscapeEffect(p) },
-                 )
-            },
-          preset(
+           ) { p -> skill1EscapeEffect(p) },
+           preset(
               "projects:class/twin_blades/skill2_pulse",
               "Twin Blades Blade Storm Pulse",
               combat + setOf("class", "twin_blades", "skill2"),
