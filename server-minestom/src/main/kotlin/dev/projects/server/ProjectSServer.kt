@@ -815,7 +815,6 @@ fun main() {
                         showSkill3PulseVfx(
                             event.player,
                             target,
-                            requireNotNull(skill3Tick.dashDirection),
                             pulseIndex,
                             particleAnimations,
                             particleManager,
@@ -829,7 +828,6 @@ fun main() {
                         showSkill3FinisherVfx(
                             event.player,
                             target,
-                            requireNotNull(skill3Tick.dashDirection),
                             particleAnimations,
                             particleManager,
                         )
@@ -1616,6 +1614,23 @@ private fun showSkill3DashTrail(
     )
 }
 
+private fun skill3VisualDirection(playerPosition: Point, targetPosition: Point): Vec {
+    val direction = Vec(
+        targetPosition.x() - playerPosition.x(),
+        targetPosition.y() - playerPosition.y(),
+        targetPosition.z() - playerPosition.z(),
+    )
+    return if (direction.length().isFinite() && direction.length() > 1.0e-9) direction else Vec(0.0, 0.0, 1.0)
+}
+
+private fun skill3VisualValues(playerPosition: Point, target: CombatTarget): Map<String, Any> {
+    val direction = skill3VisualDirection(playerPosition, target.position)
+    return mapOf(
+        "targetDistance" to direction.length(),
+        "targetLowerOffset" to (target.halfExtent.y() * 0.85).coerceIn(0.0, 2.0),
+    )
+}
+
 private fun showSkill3CatchVfx(
     player: net.minestom.server.entity.Player,
     dashOrigin: Pos,
@@ -1626,14 +1641,15 @@ private fun showSkill3CatchVfx(
 ) {
     val contact = twinBladesSkill3ContactPoint(dashOrigin, dashDirection, target.position, target.halfExtent)
     val visual = TwinBladesSkill3Visual()
+    val visualDirection = skill3VisualDirection(player.position, target.position)
     val started = startParticlePreset(
         player = player,
         id = "projects:class/twin_blades/skill3_hit",
         scheduler = scheduler,
-        origin = contact,
-        direction = dashDirection,
+        origin = player.position,
+        direction = visualDirection,
         manager = manager,
-        values = mapOf(
+        values = skill3VisualValues(player.position, target) + mapOf(
             "length" to visual.primaryLength,
             "aftercutLength" to visual.aftercutLength,
             "duration" to visual.primaryDuration.toDouble(),
@@ -1648,19 +1664,19 @@ private fun showSkill3CatchVfx(
 private fun showSkill3PulseVfx(
     player: net.minestom.server.entity.Player,
     target: CombatTarget,
-    direction: Vec,
     pulseIndex: Int,
     scheduler: ParticleAnimationScheduler,
     manager: ParticleManager,
 ) {
+    val visualDirection = skill3VisualDirection(player.position, target.position)
     val started = startParticlePreset(
         player = player,
         id = "projects:class/twin_blades/skill3_pulse",
         scheduler = scheduler,
-        origin = target.position,
-        direction = direction,
+        origin = player.position,
+        direction = visualDirection,
         manager = manager,
-        values = mapOf(
+        values = skill3VisualValues(player.position, target) + mapOf(
             "pulse" to pulseIndex.toDouble(),
             "duration" to 2.0,
         ),
@@ -1674,20 +1690,20 @@ private fun showSkill3PulseVfx(
 private fun showSkill3FinisherVfx(
     player: net.minestom.server.entity.Player,
     target: CombatTarget,
-    direction: Vec,
     scheduler: ParticleAnimationScheduler,
     manager: ParticleManager,
 ) {
     val contact = target.position
     val visual = TwinBladesSkill3Visual()
+    val visualDirection = skill3VisualDirection(player.position, target.position)
     val started = startParticlePreset(
         player = player,
         id = "projects:class/twin_blades/skill3_finisher",
         scheduler = scheduler,
-        origin = contact,
-        direction = direction,
+        origin = player.position,
+        direction = visualDirection,
         manager = manager,
-        values = mapOf("length" to visual.finisherLength, "duration" to visual.finisherDuration.toDouble()),
+        values = skill3VisualValues(player.position, target) + mapOf("length" to visual.finisherLength, "duration" to visual.finisherDuration.toDouble()),
     )
     if (!started) {
         System.err.println("Skill3 VFX preset failed to start: projects:class/twin_blades/skill3_finisher")
@@ -1698,7 +1714,7 @@ private fun showSkill3FinisherVfx(
         id = "projects:class/twin_blades/skill3_recoil",
         scheduler = scheduler,
         origin = recoilOrigin,
-        direction = direction.mul(-1.0),
+        direction = visualDirection.mul(-1.0),
         manager = manager,
         values = mapOf("duration" to visual.recoilDuration.toDouble()),
     )

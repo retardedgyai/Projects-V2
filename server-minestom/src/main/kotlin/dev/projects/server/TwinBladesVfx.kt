@@ -41,11 +41,11 @@ internal fun twinBladesSkill2LandingSoundPlan(): List<TwinBladesSoundCue> = list
 )
 
 internal data class TwinBladesSkill3Visual(
-    val primaryLength: Double = 5.8,
+    val primaryLength: Double = 6.6,
     val primaryDuration: Int = 4,
-    val aftercutLength: Double = 3.1,
+    val aftercutLength: Double = 5.8,
     val aftercutDuration: Int = 2,
-    val finisherLength: Double = 6.2,
+    val finisherLength: Double = 8.1,
     val finisherDuration: Int = 6,
     val recoilDuration: Int = 4,
 )
