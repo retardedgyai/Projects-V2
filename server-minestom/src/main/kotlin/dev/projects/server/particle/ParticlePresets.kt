@@ -251,11 +251,114 @@ private fun buildCatalogue(): List<ParticlePreset> {
         preset("projects:motion/orbit", "Orbit", motion, listOf(number("radius", 1.4, 0.0, 8.0)) + common) { p -> ParticleBatch.of(ParticleCircle(p.origin, p.radius(1.4), axis1 = basis(p.direction).second, axis2 = basis(p.direction).third, countPerMeter = 10.0, style = style(p, particle = Particle.END_ROD)), ParticleCircle(p.origin.add(0.0, 0.5, 0.0), p.radius(1.0), axis1 = basis(p.direction).second, axis2 = basis(p.direction).third, countPerMeter = 10.0, style = style(p, primary = false, particle = Particle.ENCHANT))) },
         preset("projects:motion/aura_pulse", "Aura Pulse", motion, listOf(number("radius", 1.5, 0.0, 8.0)) + common) { p -> ParticleBatch.of(pulseRing(p.origin, p.direction, p.radius(1.5), p.ticks(), style(p, particle = Particle.DUST)), ParticleExplosion(p.origin, p.radius(1.5) * 0.3, sphere = true, particle = Particle.GLOW, count = 12, speed = 0.05f, seed = p.seedValue())) },
 
-        preset("projects:combat/slash_light", "Slash Light", combat, listOf(number("length", 2.2, 0.0, 8.0), number("angle", 35.0, -180.0, 180.0)) + colors + common) { p ->
-            val slash = ParticleGeometry.drawParticleLineSlash(p.origin, p.direction, p.number("angle", 35.0), p.length(2.2), 0.12, p.ticks()) { _, middle, _, middleSample -> style(p, primary = middleSample, particle = Particle.DUST, count = if (middleSample) 2 else 1).copy(particle = dust(if (middleSample) p.color("colorPrimary", 0xffff66) else p.color("colorSecondary", 0xff5522), (middle * 0.35 + 0.25).toFloat())) }
-            ParticleBatch.of(slash, ParticleGeometry.drawCleaveArc(p.origin, p.direction, p.radius(0.8), 0.0, -55.0, 55.0, 1, degreesPerTick = 110.0 / p.ticks()) { _, _, progress -> ParticleStyle(dust(lerpColor(p.color("colorSecondary", 0xff5522), p.color("colorPrimary", 0xffff66), progress), 0.22f)) }, ParticleExplosion(p.origin, count = 4, speed = 0.1f, particle = Particle.ELECTRIC_SPARK, seed = p.seedValue()))
-        },
-        preset("projects:combat/slash_heavy", "Slash Heavy", combat, listOf(number("length", 3.0, 0.0, 10.0)) + colors + common) { p -> ParticleBatch.of(ParticleGeometry.drawParticleLineSlash(p.origin, p.direction, -28.0, p.length(3.0), 0.16, p.ticks()) { _, middle, _, _ -> ParticleStyle(dust(lerpColor(p.color("colorSecondary", 0xff5522), p.color("colorPrimary", 0xffffff), middle), 0.38f), if (middle > 0.6) 3 else 1) }, ParticleGeometry.drawCleaveArc(p.origin, p.direction, p.radius(1.0), 0.0, -75.0, 75.0, 2, degreesPerTick = 150.0 / p.ticks()), ParticleExplosion(p.origin, radius = 0.4, sphere = true, count = 8, particle = Particle.CRIT, speed = 0.12f, seed = p.seedValue())) },
+         preset("projects:combat/slash_light", "Slash Light", combat, listOf(number("length", 2.2, 0.0, 8.0), number("angle", 35.0, -180.0, 180.0)) + colors + common) { p ->
+             val slash = ParticleGeometry.drawParticleLineSlash(p.origin, p.direction, p.number("angle", 35.0), p.length(2.2), 0.12, p.ticks()) { _, middle, _, middleSample -> style(p, primary = middleSample, particle = Particle.DUST, count = if (middleSample) 2 else 1).copy(particle = dust(if (middleSample) p.color("colorPrimary", 0xffff66) else p.color("colorSecondary", 0xff5522), (middle * 0.35 + 0.25).toFloat())) }
+             ParticleBatch.of(slash, ParticleGeometry.drawCleaveArc(p.origin, p.direction, p.radius(0.8), 0.0, -55.0, 55.0, 1, degreesPerTick = 110.0 / p.ticks()) { _, _, progress -> ParticleStyle(dust(lerpColor(p.color("colorSecondary", 0xff5522), p.color("colorPrimary", 0xffff66), progress), 0.22f)) }, ParticleExplosion(p.origin, count = 4, speed = 0.1f, particle = Particle.ELECTRIC_SPARK, seed = p.seedValue()))
+         },
+         preset(
+             "projects:class/twin_blades/aa_swing",
+             "Twin Blades AA Swing",
+             combat + setOf("class", "twin_blades"),
+             listOf(number("length", 1.75, 0.0, 4.0), number("angle", 35.0, -180.0, 180.0)) + colors + common,
+         ) { p ->
+             ParticleGeometry.drawParticleLineSlash(
+                 p.origin,
+                 p.direction,
+                 p.number("angle", 35.0),
+                 p.length(1.75),
+                 0.18,
+                 p.ticks(),
+             ) { _, middle, _, middleSample ->
+                 val color = if (middleSample) p.color("colorPrimary", 0xeaffff) else
+                     lerpColor(p.color("colorSecondary", 0x27dbe8), p.color("colorPrimary", 0xeaffff), middle)
+                 style(p, primary = middleSample, particle = Particle.DUST, count = if (middleSample) 2 else 1)
+                     .copy(particle = dust(color, (0.18 + middle * 0.18).toFloat()))
+             }
+         },
+         preset(
+             "projects:class/twin_blades/aa_hit",
+             "Twin Blades AA Hit",
+             combat + setOf("class", "twin_blades"),
+             listOf(number("length", 1.7, 0.0, 4.0), number("radius", 0.72, 0.0, 2.0), number("angle", 35.0, -180.0, 180.0)) + colors + common,
+         ) { p ->
+             val duration = p.ticks()
+             ParticleBatch.of(
+                 ParticleGeometry.drawParticleLineSlash(
+                     p.origin,
+                     p.direction,
+                     p.number("angle", 35.0),
+                     p.length(1.7),
+                     0.16,
+                     duration,
+                 ) { _, middle, _, _ ->
+                     ParticleStyle(dust(lerpColor(p.color("colorSecondary", 0xff3a12), p.color("colorPrimary", 0xff8b2a), middle), 0.3f))
+                 },
+                 ParticleGeometry.drawParticleLineSlash(
+                     p.origin,
+                     p.direction,
+                     p.number("angle", 35.0),
+                     p.length(1.2),
+                     0.24,
+                     duration,
+                 ) { _, middle, _, middleSample ->
+                     ParticleStyle(
+                         dust(
+                             lerpColor(p.color("colorSecondary", 0xffffa0), p.color("colorPrimary", 0xfffff0), middle),
+                             if (middleSample) 0.55f else 0.36f,
+                         ),
+                         if (middleSample) 2 else 1,
+                     )
+                 },
+                 ParticleGeometry.drawCleaveArc(
+                     p.origin,
+                     p.direction,
+                     p.radius(0.72),
+                     0.0,
+                     -52.0,
+                     52.0,
+                     1,
+                     degreesPerTick = 104.0 / duration,
+                 ) { _, _, progress ->
+                     ParticleStyle(dust(lerpColor(p.color("colorSecondary", 0xff3a12), p.color("colorPrimary", 0xffffa0), progress), 0.24f))
+                 },
+                 ParticleExplosion(p.origin, count = 4, speed = 0.1f, particle = Particle.ELECTRIC_SPARK, seed = p.seedValue()),
+             )
+         },
+         preset(
+             "projects:class/twin_blades/weakpoint_hit",
+             "Twin Blades Weakpoint Hit",
+             combat + setOf("class", "twin_blades"),
+             listOf(number("radius", 0.6, 0.0, 2.0)) + colors + common,
+         ) { p ->
+             val duration = p.ticks().coerceIn(4, 6)
+             ParticleBatch.of(
+                 ParticleGeometry.drawParticleLineSlash(
+                     p.origin,
+                     p.direction,
+                     42.0,
+                     p.radius(0.95),
+                     0.2,
+                     duration,
+                 ) { _, middle, _, middleSample ->
+                     ParticleStyle(
+                         dust(p.color("colorPrimary", 0xfffff5), if (middleSample) 0.6f else (0.32 + middle * 0.2).toFloat()),
+                         if (middleSample) 2 else 1,
+                     )
+                 },
+                 ParticleGeometry.drawParticleLineSlash(
+                     p.origin,
+                     p.direction,
+                     -42.0,
+                     p.radius(0.95),
+                     0.2,
+                     duration,
+                 ) { _, middle, _, _ ->
+                     ParticleStyle(dust(lerpColor(p.color("colorSecondary", 0x25d9e8), p.color("colorPrimary", 0xfffff5), middle), 0.3f))
+                 },
+                 ParticleExplosion(p.origin, radius = p.radius(0.45), sphere = true, count = 5, speed = 0.08f, particle = Particle.END_ROD, seed = p.seedValue()),
+             )
+         },
+         preset("projects:combat/slash_heavy", "Slash Heavy", combat, listOf(number("length", 3.0, 0.0, 10.0)) + colors + common) { p -> ParticleBatch.of(ParticleGeometry.drawParticleLineSlash(p.origin, p.direction, -28.0, p.length(3.0), 0.16, p.ticks()) { _, middle, _, _ -> ParticleStyle(dust(lerpColor(p.color("colorSecondary", 0xff5522), p.color("colorPrimary", 0xffffff), middle), 0.38f), if (middle > 0.6) 3 else 1) }, ParticleGeometry.drawCleaveArc(p.origin, p.direction, p.radius(1.0), 0.0, -75.0, 75.0, 2, degreesPerTick = 150.0 / p.ticks()), ParticleExplosion(p.origin, radius = 0.4, sphere = true, count = 8, particle = Particle.CRIT, speed = 0.12f, seed = p.seedValue())) },
         preset("projects:combat/slash_x", "Slash X", combat, listOf(number("length", 2.2, 0.0, 8.0)) + colors + common) { p -> ParticleBatch.of(ParticleGeometry.drawParticleLineSlash(p.origin, p.direction, 35.0, p.length(2.2), 0.12, p.ticks()) { _, middle, _, _ -> ParticleStyle(dust(lerpColor(p.color("colorSecondary", 0xff5522), p.color("colorPrimary", 0xffff66), middle), 0.3f)) }, ParticleGeometry.drawParticleLineSlash(p.origin, p.direction, -35.0, p.length(2.2), 0.12, p.ticks()) { _, middle, _, _ -> ParticleStyle(dust(lerpColor(p.color("colorSecondary", 0xff5522), p.color("colorPrimary", 0xffffff), middle), 0.3f)) }, ParticleExplosion(p.origin, count = 6, particle = Particle.ELECTRIC_SPARK, speed = 0.1f, seed = p.seedValue())) },
         preset("projects:combat/cleave_arc", "Cleave Arc", combat, listOf(number("radius", 1.6, 0.0, 8.0), number("angle", 150.0, 1.0, 360.0)) + colors + common) { p -> ParticleBatch.of(ParticleGeometry.drawCleaveArc(p.origin, p.direction, p.radius(1.6), 12.0, -p.number("angle", 150.0) / 2.0, p.number("angle", 150.0) / 2.0, 2, degreesPerTick = p.number("angle", 150.0) / p.ticks()), ParticleGeometry.drawCleaveArc(p.origin, p.direction, p.radius(1.6) * 0.86, 12.0, -p.number("angle", 150.0) / 2.0, p.number("angle", 150.0) / 2.0, 1, degreesPerTick = p.number("angle", 150.0) / p.ticks()) { _, _, progress -> ParticleStyle(dust(lerpColor(p.color("colorSecondary", 0xff5522), p.color("colorPrimary", 0xffff66), progress), 0.3f)) }) },
         preset("projects:combat/thrust_line", "Thrust Line", combat, listOf(number("length", 4.0, 0.0, 12.0)) + colors + common) { p ->

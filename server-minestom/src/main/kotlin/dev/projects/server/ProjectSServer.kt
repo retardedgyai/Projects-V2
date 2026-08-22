@@ -101,6 +101,7 @@ fun main() {
     val lastSentCooldowns = mutableMapOf<UUID, SkillCooldowns>()
     val dodgeVelocityActive = mutableMapOf<UUID, Boolean>()
     val attackSpeeds = mutableMapOf<UUID, Double>()
+    val twinBladesSwingAngles = mutableMapOf<UUID, Double>()
     val prototypeBoss = PrototypeBossState()
     val bossBar = BossBar.bossBar(
         Component.text("Rift Executioner ${prototypeBoss.currentHealth} / ${prototypeBoss.maxHealth}"),
@@ -536,6 +537,7 @@ fun main() {
         resourceSyncTicks.remove(playerId)
         lastSentCooldowns.remove(playerId)
         attackSpeeds.remove(playerId)
+        twinBladesSwingAngles.remove(playerId)
         lastGroundTelegraphIds.remove(playerId)
         if (instance.players.none { it.uuid != playerId }) {
             clearBossTelegraphs()
@@ -619,6 +621,7 @@ fun main() {
             listOf(target)
         } ?: emptyList()
         val combatEvents = state.tick(attackOrigin, event.player.position.direction(), targets)
+        showTwinBladesSwingVfx(event.player, state, combatEvents, twinBladesSwingAngles, particleAnimations, particleManager)
         publishCombatEvents(
             event.player,
             combatEvents.filter { it is CombatEvent.Started || it is CombatEvent.Active },
@@ -638,6 +641,7 @@ fun main() {
                 if (weakpoint != null) showWeakpointHit(event.player, weakpoint)
                 if (hit.weapon == WeaponType.TWIN_RODS) {
                     val target = tester ?: return@forEach
+                    if (weakpoint != null) showTwinBladesWeakpointVfx(event.player, weakpoint, particleAnimations, particleManager)
                     showTwinRodsHitVfx(
                         event.player,
                         weakpoint?.center ?: target.position.add(0.0, 1.1, 0.0),
@@ -647,6 +651,7 @@ fun main() {
                             event.player.position.z() - target.position.z(),
                         ),
                         particleAnimations,
+                        particleManager,
                     )
                 }
             }
@@ -810,7 +815,9 @@ fun main() {
                 is AttackInput -> {
                     if (!prototypeBoss.isActive) return@addListener
                     val state = combatStates[event.player.uuid] ?: return@addListener
-                    publishCombatEvents(event.player, state.input(message.state))
+                    val combatEvents = state.input(message.state)
+                    showTwinBladesSwingVfx(event.player, state, combatEvents, twinBladesSwingAngles, particleAnimations, particleManager)
+                    publishCombatEvents(event.player, combatEvents)
                 }
                 is DodgeInput -> {
                     if (!prototypeBoss.isActive) return@addListener
@@ -1201,19 +1208,76 @@ private fun showWeakpointHit(
     )
 }
 
+private fun showTwinBladesWeakpointVfx(
+    player: net.minestom.server.entity.Player,
+    selection: FixedWeakpointSelection,
+    scheduler: ParticleAnimationScheduler,
+    manager: ParticleManager,
+) {
+    val center = selection.center
+    playSkillSound(player, "block.note_block.chime", center, 0.45f, 1.65f)
+    startParticlePreset(
+        player = player,
+        id = "projects:class/twin_blades/weakpoint_hit",
+        scheduler = scheduler,
+        origin = center,
+        direction = player.position.direction(),
+        manager = manager,
+        values = mapOf("duration" to 5.0, "colorPrimary" to 0xfffff5, "colorSecondary" to 0x25d9e8),
+    )
+}
+
 private fun showTwinRodsHitVfx(
     player: net.minestom.server.entity.Player,
     center: Point,
     facing: Vec,
     scheduler: ParticleAnimationScheduler,
+    manager: ParticleManager,
 ) {
     startParticlePreset(
         player = player,
-        id = "projects:combat/slash_light",
+        id = "projects:class/twin_blades/aa_hit",
         scheduler = scheduler,
         origin = center,
         direction = facing,
-        values = mapOf("length" to 1.65, "duration" to 4.0, "colorPrimary" to 0xffff66, "colorSecondary" to 0xff2020),
+        manager = manager,
+        values = mapOf("length" to 1.65, "duration" to 4.0, "colorPrimary" to 0xfffff0, "colorSecondary" to 0xff3a12),
+    )
+    playSkillSound(player, "entity.player.attack.sweep", center, 0.35f, 1.55f)
+    playSkillSound(player, "entity.player.attack.crit", center, 0.3f, 1.1f)
+}
+
+private fun showTwinBladesSwingVfx(
+    player: net.minestom.server.entity.Player,
+    state: CombatState,
+    events: List<CombatEvent>,
+    angles: MutableMap<UUID, Double>,
+    scheduler: ParticleAnimationScheduler,
+    manager: ParticleManager,
+) {
+    if (state.activeProfile?.weapon != WeaponType.TWIN_RODS || events.none { it is CombatEvent.Started }) return
+    val direction = player.position.direction()
+    val angle = angles[player.uuid] ?: 35.0
+    angles[player.uuid] = -angle
+    val origin = player.position.add(
+        direction.x() * 0.8,
+        player.eyeHeight * 0.72 + direction.y() * 0.8,
+        direction.z() * 0.8,
+    )
+    startParticlePreset(
+        player = player,
+        id = "projects:class/twin_blades/aa_swing",
+        scheduler = scheduler,
+        origin = origin,
+        direction = direction,
+        manager = manager,
+        values = mapOf(
+            "length" to 1.75,
+            "angle" to angle,
+            "duration" to 3.0,
+            "colorPrimary" to 0xeaffff,
+            "colorSecondary" to 0x27dbe8,
+        ),
     )
 }
 
