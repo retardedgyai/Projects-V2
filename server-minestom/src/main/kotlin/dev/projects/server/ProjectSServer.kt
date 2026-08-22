@@ -721,8 +721,8 @@ fun main() {
                     val damage = prototypeBoss.applySkill1Attack(skill1.castId, targetId)
                     if (damage > 0) updateBossBar()
                 }
-                showSkill1Impact(event.player, tester?.position ?: end)
-                showSkill1Launch(event.player)
+                showSkill1Impact(event.player, tester?.position ?: end, direction, particleAnimations, particleManager)
+                showSkill1Launch(event.player, direction, particleAnimations, particleManager)
                 event.player.setVelocity(
                     Vec(
                         direction.x() * Skill1State.LAUNCH_HORIZONTAL_SPEED,
@@ -899,7 +899,7 @@ fun main() {
                         ClassSkillSlot.SKILL_1 -> {
                             if (skill2.phase == Skill2Phase.DIVE || skill3.phase != Skill3Phase.IDLE) return@addListener
                             if (skill1.tryCast(event.player.position.direction()) != null) {
-                                showSkill1Cast(event.player)
+                                showSkill1Cast(event.player, particleAnimations, particleManager)
                                 sendResourceSnapshot(event.player)
                             }
                         }
@@ -1363,16 +1363,25 @@ private fun showTwinBladesSwingVfx(
     )
 }
 
-private fun showSkill1Cast(player: net.minestom.server.entity.Player) {
-    val origin = player.position.add(0.0, 0.12, 0.0)
+private fun showSkill1Cast(
+    player: net.minestom.server.entity.Player,
+    scheduler: ParticleAnimationScheduler,
+    manager: ParticleManager,
+) {
+    val origin = player.position.add(0.0, 0.45, 0.0)
     val direction = FixedAttackTester.normalizeHorizontal(player.position.direction())
-    sendSkillParticle(player, Particle.END_ROD, origin)
-    sendSkillParticle(player, Particle.ENCHANT, origin.add(direction.x() * 0.35, 0.2, direction.z() * 0.35))
-    sendSkillParticle(player, Particle.END_ROD, origin.add(0.25, 0.0, 0.0))
-    sendSkillParticle(player, Particle.END_ROD, origin.add(-0.25, 0.0, 0.0))
-    sendSkillArc(player, Particle.END_ROD, origin.add(0.0, 0.12, 0.0), direction, 0.62, -1.1, 1.1, 7)
-    sendSkillArc(player, Particle.ENCHANT, origin.add(0.0, 0.18, 0.0), direction, 0.45, -0.85, 0.85, 5)
-    playSkillSound(player, "entity.player.attack.sweep", origin, 0.75f, 1.35f)
+    startParticlePreset(
+        player = player,
+        id = SKILL1_TRAVEL_VFX,
+        scheduler = scheduler,
+        origin = origin,
+        direction = direction,
+        manager = manager,
+        values = mapOf("length" to 1.0, "duration" to 2.0, "colorPrimary" to 0x168cff, "colorSecondary" to 0x071525),
+    )
+    skill1SoundPlan(confirmedHit = false).travel.forEach { cue ->
+        playSkillSound(player, cue.key, origin, cue.volume, cue.pitch)
+    }
 }
 
 private fun showSkill1Trail(
@@ -1384,42 +1393,56 @@ private fun showSkill1Trail(
 ) {
     startParticlePreset(
         player = player,
-        id = "projects:combat/projectile_trail",
+        id = SKILL1_TRAVEL_VFX,
         scheduler = scheduler,
         origin = position.add(0.0, 0.45, 0.0),
         direction = direction,
         manager = manager,
-        values = mapOf("length" to 1.0, "duration" to 3.0),
+        values = mapOf("length" to 1.35, "duration" to 2.0, "colorPrimary" to 0x168cff, "colorSecondary" to 0x071525),
     )
 }
 
-private fun showSkill1Impact(player: net.minestom.server.entity.Player, position: Point) {
-    val center = position.add(0.0, 1.0, 0.0)
-    sendSkillParticle(player, Particle.EXPLOSION, center)
-    sendSkillParticle(player, Particle.END_ROD, center)
-    sendSkillParticle(player, Particle.CRIT, center.add(0.45, 0.0, 0.0))
-    sendSkillParticle(player, Particle.CRIT, center.add(-0.45, 0.0, 0.0))
-    sendSkillParticle(player, Particle.CRIT, center.add(0.0, 0.45, 0.0))
-    sendSkillParticle(player, Particle.CRIT, center.add(0.0, -0.45, 0.0))
-    sendSkillArc(player, Particle.END_ROD, center, Vec(0.0, 0.0, 1.0), 0.58, -Math.PI, Math.PI, 10)
-    playSkillSound(player, "entity.player.attack.crit", center, 0.9f, 0.9f)
+private fun showSkill1Impact(
+    player: net.minestom.server.entity.Player,
+    position: Point,
+    direction: Vec,
+    scheduler: ParticleAnimationScheduler,
+    manager: ParticleManager,
+) {
+    val center = position.add(0.0, 1.05, 0.0)
+    startParticlePreset(
+        player = player,
+        id = SKILL1_STOMP_VFX,
+        scheduler = scheduler,
+        origin = center,
+        direction = direction,
+        manager = manager,
+        values = mapOf("radius" to 0.82, "duration" to 5.0, "colorPrimary" to 0x168cff, "colorSecondary" to 0x071525),
+    )
+    skill1SoundPlan(confirmedHit = true).stomp.forEach { cue ->
+        playSkillSound(player, cue.key, center, cue.volume, cue.pitch)
+    }
 }
 
-private fun showSkill1Launch(player: net.minestom.server.entity.Player) {
-    val origin = player.position.add(0.0, 0.15, 0.0)
-    for (step in 0..7) {
-        val progress = step / 7.0
-        val angle = progress * Math.PI * 2.2
-        val radius = 0.12 + progress * 0.2
-        val point = origin.add(
-            kotlin.math.cos(angle) * radius,
-            step * 0.34,
-            kotlin.math.sin(angle) * radius,
-        )
-        sendSkillParticle(player, Particle.END_ROD, point)
-        if (step % 2 == 0) sendSkillParticle(player, Particle.ENCHANT, point.add(0.0, 0.12, 0.0))
+private fun showSkill1Launch(
+    player: net.minestom.server.entity.Player,
+    direction: Vec,
+    scheduler: ParticleAnimationScheduler,
+    manager: ParticleManager,
+) {
+    val origin = player.position.add(0.0, 0.65, 0.0)
+    startParticlePreset(
+        player = player,
+        id = SKILL1_ESCAPE_VFX,
+        scheduler = scheduler,
+        origin = origin,
+        direction = direction,
+        manager = manager,
+        values = mapOf("length" to 1.7, "duration" to 4.0, "colorPrimary" to 0x168cff, "colorSecondary" to 0x071525),
+    )
+    skill1SoundPlan(confirmedHit = true).escape.forEach { cue ->
+        playSkillSound(player, cue.key, origin, cue.volume, cue.pitch)
     }
-    playSkillSound(player, "entity.player.levelup", origin.add(0.0, 0.8, 0.0), 0.5f, 1.65f)
 }
 
 private fun showSkill2Cast(player: net.minestom.server.entity.Player) {

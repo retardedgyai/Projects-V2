@@ -162,6 +162,51 @@ class ParticlePresetsTest {
     }
 
     @Test
+    fun `skill1 travel stomp and escape presets emit finite feedback`() {
+        listOf(
+            "projects:class/twin_blades/skill1_travel",
+            "projects:class/twin_blades/skill1_stomp",
+            "projects:class/twin_blades/skill1_escape",
+        ).forEach { id ->
+            val preset = requireNotNull(ParticlePresetRegistry[id])
+            val effect = preset.create(context.with("seed", 62.0))
+            val sink = RecordingParticleSink()
+            repeat(effect.durationTicks) { tick -> effect.emit(tick, sink) }
+
+            assertTrue(sink.spawns.isNotEmpty(), id)
+            assertTrue(sink.spawns.all { spawn ->
+                listOf(spawn.position.x(), spawn.position.y(), spawn.position.z(), spawn.offset.x(), spawn.offset.y(), spawn.offset.z(), spawn.speed.toDouble())
+                    .all { it.isFinite() }
+            }, id)
+        }
+    }
+
+    @Test
+    fun `skill1 stomp compresses before its outward burst`() {
+        val preset = requireNotNull(ParticlePresetRegistry["projects:class/twin_blades/skill1_stomp"])
+        val effect = preset.create(context)
+        val compression = RecordingParticleSink().also { effect.emit(0, it) }.spawns
+        val burst = RecordingParticleSink().also { effect.emit(2, it) }.spawns
+
+        assertTrue(compression.isNotEmpty())
+        assertTrue(burst.isNotEmpty())
+        assertTrue(burst.size > compression.size)
+        assertEquals(5, effect.durationTicks)
+    }
+
+    @Test
+    fun `skill1 stomp scheduler has no residual animation after completion`() {
+        val preset = requireNotNull(ParticlePresetRegistry["projects:class/twin_blades/skill1_stomp"])
+        val effect = preset.create(context)
+        val scheduler = ParticleAnimationScheduler()
+
+        scheduler.start(effect, RecordingParticleSink())
+        repeat(effect.durationTicks) { scheduler.tick() }
+
+        assertEquals(0, scheduler.activeAnimationCount)
+    }
+
+    @Test
     fun `override parser rejects unknown and malformed parameters`() {
         val preset = requireNotNull(ParticlePresetRegistry["projects:combat/slash_light"])
         assertNotNull(parseParticlePresetOverrides(preset, arrayOf("length=2")))
