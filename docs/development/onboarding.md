@@ -19,7 +19,7 @@ WindowsではGradle wrapperを`gradlew.bat`として実行します。PowerShell
 
 ## Creator名を一度だけ登録
 
-このcloneで使う短いCreator名を一度だけ設定します。
+このcloneで使う短いCreator名を一度だけ設定します。branch名に使うので、小文字英数字と`-`だけの短い名前が分かりやすいです。
 
 ```bash
 git config projects.creator <name>
@@ -37,7 +37,7 @@ git config projects.creator mei
 git config --get projects.creator
 ```
 
-この設定はそのPC/cloneだけに保存され、repoへcommitされません。未設定でも、Playgroundを始める時にAgentが一度だけCreator名を聞けます。
+この設定はそのPC/cloneだけに保存され、repoへcommitされません。未設定でも、Playgroundを始める時にAgentが一度だけCreator名を聞けます。空白や`_`等を含む名前を設定した場合も、Agentがbranch用に安全な小文字slugへ正規化します。
 
 ## Codexを起動
 
