@@ -102,6 +102,8 @@ fun main() {
     val dodgeVelocityActive = mutableMapOf<UUID, Boolean>()
     val attackSpeeds = mutableMapOf<UUID, Double>()
     val twinBladesSwingAngles = mutableMapOf<UUID, Double>()
+    val twinBladesComboStates = mutableMapOf<UUID, TwinBladesComboState>()
+    val twinBladesAttackSteps = mutableMapOf<UUID, Int>()
     val prototypeBoss = PrototypeBossState()
     val bossBar = BossBar.bossBar(
         Component.text("Rift Executioner ${prototypeBoss.currentHealth} / ${prototypeBoss.maxHealth}"),
@@ -165,6 +167,8 @@ fun main() {
 
     fun stopPlayerActions() {
         combatStates.values.forEach { it.reset() }
+        twinBladesComboStates.values.forEach { it.reset() }
+        twinBladesAttackSteps.clear()
         dodgeStates.values.forEach { it.reset() }
         twinRodsAirStates.values.forEach { it.tick(true) }
         skill1States.values.forEach { it.reset() }
@@ -487,6 +491,7 @@ fun main() {
         event.player.showBossBar(bossBar)
         if (event.isFirstSpawn) {
             attackSpeeds[event.player.uuid] = DEFAULT_ATTACK_SPEED
+            twinBladesComboStates[event.player.uuid] = TwinBladesComboState()
             combatStates[event.player.uuid] = CombatState(
                 weaponSource = { weaponFor(event.player) },
                 attackSpeedSource = { attackSpeeds[event.player.uuid] ?: DEFAULT_ATTACK_SPEED },
@@ -538,6 +543,8 @@ fun main() {
         lastSentCooldowns.remove(playerId)
         attackSpeeds.remove(playerId)
         twinBladesSwingAngles.remove(playerId)
+        twinBladesComboStates.remove(playerId)
+        twinBladesAttackSteps.remove(playerId)
         lastGroundTelegraphIds.remove(playerId)
         if (instance.players.none { it.uuid != playerId }) {
             clearBossTelegraphs()
@@ -584,6 +591,7 @@ fun main() {
             }
         }
         if (!prototypeBoss.isEncounterRunning) return@addListener
+        twinBladesComboStates[event.player.uuid]?.tick()
         twinRodsAir.tick(event.player.isOnGround)
         if (dodge.hasPending) state.deferAttackRestart()
         val tester = dummy?.takeIf { it.instance == event.player.instance && !it.isRemoved }
@@ -621,7 +629,16 @@ fun main() {
             listOf(target)
         } ?: emptyList()
         val combatEvents = state.tick(attackOrigin, event.player.position.direction(), targets)
-        showTwinBladesSwingVfx(event.player, state, combatEvents, twinBladesSwingAngles, particleAnimations, particleManager)
+        showTwinBladesSwingVfx(
+            event.player,
+            state,
+            combatEvents,
+            twinBladesSwingAngles,
+            twinBladesComboStates,
+            twinBladesAttackSteps,
+            particleAnimations,
+            particleManager,
+        )
         publishCombatEvents(
             event.player,
             combatEvents.filter { it is CombatEvent.Started || it is CombatEvent.Active },
@@ -650,7 +667,14 @@ fun main() {
                         height = target.boundingBox.maxY() - target.boundingBox.minY(),
                     )
                     if ("projects:class/twin_blades/weakpoint_hit" in vfxPlan.presets && weakpoint != null) {
-                        showTwinBladesWeakpointVfx(event.player, weakpoint, visualScale, particleAnimations, particleManager)
+                        showTwinBladesWeakpointVfx(
+                            event.player,
+                            weakpoint,
+                            visualScale,
+                            twinBladesComboVisual(twinBladesAttackSteps[event.player.uuid] ?: 1),
+                            particleAnimations,
+                            particleManager,
+                        )
                     }
                     showTwinRodsHitVfx(
                         event.player,
@@ -663,6 +687,7 @@ fun main() {
                         particleAnimations,
                         particleManager,
                         visualScale,
+                        twinBladesComboVisual(twinBladesAttackSteps[event.player.uuid] ?: 1),
                     )
                 }
             }
@@ -827,7 +852,16 @@ fun main() {
                     if (!prototypeBoss.isActive) return@addListener
                     val state = combatStates[event.player.uuid] ?: return@addListener
                     val combatEvents = state.input(message.state)
-                    showTwinBladesSwingVfx(event.player, state, combatEvents, twinBladesSwingAngles, particleAnimations, particleManager)
+                    showTwinBladesSwingVfx(
+                        event.player,
+                        state,
+                        combatEvents,
+                        twinBladesSwingAngles,
+                        twinBladesComboStates,
+                        twinBladesAttackSteps,
+                        particleAnimations,
+                        particleManager,
+                    )
                     publishCombatEvents(event.player, combatEvents)
                 }
                 is DodgeInput -> {
@@ -1227,6 +1261,7 @@ private fun showTwinBladesWeakpointVfx(
     player: net.minestom.server.entity.Player,
     selection: FixedWeakpointSelection,
     visualScale: Double,
+    visual: TwinBladesComboVisual,
     scheduler: ParticleAnimationScheduler,
     manager: ParticleManager,
 ) {
@@ -1241,9 +1276,9 @@ private fun showTwinBladesWeakpointVfx(
         manager = manager,
         values = mapOf(
             "radius" to twinBladesWeakpointRadius(visualScale),
-            "duration" to 5.0,
-            "colorPrimary" to 0xfffff5,
-            "colorSecondary" to 0x25d9e8,
+            "duration" to visual.weakpointDuration.toDouble(),
+            "colorPrimary" to visual.weakpointPrimary,
+            "colorSecondary" to visual.weakpointSecondary,
         ),
     )
 }
@@ -1255,6 +1290,7 @@ private fun showTwinRodsHitVfx(
     scheduler: ParticleAnimationScheduler,
     manager: ParticleManager,
     scale: Double,
+    visual: TwinBladesComboVisual,
 ) {
     startParticlePreset(
         player = player,
@@ -1263,7 +1299,14 @@ private fun showTwinRodsHitVfx(
         origin = center,
         direction = facing,
         manager = manager,
-        values = mapOf("length" to 3.0, "radius" to 1.1, "scale" to scale, "duration" to 4.0, "colorPrimary" to 0x168cff, "colorSecondary" to 0x071525),
+        values = mapOf(
+            "length" to visual.hitLength * scale,
+            "radius" to 1.1 * scale,
+            "scale" to scale,
+            "duration" to visual.hitDuration.toDouble(),
+            "colorPrimary" to visual.hitPrimary,
+            "colorSecondary" to visual.hitSecondary,
+        ),
     )
     playSkillSound(player, "entity.player.attack.sweep", center, 0.35f, 1.55f)
     playSkillSound(player, "entity.player.attack.crit", center, 0.3f, 1.1f)
@@ -1274,10 +1317,15 @@ private fun showTwinBladesSwingVfx(
     state: CombatState,
     events: List<CombatEvent>,
     angles: MutableMap<UUID, Double>,
+    comboStates: MutableMap<UUID, TwinBladesComboState>,
+    attackSteps: MutableMap<UUID, Int>,
     scheduler: ParticleAnimationScheduler,
     manager: ParticleManager,
 ) {
     if (state.activeProfile?.weapon != WeaponType.TWIN_RODS || events.none { it is CombatEvent.Started }) return
+    val step = comboStates.getOrPut(player.uuid) { TwinBladesComboState() }.start()
+    attackSteps[player.uuid] = step
+    val visual = twinBladesComboVisual(step)
     val direction = player.position.direction()
     val angle = nextTwinBladesSwingAngle(angles[player.uuid])
     angles[player.uuid] = angle
@@ -1294,11 +1342,11 @@ private fun showTwinBladesSwingVfx(
         direction = direction,
         manager = manager,
         values = mapOf(
-            "length" to 2.1,
+            "length" to visual.swingLength,
             "angle" to angle,
-            "duration" to 3.0,
-            "colorPrimary" to 0x70e9ff,
-            "colorSecondary" to 0x071525,
+            "duration" to visual.swingDuration.toDouble(),
+            "colorPrimary" to visual.swingPrimary,
+            "colorSecondary" to visual.swingSecondary,
         ),
     )
 }

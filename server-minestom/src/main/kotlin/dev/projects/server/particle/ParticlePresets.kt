@@ -246,7 +246,7 @@ private fun twinBladesCrescent(parameters: ParticlePresetParameters, angleDegree
         val leadingStart = (progress - 0.22).coerceAtLeast(0.0)
         val bodyStart = (progress - 0.48).coerceAtLeast(0.0)
         ParticleParallel.of(
-            twinBladesArcRibbon(parameters, angleDegrees, length, 0.18, bodyStart, progress, 0x126bff, 0.38f),
+            twinBladesArcRibbon(parameters, angleDegrees, length, 0.18, bodyStart, progress, parameters.color("colorSecondary", 0x126bff), 0.38f),
             twinBladesArcRibbon(parameters, angleDegrees, length, 0.12, leadingStart, progress, parameters.color("colorPrimary", 0x70e9ff), 0.24f),
             twinBladesArcRibbon(parameters, angleDegrees, length, 0.07, progress, minOf(1.0, progress + 0.08), 0xe8fdff, 0.20f),
         ).emit(0, sink)

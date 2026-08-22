@@ -2,6 +2,7 @@ package dev.projects.server
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class TwinBladesVfxTest {
     @Test
@@ -9,6 +10,36 @@ class TwinBladesVfxTest {
         var previous: Double? = null
         val angles = (0..2).map { nextTwinBladesSwingAngle(previous).also { previous = it } }
         assertEquals(listOf(35.0, -35.0, 35.0), angles)
+    }
+
+    @Test
+    fun `combo steps cycle from one through three`() {
+        val state = TwinBladesComboState()
+        assertEquals(listOf(1, 2, 3, 1), (0..3).map { state.start() })
+    }
+
+    @Test
+    fun `combo resets to step one after twelve idle ticks`() {
+        val state = TwinBladesComboState()
+        assertEquals(1, state.start())
+        assertEquals(2, state.start())
+        repeat(TWIN_BLADES_COMBO_RESET_TICKS) { state.tick() }
+        assertEquals(1, state.start())
+    }
+
+    @Test
+    fun `each combo step has a distinct visual plan`() {
+        val first = twinBladesComboVisual(1)
+        val second = twinBladesComboVisual(2)
+        val third = twinBladesComboVisual(3)
+
+        assertTrue(first.swingLength < second.swingLength)
+        assertTrue(second.swingLength < third.swingLength)
+        assertTrue(first.swingDuration < second.swingDuration)
+        assertTrue(second.hitLength < third.hitLength)
+        assertTrue(first.swingPrimary != second.swingPrimary)
+        assertTrue(second.swingPrimary != third.swingPrimary)
+        assertTrue(first.weakpointDuration < third.weakpointDuration)
     }
 
     @Test
