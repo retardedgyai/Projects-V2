@@ -27,22 +27,24 @@ internal data class CombatHudLayout(
     val skills: HudRect,
     val hotbar: HudRect,
     val offhand: HudRect,
+    val stored: HudRect,
 )
 
 internal fun calculateCombatHudLayout(guiWidth: Int, guiHeight: Int): CombatHudLayout {
     require(guiWidth > 0 && guiHeight > 0)
 
     val core = HudRect(
-        x = guiWidth / 2 - 16,
-        y = guiHeight - 92,
-        width = 32,
-        height = 26,
+        x = guiWidth / 2 - 28,
+        y = guiHeight - 120,
+        width = 56,
+        height = 56,
     )
-    val health = HudRect(core.x - 8 - 106, core.y + 4, 106, 18)
-    val resource = HudRect(core.right + 8, core.y + 4, 106, 18)
-    val skills = HudRect(core.x - 12 - 113, guiHeight - 45, 113, 28)
-    val hotbar = HudRect(core.right + 12, guiHeight - 42, 196, 22)
-    val offhand = HudRect(hotbar.right + 2, hotbar.y, 20, 22)
+    val health = HudRect(core.x - 8 - 160, core.y + 16, 160, 24)
+    val resource = HudRect(core.right + 8, core.y + 16, 160, 24)
+    val skills = HudRect(core.x - 18 - 164, guiHeight - 52, 164, 40)
+    val hotbar = HudRect(core.right + 18, guiHeight - 48, 224, 34)
+    val offhand = HudRect(hotbar.right + 4, hotbar.y, 34, 34)
+    val stored = HudRect(resource.right - 96, core.y - 34, 96, 28)
 
-    return CombatHudLayout(health, core, resource, skills, hotbar, offhand)
+    return CombatHudLayout(health, core, resource, skills, hotbar, offhand, stored)
 }

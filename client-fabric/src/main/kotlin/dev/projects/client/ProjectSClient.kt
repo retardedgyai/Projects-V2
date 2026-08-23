@@ -96,6 +96,7 @@ object ProjectSClient : ClientModInitializer {
     private val skill2Key = skillKey("key.projects.skill_2", InputConstants.KEY_X)
     private val skill3Key = skillKey("key.projects.skill_3", InputConstants.KEY_C)
     private val ultimateKey = skillKey("key.projects.ultimate", InputConstants.KEY_V)
+    private val activeCombatHudTheme = CombatHudTheme.TWIN_BLADES
 
     override fun onInitializeClient() {
         KeyMappingHelper.registerKeyMapping(dodgeKey)
@@ -288,27 +289,34 @@ object ProjectSClient : ClientModInitializer {
         if (player.isSpectator()) return
 
         val layout = calculateCombatHudLayout(context.guiWidth(), context.guiHeight())
-        val presentation = twinBladesPresentation
+        val theme = activeCombatHudTheme
         drawStatusBar(
             context,
             "HP ${player.getHealth().toInt()}/${player.getMaxHealth().toInt()}",
             player.getHealth().toInt(),
             player.getMaxHealth().toInt(),
             layout.health,
-            0xFFE05252.toInt(),
+            theme.hpBackground,
+            theme.hpFrame,
+            theme.hpFill,
+            theme.labelColor,
         )
         drawStatusBar(
             context,
-            "${presentation.resourceLabel} $mana/$maxMana",
+            "${theme.resourceLabel} $mana/$maxMana",
             mana,
             maxMana,
             layout.resource,
-            presentation.resourceColor,
+            theme.resourceBackground,
+            theme.resourceFrame,
+            theme.resourceFill,
+            theme.labelColor,
         )
-        drawClassCore(context, layout.core, presentation)
-        renderSkillHud(context, layout.skills, presentation)
-        renderHotbar(context, layout.hotbar, player)
-        renderOffhand(context, layout.offhand, player)
+        drawTexture(context, theme.core, layout.core)
+        renderSkillHud(context, layout.skills, theme)
+        renderHotbar(context, layout.hotbar, player, theme)
+        renderOffhand(context, layout.offhand, player, theme)
+        theme.storedPanelFrame?.let { renderStoredPanel(context, layout.stored, it) }
         renderHitMarker(context)
     }
 
@@ -325,9 +333,8 @@ object ProjectSClient : ClientModInitializer {
         context.fill(centerX - 1, centerY + spread, centerX + 2, centerY + spread + arm, color)
     }
 
-    private fun renderSkillHud(context: GuiGraphicsExtractor, bounds: HudRect, presentation: ClassHudPresentation) {
-        val slotWidth = 26
-        val slotHeight = 28
+    private fun renderSkillHud(context: GuiGraphicsExtractor, bounds: HudRect, theme: CombatHudTheme) {
+        val slotSize = 38
         val gap = 3
         val slots = listOf(
             SkillHudSlot(0, skill1Key, skill1CooldownTicks, skill1CooldownMaxTicks),
@@ -336,71 +343,40 @@ object ProjectSClient : ClientModInitializer {
             SkillHudSlot(3, ultimateKey, 0, 0),
         )
         for ((index, slot) in slots.withIndex()) {
-            val slotX = bounds.x + index * (slotWidth + gap)
-            drawSkillSlot(context, slot, slotX, bounds.y, slotWidth, slotHeight, presentation)
+            val slotX = bounds.x + index * (slotSize + gap)
+            drawSkillSlot(context, slot, HudRect(slotX, bounds.y, slotSize, slotSize), theme)
         }
     }
 
     private fun drawSkillSlot(
         context: GuiGraphicsExtractor,
         slot: SkillHudSlot,
-        x: Int,
-        y: Int,
-        width: Int,
-        height: Int,
-        presentation: ClassHudPresentation,
+        bounds: HudRect,
+        theme: CombatHudTheme,
     ) {
         val ready = slot.remainingTicks <= 0
-        val background = 0xDD18202A.toInt()
-        context.fill(x, y, x + width, y + height, background)
-        val iconColor = if (ready) presentation.skillReadyColor else presentation.skillCooldownColor
-        drawSkillIcon(context, x + width / 2, y + 11, slot.index, iconColor)
+        drawTexture(context, theme.skillSlotFrame, bounds)
+        val iconBounds = HudRect(bounds.x + 6, bounds.y + 4, 26, 26)
+        drawTexture(context, theme.skillIcons[slot.index], iconBounds)
         val keyLabel = slot.key.getTranslatedKeyMessage().getString()
-        context.text(Minecraft.getInstance().font, keyLabel, x + 3, y + height - 9, 0xFFFFFFFF.toInt(), true)
+        context.text(
+            Minecraft.getInstance().font,
+            keyLabel,
+            bounds.x + 4,
+            bounds.bottom - 11,
+            theme.labelColor,
+            true,
+        )
         if (!ready) {
-            context.fill(x + 2, y + 2, x + width - 2, y + height - 10, 0x99080B10.toInt())
+            context.fill(iconBounds.x, iconBounds.y, iconBounds.right, iconBounds.bottom, 0xAA080B10.toInt())
             context.centeredText(
                 Minecraft.getInstance().font,
                 cooldownSecondsText(slot.remainingTicks),
-                x + width / 2,
-                y + 8,
-                0xFFFFFFFF.toInt(),
+                bounds.centerX,
+                bounds.y + 13,
+                theme.cooldownColor,
             )
         }
-    }
-
-    private fun drawSkillIcon(context: GuiGraphicsExtractor, centerX: Int, centerY: Int, index: Int, color: Int) {
-        when (index) {
-            0 -> {
-                context.fill(centerX - 2, centerY - 7, centerX + 2, centerY + 7, color)
-                context.fill(centerX - 6, centerY - 3, centerX + 6, centerY + 1, color)
-            }
-            1 -> {
-                context.fill(centerX - 7, centerY - 2, centerX + 7, centerY + 2, color)
-                context.fill(centerX - 3, centerY - 6, centerX + 3, centerY + 6, color)
-            }
-            2 -> {
-                context.fill(centerX - 6, centerY - 6, centerX + 6, centerY - 2, color)
-                context.fill(centerX - 2, centerY - 2, centerX + 2, centerY + 6, color)
-            }
-            else -> {
-                context.fill(centerX - 6, centerY - 6, centerX + 6, centerY - 2, color)
-                context.fill(centerX - 2, centerY - 2, centerX + 2, centerY + 6, color)
-                context.fill(centerX - 6, centerY + 2, centerX - 2, centerY + 6, color)
-                context.fill(centerX + 2, centerY + 2, centerX + 6, centerY + 6, color)
-            }
-        }
-    }
-
-    private fun drawClassCore(context: GuiGraphicsExtractor, bounds: HudRect, presentation: ClassHudPresentation) {
-        context.fill(bounds.x, bounds.y, bounds.right, bounds.bottom, 0xDD121820.toInt())
-        context.outline(bounds.x, bounds.y, bounds.width, bounds.height, presentation.coreBorderColor)
-        val centerX = bounds.centerX
-        val centerY = bounds.y + bounds.height / 2
-        context.fill(centerX - 2, centerY - 9, centerX + 1, centerY + 8, presentation.corePrimaryColor)
-        context.fill(centerX + 1, centerY - 8, centerX + 4, centerY + 9, presentation.coreSecondaryColor)
-        context.fill(centerX - 8, centerY - 5, centerX - 2, centerY - 2, presentation.corePrimaryColor)
-        context.fill(centerX + 4, centerY + 2, centerX + 8, centerY + 5, presentation.coreSecondaryColor)
     }
 
     private fun drawStatusBar(
@@ -409,29 +385,44 @@ object ProjectSClient : ClientModInitializer {
         value: Int,
         maximum: Int,
         bounds: HudRect,
-        color: Int,
+        background: HudTexture,
+        frame: HudTexture,
+        fill: HudTexture,
+        labelColor: Int,
     ) {
-        context.text(Minecraft.getInstance().font, label, bounds.x, bounds.y, 0xFFFFFFFF.toInt(), true)
-        val barY = bounds.y + 10
-        val barHeight = 5
-        context.fill(bounds.x, barY, bounds.right, barY + barHeight, 0xAA10151C.toInt())
-        val filled = if (maximum > 0) bounds.width * value.coerceIn(0, maximum) / maximum else 0
-        if (filled > 0) context.fill(bounds.x, barY, bounds.x + filled, barY + barHeight, color)
+        val ratio = if (maximum > 0) value.coerceIn(0, maximum).toFloat() / maximum else 0f
+        drawTexture(context, background, bounds)
+        if (ratio > 0f) {
+            drawTexture(
+                context,
+                fill,
+                HudRect(bounds.x, bounds.y, (bounds.width * ratio).toInt().coerceAtLeast(1), bounds.height),
+                ratio,
+            )
+        }
+        drawTexture(context, frame, bounds)
+        context.text(Minecraft.getInstance().font, label, bounds.x + 7, bounds.y + 7, labelColor, true)
     }
 
-    private fun renderHotbar(context: GuiGraphicsExtractor, bounds: HudRect, player: net.minecraft.client.player.LocalPlayer) {
-        val slotSize = 20
+    private fun renderHotbar(
+        context: GuiGraphicsExtractor,
+        bounds: HudRect,
+        player: net.minecraft.client.player.LocalPlayer,
+        theme: CombatHudTheme,
+    ) {
+        drawTexture(context, theme.hotbarFrame, bounds)
+        val slotSize = 22
         val gap = 2
         val selectedSlot = player.inventory.getSelectedSlot()
         for (slot in 0 until 9) {
-            val x = bounds.x + slot * (slotSize + gap)
+            val x = bounds.x + 5 + slot * (slotSize + gap)
+            val y = bounds.y + 6
             val selected = slot == selectedSlot
-            context.fill(x, bounds.y, x + slotSize, bounds.y + slotSize, if (selected) 0xFFE0D6A0.toInt() else 0xCC171B20.toInt())
-            context.fill(x + 2, bounds.y + 2, x + slotSize - 2, bounds.y + slotSize - 2, if (selected) 0xCC3A3426.toInt() else 0xAA0D1116.toInt())
+            if (selected) drawTexture(context, theme.selectedSlot, HudRect(x, y, slotSize, slotSize))
             val stack = player.inventory.getItem(slot)
             if (!stack.isEmpty) {
-                context.item(stack, x + 2, bounds.y + 2)
-                context.itemDecorations(Minecraft.getInstance().font, stack, x + 2, bounds.y + 2)
+                context.item(stack, x + 3, y + 3)
+                context.itemDecorations(Minecraft.getInstance().font, stack, x + 3, y + 3)
             }
         }
     }
@@ -440,14 +431,29 @@ object ProjectSClient : ClientModInitializer {
         context: GuiGraphicsExtractor,
         bounds: HudRect,
         player: net.minecraft.client.player.LocalPlayer,
+        theme: CombatHudTheme,
     ) {
-        context.fill(bounds.x, bounds.y, bounds.right, bounds.bottom, 0xCC171B20.toInt())
-        context.fill(bounds.x + 2, bounds.y + 2, bounds.right - 2, bounds.bottom - 2, 0xAA0D1116.toInt())
+        drawTexture(context, theme.offhandFrame, bounds)
         val stack = player.getOffhandItem()
         if (!stack.isEmpty) {
-            context.item(stack, bounds.x + 2, bounds.y + 2)
-            context.itemDecorations(Minecraft.getInstance().font, stack, bounds.x + 2, bounds.y + 2)
+            context.item(stack, bounds.x + 9, bounds.y + 9)
+            context.itemDecorations(Minecraft.getInstance().font, stack, bounds.x + 9, bounds.y + 9)
         }
+    }
+
+    private fun renderStoredPanel(context: GuiGraphicsExtractor, bounds: HudRect, frame: HudTexture) {
+        drawTexture(context, frame, bounds)
+        context.text(Minecraft.getInstance().font, "STORED", bounds.x + 7, bounds.y + 5, 0xFFE8F5FF.toInt(), true)
+        context.text(Minecraft.getInstance().font, "0", bounds.right - 13, bounds.y + 5, 0xFFFFFFFF.toInt(), true)
+    }
+
+    private fun drawTexture(
+        context: GuiGraphicsExtractor,
+        texture: HudTexture,
+        bounds: HudRect,
+        uRight: Float = 1f,
+    ) {
+        context.blit(texture.id, bounds.x, bounds.y, bounds.width, bounds.height, 0f, 0f, uRight, 1f)
     }
 
     private fun renderAttackDebugShape(client: Minecraft) {
@@ -640,26 +646,6 @@ object ProjectSClient : ClientModInitializer {
         InputConstants.Type.KEYSYM,
         defaultKey,
         skillCategory,
-    )
-
-    private data class ClassHudPresentation(
-        val resourceLabel: String,
-        val resourceColor: Int,
-        val coreBorderColor: Int,
-        val corePrimaryColor: Int,
-        val coreSecondaryColor: Int,
-        val skillReadyColor: Int,
-        val skillCooldownColor: Int,
-    )
-
-    private val twinBladesPresentation = ClassHudPresentation(
-        resourceLabel = "MANA",
-        resourceColor = 0xFF4C9BFF.toInt(),
-        coreBorderColor = 0xFF8BB7BD.toInt(),
-        corePrimaryColor = 0xFFE6F4F2.toInt(),
-        coreSecondaryColor = 0xFF7DC2C8.toInt(),
-        skillReadyColor = 0xFF72C9D2.toInt(),
-        skillCooldownColor = 0xFF3D4850.toInt(),
     )
 
     private data class SkillHudSlot(
