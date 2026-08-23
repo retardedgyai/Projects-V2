@@ -2,6 +2,7 @@ package dev.projects.server
 
 import dev.projects.protocol.SlashEditorParameters
 import dev.projects.server.particle.ParticleEffect
+import dev.projects.server.particle.ParticleBatch
 import dev.projects.server.particle.ParticleGeometry
 import dev.projects.server.particle.ParticleStyle
 import dev.projects.server.particle.dust
@@ -112,24 +113,30 @@ object SlashEditorPreview {
     fun create(origin: Point, direction: Vec, parameters: SlashEditorParameters): ParticleEffect {
         val radius = (parameters.length * (0.72 + parameters.curvature * 0.07)).coerceIn(0.5, 12.0)
         val degreeStep = (parameters.spacing * 42.0).coerceIn(2.0, 32.0)
-        val arc = ParticleGeometry.drawCleaveArc(
-            origin = origin,
-            facing = direction,
-            radius = radius,
-            tiltAngle = parameters.tilt,
-            startDegrees = -parameters.arcSpan / 2.0,
-            endDegrees = parameters.arcSpan / 2.0,
-            rings = parameters.laneCount,
-            extraYaw = parameters.yaw,
-            ringSpacing = parameters.laneSpacing,
-            degreesPerTick = parameters.arcSpan / parameters.durationTicks,
-            degreeStep = degreeStep,
-        ) { _, ring, _ ->
-            ParticleStyle(
-                dust(parameters.color, parameters.particleSize.toFloat() * (0.75f + parameters.width.toFloat() / 0.28f * 0.25f) * if (ring == 0) 1.0f else 0.72f),
-                count = if (ring == 0) 2 else 1,
-            )
+        val laneOffsets = when (parameters.laneCount) {
+            1 -> listOf(0.0)
+            2 -> listOf(-0.5, 0.5)
+            else -> listOf(-1.0, 0.0, 1.0)
         }
-        return arc
+        return ParticleBatch.of(*laneOffsets.map { laneOffset ->
+            ParticleGeometry.drawCleaveArc(
+                origin = origin,
+                facing = direction,
+                radius = radius,
+                tiltAngle = parameters.tilt,
+                startDegrees = -parameters.arcSpan / 2.0,
+                endDegrees = parameters.arcSpan / 2.0,
+                rings = 1,
+                extraYaw = parameters.yaw,
+                degreesPerTick = parameters.arcSpan / parameters.durationTicks,
+                degreeStep = degreeStep,
+                lateralOffset = laneOffset * parameters.laneSpacing,
+            ) { _, _, _ ->
+                ParticleStyle(
+                    dust(parameters.color, parameters.particleSize.toFloat() * (0.75f + parameters.width.toFloat() / 0.28f * 0.25f)),
+                    count = 2,
+                )
+            }
+        }.toTypedArray())
     }
 }

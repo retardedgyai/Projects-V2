@@ -9,6 +9,7 @@ import java.nio.file.Files
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNotEquals
 import kotlin.test.assertTrue
 
 class SlashEditorTest {
@@ -65,13 +66,22 @@ class SlashEditorTest {
     }
 
     @Test
-    fun `lane count is independent from thickness`() {
-        val oneLane = SlashEditorPreview.create(Pos.ZERO, Vec(0.0, 0.0, 1.0), SlashEditorParameters(laneCount = 1, width = 1.5))
-        val threeLanes = SlashEditorPreview.create(Pos.ZERO, Vec(0.0, 0.0, 1.0), SlashEditorParameters(laneCount = 3, laneSpacing = 0.5, width = 0.05))
-        val oneSink = RecordingParticleSink()
-        val threeSink = RecordingParticleSink()
-        oneLane.emit(0, oneSink)
-        threeLanes.emit(0, threeSink)
-        assertTrue(threeSink.spawns.size > oneSink.spawns.size)
+    fun `lane count creates distinct trajectories and spacing separates them`() {
+        fun positions(spacing: Double): List<Double> {
+            val effect = SlashEditorPreview.create(
+                Pos.ZERO,
+                Vec(0.0, 0.0, 1.0),
+                SlashEditorParameters(laneCount = 3, laneSpacing = spacing, arcSpan = 10.0, durationTicks = 1),
+            )
+            val sink = RecordingParticleSink()
+            effect.emit(0, sink)
+            return sink.spawns.map { it.position.x() }
+        }
+
+        val narrow = positions(0.1)
+        val wide = positions(0.5)
+        assertTrue(narrow.toSet().size >= 3)
+        assertTrue(wide.max() - wide.min() > narrow.max() - narrow.min())
+        assertNotEquals(narrow, wide)
     }
 }
