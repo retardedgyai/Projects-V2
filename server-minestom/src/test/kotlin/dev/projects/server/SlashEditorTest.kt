@@ -9,6 +9,7 @@ import java.nio.file.Files
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNotEquals
 import kotlin.test.assertTrue
 
 class SlashEditorTest {
@@ -23,6 +24,17 @@ class SlashEditorTest {
         assertEquals(parameters, reloaded.load("deep blue"))
         assertFalse(reloaded.save("../escape", parameters))
         assertFalse(reloaded.save("", parameters))
+    }
+
+    @Test
+    fun `legacy drafts load with safe lane defaults`() {
+        val file = Files.createTempFile("slash-editor-legacy", ".json")
+        Files.writeString(file, """
+            {"schemaVersion":1,"drafts":[{"name":"legacy","parameters":{"originY":1.2,"forwardOffset":1.7,"length":5.0,"arcSpan":160.0,"curvature":0.35,"tilt":12.0,"yaw":0.0,"width":0.8,"particleSize":0.28,"spacing":0.18,"durationTicks":8,"color":1190875,"targetDistance":5.0}}]}
+        """.trimIndent())
+        val loaded = SlashDraftStore(file).load("legacy")
+        assertEquals(1, loaded?.laneCount)
+        assertEquals(0.18, loaded?.laneSpacing)
     }
 
     @Test
@@ -51,5 +63,25 @@ class SlashEditorTest {
             }
         }.toSet()
         assertEquals(setOf(color), dustColors)
+    }
+
+    @Test
+    fun `lane count creates distinct trajectories and spacing separates them`() {
+        fun positions(spacing: Double): List<Double> {
+            val effect = SlashEditorPreview.create(
+                Pos.ZERO,
+                Vec(0.0, 0.0, 1.0),
+                SlashEditorParameters(laneCount = 3, laneSpacing = spacing, arcSpan = 10.0, durationTicks = 1),
+            )
+            val sink = RecordingParticleSink()
+            effect.emit(0, sink)
+            return sink.spawns.map { it.position.x() }
+        }
+
+        val narrow = positions(0.1)
+        val wide = positions(0.5)
+        assertTrue(narrow.toSet().size >= 3)
+        assertTrue(wide.max() - wide.min() > narrow.max() - narrow.min())
+        assertNotEquals(narrow, wide)
     }
 }

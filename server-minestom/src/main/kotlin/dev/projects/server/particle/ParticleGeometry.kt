@@ -22,6 +22,7 @@ object ParticleGeometry {
         ringSpacing: Double = 0.22,
         degreesPerTick: Double = 45.0,
         degreeStep: Double = 8.0,
+        lateralOffset: Double = 0.0,
         sample: (position: Point, ringIndex: Int, angleProgress: Double) -> ParticleStyle =
             { _, ring, progress -> ParticleStyle(if (ring == 0) dust(0xffdd33, 0.45f) else dust(0xff5522, 0.3f + progress.toFloat() * 0.15f)) },
     ): ParticleEffect {
@@ -38,6 +39,7 @@ object ParticleGeometry {
             ringSpacing = ringSpacing,
             degreesPerTick = degreesPerTick,
             degreeStep = degreeStep,
+            lateralOffset = lateralOffset,
             sample = sample,
         )
     }
@@ -89,6 +91,7 @@ object ParticleGeometry {
         ringSpacing: Double = 0.22,
         degreesPerTick: Double = 45.0,
         degreeStep: Double = 8.0,
+        lateralOffset: Double = 0.0,
         sample: (position: Point, ringIndex: Int, angleProgress: Double) -> ParticleStyle =
             { _, ring, progress -> ParticleStyle(if (ring == 0) dust(0xffdd33, 0.45f) else dust(0xff5522, 0.3f + progress.toFloat() * 0.15f)) },
     ): ParticleEffect {
@@ -116,7 +119,11 @@ object ParticleGeometry {
                         if (progress > progressEnd || progress < startProgress) continue
                         val angle = Math.toRadians(startDegrees + span * progress)
                         val radial = right.mul(cos(angle) * ringRadius).add(up.mul(sin(angle) * ringRadius))
-                        val point = origin.add(radial.x(), radial.y(), radial.z())
+                        val point = origin.add(
+                            radial.x() + right.x() * lateralOffset,
+                            radial.y() + right.y() * lateralOffset,
+                            radial.z() + right.z() * lateralOffset,
+                        )
                         emitStyle(point, sample(point, ring, progress), step + ring * (steps + 1), sink)
                     }
                 }
