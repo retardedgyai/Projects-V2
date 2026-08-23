@@ -868,8 +868,6 @@ fun main() {
                             start,
                             direction,
                             target,
-                            particleAnimations,
-                            particleManager,
                         )
                     }
                 } else {
@@ -1737,27 +1735,8 @@ private fun showSkill3CatchVfx(
     dashOrigin: Pos,
     dashDirection: Vec,
     target: CombatTarget,
-    scheduler: ParticleAnimationScheduler,
-    manager: ParticleManager,
 ) {
     val contact = twinBladesSkill3ContactPoint(dashOrigin, dashDirection, target.position, target.halfExtent)
-    val visual = TwinBladesSkill3Visual()
-    val started = startParticlePreset(
-        player = player,
-        id = "projects:class/twin_blades/skill3_hit",
-        scheduler = scheduler,
-        origin = contact,
-        direction = dashDirection,
-        manager = manager,
-        values = mapOf(
-            "length" to visual.primaryLength,
-            "aftercutLength" to visual.aftercutLength,
-            "duration" to visual.primaryDuration.toDouble(),
-        ),
-    )
-    if (!started) {
-        System.err.println("Skill3 VFX preset failed to start: projects:class/twin_blades/skill3_hit")
-    }
     playTwinBladesSounds(player, contact, twinBladesSkill3SoundPlan().confirmedHit)
 }
 
