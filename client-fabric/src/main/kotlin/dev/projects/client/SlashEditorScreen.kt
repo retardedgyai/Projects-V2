@@ -21,8 +21,8 @@ class SlashEditorScreen(
         const val MAX_PARTICLE_SIZE = 2.0
         const val MIN_SPACING = 0.05
         const val MAX_SPACING = 2.0
-        const val BASIC_ROW_SPACING = 20
-        const val BASIC_START_Y = 34
+        const val BASIC_ROW_SPACING = 19
+        const val BASIC_START_Y = 30
     }
 
     private var parameters = initialParameters
@@ -134,7 +134,14 @@ class SlashEditorScreen(
                 mouseX in (panelX + 112)..(panelX + 252) && mouseY in y..(y + 20)
             }
             if (hoveredIndex != null) {
-                graphics.text(font, basicControls[hoveredIndex].description, panelX + 10, 236, 0xFF8EA9C5.toInt(), false)
+                graphics.text(
+                    font,
+                    basicControls[hoveredIndex].description,
+                    panelX + 10,
+                    BASIC_START_Y + basicControls.size * BASIC_ROW_SPACING + 2,
+                    0xFF8EA9C5.toInt(),
+                    false,
+                )
             }
         } else {
             detailNames.forEachIndexed { index, (_, label) ->
@@ -224,7 +231,7 @@ class SlashEditorScreen(
         forwardOffset = if (key == "forwardOffset") value else forwardOffset,
         length = if (key == "length") value else length, arcSpan = if (key == "arcSpan") value else arcSpan,
         curvature = if (key == "curvature") value else curvature, tilt = if (key == "tilt") value else tilt,
-        yaw = yaw, width = if (key == "width") value else width,
+        yaw = if (key == "yaw") value else yaw, width = if (key == "width") value else width,
         particleSize = if (key == "particleSize") value else particleSize,
         spacing = if (key == "density") spacingForDensity(value) else spacing,
         durationTicks = durationTicks, color = color, targetDistance = targetDistance,
