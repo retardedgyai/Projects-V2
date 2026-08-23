@@ -16,6 +16,13 @@ class SlashEditorScreen(
     initialParameters: SlashEditorParameters,
     private val sendMessage: (Any) -> Unit,
 ) : Screen(Component.literal("斬撃エディター")) {
+    private companion object {
+        const val MIN_PARTICLE_SIZE = 0.05
+        const val MAX_PARTICLE_SIZE = 2.0
+        const val MIN_SPACING = 0.05
+        const val MAX_SPACING = 2.0
+    }
+
     private var parameters = initialParameters
     private var autoPreview = true
     private var previewDebounce = 0
@@ -44,6 +51,8 @@ class SlashEditorScreen(
         BasicControl("tilt", "傾き", "斬撃面の角度", -90.0, 90.0, 0),
         BasicControl("originY", "開始高さ", "プレイヤー基準の発生高さ", -4.0, 8.0),
         BasicControl("width", "太さ", "並行するSlashライン間隔", 0.0, 1.5),
+        BasicControl("particleSize", "粒の大きさ", "1粒の見た目の大きさ", MIN_PARTICLE_SIZE, MAX_PARTICLE_SIZE, 2),
+        BasicControl("density", "密度", "斬撃ライン上の粒の詰まり具合", MIN_SPACING, MAX_SPACING, 2),
     )
 
     private val detailNames = listOf(
@@ -151,6 +160,8 @@ class SlashEditorScreen(
 
     private fun updateBasicValue(key: String, value: Double) {
         parameters = parameters.withValue(key, value)
+        fields[key]?.setValue(formatValue(key, parameters))
+        if (key == "density") fields["spacing"]?.setValue(formatValue("spacing", parameters))
         previewDebounce = 5
     }
 
@@ -186,7 +197,8 @@ class SlashEditorScreen(
         "originY" -> parameters.originY; "forwardOffset" -> parameters.forwardOffset; "length" -> parameters.length
         "arcSpan" -> parameters.arcSpan; "curvature" -> parameters.curvature; "tilt" -> parameters.tilt
         "yaw" -> parameters.yaw; "width" -> parameters.width; "particleSize" -> parameters.particleSize
-        "spacing" -> parameters.spacing; "durationTicks" -> parameters.durationTicks.toDouble(); "targetDistance" -> parameters.targetDistance
+        "spacing" -> parameters.spacing; "density" -> densityForSpacing(parameters.spacing)
+        "durationTicks" -> parameters.durationTicks.toDouble(); "targetDistance" -> parameters.targetDistance
         else -> 0.0
     }
 
@@ -203,9 +215,17 @@ class SlashEditorScreen(
         originY = if (key == "originY") value else originY, forwardOffset = forwardOffset,
         length = if (key == "length") value else length, arcSpan = if (key == "arcSpan") value else arcSpan,
         curvature = if (key == "curvature") value else curvature, tilt = if (key == "tilt") value else tilt,
-        yaw = yaw, width = if (key == "width") value else width, particleSize = particleSize, spacing = spacing,
+        yaw = yaw, width = if (key == "width") value else width,
+        particleSize = if (key == "particleSize") value else particleSize,
+        spacing = if (key == "density") spacingForDensity(value) else spacing,
         durationTicks = durationTicks, color = color, targetDistance = targetDistance,
     )
+
+    private fun densityForSpacing(spacing: Double): Double =
+        MAX_SPACING + MIN_SPACING - spacing
+
+    private fun spacingForDensity(density: Double): Double =
+        MAX_SPACING + MIN_SPACING - density
 
     private class ValueSlider(
         x: Int, y: Int, width: Int, private val control: BasicControl, value: Double,
