@@ -47,6 +47,19 @@ class SlashEditorTest {
     }
 
     @Test
+    fun `skill3 binding survives reload and malformed binding falls back`() {
+        val directory = Files.createTempDirectory("skill3-binding-test")
+        val file = directory.resolve("binding.json")
+        val parameters = SlashEditorParameters(laneCount = 3, laneSpacing = 0.9, yaw = 42.0, forwardOffset = 3.2)
+
+        assertTrue(Skill3SlashBindingStore(file).save(parameters))
+        assertEquals(parameters, Skill3SlashBindingStore(file).load())
+
+        Files.writeString(file, "not-json")
+        assertEquals(null, Skill3SlashBindingStore(file).load())
+    }
+
+    @Test
     fun `preview emits finite positions with the requested color`() {
         val color = 0x123456
         val effect = SlashEditorPreview.create(Pos.ZERO, Vec(0.0, 0.0, 1.0), SlashEditorParameters(color = color))
@@ -83,5 +96,15 @@ class SlashEditorTest {
         assertTrue(narrow.toSet().size >= 3)
         assertTrue(wide.max() - wide.min() > narrow.max() - narrow.min())
         assertNotEquals(narrow, wide)
+    }
+
+    @Test
+    fun `runtime slash origin preserves authored anchor values`() {
+        val parameters = SlashEditorParameters(originY = 2.4, forwardOffset = 3.6, yaw = 27.0)
+        val origin = slashOrigin(Pos(10.0, 20.0, 30.0), Vec(0.0, 0.0, 1.0), parameters)
+
+        assertEquals(10.0, origin.x())
+        assertEquals(22.4, origin.y())
+        assertEquals(33.6, origin.z())
     }
 }

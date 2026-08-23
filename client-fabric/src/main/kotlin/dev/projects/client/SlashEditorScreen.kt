@@ -2,6 +2,7 @@ package dev.projects.client
 
 import dev.projects.protocol.SlashEditorParameters
 import dev.projects.protocol.VfxSlashDraftLoadRequest
+import dev.projects.protocol.VfxSlashApplySkill3
 import dev.projects.protocol.VfxSlashPreviewCancel
 import dev.projects.protocol.VfxSlashPreviewRequest
 import dev.projects.protocol.VfxSlashSaveRequest
@@ -96,6 +97,8 @@ class SlashEditorScreen(
             .bounds(panelX + 160, controlsY, 112, 20).build())
         detailsButton = addRenderableWidget(Button.builder(Component.literal(detailsLabel())) { showDetails = !showDetails; rebuildWidgets() }
             .bounds(panelX + 8, controlsY - 25, 120, 20).build())
+        addRenderableWidget(Button.builder(Component.literal("Skill3へ適用")) { applySkill3() }
+            .bounds(panelX + 132, controlsY - 25, 140, 20).build())
 
         val draftY = height - 43
         draftName = addRenderableWidget(EditBox(font, panelX + 136, draftY, 108, 18, Component.literal("Draft名")))
@@ -203,6 +206,13 @@ class SlashEditorScreen(
 
     private fun replay() { parseParameters()?.let { parameters = it; sendPreview() } }
     private fun sendPreview() { sendMessage(VfxSlashPreviewRequest(++requestId, parameters)) }
+
+    private fun applySkill3() {
+        parseParameters()?.let {
+            parameters = it
+            sendMessage(VfxSlashApplySkill3(it))
+        }
+    }
 
     private fun reset() {
         parameters = SlashEditorParameters()

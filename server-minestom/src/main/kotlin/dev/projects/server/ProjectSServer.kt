@@ -25,6 +25,7 @@ import dev.projects.protocol.VfxSlashDraftLoadRequest
 import dev.projects.protocol.VfxSlashPreviewRequest
 import dev.projects.protocol.VfxSlashPreviewCancel
 import dev.projects.protocol.VfxSlashSaveRequest
+import dev.projects.protocol.VfxSlashApplySkill3
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.bossbar.BossBar
 import net.minestom.server.Auth
@@ -136,6 +137,7 @@ fun main() {
     val bossGroundTelegraphIds = mutableSetOf<Long>()
     val bossRiftTelegraphIds = mutableMapOf<Long, Long>()
     val slashDraftStore = SlashDraftStore(Path.of("config", "projects", "vfx-editor", "slash-drafts.json"))
+    val skill3SlashBindingStore = Skill3SlashBindingStore(Path.of("config", "projects", "vfx-editor", "twin-blades-skill3-slash.json"))
     val slashPreviewHandles = mutableMapOf<UUID, ParticleEffectHandle>()
 
     fun sendSlashDraftList(player: net.minestom.server.entity.Player) {
@@ -153,12 +155,7 @@ fun main() {
     fun previewSlash(player: net.minestom.server.entity.Player, parameters: SlashEditorParameters) {
         particleAnimations.cancel(slashPreviewHandles.remove(player.uuid))
         val direction = player.position.direction()
-        val forward = FixedAttackTester.normalizeHorizontal(direction)
-        val origin = player.position.add(
-            forward.x() * parameters.forwardOffset,
-            parameters.originY,
-            forward.z() * parameters.forwardOffset,
-        )
+        val origin = slashOrigin(player.position, direction, parameters)
         val sink = particleManager.sink(
             ParticleViewer(player.position, player),
             PlayerParticleSink(player),
@@ -896,6 +893,7 @@ fun main() {
                             target,
                             requireNotNull(skill3Tick.dashDirection),
                             pulseIndex,
+                            skill3SlashBindingStore,
                             particleAnimations,
                             particleManager,
                         )
@@ -1061,6 +1059,16 @@ fun main() {
                 }
                 is VfxSlashPreviewRequest -> previewSlash(event.player, message.parameters)
                 VfxSlashPreviewCancel -> particleAnimations.cancel(slashPreviewHandles.remove(event.player.uuid))
+                is VfxSlashApplySkill3 -> {
+                    val saved = skill3SlashBindingStore.save(message.parameters)
+                    event.player.sendPluginMessage(
+                        PROJECTS_CHANNEL,
+                        ProtocolCodec.encode(
+                            if (saved) VfxEditorNotice("Skill3へ適用しました")
+                            else VfxEditorNotice("Skill3への適用に失敗しました"),
+                        ),
+                    )
+                }
                 is VfxSlashSaveRequest -> {
                     val saved = slashDraftStore.save(message.name, message.parameters)
                     event.player.sendPluginMessage(
@@ -1752,23 +1760,26 @@ private fun showSkill3PulseVfx(
     target: CombatTarget,
     direction: Vec,
     pulseIndex: Int,
+    bindingStore: Skill3SlashBindingStore,
     scheduler: ParticleAnimationScheduler,
     manager: ParticleManager,
 ) {
-    val started = startParticlePreset(
-        player = player,
-        id = "projects:class/twin_blades/skill3_pulse",
-        scheduler = scheduler,
-        origin = target.position,
-        direction = direction,
-        manager = manager,
-        values = mapOf(
-            "pulse" to pulseIndex.toDouble(),
-            "duration" to 2.0,
-        ),
-    )
-    if (!started) {
-        System.err.println("Skill3 VFX preset failed to start: projects:class/twin_blades/skill3_pulse")
+    val authored = bindingStore.load()
+    if (authored == null) {
+        val started = startParticlePreset(
+            player = player,
+            id = "projects:class/twin_blades/skill3_pulse",
+            scheduler = scheduler,
+            origin = target.position,
+            direction = direction,
+            manager = manager,
+            values = mapOf("pulse" to pulseIndex.toDouble(), "duration" to 2.0),
+        )
+        if (!started) System.err.println("Skill3 VFX preset failed to start: projects:class/twin_blades/skill3_pulse")
+    } else {
+        val origin = slashOrigin(player.position, direction, authored)
+        val sink = manager.sink(ParticleViewer(player.position, player), PlayerParticleSink(player), "skill3:slash")
+        scheduler.start(SlashEditorPreview.create(origin, direction, authored), sink, id = "skill3:slash:${player.uuid}:$pulseIndex")
     }
     playTwinBladesSounds(player, target.position, twinBladesSkill3PulseSoundPlan(pulseIndex))
 }

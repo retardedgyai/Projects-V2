@@ -14,6 +14,39 @@ import java.nio.file.Path
 private const val DRAFT_SCHEMA_VERSION = 2
 private const val MAX_DRAFTS = 16
 
+private fun parseSlashParameters(raw: String): SlashEditorParameters? = runCatching {
+    fun number(key: String, default: Double? = null): Double =
+        Regex("\\\"$key\\\":([^,}]+)").find(raw)?.groupValues?.get(1)?.toDouble() ?: default
+        ?: error("Missing numeric slash field: $key")
+    fun integer(key: String): Int = Regex("\\\"$key\\\":([^,}]+)").find(raw)!!.groupValues[1].toInt()
+    SlashEditorParameters.clamped(
+        originY = number("originY"), forwardOffset = number("forwardOffset"), length = number("length"),
+        arcSpan = number("arcSpan"), curvature = number("curvature"), tilt = number("tilt"), yaw = number("yaw"),
+        width = number("width"), laneCount = Regex("\\\"laneCount\\\":([^,}]+)").find(raw)?.groupValues?.get(1)?.toInt() ?: 1,
+        laneSpacing = number("laneSpacing", 0.18),
+        particleSize = number("particleSize"), spacing = number("spacing"), durationTicks = integer("durationTicks"),
+        color = integer("color"), targetDistance = number("targetDistance"),
+    )
+}.getOrNull()
+
+private fun appendSlashParameters(json: StringBuilder, parameters: SlashEditorParameters) {
+    json.append("\"originY\":").append(parameters.originY)
+        .append(",\"forwardOffset\":").append(parameters.forwardOffset)
+        .append(",\"length\":").append(parameters.length)
+        .append(",\"arcSpan\":").append(parameters.arcSpan)
+        .append(",\"curvature\":").append(parameters.curvature)
+        .append(",\"tilt\":").append(parameters.tilt)
+        .append(",\"yaw\":").append(parameters.yaw)
+        .append(",\"width\":").append(parameters.width)
+        .append(",\"laneCount\":").append(parameters.laneCount)
+        .append(",\"laneSpacing\":").append(parameters.laneSpacing)
+        .append(",\"particleSize\":").append(parameters.particleSize)
+        .append(",\"spacing\":").append(parameters.spacing)
+        .append(",\"durationTicks\":").append(parameters.durationTicks)
+        .append(",\"color\":").append(parameters.color)
+        .append(",\"targetDistance\":").append(parameters.targetDistance)
+}
+
 /** Fixed-path, deliberately small persistence for the in-game slash authoring tool. */
 class SlashDraftStore(private val file: Path) {
     private val drafts = linkedMapOf<String, SlashEditorParameters>()
@@ -48,29 +81,7 @@ class SlashDraftStore(private val file: Path) {
         }
     }
 
-    private fun parseParameters(raw: String): SlashEditorParameters? = runCatching {
-        fun number(key: String, default: Double? = null): Double =
-            Regex("\\\"$key\\\":([^,}]+)").find(raw)?.groupValues?.get(1)?.toDouble() ?: default
-            ?: error("Missing numeric draft field: $key")
-        fun integer(key: String): Int = Regex("\\\"$key\\\":([^,}]+)").find(raw)!!.groupValues[1].toInt()
-        SlashEditorParameters.clamped(
-            originY = number("originY"),
-            forwardOffset = number("forwardOffset"),
-            length = number("length"),
-            arcSpan = number("arcSpan"),
-            curvature = number("curvature"),
-            tilt = number("tilt"),
-            yaw = number("yaw"),
-            width = number("width"),
-            laneCount = Regex("\\\"laneCount\\\":([^,}]+)").find(raw)?.groupValues?.get(1)?.toInt() ?: 1,
-            laneSpacing = number("laneSpacing", 0.18),
-            particleSize = number("particleSize"),
-            spacing = number("spacing"),
-            durationTicks = integer("durationTicks"),
-            color = integer("color"),
-            targetDistance = number("targetDistance"),
-        )
-    }.getOrNull()
+    private fun parseParameters(raw: String): SlashEditorParameters? = parseSlashParameters(raw)
 
     private fun writeToDisk(): Boolean = runCatching {
         file.parent?.let(Files::createDirectories)
@@ -79,21 +90,7 @@ class SlashDraftStore(private val file: Path) {
             drafts.entries.sortedBy { it.key }.forEachIndexed { index, (name, parameters) ->
                 if (index > 0) append(',')
                 append("{\"name\":\"").append(name).append("\",\"parameters\":{")
-                append("\"originY\":").append(parameters.originY)
-                append(",\"forwardOffset\":").append(parameters.forwardOffset)
-                append(",\"length\":").append(parameters.length)
-                append(",\"arcSpan\":").append(parameters.arcSpan)
-                append(",\"curvature\":").append(parameters.curvature)
-                append(",\"tilt\":").append(parameters.tilt)
-                append(",\"yaw\":").append(parameters.yaw)
-                append(",\"width\":").append(parameters.width)
-                append(",\"laneCount\":").append(parameters.laneCount)
-                append(",\"laneSpacing\":").append(parameters.laneSpacing)
-                append(",\"particleSize\":").append(parameters.particleSize)
-                append(",\"spacing\":").append(parameters.spacing)
-                append(",\"durationTicks\":").append(parameters.durationTicks)
-                append(",\"color\":").append(parameters.color)
-                append(",\"targetDistance\":").append(parameters.targetDistance)
+                appendSlashParameters(this, parameters)
                 append("}}")
             }
             append("]}")
@@ -107,6 +104,27 @@ class SlashDraftStore(private val file: Path) {
 
         fun isSafeName(name: String): Boolean = SAFE_NAME.matches(name)
     }
+}
+
+class Skill3SlashBindingStore(private val file: Path) {
+    private var binding: SlashEditorParameters? = readFromDisk()
+
+    fun load(): SlashEditorParameters? = binding
+
+    fun save(parameters: SlashEditorParameters): Boolean = runCatching {
+        file.parent?.let(Files::createDirectories)
+        val json = StringBuilder("{\"schemaVersion\":1,\"parameters\":{")
+        appendSlashParameters(json, parameters)
+        json.append("}}")
+        Files.writeString(file, json)
+        binding = parameters
+        true
+    }.getOrDefault(false)
+
+    private fun readFromDisk(): SlashEditorParameters? = runCatching {
+        if (!Files.isRegularFile(file)) return null
+        parseSlashParameters(Files.readString(file))
+    }.getOrNull()
 }
 
 object SlashEditorPreview {
@@ -139,4 +157,13 @@ object SlashEditorPreview {
             }
         }.toTypedArray())
     }
+}
+
+internal fun slashOrigin(position: Point, direction: Vec, parameters: SlashEditorParameters): Point {
+    val forward = FixedAttackTester.normalizeHorizontal(direction)
+    return position.add(
+        forward.x() * parameters.forwardOffset,
+        parameters.originY,
+        forward.z() * parameters.forwardOffset,
+    )
 }
