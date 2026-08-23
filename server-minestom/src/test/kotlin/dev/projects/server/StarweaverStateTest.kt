@@ -4,6 +4,7 @@ import kotlin.random.Random
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
+import kotlin.test.assertNotEquals
 import kotlin.test.assertTrue
 import org.junit.jupiter.api.Test
 
@@ -16,6 +17,41 @@ class StarweaverStateTest {
         assertEquals(5, snapshot.queue.size)
         StarweaverCelestial.entries.forEach { celestial ->
             assertEquals(2, allMarks.count { it == celestial })
+        }
+        assertNotEquals(snapshot.stored, snapshot.current)
+    }
+
+    @Test
+    fun `seeded cycle generation keeps current different from stored`() {
+        for (seed in 0..128) {
+            val state = StarweaverRotationState(Random(seed))
+            val initial = state.snapshot()
+            assertNotEquals(initial.stored, initial.current, "initial cycle seed=$seed")
+
+            state.setRotationForTest(
+                listOf(
+                    StarweaverCelestial.SUN,
+                    StarweaverCelestial.MOON,
+                    StarweaverCelestial.STAR,
+                    StarweaverCelestial.SUN,
+                    StarweaverCelestial.MOON,
+                ),
+                StarweaverCelestial.STAR,
+            )
+            state.tryCast(StarweaverSlot.Q)
+            state.tryCast(StarweaverSlot.W)
+            state.tryCast(StarweaverSlot.E)
+            repeat(StarweaverBalance.BASE_COOLDOWN_TICKS) { state.tick() }
+            state.tryCast(StarweaverSlot.Q)
+            state.tryCast(StarweaverSlot.W)
+            repeat(StarweaverBalance.RELOAD_TICKS) { state.tick() }
+
+            val reloaded = state.snapshot()
+            assertNotEquals(reloaded.stored, reloaded.current, "reload cycle seed=$seed")
+            assertEquals(5, reloaded.queue.size)
+            StarweaverCelestial.entries.forEach { celestial ->
+                assertEquals(2, (reloaded.queue + reloaded.stored).count { it == celestial })
+            }
         }
     }
 
@@ -166,6 +202,7 @@ class StarweaverStateTest {
         assertFalse(state.isReloading)
         assertEquals(5, state.snapshot().queue.size)
         assertEquals(storedBeforeReload, state.snapshot().stored)
+        assertNotEquals(storedBeforeReload, state.snapshot().current)
         StarweaverCelestial.entries.forEach { celestial ->
             assertEquals(2, (state.snapshot().queue + state.snapshot().stored).count { it == celestial })
         }

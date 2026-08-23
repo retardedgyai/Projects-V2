@@ -17,6 +17,8 @@ import dev.projects.protocol.ProtocolHello
 import dev.projects.protocol.ProtocolHelloAck
 import dev.projects.protocol.ProtocolVersion
 import dev.projects.protocol.SlashEditorParameters
+import dev.projects.protocol.StarweaverHudCelestial
+import dev.projects.protocol.StarweaverHudSnapshot
 import dev.projects.protocol.VfxEditorNotice
 import dev.projects.protocol.VfxEditorOpen
 import dev.projects.protocol.VfxSlashDraft
@@ -203,31 +205,22 @@ fun main() {
         lastSentCooldowns[player.uuid] = cooldowns
     }
 
-    fun sendStarweaverActionBar(player: net.minestom.server.entity.Player) {
+    fun sendStarweaverHudSnapshot(player: net.minestom.server.entity.Player) {
         val state = starweaverStates[player.uuid] ?: return
         val snapshot = state.rotation.snapshot()
-        if (snapshot.reloadTicksRemaining > 0) {
-            val seconds = String.format(Locale.ROOT, "%.1f", snapshot.reloadTicksRemaining / 20.0)
-            player.sendActionBar(Component.text("Stargazing... ${seconds}s | Stored: ${snapshot.stored.symbol}"))
-            return
-        }
-        val queueText = buildString {
-            val conjunctionSlot = snapshot.conjunctionSlot
-            if (conjunctionSlot != null) {
-                append("[")
-                append(snapshot.queue.take(2).joinToString(" ") { it.symbol })
-                append("]")
-                snapshot.queue.drop(2).forEach { append(" ").append(it.symbol) }
-            } else {
-                append(snapshot.queue.joinToString(" ") { it.symbol })
-            }
-        }
-        val cooldownText = StarweaverSlot.entries.joinToString(" ") { slot ->
-            val remaining = snapshot.cooldowns.getValue(slot)
-            "${slot.name}:${if (remaining == 0) "ready" else String.format(Locale.ROOT, "%.1f", remaining / 20.0)}"
-        }
-        player.sendActionBar(
-            Component.text("$queueText | Stored: ${snapshot.stored.symbol} | $cooldownText"),
+        val selected = selectedClasses[player.uuid] == PlayableClass.STARWEAVER
+        player.sendPluginMessage(
+            PROJECTS_CHANNEL,
+            ProtocolCodec.encode(
+                StarweaverHudSnapshot(
+                    selected = selected,
+                    queue = if (selected) snapshot.queue.map(StarweaverCelestial::toHudCelestial) else emptyList(),
+                    stored = snapshot.stored.toHudCelestial(),
+                    conjunctionAvailable = selected && snapshot.conjunctionSlot != null,
+                    conjunctionUsed = selected && snapshot.conjunctionUsed,
+                    reloadTicksRemaining = if (selected) snapshot.reloadTicksRemaining else 0,
+                ),
+            ),
         )
     }
 
@@ -357,11 +350,11 @@ fun main() {
         player.setVelocity(Vec.ZERO)
         if (selected == PlayableClass.STARWEAVER) {
             player.sendMessage(Component.text("Class selected: Starweaver (Q/W/E/R slots)"))
-            sendStarweaverActionBar(player)
         } else {
             player.sendActionBar(Component.empty())
             player.sendMessage(Component.text("Class selected: Twin Blades"))
         }
+        sendStarweaverHudSnapshot(player)
     }
 
     fun handleStarweaverState(sender: CommandSender) {
@@ -370,7 +363,7 @@ fun main() {
             player.sendMessage(Component.text("Select Starweaver first with /class starweaver"))
             return
         }
-        sendStarweaverActionBar(player)
+        sendStarweaverHudSnapshot(player)
     }
 
     val queueArguments = (1..6).map { ArgumentType.Word("mark$it") }
@@ -399,7 +392,7 @@ fun main() {
             player.sendMessage(Component.text(error.message ?: "Invalid Starweaver rotation"))
             return
         }
-        sendStarweaverActionBar(player)
+        sendStarweaverHudSnapshot(player)
         player.sendMessage(Component.text("Starweaver rotation fixed for testing"))
     }
 
@@ -921,7 +914,7 @@ fun main() {
 
         applyStarweaverMovementSpeed(player, state.rotation.movementSpeedBonus)
         updateStarweaverShields()
-        sendStarweaverActionBar(player)
+        sendStarweaverHudSnapshot(player)
 
         val velocityWasApplied = dodgeVelocityActive[player.uuid] == true
         val movement = dodge.tick(
@@ -1017,7 +1010,7 @@ fun main() {
                 }
             }
         }
-        sendStarweaverActionBar(player)
+        sendStarweaverHudSnapshot(player)
     }
 
     events.addListener(AsyncPlayerConfigurationEvent::class.java) { event ->
@@ -1044,9 +1037,7 @@ fun main() {
         }
         resourceSyncTicks[event.player.uuid] = 0
         sendResourceSnapshot(event.player)
-        if (selectedClasses[event.player.uuid] == PlayableClass.STARWEAVER) {
-            sendStarweaverActionBar(event.player)
-        }
+        sendStarweaverHudSnapshot(event.player)
         updateBossBar()
         event.player.showBossBar(bossBar)
         if (event.isFirstSpawn) {
@@ -1599,6 +1590,12 @@ fun main() {
 
     server.start(SERVER_ADDRESS, SERVER_PORT)
     println("ProjectS Minestom server listening on $SERVER_ADDRESS:$SERVER_PORT")
+}
+
+private fun StarweaverCelestial.toHudCelestial(): StarweaverHudCelestial = when (this) {
+    StarweaverCelestial.SUN -> StarweaverHudCelestial.SUN
+    StarweaverCelestial.MOON -> StarweaverHudCelestial.MOON
+    StarweaverCelestial.STAR -> StarweaverHudCelestial.STAR
 }
 
 private fun publishCombatEvents(player: net.minestom.server.entity.Player, events: List<CombatEvent>) {

@@ -108,9 +108,9 @@ class StarweaverRotationState(
         queue.clear()
         val marks = StarweaverCelestial.entries.flatMap { celestial ->
             List(StarweaverBalance.MARKS_PER_CELESTIAL) { celestial }
-        }.shuffled(random)
-        queue.addAll(marks.take(StarweaverBalance.QUEUE_SIZE))
-        stored = requireNotNull(marks.getOrNull(StarweaverBalance.QUEUE_SIZE))
+        }.shuffled(random).toMutableList()
+        stored = requireNotNull(marks.removeAt(marks.lastIndex))
+        queue.addAll(queueForCycle(marks, stored))
         reloadTicksRemainingValue = 0
         conjunctionUsedValue = false
         cooldowns.keys.forEach { cooldowns[it] = 0 }
@@ -191,9 +191,31 @@ class StarweaverRotationState(
         }.toMutableList()
         check(marks.remove(stored)) { "Stored Starweaver mark was not present in refill pool" }
         queue.clear()
-        queue.addAll(marks.shuffled(random))
+        queue.addAll(queueForCycle(marks.shuffled(random), stored))
         check(queue.size == StarweaverBalance.QUEUE_SIZE)
         conjunctionUsedValue = false
+    }
+
+    /**
+     * Applies the cycle-start invariant with one finite swap after shuffling.
+     * The mark multiset is unchanged, so the two-of-each composition remains
+     * intact while a refill can never begin with the stored mark.
+     */
+    private fun queueForCycle(
+        marks: List<StarweaverCelestial>,
+        storedMark: StarweaverCelestial,
+    ): List<StarweaverCelestial> {
+        check(marks.size == StarweaverBalance.QUEUE_SIZE)
+        val queueMarks = marks.toMutableList()
+        if (queueMarks.firstOrNull() == storedMark) {
+            val swapIndex = queueMarks.indexOfFirst { it != storedMark }
+            check(swapIndex > 0) { "A Starweaver cycle needs a mark different from stored" }
+            val replacement = queueMarks[swapIndex]
+            queueMarks[swapIndex] = queueMarks[0]
+            queueMarks[0] = replacement
+        }
+        check(queueMarks.firstOrNull() != storedMark)
+        return queueMarks
     }
 }
 

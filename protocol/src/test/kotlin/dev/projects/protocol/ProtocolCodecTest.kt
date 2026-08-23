@@ -160,6 +160,36 @@ class ProtocolCodecTest {
     }
 
     @Test
+    fun `starweaver HUD snapshot round trips authoritative celestial state`() {
+        assertRoundTrip(
+            StarweaverHudSnapshot(
+                selected = true,
+                queue = listOf(
+                    StarweaverHudCelestial.MOON,
+                    StarweaverHudCelestial.MOON,
+                    StarweaverHudCelestial.SUN,
+                    StarweaverHudCelestial.STAR,
+                    StarweaverHudCelestial.SUN,
+                ),
+                stored = StarweaverHudCelestial.STAR,
+                conjunctionAvailable = true,
+                conjunctionUsed = false,
+                reloadTicksRemaining = 0,
+            ),
+        )
+        assertRoundTrip(
+            StarweaverHudSnapshot(
+                selected = false,
+                queue = emptyList(),
+                stored = StarweaverHudCelestial.SUN,
+                conjunctionAvailable = false,
+                conjunctionUsed = false,
+                reloadTicksRemaining = 0,
+            ),
+        )
+    }
+
+    @Test
     fun `malformed resource snapshot fails closed`() {
         val malformed = ProtocolCodec.encode(ClassResourceSnapshot(75, 100, 20, 80, 50, 100, 40, 60)).copyOf().also { bytes ->
             java.nio.ByteBuffer.wrap(bytes, 25, Int.SIZE_BYTES).putInt(61)

@@ -19,6 +19,7 @@ import dev.projects.protocol.ProtocolHello
 import dev.projects.protocol.ProtocolHelloAck
 import dev.projects.protocol.ProtocolVersion
 import dev.projects.protocol.SlashEditorParameters
+import dev.projects.protocol.StarweaverHudSnapshot
 import dev.projects.protocol.VfxEditorNotice
 import dev.projects.protocol.VfxEditorOpen
 import dev.projects.protocol.VfxSlashDraft
@@ -72,6 +73,7 @@ object ProjectSClient : ClientModInitializer {
     private var skill2CooldownMaxTicks = 100
     private var skill3CooldownTicks = 0
     private var skill3CooldownMaxTicks = 60
+    private var starweaverHudSnapshot: StarweaverHudSnapshot? = null
     private var attackDebugShape: AttackDebugShape? = null
     private var attackDebugTicksRemaining = 0
     private var attackDebugEnabled = true
@@ -141,6 +143,9 @@ object ProjectSClient : ClientModInitializer {
                         skill3CooldownTicks = message.skill3CooldownTicks
                         skill3CooldownMaxTicks = message.skill3CooldownMaxTicks
                     }
+                    is StarweaverHudSnapshot -> context.client().execute {
+                        starweaverHudSnapshot = message
+                    }
                     is GroundTelegraphStart -> context.client().execute {
                         GroundTelegraphRenderer.start(message)
                     }
@@ -184,6 +189,11 @@ object ProjectSClient : ClientModInitializer {
             Identifier.fromNamespaceAndPath("projects", "class_resources"),
             ::renderResourceHud,
         )
+        HudElementRegistry.attachElementAfter(
+            VanillaHudElements.HOTBAR,
+            Identifier.fromNamespaceAndPath("projects", "starweaver_celestial"),
+            ::renderStarweaverHud,
+        )
         ClientTickEvents.END_CLIENT_TICK.register(::handleAttackInput)
     }
 
@@ -199,6 +209,7 @@ object ProjectSClient : ClientModInitializer {
             skill1CooldownTicks = 0
             skill2CooldownTicks = 0
             skill3CooldownTicks = 0
+            starweaverHudSnapshot = null
             attackDebugShape = null
             attackDebugTicksRemaining = 0
             slashDraftNames = emptyList()
@@ -285,6 +296,10 @@ object ProjectSClient : ClientModInitializer {
         drawResourceBar(context, "MANA $mana / $maxMana", mana, maxMana, x, y, barWidth, barHeight, 0xFF4C9BFF.toInt())
         renderSkillHud(context)
         renderHitMarker(context)
+    }
+
+    private fun renderStarweaverHud(context: GuiGraphicsExtractor, tickCounter: DeltaTracker) {
+        StarweaverCelestialHud.render(context, starweaverHudSnapshot)
     }
 
     private fun renderHitMarker(context: GuiGraphicsExtractor) {

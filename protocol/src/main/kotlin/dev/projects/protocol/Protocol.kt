@@ -12,7 +12,7 @@ import kotlin.math.sqrt
 const val PROJECTS_CHANNEL = "projects:protocol"
 
 object ProtocolVersion {
-    const val CURRENT = 10
+    const val CURRENT = 11
 
     fun requireCompatible(version: Int) {
         if (version != CURRENT) {
@@ -127,6 +127,41 @@ data class ClassResourceSnapshot(
         require(skill1CooldownTicks in 0..skill1CooldownMaxTicks) { "Skill1 cooldown is out of range" }
         require(skill2CooldownTicks in 0..skill2CooldownMaxTicks) { "Skill2 cooldown is out of range" }
         require(skill3CooldownTicks in 0..skill3CooldownMaxTicks) { "Skill3 cooldown is out of range" }
+    }
+}
+
+private object StarweaverHudLimits {
+    const val MAX_QUEUE_SIZE = 5
+    const val MAX_RELOAD_TICKS = 1200
+}
+
+enum class StarweaverHudCelestial {
+    SUN,
+    MOON,
+    STAR,
+}
+
+data class StarweaverHudSnapshot(
+    val selected: Boolean,
+    val queue: List<StarweaverHudCelestial>,
+    val stored: StarweaverHudCelestial,
+    val conjunctionAvailable: Boolean,
+    val conjunctionUsed: Boolean,
+    val reloadTicksRemaining: Int,
+) : ProtocolMessage {
+    init {
+        require(queue.size <= StarweaverHudLimits.MAX_QUEUE_SIZE) {
+            "Starweaver HUD queue is too large"
+        }
+        require(reloadTicksRemaining in 0..StarweaverHudLimits.MAX_RELOAD_TICKS) {
+            "Starweaver HUD reload ticks are out of range"
+        }
+        require(!(conjunctionAvailable && conjunctionUsed)) {
+            "Starweaver conjunction cannot be available after being used"
+        }
+        require(!conjunctionAvailable || (queue.size >= 2 && queue[0] == queue[1])) {
+            "Starweaver conjunction must match the first two queue marks"
+        }
     }
 }
 
@@ -383,6 +418,7 @@ object ProtocolCodec {
     private const val VFX_EDITOR_NOTICE = 27
     private const val VFX_SLASH_PREVIEW_CANCEL = 28
     private const val VFX_SLASH_APPLY_SKILL3 = 29
+    private const val STARWEAVER_HUD_SNAPSHOT = 30
 
     fun encode(message: ProtocolMessage): ByteArray {
         val output = ByteArrayOutputStream()
@@ -450,6 +486,16 @@ object ProtocolCodec {
                     data.writeInt(message.skill2CooldownMaxTicks)
                     data.writeInt(message.skill3CooldownTicks)
                     data.writeInt(message.skill3CooldownMaxTicks)
+                }
+                is StarweaverHudSnapshot -> {
+                    data.writeByte(STARWEAVER_HUD_SNAPSHOT)
+                    data.writeBoolean(message.selected)
+                    data.writeByte(message.queue.size)
+                    message.queue.forEach { data.writeByte(it.ordinal) }
+                    data.writeByte(message.stored.ordinal)
+                    data.writeBoolean(message.conjunctionAvailable)
+                    data.writeBoolean(message.conjunctionUsed)
+                    data.writeInt(message.reloadTicksRemaining)
                 }
                 is GroundTelegraphStart -> {
                     data.writeByte(GROUND_TELEGRAPH_START)
@@ -573,6 +619,29 @@ object ProtocolCodec {
                 input.readInt(),
                 input.readInt(),
             )
+            STARWEAVER_HUD_SNAPSHOT -> {
+                val selected = input.readBoolean()
+                val queueSize = input.readUnsignedByte()
+                require(queueSize <= StarweaverHudLimits.MAX_QUEUE_SIZE) {
+                    "Starweaver HUD queue is too large"
+                }
+                val queue = List(queueSize) {
+                    val markId = input.readUnsignedByte()
+                    StarweaverHudCelestial.entries.getOrNull(markId)
+                        ?: throw IllegalArgumentException("Unknown Starweaver HUD celestial: $markId")
+                }
+                val storedId = input.readUnsignedByte()
+                val stored = StarweaverHudCelestial.entries.getOrNull(storedId)
+                    ?: throw IllegalArgumentException("Unknown stored Starweaver HUD celestial: $storedId")
+                StarweaverHudSnapshot(
+                    selected = selected,
+                    queue = queue,
+                    stored = stored,
+                    conjunctionAvailable = input.readBoolean(),
+                    conjunctionUsed = input.readBoolean(),
+                    reloadTicksRemaining = input.readInt(),
+                )
+            }
             GROUND_TELEGRAPH_START -> GroundTelegraphStart.clamped(
                 telegraphId = input.readLong(),
                 centerX = input.readDouble(),
