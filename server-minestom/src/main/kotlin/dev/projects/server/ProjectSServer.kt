@@ -1764,9 +1764,10 @@ private fun showSkill3PulseVfx(
     } else {
         val choreography = skill3SlashPulseSpec(authored, pulseIndex)
         val origin = skill3SlashOrigin(player.position, direction, choreography.parameters)
+        val visualDirection = skill3SlashVisualDirection(direction)
         val sink = manager.sink(ParticleViewer(player.position, player), PlayerParticleSink(player), "skill3:slash")
         scheduler.start(
-            SlashEditorPreview.create(origin, direction, choreography.parameters, choreography.reverseDraw),
+            SlashEditorPreview.create(origin, visualDirection, choreography.parameters, choreography.reverseDraw),
             sink,
             id = "skill3:slash:${player.uuid}:$pulseIndex",
         )
@@ -1797,9 +1798,10 @@ private fun showSkill3FinisherVfx(
         )
     } else {
         val origin = skill3SlashOrigin(player.position, direction, authored)
+        val visualDirection = skill3SlashVisualDirection(direction)
         val sink = manager.sink(ParticleViewer(player.position, player), PlayerParticleSink(player), "skill3:finisher-slash")
         scheduler.start(
-            SlashEditorPreview.create(origin, direction, authored),
+            SlashEditorPreview.create(origin, visualDirection, authored),
             sink,
             id = "skill3:finisher-slash:${player.uuid}",
         )

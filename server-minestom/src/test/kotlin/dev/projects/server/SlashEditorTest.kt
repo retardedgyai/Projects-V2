@@ -187,6 +187,33 @@ class SlashEditorTest {
     }
 
     @Test
+    fun `skill3 slash visual direction follows horizontal yaw and softened pitch`() {
+        val forward = skill3SlashVisualDirection(Vec(0.0, 0.0, 1.0))
+        assertEquals(0.0, forward.x(), absoluteTolerance = 0.000001)
+        assertEquals(0.0, forward.y(), absoluteTolerance = 0.000001)
+        assertEquals(1.0, forward.z(), absoluteTolerance = 0.000001)
+        val right = skill3SlashVisualDirection(Vec(1.0, 0.0, 0.0))
+        assertEquals(1.0, right.x(), absoluteTolerance = 0.000001)
+        assertEquals(0.0, right.y(), absoluteTolerance = 0.000001)
+        assertEquals(0.0, right.z(), absoluteTolerance = 0.000001)
+
+        val diagonal = skill3SlashVisualDirection(Vec(0.0, 1.0, 1.0))
+        assertEquals(0.3826834323650898, diagonal.y(), absoluteTolerance = 0.000001)
+        assertEquals(0.9238795325112867, diagonal.z(), absoluteTolerance = 0.000001)
+    }
+
+    @Test
+    fun `skill3 slash visual pitch is clamped while origin keeps full 3d direction`() {
+        val direction = Vec(0.0, 10.0, 1.0)
+        val visual = skill3SlashVisualDirection(direction)
+        assertEquals(Math.sin(Math.toRadians(35.0)), visual.y(), absoluteTolerance = 0.000001)
+        assertEquals(Math.cos(Math.toRadians(35.0)), visual.z(), absoluteTolerance = 0.000001)
+
+        val origin = skill3SlashOrigin(Pos.ZERO, direction, SlashEditorParameters(forwardOffset = 2.0))
+        assertEquals(1.2 + 20.0 / Math.sqrt(101.0), origin.y(), absoluteTolerance = 0.000001)
+    }
+
+    @Test
     fun `zero authored yaw follows locked direction while yaw remains local`() {
         val zeroYaw = SlashEditorParameters(yaw = 0.0, tilt = 0.0, arcSpan = 0.0, durationTicks = 1)
         val localYaw = SlashEditorParameters(yaw = 35.0, tilt = 0.0, arcSpan = 0.0, durationTicks = 1)
