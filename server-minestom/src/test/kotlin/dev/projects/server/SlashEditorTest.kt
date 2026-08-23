@@ -158,6 +158,35 @@ class SlashEditorTest {
     }
 
     @Test
+    fun `skill3 slash origin follows full 3d direction`() {
+        val parameters = SlashEditorParameters(originY = 1.25, forwardOffset = 4.0)
+        val position = Pos(2.0, 10.0, -3.0)
+
+        val diagonal = skill3SlashOrigin(position, Vec(1.0, 2.0, 2.0), parameters)
+        assertEquals(2.0 + 4.0 / 3.0, diagonal.x(), absoluteTolerance = 0.000001)
+        assertEquals(10.0 + 1.25 + 8.0 / 3.0, diagonal.y(), absoluteTolerance = 0.000001)
+        assertEquals(-3.0 + 8.0 / 3.0, diagonal.z(), absoluteTolerance = 0.000001)
+
+        val upward = skill3SlashOrigin(position, Vec(0.0, 1.0, 0.0), parameters)
+        assertEquals(position.x(), upward.x(), absoluteTolerance = 0.000001)
+        assertEquals(position.y() + 1.25 + 4.0, upward.y(), absoluteTolerance = 0.000001)
+        assertEquals(position.z(), upward.z(), absoluteTolerance = 0.000001)
+
+        val downward = skill3SlashOrigin(position, Vec(0.0, -1.0, 0.0), parameters)
+        assertEquals(position.y() + 1.25 - 4.0, downward.y(), absoluteTolerance = 0.000001)
+    }
+
+    @Test
+    fun `skill3 slash origin uses positive z fallback for degenerate direction`() {
+        val parameters = SlashEditorParameters(originY = 0.5, forwardOffset = 2.0)
+        val origin = skill3SlashOrigin(Pos.ZERO, Vec.ZERO, parameters)
+
+        assertEquals(0.0, origin.x(), absoluteTolerance = 0.000001)
+        assertEquals(0.5, origin.y(), absoluteTolerance = 0.000001)
+        assertEquals(2.0, origin.z(), absoluteTolerance = 0.000001)
+    }
+
+    @Test
     fun `zero authored yaw follows locked direction while yaw remains local`() {
         val zeroYaw = SlashEditorParameters(yaw = 0.0, tilt = 0.0, arcSpan = 0.0, durationTicks = 1)
         val localYaw = SlashEditorParameters(yaw = 35.0, tilt = 0.0, arcSpan = 0.0, durationTicks = 1)

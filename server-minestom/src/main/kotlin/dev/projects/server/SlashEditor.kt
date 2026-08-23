@@ -198,3 +198,17 @@ internal fun slashOrigin(position: Point, direction: Vec, parameters: SlashEdito
         forward.z() * parameters.forwardOffset,
     )
 }
+
+internal fun skill3SlashOrigin(position: Point, direction: Vec, parameters: SlashEditorParameters): Point {
+    val length = direction.length()
+    val forward = if (length.isFinite() && length > 1.0e-9) {
+        direction.mul(1.0 / length)
+    } else {
+        Vec(0.0, 0.0, 1.0)
+    }
+    return position.add(
+        forward.x() * parameters.forwardOffset,
+        parameters.originY + forward.y() * parameters.forwardOffset,
+        forward.z() * parameters.forwardOffset,
+    )
+}
