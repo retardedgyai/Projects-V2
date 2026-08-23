@@ -1,12 +1,9 @@
 package dev.projects.server
 
 import dev.projects.protocol.SlashEditorParameters
-import dev.projects.server.particle.ParticleCircle
 import dev.projects.server.particle.ParticleEffect
 import dev.projects.server.particle.ParticleGeometry
-import dev.projects.server.particle.ParticleParallel
 import dev.projects.server.particle.ParticleStyle
-import dev.projects.server.particle.basis
 import dev.projects.server.particle.dust
 import net.minestom.server.coordinate.Point
 import net.minestom.server.coordinate.Vec
@@ -107,7 +104,6 @@ class SlashDraftStore(private val file: Path) {
 
 object SlashEditorPreview {
     fun create(origin: Point, direction: Vec, parameters: SlashEditorParameters): ParticleEffect {
-        val (forward, right, up) = basis(direction)
         val radius = (parameters.length * (0.72 + parameters.curvature * 0.07)).coerceIn(0.5, 12.0)
         val lanes = when {
             parameters.width < 0.16 -> 1
@@ -133,19 +129,6 @@ object SlashEditorPreview {
                 count = if (ring == 0) 2 else 1,
             )
         }
-        val target = origin.add(
-            forward.x() * parameters.targetDistance,
-            forward.y() * parameters.targetDistance,
-            forward.z() * parameters.targetDistance,
-        )
-        val targetMarker = ParticleCircle(
-            center = target,
-            radius = 0.16,
-            axis1 = right,
-            axis2 = up,
-            countPerMeter = 18.0,
-            style = ParticleStyle(dust(parameters.color, (parameters.particleSize * 0.7).toFloat())),
-        )
-        return ParticleParallel.of(arc, targetMarker)
+        return arc
     }
 }

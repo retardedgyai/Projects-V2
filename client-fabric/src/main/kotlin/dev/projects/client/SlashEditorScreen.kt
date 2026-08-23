@@ -16,6 +16,15 @@ class SlashEditorScreen(
     initialParameters: SlashEditorParameters,
     private val sendMessage: (Any) -> Unit,
 ) : Screen(Component.literal("斬撃エディター")) {
+    private companion object {
+        const val MIN_PARTICLE_SIZE = 0.05
+        const val MAX_PARTICLE_SIZE = 2.0
+        const val MIN_SPACING = 0.05
+        const val MAX_SPACING = 2.0
+        const val BASIC_ROW_SPACING = 19
+        const val BASIC_START_Y = 30
+    }
+
     private var parameters = initialParameters
     private var autoPreview = true
     private var previewDebounce = 0
@@ -42,18 +51,20 @@ class SlashEditorScreen(
         BasicControl("curvature", "曲がり", "直線から強いカーブまで", 0.0, 4.0),
         BasicControl("arcSpan", "弧の広さ", "斬撃が描く円弧の大きさ", 10.0, 350.0, 0),
         BasicControl("tilt", "傾き", "斬撃面の角度", -90.0, 90.0, 0),
+        BasicControl("yaw", "向き", "斬撃全体を左右へ回転", -180.0, 180.0, 0),
         BasicControl("originY", "開始高さ", "プレイヤー基準の発生高さ", -4.0, 8.0),
         BasicControl("width", "太さ", "並行するSlashライン間隔", 0.0, 1.5),
+        BasicControl("particleSize", "粒の大きさ", "1粒の見た目の大きさ", MIN_PARTICLE_SIZE, MAX_PARTICLE_SIZE, 2),
+        BasicControl("density", "密度", "斬撃ライン上の粒の詰まり具合", MIN_SPACING, MAX_SPACING, 2),
+        BasicControl("forwardOffset", "前後位置", "斬撃全体をプレイヤーから前後に移動", 0.0, 8.0, 2),
     )
 
     private val detailNames = listOf(
         "forwardOffset" to "前方オフセット",
-        "yaw" to "水平回転",
         "particleSize" to "粒子サイズ",
         "spacing" to "粒子間隔",
         "durationTicks" to "再生時間(tick)",
         "color" to "色 (#RRGGBB)",
-        "targetDistance" to "対象距離",
     )
 
     override fun isPauseScreen(): Boolean = false
@@ -64,7 +75,7 @@ class SlashEditorScreen(
     override fun init() {
         val panelX = width - 340
         basicControls.forEachIndexed { index, control ->
-            val y = 38 + index * 35
+            val y = BASIC_START_Y + index * BASIC_ROW_SPACING
             val slider = ValueSlider(
                 panelX + 112, y, 140, control, valueFor(control.key),
             ) { value -> updateBasicValue(control.key, value) }
@@ -115,9 +126,22 @@ class SlashEditorScreen(
         graphics.text(font, "基本" + if (showDetails) " / 詳細" else "", panelX + 10, 22, 0xFF9BB4CE.toInt(), false)
         if (!showDetails) {
             basicControls.forEachIndexed { index, control ->
-                val y = 39 + index * 35
+                val y = BASIC_START_Y + index * BASIC_ROW_SPACING + 5
                 graphics.text(font, control.label, panelX + 10, y, 0xFFD5E2F0.toInt(), false)
-                graphics.text(font, control.description, panelX + 10, y + 20, 0xFF8EA9C5.toInt(), false)
+            }
+            val hoveredIndex = basicControls.indices.firstOrNull { index ->
+                val y = BASIC_START_Y + index * BASIC_ROW_SPACING
+                mouseX in (panelX + 112)..(panelX + 252) && mouseY in y..(y + 20)
+            }
+            if (hoveredIndex != null) {
+                graphics.text(
+                    font,
+                    basicControls[hoveredIndex].description,
+                    panelX + 10,
+                    BASIC_START_Y + basicControls.size * BASIC_ROW_SPACING + 2,
+                    0xFF8EA9C5.toInt(),
+                    false,
+                )
             }
         } else {
             detailNames.forEachIndexed { index, (_, label) ->
@@ -151,6 +175,8 @@ class SlashEditorScreen(
 
     private fun updateBasicValue(key: String, value: Double) {
         parameters = parameters.withValue(key, value)
+        fields[key]?.setValue(formatValue(key, parameters))
+        if (key == "density") fields["spacing"]?.setValue(formatValue("spacing", parameters))
         previewDebounce = 5
     }
 
@@ -186,7 +212,8 @@ class SlashEditorScreen(
         "originY" -> parameters.originY; "forwardOffset" -> parameters.forwardOffset; "length" -> parameters.length
         "arcSpan" -> parameters.arcSpan; "curvature" -> parameters.curvature; "tilt" -> parameters.tilt
         "yaw" -> parameters.yaw; "width" -> parameters.width; "particleSize" -> parameters.particleSize
-        "spacing" -> parameters.spacing; "durationTicks" -> parameters.durationTicks.toDouble(); "targetDistance" -> parameters.targetDistance
+        "spacing" -> parameters.spacing; "density" -> densityForSpacing(parameters.spacing)
+        "durationTicks" -> parameters.durationTicks.toDouble(); "targetDistance" -> parameters.targetDistance
         else -> 0.0
     }
 
@@ -200,12 +227,21 @@ class SlashEditorScreen(
     private fun detailsLabel() = if (showDetails) "詳細を閉じる" else "詳細を表示"
 
     private fun SlashEditorParameters.withValue(key: String, value: Double) = SlashEditorParameters.clamped(
-        originY = if (key == "originY") value else originY, forwardOffset = forwardOffset,
+        originY = if (key == "originY") value else originY,
+        forwardOffset = if (key == "forwardOffset") value else forwardOffset,
         length = if (key == "length") value else length, arcSpan = if (key == "arcSpan") value else arcSpan,
         curvature = if (key == "curvature") value else curvature, tilt = if (key == "tilt") value else tilt,
-        yaw = yaw, width = if (key == "width") value else width, particleSize = particleSize, spacing = spacing,
+        yaw = if (key == "yaw") value else yaw, width = if (key == "width") value else width,
+        particleSize = if (key == "particleSize") value else particleSize,
+        spacing = if (key == "density") spacingForDensity(value) else spacing,
         durationTicks = durationTicks, color = color, targetDistance = targetDistance,
     )
+
+    private fun densityForSpacing(spacing: Double): Double =
+        MAX_SPACING + MIN_SPACING - spacing
+
+    private fun spacingForDensity(density: Double): Double =
+        MAX_SPACING + MIN_SPACING - density
 
     private class ValueSlider(
         x: Int, y: Int, width: Int, private val control: BasicControl, value: Double,
