@@ -10,10 +10,6 @@ import net.minestom.server.coordinate.Point
 import net.minestom.server.coordinate.Vec
 import java.nio.file.Files
 import java.nio.file.Path
-import kotlin.math.asin
-import kotlin.math.atan2
-import kotlin.math.cos
-import kotlin.math.sin
 
 private const val DRAFT_SCHEMA_VERSION = 2
 private const val MAX_DRAFTS = 16
@@ -221,10 +217,5 @@ internal fun skill3SlashVisualDirection(direction: Vec): Vec {
     val length = direction.length()
     if (!length.isFinite() || length <= 1.0e-9) return Vec(0.0, 0.0, 1.0)
 
-    val normalized = direction.mul(1.0 / length)
-    val yaw = atan2(normalized.x(), normalized.z())
-    val pitch = (asin(normalized.y().coerceIn(-1.0, 1.0)) * 0.5)
-        .coerceIn(Math.toRadians(-35.0), Math.toRadians(35.0))
-    val horizontal = cos(pitch)
-    return Vec(sin(yaw) * horizontal, sin(pitch), cos(yaw) * horizontal)
+    return direction.mul(1.0 / length)
 }

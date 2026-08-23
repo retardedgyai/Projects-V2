@@ -187,7 +187,7 @@ class SlashEditorTest {
     }
 
     @Test
-    fun `skill3 slash visual direction follows horizontal yaw and softened pitch`() {
+    fun `skill3 slash visual direction follows full 3d direction`() {
         val forward = skill3SlashVisualDirection(Vec(0.0, 0.0, 1.0))
         assertEquals(0.0, forward.x(), absoluteTolerance = 0.000001)
         assertEquals(0.0, forward.y(), absoluteTolerance = 0.000001)
@@ -198,19 +198,38 @@ class SlashEditorTest {
         assertEquals(0.0, right.z(), absoluteTolerance = 0.000001)
 
         val diagonal = skill3SlashVisualDirection(Vec(0.0, 1.0, 1.0))
-        assertEquals(0.3826834323650898, diagonal.y(), absoluteTolerance = 0.000001)
-        assertEquals(0.9238795325112867, diagonal.z(), absoluteTolerance = 0.000001)
+        assertEquals(1.0 / Math.sqrt(2.0), diagonal.y(), absoluteTolerance = 0.000001)
+        assertEquals(1.0 / Math.sqrt(2.0), diagonal.z(), absoluteTolerance = 0.000001)
     }
 
     @Test
-    fun `skill3 slash visual pitch is clamped while origin keeps full 3d direction`() {
+    fun `skill3 slash visual direction preserves vertical pitch while origin keeps full 3d direction`() {
+        val upward = skill3SlashVisualDirection(Vec(0.0, 1.0, 0.0))
+        assertEquals(0.0, upward.x(), absoluteTolerance = 0.000001)
+        assertEquals(1.0, upward.y(), absoluteTolerance = 0.000001)
+        assertEquals(0.0, upward.z(), absoluteTolerance = 0.000001)
+
+        val downward = skill3SlashVisualDirection(Vec(0.0, -1.0, 0.0))
+        assertEquals(0.0, downward.x(), absoluteTolerance = 0.000001)
+        assertEquals(-1.0, downward.y(), absoluteTolerance = 0.000001)
+        assertEquals(0.0, downward.z(), absoluteTolerance = 0.000001)
+
         val direction = Vec(0.0, 10.0, 1.0)
         val visual = skill3SlashVisualDirection(direction)
-        assertEquals(Math.sin(Math.toRadians(35.0)), visual.y(), absoluteTolerance = 0.000001)
-        assertEquals(Math.cos(Math.toRadians(35.0)), visual.z(), absoluteTolerance = 0.000001)
+        assertEquals(10.0 / Math.sqrt(101.0), visual.y(), absoluteTolerance = 0.000001)
+        assertEquals(1.0 / Math.sqrt(101.0), visual.z(), absoluteTolerance = 0.000001)
 
         val origin = skill3SlashOrigin(Pos.ZERO, direction, SlashEditorParameters(forwardOffset = 2.0))
         assertEquals(1.2 + 20.0 / Math.sqrt(101.0), origin.y(), absoluteTolerance = 0.000001)
+    }
+
+    @Test
+    fun `skill3 slash visual direction uses positive z fallback for invalid direction`() {
+        val visual = skill3SlashVisualDirection(Vec(Double.NaN, 0.0, 1.0))
+
+        assertEquals(0.0, visual.x(), absoluteTolerance = 0.000001)
+        assertEquals(0.0, visual.y(), absoluteTolerance = 0.000001)
+        assertEquals(1.0, visual.z(), absoluteTolerance = 0.000001)
     }
 
     @Test
