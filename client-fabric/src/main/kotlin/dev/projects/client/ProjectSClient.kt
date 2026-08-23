@@ -453,7 +453,7 @@ object ProjectSClient : ClientModInitializer {
         bounds: HudRect,
         uRight: Float = 1f,
     ) {
-        context.blit(texture.id, bounds.x, bounds.y, bounds.width, bounds.height, 0f, 0f, uRight, 1f)
+        context.blit(texture.id, bounds.x, bounds.y, bounds.right, bounds.bottom, 0f, uRight, 0f, 1f)
     }
 
     private fun renderAttackDebugShape(client: Minecraft) {
