@@ -11,6 +11,7 @@ import net.minecraft.client.gui.components.Button
 import net.minecraft.client.gui.components.EditBox
 import net.minecraft.client.gui.screens.Screen
 import net.minecraft.network.chat.Component
+import kotlin.math.roundToInt
 
 class SlashEditorScreen(
     initialParameters: SlashEditorParameters,
@@ -23,7 +24,7 @@ class SlashEditorScreen(
         const val MAX_SPACING = 2.0
         const val MIN_LANE_SPACING = 0.05
         const val MAX_LANE_SPACING = 2.0
-        const val BASIC_ROW_SPACING = 19
+        const val BASIC_ROW_SPACING = 16
         const val BASIC_START_Y = 30
     }
 
@@ -194,7 +195,7 @@ class SlashEditorScreen(
         SlashEditorParameters.clamped(
             originY = valueFor("originY"), forwardOffset = number("forwardOffset"), length = valueFor("length"),
             arcSpan = valueFor("arcSpan"), curvature = valueFor("curvature"), tilt = valueFor("tilt"), yaw = number("yaw"),
-            width = valueFor("width"), laneCount = valueFor("laneCount").toInt(), laneSpacing = valueFor("laneSpacing"),
+            width = valueFor("width"), laneCount = valueFor("laneCount").roundToInt(), laneSpacing = valueFor("laneSpacing"),
             particleSize = number("particleSize"), spacing = number("spacing"),
             durationTicks = number("durationTicks").toInt(), color = color, targetDistance = number("targetDistance"),
         )
@@ -238,7 +239,7 @@ class SlashEditorScreen(
         length = if (key == "length") value else length, arcSpan = if (key == "arcSpan") value else arcSpan,
         curvature = if (key == "curvature") value else curvature, tilt = if (key == "tilt") value else tilt,
         yaw = if (key == "yaw") value else yaw, width = if (key == "width") value else width,
-        laneCount = if (key == "laneCount") value.toInt() else laneCount,
+        laneCount = if (key == "laneCount") value.roundToInt() else laneCount,
         laneSpacing = if (key == "laneSpacing") value else laneSpacing,
         particleSize = if (key == "particleSize") value else particleSize,
         spacing = if (key == "density") spacingForDensity(value) else spacing,
@@ -260,8 +261,17 @@ class SlashEditorScreen(
     ) {
         private var current = value
         override fun updateMessage() { message = Component.literal("${control.label}: ${format(current, control.decimals)}") }
-        override fun applyValue() { current = control.min + value * (control.max - control.min); changed(current); updateMessage() }
-        fun setParameterValue(value: Double) { current = value; setValue(normalized(value)); updateMessage() }
+        override fun applyValue() {
+            val raw = control.min + value * (control.max - control.min)
+            current = if (control.key == "laneCount") raw.roundToInt().toDouble() else raw
+            changed(current)
+            updateMessage()
+        }
+        fun setParameterValue(value: Double) {
+            current = if (control.key == "laneCount") value.roundToInt().toDouble() else value
+            setValue(normalized(current))
+            updateMessage()
+        }
         companion object {
             fun normalized(value: Double, min: Double = 0.0, max: Double = 1.0) = ((value - min) / (max - min)).coerceIn(0.0, 1.0)
             private fun format(value: Double, decimals: Int) = "% .${decimals}f".format(value).trim()
