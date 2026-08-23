@@ -21,6 +21,8 @@ class SlashEditorScreen(
         const val MAX_PARTICLE_SIZE = 2.0
         const val MIN_SPACING = 0.05
         const val MAX_SPACING = 2.0
+        const val BASIC_ROW_SPACING = 22
+        const val BASIC_START_Y = 34
     }
 
     private var parameters = initialParameters
@@ -63,7 +65,6 @@ class SlashEditorScreen(
         "spacing" to "粒子間隔",
         "durationTicks" to "再生時間(tick)",
         "color" to "色 (#RRGGBB)",
-        "targetDistance" to "対象距離",
     )
 
     override fun isPauseScreen(): Boolean = false
@@ -74,7 +75,7 @@ class SlashEditorScreen(
     override fun init() {
         val panelX = width - 340
         basicControls.forEachIndexed { index, control ->
-            val y = 38 + index * 35
+            val y = BASIC_START_Y + index * BASIC_ROW_SPACING
             val slider = ValueSlider(
                 panelX + 112, y, 140, control, valueFor(control.key),
             ) { value -> updateBasicValue(control.key, value) }
@@ -125,9 +126,15 @@ class SlashEditorScreen(
         graphics.text(font, "基本" + if (showDetails) " / 詳細" else "", panelX + 10, 22, 0xFF9BB4CE.toInt(), false)
         if (!showDetails) {
             basicControls.forEachIndexed { index, control ->
-                val y = 39 + index * 35
+                val y = BASIC_START_Y + index * BASIC_ROW_SPACING + 5
                 graphics.text(font, control.label, panelX + 10, y, 0xFFD5E2F0.toInt(), false)
-                graphics.text(font, control.description, panelX + 10, y + 20, 0xFF8EA9C5.toInt(), false)
+            }
+            val hoveredIndex = basicControls.indices.firstOrNull { index ->
+                val y = BASIC_START_Y + index * BASIC_ROW_SPACING
+                mouseX in (panelX + 112)..(panelX + 252) && mouseY in y..(y + 20)
+            }
+            if (hoveredIndex != null) {
+                graphics.text(font, basicControls[hoveredIndex].description, panelX + 10, 232, 0xFF8EA9C5.toInt(), false)
             }
         } else {
             detailNames.forEachIndexed { index, (_, label) ->
