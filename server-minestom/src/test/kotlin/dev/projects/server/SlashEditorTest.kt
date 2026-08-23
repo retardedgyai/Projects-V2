@@ -2,6 +2,7 @@ package dev.projects.server
 
 import dev.projects.protocol.SlashEditorParameters
 import dev.projects.server.particle.RecordingParticleSink
+import net.minestom.server.coordinate.Point
 import net.minestom.server.coordinate.Pos
 import net.minestom.server.coordinate.Vec
 import net.minestom.server.particle.Particle
@@ -117,6 +118,69 @@ class SlashEditorTest {
         assertEquals(10.0, origin.x())
         assertEquals(22.4, origin.y())
         assertEquals(33.6, origin.z())
+    }
+
+    @Test
+    fun `slash origin and geometry rotate with locked skill3 direction`() {
+        val parameters = SlashEditorParameters(
+            originY = 1.2,
+            forwardOffset = 2.5,
+            arcSpan = 96.0,
+            tilt = 11.0,
+            yaw = 23.0,
+            durationTicks = 1,
+        )
+        val position = Pos(4.0, 8.0, -3.0)
+        val forward = Vec(0.0, 0.0, 1.0)
+        val right = Vec(1.0, 0.0, 0.0)
+        val forwardOrigin = slashOrigin(position, forward, parameters)
+        val rightOrigin = slashOrigin(position, right, parameters)
+
+        assertEquals(position.x(), forwardOrigin.x(), absoluteTolerance = 0.000001)
+        assertEquals(position.z() + parameters.forwardOffset, forwardOrigin.z(), absoluteTolerance = 0.000001)
+        assertEquals(position.x() + parameters.forwardOffset, rightOrigin.x(), absoluteTolerance = 0.000001)
+        assertEquals(position.z(), rightOrigin.z(), absoluteTolerance = 0.000001)
+
+        fun emitted(direction: Vec, origin: Point): List<Point> {
+            val sink = RecordingParticleSink()
+            SlashEditorPreview.create(origin, direction, parameters).emit(0, sink)
+            return sink.spawns.map { it.position }
+        }
+
+        val forwardPositions = emitted(forward, forwardOrigin)
+        val rightPositions = emitted(right, rightOrigin)
+        assertEquals(forwardPositions.size, rightPositions.size)
+        forwardPositions.zip(rightPositions).forEach { (zFacing, xFacing) ->
+            assertEquals(zFacing.z() - forwardOrigin.z() + rightOrigin.x(), xFacing.x(), absoluteTolerance = 0.000001)
+            assertEquals(zFacing.y(), xFacing.y(), absoluteTolerance = 0.000001)
+            assertEquals(-(zFacing.x() - forwardOrigin.x()) + rightOrigin.z(), xFacing.z(), absoluteTolerance = 0.000001)
+        }
+    }
+
+    @Test
+    fun `zero authored yaw follows locked direction while yaw remains local`() {
+        val zeroYaw = SlashEditorParameters(yaw = 0.0, tilt = 0.0, arcSpan = 0.0, durationTicks = 1)
+        val localYaw = SlashEditorParameters(yaw = 35.0, tilt = 0.0, arcSpan = 0.0, durationTicks = 1)
+
+        fun firstOffset(direction: Vec, parameters: SlashEditorParameters): Vec {
+            val origin = slashOrigin(Pos.ZERO, direction, parameters)
+            val sink = RecordingParticleSink()
+            SlashEditorPreview.create(origin, direction, parameters).emit(0, sink)
+            val point = sink.spawns.first().position
+            return Vec(point.x() - origin.x(), point.y() - origin.y(), point.z() - origin.z())
+        }
+
+        val zeroZ = firstOffset(Vec(0.0, 0.0, 1.0), zeroYaw)
+        val zeroX = firstOffset(Vec(1.0, 0.0, 0.0), zeroYaw)
+        assertTrue(zeroZ.x() < 0.0)
+        assertEquals(zeroZ.z(), zeroX.x(), absoluteTolerance = 0.000001)
+        assertEquals(-zeroZ.x(), zeroX.z(), absoluteTolerance = 0.000001)
+
+        val localZ = firstOffset(Vec(0.0, 0.0, 1.0), localYaw)
+        val localX = firstOffset(Vec(1.0, 0.0, 0.0), localYaw)
+        assertEquals(localZ.z(), localX.x(), absoluteTolerance = 0.000001)
+        assertEquals(-localZ.x(), localX.z(), absoluteTolerance = 0.000001)
+        assertNotEquals(zeroZ, localZ)
     }
 
     @Test
