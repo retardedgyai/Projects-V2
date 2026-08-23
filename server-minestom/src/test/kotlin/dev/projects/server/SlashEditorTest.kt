@@ -26,6 +26,17 @@ class SlashEditorTest {
     }
 
     @Test
+    fun `legacy drafts load with safe lane defaults`() {
+        val file = Files.createTempFile("slash-editor-legacy", ".json")
+        Files.writeString(file, """
+            {"schemaVersion":1,"drafts":[{"name":"legacy","parameters":{"originY":1.2,"forwardOffset":1.7,"length":5.0,"arcSpan":160.0,"curvature":0.35,"tilt":12.0,"yaw":0.0,"width":0.8,"particleSize":0.28,"spacing":0.18,"durationTicks":8,"color":1190875,"targetDistance":5.0}}]}
+        """.trimIndent())
+        val loaded = SlashDraftStore(file).load("legacy")
+        assertEquals(1, loaded?.laneCount)
+        assertEquals(0.18, loaded?.laneSpacing)
+    }
+
+    @Test
     fun `draft store enforces the maximum number of drafts`() {
         val file = Files.createTempFile("slash-editor-test", ".json")
         val store = SlashDraftStore(file)
@@ -51,5 +62,16 @@ class SlashEditorTest {
             }
         }.toSet()
         assertEquals(setOf(color), dustColors)
+    }
+
+    @Test
+    fun `lane count is independent from thickness`() {
+        val oneLane = SlashEditorPreview.create(Pos.ZERO, Vec(0.0, 0.0, 1.0), SlashEditorParameters(laneCount = 1, width = 1.5))
+        val threeLanes = SlashEditorPreview.create(Pos.ZERO, Vec(0.0, 0.0, 1.0), SlashEditorParameters(laneCount = 3, laneSpacing = 0.5, width = 0.05))
+        val oneSink = RecordingParticleSink()
+        val threeSink = RecordingParticleSink()
+        oneLane.emit(0, oneSink)
+        threeLanes.emit(0, threeSink)
+        assertTrue(threeSink.spawns.size > oneSink.spawns.size)
     }
 }

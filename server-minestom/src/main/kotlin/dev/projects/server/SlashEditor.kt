@@ -10,7 +10,7 @@ import net.minestom.server.coordinate.Vec
 import java.nio.file.Files
 import java.nio.file.Path
 
-private const val DRAFT_SCHEMA_VERSION = 1
+private const val DRAFT_SCHEMA_VERSION = 2
 private const val MAX_DRAFTS = 16
 
 /** Fixed-path, deliberately small persistence for the in-game slash authoring tool. */
@@ -48,7 +48,9 @@ class SlashDraftStore(private val file: Path) {
     }
 
     private fun parseParameters(raw: String): SlashEditorParameters? = runCatching {
-        fun number(key: String): Double = Regex("\\\"$key\\\":([^,}]+)").find(raw)!!.groupValues[1].toDouble()
+        fun number(key: String, default: Double? = null): Double =
+            Regex("\\\"$key\\\":([^,}]+)").find(raw)?.groupValues?.get(1)?.toDouble() ?: default
+            ?: error("Missing numeric draft field: $key")
         fun integer(key: String): Int = Regex("\\\"$key\\\":([^,}]+)").find(raw)!!.groupValues[1].toInt()
         SlashEditorParameters.clamped(
             originY = number("originY"),
@@ -59,6 +61,8 @@ class SlashDraftStore(private val file: Path) {
             tilt = number("tilt"),
             yaw = number("yaw"),
             width = number("width"),
+            laneCount = Regex("\\\"laneCount\\\":([^,}]+)").find(raw)?.groupValues?.get(1)?.toInt() ?: 1,
+            laneSpacing = number("laneSpacing", 0.18),
             particleSize = number("particleSize"),
             spacing = number("spacing"),
             durationTicks = integer("durationTicks"),
@@ -82,6 +86,8 @@ class SlashDraftStore(private val file: Path) {
                 append(",\"tilt\":").append(parameters.tilt)
                 append(",\"yaw\":").append(parameters.yaw)
                 append(",\"width\":").append(parameters.width)
+                append(",\"laneCount\":").append(parameters.laneCount)
+                append(",\"laneSpacing\":").append(parameters.laneSpacing)
                 append(",\"particleSize\":").append(parameters.particleSize)
                 append(",\"spacing\":").append(parameters.spacing)
                 append(",\"durationTicks\":").append(parameters.durationTicks)
@@ -105,11 +111,6 @@ class SlashDraftStore(private val file: Path) {
 object SlashEditorPreview {
     fun create(origin: Point, direction: Vec, parameters: SlashEditorParameters): ParticleEffect {
         val radius = (parameters.length * (0.72 + parameters.curvature * 0.07)).coerceIn(0.5, 12.0)
-        val lanes = when {
-            parameters.width < 0.16 -> 1
-            parameters.width < 0.7 -> 2
-            else -> 3
-        }
         val degreeStep = (parameters.spacing * 42.0).coerceIn(2.0, 32.0)
         val arc = ParticleGeometry.drawCleaveArc(
             origin = origin,
@@ -118,14 +119,14 @@ object SlashEditorPreview {
             tiltAngle = parameters.tilt,
             startDegrees = -parameters.arcSpan / 2.0,
             endDegrees = parameters.arcSpan / 2.0,
-            rings = lanes,
+            rings = parameters.laneCount,
             extraYaw = parameters.yaw,
-            ringSpacing = parameters.width.coerceAtLeast(0.04),
+            ringSpacing = parameters.laneSpacing,
             degreesPerTick = parameters.arcSpan / parameters.durationTicks,
             degreeStep = degreeStep,
         ) { _, ring, _ ->
             ParticleStyle(
-                dust(parameters.color, parameters.particleSize.toFloat() * if (ring == 0) 1.0f else 0.72f),
+                dust(parameters.color, parameters.particleSize.toFloat() * (0.75f + parameters.width.toFloat() / 0.28f * 0.25f) * if (ring == 0) 1.0f else 0.72f),
                 count = if (ring == 0) 2 else 1,
             )
         }

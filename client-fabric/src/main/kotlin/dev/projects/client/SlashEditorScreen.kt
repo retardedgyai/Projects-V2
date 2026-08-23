@@ -21,6 +21,8 @@ class SlashEditorScreen(
         const val MAX_PARTICLE_SIZE = 2.0
         const val MIN_SPACING = 0.05
         const val MAX_SPACING = 2.0
+        const val MIN_LANE_SPACING = 0.05
+        const val MAX_LANE_SPACING = 2.0
         const val BASIC_ROW_SPACING = 19
         const val BASIC_START_Y = 30
     }
@@ -53,7 +55,9 @@ class SlashEditorScreen(
         BasicControl("tilt", "傾き", "斬撃面の角度", -90.0, 90.0, 0),
         BasicControl("yaw", "向き", "斬撃全体を左右へ回転", -180.0, 180.0, 0),
         BasicControl("originY", "開始高さ", "プレイヤー基準の発生高さ", -4.0, 8.0),
-        BasicControl("width", "太さ", "並行するSlashライン間隔", 0.0, 1.5),
+        BasicControl("width", "太さ", "斬撃1本の視覚的な太さ", 0.0, 1.5),
+        BasicControl("laneCount", "線の本数", "平行に描く斬撃ラインの本数", 1.0, 3.0, 0),
+        BasicControl("laneSpacing", "線の間隔", "斬撃ライン同士の距離", MIN_LANE_SPACING, MAX_LANE_SPACING, 2),
         BasicControl("particleSize", "粒の大きさ", "1粒の見た目の大きさ", MIN_PARTICLE_SIZE, MAX_PARTICLE_SIZE, 2),
         BasicControl("density", "密度", "斬撃ライン上の粒の詰まり具合", MIN_SPACING, MAX_SPACING, 2),
         BasicControl("forwardOffset", "前後位置", "斬撃全体をプレイヤーから前後に移動", 0.0, 8.0, 2),
@@ -190,7 +194,8 @@ class SlashEditorScreen(
         SlashEditorParameters.clamped(
             originY = valueFor("originY"), forwardOffset = number("forwardOffset"), length = valueFor("length"),
             arcSpan = valueFor("arcSpan"), curvature = valueFor("curvature"), tilt = valueFor("tilt"), yaw = number("yaw"),
-            width = valueFor("width"), particleSize = number("particleSize"), spacing = number("spacing"),
+            width = valueFor("width"), laneCount = valueFor("laneCount").toInt(), laneSpacing = valueFor("laneSpacing"),
+            particleSize = number("particleSize"), spacing = number("spacing"),
             durationTicks = number("durationTicks").toInt(), color = color, targetDistance = number("targetDistance"),
         )
     }.getOrNull()
@@ -211,7 +216,8 @@ class SlashEditorScreen(
     private fun valueFor(key: String): Double = when (key) {
         "originY" -> parameters.originY; "forwardOffset" -> parameters.forwardOffset; "length" -> parameters.length
         "arcSpan" -> parameters.arcSpan; "curvature" -> parameters.curvature; "tilt" -> parameters.tilt
-        "yaw" -> parameters.yaw; "width" -> parameters.width; "particleSize" -> parameters.particleSize
+        "yaw" -> parameters.yaw; "width" -> parameters.width; "laneCount" -> parameters.laneCount.toDouble(); "laneSpacing" -> parameters.laneSpacing
+        "particleSize" -> parameters.particleSize
         "spacing" -> parameters.spacing; "density" -> densityForSpacing(parameters.spacing)
         "durationTicks" -> parameters.durationTicks.toDouble(); "targetDistance" -> parameters.targetDistance
         else -> 0.0
@@ -232,6 +238,8 @@ class SlashEditorScreen(
         length = if (key == "length") value else length, arcSpan = if (key == "arcSpan") value else arcSpan,
         curvature = if (key == "curvature") value else curvature, tilt = if (key == "tilt") value else tilt,
         yaw = if (key == "yaw") value else yaw, width = if (key == "width") value else width,
+        laneCount = if (key == "laneCount") value.toInt() else laneCount,
+        laneSpacing = if (key == "laneSpacing") value else laneSpacing,
         particleSize = if (key == "particleSize") value else particleSize,
         spacing = if (key == "density") spacingForDensity(value) else spacing,
         durationTicks = durationTicks, color = color, targetDistance = targetDistance,

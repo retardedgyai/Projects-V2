@@ -12,7 +12,7 @@ import kotlin.math.sqrt
 const val PROJECTS_CHANNEL = "projects:protocol"
 
 object ProtocolVersion {
-    const val CURRENT = 8
+    const val CURRENT = 9
 
     fun requireCompatible(version: Int) {
         if (version != CURRENT) {
@@ -224,6 +224,10 @@ private object SlashEditorLimits {
     const val MAX_YAW = 180.0
     const val MIN_WIDTH = 0.0
     const val MAX_WIDTH = 1.5
+    const val MIN_LANE_COUNT = 1
+    const val MAX_LANE_COUNT = 3
+    const val MIN_LANE_SPACING = 0.05
+    const val MAX_LANE_SPACING = 2.0
     const val MIN_PARTICLE_SIZE = 0.05
     const val MAX_PARTICLE_SIZE = 2.0
     const val MIN_SPACING = 0.05
@@ -242,6 +246,8 @@ data class SlashEditorParameters(
     val tilt: Double = 12.0,
     val yaw: Double = 0.0,
     val width: Double = 0.28,
+    val laneCount: Int = 1,
+    val laneSpacing: Double = 0.18,
     val particleSize: Double = 0.28,
     val spacing: Double = 0.18,
     val durationTicks: Int = 8,
@@ -249,9 +255,10 @@ data class SlashEditorParameters(
     val targetDistance: Double = 5.0,
 ) {
     init {
-        require(listOf(originY, forwardOffset, length, arcSpan, curvature, tilt, yaw, width, particleSize, spacing, targetDistance).all { it.isFinite() }) {
+        require(listOf(originY, forwardOffset, length, arcSpan, curvature, tilt, yaw, width, laneSpacing, particleSize, spacing, targetDistance).all { it.isFinite() }) {
             "Slash editor values must be finite"
         }
+        require(laneCount in SlashEditorLimits.MIN_LANE_COUNT..SlashEditorLimits.MAX_LANE_COUNT) { "Slash editor lane count is out of range" }
         require(durationTicks in SlashEditorLimits.MIN_DURATION_TICKS..SlashEditorLimits.MAX_DURATION_TICKS) {
             "Slash editor duration is out of range"
         }
@@ -268,13 +275,15 @@ data class SlashEditorParameters(
             tilt: Double,
             yaw: Double,
             width: Double,
+            laneCount: Int,
+            laneSpacing: Double,
             particleSize: Double,
             spacing: Double,
             durationTicks: Int,
             color: Int,
             targetDistance: Double,
         ): SlashEditorParameters {
-            require(listOf(originY, forwardOffset, length, arcSpan, curvature, tilt, yaw, width, particleSize, spacing, targetDistance).all { it.isFinite() }) {
+            require(listOf(originY, forwardOffset, length, arcSpan, curvature, tilt, yaw, width, laneSpacing, particleSize, spacing, targetDistance).all { it.isFinite() }) {
                 "Slash editor values must be finite"
             }
             return SlashEditorParameters(
@@ -286,6 +295,8 @@ data class SlashEditorParameters(
                 tilt.coerceIn(SlashEditorLimits.MIN_TILT, SlashEditorLimits.MAX_TILT),
                 yaw.coerceIn(SlashEditorLimits.MIN_YAW, SlashEditorLimits.MAX_YAW),
                 width.coerceIn(SlashEditorLimits.MIN_WIDTH, SlashEditorLimits.MAX_WIDTH),
+                laneCount.coerceIn(SlashEditorLimits.MIN_LANE_COUNT, SlashEditorLimits.MAX_LANE_COUNT),
+                laneSpacing.coerceIn(SlashEditorLimits.MIN_LANE_SPACING, SlashEditorLimits.MAX_LANE_SPACING),
                 particleSize.coerceIn(SlashEditorLimits.MIN_PARTICLE_SIZE, SlashEditorLimits.MAX_PARTICLE_SIZE),
                 spacing.coerceIn(SlashEditorLimits.MIN_SPACING, SlashEditorLimits.MAX_SPACING),
                 durationTicks.coerceIn(SlashEditorLimits.MIN_DURATION_TICKS, SlashEditorLimits.MAX_DURATION_TICKS),
@@ -594,6 +605,8 @@ object ProtocolCodec {
         data.writeDouble(parameters.tilt)
         data.writeDouble(parameters.yaw)
         data.writeDouble(parameters.width)
+        data.writeInt(parameters.laneCount)
+        data.writeDouble(parameters.laneSpacing)
         data.writeDouble(parameters.particleSize)
         data.writeDouble(parameters.spacing)
         data.writeInt(parameters.durationTicks)
@@ -610,6 +623,8 @@ object ProtocolCodec {
         tilt = input.readDouble(),
         yaw = input.readDouble(),
         width = input.readDouble(),
+        laneCount = input.readInt(),
+        laneSpacing = input.readDouble(),
         particleSize = input.readDouble(),
         spacing = input.readDouble(),
         durationTicks = input.readInt(),

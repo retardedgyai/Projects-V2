@@ -204,17 +204,19 @@ class ProtocolCodecTest {
     fun `slash editor parameters reject non finite values and clamp bounds`() {
         assertFailsWith<IllegalArgumentException> {
             SlashEditorParameters.clamped(
-                Double.NaN, 0.0, 1.0, 90.0, 0.0, 0.0, 0.0, 0.1, 0.1, 0.1, 8, 0xffffff, 1.0,
+                Double.NaN, 0.0, 1.0, 90.0, 0.0, 0.0, 0.0, 0.1, 1, 0.1, 0.1, 0.1, 8, 0xffffff, 1.0,
             )
         }
         val parameters = SlashEditorParameters.clamped(
-            -100.0, 100.0, 100.0, -100.0, 100.0, -100.0, 100.0, 100.0, 100.0, -100.0, 1000, -1, 100.0,
+            -100.0, 100.0, 100.0, -100.0, 100.0, -100.0, 100.0, 100.0, 9, 100.0, 100.0, -100.0, 1000, -1, 100.0,
         )
         assertEquals(-4.0, parameters.originY)
         assertEquals(8.0, parameters.forwardOffset)
         assertEquals(12.0, parameters.length)
         assertEquals(10.0, parameters.arcSpan)
         assertEquals(4.0, parameters.curvature)
+        assertEquals(3, parameters.laneCount)
+        assertEquals(2.0, parameters.laneSpacing)
         assertEquals(0.05, parameters.spacing)
         assertEquals(80, parameters.durationTicks)
         assertEquals(0, parameters.color)
