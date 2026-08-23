@@ -2,6 +2,7 @@ package dev.projects.server
 
 import dev.projects.protocol.SlashEditorParameters
 import dev.projects.server.particle.RecordingParticleSink
+import dev.projects.server.particle.ParticleTransform
 import net.minestom.server.coordinate.Point
 import net.minestom.server.coordinate.Pos
 import net.minestom.server.coordinate.Vec
@@ -286,5 +287,54 @@ class SlashEditorTest {
         reverse.emit(0, reverseSink)
 
         assertNotEquals(forwardSink.spawns.map { it.position }, reverseSink.spawns.map { it.position })
+    }
+
+    @Test
+    fun `skill3 authored slash transforms its complete pulse and finisher geometry locally`() {
+        val origin = Pos(8.0, 12.0, -4.0)
+        val authored = SlashEditorParameters(
+            originY = 1.3,
+            forwardOffset = 2.1,
+            arcSpan = 84.0,
+            tilt = 17.0,
+            yaw = 23.0,
+            laneCount = 3,
+            laneSpacing = 0.7,
+            durationTicks = 2,
+        )
+        val specs = (1..4).map { skill3SlashPulseSpec(authored, it) } + Skill3SlashPulseSpec(authored, false)
+        val directions = listOf(
+            Vec(0.0, 0.0, 1.0),
+            Vec(0.0, 1.0, 0.0),
+            Vec(0.0, -1.0, 0.0),
+            Vec(1.0, 0.0, 0.0),
+            Vec(1.0, 2.0, 3.0),
+        )
+
+        fun positions(direction: Vec, spec: Skill3SlashPulseSpec): List<Point> {
+            val effect = SlashEditorPreview.createSkill3(origin, direction, spec.parameters, spec.reverseDraw)
+            val sink = RecordingParticleSink()
+            repeat(effect.durationTicks) { effect.emit(it, sink) }
+            return sink.spawns.map { it.position }
+        }
+
+        specs.forEach { spec ->
+            val baseline = positions(directions.first(), spec)
+            val baselineFrame = ParticleTransform.fromDirection(origin, directions.first())
+            directions.drop(1).forEach { direction ->
+                val transform = ParticleTransform.fromDirection(origin, direction)
+                val actual = positions(direction, spec)
+                assertEquals(baseline.size, actual.size)
+                baseline.zip(actual).forEach { (localPoint, worldPoint) ->
+                    val expected = transform.localPoint(baselineFrame.worldPoint(localPoint))
+                    assertEquals(expected.x(), worldPoint.x(), absoluteTolerance = 0.000001)
+                    assertEquals(expected.y(), worldPoint.y(), absoluteTolerance = 0.000001)
+                    assertEquals(expected.z(), worldPoint.z(), absoluteTolerance = 0.000001)
+                }
+            }
+        }
+
+        val fallback = positions(Vec(Double.NaN, 0.0, 1.0), specs.last())
+        assertEquals(positions(directions.first(), specs.last()), fallback)
     }
 }

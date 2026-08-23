@@ -5,7 +5,10 @@ import dev.projects.server.particle.ParticleEffect
 import dev.projects.server.particle.ParticleBatch
 import dev.projects.server.particle.ParticleGeometry
 import dev.projects.server.particle.ParticleStyle
+import dev.projects.server.particle.ParticleTransform
 import dev.projects.server.particle.dust
+import dev.projects.server.particle.localCoordinates
+import dev.projects.server.particle.translated
 import net.minestom.server.coordinate.Point
 import net.minestom.server.coordinate.Vec
 import java.nio.file.Files
@@ -156,6 +159,16 @@ object SlashEditorPreview {
                 )
             }
         }.toTypedArray())
+    }
+
+    /** Builds authored Skill3 geometry in canonical +Z local space, then maps the whole effect to the cast direction. */
+    fun createSkill3(origin: Point, direction: Vec, parameters: SlashEditorParameters, reverseDraw: Boolean = false): ParticleEffect {
+        val localOrigin = Vec(0.0, parameters.originY, parameters.forwardOffset)
+        val localParameters = parameters.copy(originY = 0.0, forwardOffset = 0.0)
+        val localEffect = create(Vec.ZERO, Vec(0.0, 0.0, 1.0), localParameters, reverseDraw)
+        return localEffect.translated(localOrigin).localCoordinates(
+            ParticleTransform.fromDirection(origin, skill3SlashVisualDirection(direction)),
+        )
     }
 }
 

@@ -1763,11 +1763,9 @@ private fun showSkill3PulseVfx(
         if (!started) System.err.println("Skill3 VFX preset failed to start: projects:class/twin_blades/skill3_pulse")
     } else {
         val choreography = skill3SlashPulseSpec(authored, pulseIndex)
-        val origin = skill3SlashOrigin(player.position, direction, choreography.parameters)
-        val visualDirection = skill3SlashVisualDirection(direction)
         val sink = manager.sink(ParticleViewer(player.position, player), PlayerParticleSink(player), "skill3:slash")
         scheduler.start(
-            SlashEditorPreview.create(origin, visualDirection, choreography.parameters, choreography.reverseDraw),
+            SlashEditorPreview.createSkill3(player.position, direction, choreography.parameters, choreography.reverseDraw),
             sink,
             id = "skill3:slash:${player.uuid}:$pulseIndex",
         )
@@ -1797,11 +1795,9 @@ private fun showSkill3FinisherVfx(
             values = mapOf("length" to visual.finisherLength, "duration" to visual.finisherDuration.toDouble()),
         )
     } else {
-        val origin = skill3SlashOrigin(player.position, direction, authored)
-        val visualDirection = skill3SlashVisualDirection(direction)
         val sink = manager.sink(ParticleViewer(player.position, player), PlayerParticleSink(player), "skill3:finisher-slash")
         scheduler.start(
-            SlashEditorPreview.create(origin, visualDirection, authored),
+            SlashEditorPreview.createSkill3(player.position, direction, authored),
             sink,
             id = "skill3:finisher-slash:${player.uuid}",
         )
