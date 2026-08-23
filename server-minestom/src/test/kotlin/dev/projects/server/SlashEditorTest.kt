@@ -107,4 +107,33 @@ class SlashEditorTest {
         assertEquals(22.4, origin.y())
         assertEquals(33.6, origin.z())
     }
+
+    @Test
+    fun `skill3 pulse choreography varies orientation without changing authored parameters`() {
+        val authored = SlashEditorParameters(laneCount = 3, laneSpacing = 0.9, yaw = 7.0, tilt = 4.0, originY = 1.5)
+        val authoredBefore = authored
+        val specs = (1..4).map { skill3SlashPulseSpec(authored, it) }
+
+        assertEquals(authoredBefore, authored)
+        assertEquals(listOf(false, true, false, true), specs.map { it.reverseDraw })
+        assertEquals(4, specs.map { Triple(it.parameters.yaw, it.parameters.tilt, it.parameters.originY) }.toSet().size)
+        assertTrue(specs.all { it.parameters.laneCount == authored.laneCount && it.parameters.laneSpacing == authored.laneSpacing })
+        assertTrue(specs.all { it.parameters.length == authored.length && it.parameters.arcSpan == authored.arcSpan })
+        assertTrue(specs.all { it.parameters.width == authored.width && it.parameters.particleSize == authored.particleSize })
+        assertTrue(specs.all { it.parameters.spacing == authored.spacing && it.parameters.color == authored.color })
+    }
+
+    @Test
+    fun `reverse choreography swaps slash traversal direction`() {
+        val authored = SlashEditorParameters(arcSpan = 80.0, durationTicks = 4)
+        val forward = SlashEditorPreview.create(Pos.ZERO, Vec(0.0, 0.0, 1.0), authored)
+        val reverse = SlashEditorPreview.create(Pos.ZERO, Vec(0.0, 0.0, 1.0), authored, reverseDraw = true)
+        val forwardSink = RecordingParticleSink()
+        val reverseSink = RecordingParticleSink()
+
+        forward.emit(0, forwardSink)
+        reverse.emit(0, reverseSink)
+
+        assertNotEquals(forwardSink.spawns.map { it.position }, reverseSink.spawns.map { it.position })
+    }
 }

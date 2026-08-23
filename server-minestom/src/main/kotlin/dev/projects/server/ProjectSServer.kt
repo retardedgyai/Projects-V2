@@ -1777,9 +1777,14 @@ private fun showSkill3PulseVfx(
         )
         if (!started) System.err.println("Skill3 VFX preset failed to start: projects:class/twin_blades/skill3_pulse")
     } else {
-        val origin = slashOrigin(player.position, direction, authored)
+        val choreography = skill3SlashPulseSpec(authored, pulseIndex)
+        val origin = slashOrigin(player.position, direction, choreography.parameters)
         val sink = manager.sink(ParticleViewer(player.position, player), PlayerParticleSink(player), "skill3:slash")
-        scheduler.start(SlashEditorPreview.create(origin, direction, authored), sink, id = "skill3:slash:${player.uuid}:$pulseIndex")
+        scheduler.start(
+            SlashEditorPreview.create(origin, direction, choreography.parameters, choreography.reverseDraw),
+            sink,
+            id = "skill3:slash:${player.uuid}:$pulseIndex",
+        )
     }
     playTwinBladesSounds(player, target.position, twinBladesSkill3PulseSoundPlan(pulseIndex))
 }
