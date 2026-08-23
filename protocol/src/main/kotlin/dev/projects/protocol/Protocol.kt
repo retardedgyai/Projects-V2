@@ -12,7 +12,7 @@ import kotlin.math.sqrt
 const val PROJECTS_CHANNEL = "projects:protocol"
 
 object ProtocolVersion {
-    const val CURRENT = 9
+    const val CURRENT = 10
 
     fun requireCompatible(version: Int) {
         if (version != CURRENT) {
@@ -314,6 +314,8 @@ data class VfxSlashPreviewRequest(
     val parameters: SlashEditorParameters,
 ) : ProtocolMessage
 
+data class VfxSlashApplySkill3(val parameters: SlashEditorParameters) : ProtocolMessage
+
 object VfxSlashPreviewCancel : ProtocolMessage
 
 data class VfxSlashSaveRequest(
@@ -380,6 +382,7 @@ object ProtocolCodec {
     private const val VFX_SLASH_DRAFT = 26
     private const val VFX_EDITOR_NOTICE = 27
     private const val VFX_SLASH_PREVIEW_CANCEL = 28
+    private const val VFX_SLASH_APPLY_SKILL3 = 29
 
     fun encode(message: ProtocolMessage): ByteArray {
         val output = ByteArrayOutputStream()
@@ -471,6 +474,10 @@ object ProtocolCodec {
                 is VfxSlashPreviewRequest -> {
                     data.writeByte(VFX_SLASH_PREVIEW_REQUEST)
                     data.writeLong(message.requestId)
+                    writeSlashParameters(data, message.parameters)
+                }
+                is VfxSlashApplySkill3 -> {
+                    data.writeByte(VFX_SLASH_APPLY_SKILL3)
                     writeSlashParameters(data, message.parameters)
                 }
                 VfxSlashPreviewCancel -> data.writeByte(VFX_SLASH_PREVIEW_CANCEL)
@@ -580,6 +587,7 @@ object ProtocolCodec {
             GROUND_TELEGRAPH_REMOVE -> GroundTelegraphRemove(input.readLong())
             VFX_EDITOR_OPEN -> VfxEditorOpen(readSlashParameters(input))
             VFX_SLASH_PREVIEW_REQUEST -> VfxSlashPreviewRequest(input.readLong(), readSlashParameters(input))
+            VFX_SLASH_APPLY_SKILL3 -> VfxSlashApplySkill3(readSlashParameters(input))
             VFX_SLASH_PREVIEW_CANCEL -> VfxSlashPreviewCancel
             VFX_SLASH_SAVE_REQUEST -> VfxSlashSaveRequest(readString(input), readSlashParameters(input))
             VFX_SLASH_DRAFT_LIST -> {
