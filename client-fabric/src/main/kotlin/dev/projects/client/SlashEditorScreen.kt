@@ -256,7 +256,7 @@ class SlashEditorScreen(
         x: Int, y: Int, width: Int, private val control: BasicControl, value: Double,
         private val changed: (Double) -> Unit,
     ) : AbstractSliderButton(
-        x, y, width, 20, Component.literal(control.label),
+        x, y, width, BASIC_ROW_SPACING, Component.literal(control.label),
         ((value - control.min) / (control.max - control.min)).coerceIn(0.0, 1.0),
     ) {
         private var current = value
