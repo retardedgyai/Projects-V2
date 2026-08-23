@@ -1,6 +1,7 @@
 package dev.projects.client
 
 import dev.projects.protocol.SlashEditorParameters
+import dev.projects.protocol.Skill3VfxTarget
 import dev.projects.protocol.VfxSlashDraftLoadRequest
 import dev.projects.protocol.VfxSlashApplySkill3
 import dev.projects.protocol.VfxSlashPreviewCancel
@@ -40,6 +41,8 @@ class SlashEditorScreen(
     private lateinit var draftName: EditBox
     private lateinit var autoButton: Button
     private lateinit var detailsButton: Button
+    private lateinit var applyTargetButton: Button
+    private var applyTarget = Skill3VfxTarget.PULSE
 
     private data class BasicControl(
         val key: String,
@@ -97,8 +100,10 @@ class SlashEditorScreen(
             .bounds(panelX + 160, controlsY, 112, 20).build())
         detailsButton = addRenderableWidget(Button.builder(Component.literal(detailsLabel())) { showDetails = !showDetails; rebuildWidgets() }
             .bounds(panelX + 8, controlsY - 25, 120, 20).build())
-        addRenderableWidget(Button.builder(Component.literal("Skill3へ適用")) { applySkill3() }
-            .bounds(panelX + 132, controlsY - 25, 140, 20).build())
+        applyTargetButton = addRenderableWidget(Button.builder(Component.literal(applyTargetLabel())) { cycleApplyTarget() }
+            .bounds(panelX + 132, controlsY - 25, 92, 20).build())
+        addRenderableWidget(Button.builder(Component.literal("適用")) { applySkill3() }
+            .bounds(panelX + 228, controlsY - 25, 44, 20).build())
 
         val draftY = height - 43
         draftName = addRenderableWidget(EditBox(font, panelX + 136, draftY, 108, 18, Component.literal("Draft名")))
@@ -210,8 +215,18 @@ class SlashEditorScreen(
     private fun applySkill3() {
         parseParameters()?.let {
             parameters = it
-            sendMessage(VfxSlashApplySkill3(it))
+            sendMessage(VfxSlashApplySkill3(applyTarget, it))
         }
+    }
+
+    private fun cycleApplyTarget() {
+        applyTarget = if (applyTarget == Skill3VfxTarget.PULSE) Skill3VfxTarget.FINISHER else Skill3VfxTarget.PULSE
+        applyTargetButton.message = Component.literal(applyTargetLabel())
+    }
+
+    private fun applyTargetLabel() = when (applyTarget) {
+        Skill3VfxTarget.PULSE -> "適用先: Skill3連撃"
+        Skill3VfxTarget.FINISHER -> "適用先: Finisher"
     }
 
     private fun reset() {

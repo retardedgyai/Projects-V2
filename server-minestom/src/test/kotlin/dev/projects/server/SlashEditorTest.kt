@@ -60,6 +60,17 @@ class SlashEditorTest {
     }
 
     @Test
+    fun `pulse and finisher bindings are independent`() {
+        val directory = Files.createTempDirectory("skill3-binding-independent-test")
+        val pulse = SlashEditorParameters(color = 0x112233)
+        val finisher = SlashEditorParameters(color = 0xaabbcc, length = 9.0)
+        assertTrue(Skill3SlashBindingStore(directory.resolve("pulse.json")).save(pulse))
+        assertTrue(Skill3SlashBindingStore(directory.resolve("finisher.json")).save(finisher))
+        assertEquals(pulse, Skill3SlashBindingStore(directory.resolve("pulse.json")).load())
+        assertEquals(finisher, Skill3SlashBindingStore(directory.resolve("finisher.json")).load())
+    }
+
+    @Test
     fun `preview emits finite positions with the requested color`() {
         val color = 0x123456
         val effect = SlashEditorPreview.create(Pos.ZERO, Vec(0.0, 0.0, 1.0), SlashEditorParameters(color = color))

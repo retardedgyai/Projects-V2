@@ -17,6 +17,7 @@ import dev.projects.protocol.ProtocolHello
 import dev.projects.protocol.ProtocolHelloAck
 import dev.projects.protocol.ProtocolVersion
 import dev.projects.protocol.SlashEditorParameters
+import dev.projects.protocol.Skill3VfxTarget
 import dev.projects.protocol.VfxEditorNotice
 import dev.projects.protocol.VfxEditorOpen
 import dev.projects.protocol.VfxSlashDraft
@@ -138,6 +139,7 @@ fun main() {
     val bossRiftTelegraphIds = mutableMapOf<Long, Long>()
     val slashDraftStore = SlashDraftStore(Path.of("config", "projects", "vfx-editor", "slash-drafts.json"))
     val skill3SlashBindingStore = Skill3SlashBindingStore(Path.of("config", "projects", "vfx-editor", "twin-blades-skill3-slash.json"))
+    val skill3FinisherBindingStore = Skill3SlashBindingStore(Path.of("config", "projects", "vfx-editor", "twin-blades-skill3-finisher-slash.json"))
     val slashPreviewHandles = mutableMapOf<UUID, ParticleEffectHandle>()
 
     fun sendSlashDraftList(player: net.minestom.server.entity.Player) {
@@ -907,6 +909,7 @@ fun main() {
                             event.player,
                             target,
                             requireNotNull(skill3Tick.dashDirection),
+                            skill3FinisherBindingStore,
                             particleAnimations,
                             particleManager,
                         )
@@ -1060,12 +1063,15 @@ fun main() {
                 is VfxSlashPreviewRequest -> previewSlash(event.player, message.parameters)
                 VfxSlashPreviewCancel -> particleAnimations.cancel(slashPreviewHandles.remove(event.player.uuid))
                 is VfxSlashApplySkill3 -> {
-                    val saved = skill3SlashBindingStore.save(message.parameters)
+                    val store = when (message.target) {
+                        Skill3VfxTarget.PULSE -> skill3SlashBindingStore
+                        Skill3VfxTarget.FINISHER -> skill3FinisherBindingStore
+                    }
                     event.player.sendPluginMessage(
                         PROJECTS_CHANNEL,
                         ProtocolCodec.encode(
-                            if (saved) VfxEditorNotice("Skill3へ適用しました")
-                            else VfxEditorNotice("Skill3への適用に失敗しました"),
+                            if (store.save(message.parameters)) VfxEditorNotice("${if (message.target == Skill3VfxTarget.PULSE) "Skill3連撃" else "Skill3 Finisher"}へ適用しました")
+                            else VfxEditorNotice("適用に失敗しました"),
                         ),
                     )
                 }
@@ -1793,20 +1799,33 @@ private fun showSkill3FinisherVfx(
     player: net.minestom.server.entity.Player,
     target: CombatTarget,
     direction: Vec,
+    bindingStore: Skill3SlashBindingStore,
     scheduler: ParticleAnimationScheduler,
     manager: ParticleManager,
 ) {
     val contact = target.position
     val visual = TwinBladesSkill3Visual()
-    val started = startParticlePreset(
-        player = player,
-        id = "projects:class/twin_blades/skill3_finisher",
-        scheduler = scheduler,
-        origin = contact,
-        direction = direction,
-        manager = manager,
-        values = mapOf("length" to visual.finisherLength, "duration" to visual.finisherDuration.toDouble()),
-    )
+    val authored = bindingStore.load()
+    val started = if (authored == null) {
+        startParticlePreset(
+            player = player,
+            id = "projects:class/twin_blades/skill3_finisher",
+            scheduler = scheduler,
+            origin = contact,
+            direction = direction,
+            manager = manager,
+            values = mapOf("length" to visual.finisherLength, "duration" to visual.finisherDuration.toDouble()),
+        )
+    } else {
+        val origin = slashOrigin(player.position, direction, authored)
+        val sink = manager.sink(ParticleViewer(player.position, player), PlayerParticleSink(player), "skill3:finisher-slash")
+        scheduler.start(
+            SlashEditorPreview.create(origin, direction, authored),
+            sink,
+            id = "skill3:finisher-slash:${player.uuid}",
+        )
+        true
+    }
     if (!started) {
         System.err.println("Skill3 VFX preset failed to start: projects:class/twin_blades/skill3_finisher")
     }

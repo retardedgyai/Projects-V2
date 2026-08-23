@@ -12,7 +12,7 @@ import kotlin.math.sqrt
 const val PROJECTS_CHANNEL = "projects:protocol"
 
 object ProtocolVersion {
-    const val CURRENT = 10
+    const val CURRENT = 11
 
     fun requireCompatible(version: Int) {
         if (version != CURRENT) {
@@ -314,7 +314,15 @@ data class VfxSlashPreviewRequest(
     val parameters: SlashEditorParameters,
 ) : ProtocolMessage
 
-data class VfxSlashApplySkill3(val parameters: SlashEditorParameters) : ProtocolMessage
+enum class Skill3VfxTarget {
+    PULSE,
+    FINISHER,
+}
+
+data class VfxSlashApplySkill3(
+    val target: Skill3VfxTarget,
+    val parameters: SlashEditorParameters,
+) : ProtocolMessage
 
 object VfxSlashPreviewCancel : ProtocolMessage
 
@@ -478,6 +486,7 @@ object ProtocolCodec {
                 }
                 is VfxSlashApplySkill3 -> {
                     data.writeByte(VFX_SLASH_APPLY_SKILL3)
+                    data.writeByte(message.target.ordinal)
                     writeSlashParameters(data, message.parameters)
                 }
                 VfxSlashPreviewCancel -> data.writeByte(VFX_SLASH_PREVIEW_CANCEL)
@@ -587,7 +596,12 @@ object ProtocolCodec {
             GROUND_TELEGRAPH_REMOVE -> GroundTelegraphRemove(input.readLong())
             VFX_EDITOR_OPEN -> VfxEditorOpen(readSlashParameters(input))
             VFX_SLASH_PREVIEW_REQUEST -> VfxSlashPreviewRequest(input.readLong(), readSlashParameters(input))
-            VFX_SLASH_APPLY_SKILL3 -> VfxSlashApplySkill3(readSlashParameters(input))
+            VFX_SLASH_APPLY_SKILL3 -> {
+                val targetId = input.readUnsignedByte()
+                val target = Skill3VfxTarget.entries.getOrNull(targetId)
+                    ?: throw IllegalArgumentException("Unknown Skill3 VFX target: $targetId")
+                VfxSlashApplySkill3(target, readSlashParameters(input))
+            }
             VFX_SLASH_PREVIEW_CANCEL -> VfxSlashPreviewCancel
             VFX_SLASH_SAVE_REQUEST -> VfxSlashSaveRequest(readString(input), readSlashParameters(input))
             VFX_SLASH_DRAFT_LIST -> {
