@@ -21,7 +21,7 @@ class SlashEditorScreen(
         const val MAX_PARTICLE_SIZE = 2.0
         const val MIN_SPACING = 0.05
         const val MAX_SPACING = 2.0
-        const val BASIC_ROW_SPACING = 22
+        const val BASIC_ROW_SPACING = 20
         const val BASIC_START_Y = 34
     }
 
@@ -51,6 +51,7 @@ class SlashEditorScreen(
         BasicControl("curvature", "曲がり", "直線から強いカーブまで", 0.0, 4.0),
         BasicControl("arcSpan", "弧の広さ", "斬撃が描く円弧の大きさ", 10.0, 350.0, 0),
         BasicControl("tilt", "傾き", "斬撃面の角度", -90.0, 90.0, 0),
+        BasicControl("yaw", "向き", "斬撃全体を左右へ回転", -180.0, 180.0, 0),
         BasicControl("originY", "開始高さ", "プレイヤー基準の発生高さ", -4.0, 8.0),
         BasicControl("width", "太さ", "並行するSlashライン間隔", 0.0, 1.5),
         BasicControl("particleSize", "粒の大きさ", "1粒の見た目の大きさ", MIN_PARTICLE_SIZE, MAX_PARTICLE_SIZE, 2),
@@ -60,7 +61,6 @@ class SlashEditorScreen(
 
     private val detailNames = listOf(
         "forwardOffset" to "前方オフセット",
-        "yaw" to "水平回転",
         "particleSize" to "粒子サイズ",
         "spacing" to "粒子間隔",
         "durationTicks" to "再生時間(tick)",
@@ -134,7 +134,7 @@ class SlashEditorScreen(
                 mouseX in (panelX + 112)..(panelX + 252) && mouseY in y..(y + 20)
             }
             if (hoveredIndex != null) {
-                graphics.text(font, basicControls[hoveredIndex].description, panelX + 10, 232, 0xFF8EA9C5.toInt(), false)
+                graphics.text(font, basicControls[hoveredIndex].description, panelX + 10, 236, 0xFF8EA9C5.toInt(), false)
             }
         } else {
             detailNames.forEachIndexed { index, (_, label) ->
