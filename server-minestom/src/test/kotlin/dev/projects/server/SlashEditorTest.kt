@@ -110,11 +110,12 @@ class SlashEditorTest {
 
     @Test
     fun `skill3 pulse choreography varies orientation without changing authored parameters`() {
-        val authored = SlashEditorParameters(laneCount = 3, laneSpacing = 0.9, yaw = 7.0, tilt = 4.0, originY = 1.5)
+        val authored = SlashEditorParameters(laneCount = 3, laneSpacing = 0.9, yaw = 7.0, tilt = 4.0, originY = 1.5, durationTicks = 8)
         val authoredBefore = authored
         val specs = (1..4).map { skill3SlashPulseSpec(authored, it) }
 
         assertEquals(authoredBefore, authored)
+        assertTrue(specs.all { it.parameters.durationTicks == Skill3State.PULSE_INTERVAL_TICKS })
         assertEquals(listOf(false, true, false, true), specs.map { it.reverseDraw })
         assertEquals(4, specs.map { Triple(it.parameters.yaw, it.parameters.tilt, it.parameters.originY) }.toSet().size)
         assertTrue(specs.all { it.parameters.laneCount == authored.laneCount && it.parameters.laneSpacing == authored.laneSpacing })

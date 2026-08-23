@@ -177,6 +177,7 @@ internal fun skill3SlashPulseSpec(authored: SlashEditorParameters, pulseIndex: I
             yaw = authored.yaw + yawOffset,
             tilt = authored.tilt + tiltOffset,
             originY = authored.originY + originYOffset,
+            durationTicks = Skill3State.PULSE_INTERVAL_TICKS,
         ),
         reverseDraw = reverseDraw,
     )
