@@ -18,10 +18,11 @@ class CombatHudLayoutTest {
     @Test
     fun `combat groups fit and do not overlap at minimum size`() {
         val layout = calculateCombatHudLayout(640, 360)
-        val rects = listOf(layout.health, layout.core, layout.resource, layout.skills, layout.hotbar)
+        val rects = listOf(layout.health, layout.core, layout.resource, layout.skills, layout.hotbar, layout.offhand)
 
         assertTrue(rects.all { it.isWithin(640, 360) })
         assertFalse(layout.skills.intersects(layout.hotbar))
+        assertFalse(layout.hotbar.intersects(layout.offhand))
         assertFalse(layout.health.intersects(layout.core))
         assertFalse(layout.core.intersects(layout.resource))
     }

@@ -181,7 +181,13 @@ object ProjectSClient : ClientModInitializer {
         }
 
         HudElementRegistry.replaceElement(VanillaHudElements.HOTBAR) {
-            HudElement { context, tickCounter -> renderCombatHud(context, tickCounter) }
+            original -> HudElement { context, tickCounter ->
+                if (Minecraft.getInstance().player?.isSpectator() == true) {
+                    original.extractRenderState(context, tickCounter)
+                } else {
+                    renderCombatHud(context, tickCounter)
+                }
+            }
         }
         ClientTickEvents.END_CLIENT_TICK.register(::handleAttackInput)
     }
@@ -302,6 +308,7 @@ object ProjectSClient : ClientModInitializer {
         drawClassCore(context, layout.core, presentation)
         renderSkillHud(context, layout.skills, presentation)
         renderHotbar(context, layout.hotbar, player)
+        renderOffhand(context, layout.offhand, player)
         renderHitMarker(context)
     }
 
@@ -426,6 +433,20 @@ object ProjectSClient : ClientModInitializer {
                 context.item(stack, x + 2, bounds.y + 2)
                 context.itemDecorations(Minecraft.getInstance().font, stack, x + 2, bounds.y + 2)
             }
+        }
+    }
+
+    private fun renderOffhand(
+        context: GuiGraphicsExtractor,
+        bounds: HudRect,
+        player: net.minecraft.client.player.LocalPlayer,
+    ) {
+        context.fill(bounds.x, bounds.y, bounds.right, bounds.bottom, 0xCC171B20.toInt())
+        context.fill(bounds.x + 2, bounds.y + 2, bounds.right - 2, bounds.bottom - 2, 0xAA0D1116.toInt())
+        val stack = player.getOffhandItem()
+        if (!stack.isEmpty) {
+            context.item(stack, bounds.x + 2, bounds.y + 2)
+            context.itemDecorations(Minecraft.getInstance().font, stack, bounds.x + 2, bounds.y + 2)
         }
     }
 

@@ -26,6 +26,7 @@ internal data class CombatHudLayout(
     val resource: HudRect,
     val skills: HudRect,
     val hotbar: HudRect,
+    val offhand: HudRect,
 )
 
 internal fun calculateCombatHudLayout(guiWidth: Int, guiHeight: Int): CombatHudLayout {
@@ -41,6 +42,7 @@ internal fun calculateCombatHudLayout(guiWidth: Int, guiHeight: Int): CombatHudL
     val resource = HudRect(core.right + 8, core.y + 4, 106, 18)
     val skills = HudRect(core.x - 12 - 113, guiHeight - 45, 113, 28)
     val hotbar = HudRect(core.right + 12, guiHeight - 42, 196, 22)
+    val offhand = HudRect(hotbar.right + 2, hotbar.y, 20, 22)
 
-    return CombatHudLayout(health, core, resource, skills, hotbar)
+    return CombatHudLayout(health, core, resource, skills, hotbar, offhand)
 }
