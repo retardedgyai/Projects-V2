@@ -53,6 +53,7 @@ class SlashEditorScreen(
         BasicControl("width", "太さ", "並行するSlashライン間隔", 0.0, 1.5),
         BasicControl("particleSize", "粒の大きさ", "1粒の見た目の大きさ", MIN_PARTICLE_SIZE, MAX_PARTICLE_SIZE, 2),
         BasicControl("density", "密度", "斬撃ライン上の粒の詰まり具合", MIN_SPACING, MAX_SPACING, 2),
+        BasicControl("forwardOffset", "前後位置", "斬撃全体をプレイヤーから前後に移動", 0.0, 8.0, 2),
     )
 
     private val detailNames = listOf(
@@ -212,7 +213,8 @@ class SlashEditorScreen(
     private fun detailsLabel() = if (showDetails) "詳細を閉じる" else "詳細を表示"
 
     private fun SlashEditorParameters.withValue(key: String, value: Double) = SlashEditorParameters.clamped(
-        originY = if (key == "originY") value else originY, forwardOffset = forwardOffset,
+        originY = if (key == "originY") value else originY,
+        forwardOffset = if (key == "forwardOffset") value else forwardOffset,
         length = if (key == "length") value else length, arcSpan = if (key == "arcSpan") value else arcSpan,
         curvature = if (key == "curvature") value else curvature, tilt = if (key == "tilt") value else tilt,
         yaw = yaw, width = if (key == "width") value else width,

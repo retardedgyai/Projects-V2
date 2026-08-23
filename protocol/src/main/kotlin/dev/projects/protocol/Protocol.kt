@@ -235,7 +235,7 @@ private object SlashEditorLimits {
 
 data class SlashEditorParameters(
     val originY: Double = 1.2,
-    val forwardOffset: Double = 0.2,
+    val forwardOffset: Double = 1.7,
     val length: Double = 5.0,
     val arcSpan: Double = 160.0,
     val curvature: Double = 0.35,
