@@ -1115,6 +1115,172 @@ private fun buildCatalogue(): List<ParticlePreset> {
     val skillCommon = listOf(scale(), density(), seed())
     val colors = listOf(color("colorPrimary", 0xffee55), color("colorSecondary", 0xff5522))
     return listOf(
+        preset(
+            "projects:class/starweaver/q_sun",
+            "Starweaver Sun Q",
+            combat + setOf("class", "starweaver", "skill1"),
+            listOf(number("length", 2.8, 0.0, 8.0), number("radius", 0.42, 0.0, 2.0)) + colors + common,
+        ) { p ->
+            val forward = normalize(p.direction)
+            ParticleBatch.of(
+                ParticleLine(p.origin, p.origin.add(forward.mul(p.length(2.8))), countPerMeter = 12.0, durationTicks = p.ticks(), style = style(p, particle = Particle.DUST, count = 2)),
+                ParticleCircle(p.origin, p.radius(0.42), axis1 = basis(p.direction).second, axis2 = basis(p.direction).third, countPerMeter = 14.0, style = style(p, primary = false, particle = Particle.DUST)),
+                ParticleExplosion(p.origin, radius = 0.18, sphere = true, particle = Particle.FLAME, count = 8, speed = 0.08f, seed = p.seedValue()),
+            )
+        },
+        preset(
+            "projects:class/starweaver/q_moon",
+            "Starweaver Moon Q",
+            combat + setOf("class", "starweaver", "skill1"),
+            listOf(number("length", 2.8, 0.0, 8.0), number("radius", 0.42, 0.0, 2.0)) + colors + common,
+        ) { p ->
+            val forward = normalize(p.direction)
+            ParticleBatch.of(
+                ParticleLine(p.origin, p.origin.add(forward.mul(p.length(2.8))), countPerMeter = 12.0, durationTicks = p.ticks(), style = style(p, particle = Particle.DUST, count = 2)),
+                ParticleSpiral(p.origin, p.direction, p.radius(0.42), PI * 2.0, 1.0, axialLength = p.length(1.5), durationTicks = p.ticks(), style = style(p, primary = false, particle = Particle.END_ROD)),
+                ParticleExplosion(p.origin, radius = 0.18, sphere = true, particle = Particle.SNOWFLAKE, count = 8, speed = 0.04f, seed = p.seedValue()),
+            )
+        },
+        preset(
+            "projects:class/starweaver/q_star",
+            "Starweaver Star Q",
+            combat + setOf("class", "starweaver", "skill1"),
+            listOf(number("length", 3.0, 0.0, 9.0), number("radius", 0.48, 0.0, 2.0)) + colors + common,
+        ) { p ->
+            val forward = normalize(p.direction)
+            ParticleBatch.of(
+                ParticleLine(p.origin, p.origin.add(forward.mul(p.length(3.0))), countPerMeter = 14.0, durationTicks = p.ticks(), style = style(p, particle = Particle.END_ROD, count = 2)),
+                ParticleSpiral(p.origin, p.direction, p.radius(0.48), PI * 2.0, 1.5, axialLength = p.length(1.7), durationTicks = p.ticks(), style = style(p, primary = false, particle = Particle.ELECTRIC_SPARK)),
+                ParticleExplosion(p.origin, radius = 0.2, sphere = true, particle = Particle.END_ROD, count = 10, speed = 0.08f, seed = p.seedValue()),
+            )
+        },
+        preset(
+            "projects:class/starweaver/q_solar",
+            "Starweaver Solar Conjunction Q",
+            combat + setOf("class", "starweaver", "skill1", "conjunction"),
+            listOf(number("length", 4.8, 0.0, 12.0), number("radius", 1.05, 0.0, 3.0)) + colors + common,
+        ) { p ->
+            val forward = normalize(p.direction)
+            ParticleBatch.of(
+                ParticleLine(p.origin, p.origin.add(forward.mul(p.length(4.8))), countPerMeter = 16.0, durationTicks = p.ticks(), style = style(p, particle = Particle.DUST, count = 3)),
+                ParticleSpiral(p.origin, p.direction, p.radius(1.05), PI * 2.0, 2.0, axialLength = p.length(3.2), durationTicks = p.ticks(), style = style(p, primary = false, particle = Particle.FLAME)),
+                ParticleCircle(p.origin, p.radius(1.05), axis1 = basis(p.direction).second, axis2 = basis(p.direction).third, countPerMeter = 16.0, durationTicks = p.ticks(), style = style(p, particle = Particle.DUST, count = 2)),
+                ParticleExplosion(p.origin, radius = 0.55, sphere = true, particle = Particle.EXPLOSION, count = 14, speed = 0.12f, seed = p.seedValue()),
+            )
+        },
+        preset(
+            "projects:class/starweaver/w_sun",
+            "Starweaver Sun W",
+            combat + setOf("class", "starweaver", "skill2"),
+            listOf(number("radius", 3.5, 0.0, 7.0)) + colors + common,
+        ) { p ->
+            ParticleBatch.of(
+                pulseRing(p.origin, p.direction, p.radius(3.5), p.ticks(), style(p, particle = Particle.DUST, count = 2)),
+                ParticleCircle(p.origin, p.radius(3.5) * 0.72, axis1 = basis(p.direction).second, axis2 = basis(p.direction).third, countPerMeter = 11.0, durationTicks = p.ticks(), style = style(p, primary = false, particle = Particle.FLAME)),
+                ParticleExplosion(p.origin, radius = 0.25, particle = Particle.FLAME, count = 8, speed = 0.08f, seed = p.seedValue()),
+            )
+        },
+        preset(
+            "projects:class/starweaver/w_moon",
+            "Starweaver Moon W",
+            combat + setOf("class", "starweaver", "skill2"),
+            listOf(number("radius", 3.5, 0.0, 7.0)) + colors + common,
+        ) { p ->
+            ParticleBatch.of(
+                pulseRing(p.origin, p.direction, p.radius(3.5), p.ticks(), style(p, particle = Particle.DUST, count = 2)),
+                ParticleCircle(p.origin, p.radius(3.5) * 0.72, axis1 = basis(p.direction).second, axis2 = basis(p.direction).third, countPerMeter = 11.0, durationTicks = p.ticks(), style = style(p, primary = false, particle = Particle.END_ROD)),
+                shrinkingRing(p.origin, p.direction, p.radius(2.8), p.ticks(), style(p, particle = Particle.SNOWFLAKE)),
+            )
+        },
+        preset(
+            "projects:class/starweaver/w_star",
+            "Starweaver Star W",
+            combat + setOf("class", "starweaver", "skill2"),
+            listOf(number("radius", 3.5, 0.0, 7.0)) + colors + common,
+        ) { p ->
+            ParticleBatch.of(
+                pulseRing(p.origin, p.direction, p.radius(3.5), p.ticks(), style(p, particle = Particle.END_ROD, count = 2)),
+                ParticleCircle(p.origin, p.radius(3.5) * 0.72, axis1 = basis(p.direction).second, axis2 = basis(p.direction).third, countPerMeter = 11.0, durationTicks = p.ticks(), style = style(p, primary = false, particle = Particle.ELECTRIC_SPARK)),
+                ParticleExplosion(p.origin, radius = 0.2, sphere = true, particle = Particle.END_ROD, count = 10, speed = 0.08f, seed = p.seedValue()),
+            )
+        },
+        preset(
+            "projects:class/starweaver/w_lunar",
+            "Starweaver Lunar Conjunction W",
+            combat + setOf("class", "starweaver", "skill2", "conjunction"),
+            listOf(number("radius", 5.0, 0.0, 8.0)) + colors + common,
+        ) { p ->
+            ParticleBatch.of(
+                pulseRing(p.origin, p.direction, p.radius(5.0), p.ticks(), style(p, particle = Particle.END_ROD, count = 2)),
+                shrinkingRing(p.origin, p.direction, p.radius(4.5), p.ticks(), style(p, primary = false, particle = Particle.SNOWFLAKE)),
+                ParticleCircle(p.origin, p.radius(5.0) * 0.5, axis1 = basis(p.direction).second, axis2 = basis(p.direction).third, countPerMeter = 14.0, durationTicks = p.ticks(), style = style(p, particle = Particle.DUST)),
+            )
+        },
+        preset(
+            "projects:class/starweaver/e_sun",
+            "Starweaver Sun E",
+            combat + setOf("class", "starweaver", "skill3"),
+            listOf(number("radius", 3.0, 0.0, 6.0), number("height", 3.5, 0.0, 8.0)) + colors + common,
+        ) { p ->
+            val meteor = p.origin.add(0.0, p.number("height", 3.5), 0.0)
+            ParticleBatch.of(
+                ParticleLine(meteor, p.origin, countPerMeter = 10.0, durationTicks = p.ticks(), style = style(p, particle = Particle.FLAME, count = 2)),
+                ParticleExplosion(p.origin, radius = p.radius(1.0), particle = Particle.EXPLOSION, count = 12, speed = 0.1f, seed = p.seedValue()),
+                pulseRing(p.origin, Vec(0.0, 1.0, 0.0), p.radius(3.0), p.ticks(), style(p, particle = Particle.DUST, count = 2)),
+            )
+        },
+        preset(
+            "projects:class/starweaver/e_moon",
+            "Starweaver Moon E",
+            combat + setOf("class", "starweaver", "skill3"),
+            listOf(number("radius", 3.0, 0.0, 6.0), number("height", 3.5, 0.0, 8.0)) + colors + common,
+        ) { p ->
+            val meteor = p.origin.add(0.0, p.number("height", 3.5), 0.0)
+            ParticleBatch.of(
+                ParticleLine(meteor, p.origin, countPerMeter = 10.0, durationTicks = p.ticks(), style = style(p, particle = Particle.END_ROD, count = 2)),
+                ParticleExplosion(p.origin, radius = p.radius(1.0), particle = Particle.SNOWFLAKE, count = 12, speed = 0.08f, seed = p.seedValue()),
+                pulseRing(p.origin, Vec(0.0, 1.0, 0.0), p.radius(3.0), p.ticks(), style(p, particle = Particle.END_ROD, count = 2)),
+            )
+        },
+        preset(
+            "projects:class/starweaver/e_star",
+            "Starweaver Star E",
+            combat + setOf("class", "starweaver", "skill3"),
+            listOf(number("radius", 3.0, 0.0, 6.0), number("height", 3.5, 0.0, 8.0)) + colors + common,
+        ) { p ->
+            val meteor = p.origin.add(0.0, p.number("height", 3.5), 0.0)
+            ParticleBatch.of(
+                ParticleLine(meteor, p.origin, countPerMeter = 12.0, durationTicks = p.ticks(), style = style(p, particle = Particle.END_ROD, count = 2)),
+                ParticleSpiral(meteor, Vec(0.0, -1.0, 0.0), 0.28, PI * 2.0, 1.0, axialLength = 1.4, durationTicks = p.ticks(), style = style(p, primary = false, particle = Particle.ELECTRIC_SPARK)),
+                ParticleExplosion(p.origin, radius = p.radius(1.0), particle = Particle.END_ROD, count = 14, speed = 0.1f, seed = p.seedValue()),
+                pulseRing(p.origin, Vec(0.0, 1.0, 0.0), p.radius(3.0), p.ticks(), style(p, particle = Particle.END_ROD, count = 2)),
+            )
+        },
+        preset(
+            "projects:class/starweaver/e_stellar",
+            "Starweaver Stellar Conjunction E",
+            combat + setOf("class", "starweaver", "skill3", "conjunction"),
+            listOf(number("radius", 4.5, 0.0, 8.0), number("height", 5.0, 0.0, 10.0)) + colors + common,
+        ) { p ->
+            val meteor = p.origin.add(0.0, p.number("height", 5.0), 0.0)
+            ParticleBatch.of(
+                ParticleLine(meteor, p.origin, countPerMeter = 14.0, durationTicks = p.ticks(), style = style(p, particle = Particle.END_ROD, count = 3)),
+                ParticleExplosion(p.origin, radius = 1.2, sphere = true, particle = Particle.EXPLOSION, count = 20, speed = 0.12f, seed = p.seedValue()),
+                pulseRing(p.origin, Vec(0.0, 1.0, 0.0), p.radius(4.5), p.ticks(), style(p, primary = false, particle = Particle.ELECTRIC_SPARK, count = 2)),
+                ParticleCircle(p.origin, p.radius(4.5), axis1 = Vec(1.0, 0.0, 0.0), axis2 = Vec(0.0, 0.0, 1.0), countPerMeter = 12.0, durationTicks = p.ticks(), style = style(p, particle = Particle.DUST, count = 2)),
+            )
+        },
+        preset(
+            "projects:class/starweaver/r_swap",
+            "Starweaver Stored Swap",
+            combat + setOf("class", "starweaver", "ultimate"),
+            listOf(number("radius", 1.2, 0.0, 3.0)) + colors + common,
+        ) { p ->
+            ParticleBatch.of(
+                ParticleCircle(p.origin, p.radius(1.2), axis1 = basis(p.direction).second, axis2 = basis(p.direction).third, countPerMeter = 16.0, durationTicks = p.ticks(), style = style(p, particle = Particle.END_ROD, count = 2)),
+                ParticleExplosion(p.origin, radius = 0.35, sphere = true, particle = Particle.ELECTRIC_SPARK, count = 12, speed = 0.08f, seed = p.seedValue()),
+            )
+        },
         preset("projects:geometry/circle", "Circle", geometry, listOf(number("radius", 1.5, 0.0, 8.0)) + common) { p -> ParticleCircle(p.origin, p.radius(1.5), axis1 = basis(p.direction).second, axis2 = basis(p.direction).third, countPerMeter = 10.0, style = style(p, particle = Particle.DUST)) },
         preset("projects:geometry/arc", "Arc", geometry, listOf(number("radius", 1.6, 0.0, 8.0), number("angle", 140.0, -360.0, 360.0)) + common) { p -> ParticleCircle(p.origin, p.radius(1.6), axis1 = basis(p.direction).second, axis2 = basis(p.direction).third, startDegrees = -p.number("angle", 140.0) / 2.0, endDegrees = p.number("angle", 140.0) / 2.0, countPerMeter = 10.0, style = style(p, particle = Particle.DUST)) },
         preset("projects:geometry/sphere", "Sphere", geometry, listOf(number("radius", 1.4, 0.0, 8.0), number("count", 72.0, 1.0, 512.0)) + common) { p -> ParticleUtils.sphere(p.origin, p.radius(1.4), p.number("count", 72.0).roundToInt(), style(p, particle = Particle.DUST), p.seedValue()) },

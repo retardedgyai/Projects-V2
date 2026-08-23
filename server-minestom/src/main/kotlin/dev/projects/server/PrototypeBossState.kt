@@ -46,6 +46,7 @@ class PrototypeBossState(
     private val skill1DamageExecutions = mutableSetOf<Pair<Long, UUID>>()
     private val skill2PulseDamageExecutions = mutableSetOf<Triple<Long, Int, UUID>>()
     private val skill2LandingDamageExecutions = mutableSetOf<Pair<Long, UUID>>()
+    private val starweaverDamageExecutions = mutableSetOf<Pair<Long, UUID>>()
 
     val isActive: Boolean
         get() = encounterState == PrototypeEncounterState.ACTIVE
@@ -142,6 +143,13 @@ class PrototypeBossState(
         return applyPlayerDamage(SKILL_2_LANDING_DAMAGE)
     }
 
+    /** Applies one server-confirmed Starweaver direct or periodic hit. */
+    fun applyStarweaverDamage(castId: Long, targetId: UUID, damage: Int): Int {
+        require(damage >= 0) { "Starweaver damage must not be negative" }
+        if (!isActive || !starweaverDamageExecutions.add(castId to targetId)) return 0
+        return applyPlayerDamage(damage)
+    }
+
     fun setBreakActive(active: Boolean) {
         breakActive = active
     }
@@ -162,6 +170,7 @@ class PrototypeBossState(
         skill1DamageExecutions.clear()
         skill2PulseDamageExecutions.clear()
         skill2LandingDamageExecutions.clear()
+        starweaverDamageExecutions.clear()
         when (targetPhase) {
             PrototypeBossPhase.DUEL -> {
                 currentHealth = (maxHealth * 0.85).roundToInt().coerceAtLeast(1)
@@ -193,6 +202,7 @@ class PrototypeBossState(
         skill1DamageExecutions.clear()
         skill2PulseDamageExecutions.clear()
         skill2LandingDamageExecutions.clear()
+        starweaverDamageExecutions.clear()
     }
 
     /** Restores the prototype encounter and every registered player to its test-start state. */
@@ -208,6 +218,7 @@ class PrototypeBossState(
         skill2PulseDamageExecutions.clear()
         skill2LandingDamageExecutions.clear()
         playerDamageExecutions.clear()
+        starweaverDamageExecutions.clear()
         playerHealth.keys.toList().forEach { playerHealth[it] = playerMaxHealth }
     }
 

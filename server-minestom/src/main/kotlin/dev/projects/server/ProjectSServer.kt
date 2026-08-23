@@ -58,6 +58,7 @@ import net.kyori.adventure.sound.Sound
 import net.kyori.adventure.key.Key
 import java.nio.charset.StandardCharsets
 import java.nio.file.Path
+import java.util.Locale
 import java.util.UUID
 import kotlin.math.abs
 import kotlin.math.floor
@@ -89,6 +90,11 @@ private const val DODGE_PLAYER_WIDTH = 0.6
 private const val DODGE_PLAYER_HEIGHT = 1.8
 private val TWIN_BLADES_AUTO_OFFHAND = Tag.Boolean("projects_twin_blades_auto_offhand").defaultValue(false)
 
+internal enum class PlayableClass {
+    TWIN_BLADES,
+    STARWEAVER,
+}
+
 internal data class SkillCooldowns(
     val skill1: Int,
     val skill2: Int,
@@ -112,6 +118,8 @@ fun main() {
     val skill1States = mutableMapOf<UUID, Skill1State>()
     val skill2States = mutableMapOf<UUID, Skill2State>()
     val skill3States = mutableMapOf<UUID, Skill3State>()
+    val selectedClasses = mutableMapOf<UUID, PlayableClass>()
+    val starweaverStates = mutableMapOf<UUID, StarweaverRuntimeState>()
     val resourceSyncTicks = mutableMapOf<UUID, Int>()
     val lastSentCooldowns = mutableMapOf<UUID, SkillCooldowns>()
     val dodgeVelocityActive = mutableMapOf<UUID, Boolean>()
@@ -195,6 +203,40 @@ fun main() {
         lastSentCooldowns[player.uuid] = cooldowns
     }
 
+    fun sendStarweaverActionBar(player: net.minestom.server.entity.Player) {
+        val state = starweaverStates[player.uuid] ?: return
+        val snapshot = state.rotation.snapshot()
+        if (snapshot.reloadTicksRemaining > 0) {
+            val seconds = String.format(Locale.ROOT, "%.1f", snapshot.reloadTicksRemaining / 20.0)
+            player.sendActionBar(Component.text("Stargazing... ${seconds}s | Stored: ${snapshot.stored.symbol}"))
+            return
+        }
+        val queueText = buildString {
+            val conjunctionSlot = snapshot.conjunctionSlot
+            if (conjunctionSlot != null) {
+                append("[")
+                append(snapshot.queue.take(2).joinToString(" ") { it.symbol })
+                append("]")
+                snapshot.queue.drop(2).forEach { append(" ").append(it.symbol) }
+            } else {
+                append(snapshot.queue.joinToString(" ") { it.symbol })
+            }
+        }
+        val cooldownText = StarweaverSlot.entries.joinToString(" ") { slot ->
+            val remaining = snapshot.cooldowns.getValue(slot)
+            "${slot.name}:${if (remaining == 0) "ready" else String.format(Locale.ROOT, "%.1f", remaining / 20.0)}"
+        }
+        player.sendActionBar(
+            Component.text("$queueText | Stored: ${snapshot.stored.symbol} | $cooldownText"),
+        )
+    }
+
+    fun resetStarweaverPlayerState(player: net.minestom.server.entity.Player) {
+        starweaverStates[player.uuid]?.reset()
+        restoreStarweaverMovementSpeed(player)
+        player.setAdditionalHearts(0f)
+    }
+
     fun updateBossBar() {
         val status = when {
             prototypeBoss.isVictory -> "VICTORY"
@@ -220,8 +262,11 @@ fun main() {
         skill1States.values.forEach { it.reset() }
         skill2States.values.forEach { it.reset() }
         skill3States.values.forEach { it.reset() }
+        starweaverStates.values.forEach { it.reset() }
         instance.players.forEach { player ->
             player.setVelocity(Vec.ZERO)
+            restoreStarweaverMovementSpeed(player)
+            player.setAdditionalHearts(0f)
         }
         dodgeVelocityActive.clear()
     }
@@ -289,6 +334,75 @@ fun main() {
         player.sendMessage(Component.text("Game mode set to ${mode.name.lowercase()}"))
     }
 
+    val classNameArgument = ArgumentType.Word("className")
+    fun handleClass(sender: CommandSender, context: CommandContext) {
+        val player = sender as? net.minestom.server.entity.Player ?: return
+        val requested = context.get<String>(classNameArgument).lowercase(Locale.ROOT)
+        val selected = when (requested) {
+            "starweaver", "star_weaver" -> PlayableClass.STARWEAVER
+            "twinblades", "twin_blades", "twin-blades" -> PlayableClass.TWIN_BLADES
+            else -> {
+                player.sendMessage(Component.text("Use /class starweaver or /class twinblades"))
+                return
+            }
+        }
+        resetStarweaverPlayerState(player)
+        combatStates[player.uuid]?.reset()
+        dodgeStates[player.uuid]?.reset()
+        twinRodsAirStates[player.uuid]?.tick(true)
+        skill1States[player.uuid]?.reset()
+        skill2States[player.uuid]?.reset()
+        skill3States[player.uuid]?.reset()
+        selectedClasses[player.uuid] = selected
+        player.setVelocity(Vec.ZERO)
+        if (selected == PlayableClass.STARWEAVER) {
+            player.sendMessage(Component.text("Class selected: Starweaver (Q/W/E/R slots)"))
+            sendStarweaverActionBar(player)
+        } else {
+            player.sendActionBar(Component.empty())
+            player.sendMessage(Component.text("Class selected: Twin Blades"))
+        }
+    }
+
+    fun handleStarweaverState(sender: CommandSender) {
+        val player = sender as? net.minestom.server.entity.Player ?: return
+        if (selectedClasses[player.uuid] != PlayableClass.STARWEAVER) {
+            player.sendMessage(Component.text("Select Starweaver first with /class starweaver"))
+            return
+        }
+        sendStarweaverActionBar(player)
+    }
+
+    val queueArguments = (1..6).map { ArgumentType.Word("mark$it") }
+    fun handleStarweaverQueue(sender: CommandSender, context: CommandContext) {
+        val player = sender as? net.minestom.server.entity.Player ?: return
+        val state = starweaverStates[player.uuid]
+        if (state == null || selectedClasses[player.uuid] != PlayableClass.STARWEAVER) {
+            player.sendMessage(Component.text("Select Starweaver first with /class starweaver"))
+            return
+        }
+        val marks = queueArguments.map { argument ->
+            when (context.get<String>(argument).lowercase(Locale.ROOT)) {
+                "sun" -> StarweaverCelestial.SUN
+                "moon" -> StarweaverCelestial.MOON
+                "star" -> StarweaverCelestial.STAR
+                else -> null
+            }
+        }
+        if (marks.any { it == null }) {
+            player.sendMessage(Component.text("Use /starweaverqueue sun|moon|star six times"))
+            return
+        }
+        runCatching {
+            state.rotation.setRotationForTest(marks.take(5).filterNotNull(), marks[5]!!)
+        }.onFailure { error ->
+            player.sendMessage(Component.text(error.message ?: "Invalid Starweaver rotation"))
+            return
+        }
+        sendStarweaverActionBar(player)
+        player.sendMessage(Component.text("Starweaver rotation fixed for testing"))
+    }
+
     MinecraftServer.getCommandManager().register(
         Command("as").apply { addSyntax(::handleAttackSpeed, speedArgument) },
     )
@@ -300,6 +414,17 @@ fun main() {
     MinecraftServer.getCommandManager().register(
         Command("survival").apply {
             setDefaultExecutor { sender, _ -> handleGameMode(sender, GameMode.SURVIVAL) }
+        },
+    )
+    MinecraftServer.getCommandManager().register(
+        Command("class").apply { addSyntax(::handleClass, classNameArgument) },
+    )
+    MinecraftServer.getCommandManager().register(
+        Command("starweaverstate").apply { setDefaultExecutor { sender, _ -> handleStarweaverState(sender) } },
+    )
+    MinecraftServer.getCommandManager().register(
+        Command("starweaverqueue").apply {
+            addSyntax(::handleStarweaverQueue, *queueArguments.toTypedArray())
         },
     )
     MinecraftServer.getCommandManager().register(
@@ -543,6 +668,358 @@ fun main() {
         },
     )
 
+    fun starweaverProjectileTargets(caster: net.minestom.server.entity.Player): List<StarweaverProjectileTarget> = buildList {
+        dummy?.takeIf { it.instance == caster.instance && !it.isRemoved }?.let {
+            add(StarweaverProjectileTarget(combatTarget(it), isAlly = false))
+        }
+        instance.players.filter { it !== caster && it.isOnline }.forEach { ally ->
+            add(StarweaverProjectileTarget(combatTarget(ally), isAlly = true))
+        }
+    }
+
+    fun starweaverAreaTargets(caster: net.minestom.server.entity.Player): List<StarweaverProjectileTarget> = buildList {
+        dummy?.takeIf { it.instance == caster.instance && !it.isRemoved }?.let {
+            add(StarweaverProjectileTarget(combatTarget(it), isAlly = false))
+        }
+        instance.players.filter { it.isOnline }.forEach { ally ->
+            add(StarweaverProjectileTarget(combatTarget(ally), isAlly = true))
+        }
+    }
+
+    fun applyStarweaverDirectDamage(
+        caster: net.minestom.server.entity.Player,
+        state: StarweaverRuntimeState,
+        cast: StarweaverCast,
+        targetId: UUID,
+        damage: Int,
+    ): Int {
+        val target = dummy?.takeIf { it.uuid == targetId && !it.isRemoved } ?: return 0
+        val applied = prototypeBoss.applyStarweaverDamage(cast.castId, target.uuid, damage)
+        if (applied <= 0) return 0
+        updateBossBar()
+        val enemyIds = listOf(target.uuid)
+        state.effects.moonlitPropagation(cast.castId, target.uuid, applied, enemyIds).forEach { (transferId, transferDamage) ->
+            val transferred = prototypeBoss.applyStarweaverDamage(cast.castId, transferId, transferDamage)
+            if (transferred > 0) updateBossBar()
+        }
+        return applied
+    }
+
+    fun applyStarweaverPeriodicDamage(state: StarweaverRuntimeState, effect: StarweaverPeriodicEffect) {
+        val target = dummy?.takeIf { it.uuid == effect.targetId && !it.isRemoved } ?: return
+        val applied = prototypeBoss.applyStarweaverDamage(state.nextExecutionId(), target.uuid, effect.damage)
+        if (applied > 0) updateBossBar()
+    }
+
+    fun healStarweaverPlayer(targetId: UUID, amount: Int) {
+        val target = instance.players.firstOrNull { it.uuid == targetId } ?: return
+        target.setHealth((target.getHealth() + amount).coerceAtMost(prototypeBoss.playerMaxHealth.toFloat()))
+    }
+
+    fun updateStarweaverShields() {
+        instance.players.forEach { target ->
+            val shield = starweaverStates.values.mapNotNull { it.effects.shield(target.uuid)?.amount }.maxOrNull() ?: 0
+            target.setAdditionalHearts(shield.toFloat())
+        }
+    }
+
+    fun activateStarweaverZone(
+        caster: net.minestom.server.entity.Player,
+        state: StarweaverRuntimeState,
+        zone: StarweaverPendingZone,
+    ) {
+        val cast = zone.cast
+        val radius = when {
+            cast.kind == StarweaverCastKind.CONJUNCTION && cast.celestial == StarweaverCelestial.MOON -> StarweaverBalance.LUNAR_W_RADIUS
+            cast.slot == StarweaverSlot.W -> StarweaverBalance.W_RADIUS
+            else -> StarweaverBalance.E_RADIUS
+        }
+        val targets = starweaverAreaTargets(caster).filter {
+            isWithinStarweaverAabbRadius(zone.center, radius, it.target)
+        }
+        targets.forEach { target ->
+            val targetId = target.target.id
+            val isEnemy = !target.isAlly
+            when (cast.slot) {
+                StarweaverSlot.W -> when {
+                    cast.kind == StarweaverCastKind.CONJUNCTION && cast.celestial == StarweaverCelestial.MOON -> {
+                        if (isEnemy) {
+                            applyStarweaverDirectDamage(caster, state, cast, targetId, StarweaverBalance.LUNAR_W_DAMAGE)
+                            state.effects.applyMoonlit(targetId)
+                            if (targetId != dummy?.uuid) {
+                                state.effects.applyStun(targetId, StarweaverBalance.LUNAR_W_STUN_TICKS)
+                            }
+                        }
+                    }
+                    cast.celestial == StarweaverCelestial.SUN -> if (isEnemy) {
+                        applyStarweaverDirectDamage(caster, state, cast, targetId, StarweaverBalance.SUN_W_DAMAGE)
+                        state.effects.applySolarBurn(targetId)
+                    }
+                    cast.celestial == StarweaverCelestial.MOON -> if (isEnemy) {
+                        applyStarweaverDirectDamage(caster, state, cast, targetId, StarweaverBalance.MOON_W_DAMAGE)
+                        if (targetId != dummy?.uuid) state.effects.applyStun(targetId, StarweaverBalance.MOON_W_STUN_TICKS)
+                    }
+                    target.isAlly -> {
+                        state.effects.applyShield(targetId, StarweaverBalance.STAR_W_SHIELD)
+                    }
+                    else -> {
+                        applyStarweaverDirectDamage(caster, state, cast, targetId, StarweaverBalance.STAR_W_DAMAGE)
+                    }
+                }
+                StarweaverSlot.E -> when {
+                    cast.kind == StarweaverCastKind.CONJUNCTION && cast.celestial == StarweaverCelestial.STAR -> {
+                        if (isEnemy) {
+                            applyStarweaverDirectDamage(caster, state, cast, targetId, StarweaverBalance.STELLAR_E_DAMAGE)
+                        } else {
+                            healStarweaverPlayer(targetId, StarweaverBalance.STELLAR_E_HEAL)
+                        }
+                    }
+                    cast.celestial == StarweaverCelestial.SUN -> if (isEnemy) {
+                        applyStarweaverDirectDamage(caster, state, cast, targetId, StarweaverBalance.SUN_E_DAMAGE)
+                        state.effects.applySolarBurn(targetId)
+                    }
+                    cast.celestial == StarweaverCelestial.MOON -> if (isEnemy) {
+                        applyStarweaverDirectDamage(caster, state, cast, targetId, StarweaverBalance.MOON_E_DAMAGE)
+                        if (targetId != dummy?.uuid) state.effects.applyStun(targetId, StarweaverBalance.MOON_E_STUN_TICKS)
+                    }
+                    target.isAlly -> healStarweaverPlayer(targetId, StarweaverBalance.STAR_E_HEAL)
+                    else -> applyStarweaverDirectDamage(caster, state, cast, targetId, StarweaverBalance.STAR_E_DAMAGE)
+                }
+                StarweaverSlot.Q -> Unit
+            }
+        }
+
+        if (cast.kind == StarweaverCastKind.CONJUNCTION && cast.celestial == StarweaverCelestial.STAR) {
+            state.addField(cast.castId, zone.center)
+            showStarweaverPreset(
+                caster,
+                starweaverZonePresetId(cast),
+                zone.center,
+                Vec(0.0, 1.0, 0.0),
+                particleAnimations,
+                particleManager,
+                durationTicks = 20,
+            )
+        } else {
+            showStarweaverPreset(
+                caster,
+                starweaverZonePresetId(cast),
+                zone.center,
+                Vec(0.0, 1.0, 0.0),
+                particleAnimations,
+                particleManager,
+                durationTicks = 5,
+            )
+        }
+    }
+
+    fun tickStarweaverPlayer(
+        player: net.minestom.server.entity.Player,
+        combatState: CombatState,
+        dodge: DodgeState,
+        state: StarweaverRuntimeState,
+    ) {
+        if (!prototypeBoss.isEncounterRunning) return
+
+        val runtimeTick = state.tick()
+        runtimeTick.periodicEffects.forEach { applyStarweaverPeriodicDamage(state, it) }
+        val targets = starweaverProjectileTargets(player)
+        state.projectiles().forEach { projectile ->
+            val result = projectile.tick(targets) { start, end ->
+                isStarweaverBlockCollision(player.instance, start, end)
+            }
+            result.hitTargetIds.forEach { targetId ->
+                val target = targets.firstOrNull { it.target.id == targetId } ?: return@forEach
+                val cast = projectile.cast
+                if (target.isAlly) {
+                    if (cast.celestial == StarweaverCelestial.STAR) {
+                        healStarweaverPlayer(targetId, StarweaverBalance.STAR_Q_HEAL)
+                    }
+                    return@forEach
+                }
+                when {
+                    cast.kind == StarweaverCastKind.CONJUNCTION && cast.celestial == StarweaverCelestial.SUN -> {
+                        applyStarweaverDirectDamage(player, state, cast, targetId, StarweaverBalance.SOLAR_Q_DAMAGE)
+                        state.effects.applySolarQDot(targetId, prototypeBoss.maxHealth)
+                    }
+                    cast.celestial == StarweaverCelestial.SUN -> {
+                        applyStarweaverDirectDamage(player, state, cast, targetId, StarweaverBalance.SUN_Q_DAMAGE)
+                    }
+                    cast.celestial == StarweaverCelestial.MOON -> {
+                        applyStarweaverDirectDamage(player, state, cast, targetId, StarweaverBalance.MOON_Q_DAMAGE)
+                        val bossTarget = targetId == dummy?.uuid
+                        state.effects.applySlow(
+                            targetId,
+                            if (bossTarget) StarweaverBalance.MOON_Q_BOSS_SLOW_MULTIPLIER else StarweaverBalance.MOON_Q_SLOW_MULTIPLIER,
+                            if (bossTarget) StarweaverBalance.MOON_Q_BOSS_SLOW_TICKS else StarweaverBalance.MOON_Q_SLOW_TICKS,
+                        )
+                    }
+                    cast.celestial == StarweaverCelestial.STAR -> {
+                        val damage = applyStarweaverDirectDamage(player, state, cast, targetId, StarweaverBalance.STAR_Q_DAMAGE)
+                        if (damage > 0 && state.markSelfHealIfFirst(cast.castId)) {
+                            healStarweaverPlayer(player.uuid, StarweaverBalance.STAR_Q_SELF_HEAL)
+                        }
+                    }
+                }
+                showStarweaverPreset(
+                    player,
+                    starweaverImpactPresetId(cast),
+                    projectile.position,
+                    Vec(0.0, 1.0, 0.0),
+                    particleAnimations,
+                    particleManager,
+                    durationTicks = 4,
+                )
+            }
+            if (result.active || result.hitTargetIds.isNotEmpty()) {
+                val direction = Vec(
+                    result.position.x() - projectile.previousPosition.x(),
+                    result.position.y() - projectile.previousPosition.y(),
+                    result.position.z() - projectile.previousPosition.z(),
+                )
+                showStarweaverPreset(
+                    player,
+                    starweaverProjectilePresetId(projectile.cast),
+                    result.position,
+                    direction,
+                    particleAnimations,
+                    particleManager,
+                    durationTicks = 2,
+                )
+            }
+        }
+        state.removeInactiveProjectiles()
+
+        runtimeTick.activatedZones.forEach { activateStarweaverZone(player, state, it) }
+        runtimeTick.fieldPulses.forEach { pulse ->
+            starweaverAreaTargets(player)
+                .filter { isWithinStarweaverAabbRadius(pulse.center, pulse.radius, it.target) }
+                .forEach { target ->
+                    if (target.isAlly) {
+                        healStarweaverPlayer(target.target.id, StarweaverBalance.STELLAR_E_HEAL)
+                    } else {
+                        applyStarweaverPeriodicDamage(
+                            state,
+                            StarweaverPeriodicEffect(
+                                targetId = target.target.id,
+                                damage = StarweaverBalance.STELLAR_FIELD_DAMAGE,
+                                source = StarweaverPeriodicSource.STELLAR_FIELD,
+                            ),
+                        )
+                    }
+                }
+            showStarweaverPreset(
+                player,
+                "projects:class/starweaver/e_stellar",
+                pulse.center,
+                Vec(0.0, 1.0, 0.0),
+                particleAnimations,
+                particleManager,
+                durationTicks = 10,
+            )
+        }
+
+        applyStarweaverMovementSpeed(player, state.rotation.movementSpeedBonus)
+        updateStarweaverShields()
+        sendStarweaverActionBar(player)
+
+        val velocityWasApplied = dodgeVelocityActive[player.uuid] == true
+        val movement = dodge.tick(
+            canStart = !combatState.isAttacking,
+            facing = player.position.direction(),
+            startAllowed = { canStartDodge(player.isOnGround, weaponFor(player)) },
+        )
+        if (movement != null) {
+            moveDodge(player, dodge, movement)
+            dodgeVelocityActive[player.uuid] = true
+        } else if (velocityWasApplied) {
+            stopDodgeVelocity(player)
+            dodgeVelocityActive[player.uuid] = false
+        }
+        if (!prototypeBoss.isEncounterRunning) finishEncounter()
+    }
+
+    fun handleStarweaverSkillInput(player: net.minestom.server.entity.Player, slot: ClassSkillSlot) {
+        val state = starweaverStates[player.uuid] ?: return
+        when (slot) {
+            ClassSkillSlot.ULTIMATE -> {
+                if (state.rotation.trySwap()) {
+                    showStarweaverPreset(
+                        player,
+                        "projects:class/starweaver/r_swap",
+                        player.position.add(0.0, 1.0, 0.0),
+                        Vec(0.0, 1.0, 0.0),
+                        particleAnimations,
+                        particleManager,
+                        durationTicks = 6,
+                    )
+                }
+            }
+            ClassSkillSlot.SKILL_1,
+            ClassSkillSlot.SKILL_2,
+            ClassSkillSlot.SKILL_3 -> {
+                val starweaverSlot = when (slot) {
+                    ClassSkillSlot.SKILL_1 -> StarweaverSlot.Q
+                    ClassSkillSlot.SKILL_2 -> StarweaverSlot.W
+                    ClassSkillSlot.SKILL_3 -> StarweaverSlot.E
+                    ClassSkillSlot.ULTIMATE -> error("Handled above")
+                }
+                val groundTarget = if (starweaverSlot == StarweaverSlot.W || starweaverSlot == StarweaverSlot.E) {
+                    resolveStarweaverGroundTarget(
+                        player.instance,
+                        player.position.add(0.0, player.eyeHeight, 0.0),
+                        player.position.direction(),
+                        if (starweaverSlot == StarweaverSlot.W) StarweaverBalance.W_RANGE else StarweaverBalance.E_RANGE,
+                    ) ?: run {
+                        player.sendMessage(Component.text("Starweaver target is out of range or has no surface"))
+                        return
+                    }
+                } else {
+                    null
+                }
+                val cast = state.rotation.tryCast(starweaverSlot) ?: return
+                if (starweaverSlot == StarweaverSlot.Q) {
+                    val origin = player.position.add(0.0, player.eyeHeight, 0.0)
+                    state.addProjectile(
+                        if (cast.kind == StarweaverCastKind.CONJUNCTION && cast.celestial == StarweaverCelestial.SUN) {
+                            StarweaverProjectileState.solar(cast, origin, player.position.direction())
+                        } else {
+                            StarweaverProjectileState.normal(cast, origin, player.position.direction())
+                        },
+                    )
+                    showStarweaverPreset(
+                        player,
+                        starweaverProjectilePresetId(cast),
+                        origin,
+                        player.position.direction(),
+                        particleAnimations,
+                        particleManager,
+                        durationTicks = 5,
+                    )
+                } else {
+                    val center = requireNotNull(groundTarget)
+                    val delay = when {
+                        starweaverSlot == StarweaverSlot.W && cast.celestial == StarweaverCelestial.STAR -> StarweaverBalance.STAR_W_DELAY_TICKS
+                        starweaverSlot == StarweaverSlot.E && cast.celestial == StarweaverCelestial.STAR -> StarweaverBalance.STAR_E_DELAY_TICKS
+                        starweaverSlot == StarweaverSlot.W -> StarweaverBalance.W_DELAY_TICKS
+                        else -> StarweaverBalance.E_DELAY_TICKS
+                    }
+                    state.addPendingZone(cast, center, delay)
+                    showStarweaverPreset(
+                        player,
+                        starweaverZonePresetId(cast),
+                        center,
+                        Vec(0.0, 1.0, 0.0),
+                        particleAnimations,
+                        particleManager,
+                        durationTicks = delay,
+                    )
+                }
+            }
+        }
+        sendStarweaverActionBar(player)
+    }
+
     events.addListener(AsyncPlayerConfigurationEvent::class.java) { event ->
         event.spawningInstance = instance
         event.player.respawnPoint = Pos(0.0, 41.0, 0.0)
@@ -550,11 +1027,16 @@ fun main() {
     events.addListener(PlayerSpawnEvent::class.java) { event ->
         prototypeBoss.registerPlayer(event.player.uuid)
         event.player.setHealth(prototypeBoss.playerMaxHealth.toFloat())
+        val starweaver = starweaverStates.getOrPut(event.player.uuid) { StarweaverRuntimeState() }
+        selectedClasses.putIfAbsent(event.player.uuid, PlayableClass.TWIN_BLADES)
         val resources = classResources.getOrPut(event.player.uuid) { ClassResourceState() }
         val skill1 = skill1States.getOrPut(event.player.uuid) { Skill1State() }
         val skill2 = skill2States.getOrPut(event.player.uuid) { Skill2State() }
         val skill3 = skill3States.getOrPut(event.player.uuid) { Skill3State() }
         if (!event.isFirstSpawn) {
+            starweaver.reset()
+            restoreStarweaverMovementSpeed(event.player)
+            event.player.setAdditionalHearts(0f)
             resources.reset()
             skill1.reset()
             skill2.reset()
@@ -562,6 +1044,9 @@ fun main() {
         }
         resourceSyncTicks[event.player.uuid] = 0
         sendResourceSnapshot(event.player)
+        if (selectedClasses[event.player.uuid] == PlayableClass.STARWEAVER) {
+            sendStarweaverActionBar(event.player)
+        }
         updateBossBar()
         event.player.showBossBar(bossBar)
         if (event.isFirstSpawn) {
@@ -606,6 +1091,7 @@ fun main() {
     }
     events.addListener(PlayerDisconnectEvent::class.java) { event ->
         val playerId = event.player.uuid
+        resetStarweaverPlayerState(event.player)
         particleAnimations.cancel(slashPreviewHandles.remove(playerId))
         particleAnimations.cancelFor(event.player)
         combatStates.remove(playerId)
@@ -615,6 +1101,8 @@ fun main() {
         skill1States.remove(playerId)
         skill2States.remove(playerId)
         skill3States.remove(playerId)
+        starweaverStates.remove(playerId)
+        selectedClasses.remove(playerId)
         resourceSyncTicks.remove(playerId)
         lastSentCooldowns.remove(playerId)
         attackSpeeds.remove(playerId)
@@ -637,7 +1125,9 @@ fun main() {
         }
     }
     events.addListener(PlayerTickEvent::class.java) { event ->
-        synchronizeTwinBladesOffhand(event.player)
+        if (selectedClasses[event.player.uuid] != PlayableClass.STARWEAVER) {
+            synchronizeTwinBladesOffhand(event.player)
+        }
         val state = combatStates[event.player.uuid] ?: return@addListener
         val dodge = dodgeStates[event.player.uuid] ?: return@addListener
         val twinRodsAir = twinRodsAirStates[event.player.uuid] ?: return@addListener
@@ -665,6 +1155,11 @@ fun main() {
                     return@addListener
                 }
             }
+        }
+        if (selectedClasses[event.player.uuid] == PlayableClass.STARWEAVER) {
+            val starweaver = starweaverStates[event.player.uuid] ?: return@addListener
+            tickStarweaverPlayer(event.player, state, dodge, starweaver)
+            return@addListener
         }
         if (!prototypeBoss.isEncounterRunning) return@addListener
         twinBladesComboStates[event.player.uuid]?.tick()
@@ -978,6 +1473,7 @@ fun main() {
                     println("ProjectS handshake complete for ${event.player.username}")
                 }
                 is AttackInput -> {
+                    if (selectedClasses[event.player.uuid] == PlayableClass.STARWEAVER) return@addListener
                     if (!prototypeBoss.isActive) return@addListener
                     val state = combatStates[event.player.uuid] ?: return@addListener
                     val combatEvents = state.input(message.state)
@@ -1021,6 +1517,10 @@ fun main() {
                 }
                 is ClassSkillInput -> {
                     if (!prototypeBoss.isActive) return@addListener
+                    if (selectedClasses[event.player.uuid] == PlayableClass.STARWEAVER) {
+                        handleStarweaverSkillInput(event.player, message.slot)
+                        return@addListener
+                    }
                     val skill1 = skill1States[event.player.uuid] ?: return@addListener
                     val skill2 = skill2States[event.player.uuid] ?: return@addListener
                     val skill3 = skill3States[event.player.uuid] ?: return@addListener
