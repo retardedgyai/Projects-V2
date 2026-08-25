@@ -52,4 +52,18 @@ class EquipmentAndModFoundationTest {
         assertEquals(2.5, result.contribution!!.value)
         assertFalse(ModValidation.validate(ModEntry("projects:keen-edge", ModRank.RANK_1, 2.5, 0, 7), definition, EquipmentSlot.HEAD).valid)
     }
+
+    @Test
+    fun modTagMatchPolicyControlsRequiredTagMatching() {
+        fun definition(policy: ModTagMatchPolicy) = ModDefinition(
+            "projects:tagged", ModRank.RANK_1, setOf(EquipmentSlot.WEAPON),
+            setOf(AttackTag.MELEE), emptySet(), "projects:attack", 1.0, 2.0,
+            ModStackingLayer.BASE_FLAT, 0L, policy
+        )
+        val exact = definition(ModTagMatchPolicy.EXACT)
+        val allRequired = definition(ModTagMatchPolicy.ALL_REQUIRED)
+        val actualTags = setOf(AttackTag.MELEE, AttackTag.PHYSICAL)
+        assertFalse(exact.acceptsAttackTags(actualTags))
+        assertTrue(allRequired.acceptsAttackTags(actualTags))
+    }
 }

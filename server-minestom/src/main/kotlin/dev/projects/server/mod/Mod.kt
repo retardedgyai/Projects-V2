@@ -24,7 +24,8 @@ class ModDefinition(
     val minimumValue: Double,
     val maximumValue: Double,
     val stackingLayer: ModStackingLayer,
-    val definitionRevision: Long
+    val definitionRevision: Long,
+    val tagMatchPolicy: ModTagMatchPolicy = ModTagMatchPolicy.EXACT
 ) {
     val allowedSlots: Set<EquipmentSlot> = allowedSlots.toSet()
     val requiredTags: Set<AttackTag> = requiredTags.toSet()
@@ -43,7 +44,10 @@ class ModDefinition(
 
     fun acceptsAttackTags(actualTags: Set<AttackTag>): Boolean {
         if (actualTags.any { it in excludedTags }) return false
-        return actualTags == requiredTags
+        return when (tagMatchPolicy) {
+            ModTagMatchPolicy.EXACT -> actualTags == requiredTags
+            ModTagMatchPolicy.ALL_REQUIRED -> actualTags.containsAll(requiredTags)
+        }
     }
 }
 
