@@ -13,12 +13,15 @@ class HudDesignerScreen(
     private val store: HudLayoutStore,
     initialConfig: HudLayoutConfig,
     private val onSaved: (HudLayoutConfig) -> Unit = {},
+    private val onChanged: (HudLayoutConfig) -> Unit = {},
 ) : Screen(Component.literal("HUD Designer")) {
     private var config = initialConfig.copyLayouts()
     private var selected = HudElementId.SKILLS
     private var dragging = false
     private var dragX = 0
     private var dragY = 0
+    private var guideX: Int? = null
+    private var guideY: Int? = null
     private lateinit var widthField: EditBox
     private lateinit var heightField: EditBox
 
@@ -34,7 +37,7 @@ class HudDesignerScreen(
             .bounds(width - 145, 74, 110, 20).build())
         addRenderableWidget(Button.builder(Component.literal("Center Y")) { centerY() }
             .bounds(width - 145, 98, 110, 20).build())
-        addRenderableWidget(Button.builder(Component.literal("Reset")) { config.elements[selected] = HudLayoutConfig.defaults().elements[selected]!!; syncFields() }
+        addRenderableWidget(Button.builder(Component.literal("Reset")) { config.elements[selected] = HudLayoutConfig.defaults().elements[selected]!!; changed() }
             .bounds(width - 145, 122, 110, 20).build())
         addRenderableWidget(Button.builder(Component.literal("Save")) { saveConfig() }
             .bounds(width - 145, 146, 110, 20).build())
@@ -54,6 +57,9 @@ class HudDesignerScreen(
             outline(graphics, rect, selectedColor)
             graphics.text(font, id.label, rect.x + 3, rect.y + 3, selectedColor, false)
         }
+        drawHotbarPreview(graphics, config.elements[HudElementId.HOTBAR]!!.resolve(width, height))
+        guideX?.let { graphics.fill(it, 0, it + 1, height, 0x8899D9FF.toInt()) }
+        guideY?.let { graphics.fill(0, it, width - CONTROL_PANEL_WIDTH, it + 1, 0x8899D9FF.toInt()) }
         val layout = config.elements[selected]!!
         graphics.text(font, "X ${layout.offsetX} / Y ${layout.offsetY}", width - 148, 178, 0xFFB8C4CF.toInt(), false)
         graphics.text(font, "W ${layout.width} / H ${layout.height}", width - 148, 190, 0xFFB8C4CF.toInt(), false)
@@ -90,9 +96,14 @@ class HudDesignerScreen(
         val layout = config.elements[selected]!!
         val rect = layout.resolve(width, height)
         config.elements[selected] = layout.movedTo(rect.x + (mouseX.toInt() - this.dragX), rect.y + (mouseY.toInt() - this.dragY), width, height)
+        val snapped = HudLayoutSnap.snap(selected, config.elements[selected]!!, config.elements, width, height)
+        config.elements[selected] = snapped.layout
+        guideX = snapped.guideX
+        guideY = snapped.guideY
         this.dragX = mouseX.toInt()
         this.dragY = mouseY.toInt()
         syncFields()
+        onChanged(config.copyLayouts())
         return true
     }
 
@@ -108,7 +119,9 @@ class HudDesignerScreen(
         val layout = config.elements[selected]!!
         val rect = layout.resolve(width, height)
         config.elements[selected] = layout.movedTo(rect.x + delta.first, rect.y + delta.second, width, height)
-        syncFields()
+        guideX = null
+        guideY = null
+        changed()
         return true
     }
 
@@ -129,12 +142,13 @@ class HudDesignerScreen(
         val newWidth = widthField.value.toIntOrNull() ?: layout.width
         val newHeight = heightField.value.toIntOrNull() ?: layout.height
         config.elements[selected] = layout.resizedFor(selected, newWidth, newHeight)
+        onChanged(config.copyLayouts())
     }
 
     private fun updateSelected(update: HudElementLayout.() -> HudElementLayout) {
         applyDimensions()
         config.elements[selected] = config.elements[selected]!!.update()
-        syncFields()
+        changed()
     }
 
     private fun centerX() {
@@ -142,7 +156,7 @@ class HudDesignerScreen(
         val layout = config.elements[selected]!!
         val rect = layout.resolve(width, height)
         config.elements[selected] = layout.movedTo((width - layout.width) / 2, rect.y, width, height)
-        syncFields()
+        changed()
     }
 
     private fun centerY() {
@@ -150,14 +164,31 @@ class HudDesignerScreen(
         val layout = config.elements[selected]!!
         val rect = layout.resolve(width, height)
         config.elements[selected] = layout.movedTo(rect.x, (height - layout.height) / 2, width, height)
-        syncFields()
+        changed()
     }
 
     private fun saveConfig() {
         applyDimensions()
         store.save(config)
         onSaved(config.copyLayouts())
+        onChanged(config.copyLayouts())
         syncFields()
+    }
+
+    private fun changed() {
+        guideX = null
+        guideY = null
+        syncFields()
+        onChanged(config.copyLayouts())
+    }
+
+    private fun drawHotbarPreview(graphics: GuiGraphicsExtractor, rect: HudRect) {
+        val slotWidth = (rect.width / 9).coerceAtLeast(1)
+        graphics.fill(rect.x, rect.y, rect.x + rect.width, rect.y + rect.height, 0xCC10151C.toInt())
+        repeat(9) { index ->
+            val x = rect.x + index * slotWidth
+            outline(graphics, HudRect(x, rect.y, slotWidth, rect.height), 0xFFB8C4CF.toInt())
+        }
     }
 
     private fun outline(graphics: GuiGraphicsExtractor, rect: HudRect, color: Int) {

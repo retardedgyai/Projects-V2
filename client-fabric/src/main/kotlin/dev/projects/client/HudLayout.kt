@@ -87,6 +87,53 @@ data class HudRect(val x: Int, val y: Int, val width: Int, val height: Int) {
     )
 }
 
+data class HudSnapResult(val layout: HudElementLayout, val guideX: Int? = null, val guideY: Int? = null)
+
+object HudLayoutSnap {
+    const val THRESHOLD = 4
+
+    fun snap(
+        selected: HudElementId,
+        layout: HudElementLayout,
+        elements: Map<HudElementId, HudElementLayout>,
+        screenWidth: Int,
+        screenHeight: Int,
+    ): HudSnapResult {
+        val rect = layout.resolve(screenWidth, screenHeight)
+        val xCenterTargets = listOf(screenWidth / 2)
+        val yCenterTargets = listOf(screenHeight / 2)
+        val xAlignmentTargets = mutableListOf<Int>()
+        val yAlignmentTargets = mutableListOf<Int>()
+        elements.filterKeys { it != selected }.values.forEach { other ->
+            val otherRect = other.resolve(screenWidth, screenHeight)
+            xAlignmentTargets += listOf(otherRect.x, otherRect.x + otherRect.width / 2, otherRect.x + otherRect.width)
+            yAlignmentTargets += listOf(otherRect.y, otherRect.y + otherRect.height / 2, otherRect.y + otherRect.height)
+        }
+
+        val x = nearestSnap(rect.x, rect.width, xCenterTargets, xAlignmentTargets)
+        val y = nearestSnap(rect.y, rect.height, yCenterTargets, yAlignmentTargets)
+        return HudSnapResult(
+            layout.movedTo(x.position, y.position, screenWidth, screenHeight),
+            x.guide,
+            y.guide,
+        )
+    }
+
+    private data class AxisSnap(val position: Int, val guide: Int?)
+
+    private fun nearestSnap(start: Int, size: Int, centerTargets: List<Int>, alignmentTargets: List<Int>): AxisSnap {
+        val candidates = centerTargets.map { it - size / 2 to it } + alignmentTargets.flatMap { target ->
+            listOf(target - size / 2 to target, target - size to target, target to target)
+        }
+        val best = candidates.minByOrNull { (position, _) -> kotlin.math.abs(position - start) }
+        return if (best != null && kotlin.math.abs(best.first - start) <= THRESHOLD) {
+            AxisSnap(best.first, best.second)
+        } else {
+            AxisSnap(start, null)
+        }
+    }
+}
+
 data class HudLayoutConfig(val elements: MutableMap<HudElementId, HudElementLayout>) {
     fun copyLayouts(): HudLayoutConfig = HudLayoutConfig(elements.toMutableMap())
 

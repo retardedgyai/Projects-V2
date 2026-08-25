@@ -46,4 +46,21 @@ class HudLayoutTest {
         store.save(config)
         assertEquals(config, store.load())
     }
+
+    @Test
+    fun `snap aligns to screen center and other element edges`() {
+        val selected = HudElementLayout(HudAnchorX.LEFT, HudAnchorY.TOP, 316, 97, 8, 8)
+        val other = HudElementLayout(HudAnchorX.LEFT, HudAnchorY.TOP, 100, 100, 40, 20)
+        val result = HudLayoutSnap.snap(
+            HudElementId.SKILLS,
+            selected,
+            mapOf(HudElementId.SKILLS to selected, HudElementId.HP to other),
+            640,
+            360,
+        )
+        assertEquals(316, result.layout.resolve(640, 360).x)
+        assertEquals(96, result.layout.resolve(640, 360).y)
+        assertEquals(320, result.guideX)
+        assertEquals(100, result.guideY)
+    }
 }

@@ -217,7 +217,12 @@ object ProjectSClient : ClientModInitializer {
             return
         }
         if (hudDesignerKey.consumeClick() && client.gui.screen() == null) {
-            client.gui.setScreen(HudDesignerScreen(hudLayoutStore, hudLayout) { saved -> hudLayout = saved })
+            client.gui.setScreen(
+                HudDesignerScreen(hudLayoutStore, hudLayout,
+                    onSaved = { saved -> hudLayout = saved },
+                    onChanged = { changed -> hudLayout = changed },
+                ),
+            )
         }
         renderAttackDebugShape(client)
         if (hitMarkerTicksRemaining > 0) hitMarkerTicksRemaining--
