@@ -125,33 +125,39 @@ internal object RoninSlashEffects {
         RoninSlashEffect.CROSSCUT_FLASH -> crosscutFlash(origin, direction, seed)
         RoninSlashEffect.TEMPEST_SEQUENCE -> tempestSequence(origin, direction, seed)
         RoninSlashEffect.TEMPEST_FINAL -> tempestFinal(origin, direction, seed)
-        RoninSlashEffect.BLINK_TRAIL -> slash(
-            origin = origin,
-            direction = direction,
-            length = 2.55,
-            arcSpanDegrees = 78.0,
-            tiltDegrees = 16.0,
-            durationTicks = 4,
-            bodyColor = 0x851022,
-            bodySamples = 10,
-            coreSamples = 14,
-            edgeSamples = 5,
-            fragmentCount = 2,
-            seed = seed,
+        RoninSlashEffect.BLINK_TRAIL -> ParticleSequence.of(
+            dev.projects.server.particle.ParticleDelay(1),
+            slash(
+                origin = origin,
+                direction = direction,
+                length = 2.55,
+                arcSpanDegrees = 78.0,
+                tiltDegrees = 16.0,
+                durationTicks = 4,
+                bodyColor = 0x851022,
+                bodySamples = 10,
+                coreSamples = 14,
+                edgeSamples = 5,
+                fragmentCount = 2,
+                seed = seed,
+            ),
         )
-        RoninSlashEffect.BLINK_HIT -> slash(
-            origin = origin,
-            direction = direction,
-            length = 2.15,
-            arcSpanDegrees = 72.0,
-            tiltDegrees = 25.0,
-            durationTicks = 3,
-            bodyColor = 0xa5162d,
-            bodySamples = 9,
-            coreSamples = 13,
-            edgeSamples = 5,
-            fragmentCount = 2,
-            seed = seed,
+        RoninSlashEffect.BLINK_HIT -> ParticleSequence.of(
+            dev.projects.server.particle.ParticleDelay(2),
+            slash(
+                origin = origin,
+                direction = direction,
+                length = 2.15,
+                arcSpanDegrees = 72.0,
+                tiltDegrees = 25.0,
+                durationTicks = 3,
+                bodyColor = 0xa5162d,
+                bodySamples = 9,
+                coreSamples = 13,
+                edgeSamples = 5,
+                fragmentCount = 2,
+                seed = seed,
+            ),
         )
         RoninSlashEffect.R_SHEATH -> rSheath(origin, direction)
         RoninSlashEffect.R_DRAW -> rDraw(origin, direction, sweetSpot = false, seed = seed)
