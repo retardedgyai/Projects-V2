@@ -19,7 +19,6 @@ import dev.projects.protocol.ProtocolHello
 import dev.projects.protocol.ProtocolHelloAck
 import dev.projects.protocol.ProtocolVersion
 import dev.projects.protocol.RoninHudSnapshot
-import dev.projects.protocol.RoninVfxEvent
 import dev.projects.protocol.SlashEditorParameters
 import dev.projects.protocol.StarweaverHudSnapshot
 import dev.projects.protocol.VfxEditorNotice
@@ -111,7 +110,6 @@ object ProjectSClient : ClientModInitializer {
         PayloadTypeRegistry.clientboundPlay().register(ProjectSPayload.TYPE, ProjectSPayload.CODEC)
         PayloadTypeRegistry.serverboundPlay().register(ProjectSPayload.TYPE, ProjectSPayload.CODEC)
         GroundTelegraphRenderer.register()
-        RoninTexturedSlashRenderer.register()
 
         ClientPlayNetworking.registerGlobalReceiver(ProjectSPayload.TYPE) { payload, context ->
             try {
@@ -152,9 +150,6 @@ object ProjectSClient : ClientModInitializer {
                     }
                     is RoninHudSnapshot -> context.client().execute {
                         roninHudSnapshot = message
-                    }
-                    is RoninVfxEvent -> context.client().execute {
-                        RoninTexturedSlashRenderer.enqueue(message)
                     }
                     is GroundTelegraphStart -> context.client().execute {
                         GroundTelegraphRenderer.start(message)

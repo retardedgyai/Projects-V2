@@ -190,7 +190,7 @@ class ProtocolCodecTest {
     }
 
     @Test
-    fun `Ronin HUD and textured slash events round trip authoritative state`() {
+    fun `Ronin HUD snapshot round trips authoritative state`() {
         assertRoundTrip(
             RoninHudSnapshot(
                 selected = true,
@@ -202,73 +202,20 @@ class ProtocolCodecTest {
                 wVariant = 3,
             ),
         )
-        assertRoundTrip(
-            RoninVfxEvent(
-                effect = RoninVfxEffect.R_SWEET_DRAW,
-                texture = RoninVfxTexture.CIRCULAR,
-                originX = 1.0,
-                originY = 41.0,
-                originZ = -2.0,
-                directionX = 0.0,
-                directionY = 0.2,
-                directionZ = 1.0,
-                width = 7.0,
-                height = 2.4,
-                scale = 1.1,
-                roll = 0.35,
-                alpha = 0.9,
-                lifetimeTicks = 12,
-                delayTicks = 2,
-                tintRgb = 0xffe8e8,
-            ),
-        )
     }
 
     @Test
-    fun `Ronin protocol rejects malformed HUD and VFX values`() {
+    fun `Ronin protocol rejects malformed HUD values`() {
         assertFailsWith<IllegalArgumentException> {
             RoninHudSnapshot(true, 4, 0, 0, 0, 0, 0)
         }
+    }
+
+    @Test
+    fun `removed textured Ronin VFX message fails closed`() {
         assertFailsWith<IllegalArgumentException> {
-            RoninVfxEvent(
-                RoninVfxEffect.Q_SLASH,
-                RoninVfxTexture.ARC,
-                0.0,
-                0.0,
-                0.0,
-                0.0,
-                0.0,
-                0.0,
-                1.0,
-                1.0,
-                1.0,
-                0.0,
-                1.0,
-                5,
-            )
+            ProtocolCodec.decode(byteArrayOf(32))
         }
-        val malformed = ProtocolCodec.encode(
-            RoninVfxEvent(
-                RoninVfxEffect.Q_SLASH,
-                RoninVfxTexture.ARC,
-                0.0,
-                0.0,
-                0.0,
-                0.0,
-                0.0,
-                1.0,
-                1.0,
-                1.0,
-                1.0,
-                0.0,
-                1.0,
-                5,
-            ),
-        ).copyOf().also { bytes ->
-            java.nio.ByteBuffer.wrap(bytes, 3 + Double.SIZE_BYTES * 3, Double.SIZE_BYTES)
-                .putDouble(Double.NaN)
-        }
-        assertFailsWith<IllegalArgumentException> { ProtocolCodec.decode(malformed) }
     }
 
     @Test

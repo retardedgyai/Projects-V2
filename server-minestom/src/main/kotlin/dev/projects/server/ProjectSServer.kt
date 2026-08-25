@@ -17,9 +17,6 @@ import dev.projects.protocol.ProtocolHello
 import dev.projects.protocol.ProtocolHelloAck
 import dev.projects.protocol.ProtocolVersion
 import dev.projects.protocol.RoninHudSnapshot
-import dev.projects.protocol.RoninVfxEffect
-import dev.projects.protocol.RoninVfxEvent
-import dev.projects.protocol.RoninVfxTexture
 import dev.projects.protocol.SlashEditorParameters
 import dev.projects.protocol.StarweaverHudCelestial
 import dev.projects.protocol.StarweaverHudSnapshot
@@ -76,6 +73,9 @@ import net.minestom.server.command.builder.Command
 import net.minestom.server.command.builder.CommandContext
 import net.minestom.server.command.builder.arguments.ArgumentType
 import dev.projects.server.particle.ParticleAnimationScheduler
+import dev.projects.server.particle.ParticleAnchor
+import dev.projects.server.particle.ParticleAnchorPoint
+import dev.projects.server.particle.ParticleEffect
 import dev.projects.server.particle.ParticleManager
 import dev.projects.server.particle.ParticleProfiler
 import dev.projects.server.particle.ParticlePresetRegistry
@@ -1055,8 +1055,12 @@ fun main() {
         sendStarweaverHudSnapshot(player)
     }
 
-    fun broadcastRoninVfx(source: net.minestom.server.entity.Player, event: RoninVfxEvent) {
-        val payload = ProtocolCodec.encode(event)
+    fun startRoninParticleEffect(
+        source: net.minestom.server.entity.Player,
+        id: String,
+        anchors: List<ParticleAnchor> = emptyList(),
+        effectFactory: () -> ParticleEffect,
+    ) {
         val sourcePosition = source.position
         instance.players
             .filter { player ->
@@ -1065,45 +1069,48 @@ fun main() {
                     (player.position.y() - sourcePosition.y()) * (player.position.y() - sourcePosition.y()) +
                     (player.position.z() - sourcePosition.z()) * (player.position.z() - sourcePosition.z()) <= 64.0 * 64.0
             }
-            .forEach { player -> player.sendPluginMessage(PROJECTS_CHANNEL, payload) }
+            .forEach { viewer ->
+                val sink = particleManager.sink(
+                    ParticleViewer(viewer.position, viewer),
+                    PlayerParticleSink(viewer),
+                    "ronin:$id",
+                )
+                particleAnimations.start(
+                    effect = effectFactory(),
+                    sink = sink,
+                    id = "ronin:$id:${source.uuid}:${viewer.uuid}",
+                    anchors = anchors,
+                )
+            }
     }
 
     fun emitRoninSlash(
         source: net.minestom.server.entity.Player,
-        effect: RoninVfxEffect,
-        texture: RoninVfxTexture,
+        effect: RoninSlashEffect,
         origin: Point,
         direction: Vec,
-        width: Double,
-        height: Double,
-        scale: Double,
-        roll: Double,
-        alpha: Double,
-        lifetimeTicks: Int,
-        delayTicks: Int = 0,
-        tintRgb: Int = 0xfff4f4,
+        variant: Int = 0,
+        seed: Long = 0L,
     ) {
-        broadcastRoninVfx(
-            source,
-            RoninVfxEvent(
-                effect = effect,
-                texture = texture,
-                originX = origin.x(),
-                originY = origin.y(),
-                originZ = origin.z(),
-                directionX = direction.x(),
-                directionY = direction.y(),
-                directionZ = direction.z(),
-                width = width,
-                height = height,
-                scale = scale,
-                roll = roll,
-                alpha = alpha,
-                lifetimeTicks = lifetimeTicks,
-                delayTicks = delayTicks,
-                tintRgb = tintRgb,
-            ),
-        )
+        val visualSeed = seed xor source.uuid.mostSignificantBits xor source.uuid.leastSignificantBits xor
+            origin.x().toBits() xor origin.y().toBits() xor origin.z().toBits()
+        startRoninParticleEffect(
+            source = source,
+            id = effect.name.lowercase(Locale.ROOT),
+        ) {
+            RoninSlashEffects.create(effect, origin, direction, variant = variant, seed = visualSeed)
+        }
+    }
+
+    fun startRoninBlinkTrail(source: net.minestom.server.entity.Player) {
+        val anchor = ParticleAnchor.player(source, ParticleAnchorPoint.CENTER)
+        startRoninParticleEffect(
+            source = source,
+            id = "blink-trail",
+            anchors = listOf(anchor),
+        ) {
+            RoninSlashEffects.blinkTrail(anchor)
+        }
     }
 
     fun roninEnemyTargets(caster: net.minestom.server.entity.Player): List<CombatTarget> = buildList {
@@ -1132,17 +1139,10 @@ fun main() {
             healRoninPlayer(player, prototypeBoss.playerMaxHealth * RoninBalance.WOUND_HEAL_RATIO)
             emitRoninSlash(
                 player,
-                RoninVfxEffect.WOUND_CONSUME,
-                RoninVfxTexture.THIN,
+                RoninSlashEffect.WOUND_CONSUME,
                 target.position.add(0.0, 1.0, 0.0),
                 player.position.direction(),
-                width = 1.2,
-                height = 1.2,
-                scale = 0.9,
-                roll = 0.0,
-                alpha = 0.95,
-                lifetimeTicks = 7,
-                tintRgb = 0xfff7f7,
+                seed = executionId,
             )
         }
         if (recordW3Healing) {
@@ -1180,58 +1180,19 @@ fun main() {
             RoninSkill.Q to RoninWVariant.NONE -> Unit
             RoninSkill.W to RoninWVariant.WOUND -> Unit
             RoninSkill.W to RoninWVariant.CROSSCUT -> Unit
-            RoninSkill.W to RoninWVariant.TEMPEST -> {
-                for (index in 0 until 12) {
-                    val angle = index * Math.PI * 2.0 / 12.0
-                    val direction = Vec(kotlin.math.cos(angle), 0.0, kotlin.math.sin(angle))
-                    val radial = 0.8 + (index % 3) * 0.22
-                    val origin = cast.origin.add(
-                        direction.x() * radial,
-                        0.65 + (index % 4) * 0.28,
-                        direction.z() * radial,
-                    )
-                    emitRoninSlash(
-                        player,
-                        RoninVfxEffect.TEMPEST_SLASH,
-                        if (index % 3 == 0) RoninVfxTexture.THIN else RoninVfxTexture.ARC,
-                        origin,
-                        direction,
-                        width = 2.0 + (index % 3) * 0.45,
-                        height = 1.0 + (index % 2) * 0.35,
-                        scale = 0.65 + (index % 4) * 0.08,
-                        roll = index * 0.47,
-                        alpha = 0.60,
-                        lifetimeTicks = 9 + (index % 5),
-                        delayTicks = index % 3,
-                    )
-                }
-            }
-            RoninSkill.E to RoninWVariant.NONE -> emitRoninSlash(
+            RoninSkill.W to RoninWVariant.TEMPEST -> emitRoninSlash(
                 player,
-                RoninVfxEffect.BLINK_TRAIL,
-                RoninVfxTexture.THIN,
-                cast.origin.add(0.0, 1.0, 0.0),
-                roninHorizontalDirection(cast.direction),
-                width = 2.0,
-                height = 1.4,
-                scale = 0.8,
-                roll = 0.0,
-                alpha = 0.55,
-                lifetimeTicks = 8,
-            )
-            RoninSkill.R to RoninWVariant.NONE -> emitRoninSlash(
-                player,
-                RoninVfxEffect.R_SHEATH,
-                RoninVfxTexture.THIN,
+                RoninSlashEffect.TEMPEST_SEQUENCE,
                 cast.origin.add(0.0, 1.0, 0.0),
                 cast.direction,
-                width = 1.1,
-                height = 1.8,
-                scale = 0.55,
-                roll = 0.0,
-                alpha = 0.35,
-                lifetimeTicks = 12,
-                tintRgb = 0xffe6e6,
+                seed = cast.castId,
+            )
+            RoninSkill.E to RoninWVariant.NONE -> startRoninBlinkTrail(player)
+            RoninSkill.R to RoninWVariant.NONE -> emitRoninSlash(
+                player,
+                RoninSlashEffect.R_SHEATH,
+                cast.origin.add(0.0, 1.0, 0.0),
+                cast.direction,
             )
             else -> Unit
         }
@@ -1275,20 +1236,14 @@ fun main() {
                     if (hit) state.recordEnemyHit()
                     emitRoninSlash(
                         player,
-                        RoninVfxEffect.Q_SLASH,
-                        RoninVfxTexture.ARC,
+                        RoninSlashEffect.Q,
                         activeCast.origin.add(
                             activeCast.direction.x() * 2.7,
                             1.05,
                             activeCast.direction.z() * 2.7,
                         ),
                         activeCast.direction,
-                        width = 6.0,
-                        height = 2.1,
-                        scale = 0.75,
-                        roll = 0.0,
-                        alpha = 0.95,
-                        lifetimeTicks = 7,
+                        seed = activeCast.castId,
                     )
                 }
                 RoninCastEventKind.W_INITIAL -> when (activeCast.variant) {
@@ -1315,17 +1270,10 @@ fun main() {
                                 state.applyWound(target.id)
                                 emitRoninSlash(
                                     player,
-                                    RoninVfxEffect.WOUND_MARK,
-                                    RoninVfxTexture.THIN,
+                                    RoninSlashEffect.WOUND_MARK,
                                     target.position.add(0.0, 1.0, 0.0),
                                     activeCast.direction,
-                                    width = 1.5,
-                                    height = 1.0,
-                                    scale = 0.72,
-                                    roll = 0.2,
-                                    alpha = 0.8,
-                                    lifetimeTicks = 10,
-                                    tintRgb = 0xffdede,
+                                    seed = activeCast.castId * 10L + 1L,
                                 )
                             }
                         }
@@ -1333,29 +1281,19 @@ fun main() {
                     RoninWVariant.CROSSCUT -> {
                         emitRoninSlash(
                             player,
-                            RoninVfxEffect.CROSSCUT,
-                            RoninVfxTexture.THIN,
+                            RoninSlashEffect.CROSSCUT,
                             activeCast.origin.add(activeCast.direction.x() * 3.0, 1.0, activeCast.direction.z() * 3.0),
                             activeCast.direction,
-                            width = 2.8,
-                            height = 1.8,
-                            scale = 0.8,
-                            roll = 0.75,
-                            alpha = 0.9,
-                            lifetimeTicks = 8,
+                            variant = 1,
+                            seed = activeCast.castId * 10L + 1L,
                         )
                         emitRoninSlash(
                             player,
-                            RoninVfxEffect.CROSSCUT,
-                            RoninVfxTexture.THIN,
+                            RoninSlashEffect.CROSSCUT,
                             activeCast.origin.add(activeCast.direction.x() * 3.0, 1.0, activeCast.direction.z() * 3.0),
                             activeCast.direction,
-                            width = 2.8,
-                            height = 1.8,
-                            scale = 0.8,
-                            roll = -0.75,
-                            alpha = 0.9,
-                            lifetimeTicks = 8,
+                            variant = -1,
+                            seed = activeCast.castId * 10L + 2L,
                         )
                         selectRoninFrontTarget(activeCast.origin, activeCast.direction, targets, RoninBalance.W2_RANGE)?.let { target ->
                             if (applyRoninDirectDamage(
@@ -1377,17 +1315,10 @@ fun main() {
                     if (target != null) {
                         emitRoninSlash(
                             player,
-                            RoninVfxEffect.CROSSCUT_FLASH,
-                            RoninVfxTexture.THIN,
+                            RoninSlashEffect.CROSSCUT_FLASH,
                             target.position.add(0.0, 1.0, 0.0),
                             activeCast.direction,
-                            width = 3.0,
-                            height = 1.9,
-                            scale = 1.05,
-                            roll = 0.75,
-                            alpha = 1.0,
-                            lifetimeTicks = 7,
-                            tintRgb = 0xffffff,
+                            seed = activeCast.castId * 10L + 2L,
                         )
                         if (applyRoninDirectDamage(
                                 player,
@@ -1413,19 +1344,6 @@ fun main() {
                                 recordW3Healing = true,
                             )
                         }
-                    emitRoninSlash(
-                        player,
-                        RoninVfxEffect.TEMPEST_SLASH,
-                        RoninVfxTexture.ARC,
-                        activeCast.origin.add(0.0, 1.0, 0.0),
-                        Vec(0.0, 1.0, 0.0),
-                        width = 5.0,
-                        height = 1.8,
-                        scale = 0.85,
-                        roll = event.pulseIndex * 0.9,
-                        alpha = 0.75,
-                        lifetimeTicks = 7,
-                    )
                 }
                 RoninCastEventKind.W3_FINAL -> {
                     targets.filter { isRoninRadialHit(activeCast.origin.add(0.0, 1.0, 0.0), RoninBalance.W3_RADIUS, it) }
@@ -1441,16 +1359,10 @@ fun main() {
                         }
                     emitRoninSlash(
                         player,
-                        RoninVfxEffect.TEMPEST_FINAL,
-                        RoninVfxTexture.CIRCULAR,
+                        RoninSlashEffect.TEMPEST_FINAL,
                         activeCast.origin.add(0.0, 1.0, 0.0),
-                        Vec(0.0, 1.0, 0.0),
-                        width = 8.0,
-                        height = 3.0,
-                        scale = 1.0,
-                        roll = 0.0,
-                        alpha = 0.9,
-                        lifetimeTicks = 10,
+                        activeCast.direction,
+                        seed = activeCast.castId,
                     )
                 }
                 RoninCastEventKind.E_BLINK -> {
@@ -1473,34 +1385,21 @@ fun main() {
                             hit = true
                             emitRoninSlash(
                                 player,
-                                RoninVfxEffect.BLINK_HIT,
-                                RoninVfxTexture.THIN,
+                                RoninSlashEffect.BLINK_HIT,
                                 target.position.add(0.0, 1.0, 0.0),
                                 activeCast.direction,
-                                width = 2.0,
-                                height = 1.5,
-                                scale = 0.9,
-                                roll = 0.4,
-                                alpha = 0.9,
-                                lifetimeTicks = 7,
-                                delayTicks = 2,
+                                seed = activeCast.castId * 10L + 1L,
                             )
                         }
                     }
                     if (hit) state.recordEnemyHit()
                     emitRoninSlash(
                         player,
-                        RoninVfxEffect.BLINK_TRAIL,
-                        RoninVfxTexture.ARC,
+                        RoninSlashEffect.BLINK_TRAIL,
                         end.add(0.0, 1.0, 0.0),
                         activeCast.direction,
-                        width = 2.8,
-                        height = 1.5,
-                        scale = 0.8,
-                        roll = 0.0,
-                        alpha = 0.8,
-                        lifetimeTicks = 8,
-                        delayTicks = 1,
+                        variant = 1,
+                        seed = activeCast.castId,
                     )
                 }
                 RoninCastEventKind.R_IMPACT -> {
@@ -1536,17 +1435,10 @@ fun main() {
                     if (hit) state.recordEnemyHit()
                     emitRoninSlash(
                         player,
-                        if (sweetHit) RoninVfxEffect.R_SWEET_DRAW else RoninVfxEffect.R_DRAW,
-                        if (sweetHit) RoninVfxTexture.CIRCULAR else RoninVfxTexture.ARC,
+                        if (sweetHit) RoninSlashEffect.R_SWEET_DRAW else RoninSlashEffect.R_DRAW,
                         activeCast.origin.add(activeCast.direction.x() * 3.4, 1.1, activeCast.direction.z() * 3.4),
                         activeCast.direction,
-                        width = 7.2,
-                        height = 2.3,
-                        scale = if (sweetHit) 1.2 else 1.0,
-                        roll = 0.0,
-                        alpha = 1.0,
-                        lifetimeTicks = 10,
-                        tintRgb = if (sweetHit) 0xffffff else 0xffe6e6,
+                        seed = activeCast.castId,
                     )
                 }
             }
@@ -1574,16 +1466,9 @@ fun main() {
         if (combatEvents.any { it is CombatEvent.Started }) {
             emitRoninSlash(
                 player,
-                RoninVfxEffect.AA_SLASH,
-                RoninVfxTexture.THIN,
+                RoninSlashEffect.AA,
                 player.position.add(0.0, 1.0, 0.0),
                 player.position.direction(),
-                width = 2.0,
-                height = 1.4,
-                scale = 0.65,
-                roll = 0.4,
-                alpha = 0.7,
-                lifetimeTicks = 6,
             )
         }
         combatEvents.filterIsInstance<CombatEvent.HitConfirmed>().forEach { hit ->
