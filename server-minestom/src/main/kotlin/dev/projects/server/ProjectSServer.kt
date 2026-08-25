@@ -16,6 +16,10 @@ import dev.projects.protocol.ProtocolCodec
 import dev.projects.protocol.ProtocolHello
 import dev.projects.protocol.ProtocolHelloAck
 import dev.projects.protocol.ProtocolVersion
+import dev.projects.protocol.RoninHudSnapshot
+import dev.projects.protocol.RoninVfxEffect
+import dev.projects.protocol.RoninVfxEvent
+import dev.projects.protocol.RoninVfxTexture
 import dev.projects.protocol.SlashEditorParameters
 import dev.projects.protocol.StarweaverHudCelestial
 import dev.projects.protocol.StarweaverHudSnapshot
@@ -95,6 +99,7 @@ private val TWIN_BLADES_AUTO_OFFHAND = Tag.Boolean("projects_twin_blades_auto_of
 internal enum class PlayableClass {
     TWIN_BLADES,
     STARWEAVER,
+    RONIN,
 }
 
 internal data class SkillCooldowns(
@@ -122,6 +127,8 @@ fun main() {
     val skill3States = mutableMapOf<UUID, Skill3State>()
     val selectedClasses = mutableMapOf<UUID, PlayableClass>()
     val starweaverStates = mutableMapOf<UUID, StarweaverRuntimeState>()
+    val roninStates = mutableMapOf<UUID, RoninState>()
+    val roninLockPositions = mutableMapOf<UUID, Pos>()
     val resourceSyncTicks = mutableMapOf<UUID, Int>()
     val lastSentCooldowns = mutableMapOf<UUID, SkillCooldowns>()
     val dodgeVelocityActive = mutableMapOf<UUID, Boolean>()
@@ -230,6 +237,31 @@ fun main() {
         player.setAdditionalHearts(0f)
     }
 
+    fun sendRoninHudSnapshot(player: net.minestom.server.entity.Player) {
+        val state = roninStates[player.uuid] ?: return
+        val selected = selectedClasses[player.uuid] == PlayableClass.RONIN
+        player.sendPluginMessage(
+            PROJECTS_CHANNEL,
+            ProtocolCodec.encode(
+                RoninHudSnapshot(
+                    selected = selected,
+                    iaido = if (selected) state.iaido else 0,
+                    qCooldownTicks = if (selected) state.qCooldownTicksRemaining else 0,
+                    eCooldownTicks = if (selected) state.eCooldownTicksRemaining else 0,
+                    rCooldownTicks = if (selected) state.rCooldownTicksRemaining else 0,
+                    movementLockTicksRemaining = if (selected) state.movementLockTicksRemaining else 0,
+                    wVariant = if (selected) state.iaido else 0,
+                ),
+            ),
+        )
+    }
+
+    fun resetRoninPlayerState(player: net.minestom.server.entity.Player) {
+        roninStates[player.uuid]?.reset()
+        roninLockPositions.remove(player.uuid)
+        player.setVelocity(Vec.ZERO)
+    }
+
     fun updateBossBar() {
         val status = when {
             prototypeBoss.isVictory -> "VICTORY"
@@ -256,6 +288,8 @@ fun main() {
         skill2States.values.forEach { it.reset() }
         skill3States.values.forEach { it.reset() }
         starweaverStates.values.forEach { it.reset() }
+        roninStates.values.forEach { it.reset() }
+        roninLockPositions.clear()
         instance.players.forEach { player ->
             player.setVelocity(Vec.ZERO)
             restoreStarweaverMovementSpeed(player)
@@ -334,12 +368,14 @@ fun main() {
         val selected = when (requested) {
             "starweaver", "star_weaver" -> PlayableClass.STARWEAVER
             "twinblades", "twin_blades", "twin-blades" -> PlayableClass.TWIN_BLADES
+            "ronin" -> PlayableClass.RONIN
             else -> {
-                player.sendMessage(Component.text("Use /class starweaver or /class twinblades"))
+                player.sendMessage(Component.text("Use /class starweaver, /class twinblades, or /class ronin"))
                 return
             }
         }
         resetStarweaverPlayerState(player)
+        resetRoninPlayerState(player)
         combatStates[player.uuid]?.reset()
         dodgeStates[player.uuid]?.reset()
         twinRodsAirStates[player.uuid]?.tick(true)
@@ -348,13 +384,19 @@ fun main() {
         skill3States[player.uuid]?.reset()
         selectedClasses[player.uuid] = selected
         player.setVelocity(Vec.ZERO)
-        if (selected == PlayableClass.STARWEAVER) {
-            player.sendMessage(Component.text("Class selected: Starweaver (Q/W/E/R slots)"))
-        } else {
+        when (selected) {
+            PlayableClass.STARWEAVER -> player.sendMessage(Component.text("Class selected: Starweaver (Q/W/E/R slots)"))
+            PlayableClass.RONIN -> player.sendMessage(Component.text("Class selected: Ronin (Q/W/E/R slots)"))
+            PlayableClass.TWIN_BLADES -> {
+                player.sendActionBar(Component.empty())
+                player.sendMessage(Component.text("Class selected: Twin Blades"))
+            }
+        }
+        if (selected != PlayableClass.STARWEAVER && selected != PlayableClass.RONIN) {
             player.sendActionBar(Component.empty())
-            player.sendMessage(Component.text("Class selected: Twin Blades"))
         }
         sendStarweaverHudSnapshot(player)
+        sendRoninHudSnapshot(player)
     }
 
     fun handleStarweaverState(sender: CommandSender) {
@@ -1013,6 +1055,585 @@ fun main() {
         sendStarweaverHudSnapshot(player)
     }
 
+    fun broadcastRoninVfx(source: net.minestom.server.entity.Player, event: RoninVfxEvent) {
+        val payload = ProtocolCodec.encode(event)
+        val sourcePosition = source.position
+        instance.players
+            .filter { player ->
+                player.instance == source.instance &&
+                    (player.position.x() - sourcePosition.x()) * (player.position.x() - sourcePosition.x()) +
+                    (player.position.y() - sourcePosition.y()) * (player.position.y() - sourcePosition.y()) +
+                    (player.position.z() - sourcePosition.z()) * (player.position.z() - sourcePosition.z()) <= 64.0 * 64.0
+            }
+            .forEach { player -> player.sendPluginMessage(PROJECTS_CHANNEL, payload) }
+    }
+
+    fun emitRoninSlash(
+        source: net.minestom.server.entity.Player,
+        effect: RoninVfxEffect,
+        texture: RoninVfxTexture,
+        origin: Point,
+        direction: Vec,
+        width: Double,
+        height: Double,
+        scale: Double,
+        roll: Double,
+        alpha: Double,
+        lifetimeTicks: Int,
+        delayTicks: Int = 0,
+        tintRgb: Int = 0xfff4f4,
+    ) {
+        broadcastRoninVfx(
+            source,
+            RoninVfxEvent(
+                effect = effect,
+                texture = texture,
+                originX = origin.x(),
+                originY = origin.y(),
+                originZ = origin.z(),
+                directionX = direction.x(),
+                directionY = direction.y(),
+                directionZ = direction.z(),
+                width = width,
+                height = height,
+                scale = scale,
+                roll = roll,
+                alpha = alpha,
+                lifetimeTicks = lifetimeTicks,
+                delayTicks = delayTicks,
+                tintRgb = tintRgb,
+            ),
+        )
+    }
+
+    fun roninEnemyTargets(caster: net.minestom.server.entity.Player): List<CombatTarget> = buildList {
+        dummy?.takeIf { it.instance == caster.instance && !it.isRemoved }?.let { add(combatTarget(it)) }
+    }
+
+    fun healRoninPlayer(player: net.minestom.server.entity.Player, amount: Double) {
+        if (amount <= 0.0) return
+        player.setHealth((player.getHealth() + amount.toFloat()).coerceAtMost(prototypeBoss.playerMaxHealth.toFloat()))
+    }
+
+    fun applyRoninDirectDamage(
+        player: net.minestom.server.entity.Player,
+        state: RoninState,
+        target: CombatTarget,
+        baseDamage: Double,
+        executionId: Long,
+        consumeWound: Boolean = true,
+        recordW3Healing: Boolean = false,
+    ): Int {
+        val damage = baseDamage * state.roninDamageMultiplier(target.id)
+        val applied = prototypeBoss.applyRoninDamage(executionId, target.id, damage)
+        if (applied <= 0) return 0
+        updateBossBar()
+        if (consumeWound && state.consumeWound(executionId, target.id)) {
+            healRoninPlayer(player, prototypeBoss.playerMaxHealth * RoninBalance.WOUND_HEAL_RATIO)
+            emitRoninSlash(
+                player,
+                RoninVfxEffect.WOUND_CONSUME,
+                RoninVfxTexture.THIN,
+                target.position.add(0.0, 1.0, 0.0),
+                player.position.direction(),
+                width = 1.2,
+                height = 1.2,
+                scale = 0.9,
+                roll = 0.0,
+                alpha = 0.95,
+                lifetimeTicks = 7,
+                tintRgb = 0xfff7f7,
+            )
+        }
+        if (recordW3Healing) {
+            healRoninPlayer(player, state.recordW3Healing(applied, prototypeBoss.playerMaxHealth))
+        }
+        return applied
+    }
+
+    fun roninHorizontalDirection(direction: Vec): Vec {
+        val length = sqrt(direction.x() * direction.x() + direction.z() * direction.z())
+        return if (length > 1.0e-9) Vec(direction.x() / length, 0.0, direction.z() / length) else Vec(0.0, 0.0, 1.0)
+    }
+
+    fun selectRoninFrontTarget(
+        origin: Point,
+        direction: Vec,
+        targets: List<CombatTarget>,
+        range: Double,
+    ): CombatTarget? {
+        val horizontal = roninHorizontalDirection(direction)
+        val right = Vec(-horizontal.z(), 0.0, horizontal.x())
+        return targets
+            .filter { isRoninFrontVolumeHit(origin, direction, it, range, 2.6, 2.5) }
+            .minWithOrNull(
+                compareBy<CombatTarget> {
+                    val lateral = (it.position.x() - origin.x()) * right.x() +
+                        (it.position.z() - origin.z()) * right.z()
+                    abs(lateral) * 5.0
+                }.thenBy { roninForwardProjection(origin, direction, it) },
+            )
+    }
+
+    fun showRoninCastStartVfx(player: net.minestom.server.entity.Player, cast: RoninCast) {
+        when (cast.skill to cast.variant) {
+            RoninSkill.Q to RoninWVariant.NONE -> Unit
+            RoninSkill.W to RoninWVariant.WOUND -> Unit
+            RoninSkill.W to RoninWVariant.CROSSCUT -> Unit
+            RoninSkill.W to RoninWVariant.TEMPEST -> {
+                for (index in 0 until 12) {
+                    val angle = index * Math.PI * 2.0 / 12.0
+                    val direction = Vec(kotlin.math.cos(angle), 0.0, kotlin.math.sin(angle))
+                    val radial = 0.8 + (index % 3) * 0.22
+                    val origin = cast.origin.add(
+                        direction.x() * radial,
+                        0.65 + (index % 4) * 0.28,
+                        direction.z() * radial,
+                    )
+                    emitRoninSlash(
+                        player,
+                        RoninVfxEffect.TEMPEST_SLASH,
+                        if (index % 3 == 0) RoninVfxTexture.THIN else RoninVfxTexture.ARC,
+                        origin,
+                        direction,
+                        width = 2.0 + (index % 3) * 0.45,
+                        height = 1.0 + (index % 2) * 0.35,
+                        scale = 0.65 + (index % 4) * 0.08,
+                        roll = index * 0.47,
+                        alpha = 0.60,
+                        lifetimeTicks = 9 + (index % 5),
+                        delayTicks = index % 3,
+                    )
+                }
+            }
+            RoninSkill.E to RoninWVariant.NONE -> emitRoninSlash(
+                player,
+                RoninVfxEffect.BLINK_TRAIL,
+                RoninVfxTexture.THIN,
+                cast.origin.add(0.0, 1.0, 0.0),
+                roninHorizontalDirection(cast.direction),
+                width = 2.0,
+                height = 1.4,
+                scale = 0.8,
+                roll = 0.0,
+                alpha = 0.55,
+                lifetimeTicks = 8,
+            )
+            RoninSkill.R to RoninWVariant.NONE -> emitRoninSlash(
+                player,
+                RoninVfxEffect.R_SHEATH,
+                RoninVfxTexture.THIN,
+                cast.origin.add(0.0, 1.0, 0.0),
+                cast.direction,
+                width = 1.1,
+                height = 1.8,
+                scale = 0.55,
+                roll = 0.0,
+                alpha = 0.35,
+                lifetimeTicks = 12,
+                tintRgb = 0xffe6e6,
+            )
+            else -> Unit
+        }
+    }
+
+    fun tickRoninPlayer(
+        player: net.minestom.server.entity.Player,
+        combatState: CombatState,
+        dodge: DodgeState,
+        state: RoninState,
+    ) {
+        if (!prototypeBoss.isEncounterRunning) return
+        if (player.getHealth() <= 0.0f) {
+            resetRoninPlayerState(player)
+            return
+        }
+
+        val wasLocked = state.isMovementLocked
+        val tick = state.tick()
+        val cast = state.currentCast ?: tick.completedCast
+        tick.events.forEach { event ->
+            val activeCast = state.currentCast ?: cast ?: return@forEach
+            val targets = roninEnemyTargets(player)
+            when (event.kind) {
+                RoninCastEventKind.Q_IMPACT -> {
+                    var hit = false
+                    targets.filter {
+                        isRoninFrontVolumeHit(
+                            activeCast.origin,
+                            activeCast.direction,
+                            it,
+                            RoninBalance.Q_RANGE,
+                            RoninBalance.Q_WIDTH,
+                            RoninBalance.Q_VERTICAL_TOLERANCE,
+                        )
+                    }.forEach { target ->
+                        if (applyRoninDirectDamage(player, state, target, RoninBalance.Q_DAMAGE.toDouble(), activeCast.castId) > 0) {
+                            hit = true
+                        }
+                    }
+                    if (hit) state.recordEnemyHit()
+                    emitRoninSlash(
+                        player,
+                        RoninVfxEffect.Q_SLASH,
+                        RoninVfxTexture.ARC,
+                        activeCast.origin.add(
+                            activeCast.direction.x() * 2.7,
+                            1.05,
+                            activeCast.direction.z() * 2.7,
+                        ),
+                        activeCast.direction,
+                        width = 6.0,
+                        height = 2.1,
+                        scale = 0.75,
+                        roll = 0.0,
+                        alpha = 0.95,
+                        lifetimeTicks = 7,
+                    )
+                }
+                RoninCastEventKind.W_INITIAL -> when (activeCast.variant) {
+                    RoninWVariant.WOUND -> {
+                        targets.filter {
+                            isRoninFrontVolumeHit(
+                                activeCast.origin,
+                                activeCast.direction,
+                                it,
+                                RoninBalance.W1_RANGE,
+                                RoninBalance.W1_WIDTH,
+                                RoninBalance.W1_VERTICAL_TOLERANCE,
+                            )
+                        }.forEach { target ->
+                            val applied = applyRoninDirectDamage(
+                                player,
+                                state,
+                                target,
+                                RoninBalance.W1_DAMAGE.toDouble(),
+                                activeCast.castId * 10L + 1L,
+                                consumeWound = false,
+                            )
+                            if (applied > 0) {
+                                state.applyWound(target.id)
+                                emitRoninSlash(
+                                    player,
+                                    RoninVfxEffect.WOUND_MARK,
+                                    RoninVfxTexture.THIN,
+                                    target.position.add(0.0, 1.0, 0.0),
+                                    activeCast.direction,
+                                    width = 1.5,
+                                    height = 1.0,
+                                    scale = 0.72,
+                                    roll = 0.2,
+                                    alpha = 0.8,
+                                    lifetimeTicks = 10,
+                                    tintRgb = 0xffdede,
+                                )
+                            }
+                        }
+                    }
+                    RoninWVariant.CROSSCUT -> {
+                        emitRoninSlash(
+                            player,
+                            RoninVfxEffect.CROSSCUT,
+                            RoninVfxTexture.THIN,
+                            activeCast.origin.add(activeCast.direction.x() * 3.0, 1.0, activeCast.direction.z() * 3.0),
+                            activeCast.direction,
+                            width = 2.8,
+                            height = 1.8,
+                            scale = 0.8,
+                            roll = 0.75,
+                            alpha = 0.9,
+                            lifetimeTicks = 8,
+                        )
+                        emitRoninSlash(
+                            player,
+                            RoninVfxEffect.CROSSCUT,
+                            RoninVfxTexture.THIN,
+                            activeCast.origin.add(activeCast.direction.x() * 3.0, 1.0, activeCast.direction.z() * 3.0),
+                            activeCast.direction,
+                            width = 2.8,
+                            height = 1.8,
+                            scale = 0.8,
+                            roll = -0.75,
+                            alpha = 0.9,
+                            lifetimeTicks = 8,
+                        )
+                        selectRoninFrontTarget(activeCast.origin, activeCast.direction, targets, RoninBalance.W2_RANGE)?.let { target ->
+                            if (applyRoninDirectDamage(
+                                    player,
+                                    state,
+                                    target,
+                                    RoninBalance.W2_INITIAL_DAMAGE.toDouble(),
+                                    activeCast.castId * 10L + 1L,
+                                ) > 0
+                            ) {
+                                state.lockDelayedTarget(target.id)
+                            }
+                        }
+                    }
+                    else -> Unit
+                }
+                RoninCastEventKind.W_DELAYED -> {
+                    val target = event.targetId?.let { id -> targets.firstOrNull { it.id == id } }
+                    if (target != null) {
+                        emitRoninSlash(
+                            player,
+                            RoninVfxEffect.CROSSCUT_FLASH,
+                            RoninVfxTexture.THIN,
+                            target.position.add(0.0, 1.0, 0.0),
+                            activeCast.direction,
+                            width = 3.0,
+                            height = 1.9,
+                            scale = 1.05,
+                            roll = 0.75,
+                            alpha = 1.0,
+                            lifetimeTicks = 7,
+                            tintRgb = 0xffffff,
+                        )
+                        if (applyRoninDirectDamage(
+                                player,
+                                state,
+                                target,
+                                RoninBalance.W2_DELAYED_DAMAGE.toDouble(),
+                                activeCast.castId * 10L + 2L,
+                            ) > 0
+                        ) {
+                            state.applySevered(target.id)
+                        }
+                    }
+                }
+                RoninCastEventKind.W3_PULSE -> {
+                    targets.filter { isRoninRadialHit(activeCast.origin.add(0.0, 1.0, 0.0), RoninBalance.W3_RADIUS, it) }
+                        .forEach { target ->
+                            applyRoninDirectDamage(
+                                player,
+                                state,
+                                target,
+                                RoninBalance.W3_PULSE_DAMAGE.toDouble(),
+                                activeCast.castId * 10L + event.pulseIndex,
+                                recordW3Healing = true,
+                            )
+                        }
+                    emitRoninSlash(
+                        player,
+                        RoninVfxEffect.TEMPEST_SLASH,
+                        RoninVfxTexture.ARC,
+                        activeCast.origin.add(0.0, 1.0, 0.0),
+                        Vec(0.0, 1.0, 0.0),
+                        width = 5.0,
+                        height = 1.8,
+                        scale = 0.85,
+                        roll = event.pulseIndex * 0.9,
+                        alpha = 0.75,
+                        lifetimeTicks = 7,
+                    )
+                }
+                RoninCastEventKind.W3_FINAL -> {
+                    targets.filter { isRoninRadialHit(activeCast.origin.add(0.0, 1.0, 0.0), RoninBalance.W3_RADIUS, it) }
+                        .forEach { target ->
+                            applyRoninDirectDamage(
+                                player,
+                                state,
+                                target,
+                                RoninBalance.W3_FINAL_DAMAGE.toDouble(),
+                                activeCast.castId * 10L + 4L,
+                                recordW3Healing = true,
+                            )
+                        }
+                    emitRoninSlash(
+                        player,
+                        RoninVfxEffect.TEMPEST_FINAL,
+                        RoninVfxTexture.CIRCULAR,
+                        activeCast.origin.add(0.0, 1.0, 0.0),
+                        Vec(0.0, 1.0, 0.0),
+                        width = 8.0,
+                        height = 3.0,
+                        scale = 1.0,
+                        roll = 0.0,
+                        alpha = 0.9,
+                        lifetimeTicks = 10,
+                    )
+                }
+                RoninCastEventKind.E_BLINK -> {
+                    val start = Pos(activeCast.origin.x(), activeCast.origin.y(), activeCast.origin.z())
+                    val direction = roninHorizontalDirection(activeCast.direction)
+                    val end = resolveRoninBlinkEnd(player.instance, start, direction, RoninBalance.E_RANGE)
+                    player.teleport(end.withDirection(player.position.direction()))
+                    roninLockPositions[player.uuid] = end
+                    val hitTargets = targets.filter { roninSegmentIntersectsAabb(start, end, it) }
+                    var hit = false
+                    hitTargets.forEach { target ->
+                        if (applyRoninDirectDamage(
+                                player,
+                                state,
+                                target,
+                                RoninBalance.E_DAMAGE.toDouble(),
+                                activeCast.castId * 10L + 1L,
+                            ) > 0
+                        ) {
+                            hit = true
+                            emitRoninSlash(
+                                player,
+                                RoninVfxEffect.BLINK_HIT,
+                                RoninVfxTexture.THIN,
+                                target.position.add(0.0, 1.0, 0.0),
+                                activeCast.direction,
+                                width = 2.0,
+                                height = 1.5,
+                                scale = 0.9,
+                                roll = 0.4,
+                                alpha = 0.9,
+                                lifetimeTicks = 7,
+                                delayTicks = 2,
+                            )
+                        }
+                    }
+                    if (hit) state.recordEnemyHit()
+                    emitRoninSlash(
+                        player,
+                        RoninVfxEffect.BLINK_TRAIL,
+                        RoninVfxTexture.ARC,
+                        end.add(0.0, 1.0, 0.0),
+                        activeCast.direction,
+                        width = 2.8,
+                        height = 1.5,
+                        scale = 0.8,
+                        roll = 0.0,
+                        alpha = 0.8,
+                        lifetimeTicks = 8,
+                        delayTicks = 1,
+                    )
+                }
+                RoninCastEventKind.R_IMPACT -> {
+                    var hit = false
+                    var sweetHit = false
+                    targets.filter {
+                        isRoninSectorHit(activeCast.origin, activeCast.direction, it, RoninBalance.R_RANGE, RoninBalance.R_HALF_ANGLE_DEGREES)
+                    }.forEach { target ->
+                        val sweet = isRoninSectorHit(
+                            activeCast.origin,
+                            activeCast.direction,
+                            target,
+                            RoninBalance.R_RANGE,
+                            RoninBalance.R_SWEET_HALF_ANGLE_DEGREES,
+                        )
+                        val missing = if (target.id == dummy?.uuid) {
+                            (1.0 - prototypeBoss.currentHealth.toDouble() / prototypeBoss.maxHealth).coerceIn(0.0, 1.0)
+                        } else {
+                            0.0
+                        }
+                        if (applyRoninDirectDamage(
+                                player,
+                                state,
+                                target,
+                                RoninBalance.R_DAMAGE * if (sweet) 1.0 + missing else 1.0,
+                                activeCast.castId,
+                            ) > 0
+                        ) {
+                            hit = true
+                            sweetHit = sweetHit || sweet
+                        }
+                    }
+                    if (hit) state.recordEnemyHit()
+                    emitRoninSlash(
+                        player,
+                        if (sweetHit) RoninVfxEffect.R_SWEET_DRAW else RoninVfxEffect.R_DRAW,
+                        if (sweetHit) RoninVfxTexture.CIRCULAR else RoninVfxTexture.ARC,
+                        activeCast.origin.add(activeCast.direction.x() * 3.4, 1.1, activeCast.direction.z() * 3.4),
+                        activeCast.direction,
+                        width = 7.2,
+                        height = 2.3,
+                        scale = if (sweetHit) 1.2 else 1.0,
+                        roll = 0.0,
+                        alpha = 1.0,
+                        lifetimeTicks = 10,
+                        tintRgb = if (sweetHit) 0xffffff else 0xffe6e6,
+                    )
+                }
+            }
+        }
+
+        if (state.isMovementLocked) {
+            val lockPosition = roninLockPositions[player.uuid] ?: Pos(
+                cast?.origin?.x() ?: player.position.x(),
+                cast?.origin?.y() ?: player.position.y(),
+                cast?.origin?.z() ?: player.position.z(),
+            ).also { roninLockPositions[player.uuid] = it }
+            player.teleport(lockPosition.withDirection(player.position.direction()))
+            player.setVelocity(Vec.ZERO)
+            sendRoninHudSnapshot(player)
+            return
+        }
+        roninLockPositions.remove(player.uuid)
+        if (wasLocked) player.setVelocity(Vec.ZERO)
+
+        if (!prototypeBoss.isEncounterRunning) return
+        if (dodge.hasPending) combatState.deferAttackRestart()
+        val targets = roninEnemyTargets(player)
+        val combatEvents = combatState.tick(player.position, player.position.direction(), targets)
+        publishCombatEvents(player, combatEvents.filter { it is CombatEvent.Started || it is CombatEvent.Active })
+        if (combatEvents.any { it is CombatEvent.Started }) {
+            emitRoninSlash(
+                player,
+                RoninVfxEffect.AA_SLASH,
+                RoninVfxTexture.THIN,
+                player.position.add(0.0, 1.0, 0.0),
+                player.position.direction(),
+                width = 2.0,
+                height = 1.4,
+                scale = 0.65,
+                roll = 0.4,
+                alpha = 0.7,
+                lifetimeTicks = 6,
+            )
+        }
+        combatEvents.filterIsInstance<CombatEvent.HitConfirmed>().forEach { hit ->
+            targets.firstOrNull { it.id == hit.targetId }?.let { target ->
+                applyRoninDirectDamage(
+                    player,
+                    state,
+                    target,
+                    RoninBalance.AA_DAMAGE.toDouble(),
+                    hit.attackExecutionId,
+                )
+            }
+        }
+        val velocityWasApplied = dodgeVelocityActive[player.uuid] == true
+        val movement = dodge.tick(
+            canStart = !combatState.isAttacking,
+            facing = player.position.direction(),
+            startAllowed = { canStartDodge(player.isOnGround, WeaponType.RONIN) },
+        )
+        if (movement != null) {
+            moveDodge(player, dodge, movement)
+            dodgeVelocityActive[player.uuid] = true
+        } else if (velocityWasApplied) {
+            stopDodgeVelocity(player)
+            dodgeVelocityActive[player.uuid] = false
+        }
+        sendRoninHudSnapshot(player)
+        if (!prototypeBoss.isEncounterRunning) finishEncounter()
+    }
+
+    fun handleRoninSkillInput(
+        player: net.minestom.server.entity.Player,
+        combatState: CombatState,
+        slot: ClassSkillSlot,
+    ) {
+        val state = roninStates[player.uuid] ?: return
+        if (state.isMovementLocked || combatState.isAttacking) return
+        val skill = when (slot) {
+            ClassSkillSlot.SKILL_1 -> RoninSkill.Q
+            ClassSkillSlot.SKILL_2 -> RoninSkill.W
+            ClassSkillSlot.SKILL_3 -> RoninSkill.E
+            ClassSkillSlot.ULTIMATE -> RoninSkill.R
+        }
+        val cast = state.tryCast(skill, player.position, player.position.direction()) ?: return
+        roninLockPositions[player.uuid] = player.position
+        player.setVelocity(Vec.ZERO)
+        showRoninCastStartVfx(player, cast)
+        sendRoninHudSnapshot(player)
+    }
+
     events.addListener(AsyncPlayerConfigurationEvent::class.java) { event ->
         event.spawningInstance = instance
         event.player.respawnPoint = Pos(0.0, 41.0, 0.0)
@@ -1021,6 +1642,7 @@ fun main() {
         prototypeBoss.registerPlayer(event.player.uuid)
         event.player.setHealth(prototypeBoss.playerMaxHealth.toFloat())
         val starweaver = starweaverStates.getOrPut(event.player.uuid) { StarweaverRuntimeState() }
+        val ronin = roninStates.getOrPut(event.player.uuid) { RoninState() }
         selectedClasses.putIfAbsent(event.player.uuid, PlayableClass.TWIN_BLADES)
         val resources = classResources.getOrPut(event.player.uuid) { ClassResourceState() }
         val skill1 = skill1States.getOrPut(event.player.uuid) { Skill1State() }
@@ -1028,6 +1650,8 @@ fun main() {
         val skill3 = skill3States.getOrPut(event.player.uuid) { Skill3State() }
         if (!event.isFirstSpawn) {
             starweaver.reset()
+            ronin.reset()
+            roninLockPositions.remove(event.player.uuid)
             restoreStarweaverMovementSpeed(event.player)
             event.player.setAdditionalHearts(0f)
             resources.reset()
@@ -1038,13 +1662,17 @@ fun main() {
         resourceSyncTicks[event.player.uuid] = 0
         sendResourceSnapshot(event.player)
         sendStarweaverHudSnapshot(event.player)
+        sendRoninHudSnapshot(event.player)
         updateBossBar()
         event.player.showBossBar(bossBar)
         if (event.isFirstSpawn) {
             attackSpeeds[event.player.uuid] = DEFAULT_ATTACK_SPEED
             twinBladesComboStates[event.player.uuid] = TwinBladesComboState()
             combatStates[event.player.uuid] = CombatState(
-                weaponSource = { weaponFor(event.player) },
+                weaponSource = {
+                    if (selectedClasses[event.player.uuid] == PlayableClass.RONIN) WeaponType.RONIN
+                    else weaponFor(event.player)
+                },
                 attackSpeedSource = { attackSpeeds[event.player.uuid] ?: DEFAULT_ATTACK_SPEED },
             )
             dodgeStates[event.player.uuid] = DodgeState()
@@ -1083,6 +1711,7 @@ fun main() {
     events.addListener(PlayerDisconnectEvent::class.java) { event ->
         val playerId = event.player.uuid
         resetStarweaverPlayerState(event.player)
+        resetRoninPlayerState(event.player)
         particleAnimations.cancel(slashPreviewHandles.remove(playerId))
         particleAnimations.cancelFor(event.player)
         combatStates.remove(playerId)
@@ -1093,6 +1722,8 @@ fun main() {
         skill2States.remove(playerId)
         skill3States.remove(playerId)
         starweaverStates.remove(playerId)
+        roninStates.remove(playerId)
+        roninLockPositions.remove(playerId)
         selectedClasses.remove(playerId)
         resourceSyncTicks.remove(playerId)
         lastSentCooldowns.remove(playerId)
@@ -1138,9 +1769,9 @@ fun main() {
                     particleManager,
                     bossGroundTelegraphIds,
                     bossRiftTelegraphIds,
-                ) {
-                    nextGroundTelegraphId++
-                }
+                    nextTelegraphId = { nextGroundTelegraphId++ },
+                    damageAllowed = { playerId -> roninStates[playerId]?.isW3Untargetable != true },
+                )
                 if (!prototypeBoss.isEncounterRunning) {
                     finishEncounter()
                     return@addListener
@@ -1150,6 +1781,11 @@ fun main() {
         if (selectedClasses[event.player.uuid] == PlayableClass.STARWEAVER) {
             val starweaver = starweaverStates[event.player.uuid] ?: return@addListener
             tickStarweaverPlayer(event.player, state, dodge, starweaver)
+            return@addListener
+        }
+        if (selectedClasses[event.player.uuid] == PlayableClass.RONIN) {
+            val ronin = roninStates[event.player.uuid] ?: return@addListener
+            tickRoninPlayer(event.player, state, dodge, ronin)
             return@addListener
         }
         if (!prototypeBoss.isEncounterRunning) return@addListener
@@ -1465,6 +2101,9 @@ fun main() {
                 }
                 is AttackInput -> {
                     if (selectedClasses[event.player.uuid] == PlayableClass.STARWEAVER) return@addListener
+                    if (selectedClasses[event.player.uuid] == PlayableClass.RONIN &&
+                        roninStates[event.player.uuid]?.isMovementLocked == true
+                    ) return@addListener
                     if (!prototypeBoss.isActive) return@addListener
                     val state = combatStates[event.player.uuid] ?: return@addListener
                     val combatEvents = state.input(message.state)
@@ -1485,17 +2124,23 @@ fun main() {
                     val state = combatStates[event.player.uuid] ?: return@addListener
                     val dodge = dodgeStates[event.player.uuid] ?: return@addListener
                     val twinRodsAir = twinRodsAirStates[event.player.uuid] ?: return@addListener
+                    val isRonin = selectedClasses[event.player.uuid] == PlayableClass.RONIN
+                    if (isRonin && roninStates[event.player.uuid]?.isMovementLocked == true) return@addListener
                     dodge.request(
                         message,
                         canStart = !state.isAttacking,
                         facing = event.player.position.direction(),
                         startAllowed = {
-                            canStartDodge(event.player.isOnGround, weaponFor(event.player))
+                            canStartDodge(
+                                event.player.isOnGround,
+                                if (isRonin) WeaponType.RONIN else weaponFor(event.player),
+                            )
                         },
                     )
                 }
                 is AirJumpInput -> {
                     if (!prototypeBoss.isActive) return@addListener
+                    if (selectedClasses[event.player.uuid] == PlayableClass.RONIN) return@addListener
                     val twinRodsAir = twinRodsAirStates[event.player.uuid] ?: return@addListener
                     if (!event.player.isOnGround &&
                         weaponFor(event.player) == WeaponType.TWIN_RODS &&
@@ -1510,6 +2155,14 @@ fun main() {
                     if (!prototypeBoss.isActive) return@addListener
                     if (selectedClasses[event.player.uuid] == PlayableClass.STARWEAVER) {
                         handleStarweaverSkillInput(event.player, message.slot)
+                        return@addListener
+                    }
+                    if (selectedClasses[event.player.uuid] == PlayableClass.RONIN) {
+                        handleRoninSkillInput(
+                            event.player,
+                            combatStates[event.player.uuid] ?: return@addListener,
+                            message.slot,
+                        )
                         return@addListener
                     }
                     val skill1 = skill1States[event.player.uuid] ?: return@addListener
@@ -1606,6 +2259,7 @@ private fun publishCombatEvents(player: net.minestom.server.entity.Player, event
                 kind = when (event.profile.weapon) {
                     WeaponType.TWIN_RODS -> AttackDebugShapeKind.TWIN_RODS
                     WeaponType.HEAVY_BLADE -> AttackDebugShapeKind.HEAVY_BLADE
+                    WeaponType.RONIN -> AttackDebugShapeKind.HEAVY_BLADE
                 },
                 originX = event.position.x(),
                 originY = event.position.y(),
@@ -1698,6 +2352,7 @@ private fun tickRiftExecutioner(
     bossGroundTelegraphIds: MutableSet<Long>,
     bossRiftTelegraphIds: MutableMap<Long, Long>,
     nextTelegraphId: () -> Long,
+    damageAllowed: (UUID) -> Boolean = { true },
 ) {
     if (testerEntity == null || testerEntity.isRemoved || testerEntity.instance != instance) return
     val players = instance.players.filter { it.isOnline }
@@ -1782,24 +2437,26 @@ private fun tickRiftExecutioner(
                 testerEntity.teleport(Pos(event.position.x(), event.position.y(), event.position.z()).withDirection(event.facing))
             }
             is RiftExecutionerEvent.AttackHit -> {
-                instance.getPlayerByUuid(event.targetId)?.let { player ->
-                    val damage = bossState.applyBossDamage(player.uuid, event.executionId, event.damage)
-                    if (damage == 0) return@let
-                    player.setHealth(bossState.playerEntityHealth(player.uuid))
-                    player.sendMessage(Component.text("[Rift Executioner] HIT $damage"))
-                    player.sendPacket(
-                        ParticlePacket(
-                            Particle.DAMAGE_INDICATOR,
-                            player.position.x(),
-                            player.position.y() + 1.0,
-                            player.position.z(),
-                            0.35f,
-                            0.45f,
-                            0.35f,
-                            0.1f,
-                            8,
-                        ),
-                    )
+                if (damageAllowed(event.targetId)) {
+                    instance.getPlayerByUuid(event.targetId)?.let { player ->
+                        val damage = bossState.applyBossDamage(player.uuid, event.executionId, event.damage)
+                        if (damage == 0) return@let
+                        player.setHealth(bossState.playerEntityHealth(player.uuid))
+                        player.sendMessage(Component.text("[Rift Executioner] HIT $damage"))
+                        player.sendPacket(
+                            ParticlePacket(
+                                Particle.DAMAGE_INDICATOR,
+                                player.position.x(),
+                                player.position.y() + 1.0,
+                                player.position.z(),
+                                0.35f,
+                                0.45f,
+                                0.35f,
+                                0.1f,
+                                8,
+                            ),
+                        )
+                    }
                 }
             }
             is RiftExecutionerEvent.RiftCreated -> {
@@ -2529,6 +3186,33 @@ private fun moveDodge(
 
     dodge.stop()
     player.setVelocity(dodgeVelocity(movement.mul(safeProgress), player.velocity.y()))
+}
+
+/** Resolves Ronin's blink against the same simple player-volume block sweep as dodge. */
+private fun resolveRoninBlinkEnd(
+    instance: Instance,
+    start: Pos,
+    direction: Vec,
+    distance: Double,
+): Pos {
+    val target = start.add(direction.x() * distance, 0.0, direction.z() * distance)
+    if (isDodgePathClear(instance, start, target)) return target
+    var safeProgress = 0.0
+    var blockedProgress = 1.0
+    repeat(10) {
+        val progress = (safeProgress + blockedProgress) / 2.0
+        val sample = start.add(
+            (target.x() - start.x()) * progress,
+            0.0,
+            (target.z() - start.z()) * progress,
+        )
+        if (isDodgePathClear(instance, start, sample)) safeProgress = progress else blockedProgress = progress
+    }
+    return start.add(
+        (target.x() - start.x()) * safeProgress,
+        0.0,
+        (target.z() - start.z()) * safeProgress,
+    )
 }
 
 internal fun dodgeVelocity(movement: Vec, verticalVelocity: Double): Vec = Vec(

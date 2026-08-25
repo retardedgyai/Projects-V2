@@ -12,7 +12,7 @@ import kotlin.math.sqrt
 const val PROJECTS_CHANNEL = "projects:protocol"
 
 object ProtocolVersion {
-    const val CURRENT = 11
+    const val CURRENT = 12
 
     fun requireCompatible(version: Int) {
         if (version != CURRENT) {
@@ -162,6 +162,109 @@ data class StarweaverHudSnapshot(
         require(!conjunctionAvailable || (queue.size >= 2 && queue[0] == queue[1])) {
             "Starweaver conjunction must match the first two queue marks"
         }
+    }
+}
+
+private object RoninHudLimits {
+    const val MAX_Q_COOLDOWN_TICKS = 160
+    const val MAX_E_COOLDOWN_TICKS = 300
+    const val MAX_R_COOLDOWN_TICKS = 600
+    const val MAX_LOCK_TICKS = 40
+}
+
+data class RoninHudSnapshot(
+    val selected: Boolean,
+    val iaido: Int,
+    val qCooldownTicks: Int,
+    val eCooldownTicks: Int,
+    val rCooldownTicks: Int,
+    val movementLockTicksRemaining: Int,
+    /** 0 = unavailable, 1 = Wound, 2 = Crosscut, 3 = Tempest. */
+    val wVariant: Int,
+) : ProtocolMessage {
+    init {
+        require(iaido in 0..3) { "Ronin Iaido is out of range" }
+        require(qCooldownTicks in 0..RoninHudLimits.MAX_Q_COOLDOWN_TICKS) {
+            "Ronin Q cooldown is out of range"
+        }
+        require(eCooldownTicks in 0..RoninHudLimits.MAX_E_COOLDOWN_TICKS) {
+            "Ronin E cooldown is out of range"
+        }
+        require(rCooldownTicks in 0..RoninHudLimits.MAX_R_COOLDOWN_TICKS) {
+            "Ronin R cooldown is out of range"
+        }
+        require(movementLockTicksRemaining in 0..RoninHudLimits.MAX_LOCK_TICKS) {
+            "Ronin movement lock is out of range"
+        }
+        require(wVariant in 0..3) { "Ronin W variant is out of range" }
+    }
+}
+
+enum class RoninVfxEffect {
+    AA_SLASH,
+    Q_SLASH,
+    WOUND_MARK,
+    WOUND_CONSUME,
+    CROSSCUT,
+    CROSSCUT_FLASH,
+    TEMPEST_SLASH,
+    TEMPEST_FINAL,
+    BLINK_TRAIL,
+    BLINK_HIT,
+    R_SHEATH,
+    R_DRAW,
+    R_SWEET_DRAW,
+}
+
+enum class RoninVfxTexture {
+    ARC,
+    THIN,
+    CIRCULAR,
+}
+
+data class RoninVfxEvent(
+    val effect: RoninVfxEffect,
+    val texture: RoninVfxTexture,
+    val originX: Double,
+    val originY: Double,
+    val originZ: Double,
+    val directionX: Double,
+    val directionY: Double,
+    val directionZ: Double,
+    val width: Double,
+    val height: Double,
+    val scale: Double,
+    val roll: Double,
+    val alpha: Double,
+    val lifetimeTicks: Int,
+    val delayTicks: Int = 0,
+    val tintRgb: Int = 0xffffff,
+) : ProtocolMessage {
+    init {
+        require(
+            listOf(
+                originX,
+                originY,
+                originZ,
+                directionX,
+                directionY,
+                directionZ,
+                width,
+                height,
+                scale,
+                roll,
+                alpha,
+            ).all(Double::isFinite),
+        ) { "Ronin VFX values must be finite" }
+        require(sqrt(directionX * directionX + directionY * directionY + directionZ * directionZ) > 1.0e-9) {
+            "Ronin VFX direction must not be zero"
+        }
+        require(width in 0.05..64.0 && height in 0.05..64.0) { "Ronin VFX dimensions are out of range" }
+        require(scale in 0.01..8.0) { "Ronin VFX scale is out of range" }
+        require(alpha in 0.0..1.0) { "Ronin VFX alpha is out of range" }
+        require(lifetimeTicks in 1..80) { "Ronin VFX lifetime is out of range" }
+        require(delayTicks in 0..40) { "Ronin VFX delay is out of range" }
+        require(tintRgb in 0..0xffffff) { "Ronin VFX tint is out of range" }
     }
 }
 
@@ -419,6 +522,8 @@ object ProtocolCodec {
     private const val VFX_SLASH_PREVIEW_CANCEL = 28
     private const val VFX_SLASH_APPLY_SKILL3 = 29
     private const val STARWEAVER_HUD_SNAPSHOT = 30
+    private const val RONIN_HUD_SNAPSHOT = 31
+    private const val RONIN_VFX_EVENT = 32
 
     fun encode(message: ProtocolMessage): ByteArray {
         val output = ByteArrayOutputStream()
@@ -496,6 +601,35 @@ object ProtocolCodec {
                     data.writeBoolean(message.conjunctionAvailable)
                     data.writeBoolean(message.conjunctionUsed)
                     data.writeInt(message.reloadTicksRemaining)
+                }
+                is RoninHudSnapshot -> {
+                    data.writeByte(RONIN_HUD_SNAPSHOT)
+                    data.writeBoolean(message.selected)
+                    data.writeByte(message.iaido)
+                    data.writeInt(message.qCooldownTicks)
+                    data.writeInt(message.eCooldownTicks)
+                    data.writeInt(message.rCooldownTicks)
+                    data.writeInt(message.movementLockTicksRemaining)
+                    data.writeByte(message.wVariant)
+                }
+                is RoninVfxEvent -> {
+                    data.writeByte(RONIN_VFX_EVENT)
+                    data.writeByte(message.effect.ordinal)
+                    data.writeByte(message.texture.ordinal)
+                    data.writeDouble(message.originX)
+                    data.writeDouble(message.originY)
+                    data.writeDouble(message.originZ)
+                    data.writeDouble(message.directionX)
+                    data.writeDouble(message.directionY)
+                    data.writeDouble(message.directionZ)
+                    data.writeDouble(message.width)
+                    data.writeDouble(message.height)
+                    data.writeDouble(message.scale)
+                    data.writeDouble(message.roll)
+                    data.writeDouble(message.alpha)
+                    data.writeInt(message.lifetimeTicks)
+                    data.writeInt(message.delayTicks)
+                    data.writeInt(message.tintRgb)
                 }
                 is GroundTelegraphStart -> {
                     data.writeByte(GROUND_TELEGRAPH_START)
@@ -640,6 +774,39 @@ object ProtocolCodec {
                     conjunctionAvailable = input.readBoolean(),
                     conjunctionUsed = input.readBoolean(),
                     reloadTicksRemaining = input.readInt(),
+                )
+            }
+            RONIN_HUD_SNAPSHOT -> RoninHudSnapshot(
+                selected = input.readBoolean(),
+                iaido = input.readUnsignedByte(),
+                qCooldownTicks = input.readInt(),
+                eCooldownTicks = input.readInt(),
+                rCooldownTicks = input.readInt(),
+                movementLockTicksRemaining = input.readInt(),
+                wVariant = input.readUnsignedByte(),
+            )
+            RONIN_VFX_EVENT -> {
+                val effectId = input.readUnsignedByte()
+                val textureId = input.readUnsignedByte()
+                RoninVfxEvent(
+                    effect = RoninVfxEffect.entries.getOrNull(effectId)
+                        ?: throw IllegalArgumentException("Unknown Ronin VFX effect: $effectId"),
+                    texture = RoninVfxTexture.entries.getOrNull(textureId)
+                        ?: throw IllegalArgumentException("Unknown Ronin VFX texture: $textureId"),
+                    originX = input.readDouble(),
+                    originY = input.readDouble(),
+                    originZ = input.readDouble(),
+                    directionX = input.readDouble(),
+                    directionY = input.readDouble(),
+                    directionZ = input.readDouble(),
+                    width = input.readDouble(),
+                    height = input.readDouble(),
+                    scale = input.readDouble(),
+                    roll = input.readDouble(),
+                    alpha = input.readDouble(),
+                    lifetimeTicks = input.readInt(),
+                    delayTicks = input.readInt(),
+                    tintRgb = input.readInt(),
                 )
             }
             GROUND_TELEGRAPH_START -> GroundTelegraphStart.clamped(

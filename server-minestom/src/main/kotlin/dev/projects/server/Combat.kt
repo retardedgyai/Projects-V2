@@ -11,6 +11,7 @@ import kotlin.math.sqrt
 enum class WeaponType {
     HEAVY_BLADE,
     TWIN_RODS,
+    RONIN,
     ;
 
     fun profile(attackSpeed: Double): WeaponProfile {
@@ -33,6 +34,15 @@ enum class WeaponType {
                 range = 3.5,
                 minForwardDot = 0.65,
                 verticalRange = 1.75,
+            )
+            RONIN -> WeaponProfile(
+                weapon = this,
+                startupTicks = scaledTicks(10.0 / (1.0 + 0.15 * (attackSpeed - 1.0))),
+                activeTicks = 2,
+                recoveryTicks = scaledTicks(15.0 / attackSpeed),
+                range = 5.0,
+                minForwardDot = 0.35,
+                verticalRange = 2.2,
             )
         }
     }

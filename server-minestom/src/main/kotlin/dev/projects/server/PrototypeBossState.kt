@@ -47,6 +47,7 @@ class PrototypeBossState(
     private val skill2PulseDamageExecutions = mutableSetOf<Triple<Long, Int, UUID>>()
     private val skill2LandingDamageExecutions = mutableSetOf<Pair<Long, UUID>>()
     private val starweaverDamageExecutions = mutableSetOf<Pair<Long, UUID>>()
+    private val roninDamageExecutions = mutableSetOf<Pair<Long, UUID>>()
 
     val isActive: Boolean
         get() = encounterState == PrototypeEncounterState.ACTIVE
@@ -107,6 +108,7 @@ class PrototypeBossState(
         val bodyDamage = when (weapon) {
             WeaponType.HEAVY_BLADE -> HEAVY_BLADE_BODY_DAMAGE
             WeaponType.TWIN_RODS -> TWIN_RODS_BODY_DAMAGE
+            WeaponType.RONIN -> RONIN_BODY_DAMAGE
         }
         return applyPlayerDamage(bodyDamage, weakpoint != null)
     }
@@ -150,6 +152,13 @@ class PrototypeBossState(
         return applyPlayerDamage(damage)
     }
 
+    /** Applies one server-confirmed Ronin damage execution to the prototype boss. */
+    fun applyRoninDamage(executionId: Long, targetId: UUID, damage: Double): Int {
+        require(damage >= 0.0 && damage.isFinite()) { "Ronin damage must be finite and non-negative" }
+        if (!isActive || !roninDamageExecutions.add(executionId to targetId)) return 0
+        return applyPlayerDamage(damage.roundToInt())
+    }
+
     fun setBreakActive(active: Boolean) {
         breakActive = active
     }
@@ -171,6 +180,7 @@ class PrototypeBossState(
         skill2PulseDamageExecutions.clear()
         skill2LandingDamageExecutions.clear()
         starweaverDamageExecutions.clear()
+        roninDamageExecutions.clear()
         when (targetPhase) {
             PrototypeBossPhase.DUEL -> {
                 currentHealth = (maxHealth * 0.85).roundToInt().coerceAtLeast(1)
@@ -203,6 +213,7 @@ class PrototypeBossState(
         skill2PulseDamageExecutions.clear()
         skill2LandingDamageExecutions.clear()
         starweaverDamageExecutions.clear()
+        roninDamageExecutions.clear()
     }
 
     /** Restores the prototype encounter and every registered player to its test-start state. */
@@ -219,6 +230,7 @@ class PrototypeBossState(
         skill2LandingDamageExecutions.clear()
         playerDamageExecutions.clear()
         starweaverDamageExecutions.clear()
+        roninDamageExecutions.clear()
         playerHealth.keys.toList().forEach { playerHealth[it] = playerMaxHealth }
     }
 
@@ -247,6 +259,7 @@ class PrototypeBossState(
         const val DEFAULT_PLAYER_MAX_HEALTH = 20
         const val HEAVY_BLADE_BODY_DAMAGE = 20
         const val TWIN_RODS_BODY_DAMAGE = 10
+        const val RONIN_BODY_DAMAGE = 18
         const val SKILL_3_PULSE_DAMAGE = 6
         const val SKILL_3_FINISHER_DAMAGE = 12
         const val SKILL_1_DAMAGE = 20
