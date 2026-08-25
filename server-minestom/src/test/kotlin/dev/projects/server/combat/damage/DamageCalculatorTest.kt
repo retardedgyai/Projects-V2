@@ -12,6 +12,13 @@ class DamageCalculatorTest {
     }
 
     @Test
+    fun `final damage uses legacy half-up rounding`() {
+        val result = DamageCalculator.calculate(DamageCalculator.Input(fixedDamage = 0.0005))
+
+        assertEquals(0.001, result.finalRoundedDamage)
+    }
+
+    @Test
     fun `true damage bypasses defense`() {
         val result = calculate(DamageType.TRUE, defense = 1_000_000.0)
         assertEquals(100.0, result.finalRoundedDamage)

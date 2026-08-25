@@ -26,7 +26,7 @@ object DamageCalculator {
         var beforeShield = StatCalculator.saturatedMultiply(offense.damage, taken)
         beforeShield = StatCalculator.saturatedMultiply(beforeShield, defenseMultiplier)
         beforeShield = StatCalculator.saturatedMultiply(beforeShield, reductionMultiplier)
-        val rounded = kotlin.math.round(StatCalculator.nonNegative(beforeShield) * 1_000.0) / 1_000.0
+        val rounded = Math.round(StatCalculator.nonNegative(beforeShield) * 1_000.0) / 1_000.0
         val shieldDamage = StatCalculator.shieldDamage(rounded, input.shield)
         val healthDamage = StatCalculator.actualHealthDamage(rounded, input.shield, input.health)
         val kind = input.damageKind ?: DamageKind.DIRECT_SKILL
