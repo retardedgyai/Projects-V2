@@ -270,6 +270,13 @@ def start(root: Path, issues: list[int], parallel: int) -> None:
         if existing and existing.get("state") in {"RUNNING", "UNKNOWN"}:
             raise ConductorError(f"Issue #{issue} is already tracked as {existing['state']}")
 
+    active_tasks = sum(task.get("state") in {"RUNNING", "UNKNOWN"} for task in state.get("tasks", []))
+    if active_tasks + len(issues) > parallel:
+        raise ConductorError(
+            f"parallel limit {parallel} exceeded: {active_tasks} existing RUNNING/UNKNOWN + "
+            f"{len(issues)} new"
+        )
+
     prepared: list[tuple[int, str, Path, dict[str, Any]]] = []
     branches: set[str] = set()
     for issue in issues:

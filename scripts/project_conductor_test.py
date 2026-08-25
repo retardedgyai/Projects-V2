@@ -74,6 +74,22 @@ def main() -> None:
         assert duplicate.returncode != 0
         assert "already tracked" in duplicate.stderr
 
+        state = conductor.load_state(state_file)
+        state["tasks"].append(
+            {
+                "issue": 92,
+                "branch": "tool/hud-designer-v0",
+                "worktree": str(ROOT),
+                "state": "UNKNOWN",
+                "pid": -1,
+                "session": "-1",
+            }
+        )
+        conductor.save_state(state_file, state)
+        limited = run_cli("start", "94", "--parallel", "2", state_file=state_file)
+        assert limited.returncode != 0
+        assert "parallel limit" in limited.stderr
+
         status = run_cli("status", state_file=state_file)
         assert status.returncode == 0
         assert "RUNNING" in status.stdout
