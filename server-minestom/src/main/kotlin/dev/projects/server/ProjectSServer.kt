@@ -22,6 +22,11 @@ import dev.projects.protocol.StarweaverHudCelestial
 import dev.projects.protocol.StarweaverHudSnapshot
 import dev.projects.protocol.VfxEditorNotice
 import dev.projects.protocol.VfxEditorOpen
+import dev.projects.protocol.VfxEditor2ApplyRequest
+import dev.projects.protocol.VfxEditor2LoadRequest
+import dev.projects.protocol.VfxEditor2PreviewCancel
+import dev.projects.protocol.VfxEditor2PreviewRequest
+import dev.projects.protocol.VfxEditor2SaveRequest
 import dev.projects.protocol.VfxSlashDraft
 import dev.projects.protocol.VfxSlashDraftList
 import dev.projects.protocol.VfxSlashDraftLoadRequest
@@ -156,6 +161,22 @@ fun main() {
     val slashDraftStore = SlashDraftStore(Path.of("config", "projects", "vfx-editor", "slash-drafts.json"))
     val skill3SlashBindingStore = Skill3SlashBindingStore(Path.of("config", "projects", "vfx-editor", "twin-blades-skill3-slash.json"))
     val slashPreviewHandles = mutableMapOf<UUID, ParticleEffectHandle>()
+    val vfxEditor2 = VfxEditor2Runtime(
+        scheduler = particleAnimations,
+        particleManager = particleManager,
+        send = { player, message ->
+            player.sendPluginMessage(PROJECTS_CHANNEL, ProtocolCodec.encode(message))
+        },
+        viewersFor = { source ->
+            val sourcePosition = source.position
+            instance.players.filter { viewer ->
+                viewer.instance == source.instance &&
+                    viewer.position.distanceSquared(sourcePosition) <= 64.0 * 64.0
+            }
+        },
+        draftFile = Path.of("config", "projects", "vfx-editor2", "drafts.json"),
+        bindingFile = Path.of("config", "projects", "vfx-editor2", "runtime-binding.json"),
+    )
 
     fun sendSlashDraftList(player: net.minestom.server.entity.Player) {
         player.sendPluginMessage(
@@ -616,6 +637,11 @@ fun main() {
                 { sender, _ -> (sender as? net.minestom.server.entity.Player)?.let(::openSlashEditor) },
                 ArgumentType.Literal("slash"),
             )
+        },
+    )
+    MinecraftServer.getCommandManager().register(
+        Command("vfxeditor2").apply {
+            setDefaultExecutor { sender, _ -> (sender as? net.minestom.server.entity.Player)?.let(vfxEditor2::open) }
         },
     )
     MinecraftServer.getCommandManager().register(
@@ -1092,6 +1118,7 @@ fun main() {
         variant: Int = 0,
         seed: Long = 0L,
     ) {
+        if (effect == RoninSlashEffect.Q && vfxEditor2.playRoninQ(source, origin, direction, seed)) return
         val visualSeed = seed xor source.uuid.mostSignificantBits xor source.uuid.leastSignificantBits xor
             origin.x().toBits() xor origin.y().toBits() xor origin.z().toBits()
         startRoninParticleEffect(
@@ -1598,6 +1625,7 @@ fun main() {
         resetStarweaverPlayerState(event.player)
         resetRoninPlayerState(event.player)
         particleAnimations.cancel(slashPreviewHandles.remove(playerId))
+        vfxEditor2.disconnect(event.player)
         particleAnimations.cancelFor(event.player)
         combatStates.remove(playerId)
         dodgeStates.remove(playerId)
@@ -1628,6 +1656,7 @@ fun main() {
             particleManager.beginTick()
             particleProfiler.setActiveEffects(particleAnimations.activeAnimationCount)
             particleAnimations.tick()
+            vfxEditor2.tick()
             particleManager.flush()
         }
     }
@@ -2119,6 +2148,11 @@ fun main() {
                         ),
                     )
                 }
+                is VfxEditor2PreviewRequest -> vfxEditor2.preview(event.player, message)
+                VfxEditor2PreviewCancel -> vfxEditor2.cancel(event.player)
+                is VfxEditor2SaveRequest -> vfxEditor2.save(event.player, message.composition)
+                is VfxEditor2LoadRequest -> vfxEditor2.load(event.player, message)
+                is VfxEditor2ApplyRequest -> vfxEditor2.apply(event.player, message)
                 else -> throw IllegalArgumentException("Unexpected ProjectS message")
             }
         } catch (error: IllegalArgumentException) {
