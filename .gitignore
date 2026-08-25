@@ -5,3 +5,4 @@ client-fabric/run/
 server-minestom/run/
 .idea/
 *.iml
+.projects/
