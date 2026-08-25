@@ -56,8 +56,24 @@ data class HudElementLayout(
     fun resized(width: Int = this.width, height: Int = this.height): HudElementLayout =
         copy(width = width.coerceAtLeast(MIN_SIZE), height = height.coerceAtLeast(MIN_SIZE))
 
+    fun resizedFor(id: HudElementId, width: Int = this.width, height: Int = this.height): HudElementLayout =
+        copy(
+            width = width.coerceAtLeast(minimumWidth(id)),
+            height = height.coerceAtLeast(MIN_SIZE),
+        )
+
     companion object {
         const val MIN_SIZE = 4
+        const val SKILLS_SLOT_COUNT = 4
+        const val SKILLS_SLOT_GAP = 4
+        const val SKILLS_GAP_TOTAL = SKILLS_SLOT_GAP * (SKILLS_SLOT_COUNT - 1)
+        const val SKILLS_MIN_WIDTH = SKILLS_GAP_TOTAL + SKILLS_SLOT_COUNT
+
+        fun minimumWidth(id: HudElementId): Int =
+            if (id == HudElementId.SKILLS) SKILLS_MIN_WIDTH else MIN_SIZE
+
+        fun skillsSlotWidth(width: Int): Int =
+            ((width - SKILLS_GAP_TOTAL) / SKILLS_SLOT_COUNT).coerceAtLeast(1)
     }
 }
 
@@ -77,7 +93,7 @@ data class HudLayoutConfig(val elements: MutableMap<HudElementId, HudElementLayo
     companion object {
         fun defaults(): HudLayoutConfig = HudLayoutConfig(
             mutableMapOf(
-                HudElementId.SKILLS to HudElementLayout(HudAnchorX.CENTER, HudAnchorY.BOTTOM, 0, 84, 166, 28),
+                HudElementId.SKILLS to HudElementLayout(HudAnchorX.CENTER, HudAnchorY.BOTTOM, 0, 84, 94, 22),
                 HudElementId.HP to HudElementLayout(HudAnchorX.CENTER, HudAnchorY.BOTTOM, -44, 52, 82, 12),
                 HudElementId.RESOURCE to HudElementLayout(HudAnchorX.CENTER, HudAnchorY.BOTTOM, 44, 52, 82, 12),
                 HudElementId.HOTBAR to HudElementLayout(HudAnchorX.CENTER, HudAnchorY.BOTTOM, 0, 22, 182, 22),
@@ -99,9 +115,9 @@ class HudLayoutStore(private val file: Path) {
                         HudAnchorY.valueOf(json.get("anchorY").asString),
                         json.get("offsetX").asInt,
                         json.get("offsetY").asInt,
-                        json.get("width").asInt.coerceAtLeast(HudElementLayout.MIN_SIZE),
-                        json.get("height").asInt.coerceAtLeast(HudElementLayout.MIN_SIZE),
-                    )
+                        json.get("width").asInt,
+                        json.get("height").asInt,
+                    ).resizedFor(id)
                 }
             }
             config

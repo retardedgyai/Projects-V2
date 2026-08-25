@@ -43,7 +43,7 @@ class HudDesignerScreen(
 
     override fun extractRenderState(graphics: GuiGraphicsExtractor, mouseX: Int, mouseY: Int, delta: Float) {
         super.extractRenderState(graphics, mouseX, mouseY, delta)
-        graphics.fill(width - 160, 0, width, height, 0xDD10151C.toInt())
+        graphics.fill(width - CONTROL_PANEL_WIDTH, 0, width, height, 0xDD10151C.toInt())
         graphics.text(font, "HUD Designer", width - 148, 12, 0xFFFFFFFF.toInt(), true)
         graphics.text(font, "Width / Height", width - 145, 37, 0xFFB8C4CF.toInt(), false)
         HudElementId.entries.forEach { id ->
@@ -63,6 +63,9 @@ class HudDesignerScreen(
         applyDimensions()
         val mouseX = event.x()
         val mouseY = event.y()
+        if (mouseX >= width - CONTROL_PANEL_WIDTH) {
+            return super.mouseClicked(event, doubleClick)
+        }
         val hit = HudElementId.entries.asReversed().firstOrNull { config.elements[it]!!.resolve(width, height).contains(mouseX, mouseY) }
         if (hit != null) {
             selected = hit
@@ -125,7 +128,7 @@ class HudDesignerScreen(
         val layout = config.elements[selected]!!
         val newWidth = widthField.value.toIntOrNull() ?: layout.width
         val newHeight = heightField.value.toIntOrNull() ?: layout.height
-        config.elements[selected] = layout.resized(newWidth, newHeight)
+        config.elements[selected] = layout.resizedFor(selected, newWidth, newHeight)
     }
 
     private fun updateSelected(update: HudElementLayout.() -> HudElementLayout) {
@@ -162,5 +165,9 @@ class HudDesignerScreen(
         graphics.fill(rect.x, rect.y + rect.height - 1, rect.x + rect.width, rect.y + rect.height, color)
         graphics.fill(rect.x, rect.y, rect.x + 1, rect.y + rect.height, color)
         graphics.fill(rect.x + rect.width - 1, rect.y, rect.x + rect.width, rect.y + rect.height, color)
+    }
+
+    private companion object {
+        const val CONTROL_PANEL_WIDTH = 160
     }
 }

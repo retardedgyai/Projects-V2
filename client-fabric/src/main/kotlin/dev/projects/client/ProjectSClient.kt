@@ -315,9 +315,9 @@ object ProjectSClient : ClientModInitializer {
     private fun renderSkillHud(context: GuiGraphicsExtractor) {
         val layout = hudLayout.elements[HudElementId.SKILLS]!!
         val rect = layout.resolve(context.guiWidth(), context.guiHeight())
-        val slotWidth = (rect.width - 12) / 4
+        val slotWidth = HudElementLayout.skillsSlotWidth(rect.width)
         val slotHeight = rect.height
-        val gap = 4
+        val gap = HudElementLayout.SKILLS_SLOT_GAP
         val startX = rect.x
         val y = rect.y
         val slots = listOf(

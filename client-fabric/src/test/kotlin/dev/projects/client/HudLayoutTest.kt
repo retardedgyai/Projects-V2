@@ -29,6 +29,15 @@ class HudLayoutTest {
     }
 
     @Test
+    fun `skills resize keeps four runtime slots usable`() {
+        val layout = HudLayoutConfig.defaults().elements[HudElementId.SKILLS]!!
+        val resized = layout.resizedFor(HudElementId.SKILLS, 4, 22)
+
+        assertEquals(HudElementLayout.SKILLS_MIN_WIDTH, resized.width)
+        assertTrue(HudElementLayout.skillsSlotWidth(resized.width) > 0)
+    }
+
+    @Test
     fun `config round trips through local store`() {
         val directory = Files.createTempDirectory("projects-hud-test")
         val store = HudLayoutStore(directory.resolve("config/projects/hud-layout.json"))
