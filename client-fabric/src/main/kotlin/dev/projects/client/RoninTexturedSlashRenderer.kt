@@ -11,6 +11,7 @@ import net.minecraft.client.Minecraft
 import net.minecraft.client.renderer.SubmitNodeCollector
 import net.minecraft.client.renderer.rendertype.RenderType
 import net.minecraft.client.renderer.rendertype.RenderTypes
+import net.minecraft.client.renderer.texture.OverlayTexture
 import net.minecraft.resources.Identifier
 import kotlin.math.abs
 import kotlin.math.cos
@@ -29,6 +30,8 @@ private data class ClientRoninSlash(
  * general ability VFX API: the only producer is the Ronin protocol event.
  */
 object RoninTexturedSlashRenderer {
+    private const val FULL_BRIGHT_LIGHT = 0x00F000F0
+
     private val renderDataKey = RenderStateDataKey.create<List<ClientRoninSlash>> {
         "projects:ronin_textured_slashes"
     }
@@ -219,11 +222,28 @@ object RoninTexturedSlashRenderer {
         alpha: Int,
     ) {
         val uvs = arrayOf(floatArrayOf(0.0f, 1.0f), floatArrayOf(1.0f, 1.0f), floatArrayOf(1.0f, 0.0f), floatArrayOf(0.0f, 0.0f))
+        val edgeAX = corners[1][0] - corners[0][0]
+        val edgeAY = corners[1][1] - corners[0][1]
+        val edgeAZ = corners[1][2] - corners[0][2]
+        val edgeBX = corners[2][0] - corners[0][0]
+        val edgeBY = corners[2][1] - corners[0][1]
+        val edgeBZ = corners[2][2] - corners[0][2]
+        val normalX = edgeAY * edgeBZ - edgeAZ * edgeBY
+        val normalY = edgeAZ * edgeBX - edgeAX * edgeBZ
+        val normalZ = edgeAX * edgeBY - edgeAY * edgeBX
+        val normalLength = sqrt(normalX * normalX + normalY * normalY + normalZ * normalZ)
+        if (normalLength <= 1.0e-9) return
+        val normalizedNormalX = (normalX / normalLength).toFloat()
+        val normalizedNormalY = (normalY / normalLength).toFloat()
+        val normalizedNormalZ = (normalZ / normalLength).toFloat()
         corners.indices.forEach { index ->
             val corner = corners[index]
             consumer.addVertex(pose, corner[0].toFloat(), corner[1].toFloat(), corner[2].toFloat())
                 .setColor(red, green, blue, alpha)
                 .setUv(uvs[index][0], uvs[index][1])
+                .setOverlay(OverlayTexture.NO_OVERLAY)
+                .setLight(FULL_BRIGHT_LIGHT)
+                .setNormal(pose, normalizedNormalX, normalizedNormalY, normalizedNormalZ)
         }
     }
 }
