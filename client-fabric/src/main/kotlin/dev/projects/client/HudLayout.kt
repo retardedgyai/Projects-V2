@@ -100,14 +100,17 @@ object HudLayoutSnap {
         screenHeight: Int,
     ): HudSnapResult {
         val rect = layout.resolve(screenWidth, screenHeight)
-        val xCenterTargets = listOf(screenWidth / 2)
-        val yCenterTargets = listOf(screenHeight / 2)
+        val screenCenterX = screenWidth / 2
+        val screenCenterY = screenHeight / 2
+        val xCenterTargets = mutableListOf(screenCenterX to screenCenterX)
+        val yCenterTargets = mutableListOf(screenCenterY to screenCenterY)
         val xAlignmentTargets = mutableListOf<Int>()
         val yAlignmentTargets = mutableListOf<Int>()
         elements.filterKeys { it != selected }.values.forEach { other ->
             val otherRect = other.resolve(screenWidth, screenHeight)
             xAlignmentTargets += listOf(otherRect.x, otherRect.x + otherRect.width / 2, otherRect.x + otherRect.width)
             yAlignmentTargets += listOf(otherRect.y, otherRect.y + otherRect.height / 2, otherRect.y + otherRect.height)
+            xCenterTargets += 2 * screenCenterX - (otherRect.x + otherRect.width / 2) to screenCenterX
         }
 
         val x = nearestSnap(rect.x, rect.width, xCenterTargets, xAlignmentTargets)
@@ -121,8 +124,8 @@ object HudLayoutSnap {
 
     private data class AxisSnap(val position: Int, val guide: Int?)
 
-    private fun nearestSnap(start: Int, size: Int, centerTargets: List<Int>, alignmentTargets: List<Int>): AxisSnap {
-        val candidates = centerTargets.map { it - size / 2 to it } + alignmentTargets.flatMap { target ->
+    private fun nearestSnap(start: Int, size: Int, centerTargets: List<Pair<Int, Int>>, alignmentTargets: List<Int>): AxisSnap {
+        val candidates = centerTargets.map { (target, guide) -> target - size / 2 to guide } + alignmentTargets.flatMap { target ->
             listOf(target - size / 2 to target, target - size to target, target to target)
         }
         val best = candidates.minByOrNull { (position, _) -> kotlin.math.abs(position - start) }

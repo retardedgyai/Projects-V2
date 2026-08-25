@@ -1,6 +1,7 @@
 package dev.projects.client
 
 import net.minecraft.client.gui.GuiGraphicsExtractor
+import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.components.Button
 import net.minecraft.client.gui.components.EditBox
 import net.minecraft.client.gui.screens.Screen
@@ -22,6 +23,7 @@ class HudDesignerScreen(
     private var dragY = 0
     private var guideX: Int? = null
     private var guideY: Int? = null
+    private var syncingFields = false
     private lateinit var widthField: EditBox
     private lateinit var heightField: EditBox
 
@@ -33,6 +35,8 @@ class HudDesignerScreen(
         heightField = addRenderableWidget(EditBox(font, width - 75, 48, 55, 18, Component.literal("Height")))
         widthField.setMaxLength(4)
         heightField.setMaxLength(4)
+        widthField.setResponder { if (!syncingFields) applyDimensions() }
+        heightField.setResponder { if (!syncingFields) applyDimensions() }
         addRenderableWidget(Button.builder(Component.literal("Center X")) { centerX() }
             .bounds(width - 145, 74, 110, 20).build())
         addRenderableWidget(Button.builder(Component.literal("Center Y")) { centerY() }
@@ -46,6 +50,7 @@ class HudDesignerScreen(
 
     override fun extractRenderState(graphics: GuiGraphicsExtractor, mouseX: Int, mouseY: Int, delta: Float) {
         super.extractRenderState(graphics, mouseX, mouseY, delta)
+        coverVanillaHotbar(graphics)
         graphics.fill(width - CONTROL_PANEL_WIDTH, 0, width, height, 0xDD10151C.toInt())
         graphics.text(font, "HUD Designer", width - 148, 12, 0xFFFFFFFF.toInt(), true)
         graphics.text(font, "Width / Height", width - 145, 37, 0xFFB8C4CF.toInt(), false)
@@ -86,6 +91,8 @@ class HudDesignerScreen(
 
     override fun mouseReleased(event: MouseButtonEvent): Boolean {
         dragging = false
+        guideX = null
+        guideY = null
         return super.mouseReleased(event)
     }
 
@@ -133,8 +140,13 @@ class HudDesignerScreen(
     private fun syncFields() {
         if (!::widthField.isInitialized) return
         val layout = config.elements[selected]!!
-        widthField.setValue(layout.width.toString())
-        heightField.setValue(layout.height.toString())
+        syncingFields = true
+        try {
+            widthField.setValue(layout.width.toString())
+            heightField.setValue(layout.height.toString())
+        } finally {
+            syncingFields = false
+        }
     }
 
     private fun applyDimensions() {
@@ -188,7 +200,21 @@ class HudDesignerScreen(
         repeat(9) { index ->
             val x = rect.x + index * slotWidth
             outline(graphics, HudRect(x, rect.y, slotWidth, rect.height), 0xFFB8C4CF.toInt())
+            Minecraft.getInstance().player?.inventory?.getItem(index)?.takeUnless { it.isEmpty }?.let { stack ->
+                val itemX = x + (slotWidth - 16) / 2
+                val itemY = rect.y + (rect.height - 16) / 2
+                graphics.item(stack, itemX, itemY)
+                graphics.itemDecorations(font, stack, itemX, itemY)
+            }
         }
+        Minecraft.getInstance().player?.inventory?.getSelectedSlot()?.let { index ->
+            if (index in 0..8) outline(graphics, HudRect(rect.x + index * slotWidth, rect.y, slotWidth, rect.height), 0xFFFFFF55.toInt())
+        }
+    }
+
+    private fun coverVanillaHotbar(graphics: GuiGraphicsExtractor) {
+        val vanilla = HudRect((width - 182) / 2, height - 22, 182, 22)
+        graphics.fill(vanilla.x, vanilla.y, vanilla.x + vanilla.width, vanilla.y + vanilla.height, 0xFF10151C.toInt())
     }
 
     private fun outline(graphics: GuiGraphicsExtractor, rect: HudRect, color: Int) {

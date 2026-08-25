@@ -63,4 +63,20 @@ class HudLayoutTest {
         assertEquals(320, result.guideX)
         assertEquals(100, result.guideY)
     }
+
+    @Test
+    fun `snap mirrors another element around screen center`() {
+        val selected = HudElementLayout(HudAnchorX.LEFT, HudAnchorY.TOP, 407, 40, 20, 10)
+        val other = HudElementLayout(HudAnchorX.LEFT, HudAnchorY.TOP, 210, 40, 20, 10)
+        val result = HudLayoutSnap.snap(
+            HudElementId.RESOURCE,
+            selected,
+            mapOf(HudElementId.RESOURCE to selected, HudElementId.HP to other),
+            640,
+            360,
+        )
+
+        assertEquals(410, result.layout.resolve(640, 360).x)
+        assertEquals(320, result.guideX)
+    }
 }
