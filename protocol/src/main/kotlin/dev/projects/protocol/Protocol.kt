@@ -12,7 +12,7 @@ import kotlin.math.sqrt
 const val PROJECTS_CHANNEL = "projects:protocol"
 
 object ProtocolVersion {
-    const val CURRENT = 14
+    const val CURRENT = 15
 
     fun requireCompatible(version: Int) {
         if (version != CURRENT) {
@@ -430,377 +430,38 @@ data class VfxEditorNotice(val text: String) : ProtocolMessage {
     }
 }
 
-enum class VfxEditor2Shape {
-    RIBBON,
-    LINE,
-    CIRCLE,
-    BURST,
+private object VfxEditor2ProtocolLimits {
+    const val MAX_TARGET_LENGTH = 32
+    const val MAX_STATUS_LENGTH = 160
 }
 
-enum class VfxEditor2Particle {
-    DUST,
-    END_ROD,
-    ELECTRIC_SPARK,
-    CRIT,
-    ENCHANT,
-    SOUL_FIRE_FLAME,
-    FLAME,
-}
-
-enum class VfxEditor2WidthCurve {
-    CONSTANT,
-    THIN_THICK_THIN,
-}
-
-private object VfxEditor2Limits {
-    const val MAX_LAYERS = 16
-    const val MAX_DRAFTS = 32
-    const val MAX_NAME_LENGTH = 32
-    const val MAX_DURATION_TICKS = 200
-    const val MAX_START_TICK = 200
-    const val MAX_LAYER_DURATION_TICKS = 200
-    const val MAX_LENGTH = 16.0
-    const val MAX_ARC_SPAN = 360.0
-    const val MAX_CURVATURE = 4.0
-    const val MAX_WIDTH = 2.0
-    const val MAX_SAMPLE_DENSITY = 32.0
-    const val MAX_LANE_COUNT = 4
-    const val MAX_LANE_SPACING = 3.0
-    const val MAX_LINE_SPACING = 3.0
-    const val MAX_CIRCLE_RADIUS = 12.0
-    const val MAX_CIRCLE_SPACING = 3.0
-    const val MAX_BURST_RADIUS = 8.0
-    const val MAX_BURST_COUNT = 64
-    const val MAX_BURST_SPREAD = 8.0
-    const val MAX_BURST_SPEED = 2.0
-    const val MAX_OFFSET = 8.0
-    const val MAX_ROTATION = 180.0
-    const val MAX_SIZE = 2.0
-    const val MAX_DENSITY = 32.0
-}
-
-private fun requireFiniteVfx2(values: List<Double>, label: String) {
-    require(values.all(Double::isFinite)) { "$label must be finite" }
-}
-
-private val VFX_EDITOR_2_NAME = Regex("[A-Za-z0-9][A-Za-z0-9 _-]{0,31}")
-private val VFX_EDITOR_2_ID = Regex("[A-Za-z0-9][A-Za-z0-9_.-]{0,31}")
-
-data class VfxEditor2Offset(
-    val forward: Double = 0.0,
-    val right: Double = 0.0,
-    val up: Double = 0.0,
-) {
+data class VfxEditor2Open(val targetLabel: String = "Ronin Q") : ProtocolMessage {
     init {
-        requireFiniteVfx2(listOf(forward, right, up), "VFX Editor 2 offset")
-        require(listOf(forward, right, up).all { it in -VfxEditor2Limits.MAX_OFFSET..VfxEditor2Limits.MAX_OFFSET }) {
-            "VFX Editor 2 offset is out of range"
-        }
-    }
-
-    companion object {
-        fun clamped(forward: Double, right: Double, up: Double): VfxEditor2Offset {
-            requireFiniteVfx2(listOf(forward, right, up), "VFX Editor 2 offset")
-            return VfxEditor2Offset(
-                forward.coerceIn(-VfxEditor2Limits.MAX_OFFSET, VfxEditor2Limits.MAX_OFFSET),
-                right.coerceIn(-VfxEditor2Limits.MAX_OFFSET, VfxEditor2Limits.MAX_OFFSET),
-                up.coerceIn(-VfxEditor2Limits.MAX_OFFSET, VfxEditor2Limits.MAX_OFFSET),
-            )
+        require(targetLabel.isNotBlank() && targetLabel.length <= VfxEditor2ProtocolLimits.MAX_TARGET_LENGTH) {
+            "VFX Editor 2 target label is invalid"
         }
     }
 }
 
-data class VfxEditor2Rotation(
-    val yaw: Double = 0.0,
-    val pitch: Double = 0.0,
-    val roll: Double = 0.0,
-) {
-    init {
-        requireFiniteVfx2(listOf(yaw, pitch, roll), "VFX Editor 2 rotation")
-        require(listOf(yaw, pitch, roll).all { it in -VfxEditor2Limits.MAX_ROTATION..VfxEditor2Limits.MAX_ROTATION }) {
-            "VFX Editor 2 rotation is out of range"
-        }
-    }
-
-    companion object {
-        fun clamped(yaw: Double, pitch: Double, roll: Double): VfxEditor2Rotation {
-            requireFiniteVfx2(listOf(yaw, pitch, roll), "VFX Editor 2 rotation")
-            return VfxEditor2Rotation(
-                yaw.coerceIn(-VfxEditor2Limits.MAX_ROTATION, VfxEditor2Limits.MAX_ROTATION),
-                pitch.coerceIn(-VfxEditor2Limits.MAX_ROTATION, VfxEditor2Limits.MAX_ROTATION),
-                roll.coerceIn(-VfxEditor2Limits.MAX_ROTATION, VfxEditor2Limits.MAX_ROTATION),
-            )
-        }
-    }
+data class VfxEditor2PreviewStart(val requestId: Long) : ProtocolMessage {
+    init { require(requestId >= 0L) { "VFX Editor 2 request id is invalid" } }
 }
 
-data class VfxEditor2ShapeParameters(
-    val length: Double = 4.5,
-    val arcSpan: Double = 120.0,
-    val curvature: Double = 0.25,
-    val width: Double = 0.45,
-    val sampleDensity: Double = 12.0,
-    val laneCount: Int = 1,
-    val laneSpacing: Double = 0.18,
-    val reverse: Boolean = false,
-    val widthCurve: VfxEditor2WidthCurve = VfxEditor2WidthCurve.CONSTANT,
-    val lineLength: Double = 4.0,
-    val lineSpacing: Double = 0.22,
-    val circleRadius: Double = 2.0,
-    val circleArcDegrees: Double = 360.0,
-    val circleSpacing: Double = 0.22,
-    val burstRadius: Double = 1.0,
-    val burstCount: Int = 18,
-    val burstSpread: Double = 1.0,
-    val burstSpeed: Double = 0.18,
-) {
-    init {
-        requireFiniteVfx2(
-            listOf(
-                length, arcSpan, curvature, width, sampleDensity, laneSpacing,
-                lineLength, lineSpacing, circleRadius, circleArcDegrees, circleSpacing,
-                burstRadius, burstSpread, burstSpeed,
-            ),
-            "VFX Editor 2 shape parameters",
-        )
-        require(laneCount in 1..VfxEditor2Limits.MAX_LANE_COUNT) { "VFX Editor 2 lane count is out of range" }
-        require(burstCount in 0..VfxEditor2Limits.MAX_BURST_COUNT) { "VFX Editor 2 burst count is out of range" }
-        require(length in 0.1..VfxEditor2Limits.MAX_LENGTH && arcSpan in 1.0..VfxEditor2Limits.MAX_ARC_SPAN) { "VFX Editor 2 ribbon geometry is out of range" }
-        require(curvature in 0.0..VfxEditor2Limits.MAX_CURVATURE && width in 0.0..VfxEditor2Limits.MAX_WIDTH) { "VFX Editor 2 ribbon width is out of range" }
-        require(sampleDensity in 1.0..VfxEditor2Limits.MAX_SAMPLE_DENSITY && laneSpacing in 0.0..VfxEditor2Limits.MAX_LANE_SPACING) { "VFX Editor 2 ribbon sampling is out of range" }
-        require(lineLength in 0.1..VfxEditor2Limits.MAX_LENGTH && lineSpacing in 0.05..VfxEditor2Limits.MAX_LINE_SPACING) { "VFX Editor 2 line geometry is out of range" }
-        require(circleRadius in 0.0..VfxEditor2Limits.MAX_CIRCLE_RADIUS && circleArcDegrees in 1.0..VfxEditor2Limits.MAX_ARC_SPAN && circleSpacing in 0.05..VfxEditor2Limits.MAX_CIRCLE_SPACING) { "VFX Editor 2 circle geometry is out of range" }
-        require(burstRadius in 0.0..VfxEditor2Limits.MAX_BURST_RADIUS && burstSpread in 0.0..VfxEditor2Limits.MAX_BURST_SPREAD && burstSpeed in 0.0..VfxEditor2Limits.MAX_BURST_SPEED) { "VFX Editor 2 burst geometry is out of range" }
-    }
+object VfxEditor2PreviewStop : ProtocolMessage
 
-    companion object {
-        fun clamped(
-            length: Double,
-            arcSpan: Double,
-            curvature: Double,
-            width: Double,
-            sampleDensity: Double,
-            laneCount: Int,
-            laneSpacing: Double,
-            reverse: Boolean,
-            widthCurve: VfxEditor2WidthCurve,
-            lineLength: Double,
-            lineSpacing: Double,
-            circleRadius: Double,
-            circleArcDegrees: Double,
-            circleSpacing: Double,
-            burstRadius: Double,
-            burstCount: Int,
-            burstSpread: Double,
-            burstSpeed: Double,
-        ): VfxEditor2ShapeParameters {
-            requireFiniteVfx2(
-                listOf(
-                    length, arcSpan, curvature, width, sampleDensity, laneSpacing,
-                    lineLength, lineSpacing, circleRadius, circleArcDegrees, circleSpacing,
-                    burstRadius, burstSpread, burstSpeed,
-                ),
-                "VFX Editor 2 shape parameters",
-            )
-            return VfxEditor2ShapeParameters(
-                length.coerceIn(0.1, VfxEditor2Limits.MAX_LENGTH),
-                arcSpan.coerceIn(1.0, VfxEditor2Limits.MAX_ARC_SPAN),
-                curvature.coerceIn(0.0, VfxEditor2Limits.MAX_CURVATURE),
-                width.coerceIn(0.0, VfxEditor2Limits.MAX_WIDTH),
-                sampleDensity.coerceIn(1.0, VfxEditor2Limits.MAX_SAMPLE_DENSITY),
-                laneCount.coerceIn(1, VfxEditor2Limits.MAX_LANE_COUNT),
-                laneSpacing.coerceIn(0.0, VfxEditor2Limits.MAX_LANE_SPACING),
-                reverse,
-                widthCurve,
-                lineLength.coerceIn(0.1, VfxEditor2Limits.MAX_LENGTH),
-                lineSpacing.coerceIn(0.05, VfxEditor2Limits.MAX_LINE_SPACING),
-                circleRadius.coerceIn(0.0, VfxEditor2Limits.MAX_CIRCLE_RADIUS),
-                circleArcDegrees.coerceIn(1.0, VfxEditor2Limits.MAX_ARC_SPAN),
-                circleSpacing.coerceIn(0.05, VfxEditor2Limits.MAX_CIRCLE_SPACING),
-                burstRadius.coerceIn(0.0, VfxEditor2Limits.MAX_BURST_RADIUS),
-                burstCount.coerceIn(0, VfxEditor2Limits.MAX_BURST_COUNT),
-                burstSpread.coerceIn(0.0, VfxEditor2Limits.MAX_BURST_SPREAD),
-                burstSpeed.coerceIn(0.0, VfxEditor2Limits.MAX_BURST_SPEED),
-            )
-        }
-    }
+enum class VfxEditor2StatusKind {
+    READY,
+    PREVIEW_REQUESTED,
+    PLAYING,
+    STOPPED,
+    ERROR,
 }
 
-data class VfxEditor2Layer(
-    val id: Int = 0,
-    val name: String = "Layer",
-    val enabled: Boolean = true,
-    val solo: Boolean = false,
-    val shapeType: VfxEditor2Shape = VfxEditor2Shape.RIBBON,
-    val particleType: VfxEditor2Particle = VfxEditor2Particle.DUST,
-    val color: Int = 0xffffff,
-    val size: Double = 0.28,
-    val density: Double = 1.0,
-    val offset: VfxEditor2Offset = VfxEditor2Offset(),
-    val rotation: VfxEditor2Rotation = VfxEditor2Rotation(),
-    val startTick: Int = 0,
-    val durationTicks: Int = 8,
-    val shapeParameters: VfxEditor2ShapeParameters = VfxEditor2ShapeParameters(),
-) {
-    init {
-        require(name.matches(VFX_EDITOR_2_NAME)) { "VFX Editor 2 layer name is invalid" }
-        require(color in 0..0xffffff) { "VFX Editor 2 color is out of range" }
-        require(size.isFinite() && density.isFinite()) { "VFX Editor 2 appearance values must be finite" }
-        require(size in 0.01..VfxEditor2Limits.MAX_SIZE && density in 0.05..VfxEditor2Limits.MAX_DENSITY) { "VFX Editor 2 appearance values are out of range" }
-        require(startTick in 0..VfxEditor2Limits.MAX_START_TICK) { "VFX Editor 2 start tick is out of range" }
-        require(durationTicks in 1..VfxEditor2Limits.MAX_LAYER_DURATION_TICKS) { "VFX Editor 2 layer duration is out of range" }
-    }
-
-    companion object {
-        fun clamped(
-            id: Int,
-            name: String,
-            enabled: Boolean,
-            solo: Boolean,
-            shapeType: VfxEditor2Shape,
-            particleType: VfxEditor2Particle,
-            color: Int,
-            size: Double,
-            density: Double,
-            offset: VfxEditor2Offset,
-            rotation: VfxEditor2Rotation,
-            startTick: Int,
-            durationTicks: Int,
-            shapeParameters: VfxEditor2ShapeParameters,
-        ): VfxEditor2Layer {
-            require(name.matches(VFX_EDITOR_2_NAME)) { "VFX Editor 2 layer name is invalid" }
-            requireFiniteVfx2(listOf(size, density), "VFX Editor 2 appearance values")
-            return VfxEditor2Layer(
-                id = id,
-                name = name,
-                enabled = enabled,
-                solo = solo,
-                shapeType = shapeType,
-                particleType = particleType,
-                color = color.coerceIn(0, 0xffffff),
-                size = size.coerceIn(0.01, VfxEditor2Limits.MAX_SIZE),
-                density = density.coerceIn(0.05, VfxEditor2Limits.MAX_DENSITY),
-                offset = offset,
-                rotation = rotation,
-                startTick = startTick.coerceIn(0, VfxEditor2Limits.MAX_START_TICK),
-                durationTicks = durationTicks.coerceIn(1, VfxEditor2Limits.MAX_LAYER_DURATION_TICKS),
-                shapeParameters = shapeParameters,
-            )
-        }
-    }
-}
-
-data class VfxEditor2Composition(
-    val name: String = "ronin_q",
-    val durationTicks: Int = 16,
-    val layers: List<VfxEditor2Layer> = defaultLayers(),
-) {
-    init {
-        require(name.matches(VFX_EDITOR_2_NAME)) { "VFX Editor 2 composition name is invalid" }
-        require(durationTicks in 1..VfxEditor2Limits.MAX_DURATION_TICKS) { "VFX Editor 2 composition duration is out of range" }
-        require(layers.size <= VfxEditor2Limits.MAX_LAYERS) { "Too many VFX Editor 2 layers" }
-        require(layers.map { it.id }.toSet().size == layers.size) { "VFX Editor 2 layer ids must be unique" }
-    }
-
-    companion object {
-        fun clamped(name: String, durationTicks: Int, layers: List<VfxEditor2Layer>): VfxEditor2Composition {
-            require(name.matches(VFX_EDITOR_2_NAME)) { "VFX Editor 2 composition name is invalid" }
-            require(layers.size <= VfxEditor2Limits.MAX_LAYERS) { "Too many VFX Editor 2 layers" }
-            val safeDuration = durationTicks.coerceIn(1, VfxEditor2Limits.MAX_DURATION_TICKS)
-            val safeLayers = layers.map { layer ->
-                val safeStart = layer.startTick.coerceIn(0, safeDuration - 1)
-                val maxDuration = (safeDuration - safeStart).coerceAtLeast(1)
-                layer.copy(
-                    startTick = safeStart,
-                    durationTicks = layer.durationTicks.coerceIn(1, maxDuration),
-                )
-            }
-            return VfxEditor2Composition(name, safeDuration, safeLayers)
-        }
-
-        fun defaultLayers(): List<VfxEditor2Layer> = listOf(
-            VfxEditor2Layer(
-                id = 1,
-                name = "Core Ribbon",
-                color = 0xffffff,
-                size = 0.32,
-                density = 1.0,
-                shapeParameters = VfxEditor2ShapeParameters(
-                    length = 4.8,
-                    arcSpan = 110.0,
-                    width = 0.24,
-                    sampleDensity = 14.0,
-                    widthCurve = VfxEditor2WidthCurve.THIN_THICK_THIN,
-                ),
-            ),
-            VfxEditor2Layer(
-                id = 2,
-                name = "Crimson Body",
-                color = 0xd21f3c,
-                size = 0.46,
-                density = 1.0,
-                shapeParameters = VfxEditor2ShapeParameters(
-                    length = 4.7,
-                    arcSpan = 110.0,
-                    width = 0.46,
-                    sampleDensity = 12.0,
-                    widthCurve = VfxEditor2WidthCurve.THIN_THICK_THIN,
-                ),
-            ),
-            VfxEditor2Layer(
-                id = 3,
-                name = "Fragments",
-                color = 0x321b2d,
-                size = 0.24,
-                particleType = VfxEditor2Particle.ELECTRIC_SPARK,
-                shapeType = VfxEditor2Shape.BURST,
-                shapeParameters = VfxEditor2ShapeParameters(
-                    burstRadius = 0.9,
-                    burstCount = 12,
-                    burstSpread = 1.4,
-                    burstSpeed = 0.16,
-                ),
-                startTick = 2,
-                durationTicks = 1,
-            ),
-        )
-    }
-}
-
-data class VfxEditor2Open(val composition: VfxEditor2Composition) : ProtocolMessage
-
-data class VfxEditor2PreviewRequest(
-    val requestId: Long,
-    val composition: VfxEditor2Composition,
-    val loop: Boolean,
-) : ProtocolMessage
-
-object VfxEditor2PreviewCancel : ProtocolMessage
-
-data class VfxEditor2SaveRequest(val composition: VfxEditor2Composition) : ProtocolMessage
-
-data class VfxEditor2LoadRequest(val name: String) : ProtocolMessage {
-    init { require(name.matches(VFX_EDITOR_2_NAME)) { "VFX Editor 2 draft name is invalid" } }
-}
-
-data class VfxEditor2Draft(val composition: VfxEditor2Composition) : ProtocolMessage
-
-data class VfxEditor2DraftList(val names: List<String>) : ProtocolMessage {
-    init {
-        require(names.size <= VfxEditor2Limits.MAX_DRAFTS) { "Too many VFX Editor 2 drafts" }
-        require(names.all { it.matches(VFX_EDITOR_2_NAME) }) { "VFX Editor 2 draft name is invalid" }
-    }
-}
-
-data class VfxEditor2ApplyRequest(
-    val runtimeVfxId: String,
-    val composition: VfxEditor2Composition,
+data class VfxEditor2Status(
+    val kind: VfxEditor2StatusKind,
+    val message: String,
 ) : ProtocolMessage {
-    init { require(runtimeVfxId.matches(VFX_EDITOR_2_ID)) { "VFX Editor 2 runtime id is invalid" } }
-}
-
-data class VfxEditor2Notice(val text: String) : ProtocolMessage {
-    init { require(text.length <= 160) { "VFX Editor 2 notice is too long" } }
+    init { require(message.length <= VfxEditor2ProtocolLimits.MAX_STATUS_LENGTH) { "VFX Editor 2 status is too long" } }
 }
 
 object ProtocolCodec {
@@ -829,14 +490,9 @@ object ProtocolCodec {
     private const val STARWEAVER_HUD_SNAPSHOT = 30
     private const val RONIN_HUD_SNAPSHOT = 31
     private const val VFX_EDITOR_2_OPEN = 40
-    private const val VFX_EDITOR_2_PREVIEW_REQUEST = 41
-    private const val VFX_EDITOR_2_PREVIEW_CANCEL = 42
-    private const val VFX_EDITOR_2_SAVE_REQUEST = 43
-    private const val VFX_EDITOR_2_LOAD_REQUEST = 44
-    private const val VFX_EDITOR_2_DRAFT = 45
-    private const val VFX_EDITOR_2_DRAFT_LIST = 46
-    private const val VFX_EDITOR_2_APPLY_REQUEST = 47
-    private const val VFX_EDITOR_2_NOTICE = 48
+    private const val VFX_EDITOR_2_PREVIEW_START = 41
+    private const val VFX_EDITOR_2_PREVIEW_STOP = 42
+    private const val VFX_EDITOR_2_STATUS = 43
 
     fun encode(message: ProtocolMessage): ByteArray {
         val output = ByteArrayOutputStream()
@@ -980,40 +636,17 @@ object ProtocolCodec {
                 }
                 is VfxEditor2Open -> {
                     data.writeByte(VFX_EDITOR_2_OPEN)
-                    writeVfxEditor2Composition(data, message.composition)
+                    writeString(data, message.targetLabel)
                 }
-                is VfxEditor2PreviewRequest -> {
-                    data.writeByte(VFX_EDITOR_2_PREVIEW_REQUEST)
+                is VfxEditor2PreviewStart -> {
+                    data.writeByte(VFX_EDITOR_2_PREVIEW_START)
                     data.writeLong(message.requestId)
-                    data.writeBoolean(message.loop)
-                    writeVfxEditor2Composition(data, message.composition)
                 }
-                VfxEditor2PreviewCancel -> data.writeByte(VFX_EDITOR_2_PREVIEW_CANCEL)
-                is VfxEditor2SaveRequest -> {
-                    data.writeByte(VFX_EDITOR_2_SAVE_REQUEST)
-                    writeVfxEditor2Composition(data, message.composition)
-                }
-                is VfxEditor2LoadRequest -> {
-                    data.writeByte(VFX_EDITOR_2_LOAD_REQUEST)
-                    writeString(data, message.name)
-                }
-                is VfxEditor2Draft -> {
-                    data.writeByte(VFX_EDITOR_2_DRAFT)
-                    writeVfxEditor2Composition(data, message.composition)
-                }
-                is VfxEditor2DraftList -> {
-                    data.writeByte(VFX_EDITOR_2_DRAFT_LIST)
-                    data.writeByte(message.names.size)
-                    message.names.forEach { writeString(data, it) }
-                }
-                is VfxEditor2ApplyRequest -> {
-                    data.writeByte(VFX_EDITOR_2_APPLY_REQUEST)
-                    writeString(data, message.runtimeVfxId)
-                    writeVfxEditor2Composition(data, message.composition)
-                }
-                is VfxEditor2Notice -> {
-                    data.writeByte(VFX_EDITOR_2_NOTICE)
-                    writeString(data, message.text)
+                VfxEditor2PreviewStop -> data.writeByte(VFX_EDITOR_2_PREVIEW_STOP)
+                is VfxEditor2Status -> {
+                    data.writeByte(VFX_EDITOR_2_STATUS)
+                    data.writeByte(message.kind.ordinal)
+                    writeString(data, message.message)
                 }
             }
         }
@@ -1141,26 +774,14 @@ object ProtocolCodec {
             VFX_SLASH_DRAFT_LOAD_REQUEST -> VfxSlashDraftLoadRequest(readString(input))
             VFX_SLASH_DRAFT -> VfxSlashDraft(readString(input), readSlashParameters(input))
             VFX_EDITOR_NOTICE -> VfxEditorNotice(readString(input))
-            VFX_EDITOR_2_OPEN -> VfxEditor2Open(readVfxEditor2Composition(input))
-            VFX_EDITOR_2_PREVIEW_REQUEST -> VfxEditor2PreviewRequest(
-                requestId = input.readLong(),
-                loop = input.readBoolean(),
-                composition = readVfxEditor2Composition(input),
-            )
-            VFX_EDITOR_2_PREVIEW_CANCEL -> VfxEditor2PreviewCancel
-            VFX_EDITOR_2_SAVE_REQUEST -> VfxEditor2SaveRequest(readVfxEditor2Composition(input))
-            VFX_EDITOR_2_LOAD_REQUEST -> VfxEditor2LoadRequest(readString(input))
-            VFX_EDITOR_2_DRAFT -> VfxEditor2Draft(readVfxEditor2Composition(input))
-            VFX_EDITOR_2_DRAFT_LIST -> {
-                val count = input.readUnsignedByte()
-                require(count <= VfxEditor2Limits.MAX_DRAFTS) { "Too many VFX Editor 2 drafts" }
-                VfxEditor2DraftList(List(count) { readString(input) })
+            VFX_EDITOR_2_OPEN -> VfxEditor2Open(readString(input))
+            VFX_EDITOR_2_PREVIEW_START -> VfxEditor2PreviewStart(input.readLong())
+            VFX_EDITOR_2_PREVIEW_STOP -> VfxEditor2PreviewStop
+            VFX_EDITOR_2_STATUS -> {
+                val kind = VfxEditor2StatusKind.entries.getOrNull(input.readUnsignedByte())
+                    ?: throw IllegalArgumentException("Unknown VFX Editor 2 status")
+                VfxEditor2Status(kind, readString(input))
             }
-            VFX_EDITOR_2_APPLY_REQUEST -> VfxEditor2ApplyRequest(
-                runtimeVfxId = readString(input),
-                composition = readVfxEditor2Composition(input),
-            )
-            VFX_EDITOR_2_NOTICE -> VfxEditor2Notice(readString(input))
             else -> throw IllegalArgumentException("Unknown ProjectS message type: $type")
         }
         require(input.available() == 0) { "Unexpected trailing ProjectS protocol data" }
@@ -1202,103 +823,6 @@ object ProtocolCodec {
         color = input.readInt(),
         targetDistance = input.readDouble(),
     )
-
-    private fun writeVfxEditor2Composition(data: DataOutputStream, composition: VfxEditor2Composition) {
-        writeString(data, composition.name)
-        data.writeShort(composition.durationTicks)
-        data.writeByte(composition.layers.size)
-        composition.layers.forEach { layer ->
-            data.writeInt(layer.id)
-            writeString(data, layer.name)
-            data.writeBoolean(layer.enabled)
-            data.writeBoolean(layer.solo)
-            data.writeByte(layer.shapeType.ordinal)
-            data.writeByte(layer.particleType.ordinal)
-            data.writeInt(layer.color)
-            data.writeDouble(layer.size)
-            data.writeDouble(layer.density)
-            data.writeDouble(layer.offset.forward)
-            data.writeDouble(layer.offset.right)
-            data.writeDouble(layer.offset.up)
-            data.writeDouble(layer.rotation.yaw)
-            data.writeDouble(layer.rotation.pitch)
-            data.writeDouble(layer.rotation.roll)
-            data.writeShort(layer.startTick)
-            data.writeShort(layer.durationTicks)
-            val shape = layer.shapeParameters
-            data.writeDouble(shape.length)
-            data.writeDouble(shape.arcSpan)
-            data.writeDouble(shape.curvature)
-            data.writeDouble(shape.width)
-            data.writeDouble(shape.sampleDensity)
-            data.writeByte(shape.laneCount)
-            data.writeDouble(shape.laneSpacing)
-            data.writeBoolean(shape.reverse)
-            data.writeByte(shape.widthCurve.ordinal)
-            data.writeDouble(shape.lineLength)
-            data.writeDouble(shape.lineSpacing)
-            data.writeDouble(shape.circleRadius)
-            data.writeDouble(shape.circleArcDegrees)
-            data.writeDouble(shape.circleSpacing)
-            data.writeDouble(shape.burstRadius)
-            data.writeByte(shape.burstCount)
-            data.writeDouble(shape.burstSpread)
-            data.writeDouble(shape.burstSpeed)
-        }
-    }
-
-    private fun readVfxEditor2Composition(input: DataInputStream): VfxEditor2Composition {
-        val name = readString(input)
-        val durationTicks = input.readUnsignedShort()
-        val layerCount = input.readUnsignedByte()
-        require(layerCount <= VfxEditor2Limits.MAX_LAYERS) { "Too many VFX Editor 2 layers" }
-        val layers = List(layerCount) {
-            val layer = VfxEditor2Layer.clamped(
-                id = input.readInt(),
-                name = readString(input),
-                enabled = input.readBoolean(),
-                solo = input.readBoolean(),
-                shapeType = VfxEditor2Shape.entries.getOrNull(input.readUnsignedByte())
-                    ?: throw IllegalArgumentException("Unknown VFX Editor 2 shape"),
-                particleType = VfxEditor2Particle.entries.getOrNull(input.readUnsignedByte())
-                    ?: throw IllegalArgumentException("Unknown VFX Editor 2 particle"),
-                color = input.readInt(),
-                size = input.readDouble(),
-                density = input.readDouble(),
-                offset = VfxEditor2Offset.clamped(
-                    input.readDouble(), input.readDouble(), input.readDouble(),
-                ),
-                rotation = VfxEditor2Rotation.clamped(
-                    input.readDouble(), input.readDouble(), input.readDouble(),
-                ),
-                startTick = input.readUnsignedShort(),
-                durationTicks = input.readUnsignedShort(),
-                shapeParameters = VfxEditor2ShapeParameters.clamped(
-                    length = input.readDouble(),
-                    arcSpan = input.readDouble(),
-                    curvature = input.readDouble(),
-                    width = input.readDouble(),
-                    sampleDensity = input.readDouble(),
-                    laneCount = input.readUnsignedByte(),
-                    laneSpacing = input.readDouble(),
-                    reverse = input.readBoolean(),
-                    widthCurve = VfxEditor2WidthCurve.entries.getOrNull(input.readUnsignedByte())
-                        ?: throw IllegalArgumentException("Unknown VFX Editor 2 width curve"),
-                    lineLength = input.readDouble(),
-                    lineSpacing = input.readDouble(),
-                    circleRadius = input.readDouble(),
-                    circleArcDegrees = input.readDouble(),
-                    circleSpacing = input.readDouble(),
-                    burstRadius = input.readDouble(),
-                    burstCount = input.readUnsignedByte(),
-                    burstSpread = input.readDouble(),
-                    burstSpeed = input.readDouble(),
-                ),
-            )
-            layer
-        }
-        return VfxEditor2Composition.clamped(name, durationTicks, layers)
-    }
 
     private fun writeString(data: DataOutputStream, value: String) {
         val bytes = value.toByteArray(Charsets.UTF_8)

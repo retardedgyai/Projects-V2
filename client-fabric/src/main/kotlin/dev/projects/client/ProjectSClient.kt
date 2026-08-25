@@ -23,10 +23,8 @@ import dev.projects.protocol.SlashEditorParameters
 import dev.projects.protocol.StarweaverHudSnapshot
 import dev.projects.protocol.VfxEditorNotice
 import dev.projects.protocol.VfxEditorOpen
-import dev.projects.protocol.VfxEditor2Draft
-import dev.projects.protocol.VfxEditor2DraftList
-import dev.projects.protocol.VfxEditor2Notice
 import dev.projects.protocol.VfxEditor2Open
+import dev.projects.protocol.VfxEditor2Status
 import dev.projects.protocol.VfxSlashDraft
 import dev.projects.protocol.VfxSlashDraftList
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents
@@ -84,7 +82,6 @@ object ProjectSClient : ClientModInitializer {
     private var attackDebugTicksRemaining = 0
     private var attackDebugEnabled = true
     private var slashDraftNames: List<String> = emptyList()
-    private var vfxEditor2DraftNames: List<String> = emptyList()
     private val skillCategory = KeyMapping.Category.register(
         Identifier.fromNamespaceAndPath("projects", "skills"),
     )
@@ -189,26 +186,17 @@ object ProjectSClient : ClientModInitializer {
                         val client = context.client()
                         if (client.gui.screen() is VfxEditor2Screen) return@execute
                         client.gui.setScreen(
-                            VfxEditor2Screen(message.composition) { outgoing ->
-                                if (outgoing is dev.projects.protocol.ProtocolMessage &&
-                                    ClientPlayNetworking.canSend(ProjectSPayload.TYPE)
-                                ) {
+                            VfxEditor2Screen(message.targetLabel) { outgoing ->
+                                if (ClientPlayNetworking.canSend(ProjectSPayload.TYPE)) {
                                     ClientPlayNetworking.send(ProjectSPayload(ProtocolCodec.encode(outgoing)))
                                 }
-                            }.also { it.setDraftNames(vfxEditor2DraftNames) },
+                            },
                         )
                     }
-                    is VfxEditor2DraftList -> context.client().execute {
-                        vfxEditor2DraftNames = message.names
-                        (context.client().gui.screen() as? VfxEditor2Screen)?.setDraftNames(message.names)
-                    }
-                    is VfxEditor2Draft -> context.client().execute {
-                        (context.client().gui.screen() as? VfxEditor2Screen)?.applyDraft(message.composition)
-                    }
-                    is VfxEditor2Notice -> context.client().execute {
+                    is VfxEditor2Status -> context.client().execute {
                         val screen = context.client().gui.screen() as? VfxEditor2Screen
-                        if (screen != null) screen.setNotice(message.text)
-                        else context.client().player?.sendSystemMessage(Component.literal(message.text))
+                        if (screen != null) screen.setStatus(message)
+                        else context.client().player?.sendSystemMessage(Component.literal(message.message))
                     }
                     else -> require(false) { "Unexpected ProjectS clientbound message" }
                 }

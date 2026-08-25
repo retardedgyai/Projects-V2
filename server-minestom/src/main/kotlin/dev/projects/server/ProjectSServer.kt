@@ -22,11 +22,8 @@ import dev.projects.protocol.StarweaverHudCelestial
 import dev.projects.protocol.StarweaverHudSnapshot
 import dev.projects.protocol.VfxEditorNotice
 import dev.projects.protocol.VfxEditorOpen
-import dev.projects.protocol.VfxEditor2ApplyRequest
-import dev.projects.protocol.VfxEditor2LoadRequest
-import dev.projects.protocol.VfxEditor2PreviewCancel
-import dev.projects.protocol.VfxEditor2PreviewRequest
-import dev.projects.protocol.VfxEditor2SaveRequest
+import dev.projects.protocol.VfxEditor2PreviewStart
+import dev.projects.protocol.VfxEditor2PreviewStop
 import dev.projects.protocol.VfxSlashDraft
 import dev.projects.protocol.VfxSlashDraftList
 import dev.projects.protocol.VfxSlashDraftLoadRequest
@@ -167,15 +164,6 @@ fun main() {
         send = { player, message ->
             player.sendPluginMessage(PROJECTS_CHANNEL, ProtocolCodec.encode(message))
         },
-        viewersFor = { source ->
-            val sourcePosition = source.position
-            instance.players.filter { viewer ->
-                viewer.instance == source.instance &&
-                    viewer.position.distanceSquared(sourcePosition) <= 64.0 * 64.0
-            }
-        },
-        draftFile = Path.of("config", "projects", "vfx-editor2", "drafts.json"),
-        bindingFile = Path.of("config", "projects", "vfx-editor2", "runtime-binding.json"),
     )
 
     fun sendSlashDraftList(player: net.minestom.server.entity.Player) {
@@ -1118,7 +1106,6 @@ fun main() {
         variant: Int = 0,
         seed: Long = 0L,
     ) {
-        if (effect == RoninSlashEffect.Q && vfxEditor2.playRoninQ(source, origin, direction, seed)) return
         val visualSeed = seed xor source.uuid.mostSignificantBits xor source.uuid.leastSignificantBits xor
             origin.x().toBits() xor origin.y().toBits() xor origin.z().toBits()
         startRoninParticleEffect(
@@ -2148,11 +2135,8 @@ fun main() {
                         ),
                     )
                 }
-                is VfxEditor2PreviewRequest -> vfxEditor2.preview(event.player, message)
-                VfxEditor2PreviewCancel -> vfxEditor2.cancel(event.player)
-                is VfxEditor2SaveRequest -> vfxEditor2.save(event.player, message.composition)
-                is VfxEditor2LoadRequest -> vfxEditor2.load(event.player, message)
-                is VfxEditor2ApplyRequest -> vfxEditor2.apply(event.player, message)
+                is VfxEditor2PreviewStart -> vfxEditor2.preview(event.player, message)
+                VfxEditor2PreviewStop -> vfxEditor2.stop(event.player)
                 else -> throw IllegalArgumentException("Unexpected ProjectS message")
             }
         } catch (error: IllegalArgumentException) {
