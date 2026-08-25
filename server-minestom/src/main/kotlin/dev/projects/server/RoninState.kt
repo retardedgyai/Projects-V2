@@ -275,6 +275,9 @@ internal class RoninState(
         if (targetId in targets || targets.size >= RoninBalance.WOUND_HEAL_TARGET_CAP) return false
         targets += targetId
         wounds.remove(targetId)
+        if (woundExecutionTargets.size > 512) {
+            woundExecutionTargets.keys.minOrNull()?.let(woundExecutionTargets::remove)
+        }
         return true
     }
 

@@ -120,6 +120,12 @@ class RoninStateTest {
         state.applyWound(targetA)
         assertTrue(state.woundRemaining(targetA) > 0)
         assertTrue(state.consumeWound(11L, targetA))
+
+        state.applyWound(targetA)
+        repeat(RoninBalance.WOUND_DURATION_TICKS - 1) { state.tick() }
+        assertTrue(state.woundRemaining(targetA) > 0)
+        state.tick()
+        assertEquals(0, state.woundRemaining(targetA))
     }
 
     @Test
@@ -152,10 +158,36 @@ class RoninStateTest {
         assertEquals(RoninWVariant.TEMPEST, w3.variant)
         repeat(RoninBalance.W3_INVULNERABLE_START_TICK - 1) { fresh.tick() }
         assertFalse(fresh.isW3Untargetable)
-        assertTrue(fresh.tick().events.any { it.kind == RoninCastEventKind.W3_PULSE })
+        val firstW3Tick = fresh.tick()
+        assertTrue(firstW3Tick.events.any { it.kind == RoninCastEventKind.W3_PULSE })
         assertTrue(fresh.isW3Untargetable)
         assertEquals(7.0, fresh.recordW3Healing(35, 20))
         assertEquals(0.0, fresh.recordW3Healing(35, 20))
+
+        val events = buildList {
+            addAll(firstW3Tick.events)
+            repeat(RoninBalance.W3_LOCK_TICKS - RoninBalance.W3_INVULNERABLE_START_TICK) {
+                addAll(fresh.tick().events)
+            }
+        }
+        assertEquals(listOf(1, 2, 3), events.filter { it.kind == RoninCastEventKind.W3_PULSE }.map { it.pulseIndex })
+        assertEquals(1, events.count { it.kind == RoninCastEventKind.W3_FINAL })
+        assertFalse(fresh.isMovementLocked)
+    }
+
+    @Test
+    fun `Severed refreshes for five seconds and applies Ronin-only multiplier`() {
+        val state = RoninState()
+
+        state.applySevered(targetA)
+        assertEquals(RoninBalance.SEVERED_DAMAGE_MULTIPLIER, state.roninDamageMultiplier(targetA))
+        repeat(RoninBalance.SEVERED_DURATION_TICKS - 1) { state.tick() }
+        assertTrue(state.severedRemaining(targetA) > 0)
+        state.applySevered(targetA)
+        assertEquals(RoninBalance.SEVERED_DURATION_TICKS, state.severedRemaining(targetA))
+        repeat(RoninBalance.SEVERED_DURATION_TICKS) { state.tick() }
+        assertEquals(0, state.severedRemaining(targetA))
+        assertEquals(1.0, state.roninDamageMultiplier(targetA))
     }
 
     @Test
@@ -186,6 +218,10 @@ class RoninStateTest {
         assertTrue(isRoninFrontVolumeHit(origin, facing, target, 5.5, 7.0, 2.5))
         assertTrue(isRoninRadialHit(Pos(0.0, 0.0, 0.0), 5.0, target))
         assertTrue(isRoninSectorHit(origin, facing, target, 7.0, 90.0))
+        assertTrue(isRoninSectorHit(origin, facing, target, 7.0, 45.0))
+        val outer = target.copy(position = Pos(6.0, 1.0, 3.0))
+        assertTrue(isRoninSectorHit(origin, facing, outer, 7.0, 90.0))
+        assertFalse(isRoninSectorHit(origin, facing, outer, 7.0, 45.0))
         assertTrue(roninSegmentIntersectsAabb(origin, Pos(0.0, 1.0, 8.0), target))
     }
 
