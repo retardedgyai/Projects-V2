@@ -2,6 +2,8 @@ package dev.projects.server
 
 import dev.projects.protocol.SlashEditorParameters
 import dev.projects.server.particle.RecordingParticleSink
+import dev.projects.server.particle.ParticleTransform
+import net.minestom.server.coordinate.Point
 import net.minestom.server.coordinate.Pos
 import net.minestom.server.coordinate.Vec
 import net.minestom.server.particle.Particle
@@ -60,6 +62,17 @@ class SlashEditorTest {
     }
 
     @Test
+    fun `pulse and finisher bindings are independent`() {
+        val directory = Files.createTempDirectory("skill3-binding-independent-test")
+        val pulse = SlashEditorParameters(color = 0x112233)
+        val finisher = SlashEditorParameters(color = 0xaabbcc, length = 9.0)
+        assertTrue(Skill3SlashBindingStore(directory.resolve("pulse.json")).save(pulse))
+        assertTrue(Skill3SlashBindingStore(directory.resolve("finisher.json")).save(finisher))
+        assertEquals(pulse, Skill3SlashBindingStore(directory.resolve("pulse.json")).load())
+        assertEquals(finisher, Skill3SlashBindingStore(directory.resolve("finisher.json")).load())
+    }
+
+    @Test
     fun `preview emits finite positions with the requested color`() {
         val color = 0x123456
         val effect = SlashEditorPreview.create(Pos.ZERO, Vec(0.0, 0.0, 1.0), SlashEditorParameters(color = color))
@@ -109,6 +122,144 @@ class SlashEditorTest {
     }
 
     @Test
+    fun `slash origin and geometry rotate with locked skill3 direction`() {
+        val parameters = SlashEditorParameters(
+            originY = 1.2,
+            forwardOffset = 2.5,
+            arcSpan = 96.0,
+            tilt = 11.0,
+            yaw = 23.0,
+            durationTicks = 1,
+        )
+        val position = Pos(4.0, 8.0, -3.0)
+        val forward = Vec(0.0, 0.0, 1.0)
+        val right = Vec(1.0, 0.0, 0.0)
+        val forwardOrigin = slashOrigin(position, forward, parameters)
+        val rightOrigin = slashOrigin(position, right, parameters)
+
+        assertEquals(position.x(), forwardOrigin.x(), absoluteTolerance = 0.000001)
+        assertEquals(position.z() + parameters.forwardOffset, forwardOrigin.z(), absoluteTolerance = 0.000001)
+        assertEquals(position.x() + parameters.forwardOffset, rightOrigin.x(), absoluteTolerance = 0.000001)
+        assertEquals(position.z(), rightOrigin.z(), absoluteTolerance = 0.000001)
+
+        fun emitted(direction: Vec, origin: Point): List<Point> {
+            val sink = RecordingParticleSink()
+            SlashEditorPreview.create(origin, direction, parameters).emit(0, sink)
+            return sink.spawns.map { it.position }
+        }
+
+        val forwardPositions = emitted(forward, forwardOrigin)
+        val rightPositions = emitted(right, rightOrigin)
+        assertEquals(forwardPositions.size, rightPositions.size)
+        forwardPositions.zip(rightPositions).forEach { (zFacing, xFacing) ->
+            assertEquals(zFacing.z() - forwardOrigin.z() + rightOrigin.x(), xFacing.x(), absoluteTolerance = 0.000001)
+            assertEquals(zFacing.y(), xFacing.y(), absoluteTolerance = 0.000001)
+            assertEquals(-(zFacing.x() - forwardOrigin.x()) + rightOrigin.z(), xFacing.z(), absoluteTolerance = 0.000001)
+        }
+    }
+
+    @Test
+    fun `skill3 slash origin follows full 3d direction`() {
+        val parameters = SlashEditorParameters(originY = 1.25, forwardOffset = 4.0)
+        val position = Pos(2.0, 10.0, -3.0)
+
+        val diagonal = skill3SlashOrigin(position, Vec(1.0, 2.0, 2.0), parameters)
+        assertEquals(2.0 + 4.0 / 3.0, diagonal.x(), absoluteTolerance = 0.000001)
+        assertEquals(10.0 + 1.25 + 8.0 / 3.0, diagonal.y(), absoluteTolerance = 0.000001)
+        assertEquals(-3.0 + 8.0 / 3.0, diagonal.z(), absoluteTolerance = 0.000001)
+
+        val upward = skill3SlashOrigin(position, Vec(0.0, 1.0, 0.0), parameters)
+        assertEquals(position.x(), upward.x(), absoluteTolerance = 0.000001)
+        assertEquals(position.y() + 1.25 + 4.0, upward.y(), absoluteTolerance = 0.000001)
+        assertEquals(position.z(), upward.z(), absoluteTolerance = 0.000001)
+
+        val downward = skill3SlashOrigin(position, Vec(0.0, -1.0, 0.0), parameters)
+        assertEquals(position.y() + 1.25 - 4.0, downward.y(), absoluteTolerance = 0.000001)
+    }
+
+    @Test
+    fun `skill3 slash origin uses positive z fallback for degenerate direction`() {
+        val parameters = SlashEditorParameters(originY = 0.5, forwardOffset = 2.0)
+        val origin = skill3SlashOrigin(Pos.ZERO, Vec.ZERO, parameters)
+
+        assertEquals(0.0, origin.x(), absoluteTolerance = 0.000001)
+        assertEquals(0.5, origin.y(), absoluteTolerance = 0.000001)
+        assertEquals(2.0, origin.z(), absoluteTolerance = 0.000001)
+    }
+
+    @Test
+    fun `skill3 slash visual direction follows full 3d direction`() {
+        val forward = skill3SlashVisualDirection(Vec(0.0, 0.0, 1.0))
+        assertEquals(0.0, forward.x(), absoluteTolerance = 0.000001)
+        assertEquals(0.0, forward.y(), absoluteTolerance = 0.000001)
+        assertEquals(1.0, forward.z(), absoluteTolerance = 0.000001)
+        val right = skill3SlashVisualDirection(Vec(1.0, 0.0, 0.0))
+        assertEquals(1.0, right.x(), absoluteTolerance = 0.000001)
+        assertEquals(0.0, right.y(), absoluteTolerance = 0.000001)
+        assertEquals(0.0, right.z(), absoluteTolerance = 0.000001)
+
+        val diagonal = skill3SlashVisualDirection(Vec(0.0, 1.0, 1.0))
+        assertEquals(1.0 / Math.sqrt(2.0), diagonal.y(), absoluteTolerance = 0.000001)
+        assertEquals(1.0 / Math.sqrt(2.0), diagonal.z(), absoluteTolerance = 0.000001)
+    }
+
+    @Test
+    fun `skill3 slash visual direction preserves vertical pitch while origin keeps full 3d direction`() {
+        val upward = skill3SlashVisualDirection(Vec(0.0, 1.0, 0.0))
+        assertEquals(0.0, upward.x(), absoluteTolerance = 0.000001)
+        assertEquals(1.0, upward.y(), absoluteTolerance = 0.000001)
+        assertEquals(0.0, upward.z(), absoluteTolerance = 0.000001)
+
+        val downward = skill3SlashVisualDirection(Vec(0.0, -1.0, 0.0))
+        assertEquals(0.0, downward.x(), absoluteTolerance = 0.000001)
+        assertEquals(-1.0, downward.y(), absoluteTolerance = 0.000001)
+        assertEquals(0.0, downward.z(), absoluteTolerance = 0.000001)
+
+        val direction = Vec(0.0, 10.0, 1.0)
+        val visual = skill3SlashVisualDirection(direction)
+        assertEquals(10.0 / Math.sqrt(101.0), visual.y(), absoluteTolerance = 0.000001)
+        assertEquals(1.0 / Math.sqrt(101.0), visual.z(), absoluteTolerance = 0.000001)
+
+        val origin = skill3SlashOrigin(Pos.ZERO, direction, SlashEditorParameters(forwardOffset = 2.0))
+        assertEquals(1.2 + 20.0 / Math.sqrt(101.0), origin.y(), absoluteTolerance = 0.000001)
+    }
+
+    @Test
+    fun `skill3 slash visual direction uses positive z fallback for invalid direction`() {
+        val visual = skill3SlashVisualDirection(Vec(Double.NaN, 0.0, 1.0))
+
+        assertEquals(0.0, visual.x(), absoluteTolerance = 0.000001)
+        assertEquals(0.0, visual.y(), absoluteTolerance = 0.000001)
+        assertEquals(1.0, visual.z(), absoluteTolerance = 0.000001)
+    }
+
+    @Test
+    fun `zero authored yaw follows locked direction while yaw remains local`() {
+        val zeroYaw = SlashEditorParameters(yaw = 0.0, tilt = 0.0, arcSpan = 0.0, durationTicks = 1)
+        val localYaw = SlashEditorParameters(yaw = 35.0, tilt = 0.0, arcSpan = 0.0, durationTicks = 1)
+
+        fun firstOffset(direction: Vec, parameters: SlashEditorParameters): Vec {
+            val origin = slashOrigin(Pos.ZERO, direction, parameters)
+            val sink = RecordingParticleSink()
+            SlashEditorPreview.create(origin, direction, parameters).emit(0, sink)
+            val point = sink.spawns.first().position
+            return Vec(point.x() - origin.x(), point.y() - origin.y(), point.z() - origin.z())
+        }
+
+        val zeroZ = firstOffset(Vec(0.0, 0.0, 1.0), zeroYaw)
+        val zeroX = firstOffset(Vec(1.0, 0.0, 0.0), zeroYaw)
+        assertTrue(zeroZ.x() < 0.0)
+        assertEquals(zeroZ.z(), zeroX.x(), absoluteTolerance = 0.000001)
+        assertEquals(-zeroZ.x(), zeroX.z(), absoluteTolerance = 0.000001)
+
+        val localZ = firstOffset(Vec(0.0, 0.0, 1.0), localYaw)
+        val localX = firstOffset(Vec(1.0, 0.0, 0.0), localYaw)
+        assertEquals(localZ.z(), localX.x(), absoluteTolerance = 0.000001)
+        assertEquals(-localZ.x(), localX.z(), absoluteTolerance = 0.000001)
+        assertNotEquals(zeroZ, localZ)
+    }
+
+    @Test
     fun `skill3 pulse choreography varies orientation without changing authored parameters`() {
         val authored = SlashEditorParameters(laneCount = 3, laneSpacing = 0.9, yaw = 7.0, tilt = 4.0, originY = 1.5, durationTicks = 8)
         val authoredBefore = authored
@@ -136,5 +287,54 @@ class SlashEditorTest {
         reverse.emit(0, reverseSink)
 
         assertNotEquals(forwardSink.spawns.map { it.position }, reverseSink.spawns.map { it.position })
+    }
+
+    @Test
+    fun `skill3 authored slash transforms its complete pulse and finisher geometry locally`() {
+        val origin = Pos(8.0, 12.0, -4.0)
+        val authored = SlashEditorParameters(
+            originY = 1.3,
+            forwardOffset = 2.1,
+            arcSpan = 84.0,
+            tilt = 17.0,
+            yaw = 23.0,
+            laneCount = 3,
+            laneSpacing = 0.7,
+            durationTicks = 2,
+        )
+        val specs = (1..4).map { skill3SlashPulseSpec(authored, it) } + Skill3SlashPulseSpec(authored, false)
+        val directions = listOf(
+            Vec(0.0, 0.0, 1.0),
+            Vec(0.0, 1.0, 0.0),
+            Vec(0.0, -1.0, 0.0),
+            Vec(1.0, 0.0, 0.0),
+            Vec(1.0, 2.0, 3.0),
+        )
+
+        fun positions(direction: Vec, spec: Skill3SlashPulseSpec): List<Point> {
+            val effect = SlashEditorPreview.createSkill3(origin, direction, spec.parameters, spec.reverseDraw)
+            val sink = RecordingParticleSink()
+            repeat(effect.durationTicks) { effect.emit(it, sink) }
+            return sink.spawns.map { it.position }
+        }
+
+        specs.forEach { spec ->
+            val baseline = positions(directions.first(), spec)
+            val baselineFrame = ParticleTransform.fromDirection(origin, directions.first())
+            directions.drop(1).forEach { direction ->
+                val transform = ParticleTransform.fromDirection(origin, direction)
+                val actual = positions(direction, spec)
+                assertEquals(baseline.size, actual.size)
+                baseline.zip(actual).forEach { (localPoint, worldPoint) ->
+                    val expected = transform.localPoint(baselineFrame.worldPoint(localPoint))
+                    assertEquals(expected.x(), worldPoint.x(), absoluteTolerance = 0.000001)
+                    assertEquals(expected.y(), worldPoint.y(), absoluteTolerance = 0.000001)
+                    assertEquals(expected.z(), worldPoint.z(), absoluteTolerance = 0.000001)
+                }
+            }
+        }
+
+        val fallback = positions(Vec(Double.NaN, 0.0, 1.0), specs.last())
+        assertEquals(positions(directions.first(), specs.last()), fallback)
     }
 }

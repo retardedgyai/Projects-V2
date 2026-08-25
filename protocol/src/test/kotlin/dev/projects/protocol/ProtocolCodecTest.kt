@@ -229,7 +229,8 @@ class ProtocolCodecTest {
         listOf<ProtocolMessage>(
             VfxEditorOpen(parameters),
             VfxSlashPreviewRequest(42L, parameters),
-            VfxSlashApplySkill3(parameters),
+            VfxSlashApplySkill3(Skill3VfxTarget.PULSE, parameters),
+            VfxSlashApplySkill3(Skill3VfxTarget.FINISHER, parameters),
             VfxSlashPreviewCancel,
             VfxSlashSaveRequest("blue slash", parameters),
             VfxSlashDraftList(listOf("blue slash")),

@@ -5,7 +5,10 @@ import dev.projects.server.particle.ParticleEffect
 import dev.projects.server.particle.ParticleBatch
 import dev.projects.server.particle.ParticleGeometry
 import dev.projects.server.particle.ParticleStyle
+import dev.projects.server.particle.ParticleTransform
 import dev.projects.server.particle.dust
+import dev.projects.server.particle.localCoordinates
+import dev.projects.server.particle.translated
 import net.minestom.server.coordinate.Point
 import net.minestom.server.coordinate.Vec
 import java.nio.file.Files
@@ -157,6 +160,16 @@ object SlashEditorPreview {
             }
         }.toTypedArray())
     }
+
+    /** Builds authored Skill3 geometry in canonical +Z local space, then maps the whole effect to the cast direction. */
+    fun createSkill3(origin: Point, direction: Vec, parameters: SlashEditorParameters, reverseDraw: Boolean = false): ParticleEffect {
+        val localOrigin = Vec(0.0, parameters.originY, parameters.forwardOffset)
+        val localParameters = parameters.copy(originY = 0.0, forwardOffset = 0.0)
+        val localEffect = create(Vec.ZERO, Vec(0.0, 0.0, 1.0), localParameters, reverseDraw)
+        return localEffect.translated(localOrigin).localCoordinates(
+            ParticleTransform.fromDirection(origin, skill3SlashVisualDirection(direction)),
+        )
+    }
 }
 
 data class Skill3SlashPulseSpec(
@@ -197,4 +210,25 @@ internal fun slashOrigin(position: Point, direction: Vec, parameters: SlashEdito
         parameters.originY,
         forward.z() * parameters.forwardOffset,
     )
+}
+
+internal fun skill3SlashOrigin(position: Point, direction: Vec, parameters: SlashEditorParameters): Point {
+    val length = direction.length()
+    val forward = if (length.isFinite() && length > 1.0e-9) {
+        direction.mul(1.0 / length)
+    } else {
+        Vec(0.0, 0.0, 1.0)
+    }
+    return position.add(
+        forward.x() * parameters.forwardOffset,
+        parameters.originY + forward.y() * parameters.forwardOffset,
+        forward.z() * parameters.forwardOffset,
+    )
+}
+
+internal fun skill3SlashVisualDirection(direction: Vec): Vec {
+    val length = direction.length()
+    if (!length.isFinite() || length <= 1.0e-9) return Vec(0.0, 0.0, 1.0)
+
+    return direction.mul(1.0 / length)
 }
