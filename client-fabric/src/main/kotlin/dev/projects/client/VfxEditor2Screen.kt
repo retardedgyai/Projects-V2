@@ -211,7 +211,7 @@ class VfxEditor2Screen(
                 FieldSpec("pitch", "Pitch", 0), FieldSpec("roll", "Roll", 0),
             )
             Category.APPEARANCE -> listOf(
-                FieldSpec("color", "#RRGGBB"), FieldSpec("size", "Size"),
+                FieldSpec("layerName", "Name"), FieldSpec("color", "#RRGGBB"), FieldSpec("size", "Size"),
                 FieldSpec("density", "Density"),
             )
             Category.GEOMETRY -> when (layer.shapeType) {
@@ -237,6 +237,7 @@ class VfxEditor2Screen(
 
     private fun formatValue(spec: FieldSpec): String {
         val layer = selectedLayerOrNull() ?: return ""
+        if (spec.key == "layerName") return layer.name
         val value = when (spec.key) {
             "offsetForward" -> layer.offset.forward
             "offsetRight" -> layer.offset.right
@@ -272,6 +273,13 @@ class VfxEditor2Screen(
 
     private fun updateField(spec: FieldSpec, raw: String) {
         val layer = selectedLayerOrNull() ?: return
+        if (spec.key == "layerName") {
+            if (raw.matches(Regex("[A-Za-z0-9][A-Za-z0-9 _-]{0,31}"))) {
+                composition = composition.copy(layers = composition.layers.toMutableList().also { it[selectedLayerIndex] = layer.copy(name = raw) })
+                previewDebounce = 5
+            }
+            return
+        }
         val parsed = if (spec.key == "color") raw.removePrefix("#").toIntOrNull(16)?.toDouble() else raw.toDoubleOrNull()
         if (parsed == null || !parsed.isFinite()) return
         val next = when (spec.key) {
