@@ -18,6 +18,8 @@ import dev.projects.protocol.ProtocolCodec
 import dev.projects.protocol.ProtocolHello
 import dev.projects.protocol.ProtocolHelloAck
 import dev.projects.protocol.ProtocolVersion
+import dev.projects.protocol.RoninHudSnapshot
+import dev.projects.protocol.RoninVfxEvent
 import dev.projects.protocol.SlashEditorParameters
 import dev.projects.protocol.StarweaverHudSnapshot
 import dev.projects.protocol.VfxEditorNotice
@@ -74,6 +76,7 @@ object ProjectSClient : ClientModInitializer {
     private var skill3CooldownTicks = 0
     private var skill3CooldownMaxTicks = 60
     private var starweaverHudSnapshot: StarweaverHudSnapshot? = null
+    private var roninHudSnapshot: RoninHudSnapshot? = null
     private var attackDebugShape: AttackDebugShape? = null
     private var attackDebugTicksRemaining = 0
     private var attackDebugEnabled = true
@@ -108,6 +111,7 @@ object ProjectSClient : ClientModInitializer {
         PayloadTypeRegistry.clientboundPlay().register(ProjectSPayload.TYPE, ProjectSPayload.CODEC)
         PayloadTypeRegistry.serverboundPlay().register(ProjectSPayload.TYPE, ProjectSPayload.CODEC)
         GroundTelegraphRenderer.register()
+        RoninTexturedSlashRenderer.register()
 
         ClientPlayNetworking.registerGlobalReceiver(ProjectSPayload.TYPE) { payload, context ->
             try {
@@ -145,6 +149,12 @@ object ProjectSClient : ClientModInitializer {
                     }
                     is StarweaverHudSnapshot -> context.client().execute {
                         starweaverHudSnapshot = message
+                    }
+                    is RoninHudSnapshot -> context.client().execute {
+                        roninHudSnapshot = message
+                    }
+                    is RoninVfxEvent -> context.client().execute {
+                        RoninTexturedSlashRenderer.enqueue(message)
                     }
                     is GroundTelegraphStart -> context.client().execute {
                         GroundTelegraphRenderer.start(message)
@@ -194,6 +204,11 @@ object ProjectSClient : ClientModInitializer {
             Identifier.fromNamespaceAndPath("projects", "starweaver_celestial"),
             ::renderStarweaverHud,
         )
+        HudElementRegistry.attachElementAfter(
+            VanillaHudElements.HOTBAR,
+            Identifier.fromNamespaceAndPath("projects", "ronin_iaido"),
+            ::renderRoninHud,
+        )
         ClientTickEvents.END_CLIENT_TICK.register(::handleAttackInput)
     }
 
@@ -210,6 +225,7 @@ object ProjectSClient : ClientModInitializer {
             skill2CooldownTicks = 0
             skill3CooldownTicks = 0
             starweaverHudSnapshot = null
+            roninHudSnapshot = null
             attackDebugShape = null
             attackDebugTicksRemaining = 0
             slashDraftNames = emptyList()
@@ -302,6 +318,10 @@ object ProjectSClient : ClientModInitializer {
         StarweaverCelestialHud.render(context, starweaverHudSnapshot)
     }
 
+    private fun renderRoninHud(context: GuiGraphicsExtractor, tickCounter: DeltaTracker) {
+        RoninIaidoHud.render(context, roninHudSnapshot)
+    }
+
     private fun renderHitMarker(context: GuiGraphicsExtractor) {
         if (hitMarkerTicksRemaining <= 0) return
         val centerX = context.guiWidth() / 2
@@ -322,12 +342,33 @@ object ProjectSClient : ClientModInitializer {
         val totalWidth = slotWidth * 4 + gap * 3
         val startX = (context.guiWidth() - totalWidth) / 2
         val y = context.guiHeight() - 84
-        val slots = listOf(
-            SkillHudSlot("S1", skill1Key, skill1CooldownTicks, skill1CooldownMaxTicks, true),
-            SkillHudSlot("S2", skill2Key, skill2CooldownTicks, skill2CooldownMaxTicks, true),
-            SkillHudSlot("S3", skill3Key, skill3CooldownTicks, skill3CooldownMaxTicks, true),
-            SkillHudSlot("ULT", ultimateKey, 0, 1, false),
-        )
+        val ronin = roninHudSnapshot?.takeIf { it.selected }
+        val slots = if (ronin != null) {
+            listOf(
+                SkillHudSlot("Q", skill1Key, ronin.qCooldownTicks, 160, true),
+                SkillHudSlot(
+                    when (ronin.wVariant) {
+                        1 -> "Wound"
+                        2 -> "Crosscut"
+                        3 -> "Tempest"
+                        else -> "W"
+                    },
+                    skill2Key,
+                    0,
+                    1,
+                    ronin.wVariant > 0,
+                ),
+                SkillHudSlot("E", skill3Key, ronin.eCooldownTicks, 300, true),
+                SkillHudSlot("R", ultimateKey, ronin.rCooldownTicks, 600, true),
+            )
+        } else {
+            listOf(
+                SkillHudSlot("S1", skill1Key, skill1CooldownTicks, skill1CooldownMaxTicks, true),
+                SkillHudSlot("S2", skill2Key, skill2CooldownTicks, skill2CooldownMaxTicks, true),
+                SkillHudSlot("S3", skill3Key, skill3CooldownTicks, skill3CooldownMaxTicks, true),
+                SkillHudSlot("ULT", ultimateKey, 0, 1, false),
+            )
+        }
         for ((index, slot) in slots.withIndex()) {
             val slotX = startX + index * (slotWidth + gap)
             drawSkillSlot(context, slot, slotX, y, slotWidth, slotHeight)
