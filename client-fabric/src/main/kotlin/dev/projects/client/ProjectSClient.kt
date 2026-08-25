@@ -76,6 +76,8 @@ object ProjectSClient : ClientModInitializer {
     private var attackDebugTicksRemaining = 0
     private var attackDebugEnabled = true
     private var slashDraftNames: List<String> = emptyList()
+    private lateinit var hudLayoutStore: HudLayoutStore
+    private var hudLayout = HudLayoutConfig.defaults()
     private val skillCategory = KeyMapping.Category.register(
         Identifier.fromNamespaceAndPath("projects", "skills"),
     )
@@ -91,6 +93,12 @@ object ProjectSClient : ClientModInitializer {
         InputConstants.KEY_F6,
         KeyMapping.Category.GAMEPLAY,
     )
+    private val hudDesignerKey = KeyMapping(
+        "key.projects.hud_designer",
+        InputConstants.Type.KEYSYM,
+        InputConstants.KEY_F7,
+        KeyMapping.Category.GAMEPLAY,
+    )
     private val skill1Key = skillKey("key.projects.skill_1", InputConstants.KEY_Z)
     private val skill2Key = skillKey("key.projects.skill_2", InputConstants.KEY_X)
     private val skill3Key = skillKey("key.projects.skill_3", InputConstants.KEY_C)
@@ -99,6 +107,7 @@ object ProjectSClient : ClientModInitializer {
     override fun onInitializeClient() {
         KeyMappingHelper.registerKeyMapping(dodgeKey)
         KeyMappingHelper.registerKeyMapping(attackDebugKey)
+        KeyMappingHelper.registerKeyMapping(hudDesignerKey)
         KeyMappingHelper.registerKeyMapping(skill1Key)
         KeyMappingHelper.registerKeyMapping(skill2Key)
         KeyMappingHelper.registerKeyMapping(skill3Key)
@@ -106,6 +115,8 @@ object ProjectSClient : ClientModInitializer {
         PayloadTypeRegistry.clientboundPlay().register(ProjectSPayload.TYPE, ProjectSPayload.CODEC)
         PayloadTypeRegistry.serverboundPlay().register(ProjectSPayload.TYPE, ProjectSPayload.CODEC)
         GroundTelegraphRenderer.register()
+        hudLayoutStore = HudLayoutStore(Minecraft.getInstance().gameDirectory.toPath().resolve("config/projects/hud-layout.json"))
+        hudLayout = hudLayoutStore.load()
 
         ClientPlayNetworking.registerGlobalReceiver(ProjectSPayload.TYPE) { payload, context ->
             try {
@@ -205,6 +216,9 @@ object ProjectSClient : ClientModInitializer {
             if (client.gui.screen() is SlashEditorScreen) client.gui.setScreen(null)
             return
         }
+        if (hudDesignerKey.consumeClick() && client.gui.screen() == null) {
+            client.gui.setScreen(HudDesignerScreen(hudLayoutStore, hudLayout) { saved -> hudLayout = saved })
+        }
         renderAttackDebugShape(client)
         if (hitMarkerTicksRemaining > 0) hitMarkerTicksRemaining--
         if (attackDebugKey.consumeClick()) {
@@ -278,11 +292,9 @@ object ProjectSClient : ClientModInitializer {
             (if (client.options.keyDown.isDown()) 1.0 else 0.0)
 
     private fun renderResourceHud(context: GuiGraphicsExtractor, tickCounter: DeltaTracker) {
-        val barWidth = 130
-        val barHeight = 5
-        val x = (context.guiWidth() - barWidth) / 2
-        val y = context.guiHeight() - 52
-        drawResourceBar(context, "MANA $mana / $maxMana", mana, maxMana, x, y, barWidth, barHeight, 0xFF4C9BFF.toInt())
+        val resource = hudLayout.elements[HudElementId.RESOURCE]!!
+        val resourceRect = resource.resolve(context.guiWidth(), context.guiHeight())
+        drawResourceBar(context, "MANA $mana / $maxMana", mana, maxMana, resourceRect.x, resourceRect.y, resourceRect.width, resourceRect.height, 0xFF4C9BFF.toInt())
         renderSkillHud(context)
         renderHitMarker(context)
     }
@@ -301,12 +313,13 @@ object ProjectSClient : ClientModInitializer {
     }
 
     private fun renderSkillHud(context: GuiGraphicsExtractor) {
-        val slotWidth = 38
-        val slotHeight = 28
+        val layout = hudLayout.elements[HudElementId.SKILLS]!!
+        val rect = layout.resolve(context.guiWidth(), context.guiHeight())
+        val slotWidth = (rect.width - 12) / 4
+        val slotHeight = rect.height
         val gap = 4
-        val totalWidth = slotWidth * 4 + gap * 3
-        val startX = (context.guiWidth() - totalWidth) / 2
-        val y = context.guiHeight() - 84
+        val startX = rect.x
+        val y = rect.y
         val slots = listOf(
             SkillHudSlot("S1", skill1Key, skill1CooldownTicks, skill1CooldownMaxTicks, true),
             SkillHudSlot("S2", skill2Key, skill2CooldownTicks, skill2CooldownMaxTicks, true),
