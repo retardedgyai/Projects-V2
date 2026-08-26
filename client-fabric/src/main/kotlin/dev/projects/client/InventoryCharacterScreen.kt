@@ -73,6 +73,20 @@ internal fun inventoryCharacterTextureRegion(
     )
 }
 
+internal data class InventoryCharacterPreviewBounds(
+    val x0: Int,
+    val y0: Int,
+    val x1: Int,
+    val y1: Int,
+)
+
+internal fun inventoryCharacterPreviewBounds(preview: HudRect): InventoryCharacterPreviewBounds = InventoryCharacterPreviewBounds(
+    x0 = preview.x,
+    y0 = preview.y,
+    x1 = preview.x + preview.width,
+    y1 = preview.y + preview.height,
+)
+
 internal class InventoryCharacterMenu(
     private val player: Player,
     layout: InventoryCharacterLayout,
@@ -197,12 +211,13 @@ internal class InventoryCharacterScreen private constructor(
         drawCharacter(graphics, mouseX, mouseY)
         drawInventory(graphics)
         drawDetail(graphics)
+        val preview = inventoryCharacterPreviewBounds(layout.preview)
         InventoryScreen.extractEntityInInventoryFollowsMouse(
             graphics,
-            layout.preview.x,
-            layout.preview.y,
-            layout.preview.width,
-            layout.preview.height,
+            preview.x0,
+            preview.y0,
+            preview.x1,
+            preview.y1,
             34,
             0.0625f,
             mouseX.toFloat(),
