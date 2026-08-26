@@ -245,7 +245,17 @@ object ProjectSClient : ClientModInitializer {
         HudElementRegistry.replaceElement(VanillaHudElements.EXPERIENCE_LEVEL) { _ ->
             { _, _ -> }
         }
+        ClientTickEvents.START_CLIENT_TICK.register(::handleInventoryKey)
         ClientTickEvents.END_CLIENT_TICK.register(::handleAttackInput)
+    }
+
+    private fun handleInventoryKey(client: Minecraft) {
+        val player = client.player ?: return
+        if (client.gui.screen() != null || player.hasInfiniteMaterials()) return
+        if (client.gameMode?.isServerControlledInventory() == true) return
+        if (client.options.keyInventory.consumeClick()) {
+            client.gui.setScreen(InventoryCharacterScreen(player))
+        }
     }
 
     private fun handleAttackInput(client: Minecraft) {
@@ -269,6 +279,12 @@ object ProjectSClient : ClientModInitializer {
             attackDebugTicksRemaining = 0
             slashDraftNames = emptyList()
             if (client.gui.screen() is SlashEditorScreen) client.gui.setScreen(null)
+            return
+        }
+        if (client.gui.screen() is InventoryCharacterScreen) {
+            attackHeld = false
+            dodgeHeld = false
+            jumpHeld = false
             return
         }
         if (hudDesignerKey.consumeClick() && client.gui.screen() == null) {
