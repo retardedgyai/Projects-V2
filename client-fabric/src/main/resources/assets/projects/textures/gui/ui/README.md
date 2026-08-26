@@ -3,9 +3,10 @@
 These PNGs are the authored visual baseline for the ProjectS UI. They are not
 runtime-integrated by Issue #117.
 
-All images are RGBA PNGs authored for nearest-neighbor sampling. Surfaces and
-long controls keep pixel edges, asymmetric highlights, and transparent corners
-so the Minecraft world can remain visible behind them.
+All images are RGBA PNGs. Large surfaces and long controls are authored at high
+resolution for smooth edges, restrained highlights, and transparent corners so
+the Minecraft world can remain visible behind them. Slots, markers, and other
+micro details keep crisp pixel edges and use nearest-neighbor scaling.
 
 | Asset | Size | Intent |
 | --- | ---: | --- |
@@ -31,5 +32,5 @@ so the Minecraft world can remain visible behind them.
 | `corner_accent_marker` | 12x12 | Small section/corner accent; nearest-neighbor scale |
 
 `projects_ui_preview.png` is a static visual gate. It contains a native-size
-catalog, 4x nearest-neighbor samples, and a mini inventory composition using
-the authored surfaces, navigation states, slots, and actions.
+catalog, 4x authoring samples, and a mini inventory composition using the
+authored surfaces, navigation states, slots, and actions.
