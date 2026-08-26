@@ -100,6 +100,7 @@ class PrototypeBossState(
         attackExecutionId: Long,
         weapon: WeaponType,
         weakpoint: FixedWeakpoint? = null,
+        damageMultiplier: Double = 1.0,
     ): Int {
         if (!isActive || !bossDamageExecutions.add(attackExecutionId)) return 0
 
@@ -107,7 +108,7 @@ class PrototypeBossState(
             WeaponType.HEAVY_BLADE -> HEAVY_BLADE_BODY_DAMAGE
             WeaponType.TWIN_RODS -> TWIN_RODS_BODY_DAMAGE
         }
-        return applyPlayerDamage(bodyDamage, weakpoint != null)
+        return applyPlayerDamage((bodyDamage * damageMultiplier).roundToInt(), weakpoint != null)
     }
 
     /** Applies one server-confirmed Skill3 pulse per cast, pulse, and target. */
@@ -118,9 +119,9 @@ class PrototypeBossState(
     }
 
     /** Applies the Skill3 finisher once per cast and target. */
-    fun applySkill3Finisher(castId: Long, targetId: UUID): Int {
+    fun applySkill3Finisher(castId: Long, targetId: UUID, damageMultiplier: Double = 1.0): Int {
         if (!isActive || !skill3FinisherDamageExecutions.add(castId to targetId)) return 0
-        return applyPlayerDamage(SKILL_3_FINISHER_DAMAGE)
+        return applyPlayerDamage((SKILL_3_FINISHER_DAMAGE * damageMultiplier).roundToInt())
     }
 
     /** Applies one server-confirmed Skill1 hit per cast and target. */
@@ -137,9 +138,9 @@ class PrototypeBossState(
     }
 
     /** Applies the server-confirmed Skill2 landing finisher once per cast and target. */
-    fun applySkill2Landing(castId: Long, targetId: UUID): Int {
+    fun applySkill2Landing(castId: Long, targetId: UUID, damageMultiplier: Double = 1.0): Int {
         if (!isActive || !skill2LandingDamageExecutions.add(castId to targetId)) return 0
-        return applyPlayerDamage(SKILL_2_LANDING_DAMAGE)
+        return applyPlayerDamage((SKILL_2_LANDING_DAMAGE * damageMultiplier).roundToInt())
     }
 
     fun setBreakActive(active: Boolean) {

@@ -52,22 +52,30 @@ class Skill3State(
     private var nextPulseIndex = 1
     private var ticksUntilNextPulse = 0
     private var finisherPending = false
+    private var configuredPulseIntervalTicks = PULSE_INTERVAL_TICKS
 
     val isReady: Boolean
         get() = phase == Skill3Phase.IDLE && cooldownTicksRemaining == 0
 
-    fun tryCast(facing: Vec, input: ClassSkillDirection): Long? {
+    fun tryCast(
+        facing: Vec,
+        input: ClassSkillDirection,
+        dashTicks: Int = DASH_TICKS,
+        pulseIntervalTicks: Int = PULSE_INTERVAL_TICKS,
+    ): Long? {
         if (!isReady) return null
+        require(dashTicks > 0 && pulseIntervalTicks > 0) { "Skill3 timing must be positive" }
         dashDirection = skill3Direction(facing, input)
         castId = castIdSource()
         phase = Skill3Phase.DASH
-        dashTicksRemaining = DASH_TICKS
+        dashTicksRemaining = dashTicks
         hoverTicksRemaining = 0
         primaryTargetId = null
         hitTargets.clear()
         nextPulseIndex = 1
         ticksUntilNextPulse = 0
         finisherPending = false
+        configuredPulseIntervalTicks = pulseIntervalTicks
         return castId
     }
 
@@ -118,7 +126,7 @@ class Skill3State(
                     }
                     nextPulseIndex <= PULSE_COUNT -> {
                         val pulse = nextPulseIndex++
-                        ticksUntilNextPulse = PULSE_INTERVAL_TICKS - 1
+                        ticksUntilNextPulse = configuredPulseIntervalTicks - 1
                         if (pulse == PULSE_COUNT) finisherPending = true
                         Skill3Tick(
                             phase = Skill3Phase.MULTIHIT,
@@ -215,6 +223,7 @@ class Skill3State(
         nextPulseIndex = 1
         ticksUntilNextPulse = 0
         finisherPending = false
+        configuredPulseIntervalTicks = PULSE_INTERVAL_TICKS
     }
 
     fun reset() {

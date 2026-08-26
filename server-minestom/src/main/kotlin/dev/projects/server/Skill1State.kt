@@ -43,12 +43,13 @@ class Skill1State(
     val isReady: Boolean
         get() = phase == Skill1Phase.IDLE && cooldownTicksRemaining == 0
 
-    fun tryCast(facing: Vec): Long? {
+    fun tryCast(facing: Vec, dashTicks: Int = DASH_TICKS): Long? {
         if (!isReady) return null
+        require(dashTicks > 0) { "Skill1 dash ticks must be positive" }
         dashDirection = horizontalFacing(facing)
         castId = castIdSource()
         phase = Skill1Phase.DASH
-        dashTicksRemaining = DASH_TICKS
+        dashTicksRemaining = dashTicks
         cooldownTicksRemaining = COOLDOWN_TICKS
         hitWindowOpen = true
         hitTargets.clear()

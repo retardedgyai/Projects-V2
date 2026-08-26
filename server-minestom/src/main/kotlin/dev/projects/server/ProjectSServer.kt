@@ -98,6 +98,7 @@ import dev.projects.server.mod.ModStackingLayer
 private const val SERVER_ADDRESS = "127.0.0.1"
 private const val SERVER_PORT = 25565
 private const val DEFAULT_ATTACK_SPEED = 1.0
+private const val XP_PER_CONFIRMED_HIT = 10
 private val SUPPORTED_ATTACK_SPEEDS = setOf(1.0, 1.5, 2.0)
 private const val DODGE_PLAYER_WIDTH = 0.6
 private const val DODGE_PLAYER_HEIGHT = 1.8
@@ -161,6 +162,7 @@ fun main() {
     val skill1States = mutableMapOf<UUID, Skill1State>()
     val skill2States = mutableMapOf<UUID, Skill2State>()
     val skill3States = mutableMapOf<UUID, Skill3State>()
+    val progressionStates = mutableMapOf<UUID, ProgressionState>()
     val resourceSyncTicks = mutableMapOf<UUID, Int>()
     val lastSentCooldowns = mutableMapOf<UUID, SkillCooldowns>()
     val dodgeVelocityActive = mutableMapOf<UUID, Boolean>()
@@ -354,6 +356,38 @@ fun main() {
     )
     MinecraftServer.getCommandManager().register(
         Command("bossreset").apply { setDefaultExecutor { _, _ -> resetEncounter() } },
+    )
+    val progressionAmount = ArgumentType.Integer("amount")
+    val progressionNode = ArgumentType.Word("node")
+    fun sendProgressionStatus(player: net.minestom.server.entity.Player) {
+        val progression = progressionStates.getOrPut(player.uuid) { ProgressionState() }
+        player.sendMessage(Component.text("Progression level=${progression.level} xp=${progression.xp}/${ProgressionState.xpForNextLevel(progression.level)} points=${progression.unspentSkillPoints} nodes=${progression.acquiredNodeIds().joinToString(",").ifEmpty { "-" }}"))
+    }
+    MinecraftServer.getCommandManager().register(
+        Command("progression").apply {
+            setDefaultExecutor { sender, _ -> (sender as? net.minestom.server.entity.Player)?.let(::sendProgressionStatus) }
+            addSyntax({ sender, _ -> (sender as? net.minestom.server.entity.Player)?.let(::sendProgressionStatus) }, ArgumentType.Literal("status"))
+            addSyntax({ sender, context ->
+                val player = sender as? net.minestom.server.entity.Player ?: return@addSyntax
+                val amount = context.get<Int>(progressionAmount)
+                if (amount < 0) player.sendMessage(Component.text("XP amount must not be negative"))
+                else {
+                    val progression = progressionStates.getOrPut(player.uuid) { ProgressionState() }
+                    val levels = progression.addXp(amount)
+                    player.sendMessage(Component.text("Added $amount XP${if (levels > 0) "; level up x$levels" else ""}"))
+                    sendProgressionStatus(player)
+                }
+            }, ArgumentType.Literal("xp"), progressionAmount)
+            addSyntax({ sender, context ->
+                val player = sender as? net.minestom.server.entity.Player ?: return@addSyntax
+                val progression = progressionStates.getOrPut(player.uuid) { ProgressionState() }
+                val node = context.get<String>(progressionNode).lowercase()
+                val result = progression.spend(node)
+                val message = if (result == SpendResult.ACCEPTED) "Acquired $node" else "Cannot acquire $node: ${result.name.lowercase()}"
+                player.sendMessage(Component.text(message))
+                sendProgressionStatus(player)
+            }, ArgumentType.Literal("spend"), progressionNode)
+        },
     )
     val bossPhaseArgument = ArgumentType.Word("phase")
     fun handleBossPhase(sender: CommandSender, context: CommandContext) {
@@ -604,6 +638,7 @@ fun main() {
         val skill1 = skill1States.getOrPut(event.player.uuid) { Skill1State() }
         val skill2 = skill2States.getOrPut(event.player.uuid) { Skill2State() }
         val skill3 = skill3States.getOrPut(event.player.uuid) { Skill3State() }
+        progressionStates.getOrPut(event.player.uuid) { ProgressionState() }
         if (!event.isFirstSpawn) {
             resources.reset()
             skill1.reset()
@@ -665,6 +700,7 @@ fun main() {
         skill1States.remove(playerId)
         skill2States.remove(playerId)
         skill3States.remove(playerId)
+        // Progression intentionally remains process-local across reconnects; persistence is out of scope for v0.
         resourceSyncTicks.remove(playerId)
         lastSentCooldowns.remove(playerId)
         attackSpeeds.remove(playerId)
@@ -695,6 +731,8 @@ fun main() {
         val skill1 = skill1States[event.player.uuid] ?: return@addListener
         val skill2 = skill2States[event.player.uuid] ?: return@addListener
         val skill3 = skill3States[event.player.uuid] ?: return@addListener
+        val progression = progressionStates[event.player.uuid] ?: return@addListener
+        val progressionEffects = progression.twinBladesEffects()
         if (event.player == instance.players.firstOrNull()) {
             if (prototypeBoss.isEncounterRunning) {
                 tickRiftExecutioner(
@@ -774,7 +812,9 @@ fun main() {
                 attackExecutionId = hit.attackExecutionId,
                 weapon = hit.weapon,
                 weakpoint = weakpoint?.weakpoint,
+                damageMultiplier = progressionEffects.normalDamageMultiplier,
             )
+            if (damage > 0) progression.addXp(XP_PER_CONFIRMED_HIT)
             twinRodsAir.onAttackHit(hit.weapon, event.player.isOnGround, hit.attackExecutionId)
             if (skill3.reduceCooldownForNormalAttack(hit.attackExecutionId)) {
                 sendResourceSnapshot(event.player)
@@ -841,10 +881,11 @@ fun main() {
             )
             showSkill1Trail(event.player, start, direction, particleAnimations, particleManager)
             val skillTargets = tester?.let { listOf(combatTarget(it)) } ?: emptyList()
-            val hitTargets = skill1.hitTargetsOnSegment(start, end, skillTargets)
+            val hitTargets = skill1.hitTargetsOnSegment(start, end, skillTargets, progressionEffects.skill1HitRadius)
             if (hitTargets.isNotEmpty()) {
                 hitTargets.forEach { targetId ->
                     val damage = prototypeBoss.applySkill1Attack(skill1.castId, targetId)
+                    if (damage > 0) progression.addXp(XP_PER_CONFIRMED_HIT)
                     if (damage > 0) updateBossBar()
                 }
                 showSkill1Impact(event.player, tester?.position ?: end, direction, particleAnimations, particleManager)
@@ -870,7 +911,7 @@ fun main() {
             showSkill2DiveTrail(event.player)
             skill2Tick.pulseIndex?.let { pulseIndex ->
                 val skillTargets = tester?.let { listOf(combatTarget(it)) } ?: emptyList()
-                skill2.hitTargetsAtPulse(pulseIndex, event.player.position, skillTargets).forEach { targetId ->
+                skill2.hitTargetsAtPulse(pulseIndex, event.player.position, skillTargets, progressionEffects.skill2PulseRadius).forEach { targetId ->
                     val damage = prototypeBoss.applySkill2Pulse(skill2.castId, pulseIndex, targetId)
                     if (damage > 0) updateBossBar()
                 }
@@ -879,7 +920,7 @@ fun main() {
         } else if (skill2Tick.landed) {
             val skillTargets = tester?.let { listOf(combatTarget(it)) } ?: emptyList()
             skill2.hitTargetsAtLanding(event.player.position, skillTargets).forEach { targetId ->
-                val damage = prototypeBoss.applySkill2Landing(skill2.castId, targetId)
+                val damage = prototypeBoss.applySkill2Landing(skill2.castId, targetId, progressionEffects.skill2LandingDamageMultiplier)
                 if (damage > 0) updateBossBar()
             }
             showSkill2Landing(event.player, particleAnimations, particleManager)
@@ -947,7 +988,7 @@ fun main() {
                         )
                     }
                     if (skill3Tick.finisherActive) {
-                        val damage = prototypeBoss.applySkill3Finisher(skill3.castId, target.id)
+                        val damage = prototypeBoss.applySkill3Finisher(skill3.castId, target.id, progressionEffects.skill3FinisherDamageMultiplier)
                         if (damage > 0) updateBossBar()
                         sendResourceSnapshot(event.player)
                         event.player.setVelocity(skill3HitBounceVelocity(requireNotNull(skill3Tick.dashDirection)))
@@ -1073,10 +1114,11 @@ fun main() {
                     val skill1 = skill1States[event.player.uuid] ?: return@addListener
                     val skill2 = skill2States[event.player.uuid] ?: return@addListener
                     val skill3 = skill3States[event.player.uuid] ?: return@addListener
+                    val progressionEffects = (progressionStates[event.player.uuid] ?: return@addListener).twinBladesEffects()
                     when (message.slot) {
                         ClassSkillSlot.SKILL_1 -> {
                             if (skill2.phase == Skill2Phase.DIVE || skill3.phase != Skill3Phase.IDLE) return@addListener
-                            if (skill1.tryCast(event.player.position.direction()) != null) {
+                            if (skill1.tryCast(event.player.position.direction(), progressionEffects.skill1DashTicks) != null) {
                                 showSkill1Cast(event.player, particleAnimations, particleManager)
                                 sendResourceSnapshot(event.player)
                             }
@@ -1097,6 +1139,8 @@ fun main() {
                             val castId = skill3.tryCast(
                                 event.player.position.direction(),
                                 ClassSkillDirection(message.directionX, message.directionZ),
+                                dashTicks = progressionEffects.skill3DashTicks,
+                                pulseIntervalTicks = progressionEffects.skill3PulseInterval,
                             )
                             if (castId != null) {
                                 showSkill3Cast(event.player)
