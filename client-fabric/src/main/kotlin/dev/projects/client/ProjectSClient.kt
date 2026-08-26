@@ -195,6 +195,12 @@ object ProjectSClient : ClientModInitializer {
             Identifier.fromNamespaceAndPath("projects", "class_resources"),
             ::renderResourceHud,
         )
+        HudElementRegistry.replaceElement(VanillaHudElements.HEALTH_BAR) { _ ->
+            { _, _ -> }
+        }
+        HudElementRegistry.replaceElement(VanillaHudElements.FOOD_BAR) { _ ->
+            { _, _ -> }
+        }
         ClientTickEvents.END_CLIENT_TICK.register(::handleAttackInput)
     }
 
