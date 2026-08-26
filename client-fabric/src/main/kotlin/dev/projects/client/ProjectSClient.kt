@@ -195,9 +195,6 @@ object ProjectSClient : ClientModInitializer {
             Identifier.fromNamespaceAndPath("projects", "class_resources"),
             ::renderResourceHud,
         )
-        HudElementRegistry.replaceElement(VanillaHudElements.HOTBAR) { _ ->
-            { context, tickCounter -> renderProductionHotbar(context, tickCounter) }
-        }
         ClientTickEvents.END_CLIENT_TICK.register(::handleAttackInput)
     }
 
@@ -304,10 +301,28 @@ object ProjectSClient : ClientModInitializer {
         val screenHeight = context.guiHeight()
         val resource = hudLayout.elements[HudElementId.RESOURCE]!!
         val resourceRect = resource.resolve(screenWidth, screenHeight)
-        drawResourceBar(context, "MANA", mana, maxMana, resourceRect, 0xFF3F9694.toInt())
+        drawResourceBar(
+            context,
+            "MANA",
+            mana,
+            maxMana,
+            resourceRect,
+            0xFF3F9694.toInt(),
+            0xFF245A5A.toInt(),
+            0xFF90C7BF.toInt(),
+        )
         Minecraft.getInstance().player?.let { player ->
             val hp = hudLayout.elements[HudElementId.HP]!!.resolve(screenWidth, screenHeight)
-            drawResourceBar(context, "HP", player.health.toInt(), player.maxHealth.toInt(), hp, 0xFF9B4E56.toInt())
+            drawResourceBar(
+                context,
+                "HP",
+                player.health.toInt(),
+                player.maxHealth.toInt(),
+                hp,
+                0xFF9B4E56.toInt(),
+                0xFF63353D.toInt(),
+                0xFFD18A88.toInt(),
+            )
         }
         renderSkillHud(context)
         renderHitMarker(context)
@@ -346,6 +361,49 @@ object ProjectSClient : ClientModInitializer {
         }
     }
 
+    private val skillIconPatterns = listOf(
+        listOf(
+            "00011000",
+            "00011000",
+            "00111100",
+            "01111110",
+            "01111110",
+            "00011000",
+            "00111100",
+            "01111110",
+        ),
+        listOf(
+            "00100100",
+            "01011010",
+            "10011001",
+            "01111110",
+            "01111110",
+            "10011001",
+            "01011010",
+            "00100100",
+        ),
+        listOf(
+            "00000110",
+            "00001100",
+            "00011000",
+            "00110000",
+            "01100000",
+            "11000000",
+            "01100110",
+            "00111100",
+        ),
+        listOf(
+            "00111000",
+            "01111100",
+            "11111110",
+            "01111100",
+            "00111000",
+            "00010000",
+            "00111000",
+            "00010000",
+        ),
+    )
+
     private fun drawSkillSlot(
         context: GuiGraphicsExtractor,
         slot: SkillHudSlot,
@@ -355,7 +413,13 @@ object ProjectSClient : ClientModInitializer {
         height: Int,
     ) {
         val ready = skillHudReady(slot.available, slot.remainingTicks)
-        context.fill(x, y, x + width, y + height, if (ready) 0xCC26383A.toInt() else 0xCC1B2026.toInt())
+        val background = when {
+            !slot.available -> 0xCC151B1E.toInt()
+            ready -> 0xCC26383A.toInt()
+            else -> 0xCC1B2026.toInt()
+        }
+        context.fill(x, y, x + width, y + height, background)
+        context.fill(x + 2, y + 1, x + width - 2, y + 2, if (slot.available) 0xFF657F7C.toInt() else 0xFF3B4548.toInt())
         outline(context, HudRect(x, y, width, height), if (ready) 0xFF638B83.toInt() else 0xFF4A4D53.toInt())
         val cooldownHeight = (height * cooldownFillRatio(slot.remainingTicks, slot.maxTicks)).toInt()
         if (slot.available && !ready && cooldownHeight > 0) {
@@ -365,12 +429,16 @@ object ProjectSClient : ClientModInitializer {
             val cooldownStripWidth = ((width - 2) * (1f - cooldownFillRatio(slot.remainingTicks, slot.maxTicks))).toInt()
             context.fill(x + 1, y + height - 3, x + 1 + cooldownStripWidth, y + height - 1, if (ready) 0xFF638B83.toInt() else 0xFF68777A.toInt())
         }
-        drawSkillIcon(context, x + (width - 16) / 2, y + 2, slot.iconIndex, ready)
+        drawSkillIcon(context, x + (width - 16) / 2, y + 2, slot.iconIndex, slot.available, ready)
         val keyLabel = slot.key.getTranslatedKeyMessage().getString()
-        val keyColor = if (ready) 0xFFE3E8E4.toInt() else 0xFF9AA1A4.toInt()
+        val keyColor = when {
+            !slot.available -> 0xFF687276.toInt()
+            ready -> 0xFFE3E8E4.toInt()
+            else -> 0xFF9AA1A4.toInt()
+        }
         context.text(Minecraft.getInstance().font, slot.name, x + 3, y + 3, keyColor, true)
         context.text(Minecraft.getInstance().font, keyLabel, x + 3, y + height - 10, keyColor, true)
-        if (!ready) {
+        if (slot.available && !ready) {
             val cooldown = cooldownSecondsText(slot.remainingTicks)
             context.text(Minecraft.getInstance().font, cooldown, x + width - Minecraft.getInstance().font.width(cooldown) - 2, y + height - 10, keyColor, true)
         }
@@ -382,49 +450,51 @@ object ProjectSClient : ClientModInitializer {
         value: Int,
         maximum: Int,
         rect: HudRect,
-        color: Int,
+        fillColor: Int,
+        shadowColor: Int,
+        highlightColor: Int,
     ) {
-        context.text(Minecraft.getInstance().font, label, rect.x, rect.y - 9, 0xFFD6D9D5.toInt(), true)
-        context.fill(rect.x, rect.y, rect.x + rect.width, rect.y + rect.height, 0xCC10151C.toInt())
-        val filled = meterFillWidth(value, maximum, rect.width - 2)
-        if (filled > 0) context.fill(rect.x + 1, rect.y + 1, rect.x + 1 + filled, rect.y + rect.height - 1, color)
-        context.fill(rect.x, rect.y + rect.height - 2, rect.x + rect.width, rect.y + rect.height, color)
-        outline(context, rect, 0xFF4D555A.toInt())
+        val width = rect.width.coerceAtLeast(4)
+        val height = rect.height.coerceAtLeast(4)
         val valueText = "$value / $maximum"
-        context.text(Minecraft.getInstance().font, valueText, rect.x + rect.width - Minecraft.getInstance().font.width(valueText) - 2, rect.y + 2, 0xFFE8EAE7.toInt(), true)
-    }
+        context.text(Minecraft.getInstance().font, label, rect.x, rect.y - 9, highlightColor, true)
+        context.fill(rect.x, rect.y, rect.x + width, rect.y + height, 0xCC0D1418.toInt())
+        outline(context, HudRect(rect.x, rect.y, width, height), 0xFF414C50.toInt())
 
-    private fun drawSkillIcon(context: GuiGraphicsExtractor, x: Int, y: Int, index: Int, ready: Boolean) {
-        val color = if (ready) 0xFFB5D1C8.toInt() else 0xFF68777A.toInt()
-        val pattern = listOf("0110", "1111", "0110", "1001", "0110")
-        pattern.forEachIndexed { row, line -> line.forEachIndexed { column, pixel ->
-            if (pixel == '1' && ((column + row + index) % 2 == 0 || index == 3)) {
-                context.fill(x + column * 3, y + row * 3, x + column * 3 + 3, y + row * 3 + 3, color)
+        if (width >= 8 && height >= 8) {
+            context.fill(rect.x + 2, rect.y + 2, rect.x + width - 2, rect.y + height - 2, 0xD8192428.toInt())
+            context.fill(rect.x + 2, rect.y + 2, rect.x + width - 2, rect.y + 3, 0xFF667276.toInt())
+            context.fill(rect.x + 2, rect.y + height - 3, rect.x + width - 2, rect.y + height - 2, 0xFF0B1013.toInt())
+            val filled = meterFillWidth(value, maximum, width - 4)
+            if (filled > 0) {
+                val fillEnd = rect.x + 2 + filled
+                context.fill(rect.x + 2, rect.y + 3, fillEnd, rect.y + height - 3, shadowColor)
+                context.fill(rect.x + 2, rect.y + 3, fillEnd, rect.y + 4, highlightColor)
+                context.fill(rect.x + 2, rect.y + 4, fillEnd, rect.y + height - 3, fillColor)
+                context.fill(fillEnd - 1, rect.y + 3, fillEnd, rect.y + height - 3, highlightColor)
             }
-        } }
+        } else {
+            val filled = meterFillWidth(value, maximum, (width - 2).coerceAtLeast(0))
+            if (filled > 0) context.fill(rect.x + 1, rect.y + 1, rect.x + 1 + filled, rect.y + height - 1, fillColor)
+        }
+
+        context.text(Minecraft.getInstance().font, valueText, rect.x + width - Minecraft.getInstance().font.width(valueText) - 3, rect.y + 2, 0xFFE8EAE7.toInt(), true)
     }
 
-    private fun renderMovedHotbar(context: GuiGraphicsExtractor, rect: HudRect) {
-        val slotWidth = (rect.width / 9).coerceAtLeast(1)
-        context.fill(rect.x, rect.y, rect.x + rect.width, rect.y + rect.height, 0xCC10151C.toInt())
-        repeat(9) { index ->
-            val slot = HudRect(rect.x + index * slotWidth, rect.y, slotWidth, rect.height)
-            val selected = index == Minecraft.getInstance().player?.inventory?.getSelectedSlot()
-            outline(context, slot, if (selected) 0xFFE0D58A.toInt() else 0xFF50585D.toInt())
-            Minecraft.getInstance().player?.inventory?.getItem(index)?.takeUnless { it.isEmpty }?.let { stack ->
-                val itemX = slot.x + (slot.width - 16) / 2
-                val itemY = slot.y + (slot.height - 16) / 2
-                context.item(stack, itemX, itemY)
-                context.itemDecorations(Minecraft.getInstance().font, stack, itemX, itemY)
+    private fun drawSkillIcon(context: GuiGraphicsExtractor, x: Int, y: Int, index: Int, available: Boolean, ready: Boolean) {
+        val color = when {
+            !available -> 0xFF4D585B.toInt()
+            ready -> 0xFFB5D1C8.toInt()
+            else -> 0xFF68777A.toInt()
+        }
+        val pattern = skillIconPatterns[index.coerceIn(0, skillIconPatterns.lastIndex)]
+        pattern.forEachIndexed { row, line ->
+            line.forEachIndexed { column, pixel ->
+                if (pixel == '1') {
+                    context.fill(x + column * 2, y + row * 2, x + column * 2 + 2, y + row * 2 + 2, color)
+                }
             }
         }
-    }
-
-    private fun renderProductionHotbar(context: GuiGraphicsExtractor, tickCounter: DeltaTracker) {
-        renderMovedHotbar(
-            context,
-            hudLayout.elements[HudElementId.HOTBAR]!!.resolve(context.guiWidth(), context.guiHeight()),
-        )
     }
 
     private fun outline(context: GuiGraphicsExtractor, rect: HudRect, color: Int) {
