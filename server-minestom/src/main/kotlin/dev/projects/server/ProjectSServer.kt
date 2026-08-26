@@ -93,6 +93,7 @@ import dev.projects.server.equipment.LootGenerator
 import dev.projects.server.equipment.LootSource
 import dev.projects.server.equipment.V0_LOOT_MOD_POOL
 import dev.projects.server.equipment.V0_LOOT_PROFILES
+import dev.projects.server.equipment.lootRewardSeed
 import dev.projects.server.mod.AttackTag
 import dev.projects.server.mod.ModDefinition
 import dev.projects.server.mod.ModEntry
@@ -175,6 +176,7 @@ fun main() {
     val prototypeBoss = PrototypeBossState()
     val lootGenerator = LootGenerator(V0_LOOT_MOD_POOL)
     val bossRewardedPlayers = mutableSetOf<UUID>()
+    var bossRewardSequence = 0L
     val bossBar = BossBar.bossBar(
         Component.text("Rift Executioner ${prototypeBoss.currentHealth} / ${prototypeBoss.maxHealth}"),
         prototypeBoss.healthProgress,
@@ -308,11 +310,12 @@ fun main() {
         stopPlayerActions()
         updateBossBar()
         val result = if (prototypeBoss.isVictory) "VICTORY" else "DEFEAT"
+        val rewardSequence = if (prototypeBoss.isVictory) ++bossRewardSequence else bossRewardSequence
         instance.players.forEach {
             sendResourceSnapshot(it)
             it.sendMessage(Component.text(result))
             if (prototypeBoss.isVictory && bossRewardedPlayers.add(it.uuid)) {
-                grantLoot(it, LootSource.RIFT_EXECUTIONER, it.uuid.mostSignificantBits xor it.uuid.leastSignificantBits)
+                grantLoot(it, LootSource.RIFT_EXECUTIONER, lootRewardSeed(it.uuid, rewardSequence))
             }
         }
     }

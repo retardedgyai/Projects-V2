@@ -4,6 +4,7 @@ import dev.projects.server.mod.ModDefinition
 import dev.projects.server.mod.ModEntry
 import dev.projects.server.mod.ModRank
 import java.util.Random
+import java.util.UUID
 
 enum class LootSource { NORMAL_ENEMY, RIFT_EXECUTIONER }
 
@@ -35,7 +36,7 @@ class LootGenerator(
 ) {
     init {
         require(definitions.isNotEmpty()) { "loot MOD pool must not be empty" }
-        require(definitions.map { it.statId }.toSet().size == definitions.size) { "loot MOD stats must be unique" }
+        require(definitions.map { it.modId }.toSet().size == definitions.size) { "loot MOD ids must be unique" }
     }
 
     fun generate(seed: Long, profile: LootProfile): LootDrop {
@@ -85,6 +86,9 @@ class LootGenerator(
     private fun String.titleCase(): String = split(' ').joinToString(" ") { it.replaceFirstChar(Char::uppercaseChar) }
 }
 
+fun lootRewardSeed(playerId: UUID, rewardSequence: Long): Long =
+    playerId.mostSignificantBits xor playerId.leastSignificantBits xor rewardSequence
+
 val V0_LOOT_PROFILES = mapOf(
     LootSource.NORMAL_ENEMY to LootProfile(
         LootSource.NORMAL_ENEMY, EquipmentTier.T1, 5,
@@ -127,9 +131,9 @@ val V0_LOOT_MOD_POOL = listOf(
     lootDefinition("shatter-point", ModRank.RANK_1, "shatter-damage", dev.projects.server.mod.ModStackingLayer.CONDITIONAL, 2.0, 7.0),
     lootDefinition("frostbite", ModRank.RANK_1, "ice-damage", dev.projects.server.mod.ModStackingLayer.BASE_FLAT, 2.0, 6.0),
     lootDefinition("last-stand", ModRank.RANK_1, "conditional-damage", dev.projects.server.mod.ModStackingLayer.CONDITIONAL, 3.0, 9.0),
-    lootDefinition("keen-edge-2", ModRank.RANK_2, "physical-attack-2", dev.projects.server.mod.ModStackingLayer.BASE_FLAT, 2.0, 5.0),
-    lootDefinition("critical-focus-2", ModRank.RANK_2, "critical-chance-2", dev.projects.server.mod.ModStackingLayer.INCREASED, 2.0, 5.0),
-    lootDefinition("skill-drive-2", ModRank.RANK_2, "skill-power-2", dev.projects.server.mod.ModStackingLayer.INCREASED, 2.0, 7.0),
-    lootDefinition("execution-mark-2", ModRank.RANK_2, "boss-damage-2", dev.projects.server.mod.ModStackingLayer.CONDITIONAL, 3.0, 10.0),
-    lootDefinition("last-stand-2", ModRank.RANK_2, "conditional-damage-2", dev.projects.server.mod.ModStackingLayer.CONDITIONAL, 3.0, 11.0),
+    lootDefinition("keen-edge-2", ModRank.RANK_2, "physical-attack", dev.projects.server.mod.ModStackingLayer.BASE_FLAT, 2.0, 5.0),
+    lootDefinition("critical-focus-2", ModRank.RANK_2, "critical-chance", dev.projects.server.mod.ModStackingLayer.INCREASED, 2.0, 5.0),
+    lootDefinition("skill-drive-2", ModRank.RANK_2, "skill-power", dev.projects.server.mod.ModStackingLayer.INCREASED, 2.0, 7.0),
+    lootDefinition("execution-mark-2", ModRank.RANK_2, "boss-damage", dev.projects.server.mod.ModStackingLayer.CONDITIONAL, 3.0, 10.0),
+    lootDefinition("last-stand-2", ModRank.RANK_2, "conditional-damage", dev.projects.server.mod.ModStackingLayer.CONDITIONAL, 3.0, 11.0),
 )
