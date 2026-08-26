@@ -28,7 +28,7 @@ import java.util.Base64
 import java.util.Locale
 
 private const val PRESENTATION_TAG = "projects_equipment_presentation"
-private const val SLOT_SIZE = 18
+private const val SLOT_SIZE = INVENTORY_CHARACTER_SLOT_SIZE
 
 private data class InventoryCharacterUiTexture(
     val identifier: Identifier,
@@ -146,7 +146,7 @@ internal class InventoryCharacterMenu(
 
         val inventoryGridX = layout.inventoryGrid.x - layout.panel.x
         val inventoryGridY = layout.inventoryGrid.y - layout.panel.y
-        addStandardInventorySlots(player.inventory, inventoryGridX, inventoryGridY)
+        addInventorySlots(player.inventory, inventoryGridX, inventoryGridY, layout.slotStep)
         val offhand = layout.offhandSlot
         addSlot(
             object : Slot(
@@ -164,6 +164,17 @@ internal class InventoryCharacterMenu(
     override fun quickMoveStack(player: Player, index: Int): ItemStack = player.inventoryMenu.quickMoveStack(player, index)
 
     override fun stillValid(player: Player): Boolean = true
+
+    private fun addInventorySlots(inventory: Inventory, x: Int, y: Int, step: Int) {
+        repeat(3) { row ->
+            repeat(9) { column ->
+                addSlot(Slot(inventory, 9 + row * 9 + column, x + column * step, y + row * step))
+            }
+        }
+        repeat(9) { column ->
+            addSlot(Slot(inventory, column, x + column * step, y + step * 3))
+        }
+    }
 
     private fun validateVisibleSlotOrder() {
         val expected = inventoryCharacterVisibleSlotMapping()
@@ -194,7 +205,6 @@ internal class InventoryCharacterScreen private constructor(
     override fun isPauseScreen(): Boolean = false
 
     override fun extractBackground(graphics: GuiGraphicsExtractor, mouseX: Int, mouseY: Int, delta: Float) {
-        graphics.fill(0, 0, width, height, 0x520A0E12.toInt())
         drawPanel(graphics, layout.panel, GLASS_MAIN_TEXTURE, 10)
         drawPanel(graphics, layout.rail, GLASS_SECONDARY_TEXTURE, 10)
         drawPanel(graphics, layout.character, GLASS_SECONDARY_TEXTURE, 10)
@@ -224,7 +234,6 @@ internal class InventoryCharacterScreen private constructor(
     }
 
     override fun extractRenderState(graphics: GuiGraphicsExtractor, mouseX: Int, mouseY: Int, delta: Float) {
-        drawHeader(graphics)
         drawRail(graphics, mouseX, mouseY)
         drawCharacter(graphics)
         drawInventory(graphics)
@@ -275,95 +284,93 @@ internal class InventoryCharacterScreen private constructor(
         val plate = if (layout.tiny) {
             HudRect(layout.rail.x + 4, layout.rail.y + 4, 100, 20)
         } else {
-            HudRect(layout.rail.x + 4, layout.rail.y + 29, layout.rail.width - 8, 20)
+            HudRect(layout.rail.x + 8, layout.rail.y + 10, layout.rail.width - 16, 20)
         }
         drawHorizontalSlice(graphics, plate, IVORY_ACTIVE_TAB_TEXTURE, 6)
     }
 
-    private fun drawHeader(graphics: GuiGraphicsExtractor) {
-        val x = layout.panel.x + 18
-        val y = layout.panel.y + 12
-        graphics.text(font, "インベントリ / キャラクター", x, y, 0xFFE4F0EB.toInt(), true)
-        graphics.text(font, "Eで閉じる - クリック / ドラッグで移動", x, y + 14, 0xFF7F9892.toInt(), false)
-    }
-
     private fun drawRail(graphics: GuiGraphicsExtractor, mouseX: Int, mouseY: Int) {
-        val x = layout.rail.x + 10
-        val y = layout.rail.y + if (layout.tiny) 8 else 14
+        val x = layout.rail.x + 18
+        val y = layout.rail.y + if (layout.tiny) 8 else 10
         if (layout.tiny) {
-            graphics.text(font, "インベントリ", x, y, 0xFF394742.toInt(), true)
-            graphics.text(font, "キャラクター", x + 92, y, 0xFF78928A.toInt(), false)
+            graphics.text(font, "インベントリ", x, y, 0xFFD0D1CC.toInt(), true)
+            graphics.text(font, "キャラクター", x + 92, y, 0xFFB8BAB5.toInt(), false)
             return
         }
-        val row = HudRect(layout.rail.x + 4, layout.rail.y + 4, layout.rail.width - 8, 20)
-        drawHorizontalSlice(graphics, row, NAV_ROW_IDLE_TEXTURE, 6)
-        drawHorizontalSlice(
-            graphics,
-            row.copy(y = layout.rail.y + 49),
-            if (row.copy(y = layout.rail.y + 49).contains(mouseX.toDouble(), mouseY.toDouble())) {
-                NAV_ROW_HOVER_TEXTURE
-            } else {
-                NAV_ROW_IDLE_TEXTURE
-            },
-            6,
-        )
-        drawHorizontalSlice(graphics, row.copy(y = layout.rail.y + 69), NAV_ROW_DISABLED_TEXTURE, 6)
-        graphics.text(font, "プロジェクトS", x, y, 0xFF7F9892.toInt(), true)
-        graphics.text(font, "インベントリ", x, y + 34, 0xFF394742.toInt(), true)
-        graphics.text(font, "キャラクター", x, y + 54, 0xFF9DB2AB.toInt(), false)
-        graphics.text(font, "ステータス", x, y + 74, 0xFF6F8580.toInt(), false)
+        val labels = listOf("インベントリ", "キャラクター", "クエスト", "パーティー", "コーデックス", "マップ", "設定")
+        labels.forEachIndexed { index, label ->
+            val row = HudRect(layout.rail.x + 8, layout.rail.y + 10 + index * 48, layout.rail.width - 16, 20)
+            if (index > 0) {
+                val texture = if (row.contains(mouseX.toDouble(), mouseY.toDouble())) {
+                    NAV_ROW_HOVER_TEXTURE
+                } else if (index == labels.lastIndex) {
+                    NAV_ROW_DISABLED_TEXTURE
+                } else {
+                    NAV_ROW_IDLE_TEXTURE
+                }
+                drawHorizontalSlice(graphics, row, texture, 6)
+            }
+            graphics.text(
+                font,
+                label,
+                row.x + 12,
+                row.y + 6,
+                if (index == 0) 0xFF4B4D49.toInt() else 0xFFD0D1CC.toInt(),
+                index == 0,
+            )
+        }
     }
 
     private fun drawCharacter(graphics: GuiGraphicsExtractor) {
-        val x = layout.character.x + 12
-        val y = layout.character.y + 12
-        graphics.text(font, "キャラクター", x, y, 0xFFE4F0EB.toInt(), true)
-        graphics.text(font, setup.player.name, x, y + 14, 0xFF9DB2AB.toInt())
+        val x = layout.character.x + 20
+        val y = layout.character.y + 18
+        graphics.text(font, "ProjectS", x, y, 0xFFF0F0EA.toInt(), true)
+        graphics.text(font, setup.player.name, x, y + 16, 0xFFB8BAB5.toInt())
         graphics.text(
             font,
-            "体力 ${setup.player.health.toInt()} / ${setup.player.maxHealth.toInt()}   防御 ${setup.player.getArmorValue()}",
+            "Lv ${setup.player.experienceLevel}   体力 ${setup.player.health.toInt()} / ${setup.player.maxHealth.toInt()}",
             x,
             layout.character.y + layout.character.height - 16,
-            0xFFB5C8C0.toInt(),
+            0xFFB8BAB5.toInt(),
             false,
         )
         layout.equipmentSlots.forEach { (slot, position) ->
             val label = equipmentLabel(slot)
-            graphics.text(font, label, position.x + 22, position.y + 5, 0xFF718982.toInt(), false)
+            graphics.text(font, label, position.x + 22, position.y + 5, 0xFFB8BAB5.toInt(), false)
         }
-        graphics.text(font, "左手", layout.offhandSlot.x - 22, layout.offhandSlot.y + 5, 0xFF718982.toInt(), false)
+        graphics.text(font, "左手", layout.offhandSlot.x - 22, layout.offhandSlot.y + 5, 0xFFB8BAB5.toInt(), false)
     }
 
     private fun drawInventory(graphics: GuiGraphicsExtractor) {
-        val x = layout.inventory.x + 12
-        graphics.text(font, "アイテム", x, layout.inventory.y + 12, 0xFFE4F0EB.toInt(), true)
-        graphics.text(font, "アイテム一覧", x, layout.inventory.y + 26, 0xFF718982.toInt(), false)
+        val x = layout.inventory.x + 18
+        graphics.text(font, "インベントリ", x, layout.inventory.y + 18, 0xFFF0F0EA.toInt(), true)
+        graphics.text(font, "すべて   武器   防具   消耗品", x, layout.inventory.y + 34, 0xFFB8BAB5.toInt(), false)
         graphics.text(
             font,
             "ホットバー",
             layout.inventoryGrid.x,
-            layout.inventoryGrid.y + SLOT_SIZE * 3 + 10,
-            0xFF718982.toInt(),
+            layout.inventoryGrid.y + layout.slotStep * 4 + 4,
+            0xFFB8BAB5.toInt(),
             false,
         )
     }
 
     private fun drawDetail(graphics: GuiGraphicsExtractor) {
-        val x = layout.detail.x + 14
-        val y = layout.detail.y + 12
-        graphics.text(font, "選択中のアイテム", x, y, 0xFFE4F0EB.toInt(), true)
+        val x = layout.detail.x + 18
+        val y = layout.detail.y + 16
+        graphics.text(font, "選択中のアイテム", x, y, 0xFFF0F0EA.toInt(), true)
         val stack = selectedSlot()?.getItem() ?: ItemStack.EMPTY
         if (stack.isEmpty) {
-            graphics.text(font, "アイテムを選択してください", x, y + 28, 0xFF7F9892.toInt(), false)
+            graphics.text(font, "アイテムを選択してください", x, y + 28, 0xFFB8BAB5.toInt(), false)
             return
         }
 
         graphics.item(stack, x, y + 22)
         val presentation = stack.readEquipmentPresentation()
         val textX = x + 24
-        graphics.text(font, stack.getHoverName(), textX, y + 22, presentation?.let(::rarityColor) ?: 0xFFE4F0EB.toInt(), true)
+        graphics.text(font, stack.getHoverName(), textX, y + 22, presentation?.let(::rarityColor) ?: 0xFFF0F0EA.toInt(), true)
         if (presentation == null) {
-            graphics.text(font, "通常アイテム", textX, y + 36, 0xFF7F9892.toInt(), false)
+            graphics.text(font, "通常アイテム", textX, y + 36, 0xFFB8BAB5.toInt(), false)
             return
         }
         graphics.text(
@@ -371,13 +378,13 @@ internal class InventoryCharacterScreen private constructor(
             "${rarityLabel(presentation.rarity)}  |  Lv ${presentation.itemLevel}  |  ${categoryLabel(presentation.category)}",
             textX,
             y + 36,
-            0xFF9DB2AB.toInt(),
+            0xFFB8BAB5.toInt(),
             false,
         )
         var rowY = y + 54
         val maxRows = ((layout.detail.height - 54) / 12).coerceAtLeast(1)
         presentation.baseStats.take(maxRows).forEach { stat ->
-            graphics.text(font, "${displayId(stat.statId)}  ${formatValue(stat.value)}", x, rowY, 0xFFB5C8C0.toInt(), false)
+            graphics.text(font, "${displayId(stat.statId)}  ${formatValue(stat.value)}", x, rowY, 0xFFD0D1CC.toInt(), false)
             rowY += 12
         }
         presentation.installedMods.take((maxRows - presentation.baseStats.size).coerceAtLeast(0)).forEach { mod ->
@@ -635,7 +642,7 @@ internal class InventoryCharacterScreen private constructor(
             "uncommon" -> 0xFF6EE7A4.toInt()
             "rare" -> 0xFF6CA8FF.toInt()
             "epic" -> 0xFFC486FF.toInt()
-            else -> 0xFFE4F0EB.toInt()
+            else -> 0xFFF0F0EA.toInt()
         }
     }
 }
