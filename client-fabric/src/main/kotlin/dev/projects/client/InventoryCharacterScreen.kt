@@ -6,6 +6,7 @@ import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiGraphicsExtractor
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen
 import net.minecraft.client.gui.screens.inventory.InventoryScreen
+import net.minecraft.client.renderer.RenderPipelines
 import net.minecraft.client.input.MouseButtonEvent
 import net.minecraft.core.component.DataComponents
 import net.minecraft.network.chat.Component
@@ -28,25 +29,42 @@ import java.util.Locale
 
 private const val PRESENTATION_TAG = "projects_equipment_presentation"
 private const val SLOT_SIZE = 18
-private const val UI_TEXTURE_SIZE = 64.0f
-private const val GLASS_SOURCE_SIZE = 24
-private const val GLASS_CORNER_SIZE = 7
-private const val IVORY_SOURCE_X = 32
-private const val IVORY_SOURCE_HEIGHT = 16
-private val INVENTORY_CHARACTER_TEXTURE = Identifier.fromNamespaceAndPath(
-    "projects",
-    "textures/gui/inventory_character.png",
+
+private data class InventoryCharacterUiTexture(
+    val identifier: Identifier,
+    val width: Int,
+    val height: Int,
 )
 
+private fun inventoryCharacterUiTexture(name: String, width: Int, height: Int): InventoryCharacterUiTexture =
+    InventoryCharacterUiTexture(
+        Identifier.fromNamespaceAndPath("projects", "textures/gui/ui/$name.png"),
+        width,
+        height,
+    )
+
+private val GLASS_MAIN_TEXTURE = inventoryCharacterUiTexture("glass_main", 96, 56)
+private val GLASS_SECONDARY_TEXTURE = inventoryCharacterUiTexture("glass_secondary", 88, 52)
+private val GLASS_DETAIL_TEXTURE = inventoryCharacterUiTexture("glass_detail", 96, 48)
+private val IVORY_ACTIVE_TAB_TEXTURE = inventoryCharacterUiTexture("ivory_active_tab", 72, 20)
+private val NAV_ROW_IDLE_TEXTURE = inventoryCharacterUiTexture("nav_row_idle", 84, 20)
+private val NAV_ROW_HOVER_TEXTURE = inventoryCharacterUiTexture("nav_row_hover", 84, 20)
+private val NAV_ROW_DISABLED_TEXTURE = inventoryCharacterUiTexture("nav_row_disabled", 84, 20)
+private val ITEM_SLOT_IDLE_TEXTURE = inventoryCharacterUiTexture("item_slot_idle", 24, 24)
+private val ITEM_SLOT_HOVER_TEXTURE = inventoryCharacterUiTexture("item_slot_hover", 24, 24)
+private val ITEM_SLOT_SELECTED_TEXTURE = inventoryCharacterUiTexture("item_slot_selected", 24, 24)
+private val EQUIPMENT_SLOT_IDLE_TEXTURE = inventoryCharacterUiTexture("equipment_slot_idle", 28, 28)
+private val EQUIPMENT_SLOT_SELECTED_TEXTURE = inventoryCharacterUiTexture("equipment_slot_selected", 28, 28)
+
 internal data class InventoryCharacterTextureRegion(
-    val x0: Int,
-    val x1: Int,
-    val y0: Int,
-    val y1: Int,
-    val u0: Float,
-    val u1: Float,
-    val v0: Float,
-    val v1: Float,
+    val x: Int,
+    val y: Int,
+    val width: Int,
+    val height: Int,
+    val sourceX: Int,
+    val sourceY: Int,
+    val sourceWidth: Int,
+    val sourceHeight: Int,
 )
 
 internal fun inventoryCharacterTextureRegion(
@@ -62,14 +80,14 @@ internal fun inventoryCharacterTextureRegion(
     require(width > 0 && height > 0) { "Inventory Character texture target must be positive" }
     require(sourceWidth > 0 && sourceHeight > 0) { "Inventory Character texture source must be positive" }
     return InventoryCharacterTextureRegion(
-        x0 = x,
-        x1 = x + width,
-        y0 = y,
-        y1 = y + height,
-        u0 = sourceX / UI_TEXTURE_SIZE,
-        u1 = (sourceX + sourceWidth) / UI_TEXTURE_SIZE,
-        v0 = sourceY / UI_TEXTURE_SIZE,
-        v1 = (sourceY + sourceHeight) / UI_TEXTURE_SIZE,
+        x = x,
+        y = y,
+        width = width,
+        height = height,
+        sourceX = sourceX,
+        sourceY = sourceY,
+        sourceWidth = sourceWidth,
+        sourceHeight = sourceHeight,
     )
 }
 
@@ -177,11 +195,11 @@ internal class InventoryCharacterScreen private constructor(
 
     override fun extractBackground(graphics: GuiGraphicsExtractor, mouseX: Int, mouseY: Int, delta: Float) {
         graphics.fill(0, 0, width, height, 0x520A0E12.toInt())
-        drawPanel(graphics, layout.panel)
-        drawPanel(graphics, layout.rail)
-        drawPanel(graphics, layout.character)
-        drawPanel(graphics, layout.inventory)
-        drawPanel(graphics, layout.detail)
+        drawPanel(graphics, layout.panel, GLASS_MAIN_TEXTURE, 10)
+        drawPanel(graphics, layout.rail, GLASS_SECONDARY_TEXTURE, 10)
+        drawPanel(graphics, layout.character, GLASS_SECONDARY_TEXTURE, 10)
+        drawPanel(graphics, layout.inventory, GLASS_SECONDARY_TEXTURE, 10)
+        drawPanel(graphics, layout.detail, GLASS_DETAIL_TEXTURE, 9)
         drawActiveTab(graphics)
     }
 
@@ -200,15 +218,15 @@ internal class InventoryCharacterScreen private constructor(
 
     override fun extractSlots(graphics: GuiGraphicsExtractor, mouseX: Int, mouseY: Int) {
         visibleSlotEntries().forEach { (_, slot) ->
-            drawSlotFrame(graphics, slot)
+            drawSlotFrame(graphics, slot, mouseX, mouseY)
             extractSlot(graphics, slot, mouseX, mouseY)
         }
     }
 
     override fun extractRenderState(graphics: GuiGraphicsExtractor, mouseX: Int, mouseY: Int, delta: Float) {
         drawHeader(graphics)
-        drawRail(graphics)
-        drawCharacter(graphics, mouseX, mouseY)
+        drawRail(graphics, mouseX, mouseY)
+        drawCharacter(graphics)
         drawInventory(graphics)
         drawDetail(graphics)
         val preview = inventoryCharacterPreviewBounds(layout.preview)
@@ -259,7 +277,7 @@ internal class InventoryCharacterScreen private constructor(
         } else {
             HudRect(layout.rail.x + 4, layout.rail.y + 29, layout.rail.width - 8, 20)
         }
-        drawNineSlice(graphics, plate, IVORY_SOURCE_X, 0, GLASS_SOURCE_SIZE, IVORY_SOURCE_HEIGHT, 5)
+        drawHorizontalSlice(graphics, plate, IVORY_ACTIVE_TAB_TEXTURE, 6)
     }
 
     private fun drawHeader(graphics: GuiGraphicsExtractor) {
@@ -269,7 +287,7 @@ internal class InventoryCharacterScreen private constructor(
         graphics.text(font, "Eで閉じる - クリック / ドラッグで移動", x, y + 14, 0xFF7F9892.toInt(), false)
     }
 
-    private fun drawRail(graphics: GuiGraphicsExtractor) {
+    private fun drawRail(graphics: GuiGraphicsExtractor, mouseX: Int, mouseY: Int) {
         val x = layout.rail.x + 10
         val y = layout.rail.y + if (layout.tiny) 8 else 14
         if (layout.tiny) {
@@ -277,13 +295,26 @@ internal class InventoryCharacterScreen private constructor(
             graphics.text(font, "キャラクター", x + 92, y, 0xFF78928A.toInt(), false)
             return
         }
+        val row = HudRect(layout.rail.x + 4, layout.rail.y + 4, layout.rail.width - 8, 20)
+        drawHorizontalSlice(graphics, row, NAV_ROW_IDLE_TEXTURE, 6)
+        drawHorizontalSlice(
+            graphics,
+            row.copy(y = layout.rail.y + 49),
+            if (row.copy(y = layout.rail.y + 49).contains(mouseX.toDouble(), mouseY.toDouble())) {
+                NAV_ROW_HOVER_TEXTURE
+            } else {
+                NAV_ROW_IDLE_TEXTURE
+            },
+            6,
+        )
+        drawHorizontalSlice(graphics, row.copy(y = layout.rail.y + 69), NAV_ROW_DISABLED_TEXTURE, 6)
         graphics.text(font, "プロジェクトS", x, y, 0xFF7F9892.toInt(), true)
         graphics.text(font, "インベントリ", x, y + 34, 0xFF394742.toInt(), true)
         graphics.text(font, "キャラクター", x, y + 54, 0xFF9DB2AB.toInt(), false)
         graphics.text(font, "ステータス", x, y + 74, 0xFF6F8580.toInt(), false)
     }
 
-    private fun drawCharacter(graphics: GuiGraphicsExtractor, mouseX: Int, mouseY: Int) {
+    private fun drawCharacter(graphics: GuiGraphicsExtractor) {
         val x = layout.character.x + 12
         val y = layout.character.y + 12
         graphics.text(font, "キャラクター", x, y, 0xFFE4F0EB.toInt(), true)
@@ -301,12 +332,6 @@ internal class InventoryCharacterScreen private constructor(
             graphics.text(font, label, position.x + 22, position.y + 5, 0xFF718982.toInt(), false)
         }
         graphics.text(font, "左手", layout.offhandSlot.x - 22, layout.offhandSlot.y + 5, 0xFF718982.toInt(), false)
-        slotAt(mouseX.toDouble(), mouseY.toDouble())?.let { hovered ->
-            if (menu.slots.indexOf(hovered) in visibleMenuIndices) {
-                val position = slotPosition(hovered)
-                graphics.outline(position.x - 1, position.y - 1, SLOT_SIZE + 2, SLOT_SIZE + 2, 0xFFE5C878.toInt())
-            }
-        }
     }
 
     private fun drawInventory(graphics: GuiGraphicsExtractor) {
@@ -321,10 +346,6 @@ internal class InventoryCharacterScreen private constructor(
             0xFF718982.toInt(),
             false,
         )
-        selectedSlot()?.let { selected ->
-            val position = slotPosition(selected)
-            graphics.outline(position.x - 1, position.y - 1, SLOT_SIZE + 2, SLOT_SIZE + 2, 0xFFE5C878.toInt())
-        }
     }
 
     private fun drawDetail(graphics: GuiGraphicsExtractor) {
@@ -378,42 +399,67 @@ internal class InventoryCharacterScreen private constructor(
     private fun visibleSlotEntries(): List<Pair<Int, Slot>> = menu.slots.mapIndexed { menuIndex, slot -> menuIndex to slot }
         .filter { (menuIndex, slot) -> menuIndex in visibleMenuIndices && slot.isActive() }
 
-    private companion object {
-        fun drawPanel(graphics: GuiGraphicsExtractor, rect: HudRect) {
-            drawNineSlice(graphics, rect, 0, 0, GLASS_SOURCE_SIZE, GLASS_SOURCE_SIZE, GLASS_CORNER_SIZE)
+    private fun drawSlotFrame(graphics: GuiGraphicsExtractor, slot: Slot, mouseX: Int, mouseY: Int) {
+        val menuIndex = menu.slots.indexOf(slot)
+        val group = inventoryCharacterVisibleSlotMapping()
+            .firstOrNull { it.menuIndex == menuIndex }
+            ?.group
+        val equipment = group == InventoryCharacterSlotGroup.ARMOR || group == InventoryCharacterSlotGroup.OFFHAND
+        val selected = menuIndex == selectedSlotIndex
+        val hovered = slotAt(mouseX.toDouble(), mouseY.toDouble()) === slot
+        val texture = if (equipment) {
+            if (selected) EQUIPMENT_SLOT_SELECTED_TEXTURE else EQUIPMENT_SLOT_IDLE_TEXTURE
+        } else {
+            when {
+                selected -> ITEM_SLOT_SELECTED_TEXTURE
+                hovered -> ITEM_SLOT_HOVER_TEXTURE
+                else -> ITEM_SLOT_IDLE_TEXTURE
+            }
         }
+        blitRegion(graphics, slot.x - 1, slot.y - 1, SLOT_SIZE, SLOT_SIZE, 0, 0, texture.width, texture.height, texture)
+    }
 
-        fun drawSlotFrame(graphics: GuiGraphicsExtractor, slot: Slot) {
-            blitRegion(graphics, slot.x - 1, slot.y - 1, SLOT_SIZE, SLOT_SIZE, 0, 32, SLOT_SIZE, SLOT_SIZE)
+    private companion object {
+        fun drawPanel(graphics: GuiGraphicsExtractor, rect: HudRect, texture: InventoryCharacterUiTexture, corner: Int) {
+            drawNineSlice(graphics, rect, texture, corner)
         }
 
         fun drawNineSlice(
             graphics: GuiGraphicsExtractor,
             rect: HudRect,
-            sourceX: Int,
-            sourceY: Int,
-            sourceWidth: Int,
-            sourceHeight: Int,
+            texture: InventoryCharacterUiTexture,
             corner: Int,
         ) {
             val centerWidth = (rect.width - corner * 2).coerceAtLeast(1)
             val centerHeight = (rect.height - corner * 2).coerceAtLeast(1)
-            val sourceCenterWidth = sourceWidth - corner * 2
-            val sourceCenterHeight = sourceHeight - corner * 2
-            blitRegion(graphics, rect.x, rect.y, corner, corner, sourceX, sourceY, corner, corner)
-            blitRegion(graphics, rect.x + corner, rect.y, centerWidth, corner, sourceX + corner, sourceY, sourceCenterWidth, corner)
-            blitRegion(graphics, rect.x + rect.width - corner, rect.y, corner, corner, sourceX + sourceWidth - corner, sourceY, corner, corner)
-            blitRegion(graphics, rect.x, rect.y + corner, corner, centerHeight, sourceX, sourceY + corner, corner, sourceCenterHeight)
+            val sourceCenterWidth = texture.width - corner * 2
+            val sourceCenterHeight = texture.height - corner * 2
+            blitRegion(graphics, rect.x, rect.y, corner, corner, 0, 0, corner, corner, texture)
+            blitRegion(graphics, rect.x + corner, rect.y, centerWidth, corner, corner, 0, sourceCenterWidth, corner, texture)
+            blitRegion(
+                graphics,
+                rect.x + rect.width - corner,
+                rect.y,
+                corner,
+                corner,
+                texture.width - corner,
+                0,
+                corner,
+                corner,
+                texture,
+            )
+            blitRegion(graphics, rect.x, rect.y + corner, corner, centerHeight, 0, corner, corner, sourceCenterHeight, texture)
             blitRegion(
                 graphics,
                 rect.x + corner,
                 rect.y + corner,
                 centerWidth,
                 centerHeight,
-                sourceX + corner,
-                sourceY + corner,
+                corner,
+                corner,
                 sourceCenterWidth,
                 sourceCenterHeight,
+                texture,
             )
             blitRegion(
                 graphics,
@@ -421,22 +467,35 @@ internal class InventoryCharacterScreen private constructor(
                 rect.y + corner,
                 corner,
                 centerHeight,
-                sourceX + sourceWidth - corner,
-                sourceY + corner,
+                texture.width - corner,
+                corner,
                 corner,
                 sourceCenterHeight,
+                texture,
             )
-            blitRegion(graphics, rect.x, rect.y + rect.height - corner, corner, corner, sourceX, sourceY + sourceHeight - corner, corner, corner)
+            blitRegion(
+                graphics,
+                rect.x,
+                rect.y + rect.height - corner,
+                corner,
+                corner,
+                0,
+                texture.height - corner,
+                corner,
+                corner,
+                texture,
+            )
             blitRegion(
                 graphics,
                 rect.x + corner,
                 rect.y + rect.height - corner,
                 centerWidth,
                 corner,
-                sourceX + corner,
-                sourceY + sourceHeight - corner,
+                corner,
+                texture.height - corner,
                 sourceCenterWidth,
                 corner,
+                texture,
             )
             blitRegion(
                 graphics,
@@ -444,10 +503,46 @@ internal class InventoryCharacterScreen private constructor(
                 rect.y + rect.height - corner,
                 corner,
                 corner,
-                sourceX + sourceWidth - corner,
-                sourceY + sourceHeight - corner,
+                texture.width - corner,
+                texture.height - corner,
                 corner,
                 corner,
+                texture,
+            )
+        }
+
+        fun drawHorizontalSlice(
+            graphics: GuiGraphicsExtractor,
+            rect: HudRect,
+            texture: InventoryCharacterUiTexture,
+            corner: Int,
+        ) {
+            val centerWidth = (rect.width - corner * 2).coerceAtLeast(1)
+            val sourceCenterWidth = texture.width - corner * 2
+            blitRegion(graphics, rect.x, rect.y, corner, rect.height, 0, 0, corner, texture.height, texture)
+            blitRegion(
+                graphics,
+                rect.x + corner,
+                rect.y,
+                centerWidth,
+                rect.height,
+                corner,
+                0,
+                sourceCenterWidth,
+                texture.height,
+                texture,
+            )
+            blitRegion(
+                graphics,
+                rect.x + rect.width - corner,
+                rect.y,
+                corner,
+                rect.height,
+                texture.width - corner,
+                0,
+                corner,
+                texture.height,
+                texture,
             )
         }
 
@@ -461,6 +556,7 @@ internal class InventoryCharacterScreen private constructor(
             sourceY: Int,
             sourceWidth: Int,
             sourceHeight: Int,
+            texture: InventoryCharacterUiTexture,
         ) {
             val region = inventoryCharacterTextureRegion(
                 x,
@@ -473,15 +569,18 @@ internal class InventoryCharacterScreen private constructor(
                 sourceHeight,
             )
             graphics.blit(
-                INVENTORY_CHARACTER_TEXTURE,
-                region.x0,
-                region.x1,
-                region.y0,
-                region.y1,
-                region.u0,
-                region.u1,
-                region.v0,
-                region.v1,
+                RenderPipelines.GUI_TEXTURED,
+                texture.identifier,
+                region.x,
+                region.y,
+                region.sourceX.toFloat(),
+                region.sourceY.toFloat(),
+                region.width,
+                region.height,
+                region.sourceWidth,
+                region.sourceHeight,
+                texture.width,
+                texture.height,
             )
         }
 

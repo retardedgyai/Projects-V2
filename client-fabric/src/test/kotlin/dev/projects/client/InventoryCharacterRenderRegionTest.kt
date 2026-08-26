@@ -18,16 +18,20 @@ class InventoryCharacterRenderRegionTest {
     }
 
     @Test
-    fun `texture blit region uses positive endpoint bounds`() {
-        val region = inventoryCharacterTextureRegion(8, 8, 889, 494, 0, 0, 24, 24)
+    fun `texture blit region keeps integer target and source pixels`() {
+        val region = inventoryCharacterTextureRegion(8, 8, 18, 18, 0, 0, 24, 24)
 
-        assertEquals(8, region.x0)
-        assertEquals(897, region.x1)
-        assertEquals(8, region.y0)
-        assertEquals(502, region.y1)
-        assertTrue(region.x1 > region.x0)
-        assertTrue(region.y1 > region.y0)
-        assertTrue(region.u1 > region.u0)
-        assertTrue(region.v1 > region.v0)
+        assertEquals(8, region.x)
+        assertEquals(8, region.y)
+        assertEquals(18, region.width)
+        assertEquals(18, region.height)
+        assertEquals(0, region.sourceX)
+        assertEquals(0, region.sourceY)
+        assertEquals(24, region.sourceWidth)
+        assertEquals(24, region.sourceHeight)
+        assertTrue(region.width > 0)
+        assertTrue(region.height > 0)
+        assertTrue(region.sourceWidth > 0)
+        assertTrue(region.sourceHeight > 0)
     }
 }
