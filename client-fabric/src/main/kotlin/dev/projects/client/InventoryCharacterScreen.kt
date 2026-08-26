@@ -55,6 +55,8 @@ private val ITEM_SLOT_HOVER_TEXTURE = inventoryCharacterUiTexture("item_slot_hov
 private val ITEM_SLOT_SELECTED_TEXTURE = inventoryCharacterUiTexture("item_slot_selected", 24, 24)
 private val EQUIPMENT_SLOT_IDLE_TEXTURE = inventoryCharacterUiTexture("equipment_slot_idle", 28, 28)
 private val EQUIPMENT_SLOT_SELECTED_TEXTURE = inventoryCharacterUiTexture("equipment_slot_selected", 28, 28)
+private val DIVIDER_TEXTURE = inventoryCharacterUiTexture("divider", 96, 4)
+private val THIN_HIGHLIGHT_TEXTURE = inventoryCharacterUiTexture("thin_highlight", 96, 2)
 
 internal data class InventoryCharacterTextureRegion(
     val x: Int,
@@ -147,6 +149,7 @@ internal class InventoryCharacterMenu(
         val inventoryGridX = layout.inventoryGrid.x - layout.panel.x
         val inventoryGridY = layout.inventoryGrid.y - layout.panel.y
         addInventorySlots(player.inventory, inventoryGridX, inventoryGridY, layout.slotStep)
+        addHotbarSlots(player.inventory, layout.hotbar, layout.panel)
         val offhand = layout.offhandSlot
         addSlot(
             object : Slot(
@@ -171,8 +174,14 @@ internal class InventoryCharacterMenu(
                 addSlot(Slot(inventory, 9 + row * 9 + column, x + column * step, y + row * step))
             }
         }
+    }
+
+    private fun addHotbarSlots(inventory: Inventory, hotbar: HudRect, panel: HudRect) {
+        val step = hotbar.width / 9
+        val y = hotbar.y - panel.y + (hotbar.height - SLOT_SIZE) / 2
         repeat(9) { column ->
-            addSlot(Slot(inventory, column, x + column * step, y + step * 3))
+            val x = hotbar.x - panel.x + column * step + (step - SLOT_SIZE) / 2
+            addSlot(Slot(inventory, column, x, y))
         }
     }
 
@@ -210,6 +219,7 @@ internal class InventoryCharacterScreen private constructor(
         drawPanel(graphics, layout.character, GLASS_SECONDARY_TEXTURE, 10)
         drawPanel(graphics, layout.inventory, GLASS_SECONDARY_TEXTURE, 10)
         drawPanel(graphics, layout.detail, GLASS_DETAIL_TEXTURE, 9)
+        drawPanel(graphics, layout.footer, GLASS_SECONDARY_TEXTURE, 6)
         drawActiveTab(graphics)
     }
 
@@ -227,10 +237,11 @@ internal class InventoryCharacterScreen private constructor(
     override fun extractLabels(graphics: GuiGraphicsExtractor, mouseX: Int, mouseY: Int) = Unit
 
     override fun extractSlots(graphics: GuiGraphicsExtractor, mouseX: Int, mouseY: Int) {
-        visibleSlotEntries().forEach { (_, slot) ->
-            drawSlotFrame(graphics, slot, mouseX, mouseY)
-            extractSlot(graphics, slot, mouseX, mouseY)
-        }
+        visibleSlotEntries().filter { (menuIndex, _) -> slotGroup(menuIndex) != InventoryCharacterSlotGroup.HOTBAR }
+            .forEach { (_, slot) ->
+                drawSlotFrame(graphics, slot, mouseX, mouseY)
+                extractSlot(graphics, slot, mouseX, mouseY)
+            }
     }
 
     override fun extractRenderState(graphics: GuiGraphicsExtractor, mouseX: Int, mouseY: Int, delta: Float) {
@@ -238,6 +249,7 @@ internal class InventoryCharacterScreen private constructor(
         drawCharacter(graphics)
         drawInventory(graphics)
         drawDetail(graphics)
+        drawFooter(graphics)
         val preview = inventoryCharacterPreviewBounds(layout.preview)
         InventoryScreen.extractEntityInInventoryFollowsMouse(
             graphics,
@@ -255,7 +267,7 @@ internal class InventoryCharacterScreen private constructor(
     }
 
     override fun mouseClicked(event: MouseButtonEvent, doubleClick: Boolean): Boolean {
-        if (!layout.panel.contains(event.x(), event.y())) return true
+        if (!containsInteractiveArea(event.x(), event.y())) return true
         slotAt(event.x(), event.y())?.let { selectedSlotIndex = menu.slots.indexOf(it) }
         return super.mouseClicked(event, doubleClick)
     }
@@ -267,13 +279,13 @@ internal class InventoryCharacterScreen private constructor(
     }
 
     override fun mouseReleased(event: MouseButtonEvent): Boolean {
-        if (!layout.panel.contains(event.x(), event.y())) return true
+        if (!containsInteractiveArea(event.x(), event.y())) return true
         if (!menu.getCarried().isEmpty() && slotAt(event.x(), event.y()) == null) return true
         return super.mouseReleased(event)
     }
 
     override fun hasClickedOutside(mouseX: Double, mouseY: Double, leftPos: Int, topPos: Int): Boolean =
-        !layout.panel.contains(mouseX, mouseY)
+        !containsInteractiveArea(mouseX, mouseY)
 
     override fun removed() {
         if (setup.player.containerMenu === menu) setup.player.containerMenu = setup.player.inventoryMenu
@@ -321,38 +333,86 @@ internal class InventoryCharacterScreen private constructor(
         }
     }
 
+    private fun drawFooter(graphics: GuiGraphicsExtractor) {
+        val x = layout.footer.x + 16
+        val y = layout.footer.y + 6
+        val progress = (setup.player.experienceProgress * 100).toInt().coerceIn(0, 100)
+        graphics.text(font, "Lv ${setup.player.experienceLevel}", x, y, 0xFFF0F0EA.toInt(), true)
+        graphics.text(font, "経験値 $progress%", x + 72, y, 0xFFB8BAB5.toInt(), false)
+        drawHorizontalSlice(
+            graphics,
+            HudRect(x + 170, layout.footer.y + layout.footer.height / 2, (layout.footer.width - 200).coerceAtLeast(40), 2),
+            THIN_HIGHLIGHT_TEXTURE,
+            2,
+        )
+    }
+
     private fun drawCharacter(graphics: GuiGraphicsExtractor) {
         val x = layout.character.x + 20
         val y = layout.character.y + 18
         graphics.text(font, "ProjectS", x, y, 0xFFF0F0EA.toInt(), true)
-        graphics.text(font, setup.player.name, x, y + 16, 0xFFB8BAB5.toInt())
+        graphics.text(font, "${setup.player.name}  Lv ${setup.player.experienceLevel}", x, y + 16, 0xFFB8BAB5.toInt())
+        graphics.text(font, "キャラクター", x, y + 32, 0xFFD0D1CC.toInt(), false)
+        val statsY = layout.character.y + layout.character.height - 82
+        drawHorizontalSlice(
+            graphics,
+            HudRect(x, statsY, (layout.character.width - 40).coerceAtLeast(80), 2),
+            THIN_HIGHLIGHT_TEXTURE,
+            2,
+        )
         graphics.text(
             font,
-            "Lv ${setup.player.experienceLevel}   体力 ${setup.player.health.toInt()} / ${setup.player.maxHealth.toInt()}",
+            "ステータス",
             x,
-            layout.character.y + layout.character.height - 16,
+            statsY + 12,
+            0xFFF0F0EA.toInt(),
+            true,
+        )
+        graphics.text(
+            font,
+            "体力 ${setup.player.health.toInt()} / ${setup.player.maxHealth.toInt()}",
+            x,
+            statsY + 28,
+            0xFFD0D1CC.toInt(),
+            false,
+        )
+        graphics.text(
+            font,
+            "経験値 ${(setup.player.experienceProgress * 100).toInt().coerceIn(0, 100)}%",
+            x,
+            statsY + 40,
             0xFFB8BAB5.toInt(),
             false,
         )
-        layout.equipmentSlots.forEach { (slot, position) ->
-            val label = equipmentLabel(slot)
-            graphics.text(font, label, position.x + 22, position.y + 5, 0xFFB8BAB5.toInt(), false)
-        }
-        graphics.text(font, "左手", layout.offhandSlot.x - 22, layout.offhandSlot.y + 5, 0xFFB8BAB5.toInt(), false)
     }
 
     private fun drawInventory(graphics: GuiGraphicsExtractor) {
         val x = layout.inventory.x + 18
         graphics.text(font, "インベントリ", x, layout.inventory.y + 18, 0xFFF0F0EA.toInt(), true)
-        graphics.text(font, "すべて   武器   防具   消耗品", x, layout.inventory.y + 34, 0xFFB8BAB5.toInt(), false)
-        graphics.text(
-            font,
-            "ホットバー",
-            layout.inventoryGrid.x,
-            layout.inventoryGrid.y + layout.slotStep * 4 + 4,
-            0xFFB8BAB5.toInt(),
-            false,
-        )
+        if (layout.tiny) {
+            graphics.text(font, "アイテム一覧", x, layout.inventory.y + 34, 0xFFB8BAB5.toInt(), false)
+            return
+        }
+        val chips = listOf("すべて" to 52, "武器" to 42, "防具" to 42, "消耗品" to 58)
+        var chipX = x
+        chips.forEachIndexed { index, (label, chipWidth) ->
+            val chip = HudRect(chipX, layout.inventory.y + 46, chipWidth, 20)
+            drawHorizontalSlice(
+                graphics,
+                chip,
+                if (index == 0) IVORY_ACTIVE_TAB_TEXTURE else NAV_ROW_IDLE_TEXTURE,
+                6,
+            )
+            graphics.text(
+                font,
+                label,
+                chip.x + (chip.width - font.width(label)) / 2,
+                chip.y + 6,
+                if (index == 0) 0xFF4B4D49.toInt() else 0xFFD0D1CC.toInt(),
+                index == 0,
+            )
+            chipX += chip.width + 6
+        }
     }
 
     private fun drawDetail(graphics: GuiGraphicsExtractor) {
@@ -365,35 +425,56 @@ internal class InventoryCharacterScreen private constructor(
             return
         }
 
-        graphics.item(stack, x, y + 22)
         val presentation = stack.readEquipmentPresentation()
-        val textX = x + 24
-        graphics.text(font, stack.getHoverName(), textX, y + 22, presentation?.let(::rarityColor) ?: 0xFFF0F0EA.toInt(), true)
+        val iconX = x + 4
+        val iconY = y + 38
+        blitRegion(graphics, iconX - 4, iconY - 4, 24, 24, 0, 0, 24, 24, ITEM_SLOT_SELECTED_TEXTURE)
+        graphics.item(stack, iconX, iconY)
+        val textX = x + 38
+        graphics.text(font, stack.getHoverName(), textX, y + 34, presentation?.let(::rarityColor) ?: 0xFFF0F0EA.toInt(), true)
         if (presentation == null) {
-            graphics.text(font, "通常アイテム", textX, y + 36, 0xFFB8BAB5.toInt(), false)
+            graphics.text(font, "通常アイテム", textX, y + 48, 0xFFB8BAB5.toInt(), false)
             return
         }
         graphics.text(
             font,
             "${rarityLabel(presentation.rarity)}  |  Lv ${presentation.itemLevel}  |  ${categoryLabel(presentation.category)}",
             textX,
-            y + 36,
+            y + 48,
             0xFFB8BAB5.toInt(),
             false,
         )
-        var rowY = y + 54
-        val maxRows = ((layout.detail.height - 54) / 12).coerceAtLeast(1)
-        presentation.baseStats.take(maxRows).forEach { stat ->
+        drawHorizontalSlice(
+            graphics,
+            HudRect(x, y + 70, (layout.detail.width - 36).coerceAtLeast(60), 4),
+            DIVIDER_TEXTURE,
+            2,
+        )
+        var rowY = y + 86
+        val maxRows = ((layout.detail.height - 92) / 12).coerceAtLeast(1)
+        if (presentation.baseStats.isNotEmpty()) {
+            graphics.text(font, "基本", x, rowY, 0xFFF0F0EA.toInt(), true)
+            rowY += 12
+        }
+        presentation.baseStats.take((maxRows - 1).coerceAtLeast(0)).forEach { stat ->
             graphics.text(font, "${displayId(stat.statId)}  ${formatValue(stat.value)}", x, rowY, 0xFFD0D1CC.toInt(), false)
             rowY += 12
         }
-        presentation.installedMods.take((maxRows - presentation.baseStats.size).coerceAtLeast(0)).forEach { mod ->
-            graphics.text(font, "付与 ${displayId(mod.modId)} +${formatValue(mod.rolledValue)}", x, rowY, 0xFFE5C878.toInt(), false)
+        val remainingRows = (maxRows - 1 - presentation.baseStats.size).coerceAtLeast(0)
+        if (presentation.installedMods.isNotEmpty() && remainingRows > 0) {
+            graphics.text(font, "付与効果", x, rowY, 0xFFF0F0EA.toInt(), true)
             rowY += 12
+            presentation.installedMods.take(remainingRows - 1).forEach { mod ->
+                graphics.text(font, "${displayId(mod.modId)} +${formatValue(mod.rolledValue)}", x, rowY, 0xFFE5C878.toInt(), false)
+                rowY += 12
+            }
         }
     }
 
     private fun selectedSlot(): Slot? = selectedSlotIndex?.let { index -> menu.slots.getOrNull(index) }
+
+    private fun containsInteractiveArea(mouseX: Double, mouseY: Double): Boolean =
+        layout.panel.contains(mouseX, mouseY) || layout.hotbar.contains(mouseX, mouseY)
 
     private fun slotAt(mouseX: Double, mouseY: Double): Slot? = visibleSlotEntries()
         .firstOrNull { (_, slot) ->
@@ -401,16 +482,16 @@ internal class InventoryCharacterScreen private constructor(
                 mouseY >= topPos + slot.y && mouseY < topPos + slot.y + SLOT_SIZE
         }?.second
 
-    private fun slotPosition(slot: Slot): HudRect = HudRect(leftPos + slot.x, topPos + slot.y, SLOT_SIZE, SLOT_SIZE)
-
     private fun visibleSlotEntries(): List<Pair<Int, Slot>> = menu.slots.mapIndexed { menuIndex, slot -> menuIndex to slot }
         .filter { (menuIndex, slot) -> menuIndex in visibleMenuIndices && slot.isActive() }
 
+    private fun slotGroup(menuIndex: Int): InventoryCharacterSlotGroup? = inventoryCharacterVisibleSlotMapping()
+        .firstOrNull { it.menuIndex == menuIndex }
+        ?.group
+
     private fun drawSlotFrame(graphics: GuiGraphicsExtractor, slot: Slot, mouseX: Int, mouseY: Int) {
         val menuIndex = menu.slots.indexOf(slot)
-        val group = inventoryCharacterVisibleSlotMapping()
-            .firstOrNull { it.menuIndex == menuIndex }
-            ?.group
+        val group = slotGroup(menuIndex)
         val equipment = group == InventoryCharacterSlotGroup.ARMOR || group == InventoryCharacterSlotGroup.OFFHAND
         val selected = menuIndex == selectedSlotIndex
         val hovered = slotAt(mouseX.toDouble(), mouseY.toDouble()) === slot
@@ -597,14 +678,6 @@ internal class InventoryCharacterScreen private constructor(
             return runCatching { Base64.getDecoder().decode(encoded) }
                 .getOrNull()
                 ?.let(EquipmentPresentationCodec::decodeOrNull)
-        }
-
-        fun equipmentLabel(slot: EquipmentSlot): String = when (slot) {
-            EquipmentSlot.HEAD -> "頭"
-            EquipmentSlot.CHEST -> "胴"
-            EquipmentSlot.LEGS -> "脚"
-            EquipmentSlot.FEET -> "足"
-            else -> slot.getName()
         }
 
         fun displayId(value: String): String {

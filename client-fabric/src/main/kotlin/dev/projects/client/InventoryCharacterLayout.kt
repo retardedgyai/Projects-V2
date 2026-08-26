@@ -11,6 +11,8 @@ private const val MOCK_HEIGHT = 941f
 private const val CANONICAL_MIN_SCALE = 0.43f
 private const val CANONICAL_SLOT_STEP = 24
 private const val LEGACY_SLOT_STEP = 18
+private const val HUD_HOTBAR_WIDTH = 182
+private const val HUD_HOTBAR_HEIGHT = 22
 
 data class InventoryCharacterLayout(
     val panel: HudRect,
@@ -20,6 +22,8 @@ data class InventoryCharacterLayout(
     val inventory: HudRect,
     val inventoryGrid: HudRect,
     val detail: HudRect,
+    val footer: HudRect,
+    val hotbar: HudRect,
     val equipmentSlots: Map<EquipmentSlot, HudRect>,
     val offhandSlot: HudRect,
     val slotStep: Int,
@@ -39,7 +43,7 @@ fun inventoryCharacterLayout(screenWidth: Int, screenHeight: Int): InventoryChar
     val inventory = transform.rect(HudRect(714, 186, 494, 532))
     val detail = transform.rect(HudRect(1220, 186, 310, 532))
     val gridWidth = CANONICAL_SLOT_STEP * 8 + INVENTORY_CHARACTER_SLOT_SIZE
-    val gridHeight = CANONICAL_SLOT_STEP * 3 + INVENTORY_CHARACTER_SLOT_SIZE
+    val gridHeight = CANONICAL_SLOT_STEP * 2 + INVENTORY_CHARACTER_SLOT_SIZE
     val gridX = (inventory.x + (inventory.width - gridWidth) / 2)
         .coerceIn(inventory.x, (inventory.x + inventory.width - gridWidth).coerceAtLeast(inventory.x))
     val inventoryGrid = HudRect(gridX, transform.y(276), gridWidth, gridHeight)
@@ -49,7 +53,9 @@ fun inventoryCharacterLayout(screenWidth: Int, screenHeight: Int): InventoryChar
         EquipmentSlot.LEGS,
         EquipmentSlot.FEET,
     ).mapIndexed { index, slot ->
-        slot to transform.slot(366, 270 + index * 52)
+        val x = if (index < 2) 366 else 664
+        val y = 294 + (index % 2) * 58
+        slot to transform.slot(x, y)
     }.toMap()
 
     return InventoryCharacterLayout(
@@ -60,8 +66,10 @@ fun inventoryCharacterLayout(screenWidth: Int, screenHeight: Int): InventoryChar
         inventory = inventory,
         inventoryGrid = inventoryGrid,
         detail = detail,
+        footer = transform.rect(HudRect(346, 724, 1184, 24)),
+        hotbar = bottomHudHotbar(screenWidth, screenHeight),
         equipmentSlots = equipmentSlots,
-        offhandSlot = transform.slot(650, 638),
+        offhandSlot = transform.slot(664, 410),
         slotStep = CANONICAL_SLOT_STEP,
         compact = transform.scale < 0.75f,
         tiny = false,
@@ -122,7 +130,7 @@ private fun legacyInventoryCharacterLayout(screenWidth: Int, screenHeight: Int):
     val character = HudRect(contentLeft, contentTop, characterWidth, columnHeight)
     val inventory = HudRect(contentLeft + characterWidth + 12, contentTop, inventoryWidth, columnHeight)
     val gridWidth = LEGACY_SLOT_STEP * 8 + INVENTORY_CHARACTER_SLOT_SIZE
-    val gridHeight = LEGACY_SLOT_STEP * 3 + INVENTORY_CHARACTER_SLOT_SIZE + 4
+    val gridHeight = LEGACY_SLOT_STEP * 2 + INVENTORY_CHARACTER_SLOT_SIZE + 4
     val inventoryGrid = HudRect(
         inventory.x + ((inventory.width - gridWidth) / 2).coerceAtLeast(0),
         inventory.y + 24,
@@ -154,6 +162,8 @@ private fun legacyInventoryCharacterLayout(screenWidth: Int, screenHeight: Int):
         inventory = inventory,
         inventoryGrid = inventoryGrid,
         detail = detail,
+        footer = HudRect(panel.x + 12, panel.y + panel.height - 22, panel.width - 24, 16),
+        hotbar = bottomHudHotbar(screenWidth, screenHeight),
         equipmentSlots = equipmentSlots,
         offhandSlot = offhandSlot,
         slotStep = LEGACY_SLOT_STEP,
@@ -161,6 +171,13 @@ private fun legacyInventoryCharacterLayout(screenWidth: Int, screenHeight: Int):
         tiny = tiny,
     )
 }
+
+private fun bottomHudHotbar(screenWidth: Int, screenHeight: Int): HudRect = HudRect(
+    (screenWidth - HUD_HOTBAR_WIDTH) / 2,
+    screenHeight - HUD_HOTBAR_HEIGHT,
+    HUD_HOTBAR_WIDTH,
+    HUD_HOTBAR_HEIGHT,
+)
 
 private data class InventoryCharacterLayoutTransform(
     val screenWidth: Int,
