@@ -39,6 +39,7 @@ enum class RiftExecutionerAttack {
     SECTOR_CLEAVE,
     FORWARD_SLAM,
     CHAIN_DASH,
+    VERTICAL_CRUSH,
 }
 
 sealed interface RiftExecutionerEvent {
@@ -266,6 +267,11 @@ class RiftExecutionerController(
         attackFacing = normalizeHorizontal(facing)
         executionId = executionIdSource()
         dashHitTargets.clear()
+        if (nextAttack == 3 && bossPhase != PrototypeBossPhase.EXECUTION) {
+            nextAttack = 0
+            phaseTicks = 8
+            return
+        }
         if (nextAttack == 2) {
             if (!dashChainActive) dashChain = 0
             val target = targets.minByOrNull { distanceSquared(attackOrigin, it.position) }
@@ -289,10 +295,18 @@ class RiftExecutionerController(
             events += RiftExecutionerEvent.DashTelegraph(executionId, attackOrigin, target.position, destination)
         } else {
             phase = ControllerPhase.SECTOR_TELEGRAPH
-            phaseTicks = if (nextAttack == 1) SLAM_TELEGRAPH_TICKS else SECTOR_TELEGRAPH_TICKS
+            phaseTicks = when (nextAttack) {
+                1 -> SLAM_TELEGRAPH_TICKS
+                3 -> VERTICAL_CRUSH_TELEGRAPH_TICKS
+                else -> SECTOR_TELEGRAPH_TICKS
+            }
             events += RiftExecutionerEvent.SectorTelegraph(
                 executionId,
-                if (nextAttack == 1) RiftExecutionerAttack.FORWARD_SLAM else RiftExecutionerAttack.SECTOR_CLEAVE,
+                when (nextAttack) {
+                    1 -> RiftExecutionerAttack.FORWARD_SLAM
+                    3 -> RiftExecutionerAttack.VERTICAL_CRUSH
+                    else -> RiftExecutionerAttack.SECTOR_CLEAVE
+                },
                 attackOrigin,
                 attackFacing,
                 phaseTicks,
@@ -305,7 +319,7 @@ class RiftExecutionerController(
         if (phaseTicks <= 0) {
             phase = ControllerPhase.PAUSE
             phaseTicks = 12
-            nextAttack = (nextAttack + 1) % 3
+            nextAttack = (nextAttack + 1) % 4
         }
     }
 
@@ -318,12 +332,21 @@ class RiftExecutionerController(
                     attackFacing,
                     it.position,
                 )
+            } else if (nextAttack == 3) {
+                isInsideVerticalCrush(attackOrigin, it.position)
             } else {
                 isInsideSector(attackOrigin, attackFacing, SECTOR_RADIUS, SECTOR_ANGLE, it.position)
             }
         }
             .filter { dashHitTargets.add(it.id) }
-            .forEach { events += RiftExecutionerEvent.AttackHit(executionId, it.id, if (nextAttack == 1) SLAM_DAMAGE else SECTOR_DAMAGE) }
+            .forEach {
+                val damage = when (nextAttack) {
+                    1 -> SLAM_DAMAGE
+                    3 -> VERTICAL_CRUSH_DAMAGE
+                    else -> SECTOR_DAMAGE
+                }
+                events += RiftExecutionerEvent.AttackHit(executionId, it.id, damage)
+            }
     }
 
     private fun tickDash(
@@ -498,6 +521,10 @@ class RiftExecutionerController(
         const val SLAM_TELEGRAPH_TICKS = 18
         const val SLAM_DAMAGE = 8
         const val SECTOR_DAMAGE = 6
+        const val VERTICAL_CRUSH_TELEGRAPH_TICKS = 16
+        const val VERTICAL_CRUSH_RADIUS = 3.0
+        const val VERTICAL_CRUSH_VERTICAL_TOLERANCE = 0.75
+        const val VERTICAL_CRUSH_DAMAGE = 7
         const val DASH_TELEGRAPH_TICKS = 18
         const val DASH_TICKS = 5
         const val DASH_OVERSHOOT = 2.5
@@ -524,6 +551,13 @@ class RiftExecutionerController(
             val forward = normalizeHorizontal(facing)
             val dot = (offsetX * forward.x() + offsetZ * forward.z()) / distance
             return dot >= cos(Math.toRadians(angleDegrees / 2.0))
+        }
+
+        fun isInsideVerticalCrush(origin: Point, target: Point): Boolean {
+            val dx = target.x() - origin.x()
+            val dz = target.z() - origin.z()
+            return sqrt(dx * dx + dz * dz) <= VERTICAL_CRUSH_RADIUS &&
+                abs(target.y() - origin.y()) <= VERTICAL_CRUSH_VERTICAL_TOLERANCE
         }
 
         fun overshootDestination(target: Point, origin: Point, overshoot: Double = DASH_OVERSHOOT): Point {

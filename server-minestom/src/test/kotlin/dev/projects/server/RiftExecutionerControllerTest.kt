@@ -24,6 +24,28 @@ class RiftExecutionerControllerTest {
     }
 
     @Test
+    fun `vertical crush requires landing proximity and low vertical separation`() {
+        assertTrue(RiftExecutionerController.isInsideVerticalCrush(origin, Vec(2.9, 0.0, 0.0)))
+        assertFalse(RiftExecutionerController.isInsideVerticalCrush(origin, Vec(3.1, 0.0, 0.0)))
+        assertFalse(RiftExecutionerController.isInsideVerticalCrush(origin, Vec(1.0, 1.0, 0.0)))
+    }
+
+    @Test
+    fun `vertical crush emits deterministic distinct damage`() {
+        val controller = RiftExecutionerController(initialPauseTicks = 0)
+        val events = mutableListOf<RiftExecutionerEvent>()
+        while (events.none { it is RiftExecutionerEvent.SectorTelegraph && it.attack == RiftExecutionerAttack.VERTICAL_CRUSH }) {
+            events += controller.tick(origin, Vec(1.0, 0.0, 0.0), listOf(target), PrototypeBossPhase.EXECUTION)
+        }
+        repeat(RiftExecutionerController.VERTICAL_CRUSH_TELEGRAPH_TICKS) {
+            events += controller.tick(origin, Vec(1.0, 0.0, 0.0), listOf(target), PrototypeBossPhase.EXECUTION)
+        }
+        events += controller.tick(origin, Vec(1.0, 0.0, 0.0), listOf(target), PrototypeBossPhase.EXECUTION)
+
+        assertTrue(events.any { it is RiftExecutionerEvent.AttackHit && it.damage == RiftExecutionerController.VERTICAL_CRUSH_DAMAGE })
+    }
+
+    @Test
     fun `sector execution emits one hit per target across active ticks`() {
         val controller = RiftExecutionerController(initialPauseTicks = 0)
         val events = mutableListOf<RiftExecutionerEvent>()

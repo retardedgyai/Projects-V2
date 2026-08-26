@@ -1273,7 +1273,7 @@ private fun tickRiftExecutioner(
             is RiftExecutionerEvent.SectorTelegraph -> {
                 val label = event.attack.displayName()
                 players.forEach { player -> player.sendMessage(Component.text("[Rift Executioner] $label: telegraph")) }
-                if (event.attack == RiftExecutionerAttack.SECTOR_CLEAVE) {
+                if (event.attack == RiftExecutionerAttack.SECTOR_CLEAVE || event.attack == RiftExecutionerAttack.VERTICAL_CRUSH) {
                     val telegraphId = nextTelegraphId()
                     val message = GroundTelegraphStart.clamped(
                         telegraphId = telegraphId,
@@ -1282,8 +1282,8 @@ private fun tickRiftExecutioner(
                         centerZ = event.origin.z(),
                         facingX = event.facing.x(),
                         facingZ = event.facing.z(),
-                        radius = RiftExecutionerController.SECTOR_RADIUS,
-                        angleDegrees = RiftExecutionerController.SECTOR_ANGLE,
+                        radius = if (event.attack == RiftExecutionerAttack.VERTICAL_CRUSH) RiftExecutionerController.VERTICAL_CRUSH_RADIUS else RiftExecutionerController.SECTOR_RADIUS,
+                        angleDegrees = if (event.attack == RiftExecutionerAttack.VERTICAL_CRUSH) 360.0 else RiftExecutionerController.SECTOR_ANGLE,
                         durationTicks = event.durationTicks,
                     )
                     bossGroundTelegraphIds += telegraphId
@@ -2040,6 +2040,7 @@ private fun RiftExecutionerAttack.displayName(): String = when (this) {
     RiftExecutionerAttack.SECTOR_CLEAVE -> "Sector Cleave"
     RiftExecutionerAttack.FORWARD_SLAM -> "Forward Slam"
     RiftExecutionerAttack.CHAIN_DASH -> "Chain Dash"
+    RiftExecutionerAttack.VERTICAL_CRUSH -> "Vertical Crush"
 }
 
 private fun moveDodge(
