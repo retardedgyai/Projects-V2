@@ -296,9 +296,18 @@ internal class InventoryCharacterScreen private constructor(
         val plate = if (layout.tiny) {
             HudRect(layout.rail.x + 4, layout.rail.y + 4, 100, 20)
         } else {
-            HudRect(layout.rail.x + 8, layout.rail.y + 10, layout.rail.width - 16, 20)
+            HudRect(
+                layout.rail.x + 8,
+                layout.rail.y + layout.navTopPadding,
+                layout.rail.width - 16,
+                layout.navRowHeight,
+            )
         }
-        drawHorizontalSlice(graphics, plate, IVORY_ACTIVE_TAB_TEXTURE, 6)
+        if (layout.tiny) {
+            drawHorizontalSlice(graphics, plate, IVORY_ACTIVE_TAB_TEXTURE, 6)
+        } else {
+            drawNineSlice(graphics, plate, IVORY_ACTIVE_TAB_TEXTURE, 6)
+        }
     }
 
     private fun drawRail(graphics: GuiGraphicsExtractor, mouseX: Int, mouseY: Int) {
@@ -311,7 +320,12 @@ internal class InventoryCharacterScreen private constructor(
         }
         val labels = listOf("インベントリ", "キャラクター", "クエスト", "パーティー", "コーデックス", "マップ", "設定")
         labels.forEachIndexed { index, label ->
-            val row = HudRect(layout.rail.x + 8, layout.rail.y + 10 + index * 48, layout.rail.width - 16, 20)
+            val row = HudRect(
+                layout.rail.x + 8,
+                layout.rail.y + layout.navTopPadding + index * (layout.navRowHeight + layout.navRowGap),
+                layout.rail.width - 16,
+                layout.navRowHeight,
+            )
             if (index > 0) {
                 val texture = if (row.contains(mouseX.toDouble(), mouseY.toDouble())) {
                     NAV_ROW_HOVER_TEXTURE
@@ -320,13 +334,13 @@ internal class InventoryCharacterScreen private constructor(
                 } else {
                     NAV_ROW_IDLE_TEXTURE
                 }
-                drawHorizontalSlice(graphics, row, texture, 6)
+                drawNineSlice(graphics, row, texture, 6)
             }
             graphics.text(
                 font,
                 label,
-                row.x + 12,
-                row.y + 6,
+                row.x + 50,
+                row.y + (row.height - font.lineHeight) / 2,
                 if (index == 0) 0xFF4B4D49.toInt() else 0xFFD0D1CC.toInt(),
                 index == 0,
             )
@@ -335,7 +349,7 @@ internal class InventoryCharacterScreen private constructor(
 
     private fun drawFooter(graphics: GuiGraphicsExtractor) {
         val x = layout.footer.x + 16
-        val y = layout.footer.y + 6
+        val y = layout.footer.y + (layout.footer.height - font.lineHeight) / 2
         val progress = (setup.player.experienceProgress * 100).toInt().coerceIn(0, 100)
         graphics.text(font, "Lv ${setup.player.experienceLevel}", x, y, 0xFFF0F0EA.toInt(), true)
         graphics.text(font, "経験値 $progress%", x + 72, y, 0xFFB8BAB5.toInt(), false)
@@ -426,32 +440,40 @@ internal class InventoryCharacterScreen private constructor(
         }
 
         val presentation = stack.readEquipmentPresentation()
-        val iconX = x + 4
-        val iconY = y + 38
-        blitRegion(graphics, iconX - 4, iconY - 4, 24, 24, 0, 0, 24, 24, ITEM_SLOT_SELECTED_TEXTURE)
-        graphics.item(stack, iconX, iconY)
-        val textX = x + 38
-        graphics.text(font, stack.getHoverName(), textX, y + 34, presentation?.let(::rarityColor) ?: 0xFFF0F0EA.toInt(), true)
+        val iconZone = HudRect(x, y + 30, 64, 64)
+        drawPanel(graphics, iconZone, GLASS_SECONDARY_TEXTURE, 6)
+        val frameX = iconZone.x + 20
+        val frameY = iconZone.y + 20
+        blitRegion(graphics, frameX, frameY, 24, 24, 0, 0, 24, 24, ITEM_SLOT_SELECTED_TEXTURE)
+        graphics.item(stack, frameX + 4, frameY + 4)
+        val textX = iconZone.x + 78
+        graphics.text(font, stack.getHoverName(), textX, iconZone.y + 12, presentation?.let(::rarityColor) ?: 0xFFF0F0EA.toInt(), true)
         if (presentation == null) {
-            graphics.text(font, "通常アイテム", textX, y + 48, 0xFFB8BAB5.toInt(), false)
+            graphics.text(font, "通常アイテム", textX, iconZone.y + 26, 0xFFB8BAB5.toInt(), false)
+            drawHorizontalSlice(
+                graphics,
+                HudRect(x, y + 104, (layout.detail.width - 36).coerceAtLeast(60), 4),
+                DIVIDER_TEXTURE,
+                2,
+            )
             return
         }
         graphics.text(
             font,
             "${rarityLabel(presentation.rarity)}  |  Lv ${presentation.itemLevel}  |  ${categoryLabel(presentation.category)}",
             textX,
-            y + 48,
+            iconZone.y + 26,
             0xFFB8BAB5.toInt(),
             false,
         )
         drawHorizontalSlice(
             graphics,
-            HudRect(x, y + 70, (layout.detail.width - 36).coerceAtLeast(60), 4),
+            HudRect(x, y + 104, (layout.detail.width - 36).coerceAtLeast(60), 4),
             DIVIDER_TEXTURE,
             2,
         )
-        var rowY = y + 86
-        val maxRows = ((layout.detail.height - 92) / 12).coerceAtLeast(1)
+        var rowY = y + 120
+        val maxRows = ((layout.detail.height - 126) / 12).coerceAtLeast(1)
         if (presentation.baseStats.isNotEmpty()) {
             graphics.text(font, "基本", x, rowY, 0xFFF0F0EA.toInt(), true)
             rowY += 12

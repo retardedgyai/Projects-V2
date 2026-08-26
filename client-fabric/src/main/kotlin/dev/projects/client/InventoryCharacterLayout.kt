@@ -5,6 +5,9 @@ import kotlin.math.min
 import kotlin.math.roundToInt
 
 internal const val INVENTORY_CHARACTER_SLOT_SIZE = 18
+internal const val INVENTORY_CHARACTER_NAV_ROW_HEIGHT = 60
+internal const val INVENTORY_CHARACTER_NAV_ROW_GAP = 12
+internal const val INVENTORY_CHARACTER_NAV_TOP_PADDING = 18
 
 private const val MOCK_WIDTH = 1672f
 private const val MOCK_HEIGHT = 941f
@@ -24,6 +27,9 @@ data class InventoryCharacterLayout(
     val detail: HudRect,
     val footer: HudRect,
     val hotbar: HudRect,
+    val navRowHeight: Int,
+    val navRowGap: Int,
+    val navTopPadding: Int,
     val equipmentSlots: Map<EquipmentSlot, HudRect>,
     val offhandSlot: HudRect,
     val slotStep: Int,
@@ -66,8 +72,11 @@ fun inventoryCharacterLayout(screenWidth: Int, screenHeight: Int): InventoryChar
         inventory = inventory,
         inventoryGrid = inventoryGrid,
         detail = detail,
-        footer = transform.rect(HudRect(346, 724, 1184, 24)),
+        footer = transform.rect(HudRect(388, 770, 896, 48)),
         hotbar = bottomHudHotbar(screenWidth, screenHeight),
+        navRowHeight = transform.size(INVENTORY_CHARACTER_NAV_ROW_HEIGHT),
+        navRowGap = transform.size(INVENTORY_CHARACTER_NAV_ROW_GAP),
+        navTopPadding = transform.size(INVENTORY_CHARACTER_NAV_TOP_PADDING),
         equipmentSlots = equipmentSlots,
         offhandSlot = transform.slot(664, 410),
         slotStep = CANONICAL_SLOT_STEP,
@@ -164,6 +173,9 @@ private fun legacyInventoryCharacterLayout(screenWidth: Int, screenHeight: Int):
         detail = detail,
         footer = HudRect(panel.x + 12, panel.y + panel.height - 22, panel.width - 24, 16),
         hotbar = bottomHudHotbar(screenWidth, screenHeight),
+        navRowHeight = INVENTORY_CHARACTER_NAV_ROW_HEIGHT / 3,
+        navRowGap = INVENTORY_CHARACTER_NAV_ROW_GAP / 2,
+        navTopPadding = 10,
         equipmentSlots = equipmentSlots,
         offhandSlot = offhandSlot,
         slotStep = LEGACY_SLOT_STEP,
@@ -190,6 +202,8 @@ private data class InventoryCharacterLayoutTransform(
     fun x(value: Int): Int = (offsetX + value * scale).roundToInt()
 
     fun y(value: Int): Int = (offsetY + value * scale).roundToInt()
+
+    fun size(value: Int): Int = (value * scale).roundToInt().coerceAtLeast(1)
 
     fun rect(rect: HudRect): HudRect = HudRect(
         x(rect.x),
