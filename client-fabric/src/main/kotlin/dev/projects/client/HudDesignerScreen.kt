@@ -103,7 +103,14 @@ class HudDesignerScreen(
         val layout = config.elements[selected]!!
         val rect = layout.resolve(width, height)
         config.elements[selected] = layout.movedTo(rect.x + (mouseX.toInt() - this.dragX), rect.y + (mouseY.toInt() - this.dragY), width, height)
-        val snapped = HudLayoutSnap.snap(selected, config.elements[selected]!!, config.elements, width, height)
+        val snapped = HudLayoutSnap.snap(
+            selected,
+            config.elements[selected]!!,
+            config.elements,
+            width,
+            height,
+            enabled = event.modifiers() and GLFW.GLFW_MOD_ALT == 0,
+        )
         config.elements[selected] = snapped.layout
         guideX = snapped.guideX
         guideY = snapped.guideY

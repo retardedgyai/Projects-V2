@@ -66,7 +66,7 @@ class HudLayoutTest {
 
     @Test
     fun `snap mirrors another element around screen center`() {
-        val selected = HudElementLayout(HudAnchorX.LEFT, HudAnchorY.TOP, 407, 40, 20, 10)
+        val selected = HudElementLayout(HudAnchorX.LEFT, HudAnchorY.TOP, 408, 40, 20, 10)
         val other = HudElementLayout(HudAnchorX.LEFT, HudAnchorY.TOP, 210, 40, 20, 10)
         val result = HudLayoutSnap.snap(
             HudElementId.RESOURCE,
@@ -78,5 +78,46 @@ class HudLayoutTest {
 
         assertEquals(410, result.layout.resolve(640, 360).x)
         assertEquals(320, result.guideX)
+    }
+
+    @Test
+    fun `snap only applies within two pixels`() {
+        val selected = HudElementLayout(HudAnchorX.LEFT, HudAnchorY.TOP, 318, 40, 8, 8)
+        val result = HudLayoutSnap.snap(
+            HudElementId.SKILLS,
+            selected,
+            mapOf(HudElementId.SKILLS to selected),
+            640,
+            360,
+        )
+
+        assertEquals(316, result.layout.resolve(640, 360).x)
+
+        val outside = selected.copy(offsetX = 319)
+        val outsideResult = HudLayoutSnap.snap(
+            HudElementId.SKILLS,
+            outside,
+            mapOf(HudElementId.SKILLS to outside),
+            640,
+            360,
+        )
+        assertEquals(319, outsideResult.layout.resolve(640, 360).x)
+    }
+
+    @Test
+    fun `disabled snap keeps raw position within threshold`() {
+        val selected = HudElementLayout(HudAnchorX.LEFT, HudAnchorY.TOP, 318, 40, 8, 8)
+        val result = HudLayoutSnap.snap(
+            HudElementId.SKILLS,
+            selected,
+            mapOf(HudElementId.SKILLS to selected),
+            640,
+            360,
+            enabled = false,
+        )
+
+        assertEquals(318, result.layout.resolve(640, 360).x)
+        assertEquals(null, result.guideX)
+        assertEquals(null, result.guideY)
     }
 }

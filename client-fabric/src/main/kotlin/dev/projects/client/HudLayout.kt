@@ -90,7 +90,7 @@ data class HudRect(val x: Int, val y: Int, val width: Int, val height: Int) {
 data class HudSnapResult(val layout: HudElementLayout, val guideX: Int? = null, val guideY: Int? = null)
 
 object HudLayoutSnap {
-    const val THRESHOLD = 4
+    const val THRESHOLD = 2
 
     fun snap(
         selected: HudElementId,
@@ -98,7 +98,9 @@ object HudLayoutSnap {
         elements: Map<HudElementId, HudElementLayout>,
         screenWidth: Int,
         screenHeight: Int,
+        enabled: Boolean = true,
     ): HudSnapResult {
+        if (!enabled) return HudSnapResult(layout)
         val rect = layout.resolve(screenWidth, screenHeight)
         val screenCenterX = screenWidth / 2
         val screenCenterY = screenHeight / 2
