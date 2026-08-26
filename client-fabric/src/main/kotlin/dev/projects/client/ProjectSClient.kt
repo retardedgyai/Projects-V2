@@ -24,6 +24,7 @@ import dev.projects.protocol.VfxEditorOpen
 import dev.projects.protocol.VfxSlashDraft
 import dev.projects.protocol.VfxSlashDraftList
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents
+import net.fabricmc.fabric.api.client.item.v1.ItemTooltipCallback
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry
 import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements
@@ -115,6 +116,12 @@ object ProjectSClient : ClientModInitializer {
         PayloadTypeRegistry.clientboundPlay().register(ProjectSPayload.TYPE, ProjectSPayload.CODEC)
         PayloadTypeRegistry.serverboundPlay().register(ProjectSPayload.TYPE, ProjectSPayload.CODEC)
         GroundTelegraphRenderer.register()
+        ItemTooltipCallback.EVENT.register { stack, _, _, lines ->
+            EquipmentTooltipModel.from(stack)?.let { model ->
+                lines.clear()
+                lines.addAll(model.lines())
+            }
+        }
         hudLayoutStore = HudLayoutStore(Minecraft.getInstance().gameDirectory.toPath().resolve("config/projects/hud-layout.json"))
         hudLayout = hudLayoutStore.load()
 
