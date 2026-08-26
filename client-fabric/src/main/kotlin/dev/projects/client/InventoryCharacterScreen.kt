@@ -38,6 +38,41 @@ private val INVENTORY_CHARACTER_TEXTURE = Identifier.fromNamespaceAndPath(
     "textures/gui/inventory_character.png",
 )
 
+internal data class InventoryCharacterTextureRegion(
+    val x0: Int,
+    val x1: Int,
+    val y0: Int,
+    val y1: Int,
+    val u0: Float,
+    val u1: Float,
+    val v0: Float,
+    val v1: Float,
+)
+
+internal fun inventoryCharacterTextureRegion(
+    x: Int,
+    y: Int,
+    width: Int,
+    height: Int,
+    sourceX: Int,
+    sourceY: Int,
+    sourceWidth: Int,
+    sourceHeight: Int,
+): InventoryCharacterTextureRegion {
+    require(width > 0 && height > 0) { "Inventory Character texture target must be positive" }
+    require(sourceWidth > 0 && sourceHeight > 0) { "Inventory Character texture source must be positive" }
+    return InventoryCharacterTextureRegion(
+        x0 = x,
+        x1 = x + width,
+        y0 = y,
+        y1 = y + height,
+        u0 = sourceX / UI_TEXTURE_SIZE,
+        u1 = (sourceX + sourceWidth) / UI_TEXTURE_SIZE,
+        v0 = sourceY / UI_TEXTURE_SIZE,
+        v1 = (sourceY + sourceHeight) / UI_TEXTURE_SIZE,
+    )
+}
+
 internal class InventoryCharacterMenu(
     private val player: Player,
     layout: InventoryCharacterLayout,
@@ -412,16 +447,26 @@ internal class InventoryCharacterScreen private constructor(
             sourceWidth: Int,
             sourceHeight: Int,
         ) {
-            graphics.blit(
-                INVENTORY_CHARACTER_TEXTURE,
+            val region = inventoryCharacterTextureRegion(
                 x,
                 y,
                 width,
                 height,
-                sourceX / UI_TEXTURE_SIZE,
-                sourceY / UI_TEXTURE_SIZE,
-                sourceWidth / UI_TEXTURE_SIZE,
-                sourceHeight / UI_TEXTURE_SIZE,
+                sourceX,
+                sourceY,
+                sourceWidth,
+                sourceHeight,
+            )
+            graphics.blit(
+                INVENTORY_CHARACTER_TEXTURE,
+                region.x0,
+                region.x1,
+                region.y0,
+                region.y1,
+                region.u0,
+                region.u1,
+                region.v0,
+                region.v1,
             )
         }
 
