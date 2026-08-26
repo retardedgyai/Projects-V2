@@ -71,6 +71,16 @@ class Skill1StateTest {
     }
 
     @Test
+    fun `skill1 cooldown recovery modifier consumes fractional ticks`() {
+        val skill1 = Skill1State(sequence())
+        skill1.tryCast(Vec(0.0, 0.0, 1.0))
+
+        repeat(5) { skill1.tick(1.20) }
+
+        assertEquals(74, skill1.cooldownTicksRemaining)
+    }
+
+    @Test
     fun `skill2 cast cancels skill1 movement but preserves its cooldown`() {
         val skill1 = Skill1State(sequence())
         val skill2 = Skill2State(sequence())

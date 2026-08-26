@@ -91,6 +91,17 @@ class Skill2StateTest {
         assertEquals(0, skill2.cooldownTicksRemaining)
     }
 
+    @Test
+    fun `skill2 cooldown recovery modifier consumes fractional ticks`() {
+        val skill2 = Skill2State(sequence())
+        skill2.tryCast(false)
+        skill2.tick(true)
+
+        repeat(5) { skill2.tick(false, 1.20) }
+
+        assertEquals(94, skill2.cooldownTicksRemaining)
+    }
+
     private fun sequence(): () -> Long {
         var id = 0L
         return { ++id }

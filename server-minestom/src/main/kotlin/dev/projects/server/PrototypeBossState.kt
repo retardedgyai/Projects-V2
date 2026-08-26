@@ -39,6 +39,7 @@ class PrototypeBossState(
         private set
 
     private val playerHealth = mutableMapOf<UUID, Int>()
+    private val playerMaxHealthValues = mutableMapOf<UUID, Int>()
     private val playerDamageExecutions = mutableMapOf<UUID, MutableSet<Long>>()
     private val bossDamageExecutions = mutableSetOf<Long>()
     private val skill3PulseDamageExecutions = mutableSetOf<Triple<Long, Int, UUID>>()
@@ -46,6 +47,7 @@ class PrototypeBossState(
     private val skill1DamageExecutions = mutableSetOf<Pair<Long, UUID>>()
     private val skill2PulseDamageExecutions = mutableSetOf<Triple<Long, Int, UUID>>()
     private val skill2LandingDamageExecutions = mutableSetOf<Pair<Long, UUID>>()
+    private var victoryRewardClaimed = false
 
     val isActive: Boolean
         get() = encounterState == PrototypeEncounterState.ACTIVE
@@ -69,30 +71,55 @@ class PrototypeBossState(
     val healthProgress: Float
         get() = currentHealth.toFloat() / maxHealth
 
-    fun registerPlayer(playerId: UUID) {
-        playerHealth.putIfAbsent(playerId, playerMaxHealth)
+    fun registerPlayer(playerId: UUID, maxHealth: Int = playerMaxHealth) {
+        require(maxHealth > 0) { "Player max health must be positive" }
+        playerMaxHealthValues.putIfAbsent(playerId, maxHealth)
+        playerHealth.putIfAbsent(playerId, maxHealth)
     }
 
     fun playerHealth(playerId: UUID): Int = playerHealth[playerId] ?: playerMaxHealth
 
+    fun playerMaxHealth(playerId: UUID): Int = playerMaxHealthValues[playerId] ?: playerMaxHealth
+
+    fun setPlayerMaxHealth(playerId: UUID, maxHealth: Int) {
+        require(maxHealth > 0) { "Player max health must be positive" }
+        registerPlayer(playerId)
+        playerMaxHealthValues[playerId] = maxHealth
+        playerHealth[playerId] = playerHealth(playerId).coerceAtMost(maxHealth)
+    }
+
     fun playerEntityHealth(playerId: UUID): Float = playerHealth(playerId).coerceAtLeast(1).toFloat()
 
     /** Applies one explicit boss attack to one player, once per execution. */
-    fun applyBossAttack(playerId: UUID, executionId: Long, attack: FixedAttackType): Int {
-        return applyBossDamage(playerId, executionId, attack.damage)
+    fun applyBossAttack(
+        playerId: UUID,
+        executionId: Long,
+        attack: FixedAttackType,
+        incomingDamageMultiplier: Double = 1.0,
+    ): Int {
+        return applyBossDamage(playerId, executionId, attack.damage, incomingDamageMultiplier)
     }
 
-    fun applyBossDamage(playerId: UUID, executionId: Long, damage: Int): Int {
+    fun applyBossDamage(
+        playerId: UUID,
+        executionId: Long,
+        damage: Int,
+        incomingDamageMultiplier: Double = 1.0,
+    ): Int {
         require(damage >= 0) { "Boss damage must not be negative" }
+        require(incomingDamageMultiplier >= 0.0 && incomingDamageMultiplier.isFinite()) {
+            "Incoming damage multiplier must be finite and non-negative"
+        }
         if (!isEncounterRunning) return 0
         registerPlayer(playerId)
         val executions = playerDamageExecutions.getOrPut(playerId) { mutableSetOf() }
         if (!executions.add(executionId)) return 0
 
-        val remainingHealth = (playerHealth(playerId) - damage).coerceAtLeast(0)
+        val effectiveDamage = (damage * incomingDamageMultiplier).roundToInt().coerceAtLeast(0)
+        val remainingHealth = (playerHealth(playerId) - effectiveDamage).coerceAtLeast(0)
         playerHealth[playerId] = remainingHealth
         if (remainingHealth == 0) encounterState = PrototypeEncounterState.DEFEAT
-        return damage
+        return effectiveDamage
     }
 
     /** Applies the server-confirmed player hit to the single prototype boss. */
@@ -100,6 +127,7 @@ class PrototypeBossState(
         attackExecutionId: Long,
         weapon: WeaponType,
         weakpoint: FixedWeakpoint? = null,
+        outgoingDamageMultiplier: Double = 1.0,
     ): Int {
         if (!isActive || !bossDamageExecutions.add(attackExecutionId)) return 0
 
@@ -107,39 +135,53 @@ class PrototypeBossState(
             WeaponType.HEAVY_BLADE -> HEAVY_BLADE_BODY_DAMAGE
             WeaponType.TWIN_RODS -> TWIN_RODS_BODY_DAMAGE
         }
-        return applyPlayerDamage(bodyDamage, weakpoint != null)
+        return applyPlayerDamage(bodyDamage, weakpoint != null, outgoingDamageMultiplier)
     }
 
     /** Applies one server-confirmed Skill3 pulse per cast, pulse, and target. */
-    fun applySkill3Pulse(castId: Long, pulseIndex: Int, targetId: UUID): Int {
+    fun applySkill3Pulse(
+        castId: Long,
+        pulseIndex: Int,
+        targetId: UUID,
+        outgoingDamageMultiplier: Double = 1.0,
+    ): Int {
         require(pulseIndex in 1..Skill3State.PULSE_COUNT) { "Skill3 pulse index is out of range" }
         if (!isActive || !skill3PulseDamageExecutions.add(Triple(castId, pulseIndex, targetId))) return 0
-        return applyPlayerDamage(SKILL_3_PULSE_DAMAGE)
+        return applyPlayerDamage(SKILL_3_PULSE_DAMAGE, outgoingDamageMultiplier = outgoingDamageMultiplier)
     }
 
     /** Applies the Skill3 finisher once per cast and target. */
-    fun applySkill3Finisher(castId: Long, targetId: UUID): Int {
+    fun applySkill3Finisher(
+        castId: Long,
+        targetId: UUID,
+        outgoingDamageMultiplier: Double = 1.0,
+    ): Int {
         if (!isActive || !skill3FinisherDamageExecutions.add(castId to targetId)) return 0
-        return applyPlayerDamage(SKILL_3_FINISHER_DAMAGE)
+        return applyPlayerDamage(SKILL_3_FINISHER_DAMAGE, outgoingDamageMultiplier = outgoingDamageMultiplier)
     }
 
     /** Applies one server-confirmed Skill1 hit per cast and target. */
-    fun applySkill1Attack(castId: Long, targetId: UUID): Int {
+    fun applySkill1Attack(castId: Long, targetId: UUID, outgoingDamageMultiplier: Double = 1.0): Int {
         if (!isActive || !skill1DamageExecutions.add(castId to targetId)) return 0
-        return applyPlayerDamage(SKILL_1_DAMAGE)
+        return applyPlayerDamage(SKILL_1_DAMAGE, outgoingDamageMultiplier = outgoingDamageMultiplier)
     }
 
     /** Applies one server-confirmed Skill2 pulse hit per cast, pulse, and target. */
-    fun applySkill2Pulse(castId: Long, pulseIndex: Int, targetId: UUID): Int {
+    fun applySkill2Pulse(
+        castId: Long,
+        pulseIndex: Int,
+        targetId: UUID,
+        outgoingDamageMultiplier: Double = 1.0,
+    ): Int {
         require(pulseIndex in 1..Skill2State.PULSE_COUNT) { "Skill2 pulse index is out of range" }
         if (!isActive || !skill2PulseDamageExecutions.add(Triple(castId, pulseIndex, targetId))) return 0
-        return applyPlayerDamage(SKILL_2_PULSE_DAMAGE)
+        return applyPlayerDamage(SKILL_2_PULSE_DAMAGE, outgoingDamageMultiplier = outgoingDamageMultiplier)
     }
 
     /** Applies the server-confirmed Skill2 landing finisher once per cast and target. */
-    fun applySkill2Landing(castId: Long, targetId: UUID): Int {
+    fun applySkill2Landing(castId: Long, targetId: UUID, outgoingDamageMultiplier: Double = 1.0): Int {
         if (!isActive || !skill2LandingDamageExecutions.add(castId to targetId)) return 0
-        return applyPlayerDamage(SKILL_2_LANDING_DAMAGE)
+        return applyPlayerDamage(SKILL_2_LANDING_DAMAGE, outgoingDamageMultiplier = outgoingDamageMultiplier)
     }
 
     fun setBreakActive(active: Boolean) {
@@ -150,6 +192,13 @@ class PrototypeBossState(
         if (encounterState == PrototypeEncounterState.FINAL_STRUGGLE) {
             encounterState = PrototypeEncounterState.VICTORY
         }
+    }
+
+    /** Claims the encounter reward gate once after a successful victory. */
+    fun claimVictoryReward(): Boolean {
+        if (!isVictory || victoryRewardClaimed) return false
+        victoryRewardClaimed = true
+        return true
     }
 
     /** Development-only phase jump used to inspect one mechanic without a full HP burn. */
@@ -208,14 +257,22 @@ class PrototypeBossState(
         skill2PulseDamageExecutions.clear()
         skill2LandingDamageExecutions.clear()
         playerDamageExecutions.clear()
-        playerHealth.keys.toList().forEach { playerHealth[it] = playerMaxHealth }
+        victoryRewardClaimed = false
+        playerHealth.keys.toList().forEach { playerHealth[it] = playerMaxHealth(it) }
     }
 
-    private fun applyPlayerDamage(bodyDamage: Int, weakpoint: Boolean = false): Int {
+    private fun applyPlayerDamage(
+        bodyDamage: Int,
+        weakpoint: Boolean = false,
+        outgoingDamageMultiplier: Double = 1.0,
+    ): Int {
+        require(outgoingDamageMultiplier >= 0.0 && outgoingDamageMultiplier.isFinite()) {
+            "Outgoing damage multiplier must be finite and non-negative"
+        }
         if (!isActive) return 0
         val breakMultiplier = if (breakActive) BREAK_MULTIPLIER else 1.0
         val weakpointMultiplier = if (weakpoint) WEAKPOINT_MULTIPLIER else 1.0
-        val damage = (bodyDamage * breakMultiplier * weakpointMultiplier).roundToInt()
+        val damage = (bodyDamage * breakMultiplier * weakpointMultiplier * outgoingDamageMultiplier).roundToInt()
         currentHealth = (currentHealth - damage).coerceAtLeast(0)
         updatePhase()
         if (currentHealth == 0) encounterState = PrototypeEncounterState.FINAL_STRUGGLE
