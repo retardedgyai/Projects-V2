@@ -5,3 +5,5 @@ client-fabric/run/
 server-minestom/run/
 .idea/
 *.iml
+__pycache__/
+*.pyc
