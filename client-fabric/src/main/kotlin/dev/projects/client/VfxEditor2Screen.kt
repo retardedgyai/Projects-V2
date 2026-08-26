@@ -27,7 +27,6 @@ import dev.projects.protocol.VFX_EDITOR_2_DEFAULT_TIMELINE_LENGTH_TICKS
 import dev.projects.protocol.VFX_EDITOR_2_MAX_EFFECT_START_TICKS
 import dev.projects.protocol.VFX_EDITOR_2_MAX_TIMELINE_LENGTH_TICKS
 import dev.projects.protocol.VFX_EDITOR_2_MAX_EFFECTS
-import dev.projects.protocol.defaultVfxEditor2Composition
 import dev.projects.protocol.defaultVfxEditor2Effect
 import dev.projects.protocol.isSafeVfxEditor2CompositionName
 import dev.projects.protocol.isVfxEditor2Instant
@@ -52,7 +51,7 @@ class VfxEditor2Screen(
     constructor(
         targetLabel: String,
         sendMessage: (ProtocolMessage) -> Unit,
-    ) : this(targetLabel, defaultVfxEditor2Composition(), sendMessage)
+    ) : this(targetLabel, VfxEditor2Composition(emptyList()), sendMessage)
 
     private companion object {
         const val LEFT_PANEL_WIDTH = 190
@@ -228,6 +227,7 @@ class VfxEditor2Screen(
     private var composition = initialComposition
     private var selectedEffectId: Long? = initialComposition.effects.firstOrNull()?.id
     private var nextEffectId = (initialComposition.effects.maxOfOrNull { it.id } ?: 0L) + 1L
+    private var workspacePlaceholder = true
     private var statusText = "Ready"
     private var previewActive = false
     private var previewDebounceTicks = 0
@@ -253,6 +253,12 @@ class VfxEditor2Screen(
     private var targetCatalog = VfxEditor2TargetCatalog(emptyList())
     private var bindingSnapshot = VfxEditor2BindingSnapshot(emptyMap())
     private var selectedTargetId: String? = null
+    private val workspaceSession = VfxEditor2WorkspaceSession()
+    private var targetCatalogReceived = false
+    private var bindingSnapshotReceived = false
+    private var workspaceGeneration = 0L
+    private var pendingLoad: VfxEditor2LoadContext? = null
+    private var queuedLoad: VfxEditor2LoadContext? = null
     private var loadMenuOpen = false
     private var loadPage = 0
     private var syncingTimingFields = false
@@ -314,7 +320,10 @@ class VfxEditor2Screen(
         val compositionField = EditBox(font, headerLeft, 31, headerFieldWidth, 18, Component.literal("Composition Name"))
         compositionField.setMaxLength(48)
         compositionField.setValue(compositionNameInput)
-        compositionField.setResponder { compositionNameInput = it }
+        compositionField.setResponder {
+            compositionNameInput = it
+            workspacePlaceholder = false
+        }
         compositionNameField = addRenderableWidget(compositionField)
         val headerButtonsX = headerLeft + headerFieldWidth + headerGap
         addRenderableWidget(
@@ -350,7 +359,7 @@ class VfxEditor2Screen(
         )
         clearButton.active = selectedTargetId != null
         val loadBoundButton = addRenderableWidget(
-            Button.builder(Component.literal("Load Bound")) { loadBoundComposition() }
+            Button.builder(Component.literal("Reload Bound")) { loadBoundComposition() }
                 .bounds(headerLeft + (bindingButtonWidth + headerGap) * 2, bindingY, bindingButtonWidth, 18)
                 .build(),
         )
@@ -659,8 +668,13 @@ class VfxEditor2Screen(
             }
             graphics.text(font, "Estimated: ${composition.estimatedSampleCount()} particles", rightPanelX + 10, presetY + 22, 0xFF8EA9C5.toInt(), false)
         } ?: run {
-            graphics.text(font, "Select an Effect", rightPanelX + 12, 36, 0xFF9BB4CE.toInt(), false)
-            graphics.text(font, "Use + Add Effect to begin", rightPanelX + 12, 54, 0xFF8EA9C5.toInt(), false)
+            graphics.text(font, "No Effect Selected", rightPanelX + 12, 36, 0xFF9BB4CE.toInt(), false)
+            if (selectedTarget() != null && selectedBindingName() == null && composition.effects.isEmpty()) {
+                graphics.text(font, "Using default skill VFX.", rightPanelX + 12, 54, 0xFF8EA9C5.toInt(), false)
+                graphics.text(font, "Add an Effect or load a Composition", rightPanelX + 12, 70, 0xFF8EA9C5.toInt(), false)
+            } else {
+                graphics.text(font, "Use + Add Effect to begin", rightPanelX + 12, 54, 0xFF8EA9C5.toInt(), false)
+            }
         }
         graphics.text(font, "Target: ${selectedSkillLabel().take(28)}", LEFT_PANEL_WIDTH + 8, 99, 0xFF9BB4CE.toInt(), false)
         graphics.text(font, "Bound: ${(selectedBindingName() ?: "Default").take(28)}", LEFT_PANEL_WIDTH + 8, 111, 0xFF9BB4CE.toInt(), false)
@@ -843,14 +857,15 @@ class VfxEditor2Screen(
 
     fun setTargetCatalog(catalog: VfxEditor2TargetCatalog) {
         targetCatalog = catalog
-        selectedTargetId = selectedTargetId?.takeIf { id -> catalog.targets.any { it.id == id } }
-            ?: catalog.targets.firstOrNull()?.id
-        updateTargetLabel()
+        targetCatalogReceived = true
+        maybeInitializeTargetWorkspace()
         if (width > 0) rebuildEditorWidgets()
     }
 
     fun setBindingSnapshot(snapshot: VfxEditor2BindingSnapshot) {
         bindingSnapshot = snapshot
+        bindingSnapshotReceived = true
+        maybeInitializeTargetWorkspace()
         if (width > 0) rebuildEditorWidgets()
     }
 
@@ -870,33 +885,49 @@ class VfxEditor2Screen(
             composition = composition.copy(name = result.name)
             compositionNameInput = result.name
             savedSnapshot = composition.withoutSolo()
+            workspacePlaceholder = false
             loadMenuOpen = false
+            rememberActiveWorkspace()
             rebuildEditorWidgets()
         }
     }
 
     fun applyLoadedComposition(response: VfxEditor2LoadResponse) {
+        val request = pendingLoad
+        pendingLoad = null
+        if (!isCurrentVfxEditor2Load(request, response, selectedTargetId, workspaceGeneration)) {
+            dispatchQueuedLoadIfCurrent()
+            if (pendingLoad == null && queuedLoad == null) resolveBindingForCurrentTarget()
+            return
+        }
         val loaded = response.composition
         if (loaded == null) {
             statusText = response.message
+            if (width > 0) rebuildEditorWidgets()
+            dispatchQueuedLoadIfCurrent()
             return
         }
         composition = loaded.withoutSolo()
         compositionNameInput = composition.name
         savedSnapshot = composition
+        workspacePlaceholder = false
         selectedEffectId = composition.effects.firstOrNull()?.id
         nextEffectId = (composition.effects.maxOfOrNull { it.id } ?: 0L) + 1L
         loadMenuOpen = false
         inspectorPage = 0
         statusText = response.message
+        rememberActiveWorkspace()
         rebuildEditorWidgets()
         schedulePreview()
+        dispatchQueuedLoadIfCurrent()
     }
 
     override fun onClose() {
         previewDebounceTicks = 0
         previewActive = false
         timelineDrag = null
+        pendingLoad = null
+        queuedLoad = null
         sendMessage(VfxEditor2PreviewStop)
         super.onClose()
     }
@@ -915,15 +946,162 @@ class VfxEditor2Screen(
         targetLabel = selectedTarget()?.let { "${it.classLabel} ${it.skillLabel}" } ?: targetLabel
     }
 
+    private fun currentWorkspaceState(): VfxEditor2WorkspaceState = VfxEditor2WorkspaceState(
+        composition = composition,
+        compositionNameInput = compositionNameInput,
+        savedSnapshot = savedSnapshot,
+        selectedEffectId = selectedEffectId,
+        nextEffectId = nextEffectId,
+        isPlaceholder = workspacePlaceholder,
+    )
+
+    private fun rememberActiveWorkspace() {
+        selectedTargetId?.let { targetId ->
+            workspaceSession.remember(targetId, currentWorkspaceState())
+        }
+    }
+
+    private fun restoreWorkspace(state: VfxEditor2WorkspaceState) {
+        composition = state.composition
+        compositionNameInput = state.compositionNameInput
+        savedSnapshot = state.savedSnapshot
+        selectedEffectId = state.selectedEffectId?.takeIf { id -> composition.effects.any { it.id == id } }
+        nextEffectId = state.nextEffectId
+        workspacePlaceholder = state.isPlaceholder
+    }
+
+    private fun useEmptyWorkspace(placeholder: Boolean) {
+        restoreWorkspace(emptyVfxEditor2Workspace(placeholder))
+    }
+
+    private fun resetTargetTransientState() {
+        addMenuOpen = false
+        addCategory = null
+        addPage = 0
+        inspectorPage = 0
+        loadMenuOpen = false
+        loadPage = 0
+        previewDebounceTicks = 0
+        previewActive = false
+        timelineDrag = null
+    }
+
+    private fun maybeInitializeTargetWorkspace() {
+        if (!targetCatalogReceived || !bindingSnapshotReceived) return
+        val firstTarget = targetCatalog.targets.firstOrNull() ?: return
+        val targetId = selectedTargetId?.takeIf { id -> targetCatalog.targets.any { it.id == id } }
+            ?: firstTarget.id
+        if (selectedTargetId != targetId) {
+            switchTarget(targetId)
+        } else {
+            updateTargetLabel()
+            resolveBindingForCurrentTarget()
+        }
+    }
+
+    private fun switchTarget(targetId: String) {
+        val target = targetCatalog.targets.firstOrNull { it.id == targetId } ?: return
+        if (selectedTargetId == targetId) {
+            updateTargetLabel()
+            resolveBindingForCurrentTarget()
+            if (width > 0) rebuildEditorWidgets()
+            return
+        }
+
+        rememberActiveWorkspace()
+        workspaceGeneration++
+        selectedTargetId = targetId
+        targetLabel = "${target.classLabel} ${target.skillLabel}"
+        resetTargetTransientState()
+        sendMessage(VfxEditor2PreviewStop)
+
+        val resolution = resolveVfxEditor2Workspace(
+            existing = workspaceSession.stateFor(targetId),
+            bindingName = bindingSnapshot.bindings[targetId],
+        )
+        when (resolution) {
+            is VfxEditor2WorkspaceResolution.Restore -> {
+                restoreWorkspace(resolution.state)
+                statusText = if (resolution.state.isDirty) "Restored unsaved workspace" else "Ready"
+            }
+            is VfxEditor2WorkspaceResolution.LoadBound -> {
+                useEmptyWorkspace(placeholder = true)
+                statusText = "Loading ${resolution.compositionName}..."
+            }
+            VfxEditor2WorkspaceResolution.Empty -> {
+                useEmptyWorkspace(placeholder = true)
+                statusText = "Using default skill VFX."
+            }
+        }
+        rememberActiveWorkspace()
+        if (width > 0) rebuildEditorWidgets()
+
+        when (resolution) {
+            is VfxEditor2WorkspaceResolution.LoadBound -> queueLoad(resolution.compositionName)
+            is VfxEditor2WorkspaceResolution.Restore -> if (composition.effects.isNotEmpty()) schedulePreview()
+            VfxEditor2WorkspaceResolution.Empty -> Unit
+        }
+    }
+
+    private fun resolveBindingForCurrentTarget() {
+        val targetId = selectedTargetId ?: return
+        val current = currentWorkspaceState()
+        when (val resolution = resolveVfxEditor2Workspace(current, bindingSnapshot.bindings[targetId])) {
+            is VfxEditor2WorkspaceResolution.Restore -> {
+                if (resolution.state != current) {
+                    restoreWorkspace(resolution.state)
+                    rememberActiveWorkspace()
+                    if (width > 0) rebuildEditorWidgets()
+                }
+            }
+            is VfxEditor2WorkspaceResolution.LoadBound -> {
+                useEmptyWorkspace(placeholder = true)
+                rememberActiveWorkspace()
+                if (width > 0) rebuildEditorWidgets()
+                queueLoad(resolution.compositionName)
+            }
+            VfxEditor2WorkspaceResolution.Empty -> Unit
+        }
+    }
+
+    private fun queueLoad(name: String) {
+        val targetId = selectedTargetId ?: return
+        val context = VfxEditor2LoadContext(targetId, name, workspaceGeneration)
+        if (pendingLoad == null) {
+            queuedLoad = null
+            pendingLoad = context
+            statusText = "Loading $name..."
+            if (width > 0) rebuildEditorWidgets()
+            sendMessage(VfxEditor2LoadRequest(name))
+            return
+        }
+        if (pendingLoad == context || queuedLoad == context) return
+        queuedLoad = context
+        statusText = "Loading $name..."
+        if (width > 0) rebuildEditorWidgets()
+    }
+
+    private fun dispatchQueuedLoadIfCurrent() {
+        if (pendingLoad != null) return
+        val next = queuedLoad ?: return
+        queuedLoad = null
+        if (next.targetId != selectedTargetId || next.generation != workspaceGeneration) {
+            resolveBindingForCurrentTarget()
+            return
+        }
+        pendingLoad = next
+        statusText = "Loading ${next.compositionName}..."
+        if (width > 0) rebuildEditorWidgets()
+        sendMessage(VfxEditor2LoadRequest(next.compositionName))
+    }
+
     private fun cycleClass() {
         val classes = targetCatalog.targets.distinctBy { it.classId }
         if (classes.isEmpty()) return
         val currentClassId = selectedTarget()?.classId
         val currentIndex = classes.indexOfFirst { it.classId == currentClassId }
         val next = classes[(currentIndex + 1).mod(classes.size)]
-        selectedTargetId = next.id
-        updateTargetLabel()
-        rebuildEditorWidgets()
+        switchTarget(next.id)
     }
 
     private fun cycleSkillTarget() {
@@ -931,9 +1109,7 @@ class VfxEditor2Screen(
         val options = targetCatalog.targets.filter { it.classId == selected.classId }
         if (options.isEmpty()) return
         val currentIndex = options.indexOfFirst { it.id == selected.id }
-        selectedTargetId = options[(currentIndex + 1).mod(options.size)].id
-        updateTargetLabel()
-        rebuildEditorWidgets()
+        switchTarget(options[(currentIndex + 1).mod(options.size)].id)
     }
 
     private fun canApplyBinding(): Boolean {
@@ -971,9 +1147,12 @@ class VfxEditor2Screen(
             return
         }
         if (isDirty()) {
-            statusText = "Save or discard changes before loading bound."
+            statusText = "Save or discard changes before reloading bound."
+            if (width > 0) rebuildEditorWidgets()
             return
         }
+        useEmptyWorkspace(placeholder = true)
+        rememberActiveWorkspace()
         requestLoad(name)
     }
 
@@ -1008,6 +1187,7 @@ class VfxEditor2Screen(
         }
         val effect = defaultVfxEditor2Effect(type, allocateEffectId())
         composition = composition.add(effect) ?: return
+        markWorkspaceEdited()
         selectedEffectId = effect.id
         addMenuOpen = false
         addCategory = null
@@ -1026,6 +1206,7 @@ class VfxEditor2Screen(
         val duplicateId = allocateEffectId()
         val duplicateName = "${selected.name} Copy".take(MAX_NAME_LENGTH)
         composition = composition.duplicate(selected.id, duplicateId, duplicateName) ?: return
+        markWorkspaceEdited()
         selectedEffectId = duplicateId
         inspectorPage = 0
         rebuildEditorWidgets()
@@ -1037,6 +1218,7 @@ class VfxEditor2Screen(
         val oldIndex = composition.effects.indexOfFirst { it.id == selected.id }
         val remaining = composition.effects.filterNot { it.id == selected.id }
         composition = composition.remove(selected.id)
+        markWorkspaceEdited()
         selectedEffectId = remaining.getOrNull(oldIndex.coerceIn(0, remaining.lastIndex.coerceAtLeast(0)))?.id ?: remaining.lastOrNull()?.id
         inspectorPage = 0
         rebuildEditorWidgets()
@@ -1051,6 +1233,7 @@ class VfxEditor2Screen(
         val effects = composition.effects.toMutableList()
         effects.add(to, effects.removeAt(from))
         composition = composition.copy(effects = effects)
+        markWorkspaceEdited()
         rebuildEditorWidgets()
         schedulePreview()
     }
@@ -1093,6 +1276,7 @@ class VfxEditor2Screen(
             timelineLengthTicks = maxOf(composition.timelineLengthTicks, end)
                 .coerceAtMost(VFX_EDITOR_2_MAX_TIMELINE_LENGTH_TICKS),
         )
+        markWorkspaceEdited()
         syncTimingFields()
         if (rebuild) rebuildEditorWidgets()
         schedulePreview()
@@ -1164,6 +1348,7 @@ class VfxEditor2Screen(
 
     private fun updateEffect(id: Long, transform: (VfxEditor2Effect) -> VfxEditor2Effect) {
         composition = composition.update(id, transform)
+        markWorkspaceEdited()
         syncColorField()
     }
 
@@ -1193,9 +1378,13 @@ class VfxEditor2Screen(
         syncingTimingFields = false
     }
 
-    private fun isDirty(): Boolean = savedSnapshot == null ||
+    private fun markWorkspaceEdited() {
+        workspacePlaceholder = false
+    }
+
+    private fun isDirty(): Boolean = !workspacePlaceholder && (savedSnapshot == null ||
         compositionNameInput != composition.name ||
-        composition.withoutSolo() != savedSnapshot
+        composition.withoutSolo() != savedSnapshot)
 
     private fun saveComposition() {
         if (!isSafeVfxEditor2CompositionName(compositionNameInput)) {
@@ -1209,21 +1398,21 @@ class VfxEditor2Screen(
 
     private fun requestLoad(name: String) {
         loadMenuOpen = false
-        statusText = "Loading..."
-        rebuildEditorWidgets()
-        sendMessage(VfxEditor2LoadRequest(name))
+        queueLoad(name)
     }
 
     private fun newComposition() {
         sendMessage(VfxEditor2PreviewStop)
-        composition = defaultVfxEditor2Composition()
+        composition = VfxEditor2Composition(emptyList())
         compositionNameInput = composition.name
         savedSnapshot = null
-        selectedEffectId = composition.effects.firstOrNull()?.id
-        nextEffectId = (composition.effects.maxOfOrNull { it.id } ?: 0L) + 1L
+        selectedEffectId = null
+        nextEffectId = 1L
+        workspacePlaceholder = false
         inspectorPage = 0
         loadMenuOpen = false
         statusText = "New composition"
+        rememberActiveWorkspace()
         rebuildEditorWidgets()
         schedulePreview()
     }
@@ -1234,6 +1423,7 @@ class VfxEditor2Screen(
         val next = presets[((if (currentIndex >= 0) currentIndex else 0) + 1) % presets.size]
         val length = maxOf(next, composition.maxEndTick()).coerceAtMost(VFX_EDITOR_2_MAX_TIMELINE_LENGTH_TICKS)
         composition = composition.copy(timelineLengthTicks = length)
+        markWorkspaceEdited()
         rebuildEditorWidgets()
         schedulePreview()
     }

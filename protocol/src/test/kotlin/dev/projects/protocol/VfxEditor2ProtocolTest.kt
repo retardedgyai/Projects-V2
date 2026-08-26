@@ -108,6 +108,11 @@ class VfxEditor2ProtocolTest {
     }
 
     @Test
+    fun `editor open default is an empty workspace bootstrap`() {
+        assertTrue(VfxEditor2Open().composition.effects.isEmpty())
+    }
+
+    @Test
     fun `default composition round trips through open and preview start`() {
         val composition = defaultVfxEditor2Composition()
 

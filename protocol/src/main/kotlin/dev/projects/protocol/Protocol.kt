@@ -1551,7 +1551,7 @@ fun defaultVfxEditor2Composition(): VfxEditor2Composition = VfxEditor2Compositio
 
 data class VfxEditor2Open(
     val targetLabel: String = "Ronin Q",
-    val composition: VfxEditor2Composition = defaultVfxEditor2Composition(),
+    val composition: VfxEditor2Composition = VfxEditor2Composition(emptyList()),
 ) : ProtocolMessage {
     init {
         require(targetLabel.isNotBlank() && targetLabel.length <= VfxEditor2ProtocolLimits.MAX_TARGET_LENGTH) {

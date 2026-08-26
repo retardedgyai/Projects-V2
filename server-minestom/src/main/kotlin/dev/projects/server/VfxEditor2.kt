@@ -1002,7 +1002,7 @@ class VfxEditor2Runtime(
 
     fun open(player: Player) {
         lastRequestIds[player.uuid] = -1L
-        send(player, VfxEditor2Open("Ronin Q", defaultVfxEditor2Composition()))
+        send(player, VfxEditor2Open("Ronin Q", VfxEditor2Composition(emptyList())))
         send(player, VfxEditor2TargetCatalog.message)
         send(player, VfxEditor2BindingSnapshot(bindingStore.snapshot()))
         list(player)

@@ -200,9 +200,6 @@ object ProjectSClient : ClientModInitializer {
                                 if (ClientPlayNetworking.canSend(ProjectSPayload.TYPE)) {
                                     ClientPlayNetworking.send(ProjectSPayload(ProtocolCodec.encode(outgoing)))
                                 }
-                            }.also {
-                                it.setTargetCatalog(vfxEditor2TargetCatalog)
-                                it.setBindingSnapshot(vfxEditor2BindingSnapshot)
                             },
                         )
                     }
