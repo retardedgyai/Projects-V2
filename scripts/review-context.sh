@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-BASE=${1:-main}
+BASE=${1:-origin/main}
 ROOT_DIR=$(git rev-parse --show-toplevel)
 BRANCH=$(git branch --show-current)
 HEAD_COMMIT=$(git rev-parse HEAD)
