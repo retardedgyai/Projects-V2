@@ -470,7 +470,7 @@ object ProjectSClient : ClientModInitializer {
                 true,
             )
         } else if (progressionPointHintTicks > 0 && points > 0) {
-            val hint = "K  Passive Tree"
+            val hint = "K  パッシブツリー"
             context.text(
                 Minecraft.getInstance().font,
                 hint,

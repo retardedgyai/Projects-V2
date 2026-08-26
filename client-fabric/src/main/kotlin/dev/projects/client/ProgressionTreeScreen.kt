@@ -13,12 +13,11 @@ import net.minecraft.network.chat.Component
 import org.lwjgl.glfw.GLFW
 import kotlin.math.abs
 import kotlin.math.max
-import kotlin.math.min
 
 class ProgressionTreeScreen(
     initialSnapshot: ProgressionSnapshot,
     private val sendMessage: (PassiveNodeSpendRequest) -> Unit,
-) : Screen(Component.literal("Global Passive Tree")) {
+) : Screen(Component.literal("パッシブツリー")) {
     private var snapshot = initialSnapshot
     private var selectedNodeId: String? = null
     private var notice: String? = null
@@ -29,14 +28,10 @@ class ProgressionTreeScreen(
     override fun extractBackground(graphics: GuiGraphicsExtractor, mouseX: Int, mouseY: Int, delta: Float) = Unit
 
     override fun init() {
+        val layout = progressionTreeLayout(width, height)
         purchaseButton = addRenderableWidget(
             Button.builder(Component.literal("取得")) { purchaseSelected() }
-                .bounds(
-                    if (isCompact()) panelLeft() + panelWidth() - 124 else panelLeft() + 350,
-                    if (isCompact()) panelTop() + panelHeight() - 44 else panelTop() + 236,
-                    110,
-                    20,
-                )
+                .bounds(layout.purchase.x, layout.purchase.y, layout.purchase.width, layout.purchase.height)
                 .build(),
         )
         updatePurchaseButton()
@@ -44,59 +39,59 @@ class ProgressionTreeScreen(
 
     override fun extractRenderState(graphics: GuiGraphicsExtractor, mouseX: Int, mouseY: Int, delta: Float) {
         super.extractRenderState(graphics, mouseX, mouseY, delta)
-        val left = panelLeft()
-        val top = panelTop()
-        val panelWidth = panelWidth()
-        val panelHeight = panelHeight()
+        val layout = progressionTreeLayout(width, height)
+        val panel = layout.panel
+        val left = panel.x
+        val top = panel.y
         graphics.fill(0, 0, width, height, 0x88060A0D.toInt())
-        graphics.fill(left, top, left + panelWidth, top + panelHeight, 0xF0131B20.toInt())
-        graphics.fill(left, top, left + 2, top + panelHeight, 0xFF638B83.toInt())
-        outline(graphics, HudRect(left, top, panelWidth, panelHeight), 0xFF4E625F.toInt())
-        graphics.text(font, "GLOBAL PASSIVE TREE", left + 16, top + 12, 0xFFE5F0E9.toInt(), true)
+        graphics.fill(left, top, left + panel.width, top + panel.height, 0xF0131B20.toInt())
+        graphics.fill(left, top, left + 2, top + panel.height, 0xFF638B83.toInt())
+        outline(graphics, panel, 0xFF4E625F.toInt())
+        graphics.text(font, "パッシブツリー", left + 16, top + 12, 0xFFE5F0E9.toInt(), true)
         graphics.text(font, "Kで閉じる / サーバーが状態を確定", left + 16, top + 27, 0xFF91AAA3.toInt(), false)
 
         val available = snapshot.grantedPassivePoints - snapshot.spentPassivePoints
         graphics.text(
             font,
-            "Lv ${snapshot.level}   XP ${snapshot.xp} / ${snapshot.xpRequiredForNextLevel}   Point $available",
+            "Lv ${snapshot.level}   XP ${snapshot.xp} / ${snapshot.xpRequiredForNextLevel}   所持ポイント $available",
             left + 16,
-            top + panelHeight - 22,
+            layout.footer.y,
             if (available > 0) 0xFFE5C878.toInt() else 0xFFAFC0BA.toInt(),
             true,
         )
 
-        val positions = nodePositions(left, top)
+        val positions = progressionTreeNodePositions(panel)
         drawConnections(graphics, positions)
         positions.forEach { (nodeId, position) ->
             drawNode(graphics, nodeId, position.x, position.y, nodeId == selectedNodeId)
         }
 
-        val detailLeft = if (isCompact()) left + 14 else left + 330
-        val detailTop = if (isCompact()) top + 235 else top + 48
-        val detailWidth = if (isCompact()) panelWidth - 28 else panelWidth - 344
-        val detailHeight = if (isCompact()) 130 else 172
-        graphics.fill(detailLeft, detailTop, detailLeft + detailWidth, detailTop + detailHeight, 0xAA1B272B.toInt())
-        outline(graphics, HudRect(detailLeft, detailTop, detailWidth, detailHeight), 0xFF374744.toInt())
+        val detail = layout.detail
+        val detailLeft = detail.x
+        val detailTop = detail.y
+        val detailWidth = detail.width
+        graphics.fill(detail.x, detail.y, detail.x + detail.width, detail.y + detail.height, 0xAA1B272B.toInt())
+        outline(graphics, detail, 0xFF374744.toInt())
         val node = selectedNodeId?.let(::nodeFor)
         if (node == null) {
-            graphics.text(font, "Nodeを選択", detailLeft + 12, detailTop + 16, 0xFFB7C8C1.toInt(), true)
-            graphics.text(font, "6つの固定Nodeから選べます", detailLeft + 12, detailTop + 36, 0xFF7F9790.toInt(), false)
+            graphics.text(font, "ノードを選択", detailLeft + 12, detailTop + 16, 0xFFB7C8C1.toInt(), true)
+            graphics.text(font, "6つの固定ノードから選べます", detailLeft + 12, detailTop + 36, 0xFF7F9790.toInt(), false)
         } else {
             val state = nodeState(node.id)
             graphics.text(font, node.label, detailLeft + 12, detailTop + 16, nodeColor(state), true)
             drawWrapped(graphics, node.description, detailLeft + 12, detailTop + 36, detailWidth - 24, 0xFFD5E1DB.toInt())
-            graphics.text(font, "Cost: ${node.cost}", detailLeft + 12, detailTop + 76, 0xFFE5C878.toInt(), false)
+            graphics.text(font, "コスト: ${node.cost}", detailLeft + 12, detailTop + 76, 0xFFE5C878.toInt(), false)
             val prerequisite = if (node.prerequisites.isEmpty()) "なし" else node.prerequisites.joinToString { nodeFor(it)?.label ?: it }
-            graphics.text(font, "Prerequisite: $prerequisite", detailLeft + 12, detailTop + 94, 0xFF9BAFA8.toInt(), false)
+            graphics.text(font, "前提: $prerequisite", detailLeft + 12, detailTop + 94, 0xFF9BAFA8.toInt(), false)
             graphics.text(font, stateLabel(state), detailLeft + 12, detailTop + 114, nodeColor(state), true)
         }
         notice?.let { text ->
-            graphics.text(font, text, left + 16, top + panelHeight - 42, 0xFFE5C878.toInt(), false)
+            graphics.text(font, text, layout.notice.x, layout.notice.y, 0xFFE5C878.toInt(), false)
         }
     }
 
     override fun mouseClicked(event: MouseButtonEvent, doubleClick: Boolean): Boolean {
-        val positions = nodePositions(panelLeft(), panelTop())
+        val positions = progressionTreeNodePositions(progressionTreeLayout(width, height).panel)
         val selected = positions.entries.firstOrNull { (_, position) ->
             abs(event.x() - position.x) <= NODE_RADIUS && abs(event.y() - position.y) <= NODE_RADIUS
         }?.key
@@ -127,8 +122,8 @@ class ProgressionTreeScreen(
             PassiveNodeSpendResult.ACCEPTED -> "取得しました"
             PassiveNodeSpendResult.UNKNOWN_NODE -> "不明なNodeです"
             PassiveNodeSpendResult.ALREADY_ACQUIRED -> "取得済みです"
-            PassiveNodeSpendResult.INSUFFICIENT_POINTS -> "Pointが足りません"
-            PassiveNodeSpendResult.MISSING_PREREQUISITE -> "Prerequisiteが必要です"
+            PassiveNodeSpendResult.INSUFFICIENT_POINTS -> "ポイントが足りません"
+            PassiveNodeSpendResult.MISSING_PREREQUISITE -> "前提条件が必要です"
             PassiveNodeSpendResult.STALE_REVISION -> "状態が更新されました"
             PassiveNodeSpendResult.PERSISTENCE_FAILURE -> "保存に失敗しました"
         }
@@ -160,7 +155,7 @@ class ProgressionTreeScreen(
         }
     }
 
-    private fun drawConnections(graphics: GuiGraphicsExtractor, positions: Map<String, NodePosition>) {
+    private fun drawConnections(graphics: GuiGraphicsExtractor, positions: Map<String, ProgressionTreeNodePosition>) {
         CLIENT_NODES.forEach { node ->
             node.prerequisites.forEach { prerequisite ->
                 val from = positions[prerequisite] ?: return@forEach
@@ -221,27 +216,11 @@ class ProgressionTreeScreen(
     }
 
     private fun stateLabel(state: NodeState): String = when (state) {
-        NodeState.ACQUIRED -> "ACQUIRED"
-        NodeState.AVAILABLE -> "AVAILABLE"
-        NodeState.LOCKED -> "LOCKED"
+        NodeState.ACQUIRED -> "取得済み"
+        NodeState.AVAILABLE -> "取得可能"
+        NodeState.LOCKED -> "ロック"
     }
 
-    private fun panelWidth(): Int = min(560, (width - 16).coerceAtLeast(120))
-    private fun panelHeight(): Int = min(if (isCompact()) 430 else 320, (height - 16).coerceAtLeast(120))
-    private fun isCompact(): Boolean = panelWidth() < 500
-    private fun panelLeft(): Int = (width - panelWidth()) / 2
-    private fun panelTop(): Int = (height - panelHeight()) / 2
-
-    private fun nodePositions(left: Int, top: Int): Map<String, NodePosition> = mapOf(
-        "projects:passive/force" to NodePosition(left + 112, top + 174),
-        "projects:passive/overpower" to NodePosition(left + 62, top + 124),
-        "projects:passive/tempo" to NodePosition(left + 232, top + 174),
-        "projects:passive/flow" to NodePosition(left + 282, top + 124),
-        "projects:passive/vitality" to NodePosition(left + 172, top + 124),
-        "projects:passive/guard" to NodePosition(left + 172, top + 74),
-    )
-
-    private data class NodePosition(val x: Int, val y: Int)
     private enum class NodeState { ACQUIRED, AVAILABLE, LOCKED }
 
     private companion object {

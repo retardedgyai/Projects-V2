@@ -39,4 +39,18 @@ class ProgressionPersistenceTest {
         assertFalse(repository.save(playerId, ProgressionState()))
         assertEquals(original, Files.readString(file))
     }
+
+    @Test
+    fun `trailing garbage is rejected and original bytes remain untouched`() {
+        val directory = Files.createTempDirectory("projects-progression-trailing")
+        val repository = ProgressionRepository(directory)
+        val playerId = UUID.randomUUID()
+        val file = directory.resolve("$playerId.json")
+        val original = "{\"schemaVersion\":1,\"level\":1,\"experience\":0,\"grantedPassivePoints\":0,\"spentPassivePoints\":0,\"allocatedPassiveNodeIds\":[],\"revision\":0} trailing"
+        Files.writeString(file, original)
+
+        assertIs<ProgressionLoadResult.Invalid>(repository.load(playerId))
+        assertFalse(repository.save(playerId, ProgressionState()))
+        assertEquals(original, Files.readString(file))
+    }
 }

@@ -7,6 +7,11 @@ import kotlin.test.assertFailsWith
 
 class ProtocolCodecTest {
     @Test
+    fun `current protocol version is explicitly v12`() {
+        assertEquals(12, ProtocolVersion.CURRENT)
+    }
+
+    @Test
     fun `current protocol version is accepted`() {
         ProtocolVersion.requireCompatible(ProtocolVersion.CURRENT)
     }
@@ -15,6 +20,9 @@ class ProtocolCodecTest {
     fun `mismatched protocol version is rejected`() {
         assertFailsWith<ProtocolVersionMismatchException> {
             ProtocolVersion.requireCompatible(ProtocolVersion.CURRENT + 1)
+        }
+        assertFailsWith<ProtocolVersionMismatchException> {
+            ProtocolVersion.requireCompatible(11)
         }
     }
 

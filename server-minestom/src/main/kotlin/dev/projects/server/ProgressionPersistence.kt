@@ -56,37 +56,29 @@ class ProgressionRepository(private val directory: Path) {
     private fun fileFor(playerId: UUID): Path = directory.resolve("$playerId.json")
 
     private fun parse(raw: String): ProgressionState {
-        val schemaVersion = intField(raw, "schemaVersion")
+        val fields = ENVELOPE.find(raw)?.groupValues
+            ?: error("Malformed progression envelope")
+        val schemaVersion = fields[1].toInt()
         require(schemaVersion == SCHEMA_VERSION) { "Unsupported progression schema version: $schemaVersion" }
-        val allocatedField = Regex("\\\"allocatedPassiveNodeIds\\\"\\s*:\\s*\\[(.*?)]", setOf(RegexOption.DOT_MATCHES_ALL))
-            .find(raw)?.groupValues?.get(1)
-            ?: error("Missing allocatedPassiveNodeIds")
+        val allocatedField = fields[6]
         val nodeIds = if (allocatedField.isBlank()) {
             emptyList()
         } else {
-            allocatedField.split(',').map { token ->
-                val nodeId = token.trim().removeSurrounding("\"")
-                require(NODE_ID.matches(nodeId)) { "Invalid passive node id" }
-                nodeId
+            val matches = NODE_ID.findAll(allocatedField).toList()
+            require(matches.joinToString(",") { it.value } == allocatedField) {
+                "Malformed allocated passive node list"
             }
+            matches.map { it.groupValues[1] }
         }
         return ProgressionState(
-            level = intField(raw, "level"),
-            experience = intField(raw, "experience"),
-            grantedPassivePoints = intField(raw, "grantedPassivePoints"),
-            spentPassivePoints = intField(raw, "spentPassivePoints"),
+            level = fields[2].toInt(),
+            experience = fields[3].toInt(),
+            grantedPassivePoints = fields[4].toInt(),
+            spentPassivePoints = fields[5].toInt(),
             allocatedPassiveNodeIds = nodeIds,
-            revision = longField(raw, "revision"),
+            revision = fields[7].toLong(),
         )
     }
-
-    private fun intField(raw: String, key: String): Int =
-        Regex("\\\"$key\\\"\\s*:\\s*(-?\\d+)").find(raw)?.groupValues?.get(1)?.toInt()
-            ?: error("Missing progression field: $key")
-
-    private fun longField(raw: String, key: String): Long =
-        Regex("\\\"$key\\\"\\s*:\\s*(-?\\d+)").find(raw)?.groupValues?.get(1)?.toLong()
-            ?: error("Missing progression field: $key")
 
     private fun encode(record: ProgressionRecord): String = buildString {
         append("{\"schemaVersion\":").append(SCHEMA_VERSION)
@@ -105,6 +97,10 @@ class ProgressionRepository(private val directory: Path) {
     private companion object {
         const val SCHEMA_VERSION = 1
         const val MAX_FILE_BYTES = 16 * 1024L
-        val NODE_ID = Regex("[a-z0-9][a-z0-9:_/-]*")
+        val ENVELOPE = Regex(
+            """\A\{"schemaVersion":(-?\d+),"level":(-?\d+),"experience":(-?\d+),"grantedPassivePoints":(-?\d+),"spentPassivePoints":(-?\d+),"allocatedPassiveNodeIds":\[(.*)],"revision":(-?\d+)\}\z""",
+            setOf(RegexOption.DOT_MATCHES_ALL),
+        )
+        val NODE_ID = Regex("\"([a-z0-9][a-z0-9:_/-]*)\"")
     }
 }
