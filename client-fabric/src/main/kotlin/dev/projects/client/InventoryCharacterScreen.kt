@@ -227,7 +227,7 @@ internal class InventoryCharacterScreen private constructor(
         super.init()
         leftPos = layout.panel.x.coerceIn(0, (width - imageWidth).coerceAtLeast(0))
         topPos = layout.panel.y.coerceIn(0, (height - imageHeight).coerceAtLeast(0))
-        if (setup.player.containerMenu !== menu) setup.player.containerMenu = menu
+        if (setup.player.containerMenu !== setup.player.inventoryMenu) setup.player.containerMenu = setup.player.inventoryMenu
         if (selectedSlotIndex == null) {
             selectedSlotIndex = visibleSlotEntries().firstOrNull { (_, slot) -> slot.hasItem() }?.first
                 ?: visibleMenuIndices.first()
@@ -237,6 +237,7 @@ internal class InventoryCharacterScreen private constructor(
     override fun extractLabels(graphics: GuiGraphicsExtractor, mouseX: Int, mouseY: Int) = Unit
 
     override fun extractSlots(graphics: GuiGraphicsExtractor, mouseX: Int, mouseY: Int) {
+        syncClientMenuState()
         visibleSlotEntries().filter { (menuIndex, _) -> slotGroup(menuIndex) != InventoryCharacterSlotGroup.HOTBAR }
             .forEach { (_, slot) ->
                 drawSlotFrame(graphics, slot, mouseX, mouseY)
@@ -245,6 +246,7 @@ internal class InventoryCharacterScreen private constructor(
     }
 
     override fun extractRenderState(graphics: GuiGraphicsExtractor, mouseX: Int, mouseY: Int, delta: Float) {
+        syncClientMenuState()
         drawRail(graphics, mouseX, mouseY)
         drawCharacter(graphics)
         drawInventory(graphics)
@@ -268,6 +270,7 @@ internal class InventoryCharacterScreen private constructor(
 
     override fun mouseClicked(event: MouseButtonEvent, doubleClick: Boolean): Boolean {
         if (!containsInteractiveArea(event.x(), event.y())) return true
+        syncClientMenuState()
         slotAt(event.x(), event.y())?.let { selectedSlotIndex = menu.slots.indexOf(it) }
         return super.mouseClicked(event, doubleClick)
     }
@@ -275,11 +278,21 @@ internal class InventoryCharacterScreen private constructor(
     override fun slotClicked(slot: Slot, slotIndex: Int, mouseButton: Int, containerInput: ContainerInput) {
         val menuIndex = menu.slots.indexOf(slot).takeIf { it >= 0 } ?: slotIndex
         onMouseClickAction(slot, containerInput)
-        minecraft.gameMode?.handleContainerInput(menu.containerId, menuIndex, mouseButton, containerInput, minecraft.player ?: return)
+        val player = minecraft.player ?: return
+        val inventoryMenu = player.inventoryMenu
+        minecraft.gameMode?.handleContainerInput(
+            inventoryMenu.containerId,
+            menuIndex,
+            mouseButton,
+            containerInput,
+            player,
+        )
+        menu.setCarried(inventoryMenu.getCarried())
     }
 
     override fun mouseReleased(event: MouseButtonEvent): Boolean {
         if (!containsInteractiveArea(event.x(), event.y())) return true
+        syncClientMenuState()
         if (!menu.getCarried().isEmpty() && slotAt(event.x(), event.y()) == null) return true
         return super.mouseReleased(event)
     }
@@ -288,7 +301,7 @@ internal class InventoryCharacterScreen private constructor(
         !containsInteractiveArea(mouseX, mouseY)
 
     override fun removed() {
-        if (setup.player.containerMenu === menu) setup.player.containerMenu = setup.player.inventoryMenu
+        if (setup.player.containerMenu !== setup.player.inventoryMenu) setup.player.containerMenu = setup.player.inventoryMenu
         super.removed()
     }
 
@@ -494,6 +507,10 @@ internal class InventoryCharacterScreen private constructor(
     }
 
     private fun selectedSlot(): Slot? = selectedSlotIndex?.let { index -> menu.slots.getOrNull(index) }
+
+    private fun syncClientMenuState() {
+        menu.setCarried(setup.player.inventoryMenu.getCarried())
+    }
 
     private fun containsInteractiveArea(mouseX: Double, mouseY: Double): Boolean =
         layout.panel.contains(mouseX, mouseY) || layout.hotbar.contains(mouseX, mouseY)
