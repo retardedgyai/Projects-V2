@@ -17,4 +17,19 @@ class CooldownHudTest {
         assertEquals("2.4", cooldownSecondsText(48))
         assertEquals("0.0", cooldownSecondsText(0))
     }
+
+    @Test
+    fun `unavailable skill is not ready`() {
+        assertEquals(false, skillHudReady(false, 0))
+        assertEquals(true, skillHudReady(true, 0))
+        assertEquals(false, skillHudReady(true, 1))
+    }
+
+    @Test
+    fun `meter fill is clamped to its layout width`() {
+        assertEquals(0, meterFillWidth(0, 100, 82))
+        assertEquals(41, meterFillWidth(50, 100, 82))
+        assertEquals(82, meterFillWidth(120, 100, 82))
+        assertEquals(0, meterFillWidth(20, 0, 82))
+    }
 }
