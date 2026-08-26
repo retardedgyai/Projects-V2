@@ -190,7 +190,11 @@ class RiftExecutionerController(
                     phaseTicks = 2
                     events += RiftExecutionerEvent.SectorActive(
                         executionId,
-                        if (nextAttack == 1) RiftExecutionerAttack.FORWARD_SLAM else RiftExecutionerAttack.SECTOR_CLEAVE,
+                        when (nextAttack) {
+                            1 -> RiftExecutionerAttack.FORWARD_SLAM
+                            3 -> RiftExecutionerAttack.VERTICAL_CRUSH
+                            else -> RiftExecutionerAttack.SECTOR_CLEAVE
+                        },
                         attackOrigin,
                         attackFacing,
                     )

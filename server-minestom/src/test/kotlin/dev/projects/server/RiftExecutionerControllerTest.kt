@@ -31,18 +31,49 @@ class RiftExecutionerControllerTest {
     }
 
     @Test
-    fun `vertical crush emits deterministic distinct damage`() {
+    fun `vertical crush keeps attack through active phase and only damages low targets inside crush`() {
         val controller = RiftExecutionerController(initialPauseTicks = 0)
         val events = mutableListOf<RiftExecutionerEvent>()
+        val lowInside = RiftExecutionerTarget(playerId, Vec(2.0, 0.0, 0.0))
+        val highInside = RiftExecutionerTarget(UUID.randomUUID(), Vec(2.0, 1.0, 0.0))
+        val lowOutside = RiftExecutionerTarget(UUID.randomUUID(), Vec(3.1, 0.0, 0.0))
         while (events.none { it is RiftExecutionerEvent.SectorTelegraph && it.attack == RiftExecutionerAttack.VERTICAL_CRUSH }) {
-            events += controller.tick(origin, Vec(1.0, 0.0, 0.0), listOf(target), PrototypeBossPhase.EXECUTION)
+            events += controller.tick(origin, Vec(1.0, 0.0, 0.0), listOf(lowInside), PrototypeBossPhase.EXECUTION)
         }
-        repeat(RiftExecutionerController.VERTICAL_CRUSH_TELEGRAPH_TICKS) {
-            events += controller.tick(origin, Vec(1.0, 0.0, 0.0), listOf(target), PrototypeBossPhase.EXECUTION)
+        repeat(RiftExecutionerController.VERTICAL_CRUSH_TELEGRAPH_TICKS - 1) {
+            events += controller.tick(
+                origin,
+                Vec(1.0, 0.0, 0.0),
+                listOf(lowInside, highInside, lowOutside),
+                PrototypeBossPhase.EXECUTION,
+            )
         }
-        events += controller.tick(origin, Vec(1.0, 0.0, 0.0), listOf(target), PrototypeBossPhase.EXECUTION)
+        val activeEvents = controller.tick(
+            origin,
+            Vec(1.0, 0.0, 0.0),
+            listOf(lowInside, highInside, lowOutside),
+            PrototypeBossPhase.EXECUTION,
+        )
+        events += activeEvents
 
-        assertTrue(events.any { it is RiftExecutionerEvent.AttackHit && it.damage == RiftExecutionerController.VERTICAL_CRUSH_DAMAGE })
+        assertEquals(
+            RiftExecutionerAttack.VERTICAL_CRUSH,
+            activeEvents.filterIsInstance<RiftExecutionerEvent.SectorActive>().single().attack,
+        )
+
+        val hitEvents = controller.tick(
+            origin,
+            Vec(1.0, 0.0, 0.0),
+            listOf(lowInside, highInside, lowOutside),
+            PrototypeBossPhase.EXECUTION,
+        )
+        events += hitEvents
+
+        assertEquals(
+            listOf(lowInside.id),
+            hitEvents.filterIsInstance<RiftExecutionerEvent.AttackHit>().map { it.targetId },
+        )
+        assertEquals(RiftExecutionerController.VERTICAL_CRUSH_DAMAGE, hitEvents.filterIsInstance<RiftExecutionerEvent.AttackHit>().single().damage)
     }
 
     @Test

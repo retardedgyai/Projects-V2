@@ -1303,13 +1303,15 @@ private fun tickRiftExecutioner(
                 }
             }
             is RiftExecutionerEvent.SectorActive -> {
-                val attack = if (event.attack == RiftExecutionerAttack.FORWARD_SLAM) {
-                    FixedAttackType.FORWARD_SLAM
-                } else {
-                    FixedAttackType.SIDE_SWEEP
-                }
-                players.forEach { player ->
-                    showTesterActive(player, Pos(event.origin.x(), event.origin.y(), event.origin.z()), attack, event.facing)
+                if (event.attack != RiftExecutionerAttack.VERTICAL_CRUSH) {
+                    val attack = if (event.attack == RiftExecutionerAttack.FORWARD_SLAM) {
+                        FixedAttackType.FORWARD_SLAM
+                    } else {
+                        FixedAttackType.SIDE_SWEEP
+                    }
+                    players.forEach { player ->
+                        showTesterActive(player, Pos(event.origin.x(), event.origin.y(), event.origin.z()), attack, event.facing)
+                    }
                 }
             }
             is RiftExecutionerEvent.DashTelegraph -> {
