@@ -81,6 +81,19 @@ import dev.projects.server.particle.startParticleV2Diagnostic
 import dev.projects.server.particle.ParticleEffectHandle
 import dev.projects.server.particle.ParticleViewer
 import dev.projects.server.particle.PlayerParticleSink
+import dev.projects.server.equipment.BaseStatRoll
+import dev.projects.server.equipment.EquipmentCategory
+import dev.projects.server.equipment.EquipmentItem
+import dev.projects.server.equipment.EquipmentModSlot
+import dev.projects.server.equipment.EquipmentRarity
+import dev.projects.server.equipment.EquipmentSlot as ProjectSEquipmentSlot
+import dev.projects.server.equipment.EquipmentTier
+import dev.projects.server.equipment.toPresentationItemStack
+import dev.projects.server.mod.AttackTag
+import dev.projects.server.mod.ModDefinition
+import dev.projects.server.mod.ModEntry
+import dev.projects.server.mod.ModRank
+import dev.projects.server.mod.ModStackingLayer
 
 private const val SERVER_ADDRESS = "127.0.0.1"
 private const val SERVER_PORT = 25565
@@ -89,6 +102,41 @@ private val SUPPORTED_ATTACK_SPEEDS = setOf(1.0, 1.5, 2.0)
 private const val DODGE_PLAYER_WIDTH = 0.6
 private const val DODGE_PLAYER_HEIGHT = 1.8
 private val TWIN_BLADES_AUTO_OFFHAND = Tag.Boolean("projects_twin_blades_auto_offhand").defaultValue(false)
+
+private val TWIN_BLADES_DEFINITIONS = mapOf(
+    "projects:keen-edge" to ModDefinition(
+        modId = "projects:keen-edge",
+        rank = ModRank.RANK_1,
+        allowedSlots = setOf(ProjectSEquipmentSlot.WEAPON),
+        requiredTags = setOf(AttackTag.MELEE),
+        excludedTags = emptySet(),
+        statId = "projects:physical-attack",
+        minimumValue = 1.0,
+        maximumValue = 3.0,
+        stackingLayer = ModStackingLayer.BASE_FLAT,
+        definitionRevision = 1,
+    ),
+)
+
+private fun twinBladesItem(): EquipmentItem = EquipmentItem(
+    itemId = "projects:twin-blades",
+    category = EquipmentCategory.WEAPON,
+    slot = ProjectSEquipmentSlot.WEAPON,
+    tier = EquipmentTier.T1,
+    itemLevel = 5,
+    rarity = EquipmentRarity.UNCOMMON,
+    baseStatRolls = listOf(BaseStatRoll("projects:physical-attack", 12.5)),
+    modSlots = listOf(
+        EquipmentModSlot(0, ModEntry("projects:keen-edge", ModRank.RANK_1, 2.5, 0, 1)),
+        EquipmentModSlot.empty(1),
+    ),
+)
+
+private fun twinBladesItemStack() = twinBladesItem().toPresentationItemStack(
+    material = Material.IRON_SWORD,
+    displayName = "Twin Blades",
+    definitions = TWIN_BLADES_DEFINITIONS,
+)
 
 internal data class SkillCooldowns(
     val skill1: Int,
@@ -579,7 +627,7 @@ fun main() {
                 ItemStack.builder(Material.NETHERITE_SWORD).customName(Component.text("Heavy Blade")).build(),
             )
             event.player.inventory.addItemStack(
-                ItemStack.builder(Material.IRON_SWORD).customName(Component.text("Twin Blades")).build(),
+                twinBladesItemStack(),
             )
             if (dummy == null) {
                 dummy = Entity(EntityType.RAVAGER).apply {
@@ -1144,10 +1192,7 @@ private fun synchronizeTwinBladesOffhand(player: net.minestom.server.entity.Play
         if (offhand.isAir) {
             player.setEquipment(
                 EquipmentSlot.OFF_HAND,
-                ItemStack.builder(Material.IRON_SWORD)
-                    .customName(Component.text("Twin Blades"))
-                    .set(TWIN_BLADES_AUTO_OFFHAND, true)
-                    .build(),
+                twinBladesItemStack().withTag(TWIN_BLADES_AUTO_OFFHAND, true),
             )
         }
     } else if (offhand.getTag(TWIN_BLADES_AUTO_OFFHAND)) {
