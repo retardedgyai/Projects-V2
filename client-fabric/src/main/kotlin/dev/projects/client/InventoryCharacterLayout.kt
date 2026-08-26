@@ -25,7 +25,6 @@ data class InventoryCharacterLayout(
     val inventory: HudRect,
     val inventoryGrid: HudRect,
     val detail: HudRect,
-    val footer: HudRect,
     val hotbar: HudRect,
     val navRowHeight: Int,
     val navRowGap: Int,
@@ -52,7 +51,7 @@ fun inventoryCharacterLayout(screenWidth: Int, screenHeight: Int): InventoryChar
     val gridHeight = CANONICAL_SLOT_STEP * 2 + INVENTORY_CHARACTER_SLOT_SIZE
     val gridX = (inventory.x + (inventory.width - gridWidth) / 2)
         .coerceIn(inventory.x, (inventory.x + inventory.width - gridWidth).coerceAtLeast(inventory.x))
-    val inventoryGrid = HudRect(gridX, transform.y(276), gridWidth, gridHeight)
+    val inventoryGrid = HudRect(gridX, transform.y(320), gridWidth, gridHeight)
     val equipmentSlots = listOf(
         EquipmentSlot.HEAD,
         EquipmentSlot.CHEST,
@@ -72,7 +71,6 @@ fun inventoryCharacterLayout(screenWidth: Int, screenHeight: Int): InventoryChar
         inventory = inventory,
         inventoryGrid = inventoryGrid,
         detail = detail,
-        footer = transform.rect(HudRect(388, 770, 896, 48)),
         hotbar = bottomHudHotbar(screenWidth, screenHeight),
         navRowHeight = transform.size(INVENTORY_CHARACTER_NAV_ROW_HEIGHT),
         navRowGap = transform.size(INVENTORY_CHARACTER_NAV_ROW_GAP),
@@ -171,7 +169,6 @@ private fun legacyInventoryCharacterLayout(screenWidth: Int, screenHeight: Int):
         inventory = inventory,
         inventoryGrid = inventoryGrid,
         detail = detail,
-        footer = HudRect(panel.x + 12, panel.y + panel.height - 22, panel.width - 24, 16),
         hotbar = bottomHudHotbar(screenWidth, screenHeight),
         navRowHeight = INVENTORY_CHARACTER_NAV_ROW_HEIGHT / 3,
         navRowGap = INVENTORY_CHARACTER_NAV_ROW_GAP / 2,

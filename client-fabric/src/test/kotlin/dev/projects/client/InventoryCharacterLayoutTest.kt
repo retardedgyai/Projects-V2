@@ -29,11 +29,8 @@ class InventoryCharacterLayoutTest {
         assertEquals(HudRect(346, 186, 356, 532), layout.character)
         assertEquals(HudRect(714, 186, 494, 532), layout.inventory)
         assertEquals(HudRect(1220, 186, 310, 532), layout.detail)
-        assertEquals(HudRect(388, 770, 896, 48), layout.footer)
         assertEquals(HudRect(745, 919, 182, 22), layout.hotbar)
         assertEquals(24, layout.slotStep)
-        assertTrue(layout.footer.y > layout.panel.y + layout.panel.height)
-        assertTrue(layout.footer.y + layout.footer.height < layout.hotbar.y)
         assertEquals(INVENTORY_CHARACTER_NAV_ROW_HEIGHT, layout.navRowHeight)
         val navLastBottom = layout.rail.y + layout.navTopPadding +
             6 * (layout.navRowHeight + layout.navRowGap) + layout.navRowHeight

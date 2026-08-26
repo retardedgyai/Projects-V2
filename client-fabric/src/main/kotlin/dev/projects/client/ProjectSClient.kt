@@ -394,6 +394,7 @@ object ProjectSClient : ClientModInitializer {
             (if (client.options.keyDown.isDown()) 1.0 else 0.0)
 
     private fun renderResourceHud(context: GuiGraphicsExtractor, tickCounter: DeltaTracker) {
+        if (Minecraft.getInstance().gui.screen() is InventoryCharacterScreen) return
         val screenWidth = context.guiWidth()
         val screenHeight = context.guiHeight()
         val resource = hudLayout.elements[HudElementId.RESOURCE]!!
@@ -426,6 +427,7 @@ object ProjectSClient : ClientModInitializer {
     }
 
     private fun renderProgressionHud(context: GuiGraphicsExtractor, tickCounter: DeltaTracker) {
+        if (Minecraft.getInstance().gui.screen() is InventoryCharacterScreen) return
         val screenWidth = context.guiWidth()
         val screenHeight = context.guiHeight()
         val barWidth = minOf(182, screenWidth - 20)

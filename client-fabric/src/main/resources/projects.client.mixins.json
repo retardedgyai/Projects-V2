@@ -1,0 +1,11 @@
+{
+  "required": true,
+  "package": "dev.projects.client.mixin",
+  "compatibilityLevel": "JAVA_25",
+  "client": [
+    "InventoryCharacterItemInHandRendererMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

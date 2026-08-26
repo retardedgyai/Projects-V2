@@ -29,6 +29,7 @@ import java.util.Locale
 
 private const val PRESENTATION_TAG = "projects_equipment_presentation"
 private const val SLOT_SIZE = INVENTORY_CHARACTER_SLOT_SIZE
+private const val PREVIEW_ENTITY_SCALE = 52
 
 private data class InventoryCharacterUiTexture(
     val identifier: Identifier,
@@ -46,7 +47,6 @@ private fun inventoryCharacterUiTexture(name: String, width: Int, height: Int): 
 private val GLASS_MAIN_TEXTURE = inventoryCharacterUiTexture("glass_main", 96, 56)
 private val GLASS_SECONDARY_TEXTURE = inventoryCharacterUiTexture("glass_secondary", 88, 52)
 private val GLASS_DETAIL_TEXTURE = inventoryCharacterUiTexture("glass_detail", 96, 48)
-private val IVORY_ACTIVE_TAB_TEXTURE = inventoryCharacterUiTexture("ivory_active_tab", 72, 20)
 private val NAV_ROW_IDLE_TEXTURE = inventoryCharacterUiTexture("nav_row_idle", 84, 20)
 private val NAV_ROW_HOVER_TEXTURE = inventoryCharacterUiTexture("nav_row_hover", 84, 20)
 private val NAV_ROW_DISABLED_TEXTURE = inventoryCharacterUiTexture("nav_row_disabled", 84, 20)
@@ -214,12 +214,12 @@ internal class InventoryCharacterScreen private constructor(
     override fun isPauseScreen(): Boolean = false
 
     override fun extractBackground(graphics: GuiGraphicsExtractor, mouseX: Int, mouseY: Int, delta: Float) {
+        extractBlurredBackground(graphics)
         drawPanel(graphics, layout.panel, GLASS_MAIN_TEXTURE, 10)
         drawPanel(graphics, layout.rail, GLASS_SECONDARY_TEXTURE, 10)
         drawPanel(graphics, layout.character, GLASS_SECONDARY_TEXTURE, 10)
         drawPanel(graphics, layout.inventory, GLASS_SECONDARY_TEXTURE, 10)
         drawPanel(graphics, layout.detail, GLASS_DETAIL_TEXTURE, 9)
-        drawPanel(graphics, layout.footer, GLASS_SECONDARY_TEXTURE, 6)
         drawActiveTab(graphics)
     }
 
@@ -251,7 +251,6 @@ internal class InventoryCharacterScreen private constructor(
         drawCharacter(graphics)
         drawInventory(graphics)
         drawDetail(graphics)
-        drawFooter(graphics)
         val preview = inventoryCharacterPreviewBounds(layout.preview)
         InventoryScreen.extractEntityInInventoryFollowsMouse(
             graphics,
@@ -259,7 +258,7 @@ internal class InventoryCharacterScreen private constructor(
             preview.y0,
             preview.x1,
             preview.y1,
-            34,
+            PREVIEW_ENTITY_SCALE,
             0.0625f,
             mouseX.toFloat(),
             mouseY.toFloat(),
@@ -317,9 +316,9 @@ internal class InventoryCharacterScreen private constructor(
             )
         }
         if (layout.tiny) {
-            drawHorizontalSlice(graphics, plate, IVORY_ACTIVE_TAB_TEXTURE, 6)
+            drawHorizontalSlice(graphics, plate, NAV_ROW_HOVER_TEXTURE, 6)
         } else {
-            drawNineSlice(graphics, plate, IVORY_ACTIVE_TAB_TEXTURE, 6)
+            drawNineSlice(graphics, plate, NAV_ROW_HOVER_TEXTURE, 6)
         }
     }
 
@@ -358,20 +357,6 @@ internal class InventoryCharacterScreen private constructor(
                 index == 0,
             )
         }
-    }
-
-    private fun drawFooter(graphics: GuiGraphicsExtractor) {
-        val x = layout.footer.x + 16
-        val y = layout.footer.y + (layout.footer.height - font.lineHeight) / 2
-        val progress = (setup.player.experienceProgress * 100).toInt().coerceIn(0, 100)
-        graphics.text(font, "Lv ${setup.player.experienceLevel}", x, y, 0xFFF0F0EA.toInt(), true)
-        graphics.text(font, "経験値 $progress%", x + 72, y, 0xFFB8BAB5.toInt(), false)
-        drawHorizontalSlice(
-            graphics,
-            HudRect(x + 170, layout.footer.y + layout.footer.height / 2, (layout.footer.width - 200).coerceAtLeast(40), 2),
-            THIN_HIGHLIGHT_TEXTURE,
-            2,
-        )
     }
 
     private fun drawCharacter(graphics: GuiGraphicsExtractor) {
@@ -427,7 +412,7 @@ internal class InventoryCharacterScreen private constructor(
             drawHorizontalSlice(
                 graphics,
                 chip,
-                if (index == 0) IVORY_ACTIVE_TAB_TEXTURE else NAV_ROW_IDLE_TEXTURE,
+                NAV_ROW_HOVER_TEXTURE,
                 6,
             )
             graphics.text(
@@ -455,10 +440,16 @@ internal class InventoryCharacterScreen private constructor(
         val presentation = stack.readEquipmentPresentation()
         val iconZone = HudRect(x, y + 30, 64, 64)
         drawPanel(graphics, iconZone, GLASS_SECONDARY_TEXTURE, 6)
-        val frameX = iconZone.x + 20
-        val frameY = iconZone.y + 20
+        val frameX = iconZone.x + (iconZone.width - 24) / 2
+        val frameY = iconZone.y + (iconZone.height - 24) / 2
         blitRegion(graphics, frameX, frameY, 24, 24, 0, 0, 24, 24, ITEM_SLOT_SELECTED_TEXTURE)
-        graphics.item(stack, frameX + 4, frameY + 4)
+        val pose = graphics.pose()
+        pose.pushMatrix()
+        pose.translate((iconZone.x + iconZone.width / 2).toFloat(), (iconZone.y + iconZone.height / 2).toFloat())
+        pose.scale(2f)
+        graphics.item(stack, -8, -8)
+        graphics.itemDecorations(font, stack, -8, -8)
+        pose.popMatrix()
         val textX = iconZone.x + 78
         graphics.text(font, stack.getHoverName(), textX, iconZone.y + 12, presentation?.let(::rarityColor) ?: 0xFFF0F0EA.toInt(), true)
         if (presentation == null) {
