@@ -13,4 +13,4 @@ Recipes consume one of each input:
 | tide + gale | surge | prototype mobility energy, reserved for the next combat pass |
 | stone + tide | ward | prototype defensive energy, reserved for the next combat pass |
 
-`/essence gather` is the explicit world interaction and grants one ember and one tide. `/essence grant` and `/essence reset` are debug helpers. State is process-lifetime only; persistence and UI are intentionally out of scope.
+Confirmed combat actions acquire primal essence without debug commands: heavy blade hits grant ember, twin rods hits grant gale, dash hits grant tide, and dive hits grant stone. `/essence gather`, `/essence grant`, and `/essence reset` are debug helpers, not world interactions. State is process-lifetime only; persistence and UI are intentionally out of scope.

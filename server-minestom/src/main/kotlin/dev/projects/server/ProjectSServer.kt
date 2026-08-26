@@ -38,6 +38,7 @@ import net.minestom.server.entity.Entity
 import net.minestom.server.entity.EntityType
 import net.minestom.server.entity.EquipmentSlot
 import net.minestom.server.entity.GameMode
+import net.minestom.server.entity.attribute.Attribute
 import net.minestom.server.event.player.AsyncPlayerConfigurationEvent
 import net.minestom.server.event.player.PlayerPluginMessageEvent
 import net.minestom.server.event.player.PlayerDisconnectEvent
@@ -292,6 +293,10 @@ fun main() {
     fun essenceState(player: net.minestom.server.entity.Player): MagicEssenceState =
         magicEssences.getOrPut(player.uuid) { MagicEssenceState() }
 
+    fun grantCombatEssence(player: net.minestom.server.entity.Player, action: MagicCombatAction) {
+        essenceState(player).grantForCombatAction(action)
+    }
+
     fun parsePrimal(raw: String): PrimalEssence? =
         runCatching { PrimalEssence.valueOf(raw.uppercase()) }.getOrNull()
 
@@ -343,7 +348,9 @@ fun main() {
             return
         }
         when (result) {
-            DerivedEssence.BLOOM -> player.setHealth((player.health + 10.0f).coerceAtMost(20.0f))
+            DerivedEssence.BLOOM -> player.setHealth(
+                (player.health + 10.0f).coerceAtMost(player.getAttributeValue(Attribute.MAX_HEALTH).toFloat()),
+            )
             DerivedEssence.SPARK, DerivedEssence.SURGE, DerivedEssence.WARD -> Unit
         }
         player.sendMessage(Component.text("Used ${result.name.lowercase()}" + if (result == DerivedEssence.BLOOM) " and restored health" else ""))
@@ -859,6 +866,11 @@ fun main() {
                 sendResourceSnapshot(event.player)
             }
             if (damage > 0) {
+                grantCombatEssence(
+                    event.player,
+                    if (hit.weapon == WeaponType.HEAVY_BLADE) MagicCombatAction.HEAVY_BLADE_HIT
+                    else MagicCombatAction.TWIN_RODS_HIT,
+                )
                 updateBossBar()
                 if (weakpoint != null) {
                     if (hit.weapon == WeaponType.TWIN_RODS) showWeakpointLabel(event.player, weakpoint)
@@ -924,7 +936,10 @@ fun main() {
             if (hitTargets.isNotEmpty()) {
                 hitTargets.forEach { targetId ->
                     val damage = prototypeBoss.applySkill1Attack(skill1.castId, targetId)
-                    if (damage > 0) updateBossBar()
+                    if (damage > 0) {
+                        grantCombatEssence(event.player, MagicCombatAction.DASH_HIT)
+                        updateBossBar()
+                    }
                 }
                 showSkill1Impact(event.player, tester?.position ?: end, direction, particleAnimations, particleManager)
                 showSkill1Launch(event.player, direction, particleAnimations, particleManager)
@@ -951,7 +966,10 @@ fun main() {
                 val skillTargets = tester?.let { listOf(combatTarget(it)) } ?: emptyList()
                 skill2.hitTargetsAtPulse(pulseIndex, event.player.position, skillTargets).forEach { targetId ->
                     val damage = prototypeBoss.applySkill2Pulse(skill2.castId, pulseIndex, targetId)
-                    if (damage > 0) updateBossBar()
+                    if (damage > 0) {
+                        grantCombatEssence(event.player, MagicCombatAction.DIVE_HIT)
+                        updateBossBar()
+                    }
                 }
                 showSkill2Pulse(event.player, pulseIndex, particleAnimations, particleManager)
             }
@@ -959,7 +977,10 @@ fun main() {
             val skillTargets = tester?.let { listOf(combatTarget(it)) } ?: emptyList()
             skill2.hitTargetsAtLanding(event.player.position, skillTargets).forEach { targetId ->
                 val damage = prototypeBoss.applySkill2Landing(skill2.castId, targetId)
-                if (damage > 0) updateBossBar()
+                if (damage > 0) {
+                    grantCombatEssence(event.player, MagicCombatAction.DIVE_HIT)
+                    updateBossBar()
+                }
             }
             showSkill2Landing(event.player, particleAnimations, particleManager)
             sendResourceSnapshot(event.player)

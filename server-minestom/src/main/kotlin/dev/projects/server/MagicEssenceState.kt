@@ -14,6 +14,13 @@ enum class DerivedEssence(val first: PrimalEssence, val second: PrimalEssence) {
     WARD(PrimalEssence.STONE, PrimalEssence.TIDE),
 }
 
+enum class MagicCombatAction(val essence: PrimalEssence) {
+    HEAVY_BLADE_HIT(PrimalEssence.EMBER),
+    TWIN_RODS_HIT(PrimalEssence.GALE),
+    DASH_HIT(PrimalEssence.TIDE),
+    DIVE_HIT(PrimalEssence.STONE),
+}
+
 /** Small server-owned v0 inventory for the magic prototype. */
 class MagicEssenceState(
     val capacity: Int = DEFAULT_CAPACITY,
@@ -36,12 +43,15 @@ class MagicEssenceState(
         return accepted
     }
 
+    fun grantForCombatAction(action: MagicCombatAction): Int = grant(action.essence, 1)
+
     fun canCombine(first: PrimalEssence, second: PrimalEssence): Boolean =
         first != second && amount(first) > 0 && amount(second) > 0 && recipe(first, second) != null
 
     fun tryCombine(first: PrimalEssence, second: PrimalEssence): DerivedEssence? {
         val result = recipe(first, second) ?: return null
         if (!canCombine(first, second)) return null
+        if (amount(result) >= capacity) return null
         primal[first] = amount(first) - 1
         primal[second] = amount(second) - 1
         derived[result] = amount(result) + 1

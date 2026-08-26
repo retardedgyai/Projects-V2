@@ -30,6 +30,30 @@ class MagicEssenceStateTest {
     }
 
     @Test
+    fun `combat actions can acquire every primal essence`() {
+        val state = MagicEssenceState()
+
+        MagicCombatAction.entries.forEach(state::grantForCombatAction)
+
+        PrimalEssence.entries.forEach { assertEquals(1, state.amount(it)) }
+    }
+
+    @Test
+    fun `derived capacity rejects combine without consuming inputs`() {
+        val state = MagicEssenceState(capacity = 1)
+        state.grant(PrimalEssence.EMBER, 1)
+        state.grant(PrimalEssence.TIDE, 1)
+        assertEquals(DerivedEssence.BLOOM, state.tryCombine(PrimalEssence.EMBER, PrimalEssence.TIDE))
+        state.grant(PrimalEssence.EMBER, 1)
+        state.grant(PrimalEssence.TIDE, 1)
+
+        assertNull(state.tryCombine(PrimalEssence.EMBER, PrimalEssence.TIDE))
+        assertEquals(1, state.amount(PrimalEssence.EMBER))
+        assertEquals(1, state.amount(PrimalEssence.TIDE))
+        assertEquals(1, state.amount(DerivedEssence.BLOOM))
+    }
+
+    @Test
     fun `insufficient or invalid recipe does not mutate state`() {
         val state = MagicEssenceState()
         state.grant(PrimalEssence.STONE, 1)
