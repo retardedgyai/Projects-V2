@@ -186,7 +186,7 @@ object ProjectSClient : ClientModInitializer {
                         val client = context.client()
                         if (client.gui.screen() is VfxEditor2Screen) return@execute
                         client.gui.setScreen(
-                            VfxEditor2Screen(message.targetLabel) { outgoing ->
+                            VfxEditor2Screen(message.targetLabel, message.composition) { outgoing ->
                                 if (ClientPlayNetworking.canSend(ProjectSPayload.TYPE)) {
                                     ClientPlayNetworking.send(ProjectSPayload(ProtocolCodec.encode(outgoing)))
                                 }

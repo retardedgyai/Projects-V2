@@ -433,9 +433,349 @@ data class VfxEditorNotice(val text: String) : ProtocolMessage {
 private object VfxEditor2ProtocolLimits {
     const val MAX_TARGET_LENGTH = 32
     const val MAX_STATUS_LENGTH = 160
+    const val MAX_EFFECTS = 8
+    const val MAX_EFFECT_NAME_LENGTH = 32
+    const val MIN_FORWARD = -1.0
+    const val MAX_FORWARD = 8.0
+    const val MIN_SIDE = -5.0
+    const val MAX_SIDE = 5.0
+    const val MIN_HEIGHT = -2.0
+    const val MAX_HEIGHT = 5.0
+    const val MIN_ROTATION = -180.0
+    const val MAX_ROTATION = 180.0
+    const val MIN_LENGTH = 0.5
+    const val MAX_LENGTH = 10.0
+    const val MIN_ARC_DEGREES = 10.0
+    const val MAX_ARC_DEGREES = 300.0
+    const val MIN_CURVATURE = 0.0
+    const val MAX_CURVATURE = 2.0
+    const val MIN_THICKNESS = 0.0
+    const val MAX_THICKNESS = 1.5
+    const val MIN_RADIUS = 0.0
+    const val MAX_RADIUS = 8.0
+    const val MIN_DENSITY = 0.25
+    const val MAX_DENSITY = 4.0
+    const val MIN_PARTICLE_SIZE = 0.05
+    const val MAX_PARTICLE_SIZE = 1.5
+    const val MAX_BURST_COUNT = 64
+    const val MAX_BURST_SPREAD = 89.0
+    const val MAX_BURST_SPEED = 3.0
 }
 
-data class VfxEditor2Open(val targetLabel: String = "Ronin Q") : ProtocolMessage {
+enum class VfxEditor2EffectType {
+    ARC_SLASH,
+    STRAIGHT_SLASH,
+    RING,
+    BURST,
+}
+
+data class VfxEditor2Transform(
+    val forward: Double = 0.0,
+    val side: Double = 0.0,
+    val height: Double = 0.0,
+    val yaw: Double = 0.0,
+    val pitch: Double = 0.0,
+    val roll: Double = 0.0,
+) {
+    init {
+        require(listOf(forward, side, height, yaw, pitch, roll).all { it.isFinite() }) {
+            "VFX Editor 2 transform values must be finite"
+        }
+        require(forward in VfxEditor2ProtocolLimits.MIN_FORWARD..VfxEditor2ProtocolLimits.MAX_FORWARD) {
+            "VFX Editor 2 forward position is out of range"
+        }
+        require(side in VfxEditor2ProtocolLimits.MIN_SIDE..VfxEditor2ProtocolLimits.MAX_SIDE) {
+            "VFX Editor 2 side position is out of range"
+        }
+        require(height in VfxEditor2ProtocolLimits.MIN_HEIGHT..VfxEditor2ProtocolLimits.MAX_HEIGHT) {
+            "VFX Editor 2 height is out of range"
+        }
+        require(listOf(yaw, pitch, roll).all { it in VfxEditor2ProtocolLimits.MIN_ROTATION..VfxEditor2ProtocolLimits.MAX_ROTATION }) {
+            "VFX Editor 2 rotation is out of range"
+        }
+    }
+
+    companion object {
+        fun clamped(
+            forward: Double,
+            side: Double,
+            height: Double,
+            yaw: Double,
+            pitch: Double,
+            roll: Double,
+        ): VfxEditor2Transform {
+            require(listOf(forward, side, height, yaw, pitch, roll).all { it.isFinite() }) {
+                "VFX Editor 2 transform values must be finite"
+            }
+            return VfxEditor2Transform(
+                forward.coerceIn(VfxEditor2ProtocolLimits.MIN_FORWARD, VfxEditor2ProtocolLimits.MAX_FORWARD),
+                side.coerceIn(VfxEditor2ProtocolLimits.MIN_SIDE, VfxEditor2ProtocolLimits.MAX_SIDE),
+                height.coerceIn(VfxEditor2ProtocolLimits.MIN_HEIGHT, VfxEditor2ProtocolLimits.MAX_HEIGHT),
+                yaw.coerceIn(VfxEditor2ProtocolLimits.MIN_ROTATION, VfxEditor2ProtocolLimits.MAX_ROTATION),
+                pitch.coerceIn(VfxEditor2ProtocolLimits.MIN_ROTATION, VfxEditor2ProtocolLimits.MAX_ROTATION),
+                roll.coerceIn(VfxEditor2ProtocolLimits.MIN_ROTATION, VfxEditor2ProtocolLimits.MAX_ROTATION),
+            )
+        }
+    }
+}
+
+data class VfxEditor2Appearance(
+    val color: Int = 0xffffff,
+    val particleSize: Double = 0.45,
+    val density: Double = 1.0,
+) {
+    init {
+        require(color in 0..0xffffff) { "VFX Editor 2 color is out of range" }
+        require(particleSize.isFinite() && particleSize in VfxEditor2ProtocolLimits.MIN_PARTICLE_SIZE..VfxEditor2ProtocolLimits.MAX_PARTICLE_SIZE) {
+            "VFX Editor 2 particle size is out of range"
+        }
+        require(density.isFinite() && density in VfxEditor2ProtocolLimits.MIN_DENSITY..VfxEditor2ProtocolLimits.MAX_DENSITY) {
+            "VFX Editor 2 density is out of range"
+        }
+    }
+
+    companion object {
+        fun clamped(color: Int, particleSize: Double, density: Double): VfxEditor2Appearance {
+            require(particleSize.isFinite() && density.isFinite()) {
+                "VFX Editor 2 appearance values must be finite"
+            }
+            return VfxEditor2Appearance(
+                color.coerceIn(0, 0xffffff),
+                particleSize.coerceIn(VfxEditor2ProtocolLimits.MIN_PARTICLE_SIZE, VfxEditor2ProtocolLimits.MAX_PARTICLE_SIZE),
+                density.coerceIn(VfxEditor2ProtocolLimits.MIN_DENSITY, VfxEditor2ProtocolLimits.MAX_DENSITY),
+            )
+        }
+    }
+}
+
+sealed interface VfxEditor2Shape {
+    val type: VfxEditor2EffectType
+
+    data class ArcSlash(
+        val length: Double = 5.0,
+        val arcDegrees: Double = 170.0,
+        val curvature: Double = 0.55,
+        val thickness: Double = 0.35,
+    ) : VfxEditor2Shape {
+        override val type: VfxEditor2EffectType get() = VfxEditor2EffectType.ARC_SLASH
+
+        init {
+            require(listOf(length, arcDegrees, curvature, thickness).all { it.isFinite() }) {
+                "VFX Editor 2 arc values must be finite"
+            }
+            require(length in VfxEditor2ProtocolLimits.MIN_LENGTH..VfxEditor2ProtocolLimits.MAX_LENGTH) {
+                "VFX Editor 2 arc length is out of range"
+            }
+            require(arcDegrees in VfxEditor2ProtocolLimits.MIN_ARC_DEGREES..VfxEditor2ProtocolLimits.MAX_ARC_DEGREES) {
+                "VFX Editor 2 arc span is out of range"
+            }
+            require(curvature in VfxEditor2ProtocolLimits.MIN_CURVATURE..VfxEditor2ProtocolLimits.MAX_CURVATURE) {
+                "VFX Editor 2 curvature is out of range"
+            }
+            require(thickness in VfxEditor2ProtocolLimits.MIN_THICKNESS..VfxEditor2ProtocolLimits.MAX_THICKNESS) {
+                "VFX Editor 2 arc thickness is out of range"
+            }
+        }
+
+        companion object {
+            fun clamped(length: Double, arcDegrees: Double, curvature: Double, thickness: Double): ArcSlash {
+                require(listOf(length, arcDegrees, curvature, thickness).all { it.isFinite() }) {
+                    "VFX Editor 2 arc values must be finite"
+                }
+                return ArcSlash(
+                    length.coerceIn(VfxEditor2ProtocolLimits.MIN_LENGTH, VfxEditor2ProtocolLimits.MAX_LENGTH),
+                    arcDegrees.coerceIn(VfxEditor2ProtocolLimits.MIN_ARC_DEGREES, VfxEditor2ProtocolLimits.MAX_ARC_DEGREES),
+                    curvature.coerceIn(VfxEditor2ProtocolLimits.MIN_CURVATURE, VfxEditor2ProtocolLimits.MAX_CURVATURE),
+                    thickness.coerceIn(VfxEditor2ProtocolLimits.MIN_THICKNESS, VfxEditor2ProtocolLimits.MAX_THICKNESS),
+                )
+            }
+        }
+    }
+
+    data class StraightSlash(
+        val length: Double = 5.0,
+        val thickness: Double = 0.25,
+    ) : VfxEditor2Shape {
+        override val type: VfxEditor2EffectType get() = VfxEditor2EffectType.STRAIGHT_SLASH
+
+        init {
+            require(listOf(length, thickness).all { it.isFinite() }) {
+                "VFX Editor 2 straight slash values must be finite"
+            }
+            require(length in VfxEditor2ProtocolLimits.MIN_LENGTH..VfxEditor2ProtocolLimits.MAX_LENGTH) {
+                "VFX Editor 2 straight slash length is out of range"
+            }
+            require(thickness in VfxEditor2ProtocolLimits.MIN_THICKNESS..VfxEditor2ProtocolLimits.MAX_THICKNESS) {
+                "VFX Editor 2 straight slash thickness is out of range"
+            }
+        }
+
+        companion object {
+            fun clamped(length: Double, thickness: Double): StraightSlash {
+                require(listOf(length, thickness).all { it.isFinite() }) {
+                    "VFX Editor 2 straight slash values must be finite"
+                }
+                return StraightSlash(
+                    length.coerceIn(VfxEditor2ProtocolLimits.MIN_LENGTH, VfxEditor2ProtocolLimits.MAX_LENGTH),
+                    thickness.coerceIn(VfxEditor2ProtocolLimits.MIN_THICKNESS, VfxEditor2ProtocolLimits.MAX_THICKNESS),
+                )
+            }
+        }
+    }
+
+    data class Ring(
+        val radius: Double = 1.5,
+        val arcDegrees: Double = 360.0,
+        val thickness: Double = 0.12,
+    ) : VfxEditor2Shape {
+        override val type: VfxEditor2EffectType get() = VfxEditor2EffectType.RING
+
+        init {
+            require(listOf(radius, arcDegrees, thickness).all { it.isFinite() }) {
+                "VFX Editor 2 ring values must be finite"
+            }
+            require(radius in VfxEditor2ProtocolLimits.MIN_RADIUS..VfxEditor2ProtocolLimits.MAX_RADIUS) {
+                "VFX Editor 2 ring radius is out of range"
+            }
+            require(arcDegrees in VfxEditor2ProtocolLimits.MIN_ARC_DEGREES..360.0) {
+                "VFX Editor 2 ring arc is out of range"
+            }
+            require(thickness in VfxEditor2ProtocolLimits.MIN_THICKNESS..VfxEditor2ProtocolLimits.MAX_THICKNESS) {
+                "VFX Editor 2 ring thickness is out of range"
+            }
+        }
+
+        companion object {
+            fun clamped(radius: Double, arcDegrees: Double, thickness: Double): Ring {
+                require(listOf(radius, arcDegrees, thickness).all { it.isFinite() }) {
+                    "VFX Editor 2 ring values must be finite"
+                }
+                return Ring(
+                    radius.coerceIn(VfxEditor2ProtocolLimits.MIN_RADIUS, VfxEditor2ProtocolLimits.MAX_RADIUS),
+                    arcDegrees.coerceIn(VfxEditor2ProtocolLimits.MIN_ARC_DEGREES, 360.0),
+                    thickness.coerceIn(VfxEditor2ProtocolLimits.MIN_THICKNESS, VfxEditor2ProtocolLimits.MAX_THICKNESS),
+                )
+            }
+        }
+    }
+
+    data class Burst(
+        val radius: Double = 1.2,
+        val count: Int = 20,
+        val spread: Double = 45.0,
+        val speed: Double = 0.45,
+    ) : VfxEditor2Shape {
+        override val type: VfxEditor2EffectType get() = VfxEditor2EffectType.BURST
+
+        init {
+            require(listOf(radius, spread, speed).all { it.isFinite() }) {
+                "VFX Editor 2 burst values must be finite"
+            }
+            require(radius in VfxEditor2ProtocolLimits.MIN_RADIUS..VfxEditor2ProtocolLimits.MAX_RADIUS) {
+                "VFX Editor 2 burst radius is out of range"
+            }
+            require(count in 1..VfxEditor2ProtocolLimits.MAX_BURST_COUNT) {
+                "VFX Editor 2 burst count is out of range"
+            }
+            require(spread in 0.0..VfxEditor2ProtocolLimits.MAX_BURST_SPREAD) {
+                "VFX Editor 2 burst spread is out of range"
+            }
+            require(speed in 0.0..VfxEditor2ProtocolLimits.MAX_BURST_SPEED) {
+                "VFX Editor 2 burst speed is out of range"
+            }
+        }
+
+        companion object {
+            fun clamped(radius: Double, count: Int, spread: Double, speed: Double): Burst {
+                require(listOf(radius, spread, speed).all { it.isFinite() }) {
+                    "VFX Editor 2 burst values must be finite"
+                }
+                return Burst(
+                    radius.coerceIn(VfxEditor2ProtocolLimits.MIN_RADIUS, VfxEditor2ProtocolLimits.MAX_RADIUS),
+                    count.coerceIn(1, VfxEditor2ProtocolLimits.MAX_BURST_COUNT),
+                    spread.coerceIn(0.0, VfxEditor2ProtocolLimits.MAX_BURST_SPREAD),
+                    speed.coerceIn(0.0, VfxEditor2ProtocolLimits.MAX_BURST_SPEED),
+                )
+            }
+        }
+    }
+}
+
+data class VfxEditor2Effect(
+    val id: Long,
+    val name: String,
+    val type: VfxEditor2EffectType,
+    val shape: VfxEditor2Shape,
+    val transform: VfxEditor2Transform = VfxEditor2Transform(),
+    val appearance: VfxEditor2Appearance = VfxEditor2Appearance(),
+    val enabled: Boolean = true,
+    val solo: Boolean = false,
+) {
+    init {
+        require(id >= 0L) { "VFX Editor 2 effect id is invalid" }
+        require(name.isNotBlank() && name.length <= VfxEditor2ProtocolLimits.MAX_EFFECT_NAME_LENGTH) {
+            "VFX Editor 2 effect name is invalid"
+        }
+        require(shape.type == type) { "VFX Editor 2 effect type and shape do not match" }
+    }
+}
+
+data class VfxEditor2Composition(val effects: List<VfxEditor2Effect>) {
+    init {
+        require(effects.size <= VfxEditor2ProtocolLimits.MAX_EFFECTS) {
+            "VFX Editor 2 has too many effects"
+        }
+        require(effects.map { it.id }.toSet().size == effects.size) {
+            "VFX Editor 2 effect ids must be unique"
+        }
+    }
+
+    fun visibleEffects(): List<VfxEditor2Effect> {
+        val hasSolo = effects.any { it.solo }
+        return effects.filter { it.enabled && (!hasSolo || it.solo) }
+    }
+
+    fun add(effect: VfxEditor2Effect): VfxEditor2Composition? {
+        if (effects.size >= VfxEditor2ProtocolLimits.MAX_EFFECTS || effects.any { it.id == effect.id }) return null
+        return copy(effects = effects + effect)
+    }
+
+    fun duplicate(effectId: Long, newId: Long, newName: String): VfxEditor2Composition? {
+        val source = effects.firstOrNull { it.id == effectId } ?: return null
+        if (effects.size >= VfxEditor2ProtocolLimits.MAX_EFFECTS || effects.any { it.id == newId }) return null
+        val duplicate = source.copy(id = newId, name = newName.take(VfxEditor2ProtocolLimits.MAX_EFFECT_NAME_LENGTH))
+        return copy(effects = effects + duplicate)
+    }
+
+    fun remove(effectId: Long): VfxEditor2Composition = copy(effects = effects.filterNot { it.id == effectId })
+
+    fun update(effectId: Long, transform: (VfxEditor2Effect) -> VfxEditor2Effect): VfxEditor2Composition =
+        copy(effects = effects.map { if (it.id == effectId) transform(it) else it })
+}
+
+fun defaultVfxEditor2Composition(): VfxEditor2Composition = VfxEditor2Composition(
+    listOf(
+        VfxEditor2Effect(
+            id = 1L,
+            name = "Crimson Slash",
+            type = VfxEditor2EffectType.ARC_SLASH,
+            shape = VfxEditor2Shape.ArcSlash(length = 5.0, arcDegrees = 170.0, curvature = 0.55, thickness = 0.35),
+            appearance = VfxEditor2Appearance(color = 0xc51f3a, particleSize = 0.58, density = 1.3),
+        ),
+        VfxEditor2Effect(
+            id = 2L,
+            name = "White Core",
+            type = VfxEditor2EffectType.ARC_SLASH,
+            shape = VfxEditor2Shape.ArcSlash(length = 5.0, arcDegrees = 170.0, curvature = 0.55, thickness = 0.12),
+            appearance = VfxEditor2Appearance(color = 0xffffff, particleSize = 0.34, density = 1.7),
+        ),
+    ),
+)
+
+data class VfxEditor2Open(
+    val targetLabel: String = "Ronin Q",
+    val composition: VfxEditor2Composition = defaultVfxEditor2Composition(),
+) : ProtocolMessage {
     init {
         require(targetLabel.isNotBlank() && targetLabel.length <= VfxEditor2ProtocolLimits.MAX_TARGET_LENGTH) {
             "VFX Editor 2 target label is invalid"
@@ -443,7 +783,10 @@ data class VfxEditor2Open(val targetLabel: String = "Ronin Q") : ProtocolMessage
     }
 }
 
-data class VfxEditor2PreviewStart(val requestId: Long) : ProtocolMessage {
+data class VfxEditor2PreviewStart(
+    val requestId: Long,
+    val composition: VfxEditor2Composition = defaultVfxEditor2Composition(),
+) : ProtocolMessage {
     init { require(requestId >= 0L) { "VFX Editor 2 request id is invalid" } }
 }
 
@@ -637,10 +980,12 @@ object ProtocolCodec {
                 is VfxEditor2Open -> {
                     data.writeByte(VFX_EDITOR_2_OPEN)
                     writeString(data, message.targetLabel)
+                    writeVfxEditor2Composition(data, message.composition)
                 }
                 is VfxEditor2PreviewStart -> {
                     data.writeByte(VFX_EDITOR_2_PREVIEW_START)
                     data.writeLong(message.requestId)
+                    writeVfxEditor2Composition(data, message.composition)
                 }
                 VfxEditor2PreviewStop -> data.writeByte(VFX_EDITOR_2_PREVIEW_STOP)
                 is VfxEditor2Status -> {
@@ -774,8 +1119,8 @@ object ProtocolCodec {
             VFX_SLASH_DRAFT_LOAD_REQUEST -> VfxSlashDraftLoadRequest(readString(input))
             VFX_SLASH_DRAFT -> VfxSlashDraft(readString(input), readSlashParameters(input))
             VFX_EDITOR_NOTICE -> VfxEditorNotice(readString(input))
-            VFX_EDITOR_2_OPEN -> VfxEditor2Open(readString(input))
-            VFX_EDITOR_2_PREVIEW_START -> VfxEditor2PreviewStart(input.readLong())
+            VFX_EDITOR_2_OPEN -> VfxEditor2Open(readString(input), readVfxEditor2Composition(input))
+            VFX_EDITOR_2_PREVIEW_START -> VfxEditor2PreviewStart(input.readLong(), readVfxEditor2Composition(input))
             VFX_EDITOR_2_PREVIEW_STOP -> VfxEditor2PreviewStop
             VFX_EDITOR_2_STATUS -> {
                 val kind = VfxEditor2StatusKind.entries.getOrNull(input.readUnsignedByte())
@@ -804,6 +1149,112 @@ object ProtocolCodec {
         data.writeInt(parameters.durationTicks)
         data.writeInt(parameters.color)
         data.writeDouble(parameters.targetDistance)
+    }
+
+    private fun writeVfxEditor2Composition(data: DataOutputStream, composition: VfxEditor2Composition) {
+        data.writeByte(composition.effects.size)
+        composition.effects.forEach { effect ->
+            data.writeLong(effect.id)
+            writeString(data, effect.name)
+            data.writeByte(effect.type.ordinal)
+            data.writeBoolean(effect.enabled)
+            data.writeBoolean(effect.solo)
+            data.writeDouble(effect.transform.forward)
+            data.writeDouble(effect.transform.side)
+            data.writeDouble(effect.transform.height)
+            data.writeDouble(effect.transform.yaw)
+            data.writeDouble(effect.transform.pitch)
+            data.writeDouble(effect.transform.roll)
+            data.writeInt(effect.appearance.color)
+            data.writeDouble(effect.appearance.particleSize)
+            data.writeDouble(effect.appearance.density)
+            when (val shape = effect.shape) {
+                is VfxEditor2Shape.ArcSlash -> {
+                    data.writeDouble(shape.length)
+                    data.writeDouble(shape.arcDegrees)
+                    data.writeDouble(shape.curvature)
+                    data.writeDouble(shape.thickness)
+                }
+                is VfxEditor2Shape.StraightSlash -> {
+                    data.writeDouble(shape.length)
+                    data.writeDouble(shape.thickness)
+                }
+                is VfxEditor2Shape.Ring -> {
+                    data.writeDouble(shape.radius)
+                    data.writeDouble(shape.arcDegrees)
+                    data.writeDouble(shape.thickness)
+                }
+                is VfxEditor2Shape.Burst -> {
+                    data.writeDouble(shape.radius)
+                    data.writeInt(shape.count)
+                    data.writeDouble(shape.spread)
+                    data.writeDouble(shape.speed)
+                }
+            }
+        }
+    }
+
+    private fun readVfxEditor2Composition(input: DataInputStream): VfxEditor2Composition {
+        val count = input.readUnsignedByte()
+        require(count <= VfxEditor2ProtocolLimits.MAX_EFFECTS) {
+            "VFX Editor 2 has too many effects"
+        }
+        val effects = List(count) {
+            val id = input.readLong()
+            val name = readString(input)
+            val typeId = input.readUnsignedByte()
+            val type = VfxEditor2EffectType.entries.getOrNull(typeId)
+                ?: throw IllegalArgumentException("Unknown VFX Editor 2 effect type: $typeId")
+            val enabled = input.readBoolean()
+            val solo = input.readBoolean()
+            val transform = VfxEditor2Transform.clamped(
+                forward = input.readDouble(),
+                side = input.readDouble(),
+                height = input.readDouble(),
+                yaw = input.readDouble(),
+                pitch = input.readDouble(),
+                roll = input.readDouble(),
+            )
+            val appearance = VfxEditor2Appearance.clamped(
+                color = input.readInt(),
+                particleSize = input.readDouble(),
+                density = input.readDouble(),
+            )
+            val shape = when (type) {
+                VfxEditor2EffectType.ARC_SLASH -> VfxEditor2Shape.ArcSlash.clamped(
+                    length = input.readDouble(),
+                    arcDegrees = input.readDouble(),
+                    curvature = input.readDouble(),
+                    thickness = input.readDouble(),
+                )
+                VfxEditor2EffectType.STRAIGHT_SLASH -> VfxEditor2Shape.StraightSlash.clamped(
+                    length = input.readDouble(),
+                    thickness = input.readDouble(),
+                )
+                VfxEditor2EffectType.RING -> VfxEditor2Shape.Ring.clamped(
+                    radius = input.readDouble(),
+                    arcDegrees = input.readDouble(),
+                    thickness = input.readDouble(),
+                )
+                VfxEditor2EffectType.BURST -> VfxEditor2Shape.Burst.clamped(
+                    radius = input.readDouble(),
+                    count = input.readInt(),
+                    spread = input.readDouble(),
+                    speed = input.readDouble(),
+                )
+            }
+            VfxEditor2Effect(
+                id = id,
+                name = name,
+                type = type,
+                shape = shape,
+                transform = transform,
+                appearance = appearance,
+                enabled = enabled,
+                solo = solo,
+            )
+        }
+        return VfxEditor2Composition(effects)
     }
 
     private fun readSlashParameters(input: DataInputStream): SlashEditorParameters = SlashEditorParameters.clamped(

@@ -1,5 +1,9 @@
 package dev.projects.server
 
+import dev.projects.protocol.VfxEditor2Composition
+import dev.projects.protocol.VfxEditor2Effect
+import dev.projects.protocol.VfxEditor2EffectType
+import dev.projects.protocol.VfxEditor2Shape
 import dev.projects.server.particle.ParticleAnimationScheduler
 import dev.projects.server.particle.ParticleDelay
 import dev.projects.server.particle.ParticleEffectState
@@ -25,6 +29,40 @@ class VfxEditor2Test {
         })
         assertTrue(sink.spawns.any { it.particle.isDustColor(0xc51f3a) })
         assertTrue(sink.spawns.any { it.particle.isDustColor(0xffffff) })
+    }
+
+    @Test
+    fun `compiler emits particles for every checkpoint B effect type`() {
+        val composition = VfxEditor2Composition(
+            listOf(
+                VfxEditor2Effect(1L, "Arc", VfxEditor2EffectType.ARC_SLASH, VfxEditor2Shape.ArcSlash()),
+                VfxEditor2Effect(2L, "Line", VfxEditor2EffectType.STRAIGHT_SLASH, VfxEditor2Shape.StraightSlash()),
+                VfxEditor2Effect(3L, "Ring", VfxEditor2EffectType.RING, VfxEditor2Shape.Ring()),
+                VfxEditor2Effect(4L, "Burst", VfxEditor2EffectType.BURST, VfxEditor2Shape.Burst()),
+            ),
+        )
+        val effect = VfxWorkbenchCompiler.compile(composition, Pos.ZERO, Vec(0.0, 0.0, 1.0))
+        val sink = RecordingParticleSink()
+        repeat(effect.durationTicks) { tick -> effect.emit(tick, sink) }
+
+        assertTrue(sink.spawns.size > 50)
+        assertTrue(sink.spawns.any { it.particle.isDustColor(0xffffff) })
+        assertTrue(sink.spawns.all { spawn ->
+            spawn.position.x().isFinite() && spawn.position.y().isFinite() && spawn.position.z().isFinite()
+        })
+    }
+
+    @Test
+    fun `compiler honors hidden and solo effect visibility`() {
+        val arc = VfxEditor2Effect(1L, "Arc", VfxEditor2EffectType.ARC_SLASH, VfxEditor2Shape.ArcSlash())
+        val ring = VfxEditor2Effect(2L, "Ring", VfxEditor2EffectType.RING, VfxEditor2Shape.Ring())
+        val hidden = VfxEditor2Composition(listOf(arc, ring.copy(enabled = false)))
+        val solo = VfxEditor2Composition(listOf(arc.copy(solo = true), ring))
+
+        assertEquals(1, hidden.visibleEffects().size)
+        assertEquals(1, solo.visibleEffects().size)
+        assertTrue(hidden.visibleEffects().single().type == VfxEditor2EffectType.ARC_SLASH)
+        assertTrue(solo.visibleEffects().single().type == VfxEditor2EffectType.ARC_SLASH)
     }
 
     @Test
