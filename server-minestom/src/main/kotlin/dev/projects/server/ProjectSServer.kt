@@ -913,7 +913,10 @@ fun main() {
                 val skillTargets = tester?.let { listOf(combatTarget(it)) } ?: emptyList()
                 skill2.hitTargetsAtPulse(pulseIndex, event.player.position, skillTargets, progressionEffects.skill2PulseRadius).forEach { targetId ->
                     val damage = prototypeBoss.applySkill2Pulse(skill2.castId, pulseIndex, targetId)
-                    if (damage > 0) updateBossBar()
+                    if (damage > 0) {
+                        progression.addXp(XP_PER_CONFIRMED_HIT)
+                        updateBossBar()
+                    }
                 }
                 showSkill2Pulse(event.player, pulseIndex, particleAnimations, particleManager)
             }
@@ -921,7 +924,10 @@ fun main() {
             val skillTargets = tester?.let { listOf(combatTarget(it)) } ?: emptyList()
             skill2.hitTargetsAtLanding(event.player.position, skillTargets).forEach { targetId ->
                 val damage = prototypeBoss.applySkill2Landing(skill2.castId, targetId, progressionEffects.skill2LandingDamageMultiplier)
-                if (damage > 0) updateBossBar()
+                if (damage > 0) {
+                    progression.addXp(XP_PER_CONFIRMED_HIT)
+                    updateBossBar()
+                }
             }
             showSkill2Landing(event.player, particleAnimations, particleManager)
             sendResourceSnapshot(event.player)
@@ -976,7 +982,10 @@ fun main() {
                 } else {
                     skill3Tick.pulseIndex?.let { pulseIndex ->
                         val damage = prototypeBoss.applySkill3Pulse(skill3.castId, pulseIndex, target.id)
-                        if (damage > 0) updateBossBar()
+                        if (damage > 0) {
+                            progression.addXp(XP_PER_CONFIRMED_HIT)
+                            updateBossBar()
+                        }
                         showSkill3PulseVfx(
                             event.player,
                             target,
@@ -989,7 +998,10 @@ fun main() {
                     }
                     if (skill3Tick.finisherActive) {
                         val damage = prototypeBoss.applySkill3Finisher(skill3.castId, target.id, progressionEffects.skill3FinisherDamageMultiplier)
-                        if (damage > 0) updateBossBar()
+                        if (damage > 0) {
+                            progression.addXp(XP_PER_CONFIRMED_HIT)
+                            updateBossBar()
+                        }
                         sendResourceSnapshot(event.player)
                         event.player.setVelocity(skill3HitBounceVelocity(requireNotNull(skill3Tick.dashDirection)))
                         showSkill3FinisherVfx(
