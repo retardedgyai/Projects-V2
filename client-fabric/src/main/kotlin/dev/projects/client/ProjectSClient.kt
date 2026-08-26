@@ -195,6 +195,9 @@ object ProjectSClient : ClientModInitializer {
             Identifier.fromNamespaceAndPath("projects", "class_resources"),
             ::renderResourceHud,
         )
+        HudElementRegistry.replaceElement(VanillaHudElements.HOTBAR) { _ ->
+            { context, tickCounter -> renderProductionHotbar(context, tickCounter) }
+        }
         ClientTickEvents.END_CLIENT_TICK.register(::handleAttackInput)
     }
 
@@ -299,7 +302,6 @@ object ProjectSClient : ClientModInitializer {
     private fun renderResourceHud(context: GuiGraphicsExtractor, tickCounter: DeltaTracker) {
         val screenWidth = context.guiWidth()
         val screenHeight = context.guiHeight()
-        renderMovedHotbar(context, hudLayout.elements[HudElementId.HOTBAR]!!.resolve(screenWidth, screenHeight))
         val resource = hudLayout.elements[HudElementId.RESOURCE]!!
         val resourceRect = resource.resolve(screenWidth, screenHeight)
         drawResourceBar(context, "MANA", mana, maxMana, resourceRect, 0xFF3F9694.toInt())
@@ -333,10 +335,10 @@ object ProjectSClient : ClientModInitializer {
         val startX = rect.x
         val y = rect.y
         val slots = listOf(
-            SkillHudSlot("S1", skill1Key, skill1CooldownTicks, skill1CooldownMaxTicks, 0),
-            SkillHudSlot("S2", skill2Key, skill2CooldownTicks, skill2CooldownMaxTicks, 1),
-            SkillHudSlot("S3", skill3Key, skill3CooldownTicks, skill3CooldownMaxTicks, 2),
-            SkillHudSlot("ULT", ultimateKey, 0, 1, 3),
+            SkillHudSlot("S1", skill1Key, skill1CooldownTicks, skill1CooldownMaxTicks, 0, true),
+            SkillHudSlot("S2", skill2Key, skill2CooldownTicks, skill2CooldownMaxTicks, 1, true),
+            SkillHudSlot("S3", skill3Key, skill3CooldownTicks, skill3CooldownMaxTicks, 2, true),
+            SkillHudSlot("ULT", ultimateKey, 0, 1, 3, false),
         )
         for ((index, slot) in slots.withIndex()) {
             val slotX = startX + index * (slotWidth + gap)
@@ -352,13 +354,17 @@ object ProjectSClient : ClientModInitializer {
         width: Int,
         height: Int,
     ) {
-        val ready = slot.remainingTicks == 0
+        val ready = skillHudReady(slot.available, slot.remainingTicks)
         context.fill(x, y, x + width, y + height, if (ready) 0xCC26383A.toInt() else 0xCC1B2026.toInt())
         outline(context, HudRect(x, y, width, height), if (ready) 0xFF638B83.toInt() else 0xFF4A4D53.toInt())
         val cooldownHeight = (height * cooldownFillRatio(slot.remainingTicks, slot.maxTicks)).toInt()
-        if (!ready && cooldownHeight > 0) context.fill(x + 1, y + 1, x + width - 1, y + cooldownHeight, 0x9A080B10.toInt())
-        val cooldownStripWidth = ((width - 2) * (1f - cooldownFillRatio(slot.remainingTicks, slot.maxTicks))).toInt()
-        context.fill(x + 1, y + height - 3, x + 1 + cooldownStripWidth, y + height - 1, if (ready) 0xFF638B83.toInt() else 0xFF68777A.toInt())
+        if (slot.available && !ready && cooldownHeight > 0) {
+            context.fill(x + 1, y + 1, x + width - 1, y + cooldownHeight, 0x9A080B10.toInt())
+        }
+        if (slot.available) {
+            val cooldownStripWidth = ((width - 2) * (1f - cooldownFillRatio(slot.remainingTicks, slot.maxTicks))).toInt()
+            context.fill(x + 1, y + height - 3, x + 1 + cooldownStripWidth, y + height - 1, if (ready) 0xFF638B83.toInt() else 0xFF68777A.toInt())
+        }
         drawSkillIcon(context, x + (width - 16) / 2, y + 2, slot.iconIndex, ready)
         val keyLabel = slot.key.getTranslatedKeyMessage().getString()
         val keyColor = if (ready) 0xFFE3E8E4.toInt() else 0xFF9AA1A4.toInt()
@@ -399,9 +405,6 @@ object ProjectSClient : ClientModInitializer {
     }
 
     private fun renderMovedHotbar(context: GuiGraphicsExtractor, rect: HudRect) {
-        val vanilla = HudRect((context.guiWidth() - 182) / 2, context.guiHeight() - 22, 182, 22)
-        if (rect == vanilla) return
-        context.fill(vanilla.x, vanilla.y, vanilla.x + vanilla.width, vanilla.y + vanilla.height, 0xFF10151C.toInt())
         val slotWidth = (rect.width / 9).coerceAtLeast(1)
         context.fill(rect.x, rect.y, rect.x + rect.width, rect.y + rect.height, 0xCC10151C.toInt())
         repeat(9) { index ->
@@ -415,6 +418,13 @@ object ProjectSClient : ClientModInitializer {
                 context.itemDecorations(Minecraft.getInstance().font, stack, itemX, itemY)
             }
         }
+    }
+
+    private fun renderProductionHotbar(context: GuiGraphicsExtractor, tickCounter: DeltaTracker) {
+        renderMovedHotbar(
+            context,
+            hudLayout.elements[HudElementId.HOTBAR]!!.resolve(context.guiWidth(), context.guiHeight()),
+        )
     }
 
     private fun outline(context: GuiGraphicsExtractor, rect: HudRect, color: Int) {
@@ -622,6 +632,7 @@ object ProjectSClient : ClientModInitializer {
         val remainingTicks: Int,
         val maxTicks: Int,
         val iconIndex: Int,
+        val available: Boolean,
     )
 
     private fun showSwingEffect(client: Minecraft, player: net.minecraft.client.player.LocalPlayer) {
