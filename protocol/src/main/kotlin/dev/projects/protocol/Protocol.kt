@@ -6,13 +6,15 @@ import java.io.DataInputStream
 import java.io.DataOutputStream
 import java.io.IOException
 import java.util.UUID
+import kotlin.math.PI
 import kotlin.math.abs
+import kotlin.math.roundToInt
 import kotlin.math.sqrt
 
 const val PROJECTS_CHANNEL = "projects:protocol"
 
 object ProtocolVersion {
-    const val CURRENT = 16
+    const val CURRENT = 17
 
     fun requireCompatible(version: Int) {
         if (version != CURRENT) {
@@ -30,6 +32,10 @@ class ProtocolDecodeException(
     val reason: String,
     cause: Throwable,
 ) : IllegalArgumentException("Malformed ProjectS protocol packet", cause)
+
+const val VFX_EDITOR_2_MAX_EFFECTS = 8
+const val VFX_EDITOR_2_MAX_SAMPLES_PER_EFFECT = 512
+const val VFX_EDITOR_2_MAX_TOTAL_SAMPLES = 4096
 
 sealed interface ProtocolMessage
 
@@ -440,7 +446,7 @@ data class VfxEditorNotice(val text: String) : ProtocolMessage {
 private object VfxEditor2ProtocolLimits {
     const val MAX_TARGET_LENGTH = 32
     const val MAX_STATUS_LENGTH = 160
-    const val MAX_EFFECTS = 8
+    const val MAX_EFFECTS = VFX_EDITOR_2_MAX_EFFECTS
     const val MAX_EFFECT_NAME_LENGTH = 32
     const val MIN_FORWARD = -1.0
     const val MAX_FORWARD = 8.0
@@ -467,6 +473,18 @@ private object VfxEditor2ProtocolLimits {
     const val MAX_BURST_COUNT = 64
     const val MAX_BURST_SPREAD = 89.0
     const val MAX_BURST_SPEED = 3.0
+    const val MAX_COUNT = 256
+    const val MAX_WAVES = 8
+    const val MAX_TURNS = 8.0
+    const val MAX_JITTER = 2.0
+    const val MAX_HOPS = 32
+    const val MAX_GRID_ROWS = 32
+    const val MAX_POINTS = 12
+    const val MAX_DURATION_TICKS = 40
+    const val MAX_SPEED = 3.0
+    const val MAX_SHARPNESS = 2.0
+    const val MAX_PHASE = 360.0
+    const val MAX_ANGLE = 360.0
 }
 
 enum class VfxEditor2EffectType {
@@ -474,6 +492,42 @@ enum class VfxEditor2EffectType {
     STRAIGHT_SLASH,
     RING,
     BURST,
+    BEZIER,
+    WAVE,
+    LIGHTNING,
+    SPIRAL,
+    HELIX,
+    DISK,
+    SECTOR,
+    GRID,
+    SPHERE,
+    ORB,
+    DOME,
+    CYLINDER,
+    CONE,
+    BOX,
+    TORUS,
+    STAR_FLOWER,
+    CROSS,
+    SHOCKWAVE,
+    VORTEX,
+    TORNADO,
+    FOUNTAIN,
+    SPHERE_BURST,
+    CONE_BURST,
+}
+
+enum class VfxEditor2Direction { UP, DOWN }
+
+enum class VfxEditor2BoxMode { EDGES, FACES }
+
+private fun requireFinite(label: String, vararg values: Double) {
+    require(values.all { it.isFinite() }) { "VFX Editor 2 $label values must be finite" }
+}
+
+private fun clampFinite(value: Double, minimum: Double, maximum: Double, label: String): Double {
+    require(value.isFinite()) { "VFX Editor 2 $label must be finite" }
+    return value.coerceIn(minimum, maximum)
 }
 
 data class VfxEditor2Transform(
@@ -511,16 +565,13 @@ data class VfxEditor2Transform(
             pitch: Double,
             roll: Double,
         ): VfxEditor2Transform {
-            require(listOf(forward, side, height, yaw, pitch, roll).all { it.isFinite() }) {
-                "VFX Editor 2 transform values must be finite"
-            }
             return VfxEditor2Transform(
-                forward.coerceIn(VfxEditor2ProtocolLimits.MIN_FORWARD, VfxEditor2ProtocolLimits.MAX_FORWARD),
-                side.coerceIn(VfxEditor2ProtocolLimits.MIN_SIDE, VfxEditor2ProtocolLimits.MAX_SIDE),
-                height.coerceIn(VfxEditor2ProtocolLimits.MIN_HEIGHT, VfxEditor2ProtocolLimits.MAX_HEIGHT),
-                yaw.coerceIn(VfxEditor2ProtocolLimits.MIN_ROTATION, VfxEditor2ProtocolLimits.MAX_ROTATION),
-                pitch.coerceIn(VfxEditor2ProtocolLimits.MIN_ROTATION, VfxEditor2ProtocolLimits.MAX_ROTATION),
-                roll.coerceIn(VfxEditor2ProtocolLimits.MIN_ROTATION, VfxEditor2ProtocolLimits.MAX_ROTATION),
+                clampFinite(forward, VfxEditor2ProtocolLimits.MIN_FORWARD, VfxEditor2ProtocolLimits.MAX_FORWARD, "forward"),
+                clampFinite(side, VfxEditor2ProtocolLimits.MIN_SIDE, VfxEditor2ProtocolLimits.MAX_SIDE, "side"),
+                clampFinite(height, VfxEditor2ProtocolLimits.MIN_HEIGHT, VfxEditor2ProtocolLimits.MAX_HEIGHT, "height"),
+                clampFinite(yaw, VfxEditor2ProtocolLimits.MIN_ROTATION, VfxEditor2ProtocolLimits.MAX_ROTATION, "yaw"),
+                clampFinite(pitch, VfxEditor2ProtocolLimits.MIN_ROTATION, VfxEditor2ProtocolLimits.MAX_ROTATION, "pitch"),
+                clampFinite(roll, VfxEditor2ProtocolLimits.MIN_ROTATION, VfxEditor2ProtocolLimits.MAX_ROTATION, "roll"),
             )
         }
     }
@@ -543,13 +594,10 @@ data class VfxEditor2Appearance(
 
     companion object {
         fun clamped(color: Int, particleSize: Double, density: Double): VfxEditor2Appearance {
-            require(particleSize.isFinite() && density.isFinite()) {
-                "VFX Editor 2 appearance values must be finite"
-            }
             return VfxEditor2Appearance(
                 color.coerceIn(0, 0xffffff),
-                particleSize.coerceIn(VfxEditor2ProtocolLimits.MIN_PARTICLE_SIZE, VfxEditor2ProtocolLimits.MAX_PARTICLE_SIZE),
-                density.coerceIn(VfxEditor2ProtocolLimits.MIN_DENSITY, VfxEditor2ProtocolLimits.MAX_DENSITY),
+                clampFinite(particleSize, VfxEditor2ProtocolLimits.MIN_PARTICLE_SIZE, VfxEditor2ProtocolLimits.MAX_PARTICLE_SIZE, "particle size"),
+                clampFinite(density, VfxEditor2ProtocolLimits.MIN_DENSITY, VfxEditor2ProtocolLimits.MAX_DENSITY, "density"),
             )
         }
     }
@@ -586,14 +634,11 @@ sealed interface VfxEditor2Shape {
 
         companion object {
             fun clamped(length: Double, arcDegrees: Double, curvature: Double, thickness: Double): ArcSlash {
-                require(listOf(length, arcDegrees, curvature, thickness).all { it.isFinite() }) {
-                    "VFX Editor 2 arc values must be finite"
-                }
                 return ArcSlash(
-                    length.coerceIn(VfxEditor2ProtocolLimits.MIN_LENGTH, VfxEditor2ProtocolLimits.MAX_LENGTH),
-                    arcDegrees.coerceIn(VfxEditor2ProtocolLimits.MIN_ARC_DEGREES, VfxEditor2ProtocolLimits.MAX_ARC_DEGREES),
-                    curvature.coerceIn(VfxEditor2ProtocolLimits.MIN_CURVATURE, VfxEditor2ProtocolLimits.MAX_CURVATURE),
-                    thickness.coerceIn(VfxEditor2ProtocolLimits.MIN_THICKNESS, VfxEditor2ProtocolLimits.MAX_THICKNESS),
+                    clampFinite(length, VfxEditor2ProtocolLimits.MIN_LENGTH, VfxEditor2ProtocolLimits.MAX_LENGTH, "arc length"),
+                    clampFinite(arcDegrees, VfxEditor2ProtocolLimits.MIN_ARC_DEGREES, VfxEditor2ProtocolLimits.MAX_ARC_DEGREES, "arc span"),
+                    clampFinite(curvature, VfxEditor2ProtocolLimits.MIN_CURVATURE, VfxEditor2ProtocolLimits.MAX_CURVATURE, "curvature"),
+                    clampFinite(thickness, VfxEditor2ProtocolLimits.MIN_THICKNESS, VfxEditor2ProtocolLimits.MAX_THICKNESS, "arc thickness"),
                 )
             }
         }
@@ -619,12 +664,9 @@ sealed interface VfxEditor2Shape {
 
         companion object {
             fun clamped(length: Double, thickness: Double): StraightSlash {
-                require(listOf(length, thickness).all { it.isFinite() }) {
-                    "VFX Editor 2 straight slash values must be finite"
-                }
                 return StraightSlash(
-                    length.coerceIn(VfxEditor2ProtocolLimits.MIN_LENGTH, VfxEditor2ProtocolLimits.MAX_LENGTH),
-                    thickness.coerceIn(VfxEditor2ProtocolLimits.MIN_THICKNESS, VfxEditor2ProtocolLimits.MAX_THICKNESS),
+                    clampFinite(length, VfxEditor2ProtocolLimits.MIN_LENGTH, VfxEditor2ProtocolLimits.MAX_LENGTH, "straight slash length"),
+                    clampFinite(thickness, VfxEditor2ProtocolLimits.MIN_THICKNESS, VfxEditor2ProtocolLimits.MAX_THICKNESS, "straight slash thickness"),
                 )
             }
         }
@@ -654,13 +696,10 @@ sealed interface VfxEditor2Shape {
 
         companion object {
             fun clamped(radius: Double, arcDegrees: Double, thickness: Double): Ring {
-                require(listOf(radius, arcDegrees, thickness).all { it.isFinite() }) {
-                    "VFX Editor 2 ring values must be finite"
-                }
                 return Ring(
-                    radius.coerceIn(VfxEditor2ProtocolLimits.MIN_RADIUS, VfxEditor2ProtocolLimits.MAX_RADIUS),
-                    arcDegrees.coerceIn(VfxEditor2ProtocolLimits.MIN_ARC_DEGREES, 360.0),
-                    thickness.coerceIn(VfxEditor2ProtocolLimits.MIN_THICKNESS, VfxEditor2ProtocolLimits.MAX_THICKNESS),
+                    clampFinite(radius, VfxEditor2ProtocolLimits.MIN_RADIUS, VfxEditor2ProtocolLimits.MAX_RADIUS, "ring radius"),
+                    clampFinite(arcDegrees, VfxEditor2ProtocolLimits.MIN_ARC_DEGREES, 360.0, "ring arc"),
+                    clampFinite(thickness, VfxEditor2ProtocolLimits.MIN_THICKNESS, VfxEditor2ProtocolLimits.MAX_THICKNESS, "ring thickness"),
                 )
             }
         }
@@ -671,13 +710,12 @@ sealed interface VfxEditor2Shape {
         val count: Int = 20,
         val spread: Double = 45.0,
         val speed: Double = 0.45,
+        val seed: Long = 42L,
     ) : VfxEditor2Shape {
         override val type: VfxEditor2EffectType get() = VfxEditor2EffectType.BURST
 
         init {
-            require(listOf(radius, spread, speed).all { it.isFinite() }) {
-                "VFX Editor 2 burst values must be finite"
-            }
+            requireFinite("burst", radius, spread, speed)
             require(radius in VfxEditor2ProtocolLimits.MIN_RADIUS..VfxEditor2ProtocolLimits.MAX_RADIUS) {
                 "VFX Editor 2 burst radius is out of range"
             }
@@ -693,17 +731,551 @@ sealed interface VfxEditor2Shape {
         }
 
         companion object {
-            fun clamped(radius: Double, count: Int, spread: Double, speed: Double): Burst {
-                require(listOf(radius, spread, speed).all { it.isFinite() }) {
-                    "VFX Editor 2 burst values must be finite"
-                }
+            fun clamped(radius: Double, count: Int, spread: Double, speed: Double, seed: Long = 42L): Burst {
                 return Burst(
-                    radius.coerceIn(VfxEditor2ProtocolLimits.MIN_RADIUS, VfxEditor2ProtocolLimits.MAX_RADIUS),
+                    clampFinite(radius, VfxEditor2ProtocolLimits.MIN_RADIUS, VfxEditor2ProtocolLimits.MAX_RADIUS, "burst radius"),
                     count.coerceIn(1, VfxEditor2ProtocolLimits.MAX_BURST_COUNT),
-                    spread.coerceIn(0.0, VfxEditor2ProtocolLimits.MAX_BURST_SPREAD),
-                    speed.coerceIn(0.0, VfxEditor2ProtocolLimits.MAX_BURST_SPEED),
+                    clampFinite(spread, 0.0, VfxEditor2ProtocolLimits.MAX_BURST_SPREAD, "burst spread"),
+                    clampFinite(speed, 0.0, VfxEditor2ProtocolLimits.MAX_BURST_SPEED, "burst speed"),
+                    seed,
                 )
             }
+        }
+    }
+
+    data class Bezier(
+        val length: Double = 4.5,
+        val controlForward: Double = 2.0,
+        val controlSide: Double = 1.2,
+        val controlHeight: Double = 0.8,
+        val endSide: Double = 0.0,
+        val endHeight: Double = 0.0,
+        val thickness: Double = 0.18,
+    ) : VfxEditor2Shape {
+        override val type get() = VfxEditor2EffectType.BEZIER
+        init {
+            requireFinite("bezier", length, controlForward, controlSide, controlHeight, endSide, endHeight, thickness)
+            require(length in VfxEditor2ProtocolLimits.MIN_LENGTH..VfxEditor2ProtocolLimits.MAX_LENGTH)
+            require(controlForward in VfxEditor2ProtocolLimits.MIN_FORWARD..VfxEditor2ProtocolLimits.MAX_LENGTH)
+            require(controlSide in VfxEditor2ProtocolLimits.MIN_SIDE..VfxEditor2ProtocolLimits.MAX_SIDE)
+            require(controlHeight in VfxEditor2ProtocolLimits.MIN_HEIGHT..VfxEditor2ProtocolLimits.MAX_HEIGHT)
+            require(endSide in VfxEditor2ProtocolLimits.MIN_SIDE..VfxEditor2ProtocolLimits.MAX_SIDE)
+            require(endHeight in VfxEditor2ProtocolLimits.MIN_HEIGHT..VfxEditor2ProtocolLimits.MAX_HEIGHT)
+            require(thickness in VfxEditor2ProtocolLimits.MIN_THICKNESS..VfxEditor2ProtocolLimits.MAX_THICKNESS)
+        }
+        companion object {
+            fun clamped(length: Double, controlForward: Double, controlSide: Double, controlHeight: Double, endSide: Double, endHeight: Double, thickness: Double): Bezier = Bezier(
+                clampFinite(length, VfxEditor2ProtocolLimits.MIN_LENGTH, VfxEditor2ProtocolLimits.MAX_LENGTH, "bezier length"),
+                clampFinite(controlForward, VfxEditor2ProtocolLimits.MIN_FORWARD, VfxEditor2ProtocolLimits.MAX_LENGTH, "bezier control forward"),
+                clampFinite(controlSide, VfxEditor2ProtocolLimits.MIN_SIDE, VfxEditor2ProtocolLimits.MAX_SIDE, "bezier control side"),
+                clampFinite(controlHeight, VfxEditor2ProtocolLimits.MIN_HEIGHT, VfxEditor2ProtocolLimits.MAX_HEIGHT, "bezier control height"),
+                clampFinite(endSide, VfxEditor2ProtocolLimits.MIN_SIDE, VfxEditor2ProtocolLimits.MAX_SIDE, "bezier end side"),
+                clampFinite(endHeight, VfxEditor2ProtocolLimits.MIN_HEIGHT, VfxEditor2ProtocolLimits.MAX_HEIGHT, "bezier end height"),
+                clampFinite(thickness, VfxEditor2ProtocolLimits.MIN_THICKNESS, VfxEditor2ProtocolLimits.MAX_THICKNESS, "bezier thickness"),
+            )
+        }
+    }
+
+    data class Wave(
+        val length: Double = 4.0,
+        val amplitude: Double = 0.7,
+        val waves: Int = 2,
+        val phaseDegrees: Double = 0.0,
+        val thickness: Double = 0.18,
+    ) : VfxEditor2Shape {
+        override val type get() = VfxEditor2EffectType.WAVE
+        init {
+            requireFinite("wave", length, amplitude, phaseDegrees, thickness)
+            require(length in VfxEditor2ProtocolLimits.MIN_LENGTH..VfxEditor2ProtocolLimits.MAX_LENGTH)
+            require(amplitude in 0.0..VfxEditor2ProtocolLimits.MAX_RADIUS)
+            require(waves in 1..VfxEditor2ProtocolLimits.MAX_WAVES)
+            require(phaseDegrees in -VfxEditor2ProtocolLimits.MAX_PHASE..VfxEditor2ProtocolLimits.MAX_PHASE)
+            require(thickness in VfxEditor2ProtocolLimits.MIN_THICKNESS..VfxEditor2ProtocolLimits.MAX_THICKNESS)
+        }
+        companion object {
+            fun clamped(length: Double, amplitude: Double, waves: Int, phaseDegrees: Double, thickness: Double): Wave = Wave(
+                clampFinite(length, VfxEditor2ProtocolLimits.MIN_LENGTH, VfxEditor2ProtocolLimits.MAX_LENGTH, "wave length"),
+                clampFinite(amplitude, 0.0, VfxEditor2ProtocolLimits.MAX_RADIUS, "wave amplitude"),
+                waves.coerceIn(1, VfxEditor2ProtocolLimits.MAX_WAVES),
+                clampFinite(phaseDegrees, -VfxEditor2ProtocolLimits.MAX_PHASE, VfxEditor2ProtocolLimits.MAX_PHASE, "wave phase"),
+                clampFinite(thickness, VfxEditor2ProtocolLimits.MIN_THICKNESS, VfxEditor2ProtocolLimits.MAX_THICKNESS, "wave thickness"),
+            )
+        }
+    }
+
+    data class Lightning(
+        val length: Double = 5.0,
+        val jitter: Double = 0.35,
+        val hops: Int = 10,
+        val seed: Long = 42L,
+    ) : VfxEditor2Shape {
+        override val type get() = VfxEditor2EffectType.LIGHTNING
+        init {
+            requireFinite("lightning", length, jitter)
+            require(length in VfxEditor2ProtocolLimits.MIN_LENGTH..VfxEditor2ProtocolLimits.MAX_LENGTH)
+            require(jitter in 0.0..VfxEditor2ProtocolLimits.MAX_JITTER)
+            require(hops in 1..VfxEditor2ProtocolLimits.MAX_HOPS)
+        }
+        companion object {
+            fun clamped(length: Double, jitter: Double, hops: Int, seed: Long): Lightning = Lightning(
+                clampFinite(length, VfxEditor2ProtocolLimits.MIN_LENGTH, VfxEditor2ProtocolLimits.MAX_LENGTH, "lightning length"),
+                clampFinite(jitter, 0.0, VfxEditor2ProtocolLimits.MAX_JITTER, "lightning jitter"),
+                hops.coerceIn(1, VfxEditor2ProtocolLimits.MAX_HOPS),
+                seed,
+            )
+        }
+    }
+
+    data class Spiral(
+        val radius: Double = 1.6,
+        val length: Double = 3.0,
+        val turns: Double = 2.0,
+        val angleOffsetDegrees: Double = 0.0,
+        val reverse: Boolean = false,
+    ) : VfxEditor2Shape {
+        override val type get() = VfxEditor2EffectType.SPIRAL
+        init {
+            requireFinite("spiral", radius, length, turns, angleOffsetDegrees)
+            require(radius in VfxEditor2ProtocolLimits.MIN_RADIUS..VfxEditor2ProtocolLimits.MAX_RADIUS)
+            require(length in VfxEditor2ProtocolLimits.MIN_LENGTH..VfxEditor2ProtocolLimits.MAX_LENGTH)
+            require(turns in 0.25..VfxEditor2ProtocolLimits.MAX_TURNS)
+            require(angleOffsetDegrees in -VfxEditor2ProtocolLimits.MAX_PHASE..VfxEditor2ProtocolLimits.MAX_PHASE)
+        }
+        companion object {
+            fun clamped(radius: Double, length: Double, turns: Double, angleOffsetDegrees: Double, reverse: Boolean): Spiral = Spiral(
+                clampFinite(radius, 0.0, VfxEditor2ProtocolLimits.MAX_RADIUS, "spiral radius"),
+                clampFinite(length, VfxEditor2ProtocolLimits.MIN_LENGTH, VfxEditor2ProtocolLimits.MAX_LENGTH, "spiral length"),
+                clampFinite(turns, 0.25, VfxEditor2ProtocolLimits.MAX_TURNS, "spiral turns"),
+                clampFinite(angleOffsetDegrees, -VfxEditor2ProtocolLimits.MAX_PHASE, VfxEditor2ProtocolLimits.MAX_PHASE, "spiral angle offset"),
+                reverse,
+            )
+        }
+    }
+
+    data class Helix(
+        val radius: Double = 1.2,
+        val length: Double = 3.0,
+        val turns: Double = 2.0,
+        val phaseDegrees: Double = 0.0,
+    ) : VfxEditor2Shape {
+        override val type get() = VfxEditor2EffectType.HELIX
+        init {
+            requireFinite("helix", radius, length, turns, phaseDegrees)
+            require(radius in VfxEditor2ProtocolLimits.MIN_RADIUS..VfxEditor2ProtocolLimits.MAX_RADIUS)
+            require(length in VfxEditor2ProtocolLimits.MIN_LENGTH..VfxEditor2ProtocolLimits.MAX_LENGTH)
+            require(turns in 0.25..VfxEditor2ProtocolLimits.MAX_TURNS)
+            require(phaseDegrees in -VfxEditor2ProtocolLimits.MAX_PHASE..VfxEditor2ProtocolLimits.MAX_PHASE)
+        }
+        companion object {
+            fun clamped(radius: Double, length: Double, turns: Double, phaseDegrees: Double): Helix = Helix(
+                clampFinite(radius, 0.0, VfxEditor2ProtocolLimits.MAX_RADIUS, "helix radius"),
+                clampFinite(length, VfxEditor2ProtocolLimits.MIN_LENGTH, VfxEditor2ProtocolLimits.MAX_LENGTH, "helix length"),
+                clampFinite(turns, 0.25, VfxEditor2ProtocolLimits.MAX_TURNS, "helix turns"),
+                clampFinite(phaseDegrees, -VfxEditor2ProtocolLimits.MAX_PHASE, VfxEditor2ProtocolLimits.MAX_PHASE, "helix phase"),
+            )
+        }
+    }
+
+    data class Disk(
+        val radius: Double = 2.0,
+        val innerRadius: Double = 0.0,
+    ) : VfxEditor2Shape {
+        override val type get() = VfxEditor2EffectType.DISK
+        init {
+            requireFinite("disk", radius, innerRadius)
+            require(radius in 0.05..VfxEditor2ProtocolLimits.MAX_RADIUS)
+            require(innerRadius in 0.0..radius)
+        }
+        companion object {
+            fun clamped(radius: Double, innerRadius: Double): Disk {
+                val safeRadius = clampFinite(radius, 0.05, VfxEditor2ProtocolLimits.MAX_RADIUS, "disk radius")
+                return Disk(safeRadius, clampFinite(innerRadius, 0.0, safeRadius, "disk inner radius"))
+            }
+        }
+    }
+
+    data class Sector(
+        val radius: Double = 2.0,
+        val angleDegrees: Double = 90.0,
+        val innerRadius: Double = 0.0,
+    ) : VfxEditor2Shape {
+        override val type get() = VfxEditor2EffectType.SECTOR
+        init {
+            requireFinite("sector", radius, angleDegrees, innerRadius)
+            require(radius in 0.05..VfxEditor2ProtocolLimits.MAX_RADIUS)
+            require(angleDegrees in 1.0..VfxEditor2ProtocolLimits.MAX_ANGLE)
+            require(innerRadius in 0.0..radius)
+        }
+        companion object {
+            fun clamped(radius: Double, angleDegrees: Double, innerRadius: Double): Sector {
+                val safeRadius = clampFinite(radius, 0.05, VfxEditor2ProtocolLimits.MAX_RADIUS, "sector radius")
+                return Sector(
+                    safeRadius,
+                    clampFinite(angleDegrees, 1.0, VfxEditor2ProtocolLimits.MAX_ANGLE, "sector angle"),
+                    clampFinite(innerRadius, 0.0, safeRadius, "sector inner radius"),
+                )
+            }
+        }
+    }
+
+    data class Grid(
+        val width: Double = 3.0,
+        val height: Double = 2.0,
+        val rows: Int = 6,
+    ) : VfxEditor2Shape {
+        override val type get() = VfxEditor2EffectType.GRID
+        init {
+            requireFinite("grid", width, height)
+            require(width in 0.25..VfxEditor2ProtocolLimits.MAX_LENGTH)
+            require(height in 0.25..VfxEditor2ProtocolLimits.MAX_LENGTH)
+            require(rows in 1..VfxEditor2ProtocolLimits.MAX_GRID_ROWS)
+        }
+        companion object {
+            fun clamped(width: Double, height: Double, rows: Int): Grid = Grid(
+                clampFinite(width, 0.25, VfxEditor2ProtocolLimits.MAX_LENGTH, "grid width"),
+                clampFinite(height, 0.25, VfxEditor2ProtocolLimits.MAX_LENGTH, "grid height"),
+                rows.coerceIn(1, VfxEditor2ProtocolLimits.MAX_GRID_ROWS),
+            )
+        }
+    }
+
+    data class Sphere(
+        val radius: Double = 2.0,
+    ) : VfxEditor2Shape {
+        override val type get() = VfxEditor2EffectType.SPHERE
+        init {
+            requireFinite("sphere", radius)
+            require(radius in 0.05..VfxEditor2ProtocolLimits.MAX_RADIUS)
+        }
+        companion object {
+            fun clamped(radius: Double): Sphere = Sphere(clampFinite(radius, 0.05, VfxEditor2ProtocolLimits.MAX_RADIUS, "sphere radius"))
+        }
+    }
+
+    data class Orb(
+        val radius: Double = 1.5,
+        val count: Int = 64,
+        val seed: Long = 42L,
+    ) : VfxEditor2Shape {
+        override val type get() = VfxEditor2EffectType.ORB
+        init {
+            requireFinite("orb", radius)
+            require(radius in 0.05..VfxEditor2ProtocolLimits.MAX_RADIUS)
+            require(count in 1..VfxEditor2ProtocolLimits.MAX_COUNT)
+        }
+        companion object {
+            fun clamped(radius: Double, count: Int, seed: Long): Orb = Orb(
+                clampFinite(radius, 0.05, VfxEditor2ProtocolLimits.MAX_RADIUS, "orb radius"),
+                count.coerceIn(1, VfxEditor2ProtocolLimits.MAX_COUNT),
+                seed,
+            )
+        }
+    }
+
+    data class Dome(
+        val radius: Double = 2.0,
+        val direction: VfxEditor2Direction = VfxEditor2Direction.UP,
+    ) : VfxEditor2Shape {
+        override val type get() = VfxEditor2EffectType.DOME
+        init {
+            requireFinite("dome", radius)
+            require(radius in 0.05..VfxEditor2ProtocolLimits.MAX_RADIUS)
+        }
+        companion object {
+            fun clamped(radius: Double, direction: VfxEditor2Direction): Dome = Dome(
+                clampFinite(radius, 0.05, VfxEditor2ProtocolLimits.MAX_RADIUS, "dome radius"),
+                direction,
+            )
+        }
+    }
+
+    data class Cylinder(
+        val radius: Double = 0.8,
+        val height: Double = 3.0,
+        val count: Int = 64,
+        val shell: Boolean = false,
+    ) : VfxEditor2Shape {
+        override val type get() = VfxEditor2EffectType.CYLINDER
+        init {
+            requireFinite("cylinder", radius, height)
+            require(radius in 0.05..VfxEditor2ProtocolLimits.MAX_RADIUS)
+            require(height in 0.25..VfxEditor2ProtocolLimits.MAX_LENGTH)
+            require(count in 1..VfxEditor2ProtocolLimits.MAX_COUNT)
+        }
+        companion object {
+            fun clamped(radius: Double, height: Double, count: Int, shell: Boolean): Cylinder = Cylinder(
+                clampFinite(radius, 0.05, VfxEditor2ProtocolLimits.MAX_RADIUS, "cylinder radius"),
+                clampFinite(height, 0.25, VfxEditor2ProtocolLimits.MAX_LENGTH, "cylinder height"),
+                count.coerceIn(1, VfxEditor2ProtocolLimits.MAX_COUNT),
+                shell,
+            )
+        }
+    }
+
+    data class Cone(
+        val length: Double = 3.0,
+        val radius: Double = 1.4,
+        val angleDegrees: Double = 32.0,
+    ) : VfxEditor2Shape {
+        override val type get() = VfxEditor2EffectType.CONE
+        init {
+            requireFinite("cone", length, radius, angleDegrees)
+            require(length in VfxEditor2ProtocolLimits.MIN_LENGTH..VfxEditor2ProtocolLimits.MAX_LENGTH)
+            require(radius in 0.05..VfxEditor2ProtocolLimits.MAX_RADIUS)
+            require(angleDegrees in 1.0..VfxEditor2ProtocolLimits.MAX_BURST_SPREAD)
+        }
+        companion object {
+            fun clamped(length: Double, radius: Double, angleDegrees: Double): Cone = Cone(
+                clampFinite(length, VfxEditor2ProtocolLimits.MIN_LENGTH, VfxEditor2ProtocolLimits.MAX_LENGTH, "cone length"),
+                clampFinite(radius, 0.05, VfxEditor2ProtocolLimits.MAX_RADIUS, "cone radius"),
+                clampFinite(angleDegrees, 1.0, VfxEditor2ProtocolLimits.MAX_BURST_SPREAD, "cone angle"),
+            )
+        }
+    }
+
+    data class Box(
+        val width: Double = 2.0,
+        val height: Double = 2.0,
+        val depth: Double = 2.0,
+        val mode: VfxEditor2BoxMode = VfxEditor2BoxMode.EDGES,
+    ) : VfxEditor2Shape {
+        override val type get() = VfxEditor2EffectType.BOX
+        init {
+            requireFinite("box", width, height, depth)
+            require(width in 0.25..VfxEditor2ProtocolLimits.MAX_LENGTH)
+            require(height in 0.25..VfxEditor2ProtocolLimits.MAX_LENGTH)
+            require(depth in 0.25..VfxEditor2ProtocolLimits.MAX_LENGTH)
+        }
+        companion object {
+            fun clamped(width: Double, height: Double, depth: Double, mode: VfxEditor2BoxMode): Box = Box(
+                clampFinite(width, 0.25, VfxEditor2ProtocolLimits.MAX_LENGTH, "box width"),
+                clampFinite(height, 0.25, VfxEditor2ProtocolLimits.MAX_LENGTH, "box height"),
+                clampFinite(depth, 0.25, VfxEditor2ProtocolLimits.MAX_LENGTH, "box depth"),
+                mode,
+            )
+        }
+    }
+
+    data class Torus(
+        val majorRadius: Double = 2.0,
+        val tubeRadius: Double = 0.35,
+    ) : VfxEditor2Shape {
+        override val type get() = VfxEditor2EffectType.TORUS
+        init {
+            requireFinite("torus", majorRadius, tubeRadius)
+            require(majorRadius in 0.05..VfxEditor2ProtocolLimits.MAX_RADIUS)
+            require(tubeRadius in 0.05..VfxEditor2ProtocolLimits.MAX_RADIUS)
+            require(tubeRadius <= majorRadius)
+        }
+        companion object {
+            fun clamped(majorRadius: Double, tubeRadius: Double): Torus {
+                val safeMajor = clampFinite(majorRadius, 0.05, VfxEditor2ProtocolLimits.MAX_RADIUS, "torus major radius")
+                return Torus(safeMajor, clampFinite(tubeRadius, 0.05, safeMajor, "torus tube radius"))
+            }
+        }
+    }
+
+    data class Star(
+        val points: Int = 5,
+        val radius: Double = 2.0,
+        val innerRadius: Double = 0.8,
+        val sharpness: Double = 1.0,
+    ) : VfxEditor2Shape {
+        override val type get() = VfxEditor2EffectType.STAR_FLOWER
+        init {
+            requireFinite("star", radius, innerRadius, sharpness)
+            require(points in 2..VfxEditor2ProtocolLimits.MAX_POINTS)
+            require(radius in 0.05..VfxEditor2ProtocolLimits.MAX_RADIUS)
+            require(innerRadius in 0.0..radius)
+            require(sharpness in 0.0..VfxEditor2ProtocolLimits.MAX_SHARPNESS)
+        }
+        companion object {
+            fun clamped(points: Int, radius: Double, innerRadius: Double, sharpness: Double): Star {
+                val safeRadius = clampFinite(radius, 0.05, VfxEditor2ProtocolLimits.MAX_RADIUS, "star radius")
+                return Star(
+                    points.coerceIn(2, VfxEditor2ProtocolLimits.MAX_POINTS),
+                    safeRadius,
+                    clampFinite(innerRadius, 0.0, safeRadius, "star inner radius"),
+                    clampFinite(sharpness, 0.0, VfxEditor2ProtocolLimits.MAX_SHARPNESS, "star sharpness"),
+                )
+            }
+        }
+    }
+
+    data class Cross(
+        val size: Double = 2.0,
+        val angleDegrees: Double = 45.0,
+        val thickness: Double = 0.14,
+    ) : VfxEditor2Shape {
+        override val type get() = VfxEditor2EffectType.CROSS
+        init {
+            requireFinite("cross", size, angleDegrees, thickness)
+            require(size in 0.25..VfxEditor2ProtocolLimits.MAX_LENGTH)
+            require(angleDegrees in -VfxEditor2ProtocolLimits.MAX_PHASE..VfxEditor2ProtocolLimits.MAX_PHASE)
+            require(thickness in VfxEditor2ProtocolLimits.MIN_THICKNESS..VfxEditor2ProtocolLimits.MAX_THICKNESS)
+        }
+        companion object {
+            fun clamped(size: Double, angleDegrees: Double, thickness: Double): Cross = Cross(
+                clampFinite(size, 0.25, VfxEditor2ProtocolLimits.MAX_LENGTH, "cross size"),
+                clampFinite(angleDegrees, -VfxEditor2ProtocolLimits.MAX_PHASE, VfxEditor2ProtocolLimits.MAX_PHASE, "cross angle"),
+                clampFinite(thickness, 0.0, VfxEditor2ProtocolLimits.MAX_THICKNESS, "cross thickness"),
+            )
+        }
+    }
+
+    data class Shockwave(
+        val startRadius: Double = 0.3,
+        val endRadius: Double = 3.0,
+        val durationTicks: Int = 10,
+    ) : VfxEditor2Shape {
+        override val type get() = VfxEditor2EffectType.SHOCKWAVE
+        init {
+            requireFinite("shockwave", startRadius, endRadius)
+            require(startRadius in 0.0..VfxEditor2ProtocolLimits.MAX_RADIUS)
+            require(endRadius in 0.05..VfxEditor2ProtocolLimits.MAX_RADIUS)
+            require(durationTicks in 1..VfxEditor2ProtocolLimits.MAX_DURATION_TICKS)
+        }
+        companion object {
+            fun clamped(startRadius: Double, endRadius: Double, durationTicks: Int): Shockwave = Shockwave(
+                clampFinite(startRadius, 0.0, VfxEditor2ProtocolLimits.MAX_RADIUS, "shockwave start radius"),
+                clampFinite(endRadius, 0.05, VfxEditor2ProtocolLimits.MAX_RADIUS, "shockwave end radius"),
+                durationTicks.coerceIn(1, VfxEditor2ProtocolLimits.MAX_DURATION_TICKS),
+            )
+        }
+    }
+
+    data class Vortex(
+        val radius: Double = 1.3,
+        val height: Double = 2.5,
+        val turns: Double = 2.0,
+        val durationTicks: Int = 16,
+        val direction: VfxEditor2Direction = VfxEditor2Direction.UP,
+    ) : VfxEditor2Shape {
+        override val type get() = VfxEditor2EffectType.VORTEX
+        init {
+            requireFinite("vortex", radius, height, turns)
+            require(radius in 0.05..VfxEditor2ProtocolLimits.MAX_RADIUS)
+            require(height in 0.25..VfxEditor2ProtocolLimits.MAX_LENGTH)
+            require(turns in 0.25..VfxEditor2ProtocolLimits.MAX_TURNS)
+            require(durationTicks in 1..VfxEditor2ProtocolLimits.MAX_DURATION_TICKS)
+        }
+        companion object {
+            fun clamped(radius: Double, height: Double, turns: Double, durationTicks: Int, direction: VfxEditor2Direction): Vortex = Vortex(
+                clampFinite(radius, 0.05, VfxEditor2ProtocolLimits.MAX_RADIUS, "vortex radius"),
+                clampFinite(height, 0.25, VfxEditor2ProtocolLimits.MAX_LENGTH, "vortex height"),
+                clampFinite(turns, 0.25, VfxEditor2ProtocolLimits.MAX_TURNS, "vortex turns"),
+                durationTicks.coerceIn(1, VfxEditor2ProtocolLimits.MAX_DURATION_TICKS),
+                direction,
+            )
+        }
+    }
+
+    data class Tornado(
+        val bottomRadius: Double = 0.5,
+        val topRadius: Double = 2.0,
+        val height: Double = 3.5,
+        val turns: Double = 2.0,
+        val durationTicks: Int = 18,
+    ) : VfxEditor2Shape {
+        override val type get() = VfxEditor2EffectType.TORNADO
+        init {
+            requireFinite("tornado", bottomRadius, topRadius, height, turns)
+            require(bottomRadius in 0.05..VfxEditor2ProtocolLimits.MAX_RADIUS)
+            require(topRadius in 0.05..VfxEditor2ProtocolLimits.MAX_RADIUS)
+            require(height in 0.25..VfxEditor2ProtocolLimits.MAX_LENGTH)
+            require(turns in 0.25..VfxEditor2ProtocolLimits.MAX_TURNS)
+            require(durationTicks in 1..VfxEditor2ProtocolLimits.MAX_DURATION_TICKS)
+        }
+        companion object {
+            fun clamped(bottomRadius: Double, topRadius: Double, height: Double, turns: Double, durationTicks: Int): Tornado = Tornado(
+                clampFinite(bottomRadius, 0.05, VfxEditor2ProtocolLimits.MAX_RADIUS, "tornado bottom radius"),
+                clampFinite(topRadius, 0.05, VfxEditor2ProtocolLimits.MAX_RADIUS, "tornado top radius"),
+                clampFinite(height, 0.25, VfxEditor2ProtocolLimits.MAX_LENGTH, "tornado height"),
+                clampFinite(turns, 0.25, VfxEditor2ProtocolLimits.MAX_TURNS, "tornado turns"),
+                durationTicks.coerceIn(1, VfxEditor2ProtocolLimits.MAX_DURATION_TICKS),
+            )
+        }
+    }
+
+    data class Fountain(
+        val radius: Double = 1.2,
+        val height: Double = 3.0,
+        val spreadDegrees: Double = 25.0,
+        val count: Int = 64,
+        val durationTicks: Int = 16,
+    ) : VfxEditor2Shape {
+        override val type get() = VfxEditor2EffectType.FOUNTAIN
+        init {
+            requireFinite("fountain", radius, height, spreadDegrees)
+            require(radius in 0.05..VfxEditor2ProtocolLimits.MAX_RADIUS)
+            require(height in 0.25..VfxEditor2ProtocolLimits.MAX_LENGTH)
+            require(spreadDegrees in 0.0..VfxEditor2ProtocolLimits.MAX_BURST_SPREAD)
+            require(count in 1..VfxEditor2ProtocolLimits.MAX_COUNT)
+            require(durationTicks in 1..VfxEditor2ProtocolLimits.MAX_DURATION_TICKS)
+        }
+        companion object {
+            fun clamped(radius: Double, height: Double, spreadDegrees: Double, count: Int, durationTicks: Int): Fountain = Fountain(
+                clampFinite(radius, 0.05, VfxEditor2ProtocolLimits.MAX_RADIUS, "fountain radius"),
+                clampFinite(height, 0.25, VfxEditor2ProtocolLimits.MAX_LENGTH, "fountain height"),
+                clampFinite(spreadDegrees, 0.0, VfxEditor2ProtocolLimits.MAX_BURST_SPREAD, "fountain spread"),
+                count.coerceIn(1, VfxEditor2ProtocolLimits.MAX_COUNT),
+                durationTicks.coerceIn(1, VfxEditor2ProtocolLimits.MAX_DURATION_TICKS),
+            )
+        }
+    }
+
+    data class SphereBurst(
+        val spawnRadius: Double = 0.3,
+        val count: Int = 32,
+        val speed: Double = 0.6,
+        val variance: Double = 0.15,
+        val seed: Long = 42L,
+    ) : VfxEditor2Shape {
+        override val type get() = VfxEditor2EffectType.SPHERE_BURST
+        init {
+            requireFinite("sphere burst", spawnRadius, speed, variance)
+            require(spawnRadius in 0.0..VfxEditor2ProtocolLimits.MAX_RADIUS)
+            require(count in 1..VfxEditor2ProtocolLimits.MAX_COUNT)
+            require(speed in 0.0..VfxEditor2ProtocolLimits.MAX_SPEED)
+            require(variance in 0.0..VfxEditor2ProtocolLimits.MAX_SPEED)
+        }
+        companion object {
+            fun clamped(spawnRadius: Double, count: Int, speed: Double, variance: Double, seed: Long): SphereBurst = SphereBurst(
+                clampFinite(spawnRadius, 0.0, VfxEditor2ProtocolLimits.MAX_RADIUS, "sphere burst spawn radius"),
+                count.coerceIn(1, VfxEditor2ProtocolLimits.MAX_COUNT),
+                clampFinite(speed, 0.0, VfxEditor2ProtocolLimits.MAX_SPEED, "sphere burst speed"),
+                clampFinite(variance, 0.0, VfxEditor2ProtocolLimits.MAX_SPEED, "sphere burst variance"),
+                seed,
+            )
+        }
+    }
+
+    data class ConeBurst(
+        val length: Double = 2.5,
+        val radius: Double = 1.0,
+        val angleDegrees: Double = 25.0,
+        val count: Int = 32,
+        val speed: Double = 0.6,
+        val seed: Long = 42L,
+    ) : VfxEditor2Shape {
+        override val type get() = VfxEditor2EffectType.CONE_BURST
+        init {
+            requireFinite("cone burst", length, radius, angleDegrees, speed)
+            require(length in VfxEditor2ProtocolLimits.MIN_LENGTH..VfxEditor2ProtocolLimits.MAX_LENGTH)
+            require(radius in 0.05..VfxEditor2ProtocolLimits.MAX_RADIUS)
+            require(angleDegrees in 1.0..VfxEditor2ProtocolLimits.MAX_BURST_SPREAD)
+            require(count in 1..VfxEditor2ProtocolLimits.MAX_COUNT)
+            require(speed in 0.0..VfxEditor2ProtocolLimits.MAX_SPEED)
+        }
+        companion object {
+            fun clamped(length: Double, radius: Double, angleDegrees: Double, count: Int, speed: Double, seed: Long): ConeBurst = ConeBurst(
+                clampFinite(length, VfxEditor2ProtocolLimits.MIN_LENGTH, VfxEditor2ProtocolLimits.MAX_LENGTH, "cone burst length"),
+                clampFinite(radius, 0.05, VfxEditor2ProtocolLimits.MAX_RADIUS, "cone burst radius"),
+                clampFinite(angleDegrees, 1.0, VfxEditor2ProtocolLimits.MAX_BURST_SPREAD, "cone burst angle"),
+                count.coerceIn(1, VfxEditor2ProtocolLimits.MAX_COUNT),
+                clampFinite(speed, 0.0, VfxEditor2ProtocolLimits.MAX_SPEED, "cone burst speed"),
+                seed,
+            )
         }
     }
 }
@@ -758,6 +1330,110 @@ data class VfxEditor2Composition(val effects: List<VfxEditor2Effect>) {
 
     fun update(effectId: Long, transform: (VfxEditor2Effect) -> VfxEditor2Effect): VfxEditor2Composition =
         copy(effects = effects.map { if (it.id == effectId) transform(it) else it })
+
+    fun estimatedSampleCount(): Int = visibleEffects().sumOf { estimateVfxEditor2Samples(it.shape, it.appearance.density) }
+        .coerceAtMost(VFX_EDITOR_2_MAX_TOTAL_SAMPLES)
+}
+
+fun defaultVfxEditor2Shape(type: VfxEditor2EffectType): VfxEditor2Shape = when (type) {
+    VfxEditor2EffectType.ARC_SLASH -> VfxEditor2Shape.ArcSlash()
+    VfxEditor2EffectType.STRAIGHT_SLASH -> VfxEditor2Shape.StraightSlash()
+    VfxEditor2EffectType.RING -> VfxEditor2Shape.Ring()
+    VfxEditor2EffectType.BURST -> VfxEditor2Shape.Burst()
+    VfxEditor2EffectType.BEZIER -> VfxEditor2Shape.Bezier()
+    VfxEditor2EffectType.WAVE -> VfxEditor2Shape.Wave()
+    VfxEditor2EffectType.LIGHTNING -> VfxEditor2Shape.Lightning()
+    VfxEditor2EffectType.SPIRAL -> VfxEditor2Shape.Spiral()
+    VfxEditor2EffectType.HELIX -> VfxEditor2Shape.Helix()
+    VfxEditor2EffectType.DISK -> VfxEditor2Shape.Disk()
+    VfxEditor2EffectType.SECTOR -> VfxEditor2Shape.Sector()
+    VfxEditor2EffectType.GRID -> VfxEditor2Shape.Grid()
+    VfxEditor2EffectType.SPHERE -> VfxEditor2Shape.Sphere()
+    VfxEditor2EffectType.ORB -> VfxEditor2Shape.Orb()
+    VfxEditor2EffectType.DOME -> VfxEditor2Shape.Dome()
+    VfxEditor2EffectType.CYLINDER -> VfxEditor2Shape.Cylinder()
+    VfxEditor2EffectType.CONE -> VfxEditor2Shape.Cone()
+    VfxEditor2EffectType.BOX -> VfxEditor2Shape.Box()
+    VfxEditor2EffectType.TORUS -> VfxEditor2Shape.Torus()
+    VfxEditor2EffectType.STAR_FLOWER -> VfxEditor2Shape.Star()
+    VfxEditor2EffectType.CROSS -> VfxEditor2Shape.Cross()
+    VfxEditor2EffectType.SHOCKWAVE -> VfxEditor2Shape.Shockwave()
+    VfxEditor2EffectType.VORTEX -> VfxEditor2Shape.Vortex()
+    VfxEditor2EffectType.TORNADO -> VfxEditor2Shape.Tornado()
+    VfxEditor2EffectType.FOUNTAIN -> VfxEditor2Shape.Fountain()
+    VfxEditor2EffectType.SPHERE_BURST -> VfxEditor2Shape.SphereBurst()
+    VfxEditor2EffectType.CONE_BURST -> VfxEditor2Shape.ConeBurst()
+}
+
+fun defaultVfxEditor2Effect(type: VfxEditor2EffectType, id: Long): VfxEditor2Effect = VfxEditor2Effect(
+    id = id,
+    name = vfxEditor2DisplayName(type),
+    type = type,
+    shape = defaultVfxEditor2Shape(type),
+)
+
+fun vfxEditor2DisplayName(type: VfxEditor2EffectType): String = when (type) {
+    VfxEditor2EffectType.ARC_SLASH -> "Arc Slash"
+    VfxEditor2EffectType.STRAIGHT_SLASH -> "Straight Slash"
+    VfxEditor2EffectType.BEZIER -> "Bezier Curve"
+    VfxEditor2EffectType.WAVE -> "Wave"
+    VfxEditor2EffectType.LIGHTNING -> "Lightning"
+    VfxEditor2EffectType.SPIRAL -> "Spiral"
+    VfxEditor2EffectType.HELIX -> "Helix"
+    VfxEditor2EffectType.RING -> "Ring"
+    VfxEditor2EffectType.DISK -> "Disk"
+    VfxEditor2EffectType.SECTOR -> "Sector / Fan"
+    VfxEditor2EffectType.GRID -> "Grid / Plane"
+    VfxEditor2EffectType.SPHERE -> "Sphere"
+    VfxEditor2EffectType.ORB -> "Orb / Filled Sphere"
+    VfxEditor2EffectType.DOME -> "Hemisphere / Dome"
+    VfxEditor2EffectType.CYLINDER -> "Cylinder / Pillar"
+    VfxEditor2EffectType.CONE -> "Cone"
+    VfxEditor2EffectType.BOX -> "Box / Cuboid"
+    VfxEditor2EffectType.TORUS -> "Torus / Donut"
+    VfxEditor2EffectType.STAR_FLOWER -> "Star / Flower"
+    VfxEditor2EffectType.CROSS -> "Cross / X"
+    VfxEditor2EffectType.SHOCKWAVE -> "Shockwave"
+    VfxEditor2EffectType.VORTEX -> "Vortex"
+    VfxEditor2EffectType.TORNADO -> "Tornado"
+    VfxEditor2EffectType.FOUNTAIN -> "Fountain"
+    VfxEditor2EffectType.BURST -> "Burst"
+    VfxEditor2EffectType.SPHERE_BURST -> "Sphere Burst"
+    VfxEditor2EffectType.CONE_BURST -> "Cone Burst"
+}
+
+fun estimateVfxEditor2Samples(shape: VfxEditor2Shape, density: Double = 1.0): Int {
+    val safeDensity = density.coerceIn(0.25, 4.0)
+    val estimate = when (shape) {
+        is VfxEditor2Shape.ArcSlash -> shape.length * 18.0
+        is VfxEditor2Shape.StraightSlash -> shape.length * 10.0
+        is VfxEditor2Shape.Bezier -> shape.length * 16.0
+        is VfxEditor2Shape.Wave -> shape.length * 16.0
+        is VfxEditor2Shape.Lightning -> (shape.hops + 1) * 4.0
+        is VfxEditor2Shape.Spiral -> shape.length * shape.turns * 12.0
+        is VfxEditor2Shape.Helix -> shape.length * shape.turns * 12.0
+        is VfxEditor2Shape.Ring -> shape.radius * 2.0 * PI * shape.arcDegrees / 360.0 * 8.0
+        is VfxEditor2Shape.Disk -> shape.radius * shape.radius * 12.0
+        is VfxEditor2Shape.Sector -> shape.radius * shape.radius * shape.angleDegrees / 360.0 * 12.0
+        is VfxEditor2Shape.Grid -> (shape.rows + 1.0) * (shape.rows + 1.0)
+        is VfxEditor2Shape.Sphere -> shape.radius * shape.radius * 20.0
+        is VfxEditor2Shape.Orb -> shape.count.toDouble()
+        is VfxEditor2Shape.Dome -> shape.radius * shape.radius * 12.0
+        is VfxEditor2Shape.Cylinder -> shape.count.toDouble()
+        is VfxEditor2Shape.Cone -> shape.length * shape.radius * 16.0
+        is VfxEditor2Shape.Box -> shape.width * shape.height * shape.depth * 3.0
+        is VfxEditor2Shape.Torus -> shape.majorRadius * shape.tubeRadius * 64.0
+        is VfxEditor2Shape.Star -> shape.points * 16.0
+        is VfxEditor2Shape.Cross -> shape.size * 20.0
+        is VfxEditor2Shape.Shockwave -> shape.endRadius * 2.0 * PI * 8.0
+        is VfxEditor2Shape.Vortex -> shape.radius * shape.height * shape.turns * 12.0
+        is VfxEditor2Shape.Tornado -> (shape.bottomRadius + shape.topRadius) * shape.height * shape.turns * 8.0
+        is VfxEditor2Shape.Fountain -> shape.count.toDouble()
+        is VfxEditor2Shape.Burst -> shape.count.toDouble()
+        is VfxEditor2Shape.SphereBurst -> shape.count.toDouble()
+        is VfxEditor2Shape.ConeBurst -> shape.count.toDouble()
+    }
+    return (estimate * safeDensity).roundToInt().coerceIn(1, VFX_EDITOR_2_MAX_SAMPLES_PER_EFFECT)
 }
 
 fun defaultVfxEditor2Composition(): VfxEditor2Composition = VfxEditor2Composition(
@@ -1246,6 +1922,139 @@ object ProtocolCodec {
                     data.writeInt(shape.count)
                     data.writeDouble(shape.spread)
                     data.writeDouble(shape.speed)
+                    data.writeLong(shape.seed)
+                }
+                is VfxEditor2Shape.Bezier -> {
+                    data.writeDouble(shape.length)
+                    data.writeDouble(shape.controlForward)
+                    data.writeDouble(shape.controlSide)
+                    data.writeDouble(shape.controlHeight)
+                    data.writeDouble(shape.endSide)
+                    data.writeDouble(shape.endHeight)
+                    data.writeDouble(shape.thickness)
+                }
+                is VfxEditor2Shape.Wave -> {
+                    data.writeDouble(shape.length)
+                    data.writeDouble(shape.amplitude)
+                    data.writeInt(shape.waves)
+                    data.writeDouble(shape.phaseDegrees)
+                    data.writeDouble(shape.thickness)
+                }
+                is VfxEditor2Shape.Lightning -> {
+                    data.writeDouble(shape.length)
+                    data.writeDouble(shape.jitter)
+                    data.writeInt(shape.hops)
+                    data.writeLong(shape.seed)
+                }
+                is VfxEditor2Shape.Spiral -> {
+                    data.writeDouble(shape.radius)
+                    data.writeDouble(shape.length)
+                    data.writeDouble(shape.turns)
+                    data.writeDouble(shape.angleOffsetDegrees)
+                    data.writeBoolean(shape.reverse)
+                }
+                is VfxEditor2Shape.Helix -> {
+                    data.writeDouble(shape.radius)
+                    data.writeDouble(shape.length)
+                    data.writeDouble(shape.turns)
+                    data.writeDouble(shape.phaseDegrees)
+                }
+                is VfxEditor2Shape.Disk -> {
+                    data.writeDouble(shape.radius)
+                    data.writeDouble(shape.innerRadius)
+                }
+                is VfxEditor2Shape.Sector -> {
+                    data.writeDouble(shape.radius)
+                    data.writeDouble(shape.angleDegrees)
+                    data.writeDouble(shape.innerRadius)
+                }
+                is VfxEditor2Shape.Grid -> {
+                    data.writeDouble(shape.width)
+                    data.writeDouble(shape.height)
+                    data.writeInt(shape.rows)
+                }
+                is VfxEditor2Shape.Sphere -> data.writeDouble(shape.radius)
+                is VfxEditor2Shape.Orb -> {
+                    data.writeDouble(shape.radius)
+                    data.writeInt(shape.count)
+                    data.writeLong(shape.seed)
+                }
+                is VfxEditor2Shape.Dome -> {
+                    data.writeDouble(shape.radius)
+                    data.writeByte(shape.direction.ordinal)
+                }
+                is VfxEditor2Shape.Cylinder -> {
+                    data.writeDouble(shape.radius)
+                    data.writeDouble(shape.height)
+                    data.writeInt(shape.count)
+                    data.writeBoolean(shape.shell)
+                }
+                is VfxEditor2Shape.Cone -> {
+                    data.writeDouble(shape.length)
+                    data.writeDouble(shape.radius)
+                    data.writeDouble(shape.angleDegrees)
+                }
+                is VfxEditor2Shape.Box -> {
+                    data.writeDouble(shape.width)
+                    data.writeDouble(shape.height)
+                    data.writeDouble(shape.depth)
+                    data.writeByte(shape.mode.ordinal)
+                }
+                is VfxEditor2Shape.Torus -> {
+                    data.writeDouble(shape.majorRadius)
+                    data.writeDouble(shape.tubeRadius)
+                }
+                is VfxEditor2Shape.Star -> {
+                    data.writeInt(shape.points)
+                    data.writeDouble(shape.radius)
+                    data.writeDouble(shape.innerRadius)
+                    data.writeDouble(shape.sharpness)
+                }
+                is VfxEditor2Shape.Cross -> {
+                    data.writeDouble(shape.size)
+                    data.writeDouble(shape.angleDegrees)
+                    data.writeDouble(shape.thickness)
+                }
+                is VfxEditor2Shape.Shockwave -> {
+                    data.writeDouble(shape.startRadius)
+                    data.writeDouble(shape.endRadius)
+                    data.writeInt(shape.durationTicks)
+                }
+                is VfxEditor2Shape.Vortex -> {
+                    data.writeDouble(shape.radius)
+                    data.writeDouble(shape.height)
+                    data.writeDouble(shape.turns)
+                    data.writeInt(shape.durationTicks)
+                    data.writeByte(shape.direction.ordinal)
+                }
+                is VfxEditor2Shape.Tornado -> {
+                    data.writeDouble(shape.bottomRadius)
+                    data.writeDouble(shape.topRadius)
+                    data.writeDouble(shape.height)
+                    data.writeDouble(shape.turns)
+                    data.writeInt(shape.durationTicks)
+                }
+                is VfxEditor2Shape.Fountain -> {
+                    data.writeDouble(shape.radius)
+                    data.writeDouble(shape.height)
+                    data.writeDouble(shape.spreadDegrees)
+                    data.writeInt(shape.count)
+                    data.writeInt(shape.durationTicks)
+                }
+                is VfxEditor2Shape.SphereBurst -> {
+                    data.writeDouble(shape.spawnRadius)
+                    data.writeInt(shape.count)
+                    data.writeDouble(shape.speed)
+                    data.writeDouble(shape.variance)
+                    data.writeLong(shape.seed)
+                }
+                is VfxEditor2Shape.ConeBurst -> {
+                    data.writeDouble(shape.length)
+                    data.writeDouble(shape.radius)
+                    data.writeDouble(shape.angleDegrees)
+                    data.writeInt(shape.count)
+                    data.writeDouble(shape.speed)
+                    data.writeLong(shape.seed)
                 }
             }
         }
@@ -1298,6 +2107,142 @@ object ProtocolCodec {
                     count = input.readInt(),
                     spread = input.readDouble(),
                     speed = input.readDouble(),
+                    seed = input.readLong(),
+                )
+                VfxEditor2EffectType.BEZIER -> VfxEditor2Shape.Bezier.clamped(
+                    length = input.readDouble(),
+                    controlForward = input.readDouble(),
+                    controlSide = input.readDouble(),
+                    controlHeight = input.readDouble(),
+                    endSide = input.readDouble(),
+                    endHeight = input.readDouble(),
+                    thickness = input.readDouble(),
+                )
+                VfxEditor2EffectType.WAVE -> VfxEditor2Shape.Wave.clamped(
+                    length = input.readDouble(),
+                    amplitude = input.readDouble(),
+                    waves = input.readInt(),
+                    phaseDegrees = input.readDouble(),
+                    thickness = input.readDouble(),
+                )
+                VfxEditor2EffectType.LIGHTNING -> VfxEditor2Shape.Lightning.clamped(
+                    length = input.readDouble(),
+                    jitter = input.readDouble(),
+                    hops = input.readInt(),
+                    seed = input.readLong(),
+                )
+                VfxEditor2EffectType.SPIRAL -> VfxEditor2Shape.Spiral.clamped(
+                    radius = input.readDouble(),
+                    length = input.readDouble(),
+                    turns = input.readDouble(),
+                    angleOffsetDegrees = input.readDouble(),
+                    reverse = input.readBoolean(),
+                )
+                VfxEditor2EffectType.HELIX -> VfxEditor2Shape.Helix.clamped(
+                    radius = input.readDouble(),
+                    length = input.readDouble(),
+                    turns = input.readDouble(),
+                    phaseDegrees = input.readDouble(),
+                )
+                VfxEditor2EffectType.DISK -> VfxEditor2Shape.Disk.clamped(
+                    radius = input.readDouble(),
+                    innerRadius = input.readDouble(),
+                )
+                VfxEditor2EffectType.SECTOR -> VfxEditor2Shape.Sector.clamped(
+                    radius = input.readDouble(),
+                    angleDegrees = input.readDouble(),
+                    innerRadius = input.readDouble(),
+                )
+                VfxEditor2EffectType.GRID -> VfxEditor2Shape.Grid.clamped(
+                    width = input.readDouble(),
+                    height = input.readDouble(),
+                    rows = input.readInt(),
+                )
+                VfxEditor2EffectType.SPHERE -> VfxEditor2Shape.Sphere.clamped(input.readDouble())
+                VfxEditor2EffectType.ORB -> VfxEditor2Shape.Orb.clamped(
+                    radius = input.readDouble(),
+                    count = input.readInt(),
+                    seed = input.readLong(),
+                )
+                VfxEditor2EffectType.DOME -> VfxEditor2Shape.Dome.clamped(
+                    radius = input.readDouble(),
+                    direction = VfxEditor2Direction.entries.getOrNull(input.readUnsignedByte())
+                        ?: throw IllegalArgumentException("Unknown VFX Editor 2 dome direction"),
+                )
+                VfxEditor2EffectType.CYLINDER -> VfxEditor2Shape.Cylinder.clamped(
+                    radius = input.readDouble(),
+                    height = input.readDouble(),
+                    count = input.readInt(),
+                    shell = input.readBoolean(),
+                )
+                VfxEditor2EffectType.CONE -> VfxEditor2Shape.Cone.clamped(
+                    length = input.readDouble(),
+                    radius = input.readDouble(),
+                    angleDegrees = input.readDouble(),
+                )
+                VfxEditor2EffectType.BOX -> VfxEditor2Shape.Box.clamped(
+                    width = input.readDouble(),
+                    height = input.readDouble(),
+                    depth = input.readDouble(),
+                    mode = VfxEditor2BoxMode.entries.getOrNull(input.readUnsignedByte())
+                        ?: throw IllegalArgumentException("Unknown VFX Editor 2 box mode"),
+                )
+                VfxEditor2EffectType.TORUS -> VfxEditor2Shape.Torus.clamped(
+                    majorRadius = input.readDouble(),
+                    tubeRadius = input.readDouble(),
+                )
+                VfxEditor2EffectType.STAR_FLOWER -> VfxEditor2Shape.Star.clamped(
+                    points = input.readInt(),
+                    radius = input.readDouble(),
+                    innerRadius = input.readDouble(),
+                    sharpness = input.readDouble(),
+                )
+                VfxEditor2EffectType.CROSS -> VfxEditor2Shape.Cross.clamped(
+                    size = input.readDouble(),
+                    angleDegrees = input.readDouble(),
+                    thickness = input.readDouble(),
+                )
+                VfxEditor2EffectType.SHOCKWAVE -> VfxEditor2Shape.Shockwave.clamped(
+                    startRadius = input.readDouble(),
+                    endRadius = input.readDouble(),
+                    durationTicks = input.readInt(),
+                )
+                VfxEditor2EffectType.VORTEX -> VfxEditor2Shape.Vortex.clamped(
+                    radius = input.readDouble(),
+                    height = input.readDouble(),
+                    turns = input.readDouble(),
+                    durationTicks = input.readInt(),
+                    direction = VfxEditor2Direction.entries.getOrNull(input.readUnsignedByte())
+                        ?: throw IllegalArgumentException("Unknown VFX Editor 2 vortex direction"),
+                )
+                VfxEditor2EffectType.TORNADO -> VfxEditor2Shape.Tornado.clamped(
+                    bottomRadius = input.readDouble(),
+                    topRadius = input.readDouble(),
+                    height = input.readDouble(),
+                    turns = input.readDouble(),
+                    durationTicks = input.readInt(),
+                )
+                VfxEditor2EffectType.FOUNTAIN -> VfxEditor2Shape.Fountain.clamped(
+                    radius = input.readDouble(),
+                    height = input.readDouble(),
+                    spreadDegrees = input.readDouble(),
+                    count = input.readInt(),
+                    durationTicks = input.readInt(),
+                )
+                VfxEditor2EffectType.SPHERE_BURST -> VfxEditor2Shape.SphereBurst.clamped(
+                    spawnRadius = input.readDouble(),
+                    count = input.readInt(),
+                    speed = input.readDouble(),
+                    variance = input.readDouble(),
+                    seed = input.readLong(),
+                )
+                VfxEditor2EffectType.CONE_BURST -> VfxEditor2Shape.ConeBurst.clamped(
+                    length = input.readDouble(),
+                    radius = input.readDouble(),
+                    angleDegrees = input.readDouble(),
+                    count = input.readInt(),
+                    speed = input.readDouble(),
+                    seed = input.readLong(),
                 )
             }
             VfxEditor2Effect(

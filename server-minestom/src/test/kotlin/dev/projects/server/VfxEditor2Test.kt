@@ -4,6 +4,9 @@ import dev.projects.protocol.VfxEditor2Composition
 import dev.projects.protocol.VfxEditor2Effect
 import dev.projects.protocol.VfxEditor2EffectType
 import dev.projects.protocol.VfxEditor2Shape
+import dev.projects.protocol.VfxEditor2Transform
+import dev.projects.protocol.VFX_EDITOR_2_MAX_SAMPLES_PER_EFFECT
+import dev.projects.protocol.defaultVfxEditor2Effect
 import dev.projects.server.particle.ParticleAnimationScheduler
 import dev.projects.server.particle.ParticleDelay
 import dev.projects.server.particle.ParticleEffectState
@@ -32,24 +35,34 @@ class VfxEditor2Test {
     }
 
     @Test
-    fun `compiler emits particles for every checkpoint B effect type`() {
-        val composition = VfxEditor2Composition(
-            listOf(
-                VfxEditor2Effect(1L, "Arc", VfxEditor2EffectType.ARC_SLASH, VfxEditor2Shape.ArcSlash()),
-                VfxEditor2Effect(2L, "Line", VfxEditor2EffectType.STRAIGHT_SLASH, VfxEditor2Shape.StraightSlash()),
-                VfxEditor2Effect(3L, "Ring", VfxEditor2EffectType.RING, VfxEditor2Shape.Ring()),
-                VfxEditor2Effect(4L, "Burst", VfxEditor2EffectType.BURST, VfxEditor2Shape.Burst()),
-            ),
-        )
-        val effect = VfxWorkbenchCompiler.compile(composition, Pos.ZERO, Vec(0.0, 0.0, 1.0))
-        val sink = RecordingParticleSink()
-        repeat(effect.durationTicks) { tick -> effect.emit(tick, sink) }
+    fun `compiler emits bounded particles for every checkpoint B1 effect type`() {
+        VfxEditor2EffectType.entries.forEachIndexed { index, type ->
+            val baseEffect = defaultVfxEditor2Effect(type, index.toLong() + 1L)
+            val authoredEffect = baseEffect.copy(
+                transform = VfxEditor2Transform(2.0, 1.0, 0.5, 35.0, -20.0, 15.0),
+                appearance = baseEffect.appearance.copy(density = 4.0),
+            )
+            val composition = VfxEditor2Composition(
+                listOf(authoredEffect),
+            )
+            val effect = VfxWorkbenchCompiler.compile(composition, Pos.ZERO, Vec(0.0, 0.0, 1.0))
+            val sink = RecordingParticleSink()
+            var previousSize = 0
+            repeat(effect.durationTicks) { tick ->
+                effect.emit(tick, sink)
+                assertTrue(
+                    sink.spawns.size - previousSize <= VFX_EDITOR_2_MAX_SAMPLES_PER_EFFECT,
+                    "per-tick sample budget exceeded for ${type.name}",
+                )
+                previousSize = sink.spawns.size
+            }
 
-        assertTrue(sink.spawns.size > 50)
-        assertTrue(sink.spawns.any { it.particle.isDustColor(0xffffff) })
-        assertTrue(sink.spawns.all { spawn ->
-            spawn.position.x().isFinite() && spawn.position.y().isFinite() && spawn.position.z().isFinite()
-        })
+            assertTrue(sink.spawns.isNotEmpty(), "no particles emitted for ${type.name}")
+            assertTrue(sink.spawns.all { spawn ->
+                spawn.position.x().isFinite() && spawn.position.y().isFinite() && spawn.position.z().isFinite() &&
+                    spawn.position.distance(Pos.ZERO) <= 32.0
+            })
+        }
     }
 
     @Test

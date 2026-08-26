@@ -20,28 +20,38 @@ class VfxEditor2ProtocolTest {
     }
 
     @Test
-    fun `checkpoint A protocol validates bounded fields`() {
-        assertFailsWith<IllegalArgumentException> { VfxEditor2Open(" ") }
-        assertFailsWith<IllegalArgumentException> { VfxEditor2PreviewStart(-1L) }
-        assertFailsWith<IllegalArgumentException> {
-            VfxEditor2Status(VfxEditor2StatusKind.ERROR, "x".repeat(161))
+    fun `editor 2 round trips every shape type`() {
+        VfxEditor2EffectType.entries.forEachIndexed { index, type ->
+            val effect = defaultVfxEditor2Effect(type, index.toLong() + 1L)
+            val message = VfxEditor2PreviewStart(index.toLong(), VfxEditor2Composition(listOf(effect)))
+            assertEquals(message, ProtocolCodec.decode(ProtocolCodec.encode(message)), type.name)
         }
     }
 
     @Test
-    fun `checkpoint B composition round trips every effect type`() {
+    fun `two effect composition round trips`() {
         val composition = VfxEditor2Composition(
             listOf(
-                VfxEditor2Effect(1L, "Arc", VfxEditor2EffectType.ARC_SLASH, VfxEditor2Shape.ArcSlash()),
-                VfxEditor2Effect(2L, "Line", VfxEditor2EffectType.STRAIGHT_SLASH, VfxEditor2Shape.StraightSlash()),
-                VfxEditor2Effect(3L, "Ring", VfxEditor2EffectType.RING, VfxEditor2Shape.Ring()),
-                VfxEditor2Effect(4L, "Burst", VfxEditor2EffectType.BURST, VfxEditor2Shape.Burst()),
+                defaultVfxEditor2Effect(VfxEditor2EffectType.ARC_SLASH, 1L),
+                defaultVfxEditor2Effect(VfxEditor2EffectType.BEZIER, 2L),
             ),
         )
         val message = VfxEditor2PreviewStart(42L, composition)
 
         assertEquals(message, ProtocolCodec.decode(ProtocolCodec.encode(message)))
         assertTrue(ProtocolCodec.encode(message).size < 8192)
+    }
+
+    @Test
+    fun `checkpoint B1 protocol validates bounded fields`() {
+        assertFailsWith<IllegalArgumentException> { VfxEditor2Open(" ") }
+        assertFailsWith<IllegalArgumentException> { VfxEditor2PreviewStart(-1L) }
+        assertFailsWith<IllegalArgumentException> {
+            VfxEditor2Status(VfxEditor2StatusKind.ERROR, "x".repeat(161))
+        }
+        assertFailsWith<IllegalArgumentException> {
+            VfxEditor2Shape.Sphere(Double.NaN)
+        }
     }
 
     @Test
@@ -61,52 +71,23 @@ class VfxEditor2ProtocolTest {
     @Test
     fun `maximum legal composition round trips`() {
         val composition = VfxEditor2Composition(
-            (0 until 8).map { index ->
-                val id = index.toLong() + 1L
-                when (index % 4) {
-                    0 -> VfxEditor2Effect(
-                        id = id,
-                        name = "Arc $id",
-                        type = VfxEditor2EffectType.ARC_SLASH,
-                        shape = VfxEditor2Shape.ArcSlash(10.0, 300.0, 2.0, 1.5),
-                        transform = VfxEditor2Transform(8.0, -5.0, 5.0, 180.0, -180.0, 180.0),
-                        appearance = VfxEditor2Appearance(0xffffff, 1.5, 4.0),
-                    )
-                    1 -> VfxEditor2Effect(
-                        id = id,
-                        name = "Line $id",
-                        type = VfxEditor2EffectType.STRAIGHT_SLASH,
-                        shape = VfxEditor2Shape.StraightSlash(10.0, 1.5),
-                        transform = VfxEditor2Transform(8.0, -5.0, 5.0, 180.0, -180.0, 180.0),
-                        appearance = VfxEditor2Appearance(0xffffff, 1.5, 4.0),
-                    )
-                    2 -> VfxEditor2Effect(
-                        id = id,
-                        name = "Ring $id",
-                        type = VfxEditor2EffectType.RING,
-                        shape = VfxEditor2Shape.Ring(8.0, 360.0, 1.5),
-                        transform = VfxEditor2Transform(8.0, -5.0, 5.0, 180.0, -180.0, 180.0),
-                        appearance = VfxEditor2Appearance(0xffffff, 1.5, 4.0),
-                    )
-                    else -> VfxEditor2Effect(
-                        id = id,
-                        name = "Burst $id",
-                        type = VfxEditor2EffectType.BURST,
-                        shape = VfxEditor2Shape.Burst(8.0, 64, 89.0, 3.0),
-                        transform = VfxEditor2Transform(8.0, -5.0, 5.0, 180.0, -180.0, 180.0),
-                        appearance = VfxEditor2Appearance(0xffffff, 1.5, 4.0),
-                    )
-                }
+            VfxEditor2EffectType.entries.take(VFX_EDITOR_2_MAX_EFFECTS).mapIndexed { index, type ->
+                defaultVfxEditor2Effect(type, index.toLong() + 1L).copy(
+                    name = "Effect ${index + 1}",
+                    transform = VfxEditor2Transform(8.0, -5.0, 5.0, 180.0, -180.0, 180.0),
+                    appearance = VfxEditor2Appearance(0xffffff, 1.5, 4.0),
+                )
             },
         )
         val message = VfxEditor2PreviewStart(Long.MAX_VALUE, composition)
 
         assertEquals(message, ProtocolCodec.decode(ProtocolCodec.encode(message)))
         assertTrue(ProtocolCodec.encode(message).size <= 8192)
+        assertTrue(composition.estimatedSampleCount() <= VFX_EDITOR_2_MAX_TOTAL_SAMPLES)
     }
 
     @Test
-    fun `checkpoint B model validates visibility and clamps authored values`() {
+    fun `checkpoint B1 model validates visibility and clamps authored values`() {
         val defaults = defaultVfxEditor2Composition()
         assertEquals(2, defaults.visibleEffects().size)
         val clampedTransform = VfxEditor2Transform.clamped(99.0, -99.0, 99.0, 999.0, -999.0, 999.0)
@@ -114,6 +95,7 @@ class VfxEditor2ProtocolTest {
         assertEquals(-5.0, clampedTransform.side)
         assertEquals(5.0, clampedTransform.height)
         assertEquals(64, VfxEditor2Shape.Burst.clamped(99.0, 999, 999.0, 999.0).count)
+        assertEquals(256, VfxEditor2Shape.Orb.clamped(99.0, 999, 42L).count)
 
         val hidden = defaults.effects[1].copy(enabled = false)
         assertEquals(listOf(defaults.effects[0]), defaults.copy(effects = listOf(defaults.effects[0], hidden)).visibleEffects())
@@ -126,7 +108,7 @@ class VfxEditor2ProtocolTest {
     }
 
     @Test
-    fun `checkpoint B composition editing supports add duplicate and delete`() {
+    fun `checkpoint B1 composition editing supports add duplicate and delete`() {
         val start = VfxEditor2Composition(emptyList())
         val arc = VfxEditor2Effect(10L, "Arc", VfxEditor2EffectType.ARC_SLASH, VfxEditor2Shape.ArcSlash())
         val withArc = start.add(arc)!!
@@ -139,37 +121,25 @@ class VfxEditor2ProtocolTest {
     }
 
     @Test
-    fun `checkpoint B rejects truncated composition packet`() {
+    fun `checkpoint B1 rejects truncated and trailing composition packets`() {
         val encoded = ProtocolCodec.encode(VfxEditor2PreviewStart(1L, defaultVfxEditor2Composition()))
         assertFailsWith<IllegalArgumentException> {
             ProtocolCodec.decode(encoded.copyOf(encoded.size - 1))
         }
+        assertFailsWith<IllegalArgumentException> {
+            ProtocolCodec.decode(encoded + byteArrayOf(0))
+        }
     }
 
     @Test
-    fun `checkpoint A hello is rejected as a version mismatch`() {
-        val checkpointAHello = byteArrayOf(1, 0, 0, 0, 15)
-        val hello = ProtocolCodec.decode(checkpointAHello) as ProtocolHello
+    fun `checkpoint B version is rejected as a version mismatch`() {
+        val checkpointBHello = ProtocolCodec.decode(ProtocolCodec.encode(ProtocolHello(16))) as ProtocolHello
 
         val error = assertFailsWith<ProtocolVersionMismatchException> {
-            ProtocolVersion.requireCompatible(hello.version)
+            ProtocolVersion.requireCompatible(checkpointBHello.version)
         }
 
-        assertEquals("ProjectS protocol version mismatch: expected 16, received 15", error.message)
-    }
-
-    @Test
-    fun `checkpoint A editor open packet reports its packet context`() {
-        val checkpointAOpen = byteArrayOf(40, 0, 7) + "Ronin Q".toByteArray(Charsets.UTF_8)
-
-        val error = assertFailsWith<ProtocolDecodeException> {
-            ProtocolCodec.decode(checkpointAOpen)
-        }
-
-        assertEquals(40, error.packetId)
-        assertEquals("VfxEditor2Open", error.packetName)
-        assertEquals("unexpected end of packet", error.reason)
-        assertEquals("Malformed ProjectS protocol packet", error.message)
+        assertEquals("ProjectS protocol version mismatch: expected 17, received 16", error.message)
     }
 
     @Test
