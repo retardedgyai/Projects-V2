@@ -160,6 +160,47 @@ class ProtocolCodecTest {
     }
 
     @Test
+    fun `progression messages round trip`() {
+        assertRoundTrip(
+            ProgressionSnapshot(
+                revision = 7L,
+                level = 2,
+                xp = 25,
+                xpRequiredForNextLevel = 150,
+                grantedPassivePoints = 1,
+                spentPassivePoints = 1,
+                allocatedPassiveNodeIds = listOf("projects:passive/force"),
+            ),
+        )
+        assertRoundTrip(ProgressionXpGained(100, 2, 1, 1))
+        assertRoundTrip(PassiveNodeSpendRequest(7L, "projects:passive/tempo"))
+        assertRoundTrip(
+            PassiveNodeSpendResponse(
+                "projects:passive/tempo",
+                PassiveNodeSpendResult.STALE_REVISION,
+                7L,
+            ),
+        )
+    }
+
+    @Test
+    fun `invalid progression messages fail closed`() {
+        assertFailsWith<IllegalArgumentException> {
+            ProgressionSnapshot(0L, 46, 0, 100, 0, 0, emptyList())
+        }
+        assertFailsWith<IllegalArgumentException> {
+            PassiveNodeSpendRequest(0L, "projects:passive/unknown node")
+        }
+
+        val malformed = ProtocolCodec.encode(
+            ProgressionSnapshot(0L, 1, 0, 100, 0, 0, emptyList()),
+        ).copyOf().also { bytes ->
+            bytes[1 + Long.SIZE_BYTES + Int.SIZE_BYTES * 5] = 7
+        }
+        assertFailsWith<IllegalArgumentException> { ProtocolCodec.decode(malformed) }
+    }
+
+    @Test
     fun `malformed resource snapshot fails closed`() {
         val malformed = ProtocolCodec.encode(ClassResourceSnapshot(75, 100, 20, 80, 50, 100, 40, 60)).copyOf().also { bytes ->
             java.nio.ByteBuffer.wrap(bytes, 25, Int.SIZE_BYTES).putInt(61)

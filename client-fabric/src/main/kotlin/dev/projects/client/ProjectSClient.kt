@@ -18,6 +18,9 @@ import dev.projects.protocol.ProtocolCodec
 import dev.projects.protocol.ProtocolHello
 import dev.projects.protocol.ProtocolHelloAck
 import dev.projects.protocol.ProtocolVersion
+import dev.projects.protocol.ProgressionSnapshot
+import dev.projects.protocol.ProgressionXpGained
+import dev.projects.protocol.PassiveNodeSpendResponse
 import dev.projects.protocol.SlashEditorParameters
 import dev.projects.protocol.VfxEditorNotice
 import dev.projects.protocol.VfxEditorOpen
@@ -54,6 +57,9 @@ import kotlin.math.sqrt
 
 object ProjectSClient : ClientModInitializer {
     private const val ATTACK_DEBUG_TICKS = 5
+    private const val XP_GAIN_TICKS = 40
+    private const val LEVEL_UP_TICKS = 70
+    private const val POINT_HINT_TICKS = 140
     private val attackDebugDust = DustParticleOptions(0xFF0000, 0.65f)
     private val hitCoreDust = DustParticleOptions(0xFFFFFF, 0.9f)
     private val logger = LoggerFactory.getLogger("projects")
@@ -72,6 +78,11 @@ object ProjectSClient : ClientModInitializer {
     private var skill2CooldownMaxTicks = 100
     private var skill3CooldownTicks = 0
     private var skill3CooldownMaxTicks = 60
+    private var progressionSnapshot = ProgressionSnapshot(0L, 1, 0, 100, 0, 0, emptyList())
+    private var progressionXpGain = 0
+    private var progressionXpGainTicks = 0
+    private var progressionLevelUpTicks = 0
+    private var progressionPointHintTicks = 0
     private var attackDebugShape: AttackDebugShape? = null
     private var attackDebugTicksRemaining = 0
     private var attackDebugEnabled = true
@@ -99,6 +110,12 @@ object ProjectSClient : ClientModInitializer {
         InputConstants.KEY_F7,
         KeyMapping.Category.GAMEPLAY,
     )
+    private val passiveTreeKey = KeyMapping(
+        "key.projects.passive_tree",
+        InputConstants.Type.KEYSYM,
+        InputConstants.KEY_K,
+        KeyMapping.Category.GAMEPLAY,
+    )
     private val skill1Key = skillKey("key.projects.skill_1", InputConstants.KEY_Z)
     private val skill2Key = skillKey("key.projects.skill_2", InputConstants.KEY_X)
     private val skill3Key = skillKey("key.projects.skill_3", InputConstants.KEY_C)
@@ -108,6 +125,7 @@ object ProjectSClient : ClientModInitializer {
         KeyMappingHelper.registerKeyMapping(dodgeKey)
         KeyMappingHelper.registerKeyMapping(attackDebugKey)
         KeyMappingHelper.registerKeyMapping(hudDesignerKey)
+        KeyMappingHelper.registerKeyMapping(passiveTreeKey)
         KeyMappingHelper.registerKeyMapping(skill1Key)
         KeyMappingHelper.registerKeyMapping(skill2Key)
         KeyMappingHelper.registerKeyMapping(skill3Key)
@@ -152,6 +170,21 @@ object ProjectSClient : ClientModInitializer {
                         skill3CooldownTicks = message.skill3CooldownTicks
                         skill3CooldownMaxTicks = message.skill3CooldownMaxTicks
                     }
+                    is ProgressionSnapshot -> context.client().execute {
+                        progressionSnapshot = message
+                        (context.client().gui.screen() as? ProgressionTreeScreen)?.setSnapshot(message)
+                    }
+                    is ProgressionXpGained -> context.client().execute {
+                        progressionXpGain = message.amount
+                        progressionXpGainTicks = XP_GAIN_TICKS
+                        if (message.levelUpCount > 0) {
+                            progressionLevelUpTicks = LEVEL_UP_TICKS
+                            progressionPointHintTicks = POINT_HINT_TICKS
+                        }
+                    }
+                    is PassiveNodeSpendResponse -> context.client().execute {
+                        (context.client().gui.screen() as? ProgressionTreeScreen)?.setSpendResponse(message)
+                    }
                     is GroundTelegraphStart -> context.client().execute {
                         GroundTelegraphRenderer.start(message)
                     }
@@ -195,10 +228,21 @@ object ProjectSClient : ClientModInitializer {
             Identifier.fromNamespaceAndPath("projects", "class_resources"),
             ::renderResourceHud,
         )
+        HudElementRegistry.attachElementAfter(
+            Identifier.fromNamespaceAndPath("projects", "class_resources"),
+            Identifier.fromNamespaceAndPath("projects", "progression"),
+            ::renderProgressionHud,
+        )
         HudElementRegistry.replaceElement(VanillaHudElements.HEALTH_BAR) { _ ->
             { _, _ -> }
         }
         HudElementRegistry.replaceElement(VanillaHudElements.FOOD_BAR) { _ ->
+            { _, _ -> }
+        }
+        HudElementRegistry.replaceElement(VanillaHudElements.INFO_BAR) { _ ->
+            { _, _ -> }
+        }
+        HudElementRegistry.replaceElement(VanillaHudElements.EXPERIENCE_LEVEL) { _ ->
             { _, _ -> }
         }
         ClientTickEvents.END_CLIENT_TICK.register(::handleAttackInput)
@@ -216,6 +260,11 @@ object ProjectSClient : ClientModInitializer {
             skill1CooldownTicks = 0
             skill2CooldownTicks = 0
             skill3CooldownTicks = 0
+            progressionSnapshot = ProgressionSnapshot(0L, 1, 0, 100, 0, 0, emptyList())
+            progressionXpGain = 0
+            progressionXpGainTicks = 0
+            progressionLevelUpTicks = 0
+            progressionPointHintTicks = 0
             attackDebugShape = null
             attackDebugTicksRemaining = 0
             slashDraftNames = emptyList()
@@ -230,8 +279,20 @@ object ProjectSClient : ClientModInitializer {
                 ),
             )
         }
+        if (passiveTreeKey.consumeClick() && client.gui.screen() == null) {
+            client.gui.setScreen(
+                ProgressionTreeScreen(progressionSnapshot) { request ->
+                    if (ClientPlayNetworking.canSend(ProjectSPayload.TYPE)) {
+                        ClientPlayNetworking.send(ProjectSPayload(ProtocolCodec.encode(request)))
+                    }
+                },
+            )
+        }
         renderAttackDebugShape(client)
         if (hitMarkerTicksRemaining > 0) hitMarkerTicksRemaining--
+        if (progressionXpGainTicks > 0) progressionXpGainTicks--
+        if (progressionLevelUpTicks > 0) progressionLevelUpTicks--
+        if (progressionPointHintTicks > 0) progressionPointHintTicks--
         if (attackDebugKey.consumeClick()) {
             attackDebugEnabled = !attackDebugEnabled
             player.sendSystemMessage(
@@ -332,6 +393,93 @@ object ProjectSClient : ClientModInitializer {
         }
         renderSkillHud(context)
         renderHitMarker(context)
+    }
+
+    private fun renderProgressionHud(context: GuiGraphicsExtractor, tickCounter: DeltaTracker) {
+        val screenWidth = context.guiWidth()
+        val screenHeight = context.guiHeight()
+        val barWidth = minOf(182, screenWidth - 20)
+        val barHeight = 8
+        val x = (screenWidth - barWidth) / 2
+        val y = screenHeight - 34
+        val required = progressionSnapshot.xpRequiredForNextLevel
+        val ratio = if (required <= 0) 1.0 else (progressionSnapshot.xp.toDouble() / required).coerceIn(0.0, 1.0)
+        context.text(
+            Minecraft.getInstance().font,
+            "Lv ${progressionSnapshot.level}",
+            x,
+            y - 10,
+            0xFFB8CFC5.toInt(),
+            true,
+        )
+        val points = progressionSnapshot.grantedPassivePoints - progressionSnapshot.spentPassivePoints
+        if (points > 0) {
+            val pointsText = "P $points"
+            context.text(
+                Minecraft.getInstance().font,
+                pointsText,
+                x + barWidth - Minecraft.getInstance().font.width(pointsText),
+                y - 10,
+                0xFFE5C878.toInt(),
+                true,
+            )
+        }
+        context.fill(x, y, x + barWidth, y + barHeight, 0xCC0D1418.toInt())
+        outline(context, HudRect(x, y, barWidth, barHeight), 0xFF414C50.toInt())
+        val filled = (barWidth - 2) * ratio
+        if (filled > 0.0) {
+            context.fill(x + 1, y + 1, x + 1 + filled.toInt(), y + barHeight - 1, 0xFF638B83.toInt())
+        }
+        val xpText = if (required <= 0) "MAX" else "${progressionSnapshot.xp} / $required"
+        context.text(
+            Minecraft.getInstance().font,
+            xpText,
+            x + barWidth / 2 - Minecraft.getInstance().font.width(xpText) / 2,
+            y - 10,
+            0xFF8CABA2.toInt(),
+            false,
+        )
+        if (progressionXpGainTicks > 0) {
+            val gainText = "+$progressionXpGain XP"
+            context.text(
+                Minecraft.getInstance().font,
+                gainText,
+                screenWidth / 2 - Minecraft.getInstance().font.width(gainText) / 2,
+                y - 28,
+                0xFFE5C878.toInt(),
+                true,
+            )
+        }
+        if (progressionLevelUpTicks > 0) {
+            val levelText = "LEVEL ${progressionSnapshot.level}"
+            val pointText = "PASSIVE POINT +1"
+            context.text(
+                Minecraft.getInstance().font,
+                levelText,
+                screenWidth / 2 - Minecraft.getInstance().font.width(levelText) / 2,
+                screenHeight / 2 - 48,
+                0xFFE5F0E9.toInt(),
+                true,
+            )
+            context.text(
+                Minecraft.getInstance().font,
+                pointText,
+                screenWidth / 2 - Minecraft.getInstance().font.width(pointText) / 2,
+                screenHeight / 2 - 34,
+                0xFFE5C878.toInt(),
+                true,
+            )
+        } else if (progressionPointHintTicks > 0 && points > 0) {
+            val hint = "K  Passive Tree"
+            context.text(
+                Minecraft.getInstance().font,
+                hint,
+                screenWidth / 2 - Minecraft.getInstance().font.width(hint) / 2,
+                y - 28,
+                0xFFB8CFC5.toInt(),
+                false,
+            )
+        }
     }
 
     private fun renderHitMarker(context: GuiGraphicsExtractor) {

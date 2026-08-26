@@ -72,6 +72,17 @@ class Skill3StateTest {
     }
 
     @Test
+    fun `skill3 cooldown recovery modifier consumes fractional ticks`() {
+        val skill3 = Skill3State(sequence())
+        skill3.tryCast(facing, ClassSkillDirection(0.0, 1.0))
+        repeat(4) { skill3.tick(false, 0.0) }
+
+        repeat(5) { skill3.tick(false, -1.0, 1.20) }
+
+        assertEquals(54, skill3.cooldownTicksRemaining)
+    }
+
+    @Test
     fun `dash segment selects the nearest target and only one target per cast`() {
         val skill3 = Skill3State(sequence())
         skill3.tryCast(facing, ClassSkillDirection(0.0, 1.0))

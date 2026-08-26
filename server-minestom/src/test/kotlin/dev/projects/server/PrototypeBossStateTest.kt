@@ -27,6 +27,27 @@ class PrototypeBossStateTest {
     }
 
     @Test
+    fun `progression modifiers affect outgoing and incoming pve damage`() {
+        val boss = PrototypeBossState()
+
+        assertEquals(23, boss.applyPlayerAttack(1L, WeaponType.HEAVY_BLADE, outgoingDamageMultiplier = 1.15))
+        assertEquals(5, boss.applyBossAttack(playerId, 2L, FixedAttackType.SIDE_SWEEP, incomingDamageMultiplier = 0.90))
+        assertEquals(15, boss.playerHealth(playerId))
+    }
+
+    @Test
+    fun `player max health modifier survives reset`() {
+        val boss = PrototypeBossState()
+
+        boss.registerPlayer(playerId, 24)
+        boss.applyBossDamage(playerId, 1L, 8)
+        boss.reset()
+
+        assertEquals(24, boss.playerMaxHealth(playerId))
+        assertEquals(24, boss.playerHealth(playerId))
+    }
+
+    @Test
     fun `head and back weakpoints both multiply body damage`() {
         val boss = PrototypeBossState()
 
@@ -52,6 +73,18 @@ class PrototypeBossStateTest {
 
         boss.completeFinalStruggle()
         assertTrue(boss.isVictory)
+    }
+
+    @Test
+    fun `victory reward gate grants once and resets for the next encounter`() {
+        val boss = PrototypeBossState(maxHealth = 20)
+        boss.applyPlayerAttack(1L, WeaponType.HEAVY_BLADE)
+        boss.completeFinalStruggle()
+
+        assertTrue(boss.claimVictoryReward())
+        assertFalse(boss.claimVictoryReward())
+        boss.reset()
+        assertFalse(boss.claimVictoryReward())
     }
 
     @Test

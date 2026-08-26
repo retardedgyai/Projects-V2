@@ -39,6 +39,7 @@ class Skill1State(
 
     private var hitWindowOpen = false
     private val hitTargets = mutableSetOf<UUID>()
+    private var cooldownRecoveryRemainder = 0.0
 
     val isReady: Boolean
         get() = phase == Skill1Phase.IDLE && cooldownTicksRemaining == 0
@@ -55,7 +56,10 @@ class Skill1State(
         return castId
     }
 
-    fun tick(): Skill1Tick {
+    fun tick(cooldownRecoveryMultiplier: Double = 1.0): Skill1Tick {
+        require(cooldownRecoveryMultiplier >= 1.0 && cooldownRecoveryMultiplier.isFinite()) {
+            "Skill1 cooldown recovery multiplier must be finite and at least 1"
+        }
         val wasDashing = phase == Skill1Phase.DASH
         hitWindowOpen = wasDashing
         val result = when (phase) {
@@ -76,7 +80,7 @@ class Skill1State(
                 Skill1Tick(Skill1Phase.IDLE, null, false)
             }
         }
-        if (cooldownTicksRemaining > 0) cooldownTicksRemaining--
+        advanceCooldown(cooldownRecoveryMultiplier)
         if (!wasDashing) hitWindowOpen = false
         return result
     }
@@ -106,11 +110,24 @@ class Skill1State(
         castId = 0L
         hitWindowOpen = false
         hitTargets.clear()
+        cooldownRecoveryRemainder = 0.0
     }
 
     fun reset() {
         cancelActiveMovement()
         cooldownTicksRemaining = 0
+    }
+
+    private fun advanceCooldown(multiplier: Double) {
+        if (cooldownTicksRemaining <= 0) {
+            cooldownRecoveryRemainder = 0.0
+            return
+        }
+        cooldownRecoveryRemainder += multiplier
+        val recoveredTicks = (cooldownRecoveryRemainder + 1.0e-9).toInt()
+        cooldownRecoveryRemainder -= recoveredTicks
+        cooldownTicksRemaining = (cooldownTicksRemaining - recoveredTicks).coerceAtLeast(0)
+        if (cooldownTicksRemaining == 0) cooldownRecoveryRemainder = 0.0
     }
 
     companion object {

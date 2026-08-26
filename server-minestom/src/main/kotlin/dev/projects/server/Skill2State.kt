@@ -37,6 +37,7 @@ class Skill2State(
     private var activePulse: Int? = null
     private val pulseHitTargets = mutableMapOf<Int, MutableSet<UUID>>()
     private val landingHitTargets = mutableSetOf<UUID>()
+    private var cooldownRecoveryRemainder = 0.0
 
     val isReady: Boolean
         get() = phase == Skill2Phase.IDLE && cooldownTicksRemaining == 0
@@ -54,7 +55,10 @@ class Skill2State(
         return castId
     }
 
-    fun tick(isGrounded: Boolean): Skill2Tick {
+    fun tick(isGrounded: Boolean, cooldownRecoveryMultiplier: Double = 1.0): Skill2Tick {
+        require(cooldownRecoveryMultiplier >= 1.0 && cooldownRecoveryMultiplier.isFinite()) {
+            "Skill2 cooldown recovery multiplier must be finite and at least 1"
+        }
         if (phase == Skill2Phase.DIVE) {
             if (isGrounded) {
                 phase = Skill2Phase.IDLE
@@ -77,7 +81,7 @@ class Skill2State(
 
         activePulse = null
         landingWindowOpen = false
-        if (cooldownTicksRemaining > 0) cooldownTicksRemaining--
+        advanceCooldown(cooldownRecoveryMultiplier)
         return Skill2Tick(Skill2Phase.IDLE, false, 0.0)
     }
 
@@ -126,6 +130,19 @@ class Skill2State(
         activePulse = null
         pulseHitTargets.clear()
         landingHitTargets.clear()
+        cooldownRecoveryRemainder = 0.0
+    }
+
+    private fun advanceCooldown(multiplier: Double) {
+        if (cooldownTicksRemaining <= 0) {
+            cooldownRecoveryRemainder = 0.0
+            return
+        }
+        cooldownRecoveryRemainder += multiplier
+        val recoveredTicks = (cooldownRecoveryRemainder + 1.0e-9).toInt()
+        cooldownRecoveryRemainder -= recoveredTicks
+        cooldownTicksRemaining = (cooldownTicksRemaining - recoveredTicks).coerceAtLeast(0)
+        if (cooldownTicksRemaining == 0) cooldownRecoveryRemainder = 0.0
     }
 
     companion object {

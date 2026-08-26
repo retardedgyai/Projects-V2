@@ -16,6 +16,11 @@ import dev.projects.protocol.ProtocolCodec
 import dev.projects.protocol.ProtocolHello
 import dev.projects.protocol.ProtocolHelloAck
 import dev.projects.protocol.ProtocolVersion
+import dev.projects.protocol.ProgressionSnapshot
+import dev.projects.protocol.ProgressionXpGained
+import dev.projects.protocol.PassiveNodeSpendRequest
+import dev.projects.protocol.PassiveNodeSpendResponse
+import dev.projects.protocol.PassiveNodeSpendResult as ProtocolPassiveNodeSpendResult
 import dev.projects.protocol.SlashEditorParameters
 import dev.projects.protocol.Skill3VfxTarget
 import dev.projects.protocol.VfxEditorNotice
@@ -98,6 +103,7 @@ import dev.projects.server.mod.ModStackingLayer
 private const val SERVER_ADDRESS = "127.0.0.1"
 private const val SERVER_PORT = 25565
 private const val DEFAULT_ATTACK_SPEED = 1.0
+private const val RIFT_EXECUTIONER_VICTORY_XP = 100
 private val SUPPORTED_ATTACK_SPEEDS = setOf(1.0, 1.5, 2.0)
 private const val DODGE_PLAYER_WIDTH = 0.6
 private const val DODGE_PLAYER_HEIGHT = 1.8
@@ -161,6 +167,7 @@ fun main() {
     val skill1States = mutableMapOf<UUID, Skill1State>()
     val skill2States = mutableMapOf<UUID, Skill2State>()
     val skill3States = mutableMapOf<UUID, Skill3State>()
+    val progressions = mutableMapOf<UUID, ProgressionState>()
     val resourceSyncTicks = mutableMapOf<UUID, Int>()
     val lastSentCooldowns = mutableMapOf<UUID, SkillCooldowns>()
     val dodgeVelocityActive = mutableMapOf<UUID, Boolean>()
@@ -188,7 +195,9 @@ fun main() {
     val slashDraftStore = SlashDraftStore(Path.of("config", "projects", "vfx-editor", "slash-drafts.json"))
     val skill3SlashBindingStore = Skill3SlashBindingStore(Path.of("config", "projects", "vfx-editor", "twin-blades-skill3-slash.json"))
     val skill3FinisherBindingStore = Skill3SlashBindingStore(Path.of("config", "projects", "vfx-editor", "twin-blades-skill3-finisher-slash.json"))
+    val progressionRepository = ProgressionRepository(Path.of("config", "projects", "progression"))
     val slashPreviewHandles = mutableMapOf<UUID, ParticleEffectHandle>()
+    val progressionLoadWarnings = mutableSetOf<UUID>()
 
     fun sendSlashDraftList(player: net.minestom.server.entity.Player) {
         player.sendPluginMessage(
@@ -245,6 +254,95 @@ fun main() {
         lastSentCooldowns[player.uuid] = cooldowns
     }
 
+    fun progressionEffects(playerId: UUID): ProgressionEffects =
+        progressions[playerId]?.effects() ?: ProgressionEffects.DEFAULT
+
+    fun sendProgressionSnapshot(player: net.minestom.server.entity.Player) {
+        val state = progressions[player.uuid] ?: return
+        val record = state.record()
+        player.sendPluginMessage(
+            PROJECTS_CHANNEL,
+            ProtocolCodec.encode(
+                ProgressionSnapshot(
+                    revision = record.revision,
+                    level = record.level,
+                    xp = record.experience,
+                    xpRequiredForNextLevel = state.xpRequiredForNextLevel,
+                    grantedPassivePoints = record.grantedPassivePoints,
+                    spentPassivePoints = record.spentPassivePoints,
+                    allocatedPassiveNodeIds = record.allocatedPassiveNodeIds,
+                ),
+            ),
+        )
+    }
+
+    fun loadProgression(playerId: UUID): ProgressionState {
+        return when (val result = progressionRepository.load(playerId)) {
+            ProgressionLoadResult.Missing -> ProgressionState()
+            is ProgressionLoadResult.Loaded -> result.state
+            is ProgressionLoadResult.Invalid -> {
+                if (progressionLoadWarnings.add(playerId)) {
+                    System.err.println("Progression load blocked for $playerId: ${result.reason}")
+                }
+                ProgressionState()
+            }
+        }
+    }
+
+    fun persistProgression(playerId: UUID, state: ProgressionState): Boolean {
+        val saved = progressionRepository.save(playerId, state)
+        if (!saved) {
+            System.err.println("Progression save failed for $playerId")
+        }
+        return saved
+    }
+
+    fun applyPlayerMaxHealth(player: net.minestom.server.entity.Player) {
+        val maxHealth = prototypeBoss.playerMaxHealth(player.uuid).toDouble()
+        player.getAttribute(net.minestom.server.entity.attribute.Attribute.MAX_HEALTH).setBaseValue(maxHealth)
+        player.setHealth(prototypeBoss.playerEntityHealth(player.uuid))
+    }
+
+    fun refreshPlayerProgressionEffects(player: net.minestom.server.entity.Player) {
+        prototypeBoss.setPlayerMaxHealth(
+            player.uuid,
+            prototypeBoss.playerMaxHealth + progressionEffects(player.uuid).maxHealthBonus,
+        )
+        applyPlayerMaxHealth(player)
+    }
+
+    fun sendProgressionSpendResponse(
+        player: net.minestom.server.entity.Player,
+        nodeId: String,
+        result: ProtocolPassiveNodeSpendResult,
+    ) {
+        val revision = progressions[player.uuid]?.revision ?: 0L
+        player.sendPluginMessage(
+            PROJECTS_CHANNEL,
+            ProtocolCodec.encode(PassiveNodeSpendResponse(nodeId, result, revision)),
+        )
+    }
+
+    fun grantVictoryXp(player: net.minestom.server.entity.Player) {
+        val current = progressions[player.uuid] ?: return
+        val updated = current.copyState()
+        val gain = updated.addXp(RIFT_EXECUTIONER_VICTORY_XP)
+        if (!persistProgression(player.uuid, updated)) return
+        progressions[player.uuid] = updated
+        player.sendPluginMessage(
+            PROJECTS_CHANNEL,
+            ProtocolCodec.encode(
+                ProgressionXpGained(
+                    amount = gain.amount,
+                    resultingLevel = gain.resultingLevel,
+                    levelUpCount = gain.levelUpCount,
+                    passivePointsGranted = gain.passivePointsGranted,
+                ),
+            ),
+        )
+        sendProgressionSnapshot(player)
+    }
+
     fun updateBossBar() {
         val status = when {
             prototypeBoss.isVictory -> "VICTORY"
@@ -281,10 +379,11 @@ fun main() {
         instance.players.forEach { player ->
             classResources[player.uuid]?.reset()
             resourceSyncTicks[player.uuid] = 0
-            player.setHealth(prototypeBoss.playerMaxHealth.toFloat())
+            applyPlayerMaxHealth(player)
             player.teleport(player.respawnPoint)
             player.showBossBar(bossBar)
             sendResourceSnapshot(player)
+            sendProgressionSnapshot(player)
         }
     }
 
@@ -295,8 +394,12 @@ fun main() {
         stopPlayerActions()
         updateBossBar()
         val result = if (prototypeBoss.isVictory) "VICTORY" else "DEFEAT"
+        if (prototypeBoss.claimVictoryReward()) {
+            instance.players.filter { it.isOnline }.forEach(::grantVictoryXp)
+        }
         instance.players.forEach {
             sendResourceSnapshot(it)
+            sendProgressionSnapshot(it)
             it.sendMessage(Component.text(result))
         }
     }
@@ -598,8 +701,14 @@ fun main() {
         event.player.respawnPoint = Pos(0.0, 41.0, 0.0)
     }
     events.addListener(PlayerSpawnEvent::class.java) { event ->
-        prototypeBoss.registerPlayer(event.player.uuid)
-        event.player.setHealth(prototypeBoss.playerMaxHealth.toFloat())
+        val playerId = event.player.uuid
+        if (event.isFirstSpawn) {
+            progressions[playerId] = loadProgression(playerId)
+        }
+        val progression = progressions.getOrPut(playerId) { ProgressionState() }
+        val loadedEffects = progression.effects()
+        prototypeBoss.registerPlayer(playerId, prototypeBoss.playerMaxHealth + loadedEffects.maxHealthBonus)
+        applyPlayerMaxHealth(event.player)
         val resources = classResources.getOrPut(event.player.uuid) { ClassResourceState() }
         val skill1 = skill1States.getOrPut(event.player.uuid) { Skill1State() }
         val skill2 = skill2States.getOrPut(event.player.uuid) { Skill2State() }
@@ -612,6 +721,7 @@ fun main() {
         }
         resourceSyncTicks[event.player.uuid] = 0
         sendResourceSnapshot(event.player)
+        sendProgressionSnapshot(event.player)
         updateBossBar()
         event.player.showBossBar(bossBar)
         if (event.isFirstSpawn) {
@@ -619,7 +729,10 @@ fun main() {
             twinBladesComboStates[event.player.uuid] = TwinBladesComboState()
             combatStates[event.player.uuid] = CombatState(
                 weaponSource = { weaponFor(event.player) },
-                attackSpeedSource = { attackSpeeds[event.player.uuid] ?: DEFAULT_ATTACK_SPEED },
+                attackSpeedSource = {
+                    (attackSpeeds[event.player.uuid] ?: DEFAULT_ATTACK_SPEED) *
+                        progressionEffects(event.player.uuid).normalAttackSpeedMultiplier
+                },
             )
             dodgeStates[event.player.uuid] = DodgeState()
             twinRodsAirStates[event.player.uuid] = TwinRodsAirState()
@@ -656,6 +769,7 @@ fun main() {
     }
     events.addListener(PlayerDisconnectEvent::class.java) { event ->
         val playerId = event.player.uuid
+        progressions[playerId]?.let { persistProgression(playerId, it) }
         particleAnimations.cancel(slashPreviewHandles.remove(playerId))
         particleAnimations.cancelFor(event.player)
         combatStates.remove(playerId)
@@ -665,6 +779,7 @@ fun main() {
         skill1States.remove(playerId)
         skill2States.remove(playerId)
         skill3States.remove(playerId)
+        progressions.remove(playerId)
         resourceSyncTicks.remove(playerId)
         lastSentCooldowns.remove(playerId)
         attackSpeeds.remove(playerId)
@@ -695,6 +810,7 @@ fun main() {
         val skill1 = skill1States[event.player.uuid] ?: return@addListener
         val skill2 = skill2States[event.player.uuid] ?: return@addListener
         val skill3 = skill3States[event.player.uuid] ?: return@addListener
+        val playerEffects = progressionEffects(event.player.uuid)
         if (event.player == instance.players.firstOrNull()) {
             if (prototypeBoss.isEncounterRunning) {
                 tickRiftExecutioner(
@@ -707,6 +823,9 @@ fun main() {
                     particleManager,
                     bossGroundTelegraphIds,
                     bossRiftTelegraphIds,
+                    incomingDamageMultiplier = { playerId ->
+                        progressionEffects(playerId).incomingPveDamageMultiplier
+                    },
                 ) {
                     nextGroundTelegraphId++
                 }
@@ -774,6 +893,7 @@ fun main() {
                 attackExecutionId = hit.attackExecutionId,
                 weapon = hit.weapon,
                 weakpoint = weakpoint?.weakpoint,
+                outgoingDamageMultiplier = playerEffects.directDamageMultiplier,
             )
             twinRodsAir.onAttackHit(hit.weapon, event.player.isOnGround, hit.attackExecutionId)
             if (skill3.reduceCooldownForNormalAttack(hit.attackExecutionId)) {
@@ -823,7 +943,7 @@ fun main() {
             finishEncounter()
             return@addListener
         }
-        val skill1Tick = skill1.tick()
+        val skill1Tick = skill1.tick(playerEffects.cooldownRecoveryMultiplier)
         if (skill1Tick.dashActive) {
             val direction = requireNotNull(skill1Tick.dashDirection)
             val start = event.player.position
@@ -844,7 +964,11 @@ fun main() {
             val hitTargets = skill1.hitTargetsOnSegment(start, end, skillTargets)
             if (hitTargets.isNotEmpty()) {
                 hitTargets.forEach { targetId ->
-                    val damage = prototypeBoss.applySkill1Attack(skill1.castId, targetId)
+                    val damage = prototypeBoss.applySkill1Attack(
+                        skill1.castId,
+                        targetId,
+                        playerEffects.directDamageMultiplier,
+                    )
                     if (damage > 0) updateBossBar()
                 }
                 showSkill1Impact(event.player, tester?.position ?: end, direction, particleAnimations, particleManager)
@@ -864,14 +988,19 @@ fun main() {
             finishEncounter()
             return@addListener
         }
-        val skill2Tick = skill2.tick(event.player.isOnGround)
+        val skill2Tick = skill2.tick(event.player.isOnGround, playerEffects.cooldownRecoveryMultiplier)
         if (skill2Tick.diveActive) {
             event.player.setVelocity(Vec(0.0, skill2Tick.velocityY, 0.0))
             showSkill2DiveTrail(event.player)
             skill2Tick.pulseIndex?.let { pulseIndex ->
                 val skillTargets = tester?.let { listOf(combatTarget(it)) } ?: emptyList()
                 skill2.hitTargetsAtPulse(pulseIndex, event.player.position, skillTargets).forEach { targetId ->
-                    val damage = prototypeBoss.applySkill2Pulse(skill2.castId, pulseIndex, targetId)
+                    val damage = prototypeBoss.applySkill2Pulse(
+                        skill2.castId,
+                        pulseIndex,
+                        targetId,
+                        playerEffects.directDamageMultiplier,
+                    )
                     if (damage > 0) updateBossBar()
                 }
                 showSkill2Pulse(event.player, pulseIndex, particleAnimations, particleManager)
@@ -879,7 +1008,11 @@ fun main() {
         } else if (skill2Tick.landed) {
             val skillTargets = tester?.let { listOf(combatTarget(it)) } ?: emptyList()
             skill2.hitTargetsAtLanding(event.player.position, skillTargets).forEach { targetId ->
-                val damage = prototypeBoss.applySkill2Landing(skill2.castId, targetId)
+                val damage = prototypeBoss.applySkill2Landing(
+                    skill2.castId,
+                    targetId,
+                    playerEffects.directDamageMultiplier,
+                )
                 if (damage > 0) updateBossBar()
             }
             showSkill2Landing(event.player, particleAnimations, particleManager)
@@ -896,7 +1029,11 @@ fun main() {
             skill3.cancelActiveMovement()
         } else {
             val previousSkill3Phase = skill3.phase
-            val skill3Tick = skill3.tick(event.player.isOnGround, event.player.velocity.y())
+            val skill3Tick = skill3.tick(
+                event.player.isOnGround,
+                event.player.velocity.y(),
+                playerEffects.cooldownRecoveryMultiplier,
+            )
             if (skill3Tick.dashActive) {
                 val direction = requireNotNull(skill3Tick.dashDirection)
                 val start = event.player.position
@@ -934,7 +1071,12 @@ fun main() {
                     skill3.cancelActiveMovement()
                 } else {
                     skill3Tick.pulseIndex?.let { pulseIndex ->
-                        val damage = prototypeBoss.applySkill3Pulse(skill3.castId, pulseIndex, target.id)
+                        val damage = prototypeBoss.applySkill3Pulse(
+                            skill3.castId,
+                            pulseIndex,
+                            target.id,
+                            playerEffects.directDamageMultiplier,
+                        )
                         if (damage > 0) updateBossBar()
                         showSkill3PulseVfx(
                             event.player,
@@ -947,7 +1089,11 @@ fun main() {
                         )
                     }
                     if (skill3Tick.finisherActive) {
-                        val damage = prototypeBoss.applySkill3Finisher(skill3.castId, target.id)
+                        val damage = prototypeBoss.applySkill3Finisher(
+                            skill3.castId,
+                            target.id,
+                            playerEffects.directDamageMultiplier,
+                        )
                         if (damage > 0) updateBossBar()
                         sendResourceSnapshot(event.player)
                         event.player.setVelocity(skill3HitBounceVelocity(requireNotNull(skill3Tick.dashDirection)))
@@ -1106,6 +1252,29 @@ fun main() {
                         ClassSkillSlot.ULTIMATE -> return@addListener
                     }
                 }
+                is PassiveNodeSpendRequest -> {
+                    val current = progressions[event.player.uuid] ?: return@addListener
+                    val updated = current.copyState()
+                    val domainResult = updated.spend(message.nodeId, message.expectedRevision)
+                    var protocolResult = when (domainResult) {
+                        PassiveSpendResult.ACCEPTED -> ProtocolPassiveNodeSpendResult.ACCEPTED
+                        PassiveSpendResult.UNKNOWN_NODE -> ProtocolPassiveNodeSpendResult.UNKNOWN_NODE
+                        PassiveSpendResult.ALREADY_ACQUIRED -> ProtocolPassiveNodeSpendResult.ALREADY_ACQUIRED
+                        PassiveSpendResult.INSUFFICIENT_POINTS -> ProtocolPassiveNodeSpendResult.INSUFFICIENT_POINTS
+                        PassiveSpendResult.MISSING_PREREQUISITE -> ProtocolPassiveNodeSpendResult.MISSING_PREREQUISITE
+                        PassiveSpendResult.STALE_REVISION -> ProtocolPassiveNodeSpendResult.STALE_REVISION
+                    }
+                    if (domainResult == PassiveSpendResult.ACCEPTED) {
+                        if (persistProgression(event.player.uuid, updated)) {
+                            progressions[event.player.uuid] = updated
+                            refreshPlayerProgressionEffects(event.player)
+                        } else {
+                            protocolResult = ProtocolPassiveNodeSpendResult.PERSISTENCE_FAILURE
+                        }
+                    }
+                    sendProgressionSpendResponse(event.player, message.nodeId, protocolResult)
+                    sendProgressionSnapshot(event.player)
+                }
                 is VfxSlashPreviewRequest -> previewSlash(event.player, message.parameters)
                 VfxSlashPreviewCancel -> particleAnimations.cancel(slashPreviewHandles.remove(event.player.uuid))
                 is VfxSlashApplySkill3 -> {
@@ -1249,6 +1418,7 @@ private fun tickRiftExecutioner(
     manager: ParticleManager,
     bossGroundTelegraphIds: MutableSet<Long>,
     bossRiftTelegraphIds: MutableMap<Long, Long>,
+    incomingDamageMultiplier: (UUID) -> Double,
     nextTelegraphId: () -> Long,
 ) {
     if (testerEntity == null || testerEntity.isRemoved || testerEntity.instance != instance) return
@@ -1335,7 +1505,12 @@ private fun tickRiftExecutioner(
             }
             is RiftExecutionerEvent.AttackHit -> {
                 instance.getPlayerByUuid(event.targetId)?.let { player ->
-                    val damage = bossState.applyBossDamage(player.uuid, event.executionId, event.damage)
+                    val damage = bossState.applyBossDamage(
+                        player.uuid,
+                        event.executionId,
+                        event.damage,
+                        incomingDamageMultiplier(player.uuid),
+                    )
                     if (damage == 0) return@let
                     player.setHealth(bossState.playerEntityHealth(player.uuid))
                     player.sendMessage(Component.text("[Rift Executioner] HIT $damage"))

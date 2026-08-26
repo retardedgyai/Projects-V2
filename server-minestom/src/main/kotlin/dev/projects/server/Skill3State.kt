@@ -52,6 +52,7 @@ class Skill3State(
     private var nextPulseIndex = 1
     private var ticksUntilNextPulse = 0
     private var finisherPending = false
+    private var cooldownRecoveryRemainder = 0.0
 
     val isReady: Boolean
         get() = phase == Skill3Phase.IDLE && cooldownTicksRemaining == 0
@@ -71,8 +72,15 @@ class Skill3State(
         return castId
     }
 
-    fun tick(isGrounded: Boolean, velocityY: Double): Skill3Tick {
+    fun tick(
+        isGrounded: Boolean,
+        velocityY: Double,
+        cooldownRecoveryMultiplier: Double = 1.0,
+    ): Skill3Tick {
         require(velocityY.isFinite()) { "Skill3 velocity must be finite" }
+        require(cooldownRecoveryMultiplier >= 1.0 && cooldownRecoveryMultiplier.isFinite()) {
+            "Skill3 cooldown recovery multiplier must be finite and at least 1"
+        }
         val wasDashing = phase == Skill3Phase.DASH
         val tick = when (phase) {
             Skill3Phase.DASH -> {
@@ -154,9 +162,7 @@ class Skill3State(
             Skill3Phase.IDLE -> Skill3Tick(Skill3Phase.IDLE, null, false, velocityY)
         }
 
-        if (!wasDashing && cooldownTicksRemaining > 0 && !tick.finisherActive) {
-            cooldownTicksRemaining--
-        }
+        if (!wasDashing && !tick.finisherActive) advanceCooldown(cooldownRecoveryMultiplier)
         return tick
     }
 
@@ -170,6 +176,7 @@ class Skill3State(
         nextPulseIndex = 1
         ticksUntilNextPulse = 0
         finisherPending = false
+        cooldownRecoveryRemainder = 0.0
         return true
     }
 
@@ -221,6 +228,18 @@ class Skill3State(
         cancelActiveMovement()
         cooldownTicksRemaining = 0
         reducedNormalAttackExecutions.clear()
+    }
+
+    private fun advanceCooldown(multiplier: Double) {
+        if (cooldownTicksRemaining <= 0) {
+            cooldownRecoveryRemainder = 0.0
+            return
+        }
+        cooldownRecoveryRemainder += multiplier
+        val recoveredTicks = (cooldownRecoveryRemainder + 1.0e-9).toInt()
+        cooldownRecoveryRemainder -= recoveredTicks
+        cooldownTicksRemaining = (cooldownTicksRemaining - recoveredTicks).coerceAtLeast(0)
+        if (cooldownTicksRemaining == 0) cooldownRecoveryRemainder = 0.0
     }
 
     companion object {

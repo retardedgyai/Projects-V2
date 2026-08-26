@@ -130,6 +130,84 @@ data class ClassResourceSnapshot(
     }
 }
 
+private const val MAX_PROGRESSION_NODES = 6
+private val PROGRESSION_NODE_ID = Regex("[a-z0-9][a-z0-9:_/-]*")
+
+data class ProgressionSnapshot(
+    val revision: Long,
+    val level: Int,
+    val xp: Int,
+    val xpRequiredForNextLevel: Int,
+    val grantedPassivePoints: Int,
+    val spentPassivePoints: Int,
+    val allocatedPassiveNodeIds: List<String>,
+) : ProtocolMessage {
+    init {
+        require(revision >= 0L) { "Progression revision must not be negative" }
+        require(level in 1..45) { "Progression level is out of range" }
+        require(xp >= 0 && xpRequiredForNextLevel >= 0) { "Progression XP values must not be negative" }
+        require(grantedPassivePoints >= 0 && spentPassivePoints >= 0) {
+            "Progression point values must not be negative"
+        }
+        require(spentPassivePoints <= grantedPassivePoints) {
+            "Spent passive points must not exceed granted passive points"
+        }
+        require(allocatedPassiveNodeIds.size <= MAX_PROGRESSION_NODES) { "Too many progression nodes" }
+        require(allocatedPassiveNodeIds.distinct().size == allocatedPassiveNodeIds.size) {
+            "Duplicate progression node"
+        }
+        require(allocatedPassiveNodeIds.all(PROGRESSION_NODE_ID::matches)) {
+            "Invalid progression node id"
+        }
+    }
+}
+
+data class ProgressionXpGained(
+    val amount: Int,
+    val resultingLevel: Int,
+    val levelUpCount: Int,
+    val passivePointsGranted: Int,
+) : ProtocolMessage {
+    init {
+        require(amount >= 0) { "XP gain must not be negative" }
+        require(resultingLevel in 1..45) { "Progression level is out of range" }
+        require(levelUpCount >= 0 && passivePointsGranted >= 0) {
+            "Progression level-up values must not be negative"
+        }
+    }
+}
+
+data class PassiveNodeSpendRequest(
+    val expectedRevision: Long,
+    val nodeId: String,
+) : ProtocolMessage {
+    init {
+        require(expectedRevision >= 0L) { "Expected progression revision must not be negative" }
+        require(PROGRESSION_NODE_ID.matches(nodeId)) { "Invalid progression node id" }
+    }
+}
+
+enum class PassiveNodeSpendResult {
+    ACCEPTED,
+    UNKNOWN_NODE,
+    ALREADY_ACQUIRED,
+    INSUFFICIENT_POINTS,
+    MISSING_PREREQUISITE,
+    STALE_REVISION,
+    PERSISTENCE_FAILURE,
+}
+
+data class PassiveNodeSpendResponse(
+    val nodeId: String,
+    val result: PassiveNodeSpendResult,
+    val revision: Long,
+) : ProtocolMessage {
+    init {
+        require(PROGRESSION_NODE_ID.matches(nodeId)) { "Invalid progression node id" }
+        require(revision >= 0L) { "Progression revision must not be negative" }
+    }
+}
+
 private object GroundTelegraphLimits {
     const val MAX_RADIUS = 64.0
     const val MIN_ANGLE_DEGREES = 1.0
@@ -391,6 +469,10 @@ object ProtocolCodec {
     private const val VFX_EDITOR_NOTICE = 27
     private const val VFX_SLASH_PREVIEW_CANCEL = 28
     private const val VFX_SLASH_APPLY_SKILL3 = 29
+    private const val PROGRESSION_SNAPSHOT = 30
+    private const val PROGRESSION_XP_GAINED = 31
+    private const val PASSIVE_NODE_SPEND_REQUEST = 32
+    private const val PASSIVE_NODE_SPEND_RESPONSE = 33
 
     fun encode(message: ProtocolMessage): ByteArray {
         val output = ByteArrayOutputStream()
@@ -458,6 +540,35 @@ object ProtocolCodec {
                     data.writeInt(message.skill2CooldownMaxTicks)
                     data.writeInt(message.skill3CooldownTicks)
                     data.writeInt(message.skill3CooldownMaxTicks)
+                }
+                is ProgressionSnapshot -> {
+                    data.writeByte(PROGRESSION_SNAPSHOT)
+                    data.writeLong(message.revision)
+                    data.writeInt(message.level)
+                    data.writeInt(message.xp)
+                    data.writeInt(message.xpRequiredForNextLevel)
+                    data.writeInt(message.grantedPassivePoints)
+                    data.writeInt(message.spentPassivePoints)
+                    data.writeByte(message.allocatedPassiveNodeIds.size)
+                    message.allocatedPassiveNodeIds.forEach { nodeId -> writeString(data, nodeId) }
+                }
+                is ProgressionXpGained -> {
+                    data.writeByte(PROGRESSION_XP_GAINED)
+                    data.writeInt(message.amount)
+                    data.writeInt(message.resultingLevel)
+                    data.writeInt(message.levelUpCount)
+                    data.writeInt(message.passivePointsGranted)
+                }
+                is PassiveNodeSpendRequest -> {
+                    data.writeByte(PASSIVE_NODE_SPEND_REQUEST)
+                    data.writeLong(message.expectedRevision)
+                    writeString(data, message.nodeId)
+                }
+                is PassiveNodeSpendResponse -> {
+                    data.writeByte(PASSIVE_NODE_SPEND_RESPONSE)
+                    writeString(data, message.nodeId)
+                    data.writeByte(message.result.ordinal)
+                    data.writeLong(message.revision)
                 }
                 is GroundTelegraphStart -> {
                     data.writeByte(GROUND_TELEGRAPH_START)
@@ -582,6 +693,47 @@ object ProtocolCodec {
                 input.readInt(),
                 input.readInt(),
             )
+            PROGRESSION_SNAPSHOT -> {
+                val revision = input.readLong()
+                val level = input.readInt()
+                val xp = input.readInt()
+                val xpRequiredForNextLevel = input.readInt()
+                val grantedPassivePoints = input.readInt()
+                val spentPassivePoints = input.readInt()
+                val count = input.readUnsignedByte().also {
+                    require(it <= MAX_PROGRESSION_NODES) { "Too many progression nodes" }
+                }
+                ProgressionSnapshot(
+                    revision = revision,
+                    level = level,
+                    xp = xp,
+                    xpRequiredForNextLevel = xpRequiredForNextLevel,
+                    grantedPassivePoints = grantedPassivePoints,
+                    spentPassivePoints = spentPassivePoints,
+                    allocatedPassiveNodeIds = List(count) { readString(input) },
+                )
+            }
+            PROGRESSION_XP_GAINED -> ProgressionXpGained(
+                amount = input.readInt(),
+                resultingLevel = input.readInt(),
+                levelUpCount = input.readInt(),
+                passivePointsGranted = input.readInt(),
+            )
+            PASSIVE_NODE_SPEND_REQUEST -> PassiveNodeSpendRequest(
+                expectedRevision = input.readLong(),
+                nodeId = readString(input),
+            )
+            PASSIVE_NODE_SPEND_RESPONSE -> {
+                val nodeId = readString(input)
+                val resultId = input.readUnsignedByte()
+                val result = PassiveNodeSpendResult.entries.getOrNull(resultId)
+                    ?: throw IllegalArgumentException("Unknown passive node spend result: $resultId")
+                PassiveNodeSpendResponse(
+                    nodeId = nodeId,
+                    result = result,
+                    revision = input.readLong(),
+                )
+            }
             GROUND_TELEGRAPH_START -> GroundTelegraphStart.clamped(
                 telegraphId = input.readLong(),
                 centerX = input.readDouble(),
