@@ -89,6 +89,10 @@ import dev.projects.server.equipment.EquipmentRarity
 import dev.projects.server.equipment.EquipmentSlot as ProjectSEquipmentSlot
 import dev.projects.server.equipment.EquipmentTier
 import dev.projects.server.equipment.toPresentationItemStack
+import dev.projects.server.equipment.LootGenerator
+import dev.projects.server.equipment.LootSource
+import dev.projects.server.equipment.V0_LOOT_MOD_POOL
+import dev.projects.server.equipment.V0_LOOT_PROFILES
 import dev.projects.server.mod.AttackTag
 import dev.projects.server.mod.ModDefinition
 import dev.projects.server.mod.ModEntry
@@ -169,6 +173,8 @@ fun main() {
     val twinBladesComboStates = mutableMapOf<UUID, TwinBladesComboState>()
     val twinBladesAttackSteps = mutableMapOf<UUID, Int>()
     val prototypeBoss = PrototypeBossState()
+    val lootGenerator = LootGenerator(V0_LOOT_MOD_POOL)
+    val bossRewardedPlayers = mutableSetOf<UUID>()
     val bossBar = BossBar.bossBar(
         Component.text("Rift Executioner ${prototypeBoss.currentHealth} / ${prototypeBoss.maxHealth}"),
         prototypeBoss.healthProgress,
@@ -288,6 +294,13 @@ fun main() {
         }
     }
 
+    fun grantLoot(player: net.minestom.server.entity.Player, source: LootSource, seed: Long) {
+        val drop = lootGenerator.generate(seed, V0_LOOT_PROFILES.getValue(source))
+        val material = if (source == LootSource.RIFT_EXECUTIONER) Material.DIAMOND_SWORD else Material.IRON_SWORD
+        player.inventory.addItemStack(drop.item.toPresentationItemStack(material, drop.displayName, TWIN_BLADES_DEFINITIONS + V0_LOOT_MOD_POOL.associateBy { it.modId }))
+        player.sendMessage(Component.text("Loot: ${drop.displayName} [${drop.item.rarity.name.lowercase()}] (${drop.item.modSlots.size} MOD)"))
+    }
+
     fun finishEncounter() {
         clearBossTelegraphs()
         riftExecutioner.reset()
@@ -298,11 +311,15 @@ fun main() {
         instance.players.forEach {
             sendResourceSnapshot(it)
             it.sendMessage(Component.text(result))
+            if (prototypeBoss.isVictory && bossRewardedPlayers.add(it.uuid)) {
+                grantLoot(it, LootSource.RIFT_EXECUTIONER, it.uuid.mostSignificantBits xor it.uuid.leastSignificantBits)
+            }
         }
     }
 
     fun resetEncounter() {
         prototypeBoss.reset()
+        bossRewardedPlayers.clear()
         clearBossTelegraphs()
         riftExecutioner.reset()
         dummy?.let { boss ->
@@ -375,6 +392,14 @@ fun main() {
     }
     MinecraftServer.getCommandManager().register(
         Command("bossphase").apply { addSyntax(::handleBossPhase, bossPhaseArgument) },
+    )
+    MinecraftServer.getCommandManager().register(
+        Command("lootdebug").apply {
+            setDefaultExecutor { sender, _ ->
+                val player = sender as? net.minestom.server.entity.Player ?: return@setDefaultExecutor
+                grantLoot(player, LootSource.NORMAL_ENEMY, System.nanoTime())
+            }
+        },
     )
     val aoeSectorLiteral = ArgumentType.Literal("sector")
     val aoeClearLiteral = ArgumentType.Literal("clear")
