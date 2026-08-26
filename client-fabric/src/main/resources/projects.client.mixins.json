@@ -3,7 +3,8 @@
   "package": "dev.projects.client.mixin",
   "compatibilityLevel": "JAVA_25",
   "client": [
-    "InventoryCharacterItemInHandRendererMixin"
+    "InventoryCharacterItemInHandRendererMixin",
+    "InventoryCharacterHudMixin"
   ],
   "injectors": {
     "defaultRequire": 1

@@ -149,7 +149,6 @@ internal class InventoryCharacterMenu(
         val inventoryGridX = layout.inventoryGrid.x - layout.panel.x
         val inventoryGridY = layout.inventoryGrid.y - layout.panel.y
         addInventorySlots(player.inventory, inventoryGridX, inventoryGridY, layout.slotStep)
-        addHotbarSlots(player.inventory, layout.hotbar, layout.panel)
         val offhand = layout.offhandSlot
         addSlot(
             object : Slot(
@@ -174,14 +173,8 @@ internal class InventoryCharacterMenu(
                 addSlot(Slot(inventory, 9 + row * 9 + column, x + column * step, y + row * step))
             }
         }
-    }
-
-    private fun addHotbarSlots(inventory: Inventory, hotbar: HudRect, panel: HudRect) {
-        val step = hotbar.width / 9
-        val y = hotbar.y - panel.y + (hotbar.height - SLOT_SIZE) / 2
         repeat(9) { column ->
-            val x = hotbar.x - panel.x + column * step + (step - SLOT_SIZE) / 2
-            addSlot(Slot(inventory, column, x, y))
+            addSlot(Slot(inventory, column, x + column * step, y + 3 * step))
         }
     }
 
@@ -238,11 +231,10 @@ internal class InventoryCharacterScreen private constructor(
 
     override fun extractSlots(graphics: GuiGraphicsExtractor, mouseX: Int, mouseY: Int) {
         syncClientMenuState()
-        visibleSlotEntries().filter { (menuIndex, _) -> slotGroup(menuIndex) != InventoryCharacterSlotGroup.HOTBAR }
-            .forEach { (_, slot) ->
-                drawSlotFrame(graphics, slot, mouseX, mouseY)
-                extractSlot(graphics, slot, mouseX, mouseY)
-            }
+        visibleSlotEntries().forEach { (_, slot) ->
+            drawSlotFrame(graphics, slot, mouseX, mouseY)
+            extractSlot(graphics, slot, mouseX, mouseY)
+        }
     }
 
     override fun extractRenderState(graphics: GuiGraphicsExtractor, mouseX: Int, mouseY: Int, delta: Float) {
@@ -363,7 +355,11 @@ internal class InventoryCharacterScreen private constructor(
         val x = layout.character.x + 20
         val y = layout.character.y + 18
         graphics.text(font, "ProjectS", x, y, 0xFFF0F0EA.toInt(), true)
-        graphics.text(font, "${setup.player.name}  Lv ${setup.player.experienceLevel}", x, y + 16, 0xFFB8BAB5.toInt())
+        val playerName = setup.player.name.string
+        graphics.text(font, playerName, x, y + 16, 0xFFB8BAB5.toInt())
+        val levelX = x + font.width(playerName) + 8
+        drawPixelGlyph(graphics, levelX, y + 18, LEVEL_GLYPH, 0xFFB8BAB5.toInt())
+        graphics.text(font, "Lv ${setup.player.experienceLevel}", levelX + 10, y + 16, 0xFFB8BAB5.toInt())
         graphics.text(font, "キャラクター", x, y + 32, 0xFFD0D1CC.toInt(), false)
         val statsY = layout.character.y + layout.character.height - 82
         drawHorizontalSlice(
@@ -380,18 +376,20 @@ internal class InventoryCharacterScreen private constructor(
             0xFFF0F0EA.toInt(),
             true,
         )
+        drawPixelGlyph(graphics, x, statsY + 29, HEALTH_GLYPH, 0xFFD0D1CC.toInt())
         graphics.text(
             font,
             "体力 ${setup.player.health.toInt()} / ${setup.player.maxHealth.toInt()}",
-            x,
+            x + 12,
             statsY + 28,
             0xFFD0D1CC.toInt(),
             false,
         )
+        drawPixelGlyph(graphics, x, statsY + 41, XP_GLYPH, 0xFFB8BAB5.toInt())
         graphics.text(
             font,
             "経験値 ${(setup.player.experienceProgress * 100).toInt().coerceIn(0, 100)}%",
-            x,
+            x + 12,
             statsY + 40,
             0xFFB8BAB5.toInt(),
             false,
@@ -504,7 +502,7 @@ internal class InventoryCharacterScreen private constructor(
     }
 
     private fun containsInteractiveArea(mouseX: Double, mouseY: Double): Boolean =
-        layout.panel.contains(mouseX, mouseY) || layout.hotbar.contains(mouseX, mouseY)
+        layout.panel.contains(mouseX, mouseY)
 
     private fun slotAt(mouseX: Double, mouseY: Double): Slot? = visibleSlotEntries()
         .firstOrNull { (_, slot) ->
@@ -538,6 +536,45 @@ internal class InventoryCharacterScreen private constructor(
     }
 
     private companion object {
+        private val LEVEL_GLYPH = listOf(
+            "00100",
+            "01110",
+            "11111",
+            "00100",
+            "00100",
+            "01110",
+            "00100",
+        )
+        private val HEALTH_GLYPH = listOf(
+            "0110110",
+            "1111111",
+            "1111111",
+            "0111110",
+            "0011100",
+            "0001000",
+        )
+        private val XP_GLYPH = listOf(
+            "0010000",
+            "0111000",
+            "1111100",
+            "0111000",
+            "0010000",
+        )
+
+        private fun drawPixelGlyph(
+            graphics: GuiGraphicsExtractor,
+            x: Int,
+            y: Int,
+            pattern: List<String>,
+            color: Int,
+        ) {
+            pattern.forEachIndexed { row, line ->
+                line.forEachIndexed { column, pixel ->
+                    if (pixel == '1') graphics.fill(x + column, y + row, x + column + 1, y + row + 1, color)
+                }
+            }
+        }
+
         fun drawPanel(graphics: GuiGraphicsExtractor, rect: HudRect, texture: InventoryCharacterUiTexture, corner: Int) {
             drawNineSlice(graphics, rect, texture, corner)
         }
