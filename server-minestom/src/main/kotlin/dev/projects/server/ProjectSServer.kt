@@ -26,6 +26,9 @@ import dev.projects.protocol.VfxEditorNotice
 import dev.projects.protocol.VfxEditorOpen
 import dev.projects.protocol.VfxEditor2PreviewStart
 import dev.projects.protocol.VfxEditor2PreviewStop
+import dev.projects.protocol.VfxEditor2ListRequest
+import dev.projects.protocol.VfxEditor2LoadRequest
+import dev.projects.protocol.VfxEditor2SaveRequest
 import dev.projects.protocol.VfxSlashDraft
 import dev.projects.protocol.VfxSlashDraftList
 import dev.projects.protocol.VfxSlashDraftLoadRequest
@@ -159,10 +162,12 @@ fun main() {
     val bossRiftTelegraphIds = mutableMapOf<Long, Long>()
     val slashDraftStore = SlashDraftStore(Path.of("config", "projects", "vfx-editor", "slash-drafts.json"))
     val skill3SlashBindingStore = Skill3SlashBindingStore(Path.of("config", "projects", "vfx-editor", "twin-blades-skill3-slash.json"))
+    val vfxEditor2Store = VfxEditor2CompositionStore(Path.of("config", "projects", "vfx-editor2", "compositions.json"))
     val slashPreviewHandles = mutableMapOf<UUID, ParticleEffectHandle>()
     val vfxEditor2 = VfxEditor2Runtime(
         scheduler = particleAnimations,
         particleManager = particleManager,
+        store = vfxEditor2Store,
         send = { player, message ->
             player.sendPluginMessage(PROJECTS_CHANNEL, ProtocolCodec.encode(message))
         },
@@ -2139,6 +2144,9 @@ fun main() {
                 }
                 is VfxEditor2PreviewStart -> vfxEditor2.preview(event.player, message)
                 VfxEditor2PreviewStop -> vfxEditor2.stop(event.player)
+                is VfxEditor2SaveRequest -> vfxEditor2.save(event.player, message)
+                VfxEditor2ListRequest -> vfxEditor2.list(event.player)
+                is VfxEditor2LoadRequest -> vfxEditor2.load(event.player, message)
                 else -> throw IllegalArgumentException("Unexpected ProjectS message")
             }
         } catch (error: ProtocolDecodeException) {

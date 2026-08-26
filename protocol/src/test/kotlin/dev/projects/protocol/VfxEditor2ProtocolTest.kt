@@ -20,6 +20,48 @@ class VfxEditor2ProtocolTest {
     }
 
     @Test
+    fun `checkpoint C1 save list and load messages round trip`() {
+        val composition = defaultVfxEditor2Composition().copy(
+            name = "timeline_01",
+            timelineLengthTicks = 60,
+            effects = listOf(
+                defaultVfxEditor2Effect(VfxEditor2EffectType.ARC_SLASH, 1L).copy(
+                    startTick = 4,
+                    durationTicks = 20,
+                ),
+                defaultVfxEditor2Effect(VfxEditor2EffectType.BURST, 2L).copy(startTick = 32),
+            ),
+        )
+        listOf<ProtocolMessage>(
+            VfxEditor2SaveRequest(composition),
+            VfxEditor2SaveResult("timeline_01", success = true, overwritten = true, message = "Saved"),
+            VfxEditor2ListRequest,
+            VfxEditor2ListResponse(listOf("timeline_01", "second")),
+            VfxEditor2LoadRequest("timeline_01"),
+            VfxEditor2LoadResponse("timeline_01", composition, "Loaded"),
+            VfxEditor2LoadResponse("missing", null, "Composition not found"),
+        ).forEach { message ->
+            assertEquals(message, ProtocolCodec.decode(ProtocolCodec.encode(message)))
+        }
+    }
+
+    @Test
+    fun `checkpoint C1 timing clamps to the two hundred tick composition limit`() {
+        val authored = defaultVfxEditor2Effect(VfxEditor2EffectType.ARC_SLASH, 1L).copy(
+            startTick = 199,
+            durationTicks = 200,
+        )
+        val clamped = VfxEditor2Composition.clamped("timing", 40, listOf(authored))
+        assertEquals(199, clamped.effects.single().startTick)
+        assertEquals(1, clamped.effects.single().durationTicks)
+        assertEquals(200, clamped.timelineLengthTicks)
+        assertEquals(1, defaultVfxEditor2Effect(VfxEditor2EffectType.BURST, 2L).durationTicks)
+        assertFailsWith<IllegalArgumentException> {
+            defaultVfxEditor2Effect(VfxEditor2EffectType.BURST, 2L).copy(durationTicks = 2)
+        }
+    }
+
+    @Test
     fun `editor 2 round trips every shape type`() {
         VfxEditor2EffectType.entries.forEachIndexed { index, type ->
             val effect = defaultVfxEditor2Effect(type, index.toLong() + 1L)
@@ -133,13 +175,13 @@ class VfxEditor2ProtocolTest {
 
     @Test
     fun `checkpoint B version is rejected as a version mismatch`() {
-        val checkpointBHello = ProtocolCodec.decode(ProtocolCodec.encode(ProtocolHello(16))) as ProtocolHello
+        val checkpointBHello = ProtocolCodec.decode(ProtocolCodec.encode(ProtocolHello(17))) as ProtocolHello
 
         val error = assertFailsWith<ProtocolVersionMismatchException> {
             ProtocolVersion.requireCompatible(checkpointBHello.version)
         }
 
-        assertEquals("ProjectS protocol version mismatch: expected 17, received 16", error.message)
+        assertEquals("ProjectS protocol version mismatch: expected 18, received 17", error.message)
     }
 
     @Test

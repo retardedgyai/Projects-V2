@@ -6,12 +6,18 @@ import dev.projects.protocol.VfxEditor2Direction
 import dev.projects.protocol.VfxEditor2Open
 import dev.projects.protocol.VfxEditor2PreviewStart
 import dev.projects.protocol.VfxEditor2PreviewStop
+import dev.projects.protocol.VfxEditor2ListResponse
+import dev.projects.protocol.VfxEditor2LoadRequest
+import dev.projects.protocol.VfxEditor2LoadResponse
+import dev.projects.protocol.VfxEditor2SaveRequest
+import dev.projects.protocol.VfxEditor2SaveResult
 import dev.projects.protocol.VfxEditor2Shape
 import dev.projects.protocol.VfxEditor2Status
 import dev.projects.protocol.VfxEditor2StatusKind
 import dev.projects.protocol.VFX_EDITOR_2_MAX_SAMPLES_PER_EFFECT
 import dev.projects.protocol.defaultVfxEditor2Composition
 import dev.projects.protocol.estimateVfxEditor2Samples
+import dev.projects.protocol.isVfxEditor2Instant
 import dev.projects.server.particle.EmitterRate
 import dev.projects.server.particle.ParticleAnchor
 import dev.projects.server.particle.ParticleAnimationScheduler
@@ -28,6 +34,7 @@ import dev.projects.server.particle.ParticleLine
 import dev.projects.server.particle.ParticleLightning
 import dev.projects.server.particle.ParticleManager
 import dev.projects.server.particle.ParticleMulti
+import dev.projects.server.particle.ParticleParallel
 import dev.projects.server.particle.ParticleParametric
 import dev.projects.server.particle.ParticlePillar
 import dev.projects.server.particle.ParticleRectPrism
@@ -35,6 +42,7 @@ import dev.projects.server.particle.ParticleRibbon
 import dev.projects.server.particle.ParticleSink
 import dev.projects.server.particle.ParticleSpawn
 import dev.projects.server.particle.ParticleSpiral
+import dev.projects.server.particle.ParticleSequence
 import dev.projects.server.particle.ParticleStyle
 import dev.projects.server.particle.ParticleStyleCurve
 import dev.projects.server.particle.ParticleTransform
@@ -63,7 +71,7 @@ import kotlin.math.sqrt
 import kotlin.math.tan
 import kotlin.random.Random
 
-private const val VFX_EDITOR_2_PREVIEW_DURATION_TICKS = 12
+private const val VFX_EDITOR_2_PRIMITIVE_DURATION_TICKS = 12
 private const val VFX_EDITOR_2_PREVIEW_DISTANCE = 3.0
 private const val VFX_EDITOR_2_PREVIEW_HEIGHT = 1.1
 
@@ -71,8 +79,16 @@ private const val VFX_EDITOR_2_PREVIEW_HEIGHT = 1.1
 object VfxWorkbenchCompiler {
     fun compile(composition: VfxEditor2Composition, origin: Point, direction: Vec): ParticleEffect {
         val visibleEffects = composition.visibleEffects()
-        if (visibleEffects.isEmpty()) return ParticleDelay(VFX_EDITOR_2_PREVIEW_DURATION_TICKS)
-        return ParticleBatch.of(*visibleEffects.map { effect -> compileEffect(effect, origin, direction) }.toTypedArray())
+        if (visibleEffects.isEmpty()) return ParticleDelay(composition.timelineLengthTicks)
+        val sequences = visibleEffects.map { effect ->
+            ParticleSequence.of(
+                ParticleDelay(effect.startTick),
+                compileEffect(effect, origin, direction),
+            )
+        }
+        return ParticleParallel.of(
+            *(sequences + ParticleDelay(composition.timelineLengthTicks)).toTypedArray(),
+        )
     }
 
     private fun compileEffect(
@@ -83,7 +99,7 @@ object VfxWorkbenchCompiler {
         val transform = effectFrame(origin, direction, effect.transform)
         val appearance = effect.appearance
         val particle = dust(appearance.color, appearance.particleSize.toFloat())
-        return when (val shape = effect.shape) {
+        val compiled = when (val shape = effect.shape) {
             is VfxEditor2Shape.ArcSlash -> compileArcSlash(shape, transform, appearance, particle)
             is VfxEditor2Shape.StraightSlash -> compileStraightSlash(shape, transform, appearance, particle)
             is VfxEditor2Shape.Ring -> compileRing(shape, transform, appearance, particle)
@@ -112,6 +128,25 @@ object VfxWorkbenchCompiler {
             is VfxEditor2Shape.SphereBurst -> compileSphereBurst(shape, transform, particle)
             is VfxEditor2Shape.ConeBurst -> compileConeBurst(shape, transform, appearance, particle)
         }
+        return retime(compiled, if (isVfxEditor2Instant(effect.type)) 1 else effect.durationTicks)
+    }
+
+    /** Keeps the existing primitives intact while making authored Effect timing the source of truth. */
+    private fun retime(effect: ParticleEffect, durationTicks: Int): ParticleEffect {
+        if (effect.durationTicks == durationTicks) return effect
+        return object : ParticleEffect {
+            override val durationTicks: Int = durationTicks
+
+            override fun emit(tick: Int, sink: ParticleSink) {
+                if (tick !in 0 until this.durationTicks) return
+                val sourceTick = if (this.durationTicks <= 1 || effect.durationTicks <= 1) {
+                    0
+                } else {
+                    (tick.toLong() * (effect.durationTicks - 1) / (this.durationTicks - 1)).toInt()
+                }
+                effect.emit(sourceTick, sink)
+            }
+        }
     }
 
     private fun compileArcSlash(
@@ -135,7 +170,7 @@ object VfxWorkbenchCompiler {
             sampleCount = sampleCount,
             lanes = lanes,
             width = constantCurve(shape.thickness),
-            durationTicks = VFX_EDITOR_2_PREVIEW_DURATION_TICKS,
+            durationTicks = VFX_EDITOR_2_PRIMITIVE_DURATION_TICKS,
             styleAt = { _, _ -> ParticleStyle(particle) },
         )
     }
@@ -154,7 +189,7 @@ object VfxWorkbenchCompiler {
                 start = localPoint(transform, -shape.length / 2.0, verticalOffset, 0.0),
                 end = localPoint(transform, shape.length / 2.0, verticalOffset, 0.0),
                 countPerMeter = countPerMeter,
-                durationTicks = VFX_EDITOR_2_PREVIEW_DURATION_TICKS,
+            durationTicks = VFX_EDITOR_2_PRIMITIVE_DURATION_TICKS,
                 style = ParticleStyle(particle),
             )
         }.toTypedArray())
@@ -187,7 +222,7 @@ object VfxWorkbenchCompiler {
                 VFX_EDITOR_2_MAX_SAMPLES_PER_EFFECT,
             ),
             includeEnd = true,
-            durationTicks = VFX_EDITOR_2_PREVIEW_DURATION_TICKS,
+            durationTicks = VFX_EDITOR_2_PRIMITIVE_DURATION_TICKS,
             style = ParticleStyle(particle),
         )
     }
@@ -224,7 +259,7 @@ object VfxWorkbenchCompiler {
             controlPoints = listOf(control),
             particle = particle,
             sampleCount = (sampleBudget(shape, appearance) - 1).coerceAtLeast(1),
-            durationTicks = VFX_EDITOR_2_PREVIEW_DURATION_TICKS,
+            durationTicks = VFX_EDITOR_2_PRIMITIVE_DURATION_TICKS,
             styleAt = { ParticleStyle(particle) },
         )
         if (shape.thickness <= 0.04) return center
@@ -236,7 +271,7 @@ object VfxWorkbenchCompiler {
                  sampleCount = ribbonSampleCount(shape, appearance, 3),
                 lanes = 3,
                 width = constantCurve(shape.thickness),
-                durationTicks = VFX_EDITOR_2_PREVIEW_DURATION_TICKS,
+            durationTicks = VFX_EDITOR_2_PRIMITIVE_DURATION_TICKS,
                 styleAt = { _, _ -> ParticleStyle(particle) },
             ),
         )
@@ -257,7 +292,7 @@ object VfxWorkbenchCompiler {
             positionAt = pointAt,
             particle = particle,
              sampleCount = (sampleBudget(shape, appearance) - 1).coerceAtLeast(1),
-            durationTicks = VFX_EDITOR_2_PREVIEW_DURATION_TICKS,
+            durationTicks = VFX_EDITOR_2_PRIMITIVE_DURATION_TICKS,
             styleAt = { ParticleStyle(particle) },
         )
         if (shape.thickness <= 0.04) return center
@@ -269,7 +304,7 @@ object VfxWorkbenchCompiler {
                  sampleCount = ribbonSampleCount(shape, appearance, 3),
                 lanes = 3,
                 width = constantCurve(shape.thickness),
-                durationTicks = VFX_EDITOR_2_PREVIEW_DURATION_TICKS,
+            durationTicks = VFX_EDITOR_2_PRIMITIVE_DURATION_TICKS,
                 styleAt = { _, _ -> ParticleStyle(particle) },
             ),
         )
@@ -289,7 +324,7 @@ object VfxWorkbenchCompiler {
         hopVariance = shape.jitter,
         density = (appearance.density * 4.0).roundToInt().coerceIn(1, 4),
         seed = shape.seed,
-        durationTicks = VFX_EDITOR_2_PREVIEW_DURATION_TICKS,
+            durationTicks = VFX_EDITOR_2_PRIMITIVE_DURATION_TICKS,
         style = ParticleStyle(particle),
     )
 
@@ -306,7 +341,7 @@ object VfxWorkbenchCompiler {
         curves = shape.turns,
         axialLength = shape.length,
         angleOffset = Math.toRadians(shape.angleOffsetDegrees),
-        durationTicks = VFX_EDITOR_2_PREVIEW_DURATION_TICKS,
+            durationTicks = VFX_EDITOR_2_PRIMITIVE_DURATION_TICKS,
         reversed = shape.reverse,
         sampleCount = (sampleBudget(shape, appearance) - 1).coerceAtLeast(1),
         style = ParticleStyle(particle),
@@ -331,7 +366,7 @@ object VfxWorkbenchCompiler {
             },
             particle = particle,
              sampleCount = (sampleBudget(shape, appearance) - 1).coerceAtLeast(1),
-            durationTicks = VFX_EDITOR_2_PREVIEW_DURATION_TICKS,
+            durationTicks = VFX_EDITOR_2_PRIMITIVE_DURATION_TICKS,
             styleAt = { ParticleStyle(particle) },
         )
     }
@@ -394,7 +429,7 @@ object VfxWorkbenchCompiler {
                 budget = VFX_EDITOR_2_MAX_SAMPLES_PER_EFFECT,
             ),
             includeEnd = endDegrees - startDegrees < 359.99,
-            durationTicks = VFX_EDITOR_2_PREVIEW_DURATION_TICKS,
+            durationTicks = VFX_EDITOR_2_PRIMITIVE_DURATION_TICKS,
             style = ParticleStyle(particle),
         )
     }
@@ -414,7 +449,7 @@ object VfxWorkbenchCompiler {
                 add(localPoint(transform, x, y, 0.0))
             }
         }
-        return ParticleMulti(points, style = ParticleStyle(particle), durationTicks = VFX_EDITOR_2_PREVIEW_DURATION_TICKS)
+        return ParticleMulti(points, style = ParticleStyle(particle), durationTicks = VFX_EDITOR_2_PRIMITIVE_DURATION_TICKS)
     }
 
     private fun compileSphere(
@@ -425,7 +460,7 @@ object VfxWorkbenchCompiler {
     ): ParticleEffect = ParticleMulti(
         locations = fibonacciSphere(shape.radius, sampleBudget(shape, appearance)).map { transform.localPoint(it) },
         style = ParticleStyle(particle),
-        durationTicks = VFX_EDITOR_2_PREVIEW_DURATION_TICKS,
+            durationTicks = VFX_EDITOR_2_PRIMITIVE_DURATION_TICKS,
     )
 
     private fun compileOrb(
@@ -436,7 +471,7 @@ object VfxWorkbenchCompiler {
     ): ParticleEffect = ParticleMulti(
         locations = solidSphere(shape.radius, minOf(shape.count, sampleBudget(shape, appearance)), shape.seed).map { transform.localPoint(it) },
         style = ParticleStyle(particle),
-        durationTicks = VFX_EDITOR_2_PREVIEW_DURATION_TICKS,
+            durationTicks = VFX_EDITOR_2_PRIMITIVE_DURATION_TICKS,
     )
 
     private fun compileDome(
@@ -447,7 +482,7 @@ object VfxWorkbenchCompiler {
     ): ParticleEffect = ParticleMulti(
         locations = hemisphere(shape.radius, sampleBudget(shape, appearance), shape.direction).map { transform.localPoint(it) },
         style = ParticleStyle(particle),
-        durationTicks = VFX_EDITOR_2_PREVIEW_DURATION_TICKS,
+            durationTicks = VFX_EDITOR_2_PRIMITIVE_DURATION_TICKS,
     )
 
     private fun compileCylinder(
@@ -466,13 +501,13 @@ object VfxWorkbenchCompiler {
                 axis = transform.up,
                 seed = 42L,
                 style = ParticleStyle(particle),
-                durationTicks = VFX_EDITOR_2_PREVIEW_DURATION_TICKS,
+            durationTicks = VFX_EDITOR_2_PRIMITIVE_DURATION_TICKS,
             )
         }
         return ParticleMulti(
             locations = cylinderShell(shape.radius, shape.height, count).map { transform.localPoint(it) },
             style = ParticleStyle(particle),
-            durationTicks = VFX_EDITOR_2_PREVIEW_DURATION_TICKS,
+            durationTicks = VFX_EDITOR_2_PRIMITIVE_DURATION_TICKS,
         )
     }
 
@@ -484,7 +519,7 @@ object VfxWorkbenchCompiler {
     ): ParticleEffect = ParticleMulti(
         locations = coneSurface(shape.length, shape.radius, shape.angleDegrees, sampleBudget(shape, appearance)).map { transform.localPoint(it) },
         style = ParticleStyle(particle),
-        durationTicks = VFX_EDITOR_2_PREVIEW_DURATION_TICKS,
+            durationTicks = VFX_EDITOR_2_PRIMITIVE_DURATION_TICKS,
     )
 
     private fun compileBox(
@@ -500,13 +535,13 @@ object VfxWorkbenchCompiler {
             mode = mode,
             countPerMeter = 2.0,
             countPerMeterSquared = 1.5,
-            durationTicks = VFX_EDITOR_2_PREVIEW_DURATION_TICKS,
+            durationTicks = VFX_EDITOR_2_PRIMITIVE_DURATION_TICKS,
             style = ParticleStyle(particle),
         )
         return ParticleMulti(
             locations = base.points().take(sampleBudget(shape, appearance)).map { transform.localPoint(it) },
             style = ParticleStyle(particle),
-            durationTicks = VFX_EDITOR_2_PREVIEW_DURATION_TICKS,
+            durationTicks = VFX_EDITOR_2_PRIMITIVE_DURATION_TICKS,
         )
     }
 
@@ -518,7 +553,7 @@ object VfxWorkbenchCompiler {
     ): ParticleEffect = ParticleMulti(
         locations = torusPoints(shape.majorRadius, shape.tubeRadius, sampleBudget(shape, appearance)).map { transform.localPoint(it) },
         style = ParticleStyle(particle),
-        durationTicks = VFX_EDITOR_2_PREVIEW_DURATION_TICKS,
+            durationTicks = VFX_EDITOR_2_PRIMITIVE_DURATION_TICKS,
     )
 
     private fun compileStar(
@@ -535,7 +570,7 @@ object VfxWorkbenchCompiler {
         count = sampleBudget(shape, appearance),
         innerRadius = shape.innerRadius,
         style = ParticleStyle(particle),
-        durationTicks = VFX_EDITOR_2_PREVIEW_DURATION_TICKS,
+            durationTicks = VFX_EDITOR_2_PRIMITIVE_DURATION_TICKS,
     )
 
     private fun compileCross(
@@ -553,7 +588,7 @@ object VfxWorkbenchCompiler {
             end = localPoint(transform, axis.x() * shape.size / 2.0, axis.y() * shape.size / 2.0, 0.0),
             particle = particle,
             countPerMeter = density,
-            durationTicks = VFX_EDITOR_2_PREVIEW_DURATION_TICKS,
+            durationTicks = VFX_EDITOR_2_PRIMITIVE_DURATION_TICKS,
             style = ParticleStyle(particle),
         )
         return ParticleBatch.of(line(first), line(second))
@@ -565,7 +600,7 @@ object VfxWorkbenchCompiler {
         appearance: dev.projects.protocol.VfxEditor2Appearance,
         particle: Particle,
     ): ParticleEffect = object : ParticleEffect {
-        override val durationTicks: Int = shape.durationTicks
+        override val durationTicks: Int = VFX_EDITOR_2_PRIMITIVE_DURATION_TICKS
 
         override fun emit(tick: Int, sink: ParticleSink) {
             if (tick !in 0 until durationTicks) return
@@ -593,7 +628,7 @@ object VfxWorkbenchCompiler {
         radius = shape.radius,
         height = shape.height,
         turns = shape.turns,
-        durationTicks = shape.durationTicks,
+        durationTicks = VFX_EDITOR_2_PRIMITIVE_DURATION_TICKS,
         direction = shape.direction,
         transform = transform,
         count = sampleBudget(shape, appearance),
@@ -606,7 +641,7 @@ object VfxWorkbenchCompiler {
         appearance: dev.projects.protocol.VfxEditor2Appearance,
         particle: Particle,
     ): ParticleEffect = object : ParticleEffect {
-        override val durationTicks: Int = shape.durationTicks
+        override val durationTicks: Int = VFX_EDITOR_2_PRIMITIVE_DURATION_TICKS
 
         override fun emit(tick: Int, sink: ParticleSink) {
             if (tick !in 0 until durationTicks) return
@@ -658,7 +693,7 @@ object VfxWorkbenchCompiler {
         appearance: dev.projects.protocol.VfxEditor2Appearance,
         particle: Particle,
     ): ParticleEffect = object : ParticleEffect {
-        override val durationTicks: Int = shape.durationTicks
+        override val durationTicks: Int = VFX_EDITOR_2_PRIMITIVE_DURATION_TICKS
 
         override fun emit(tick: Int, sink: ParticleSink) {
             if (tick !in 0 until durationTicks) return
@@ -953,6 +988,7 @@ internal class VfxEditor2PreviewHandles(
 class VfxEditor2Runtime(
     private val scheduler: ParticleAnimationScheduler,
     private val particleManager: ParticleManager,
+    private val store: VfxEditor2CompositionStore,
     private val send: (Player, ProtocolMessage) -> Unit,
 ) {
     private val previews = VfxEditor2PreviewHandles { handle -> scheduler.cancel(handle) }
@@ -961,7 +997,38 @@ class VfxEditor2Runtime(
     fun open(player: Player) {
         lastRequestIds[player.uuid] = -1L
         send(player, VfxEditor2Open("Ronin Q", defaultVfxEditor2Composition()))
+        list(player)
         sendStatus(player, VfxEditor2StatusKind.READY, "Ready")
+    }
+
+    fun list(player: Player) {
+        send(player, VfxEditor2ListResponse(store.list()))
+    }
+
+    fun save(player: Player, request: VfxEditor2SaveRequest) {
+        val result = store.save(request.composition)
+        send(
+            player,
+            VfxEditor2SaveResult(
+                name = request.composition.name,
+                success = result.success,
+                overwritten = result.overwritten,
+                message = result.message,
+            ),
+        )
+        if (result.success) list(player)
+    }
+
+    fun load(player: Player, request: VfxEditor2LoadRequest) {
+        val composition = store.load(request.name)
+        send(
+            player,
+            VfxEditor2LoadResponse(
+                name = request.name,
+                composition = composition,
+                message = if (composition == null) "Composition not found" else "Loaded '${request.name}'",
+            ),
+        )
     }
 
     fun preview(player: Player, request: VfxEditor2PreviewStart) {

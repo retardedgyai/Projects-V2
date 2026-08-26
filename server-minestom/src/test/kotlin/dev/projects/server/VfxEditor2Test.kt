@@ -79,6 +79,54 @@ class VfxEditor2Test {
     }
 
     @Test
+    fun `compiler delays effects and uses common authored duration`() {
+        val burst = defaultVfxEditor2Effect(VfxEditor2EffectType.BURST, 1L).copy(
+            startTick = 5,
+            durationTicks = 1,
+        )
+        val composition = VfxEditor2Composition(
+            effects = listOf(burst),
+            name = "delay-test",
+            timelineLengthTicks = 12,
+        )
+        val compiled = VfxWorkbenchCompiler.compile(composition, Pos.ZERO, Vec(0.0, 0.0, 1.0))
+        assertEquals(12, compiled.durationTicks)
+        val sink = RecordingParticleSink()
+        repeat(5) { tick -> compiled.emit(tick, sink) }
+        assertTrue(sink.spawns.isEmpty(), "effect emitted before its authored start tick")
+        compiled.emit(5, sink)
+        assertTrue(sink.spawns.isNotEmpty(), "effect did not emit at its authored start tick")
+
+        val timedArc = defaultVfxEditor2Effect(VfxEditor2EffectType.ARC_SLASH, 2L).copy(
+            startTick = 2,
+            durationTicks = 3,
+        )
+        val timed = VfxWorkbenchCompiler.compile(
+            VfxEditor2Composition(listOf(timedArc), name = "duration-test", timelineLengthTicks = 8),
+            Pos.ZERO,
+            Vec(0.0, 0.0, 1.0),
+        )
+        assertEquals(8, timed.durationTicks)
+    }
+
+    @Test
+    fun `cancelling a preview prevents future delayed effects`() {
+        val effect = defaultVfxEditor2Effect(VfxEditor2EffectType.BURST, 1L).copy(startTick = 6)
+        val compiled = VfxWorkbenchCompiler.compile(
+            VfxEditor2Composition(listOf(effect), name = "stop-test", timelineLengthTicks = 12),
+            Pos.ZERO,
+            Vec(0.0, 0.0, 1.0),
+        )
+        val scheduler = ParticleAnimationScheduler()
+        val sink = RecordingParticleSink()
+        val handle = scheduler.start(compiled, sink, id = "delayed-stop")
+        scheduler.tick()
+        scheduler.cancel(handle)
+        repeat(12) { scheduler.tick() }
+        assertTrue(sink.spawns.isEmpty(), "cancelled preview emitted a delayed effect")
+    }
+
+    @Test
     fun `play replacement and stop cleanup cancel only the current handle`() {
         val scheduler = ParticleAnimationScheduler()
         val sessions = VfxEditor2PreviewHandles { handle -> scheduler.cancel(handle) }

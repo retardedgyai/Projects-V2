@@ -9,12 +9,22 @@ import dev.projects.protocol.VfxEditor2Effect
 import dev.projects.protocol.VfxEditor2EffectType
 import dev.projects.protocol.VfxEditor2PreviewStart
 import dev.projects.protocol.VfxEditor2PreviewStop
+import dev.projects.protocol.VfxEditor2SaveRequest
+import dev.projects.protocol.VfxEditor2SaveResult
+import dev.projects.protocol.VfxEditor2ListRequest
+import dev.projects.protocol.VfxEditor2LoadRequest
+import dev.projects.protocol.VfxEditor2LoadResponse
 import dev.projects.protocol.VfxEditor2Shape
 import dev.projects.protocol.VfxEditor2Status
 import dev.projects.protocol.VfxEditor2StatusKind
+import dev.projects.protocol.VFX_EDITOR_2_DEFAULT_TIMELINE_LENGTH_TICKS
+import dev.projects.protocol.VFX_EDITOR_2_MAX_EFFECT_START_TICKS
+import dev.projects.protocol.VFX_EDITOR_2_MAX_TIMELINE_LENGTH_TICKS
 import dev.projects.protocol.VFX_EDITOR_2_MAX_EFFECTS
 import dev.projects.protocol.defaultVfxEditor2Composition
 import dev.projects.protocol.defaultVfxEditor2Effect
+import dev.projects.protocol.isSafeVfxEditor2CompositionName
+import dev.projects.protocol.isVfxEditor2Instant
 import dev.projects.protocol.vfxEditor2DisplayName
 import net.minecraft.client.gui.GuiGraphicsExtractor
 import net.minecraft.client.gui.components.AbstractSliderButton
@@ -41,7 +51,10 @@ class VfxEditor2Screen(
     private companion object {
         const val LEFT_PANEL_WIDTH = 190
         const val RIGHT_PANEL_WIDTH = 330
-        const val BOTTOM_BAR_HEIGHT = 36
+        const val TIMELINE_PANEL_HEIGHT = 180
+        const val TIMELINE_RULER_HEIGHT = 28
+        const val TIMELINE_LABEL_WIDTH = 106
+        const val BOTTOM_BAR_HEIGHT = 28
         const val EFFECT_ROW_HEIGHT = 22
         const val MAX_EFFECTS = VFX_EDITOR_2_MAX_EFFECTS
         const val MAX_NAME_LENGTH = 32
@@ -55,7 +68,9 @@ class VfxEditor2Screen(
             ParameterKey.HOPS,
             ParameterKey.ROWS,
             ParameterKey.POINTS,
-            ParameterKey.DURATION,
+            ParameterKey.START_TICK,
+            ParameterKey.EFFECT_DURATION,
+            ParameterKey.END_TICK,
         )
     }
 
@@ -91,7 +106,9 @@ class VfxEditor2Screen(
         SIZE,
         START_RADIUS,
         END_RADIUS,
-        DURATION,
+        START_TICK,
+        EFFECT_DURATION,
+        END_TICK,
         BOTTOM_RADIUS,
         TOP_RADIUS,
         VARIANCE,
@@ -138,6 +155,14 @@ class VfxEditor2Screen(
     )
 
     private data class PlacedChoice(val spec: ChoiceSpec, val y: Int)
+
+    private enum class TimelineDragMode { MOVE, LEFT_EDGE, RIGHT_EDGE }
+
+    private data class TimelineDrag(
+        val effectId: Long,
+        val mode: TimelineDragMode,
+        val grabOffsetTicks: Int,
+    )
 
     private enum class EffectCategory(val label: String, val types: List<VfxEditor2EffectType>) {
         SLASH_PATH(
@@ -211,14 +236,28 @@ class VfxEditor2Screen(
     private var sectionLabels: List<Pair<String, Int>> = emptyList()
     private var colorFieldY = 0
     private var presetY = 0
+    private var instantTimingY = 0
     private var nameField: EditBox? = null
     private var colorField: EditBox? = null
+    private var compositionNameField: EditBox? = null
+    private var compositionNameInput = initialComposition.name
+    private var savedNames: List<String> = emptyList()
+    private var savedSnapshot: VfxEditor2Composition? = null
+    private var loadMenuOpen = false
+    private var loadPage = 0
+    private var syncingTimingFields = false
+    private val timingInputFields = linkedMapOf<ParameterKey, EditBox>()
+    private val timingSliders = linkedMapOf<ParameterKey, WorkbenchSlider>()
+    private var timelineDrag: TimelineDrag? = null
 
     private val rightPanelX: Int
         get() = (width - RIGHT_PANEL_WIDTH).coerceAtLeast(LEFT_PANEL_WIDTH + 40)
 
     private val bottomBarY: Int
-        get() = (height - BOTTOM_BAR_HEIGHT).coerceAtLeast(0)
+        get() = (height - TIMELINE_PANEL_HEIGHT).coerceAtLeast(0)
+
+    private val bottomControlsY: Int
+        get() = (height - BOTTOM_BAR_HEIGHT - 4).coerceAtLeast(bottomBarY)
 
     override fun isPauseScreen(): Boolean = false
 
@@ -236,9 +275,48 @@ class VfxEditor2Screen(
         clearWidgets()
         nameField = null
         colorField = null
+        compositionNameField = null
+        timingInputFields.clear()
+        timingSliders.clear()
         placedControls = emptyList()
         placedChoices = emptyList()
         sectionLabels = emptyList()
+        instantTimingY = 0
+
+        val headerLeft = LEFT_PANEL_WIDTH + 8
+        val headerRight = (rightPanelX - 8).coerceAtLeast(headerLeft + 120)
+        val headerButtonWidth = 48
+        val headerGap = 3
+        val headerFieldWidth = (headerRight - headerLeft - (headerButtonWidth + headerGap) * 3).coerceAtLeast(100)
+        val compositionField = EditBox(font, headerLeft, 8, headerFieldWidth, 18, Component.literal("Composition Name"))
+        compositionField.setMaxLength(48)
+        compositionField.setValue(compositionNameInput)
+        compositionField.setResponder { compositionNameInput = it }
+        compositionNameField = addRenderableWidget(compositionField)
+        val headerButtonsX = headerLeft + headerFieldWidth + headerGap
+        addRenderableWidget(
+            Button.builder(Component.literal("Save")) { saveComposition() }
+                .bounds(headerButtonsX, 8, headerButtonWidth, 18)
+                .build(),
+        )
+        addRenderableWidget(
+            Button.builder(Component.literal("Load")) {
+                loadMenuOpen = !loadMenuOpen
+                loadPage = 0
+                rebuildEditorWidgets()
+                if (loadMenuOpen) sendMessage(VfxEditor2ListRequest)
+            }.bounds(headerButtonsX + headerButtonWidth + headerGap, 8, headerButtonWidth, 18).build(),
+        )
+        addRenderableWidget(
+            Button.builder(Component.literal("New")) { newComposition() }
+                .bounds(headerButtonsX + (headerButtonWidth + headerGap) * 2, 8, headerButtonWidth, 18)
+                .build(),
+        )
+        addRenderableWidget(
+            Button.builder(Component.literal("Timeline: ${composition.timelineLengthTicks}")) { cycleTimelineLength() }
+                .bounds(headerLeft, 31, 150, 18)
+                .build(),
+        )
 
         val addY = (38 + composition.effects.size * EFFECT_ROW_HEIGHT).coerceAtMost(bottomBarY - 24)
         addRenderableWidget(
@@ -325,8 +403,8 @@ class VfxEditor2Screen(
         }
 
         val centerButtonX = ((width - 164) / 2).coerceAtLeast(LEFT_PANEL_WIDTH + 4)
-        addRenderableWidget(Button.builder(Component.literal("Play")) { play() }.bounds(centerButtonX, bottomBarY + 8, 78, 20).build())
-        addRenderableWidget(Button.builder(Component.literal("Stop")) { stop() }.bounds(centerButtonX + 84, bottomBarY + 8, 78, 20).build())
+        addRenderableWidget(Button.builder(Component.literal("Play")) { play() }.bounds(centerButtonX, bottomControlsY, 78, 20).build())
+        addRenderableWidget(Button.builder(Component.literal("Stop")) { stop() }.bounds(centerButtonX + 84, bottomControlsY, 78, 20).build())
 
         selectedEffect()?.let { effect ->
             val panelX = rightPanelX
@@ -366,15 +444,37 @@ class VfxEditor2Screen(
                     nextY += 12
                     previousSection = control.section
                 }
-                val slider = WorkbenchSlider(
-                    x = panelX + 112,
-                    y = nextY,
-                    width = RIGHT_PANEL_WIDTH - 122,
-                    control = control,
-                    value = control.read(effect),
-                    changed = { value -> updateParameter(control, value) },
-                ).also { it.setTooltip(Tooltip.create(Component.literal(control.tooltip))) }
-                addRenderableWidget(slider)
+                val isTiming = control.key == ParameterKey.START_TICK || control.key == ParameterKey.EFFECT_DURATION
+                val isInstantDuration = control.key == ParameterKey.EFFECT_DURATION && isVfxEditor2Instant(effect.type)
+                val isReadOnlyTiming = control.key == ParameterKey.END_TICK
+                val sliderX = if (isTiming) panelX + 178 else panelX + 112
+                val sliderWidth = if (isTiming) RIGHT_PANEL_WIDTH - 188 else RIGHT_PANEL_WIDTH - 122
+                if (isTiming && !isInstantDuration) {
+                    val input = EditBox(font, panelX + 112, nextY, 62, 18, Component.literal(control.label))
+                    input.setMaxLength(3)
+                    input.setValue(control.read(effect).roundToInt().toString())
+                    input.setResponder { value ->
+                        if (!syncingTimingFields) value.toIntOrNull()?.let { updateTimingFromInput(control.key, it) }
+                    }
+                    input.setTooltip(Tooltip.create(Component.literal(control.tooltip)))
+                    timingInputFields[control.key] = addRenderableWidget(input)
+                }
+                if (isInstantDuration) {
+                    instantTimingY = nextY
+                } else if (isReadOnlyTiming) {
+                    // End is a derived value; its row is intentionally display-only.
+                } else {
+                    val slider = WorkbenchSlider(
+                        x = sliderX,
+                        y = nextY,
+                        width = sliderWidth,
+                        control = control,
+                        value = control.read(effect),
+                        changed = { value -> updateParameter(control, value) },
+                    ).also { it.setTooltip(Tooltip.create(Component.literal(control.tooltip))) }
+                    if (isTiming) timingSliders[control.key] = slider
+                    addRenderableWidget(slider)
+                }
                 placed += PlacedControl(control, nextY)
                 nextY += 20
             }
@@ -402,6 +502,7 @@ class VfxEditor2Screen(
             colorFieldY = if (currentPage == pageCount - 1) nextY + 3 else 0
             if (currentPage == pageCount - 1) addColorControls(panelX, effect)
         }
+        if (loadMenuOpen) addLoadMenuWidgets()
     }
 
     private fun addColorControls(panelX: Int, effect: VfxEditor2Effect) {
@@ -432,6 +533,48 @@ class VfxEditor2Screen(
         }
     }
 
+    private fun addLoadMenuWidgets() {
+        val panelWidth = 250
+        val panelX = ((width - panelWidth) / 2).coerceAtLeast(LEFT_PANEL_WIDTH + 4)
+        val pageSize = 8
+        val pageCount = (savedNames.size + pageSize - 1) / pageSize
+        val currentPage = loadPage.coerceIn(0, (pageCount - 1).coerceAtLeast(0))
+        loadPage = currentPage
+        val first = currentPage * pageSize
+        savedNames.drop(first).take(pageSize).forEachIndexed { index, name ->
+            addRenderableWidget(
+                Button.builder(Component.literal(name)) { requestLoad(name) }
+                    .bounds(panelX + 10, bottomBarY + 31 + index * 16, panelWidth - 20, 15)
+                    .build(),
+            )
+        }
+        val navigationY = bottomBarY + 31 + pageSize * 16 + 3
+        val navWidth = (panelWidth - 24) / 2
+        addRenderableWidget(
+            Button.builder(Component.literal("< Page")) { loadPage = (currentPage - 1).coerceAtLeast(0); rebuildEditorWidgets() }
+                .bounds(panelX + 10, navigationY, navWidth, 18)
+                .build(),
+        )
+        addRenderableWidget(
+            Button.builder(Component.literal("Page ${if (pageCount == 0) 0 else currentPage + 1}/${pageCount.coerceAtLeast(1)} >")) {
+                loadPage = (currentPage + 1).coerceAtMost((pageCount - 1).coerceAtLeast(0))
+                rebuildEditorWidgets()
+            }.bounds(panelX + 14 + navWidth, navigationY, navWidth, 18).build(),
+        )
+    }
+
+    private fun drawLoadMenu(graphics: GuiGraphicsExtractor) {
+        if (!loadMenuOpen) return
+        val panelWidth = 250
+        val panelX = ((width - panelWidth) / 2).coerceAtLeast(LEFT_PANEL_WIDTH + 4)
+        val panelTop = bottomBarY + 24
+        val panelBottom = (bottomBarY + 31 + 8 * 16 + 3 + 18 + 5).coerceAtMost(height - 2)
+        graphics.fill(panelX, panelTop, panelX + panelWidth, panelBottom, 0xF01B2938.toInt())
+        graphics.fill(panelX, panelTop, panelX + panelWidth, panelTop + 1, 0xFF8FB5D1.toInt())
+        graphics.text(font, "Load Composition", panelX + 10, panelTop + 7, 0xFFE8F3FF.toInt(), true)
+        if (savedNames.isEmpty()) graphics.text(font, "No saved compositions", panelX + 10, panelTop + 24, 0xFF9BB4CE.toInt(), false)
+    }
+
     override fun extractRenderState(graphics: GuiGraphicsExtractor, mouseX: Int, mouseY: Int, delta: Float) {
         super.extractRenderState(graphics, mouseX, mouseY, delta)
         graphics.fill(0, 0, LEFT_PANEL_WIDTH, bottomBarY, 0xC8101824.toInt())
@@ -459,6 +602,12 @@ class VfxEditor2Screen(
             sectionLabels.forEach { (label, y) -> graphics.text(font, label, rightPanelX + 10, y, 0xFFCF7990.toInt(), true) }
             placedControls.forEach { placed -> graphics.text(font, placed.spec.label, rightPanelX + 10, placed.y + 5, 0xFFD5E2F0.toInt(), false) }
             placedChoices.forEach { placed -> graphics.text(font, placed.spec.label, rightPanelX + 10, placed.y + 5, 0xFFD5E2F0.toInt(), false) }
+            if (instantTimingY > 0) {
+                graphics.text(font, "[■] Instant (1 tick)", rightPanelX + 112, instantTimingY + 5, 0xFF9BB4CE.toInt(), false)
+            }
+            placedControls.firstOrNull { it.spec.key == ParameterKey.END_TICK }?.let { placed ->
+                graphics.text(font, "${effect.endTick} ticks", rightPanelX + 112, placed.y + 5, 0xFF9BB4CE.toInt(), false)
+            }
             if (colorFieldY > 0) {
                 graphics.text(font, "Color", rightPanelX + 10, colorFieldY + 5, 0xFFD5E2F0.toInt(), false)
                 val color = effect.appearance.color or 0xff000000.toInt()
@@ -470,17 +619,93 @@ class VfxEditor2Screen(
             graphics.text(font, "Select an Effect", rightPanelX + 12, 36, 0xFF9BB4CE.toInt(), false)
             graphics.text(font, "Use + Add Effect to begin", rightPanelX + 12, 54, 0xFF8EA9C5.toInt(), false)
         }
-        graphics.text(font, "Status: $statusText", rightPanelX + 12, bottomBarY + 13, statusColor(), false)
-        graphics.text(font, targetLabel.take(24), LEFT_PANEL_WIDTH + 8, bottomBarY + 13, 0xFF8EA9C5.toInt(), false)
+        drawTimeline(graphics, mouseX, mouseY)
+        drawLoadMenu(graphics)
+        graphics.text(font, "Status: $statusText", rightPanelX + 12, bottomControlsY + 5, statusColor(), false)
+        graphics.text(font, targetLabel.take(24), LEFT_PANEL_WIDTH + 8, bottomControlsY + 5, 0xFF8EA9C5.toInt(), false)
+    }
+
+    private fun drawTimeline(graphics: GuiGraphicsExtractor, mouseX: Int, mouseY: Int) {
+        val timelineLeft = TIMELINE_LABEL_WIDTH
+        val timelineRight = (width - 10).coerceAtLeast(timelineLeft + 20)
+        val timelineWidth = (timelineRight - timelineLeft).coerceAtLeast(1)
+        val scale = timelineWidth.toDouble() / composition.timelineLengthTicks.toDouble()
+        val rulerY = bottomBarY + 17
+        val rowTop = bottomBarY + TIMELINE_RULER_HEIGHT
+        val rowHeight = 14
+
+        graphics.text(
+            font,
+            "Timeline / ${composition.name}${if (isDirty()) " *" else ""}",
+            10,
+            bottomBarY + 5,
+            0xFFE8F3FF.toInt(),
+            true,
+        )
+        graphics.text(
+            font,
+            "${composition.timelineLengthTicks} ticks",
+            width - 76,
+            bottomBarY + 5,
+            0xFF8EA9C5.toInt(),
+            false,
+        )
+        graphics.fill(timelineLeft, rulerY, timelineRight, rulerY + 1, 0xFF49627D.toInt())
+        for (tick in 0..composition.timelineLengthTicks) {
+            val x = timelineLeft + (tick * scale).roundToInt()
+            val major = tick % 5 == 0 || tick == composition.timelineLengthTicks
+            graphics.fill(x, rulerY - if (major) 5 else 2, x + 1, rulerY + 1, if (major) 0xFFB9D0E8.toInt() else 0xFF66819D.toInt())
+            if (major) graphics.text(font, tick.toString(), x - if (tick >= 100) 6 else 3, bottomBarY + 8, 0xFF9BB4CE.toInt(), false)
+        }
+        for ((index, effect) in composition.effects.withIndex()) {
+            val rowY = rowTop + index * rowHeight
+            if (index % 2 == 0) graphics.fill(0, rowY - 1, width, rowY + rowHeight - 1, 0x221F3042)
+            graphics.text(font, effect.name.take(13), 7, rowY + 2, if (effect.enabled) 0xFFD5E2F0.toInt() else 0xFF71849A.toInt(), false)
+            val startX = timelineLeft + (effect.startTick * scale).roundToInt()
+            val endX = timelineLeft + (effect.endTick * scale).roundToInt()
+            val barWidth = if (isVfxEditor2Instant(effect.type)) 5 else (endX - startX).coerceAtLeast(4)
+            val barColor = if (effect.enabled) 0xFF4D9BC6.toInt() else 0xFF405263.toInt()
+            graphics.fill(startX, rowY + 1, (startX + barWidth).coerceAtMost(timelineRight), rowY + rowHeight - 2, barColor)
+            if (effect.id == selectedEffectId) {
+                graphics.fill(startX, rowY, (startX + barWidth).coerceAtMost(timelineRight), rowY + 1, 0xFFFFD166.toInt())
+                graphics.fill(startX, rowY + rowHeight - 2, (startX + barWidth).coerceAtMost(timelineRight), rowY + rowHeight - 1, 0xFFFFD166.toInt())
+                if (!isVfxEditor2Instant(effect.type)) {
+                    graphics.fill(startX, rowY, startX + 1, rowY + rowHeight - 1, 0xFFFFD166.toInt())
+                    graphics.fill((startX + barWidth - 1).coerceAtLeast(startX), rowY, startX + barWidth, rowY + rowHeight - 1, 0xFFFFD166.toInt())
+                }
+            }
+            if (effect.solo) graphics.fill(startX, rowY + 1, (startX + barWidth).coerceAtMost(timelineRight), rowY + 2, 0xFFFFD166.toInt())
+            if (mouseX in startX..(startX + barWidth) && mouseY in rowY..(rowY + rowHeight)) {
+                graphics.setTooltipForNextFrame(
+                    Component.literal("${effect.name}\nStart: ${effect.startTick}  Duration: ${effect.animationDurationTicks}  End: ${effect.endTick}"),
+                    mouseX,
+                    mouseY,
+                )
+            }
+        }
+    }
+
+    private fun timelineEffectAt(mouseX: Int, mouseY: Int): VfxEditor2Effect? {
+        val rowTop = bottomBarY + TIMELINE_RULER_HEIGHT
+        val index = (mouseY - rowTop) / 14
+        if (index !in composition.effects.indices) return null
+        val timelineLeft = TIMELINE_LABEL_WIDTH
+        val timelineRight = (width - 10).coerceAtLeast(timelineLeft + 20)
+        val scale = (timelineRight - timelineLeft).coerceAtLeast(1).toDouble() / composition.timelineLengthTicks
+        val effect = composition.effects[index]
+        val startX = timelineLeft + (effect.startTick * scale).roundToInt()
+        val endX = timelineLeft + (effect.endTick * scale).roundToInt()
+        val barWidth = if (isVfxEditor2Instant(effect.type)) 5 else (endX - startX).coerceAtLeast(4)
+        return effect.takeIf { mouseX in startX..(startX + barWidth) }
     }
 
     override fun mouseClicked(event: MouseButtonEvent, doubleClick: Boolean): Boolean {
-        val mouseX = event.x()
-        val mouseY = event.y()
-        if (event.button() == 0 && mouseX in 0.0..LEFT_PANEL_WIDTH.toDouble()) {
+        val mouseX = event.x().toInt()
+        val mouseY = event.y().toInt()
+        if (event.button() == 0 && mouseX in 0..LEFT_PANEL_WIDTH) {
             composition.effects.forEachIndexed { index, effect ->
                 val rowY = 32 + index * EFFECT_ROW_HEIGHT
-                if (mouseY in rowY.toDouble()..(rowY + EFFECT_ROW_HEIGHT).toDouble()) {
+                if (mouseY in rowY..(rowY + EFFECT_ROW_HEIGHT)) {
                     when {
                         mouseX < 36.0 -> toggleEnabled(effect.id)
                         mouseX < 66.0 -> toggleSolo(effect.id)
@@ -490,7 +715,67 @@ class VfxEditor2Screen(
                 }
             }
         }
+        if (event.button() == 0 && mouseY >= bottomBarY + TIMELINE_RULER_HEIGHT) {
+            val effect = timelineEffectAt(mouseX, mouseY)
+            if (effect != null) {
+                selectEffect(effect.id)
+                val timelineLeft = TIMELINE_LABEL_WIDTH
+                val timelineRight = (width - 10).coerceAtLeast(timelineLeft + 20)
+                val scale = (timelineRight - timelineLeft).coerceAtLeast(1).toDouble() / composition.timelineLengthTicks
+                val startX = timelineLeft + (effect.startTick * scale).roundToInt()
+                val endX = timelineLeft + (effect.endTick * scale).roundToInt()
+                val mode = if (isVfxEditor2Instant(effect.type)) {
+                    TimelineDragMode.MOVE
+                } else if (kotlin.math.abs(mouseX - startX) <= 5) {
+                    TimelineDragMode.LEFT_EDGE
+                } else if (kotlin.math.abs(mouseX - endX) <= 5) {
+                    TimelineDragMode.RIGHT_EDGE
+                } else {
+                    TimelineDragMode.MOVE
+                }
+                timelineDrag = TimelineDrag(
+                    effectId = effect.id,
+                    mode = mode,
+                    grabOffsetTicks = if (mode == TimelineDragMode.MOVE) {
+                        tickAtTimelineX(mouseX) - effect.startTick
+                    } else {
+                        0
+                    },
+                )
+                setDragging(true)
+                return true
+            }
+        }
         return super.mouseClicked(event, doubleClick)
+    }
+
+    override fun mouseDragged(event: MouseButtonEvent, deltaX: Double, deltaY: Double): Boolean {
+        val drag = timelineDrag ?: return super.mouseDragged(event, deltaX, deltaY)
+        val effect = composition.effects.firstOrNull { it.id == drag.effectId } ?: return true
+        val tick = tickAtTimelineX(event.x().toInt())
+        when (drag.mode) {
+            TimelineDragMode.MOVE -> updateTiming(effect.id, tick - drag.grabOffsetTicks, effect.durationTicks, rebuild = false)
+            TimelineDragMode.LEFT_EDGE -> {
+                val start = tick.coerceIn(0, effect.endTick - 1)
+                updateTiming(effect.id, start, effect.endTick - start, rebuild = false)
+            }
+            TimelineDragMode.RIGHT_EDGE -> {
+                val end = tick.coerceIn(effect.startTick + 1, VFX_EDITOR_2_MAX_TIMELINE_LENGTH_TICKS)
+                updateTiming(effect.id, effect.startTick, end - effect.startTick, rebuild = false)
+            }
+        }
+        return true
+    }
+
+    override fun mouseReleased(event: MouseButtonEvent): Boolean {
+        if (timelineDrag != null) {
+            timelineDrag = null
+            setDragging(false)
+            rebuildEditorWidgets()
+            sendPreview()
+            return true
+        }
+        return super.mouseReleased(event)
     }
 
     override fun tick() {
@@ -511,9 +796,44 @@ class VfxEditor2Screen(
         previewActive = status.kind == VfxEditor2StatusKind.PREVIEW_REQUESTED || status.kind == VfxEditor2StatusKind.PLAYING
     }
 
+    fun setSavedNames(names: List<String>) {
+        savedNames = names.distinct().sorted()
+        if (loadMenuOpen) rebuildEditorWidgets()
+    }
+
+    fun setSaveResult(result: VfxEditor2SaveResult) {
+        statusText = result.message
+        if (result.success) {
+            composition = composition.copy(name = result.name)
+            compositionNameInput = result.name
+            savedSnapshot = composition.withoutSolo()
+            loadMenuOpen = false
+            rebuildEditorWidgets()
+        }
+    }
+
+    fun applyLoadedComposition(response: VfxEditor2LoadResponse) {
+        val loaded = response.composition
+        if (loaded == null) {
+            statusText = response.message
+            return
+        }
+        composition = loaded.withoutSolo()
+        compositionNameInput = composition.name
+        savedSnapshot = composition
+        selectedEffectId = composition.effects.firstOrNull()?.id
+        nextEffectId = (composition.effects.maxOfOrNull { it.id } ?: 0L) + 1L
+        loadMenuOpen = false
+        inspectorPage = 0
+        statusText = response.message
+        rebuildEditorWidgets()
+        schedulePreview()
+    }
+
     override fun onClose() {
         previewDebounceTicks = 0
         previewActive = false
+        timelineDrag = null
         sendMessage(VfxEditor2PreviewStop)
         super.onClose()
     }
@@ -599,8 +919,51 @@ class VfxEditor2Screen(
     private fun updateParameter(control: ControlSpec, value: Double) {
         val normalized = value.coerceIn(control.min, control.max)
         val adjusted = if (isIntegerParameter(control.key)) normalized.roundToInt().toDouble() else normalized
+        if (control.key == ParameterKey.START_TICK || control.key == ParameterKey.EFFECT_DURATION) {
+            val effect = selectedEffect() ?: return
+            val start = if (control.key == ParameterKey.START_TICK) adjusted.roundToInt() else effect.startTick
+            val duration = if (control.key == ParameterKey.EFFECT_DURATION) adjusted.roundToInt() else effect.durationTicks
+            updateTiming(effect.id, start, duration)
+            return
+        }
         updateSelectedEffect(transform = { control.write(it, adjusted) })
         schedulePreview()
+    }
+
+    private fun updateTimingFromInput(key: ParameterKey, value: Int) {
+        val effect = selectedEffect() ?: return
+        val start = if (key == ParameterKey.START_TICK) value else effect.startTick
+        val duration = if (key == ParameterKey.EFFECT_DURATION) value else effect.durationTicks
+        updateTiming(effect.id, start, duration)
+    }
+
+    private fun updateTiming(effectId: Long, requestedStart: Int, requestedDuration: Int, rebuild: Boolean = false) {
+        val effect = composition.effects.firstOrNull { it.id == effectId } ?: return
+        val start = requestedStart.coerceIn(0, VFX_EDITOR_2_MAX_EFFECT_START_TICKS)
+        val duration = if (isVfxEditor2Instant(effect.type)) {
+            1
+        } else {
+            requestedDuration.coerceIn(1, (VFX_EDITOR_2_MAX_TIMELINE_LENGTH_TICKS - start).coerceAtLeast(1))
+        }
+        val end = start + duration
+        val effects = composition.effects.map { current ->
+            if (current.id == effectId) current.copy(startTick = start, durationTicks = duration) else current
+        }
+        composition = composition.copy(
+            effects = effects,
+            timelineLengthTicks = maxOf(composition.timelineLengthTicks, end)
+                .coerceAtMost(VFX_EDITOR_2_MAX_TIMELINE_LENGTH_TICKS),
+        )
+        syncTimingFields()
+        if (rebuild) rebuildEditorWidgets()
+        schedulePreview()
+    }
+
+    private fun tickAtTimelineX(mouseX: Int): Int {
+        val timelineLeft = TIMELINE_LABEL_WIDTH
+        val timelineRight = (width - 10).coerceAtLeast(timelineLeft + 20)
+        val scale = (timelineRight - timelineLeft).coerceAtLeast(1).toDouble() / composition.timelineLengthTicks
+        return ((mouseX - timelineLeft) / scale).roundToInt().coerceIn(0, VFX_EDITOR_2_MAX_EFFECT_START_TICKS)
     }
 
     private fun updateChoice(choice: ChoiceSpec) {
@@ -681,6 +1044,61 @@ class VfxEditor2Screen(
         syncingColorField = false
     }
 
+    private fun syncTimingFields() {
+        val effect = selectedEffect() ?: return
+        syncingTimingFields = true
+        timingInputFields[ParameterKey.START_TICK]?.setValue(effect.startTick.toString())
+        timingInputFields[ParameterKey.EFFECT_DURATION]?.setValue(effect.durationTicks.toString())
+        timingSliders[ParameterKey.START_TICK]?.setExternalValue(effect.startTick.toDouble())
+        timingSliders[ParameterKey.EFFECT_DURATION]?.setExternalValue(effect.durationTicks.toDouble())
+        syncingTimingFields = false
+    }
+
+    private fun isDirty(): Boolean = savedSnapshot == null ||
+        compositionNameInput != composition.name ||
+        composition.withoutSolo() != savedSnapshot
+
+    private fun saveComposition() {
+        if (!isSafeVfxEditor2CompositionName(compositionNameInput)) {
+            statusText = "Name must match A-Z, 0-9, _, ., - (1-48 chars)"
+            return
+        }
+        val outgoing = composition.copy(name = compositionNameInput)
+        statusText = "Saving..."
+        sendMessage(VfxEditor2SaveRequest(outgoing))
+    }
+
+    private fun requestLoad(name: String) {
+        loadMenuOpen = false
+        statusText = "Loading..."
+        rebuildEditorWidgets()
+        sendMessage(VfxEditor2LoadRequest(name))
+    }
+
+    private fun newComposition() {
+        sendMessage(VfxEditor2PreviewStop)
+        composition = defaultVfxEditor2Composition()
+        compositionNameInput = composition.name
+        savedSnapshot = null
+        selectedEffectId = composition.effects.firstOrNull()?.id
+        nextEffectId = (composition.effects.maxOfOrNull { it.id } ?: 0L) + 1L
+        inspectorPage = 0
+        loadMenuOpen = false
+        statusText = "New composition"
+        rebuildEditorWidgets()
+        schedulePreview()
+    }
+
+    private fun cycleTimelineLength() {
+        val presets = listOf(20, 40, 60, 80, 120, 200)
+        val currentIndex = presets.indexOf(composition.timelineLengthTicks)
+        val next = presets[((if (currentIndex >= 0) currentIndex else 0) + 1) % presets.size]
+        val length = maxOf(next, composition.maxEndTick()).coerceAtMost(VFX_EDITOR_2_MAX_TIMELINE_LENGTH_TICKS)
+        composition = composition.copy(timelineLengthTicks = length)
+        rebuildEditorWidgets()
+        schedulePreview()
+    }
+
     private fun selectedEffect(): VfxEditor2Effect? = selectedEffectId?.let { id -> composition.effects.firstOrNull { it.id == id } }
 
     private fun allocateEffectId(): Long {
@@ -755,8 +1173,49 @@ class VfxEditor2Screen(
         )
         val particleSize = appearanceControl(ParameterKey.PARTICLE_SIZE, "Particle Size", 0.05, 1.5, 2, "x", "表示するParticleの大きさ", { appearance -> appearance.particleSize }) { appearance, value -> appearance.copy(particleSize = value) }
         val density = appearanceControl(ParameterKey.DENSITY, "Density", 0.25, 4.0, 2, "x", "軌道上に配置するParticle密度", { appearance -> appearance.density }) { appearance, value -> appearance.copy(density = value) }
+        val timing = buildList {
+            add(
+                ControlSpec(
+                    ParameterKey.START_TICK,
+                    "Timing",
+                    "Start",
+                    0.0,
+                    VFX_EDITOR_2_MAX_EFFECT_START_TICKS.toDouble(),
+                    0,
+                    "ticks",
+                    "タイムライン上の開始Tick",
+                    { current -> current.startTick.toDouble() },
+                ) { current, value -> current.copy(startTick = value.roundToInt()) },
+            )
+            add(
+                ControlSpec(
+                    ParameterKey.EFFECT_DURATION,
+                    "Timing",
+                    "Duration",
+                    1.0,
+                    (VFX_EDITOR_2_MAX_TIMELINE_LENGTH_TICKS - effect.startTick).coerceAtLeast(1).toDouble(),
+                    0,
+                    "ticks",
+                    "Effectの共通Duration（End = Start + Duration）",
+                    { current -> current.durationTicks.toDouble() },
+                ) { current, value -> current.copy(durationTicks = value.roundToInt()) },
+            )
+            add(
+                ControlSpec(
+                    ParameterKey.END_TICK,
+                    "Timing",
+                    "End",
+                    1.0,
+                    VFX_EDITOR_2_MAX_TIMELINE_LENGTH_TICKS.toDouble(),
+                    0,
+                    "ticks",
+                    "Start + Durationから計算された終了Tick",
+                    { current -> current.endTick.toDouble() },
+                ) { current, _ -> current },
+            )
+        }
 
-        return when (effect.type) {
+        return timing + when (effect.type) {
             VfxEditor2EffectType.ARC_SLASH -> listOf(
                 shape(ParameterKey.LENGTH, "Length", 0.5, 10.0, 1, "blocks", "Effect全体の長さ", { shape -> (shape as VfxEditor2Shape.ArcSlash).length }) { shape, value -> (shape as VfxEditor2Shape.ArcSlash).copy(length = value) },
                 shape(ParameterKey.ARC, "Arc", 10.0, 300.0, 0, "°", "弧の開き角度", { shape -> (shape as VfxEditor2Shape.ArcSlash).arcDegrees }) { shape, value -> (shape as VfxEditor2Shape.ArcSlash).copy(arcDegrees = value) },
@@ -862,27 +1321,23 @@ class VfxEditor2Screen(
             VfxEditor2EffectType.SHOCKWAVE -> listOf(
                 shape(ParameterKey.START_RADIUS, "Start Radius", 0.0, 8.0, 1, "blocks", "Shockwaveの開始半径", { shape -> (shape as VfxEditor2Shape.Shockwave).startRadius }) { shape, value -> (shape as VfxEditor2Shape.Shockwave).copy(startRadius = value) },
                 shape(ParameterKey.END_RADIUS, "End Radius", 0.05, 8.0, 1, "blocks", "Shockwaveの終了半径", { shape -> (shape as VfxEditor2Shape.Shockwave).endRadius }) { shape, value -> (shape as VfxEditor2Shape.Shockwave).copy(endRadius = value) },
-                shape(ParameterKey.DURATION, "Duration", 1.0, 40.0, 0, "ticks", "拡大にかかる時間", { shape -> (shape as VfxEditor2Shape.Shockwave).durationTicks.toDouble() }) { shape, value -> (shape as VfxEditor2Shape.Shockwave).copy(durationTicks = value.roundToInt()) },
             ) + position + rotation + listOf(density)
             VfxEditor2EffectType.VORTEX -> listOf(
                 shape(ParameterKey.RADIUS, "Radius", 0.05, 8.0, 1, "blocks", "Vortexの軸からの距離", { shape -> (shape as VfxEditor2Shape.Vortex).radius }) { shape, value -> (shape as VfxEditor2Shape.Vortex).copy(radius = value) },
                 shape(ParameterKey.SHAPE_HEIGHT, "Height", 0.25, 10.0, 1, "blocks", "Vortexの高さ", { shape -> (shape as VfxEditor2Shape.Vortex).height }) { shape, value -> (shape as VfxEditor2Shape.Vortex).copy(height = value) },
                 shape(ParameterKey.TURNS, "Turns", 0.25, 8.0, 2, "turns", "上昇中に回る回数", { shape -> (shape as VfxEditor2Shape.Vortex).turns }) { shape, value -> (shape as VfxEditor2Shape.Vortex).copy(turns = value) },
-                shape(ParameterKey.DURATION, "Duration", 1.0, 40.0, 0, "ticks", "回転アニメーションの時間", { shape -> (shape as VfxEditor2Shape.Vortex).durationTicks.toDouble() }) { shape, value -> (shape as VfxEditor2Shape.Vortex).copy(durationTicks = value.roundToInt()) },
             ) + position + rotation + listOf(density)
             VfxEditor2EffectType.TORNADO -> listOf(
                 shape(ParameterKey.BOTTOM_RADIUS, "Bottom Radius", 0.05, 8.0, 1, "blocks", "竜巻の下側の半径", { shape -> (shape as VfxEditor2Shape.Tornado).bottomRadius }) { shape, value -> (shape as VfxEditor2Shape.Tornado).copy(bottomRadius = value) },
                 shape(ParameterKey.TOP_RADIUS, "Top Radius", 0.05, 8.0, 1, "blocks", "竜巻の上側の半径", { shape -> (shape as VfxEditor2Shape.Tornado).topRadius }) { shape, value -> (shape as VfxEditor2Shape.Tornado).copy(topRadius = value) },
                 shape(ParameterKey.SHAPE_HEIGHT, "Height", 0.25, 10.0, 1, "blocks", "竜巻の高さ", { shape -> (shape as VfxEditor2Shape.Tornado).height }) { shape, value -> (shape as VfxEditor2Shape.Tornado).copy(height = value) },
                 shape(ParameterKey.TURNS, "Turns", 0.25, 8.0, 2, "turns", "竜巻が回る回数", { shape -> (shape as VfxEditor2Shape.Tornado).turns }) { shape, value -> (shape as VfxEditor2Shape.Tornado).copy(turns = value) },
-                shape(ParameterKey.DURATION, "Duration", 1.0, 40.0, 0, "ticks", "回転アニメーションの時間", { shape -> (shape as VfxEditor2Shape.Tornado).durationTicks.toDouble() }) { shape, value -> (shape as VfxEditor2Shape.Tornado).copy(durationTicks = value.roundToInt()) },
             ) + position + rotation + listOf(density)
             VfxEditor2EffectType.FOUNTAIN -> listOf(
                 shape(ParameterKey.RADIUS, "Radius", 0.05, 8.0, 1, "blocks", "噴水の横方向の広がり", { shape -> (shape as VfxEditor2Shape.Fountain).radius }) { shape, value -> (shape as VfxEditor2Shape.Fountain).copy(radius = value) },
                 shape(ParameterKey.SHAPE_HEIGHT, "Height / Speed", 0.25, 10.0, 1, "blocks", "噴き上がる高さ", { shape -> (shape as VfxEditor2Shape.Fountain).height }) { shape, value -> (shape as VfxEditor2Shape.Fountain).copy(height = value) },
                 shape(ParameterKey.SPREAD, "Spread", 0.0, 89.0, 0, "°", "噴き上がる方向の広がり", { shape -> (shape as VfxEditor2Shape.Fountain).spreadDegrees }) { shape, value -> (shape as VfxEditor2Shape.Fountain).copy(spreadDegrees = value) },
                 shape(ParameterKey.COUNT, "Count", 1.0, 256.0, 0, "particles", "噴水へ配置するParticle数", { shape -> (shape as VfxEditor2Shape.Fountain).count.toDouble() }) { shape, value -> (shape as VfxEditor2Shape.Fountain).copy(count = value.roundToInt()) },
-                shape(ParameterKey.DURATION, "Duration", 1.0, 40.0, 0, "ticks", "噴水アニメーションの時間", { shape -> (shape as VfxEditor2Shape.Fountain).durationTicks.toDouble() }) { shape, value -> (shape as VfxEditor2Shape.Fountain).copy(durationTicks = value.roundToInt()) },
             ) + position + rotation + listOf(particleSize, density)
             VfxEditor2EffectType.BURST -> listOf(
                 shape(ParameterKey.RADIUS, "Radius", 0.0, 8.0, 1, "blocks", "Burstの開始位置までの距離", { shape -> (shape as VfxEditor2Shape.Burst).radius }) { shape, value -> (shape as VfxEditor2Shape.Burst).copy(radius = value) },
@@ -965,8 +1420,15 @@ class VfxEditor2Screen(
             updateMessage()
         }
 
+        fun setExternalValue(newValue: Double) {
+            current = newValue.coerceIn(control.min, control.max)
+            value = normalized(current, control.min, control.max)
+            updateMessage()
+        }
+
         companion object {
-            private fun normalized(value: Double, min: Double, max: Double): Double = ((value - min) / (max - min)).coerceIn(0.0, 1.0)
+            private fun normalized(value: Double, min: Double, max: Double): Double =
+                if (max <= min) 0.0 else ((value - min) / (max - min)).coerceIn(0.0, 1.0)
 
             private fun format(value: Double, decimals: Int, unit: String): String {
                 val number = "%.${decimals}f".format(value)

@@ -14,7 +14,7 @@ import kotlin.math.sqrt
 const val PROJECTS_CHANNEL = "projects:protocol"
 
 object ProtocolVersion {
-    const val CURRENT = 17
+    const val CURRENT = 18
 
     fun requireCompatible(version: Int) {
         if (version != CURRENT) {
@@ -36,6 +36,13 @@ class ProtocolDecodeException(
 const val VFX_EDITOR_2_MAX_EFFECTS = 8
 const val VFX_EDITOR_2_MAX_SAMPLES_PER_EFFECT = 512
 const val VFX_EDITOR_2_MAX_TOTAL_SAMPLES = 4096
+const val VFX_EDITOR_2_DEFAULT_TIMELINE_LENGTH_TICKS = 40
+const val VFX_EDITOR_2_MAX_TIMELINE_LENGTH_TICKS = 200
+const val VFX_EDITOR_2_MAX_EFFECT_START_TICKS = 199
+const val VFX_EDITOR_2_MAX_EFFECT_DURATION_TICKS = 200
+const val VFX_EDITOR_2_DEFAULT_EFFECT_DURATION_TICKS = 12
+const val VFX_EDITOR_2_MAX_COMPOSITION_NAME_LENGTH = 48
+const val VFX_EDITOR_2_MAX_SAVED_COMPOSITIONS = 128
 
 sealed interface ProtocolMessage
 
@@ -448,6 +455,7 @@ private object VfxEditor2ProtocolLimits {
     const val MAX_STATUS_LENGTH = 160
     const val MAX_EFFECTS = VFX_EDITOR_2_MAX_EFFECTS
     const val MAX_EFFECT_NAME_LENGTH = 32
+    const val MAX_COMPOSITION_NAME_LENGTH = VFX_EDITOR_2_MAX_COMPOSITION_NAME_LENGTH
     const val MIN_FORWARD = -1.0
     const val MAX_FORWARD = 8.0
     const val MIN_SIDE = -5.0
@@ -480,7 +488,6 @@ private object VfxEditor2ProtocolLimits {
     const val MAX_HOPS = 32
     const val MAX_GRID_ROWS = 32
     const val MAX_POINTS = 12
-    const val MAX_DURATION_TICKS = 40
     const val MAX_SPEED = 3.0
     const val MAX_SHARPNESS = 2.0
     const val MAX_PHASE = 360.0
@@ -520,6 +527,20 @@ enum class VfxEditor2EffectType {
 enum class VfxEditor2Direction { UP, DOWN }
 
 enum class VfxEditor2BoxMode { EDGES, FACES }
+
+enum class VfxEditor2ParticleType { DUST }
+
+fun isVfxEditor2Instant(type: VfxEditor2EffectType): Boolean = type in setOf(
+    VfxEditor2EffectType.BURST,
+    VfxEditor2EffectType.SPHERE_BURST,
+    VfxEditor2EffectType.CONE_BURST,
+)
+
+private val SAFE_VFX_EDITOR_2_COMPOSITION_NAME = Regex("[A-Za-z0-9][A-Za-z0-9_.-]{0,47}")
+
+fun isSafeVfxEditor2CompositionName(name: String): Boolean =
+    name.length in 1..VFX_EDITOR_2_MAX_COMPOSITION_NAME_LENGTH &&
+        SAFE_VFX_EDITOR_2_COMPOSITION_NAME.matches(name)
 
 private fun requireFinite(label: String, vararg values: Double) {
     require(values.all { it.isFinite() }) { "VFX Editor 2 $label values must be finite" }
@@ -581,6 +602,7 @@ data class VfxEditor2Appearance(
     val color: Int = 0xffffff,
     val particleSize: Double = 0.45,
     val density: Double = 1.0,
+    val particleType: VfxEditor2ParticleType = VfxEditor2ParticleType.DUST,
 ) {
     init {
         require(color in 0..0xffffff) { "VFX Editor 2 color is out of range" }
@@ -593,11 +615,17 @@ data class VfxEditor2Appearance(
     }
 
     companion object {
-        fun clamped(color: Int, particleSize: Double, density: Double): VfxEditor2Appearance {
+        fun clamped(
+            color: Int,
+            particleSize: Double,
+            density: Double,
+            particleType: VfxEditor2ParticleType = VfxEditor2ParticleType.DUST,
+        ): VfxEditor2Appearance {
             return VfxEditor2Appearance(
                 color.coerceIn(0, 0xffffff),
                 clampFinite(particleSize, VfxEditor2ProtocolLimits.MIN_PARTICLE_SIZE, VfxEditor2ProtocolLimits.MAX_PARTICLE_SIZE, "particle size"),
                 clampFinite(density, VfxEditor2ProtocolLimits.MIN_DENSITY, VfxEditor2ProtocolLimits.MAX_DENSITY, "density"),
+                particleType,
             )
         }
     }
@@ -1126,20 +1154,17 @@ sealed interface VfxEditor2Shape {
     data class Shockwave(
         val startRadius: Double = 0.3,
         val endRadius: Double = 3.0,
-        val durationTicks: Int = 10,
     ) : VfxEditor2Shape {
         override val type get() = VfxEditor2EffectType.SHOCKWAVE
         init {
             requireFinite("shockwave", startRadius, endRadius)
             require(startRadius in 0.0..VfxEditor2ProtocolLimits.MAX_RADIUS)
             require(endRadius in 0.05..VfxEditor2ProtocolLimits.MAX_RADIUS)
-            require(durationTicks in 1..VfxEditor2ProtocolLimits.MAX_DURATION_TICKS)
         }
         companion object {
-            fun clamped(startRadius: Double, endRadius: Double, durationTicks: Int): Shockwave = Shockwave(
+            fun clamped(startRadius: Double, endRadius: Double): Shockwave = Shockwave(
                 clampFinite(startRadius, 0.0, VfxEditor2ProtocolLimits.MAX_RADIUS, "shockwave start radius"),
                 clampFinite(endRadius, 0.05, VfxEditor2ProtocolLimits.MAX_RADIUS, "shockwave end radius"),
-                durationTicks.coerceIn(1, VfxEditor2ProtocolLimits.MAX_DURATION_TICKS),
             )
         }
     }
@@ -1148,7 +1173,6 @@ sealed interface VfxEditor2Shape {
         val radius: Double = 1.3,
         val height: Double = 2.5,
         val turns: Double = 2.0,
-        val durationTicks: Int = 16,
         val direction: VfxEditor2Direction = VfxEditor2Direction.UP,
     ) : VfxEditor2Shape {
         override val type get() = VfxEditor2EffectType.VORTEX
@@ -1157,14 +1181,12 @@ sealed interface VfxEditor2Shape {
             require(radius in 0.05..VfxEditor2ProtocolLimits.MAX_RADIUS)
             require(height in 0.25..VfxEditor2ProtocolLimits.MAX_LENGTH)
             require(turns in 0.25..VfxEditor2ProtocolLimits.MAX_TURNS)
-            require(durationTicks in 1..VfxEditor2ProtocolLimits.MAX_DURATION_TICKS)
         }
         companion object {
-            fun clamped(radius: Double, height: Double, turns: Double, durationTicks: Int, direction: VfxEditor2Direction): Vortex = Vortex(
+            fun clamped(radius: Double, height: Double, turns: Double, direction: VfxEditor2Direction): Vortex = Vortex(
                 clampFinite(radius, 0.05, VfxEditor2ProtocolLimits.MAX_RADIUS, "vortex radius"),
                 clampFinite(height, 0.25, VfxEditor2ProtocolLimits.MAX_LENGTH, "vortex height"),
                 clampFinite(turns, 0.25, VfxEditor2ProtocolLimits.MAX_TURNS, "vortex turns"),
-                durationTicks.coerceIn(1, VfxEditor2ProtocolLimits.MAX_DURATION_TICKS),
                 direction,
             )
         }
@@ -1175,7 +1197,6 @@ sealed interface VfxEditor2Shape {
         val topRadius: Double = 2.0,
         val height: Double = 3.5,
         val turns: Double = 2.0,
-        val durationTicks: Int = 18,
     ) : VfxEditor2Shape {
         override val type get() = VfxEditor2EffectType.TORNADO
         init {
@@ -1184,15 +1205,13 @@ sealed interface VfxEditor2Shape {
             require(topRadius in 0.05..VfxEditor2ProtocolLimits.MAX_RADIUS)
             require(height in 0.25..VfxEditor2ProtocolLimits.MAX_LENGTH)
             require(turns in 0.25..VfxEditor2ProtocolLimits.MAX_TURNS)
-            require(durationTicks in 1..VfxEditor2ProtocolLimits.MAX_DURATION_TICKS)
         }
         companion object {
-            fun clamped(bottomRadius: Double, topRadius: Double, height: Double, turns: Double, durationTicks: Int): Tornado = Tornado(
+            fun clamped(bottomRadius: Double, topRadius: Double, height: Double, turns: Double): Tornado = Tornado(
                 clampFinite(bottomRadius, 0.05, VfxEditor2ProtocolLimits.MAX_RADIUS, "tornado bottom radius"),
                 clampFinite(topRadius, 0.05, VfxEditor2ProtocolLimits.MAX_RADIUS, "tornado top radius"),
                 clampFinite(height, 0.25, VfxEditor2ProtocolLimits.MAX_LENGTH, "tornado height"),
                 clampFinite(turns, 0.25, VfxEditor2ProtocolLimits.MAX_TURNS, "tornado turns"),
-                durationTicks.coerceIn(1, VfxEditor2ProtocolLimits.MAX_DURATION_TICKS),
             )
         }
     }
@@ -1202,7 +1221,6 @@ sealed interface VfxEditor2Shape {
         val height: Double = 3.0,
         val spreadDegrees: Double = 25.0,
         val count: Int = 64,
-        val durationTicks: Int = 16,
     ) : VfxEditor2Shape {
         override val type get() = VfxEditor2EffectType.FOUNTAIN
         init {
@@ -1211,15 +1229,13 @@ sealed interface VfxEditor2Shape {
             require(height in 0.25..VfxEditor2ProtocolLimits.MAX_LENGTH)
             require(spreadDegrees in 0.0..VfxEditor2ProtocolLimits.MAX_BURST_SPREAD)
             require(count in 1..VfxEditor2ProtocolLimits.MAX_COUNT)
-            require(durationTicks in 1..VfxEditor2ProtocolLimits.MAX_DURATION_TICKS)
         }
         companion object {
-            fun clamped(radius: Double, height: Double, spreadDegrees: Double, count: Int, durationTicks: Int): Fountain = Fountain(
+            fun clamped(radius: Double, height: Double, spreadDegrees: Double, count: Int): Fountain = Fountain(
                 clampFinite(radius, 0.05, VfxEditor2ProtocolLimits.MAX_RADIUS, "fountain radius"),
                 clampFinite(height, 0.25, VfxEditor2ProtocolLimits.MAX_LENGTH, "fountain height"),
                 clampFinite(spreadDegrees, 0.0, VfxEditor2ProtocolLimits.MAX_BURST_SPREAD, "fountain spread"),
                 count.coerceIn(1, VfxEditor2ProtocolLimits.MAX_COUNT),
-                durationTicks.coerceIn(1, VfxEditor2ProtocolLimits.MAX_DURATION_TICKS),
             )
         }
     }
@@ -1289,6 +1305,8 @@ data class VfxEditor2Effect(
     val appearance: VfxEditor2Appearance = VfxEditor2Appearance(),
     val enabled: Boolean = true,
     val solo: Boolean = false,
+    val startTick: Int = 0,
+    val durationTicks: Int = VFX_EDITOR_2_DEFAULT_EFFECT_DURATION_TICKS,
 ) {
     init {
         require(id >= 0L) { "VFX Editor 2 effect id is invalid" }
@@ -1296,16 +1314,45 @@ data class VfxEditor2Effect(
             "VFX Editor 2 effect name is invalid"
         }
         require(shape.type == type) { "VFX Editor 2 effect type and shape do not match" }
+        require(startTick in 0..VFX_EDITOR_2_MAX_EFFECT_START_TICKS) {
+            "VFX Editor 2 effect start tick is out of range"
+        }
+        require(durationTicks in 1..VFX_EDITOR_2_MAX_EFFECT_DURATION_TICKS) {
+            "VFX Editor 2 effect duration is out of range"
+        }
+        require(!isVfxEditor2Instant(type) || durationTicks == 1) {
+            "VFX Editor 2 instant effects must have a one-tick duration"
+        }
     }
+
+    val endTick: Int get() = startTick + durationTicks
+
+    val animationDurationTicks: Int get() = if (isVfxEditor2Instant(type)) 1 else durationTicks
 }
 
-data class VfxEditor2Composition(val effects: List<VfxEditor2Effect>) {
+data class VfxEditor2Composition(
+    val effects: List<VfxEditor2Effect>,
+    val name: String = "untitled",
+    val timelineLengthTicks: Int = VFX_EDITOR_2_DEFAULT_TIMELINE_LENGTH_TICKS,
+) {
     init {
         require(effects.size <= VfxEditor2ProtocolLimits.MAX_EFFECTS) {
             "VFX Editor 2 has too many effects"
         }
         require(effects.map { it.id }.toSet().size == effects.size) {
             "VFX Editor 2 effect ids must be unique"
+        }
+        require(isSafeVfxEditor2CompositionName(name)) {
+            "VFX Editor 2 composition name is invalid"
+        }
+        require(timelineLengthTicks in 1..VFX_EDITOR_2_MAX_TIMELINE_LENGTH_TICKS) {
+            "VFX Editor 2 timeline length is out of range"
+        }
+        require(effects.all { it.endTick <= VFX_EDITOR_2_MAX_TIMELINE_LENGTH_TICKS }) {
+            "VFX Editor 2 effect exceeds the maximum timeline length"
+        }
+        require(timelineLengthTicks >= effects.maxOfOrNull { it.endTick } ?: 0) {
+            "VFX Editor 2 timeline length is shorter than an effect"
         }
     }
 
@@ -1331,8 +1378,46 @@ data class VfxEditor2Composition(val effects: List<VfxEditor2Effect>) {
     fun update(effectId: Long, transform: (VfxEditor2Effect) -> VfxEditor2Effect): VfxEditor2Composition =
         copy(effects = effects.map { if (it.id == effectId) transform(it) else it })
 
+    fun maxEndTick(): Int = effects.maxOfOrNull { it.endTick } ?: 0
+
+    fun withoutSolo(): VfxEditor2Composition = copy(effects = effects.map { it.copy(solo = false) })
+
+    fun normalizedForStorage(): VfxEditor2Composition = clamped(
+        name = name,
+        timelineLengthTicks = timelineLengthTicks,
+        effects = effects.map { it.copy(solo = false) },
+    )
+
     fun estimatedSampleCount(): Int = visibleEffects().sumOf { estimateVfxEditor2Samples(it.shape, it.appearance.density) }
         .coerceAtMost(VFX_EDITOR_2_MAX_TOTAL_SAMPLES)
+
+    companion object {
+        fun clamped(
+            name: String,
+            timelineLengthTicks: Int,
+            effects: List<VfxEditor2Effect>,
+        ): VfxEditor2Composition {
+            require(isSafeVfxEditor2CompositionName(name)) {
+                "VFX Editor 2 composition name is invalid"
+            }
+            val boundedEffects = effects.take(VfxEditor2ProtocolLimits.MAX_EFFECTS).map { effect ->
+                val start = effect.startTick.coerceIn(0, VFX_EDITOR_2_MAX_EFFECT_START_TICKS)
+                val maxDuration = (VFX_EDITOR_2_MAX_TIMELINE_LENGTH_TICKS - start).coerceAtLeast(1)
+                val duration = if (isVfxEditor2Instant(effect.type)) {
+                    1
+                } else {
+                    effect.durationTicks.coerceIn(1, maxDuration)
+                }
+                effect.copy(startTick = start, durationTicks = duration)
+            }
+            val maximumEnd = boundedEffects.maxOfOrNull { it.endTick } ?: 1
+            val boundedTimeline = timelineLengthTicks
+                .coerceIn(1, VFX_EDITOR_2_MAX_TIMELINE_LENGTH_TICKS)
+                .coerceAtLeast(maximumEnd)
+                .coerceAtMost(VFX_EDITOR_2_MAX_TIMELINE_LENGTH_TICKS)
+            return VfxEditor2Composition(boundedEffects, name, boundedTimeline)
+        }
+    }
 }
 
 fun defaultVfxEditor2Shape(type: VfxEditor2EffectType): VfxEditor2Shape = when (type) {
@@ -1370,6 +1455,7 @@ fun defaultVfxEditor2Effect(type: VfxEditor2EffectType, id: Long): VfxEditor2Eff
     name = vfxEditor2DisplayName(type),
     type = type,
     shape = defaultVfxEditor2Shape(type),
+    durationTicks = if (isVfxEditor2Instant(type)) 1 else VFX_EDITOR_2_DEFAULT_EFFECT_DURATION_TICKS,
 )
 
 fun vfxEditor2DisplayName(type: VfxEditor2EffectType): String = when (type) {
@@ -1490,8 +1576,66 @@ data class VfxEditor2Status(
     init { require(message.length <= VfxEditor2ProtocolLimits.MAX_STATUS_LENGTH) { "VFX Editor 2 status is too long" } }
 }
 
+data class VfxEditor2SaveRequest(
+    val composition: VfxEditor2Composition,
+) : ProtocolMessage
+
+data class VfxEditor2SaveResult(
+    val name: String,
+    val success: Boolean,
+    val overwritten: Boolean,
+    val message: String,
+) : ProtocolMessage {
+    init {
+        require(isSafeVfxEditor2CompositionName(name)) { "VFX Editor 2 save result name is invalid" }
+        require(message.length <= VfxEditor2ProtocolLimits.MAX_STATUS_LENGTH) {
+            "VFX Editor 2 save result is too long"
+        }
+    }
+}
+
+object VfxEditor2ListRequest : ProtocolMessage
+
+data class VfxEditor2ListResponse(
+    val names: List<String>,
+) : ProtocolMessage {
+    init {
+        require(names.size <= VFX_EDITOR_2_MAX_SAVED_COMPOSITIONS) {
+            "VFX Editor 2 saved composition list is too large"
+        }
+        require(names.all(::isSafeVfxEditor2CompositionName)) {
+            "VFX Editor 2 saved composition name is invalid"
+        }
+    }
+}
+
+data class VfxEditor2LoadRequest(
+    val name: String,
+) : ProtocolMessage {
+    init {
+        require(isSafeVfxEditor2CompositionName(name)) { "VFX Editor 2 load name is invalid" }
+    }
+}
+
+data class VfxEditor2LoadResponse(
+    val name: String,
+    val composition: VfxEditor2Composition?,
+    val message: String,
+) : ProtocolMessage {
+    init {
+        require(isSafeVfxEditor2CompositionName(name)) { "VFX Editor 2 load response name is invalid" }
+        require(message.length <= VfxEditor2ProtocolLimits.MAX_STATUS_LENGTH) {
+            "VFX Editor 2 load response is too long"
+        }
+        require(composition == null || composition.name == name) {
+            "VFX Editor 2 load response name does not match composition"
+        }
+    }
+}
+
 object ProtocolCodec {
     private const val MAX_PACKET_SIZE = 8192
+    private const val MAX_STRING_BYTES = 768
     private const val HELLO = 1
     private const val HELLO_ACK = 2
     private const val ATTACK_INPUT = 10
@@ -1519,6 +1663,12 @@ object ProtocolCodec {
     private const val VFX_EDITOR_2_PREVIEW_START = 41
     private const val VFX_EDITOR_2_PREVIEW_STOP = 42
     private const val VFX_EDITOR_2_STATUS = 43
+    private const val VFX_EDITOR_2_SAVE_REQUEST = 44
+    private const val VFX_EDITOR_2_SAVE_RESULT = 45
+    private const val VFX_EDITOR_2_LIST_REQUEST = 46
+    private const val VFX_EDITOR_2_LIST_RESPONSE = 47
+    private const val VFX_EDITOR_2_LOAD_REQUEST = 48
+    private const val VFX_EDITOR_2_LOAD_RESPONSE = 49
 
     fun encode(message: ProtocolMessage): ByteArray {
         val output = ByteArrayOutputStream()
@@ -1676,6 +1826,34 @@ object ProtocolCodec {
                     data.writeByte(message.kind.ordinal)
                     writeString(data, message.message)
                 }
+                is VfxEditor2SaveRequest -> {
+                    data.writeByte(VFX_EDITOR_2_SAVE_REQUEST)
+                    writeVfxEditor2Composition(data, message.composition)
+                }
+                is VfxEditor2SaveResult -> {
+                    data.writeByte(VFX_EDITOR_2_SAVE_RESULT)
+                    writeString(data, message.name)
+                    data.writeBoolean(message.success)
+                    data.writeBoolean(message.overwritten)
+                    writeString(data, message.message)
+                }
+                VfxEditor2ListRequest -> data.writeByte(VFX_EDITOR_2_LIST_REQUEST)
+                is VfxEditor2ListResponse -> {
+                    data.writeByte(VFX_EDITOR_2_LIST_RESPONSE)
+                    data.writeByte(message.names.size)
+                    message.names.forEach { writeString(data, it) }
+                }
+                is VfxEditor2LoadRequest -> {
+                    data.writeByte(VFX_EDITOR_2_LOAD_REQUEST)
+                    writeString(data, message.name)
+                }
+                is VfxEditor2LoadResponse -> {
+                    data.writeByte(VFX_EDITOR_2_LOAD_RESPONSE)
+                    writeString(data, message.name)
+                    data.writeBoolean(message.composition != null)
+                    message.composition?.let { writeVfxEditor2Composition(data, it) }
+                    writeString(data, message.message)
+                }
             }
         }
         return output.toByteArray().also {
@@ -1740,6 +1918,12 @@ object ProtocolCodec {
         VFX_EDITOR_2_PREVIEW_START -> "VfxEditor2PreviewStart"
         VFX_EDITOR_2_PREVIEW_STOP -> "VfxEditor2PreviewStop"
         VFX_EDITOR_2_STATUS -> "VfxEditor2Status"
+        VFX_EDITOR_2_SAVE_REQUEST -> "VfxEditor2SaveRequest"
+        VFX_EDITOR_2_SAVE_RESULT -> "VfxEditor2SaveResult"
+        VFX_EDITOR_2_LIST_REQUEST -> "VfxEditor2ListRequest"
+        VFX_EDITOR_2_LIST_RESPONSE -> "VfxEditor2ListResponse"
+        VFX_EDITOR_2_LOAD_REQUEST -> "VfxEditor2LoadRequest"
+        VFX_EDITOR_2_LOAD_RESPONSE -> "VfxEditor2LoadResponse"
         null -> "none"
         else -> "unknown"
     }
@@ -1860,6 +2044,28 @@ object ProtocolCodec {
                     ?: throw IllegalArgumentException("Unknown VFX Editor 2 status")
                 VfxEditor2Status(kind, readString(input))
             }
+            VFX_EDITOR_2_SAVE_REQUEST -> VfxEditor2SaveRequest(readVfxEditor2Composition(input))
+            VFX_EDITOR_2_SAVE_RESULT -> VfxEditor2SaveResult(
+                name = readString(input),
+                success = input.readBoolean(),
+                overwritten = input.readBoolean(),
+                message = readString(input),
+            )
+            VFX_EDITOR_2_LIST_REQUEST -> VfxEditor2ListRequest
+            VFX_EDITOR_2_LIST_RESPONSE -> {
+                val count = input.readUnsignedByte()
+                require(count <= VFX_EDITOR_2_MAX_SAVED_COMPOSITIONS) {
+                    "VFX Editor 2 saved composition list is too large"
+                }
+                VfxEditor2ListResponse(List(count) { readString(input) })
+            }
+            VFX_EDITOR_2_LOAD_REQUEST -> VfxEditor2LoadRequest(readString(input))
+            VFX_EDITOR_2_LOAD_RESPONSE -> {
+                val name = readString(input)
+                val hasComposition = input.readBoolean()
+                val composition = if (hasComposition) readVfxEditor2Composition(input) else null
+                VfxEditor2LoadResponse(name, composition, readString(input))
+            }
             else -> throw IllegalArgumentException("Unknown ProjectS message type: $type")
         }
         require(input.available() == 0) { "Unexpected trailing ProjectS protocol data" }
@@ -1885,6 +2091,8 @@ object ProtocolCodec {
     }
 
     private fun writeVfxEditor2Composition(data: DataOutputStream, composition: VfxEditor2Composition) {
+        writeString(data, composition.name)
+        data.writeInt(composition.timelineLengthTicks)
         data.writeByte(composition.effects.size)
         composition.effects.forEach { effect ->
             data.writeLong(effect.id)
@@ -1892,6 +2100,8 @@ object ProtocolCodec {
             data.writeByte(effect.type.ordinal)
             data.writeBoolean(effect.enabled)
             data.writeBoolean(effect.solo)
+            data.writeInt(effect.startTick)
+            data.writeInt(effect.durationTicks)
             data.writeDouble(effect.transform.forward)
             data.writeDouble(effect.transform.side)
             data.writeDouble(effect.transform.height)
@@ -1901,6 +2111,7 @@ object ProtocolCodec {
             data.writeInt(effect.appearance.color)
             data.writeDouble(effect.appearance.particleSize)
             data.writeDouble(effect.appearance.density)
+            data.writeByte(effect.appearance.particleType.ordinal)
             when (val shape = effect.shape) {
                 is VfxEditor2Shape.ArcSlash -> {
                     data.writeDouble(shape.length)
@@ -2018,13 +2229,11 @@ object ProtocolCodec {
                 is VfxEditor2Shape.Shockwave -> {
                     data.writeDouble(shape.startRadius)
                     data.writeDouble(shape.endRadius)
-                    data.writeInt(shape.durationTicks)
                 }
                 is VfxEditor2Shape.Vortex -> {
                     data.writeDouble(shape.radius)
                     data.writeDouble(shape.height)
                     data.writeDouble(shape.turns)
-                    data.writeInt(shape.durationTicks)
                     data.writeByte(shape.direction.ordinal)
                 }
                 is VfxEditor2Shape.Tornado -> {
@@ -2032,14 +2241,12 @@ object ProtocolCodec {
                     data.writeDouble(shape.topRadius)
                     data.writeDouble(shape.height)
                     data.writeDouble(shape.turns)
-                    data.writeInt(shape.durationTicks)
                 }
                 is VfxEditor2Shape.Fountain -> {
                     data.writeDouble(shape.radius)
                     data.writeDouble(shape.height)
                     data.writeDouble(shape.spreadDegrees)
                     data.writeInt(shape.count)
-                    data.writeInt(shape.durationTicks)
                 }
                 is VfxEditor2Shape.SphereBurst -> {
                     data.writeDouble(shape.spawnRadius)
@@ -2061,6 +2268,11 @@ object ProtocolCodec {
     }
 
     private fun readVfxEditor2Composition(input: DataInputStream): VfxEditor2Composition {
+        val name = readString(input)
+        require(isSafeVfxEditor2CompositionName(name)) {
+            "VFX Editor 2 composition name is invalid"
+        }
+        val timelineLengthTicks = input.readInt()
         val count = input.readUnsignedByte()
         require(count <= VfxEditor2ProtocolLimits.MAX_EFFECTS) {
             "VFX Editor 2 has too many effects"
@@ -2073,6 +2285,8 @@ object ProtocolCodec {
                 ?: throw IllegalArgumentException("Unknown VFX Editor 2 effect type: $typeId")
             val enabled = input.readBoolean()
             val solo = input.readBoolean()
+            val startTick = input.readInt()
+            val durationTicks = input.readInt()
             val transform = VfxEditor2Transform.clamped(
                 forward = input.readDouble(),
                 side = input.readDouble(),
@@ -2085,6 +2299,8 @@ object ProtocolCodec {
                 color = input.readInt(),
                 particleSize = input.readDouble(),
                 density = input.readDouble(),
+                particleType = VfxEditor2ParticleType.entries.getOrNull(input.readUnsignedByte())
+                    ?: throw IllegalArgumentException("Unknown VFX Editor 2 particle type"),
             )
             val shape = when (type) {
                 VfxEditor2EffectType.ARC_SLASH -> VfxEditor2Shape.ArcSlash.clamped(
@@ -2205,13 +2421,11 @@ object ProtocolCodec {
                 VfxEditor2EffectType.SHOCKWAVE -> VfxEditor2Shape.Shockwave.clamped(
                     startRadius = input.readDouble(),
                     endRadius = input.readDouble(),
-                    durationTicks = input.readInt(),
                 )
                 VfxEditor2EffectType.VORTEX -> VfxEditor2Shape.Vortex.clamped(
                     radius = input.readDouble(),
                     height = input.readDouble(),
                     turns = input.readDouble(),
-                    durationTicks = input.readInt(),
                     direction = VfxEditor2Direction.entries.getOrNull(input.readUnsignedByte())
                         ?: throw IllegalArgumentException("Unknown VFX Editor 2 vortex direction"),
                 )
@@ -2220,14 +2434,12 @@ object ProtocolCodec {
                     topRadius = input.readDouble(),
                     height = input.readDouble(),
                     turns = input.readDouble(),
-                    durationTicks = input.readInt(),
                 )
                 VfxEditor2EffectType.FOUNTAIN -> VfxEditor2Shape.Fountain.clamped(
                     radius = input.readDouble(),
                     height = input.readDouble(),
                     spreadDegrees = input.readDouble(),
                     count = input.readInt(),
-                    durationTicks = input.readInt(),
                 )
                 VfxEditor2EffectType.SPHERE_BURST -> VfxEditor2Shape.SphereBurst.clamped(
                     spawnRadius = input.readDouble(),
@@ -2254,9 +2466,11 @@ object ProtocolCodec {
                 appearance = appearance,
                 enabled = enabled,
                 solo = solo,
+                startTick = startTick.coerceIn(0, VFX_EDITOR_2_MAX_EFFECT_START_TICKS),
+                durationTicks = durationTicks.coerceIn(1, VFX_EDITOR_2_MAX_EFFECT_DURATION_TICKS),
             )
         }
-        return VfxEditor2Composition(effects)
+        return VfxEditor2Composition.clamped(name, timelineLengthTicks, effects)
     }
 
     private fun readSlashParameters(input: DataInputStream): SlashEditorParameters = SlashEditorParameters.clamped(
@@ -2279,14 +2493,14 @@ object ProtocolCodec {
 
     private fun writeString(data: DataOutputStream, value: String) {
         val bytes = value.toByteArray(Charsets.UTF_8)
-        require(bytes.size <= SlashEditorLimits.MAX_NAME_LENGTH * 4) { "ProjectS string is too long" }
+        require(bytes.size <= MAX_STRING_BYTES) { "ProjectS string is too long" }
         data.writeShort(bytes.size)
         data.write(bytes)
     }
 
     private fun readString(input: DataInputStream): String {
         val size = input.readUnsignedShort()
-        require(size <= SlashEditorLimits.MAX_NAME_LENGTH * 4) { "ProjectS string is too long" }
+        require(size <= MAX_STRING_BYTES) { "ProjectS string is too long" }
         return ByteArray(size).also(input::readFully).toString(Charsets.UTF_8)
     }
 }

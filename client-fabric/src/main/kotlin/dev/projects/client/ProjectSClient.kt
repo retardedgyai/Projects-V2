@@ -27,6 +27,9 @@ import dev.projects.protocol.VfxEditorNotice
 import dev.projects.protocol.VfxEditorOpen
 import dev.projects.protocol.VfxEditor2Open
 import dev.projects.protocol.VfxEditor2Status
+import dev.projects.protocol.VfxEditor2ListResponse
+import dev.projects.protocol.VfxEditor2LoadResponse
+import dev.projects.protocol.VfxEditor2SaveResult
 import dev.projects.protocol.VfxSlashDraft
 import dev.projects.protocol.VfxSlashDraftList
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents
@@ -200,6 +203,19 @@ object ProjectSClient : ClientModInitializer {
                         if (screen != null) screen.setStatus(message)
                         else context.client().player?.sendSystemMessage(Component.literal(message.message))
                     }
+                    is VfxEditor2ListResponse -> context.client().execute {
+                        (context.client().gui.screen() as? VfxEditor2Screen)?.setSavedNames(message.names)
+                    }
+                    is VfxEditor2SaveResult -> context.client().execute {
+                        val screen = context.client().gui.screen() as? VfxEditor2Screen
+                        if (screen != null) screen.setSaveResult(message)
+                        else context.client().player?.sendSystemMessage(Component.literal(message.message))
+                    }
+                    is VfxEditor2LoadResponse -> context.client().execute {
+                        val screen = context.client().gui.screen() as? VfxEditor2Screen
+                        if (screen != null) screen.applyLoadedComposition(message)
+                        else context.client().player?.sendSystemMessage(Component.literal(message.message))
+                    }
                     else -> require(false) { "Unexpected ProjectS clientbound message" }
                 }
             } catch (error: ProtocolDecodeException) {
@@ -266,6 +282,7 @@ object ProjectSClient : ClientModInitializer {
             attackDebugTicksRemaining = 0
             slashDraftNames = emptyList()
             if (client.gui.screen() is SlashEditorScreen) client.gui.setScreen(null)
+            if (client.gui.screen() is VfxEditor2Screen) client.gui.setScreen(null)
             return
         }
         renderAttackDebugShape(client)
