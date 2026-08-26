@@ -158,6 +158,7 @@ fun main() {
     val dodgeStates = mutableMapOf<UUID, DodgeState>()
     val twinRodsAirStates = mutableMapOf<UUID, TwinRodsAirState>()
     val classResources = mutableMapOf<UUID, ClassResourceState>()
+    val magicEssences = mutableMapOf<UUID, MagicEssenceState>()
     val skill1States = mutableMapOf<UUID, Skill1State>()
     val skill2States = mutableMapOf<UUID, Skill2State>()
     val skill3States = mutableMapOf<UUID, Skill3State>()
@@ -288,6 +289,66 @@ fun main() {
         }
     }
 
+    fun essenceState(player: net.minestom.server.entity.Player): MagicEssenceState =
+        magicEssences.getOrPut(player.uuid) { MagicEssenceState() }
+
+    fun parsePrimal(raw: String): PrimalEssence? =
+        runCatching { PrimalEssence.valueOf(raw.uppercase()) }.getOrNull()
+
+    fun parseDerived(raw: String): DerivedEssence? =
+        runCatching { DerivedEssence.valueOf(raw.uppercase()) }.getOrNull()
+
+    fun handleEssenceStatus(sender: CommandSender) {
+        val player = sender as? net.minestom.server.entity.Player ?: return
+        player.sendMessage(Component.text("Essence ${essenceState(player).snapshot()}"))
+    }
+
+    fun handleEssenceGather(sender: CommandSender) {
+        val player = sender as? net.minestom.server.entity.Player ?: return
+        val state = essenceState(player)
+        val ember = state.grant(PrimalEssence.EMBER, 1)
+        val tide = state.grant(PrimalEssence.TIDE, 1)
+        player.sendMessage(Component.text("World interaction gathered ember+$ember tide+$tide"))
+    }
+
+    fun handleEssenceGrant(sender: CommandSender, context: CommandContext, typeArgument: net.minestom.server.command.builder.arguments.Argument<String>, amountArgument: net.minestom.server.command.builder.arguments.Argument<Int>) {
+        val player = sender as? net.minestom.server.entity.Player ?: return
+        val essence = parsePrimal(context.get<String>(typeArgument))
+        val amount = context.get<Int>(amountArgument)
+        if (essence == null || amount < 0) {
+            player.sendMessage(Component.text("Use /essence grant ember|tide|gale|stone amount"))
+            return
+        }
+        player.sendMessage(Component.text("Granted ${essence.name.lowercase()} ${essenceState(player).grant(essence, amount)}"))
+    }
+
+    fun handleEssenceCombine(sender: CommandSender, context: CommandContext, firstArgument: net.minestom.server.command.builder.arguments.Argument<String>, secondArgument: net.minestom.server.command.builder.arguments.Argument<String>) {
+        val player = sender as? net.minestom.server.entity.Player ?: return
+        val first = parsePrimal(context.get<String>(firstArgument))
+        val second = parsePrimal(context.get<String>(secondArgument))
+        val result = if (first != null && second != null) essenceState(player).tryCombine(first, second) else null
+        player.sendMessage(
+            Component.text(
+                result?.let { "Transmuted ${it.name.lowercase()}" }
+                    ?: "Cannot combine those essences (need one of each input)",
+            ),
+        )
+    }
+
+    fun handleEssenceUse(sender: CommandSender, context: CommandContext, resultArgument: net.minestom.server.command.builder.arguments.Argument<String>) {
+        val player = sender as? net.minestom.server.entity.Player ?: return
+        val result = parseDerived(context.get<String>(resultArgument))
+        if (result == null || !essenceState(player).tryConsume(result)) {
+            player.sendMessage(Component.text("No usable derived essence: spark|bloom|surge|ward"))
+            return
+        }
+        when (result) {
+            DerivedEssence.BLOOM -> player.setHealth((player.health + 10.0f).coerceAtMost(20.0f))
+            DerivedEssence.SPARK, DerivedEssence.SURGE, DerivedEssence.WARD -> Unit
+        }
+        player.sendMessage(Component.text("Used ${result.name.lowercase()}" + if (result == DerivedEssence.BLOOM) " and restored health" else ""))
+    }
+
     fun finishEncounter() {
         clearBossTelegraphs()
         riftExecutioner.reset()
@@ -375,6 +436,22 @@ fun main() {
     }
     MinecraftServer.getCommandManager().register(
         Command("bossphase").apply { addSyntax(::handleBossPhase, bossPhaseArgument) },
+    )
+    val essenceTypeArgument = ArgumentType.Word("essence")
+    val essenceAmountArgument = ArgumentType.Integer("amount")
+    val essenceFirstArgument = ArgumentType.Word("first")
+    val essenceSecondArgument = ArgumentType.Word("second")
+    val essenceResultArgument = ArgumentType.Word("result")
+    MinecraftServer.getCommandManager().register(
+        Command("essence").apply {
+            setDefaultExecutor { sender, _ -> handleEssenceStatus(sender) }
+            addSyntax({ sender, _ -> handleEssenceStatus(sender) }, ArgumentType.Literal("status"))
+            addSyntax({ sender, _ -> handleEssenceGather(sender) }, ArgumentType.Literal("gather"))
+            addSyntax({ sender, context -> handleEssenceGrant(sender, context, essenceTypeArgument, essenceAmountArgument) }, ArgumentType.Literal("grant"), essenceTypeArgument, essenceAmountArgument)
+            addSyntax({ sender, _ -> (sender as? net.minestom.server.entity.Player)?.let { essenceState(it).reset(); it.sendMessage(Component.text("Essence reset")) } }, ArgumentType.Literal("reset"))
+            addSyntax({ sender, context -> handleEssenceCombine(sender, context, essenceFirstArgument, essenceSecondArgument) }, ArgumentType.Literal("combine"), essenceFirstArgument, essenceSecondArgument)
+            addSyntax({ sender, context -> handleEssenceUse(sender, context, essenceResultArgument) }, ArgumentType.Literal("use"), essenceResultArgument)
+        },
     )
     val aoeSectorLiteral = ArgumentType.Literal("sector")
     val aoeClearLiteral = ArgumentType.Literal("clear")
@@ -601,6 +678,7 @@ fun main() {
         prototypeBoss.registerPlayer(event.player.uuid)
         event.player.setHealth(prototypeBoss.playerMaxHealth.toFloat())
         val resources = classResources.getOrPut(event.player.uuid) { ClassResourceState() }
+        magicEssences.getOrPut(event.player.uuid) { MagicEssenceState() }
         val skill1 = skill1States.getOrPut(event.player.uuid) { Skill1State() }
         val skill2 = skill2States.getOrPut(event.player.uuid) { Skill2State() }
         val skill3 = skill3States.getOrPut(event.player.uuid) { Skill3State() }
@@ -662,6 +740,7 @@ fun main() {
         dodgeStates.remove(playerId)
         twinRodsAirStates.remove(playerId)
         classResources.remove(playerId)
+        magicEssences.remove(playerId)
         skill1States.remove(playerId)
         skill2States.remove(playerId)
         skill3States.remove(playerId)
