@@ -350,10 +350,10 @@ object ProjectSClient : ClientModInitializer {
         val startX = rect.x
         val y = rect.y
         val slots = listOf(
-            SkillHudSlot("S1", skill1Key, skill1CooldownTicks, skill1CooldownMaxTicks, 0, true),
-            SkillHudSlot("S2", skill2Key, skill2CooldownTicks, skill2CooldownMaxTicks, 1, true),
-            SkillHudSlot("S3", skill3Key, skill3CooldownTicks, skill3CooldownMaxTicks, 2, true),
-            SkillHudSlot("ULT", ultimateKey, 0, 1, 3, false),
+            SkillHudSlot(skill1CooldownTicks, skill1CooldownMaxTicks, 0, true),
+            SkillHudSlot(skill2CooldownTicks, skill2CooldownMaxTicks, 1, true),
+            SkillHudSlot(skill3CooldownTicks, skill3CooldownMaxTicks, 2, true),
+            SkillHudSlot(0, 1, 3, false),
         )
         for ((index, slot) in slots.withIndex()) {
             val slotX = startX + index * (slotWidth + gap)
@@ -430,18 +430,6 @@ object ProjectSClient : ClientModInitializer {
             context.fill(x + 1, y + height - 3, x + 1 + cooldownStripWidth, y + height - 1, if (ready) 0xFF638B83.toInt() else 0xFF68777A.toInt())
         }
         drawSkillIcon(context, x + (width - 16) / 2, y + 2, slot.iconIndex, slot.available, ready)
-        val keyLabel = slot.key.getTranslatedKeyMessage().getString()
-        val keyColor = when {
-            !slot.available -> 0xFF687276.toInt()
-            ready -> 0xFFE3E8E4.toInt()
-            else -> 0xFF9AA1A4.toInt()
-        }
-        context.text(Minecraft.getInstance().font, slot.name, x + 3, y + 3, keyColor, true)
-        context.text(Minecraft.getInstance().font, keyLabel, x + 3, y + height - 10, keyColor, true)
-        if (slot.available && !ready) {
-            val cooldown = cooldownSecondsText(slot.remainingTicks)
-            context.text(Minecraft.getInstance().font, cooldown, x + width - Minecraft.getInstance().font.width(cooldown) - 2, y + height - 10, keyColor, true)
-        }
     }
 
     private fun drawResourceBar(
@@ -697,8 +685,6 @@ object ProjectSClient : ClientModInitializer {
     )
 
     private data class SkillHudSlot(
-        val name: String,
-        val key: KeyMapping,
         val remainingTicks: Int,
         val maxTicks: Int,
         val iconIndex: Int,
