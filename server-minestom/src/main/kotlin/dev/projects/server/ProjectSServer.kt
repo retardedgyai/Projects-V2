@@ -13,9 +13,11 @@ import dev.projects.protocol.DodgeInput
 import dev.projects.protocol.GroundTelegraphRemove
 import dev.projects.protocol.GroundTelegraphStart
 import dev.projects.protocol.ProtocolCodec
+import dev.projects.protocol.ProtocolDecodeException
 import dev.projects.protocol.ProtocolHello
 import dev.projects.protocol.ProtocolHelloAck
 import dev.projects.protocol.ProtocolVersion
+import dev.projects.protocol.ProtocolVersionMismatchException
 import dev.projects.protocol.RoninHudSnapshot
 import dev.projects.protocol.SlashEditorParameters
 import dev.projects.protocol.StarweaverHudCelestial
@@ -2139,8 +2141,25 @@ fun main() {
                 VfxEditor2PreviewStop -> vfxEditor2.stop(event.player)
                 else -> throw IllegalArgumentException("Unexpected ProjectS message")
             }
+        } catch (error: ProtocolDecodeException) {
+            System.err.println(
+                "ProjectS protocol decode failed for ${event.player.username}: " +
+                    "packetId=${error.packetId ?: "none"} message=${error.packetName} " +
+                    "exception=${error.cause?.javaClass?.simpleName ?: error.javaClass.simpleName} " +
+                    "reason=${error.reason}",
+            )
+            event.player.kick(Component.text("Malformed ProjectS protocol packet"))
+        } catch (error: ProtocolVersionMismatchException) {
+            System.err.println(
+                "ProjectS protocol version mismatch for ${event.player.username}: ${error.message}",
+            )
+            event.player.kick(Component.text(error.message ?: "ProjectS protocol version mismatch"))
         } catch (error: IllegalArgumentException) {
-            event.player.kick(Component.text(error.message ?: "Invalid ProjectS protocol handshake"))
+            System.err.println(
+                "ProjectS protocol rejected for ${event.player.username}: " +
+                    "exception=${error.javaClass.simpleName} reason=${error.message ?: "invalid packet"}",
+            )
+            event.player.kick(Component.text("Invalid ProjectS protocol packet"))
         }
     }
 

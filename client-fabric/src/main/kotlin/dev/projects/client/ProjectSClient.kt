@@ -15,9 +15,11 @@ import dev.projects.protocol.DodgeInput
 import dev.projects.protocol.GroundTelegraphRemove
 import dev.projects.protocol.GroundTelegraphStart
 import dev.projects.protocol.ProtocolCodec
+import dev.projects.protocol.ProtocolDecodeException
 import dev.projects.protocol.ProtocolHello
 import dev.projects.protocol.ProtocolHelloAck
 import dev.projects.protocol.ProtocolVersion
+import dev.projects.protocol.ProtocolVersionMismatchException
 import dev.projects.protocol.RoninHudSnapshot
 import dev.projects.protocol.SlashEditorParameters
 import dev.projects.protocol.StarweaverHudSnapshot
@@ -200,9 +202,30 @@ object ProjectSClient : ClientModInitializer {
                     }
                     else -> require(false) { "Unexpected ProjectS clientbound message" }
                 }
-            } catch (error: IllegalArgumentException) {
+            } catch (error: ProtocolDecodeException) {
+                logger.warn(
+                    "ProjectS protocol decode failed: packetId={} message={} exception={} reason={}",
+                    error.packetId ?: "none",
+                    error.packetName,
+                    error.cause?.javaClass?.simpleName ?: error.javaClass.simpleName,
+                    error.reason,
+                )
                 context.player().connection.connection.disconnect(
-                    Component.literal(error.message ?: "Invalid ProjectS protocol handshake"),
+                    Component.literal("Malformed ProjectS protocol packet"),
+                )
+            } catch (error: ProtocolVersionMismatchException) {
+                logger.warn("ProjectS protocol version mismatch: {}", error.message)
+                context.player().connection.connection.disconnect(
+                    Component.literal(error.message ?: "ProjectS protocol version mismatch"),
+                )
+            } catch (error: IllegalArgumentException) {
+                logger.warn(
+                    "ProjectS protocol rejected: exception={} reason={}",
+                    error.javaClass.simpleName,
+                    error.message ?: "invalid packet",
+                )
+                context.player().connection.connection.disconnect(
+                    Component.literal("Invalid ProjectS protocol packet"),
                 )
             }
         }

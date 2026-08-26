@@ -12,7 +12,7 @@ import kotlin.math.sqrt
 const val PROJECTS_CHANNEL = "projects:protocol"
 
 object ProtocolVersion {
-    const val CURRENT = 15
+    const val CURRENT = 16
 
     fun requireCompatible(version: Int) {
         if (version != CURRENT) {
@@ -23,6 +23,13 @@ object ProtocolVersion {
 
 class ProtocolVersionMismatchException(expected: Int, actual: Int) :
     IllegalArgumentException("ProjectS protocol version mismatch: expected $expected, received $actual")
+
+class ProtocolDecodeException(
+    val packetId: Int?,
+    val packetName: String,
+    val reason: String,
+    cause: Throwable,
+) : IllegalArgumentException("Malformed ProjectS protocol packet", cause)
 
 sealed interface ProtocolMessage
 
@@ -1001,14 +1008,64 @@ object ProtocolCodec {
     }
 
     fun decode(bytes: ByteArray): ProtocolMessage {
-        require(bytes.isNotEmpty()) { "ProjectS protocol packet is empty" }
-        require(bytes.size <= MAX_PACKET_SIZE) { "ProjectS protocol packet exceeds $MAX_PACKET_SIZE bytes" }
-
+        val packetId = bytes.firstOrNull()?.toInt()?.and(0xff)
         return try {
+            require(bytes.isNotEmpty()) { "ProjectS protocol packet is empty" }
+            require(bytes.size <= MAX_PACKET_SIZE) { "ProjectS protocol packet exceeds $MAX_PACKET_SIZE bytes" }
             decodePacket(bytes)
+        } catch (error: ProtocolDecodeException) {
+            throw error
         } catch (error: IOException) {
-            throw IllegalArgumentException("Malformed ProjectS protocol packet", error)
+            throw malformed(packetId, error)
+        } catch (error: IllegalArgumentException) {
+            throw malformed(packetId, error)
         }
+    }
+
+    private fun malformed(packetId: Int?, error: Throwable): ProtocolDecodeException = ProtocolDecodeException(
+        packetId = packetId,
+        packetName = packetName(packetId),
+        reason = conciseReason(error),
+        cause = error,
+    )
+
+    private fun conciseReason(error: Throwable): String = when (error) {
+        is java.io.EOFException -> "unexpected end of packet"
+        else -> (error.message ?: error.javaClass.simpleName)
+            .replace(Regex("\\s+"), " ")
+            .take(160)
+    }
+
+    private fun packetName(packetId: Int?): String = when (packetId) {
+        HELLO -> "ProtocolHello"
+        HELLO_ACK -> "ProtocolHelloAck"
+        ATTACK_INPUT -> "AttackInput"
+        ATTACK_STARTED -> "AttackStarted"
+        ATTACK_HIT_CONFIRMED -> "AttackHitConfirmed"
+        DODGE_INPUT -> "DodgeInput"
+        AIR_JUMP_INPUT -> "AirJumpInput"
+        CLASS_SKILL_INPUT -> "ClassSkillInput"
+        CLASS_RESOURCE_SNAPSHOT -> "ClassResourceSnapshot"
+        ATTACK_DEBUG_SHAPE -> "AttackDebugShape"
+        GROUND_TELEGRAPH_START -> "GroundTelegraphStart"
+        GROUND_TELEGRAPH_REMOVE -> "GroundTelegraphRemove"
+        VFX_EDITOR_OPEN -> "VfxEditorOpen"
+        VFX_SLASH_PREVIEW_REQUEST -> "VfxSlashPreviewRequest"
+        VFX_SLASH_SAVE_REQUEST -> "VfxSlashSaveRequest"
+        VFX_SLASH_DRAFT_LIST -> "VfxSlashDraftList"
+        VFX_SLASH_DRAFT_LOAD_REQUEST -> "VfxSlashDraftLoadRequest"
+        VFX_SLASH_DRAFT -> "VfxSlashDraft"
+        VFX_EDITOR_NOTICE -> "VfxEditorNotice"
+        VFX_SLASH_PREVIEW_CANCEL -> "VfxSlashPreviewCancel"
+        VFX_SLASH_APPLY_SKILL3 -> "VfxSlashApplySkill3"
+        STARWEAVER_HUD_SNAPSHOT -> "StarweaverHudSnapshot"
+        RONIN_HUD_SNAPSHOT -> "RoninHudSnapshot"
+        VFX_EDITOR_2_OPEN -> "VfxEditor2Open"
+        VFX_EDITOR_2_PREVIEW_START -> "VfxEditor2PreviewStart"
+        VFX_EDITOR_2_PREVIEW_STOP -> "VfxEditor2PreviewStop"
+        VFX_EDITOR_2_STATUS -> "VfxEditor2Status"
+        null -> "none"
+        else -> "unknown"
     }
 
     private fun decodePacket(bytes: ByteArray): ProtocolMessage {

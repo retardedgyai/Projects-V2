@@ -7,10 +7,10 @@ import kotlin.test.assertTrue
 
 class VfxEditor2ProtocolTest {
     @Test
-    fun `checkpoint A messages round trip`() {
+    fun `editor 2 messages round trip`() {
         listOf<ProtocolMessage>(
-            VfxEditor2Open("Ronin Q"),
-            VfxEditor2PreviewStart(17L),
+            VfxEditor2Open("Ronin Q", defaultVfxEditor2Composition()),
+            VfxEditor2PreviewStart(17L, defaultVfxEditor2Composition()),
             VfxEditor2PreviewStop,
             VfxEditor2Status(VfxEditor2StatusKind.PLAYING, "Playing"),
             VfxEditor2Status(VfxEditor2StatusKind.ERROR, "Preview failed"),
@@ -42,6 +42,67 @@ class VfxEditor2ProtocolTest {
 
         assertEquals(message, ProtocolCodec.decode(ProtocolCodec.encode(message)))
         assertTrue(ProtocolCodec.encode(message).size < 8192)
+    }
+
+    @Test
+    fun `default composition round trips through open and preview start`() {
+        val composition = defaultVfxEditor2Composition()
+
+        assertEquals(
+            VfxEditor2Open("Ronin Q", composition),
+            ProtocolCodec.decode(ProtocolCodec.encode(VfxEditor2Open("Ronin Q", composition))),
+        )
+        assertEquals(
+            VfxEditor2PreviewStart(99L, composition),
+            ProtocolCodec.decode(ProtocolCodec.encode(VfxEditor2PreviewStart(99L, composition))),
+        )
+    }
+
+    @Test
+    fun `maximum legal composition round trips`() {
+        val composition = VfxEditor2Composition(
+            (0 until 8).map { index ->
+                val id = index.toLong() + 1L
+                when (index % 4) {
+                    0 -> VfxEditor2Effect(
+                        id = id,
+                        name = "Arc $id",
+                        type = VfxEditor2EffectType.ARC_SLASH,
+                        shape = VfxEditor2Shape.ArcSlash(10.0, 300.0, 2.0, 1.5),
+                        transform = VfxEditor2Transform(8.0, -5.0, 5.0, 180.0, -180.0, 180.0),
+                        appearance = VfxEditor2Appearance(0xffffff, 1.5, 4.0),
+                    )
+                    1 -> VfxEditor2Effect(
+                        id = id,
+                        name = "Line $id",
+                        type = VfxEditor2EffectType.STRAIGHT_SLASH,
+                        shape = VfxEditor2Shape.StraightSlash(10.0, 1.5),
+                        transform = VfxEditor2Transform(8.0, -5.0, 5.0, 180.0, -180.0, 180.0),
+                        appearance = VfxEditor2Appearance(0xffffff, 1.5, 4.0),
+                    )
+                    2 -> VfxEditor2Effect(
+                        id = id,
+                        name = "Ring $id",
+                        type = VfxEditor2EffectType.RING,
+                        shape = VfxEditor2Shape.Ring(8.0, 360.0, 1.5),
+                        transform = VfxEditor2Transform(8.0, -5.0, 5.0, 180.0, -180.0, 180.0),
+                        appearance = VfxEditor2Appearance(0xffffff, 1.5, 4.0),
+                    )
+                    else -> VfxEditor2Effect(
+                        id = id,
+                        name = "Burst $id",
+                        type = VfxEditor2EffectType.BURST,
+                        shape = VfxEditor2Shape.Burst(8.0, 64, 89.0, 3.0),
+                        transform = VfxEditor2Transform(8.0, -5.0, 5.0, 180.0, -180.0, 180.0),
+                        appearance = VfxEditor2Appearance(0xffffff, 1.5, 4.0),
+                    )
+                }
+            },
+        )
+        val message = VfxEditor2PreviewStart(Long.MAX_VALUE, composition)
+
+        assertEquals(message, ProtocolCodec.decode(ProtocolCodec.encode(message)))
+        assertTrue(ProtocolCodec.encode(message).size <= 8192)
     }
 
     @Test
@@ -83,6 +144,32 @@ class VfxEditor2ProtocolTest {
         assertFailsWith<IllegalArgumentException> {
             ProtocolCodec.decode(encoded.copyOf(encoded.size - 1))
         }
+    }
+
+    @Test
+    fun `checkpoint A hello is rejected as a version mismatch`() {
+        val checkpointAHello = byteArrayOf(1, 0, 0, 0, 15)
+        val hello = ProtocolCodec.decode(checkpointAHello) as ProtocolHello
+
+        val error = assertFailsWith<ProtocolVersionMismatchException> {
+            ProtocolVersion.requireCompatible(hello.version)
+        }
+
+        assertEquals("ProjectS protocol version mismatch: expected 16, received 15", error.message)
+    }
+
+    @Test
+    fun `checkpoint A editor open packet reports its packet context`() {
+        val checkpointAOpen = byteArrayOf(40, 0, 7) + "Ronin Q".toByteArray(Charsets.UTF_8)
+
+        val error = assertFailsWith<ProtocolDecodeException> {
+            ProtocolCodec.decode(checkpointAOpen)
+        }
+
+        assertEquals(40, error.packetId)
+        assertEquals("VfxEditor2Open", error.packetName)
+        assertEquals("unexpected end of packet", error.reason)
+        assertEquals("Malformed ProjectS protocol packet", error.message)
     }
 
     @Test
