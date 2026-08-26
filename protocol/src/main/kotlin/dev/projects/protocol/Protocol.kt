@@ -14,7 +14,7 @@ import kotlin.math.sqrt
 const val PROJECTS_CHANNEL = "projects:protocol"
 
 object ProtocolVersion {
-    const val CURRENT = 18
+    const val CURRENT = 19
 
     fun requireCompatible(version: Int) {
         if (version != CURRENT) {
@@ -43,6 +43,10 @@ const val VFX_EDITOR_2_MAX_EFFECT_DURATION_TICKS = 200
 const val VFX_EDITOR_2_DEFAULT_EFFECT_DURATION_TICKS = 12
 const val VFX_EDITOR_2_MAX_COMPOSITION_NAME_LENGTH = 48
 const val VFX_EDITOR_2_MAX_SAVED_COMPOSITIONS = 128
+const val VFX_EDITOR_2_MAX_TARGETS = 64
+const val VFX_EDITOR_2_MAX_TARGET_ID_LENGTH = 64
+const val VFX_EDITOR_2_MAX_TARGET_LABEL_LENGTH = 48
+const val VFX_EDITOR_2_MAX_BINDINGS = 64
 
 sealed interface ProtocolMessage
 
@@ -537,10 +541,14 @@ fun isVfxEditor2Instant(type: VfxEditor2EffectType): Boolean = type in setOf(
 )
 
 private val SAFE_VFX_EDITOR_2_COMPOSITION_NAME = Regex("[A-Za-z0-9][A-Za-z0-9_.-]{0,47}")
+private val SAFE_VFX_EDITOR_2_TARGET_ID = Regex("[a-z0-9][a-z0-9_.-]{0,63}")
 
 fun isSafeVfxEditor2CompositionName(name: String): Boolean =
     name.length in 1..VFX_EDITOR_2_MAX_COMPOSITION_NAME_LENGTH &&
         SAFE_VFX_EDITOR_2_COMPOSITION_NAME.matches(name)
+
+fun isSafeVfxEditor2TargetId(id: String): Boolean =
+    id.length in 1..VFX_EDITOR_2_MAX_TARGET_ID_LENGTH && SAFE_VFX_EDITOR_2_TARGET_ID.matches(id)
 
 private fun requireFinite(label: String, vararg values: Double) {
     require(values.all { it.isFinite() }) { "VFX Editor 2 $label values must be finite" }
@@ -1552,6 +1560,89 @@ data class VfxEditor2Open(
     }
 }
 
+data class VfxEditor2TargetDescriptor(
+    val id: String,
+    val classId: String,
+    val classLabel: String,
+    val skillLabel: String,
+) {
+    init {
+        require(isSafeVfxEditor2TargetId(id)) { "VFX Editor 2 target id is invalid" }
+        require(isSafeVfxEditor2TargetId(classId)) { "VFX Editor 2 class id is invalid" }
+        require(classLabel.isNotBlank() && classLabel.length <= VFX_EDITOR_2_MAX_TARGET_LABEL_LENGTH) {
+            "VFX Editor 2 class label is invalid"
+        }
+        require(skillLabel.isNotBlank() && skillLabel.length <= VFX_EDITOR_2_MAX_TARGET_LABEL_LENGTH) {
+            "VFX Editor 2 skill label is invalid"
+        }
+    }
+}
+
+data class VfxEditor2TargetCatalog(
+    val targets: List<VfxEditor2TargetDescriptor>,
+) : ProtocolMessage {
+    init {
+        require(targets.size <= VFX_EDITOR_2_MAX_TARGETS) { "VFX Editor 2 target catalog is too large" }
+        require(targets.map { it.id }.toSet().size == targets.size) {
+            "VFX Editor 2 target ids must be unique"
+        }
+        require(targets.map { it.classId }.all(::isSafeVfxEditor2TargetId)) {
+            "VFX Editor 2 class id is invalid"
+        }
+    }
+}
+
+data class VfxEditor2BindingSnapshot(
+    val bindings: Map<String, String>,
+) : ProtocolMessage {
+    init {
+        require(bindings.size <= VFX_EDITOR_2_MAX_BINDINGS) { "VFX Editor 2 binding snapshot is too large" }
+        require(bindings.keys.all(::isSafeVfxEditor2TargetId)) {
+            "VFX Editor 2 binding target id is invalid"
+        }
+        require(bindings.values.all(::isSafeVfxEditor2CompositionName)) {
+            "VFX Editor 2 binding composition name is invalid"
+        }
+    }
+}
+
+data class VfxEditor2ApplyBindingRequest(
+    val targetId: String,
+    val compositionName: String,
+) : ProtocolMessage {
+    init {
+        require(isSafeVfxEditor2TargetId(targetId)) { "VFX Editor 2 apply target id is invalid" }
+        require(isSafeVfxEditor2CompositionName(compositionName)) {
+            "VFX Editor 2 apply composition name is invalid"
+        }
+    }
+}
+
+data class VfxEditor2BindingResult(
+    val targetId: String,
+    val compositionName: String?,
+    val success: Boolean,
+    val message: String,
+) : ProtocolMessage {
+    init {
+        require(isSafeVfxEditor2TargetId(targetId)) { "VFX Editor 2 binding result target id is invalid" }
+        require(compositionName == null || isSafeVfxEditor2CompositionName(compositionName)) {
+            "VFX Editor 2 binding result composition name is invalid"
+        }
+        require(message.length <= VfxEditor2ProtocolLimits.MAX_STATUS_LENGTH) {
+            "VFX Editor 2 binding result is too long"
+        }
+    }
+}
+
+data class VfxEditor2ClearBindingRequest(
+    val targetId: String,
+) : ProtocolMessage {
+    init {
+        require(isSafeVfxEditor2TargetId(targetId)) { "VFX Editor 2 clear target id is invalid" }
+    }
+}
+
 data class VfxEditor2PreviewStart(
     val requestId: Long,
     val composition: VfxEditor2Composition = defaultVfxEditor2Composition(),
@@ -1669,6 +1760,11 @@ object ProtocolCodec {
     private const val VFX_EDITOR_2_LIST_RESPONSE = 47
     private const val VFX_EDITOR_2_LOAD_REQUEST = 48
     private const val VFX_EDITOR_2_LOAD_RESPONSE = 49
+    private const val VFX_EDITOR_2_TARGET_CATALOG = 50
+    private const val VFX_EDITOR_2_BINDING_SNAPSHOT = 51
+    private const val VFX_EDITOR_2_APPLY_BINDING_REQUEST = 52
+    private const val VFX_EDITOR_2_BINDING_RESULT = 53
+    private const val VFX_EDITOR_2_CLEAR_BINDING_REQUEST = 54
 
     fun encode(message: ProtocolMessage): ByteArray {
         val output = ByteArrayOutputStream()
@@ -1854,6 +1950,41 @@ object ProtocolCodec {
                     message.composition?.let { writeVfxEditor2Composition(data, it) }
                     writeString(data, message.message)
                 }
+                is VfxEditor2TargetCatalog -> {
+                    data.writeByte(VFX_EDITOR_2_TARGET_CATALOG)
+                    data.writeByte(message.targets.size)
+                    message.targets.forEach { target ->
+                        writeString(data, target.id)
+                        writeString(data, target.classId)
+                        writeString(data, target.classLabel)
+                        writeString(data, target.skillLabel)
+                    }
+                }
+                is VfxEditor2BindingSnapshot -> {
+                    data.writeByte(VFX_EDITOR_2_BINDING_SNAPSHOT)
+                    data.writeByte(message.bindings.size)
+                    message.bindings.toSortedMap().forEach { (targetId, compositionName) ->
+                        writeString(data, targetId)
+                        writeString(data, compositionName)
+                    }
+                }
+                is VfxEditor2ApplyBindingRequest -> {
+                    data.writeByte(VFX_EDITOR_2_APPLY_BINDING_REQUEST)
+                    writeString(data, message.targetId)
+                    writeString(data, message.compositionName)
+                }
+                is VfxEditor2BindingResult -> {
+                    data.writeByte(VFX_EDITOR_2_BINDING_RESULT)
+                    writeString(data, message.targetId)
+                    data.writeBoolean(message.compositionName != null)
+                    message.compositionName?.let { writeString(data, it) }
+                    data.writeBoolean(message.success)
+                    writeString(data, message.message)
+                }
+                is VfxEditor2ClearBindingRequest -> {
+                    data.writeByte(VFX_EDITOR_2_CLEAR_BINDING_REQUEST)
+                    writeString(data, message.targetId)
+                }
             }
         }
         return output.toByteArray().also {
@@ -1924,6 +2055,11 @@ object ProtocolCodec {
         VFX_EDITOR_2_LIST_RESPONSE -> "VfxEditor2ListResponse"
         VFX_EDITOR_2_LOAD_REQUEST -> "VfxEditor2LoadRequest"
         VFX_EDITOR_2_LOAD_RESPONSE -> "VfxEditor2LoadResponse"
+        VFX_EDITOR_2_TARGET_CATALOG -> "VfxEditor2TargetCatalog"
+        VFX_EDITOR_2_BINDING_SNAPSHOT -> "VfxEditor2BindingSnapshot"
+        VFX_EDITOR_2_APPLY_BINDING_REQUEST -> "VfxEditor2ApplyBindingRequest"
+        VFX_EDITOR_2_BINDING_RESULT -> "VfxEditor2BindingResult"
+        VFX_EDITOR_2_CLEAR_BINDING_REQUEST -> "VfxEditor2ClearBindingRequest"
         null -> "none"
         else -> "unknown"
     }
@@ -2066,6 +2202,42 @@ object ProtocolCodec {
                 val composition = if (hasComposition) readVfxEditor2Composition(input) else null
                 VfxEditor2LoadResponse(name, composition, readString(input))
             }
+            VFX_EDITOR_2_TARGET_CATALOG -> {
+                val count = input.readUnsignedByte()
+                require(count <= VFX_EDITOR_2_MAX_TARGETS) { "VFX Editor 2 target catalog is too large" }
+                VfxEditor2TargetCatalog(List(count) {
+                    VfxEditor2TargetDescriptor(
+                        id = readString(input),
+                        classId = readString(input),
+                        classLabel = readString(input),
+                        skillLabel = readString(input),
+                    )
+                })
+            }
+            VFX_EDITOR_2_BINDING_SNAPSHOT -> {
+                val count = input.readUnsignedByte()
+                require(count <= VFX_EDITOR_2_MAX_BINDINGS) { "VFX Editor 2 binding snapshot is too large" }
+                val bindings = linkedMapOf<String, String>()
+                repeat(count) {
+                    bindings[readString(input)] = readString(input)
+                }
+                VfxEditor2BindingSnapshot(bindings)
+            }
+            VFX_EDITOR_2_APPLY_BINDING_REQUEST -> VfxEditor2ApplyBindingRequest(
+                targetId = readString(input),
+                compositionName = readString(input),
+            )
+            VFX_EDITOR_2_BINDING_RESULT -> {
+                val targetId = readString(input)
+                val compositionName = if (input.readBoolean()) readString(input) else null
+                VfxEditor2BindingResult(
+                    targetId = targetId,
+                    compositionName = compositionName,
+                    success = input.readBoolean(),
+                    message = readString(input),
+                )
+            }
+            VFX_EDITOR_2_CLEAR_BINDING_REQUEST -> VfxEditor2ClearBindingRequest(readString(input))
             else -> throw IllegalArgumentException("Unknown ProjectS message type: $type")
         }
         require(input.available() == 0) { "Unexpected trailing ProjectS protocol data" }

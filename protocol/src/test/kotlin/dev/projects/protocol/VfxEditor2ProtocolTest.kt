@@ -14,6 +14,17 @@ class VfxEditor2ProtocolTest {
             VfxEditor2PreviewStop,
             VfxEditor2Status(VfxEditor2StatusKind.PLAYING, "Playing"),
             VfxEditor2Status(VfxEditor2StatusKind.ERROR, "Preview failed"),
+            VfxEditor2TargetCatalog(
+                listOf(
+                    VfxEditor2TargetDescriptor("ronin.q.main", "ronin", "Ronin", "Q"),
+                    VfxEditor2TargetDescriptor("starweaver.q.sun.impact", "starweaver", "Starweaver", "Q Sun - Impact"),
+                ),
+            ),
+            VfxEditor2BindingSnapshot(mapOf("ronin.q.main" to "ronin_q_red")),
+            VfxEditor2ApplyBindingRequest("ronin.q.main", "ronin_q_red"),
+            VfxEditor2BindingResult("ronin.q.main", "ronin_q_red", true, "Applied"),
+            VfxEditor2BindingResult("ronin.q.main", null, false, "Unknown target"),
+            VfxEditor2ClearBindingRequest("ronin.q.main"),
         ).forEach { message ->
             assertEquals(message, ProtocolCodec.decode(ProtocolCodec.encode(message)))
         }
@@ -175,13 +186,13 @@ class VfxEditor2ProtocolTest {
 
     @Test
     fun `checkpoint B version is rejected as a version mismatch`() {
-        val checkpointBHello = ProtocolCodec.decode(ProtocolCodec.encode(ProtocolHello(17))) as ProtocolHello
+        val checkpointBHello = ProtocolCodec.decode(ProtocolCodec.encode(ProtocolHello(18))) as ProtocolHello
 
         val error = assertFailsWith<ProtocolVersionMismatchException> {
             ProtocolVersion.requireCompatible(checkpointBHello.version)
         }
 
-        assertEquals("ProjectS protocol version mismatch: expected 18, received 17", error.message)
+        assertEquals("ProjectS protocol version mismatch: expected 19, received 18", error.message)
     }
 
     @Test

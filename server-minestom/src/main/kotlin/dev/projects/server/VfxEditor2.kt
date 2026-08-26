@@ -2,6 +2,10 @@ package dev.projects.server
 
 import dev.projects.protocol.ProtocolMessage
 import dev.projects.protocol.VfxEditor2Composition
+import dev.projects.protocol.VfxEditor2ApplyBindingRequest
+import dev.projects.protocol.VfxEditor2BindingResult
+import dev.projects.protocol.VfxEditor2BindingSnapshot
+import dev.projects.protocol.VfxEditor2ClearBindingRequest
 import dev.projects.protocol.VfxEditor2Direction
 import dev.projects.protocol.VfxEditor2Open
 import dev.projects.protocol.VfxEditor2PreviewStart
@@ -989,14 +993,18 @@ class VfxEditor2Runtime(
     private val scheduler: ParticleAnimationScheduler,
     private val particleManager: ParticleManager,
     private val store: VfxEditor2CompositionStore,
+    private val bindingStore: VfxEditor2BindingStore,
     private val send: (Player, ProtocolMessage) -> Unit,
 ) {
     private val previews = VfxEditor2PreviewHandles { handle -> scheduler.cancel(handle) }
     private val lastRequestIds = mutableMapOf<UUID, Long>()
+    internal val skillVfxResolver = VfxEditor2SkillVfxResolver(bindingStore, store)
 
     fun open(player: Player) {
         lastRequestIds[player.uuid] = -1L
         send(player, VfxEditor2Open("Ronin Q", defaultVfxEditor2Composition()))
+        send(player, VfxEditor2TargetCatalog.message)
+        send(player, VfxEditor2BindingSnapshot(bindingStore.snapshot()))
         list(player)
         sendStatus(player, VfxEditor2StatusKind.READY, "Ready")
     }
@@ -1029,6 +1037,44 @@ class VfxEditor2Runtime(
                 message = if (composition == null) "Composition not found" else "Loaded '${request.name}'",
             ),
         )
+    }
+
+    fun applyBinding(player: Player, request: VfxEditor2ApplyBindingRequest) {
+        val result = bindingStore.apply(request.targetId, request.compositionName) { name ->
+            store.load(name) != null
+        }
+        val descriptor = VfxEditor2TargetCatalog.descriptor(request.targetId)
+        val message = if (result.success) {
+            val label = descriptor?.let { "${it.classLabel} ${it.skillLabel}" } ?: request.targetId
+            "Applied \"${request.compositionName}\" to $label"
+        } else {
+            result.message
+        }
+        send(
+            player,
+            VfxEditor2BindingResult(
+                targetId = request.targetId,
+                compositionName = request.compositionName.takeIf { result.success },
+                success = result.success,
+                message = message,
+            ),
+        )
+        send(player, VfxEditor2BindingSnapshot(bindingStore.snapshot()))
+    }
+
+    fun clearBinding(player: Player, request: VfxEditor2ClearBindingRequest) {
+        val result = bindingStore.clear(request.targetId)
+        val message = if (result.success) result.message else result.message
+        send(
+            player,
+            VfxEditor2BindingResult(
+                targetId = request.targetId,
+                compositionName = null,
+                success = result.success,
+                message = message,
+            ),
+        )
+        send(player, VfxEditor2BindingSnapshot(bindingStore.snapshot()))
     }
 
     fun preview(player: Player, request: VfxEditor2PreviewStart) {

@@ -113,6 +113,14 @@ internal fun starweaverImpactPresetId(cast: StarweaverCast): String = when {
     else -> "projects:class/starweaver/q_star"
 }
 
+internal fun starweaverImpactTargetId(cast: StarweaverCast): String = when {
+    cast.kind == StarweaverCastKind.CONJUNCTION && cast.celestial == StarweaverCelestial.SUN ->
+        VfxEditor2TargetCatalog.STARWEAVER_Q_SOLAR
+    cast.celestial == StarweaverCelestial.SUN -> VfxEditor2TargetCatalog.STARWEAVER_Q_SUN
+    cast.celestial == StarweaverCelestial.MOON -> VfxEditor2TargetCatalog.STARWEAVER_Q_MOON
+    else -> VfxEditor2TargetCatalog.STARWEAVER_Q_STAR
+}
+
 internal fun starweaverZonePresetId(cast: StarweaverCast): String = when (cast.slot) {
     StarweaverSlot.W -> if (cast.kind == StarweaverCastKind.CONJUNCTION) {
         "projects:class/starweaver/w_lunar"
@@ -129,6 +137,24 @@ internal fun starweaverZonePresetId(cast: StarweaverCast): String = when (cast.s
         StarweaverCelestial.STAR -> "projects:class/starweaver/e_star"
     }
     StarweaverSlot.Q -> error("Q does not have a ground zone preset")
+}
+
+internal fun starweaverZoneTargetId(cast: StarweaverCast): String = when (cast.slot) {
+    StarweaverSlot.W -> if (cast.kind == StarweaverCastKind.CONJUNCTION) {
+        VfxEditor2TargetCatalog.STARWEAVER_W_LUNAR
+    } else when (cast.celestial) {
+        StarweaverCelestial.SUN -> VfxEditor2TargetCatalog.STARWEAVER_W_SUN
+        StarweaverCelestial.MOON -> VfxEditor2TargetCatalog.STARWEAVER_W_MOON
+        StarweaverCelestial.STAR -> VfxEditor2TargetCatalog.STARWEAVER_W_STAR
+    }
+    StarweaverSlot.E -> if (cast.kind == StarweaverCastKind.CONJUNCTION) {
+        VfxEditor2TargetCatalog.STARWEAVER_E_STELLAR
+    } else when (cast.celestial) {
+        StarweaverCelestial.SUN -> VfxEditor2TargetCatalog.STARWEAVER_E_SUN
+        StarweaverCelestial.MOON -> VfxEditor2TargetCatalog.STARWEAVER_E_MOON
+        StarweaverCelestial.STAR -> VfxEditor2TargetCatalog.STARWEAVER_E_STAR
+    }
+    StarweaverSlot.Q -> error("Q does not have a ground zone target")
 }
 
 internal fun showStarweaverPreset(

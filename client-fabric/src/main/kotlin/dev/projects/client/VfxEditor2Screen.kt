@@ -2,7 +2,11 @@ package dev.projects.client
 
 import dev.projects.protocol.ProtocolMessage
 import dev.projects.protocol.VfxEditor2Appearance
+import dev.projects.protocol.VfxEditor2ApplyBindingRequest
+import dev.projects.protocol.VfxEditor2BindingResult
+import dev.projects.protocol.VfxEditor2BindingSnapshot
 import dev.projects.protocol.VfxEditor2BoxMode
+import dev.projects.protocol.VfxEditor2ClearBindingRequest
 import dev.projects.protocol.VfxEditor2Composition
 import dev.projects.protocol.VfxEditor2Direction
 import dev.projects.protocol.VfxEditor2Effect
@@ -17,6 +21,8 @@ import dev.projects.protocol.VfxEditor2LoadResponse
 import dev.projects.protocol.VfxEditor2Shape
 import dev.projects.protocol.VfxEditor2Status
 import dev.projects.protocol.VfxEditor2StatusKind
+import dev.projects.protocol.VfxEditor2TargetCatalog
+import dev.projects.protocol.VfxEditor2TargetDescriptor
 import dev.projects.protocol.VFX_EDITOR_2_DEFAULT_TIMELINE_LENGTH_TICKS
 import dev.projects.protocol.VFX_EDITOR_2_MAX_EFFECT_START_TICKS
 import dev.projects.protocol.VFX_EDITOR_2_MAX_TIMELINE_LENGTH_TICKS
@@ -39,7 +45,7 @@ import kotlin.math.roundToLong
 
 /** World-preserving Checkpoint B.1 workbench for authoring a small VFX composition. */
 class VfxEditor2Screen(
-    private val targetLabel: String,
+    initialTargetLabel: String,
     initialComposition: VfxEditor2Composition,
     private val sendMessage: (ProtocolMessage) -> Unit,
 ) : Screen(Component.literal("VFX Workbench")) {
@@ -243,6 +249,10 @@ class VfxEditor2Screen(
     private var compositionNameInput = initialComposition.name
     private var savedNames: List<String> = emptyList()
     private var savedSnapshot: VfxEditor2Composition? = null
+    private var targetLabel = initialTargetLabel
+    private var targetCatalog = VfxEditor2TargetCatalog(emptyList())
+    private var bindingSnapshot = VfxEditor2BindingSnapshot(emptyMap())
+    private var selectedTargetId: String? = null
     private var loadMenuOpen = false
     private var loadPage = 0
     private var syncingTimingFields = false
@@ -285,10 +295,23 @@ class VfxEditor2Screen(
 
         val headerLeft = LEFT_PANEL_WIDTH + 8
         val headerRight = (rightPanelX - 8).coerceAtLeast(headerLeft + 120)
+        val headerAvailable = (headerRight - headerLeft).coerceAtLeast(240)
+        val classButtonWidth = 104
+        val skillButtonWidth = (headerAvailable - classButtonWidth - 3).coerceAtLeast(120)
+        addRenderableWidget(
+            Button.builder(Component.literal("Class: ${selectedClassLabel()}")) { cycleClass() }
+                .bounds(headerLeft, 8, classButtonWidth, 18)
+                .build(),
+        )
+        addRenderableWidget(
+            Button.builder(Component.literal("Skill: ${selectedSkillLabel()}")) { cycleSkillTarget() }
+                .bounds(headerLeft + classButtonWidth + 3, 8, skillButtonWidth, 18)
+                .build(),
+        )
         val headerButtonWidth = 48
         val headerGap = 3
-        val headerFieldWidth = (headerRight - headerLeft - (headerButtonWidth + headerGap) * 3).coerceAtLeast(100)
-        val compositionField = EditBox(font, headerLeft, 8, headerFieldWidth, 18, Component.literal("Composition Name"))
+        val headerFieldWidth = (headerAvailable - (headerButtonWidth + headerGap) * 3).coerceAtLeast(100)
+        val compositionField = EditBox(font, headerLeft, 31, headerFieldWidth, 18, Component.literal("Composition Name"))
         compositionField.setMaxLength(48)
         compositionField.setValue(compositionNameInput)
         compositionField.setResponder { compositionNameInput = it }
@@ -296,7 +319,7 @@ class VfxEditor2Screen(
         val headerButtonsX = headerLeft + headerFieldWidth + headerGap
         addRenderableWidget(
             Button.builder(Component.literal("Save")) { saveComposition() }
-                .bounds(headerButtonsX, 8, headerButtonWidth, 18)
+                .bounds(headerButtonsX, 31, headerButtonWidth, 18)
                 .build(),
         )
         addRenderableWidget(
@@ -305,16 +328,36 @@ class VfxEditor2Screen(
                 loadPage = 0
                 rebuildEditorWidgets()
                 if (loadMenuOpen) sendMessage(VfxEditor2ListRequest)
-            }.bounds(headerButtonsX + headerButtonWidth + headerGap, 8, headerButtonWidth, 18).build(),
+            }.bounds(headerButtonsX + headerButtonWidth + headerGap, 31, headerButtonWidth, 18).build(),
         )
         addRenderableWidget(
             Button.builder(Component.literal("New")) { newComposition() }
-                .bounds(headerButtonsX + (headerButtonWidth + headerGap) * 2, 8, headerButtonWidth, 18)
+                .bounds(headerButtonsX + (headerButtonWidth + headerGap) * 2, 31, headerButtonWidth, 18)
                 .build(),
         )
+        val bindingButtonWidth = ((headerAvailable - headerGap * 2) / 3).coerceAtLeast(72)
+        val bindingY = 54
+        val applyButton = addRenderableWidget(
+            Button.builder(Component.literal("Apply to Skill")) { applyBinding() }
+                .bounds(headerLeft, bindingY, bindingButtonWidth, 18)
+                .build(),
+        )
+        applyButton.active = canApplyBinding()
+        val clearButton = addRenderableWidget(
+            Button.builder(Component.literal("Restore Default")) { clearBinding() }
+                .bounds(headerLeft + bindingButtonWidth + headerGap, bindingY, bindingButtonWidth, 18)
+                .build(),
+        )
+        clearButton.active = selectedTargetId != null
+        val loadBoundButton = addRenderableWidget(
+            Button.builder(Component.literal("Load Bound")) { loadBoundComposition() }
+                .bounds(headerLeft + (bindingButtonWidth + headerGap) * 2, bindingY, bindingButtonWidth, 18)
+                .build(),
+        )
+        loadBoundButton.active = selectedBindingName() != null
         addRenderableWidget(
             Button.builder(Component.literal("Timeline: ${composition.timelineLengthTicks}")) { cycleTimelineLength() }
-                .bounds(headerLeft, 31, 150, 18)
+                .bounds(headerLeft, 77, 150, 18)
                 .build(),
         )
 
@@ -619,6 +662,8 @@ class VfxEditor2Screen(
             graphics.text(font, "Select an Effect", rightPanelX + 12, 36, 0xFF9BB4CE.toInt(), false)
             graphics.text(font, "Use + Add Effect to begin", rightPanelX + 12, 54, 0xFF8EA9C5.toInt(), false)
         }
+        graphics.text(font, "Target: ${selectedSkillLabel().take(28)}", LEFT_PANEL_WIDTH + 8, 99, 0xFF9BB4CE.toInt(), false)
+        graphics.text(font, "Bound: ${(selectedBindingName() ?: "Default").take(28)}", LEFT_PANEL_WIDTH + 8, 111, 0xFF9BB4CE.toInt(), false)
         drawTimeline(graphics, mouseX, mouseY)
         drawLoadMenu(graphics)
         graphics.text(font, "Status: $statusText", rightPanelX + 12, bottomControlsY + 5, statusColor(), false)
@@ -796,6 +841,24 @@ class VfxEditor2Screen(
         previewActive = status.kind == VfxEditor2StatusKind.PREVIEW_REQUESTED || status.kind == VfxEditor2StatusKind.PLAYING
     }
 
+    fun setTargetCatalog(catalog: VfxEditor2TargetCatalog) {
+        targetCatalog = catalog
+        selectedTargetId = selectedTargetId?.takeIf { id -> catalog.targets.any { it.id == id } }
+            ?: catalog.targets.firstOrNull()?.id
+        updateTargetLabel()
+        if (width > 0) rebuildEditorWidgets()
+    }
+
+    fun setBindingSnapshot(snapshot: VfxEditor2BindingSnapshot) {
+        bindingSnapshot = snapshot
+        if (width > 0) rebuildEditorWidgets()
+    }
+
+    fun setBindingResult(result: VfxEditor2BindingResult) {
+        statusText = result.message
+        if (width > 0) rebuildEditorWidgets()
+    }
+
     fun setSavedNames(names: List<String>) {
         savedNames = names.distinct().sorted()
         if (loadMenuOpen) rebuildEditorWidgets()
@@ -836,6 +899,82 @@ class VfxEditor2Screen(
         timelineDrag = null
         sendMessage(VfxEditor2PreviewStop)
         super.onClose()
+    }
+
+    private fun selectedTarget(): VfxEditor2TargetDescriptor? = selectedTargetId?.let { id ->
+        targetCatalog.targets.firstOrNull { it.id == id }
+    }
+
+    private fun selectedClassLabel(): String = selectedTarget()?.classLabel ?: "Loading"
+
+    private fun selectedSkillLabel(): String = selectedTarget()?.skillLabel ?: "Waiting for catalog"
+
+    private fun selectedBindingName(): String? = selectedTargetId?.let(bindingSnapshot.bindings::get)
+
+    private fun updateTargetLabel() {
+        targetLabel = selectedTarget()?.let { "${it.classLabel} ${it.skillLabel}" } ?: targetLabel
+    }
+
+    private fun cycleClass() {
+        val classes = targetCatalog.targets.distinctBy { it.classId }
+        if (classes.isEmpty()) return
+        val currentClassId = selectedTarget()?.classId
+        val currentIndex = classes.indexOfFirst { it.classId == currentClassId }
+        val next = classes[(currentIndex + 1).mod(classes.size)]
+        selectedTargetId = next.id
+        updateTargetLabel()
+        rebuildEditorWidgets()
+    }
+
+    private fun cycleSkillTarget() {
+        val selected = selectedTarget() ?: return
+        val options = targetCatalog.targets.filter { it.classId == selected.classId }
+        if (options.isEmpty()) return
+        val currentIndex = options.indexOfFirst { it.id == selected.id }
+        selectedTargetId = options[(currentIndex + 1).mod(options.size)].id
+        updateTargetLabel()
+        rebuildEditorWidgets()
+    }
+
+    private fun canApplyBinding(): Boolean {
+        val nameIsSaved = compositionNameInput in savedNames || savedSnapshot?.name == compositionNameInput
+        return selectedTarget() != null && nameIsSaved && !isDirty() &&
+            isSafeVfxEditor2CompositionName(compositionNameInput)
+    }
+
+    private fun applyBinding() {
+        val targetId = selectedTargetId ?: return
+        if (isDirty()) {
+            statusText = "Save the composition before applying."
+            rebuildEditorWidgets()
+            return
+        }
+        if (!canApplyBinding()) {
+            statusText = "Save before Apply"
+            rebuildEditorWidgets()
+            return
+        }
+        statusText = "Applying..."
+        sendMessage(VfxEditor2ApplyBindingRequest(targetId, compositionNameInput))
+    }
+
+    private fun clearBinding() {
+        val targetId = selectedTargetId ?: return
+        statusText = "Restoring default..."
+        sendMessage(VfxEditor2ClearBindingRequest(targetId))
+    }
+
+    private fun loadBoundComposition() {
+        val name = selectedBindingName()
+        if (name == null) {
+            statusText = "No binding for this target"
+            return
+        }
+        if (isDirty()) {
+            statusText = "Save or discard changes before loading bound."
+            return
+        }
+        requestLoad(name)
     }
 
     private fun selectEffect(id: Long) {

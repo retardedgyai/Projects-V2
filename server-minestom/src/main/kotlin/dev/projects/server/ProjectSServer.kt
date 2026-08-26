@@ -26,6 +26,8 @@ import dev.projects.protocol.VfxEditorNotice
 import dev.projects.protocol.VfxEditorOpen
 import dev.projects.protocol.VfxEditor2PreviewStart
 import dev.projects.protocol.VfxEditor2PreviewStop
+import dev.projects.protocol.VfxEditor2ApplyBindingRequest
+import dev.projects.protocol.VfxEditor2ClearBindingRequest
 import dev.projects.protocol.VfxEditor2ListRequest
 import dev.projects.protocol.VfxEditor2LoadRequest
 import dev.projects.protocol.VfxEditor2SaveRequest
@@ -136,6 +138,7 @@ fun main() {
     val starweaverStates = mutableMapOf<UUID, StarweaverRuntimeState>()
     val roninStates = mutableMapOf<UUID, RoninState>()
     val roninLockPositions = mutableMapOf<UUID, Pos>()
+    val authoredRoninPrimaryCasts = mutableMapOf<Pair<UUID, Long>, MutableSet<String>>()
     val resourceSyncTicks = mutableMapOf<UUID, Int>()
     val lastSentCooldowns = mutableMapOf<UUID, SkillCooldowns>()
     val dodgeVelocityActive = mutableMapOf<UUID, Boolean>()
@@ -163,15 +166,50 @@ fun main() {
     val slashDraftStore = SlashDraftStore(Path.of("config", "projects", "vfx-editor", "slash-drafts.json"))
     val skill3SlashBindingStore = Skill3SlashBindingStore(Path.of("config", "projects", "vfx-editor", "twin-blades-skill3-slash.json"))
     val vfxEditor2Store = VfxEditor2CompositionStore(Path.of("config", "projects", "vfx-editor2", "compositions.json"))
+    val vfxEditor2BindingStore = VfxEditor2BindingStore(Path.of("config", "projects", "vfx-editor2", "bindings.json"))
     val slashPreviewHandles = mutableMapOf<UUID, ParticleEffectHandle>()
     val vfxEditor2 = VfxEditor2Runtime(
         scheduler = particleAnimations,
         particleManager = particleManager,
         store = vfxEditor2Store,
+        bindingStore = vfxEditor2BindingStore,
         send = { player, message ->
             player.sendPluginMessage(PROJECTS_CHANNEL, ProtocolCodec.encode(message))
         },
     )
+
+    fun showStarweaverPresetOrAuthored(
+        player: net.minestom.server.entity.Player,
+        targetId: String,
+        fallbackPresetId: String,
+        origin: Point,
+        direction: Vec,
+        durationTicks: Int,
+        castId: Long,
+        runtimeId: String = castId.toString(),
+    ): Boolean {
+        val authored = vfxEditor2.skillVfxResolver.resolve(targetId, origin, direction)
+        if (authored == null) {
+            showStarweaverPreset(
+                player,
+                fallbackPresetId,
+                origin,
+                direction,
+                particleAnimations,
+                particleManager,
+                durationTicks,
+            )
+            return false
+        }
+        val effectId = "skill-vfx:$targetId:$castId:$runtimeId"
+        val sink = particleManager.sink(
+            ParticleViewer(player.position, player),
+            PlayerParticleSink(player),
+            effectId,
+        )
+        particleAnimations.start(authored, sink, id = effectId)
+        return true
+    }
 
     fun sendSlashDraftList(player: net.minestom.server.entity.Player) {
         player.sendPluginMessage(
@@ -275,6 +313,7 @@ fun main() {
     fun resetRoninPlayerState(player: net.minestom.server.entity.Player) {
         roninStates[player.uuid]?.reset()
         roninLockPositions.remove(player.uuid)
+        authoredRoninPrimaryCasts.keys.removeIf { (playerId, _) -> playerId == player.uuid }
         player.setVelocity(Vec.ZERO)
     }
 
@@ -847,24 +886,24 @@ fun main() {
 
         if (cast.kind == StarweaverCastKind.CONJUNCTION && cast.celestial == StarweaverCelestial.STAR) {
             state.addField(cast.castId, zone.center)
-            showStarweaverPreset(
+            showStarweaverPresetOrAuthored(
                 caster,
+                starweaverZoneTargetId(cast),
                 starweaverZonePresetId(cast),
                 zone.center,
                 Vec(0.0, 1.0, 0.0),
-                particleAnimations,
-                particleManager,
                 durationTicks = 20,
+                castId = cast.castId,
             )
         } else {
-            showStarweaverPreset(
+            showStarweaverPresetOrAuthored(
                 caster,
+                starweaverZoneTargetId(cast),
                 starweaverZonePresetId(cast),
                 zone.center,
                 Vec(0.0, 1.0, 0.0),
-                particleAnimations,
-                particleManager,
                 durationTicks = 5,
+                castId = cast.castId,
             )
         }
     }
@@ -917,14 +956,20 @@ fun main() {
                         }
                     }
                 }
-                showStarweaverPreset(
+                val impactDirection = Vec(
+                    projectile.position.x() - projectile.previousPosition.x(),
+                    projectile.position.y() - projectile.previousPosition.y(),
+                    projectile.position.z() - projectile.previousPosition.z(),
+                ).takeIf { it.length() > 1.0e-9 } ?: player.position.direction()
+                showStarweaverPresetOrAuthored(
                     player,
+                    starweaverImpactTargetId(cast),
                     starweaverImpactPresetId(cast),
                     projectile.position,
-                    Vec(0.0, 1.0, 0.0),
-                    particleAnimations,
-                    particleManager,
+                    impactDirection,
                     durationTicks = 4,
+                    castId = cast.castId,
+                    runtimeId = targetId.toString(),
                 )
             }
             if (result.active || result.hitTargetIds.isNotEmpty()) {
@@ -1105,6 +1150,20 @@ fun main() {
             }
     }
 
+    fun playRoninAuthoredVfx(
+        source: net.minestom.server.entity.Player,
+        targetId: String,
+        origin: Point,
+        direction: Vec,
+        castId: Long,
+        runtimeId: String = castId.toString(),
+    ): Boolean {
+        val authored = vfxEditor2.skillVfxResolver.resolve(targetId, origin, direction) ?: return false
+        val effectId = "skill-vfx:$targetId:$castId:$runtimeId"
+        startRoninParticleEffect(source = source, id = effectId) { authored }
+        return true
+    }
+
     fun emitRoninSlash(
         source: net.minestom.server.entity.Player,
         effect: RoninSlashEffect,
@@ -1112,7 +1171,21 @@ fun main() {
         direction: Vec,
         variant: Int = 0,
         seed: Long = 0L,
-    ) {
+        authoredTargetId: String? = null,
+        authoredOrigin: Point = origin,
+        authoredDirection: Vec = direction,
+        authoredCastId: Long = seed,
+    ): Boolean {
+        if (authoredTargetId != null && playRoninAuthoredVfx(
+                source = source,
+                targetId = authoredTargetId,
+                origin = authoredOrigin,
+                direction = authoredDirection,
+                castId = authoredCastId,
+            )
+        ) {
+            return true
+        }
         val visualSeed = seed xor source.uuid.mostSignificantBits xor source.uuid.leastSignificantBits xor
             origin.x().toBits() xor origin.y().toBits() xor origin.z().toBits()
         startRoninParticleEffect(
@@ -1121,6 +1194,7 @@ fun main() {
         ) {
             RoninSlashEffects.create(effect, origin, direction, variant = variant, seed = visualSeed)
         }
+        return false
     }
 
     fun startRoninBlinkTrail(source: net.minestom.server.entity.Player) {
@@ -1196,19 +1270,44 @@ fun main() {
             )
     }
 
+    fun markAuthoredRoninPrimary(player: net.minestom.server.entity.Player, cast: RoninCast, targetId: String) {
+        authoredRoninPrimaryCasts.getOrPut(player.uuid to cast.castId) { mutableSetOf() }.add(targetId)
+    }
+
+    fun hasAuthoredRoninPrimary(player: net.minestom.server.entity.Player, cast: RoninCast, targetId: String): Boolean =
+        targetId in (authoredRoninPrimaryCasts[player.uuid to cast.castId] ?: emptySet())
+
     fun showRoninCastStartVfx(player: net.minestom.server.entity.Player, cast: RoninCast) {
         when (cast.skill to cast.variant) {
             RoninSkill.Q to RoninWVariant.NONE -> Unit
-            RoninSkill.W to RoninWVariant.WOUND -> Unit
+            RoninSkill.W to RoninWVariant.WOUND -> {
+                if (playRoninAuthoredVfx(player, VfxEditor2TargetCatalog.RONIN_W1, cast.origin, cast.direction, cast.castId)) {
+                    markAuthoredRoninPrimary(player, cast, VfxEditor2TargetCatalog.RONIN_W1)
+                }
+            }
             RoninSkill.W to RoninWVariant.CROSSCUT -> Unit
-            RoninSkill.W to RoninWVariant.TEMPEST -> emitRoninSlash(
-                player,
-                RoninSlashEffect.TEMPEST_SEQUENCE,
-                cast.origin.add(0.0, 1.0, 0.0),
-                cast.direction,
-                seed = cast.castId,
-            )
-            RoninSkill.E to RoninWVariant.NONE -> startRoninBlinkTrail(player)
+            RoninSkill.W to RoninWVariant.TEMPEST -> {
+                if (emitRoninSlash(
+                        player,
+                        RoninSlashEffect.TEMPEST_SEQUENCE,
+                        cast.origin.add(0.0, 1.0, 0.0),
+                        cast.direction,
+                        seed = cast.castId,
+                        authoredTargetId = VfxEditor2TargetCatalog.RONIN_W3,
+                        authoredOrigin = cast.origin,
+                        authoredDirection = cast.direction,
+                    )
+                ) {
+                    markAuthoredRoninPrimary(player, cast, VfxEditor2TargetCatalog.RONIN_W3)
+                }
+            }
+            RoninSkill.E to RoninWVariant.NONE -> {
+                if (playRoninAuthoredVfx(player, VfxEditor2TargetCatalog.RONIN_E, cast.origin, cast.direction, cast.castId)) {
+                    markAuthoredRoninPrimary(player, cast, VfxEditor2TargetCatalog.RONIN_E)
+                } else {
+                    startRoninBlinkTrail(player)
+                }
+            }
             RoninSkill.R to RoninWVariant.NONE -> emitRoninSlash(
                 player,
                 RoninSlashEffect.R_SHEATH,
@@ -1265,6 +1364,9 @@ fun main() {
                         ),
                         activeCast.direction,
                         seed = activeCast.castId,
+                        authoredTargetId = VfxEditor2TargetCatalog.RONIN_Q,
+                        authoredOrigin = activeCast.origin,
+                        authoredDirection = activeCast.direction,
                     )
                 }
                 RoninCastEventKind.W_INITIAL -> when (activeCast.variant) {
@@ -1300,22 +1402,33 @@ fun main() {
                         }
                     }
                     RoninWVariant.CROSSCUT -> {
-                        emitRoninSlash(
+                        val authored = playRoninAuthoredVfx(
                             player,
-                            RoninSlashEffect.CROSSCUT,
-                            activeCast.origin.add(activeCast.direction.x() * 3.0, 1.0, activeCast.direction.z() * 3.0),
+                            VfxEditor2TargetCatalog.RONIN_W2,
+                            activeCast.origin,
                             activeCast.direction,
-                            variant = 1,
-                            seed = activeCast.castId * 10L + 1L,
+                            activeCast.castId,
                         )
-                        emitRoninSlash(
-                            player,
-                            RoninSlashEffect.CROSSCUT,
-                            activeCast.origin.add(activeCast.direction.x() * 3.0, 1.0, activeCast.direction.z() * 3.0),
-                            activeCast.direction,
-                            variant = -1,
-                            seed = activeCast.castId * 10L + 2L,
-                        )
+                        if (authored) {
+                            markAuthoredRoninPrimary(player, activeCast, VfxEditor2TargetCatalog.RONIN_W2)
+                        } else {
+                            emitRoninSlash(
+                                player,
+                                RoninSlashEffect.CROSSCUT,
+                                activeCast.origin.add(activeCast.direction.x() * 3.0, 1.0, activeCast.direction.z() * 3.0),
+                                activeCast.direction,
+                                variant = 1,
+                                seed = activeCast.castId * 10L + 1L,
+                            )
+                            emitRoninSlash(
+                                player,
+                                RoninSlashEffect.CROSSCUT,
+                                activeCast.origin.add(activeCast.direction.x() * 3.0, 1.0, activeCast.direction.z() * 3.0),
+                                activeCast.direction,
+                                variant = -1,
+                                seed = activeCast.castId * 10L + 2L,
+                            )
+                        }
                         selectRoninFrontTarget(activeCast.origin, activeCast.direction, targets, RoninBalance.W2_RANGE)?.let { target ->
                             if (applyRoninDirectDamage(
                                     player,
@@ -1378,13 +1491,15 @@ fun main() {
                                 recordW3Healing = true,
                             )
                         }
-                    emitRoninSlash(
-                        player,
-                        RoninSlashEffect.TEMPEST_FINAL,
-                        activeCast.origin.add(0.0, 1.0, 0.0),
-                        activeCast.direction,
-                        seed = activeCast.castId,
-                    )
+                    if (!hasAuthoredRoninPrimary(player, activeCast, VfxEditor2TargetCatalog.RONIN_W3)) {
+                        emitRoninSlash(
+                            player,
+                            RoninSlashEffect.TEMPEST_FINAL,
+                            activeCast.origin.add(0.0, 1.0, 0.0),
+                            activeCast.direction,
+                            seed = activeCast.castId,
+                        )
+                    }
                 }
                 RoninCastEventKind.E_BLINK -> {
                     val start = Pos(activeCast.origin.x(), activeCast.origin.y(), activeCast.origin.z())
@@ -1414,14 +1529,16 @@ fun main() {
                         }
                     }
                     if (hit) state.recordEnemyHit()
-                    emitRoninSlash(
-                        player,
-                        RoninSlashEffect.BLINK_TRAIL,
-                        end.add(0.0, 1.0, 0.0),
-                        activeCast.direction,
-                        variant = 1,
-                        seed = activeCast.castId,
-                    )
+                    if (!hasAuthoredRoninPrimary(player, activeCast, VfxEditor2TargetCatalog.RONIN_E)) {
+                        emitRoninSlash(
+                            player,
+                            RoninSlashEffect.BLINK_TRAIL,
+                            end.add(0.0, 1.0, 0.0),
+                            activeCast.direction,
+                            variant = 1,
+                            seed = activeCast.castId,
+                        )
+                    }
                 }
                 RoninCastEventKind.R_IMPACT -> {
                     var hit = false
@@ -1460,10 +1577,14 @@ fun main() {
                         activeCast.origin.add(activeCast.direction.x() * 3.4, 1.1, activeCast.direction.z() * 3.4),
                         activeCast.direction,
                         seed = activeCast.castId,
+                        authoredTargetId = VfxEditor2TargetCatalog.RONIN_R,
+                        authoredOrigin = activeCast.origin,
+                        authoredDirection = activeCast.direction,
                     )
                 }
             }
         }
+        tick.completedCast?.let { authoredRoninPrimaryCasts.remove(player.uuid to it.castId) }
 
         if (state.isMovementLocked) {
             val lockPosition = roninLockPositions[player.uuid] ?: Pos(
@@ -1484,12 +1605,17 @@ fun main() {
         val targets = roninEnemyTargets(player)
         val combatEvents = combatState.tick(player.position, player.position.direction(), targets)
         publishCombatEvents(player, combatEvents.filter { it is CombatEvent.Started || it is CombatEvent.Active })
-        if (combatEvents.any { it is CombatEvent.Started }) {
+        combatEvents.filterIsInstance<CombatEvent.Started>().firstOrNull()?.let { started ->
             emitRoninSlash(
                 player,
                 RoninSlashEffect.AA,
                 player.position.add(0.0, 1.0, 0.0),
                 player.position.direction(),
+                seed = 0L,
+                authoredTargetId = VfxEditor2TargetCatalog.RONIN_AA,
+                authoredOrigin = player.position,
+                authoredDirection = player.position.direction(),
+                authoredCastId = started.attackExecutionId,
             )
         }
         combatEvents.filterIsInstance<CombatEvent.HitConfirmed>().forEach { hit ->
@@ -2147,6 +2273,8 @@ fun main() {
                 is VfxEditor2SaveRequest -> vfxEditor2.save(event.player, message)
                 VfxEditor2ListRequest -> vfxEditor2.list(event.player)
                 is VfxEditor2LoadRequest -> vfxEditor2.load(event.player, message)
+                is VfxEditor2ApplyBindingRequest -> vfxEditor2.applyBinding(event.player, message)
+                is VfxEditor2ClearBindingRequest -> vfxEditor2.clearBinding(event.player, message)
                 else -> throw IllegalArgumentException("Unexpected ProjectS message")
             }
         } catch (error: ProtocolDecodeException) {

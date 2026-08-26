@@ -26,6 +26,9 @@ import dev.projects.protocol.StarweaverHudSnapshot
 import dev.projects.protocol.VfxEditorNotice
 import dev.projects.protocol.VfxEditorOpen
 import dev.projects.protocol.VfxEditor2Open
+import dev.projects.protocol.VfxEditor2TargetCatalog
+import dev.projects.protocol.VfxEditor2BindingSnapshot
+import dev.projects.protocol.VfxEditor2BindingResult
 import dev.projects.protocol.VfxEditor2Status
 import dev.projects.protocol.VfxEditor2ListResponse
 import dev.projects.protocol.VfxEditor2LoadResponse
@@ -83,6 +86,8 @@ object ProjectSClient : ClientModInitializer {
     private var skill3CooldownMaxTicks = 60
     private var starweaverHudSnapshot: StarweaverHudSnapshot? = null
     private var roninHudSnapshot: RoninHudSnapshot? = null
+    private var vfxEditor2TargetCatalog = VfxEditor2TargetCatalog(emptyList())
+    private var vfxEditor2BindingSnapshot = VfxEditor2BindingSnapshot(emptyMap())
     private var attackDebugShape: AttackDebugShape? = null
     private var attackDebugTicksRemaining = 0
     private var attackDebugEnabled = true
@@ -195,8 +200,24 @@ object ProjectSClient : ClientModInitializer {
                                 if (ClientPlayNetworking.canSend(ProjectSPayload.TYPE)) {
                                     ClientPlayNetworking.send(ProjectSPayload(ProtocolCodec.encode(outgoing)))
                                 }
+                            }.also {
+                                it.setTargetCatalog(vfxEditor2TargetCatalog)
+                                it.setBindingSnapshot(vfxEditor2BindingSnapshot)
                             },
                         )
+                    }
+                    is VfxEditor2TargetCatalog -> context.client().execute {
+                        vfxEditor2TargetCatalog = message
+                        (context.client().gui.screen() as? VfxEditor2Screen)?.setTargetCatalog(message)
+                    }
+                    is VfxEditor2BindingSnapshot -> context.client().execute {
+                        vfxEditor2BindingSnapshot = message
+                        (context.client().gui.screen() as? VfxEditor2Screen)?.setBindingSnapshot(message)
+                    }
+                    is VfxEditor2BindingResult -> context.client().execute {
+                        val screen = context.client().gui.screen() as? VfxEditor2Screen
+                        if (screen != null) screen.setBindingResult(message)
+                        else context.client().player?.sendSystemMessage(Component.literal(message.message))
                     }
                     is VfxEditor2Status -> context.client().execute {
                         val screen = context.client().gui.screen() as? VfxEditor2Screen
@@ -281,6 +302,8 @@ object ProjectSClient : ClientModInitializer {
             attackDebugShape = null
             attackDebugTicksRemaining = 0
             slashDraftNames = emptyList()
+            vfxEditor2TargetCatalog = VfxEditor2TargetCatalog(emptyList())
+            vfxEditor2BindingSnapshot = VfxEditor2BindingSnapshot(emptyMap())
             if (client.gui.screen() is SlashEditorScreen) client.gui.setScreen(null)
             if (client.gui.screen() is VfxEditor2Screen) client.gui.setScreen(null)
             return
