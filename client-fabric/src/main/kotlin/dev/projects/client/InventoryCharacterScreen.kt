@@ -2,6 +2,7 @@ package dev.projects.client
 
 import dev.projects.protocol.EquipmentPresentationCodec
 import dev.projects.protocol.EquipmentPresentationSnapshot
+import dev.projects.protocol.ProgressionSnapshot
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiGraphicsExtractor
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen
@@ -68,7 +69,15 @@ private val DIVIDER_TEXTURE = inventoryCharacterUiTexture("divider", 96, 4)
 private val THIN_HIGHLIGHT_TEXTURE = inventoryCharacterUiTexture("thin_highlight", 96, 2)
 private val LEVEL_STAT_TEXTURE = inventoryCharacterStatTexture("level")
 private val HEALTH_STAT_TEXTURE = inventoryCharacterStatTexture("health")
+private val MANA_STAT_TEXTURE = inventoryCharacterStatTexture("mana")
 private val XP_STAT_TEXTURE = inventoryCharacterStatTexture("xp")
+
+internal fun inventoryCharacterXpText(snapshot: ProgressionSnapshot): String =
+    if (snapshot.xpRequiredForNextLevel <= 0) {
+        "経験値 MAX"
+    } else {
+        "経験値 ${snapshot.xp} / ${snapshot.xpRequiredForNextLevel}"
+    }
 
 internal data class InventoryCharacterTextureRegion(
     val x: Int,
@@ -366,12 +375,13 @@ internal class InventoryCharacterScreen private constructor(
     private fun drawCharacter(graphics: GuiGraphicsExtractor) {
         val x = layout.character.x + 20
         val y = layout.character.y + 18
+        val presentation = ProjectSClient.inventoryCharacterPresentationSnapshot()
         graphics.text(font, "ProjectS", x, y, 0xFFF0F0EA.toInt(), true)
         val playerName = setup.player.name.string
         graphics.text(font, playerName, x, y + 16, 0xFFB8BAB5.toInt())
         val levelX = x + font.width(playerName) + 8
         drawStatIcon(graphics, levelX, y + 16, LEVEL_STAT_TEXTURE)
-        graphics.text(font, "Lv ${setup.player.experienceLevel}", levelX + STAT_ICON_SIZE + STAT_TEXT_GAP, y + 16, 0xFFB8BAB5.toInt())
+        graphics.text(font, "Lv ${presentation.progression.level}", levelX + STAT_ICON_SIZE + STAT_TEXT_GAP, y + 16, 0xFFB8BAB5.toInt())
         graphics.text(font, "キャラクター", x, y + 32, 0xFFD0D1CC.toInt(), false)
         val statsY = layout.character.y + layout.character.height - 82
         drawHorizontalSlice(
@@ -397,12 +407,21 @@ internal class InventoryCharacterScreen private constructor(
             0xFFD0D1CC.toInt(),
             false,
         )
-        drawStatIcon(graphics, x, statsY + 40, XP_STAT_TEXTURE)
+        drawStatIcon(graphics, x, statsY + 40, MANA_STAT_TEXTURE)
         graphics.text(
             font,
-            "経験値 ${(setup.player.experienceProgress * 100).toInt().coerceIn(0, 100)}%",
+            "マナ ${presentation.mana} / ${presentation.maxMana}",
             x + STAT_ICON_SIZE + STAT_TEXT_GAP,
             statsY + 40,
+            0xFFD0D1CC.toInt(),
+            false,
+        )
+        drawStatIcon(graphics, x, statsY + 52, XP_STAT_TEXTURE)
+        graphics.text(
+            font,
+            inventoryCharacterXpText(presentation.progression),
+            x + STAT_ICON_SIZE + STAT_TEXT_GAP,
+            statsY + 52,
             0xFFB8BAB5.toInt(),
             false,
         )

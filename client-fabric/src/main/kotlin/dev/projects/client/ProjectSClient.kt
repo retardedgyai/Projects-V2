@@ -55,6 +55,12 @@ import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.math.sqrt
 
+internal data class InventoryCharacterPresentationSnapshot(
+    val progression: ProgressionSnapshot,
+    val mana: Int,
+    val maxMana: Int,
+)
+
 object ProjectSClient : ClientModInitializer {
     private const val ATTACK_DEBUG_TICKS = 5
     private const val XP_GAIN_TICKS = 40
@@ -122,6 +128,13 @@ object ProjectSClient : ClientModInitializer {
     private val skill2Key = skillKey("key.projects.skill_2", InputConstants.KEY_X)
     private val skill3Key = skillKey("key.projects.skill_3", InputConstants.KEY_C)
     private val ultimateKey = skillKey("key.projects.ultimate", InputConstants.KEY_V)
+
+    internal fun inventoryCharacterPresentationSnapshot(): InventoryCharacterPresentationSnapshot =
+        InventoryCharacterPresentationSnapshot(
+            progression = progressionSnapshot,
+            mana = mana,
+            maxMana = maxMana,
+        )
 
     override fun onInitializeClient() {
         KeyMappingHelper.registerKeyMapping(dodgeKey)
