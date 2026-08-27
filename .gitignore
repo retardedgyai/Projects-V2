@@ -7,3 +7,6 @@ server-minestom/run/
 *.iml
 __pycache__/
 *.pyc
+
+# Local PixelLab requests, raw candidates, and previews.
+/.projects-local/
