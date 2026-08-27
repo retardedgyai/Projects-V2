@@ -31,6 +31,16 @@
       "rm -rf*": "deny"
     }
   },
+  "mcp": {
+    "pixellab": {
+      "type": "remote",
+      "url": "https://api.pixellab.ai/mcp",
+      "enabled": true,
+      "headers": {
+        "Authorization": "Bearer {file:~/.config/projects/pixellab-token}"
+      }
+    }
+  },
 
   // Do not let the generic helper become a second implementation agent
   // inside the same worktree.
