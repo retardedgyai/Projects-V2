@@ -490,7 +490,7 @@ def record_failure(root: str | Path, request_id: str, _message: str | None = Non
     result_dir, safe_id, result = _load_result(root, request_id)
     result["status"] = "error"
     # Keep the retry marker useful without persisting arbitrary remote error text.
-    result["error"] = "pixellab_mcp_generation_failed"
+    result["error"] = "pixellab_generation_failed"
     result["finished_at"] = now_utc()
     _write_json(result_dir / "result.json", result)
     return {"request_id": safe_id, "status": "error", "result_file": str(result_dir / "result.json")}

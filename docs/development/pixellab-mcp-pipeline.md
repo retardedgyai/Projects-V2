@@ -1,9 +1,8 @@
 # PixelLab MCP Pipeline v0
 
-This repository uses the official PixelLab remote MCP as the only generation
-route for the v0 asset pipeline. The project config points the native OpenCode
-MCP client at `https://api.pixellab.ai/mcp` and supplies the authorization header
-through the canonical local file substitution:
+The project config connects the official PixelLab remote MCP at
+`https://api.pixellab.ai/mcp` and supplies the authorization header through the
+canonical local file substitution:
 
 ```jsonc
 "Authorization": "Bearer {file:~/.config/projects/pixellab-token}"
@@ -14,14 +13,22 @@ config and the published config schema both use `mcp.<name>` entries with
 `type: "remote"`, `url`, `enabled`, and `headers`; this project therefore does
 not use a guessed `mcp.servers` shape.
 
+OpenCode 1.18.16 reports that transport as connected, but its direct
+`/experimental/tool/ids` and model-specific `/experimental/tool` catalogs do
+not contain any `pixellab_*` tools. The `/pixellab` command therefore uses the
+official `pixellab==1.0.5` Python SDK fallback permitted by Issue #124. The MCP
+configuration stays in place for a future OpenCode version that exposes the
+native tools.
+
 ## Token Safety
 
 The token is never a repository file, command argument, request field, result
 field, log field, or chat message. Store it locally at
 `~/.config/projects/pixellab-token` with mode `0600`, then restart OpenCode.
 The `/pixellab` command checks only that the file is readable and non-empty
-before using any MCP tool. If that check fails, it returns one Japanese setup
-message and does not connect or create a request.
+before starting the SDK runner. The runner also rejects symlinks, empty files,
+and group/world-accessible modes. If preflight fails, the command returns one
+Japanese setup message and does not generate or create a request.
 
 Do not put the token in a reference image path, free-form request, shell
 command, issue comment, or error report.
@@ -34,24 +41,26 @@ Use:
 /pixellab <free-form request and optional local reference paths>
 ```
 
-The command first validates local references and writes one request record per
-generation under `.projects-local/pixellab/`. It then discovers the actual
-tools exposed by the native `pixellab` MCP server, selects the matching tool,
-and saves returned image files with the local helper:
+The command validates local references and runs the official SDK through a
+PEP 723 `uv` script. Text-only requests use Pixflux; requests with a local
+style reference use Bitforge:
 
 ```sh
-python3 scripts/pixellab_pipeline.py init --request "..." --reference path/to/ref.png
-python3 scripts/pixellab_pipeline.py save-candidates \
-  --request-id <request-id> \
-  --tool-name <native-tool-name> \
-  --candidate /path/to/native-result-1.png
+uv run scripts/pixellab_generate.py \
+  --request "..." \
+  --normalized-prompt "..." \
+  --width 32 --height 32 --count 4 --transparent \
+  --reference path/to/ref.png
 ```
 
-The helper has no network code and does not replace the native MCP. It stores
-the original request, normalized prompt, safe reference identifiers, selected
-tool, optional seed, output dimensions, candidate metadata, and generation
-status. A generation failure can leave a retry marker without persisting raw
-remote error text:
+`scripts/pixellab_generate.py` reads the token only inside its process and
+passes it directly to the official SDK. It never accepts a token argument or
+prints SDK exception details. `scripts/pixellab_pipeline.py` remains the
+network-free storage/contact-sheet/adoption helper. Together they store the
+original request, normalized prompt, safe reference identifiers, SDK route,
+seeds, output dimensions, candidate metadata, and generation status. A
+generation failure leaves a retry marker without persisting raw remote error
+text:
 
 ```sh
 python3 scripts/pixellab_pipeline.py record-failure \
@@ -99,7 +108,7 @@ The helper never edits Kotlin/runtime code and never commits, pushes, or merges.
 OpenCode 1.18.16 rejects a missing `{file:...}` target while loading config,
 before a command can run. For a parse-only check without a real credential,
 use an isolated `HOME` containing an empty `0600` placeholder file. The
-`/pixellab` preflight rejects that empty file and never calls MCP; do not use
+`/pixellab` preflight rejects that empty file and never calls the SDK; do not use
 `opencode mcp list` for this check.
 
 Run the focused tests and installed-OpenCode config parse without contacting
@@ -107,6 +116,7 @@ PixelLab:
 
 ```sh
 python3 scripts/test_pixellab_pipeline.py
+uv run scripts/pixellab_generate.py --help
 opencode --version
 real_home="$HOME"
 parse_home="$(mktemp -d)"
@@ -121,6 +131,5 @@ git check-ignore -q .projects-local/pixellab/results/example/contact-sheet.png
 git diff --check
 ```
 
-The final integration smoke is Creator-assisted and must only happen after the
-Creator has configured the local token. This lane does not request or perform
-that connection.
+The final integration smoke must only happen after the Creator has configured
+the local token. Never request the token through chat or include it in reports.
