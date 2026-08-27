@@ -156,8 +156,14 @@ def generate_assets(
         raise PipelineError(f"candidate count must be between 1 and {MAX_CANDIDATES}")
     if not normalized_prompt.strip():
         raise PipelineError("normalized prompt must not be empty")
+    if reference is None and (width < 32 or height < 32):
+        raise PipelineError(
+            "text-only Pixflux requires at least 32x32; generate a 32px master and resize after adoption with nearest-neighbor",
+        )
 
     secret = _read_token(token_path)
+    if any(secret in value for value in (original_request, normalized_prompt, reference or "")):
+        raise PipelineError("request contains protected credential material")
     references = [reference] if reference else []
     request = init_request(
         root=root,

@@ -54,6 +54,11 @@ uv run scripts/pixellab_generate.py \
   --reference path/to/ref.png
 ```
 
+Text-only Pixflux requests must be at least `32x32`. Smaller runtime icons use a
+32px master and are resized with nearest-neighbor only after explicit adoption.
+Before request metadata is created, the runner rejects any request, normalized
+prompt, or reference path containing the loaded token value.
+
 `scripts/pixellab_generate.py` reads the token only inside its process and
 sends it only in the official API Authorization header. It never accepts a
 token argument or prints API response details. `scripts/pixellab_pipeline.py` remains the
@@ -102,7 +107,9 @@ An existing target is rejected unless the Creator explicitly requests a
 replacement and `--overwrite` is supplied as well. Missing candidates and the
 canonical token file are always rejected. The result metadata records the
 source request ID and candidate number under the ignored local result folder.
-The helper never edits Kotlin/runtime code and never commits, pushes, or merges.
+Targets outside the current ProjectS repository are rejected, including paths
+that escape through existing symlinks. The helper never edits Kotlin/runtime
+code and never commits, pushes, or merges.
 
 ## Local Validation
 

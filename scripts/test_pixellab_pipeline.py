@@ -113,26 +113,83 @@ class PixelLabPipelineTest(unittest.TestCase):
         request_id = self._request()
         candidate = self._fixture("candidate.png", (0, 0, 255, 255))
         save_candidates(self.root, request_id, [str(candidate)])
-        target = self.workspace / "resource.png"
+        repo = self.workspace / "repo"
+        repo.mkdir()
+        target = repo / "resource.png"
         target.write_bytes(b"keep me")
 
         with self.assertRaisesRegex(PipelineError, "does not exist"):
-            adopt_candidate(self.root, request_id, 7, str(self.workspace / "missing.png"), confirm_adopt=True)
+            adopt_candidate(self.root, request_id, 7, "missing.png", confirm_adopt=True, repo_root=repo)
         with self.assertRaisesRegex(PipelineError, "explicit overwrite"):
-            adopt_candidate(self.root, request_id, 1, str(target), confirm_adopt=True)
+            adopt_candidate(self.root, request_id, 1, str(target), confirm_adopt=True, repo_root=repo)
         self.assertEqual(target.read_bytes(), b"keep me")
         with self.assertRaisesRegex(PipelineError, "explicit adoption"):
-            adopt_candidate(self.root, request_id, 1, str(self.workspace / "new.png"))
+            adopt_candidate(self.root, request_id, 1, "new.png", repo_root=repo)
 
-        result = adopt_candidate(self.root, request_id, 1, str(target), confirm_adopt=True, overwrite=True)
+        result = adopt_candidate(
+            self.root,
+            request_id,
+            1,
+            str(target),
+            confirm_adopt=True,
+            overwrite=True,
+            repo_root=repo,
+        )
         self.assertTrue(result["overwritten"])
         self.assertNotEqual(target.read_bytes(), b"keep me")
         metadata = json.loads((self.root / "results" / request_id / "result.json").read_text(encoding="utf-8"))
         self.assertEqual(metadata["adoptions"][0]["candidate"], 1)
 
+    def test_adoption_rejects_repo_escape_and_symlink_escape(self) -> None:
+        request_id = self._request()
+        candidate = self._fixture("candidate.png", (0, 0, 255, 255))
+        save_candidates(self.root, request_id, [str(candidate)])
+        repo = self.workspace / "repo"
+        repo.mkdir()
+        outside = self.workspace / "outside"
+        outside.mkdir()
+
+        with self.assertRaisesRegex(PipelineError, "inside the ProjectS repository"):
+            adopt_candidate(
+                self.root,
+                request_id,
+                1,
+                str(outside / "direct.png"),
+                confirm_adopt=True,
+                repo_root=repo,
+            )
+        link = repo / "linked-outside"
+        link.symlink_to(outside, target_is_directory=True)
+        with self.assertRaisesRegex(PipelineError, "inside the ProjectS repository"):
+            adopt_candidate(
+                self.root,
+                request_id,
+                1,
+                str(link / "symlink.png"),
+                confirm_adopt=True,
+                repo_root=repo,
+            )
+        self.assertFalse((outside / "direct.png").exists())
+        self.assertFalse((outside / "symlink.png").exists())
+
     def test_token_file_cannot_be_reference_or_adoption_target(self) -> None:
         with self.assertRaisesRegex(PipelineError, "token file"):
             init_request(self.root, "request", references=["~/.config/projects/pixellab-token"], request_id="safe")
+        request_id = self._request()
+        candidate = self._fixture("candidate.png", (0, 0, 255, 255))
+        save_candidates(self.root, request_id, [str(candidate)])
+        repo = self.workspace / "repo"
+        repo.mkdir()
+        with self.assertRaisesRegex(PipelineError, "token file"):
+            adopt_candidate(
+                self.root,
+                request_id,
+                1,
+                str(repo / "pixellab-token"),
+                confirm_adopt=True,
+                repo_root=repo,
+            )
+        self.assertFalse((repo / "pixellab-token").exists())
 
     def test_official_api_generation_saves_four_candidates_without_adoption(self) -> None:
         token = self.workspace / "pixellab-token"
@@ -207,6 +264,53 @@ class PixelLabPipelineTest(unittest.TestCase):
                 token_path=token,
                 generator=lambda *_args: Image.new("RGBA", (32, 32)),
             )
+
+    def test_generation_rejects_secret_in_request_fields_before_metadata(self) -> None:
+        token = self.workspace / "pixellab-token"
+        secret = "fixture-secret-value"
+        token.write_text(f"{secret}\n", encoding="utf-8")
+        token.chmod(0o600)
+        cases = (
+            {"original_request": f"HP icon {secret}", "normalized_prompt": "HP icon", "reference": None},
+            {"original_request": "HP icon", "normalized_prompt": f"HP icon {secret}", "reference": None},
+            {"original_request": "HP icon", "normalized_prompt": "HP icon", "reference": f"/tmp/{secret}.png"},
+        )
+
+        for index, values in enumerate(cases):
+            root = self.workspace / f"secret-case-{index}"
+            with self.subTest(field=index), self.assertRaisesRegex(PipelineError, "protected credential material") as error:
+                generate_assets(
+                    root=root,
+                    width=32,
+                    height=32,
+                    count=1,
+                    transparent=True,
+                    token_path=token,
+                    generator=lambda *_args: Image.new("RGBA", (32, 32)),
+                    **values,
+                )
+            self.assertNotIn(secret, str(error.exception))
+            self.assertFalse((root / "requests").exists())
+            self.assertFalse((root / "results").exists())
+
+    def test_text_only_pixflux_rejects_dimensions_below_32(self) -> None:
+        token = self.workspace / "pixellab-token"
+        token.write_text("fixture-secret\n", encoding="utf-8")
+        token.chmod(0o600)
+
+        for width, height in ((31, 32), (32, 31), (16, 16)):
+            with self.subTest(width=width, height=height), self.assertRaisesRegex(PipelineError, "32px master"):
+                generate_assets(
+                    root=self.workspace / f"small-{width}-{height}",
+                    original_request="small icon",
+                    normalized_prompt="small icon",
+                    width=width,
+                    height=height,
+                    count=1,
+                    transparent=True,
+                    token_path=token,
+                    generator=lambda *_args: Image.new("RGBA", (width, height)),
+                )
 
     def test_official_api_failure_does_not_persist_remote_error_text(self) -> None:
         token = self.workspace / "pixellab-token"

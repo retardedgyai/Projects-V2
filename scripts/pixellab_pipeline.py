@@ -120,6 +120,14 @@ def _canonical_secret_path() -> Path:
     return (Path.home() / ".config" / "projects" / "pixellab-token").resolve()
 
 
+def _repository_root(start: Path | None = None) -> Path:
+    current = (start or Path.cwd()).resolve()
+    for candidate in (current, *current.parents):
+        if (candidate / ".git").exists():
+            return candidate
+    raise PipelineError("ProjectS repository root could not be found")
+
+
 def _reference_path(raw_path: str) -> Path:
     path = Path(raw_path).expanduser()
     resolved = path.resolve(strict=False)
@@ -503,6 +511,7 @@ def adopt_candidate(
     target: str,
     confirm_adopt: bool = False,
     overwrite: bool = False,
+    repo_root: str | Path | None = None,
 ) -> dict[str, Any]:
     if not confirm_adopt:
         raise PipelineError("explicit adoption confirmation is required")
@@ -520,9 +529,17 @@ def adopt_candidate(
         raise PipelineError(f"candidate {candidate_number} does not exist")
     source_paths = _candidate_paths(result_dir, [selected])
     source = source_paths[0][1]
-    destination = Path(target).expanduser()
-    if destination.name == "pixellab-token" or destination.resolve(strict=False) == _canonical_secret_path():
+    project_root = Path(repo_root).expanduser().resolve() if repo_root is not None else _repository_root()
+    if not project_root.is_dir():
+        raise PipelineError("ProjectS repository root is not a directory")
+    requested_destination = Path(target).expanduser()
+    destination = (
+        requested_destination if requested_destination.is_absolute() else project_root / requested_destination
+    ).resolve(strict=False)
+    if requested_destination.name == "pixellab-token" or destination == _canonical_secret_path():
         raise PipelineError("the PixelLab token file cannot be an adoption target")
+    if destination != project_root and project_root not in destination.parents:
+        raise PipelineError("adoption target must stay inside the ProjectS repository")
     if destination.exists() and not overwrite:
         raise PipelineError(f"target already exists; explicit overwrite is required: {destination}")
     if destination.exists() and destination.is_dir():
