@@ -55,6 +55,12 @@ import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.math.sqrt
 
+internal data class InventoryCharacterPresentationSnapshot(
+    val progression: ProgressionSnapshot,
+    val mana: Int,
+    val maxMana: Int,
+)
+
 object ProjectSClient : ClientModInitializer {
     private const val ATTACK_DEBUG_TICKS = 5
     private const val XP_GAIN_TICKS = 40
@@ -87,6 +93,8 @@ object ProjectSClient : ClientModInitializer {
     private var attackDebugTicksRemaining = 0
     private var attackDebugEnabled = true
     private var slashDraftNames: List<String> = emptyList()
+    @Volatile
+    private var projectSProtocolSessionActive = false
     private lateinit var hudLayoutStore: HudLayoutStore
     private var hudLayout = HudLayoutConfig.defaults()
     private val skillCategory = KeyMapping.Category.register(
@@ -121,6 +129,13 @@ object ProjectSClient : ClientModInitializer {
     private val skill3Key = skillKey("key.projects.skill_3", InputConstants.KEY_C)
     private val ultimateKey = skillKey("key.projects.ultimate", InputConstants.KEY_V)
 
+    internal fun inventoryCharacterPresentationSnapshot(): InventoryCharacterPresentationSnapshot =
+        InventoryCharacterPresentationSnapshot(
+            progression = progressionSnapshot,
+            mana = mana,
+            maxMana = maxMana,
+        )
+
     override fun onInitializeClient() {
         KeyMappingHelper.registerKeyMapping(dodgeKey)
         KeyMappingHelper.registerKeyMapping(attackDebugKey)
@@ -141,6 +156,7 @@ object ProjectSClient : ClientModInitializer {
                 when (val message = ProtocolCodec.decode(payload.data)) {
                     is ProtocolHello -> {
                         ProtocolVersion.requireCompatible(message.version)
+                        projectSProtocolSessionActive = true
                         context.responseSender().sendPacket(
                             ProjectSPayload(ProtocolCodec.encode(ProtocolHelloAck(ProtocolVersion.CURRENT))),
                         )
@@ -217,6 +233,7 @@ object ProjectSClient : ClientModInitializer {
                     else -> require(false) { "Unexpected ProjectS clientbound message" }
                 }
             } catch (error: IllegalArgumentException) {
+                projectSProtocolSessionActive = false
                 context.player().connection.connection.disconnect(
                     Component.literal(error.message ?: "Invalid ProjectS protocol handshake"),
                 )
@@ -245,7 +262,26 @@ object ProjectSClient : ClientModInitializer {
         HudElementRegistry.replaceElement(VanillaHudElements.EXPERIENCE_LEVEL) { _ ->
             { _, _ -> }
         }
+        ClientTickEvents.START_CLIENT_TICK.register(::handleInventoryKey)
         ClientTickEvents.END_CLIENT_TICK.register(::handleAttackInput)
+    }
+
+    private fun handleInventoryKey(client: Minecraft) {
+        val player = client.player ?: return
+        if (client.getConnection() == null) {
+            projectSProtocolSessionActive = false
+            return
+        }
+        if (!shouldOpenInventoryCharacterScreen(
+                projectSProtocolSessionActive,
+                client.gui.screen() != null,
+                player.hasInfiniteMaterials(),
+                client.gameMode?.isServerControlledInventory() == true,
+            )
+        ) return
+        if (client.options.keyInventory.consumeClick()) {
+            client.gui.setScreen(InventoryCharacterScreen(player))
+        }
     }
 
     private fun handleAttackInput(client: Minecraft) {
@@ -268,7 +304,14 @@ object ProjectSClient : ClientModInitializer {
             attackDebugShape = null
             attackDebugTicksRemaining = 0
             slashDraftNames = emptyList()
+            projectSProtocolSessionActive = false
             if (client.gui.screen() is SlashEditorScreen) client.gui.setScreen(null)
+            return
+        }
+        if (client.gui.screen() is InventoryCharacterScreen) {
+            attackHeld = false
+            dodgeHeld = false
+            jumpHeld = false
             return
         }
         if (hudDesignerKey.consumeClick() && client.gui.screen() == null) {
@@ -364,6 +407,7 @@ object ProjectSClient : ClientModInitializer {
             (if (client.options.keyDown.isDown()) 1.0 else 0.0)
 
     private fun renderResourceHud(context: GuiGraphicsExtractor, tickCounter: DeltaTracker) {
+        if (Minecraft.getInstance().gui.screen() is InventoryCharacterScreen) return
         val screenWidth = context.guiWidth()
         val screenHeight = context.guiHeight()
         val resource = hudLayout.elements[HudElementId.RESOURCE]!!
@@ -396,6 +440,7 @@ object ProjectSClient : ClientModInitializer {
     }
 
     private fun renderProgressionHud(context: GuiGraphicsExtractor, tickCounter: DeltaTracker) {
+        if (Minecraft.getInstance().gui.screen() is InventoryCharacterScreen) return
         val screenWidth = context.guiWidth()
         val screenHeight = context.guiHeight()
         val barWidth = minOf(182, screenWidth - 20)
