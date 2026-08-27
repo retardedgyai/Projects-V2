@@ -2,17 +2,18 @@
 # /// script
 # requires-python = ">=3.10"
 # dependencies = [
-#   "pixellab==1.0.5",
 #   "pillow==12.3.0",
 # ]
 # ///
-"""Generate PixelLab candidates through the official Python SDK."""
+"""Generate PixelLab candidates through the official v2 API."""
 
 from __future__ import annotations
 
 import argparse
+import base64
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
+from io import BytesIO
 import json
 import os
 from pathlib import Path
@@ -21,6 +22,8 @@ import stat
 import sys
 import tempfile
 from typing import Any, Callable
+import urllib.error
+import urllib.request
 
 from PIL import Image
 
@@ -28,6 +31,7 @@ from pixellab_pipeline import DEFAULT_ROOT, PipelineError, init_request, record_
 
 
 TOKEN_PATH = Path.home() / ".config" / "projects" / "pixellab-token"
+API_ROOT = "https://api.pixellab.ai/v2"
 MAX_CANDIDATES = 16
 
 
@@ -56,12 +60,64 @@ def _read_token(path: Path) -> str:
     return lines[0].strip()
 
 
-def _official_client(secret: str) -> Any:
+def _base64_image(path: Path) -> dict[str, str]:
+    with Image.open(path) as source:
+        source.load()
+        buffer = BytesIO()
+        source.convert("RGBA").save(buffer, format="PNG")
+    return {
+        "type": "base64",
+        "base64": base64.b64encode(buffer.getvalue()).decode("ascii"),
+        "format": "png",
+    }
+
+
+def _official_api_generate(
+    secret: str,
+    prompt: str,
+    width: int,
+    height: int,
+    transparent: bool,
+    reference: Path | None,
+    seed: int,
+    opener: Callable[..., Any] = urllib.request.urlopen,
+) -> Image.Image:
+    endpoint = "create-image-bitforge" if reference else "create-image-pixflux"
+    payload: dict[str, Any] = {
+        "description": prompt,
+        "image_size": {"width": width, "height": height},
+        "no_background": transparent,
+        "seed": seed,
+    }
+    if reference is not None:
+        payload["style_image"] = _base64_image(reference)
+        payload["style_strength"] = 50
+    request = urllib.request.Request(
+        f"{API_ROOT}/{endpoint}",
+        data=json.dumps(payload).encode("utf-8"),
+        headers={
+            "Authorization": f"Bearer {secret}",
+            "Content-Type": "application/json",
+        },
+        method="POST",
+    )
     try:
-        import pixellab
-    except ImportError as exc:
-        raise PipelineError("official PixelLab SDK is unavailable; run this script with uv") from exc
-    return pixellab.Client(secret=secret)
+        with opener(request, timeout=180) as response:
+            body = json.loads(response.read().decode("utf-8"))
+    except urllib.error.HTTPError as exc:
+        raise PipelineError(f"official PixelLab API generation failed with HTTP {exc.code}") from None
+    except (urllib.error.URLError, OSError, UnicodeError, json.JSONDecodeError) as exc:
+        raise PipelineError("official PixelLab API generation transport failed") from exc
+    try:
+        encoded = body["image"]["base64"]
+        if encoded.startswith("data:"):
+            encoded = encoded.split(",", 1)[1]
+        image_bytes = base64.b64decode(encoded, validate=True)
+        with Image.open(BytesIO(image_bytes)) as source:
+            source.load()
+            return source.convert("RGBA")
+    except (KeyError, TypeError, ValueError, OSError) as exc:
+        raise PipelineError("official PixelLab API returned invalid image data") from exc
 
 
 def _generate_one(
@@ -73,26 +129,9 @@ def _generate_one(
     height: int,
     transparent: bool,
     reference: Path | None,
-    client_factory: Callable[[str], Any],
+    generator: Callable[[str, str, int, int, bool, Path | None, int], Image.Image],
 ) -> GeneratedCandidate:
-    client = client_factory(secret)
-    common = {
-        "description": prompt,
-        "image_size": {"width": width, "height": height},
-        "no_background": transparent,
-        "seed": seed,
-    }
-    if reference is None:
-        response = client.generate_image_pixflux(**common)
-    else:
-        with Image.open(reference) as source:
-            source.load()
-            response = client.generate_image_bitforge(
-                **common,
-                style_image=source.convert("RGBA"),
-                style_strength=50,
-            )
-    image = response.image.pil_image().convert("RGBA")
+    image = generator(secret, prompt, width, height, transparent, reference, seed)
     if image.size != (width, height):
         image.close()
         raise PipelineError("PixelLab returned an unexpected image size")
@@ -109,7 +148,7 @@ def generate_assets(
     transparent: bool,
     reference: str | None = None,
     token_path: Path = TOKEN_PATH,
-    client_factory: Callable[[str], Any] = _official_client,
+    generator: Callable[[str, str, int, int, bool, Path | None, int], Image.Image] = _official_api_generate,
 ) -> dict[str, Any]:
     if width not in range(16, 401) or height not in range(16, 401):
         raise PipelineError("width and height must be between 16 and 400")
@@ -150,7 +189,7 @@ def generate_assets(
                 height,
                 transparent,
                 reference_path,
-                client_factory,
+                generator,
             )
             for number, seed in enumerate(seeds, start=1)
         ]
@@ -175,7 +214,7 @@ def generate_assets(
                 candidate.image.close()
                 candidate_paths.append(str(path))
             if candidate_paths:
-                route = "official-python-sdk:generate_image_bitforge" if reference else "official-python-sdk:generate_image_pixflux"
+                route = "official-api-v2:create-image-bitforge" if reference else "official-api-v2:create-image-pixflux"
                 saved = save_candidates(
                     root=root,
                     request_id=request_id,
@@ -191,13 +230,13 @@ def generate_assets(
 
     if failed or len(generated) != count or saved is None:
         record_failure(root, request_id)
-        raise PipelineError(f"official PixelLab SDK generation failed; request retained as {request_id}")
+        raise PipelineError(f"official PixelLab API generation failed; request retained as {request_id}")
     return {
         "request_id": request_id,
         "result_dir": saved["result_dir"],
         "candidate_count": len(saved["candidates"]),
         "contact_sheet": str(Path(saved["result_dir"]) / saved["previews"]["contact_sheet"]),
-        "route": "official-python-sdk",
+        "route": "official-api-v2",
         "reference_used": reference_path is not None,
         "adopted": False,
     }

@@ -3,6 +3,8 @@
 
 from __future__ import annotations
 
+import base64
+from io import BytesIO
 import json
 from pathlib import Path
 import sys
@@ -20,7 +22,7 @@ from pixellab_pipeline import (  # noqa: E402
     save_candidates,
     _scaled_nearest,
 )
-from pixellab_generate import generate_assets  # noqa: E402
+from pixellab_generate import _official_api_generate, generate_assets  # noqa: E402
 
 
 class PixelLabPipelineTest(unittest.TestCase):
@@ -132,32 +134,23 @@ class PixelLabPipelineTest(unittest.TestCase):
         with self.assertRaisesRegex(PipelineError, "token file"):
             init_request(self.root, "request", references=["~/.config/projects/pixellab-token"], request_id="safe")
 
-    def test_official_sdk_generation_saves_four_candidates_without_adoption(self) -> None:
+    def test_official_api_generation_saves_four_candidates_without_adoption(self) -> None:
         token = self.workspace / "pixellab-token"
         token.write_text("fixture-secret\n", encoding="utf-8")
         token.chmod(0o600)
-        calls: list[tuple[str, dict[str, object]]] = []
+        calls: list[tuple[Path | None, bool]] = []
 
-        class FakeImage:
-            def __init__(self, color: tuple[int, int, int, int]) -> None:
-                self.color = color
-
-            def pil_image(self) -> Image.Image:
-                return Image.new("RGBA", (32, 32), self.color)
-
-        class FakeResponse:
-            def __init__(self, color: tuple[int, int, int, int]) -> None:
-                self.image = FakeImage(color)
-
-        class FakeClient:
-            def generate_image_pixflux(self, **kwargs: object) -> FakeResponse:
-                calls.append(("pixflux", kwargs))
-                seed = int(kwargs["seed"])
-                return FakeResponse((seed % 255, 80, 90, 160))
-
-            def generate_image_bitforge(self, **kwargs: object) -> FakeResponse:
-                calls.append(("bitforge", kwargs))
-                return FakeResponse((40, 60, 220, 180))
+        def fake_generator(
+            _secret: str,
+            _prompt: str,
+            width: int,
+            height: int,
+            transparent: bool,
+            reference: Path | None,
+            seed: int,
+        ) -> Image.Image:
+            calls.append((reference, transparent))
+            return Image.new("RGBA", (width, height), (seed % 255, 80, 90, 160))
 
         output = generate_assets(
             root=self.root,
@@ -168,13 +161,13 @@ class PixelLabPipelineTest(unittest.TestCase):
             count=4,
             transparent=True,
             token_path=token,
-            client_factory=lambda _secret: FakeClient(),
+            generator=fake_generator,
         )
 
         result_dir = Path(output["result_dir"])
         self.assertEqual(output["candidate_count"], 4)
-        self.assertEqual([route for route, _ in calls], ["pixflux"] * 4)
-        self.assertTrue(all(call["no_background"] is True for _, call in calls))
+        self.assertEqual([reference for reference, _ in calls], [None] * 4)
+        self.assertTrue(all(transparent for _, transparent in calls))
         self.assertTrue((result_dir / "contact-sheet.png").is_file())
         metadata = json.loads((result_dir / "result.json").read_text(encoding="utf-8"))
         self.assertEqual(len(metadata["candidates"]), 4)
@@ -192,13 +185,12 @@ class PixelLabPipelineTest(unittest.TestCase):
             transparent=True,
             reference=str(reference),
             token_path=token,
-            client_factory=lambda _secret: FakeClient(),
+            generator=fake_generator,
         )
-        self.assertEqual(calls[-1][0], "bitforge")
-        self.assertEqual(calls[-1][1]["style_image"].size, (32, 32))
+        self.assertEqual(calls[-1][0], reference.resolve())
         self.assertTrue(reference_output["reference_used"])
 
-    def test_official_sdk_rejects_insecure_token_permissions(self) -> None:
+    def test_official_api_rejects_insecure_token_permissions(self) -> None:
         token = self.workspace / "pixellab-token"
         token.write_text("fixture-secret\n", encoding="utf-8")
         token.chmod(0o644)
@@ -213,17 +205,16 @@ class PixelLabPipelineTest(unittest.TestCase):
                 count=1,
                 transparent=True,
                 token_path=token,
-                client_factory=lambda _secret: object(),
+                generator=lambda *_args: Image.new("RGBA", (32, 32)),
             )
 
-    def test_official_sdk_failure_does_not_persist_remote_error_text(self) -> None:
+    def test_official_api_failure_does_not_persist_remote_error_text(self) -> None:
         token = self.workspace / "pixellab-token"
         token.write_text("fixture-secret\n", encoding="utf-8")
         token.chmod(0o600)
 
-        class FailingClient:
-            def generate_image_pixflux(self, **_kwargs: object) -> object:
-                raise RuntimeError("remote failure fixture-secret")
+        def failing_generator(*_args: object) -> Image.Image:
+            raise RuntimeError("remote failure fixture-secret")
 
         with self.assertRaisesRegex(PipelineError, "request retained"):
             generate_assets(
@@ -235,7 +226,7 @@ class PixelLabPipelineTest(unittest.TestCase):
                 count=1,
                 transparent=True,
                 token_path=token,
-                client_factory=lambda _secret: FailingClient(),
+                generator=failing_generator,
             )
 
         result_files = list((self.root / "results").glob("*/result.json"))
@@ -244,6 +235,46 @@ class PixelLabPipelineTest(unittest.TestCase):
         self.assertIn("pixellab_generation_failed", stored)
         self.assertNotIn("remote failure", stored)
         self.assertNotIn("fixture-secret", stored)
+
+    def test_official_api_decodes_image_without_exposing_authorization(self) -> None:
+        buffer = BytesIO()
+        Image.new("RGBA", (32, 32), (20, 40, 60, 128)).save(buffer, format="PNG")
+        body = json.dumps(
+            {"image": {"type": "base64", "base64": base64.b64encode(buffer.getvalue()).decode("ascii")}},
+        ).encode("utf-8")
+        captured: dict[str, object] = {}
+
+        class FakeHttpResponse:
+            def __enter__(self) -> "FakeHttpResponse":
+                return self
+
+            def __exit__(self, *_args: object) -> None:
+                return None
+
+            def read(self) -> bytes:
+                return body
+
+        def fake_opener(request: object, timeout: int) -> FakeHttpResponse:
+            captured["url"] = request.full_url
+            captured["timeout"] = timeout
+            captured["payload"] = json.loads(request.data.decode("utf-8"))
+            return FakeHttpResponse()
+
+        image = _official_api_generate(
+            "fixture-secret",
+            "HP icon",
+            32,
+            32,
+            True,
+            None,
+            7,
+            opener=fake_opener,
+        )
+
+        self.assertEqual(image.size, (32, 32))
+        self.assertEqual(captured["url"], "https://api.pixellab.ai/v2/create-image-pixflux")
+        self.assertEqual(captured["payload"]["no_background"], True)
+        self.assertNotIn("fixture-secret", json.dumps(captured["payload"]))
 
 
 if __name__ == "__main__":
