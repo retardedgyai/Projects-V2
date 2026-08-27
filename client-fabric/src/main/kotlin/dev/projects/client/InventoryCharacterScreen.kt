@@ -30,6 +30,8 @@ import java.util.Locale
 private const val PRESENTATION_TAG = "projects_equipment_presentation"
 private const val SLOT_SIZE = INVENTORY_CHARACTER_SLOT_SIZE
 private const val PREVIEW_ENTITY_SCALE = 52
+private const val STAT_ICON_SIZE = 12
+private const val STAT_TEXT_GAP = 4
 
 private data class InventoryCharacterUiTexture(
     val identifier: Identifier,
@@ -42,6 +44,13 @@ private fun inventoryCharacterUiTexture(name: String, width: Int, height: Int): 
         Identifier.fromNamespaceAndPath("projects", "textures/gui/ui/$name.png"),
         width,
         height,
+    )
+
+private fun inventoryCharacterStatTexture(name: String): InventoryCharacterUiTexture =
+    InventoryCharacterUiTexture(
+        Identifier.fromNamespaceAndPath("projects", "textures/gui/stats/$name.png"),
+        16,
+        16,
     )
 
 private val GLASS_MAIN_TEXTURE = inventoryCharacterUiTexture("glass_main", 96, 56)
@@ -57,6 +66,9 @@ private val EQUIPMENT_SLOT_IDLE_TEXTURE = inventoryCharacterUiTexture("equipment
 private val EQUIPMENT_SLOT_SELECTED_TEXTURE = inventoryCharacterUiTexture("equipment_slot_selected", 28, 28)
 private val DIVIDER_TEXTURE = inventoryCharacterUiTexture("divider", 96, 4)
 private val THIN_HIGHLIGHT_TEXTURE = inventoryCharacterUiTexture("thin_highlight", 96, 2)
+private val LEVEL_STAT_TEXTURE = inventoryCharacterStatTexture("level")
+private val HEALTH_STAT_TEXTURE = inventoryCharacterStatTexture("health")
+private val XP_STAT_TEXTURE = inventoryCharacterStatTexture("xp")
 
 internal data class InventoryCharacterTextureRegion(
     val x: Int,
@@ -358,8 +370,8 @@ internal class InventoryCharacterScreen private constructor(
         val playerName = setup.player.name.string
         graphics.text(font, playerName, x, y + 16, 0xFFB8BAB5.toInt())
         val levelX = x + font.width(playerName) + 8
-        drawPixelGlyph(graphics, levelX, y + 18, LEVEL_GLYPH, 0xFFB8BAB5.toInt())
-        graphics.text(font, "Lv ${setup.player.experienceLevel}", levelX + 10, y + 16, 0xFFB8BAB5.toInt())
+        drawStatIcon(graphics, levelX, y + 16, LEVEL_STAT_TEXTURE)
+        graphics.text(font, "Lv ${setup.player.experienceLevel}", levelX + STAT_ICON_SIZE + STAT_TEXT_GAP, y + 16, 0xFFB8BAB5.toInt())
         graphics.text(font, "キャラクター", x, y + 32, 0xFFD0D1CC.toInt(), false)
         val statsY = layout.character.y + layout.character.height - 82
         drawHorizontalSlice(
@@ -376,20 +388,20 @@ internal class InventoryCharacterScreen private constructor(
             0xFFF0F0EA.toInt(),
             true,
         )
-        drawPixelGlyph(graphics, x, statsY + 29, HEALTH_GLYPH, 0xFFD0D1CC.toInt())
+        drawStatIcon(graphics, x, statsY + 28, HEALTH_STAT_TEXTURE)
         graphics.text(
             font,
             "体力 ${setup.player.health.toInt()} / ${setup.player.maxHealth.toInt()}",
-            x + 12,
+            x + STAT_ICON_SIZE + STAT_TEXT_GAP,
             statsY + 28,
             0xFFD0D1CC.toInt(),
             false,
         )
-        drawPixelGlyph(graphics, x, statsY + 41, XP_GLYPH, 0xFFB8BAB5.toInt())
+        drawStatIcon(graphics, x, statsY + 40, XP_STAT_TEXTURE)
         graphics.text(
             font,
             "経験値 ${(setup.player.experienceProgress * 100).toInt().coerceIn(0, 100)}%",
-            x + 12,
+            x + STAT_ICON_SIZE + STAT_TEXT_GAP,
             statsY + 40,
             0xFFB8BAB5.toInt(),
             false,
@@ -536,43 +548,13 @@ internal class InventoryCharacterScreen private constructor(
     }
 
     private companion object {
-        private val LEVEL_GLYPH = listOf(
-            "00100",
-            "01110",
-            "11111",
-            "00100",
-            "00100",
-            "01110",
-            "00100",
-        )
-        private val HEALTH_GLYPH = listOf(
-            "0110110",
-            "1111111",
-            "1111111",
-            "0111110",
-            "0011100",
-            "0001000",
-        )
-        private val XP_GLYPH = listOf(
-            "0010000",
-            "0111000",
-            "1111100",
-            "0111000",
-            "0010000",
-        )
-
-        private fun drawPixelGlyph(
+        private fun drawStatIcon(
             graphics: GuiGraphicsExtractor,
             x: Int,
             y: Int,
-            pattern: List<String>,
-            color: Int,
+            texture: InventoryCharacterUiTexture,
         ) {
-            pattern.forEachIndexed { row, line ->
-                line.forEachIndexed { column, pixel ->
-                    if (pixel == '1') graphics.fill(x + column, y + row, x + column + 1, y + row + 1, color)
-                }
-            }
+            blitRegion(graphics, x, y, STAT_ICON_SIZE, STAT_ICON_SIZE, 0, 0, texture.width, texture.height, texture)
         }
 
         fun drawPanel(graphics: GuiGraphicsExtractor, rect: HudRect, texture: InventoryCharacterUiTexture, corner: Int) {
