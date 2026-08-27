@@ -33,6 +33,13 @@ private const val SLOT_SIZE = INVENTORY_CHARACTER_SLOT_SIZE
 private const val PREVIEW_ENTITY_SCALE = 52
 private const val STAT_ICON_SIZE = 12
 private const val STAT_TEXT_GAP = 4
+internal const val INVENTORY_CHARACTER_REVIEW_ICON_SIZE = 32
+private const val REVIEW_GRID_COLUMNS = 4
+private const val REVIEW_GRID_TOP = 16
+private const val REVIEW_GRID_BOTTOM_PADDING = 2
+private const val REVIEW_GRID_HORIZONTAL_PADDING = 4
+private const val REVIEW_GRID_LABEL_HEIGHT = 9
+private const val REVIEW_GRID_MAX_CELL_SIZE = 64
 
 private data class InventoryCharacterUiTexture(
     val identifier: Identifier,
@@ -53,6 +60,56 @@ private fun inventoryCharacterStatTexture(name: String): InventoryCharacterUiTex
         16,
         16,
     )
+
+private fun inventoryCharacterReviewTexture(name: String): InventoryCharacterUiTexture =
+    InventoryCharacterUiTexture(
+        Identifier.fromNamespaceAndPath("projects", "textures/gui/review/icons32/$name.png"),
+        INVENTORY_CHARACTER_REVIEW_ICON_SIZE,
+        INVENTORY_CHARACTER_REVIEW_ICON_SIZE,
+    )
+
+internal data class InventoryCharacterReviewIcon(
+    val assetName: String,
+    val label: String,
+)
+
+internal val inventoryCharacterReviewMenuIcons = listOf(
+    InventoryCharacterReviewIcon("menu_inventory", "インベントリ"),
+    InventoryCharacterReviewIcon("menu_character", "キャラクター"),
+    InventoryCharacterReviewIcon("menu_quest", "クエスト"),
+    InventoryCharacterReviewIcon("menu_party", "パーティー"),
+    InventoryCharacterReviewIcon("menu_codex", "コーデックス"),
+    InventoryCharacterReviewIcon("menu_map", "マップ"),
+    InventoryCharacterReviewIcon("menu_settings", "設定"),
+)
+
+internal val inventoryCharacterReviewStatIcons = listOf(
+    InventoryCharacterReviewIcon("health", "HP"),
+    InventoryCharacterReviewIcon("mana", "Mana"),
+    InventoryCharacterReviewIcon("attack_damage", "AD"),
+    InventoryCharacterReviewIcon("ability_power", "AP"),
+    InventoryCharacterReviewIcon("armor", "AR"),
+    InventoryCharacterReviewIcon("magic_resist", "MR"),
+    InventoryCharacterReviewIcon("attack_speed", "AS"),
+    InventoryCharacterReviewIcon("critical_strike", "Crit"),
+    InventoryCharacterReviewIcon("ability_haste", "AH"),
+    InventoryCharacterReviewIcon("move_speed", "Move"),
+    InventoryCharacterReviewIcon("life_steal", "LS"),
+    InventoryCharacterReviewIcon("level", "Lv"),
+    InventoryCharacterReviewIcon("xp", "XP"),
+    InventoryCharacterReviewIcon("armor_penetration", "ArP"),
+    InventoryCharacterReviewIcon("magic_penetration", "MPen"),
+    InventoryCharacterReviewIcon("damage_amplification", "Amp"),
+    InventoryCharacterReviewIcon("shield", "Shield"),
+    InventoryCharacterReviewIcon("healing", "Heal"),
+    InventoryCharacterReviewIcon("health_regeneration", "Regen"),
+    InventoryCharacterReviewIcon("crowd_control", "CC"),
+    InventoryCharacterReviewIcon("tenacity", "Ten"),
+    InventoryCharacterReviewIcon("cooldown_reduction", "CDR"),
+)
+
+private val REVIEW_MENU_ITEMS = inventoryCharacterReviewMenuIcons.map { it to inventoryCharacterReviewTexture(it.assetName) }
+private val REVIEW_STAT_ITEMS = inventoryCharacterReviewStatIcons.map { it to inventoryCharacterReviewTexture(it.assetName) }
 
 private val GLASS_MAIN_TEXTURE = inventoryCharacterUiTexture("glass_main", 96, 56)
 private val GLASS_SECONDARY_TEXTURE = inventoryCharacterUiTexture("glass_secondary", 88, 52)
@@ -127,6 +184,36 @@ internal fun inventoryCharacterPreviewBounds(preview: HudRect): InventoryCharact
     x1 = preview.x + preview.width,
     y1 = preview.y + preview.height,
 )
+
+internal fun inventoryCharacterReviewIconPlacements(area: HudRect, iconCount: Int): List<HudRect> {
+    require(iconCount >= 0) { "Inventory Character review icon count must not be negative" }
+    if (iconCount == 0) return emptyList()
+
+    val rowCount = (iconCount + REVIEW_GRID_COLUMNS - 1) / REVIEW_GRID_COLUMNS
+    val availableWidth = area.width - REVIEW_GRID_HORIZONTAL_PADDING * 2
+    val availableHeight = area.height - REVIEW_GRID_TOP - REVIEW_GRID_BOTTOM_PADDING
+    val minimumHeight = rowCount * (INVENTORY_CHARACTER_REVIEW_ICON_SIZE + REVIEW_GRID_LABEL_HEIGHT)
+    if (availableWidth < REVIEW_GRID_COLUMNS * INVENTORY_CHARACTER_REVIEW_ICON_SIZE || availableHeight < minimumHeight) {
+        return emptyList()
+    }
+
+    val gridWidth = minOf(availableWidth, REVIEW_GRID_COLUMNS * REVIEW_GRID_MAX_CELL_SIZE)
+    val rowHeight = minOf(availableHeight / rowCount, REVIEW_GRID_MAX_CELL_SIZE)
+    val gridX = area.x + (area.width - gridWidth) / 2
+    val gridY = area.y + REVIEW_GRID_TOP
+    return List(iconCount) { index ->
+        val column = index % REVIEW_GRID_COLUMNS
+        val row = index / REVIEW_GRID_COLUMNS
+        val cellLeft = gridX + column * gridWidth / REVIEW_GRID_COLUMNS
+        val cellRight = gridX + (column + 1) * gridWidth / REVIEW_GRID_COLUMNS
+        HudRect(
+            x = cellLeft + (cellRight - cellLeft - INVENTORY_CHARACTER_REVIEW_ICON_SIZE) / 2,
+            y = gridY + row * rowHeight,
+            width = INVENTORY_CHARACTER_REVIEW_ICON_SIZE,
+            height = INVENTORY_CHARACTER_REVIEW_ICON_SIZE,
+        )
+    }
+}
 
 internal class InventoryCharacterMenu(
     private val player: Player,
@@ -263,7 +350,7 @@ internal class InventoryCharacterScreen private constructor(
         drawRail(graphics, mouseX, mouseY)
         drawCharacter(graphics)
         drawInventory(graphics)
-        drawDetail(graphics)
+        if (!drawStatIconReview(graphics)) drawDetail(graphics)
         val preview = inventoryCharacterPreviewBounds(layout.preview)
         InventoryScreen.extractEntityInInventoryFollowsMouse(
             graphics,
@@ -343,8 +430,7 @@ internal class InventoryCharacterScreen private constructor(
             graphics.text(font, "キャラクター", x + 92, y, 0xFFB8BAB5.toInt(), false)
             return
         }
-        val labels = listOf("インベントリ", "キャラクター", "クエスト", "パーティー", "コーデックス", "マップ", "設定")
-        labels.forEachIndexed { index, label ->
+        REVIEW_MENU_ITEMS.forEachIndexed { index, (item, texture) ->
             val row = HudRect(
                 layout.rail.x + 8,
                 layout.rail.y + layout.navTopPadding + index * (layout.navRowHeight + layout.navRowGap),
@@ -352,24 +438,50 @@ internal class InventoryCharacterScreen private constructor(
                 layout.navRowHeight,
             )
             if (index > 0) {
-                val texture = if (row.contains(mouseX.toDouble(), mouseY.toDouble())) {
+                val rowTexture = if (row.contains(mouseX.toDouble(), mouseY.toDouble())) {
                     NAV_ROW_HOVER_TEXTURE
-                } else if (index == labels.lastIndex) {
+                } else if (index == REVIEW_MENU_ITEMS.lastIndex) {
                     NAV_ROW_DISABLED_TEXTURE
                 } else {
                     NAV_ROW_IDLE_TEXTURE
                 }
-                drawNineSlice(graphics, row, texture, 6)
+                drawNineSlice(graphics, row, rowTexture, 6)
             }
+            drawReviewIcon(
+                graphics,
+                row.x + 10,
+                row.y + (row.height - INVENTORY_CHARACTER_REVIEW_ICON_SIZE) / 2,
+                texture,
+            )
             graphics.text(
                 font,
-                label,
+                item.label,
                 row.x + 50,
                 row.y + (row.height - font.lineHeight) / 2,
                 if (index == 0) 0xFF4B4D49.toInt() else 0xFFD0D1CC.toInt(),
                 index == 0,
             )
         }
+    }
+
+    private fun drawStatIconReview(graphics: GuiGraphicsExtractor): Boolean {
+        val placements = inventoryCharacterReviewIconPlacements(layout.detail, REVIEW_STAT_ITEMS.size)
+        if (placements.size != REVIEW_STAT_ITEMS.size) return false
+
+        graphics.text(font, "32px STAT ICON REVIEW", layout.detail.x + 6, layout.detail.y + 4, 0xFFF0F0EA.toInt(), true)
+        REVIEW_STAT_ITEMS.zip(placements).forEach { (reviewItem, icon) ->
+            val (item, texture) = reviewItem
+            drawReviewIcon(graphics, icon.x, icon.y, texture)
+            graphics.text(
+                font,
+                item.label,
+                icon.x + (icon.width - font.width(item.label)) / 2,
+                icon.y + INVENTORY_CHARACTER_REVIEW_ICON_SIZE,
+                0xFFD0D1CC.toInt(),
+                false,
+            )
+        }
+        return true
     }
 
     private fun drawCharacter(graphics: GuiGraphicsExtractor) {
@@ -574,6 +686,26 @@ internal class InventoryCharacterScreen private constructor(
             texture: InventoryCharacterUiTexture,
         ) {
             blitRegion(graphics, x, y, STAT_ICON_SIZE, STAT_ICON_SIZE, 0, 0, texture.width, texture.height, texture)
+        }
+
+        private fun drawReviewIcon(
+            graphics: GuiGraphicsExtractor,
+            x: Int,
+            y: Int,
+            texture: InventoryCharacterUiTexture,
+        ) {
+            blitRegion(
+                graphics,
+                x,
+                y,
+                INVENTORY_CHARACTER_REVIEW_ICON_SIZE,
+                INVENTORY_CHARACTER_REVIEW_ICON_SIZE,
+                0,
+                0,
+                INVENTORY_CHARACTER_REVIEW_ICON_SIZE,
+                INVENTORY_CHARACTER_REVIEW_ICON_SIZE,
+                texture,
+            )
         }
 
         fun drawPanel(graphics: GuiGraphicsExtractor, rect: HudRect, texture: InventoryCharacterUiTexture, corner: Int) {
