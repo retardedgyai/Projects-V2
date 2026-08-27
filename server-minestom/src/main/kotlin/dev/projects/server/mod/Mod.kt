@@ -4,6 +4,7 @@ import dev.projects.server.equipment.EquipmentSlot
 import dev.projects.server.equipment.EquipmentTier
 import dev.projects.server.equipment.EquipmentStatContribution
 import dev.projects.server.equipment.requireCanonicalId
+import dev.projects.server.combat.Element
 
 enum class AttackTag { MELEE, PROJECTILE, MAGIC, PHYSICAL, NORMAL_ATTACK, SKILL, SHATTER, FIRE, ICE, LIGHTNING }
 
@@ -13,6 +14,21 @@ enum class ModRank(val value: Int, val tier: EquipmentTier) {
 
 enum class ModStackingLayer { BASE_FLAT, BASE_PERCENT, INCREASED, CONDITIONAL, FINAL }
 enum class ModTagMatchPolicy { ALL_REQUIRED, EXACT }
+
+sealed interface ModEffect {
+    data class ElementApplication(val element: Element) : ModEffect
+}
+
+data class ModEffectContribution(
+    val effect: ModEffect,
+    val value: Double,
+    val sourceId: String,
+) {
+    init {
+        require(value.isFinite() && value >= 0.0) { "effect value must be finite and non-negative" }
+        requireCanonicalId("sourceId", sourceId)
+    }
+}
 
 class ModDefinition(
     val modId: String,
@@ -25,7 +41,8 @@ class ModDefinition(
     val maximumValue: Double,
     val stackingLayer: ModStackingLayer,
     val definitionRevision: Long,
-    val tagMatchPolicy: ModTagMatchPolicy = ModTagMatchPolicy.EXACT
+    val tagMatchPolicy: ModTagMatchPolicy = ModTagMatchPolicy.EXACT,
+    val effect: ModEffect? = null,
 ) {
     val allowedSlots: Set<EquipmentSlot> = allowedSlots.toSet()
     val requiredTags: Set<AttackTag> = requiredTags.toSet()
@@ -71,7 +88,12 @@ interface ModSlotEntry {
     val rank: ModRank
 }
 
-data class ModValidation(val valid: Boolean, val issues: List<String>, val contribution: EquipmentStatContribution? = null) {
+data class ModValidation(
+    val valid: Boolean,
+    val issues: List<String>,
+    val contribution: EquipmentStatContribution? = null,
+    val effect: ModEffectContribution? = null,
+) {
     companion object {
         fun validate(entry: ModSlotEntry?, definition: ModDefinition?, equipmentSlot: EquipmentSlot): ModValidation {
             if (entry !is ModEntry) return ModValidation(false, listOf("unsupported MOD entry"))
@@ -82,10 +104,22 @@ data class ModValidation(val valid: Boolean, val issues: List<String>, val contr
                 if (equipmentSlot !in definition.allowedSlots) add("equipmentSlot")
                 if (entry.definitionRevision != definition.definitionRevision) add("definitionRevision")
                 if (entry.rolledValue !in definition.minimumValue..definition.maximumValue) add("rolledValue")
+                if (definition.effect != null && entry.rolledValue < 0.0) add("effectValue")
             }
-            return if (issues.isEmpty()) ModValidation(
-                true, emptyList(), EquipmentStatContribution(definition.statId, entry.rolledValue, entry.modId)
-            ) else ModValidation(false, issues)
+            return if (issues.isEmpty()) {
+                ModValidation(
+                    valid = true,
+                    issues = emptyList(),
+                    contribution = if (definition.effect == null) {
+                        EquipmentStatContribution(definition.statId, entry.rolledValue, entry.modId)
+                    } else {
+                        null
+                    },
+                    effect = definition.effect?.let { ModEffectContribution(it, entry.rolledValue, entry.modId) },
+                )
+            } else {
+                ModValidation(false, issues)
+            }
         }
     }
 }

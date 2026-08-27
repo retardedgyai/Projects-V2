@@ -36,6 +36,18 @@ class PrototypeBossStateTest {
     }
 
     @Test
+    fun `resolved direct and elemental damage each apply once per attack execution`() {
+        val boss = PrototypeBossState(maxHealth = 100)
+
+        assertEquals(10, boss.applyResolvedPlayerAttack(1L, 10.0))
+        assertEquals(0, boss.applyResolvedPlayerAttack(1L, 10.0))
+        assertEquals(3, boss.applyElementalDamage(1L, "fire-detonation-0", 2.5))
+        assertEquals(0, boss.applyElementalDamage(1L, "fire-detonation-0", 2.5))
+        assertEquals(0, boss.applyElementalDamage(1L, "fire-detonation-1", 0.0))
+        assertEquals(87, boss.currentHealth)
+    }
+
+    @Test
     fun `player max health modifier survives reset`() {
         val boss = PrototypeBossState()
 

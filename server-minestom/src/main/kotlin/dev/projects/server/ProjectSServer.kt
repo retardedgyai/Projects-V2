@@ -49,6 +49,10 @@ import net.minestom.server.event.player.PlayerDisconnectEvent
 import net.minestom.server.event.player.PlayerSpawnEvent
 import net.minestom.server.event.player.PlayerTickEvent
 import net.minestom.server.event.instance.InstanceTickEvent
+import net.minestom.server.event.inventory.InventoryPreClickEvent
+import net.minestom.server.event.inventory.CreativeInventoryActionEvent
+import net.minestom.server.event.item.ItemDropEvent
+import net.minestom.server.event.player.PlayerSwapItemEvent
 import net.minestom.server.instance.block.Block
 import net.minestom.server.instance.Instance
 import net.minestom.server.instance.LightingChunk
@@ -93,12 +97,28 @@ import dev.projects.server.equipment.EquipmentModSlot
 import dev.projects.server.equipment.EquipmentRarity
 import dev.projects.server.equipment.EquipmentSlot as ProjectSEquipmentSlot
 import dev.projects.server.equipment.EquipmentTier
+import dev.projects.server.equipment.readEquipmentPresentation
 import dev.projects.server.equipment.toPresentationItemStack
 import dev.projects.server.mod.AttackTag
+import dev.projects.server.mod.ModEffect
 import dev.projects.server.mod.ModDefinition
 import dev.projects.server.mod.ModEntry
 import dev.projects.server.mod.ModRank
 import dev.projects.server.mod.ModStackingLayer
+import dev.projects.server.mod.ModTagMatchPolicy
+import dev.projects.server.combat.CombatBuildResolver
+import dev.projects.server.combat.CombatBuildSnapshot
+import dev.projects.server.combat.CombatStatIds
+import dev.projects.server.combat.ColdLevel
+import dev.projects.server.combat.Element
+import dev.projects.server.combat.ElementalCombatState
+import dev.projects.server.combat.FireApplicationResult
+import dev.projects.server.combat.FireState
+import dev.projects.server.combat.IceState
+import dev.projects.server.combat.IceApplicationResult
+import dev.projects.server.combat.NormalAttackDamageResolver
+import dev.projects.server.combat.TargetClassification
+import dev.projects.server.combat.damage.DamageType
 
 private const val SERVER_ADDRESS = "127.0.0.1"
 private const val SERVER_PORT = 25565
@@ -109,40 +129,110 @@ private const val DODGE_PLAYER_WIDTH = 0.6
 private const val DODGE_PLAYER_HEIGHT = 1.8
 private val TWIN_BLADES_AUTO_OFFHAND = Tag.Boolean("projects_twin_blades_auto_offhand").defaultValue(false)
 
-private val TWIN_BLADES_DEFINITIONS = mapOf(
-    "projects:keen-edge" to ModDefinition(
+private val TWIN_BLADES_DEFINITIONS = listOf(
+    ModDefinition(
         modId = "projects:keen-edge",
         rank = ModRank.RANK_1,
         allowedSlots = setOf(ProjectSEquipmentSlot.WEAPON),
         requiredTags = setOf(AttackTag.MELEE),
-        excludedTags = emptySet(),
-        statId = "projects:physical-attack",
+        excludedTags = setOf(AttackTag.MAGIC),
+        statId = CombatStatIds.PHYSICAL_ATTACK,
         minimumValue = 1.0,
         maximumValue = 3.0,
         stackingLayer = ModStackingLayer.BASE_FLAT,
         definitionRevision = 1,
+        tagMatchPolicy = ModTagMatchPolicy.ALL_REQUIRED,
     ),
-)
+    ModDefinition(
+        modId = "projects:executioner",
+        rank = ModRank.RANK_1,
+        allowedSlots = setOf(ProjectSEquipmentSlot.WEAPON),
+        requiredTags = setOf(AttackTag.MELEE),
+        excludedTags = setOf(AttackTag.MAGIC),
+        statId = CombatStatIds.INCREASED_DAMAGE,
+        minimumValue = 0.08,
+        maximumValue = 0.12,
+        stackingLayer = ModStackingLayer.INCREASED,
+        definitionRevision = 1,
+        tagMatchPolicy = ModTagMatchPolicy.ALL_REQUIRED,
+    ),
+    ModDefinition(
+        modId = "projects:ember",
+        rank = ModRank.RANK_1,
+        allowedSlots = setOf(ProjectSEquipmentSlot.WEAPON),
+        requiredTags = setOf(AttackTag.MELEE),
+        excludedTags = setOf(AttackTag.MAGIC),
+        statId = CombatStatIds.ELEMENT_APPLICATION,
+        minimumValue = 1.5,
+        maximumValue = 2.0,
+        stackingLayer = ModStackingLayer.BASE_FLAT,
+        definitionRevision = 1,
+        tagMatchPolicy = ModTagMatchPolicy.ALL_REQUIRED,
+        effect = ModEffect.ElementApplication(Element.FIRE),
+    ),
+    ModDefinition(
+        modId = "projects:frost",
+        rank = ModRank.RANK_1,
+        allowedSlots = setOf(ProjectSEquipmentSlot.WEAPON),
+        requiredTags = setOf(AttackTag.MELEE),
+        excludedTags = setOf(AttackTag.MAGIC),
+        statId = CombatStatIds.ELEMENT_APPLICATION,
+        minimumValue = 1.0,
+        maximumValue = 1.5,
+        stackingLayer = ModStackingLayer.BASE_FLAT,
+        definitionRevision = 1,
+        tagMatchPolicy = ModTagMatchPolicy.ALL_REQUIRED,
+        effect = ModEffect.ElementApplication(Element.ICE),
+    ),
+).associateBy(ModDefinition::modId)
 
-private fun twinBladesItem(): EquipmentItem = EquipmentItem(
-    itemId = "projects:twin-blades",
+private fun twinBladesItem(
+    itemId: String,
+    primaryModId: String,
+    primaryModValue: Double,
+    elementModId: String,
+    elementModValue: Double,
+): EquipmentItem = EquipmentItem(
+    itemId = itemId,
     category = EquipmentCategory.WEAPON,
     slot = ProjectSEquipmentSlot.WEAPON,
     tier = EquipmentTier.T1,
     itemLevel = 5,
     rarity = EquipmentRarity.UNCOMMON,
-    baseStatRolls = listOf(BaseStatRoll("projects:physical-attack", 12.5)),
+    baseStatRolls = listOf(BaseStatRoll(CombatStatIds.PHYSICAL_ATTACK, 12.5)),
     modSlots = listOf(
-        EquipmentModSlot(0, ModEntry("projects:keen-edge", ModRank.RANK_1, 2.5, 0, 1)),
-        EquipmentModSlot.empty(1),
+        EquipmentModSlot(0, ModEntry(primaryModId, ModRank.RANK_1, primaryModValue, 0, 1)),
+        EquipmentModSlot(1, ModEntry(elementModId, ModRank.RANK_1, elementModValue, 1, 1)),
     ),
 )
 
-private fun twinBladesItemStack() = twinBladesItem().toPresentationItemStack(
+private val EMBER_TWIN_BLADES = twinBladesItem(
+    itemId = "projects:ember-twin-blades",
+    primaryModId = "projects:keen-edge",
+    primaryModValue = 2.5,
+    elementModId = "projects:ember",
+    elementModValue = 2.0,
+)
+
+private val FROST_TWIN_BLADES = twinBladesItem(
+    itemId = "projects:frost-twin-blades",
+    primaryModId = "projects:executioner",
+    primaryModValue = 0.10,
+    elementModId = "projects:frost",
+    elementModValue = 1.0,
+)
+
+private val TWIN_BLADES_FIXTURES = listOf(EMBER_TWIN_BLADES, FROST_TWIN_BLADES).associateBy(EquipmentItem::itemId)
+
+private fun twinBladesItemStack(item: EquipmentItem, displayName: String) = item.toPresentationItemStack(
     material = Material.IRON_SWORD,
-    displayName = "Twin Blades",
+    displayName = displayName,
     definitions = TWIN_BLADES_DEFINITIONS,
 )
+
+private fun emberTwinBladesItemStack() = twinBladesItemStack(EMBER_TWIN_BLADES, "Ember Twin Blades")
+
+private fun frostTwinBladesItemStack() = twinBladesItemStack(FROST_TWIN_BLADES, "Frost Twin Blades")
 
 internal data class SkillCooldowns(
     val skill1: Int,
@@ -168,6 +258,7 @@ fun main() {
     val skill2States = mutableMapOf<UUID, Skill2State>()
     val skill3States = mutableMapOf<UUID, Skill3State>()
     val progressions = mutableMapOf<UUID, ProgressionState>()
+    val elementalCombatState = ElementalCombatState()
     val resourceSyncTicks = mutableMapOf<UUID, Int>()
     val lastSentCooldowns = mutableMapOf<UUID, SkillCooldowns>()
     val dodgeVelocityActive = mutableMapOf<UUID, Boolean>()
@@ -390,6 +481,7 @@ fun main() {
     fun finishEncounter() {
         clearBossTelegraphs()
         riftExecutioner.reset()
+        elementalCombatState.reset()
         prototypeBoss.setBreakActive(false)
         stopPlayerActions()
         updateBossBar()
@@ -408,6 +500,7 @@ fun main() {
         prototypeBoss.reset()
         clearBossTelegraphs()
         riftExecutioner.reset()
+        elementalCombatState.reset()
         dummy?.let { boss ->
             instance.players.firstOrNull()?.let { player -> boss.teleport(player.respawnPoint) }
         }
@@ -733,6 +826,15 @@ fun main() {
                     (attackSpeeds[event.player.uuid] ?: DEFAULT_ATTACK_SPEED) *
                         progressionEffects(event.player.uuid).normalAttackSpeedMultiplier
                 },
+                buildSource = {
+                    val weapon = weaponFor(event.player)
+                    CombatBuildResolver.resolve(
+                        equipment = equipmentFor(event.player),
+                        definitions = TWIN_BLADES_DEFINITIONS,
+                        attackTags = normalAttackTags(weapon),
+                        fallbackAttackPower = weapon.baseAttackPower(),
+                    )
+                },
             )
             dodgeStates[event.player.uuid] = DodgeState()
             twinRodsAirStates[event.player.uuid] = TwinRodsAirState()
@@ -740,7 +842,10 @@ fun main() {
                 ItemStack.builder(Material.NETHERITE_SWORD).customName(Component.text("Heavy Blade")).build(),
             )
             event.player.inventory.addItemStack(
-                twinBladesItemStack(),
+                emberTwinBladesItemStack(),
+            )
+            event.player.inventory.addItemStack(
+                frostTwinBladesItemStack(),
             )
             if (dummy == null) {
                 dummy = Entity(EntityType.RAVAGER).apply {
@@ -790,8 +895,25 @@ fun main() {
         if (instance.players.none { it.uuid != playerId }) {
             clearBossTelegraphs()
             riftExecutioner.reset()
+            elementalCombatState.reset()
             prototypeBoss.reset()
         }
+    }
+    events.addListener(InventoryPreClickEvent::class.java) { event ->
+        if (event.clickedItem.getTag(TWIN_BLADES_AUTO_OFFHAND)) event.isCancelled = true
+    }
+    events.addListener(CreativeInventoryActionEvent::class.java) { event ->
+        if (event.clickedItem.getTag(TWIN_BLADES_AUTO_OFFHAND) ||
+            event.player.getEquipment(EquipmentSlot.OFF_HAND).getTag(TWIN_BLADES_AUTO_OFFHAND)
+        ) {
+            event.isCancelled = true
+        }
+    }
+    events.addListener(ItemDropEvent::class.java) { event ->
+        if (event.itemStack.getTag(TWIN_BLADES_AUTO_OFFHAND)) event.isCancelled = true
+    }
+    events.addListener(PlayerSwapItemEvent::class.java) { event ->
+        if (event.offHandItem.getTag(TWIN_BLADES_AUTO_OFFHAND)) event.isCancelled = true
     }
     events.addListener(InstanceTickEvent::class.java) { event ->
         if (event.instance === instance) {
@@ -812,6 +934,7 @@ fun main() {
         val skill3 = skill3States[event.player.uuid] ?: return@addListener
         val playerEffects = progressionEffects(event.player.uuid)
         if (event.player == instance.players.firstOrNull()) {
+            elementalCombatState.tick()
             if (prototypeBoss.isEncounterRunning) {
                 tickRiftExecutioner(
                     instance,
@@ -889,17 +1012,68 @@ fun main() {
             combatEvents.filter { it is CombatEvent.Started || it is CombatEvent.Active },
         )
         combatEvents.filterIsInstance<CombatEvent.HitConfirmed>().forEach { hit ->
-            val damage = prototypeBoss.applyPlayerAttack(
-                attackExecutionId = hit.attackExecutionId,
-                weapon = hit.weapon,
-                weakpoint = weakpoint?.weakpoint,
-                outgoingDamageMultiplier = playerEffects.directDamageMultiplier,
+            if (!prototypeBoss.isActive) return@forEach
+            val build = state.activeBuildSnapshot ?: CombatBuildSnapshot.empty(
+                attackTags = normalAttackTags(hit.weapon),
+                fallbackAttackPower = hit.weapon.baseAttackPower(),
             )
+            val elementalTarget = elementalCombatState.target(hit.targetId, TargetClassification.BOSS)
+            val frozenBeforeHit = elementalTarget.ice.level == ColdLevel.FROZEN
+            val damageResolution = NormalAttackDamageResolver.resolve(
+                build = build,
+                damageType = DamageType.PHYSICAL,
+                modeMultiplier = playerEffects.directDamageMultiplier *
+                    if (frozenBeforeHit) IceState.FROZEN_DIRECT_DAMAGE_MULTIPLIER else 1.0,
+            )
+            val damage = prototypeBoss.applyResolvedPlayerAttack(
+                attackExecutionId = hit.attackExecutionId,
+                directDamage = damageResolution.direct.finalRoundedDamage,
+                weakpoint = weakpoint?.weakpoint,
+            )
+            val weakpointMultiplier = if (weakpoint != null) PrototypeBossState.WEAKPOINT_MULTIPLIER else 1.0
+            val fire = build.elementPower(Element.FIRE).takeIf { it > 0.0 }?.let { power ->
+                elementalTarget.fire.apply(
+                    applicationPower = power,
+                    contributorId = "${event.player.uuid}:${build.elementSource(Element.FIRE) ?: ElementalCombatState.DEFAULT_CONTRIBUTOR}",
+                    lineage = DamageType.PHYSICAL,
+                    hitExecutionId = hit.attackExecutionId,
+                )
+            }
+            val ice = build.elementPower(Element.ICE).takeIf { it > 0.0 }?.let { power ->
+                elementalTarget.ice.apply(
+                    applicationPower = power,
+                    preCriticalDirectDamage = damageResolution.preCritical.finalRoundedDamage * weakpointMultiplier,
+                    contributorId = "${event.player.uuid}:${build.elementSource(Element.ICE) ?: ElementalCombatState.DEFAULT_CONTRIBUTOR}",
+                    lineage = DamageType.PHYSICAL,
+                    hitExecutionId = hit.attackExecutionId,
+                )
+            }
+            var elementalDamage = 0
+            fire?.detonations?.forEachIndexed { index, detonation ->
+                elementalDamage += prototypeBoss.applyElementalDamage(
+                    attackExecutionId = hit.attackExecutionId,
+                    effectId = "fire-detonation-$index",
+                    damage = detonation.primaryDamage,
+                )
+            }
+            ice?.shatter?.let { shatter ->
+                elementalDamage += prototypeBoss.applyElementalDamage(
+                    attackExecutionId = hit.attackExecutionId,
+                    effectId = "ice-shatter",
+                    damage = shatter.totalBonusDamage,
+                )
+            }
             twinRodsAir.onAttackHit(hit.weapon, event.player.isOnGround, hit.attackExecutionId)
             if (skill3.reduceCooldownForNormalAttack(hit.attackExecutionId)) {
                 sendResourceSnapshot(event.player)
             }
-            if (damage > 0) {
+            showElementalFeedback(
+                player = event.player,
+                point = tester?.position?.add(0.0, 1.0, 0.0) ?: event.player.position,
+                fire = fire,
+                ice = ice,
+            )
+            if (damage + elementalDamage > 0) {
                 updateBossBar()
                 if (weakpoint != null) {
                     if (hit.weapon == WeaponType.TWIN_RODS) showWeakpointLabel(event.player, weakpoint)
@@ -1355,13 +1529,37 @@ private fun weaponFor(player: net.minestom.server.entity.Player): WeaponType = w
     else -> WeaponType.HEAVY_BLADE
 }
 
+private fun equipmentFor(player: net.minestom.server.entity.Player): EquipmentItem? {
+    val mainHand = player.getEquipment(EquipmentSlot.MAIN_HAND)
+    if (mainHand.material() != Material.IRON_SWORD) return null
+    val itemId = mainHand.readEquipmentPresentation()?.itemId ?: return null
+    return TWIN_BLADES_FIXTURES[itemId]
+}
+
+private fun normalAttackTags(weapon: WeaponType): Set<AttackTag> = setOf(
+    AttackTag.MELEE,
+    AttackTag.PHYSICAL,
+    AttackTag.NORMAL_ATTACK,
+)
+
+private fun WeaponType.baseAttackPower(): Double = when (this) {
+    WeaponType.HEAVY_BLADE -> PrototypeBossState.HEAVY_BLADE_BODY_DAMAGE.toDouble()
+    WeaponType.TWIN_RODS -> PrototypeBossState.TWIN_RODS_BODY_DAMAGE.toDouble()
+}
+
 private fun synchronizeTwinBladesOffhand(player: net.minestom.server.entity.Player) {
     val offhand = player.getEquipment(EquipmentSlot.OFF_HAND)
     if (weaponFor(player) == WeaponType.TWIN_RODS) {
-        if (offhand.isAir) {
+        val desired = when (equipmentFor(player)?.itemId) {
+            FROST_TWIN_BLADES.itemId -> frostTwinBladesItemStack()
+            else -> emberTwinBladesItemStack()
+        }.withTag(TWIN_BLADES_AUTO_OFFHAND, true)
+        val proxyNeedsRefresh = offhand.getTag(TWIN_BLADES_AUTO_OFFHAND) &&
+            offhand.readEquipmentPresentation()?.itemId != desired.readEquipmentPresentation()?.itemId
+        if (offhand.isAir || proxyNeedsRefresh) {
             player.setEquipment(
                 EquipmentSlot.OFF_HAND,
-                twinBladesItemStack().withTag(TWIN_BLADES_AUTO_OFFHAND, true),
+                desired,
             )
         }
     } else if (offhand.getTag(TWIN_BLADES_AUTO_OFFHAND)) {
@@ -1571,6 +1769,63 @@ private fun tickRiftExecutioner(
             }
             RiftExecutionerEvent.BreakEnded -> bossState.setBreakActive(false)
             RiftExecutionerEvent.FinalStruggleComplete -> bossState.completeFinalStruggle()
+        }
+    }
+}
+
+private fun showElementalFeedback(
+    player: net.minestom.server.entity.Player,
+    point: Point,
+    fire: FireApplicationResult?,
+    ice: IceApplicationResult?,
+) {
+    if (fire != null && !fire.duplicateHit) {
+        sendSkillParticle(player, Particle.FLAME, point)
+        if (fire.detonated) {
+            player.sendPacket(
+                ParticlePacket(
+                    Particle.EXPLOSION,
+                    point.x(),
+                    point.y(),
+                    point.z(),
+                    0.45f,
+                    0.45f,
+                    0.45f,
+                    0.1f,
+                    8,
+                ),
+            )
+            playSkillSound(player, "entity.generic.explode", point, 0.75f, 1.15f)
+            player.sendMessage(Component.text("[Fire] Burn detonated (${fire.stacksAfter}/${FireState.MAX_STACKS})"))
+        }
+    }
+    if (ice != null && !ice.duplicateHit) {
+        sendSkillParticle(player, Particle.SNOWFLAKE, point)
+        when {
+            ice.shatter != null -> {
+                player.sendPacket(
+                    ParticlePacket(
+                        Particle.CLOUD,
+                        point.x(),
+                        point.y(),
+                        point.z(),
+                        0.45f,
+                        0.45f,
+                        0.45f,
+                        0.08f,
+                        10,
+                    ),
+                )
+                playSkillSound(player, "block.glass.break", point, 0.9f, 1.2f)
+                player.sendMessage(Component.text("[Ice] SHATTER"))
+            }
+            ice.createdFrozen -> {
+                playSkillSound(player, "block.glass.place", point, 0.8f, 1.35f)
+                player.sendMessage(Component.text("[Ice] FROZEN"))
+            }
+            ice.levelAfter != ice.levelBefore -> {
+                player.sendMessage(Component.text("[Ice] ${ice.levelAfter.name.replace('_', ' ')}"))
+            }
         }
     }
 }

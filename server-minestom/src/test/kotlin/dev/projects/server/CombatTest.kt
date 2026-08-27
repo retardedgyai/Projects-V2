@@ -1,6 +1,7 @@
 package dev.projects.server
 
 import dev.projects.protocol.AttackInputState
+import dev.projects.server.combat.CombatBuildSnapshot
 import net.minestom.server.coordinate.Pos
 import net.minestom.server.coordinate.Vec
 import kotlin.test.Test
@@ -244,6 +245,30 @@ class CombatTest {
         combat.input(AttackInputState.RELEASE)
         combat.tick(origin, forward, emptyList())
         assertEquals(null, combat.activeProfile)
+    }
+
+    @Test
+    fun `equipment snapshot is taken at attack start and released after execution`() {
+        var currentBuild = CombatBuildSnapshot.empty(
+            attackTags = setOf(dev.projects.server.mod.AttackTag.MELEE),
+            fallbackAttackPower = 10.0,
+        )
+        val combat = CombatState(
+            executionIdSource = sequence(),
+            weaponSource = { WeaponType.TWIN_RODS },
+            buildSource = { currentBuild },
+        )
+
+        combat.input(AttackInputState.PRESS)
+        val startedBuild = combat.activeBuildSnapshot
+        currentBuild = CombatBuildSnapshot.empty(fallbackAttackPower = 99.0)
+        repeat(combat.activeProfile!!.totalTicks - 1) {
+            combat.tick(origin, forward, emptyList())
+            assertEquals(startedBuild, combat.activeBuildSnapshot)
+        }
+        combat.input(AttackInputState.RELEASE)
+        combat.tick(origin, forward, emptyList())
+        assertEquals(null, combat.activeBuildSnapshot)
     }
 
     private fun finishAttack(combat: CombatState, targets: Collection<CombatTarget>): List<UUID> =

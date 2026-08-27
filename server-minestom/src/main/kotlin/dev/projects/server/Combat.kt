@@ -2,6 +2,7 @@ package dev.projects.server
 
 import dev.projects.protocol.AttackInputState
 import dev.projects.protocol.DodgeInput
+import dev.projects.server.combat.CombatBuildSnapshot
 import net.minestom.server.coordinate.Point
 import net.minestom.server.coordinate.Vec
 import java.util.UUID
@@ -86,6 +87,7 @@ class CombatState(
     private val executionIdSource: () -> Long = ExecutionIds::next,
     private val weaponSource: () -> WeaponType = { WeaponType.HEAVY_BLADE },
     private val attackSpeedSource: () -> Double = { 1.0 },
+    private val buildSource: () -> CombatBuildSnapshot? = { null },
 ) {
     private var held = false
     private var phase: AttackPhase? = null
@@ -94,6 +96,9 @@ class CombatState(
     private var deferAttackRestart = false
     private val hitTargets = mutableSetOf<UUID>()
     var activeProfile: WeaponProfile? = null
+        private set
+
+    var activeBuildSnapshot: CombatBuildSnapshot? = null
         private set
 
     val isAttacking: Boolean
@@ -117,6 +122,7 @@ class CombatState(
         deferAttackRestart = false
         hitTargets.clear()
         activeProfile = null
+        activeBuildSnapshot = null
     }
 
     fun tick(position: Point, direction: Vec, targets: Collection<CombatTarget>): List<CombatEvent> {
@@ -152,6 +158,7 @@ class CombatState(
             }
             if (phase == null) {
                 activeProfile = null
+                activeBuildSnapshot = null
                 hitTargets.clear()
                 if (held && !deferAttackRestart) events += startAttack()
                 deferAttackRestart = false
@@ -162,7 +169,10 @@ class CombatState(
 
     private fun startAttack(): List<CombatEvent> {
         executionId = executionIdSource()
-        activeProfile = weaponSource().profile(attackSpeedSource())
+        activeBuildSnapshot = buildSource()
+        activeProfile = weaponSource().profile(
+            attackSpeedSource() * (activeBuildSnapshot?.stats?.attackSpeedMultiplier ?: 1.0),
+        )
         phase = AttackPhase.WINDUP
         phaseTicks = activeProfile!!.startupTicks
         hitTargets.clear()

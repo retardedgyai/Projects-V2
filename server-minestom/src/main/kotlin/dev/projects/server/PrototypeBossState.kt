@@ -42,6 +42,7 @@ class PrototypeBossState(
     private val playerMaxHealthValues = mutableMapOf<UUID, Int>()
     private val playerDamageExecutions = mutableMapOf<UUID, MutableSet<Long>>()
     private val bossDamageExecutions = mutableSetOf<Long>()
+    private val bossElementalDamageExecutions = mutableSetOf<Pair<Long, String>>()
     private val skill3PulseDamageExecutions = mutableSetOf<Triple<Long, Int, UUID>>()
     private val skill3FinisherDamageExecutions = mutableSetOf<Pair<Long, UUID>>()
     private val skill1DamageExecutions = mutableSetOf<Pair<Long, UUID>>()
@@ -138,6 +139,33 @@ class PrototypeBossState(
         return applyPlayerDamage(bodyDamage, weakpoint != null, outgoingDamageMultiplier)
     }
 
+    /** Applies one Damage Core result for a server-confirmed normal hit. */
+    fun applyResolvedPlayerAttack(
+        attackExecutionId: Long,
+        directDamage: Double,
+        weakpoint: FixedWeakpoint? = null,
+    ): Int {
+        require(directDamage.isFinite() && directDamage >= 0.0) {
+            "Resolved player damage must be finite and non-negative"
+        }
+        if (!isActive || !bossDamageExecutions.add(attackExecutionId)) return 0
+        return applyPlayerDamage(directDamage, weakpoint != null)
+    }
+
+    /** Applies one explicitly attributed elemental bonus for an attack execution. */
+    fun applyElementalDamage(
+        attackExecutionId: Long,
+        effectId: String,
+        damage: Double,
+    ): Int {
+        require(effectId.isNotBlank()) { "Elemental effect ID is required" }
+        require(damage.isFinite() && damage >= 0.0) {
+            "Elemental damage must be finite and non-negative"
+        }
+        if (!isActive || !bossElementalDamageExecutions.add(attackExecutionId to effectId)) return 0
+        return applyPlayerDamage(damage)
+    }
+
     /** Applies one server-confirmed Skill3 pulse per cast, pulse, and target. */
     fun applySkill3Pulse(
         castId: Long,
@@ -211,6 +239,7 @@ class PrototypeBossState(
         skill1DamageExecutions.clear()
         skill2PulseDamageExecutions.clear()
         skill2LandingDamageExecutions.clear()
+        bossElementalDamageExecutions.clear()
         when (targetPhase) {
             PrototypeBossPhase.DUEL -> {
                 currentHealth = (maxHealth * 0.85).roundToInt().coerceAtLeast(1)
@@ -242,6 +271,7 @@ class PrototypeBossState(
         skill1DamageExecutions.clear()
         skill2PulseDamageExecutions.clear()
         skill2LandingDamageExecutions.clear()
+        bossElementalDamageExecutions.clear()
     }
 
     /** Restores the prototype encounter and every registered player to its test-start state. */
@@ -256,6 +286,7 @@ class PrototypeBossState(
         skill1DamageExecutions.clear()
         skill2PulseDamageExecutions.clear()
         skill2LandingDamageExecutions.clear()
+        bossElementalDamageExecutions.clear()
         playerDamageExecutions.clear()
         victoryRewardClaimed = false
         playerHealth.keys.toList().forEach { playerHealth[it] = playerMaxHealth(it) }
@@ -265,7 +296,16 @@ class PrototypeBossState(
         bodyDamage: Int,
         weakpoint: Boolean = false,
         outgoingDamageMultiplier: Double = 1.0,
+    ): Int = applyPlayerDamage(bodyDamage.toDouble(), weakpoint, outgoingDamageMultiplier)
+
+    private fun applyPlayerDamage(
+        bodyDamage: Double,
+        weakpoint: Boolean = false,
+        outgoingDamageMultiplier: Double = 1.0,
     ): Int {
+        require(bodyDamage.isFinite() && bodyDamage >= 0.0) {
+            "Player damage must be finite and non-negative"
+        }
         require(outgoingDamageMultiplier >= 0.0 && outgoingDamageMultiplier.isFinite()) {
             "Outgoing damage multiplier must be finite and non-negative"
         }
