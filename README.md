@@ -19,7 +19,7 @@ ProjectS v2 は、旧ProjectSを引き継ぎつつコードはゼロから作り
 - Kotlin-first。
 - Gradle Kotlin DSL。
 - Server: Minestom 26.2系。
-- Client: Fabric 26.2を内部基盤とした専用ProjectS Client。
+- Client: Fabric 26.2。core loopをclient-only入力へ依存させず、体験強化として使う方向をDirector Review中。
 - ServerがDamage/Hit/Reward/Progressionを最終判定。
 - 人間向けEditorはMob Editorのみ。
 - Skill/VFX/Studio/World Builder/Balance Editorはv2では作らない。
@@ -34,10 +34,11 @@ ProjectS v2 は、旧ProjectSを引き継ぎつつコードはゼロから作り
 
 ## まず読む文書
 
+- [`docs/00 Dashboard.md`](docs/00%20Dashboard.md) — Obsidian Director Console。現在のNOW/NEXT/BLOCKED/判断待ち。
 - [`docs/development/onboarding.md`](docs/development/onboarding.md) — 新しいCreatorのcloneから開始まで。
 - [`docs/development/creator-workflow.md`](docs/development/creator-workflow.md) — PlaygroundとProductionの使い分け。
 - [`docs/development/sol-review.md`](docs/development/sol-review.md) — 共通Sol Review手順。
-- [`docs/decisions/2026-08-19-current-decisions.md`](docs/decisions/2026-08-19-current-decisions.md) — **現在決まっていること全部の基準書**。
+- [`docs/decisions/2026-08-19-current-decisions.md`](docs/decisions/2026-08-19-current-decisions.md) — 既存Decisionの取り込み元。Director Consoleで個別仕様へ分解して再確認する。
 - [`docs/game/combat-principles.md`](docs/game/combat-principles.md) — 一人称、通常攻撃、攻撃判定、Mob攻撃、回避等。
 - [`docs/game/mana-and-class-resources.md`](docs/game/mana-and-class-resources.md) — マナ/Cooldown/固有ゲージ。
 - [`docs/development/environment.md`](docs/development/environment.md) — Minecraft/Java/Minestom/Fabric/Gradle環境。
@@ -48,6 +49,12 @@ ProjectS v2 は、旧ProjectSを引き継ぎつつコードはゼロから作り
 - [`docs/development/day-1-combat-spike.md`](docs/development/day-1-combat-spike.md) — 初日の戦闘実験。
 - [`docs/development/rewrite-rules.md`](docs/development/rewrite-rules.md) — リライト規則。
 - [`legacy/README.md`](legacy/README.md) — 旧ProjectSの扱い。
+
+## Obsidian Director Console
+
+Obsidianで `docs` フォルダを **Open folder as vault** し、`00 Dashboard.md` をPinします。
+
+このrepo内の `docs` が外部脳です。その中で `design_status: FIXED` かつDirector承認済みのページを仕様の正本として扱います。別Vaultへコピーして二重管理しません。日々の使い方は [`docs/Director/50 Reference/Obsidian Guide.md`](docs/Director/50%20Reference/Obsidian%20Guide.md) を参照してください。
 
 ## 最重要原則
 
