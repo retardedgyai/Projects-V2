@@ -19,7 +19,7 @@ ProjectS v2 は、旧ProjectSを引き継ぎつつコードはゼロから作り
 - Kotlin-first。
 - Gradle Kotlin DSL。
 - Server: Minestom 26.2系。
-- Client: Fabric 26.2。core loopをclient-only入力へ依存させず、体験強化として使う方向をDirector Review中。
+- Client: Fabric 26.2。core loopをclient-only入力へ依存させず、体験強化として使う方向を本人確認待ち。
 - ServerがDamage/Hit/Reward/Progressionを最終判定。
 - 人間向けEditorはMob Editorのみ。
 - Skill/VFX/Studio/World Builder/Balance Editorはv2では作らない。
@@ -34,7 +34,7 @@ ProjectS v2 は、旧ProjectSを引き継ぎつつコードはゼロから作り
 
 ## まず読む文書
 
-- [`docs/00 Dashboard.md`](docs/00%20Dashboard.md) — Obsidian Director Console。現在のNOW/NEXT/BLOCKED/判断待ち。
+- [`docs/00 ここから.md`](docs/00%20%E3%81%93%E3%81%93%E3%81%8B%E3%82%89.md) — Obsidianの最初の画面。今日やること、困っていること、自分が決めること。
 - [`docs/development/onboarding.md`](docs/development/onboarding.md) — 新しいCreatorのcloneから開始まで。
 - [`docs/development/creator-workflow.md`](docs/development/creator-workflow.md) — PlaygroundとProductionの使い分け。
 - [`docs/development/sol-review.md`](docs/development/sol-review.md) — 共通Sol Review手順。
@@ -50,11 +50,11 @@ ProjectS v2 は、旧ProjectSを引き継ぎつつコードはゼロから作り
 - [`docs/development/rewrite-rules.md`](docs/development/rewrite-rules.md) — リライト規則。
 - [`legacy/README.md`](legacy/README.md) — 旧ProjectSの扱い。
 
-## Obsidian Director Console
+## Obsidian制作ノート
 
-Obsidianで `docs` フォルダを **Open folder as vault** し、`00 Dashboard.md` をPinします。
+Obsidianで `docs` フォルダを **Open folder as vault** し、`00 ここから.md` をピン留めします。
 
-このrepo内の `docs` が外部脳です。その中で `design_status: FIXED` かつDirector承認済みのページを仕様の正本として扱います。別Vaultへコピーして二重管理しません。日々の使い方は [`docs/Director/50 Reference/Obsidian Guide.md`](docs/Director/50%20Reference/Obsidian%20Guide.md) を参照してください。
+このrepo内の `docs` がProjectSの外部脳です。その中で `仕様状態: 仕様確定` かつ本人確認済みのページを正式仕様として扱います。別の場所へコピーして二重管理しません。日々の使い方は [`docs/制作ノート/50 使い方と資料/使い方.md`](docs/%E5%88%B6%E4%BD%9C%E3%83%8E%E3%83%BC%E3%83%88/50%20%E4%BD%BF%E3%81%84%E6%96%B9%E3%81%A8%E8%B3%87%E6%96%99/%E4%BD%BF%E3%81%84%E6%96%B9.md) を参照してください。
 
 ## 最重要原則
 

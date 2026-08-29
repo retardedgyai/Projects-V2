@@ -1,8 +1,8 @@
 {
   "alwaysUpdateLinks": true,
   "newFileLocation": "folder",
-  "newFileFolderPath": "Director/30 Current/Inbox",
-  "attachmentFolderPath": "Director/90 Archive/Attachments",
+  "newFileFolderPath": "制作ノート/30 今/思いつき置き場",
+  "attachmentFolderPath": "制作ノート/90 保管庫/添付ファイル",
   "showInlineTitle": true,
   "useMarkdownLinks": false
 }
