@@ -17,14 +17,8 @@ internal object QuestMapStructureAssets {
         variation: Int,
         rotation: Int,
     ) {
-        Painter(
-            instance,
-            origin.x,
-            plan.heightAt(origin) + 1,
-            origin.z,
-            rotation,
-            variation.toLong(),
-        ).proceduralTree(plan.style, plan)
+        val selection = QuestMapSchematicCatalog.selectTree(plan.style, variation)
+        selection.asset.place(instance, plan, origin, rotation, selection.palette)
     }
 
     fun placeBoulder(
@@ -34,15 +28,15 @@ internal object QuestMapStructureAssets {
         variation: Int,
         rotation: Int,
     ) {
-        Painter(
-            instance,
-            origin.x,
-            plan.heightAt(origin) + 1,
-            origin.z,
-            rotation,
-            variation.toLong(),
-        ).groundedBoulder(plan, plan.style)
+        val selection = QuestMapSchematicCatalog.selectBoulder(plan.style, variation)
+        selection.asset.place(instance, plan, origin, rotation, selection.palette)
     }
+
+    fun treeFootprint(style: QuestTerrainStyle, variation: Int): Int =
+        QuestMapSchematicCatalog.selectTree(style, variation).asset.footprintRadius
+
+    fun boulderFootprint(style: QuestTerrainStyle, variation: Int): Int =
+        QuestMapSchematicCatalog.selectBoulder(style, variation).asset.footprintRadius
 
     fun placeFallenLog(
         instance: Instance,
@@ -485,33 +479,39 @@ internal object QuestMapStructureAssets {
         fun roadsideMarker(plan: QuestMapPlan, style: QuestTerrainStyle) {
             when (Math.floorMod(assetSeed, 4L).toInt()) {
                 0 -> {
+                    // A low cairn reads as a route cue without becoming a random tower.
                     setGrounded(plan, 0, 0, 0, Block.COBBLESTONE)
                     setGrounded(plan, 0, 0, 1, Block.MOSSY_COBBLESTONE)
-                    setGrounded(plan, 0, 0, 2, Block.COBBLESTONE_WALL)
                     setGrounded(plan, 1, 0, 0, Block.ANDESITE)
                     setGrounded(plan, -1, 1, 0, Block.MOSSY_COBBLESTONE)
+                    setGrounded(plan, 0, 0, 2, Block.STONE_BUTTON)
                 }
                 1 -> {
-                    setGrounded(plan, 0, 0, 0, if (style == QuestTerrainStyle.HIGHLANDS) Block.SPRUCE_LOG else Block.STRIPPED_OAK_LOG)
-                    setGrounded(plan, 0, 0, 1, Block.OAK_FENCE)
-                    setGrounded(plan, 0, 0, 2, Block.OAK_FENCE)
-                    set(1, 2, 0, Block.OAK_PLANKS)
-                    set(-1, 2, 0, Block.OAK_PLANKS)
-                    set(0, 3, 0, Block.LANTERN)
+                    // A grounded rest bench, not a freestanding sign or arch.
+                    val timber = if (style == QuestTerrainStyle.HIGHLANDS) Block.SPRUCE_SLAB else Block.OAK_SLAB
+                    setGrounded(plan, -1, 0, 0, timber)
+                    setGrounded(plan, 0, 0, 0, timber)
+                    setGrounded(plan, 1, 0, 0, timber)
+                    setGrounded(plan, -1, 1, 0, Block.COBBLESTONE)
+                    setGrounded(plan, 1, 1, 0, Block.MOSSY_COBBLESTONE)
+                    setGrounded(plan, 2, 0, 0, Block.LANTERN)
                 }
                 2 -> {
+                    // A half-buried milestone with a broad base.
                     setGrounded(plan, 0, 0, 0, Block.MOSSY_STONE_BRICKS)
                     setGrounded(plan, 0, 0, 1, Block.CHISELED_STONE_BRICKS)
-                    setGrounded(plan, 0, 0, 2, Block.STONE_BRICK_WALL)
                     setGrounded(plan, 1, 0, 0, Block.CRACKED_STONE_BRICKS)
+                    setGrounded(plan, -1, 0, 0, Block.ANDESITE)
                     setGrounded(plan, -1, 0, 0, Block.MOSS_CARPET)
                 }
                 else -> {
-                    setGrounded(plan, 0, 0, 0, Block.COBBLESTONE_WALL)
-                    setGrounded(plan, 0, 0, 1, Block.COBBLESTONE_WALL)
-                    setGrounded(plan, 0, 0, 2, if (style == QuestTerrainStyle.HIGHLANDS) Block.SOUL_LANTERN else Block.LANTERN)
+                    // A collapsed road-edge fragment; its horizontal mass explains its presence.
+                    setGrounded(plan, -1, 0, 0, Block.COBBLESTONE)
+                    setGrounded(plan, 0, 0, 0, Block.MOSSY_COBBLESTONE)
+                    setGrounded(plan, 1, 0, 0, Block.ANDESITE)
+                    setGrounded(plan, 1, 0, 1, Block.COBBLESTONE_SLAB)
                     setGrounded(plan, 1, 0, 0, Block.MOSSY_COBBLESTONE)
-                    setGrounded(plan, -1, 1, 0, Block.ANDESITE)
+                    setGrounded(plan, 0, 1, 0, if (style == QuestTerrainStyle.HIGHLANDS) Block.SOUL_LANTERN else Block.LANTERN)
                 }
             }
         }

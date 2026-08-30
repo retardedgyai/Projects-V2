@@ -2,23 +2,23 @@
 
 This note defines how ProjectS accumulates reusable terrain-decoration knowledge without quietly importing incompatible or unlicensed Minecraft builds.
 
-## Current ProjectS-owned catalog
+## Current reviewed catalog
 
 `QuestMapStructureAssets` is the single placement boundary for reusable quest-map structures.
 
-- Verdant, Highlands, and Saltmarsh trees use a parametric grammar with twenty-four profile tendencies.
-- Height, lean, multiple stems, root flare, branch count, branch direction, branch length, crown count, crown radius, leaf holes, dead growth, windswept form, palette, and four rotations are seed-driven.
-- The parameter space contains well over one hundred thousand deterministic combinations; this is a diversity budget, not a claim that every combination is perceptually unique.
-- Boulders combine eighteen tendencies with independent footprint, height, palette, erosion holes, spikes, moss, burial, and four rotations.
-- Boulders use one buried structural anchor rather than draping every voxel over the sampled surface; satellite stones make them read as one grounded outcrop.
+- Trees now use 25 reviewed Sponge-v2 schematics grouped into lush oak, spruce, swamp, old-growth, and dead-tree ecologies.
+- Rocks use 11 reviewed schematics. Four rotations and style-aware block palettes provide variety without deforming the source silhouettes.
+- Every imported file is parsed and validated in tests; every selected palette and rotation must resolve to a Minecraft 26.2 block state.
+- Tree anchors are calculated from the lowest trunk mass. Root/trunk columns are extended only where local ground would otherwise leave a visible gap.
+- Rock anchors are buried by one block and any exposed lower mass is filled down to terrain, preventing floating boulders.
 - Placement is rejected when the required footprint is too steep, close to a road, submerged, or inside content clearance.
 - Fallen logs are reusable grounded structures rather than one-off decoration code.
 - Shrub clusters combine stems, multiple low crowns, undergrowth, and ground litter as micro-scenes instead of isolated leaf cubes.
-- Road guidance alternates sides and selects from cairn, sign/lamp, ruined waystone, and lantern-cairn scenes instead of repeating one fence post.
-- Camps, combat landmarks, gathering outcrops, and discoveries each select from multiple authored scene grammars.
+- Road guidance uses only low cairns, grounded rest benches, half-buried milestones, and collapsed road-edge fragments. Freestanding posts and unexplained arches are forbidden.
+- Camps, combat landmarks, gathering cuts, discoveries, and the boss arena each have a readable purpose, broad silhouette, route-aligned framing, and a clear playable center.
 - Grove-weighted placement creates forests and clearings instead of uniform random noise.
 
-The catalog is authored in this repository and therefore has an unambiguous ownership and review path. Terrain planning does not know how an asset is stored; a future file-backed catalog can replace the Kotlin-authored voxels without changing route or terrain generation.
+The placement code remains behind one boundary, so terrain planning does not know whether a reviewed asset is file-backed or authored in Kotlin.
 
 ## External asset intake contract
 
@@ -37,11 +37,11 @@ Assets with missing redistribution terms are reference material only and must no
 
 ## Reference study applied in this revision
 
-The MIT-licensed WorldPainter tree collection records several useful production patterns: separate small-tree sets, slope-capable roots, spruce families, rocks, bushes, and debris. ProjectS did not import its binary schematics in this revision; it translated those catalog and grounding principles into repository-owned parametric assets. Source: https://github.com/sijmenvb/worldpainter-trees
+The MIT-licensed WorldPainter tree collection provides the current tree and rock schematics. ProjectS preserves its upstream license beside the resources, records the canonical source, and adds its own deterministic grounding, rotation, palette, and placement rules. Source: https://github.com/sijmenvb/worldpainter-trees
 
-## File-backed direction
+## File-backed implementation
 
-Sponge `.schem` is the preferred interchange format because modern WorldEdit uses it for current block-state data and preserves a relative origin. ProjectS still needs a small importer that converts the palette and relative block positions into the existing placement boundary; Minestom's generator should remain responsible for terrain, while structures are placed after the quest Instance chunks are ready.
+`SpongeSchematicAsset` reads Sponge `.schem` v2 palettes and varint block data directly. Minestom remains responsible for terrain; reviewed structures are placed after the quest Instance chunks are ready.
 
 Relevant primary documentation:
 

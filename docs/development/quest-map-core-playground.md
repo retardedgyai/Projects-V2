@@ -30,7 +30,7 @@ This playground tests one concrete replacement for the current flat hunt space. 
 7. For Saltmarsh, carve warped wetland basins with variable depth, irregular shorelines, inlet fingers, and relaxed banks while keeping the entire main road above water.
 8. Classify every surface cell as Meadow, Forest Floor, Shore, Rocky, Heath, or Peat and apply contiguous block palettes.
 9. Reject maps that fail reachability, density, spacing, elevation, sightline, road-grade, shoulder-relief, explorable-corridor, ecology, coastline, water, or content-count rules.
-10. Load the 196 playable chunks plus a one-chunk sea buffer, add ecology-weighted parametric structures and authored landmarks, then place the result in the ready pool.
+10. Load the 196 playable chunks plus a one-chunk sea buffer, add ecology-weighted reviewed schematics and route-aligned authored scenes, then place the result in the ready pool.
 
 ## No-wait rule
 
@@ -68,8 +68,8 @@ Automated planning budget: 20 complete plans in under four seconds on the develo
    To reproduce the failed Saltmarsh screenshot exactly, use `/questmap seed 1788101320652` instead.
    To reproduce the failed mountainside-road screenshot, use `/questmap seed 1788109725769`.
 4. Confirm that no Rift Executioner boss bar or Hub combat telegraph remains after transfer.
-5. Follow only the broad main road. It must lead from the camp through three stone combat rings to the Lodestone boss arena without jumping or building.
-6. Inspect every narrow side trail. Four end at ore clusters and two end at stone/amethyst arches; the final main-road arch foreshadows the boss.
+5. Follow only the broad main road. It must lead from the field-work camp through three distinct, playable combat clearings to the Lodestone boss arena without jumping or building.
+6. Inspect every narrow side trail. Gathering sites must read as exposed cuts/outcrops rather than loose ore piles; discoveries must read as a spring, collapsed shrine, or rooted stone seat rather than unexplained pillars.
 7. Verify that vegetation does not block the road or content landmarks.
 8. From the actual spawn height, verify that terrain and vegetation hide the boss arena and most later encounters.
 9. Compare at least one seed from every reported route layout; the route must not merely be the same west-to-east S-curve.
@@ -77,6 +77,7 @@ Automated planning budget: 20 complete plans in under four seconds on the develo
 10. Verify that the coastline and outer sea hide the square edge during normal play and the invisible boundary cannot be crossed.
 11. Run `/questmap return`; the player must return to the hub and the active count must decrease.
 12. Repeat at least 20 entries. The command-to-transfer P95 target is below one second.
+13. Reject the seed if a tree or rock floats, a roadside cue reads as a random structure, the boss shrine is visible from spawn, or a scene lacks a clear entrance, focal point, and playable floor.
 
 ## Explicitly not complete in this playground checkpoint
 

@@ -1,0 +1,90 @@
+# Quest Map Visual Quality Contract
+
+This contract replaces “more random blocks” as the definition of quality for the ProjectS quest-map playground. A seed may pass topology and reachability tests and still fail this contract.
+
+## Reference findings
+
+### Wynncraft
+
+The official Wynncraft map shows that a readable RPG landscape is a network of authored places, not uniformly decorated noise. Roads split and merge around lakes, towns, ruins, forest edges, fields, cliffs, and major silhouettes. Biome transitions are staged over distance, while local scenes use a dominant landmark plus supporting terrain and vegetation.
+
+- Official map: https://map.wynncraft.com/
+- Official rendered map tile studied for road, lake, settlement, and biome composition: https://cdn.wynncraft.com/nextgen/renders/2.0.4/0/3/3/3/0.png
+- Crystal Cave example studied for layered paths, water, lighting, framing, and a destination beyond the foreground: https://forums.wynncraft.com/threads/crystal-cave.142106/
+
+### Monumenta
+
+Monumenta's public dungeon gallery demonstrates room-level authorship. Each room has a clear activity, a dominant silhouette, a controlled palette, a navigable floor, strong walls or background framing, and a small number of accents. Detail is clustered around the intended subject instead of distributed uniformly.
+
+Celestial Zenith also fixes progression rhythm at the layout level: nine rooms are followed by a guaranteed boss as the tenth room. ProjectS does not copy its rooms, but adopts the principle that procedural order selects authored gameplay scenes rather than generating anonymous decoration.
+
+- Official gallery: https://www.playmonumenta.com/
+- Celestial Zenith room/floor rules: https://monumenta.wiki.gg/wiki/Celestial_Zenith
+
+### Hypixel
+
+Hypixel hub and island builds reinforce a gameplay constraint missing from showcase-only terrain: courtyards, paths, cover, water, and elevation must preserve movement and combat space. A beautiful cliff that makes ordinary traversal unpleasant fails this quest-map contract.
+
+- Hypixel community hub rebuild discussion used as a gameplay-space comparison: https://hypixel.net/threads/i-rebuilt-the-ruined-castle-in-the-hub.4084476/
+
+### Licensed structure source
+
+ProjectS may redistribute and adapt the selected tree and rock schematics from `sijmenvb/worldpainter-trees` under its MIT license. The source collection explicitly designs roots for slopes and groups assets by ecological use.
+
+- Canonical source: https://github.com/sijmenvb/worldpainter-trees
+- License: https://github.com/sijmenvb/worldpainter-trees/blob/main/LICENSE
+
+## Non-negotiable scene grammar
+
+Every major scene must contain all five layers:
+
+1. **Purpose** — the player can tell whether this is travel, combat, gathering, discovery, rest, or boss space.
+2. **Primary silhouette** — one dominant form readable before its small details.
+3. **Framing** — terrain, canopy, ruins, water, or walls shape the approach without blocking it.
+4. **Ground transition** — the scene blends into adjacent ecology over multiple blocks; it is never pasted onto one flat disk.
+5. **Supporting detail** — two or three coherent accents explain use and age. Random pillars, isolated fences, and freestanding block stacks are forbidden.
+
+## Route contract
+
+- The main road is an authored traversal corridor, not paint on a heightmap.
+- A player standing on the road should normally see the current scene and a hint of the next, not the boss and every encounter.
+- Long straight visibility is interrupted by bends, tree masses, rock shoulders, shallow cuts, bridges, or gateways.
+- The road may narrow briefly for drama but must reopen before combat and gathering scenes.
+- Stairs, slabs, retaining edges, bridges, and switchbacks must communicate why the road crosses its terrain.
+- Road materials form contiguous wear patterns. Single-block confetti is rejected.
+
+## Natural asset contract
+
+- Tree families must mix at least three scales and multiple crown silhouettes per ecology.
+- The lowest trunk/root mass must intersect terrain. No visible air gap is permitted below a tree or boulder footprint.
+- Forests contain edge, interior, veteran, deadwood, shrub, and clearing roles instead of one uniformly scattered tree.
+- Rocks are partially buried and occur as outcrops or related satellites, never as identical surface props.
+- Water has inflow/outflow logic, variable shelf depth, distinct bank ecologies, and at least one composed focal edge.
+
+## Landmark contract
+
+- Road markers are low, believable navigation cues such as cairns, worn milestones, collapsed wall fragments, or a lamp attached to an actual rest scene.
+- Tall freestanding posts, unexplained arches, floating rubble, and isolated decorative block stacks are prohibited.
+- Combat spaces require a readable entry, a clear playable center, two or more edge features, and an exit orientation.
+- Gathering spaces expose material through terrain: a seam, cut, fallen tree, bank, or excavation. Loose ore blocks piled on grass are prohibited.
+- The boss approach must have at least two reveals: distant foreshadowing and an arena threshold.
+
+## Automated rejection signals
+
+Automation cannot certify beauty, but it must reject common failures:
+
+- asset footprint exceeds its permitted terrain range;
+- a placed asset has a solid block above air within its ground-contact footprint;
+- repeated major asset family appears in adjacent scene slots;
+- major scene lacks approach and exit clearance;
+- main-road visibility exposes the boss too early;
+- content-free travel span or uniform-detail span exceeds the authored budget;
+- trees occupy the road or combat center;
+- biome surface coverage collapses to one dominant material;
+- preparation exceeds the five-second map budget.
+
+## Manual review gate
+
+Review at least twelve deterministic seeds: four route layouts across all three terrain styles, including every permanent regression seed. Capture spawn, first bend, one combat scene, one gathering branch, one discovery, boss threshold, water edge, forest interior, and a high overview.
+
+A seed is rejected when any reviewer cannot answer “what is this place for?”, sees a repeated generator trick, notices a floating/pasted asset, or must fight the terrain to explore. Passing metrics is necessary but never sufficient.
