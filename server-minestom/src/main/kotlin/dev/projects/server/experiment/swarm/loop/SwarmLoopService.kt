@@ -91,6 +91,8 @@ class SwarmLoopService(
         Decision.apply(
             current.copy(
                 cord = current.cord + 1,
+                brineclawTrainingDefeats = (current.brineclawTrainingDefeats + 1)
+                    .coerceAtMost(SwarmPlayerSnapshot.BRINECLAW_TRAINING_OBJECTIVE),
                 hunterCordEarned = if (current.selectedRoute == ProcurementRoute.HUNTER) {
                     (current.hunterCordEarned + 1).coerceAtMost(SwarmPlayerSnapshot.HUNTER_OBJECTIVE)
                 } else {
@@ -101,19 +103,26 @@ class SwarmLoopService(
     }
 
     /** Called only after a registered Ore target passes spatial validation. */
-    fun grantHarvestedOre(playerId: UUID): LoopOperationResult = transact(playerId) { current ->
+    fun grantHarvestedOre(playerId: UUID, objectiveNodeIndex: Int): LoopOperationResult = transact(playerId) { current ->
         if (current.selectedRoute == null) return@transact Decision.reject(LoopStatus.INVALID_STATE, current)
+        if (objectiveNodeIndex !in 0 until SwarmPlayerSnapshot.ORE_NODE_COUNT) {
+            return@transact Decision.reject(LoopStatus.UNKNOWN_TARGET, current)
+        }
         if (current.ore >= SwarmPlayerSnapshot.MAX_RESOURCE) {
             return@transact Decision.reject(LoopStatus.CAPACITY_EXCEEDED, current)
         }
+        val nodeBit = 1 shl objectiveNodeIndex
+        val isNewGathererNode = current.selectedRoute == ProcurementRoute.GATHERER &&
+            (current.gathererOreNodeMask and nodeBit) == 0
         Decision.apply(
             current.copy(
                 ore = current.ore + 1,
-                gathererOreEarned = if (current.selectedRoute == ProcurementRoute.GATHERER) {
+                gathererOreEarned = if (isNewGathererNode) {
                     (current.gathererOreEarned + 1).coerceAtMost(SwarmPlayerSnapshot.GATHERER_OBJECTIVE)
                 } else {
                     current.gathererOreEarned
                 },
+                gathererOreNodeMask = if (isNewGathererNode) current.gathererOreNodeMask or nodeBit else current.gathererOreNodeMask,
             ),
         )
     }
@@ -169,6 +178,9 @@ class SwarmLoopService(
     /** Narrow reward boundary for Lane B; encounter eligibility remains Lane B authority. */
     fun claimBossVictory(playerId: UUID): LoopOperationResult = transact(playerId) { current ->
         if (current.firstClearClaimed) return@transact Decision.already(current)
+        if (!current.brineclawTrainingComplete) {
+            return@transact Decision.reject(LoopStatus.OBJECTIVE_INCOMPLETE, current)
+        }
         if (current.fittingState != FittingState.PREPARED || current.questStage != QuestStage.COUPLER_INSTALLED) {
             return@transact Decision.reject(LoopStatus.INVALID_STATE, current)
         }

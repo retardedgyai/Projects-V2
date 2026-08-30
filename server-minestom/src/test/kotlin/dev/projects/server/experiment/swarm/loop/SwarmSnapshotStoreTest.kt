@@ -79,4 +79,22 @@ class SwarmSnapshotStoreTest {
         assertTrue(complete.firstClearClaimed)
         assertEquals(0, complete.scrip)
     }
+
+    @Test
+    fun `schema one profile migrates without granting unearned training`() {
+        val directory = Files.createTempDirectory("swarm-snapshot-v1")
+        val playerId = UUID.randomUUID()
+        Files.writeString(
+            directory.resolve("$playerId.json"),
+            """{"schemaVersion":1,"revision":4,"initialGrantClaimed":true,"scrip":0,"ore":0,"cord":0,"selectedRoute":"GATHERER","hunterCordEarned":0,"gathererOreEarned":4,"supplierRecordMask":0,"supplierCommissionClaimed":false,"fittingState":"PREPARED","questStage":"COUPLER_INSTALLED","firstClearClaimed":false}""",
+        )
+
+        val service = SwarmLoopService(FileSwarmSnapshotStore(directory))
+        val migrated = assertIs<PlayerLoadResult.Ready>(service.loadPlayer(playerId)).snapshot
+
+        assertEquals(0, migrated.brineclawTrainingDefeats)
+        assertFalse(migrated.preparedForEncounter)
+        repeat(3) { service.grantBrineclawCord(playerId) }
+        assertTrue(service.preparedForEncounter(playerId))
+    }
 }

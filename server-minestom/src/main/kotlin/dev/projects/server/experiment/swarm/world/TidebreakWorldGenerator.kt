@@ -45,6 +45,8 @@ class TidebreakBlockPlan {
     private fun structureBlock(x: Int, y: Int, z: Int): Block? {
         if (isCrashPillar(x, y, z)) return if (y == 47) Block.SEA_LANTERN else Block.REINFORCED_DEEPSLATE
 
+        if (isPracticePost(x, y, z)) return if (y == 44) Block.LIGHTNING_ROD else Block.CUT_COPPER
+
         if (inRect(x, z, 29, 33, -4, 4) && y == 41) return Block.SMOOTH_STONE
         if (inRect(x, z, 42, 46, -4, 4) && y == 41) return Block.SMOOTH_STONE
 
@@ -80,6 +82,11 @@ class TidebreakBlockPlan {
             val pz = pillar.position.blockZ()
             x in (px - 1)..(px + 1) && z in (pz - 1)..(pz + 1)
         }
+
+    private fun isPracticePost(x: Int, y: Int, z: Int): Boolean {
+        val post = TidebreakWorldSpec.practicePost.position
+        return y in 41..44 && x in (post.blockX() - 1)..(post.blockX() + 1) && z in (post.blockZ() - 1)..(post.blockZ() + 1)
+    }
 
     private fun isMarketStall(x: Int, y: Int, z: Int): Boolean {
         val corners = setOf(-31 to 7, -24 to 7, -31 to 12, -24 to 12)

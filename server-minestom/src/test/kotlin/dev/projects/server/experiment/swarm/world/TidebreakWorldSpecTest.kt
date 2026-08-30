@@ -76,4 +76,15 @@ class TidebreakWorldSpecTest {
             }
         }
     }
+
+    @Test
+    fun `practice post is a readable three-by-three four-block-high landmark`() {
+        val post = TidebreakWorldSpec.practicePost.position
+        for (x in post.blockX() - 1..post.blockX() + 1) {
+            for (z in post.blockZ() - 1..post.blockZ() + 1) {
+                assertEquals(Block.CUT_COPPER, plan.blockAt(x, 42, z))
+                assertEquals(Block.LIGHTNING_ROD, plan.blockAt(x, 44, z))
+            }
+        }
+    }
 }

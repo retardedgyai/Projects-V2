@@ -53,7 +53,9 @@ data class SwarmPlayerSnapshot(
     val cord: Int,
     val selectedRoute: ProcurementRoute?,
     val hunterCordEarned: Int,
+    val brineclawTrainingDefeats: Int,
     val gathererOreEarned: Int,
+    val gathererOreNodeMask: Int,
     val supplierRecordMask: Int,
     val supplierCommissionClaimed: Boolean,
     val fittingState: FittingState,
@@ -67,12 +69,18 @@ data class SwarmPlayerSnapshot(
         require(ore in 0..MAX_RESOURCE) { "Ore out of range" }
         require(cord in 0..MAX_RESOURCE) { "Cord out of range" }
         require(hunterCordEarned in 0..HUNTER_OBJECTIVE) { "Hunter progress out of range" }
+        require(brineclawTrainingDefeats in 0..BRINECLAW_TRAINING_OBJECTIVE) { "Brineclaw training out of range" }
         require(gathererOreEarned in 0..GATHERER_OBJECTIVE) { "Gatherer progress out of range" }
+        require(gathererOreNodeMask in 0..ALL_ORE_NODE_MASK) { "Gatherer Ore-node mask out of range" }
+        require(Integer.bitCount(gathererOreNodeMask) >= gathererOreEarned) { "Gatherer progress exceeds distinct Ore nodes" }
         require(supplierRecordMask in 0..ALL_SUPPLIER_RECORDS) { "Supplier record mask out of range" }
 
         if (selectedRoute == null) {
             require(questStage == null) { "Unselected player cannot have a quest stage" }
-            require(hunterCordEarned == 0 && gathererOreEarned == 0 && supplierRecordMask == 0) {
+            require(
+                hunterCordEarned == 0 && brineclawTrainingDefeats == 0 &&
+                    gathererOreEarned == 0 && gathererOreNodeMask == 0 && supplierRecordMask == 0,
+            ) {
                 "Unselected player cannot have route progress"
             }
             require(!supplierCommissionClaimed && fittingState == FittingState.NONE && !firstClearClaimed) {
@@ -85,6 +93,9 @@ data class SwarmPlayerSnapshot(
             }
             require(selectedRoute == ProcurementRoute.GATHERER || gathererOreEarned == 0) {
                 "Gatherer progress belongs only to Gatherer"
+            }
+            require(selectedRoute == ProcurementRoute.GATHERER || gathererOreNodeMask == 0) {
+                "Gatherer Ore nodes belong only to Gatherer"
             }
             require(selectedRoute == ProcurementRoute.SUPPLIER || supplierRecordMask == 0) {
                 "Supplier records belong only to Supplier"
@@ -128,7 +139,10 @@ data class SwarmPlayerSnapshot(
         }
 
     val preparedForEncounter: Boolean
-        get() = fittingState != FittingState.NONE
+        get() = fittingState != FittingState.NONE && brineclawTrainingDefeats >= BRINECLAW_TRAINING_OBJECTIVE
+
+    val brineclawTrainingComplete: Boolean
+        get() = brineclawTrainingDefeats >= BRINECLAW_TRAINING_OBJECTIVE
 
     val fittingEffects: TidehookFittingEffects
         get() = when (fittingState) {
@@ -149,7 +163,10 @@ data class SwarmPlayerSnapshot(
         const val MAX_RESOURCE = 99
         const val INITIAL_SCRIP = 12
         const val HUNTER_OBJECTIVE = 4
+        const val BRINECLAW_TRAINING_OBJECTIVE = 3
         const val GATHERER_OBJECTIVE = 4
+        const val ORE_NODE_COUNT = 6
+        const val ALL_ORE_NODE_MASK = (1 shl ORE_NODE_COUNT) - 1
         const val ALL_SUPPLIER_RECORDS = 3
 
         fun fresh(): SwarmPlayerSnapshot = SwarmPlayerSnapshot(
@@ -160,7 +177,9 @@ data class SwarmPlayerSnapshot(
             cord = 0,
             selectedRoute = null,
             hunterCordEarned = 0,
+            brineclawTrainingDefeats = 0,
             gathererOreEarned = 0,
+            gathererOreNodeMask = 0,
             supplierRecordMask = 0,
             supplierCommissionClaimed = false,
             fittingState = FittingState.NONE,

@@ -45,10 +45,14 @@ class SwarmLoopServiceTest {
     @Test
     fun `gatherer and supplier each have a solo completion path`() {
         val gatherer = Fixture(ProcurementRoute.GATHERER)
-        repeat(4) { gatherer.service.grantHarvestedOre(gatherer.playerId) }
+        repeat(4) { nodeIndex -> gatherer.service.grantHarvestedOre(gatherer.playerId, nodeIndex) }
         gatherer.service.sell(gatherer.playerId, SwarmResource.ORE, 2)
         gatherer.service.buy(gatherer.playerId, SwarmResource.CORD, 2)
         assertEquals(LoopStatus.APPLIED, gatherer.service.craftAndInstallCoupler(gatherer.playerId).status)
+        assertFalse(gatherer.service.preparedForEncounter(gatherer.playerId))
+        repeat(3) { gatherer.service.grantBrineclawCord(gatherer.playerId) }
+        assertTrue(gatherer.service.preparedForEncounter(gatherer.playerId))
+        assertEquals(LoopStatus.APPLIED, gatherer.service.claimBossVictory(gatherer.playerId).status)
 
         val supplier = Fixture(ProcurementRoute.SUPPLIER)
         supplier.service.inspectSupplierRecord(supplier.playerId, SupplierRecord.TIDAL_FLAT)
@@ -62,6 +66,11 @@ class SwarmLoopServiceTest {
         val installed = supplier.service.craftAndInstallCoupler(supplier.playerId)
         assertEquals(LoopStatus.APPLIED, installed.status)
         assertEquals(0, installed.snapshot?.scrip)
+        assertFalse(supplier.service.preparedForEncounter(supplier.playerId))
+        assertEquals(LoopStatus.OBJECTIVE_INCOMPLETE, supplier.service.claimBossVictory(supplier.playerId).status)
+        repeat(3) { supplier.service.grantBrineclawCord(supplier.playerId) }
+        assertTrue(supplier.service.preparedForEncounter(supplier.playerId))
+        assertEquals(LoopStatus.APPLIED, supplier.service.claimBossVictory(supplier.playerId).status)
     }
 
     @Test
@@ -74,6 +83,19 @@ class SwarmLoopServiceTest {
 
         assertEquals(before - 4, fixture.snapshot().scrip)
         assertEquals(0, fixture.snapshot().ore)
+    }
+
+    @Test
+    fun `gatherer objective requires four distinct registered Ore nodes`() {
+        val fixture = Fixture(ProcurementRoute.GATHERER)
+        repeat(4) { fixture.service.grantHarvestedOre(fixture.playerId, 0) }
+
+        assertEquals(1, fixture.snapshot().gathererOreEarned)
+        assertFalse(fixture.snapshot().routeObjectiveComplete)
+
+        repeat(3) { offset -> fixture.service.grantHarvestedOre(fixture.playerId, offset + 1) }
+        assertEquals(4, fixture.snapshot().gathererOreEarned)
+        assertTrue(fixture.snapshot().routeObjectiveComplete)
     }
 
     @Test
@@ -123,7 +145,7 @@ class SwarmLoopServiceTest {
         service.selectRoute(gatherer, ProcurementRoute.GATHERER)
 
         service.grantBrineclawCord(hunter)
-        service.grantHarvestedOre(gatherer)
+        service.grantHarvestedOre(gatherer, 0)
 
         assertEquals(1, service.snapshot(hunter)?.cord)
         assertEquals(0, service.snapshot(hunter)?.ore)

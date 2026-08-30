@@ -16,6 +16,7 @@ class SwarmContractOracleTest {
         assertEquals(3.5, SwarmContractOracle.THRUST_RANGE_BLOCKS)
         assertEquals(10..12, SwarmContractOracle.BRACE_ACTIVE_MIN_TICKS..SwarmContractOracle.BRACE_ACTIVE_MAX_TICKS)
         assertEquals(3, SwarmContractOracle.REQUIRED_ELIGIBLE_HITS)
+        assertEquals(3, SwarmContractOracle.BRINECLAW_TRAINING_DEFEATS)
         assertEquals(4, SwarmContractOracle.MAX_ROSTER_SIZE)
     }
 

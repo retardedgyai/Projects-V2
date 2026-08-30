@@ -26,6 +26,7 @@ object SwarmContractOracle {
     const val BRACE_ACTIVE_MIN_TICKS = 10
     const val BRACE_ACTIVE_MAX_TICKS = 12
     const val REQUIRED_ELIGIBLE_HITS = 3
+    const val BRINECLAW_TRAINING_DEFEATS = 3
     const val MAX_ROSTER_SIZE = 4
 
     val persistentStages = listOf(

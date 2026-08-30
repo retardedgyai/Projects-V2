@@ -7,6 +7,7 @@ import dev.projects.server.experiment.swarm.combat.BrineclawEvent
 import dev.projects.server.experiment.swarm.combat.BrineclawScheduledAction
 import dev.projects.server.experiment.swarm.combat.BrineclawState
 import dev.projects.server.experiment.swarm.combat.CairnbackAttack
+import dev.projects.server.experiment.swarm.combat.CairnbackConfig
 import dev.projects.server.experiment.swarm.combat.CairnbackEncounter
 import dev.projects.server.experiment.swarm.combat.CairnbackEvent
 import dev.projects.server.experiment.swarm.combat.CairnbackLifecycle
@@ -15,9 +16,11 @@ import dev.projects.server.experiment.swarm.combat.CairnbackRewardSink
 import dev.projects.server.experiment.swarm.combat.CairnbackScheduledAction
 import dev.projects.server.experiment.swarm.combat.CairnbackState
 import dev.projects.server.experiment.swarm.combat.CombatBounds
+import dev.projects.server.experiment.swarm.combat.CombatGeometry
 import dev.projects.server.experiment.swarm.combat.CombatPoint
 import dev.projects.server.experiment.swarm.combat.TidehookBraceIntent
 import dev.projects.server.experiment.swarm.combat.TidehookCombat
+import dev.projects.server.experiment.swarm.combat.TidehookConfig
 import dev.projects.server.experiment.swarm.combat.TidehookHand
 import dev.projects.server.experiment.swarm.combat.TidehookMod
 import dev.projects.server.experiment.swarm.combat.TidehookThrustIntent
@@ -76,13 +79,17 @@ import net.minestom.server.inventory.Inventory
 import net.minestom.server.inventory.InventoryType
 import net.minestom.server.item.ItemStack
 import net.minestom.server.item.Material
+import net.minestom.server.network.packet.server.play.ParticlePacket
+import net.minestom.server.particle.Particle
 import net.minestom.server.scoreboard.Sidebar
 import net.minestom.server.sound.SoundEvent
 import net.minestom.server.tag.Tag
 import java.nio.file.Path
 import java.util.UUID
 import kotlin.math.floor
+import kotlin.math.cos
 import kotlin.math.roundToInt
+import kotlin.math.sin
 import kotlin.math.sqrt
 
 /** Runtime-only composition for the frozen Tidebreak vertical slice. */
@@ -92,7 +99,7 @@ class SwarmSliceWiring(dataRoot: Path) {
     private val instance: InstanceContainer = MinecraftServer.getInstanceManager().createInstanceContainer()
     private val loop = SwarmLoopService(FileSwarmSnapshotStore(dataDirectory))
     private val interactions = SwarmWorldInteractions(loop)
-    private val tidehook = TidehookCombat()
+    private val tidehook = TidehookCombat(TidehookConfig(thrustRecoveryTicks = SwarmSliceBalance.THRUST_RECOVERY_TICKS))
     private val sidebars = mutableMapOf<UUID, Sidebar>()
     private val routeMenus = mutableMapOf<UUID, Inventory>()
     private val modMenus = mutableMapOf<UUID, Inventory>()
@@ -100,7 +107,7 @@ class SwarmSliceWiring(dataRoot: Path) {
     private val brineByEntity = mutableMapOf<UUID, BrineclawRuntime>()
     private val targetByBlock = TidebreakWorldSpec.targets.associateBy { it.position.blockKey() }
     private val interactionDebounce = mutableMapOf<Pair<UUID, UUID>, Long>()
-    private val useActionId = mutableMapOf<UUID, Pair<Long, Long>>()
+    private val useActions = SwarmUseActionDeduplicator()
     private val inputSequence = mutableMapOf<UUID, Long>()
     private val cairnbackScheduled = mutableListOf<CairnbackScheduledAction>()
     private var cairnbackAttack: RuntimeAttack<CairnbackAttack>? = null
@@ -112,6 +119,7 @@ class SwarmSliceWiring(dataRoot: Path) {
     private var victoryPersistenceFailed = false
 
     private val cairnback = CairnbackEncounter(
+        config = CairnbackConfig(baseMaxHealth = SwarmSliceBalance.CAIRNBACK_BASE_HEALTH),
         rewardSink = CairnbackRewardSink { rewardBossVictory(it) },
     )
 
@@ -160,8 +168,15 @@ class SwarmSliceWiring(dataRoot: Path) {
         val controller = BrineclawController(
             defeatSink = BrineclawDefeatSink { event ->
                 event.participants.forEach { playerId ->
+                    val beforeTraining = loop.snapshot(playerId)?.brineclawTrainingComplete == true
                     val result = loop.grantBrineclawCord(playerId)
-                    player(playerId)?.let { showResult(it, result, "Brineclaw Cord secured") }
+                    player(playerId)?.let { participant ->
+                        showResult(participant, result, "Brineclaw Cord secured")
+                        if (!beforeTraining && result.snapshot?.brineclawTrainingComplete == true) {
+                            participant.sendMessage(Component.text("Brineclaw lesson complete: Sweep and Charge recognized.", NamedTextColor.GREEN))
+                            participant.sendMessage(Component.text("Install the Coupler, then report to Lookout Tern.", NamedTextColor.GRAY))
+                        }
+                    }
                 }
             },
         )
@@ -248,6 +263,7 @@ class SwarmSliceWiring(dataRoot: Path) {
     private fun onDisconnect(player: Player) {
         if (player.uuid in cairnback.roster()) cairnback.markDisconnected(player.uuid)
         tidehook.clearPlayer(player.uuid)
+        useActions.clear(player.uuid)
         sidebars.remove(player.uuid)?.removeViewer(player)
         routeMenus.remove(player.uuid)
         modMenus.remove(player.uuid)
@@ -314,7 +330,13 @@ class SwarmSliceWiring(dataRoot: Path) {
         player.sendMessage(Component.text("Tern: Sweep leaves the arc. Charge: sidestep or Brace.", NamedTextColor.YELLOW))
         player.sendMessage(Component.text("Line Charge into the copper post; Cairnback must hit a lit crash pillar.", NamedTextColor.GRAY))
         if (!loop.preparedForEncounter(player.uuid)) {
-            player.sendActionBar(Component.text("Install the Signal Coupler first.", NamedTextColor.RED))
+            val snapshot = loop.snapshot(player.uuid)
+            val reason = if (snapshot?.fittingState == FittingState.NONE) {
+                "Install the Signal Coupler first."
+            } else {
+                "Brineclaw training ${snapshot?.brineclawTrainingDefeats ?: 0}/${SwarmPlayerSnapshot.BRINECLAW_TRAINING_OBJECTIVE}."
+            }
+            player.sendActionBar(Component.text(reason, NamedTextColor.RED))
             return
         }
         if (cairnback.lifecycle == CairnbackLifecycle.ACTIVE) {
@@ -336,7 +358,7 @@ class SwarmSliceWiring(dataRoot: Path) {
             sidebars[it.uuid]?.removeViewer(it)
             bossBar?.let(it::showBossBar)
         }
-        bossEntity?.teleport(TidebreakWorldSpec.bossSpawn)
+        bossEntity?.teleport(TidebreakWorldSpec.bossSpawn)?.join()
         nextBossAttackTick = serverTick + 30
         broadcastRoster(Component.text("Cairnback wakes. Build three confirmed hits to qualify.", NamedTextColor.RED))
         updateBossBar()
@@ -379,10 +401,7 @@ class SwarmSliceWiring(dataRoot: Path) {
     }
 
     private fun requestBrace(player: Player, hand: PlayerHand) {
-        val pair = useActionId[player.uuid]
-        val actionId = if (pair?.first == serverTick) pair.second else nextActionId(player.uuid).also {
-            useActionId[player.uuid] = serverTick to it
-        }
+        val actionId = useActions.actionId(player.uuid, serverTick) { nextActionId(player.uuid) }
         val result = tidehook.requestBrace(
             TidehookBraceIntent(
                 player.uuid,
@@ -434,18 +453,30 @@ class SwarmSliceWiring(dataRoot: Path) {
             return
         }
         val exposed = if (isBoss) cairnback.exposed else brine?.controller?.state == BrineclawState.EXPOSED
-        val shellMultiplier = if (exposed == true) EXPOSED_MULTIPLIER else 1.0
-        val damage = (TIDEHOOK_BASE_DAMAGE * shellMultiplier * result.damageMultiplier).roundToInt()
+        val damage = if (isBoss) {
+            SwarmSliceBalance.cairnbackThrustDamage(exposed == true, result.damageMultiplier)
+        } else {
+            SwarmSliceBalance.brineclawThrustDamage(exposed == true, result.damageMultiplier)
+        }
         if (isBoss) {
             val hit = cairnback.applyTidehookHit(player.uuid, result.actionId!!, damage)
             if (hit.accepted) {
-                player.sendActionBar(Component.text("Thrust ${hit.damageApplied}${if (hit.exposed) " — EXPOSED" else ""}", NamedTextColor.GREEN))
+                val feedback = if (hit.exposed) {
+                    "Thrust ${hit.damageApplied} — EXPOSED"
+                } else {
+                    "Shell deflects (${hit.damageApplied}) — line Charge into a lit pillar"
+                }
+                player.sendActionBar(Component.text(feedback, if (hit.exposed) NamedTextColor.GREEN else NamedTextColor.YELLOW))
+                showImpact(target.position.add(0.0, 1.0, 0.0), if (hit.exposed) Particle.ELECTRIC_SPARK else Particle.CRIT, setOf(player.uuid))
                 handleBossEvents(hit.events)
                 updateBossBar()
             }
         } else if (brine != null) {
             val hit = brine.controller.applyTidehookHit(player.uuid, result.actionId!!, damage)
-            if (hit.accepted) player.sendActionBar(Component.text("Thrust ${hit.damageApplied}", NamedTextColor.GREEN))
+            if (hit.accepted) {
+                player.sendActionBar(Component.text("Thrust ${hit.damageApplied}", NamedTextColor.GREEN))
+                showImpact(target.position.add(0.0, 1.0, 0.0), if (exposed == true) Particle.ELECTRIC_SPARK else Particle.CRIT, setOf(player.uuid))
+            }
             if (hit.defeated) defeatBrineclaw(brine)
         }
     }
@@ -481,6 +512,7 @@ class SwarmSliceWiring(dataRoot: Path) {
                     runtime.attack = RuntimeAttack(plan.telegraph.attackId, attack, point(runtime.entity.position), horizontalDirection(runtime.entity.position, target.position))
                     runtime.scheduled += plan.scheduled
                     tell(runtime.entity.position, plan.telegraph.textCue, attack == BrineclawAttack.CHARGE)
+                    renderTelegraph(runtime.attack!!, boss = false)
                 }
             }
         }
@@ -490,8 +522,11 @@ class SwarmSliceWiring(dataRoot: Path) {
         runtime.scheduled += transition.scheduled
         transition.events.forEach { event ->
             when (event) {
-                is BrineclawEvent.Active -> if (event.attack == BrineclawAttack.CHARGE) moveAlong(runtime.entity, runtime.attack, 4.0)
-                is BrineclawEvent.ExposureStarted -> tell(runtime.entity.position, "Brineclaw exposed — thrust now", true)
+                is BrineclawEvent.Active -> runtime.attack?.activeFromTick = serverTick
+                is BrineclawEvent.ExposureStarted -> {
+                    tell(runtime.entity.position, "Brineclaw exposed — thrust now", true)
+                    showImpact(runtime.entity.position.add(0.0, 1.0, 0.0), Particle.EXPLOSION)
+                }
                 is BrineclawEvent.Ready -> {
                     runtime.entity.teleport(runtime.spec.position)
                     runtime.attack = null
@@ -505,8 +540,30 @@ class SwarmSliceWiring(dataRoot: Path) {
     private fun resolveBrineActive(runtime: BrineclawRuntime) {
         val attack = runtime.attack ?: return
         val controller = runtime.controller
+        if (
+            (controller.state == BrineclawState.SWEEP_TELEGRAPH || controller.state == BrineclawState.CHARGE_TELEGRAPH) &&
+            serverTick % TELEGRAPH_REFRESH_TICKS == 0L
+        ) {
+            renderTelegraph(attack, boss = false)
+        }
         if (controller.state != BrineclawState.SWEEP_ACTIVE && controller.state != BrineclawState.CHARGE_ACTIVE) return
-        if (controller.state == BrineclawState.CHARGE_ACTIVE && controller.intersectsCharge(attack.origin, attack.forward, targetBounds(TidebreakWorldSpec.practicePost.position, 0.9, 3.2))) {
+        val chargeLength = if (controller.state == BrineclawState.CHARGE_ACTIVE) {
+            attack.chargeLength(serverTick, BRINE_CHARGE_ACTIVE_TICKS, BRINE_CHARGE_LENGTH)
+        } else {
+            0.0
+        }
+        if (controller.state == BrineclawState.CHARGE_ACTIVE) moveChargeEntity(runtime.entity, attack, chargeLength)
+        if (
+            controller.state == BrineclawState.CHARGE_ACTIVE &&
+            CombatGeometry.intersectsChargeCorridor(
+                attack.origin,
+                attack.forward,
+                chargeLength.coerceAtLeast(0.05),
+                BRINE_CHARGE_HALF_WIDTH,
+                BRINE_CHARGE_HEIGHT,
+                targetBounds(TidebreakWorldSpec.practicePost.position, 1.6, 4.0),
+            )
+        ) {
             handleBrineTransition(runtime, controller.collideChargeWithPracticePost(serverTick))
             return
         }
@@ -515,7 +572,14 @@ class SwarmSliceWiring(dataRoot: Path) {
             val hit = if (controller.state == BrineclawState.SWEEP_ACTIVE) {
                 controller.intersectsSweep(attack.origin, attack.forward, bounds(player))
             } else {
-                controller.intersectsCharge(attack.origin, attack.forward, bounds(player))
+                CombatGeometry.intersectsChargeCorridor(
+                    attack.origin,
+                    attack.forward,
+                    chargeLength.coerceAtLeast(0.05),
+                    BRINE_CHARGE_HALF_WIDTH,
+                    BRINE_CHARGE_HEIGHT,
+                    bounds(player),
+                )
             }
             if (!hit) {
                 attack.hitPlayers.remove(player.uuid)
@@ -556,12 +620,13 @@ class SwarmSliceWiring(dataRoot: Path) {
                 val target = cairnback.roster().mapNotNull(::player).firstOrNull { cairnback.member(it.uuid)?.alive == true }
                 if (target != null) {
                     val entity = bossEntity ?: return
-                    entity.teleport(TidebreakWorldSpec.bossSpawn)
+                    entity.teleport(TidebreakWorldSpec.bossSpawn).join()
                     entity.lookAt(target)
                     cairnback.beginNextAttack(serverTick, target.uuid)?.let { plan ->
                         cairnbackAttack = RuntimeAttack(plan.telegraph.attackId, plan.telegraph.attack, point(entity.position), horizontalDirection(entity.position, target.position))
                         cairnbackScheduled += plan.scheduled
                         tell(entity.position, plan.telegraph.textCue, plan.telegraph.attack == CairnbackAttack.CHARGE, cairnback.roster())
+                        renderTelegraph(cairnbackAttack!!, boss = true, recipients = cairnback.roster())
                     }
                 }
             }
@@ -577,8 +642,11 @@ class SwarmSliceWiring(dataRoot: Path) {
     private fun handleBossEvents(events: List<CairnbackEvent>) {
         events.forEach { event ->
             when (event) {
-                is CairnbackEvent.Active -> if (event.attack == CairnbackAttack.CHARGE) moveAlong(bossEntity, cairnbackAttack, 7.0)
-                is CairnbackEvent.ExposureStarted -> broadcastRoster(Component.text("PILLAR CRASH — Cairnback exposed!", NamedTextColor.GREEN))
+                is CairnbackEvent.Active -> cairnbackAttack?.activeFromTick = serverTick
+                is CairnbackEvent.ExposureStarted -> {
+                    broadcastRoster(Component.text("PILLAR CRASH — Cairnback exposed!", NamedTextColor.GREEN))
+                    bossEntity?.position?.add(0.0, 1.0, 0.0)?.let { showImpact(it, Particle.EXPLOSION, cairnback.roster()) }
+                }
                 is CairnbackEvent.PhaseChanged -> broadcastRoster(Component.text("Phase 2 — the same tells, faster recombination.", NamedTextColor.GOLD))
                 is CairnbackEvent.Victory -> finishBossVictory(event)
                 is CairnbackEvent.Reset -> finishBossReset(event.reason)
@@ -589,9 +657,28 @@ class SwarmSliceWiring(dataRoot: Path) {
 
     private fun resolveBossActive() {
         val attack = cairnbackAttack ?: return
+        if (
+            (cairnback.state == CairnbackState.SWEEP_TELEGRAPH || cairnback.state == CairnbackState.CHARGE_TELEGRAPH) &&
+            serverTick % TELEGRAPH_REFRESH_TICKS == 0L
+        ) {
+            renderTelegraph(attack, boss = true, recipients = cairnback.roster())
+        }
         if (cairnback.state != CairnbackState.SWEEP_ACTIVE && cairnback.state != CairnbackState.CHARGE_ACTIVE) return
+        val chargeLength = if (cairnback.state == CairnbackState.CHARGE_ACTIVE) {
+            attack.chargeLength(serverTick, BOSS_CHARGE_ACTIVE_TICKS, BOSS_CHARGE_LENGTH)
+        } else {
+            0.0
+        }
+        if (cairnback.state == CairnbackState.CHARGE_ACTIVE) bossEntity?.let { moveChargeEntity(it, attack, chargeLength) }
         if (cairnback.state == CairnbackState.CHARGE_ACTIVE && TidebreakWorldSpec.crashPillars.any {
-                cairnback.intersectsCharge(attack.origin, attack.forward, targetBounds(it.position, 1.4, 4.0))
+                CombatGeometry.intersectsChargeCorridor(
+                    attack.origin,
+                    attack.forward,
+                    chargeLength.coerceAtLeast(0.05),
+                    BOSS_CHARGE_HALF_WIDTH,
+                    BOSS_CHARGE_HEIGHT,
+                    targetBounds(it.position, 1.6, 6.5),
+                )
             }
         ) {
             handleBossTransition(cairnback.collideChargeWithPillar(powered = true, tick = serverTick))
@@ -602,7 +689,14 @@ class SwarmSliceWiring(dataRoot: Path) {
             val hit = if (cairnback.state == CairnbackState.SWEEP_ACTIVE) {
                 cairnback.intersectsSweep(attack.origin, attack.forward, bounds(player))
             } else {
-                cairnback.intersectsCharge(attack.origin, attack.forward, bounds(player))
+                CombatGeometry.intersectsChargeCorridor(
+                    attack.origin,
+                    attack.forward,
+                    chargeLength.coerceAtLeast(0.05),
+                    BOSS_CHARGE_HALF_WIDTH,
+                    BOSS_CHARGE_HEIGHT,
+                    bounds(player),
+                )
             }
             if (!hit) {
                 attack.hitPlayers.remove(player.uuid)
@@ -705,7 +799,7 @@ class SwarmSliceWiring(dataRoot: Path) {
     private fun openRouteMenu(player: Player) {
         val menu = Inventory(InventoryType.CHEST_3_ROW, Component.text("Choose one procurement route"))
         menu.setItemStack(11, menuItem(Material.IRON_SWORD, "Hunter — confirm 4 Cord"))
-        menu.setItemStack(13, menuItem(Material.IRON_PICKAXE, "Gatherer — harvest 4 Ore"))
+        menu.setItemStack(13, menuItem(Material.IRON_PICKAXE, "Gatherer — visit 4 distinct Ore sites"))
         menu.setItemStack(15, menuItem(Material.WRITABLE_BOOK, "Supplier — inspect 2 records"))
         routeMenus[player.uuid] = menu
         player.openInventory(menu)
@@ -819,6 +913,53 @@ class SwarmSliceWiring(dataRoot: Path) {
         }
     }
 
+    private fun renderTelegraph(
+        attack: RuntimeAttack<*>,
+        boss: Boolean,
+        recipients: Set<UUID>? = null,
+    ) {
+        val isCharge = attack.attack == BrineclawAttack.CHARGE || attack.attack == CairnbackAttack.CHARGE
+        val viewers = instance.players.filter { recipients == null || it.uuid in recipients }
+            .filter { distance(it.position, Pos(attack.origin.x, attack.origin.y, attack.origin.z)) <= 28.0 }
+        if (viewers.isEmpty()) return
+
+        val points = if (isCharge) {
+            val length = if (boss) BOSS_CHARGE_LENGTH else BRINE_CHARGE_LENGTH
+            (0..20).map { step ->
+                val travel = length * step / 20.0
+                CombatPoint(
+                    attack.origin.x + attack.forward.x * travel,
+                    attack.origin.y + 0.12,
+                    attack.origin.z + attack.forward.z * travel,
+                )
+            }
+        } else {
+            val radius = if (boss) 6.0 else 4.0
+            val halfAngle = Math.toRadians(if (boss) 70.0 else 65.0)
+            val right = CombatPoint(-attack.forward.z, 0.0, attack.forward.x)
+            (0..24).map { step ->
+                val angle = -halfAngle + halfAngle * 2.0 * step / 24.0
+                CombatPoint(
+                    attack.origin.x + (attack.forward.x * cos(angle) + right.x * sin(angle)) * radius,
+                    attack.origin.y + 0.12,
+                    attack.origin.z + (attack.forward.z * cos(angle) + right.z * sin(angle)) * radius,
+                )
+            }
+        }
+        val particle = if (isCharge) Particle.ELECTRIC_SPARK else Particle.SWEEP_ATTACK
+        viewers.forEach { viewer ->
+            points.forEach { point ->
+                viewer.sendPacket(ParticlePacket(particle, point.x, point.y, point.z, 0f, 0f, 0f, 0f, 1))
+            }
+        }
+    }
+
+    private fun showImpact(position: Pos, particle: Particle, recipients: Set<UUID>? = null) {
+        instance.players.filter { recipients == null || it.uuid in recipients }.forEach { viewer ->
+            viewer.sendPacket(ParticlePacket(particle, position.x(), position.y(), position.z(), 0.35f, 0.35f, 0.35f, 0.08f, 12))
+        }
+    }
+
     private fun broadcastRoster(component: Component) = cairnback.roster().mapNotNull(::player).forEach { it.sendMessage(component) }
 
     private fun nearestPlayer(origin: Pos, range: Double): Player? = instance.players
@@ -856,11 +997,12 @@ class SwarmSliceWiring(dataRoot: Path) {
         snapshot.selectedRoute == null -> "Speak to Warden: choose a route"
         snapshot.questStage == QuestStage.ROUTE_SELECTED && !snapshot.routeObjectiveComplete -> when (snapshot.selectedRoute) {
             ProcurementRoute.HUNTER -> "Defeat Brineclaw ${snapshot.hunterCordEarned}/4"
-            ProcurementRoute.GATHERER -> "Harvest Ore ${snapshot.gathererOreEarned}/4"
+            ProcurementRoute.GATHERER -> "Visit distinct Ore sites ${snapshot.gathererOreEarned}/4"
             ProcurementRoute.SUPPLIER -> "Inspect records ${Integer.bitCount(snapshot.supplierRecordMask)}/2"
-            null -> "Choose a route"
         }
         snapshot.questStage == QuestStage.ROUTE_SELECTED -> "Get 2 Ore + 2 Cord, use Coupler rack"
+        snapshot.questStage == QuestStage.COUPLER_INSTALLED && !snapshot.brineclawTrainingComplete ->
+            "Learn Brineclaw ${snapshot.brineclawTrainingDefeats}/${SwarmPlayerSnapshot.BRINECLAW_TRAINING_OBJECTIVE}"
         snapshot.questStage == QuestStage.COUPLER_INSTALLED -> "Speak to Lookout; defeat Cairnback"
         snapshot.questStage == QuestStage.BOSS_CLEARED -> "Broker-Smith: choose a Tidehook MOD"
         snapshot.questStage == QuestStage.MOD_INSTALLED -> "Report completion to Warden"
@@ -926,8 +1068,7 @@ class SwarmSliceWiring(dataRoot: Path) {
     private fun horizontalDirection(from: Pos, to: Pos): CombatPoint =
         CombatPoint(to.x() - from.x(), 0.0, to.z() - from.z()).normalizedOrNull() ?: CombatPoint(1.0, 0.0, 0.0)
 
-    private fun moveAlong(entity: Entity?, attack: RuntimeAttack<*>?, distance: Double) {
-        if (entity == null || attack == null) return
+    private fun moveChargeEntity(entity: Entity, attack: RuntimeAttack<*>, distance: Double) {
         entity.teleport(
             Pos(
                 attack.origin.x + attack.forward.x * distance,
@@ -959,7 +1100,14 @@ class SwarmSliceWiring(dataRoot: Path) {
         val origin: CombatPoint,
         val forward: CombatPoint,
         val hitPlayers: MutableSet<UUID> = mutableSetOf(),
-    )
+        var activeFromTick: Long? = null,
+    ) {
+        fun chargeLength(tick: Long, activeTicks: Long, maximumLength: Double): Double {
+            val activeFrom = activeFromTick ?: return 0.0
+            val elapsed = (tick - activeFrom + 1).coerceIn(0, activeTicks)
+            return maximumLength * elapsed.toDouble() / activeTicks
+        }
+    }
 
     private data class BrineclawRuntime(
         val spec: TidebreakCombatSpawnSpec,
@@ -975,9 +1123,45 @@ class SwarmSliceWiring(dataRoot: Path) {
     private companion object {
         const val TIDEHOOK_SLOT = 0
         const val NPC_DISTANCE = 6.0
-        const val TIDEHOOK_BASE_DAMAGE = 55.0
-        const val EXPOSED_MULTIPLIER = 2.0
         const val BRINE_RESPAWN_TICKS = 120L
+        const val TELEGRAPH_REFRESH_TICKS = 4L
+        const val BRINE_CHARGE_ACTIVE_TICKS = 10L
+        const val BRINE_CHARGE_LENGTH = 9.0
+        const val BRINE_CHARGE_HALF_WIDTH = 1.0
+        const val BRINE_CHARGE_HEIGHT = 2.5
+        const val BOSS_CHARGE_ACTIVE_TICKS = 12L
+        const val BOSS_CHARGE_LENGTH = 16.0
+        const val BOSS_CHARGE_HALF_WIDTH = 1.6
+        const val BOSS_CHARGE_HEIGHT = 4.0
         val TIDEHOOK_TAG = Tag.Boolean("swarm_tidehook").defaultValue(false)
+    }
+}
+
+internal object SwarmSliceBalance {
+    const val THRUST_RECOVERY_TICKS = 12L
+    const val CAIRNBACK_BASE_HEALTH = 4_800
+    private const val BRINECLAW_CLOSED_DAMAGE = 42.0
+    private const val BRINECLAW_EXPOSED_DAMAGE = 68.0
+    private const val CAIRNBACK_CLOSED_DAMAGE = 5.0
+    private const val CAIRNBACK_EXPOSED_DAMAGE = 75.0
+
+    fun brineclawThrustDamage(exposed: Boolean, modMultiplier: Double): Int =
+        ((if (exposed) BRINECLAW_EXPOSED_DAMAGE else BRINECLAW_CLOSED_DAMAGE) * modMultiplier).roundToInt()
+
+    fun cairnbackThrustDamage(exposed: Boolean, modMultiplier: Double): Int =
+        ((if (exposed) CAIRNBACK_EXPOSED_DAMAGE else CAIRNBACK_CLOSED_DAMAGE) * modMultiplier).roundToInt()
+}
+
+internal class SwarmUseActionDeduplicator {
+    private val actionByPlayer = mutableMapOf<UUID, Pair<Long, Long>>()
+
+    fun actionId(playerId: UUID, serverTick: Long, nextActionId: () -> Long): Long {
+        val current = actionByPlayer[playerId]
+        if (current?.first == serverTick) return current.second
+        return nextActionId().also { actionByPlayer[playerId] = serverTick to it }
+    }
+
+    fun clear(playerId: UUID) {
+        actionByPlayer.remove(playerId)
     }
 }

@@ -59,9 +59,13 @@ Braceは各条件でmissing、duplicate、default-useの合計が20回中1回以
 
 1. Wardenと話し、Hunter / Gatherer / Supplierの1 routeを選ぶ。開始Scripは12。
 2. 選択routeの目的を完了する。不足するOre/CordはBroker-Smithの固定交換で揃える。
+   - Gathererは同じnode連打ではなく、6地点中4つの異なるOre nodeを巡る。
+   - 全routeでBrineclaw 3体のserver-confirmed defeatがBoss入場条件。Hunterの4体objectiveはこれを兼ねる。
 3. Ore 2 + Cord 2 + Scrip 4をMarket rackで一度だけ支払い、Signal Couplerをcraft/installする。連打して二重消費しないこと。
 4. LookoutからBreakwaterへ入る。
 5. CairnbackのSweepとChargeだけを読み、Chargeをpowered crash pillarへ誘導してexposed window中に攻撃する。
+   - closed shellへの通常Thrustだけではhard timeout前に倒せないこと。
+   - Chargeのparticle line、entity移動、実damage/collision位置が一致すること。
 6. 故意に一度wipeする。準備をやり直さず15–30秒で再戦し、古いBoss/action/rosterが残らないこと。
 7. 撃破時にroster内、arena内、Tidehook hit 3回以上であることを確認する。Pressure Pearl stateは一度だけ得る。
 8. Broker-SmithでBarbed PointまたはGuard Ringを一度だけ選ぶ。追加素材なし、再選択なし。

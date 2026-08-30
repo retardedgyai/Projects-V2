@@ -30,7 +30,9 @@ class SwarmWorldInteractions(
         if (attempt.serverTick < nextAllowed) {
             return LoopOperationResult(LoopStatus.COOLDOWN, loop.snapshot(attempt.playerId))
         }
-        val result = loop.grantHarvestedOre(attempt.playerId)
+        val nodeIndex = TidebreakWorldSpec.oreNodes.indexOfFirst { it.targetId == attempt.targetId }
+        if (nodeIndex < 0) return LoopOperationResult(LoopStatus.UNKNOWN_TARGET, loop.snapshot(attempt.playerId))
+        val result = loop.grantHarvestedOre(attempt.playerId, nodeIndex)
         if (result.status == LoopStatus.APPLIED) nextOreTick[key] = attempt.serverTick + oreCooldownTicks
         return result
     }
