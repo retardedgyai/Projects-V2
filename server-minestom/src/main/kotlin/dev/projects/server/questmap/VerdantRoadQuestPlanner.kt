@@ -9,23 +9,28 @@ import kotlin.math.roundToInt
 internal object VerdantRoadQuestPlanner {
     const val MAP_SIZE = 160
     const val PLAYABLE_BORDER = 8
-    private const val ROAD_BLEND_RADIUS = 6
+    private const val ROAD_BLEND_RADIUS = 7
     private const val BASE_GROUND_Y = 46
 
     fun generate(seed: Long): QuestMapPlan {
         val random = Random(seed)
         val style = QuestTerrainStyle.entries[Math.floorMod(seed, QuestTerrainStyle.entries.size.toLong()).toInt()]
         val controls = routeControls(random)
-        val mainRoute = controls.zipWithNext()
-            .flatMapIndexed { index, pair -> bresenham(pair.first, pair.second).drop(if (index == 0) 0 else 1) }
-            .distinctConsecutive()
+        val mainRoute = curvedRoute(controls)
         val rawHeights = rawTerrain(seed, style)
-        val routeHeights = smoothRouteHeights(mainRoute.map { rawHeights[index(it)] })
+        val routeHeights = smoothRouteHeights(mainRoute.map { rawHeights[index(it)] }).also { heights ->
+            if (style == QuestTerrainStyle.SALTMARSH) {
+                heights.indices.forEach { routeIndex ->
+                    heights[routeIndex] = maxOf(heights[routeIndex], QUEST_WATER_LEVEL + 2)
+                }
+            }
+        }
         val trails = linkedSetOf<QuestMapPoint>()
         trails += mainRoute
         val contents = contentPlan(mainRoute, random, trails)
         val nearestRoad = nearestRoad(mainRoute, trails)
-        val finalHeights = shapeTerrain(rawHeights, mainRoute, routeHeights, contents, nearestRoad)
+        val nearestMainRoad = nearestRoad(mainRoute, mainRoute.toSet())
+        val finalHeights = shapeTerrain(seed, style, rawHeights, mainRoute, routeHeights, contents, nearestRoad)
 
         return QuestMapQualityGate.requireAccepted(
             QuestMapPlan(
@@ -38,25 +43,55 @@ internal object VerdantRoadQuestPlanner {
                 contents = contents,
                 heights = finalHeights,
                 roadDistanceSquared = nearestRoad.distanceSquared,
+                mainRoadDistanceSquared = nearestMainRoad.distanceSquared,
             ),
         )
     }
 
     private fun routeControls(random: Random): List<QuestMapPoint> {
-        val lowBand = 24..53
-        val highBand = 106..135
+        val lowBand = 38..62
+        val highBand = 98..122
         val startHigh = random.nextBoolean()
         fun band(high: Boolean): IntRange = if (high) highBand else lowBand
         fun sample(range: IntRange): Int = range.first + random.nextInt(range.last - range.first + 1)
 
         return listOf(
-            QuestMapPoint(18, sample(52..108)),
+            QuestMapPoint(18, sample(58..102)),
             QuestMapPoint(42, sample(band(startHigh))),
             QuestMapPoint(69, sample(band(!startHigh))),
             QuestMapPoint(97, sample(band(startHigh))),
             QuestMapPoint(124, sample(band(!startHigh))),
-            QuestMapPoint(141, sample(52..108)),
+            QuestMapPoint(141, sample(58..102)),
         )
+    }
+
+    private fun curvedRoute(controls: List<QuestMapPoint>): List<QuestMapPoint> {
+        val samples = mutableListOf(controls.first())
+        for (index in 0 until controls.lastIndex) {
+            val p0 = controls[(index - 1).coerceAtLeast(0)]
+            val p1 = controls[index]
+            val p2 = controls[index + 1]
+            val p3 = controls[(index + 2).coerceAtMost(controls.lastIndex)]
+            for (step in 1..16) {
+                val t = step / 16.0
+                fun interpolate(a: Int, b: Int, c: Int, d: Int): Int {
+                    val t2 = t * t
+                    val t3 = t2 * t
+                    return (0.5 * (
+                        2.0 * b +
+                            (-a + c) * t +
+                            (2.0 * a - 5.0 * b + 4.0 * c - d) * t2 +
+                            (-a + 3.0 * b - 3.0 * c + d) * t3
+                        )).roundToInt()
+                }
+                val sample = QuestMapPoint(
+                    interpolate(p0.x, p1.x, p2.x, p3.x).coerceIn(PLAYABLE_BORDER + 2, MAP_SIZE - PLAYABLE_BORDER - 3),
+                    interpolate(p0.z, p1.z, p2.z, p3.z).coerceIn(PLAYABLE_BORDER + 2, MAP_SIZE - PLAYABLE_BORDER - 3),
+                )
+                samples += bresenham(samples.last(), sample).drop(1)
+            }
+        }
+        return samples.distinctConsecutive()
     }
 
     private fun contentPlan(
@@ -163,14 +198,16 @@ internal object VerdantRoadQuestPlanner {
         val styleOffset = when (style) {
             QuestTerrainStyle.VERDANT -> 0.0
             QuestTerrainStyle.HIGHLANDS -> 4.0
-            QuestTerrainStyle.SALTMARSH -> -3.0
+            QuestTerrainStyle.SALTMARSH -> 1.0
         }
         val amplitude = when (style) {
             QuestTerrainStyle.VERDANT -> 9.0
             QuestTerrainStyle.HIGHLANDS -> 15.0
-            QuestTerrainStyle.SALTMARSH -> 7.0
+            QuestTerrainStyle.SALTMARSH -> 6.0
         }
-        (BASE_GROUND_Y + styleOffset + broad * amplitude + medium * 5.0 + detail * 1.8).roundToInt()
+        val mediumAmplitude = if (style == QuestTerrainStyle.SALTMARSH) 3.0 else 5.0
+        val detailAmplitude = if (style == QuestTerrainStyle.SALTMARSH) 1.4 else 1.8
+        (BASE_GROUND_Y + styleOffset + broad * amplitude + medium * mediumAmplitude + detail * detailAmplitude).roundToInt()
     }
 
     private fun smoothRouteHeights(raw: List<Int>): IntArray {
@@ -215,6 +252,8 @@ internal object VerdantRoadQuestPlanner {
     }
 
     private fun shapeTerrain(
+        seed: Long,
+        style: QuestTerrainStyle,
         raw: IntArray,
         route: List<QuestMapPoint>,
         routeHeights: IntArray,
@@ -234,21 +273,58 @@ internal object VerdantRoadQuestPlanner {
             }
         }
 
-        for (z in 0 until MAP_SIZE) {
-            for (x in 0 until MAP_SIZE) {
-                val edgeDistance = minOf(x, z, MAP_SIZE - 1 - x, MAP_SIZE - 1 - z)
-                if (edgeDistance < PLAYABLE_BORDER) {
-                    val rimHeight = BASE_GROUND_Y + 13 + (PLAYABLE_BORDER - edgeDistance) * 2
-                    val offset = index(QuestMapPoint(x, z))
-                    shaped[offset] = maxOf(shaped[offset], rimHeight)
-                }
-            }
+        if (style == QuestTerrainStyle.SALTMARSH) {
+            carveSaltmarshWetlands(seed, shaped, contents, nearest)
         }
+        shapeNaturalCoastline(seed, shaped)
 
         flattenCircle(shaped, contents.single { it.kind == QuestMapContentKind.START }.position, 8)
         flattenCircle(shaped, contents.single { it.kind == QuestMapContentKind.BOSS }.position, 14)
+        contents.filter { it.kind == QuestMapContentKind.COMBAT }.forEach { flattenCircle(shaped, it.position, 7) }
+        contents.filter { it.kind == QuestMapContentKind.GATHERING }.forEach { flattenCircle(shaped, it.position, 4) }
+        contents.filter { it.kind == QuestMapContentKind.DISCOVERY }.forEach { flattenCircle(shaped, it.position, 4) }
         route.forEachIndexed { routeIndex, point -> shaped[index(point)] = routeHeights[routeIndex] }
         return shaped
+    }
+
+    private fun shapeNaturalCoastline(seed: Long, heights: IntArray) {
+        for (z in 0 until MAP_SIZE) {
+            for (x in 0 until MAP_SIZE) {
+                val edgeDistance = minOf(x, z, MAP_SIZE - 1 - x, MAP_SIZE - 1 - z)
+                if (edgeDistance >= PLAYABLE_BORDER) continue
+                val offset = index(QuestMapPoint(x, z))
+                val coastalHeight = QUEST_WATER_LEVEL + 1 +
+                    (hashUnit(seed xor 0x434F415354L, x / 3, z / 3) * 1.5).roundToInt()
+                val influence = edgeDistance.toDouble() / PLAYABLE_BORDER
+                heights[offset] = (coastalHeight * (1.0 - influence) + heights[offset] * influence).roundToInt()
+            }
+        }
+    }
+
+    private fun carveSaltmarshWetlands(
+        seed: Long,
+        heights: IntArray,
+        contents: List<QuestMapContent>,
+        nearest: NearestRoad,
+    ) {
+        val random = Random(seed xor 0x5745544C414E44L)
+        repeat(8) {
+            val center = QuestMapPoint(15 + random.nextInt(MAP_SIZE - 30), 15 + random.nextInt(MAP_SIZE - 30))
+            val radiusX = 11 + random.nextInt(8)
+            val radiusZ = 8 + random.nextInt(6)
+            for (z in (center.z - radiusZ).coerceAtLeast(1)..(center.z + radiusZ).coerceAtMost(MAP_SIZE - 2)) {
+                for (x in (center.x - radiusX).coerceAtLeast(1)..(center.x + radiusX).coerceAtMost(MAP_SIZE - 2)) {
+                    val dx = (x - center.x).toDouble() / radiusX
+                    val dz = (z - center.z).toDouble() / radiusZ
+                    if (dx * dx + dz * dz > 1.0) continue
+                    val point = QuestMapPoint(x, z)
+                    val offset = index(point)
+                    if (nearest.distanceSquared[offset] <= 5 * 5) continue
+                    if (contents.any { it.position.distanceSquared(point) < 8 * 8 }) continue
+                    heights[offset] = minOf(heights[offset], QUEST_WATER_LEVEL - 1)
+                }
+            }
+        }
     }
 
     private fun flattenCircle(heights: IntArray, center: QuestMapPoint, radius: Int) {

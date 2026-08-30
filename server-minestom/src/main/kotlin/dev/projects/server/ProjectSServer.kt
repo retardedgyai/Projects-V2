@@ -467,6 +467,9 @@ fun main() {
         Command("questmap").apply {
             setDefaultExecutor { sender, _ ->
                 val player = sender as? net.minestom.server.entity.Player ?: return@setDefaultExecutor
+                bossGroundTelegraphIds.forEach { telegraphId ->
+                    player.sendPluginMessage(PROJECTS_CHANNEL, ProtocolCodec.encode(GroundTelegraphRemove(telegraphId)))
+                }
                 player.hideBossBar(bossBar)
                 questMaps.enter(player).thenAccept { entered -> if (!entered) player.showBossBar(bossBar) }
             }
@@ -744,7 +747,11 @@ fun main() {
         sendResourceSnapshot(event.player)
         sendProgressionSnapshot(event.player)
         updateBossBar()
-        event.player.showBossBar(bossBar)
+        if (event.player.instance == instance) {
+            event.player.showBossBar(bossBar)
+        } else {
+            event.player.hideBossBar(bossBar)
+        }
         if (event.isFirstSpawn) {
             attackSpeeds[event.player.uuid] = DEFAULT_ATTACK_SPEED
             twinBladesComboStates[event.player.uuid] = TwinBladesComboState()

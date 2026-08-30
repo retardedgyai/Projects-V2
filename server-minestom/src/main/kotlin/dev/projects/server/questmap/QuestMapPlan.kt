@@ -3,6 +3,8 @@ package dev.projects.server.questmap
 import kotlin.math.abs
 import kotlin.math.max
 
+internal const val QUEST_WATER_LEVEL = 42
+
 internal data class QuestMapPoint(
     val x: Int,
     val z: Int,
@@ -46,12 +48,14 @@ internal class QuestMapPlan(
     val contents: List<QuestMapContent>,
     private val heights: IntArray,
     private val roadDistanceSquared: IntArray,
+    private val mainRoadDistanceSquared: IntArray,
 ) {
     init {
         require(size > 0)
         require(playableBorder in 1 until size / 2)
         require(heights.size == size * size)
         require(roadDistanceSquared.size == size * size)
+        require(mainRoadDistanceSquared.size == size * size)
         require(mainRoute.isNotEmpty())
     }
 
@@ -63,6 +67,8 @@ internal class QuestMapPlan(
     fun heightAt(point: QuestMapPoint): Int = heightAt(point.x, point.z)
 
     fun roadDistanceSquaredAt(x: Int, z: Int): Int = roadDistanceSquared[index(x, z)]
+
+    fun mainRoadDistanceSquaredAt(x: Int, z: Int): Int = mainRoadDistanceSquared[index(x, z)]
 
     fun isInsidePlayable(point: QuestMapPoint): Boolean =
         point.x in playableBorder until size - playableBorder &&
@@ -76,6 +82,19 @@ internal class QuestMapPlan(
             highest = maxOf(highest, height)
         }
         return highest - lowest
+    }
+
+    fun surfaceCoverageAtOrBelow(level: Int): Double = heights.count { it <= level }.toDouble() / heights.size
+
+    fun maximumBoundaryRise(): Int {
+        var maximum = 0
+        for (offset in 0 until size) {
+            maximum = maxOf(maximum, heightAt(0, offset) - heightAt(playableBorder, offset))
+            maximum = maxOf(maximum, heightAt(size - 1, offset) - heightAt(size - 1 - playableBorder, offset))
+            maximum = maxOf(maximum, heightAt(offset, 0) - heightAt(offset, playableBorder))
+            maximum = maxOf(maximum, heightAt(offset, size - 1) - heightAt(offset, size - 1 - playableBorder))
+        }
+        return maximum
     }
 
     fun fingerprint(): Long {
@@ -107,7 +126,7 @@ internal data class QuestMapQualityReport(
 }
 
 internal object QuestMapQualityGate {
-    private const val MINIMUM_MAIN_ROUTE_POINTS = 210
+    private const val MINIMUM_MAIN_ROUTE_POINTS = 170
     private const val MAXIMUM_CONTENT_GAP = 75
 
     fun evaluate(plan: QuestMapPlan): QuestMapQualityReport {
@@ -121,7 +140,9 @@ internal object QuestMapQualityGate {
         )
 
         if (plan.size != VerdantRoadQuestPlanner.MAP_SIZE) violations += "Unexpected map size"
-        if (plan.mainRoute.size < MINIMUM_MAIN_ROUTE_POINTS) violations += "Main route is too short"
+        if (plan.mainRoute.size < MINIMUM_MAIN_ROUTE_POINTS) {
+            violations += "Main route has ${plan.mainRoute.size} points; expected at least $MINIMUM_MAIN_ROUTE_POINTS"
+        }
         if (plan.mainRoute.first() != plan.start) violations += "Main route does not start at the quest start"
         if (plan.mainRoute.last() != plan.boss) violations += "Main route does not terminate at the boss"
         if (!plan.contents.all { plan.isInsidePlayable(it.position) }) violations += "Content outside playable area"
@@ -145,6 +166,16 @@ internal object QuestMapQualityGate {
             violations += "Boss arena does not fit inside generated extent"
         }
         if (plan.elevationRange() < 8) violations += "Terrain is visually too flat"
+        if (plan.maximumBoundaryRise() > 16) violations += "Map boundary forms a visible terrain wall"
+        if (plan.style == QuestTerrainStyle.SALTMARSH) {
+            val waterCoverage = plan.surfaceCoverageAtOrBelow(QUEST_WATER_LEVEL)
+            if (waterCoverage !in 0.04..0.38) {
+                violations += "Saltmarsh water coverage ${"%.3f".format(waterCoverage)} is outside the authored range"
+            }
+            if (plan.mainRoute.any { plan.heightAt(it) <= QUEST_WATER_LEVEL }) {
+                violations += "Saltmarsh main road is submerged"
+            }
+        }
 
         val requiredRouteIndices = plan.contents
             .map { it.mainRouteIndex }

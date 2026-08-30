@@ -10,8 +10,9 @@ This playground tests one concrete replacement for the current flat hunt space. 
 - `/questmap return` returns to the existing ProjectS hub and destroys that temporary instance.
 - `/questmap status` displays ready, preparing, and active map counts.
 - The generated extent is 160×160 blocks so it aligns to 10×10 Minecraft chunks.
-- A raised outer terrain rim and an invisible final edge prevent accidental escape.
+- A low, irregular coastline and one-chunk outer sea hide the square edge; an invisible final edge prevents escape.
 - The main road always connects the camp to the boss arena.
+- Main roads are broad and readable while optional side trails are deliberately narrower and use different materials.
 - The current authored rhythm is three combat landmarks, four gathering branches, three discoveries, and one boss arena.
 - Seed and terrain style are shown on entry so bad generations can be reproduced.
 
@@ -19,12 +20,13 @@ This playground tests one concrete replacement for the current flat hunt space. 
 
 1. Select one of Verdant, Highlands, or Saltmarsh from the seed.
 2. Generate layered deterministic terrain height.
-3. Build a long, monotonic west-to-east quest route through alternating terrain bands.
+3. Build a long, curved west-to-east quest route through alternating terrain bands.
 4. Add side trails for gathering and discovery content.
 5. Blend terrain toward the road and force every road step to remain walkable.
-6. Flatten the start camp and boss arena without breaking the road ramp.
-7. Reject maps that fail reachability, density, spacing, elevation, or content-count rules.
-8. Load all 100 chunks, add trees and authored landmarks, and place the result in the ready pool.
+6. Flatten the start, encounters, gathering pockets, discoveries, and boss arena without breaking the road ramp.
+7. For Saltmarsh, carve bounded wetland basins while keeping the entire main road above water.
+8. Reject maps that fail reachability, density, spacing, elevation, coastline, water, or content-count rules.
+9. Load the 100 playable chunks plus a one-chunk sea buffer, add clustered vegetation and authored landmarks, and place the result in the ready pool.
 
 ## No-wait rule
 
@@ -41,6 +43,8 @@ Automated planning budget: 20 complete plans in under four seconds on the develo
 - Terrain elevation range is at least eight blocks.
 - The route contains no content gap greater than 75 road steps.
 - Required content counts and minimum separation are enforced.
+- Saltmarsh water coverage is bounded and its main road cannot be submerged.
+- The failed manual-smoke seed `1788101320652` is a permanent regression case for flooding and perimeter walls.
 - JVM 25 production sources compile with the current Minestom dependency.
 
 ## Creator manual smoke
@@ -48,12 +52,13 @@ Automated planning budget: 20 complete plans in under four seconds on the develo
 1. Start the ProjectS server and connect normally.
 2. Run `/questmap status`; at least two maps must be ready.
 3. Run `/questmap` and record the reported transfer time, seed, and style.
-4. Follow only the tan road. It must lead from the camp through three stone combat rings to the Lodestone boss arena without jumping or building.
-5. Inspect every side trail. Four end at ore clusters and two end at stone/amethyst arches; the final main-road arch foreshadows the boss.
-6. Verify that trees do not block the road or content landmarks.
-7. Verify that the raised outer terrain hides the square edge during normal play and the invisible boundary cannot be crossed.
-8. Run `/questmap return`; the player must return to the hub and the active count must decrease.
-9. Repeat at least 20 entries. The command-to-transfer P95 target is below one second.
+4. Confirm that no Rift Executioner boss bar or Hub combat telegraph remains after transfer.
+5. Follow only the broad main road. It must lead from the camp through three stone combat rings to the Lodestone boss arena without jumping or building.
+6. Inspect every narrow side trail. Four end at ore clusters and two end at stone/amethyst arches; the final main-road arch foreshadows the boss.
+7. Verify that vegetation does not block the road or content landmarks.
+8. Verify that the coastline and outer sea hide the square edge during normal play and the invisible boundary cannot be crossed.
+9. Run `/questmap return`; the player must return to the hub and the active count must decrease.
+10. Repeat at least 20 entries. The command-to-transfer P95 target is below one second.
 
 ## Explicitly not complete in this playground checkpoint
 

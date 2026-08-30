@@ -44,6 +44,16 @@ class VerdantRoadQuestPlannerTest {
     }
 
     @Test
+    fun `failed manual smoke saltmarsh seed no longer floods or builds a perimeter wall`() {
+        val plan = VerdantRoadQuestPlanner.generate(1_788_101_320_652L)
+
+        assertEquals(QuestTerrainStyle.SALTMARSH, plan.style)
+        assertTrue(plan.surfaceCoverageAtOrBelow(QUEST_WATER_LEVEL) in 0.04..0.38)
+        assertTrue(plan.maximumBoundaryRise() <= 16)
+        assertTrue(plan.mainRoute.all { plan.heightAt(it) > QUEST_WATER_LEVEL })
+    }
+
+    @Test
     fun `generation stays inside the prewarm budget`() {
         val elapsed = measureTimeMillis {
             repeat(20) { VerdantRoadQuestPlanner.generate(50_000L + it) }
