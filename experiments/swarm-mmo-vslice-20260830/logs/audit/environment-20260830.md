@@ -32,3 +32,13 @@
 ## Additional input
 
 A prebuilt Minecraft world is optional, not blocking. Without one, the slice will generate a compact port/outpost directly in Minestom. If the Creator later supplies a world, it must include the world directory/archive and either target coordinates/region bounds or permission for the integration lane to select a bounded area.
+
+## Toolchain remediation and baseline
+
+- Portable Temurin JDK `25.0.4.1+1` was downloaded from the official Adoptium binary API into `C:\Users\xgaiz\Documents\Codex\minecraft-runtime\temurin-25`.
+- Downloaded archive SHA-256: `00C847D804F4A78E9F04F2683FAF14FED898535B177B7FC704486CB0284E9283`.
+- Gradle `9.5.1` was provisioned into the task-local Gradle home under this Codex task's `work` directory.
+- Baseline command: `gradlew.bat build --no-daemon` with explicit JDK 25 and task-local Gradle home.
+- Result: **BUILD SUCCESSFUL** in 3m 1s; 17 actionable tasks executed.
+- Existing warnings: one unnecessary Kotlin non-null assertion, deprecated Minestom `customName`, deprecated `isAir`, and one unnecessary test cast. These predate the experiment.
+- The JDK/Gradle blocker is resolved. HTTPS Git fetch/push and Windows-compatible smoke orchestration remain unresolved.
