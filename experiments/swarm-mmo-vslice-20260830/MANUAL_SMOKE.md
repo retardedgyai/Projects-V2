@@ -9,6 +9,16 @@ Minecraft GUI操作と最終feel判定はCreatorが行う。FabricとResource Pa
 3. 本番smoke用Serverを起動し、Vanilla 26.2から接続する。Resource Pack提示があれば拒否する。
 4. 新規Player profileを使い、開始時刻を記録する。Server commandや管理者による進行補助は禁止。
 
+このexperiment branchでは`server-minestom:run`がTidebreak専用entrypointを起動する。保存先を固定してから起動する:
+
+```powershell
+$env:PROJECTS_SWARM_DATA_ROOT = (Resolve-Path .).Path + "\local-swarm-data"
+$env:PROJECTS_SWARM_PORT = "25565"
+.\gradlew.bat --no-daemon :server-minestom:run
+```
+
+`SWARM_VSLICE_READY address=127.0.0.1 port=25565 ...`が出たら、Vanilla 26.2で`127.0.0.1:25565`へ接続する。外部worldファイル、Resource Pack、Fabricは不要。
+
 Startup probe例:
 
 ```powershell

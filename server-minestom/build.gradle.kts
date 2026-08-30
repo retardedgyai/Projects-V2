@@ -18,7 +18,7 @@ tasks.test {
 }
 
 application {
-    mainClass = "dev.projects.server.ProjectSServerKt"
+    mainClass = "dev.projects.server.experiment.swarm.SwarmSliceServerKt"
 }
 
 tasks.named<JavaExec>("run") {
