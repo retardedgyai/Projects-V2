@@ -72,6 +72,40 @@ internal object QuestMapStructureAssets {
         if (length >= 4) painter.setGrounded(plan, length / 2, 0, 1, Block.BROWN_MUSHROOM)
     }
 
+    fun placeShrubCluster(
+        instance: Instance,
+        plan: QuestMapPlan,
+        origin: QuestMapPoint,
+        variation: Int,
+        rotation: Int,
+    ) {
+        Painter(
+            instance,
+            origin.x,
+            plan.heightAt(origin) + 1,
+            origin.z,
+            rotation,
+            variation.toLong(),
+        ).shrubCluster(plan, plan.style)
+    }
+
+    fun placeRoadsideMarker(
+        instance: Instance,
+        plan: QuestMapPlan,
+        origin: QuestMapPoint,
+        variation: Int,
+        rotation: Int,
+    ) {
+        Painter(
+            instance,
+            origin.x,
+            plan.heightAt(origin) + 1,
+            origin.z,
+            rotation,
+            variation.toLong(),
+        ).roadsideMarker(plan, plan.style)
+    }
+
     private class Painter(
         private val instance: Instance,
         private val originX: Int,
@@ -91,6 +125,21 @@ internal object QuestMapStructureAssets {
             val absoluteZ = originZ + rotatedZ
             if (absoluteX !in 0 until plan.size || absoluteZ !in 0 until plan.size) return
             instance.setBlock(absoluteX, plan.heightAt(absoluteX, absoluteZ) + 1 + dy, absoluteZ, block)
+        }
+
+        private fun setAnchored(plan: QuestMapPlan, dx: Int, dy: Int, dz: Int, block: Block) {
+            val (rotatedX, rotatedZ) = rotate(dx, dz)
+            val absoluteX = originX + rotatedX
+            val absoluteZ = originZ + rotatedZ
+            if (absoluteX !in 0 until plan.size || absoluteZ !in 0 until plan.size) return
+            val targetY = originY + dy
+            val localSurface = plan.heightAt(absoluteX, absoluteZ)
+            if (targetY < localSurface - 1) return
+            if (dy <= 0 && targetY > localSurface + 1) {
+                for (fillY in localSurface + 1..targetY) instance.setBlock(absoluteX, fillY, absoluteZ, block)
+            } else {
+                instance.setBlock(absoluteX, targetY, absoluteZ, block)
+            }
         }
 
         private fun column(dx: Int, dz: Int, fromY: Int, toY: Int, block: Block) {
@@ -127,25 +176,34 @@ internal object QuestMapStructureAssets {
 
         fun proceduralTree(style: QuestTerrainStyle, plan: QuestMapPlan) {
             val random = java.util.Random(assetSeed xor 0x5452454547524F57L)
-            val profile = Math.floorMod(assetSeed, 14L).toInt()
-            val log = when (style) {
-                QuestTerrainStyle.VERDANT -> Block.OAK_LOG
-                QuestTerrainStyle.HIGHLANDS -> Block.SPRUCE_LOG
-                QuestTerrainStyle.SALTMARSH -> Block.MANGROVE_LOG
+            val profile = Math.floorMod(assetSeed, 24L).toInt()
+            val localHeight = plan.heightAt(originX, originZ)
+            val broadleafHighland = style == QuestTerrainStyle.HIGHLANDS && localHeight < 66 && profile in 16..19
+            val log = when {
+                style == QuestTerrainStyle.VERDANT && profile in 18..20 -> Block.BIRCH_LOG
+                style == QuestTerrainStyle.VERDANT && profile >= 21 -> Block.DARK_OAK_LOG
+                broadleafHighland -> Block.BIRCH_LOG
+                style == QuestTerrainStyle.VERDANT -> Block.OAK_LOG
+                style == QuestTerrainStyle.HIGHLANDS -> Block.SPRUCE_LOG
+                else -> Block.MANGROVE_LOG
             }
-            val leaves = when (style) {
-                QuestTerrainStyle.VERDANT -> Block.OAK_LEAVES
-                QuestTerrainStyle.HIGHLANDS -> Block.SPRUCE_LEAVES
-                QuestTerrainStyle.SALTMARSH -> Block.MANGROVE_LEAVES
+            val leaves = when {
+                style == QuestTerrainStyle.VERDANT && profile in 18..20 -> Block.BIRCH_LEAVES
+                style == QuestTerrainStyle.VERDANT && profile >= 21 -> Block.DARK_OAK_LEAVES
+                broadleafHighland -> Block.BIRCH_LEAVES
+                style == QuestTerrainStyle.VERDANT -> Block.OAK_LEAVES
+                style == QuestTerrainStyle.HIGHLANDS -> Block.SPRUCE_LEAVES
+                else -> Block.MANGROVE_LEAVES
             }
             val baseHeight = when (style) {
-                QuestTerrainStyle.VERDANT -> 6 + random.nextInt(7)
-                QuestTerrainStyle.HIGHLANDS -> 8 + random.nextInt(10)
-                QuestTerrainStyle.SALTMARSH -> 6 + random.nextInt(7)
+                QuestTerrainStyle.VERDANT -> 6 + random.nextInt(8)
+                QuestTerrainStyle.HIGHLANDS -> if (broadleafHighland) 6 + random.nextInt(5) else 7 + random.nextInt(7)
+                QuestTerrainStyle.SALTMARSH -> 6 + random.nextInt(6)
             }
-            val dead = profile == 11
-            val multiStem = profile in setOf(2, 7, 12)
-            val windswept = profile in setOf(4, 9)
+            val dead = profile in setOf(11, 23)
+            val multiStem = profile in setOf(2, 7, 12, 17, 21)
+            val windswept = profile in setOf(4, 9, 15)
+            val conifer = style == QuestTerrainStyle.HIGHLANDS && !broadleafHighland
             val leanX = when {
                 windswept -> 1
                 profile == 6 -> -1
@@ -158,8 +216,13 @@ internal object QuestMapStructureAssets {
                     setGrounded(plan, dx, dz, 0, if ((profile + index) and 1 == 0) Block.MANGROVE_ROOTS else Block.MUDDY_MANGROVE_ROOTS)
                     setGrounded(plan, dx / 2, dz / 2, 1, Block.MANGROVE_ROOTS)
                 }
-            } else if (profile in setOf(3, 10, 13)) {
-                listOf(-1 to 0, 1 to 0, 0 to -1, 0 to 1).forEach { (dx, dz) -> setGrounded(plan, dx, dz, 0, log) }
+            } else if (profile % 3 == 0 || baseHeight >= 11) {
+                listOf(-1 to 0, 1 to 0, 0 to -1, 0 to 1).forEachIndexed { index, (dx, dz) ->
+                    setGrounded(plan, dx, dz, if ((index + profile) and 1 == 0) 0 else -1, log)
+                }
+                listOf(-1 to -1, 1 to -1, -1 to 1, 1 to 1).forEach { (dx, dz) ->
+                    if (Math.floorMod(dx * 7 + dz * 11 + profile, 3) == 0) setGrounded(plan, dx, dz, 0, Block.ROOTED_DIRT)
+                }
             }
 
             var trunkX = 0
@@ -180,7 +243,7 @@ internal object QuestMapStructureAssets {
 
             val directions = listOf(1 to 0, 1 to 1, 0 to 1, -1 to 1, -1 to 0, -1 to -1, 0 to -1, 1 to -1)
             val branchCount = when (style) {
-                QuestTerrainStyle.HIGHLANDS -> 4 + random.nextInt(5)
+                QuestTerrainStyle.HIGHLANDS -> if (conifer) 5 + random.nextInt(5) else 3 + random.nextInt(4)
                 else -> 3 + random.nextInt(5)
             }
             repeat(branchCount) { branch ->
@@ -204,7 +267,7 @@ internal object QuestMapStructureAssets {
                 if (!dead || branch % 2 == 0) {
                     val crownRadius = when (style) {
                         QuestTerrainStyle.VERDANT -> 2 + random.nextInt(3)
-                        QuestTerrainStyle.HIGHLANDS -> 1 + random.nextInt(2)
+                        QuestTerrainStyle.HIGHLANDS -> if (conifer) 1 + random.nextInt(2) else 2 + random.nextInt(3)
                         QuestTerrainStyle.SALTMARSH -> 2 + random.nextInt(3)
                     }
                     leafCrown(
@@ -212,7 +275,7 @@ internal object QuestMapStructureAssets {
                         branchY + branchLength / 2 + 1,
                         endpointZ,
                         crownRadius + if (windswept) 1 else 0,
-                        if (style == QuestTerrainStyle.HIGHLANDS) 1 else 2,
+                        if (conifer) 1 else 2,
                         crownRadius,
                         leaves,
                         clippedCorner = if (dead) 7 else 2 + random.nextInt(3),
@@ -222,22 +285,22 @@ internal object QuestMapStructureAssets {
 
             if (!dead) {
                 val crownLayers = when (style) {
-                    QuestTerrainStyle.HIGHLANDS -> 3 + random.nextInt(3)
+                    QuestTerrainStyle.HIGHLANDS -> if (conifer) 3 + random.nextInt(3) else 2 + random.nextInt(2)
                     else -> 2 + random.nextInt(3)
                 }
                 repeat(crownLayers) { layer ->
                     val offsetX = trunkX + random.nextInt(3) - 1 + if (windswept) layer else 0
                     val offsetZ = trunkZ + random.nextInt(3) - 1
                     val radius = when (style) {
-                        QuestTerrainStyle.HIGHLANDS -> (3 - layer / 2).coerceAtLeast(1)
+                        QuestTerrainStyle.HIGHLANDS -> if (conifer) (3 - layer / 2).coerceAtLeast(1) else 2 + random.nextInt(3)
                         else -> 2 + random.nextInt(3)
                     }
                     leafCrown(
                         offsetX,
-                        baseHeight - 1 + layer * if (style == QuestTerrainStyle.HIGHLANDS) 2 else 1,
+                        baseHeight - 1 + layer * if (conifer) 2 else 1,
                         offsetZ,
                         radius + if (style == QuestTerrainStyle.SALTMARSH) 1 else 0,
-                        if (style == QuestTerrainStyle.HIGHLANDS) 1 else 2,
+                        if (conifer) 1 else 2,
                         radius,
                         leaves,
                         clippedCorner = 2 + random.nextInt(3),
@@ -348,30 +411,109 @@ internal object QuestMapStructureAssets {
                 QuestTerrainStyle.HIGHLANDS -> Block.COBBLESTONE
                 QuestTerrainStyle.SALTMARSH -> Block.MOSS_BLOCK
             }
-            val radiusX = 1 + random.nextInt(4)
+            val radiusX = 1 + random.nextInt(3)
             val radiusZ = 1 + random.nextInt(3)
             val layers = 1 + random.nextInt(3) + if (variation >= 14) 1 else 0
+            val burial = 1 + random.nextInt(2)
             for (dx in -radiusX..radiusX) {
                 for (dz in -radiusZ..radiusZ) {
                     val normalized = (dx * dx).toDouble() / (radiusX * radiusX) + (dz * dz).toDouble() / (radiusZ * radiusZ)
                     val edgeNoise = Math.floorMod(assetSeed xor (dx * 31L) xor (dz * 47L), 7L).toInt()
                     if (normalized > 1.05 || (normalized > 0.72 && edgeNoise <= 1)) continue
                     val baseBlock = if (Math.floorMod(dx + dz + variation, 5) == 0) secondary else primary
-                    setGrounded(plan, dx, dz, -1, baseBlock)
-                    setGrounded(plan, dx, dz, 0, baseBlock)
+                    setAnchored(plan, dx, -burial, dz, baseBlock)
+                    setAnchored(plan, dx, 1 - burial, dz, baseBlock)
                     for (layer in 1 until layers) {
                         val layerRadiusX = (radiusX - layer).coerceAtLeast(0)
                         val layerRadiusZ = (radiusZ - layer).coerceAtLeast(0)
                         if (abs(dx) > layerRadiusX || abs(dz) > layerRadiusZ) continue
                         if (Math.floorMod(dx * 5 + dz * 3 + layer + variation, 4) == 0) continue
-                        setGrounded(plan, dx, dz, layer, if ((layer + variation) % 4 == 0) secondary else primary)
+                        setAnchored(plan, dx, layer + 1 - burial, dz, if ((layer + variation) % 4 == 0) secondary else primary)
                     }
                 }
             }
             if (variation in setOf(5, 11, 17)) {
-                repeat(2 + variation % 3) { spike -> setGrounded(plan, 0, 0, layers + spike, primary) }
+                repeat(2 + variation % 3) { spike -> setAnchored(plan, 0, layers + spike - burial, 0, primary) }
             }
-            if (style != QuestTerrainStyle.HIGHLANDS) setGrounded(plan, 0, 0, layers, Block.MOSS_CARPET)
+            if (style != QuestTerrainStyle.HIGHLANDS) setAnchored(plan, 0, layers - burial + 1, 0, Block.MOSS_CARPET)
+            val satellites = 1 + random.nextInt(3)
+            repeat(satellites) { satellite ->
+                val dx = (if (satellite and 1 == 0) radiusX + 2 else -radiusX - 2) + random.nextInt(2)
+                val dz = random.nextInt(radiusZ * 2 + 3) - radiusZ - 1
+                setGrounded(plan, dx, dz, -1, secondary)
+                if (random.nextBoolean()) setGrounded(plan, dx, dz, 0, primary)
+            }
+        }
+
+        fun shrubCluster(plan: QuestMapPlan, style: QuestTerrainStyle) {
+            val random = java.util.Random(assetSeed xor 0x5348525542434C55L)
+            val leaf = when (style) {
+                QuestTerrainStyle.VERDANT -> if ((assetSeed and 1L) == 0L) Block.OAK_LEAVES else Block.AZALEA_LEAVES
+                QuestTerrainStyle.HIGHLANDS -> if ((assetSeed and 1L) == 0L) Block.SPRUCE_LEAVES else Block.BIRCH_LEAVES
+                QuestTerrainStyle.SALTMARSH -> Block.MANGROVE_LEAVES
+            }
+            val stems = when (style) {
+                QuestTerrainStyle.VERDANT -> Block.OAK_FENCE
+                QuestTerrainStyle.HIGHLANDS -> Block.SPRUCE_FENCE
+                QuestTerrainStyle.SALTMARSH -> Block.MANGROVE_ROOTS
+            }
+            val centers = listOf(0 to 0, 2 to 1, -2 to 1, 1 to -2)
+                .sortedBy { (dx, dz) -> Math.floorMod(assetSeed xor (dx * 31L) xor (dz * 47L), 97L) }
+                .take(2 + random.nextInt(3))
+            centers.forEachIndexed { index, (dx, dz) ->
+                setGrounded(plan, dx, dz, 0, stems)
+                setGrounded(plan, dx, dz, 1, leaf)
+                listOf(-1 to 0, 1 to 0, 0 to -1, 0 to 1).forEach { (leafX, leafZ) ->
+                    if (Math.floorMod(index + leafX * 3 + leafZ * 5 + assetSeed.toInt(), 4) != 0) {
+                        setGrounded(plan, dx + leafX, dz + leafZ, 1, leaf)
+                    }
+                }
+            }
+            repeat(3 + random.nextInt(4)) {
+                val dx = random.nextInt(7) - 3
+                val dz = random.nextInt(7) - 3
+                val detail = when (Math.floorMod(assetSeed + it, 4L).toInt()) {
+                    0 -> Block.FERN
+                    1 -> Block.MOSS_CARPET
+                    2 -> if (style == QuestTerrainStyle.HIGHLANDS) Block.DEAD_BUSH else Block.BROWN_MUSHROOM
+                    else -> Block.SHORT_GRASS
+                }
+                setGrounded(plan, dx, dz, 0, detail)
+            }
+        }
+
+        fun roadsideMarker(plan: QuestMapPlan, style: QuestTerrainStyle) {
+            when (Math.floorMod(assetSeed, 4L).toInt()) {
+                0 -> {
+                    setGrounded(plan, 0, 0, 0, Block.COBBLESTONE)
+                    setGrounded(plan, 0, 0, 1, Block.MOSSY_COBBLESTONE)
+                    setGrounded(plan, 0, 0, 2, Block.COBBLESTONE_WALL)
+                    setGrounded(plan, 1, 0, 0, Block.ANDESITE)
+                    setGrounded(plan, -1, 1, 0, Block.MOSSY_COBBLESTONE)
+                }
+                1 -> {
+                    setGrounded(plan, 0, 0, 0, if (style == QuestTerrainStyle.HIGHLANDS) Block.SPRUCE_LOG else Block.STRIPPED_OAK_LOG)
+                    setGrounded(plan, 0, 0, 1, Block.OAK_FENCE)
+                    setGrounded(plan, 0, 0, 2, Block.OAK_FENCE)
+                    set(1, 2, 0, Block.OAK_PLANKS)
+                    set(-1, 2, 0, Block.OAK_PLANKS)
+                    set(0, 3, 0, Block.LANTERN)
+                }
+                2 -> {
+                    setGrounded(plan, 0, 0, 0, Block.MOSSY_STONE_BRICKS)
+                    setGrounded(plan, 0, 0, 1, Block.CHISELED_STONE_BRICKS)
+                    setGrounded(plan, 0, 0, 2, Block.STONE_BRICK_WALL)
+                    setGrounded(plan, 1, 0, 0, Block.CRACKED_STONE_BRICKS)
+                    setGrounded(plan, -1, 0, 0, Block.MOSS_CARPET)
+                }
+                else -> {
+                    setGrounded(plan, 0, 0, 0, Block.COBBLESTONE_WALL)
+                    setGrounded(plan, 0, 0, 1, Block.COBBLESTONE_WALL)
+                    setGrounded(plan, 0, 0, 2, if (style == QuestTerrainStyle.HIGHLANDS) Block.SOUL_LANTERN else Block.LANTERN)
+                    setGrounded(plan, 1, 0, 0, Block.MOSSY_COBBLESTONE)
+                    setGrounded(plan, -1, 1, 0, Block.ANDESITE)
+                }
+            }
         }
 
         private fun rotate(dx: Int, dz: Int): Pair<Int, Int> = when (Math.floorMod(rotation, 4)) {

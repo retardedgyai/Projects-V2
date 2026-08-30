@@ -45,11 +45,28 @@ class VerdantRoadQuestPlannerTest {
         assertEquals(4, plan.contents.count { it.kind == QuestMapContentKind.GATHERING })
         assertEquals(3, plan.contents.count { it.kind == QuestMapContentKind.DISCOVERY })
         assertEquals(1, plan.contents.count { it.kind == QuestMapContentKind.BOSS })
-        assertTrue(plan.mainRoute.size >= 210)
-        assertTrue(plan.elevationRange() >= 18)
+        assertTrue(plan.mainRoute.size >= 180)
+        assertTrue(plan.elevationRange() in 16..48)
         assertTrue(plan.terrainOcclusionSamples() >= 3)
-        assertTrue(plan.routeDetourRatio() >= 1.18)
+        assertTrue(plan.routeDetourRatio() in 1.06..1.58)
+        assertTrue(plan.maximumRouteRise() <= 5)
+        assertTrue(plan.maximumRoadShoulderRelief() <= 4)
+        assertTrue(plan.explorableCorridorCoverage() >= 0.82)
         assertTrue(plan.groundCoverDiversity() >= 4)
+    }
+
+    @Test
+    fun `failed highland smoke seed now produces a moderate explorable pass`() {
+        val plan = VerdantRoadQuestPlanner.generate(1_788_109_725_769L)
+
+        assertEquals(QuestTerrainStyle.HIGHLANDS, plan.style)
+        assertEquals(QuestRouteLayout.MEANDER, plan.routeLayout)
+        assertEquals(QuestTerrainProfile.BROKEN_HILLS, plan.terrainProfile)
+        assertTrue(plan.routeDetourRatio() <= 1.58)
+        assertTrue(plan.maximumRouteRise() <= 5)
+        assertTrue(plan.maximumRoadShoulderRelief() <= 4)
+        assertTrue(plan.explorableCorridorCoverage() >= 0.82)
+        assertTrue(plan.elevationRange() <= 48)
     }
 
     @Test

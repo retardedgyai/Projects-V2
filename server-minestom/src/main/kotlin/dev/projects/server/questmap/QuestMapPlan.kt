@@ -182,6 +182,75 @@ internal class QuestMapPlan(
         return if (directDistance == 0.0) 0.0 else walkedDistance / directDistance
     }
 
+    fun maximumRouteRise(window: Int = 12): Int {
+        if (mainRoute.size <= window) return elevationRange()
+        return (0..mainRoute.lastIndex - window).maxOf { index ->
+            abs(heightAt(mainRoute[index + window]) - heightAt(mainRoute[index]))
+        }
+    }
+
+    fun maximumRoadShoulderRelief(radius: Int = 6): Int = roadShoulderReliefSample(radius).third
+
+    internal fun roadShoulderReliefSample(radius: Int = 6): Triple<QuestMapPoint, QuestMapPoint, Int> {
+        var worstRoad = mainRoute.first()
+        var worstTerrain = worstRoad
+        var maximum = 0
+        mainRoute.forEach { road ->
+            val roadHeight = heightAt(road)
+            for (z in (road.z - radius).coerceAtLeast(0)..(road.z + radius).coerceAtMost(size - 1)) {
+                for (x in (road.x - radius).coerceAtLeast(0)..(road.x + radius).coerceAtMost(size - 1)) {
+                    if (QuestMapPoint(x, z).distanceSquared(road) > radius * radius) continue
+                    val relief = abs(heightAt(x, z) - roadHeight)
+                    if (relief > maximum) {
+                        maximum = relief
+                        worstRoad = road
+                        worstTerrain = QuestMapPoint(x, z)
+                    }
+                }
+            }
+        }
+        return Triple(worstRoad, worstTerrain, maximum)
+    }
+
+    fun explorableCorridorCoverage(radius: Int = 22): Double {
+        val insideCorridor = BooleanArray(size * size)
+        var eligible = 0
+        for (z in playableBorder until size - playableBorder) {
+            for (x in playableBorder until size - playableBorder) {
+                val offset = z * size + x
+                if (roadDistanceSquared[offset] > radius * radius || heights[offset] <= QUEST_WATER_LEVEL) continue
+                insideCorridor[offset] = true
+                eligible++
+            }
+        }
+        if (eligible == 0) return 0.0
+        val visited = BooleanArray(size * size)
+        val queue = ArrayDeque<QuestMapPoint>()
+        trails.forEach { point ->
+            val offset = point.z * size + point.x
+            if (insideCorridor[offset] && !visited[offset]) {
+                visited[offset] = true
+                queue += point
+            }
+        }
+        val directions = listOf(-1 to 0, 1 to 0, 0 to -1, 0 to 1, -1 to -1, -1 to 1, 1 to -1, 1 to 1)
+        var reachable = 0
+        while (queue.isNotEmpty()) {
+            val point = queue.removeFirst()
+            reachable++
+            directions.forEach { (dx, dz) ->
+                val next = QuestMapPoint(point.x + dx, point.z + dz)
+                if (next.x !in 0 until size || next.z !in 0 until size) return@forEach
+                val nextOffset = next.z * size + next.x
+                if (!insideCorridor[nextOffset] || visited[nextOffset]) return@forEach
+                if (abs(heightAt(point) - heightAt(next)) > 1) return@forEach
+                visited[nextOffset] = true
+                queue += next
+            }
+        }
+        return reachable.toDouble() / eligible
+    }
+
     fun fingerprint(): Long {
         var hash = seed xor -7046029254386353131L
         fun mix(value: Long) {
@@ -247,7 +316,7 @@ internal data class QuestMapQualityReport(
 }
 
 internal object QuestMapQualityGate {
-    private const val MINIMUM_MAIN_ROUTE_POINTS = 210
+    private const val MINIMUM_MAIN_ROUTE_POINTS = 180
     private const val MAXIMUM_CONTENT_GAP = 115
 
     fun evaluate(plan: QuestMapPlan): QuestMapQualityReport {
@@ -286,9 +355,25 @@ internal object QuestMapQualityGate {
         if (plan.boss.x !in 14 until plan.size - 14 || plan.boss.z !in 14 until plan.size - 14) {
             violations += "Boss arena does not fit inside generated extent"
         }
-        if (plan.elevationRange() < 18) violations += "Terrain is visually too flat"
-        if (plan.terrainOcclusionSamples() < 3) violations += "Terrain does not hide the boss from the start"
-        if (plan.routeDetourRatio() < 1.18) violations += "Main route is too direct"
+        val elevationRange = plan.elevationRange()
+        if (elevationRange < 16) violations += "Terrain is visually too flat ($elevationRange blocks)"
+        if (elevationRange > 48) violations += "Terrain elevation is too extreme for exploration ($elevationRange blocks)"
+        val occlusionSamples = plan.terrainOcclusionSamples()
+        if (occlusionSamples < 3) violations += "Terrain does not hide the boss from the start ($occlusionSamples/3 samples)"
+        val routeDetour = plan.routeDetourRatio()
+        if (routeDetour < 1.06) violations += "Main route is too direct (${"%.3f".format(routeDetour)})"
+        if (routeDetour > 1.58) violations += "Main route bends too aggressively (${"%.3f".format(routeDetour)})"
+        val routeRise = plan.maximumRouteRise()
+        if (routeRise > 5) violations += "Main route grade is too steep over a short span ($routeRise blocks)"
+        val shoulderSample = plan.roadShoulderReliefSample()
+        val shoulderRelief = shoulderSample.third
+        if (shoulderRelief > 4) {
+            violations += "Road shoulder cuts through terrain too abruptly ($shoulderRelief blocks at ${shoulderSample.first} -> ${shoulderSample.second})"
+        }
+        val corridorCoverage = plan.explorableCorridorCoverage()
+        if (corridorCoverage < 0.82) {
+            violations += "Only ${"%.3f".format(corridorCoverage)} of the quest corridor is walkable from the road"
+        }
         if (plan.groundCoverDiversity() < 4) violations += "Ground cover lacks ecological variation"
         if (plan.maximumBoundaryRise() > 16) violations += "Map boundary forms a visible terrain wall"
         if (plan.style == QuestTerrainStyle.SALTMARSH) {

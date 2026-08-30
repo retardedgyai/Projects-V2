@@ -19,6 +19,19 @@ One seed selects independent axes so visible variety is multiplicative rather th
 4. Surface ecology: Meadow, Forest Floor, Shore, Rocky, Heath, or Peat.
 5. Structure grammar: tree, boulder, fallen log, undergrowth, water-edge, and authored quest landmark parameters.
 
+## Route-first exploration contract
+
+The quest route is not paint applied to a finished heightmap. ProjectS reserves the playable corridor first and then constrains nearby terrain around it.
+
+- Route templates use moderate turns and independent rotation/reflection rather than one forced S-curve.
+- Consecutive road steps and spatially adjacent hairpins are reconciled together.
+- The inner road shoulder is protected after all landform and sightline passes, so a late mountain cannot cut back through the path.
+- A broad corridor is relaxed outward from roads and side trails; accepted maps must prove that players can leave the road and explore most nearby dry terrain.
+- Boss occlusion prefers an off-road landform. If no such placement exists, it uses a broad pass with road clearance rather than a narrow wall.
+- Total relief is capped after authored landforms so a rare overlap cannot create an exploration-hostile spike.
+
+This follows the general constraint-driven PCG lesson that designer intent must be encoded as explicit constraints rather than inferred from attractive noise alone. Reference: https://ojs.aaai.org/index.php/AIIDE/article/view/12592
+
 ## Water language
 
 A pond is not a filled ellipse. Each Saltmarsh water system uses:
@@ -45,4 +58,4 @@ The top block is selected from contiguous low-frequency patches constrained by e
 
 ## Acceptance meaning
 
-Automated gates can reject repetition, broken reachability, flatness, missing sight occlusion, insufficient water, ecological monotony, and floating-prone footprints. They cannot certify beauty. The Creator manual smoke remains the final visual verdict, and rejected screenshots become permanent regression seeds.
+Automated gates can reject repetition, broken reachability, extreme or flat relief, short-span road grades, abrupt shoulders, inaccessible exploration corridors, missing sight occlusion, insufficient water, ecological monotony, and floating-prone footprints. They cannot certify beauty. The Creator manual smoke remains the final visual verdict, and rejected screenshots become permanent regression seeds.

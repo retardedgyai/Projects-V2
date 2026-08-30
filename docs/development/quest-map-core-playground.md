@@ -25,11 +25,11 @@ This playground tests one concrete replacement for the current flat hunt space. 
 2. Generate layered deterministic terrain height with one of five macro terrain profiles.
 3. Select one of four route topologies, rotate or reflect it, and curve it into a walkable route.
 4. Add side trails for gathering and discovery content.
-5. Blend terrain toward the road and force every road step to remain walkable.
+5. Reserve a broad exploration corridor around the road before decoration, reconcile nearby hairpins, and force every road step to remain walkable.
 6. Blend the start, encounters, gathering pockets, discoveries, and boss arena into their local landforms without breaking the road ramp.
 7. For Saltmarsh, carve warped wetland basins with variable depth, irregular shorelines, inlet fingers, and relaxed banks while keeping the entire main road above water.
 8. Classify every surface cell as Meadow, Forest Floor, Shore, Rocky, Heath, or Peat and apply contiguous block palettes.
-9. Reject maps that fail reachability, density, spacing, elevation, sightline, ecology, coastline, water, or content-count rules.
+9. Reject maps that fail reachability, density, spacing, elevation, sightline, road-grade, shoulder-relief, explorable-corridor, ecology, coastline, water, or content-count rules.
 10. Load the 196 playable chunks plus a one-chunk sea buffer, add ecology-weighted parametric structures and authored landmarks, then place the result in the ready pool.
 
 ## No-wait rule
@@ -44,9 +44,11 @@ Automated planning budget: 20 complete plans in under four seconds on the develo
 - Different seeds alter the fingerprint.
 - 120 representative seeds pass the complete quality gate.
 - Every accepted road reaches the boss with no step higher than one block.
-- Terrain elevation range is at least eighteen blocks.
+- Terrain elevation range is 16–48 blocks.
 - At least three direct sightline samples must hide the boss landmark from the start.
-- The walked route must be at least 1.18 times the direct start-to-boss distance.
+- The walked route must be 1.06–1.58 times the direct start-to-boss distance: readable, but neither straight nor an artificial giant S-curve.
+- A twelve-step road window may rise at most five blocks, and terrain within six blocks of the road may differ by at most four blocks.
+- At least 82% of the dry 22-block quest corridor must be reachable from the road with one-block steps.
 - The route contains no content gap greater than 115 road steps.
 - All four route topologies occur in the representative seed suite.
 - All five macro terrain profiles occur in the representative seed suite.
@@ -55,6 +57,7 @@ Automated planning budget: 20 complete plans in under four seconds on the develo
 - Saltmarsh water coverage is bounded and its main road cannot be submerged.
 - Interior Saltmarsh shorelines cannot jump more than four blocks from water bed to adjacent land.
 - The failed manual-smoke seed `1788101320652` is a permanent regression case for flooding and perimeter walls.
+- The failed Highlands seed `1788109725769` is a permanent regression case for mountainside roads, extreme relief, and poor exploration access.
 - JVM 25 production sources compile with the current Minestom dependency.
 
 ## Creator manual smoke
@@ -63,6 +66,7 @@ Automated planning budget: 20 complete plans in under four seconds on the develo
 2. Run `/questmap status`; at least two maps must be ready.
 3. Run `/questmap` and record the reported transfer time, seed, and style.
    To reproduce the failed Saltmarsh screenshot exactly, use `/questmap seed 1788101320652` instead.
+   To reproduce the failed mountainside-road screenshot, use `/questmap seed 1788109725769`.
 4. Confirm that no Rift Executioner boss bar or Hub combat telegraph remains after transfer.
 5. Follow only the broad main road. It must lead from the camp through three stone combat rings to the Lodestone boss arena without jumping or building.
 6. Inspect every narrow side trail. Four end at ore clusters and two end at stone/amethyst arches; the final main-road arch foreshadows the boss.

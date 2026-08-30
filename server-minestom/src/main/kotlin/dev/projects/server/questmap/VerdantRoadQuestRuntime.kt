@@ -186,9 +186,9 @@ internal object VerdantRoadQuestDecorator {
         plan.contents.forEachIndexed { ordinal, content ->
             when (content.kind) {
                 QuestMapContentKind.START -> decorateStart(instance, plan, content.position)
-                QuestMapContentKind.COMBAT -> decorateCombat(instance, plan, content.position)
+                QuestMapContentKind.COMBAT -> decorateCombat(instance, plan, content.position, ordinal)
                 QuestMapContentKind.GATHERING -> decorateGathering(instance, plan, content.position, ordinal)
-                QuestMapContentKind.DISCOVERY -> decorateDiscovery(instance, plan, content.position)
+                QuestMapContentKind.DISCOVERY -> decorateDiscovery(instance, plan, content.position, ordinal)
                 QuestMapContentKind.BOSS -> decorateBossArena(instance, plan, content.position)
             }
         }
@@ -254,6 +254,7 @@ internal object VerdantRoadQuestDecorator {
 
     private fun decorateTerrainDetail(instance: Instance, plan: QuestMapPlan) {
         val random = Random(plan.seed xor 0x5445525241494EL)
+        val occupiedScenes = mutableListOf<QuestMapPoint>()
         repeat(2_800) {
             val point = QuestMapPoint(8 + random.nextInt(plan.size - 16), 8 + random.nextInt(plan.size - 16))
             if (plan.roadDistanceSquaredAt(point.x, point.z) <= 4 * 4) return@repeat
@@ -268,40 +269,46 @@ internal object VerdantRoadQuestDecorator {
             val cover = plan.groundCoverAt(point)
             val roll = random.nextInt(100)
             val assetRotation = random.nextInt(4)
+            fun sceneClear(radius: Int): Boolean = occupiedScenes.none { it.distanceSquared(point) < radius * radius }
+            fun rememberScene() {
+                occupiedScenes += point
+            }
             when (cover) {
                 QuestGroundCover.ROCKY -> when {
-                    roll < 34 && terrainRange(plan, point, 4) <= 5 -> QuestMapStructureAssets.placeBoulder(
-                        instance,
-                        plan,
-                        point,
-                        random.nextInt(),
-                        assetRotation,
-                    )
-                    roll < 62 -> instance.setBlock(point.x, ground, point.z, if (plan.style == QuestTerrainStyle.HIGHLANDS) Block.TUFF else Block.ANDESITE)
+                    roll < 12 && sceneClear(7) && terrainRange(plan, point, 4) <= 3 -> {
+                        QuestMapStructureAssets.placeBoulder(instance, plan, point, random.nextInt(), assetRotation)
+                        rememberScene()
+                    }
+                    roll < 25 && sceneClear(6) && terrainRange(plan, point, 3) <= 2 -> {
+                        QuestMapStructureAssets.placeShrubCluster(instance, plan, point, random.nextInt(), assetRotation)
+                        rememberScene()
+                    }
+                    roll < 58 -> instance.setBlock(point.x, ground, point.z, if (plan.style == QuestTerrainStyle.HIGHLANDS) Block.TUFF else Block.ANDESITE)
                     else -> instance.setBlock(point.x, ground + 1, point.z, Block.DEAD_BUSH)
                 }
                 QuestGroundCover.FOREST_FLOOR -> when {
-                    roll < 8 && lineTerrainRange(plan, point, 3, assetRotation) <= 1 -> QuestMapStructureAssets.placeFallenLog(
-                        instance,
-                        plan,
-                        point,
-                        3 + random.nextInt(4),
-                        assetRotation,
-                        random.nextInt(),
-                    )
+                    roll < 5 && sceneClear(8) && lineTerrainRange(plan, point, 3, assetRotation) <= 1 -> {
+                        QuestMapStructureAssets.placeFallenLog(instance, plan, point, 3 + random.nextInt(4), assetRotation, random.nextInt())
+                        rememberScene()
+                    }
+                    roll < 13 && sceneClear(6) && terrainRange(plan, point, 3) <= 2 -> {
+                        QuestMapStructureAssets.placeShrubCluster(instance, plan, point, random.nextInt(), assetRotation)
+                        rememberScene()
+                    }
                     roll < 30 -> instance.setBlock(point.x, ground + 1, point.z, Block.FERN)
                     roll < 42 -> instance.setBlock(point.x, ground + 1, point.z, if (roll and 1 == 0) Block.BROWN_MUSHROOM else Block.RED_MUSHROOM)
                     roll < 54 -> instance.setBlock(point.x, ground + 1, point.z, Block.MOSS_CARPET)
                     else -> instance.setBlock(point.x, ground + 1, point.z, Block.SHORT_GRASS)
                 }
                 QuestGroundCover.MEADOW -> when {
-                    roll < 4 && terrainRange(plan, point, 3) <= 2 -> QuestMapStructureAssets.placeBoulder(
-                        instance,
-                        plan,
-                        point,
-                        random.nextInt(),
-                        assetRotation,
-                    )
+                    roll < 2 && sceneClear(8) && terrainRange(plan, point, 3) <= 2 -> {
+                        QuestMapStructureAssets.placeBoulder(instance, plan, point, random.nextInt(), assetRotation)
+                        rememberScene()
+                    }
+                    roll < 7 && sceneClear(7) && terrainRange(plan, point, 3) <= 2 -> {
+                        QuestMapStructureAssets.placeShrubCluster(instance, plan, point, random.nextInt(), assetRotation)
+                        rememberScene()
+                    }
                     roll < 9 -> instance.setBlock(point.x, ground + 1, point.z, Block.DANDELION)
                     roll < 16 -> instance.setBlock(point.x, ground + 1, point.z, Block.POPPY)
                     roll < 22 -> instance.setBlock(point.x, ground + 1, point.z, Block.AZURE_BLUET)
@@ -309,14 +316,15 @@ internal object VerdantRoadQuestDecorator {
                     else -> instance.setBlock(point.x, ground + 1, point.z, Block.SHORT_GRASS)
                 }
                 QuestGroundCover.HEATH -> when {
-                    roll < 7 && terrainRange(plan, point, 3) <= 3 -> QuestMapStructureAssets.placeBoulder(
-                        instance,
-                        plan,
-                        point,
-                        random.nextInt(),
-                        assetRotation,
-                    )
-                    roll < 14 -> instance.setBlock(point.x, ground + 1, point.z, Block.SWEET_BERRY_BUSH)
+                    roll < 5 && sceneClear(8) && terrainRange(plan, point, 3) <= 3 -> {
+                        QuestMapStructureAssets.placeBoulder(instance, plan, point, random.nextInt(), assetRotation)
+                        rememberScene()
+                    }
+                    roll < 17 && sceneClear(6) && terrainRange(plan, point, 3) <= 2 -> {
+                        QuestMapStructureAssets.placeShrubCluster(instance, plan, point, random.nextInt(), assetRotation)
+                        rememberScene()
+                    }
+                    roll < 25 -> instance.setBlock(point.x, ground + 1, point.z, Block.SWEET_BERRY_BUSH)
                     roll < 30 -> instance.setBlock(point.x, ground + 1, point.z, Block.FERN)
                     roll < 42 -> instance.setBlock(point.x, ground + 1, point.z, Block.DEAD_BUSH)
                     roll < 52 -> instance.setBlock(point.x, ground + 1, point.z, Block.MOSS_CARPET)
@@ -411,18 +419,34 @@ internal object VerdantRoadQuestDecorator {
     }
 
     private fun decorateRoadGuidance(instance: Instance, plan: QuestMapPlan) {
-        val interval = maxOf(35, plan.mainRoute.size / 6)
+        val interval = maxOf(44, plan.mainRoute.size / 6)
+        var markerOrdinal = 0
         for (routeIndex in interval until plan.mainRoute.lastIndex - interval step interval) {
             val point = plan.mainRoute[routeIndex]
             val before = plan.mainRoute[(routeIndex - 4).coerceAtLeast(0)]
             val after = plan.mainRoute[(routeIndex + 4).coerceAtMost(plan.mainRoute.lastIndex)]
-            val sideX = (after.z - before.z).coerceIn(-1, 1) * 4
-            val sideZ = (before.x - after.x).coerceIn(-1, 1) * 4
-            val marker = QuestMapPoint(
+            val side = if (markerOrdinal and 1 == 0) 1 else -1
+            val sideX = (after.z - before.z).coerceIn(-1, 1) * 5 * side
+            val sideZ = (before.x - after.x).coerceIn(-1, 1) * 5 * side
+            val preferred = QuestMapPoint(
                 (point.x + sideX).coerceIn(3, plan.size - 4),
                 (point.z + sideZ).coerceIn(3, plan.size - 4),
             )
-            placeLanternPost(instance, marker.x, plan.heightAt(marker) + 1, marker.z)
+            val opposite = QuestMapPoint(
+                (point.x - sideX).coerceIn(3, plan.size - 4),
+                (point.z - sideZ).coerceIn(3, plan.size - 4),
+            )
+            val marker = listOf(preferred, opposite).minBy { terrainRange(plan, it, 2) }
+            if (terrainRange(plan, marker, 2) <= 2) {
+                QuestMapStructureAssets.placeRoadsideMarker(
+                    instance,
+                    plan,
+                    marker,
+                    (plan.seed xor routeIndex.toLong() xor markerOrdinal.toLong()).toInt(),
+                    markerOrdinal,
+                )
+            }
+            markerOrdinal++
         }
     }
 
@@ -433,27 +457,54 @@ internal object VerdantRoadQuestDecorator {
                 if ((x + z) % 3 == 0) instance.setBlock(x, ground, z, Block.COARSE_DIRT)
             }
         }
-        instance.setBlock(center.x, ground + 1, center.z, Block.CAMPFIRE)
-        instance.setBlock(center.x + 2, ground + 1, center.z, Block.BARREL)
-        instance.setBlock(center.x - 2, ground + 1, center.z, Block.CRAFTING_TABLE)
-        for (x in center.x - 3..center.x + 3) instance.setBlock(x, ground + 4, center.z - 4, Block.GREEN_WOOL)
-        listOf(center.x - 3, center.x + 3).forEach { x ->
-            repeat(3) { height -> instance.setBlock(x, ground + 1 + height, center.z - 4, Block.OAK_FENCE) }
+        instance.setBlock(center.x - 1, ground + 1, center.z + 1, Block.CAMPFIRE)
+        instance.setBlock(center.x + 3, ground + 1, center.z, Block.BARREL)
+        instance.setBlock(center.x + 2, ground + 1, center.z - 1, Block.CRAFTING_TABLE)
+        for (z in center.z - 6..center.z - 2) {
+            for (step in 0..2) {
+                instance.setBlock(center.x - 3 + step, ground + 1 + step, z, Block.GREEN_WOOL)
+                instance.setBlock(center.x + 3 - step, ground + 1 + step, z, Block.GREEN_WOOL)
+            }
+            instance.setBlock(center.x, ground + 4, z, Block.BROWN_WOOL)
         }
-        placeLanternPost(instance, center.x, ground + 1, center.z + 4)
+        listOf(-3 to -6, 3 to -6, -3 to -2, 3 to -2).forEach { (dx, dz) ->
+            instance.setBlock(center.x + dx, ground + 1, center.z + dz, Block.STRIPPED_OAK_LOG)
+        }
+        QuestMapStructureAssets.placeRoadsideMarker(instance, plan, QuestMapPoint(center.x, center.z + 5), plan.seed.toInt(), 0)
     }
 
-    private fun decorateCombat(instance: Instance, plan: QuestMapPlan, center: QuestMapPoint) {
+    private fun decorateCombat(instance: Instance, plan: QuestMapPlan, center: QuestMapPoint, ordinal: Int) {
         val y = plan.heightAt(center)
-        for (step in 0 until 28) {
-            val angle = Math.PI * 2.0 * step / 28.0
-            val x = center.x + (kotlin.math.cos(angle) * 6.0).roundToInt()
-            val z = center.z + (kotlin.math.sin(angle) * 6.0).roundToInt()
-            instance.setBlock(x, plan.heightAt(x, z), z, Block.MOSSY_COBBLESTONE)
-        }
-        listOf(-4 to -4, -4 to 4, 4 to -4, 4 to 4).forEach { (dx, dz) ->
-            repeat(2) { height -> instance.setBlock(center.x + dx, y + 1 + height, center.z + dz, Block.MOSSY_STONE_BRICKS) }
-            instance.setBlock(center.x + dx, y + 3, center.z + dz, Block.LANTERN)
+        when (ordinal % 3) {
+            0 -> {
+                for (step in 0 until 32) {
+                    val angle = Math.PI * 2.0 * step / 32.0
+                    val x = center.x + (kotlin.math.cos(angle) * 7.0).roundToInt()
+                    val z = center.z + (kotlin.math.sin(angle) * 7.0).roundToInt()
+                    if (step % 5 != 0) instance.setBlock(x, plan.heightAt(x, z), z, if (step and 1 == 0) Block.MOSSY_COBBLESTONE else Block.ANDESITE)
+                }
+                listOf(-5 to -4, 5 to 4, -4 to 5).forEachIndexed { index, (dx, dz) ->
+                    repeat(2 + index) { height -> instance.setBlock(center.x + dx, y + 1 + height, center.z + dz, Block.MOSSY_STONE_BRICKS) }
+                }
+            }
+            1 -> {
+                for (z in center.z - 6..center.z + 6) {
+                    if ((z - center.z) % 4 != 0) instance.setBlock(center.x - 6, y + 1, z, Block.CRACKED_STONE_BRICKS)
+                    if ((z - center.z + 2) % 5 != 0) instance.setBlock(center.x + 6, y + 1, z, Block.MOSSY_STONE_BRICKS)
+                }
+                listOf(-6 to -5, -6 to 4, 6 to -3, 6 to 5).forEachIndexed { index, (dx, dz) ->
+                    repeat(2 + index % 3) { height -> instance.setBlock(center.x + dx, y + 1 + height, center.z + dz, Block.STONE_BRICKS) }
+                }
+                instance.setBlock(center.x, y + 1, center.z, Block.CAMPFIRE)
+            }
+            else -> {
+                listOf(-5 to -3, -2 to 5, 4 to 3, 5 to -4).forEachIndexed { index, (dx, dz) ->
+                    QuestMapStructureAssets.placeBoulder(instance, plan, QuestMapPoint(center.x + dx, center.z + dz), ordinal * 31 + index, index)
+                }
+                for (x in center.x - 3..center.x + 3) {
+                    if (x != center.x) instance.setBlock(x, y + 1, center.z - 6, Block.OAK_LOG.withProperty("axis", "x"))
+                }
+            }
         }
     }
 
@@ -465,24 +516,45 @@ internal object VerdantRoadQuestDecorator {
             2 -> Block.COAL_ORE
             else -> Block.AMETHYST_BLOCK
         }
-        listOf(0 to 0, 1 to 0, -1 to 0, 0 to 1, 0 to -1).forEachIndexed { index, (dx, dz) ->
-            instance.setBlock(center.x + dx, y + if (index == 0) 1 else 0, center.z + dz, ore)
+        QuestMapStructureAssets.placeBoulder(instance, plan, QuestMapPoint(center.x + 1, center.z), ordinal * 97, ordinal)
+        listOf(0 to 0, 1 to 0, -1 to 0, 0 to 1, 1 to 1).forEachIndexed { index, (dx, dz) ->
+            instance.setBlock(center.x + dx, y + if (index == 0) 2 else index % 2, center.z + dz, ore)
         }
-        listOf(-3 to -3, 3 to -3).forEach { (dx, dz) ->
-            repeat(3) { height -> instance.setBlock(center.x + dx, y + height, center.z + dz, Block.STRIPPED_OAK_LOG) }
+        listOf(-3 to -3, 3 to -3).forEachIndexed { index, (dx, dz) ->
+            repeat(2 + index) { height -> instance.setBlock(center.x + dx, y + height, center.z + dz, Block.STRIPPED_OAK_LOG) }
         }
-        for (x in center.x - 3..center.x + 3) instance.setBlock(x, y + 3, center.z - 3, Block.BROWN_WOOL)
+        for (x in center.x - 3..center.x + 3) {
+            if ((x - center.x) % 2 == 0) instance.setBlock(x, y + 3, center.z - 3, Block.BROWN_WOOL)
+        }
+        instance.setBlock(center.x - 2, y, center.z + 2, Block.BARREL)
     }
 
-    private fun decorateDiscovery(instance: Instance, plan: QuestMapPlan, center: QuestMapPoint) {
+    private fun decorateDiscovery(instance: Instance, plan: QuestMapPlan, center: QuestMapPoint, ordinal: Int) {
         val y = plan.heightAt(center) + 1
-        for (height in 0..4) {
-            instance.setBlock(center.x - 2, y + height, center.z, Block.STONE_BRICKS)
-            instance.setBlock(center.x + 2, y + height, center.z, Block.STONE_BRICKS)
+        when (ordinal % 3) {
+            0 -> {
+                for (height in 0..4) {
+                    instance.setBlock(center.x - 2, y + height, center.z, if (height == 2) Block.CRACKED_STONE_BRICKS else Block.STONE_BRICKS)
+                    if (height != 3) instance.setBlock(center.x + 2, y + height, center.z, Block.MOSSY_STONE_BRICKS)
+                }
+                for (x in center.x - 2..center.x + 2) if (x != center.x + 1) instance.setBlock(x, y + 5, center.z, Block.CHISELED_STONE_BRICKS)
+            }
+            1 -> {
+                for (height in 0..6) instance.setBlock(center.x, y + height, center.z, if (height % 3 == 0) Block.CHISELED_STONE_BRICKS else Block.MOSSY_STONE_BRICKS)
+                listOf(-1 to 0, 1 to 0, 0 to -1, 0 to 1).forEach { (dx, dz) -> instance.setBlock(center.x + dx, y, center.z + dz, Block.CRACKED_STONE_BRICKS) }
+            }
+            else -> {
+                for (step in 0 until 20) {
+                    val angle = Math.PI * 2.0 * step / 20.0
+                    val x = center.x + (kotlin.math.cos(angle) * 3.0).roundToInt()
+                    val z = center.z + (kotlin.math.sin(angle) * 3.0).roundToInt()
+                    instance.setBlock(x, y, z, if (step % 4 == 0) Block.MOSSY_STONE_BRICKS else Block.STONE_BRICKS)
+                }
+                instance.setBlock(center.x, y, center.z, Block.WATER)
+            }
         }
-        for (x in center.x - 2..center.x + 2) instance.setBlock(x, y + 5, center.z, Block.CHISELED_STONE_BRICKS)
-        instance.setBlock(center.x, y, center.z, Block.AMETHYST_BLOCK)
-        instance.setBlock(center.x, y + 1, center.z, Block.CANDLE)
+        instance.setBlock(center.x, y + 1, center.z, Block.AMETHYST_BLOCK)
+        instance.setBlock(center.x, y + 2, center.z, Block.CANDLE)
     }
 
     private fun decorateBossArena(instance: Instance, plan: QuestMapPlan, center: QuestMapPoint) {
@@ -507,10 +579,6 @@ internal object VerdantRoadQuestDecorator {
         }
     }
 
-    private fun placeLanternPost(instance: Instance, x: Int, y: Int, z: Int) {
-        repeat(3) { offset -> instance.setBlock(x, y + offset, z, Block.OAK_FENCE) }
-        instance.setBlock(x, y + 3, z, Block.LANTERN)
-    }
 }
 
 internal class VerdantRoadQuestRuntime private constructor(

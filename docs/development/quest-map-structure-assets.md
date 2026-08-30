@@ -6,13 +6,16 @@ This note defines how ProjectS accumulates reusable terrain-decoration knowledge
 
 `QuestMapStructureAssets` is the single placement boundary for reusable quest-map structures.
 
-- Verdant, Highlands, and Saltmarsh trees use a parametric grammar with fourteen profile tendencies.
-- Height, lean, multiple stems, root form, branch count, branch direction, branch length, crown count, crown radius, leaf holes, dead growth, and four rotations are seed-driven.
+- Verdant, Highlands, and Saltmarsh trees use a parametric grammar with twenty-four profile tendencies.
+- Height, lean, multiple stems, root flare, branch count, branch direction, branch length, crown count, crown radius, leaf holes, dead growth, windswept form, palette, and four rotations are seed-driven.
 - The parameter space contains well over one hundred thousand deterministic combinations; this is a diversity budget, not a claim that every combination is perceptually unique.
 - Boulders combine eighteen tendencies with independent footprint, height, palette, erosion holes, spikes, moss, burial, and four rotations.
-- Boulders are embedded per footprint cell and fallen logs follow the sampled ground line rather than using one origin height.
+- Boulders use one buried structural anchor rather than draping every voxel over the sampled surface; satellite stones make them read as one grounded outcrop.
 - Placement is rejected when the required footprint is too steep, close to a road, submerged, or inside content clearance.
 - Fallen logs are reusable grounded structures rather than one-off decoration code.
+- Shrub clusters combine stems, multiple low crowns, undergrowth, and ground litter as micro-scenes instead of isolated leaf cubes.
+- Road guidance alternates sides and selects from cairn, sign/lamp, ruined waystone, and lantern-cairn scenes instead of repeating one fence post.
+- Camps, combat landmarks, gathering outcrops, and discoveries each select from multiple authored scene grammars.
 - Grove-weighted placement creates forests and clearings instead of uniform random noise.
 
 The catalog is authored in this repository and therefore has an unambiguous ownership and review path. Terrain planning does not know how an asset is stored; a future file-backed catalog can replace the Kotlin-authored voxels without changing route or terrain generation.
@@ -31,6 +34,10 @@ An external tree, rock, ruin, or landmark is not accepted until the following me
 8. A rendered review image and at least one in-game smoke seed.
 
 Assets with missing redistribution terms are reference material only and must not be copied into ProjectS.
+
+## Reference study applied in this revision
+
+The MIT-licensed WorldPainter tree collection records several useful production patterns: separate small-tree sets, slope-capable roots, spruce families, rocks, bushes, and debris. ProjectS did not import its binary schematics in this revision; it translated those catalog and grounding principles into repository-owned parametric assets. Source: https://github.com/sijmenvb/worldpainter-trees
 
 ## File-backed direction
 
