@@ -21,15 +21,18 @@ class VerdantRoadQuestPlannerTest {
     fun `representative seeds always pass the complete quality gate`() {
         val styles = mutableSetOf<QuestTerrainStyle>()
         val layouts = mutableSetOf<QuestRouteLayout>()
+        val terrainProfiles = mutableSetOf<QuestTerrainProfile>()
         repeat(120) { ordinal ->
             val plan = VerdantRoadQuestPlanner.generate(ordinal * 104_729L + 17L)
             val report = QuestMapQualityGate.evaluate(plan)
             assertTrue(report.accepted, "seed=${plan.seed}: ${report.violations}")
             styles += plan.style
             layouts += plan.routeLayout
+            terrainProfiles += plan.terrainProfile
         }
         assertEquals(QuestTerrainStyle.entries.toSet(), styles)
         assertEquals(QuestRouteLayout.entries.toSet(), layouts)
+        assertEquals(QuestTerrainProfile.entries.toSet(), terrainProfiles)
     }
 
     @Test
@@ -46,6 +49,7 @@ class VerdantRoadQuestPlannerTest {
         assertTrue(plan.elevationRange() >= 18)
         assertTrue(plan.terrainOcclusionSamples() >= 3)
         assertTrue(plan.routeDetourRatio() >= 1.18)
+        assertTrue(plan.groundCoverDiversity() >= 4)
     }
 
     @Test
@@ -64,6 +68,7 @@ class VerdantRoadQuestPlannerTest {
         assertTrue(plan.surfaceCoverageAtOrBelow(QUEST_WATER_LEVEL) in 0.04..0.38)
         assertTrue(plan.maximumBoundaryRise() <= 16)
         assertTrue(plan.mainRoute.all { plan.heightAt(it) > QUEST_WATER_LEVEL })
+        assertTrue(plan.maximumWaterBankStep() <= 4)
     }
 
     @Test

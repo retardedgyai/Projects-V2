@@ -29,6 +29,23 @@ internal enum class QuestRouteLayout {
     DIAGONAL,
 }
 
+internal enum class QuestTerrainProfile {
+    ROLLING,
+    RIDGED,
+    TERRACED,
+    BASIN,
+    BROKEN_HILLS,
+}
+
+internal enum class QuestGroundCover {
+    MEADOW,
+    FOREST_FLOOR,
+    SHORE,
+    ROCKY,
+    HEATH,
+    PEAT,
+}
+
 internal enum class QuestMapContentKind {
     START,
     COMBAT,
@@ -51,12 +68,17 @@ internal class QuestMapPlan(
     val playableBorder: Int,
     val style: QuestTerrainStyle,
     val routeLayout: QuestRouteLayout,
+    val terrainProfile: QuestTerrainProfile,
     val mainRoute: List<QuestMapPoint>,
     val trails: Set<QuestMapPoint>,
     val contents: List<QuestMapContent>,
     private val heights: IntArray,
     private val roadDistanceSquared: IntArray,
     private val mainRoadDistanceSquared: IntArray,
+    private val groundCovers: IntArray,
+    private val surfacePatches: IntArray,
+    private val waterDistances: IntArray,
+    private val slopes: IntArray,
 ) {
     init {
         require(size > 0)
@@ -64,6 +86,10 @@ internal class QuestMapPlan(
         require(heights.size == size * size)
         require(roadDistanceSquared.size == size * size)
         require(mainRoadDistanceSquared.size == size * size)
+        require(groundCovers.size == size * size)
+        require(surfacePatches.size == size * size)
+        require(waterDistances.size == size * size)
+        require(slopes.size == size * size)
         require(mainRoute.isNotEmpty())
     }
 
@@ -77,6 +103,37 @@ internal class QuestMapPlan(
     fun roadDistanceSquaredAt(x: Int, z: Int): Int = roadDistanceSquared[index(x, z)]
 
     fun mainRoadDistanceSquaredAt(x: Int, z: Int): Int = mainRoadDistanceSquared[index(x, z)]
+
+    fun groundCoverAt(x: Int, z: Int): QuestGroundCover = QuestGroundCover.entries[groundCovers[index(x, z)]]
+
+    fun groundCoverAt(point: QuestMapPoint): QuestGroundCover = groundCoverAt(point.x, point.z)
+
+    fun surfacePatchAt(x: Int, z: Int): Int = surfacePatches[index(x, z)]
+
+    fun waterDistanceAt(x: Int, z: Int): Int = waterDistances[index(x, z)]
+
+    fun waterDistanceAt(point: QuestMapPoint): Int = waterDistanceAt(point.x, point.z)
+
+    fun slopeAt(x: Int, z: Int): Int = slopes[index(x, z)]
+
+    fun slopeAt(point: QuestMapPoint): Int = slopeAt(point.x, point.z)
+
+    fun groundCoverDiversity(): Int = groundCovers.toSet().size
+
+    fun maximumWaterBankStep(): Int {
+        var maximum = 0
+        for (z in playableBorder + 1 until size - playableBorder - 1) {
+            for (x in playableBorder + 1 until size - playableBorder - 1) {
+                val height = heightAt(x, z)
+                if (height > QUEST_WATER_LEVEL) continue
+                listOf(x - 1 to z, x + 1 to z, x to z - 1, x to z + 1).forEach { (neighborX, neighborZ) ->
+                    val neighborHeight = heightAt(neighborX, neighborZ)
+                    if (neighborHeight > QUEST_WATER_LEVEL) maximum = maxOf(maximum, neighborHeight - height)
+                }
+            }
+        }
+        return maximum
+    }
 
     fun isInsidePlayable(point: QuestMapPoint): Boolean =
         point.x in playableBorder until size - playableBorder &&
@@ -133,12 +190,15 @@ internal class QuestMapPlan(
         }
         mix(style.ordinal.toLong())
         mix(routeLayout.ordinal.toLong())
+        mix(terrainProfile.ordinal.toLong())
         mainRoute.forEach { point -> mix((point.x.toLong() shl 32) xor point.z.toLong()) }
         contents.forEach { content ->
             mix(content.kind.ordinal.toLong())
             mix((content.position.x.toLong() shl 32) xor content.position.z.toLong())
         }
         heights.forEach { mix(it.toLong()) }
+        groundCovers.forEach { mix(it.toLong()) }
+        surfacePatches.forEach { mix(it.toLong()) }
         return hash
     }
 
@@ -229,6 +289,7 @@ internal object QuestMapQualityGate {
         if (plan.elevationRange() < 18) violations += "Terrain is visually too flat"
         if (plan.terrainOcclusionSamples() < 3) violations += "Terrain does not hide the boss from the start"
         if (plan.routeDetourRatio() < 1.18) violations += "Main route is too direct"
+        if (plan.groundCoverDiversity() < 4) violations += "Ground cover lacks ecological variation"
         if (plan.maximumBoundaryRise() > 16) violations += "Map boundary forms a visible terrain wall"
         if (plan.style == QuestTerrainStyle.SALTMARSH) {
             val waterCoverage = plan.surfaceCoverageAtOrBelow(QUEST_WATER_LEVEL)
@@ -238,6 +299,8 @@ internal object QuestMapQualityGate {
             if (plan.mainRoute.any { plan.heightAt(it) <= QUEST_WATER_LEVEL }) {
                 violations += "Saltmarsh main road is submerged"
             }
+            val maximumBankStep = plan.maximumWaterBankStep()
+            if (maximumBankStep > 4) violations += "Saltmarsh shoreline contains an abrupt vertical bank ($maximumBankStep blocks)"
         }
 
         val requiredRouteIndices = plan.contents

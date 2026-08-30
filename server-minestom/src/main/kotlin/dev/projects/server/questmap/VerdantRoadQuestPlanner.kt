@@ -1,6 +1,7 @@
 package dev.projects.server.questmap
 
 import java.util.Random
+import java.util.PriorityQueue
 import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.floor
@@ -17,9 +18,12 @@ internal object VerdantRoadQuestPlanner {
     fun generate(seed: Long): QuestMapPlan {
         val random = Random(seed)
         val style = QuestTerrainStyle.entries[Math.floorMod(seed, QuestTerrainStyle.entries.size.toLong()).toInt()]
+        val terrainProfile = QuestTerrainProfile.entries[
+            Math.floorMod(seed xor 0x50524F46494C45L, QuestTerrainProfile.entries.size.toLong()).toInt()
+        ]
         val routePlan = routeControls(seed, random)
         val mainRoute = curvedRoute(routePlan.controls)
-        val rawHeights = rawTerrain(seed, style, mainRoute)
+        val rawHeights = rawTerrain(seed, style, terrainProfile, mainRoute)
         val routeHeights = smoothRouteHeights(mainRoute.map { rawHeights[index(it)] }).also { heights ->
             if (style == QuestTerrainStyle.SALTMARSH) {
                 heights.indices.forEach { routeIndex ->
@@ -33,6 +37,7 @@ internal object VerdantRoadQuestPlanner {
         val nearestRoad = nearestRoad(mainRoute, trails)
         val nearestMainRoad = nearestRoad(mainRoute, mainRoute.toSet())
         val finalHeights = shapeTerrain(seed, style, rawHeights, mainRoute, routeHeights, contents, nearestRoad)
+        val ecology = ecology(seed, style, finalHeights)
 
         return QuestMapQualityGate.requireAccepted(
             QuestMapPlan(
@@ -41,12 +46,17 @@ internal object VerdantRoadQuestPlanner {
                 playableBorder = PLAYABLE_BORDER,
                 style = style,
                 routeLayout = routePlan.layout,
+                terrainProfile = terrainProfile,
                 mainRoute = mainRoute,
                 trails = trails,
                 contents = contents,
                 heights = finalHeights,
                 roadDistanceSquared = nearestRoad.distanceSquared,
                 mainRoadDistanceSquared = nearestMainRoad.distanceSquared,
+                groundCovers = ecology.groundCovers,
+                surfacePatches = ecology.surfacePatches,
+                waterDistances = ecology.waterDistances,
+                slopes = ecology.slopes,
             ),
         )
     }
@@ -248,8 +258,13 @@ internal object VerdantRoadQuestPlanner {
         val angle: Double,
     )
 
-    private fun rawTerrain(seed: Long, style: QuestTerrainStyle, route: List<QuestMapPoint>): IntArray {
-        val landforms = authoredLandforms(seed, style, route)
+    private fun rawTerrain(
+        seed: Long,
+        style: QuestTerrainStyle,
+        profile: QuestTerrainProfile,
+        route: List<QuestMapPoint>,
+    ): IntArray {
+        val landforms = authoredLandforms(seed, style, profile, route)
         return IntArray(MAP_SIZE * MAP_SIZE) { offset ->
             val x = offset % MAP_SIZE
             val z = offset / MAP_SIZE
@@ -279,9 +294,27 @@ internal object VerdantRoadQuestPlanner {
             }
             val detailAmplitude = if (style == QuestTerrainStyle.HIGHLANDS) 2.5 else 1.8
             val authoredHeight = landforms.sumOf { landform -> landform.heightAt(x, z) }
+            val profileHeight = when (profile) {
+                QuestTerrainProfile.ROLLING -> 0.0
+                QuestTerrainProfile.RIDGED -> (ridge - 0.48) * 14.0
+                QuestTerrainProfile.TERRACED -> {
+                    val terraceSource = broad * broadAmplitude + medium * mediumAmplitude
+                    (terraceSource / 5.0).roundToInt() * 5.0 - terraceSource
+                }
+                QuestTerrainProfile.BASIN -> {
+                    val dx = (x - MAP_SIZE / 2.0) / (MAP_SIZE * 0.44)
+                    val dz = (z - MAP_SIZE / 2.0) / (MAP_SIZE * 0.44)
+                    val radial = (dx * dx + dz * dz).coerceIn(0.0, 1.0)
+                    -10.0 * (1.0 - radial) + 5.0 * radial
+                }
+                QuestTerrainProfile.BROKEN_HILLS -> {
+                    val cells = valueNoise(seed xor 0x42524F4B454EL, x / 23.0, z / 23.0)
+                    maxOf(0.0, cells) * 15.0 - 2.0
+                }
+            }
             (
                 BASE_GROUND_Y + styleOffset + broad * broadAmplitude + medium * mediumAmplitude +
-                    (ridge - 0.45) * ridgeAmplitude + detail * detailAmplitude + authoredHeight
+                    (ridge - 0.45) * ridgeAmplitude + detail * detailAmplitude + authoredHeight + profileHeight
                 ).roundToInt()
         }
     }
@@ -289,6 +322,7 @@ internal object VerdantRoadQuestPlanner {
     private fun authoredLandforms(
         seed: Long,
         style: QuestTerrainStyle,
+        profile: QuestTerrainProfile,
         route: List<QuestMapPoint>,
     ): List<Landform> {
         val random = Random(seed xor 0x4C414E44464F524DL)
@@ -312,7 +346,14 @@ internal object VerdantRoadQuestPlanner {
                 angle = random.nextDouble() * Math.PI,
             ),
         )
-        listOf(0.22, 0.52, 0.76).forEachIndexed { ordinal, fraction ->
+        val hillFractions = when (profile) {
+            QuestTerrainProfile.ROLLING -> listOf(0.22, 0.56)
+            QuestTerrainProfile.RIDGED -> listOf(0.18, 0.38, 0.62, 0.82)
+            QuestTerrainProfile.TERRACED -> listOf(0.28, 0.72)
+            QuestTerrainProfile.BASIN -> listOf(0.20, 0.50, 0.80)
+            QuestTerrainProfile.BROKEN_HILLS -> listOf(0.18, 0.36, 0.58, 0.78)
+        }
+        hillFractions.forEachIndexed { ordinal, fraction ->
             val routeIndex = (route.lastIndex * fraction).roundToInt()
             val point = route[routeIndex]
             val before = route[(routeIndex - 8).coerceAtLeast(0)]
@@ -334,7 +375,12 @@ internal object VerdantRoadQuestPlanner {
                 angle = random.nextDouble() * Math.PI,
             )
         }
-        listOf(0.36, 0.68).forEachIndexed { ordinal, fraction ->
+        val valleyFractions = when (profile) {
+            QuestTerrainProfile.BASIN -> listOf(0.42, 0.66)
+            QuestTerrainProfile.ROLLING -> listOf(0.52)
+            else -> emptyList()
+        }
+        valleyFractions.forEachIndexed { ordinal, fraction ->
             val routeIndex = (route.lastIndex * fraction).roundToInt()
             val point = route[routeIndex]
             val before = route[(routeIndex - 8).coerceAtLeast(0)]
@@ -349,9 +395,9 @@ internal object VerdantRoadQuestPlanner {
                     (point.x + (-dz * side * offset) / length).coerceIn(36, MAP_SIZE - 37),
                     (point.z + (dx * side * offset) / length).coerceIn(36, MAP_SIZE - 37),
                 ),
-                radiusX = 22.0 + random.nextInt(16),
-                radiusZ = 14.0 + random.nextInt(12),
-                height = if (style == QuestTerrainStyle.SALTMARSH) -6.0 else -11.0 - random.nextInt(5),
+                radiusX = 34.0 + random.nextInt(18),
+                radiusZ = 26.0 + random.nextInt(14),
+                height = if (style == QuestTerrainStyle.SALTMARSH) -4.0 else -7.0 - random.nextInt(4),
                 angle = random.nextDouble() * Math.PI,
             )
         }
@@ -443,6 +489,11 @@ internal object VerdantRoadQuestPlanner {
         contents.filter { it.kind == QuestMapContentKind.GATHERING }.forEach { flattenCircle(shaped, it.position, 4) }
         contents.filter { it.kind == QuestMapContentKind.DISCOVERY }.forEach { flattenCircle(shaped, it.position, 4) }
         route.forEachIndexed { routeIndex, point -> shaped[index(point)] = routeHeights[routeIndex] }
+        ensureBossOcclusion(shaped, route.first(), route.last(), nearest, contents)
+        if (style == QuestTerrainStyle.SALTMARSH) {
+            relaxSaltmarshBanks(shaped, passes = 12)
+            route.forEachIndexed { routeIndex, point -> shaped[index(point)] = routeHeights[routeIndex] }
+        }
         return shaped
     }
 
@@ -467,23 +518,297 @@ internal object VerdantRoadQuestPlanner {
         nearest: NearestRoad,
     ) {
         val random = Random(seed xor 0x5745544C414E44L)
-        repeat(8) {
-            val center = QuestMapPoint(15 + random.nextInt(MAP_SIZE - 30), 15 + random.nextInt(MAP_SIZE - 30))
-            val radiusX = 11 + random.nextInt(8)
-            val radiusZ = 8 + random.nextInt(6)
-            for (z in (center.z - radiusZ).coerceAtLeast(1)..(center.z + radiusZ).coerceAtMost(MAP_SIZE - 2)) {
-                for (x in (center.x - radiusX).coerceAtLeast(1)..(center.x + radiusX).coerceAtMost(MAP_SIZE - 2)) {
-                    val dx = (x - center.x).toDouble() / radiusX
-                    val dz = (z - center.z).toDouble() / radiusZ
-                    if (dx * dx + dz * dz > 1.0) continue
+        data class WetlandBasin(
+            val center: QuestMapPoint,
+            val radiusX: Int,
+            val radiusZ: Int,
+            val angle: Double,
+            val noiseSeed: Long,
+        )
+        val basins = List(5 + random.nextInt(4)) {
+            WetlandBasin(
+                center = QuestMapPoint(24 + random.nextInt(MAP_SIZE - 48), 24 + random.nextInt(MAP_SIZE - 48)),
+                radiusX = 16 + random.nextInt(19),
+                radiusZ = 11 + random.nextInt(16),
+                angle = random.nextDouble() * Math.PI,
+                noiseSeed = random.nextLong(),
+            )
+        }
+        basins.forEach { basin ->
+            val extent = maxOf(basin.radiusX, basin.radiusZ) + 8
+            for (z in (basin.center.z - extent).coerceAtLeast(1)..(basin.center.z + extent).coerceAtMost(MAP_SIZE - 2)) {
+                for (x in (basin.center.x - extent).coerceAtLeast(1)..(basin.center.x + extent).coerceAtMost(MAP_SIZE - 2)) {
+                    val rawX = x - basin.center.x
+                    val rawZ = z - basin.center.z
+                    val rotatedX = rawX * cos(basin.angle) - rawZ * sin(basin.angle)
+                    val rotatedZ = rawX * sin(basin.angle) + rawZ * cos(basin.angle)
+                    val ellipseDistance = kotlin.math.sqrt(
+                        (rotatedX * rotatedX) / (basin.radiusX * basin.radiusX) +
+                            (rotatedZ * rotatedZ) / (basin.radiusZ * basin.radiusZ),
+                    )
+                    val shorelineWarp = valueNoise(basin.noiseSeed, x / 9.0, z / 9.0) * 0.22 +
+                        valueNoise(basin.noiseSeed xor 0x53484F5245L, x / 21.0, z / 21.0) * 0.13
+                    val interior = 1.0 - ellipseDistance + shorelineWarp
+                    if (interior <= 0.0) continue
                     val point = QuestMapPoint(x, z)
                     val offset = index(point)
-                    if (nearest.distanceSquared[offset] <= 5 * 5) continue
-                    if (contents.any { it.position.distanceSquared(point) < 8 * 8 }) continue
-                    heights[offset] = minOf(heights[offset], QUEST_WATER_LEVEL - 1)
+                    if (nearest.distanceSquared[offset] <= 12 * 12) continue
+                    if (contents.any { it.position.distanceSquared(point) < 20 * 20 }) continue
+                    val depthNoise = valueNoise(basin.noiseSeed xor 0x4445505448L, x / 7.0, z / 7.0)
+                    val target = when {
+                        interior > 0.70 -> QUEST_WATER_LEVEL - 3 - if (depthNoise > 0.35) 1 else 0
+                        interior > 0.46 -> QUEST_WATER_LEVEL - 2
+                        interior > 0.24 -> QUEST_WATER_LEVEL - 1
+                        else -> QUEST_WATER_LEVEL + 1
+                    }
+                    val influence = smooth((interior * 1.55).coerceIn(0.0, 1.0))
+                    heights[offset] = minOf(
+                        heights[offset],
+                        (heights[offset] * (1.0 - influence) + target * influence).roundToInt(),
+                    )
                 }
             }
         }
+        basins.take(3).forEachIndexed { ordinal, basin ->
+            val angle = basin.angle + (if (ordinal % 2 == 0) 1 else -1) * (0.55 + random.nextDouble())
+            val endpoint = QuestMapPoint(
+                (basin.center.x + cos(angle) * (basin.radiusX + 18)).roundToInt().coerceIn(2, MAP_SIZE - 3),
+                (basin.center.z + sin(angle) * (basin.radiusZ + 18)).roundToInt().coerceIn(2, MAP_SIZE - 3),
+            )
+            bresenham(basin.center, endpoint).forEachIndexed { channelIndex, channelPoint ->
+                val radius = 2 + if (channelIndex % 11 == 0) 1 else 0
+                for (dz in -radius..radius) {
+                    for (dx in -radius..radius) {
+                        if (dx * dx + dz * dz > radius * radius) continue
+                        val point = QuestMapPoint(channelPoint.x + dx, channelPoint.z + dz)
+                        if (point.x !in 1 until MAP_SIZE - 1 || point.z !in 1 until MAP_SIZE - 1) continue
+                        val offset = index(point)
+                        if (nearest.distanceSquared[offset] <= 12 * 12) continue
+                        if (contents.any { it.position.distanceSquared(point) < 20 * 20 }) continue
+                        val target = if (abs(dx) + abs(dz) <= 1) QUEST_WATER_LEVEL - 1 else QUEST_WATER_LEVEL + 1
+                        heights[offset] = minOf(heights[offset], target)
+                    }
+                }
+            }
+        }
+        repeat(3) {
+            val before = heights.copyOf()
+            for (z in 2 until MAP_SIZE - 2) {
+                for (x in 2 until MAP_SIZE - 2) {
+                    val offset = index(QuestMapPoint(x, z))
+                    if (nearest.distanceSquared[offset] <= 6 * 6) continue
+                    if (before[offset] > QUEST_WATER_LEVEL + 10) continue
+                    val lowestNeighbor = minOf(
+                        before[index(QuestMapPoint(x - 1, z))],
+                        before[index(QuestMapPoint(x + 1, z))],
+                        before[index(QuestMapPoint(x, z - 1))],
+                        before[index(QuestMapPoint(x, z + 1))],
+                    )
+                    if (before[offset] > lowestNeighbor + 2) heights[offset] = lowestNeighbor + 2
+                }
+            }
+        }
+        ensureSaltmarshWaterCoverage(seed, heights, contents, nearest)
+        relaxSaltmarshBanks(heights, passes = 8)
+    }
+
+    private fun relaxSaltmarshBanks(heights: IntArray, passes: Int) {
+        repeat(passes) {
+            val before = heights.copyOf()
+            for (z in 2 until MAP_SIZE - 2) {
+                for (x in 2 until MAP_SIZE - 2) {
+                    val point = QuestMapPoint(x, z)
+                    val offset = index(point)
+                    val neighbors = listOf(
+                        before[index(QuestMapPoint(x - 1, z))],
+                        before[index(QuestMapPoint(x + 1, z))],
+                        before[index(QuestMapPoint(x, z - 1))],
+                        before[index(QuestMapPoint(x, z + 1))],
+                    )
+                    val lowestNeighbor = neighbors.min()
+                    if (before[offset] > lowestNeighbor + 2 && lowestNeighbor <= QUEST_WATER_LEVEL + 5) {
+                        heights[offset] = lowestNeighbor + 2
+                    }
+                }
+            }
+        }
+    }
+
+    private fun ensureSaltmarshWaterCoverage(
+        seed: Long,
+        heights: IntArray,
+        contents: List<QuestMapContent>,
+        nearest: NearestRoad,
+    ) {
+        val target = (MAP_SIZE * MAP_SIZE * 0.055).roundToInt()
+        var current = heights.count { it <= QUEST_WATER_LEVEL }
+        if (current >= target) return
+        data class Candidate(val point: QuestMapPoint, val score: Double)
+        val queued = BooleanArray(MAP_SIZE * MAP_SIZE)
+        val frontier = PriorityQueue<Candidate>(compareBy(Candidate::score))
+        fun offer(point: QuestMapPoint) {
+            if (point.x !in 2 until MAP_SIZE - 2 || point.z !in 2 until MAP_SIZE - 2) return
+            val offset = index(point)
+            if (queued[offset] || heights[offset] <= QUEST_WATER_LEVEL) return
+            if (nearest.distanceSquared[offset] <= 12 * 12) return
+            if (contents.any { it.position.distanceSquared(point) < 20 * 20 }) return
+            queued[offset] = true
+            val organicBias = hashUnit(seed xor 0x5741544552454447L, point.x, point.z) * 1.8
+            frontier += Candidate(point, heights[offset] + organicBias)
+        }
+        for (z in 2 until MAP_SIZE - 2) {
+            for (x in 2 until MAP_SIZE - 2) {
+                val point = QuestMapPoint(x, z)
+                if (heights[index(point)] > QUEST_WATER_LEVEL) continue
+                offer(QuestMapPoint(x - 1, z))
+                offer(QuestMapPoint(x + 1, z))
+                offer(QuestMapPoint(x, z - 1))
+                offer(QuestMapPoint(x, z + 1))
+            }
+        }
+        while (current < target && frontier.isNotEmpty()) {
+            val point = frontier.remove().point
+            val offset = index(point)
+            heights[offset] = QUEST_WATER_LEVEL - if (hashUnit(seed xor 0x44454550L, point.x, point.z) > 0.55) 1 else 0
+            current++
+            offer(QuestMapPoint(point.x - 1, point.z))
+            offer(QuestMapPoint(point.x + 1, point.z))
+            offer(QuestMapPoint(point.x, point.z - 1))
+            offer(QuestMapPoint(point.x, point.z + 1))
+        }
+    }
+
+    private fun ensureBossOcclusion(
+        heights: IntArray,
+        start: QuestMapPoint,
+        boss: QuestMapPoint,
+        nearest: NearestRoad,
+        contents: List<QuestMapContent>,
+    ) {
+        val direct = bresenham(start, boss)
+        val startEye = heights[index(start)] + 2.0
+        val bossTop = heights[index(boss)] + 7.0
+        fun samples(): Int = direct.drop(2).dropLast(2).countIndexed { sampleIndex, point ->
+            val progress = (sampleIndex + 2).toDouble() / direct.lastIndex
+            heights[index(point)] >= startEye + (bossTop - startEye) * progress
+        }
+        if (samples() >= 3) return
+        val baseCandidates = direct.withIndex()
+            .filter { (lineIndex, point) ->
+                lineIndex in (direct.size * 0.25).roundToInt()..(direct.size * 0.72).roundToInt() &&
+                    nearest.distanceSquared[index(point)] > 8 * 8 &&
+                    contents.none { it.position.distanceSquared(point) < 12 * 12 }
+            }
+        val candidate = baseCandidates
+            .filter { (_, point) -> hasWaterClearance(heights, point, 15) }
+            .maxByOrNull { (_, point) -> nearest.distanceSquared[index(point)] }
+            ?: baseCandidates.maxByOrNull { (_, point) -> nearest.distanceSquared[index(point)] }
+            ?: return
+        val progress = candidate.index.toDouble() / direct.lastIndex
+        val requiredCenter = (startEye + (bossTop - startEye) * progress + 8.0).roundToInt()
+        val center = candidate.value
+        val radius = 13
+        for (z in (center.z - radius).coerceAtLeast(1)..(center.z + radius).coerceAtMost(MAP_SIZE - 2)) {
+            for (x in (center.x - radius).coerceAtLeast(1)..(center.x + radius).coerceAtMost(MAP_SIZE - 2)) {
+                val point = QuestMapPoint(x, z)
+                val offset = index(point)
+                if (nearest.distanceSquared[offset] <= 5 * 5) continue
+                val distance = kotlin.math.sqrt(center.distanceSquared(point).toDouble())
+                if (distance > radius) continue
+                val influence = smooth(1.0 - distance / radius)
+                val target = (heights[offset] * (1.0 - influence) + requiredCenter * influence).roundToInt()
+                heights[offset] = maxOf(heights[offset], target)
+            }
+        }
+    }
+
+    private fun hasWaterClearance(heights: IntArray, center: QuestMapPoint, radius: Int): Boolean {
+        for (z in (center.z - radius).coerceAtLeast(0)..(center.z + radius).coerceAtMost(MAP_SIZE - 1)) {
+            for (x in (center.x - radius).coerceAtLeast(0)..(center.x + radius).coerceAtMost(MAP_SIZE - 1)) {
+                if (QuestMapPoint(x, z).distanceSquared(center) > radius * radius) continue
+                if (heights[index(QuestMapPoint(x, z))] <= QUEST_WATER_LEVEL) return false
+            }
+        }
+        return true
+    }
+
+    private inline fun <T> Iterable<T>.countIndexed(predicate: (Int, T) -> Boolean): Int {
+        var count = 0
+        forEachIndexed { index, value -> if (predicate(index, value)) count++ }
+        return count
+    }
+
+    private data class EcologyMap(
+        val groundCovers: IntArray,
+        val surfacePatches: IntArray,
+        val waterDistances: IntArray,
+        val slopes: IntArray,
+    )
+
+    private fun ecology(seed: Long, style: QuestTerrainStyle, heights: IntArray): EcologyMap {
+        val waterDistances = waterDistances(heights)
+        val slopes = IntArray(MAP_SIZE * MAP_SIZE)
+        val surfacePatches = IntArray(MAP_SIZE * MAP_SIZE)
+        val groundCovers = IntArray(MAP_SIZE * MAP_SIZE)
+        for (z in 0 until MAP_SIZE) {
+            for (x in 0 until MAP_SIZE) {
+                val offset = index(QuestMapPoint(x, z))
+                val center = heights[offset]
+                val slope = maxOf(
+                    abs(center - heights[index(QuestMapPoint((x - 1).coerceAtLeast(0), z))]),
+                    abs(center - heights[index(QuestMapPoint((x + 1).coerceAtMost(MAP_SIZE - 1), z))]),
+                    abs(center - heights[index(QuestMapPoint(x, (z - 1).coerceAtLeast(0)))]),
+                    abs(center - heights[index(QuestMapPoint(x, (z + 1).coerceAtMost(MAP_SIZE - 1)))]),
+                )
+                slopes[offset] = slope
+                val patchNoise = valueNoise(seed xor 0x5041544348L, x / 16.0, z / 16.0)
+                surfacePatches[offset] = (((patchNoise + 1.0) * 3.0).toInt()).coerceIn(0, 5)
+                val moisture = valueNoise(seed xor 0x4D4F495354L, x / 43.0, z / 43.0) +
+                    (10 - waterDistances[offset]).coerceAtLeast(0) * 0.07
+                val canopy = valueNoise(seed xor 0x43414E4F5059L, x / 51.0, z / 51.0)
+                val cover = when {
+                    waterDistances[offset] <= 3 -> QuestGroundCover.SHORE
+                    slope >= 3 -> QuestGroundCover.ROCKY
+                    style == QuestTerrainStyle.SALTMARSH && (waterDistances[offset] <= 9 || center <= QUEST_WATER_LEVEL + 4) -> QuestGroundCover.PEAT
+                    style == QuestTerrainStyle.HIGHLANDS && (center >= 70 || moisture < -0.30) -> QuestGroundCover.HEATH
+                    canopy + moisture * 0.35 > 0.12 -> QuestGroundCover.FOREST_FLOOR
+                    moisture < -0.32 || (style == QuestTerrainStyle.HIGHLANDS && center >= 62) -> QuestGroundCover.HEATH
+                    else -> QuestGroundCover.MEADOW
+                }
+                groundCovers[offset] = cover.ordinal
+            }
+        }
+        return EcologyMap(groundCovers, surfacePatches, waterDistances, slopes)
+    }
+
+    private fun waterDistances(heights: IntArray): IntArray {
+        val distances = IntArray(MAP_SIZE * MAP_SIZE) { 32 }
+        val queue = ArrayDeque<QuestMapPoint>()
+        for (z in 0 until MAP_SIZE) {
+            for (x in 0 until MAP_SIZE) {
+                val point = QuestMapPoint(x, z)
+                val offset = index(point)
+                if (heights[offset] <= QUEST_WATER_LEVEL) {
+                    distances[offset] = 0
+                    queue += point
+                }
+            }
+        }
+        val directions = listOf(-1 to 0, 1 to 0, 0 to -1, 0 to 1)
+        while (queue.isNotEmpty()) {
+            val point = queue.removeFirst()
+            val nextDistance = distances[index(point)] + 1
+            if (nextDistance >= 32) continue
+            directions.forEach { (dx, dz) ->
+                val next = QuestMapPoint(point.x + dx, point.z + dz)
+                if (next.x !in 0 until MAP_SIZE || next.z !in 0 until MAP_SIZE) return@forEach
+                val nextIndex = index(next)
+                if (nextDistance >= distances[nextIndex]) return@forEach
+                distances[nextIndex] = nextDistance
+                queue += next
+            }
+        }
+        return distances
     }
 
     private fun flattenCircle(heights: IntArray, center: QuestMapPoint, radius: Int) {

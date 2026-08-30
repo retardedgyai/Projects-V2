@@ -6,11 +6,13 @@ This note defines how ProjectS accumulates reusable terrain-decoration knowledge
 
 `QuestMapStructureAssets` is the single placement boundary for reusable quest-map structures.
 
-- Verdant, Highlands, and Saltmarsh each have six tree silhouettes.
-- Every tree can be rotated in four directions.
-- Tree silhouettes include asymmetric crowns, split or leaning trunks, roots, and style-specific proportions.
-- Six boulder silhouettes combine style-specific stone palettes with four rotations.
-- Fallen logs are reusable structures rather than one-off decoration code.
+- Verdant, Highlands, and Saltmarsh trees use a parametric grammar with fourteen profile tendencies.
+- Height, lean, multiple stems, root form, branch count, branch direction, branch length, crown count, crown radius, leaf holes, dead growth, and four rotations are seed-driven.
+- The parameter space contains well over one hundred thousand deterministic combinations; this is a diversity budget, not a claim that every combination is perceptually unique.
+- Boulders combine eighteen tendencies with independent footprint, height, palette, erosion holes, spikes, moss, burial, and four rotations.
+- Boulders are embedded per footprint cell and fallen logs follow the sampled ground line rather than using one origin height.
+- Placement is rejected when the required footprint is too steep, close to a road, submerged, or inside content clearance.
+- Fallen logs are reusable grounded structures rather than one-off decoration code.
 - Grove-weighted placement creates forests and clearings instead of uniform random noise.
 
 The catalog is authored in this repository and therefore has an unambiguous ownership and review path. Terrain planning does not know how an asset is stored; a future file-backed catalog can replace the Kotlin-authored voxels without changing route or terrain generation.
@@ -42,4 +44,4 @@ Relevant primary documentation:
 
 ## Performance rule
 
-Quest entry consumes a fully prepared Instance from the ready pool. Larger maps and richer assets are allowed only while two Instances can still be prepared in the background and the command-to-transfer P95 remains below one second. Planning time, chunk generation time, decoration time, and transfer time should be logged separately before production merge.
+Quest entry consumes a fully prepared Instance from the ready pool. The current Creator-approved preparation budget is five seconds per map; command-to-transfer P95 remains below one second because it must consume a ready Instance. Planning time, chunk generation time, decoration time, and transfer time should be logged separately before production merge.

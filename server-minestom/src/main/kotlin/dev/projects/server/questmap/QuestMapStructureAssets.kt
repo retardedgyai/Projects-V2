@@ -12,49 +12,64 @@ import kotlin.math.abs
 internal object QuestMapStructureAssets {
     fun placeTree(
         instance: Instance,
-        style: QuestTerrainStyle,
+        plan: QuestMapPlan,
         origin: QuestMapPoint,
-        groundY: Int,
         variation: Int,
         rotation: Int,
     ) {
-        val painter = Painter(instance, origin.x, groundY + 1, origin.z, rotation)
-        when (style) {
-            QuestTerrainStyle.VERDANT -> painter.verdantTree(Math.floorMod(variation, 6))
-            QuestTerrainStyle.HIGHLANDS -> painter.highlandTree(Math.floorMod(variation, 6))
-            QuestTerrainStyle.SALTMARSH -> painter.saltmarshTree(Math.floorMod(variation, 6))
-        }
+        Painter(
+            instance,
+            origin.x,
+            plan.heightAt(origin) + 1,
+            origin.z,
+            rotation,
+            variation.toLong(),
+        ).proceduralTree(plan.style, plan)
     }
 
     fun placeBoulder(
         instance: Instance,
-        style: QuestTerrainStyle,
+        plan: QuestMapPlan,
         origin: QuestMapPoint,
-        groundY: Int,
         variation: Int,
         rotation: Int,
     ) {
-        Painter(instance, origin.x, groundY + 1, origin.z, rotation).boulder(style, Math.floorMod(variation, 6))
+        Painter(
+            instance,
+            origin.x,
+            plan.heightAt(origin) + 1,
+            origin.z,
+            rotation,
+            variation.toLong(),
+        ).groundedBoulder(plan, plan.style)
     }
 
     fun placeFallenLog(
         instance: Instance,
-        style: QuestTerrainStyle,
+        plan: QuestMapPlan,
         origin: QuestMapPoint,
-        groundY: Int,
         length: Int,
         rotation: Int,
+        variation: Int,
     ) {
-        val painter = Painter(instance, origin.x, groundY + 1, origin.z, rotation)
-        val log = when (style) {
+        val painter = Painter(
+            instance,
+            origin.x,
+            plan.heightAt(origin) + 1,
+            origin.z,
+            rotation,
+            variation.toLong(),
+        )
+        val baseLog = when (plan.style) {
             QuestTerrainStyle.VERDANT -> Block.STRIPPED_OAK_LOG
             QuestTerrainStyle.HIGHLANDS -> Block.STRIPPED_SPRUCE_LOG
             QuestTerrainStyle.SALTMARSH -> Block.STRIPPED_MANGROVE_LOG
         }
-        repeat(length) { offset -> painter.set(offset, 0, 0, log) }
-        painter.set(0, -1, 0, Block.MOSS_BLOCK)
-        painter.set(length - 1, -1, 0, Block.MOSS_BLOCK)
-        if (length >= 4) painter.set(length / 2, 1, 0, Block.BROWN_MUSHROOM)
+        val log = baseLog.withProperty("axis", if (Math.floorMod(rotation, 2) == 0) "x" else "z")
+        repeat(length) { offset -> painter.setGrounded(plan, offset, 0, 0, log) }
+        painter.setGrounded(plan, 0, 0, -1, Block.MOSS_BLOCK)
+        painter.setGrounded(plan, length - 1, 0, -1, Block.MOSS_BLOCK)
+        if (length >= 4) painter.setGrounded(plan, length / 2, 0, 1, Block.BROWN_MUSHROOM)
     }
 
     private class Painter(
@@ -63,10 +78,19 @@ internal object QuestMapStructureAssets {
         private val originY: Int,
         private val originZ: Int,
         private val rotation: Int,
+        private val assetSeed: Long,
     ) {
         fun set(dx: Int, dy: Int, dz: Int, block: Block) {
             val (rotatedX, rotatedZ) = rotate(dx, dz)
             instance.setBlock(originX + rotatedX, originY + dy, originZ + rotatedZ, block)
+        }
+
+        fun setGrounded(plan: QuestMapPlan, dx: Int, dz: Int, dy: Int, block: Block) {
+            val (rotatedX, rotatedZ) = rotate(dx, dz)
+            val absoluteX = originX + rotatedX
+            val absoluteZ = originZ + rotatedZ
+            if (absoluteX !in 0 until plan.size || absoluteZ !in 0 until plan.size) return
+            instance.setBlock(absoluteX, plan.heightAt(absoluteX, absoluteZ) + 1 + dy, absoluteZ, block)
         }
 
         private fun column(dx: Int, dz: Int, fromY: Int, toY: Int, block: Block) {
@@ -89,10 +113,135 @@ internal object QuestMapStructureAssets {
                         val normalized = abs(dx).toDouble() / (radiusX + 0.4) +
                             abs(dy).toDouble() / (radiusY + 0.6) +
                             abs(dz).toDouble() / (radiusZ + 0.4)
-                        if (normalized <= 1.65 && Math.floorMod(dx * 7 + dy * 11 + dz * 13, 9) >= clippedCorner) {
+                        val leafHash = Math.floorMod(
+                            assetSeed xor (dx * 734_287L) xor (dy * 912_271L) xor (dz * 438_289L),
+                            11L,
+                        ).toInt()
+                        if (normalized <= 1.65 && leafHash >= clippedCorner) {
                             set(centerX + dx, centerY + dy, centerZ + dz, block)
                         }
                     }
+                }
+            }
+        }
+
+        fun proceduralTree(style: QuestTerrainStyle, plan: QuestMapPlan) {
+            val random = java.util.Random(assetSeed xor 0x5452454547524F57L)
+            val profile = Math.floorMod(assetSeed, 14L).toInt()
+            val log = when (style) {
+                QuestTerrainStyle.VERDANT -> Block.OAK_LOG
+                QuestTerrainStyle.HIGHLANDS -> Block.SPRUCE_LOG
+                QuestTerrainStyle.SALTMARSH -> Block.MANGROVE_LOG
+            }
+            val leaves = when (style) {
+                QuestTerrainStyle.VERDANT -> Block.OAK_LEAVES
+                QuestTerrainStyle.HIGHLANDS -> Block.SPRUCE_LEAVES
+                QuestTerrainStyle.SALTMARSH -> Block.MANGROVE_LEAVES
+            }
+            val baseHeight = when (style) {
+                QuestTerrainStyle.VERDANT -> 6 + random.nextInt(7)
+                QuestTerrainStyle.HIGHLANDS -> 8 + random.nextInt(10)
+                QuestTerrainStyle.SALTMARSH -> 6 + random.nextInt(7)
+            }
+            val dead = profile == 11
+            val multiStem = profile in setOf(2, 7, 12)
+            val windswept = profile in setOf(4, 9)
+            val leanX = when {
+                windswept -> 1
+                profile == 6 -> -1
+                else -> 0
+            }
+            val leanZ = if (profile == 8) 1 else 0
+
+            if (style == QuestTerrainStyle.SALTMARSH) {
+                listOf(-2 to 0, 2 to 0, 0 to -2, 0 to 2).forEachIndexed { index, (dx, dz) ->
+                    setGrounded(plan, dx, dz, 0, if ((profile + index) and 1 == 0) Block.MANGROVE_ROOTS else Block.MUDDY_MANGROVE_ROOTS)
+                    setGrounded(plan, dx / 2, dz / 2, 1, Block.MANGROVE_ROOTS)
+                }
+            } else if (profile in setOf(3, 10, 13)) {
+                listOf(-1 to 0, 1 to 0, 0 to -1, 0 to 1).forEach { (dx, dz) -> setGrounded(plan, dx, dz, 0, log) }
+            }
+
+            var trunkX = 0
+            var trunkZ = 0
+            for (y in 0..baseHeight) {
+                if (y > baseHeight / 3 && y % 3 == 0) {
+                    trunkX += leanX
+                    trunkZ += leanZ
+                }
+                set(trunkX, y, trunkZ, log)
+                if (profile == 13 && y < baseHeight / 2) set(trunkX + 1, y, trunkZ, log)
+            }
+            if (multiStem) {
+                val secondX = if (profile and 1 == 0) 1 else -1
+                val secondZ = if (profile % 3 == 0) 1 else 0
+                column(secondX, secondZ, 0, baseHeight - 2 + random.nextInt(3), log)
+            }
+
+            val directions = listOf(1 to 0, 1 to 1, 0 to 1, -1 to 1, -1 to 0, -1 to -1, 0 to -1, 1 to -1)
+            val branchCount = when (style) {
+                QuestTerrainStyle.HIGHLANDS -> 4 + random.nextInt(5)
+                else -> 3 + random.nextInt(5)
+            }
+            repeat(branchCount) { branch ->
+                val (directionX, directionZ) = directions[Math.floorMod(profile * 3 + branch * 5 + random.nextInt(3), directions.size)]
+                val branchY = (baseHeight * (0.48 + random.nextDouble() * 0.42)).toInt()
+                val leanStepsAtBranch = if (branchY > baseHeight / 3) (branchY - baseHeight / 3 + 2) / 3 else 0
+                val branchBaseX = leanX * leanStepsAtBranch
+                val branchBaseZ = leanZ * leanStepsAtBranch
+                val branchLength = when (style) {
+                    QuestTerrainStyle.HIGHLANDS -> 2 + random.nextInt(3)
+                    else -> 2 + random.nextInt(5)
+                }
+                var endpointX = branchBaseX
+                var endpointZ = branchBaseZ
+                repeat(branchLength) { step ->
+                    endpointX = branchBaseX + directionX * (step + 1)
+                    endpointZ = branchBaseZ + directionZ * (step + 1)
+                    val branchLog = log.withProperty("axis", if (abs(directionX) >= abs(directionZ)) "x" else "z")
+                    set(endpointX, branchY + step / 2, endpointZ, branchLog)
+                }
+                if (!dead || branch % 2 == 0) {
+                    val crownRadius = when (style) {
+                        QuestTerrainStyle.VERDANT -> 2 + random.nextInt(3)
+                        QuestTerrainStyle.HIGHLANDS -> 1 + random.nextInt(2)
+                        QuestTerrainStyle.SALTMARSH -> 2 + random.nextInt(3)
+                    }
+                    leafCrown(
+                        endpointX,
+                        branchY + branchLength / 2 + 1,
+                        endpointZ,
+                        crownRadius + if (windswept) 1 else 0,
+                        if (style == QuestTerrainStyle.HIGHLANDS) 1 else 2,
+                        crownRadius,
+                        leaves,
+                        clippedCorner = if (dead) 7 else 2 + random.nextInt(3),
+                    )
+                }
+            }
+
+            if (!dead) {
+                val crownLayers = when (style) {
+                    QuestTerrainStyle.HIGHLANDS -> 3 + random.nextInt(3)
+                    else -> 2 + random.nextInt(3)
+                }
+                repeat(crownLayers) { layer ->
+                    val offsetX = trunkX + random.nextInt(3) - 1 + if (windswept) layer else 0
+                    val offsetZ = trunkZ + random.nextInt(3) - 1
+                    val radius = when (style) {
+                        QuestTerrainStyle.HIGHLANDS -> (3 - layer / 2).coerceAtLeast(1)
+                        else -> 2 + random.nextInt(3)
+                    }
+                    leafCrown(
+                        offsetX,
+                        baseHeight - 1 + layer * if (style == QuestTerrainStyle.HIGHLANDS) 2 else 1,
+                        offsetZ,
+                        radius + if (style == QuestTerrainStyle.SALTMARSH) 1 else 0,
+                        if (style == QuestTerrainStyle.HIGHLANDS) 1 else 2,
+                        radius,
+                        leaves,
+                        clippedCorner = 2 + random.nextInt(3),
+                    )
                 }
             }
         }
@@ -186,7 +335,9 @@ internal object QuestMapStructureAssets {
             set(-1, 0, 1, Block.MUDDY_MANGROVE_ROOTS)
         }
 
-        fun boulder(style: QuestTerrainStyle, variation: Int) {
+        fun groundedBoulder(plan: QuestMapPlan, style: QuestTerrainStyle) {
+            val random = java.util.Random(assetSeed xor 0x424F554C444552L)
+            val variation = Math.floorMod(assetSeed, 18L).toInt()
             val primary = when (style) {
                 QuestTerrainStyle.VERDANT -> if (variation % 2 == 0) Block.MOSSY_COBBLESTONE else Block.ANDESITE
                 QuestTerrainStyle.HIGHLANDS -> if (variation % 2 == 0) Block.TUFF else Block.STONE
@@ -197,19 +348,30 @@ internal object QuestMapStructureAssets {
                 QuestTerrainStyle.HIGHLANDS -> Block.COBBLESTONE
                 QuestTerrainStyle.SALTMARSH -> Block.MOSS_BLOCK
             }
-            val radiusX = 1 + variation % 3
-            val radiusZ = 1 + (variation / 2) % 3
+            val radiusX = 1 + random.nextInt(4)
+            val radiusZ = 1 + random.nextInt(3)
+            val layers = 1 + random.nextInt(3) + if (variation >= 14) 1 else 0
             for (dx in -radiusX..radiusX) {
                 for (dz in -radiusZ..radiusZ) {
-                    if (abs(dx) + abs(dz) > radiusX + radiusZ - 1) continue
-                    set(dx, 0, dz, if (Math.floorMod(dx + dz + variation, 4) == 0) secondary else primary)
-                    if (abs(dx) < radiusX && abs(dz) < radiusZ && Math.floorMod(dx * 5 + dz * 3 + variation, 3) == 0) {
-                        set(dx, 1, dz, primary)
+                    val normalized = (dx * dx).toDouble() / (radiusX * radiusX) + (dz * dz).toDouble() / (radiusZ * radiusZ)
+                    val edgeNoise = Math.floorMod(assetSeed xor (dx * 31L) xor (dz * 47L), 7L).toInt()
+                    if (normalized > 1.05 || (normalized > 0.72 && edgeNoise <= 1)) continue
+                    val baseBlock = if (Math.floorMod(dx + dz + variation, 5) == 0) secondary else primary
+                    setGrounded(plan, dx, dz, -1, baseBlock)
+                    setGrounded(plan, dx, dz, 0, baseBlock)
+                    for (layer in 1 until layers) {
+                        val layerRadiusX = (radiusX - layer).coerceAtLeast(0)
+                        val layerRadiusZ = (radiusZ - layer).coerceAtLeast(0)
+                        if (abs(dx) > layerRadiusX || abs(dz) > layerRadiusZ) continue
+                        if (Math.floorMod(dx * 5 + dz * 3 + layer + variation, 4) == 0) continue
+                        setGrounded(plan, dx, dz, layer, if ((layer + variation) % 4 == 0) secondary else primary)
                     }
                 }
             }
-            if (variation >= 4) set(0, 2, 0, primary)
-            if (style != QuestTerrainStyle.HIGHLANDS) set(0, if (variation >= 4) 3 else 2, 0, Block.MOSS_CARPET)
+            if (variation in setOf(5, 11, 17)) {
+                repeat(2 + variation % 3) { spike -> setGrounded(plan, 0, 0, layers + spike, primary) }
+            }
+            if (style != QuestTerrainStyle.HIGHLANDS) setGrounded(plan, 0, 0, layers, Block.MOSS_CARPET)
         }
 
         private fun rotate(dx: Int, dz: Int): Pair<Int, Int> = when (Math.floorMod(rotation, 4)) {

@@ -13,6 +13,8 @@ This playground tests one concrete replacement for the current flat hunt space. 
 - The generated extent is 224×224 blocks so it aligns to 14×14 Minecraft chunks.
 - A low, irregular coastline and one-chunk outer sea hide the square edge; an invisible final edge prevents escape.
 - The main road always connects the camp to the boss arena, but its topology is selected from Meander, Ridge Pass, Horseshoe, or Diagonal and then rotated or reflected.
+- Terrain independently selects Rolling, Ridged, Terraced, Basin, or Broken Hills, so route and landform silhouettes do not collapse into one combination.
+- Surface ecology is derived from water distance, slope, elevation, moisture, and canopy fields rather than one style-wide top block.
 - Main roads are broad and readable while optional side trails are deliberately narrower and use different materials.
 - The current authored rhythm is three combat landmarks, four gathering branches, three discoveries, and one boss arena.
 - Seed and terrain style are shown on entry so bad generations can be reproduced.
@@ -20,20 +22,21 @@ This playground tests one concrete replacement for the current flat hunt space. 
 ## Generation pipeline
 
 1. Select one of Verdant, Highlands, or Saltmarsh from the seed.
-2. Generate layered deterministic terrain height.
+2. Generate layered deterministic terrain height with one of five macro terrain profiles.
 3. Select one of four route topologies, rotate or reflect it, and curve it into a walkable route.
 4. Add side trails for gathering and discovery content.
 5. Blend terrain toward the road and force every road step to remain walkable.
 6. Blend the start, encounters, gathering pockets, discoveries, and boss arena into their local landforms without breaking the road ramp.
-7. For Saltmarsh, carve bounded wetland basins while keeping the entire main road above water.
-8. Reject maps that fail reachability, density, spacing, elevation, coastline, water, or content-count rules.
-9. Load the 196 playable chunks plus a one-chunk sea buffer, add grove-weighted vegetation, ProjectS structure assets, and authored landmarks, then place the result in the ready pool.
+7. For Saltmarsh, carve warped wetland basins with variable depth, irregular shorelines, inlet fingers, and relaxed banks while keeping the entire main road above water.
+8. Classify every surface cell as Meadow, Forest Floor, Shore, Rocky, Heath, or Peat and apply contiguous block palettes.
+9. Reject maps that fail reachability, density, spacing, elevation, sightline, ecology, coastline, water, or content-count rules.
+10. Load the 196 playable chunks plus a one-chunk sea buffer, add ecology-weighted parametric structures and authored landmarks, then place the result in the ready pool.
 
 ## No-wait rule
 
 Two maps are fully generated before the server begins accepting players. Entering a quest consumes a ready map and starts a background replacement. The command never performs terrain generation synchronously. If the pool is unexpectedly empty, entry is rejected instead of freezing the player.
 
-Automated planning budget: 20 complete plans in under four seconds on the development host. Runtime chunk preparation is reported per map in milliseconds and must be measured again on the production host.
+Automated planning budget: 20 complete plans in under four seconds on the development host. The Creator-approved runtime preparation budget is now five seconds per 224×224 map; transfer still consumes a ready map and should not wait for generation.
 
 ## Automated acceptance
 
@@ -46,8 +49,11 @@ Automated planning budget: 20 complete plans in under four seconds on the develo
 - The walked route must be at least 1.18 times the direct start-to-boss distance.
 - The route contains no content gap greater than 115 road steps.
 - All four route topologies occur in the representative seed suite.
+- All five macro terrain profiles occur in the representative seed suite.
+- Every accepted plan contains at least four ground-cover ecologies.
 - Required content counts and minimum separation are enforced.
 - Saltmarsh water coverage is bounded and its main road cannot be submerged.
+- Interior Saltmarsh shorelines cannot jump more than four blocks from water bed to adjacent land.
 - The failed manual-smoke seed `1788101320652` is a permanent regression case for flooding and perimeter walls.
 - JVM 25 production sources compile with the current Minestom dependency.
 
