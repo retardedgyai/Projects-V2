@@ -363,13 +363,36 @@ internal class VerdantRoadQuestService(
             player.sendMessage(Component.text("Quest map pool is warming; try again shortly.", NamedTextColor.RED))
             return CompletableFuture.completedFuture(false)
         }
+        return enterRuntime(player, runtime, returnToReadyOnFailure = true).whenComplete { _, _ -> replenish() }
+    }
+
+    fun enterSeed(player: Player, seed: Long): CompletableFuture<Boolean> {
+        if (activeByPlayer.containsKey(player.uuid)) {
+            player.sendMessage(Component.text("You are already inside a generated quest map.", NamedTextColor.YELLOW))
+            return CompletableFuture.completedFuture(false)
+        }
+        player.sendMessage(Component.text("Preparing manual-smoke seed $seed...", NamedTextColor.GRAY))
+        return VerdantRoadQuestRuntime.prepare(seed).thenCompose { runtime ->
+            enterRuntime(player, runtime, returnToReadyOnFailure = false)
+        }
+    }
+
+    private fun enterRuntime(
+        player: Player,
+        runtime: VerdantRoadQuestRuntime,
+        returnToReadyOnFailure: Boolean,
+    ): CompletableFuture<Boolean> {
         activeByPlayer[player.uuid] = runtime
         player.setVelocity(Vec.ZERO)
         val transferStartedAt = System.nanoTime()
         return player.setInstance(runtime.instance, runtime.spawn).handle { _, failure ->
             if (failure != null) {
                 activeByPlayer.remove(player.uuid, runtime)
-                ready += runtime
+                if (returnToReadyOnFailure) {
+                    ready += runtime
+                } else if (runtime.instance.players.isEmpty()) {
+                    runtime.close()
+                }
                 player.sendMessage(Component.text("Quest transfer failed: ${failure.message}", NamedTextColor.RED))
                 false
             } else {
@@ -381,7 +404,6 @@ internal class VerdantRoadQuestService(
                     ),
                 )
                 player.sendMessage(Component.text("Follow the road to the Lodestone boss arena. Side trails contain gathering and discoveries.", NamedTextColor.GRAY))
-                replenish()
                 true
             }
         }

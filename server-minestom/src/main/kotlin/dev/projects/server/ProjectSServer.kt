@@ -463,16 +463,28 @@ fun main() {
     MinecraftServer.getCommandManager().register(
         Command("bossreset").apply { setDefaultExecutor { _, _ -> resetEncounter() } },
     )
+    fun prepareQuestMapTransfer(player: net.minestom.server.entity.Player) {
+        bossGroundTelegraphIds.forEach { telegraphId ->
+            player.sendPluginMessage(PROJECTS_CHANNEL, ProtocolCodec.encode(GroundTelegraphRemove(telegraphId)))
+        }
+        player.hideBossBar(bossBar)
+    }
+    val questMapSeedLiteral = ArgumentType.Literal("seed")
+    val questMapSeedArgument = ArgumentType.Long("seedValue")
     MinecraftServer.getCommandManager().register(
         Command("questmap").apply {
             setDefaultExecutor { sender, _ ->
                 val player = sender as? net.minestom.server.entity.Player ?: return@setDefaultExecutor
-                bossGroundTelegraphIds.forEach { telegraphId ->
-                    player.sendPluginMessage(PROJECTS_CHANNEL, ProtocolCodec.encode(GroundTelegraphRemove(telegraphId)))
-                }
-                player.hideBossBar(bossBar)
+                prepareQuestMapTransfer(player)
                 questMaps.enter(player).thenAccept { entered -> if (!entered) player.showBossBar(bossBar) }
             }
+            addSyntax({ sender, context ->
+                val player = sender as? net.minestom.server.entity.Player ?: return@addSyntax
+                prepareQuestMapTransfer(player)
+                questMaps.enterSeed(player, context.get(questMapSeedArgument)).thenAccept { entered ->
+                    if (!entered) player.showBossBar(bossBar)
+                }
+            }, questMapSeedLiteral, questMapSeedArgument)
             addSyntax({ sender, _ ->
                 val player = sender as? net.minestom.server.entity.Player ?: return@addSyntax
                 questMaps.returnToHub(player).thenAccept { returned -> if (returned) player.showBossBar(bossBar) }

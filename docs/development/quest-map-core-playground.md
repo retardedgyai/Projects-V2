@@ -9,6 +9,7 @@ This playground tests one concrete replacement for the current flat hunt space. 
 - `/questmap` enters one prewarmed, party-sized generated map.
 - `/questmap return` returns to the existing ProjectS hub and destroys that temporary instance.
 - `/questmap status` displays ready, preparing, and active map counts.
+- `/questmap seed <long>` prepares and enters one exact seed for manual regression checks.
 - The generated extent is 160×160 blocks so it aligns to 10×10 Minecraft chunks.
 - A low, irregular coastline and one-chunk outer sea hide the square edge; an invisible final edge prevents escape.
 - The main road always connects the camp to the boss arena.
@@ -52,6 +53,7 @@ Automated planning budget: 20 complete plans in under four seconds on the develo
 1. Start the ProjectS server and connect normally.
 2. Run `/questmap status`; at least two maps must be ready.
 3. Run `/questmap` and record the reported transfer time, seed, and style.
+   To reproduce the failed Saltmarsh screenshot exactly, use `/questmap seed 1788101320652` instead.
 4. Confirm that no Rift Executioner boss bar or Hub combat telegraph remains after transfer.
 5. Follow only the broad main road. It must lead from the camp through three stone combat rings to the Lodestone boss arena without jumping or building.
 6. Inspect every narrow side trail. Four end at ore clusters and two end at stone/amethyst arches; the final main-road arch foreshadows the boss.
