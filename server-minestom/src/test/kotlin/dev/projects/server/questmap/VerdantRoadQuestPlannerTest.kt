@@ -20,27 +20,40 @@ class VerdantRoadQuestPlannerTest {
     @Test
     fun `representative seeds always pass the complete quality gate`() {
         val styles = mutableSetOf<QuestTerrainStyle>()
+        val layouts = mutableSetOf<QuestRouteLayout>()
         repeat(120) { ordinal ->
             val plan = VerdantRoadQuestPlanner.generate(ordinal * 104_729L + 17L)
             val report = QuestMapQualityGate.evaluate(plan)
             assertTrue(report.accepted, "seed=${plan.seed}: ${report.violations}")
             styles += plan.style
+            layouts += plan.routeLayout
         }
         assertEquals(QuestTerrainStyle.entries.toSet(), styles)
+        assertEquals(QuestRouteLayout.entries.toSet(), layouts)
     }
 
     @Test
     fun `one map contains the authored ProjectS quest rhythm`() {
         val plan = VerdantRoadQuestPlanner.generate(919_191L)
 
-        assertEquals(160, plan.size)
+        assertEquals(224, plan.size)
         assertEquals(1, plan.contents.count { it.kind == QuestMapContentKind.START })
         assertEquals(3, plan.contents.count { it.kind == QuestMapContentKind.COMBAT })
         assertEquals(4, plan.contents.count { it.kind == QuestMapContentKind.GATHERING })
         assertEquals(3, plan.contents.count { it.kind == QuestMapContentKind.DISCOVERY })
         assertEquals(1, plan.contents.count { it.kind == QuestMapContentKind.BOSS })
         assertTrue(plan.mainRoute.size >= 210)
-        assertTrue(plan.elevationRange() >= 8)
+        assertTrue(plan.elevationRange() >= 18)
+        assertTrue(plan.terrainOcclusionSamples() >= 3)
+        assertTrue(plan.routeDetourRatio() >= 1.18)
+    }
+
+    @Test
+    fun `four compact smoke seeds expose every route topology`() {
+        val plans = (0L..3L).map(VerdantRoadQuestPlanner::generate)
+
+        assertEquals(QuestRouteLayout.entries.toSet(), plans.map { it.routeLayout }.toSet())
+        assertEquals(4, plans.map { it.fingerprint() }.toSet().size)
     }
 
     @Test

@@ -39,6 +39,13 @@ internal class VerdantRoadQuestGenerator(
     private fun blockAt(x: Int, y: Int, z: Int): Block {
         if (x !in 0 until plan.size || z !in 0 until plan.size) return outerSeaBlock(x, y, z)
         val ground = plan.heightAt(x, z)
+        val neighborHeights = listOf(
+            plan.heightAt((x - 1).coerceAtLeast(0), z),
+            plan.heightAt((x + 1).coerceAtMost(plan.size - 1), z),
+            plan.heightAt(x, (z - 1).coerceAtLeast(0)),
+            plan.heightAt(x, (z + 1).coerceAtMost(plan.size - 1)),
+        )
+        val exposedCliff = neighborHeights.min() <= ground - 3
         val mainRoad = plan.mainRoadDistanceSquaredAt(x, z) <= 3 * 3
         val sideTrail = !mainRoad && plan.roadDistanceSquaredAt(x, z) <= 1 * 1
         val road = mainRoad || sideTrail
@@ -49,6 +56,13 @@ internal class VerdantRoadQuestGenerator(
         }
         if (y < ground - 4) return if (plan.style == QuestTerrainStyle.HIGHLANDS) Block.TUFF else Block.STONE
         if (y < ground) {
+            if (exposedCliff && neighborHeights.min() < y) {
+                return when (plan.style) {
+                    QuestTerrainStyle.VERDANT -> if ((x + y + z) and 3 == 0) Block.ANDESITE else Block.STONE
+                    QuestTerrainStyle.HIGHLANDS -> if ((x + y + z) and 3 == 0) Block.COBBLESTONE else Block.TUFF
+                    QuestTerrainStyle.SALTMARSH -> if ((x + y + z) and 3 == 0) Block.MUD_BRICKS else Block.STONE
+                }
+            }
             return when (plan.style) {
                 QuestTerrainStyle.VERDANT -> Block.DIRT
                 QuestTerrainStyle.HIGHLANDS -> if (ground >= 57) Block.STONE else Block.DIRT
@@ -56,11 +70,27 @@ internal class VerdantRoadQuestGenerator(
             }
         }
         if (mainRoad) {
-            val variation = Math.floorMod(plan.seed xor (x * 734_287L) xor (z * 912_271L), 5L).toInt()
+            val variation = Math.floorMod(plan.seed xor (x * 734_287L) xor (z * 912_271L), 13L).toInt()
+            val core = plan.mainRoadDistanceSquaredAt(x, z) <= 1
             return when (plan.style) {
-                QuestTerrainStyle.SALTMARSH -> if (variation == 0) Block.MUD_BRICKS else Block.PACKED_MUD
-                QuestTerrainStyle.HIGHLANDS -> if (variation == 0) Block.COBBLESTONE else Block.GRAVEL
-                QuestTerrainStyle.VERDANT -> if (variation == 0) Block.GRAVEL else Block.COARSE_DIRT
+                QuestTerrainStyle.SALTMARSH -> when {
+                    core && variation < 3 -> Block.MUD_BRICKS
+                    core -> Block.PACKED_MUD
+                    variation < 4 -> Block.MUD
+                    else -> Block.PACKED_MUD
+                }
+                QuestTerrainStyle.HIGHLANDS -> when {
+                    core && variation < 3 -> Block.COBBLESTONE
+                    core -> Block.GRAVEL
+                    variation < 5 -> Block.ANDESITE
+                    else -> Block.GRAVEL
+                }
+                QuestTerrainStyle.VERDANT -> when {
+                    core && variation < 2 -> Block.GRAVEL
+                    core -> Block.DIRT_PATH
+                    variation < 5 -> Block.COARSE_DIRT
+                    else -> Block.DIRT_PATH
+                }
             }
         }
         if (sideTrail) {
@@ -71,9 +101,13 @@ internal class VerdantRoadQuestGenerator(
             }
         }
         return when (plan.style) {
-            QuestTerrainStyle.VERDANT -> Block.GRASS_BLOCK
-            QuestTerrainStyle.HIGHLANDS -> if (ground >= 57) Block.STONE else Block.PODZOL
-            QuestTerrainStyle.SALTMARSH -> if (ground <= QUEST_WATER_LEVEL) Block.MUD else Block.MOSS_BLOCK
+            QuestTerrainStyle.VERDANT -> if (exposedCliff) Block.ANDESITE else Block.GRASS_BLOCK
+            QuestTerrainStyle.HIGHLANDS -> if (ground >= 57 || exposedCliff) Block.STONE else Block.PODZOL
+            QuestTerrainStyle.SALTMARSH -> when {
+                ground <= QUEST_WATER_LEVEL -> Block.MUD
+                exposedCliff -> Block.STONE
+                else -> Block.MOSS_BLOCK
+            }
         }
     }
 
@@ -109,55 +143,61 @@ internal object VerdantRoadQuestDecorator {
     private fun decorateTrees(instance: Instance, plan: QuestMapPlan) {
         val random = Random(plan.seed xor 0x47524F5645L)
         val occupied = mutableSetOf<QuestMapPoint>()
+        val groveCenters = List(
+            when (plan.style) {
+                QuestTerrainStyle.VERDANT -> 10
+                QuestTerrainStyle.HIGHLANDS -> 8
+                QuestTerrainStyle.SALTMARSH -> 7
+            },
+        ) {
+            QuestMapPoint(
+                18 + random.nextInt(plan.size - 36),
+                18 + random.nextInt(plan.size - 36),
+            )
+        }
         val attempts = when (plan.style) {
-            QuestTerrainStyle.VERDANT -> 280
-            QuestTerrainStyle.HIGHLANDS -> 210
-            QuestTerrainStyle.SALTMARSH -> 190
+            QuestTerrainStyle.VERDANT -> 760
+            QuestTerrainStyle.HIGHLANDS -> 560
+            QuestTerrainStyle.SALTMARSH -> 480
         }
         repeat(attempts) {
-            val point = QuestMapPoint(
-                10 + random.nextInt(plan.size - 20),
-                10 + random.nextInt(plan.size - 20),
-            )
-            if (plan.roadDistanceSquaredAt(point.x, point.z) <= 6 * 6) return@repeat
-            if (plan.contents.any { it.position.distanceSquared(point) < 9 * 9 }) return@repeat
-            if (occupied.any { it.distanceSquared(point) < 5 * 5 }) return@repeat
-            if (plan.style == QuestTerrainStyle.SALTMARSH && plan.heightAt(point) <= QUEST_WATER_LEVEL) return@repeat
-            occupied += point
-            placeTree(instance, plan, point, random.nextInt(4))
-        }
-    }
-
-    private fun placeTree(instance: Instance, plan: QuestMapPlan, point: QuestMapPoint, variation: Int) {
-        val ground = plan.heightAt(point)
-        val log = when (plan.style) {
-            QuestTerrainStyle.VERDANT -> Block.OAK_LOG
-            QuestTerrainStyle.HIGHLANDS -> Block.SPRUCE_LOG
-            QuestTerrainStyle.SALTMARSH -> Block.MANGROVE_LOG
-        }
-        val leaves = when (plan.style) {
-            QuestTerrainStyle.VERDANT -> Block.OAK_LEAVES
-            QuestTerrainStyle.HIGHLANDS -> Block.SPRUCE_LEAVES
-            QuestTerrainStyle.SALTMARSH -> Block.MANGROVE_LEAVES
-        }
-        val trunkHeight = 4 + variation
-        repeat(trunkHeight) { offset -> instance.setBlock(point.x, ground + 1 + offset, point.z, log) }
-        val crownY = ground + trunkHeight
-        for (dy in -1..2) {
-            val radius = if (dy == 2) 1 else 2
-            for (dx in -radius..radius) {
-                for (dz in -radius..radius) {
-                    if (kotlin.math.abs(dx) + kotlin.math.abs(dz) <= radius + 1) {
-                        instance.setBlock(point.x + dx, crownY + dy, point.z + dz, leaves)
-                    }
-                }
+            val point = if (random.nextInt(100) < 78) {
+                val grove = groveCenters[random.nextInt(groveCenters.size)]
+                val angle = random.nextDouble() * Math.PI * 2.0
+                val radius = 5.0 + random.nextDouble() * 29.0
+                QuestMapPoint(
+                    (grove.x + Math.cos(angle) * radius).roundToInt().coerceIn(10, plan.size - 11),
+                    (grove.z + Math.sin(angle) * radius).roundToInt().coerceIn(10, plan.size - 11),
+                )
+            } else {
+                QuestMapPoint(10 + random.nextInt(plan.size - 20), 10 + random.nextInt(plan.size - 20))
             }
+            if (plan.roadDistanceSquaredAt(point.x, point.z) <= 7 * 7) return@repeat
+            if (plan.contents.any { it.position.distanceSquared(point) < 11 * 11 }) return@repeat
+            if (occupied.any { it.distanceSquared(point) < 7 * 7 }) return@repeat
+            if (plan.style == QuestTerrainStyle.SALTMARSH && plan.heightAt(point) <= QUEST_WATER_LEVEL) return@repeat
+            val localHeights = listOf(
+                plan.heightAt(point.x - 2, point.z),
+                plan.heightAt(point.x + 2, point.z),
+                plan.heightAt(point.x, point.z - 2),
+                plan.heightAt(point.x, point.z + 2),
+            )
+            if (localHeights.any { kotlin.math.abs(it - plan.heightAt(point)) > 3 }) return@repeat
+            occupied += point
+            QuestMapStructureAssets.placeTree(
+                instance,
+                plan.style,
+                point,
+                plan.heightAt(point),
+                random.nextInt(6),
+                random.nextInt(4),
+            )
         }
     }
 
     private fun decorateTerrainDetail(instance: Instance, plan: QuestMapPlan) {
         val random = Random(plan.seed xor 0x5445525241494EL)
-        repeat(850) {
+        repeat(1_650) {
             val point = QuestMapPoint(8 + random.nextInt(plan.size - 16), 8 + random.nextInt(plan.size - 16))
             if (plan.roadDistanceSquaredAt(point.x, point.z) <= 4 * 4) return@repeat
             if (plan.contents.any { it.position.distanceSquared(point) < 6 * 6 }) return@repeat
@@ -168,21 +208,28 @@ internal object VerdantRoadQuestDecorator {
                 }
                 return@repeat
             }
-            when (random.nextInt(12)) {
-                0 -> placeRock(instance, point, ground + 1, random.nextBoolean())
-                1, 2 -> instance.setBlock(point.x, ground + 1, point.z, Block.FERN)
-                3 -> instance.setBlock(point.x, ground + 1, point.z, Block.BROWN_MUSHROOM)
+            when (random.nextInt(18)) {
+                0, 1 -> QuestMapStructureAssets.placeBoulder(
+                    instance,
+                    plan.style,
+                    point,
+                    ground,
+                    random.nextInt(6),
+                    random.nextInt(4),
+                )
+                2 -> QuestMapStructureAssets.placeFallenLog(
+                    instance,
+                    plan.style,
+                    point,
+                    ground,
+                    3 + random.nextInt(4),
+                    random.nextInt(4),
+                )
+                3, 4 -> instance.setBlock(point.x, ground + 1, point.z, Block.FERN)
+                5 -> instance.setBlock(point.x, ground + 1, point.z, Block.BROWN_MUSHROOM)
                 else -> instance.setBlock(point.x, ground + 1, point.z, Block.SHORT_GRASS)
             }
         }
-    }
-
-    private fun placeRock(instance: Instance, point: QuestMapPoint, y: Int, mossy: Boolean) {
-        val block = if (mossy) Block.MOSSY_COBBLESTONE else Block.COBBLESTONE
-        instance.setBlock(point.x, y, point.z, block)
-        instance.setBlock(point.x + 1, y, point.z, block)
-        instance.setBlock(point.x, y, point.z + 1, block)
-        if (mossy) instance.setBlock(point.x, y + 1, point.z, Block.MOSS_CARPET)
     }
 
     private fun decorateRoadGuidance(instance: Instance, plan: QuestMapPlan) {
@@ -399,7 +446,7 @@ internal class VerdantRoadQuestService(
                 val transferMillis = (System.nanoTime() - transferStartedAt) / 1_000_000
                 player.sendMessage(
                     Component.text(
-                        "Verdant Road seed=${runtime.plan.seed} style=${runtime.plan.style} ready=${runtime.preparationMillis}ms transfer=${transferMillis}ms",
+                        "Verdant Road seed=${runtime.plan.seed} style=${runtime.plan.style} layout=${runtime.plan.routeLayout} ready=${runtime.preparationMillis}ms transfer=${transferMillis}ms",
                         NamedTextColor.GREEN,
                     ),
                 )
@@ -448,7 +495,13 @@ internal class VerdantRoadQuestService(
         preparing.incrementAndGet()
         return VerdantRoadQuestRuntime.prepare(nextSeed.getAndIncrement()).whenComplete { _, _ ->
             preparing.decrementAndGet()
-        }.thenAccept { runtime -> ready += runtime }
+        }.thenAccept { runtime ->
+            ready += runtime
+            println(
+                "QUEST_MAP_READY seed=${runtime.plan.seed} style=${runtime.plan.style} " +
+                    "layout=${runtime.plan.routeLayout} size=${runtime.plan.size} preparation=${runtime.preparationMillis}ms",
+            )
+        }
     }
 
     private fun closeAfterDisconnect(runtime: VerdantRoadQuestRuntime, attemptsRemaining: Int) {

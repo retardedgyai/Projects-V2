@@ -22,6 +22,13 @@ internal enum class QuestTerrainStyle {
     SALTMARSH,
 }
 
+internal enum class QuestRouteLayout {
+    MEANDER,
+    RIDGE_PASS,
+    HORSESHOE,
+    DIAGONAL,
+}
+
 internal enum class QuestMapContentKind {
     START,
     COMBAT,
@@ -43,6 +50,7 @@ internal class QuestMapPlan(
     val size: Int,
     val playableBorder: Int,
     val style: QuestTerrainStyle,
+    val routeLayout: QuestRouteLayout,
     val mainRoute: List<QuestMapPoint>,
     val trails: Set<QuestMapPoint>,
     val contents: List<QuestMapContent>,
@@ -97,6 +105,26 @@ internal class QuestMapPlan(
         return maximum
     }
 
+    fun terrainOcclusionSamples(): Int {
+        val sightline = rasterLine(start, boss)
+        if (sightline.size < 3) return 0
+        val startEye = heightAt(start) + 2.0
+        val bossLandmarkTop = heightAt(boss) + 7.0
+        return sightline.drop(2).dropLast(2).countIndexed { index, point ->
+            val progress = (index + 2).toDouble() / sightline.lastIndex
+            val visibleHeight = startEye + (bossLandmarkTop - startEye) * progress
+            heightAt(point) >= visibleHeight
+        }
+    }
+
+    fun routeDetourRatio(): Double {
+        val directDistance = kotlin.math.sqrt(start.distanceSquared(boss).toDouble())
+        val walkedDistance = mainRoute.zipWithNext().sumOf { (from, to) ->
+            kotlin.math.sqrt(from.distanceSquared(to).toDouble())
+        }
+        return if (directDistance == 0.0) 0.0 else walkedDistance / directDistance
+    }
+
     fun fingerprint(): Long {
         var hash = seed xor -7046029254386353131L
         fun mix(value: Long) {
@@ -104,6 +132,7 @@ internal class QuestMapPlan(
             hash = hash xor (hash ushr 27)
         }
         mix(style.ordinal.toLong())
+        mix(routeLayout.ordinal.toLong())
         mainRoute.forEach { point -> mix((point.x.toLong() shl 32) xor point.z.toLong()) }
         contents.forEach { content ->
             mix(content.kind.ordinal.toLong())
@@ -117,6 +146,38 @@ internal class QuestMapPlan(
         require(x in 0 until size && z in 0 until size) { "Point outside quest map: $x,$z" }
         return z * size + x
     }
+
+
+    private fun rasterLine(from: QuestMapPoint, to: QuestMapPoint): List<QuestMapPoint> {
+        val result = mutableListOf<QuestMapPoint>()
+        var x = from.x
+        var z = from.z
+        val dx = abs(to.x - from.x)
+        val dz = abs(to.z - from.z)
+        val sx = if (from.x < to.x) 1 else -1
+        val sz = if (from.z < to.z) 1 else -1
+        var error = dx - dz
+        while (true) {
+            result += QuestMapPoint(x, z)
+            if (x == to.x && z == to.z) break
+            val doubled = error * 2
+            if (doubled > -dz) {
+                error -= dz
+                x += sx
+            }
+            if (doubled < dx) {
+                error += dx
+                z += sz
+            }
+        }
+        return result
+    }
+
+    private inline fun <T> Iterable<T>.countIndexed(predicate: (Int, T) -> Boolean): Int {
+        var count = 0
+        forEachIndexed { index, value -> if (predicate(index, value)) count++ }
+        return count
+    }
 }
 
 internal data class QuestMapQualityReport(
@@ -126,8 +187,8 @@ internal data class QuestMapQualityReport(
 }
 
 internal object QuestMapQualityGate {
-    private const val MINIMUM_MAIN_ROUTE_POINTS = 170
-    private const val MAXIMUM_CONTENT_GAP = 75
+    private const val MINIMUM_MAIN_ROUTE_POINTS = 210
+    private const val MAXIMUM_CONTENT_GAP = 115
 
     fun evaluate(plan: QuestMapPlan): QuestMapQualityReport {
         val violations = mutableListOf<String>()
@@ -161,11 +222,13 @@ internal object QuestMapQualityGate {
         }
 
         if (!roadReachable(plan)) violations += "Boss is not reachable on generated road"
-        if (plan.start.distanceSquared(plan.boss) < 120 * 120) violations += "Boss is too close to start"
+        if (plan.start.distanceSquared(plan.boss) < 130 * 130) violations += "Boss is too close to start"
         if (plan.boss.x !in 14 until plan.size - 14 || plan.boss.z !in 14 until plan.size - 14) {
             violations += "Boss arena does not fit inside generated extent"
         }
-        if (plan.elevationRange() < 8) violations += "Terrain is visually too flat"
+        if (plan.elevationRange() < 18) violations += "Terrain is visually too flat"
+        if (plan.terrainOcclusionSamples() < 3) violations += "Terrain does not hide the boss from the start"
+        if (plan.routeDetourRatio() < 1.18) violations += "Main route is too direct"
         if (plan.maximumBoundaryRise() > 16) violations += "Map boundary forms a visible terrain wall"
         if (plan.style == QuestTerrainStyle.SALTMARSH) {
             val waterCoverage = plan.surfaceCoverageAtOrBelow(QUEST_WATER_LEVEL)
