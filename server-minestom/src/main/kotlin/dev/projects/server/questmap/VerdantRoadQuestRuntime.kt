@@ -329,7 +329,61 @@ internal object VerdantRoadQuestDecorator {
                 QuestMapContentKind.BOSS -> decorateBossArena(instance, plan, content.position)
             }
         }
+        enforceRouteClearance(instance, plan)
+        val remainingObstructions = routeClearanceObstructions(instance, plan)
+        check(remainingObstructions.isEmpty()) {
+            "Decorated quest route is obstructed: ${remainingObstructions.take(8)}"
+        }
     }
+
+    /**
+     * Decoration is intentionally allowed to compose across scene boundaries, but walking space is
+     * authoritative. This final pass runs after every structure, prop, and encounter scene so a new
+     * asset call site cannot silently reintroduce the blocked-road regression.
+     */
+    internal fun enforceRouteClearance(instance: Instance, plan: QuestMapPlan) {
+        for (z in 0 until plan.size) {
+            for (x in 0 until plan.size) {
+                if (!isProtectedRouteCell(plan, x, z)) continue
+                val ground = plan.heightAt(x, z)
+                for (y in ground + 1..ground + ROUTE_HEADROOM_BLOCKS) {
+                    if (instance.getBlock(x, y, z).blocksMotion()) {
+                        instance.setBlock(x, y, z, Block.AIR)
+                    }
+                }
+            }
+        }
+    }
+
+    internal fun routeClearanceObstructions(
+        instance: Instance,
+        plan: QuestMapPlan,
+        limit: Int = 64,
+    ): List<String> {
+        val obstructions = mutableListOf<String>()
+        for (z in 0 until plan.size) {
+            for (x in 0 until plan.size) {
+                if (!isProtectedRouteCell(plan, x, z)) continue
+                val ground = plan.heightAt(x, z)
+                for (y in ground + 1..ground + ROUTE_HEADROOM_BLOCKS) {
+                    val block = instance.getBlock(x, y, z)
+                    if (block.blocksMotion()) {
+                        obstructions += "$x,$y,$z=${block.name()}"
+                        if (obstructions.size >= limit) return obstructions
+                    }
+                }
+            }
+        }
+        return obstructions
+    }
+
+    private fun isProtectedRouteCell(plan: QuestMapPlan, x: Int, z: Int): Boolean =
+        plan.mainRoadDistanceSquaredAt(x, z) <= MAIN_ROAD_CLEARANCE_RADIUS * MAIN_ROAD_CLEARANCE_RADIUS ||
+            plan.roadDistanceSquaredAt(x, z) <= SIDE_TRAIL_CLEARANCE_RADIUS * SIDE_TRAIL_CLEARANCE_RADIUS
+
+    private const val MAIN_ROAD_CLEARANCE_RADIUS = 3
+    private const val SIDE_TRAIL_CLEARANCE_RADIUS = 1
+    private const val ROUTE_HEADROOM_BLOCKS = 2
 
     private fun scenicAnchors(plan: QuestMapPlan): List<QuestMapPoint> {
         val random = Random(plan.seed xor 0x5343454E49434CL)
