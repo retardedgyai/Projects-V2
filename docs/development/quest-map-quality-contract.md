@@ -27,6 +27,12 @@ Hypixel hub and island builds reinforce a gameplay constraint missing from showc
 
 - Hypixel community hub rebuild discussion used as a gameplay-space comparison: https://hypixel.net/threads/i-rebuilt-the-ruined-castle-in-the-hub.4084476/
 
+### Shotbow Annihilation: Cherokee
+
+Cherokee's useful lesson is vertical organization: an elevated destination, a valley below it, resources distributed across height layers, and smaller hills breaking up a central plateau. ProjectS uses that spatial grammar for Clifflands while keeping its own routes, scenes, assets, and visual identity.
+
+- Official map description: https://wiki.shotbow.net/Special%3AMyLanguage/Cherokee
+
 ### Licensed structure source
 
 ProjectS may redistribute and adapt the selected tree and rock schematics from `sijmenvb/worldpainter-trees` under its MIT license. The source collection explicitly designs roots for slopes and groups assets by ecological use.
@@ -82,9 +88,10 @@ Automation cannot certify beauty, but it must reject common failures:
 - trees occupy the road or combat center;
 - biome surface coverage collapses to one dominant material;
 - preparation exceeds the five-second map budget.
+- any chunk inside the configured client render horizon is absent when the map enters the ready pool.
 
 ## Manual review gate
 
-Review at least twelve deterministic seeds: four route layouts across all three terrain styles, including every permanent regression seed. Capture spawn, first bend, one combat scene, one gathering branch, one discovery, boss threshold, water edge, forest interior, and a high overview.
+Review at least twelve deterministic seeds spanning all four route layouts and all six terrain concepts, including every permanent regression seed. Capture spawn, first bend, one combat scene, one gathering branch, one discovery, boss threshold, liquid edge, forest interior, and a high overview.
 
 A seed is rejected when any reviewer cannot answer “what is this place for?”, sees a repeated generator trick, notices a floating/pasted asset, or must fight the terrain to explore. Passing metrics is necessary but never sufficient.

@@ -20,6 +20,9 @@ internal enum class QuestTerrainStyle {
     VERDANT,
     HIGHLANDS,
     SALTMARSH,
+    CLIFFLANDS,
+    SAKURA_GROVE,
+    INFERNAL,
 }
 
 internal enum class QuestRouteLayout {

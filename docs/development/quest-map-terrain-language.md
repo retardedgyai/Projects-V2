@@ -8,6 +8,7 @@ This document records the terrain principles used for ProjectS quest fields. It 
 - Terralith combines many biome identities with structures and features instead of relying on height alone. ProjectS therefore separates macro landform, surface ecology, vegetation grammar, and content landmarks. Source: https://www.stardustlabs.net/datapacks
 - ReTerraForged continues TerraForged's terrain-first approach and provides an MIT-licensed architectural reference. ProjectS adopts the conceptual separation of terrain fields, but does not import its implementation. Source: https://github.com/racoonman2/ReTerraForged
 - William Wythers' Overhauled Overworld focuses on biome and sub-biome differentiation with vanilla materials. Its CC-BY-NC-ND license means ProjectS may study public presentation but must not copy or modify its assets. Source: https://modrinth.com/mod/wwoo
+- Shotbow's Cherokee description establishes a useful vertical gameplay grammar: a base above a valley, resources on multiple elevation layers, and a plateau broken by smaller hills. ProjectS adopts that relationship for Clifflands without copying Cherokee's map or culturally specific decoration. Source: https://wiki.shotbow.net/Special%3AMyLanguage/Cherokee
 
 ## ProjectS generation axes
 
@@ -15,7 +16,7 @@ One seed selects independent axes so visible variety is multiplicative rather th
 
 1. Quest route: Meander, Ridge Pass, Horseshoe, or Diagonal, followed by rotation or reflection.
 2. Macro terrain: Rolling, Ridged, Terraced, Basin, or Broken Hills.
-3. Palette style: Verdant, Highlands, or Saltmarsh.
+3. Palette style: Verdant, Highlands, Saltmarsh, Clifflands, Sakura Grove, or Infernal.
 4. Surface ecology: Meadow, Forest Floor, Shore, Rocky, Heath, or Peat.
 5. Structure grammar: tree, boulder, fallen log, undergrowth, water-edge, and authored quest landmark parameters.
 
@@ -44,6 +45,14 @@ A pond is not a filled ellipse. Each Saltmarsh water system uses:
 - bank relaxation that caps abrupt local height changes;
 - connected expansion when a seed produces too little water;
 - Shore and Peat ecology bands for material and decoration transitions.
+
+Infernal uses the same authored-edge rule for lava, but replaces wetland plants with basalt shelves, blackstone, magma, roots, fungi, and fire. It never places overworld lily pads or ferns around lava.
+
+## Concept languages
+
+- Clifflands: elevated shelves and valley views, restrained terracing, stone/calcite outcrops, spruce and deadwood, and readable passes. Dramatic relief stays outside the protected exploration corridor.
+- Sakura Grove: gentler hollows, cherry-grove biome color, cherry timber, mossy stone, pink petals, dense mixed crowns, and small purposeful roadside shelters. “Japanese” is expressed through composition and material discipline, not pasted ornamental stereotypes.
+- Infernal: fractured ridges, lava lowlands, basalt and blackstone faces, nylium ecology, crimson/warped vegetation, soul-lit landmarks, and blackstone quest architecture. It is a complete scene grammar rather than an overworld heightmap with red blocks.
 
 ## Surface language
 

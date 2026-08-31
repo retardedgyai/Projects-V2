@@ -279,23 +279,50 @@ internal object VerdantRoadQuestPlanner {
                 QuestTerrainStyle.VERDANT -> 0.0
                 QuestTerrainStyle.HIGHLANDS -> 6.0
                 QuestTerrainStyle.SALTMARSH -> -3.0
+                QuestTerrainStyle.CLIFFLANDS -> 7.0
+                QuestTerrainStyle.SAKURA_GROVE -> 2.0
+                QuestTerrainStyle.INFERNAL -> 1.0
             }
             val broadAmplitude = when (style) {
                 QuestTerrainStyle.VERDANT -> 9.0
                 QuestTerrainStyle.HIGHLANDS -> 10.0
                 QuestTerrainStyle.SALTMARSH -> 6.0
+                QuestTerrainStyle.CLIFFLANDS -> 11.0
+                QuestTerrainStyle.SAKURA_GROVE -> 8.0
+                QuestTerrainStyle.INFERNAL -> 9.0
             }
             val mediumAmplitude = when (style) {
                 QuestTerrainStyle.VERDANT -> 5.0
                 QuestTerrainStyle.HIGHLANDS -> 6.0
                 QuestTerrainStyle.SALTMARSH -> 3.0
+                QuestTerrainStyle.CLIFFLANDS -> 7.0
+                QuestTerrainStyle.SAKURA_GROVE -> 4.0
+                QuestTerrainStyle.INFERNAL -> 6.0
             }
             val ridgeAmplitude = when (style) {
                 QuestTerrainStyle.VERDANT -> 4.0
                 QuestTerrainStyle.HIGHLANDS -> 6.0
                 QuestTerrainStyle.SALTMARSH -> 2.5
+                QuestTerrainStyle.CLIFFLANDS -> 9.0
+                QuestTerrainStyle.SAKURA_GROVE -> 3.5
+                QuestTerrainStyle.INFERNAL -> 7.0
             }
-            val detailAmplitude = if (style == QuestTerrainStyle.HIGHLANDS) 1.8 else 1.3
+            val detailAmplitude = when (style) {
+                QuestTerrainStyle.HIGHLANDS, QuestTerrainStyle.CLIFFLANDS, QuestTerrainStyle.INFERNAL -> 1.8
+                else -> 1.3
+            }
+            val conceptHeight = when (style) {
+                QuestTerrainStyle.CLIFFLANDS -> {
+                    val shelfSource = broad * 8.0 + medium * 6.0
+                    (shelfSource / 5.0).roundToInt() * 5.0 - shelfSource * 0.42 + maxOf(0.0, ridge - 0.52) * 12.0
+                }
+                QuestTerrainStyle.SAKURA_GROVE -> -maxOf(0.0, -broad) * 3.0
+                QuestTerrainStyle.INFERNAL -> {
+                    val fracture = abs(valueNoise(seed xor 0x494E4645524E414CL, x / 21.0, z / 21.0))
+                    maxOf(0.0, fracture - 0.38) * 9.0
+                }
+                else -> 0.0
+            }
             val authoredHeight = landforms.sumOf { landform -> landform.heightAt(x, z) }
             val profileHeight = when (profile) {
                 QuestTerrainProfile.ROLLING -> 0.0
@@ -317,7 +344,7 @@ internal object VerdantRoadQuestPlanner {
             }
             (
                 BASE_GROUND_Y + styleOffset + broad * broadAmplitude + medium * mediumAmplitude +
-                    (ridge - 0.45) * ridgeAmplitude + detail * detailAmplitude + authoredHeight + profileHeight
+                    (ridge - 0.45) * ridgeAmplitude + detail * detailAmplitude + authoredHeight + profileHeight + conceptHeight
                 ).roundToInt()
         }
     }
@@ -339,6 +366,9 @@ internal object VerdantRoadQuestPlanner {
             QuestTerrainStyle.VERDANT -> 13.0
             QuestTerrainStyle.HIGHLANDS -> 16.0
             QuestTerrainStyle.SALTMARSH -> 10.0
+            QuestTerrainStyle.CLIFFLANDS -> 18.0
+            QuestTerrainStyle.SAKURA_GROVE -> 13.0
+            QuestTerrainStyle.INFERNAL -> 16.0
         }
         val result = mutableListOf(
             Landform(
@@ -374,7 +404,10 @@ internal object VerdantRoadQuestPlanner {
                 center = center,
                 radiusX = 30.0 + random.nextInt(16),
                 radiusZ = 24.0 + random.nextInt(13),
-                height = (if (style == QuestTerrainStyle.HIGHLANDS) 8 else 7).toDouble() + random.nextInt(6),
+                height = when (style) {
+                    QuestTerrainStyle.HIGHLANDS, QuestTerrainStyle.CLIFFLANDS, QuestTerrainStyle.INFERNAL -> 9.0
+                    else -> 7.0
+                } + random.nextInt(6),
                 angle = random.nextDouble() * Math.PI,
             )
         }
@@ -400,7 +433,12 @@ internal object VerdantRoadQuestPlanner {
                 ),
                 radiusX = 34.0 + random.nextInt(18),
                 radiusZ = 26.0 + random.nextInt(14),
-                height = if (style == QuestTerrainStyle.SALTMARSH) -4.0 else -7.0 - random.nextInt(4),
+                height = when (style) {
+                    QuestTerrainStyle.SALTMARSH -> -4.0
+                    QuestTerrainStyle.CLIFFLANDS -> -11.0 - random.nextInt(5)
+                    QuestTerrainStyle.INFERNAL -> -9.0 - random.nextInt(4)
+                    else -> -7.0 - random.nextInt(4)
+                },
                 angle = random.nextDouble() * Math.PI,
             )
         }
@@ -553,6 +591,9 @@ internal object VerdantRoadQuestPlanner {
         capExplorationRelief(shaped, maximumRange = 48)
         protectRoadShoulders(shaped, route, routeHeights, nearestMain)
         ensureBossOcclusion(shaped, route.first(), route.last(), nearest, contents)
+        // The final occlusion pass may lift a crest by a block. Keep the player-facing
+        // exploration contract authoritative after every terrain mutation.
+        capExplorationRelief(shaped, maximumRange = 48)
         return shaped
     }
 
@@ -889,9 +930,16 @@ internal object VerdantRoadQuestPlanner {
                     waterDistances[offset] <= 3 -> QuestGroundCover.SHORE
                     slope >= 3 -> QuestGroundCover.ROCKY
                     style == QuestTerrainStyle.SALTMARSH && (waterDistances[offset] <= 9 || center <= QUEST_WATER_LEVEL + 4) -> QuestGroundCover.PEAT
+                    style == QuestTerrainStyle.CLIFFLANDS && (center >= 67 || slope >= 2) -> QuestGroundCover.ROCKY
+                    style == QuestTerrainStyle.INFERNAL && (center >= 66 || slope >= 2) -> QuestGroundCover.ROCKY
+                    style == QuestTerrainStyle.INFERNAL && moisture > 0.25 -> QuestGroundCover.PEAT
+                    style == QuestTerrainStyle.INFERNAL && canopy < -0.20 -> QuestGroundCover.HEATH
+                    style == QuestTerrainStyle.INFERNAL && canopy > 0.22 -> QuestGroundCover.FOREST_FLOOR
+                    style == QuestTerrainStyle.INFERNAL -> QuestGroundCover.MEADOW
                     style == QuestTerrainStyle.HIGHLANDS && (center >= 70 || moisture < -0.30) -> QuestGroundCover.HEATH
+                    style == QuestTerrainStyle.SAKURA_GROVE && canopy + moisture * 0.25 > -0.18 -> QuestGroundCover.FOREST_FLOOR
                     canopy + moisture * 0.35 > 0.12 -> QuestGroundCover.FOREST_FLOOR
-                    moisture < -0.32 || (style == QuestTerrainStyle.HIGHLANDS && center >= 62) -> QuestGroundCover.HEATH
+                    moisture < -0.32 || ((style == QuestTerrainStyle.HIGHLANDS || style == QuestTerrainStyle.CLIFFLANDS) && center >= 62) -> QuestGroundCover.HEATH
                     else -> QuestGroundCover.MEADOW
                 }
                 groundCovers[offset] = cover.ordinal

@@ -56,9 +56,12 @@ internal object QuestMapSchematicCatalog {
             QuestTerrainStyle.VERDANT -> lushOak + oldLivingForest + deadTrees.take(1)
             QuestTerrainStyle.HIGHLANDS -> spruce + deadTrees.take(2)
             QuestTerrainStyle.SALTMARSH -> swamp + oldLivingForest + deadTrees.takeLast(1)
+            QuestTerrainStyle.CLIFFLANDS -> spruce + oldLivingForest + deadTrees
+            QuestTerrainStyle.SAKURA_GROVE -> lushOak + oldLivingForest + deadTrees.take(1)
+            QuestTerrainStyle.INFERNAL -> deadTrees + oldLivingForest + swamp
         }
         val asset = candidates[Math.floorMod(variation, candidates.size)]
-        return Selection(asset) { state, _ -> treePalette(state, style) }
+        return Selection(asset) { state, voxel -> treePalette(state, style, variation, voxel) }
     }
 
     fun selectBoulder(style: QuestTerrainStyle, variation: Int): Selection {
@@ -80,7 +83,12 @@ internal object QuestMapSchematicCatalog {
         input.use { SpongeSchematicAsset.read("$family/$name", it, anchorMode) }
     }
 
-    private fun treePalette(state: String, style: QuestTerrainStyle): String = when (style) {
+    private fun treePalette(
+        state: String,
+        style: QuestTerrainStyle,
+        variation: Int,
+        voxel: SchematicVoxel,
+    ): String = when (style) {
         QuestTerrainStyle.VERDANT -> state
         QuestTerrainStyle.HIGHLANDS -> state
             .replace("minecraft:oak_", "minecraft:spruce_")
@@ -89,6 +97,30 @@ internal object QuestMapSchematicCatalog {
             .replace("minecraft:dark_oak_", "minecraft:mangrove_")
             .replace("minecraft:oak_", "minecraft:mangrove_")
             .replace("minecraft:spruce_", "minecraft:mangrove_")
+        QuestTerrainStyle.CLIFFLANDS -> state
+            .replace("minecraft:dark_oak_", "minecraft:spruce_")
+            .replace("minecraft:oak_", "minecraft:spruce_")
+        QuestTerrainStyle.SAKURA_GROVE -> state
+            .replace("minecraft:dark_oak_", "minecraft:cherry_")
+            .replace("minecraft:oak_", "minecraft:cherry_")
+            .replace("minecraft:spruce_", "minecraft:cherry_")
+        QuestTerrainStyle.INFERNAL -> infernalTreeState(state, variation, voxel)
+    }
+
+    private fun infernalTreeState(state: String, variation: Int, voxel: SchematicVoxel): String {
+        val name = state.substringBefore('[')
+        val axis = Regex("axis=(x|y|z)").find(state)?.groupValues?.get(1) ?: "y"
+        val warped = Math.floorMod(variation + voxel.x * 3 + voxel.z * 5, 7) == 0
+        return when {
+            name.endsWith("_leaves") || name.endsWith("_wart_block") ->
+                if (warped) "minecraft:warped_wart_block" else "minecraft:nether_wart_block"
+            name.endsWith("_log") || name.endsWith("_stem") ->
+                if (warped) "minecraft:warped_stem[axis=$axis]" else "minecraft:crimson_stem[axis=$axis]"
+            name.endsWith("_wood") || name.endsWith("_hyphae") ->
+                if (warped) "minecraft:warped_hyphae[axis=$axis]" else "minecraft:crimson_hyphae[axis=$axis]"
+            name.endsWith("_roots") -> if (warped) "minecraft:warped_roots" else "minecraft:crimson_roots"
+            else -> state
+        }
     }
 
     private fun rockPalette(
@@ -122,6 +154,23 @@ internal object QuestMapSchematicCatalog {
                 color < 3 -> "minecraft:mossy_cobblestone"
                 color < 6 -> "minecraft:mud_bricks"
                 else -> "minecraft:stone"
+            }
+            QuestTerrainStyle.CLIFFLANDS -> when {
+                color < 2 -> "minecraft:calcite"
+                color < 6 -> "minecraft:andesite"
+                color == 12 -> "minecraft:terracotta"
+                else -> "minecraft:stone"
+            }
+            QuestTerrainStyle.SAKURA_GROVE -> when {
+                color < 3 -> "minecraft:mossy_cobblestone"
+                color < 5 -> "minecraft:calcite"
+                else -> "minecraft:stone"
+            }
+            QuestTerrainStyle.INFERNAL -> when {
+                color < 3 -> "minecraft:basalt"
+                color < 7 -> "minecraft:blackstone"
+                color == 12 -> "minecraft:magma_block"
+                else -> "minecraft:netherrack"
             }
         }
     }
