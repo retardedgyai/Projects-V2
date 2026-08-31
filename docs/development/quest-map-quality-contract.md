@@ -107,3 +107,24 @@ Automation cannot certify beauty, but it must reject common failures:
 Review at least twelve deterministic seeds spanning all four route layouts and all six terrain concepts, including every permanent regression seed. Capture spawn, first bend, one combat scene, one gathering branch, one discovery, boss threshold, liquid edge, forest interior, and a high overview.
 
 A seed is rejected when any reviewer cannot answer “what is this place for?”, sees a repeated generator trick, notices a floating/pasted asset, or must fight the terrain to explore. Passing metrics is necessary but never sufficient.
+
+## Generate, judge, discard
+
+The live ready pool does not accept the first valid heightfield. For each requested ecology it now
+generates four deterministic candidates, measures them, and loads only the best candidate into a
+Minestom instance. Candidate seed spacing preserves the requested ecology, so selection cannot
+silently turn a cherry-valley request into a nether or cliff concept.
+
+The scenic score rewards height-band range, ecological ground transitions, varied local relief,
+off-road landmark potential, a useful route detour, and delayed boss visibility. It penalizes the
+share of sampled terrain that is too steep for ordinary exploration. The lower-scoring candidates
+are discarded before chunk generation and decoration, and the two winning maps are prepared in
+the background ready pool. Manual smoke seeds intentionally use one exact candidate so a reported
+seed always reproduces the same failure.
+
+`QuestMapPlanProvider` is the import boundary for a future external terrain source. Terra's current
+Minestom platform targets Minecraft 1.21.8 rather than ProjectS's 26.2 protocol, so it is not linked
+directly into the live server. The compatible path is an offline provider that generates Anvil
+regions, validates and converts them into a `QuestMapPlan`, then reuses the same quest, route,
+encounter, gathering, boss, and ready-pool layers. External terrain must pass this contract; its
+brand name never exempts it from automated or manual review.

@@ -1117,7 +1117,10 @@ internal object VerdantRoadQuestDecorator {
 }
 
 internal class VerdantRoadQuestRuntime private constructor(
+    val requestedSeed: Long,
     val plan: QuestMapPlan,
+    val candidateScore: QuestMapCandidateScore,
+    val candidateCount: Int,
     val instance: InstanceContainer,
     val spawn: Pos,
     val preparationMillis: Long,
@@ -1129,9 +1132,13 @@ internal class VerdantRoadQuestRuntime private constructor(
     }
 
     companion object {
-        fun prepare(seed: Long): CompletableFuture<VerdantRoadQuestRuntime> {
+        fun prepare(
+            seed: Long,
+            candidateCount: Int = QuestMapCandidateSelector.DEFAULT_CANDIDATE_COUNT,
+        ): CompletableFuture<VerdantRoadQuestRuntime> {
             val startedAt = System.nanoTime()
-            val plan = VerdantRoadQuestPlanner.generate(seed)
+            val selection = QuestMapCandidateSelector.select(seed, candidateCount)
+            val plan = selection.plan
             val instance = MinecraftServer.getInstanceManager().createInstanceContainer()
             instance.setTime(6000)
             instance.defaultClock()?.pause()
@@ -1151,11 +1158,14 @@ internal class VerdantRoadQuestRuntime private constructor(
                 VerdantRoadQuestDecorator.decorate(instance, plan)
                 val spawn = Pos(plan.start.x + 0.5, plan.heightAt(plan.start) + 1.0, plan.start.z + 0.5)
                 VerdantRoadQuestRuntime(
-                    plan,
-                    instance,
-                    spawn,
-                    (System.nanoTime() - startedAt) / 1_000_000,
-                    chunkCoordinates.size,
+                    requestedSeed = selection.requestedSeed,
+                    plan = plan,
+                    candidateScore = selection.score,
+                    candidateCount = selection.attemptedCandidates,
+                    instance = instance,
+                    spawn = spawn,
+                    preparationMillis = (System.nanoTime() - startedAt) / 1_000_000,
+                    loadedChunkCount = chunkCoordinates.size,
                 )
             }.whenComplete { _, failure ->
                 if (failure != null) MinecraftServer.getInstanceManager().unregisterInstance(instance)
@@ -1212,7 +1222,7 @@ internal class VerdantRoadQuestService(
             return CompletableFuture.completedFuture(false)
         }
         player.sendMessage(Component.text("Preparing manual-smoke seed $seed...", NamedTextColor.GRAY))
-        return VerdantRoadQuestRuntime.prepare(seed).thenCompose { runtime ->
+        return VerdantRoadQuestRuntime.prepare(seed, candidateCount = 1).thenCompose { runtime ->
             enterRuntime(player, runtime, returnToReadyOnFailure = false)
         }
     }
@@ -1241,6 +1251,7 @@ internal class VerdantRoadQuestService(
                     Component.text(
                         "Verdant Road seed=${runtime.plan.seed} style=${runtime.plan.style} layout=${runtime.plan.routeLayout} " +
                             "terrain=${runtime.plan.terrainProfile} chunks=${runtime.loadedChunkCount} " +
+                            "candidates=${runtime.candidateCount} score=${"%.2f".format(runtime.candidateScore.total)} " +
                             "ready=${runtime.preparationMillis}ms transfer=${transferMillis}ms",
                         NamedTextColor.GREEN,
                     ),
@@ -1295,7 +1306,9 @@ internal class VerdantRoadQuestService(
             println(
                 "QUEST_MAP_READY seed=${runtime.plan.seed} style=${runtime.plan.style} " +
                     "layout=${runtime.plan.routeLayout} terrain=${runtime.plan.terrainProfile} " +
-                    "size=${runtime.plan.size} chunks=${runtime.loadedChunkCount} preparation=${runtime.preparationMillis}ms",
+                    "size=${runtime.plan.size} chunks=${runtime.loadedChunkCount} " +
+                    "candidates=${runtime.candidateCount} score=${"%.2f".format(runtime.candidateScore.total)} " +
+                    "preparation=${runtime.preparationMillis}ms",
             )
         }
     }
