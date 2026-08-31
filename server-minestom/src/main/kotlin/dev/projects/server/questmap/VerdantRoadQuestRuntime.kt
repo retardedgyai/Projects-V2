@@ -334,16 +334,16 @@ internal object VerdantRoadQuestDecorator {
     private fun scenicAnchors(plan: QuestMapPlan): List<QuestMapPoint> {
         val random = Random(plan.seed xor 0x5343454E49434CL)
         val result = mutableListOf<QuestMapPoint>()
-        repeat(1_600) {
-            if (result.size >= 20) return@repeat
+        repeat(4_000) {
+            if (result.size >= 34) return@repeat
             val point = QuestMapPoint(
                 22 + random.nextInt(plan.size - 44),
                 22 + random.nextInt(plan.size - 44),
             )
             val roadDistance = plan.roadDistanceSquaredAt(point.x, point.z)
-            if (roadDistance !in 13 * 13..48 * 48) return@repeat
+            if (roadDistance !in 15 * 15..62 * 62) return@repeat
             if (plan.contents.any { it.position.distanceSquared(point) < 20 * 20 }) return@repeat
-            if (result.any { it.distanceSquared(point) < 30 * 30 }) return@repeat
+            if (result.any { it.distanceSquared(point) < 34 * 34 }) return@repeat
             if (terrainRange(plan, point, 8) > 5 || plan.slopeAt(point) > 2) return@repeat
             result += point
         }
@@ -378,21 +378,31 @@ internal object VerdantRoadQuestDecorator {
                 }
             }
 
+            val turns = random.nextInt(4)
+            val mirrored = random.nextBoolean()
+            fun compositionPoint(dx: Int, dz: Int): QuestMapPoint {
+                val mirrorX = if (mirrored) -dx else dx
+                val (rotatedX, rotatedZ) = when (turns) {
+                    0 -> mirrorX to dz
+                    1 -> -dz to mirrorX
+                    2 -> -mirrorX to -dz
+                    else -> dz to -mirrorX
+                }
+                return QuestMapPoint(center.x + rotatedX, center.z + rotatedZ)
+            }
             val placements = listOf(
                 -7 to -3,
                 6 to -5,
                 -4 to 7,
                 7 to 5,
                 0 to 0,
-            ).map { (dx, dz) -> QuestMapPoint(center.x + dx, center.z + dz) }
+            ).map { (dx, dz) -> compositionPoint(dx, dz) }
             when (cover) {
                 QuestGroundCover.ROCKY -> {
-                    placements.forEachIndexed { index, point ->
-                        if (terrainRange(plan, point, 4) <= 4) {
-                            QuestMapStructureAssets.placeBoulder(instance, plan, point, ordinal * 101 + index, index)
-                        }
+                    QuestMapStructureAssets.placeRockOutcrop(instance, plan, center, ordinal * 101, turns)
+                    if (plan.style != QuestTerrainStyle.CLIFFLANDS) {
+                        QuestMapStructureAssets.placeShrubCluster(instance, plan, compositionPoint(-10, 2), ordinal, ordinal)
                     }
-                    QuestMapStructureAssets.placeShrubCluster(instance, plan, QuestMapPoint(center.x - 10, center.z + 2), ordinal, ordinal)
                 }
                 QuestGroundCover.FOREST_FLOOR -> {
                     placements.take(3).forEachIndexed { index, point ->
@@ -422,7 +432,7 @@ internal object VerdantRoadQuestDecorator {
                         if (terrainRange(plan, placements[2], 5) <= 3) {
                             QuestMapStructureAssets.placeTree(instance, plan, placements[2], ordinal * 53 + 1, random.nextInt(4))
                         }
-                        QuestMapStructureAssets.placeBoulder(instance, plan, placements[3], ordinal * 59, ordinal + 2)
+                        QuestMapStructureAssets.placeRockOutcrop(instance, plan, placements[3], ordinal * 59, ordinal + 2)
                         QuestMapStructureAssets.placeFallenLog(instance, plan, placements[4], 6, ordinal, ordinal)
                     } else {
                         placements.drop(2).forEachIndexed { index, point ->
@@ -439,12 +449,12 @@ internal object VerdantRoadQuestDecorator {
         val occupied = mutableListOf<Pair<QuestMapPoint, Int>>()
         val groveCenters = List(
             when (plan.style) {
-                QuestTerrainStyle.VERDANT -> 20
-                QuestTerrainStyle.HIGHLANDS -> 16
-                QuestTerrainStyle.SALTMARSH -> 15
-                QuestTerrainStyle.CLIFFLANDS -> 14
-                QuestTerrainStyle.SAKURA_GROVE -> 24
-                QuestTerrainStyle.INFERNAL -> 17
+                QuestTerrainStyle.VERDANT -> 38
+                QuestTerrainStyle.HIGHLANDS -> 30
+                QuestTerrainStyle.SALTMARSH -> 28
+                QuestTerrainStyle.CLIFFLANDS -> 26
+                QuestTerrainStyle.SAKURA_GROVE -> 44
+                QuestTerrainStyle.INFERNAL -> 31
             },
         ) {
             QuestMapPoint(
@@ -453,18 +463,18 @@ internal object VerdantRoadQuestDecorator {
             )
         }
         val attempts = when (plan.style) {
-            QuestTerrainStyle.VERDANT -> 1_520
-            QuestTerrainStyle.HIGHLANDS -> 1_120
-            QuestTerrainStyle.SALTMARSH -> 960
-            QuestTerrainStyle.CLIFFLANDS -> 880
-            QuestTerrainStyle.SAKURA_GROVE -> 1_840
-            QuestTerrainStyle.INFERNAL -> 1_080
+            QuestTerrainStyle.VERDANT -> 2_900
+            QuestTerrainStyle.HIGHLANDS -> 2_100
+            QuestTerrainStyle.SALTMARSH -> 1_850
+            QuestTerrainStyle.CLIFFLANDS -> 1_700
+            QuestTerrainStyle.SAKURA_GROVE -> 3_450
+            QuestTerrainStyle.INFERNAL -> 2_000
         }
         repeat(attempts) {
             val point = if (random.nextInt(100) < 78) {
                 val grove = groveCenters[random.nextInt(groveCenters.size)]
                 val angle = random.nextDouble() * Math.PI * 2.0
-                val radius = 5.0 + random.nextDouble() * 29.0
+                val radius = 5.0 + random.nextDouble() * 38.0
                 QuestMapPoint(
                     (grove.x + Math.cos(angle) * radius).roundToInt().coerceIn(10, plan.size - 11),
                     (grove.z + Math.sin(angle) * radius).roundToInt().coerceIn(10, plan.size - 11),
@@ -508,7 +518,7 @@ internal object VerdantRoadQuestDecorator {
     private fun decorateTerrainDetail(instance: Instance, plan: QuestMapPlan, scenicAnchors: List<QuestMapPoint>) {
         val random = Random(plan.seed xor 0x5445525241494EL)
         val occupiedScenes = mutableListOf<QuestMapPoint>()
-        repeat(5_600) {
+        repeat(10_500) {
             val point = QuestMapPoint(8 + random.nextInt(plan.size - 16), 8 + random.nextInt(plan.size - 16))
             if (plan.roadDistanceSquaredAt(point.x, point.z) <= 4 * 4) return@repeat
             if (plan.contents.any { it.position.distanceSquared(point) < 6 * 6 }) return@repeat
@@ -553,7 +563,7 @@ internal object VerdantRoadQuestDecorator {
                         QuestMapStructureAssets.placeBoulder(instance, plan, point, random.nextInt(), assetRotation)
                         rememberScene()
                     }
-                    roll < (if (plan.style == QuestTerrainStyle.CLIFFLANDS) 18 else 25) && sceneClear(6) && terrainRange(plan, point, 3) <= 2 -> {
+                    plan.style != QuestTerrainStyle.CLIFFLANDS && roll < 25 && sceneClear(6) && terrainRange(plan, point, 3) <= 2 -> {
                         QuestMapStructureAssets.placeShrubCluster(instance, plan, point, random.nextInt(), assetRotation)
                         rememberScene()
                     }
@@ -605,7 +615,7 @@ internal object VerdantRoadQuestDecorator {
                         QuestMapStructureAssets.placeBoulder(instance, plan, point, random.nextInt(), assetRotation)
                         rememberScene()
                     }
-                    roll < 17 && sceneClear(6) && terrainRange(plan, point, 3) <= 2 -> {
+                    plan.style != QuestTerrainStyle.CLIFFLANDS && roll < 17 && sceneClear(6) && terrainRange(plan, point, 3) <= 2 -> {
                         QuestMapStructureAssets.placeShrubCluster(instance, plan, point, random.nextInt(), assetRotation)
                         rememberScene()
                     }
@@ -635,7 +645,7 @@ internal object VerdantRoadQuestDecorator {
 
     private fun decorateWaterEdges(instance: Instance, plan: QuestMapPlan) {
         val random = Random(plan.seed xor 0x5741544552454447L)
-        repeat(2_200) {
+        repeat(4_000) {
             val point = QuestMapPoint(8 + random.nextInt(plan.size - 16), 8 + random.nextInt(plan.size - 16))
             if (plan.roadDistanceSquaredAt(point.x, point.z) <= 4 * 4) return@repeat
             if (plan.contents.any { it.position.distanceSquared(point) < 7 * 7 }) return@repeat

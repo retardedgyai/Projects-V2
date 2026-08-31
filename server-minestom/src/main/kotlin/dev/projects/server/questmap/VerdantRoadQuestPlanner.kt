@@ -8,12 +8,12 @@ import kotlin.math.floor
 import kotlin.math.roundToInt
 import kotlin.math.sin
 
-/** One concrete 320x320 quest map: authored rhythm over deterministic procedural terrain. */
+/** One concrete 448x448 quest map: authored rhythm over deterministic procedural terrain. */
 internal object VerdantRoadQuestPlanner {
     private const val DESIGN_SIZE = 224
-    const val MAP_SIZE = 320
-    const val PLAYABLE_BORDER = 16
-    private const val ROAD_BLEND_RADIUS = 28
+    const val MAP_SIZE = 448
+    const val PLAYABLE_BORDER = 20
+    private const val ROAD_BLEND_RADIUS = 34
     private const val BASE_GROUND_Y = 52
 
     private fun scaleDesign(value: Int): Int = (value * MAP_SIZE.toDouble() / DESIGN_SIZE).roundToInt()
@@ -169,12 +169,12 @@ internal object VerdantRoadQuestPlanner {
         val result = mutableListOf<QuestMapContent>()
         result += QuestMapContent(QuestMapContentKind.START, route.first(), 0, optional = false)
 
-        listOf(0.15, 0.32, 0.50, 0.68, 0.84).forEach { fraction ->
+        listOf(0.11, 0.23, 0.36, 0.49, 0.62, 0.75, 0.88).forEach { fraction ->
             val routeIndex = (route.lastIndex * fraction).roundToInt()
             result += QuestMapContent(QuestMapContentKind.COMBAT, route[routeIndex], routeIndex, optional = false)
         }
 
-        listOf(0.09, 0.24, 0.39, 0.55, 0.71, 0.88).forEachIndexed { ordinal, fraction ->
+        listOf(0.07, 0.18, 0.30, 0.42, 0.56, 0.69, 0.81, 0.92).forEachIndexed { ordinal, fraction ->
             val routeIndex = (route.lastIndex * fraction).roundToInt()
             val anchor = route[routeIndex]
             val branch = uniqueBranch(
@@ -189,7 +189,7 @@ internal object VerdantRoadQuestPlanner {
             result += QuestMapContent(QuestMapContentKind.GATHERING, branch.last(), routeIndex, optional = true)
         }
 
-        listOf(0.20, 0.43, 0.63, 0.78).forEachIndexed { ordinal, fraction ->
+        listOf(0.14, 0.28, 0.45, 0.60, 0.73, 0.84).forEachIndexed { ordinal, fraction ->
             val routeIndex = (route.lastIndex * fraction).roundToInt()
             val anchor = route[routeIndex]
             val branch = uniqueBranch(
@@ -274,10 +274,10 @@ internal object VerdantRoadQuestPlanner {
         return IntArray(MAP_SIZE * MAP_SIZE) { offset ->
             val x = offset % MAP_SIZE
             val z = offset / MAP_SIZE
-            val broad = valueNoise(seed xor 0x51A4C3L, x / 118.0, z / 118.0)
-            val medium = valueNoise(seed xor 0x137F29L, x / 45.0, z / 45.0)
-            val detail = valueNoise(seed xor 0x6C8E9FL, x / 15.0, z / 15.0)
-            val ridge = 1.0 - abs(valueNoise(seed xor 0x5249444745L, x / 62.0, z / 62.0))
+            val broad = valueNoise(seed xor 0x51A4C3L, x / 158.0, z / 158.0)
+            val medium = valueNoise(seed xor 0x137F29L, x / 60.0, z / 60.0)
+            val detail = valueNoise(seed xor 0x6C8E9FL, x / 19.0, z / 19.0)
+            val ridge = 1.0 - abs(valueNoise(seed xor 0x5249444745L, x / 84.0, z / 84.0))
             val styleOffset = when (style) {
                 QuestTerrainStyle.VERDANT -> 0.0
                 QuestTerrainStyle.HIGHLANDS -> 6.0
@@ -316,8 +316,14 @@ internal object VerdantRoadQuestPlanner {
             }
             val conceptHeight = when (style) {
                 QuestTerrainStyle.CLIFFLANDS -> {
-                    val shelfSource = broad * 8.0 + medium * 6.0
-                    (shelfSource / 5.0).roundToInt() * 5.0 - shelfSource * 0.42 + maxOf(0.0, ridge - 0.52) * 12.0
+                    // Broad ridges with local shelves, never a map-wide contour staircase.
+                    val shelfMask = smooth(
+                        ((valueNoise(seed xor 0x434C49464653484CL, x / 126.0, z / 126.0) + 0.18) * 0.85)
+                            .coerceIn(0.0, 1.0),
+                    )
+                    val shelfSource = broad * 5.0 + medium * 3.0
+                    val localShelf = ((shelfSource / 7.0).roundToInt() * 7.0 - shelfSource) * 0.28 * shelfMask
+                    localShelf + maxOf(0.0, ridge - 0.58) * 9.0
                 }
                 QuestTerrainStyle.SAKURA_GROVE -> -maxOf(0.0, -broad) * 3.0
                 QuestTerrainStyle.INFERNAL -> {
@@ -332,16 +338,25 @@ internal object VerdantRoadQuestPlanner {
                 QuestTerrainProfile.RIDGED -> (ridge - 0.48) * 8.0
                 QuestTerrainProfile.TERRACED -> {
                     val terraceSource = broad * broadAmplitude + medium * mediumAmplitude
-                    (terraceSource / 4.0).roundToInt() * 4.0 - terraceSource
+                    val regionalMask = smooth(
+                        ((valueNoise(seed xor 0x5445525241434544L, x / 138.0, z / 138.0) + 0.12) * 0.82)
+                            .coerceIn(0.0, 1.0),
+                    )
+                    ((terraceSource / 7.0).roundToInt() * 7.0 - terraceSource) * 0.34 * regionalMask
                 }
                 QuestTerrainProfile.BASIN -> {
-                    val dx = (x - MAP_SIZE / 2.0) / (MAP_SIZE * 0.44)
-                    val dz = (z - MAP_SIZE / 2.0) / (MAP_SIZE * 0.44)
-                    val radial = (dx * dx + dz * dz).coerceIn(0.0, 1.0)
-                    -10.0 * (1.0 - radial) + 5.0 * radial
+                    // An offset, noise-warped valley. The old radial parabola produced the
+                    // unmistakable artificial quarry visible in manual smoke screenshots.
+                    val warpX = valueNoise(seed xor 0x424153494E58L, x / 112.0, z / 112.0) * MAP_SIZE * 0.075
+                    val warpZ = valueNoise(seed xor 0x424153494E5AL, x / 131.0, z / 131.0) * MAP_SIZE * 0.065
+                    val dx = (x + warpX - MAP_SIZE * 0.47) / (MAP_SIZE * 0.52)
+                    val dz = (z + warpZ - MAP_SIZE * 0.54) / (MAP_SIZE * 0.38)
+                    val distance = kotlin.math.sqrt(dx * dx + dz * dz)
+                    val valley = 1.0 - smooth(distance.coerceIn(0.0, 1.0))
+                    -7.0 * valley + medium * 1.4
                 }
                 QuestTerrainProfile.BROKEN_HILLS -> {
-                    val cells = valueNoise(seed xor 0x42524F4B454EL, x / 29.0, z / 29.0)
+                    val cells = valueNoise(seed xor 0x42524F4B454EL, x / 38.0, z / 38.0)
                     maxOf(0.0, cells) * 8.0 - 1.0
                 }
             }
@@ -453,7 +468,10 @@ internal object VerdantRoadQuestPlanner {
         val dz = z - center.z
         val rotatedX = dx * cos(angle) - dz * sin(angle)
         val rotatedZ = dx * sin(angle) + dz * cos(angle)
-        val distance = (rotatedX * rotatedX) / (radiusX * radiusX) + (rotatedZ * rotatedZ) / (radiusZ * radiusZ)
+        val edgeWarp = sin(rotatedX * 0.071 + angle * 2.7) * 0.055 +
+            sin(rotatedZ * 0.093 - angle * 1.9) * 0.045
+        val distance = (rotatedX * rotatedX) / (radiusX * radiusX) +
+            (rotatedZ * rotatedZ) / (radiusZ * radiusZ) + edgeWarp
         if (distance >= 1.0) return 0.0
         val influence = 1.0 - distance
         return height * influence * influence

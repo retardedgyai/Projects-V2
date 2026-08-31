@@ -5,6 +5,9 @@ package dev.projects.server.questmap
  * beside the resource files. Selection is deterministic so a seed can always be reviewed again.
  */
 internal object QuestMapSchematicCatalog {
+    internal const val SOURCE_URL = "https://github.com/sijmenvb/worldpainter-trees"
+    internal const val SOURCE_LICENSE = "MIT"
+
     internal data class Selection(
         val asset: SpongeSchematicAsset,
         val palette: (String, SchematicVoxel) -> String,
@@ -51,26 +54,49 @@ internal object QuestMapSchematicCatalog {
         SchematicAnchorMode.BURIED_MASS,
     )
 
-    fun selectTree(style: QuestTerrainStyle, variation: Int): Selection {
-        val candidates = when (style) {
-            QuestTerrainStyle.VERDANT -> lushOak + oldLivingForest + deadTrees.take(1)
-            QuestTerrainStyle.HIGHLANDS -> spruce + deadTrees.take(2)
-            QuestTerrainStyle.SALTMARSH -> swamp + oldLivingForest + deadTrees.takeLast(1)
-            QuestTerrainStyle.CLIFFLANDS -> spruce + oldLivingForest + deadTrees
-            QuestTerrainStyle.SAKURA_GROVE -> lushOak + oldLivingForest + deadTrees.take(1)
-            QuestTerrainStyle.INFERNAL -> deadTrees + oldLivingForest + swamp
+    private fun reviewedTrees(candidates: List<SpongeSchematicAsset>): List<SpongeSchematicAsset> {
+        val reviewed = candidates.filter { asset ->
+            asset.height >= 11 && asset.footprintRadius >= 3 && asset.voxels.size >= 48
         }
+        require(reviewed.size >= 4) { "A production ecology needs at least four substantial tree silhouettes" }
+        return reviewed
+    }
+
+    private val productionRocks by lazy {
+        rocks.filter { asset -> asset.height >= 3 && asset.footprintRadius >= 2 && asset.voxels.size >= 10 }
+            .also { require(it.size >= 4) { "Production rock catalog lacks substantial silhouettes" } }
+    }
+
+    private val productionTreePools by lazy {
+        QuestTerrainStyle.entries.associateWith { style -> reviewedTrees(treeCandidates(style)) }
+    }
+
+    fun selectTree(style: QuestTerrainStyle, variation: Int): Selection {
+        val candidates = productionTreePools.getValue(style)
         val asset = candidates[Math.floorMod(variation, candidates.size)]
         return Selection(asset) { state, voxel -> treePalette(state, style, variation, voxel) }
     }
 
     fun selectBoulder(style: QuestTerrainStyle, variation: Int): Selection {
-        val asset = rocks[Math.floorMod(variation, rocks.size)]
+        val asset = productionRocks[Math.floorMod(variation, productionRocks.size)]
         return Selection(asset) { state, voxel -> rockPalette(state, style, variation, voxel) }
     }
 
     internal fun allAssets(): List<SpongeSchematicAsset> =
         lushOak + spruce + swamp + oldLivingForest + deadTrees + rocks
+
+    internal fun productionTrees(style: QuestTerrainStyle): List<SpongeSchematicAsset> = productionTreePools.getValue(style)
+
+    internal fun productionBoulders(): List<SpongeSchematicAsset> = productionRocks
+
+    private fun treeCandidates(style: QuestTerrainStyle): List<SpongeSchematicAsset> = when (style) {
+        QuestTerrainStyle.VERDANT -> lushOak + oldLivingForest + deadTrees.take(1)
+        QuestTerrainStyle.HIGHLANDS -> spruce + deadTrees.take(2)
+        QuestTerrainStyle.SALTMARSH -> swamp + oldLivingForest + deadTrees.takeLast(1)
+        QuestTerrainStyle.CLIFFLANDS -> spruce + oldLivingForest + deadTrees
+        QuestTerrainStyle.SAKURA_GROVE -> lushOak + oldLivingForest + deadTrees.take(1)
+        QuestTerrainStyle.INFERNAL -> deadTrees + oldLivingForest + swamp
+    }
 
     private fun loadFamily(
         family: String,
