@@ -3,11 +3,11 @@ package dev.projects.server.questmap
 import net.minestom.server.instance.Instance
 import net.minestom.server.instance.block.Block
 import kotlin.math.abs
+import kotlin.math.roundToInt
 
 /**
- * ProjectS-owned block structure catalog. These assets deliberately live behind one placement
- * boundary so authored Sponge schematics can replace or extend them later without changing the
- * terrain planner.
+ * ProjectS-owned block structure catalog. Production nature is generated here from authored
+ * silhouettes; no downloaded schematic participates in runtime selection.
  */
 internal object QuestMapStructureAssets {
     fun placeTree(
@@ -17,8 +17,14 @@ internal object QuestMapStructureAssets {
         variation: Int,
         rotation: Int,
     ) {
-        val selection = QuestMapSchematicCatalog.selectTree(plan.style, variation)
-        selection.asset.place(instance, plan, origin, rotation, selection.palette)
+        Painter(
+            instance,
+            origin.x,
+            plan.heightAt(origin) + 1,
+            origin.z,
+            rotation,
+            variation.toLong(),
+        ).signatureTree(plan, plan.style, variation)
     }
 
     fun placeBoulder(
@@ -28,12 +34,18 @@ internal object QuestMapStructureAssets {
         variation: Int,
         rotation: Int,
     ) {
-        val selection = QuestMapSchematicCatalog.selectBoulder(plan.style, variation)
-        selection.asset.place(instance, plan, origin, rotation, selection.palette)
+        Painter(
+            instance,
+            origin.x,
+            plan.heightAt(origin) + 1,
+            origin.z,
+            rotation,
+            variation.toLong(),
+        ).rockMass(plan, plan.style, variation)
     }
 
     /**
-     * Compose several licensed rock silhouettes into grounded geology. A stained apron makes the
+     * Compose several authored rock silhouettes into grounded geology. A stained apron makes the
      * mass emerge from the terrain instead of reading as an isolated schematic dropped on grass.
      */
     fun placeRockOutcrop(
@@ -73,11 +85,17 @@ internal object QuestMapStructureAssets {
         }
     }
 
-    fun treeFootprint(style: QuestTerrainStyle, variation: Int): Int =
-        QuestMapSchematicCatalog.selectTree(style, variation).asset.footprintRadius
+    fun treeFootprint(style: QuestTerrainStyle, variation: Int): Int = when (style) {
+        QuestTerrainStyle.VERDANT -> 13 + Math.floorMod(variation, 3)
+        QuestTerrainStyle.HIGHLANDS -> 9 + Math.floorMod(variation, 3)
+        QuestTerrainStyle.SALTMARSH -> 12 + Math.floorMod(variation, 3)
+        QuestTerrainStyle.CLIFFLANDS -> 13 + Math.floorMod(variation, 3)
+        QuestTerrainStyle.SAKURA_GROVE -> 13 + Math.floorMod(variation, 3)
+        QuestTerrainStyle.INFERNAL -> 13 + Math.floorMod(variation, 3)
+    }
 
     fun boulderFootprint(style: QuestTerrainStyle, variation: Int): Int =
-        QuestMapSchematicCatalog.selectBoulder(style, variation).asset.footprintRadius
+        4 + Math.floorMod(variation + style.ordinal, 3)
 
     fun placeFallenLog(
         instance: Instance,
@@ -208,7 +226,8 @@ internal object QuestMapStructureAssets {
                             abs(dy).toDouble() / (radiusY + 0.6) +
                             abs(dz).toDouble() / (radiusZ + 0.4)
                         val leafHash = Math.floorMod(
-                            assetSeed xor (dx * 734_287L) xor (dy * 912_271L) xor (dz * 438_289L),
+                            assetSeed xor ((centerX + dx) * 734_287L) xor
+                                ((centerY + dy) * 912_271L) xor ((centerZ + dz) * 438_289L),
                             11L,
                         ).toInt()
                         if (normalized <= 1.65 && leafHash >= clippedCorner) {
@@ -217,6 +236,254 @@ internal object QuestMapStructureAssets {
                     }
                 }
             }
+        }
+
+        fun signatureTree(plan: QuestMapPlan, style: QuestTerrainStyle, variation: Int) {
+            when (style) {
+                QuestTerrainStyle.VERDANT -> broadleafTree(plan, Block.DARK_OAK_LOG, Block.OAK_LEAVES, variation, veteran = variation and 3 == 0)
+                QuestTerrainStyle.HIGHLANDS -> coniferTree(plan, Block.SPRUCE_LOG, Block.SPRUCE_LEAVES, variation, sparse = variation and 3 == 0)
+                QuestTerrainStyle.SALTMARSH -> mangroveTree(plan, variation)
+                QuestTerrainStyle.CLIFFLANDS -> windsweptTree(plan, Block.SPRUCE_LOG, Block.SPRUCE_LEAVES, variation)
+                QuestTerrainStyle.SAKURA_GROVE -> broadleafTree(plan, Block.CHERRY_LOG, Block.CHERRY_LEAVES, variation, veteran = variation and 1 == 0)
+                QuestTerrainStyle.INFERNAL -> infernalTree(plan, variation)
+            }
+        }
+
+        fun rockMass(plan: QuestMapPlan, style: QuestTerrainStyle, variation: Int) {
+            val random = java.util.Random(assetSeed xor 0x524F434B4D415353L)
+            val radius = 3 + Math.floorMod(variation + style.ordinal, 3)
+            val lobes = buildList {
+                add(Triple(0 to 0, radius, maxOf(2, radius - 1)))
+                add(Triple((radius - 1) to 1, maxOf(2, radius - 2), maxOf(2, radius - 2)))
+                if (variation and 1 == 0) add(Triple((-radius + 2) to 2, maxOf(2, radius - 2), 2))
+            }
+            lobes.forEachIndexed { lobeIndex, (center, radiusX, radiusZ) ->
+                for (dz in -radiusZ..radiusZ) {
+                    for (dx in -radiusX..radiusX) {
+                        val normalized = (dx * dx).toDouble() / (radiusX * radiusX) +
+                            (dz * dz).toDouble() / (radiusZ * radiusZ)
+                        if (normalized > 1.0) continue
+                        val crown = ((1.0 - normalized) * (2.5 + radiusX * 0.55)).roundToInt().coerceAtLeast(1)
+                        for (dy in 0..crown) {
+                            val hash = Math.floorMod(variation * 31 + dx * 17 + dz * 43 + dy * 11 + lobeIndex * 7, 17)
+                            val block = rockBlock(style, hash)
+                            setGrounded(plan, center.first + dx, center.second + dz, dy, block)
+                        }
+                    }
+                }
+            }
+            repeat(3 + random.nextInt(4)) {
+                val dx = random.nextInt(radius * 2 + 3) - radius - 1
+                val dz = random.nextInt(radius * 2 + 3) - radius - 1
+                setGrounded(plan, dx, dz, 0, rockBlock(style, random.nextInt(17)))
+            }
+        }
+
+        private fun broadleafTree(
+            plan: QuestMapPlan,
+            log: Block,
+            leaves: Block,
+            variation: Int,
+            veteran: Boolean,
+        ) {
+            val random = java.util.Random(assetSeed xor 0x42524F41444C4541L)
+            val form = Math.floorMod(variation, 4)
+            val height = when (form) {
+                0 -> 22 + Math.floorMod(variation, 4)
+                1 -> 17 + Math.floorMod(variation, 3)
+                2 -> 19 + Math.floorMod(variation, 4)
+                else -> 15 + Math.floorMod(variation, 4)
+            }
+            val leanX = if (form == 2) 3 else if (form == 3) -2 else 0
+            val leanZ = if (form == 1) 2 else 0
+            roots(plan, log, if (veteran) 5 else 4, if (veteran) 7 else 5)
+            branch(0, 0, 0, leanX, height - 2, leanZ, log)
+            if (veteran) {
+                column(1, 0, 0, 6, log.withProperty("axis", "y"))
+                column(0, 1, 0, 4, log.withProperty("axis", "y"))
+            }
+            val directions = eightDirections(Math.floorMod(variation, 8))
+            val branchCount = when (form) {
+                0 -> 7
+                1 -> 5
+                2 -> 6
+                else -> 8
+            }
+            directions.take(branchCount).forEachIndexed { index, (directionX, directionZ) ->
+                val startY = height / 2 + index % 3 * 2
+                val length = when (form) {
+                    0 -> 7 + random.nextInt(3)
+                    1 -> 5 + random.nextInt(3)
+                    2 -> 6 + random.nextInt(3)
+                    else -> 5 + random.nextInt(2)
+                }
+                val endX = leanX + directionX * length
+                val endZ = leanZ + directionZ * length
+                val endY = startY + 2 + random.nextInt(4)
+                val startX = (leanX * startY.toDouble() / height).roundToInt()
+                val startZ = (leanZ * startY.toDouble() / height).roundToInt()
+                branch(startX, startY, startZ, endX, endY, endZ, log)
+                val middleX = (startX + endX) / 2
+                val middleZ = (startZ + endZ) / 2
+                val middleY = (startY + endY) / 2
+                leafCrown(middleX, middleY + 1, middleZ, 2, 1, 2, leaves, clippedCorner = 3)
+                val crownRadius = if ((veteran || form == 3) && index % 2 == 0) 4 else 3
+                leafCrown(endX, endY + 1, endZ, crownRadius, 2, crownRadius, leaves, clippedCorner = 2)
+            }
+            val crownRadius = if (veteran || form == 0) 5 else 4
+            leafCrown(leanX, height, leanZ, crownRadius, 3, crownRadius, leaves, clippedCorner = 2)
+            if (leaves == Block.CHERRY_LEAVES) {
+                repeat(12) {
+                    val dx = random.nextInt(13) - 6
+                    val dz = random.nextInt(13) - 6
+                    if (dx * dx + dz * dz <= 38) setGrounded(plan, dx, dz, 0, Block.PINK_PETALS)
+                }
+            }
+        }
+
+        private fun coniferTree(
+            plan: QuestMapPlan,
+            log: Block,
+            leaves: Block,
+            variation: Int,
+            sparse: Boolean,
+        ) {
+            val height = 22 + Math.floorMod(variation, 9)
+            roots(plan, log, 4, 5)
+            column(0, 0, 0, height, log.withProperty("axis", "y"))
+            var ring = 0
+            for (y in 5 until height - 2 step 3) {
+                val radius = (((height - y) * 0.34).roundToInt() + 1).coerceIn(2, 7)
+                val directions = eightDirections(Math.floorMod(variation + ring * 2, 8))
+                val branchCount = if (sparse) 3 else 4 + ring % 2
+                directions.take(branchCount).forEachIndexed { index, (directionX, directionZ) ->
+                    val length = (radius - if (index and 1 == 0) 0 else 1).coerceAtLeast(2)
+                    val endX = directionX * length
+                    val endZ = directionZ * length
+                    branch(0, y, 0, endX, y - 1, endZ, log)
+                    leafCrown(endX, y, endZ, 2, 1, 2, leaves, clippedCorner = if (sparse) 4 else 2)
+                }
+                leafCrown(0, y + 1, 0, 2, 1, 2, leaves, clippedCorner = if (sparse) 4 else 2)
+                ring++
+            }
+            leafCrown(0, height, 0, 2, 2, 2, leaves, clippedCorner = 2)
+        }
+
+        private fun windsweptTree(
+            plan: QuestMapPlan,
+            log: Block,
+            leaves: Block,
+            variation: Int,
+        ) {
+            val random = java.util.Random(assetSeed xor 0x57494E4453574550L)
+            val height = 18 + Math.floorMod(variation, 8)
+            roots(plan, log, 5, 6)
+            for (y in 0..height) {
+                val leanX = (y / 6).coerceAtMost(3)
+                set(leanX, y, if (y > height / 2) (y - height / 2) / 9 else 0, log.withProperty("axis", "y"))
+            }
+            val levels = listOf(height / 2, height / 2 + 4, height - 4, height - 1)
+            levels.forEachIndexed { index, y ->
+                val trunkX = (y / 6).coerceAtMost(3)
+                val length = 6 + index + random.nextInt(3)
+                val endX = trunkX + length
+                val endZ = (index - 1) * 2 + random.nextInt(3) - 1
+                branch(trunkX, y, 0, endX, y + index % 2, endZ, log)
+                leafCrown(endX, y + 1, endZ, 3 + index % 2, 2, 3, leaves, clippedCorner = 3)
+                if (index > 0) leafCrown(endX - 3, y + 1, endZ, 3, 1, 2, leaves, clippedCorner = 3)
+            }
+            leafCrown(3, height + 1, 0, 3, 2, 3, leaves, clippedCorner = 3)
+        }
+
+        private fun mangroveTree(plan: QuestMapPlan, variation: Int) {
+            val random = java.util.Random(assetSeed xor 0x4D414E47524F5645L)
+            val log = Block.MANGROVE_LOG
+            val leaves = Block.MANGROVE_LEAVES
+            val height = 15 + Math.floorMod(variation, 6)
+            eightDirections(Math.floorMod(variation, 8)).take(6).forEachIndexed { index, (dx, dz) ->
+                val length = 4 + index % 3
+                branch(dx * length, 0, dz * length, 0, 5, 0, log)
+                setGrounded(plan, dx * length, dz * length, 0, Block.MANGROVE_ROOTS)
+            }
+            column(0, 0, 4, height, log.withProperty("axis", "y"))
+            eightDirections(Math.floorMod(variation + 2, 8)).take(6).forEachIndexed { index, (dx, dz) ->
+                val y = height - 5 + index % 3
+                val length = 5 + random.nextInt(4)
+                branch(0, y, 0, dx * length, y + 2, dz * length, log)
+                leafCrown(dx * length, y + 3, dz * length, 4, 2, 4, leaves, clippedCorner = 2)
+                if (index and 1 == 0) set(dx * length, y, dz * length, Block.HANGING_ROOTS)
+            }
+            leafCrown(0, height + 1, 0, 4, 2, 4, leaves, clippedCorner = 2)
+        }
+
+        private fun infernalTree(plan: QuestMapPlan, variation: Int) {
+            val warped = variation and 1 == 0
+            val log = if (warped) Block.WARPED_STEM else Block.CRIMSON_STEM
+            val leaves = if (warped) Block.WARPED_WART_BLOCK else Block.NETHER_WART_BLOCK
+            windsweptTree(plan, log, leaves, variation)
+        }
+
+        private fun roots(plan: QuestMapPlan, log: Block, radius: Int, count: Int) {
+            eightDirections(Math.floorMod(assetSeed.toInt(), 8)).take(count).forEachIndexed { index, (dx, dz) ->
+                val length = (radius - index % 2).coerceAtLeast(2)
+                for (step in 1..length) {
+                    setGrounded(plan, dx * step, dz * step, 0, horizontalLog(log, dx, dz))
+                    if (step == 1 && index and 1 == 0) setGrounded(plan, dx * step, dz * step, 1, log.withProperty("axis", "y"))
+                }
+            }
+        }
+
+        private fun branch(
+            startX: Int,
+            startY: Int,
+            startZ: Int,
+            endX: Int,
+            endY: Int,
+            endZ: Int,
+            log: Block,
+        ) {
+            val deltaX = endX - startX
+            val deltaY = endY - startY
+            val deltaZ = endZ - startZ
+            val steps = maxOf(abs(deltaX), abs(deltaY), abs(deltaZ)).coerceAtLeast(1)
+            val branchLog = if (abs(deltaY) > maxOf(abs(deltaX), abs(deltaZ))) {
+                log.withProperty("axis", "y")
+            } else {
+                horizontalLog(log, deltaX, deltaZ)
+            }
+            for (step in 0..steps) {
+                val progress = step.toDouble() / steps
+                set(
+                    (startX + deltaX * progress).roundToInt(),
+                    (startY + deltaY * progress).roundToInt(),
+                    (startZ + deltaZ * progress).roundToInt(),
+                    branchLog,
+                )
+            }
+        }
+
+        private fun horizontalLog(log: Block, dx: Int, dz: Int): Block {
+            val localAxis = if (abs(dx) >= abs(dz)) "x" else "z"
+            val worldAxis = if (Math.floorMod(rotation, 2) == 1) {
+                if (localAxis == "x") "z" else "x"
+            } else {
+                localAxis
+            }
+            return log.withProperty("axis", worldAxis)
+        }
+
+        private fun eightDirections(offset: Int): List<Pair<Int, Int>> {
+            val directions = listOf(1 to 0, 1 to 1, 0 to 1, -1 to 1, -1 to 0, -1 to -1, 0 to -1, 1 to -1)
+            return directions.indices.map { directions[Math.floorMod(it + offset, directions.size)] }
+        }
+
+        private fun rockBlock(style: QuestTerrainStyle, hash: Int): Block = when (style) {
+            QuestTerrainStyle.VERDANT -> when { hash < 3 -> Block.MOSSY_COBBLESTONE; hash < 8 -> Block.ANDESITE; else -> Block.STONE }
+            QuestTerrainStyle.HIGHLANDS -> when { hash < 5 -> Block.TUFF; hash < 10 -> Block.ANDESITE; else -> Block.STONE }
+            QuestTerrainStyle.SALTMARSH -> when { hash < 4 -> Block.MOSSY_COBBLESTONE; hash < 8 -> Block.MUD_BRICKS; else -> Block.STONE }
+            QuestTerrainStyle.CLIFFLANDS -> when { hash < 3 -> Block.CALCITE; hash < 9 -> Block.ANDESITE; else -> Block.STONE }
+            QuestTerrainStyle.SAKURA_GROVE -> when { hash < 4 -> Block.MOSSY_COBBLESTONE; hash < 8 -> Block.CALCITE; else -> Block.STONE }
+            QuestTerrainStyle.INFERNAL -> when { hash < 5 -> Block.BASALT; hash < 11 -> Block.BLACKSTONE; else -> Block.NETHERRACK }
         }
 
         fun shrubCluster(plan: QuestMapPlan, style: QuestTerrainStyle) {
