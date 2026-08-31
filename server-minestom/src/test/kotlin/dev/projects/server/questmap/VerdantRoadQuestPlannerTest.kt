@@ -39,11 +39,11 @@ class VerdantRoadQuestPlannerTest {
     fun `one map contains the authored ProjectS quest rhythm`() {
         val plan = VerdantRoadQuestPlanner.generate(919_191L)
 
-        assertEquals(320, plan.size)
+        assertEquals(448, plan.size)
         assertEquals(1, plan.contents.count { it.kind == QuestMapContentKind.START })
-        assertEquals(5, plan.contents.count { it.kind == QuestMapContentKind.COMBAT })
-        assertEquals(6, plan.contents.count { it.kind == QuestMapContentKind.GATHERING })
-        assertEquals(5, plan.contents.count { it.kind == QuestMapContentKind.DISCOVERY })
+        assertEquals(7, plan.contents.count { it.kind == QuestMapContentKind.COMBAT })
+        assertEquals(8, plan.contents.count { it.kind == QuestMapContentKind.GATHERING })
+        assertEquals(7, plan.contents.count { it.kind == QuestMapContentKind.DISCOVERY })
         assertEquals(1, plan.contents.count { it.kind == QuestMapContentKind.BOSS })
         assertTrue(plan.mainRoute.size >= 250)
         assertTrue(plan.elevationRange() in 16..48)
@@ -89,8 +89,8 @@ class VerdantRoadQuestPlannerTest {
         val range = questMapRenderChunkRange(VerdantRoadQuestPlanner.MAP_SIZE, 8)
 
         assertEquals(-8, range.first)
-        assertEquals(27, range.last)
-        assertEquals(1_296, range.count() * range.count())
+        assertEquals(35, range.last)
+        assertEquals(1_936, range.count() * range.count())
     }
 
     @Test

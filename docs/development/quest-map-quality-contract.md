@@ -40,6 +40,15 @@ ProjectS may redistribute and adapt the selected tree and rock schematics from `
 - Canonical source: https://github.com/sijmenvb/worldpainter-trees
 - License: https://github.com/sijmenvb/worldpainter-trees/blob/main/LICENSE
 
+The repository is a legal source, not an automatic quality approval. Runtime selection now excludes
+small or sparse silhouettes by minimum height, footprint, and occupied-block thresholds. Rocks used
+as scenic landmarks are composed into rotated, terrain-stained outcrops rather than stamped alone.
+
+Production intake is restricted to CC0, CC-BY, MIT, or explicit written author permission that allows
+modification and redistribution. Download counts, “free to use”, a marketplace listing, or a gallery
+image are not sufficient. High-detail commercial and community packs may be studied, but their files
+stay out of the repository until their exact terms pass this allowlist.
+
 ## Non-negotiable scene grammar
 
 Every major scene must contain all five layers:
@@ -89,7 +98,7 @@ Automation cannot certify beauty, but it must reject common failures:
 - content-free travel span or uniform-detail span exceeds the authored budget;
 - trees occupy the road or combat center;
 - biome surface coverage collapses to one dominant material;
-- preparation exceeds the five-second map budget.
+- preparation exceeds the ten-second 448×448 map budget.
 - any chunk inside the configured client render horizon is absent when the map enters the ready pool.
 
 ## Manual review gate

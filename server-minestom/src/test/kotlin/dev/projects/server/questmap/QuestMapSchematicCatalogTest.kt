@@ -26,11 +26,16 @@ class QuestMapSchematicCatalogTest {
     @Test
     fun `each ecology exposes meaningful deterministic variation`() {
         QuestTerrainStyle.entries.forEach { style ->
-            val trees = (0 until 32).map { QuestMapSchematicCatalog.selectTree(style, it).asset.id }.distinct()
-            val boulders = (0 until 32).map { QuestMapSchematicCatalog.selectBoulder(style, it).asset.id }.distinct()
+            val trees = (0 until 64).map { QuestMapSchematicCatalog.selectTree(style, it).asset.id }.distinct()
+            val boulders = (0 until 64).map { QuestMapSchematicCatalog.selectBoulder(style, it).asset.id }.distinct()
 
-            assertTrue(trees.size >= 6, "$style tree family has only ${trees.size} assets")
-            assertEquals(11, boulders.size, "$style does not expose all reviewed rock assets")
+            assertTrue(trees.size >= 4, "$style tree family has only ${trees.size} production assets")
+            assertEquals(QuestMapSchematicCatalog.productionBoulders().size, boulders.size)
+            QuestMapSchematicCatalog.productionTrees(style).forEach { asset ->
+                assertTrue(asset.height >= 11, "${asset.id} is too short for production")
+                assertTrue(asset.footprintRadius >= 3, "${asset.id} has a weak silhouette")
+                assertTrue(asset.voxels.size >= 48, "${asset.id} is too sparse for production")
+            }
         }
     }
 

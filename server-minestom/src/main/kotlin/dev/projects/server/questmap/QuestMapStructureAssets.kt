@@ -32,6 +32,47 @@ internal object QuestMapStructureAssets {
         selection.asset.place(instance, plan, origin, rotation, selection.palette)
     }
 
+    /**
+     * Compose several licensed rock silhouettes into grounded geology. A stained apron makes the
+     * mass emerge from the terrain instead of reading as an isolated schematic dropped on grass.
+     */
+    fun placeRockOutcrop(
+        instance: Instance,
+        plan: QuestMapPlan,
+        origin: QuestMapPoint,
+        variation: Int,
+        rotation: Int,
+    ) {
+        val offsets = listOf(0 to 0, 4 to 2, -3 to 4, 2 to -4)
+        offsets.forEachIndexed { index, (rawX, rawZ) ->
+            val (dx, dz) = rotateOffset(rawX, rawZ, rotation)
+            val point = QuestMapPoint(origin.x + dx, origin.z + dz)
+            if (point.x !in 3 until plan.size - 3 || point.z !in 3 until plan.size - 3) return@forEachIndexed
+            if (abs(plan.heightAt(point) - plan.heightAt(origin)) > 3) return@forEachIndexed
+            placeBoulder(instance, plan, point, variation + index * 47, rotation + index)
+        }
+        for (dz in -7..7) {
+            for (dx in -7..7) {
+                if (dx * dx + dz * dz > 49) continue
+                val x = origin.x + dx
+                val z = origin.z + dz
+                if (x !in 2 until plan.size - 2 || z !in 2 until plan.size - 2) continue
+                val hash = Math.floorMod(variation * 31 + dx * 17 + dz * 43, 19)
+                if (hash > 7 || abs(plan.heightAt(x, z) - plan.heightAt(origin)) > 4) continue
+                val ground = plan.heightAt(x, z)
+                val block = when (plan.style) {
+                    QuestTerrainStyle.VERDANT -> if (hash < 2) Block.MOSSY_COBBLESTONE else Block.ANDESITE
+                    QuestTerrainStyle.HIGHLANDS -> if (hash < 3) Block.TUFF else Block.ANDESITE
+                    QuestTerrainStyle.SALTMARSH -> if (hash < 3) Block.MOSSY_COBBLESTONE else Block.MUD
+                    QuestTerrainStyle.CLIFFLANDS -> if (hash < 2) Block.CALCITE else if (hash < 5) Block.ANDESITE else Block.STONE
+                    QuestTerrainStyle.SAKURA_GROVE -> if (hash < 3) Block.MOSSY_COBBLESTONE else Block.ANDESITE
+                    QuestTerrainStyle.INFERNAL -> if (hash < 4) Block.BLACKSTONE else Block.BASALT
+                }
+                instance.setBlock(x, ground, z, block)
+            }
+        }
+    }
+
     fun treeFootprint(style: QuestTerrainStyle, variation: Int): Int =
         QuestMapSchematicCatalog.selectTree(style, variation).asset.footprintRadius
 
@@ -101,6 +142,13 @@ internal object QuestMapStructureAssets {
             rotation,
             variation.toLong(),
         ).roadsideMarker(plan, plan.style)
+    }
+
+    private fun rotateOffset(dx: Int, dz: Int, rotation: Int): Pair<Int, Int> = when (Math.floorMod(rotation, 4)) {
+        0 -> dx to dz
+        1 -> -dz to dx
+        2 -> -dx to -dz
+        else -> dz to -dx
     }
 
     private class Painter(

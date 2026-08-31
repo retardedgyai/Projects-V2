@@ -320,15 +320,15 @@ internal data class QuestMapQualityReport(
 
 internal object QuestMapQualityGate {
     private const val MINIMUM_MAIN_ROUTE_POINTS = 250
-    private const val MAXIMUM_CONTENT_GAP = 120
+    private const val MAXIMUM_CONTENT_GAP = 140
 
     fun evaluate(plan: QuestMapPlan): QuestMapQualityReport {
         val violations = mutableListOf<String>()
         val expectedCounts = mapOf(
             QuestMapContentKind.START to 1,
-            QuestMapContentKind.COMBAT to 5,
-            QuestMapContentKind.GATHERING to 6,
-            QuestMapContentKind.DISCOVERY to 5,
+            QuestMapContentKind.COMBAT to 7,
+            QuestMapContentKind.GATHERING to 8,
+            QuestMapContentKind.DISCOVERY to 7,
             QuestMapContentKind.BOSS to 1,
         )
 
@@ -354,7 +354,7 @@ internal object QuestMapQualityGate {
         }
 
         if (!roadReachable(plan)) violations += "Boss is not reachable on generated road"
-        if (plan.start.distanceSquared(plan.boss) < 185 * 185) violations += "Boss is too close to start"
+        if (plan.start.distanceSquared(plan.boss) < 250 * 250) violations += "Boss is too close to start"
         if (plan.boss.x !in 20 until plan.size - 20 || plan.boss.z !in 20 until plan.size - 20) {
             violations += "Boss arena does not fit inside generated extent"
         }
