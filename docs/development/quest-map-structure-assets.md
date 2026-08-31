@@ -2,15 +2,14 @@
 
 This note defines how ProjectS accumulates reusable terrain-decoration knowledge without quietly importing incompatible or unlicensed Minecraft builds.
 
-## Current reviewed catalog
+## Current production catalog
 
 `QuestMapStructureAssets` is the single placement boundary for reusable quest-map structures.
 
-- The archive contains 25 decoded Sponge-v2 tree schematics grouped into lush oak, spruce, swamp, old-growth, and dead-tree ecologies. Production selection admits only substantial silhouettes with a height of at least 11, footprint radius of at least three, and at least 48 occupied blocks.
-- The archive contains 11 rock schematics; production selection similarly removes tiny pieces. Four rotations and style-aware block palettes provide variety without deforming the source silhouettes.
-- Every imported file is parsed and validated in tests; every selected palette and rotation must resolve to a Minecraft 26.2 block state.
-- Tree anchors are calculated from the lowest trunk mass. Root/trunk columns are extended only where local ground would otherwise leave a visible gap.
-- Rock anchors are buried by one block and any exposed lower mass is filled down to terrain, preventing floating boulders.
+- Production runtime does not select downloaded schematics.
+- Verdant uses broad veteran trees; Highlands uses layered conifers; Clifflands uses asymmetric windswept pines; Saltmarsh uses stilt-root mangroves; Sakura uses split-crown cherry trees; Infernal uses warped or crimson wind-shaped forms.
+- Trees are assembled from grounded roots, structural trunks, connected branch lines, multiple offset crowns, and ecology-specific litter. Tree footprints span at least three scales per ecology.
+- Rock masses follow local terrain per column, combine several overlapping lobes, and use style-aware strata. Scenic rocks are grouped into stained outcrops instead of placed as identical loose props.
 - Placement is rejected when the required footprint is too steep, close to a road, submerged, or inside content clearance.
 - Fallen logs are reusable grounded structures rather than one-off decoration code.
 - Clifflands no longer uses procedural leaf shrubs as rock-scene filler. Other ecologies retain low shrub clusters only as supporting detail.
@@ -36,13 +35,13 @@ An external tree, rock, ruin, or landmark is not accepted until the following me
 
 Assets with missing redistribution terms are reference material only and must not be copied into ProjectS. Production sources are limited to CC0, CC-BY, MIT, or explicit written author permission covering modification and redistribution.
 
-## Reference study applied in this revision
+## Archived migration input
 
-The MIT-licensed WorldPainter tree collection provides the current tree and rock schematics. ProjectS preserves its upstream license beside the resources, records the canonical source, and adds its own deterministic grounding, rotation, palette, and placement rules. Source: https://github.com/sijmenvb/worldpainter-trees
+The previous MIT-licensed WorldPainter collection remains attributed and decodable only so old seeds and migration tools do not fail. It is not part of production runtime selection. Source: https://github.com/sijmenvb/worldpainter-trees
 
 ## File-backed implementation
 
-`SpongeSchematicAsset` reads Sponge `.schem` v2 palettes and varint block data directly. Minestom remains responsible for terrain; reviewed structures are placed after the quest Instance chunks are ready.
+`QuestMapStructureAssets` directly authors production block structures after the quest Instance chunks are ready. `SpongeSchematicAsset` is retained only as an archive/migration reader.
 
 Relevant primary documentation:
 

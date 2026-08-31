@@ -8,7 +8,7 @@ import net.minestom.server.instance.block.Block
 
 class QuestMapSchematicCatalogTest {
     @Test
-    fun `all licensed assets decode and have usable bounds`() {
+    fun `archived licensed assets remain decodable but are not the runtime catalog`() {
         val assets = QuestMapSchematicCatalog.allAssets()
 
         assertEquals(36, assets.size)
@@ -24,7 +24,20 @@ class QuestMapSchematicCatalogTest {
     }
 
     @Test
-    fun `each ecology exposes meaningful deterministic variation`() {
+    fun `ProjectS authored runtime silhouettes expose multiple scales per ecology`() {
+        QuestTerrainStyle.entries.forEach { style ->
+            val treeFootprints = (0 until 32).map { QuestMapStructureAssets.treeFootprint(style, it) }.distinct()
+            val rockFootprints = (0 until 32).map { QuestMapStructureAssets.boulderFootprint(style, it) }.distinct()
+
+            assertTrue(treeFootprints.size >= 3, "$style lacks authored tree scale variation")
+            assertTrue(treeFootprints.min() >= 9, "$style tree silhouette is too small")
+            assertTrue(treeFootprints.max() <= 15, "$style tree silhouette is too large for placement")
+            assertEquals(3, rockFootprints.size, "$style lacks authored rock scale variation")
+        }
+    }
+
+    @Test
+    fun `archived source palettes still decode for migration compatibility`() {
         QuestTerrainStyle.entries.forEach { style ->
             val trees = (0 until 64).map { QuestMapSchematicCatalog.selectTree(style, it).asset.id }.distinct()
             val boulders = (0 until 64).map { QuestMapSchematicCatalog.selectBoulder(style, it).asset.id }.distinct()

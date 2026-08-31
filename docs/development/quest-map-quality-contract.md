@@ -33,16 +33,17 @@ Cherokee's useful lesson is vertical organization: an elevated destination, a va
 
 - Official map description: https://wiki.shotbow.net/Special%3AMyLanguage/Cherokee
 
-### Licensed structure source
+### Archived structure source
 
-ProjectS may redistribute and adapt the selected tree and rock schematics from `sijmenvb/worldpainter-trees` under its MIT license. The source collection explicitly designs roots for slopes and groups assets by ecological use.
+The earlier prototype imported `sijmenvb/worldpainter-trees` under its MIT license. Those files remain traceable for migration compatibility, but production generation no longer selects any of its trees or rocks.
 
 - Canonical source: https://github.com/sijmenvb/worldpainter-trees
 - License: https://github.com/sijmenvb/worldpainter-trees/blob/main/LICENSE
 
-The repository is a legal source, not an automatic quality approval. Runtime selection now excludes
-small or sparse silhouettes by minimum height, footprint, and occupied-block thresholds. Rocks used
-as scenic landmarks are composed into rotated, terrain-stained outcrops rather than stamped alone.
+Production trees and rocks are now ProjectS-authored parametric structures. Each ecology owns its
+trunk architecture, branching grammar, crown placement, roots, scale range, material palette, and
+ground-contact behavior. Rocks are constructed as terrain-following masses and composed outcrops,
+not schematic stamps.
 
 Production intake is restricted to CC0, CC-BY, MIT, or explicit written author permission that allows
 modification and redistribution. Download counts, “free to use”, a marketplace listing, or a gallery
