@@ -341,13 +341,26 @@ internal object VerdantRoadQuestDecorator {
                 22 + random.nextInt(plan.size - 44),
             )
             val roadDistance = plan.roadDistanceSquaredAt(point.x, point.z)
-            if (roadDistance !in 15 * 15..62 * 62) return@repeat
+            if (roadDistance !in 22 * 22..62 * 62) return@repeat
             if (plan.contents.any { it.position.distanceSquared(point) < 20 * 20 }) return@repeat
             if (result.any { it.distanceSquared(point) < 34 * 34 }) return@repeat
             if (terrainRange(plan, point, 8) > 5 || plan.slopeAt(point) > 2) return@repeat
             result += point
         }
         return result
+    }
+
+    /** Keeps the entire authored silhouette, roots included, outside the walkable road shoulder. */
+    internal fun clearForStructure(
+        plan: QuestMapPlan,
+        point: QuestMapPoint,
+        footprint: Int,
+        shoulder: Int = 7,
+    ): Boolean {
+        val border = footprint + 2
+        if (point.x !in border until plan.size - border || point.z !in border until plan.size - border) return false
+        val required = footprint + shoulder
+        return plan.roadDistanceSquaredAt(point.x, point.z) > required * required
     }
 
     private fun decorateScenicCompositions(
@@ -399,44 +412,70 @@ internal object VerdantRoadQuestDecorator {
             ).map { (dx, dz) -> compositionPoint(dx, dz) }
             when (cover) {
                 QuestGroundCover.ROCKY -> {
-                    QuestMapStructureAssets.placeRockOutcrop(instance, plan, center, ordinal * 101, turns)
-                    if (plan.style != QuestTerrainStyle.CLIFFLANDS) {
-                        QuestMapStructureAssets.placeShrubCluster(instance, plan, compositionPoint(-10, 2), ordinal, ordinal)
+                    if (clearForStructure(plan, center, 11)) {
+                        QuestMapStructureAssets.placeRockOutcrop(instance, plan, center, ordinal * 101, turns)
+                    }
+                    val shrubPoint = compositionPoint(-10, 2)
+                    if (plan.style != QuestTerrainStyle.CLIFFLANDS && clearForStructure(plan, shrubPoint, 4)) {
+                        QuestMapStructureAssets.placeShrubCluster(instance, plan, shrubPoint, ordinal, ordinal)
                     }
                 }
                 QuestGroundCover.FOREST_FLOOR -> {
                     placements.take(3).forEachIndexed { index, point ->
-                        if (terrainRange(plan, point, 5) <= 3) {
-                            QuestMapStructureAssets.placeTree(instance, plan, point, ordinal * 37 + index, random.nextInt(4))
+                        val variation = ordinal * 37 + index
+                        val footprint = QuestMapStructureAssets.treeFootprint(plan.style, variation)
+                        if (clearForStructure(plan, point, footprint) && terrainRange(plan, point, 5) <= 3) {
+                            QuestMapStructureAssets.placeTree(instance, plan, point, variation, random.nextInt(4))
                         }
                     }
-                    QuestMapStructureAssets.placeFallenLog(instance, plan, placements[3], 6 + ordinal % 3, ordinal, ordinal)
-                    QuestMapStructureAssets.placeShrubCluster(instance, plan, placements[4], ordinal * 13, ordinal)
+                    val logLength = 6 + ordinal % 3
+                    if (clearForStructure(plan, placements[3], logLength)) {
+                        QuestMapStructureAssets.placeFallenLog(instance, plan, placements[3], logLength, ordinal, ordinal)
+                    }
+                    if (clearForStructure(plan, placements[4], 4)) {
+                        QuestMapStructureAssets.placeShrubCluster(instance, plan, placements[4], ordinal * 13, ordinal)
+                    }
                 }
                 QuestGroundCover.SHORE, QuestGroundCover.PEAT -> {
                     placements.take(2).forEachIndexed { index, point ->
-                        if (plan.heightAt(point) > QUEST_WATER_LEVEL && terrainRange(plan, point, 4) <= 3) {
-                            QuestMapStructureAssets.placeTree(instance, plan, point, ordinal * 41 + index, random.nextInt(4))
+                        val variation = ordinal * 41 + index
+                        val footprint = QuestMapStructureAssets.treeFootprint(plan.style, variation)
+                        if (clearForStructure(plan, point, footprint) && plan.heightAt(point) > QUEST_WATER_LEVEL && terrainRange(plan, point, 4) <= 3) {
+                            QuestMapStructureAssets.placeTree(instance, plan, point, variation, random.nextInt(4))
                         }
                     }
                     placements.drop(2).forEachIndexed { index, point ->
-                        QuestMapStructureAssets.placeShrubCluster(instance, plan, point, ordinal * 17 + index, index)
+                        if (clearForStructure(plan, point, 4)) {
+                            QuestMapStructureAssets.placeShrubCluster(instance, plan, point, ordinal * 17 + index, index)
+                        }
                     }
                 }
                 QuestGroundCover.MEADOW, QuestGroundCover.HEATH -> {
-                    if (terrainRange(plan, placements[0], 5) <= 3) {
-                        QuestMapStructureAssets.placeTree(instance, plan, placements[0], ordinal * 43, random.nextInt(4))
+                    val treeVariation = ordinal * 43
+                    val treeFootprint = QuestMapStructureAssets.treeFootprint(plan.style, treeVariation)
+                    if (clearForStructure(plan, placements[0], treeFootprint) && terrainRange(plan, placements[0], 5) <= 3) {
+                        QuestMapStructureAssets.placeTree(instance, plan, placements[0], treeVariation, random.nextInt(4))
                     }
-                    QuestMapStructureAssets.placeBoulder(instance, plan, placements[1], ordinal * 47, ordinal)
+                    if (clearForStructure(plan, placements[1], 6)) {
+                        QuestMapStructureAssets.placeBoulder(instance, plan, placements[1], ordinal * 47, ordinal)
+                    }
                     if (plan.style == QuestTerrainStyle.CLIFFLANDS) {
-                        if (terrainRange(plan, placements[2], 5) <= 3) {
-                            QuestMapStructureAssets.placeTree(instance, plan, placements[2], ordinal * 53 + 1, random.nextInt(4))
+                        val secondVariation = ordinal * 53 + 1
+                        val secondFootprint = QuestMapStructureAssets.treeFootprint(plan.style, secondVariation)
+                        if (clearForStructure(plan, placements[2], secondFootprint) && terrainRange(plan, placements[2], 5) <= 3) {
+                            QuestMapStructureAssets.placeTree(instance, plan, placements[2], secondVariation, random.nextInt(4))
                         }
-                        QuestMapStructureAssets.placeRockOutcrop(instance, plan, placements[3], ordinal * 59, ordinal + 2)
-                        QuestMapStructureAssets.placeFallenLog(instance, plan, placements[4], 6, ordinal, ordinal)
+                        if (clearForStructure(plan, placements[3], 11)) {
+                            QuestMapStructureAssets.placeRockOutcrop(instance, plan, placements[3], ordinal * 59, ordinal + 2)
+                        }
+                        if (clearForStructure(plan, placements[4], 6)) {
+                            QuestMapStructureAssets.placeFallenLog(instance, plan, placements[4], 6, ordinal, ordinal)
+                        }
                     } else {
                         placements.drop(2).forEachIndexed { index, point ->
-                            QuestMapStructureAssets.placeShrubCluster(instance, plan, point, ordinal * 19 + index, index)
+                            if (clearForStructure(plan, point, 4)) {
+                                QuestMapStructureAssets.placeShrubCluster(instance, plan, point, ordinal * 19 + index, index)
+                            }
                         }
                     }
                 }
@@ -482,11 +521,11 @@ internal object VerdantRoadQuestDecorator {
             } else {
                 QuestMapPoint(10 + random.nextInt(plan.size - 20), 10 + random.nextInt(plan.size - 20))
             }
-            if (plan.roadDistanceSquaredAt(point.x, point.z) <= 7 * 7) return@repeat
             if (plan.contents.any { it.position.distanceSquared(point) < 11 * 11 }) return@repeat
             if (scenicAnchors.any { it.distanceSquared(point) < 13 * 13 }) return@repeat
             val variation = random.nextInt()
             val footprint = QuestMapStructureAssets.treeFootprint(plan.style, variation)
+            if (!clearForStructure(plan, point, footprint)) return@repeat
             val clearance = maxOf(7, footprint + 2)
             if (occupied.any { (other, otherClearance) -> other.distanceSquared(point) < maxOf(clearance, otherClearance).let { it * it } }) return@repeat
             if (plan.style in setOf(QuestTerrainStyle.SALTMARSH, QuestTerrainStyle.INFERNAL) && plan.heightAt(point) <= QUEST_WATER_LEVEL) return@repeat
@@ -541,11 +580,11 @@ internal object VerdantRoadQuestDecorator {
             }
             if (plan.style == QuestTerrainStyle.INFERNAL) {
                 when {
-                    roll < 8 && sceneClear(8) && terrainRange(plan, point, 4) <= 3 -> {
+                    roll < 8 && clearForStructure(plan, point, 6) && sceneClear(8) && terrainRange(plan, point, 4) <= 3 -> {
                         QuestMapStructureAssets.placeBoulder(instance, plan, point, random.nextInt(), assetRotation)
                         rememberScene()
                     }
-                    roll < 18 && sceneClear(6) && terrainRange(plan, point, 3) <= 2 -> {
+                    roll < 18 && clearForStructure(plan, point, 4) && sceneClear(6) && terrainRange(plan, point, 3) <= 2 -> {
                         QuestMapStructureAssets.placeShrubCluster(instance, plan, point, random.nextInt(), assetRotation)
                         rememberScene()
                     }
@@ -559,11 +598,11 @@ internal object VerdantRoadQuestDecorator {
             }
             when (cover) {
                 QuestGroundCover.ROCKY -> when {
-                    roll < 12 && sceneClear(7) && terrainRange(plan, point, 4) <= 3 -> {
+                    roll < 12 && clearForStructure(plan, point, 6) && sceneClear(7) && terrainRange(plan, point, 4) <= 3 -> {
                         QuestMapStructureAssets.placeBoulder(instance, plan, point, random.nextInt(), assetRotation)
                         rememberScene()
                     }
-                    plan.style != QuestTerrainStyle.CLIFFLANDS && roll < 25 && sceneClear(6) && terrainRange(plan, point, 3) <= 2 -> {
+                    plan.style != QuestTerrainStyle.CLIFFLANDS && roll < 25 && clearForStructure(plan, point, 4) && sceneClear(6) && terrainRange(plan, point, 3) <= 2 -> {
                         QuestMapStructureAssets.placeShrubCluster(instance, plan, point, random.nextInt(), assetRotation)
                         rememberScene()
                     }
@@ -581,11 +620,11 @@ internal object VerdantRoadQuestDecorator {
                     else -> instance.setBlock(point.x, ground + 1, point.z, Block.DEAD_BUSH)
                 }
                 QuestGroundCover.FOREST_FLOOR -> when {
-                    roll < 5 && sceneClear(8) && lineTerrainRange(plan, point, 3, assetRotation) <= 1 -> {
+                    roll < 5 && clearForStructure(plan, point, 7) && sceneClear(8) && lineTerrainRange(plan, point, 3, assetRotation) <= 1 -> {
                         QuestMapStructureAssets.placeFallenLog(instance, plan, point, 3 + random.nextInt(4), assetRotation, random.nextInt())
                         rememberScene()
                     }
-                    roll < 13 && sceneClear(6) && terrainRange(plan, point, 3) <= 2 -> {
+                    roll < 13 && clearForStructure(plan, point, 4) && sceneClear(6) && terrainRange(plan, point, 3) <= 2 -> {
                         QuestMapStructureAssets.placeShrubCluster(instance, plan, point, random.nextInt(), assetRotation)
                         rememberScene()
                     }
@@ -596,11 +635,11 @@ internal object VerdantRoadQuestDecorator {
                     else -> instance.setBlock(point.x, ground + 1, point.z, Block.SHORT_GRASS)
                 }
                 QuestGroundCover.MEADOW -> when {
-                    roll < 2 && sceneClear(8) && terrainRange(plan, point, 3) <= 2 -> {
+                    roll < 2 && clearForStructure(plan, point, 6) && sceneClear(8) && terrainRange(plan, point, 3) <= 2 -> {
                         QuestMapStructureAssets.placeBoulder(instance, plan, point, random.nextInt(), assetRotation)
                         rememberScene()
                     }
-                    roll < 7 && sceneClear(7) && terrainRange(plan, point, 3) <= 2 -> {
+                    roll < 7 && clearForStructure(plan, point, 4) && sceneClear(7) && terrainRange(plan, point, 3) <= 2 -> {
                         QuestMapStructureAssets.placeShrubCluster(instance, plan, point, random.nextInt(), assetRotation)
                         rememberScene()
                     }
@@ -611,11 +650,11 @@ internal object VerdantRoadQuestDecorator {
                     else -> instance.setBlock(point.x, ground + 1, point.z, Block.SHORT_GRASS)
                 }
                 QuestGroundCover.HEATH -> when {
-                    roll < 5 && sceneClear(8) && terrainRange(plan, point, 3) <= 3 -> {
+                    roll < 5 && clearForStructure(plan, point, 6) && sceneClear(8) && terrainRange(plan, point, 3) <= 3 -> {
                         QuestMapStructureAssets.placeBoulder(instance, plan, point, random.nextInt(), assetRotation)
                         rememberScene()
                     }
-                    plan.style != QuestTerrainStyle.CLIFFLANDS && roll < 17 && sceneClear(6) && terrainRange(plan, point, 3) <= 2 -> {
+                    plan.style != QuestTerrainStyle.CLIFFLANDS && roll < 17 && clearForStructure(plan, point, 4) && sceneClear(6) && terrainRange(plan, point, 3) <= 2 -> {
                         QuestMapStructureAssets.placeShrubCluster(instance, plan, point, random.nextInt(), assetRotation)
                         rememberScene()
                     }

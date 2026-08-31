@@ -27,9 +27,11 @@ class QuestMapSchematicCatalogTest {
     fun `ProjectS authored runtime silhouettes expose multiple scales per ecology`() {
         QuestTerrainStyle.entries.forEach { style ->
             val treeFootprints = (0 until 32).map { QuestMapStructureAssets.treeFootprint(style, it) }.distinct()
+            val treeFamilies = (0 until 64).map { QuestMapStructureAssets.treeFamilyId(style, it) }.distinct()
             val rockFootprints = (0 until 32).map { QuestMapStructureAssets.boulderFootprint(style, it) }.distinct()
 
             assertTrue(treeFootprints.size >= 3, "$style lacks authored tree scale variation")
+            assertEquals(5, treeFamilies.size, "$style lacks concept-compatible tree families")
             assertTrue(treeFootprints.min() >= 9, "$style tree silhouette is too small")
             assertTrue(treeFootprints.max() <= 15, "$style tree silhouette is too large for placement")
             assertEquals(3, rockFootprints.size, "$style lacks authored rock scale variation")
