@@ -3,10 +3,28 @@ package dev.projects.server.questmap
 import kotlin.system.measureTimeMillis
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
 import kotlin.test.assertTrue
 
 class VerdantRoadQuestPlannerTest {
+    @Test
+    fun `authored structures reserve their full footprint outside the road shoulder`() {
+        val plan = VerdantRoadQuestPlanner.generate(81_551L)
+        val road = plan.mainRoute[plan.mainRoute.size / 2]
+        val footprint = QuestMapStructureAssets.treeFootprint(plan.style, 17)
+
+        assertFalse(VerdantRoadQuestDecorator.clearForStructure(plan, road, footprint))
+        val safeRange = footprint + 2 until plan.size - footprint - 2
+        assertTrue(
+            safeRange.any { z ->
+                safeRange.any { x ->
+                    VerdantRoadQuestDecorator.clearForStructure(plan, QuestMapPoint(x, z), footprint)
+                }
+            },
+        )
+    }
+
     @Test
     fun `generation is deterministic and seed-sensitive`() {
         val first = VerdantRoadQuestPlanner.generate(7_341L)

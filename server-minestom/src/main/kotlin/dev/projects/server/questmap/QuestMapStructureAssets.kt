@@ -10,6 +10,9 @@ import kotlin.math.roundToInt
  * silhouettes; no downloaded schematic participates in runtime selection.
  */
 internal object QuestMapStructureAssets {
+    fun treeFamilyId(style: QuestTerrainStyle, variation: Int): Int =
+        Math.floorMod(variation xor (style.ordinal * 0x45d9f3b), 5)
+
     fun placeTree(
         instance: Instance,
         plan: QuestMapPlan,
@@ -239,13 +242,44 @@ internal object QuestMapStructureAssets {
         }
 
         fun signatureTree(plan: QuestMapPlan, style: QuestTerrainStyle, variation: Int) {
+            val family = treeFamilyId(style, variation)
             when (style) {
-                QuestTerrainStyle.VERDANT -> broadleafTree(plan, Block.DARK_OAK_LOG, Block.OAK_LEAVES, variation, veteran = variation and 3 == 0)
-                QuestTerrainStyle.HIGHLANDS -> coniferTree(plan, Block.SPRUCE_LOG, Block.SPRUCE_LEAVES, variation, sparse = variation and 3 == 0)
-                QuestTerrainStyle.SALTMARSH -> mangroveTree(plan, variation)
-                QuestTerrainStyle.CLIFFLANDS -> windsweptTree(plan, Block.SPRUCE_LOG, Block.SPRUCE_LEAVES, variation)
-                QuestTerrainStyle.SAKURA_GROVE -> broadleafTree(plan, Block.CHERRY_LOG, Block.CHERRY_LEAVES, variation, veteran = variation and 1 == 0)
-                QuestTerrainStyle.INFERNAL -> infernalTree(plan, variation)
+                QuestTerrainStyle.VERDANT -> when (family) {
+                    0 -> broadleafTree(plan, Block.DARK_OAK_LOG, Block.OAK_LEAVES, variation, veteran = true)
+                    1 -> broadleafTree(plan, Block.OAK_LOG, Block.OAK_LEAVES, variation, veteran = false)
+                    2 -> broadleafTree(plan, Block.BIRCH_LOG, Block.BIRCH_LEAVES, variation, veteran = false)
+                    3 -> coniferTree(plan, Block.SPRUCE_LOG, Block.SPRUCE_LEAVES, variation, sparse = true)
+                    else -> windsweptTree(plan, Block.OAK_LOG, Block.AZALEA_LEAVES, variation)
+                }
+                QuestTerrainStyle.HIGHLANDS -> when (family) {
+                    0, 1 -> coniferTree(plan, Block.SPRUCE_LOG, Block.SPRUCE_LEAVES, variation, sparse = family == 1)
+                    2 -> windsweptTree(plan, Block.SPRUCE_LOG, Block.SPRUCE_LEAVES, variation)
+                    3 -> snagTree(plan, Block.STRIPPED_SPRUCE_LOG, variation)
+                    else -> broadleafTree(plan, Block.BIRCH_LOG, Block.BIRCH_LEAVES, variation, veteran = false)
+                }
+                QuestTerrainStyle.SALTMARSH -> when (family) {
+                    0, 1 -> mangroveTree(plan, variation)
+                    2 -> snagTree(plan, Block.STRIPPED_MANGROVE_LOG, variation)
+                    3 -> broadleafTree(plan, Block.DARK_OAK_LOG, Block.AZALEA_LEAVES, variation, veteran = false)
+                    else -> windsweptTree(plan, Block.MANGROVE_LOG, Block.MANGROVE_LEAVES, variation)
+                }
+                QuestTerrainStyle.CLIFFLANDS -> when (family) {
+                    0, 1 -> windsweptTree(plan, Block.SPRUCE_LOG, Block.SPRUCE_LEAVES, variation)
+                    2 -> snagTree(plan, Block.STRIPPED_SPRUCE_LOG, variation)
+                    3 -> coniferTree(plan, Block.SPRUCE_LOG, Block.SPRUCE_LEAVES, variation, sparse = true)
+                    else -> windsweptTree(plan, Block.OAK_LOG, Block.AZALEA_LEAVES, variation)
+                }
+                QuestTerrainStyle.SAKURA_GROVE -> when (family) {
+                    0, 1 -> broadleafTree(plan, Block.CHERRY_LOG, Block.CHERRY_LEAVES, variation, veteran = family == 0)
+                    2 -> broadleafTree(plan, Block.BIRCH_LOG, Block.BIRCH_LEAVES, variation, veteran = false)
+                    3 -> windsweptTree(plan, Block.CHERRY_LOG, Block.CHERRY_LEAVES, variation)
+                    else -> coniferTree(plan, Block.SPRUCE_LOG, Block.SPRUCE_LEAVES, variation, sparse = true)
+                }
+                QuestTerrainStyle.INFERNAL -> when (family) {
+                    0, 1, 2 -> infernalTree(plan, variation)
+                    3 -> snagTree(plan, Block.STRIPPED_CRIMSON_STEM, variation)
+                    else -> windsweptTree(plan, Block.WARPED_STEM, Block.WARPED_WART_BLOCK, variation)
+                }
             }
         }
 
@@ -421,6 +455,29 @@ internal object QuestMapStructureAssets {
             val log = if (warped) Block.WARPED_STEM else Block.CRIMSON_STEM
             val leaves = if (warped) Block.WARPED_WART_BLOCK else Block.NETHER_WART_BLOCK
             windsweptTree(plan, log, leaves, variation)
+        }
+
+        private fun snagTree(plan: QuestMapPlan, log: Block, variation: Int) {
+            val random = java.util.Random(assetSeed xor 0x534E414754524545L)
+            val height = 13 + Math.floorMod(variation, 8)
+            roots(plan, log, 4, 5)
+            val leanX = Math.floorMod(variation, 3) - 1
+            val leanZ = Math.floorMod(variation / 3, 3) - 1
+            branch(0, 0, 0, leanX * 2, height, leanZ * 2, log)
+            val directions = eightDirections(Math.floorMod(variation, 8))
+            directions.take(3 + Math.floorMod(variation, 3)).forEachIndexed { index, (dx, dz) ->
+                val startY = 6 + index * 2
+                val length = 3 + random.nextInt(4)
+                branch(
+                    (leanX * startY.toDouble() / height).roundToInt(),
+                    startY,
+                    (leanZ * startY.toDouble() / height).roundToInt(),
+                    dx * length,
+                    startY + 2 + random.nextInt(3),
+                    dz * length,
+                    log,
+                )
+            }
         }
 
         private fun roots(plan: QuestMapPlan, log: Block, radius: Int, count: Int) {
