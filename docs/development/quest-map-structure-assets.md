@@ -17,6 +17,7 @@ This note defines how ProjectS accumulates reusable terrain-decoration knowledge
 - Road guidance uses only low cairns, grounded rest benches, half-buried milestones, and collapsed road-edge fragments. Freestanding posts and unexplained arches are forbidden.
 - Camps, combat landmarks, gathering cuts, discoveries, and the boss arena each have a readable purpose, broad silhouette, route-aligned framing, and a clear playable center.
 - Grove-weighted placement creates forests and clearings instead of uniform random noise.
+- Twenty mutually separated scenic anchors compose trees, rock groups, fallen wood, shrubs, and ground transitions as middle-distance regions; ordinary scatter maintains clearance around those compositions.
 
 The placement code remains behind one boundary, so terrain planning does not know whether a reviewed asset is file-backed or authored in Kotlin.
 

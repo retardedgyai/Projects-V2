@@ -10,13 +10,14 @@ This playground tests one concrete replacement for the current flat hunt space. 
 - `/questmap return` returns to the existing ProjectS hub and destroys that temporary instance.
 - `/questmap status` displays ready, preparing, and active map counts.
 - `/questmap seed <long>` prepares and enters one exact seed for manual regression checks.
-- The generated extent is 224×224 blocks so it aligns to 14×14 Minecraft chunks.
+- The generated extent is 320×320 blocks, or 20×20 playable Minecraft chunks. This is roughly 2.04 times the former field area.
 - A low, irregular coastline and a full client-view-distance outer sea hide the square edge; an invisible final edge prevents escape.
 - The main road always connects the camp to the boss arena, but its topology is selected from Meander, Ridge Pass, Horseshoe, or Diagonal and then rotated or reflected.
 - Terrain independently selects Rolling, Ridged, Terraced, Basin, or Broken Hills, so route and landform silhouettes do not collapse into one combination.
 - Surface ecology is derived from water distance, slope, elevation, moisture, and canopy fields rather than one style-wide top block.
 - Main roads are broad and readable while optional side trails are deliberately narrower and use different materials.
-- The current authored rhythm is three combat landmarks, four gathering branches, three discoveries, and one boss arena.
+- The current authored rhythm is five combat landmarks, six gathering branches, five discoveries, and one boss arena.
+- Twenty separated scenic compositions create forest cores, rock spines, wetland edges, meadow rests, and framed vistas between quest landmarks.
 - Seed and terrain style are shown on entry so bad generations can be reproduced.
 
 ## Generation pipeline
@@ -30,13 +31,13 @@ This playground tests one concrete replacement for the current flat hunt space. 
 7. For Saltmarsh, carve warped wetland basins with variable depth, irregular shorelines, inlet fingers, and relaxed banks while keeping the entire main road above water.
 8. Classify every surface cell as Meadow, Forest Floor, Shore, Rocky, Heath, or Peat and apply contiguous block palettes.
 9. Reject maps that fail reachability, density, spacing, elevation, sightline, road-grade, shoulder-relief, explorable-corridor, ecology, coastline, water, or content-count rules.
-10. Load the 196 playable chunks plus the server's complete client-view-distance buffer (900 chunks at distance eight), verify every requested chunk exists, add ecology-weighted reviewed schematics and route-aligned authored scenes, then place the result in the ready pool. A player is never transferred to partial coverage.
+10. Load the 400 playable chunks plus the server's complete client-view-distance buffer (1,296 chunks at distance eight), verify every requested chunk exists, add ecology-weighted reviewed schematics, twenty composed scenic regions, and route-aligned authored scenes, then place the result in the ready pool. A player is never transferred to partial coverage.
 
 ## No-wait rule
 
 Two maps are fully generated before the server begins accepting players. Entering a quest consumes a ready map and starts a background replacement. The command never performs terrain generation synchronously. If the pool is unexpectedly empty, entry is rejected instead of freezing the player.
 
-Automated planning budget: 20 complete plans in under four seconds on the development host. The Creator-approved runtime preparation budget is now five seconds per 224×224 map; transfer still consumes a ready map and should not wait for generation.
+Automated planning budget: 20 complete plans in under eight seconds on the development host. The Creator-approved runtime preparation budget remains five seconds per 320×320 map; transfer still consumes a ready map and should not wait for generation.
 
 ## Automated acceptance
 

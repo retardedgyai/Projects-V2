@@ -39,13 +39,13 @@ class VerdantRoadQuestPlannerTest {
     fun `one map contains the authored ProjectS quest rhythm`() {
         val plan = VerdantRoadQuestPlanner.generate(919_191L)
 
-        assertEquals(224, plan.size)
+        assertEquals(320, plan.size)
         assertEquals(1, plan.contents.count { it.kind == QuestMapContentKind.START })
-        assertEquals(3, plan.contents.count { it.kind == QuestMapContentKind.COMBAT })
-        assertEquals(4, plan.contents.count { it.kind == QuestMapContentKind.GATHERING })
-        assertEquals(3, plan.contents.count { it.kind == QuestMapContentKind.DISCOVERY })
+        assertEquals(5, plan.contents.count { it.kind == QuestMapContentKind.COMBAT })
+        assertEquals(6, plan.contents.count { it.kind == QuestMapContentKind.GATHERING })
+        assertEquals(5, plan.contents.count { it.kind == QuestMapContentKind.DISCOVERY })
         assertEquals(1, plan.contents.count { it.kind == QuestMapContentKind.BOSS })
-        assertTrue(plan.mainRoute.size >= 180)
+        assertTrue(plan.mainRoute.size >= 250)
         assertTrue(plan.elevationRange() in 16..48)
         assertTrue(plan.terrainOcclusionSamples() >= 3)
         assertTrue(plan.routeDetourRatio() in 1.06..1.58)
@@ -89,8 +89,8 @@ class VerdantRoadQuestPlannerTest {
         val range = questMapRenderChunkRange(VerdantRoadQuestPlanner.MAP_SIZE, 8)
 
         assertEquals(-8, range.first)
-        assertEquals(21, range.last)
-        assertEquals(900, range.count() * range.count())
+        assertEquals(27, range.last)
+        assertEquals(1_296, range.count() * range.count())
     }
 
     @Test
@@ -110,6 +110,6 @@ class VerdantRoadQuestPlannerTest {
             repeat(20) { VerdantRoadQuestPlanner.generate(50_000L + it) }
         }
 
-        assertTrue(elapsed < 4_000, "20 maps took ${elapsed}ms")
+        assertTrue(elapsed < 8_000, "20 maps took ${elapsed}ms")
     }
 }

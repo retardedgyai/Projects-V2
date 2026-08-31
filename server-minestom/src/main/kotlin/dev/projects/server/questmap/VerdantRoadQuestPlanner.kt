@@ -8,12 +8,15 @@ import kotlin.math.floor
 import kotlin.math.roundToInt
 import kotlin.math.sin
 
-/** One concrete 224x224 quest map: authored rhythm over deterministic procedural terrain. */
+/** One concrete 320x320 quest map: authored rhythm over deterministic procedural terrain. */
 internal object VerdantRoadQuestPlanner {
-    const val MAP_SIZE = 224
-    const val PLAYABLE_BORDER = 10
-    private const val ROAD_BLEND_RADIUS = 24
+    private const val DESIGN_SIZE = 224
+    const val MAP_SIZE = 320
+    const val PLAYABLE_BORDER = 16
+    private const val ROAD_BLEND_RADIUS = 28
     private const val BASE_GROUND_Y = 52
+
+    private fun scaleDesign(value: Int): Int = (value * MAP_SIZE.toDouble() / DESIGN_SIZE).roundToInt()
 
     fun generate(seed: Long): QuestMapPlan {
         val random = Random(seed)
@@ -68,30 +71,30 @@ internal object VerdantRoadQuestPlanner {
 
     private fun routeControls(seed: Long, random: Random): RouteControls {
         val layout = QuestRouteLayout.entries[Math.floorMod(seed xor 0x524F555445L, QuestRouteLayout.entries.size.toLong()).toInt()]
-        fun jitter(value: Int, radius: Int = 8): Int = value + random.nextInt(radius * 2 + 1) - radius
+        fun jitter(value: Int, radius: Int = 8): Int = scaleDesign(value + random.nextInt(radius * 2 + 1) - radius)
         val base = when (layout) {
             QuestRouteLayout.MEANDER -> {
                 val startsHigh = random.nextBoolean()
                 val center = jitter(112, 16)
-                val broadTurn = 17 + random.nextInt(8)
+                val broadTurn = scaleDesign(17 + random.nextInt(8))
                 fun band(high: Boolean, scale: Double = 1.0): Int =
                     (center + (if (high) broadTurn else -broadTurn) * scale).roundToInt()
                 listOf(
-                    QuestMapPoint(22, jitter(center, 10)),
-                    QuestMapPoint(58, jitter(band(startsHigh), 7)),
-                    QuestMapPoint(96, jitter(band(!startsHigh, 0.55), 7)),
-                    QuestMapPoint(136, jitter(band(startsHigh, 0.45), 7)),
-                    QuestMapPoint(174, jitter(band(!startsHigh), 7)),
-                    QuestMapPoint(202, jitter(center, 10)),
+                    QuestMapPoint(scaleDesign(22), (center + scaleDesign(random.nextInt(21) - 10)).coerceIn(PLAYABLE_BORDER, MAP_SIZE - PLAYABLE_BORDER)),
+                    QuestMapPoint(scaleDesign(58), (band(startsHigh) + scaleDesign(random.nextInt(15) - 7)).coerceIn(PLAYABLE_BORDER, MAP_SIZE - PLAYABLE_BORDER)),
+                    QuestMapPoint(scaleDesign(96), (band(!startsHigh, 0.55) + scaleDesign(random.nextInt(15) - 7)).coerceIn(PLAYABLE_BORDER, MAP_SIZE - PLAYABLE_BORDER)),
+                    QuestMapPoint(scaleDesign(136), (band(startsHigh, 0.45) + scaleDesign(random.nextInt(15) - 7)).coerceIn(PLAYABLE_BORDER, MAP_SIZE - PLAYABLE_BORDER)),
+                    QuestMapPoint(scaleDesign(174), (band(!startsHigh) + scaleDesign(random.nextInt(15) - 7)).coerceIn(PLAYABLE_BORDER, MAP_SIZE - PLAYABLE_BORDER)),
+                    QuestMapPoint(scaleDesign(202), (center + scaleDesign(random.nextInt(21) - 10)).coerceIn(PLAYABLE_BORDER, MAP_SIZE - PLAYABLE_BORDER)),
                 )
             }
             QuestRouteLayout.RIDGE_PASS -> listOf(
-                QuestMapPoint(22, jitter(46, 10)),
+                QuestMapPoint(scaleDesign(22), jitter(46, 10)),
                 QuestMapPoint(jitter(55, 6), jitter(94, 8)),
                 QuestMapPoint(jitter(91, 7), jitter(91, 8)),
                 QuestMapPoint(jitter(130, 7), jitter(154, 8)),
                 QuestMapPoint(jitter(168, 6), jitter(143, 8)),
-                QuestMapPoint(202, jitter(181, 10)),
+                QuestMapPoint(scaleDesign(202), jitter(181, 10)),
             )
             QuestRouteLayout.HORSESHOE -> listOf(
                 QuestMapPoint(jitter(24, 4), jitter(58, 8)),
@@ -166,12 +169,12 @@ internal object VerdantRoadQuestPlanner {
         val result = mutableListOf<QuestMapContent>()
         result += QuestMapContent(QuestMapContentKind.START, route.first(), 0, optional = false)
 
-        listOf(0.20, 0.46, 0.72).forEach { fraction ->
+        listOf(0.15, 0.32, 0.50, 0.68, 0.84).forEach { fraction ->
             val routeIndex = (route.lastIndex * fraction).roundToInt()
             result += QuestMapContent(QuestMapContentKind.COMBAT, route[routeIndex], routeIndex, optional = false)
         }
 
-        listOf(0.12, 0.34, 0.58, 0.82).forEachIndexed { ordinal, fraction ->
+        listOf(0.09, 0.24, 0.39, 0.55, 0.71, 0.88).forEachIndexed { ordinal, fraction ->
             val routeIndex = (route.lastIndex * fraction).roundToInt()
             val anchor = route[routeIndex]
             val branch = uniqueBranch(
@@ -179,14 +182,14 @@ internal object VerdantRoadQuestPlanner {
                 routeIndex,
                 anchor,
                 preferredSide = if (ordinal % 2 == 0) 1 else -1,
-                minimumDistance = 10 + random.nextInt(6),
+                minimumDistance = scaleDesign(10 + random.nextInt(7)),
                 occupied = result.map { it.position },
             )
             trails += branch
             result += QuestMapContent(QuestMapContentKind.GATHERING, branch.last(), routeIndex, optional = true)
         }
 
-        listOf(0.29, 0.66).forEachIndexed { ordinal, fraction ->
+        listOf(0.20, 0.43, 0.63, 0.78).forEachIndexed { ordinal, fraction ->
             val routeIndex = (route.lastIndex * fraction).roundToInt()
             val anchor = route[routeIndex]
             val branch = uniqueBranch(
@@ -194,7 +197,7 @@ internal object VerdantRoadQuestPlanner {
                 routeIndex,
                 anchor,
                 preferredSide = if (ordinal % 2 == 0) -1 else 1,
-                minimumDistance = 15 + random.nextInt(5),
+                minimumDistance = scaleDesign(14 + random.nextInt(7)),
                 occupied = result.map { it.position },
             )
             trails += branch
@@ -271,10 +274,10 @@ internal object VerdantRoadQuestPlanner {
         return IntArray(MAP_SIZE * MAP_SIZE) { offset ->
             val x = offset % MAP_SIZE
             val z = offset / MAP_SIZE
-            val broad = valueNoise(seed xor 0x51A4C3L, x / 92.0, z / 92.0)
-            val medium = valueNoise(seed xor 0x137F29L, x / 34.0, z / 34.0)
-            val detail = valueNoise(seed xor 0x6C8E9FL, x / 13.0, z / 13.0)
-            val ridge = 1.0 - abs(valueNoise(seed xor 0x5249444745L, x / 48.0, z / 48.0))
+            val broad = valueNoise(seed xor 0x51A4C3L, x / 118.0, z / 118.0)
+            val medium = valueNoise(seed xor 0x137F29L, x / 45.0, z / 45.0)
+            val detail = valueNoise(seed xor 0x6C8E9FL, x / 15.0, z / 15.0)
+            val ridge = 1.0 - abs(valueNoise(seed xor 0x5249444745L, x / 62.0, z / 62.0))
             val styleOffset = when (style) {
                 QuestTerrainStyle.VERDANT -> 0.0
                 QuestTerrainStyle.HIGHLANDS -> 6.0
@@ -318,7 +321,7 @@ internal object VerdantRoadQuestPlanner {
                 }
                 QuestTerrainStyle.SAKURA_GROVE -> -maxOf(0.0, -broad) * 3.0
                 QuestTerrainStyle.INFERNAL -> {
-                    val fracture = abs(valueNoise(seed xor 0x494E4645524E414CL, x / 21.0, z / 21.0))
+                    val fracture = abs(valueNoise(seed xor 0x494E4645524E414CL, x / 27.0, z / 27.0))
                     maxOf(0.0, fracture - 0.38) * 9.0
                 }
                 else -> 0.0
@@ -338,7 +341,7 @@ internal object VerdantRoadQuestPlanner {
                     -10.0 * (1.0 - radial) + 5.0 * radial
                 }
                 QuestTerrainProfile.BROKEN_HILLS -> {
-                    val cells = valueNoise(seed xor 0x42524F4B454EL, x / 23.0, z / 23.0)
+                    val cells = valueNoise(seed xor 0x42524F4B454EL, x / 29.0, z / 29.0)
                     maxOf(0.0, cells) * 8.0 - 1.0
                 }
             }
@@ -373,8 +376,8 @@ internal object VerdantRoadQuestPlanner {
         val result = mutableListOf(
             Landform(
                 center = sightBlocker,
-                radiusX = 42.0 + random.nextInt(12),
-                radiusZ = 32.0 + random.nextInt(12),
+                radiusX = scaleDesign(42 + random.nextInt(12)).toDouble(),
+                radiusZ = scaleDesign(32 + random.nextInt(12)).toDouble(),
                 height = blockerHeight,
                 angle = random.nextDouble() * Math.PI,
             ),
@@ -395,15 +398,15 @@ internal object VerdantRoadQuestPlanner {
             val dz = after.z - before.z
             val length = maxOf(1, abs(dx) + abs(dz))
             val side = if (ordinal % 2 == 0) 1 else -1
-            val offset = 32 + random.nextInt(18)
+            val offset = scaleDesign(32 + random.nextInt(18))
             val center = QuestMapPoint(
                 (point.x + (-dz * side * offset) / length).coerceIn(PLAYABLE_BORDER, MAP_SIZE - PLAYABLE_BORDER - 1),
                 (point.z + (dx * side * offset) / length).coerceIn(PLAYABLE_BORDER, MAP_SIZE - PLAYABLE_BORDER - 1),
             )
             result += Landform(
                 center = center,
-                radiusX = 30.0 + random.nextInt(16),
-                radiusZ = 24.0 + random.nextInt(13),
+                radiusX = scaleDesign(30 + random.nextInt(16)).toDouble(),
+                radiusZ = scaleDesign(24 + random.nextInt(13)).toDouble(),
                 height = when (style) {
                     QuestTerrainStyle.HIGHLANDS, QuestTerrainStyle.CLIFFLANDS, QuestTerrainStyle.INFERNAL -> 9.0
                     else -> 7.0
@@ -425,14 +428,14 @@ internal object VerdantRoadQuestPlanner {
             val dz = after.z - before.z
             val length = maxOf(1, abs(dx) + abs(dz))
             val side = if (ordinal % 2 == 0) -1 else 1
-            val offset = 40 + random.nextInt(16)
+            val offset = scaleDesign(40 + random.nextInt(16))
             result += Landform(
                 center = QuestMapPoint(
-                    (point.x + (-dz * side * offset) / length).coerceIn(36, MAP_SIZE - 37),
-                    (point.z + (dx * side * offset) / length).coerceIn(36, MAP_SIZE - 37),
+                    (point.x + (-dz * side * offset) / length).coerceIn(scaleDesign(36), MAP_SIZE - scaleDesign(36) - 1),
+                    (point.z + (dx * side * offset) / length).coerceIn(scaleDesign(36), MAP_SIZE - scaleDesign(36) - 1),
                 ),
-                radiusX = 34.0 + random.nextInt(18),
-                radiusZ = 26.0 + random.nextInt(14),
+                radiusX = scaleDesign(34 + random.nextInt(18)).toDouble(),
+                radiusZ = scaleDesign(26 + random.nextInt(14)).toDouble(),
                 height = when (style) {
                     QuestTerrainStyle.SALTMARSH -> -4.0
                     QuestTerrainStyle.CLIFFLANDS -> -11.0 - random.nextInt(5)
@@ -671,11 +674,15 @@ internal object VerdantRoadQuestPlanner {
             val angle: Double,
             val noiseSeed: Long,
         )
-        val basins = List(5 + random.nextInt(4)) {
+        val wetlandMargin = scaleDesign(24)
+        val basins = List(8 + random.nextInt(4)) {
             WetlandBasin(
-                center = QuestMapPoint(24 + random.nextInt(MAP_SIZE - 48), 24 + random.nextInt(MAP_SIZE - 48)),
-                radiusX = 16 + random.nextInt(19),
-                radiusZ = 11 + random.nextInt(16),
+                center = QuestMapPoint(
+                    wetlandMargin + random.nextInt(MAP_SIZE - wetlandMargin * 2),
+                    wetlandMargin + random.nextInt(MAP_SIZE - wetlandMargin * 2),
+                ),
+                radiusX = scaleDesign(16 + random.nextInt(19)),
+                radiusZ = scaleDesign(11 + random.nextInt(16)),
                 angle = random.nextDouble() * Math.PI,
                 noiseSeed = random.nextLong(),
             )
