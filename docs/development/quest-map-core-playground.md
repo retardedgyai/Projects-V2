@@ -11,7 +11,7 @@ This playground tests one concrete replacement for the current flat hunt space. 
 - `/questmap status` displays ready, preparing, and active map counts.
 - `/questmap seed <long>` prepares and enters one exact seed for manual regression checks.
 - The generated extent is 224×224 blocks so it aligns to 14×14 Minecraft chunks.
-- A low, irregular coastline and one-chunk outer sea hide the square edge; an invisible final edge prevents escape.
+- A low, irregular coastline and a full client-view-distance outer sea hide the square edge; an invisible final edge prevents escape.
 - The main road always connects the camp to the boss arena, but its topology is selected from Meander, Ridge Pass, Horseshoe, or Diagonal and then rotated or reflected.
 - Terrain independently selects Rolling, Ridged, Terraced, Basin, or Broken Hills, so route and landform silhouettes do not collapse into one combination.
 - Surface ecology is derived from water distance, slope, elevation, moisture, and canopy fields rather than one style-wide top block.
@@ -21,7 +21,7 @@ This playground tests one concrete replacement for the current flat hunt space. 
 
 ## Generation pipeline
 
-1. Select one of Verdant, Highlands, or Saltmarsh from the seed.
+1. Select one of Verdant, Highlands, Saltmarsh, Clifflands, Sakura Grove, or Infernal from the seed. Each style owns biome rendering, terrain shape, surface, vegetation, liquid, road, and scene palettes.
 2. Generate layered deterministic terrain height with one of five macro terrain profiles.
 3. Select one of four route topologies, rotate or reflect it, and curve it into a walkable route.
 4. Add side trails for gathering and discovery content.
@@ -30,7 +30,7 @@ This playground tests one concrete replacement for the current flat hunt space. 
 7. For Saltmarsh, carve warped wetland basins with variable depth, irregular shorelines, inlet fingers, and relaxed banks while keeping the entire main road above water.
 8. Classify every surface cell as Meadow, Forest Floor, Shore, Rocky, Heath, or Peat and apply contiguous block palettes.
 9. Reject maps that fail reachability, density, spacing, elevation, sightline, road-grade, shoulder-relief, explorable-corridor, ecology, coastline, water, or content-count rules.
-10. Load the 196 playable chunks plus a one-chunk sea buffer, add ecology-weighted reviewed schematics and route-aligned authored scenes, then place the result in the ready pool.
+10. Load the 196 playable chunks plus the server's complete client-view-distance buffer (900 chunks at distance eight), verify every requested chunk exists, add ecology-weighted reviewed schematics and route-aligned authored scenes, then place the result in the ready pool. A player is never transferred to partial coverage.
 
 ## No-wait rule
 
@@ -52,6 +52,8 @@ Automated planning budget: 20 complete plans in under four seconds on the develo
 - The route contains no content gap greater than 115 road steps.
 - All four route topologies occur in the representative seed suite.
 - All five macro terrain profiles occur in the representative seed suite.
+- All six terrain concepts occur in the representative seed suite and exact seeds `0` through `5` expose one of each.
+- The prewarm range covers every map chunk plus the full configured view distance on all sides.
 - Every accepted plan contains at least four ground-cover ecologies.
 - Required content counts and minimum separation are enforced.
 - Saltmarsh water coverage is bounded and its main road cannot be submerged.
@@ -74,6 +76,7 @@ Automated planning budget: 20 complete plans in under four seconds on the develo
 8. From the actual spawn height, verify that terrain and vegetation hide the boss arena and most later encounters.
 9. Compare at least one seed from every reported route layout; the route must not merely be the same west-to-east S-curve.
    Compact comparison seeds are `/questmap seed 0` (Ridge Pass), `1` (Meander), `2` (Diagonal), and `3` (Horseshoe).
+   The same seeds `0` through `5` also expose Verdant, Highlands, Saltmarsh, Clifflands, Sakura Grove, and Infernal respectively.
 10. Verify that the coastline and outer sea hide the square edge during normal play and the invisible boundary cannot be crossed.
 11. Run `/questmap return`; the player must return to the hub and the active count must decrease.
 12. Repeat at least 20 entries. The command-to-transfer P95 target is below one second.

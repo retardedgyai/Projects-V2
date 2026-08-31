@@ -3,6 +3,7 @@ package dev.projects.server.questmap
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import net.minestom.server.MinecraftServer
+import net.minestom.server.ServerFlag
 import net.minestom.server.coordinate.Pos
 import net.minestom.server.coordinate.Vec
 import net.minestom.server.entity.Player
@@ -13,6 +14,7 @@ import net.minestom.server.instance.Weather
 import net.minestom.server.instance.block.Block
 import net.minestom.server.instance.generator.GenerationUnit
 import net.minestom.server.instance.generator.Generator
+import net.minestom.server.world.biome.Biome
 import java.util.Random
 import java.util.UUID
 import java.util.concurrent.CompletableFuture
@@ -27,12 +29,28 @@ internal class VerdantRoadQuestGenerator(
 ) : Generator {
     override fun generate(unit: GenerationUnit) {
         val start = unit.absoluteStart()
+        unit.modifier().fillBiome(biomeAt(start.blockX() + 8, start.blockZ() + 8))
         unit.modifier().setAllRelative { relativeX, relativeY, relativeZ ->
             blockAt(
                 start.blockX() + relativeX,
                 start.blockY() + relativeY,
                 start.blockZ() + relativeZ,
             )
+        }
+    }
+
+    private fun biomeAt(x: Int, z: Int) = when (plan.style) {
+        QuestTerrainStyle.VERDANT -> Biome.FOREST
+        QuestTerrainStyle.HIGHLANDS -> Biome.WINDSWEPT_HILLS
+        QuestTerrainStyle.SALTMARSH -> Biome.MANGROVE_SWAMP
+        QuestTerrainStyle.CLIFFLANDS -> Biome.STONY_PEAKS
+        QuestTerrainStyle.SAKURA_GROVE -> Biome.CHERRY_GROVE
+        QuestTerrainStyle.INFERNAL -> {
+            if (x in 0 until plan.size && z in 0 until plan.size && plan.groundCoverAt(x, z) == QuestGroundCover.ROCKY) {
+                Biome.BASALT_DELTAS
+            } else {
+                Biome.CRIMSON_FOREST
+            }
         }
     }
 
@@ -52,15 +70,26 @@ internal class VerdantRoadQuestGenerator(
         val boundary = x == 0 || z == 0 || x == plan.size - 1 || z == plan.size - 1
         if (boundary && y in ground + 1..ground + 4) return Block.BARRIER
         if (y > ground) {
-            return if (plan.style == QuestTerrainStyle.SALTMARSH && !road && y <= QUEST_WATER_LEVEL) Block.WATER else Block.AIR
+            return when {
+                plan.style == QuestTerrainStyle.SALTMARSH && !road && y <= QUEST_WATER_LEVEL -> Block.WATER
+                plan.style == QuestTerrainStyle.INFERNAL && !road && y <= QUEST_WATER_LEVEL -> Block.LAVA
+                else -> Block.AIR
+            }
         }
-        if (y < ground - 4) return if (plan.style == QuestTerrainStyle.HIGHLANDS) Block.TUFF else Block.STONE
+        if (y < ground - 4) return when (plan.style) {
+            QuestTerrainStyle.HIGHLANDS, QuestTerrainStyle.CLIFFLANDS -> Block.TUFF
+            QuestTerrainStyle.INFERNAL -> Block.BLACKSTONE
+            else -> Block.STONE
+        }
         if (y < ground) {
             if (exposedCliff && neighborHeights.min() < y) {
                 return when (plan.style) {
                     QuestTerrainStyle.VERDANT -> if ((x + y + z) and 3 == 0) Block.ANDESITE else Block.STONE
                     QuestTerrainStyle.HIGHLANDS -> if ((x + y + z) and 3 == 0) Block.COBBLESTONE else Block.TUFF
                     QuestTerrainStyle.SALTMARSH -> if ((x + y + z) and 3 == 0) Block.MUD_BRICKS else Block.STONE
+                    QuestTerrainStyle.CLIFFLANDS -> if ((x + y + z) and 3 == 0) Block.CALCITE else Block.STONE
+                    QuestTerrainStyle.SAKURA_GROVE -> if ((x + y + z) and 3 == 0) Block.ANDESITE else Block.STONE
+                    QuestTerrainStyle.INFERNAL -> if ((x + y + z) and 3 == 0) Block.BASALT else Block.BLACKSTONE
                 }
             }
             return subsurfaceBlock(x, z, ground)
@@ -87,6 +116,24 @@ internal class VerdantRoadQuestGenerator(
                     variation < 5 -> Block.COARSE_DIRT
                     else -> Block.DIRT_PATH
                 }
+                QuestTerrainStyle.CLIFFLANDS -> when {
+                    core && variation < 3 -> Block.COBBLESTONE
+                    core -> Block.GRAVEL
+                    variation < 5 -> Block.COARSE_DIRT
+                    else -> Block.ANDESITE
+                }
+                QuestTerrainStyle.SAKURA_GROVE -> when {
+                    core && variation < 2 -> Block.GRAVEL
+                    core -> Block.DIRT_PATH
+                    variation < 5 -> Block.ROOTED_DIRT
+                    else -> Block.DIRT_PATH
+                }
+                QuestTerrainStyle.INFERNAL -> when {
+                    core && variation < 3 -> Block.POLISHED_BLACKSTONE
+                    core -> Block.BLACKSTONE
+                    variation < 5 -> Block.SOUL_SOIL
+                    else -> Block.BASALT
+                }
             }
         }
         if (sideTrail) {
@@ -94,18 +141,29 @@ internal class VerdantRoadQuestGenerator(
                 QuestTerrainStyle.SALTMARSH -> Block.MUD
                 QuestTerrainStyle.HIGHLANDS -> Block.PODZOL
                 QuestTerrainStyle.VERDANT -> Block.ROOTED_DIRT
+                QuestTerrainStyle.CLIFFLANDS -> Block.COARSE_DIRT
+                QuestTerrainStyle.SAKURA_GROVE -> Block.ROOTED_DIRT
+                QuestTerrainStyle.INFERNAL -> Block.SOUL_SOIL
             }
         }
         return surfaceBlock(x, z, ground, exposedCliff)
     }
 
-    private fun subsurfaceBlock(x: Int, z: Int, ground: Int): Block = when (plan.groundCoverAt(x, z)) {
-        QuestGroundCover.ROCKY -> if (plan.style == QuestTerrainStyle.HIGHLANDS) Block.TUFF else Block.STONE
-        QuestGroundCover.SHORE -> if (ground <= QUEST_WATER_LEVEL - 2) Block.CLAY else Block.MUD
-        QuestGroundCover.PEAT -> if ((x + z) and 3 == 0) Block.PACKED_MUD else Block.MUD
-        QuestGroundCover.HEATH -> if (plan.style == QuestTerrainStyle.HIGHLANDS && ground >= 66) Block.STONE else Block.DIRT
-        QuestGroundCover.MEADOW,
-        QuestGroundCover.FOREST_FLOOR -> Block.DIRT
+    private fun subsurfaceBlock(x: Int, z: Int, ground: Int): Block {
+        if (plan.style == QuestTerrainStyle.INFERNAL) {
+            return if (((x + z + ground) and 4) == 0) Block.BASALT else Block.NETHERRACK
+        }
+        if (plan.style == QuestTerrainStyle.CLIFFLANDS) {
+            return if (plan.groundCoverAt(x, z) == QuestGroundCover.ROCKY) Block.STONE else Block.COARSE_DIRT
+        }
+        return when (plan.groundCoverAt(x, z)) {
+            QuestGroundCover.ROCKY -> if (plan.style == QuestTerrainStyle.HIGHLANDS) Block.TUFF else Block.STONE
+            QuestGroundCover.SHORE -> if (ground <= QUEST_WATER_LEVEL - 2) Block.CLAY else Block.MUD
+            QuestGroundCover.PEAT -> if ((x + z) and 3 == 0) Block.PACKED_MUD else Block.MUD
+            QuestGroundCover.HEATH -> if (plan.style == QuestTerrainStyle.HIGHLANDS && ground >= 66) Block.STONE else Block.DIRT
+            QuestGroundCover.MEADOW,
+            QuestGroundCover.FOREST_FLOOR -> Block.DIRT
+        }
     }
 
     private fun surfaceBlock(x: Int, z: Int, ground: Int, exposedCliff: Boolean): Block {
@@ -114,10 +172,57 @@ internal class VerdantRoadQuestGenerator(
                 QuestTerrainStyle.VERDANT -> if (plan.surfacePatchAt(x, z) <= 1) Block.MOSSY_COBBLESTONE else Block.ANDESITE
                 QuestTerrainStyle.HIGHLANDS -> if (plan.surfacePatchAt(x, z) <= 1) Block.TUFF else Block.STONE
                 QuestTerrainStyle.SALTMARSH -> if (ground <= QUEST_WATER_LEVEL + 1) Block.MUD_BRICKS else Block.STONE
+                QuestTerrainStyle.CLIFFLANDS -> if (plan.surfacePatchAt(x, z) <= 1) Block.CALCITE else Block.STONE
+                QuestTerrainStyle.SAKURA_GROVE -> if (plan.surfacePatchAt(x, z) <= 1) Block.MOSSY_COBBLESTONE else Block.ANDESITE
+                QuestTerrainStyle.INFERNAL -> if (plan.surfacePatchAt(x, z) <= 1) Block.BASALT else Block.BLACKSTONE
             }
         }
         val patch = plan.surfacePatchAt(x, z)
         val variation = Math.floorMod(plan.seed xor (x * 1_299_721L) xor (z * 741_457L), 19L).toInt()
+        if (plan.style == QuestTerrainStyle.CLIFFLANDS) {
+            return when (plan.groundCoverAt(x, z)) {
+                QuestGroundCover.ROCKY -> when {
+                    patch <= 1 -> Block.STONE
+                    patch == 2 -> Block.ANDESITE
+                    patch == 3 && variation < 8 -> Block.CALCITE
+                    else -> Block.TERRACOTTA
+                }
+                QuestGroundCover.HEATH -> if (variation < 7) Block.COARSE_DIRT else Block.GRASS_BLOCK
+                QuestGroundCover.SHORE -> if (ground <= QUEST_WATER_LEVEL) Block.GRAVEL else Block.COARSE_DIRT
+                else -> when {
+                    patch <= 1 -> Block.COARSE_DIRT
+                    variation < 4 -> Block.ROOTED_DIRT
+                    else -> Block.GRASS_BLOCK
+                }
+            }
+        }
+        if (plan.style == QuestTerrainStyle.SAKURA_GROVE) {
+            return when (plan.groundCoverAt(x, z)) {
+                QuestGroundCover.ROCKY -> if (patch <= 1) Block.CALCITE else Block.ANDESITE
+                QuestGroundCover.FOREST_FLOOR -> when {
+                    patch <= 1 -> Block.PODZOL
+                    patch == 2 -> Block.MOSS_BLOCK
+                    variation < 4 -> Block.ROOTED_DIRT
+                    else -> Block.GRASS_BLOCK
+                }
+                QuestGroundCover.SHORE -> if (ground <= QUEST_WATER_LEVEL) Block.GRAVEL else Block.MOSS_BLOCK
+                else -> if (patch == 0 && variation < 8) Block.MOSS_BLOCK else Block.GRASS_BLOCK
+            }
+        }
+        if (plan.style == QuestTerrainStyle.INFERNAL) {
+            return when (plan.groundCoverAt(x, z)) {
+                QuestGroundCover.ROCKY -> when {
+                    patch <= 1 -> Block.BASALT
+                    patch == 2 -> Block.BLACKSTONE
+                    variation == 0 -> Block.MAGMA_BLOCK
+                    else -> Block.NETHERRACK
+                }
+                QuestGroundCover.SHORE -> if (ground <= QUEST_WATER_LEVEL) Block.MAGMA_BLOCK else Block.BLACKSTONE
+                QuestGroundCover.PEAT -> if (patch <= 2) Block.CRIMSON_NYLIUM else Block.NETHERRACK
+                QuestGroundCover.HEATH -> Block.SOUL_SOIL
+                else -> if (patch == 0) Block.WARPED_NYLIUM else Block.CRIMSON_NYLIUM
+            }
+        }
         return when (plan.groundCoverAt(x, z)) {
             QuestGroundCover.MEADOW -> when {
                 patch == 0 && variation < 13 -> Block.MOSS_BLOCK
@@ -167,6 +272,15 @@ internal class VerdantRoadQuestGenerator(
     private fun outerSeaBlock(x: Int, y: Int, z: Int): Block {
         val floorVariation = Math.floorMod(plan.seed xor (x * 341_873L) xor (z * 712_619L), 3L).toInt() - 1
         val floor = QUEST_WATER_LEVEL - 3 + floorVariation
+        if (plan.style == QuestTerrainStyle.INFERNAL) {
+            return when {
+                y < floor - 3 -> Block.BLACKSTONE
+                y < floor -> Block.BASALT
+                y == floor -> if ((x + z) and 3 == 0) Block.MAGMA_BLOCK else Block.BLACKSTONE
+                y <= QUEST_WATER_LEVEL -> Block.LAVA
+                else -> Block.AIR
+            }
+        }
         return when {
             y < floor - 3 -> Block.STONE
             y < floor -> Block.DIRT
@@ -202,6 +316,9 @@ internal object VerdantRoadQuestDecorator {
                 QuestTerrainStyle.VERDANT -> 10
                 QuestTerrainStyle.HIGHLANDS -> 8
                 QuestTerrainStyle.SALTMARSH -> 7
+                QuestTerrainStyle.CLIFFLANDS -> 6
+                QuestTerrainStyle.SAKURA_GROVE -> 12
+                QuestTerrainStyle.INFERNAL -> 8
             },
         ) {
             QuestMapPoint(
@@ -213,6 +330,9 @@ internal object VerdantRoadQuestDecorator {
             QuestTerrainStyle.VERDANT -> 760
             QuestTerrainStyle.HIGHLANDS -> 560
             QuestTerrainStyle.SALTMARSH -> 480
+            QuestTerrainStyle.CLIFFLANDS -> 420
+            QuestTerrainStyle.SAKURA_GROVE -> 920
+            QuestTerrainStyle.INFERNAL -> 540
         }
         repeat(attempts) {
             val point = if (random.nextInt(100) < 78) {
@@ -232,12 +352,15 @@ internal object VerdantRoadQuestDecorator {
             val footprint = QuestMapStructureAssets.treeFootprint(plan.style, variation)
             val clearance = maxOf(7, footprint + 2)
             if (occupied.any { (other, otherClearance) -> other.distanceSquared(point) < maxOf(clearance, otherClearance).let { it * it } }) return@repeat
-            if (plan.style == QuestTerrainStyle.SALTMARSH && plan.heightAt(point) <= QUEST_WATER_LEVEL) return@repeat
+            if (plan.style in setOf(QuestTerrainStyle.SALTMARSH, QuestTerrainStyle.INFERNAL) && plan.heightAt(point) <= QUEST_WATER_LEVEL) return@repeat
             val density = when (plan.groundCoverAt(point)) {
                 QuestGroundCover.FOREST_FLOOR -> 88
-                QuestGroundCover.PEAT -> if (plan.style == QuestTerrainStyle.SALTMARSH) 58 else 20
-                QuestGroundCover.HEATH -> 28
-                QuestGroundCover.MEADOW -> 18
+                QuestGroundCover.PEAT -> when (plan.style) {
+                    QuestTerrainStyle.SALTMARSH, QuestTerrainStyle.INFERNAL -> 58
+                    else -> 20
+                }
+                QuestGroundCover.HEATH -> if (plan.style == QuestTerrainStyle.CLIFFLANDS) 18 else 28
+                QuestGroundCover.MEADOW -> if (plan.style == QuestTerrainStyle.SAKURA_GROVE) 30 else 18
                 QuestGroundCover.SHORE -> if (plan.style == QuestTerrainStyle.SALTMARSH) 32 else 9
                 QuestGroundCover.ROCKY -> 6
             }
@@ -263,9 +386,11 @@ internal object VerdantRoadQuestDecorator {
             if (plan.roadDistanceSquaredAt(point.x, point.z) <= 4 * 4) return@repeat
             if (plan.contents.any { it.position.distanceSquared(point) < 6 * 6 }) return@repeat
             val ground = plan.heightAt(point)
-            if (plan.style == QuestTerrainStyle.SALTMARSH && ground <= QUEST_WATER_LEVEL) {
-                if (random.nextInt(8) == 0) {
+            if (plan.style in setOf(QuestTerrainStyle.SALTMARSH, QuestTerrainStyle.INFERNAL) && ground <= QUEST_WATER_LEVEL) {
+                if (plan.style == QuestTerrainStyle.SALTMARSH && random.nextInt(8) == 0) {
                     instance.setBlock(point.x, QUEST_WATER_LEVEL + 1, point.z, Block.LILY_PAD)
+                } else if (plan.style == QuestTerrainStyle.INFERNAL && random.nextInt(10) == 0) {
+                    instance.setBlock(point.x, ground, point.z, Block.MAGMA_BLOCK)
                 }
                 return@repeat
             }
@@ -275,6 +400,24 @@ internal object VerdantRoadQuestDecorator {
             fun sceneClear(radius: Int): Boolean = occupiedScenes.none { it.distanceSquared(point) < radius * radius }
             fun rememberScene() {
                 occupiedScenes += point
+            }
+            if (plan.style == QuestTerrainStyle.INFERNAL) {
+                when {
+                    roll < 8 && sceneClear(8) && terrainRange(plan, point, 4) <= 3 -> {
+                        QuestMapStructureAssets.placeBoulder(instance, plan, point, random.nextInt(), assetRotation)
+                        rememberScene()
+                    }
+                    roll < 18 && sceneClear(6) && terrainRange(plan, point, 3) <= 2 -> {
+                        QuestMapStructureAssets.placeShrubCluster(instance, plan, point, random.nextInt(), assetRotation)
+                        rememberScene()
+                    }
+                    roll < 30 -> instance.setBlock(point.x, ground + 1, point.z, Block.CRIMSON_ROOTS)
+                    roll < 40 -> instance.setBlock(point.x, ground + 1, point.z, Block.WARPED_ROOTS)
+                    roll < 48 -> instance.setBlock(point.x, ground + 1, point.z, Block.CRIMSON_FUNGUS)
+                    roll < 54 -> instance.setBlock(point.x, ground + 1, point.z, Block.WARPED_FUNGUS)
+                    roll < 58 -> instance.setBlock(point.x, ground + 1, point.z, Block.FIRE)
+                }
+                return@repeat
             }
             when (cover) {
                 QuestGroundCover.ROCKY -> when {
@@ -286,7 +429,17 @@ internal object VerdantRoadQuestDecorator {
                         QuestMapStructureAssets.placeShrubCluster(instance, plan, point, random.nextInt(), assetRotation)
                         rememberScene()
                     }
-                    roll < 58 -> instance.setBlock(point.x, ground, point.z, if (plan.style == QuestTerrainStyle.HIGHLANDS) Block.TUFF else Block.ANDESITE)
+                    roll < 58 -> instance.setBlock(
+                        point.x,
+                        ground,
+                        point.z,
+                        when (plan.style) {
+                            QuestTerrainStyle.HIGHLANDS -> Block.TUFF
+                            QuestTerrainStyle.CLIFFLANDS -> if (roll and 1 == 0) Block.CALCITE else Block.ANDESITE
+                            QuestTerrainStyle.SAKURA_GROVE -> Block.MOSSY_COBBLESTONE
+                            else -> Block.ANDESITE
+                        },
+                    )
                     else -> instance.setBlock(point.x, ground + 1, point.z, Block.DEAD_BUSH)
                 }
                 QuestGroundCover.FOREST_FLOOR -> when {
@@ -298,6 +451,7 @@ internal object VerdantRoadQuestDecorator {
                         QuestMapStructureAssets.placeShrubCluster(instance, plan, point, random.nextInt(), assetRotation)
                         rememberScene()
                     }
+                    plan.style == QuestTerrainStyle.SAKURA_GROVE && roll < 26 -> instance.setBlock(point.x, ground + 1, point.z, Block.PINK_PETALS)
                     roll < 30 -> instance.setBlock(point.x, ground + 1, point.z, Block.FERN)
                     roll < 42 -> instance.setBlock(point.x, ground + 1, point.z, if (roll and 1 == 0) Block.BROWN_MUSHROOM else Block.RED_MUSHROOM)
                     roll < 54 -> instance.setBlock(point.x, ground + 1, point.z, Block.MOSS_CARPET)
@@ -360,6 +514,23 @@ internal object VerdantRoadQuestDecorator {
             val waterDistance = plan.waterDistanceAt(point)
             if (waterDistance > 4) return@repeat
             val ground = plan.heightAt(point)
+            if (plan.style == QuestTerrainStyle.INFERNAL) {
+                when {
+                    waterDistance == 0 && ground <= QUEST_WATER_LEVEL && random.nextInt(4) == 0 ->
+                        instance.setBlock(point.x, ground, point.z, if (random.nextBoolean()) Block.MAGMA_BLOCK else Block.BLACKSTONE)
+                    waterDistance in 1..2 && ground > QUEST_WATER_LEVEL -> when (random.nextInt(6)) {
+                        0 -> instance.setBlock(point.x, ground + 1, point.z, Block.CRIMSON_ROOTS)
+                        1 -> instance.setBlock(point.x, ground + 1, point.z, Block.WARPED_ROOTS)
+                        2 -> instance.setBlock(point.x, ground + 1, point.z, Block.CRIMSON_FUNGUS)
+                        3 -> instance.setBlock(point.x, ground, point.z, Block.MAGMA_BLOCK)
+                        4 -> instance.setBlock(point.x, ground, point.z, Block.BASALT)
+                        else -> instance.setBlock(point.x, ground + 1, point.z, Block.FIRE)
+                    }
+                    waterDistance in 3..4 && ground > QUEST_WATER_LEVEL && random.nextInt(3) == 0 ->
+                        instance.setBlock(point.x, ground + 1, point.z, if (random.nextBoolean()) Block.CRIMSON_ROOTS else Block.WARPED_ROOTS)
+                }
+                return@repeat
+            }
             when {
                 waterDistance == 0 && ground <= QUEST_WATER_LEVEL && random.nextInt(5) == 0 ->
                     instance.setBlock(point.x, QUEST_WATER_LEVEL + 1, point.z, Block.LILY_PAD)
@@ -385,14 +556,57 @@ internal object VerdantRoadQuestDecorator {
             val z = center.z + dz
             if (x !in 1 until plan.size - 1 || z !in 1 until plan.size - 1) return@repeat
             val ground = plan.heightAt(x, z)
-            val block = when (random.nextInt(6)) {
-                0 -> Block.BROWN_MUSHROOM
-                1, 2 -> Block.FERN
-                3 -> Block.MOSS_CARPET
-                else -> Block.SHORT_GRASS
+            val block = when (plan.style) {
+                QuestTerrainStyle.SAKURA_GROVE -> when (random.nextInt(7)) {
+                    0, 1 -> Block.PINK_PETALS
+                    2 -> Block.FLOWERING_AZALEA
+                    3 -> Block.MOSS_CARPET
+                    4 -> Block.FERN
+                    else -> Block.SHORT_GRASS
+                }
+                QuestTerrainStyle.CLIFFLANDS -> when (random.nextInt(6)) {
+                    0 -> Block.DEAD_BUSH
+                    1 -> Block.FERN
+                    2 -> Block.MOSS_CARPET
+                    else -> Block.SHORT_GRASS
+                }
+                QuestTerrainStyle.INFERNAL -> when (random.nextInt(7)) {
+                    0, 1 -> Block.CRIMSON_ROOTS
+                    2 -> Block.WARPED_ROOTS
+                    3 -> Block.CRIMSON_FUNGUS
+                    4 -> Block.WARPED_FUNGUS
+                    else -> Block.NETHER_SPROUTS
+                }
+                else -> when (random.nextInt(6)) {
+                    0 -> Block.BROWN_MUSHROOM
+                    1, 2 -> Block.FERN
+                    3 -> Block.MOSS_CARPET
+                    else -> Block.SHORT_GRASS
+                }
             }
             instance.setBlock(x, ground + 1, z, block)
         }
+    }
+
+    private data class ScenePalette(
+        val path: Block,
+        val pathAccent: Block,
+        val stone: Block,
+        val stoneCracked: Block,
+        val stonePolished: Block,
+        val timber: Block,
+        val roof: Block,
+        val light: Block,
+        val carpet: Block,
+    )
+
+    private fun scenePalette(style: QuestTerrainStyle): ScenePalette = when (style) {
+        QuestTerrainStyle.VERDANT -> ScenePalette(Block.DIRT_PATH, Block.COARSE_DIRT, Block.MOSSY_STONE_BRICKS, Block.CRACKED_STONE_BRICKS, Block.STONE_BRICKS, Block.STRIPPED_OAK_LOG, Block.DARK_OAK_SLAB, Block.LANTERN, Block.GREEN_CARPET)
+        QuestTerrainStyle.HIGHLANDS -> ScenePalette(Block.GRAVEL, Block.PODZOL, Block.TUFF_BRICKS, Block.CRACKED_STONE_BRICKS, Block.POLISHED_TUFF, Block.STRIPPED_SPRUCE_LOG, Block.SPRUCE_SLAB, Block.SOUL_LANTERN, Block.BROWN_CARPET)
+        QuestTerrainStyle.SALTMARSH -> ScenePalette(Block.PACKED_MUD, Block.MUD, Block.MUD_BRICKS, Block.MOSSY_STONE_BRICKS, Block.PACKED_MUD, Block.STRIPPED_MANGROVE_LOG, Block.MANGROVE_SLAB, Block.LANTERN, Block.GREEN_CARPET)
+        QuestTerrainStyle.CLIFFLANDS -> ScenePalette(Block.GRAVEL, Block.COARSE_DIRT, Block.STONE_BRICKS, Block.CRACKED_STONE_BRICKS, Block.POLISHED_ANDESITE, Block.STRIPPED_SPRUCE_LOG, Block.SPRUCE_SLAB, Block.SOUL_LANTERN, Block.GRAY_CARPET)
+        QuestTerrainStyle.SAKURA_GROVE -> ScenePalette(Block.DIRT_PATH, Block.ROOTED_DIRT, Block.MOSSY_STONE_BRICKS, Block.CRACKED_STONE_BRICKS, Block.POLISHED_ANDESITE, Block.STRIPPED_CHERRY_LOG, Block.CHERRY_SLAB, Block.LANTERN, Block.PINK_CARPET)
+        QuestTerrainStyle.INFERNAL -> ScenePalette(Block.POLISHED_BLACKSTONE, Block.SOUL_SOIL, Block.POLISHED_BLACKSTONE_BRICKS, Block.CRACKED_POLISHED_BLACKSTONE_BRICKS, Block.POLISHED_BASALT, Block.STRIPPED_CRIMSON_STEM, Block.CRIMSON_SLAB, Block.SOUL_LANTERN, Block.RED_CARPET)
     }
 
     private fun terrainRange(plan: QuestMapPlan, center: QuestMapPoint, radius: Int): Int {
@@ -507,15 +721,16 @@ internal object VerdantRoadQuestDecorator {
 
     private fun decorateStart(instance: Instance, plan: QuestMapPlan, center: QuestMapPoint) {
         val frame = routeFrame(plan, center)
+        val palette = scenePalette(plan.style)
         val camp = framedPoint(center, frame, 0, 6)
         for (forward in -4..4) {
             for (side in -4..4) {
                 if (forward * forward + side * side > 20) continue
                 val point = framedPoint(camp, frame, forward, side)
                 val block = when (Math.floorMod(forward * 7 + side * 11, 9)) {
-                    0, 1 -> Block.COARSE_DIRT
-                    2 -> Block.ROOTED_DIRT
-                    else -> if (plan.style == QuestTerrainStyle.HIGHLANDS) Block.PODZOL else Block.DIRT_PATH
+                    0, 1 -> palette.pathAccent
+                    2 -> palette.stonePolished
+                    else -> palette.path
                 }
                 paintSurface(instance, plan, point, block)
             }
@@ -524,37 +739,38 @@ internal object VerdantRoadQuestDecorator {
         val fire = framedPoint(camp, frame, 1, -1)
         setGrounded(instance, plan, fire, 0, Block.CAMPFIRE)
         listOf(1 to 0, -1 to 0, 0 to 1, 0 to -1).forEach { (forward, side) ->
-            setGrounded(instance, plan, framedPoint(fire, frame, forward, side), 0, Block.COBBLESTONE)
+            setGrounded(instance, plan, framedPoint(fire, frame, forward, side), 0, palette.stone)
         }
 
         // A compact field-work canopy with an obvious crafting/storage purpose.
         val shelter = framedPoint(camp, frame, -1, 2)
         listOf(-2 to -2, -2 to 2, 2 to -2, 2 to 2).forEach { (forward, side) ->
             val post = framedPoint(shelter, frame, forward, side)
-            repeat(3) { height -> setGrounded(instance, plan, post, height, Block.STRIPPED_OAK_LOG) }
+            repeat(3) { height -> setGrounded(instance, plan, post, height, palette.timber) }
         }
         for (forward in -2..2) {
             for (side in -2..2) {
                 val roof = framedPoint(shelter, frame, forward, side)
-                setGrounded(instance, plan, roof, 3, if ((forward + side) and 1 == 0) Block.DARK_OAK_SLAB else Block.SPRUCE_SLAB)
+                setGrounded(instance, plan, roof, 3, palette.roof)
             }
         }
         setGrounded(instance, plan, framedPoint(shelter, frame, 0, 1), 0, Block.CRAFTING_TABLE)
         setGrounded(instance, plan, framedPoint(shelter, frame, -1, 1), 0, Block.BARREL)
         setGrounded(instance, plan, framedPoint(shelter, frame, 1, 1), 0, Block.BARREL)
         for (forward in -1..1) {
-            setGrounded(instance, plan, framedPoint(shelter, frame, forward, -1), 0, Block.GREEN_CARPET)
+            setGrounded(instance, plan, framedPoint(shelter, frame, forward, -1), 0, palette.carpet)
         }
     }
 
     private fun decorateCombat(instance: Instance, plan: QuestMapPlan, center: QuestMapPoint, ordinal: Int) {
         val frame = routeFrame(plan, center)
+        val palette = scenePalette(plan.style)
         for (forward in -7..7) {
             for (side in -7..7) {
                 if (forward * forward + side * side > 48) continue
                 val point = framedPoint(center, frame, forward, side)
                 if (Math.floorMod(forward * 13 + side * 5 + ordinal, 7) <= 1) {
-                    paintSurface(instance, plan, point, if (plan.style == QuestTerrainStyle.HIGHLANDS) Block.GRAVEL else Block.COARSE_DIRT)
+                    paintSurface(instance, plan, point, if ((forward + side) and 1 == 0) palette.path else palette.pathAccent)
                 }
             }
         }
@@ -564,8 +780,8 @@ internal object VerdantRoadQuestDecorator {
                 for (side in -7..7) {
                     if (side in -1..1 || Math.floorMod(side + ordinal, 5) == 0) continue
                     val wall = framedPoint(center, frame, 4, side)
-                    setGrounded(instance, plan, wall, 0, if (side and 1 == 0) Block.MOSSY_STONE_BRICKS else Block.CRACKED_STONE_BRICKS)
-                    if (kotlin.math.abs(side) >= 4) setGrounded(instance, plan, wall, 1, Block.MOSSY_STONE_BRICKS)
+                    setGrounded(instance, plan, wall, 0, if (side and 1 == 0) palette.stone else palette.stoneCracked)
+                    if (kotlin.math.abs(side) >= 4) setGrounded(instance, plan, wall, 1, palette.stone)
                 }
                 QuestMapStructureAssets.placeBoulder(instance, plan, framedPoint(center, frame, 5, -6), ordinal * 31 + 1, 1)
                 QuestMapStructureAssets.placeBoulder(instance, plan, framedPoint(center, frame, 5, 6), ordinal * 31 + 2, 3)
@@ -574,12 +790,12 @@ internal object VerdantRoadQuestDecorator {
                 // A timber ambush camp: barricades frame combat but never block the route.
                 listOf(-1 to -6, 1 to -6, -1 to 6, 1 to 6).forEach { (forward, side) ->
                     val log = framedPoint(center, frame, forward, side)
-                    setGrounded(instance, plan, log, 0, Block.STRIPPED_SPRUCE_LOG)
-                    setGrounded(instance, plan, framedPoint(log, frame, 1, 0), 0, Block.STRIPPED_SPRUCE_LOG)
+                    setGrounded(instance, plan, log, 0, palette.timber)
+                    setGrounded(instance, plan, framedPoint(log, frame, 1, 0), 0, palette.timber)
                 }
                 setGrounded(instance, plan, framedPoint(center, frame, 2, 4), 0, Block.BARREL)
                 setGrounded(instance, plan, framedPoint(center, frame, 1, 3), 0, Block.CAMPFIRE)
-                for (side in -2..2) setGrounded(instance, plan, framedPoint(center, frame, -5, side), 0, Block.SPRUCE_SLAB)
+                for (side in -2..2) setGrounded(instance, plan, framedPoint(center, frame, -5, side), 0, palette.roof)
             }
             else -> {
                 // Natural choke: rock masses sit on the flanks and the clear middle remains playable.
@@ -599,6 +815,7 @@ internal object VerdantRoadQuestDecorator {
 
     private fun decorateGathering(instance: Instance, plan: QuestMapPlan, center: QuestMapPoint, ordinal: Int) {
         val frame = routeFrame(plan, center)
+        val palette = scenePalette(plan.style)
         val ore = when (ordinal % 4) {
             0 -> Block.COPPER_ORE
             1 -> Block.IRON_ORE
@@ -613,7 +830,7 @@ internal object VerdantRoadQuestDecorator {
             for (side in -3..3) {
                 if (forward * forward + side * side > 12) continue
                 val point = framedPoint(center, frame, forward, side)
-                paintSurface(instance, plan, point, if ((forward + side) and 2 == 0) Block.GRAVEL else Block.ANDESITE)
+                paintSurface(instance, plan, point, if ((forward + side) and 2 == 0) palette.path else palette.stonePolished)
             }
         }
         listOf(0 to 0, 1 to 0, -1 to 0, 0 to 1, -1 to 1).forEachIndexed { index, (forward, side) ->
@@ -623,11 +840,12 @@ internal object VerdantRoadQuestDecorator {
         }
         setGrounded(instance, plan, framedPoint(center, frame, -2, -3), 0, Block.BARREL)
         setGrounded(instance, plan, framedPoint(center, frame, -1, -3), 0, Block.CRAFTING_TABLE)
-        for (forward in -2..2) setGrounded(instance, plan, framedPoint(center, frame, forward, -4), 0, Block.SPRUCE_SLAB)
+        for (forward in -2..2) setGrounded(instance, plan, framedPoint(center, frame, forward, -4), 0, palette.roof)
     }
 
     private fun decorateDiscovery(instance: Instance, plan: QuestMapPlan, center: QuestMapPoint, ordinal: Int) {
         val frame = routeFrame(plan, center)
+        val palette = scenePalette(plan.style)
         when (ordinal % 3) {
             0 -> {
                 // A spring framed by a low ruin; the pool is the focal point.
@@ -635,30 +853,30 @@ internal object VerdantRoadQuestDecorator {
                     for (side in -2..2) {
                         val point = framedPoint(center, frame, forward, side)
                         if (forward * forward + side * side <= 3) {
-                            instance.setBlock(point.x, plan.heightAt(point), point.z, Block.WATER)
+                            instance.setBlock(point.x, plan.heightAt(point), point.z, if (plan.style == QuestTerrainStyle.INFERNAL) Block.LAVA else Block.WATER)
                         }
                     }
                 }
                 for (side in -4..4) {
                     if (side == 0 || Math.floorMod(side, 3) == 0) continue
-                    setGrounded(instance, plan, framedPoint(center, frame, 3, side), 0, Block.MOSSY_STONE_BRICKS)
+                    setGrounded(instance, plan, framedPoint(center, frame, 3, side), 0, palette.stone)
                 }
             }
             1 -> {
                 // A collapsed wayside shrine has a broad base and a deliberate recessed focal niche.
                 for (side in -4..4) {
                     val point = framedPoint(center, frame, 2, side)
-                    setGrounded(instance, plan, point, 0, if (side and 1 == 0) Block.MOSSY_STONE_BRICKS else Block.CRACKED_STONE_BRICKS)
-                    if (kotlin.math.abs(side) in 2..3) setGrounded(instance, plan, point, 1, Block.STONE_BRICKS)
+                    setGrounded(instance, plan, point, 0, if (side and 1 == 0) palette.stone else palette.stoneCracked)
+                    if (kotlin.math.abs(side) in 2..3) setGrounded(instance, plan, point, 1, palette.stonePolished)
                 }
-                setGrounded(instance, plan, framedPoint(center, frame, 2, 0), 1, Block.CHISELED_STONE_BRICKS)
+                setGrounded(instance, plan, framedPoint(center, frame, 2, 0), 1, palette.stonePolished)
                 setGrounded(instance, plan, framedPoint(center, frame, 1, 0), 0, Block.CANDLE)
             }
             else -> {
                 // A rooted stone seat: landscape and discovery object read as one silhouette.
                 QuestMapStructureAssets.placeBoulder(instance, plan, framedPoint(center, frame, 2, 1), ordinal * 71, 2)
                 for (side in -2..2) {
-                    setGrounded(instance, plan, framedPoint(center, frame, 0, side), 0, Block.MOSSY_COBBLESTONE_SLAB)
+                    setGrounded(instance, plan, framedPoint(center, frame, 0, side), 0, palette.roof)
                 }
                 setGrounded(instance, plan, framedPoint(center, frame, 1, 0), 0, Block.AMETHYST_CLUSTER)
             }
@@ -667,15 +885,16 @@ internal object VerdantRoadQuestDecorator {
 
     private fun decorateBossArena(instance: Instance, plan: QuestMapPlan, center: QuestMapPoint) {
         val frame = routeFrame(plan, center)
+        val palette = scenePalette(plan.style)
         for (forward in -13..13) {
             for (side in -13..13) {
                 val distance = forward * forward + side * side
                 if (distance > 13 * 13) continue
                 val point = framedPoint(center, frame, forward, side)
                 val block = when {
-                    distance >= 11 * 11 -> if (Math.floorMod(forward + side, 4) == 0) Block.CRACKED_DEEPSLATE_BRICKS else Block.POLISHED_DEEPSLATE
-                    Math.floorMod(forward * 5 + side * 7, 17) <= 1 -> Block.CRACKED_DEEPSLATE_TILES
-                    else -> Block.POLISHED_ANDESITE
+                    distance >= 11 * 11 -> if (Math.floorMod(forward + side, 4) == 0) palette.stoneCracked else palette.stone
+                    Math.floorMod(forward * 5 + side * 7, 17) <= 1 -> palette.pathAccent
+                    else -> palette.stonePolished
                 }
                 paintSurface(instance, plan, point, block)
             }
@@ -687,11 +906,11 @@ internal object VerdantRoadQuestDecorator {
             for (forwardOffset in -1..1) {
                 for (sideOffset in -1..1) {
                     val point = framedPoint(base, frame, forwardOffset, sideOffset)
-                    setGrounded(instance, plan, point, 0, Block.DEEPSLATE_BRICKS)
+                    setGrounded(instance, plan, point, 0, palette.stone)
                 }
             }
-            repeat(3) { height -> setGrounded(instance, plan, base, height, if (height == 1) Block.CRACKED_DEEPSLATE_BRICKS else Block.DEEPSLATE_BRICKS) }
-            setGrounded(instance, plan, framedPoint(base, frame, 0, if (side > 0) -1 else 1), 0, Block.SOUL_LANTERN)
+            repeat(3) { height -> setGrounded(instance, plan, base, height, if (height == 1) palette.stoneCracked else palette.stone) }
+            setGrounded(instance, plan, framedPoint(base, frame, 0, if (side > 0) -1 else 1), 0, palette.light)
         }
 
         // A broad far-wall shrine creates the destination silhouette seen after entering the arena.
@@ -704,15 +923,15 @@ internal object VerdantRoadQuestDecorator {
             val point = framedPoint(center, frame, 11, side)
             repeat(height) { layer ->
                 val block = when {
-                    layer == height - 1 && side % 3 == 0 -> Block.CHISELED_DEEPSLATE
-                    (side + layer) and 3 == 0 -> Block.CRACKED_DEEPSLATE_BRICKS
-                    else -> Block.DEEPSLATE_BRICKS
+                    layer == height - 1 && side % 3 == 0 -> palette.stonePolished
+                    (side + layer) and 3 == 0 -> palette.stoneCracked
+                    else -> palette.stone
                 }
                 setGrounded(instance, plan, point, layer, block)
             }
         }
         setGrounded(instance, plan, framedPoint(center, frame, 10, 0), 1, Block.LODESTONE)
-        setGrounded(instance, plan, framedPoint(center, frame, 10, 0), 2, Block.SOUL_LANTERN)
+        setGrounded(instance, plan, framedPoint(center, frame, 10, 0), 2, palette.light)
         setGrounded(instance, plan, center, 0, Block.LODESTONE)
         QuestMapStructureAssets.placeBoulder(instance, plan, framedPoint(center, frame, 10, -9), plan.seed.toInt(), 1)
         QuestMapStructureAssets.placeBoulder(instance, plan, framedPoint(center, frame, 10, 9), (plan.seed ushr 32).toInt(), 3)
@@ -725,6 +944,7 @@ internal class VerdantRoadQuestRuntime private constructor(
     val instance: InstanceContainer,
     val spawn: Pos,
     val preparationMillis: Long,
+    val loadedChunkCount: Int,
 ) {
     fun close() {
         check(instance.players.isEmpty()) { "Cannot close a quest map while players are inside" }
@@ -741,13 +961,16 @@ internal class VerdantRoadQuestRuntime private constructor(
             instance.setWeather(Weather.CLEAR)
             instance.setChunkSupplier(::LightingChunk)
             instance.setGenerator(VerdantRoadQuestGenerator(plan))
-            val chunkCount = plan.size / 16
-            val chunks = buildList {
-                for (chunkX in -1..chunkCount) {
-                    for (chunkZ in -1..chunkCount) add(instance.loadChunk(chunkX, chunkZ))
+            val chunkRange = questMapRenderChunkRange(plan.size, ServerFlag.CHUNK_VIEW_DISTANCE)
+            val chunkCoordinates = buildList {
+                for (chunkX in chunkRange) {
+                    for (chunkZ in chunkRange) add(chunkX to chunkZ)
                 }
             }
+            val chunks = chunkCoordinates.map { (chunkX, chunkZ) -> instance.loadChunk(chunkX, chunkZ) }
             return CompletableFuture.allOf(*chunks.toTypedArray()).thenApply {
+                val missing = chunkCoordinates.filter { (chunkX, chunkZ) -> instance.getChunk(chunkX, chunkZ) == null }
+                check(missing.isEmpty()) { "Quest map render coverage incomplete: ${missing.take(8)} (${missing.size} missing)" }
                 VerdantRoadQuestDecorator.decorate(instance, plan)
                 val spawn = Pos(plan.start.x + 0.5, plan.heightAt(plan.start) + 1.0, plan.start.z + 0.5)
                 VerdantRoadQuestRuntime(
@@ -755,12 +978,20 @@ internal class VerdantRoadQuestRuntime private constructor(
                     instance,
                     spawn,
                     (System.nanoTime() - startedAt) / 1_000_000,
+                    chunkCoordinates.size,
                 )
             }.whenComplete { _, failure ->
                 if (failure != null) MinecraftServer.getInstanceManager().unregisterInstance(instance)
             }
         }
     }
+}
+
+internal fun questMapRenderChunkRange(mapSize: Int, viewDistance: Int): IntRange {
+    require(mapSize > 0)
+    val lastMapChunk = Math.floorDiv(mapSize - 1, 16)
+    val renderBuffer = viewDistance.coerceAtLeast(2)
+    return -renderBuffer..lastMapChunk + renderBuffer
 }
 
 internal data class VerdantRoadQuestServiceStatus(
@@ -832,7 +1063,8 @@ internal class VerdantRoadQuestService(
                 player.sendMessage(
                     Component.text(
                         "Verdant Road seed=${runtime.plan.seed} style=${runtime.plan.style} layout=${runtime.plan.routeLayout} " +
-                            "terrain=${runtime.plan.terrainProfile} ready=${runtime.preparationMillis}ms transfer=${transferMillis}ms",
+                            "terrain=${runtime.plan.terrainProfile} chunks=${runtime.loadedChunkCount} " +
+                            "ready=${runtime.preparationMillis}ms transfer=${transferMillis}ms",
                         NamedTextColor.GREEN,
                     ),
                 )
@@ -886,7 +1118,7 @@ internal class VerdantRoadQuestService(
             println(
                 "QUEST_MAP_READY seed=${runtime.plan.seed} style=${runtime.plan.style} " +
                     "layout=${runtime.plan.routeLayout} terrain=${runtime.plan.terrainProfile} " +
-                    "size=${runtime.plan.size} preparation=${runtime.preparationMillis}ms",
+                    "size=${runtime.plan.size} chunks=${runtime.loadedChunkCount} preparation=${runtime.preparationMillis}ms",
             )
         }
     }

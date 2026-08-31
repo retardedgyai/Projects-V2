@@ -78,6 +78,22 @@ class VerdantRoadQuestPlannerTest {
     }
 
     @Test
+    fun `six compact smoke seeds expose every terrain concept`() {
+        val plans = (0L..5L).map(VerdantRoadQuestPlanner::generate)
+
+        assertEquals(QuestTerrainStyle.entries.toSet(), plans.map { it.style }.toSet())
+    }
+
+    @Test
+    fun `prewarm range covers the complete client render horizon`() {
+        val range = questMapRenderChunkRange(VerdantRoadQuestPlanner.MAP_SIZE, 8)
+
+        assertEquals(-8, range.first)
+        assertEquals(21, range.last)
+        assertEquals(900, range.count() * range.count())
+    }
+
+    @Test
     fun `failed manual smoke saltmarsh seed no longer floods or builds a perimeter wall`() {
         val plan = VerdantRoadQuestPlanner.generate(1_788_101_320_652L)
 
