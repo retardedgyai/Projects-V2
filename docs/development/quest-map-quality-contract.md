@@ -71,9 +71,9 @@ Between major scenes, the field must also contain composed middle-distance regio
 - Stairs, slabs, retaining edges, bridges, and switchbacks must communicate why the road crosses its terrain.
 - Road materials form contiguous wear patterns. Single-block confetti is rejected.
 - After every structure and encounter has been placed, the complete Minestom instance is scanned.
-  The full three-block main-road radius and one-block side-trail radius must retain two blocks of
-  collision-free headroom. Any solid decoration inside that protected volume is removed, and a
-  remaining obstruction prevents the map from entering the ready pool.
+  The full five-block main-road radius and two-block side-trail radius must remain free of solid
+  decoration for eight blocks above the local surface. Any solid decoration inside that protected
+  volume is removed, and a remaining obstruction prevents the map from entering the ready pool.
 
 ## Natural asset contract
 

@@ -346,7 +346,7 @@ internal object VerdantRoadQuestDecorator {
             for (x in 0 until plan.size) {
                 if (!isProtectedRouteCell(plan, x, z)) continue
                 val ground = plan.heightAt(x, z)
-                for (y in ground + 1..ground + ROUTE_HEADROOM_BLOCKS) {
+                for (y in ground + 1..ground + ROUTE_VISUAL_CLEARANCE_HEIGHT) {
                     if (instance.getBlock(x, y, z).blocksMotion()) {
                         instance.setBlock(x, y, z, Block.AIR)
                     }
@@ -365,7 +365,7 @@ internal object VerdantRoadQuestDecorator {
             for (x in 0 until plan.size) {
                 if (!isProtectedRouteCell(plan, x, z)) continue
                 val ground = plan.heightAt(x, z)
-                for (y in ground + 1..ground + ROUTE_HEADROOM_BLOCKS) {
+                for (y in ground + 1..ground + ROUTE_VISUAL_CLEARANCE_HEIGHT) {
                     val block = instance.getBlock(x, y, z)
                     if (block.blocksMotion()) {
                         obstructions += "$x,$y,$z=${block.name()}"
@@ -381,9 +381,9 @@ internal object VerdantRoadQuestDecorator {
         plan.mainRoadDistanceSquaredAt(x, z) <= MAIN_ROAD_CLEARANCE_RADIUS * MAIN_ROAD_CLEARANCE_RADIUS ||
             plan.roadDistanceSquaredAt(x, z) <= SIDE_TRAIL_CLEARANCE_RADIUS * SIDE_TRAIL_CLEARANCE_RADIUS
 
-    private const val MAIN_ROAD_CLEARANCE_RADIUS = 3
-    private const val SIDE_TRAIL_CLEARANCE_RADIUS = 1
-    private const val ROUTE_HEADROOM_BLOCKS = 2
+    private const val MAIN_ROAD_CLEARANCE_RADIUS = 5
+    private const val SIDE_TRAIL_CLEARANCE_RADIUS = 2
+    private const val ROUTE_VISUAL_CLEARANCE_HEIGHT = 8
 
     private fun scenicAnchors(plan: QuestMapPlan): List<QuestMapPoint> {
         val random = Random(plan.seed xor 0x5343454E49434CL)
@@ -1007,30 +1007,30 @@ internal object VerdantRoadQuestDecorator {
         }
         when (ordinal % 3) {
             0 -> {
-                // The encounter sits inside one broken retaining wall with a readable entry/exit.
-                for (side in -7..7) {
-                    if (side in -1..1 || Math.floorMod(side + ordinal, 5) == 0) continue
-                    val wall = framedPoint(center, frame, 4, side)
+                // Two separated retaining-wall remnants frame the encounter without crossing the road.
+                ((-12..-8) + (8..12)).forEach { side ->
+                    if (Math.floorMod(side + ordinal, 5) == 0) return@forEach
+                    val wall = framedPoint(center, frame, 3, side)
                     setGrounded(instance, plan, wall, 0, if (side and 1 == 0) palette.stone else palette.stoneCracked)
-                    if (kotlin.math.abs(side) >= 4) setGrounded(instance, plan, wall, 1, palette.stone)
+                    if (kotlin.math.abs(side) >= 10) setGrounded(instance, plan, wall, 1, palette.stone)
                 }
-                QuestMapStructureAssets.placeBoulder(instance, plan, framedPoint(center, frame, 5, -6), ordinal * 31 + 1, 1)
-                QuestMapStructureAssets.placeBoulder(instance, plan, framedPoint(center, frame, 5, 6), ordinal * 31 + 2, 3)
+                QuestMapStructureAssets.placeBoulder(instance, plan, framedPoint(center, frame, 4, -13), ordinal * 31 + 1, 1)
+                QuestMapStructureAssets.placeBoulder(instance, plan, framedPoint(center, frame, 4, 13), ordinal * 31 + 2, 3)
             }
             1 -> {
                 // A timber ambush camp: barricades frame combat but never block the route.
-                listOf(-1 to -6, 1 to -6, -1 to 6, 1 to 6).forEach { (forward, side) ->
+                listOf(-1 to -10, 1 to -10, -1 to 10, 1 to 10).forEach { (forward, side) ->
                     val log = framedPoint(center, frame, forward, side)
                     setGrounded(instance, plan, log, 0, palette.timber)
                     setGrounded(instance, plan, framedPoint(log, frame, 1, 0), 0, palette.timber)
                 }
-                setGrounded(instance, plan, framedPoint(center, frame, 2, 4), 0, Block.BARREL)
-                setGrounded(instance, plan, framedPoint(center, frame, 1, 3), 0, Block.CAMPFIRE)
-                for (side in -2..2) setGrounded(instance, plan, framedPoint(center, frame, -5, side), 0, palette.roof)
+                setGrounded(instance, plan, framedPoint(center, frame, 2, 9), 0, Block.BARREL)
+                setGrounded(instance, plan, framedPoint(center, frame, 1, 8), 0, Block.CAMPFIRE)
+                for (forward in -2..2) setGrounded(instance, plan, framedPoint(center, frame, forward, -10), 0, palette.roof)
             }
             else -> {
                 // Natural choke: rock masses sit on the flanks and the clear middle remains playable.
-                listOf(-2 to -7, 3 to -6, 4 to 6, -3 to 7).forEachIndexed { index, (forward, side) ->
+                listOf(-2 to -13, 3 to -12, 4 to 12, -3 to 13).forEachIndexed { index, (forward, side) ->
                     QuestMapStructureAssets.placeBoulder(
                         instance,
                         plan,
@@ -1039,7 +1039,7 @@ internal object VerdantRoadQuestDecorator {
                         index,
                     )
                 }
-                QuestMapStructureAssets.placeFallenLog(instance, plan, framedPoint(center, frame, 5, -4), 5, 1, ordinal)
+                QuestMapStructureAssets.placeFallenLog(instance, plan, framedPoint(center, frame, 5, -11), 5, 1, ordinal)
             }
         }
     }
@@ -1053,7 +1053,7 @@ internal object VerdantRoadQuestDecorator {
             2 -> Block.COAL_ORE
             else -> Block.AMETHYST_CLUSTER
         }
-        val face = framedPoint(center, frame, 1, 3)
+        val face = framedPoint(center, frame, 1, 8)
         QuestMapStructureAssets.placeBoulder(instance, plan, face, ordinal * 97, ordinal)
 
         // Resource blocks are exposed inside a cut, never stacked loose on grass.
@@ -1077,12 +1077,13 @@ internal object VerdantRoadQuestDecorator {
     private fun decorateDiscovery(instance: Instance, plan: QuestMapPlan, center: QuestMapPoint, ordinal: Int) {
         val frame = routeFrame(plan, center)
         val palette = scenePalette(plan.style)
+        val site = framedPoint(center, frame, 0, if (ordinal and 1 == 0) 9 else -9)
         when (ordinal % 3) {
             0 -> {
                 // A spring framed by a low ruin; the pool is the focal point.
                 for (forward in -2..2) {
                     for (side in -2..2) {
-                        val point = framedPoint(center, frame, forward, side)
+                        val point = framedPoint(site, frame, forward, side)
                         if (forward * forward + side * side <= 3) {
                             instance.setBlock(point.x, plan.heightAt(point), point.z, if (plan.style == QuestTerrainStyle.INFERNAL) Block.LAVA else Block.WATER)
                         }
@@ -1090,26 +1091,26 @@ internal object VerdantRoadQuestDecorator {
                 }
                 for (side in -4..4) {
                     if (side == 0 || Math.floorMod(side, 3) == 0) continue
-                    setGrounded(instance, plan, framedPoint(center, frame, 3, side), 0, palette.stone)
+                    setGrounded(instance, plan, framedPoint(site, frame, 3, side), 0, palette.stone)
                 }
             }
             1 -> {
                 // A collapsed wayside shrine has a broad base and a deliberate recessed focal niche.
                 for (side in -4..4) {
-                    val point = framedPoint(center, frame, 2, side)
+                    val point = framedPoint(site, frame, 2, side)
                     setGrounded(instance, plan, point, 0, if (side and 1 == 0) palette.stone else palette.stoneCracked)
                     if (kotlin.math.abs(side) in 2..3) setGrounded(instance, plan, point, 1, palette.stonePolished)
                 }
-                setGrounded(instance, plan, framedPoint(center, frame, 2, 0), 1, palette.stonePolished)
-                setGrounded(instance, plan, framedPoint(center, frame, 1, 0), 0, Block.CANDLE)
+                setGrounded(instance, plan, framedPoint(site, frame, 2, 0), 1, palette.stonePolished)
+                setGrounded(instance, plan, framedPoint(site, frame, 1, 0), 0, Block.CANDLE)
             }
             else -> {
                 // A rooted stone seat: landscape and discovery object read as one silhouette.
-                QuestMapStructureAssets.placeBoulder(instance, plan, framedPoint(center, frame, 2, 1), ordinal * 71, 2)
+                QuestMapStructureAssets.placeBoulder(instance, plan, framedPoint(site, frame, 2, 1), ordinal * 71, 2)
                 for (side in -2..2) {
-                    setGrounded(instance, plan, framedPoint(center, frame, 0, side), 0, palette.roof)
+                    setGrounded(instance, plan, framedPoint(site, frame, 0, side), 0, palette.roof)
                 }
-                setGrounded(instance, plan, framedPoint(center, frame, 1, 0), 0, Block.AMETHYST_CLUSTER)
+                setGrounded(instance, plan, framedPoint(site, frame, 1, 0), 0, Block.AMETHYST_CLUSTER)
             }
         }
     }
