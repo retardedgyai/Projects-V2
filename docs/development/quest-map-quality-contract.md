@@ -50,6 +50,8 @@ Every major scene must contain all five layers:
 4. **Ground transition** — the scene blends into adjacent ecology over multiple blocks; it is never pasted onto one flat disk.
 5. **Supporting detail** — two or three coherent accents explain use and age. Random pillars, isolated fences, and freestanding block stacks are forbidden.
 
+Between major scenes, the field must also contain composed middle-distance regions. A scenic region owns one ground transition, one dominant natural form, a related asset family, and negative space. Increasing isolated-prop count does not satisfy this requirement.
+
 ## Route contract
 
 - The main road is an authored traversal corridor, not paint on a heightmap.

@@ -87,7 +87,22 @@ internal class VerdantRoadQuestGenerator(
                     QuestTerrainStyle.VERDANT -> if ((x + y + z) and 3 == 0) Block.ANDESITE else Block.STONE
                     QuestTerrainStyle.HIGHLANDS -> if ((x + y + z) and 3 == 0) Block.COBBLESTONE else Block.TUFF
                     QuestTerrainStyle.SALTMARSH -> if ((x + y + z) and 3 == 0) Block.MUD_BRICKS else Block.STONE
-                    QuestTerrainStyle.CLIFFLANDS -> if ((x + y + z) and 3 == 0) Block.CALCITE else Block.STONE
+                    QuestTerrainStyle.CLIFFLANDS -> {
+                        val regionalOffset = Math.floorMod(
+                            plan.seed xor ((x / 24) * 341_873L) xor ((z / 24) * 712_619L),
+                            7L,
+                        ).toInt()
+                        val stratum = Math.floorMod(y + regionalOffset, 15)
+                        val calciteVein = Math.floorMod(
+                            plan.seed xor ((x / 10) * 1_299_721L) xor ((z / 10) * 741_457L),
+                            29L,
+                        ) == 0L
+                        when {
+                            calciteVein && stratum in 0..2 -> Block.CALCITE
+                            stratum in 7..8 -> Block.ANDESITE
+                            else -> Block.STONE
+                        }
+                    }
                     QuestTerrainStyle.SAKURA_GROVE -> if ((x + y + z) and 3 == 0) Block.ANDESITE else Block.STONE
                     QuestTerrainStyle.INFERNAL -> if ((x + y + z) and 3 == 0) Block.BASALT else Block.BLACKSTONE
                 }
@@ -172,7 +187,11 @@ internal class VerdantRoadQuestGenerator(
                 QuestTerrainStyle.VERDANT -> if (plan.surfacePatchAt(x, z) <= 1) Block.MOSSY_COBBLESTONE else Block.ANDESITE
                 QuestTerrainStyle.HIGHLANDS -> if (plan.surfacePatchAt(x, z) <= 1) Block.TUFF else Block.STONE
                 QuestTerrainStyle.SALTMARSH -> if (ground <= QUEST_WATER_LEVEL + 1) Block.MUD_BRICKS else Block.STONE
-                QuestTerrainStyle.CLIFFLANDS -> if (plan.surfacePatchAt(x, z) <= 1) Block.CALCITE else Block.STONE
+                QuestTerrainStyle.CLIFFLANDS -> when (plan.surfacePatchAt(x, z)) {
+                    0 -> Block.CALCITE
+                    1, 2 -> Block.ANDESITE
+                    else -> Block.STONE
+                }
                 QuestTerrainStyle.SAKURA_GROVE -> if (plan.surfacePatchAt(x, z) <= 1) Block.MOSSY_COBBLESTONE else Block.ANDESITE
                 QuestTerrainStyle.INFERNAL -> if (plan.surfacePatchAt(x, z) <= 1) Block.BASALT else Block.BLACKSTONE
             }
@@ -184,8 +203,10 @@ internal class VerdantRoadQuestGenerator(
                 QuestGroundCover.ROCKY -> when {
                     patch <= 1 -> Block.STONE
                     patch == 2 -> Block.ANDESITE
-                    patch == 3 && variation < 8 -> Block.CALCITE
-                    else -> Block.TERRACOTTA
+                    patch == 3 && variation < 3 -> Block.CALCITE
+                    patch == 4 && variation == 0 -> Block.TERRACOTTA
+                    patch >= 4 -> Block.ANDESITE
+                    else -> Block.STONE
                 }
                 QuestGroundCover.HEATH -> if (variation < 7) Block.COARSE_DIRT else Block.GRASS_BLOCK
                 QuestGroundCover.SHORE -> if (ground <= QUEST_WATER_LEVEL) Block.GRAVEL else Block.COARSE_DIRT
@@ -293,8 +314,10 @@ internal class VerdantRoadQuestGenerator(
 
 internal object VerdantRoadQuestDecorator {
     fun decorate(instance: InstanceContainer, plan: QuestMapPlan) {
-        decorateTrees(instance, plan)
-        decorateTerrainDetail(instance, plan)
+        val scenicAnchors = scenicAnchors(plan)
+        decorateScenicCompositions(instance, plan, scenicAnchors)
+        decorateTrees(instance, plan, scenicAnchors)
+        decorateTerrainDetail(instance, plan, scenicAnchors)
         decorateWaterEdges(instance, plan)
         decorateRoadGuidance(instance, plan)
         plan.contents.forEachIndexed { ordinal, content ->
@@ -308,17 +331,120 @@ internal object VerdantRoadQuestDecorator {
         }
     }
 
-    private fun decorateTrees(instance: Instance, plan: QuestMapPlan) {
+    private fun scenicAnchors(plan: QuestMapPlan): List<QuestMapPoint> {
+        val random = Random(plan.seed xor 0x5343454E49434CL)
+        val result = mutableListOf<QuestMapPoint>()
+        repeat(1_600) {
+            if (result.size >= 20) return@repeat
+            val point = QuestMapPoint(
+                22 + random.nextInt(plan.size - 44),
+                22 + random.nextInt(plan.size - 44),
+            )
+            val roadDistance = plan.roadDistanceSquaredAt(point.x, point.z)
+            if (roadDistance !in 13 * 13..48 * 48) return@repeat
+            if (plan.contents.any { it.position.distanceSquared(point) < 20 * 20 }) return@repeat
+            if (result.any { it.distanceSquared(point) < 30 * 30 }) return@repeat
+            if (terrainRange(plan, point, 8) > 5 || plan.slopeAt(point) > 2) return@repeat
+            result += point
+        }
+        return result
+    }
+
+    private fun decorateScenicCompositions(
+        instance: Instance,
+        plan: QuestMapPlan,
+        anchors: List<QuestMapPoint>,
+    ) {
+        val random = Random(plan.seed xor 0x564953544153L)
+        anchors.forEachIndexed { ordinal, center ->
+            val cover = plan.groundCoverAt(center)
+            val palette = scenePalette(plan.style)
+            val groundPatch = when (cover) {
+                QuestGroundCover.ROCKY -> palette.stonePolished
+                QuestGroundCover.FOREST_FLOOR -> if (plan.style == QuestTerrainStyle.INFERNAL) Block.CRIMSON_NYLIUM else Block.PODZOL
+                QuestGroundCover.PEAT -> if (plan.style == QuestTerrainStyle.INFERNAL) Block.NETHERRACK else Block.MOSS_BLOCK
+                QuestGroundCover.SHORE -> if (plan.style == QuestTerrainStyle.INFERNAL) Block.BLACKSTONE else Block.MUD
+                QuestGroundCover.HEATH -> palette.pathAccent
+                QuestGroundCover.MEADOW -> if (plan.style == QuestTerrainStyle.SAKURA_GROVE) Block.MOSS_BLOCK else Block.GRASS_BLOCK
+            }
+            for (dz in -9..9) {
+                for (dx in -9..9) {
+                    val distance = dx * dx + dz * dz
+                    if (distance > 9 * 9 || Math.floorMod(dx * 11 + dz * 7 + ordinal, 9) > 3) continue
+                    val point = QuestMapPoint(center.x + dx, center.z + dz)
+                    if (point.x !in 2 until plan.size - 2 || point.z !in 2 until plan.size - 2) continue
+                    if (plan.roadDistanceSquaredAt(point.x, point.z) <= 6 * 6) continue
+                    paintSurface(instance, plan, point, groundPatch)
+                }
+            }
+
+            val placements = listOf(
+                -7 to -3,
+                6 to -5,
+                -4 to 7,
+                7 to 5,
+                0 to 0,
+            ).map { (dx, dz) -> QuestMapPoint(center.x + dx, center.z + dz) }
+            when (cover) {
+                QuestGroundCover.ROCKY -> {
+                    placements.forEachIndexed { index, point ->
+                        if (terrainRange(plan, point, 4) <= 4) {
+                            QuestMapStructureAssets.placeBoulder(instance, plan, point, ordinal * 101 + index, index)
+                        }
+                    }
+                    QuestMapStructureAssets.placeShrubCluster(instance, plan, QuestMapPoint(center.x - 10, center.z + 2), ordinal, ordinal)
+                }
+                QuestGroundCover.FOREST_FLOOR -> {
+                    placements.take(3).forEachIndexed { index, point ->
+                        if (terrainRange(plan, point, 5) <= 3) {
+                            QuestMapStructureAssets.placeTree(instance, plan, point, ordinal * 37 + index, random.nextInt(4))
+                        }
+                    }
+                    QuestMapStructureAssets.placeFallenLog(instance, plan, placements[3], 6 + ordinal % 3, ordinal, ordinal)
+                    QuestMapStructureAssets.placeShrubCluster(instance, plan, placements[4], ordinal * 13, ordinal)
+                }
+                QuestGroundCover.SHORE, QuestGroundCover.PEAT -> {
+                    placements.take(2).forEachIndexed { index, point ->
+                        if (plan.heightAt(point) > QUEST_WATER_LEVEL && terrainRange(plan, point, 4) <= 3) {
+                            QuestMapStructureAssets.placeTree(instance, plan, point, ordinal * 41 + index, random.nextInt(4))
+                        }
+                    }
+                    placements.drop(2).forEachIndexed { index, point ->
+                        QuestMapStructureAssets.placeShrubCluster(instance, plan, point, ordinal * 17 + index, index)
+                    }
+                }
+                QuestGroundCover.MEADOW, QuestGroundCover.HEATH -> {
+                    if (terrainRange(plan, placements[0], 5) <= 3) {
+                        QuestMapStructureAssets.placeTree(instance, plan, placements[0], ordinal * 43, random.nextInt(4))
+                    }
+                    QuestMapStructureAssets.placeBoulder(instance, plan, placements[1], ordinal * 47, ordinal)
+                    if (plan.style == QuestTerrainStyle.CLIFFLANDS) {
+                        if (terrainRange(plan, placements[2], 5) <= 3) {
+                            QuestMapStructureAssets.placeTree(instance, plan, placements[2], ordinal * 53 + 1, random.nextInt(4))
+                        }
+                        QuestMapStructureAssets.placeBoulder(instance, plan, placements[3], ordinal * 59, ordinal + 2)
+                        QuestMapStructureAssets.placeFallenLog(instance, plan, placements[4], 6, ordinal, ordinal)
+                    } else {
+                        placements.drop(2).forEachIndexed { index, point ->
+                            QuestMapStructureAssets.placeShrubCluster(instance, plan, point, ordinal * 19 + index, index)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private fun decorateTrees(instance: Instance, plan: QuestMapPlan, scenicAnchors: List<QuestMapPoint>) {
         val random = Random(plan.seed xor 0x47524F5645L)
         val occupied = mutableListOf<Pair<QuestMapPoint, Int>>()
         val groveCenters = List(
             when (plan.style) {
-                QuestTerrainStyle.VERDANT -> 10
-                QuestTerrainStyle.HIGHLANDS -> 8
-                QuestTerrainStyle.SALTMARSH -> 7
-                QuestTerrainStyle.CLIFFLANDS -> 6
-                QuestTerrainStyle.SAKURA_GROVE -> 12
-                QuestTerrainStyle.INFERNAL -> 8
+                QuestTerrainStyle.VERDANT -> 20
+                QuestTerrainStyle.HIGHLANDS -> 16
+                QuestTerrainStyle.SALTMARSH -> 15
+                QuestTerrainStyle.CLIFFLANDS -> 14
+                QuestTerrainStyle.SAKURA_GROVE -> 24
+                QuestTerrainStyle.INFERNAL -> 17
             },
         ) {
             QuestMapPoint(
@@ -327,12 +453,12 @@ internal object VerdantRoadQuestDecorator {
             )
         }
         val attempts = when (plan.style) {
-            QuestTerrainStyle.VERDANT -> 760
-            QuestTerrainStyle.HIGHLANDS -> 560
-            QuestTerrainStyle.SALTMARSH -> 480
-            QuestTerrainStyle.CLIFFLANDS -> 420
-            QuestTerrainStyle.SAKURA_GROVE -> 920
-            QuestTerrainStyle.INFERNAL -> 540
+            QuestTerrainStyle.VERDANT -> 1_520
+            QuestTerrainStyle.HIGHLANDS -> 1_120
+            QuestTerrainStyle.SALTMARSH -> 960
+            QuestTerrainStyle.CLIFFLANDS -> 880
+            QuestTerrainStyle.SAKURA_GROVE -> 1_840
+            QuestTerrainStyle.INFERNAL -> 1_080
         }
         repeat(attempts) {
             val point = if (random.nextInt(100) < 78) {
@@ -348,6 +474,7 @@ internal object VerdantRoadQuestDecorator {
             }
             if (plan.roadDistanceSquaredAt(point.x, point.z) <= 7 * 7) return@repeat
             if (plan.contents.any { it.position.distanceSquared(point) < 11 * 11 }) return@repeat
+            if (scenicAnchors.any { it.distanceSquared(point) < 13 * 13 }) return@repeat
             val variation = random.nextInt()
             val footprint = QuestMapStructureAssets.treeFootprint(plan.style, variation)
             val clearance = maxOf(7, footprint + 2)
@@ -378,13 +505,14 @@ internal object VerdantRoadQuestDecorator {
         }
     }
 
-    private fun decorateTerrainDetail(instance: Instance, plan: QuestMapPlan) {
+    private fun decorateTerrainDetail(instance: Instance, plan: QuestMapPlan, scenicAnchors: List<QuestMapPoint>) {
         val random = Random(plan.seed xor 0x5445525241494EL)
         val occupiedScenes = mutableListOf<QuestMapPoint>()
-        repeat(2_800) {
+        repeat(5_600) {
             val point = QuestMapPoint(8 + random.nextInt(plan.size - 16), 8 + random.nextInt(plan.size - 16))
             if (plan.roadDistanceSquaredAt(point.x, point.z) <= 4 * 4) return@repeat
             if (plan.contents.any { it.position.distanceSquared(point) < 6 * 6 }) return@repeat
+            if (scenicAnchors.any { it.distanceSquared(point) < 8 * 8 }) return@repeat
             val ground = plan.heightAt(point)
             if (plan.style in setOf(QuestTerrainStyle.SALTMARSH, QuestTerrainStyle.INFERNAL) && ground <= QUEST_WATER_LEVEL) {
                 if (plan.style == QuestTerrainStyle.SALTMARSH && random.nextInt(8) == 0) {
@@ -425,7 +553,7 @@ internal object VerdantRoadQuestDecorator {
                         QuestMapStructureAssets.placeBoulder(instance, plan, point, random.nextInt(), assetRotation)
                         rememberScene()
                     }
-                    roll < 25 && sceneClear(6) && terrainRange(plan, point, 3) <= 2 -> {
+                    roll < (if (plan.style == QuestTerrainStyle.CLIFFLANDS) 18 else 25) && sceneClear(6) && terrainRange(plan, point, 3) <= 2 -> {
                         QuestMapStructureAssets.placeShrubCluster(instance, plan, point, random.nextInt(), assetRotation)
                         rememberScene()
                     }
@@ -507,7 +635,7 @@ internal object VerdantRoadQuestDecorator {
 
     private fun decorateWaterEdges(instance: Instance, plan: QuestMapPlan) {
         val random = Random(plan.seed xor 0x5741544552454447L)
-        repeat(1_100) {
+        repeat(2_200) {
             val point = QuestMapPoint(8 + random.nextInt(plan.size - 16), 8 + random.nextInt(plan.size - 16))
             if (plan.roadDistanceSquaredAt(point.x, point.z) <= 4 * 4) return@repeat
             if (plan.contents.any { it.position.distanceSquared(point) < 7 * 7 }) return@repeat
@@ -688,7 +816,7 @@ internal object VerdantRoadQuestDecorator {
     }
 
     private fun decorateRoadGuidance(instance: Instance, plan: QuestMapPlan) {
-        val interval = maxOf(44, plan.mainRoute.size / 6)
+        val interval = maxOf(40, plan.mainRoute.size / 9)
         var markerOrdinal = 0
         for (routeIndex in interval until plan.mainRoute.lastIndex - interval step interval) {
             val point = plan.mainRoute[routeIndex]
