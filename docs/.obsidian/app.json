@@ -1,8 +1,8 @@
 {
   "alwaysUpdateLinks": true,
   "newFileLocation": "folder",
-  "newFileFolderPath": "制作ノート/30 今/思いつき置き場",
-  "attachmentFolderPath": "制作ノート/90 保管庫/添付ファイル",
+  "newFileFolderPath": "思いつき",
+  "attachmentFolderPath": "添付",
   "showInlineTitle": true,
   "useMarkdownLinks": false
 }
