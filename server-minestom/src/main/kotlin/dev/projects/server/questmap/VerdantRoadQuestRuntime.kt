@@ -14,7 +14,6 @@ import net.minestom.server.entity.EntityType
 import net.minestom.server.entity.Player
 import net.minestom.server.entity.metadata.display.AbstractDisplayMeta
 import net.minestom.server.entity.metadata.display.TextDisplayMeta
-import net.minestom.server.entity.metadata.other.InteractionMeta
 import net.minestom.server.instance.Instance
 import net.minestom.server.instance.InstanceContainer
 import net.minestom.server.instance.LightingChunk
@@ -1454,7 +1453,9 @@ internal class VerdantRoadQuestRuntime private constructor(
     private val gatheringRespawnAtMillis = mutableMapOf<Int, Long>()
 
     init {
-        gatheringNodes.forEach(::spawnGatheringInteraction)
+        gatheringNodes.filter {
+            gatheringObjects.getValue(it.id).visualKind == QuestMapStructureAssets.GatheringVisualKind.ANIMAL_CORPSE
+        }.forEach(::spawnGatheringInteraction)
     }
 
     fun gatheringNodeAt(position: BlockVec): QuestGatheringNode? = gatheringNodesByPosition[position]
@@ -1486,7 +1487,9 @@ internal class VerdantRoadQuestRuntime private constructor(
             val node = gatheringNodes.single { it.id == nodeId }
             val gathering = gatheringObjects.getValue(node.id)
             gathering.blocks.forEach { (position, block) -> instance.setBlock(position, block) }
-            spawnGatheringInteraction(node)
+            if (gathering.visualKind == QuestMapStructureAssets.GatheringVisualKind.ANIMAL_CORPSE) {
+                spawnGatheringInteraction(node)
+            }
             gatheringRespawnAtMillis.remove(nodeId)
         }
     }
@@ -1494,26 +1497,13 @@ internal class VerdantRoadQuestRuntime private constructor(
     private fun spawnGatheringInteraction(node: QuestGatheringNode) {
         removeGatheringInteraction(node.id)
         val gathering = gatheringObjects.getValue(node.id)
-        val interaction = Entity(
-            if (gathering.visualKind == QuestMapStructureAssets.GatheringVisualKind.ANIMAL_CORPSE) {
-                EntityType.COW
-            } else {
-                EntityType.INTERACTION
-            },
-        ).apply {
+        check(gathering.visualKind == QuestMapStructureAssets.GatheringVisualKind.ANIMAL_CORPSE)
+        val interaction = Entity(EntityType.COW).apply {
             setHasPhysics(false)
             setNoGravity(true)
-            if (gathering.visualKind == QuestMapStructureAssets.GatheringVisualKind.ANIMAL_CORPSE) {
-                setPose(EntityPose.DYING)
-                setCustomName(Component.text("獣の死骸", NamedTextColor.DARK_RED))
-                setCustomNameVisible(true)
-            } else {
-                editEntityMeta(InteractionMeta::class.java) { meta ->
-                    meta.setWidth(gathering.interactionWidth)
-                    meta.setHeight(gathering.interactionHeight)
-                    meta.setResponse(true)
-                }
-            }
+            setPose(EntityPose.DYING)
+            setCustomName(Component.text("獣の死骸", NamedTextColor.DARK_RED))
+            setCustomNameVisible(true)
         }
         gatheringInteractionByNode[node.id] = interaction
         gatheringNodeByEntityId[interaction.entityId] = node
@@ -1619,9 +1609,11 @@ internal class VerdantRoadQuestService(
         val node: QuestGatheringNode,
         val targetPosition: BlockVec,
         val targetEntity: Entity?,
+        val requiresContinuousInput: Boolean,
         val requiredTicks: Int,
         val progressDisplay: Entity,
         var elapsedTicks: Int = 0,
+        var lastInputTick: Long,
     )
 
     fun prewarmInitial(): CompletableFuture<Void> = CompletableFuture.allOf(
@@ -1657,7 +1649,7 @@ internal class VerdantRoadQuestService(
         val runtime = activeByPlayer[player.uuid] ?: return false
         if (player.instance !== runtime.instance) return false
         val node = runtime.gatheringNodeAt(blockPosition) ?: return false
-        return startGathering(player, runtime, node, blockPosition, null)
+        return startGathering(player, runtime, node, blockPosition, null, requiresContinuousInput = true)
     }
 
     fun startGathering(player: Player, target: Entity): Boolean {
@@ -1665,7 +1657,7 @@ internal class VerdantRoadQuestService(
         if (player.instance !== runtime.instance || target.instance !== runtime.instance) return false
         val node = runtime.gatheringNodeForEntity(target) ?: return false
         val targetPosition = runtime.gatheringObjects.getValue(node.id).interactionPosition.asBlockVec()
-        return startGathering(player, runtime, node, targetPosition, target)
+        return startGathering(player, runtime, node, targetPosition, target, requiresContinuousInput = false)
     }
 
     private fun startGathering(
@@ -1674,6 +1666,7 @@ internal class VerdantRoadQuestService(
         node: QuestGatheringNode,
         targetPosition: BlockVec,
         targetEntity: Entity?,
+        requiresContinuousInput: Boolean,
     ): Boolean {
         val now = System.currentTimeMillis()
         if (!runtime.isGatheringNodeAvailable(node, now)) {
@@ -1689,6 +1682,7 @@ internal class VerdantRoadQuestService(
         }
         val current = activeGathering[player.uuid]
         if (current != null && current.runtime === runtime && current.node.id == node.id) {
+            current.lastInputTick = player.aliveTicks
             return true
         }
         removeActiveGathering(player.uuid)
@@ -1698,8 +1692,10 @@ internal class VerdantRoadQuestService(
             node = node,
             targetPosition = targetPosition,
             targetEntity = targetEntity,
+            requiresContinuousInput = requiresContinuousInput,
             requiredTicks = mastery.harvestTicks(node.discipline),
             progressDisplay = createGatheringProgressDisplay(),
+            lastInputTick = player.aliveTicks,
         )
         activeGathering[player.uuid] = active
         updateGatheringProgressDisplay(active)
@@ -1714,7 +1710,6 @@ internal class VerdantRoadQuestService(
     fun protectGatheringNode(player: Player, blockPosition: BlockVec): Block? {
         val runtime = activeByPlayer[player.uuid] ?: return null
         runtime.gatheringNodeAt(blockPosition) ?: return null
-        removeActiveGathering(player.uuid)
         return runtime.gatheringBlockAt(blockPosition)
     }
 
@@ -1731,6 +1726,10 @@ internal class VerdantRoadQuestService(
             MIN_GATHERING_DISTANCE,
             interaction.interactionWidth / 2.0 + GATHERING_INTERACTION_REACH,
         )
+        if (active.requiresContinuousInput && player.aliveTicks - active.lastInputTick > GATHERING_INPUT_GRACE_TICKS) {
+            cancelGathering(player)
+            return
+        }
         if (active.runtime !== runtime || player.instance !== runtime.instance ||
             !active.node.discipline.accepts(player.itemInMainHand) ||
             player.position.distanceSquared(active.targetPosition) > allowedDistance * allowedDistance ||
@@ -1859,7 +1858,7 @@ internal class VerdantRoadQuestService(
         )
         player.sendMessage(
             Component.text(
-                "採取テスト ${index + 1}/${runtime.gatheringNodes.size}: 正面の${node.discipline.displayName}対象を左クリックしてください。もう一度 /gathering test で次へ進みます。",
+                "採取テスト ${index + 1}/${runtime.gatheringNodes.size}: 正面の${node.discipline.displayName}対象を右クリック長押ししてください。もう一度 /gathering test で次へ進みます。",
                 NamedTextColor.GOLD,
             ),
         )
@@ -2078,7 +2077,7 @@ internal class VerdantRoadQuestService(
                     ),
                 )
                 player.sendMessage(Component.text("道を進むとボス地点へ到達できます。脇道には採取物や発見があります。", NamedTextColor.GRAY))
-                player.sendMessage(Component.text("採取: 対応する道具を持ち、対象を左クリック長押ししてください。", NamedTextColor.GOLD))
+                player.sendMessage(Component.text("採取: 対応する道具を持ち、対象を右クリック長押ししてください。", NamedTextColor.GOLD))
                 true
             }
         }
@@ -2154,6 +2153,7 @@ internal class VerdantRoadQuestService(
         const val PREWARM_TARGET = 2
         const val GATHERING_BAR_SEGMENTS = 12
         const val GATHERING_SWING_INTERVAL_TICKS = 6
+        const val GATHERING_INPUT_GRACE_TICKS = 8L
         const val MIN_GATHERING_DISTANCE = 7.0
         const val GATHERING_INTERACTION_REACH = 4.0
         const val RARE_PARTICLE_INTERVAL_TICKS = 18L

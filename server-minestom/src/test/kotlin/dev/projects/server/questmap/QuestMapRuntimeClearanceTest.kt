@@ -20,14 +20,12 @@ class QuestMapRuntimeClearanceTest {
             assertTrue(obstructions.isEmpty(), "Decorated route contains solid blocks: $obstructions")
             runtime.gatheringNodes.forEach { node ->
                 val gathering = runtime.gatheringObjects.getValue(node.id)
-                val interaction = assertNotNull(
-                    runtime.gatheringInteractionFor(node),
-                    "Gathering object ${node.id} has no attack interaction",
-                )
-                assertEquals(node, runtime.gatheringNodeForEntity(interaction))
                 if (gathering.visualKind == QuestMapStructureAssets.GatheringVisualKind.ANIMAL_CORPSE) {
+                    val interaction = assertNotNull(runtime.gatheringInteractionFor(node))
+                    assertEquals(node, runtime.gatheringNodeForEntity(interaction))
                     assertTrue(gathering.blocks.isEmpty(), "Animal corpse ${node.id} unexpectedly contains blocks")
                 } else {
+                    assertEquals(null, runtime.gatheringInteractionFor(node))
                     assertTrue(gathering.blocks.size > 1, "Gathering object ${node.id} is not a complete asset")
                     gathering.blocks.forEach { (position, block) ->
                         assertEquals(block, runtime.instance.getBlock(position), "Gathering asset ${node.id} lost $position")

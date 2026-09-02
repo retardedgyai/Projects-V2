@@ -43,15 +43,15 @@ import net.minestom.server.entity.Entity
 import net.minestom.server.entity.EntityType
 import net.minestom.server.entity.EquipmentSlot
 import net.minestom.server.entity.GameMode
+import net.minestom.server.entity.PlayerHand
 import net.minestom.server.event.player.AsyncPlayerConfigurationEvent
 import net.minestom.server.event.player.PlayerPluginMessageEvent
-import net.minestom.server.event.player.PlayerStartDiggingEvent
-import net.minestom.server.event.player.PlayerCancelDiggingEvent
+import net.minestom.server.event.player.PlayerBlockInteractEvent
+import net.minestom.server.event.player.PlayerEntityInteractEvent
 import net.minestom.server.event.player.PlayerFinishDiggingEvent
 import net.minestom.server.event.player.PlayerDisconnectEvent
 import net.minestom.server.event.player.PlayerSpawnEvent
 import net.minestom.server.event.player.PlayerTickEvent
-import net.minestom.server.event.entity.EntityAttackEvent
 import net.minestom.server.event.instance.InstanceTickEvent
 import net.minestom.server.instance.block.Block
 import net.minestom.server.instance.Instance
@@ -874,17 +874,14 @@ fun main() {
             prototypeBoss.reset()
         }
     }
-    events.addListener(EntityAttackEvent::class.java) { event ->
-        val player = event.entity as? net.minestom.server.entity.Player ?: return@addListener
-        questMaps.startGathering(player, event.target)
-    }
-    events.addListener(PlayerStartDiggingEvent::class.java) { event ->
-        if (questMaps.startGathering(event.player, event.blockPosition)) {
+    events.addListener(PlayerBlockInteractEvent::class.java) { event ->
+        if (event.hand == PlayerHand.MAIN && questMaps.startGathering(event.player, event.blockPosition)) {
             event.isCancelled = true
+            event.isBlockingItemUse = true
         }
     }
-    events.addListener(PlayerCancelDiggingEvent::class.java) { event ->
-        questMaps.cancelGathering(event.player)
+    events.addListener(PlayerEntityInteractEvent::class.java) { event ->
+        if (event.hand == PlayerHand.MAIN) questMaps.startGathering(event.player, event.target)
     }
     events.addListener(PlayerFinishDiggingEvent::class.java) { event ->
         questMaps.protectGatheringNode(event.player, event.blockPosition)?.let { resourceBlock ->
