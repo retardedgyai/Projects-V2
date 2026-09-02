@@ -172,9 +172,13 @@ internal data class QuestGatheringNode(
     val tier: Int = 1,
 )
 
-internal fun questGatheringNodes(plan: QuestMapPlan): List<QuestGatheringNode> = plan.contents
-    .filter { it.kind == QuestMapContentKind.GATHERING }
-    .mapIndexed { ordinal, content ->
+internal fun questGatheringNodes(
+    plan: QuestMapPlan,
+    customization: QuestMapCustomization = QuestMapCustomization.NONE,
+): List<QuestGatheringNode> {
+    val baseNodes = plan.contents
+        .filter { it.kind == QuestMapContentKind.GATHERING }
+        .mapIndexed { ordinal, content ->
         val discipline = QuestGatheringDiscipline.forGatheringOrdinal(ordinal)
         val routeAnchor = plan.mainRoute[content.mainRouteIndex]
         val outwardX = (content.position.x - routeAnchor.x).coerceIn(-1, 1)
@@ -183,20 +187,105 @@ internal fun questGatheringNodes(plan: QuestMapPlan): List<QuestGatheringNode> =
             (content.position.x + outwardX * 12).coerceIn(2, plan.size - 3),
             (content.position.z + outwardZ * 12).coerceIn(2, plan.size - 3),
         )
-        val roll = Math.floorMod(plan.seed xor (ordinal * 2_654_435_761L), 100L).toInt()
-        val quality = when {
-            roll < 6 -> QuestGatheringQuality.RARE
-            roll < 28 -> QuestGatheringQuality.BOUNTIFUL
-            else -> QuestGatheringQuality.COMMON
-        }
         QuestGatheringNode(
             id = ordinal,
             contentPosition = content.position,
             blockPosition = BlockVec(resourcePoint.x, plan.heightAt(resourcePoint) + 1, resourcePoint.z),
             discipline = discipline,
-            quality = quality,
+            quality = gatheringQuality(plan, ordinal, discipline, customization),
         )
     }
+
+    val nodes = baseNodes.toMutableList()
+    var nextId = baseNodes.size
+    baseNodes.forEach { base ->
+        val bonus = customization.amountBonusPercent(base.discipline)
+        val guaranteed = bonus / 100
+        val remainderRoll = Math.floorMod(
+            plan.seed xor (base.id * 0x4CF5AD432745937FL) xor 0x2A7B9C4D1E6F8053L,
+            100L,
+        ).toInt()
+        val extraCount = guaranteed + if (remainderRoll < bonus % 100) 1 else 0
+        repeat(extraCount) { extraOrdinal ->
+            val occupied = nodes.map { it.blockPosition }
+            val point = extraGatheringPoint(plan, base, extraOrdinal, occupied) ?: return@repeat
+            val id = nextId++
+            nodes += base.copy(
+                id = id,
+                blockPosition = BlockVec(point.x, plan.heightAt(point) + 1, point.z),
+                quality = gatheringQuality(plan, id, base.discipline, customization),
+            )
+        }
+    }
+    return nodes
+}
+
+private fun gatheringQuality(
+    plan: QuestMapPlan,
+    nodeId: Int,
+    discipline: QuestGatheringDiscipline,
+    customization: QuestMapCustomization,
+): QuestGatheringQuality {
+    val baseRoll = Math.floorMod(plan.seed xor (nodeId * 2_654_435_761L), 100L).toInt()
+    var quality = when {
+        baseRoll < 6 -> QuestGatheringQuality.RARE
+        baseRoll < 28 -> QuestGatheringQuality.BOUNTIFUL
+        else -> QuestGatheringQuality.COMMON
+    }
+    val bonus = customization.qualityBonusPercent(discipline)
+    var upgrades = bonus / 100
+    val upgradeRoll = Math.floorMod(
+        plan.seed xor (nodeId * 0x6EED0E9DA4D94A4FL) xor discipline.ordinal.toLong(),
+        100L,
+    ).toInt()
+    if (upgradeRoll < bonus % 100) upgrades++
+    repeat(upgrades) {
+        quality = when (quality) {
+            QuestGatheringQuality.COMMON -> QuestGatheringQuality.BOUNTIFUL
+            QuestGatheringQuality.BOUNTIFUL, QuestGatheringQuality.RARE -> QuestGatheringQuality.RARE
+        }
+    }
+    return quality
+}
+
+private fun extraGatheringPoint(
+    plan: QuestMapPlan,
+    base: QuestGatheringNode,
+    extraOrdinal: Int,
+    occupied: List<BlockVec>,
+): QuestMapPoint? {
+    val offsets = listOf(
+        12 to 0, -12 to 0, 0 to 12, 0 to -12,
+        10 to 10, -10 to 10, 10 to -10, -10 to -10,
+        16 to 5, -16 to 5, 5 to 16, 5 to -16,
+    )
+    val rotation = Math.floorMod(plan.seed + base.id * 31L + extraOrdinal * 7L, offsets.size.toLong()).toInt()
+    val originX = base.blockPosition.blockX()
+    val originZ = base.blockPosition.blockZ()
+    repeat(offsets.size) { attempt ->
+        val (dx, dz) = offsets[(rotation + attempt) % offsets.size]
+        val point = QuestMapPoint(originX + dx, originZ + dz)
+        if (point.x !in 4 until plan.size - 4 || point.z !in 4 until plan.size - 4) return@repeat
+        if (plan.heightAt(point) <= QUEST_WATER_LEVEL) return@repeat
+        if (plan.roadDistanceSquaredAt(point.x, point.z) <= 7 * 7) return@repeat
+        val nearbyHeights = listOf(
+            plan.heightAt(point),
+            plan.heightAt(point.x - 2, point.z),
+            plan.heightAt(point.x + 2, point.z),
+            plan.heightAt(point.x, point.z - 2),
+            plan.heightAt(point.x, point.z + 2),
+        )
+        if (nearbyHeights.max() - nearbyHeights.min() > 3) return@repeat
+        if (occupied.any { existing ->
+                val separationX = existing.blockX() - point.x
+                val separationZ = existing.blockZ() - point.z
+                separationX * separationX + separationZ * separationZ < 10 * 10
+            }
+        ) return@repeat
+        return point
+    }
+    return null
+}
 
 internal fun gatheringProgressDisplayPosition(
     playerPosition: Pos,
