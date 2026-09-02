@@ -7,7 +7,11 @@ import net.minestom.server.ServerFlag
 import net.minestom.server.coordinate.Pos
 import net.minestom.server.coordinate.Vec
 import net.minestom.server.coordinate.BlockVec
+import net.minestom.server.entity.Entity
+import net.minestom.server.entity.EntityType
 import net.minestom.server.entity.Player
+import net.minestom.server.entity.metadata.display.AbstractDisplayMeta
+import net.minestom.server.entity.metadata.display.TextDisplayMeta
 import net.minestom.server.instance.Instance
 import net.minestom.server.instance.InstanceContainer
 import net.minestom.server.instance.LightingChunk
@@ -16,6 +20,8 @@ import net.minestom.server.instance.block.Block
 import net.minestom.server.instance.generator.GenerationUnit
 import net.minestom.server.instance.generator.Generator
 import net.minestom.server.item.ItemStack
+import net.minestom.server.network.packet.server.play.ParticlePacket
+import net.minestom.server.particle.Particle
 import net.minestom.server.world.biome.Biome
 import java.nio.file.Path
 import java.util.Random
@@ -1539,6 +1545,7 @@ internal class VerdantRoadQuestService(
         val runtime: VerdantRoadQuestRuntime,
         val node: QuestGatheringNode,
         val requiredTicks: Int,
+        val progressDisplay: Entity,
         var elapsedTicks: Int = 0,
     )
 
@@ -1581,37 +1588,34 @@ internal class VerdantRoadQuestService(
             return true
         }
         if (!node.discipline.accepts(player.itemInMainHand)) {
-            activeGathering.remove(player.uuid)
+            removeActiveGathering(player.uuid)
             player.sendActionBar(
                 Component.text("Requires ${node.discipline.toolName}", NamedTextColor.RED),
             )
             return true
         }
+        removeActiveGathering(player.uuid)
         val mastery = gatheringMastery(player.uuid)
-        activeGathering[player.uuid] = ActiveGathering(
+        val active = ActiveGathering(
             runtime = runtime,
             node = node,
             requiredTicks = mastery.harvestTicks(node.discipline),
+            progressDisplay = createGatheringProgressDisplay(),
         )
-        player.sendActionBar(
-            Component.text(
-                "${node.quality.displayName} ${node.discipline.displayName} — hold attack",
-                if (node.quality == QuestGatheringQuality.RARE) NamedTextColor.LIGHT_PURPLE else NamedTextColor.GOLD,
-            ),
-        )
+        activeGathering[player.uuid] = active
+        updateGatheringProgressDisplay(active)
+        spawnGatheringProgressDisplay(player, active)
         return true
     }
 
     fun cancelGathering(player: Player) {
-        if (activeGathering.remove(player.uuid) != null) {
-            player.sendActionBar(Component.empty())
-        }
+        removeActiveGathering(player.uuid)
     }
 
     fun protectGatheringNode(player: Player, blockPosition: BlockVec): Block? {
         val runtime = activeByPlayer[player.uuid] ?: return null
         val node = runtime.gatheringNodeAt(blockPosition) ?: return null
-        activeGathering.remove(player.uuid)
+        removeActiveGathering(player.uuid)
         return node.discipline.nodeBlock
     }
 
@@ -1619,6 +1623,9 @@ internal class VerdantRoadQuestService(
         val runtime = activeByPlayer[player.uuid] ?: return
         val now = System.currentTimeMillis()
         runtime.respawnGatheringNodes(now)
+        if (player.aliveTicks % RARE_PARTICLE_INTERVAL_TICKS == 0L) {
+            emitRareGatheringParticles(player, runtime, now)
+        }
         val active = activeGathering[player.uuid] ?: return
         if (active.runtime !== runtime || player.instance !== runtime.instance ||
             !active.node.discipline.accepts(player.itemInMainHand) ||
@@ -1632,15 +1639,9 @@ internal class VerdantRoadQuestService(
             return
         }
         active.elapsedTicks++
-        val filled = (active.elapsedTicks * GATHERING_BAR_SEGMENTS / active.requiredTicks)
-            .coerceIn(0, GATHERING_BAR_SEGMENTS)
-        player.sendActionBar(
-            Component.text(active.node.discipline.displayName + " ", NamedTextColor.GOLD)
-                .append(Component.text("█".repeat(filled), NamedTextColor.GREEN))
-                .append(Component.text("░".repeat(GATHERING_BAR_SEGMENTS - filled), NamedTextColor.DARK_GRAY)),
-        )
+        updateGatheringProgressDisplay(active)
         if (active.elapsedTicks < active.requiredTicks) return
-        activeGathering.remove(player.uuid)
+        removeActiveGathering(player.uuid)
         if (!runtime.tryDepleteGatheringNode(active.node, now)) return
         completeGathering(player, active.node)
     }
@@ -1655,6 +1656,69 @@ internal class VerdantRoadQuestService(
                     NamedTextColor.GRAY,
                 ),
             )
+            player.sendMessage(
+                Component.text(
+                    "  Tree points ${mastery.availableTreePoints(discipline)} available / " +
+                        "${mastery.earnedTreePoints(discipline)} earned; " +
+                        "nodes=${mastery.unlockedNodes(discipline).joinToString { it.id }.ifEmpty { "none" }}",
+                    NamedTextColor.DARK_GRAY,
+                ),
+            )
+        }
+        player.sendMessage(Component.text("Use /gathering tree <discipline> and /gathering unlock <discipline> <node>.", NamedTextColor.GRAY))
+    }
+
+    fun gatheringMasteryTree(player: Player, disciplineId: String?) {
+        val mastery = gatheringMastery(player.uuid)
+        val disciplines = if (disciplineId == null) {
+            QuestGatheringDiscipline.entries
+        } else {
+            listOfNotNull(QuestGatheringDiscipline.entries.firstOrNull { it.id == disciplineId.lowercase() }).also {
+                if (it.isEmpty()) player.sendMessage(Component.text("Unknown gathering discipline: $disciplineId", NamedTextColor.RED))
+            }
+        }
+        disciplines.forEach { discipline ->
+            val unlocked = mastery.unlockedNodes(discipline)
+            player.sendMessage(
+                Component.text(
+                    "${discipline.displayName} tree — ${mastery.availableTreePoints(discipline)} point(s) available",
+                    NamedTextColor.GOLD,
+                ),
+            )
+            QuestGatheringMasteryNode.entries.forEach { node ->
+                val state = when {
+                    node in unlocked -> "UNLOCKED"
+                    node.prerequisite != null && node.prerequisite !in unlocked -> "requires ${node.prerequisite.id}"
+                    else -> "cost ${node.cost}"
+                }
+                player.sendMessage(
+                    Component.text(
+                        "  ${node.id} [$state] — ${node.description}",
+                        if (node in unlocked) NamedTextColor.GREEN else NamedTextColor.GRAY,
+                    ),
+                )
+            }
+        }
+    }
+
+    fun unlockGatheringMasteryNode(player: Player, disciplineId: String, nodeId: String) {
+        val discipline = QuestGatheringDiscipline.entries.firstOrNull { it.id == disciplineId.lowercase() }
+        val node = QuestGatheringMasteryNode.byId(nodeId.lowercase())
+        if (discipline == null || node == null) {
+            player.sendMessage(Component.text("Unknown discipline or mastery node.", NamedTextColor.RED))
+            return
+        }
+        val current = gatheringMastery(player.uuid)
+        when (val result = current.unlock(discipline, node)) {
+            is QuestGatheringMasteryUnlockResult.Unlocked -> {
+                gatheringMasteries[player.uuid] = result.mastery
+                masteryRepository.save(player.uuid, result.mastery)
+                player.sendMessage(Component.text("Unlocked ${discipline.displayName}: ${node.displayName}", NamedTextColor.GREEN))
+            }
+            QuestGatheringMasteryUnlockResult.AlreadyUnlocked -> player.sendMessage(Component.text("That node is already unlocked.", NamedTextColor.YELLOW))
+            QuestGatheringMasteryUnlockResult.MissingPrerequisite -> player.sendMessage(Component.text("Unlock ${node.prerequisite?.id} first.", NamedTextColor.RED))
+            QuestGatheringMasteryUnlockResult.KeystoneConflict -> player.sendMessage(Component.text("Only one keystone can be selected per gathering discipline.", NamedTextColor.RED))
+            QuestGatheringMasteryUnlockResult.NotEnoughPoints -> player.sendMessage(Component.text("Not enough mastery tree points.", NamedTextColor.RED))
         }
     }
 
@@ -1687,12 +1751,28 @@ internal class VerdantRoadQuestService(
         val previous = gatheringMastery(player.uuid)
         val previousLevel = previous.level(node.discipline)
         val amount = previous.yieldAmount(node.discipline, node.quality)
+        val nodeCenter = Vec(
+            node.blockPosition.blockX() + 0.5,
+            node.blockPosition.blockY() + 0.5,
+            node.blockPosition.blockZ() + 0.5,
+        )
+        player.sendPacket(
+            ParticlePacket(
+                Particle.BLOCK.withBlock(node.discipline.nodeBlock),
+                nodeCenter,
+                Vec(0.42, 0.42, 0.42),
+                0.12f,
+                34,
+            ),
+        )
         giveGatheringReward(
             player,
             ItemStack.of(node.discipline.commonMaterial, amount)
                 .withCustomName(Component.text(node.discipline.commonResourceName, NamedTextColor.WHITE)),
         )
-        if (node.quality == QuestGatheringQuality.RARE) {
+        val rareDiscovered = node.quality == QuestGatheringQuality.RARE ||
+            rareDiscoveryRoll(player.uuid, node, previous) < previous.rareDiscoveryChancePercent(node.discipline)
+        if (rareDiscovered) {
             giveGatheringReward(
                 player,
                 ItemStack.of(node.discipline.rareMaterial)
@@ -1706,7 +1786,7 @@ internal class VerdantRoadQuestService(
         player.sendMessage(
             Component.text(
                 "+$amount ${node.discipline.commonResourceName}  •  +${node.quality.masteryExperience} ${node.discipline.displayName} mastery",
-                if (node.quality == QuestGatheringQuality.RARE) NamedTextColor.LIGHT_PURPLE else NamedTextColor.GREEN,
+                if (rareDiscovered) NamedTextColor.LIGHT_PURPLE else NamedTextColor.GREEN,
             ),
         )
         val newLevel = updated.level(node.discipline)
@@ -1719,6 +1799,87 @@ internal class VerdantRoadQuestService(
 
     private fun giveGatheringReward(player: Player, item: ItemStack) {
         if (!player.inventory.addItemStack(item)) player.dropItem(item)
+    }
+
+    private fun createGatheringProgressDisplay(): Entity = Entity(EntityType.TEXT_DISPLAY).apply {
+        setAutoViewable(false)
+        setNoGravity(true)
+        editEntityMeta(TextDisplayMeta::class.java) { meta ->
+            meta.setBillboardRenderConstraints(AbstractDisplayMeta.BillboardConstraints.CENTER)
+            meta.setScale(Vec(0.72, 0.72, 0.72))
+            meta.setViewRange(16f)
+            meta.setShadow(true)
+            meta.setSeeThrough(true)
+            meta.setBackgroundColor(0xB0000000.toInt())
+            meta.setLineWidth(180)
+            meta.setBrightness(15, 15)
+        }
+    }
+
+    private fun spawnGatheringProgressDisplay(player: Player, active: ActiveGathering) {
+        val position = gatheringProgressDisplayPosition(player.position, player.eyeHeight, active.node.blockPosition)
+        active.progressDisplay.setInstance(active.runtime.instance, position).thenRun {
+            if (activeGathering[player.uuid] === active && player.instance === active.runtime.instance) {
+                active.progressDisplay.addViewer(player)
+            } else {
+                active.progressDisplay.remove()
+            }
+        }
+    }
+
+    private fun updateGatheringProgressDisplay(active: ActiveGathering) {
+        val filled = (active.elapsedTicks * GATHERING_BAR_SEGMENTS / active.requiredTicks)
+            .coerceIn(0, GATHERING_BAR_SEGMENTS)
+        val titleColor = if (active.node.quality == QuestGatheringQuality.RARE) {
+            NamedTextColor.LIGHT_PURPLE
+        } else {
+            NamedTextColor.GOLD
+        }
+        val text = Component.text(
+            "${active.node.quality.displayName} ${active.node.discipline.displayName}",
+            titleColor,
+        ).append(Component.newline())
+            .append(Component.text("█".repeat(filled), NamedTextColor.GREEN))
+            .append(Component.text("░".repeat(GATHERING_BAR_SEGMENTS - filled), NamedTextColor.DARK_GRAY))
+        active.progressDisplay.editEntityMeta(TextDisplayMeta::class.java) { it.setText(text) }
+    }
+
+    private fun removeActiveGathering(playerId: UUID): ActiveGathering? =
+        activeGathering.remove(playerId)?.also { it.progressDisplay.remove() }
+
+    private fun rareDiscoveryRoll(
+        playerId: UUID,
+        node: QuestGatheringNode,
+        mastery: QuestGatheringMastery,
+    ): Int = Math.floorMod(
+        playerId.mostSignificantBits xor playerId.leastSignificantBits xor
+            (node.id * 2_654_435_761L) xor mastery.experience(node.discipline).toLong(),
+        100L,
+    ).toInt()
+
+    private fun emitRareGatheringParticles(
+        player: Player,
+        runtime: VerdantRoadQuestRuntime,
+        nowMillis: Long,
+    ) {
+        runtime.gatheringNodes.asSequence()
+            .filter { it.quality == QuestGatheringQuality.RARE && runtime.isGatheringNodeAvailable(it, nowMillis) }
+            .filter { player.position.distanceSquared(it.blockPosition) <= RARE_PARTICLE_DISTANCE_SQUARED }
+            .forEach { node ->
+                player.sendPacket(
+                    ParticlePacket(
+                        Particle.END_ROD,
+                        Vec(
+                            node.blockPosition.blockX() + 0.5,
+                            node.blockPosition.blockY() + 1.0,
+                            node.blockPosition.blockZ() + 0.5,
+                        ),
+                        Vec(0.35, 0.55, 0.35),
+                        0.01f,
+                        3,
+                    ),
+                )
+            }
     }
 
     private fun gatheringMastery(playerId: UUID): QuestGatheringMastery = gatheringMasteries.computeIfAbsent(playerId) {
@@ -1786,7 +1947,7 @@ internal class VerdantRoadQuestService(
 
     fun returnToHub(player: Player): CompletableFuture<Boolean> {
         val runtime = activeByPlayer.remove(player.uuid) ?: return CompletableFuture.completedFuture(false)
-        activeGathering.remove(player.uuid)
+        removeActiveGathering(player.uuid)
         player.setVelocity(Vec.ZERO)
         return player.setInstance(hubInstance, hubSpawn).handle { _, failure ->
             if (failure == null) {
@@ -1802,7 +1963,7 @@ internal class VerdantRoadQuestService(
     }
 
     fun disconnect(playerId: UUID) {
-        activeGathering.remove(playerId)
+        removeActiveGathering(playerId)
         gatheringMasteries.remove(playerId)?.let { masteryRepository.save(playerId, it) }
         activeByPlayer.remove(playerId)?.let { closeAfterDisconnect(it, attemptsRemaining = 20) }
     }
@@ -1854,5 +2015,7 @@ internal class VerdantRoadQuestService(
         const val PREWARM_TARGET = 2
         const val GATHERING_BAR_SEGMENTS = 12
         const val MAX_GATHERING_DISTANCE_SQUARED = 7.0 * 7.0
+        const val RARE_PARTICLE_INTERVAL_TICKS = 18L
+        const val RARE_PARTICLE_DISTANCE_SQUARED = 28.0 * 28.0
     }
 }

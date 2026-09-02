@@ -497,6 +497,10 @@ fun main() {
             }, ArgumentType.Literal("status"))
         },
     )
+    val gatheringTreeLiteral = ArgumentType.Literal("tree")
+    val gatheringUnlockLiteral = ArgumentType.Literal("unlock")
+    val gatheringDisciplineArgument = ArgumentType.Word("gatheringDiscipline")
+    val gatheringNodeArgument = ArgumentType.Word("gatheringNode")
     MinecraftServer.getCommandManager().register(
         Command("gathering").apply {
             setDefaultExecutor { sender, _ ->
@@ -507,6 +511,22 @@ fun main() {
                 val player = sender as? net.minestom.server.entity.Player ?: return@addSyntax
                 questMaps.prepareGatheringSmokeTest(player)
             }, ArgumentType.Literal("test"))
+            addSyntax({ sender, _ ->
+                val player = sender as? net.minestom.server.entity.Player ?: return@addSyntax
+                questMaps.gatheringMasteryTree(player, null)
+            }, gatheringTreeLiteral)
+            addSyntax({ sender, context ->
+                val player = sender as? net.minestom.server.entity.Player ?: return@addSyntax
+                questMaps.gatheringMasteryTree(player, context.get(gatheringDisciplineArgument))
+            }, gatheringTreeLiteral, gatheringDisciplineArgument)
+            addSyntax({ sender, context ->
+                val player = sender as? net.minestom.server.entity.Player ?: return@addSyntax
+                questMaps.unlockGatheringMasteryNode(
+                    player,
+                    context.get(gatheringDisciplineArgument),
+                    context.get(gatheringNodeArgument),
+                )
+            }, gatheringUnlockLiteral, gatheringDisciplineArgument, gatheringNodeArgument)
         },
     )
     val bossPhaseArgument = ArgumentType.Word("phase")
