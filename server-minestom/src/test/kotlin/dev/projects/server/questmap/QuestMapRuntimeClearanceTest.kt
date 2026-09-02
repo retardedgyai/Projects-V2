@@ -48,6 +48,34 @@ class QuestMapRuntimeClearanceTest {
             runtime.respawnGatheringNodes(100_000L)
             assertNotNull(runtime.gatheringLabelFor(schematicNode))
             schematic.blocks.forEach { (position, block) -> assertEquals(block, runtime.instance.getBlock(position)) }
+
+            val customizedRuntime = VerdantRoadQuestRuntime.prepare(
+                BLOCKED_ROAD_REGRESSION_SEED + 1,
+                candidateCount = 1,
+                customization = QuestMapCustomization(
+                    listOf(
+                        QuestMapGatheringModifier(null, QuestMapGatheringStat.AMOUNT, 100),
+                        QuestMapGatheringModifier(
+                            QuestGatheringDiscipline.MINING,
+                            QuestMapGatheringStat.DENSE_REGIONS,
+                            200,
+                        ),
+                    ),
+                ),
+            ).get(30, TimeUnit.SECONDS)
+            try {
+                assertTrue(customizedRuntime.gatheringNodes.size > questGatheringNodes(customizedRuntime.plan).size)
+                assertTrue(customizedRuntime.gatheringNodes.any { it.denseRegionId != null })
+                customizedRuntime.gatheringNodes.forEach { node ->
+                    assertNotNull(customizedRuntime.gatheringLabelFor(node))
+                    val gathering = customizedRuntime.gatheringObjects.getValue(node.id)
+                    if (gathering.visualKind == QuestMapStructureAssets.GatheringVisualKind.SCHEMATIC) {
+                        assertTrue(gathering.blocks.isNotEmpty(), "Customized gathering node ${node.id} was not placed")
+                    }
+                }
+            } finally {
+                customizedRuntime.close()
+            }
         } finally {
             runtime.close()
         }

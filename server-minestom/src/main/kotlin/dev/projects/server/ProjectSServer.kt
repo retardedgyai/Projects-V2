@@ -43,7 +43,11 @@ import net.minestom.server.entity.Entity
 import net.minestom.server.entity.EntityType
 import net.minestom.server.entity.EquipmentSlot
 import net.minestom.server.entity.GameMode
+import net.minestom.server.entity.ItemEntity
 import net.minestom.server.entity.PlayerHand
+import net.minestom.server.event.entity.EntityDeathEvent
+import net.minestom.server.event.inventory.InventoryPreClickEvent
+import net.minestom.server.event.item.PlayerCancelItemUseEvent
 import net.minestom.server.event.player.AsyncPlayerConfigurationEvent
 import net.minestom.server.event.player.PlayerPluginMessageEvent
 import net.minestom.server.event.player.PlayerBlockInteractEvent
@@ -52,11 +56,13 @@ import net.minestom.server.event.player.PlayerFinishDiggingEvent
 import net.minestom.server.event.player.PlayerDisconnectEvent
 import net.minestom.server.event.player.PlayerSpawnEvent
 import net.minestom.server.event.player.PlayerTickEvent
+import net.minestom.server.event.player.PlayerUseItemEvent
 import net.minestom.server.event.instance.InstanceTickEvent
 import net.minestom.server.instance.block.Block
 import net.minestom.server.instance.Instance
 import net.minestom.server.instance.LightingChunk
 import net.minestom.server.instance.Weather
+import net.minestom.server.inventory.click.Click
 import net.minestom.server.item.ItemStack
 import net.minestom.server.item.Material
 import net.minestom.server.tag.Tag
@@ -68,6 +74,7 @@ import net.kyori.adventure.sound.Sound
 import net.kyori.adventure.key.Key
 import java.nio.charset.StandardCharsets
 import java.nio.file.Path
+import java.time.Duration
 import java.util.UUID
 import kotlin.math.abs
 import kotlin.math.floor
@@ -404,7 +411,10 @@ fun main() {
         updateBossBar()
         val result = if (prototypeBoss.isVictory) "VICTORY" else "DEFEAT"
         if (prototypeBoss.claimVictoryReward()) {
-            instance.players.filter { it.isOnline }.forEach(::grantVictoryXp)
+            instance.players.filter { it.isOnline }.forEach { player ->
+                grantVictoryXp(player)
+                questMaps.grantBossMapLoot(player)
+            }
         }
         instance.players.forEach {
             sendResourceSnapshot(it)
@@ -496,6 +506,10 @@ fun main() {
             addSyntax({ sender, _ ->
                 sender.sendMessage(Component.text("Quest map pool ${questMaps.status()}"))
             }, ArgumentType.Literal("status"))
+            addSyntax({ sender, _ ->
+                val player = sender as? net.minestom.server.entity.Player ?: return@addSyntax
+                questMaps.grantMapCustomizationTestItems(player)
+            }, ArgumentType.Literal("give"))
         },
     )
     val gatheringTreeLiteral = ArgumentType.Literal("tree")
@@ -877,11 +891,37 @@ fun main() {
     events.addListener(PlayerBlockInteractEvent::class.java) { event ->
         if (event.hand == PlayerHand.MAIN && questMaps.startGathering(event.player, event.blockPosition)) {
             event.isCancelled = true
-            event.isBlockingItemUse = true
+        }
+    }
+    events.addListener(InventoryPreClickEvent::class.java) { event ->
+        if (event.click !is Click.Left && event.click !is Click.Right) return@addListener
+        if (questMaps.applyGatheringTablet(event.player, event.inventory, event.slot, event.clickedItem)) {
+            event.isCancelled = true
+        }
+    }
+    events.addListener(PlayerUseItemEvent::class.java) { event ->
+        val mapData = questMaps.questMapItemData(event.itemStack) ?: return@addListener
+        event.isCancelled = true
+        prepareQuestMapTransfer(event.player)
+        questMaps.enterMapItem(event.player, mapData, event.hand).thenAccept { entered ->
+            if (!entered) event.player.showBossBar(bossBar)
         }
     }
     events.addListener(PlayerEntityInteractEvent::class.java) { event ->
         if (event.hand == PlayerHand.MAIN) questMaps.startGathering(event.player, event.target)
+    }
+    events.addListener(PlayerCancelItemUseEvent::class.java) { event ->
+        if (event.hand == PlayerHand.MAIN) questMaps.cancelGathering(event.player)
+    }
+    events.addListener(EntityDeathEvent::class.java) { event ->
+        val dead = event.entity
+        if (dead is net.minestom.server.entity.Player || dead === dummy) return@addListener
+        questMaps.rollMobMapLoot(dead.entityId).forEach { item ->
+            ItemEntity(item).apply {
+                setPickupDelay(Duration.ofMillis(600))
+                setInstance(event.instance, dead.position)
+            }
+        }
     }
     events.addListener(PlayerFinishDiggingEvent::class.java) { event ->
         questMaps.protectGatheringNode(event.player, event.blockPosition)?.let { resourceBlock ->

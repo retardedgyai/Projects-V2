@@ -12,12 +12,13 @@ import kotlin.test.assertTrue
 
 class QuestGatheringTest {
     @Test
-    fun `eight generated gathering locations cover every discipline`() {
+    fun `eight base gathering locations cover every discipline`() {
         val plan = VerdantRoadQuestPlanner.generate(91_337L)
         val nodes = questGatheringNodes(plan)
+        val baseNodes = nodes.filter { it.id in 0 until 8 }
 
-        assertEquals(8, nodes.size)
-        assertEquals(QuestGatheringDiscipline.entries.toSet(), nodes.map { it.discipline }.toSet())
+        assertEquals(8, baseNodes.size)
+        assertEquals(QuestGatheringDiscipline.entries.toSet(), baseNodes.map { it.discipline }.toSet())
         assertEquals(nodes.size, nodes.map { it.blockPosition }.distinct().size)
 
         nodes.forEach { node ->

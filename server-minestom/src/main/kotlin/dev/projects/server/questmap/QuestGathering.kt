@@ -5,9 +5,13 @@ import net.kyori.adventure.text.format.NamedTextColor
 import net.minestom.server.coordinate.BlockVec
 import net.minestom.server.coordinate.Pos
 import net.minestom.server.coordinate.Vec
+import net.minestom.server.component.DataComponents
 import net.minestom.server.instance.block.Block
+import net.minestom.server.item.component.Consumable
+import net.minestom.server.item.ItemAnimation
 import net.minestom.server.item.ItemStack
 import net.minestom.server.item.Material
+import net.minestom.server.sound.SoundEvent
 import net.minestom.server.tag.Tag
 import java.nio.file.Files
 import java.nio.file.Path
@@ -25,6 +29,7 @@ internal enum class QuestGatheringDiscipline(
     val displayName: String,
     val toolName: String,
     val toolMaterial: Material,
+    val denseRegionName: String,
     val nodeBlock: Block,
     val commonMaterial: Material,
     val commonResourceName: String,
@@ -36,6 +41,7 @@ internal enum class QuestGatheringDiscipline(
         displayName = "皮剥ぎ",
         toolName = "皮剥ぎナイフ",
         toolMaterial = Material.FLINT,
+        denseRegionName = "獣の墓場",
         nodeBlock = Block.BONE_BLOCK,
         commonMaterial = Material.LEATHER,
         commonResourceName = "獣皮",
@@ -47,6 +53,7 @@ internal enum class QuestGatheringDiscipline(
         displayName = "伐採",
         toolName = "木こりの斧",
         toolMaterial = Material.STONE_AXE,
+        denseRegionName = "古樹の森",
         nodeBlock = Block.OAK_LOG,
         commonMaterial = Material.OAK_LOG,
         commonResourceName = "木材",
@@ -58,6 +65,7 @@ internal enum class QuestGatheringDiscipline(
         displayName = "採石",
         toolName = "石工の槌",
         toolMaterial = Material.IRON_PICKAXE,
+        denseRegionName = "露岩地帯",
         nodeBlock = Block.ANDESITE,
         commonMaterial = Material.COBBLESTONE,
         commonResourceName = "石材",
@@ -69,6 +77,7 @@ internal enum class QuestGatheringDiscipline(
         displayName = "採鉱",
         toolName = "鉱夫のツルハシ",
         toolMaterial = Material.STONE_PICKAXE,
+        denseRegionName = "鉱脈",
         nodeBlock = Block.COPPER_ORE,
         commonMaterial = Material.RAW_COPPER,
         commonResourceName = "鉱石",
@@ -80,6 +89,7 @@ internal enum class QuestGatheringDiscipline(
         displayName = "植物採取",
         toolName = "採集鎌",
         toolMaterial = Material.IRON_HOE,
+        denseRegionName = "薬草群生地",
         nodeBlock = Block.MOSS_BLOCK,
         commonMaterial = Material.STRING,
         commonResourceName = "植物繊維",
@@ -88,14 +98,24 @@ internal enum class QuestGatheringDiscipline(
     ),
     ;
 
-    fun toolItem(): ItemStack = ItemStack.builder(toolMaterial)
+    fun toolItem(): ItemStack = ItemStack.builder(Material.STICK)
         .customName(Component.text(toolName, NamedTextColor.GOLD))
+        .set(DataComponents.ITEM_MODEL, toolMaterial.name().toString())
+        .set(DataComponents.CONSUMABLE, GATHERING_HOLD_COMPONENT)
         .build()
         .withTag(QUEST_GATHERING_TOOL_TAG, id)
 
     fun accepts(item: ItemStack): Boolean = item.getTag(QUEST_GATHERING_TOOL_TAG) == id
 
     companion object {
+        private val GATHERING_HOLD_COMPONENT = Consumable(
+            3_600f,
+            ItemAnimation.NONE,
+            SoundEvent.ENTITY_GENERIC_EAT,
+            false,
+            emptyList(),
+        )
+
         fun forGatheringOrdinal(ordinal: Int): QuestGatheringDiscipline = entries[Math.floorMod(ordinal, entries.size)]
     }
 }
@@ -170,11 +190,16 @@ internal data class QuestGatheringNode(
     val discipline: QuestGatheringDiscipline,
     val quality: QuestGatheringQuality,
     val tier: Int = 1,
+    val denseRegionId: Int? = null,
 )
 
-internal fun questGatheringNodes(plan: QuestMapPlan): List<QuestGatheringNode> = plan.contents
-    .filter { it.kind == QuestMapContentKind.GATHERING }
-    .mapIndexed { ordinal, content ->
+internal fun questGatheringNodes(
+    plan: QuestMapPlan,
+    customization: QuestMapCustomization = QuestMapCustomization.NONE,
+): List<QuestGatheringNode> {
+    val baseNodes = plan.contents
+        .filter { it.kind == QuestMapContentKind.GATHERING }
+        .mapIndexed { ordinal, content ->
         val discipline = QuestGatheringDiscipline.forGatheringOrdinal(ordinal)
         val routeAnchor = plan.mainRoute[content.mainRouteIndex]
         val outwardX = (content.position.x - routeAnchor.x).coerceIn(-1, 1)
@@ -183,20 +208,181 @@ internal fun questGatheringNodes(plan: QuestMapPlan): List<QuestGatheringNode> =
             (content.position.x + outwardX * 12).coerceIn(2, plan.size - 3),
             (content.position.z + outwardZ * 12).coerceIn(2, plan.size - 3),
         )
-        val roll = Math.floorMod(plan.seed xor (ordinal * 2_654_435_761L), 100L).toInt()
-        val quality = when {
-            roll < 6 -> QuestGatheringQuality.RARE
-            roll < 28 -> QuestGatheringQuality.BOUNTIFUL
-            else -> QuestGatheringQuality.COMMON
-        }
         QuestGatheringNode(
             id = ordinal,
             contentPosition = content.position,
             blockPosition = BlockVec(resourcePoint.x, plan.heightAt(resourcePoint) + 1, resourcePoint.z),
             discipline = discipline,
-            quality = quality,
+            quality = gatheringQuality(plan, ordinal, discipline, customization),
         )
     }
+
+    val nodes = baseNodes.toMutableList()
+    var nextId = baseNodes.size
+    val occupied = nodes.mapTo(mutableListOf()) { it.blockPosition }
+
+    baseNodes.forEach { base ->
+        if (plan.roadDistanceSquaredAt(base.blockPosition.blockX(), base.blockPosition.blockZ()) <= 7 * 7) {
+            return@forEach
+        }
+        val chance = (
+            BASE_DENSE_REGION_CHANCE_PERCENT + customization.denseRegionBonusPercent(base.discipline)
+            ).coerceIn(0, 100)
+        val regionRoll = Math.floorMod(
+            plan.seed xor (base.id * 0x63D83595A7C2B9E5L) xor 0x21C6A4D7F9035B8EL,
+            100L,
+        ).toInt()
+        if (regionRoll >= chance) return@forEach
+
+        val regionPoints = denseGatheringRegionPoints(plan, base, occupied)
+        if (regionPoints.size < DENSE_REGION_EXTRA_NODES) return@forEach
+        val regionId = base.id
+        val baseIndex = nodes.indexOfFirst { it.id == base.id }
+        nodes[baseIndex] = base.copy(denseRegionId = regionId)
+        regionPoints.forEach { point ->
+            val id = nextId++
+            val position = BlockVec(point.x, plan.heightAt(point) + 1, point.z)
+            nodes += base.copy(
+                id = id,
+                blockPosition = position,
+                quality = gatheringQuality(plan, id, base.discipline, customization),
+                denseRegionId = regionId,
+            )
+            occupied += position
+        }
+    }
+
+    baseNodes.forEach { base ->
+        val bonus = customization.amountBonusPercent(base.discipline)
+        val guaranteed = bonus / 100
+        val remainderRoll = Math.floorMod(
+            plan.seed xor (base.id * 0x4CF5AD432745937FL) xor 0x2A7B9C4D1E6F8053L,
+            100L,
+        ).toInt()
+        val extraCount = guaranteed + if (remainderRoll < bonus % 100) 1 else 0
+        repeat(extraCount) { extraOrdinal ->
+            val point = extraGatheringPoint(plan, base, extraOrdinal, occupied) ?: return@repeat
+            val id = nextId++
+            val position = BlockVec(point.x, plan.heightAt(point) + 1, point.z)
+            nodes += base.copy(
+                id = id,
+                blockPosition = position,
+                quality = gatheringQuality(plan, id, base.discipline, customization),
+            )
+            occupied += position
+        }
+    }
+    return nodes
+}
+
+private fun denseGatheringRegionPoints(
+    plan: QuestMapPlan,
+    base: QuestGatheringNode,
+    occupied: List<BlockVec>,
+): List<QuestMapPoint> {
+    val offsets = listOf(
+        14 to 0, -14 to 0, 0 to 14, 0 to -14,
+        11 to 11, -11 to 11, 11 to -11, -11 to -11,
+        22 to 0, -22 to 0, 0 to 22, 0 to -22,
+        17 to 17, -17 to 17, 17 to -17, -17 to -17,
+        8 to 21, -8 to 21, 8 to -21, -8 to -21,
+        21 to 8, -21 to 8, 21 to -8, -21 to -8,
+    )
+    val rotation = Math.floorMod(plan.seed + base.id * 53L, offsets.size.toLong()).toInt()
+    val selected = mutableListOf<QuestMapPoint>()
+    repeat(offsets.size) { attempt ->
+        if (selected.size >= DENSE_REGION_EXTRA_NODES) return@repeat
+        val (dx, dz) = offsets[(rotation + attempt) % offsets.size]
+        val point = QuestMapPoint(base.blockPosition.blockX() + dx, base.blockPosition.blockZ() + dz)
+        if (!isValidGatheringPoint(plan, point, occupied, selected)) return@repeat
+        selected += point
+    }
+    return selected
+}
+
+private fun gatheringQuality(
+    plan: QuestMapPlan,
+    nodeId: Int,
+    discipline: QuestGatheringDiscipline,
+    customization: QuestMapCustomization,
+): QuestGatheringQuality {
+    val baseRoll = Math.floorMod(plan.seed xor (nodeId * 2_654_435_761L), 100L).toInt()
+    var quality = when {
+        baseRoll < 6 -> QuestGatheringQuality.RARE
+        baseRoll < 28 -> QuestGatheringQuality.BOUNTIFUL
+        else -> QuestGatheringQuality.COMMON
+    }
+    val bonus = customization.qualityBonusPercent(discipline)
+    var upgrades = bonus / 100
+    val upgradeRoll = Math.floorMod(
+        plan.seed xor (nodeId * 0x6EED0E9DA4D94A4FL) xor discipline.ordinal.toLong(),
+        100L,
+    ).toInt()
+    if (upgradeRoll < bonus % 100) upgrades++
+    repeat(upgrades) {
+        quality = when (quality) {
+            QuestGatheringQuality.COMMON -> QuestGatheringQuality.BOUNTIFUL
+            QuestGatheringQuality.BOUNTIFUL, QuestGatheringQuality.RARE -> QuestGatheringQuality.RARE
+        }
+    }
+    return quality
+}
+
+private fun extraGatheringPoint(
+    plan: QuestMapPlan,
+    base: QuestGatheringNode,
+    extraOrdinal: Int,
+    occupied: List<BlockVec>,
+): QuestMapPoint? {
+    val offsets = listOf(
+        12 to 0, -12 to 0, 0 to 12, 0 to -12,
+        10 to 10, -10 to 10, 10 to -10, -10 to -10,
+        16 to 5, -16 to 5, 5 to 16, 5 to -16,
+    )
+    val rotation = Math.floorMod(plan.seed + base.id * 31L + extraOrdinal * 7L, offsets.size.toLong()).toInt()
+    val originX = base.blockPosition.blockX()
+    val originZ = base.blockPosition.blockZ()
+    repeat(offsets.size) { attempt ->
+        val (dx, dz) = offsets[(rotation + attempt) % offsets.size]
+        val point = QuestMapPoint(originX + dx, originZ + dz)
+        if (!isValidGatheringPoint(plan, point, occupied, emptyList())) return@repeat
+        return point
+    }
+    return null
+}
+
+private fun isValidGatheringPoint(
+    plan: QuestMapPlan,
+    point: QuestMapPoint,
+    occupied: List<BlockVec>,
+    selected: List<QuestMapPoint>,
+): Boolean {
+    if (point.x !in 4 until plan.size - 4 || point.z !in 4 until plan.size - 4) return false
+    if (plan.heightAt(point) <= QUEST_WATER_LEVEL) return false
+    if (plan.roadDistanceSquaredAt(point.x, point.z) <= 7 * 7) return false
+    val nearbyHeights = listOf(
+        plan.heightAt(point),
+        plan.heightAt(point.x - 2, point.z),
+        plan.heightAt(point.x + 2, point.z),
+        plan.heightAt(point.x, point.z - 2),
+        plan.heightAt(point.x, point.z + 2),
+    )
+    if (nearbyHeights.max() - nearbyHeights.min() > 3) return false
+    if (occupied.any { existing ->
+            val separationX = existing.blockX() - point.x
+            val separationZ = existing.blockZ() - point.z
+            separationX * separationX + separationZ * separationZ < 10 * 10
+        }
+    ) return false
+    return selected.none { existing ->
+        val separationX = existing.x - point.x
+        val separationZ = existing.z - point.z
+        separationX * separationX + separationZ * separationZ < 10 * 10
+    }
+}
+
+private const val BASE_DENSE_REGION_CHANCE_PERCENT = 4
+private const val DENSE_REGION_EXTRA_NODES = 6
 
 internal fun gatheringProgressDisplayPosition(
     playerPosition: Pos,
