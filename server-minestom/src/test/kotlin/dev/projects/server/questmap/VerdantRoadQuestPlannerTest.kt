@@ -71,6 +71,29 @@ class VerdantRoadQuestPlannerTest {
         assertTrue(plan.maximumRoadShoulderRelief() <= 4)
         assertTrue(plan.explorableCorridorCoverage() >= 0.82)
         assertTrue(plan.groundCoverDiversity() >= 4)
+        assertEquals(QuestLandscapePlanner.TARGET_SCENE_COUNT, plan.landscapeScenes.size)
+        assertTrue(plan.landscapeScenes.map { it.role }.distinct().size >= 5)
+        assertTrue(plan.landscapeScenes.all { it.approach in plan.mainRoute })
+        assertTrue(plan.landscapeScenes.all { plan.isInsidePlayable(it.center) })
+        assertTrue(plan.maximumLandscapeApproachStep() <= 2)
+    }
+
+    @Test
+    fun `landscape scenes are deterministic broad compositions rather than prop anchors`() {
+        val first = VerdantRoadQuestPlanner.generate(551_337L)
+        val repeated = VerdantRoadQuestPlanner.generate(551_337L)
+
+        assertEquals(first.landscapeScenes, repeated.landscapeScenes)
+        assertEquals(QuestLandscapePlanner.TARGET_SCENE_COUNT, first.landscapeScenes.size)
+        assertTrue(first.landscapeScenes.all { it.radius in 29..36 })
+        assertTrue(
+            first.landscapeScenes.withIndex().all { (index, scene) ->
+                first.landscapeScenes.drop(index + 1).all { other ->
+                    scene.center.distanceSquared(other.center) >=
+                        QuestLandscapePlanner.MINIMUM_SCENE_CENTER_SEPARATION * QuestLandscapePlanner.MINIMUM_SCENE_CENTER_SEPARATION
+                }
+            },
+        )
     }
 
     @Test

@@ -13,6 +13,7 @@ import kotlin.math.roundToInt
 internal enum class SchematicAnchorMode {
     TREE_TRUNK,
     BURIED_MASS,
+    SURFACE_MASS,
 }
 
 internal data class SchematicVoxel(
@@ -69,6 +70,7 @@ internal class SpongeSchematicAsset private constructor(
             val shouldGround = when (anchorMode) {
                 SchematicAnchorMode.TREE_TRUNK -> voxel.y <= anchorY + 2 && isTrunkState(state)
                 SchematicAnchorMode.BURIED_MASS -> y >= surface + 1
+                SchematicAnchorMode.SURFACE_MASS -> voxel.y <= anchorY + 1
             }
             if (shouldGround && y > surface + 1) {
                 for (fillY in surface + 1 until y) instance.setBlock(x, fillY, z, block)
@@ -93,7 +95,7 @@ internal class SpongeSchematicAsset private constructor(
             root.getCompound("Palette").forEach { (state, tag) ->
                 val paletteId = (tag as? IntBinaryTag)?.value()
                     ?: error("Schematic $id palette entry $state is not an int")
-                stateByPaletteId[paletteId] = persistentLeaves(state)
+                stateByPaletteId[paletteId] = modernState(state)
             }
             val paletteIds = decodeVarInts(root.getByteArray("BlockData"), width * height * length, id)
             val voxels = buildList {
@@ -123,12 +125,17 @@ internal class SpongeSchematicAsset private constructor(
                     val lowest = voxels.minOf(SchematicVoxel::y)
                     voxels.filter { it.y == lowest }
                 }
+                SchematicAnchorMode.SURFACE_MASS -> {
+                    val lowest = voxels.minOf(SchematicVoxel::y)
+                    voxels.filter { it.y == lowest }
+                }
             }
             val anchorX = anchorCandidates.map(SchematicVoxel::x).average().roundToInt()
             val anchorZ = anchorCandidates.map(SchematicVoxel::z).average().roundToInt()
             val anchorY = when (anchorMode) {
                 SchematicAnchorMode.TREE_TRUNK -> anchorCandidates.minOf(SchematicVoxel::y)
                 SchematicAnchorMode.BURIED_MASS -> anchorCandidates.minOf(SchematicVoxel::y) + 1
+                SchematicAnchorMode.SURFACE_MASS -> anchorCandidates.minOf(SchematicVoxel::y)
             }
             return SpongeSchematicAsset(id, width, height, length, anchorX, anchorY, anchorZ, voxels, anchorMode)
         }
@@ -153,8 +160,14 @@ internal class SpongeSchematicAsset private constructor(
             return values
         }
 
-        private fun persistentLeaves(state: String): String =
-            state.replace("persistent=false", "persistent=true")
+        private fun modernState(state: String): String {
+            val renamed = if (state == "minecraft:grass" || state.startsWith("minecraft:grass[")) {
+                state.replaceFirst("minecraft:grass", "minecraft:short_grass")
+            } else {
+                state
+            }
+            return renamed.replace("persistent=false", "persistent=true")
+        }
 
         private fun isTrunkState(state: String): Boolean {
             val name = state.substringBefore('[')
@@ -184,6 +197,19 @@ internal class SpongeSchematicAsset private constructor(
                 val directions = listOf("north", "east", "south", "west")
                 val rotated = directions[(directions.indexOf(facing) + turns) % directions.size]
                 result = result.replace("facing=$facing", "facing=$rotated")
+            }
+            val connections = Regex("(north|east|south|west)=(true|false)")
+                .findAll(result)
+                .associate { match -> match.groupValues[1] to match.groupValues[2] }
+            if (connections.isNotEmpty()) {
+                val directions = listOf("north", "east", "south", "west")
+                connections.forEach { (direction, value) ->
+                    result = result.replace("$direction=$value", "$direction=__rotating__")
+                }
+                connections.forEach { (direction, value) ->
+                    val rotated = directions[(directions.indexOf(direction) + turns) % directions.size]
+                    result = result.replace("$direction=__rotating__", "$rotated=$value")
+                }
             }
             return result
         }

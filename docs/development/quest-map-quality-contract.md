@@ -62,6 +62,23 @@ Every major scene must contain all five layers:
 
 Between major scenes, the field must also contain composed middle-distance regions. A scenic region owns one ground transition, one dominant natural form, a related asset family, and negative space. Increasing isolated-prop count does not satisfy this requirement.
 
+## Landscape scene graph
+
+The generator now plans nine broad landscape scenes before it decorates the Minestom instance.
+These are not prop spawn points. Each scene owns a 29–36 block radius, a main-road approach,
+orientation, negative space, a contiguous surface field, and a role-specific landmark composition.
+The current grammar includes sheltered groves, ridge gates, heath vistas, headwaters, ruined
+terraces, ore cuts, and infernal rift gardens. Every terrain concept selects a deliberate five-role
+sequence rather than drawing unrelated scene types from one global bag.
+
+Candidate placement measures local relief, approach roughness, distance from quest events, and
+separation from earlier scenes. The quality gate rejects a map unless it contains all nine scenes,
+at least five landscape roles, valid road approaches, legal radii, and forty blocks of center
+separation. A safe straight approach is preferred; when terrain would produce an abrupt painted
+slope, bounded pathfinding routes the branch around it. Every stored access path is contiguous and
+limited to two blocks of vertical change per step. Ambient trees and small detail are then excluded from non-forest scene interiors;
+the scene grammar, not scatter density, controls the middle distance.
+
 ## Route contract
 
 - The main road is an authored traversal corridor, not paint on a heightmap.
@@ -70,6 +87,10 @@ Between major scenes, the field must also contain composed middle-distance regio
 - The road may narrow briefly for drama but must reopen before combat and gathering scenes.
 - Stairs, slabs, retaining edges, bridges, and switchbacks must communicate why the road crosses its terrain.
 - Road materials form contiguous wear patterns. Single-block confetti is rejected.
+- After every structure and encounter has been placed, the complete Minestom instance is scanned.
+  The full five-block main-road radius and two-block side-trail radius must remain free of solid
+  decoration for eight blocks above the local surface. Any solid decoration inside that protected
+  volume is removed, and a remaining obstruction prevents the map from entering the ready pool.
 
 ## Natural asset contract
 
@@ -107,3 +128,24 @@ Automation cannot certify beauty, but it must reject common failures:
 Review at least twelve deterministic seeds spanning all four route layouts and all six terrain concepts, including every permanent regression seed. Capture spawn, first bend, one combat scene, one gathering branch, one discovery, boss threshold, liquid edge, forest interior, and a high overview.
 
 A seed is rejected when any reviewer cannot answer “what is this place for?”, sees a repeated generator trick, notices a floating/pasted asset, or must fight the terrain to explore. Passing metrics is necessary but never sufficient.
+
+## Generate, judge, discard
+
+The live ready pool does not accept the first valid heightfield. For each requested ecology it now
+generates four deterministic candidates, measures them, and loads only the best candidate into a
+Minestom instance. Candidate seed spacing preserves the requested ecology, so selection cannot
+silently turn a cherry-valley request into a nether or cliff concept.
+
+The scenic score rewards height-band range, ecological ground transitions, varied local relief,
+off-road landmark potential, a useful route detour, and delayed boss visibility. It penalizes the
+share of sampled terrain that is too steep for ordinary exploration. The lower-scoring candidates
+are discarded before chunk generation and decoration, and the two winning maps are prepared in
+the background ready pool. Manual smoke seeds intentionally use one exact candidate so a reported
+seed always reproduces the same failure.
+
+`QuestMapPlanProvider` is the import boundary for a future external terrain source. Terra's current
+Minestom platform targets Minecraft 1.21.8 rather than ProjectS's 26.2 protocol, so it is not linked
+directly into the live server. The compatible path is an offline provider that generates Anvil
+regions, validates and converts them into a `QuestMapPlan`, then reuses the same quest, route,
+encounter, gathering, boss, and ready-pool layers. External terrain must pass this contract; its
+brand name never exempts it from automated or manual review.

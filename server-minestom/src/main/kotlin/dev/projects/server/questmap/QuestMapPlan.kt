@@ -75,6 +75,7 @@ internal class QuestMapPlan(
     val mainRoute: List<QuestMapPoint>,
     val trails: Set<QuestMapPoint>,
     val contents: List<QuestMapContent>,
+    val landscapeScenes: List<QuestLandscapeScene>,
     private val heights: IntArray,
     private val roadDistanceSquared: IntArray,
     private val mainRoadDistanceSquared: IntArray,
@@ -94,6 +95,7 @@ internal class QuestMapPlan(
         require(waterDistances.size == size * size)
         require(slopes.size == size * size)
         require(mainRoute.isNotEmpty())
+        require(landscapeScenes.isNotEmpty())
     }
 
     val start: QuestMapPoint = contents.single { it.kind == QuestMapContentKind.START }.position
@@ -192,6 +194,13 @@ internal class QuestMapPlan(
         }
     }
 
+    fun maximumLandscapeApproachStep(): Int = landscapeScenes.maxOf { scene ->
+        scene.accessPath
+            .zipWithNext()
+            .maxOfOrNull { (from, to) -> abs(heightAt(from) - heightAt(to)) }
+            ?: 0
+    }
+
     fun maximumRoadShoulderRelief(radius: Int = 6): Int = roadShoulderReliefSample(radius).third
 
     internal fun roadShoulderReliefSample(radius: Int = 6): Triple<QuestMapPoint, QuestMapPoint, Int> {
@@ -268,6 +277,15 @@ internal class QuestMapPlan(
             mix(content.kind.ordinal.toLong())
             mix((content.position.x.toLong() shl 32) xor content.position.z.toLong())
         }
+        landscapeScenes.forEach { scene ->
+            mix(scene.role.ordinal.toLong())
+            mix((scene.center.x.toLong() shl 32) xor scene.center.z.toLong())
+            mix((scene.approach.x.toLong() shl 32) xor scene.approach.z.toLong())
+            scene.accessPath.forEach { point -> mix((point.x.toLong() shl 32) xor point.z.toLong()) }
+            mix(scene.radius.toLong())
+            mix(scene.rotation.toLong())
+            mix(if (scene.mirrored) 1L else 0L)
+        }
         heights.forEach { mix(it.toLong()) }
         groundCovers.forEach { mix(it.toLong()) }
         surfacePatches.forEach { mix(it.toLong()) }
@@ -339,6 +357,44 @@ internal object QuestMapQualityGate {
         if (plan.mainRoute.first() != plan.start) violations += "Main route does not start at the quest start"
         if (plan.mainRoute.last() != plan.boss) violations += "Main route does not terminate at the boss"
         if (!plan.contents.all { plan.isInsidePlayable(it.position) }) violations += "Content outside playable area"
+        if (plan.landscapeScenes.size != QuestLandscapePlanner.TARGET_SCENE_COUNT) {
+            violations += "Landscape scene count is not ${QuestLandscapePlanner.TARGET_SCENE_COUNT}"
+        }
+        if (plan.landscapeScenes.map { it.role }.distinct().size < 5) {
+            violations += "Landscape composition lacks role diversity"
+        }
+        if (!plan.landscapeScenes.all { plan.isInsidePlayable(it.center) && it.radius in 29..36 }) {
+            violations += "Landscape scene outside its authored bounds"
+        }
+        if (!plan.landscapeScenes.all {
+                it.approach in plan.mainRoute &&
+                    it.accessPath.firstOrNull() == it.approach &&
+                    it.accessPath.lastOrNull() == it.center
+            }
+        ) {
+            violations += "Landscape scene is not connected to the main route"
+        }
+        if (!plan.landscapeScenes.all { scene ->
+                scene.accessPath.zipWithNext().all { (from, to) ->
+                    max(abs(from.x - to.x), abs(from.z - to.z)) == 1
+                }
+            }
+        ) {
+            violations += "Landscape access path contains a broken adjacency"
+        }
+        val landscapeApproachStep = plan.maximumLandscapeApproachStep()
+        if (landscapeApproachStep > 2) {
+            violations += "Landscape approach climbs an abrupt terrain step ($landscapeApproachStep blocks)"
+        }
+        plan.landscapeScenes.forEachIndexed { index, scene ->
+            if (plan.landscapeScenes.drop(index + 1).any {
+                    scene.center.distanceSquared(it.center) <
+                        QuestLandscapePlanner.MINIMUM_SCENE_CENTER_SEPARATION * QuestLandscapePlanner.MINIMUM_SCENE_CENTER_SEPARATION
+                }
+            ) {
+                violations += "Landscape scenes overlap without enough compositional separation"
+            }
+        }
         expectedCounts.forEach { (kind, expected) ->
             if (plan.contents.count { it.kind == kind } != expected) violations += "$kind count is not $expected"
         }

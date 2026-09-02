@@ -40,6 +40,15 @@ internal object VerdantRoadQuestPlanner {
         val nearestRoad = nearestRoad(mainRoute, trails)
         val nearestMainRoad = nearestRoad(mainRoute, mainRoute.toSet())
         val finalHeights = shapeTerrain(seed, style, rawHeights, mainRoute, routeHeights, contents, nearestRoad, nearestMainRoad)
+        val landscapeScenes = QuestLandscapePlanner.plan(
+            seed = seed,
+            style = style,
+            mainRoute = mainRoute,
+            contents = contents,
+            size = MAP_SIZE,
+            playableBorder = PLAYABLE_BORDER,
+            heightAt = { point -> finalHeights[index(point)] },
+        )
         val ecology = ecology(seed, style, finalHeights)
 
         return QuestMapQualityGate.requireAccepted(
@@ -53,6 +62,7 @@ internal object VerdantRoadQuestPlanner {
                 mainRoute = mainRoute,
                 trails = trails,
                 contents = contents,
+                landscapeScenes = landscapeScenes,
                 heights = finalHeights,
                 roadDistanceSquared = nearestRoad.distanceSquared,
                 mainRoadDistanceSquared = nearestMainRoad.distanceSquared,

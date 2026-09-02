@@ -6,8 +6,8 @@ import kotlin.math.abs
 import kotlin.math.roundToInt
 
 /**
- * ProjectS-owned block structure catalog. Production nature is generated here from authored
- * silhouettes; no downloaded schematic participates in runtime selection.
+ * Runtime structure catalog. Large nature silhouettes come from the reviewed schematic catalog;
+ * small connective details remain procedural so imported assets read as part of the terrain.
  */
 internal object QuestMapStructureAssets {
     fun treeFamilyId(style: QuestTerrainStyle, variation: Int): Int =
@@ -20,14 +20,8 @@ internal object QuestMapStructureAssets {
         variation: Int,
         rotation: Int,
     ) {
-        Painter(
-            instance,
-            origin.x,
-            plan.heightAt(origin) + 1,
-            origin.z,
-            rotation,
-            variation.toLong(),
-        ).signatureTree(plan, plan.style, variation)
+        val selection = QuestMapSchematicCatalog.selectTree(plan.style, variation)
+        selection.asset.place(instance, plan, origin, rotation, selection.palette)
     }
 
     fun placeBoulder(
@@ -37,14 +31,8 @@ internal object QuestMapStructureAssets {
         variation: Int,
         rotation: Int,
     ) {
-        Painter(
-            instance,
-            origin.x,
-            plan.heightAt(origin) + 1,
-            origin.z,
-            rotation,
-            variation.toLong(),
-        ).rockMass(plan, plan.style, variation)
+        val selection = QuestMapSchematicCatalog.selectBoulder(plan.style, variation)
+        selection.asset.place(instance, plan, origin, rotation, selection.palette)
     }
 
     /**
@@ -88,17 +76,11 @@ internal object QuestMapStructureAssets {
         }
     }
 
-    fun treeFootprint(style: QuestTerrainStyle, variation: Int): Int = when (style) {
-        QuestTerrainStyle.VERDANT -> 13 + Math.floorMod(variation, 3)
-        QuestTerrainStyle.HIGHLANDS -> 9 + Math.floorMod(variation, 3)
-        QuestTerrainStyle.SALTMARSH -> 12 + Math.floorMod(variation, 3)
-        QuestTerrainStyle.CLIFFLANDS -> 13 + Math.floorMod(variation, 3)
-        QuestTerrainStyle.SAKURA_GROVE -> 13 + Math.floorMod(variation, 3)
-        QuestTerrainStyle.INFERNAL -> 13 + Math.floorMod(variation, 3)
-    }
+    fun treeFootprint(style: QuestTerrainStyle, variation: Int): Int =
+        maxOf(9, QuestMapSchematicCatalog.selectTree(style, variation).asset.footprintRadius + 3)
 
     fun boulderFootprint(style: QuestTerrainStyle, variation: Int): Int =
-        4 + Math.floorMod(variation + style.ordinal, 3)
+        QuestMapSchematicCatalog.selectBoulder(style, variation).asset.footprintRadius + 2
 
     fun placeFallenLog(
         instance: Instance,
@@ -138,15 +120,12 @@ internal object QuestMapStructureAssets {
         variation: Int,
         rotation: Int,
     ) {
-        Painter(
-            instance,
-            origin.x,
-            plan.heightAt(origin) + 1,
-            origin.z,
-            rotation,
-            variation.toLong(),
-        ).shrubCluster(plan, plan.style)
+        val selection = QuestMapSchematicCatalog.selectGroundDetail(plan.style, variation)
+        selection.asset.place(instance, plan, origin, rotation, selection.palette)
     }
+
+    fun groundDetailFootprint(style: QuestTerrainStyle, variation: Int): Int =
+        QuestMapSchematicCatalog.selectGroundDetail(style, variation).asset.footprintRadius
 
     fun placeRoadsideMarker(
         instance: Instance,

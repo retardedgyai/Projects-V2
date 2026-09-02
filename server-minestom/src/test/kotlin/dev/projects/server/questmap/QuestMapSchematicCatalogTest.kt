@@ -8,11 +8,11 @@ import net.minestom.server.instance.block.Block
 
 class QuestMapSchematicCatalogTest {
     @Test
-    fun `archived licensed assets remain decodable but are not the runtime catalog`() {
+    fun `runtime schematic assets remain decodable`() {
         val assets = QuestMapSchematicCatalog.allAssets()
 
-        assertEquals(36, assets.size)
-        assertEquals(36, assets.map { it.id }.distinct().size)
+        assertEquals(244, assets.size)
+        assertEquals(244, assets.map { it.id }.distinct().size)
         assets.forEach { asset ->
             assertTrue(asset.width in 1..48, "${asset.id} width=${asset.width}")
             assertTrue(asset.length in 1..48, "${asset.id} length=${asset.length}")
@@ -24,34 +24,55 @@ class QuestMapSchematicCatalogTest {
     }
 
     @Test
-    fun `ProjectS authored runtime silhouettes expose multiple scales per ecology`() {
+    fun `runtime silhouettes expose multiple assets per ecology with safe footprints`() {
         QuestTerrainStyle.entries.forEach { style ->
             val treeFootprints = (0 until 32).map { QuestMapStructureAssets.treeFootprint(style, it) }.distinct()
             val treeFamilies = (0 until 64).map { QuestMapStructureAssets.treeFamilyId(style, it) }.distinct()
-            val rockFootprints = (0 until 32).map { QuestMapStructureAssets.boulderFootprint(style, it) }.distinct()
+            val rockAssets = (0 until 32).map { QuestMapSchematicCatalog.selectBoulder(style, it).asset.id }.distinct()
 
-            assertTrue(treeFootprints.size >= 3, "$style lacks authored tree scale variation")
+            assertTrue(treeFootprints.size >= 2, "$style lacks tree scale variation")
             assertEquals(5, treeFamilies.size, "$style lacks concept-compatible tree families")
             assertTrue(treeFootprints.min() >= 9, "$style tree silhouette is too small")
             assertTrue(treeFootprints.max() <= 15, "$style tree silhouette is too large for placement")
-            assertEquals(3, rockFootprints.size, "$style lacks authored rock scale variation")
+            assertTrue(rockAssets.size >= 4, "$style lacks rock silhouette variation")
+            (0 until 32).forEach { variation ->
+                val tree = QuestMapSchematicCatalog.selectTree(style, variation).asset
+                val rock = QuestMapSchematicCatalog.selectBoulder(style, variation).asset
+                assertTrue(QuestMapStructureAssets.treeFootprint(style, variation) >= tree.footprintRadius + 3)
+                assertTrue(QuestMapStructureAssets.boulderFootprint(style, variation) >= rock.footprintRadius + 2)
+            }
         }
     }
 
     @Test
-    fun `archived source palettes still decode for migration compatibility`() {
+    fun `runtime source palettes provide production variety`() {
         QuestTerrainStyle.entries.forEach { style ->
             val trees = (0 until 64).map { QuestMapSchematicCatalog.selectTree(style, it).asset.id }.distinct()
             val boulders = (0 until 64).map { QuestMapSchematicCatalog.selectBoulder(style, it).asset.id }.distinct()
 
-            assertTrue(trees.size >= 4, "$style tree family has only ${trees.size} production assets")
+            assertTrue(trees.size >= 8, "$style tree family has only ${trees.size} production assets")
             assertEquals(QuestMapSchematicCatalog.productionBoulders().size, boulders.size)
             QuestMapSchematicCatalog.productionTrees(style).forEach { asset ->
                 assertTrue(asset.height >= 11, "${asset.id} is too short for production")
                 assertTrue(asset.footprintRadius >= 3, "${asset.id} has a weak silhouette")
+                assertTrue(asset.footprintRadius <= 12, "${asset.id} cannot be kept clear of paths")
                 assertTrue(asset.voxels.size >= 48, "${asset.id} is too sparse for production")
             }
         }
+    }
+
+    @Test
+    fun `production scenery draws from distinct creators and object categories`() {
+        QuestTerrainStyle.entries.forEach { style ->
+            val treeSources = QuestMapSchematicCatalog.productionTrees(style)
+                .map { it.id.substringBefore('/') }
+                .toSet()
+            assertTrue("worldpainter" in treeSources, "$style lost the established source")
+            assertTrue("daniye" in treeSources, "$style does not use Daniye silhouettes")
+            assertTrue("meowbeard" in treeSources, "$style does not use Meowbeard silhouettes")
+        }
+        assertTrue(QuestMapSchematicCatalog.productionGroundDetails().size >= 12)
+        assertTrue(QuestMapSchematicCatalog.productionBoulders().any { it.id.startsWith("meowbeard/") })
     }
 
     @Test
@@ -61,6 +82,7 @@ class QuestMapSchematicCatalogTest {
                 listOf(
                     QuestMapSchematicCatalog.selectTree(style, variation),
                     QuestMapSchematicCatalog.selectBoulder(style, variation),
+                    QuestMapSchematicCatalog.selectGroundDetail(style, variation),
                 ).forEach { selection ->
                     repeat(4) { rotation ->
                         selection.asset.resolvedStates(rotation, selection.palette).forEach { state ->

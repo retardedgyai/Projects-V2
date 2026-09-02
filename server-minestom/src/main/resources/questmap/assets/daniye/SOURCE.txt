@@ -1,0 +1,5 @@
+Daniye's Tree Bundle
+Project page: https://www.curseforge.com/minecraft/customization/daniyes-tree-bundle
+Imported file: https://www.curseforge.com/minecraft/customization/daniyes-tree-bundle/files/7534284
+Snapshot file id: 7534284
+Imported for ProjectS private quest-map visual testing on 2026-09-02.

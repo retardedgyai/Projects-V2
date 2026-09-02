@@ -6,6 +6,7 @@ import net.minestom.server.MinecraftServer
 import net.minestom.server.ServerFlag
 import net.minestom.server.coordinate.Pos
 import net.minestom.server.coordinate.Vec
+import net.minestom.server.coordinate.BlockVec
 import net.minestom.server.entity.Player
 import net.minestom.server.instance.Instance
 import net.minestom.server.instance.InstanceContainer
@@ -14,7 +15,9 @@ import net.minestom.server.instance.Weather
 import net.minestom.server.instance.block.Block
 import net.minestom.server.instance.generator.GenerationUnit
 import net.minestom.server.instance.generator.Generator
+import net.minestom.server.item.ItemStack
 import net.minestom.server.world.biome.Biome
+import java.nio.file.Path
 import java.util.Random
 import java.util.UUID
 import java.util.concurrent.CompletableFuture
@@ -314,10 +317,9 @@ internal class VerdantRoadQuestGenerator(
 
 internal object VerdantRoadQuestDecorator {
     fun decorate(instance: InstanceContainer, plan: QuestMapPlan) {
-        val scenicAnchors = scenicAnchors(plan)
-        decorateScenicCompositions(instance, plan, scenicAnchors)
-        decorateTrees(instance, plan, scenicAnchors)
-        decorateTerrainDetail(instance, plan, scenicAnchors)
+        decorateLandscapeScenes(instance, plan)
+        decorateTrees(instance, plan, plan.landscapeScenes)
+        decorateTerrainDetail(instance, plan, plan.landscapeScenes)
         decorateWaterEdges(instance, plan)
         decorateRoadGuidance(instance, plan)
         plan.contents.forEachIndexed { ordinal, content ->
@@ -329,6 +331,295 @@ internal object VerdantRoadQuestDecorator {
                 QuestMapContentKind.BOSS -> decorateBossArena(instance, plan, content.position)
             }
         }
+        enforceRouteClearance(instance, plan)
+        val remainingObstructions = routeClearanceObstructions(instance, plan)
+        check(remainingObstructions.isEmpty()) {
+            "Decorated quest route is obstructed: ${remainingObstructions.take(8)}"
+        }
+    }
+
+    /**
+     * Decoration is intentionally allowed to compose across scene boundaries, but walking space is
+     * authoritative. This final pass runs after every structure, prop, and encounter scene so a new
+     * asset call site cannot silently reintroduce the blocked-road regression.
+     */
+    internal fun enforceRouteClearance(instance: Instance, plan: QuestMapPlan) {
+        for (z in 0 until plan.size) {
+            for (x in 0 until plan.size) {
+                if (!isProtectedRouteCell(plan, x, z)) continue
+                val ground = plan.heightAt(x, z)
+                for (y in ground + 1..ground + ROUTE_VISUAL_CLEARANCE_HEIGHT) {
+                    if (instance.getBlock(x, y, z).blocksMotion()) {
+                        instance.setBlock(x, y, z, Block.AIR)
+                    }
+                }
+            }
+        }
+    }
+
+    internal fun routeClearanceObstructions(
+        instance: Instance,
+        plan: QuestMapPlan,
+        limit: Int = 64,
+    ): List<String> {
+        val obstructions = mutableListOf<String>()
+        for (z in 0 until plan.size) {
+            for (x in 0 until plan.size) {
+                if (!isProtectedRouteCell(plan, x, z)) continue
+                val ground = plan.heightAt(x, z)
+                for (y in ground + 1..ground + ROUTE_VISUAL_CLEARANCE_HEIGHT) {
+                    val block = instance.getBlock(x, y, z)
+                    if (block.blocksMotion()) {
+                        obstructions += "$x,$y,$z=${block.name()}"
+                        if (obstructions.size >= limit) return obstructions
+                    }
+                }
+            }
+        }
+        return obstructions
+    }
+
+    private fun isProtectedRouteCell(plan: QuestMapPlan, x: Int, z: Int): Boolean =
+        plan.mainRoadDistanceSquaredAt(x, z) <= MAIN_ROAD_CLEARANCE_RADIUS * MAIN_ROAD_CLEARANCE_RADIUS ||
+            plan.roadDistanceSquaredAt(x, z) <= SIDE_TRAIL_CLEARANCE_RADIUS * SIDE_TRAIL_CLEARANCE_RADIUS
+
+    private const val MAIN_ROAD_CLEARANCE_RADIUS = 5
+    private const val SIDE_TRAIL_CLEARANCE_RADIUS = 2
+    private const val ROUTE_VISUAL_CLEARANCE_HEIGHT = 8
+
+    private data class LandscapeSurface(
+        val core: Block,
+        val secondary: Block,
+        val edge: Block,
+    )
+
+    /**
+     * Paint broad, readable compositions before the ambient scatter pass. Each scene owns its
+     * ground field, approach, negative space and landmark group, so props read as one place rather
+     * than independent random samples.
+     */
+    private fun decorateLandscapeScenes(instance: Instance, plan: QuestMapPlan) {
+        plan.landscapeScenes.forEach { scene ->
+            paintLandscapeField(instance, plan, scene)
+            paintLandscapeApproach(instance, plan, scene)
+            decorateLandscapeLandmarks(instance, plan, scene)
+        }
+    }
+
+    private fun paintLandscapeField(instance: Instance, plan: QuestMapPlan, scene: QuestLandscapeScene) {
+        val surface = landscapeSurface(plan.style, scene.role)
+        for (dz in -scene.radius..scene.radius) {
+            for (dx in -scene.radius..scene.radius) {
+                val point = QuestMapPoint(scene.center.x + dx, scene.center.z + dz)
+                if (point.x !in 2 until plan.size - 2 || point.z !in 2 until plan.size - 2) continue
+                if (plan.roadDistanceSquaredAt(point.x, point.z) <= 6 * 6) continue
+                val cellX = Math.floorDiv(point.x, 5)
+                val cellZ = Math.floorDiv(point.z, 5)
+                val cellHash = Math.floorMod(
+                    scene.id * 73_856_093 + cellX * 19_349_663 + cellZ * 83_492_791 + plan.seed.toInt(),
+                    100,
+                )
+                val warp = (cellHash - 50) / 160.0
+                val normalized = kotlin.math.sqrt((dx * dx + dz * dz).toDouble()) / scene.radius
+                if (normalized > 0.92 + warp * 0.16) continue
+                val block = when {
+                    normalized > 0.70 + warp * 0.08 -> surface.edge
+                    cellHash < 31 -> surface.secondary
+                    else -> surface.core
+                }
+                paintSurface(instance, plan, point, block)
+            }
+        }
+    }
+
+    private fun paintLandscapeApproach(instance: Instance, plan: QuestMapPlan, scene: QuestLandscapeScene) {
+        val palette = scenePalette(plan.style)
+        scene.accessPath.forEachIndexed { index, center ->
+            for (dz in -1..1) {
+                for (dx in -1..1) {
+                    if (kotlin.math.abs(dx) + kotlin.math.abs(dz) > 1) continue
+                    val point = QuestMapPoint(center.x + dx, center.z + dz)
+                    if (point.x !in 2 until plan.size - 2 || point.z !in 2 until plan.size - 2) continue
+                    val block = if (Math.floorMod(index + dx * 3 + dz * 5 + scene.id, 7) == 0) {
+                        palette.pathAccent
+                    } else {
+                        palette.path
+                    }
+                    paintSurface(instance, plan, point, block)
+                }
+            }
+        }
+    }
+
+    private fun decorateLandscapeLandmarks(instance: Instance, plan: QuestMapPlan, scene: QuestLandscapeScene) {
+        fun point(forward: Int, side: Int): QuestMapPoint = landscapePoint(scene, forward, side)
+        fun tree(forward: Int, side: Int, salt: Int) {
+            val origin = point(forward, side)
+            val variation = scene.id * 1_009 + salt
+            val footprint = QuestMapStructureAssets.treeFootprint(plan.style, variation)
+            if (clearForStructure(plan, origin, footprint) && terrainRange(plan, origin, 5) <= 3) {
+                QuestMapStructureAssets.placeTree(instance, plan, origin, variation, scene.rotation + salt)
+            }
+        }
+        fun boulder(forward: Int, side: Int, salt: Int) {
+            val origin = point(forward, side)
+            val footprint = QuestMapStructureAssets.boulderFootprint(plan.style, scene.id * 97 + salt)
+            if (clearForStructure(plan, origin, footprint) && terrainRange(plan, origin, 4) <= 4) {
+                QuestMapStructureAssets.placeBoulder(instance, plan, origin, scene.id * 97 + salt, scene.rotation + salt)
+            }
+        }
+        fun shrub(forward: Int, side: Int, salt: Int) {
+            val origin = point(forward, side)
+            if (clearForStructure(plan, origin, 4) && terrainRange(plan, origin, 3) <= 3) {
+                QuestMapStructureAssets.placeShrubCluster(instance, plan, origin, scene.id * 131 + salt, scene.rotation + salt)
+            }
+        }
+        fun outcrop(forward: Int, side: Int, salt: Int) {
+            val origin = point(forward, side)
+            if (clearForStructure(plan, origin, 11) && terrainRange(plan, origin, 7) <= 7) {
+                QuestMapStructureAssets.placeRockOutcrop(instance, plan, origin, scene.id * 173 + salt, scene.rotation + salt)
+            }
+        }
+
+        when (scene.role) {
+            QuestLandscapeRole.SHELTERED_GROVE -> {
+                tree(-11, -14, 1)
+                tree(12, -13, 2)
+                tree(15, 12, 3)
+                tree(-13, 14, 4)
+                val log = point(7, 5)
+                if (clearForStructure(plan, log, 7) && lineTerrainRange(plan, log, 7, scene.rotation + 1) <= 2) {
+                    QuestMapStructureAssets.placeFallenLog(instance, plan, log, 7, scene.rotation + 1, scene.id * 211)
+                }
+                shrub(-4, 9, 5)
+                shrub(4, -8, 6)
+            }
+            QuestLandscapeRole.RIDGE_GATE -> {
+                outcrop(2, -11, 1)
+                outcrop(5, 12, 2)
+                tree(-12, 16, 3)
+                boulder(15, -16, 4)
+            }
+            QuestLandscapeRole.HEATH_VISTA -> {
+                tree(8, 16, 1)
+                boulder(-8, -12, 2)
+                shrub(3, -15, 3)
+                shrub(15, 5, 4)
+            }
+            QuestLandscapeRole.HEADWATER -> {
+                tree(-10, -15, 1)
+                tree(13, 14, 2)
+                boulder(8, -10, 3)
+                shrub(-5, 8, 4)
+                shrub(8, 7, 5)
+            }
+            QuestLandscapeRole.RUINED_TERRACE -> {
+                placeRuinedTerrace(instance, plan, scene)
+                tree(-12, -15, 1)
+                boulder(13, 13, 2)
+                shrub(8, -10, 3)
+            }
+            QuestLandscapeRole.ORE_CUT -> {
+                outcrop(3, 4, 1)
+                boulder(-12, -13, 2)
+                boulder(15, 13, 3)
+                tree(-14, 15, 4)
+            }
+            QuestLandscapeRole.RIFT_GARDEN -> {
+                outcrop(6, -8, 1)
+                tree(-13, 14, 2)
+                shrub(-5, -12, 3)
+                shrub(13, 10, 4)
+            }
+        }
+    }
+
+    private fun placeRuinedTerrace(instance: Instance, plan: QuestMapPlan, scene: QuestLandscapeScene) {
+        val palette = scenePalette(plan.style)
+        for (forward in -14..14) {
+            if (forward in -2..2 || Math.floorMod(forward + scene.id, 11) == 0) continue
+            for (depth in 0..1) {
+                val point = landscapePoint(scene, forward, 8 + depth)
+                if (point.x !in 2 until plan.size - 2 || point.z !in 2 until plan.size - 2) continue
+                if (plan.roadDistanceSquaredAt(point.x, point.z) <= 7 * 7) continue
+                val block = if (Math.floorMod(forward * 17 + depth * 5 + scene.id, 5) == 0) {
+                    palette.stoneCracked
+                } else {
+                    palette.stone
+                }
+                setGrounded(instance, plan, point, 0, block)
+                if (depth == 0 && Math.floorMod(forward + scene.id, 4) != 0) {
+                    setGrounded(instance, plan, point, 1, block)
+                }
+            }
+        }
+    }
+
+    private fun landscapePoint(scene: QuestLandscapeScene, forward: Int, side: Int): QuestMapPoint {
+        val mirroredSide = if (scene.mirrored) -side else side
+        val (dx, dz) = when (Math.floorMod(scene.rotation, 4)) {
+            0 -> forward to mirroredSide
+            1 -> -mirroredSide to forward
+            2 -> -forward to -mirroredSide
+            else -> mirroredSide to -forward
+        }
+        return QuestMapPoint(scene.center.x + dx, scene.center.z + dz)
+    }
+
+    private fun landscapeSurface(style: QuestTerrainStyle, role: QuestLandscapeRole): LandscapeSurface {
+        if (style == QuestTerrainStyle.INFERNAL) {
+            return when (role) {
+                QuestLandscapeRole.ORE_CUT, QuestLandscapeRole.RIDGE_GATE -> LandscapeSurface(Block.BLACKSTONE, Block.BASALT, Block.NETHERRACK)
+                QuestLandscapeRole.RIFT_GARDEN -> LandscapeSurface(Block.CRIMSON_NYLIUM, Block.WARPED_NYLIUM, Block.SOUL_SOIL)
+                QuestLandscapeRole.RUINED_TERRACE -> LandscapeSurface(Block.SOUL_SOIL, Block.POLISHED_BLACKSTONE, Block.NETHERRACK)
+                else -> LandscapeSurface(Block.NETHERRACK, Block.SOUL_SOIL, Block.BLACKSTONE)
+            }
+        }
+        return when (role) {
+            QuestLandscapeRole.RIDGE_GATE, QuestLandscapeRole.ORE_CUT -> when (style) {
+                QuestTerrainStyle.CLIFFLANDS -> LandscapeSurface(Block.ANDESITE, Block.CALCITE, Block.GRAVEL)
+                QuestTerrainStyle.HIGHLANDS -> LandscapeSurface(Block.TUFF, Block.ANDESITE, Block.COARSE_DIRT)
+                else -> LandscapeSurface(Block.ANDESITE, Block.STONE, Block.COARSE_DIRT)
+            }
+            QuestLandscapeRole.SHELTERED_GROVE -> when (style) {
+                QuestTerrainStyle.SAKURA_GROVE -> LandscapeSurface(Block.MOSS_BLOCK, Block.ROOTED_DIRT, Block.PODZOL)
+                QuestTerrainStyle.SALTMARSH -> LandscapeSurface(Block.MOSS_BLOCK, Block.MUD, Block.PACKED_MUD)
+                else -> LandscapeSurface(Block.PODZOL, Block.MOSS_BLOCK, Block.COARSE_DIRT)
+            }
+            QuestLandscapeRole.HEADWATER -> LandscapeSurface(Block.MOSS_BLOCK, Block.MUD, Block.CLAY)
+            QuestLandscapeRole.RUINED_TERRACE -> LandscapeSurface(Block.GRASS_BLOCK, Block.MOSSY_COBBLESTONE, Block.COARSE_DIRT)
+            QuestLandscapeRole.HEATH_VISTA -> when (style) {
+                QuestTerrainStyle.SAKURA_GROVE -> LandscapeSurface(Block.GRASS_BLOCK, Block.MOSS_BLOCK, Block.ROOTED_DIRT)
+                QuestTerrainStyle.SALTMARSH -> LandscapeSurface(Block.PACKED_MUD, Block.MUD, Block.MOSS_BLOCK)
+                else -> LandscapeSurface(Block.GRASS_BLOCK, Block.COARSE_DIRT, Block.PODZOL)
+            }
+            QuestLandscapeRole.RIFT_GARDEN -> LandscapeSurface(Block.PODZOL, Block.MOSS_BLOCK, Block.COARSE_DIRT)
+        }
+    }
+
+    private fun rasterLine(from: QuestMapPoint, to: QuestMapPoint): List<QuestMapPoint> {
+        val points = mutableListOf<QuestMapPoint>()
+        var x = from.x
+        var z = from.z
+        val dx = kotlin.math.abs(to.x - from.x)
+        val dz = kotlin.math.abs(to.z - from.z)
+        val sx = if (from.x < to.x) 1 else -1
+        val sz = if (from.z < to.z) 1 else -1
+        var error = dx - dz
+        while (true) {
+            points += QuestMapPoint(x, z)
+            if (x == to.x && z == to.z) break
+            val doubled = error * 2
+            if (doubled > -dz) {
+                error -= dz
+                x += sx
+            }
+            if (doubled < dx) {
+                error += dx
+                z += sz
+            }
+        }
+        return points
     }
 
     private fun scenicAnchors(plan: QuestMapPlan): List<QuestMapPoint> {
@@ -483,23 +774,27 @@ internal object VerdantRoadQuestDecorator {
         }
     }
 
-    private fun decorateTrees(instance: Instance, plan: QuestMapPlan, scenicAnchors: List<QuestMapPoint>) {
+    private fun decorateTrees(instance: Instance, plan: QuestMapPlan, scenes: List<QuestLandscapeScene>) {
         val random = Random(plan.seed xor 0x47524F5645L)
         val occupied = mutableListOf<Pair<QuestMapPoint, Int>>()
-        val groveCenters = List(
-            when (plan.style) {
-                QuestTerrainStyle.VERDANT -> 38
-                QuestTerrainStyle.HIGHLANDS -> 30
-                QuestTerrainStyle.SALTMARSH -> 28
-                QuestTerrainStyle.CLIFFLANDS -> 26
-                QuestTerrainStyle.SAKURA_GROVE -> 44
-                QuestTerrainStyle.INFERNAL -> 31
-            },
-        ) {
-            QuestMapPoint(
-                18 + random.nextInt(plan.size - 36),
-                18 + random.nextInt(plan.size - 36),
-            )
+        val ambientGroveCount = when (plan.style) {
+            QuestTerrainStyle.VERDANT -> 22
+            QuestTerrainStyle.HIGHLANDS -> 17
+            QuestTerrainStyle.SALTMARSH -> 16
+            QuestTerrainStyle.CLIFFLANDS -> 15
+            QuestTerrainStyle.SAKURA_GROVE -> 25
+            QuestTerrainStyle.INFERNAL -> 18
+        }
+        val groveCenters = buildList {
+            addAll(scenes.filter { it.role == QuestLandscapeRole.SHELTERED_GROVE }.map { it.center })
+            addAll(List(
+                ambientGroveCount,
+            ) {
+                QuestMapPoint(
+                    18 + random.nextInt(plan.size - 36),
+                    18 + random.nextInt(plan.size - 36),
+                )
+            })
         }
         val attempts = when (plan.style) {
             QuestTerrainStyle.VERDANT -> 2_900
@@ -522,7 +817,10 @@ internal object VerdantRoadQuestDecorator {
                 QuestMapPoint(10 + random.nextInt(plan.size - 20), 10 + random.nextInt(plan.size - 20))
             }
             if (plan.contents.any { it.position.distanceSquared(point) < 11 * 11 }) return@repeat
-            if (scenicAnchors.any { it.distanceSquared(point) < 13 * 13 }) return@repeat
+            val containingScene = scenes.firstOrNull { it.center.distanceSquared(point) < it.radius * it.radius }
+            if (containingScene != null &&
+                (containingScene.role != QuestLandscapeRole.SHELTERED_GROVE || containingScene.center.distanceSquared(point) < 9 * 9)
+            ) return@repeat
             val variation = random.nextInt()
             val footprint = QuestMapStructureAssets.treeFootprint(plan.style, variation)
             if (!clearForStructure(plan, point, footprint)) return@repeat
@@ -554,14 +852,14 @@ internal object VerdantRoadQuestDecorator {
         }
     }
 
-    private fun decorateTerrainDetail(instance: Instance, plan: QuestMapPlan, scenicAnchors: List<QuestMapPoint>) {
+    private fun decorateTerrainDetail(instance: Instance, plan: QuestMapPlan, scenes: List<QuestLandscapeScene>) {
         val random = Random(plan.seed xor 0x5445525241494EL)
         val occupiedScenes = mutableListOf<QuestMapPoint>()
         repeat(10_500) {
             val point = QuestMapPoint(8 + random.nextInt(plan.size - 16), 8 + random.nextInt(plan.size - 16))
             if (plan.roadDistanceSquaredAt(point.x, point.z) <= 4 * 4) return@repeat
             if (plan.contents.any { it.position.distanceSquared(point) < 6 * 6 }) return@repeat
-            if (scenicAnchors.any { it.distanceSquared(point) < 8 * 8 }) return@repeat
+            if (scenes.any { it.center.distanceSquared(point) < it.radius * it.radius }) return@repeat
             val ground = plan.heightAt(point)
             if (plan.style in setOf(QuestTerrainStyle.SALTMARSH, QuestTerrainStyle.INFERNAL) && ground <= QUEST_WATER_LEVEL) {
                 if (plan.style == QuestTerrainStyle.SALTMARSH && random.nextInt(8) == 0) {
@@ -953,30 +1251,30 @@ internal object VerdantRoadQuestDecorator {
         }
         when (ordinal % 3) {
             0 -> {
-                // The encounter sits inside one broken retaining wall with a readable entry/exit.
-                for (side in -7..7) {
-                    if (side in -1..1 || Math.floorMod(side + ordinal, 5) == 0) continue
-                    val wall = framedPoint(center, frame, 4, side)
+                // Two separated retaining-wall remnants frame the encounter without crossing the road.
+                ((-12..-8) + (8..12)).forEach { side ->
+                    if (Math.floorMod(side + ordinal, 5) == 0) return@forEach
+                    val wall = framedPoint(center, frame, 3, side)
                     setGrounded(instance, plan, wall, 0, if (side and 1 == 0) palette.stone else palette.stoneCracked)
-                    if (kotlin.math.abs(side) >= 4) setGrounded(instance, plan, wall, 1, palette.stone)
+                    if (kotlin.math.abs(side) >= 10) setGrounded(instance, plan, wall, 1, palette.stone)
                 }
-                QuestMapStructureAssets.placeBoulder(instance, plan, framedPoint(center, frame, 5, -6), ordinal * 31 + 1, 1)
-                QuestMapStructureAssets.placeBoulder(instance, plan, framedPoint(center, frame, 5, 6), ordinal * 31 + 2, 3)
+                QuestMapStructureAssets.placeBoulder(instance, plan, framedPoint(center, frame, 4, -13), ordinal * 31 + 1, 1)
+                QuestMapStructureAssets.placeBoulder(instance, plan, framedPoint(center, frame, 4, 13), ordinal * 31 + 2, 3)
             }
             1 -> {
                 // A timber ambush camp: barricades frame combat but never block the route.
-                listOf(-1 to -6, 1 to -6, -1 to 6, 1 to 6).forEach { (forward, side) ->
+                listOf(-1 to -10, 1 to -10, -1 to 10, 1 to 10).forEach { (forward, side) ->
                     val log = framedPoint(center, frame, forward, side)
                     setGrounded(instance, plan, log, 0, palette.timber)
                     setGrounded(instance, plan, framedPoint(log, frame, 1, 0), 0, palette.timber)
                 }
-                setGrounded(instance, plan, framedPoint(center, frame, 2, 4), 0, Block.BARREL)
-                setGrounded(instance, plan, framedPoint(center, frame, 1, 3), 0, Block.CAMPFIRE)
-                for (side in -2..2) setGrounded(instance, plan, framedPoint(center, frame, -5, side), 0, palette.roof)
+                setGrounded(instance, plan, framedPoint(center, frame, 2, 9), 0, Block.BARREL)
+                setGrounded(instance, plan, framedPoint(center, frame, 1, 8), 0, Block.CAMPFIRE)
+                for (forward in -2..2) setGrounded(instance, plan, framedPoint(center, frame, forward, -10), 0, palette.roof)
             }
             else -> {
                 // Natural choke: rock masses sit on the flanks and the clear middle remains playable.
-                listOf(-2 to -7, 3 to -6, 4 to 6, -3 to 7).forEachIndexed { index, (forward, side) ->
+                listOf(-2 to -13, 3 to -12, 4 to 12, -3 to 13).forEachIndexed { index, (forward, side) ->
                     QuestMapStructureAssets.placeBoulder(
                         instance,
                         plan,
@@ -985,7 +1283,7 @@ internal object VerdantRoadQuestDecorator {
                         index,
                     )
                 }
-                QuestMapStructureAssets.placeFallenLog(instance, plan, framedPoint(center, frame, 5, -4), 5, 1, ordinal)
+                QuestMapStructureAssets.placeFallenLog(instance, plan, framedPoint(center, frame, 5, -11), 5, 1, ordinal)
             }
         }
     }
@@ -993,13 +1291,15 @@ internal object VerdantRoadQuestDecorator {
     private fun decorateGathering(instance: Instance, plan: QuestMapPlan, center: QuestMapPoint, ordinal: Int) {
         val frame = routeFrame(plan, center)
         val palette = scenePalette(plan.style)
-        val ore = when (ordinal % 4) {
-            0 -> Block.COPPER_ORE
-            1 -> Block.IRON_ORE
-            2 -> Block.COAL_ORE
-            else -> Block.AMETHYST_CLUSTER
+        val node = questGatheringNodes(plan).single { it.contentPosition == center }
+        val ore = when (node.discipline) {
+            QuestGatheringDiscipline.MINING -> node.discipline.nodeBlock
+            QuestGatheringDiscipline.QUARRYING -> Block.ANDESITE
+            QuestGatheringDiscipline.SKINNING -> Block.BONE_BLOCK
+            QuestGatheringDiscipline.WOODCUTTING -> Block.OAK_LOG
+            QuestGatheringDiscipline.HERBALISM -> Block.MOSS_BLOCK
         }
-        val face = framedPoint(center, frame, 1, 3)
+        val face = framedPoint(center, frame, 1, 8)
         QuestMapStructureAssets.placeBoulder(instance, plan, face, ordinal * 97, ordinal)
 
         // Resource blocks are exposed inside a cut, never stacked loose on grass.
@@ -1018,17 +1318,19 @@ internal object VerdantRoadQuestDecorator {
         setGrounded(instance, plan, framedPoint(center, frame, -2, -3), 0, Block.BARREL)
         setGrounded(instance, plan, framedPoint(center, frame, -1, -3), 0, Block.CRAFTING_TABLE)
         for (forward in -2..2) setGrounded(instance, plan, framedPoint(center, frame, forward, -4), 0, palette.roof)
+        instance.setBlock(node.blockPosition, node.discipline.nodeBlock)
     }
 
     private fun decorateDiscovery(instance: Instance, plan: QuestMapPlan, center: QuestMapPoint, ordinal: Int) {
         val frame = routeFrame(plan, center)
         val palette = scenePalette(plan.style)
+        val site = framedPoint(center, frame, 0, if (ordinal and 1 == 0) 9 else -9)
         when (ordinal % 3) {
             0 -> {
                 // A spring framed by a low ruin; the pool is the focal point.
                 for (forward in -2..2) {
                     for (side in -2..2) {
-                        val point = framedPoint(center, frame, forward, side)
+                        val point = framedPoint(site, frame, forward, side)
                         if (forward * forward + side * side <= 3) {
                             instance.setBlock(point.x, plan.heightAt(point), point.z, if (plan.style == QuestTerrainStyle.INFERNAL) Block.LAVA else Block.WATER)
                         }
@@ -1036,26 +1338,26 @@ internal object VerdantRoadQuestDecorator {
                 }
                 for (side in -4..4) {
                     if (side == 0 || Math.floorMod(side, 3) == 0) continue
-                    setGrounded(instance, plan, framedPoint(center, frame, 3, side), 0, palette.stone)
+                    setGrounded(instance, plan, framedPoint(site, frame, 3, side), 0, palette.stone)
                 }
             }
             1 -> {
                 // A collapsed wayside shrine has a broad base and a deliberate recessed focal niche.
                 for (side in -4..4) {
-                    val point = framedPoint(center, frame, 2, side)
+                    val point = framedPoint(site, frame, 2, side)
                     setGrounded(instance, plan, point, 0, if (side and 1 == 0) palette.stone else palette.stoneCracked)
                     if (kotlin.math.abs(side) in 2..3) setGrounded(instance, plan, point, 1, palette.stonePolished)
                 }
-                setGrounded(instance, plan, framedPoint(center, frame, 2, 0), 1, palette.stonePolished)
-                setGrounded(instance, plan, framedPoint(center, frame, 1, 0), 0, Block.CANDLE)
+                setGrounded(instance, plan, framedPoint(site, frame, 2, 0), 1, palette.stonePolished)
+                setGrounded(instance, plan, framedPoint(site, frame, 1, 0), 0, Block.CANDLE)
             }
             else -> {
                 // A rooted stone seat: landscape and discovery object read as one silhouette.
-                QuestMapStructureAssets.placeBoulder(instance, plan, framedPoint(center, frame, 2, 1), ordinal * 71, 2)
+                QuestMapStructureAssets.placeBoulder(instance, plan, framedPoint(site, frame, 2, 1), ordinal * 71, 2)
                 for (side in -2..2) {
-                    setGrounded(instance, plan, framedPoint(center, frame, 0, side), 0, palette.roof)
+                    setGrounded(instance, plan, framedPoint(site, frame, 0, side), 0, palette.roof)
                 }
-                setGrounded(instance, plan, framedPoint(center, frame, 1, 0), 0, Block.AMETHYST_CLUSTER)
+                setGrounded(instance, plan, framedPoint(site, frame, 1, 0), 0, Block.AMETHYST_CLUSTER)
             }
         }
     }
@@ -1117,21 +1419,58 @@ internal object VerdantRoadQuestDecorator {
 }
 
 internal class VerdantRoadQuestRuntime private constructor(
+    val requestedSeed: Long,
     val plan: QuestMapPlan,
+    val candidateScore: QuestMapCandidateScore,
+    val candidateCount: Int,
     val instance: InstanceContainer,
     val spawn: Pos,
     val preparationMillis: Long,
     val loadedChunkCount: Int,
 ) {
+    val gatheringNodes: List<QuestGatheringNode> = questGatheringNodes(plan)
+    private val gatheringNodesByPosition = gatheringNodes.associateBy { it.blockPosition }
+    private val gatheringRespawnAtMillis = mutableMapOf<Int, Long>()
+
+    fun gatheringNodeAt(position: BlockVec): QuestGatheringNode? = gatheringNodesByPosition[position]
+
+    @Synchronized
+    fun isGatheringNodeAvailable(node: QuestGatheringNode, nowMillis: Long): Boolean =
+        (gatheringRespawnAtMillis[node.id] ?: Long.MIN_VALUE) <= nowMillis
+
+    @Synchronized
+    fun tryDepleteGatheringNode(node: QuestGatheringNode, nowMillis: Long): Boolean {
+        if (!isGatheringNodeAvailable(node, nowMillis)) return false
+        gatheringRespawnAtMillis[node.id] = nowMillis + GATHERING_RESPAWN_MILLIS
+        instance.setBlock(node.blockPosition, Block.AIR)
+        return true
+    }
+
+    @Synchronized
+    fun respawnGatheringNodes(nowMillis: Long) {
+        val ready = gatheringRespawnAtMillis.filterValues { it <= nowMillis }.keys.toList()
+        ready.forEach { nodeId ->
+            val node = gatheringNodes.single { it.id == nodeId }
+            instance.setBlock(node.blockPosition, node.discipline.nodeBlock)
+            gatheringRespawnAtMillis.remove(nodeId)
+        }
+    }
+
     fun close() {
         check(instance.players.isEmpty()) { "Cannot close a quest map while players are inside" }
         MinecraftServer.getInstanceManager().unregisterInstance(instance)
     }
 
     companion object {
-        fun prepare(seed: Long): CompletableFuture<VerdantRoadQuestRuntime> {
+        private const val GATHERING_RESPAWN_MILLIS = 90_000L
+
+        fun prepare(
+            seed: Long,
+            candidateCount: Int = QuestMapCandidateSelector.DEFAULT_CANDIDATE_COUNT,
+        ): CompletableFuture<VerdantRoadQuestRuntime> {
             val startedAt = System.nanoTime()
-            val plan = VerdantRoadQuestPlanner.generate(seed)
+            val selection = QuestMapCandidateSelector.select(seed, candidateCount)
+            val plan = selection.plan
             val instance = MinecraftServer.getInstanceManager().createInstanceContainer()
             instance.setTime(6000)
             instance.defaultClock()?.pause()
@@ -1151,11 +1490,14 @@ internal class VerdantRoadQuestRuntime private constructor(
                 VerdantRoadQuestDecorator.decorate(instance, plan)
                 val spawn = Pos(plan.start.x + 0.5, plan.heightAt(plan.start) + 1.0, plan.start.z + 0.5)
                 VerdantRoadQuestRuntime(
-                    plan,
-                    instance,
-                    spawn,
-                    (System.nanoTime() - startedAt) / 1_000_000,
-                    chunkCoordinates.size,
+                    requestedSeed = selection.requestedSeed,
+                    plan = plan,
+                    candidateScore = selection.score,
+                    candidateCount = selection.attemptedCandidates,
+                    instance = instance,
+                    spawn = spawn,
+                    preparationMillis = (System.nanoTime() - startedAt) / 1_000_000,
+                    loadedChunkCount = chunkCoordinates.size,
                 )
             }.whenComplete { _, failure ->
                 if (failure != null) MinecraftServer.getInstanceManager().unregisterInstance(instance)
@@ -1181,12 +1523,24 @@ internal data class VerdantRoadQuestServiceStatus(
 internal class VerdantRoadQuestService(
     private val hubInstance: Instance,
     private val hubSpawn: Pos,
+    private val masteryRepository: QuestGatheringMasteryRepository = QuestGatheringMasteryRepository(
+        Path.of("config", "projects", "gathering-mastery"),
+    ),
     seedBase: Long = System.currentTimeMillis(),
 ) {
     private val ready = ConcurrentLinkedQueue<VerdantRoadQuestRuntime>()
     private val activeByPlayer = ConcurrentHashMap<UUID, VerdantRoadQuestRuntime>()
     private val preparing = AtomicInteger()
     private val nextSeed = AtomicLong(seedBase)
+    private val gatheringMasteries = ConcurrentHashMap<UUID, QuestGatheringMastery>()
+    private val activeGathering = ConcurrentHashMap<UUID, ActiveGathering>()
+
+    private data class ActiveGathering(
+        val runtime: VerdantRoadQuestRuntime,
+        val node: QuestGatheringNode,
+        val requiredTicks: Int,
+        var elapsedTicks: Int = 0,
+    )
 
     fun prewarmInitial(): CompletableFuture<Void> = CompletableFuture.allOf(
         *Array(PREWARM_TARGET) { prepareOne() },
@@ -1212,8 +1566,176 @@ internal class VerdantRoadQuestService(
             return CompletableFuture.completedFuture(false)
         }
         player.sendMessage(Component.text("Preparing manual-smoke seed $seed...", NamedTextColor.GRAY))
-        return VerdantRoadQuestRuntime.prepare(seed).thenCompose { runtime ->
+        return VerdantRoadQuestRuntime.prepare(seed, candidateCount = 1).thenCompose { runtime ->
             enterRuntime(player, runtime, returnToReadyOnFailure = false)
+        }
+    }
+
+    fun startGathering(player: Player, blockPosition: BlockVec): Boolean {
+        val runtime = activeByPlayer[player.uuid] ?: return false
+        if (player.instance !== runtime.instance) return false
+        val node = runtime.gatheringNodeAt(blockPosition) ?: return false
+        val now = System.currentTimeMillis()
+        if (!runtime.isGatheringNodeAvailable(node, now)) {
+            player.sendActionBar(Component.text("This resource is recovering.", NamedTextColor.DARK_GRAY))
+            return true
+        }
+        if (!node.discipline.accepts(player.itemInMainHand)) {
+            activeGathering.remove(player.uuid)
+            player.sendActionBar(
+                Component.text("Requires ${node.discipline.toolName}", NamedTextColor.RED),
+            )
+            return true
+        }
+        val mastery = gatheringMastery(player.uuid)
+        activeGathering[player.uuid] = ActiveGathering(
+            runtime = runtime,
+            node = node,
+            requiredTicks = mastery.harvestTicks(node.discipline),
+        )
+        player.sendActionBar(
+            Component.text(
+                "${node.quality.displayName} ${node.discipline.displayName} — hold attack",
+                if (node.quality == QuestGatheringQuality.RARE) NamedTextColor.LIGHT_PURPLE else NamedTextColor.GOLD,
+            ),
+        )
+        return true
+    }
+
+    fun cancelGathering(player: Player) {
+        if (activeGathering.remove(player.uuid) != null) {
+            player.sendActionBar(Component.empty())
+        }
+    }
+
+    fun protectGatheringNode(player: Player, blockPosition: BlockVec): Block? {
+        val runtime = activeByPlayer[player.uuid] ?: return null
+        val node = runtime.gatheringNodeAt(blockPosition) ?: return null
+        activeGathering.remove(player.uuid)
+        return node.discipline.nodeBlock
+    }
+
+    fun tick(player: Player) {
+        val runtime = activeByPlayer[player.uuid] ?: return
+        val now = System.currentTimeMillis()
+        runtime.respawnGatheringNodes(now)
+        val active = activeGathering[player.uuid] ?: return
+        if (active.runtime !== runtime || player.instance !== runtime.instance ||
+            !active.node.discipline.accepts(player.itemInMainHand) ||
+            player.position.distanceSquared(active.node.blockPosition) > MAX_GATHERING_DISTANCE_SQUARED
+        ) {
+            cancelGathering(player)
+            return
+        }
+        if (!runtime.isGatheringNodeAvailable(active.node, now)) {
+            cancelGathering(player)
+            return
+        }
+        active.elapsedTicks++
+        val filled = (active.elapsedTicks * GATHERING_BAR_SEGMENTS / active.requiredTicks)
+            .coerceIn(0, GATHERING_BAR_SEGMENTS)
+        player.sendActionBar(
+            Component.text(active.node.discipline.displayName + " ", NamedTextColor.GOLD)
+                .append(Component.text("█".repeat(filled), NamedTextColor.GREEN))
+                .append(Component.text("░".repeat(GATHERING_BAR_SEGMENTS - filled), NamedTextColor.DARK_GRAY)),
+        )
+        if (active.elapsedTicks < active.requiredTicks) return
+        activeGathering.remove(player.uuid)
+        if (!runtime.tryDepleteGatheringNode(active.node, now)) return
+        completeGathering(player, active.node)
+    }
+
+    fun gatheringMasterySummary(player: Player) {
+        val mastery = gatheringMastery(player.uuid)
+        player.sendMessage(Component.text("Gathering mastery", NamedTextColor.GOLD))
+        QuestGatheringDiscipline.entries.forEach { discipline ->
+            player.sendMessage(
+                Component.text(
+                    "${discipline.displayName}: Lv ${mastery.level(discipline)} (${mastery.experience(discipline)} xp)",
+                    NamedTextColor.GRAY,
+                ),
+            )
+        }
+    }
+
+    fun prepareGatheringSmokeTest(player: Player) {
+        val runtime = activeByPlayer[player.uuid]
+        if (runtime == null) {
+            player.sendMessage(Component.text("Enter a quest map before using the gathering smoke test.", NamedTextColor.RED))
+            return
+        }
+        val node = runtime.gatheringNodes.first()
+        player.itemInMainHand = node.discipline.toolItem()
+        player.teleport(
+            Pos(
+                node.blockPosition.blockX() + 0.5,
+                node.blockPosition.blockY().toDouble(),
+                node.blockPosition.blockZ() + 4.5,
+                180f,
+                8f,
+            ),
+        )
+        player.sendMessage(
+            Component.text(
+                "Smoke test: hold left click on the ${node.discipline.displayName} node ahead.",
+                NamedTextColor.GOLD,
+            ),
+        )
+    }
+
+    private fun completeGathering(player: Player, node: QuestGatheringNode) {
+        val previous = gatheringMastery(player.uuid)
+        val previousLevel = previous.level(node.discipline)
+        val amount = previous.yieldAmount(node.discipline, node.quality)
+        giveGatheringReward(
+            player,
+            ItemStack.of(node.discipline.commonMaterial, amount)
+                .withCustomName(Component.text(node.discipline.commonResourceName, NamedTextColor.WHITE)),
+        )
+        if (node.quality == QuestGatheringQuality.RARE) {
+            giveGatheringReward(
+                player,
+                ItemStack.of(node.discipline.rareMaterial)
+                    .withCustomName(Component.text(node.discipline.rareResourceName, NamedTextColor.LIGHT_PURPLE))
+                    .withGlowing(true),
+            )
+        }
+        val updated = previous.addExperience(node.discipline, node.quality.masteryExperience)
+        gatheringMasteries[player.uuid] = updated
+        masteryRepository.save(player.uuid, updated)
+        player.sendMessage(
+            Component.text(
+                "+$amount ${node.discipline.commonResourceName}  •  +${node.quality.masteryExperience} ${node.discipline.displayName} mastery",
+                if (node.quality == QuestGatheringQuality.RARE) NamedTextColor.LIGHT_PURPLE else NamedTextColor.GREEN,
+            ),
+        )
+        val newLevel = updated.level(node.discipline)
+        if (newLevel > previousLevel) {
+            player.sendMessage(
+                Component.text("${node.discipline.displayName} mastery reached Lv $newLevel", NamedTextColor.GOLD),
+            )
+        }
+    }
+
+    private fun giveGatheringReward(player: Player, item: ItemStack) {
+        if (!player.inventory.addItemStack(item)) player.dropItem(item)
+    }
+
+    private fun gatheringMastery(playerId: UUID): QuestGatheringMastery = gatheringMasteries.computeIfAbsent(playerId) {
+        when (val loaded = masteryRepository.load(playerId)) {
+            QuestGatheringMasteryLoadResult.Missing -> QuestGatheringMastery()
+            is QuestGatheringMasteryLoadResult.Loaded -> loaded.mastery
+            is QuestGatheringMasteryLoadResult.Invalid -> {
+                System.err.println("Gathering mastery load blocked for $playerId: ${loaded.reason}")
+                QuestGatheringMastery()
+            }
+        }
+    }
+
+    private fun ensureGatheringTools(player: Player) {
+        val ownedDisciplines = player.inventory.itemStacks.mapNotNull { it.getTag(QUEST_GATHERING_TOOL_TAG) }.toSet()
+        QuestGatheringDiscipline.entries.filterNot { it.id in ownedDisciplines }.forEach { discipline ->
+            giveGatheringReward(player, discipline.toolItem())
         }
     }
 
@@ -1234,18 +1756,29 @@ internal class VerdantRoadQuestService(
                     runtime.close()
                 }
                 player.sendMessage(Component.text("Quest transfer failed: ${failure.message}", NamedTextColor.RED))
+                println("Quest map transfer failed for ${player.username}: ${failure.message}")
                 false
             } else {
                 val transferMillis = (System.nanoTime() - transferStartedAt) / 1_000_000
+                gatheringMastery(player.uuid)
+                ensureGatheringTools(player)
+                println(
+                    "Quest map transfer complete: player=${player.username} seed=${runtime.plan.seed} " +
+                        "style=${runtime.plan.style} layout=${runtime.plan.routeLayout} " +
+                        "terrain=${runtime.plan.terrainProfile} chunks=${runtime.loadedChunkCount} " +
+                        "ready=${runtime.preparationMillis}ms transfer=${transferMillis}ms",
+                )
                 player.sendMessage(
                     Component.text(
                         "Verdant Road seed=${runtime.plan.seed} style=${runtime.plan.style} layout=${runtime.plan.routeLayout} " +
                             "terrain=${runtime.plan.terrainProfile} chunks=${runtime.loadedChunkCount} " +
+                            "candidates=${runtime.candidateCount} score=${"%.2f".format(runtime.candidateScore.total)} " +
                             "ready=${runtime.preparationMillis}ms transfer=${transferMillis}ms",
                         NamedTextColor.GREEN,
                     ),
                 )
                 player.sendMessage(Component.text("Follow the road to the Lodestone boss arena. Side trails contain gathering and discoveries.", NamedTextColor.GRAY))
+                player.sendMessage(Component.text("Gathering: hold attack on a resource node with its matching tool.", NamedTextColor.GOLD))
                 true
             }
         }
@@ -1253,6 +1786,7 @@ internal class VerdantRoadQuestService(
 
     fun returnToHub(player: Player): CompletableFuture<Boolean> {
         val runtime = activeByPlayer.remove(player.uuid) ?: return CompletableFuture.completedFuture(false)
+        activeGathering.remove(player.uuid)
         player.setVelocity(Vec.ZERO)
         return player.setInstance(hubInstance, hubSpawn).handle { _, failure ->
             if (failure == null) {
@@ -1268,6 +1802,8 @@ internal class VerdantRoadQuestService(
     }
 
     fun disconnect(playerId: UUID) {
+        activeGathering.remove(playerId)
+        gatheringMasteries.remove(playerId)?.let { masteryRepository.save(playerId, it) }
         activeByPlayer.remove(playerId)?.let { closeAfterDisconnect(it, attemptsRemaining = 20) }
     }
 
@@ -1295,7 +1831,9 @@ internal class VerdantRoadQuestService(
             println(
                 "QUEST_MAP_READY seed=${runtime.plan.seed} style=${runtime.plan.style} " +
                     "layout=${runtime.plan.routeLayout} terrain=${runtime.plan.terrainProfile} " +
-                    "size=${runtime.plan.size} chunks=${runtime.loadedChunkCount} preparation=${runtime.preparationMillis}ms",
+                    "size=${runtime.plan.size} chunks=${runtime.loadedChunkCount} " +
+                    "candidates=${runtime.candidateCount} score=${"%.2f".format(runtime.candidateScore.total)} " +
+                    "preparation=${runtime.preparationMillis}ms",
             )
         }
     }
@@ -1314,5 +1852,7 @@ internal class VerdantRoadQuestService(
 
     private companion object {
         const val PREWARM_TARGET = 2
+        const val GATHERING_BAR_SEGMENTS = 12
+        const val MAX_GATHERING_DISTANCE_SQUARED = 7.0 * 7.0
     }
 }
