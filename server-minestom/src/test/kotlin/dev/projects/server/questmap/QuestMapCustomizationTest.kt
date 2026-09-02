@@ -7,6 +7,9 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import net.minestom.server.Auth
 import net.minestom.server.MinecraftServer
+import net.minestom.server.component.DataComponents
+import net.minestom.server.item.ItemAnimation
+import net.minestom.server.item.Material
 
 class QuestMapCustomizationTest {
     @Test
@@ -29,6 +32,15 @@ class QuestMapCustomizationTest {
         assertEquals(data, QuestMapItems.read(QuestMapItems.questMap(data)))
         assertNull(QuestMapItems.read(QuestMapItems.gatheringTablet()))
         assertTrue(QuestMapItems.isGatheringTablet(QuestMapItems.gatheringTablet()))
+
+        QuestGatheringDiscipline.entries.forEach { discipline ->
+            val tool = discipline.toolItem()
+            val consumable = assertNotNull(tool.get(DataComponents.CONSUMABLE))
+            assertEquals(Material.STICK, tool.material())
+            assertEquals(discipline.toolMaterial.name().toString(), tool.get(DataComponents.ITEM_MODEL))
+            assertEquals(ItemAnimation.NONE, consumable.animation())
+            assertTrue(consumable.consumeTicks() > 1_000)
+        }
     }
 
     @Test

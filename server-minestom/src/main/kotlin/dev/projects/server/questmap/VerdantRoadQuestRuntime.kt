@@ -22,6 +22,7 @@ import net.minestom.server.instance.Weather
 import net.minestom.server.instance.block.Block
 import net.minestom.server.instance.generator.GenerationUnit
 import net.minestom.server.instance.generator.Generator
+import net.minestom.server.inventory.AbstractInventory
 import net.minestom.server.item.ItemStack
 import net.minestom.server.network.packet.server.play.ParticlePacket
 import net.minestom.server.network.packet.server.play.EntityAnimationPacket
@@ -1714,11 +1715,9 @@ internal class VerdantRoadQuestService(
         val node: QuestGatheringNode,
         val targetPosition: BlockVec,
         val targetEntity: Entity?,
-        val requiresContinuousInput: Boolean,
         val requiredTicks: Int,
         val progressDisplay: Entity,
         var elapsedTicks: Int = 0,
-        var lastInputTick: Long,
     )
 
     fun prewarmInitial(): CompletableFuture<Void> = CompletableFuture.allOf(
@@ -1752,14 +1751,15 @@ internal class VerdantRoadQuestService(
 
     fun questMapItemData(item: ItemStack): QuestMapItemData? = QuestMapItems.read(item)
 
-    fun applyGatheringTablet(player: Player): Boolean {
-        val tablet = player.itemInMainHand
+    fun applyGatheringTablet(
+        player: Player,
+        inventory: AbstractInventory,
+        slot: Int,
+        clickedItem: ItemStack,
+    ): Boolean {
+        val tablet = player.inventory.cursorItem
         if (!QuestMapItems.isGatheringTablet(tablet)) return false
-        val mapData = QuestMapItems.read(player.itemInOffHand)
-        if (mapData == null) {
-            player.sendActionBar(Component.text("オフハンドにクエストマップを持ってください。", NamedTextColor.RED))
-            return true
-        }
+        val mapData = QuestMapItems.read(clickedItem) ?: return false
         val updated = QuestMapItems.applyTablet(mapData, itemSeeds.getAndIncrement())
         if (updated == null) {
             player.sendActionBar(
@@ -1767,8 +1767,8 @@ internal class VerdantRoadQuestService(
             )
             return true
         }
-        player.itemInMainHand = tablet.consume(1)
-        player.itemInOffHand = QuestMapItems.questMap(updated)
+        inventory.setItemStack(slot, QuestMapItems.questMap(updated))
+        player.inventory.cursorItem = tablet.consume(1)
         val added = updated.customization.modifiers.last()
         player.sendMessage(Component.text("採取の石板: ${added.displayName()}", NamedTextColor.LIGHT_PURPLE))
         return true
@@ -1843,7 +1843,7 @@ internal class VerdantRoadQuestService(
         val runtime = activeByPlayer[player.uuid] ?: return false
         if (player.instance !== runtime.instance) return false
         val node = runtime.gatheringNodeAt(blockPosition) ?: return false
-        return startGathering(player, runtime, node, blockPosition, null, requiresContinuousInput = true)
+        return startGathering(player, runtime, node, blockPosition, null)
     }
 
     fun startGathering(player: Player, target: Entity): Boolean {
@@ -1851,7 +1851,7 @@ internal class VerdantRoadQuestService(
         if (player.instance !== runtime.instance || target.instance !== runtime.instance) return false
         val node = runtime.gatheringNodeForEntity(target) ?: return false
         val targetPosition = runtime.gatheringObjects.getValue(node.id).interactionPosition.asBlockVec()
-        return startGathering(player, runtime, node, targetPosition, target, requiresContinuousInput = false)
+        return startGathering(player, runtime, node, targetPosition, target)
     }
 
     private fun startGathering(
@@ -1860,7 +1860,6 @@ internal class VerdantRoadQuestService(
         node: QuestGatheringNode,
         targetPosition: BlockVec,
         targetEntity: Entity?,
-        requiresContinuousInput: Boolean,
     ): Boolean {
         val now = System.currentTimeMillis()
         if (!runtime.isGatheringNodeAvailable(node, now)) {
@@ -1868,7 +1867,7 @@ internal class VerdantRoadQuestService(
             return true
         }
         if (!node.discipline.accepts(player.itemInMainHand)) {
-            removeActiveGathering(player.uuid)
+            cancelGathering(player)
             player.sendActionBar(
                 Component.text("${node.discipline.toolName}が必要です。", NamedTextColor.RED),
             )
@@ -1876,29 +1875,36 @@ internal class VerdantRoadQuestService(
         }
         val current = activeGathering[player.uuid]
         if (current != null && current.runtime === runtime && current.node.id == node.id) {
-            current.lastInputTick = player.aliveTicks
+            beginGatheringInput(player)
             return true
         }
-        removeActiveGathering(player.uuid)
+        cancelGathering(player)
         val mastery = gatheringMastery(player.uuid)
         val active = ActiveGathering(
             runtime = runtime,
             node = node,
             targetPosition = targetPosition,
             targetEntity = targetEntity,
-            requiresContinuousInput = requiresContinuousInput,
             requiredTicks = mastery.harvestTicks(node.discipline),
             progressDisplay = createGatheringProgressDisplay(),
-            lastInputTick = player.aliveTicks,
         )
         activeGathering[player.uuid] = active
+        beginGatheringInput(player)
         updateGatheringProgressDisplay(active)
         spawnGatheringProgressDisplay(player, active)
         return true
     }
 
     fun cancelGathering(player: Player) {
-        removeActiveGathering(player.uuid)
+        if (removeActiveGathering(player.uuid) != null) {
+            player.refreshActiveHand(false, false, false)
+            player.clearItemUse()
+        }
+    }
+
+    private fun beginGatheringInput(player: Player) {
+        player.refreshItemUse(PlayerHand.MAIN, GATHERING_HOLD_DURATION_TICKS)
+        player.refreshActiveHand(true, false, false)
     }
 
     fun protectGatheringNode(player: Player, blockPosition: BlockVec): Block? {
@@ -1920,10 +1926,6 @@ internal class VerdantRoadQuestService(
             MIN_GATHERING_DISTANCE,
             interaction.interactionWidth / 2.0 + GATHERING_INTERACTION_REACH,
         )
-        if (active.requiresContinuousInput && player.aliveTicks - active.lastInputTick > GATHERING_INPUT_GRACE_TICKS) {
-            cancelGathering(player)
-            return
-        }
         if (active.runtime !== runtime || player.instance !== runtime.instance ||
             !active.node.discipline.accepts(player.itemInMainHand) ||
             player.position.distanceSquared(active.targetPosition) > allowedDistance * allowedDistance ||
@@ -1945,7 +1947,7 @@ internal class VerdantRoadQuestService(
         }
         updateGatheringProgressDisplay(active)
         if (active.elapsedTicks < active.requiredTicks) return
-        removeActiveGathering(player.uuid)
+        cancelGathering(player)
         if (!runtime.tryDepleteGatheringNode(active.node, now)) return
         playGatheringSound(player, active.node.discipline, active.targetPosition, completion = true)
         completeGathering(player, active.node)
@@ -2285,7 +2287,7 @@ internal class VerdantRoadQuestService(
 
     fun returnToHub(player: Player): CompletableFuture<Boolean> {
         val runtime = activeByPlayer.remove(player.uuid) ?: return CompletableFuture.completedFuture(false)
-        removeActiveGathering(player.uuid)
+        cancelGathering(player)
         player.setVelocity(Vec.ZERO)
         return player.setInstance(hubInstance, hubSpawn).handle { _, failure ->
             if (failure == null) {
@@ -2353,7 +2355,7 @@ internal class VerdantRoadQuestService(
         const val PREWARM_TARGET = 2
         const val GATHERING_BAR_SEGMENTS = 12
         const val GATHERING_SWING_INTERVAL_TICKS = 6
-        const val GATHERING_INPUT_GRACE_TICKS = 8L
+        const val GATHERING_HOLD_DURATION_TICKS = 72_000L
         const val MIN_GATHERING_DISTANCE = 7.0
         const val GATHERING_INTERACTION_REACH = 4.0
         const val RARE_PARTICLE_INTERVAL_TICKS = 18L

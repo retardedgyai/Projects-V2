@@ -76,7 +76,7 @@ internal object QuestMapItems {
                     listOf(
                         Component.empty(),
                         Component.text("右クリック: マップを開始", NamedTextColor.YELLOW),
-                        Component.text("石板をメイン手、マップをオフハンドに持つとMODを付与", NamedTextColor.GRAY),
+                        Component.text("インベントリで石板を重ねるとMODを付与", NamedTextColor.GRAY),
                     ),
             )
             .build()
@@ -87,7 +87,7 @@ internal object QuestMapItems {
         .customName(Component.text("採取の石板", NamedTextColor.LIGHT_PURPLE))
         .lore(
             Component.text("クエストマップへランダムな採取MODを1つ付与する", NamedTextColor.GRAY),
-            Component.text("メイン手: 石板　オフハンド: クエストマップ", NamedTextColor.YELLOW),
+            Component.text("インベントリでつかみ、クエストマップをクリック", NamedTextColor.YELLOW),
             Component.text("最大${QuestMapCustomization.MAX_MODIFIERS}MOD", NamedTextColor.DARK_GRAY),
         )
         .glowing(true)

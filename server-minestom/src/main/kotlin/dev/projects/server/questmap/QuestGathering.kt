@@ -5,9 +5,13 @@ import net.kyori.adventure.text.format.NamedTextColor
 import net.minestom.server.coordinate.BlockVec
 import net.minestom.server.coordinate.Pos
 import net.minestom.server.coordinate.Vec
+import net.minestom.server.component.DataComponents
 import net.minestom.server.instance.block.Block
+import net.minestom.server.item.component.Consumable
+import net.minestom.server.item.ItemAnimation
 import net.minestom.server.item.ItemStack
 import net.minestom.server.item.Material
+import net.minestom.server.sound.SoundEvent
 import net.minestom.server.tag.Tag
 import java.nio.file.Files
 import java.nio.file.Path
@@ -88,14 +92,24 @@ internal enum class QuestGatheringDiscipline(
     ),
     ;
 
-    fun toolItem(): ItemStack = ItemStack.builder(toolMaterial)
+    fun toolItem(): ItemStack = ItemStack.builder(Material.STICK)
         .customName(Component.text(toolName, NamedTextColor.GOLD))
+        .set(DataComponents.ITEM_MODEL, toolMaterial.name().toString())
+        .set(DataComponents.CONSUMABLE, GATHERING_HOLD_COMPONENT)
         .build()
         .withTag(QUEST_GATHERING_TOOL_TAG, id)
 
     fun accepts(item: ItemStack): Boolean = item.getTag(QUEST_GATHERING_TOOL_TAG) == id
 
     companion object {
+        private val GATHERING_HOLD_COMPONENT = Consumable(
+            3_600f,
+            ItemAnimation.NONE,
+            SoundEvent.ENTITY_GENERIC_EAT,
+            false,
+            emptyList(),
+        )
+
         fun forGatheringOrdinal(ordinal: Int): QuestGatheringDiscipline = entries[Math.floorMod(ordinal, entries.size)]
     }
 }

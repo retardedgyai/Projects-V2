@@ -46,6 +46,8 @@ import net.minestom.server.entity.GameMode
 import net.minestom.server.entity.ItemEntity
 import net.minestom.server.entity.PlayerHand
 import net.minestom.server.event.entity.EntityDeathEvent
+import net.minestom.server.event.inventory.InventoryPreClickEvent
+import net.minestom.server.event.item.PlayerCancelItemUseEvent
 import net.minestom.server.event.player.AsyncPlayerConfigurationEvent
 import net.minestom.server.event.player.PlayerPluginMessageEvent
 import net.minestom.server.event.player.PlayerBlockInteractEvent
@@ -60,6 +62,7 @@ import net.minestom.server.instance.block.Block
 import net.minestom.server.instance.Instance
 import net.minestom.server.instance.LightingChunk
 import net.minestom.server.instance.Weather
+import net.minestom.server.inventory.click.Click
 import net.minestom.server.item.ItemStack
 import net.minestom.server.item.Material
 import net.minestom.server.tag.Tag
@@ -888,14 +891,15 @@ fun main() {
     events.addListener(PlayerBlockInteractEvent::class.java) { event ->
         if (event.hand == PlayerHand.MAIN && questMaps.startGathering(event.player, event.blockPosition)) {
             event.isCancelled = true
-            event.isBlockingItemUse = true
+        }
+    }
+    events.addListener(InventoryPreClickEvent::class.java) { event ->
+        if (event.click !is Click.Left && event.click !is Click.Right) return@addListener
+        if (questMaps.applyGatheringTablet(event.player, event.inventory, event.slot, event.clickedItem)) {
+            event.isCancelled = true
         }
     }
     events.addListener(PlayerUseItemEvent::class.java) { event ->
-        if (event.hand == PlayerHand.MAIN && questMaps.applyGatheringTablet(event.player)) {
-            event.isCancelled = true
-            return@addListener
-        }
         val mapData = questMaps.questMapItemData(event.itemStack) ?: return@addListener
         event.isCancelled = true
         prepareQuestMapTransfer(event.player)
@@ -905,6 +909,9 @@ fun main() {
     }
     events.addListener(PlayerEntityInteractEvent::class.java) { event ->
         if (event.hand == PlayerHand.MAIN) questMaps.startGathering(event.player, event.target)
+    }
+    events.addListener(PlayerCancelItemUseEvent::class.java) { event ->
+        if (event.hand == PlayerHand.MAIN) questMaps.cancelGathering(event.player)
     }
     events.addListener(EntityDeathEvent::class.java) { event ->
         val dead = event.entity
