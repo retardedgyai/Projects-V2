@@ -51,6 +51,7 @@ import net.minestom.server.event.player.PlayerFinishDiggingEvent
 import net.minestom.server.event.player.PlayerDisconnectEvent
 import net.minestom.server.event.player.PlayerSpawnEvent
 import net.minestom.server.event.player.PlayerTickEvent
+import net.minestom.server.event.entity.EntityAttackEvent
 import net.minestom.server.event.instance.InstanceTickEvent
 import net.minestom.server.instance.block.Block
 import net.minestom.server.instance.Instance
@@ -872,6 +873,10 @@ fun main() {
             riftExecutioner.reset()
             prototypeBoss.reset()
         }
+    }
+    events.addListener(EntityAttackEvent::class.java) { event ->
+        val player = event.entity as? net.minestom.server.entity.Player ?: return@addListener
+        questMaps.startGathering(player, event.target)
     }
     events.addListener(PlayerStartDiggingEvent::class.java) { event ->
         if (questMaps.startGathering(event.player, event.blockPosition)) {

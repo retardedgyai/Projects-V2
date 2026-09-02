@@ -2,6 +2,7 @@ package dev.projects.server.questmap
 
 import net.kyori.adventure.nbt.CompoundBinaryTag
 import net.kyori.adventure.nbt.IntBinaryTag
+import net.minestom.server.coordinate.BlockVec
 import net.minestom.server.instance.Instance
 import net.minestom.server.instance.block.Block
 import net.minestom.server.utils.nbt.BinaryTagReader
@@ -22,6 +23,18 @@ internal data class SchematicVoxel(
     val z: Int,
     val state: String,
 )
+
+internal data class PlacedSchematic(
+    val assetId: String,
+    val blocks: Map<BlockVec, Block>,
+) {
+    init {
+        require(blocks.isNotEmpty()) { "配置済みschematicにブロックがありません: $assetId" }
+    }
+
+    val minY: Int = blocks.keys.minOf { it.blockY() }
+    val maxY: Int = blocks.keys.maxOf { it.blockY() }
+}
 
 /**
  * Minimal Sponge schematic v2 reader used for reviewed, repository-owned third-party assets.
@@ -53,8 +66,20 @@ internal class SpongeSchematicAsset private constructor(
         origin: QuestMapPoint,
         rotation: Int,
         palette: (String, SchematicVoxel) -> String = { state, _ -> state },
-    ) {
+    ): PlacedSchematic {
+        val placement = resolvePlacement(plan, origin, rotation, palette)
+        placement.blocks.forEach { (position, block) -> instance.setBlock(position, block) }
+        return placement
+    }
+
+    fun resolvePlacement(
+        plan: QuestMapPlan,
+        origin: QuestMapPoint,
+        rotation: Int,
+        palette: (String, SchematicVoxel) -> String = { state, _ -> state },
+    ): PlacedSchematic {
         val originY = plan.heightAt(origin) + 1
+        val blocks = linkedMapOf<BlockVec, Block>()
         voxels.forEach { voxel ->
             val localX = voxel.x - anchorX
             val localZ = voxel.z - anchorZ
@@ -73,10 +98,11 @@ internal class SpongeSchematicAsset private constructor(
                 SchematicAnchorMode.SURFACE_MASS -> voxel.y <= anchorY + 1
             }
             if (shouldGround && y > surface + 1) {
-                for (fillY in surface + 1 until y) instance.setBlock(x, fillY, z, block)
+                for (fillY in surface + 1 until y) blocks[BlockVec(x, fillY, z)] = block
             }
-            instance.setBlock(x, y, z, block)
+            blocks[BlockVec(x, y, z)] = block
         }
+        return PlacedSchematic(id, blocks)
     }
 
     companion object {

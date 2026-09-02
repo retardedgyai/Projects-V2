@@ -189,6 +189,27 @@ internal object QuestMapSchematicCatalog {
         return Selection(asset) { state, voxel -> groundPalette(state, style, variation, voxel) }
     }
 
+    fun selectGatheringTree(style: QuestTerrainStyle, variation: Int): Selection {
+        val compact = productionTreePools.getValue(style).filter { asset ->
+            asset.footprintRadius <= 6 && asset.height <= 24
+        }
+        val candidates = compact.ifEmpty { productionTreePools.getValue(style) }
+        val asset = candidates[Math.floorMod(variation, candidates.size)]
+        return Selection(asset) { state, voxel -> treePalette(state, style, variation, voxel) }
+    }
+
+    fun selectGatheringBoulder(style: QuestTerrainStyle, variation: Int): Selection {
+        val compact = productionRocks.filter { it.footprintRadius <= 4 }
+        val candidates = compact.ifEmpty { productionRocks }
+        val asset = candidates[Math.floorMod(variation, candidates.size)]
+        return Selection(asset) { state, voxel -> rockPalette(state, style, variation, voxel) }
+    }
+
+    fun selectGatheringPlant(style: QuestTerrainStyle, variation: Int): Selection {
+        val asset = productionGround[Math.floorMod(variation + style.ordinal * 11, productionGround.size)]
+        return Selection(asset) { state, voxel -> groundPalette(state, style, variation, voxel) }
+    }
+
     internal fun allAssets(): List<SpongeSchematicAsset> =
         lushOak + spruce + swamp + oldLivingForest + deadTrees + roofedForest + jungle + savanna + badlands + rocks +
             daniyeAcacia + daniyeBirch + daniyeCherry + daniyeDarkOak + daniyeJungle + daniyeMangrove +

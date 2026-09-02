@@ -1,5 +1,7 @@
 package dev.projects.server.questmap
 
+import net.minestom.server.coordinate.BlockVec
+import net.minestom.server.coordinate.Pos
 import net.minestom.server.instance.Instance
 import net.minestom.server.instance.block.Block
 import kotlin.math.abs
@@ -10,6 +12,20 @@ import kotlin.math.roundToInt
  * small connective details remain procedural so imported assets read as part of the terrain.
  */
 internal object QuestMapStructureAssets {
+    internal enum class GatheringVisualKind {
+        SCHEMATIC,
+        ANIMAL_CORPSE,
+    }
+
+    internal data class GatheringObject(
+        val assetId: String,
+        val visualKind: GatheringVisualKind,
+        val blocks: Map<BlockVec, Block>,
+        val interactionPosition: Pos,
+        val interactionWidth: Float,
+        val interactionHeight: Float,
+    )
+
     fun treeFamilyId(style: QuestTerrainStyle, variation: Int): Int =
         Math.floorMod(variation xor (style.ordinal * 0x45d9f3b), 5)
 
@@ -33,6 +49,96 @@ internal object QuestMapStructureAssets {
     ) {
         val selection = QuestMapSchematicCatalog.selectBoulder(plan.style, variation)
         selection.asset.place(instance, plan, origin, rotation, selection.palette)
+    }
+
+    fun resolveGatheringObject(plan: QuestMapPlan, node: QuestGatheringNode): GatheringObject {
+        val origin = QuestMapPoint(node.blockPosition.blockX(), node.blockPosition.blockZ())
+        val rotation = Math.floorMod(plan.seed.toInt() + node.id * 31, 4)
+        if (node.discipline == QuestGatheringDiscipline.SKINNING) {
+            return GatheringObject(
+                assetId = "entity/cow_corpse",
+                visualKind = GatheringVisualKind.ANIMAL_CORPSE,
+                blocks = emptyMap(),
+                interactionPosition = Pos(
+                    origin.x + 0.5,
+                    plan.heightAt(origin) + 1.05,
+                    origin.z + 0.5,
+                    (rotation * 90f),
+                    0f,
+                ),
+                interactionWidth = 1.8f,
+                interactionHeight = 1.35f,
+            )
+        }
+
+        val variation = (plan.seed xor (node.id * 2_654_435_761L)).toInt()
+        val selection = when (node.discipline) {
+            QuestGatheringDiscipline.WOODCUTTING -> QuestMapSchematicCatalog.selectGatheringTree(plan.style, variation)
+            QuestGatheringDiscipline.QUARRYING, QuestGatheringDiscipline.MINING ->
+                QuestMapSchematicCatalog.selectGatheringBoulder(plan.style, variation)
+            QuestGatheringDiscipline.HERBALISM -> QuestMapSchematicCatalog.selectGatheringPlant(plan.style, variation)
+            QuestGatheringDiscipline.SKINNING -> error("死体にはschematicを使用しません")
+        }
+        val placement = selection.asset.resolvePlacement(plan, origin, rotation) { state, voxel ->
+            val styled = selection.palette(state, voxel)
+            if (node.discipline == QuestGatheringDiscipline.MINING && isMiningAccent(node, voxel)) {
+                miningOreState(plan.style, node.quality)
+            } else {
+                styled
+            }
+        }
+        val minX = placement.blocks.keys.minOf { it.blockX() }
+        val maxX = placement.blocks.keys.maxOf { it.blockX() }
+        val minZ = placement.blocks.keys.minOf { it.blockZ() }
+        val maxZ = placement.blocks.keys.maxOf { it.blockZ() }
+        val visualHeight = placement.maxY - placement.minY + 1
+        val interactionWidth = when (node.discipline) {
+            QuestGatheringDiscipline.WOODCUTTING -> 1.8f
+            QuestGatheringDiscipline.QUARRYING, QuestGatheringDiscipline.MINING ->
+                maxOf(maxX - minX + 1, maxZ - minZ + 1).toFloat().coerceIn(1.5f, 6f)
+            QuestGatheringDiscipline.HERBALISM ->
+                maxOf(maxX - minX + 1, maxZ - minZ + 1).toFloat().coerceIn(1.5f, 5f)
+            QuestGatheringDiscipline.SKINNING -> error("死体には別の当たり判定を使用します")
+        }
+        val interactionHeight = when (node.discipline) {
+            QuestGatheringDiscipline.WOODCUTTING -> visualHeight.toFloat().coerceIn(3f, 7f)
+            QuestGatheringDiscipline.QUARRYING, QuestGatheringDiscipline.MINING -> visualHeight.toFloat().coerceIn(1.5f, 6f)
+            QuestGatheringDiscipline.HERBALISM -> visualHeight.toFloat().coerceIn(1.2f, 3.5f)
+            QuestGatheringDiscipline.SKINNING -> error("死体には別の当たり判定を使用します")
+        }
+        return GatheringObject(
+            assetId = placement.assetId,
+            visualKind = GatheringVisualKind.SCHEMATIC,
+            blocks = placement.blocks,
+            interactionPosition = Pos(
+                origin.x + 0.5,
+                placement.minY.toDouble(),
+                origin.z + 0.5,
+                (rotation * 90f),
+                0f,
+            ),
+            interactionWidth = interactionWidth,
+            interactionHeight = interactionHeight,
+        )
+    }
+
+    fun placeGatheringObject(
+        instance: Instance,
+        plan: QuestMapPlan,
+        node: QuestGatheringNode,
+    ): GatheringObject = resolveGatheringObject(plan, node).also { gathering ->
+        gathering.blocks.forEach { (position, block) -> instance.setBlock(position, block) }
+    }
+
+    private fun isMiningAccent(node: QuestGatheringNode, voxel: SchematicVoxel): Boolean =
+        Math.floorMod(node.id * 97 + voxel.x * 31 + voxel.y * 17 + voxel.z * 43, 11) <=
+            if (node.quality == QuestGatheringQuality.RARE) 2 else 1
+
+    private fun miningOreState(style: QuestTerrainStyle, quality: QuestGatheringQuality): String = when {
+        style == QuestTerrainStyle.INFERNAL -> "minecraft:nether_gold_ore"
+        quality == QuestGatheringQuality.RARE -> "minecraft:emerald_ore"
+        style in setOf(QuestTerrainStyle.HIGHLANDS, QuestTerrainStyle.CLIFFLANDS) -> "minecraft:iron_ore"
+        else -> "minecraft:copper_ore"
     }
 
     /**

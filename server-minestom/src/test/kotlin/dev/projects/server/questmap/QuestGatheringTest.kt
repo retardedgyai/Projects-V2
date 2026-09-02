@@ -13,11 +13,23 @@ import kotlin.test.assertTrue
 class QuestGatheringTest {
     @Test
     fun `eight generated gathering locations cover every discipline`() {
-        val nodes = questGatheringNodes(VerdantRoadQuestPlanner.generate(91_337L))
+        val plan = VerdantRoadQuestPlanner.generate(91_337L)
+        val nodes = questGatheringNodes(plan)
 
         assertEquals(8, nodes.size)
         assertEquals(QuestGatheringDiscipline.entries.toSet(), nodes.map { it.discipline }.toSet())
         assertEquals(nodes.size, nodes.map { it.blockPosition }.distinct().size)
+
+        nodes.forEach { node ->
+            val gathering = QuestMapStructureAssets.resolveGatheringObject(plan, node)
+            if (node.discipline == QuestGatheringDiscipline.SKINNING) {
+                assertEquals(QuestMapStructureAssets.GatheringVisualKind.ANIMAL_CORPSE, gathering.visualKind)
+                assertTrue(gathering.blocks.isEmpty())
+            } else {
+                assertEquals(QuestMapStructureAssets.GatheringVisualKind.SCHEMATIC, gathering.visualKind)
+                assertTrue(gathering.blocks.size > 1, "${node.discipline} must use a complete authored asset")
+            }
+        }
     }
 
     @Test
