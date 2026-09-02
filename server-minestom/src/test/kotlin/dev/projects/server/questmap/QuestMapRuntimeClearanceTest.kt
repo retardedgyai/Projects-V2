@@ -20,6 +20,7 @@ class QuestMapRuntimeClearanceTest {
             assertTrue(obstructions.isEmpty(), "Decorated route contains solid blocks: $obstructions")
             runtime.gatheringNodes.forEach { node ->
                 val gathering = runtime.gatheringObjects.getValue(node.id)
+                assertNotNull(runtime.gatheringLabelFor(node), "Gathering node ${node.id} has no readable label")
                 if (gathering.visualKind == QuestMapStructureAssets.GatheringVisualKind.ANIMAL_CORPSE) {
                     val interaction = assertNotNull(runtime.gatheringInteractionFor(node))
                     assertEquals(node, runtime.gatheringNodeForEntity(interaction))
@@ -30,6 +31,10 @@ class QuestMapRuntimeClearanceTest {
                     gathering.blocks.forEach { (position, block) ->
                         assertEquals(block, runtime.instance.getBlock(position), "Gathering asset ${node.id} lost $position")
                     }
+                    assertTrue(
+                        gathering.interactionBlocks.any { position -> runtime.gatheringNodeAt(position) == node },
+                        "Gathering asset ${node.id} exposes no right-clickable block",
+                    )
                 }
             }
 
@@ -38,8 +43,10 @@ class QuestMapRuntimeClearanceTest {
             }
             val schematic = runtime.gatheringObjects.getValue(schematicNode.id)
             assertTrue(runtime.tryDepleteGatheringNode(schematicNode, 1_000L))
+            assertEquals(null, runtime.gatheringLabelFor(schematicNode))
             schematic.blocks.keys.forEach { position -> assertEquals(Block.AIR, runtime.instance.getBlock(position)) }
             runtime.respawnGatheringNodes(100_000L)
+            assertNotNull(runtime.gatheringLabelFor(schematicNode))
             schematic.blocks.forEach { (position, block) -> assertEquals(block, runtime.instance.getBlock(position)) }
         } finally {
             runtime.close()

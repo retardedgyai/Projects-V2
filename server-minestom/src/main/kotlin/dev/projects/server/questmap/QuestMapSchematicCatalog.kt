@@ -206,7 +206,10 @@ internal object QuestMapSchematicCatalog {
     }
 
     fun selectGatheringPlant(style: QuestTerrainStyle, variation: Int): Selection {
-        val asset = productionGround[Math.floorMod(variation + style.ordinal * 11, productionGround.size)]
+        val candidates = productionGround.filter { asset ->
+            asset.height >= 5 && !asset.id.contains("shroom", ignoreCase = true)
+        }.ifEmpty { productionGround }
+        val asset = candidates[Math.floorMod(variation + style.ordinal * 11, candidates.size)]
         return Selection(asset) { state, voxel -> groundPalette(state, style, variation, voxel) }
     }
 

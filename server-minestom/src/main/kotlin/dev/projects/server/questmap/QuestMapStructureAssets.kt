@@ -21,6 +21,7 @@ internal object QuestMapStructureAssets {
         val assetId: String,
         val visualKind: GatheringVisualKind,
         val blocks: Map<BlockVec, Block>,
+        val interactionBlocks: Set<BlockVec>,
         val interactionPosition: Pos,
         val interactionWidth: Float,
         val interactionHeight: Float,
@@ -59,6 +60,7 @@ internal object QuestMapStructureAssets {
                 assetId = "entity/cow_corpse",
                 visualKind = GatheringVisualKind.ANIMAL_CORPSE,
                 blocks = emptyMap(),
+                interactionBlocks = emptySet(),
                 interactionPosition = Pos(
                     origin.x + 0.5,
                     plan.heightAt(origin) + 1.05,
@@ -81,10 +83,11 @@ internal object QuestMapStructureAssets {
         }
         val placement = selection.asset.resolvePlacement(plan, origin, rotation) { state, voxel ->
             val styled = selection.palette(state, voxel)
-            if (node.discipline == QuestGatheringDiscipline.MINING && isMiningAccent(node, voxel)) {
-                miningOreState(plan.style, node.quality)
-            } else {
-                styled
+            when {
+                node.discipline == QuestGatheringDiscipline.WOODCUTTING -> nonStrippableWoodState(styled)
+                node.discipline == QuestGatheringDiscipline.MINING && isMiningAccent(node, voxel) ->
+                    miningOreState(plan.style, node.quality)
+                else -> styled
             }
         }
         val minX = placement.blocks.keys.minOf { it.blockX() }
@@ -112,6 +115,7 @@ internal object QuestMapStructureAssets {
             assetId = placement.assetId,
             visualKind = GatheringVisualKind.SCHEMATIC,
             blocks = placement.blocks,
+            interactionBlocks = placement.blocks.keys,
             interactionPosition = Pos(
                 (minX + maxX + 1) / 2.0,
                 placement.minY - 0.5,
@@ -129,7 +133,53 @@ internal object QuestMapStructureAssets {
         plan: QuestMapPlan,
         node: QuestGatheringNode,
     ): GatheringObject = resolveGatheringObject(plan, node).also { gathering ->
+        if (node.discipline == QuestGatheringDiscipline.HERBALISM) {
+            clearGatheringPlantSite(instance, plan, node, gathering)
+        }
         gathering.blocks.forEach { (position, block) -> instance.setBlock(position, block) }
+    }
+
+    private fun clearGatheringPlantSite(
+        instance: Instance,
+        plan: QuestMapPlan,
+        node: QuestGatheringNode,
+        gathering: GatheringObject,
+    ) {
+        val centerX = node.blockPosition.blockX()
+        val centerZ = node.blockPosition.blockZ()
+        val radius = (gathering.interactionWidth / 2f).roundToInt().coerceIn(3, 5)
+        for (dz in -radius..radius) {
+            for (dx in -radius..radius) {
+                if (dx * dx + dz * dz > radius * radius) continue
+                val x = centerX + dx
+                val z = centerZ + dz
+                if (x !in 1 until plan.size - 1 || z !in 1 until plan.size - 1) continue
+                val surface = plan.heightAt(x, z)
+                for (y in surface + 1..surface + 9) instance.setBlock(x, y, z, Block.AIR)
+                if (dx * dx + dz * dz <= (radius - 1) * (radius - 1)) {
+                    instance.setBlock(
+                        x,
+                        surface,
+                        z,
+                        if (plan.style == QuestTerrainStyle.INFERNAL) Block.WARPED_NYLIUM else Block.MOSS_BLOCK,
+                    )
+                }
+            }
+        }
+    }
+
+    /** Gathering trees use an axe, so their authored trunks must not trigger vanilla bark stripping. */
+    private fun nonStrippableWoodState(state: String): String {
+        val name = state.substringBefore('[')
+        if (name.startsWith("minecraft:stripped_")) return state
+        val strippedName = when {
+            name.endsWith("_log") -> "minecraft:stripped_${name.removePrefix("minecraft:").removeSuffix("_log")}_log"
+            name.endsWith("_wood") -> "minecraft:stripped_${name.removePrefix("minecraft:").removeSuffix("_wood")}_wood"
+            name.endsWith("_stem") -> "minecraft:stripped_${name.removePrefix("minecraft:").removeSuffix("_stem")}_stem"
+            name.endsWith("_hyphae") -> "minecraft:stripped_${name.removePrefix("minecraft:").removeSuffix("_hyphae")}_hyphae"
+            else -> return state
+        }
+        return strippedName + state.removePrefix(name)
     }
 
     private fun isMiningAccent(node: QuestGatheringNode, voxel: SchematicVoxel): Boolean =

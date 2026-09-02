@@ -1445,14 +1445,35 @@ internal class VerdantRoadQuestRuntime private constructor(
     }
     private val gatheringNodesByPosition = buildMap {
         gatheringNodes.forEach { node ->
-            gatheringObjects.getValue(node.id).blocks.keys.forEach { position -> put(position, node) }
+            val gathering = gatheringObjects.getValue(node.id)
+            gathering.interactionBlocks.forEach { position ->
+                if (instance.getBlock(position) != Block.AIR && position !in this) put(position, node)
+            }
+            if (node.discipline == QuestGatheringDiscipline.WOODCUTTING) {
+                gathering.interactionBlocks.forEach { position ->
+                    for (dy in -1..1) {
+                        for (dz in -1..1) {
+                            for (dx in -1..1) {
+                                val nearby = BlockVec(
+                                    position.blockX() + dx,
+                                    position.blockY() + dy,
+                                    position.blockZ() + dz,
+                                )
+                                if (nearby !in this && isWoodGatheringBlock(instance.getBlock(nearby))) put(nearby, node)
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
     private val gatheringInteractionByNode = mutableMapOf<Int, Entity>()
     private val gatheringNodeByEntityId = mutableMapOf<Int, QuestGatheringNode>()
+    private val gatheringLabelByNode = mutableMapOf<Int, Entity>()
     private val gatheringRespawnAtMillis = mutableMapOf<Int, Long>()
 
     init {
+        gatheringNodes.forEach(::spawnGatheringLabel)
         gatheringNodes.filter {
             gatheringObjects.getValue(it.id).visualKind == QuestMapStructureAssets.GatheringVisualKind.ANIMAL_CORPSE
         }.forEach(::spawnGatheringInteraction)
@@ -1463,6 +1484,8 @@ internal class VerdantRoadQuestRuntime private constructor(
     fun gatheringNodeForEntity(entity: Entity): QuestGatheringNode? = gatheringNodeByEntityId[entity.entityId]
 
     fun gatheringInteractionFor(node: QuestGatheringNode): Entity? = gatheringInteractionByNode[node.id]
+
+    fun gatheringLabelFor(node: QuestGatheringNode): Entity? = gatheringLabelByNode[node.id]
 
     fun gatheringBlockAt(position: BlockVec): Block? =
         gatheringNodeAt(position)?.let { node -> gatheringObjects.getValue(node.id).blocks[position] }
@@ -1477,6 +1500,7 @@ internal class VerdantRoadQuestRuntime private constructor(
         gatheringRespawnAtMillis[node.id] = nowMillis + GATHERING_RESPAWN_MILLIS
         gatheringObjects.getValue(node.id).blocks.keys.forEach { position -> instance.setBlock(position, Block.AIR) }
         removeGatheringInteraction(node.id)
+        removeGatheringLabel(node.id)
         return true
     }
 
@@ -1487,10 +1511,60 @@ internal class VerdantRoadQuestRuntime private constructor(
             val node = gatheringNodes.single { it.id == nodeId }
             val gathering = gatheringObjects.getValue(node.id)
             gathering.blocks.forEach { (position, block) -> instance.setBlock(position, block) }
+            gatheringRespawnAtMillis.remove(nodeId)
             if (gathering.visualKind == QuestMapStructureAssets.GatheringVisualKind.ANIMAL_CORPSE) {
                 spawnGatheringInteraction(node)
             }
-            gatheringRespawnAtMillis.remove(nodeId)
+            spawnGatheringLabel(node)
+        }
+    }
+
+    private fun spawnGatheringLabel(node: QuestGatheringNode) {
+        removeGatheringLabel(node.id)
+        val gathering = gatheringObjects.getValue(node.id)
+        val qualityColor = when (node.quality) {
+            QuestGatheringQuality.COMMON -> NamedTextColor.WHITE
+            QuestGatheringQuality.BOUNTIFUL -> NamedTextColor.GREEN
+            QuestGatheringQuality.RARE -> NamedTextColor.LIGHT_PURPLE
+        }
+        val label = Entity(EntityType.TEXT_DISPLAY).apply {
+            setHasPhysics(false)
+            setNoGravity(true)
+            editEntityMeta(TextDisplayMeta::class.java) { meta ->
+                meta.setBillboardRenderConstraints(AbstractDisplayMeta.BillboardConstraints.CENTER)
+                meta.setText(
+                    Component.text("T${node.tier} ", NamedTextColor.GRAY)
+                        .append(Component.text(node.discipline.commonResourceName, NamedTextColor.GOLD))
+                        .append(Component.text("  ${node.quality.displayName}", qualityColor)),
+                )
+                meta.setScale(Vec(0.82, 0.82, 0.82))
+                meta.setViewRange(20f)
+                meta.setShadow(true)
+                meta.setSeeThrough(true)
+                meta.setBackgroundColor(0xA0000000.toInt())
+                meta.setLineWidth(220)
+                meta.setBrightness(15, 15)
+            }
+        }
+        gatheringLabelByNode[node.id] = label
+        val lift = when (node.discipline) {
+            QuestGatheringDiscipline.SKINNING -> 1.75
+            QuestGatheringDiscipline.WOODCUTTING -> 3.1
+            QuestGatheringDiscipline.QUARRYING, QuestGatheringDiscipline.MINING ->
+                (gathering.interactionHeight + 0.4f).coerceIn(2.8f, 4.8f).toDouble()
+            QuestGatheringDiscipline.HERBALISM ->
+                (gathering.interactionHeight + 0.35f).coerceIn(3.0f, 5.2f).toDouble()
+        }
+        val labelPosition = Pos(
+            gathering.interactionPosition.x(),
+            gathering.interactionPosition.y() + lift,
+            gathering.interactionPosition.z(),
+        )
+        label.setInstance(instance, labelPosition).whenComplete { _, failure ->
+            if (failure != null || gatheringRespawnAtMillis.containsKey(node.id)) {
+                gatheringLabelByNode.remove(node.id, label)
+                label.remove()
+            }
         }
     }
 
@@ -1523,14 +1597,26 @@ internal class VerdantRoadQuestRuntime private constructor(
         }
     }
 
+    private fun removeGatheringLabel(nodeId: Int) {
+        gatheringLabelByNode.remove(nodeId)?.remove()
+    }
+
     fun close() {
         check(instance.players.isEmpty()) { "Cannot close a quest map while players are inside" }
         gatheringInteractionByNode.keys.toList().forEach(::removeGatheringInteraction)
+        gatheringLabelByNode.keys.toList().forEach(::removeGatheringLabel)
         MinecraftServer.getInstanceManager().unregisterInstance(instance)
     }
 
     companion object {
         private const val GATHERING_RESPAWN_MILLIS = 90_000L
+
+        private fun isWoodGatheringBlock(block: Block): Boolean {
+            val name = block.name().toString()
+            return name.endsWith("_log") || name.endsWith("_wood") || name.endsWith("_stem") ||
+                name.endsWith("_hyphae") || name.endsWith("_leaves") || name.endsWith("_wart_block") ||
+                name.endsWith("mangrove_roots")
+        }
 
         fun prepare(
             seed: Long,

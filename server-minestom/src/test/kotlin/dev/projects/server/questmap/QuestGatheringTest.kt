@@ -28,6 +28,21 @@ class QuestGatheringTest {
             } else {
                 assertEquals(QuestMapStructureAssets.GatheringVisualKind.SCHEMATIC, gathering.visualKind)
                 assertTrue(gathering.blocks.size > 1, "${node.discipline} must use a complete authored asset")
+                assertTrue(gathering.interactionBlocks.containsAll(gathering.blocks.keys))
+                if (node.discipline == QuestGatheringDiscipline.WOODCUTTING) {
+                    val strippableTrunks = gathering.blocks.values.map { it.name().toString() }.filter { name ->
+                        !name.contains("stripped_") && (
+                            name.endsWith("_log") || name.endsWith("_wood") ||
+                                name.endsWith("_stem") || name.endsWith("_hyphae")
+                            )
+                    }
+                    assertTrue(strippableTrunks.isEmpty(), "Gathering tree can still be stripped: $strippableTrunks")
+                }
+                if (node.discipline == QuestGatheringDiscipline.HERBALISM) {
+                    val verticalSpan = gathering.blocks.keys.maxOf { it.blockY() } -
+                        gathering.blocks.keys.minOf { it.blockY() } + 1
+                    assertTrue(verticalSpan >= 5, "Herbalism asset is too low to read from the route")
+                }
             }
         }
     }

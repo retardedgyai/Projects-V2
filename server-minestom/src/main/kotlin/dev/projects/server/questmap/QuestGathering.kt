@@ -169,6 +169,7 @@ internal data class QuestGatheringNode(
     val blockPosition: BlockVec,
     val discipline: QuestGatheringDiscipline,
     val quality: QuestGatheringQuality,
+    val tier: Int = 1,
 )
 
 internal fun questGatheringNodes(plan: QuestMapPlan): List<QuestGatheringNode> = plan.contents
