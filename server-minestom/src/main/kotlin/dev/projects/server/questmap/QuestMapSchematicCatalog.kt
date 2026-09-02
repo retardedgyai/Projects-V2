@@ -1,8 +1,8 @@
 package dev.projects.server.questmap
 
 /**
- * Reviewed third-party nature assets. The source repository is MIT licensed; attribution lives
- * beside the resource files. Selection is deterministic so a seed can always be reviewed again.
+ * Third-party nature assets used by the runtime. Attribution lives beside the resource files.
+ * Selection is deterministic so a seed can always be reviewed again.
  */
 internal object QuestMapSchematicCatalog {
     internal const val SOURCE_URL = "https://github.com/sijmenvb/worldpainter-trees"
@@ -48,6 +48,33 @@ internal object QuestMapSchematicCatalog {
         ),
         SchematicAnchorMode.TREE_TRUNK,
     )
+    private val roofedForest = loadFamily(
+        "roofed_forest",
+        listOf(
+            "dark_oak_01.schem", "dark_oak_02.schem",
+            "dark_oak_large_01.schem", "dark_oak_large_02.schem",
+        ),
+        SchematicAnchorMode.TREE_TRUNK,
+    )
+    private val jungle = loadFamily(
+        "jungle",
+        listOf(
+            "jungle_1.schem", "jungle_2.schem", "jungle_3.schem",
+            "jungle_big_1.schem", "jungle_big_2.schem",
+            "jungle_small_1.schem", "jungle_small_2.schem",
+        ),
+        SchematicAnchorMode.TREE_TRUNK,
+    )
+    private val savanna = loadFamily(
+        "savanna",
+        (1..5).map { index -> "acacia$index.schem" },
+        SchematicAnchorMode.TREE_TRUNK,
+    )
+    private val badlands = loadFamily(
+        "badlands",
+        (1..3).map { index -> "badlands_tree_${index.toString().padStart(2, '0')}.schem" },
+        SchematicAnchorMode.TREE_TRUNK,
+    )
     private val rocks = loadFamily(
         "rocks",
         (1..11).map { index -> "stone${index.toString().padStart(2, '0')}.schem" },
@@ -56,14 +83,14 @@ internal object QuestMapSchematicCatalog {
 
     private fun reviewedTrees(candidates: List<SpongeSchematicAsset>): List<SpongeSchematicAsset> {
         val reviewed = candidates.filter { asset ->
-            asset.height >= 11 && asset.footprintRadius >= 3 && asset.voxels.size >= 48
+            asset.height >= 11 && asset.footprintRadius in 3..12 && asset.voxels.size >= 48
         }
         require(reviewed.size >= 4) { "A production ecology needs at least four substantial tree silhouettes" }
         return reviewed
     }
 
     private val productionRocks by lazy {
-        rocks.filter { asset -> asset.height >= 3 && asset.footprintRadius >= 2 && asset.voxels.size >= 10 }
+        rocks.filter { asset -> asset.height >= 3 && asset.footprintRadius in 2..6 && asset.voxels.size >= 10 }
             .also { require(it.size >= 4) { "Production rock catalog lacks substantial silhouettes" } }
     }
 
@@ -83,19 +110,19 @@ internal object QuestMapSchematicCatalog {
     }
 
     internal fun allAssets(): List<SpongeSchematicAsset> =
-        lushOak + spruce + swamp + oldLivingForest + deadTrees + rocks
+        lushOak + spruce + swamp + oldLivingForest + deadTrees + roofedForest + jungle + savanna + badlands + rocks
 
     internal fun productionTrees(style: QuestTerrainStyle): List<SpongeSchematicAsset> = productionTreePools.getValue(style)
 
     internal fun productionBoulders(): List<SpongeSchematicAsset> = productionRocks
 
     private fun treeCandidates(style: QuestTerrainStyle): List<SpongeSchematicAsset> = when (style) {
-        QuestTerrainStyle.VERDANT -> lushOak + oldLivingForest + deadTrees.take(1)
-        QuestTerrainStyle.HIGHLANDS -> spruce + deadTrees.take(2)
-        QuestTerrainStyle.SALTMARSH -> swamp + oldLivingForest + deadTrees.takeLast(1)
-        QuestTerrainStyle.CLIFFLANDS -> spruce + oldLivingForest + deadTrees
-        QuestTerrainStyle.SAKURA_GROVE -> lushOak + oldLivingForest + deadTrees.take(1)
-        QuestTerrainStyle.INFERNAL -> deadTrees + oldLivingForest + swamp
+        QuestTerrainStyle.VERDANT -> lushOak + oldLivingForest + roofedForest + jungle + deadTrees.take(1)
+        QuestTerrainStyle.HIGHLANDS -> spruce + deadTrees + badlands + savanna.take(2)
+        QuestTerrainStyle.SALTMARSH -> swamp + oldLivingForest + jungle + roofedForest + deadTrees.takeLast(1)
+        QuestTerrainStyle.CLIFFLANDS -> spruce + oldLivingForest + deadTrees + badlands + savanna
+        QuestTerrainStyle.SAKURA_GROVE -> lushOak + oldLivingForest + roofedForest + savanna + jungle.take(3)
+        QuestTerrainStyle.INFERNAL -> deadTrees + oldLivingForest + swamp + badlands + roofedForest
     }
 
     private fun loadFamily(
@@ -130,6 +157,8 @@ internal object QuestMapSchematicCatalog {
             .replace("minecraft:dark_oak_", "minecraft:cherry_")
             .replace("minecraft:oak_", "minecraft:cherry_")
             .replace("minecraft:spruce_", "minecraft:cherry_")
+            .replace("minecraft:jungle_", "minecraft:cherry_")
+            .replace("minecraft:acacia_", "minecraft:cherry_")
         QuestTerrainStyle.INFERNAL -> infernalTreeState(state, variation, voxel)
     }
 

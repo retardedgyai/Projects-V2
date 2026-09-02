@@ -737,6 +737,10 @@ fun main() {
         event.player.respawnPoint = hubSpawn
     }
     events.addListener(PlayerSpawnEvent::class.java) { event ->
+        println(
+            "Player connected: ${event.player.username} uuid=${event.player.uuid} " +
+                "firstSpawn=${event.isFirstSpawn}",
+        )
         val playerId = event.player.uuid
         if (event.isFirstSpawn) {
             progressions[playerId] = loadProgression(playerId)

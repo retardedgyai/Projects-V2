@@ -62,6 +62,23 @@ Every major scene must contain all five layers:
 
 Between major scenes, the field must also contain composed middle-distance regions. A scenic region owns one ground transition, one dominant natural form, a related asset family, and negative space. Increasing isolated-prop count does not satisfy this requirement.
 
+## Landscape scene graph
+
+The generator now plans nine broad landscape scenes before it decorates the Minestom instance.
+These are not prop spawn points. Each scene owns a 29–36 block radius, a main-road approach,
+orientation, negative space, a contiguous surface field, and a role-specific landmark composition.
+The current grammar includes sheltered groves, ridge gates, heath vistas, headwaters, ruined
+terraces, ore cuts, and infernal rift gardens. Every terrain concept selects a deliberate five-role
+sequence rather than drawing unrelated scene types from one global bag.
+
+Candidate placement measures local relief, approach roughness, distance from quest events, and
+separation from earlier scenes. The quality gate rejects a map unless it contains all nine scenes,
+at least five landscape roles, valid road approaches, legal radii, and forty blocks of center
+separation. A safe straight approach is preferred; when terrain would produce an abrupt painted
+slope, bounded pathfinding routes the branch around it. Every stored access path is contiguous and
+limited to two blocks of vertical change per step. Ambient trees and small detail are then excluded from non-forest scene interiors;
+the scene grammar, not scatter density, controls the middle distance.
+
 ## Route contract
 
 - The main road is an authored traversal corridor, not paint on a heightmap.

@@ -2,7 +2,8 @@ WorldPainter tree and rock schematics
 
 Source: https://github.com/sijmenvb/worldpainter-trees
 License: MIT
-Imported asset families: lush oak, spruce, swamp, dead trees, old living forest, rocks.
+Imported asset families: lush oak, spruce, swamp, dead trees, old living forest, roofed forest,
+jungle, savanna, badlands, and rocks.
 
 Upstream LICENSE:
 
