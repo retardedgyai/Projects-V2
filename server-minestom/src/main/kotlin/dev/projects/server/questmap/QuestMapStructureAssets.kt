@@ -92,16 +92,17 @@ internal object QuestMapStructureAssets {
         val minZ = placement.blocks.keys.minOf { it.blockZ() }
         val maxZ = placement.blocks.keys.maxOf { it.blockZ() }
         val visualHeight = placement.maxY - placement.minY + 1
+        val visualWidth = maxOf(maxX - minX + 1, maxZ - minZ + 1).toFloat()
         val interactionWidth = when (node.discipline) {
-            QuestGatheringDiscipline.WOODCUTTING -> 1.8f
+            QuestGatheringDiscipline.WOODCUTTING -> visualWidth.coerceIn(2f, 12f)
             QuestGatheringDiscipline.QUARRYING, QuestGatheringDiscipline.MINING ->
-                maxOf(maxX - minX + 1, maxZ - minZ + 1).toFloat().coerceIn(1.5f, 6f)
+                visualWidth.coerceIn(1.5f, 6f)
             QuestGatheringDiscipline.HERBALISM ->
-                maxOf(maxX - minX + 1, maxZ - minZ + 1).toFloat().coerceIn(1.5f, 5f)
+                visualWidth.coerceIn(1.5f, 5f)
             QuestGatheringDiscipline.SKINNING -> error("死体には別の当たり判定を使用します")
         }
         val interactionHeight = when (node.discipline) {
-            QuestGatheringDiscipline.WOODCUTTING -> visualHeight.toFloat().coerceIn(3f, 7f)
+            QuestGatheringDiscipline.WOODCUTTING -> visualHeight.toFloat().coerceIn(3f, 24f)
             QuestGatheringDiscipline.QUARRYING, QuestGatheringDiscipline.MINING -> visualHeight.toFloat().coerceIn(1.5f, 6f)
             QuestGatheringDiscipline.HERBALISM -> visualHeight.toFloat().coerceIn(1.2f, 3.5f)
             QuestGatheringDiscipline.SKINNING -> error("死体には別の当たり判定を使用します")
@@ -111,9 +112,9 @@ internal object QuestMapStructureAssets {
             visualKind = GatheringVisualKind.SCHEMATIC,
             blocks = placement.blocks,
             interactionPosition = Pos(
-                origin.x + 0.5,
+                (minX + maxX + 1) / 2.0,
                 placement.minY.toDouble(),
-                origin.z + 0.5,
+                (minZ + maxZ + 1) / 2.0,
                 (rotation * 90f),
                 0f,
             ),

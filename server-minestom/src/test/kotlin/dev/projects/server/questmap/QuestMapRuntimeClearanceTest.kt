@@ -3,6 +3,7 @@ package dev.projects.server.questmap
 import java.util.concurrent.TimeUnit
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import net.minestom.server.Auth
 import net.minestom.server.MinecraftServer
@@ -19,6 +20,11 @@ class QuestMapRuntimeClearanceTest {
             assertTrue(obstructions.isEmpty(), "Decorated route contains solid blocks: $obstructions")
             runtime.gatheringNodes.forEach { node ->
                 val gathering = runtime.gatheringObjects.getValue(node.id)
+                val interaction = assertNotNull(
+                    runtime.gatheringInteractionFor(node),
+                    "Gathering object ${node.id} has no attack interaction",
+                )
+                assertEquals(node, runtime.gatheringNodeForEntity(interaction))
                 if (gathering.visualKind == QuestMapStructureAssets.GatheringVisualKind.ANIMAL_CORPSE) {
                     assertTrue(gathering.blocks.isEmpty(), "Animal corpse ${node.id} unexpectedly contains blocks")
                 } else {

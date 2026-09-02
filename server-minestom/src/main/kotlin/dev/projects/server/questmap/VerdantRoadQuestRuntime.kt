@@ -13,6 +13,7 @@ import net.minestom.server.entity.EntityType
 import net.minestom.server.entity.Player
 import net.minestom.server.entity.metadata.display.AbstractDisplayMeta
 import net.minestom.server.entity.metadata.display.TextDisplayMeta
+import net.minestom.server.entity.metadata.other.InteractionMeta
 import net.minestom.server.instance.Instance
 import net.minestom.server.instance.InstanceContainer
 import net.minestom.server.instance.LightingChunk
@@ -1445,18 +1446,19 @@ internal class VerdantRoadQuestRuntime private constructor(
             gatheringObjects.getValue(node.id).blocks.keys.forEach { position -> put(position, node) }
         }
     }
-    private val gatheringCorpseByNode = mutableMapOf<Int, Entity>()
+    private val gatheringInteractionByNode = mutableMapOf<Int, Entity>()
     private val gatheringNodeByEntityId = mutableMapOf<Int, QuestGatheringNode>()
     private val gatheringRespawnAtMillis = mutableMapOf<Int, Long>()
 
     init {
-        gatheringNodes.filter { gatheringObjects.getValue(it.id).visualKind == QuestMapStructureAssets.GatheringVisualKind.ANIMAL_CORPSE }
-            .forEach(::spawnGatheringCorpse)
+        gatheringNodes.forEach(::spawnGatheringInteraction)
     }
 
     fun gatheringNodeAt(position: BlockVec): QuestGatheringNode? = gatheringNodesByPosition[position]
 
     fun gatheringNodeForEntity(entity: Entity): QuestGatheringNode? = gatheringNodeByEntityId[entity.entityId]
+
+    fun gatheringInteractionFor(node: QuestGatheringNode): Entity? = gatheringInteractionByNode[node.id]
 
     fun gatheringBlockAt(position: BlockVec): Block? =
         gatheringNodeAt(position)?.let { node -> gatheringObjects.getValue(node.id).blocks[position] }
@@ -1470,7 +1472,7 @@ internal class VerdantRoadQuestRuntime private constructor(
         if (!isGatheringNodeAvailable(node, nowMillis)) return false
         gatheringRespawnAtMillis[node.id] = nowMillis + GATHERING_RESPAWN_MILLIS
         gatheringObjects.getValue(node.id).blocks.keys.forEach { position -> instance.setBlock(position, Block.AIR) }
-        removeGatheringCorpse(node.id)
+        removeGatheringInteraction(node.id)
         return true
     }
 
@@ -1481,44 +1483,56 @@ internal class VerdantRoadQuestRuntime private constructor(
             val node = gatheringNodes.single { it.id == nodeId }
             val gathering = gatheringObjects.getValue(node.id)
             gathering.blocks.forEach { (position, block) -> instance.setBlock(position, block) }
-            if (gathering.visualKind == QuestMapStructureAssets.GatheringVisualKind.ANIMAL_CORPSE) {
-                spawnGatheringCorpse(node)
-            }
+            spawnGatheringInteraction(node)
             gatheringRespawnAtMillis.remove(nodeId)
         }
     }
 
-    private fun spawnGatheringCorpse(node: QuestGatheringNode) {
-        removeGatheringCorpse(node.id)
+    private fun spawnGatheringInteraction(node: QuestGatheringNode) {
+        removeGatheringInteraction(node.id)
         val gathering = gatheringObjects.getValue(node.id)
-        val corpse = Entity(EntityType.COW).apply {
+        val interaction = Entity(
+            if (gathering.visualKind == QuestMapStructureAssets.GatheringVisualKind.ANIMAL_CORPSE) {
+                EntityType.COW
+            } else {
+                EntityType.INTERACTION
+            },
+        ).apply {
             setHasPhysics(false)
             setNoGravity(true)
-            setPose(EntityPose.DYING)
-            setCustomName(Component.text("獣の死骸", NamedTextColor.DARK_RED))
-            setCustomNameVisible(true)
+            if (gathering.visualKind == QuestMapStructureAssets.GatheringVisualKind.ANIMAL_CORPSE) {
+                setPose(EntityPose.DYING)
+                setCustomName(Component.text("獣の死骸", NamedTextColor.DARK_RED))
+                setCustomNameVisible(true)
+            } else {
+                editEntityMeta(InteractionMeta::class.java) { meta ->
+                    meta.setWidth(gathering.interactionWidth)
+                    meta.setHeight(gathering.interactionHeight)
+                    meta.setResponse(true)
+                }
+            }
         }
-        gatheringCorpseByNode[node.id] = corpse
-        gatheringNodeByEntityId[corpse.entityId] = node
-        corpse.setInstance(instance, gathering.interactionPosition).whenComplete { _, failure ->
+        gatheringInteractionByNode[node.id] = interaction
+        gatheringNodeByEntityId[interaction.entityId] = node
+        interaction.setInstance(instance, gathering.interactionPosition).whenComplete { _, failure ->
             if (failure != null || gatheringRespawnAtMillis.containsKey(node.id)) {
-                gatheringNodeByEntityId.remove(corpse.entityId)
-                gatheringCorpseByNode.remove(node.id, corpse)
-                corpse.remove()
+                gatheringNodeByEntityId.remove(interaction.entityId)
+                gatheringInteractionByNode.remove(node.id, interaction)
+                interaction.remove()
             }
         }
     }
 
-    private fun removeGatheringCorpse(nodeId: Int) {
-        gatheringCorpseByNode.remove(nodeId)?.let { corpse ->
-            gatheringNodeByEntityId.remove(corpse.entityId)
-            corpse.remove()
+    private fun removeGatheringInteraction(nodeId: Int) {
+        gatheringInteractionByNode.remove(nodeId)?.let { interaction ->
+            gatheringNodeByEntityId.remove(interaction.entityId)
+            interaction.remove()
         }
     }
 
     fun close() {
         check(instance.players.isEmpty()) { "Cannot close a quest map while players are inside" }
-        gatheringCorpseByNode.keys.toList().forEach(::removeGatheringCorpse)
+        gatheringInteractionByNode.keys.toList().forEach(::removeGatheringInteraction)
         MinecraftServer.getInstanceManager().unregisterInstance(instance)
     }
 
@@ -1595,6 +1609,7 @@ internal class VerdantRoadQuestService(
     private val nextSeed = AtomicLong(seedBase)
     private val gatheringMasteries = ConcurrentHashMap<UUID, QuestGatheringMastery>()
     private val activeGathering = ConcurrentHashMap<UUID, ActiveGathering>()
+    private val gatheringSmokeIndices = ConcurrentHashMap<UUID, Int>()
 
     private data class ActiveGathering(
         val runtime: VerdantRoadQuestRuntime,
@@ -1806,20 +1821,26 @@ internal class VerdantRoadQuestService(
             player.sendMessage(Component.text("採取テストを使う前にクエストマップへ入ってください。", NamedTextColor.RED))
             return
         }
-        val node = runtime.gatheringNodes.first()
+        val index = gatheringSmokeIndices.getOrDefault(player.uuid, 0).mod(runtime.gatheringNodes.size)
+        gatheringSmokeIndices[player.uuid] = (index + 1).mod(runtime.gatheringNodes.size)
+        val node = runtime.gatheringNodes[index]
+        val gathering = runtime.gatheringObjects.getValue(node.id)
+        val standDistance = gathering.interactionWidth / 2.0 + 2.5
+        val standX = gathering.interactionPosition.blockX().coerceIn(1, runtime.plan.size - 2)
+        val standZ = (gathering.interactionPosition.z() + standDistance).toInt().coerceIn(1, runtime.plan.size - 2)
         player.itemInMainHand = node.discipline.toolItem()
         player.teleport(
             Pos(
-                node.blockPosition.blockX() + 0.5,
-                node.blockPosition.blockY().toDouble(),
-                node.blockPosition.blockZ() + 4.5,
+                standX + 0.5,
+                runtime.plan.heightAt(standX, standZ) + 1.0,
+                standZ + 0.5,
                 180f,
-                8f,
+                0f,
             ),
         )
         player.sendMessage(
             Component.text(
-                "採取テスト: 正面の${node.discipline.displayName}対象を左クリック長押ししてください。",
+                "採取テスト ${index + 1}/${runtime.gatheringNodes.size}: 正面の${node.discipline.displayName}対象を左クリックしてください。もう一度 /gathering test で次へ進みます。",
                 NamedTextColor.GOLD,
             ),
         )
