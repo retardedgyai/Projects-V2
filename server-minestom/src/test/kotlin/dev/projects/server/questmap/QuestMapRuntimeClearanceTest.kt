@@ -53,11 +53,19 @@ class QuestMapRuntimeClearanceTest {
                 BLOCKED_ROAD_REGRESSION_SEED + 1,
                 candidateCount = 1,
                 customization = QuestMapCustomization(
-                    listOf(QuestMapGatheringModifier(null, QuestMapGatheringStat.AMOUNT, 100)),
+                    listOf(
+                        QuestMapGatheringModifier(null, QuestMapGatheringStat.AMOUNT, 100),
+                        QuestMapGatheringModifier(
+                            QuestGatheringDiscipline.MINING,
+                            QuestMapGatheringStat.DENSE_REGIONS,
+                            200,
+                        ),
+                    ),
                 ),
             ).get(30, TimeUnit.SECONDS)
             try {
                 assertTrue(customizedRuntime.gatheringNodes.size > questGatheringNodes(customizedRuntime.plan).size)
+                assertTrue(customizedRuntime.gatheringNodes.any { it.denseRegionId != null })
                 customizedRuntime.gatheringNodes.forEach { node ->
                     assertNotNull(customizedRuntime.gatheringLabelFor(node))
                     val gathering = customizedRuntime.gatheringObjects.getValue(node.id)

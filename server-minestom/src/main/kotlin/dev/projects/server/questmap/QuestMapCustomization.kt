@@ -12,6 +12,7 @@ internal val QUEST_GATHERING_TABLET_TAG: Tag<String> = Tag.String("projects_gath
 internal enum class QuestMapGatheringStat(val id: String, val displayName: String) {
     AMOUNT("amount", "生成量"),
     QUALITY("quality", "品質"),
+    DENSE_REGIONS("dense_regions", "密集地域出現率"),
 }
 
 internal data class QuestMapGatheringModifier(
@@ -25,8 +26,14 @@ internal data class QuestMapGatheringModifier(
 
     val key: String = "${discipline?.id ?: "all"}:${stat.id}"
 
-    fun displayName(): String =
-        "${discipline?.commonResourceName ?: "全採取物"}の${stat.displayName} +$percent%"
+    fun displayName(): String {
+        val target = when (stat) {
+            QuestMapGatheringStat.DENSE_REGIONS -> discipline?.displayName ?: "全資源"
+            QuestMapGatheringStat.AMOUNT, QuestMapGatheringStat.QUALITY ->
+                discipline?.commonResourceName ?: "全採取物"
+        }
+        return "${target}の${stat.displayName} +$percent%"
+    }
 }
 
 internal data class QuestMapCustomization(
@@ -40,6 +47,9 @@ internal data class QuestMapCustomization(
     fun amountBonusPercent(discipline: QuestGatheringDiscipline): Int = bonus(discipline, QuestMapGatheringStat.AMOUNT)
 
     fun qualityBonusPercent(discipline: QuestGatheringDiscipline): Int = bonus(discipline, QuestMapGatheringStat.QUALITY)
+
+    fun denseRegionBonusPercent(discipline: QuestGatheringDiscipline): Int =
+        bonus(discipline, QuestMapGatheringStat.DENSE_REGIONS)
 
     private fun bonus(discipline: QuestGatheringDiscipline, stat: QuestMapGatheringStat): Int = modifiers
         .filter { it.stat == stat && (it.discipline == null || it.discipline == discipline) }
@@ -113,8 +123,9 @@ internal object QuestMapItems {
         val magnitudeRoll = Math.floorMod(mix64(mixed xor 0x517CC1B727220A95L), 10_000L).toInt()
         val percent = when {
             discipline == null && stat == QuestMapGatheringStat.AMOUNT -> 10 + magnitudeRoll % 11
-            discipline == null && stat == QuestMapGatheringStat.QUALITY -> 8 + magnitudeRoll % 8
+            discipline == null -> 8 + magnitudeRoll % 8
             stat == QuestMapGatheringStat.AMOUNT -> 25 + magnitudeRoll % 26
+            stat == QuestMapGatheringStat.DENSE_REGIONS -> 25 + magnitudeRoll % 26
             else -> 20 + magnitudeRoll % 21
         }
         return data.copy(

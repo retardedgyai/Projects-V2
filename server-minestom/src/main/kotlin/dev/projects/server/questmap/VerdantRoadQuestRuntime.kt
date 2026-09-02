@@ -1548,10 +1548,16 @@ internal class VerdantRoadQuestRuntime private constructor(
             setNoGravity(true)
             editEntityMeta(TextDisplayMeta::class.java) { meta ->
                 meta.setBillboardRenderConstraints(AbstractDisplayMeta.BillboardConstraints.CENTER)
-                meta.setText(
-                    Component.text("T${node.tier} ", NamedTextColor.GRAY)
+                val resourceLabel = Component.text("T${node.tier} ", NamedTextColor.GRAY)
                         .append(Component.text(node.discipline.commonResourceName, NamedTextColor.GOLD))
-                        .append(Component.text("  ${node.quality.displayName}", qualityColor)),
+                        .append(Component.text("  ${node.quality.displayName}", qualityColor))
+                meta.setText(
+                    if (node.denseRegionId == node.id) {
+                        Component.text("◆ ${node.discipline.denseRegionName} ◆\n", NamedTextColor.LIGHT_PURPLE)
+                            .append(resourceLabel)
+                    } else {
+                        resourceLabel
+                    },
                 )
                 meta.setScale(Vec(0.82, 0.82, 0.82))
                 meta.setViewRange(20f)
@@ -2279,6 +2285,15 @@ internal class VerdantRoadQuestService(
                     runtime.customization.modifiers.forEach { modifier ->
                         player.sendMessage(Component.text("・${modifier.displayName()}", NamedTextColor.AQUA))
                     }
+                }
+                val denseRegionCount = runtime.gatheringNodes.mapNotNull { it.denseRegionId }.distinct().size
+                if (denseRegionCount > 0) {
+                    player.sendMessage(
+                        Component.text(
+                            "このマップには資源密集地域が${denseRegionCount}か所あります。",
+                            NamedTextColor.LIGHT_PURPLE,
+                        ),
+                    )
                 }
                 true
             }

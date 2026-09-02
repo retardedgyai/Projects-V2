@@ -25,6 +25,11 @@ class QuestMapCustomizationTest {
                         QuestMapGatheringStat.QUALITY,
                         31,
                     ),
+                    QuestMapGatheringModifier(
+                        QuestGatheringDiscipline.MINING,
+                        QuestMapGatheringStat.DENSE_REGIONS,
+                        44,
+                    ),
                 ),
             ),
         )
@@ -60,6 +65,7 @@ class QuestMapCustomizationTest {
                 modifier.discipline == null && modifier.stat == QuestMapGatheringStat.AMOUNT -> 10..20
                 modifier.discipline == null -> 8..15
                 modifier.stat == QuestMapGatheringStat.AMOUNT -> 25..50
+                modifier.stat == QuestMapGatheringStat.DENSE_REGIONS -> 25..50
                 else -> 20..40
             }
             assertTrue(modifier.percent in allowed, "Unexpected modifier magnitude: $modifier")
@@ -100,6 +106,29 @@ class QuestMapCustomizationTest {
     }
 
     @Test
+    fun `global and focused amount modifiers stack for their matching resource`() {
+        val plan = VerdantRoadQuestPlanner.generate(91_337L)
+        val discipline = QuestGatheringDiscipline.WOODCUTTING
+        val base = questGatheringNodes(plan)
+        val customized = questGatheringNodes(
+            plan,
+            QuestMapCustomization(
+                listOf(
+                    QuestMapGatheringModifier(null, QuestMapGatheringStat.AMOUNT, 100),
+                    QuestMapGatheringModifier(discipline, QuestMapGatheringStat.AMOUNT, 100),
+                ),
+            ),
+        )
+
+        val baseCounts = base.groupingBy { it.discipline }.eachCount()
+        val customizedCounts = customized.groupingBy { it.discipline }.eachCount()
+        assertEquals(baseCounts.getValue(discipline) * 3, customizedCounts.getValue(discipline))
+        QuestGatheringDiscipline.entries.filterNot { it == discipline }.forEach { other ->
+            assertEquals(baseCounts.getValue(other) * 2, customizedCounts.getValue(other))
+        }
+    }
+
+    @Test
     fun `one hundred percent quality modifier upgrades every gathering object by one tier`() {
         val plan = VerdantRoadQuestPlanner.generate(91_337L)
         val base = questGatheringNodes(plan)
@@ -118,5 +147,88 @@ class QuestMapCustomizationTest {
             }
             assertEquals(expected, after.quality)
         }
+    }
+
+    @Test
+    fun `focused dense region modifier creates seven node resource landmarks`() {
+        val plan = VerdantRoadQuestPlanner.generate(91_337L)
+        val discipline = QuestGatheringDiscipline.MINING
+        val nodes = questGatheringNodes(
+            plan,
+            QuestMapCustomization(
+                listOf(
+                    QuestMapGatheringModifier(
+                        discipline,
+                        QuestMapGatheringStat.DENSE_REGIONS,
+                        200,
+                    ),
+                ),
+            ),
+        )
+
+        val regions = nodes.filter { it.denseRegionId != null }
+            .groupBy { it.denseRegionId }
+            .filterValues { region -> region.first().discipline == discipline }
+        val expectedRegionCount = nodes.count { it.id in 0 until 8 && it.discipline == discipline }
+        assertEquals(expectedRegionCount, regions.size)
+        regions.values.forEach { region ->
+            assertEquals(7, region.size)
+            assertTrue(region.all { it.discipline == discipline })
+            assertEquals(1, region.count { it.id == it.denseRegionId })
+            region.forEach { node ->
+                assertTrue(plan.roadDistanceSquaredAt(node.blockPosition.blockX(), node.blockPosition.blockZ()) > 7 * 7)
+            }
+        }
+        assertEquals(nodes.size, nodes.map { it.blockPosition }.distinct().size)
+    }
+
+    @Test
+    fun `dense regions remain valid and become more common with their modifier`() {
+        var baselineRegions = 0
+        var modifiedMiningRegions = 0
+        var baselineMiningRegions = 0
+        repeat(120) { index ->
+            val plan = VerdantRoadQuestPlanner.generate(91_337L + index * 7_919L)
+            val baseline = questGatheringNodes(plan)
+            val modified = questGatheringNodes(
+                plan,
+                QuestMapCustomization(
+                    listOf(
+                        QuestMapGatheringModifier(
+                            QuestGatheringDiscipline.MINING,
+                            QuestMapGatheringStat.DENSE_REGIONS,
+                            50,
+                        ),
+                    ),
+                ),
+            )
+            baselineRegions += validateDenseRegions(plan, baseline)
+            validateDenseRegions(plan, modified)
+            baselineMiningRegions += baseline.mapNotNull { node ->
+                node.denseRegionId?.let { it to node.discipline }
+            }.distinct().count { (_, discipline) -> discipline == QuestGatheringDiscipline.MINING }
+            modifiedMiningRegions += modified.mapNotNull { node ->
+                node.denseRegionId?.let { it to node.discipline }
+            }.distinct().count { (_, discipline) -> discipline == QuestGatheringDiscipline.MINING }
+        }
+
+        assertTrue(baselineRegions > 0, "Baseline maps never produced a dense region")
+        assertTrue(
+            modifiedMiningRegions > baselineMiningRegions * 4,
+            "Focused modifier did not materially increase mining regions: $baselineMiningRegions -> $modifiedMiningRegions",
+        )
+    }
+
+    private fun validateDenseRegions(plan: QuestMapPlan, nodes: List<QuestGatheringNode>): Int {
+        assertEquals(nodes.size, nodes.map { it.blockPosition }.distinct().size)
+        val regions = nodes.filter { it.denseRegionId != null }.groupBy { it.denseRegionId }
+        regions.values.forEach { region ->
+            assertEquals(7, region.size)
+            assertEquals(1, region.map { it.discipline }.distinct().size)
+            region.forEach { node ->
+                assertTrue(plan.roadDistanceSquaredAt(node.blockPosition.blockX(), node.blockPosition.blockZ()) > 7 * 7)
+            }
+        }
+        return regions.size
     }
 }
