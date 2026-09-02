@@ -1576,8 +1576,6 @@ internal class VerdantRoadQuestRuntime private constructor(
             setHasPhysics(false)
             setNoGravity(true)
             setPose(EntityPose.DYING)
-            setCustomName(Component.text("獣の死骸", NamedTextColor.DARK_RED))
-            setCustomNameVisible(true)
         }
         gatheringInteractionByNode[node.id] = interaction
         gatheringNodeByEntityId[interaction.entityId] = node
