@@ -1,5 +1,6 @@
 package dev.projects.server.questmap
 
+import net.kyori.adventure.sound.Sound
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import net.minestom.server.MinecraftServer
@@ -23,7 +24,9 @@ import net.minestom.server.instance.generator.GenerationUnit
 import net.minestom.server.instance.generator.Generator
 import net.minestom.server.item.ItemStack
 import net.minestom.server.network.packet.server.play.ParticlePacket
+import net.minestom.server.network.packet.server.play.EntityAnimationPacket
 import net.minestom.server.particle.Particle
+import net.minestom.server.sound.SoundEvent
 import net.minestom.server.world.biome.Biome
 import java.nio.file.Path
 import java.util.Random
@@ -1684,6 +1687,10 @@ internal class VerdantRoadQuestService(
             )
             return true
         }
+        val current = activeGathering[player.uuid]
+        if (current != null && current.runtime === runtime && current.node.id == node.id) {
+            return true
+        }
         removeActiveGathering(player.uuid)
         val mastery = gatheringMastery(player.uuid)
         val active = ActiveGathering(
@@ -1732,10 +1739,17 @@ internal class VerdantRoadQuestService(
             return
         }
         active.elapsedTicks++
+        if (active.elapsedTicks == 1 || active.elapsedTicks % GATHERING_SWING_INTERVAL_TICKS == 0) {
+            player.sendPacketToViewersAndSelf(
+                EntityAnimationPacket(player.entityId, EntityAnimationPacket.Animation.SWING_MAIN_ARM),
+            )
+            playGatheringSound(player, active.node.discipline, active.targetPosition, completion = false)
+        }
         updateGatheringProgressDisplay(active)
         if (active.elapsedTicks < active.requiredTicks) return
         removeActiveGathering(player.uuid)
         if (!runtime.tryDepleteGatheringNode(active.node, now)) return
+        playGatheringSound(player, active.node.discipline, active.targetPosition, completion = true)
         completeGathering(player, active.node)
     }
 
@@ -1898,6 +1912,27 @@ internal class VerdantRoadQuestService(
 
     private fun giveGatheringReward(player: Player, item: ItemStack) {
         if (!player.inventory.addItemStack(item)) player.dropItem(item)
+    }
+
+    private fun playGatheringSound(
+        player: Player,
+        discipline: QuestGatheringDiscipline,
+        position: BlockVec,
+        completion: Boolean,
+    ) {
+        val key = when (discipline) {
+            QuestGatheringDiscipline.SKINNING -> if (completion) "minecraft:entity.sheep.shear" else "minecraft:item.axe.scrape"
+            QuestGatheringDiscipline.WOODCUTTING -> if (completion) "minecraft:block.wood.break" else "minecraft:block.wood.hit"
+            QuestGatheringDiscipline.QUARRYING -> if (completion) "minecraft:block.stone.break" else "minecraft:block.stone.hit"
+            QuestGatheringDiscipline.MINING -> if (completion) "minecraft:block.deepslate.break" else "minecraft:block.deepslate.hit"
+            QuestGatheringDiscipline.HERBALISM -> if (completion) "minecraft:block.grass.break" else "minecraft:block.grass.hit"
+        }
+        val event = SoundEvent.fromKey(key) ?: return
+        val pitch = if (completion) 0.9f else 0.82f + (player.aliveTicks % 4L) * 0.04f
+        player.playSound(
+            Sound.sound(event, Sound.Source.BLOCK, if (completion) 1.15f else 0.72f, pitch),
+            position,
+        )
     }
 
     private fun createGatheringProgressDisplay(): Entity = Entity(EntityType.TEXT_DISPLAY).apply {
@@ -2113,6 +2148,7 @@ internal class VerdantRoadQuestService(
     private companion object {
         const val PREWARM_TARGET = 2
         const val GATHERING_BAR_SEGMENTS = 12
+        const val GATHERING_SWING_INTERVAL_TICKS = 6
         const val MAX_GATHERING_DISTANCE_SQUARED = 7.0 * 7.0
         const val RARE_PARTICLE_INTERVAL_TICKS = 18L
         const val RARE_PARTICLE_DISTANCE_SQUARED = 28.0 * 28.0

@@ -94,17 +94,18 @@ internal object QuestMapStructureAssets {
         val visualHeight = placement.maxY - placement.minY + 1
         val visualWidth = maxOf(maxX - minX + 1, maxZ - minZ + 1).toFloat()
         val interactionWidth = when (node.discipline) {
-            QuestGatheringDiscipline.WOODCUTTING -> visualWidth.coerceIn(2f, 12f)
+            QuestGatheringDiscipline.WOODCUTTING -> (visualWidth + 3f).coerceIn(3f, 16f)
             QuestGatheringDiscipline.QUARRYING, QuestGatheringDiscipline.MINING ->
-                visualWidth.coerceIn(1.5f, 6f)
+                (visualWidth + 3f).coerceIn(3f, 10f)
             QuestGatheringDiscipline.HERBALISM ->
-                visualWidth.coerceIn(1.5f, 5f)
+                (visualWidth + 2.5f).coerceIn(2.5f, 8f)
             QuestGatheringDiscipline.SKINNING -> error("死体には別の当たり判定を使用します")
         }
         val interactionHeight = when (node.discipline) {
-            QuestGatheringDiscipline.WOODCUTTING -> visualHeight.toFloat().coerceIn(3f, 24f)
-            QuestGatheringDiscipline.QUARRYING, QuestGatheringDiscipline.MINING -> visualHeight.toFloat().coerceIn(1.5f, 6f)
-            QuestGatheringDiscipline.HERBALISM -> visualHeight.toFloat().coerceIn(1.2f, 3.5f)
+            QuestGatheringDiscipline.WOODCUTTING -> (visualHeight + 2.5f).coerceIn(4f, 27f)
+            QuestGatheringDiscipline.QUARRYING, QuestGatheringDiscipline.MINING ->
+                (visualHeight + 2f).coerceIn(3f, 9f)
+            QuestGatheringDiscipline.HERBALISM -> (visualHeight + 2f).coerceIn(2.5f, 6f)
             QuestGatheringDiscipline.SKINNING -> error("死体には別の当たり判定を使用します")
         }
         return GatheringObject(
@@ -113,7 +114,7 @@ internal object QuestMapStructureAssets {
             blocks = placement.blocks,
             interactionPosition = Pos(
                 (minX + maxX + 1) / 2.0,
-                placement.minY.toDouble(),
+                placement.minY - 0.5,
                 (minZ + maxZ + 1) / 2.0,
                 (rotation * 90f),
                 0f,
