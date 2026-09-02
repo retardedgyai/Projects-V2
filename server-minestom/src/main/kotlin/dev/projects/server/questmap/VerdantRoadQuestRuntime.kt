@@ -1726,9 +1726,14 @@ internal class VerdantRoadQuestService(
             emitRareGatheringParticles(player, runtime, now)
         }
         val active = activeGathering[player.uuid] ?: return
+        val interaction = active.runtime.gatheringObjects.getValue(active.node.id)
+        val allowedDistance = maxOf(
+            MIN_GATHERING_DISTANCE,
+            interaction.interactionWidth / 2.0 + GATHERING_INTERACTION_REACH,
+        )
         if (active.runtime !== runtime || player.instance !== runtime.instance ||
             !active.node.discipline.accepts(player.itemInMainHand) ||
-            player.position.distanceSquared(active.targetPosition) > MAX_GATHERING_DISTANCE_SQUARED ||
+            player.position.distanceSquared(active.targetPosition) > allowedDistance * allowedDistance ||
             (active.targetEntity != null && active.targetEntity.instance !== runtime.instance)
         ) {
             cancelGathering(player)
@@ -2149,7 +2154,8 @@ internal class VerdantRoadQuestService(
         const val PREWARM_TARGET = 2
         const val GATHERING_BAR_SEGMENTS = 12
         const val GATHERING_SWING_INTERVAL_TICKS = 6
-        const val MAX_GATHERING_DISTANCE_SQUARED = 7.0 * 7.0
+        const val MIN_GATHERING_DISTANCE = 7.0
+        const val GATHERING_INTERACTION_REACH = 4.0
         const val RARE_PARTICLE_INTERVAL_TICKS = 18L
         const val RARE_PARTICLE_DISTANCE_SQUARED = 28.0 * 28.0
     }
