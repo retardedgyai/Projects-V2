@@ -43,8 +43,12 @@ import net.minestom.server.entity.Entity
 import net.minestom.server.entity.EntityType
 import net.minestom.server.entity.EquipmentSlot
 import net.minestom.server.entity.GameMode
+import net.minestom.server.entity.PlayerHand
 import net.minestom.server.event.player.AsyncPlayerConfigurationEvent
 import net.minestom.server.event.player.PlayerPluginMessageEvent
+import net.minestom.server.event.player.PlayerBlockInteractEvent
+import net.minestom.server.event.player.PlayerEntityInteractEvent
+import net.minestom.server.event.player.PlayerFinishDiggingEvent
 import net.minestom.server.event.player.PlayerDisconnectEvent
 import net.minestom.server.event.player.PlayerSpawnEvent
 import net.minestom.server.event.player.PlayerTickEvent
@@ -99,6 +103,7 @@ import dev.projects.server.mod.ModDefinition
 import dev.projects.server.mod.ModEntry
 import dev.projects.server.mod.ModRank
 import dev.projects.server.mod.ModStackingLayer
+import dev.projects.server.questmap.VerdantRoadQuestService
 
 private const val SERVER_ADDRESS = "127.0.0.1"
 private const val SERVER_PORT = 25565
@@ -153,11 +158,15 @@ internal data class SkillCooldowns(
 fun main() {
     val server = MinecraftServer.init(Auth.Offline())
     val instance = MinecraftServer.getInstanceManager().createInstanceContainer()
+    val hubSpawn = Pos(0.0, 41.0, 0.0)
     instance.setTime(6000)
     instance.defaultClock()?.pause()
     instance.setWeather(Weather.CLEAR)
     instance.setChunkSupplier(::LightingChunk)
     instance.setGenerator { unit -> unit.modifier().fillHeight(0, 40, Block.GRASS_BLOCK) }
+    val questMaps = VerdantRoadQuestService(instance, hubSpawn)
+    questMaps.prewarmInitial().join()
+    println("QUEST_MAP_PREWARM ${questMaps.status()}")
 
     val events = MinecraftServer.getGlobalEventHandler()
     val combatStates = mutableMapOf<UUID, CombatState>()
@@ -458,6 +467,69 @@ fun main() {
     MinecraftServer.getCommandManager().register(
         Command("bossreset").apply { setDefaultExecutor { _, _ -> resetEncounter() } },
     )
+    fun prepareQuestMapTransfer(player: net.minestom.server.entity.Player) {
+        bossGroundTelegraphIds.forEach { telegraphId ->
+            player.sendPluginMessage(PROJECTS_CHANNEL, ProtocolCodec.encode(GroundTelegraphRemove(telegraphId)))
+        }
+        player.hideBossBar(bossBar)
+    }
+    val questMapSeedLiteral = ArgumentType.Literal("seed")
+    val questMapSeedArgument = ArgumentType.Long("seedValue")
+    MinecraftServer.getCommandManager().register(
+        Command("questmap").apply {
+            setDefaultExecutor { sender, _ ->
+                val player = sender as? net.minestom.server.entity.Player ?: return@setDefaultExecutor
+                prepareQuestMapTransfer(player)
+                questMaps.enter(player).thenAccept { entered -> if (!entered) player.showBossBar(bossBar) }
+            }
+            addSyntax({ sender, context ->
+                val player = sender as? net.minestom.server.entity.Player ?: return@addSyntax
+                prepareQuestMapTransfer(player)
+                questMaps.enterSeed(player, context.get(questMapSeedArgument)).thenAccept { entered ->
+                    if (!entered) player.showBossBar(bossBar)
+                }
+            }, questMapSeedLiteral, questMapSeedArgument)
+            addSyntax({ sender, _ ->
+                val player = sender as? net.minestom.server.entity.Player ?: return@addSyntax
+                questMaps.returnToHub(player).thenAccept { returned -> if (returned) player.showBossBar(bossBar) }
+            }, ArgumentType.Literal("return"))
+            addSyntax({ sender, _ ->
+                sender.sendMessage(Component.text("Quest map pool ${questMaps.status()}"))
+            }, ArgumentType.Literal("status"))
+        },
+    )
+    val gatheringTreeLiteral = ArgumentType.Literal("tree")
+    val gatheringUnlockLiteral = ArgumentType.Literal("unlock")
+    val gatheringDisciplineArgument = ArgumentType.Word("gatheringDiscipline")
+    val gatheringNodeArgument = ArgumentType.Word("gatheringNode")
+    MinecraftServer.getCommandManager().register(
+        Command("gathering").apply {
+            setDefaultExecutor { sender, _ ->
+                val player = sender as? net.minestom.server.entity.Player ?: return@setDefaultExecutor
+                questMaps.gatheringMasterySummary(player)
+            }
+            addSyntax({ sender, _ ->
+                val player = sender as? net.minestom.server.entity.Player ?: return@addSyntax
+                questMaps.prepareGatheringSmokeTest(player)
+            }, ArgumentType.Literal("test"))
+            addSyntax({ sender, _ ->
+                val player = sender as? net.minestom.server.entity.Player ?: return@addSyntax
+                questMaps.gatheringMasteryTree(player, null)
+            }, gatheringTreeLiteral)
+            addSyntax({ sender, context ->
+                val player = sender as? net.minestom.server.entity.Player ?: return@addSyntax
+                questMaps.gatheringMasteryTree(player, context.get(gatheringDisciplineArgument))
+            }, gatheringTreeLiteral, gatheringDisciplineArgument)
+            addSyntax({ sender, context ->
+                val player = sender as? net.minestom.server.entity.Player ?: return@addSyntax
+                questMaps.unlockGatheringMasteryNode(
+                    player,
+                    context.get(gatheringDisciplineArgument),
+                    context.get(gatheringNodeArgument),
+                )
+            }, gatheringUnlockLiteral, gatheringDisciplineArgument, gatheringNodeArgument)
+        },
+    )
     val bossPhaseArgument = ArgumentType.Word("phase")
     fun handleBossPhase(sender: CommandSender, context: CommandContext) {
         val player = sender as? net.minestom.server.entity.Player ?: return
@@ -698,9 +770,13 @@ fun main() {
 
     events.addListener(AsyncPlayerConfigurationEvent::class.java) { event ->
         event.spawningInstance = instance
-        event.player.respawnPoint = Pos(0.0, 41.0, 0.0)
+        event.player.respawnPoint = hubSpawn
     }
     events.addListener(PlayerSpawnEvent::class.java) { event ->
+        println(
+            "Player connected: ${event.player.username} uuid=${event.player.uuid} " +
+                "firstSpawn=${event.isFirstSpawn}",
+        )
         val playerId = event.player.uuid
         if (event.isFirstSpawn) {
             progressions[playerId] = loadProgression(playerId)
@@ -723,7 +799,11 @@ fun main() {
         sendResourceSnapshot(event.player)
         sendProgressionSnapshot(event.player)
         updateBossBar()
-        event.player.showBossBar(bossBar)
+        if (event.player.instance == instance) {
+            event.player.showBossBar(bossBar)
+        } else {
+            event.player.hideBossBar(bossBar)
+        }
         if (event.isFirstSpawn) {
             attackSpeeds[event.player.uuid] = DEFAULT_ATTACK_SPEED
             twinBladesComboStates[event.player.uuid] = TwinBladesComboState()
@@ -769,6 +849,7 @@ fun main() {
     }
     events.addListener(PlayerDisconnectEvent::class.java) { event ->
         val playerId = event.player.uuid
+        questMaps.disconnect(playerId)
         progressions[playerId]?.let { persistProgression(playerId, it) }
         particleAnimations.cancel(slashPreviewHandles.remove(playerId))
         particleAnimations.cancelFor(event.player)
@@ -793,6 +874,20 @@ fun main() {
             prototypeBoss.reset()
         }
     }
+    events.addListener(PlayerBlockInteractEvent::class.java) { event ->
+        if (event.hand == PlayerHand.MAIN && questMaps.startGathering(event.player, event.blockPosition)) {
+            event.isCancelled = true
+            event.isBlockingItemUse = true
+        }
+    }
+    events.addListener(PlayerEntityInteractEvent::class.java) { event ->
+        if (event.hand == PlayerHand.MAIN) questMaps.startGathering(event.player, event.target)
+    }
+    events.addListener(PlayerFinishDiggingEvent::class.java) { event ->
+        questMaps.protectGatheringNode(event.player, event.blockPosition)?.let { resourceBlock ->
+            event.block = resourceBlock
+        }
+    }
     events.addListener(InstanceTickEvent::class.java) { event ->
         if (event.instance === instance) {
             particleManager.beginTick()
@@ -802,6 +897,7 @@ fun main() {
         }
     }
     events.addListener(PlayerTickEvent::class.java) { event ->
+        questMaps.tick(event.player)
         synchronizeTwinBladesOffhand(event.player)
         val state = combatStates[event.player.uuid] ?: return@addListener
         val dodge = dodgeStates[event.player.uuid] ?: return@addListener

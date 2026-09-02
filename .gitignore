@@ -1,4 +1,6 @@
 .gradle/
+.kotlin/
+.tools/
 build/
 */build/
 client-fabric/run/

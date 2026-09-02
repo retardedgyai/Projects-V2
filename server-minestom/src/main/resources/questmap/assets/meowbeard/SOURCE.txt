@@ -1,0 +1,5 @@
+Meowbeard's Custom Object Repository Update 2
+Project page: https://www.curseforge.com/minecraft/worlds/custom-object-repository-trees-rocks-mushrooms
+Imported file: https://www.curseforge.com/minecraft/worlds/custom-object-repository-trees-rocks-mushrooms/files/4432912
+Snapshot file id: 4432912
+Imported for ProjectS private quest-map visual testing on 2026-09-02.
