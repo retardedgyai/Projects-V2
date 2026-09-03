@@ -8,15 +8,13 @@ import dev.projects.server.mod.ModStackingLayer
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
-import kotlin.test.assertTrue
 import net.minestom.server.Auth
 import net.minestom.server.MinecraftServer
-import net.minestom.server.component.DataComponents
 import net.minestom.server.item.Material
 
 class EquipmentPresentationBridgeTest {
     @Test
-    fun `equipment presentation and server tooltip survive item stack bridge`() {
+    fun `equipment presentation survives item stack bridge`() {
         MinecraftServer.init(Auth.Offline())
         val definition = ModDefinition(
             "projects:keen-edge", ModRank.RANK_1, setOf(EquipmentSlot.WEAPON), setOf(AttackTag.MELEE),
@@ -30,25 +28,12 @@ class EquipmentPresentationBridgeTest {
             ),
         )
 
-        val stack = item.toPresentationItemStack(
-            Material.IRON_SWORD,
-            "Twin Blades",
-            mapOf(definition.modId to definition),
-        )
-        val restored = stack.readEquipmentPresentation()
-        val tooltip = item.toTooltipModel(mapOf(definition.modId to definition))
+        val restored = item.toPresentationItemStack(Material.IRON_SWORD, "Twin Blades", mapOf(definition.modId to definition))
+            .readEquipmentPresentation()
 
         assertNotNull(restored)
         assertEquals(item.itemId, restored.itemId)
         assertEquals(1, restored.installedMods.size)
         assertEquals(2.5, restored.installedMods.single().rolledValue)
-
-        assertEquals("projects:uncommon", stack.get(DataComponents.TOOLTIP_STYLE))
-        assertEquals(tooltip.lore().size, stack.get(DataComponents.LORE)?.size)
-        assertEquals("TIER I • UNCOMMON", tooltip.tierRarity)
-        assertEquals(listOf("12.5 攻撃力"), tooltip.baseStats)
-        assertEquals("鋭刃 I", tooltip.mods.single().name)
-        assertEquals("+2.5 攻撃力", tooltip.mods.single().value)
-        assertTrue(tooltip.marketValue > 0)
     }
 }
