@@ -110,7 +110,7 @@ fun EquipmentItem.toTooltipModel(definitions: Map<String, ModDefinition>): Equip
 }
 
 internal fun EquipmentTooltipModel.toLore(): List<Component> = buildList {
-    add(line("$tierLabel • $rarityLabel", rarityColor(rarityLabel)))
+    add(heading("$tierLabel • $rarityLabel", rarityColor(rarityLabel)))
     add(Component.empty())
     add(section("基本性能"))
     baseStats.forEach { stat -> add(line("  ${stat.valueText} ${stat.label}", VALUE_COLOR)) }
@@ -222,10 +222,14 @@ private fun formatNumber(value: Double): String {
     }
 }
 
-private fun section(text: String): Component = line(text, SECTION_COLOR)
+private fun section(text: String): Component = heading(text, SECTION_COLOR)
+
+private fun heading(text: String, color: TextColor): Component = line(text, color)
+    .decoration(TextDecoration.BOLD, true)
 
 private fun line(text: String, color: TextColor): Component = Component.text(text, color)
     .decoration(TextDecoration.ITALIC, false)
+    .decoration(TextDecoration.BOLD, false)
 
 private fun rarityColor(rarityLabel: String): TextColor =
     EquipmentRarity.valueOf(rarityLabel).nameColor()

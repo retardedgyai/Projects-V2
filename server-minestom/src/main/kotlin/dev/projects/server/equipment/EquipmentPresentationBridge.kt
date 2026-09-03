@@ -56,7 +56,8 @@ fun EquipmentItem.toPresentationItemStack(
     return ItemStack.builder(material)
         .customName(
             Component.text(displayName, rarity.nameColor())
-                .decoration(TextDecoration.ITALIC, false),
+                .decoration(TextDecoration.ITALIC, false)
+                .decoration(TextDecoration.BOLD, true),
         )
         .lore(tooltip.toLore())
         .set(DataComponents.TOOLTIP_STYLE, tooltip.tooltipStyleId)

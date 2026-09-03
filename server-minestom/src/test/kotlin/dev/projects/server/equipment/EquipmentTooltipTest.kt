@@ -9,6 +9,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import net.kyori.adventure.text.format.TextDecoration
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer
 import net.minestom.server.Auth
 import net.minestom.server.MinecraftServer
@@ -78,7 +79,8 @@ class EquipmentTooltipTest {
         MinecraftServer.init(Auth.Offline())
         val stack = equipment(EquipmentRarity.EPIC)
             .toPresentationItemStack(Material.IRON_SWORD, "双刃", definitions)
-        val plain = stack.get(DataComponents.LORE).orEmpty().map(PlainTextComponentSerializer.plainText()::serialize)
+        val lore = stack.get(DataComponents.LORE).orEmpty()
+        val plain = lore.map(PlainTextComponentSerializer.plainText()::serialize)
 
         val baseIndex = plain.indexOf("基本性能")
         val modIndex = plain.indexOf("MOD")
@@ -90,6 +92,18 @@ class EquipmentTooltipTest {
         assertTrue(plain.any { it.contains("疾風 II") })
         assertTrue(plain.any { it.startsWith("  推定 ") && it.endsWith(" G") })
         assertFalse(plain.any { it.contains("projects:") })
+        assertEquals(TextDecoration.State.TRUE, lore.first().decoration(TextDecoration.BOLD))
+        assertEquals(TextDecoration.State.TRUE, lore[baseIndex].decoration(TextDecoration.BOLD))
+        assertEquals(TextDecoration.State.TRUE, lore[modIndex].decoration(TextDecoration.BOLD))
+        assertEquals(TextDecoration.State.TRUE, lore[marketIndex].decoration(TextDecoration.BOLD))
+        assertEquals(
+            TextDecoration.State.FALSE,
+            lore[plain.indexOfFirst { it.contains("42.8 攻撃力") }].decoration(TextDecoration.BOLD),
+        )
+        assertEquals(
+            TextDecoration.State.TRUE,
+            stack.get(DataComponents.CUSTOM_NAME)?.decoration(TextDecoration.BOLD),
+        )
     }
 
     @Test
