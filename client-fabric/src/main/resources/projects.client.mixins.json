@@ -4,7 +4,8 @@
   "compatibilityLevel": "JAVA_25",
   "client": [
     "InventoryCharacterItemInHandRendererMixin",
-    "InventoryCharacterHudMixin"
+    "InventoryCharacterHudMixin",
+    "ItemTooltipLayoutMixin"
   ],
   "injectors": {
     "defaultRequire": 1

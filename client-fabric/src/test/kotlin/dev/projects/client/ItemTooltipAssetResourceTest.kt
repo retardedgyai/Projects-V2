@@ -37,6 +37,29 @@ class ItemTooltipAssetResourceTest {
         assertEquals(4, frameMasks.size, "Rarity frames must have distinct silhouettes, not only different colors")
     }
 
+    @Test
+    fun `tooltip icon font reuses the ProjectS stat icon set`() {
+        val font = projectResource("assets/projects/font/tooltip_icons.json").use { stream ->
+            JsonParser.parseReader(InputStreamReader(stream)).asJsonObject
+        }
+        val providers = font.getAsJsonArray("providers")
+        assertEquals(7, providers.size())
+
+        val glyphs = providers.map { provider ->
+            val definition = provider.asJsonObject
+            assertEquals("bitmap", definition.get("type").asString)
+            assertEquals(8, definition.get("ascent").asInt)
+            assertEquals(9, definition.get("height").asInt)
+            val texture = definition.get("file").asString.removePrefix("projects:")
+            projectResource("assets/projects/textures/$texture").use { image ->
+                assertNotNull(ImageIO.read(image), "$texture must be a readable PNG")
+            }
+            definition.getAsJsonArray("chars").single().asString.single()
+        }.toSet()
+
+        assertEquals(('\uE001'..'\uE007').toSet(), glyphs)
+    }
+
     private fun image(fileName: String): BufferedImage = resource(fileName).use { stream ->
         assertNotNull(ImageIO.read(stream), "$fileName must be a readable PNG")
     }
@@ -56,8 +79,11 @@ class ItemTooltipAssetResourceTest {
 
     private fun resource(fileName: String): InputStream {
         val path = "assets/projects/textures/gui/sprites/tooltip/$fileName"
-        return assertNotNull(javaClass.classLoader.getResourceAsStream(path), "Missing $path")
+        return projectResource(path)
     }
+
+    private fun projectResource(path: String): InputStream =
+        assertNotNull(javaClass.classLoader.getResourceAsStream(path), "Missing $path")
 
     private fun pixels(image: BufferedImage): List<Int> = buildList(image.width * image.height) {
         for (y in 0 until image.height) for (x in 0 until image.width) add(image.getRGB(x, y))

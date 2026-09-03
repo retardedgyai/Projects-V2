@@ -4,6 +4,7 @@ import dev.projects.server.mod.ModDefinition
 import dev.projects.server.mod.ModEntry
 import dev.projects.server.mod.ModStackingLayer
 import dev.projects.server.mod.ModValidation
+import net.kyori.adventure.key.Key
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.TextColor
@@ -113,7 +114,7 @@ internal fun EquipmentTooltipModel.toLore(): List<Component> = buildList {
     add(heading("$tierLabel • $rarityLabel", rarityColor(rarityLabel)))
     add(Component.empty())
     add(section("基本性能"))
-    baseStats.forEach { stat -> add(line("  ${stat.valueText} ${stat.label}", VALUE_COLOR)) }
+    baseStats.forEach { stat -> add(statLine(stat)) }
     add(Component.empty())
     add(section("MOD"))
     if (mods.isEmpty()) {
@@ -180,6 +181,16 @@ private val MUTED_COLOR = TextColor.color(0x777D80)
 private val MOD_NAME_COLOR = TextColor.color(0xD2D9DB)
 private val MOD_VALUE_COLOR = TextColor.color(0x7EC2AE)
 private val MARKET_COLOR = TextColor.color(0xD5B974)
+private val TOOLTIP_ICON_FONT = Key.key("projects", "tooltip_icons")
+private val STAT_ICONS = mapOf(
+    "projects:physical-attack" to '\uE001',
+    "projects:attack-speed" to '\uE002',
+    "projects:critical-chance" to '\uE003',
+    "projects:defense" to '\uE004',
+    "projects:health" to '\uE005',
+    "projects:magic-power" to '\uE006',
+    "projects:mana" to '\uE007',
+)
 
 private fun statPresentation(statId: String): StatPresentation =
     STAT_PRESENTATIONS[statId] ?: StatPresentation(readableId(statId), Int.MAX_VALUE)
@@ -223,6 +234,20 @@ private fun formatNumber(value: Double): String {
 }
 
 private fun section(text: String): Component = heading(text, SECTION_COLOR)
+
+private fun statLine(stat: EquipmentTooltipStatRow): Component {
+    val icon = STAT_ICONS[stat.statId] ?: return line("  ${stat.valueText} ${stat.label}", VALUE_COLOR)
+    return Component.empty()
+        .decoration(TextDecoration.ITALIC, false)
+        .decoration(TextDecoration.BOLD, false)
+        .append(
+            Component.text(" $icon ", NamedTextColor.WHITE)
+                .font(TOOLTIP_ICON_FONT)
+                .decoration(TextDecoration.ITALIC, false)
+                .decoration(TextDecoration.BOLD, false),
+        )
+        .append(line("${stat.valueText} ${stat.label}", VALUE_COLOR))
+}
 
 private fun heading(text: String, color: TextColor): Component = line(text, color)
     .decoration(TextDecoration.BOLD, true)

@@ -9,6 +9,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import net.kyori.adventure.key.Key
 import net.kyori.adventure.text.format.TextDecoration
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer
 import net.minestom.server.Auth
@@ -89,6 +90,9 @@ class EquipmentTooltipTest {
         assertTrue(modIndex > baseIndex)
         assertTrue(marketIndex > modIndex)
         assertTrue(plain.any { it.contains("42.8 攻撃力") })
+        assertTrue(plain.any { it.contains("\uE001") && it.contains("42.8 攻撃力") })
+        assertTrue(plain.any { it.contains("\uE002") && it.contains("1.45 攻撃速度") })
+        assertTrue(plain.any { it.contains("\uE003") && it.contains("6% クリティカル率") })
         assertTrue(plain.any { it.contains("疾風 II") })
         assertTrue(plain.any { it.startsWith("  推定 ") && it.endsWith(" G") })
         assertFalse(plain.any { it.contains("projects:") })
@@ -99,6 +103,10 @@ class EquipmentTooltipTest {
         assertEquals(
             TextDecoration.State.FALSE,
             lore[plain.indexOfFirst { it.contains("42.8 攻撃力") }].decoration(TextDecoration.BOLD),
+        )
+        assertEquals(
+            Key.key("projects", "tooltip_icons"),
+            lore[plain.indexOfFirst { it.contains("42.8 攻撃力") }].children().first().style().font(),
         )
         assertEquals(
             TextDecoration.State.TRUE,

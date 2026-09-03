@@ -1,0 +1,53 @@
+{
+  "providers": [
+    {
+      "type": "bitmap",
+      "file": "projects:gui/stats/attack_power.png",
+      "ascent": 8,
+      "height": 9,
+      "chars": ["\ue001"]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/stats/attack_speed.png",
+      "ascent": 8,
+      "height": 9,
+      "chars": ["\ue002"]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/stats/magic_power.png",
+      "ascent": 8,
+      "height": 9,
+      "chars": ["\ue003"]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/stats/defense.png",
+      "ascent": 8,
+      "height": 9,
+      "chars": ["\ue004"]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/stats/health.png",
+      "ascent": 8,
+      "height": 9,
+      "chars": ["\ue005"]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/stats/magic_power.png",
+      "ascent": 8,
+      "height": 9,
+      "chars": ["\ue006"]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/stats/mana.png",
+      "ascent": 8,
+      "height": 9,
+      "chars": ["\ue007"]
+    }
+  ]
+}
