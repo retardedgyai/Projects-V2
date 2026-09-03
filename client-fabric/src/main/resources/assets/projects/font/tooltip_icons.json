@@ -48,6 +48,31 @@
       "ascent": 8,
       "height": 9,
       "chars": ["\ue007"]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/stats/xp.png",
+      "ascent": 8,
+      "height": 9,
+      "chars": ["\ue008"]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/stats/level.png",
+      "ascent": 8,
+      "height": 9,
+      "chars": ["\ue009"]
+    },
+    {
+      "type": "space",
+      "advances": {
+        "\ue110": 1,
+        "\ue111": 2,
+        "\ue112": 4,
+        "\ue113": 8,
+        "\ue114": 16,
+        "\ue115": 32
+      }
     }
   ]
 }

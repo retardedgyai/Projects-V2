@@ -16,6 +16,16 @@ class ItemTooltipLayoutTest {
     }
 
     @Test
+    fun `each rarity has a distinct opaque divider and translucent header plate`() {
+        val palettes = listOf("item_common", "item_uncommon", "item_rare", "item_epic")
+            .map { path -> requireNotNull(ItemTooltipLayout.headerPalette("projects", path)) }
+
+        assertEquals(4, palettes.toSet().size)
+        assertTrue(palettes.all { palette -> palette.plateColor ushr 24 in 1..254 })
+        assertTrue(palettes.all { palette -> palette.dividerColor ushr 24 == 255 })
+    }
+
+    @Test
     fun `title is centered inside widest tooltip line`() {
         assertEquals(130, ItemTooltipLayout.centeredTitleX(100, 80, 20))
         assertEquals(100, ItemTooltipLayout.centeredTitleX(100, 20, 80))

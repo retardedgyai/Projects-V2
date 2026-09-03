@@ -10,6 +10,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import net.kyori.adventure.key.Key
+import net.kyori.adventure.text.format.TextColor
 import net.kyori.adventure.text.format.TextDecoration
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer
 import net.minestom.server.Auth
@@ -89,12 +90,17 @@ class EquipmentTooltipTest {
         assertTrue(baseIndex >= 0)
         assertTrue(modIndex > baseIndex)
         assertTrue(marketIndex > modIndex)
-        assertTrue(plain.any { it.contains("42.8 攻撃力") })
-        assertTrue(plain.any { it.contains("\uE001") && it.contains("42.8 攻撃力") })
-        assertTrue(plain.any { it.contains("\uE002") && it.contains("1.45 攻撃速度") })
-        assertTrue(plain.any { it.contains("\uE003") && it.contains("6% クリティカル率") })
-        assertTrue(plain.any { it.contains("疾風 II") })
-        assertTrue(plain.any { it.startsWith("  推定 ") && it.endsWith(" G") })
+        val attackIndex = plain.indexOfFirst { it.contains("攻撃力") }
+        val speedIndex = plain.indexOfFirst { it.contains("攻撃速度") }
+        val criticalIndex = plain.indexOfFirst { it.contains("クリティカル率") }
+        assertTrue(plain[attackIndex].contains("\uE001"))
+        assertTrue(plain[speedIndex].contains("\uE002"))
+        assertTrue(plain[criticalIndex].contains("\uE003"))
+        assertTrue(plain[attackIndex].indexOf("攻撃力") < plain[attackIndex].indexOf("42.8"))
+        assertTrue(plain[speedIndex].indexOf("攻撃速度") < plain[speedIndex].indexOf("1.45"))
+        assertTrue(plain[criticalIndex].indexOf("クリティカル率") < plain[criticalIndex].indexOf("6%"))
+        assertTrue(plain.any { it.contains("\uE009") && it.contains("疾風 II") })
+        assertTrue(plain.any { it.contains("\uE008") && it.contains("推定 ") && it.endsWith(" G") })
         assertFalse(plain.any { it.contains("projects:") })
         assertEquals(TextDecoration.State.TRUE, lore.first().decoration(TextDecoration.BOLD))
         assertEquals(TextDecoration.State.TRUE, lore[baseIndex].decoration(TextDecoration.BOLD))
@@ -102,24 +108,46 @@ class EquipmentTooltipTest {
         assertEquals(TextDecoration.State.TRUE, lore[marketIndex].decoration(TextDecoration.BOLD))
         assertEquals(
             TextDecoration.State.FALSE,
-            lore[plain.indexOfFirst { it.contains("42.8 攻撃力") }].decoration(TextDecoration.BOLD),
+            lore[attackIndex].decoration(TextDecoration.BOLD),
         )
         assertEquals(
             Key.key("projects", "tooltip_icons"),
-            lore[plain.indexOfFirst { it.contains("42.8 攻撃力") }]
+            lore[attackIndex]
                 .children()
-                .single { it.style().font() == Key.key("projects", "tooltip_icons") }
+                .single {
+                    it.style().font() == Key.key("projects", "tooltip_icons") &&
+                        PlainTextComponentSerializer.plainText().serialize(it) == "\uE001"
+                }
                 .style()
                 .font(),
         )
         assertEquals(
             "\uE001",
             PlainTextComponentSerializer.plainText().serialize(
-                lore[plain.indexOfFirst { it.contains("42.8 攻撃力") }]
+                lore[attackIndex]
                     .children()
-                    .single { it.style().font() == Key.key("projects", "tooltip_icons") },
+                    .single {
+                        it.style().font() == Key.key("projects", "tooltip_icons") &&
+                            PlainTextComponentSerializer.plainText().serialize(it) == "\uE001"
+                    },
             ),
         )
+        assertEquals(
+            TextColor.color(0xB4B9BA),
+            lore[attackIndex].children().single {
+                PlainTextComponentSerializer.plainText().serialize(it).contains("攻撃力")
+            }.style().color(),
+        )
+        assertEquals(
+            TextColor.color(0xEBEBE5),
+            lore[attackIndex].children().single {
+                PlainTextComponentSerializer.plainText().serialize(it) == "42.8"
+            }.style().color(),
+        )
+        val customFontText = lore.flatMap { component -> component.children() }
+            .filter { child -> child.style().font() == Key.key("projects", "tooltip_icons") }
+            .joinToString("") { child -> PlainTextComponentSerializer.plainText().serialize(child) }
+        assertFalse(customFontText.contains(' '), "Custom icon font must never receive a normal space glyph")
         assertEquals(
             TextDecoration.State.TRUE,
             stack.get(DataComponents.CUSTOM_NAME)?.decoration(TextDecoration.BOLD),

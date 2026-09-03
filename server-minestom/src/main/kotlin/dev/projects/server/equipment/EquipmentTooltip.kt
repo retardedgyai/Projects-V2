@@ -121,13 +121,13 @@ internal fun EquipmentTooltipModel.toLore(): List<Component> = buildList {
         add(line("  なし", MUTED_COLOR))
     } else {
         mods.forEach { mod ->
-            add(line("  ${mod.displayName} ${mod.rankLabel}", MOD_NAME_COLOR))
+            add(modNameLine(mod))
             add(line("    ${mod.effectText}", MOD_VALUE_COLOR))
         }
     }
     add(Component.empty())
     add(section("市場価値"))
-    add(line("  推定 ${String.format(Locale.US, "%,d", estimatedMarketValue)} G", MARKET_COLOR))
+    add(marketValueLine(estimatedMarketValue))
 }
 
 internal fun EquipmentRarity.nameColor(): TextColor = when (this) {
@@ -176,12 +176,16 @@ private val MOD_NAMES = mapOf(
 )
 
 private val SECTION_COLOR = TextColor.color(0x979EA2)
+private val STAT_LABEL_COLOR = TextColor.color(0xB4B9BA)
 private val VALUE_COLOR = TextColor.color(0xEBEBE5)
 private val MUTED_COLOR = TextColor.color(0x777D80)
 private val MOD_NAME_COLOR = TextColor.color(0xD2D9DB)
 private val MOD_VALUE_COLOR = TextColor.color(0x7EC2AE)
 private val MARKET_COLOR = TextColor.color(0xD5B974)
 private val TOOLTIP_ICON_FONT = Key.key("projects", "tooltip_icons")
+private const val STAT_TEXT_COLUMN_WIDTH = 96
+private const val MARKET_ICON = '\uE008'
+private const val MOD_ICON = '\uE009'
 private val STAT_ICONS = mapOf(
     "projects:physical-attack" to '\uE001',
     "projects:attack-speed" to '\uE002',
@@ -190,6 +194,14 @@ private val STAT_ICONS = mapOf(
     "projects:health" to '\uE005',
     "projects:magic-power" to '\uE006',
     "projects:mana" to '\uE007',
+)
+private val SPACER_GLYPHS = listOf(
+    32 to '\uE115',
+    16 to '\uE114',
+    8 to '\uE113',
+    4 to '\uE112',
+    2 to '\uE111',
+    1 to '\uE110',
 )
 
 private fun statPresentation(statId: String): StatPresentation =
@@ -236,18 +248,59 @@ private fun formatNumber(value: Double): String {
 private fun section(text: String): Component = heading(text, SECTION_COLOR)
 
 private fun statLine(stat: EquipmentTooltipStatRow): Component {
-    val icon = STAT_ICONS[stat.statId] ?: return line("  ${stat.valueText} ${stat.label}", VALUE_COLOR)
-    return Component.empty()
+    val iconGlyph = STAT_ICONS[stat.statId] ?: return line("  ${stat.valueText} ${stat.label}", VALUE_COLOR)
+    val spacerWidth = (
+        STAT_TEXT_COLUMN_WIDTH - approximateTextWidth(stat.label) - approximateTextWidth(stat.valueText)
+    ).coerceAtLeast(8)
+    return bodyLine()
+        .append(line(" ", VALUE_COLOR))
+        .append(icon(iconGlyph))
+        .append(line(" ${stat.label}", STAT_LABEL_COLOR))
+        .append(spacer(spacerWidth))
+        .append(line(stat.valueText, VALUE_COLOR))
+}
+
+private fun modNameLine(mod: EquipmentTooltipModRow): Component = bodyLine()
+    .append(line(" ", MOD_NAME_COLOR))
+    .append(icon(MOD_ICON))
+    .append(line(" ${mod.displayName} ${mod.rankLabel}", MOD_NAME_COLOR))
+
+private fun marketValueLine(estimatedMarketValue: Long): Component = bodyLine()
+    .append(line(" ", MARKET_COLOR))
+    .append(icon(MARKET_ICON))
+    .append(line(" 推定 ${String.format(Locale.US, "%,d", estimatedMarketValue)} G", MARKET_COLOR))
+
+private fun bodyLine(): Component = Component.empty()
+    .decoration(TextDecoration.ITALIC, false)
+    .decoration(TextDecoration.BOLD, false)
+
+private fun icon(glyph: Char): Component = Component.text(glyph, NamedTextColor.WHITE)
+    .font(TOOLTIP_ICON_FONT)
+    .decoration(TextDecoration.ITALIC, false)
+    .decoration(TextDecoration.BOLD, false)
+
+private fun spacer(width: Int): Component {
+    var remaining = width
+    val glyphs = buildString {
+        SPACER_GLYPHS.forEach { (advance, glyph) ->
+            while (remaining >= advance) {
+                append(glyph)
+                remaining -= advance
+            }
+        }
+    }
+    return Component.text(glyphs, NamedTextColor.WHITE)
+        .font(TOOLTIP_ICON_FONT)
         .decoration(TextDecoration.ITALIC, false)
         .decoration(TextDecoration.BOLD, false)
-        .append(line(" ", VALUE_COLOR))
-        .append(
-            Component.text(icon, NamedTextColor.WHITE)
-                .font(TOOLTIP_ICON_FONT)
-                .decoration(TextDecoration.ITALIC, false)
-                .decoration(TextDecoration.BOLD, false),
-        )
-        .append(line(" ${stat.valueText} ${stat.label}", VALUE_COLOR))
+}
+
+private fun approximateTextWidth(text: String): Int = text.sumOf { character ->
+    when {
+        character == '.' || character == ',' -> 2
+        character.code <= 0x7F -> 6
+        else -> 9
+    }
 }
 
 private fun heading(text: String, color: TextColor): Component = line(text, color)

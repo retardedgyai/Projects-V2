@@ -1,6 +1,7 @@
 package dev.projects.client.mixin
 
 import dev.projects.client.ItemTooltipLayout
+import dev.projects.client.ItemTooltipHeaderPalette
 import net.minecraft.client.gui.Font
 import net.minecraft.client.gui.GuiGraphicsExtractor
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent
@@ -10,7 +11,7 @@ import org.spongepowered.asm.mixin.Mixin
 import org.spongepowered.asm.mixin.Unique
 import org.spongepowered.asm.mixin.injection.At
 import org.spongepowered.asm.mixin.injection.Inject
-import org.spongepowered.asm.mixin.injection.ModifyArg
+import org.spongepowered.asm.mixin.injection.Redirect
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo
 
 @Mixin(GuiGraphicsExtractor::class)
@@ -20,6 +21,12 @@ class ItemTooltipLayoutMixin {
 
     @Unique
     private var projectSTitleX = 0
+
+    @Unique
+    private var projectSTooltipWidth = 0
+
+    @Unique
+    private var projectSHeaderPalette: ItemTooltipHeaderPalette? = null
 
     @Inject(
         method = ["tooltip"],
@@ -34,25 +41,39 @@ class ItemTooltipLayoutMixin {
         style: Identifier?,
         callbackInfo: CallbackInfo,
     ) {
-        projectSTitlePending = ItemTooltipLayout.shouldCenterTitle(style?.namespace, style?.path) && components.isNotEmpty()
+        projectSHeaderPalette = ItemTooltipLayout.headerPalette(style?.namespace, style?.path)
+        projectSTitlePending = projectSHeaderPalette != null && components.isNotEmpty()
         if (!projectSTitlePending) return
 
-        val tooltipWidth = components.maxOf { component -> component.getWidth(font) }
+        projectSTooltipWidth = components.maxOf { component -> component.getWidth(font) }
         val titleWidth = components.first().getWidth(font)
-        projectSTitleX = ItemTooltipLayout.centeredTitleX(0, tooltipWidth, titleWidth)
+        projectSTitleX = ItemTooltipLayout.centeredTitleX(0, projectSTooltipWidth, titleWidth)
     }
 
-    @ModifyArg(
+    @Redirect(
         method = ["tooltip"],
         at = At(
             value = "INVOKE",
             target = "Lnet/minecraft/client/gui/screens/inventory/tooltip/ClientTooltipComponent;extractText(Lnet/minecraft/client/gui/GuiGraphicsExtractor;Lnet/minecraft/client/gui/Font;II)V",
         ),
-        index = 2,
     )
-    private fun centerProjectSTitle(originalX: Int): Int {
-        if (!projectSTitlePending) return originalX
+    private fun drawProjectSTooltipLine(
+        component: ClientTooltipComponent,
+        graphics: GuiGraphicsExtractor,
+        font: Font,
+        x: Int,
+        y: Int,
+    ) {
+        if (!projectSTitlePending) {
+            component.extractText(graphics, font, x, y)
+            return
+        }
+
         projectSTitlePending = false
-        return originalX + projectSTitleX
+        projectSHeaderPalette?.let { palette ->
+            graphics.fill(x - 1, y - 1, x + projectSTooltipWidth + 1, y + font.lineHeight + 1, palette.plateColor)
+            graphics.fill(x, y + font.lineHeight + 1, x + projectSTooltipWidth, y + font.lineHeight + 2, palette.dividerColor)
+        }
+        component.extractText(graphics, font, x + projectSTitleX, y)
     }
 }

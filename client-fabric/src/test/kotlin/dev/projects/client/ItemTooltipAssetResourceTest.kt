@@ -43,11 +43,13 @@ class ItemTooltipAssetResourceTest {
             JsonParser.parseReader(InputStreamReader(stream)).asJsonObject
         }
         val providers = font.getAsJsonArray("providers")
-        assertEquals(7, providers.size())
+        val definitions = providers.map { provider -> provider.asJsonObject }
+        val bitmapProviders = definitions.filter { definition -> definition.get("type").asString == "bitmap" }
+        val spacingProvider = definitions.single { definition -> definition.get("type").asString == "space" }
+        assertEquals(10, providers.size())
+        assertEquals(9, bitmapProviders.size)
 
-        val glyphs = providers.map { provider ->
-            val definition = provider.asJsonObject
-            assertEquals("bitmap", definition.get("type").asString)
+        val glyphs = bitmapProviders.map { definition ->
             assertEquals(8, definition.get("ascent").asInt)
             assertEquals(9, definition.get("height").asInt)
             val texture = definition.get("file").asString.removePrefix("projects:")
@@ -57,7 +59,13 @@ class ItemTooltipAssetResourceTest {
             definition.getAsJsonArray("chars").single().asString.single()
         }.toSet()
 
-        assertEquals(('\uE001'..'\uE007').toSet(), glyphs)
+        assertEquals(('\uE001'..'\uE009').toSet(), glyphs)
+        assertEquals(
+            mapOf('\uE110' to 1, '\uE111' to 2, '\uE112' to 4, '\uE113' to 8, '\uE114' to 16, '\uE115' to 32),
+            spacingProvider.getAsJsonObject("advances").entrySet().associate { (glyph, advance) ->
+                glyph.single() to advance.asInt
+            },
+        )
     }
 
     private fun image(fileName: String): BufferedImage = resource(fileName).use { stream ->
