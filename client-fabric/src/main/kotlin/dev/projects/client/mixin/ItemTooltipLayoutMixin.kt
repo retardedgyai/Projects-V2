@@ -1,12 +1,18 @@
 package dev.projects.client.mixin
 
-import dev.projects.client.ItemTooltipLayout
+import com.mojang.blaze3d.platform.InputConstants
 import dev.projects.client.ItemTooltipHeaderPalette
+import dev.projects.client.ItemTooltipDetails
+import dev.projects.client.ItemTooltipLayout
+import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.Font
 import net.minecraft.client.gui.GuiGraphicsExtractor
+import net.minecraft.client.gui.screens.Screen
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipPositioner
+import net.minecraft.network.chat.Component
 import net.minecraft.resources.Identifier
+import net.minecraft.world.item.ItemStack
 import org.spongepowered.asm.mixin.Mixin
 import org.spongepowered.asm.mixin.Unique
 import org.spongepowered.asm.mixin.injection.At
@@ -27,6 +33,20 @@ class ItemTooltipLayoutMixin {
 
     @Unique
     private var projectSHeaderPalette: ItemTooltipHeaderPalette? = null
+
+    @Redirect(
+        method = ["setTooltipForNextFrame(Lnet/minecraft/client/gui/Font;Lnet/minecraft/world/item/ItemStack;II)V"],
+        at = At(
+            value = "INVOKE",
+            target = "Lnet/minecraft/client/gui/screens/Screen;getTooltipFromItem(Lnet/minecraft/client/Minecraft;Lnet/minecraft/world/item/ItemStack;)Ljava/util/List;",
+        ),
+    )
+    private fun selectProjectSTooltipDetailLines(minecraft: Minecraft, stack: ItemStack): List<Component> {
+        val shiftDown = InputConstants.isKeyDown(minecraft.window, InputConstants.KEY_LSHIFT) ||
+            InputConstants.isKeyDown(minecraft.window, InputConstants.KEY_RSHIFT)
+        return Screen.getTooltipFromItem(minecraft, stack)
+            .filter { line -> ItemTooltipDetails.shouldDisplay(line.string, shiftDown) }
+    }
 
     @Inject(
         method = ["tooltip"],

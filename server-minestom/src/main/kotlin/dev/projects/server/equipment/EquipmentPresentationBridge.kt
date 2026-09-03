@@ -48,8 +48,9 @@ fun EquipmentItem.toPresentationItemStack(
     material: Material,
     displayName: String,
     definitions: Map<String, ModDefinition>,
+    equipmentTypeLabel: String? = null,
 ): ItemStack {
-    val tooltip = toTooltipModel(definitions)
+    val tooltip = equipmentTypeLabel?.let { label -> toTooltipModel(definitions, label) } ?: toTooltipModel(definitions)
     val encoded = Base64.getEncoder().encodeToString(
         EquipmentPresentationCodec.encode(toPresentationSnapshot(displayName, definitions)),
     )

@@ -51,5 +51,6 @@ internal fun tooltipDemoItemStacks(): List<ItemStack> = EquipmentRarity.entries.
         material = Material.IRON_SWORD,
         displayName = "双刃",
         definitions = TOOLTIP_DEMO_DEFINITIONS,
+        equipmentTypeLabel = "双剣・近接武器",
     )
 }

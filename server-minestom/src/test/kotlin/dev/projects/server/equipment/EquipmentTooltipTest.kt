@@ -54,13 +54,19 @@ class EquipmentTooltipTest {
         val model = equipment(EquipmentRarity.RARE).toTooltipModel(definitions)
 
         assertEquals("TIER II", model.tierLabel)
+        assertEquals("T2", model.tierId)
+        assertEquals(24, model.itemLevel)
         assertEquals("RARE", model.rarityLabel)
+        assertEquals(3, model.modCapacity)
+        assertEquals("武器・武器枠", model.equipmentTypeLabel)
         assertEquals(listOf("攻撃力", "攻撃速度", "クリティカル率"), model.baseStats.map { it.label })
         assertEquals(listOf("42.8", "1.45", "6%"), model.baseStats.map { it.valueText })
         assertEquals(1, model.mods.size)
         assertEquals("疾風", model.mods.single().displayName)
         assertEquals("II", model.mods.single().rankLabel)
         assertEquals("+12.4% 攻撃速度", model.mods.single().effectText)
+        assertEquals("+10%〜15%", model.mods.single().rangeText)
+        assertEquals(0.48, model.mods.single().rollQuality, 0.000_001)
     }
 
     @Test
@@ -80,12 +86,12 @@ class EquipmentTooltipTest {
     fun `lore keeps base stats mods and estimated market value in distinct sections`() {
         MinecraftServer.init(Auth.Offline())
         val stack = equipment(EquipmentRarity.EPIC)
-            .toPresentationItemStack(Material.IRON_SWORD, "双刃", definitions)
+            .toPresentationItemStack(Material.IRON_SWORD, "双刃", definitions, "双剣・近接武器")
         val lore = stack.get(DataComponents.LORE).orEmpty()
         val plain = lore.map(PlainTextComponentSerializer.plainText()::serialize)
 
         val baseIndex = plain.indexOf("基本性能")
-        val modIndex = plain.indexOf("MOD")
+        val modIndex = plain.indexOfFirst { it.startsWith("MOD") }
         val marketIndex = plain.indexOf("市場価値")
         assertTrue(baseIndex >= 0)
         assertTrue(modIndex > baseIndex)
@@ -99,12 +105,18 @@ class EquipmentTooltipTest {
         assertTrue(plain[attackIndex].indexOf("攻撃力") < plain[attackIndex].indexOf("42.8"))
         assertTrue(plain[speedIndex].indexOf("攻撃速度") < plain[speedIndex].indexOf("1.45"))
         assertTrue(plain[criticalIndex].indexOf("クリティカル率") < plain[criticalIndex].indexOf("6%"))
+        assertTrue(plain[modIndex].contains("◆") && plain[modIndex].count { it == '◇' } == 3)
         assertTrue(plain.any { it.contains("\uE009") && it.contains("疾風 II") })
-        assertTrue(plain.any { it.contains("\uE008") && it.contains("推定 ") && it.endsWith(" G") })
+        assertTrue(plain.any { it.contains("└") && it.contains("+12.4%") && it.contains("攻撃速度") })
+        assertTrue(plain.any { it.contains("\uE008") && it.contains("推定") && it.endsWith(" G") })
+        assertTrue(plain.any { it.contains("双剣・近接武器") })
+        assertTrue(plain.any { it.startsWith("\uE120") && it.contains("アイテムレベル") })
+        assertTrue(plain.any { it.startsWith("\uE120") && it.contains("範囲 +10%〜15%") })
+        assertTrue(plain.any { it.startsWith("\uE121") && it.contains("SHIFT") })
         assertFalse(plain.any { it.contains("projects:") })
         assertEquals(TextDecoration.State.TRUE, lore.first().decoration(TextDecoration.BOLD))
         assertEquals(TextDecoration.State.TRUE, lore[baseIndex].decoration(TextDecoration.BOLD))
-        assertEquals(TextDecoration.State.TRUE, lore[modIndex].decoration(TextDecoration.BOLD))
+        assertEquals(TextDecoration.State.TRUE, lore[modIndex].children().first().decoration(TextDecoration.BOLD))
         assertEquals(TextDecoration.State.TRUE, lore[marketIndex].decoration(TextDecoration.BOLD))
         assertEquals(
             TextDecoration.State.FALSE,
@@ -139,7 +151,7 @@ class EquipmentTooltipTest {
             }.style().color(),
         )
         assertEquals(
-            TextColor.color(0xEBEBE5),
+            TextColor.color(0xE39A91),
             lore[attackIndex].children().single {
                 PlainTextComponentSerializer.plainText().serialize(it) == "42.8"
             }.style().color(),
@@ -173,6 +185,31 @@ class EquipmentTooltipTest {
         assertTrue(first.toDouble().isFinite())
     }
 
+    @Test
+    fun `mod roll quality colors progress from muted to gold`() {
+        val expectedColors = listOf(
+            10.0 to TextColor.color(0x9CA3A5),
+            12.4 to TextColor.color(0x78BBA8),
+            14.0 to TextColor.color(0x69BDD0),
+            15.0 to TextColor.color(0xD8B962),
+        )
+
+        expectedColors.forEach { (rolledValue, expectedColor) ->
+            val entry = ModEntry("projects:gale", ModRank.RANK_2, rolledValue, 0, definitionRevision = 1)
+            val lore = equipment(EquipmentRarity.RARE, entry).toTooltipModel(definitions).toLore()
+            val effect = lore.first { component -> plain(component).contains("└") }
+            val valueText = if (rolledValue % 1.0 == 0.0) {
+                "+${rolledValue.toInt()}%"
+            } else {
+                "+$rolledValue%"
+            }
+            assertEquals(
+                expectedColor,
+                effect.children().single { child -> plain(child) == valueText }.style().color(),
+            )
+        }
+    }
+
     private fun equipment(
         rarity: EquipmentRarity,
         entry: ModEntry? = ModEntry("projects:gale", ModRank.RANK_2, 12.4, 0, definitionRevision = 1),
@@ -192,4 +229,7 @@ class EquipmentTooltipTest {
             if (index == 0 && entry != null) EquipmentModSlot(index, entry) else EquipmentModSlot.empty(index)
         },
     )
+
+    private fun plain(component: net.kyori.adventure.text.Component): String =
+        PlainTextComponentSerializer.plainText().serialize(component)
 }

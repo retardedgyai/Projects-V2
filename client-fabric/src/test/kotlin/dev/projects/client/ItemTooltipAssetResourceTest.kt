@@ -61,7 +61,16 @@ class ItemTooltipAssetResourceTest {
 
         assertEquals(('\uE001'..'\uE009').toSet(), glyphs)
         assertEquals(
-            mapOf('\uE110' to 1, '\uE111' to 2, '\uE112' to 4, '\uE113' to 8, '\uE114' to 16, '\uE115' to 32),
+            mapOf(
+                '\uE110' to 1,
+                '\uE111' to 2,
+                '\uE112' to 4,
+                '\uE113' to 8,
+                '\uE114' to 16,
+                '\uE115' to 32,
+                '\uE120' to 0,
+                '\uE121' to 0,
+            ),
             spacingProvider.getAsJsonObject("advances").entrySet().associate { (glyph, advance) ->
                 glyph.single() to advance.asInt
             },

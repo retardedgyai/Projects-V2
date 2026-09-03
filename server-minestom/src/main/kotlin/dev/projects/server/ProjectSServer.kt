@@ -155,6 +155,7 @@ private fun twinBladesItemStack() = twinBladesItem().toPresentationItemStack(
     material = Material.IRON_SWORD,
     displayName = "双刃",
     definitions = TWIN_BLADES_DEFINITIONS,
+    equipmentTypeLabel = "双剣・近接武器",
 )
 
 internal data class SkillCooldowns(
