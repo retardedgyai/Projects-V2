@@ -7,7 +7,7 @@ import dev.projects.protocol.EquipmentPresentationStat
 import dev.projects.server.mod.ModDefinition
 import dev.projects.server.mod.ModEntry
 import dev.projects.server.mod.ModValidation
-import net.kyori.adventure.text.Component
+import net.minestom.server.component.DataComponents
 import net.minestom.server.item.ItemStack
 import net.minestom.server.item.Material
 import net.minestom.server.tag.Tag
@@ -50,8 +50,12 @@ fun EquipmentItem.toPresentationItemStack(
     val encoded = Base64.getEncoder().encodeToString(
         EquipmentPresentationCodec.encode(toPresentationSnapshot(displayName, definitions)),
     )
+    val tooltip = toTooltipModel(definitions)
     return ItemStack.builder(material)
-        .customName(Component.text(displayName))
+        .customName(equipmentTooltipName(displayName, rarity))
+        .lore(tooltip.lore())
+        .set(DataComponents.TOOLTIP_STYLE, tooltip.tooltipStyle)
+        .hideExtraTooltip()
         .set(PRESENTATION_TAG, encoded)
         .build()
 }
