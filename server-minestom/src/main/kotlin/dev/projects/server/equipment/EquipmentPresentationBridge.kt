@@ -8,6 +8,8 @@ import dev.projects.server.mod.ModDefinition
 import dev.projects.server.mod.ModEntry
 import dev.projects.server.mod.ModValidation
 import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.format.TextDecoration
+import net.minestom.server.component.DataComponents
 import net.minestom.server.item.ItemStack
 import net.minestom.server.item.Material
 import net.minestom.server.tag.Tag
@@ -47,11 +49,18 @@ fun EquipmentItem.toPresentationItemStack(
     displayName: String,
     definitions: Map<String, ModDefinition>,
 ): ItemStack {
+    val tooltip = toTooltipModel(definitions)
     val encoded = Base64.getEncoder().encodeToString(
         EquipmentPresentationCodec.encode(toPresentationSnapshot(displayName, definitions)),
     )
     return ItemStack.builder(material)
-        .customName(Component.text(displayName))
+        .customName(
+            Component.text(displayName, rarity.nameColor())
+                .decoration(TextDecoration.ITALIC, false),
+        )
+        .lore(tooltip.toLore())
+        .set(DataComponents.TOOLTIP_STYLE, tooltip.tooltipStyleId)
+        .hideExtraTooltip()
         .set(PRESENTATION_TAG, encoded)
         .build()
 }

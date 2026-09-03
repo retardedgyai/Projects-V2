@@ -10,6 +10,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import net.minestom.server.Auth
 import net.minestom.server.MinecraftServer
+import net.minestom.server.component.DataComponents
 import net.minestom.server.item.Material
 
 class EquipmentPresentationBridgeTest {
@@ -28,12 +29,14 @@ class EquipmentPresentationBridgeTest {
             ),
         )
 
-        val restored = item.toPresentationItemStack(Material.IRON_SWORD, "Twin Blades", mapOf(definition.modId to definition))
-            .readEquipmentPresentation()
+        val stack = item.toPresentationItemStack(Material.IRON_SWORD, "Twin Blades", mapOf(definition.modId to definition))
+        val restored = stack.readEquipmentPresentation()
 
         assertNotNull(restored)
         assertEquals(item.itemId, restored.itemId)
         assertEquals(1, restored.installedMods.size)
         assertEquals(2.5, restored.installedMods.single().rolledValue)
+        assertEquals("projects:item_uncommon", stack.get(DataComponents.TOOLTIP_STYLE))
+        assertNotNull(stack.get(DataComponents.LORE))
     }
 }

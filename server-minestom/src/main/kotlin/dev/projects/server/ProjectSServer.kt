@@ -104,6 +104,7 @@ import dev.projects.server.equipment.EquipmentModSlot
 import dev.projects.server.equipment.EquipmentRarity
 import dev.projects.server.equipment.EquipmentSlot as ProjectSEquipmentSlot
 import dev.projects.server.equipment.EquipmentTier
+import dev.projects.server.equipment.tooltipDemoItemStacks
 import dev.projects.server.equipment.toPresentationItemStack
 import dev.projects.server.mod.AttackTag
 import dev.projects.server.mod.ModDefinition
@@ -152,7 +153,7 @@ private fun twinBladesItem(): EquipmentItem = EquipmentItem(
 
 private fun twinBladesItemStack() = twinBladesItem().toPresentationItemStack(
     material = Material.IRON_SWORD,
-    displayName = "Twin Blades",
+    displayName = "双刃",
     definitions = TWIN_BLADES_DEFINITIONS,
 )
 
@@ -476,6 +477,15 @@ fun main() {
     )
     MinecraftServer.getCommandManager().register(
         Command("bossreset").apply { setDefaultExecutor { _, _ -> resetEncounter() } },
+    )
+    MinecraftServer.getCommandManager().register(
+        Command("tooltipdemo").apply {
+            setDefaultExecutor { sender, _ ->
+                val player = sender as? net.minestom.server.entity.Player ?: return@setDefaultExecutor
+                tooltipDemoItemStacks().forEach(player.inventory::addItemStack)
+                player.sendMessage(Component.text("Tooltip比較用の双刃を4種類追加しました"))
+            }
+        },
     )
     fun prepareQuestMapTransfer(player: net.minestom.server.entity.Player) {
         bossGroundTelegraphIds.forEach { telegraphId ->
