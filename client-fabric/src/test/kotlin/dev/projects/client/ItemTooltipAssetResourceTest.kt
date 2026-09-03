@@ -68,8 +68,6 @@ class ItemTooltipAssetResourceTest {
                 '\uE113' to 8,
                 '\uE114' to 16,
                 '\uE115' to 32,
-                '\uE120' to 0,
-                '\uE121' to 0,
             ),
             spacingProvider.getAsJsonObject("advances").entrySet().associate { (glyph, advance) ->
                 glyph.single() to advance.asInt
