@@ -240,13 +240,14 @@ private fun statLine(stat: EquipmentTooltipStatRow): Component {
     return Component.empty()
         .decoration(TextDecoration.ITALIC, false)
         .decoration(TextDecoration.BOLD, false)
+        .append(line(" ", VALUE_COLOR))
         .append(
-            Component.text(" $icon ", NamedTextColor.WHITE)
+            Component.text(icon, NamedTextColor.WHITE)
                 .font(TOOLTIP_ICON_FONT)
                 .decoration(TextDecoration.ITALIC, false)
                 .decoration(TextDecoration.BOLD, false),
         )
-        .append(line("${stat.valueText} ${stat.label}", VALUE_COLOR))
+        .append(line(" ${stat.valueText} ${stat.label}", VALUE_COLOR))
 }
 
 private fun heading(text: String, color: TextColor): Component = line(text, color)

@@ -106,7 +106,19 @@ class EquipmentTooltipTest {
         )
         assertEquals(
             Key.key("projects", "tooltip_icons"),
-            lore[plain.indexOfFirst { it.contains("42.8 攻撃力") }].children().first().style().font(),
+            lore[plain.indexOfFirst { it.contains("42.8 攻撃力") }]
+                .children()
+                .single { it.style().font() == Key.key("projects", "tooltip_icons") }
+                .style()
+                .font(),
+        )
+        assertEquals(
+            "\uE001",
+            PlainTextComponentSerializer.plainText().serialize(
+                lore[plain.indexOfFirst { it.contains("42.8 攻撃力") }]
+                    .children()
+                    .single { it.style().font() == Key.key("projects", "tooltip_icons") },
+            ),
         )
         assertEquals(
             TextDecoration.State.TRUE,
