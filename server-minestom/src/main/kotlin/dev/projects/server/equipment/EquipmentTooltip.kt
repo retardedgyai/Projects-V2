@@ -11,6 +11,7 @@ import net.kyori.adventure.text.format.TextColor
 import net.kyori.adventure.text.format.TextDecoration
 import java.util.Locale
 import kotlin.math.abs
+import kotlin.math.roundToInt
 import kotlin.math.roundToLong
 
 data class EquipmentTooltipStatRow(
@@ -27,11 +28,14 @@ data class EquipmentTooltipModRow(
     val effectValueText: String,
     val effectLabel: String,
     val effectText: String,
+    val rangeText: String,
     val rollQuality: Double,
 )
 
 data class EquipmentTooltipModel(
+    val tierId: String,
     val tierLabel: String,
+    val itemLevel: Int,
     val rarityLabel: String,
     val tooltipStyleId: String,
     val equipmentTypeLabel: String,
@@ -112,11 +116,14 @@ fun EquipmentItem.toTooltipModel(
             effectValueText = effectValueText,
             effectLabel = effectLabel,
             effectText = "$effectValueText $effectLabel",
+            rangeText = formatModRange(definition),
             rollQuality = rollQuality(entry.rolledValue, definition.minimumValue, definition.maximumValue),
         )
     }
     return EquipmentTooltipModel(
+        tierId = tier.name,
         tierLabel = itemTierLabel(tier),
+        itemLevel = itemLevel,
         rarityLabel = rarity.name,
         tooltipStyleId = rarity.tooltipStyleId(),
         equipmentTypeLabel = equipmentTypeLabel,
@@ -145,6 +152,11 @@ internal fun EquipmentTooltipModel.toLore(): List<Component> = buildList {
     add(Component.empty())
     add(section("市場価値"))
     add(marketValueLine(estimatedMarketValue))
+    add(Component.empty())
+    add(section("詳細情報"))
+    add(detailLine("アイテムレベル", itemLevel.toString()))
+    add(detailLine("内部Tier", tierId))
+    mods.forEach { mod -> add(modRangeLine(mod)) }
     add(Component.empty())
     add(line("  $equipmentTypeLabel", FOOTER_COLOR))
 }
@@ -296,6 +308,12 @@ private fun formatModValue(value: Double, layer: ModStackingLayer): String {
 private fun formatModLabel(statLabel: String, layer: ModStackingLayer): String =
     if (layer == ModStackingLayer.CONDITIONAL) "$statLabel（条件付き）" else statLabel
 
+private fun formatModRange(definition: ModDefinition): String {
+    val minimum = formatModValue(definition.minimumValue, definition.stackingLayer)
+    val maximum = formatModValue(definition.maximumValue, definition.stackingLayer).removePrefix("+")
+    return "$minimum〜$maximum"
+}
+
 private fun rollQuality(value: Double, minimum: Double, maximum: Double): Double =
     if (maximum == minimum) 1.0 else ((value - minimum) / (maximum - minimum)).coerceIn(0.0, 1.0)
 
@@ -365,6 +383,22 @@ private fun marketValueLine(estimatedMarketValue: Long): Component {
         .append(spacer(spacerWidth))
         .append(line(value, MARKET_COLOR))
 }
+
+private fun detailLine(label: String, value: String): Component {
+    val spacerWidth = (
+        STAT_TEXT_COLUMN_WIDTH - approximateTextWidth(label) - approximateTextWidth(value)
+    ).coerceAtLeast(8)
+    return bodyLine()
+        .append(line("  $label", DETAIL_LABEL_COLOR))
+        .append(spacer(spacerWidth))
+        .append(line(value, VALUE_COLOR))
+}
+
+private fun modRangeLine(mod: EquipmentTooltipModRow): Component = bodyLine()
+    .append(line("  ${mod.displayName} ${mod.rankLabel}  ", DETAIL_LABEL_COLOR))
+    .append(line("範囲 ${mod.rangeText}", MUTED_COLOR))
+    .append(line("  品質 ", DETAIL_LABEL_COLOR))
+    .append(line("${(mod.rollQuality * 100.0).roundToInt()}%", modRollColor(mod.rollQuality)))
 
 private fun modRollColor(quality: Double): TextColor = when {
     quality >= 0.90 -> PERFECT_ROLL_COLOR

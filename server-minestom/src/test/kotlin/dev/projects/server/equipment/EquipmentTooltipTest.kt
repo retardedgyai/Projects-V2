@@ -54,6 +54,8 @@ class EquipmentTooltipTest {
         val model = equipment(EquipmentRarity.RARE).toTooltipModel(definitions)
 
         assertEquals("TIER II", model.tierLabel)
+        assertEquals("T2", model.tierId)
+        assertEquals(24, model.itemLevel)
         assertEquals("RARE", model.rarityLabel)
         assertEquals(3, model.modCapacity)
         assertEquals("武器・武器枠", model.equipmentTypeLabel)
@@ -63,6 +65,7 @@ class EquipmentTooltipTest {
         assertEquals("疾風", model.mods.single().displayName)
         assertEquals("II", model.mods.single().rankLabel)
         assertEquals("+12.4% 攻撃速度", model.mods.single().effectText)
+        assertEquals("+10%〜15%", model.mods.single().rangeText)
         assertEquals(0.48, model.mods.single().rollQuality, 0.000_001)
     }
 
@@ -90,9 +93,11 @@ class EquipmentTooltipTest {
         val baseIndex = plain.indexOf("基本性能")
         val modIndex = plain.indexOfFirst { it.startsWith("MOD") }
         val marketIndex = plain.indexOf("市場価値")
+        val detailIndex = plain.indexOf("詳細情報")
         assertTrue(baseIndex >= 0)
         assertTrue(modIndex > baseIndex)
         assertTrue(marketIndex > modIndex)
+        assertTrue(detailIndex > marketIndex)
         val attackIndex = plain.indexOfFirst { it.contains("攻撃力") }
         val speedIndex = plain.indexOfFirst { it.contains("攻撃速度") }
         val criticalIndex = plain.indexOfFirst { it.contains("クリティカル率") }
@@ -107,7 +112,10 @@ class EquipmentTooltipTest {
         assertTrue(plain.any { it.contains("└") && it.contains("+12.4%") && it.contains("攻撃速度") })
         assertTrue(plain.any { it.contains("\uE008") && it.contains("推定") && it.endsWith(" G") })
         assertTrue(plain.any { it.contains("双剣・近接武器") })
-        assertFalse(plain.any { it.contains("SHIFT") || it.contains("詳細情報") || it.contains("内部Tier") })
+        assertTrue(plain.any { it.contains("アイテムレベル") && it.contains("24") })
+        assertTrue(plain.any { it.contains("内部Tier") && it.contains("T2") })
+        assertTrue(plain.any { it.contains("範囲 +10%〜15%") && it.contains("品質 48%") })
+        assertFalse(plain.any { it.contains("SHIFT") })
         assertFalse(plain.any { it.contains("projects:") })
         assertEquals(TextDecoration.State.TRUE, lore.first().decoration(TextDecoration.BOLD))
         assertEquals(TextDecoration.State.TRUE, lore[baseIndex].decoration(TextDecoration.BOLD))
