@@ -2086,17 +2086,21 @@ internal class VerdantRoadQuestService(
         )
         giveGatheringReward(
             player,
-            ItemStack.of(node.discipline.commonMaterial, amount)
-                .withCustomName(Component.text(node.discipline.commonResourceName, NamedTextColor.WHITE)),
+            node.discipline.resourceItem(
+                tier = node.tier,
+                grade = QuestGatheringResourceGrade.COMMON,
+                amount = amount,
+            ),
         )
         val rareDiscovered = node.quality == QuestGatheringQuality.RARE ||
             rareDiscoveryRoll(player.uuid, node, previous) < previous.rareDiscoveryChancePercent(node.discipline)
         if (rareDiscovered) {
             giveGatheringReward(
                 player,
-                ItemStack.of(node.discipline.rareMaterial)
-                    .withCustomName(Component.text(node.discipline.rareResourceName, NamedTextColor.LIGHT_PURPLE))
-                    .withGlowing(true),
+                node.discipline.resourceItem(
+                    tier = node.tier,
+                    grade = QuestGatheringResourceGrade.RARE,
+                ),
             )
         }
         val updated = previous.addExperience(node.discipline, node.quality.masteryExperience)
