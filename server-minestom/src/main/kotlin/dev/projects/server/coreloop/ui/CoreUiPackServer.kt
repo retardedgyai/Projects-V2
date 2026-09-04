@@ -6,6 +6,8 @@ import net.kyori.adventure.resource.ResourcePackRequest
 import net.kyori.adventure.resource.ResourcePackStatus
 import net.minestom.server.MinecraftServer
 import net.minestom.server.entity.Player
+import net.minestom.server.event.EventListener
+import net.minestom.server.event.player.PlayerResourcePackStatusEvent
 import java.io.ByteArrayOutputStream
 import java.net.InetSocketAddress
 import java.net.URI
@@ -24,44 +26,86 @@ class CoreUiPackServer private constructor(
     private val info: ResourcePackInfo,
 ) : AutoCloseable {
     private class Offer(val player: Player, val callback: (Player, Boolean) -> Unit) {
-        @Volatile var loaded = false
+        val state = CoreUiPackOfferState()
     }
     private val offers = ConcurrentHashMap<UUID, Offer>()
     private val closed = AtomicBoolean()
+    private var listenerRegistered = false
+    private val statusListener = EventListener.of(PlayerResourcePackStatusEvent::class.java) { event ->
+        handleStatus(event.player, event.packUuid, event.status)
+    }
     val uri: URI get() = info.uri()
 
-    fun enabled(player: Player): Boolean = offers[player.uuid]?.let { it.player === player && it.loaded } == true
+    fun enabled(player: Player): Boolean = !closed.get() && offers[player.uuid]?.let { it.player === player && it.state.loaded } == true
 
+    @Synchronized
     fun offer(player: Player, onChanged: (Player, Boolean) -> Unit = { _, _ -> }) {
         if (closed.get() || !player.isOnline) return
+        // Minestom removes request callbacks at the first terminal status. Its event stream also
+        // contains later DISCARDED/FAILED_RELOAD, so own this listener for the service's lifetime.
+        if (!listenerRegistered) {
+            MinecraftServer.getGlobalEventHandler().addListener(statusListener)
+            listenerRegistered = true
+        }
         val offer = Offer(player, onChanged)
-        offers[player.uuid] = offer
-        val request = ResourcePackRequest.resourcePackRequest().packs(info).required(false).replace(false)
+        val previous = offers.put(player.uuid, offer)
+        val wasLoaded = previous?.state?.loaded == true
+        previous?.state?.invalidate()
+        if (previous != null && previous.player === player) {
+            runCatching { player.removeResourcePacks(previous.state.packId) }
+        }
+        if (wasLoaded) publish(offer, offer.state.current(), announce = false)
+        // The asset hash/URL stays cacheable, but every offer needs its own protocol ID: a delayed
+        // status for a removed pack must not enable the replacement offer on the same connection.
+        val offeredInfo = ResourcePackInfo.resourcePackInfo(offer.state.packId, info.uri(), info.hash())
+        val request = ResourcePackRequest.resourcePackRequest().packs(offeredInfo).required(false).replace(false)
             .prompt(CoreUiComponents.text("ProjectSのUI・アイコンを適用します。拒否しても通常表示で遊べます。"))
             .callback { id, status, _ ->
-                if (id != info.id() || offers[player.uuid] !== offer || closed.get()) return@callback
-                if (status.intermediate()) return@callback
-                // ACCEPTED/DOWNLOADED are NOT sufficient: glyphs are safe only after a successful reload.
-                val enabled = status == ResourcePackStatus.SUCCESSFULLY_LOADED
-                offer.loaded = enabled
-                MinecraftServer.getSchedulerManager().scheduleNextTick {
-                    if (!closed.get() && player.isOnline && offers[player.uuid] === offer) {
-                        player.sendMessage(CoreUiComponents.text(if (enabled) "ProjectSのUIを適用しました。" else "通常表示で続けます。ゲーム機能はそのまま利用できます。"))
-                        offer.callback(player, enabled)
-                    }
-                }
-                println("CORE_UI_PACK player=${player.username} status=$status customGlyphs=$enabled")
+                handleStatus(player, id, status)
             }.build()
         runCatching { player.sendResourcePacks(request) }.onFailure { failure ->
-            offers.remove(player.uuid, offer)
+            handleStatus(player, offer.state.packId, ResourcePackStatus.FAILED_DOWNLOAD)
             System.err.println("CORE_UI_PACK_OFFER_FAILED player=${player.username}: ${failure.message}")
         }
     }
 
-    fun forget(player: Player) { offers.computeIfPresent(player.uuid) { _, offer -> if (offer.player === player) null else offer } }
+    @Synchronized
+    private fun handleStatus(player: Player, packId: UUID, status: ResourcePackStatus) {
+        if (closed.get()) return
+        val offer = offers[player.uuid]?.takeIf { it.player === player } ?: return
+        val change = offer.state.accept(packId, status) ?: return
+        publish(offer, change)
+        println("CORE_UI_PACK player=${player.username} status=$status customGlyphs=${change.loaded}")
+    }
 
+    private fun publish(offer: Offer, change: CoreUiPackOfferState.Change, announce: Boolean = true) {
+        MinecraftServer.getSchedulerManager().scheduleNextTick {
+            synchronized(this) {
+                val player = offer.player
+                if (!closed.get() && player.isOnline && offers[player.uuid] === offer && offer.state.isCurrent(change)) {
+                    if (announce) player.sendMessage(CoreUiComponents.text(if (change.loaded) "ProjectSのUIを適用しました。" else "通常表示で続けます。ゲーム機能はそのまま利用できます。"))
+                    offer.callback(player, change.loaded)
+                }
+            }
+        }
+    }
+
+    @Synchronized
+    fun forget(player: Player) {
+        val offer = offers[player.uuid]?.takeIf { it.player === player } ?: return
+        offer.state.invalidate()
+        offers.remove(player.uuid, offer)
+    }
+
+    @Synchronized
     override fun close() {
         if (!closed.compareAndSet(false, true)) return
+        if (listenerRegistered) {
+            runCatching { MinecraftServer.getGlobalEventHandler().removeListener(statusListener) }
+                .onFailure { System.err.println("CORE_UI_PACK_LISTENER_CLOSE_FAILED: ${it.message}") }
+            listenerRegistered = false
+        }
+        offers.values.forEach { it.state.invalidate() }
         offers.clear(); server.stop(0); executor.shutdownNow()
     }
 

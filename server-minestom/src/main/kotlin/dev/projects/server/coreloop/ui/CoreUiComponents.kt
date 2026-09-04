@@ -48,10 +48,29 @@ object CoreUiComponents {
     }
 
     fun inventoryTitle(title: String, packed: Boolean): Component {
-        if (!packed) return text(title, NamedTextColor.DARK_GRAY)
+        if (!packed) return text(trimWidth(title, 158), NamedTextColor.DARK_GRAY)
         // Verified on Vanilla 26.2: extractLabels runs before extractSlots, so this backs the items.
         return Component.empty().append(space(-8)).append(glyph('\uE200', MENU_FONT))
-            .append(space(-169)).append(text(title.take(19), GOLD, true))
+            .append(space(-169)).append(text(trimWidth(title, 158, bold = true), GOLD, true))
+    }
+
+    /** Avoid splitting surrogate pairs, and reserve the ellipsis in the same pixel budget. */
+    internal fun trimWidth(value: String, maximum: Int, bold: Boolean = false): String {
+        if (width(value, bold) <= maximum) return value
+        val suffix = "…"
+        val remaining = maximum - width(suffix, bold)
+        if (remaining < 0) return ""
+        return buildString {
+            var used = 0
+            for (code in value.codePoints().toArray()) {
+                val character = String(Character.toChars(code))
+                val advance = width(character, bold)
+                if (used + advance > remaining) break
+                append(character)
+                used += advance
+            }
+            append(suffix)
+        }
     }
 
     fun hud(state: CoreHudState, packed: Boolean): Component {
