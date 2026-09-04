@@ -45,7 +45,7 @@ class CorePlayerCombatTest {
         h.player.setView(0f, 0f)
         h.actor.attack()
         h.ticks(20)
-        assertEquals(288.0, h.combat.bossHealth())
+        assertEquals(286.2, h.combat.bossHealth(), 0.00001)
     }
 
     @Test
@@ -236,9 +236,10 @@ class CorePlayerCombatTest {
         assertEquals(300.0, h.combat.bossHealth())
     }
 
-    private fun arena(bossDistance: Double = 4.0, armorTier: Int = 1, stats: CoreAffixStats = CoreAffixStats(), roll: Double = 1.0, test: (Harness) -> Unit) {
+    private fun arena(bossDistance: Double = 4.0, armorTier: Int = 1, stats: CoreAffixStats = CoreAffixStats(), roll: Double = 1.0,
+        weaponEnhancement: Int = 0, armorEnhancement: Int = 0, test: (Harness) -> Unit) {
         MinecraftServer.init(Auth.Offline())
-        Harness(bossDistance, armorTier, stats, roll).use(test)
+        Harness(bossDistance, armorTier, stats, roll, weaponEnhancement, armorEnhancement).use(test)
     }
 
     @Test
@@ -333,7 +334,88 @@ class CorePlayerCombatTest {
         } finally { encounter.dispose() }
     }
 
-    private class Harness(bossDistance: Double, armorTier: Int, stats: CoreAffixStats, roll: Double) : AutoCloseable {
+    @Test
+    fun `three consecutive greatsword swings each hit once and finish with a heavy strike`() = arena { h ->
+        for (duration in listOf(20, 22, 30)) { h.actor.attack(); h.ticks(duration) }
+        assertEquals(300.0 - 12.0 * (1.0 + 1.15 + 1.85), h.combat.bossHealth(), .00001)
+        h.ticks(40)
+        assertEquals(300.0 - 48.0, h.combat.bossHealth(), .00001)
+    }
+
+    @Test
+    fun `end recovery input buffer chains one swing without a held attack loop`() = arena { h ->
+        h.actor.attack(); h.ticks(15)
+        repeat(20) { h.actor.attack() }
+        h.ticks(60)
+        assertEquals(300.0 - 12.0 * 2.15, h.combat.bossHealth(), .00001)
+    }
+
+    @Test
+    fun `server LOS permits open uphill and downhill body hits`() {
+        arena { h ->
+            h.combat.entities().single().teleport(Pos(8.5, 42.5, 12.5)).get(10, TimeUnit.SECONDS)
+            h.actor.attack(); h.ticks(8)
+            assertEquals(288.0, h.combat.bossHealth(), .00001)
+        }
+        arena { h ->
+            h.player.teleport(Pos(8.5, 42.5, 8.5)).get(10, TimeUnit.SECONDS)
+            h.actor.attack(); h.ticks(8)
+            assertEquals(288.0, h.combat.bossHealth(), .00001)
+        }
+    }
+
+    @Test
+    fun `increased vertical range still cannot hit through a floor`() = arena { h ->
+        h.combat.entities().single().teleport(Pos(8.5, 43.0, 12.5)).get(10, TimeUnit.SECONDS)
+        for (x in 6..10) for (z in 7..14) h.instance.setBlock(x, 42, z, Block.STONE)
+        h.actor.attack(); h.ticks(20)
+        assertEquals(300.0, h.combat.bossHealth())
+    }
+
+    @Test
+    fun `enhancement multiplies weapon base and armor base separately from affix values`() = arena(armorTier = 2,
+        stats = CoreAffixStats(damagePercent = 20.0, attackSpeedPercent = 60.0, healthFlat = 20.0),
+        weaponEnhancement = 30, armorEnhancement = 30) { h ->
+        assertEquals(1.84, h.actor.attackSpeed, .00001)
+        assertEquals(12.0 * 2.2 * 1.2, h.actor.attackDamage, .00001)
+        assertEquals(228, h.actor.maxHealth)
+        h.actor.attack(); h.ticks(8)
+        assertEquals(300.0 - 12.0 * 2.2 * 1.2, h.combat.bossHealth(), .00001)
+    }
+
+    @Test
+    fun `kill callback can return actor during direct hit without late VFX or burn`() = arena(stats = CoreAffixStats(fireFlat = 10.0)) { h ->
+        h.combat.applyEffectDamage(h.combat.combatTargets().single().id, h.player, 290.0)
+        h.afterKill = { h.actor.resetActions(); h.activeEncounter = null }
+        h.actor.attack(); h.ticks(8)
+        assertTrue(h.combat.bossDefeated)
+        assertEquals(0, h.actor.activeVisualEffects)
+        h.ticks(60)
+        assertEquals(0, h.actor.activeVisualEffects)
+    }
+
+    @Test
+    fun `burn kill callback can clear effect map reentrantly without concurrent modification`() = arena(stats = CoreAffixStats(fireFlat = 10.0)) { h ->
+        h.combat.applyEffectDamage(h.combat.combatTargets().single().id, h.player, 280.0)
+        h.afterKill = { h.actor.resetActions(); h.activeEncounter = null }
+        h.actor.attack(); h.ticks(28)
+        assertTrue(h.combat.bossDefeated)
+        assertEquals(0, h.actor.activeVisualEffects)
+    }
+
+    @Test
+    fun `return cancels running sword animation and does not resume it on the next map`() = arena { h ->
+        h.actor.attack(); h.ticks(8)
+        assertTrue(h.actor.activeVisualEffects > 0)
+        h.actor.resetActions(); h.activeEncounter = null
+        assertEquals(0, h.actor.activeVisualEffects)
+        h.ticks(5); h.activeEncounter = h.combat; h.ticks(5)
+        assertEquals(0, h.actor.activeVisualEffects)
+        assertEquals(288.0, h.combat.bossHealth())
+    }
+
+    private class Harness(bossDistance: Double, armorTier: Int, stats: CoreAffixStats, roll: Double,
+        weaponEnhancement: Int, armorEnhancement: Int) : AutoCloseable {
         val instance = MinecraftServer.getInstanceManager().createInstanceContainer()
         val player: Player
         val combat: QuestEncounterCombat
@@ -341,6 +423,7 @@ class CorePlayerCombatTest {
         val actor: CorePlayerCombat
         var deaths = 0
         val incomingHits = mutableListOf<Double>()
+        var afterKill: () -> Unit = {}
 
         init {
             instance.viewDistance(2)
@@ -355,9 +438,10 @@ class CorePlayerCombatTest {
             player.gameMode = GameMode.ADVENTURE
             player.getAttribute(Attribute.MAX_HEALTH).baseValue = 100.0 + (armorTier - 1) * 30.0
             player.setInstance(instance, Pos(8.5, 40.0, 8.5)).get(10, TimeUnit.SECONDS)
-            actor = CorePlayerCombat(player, { 1 }, { armorTier }, { activeEncounter }, statSource = { stats }, criticalRoll = { roll }) { deaths++ }
+            actor = CorePlayerCombat(player, { 1 }, { armorTier }, { activeEncounter }, statSource = { stats }, criticalRoll = { roll },
+                weaponEnhancement = { weaponEnhancement }, armorEnhancement = { armorEnhancement }) { deaths++ }
             combat = QuestEncounterCombat(instance, 1, emptyList(), Pos(8.5, 40.0, 8.5 + bossDistance),
-                onMobDefeated = { _, _ -> },
+                onMobDefeated = { _, _ -> afterKill() },
                 damagePlayer = { _, amount -> incomingHits += amount; actor.hurt(amount) },
                 canTarget = { it === player && !actor.defeated })
             activeEncounter = combat
