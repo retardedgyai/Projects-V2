@@ -23,6 +23,13 @@ Root runtime integration points:
 4. Call `forget(player)` on disconnect. Offers are keyed by Player identity as well as UUID so an
    old connection's result does not switch a new connection's presentation.
 
+The service owns a `PlayerResourcePackStatusEvent` listener until `close()`, because Minestom drops
+request callbacks after the first terminal status. A later `DISCARDED` or `FAILED_RELOAD` therefore
+still disables private glyphs and requests a plain item/menu refresh. Each offer uses a fresh protocol
+UUID while retaining the cached asset hash/URL; replacement offers remove their previous pack and
+ignore its delayed events. Disconnect, replacement and close invalidate queued callbacks, and a newer
+failure supersedes an already queued success. Closing also unregisters the exact owned listener.
+
 Presentation APIs are independent of account/loot rules:
 
 - `CoreUiComponents.hud(CoreHudState, packed)` returns an action-bar component containing HP/mana gauges
@@ -32,6 +39,7 @@ Presentation APIs are independent of account/loot rules:
   The installed Vanilla 26.2 `AbstractContainerScreen.extractContents` bytecode calls `extractLabels`
   before `extractSlots`, so the title bitmap is a backdrop and item icons render above it. Socket recesses
   match all 54+36 normal hitboxes; the stock inventory-label band remains light for Vanilla's dark text.
+  Long headings are trimmed with an ellipsis to an estimated 158-pixel width, including bold CJK advances.
   Other inventory sizes must not use this frame. Root owns slot layout, navigation and click handling.
 - `CoreUiTooltip.apply(item, CoreTooltipModel, packed)` keeps the title centered within an estimated
   Vanilla text width, other lines left-aligned, rarity/MOD headings bold, affix ranges and quality always
@@ -89,15 +97,16 @@ The panel uses a restrained gold edge, charcoal socket recesses and a contrastin
 ```text
 python scripts/build_core_ui_assets.py
 python scripts/verify_core_ui_assets.py
-gradlew.bat :server-minestom:test --tests dev.projects.server.coreloop.ui.CoreUiTest --no-daemon --offline -Pkotlin.compiler.execution.strategy=in-process
+gradlew.bat :server-minestom:test --tests dev.projects.server.coreloop.ui.* --no-daemon --offline -Pkotlin.compiler.execution.strategy=in-process
 ```
 
 The build script requires Python 3 standard library only. It never edits the recovered or imported PNGs.
 The index excludes itself; ZIP generation uses stable ordering/timestamps, and the exact bytes determine
-the SHA-1 URL/hash and UUID. The resource version 88.0 was read from the installed Minecraft 26.2
+the SHA-1 URL/hash. The per-offer UUID is separate from the asset identity. The resource version 88.0 was read from the installed Minecraft 26.2
 `version.json`, not inferred from an older release.
 
 Structural checks cover all asset paths, unique private-use glyphs, pack version, no global fonts,
-model texture targets, socket alignment, reproducible ZIP bytes and local HTTP delivery.
+model texture targets, socket alignment, reproducible ZIP bytes, local HTTP delivery, Japanese title
+width and the offer-state late-failure/invalidation transitions.
 They are not a substitute for Creator manual visual testing: accept and decline the pack, open a six-row
 menu, compare COMMON/EPIC tooltips, verify Japanese text, and inspect all three skill cooldown states.

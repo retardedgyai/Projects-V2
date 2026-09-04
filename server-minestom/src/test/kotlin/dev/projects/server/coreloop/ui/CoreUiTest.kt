@@ -55,6 +55,28 @@ class CoreUiTest {
         assertTrue(packed.contains(CoreUiIcon.WHIRL.glyph))
     }
 
+    @Test fun `inventory titles fit their frame using bold Japanese pixel width`() {
+        val title = "刻印工房 — 装備と刻印石の詳細を確認する"
+        val packed = CoreUiComponents.inventoryTitle(title, true)
+        val heading = children(packed).filterIsInstance<TextComponent>()
+            .single { it.style().font() == CoreUiComponents.DEFAULT_FONT }.content()
+        assertTrue(heading.endsWith("…"))
+        assertTrue(CoreUiComponents.width(heading, bold = true) <= 158)
+        assertEquals("刻印工房", CoreUiComponents.trimWidth("刻印工房", 158, bold = true))
+        val fallback = plain(CoreUiComponents.inventoryTitle(title, false))
+        assertTrue(CoreUiComponents.width(fallback) <= 158)
+        assertFalse(fallback.any { it.code in 0xE000..0xF8FF })
+    }
+
+    @Test fun `width trimming accounts for ellipsis and never splits a Unicode codepoint`() {
+        val title = "\uD840\uDC0B\uD840\uDC0B\uD840\uDC0B"
+        val trimmed = CoreUiComponents.trimWidth(title, 20, bold = true)
+        assertEquals("\uD840\uDC0B…", trimmed)
+        assertEquals(2, trimmed.codePointCount(0, trimmed.length))
+        assertTrue(CoreUiComponents.width(trimmed, bold = true) <= 20)
+        assertEquals("", CoreUiComponents.trimWidth("長い", 3, bold = true))
+    }
+
     @Test fun `pack bundling is deterministic and never overrides Minecraft defaults`() {
         val first = CoreUiPackServer.bundle()
         assertContentEquals(first, CoreUiPackServer.bundle())
