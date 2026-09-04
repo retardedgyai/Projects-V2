@@ -183,7 +183,9 @@ internal class CoreLoopMenus(private val game: CoreLoopGame) {
                 }
             }
             button(v, 4, CoreLoopItems.icon(Material.BOOK, "対象：${s.gear.displayName}", "左右の装備をクリックして変更", "クリック：現在のMODを詳しく見る")) { gearMods(player, s.gear) }
-            button(v, 36, CoreLoopItems.icon(Material.BARREL, "倉庫・補給へ", "所持品は倉庫から直接消費", "素材が不足したら戦利品券で交換")) { supplies(player, s.tier) }
+            val supplyTier = if (s.tab == CoreForgeLayout.Tab.ENHANCE)
+                CoreEnhancementCatalog.quote(a, s.gear).recipe.costs.keys.firstOrNull()?.tier ?: s.tier else s.tier
+            button(v, 36, CoreLoopItems.icon(Material.BARREL, "T$supplyTier 倉庫・補給へ", "所持品は倉庫から直接消費", "素材が不足したら戦利品券で交換")) { supplies(player, supplyTier) }
             back(v, player)
             v.inventory.setItemStack(7, CoreLoopItems.icon(Material.GOLD_NUGGET, "③ 必要素材", "緑：足りています / 赤：不足", "数字は今回の消費数 / 所持は各素材で確認"))
             when (s.tab) {

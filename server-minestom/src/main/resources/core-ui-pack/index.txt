@@ -66,6 +66,10 @@ assets/projects/items/core_ui/reward.json
 assets/projects/items/core_ui/slam.json
 assets/projects/items/core_ui/speed.json
 assets/projects/items/core_ui/whirl.json
+assets/projects/items/weapons/greatsword_t1.json
+assets/projects/items/weapons/greatsword_t2.json
+assets/projects/items/weapons/greatsword_t3.json
+assets/projects/items/weapons/greatsword_t4.json
 assets/projects/models/core_ui/attack.json
 assets/projects/models/core_ui/blank.json
 assets/projects/models/core_ui/critical.json
@@ -79,6 +83,10 @@ assets/projects/models/core_ui/reward.json
 assets/projects/models/core_ui/slam.json
 assets/projects/models/core_ui/speed.json
 assets/projects/models/core_ui/whirl.json
+assets/projects/models/item/weapons/greatsword_t1.json
+assets/projects/models/item/weapons/greatsword_t2.json
+assets/projects/models/item/weapons/greatsword_t3.json
+assets/projects/models/item/weapons/greatsword_t4.json
 assets/projects/textures/gui/core/bar_digits.png
 assets/projects/textures/gui/core/blank.png
 assets/projects/textures/gui/core/counter_digits.png

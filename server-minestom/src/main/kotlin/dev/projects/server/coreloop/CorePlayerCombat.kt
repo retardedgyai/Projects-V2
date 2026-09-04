@@ -152,7 +152,7 @@ internal class CorePlayerCombat(
                 1 -> {
                     if (action.elapsed == action.startup) {
                         vfx.play(GreatswordVisual.SLAM, action.origin, action.direction)
-                        vfx.play(GreatswordVisual.FINISHER, action.origin, action.direction)
+                    vfx.play(GreatswordVisual.SLAM_BLADE, action.origin, action.direction)
                         strike(enemies, action.origin, action.direction, 5.0, cos(0.85), 2.6)
                         if (!actionsValid(enemies, epoch)) return
                         sound(SoundEvent.ENTITY_GENERIC_EXPLODE, 0.45f, 1.2f)
@@ -197,12 +197,12 @@ internal class CorePlayerCombat(
             "fire" -> stats.fireFlat > 0; "ice" -> stats.iceFlat > 0; "lightning" -> stats.lightningFlat > 0; else -> false
         }
         val damage = (attackDamage * multiplier * (1 + tagBonus / 100.0) + element) * criticalMultiplier * if (weak) 1.25 else 1.0
-        if (!enemies.applyDamage(id, player, damage)) return
+        val applied = enemies.applyDamageAmount(id, player, damage) ?: return
         if (!actionsValid(enemies, epoch)) return
         vfx.impactSound(heavy)
         vfx.play(GreatswordVisual.HIT, position, normalDirection)
         vfx.holdContact(if (heavy) 3 else 2)
-        showDamage(position, damage, critical, weak)
+        showDamage(position, applied, critical, weak)
         if (stats.fireFlat > 0 && enemies.isAlive(id)) {
             burns[id] = Burn(maxOf(burns[id]?.damage ?: 0.0, stats.fireFlat * 0.3), tickNumber + 20, 3)
             vfx.particles(Particle.SMALL_FLAME, position.add(0.0, 1.0, 0.0), 7, Vec(0.2, 0.4, 0.2), 0.01f)

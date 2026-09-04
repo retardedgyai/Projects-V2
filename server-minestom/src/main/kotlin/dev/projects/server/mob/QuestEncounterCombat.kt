@@ -173,24 +173,30 @@ class QuestEncounterCombat(
         }
 
     fun applyDamage(targetId: UUID, attacker: Player, amount: Double): Boolean {
-        return damage(targetId, attacker, amount, effect = false)
+        return applyDamageAmount(targetId, attacker, amount) != null
     }
+
+    /** Damage feedback uses actual HP removed after guard and overkill, never a pre-mitigation guess. */
+    fun applyDamageAmount(targetId: UUID, attacker: Player, amount: Double): Double? =
+        damage(targetId, attacker, amount, effect = false)
 
     /** Only for an effect whose initial server hit was already validated (burn/chain), never packet input. */
     fun applyEffectDamage(targetId: UUID, attacker: Player, amount: Double): Boolean {
-        return damage(targetId, attacker, amount, effect = true)
+        return damage(targetId, attacker, amount, effect = true) != null
     }
 
-    private fun damage(targetId: UUID, attacker: Player, amount: Double, effect: Boolean): Boolean {
-        if (disposed || attacker.instance !== instance || !canTarget(attacker)) return false
-        val mob = mobs[targetId] ?: return false
-        if (mob.guardianIds.any(::isAlive)) return false
+    private fun damage(targetId: UUID, attacker: Player, amount: Double, effect: Boolean): Double? {
+        if (disposed || attacker.instance !== instance || !canTarget(attacker)) return null
+        val mob = mobs[targetId] ?: return null
+        if (mob.guardianIds.any(::isAlive)) return null
         val range = if (effect) 24.0 else 8.0
-        if (!isSpawned(mob) || attacker.position.distanceSquared(mob.entity.position) > range * range) return false
-        if (!effect && !mob.entity.hasLineOfSight(attacker)) return false
+        if (!isSpawned(mob) || attacker.position.distanceSquared(mob.entity.position) > range * range) return null
+        if (!effect && !mob.entity.hasLineOfSight(attacker)) return null
         val guarded = !effect && guarding(mob) &&
             normalizeHorizontal(attacker.position.sub(mob.entity.position)).dot(normalizeHorizontal(mob.entity.position.direction())) >= 0.5
-        if (!mob.life.damage(amount * if (guarded) mob.definition.frontalDamageMultiplier else 1.0)) return false
+        val healthBefore = mob.life.health
+        if (!mob.life.damage(amount * if (guarded) mob.definition.frontalDamageMultiplier else 1.0)) return null
+        val applied = healthBefore - mob.life.health
         mob.lastAttacker = attacker
         if (!mob.life.isAlive) {
             mob.abilities.cancel()
@@ -211,7 +217,7 @@ class QuestEncounterCombat(
             sound(mob.entity.position, if (guarded) "minecraft:item.shield.block" else "minecraft:entity.${mob.definition.soundFamily}.hurt", 0.6f, 1.0f)
             particle(mob.entity.position.add(0.0, 1.0, 0.0), Particle.DAMAGE_INDICATOR, 4)
         }
-        return true
+        return applied
     }
 
     fun tick(nowMillis: Long) {

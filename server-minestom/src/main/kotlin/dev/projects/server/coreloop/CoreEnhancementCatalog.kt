@@ -22,9 +22,9 @@ data class CoreEnhancementQuote(
     val recipe: CoreRecipe, val blockedReason: String?,
 )
 
-/** Experiment policy v1. Old probability curve, new permanent protection, pity and crafting mastery. */
+/** Experiment policy v2. Stage-based material grades, protection, pity and crafting mastery. */
 object CoreEnhancementCatalog {
-    const val POLICY_REVISION = 1
+    const val POLICY_REVISION = 2
     const val MAX_LEVEL = 30
     const val MAX_SMITHING_XP = 200L
     const val XP_PER_RANK = 20L
@@ -58,6 +58,9 @@ object CoreEnhancementCatalog {
     fun weaponAttackSpeedPercent(level: Int): Double { require(level in 0..MAX_LEVEL); return level * 0.8 }
     fun armorHealthMultiplier(level: Int): Double { require(level in 0..MAX_LEVEL); return 1.0 + level * 0.02 }
 
+    /** Promotion preserves investment, so material grade cannot depend on the cheap base chosen first. */
+    fun materialTier(targetLevel: Int): Int { require(targetLevel in 1..MAX_LEVEL); return (targetLevel + 7) / 8 }
+
     /** Pure visible inputs only. The next random result is never exposed by this method. */
     fun quote(account: CoreAccount, gear: CoreGearSlot, mode: CoreEnhancementMode = CoreEnhancementMode.STANDARD): CoreEnhancementQuote {
         val state = state(account, gear)
@@ -72,7 +75,7 @@ object CoreEnhancementCatalog {
         val guaranteed = !maximum && chance == 100.0
         val costs = linkedMapOf<CoreMaterial, Long>()
         if (!maximum) {
-            val tier = CoreAffixCatalog.gearTier(account, gear)
+            val tier = materialTier(target)
             val unit = (target + 4L) / 5L
             val primary = if (gear == CoreGearSlot.WEAPON) CoreResource.INGOT else CoreResource.LEATHER
             val secondary = if (gear == CoreGearSlot.WEAPON) CoreResource.BOARD else CoreResource.CLOTH

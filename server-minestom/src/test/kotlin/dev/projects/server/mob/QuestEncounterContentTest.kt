@@ -20,22 +20,33 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class QuestEncounterContentTest {
     @Test
     fun `shield reduces front hits but rear strikes and attack windups are vulnerable`() = arena(QuestMobArchetype.SHIELD_GUARD) { h ->
         h.player.teleport(Pos(8.5, 40.0, 14.5)).join()
-        assertTrue(h.combat.applyDamage(h.enemyId, h.player, 20.0))
+        assertEquals(9.0, h.combat.applyDamageAmount(h.enemyId, h.player, 20.0))
         assertEquals(57.0, h.info().health)
         h.player.teleport(Pos(8.5, 40.0, 10.5)).join()
-        assertTrue(h.combat.applyDamage(h.enemyId, h.player, 20.0))
+        assertEquals(20.0, h.combat.applyDamageAmount(h.enemyId, h.player, 20.0))
         assertEquals(37.0, h.info().health)
         h.player.teleport(Pos(8.5, 40.0, 14.5)).join()
         h.combat.tick(0)
         assertTrue(h.combat.groundDisplayCount > 0)
         assertTrue(h.combat.applyDamage(h.enemyId, h.player, 20.0))
         assertEquals(17.0, h.info().health)
+    }
+
+    @Test
+    fun `damage feedback reports actual removed health and rejects invalid or repeated hits`() = arena(QuestMobArchetype.SOLDIER) { h ->
+        assertNull(h.combat.applyDamageAmount(h.enemyId, h.player, Double.NaN))
+        assertNull(h.combat.applyDamageAmount(h.enemyId, h.player, -1.0))
+        val initial = h.info().health
+        assertEquals(initial, h.combat.applyDamageAmount(h.enemyId, h.player, 9999.0))
+        assertNull(h.combat.applyDamageAmount(h.enemyId, h.player, 9999.0))
+        assertEquals(1, h.defeats.size)
     }
 
     @Test

@@ -149,7 +149,9 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
             if (event.isFirstSpawn) {
                 actors[player.uuid] = CorePlayerCombat(player, { accounts[player.uuid]?.weaponTier ?: 1 },
                     { accounts[player.uuid]?.armorTier ?: 1 }, { sessions[player.uuid]?.takeUnless { it.returning }?.combat },
-                    statSource = { accounts[player.uuid]?.let(CoreAffixCatalog::stats) ?: CoreAffixStats() }) {
+                    statSource = { accounts[player.uuid]?.let(CoreAffixCatalog::stats) ?: CoreAffixStats() },
+                    weaponEnhancement = { accounts[player.uuid]?.weaponEnhancement?.level ?: 0 },
+                    armorEnhancement = { accounts[player.uuid]?.armorEnhancement?.level ?: 0 }) {
                     player.showTitle(Title.title(CoreLoopItems.text("力尽きた…", NamedTextColor.RED), CoreLoopItems.text("獲得素材を持って港へ戻ります")))
                     returnToHarbor(player)
                 }
@@ -314,6 +316,9 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
 
     fun mutate(player: Player, action: CoreAction, revision: Long, after: () -> Unit = {}) {
         if (!busy.add(player.uuid)) return
+        val beforeEnhancement = (action as? CoreAction.EnhanceEquipment)?.let { operation ->
+            account(player)?.let { CoreEnhancementCatalog.state(it, operation.gear).level }
+        }
         transact(player.uuid, action, revision).whenComplete { result, error ->
             player.scheduler().scheduleNextTick {
                 if (connections[player.uuid] !== player) return@scheduleNextTick
@@ -324,7 +329,17 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
                     System.err.println("CORE_TRANSACTION_FAILURE player=${player.uuid}: $error")
                 } else {
                     player.sendMessage(CoreLoopItems.text(result.message, if (result.successful) NamedTextColor.GREEN else NamedTextColor.RED))
-                    if (result.successful) player.playSound(Sound.sound(SoundEvent.BLOCK_NOTE_BLOCK_CHIME, Sound.Source.MASTER, 0.45f, 1.2f))
+                    if (result.successful) {
+                        val enhanced = (action as? CoreAction.EnhanceEquipment)?.let { operation ->
+                            result.account?.let { CoreEnhancementCatalog.state(it, operation.gear).level > (beforeEnhancement ?: 0) }
+                        }
+                        val sound = when (enhanced) {
+                            true -> SoundEvent.BLOCK_SMITHING_TABLE_USE
+                            false -> SoundEvent.BLOCK_ANVIL_LAND
+                            null -> SoundEvent.BLOCK_NOTE_BLOCK_CHIME
+                        }
+                        player.playSound(Sound.sound(sound, Sound.Source.MASTER, 0.45f, if (enhanced == false) 0.75f else 1.2f))
+                    }
                     refresh(player)
                     if (result.successful) after() else menus.journal(player)
                 }

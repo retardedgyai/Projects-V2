@@ -62,27 +62,28 @@ internal object CoreLoopItems {
     fun gear(account: CoreAccount, slot: CoreGearSlot, packed: Boolean, material: Material? = null): ItemStack {
         val tier = CoreAffixCatalog.gearTier(account, slot)
         val stats = CoreAffixCatalog.stats(account)
-        val base = if (slot == CoreGearSlot.WEAPON) weapon(tier) else icon(material ?: Material.IRON_CHESTPLATE, "開拓者の防具")
+        val enhancement = CoreEnhancementCatalog.state(account, slot)
+        val base = if (slot == CoreGearSlot.WEAPON) CoreWeaponPresentation.skin(weapon(tier), tier, packed) else icon(material ?: Material.IRON_CHESTPLATE, "開拓者の防具")
             .withTag(actionTag, "armor").withTag(gearTag, CoreGearSlot.ARMOR.name)
         val rows = if (slot == CoreGearSlot.WEAPON) buildList {
-            add(CoreTooltipStat("攻撃力", "${(12 * CoreLoopCatalog.weaponDamage(tier) * (1 + stats.damagePercent / 100)).roundToInt()}", CoreUiIcon.ATTACK))
-            add(CoreTooltipStat("攻撃速度", "+${stats.attackSpeedPercent.toInt()}%", CoreUiIcon.SPEED))
+            add(CoreTooltipStat("攻撃力", "${CoreWeaponPresentation.damage(account)}", CoreUiIcon.ATTACK))
+            add(CoreTooltipStat("攻撃速度", CoreWeaponPresentation.attackSpeedLabel(account), CoreUiIcon.SPEED))
             add(CoreTooltipStat("会心率 / 倍率", "${(stats.criticalChance * 1000).roundToInt() / 10.0}% / ${(stats.criticalMultiplier * 100).toInt()}%", CoreUiIcon.CRITICAL))
             if (stats.fireFlat + stats.iceFlat + stats.lightningFlat > 0) add(CoreTooltipStat("炎 / 氷 / 雷", "${stats.fireFlat.toInt()} / ${stats.iceFlat.toInt()} / ${stats.lightningFlat.toInt()}", CoreUiIcon.MAGIC))
-        } else listOf(CoreTooltipStat("最大HP", "${CoreLoopCatalog.armorHealth(tier).toInt() + stats.healthFlat.toInt()}", CoreUiIcon.HEALTH),
+        } else listOf(CoreTooltipStat("最大HP", "${CoreWeaponPresentation.health(account)}", CoreUiIcon.HEALTH),
             CoreTooltipStat("基礎軽減 / MOD軽減", "${(tier - 1) * 10}% / ${stats.mitigationPercent.toInt()}%", CoreUiIcon.DEFENSE),
             CoreTooltipStat("最大マナ", "${100 + stats.maxManaFlat.toInt()}", CoreUiIcon.MANA))
-        return CoreUiTooltip.apply(base, CoreTooltipModel("T$tier 開拓者の${if (slot == CoreGearSlot.WEAPON) "大剣" else "防具"}",
+        return CoreUiTooltip.apply(base, CoreTooltipModel("T$tier 開拓者の${if (slot == CoreGearSlot.WEAPON) "大剣" else "防具"}${if (enhancement.level > 0) " +${enhancement.level}" else ""}",
             rarity = when (CoreAffixCatalog.rarity(account, slot)) {
                 CoreGearRarity.NORMAL -> CoreUiRarity.COMMON
                 CoreGearRarity.MAGIC -> CoreUiRarity.UNCOMMON
                 CoreGearRarity.RARE -> CoreUiRarity.RARE
             }, tier = tier, itemLevel = 1 + (tier - 1) * 15,
             rarityLabel = CoreAffixCatalog.rarity(account, slot).displayName,
-            typeLabel = if (slot == CoreGearSlot.WEAPON) "両手剣" else "防具セット",
+            typeLabel = (if (slot == CoreGearSlot.WEAPON) "両手剣" else "防具セット") + " · 強化 +${enhancement.level}/30",
             stats = rows, affixes = account.equippedAffixes.filter { it.gear == slot }.sortedBy { it.index }.map { affixModel(it.stone) },
             modCapacity = CoreAffixCatalog.capacity(account, slot),
-            footer = listOf("能力欄は装備全体のMODを反映", "マジック：接頭1＋接尾1 / レア：接頭3＋接尾3", if (slot == CoreGearSlot.WEAPON) "左：斬撃 / 右：踏み込み / F：回避" else "防具MODはセット全体に1回適用", "港でオーブを重ねるか、刻印工房へ")), packed)
+            footer = listOf("能力欄は強化と装備全体のMODを反映", "マジック：接頭1＋接尾1 / レア：接頭3＋接尾3", if (slot == CoreGearSlot.WEAPON) "左：3段斬撃 / 右：踏み込み / F：回避" else "防具MODはセット全体に1回適用", "強化・Tier更新でもMODと強化値を保持")), packed)
     }
 
     fun affixModel(stone: CoreAffixStone): CoreTooltipAffix {

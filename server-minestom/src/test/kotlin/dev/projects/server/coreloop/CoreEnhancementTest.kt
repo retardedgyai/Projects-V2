@@ -43,9 +43,10 @@ class CoreEnhancementTest {
         assertFailsWith<IllegalArgumentException> { CoreEnhancementState(5, 5) }
     }
 
-    @Test fun `quotes charge exact current tier materials and optional catalyst adds to armor cloth correctly`() {
-        for (tier in 1..4) for (target in 1..30) for (gear in CoreGearSlot.entries) {
-            val account = rich(tier, target - 1, target - 1)
+    @Test fun `quotes charge stage materials regardless of starting equipment tier and catalyst combines correctly`() {
+        for (equipmentTier in 1..4) for (target in 1..30) for (gear in CoreGearSlot.entries) {
+            val account = rich(equipmentTier, target - 1, target - 1)
+            val tier = (target + 7) / 8
             val normal = CoreEnhancementCatalog.quote(account, gear)
             val focused = CoreEnhancementCatalog.quote(account, gear, CoreEnhancementMode.FOCUSED)
             val unit = (target + 4L) / 5
@@ -198,7 +199,7 @@ class CoreEnhancementTest {
     }
 
     @Test fun `missing tier resources expedition max and stale view reject without costs or xp`() {
-        val f = Fixture(rich(4).copy(balances = rich(1).balances.filterKeys { it.tier == 1 }))
+        val f = Fixture(rich(1, weaponLevel = 24).copy(balances = rich(1).balances.filterKeys { it.tier == 1 }))
         assertNotNull(CoreEnhancementCatalog.quote(f.account, weapon).blockedReason)
         val before = CoreAccountCodec.encode(f.account)
         assertEquals(CoreTransactionStatus.REJECTED, f.perform(CoreAction.EnhanceEquipment(weapon)).status)
