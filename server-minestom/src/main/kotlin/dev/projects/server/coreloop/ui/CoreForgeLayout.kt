@@ -5,7 +5,7 @@ import dev.projects.server.coreloop.*
 /** Fixed Vanilla six-row hitboxes and presentation-only forge selection. No mutation authority. */
 internal object CoreForgeLayout {
     enum class Tab(val label: String, val slot: Int) {
-        ENHANCE("強化", 0), REFINE("精製", 9), CRAFT("制作", 18), MODS("MOD加工", 27)
+        ENHANCE("強化", 0), REFINE("精製", 2), CRAFT("制作", 4), MODS("MOD加工", 6)
     }
     enum class Purpose(val label: String) {
         ALL("すべて"), PROMOTE("レアリティ昇格"), ADD("MODを追加"), REROLL("MODを引き直す"), TUNE("数値・初期化");
@@ -27,14 +27,29 @@ internal object CoreForgeLayout {
         val currency: CoreCraftingCurrency? = null,
         val focused: Boolean = false,
     )
-    val RECIPES = listOf(10, 11, 19, 20, 28, 29, 37, 38)
+    // Each visual button owns every slot under its painted label, not just the icon.
+    const val TAB_SPAN = 2
+    const val GEAR_SPAN = 3
+    const val RECIPE_SPAN = 3
+    const val HELP = 8
+    val RECIPES = listOf(18, 21, 24, 27, 30, 33, 36, 39)
+    const val WEAPON = 9
+    const val ARMOR = 12
+    const val TIER_PREVIOUS = 15
+    const val TIER = 16
+    const val TIER_NEXT = 17
+    const val MATERIALS = 42
+    const val BACK = 45
+    const val EXECUTE = 51
+    // Retained only while old screen builders are migrated to the persistent side panels.
+    @Deprecated("Material costs are displayed together in the right side panel")
     val COSTS = listOf(16, 17, 25, 26, 34, 35, 43, 44)
-    const val WEAPON = 3
-    const val ARMOR = 5
+    @Deprecated("Target preview is displayed in the left side panel")
     const val TARGET = 22
+    @Deprecated("Result preview is displayed in the left side panel")
     const val RESULT = 31
+    @Deprecated("Details are displayed in the left side panel")
     const val DETAIL = 40
-    const val EXECUTE = 52
     val QUANTITIES = mapOf(47 to Quantity.ONE, 48 to Quantity.FIVE, 49 to Quantity.MAX)
 
     fun maxBatches(account: CoreAccount, unit: CoreRecipe): Int {
