@@ -73,6 +73,7 @@ class QuestEncounterCombat(
         !it.isDead && it.gameMode != GameMode.SPECTATOR && it.gameMode != GameMode.CREATIVE
     },
     contentSeed: Long = 0L,
+    explicitBossArchetype: QuestMobArchetype? = null,
 ) {
     private class Mob(
         val entity: EntityCreature,
@@ -91,6 +92,8 @@ class QuestEncounterCombat(
         var returningSince = 0L
         var slowPercent = 0.0
         var slowedUntil = 0L
+        var challengeStage = 0
+        var guardianIds = emptySet<UUID>()
         @Volatile var spawnFailure: Throwable? = null
     }
 
@@ -111,14 +114,31 @@ class QuestEncounterCombat(
 
     init {
         require(tier in 1..4)
+        require(explicitBossArchetype == null || explicitBossArchetype.rarity == QuestMobRarity.BOSS)
         encounters.forEachIndexed { index, encounter ->
             val archetypes = encounter.archetypes.ifEmpty { QuestMobContent.composition(contentSeed, index, encounter.spawnPositions.size) }
             encounter.spawnPositions.zip(archetypes).forEach { (position, archetype) -> spawn(position, index, archetype) }
         }
-        spawn(bossPosition, -1, QuestMobContent.boss(contentSeed))
+        spawn(bossPosition, -1, explicitBossArchetype ?: QuestMobContent.boss(contentSeed))
     }
 
     fun entities(): List<EntityCreature> = mobs.values.filter { it.life.isAlive }.map { it.entity }
+    fun isAlive(targetId: UUID): Boolean = mobs[targetId]?.life?.isAlive == true
+    fun spawnEncounter(encounter: QuestCombatEncounter): Set<UUID> {
+        check(!disposed)
+        val types = encounter.archetypes.ifEmpty { QuestMobContent.composition(0, mobs.size, encounter.spawnPositions.size) }
+        return encounter.spawnPositions.zip(types).map { (position, type) -> spawn(position, -2, type) }.toSet()
+    }
+    /** Event cancellation never calls death/reward callbacks, including partially cleared waves. */
+    fun removeEncounter(ids: Set<UUID>) {
+        ids.mapNotNull(mobs::get).filter { !it.boss }.forEach { mob ->
+            mob.abilities.cancel()
+            telegraphs.clear(mob.entity.uuid)
+            stopNavigation(mob)
+            if (mob.life.isAlive) mob.life.phase = QuestMobPhase.DISPOSED
+            mob.entity.remove()
+        }
+    }
     fun positionOf(targetId: UUID): Pos? = mobs[targetId]?.entity?.position
     fun isBoss(targetId: UUID): Boolean = mobs[targetId]?.boss == true
     fun bossHealth(): Double = mobs.values.first { it.boss }.life.health
@@ -134,6 +154,7 @@ class QuestEncounterCombat(
     fun applySlow(targetId: UUID, percent: Double, durationMillis: Long): Boolean {
         if (disposed || !percent.isFinite() || percent <= 0.0 || durationMillis <= 0L) return false
         val mob = mobs[targetId] ?: return false
+        if (mob.guardianIds.any(::isAlive)) return false
         if (!mob.life.isAlive || mob.life.phase == QuestMobPhase.RETURNING) return false
         val now = if (lastTickAt == Long.MIN_VALUE) System.currentTimeMillis() else lastTickAt
         val effective = percent.coerceAtMost(0.65) * if (mob.boss) 0.5 else 1.0
@@ -162,6 +183,7 @@ class QuestEncounterCombat(
     private fun damage(targetId: UUID, attacker: Player, amount: Double, effect: Boolean): Boolean {
         if (disposed || attacker.instance !== instance || !canTarget(attacker)) return false
         val mob = mobs[targetId] ?: return false
+        if (mob.guardianIds.any(::isAlive)) return false
         val range = if (effect) 24.0 else 8.0
         if (!isSpawned(mob) || attacker.position.distanceSquared(mob.entity.position) > range * range) return false
         if (!effect && !mob.entity.hasLineOfSight(attacker)) return false
@@ -196,7 +218,7 @@ class QuestEncounterCombat(
         lastTickAt = nowMillis
         telegraphs.tick(nowMillis)
         val players = instance.players.filter { canTarget(it) }
-        for (mob in mobs.values) {
+        for (mob in mobs.values.toList()) {
             mob.spawnFailure?.let { throw IllegalStateException("Quest mob failed to spawn at ${mob.home}", it) }
             if (!mob.life.isAlive || !isSpawned(mob)) continue
             tickMob(mob, players, nowMillis)
@@ -217,7 +239,7 @@ class QuestEncounterCombat(
         }
     }
 
-    private fun spawn(position: Pos, encounterIndex: Int, archetype: QuestMobArchetype) {
+    private fun spawn(position: Pos, encounterIndex: Int, archetype: QuestMobArchetype): UUID {
         val definition = QuestMobContent.definition(tier, archetype)
         val entity = EntityCreature(definition.entityType)
         entity.isInvulnerable = true
@@ -237,6 +259,7 @@ class QuestEncounterCombat(
             if (error != null) mob.spawnFailure = error
             if (disposed) entity.remove()
         }
+        return entity.uuid
     }
 
     private fun isSpawned(mob: Mob): Boolean = !mob.entity.isRemoved && mob.entity.instance === instance
@@ -280,6 +303,7 @@ class QuestEncounterCombat(
             return
         }
         (mob.entity.entityMeta as MobMeta).isAggressive = true
+        if (tickChallengeBarrier(mob, now)) return
         if (mob.abilities.isActive) {
             for (event in mob.abilities.tick(now, target.position)) {
                 if (!handleAbilityEvent(mob, event, players)) return
@@ -320,6 +344,9 @@ class QuestEncounterCombat(
     }
 
     private fun startReturn(mob: Mob, now: Long) {
+        removeEncounter(mob.guardianIds)
+        mob.guardianIds = emptySet()
+        mob.challengeStage = 0
         mob.abilities.cancel()
         telegraphs.clear(mob.entity.uuid)
         castingPose(mob, false)
@@ -338,6 +365,29 @@ class QuestEncounterCombat(
     private fun stopNavigation(mob: Mob) {
         mob.entity.navigator.reset()
         mob.entity.velocity = Vec(0.0, mob.entity.velocity.y(), 0.0)
+    }
+
+    private fun tickChallengeBarrier(mob: Mob, now: Long): Boolean {
+        if (mob.definition.archetype != QuestMobArchetype.TEMPEST_HIEROPHANT) return false
+        if (mob.guardianIds.any(::isAlive)) {
+            stopNavigation(mob)
+            updateName(mob, "障壁・護衛を倒せ")
+            return true
+        }
+        val threshold = when (mob.challengeStage) { 0 -> 0.66; 1 -> 0.33; else -> return false }
+        if (mob.life.health / mob.life.maximumHealth > threshold) return false
+        mob.challengeStage++
+        mob.abilities.cancel()
+        telegraphs.clear(mob.entity.uuid)
+        castingPose(mob, false)
+        stopNavigation(mob)
+        mob.guardianIds = spawnEncounter(QuestCombatEncounter(
+            listOf(mob.home.add(-5.0, 0.0, 0.0), mob.home.add(5.0, 0.0, 0.0)),
+            listOf(QuestMobArchetype.SHIELD_GUARD, QuestMobArchetype.RIFT_CASTER)))
+        mob.warningRetryAt = now + 800L
+        updateName(mob, "障壁・護衛を倒せ")
+        sound(mob.home, "minecraft:block.beacon.activate", 1f, 0.8f)
+        return true
     }
 
     private fun guarding(mob: Mob): Boolean = mob.definition.frontalDamageMultiplier < 1.0 &&

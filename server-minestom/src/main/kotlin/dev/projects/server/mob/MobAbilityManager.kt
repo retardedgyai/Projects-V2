@@ -92,6 +92,36 @@ sealed interface MobAttackShape {
             }
     }
 
+    /** Two perpendicular strips. The same union supplies the furnace floor warning and damage. */
+    data class Cross(val armLength: Double, val halfWidth: Double) : MobAttackShape {
+        init { require(armLength > halfWidth && halfWidth > 0.0) }
+        override fun contains(origin: Point, facing: Vec, target: Point): Boolean {
+            if (abs(target.y() - origin.y()) > verticalReach) return false
+            val forward = normalizeHorizontal(facing)
+            val delta = horizontal(target.sub(origin))
+            val along = abs(delta.dot(forward))
+            val across = abs(delta.x() * -forward.z() + delta.z() * forward.x())
+            return (along <= armLength && across <= halfWidth) || (across <= armLength && along <= halfWidth)
+        }
+        override fun outline(origin: Point, facing: Vec): List<Pos> {
+            val forward = normalizeHorizontal(facing)
+            val side = Vec(-forward.z(), 0.0, forward.x())
+            val corners = listOf(-halfWidth to -armLength, halfWidth to -armLength, halfWidth to -halfWidth,
+                armLength to -halfWidth, armLength to halfWidth, halfWidth to halfWidth, halfWidth to armLength,
+                -halfWidth to armLength, -halfWidth to halfWidth, -armLength to halfWidth, -armLength to -halfWidth,
+                -halfWidth to -halfWidth)
+            return corners.indices.flatMap { index ->
+                val a = corners[index]
+                val b = corners[(index + 1) % corners.size]
+                (0..8).map { sample ->
+                    val t = sample / 8.0
+                    val offset = forward.mul(a.first + (b.first - a.first) * t).add(side.mul(a.second + (b.second - a.second) * t))
+                    Pos(origin.x() + offset.x(), origin.y() + 0.12, origin.z() + offset.z())
+                }
+            }
+        }
+    }
+
     companion object {
         private const val EPSILON = 1.0e-8
         private fun groundPoint(origin: Point, x: Double, z: Double) =

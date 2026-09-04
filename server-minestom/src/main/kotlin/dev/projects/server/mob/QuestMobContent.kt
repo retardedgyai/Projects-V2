@@ -17,6 +17,9 @@ enum class QuestMobArchetype(val displayName: String, val rarity: QuestMobRarity
     EXECUTIONER("裂け目の執行官", QuestMobRarity.BOSS, "ice"),
     IRON_WARDEN("鉄壁の守護者", QuestMobRarity.BOSS, "lightning"),
     RIFT_ORACLE("裂け目の預言者", QuestMobRarity.BOSS, "fire"),
+    CINDER_REGENT("灰燼の王", QuestMobRarity.BOSS, "ice"),
+    GLACIAL_COLOSSUS("氷獄の巨兵", QuestMobRarity.BOSS, "fire"),
+    TEMPEST_HIEROPHANT("嵐の司祭", QuestMobRarity.BOSS, "lightning"),
 }
 
 data class QuestMobInfo(
@@ -60,9 +63,9 @@ internal data class QuestMobDefinition(
     val name: String get() = archetype.displayName
     val boss: Boolean get() = archetype.rarity == QuestMobRarity.BOSS
     val soundFamily: String get() = when (archetype) {
-        QuestMobArchetype.SHIELD_GUARD, QuestMobArchetype.IRON_WARDEN -> "husk"
-        QuestMobArchetype.RIFT_CASTER, QuestMobArchetype.RIFT_ORACLE -> "evoker"
-        QuestMobArchetype.ELITE_BRUTE -> "piglin_brute"
+        QuestMobArchetype.SHIELD_GUARD, QuestMobArchetype.IRON_WARDEN, QuestMobArchetype.GLACIAL_COLOSSUS -> "husk"
+        QuestMobArchetype.RIFT_CASTER, QuestMobArchetype.RIFT_ORACLE, QuestMobArchetype.TEMPEST_HIEROPHANT -> "evoker"
+        QuestMobArchetype.ELITE_BRUTE, QuestMobArchetype.CINDER_REGENT -> "piglin_brute"
         else -> "vindicator"
     }
     val dropKind: QuestMobDropKind get() = when (archetype) {
@@ -153,6 +156,30 @@ internal object QuestMobContent {
                         1400, 450, 1200, 3500, minimumRange = 3.0),
                     attack("oracle-pulse", "拒絶の波", MobAttackShape.Ring(3.2), 3.5, 14.0,
                         1100, 0, 1500, 3000),
+                ))
+            QuestMobArchetype.CINDER_REGENT -> definition(EntityType.PIGLIN_BRUTE, 460.0, 0.12, 3.0, 1.4,
+                Material.NETHERITE_AXE, chest = Material.NETHERITE_CHESTPLATE, attacks = listOf(
+                    attack("cinder-mark", "焼印・赤い床から離れろ", MobAttackShape.Ring(3.3), 18.0, 24.0,
+                        1700, 450, 1000, 2700, target = true),
+                    sweep(5.0, 22.0),
+                    attack("furnace-cross", "熔炉十字・斜めへ回避", MobAttackShape.Cross(13.0, 1.6), 18.0, 32.0,
+                        2100, 300, 1500, 3200, health = 0.5, weight = 4),
+                ))
+            QuestMobArchetype.GLACIAL_COLOSSUS -> definition(EntityType.HUSK, 510.0, 0.105, 4.0, 1.4,
+                Material.DIAMOND_AXE, helmet = Material.DIAMOND_HELMET, chest = Material.DIAMOND_CHESTPLATE, attacks = listOf(
+                    attack("frost-outside", "外周凍結・巨兵の近くへ", MobAttackShape.Ring(16.0, 5.0), 18.0, 26.0,
+                        2200, 0, 1200, 1800),
+                    attack("frost-inside", "中心砕氷・巨兵から離れろ", MobAttackShape.Ring(5.0), 18.0, 24.0,
+                        1800, 0, 1200, 1800),
+                ))
+            QuestMobArchetype.TEMPEST_HIEROPHANT -> definition(EntityType.EVOKER, 420.0, 0.12, 7.0, 1.3,
+                Material.LIGHTNING_ROD, Material.ENCHANTED_BOOK, attacks = listOf(
+                    attack("tempest-ray", "天雷の道", MobAttackShape.Slam(20.0, 1.2), 18.0, 23.0,
+                        1600, 400, 1200, 2600),
+                    attack("tempest-mark", "落雷の刻印", MobAttackShape.Ring(3.0), 18.0, 23.0,
+                        1500, 300, 1000, 2300, target = true),
+                    attack("tempest-cross", "嵐の十字", MobAttackShape.Cross(11.0, 1.25), 18.0, 29.0,
+                        2000, 200, 1600, 3600, health = 0.33, weight = 3),
                 ))
         }
     }
