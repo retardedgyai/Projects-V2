@@ -4,7 +4,9 @@
 
 This optional server-distributed resource pack restores the earlier ProjectS tooltip artwork,
 adds three authored ability icons, and gives the solo core loop a charcoal / warm-gold presentation.
-It contains no client mod, protocol extension or `assets/minecraft/` override. Japanese and Latin
+It contains no client mod or protocol extension. The only `assets/minecraft/` overrides are 50 explicitly
+requested transparent player-heart/food HUD sprites; armour, experience, air and vehicle hearts remain.
+Japanese and Latin
 text explicitly retain `minecraft:default`; private-use characters alone use `projects:core_*` fonts.
 
 `CoreUiPackServer.start()` starts a small loopback HTTP server, or returns `null` while keeping plain UI
@@ -32,9 +34,10 @@ failure supersedes an already queued success. Closing also unregisters the exact
 
 Presentation APIs are independent of account/loot rules:
 
-- `CoreUiComponents.hud(CoreHudState, packed)` returns an action-bar component containing HP/mana gauges
-  and up to three skill icons, key numbers, cooldown seconds and recharge meters. Plain fallback retains
-  Japanese HP/mana/cooldown text and the optional hint. The packed compact bar focuses on combat data.
+- `CoreUiComponents.hud(CoreHudState, packed)` returns positioned HP/mana bars at the original heart/food
+  locations, with three 32-pixel skill cards above them. Cards use clockwise cooldown masks and centred
+  remaining seconds; insufficient mana has its own blue state. Plain fallback retains Japanese
+  HP/mana/cooldown text and the optional hint. See [HUD layout](core-hud-layout.md) for exact coordinates.
 - `CoreUiComponents.inventoryTitle(title, packed)` adds a frame for a six-row inventory only.
   The installed Vanilla 26.2 `AbstractContainerScreen.extractContents` bytecode calls `extractLabels`
   before `extractSlots`, so the title bitmap is a backdrop and item icons render above it. Socket recesses
@@ -89,8 +92,10 @@ attribution preserves the source's attribution rather than guessing individual a
 | 地砕き | `warrior/meteor_slam.png` | `gui/skills/slam.png` |
 | 旋風斬り | `windwalker/whirlwind.png` | `gui/skills/whirl.png` |
 
-These are unchanged 32×32 PNG copies, rendered at different sizes by Minecraft. This pack does not copy
-the client mod or its code. Preserve the CC BY-SA notice and source link when distributing these textures.
+The original 32×32 PNG copies remain unchanged. The positioned HUD has derivative sheets that trim
+transparent margins, enlarge the art and add frames/dark cooldown masks. Those derivative sheets retain
+CC BY-SA 3.0 and the same attribution. This pack does not copy the client mod or its code.
+Preserve the CC BY-SA notice and source link when distributing these textures.
 An attribution copy is included inside the downloadable pack, not only in development documentation.
 
 ### Code-native geometry
@@ -108,13 +113,18 @@ python scripts/verify_core_ui_assets.py
 gradlew.bat :server-minestom:test --tests dev.projects.server.coreloop.ui.* --no-daemon --offline -Pkotlin.compiler.execution.strategy=in-process
 ```
 
-The build script requires Python 3 standard library only. It never edits the recovered or imported PNGs.
+The build script requires Python 3 and Pillow (verified with 12.3.0). It preserves imported masters;
+`build_core_hud_assets.py` creates derivative HUD sheets. Optional authored master replacements under
+`assets/core-ui/skills/` are copied into both font/item-icon paths and composed into new HUD states.
+Update the provenance when adopting replacement masters; the current fallback is the existing artwork,
+not a claim of new PixelLab generation.
 The index excludes itself; ZIP generation uses stable ordering/timestamps, and the exact bytes determine
 the SHA-1 URL/hash. The per-offer UUID is separate from the asset identity. The resource version 88.0 was read from the installed Minecraft 26.2
 `version.json`, not inferred from an older release.
 
 Structural checks cover all asset paths, unique private-use glyphs, pack version, no global fonts,
 model texture targets, socket alignment, reproducible ZIP bytes, local HTTP delivery, Japanese title
-width and the offer-state late-failure/invalidation transitions.
+width, HUD glyph advances/anchors, the exact transparent override allowlist and the offer-state
+late-failure/invalidation transitions.
 They are not a substitute for Creator manual visual testing: accept and decline the pack, open a six-row
 menu, compare COMMON/EPIC tooltips, verify Japanese text, and inspect all three skill cooldown states.

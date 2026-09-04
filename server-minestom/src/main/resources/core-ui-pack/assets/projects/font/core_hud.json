@@ -3,8 +3,8 @@
     {
       "type": "bitmap",
       "file": "projects:gui/core/health_bar.png",
-      "height": 7,
-      "ascent": 7,
+      "height": 9,
+      "ascent": -26,
       "chars": [
         "\ue300",
         "\ue301",
@@ -32,8 +32,8 @@
     {
       "type": "bitmap",
       "file": "projects:gui/core/mana_bar.png",
-      "height": 7,
-      "ascent": 7,
+      "height": 9,
+      "ascent": -26,
       "chars": [
         "\ue320",
         "\ue321",
@@ -60,21 +60,71 @@
     },
     {
       "type": "bitmap",
-      "file": "projects:gui/core/skill_charge.png",
-      "height": 7,
-      "ascent": 7,
+      "file": "projects:gui/core/skill_dash_states.png",
+      "height": 32,
+      "ascent": 29,
       "chars": [
-        "\ue340",
-        "\ue341",
-        "\ue342",
-        "\ue343",
-        "\ue344",
-        "\ue345",
-        "\ue346",
-        "\ue347",
-        "\ue348",
-        "\ue349",
-        "\ue34a"
+        "\ue400\ue401\ue402\ue403",
+        "\ue404\ue405\ue406\ue407",
+        "\ue408\ue409\ue40a\ue40b",
+        "\ue40c\ue40d\ue40e\ue40f",
+        "\ue410\ue411\ue412\ue413",
+        "\ue414\ue415\ue416\ue417"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/core/skill_slam_states.png",
+      "height": 32,
+      "ascent": 29,
+      "chars": [
+        "\ue420\ue421\ue422\ue423",
+        "\ue424\ue425\ue426\ue427",
+        "\ue428\ue429\ue42a\ue42b",
+        "\ue42c\ue42d\ue42e\ue42f",
+        "\ue430\ue431\ue432\ue433",
+        "\ue434\ue435\ue436\ue437"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/core/skill_whirl_states.png",
+      "height": 32,
+      "ascent": 29,
+      "chars": [
+        "\ue440\ue441\ue442\ue443",
+        "\ue444\ue445\ue446\ue447",
+        "\ue448\ue449\ue44a\ue44b",
+        "\ue44c\ue44d\ue44e\ue44f",
+        "\ue450\ue451\ue452\ue453",
+        "\ue454\ue455\ue456\ue457"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/core/counter_digits.png",
+      "height": 32,
+      "ascent": 29,
+      "chars": [
+        "\ue500\ue501\ue502\ue503\ue504\ue505\ue506\ue507\ue508\ue509\ue50a\ue50b\ue50c\ue50d"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/core/key_digits.png",
+      "height": 5,
+      "ascent": 3,
+      "chars": [
+        "\ue520\ue521\ue522\ue523\ue524\ue525\ue526\ue527\ue528\ue529\ue52a\ue52b\ue52c\ue52d"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/core/bar_digits.png",
+      "height": 5,
+      "ascent": -28,
+      "chars": [
+        "\ue540\ue541\ue542\ue543\ue544\ue545\ue546\ue547\ue548\ue549\ue54a\ue54b\ue54c\ue54d"
       ]
     }
   ]
