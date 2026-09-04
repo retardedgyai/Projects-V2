@@ -2,7 +2,7 @@
 
 Only rectangles/lines are generated here (gauges and a slot-safe window wireframe).
 The generated SVG files are editable native geometry; PNG is the Minecraft font transport.
-No Japanese/Latin glyph atlas is generated or replaced.
+The readable menu has its own PUA-encoded Japanese atlas. No global font is replaced.
 """
 from pathlib import Path
 import json
@@ -10,6 +10,7 @@ import shutil
 import struct
 import zlib
 from build_core_hud_assets import build_hud
+from build_core_menu_assets import build_menu
 from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -140,6 +141,7 @@ def build():
     image("blank", 1, 1, [])
     item_model("blank", "core/blank")
     build_hud(ASSETS, SOURCE, write_json)
+    build_menu()
     paths = sorted(str(path.relative_to(PACK)).replace("\\", "/") for path in PACK.rglob("*") if path.is_file() and path.name != "index.txt")
     (PACK / "index.txt").write_text("\n".join(paths) + "\n", encoding="utf-8")
     print(f"Built {len(paths)} indexed assets under {PACK}")
