@@ -28,7 +28,8 @@ class QuestEncounterCombatTest {
         try {
             assertEquals(4, combat.entities().size)
             assertEquals(4, combat.combatTargets().size)
-            assertTrue(combat.entities().all { it.entityType == EntityType.VINDICATOR && it.aiGroups.isEmpty() })
+            assertTrue(combat.entities().all { it.aiGroups.isEmpty() })
+            assertEquals(setOf(EntityType.VINDICATOR, EntityType.HUSK, EntityType.EVOKER), combat.entities().map { it.entityType }.toSet())
             assertEquals(1, combat.entities().count { combat.isBoss(it.uuid) })
             assertEquals(300.0, combat.bossHealth())
             assertEquals(0, combat.clearedEncounterCount)

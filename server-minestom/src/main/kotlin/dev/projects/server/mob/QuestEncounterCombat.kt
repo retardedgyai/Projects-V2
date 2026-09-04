@@ -7,15 +7,14 @@ import net.kyori.adventure.text.format.NamedTextColor
 import net.minestom.server.coordinate.Pos
 import net.minestom.server.coordinate.Vec
 import net.minestom.server.entity.EntityCreature
-import net.minestom.server.entity.EntityType
 import net.minestom.server.entity.EquipmentSlot
 import net.minestom.server.entity.GameMode
 import net.minestom.server.entity.Player
 import net.minestom.server.entity.attribute.Attribute
 import net.minestom.server.entity.metadata.MobMeta
+import net.minestom.server.entity.metadata.monster.raider.SpellcasterIllagerMeta
 import net.minestom.server.instance.InstanceContainer
 import net.minestom.server.item.ItemStack
-import net.minestom.server.item.Material
 import net.minestom.server.network.packet.server.play.ParticlePacket
 import net.minestom.server.particle.Particle
 import java.util.UUID
@@ -24,8 +23,15 @@ import kotlin.math.floor
 import kotlin.math.pow
 import kotlin.random.Random
 
-data class QuestCombatEncounter(val spawnPositions: List<Pos>) {
-    init { require(spawnPositions.size in 1..4) }
+data class QuestCombatEncounter(
+    val spawnPositions: List<Pos>,
+    val archetypes: List<QuestMobArchetype> = emptyList(),
+) {
+    init {
+        require(spawnPositions.size in 1..4)
+        require(archetypes.isEmpty() || archetypes.size == spawnPositions.size)
+        require(archetypes.none { it.rarity == QuestMobRarity.BOSS })
+    }
 }
 
 internal enum class QuestMobPhase { IDLE, CHASING, ATTACKING, RETURNING, DEAD, DISPOSED }
@@ -52,44 +58,6 @@ internal class QuestMobLife(val maximumHealth: Double) {
     }
 }
 
-private data class QuestMobDefinition(
-    val name: String,
-    val maximumHealth: Double,
-    val movementSpeed: Double,
-    val activationRange: Double,
-    val leashRange: Double,
-    val abilities: List<MobAbility>,
-) {
-    companion object {
-        fun forTier(tier: Int, boss: Boolean): QuestMobDefinition {
-            val multiplier = 1.65.pow(tier - 1)
-            return QuestMobDefinition(
-                name = if (boss) "裂け目の執行官" else "追放兵",
-                maximumHealth = (if (boss) 300.0 else 44.0) * multiplier,
-                movementSpeed = if (boss) 0.12 else 0.14,
-                activationRange = if (boss) 28.0 else 20.0,
-                leashRange = if (boss) 38.0 else 28.0,
-                abilities = listOf(
-                    MobAbility(
-                        "sweep", "横薙ぎ", MobAttackShape.Sweep(if (boss) 4.2 else 3.4),
-                        maximumStartRange = if (boss) 3.8 else 3.0,
-                        damage = (if (boss) 16.0 else 10.0) * multiplier,
-                        telegraphMillis = 1000L, trackingMillis = 400L,
-                        recoveryMillis = 850L, cooldownMillis = 1900L, weight = 3,
-                    ),
-                    MobAbility(
-                        "slam", "前方叩きつけ", MobAttackShape.Slam(if (boss) 7.0 else 5.8, if (boss) 1.6 else 1.25),
-                        maximumStartRange = if (boss) 6.6 else 5.4,
-                        damage = (if (boss) 24.0 else 14.0) * multiplier,
-                        telegraphMillis = 1450L, trackingMillis = 550L,
-                        recoveryMillis = 1400L, cooldownMillis = 3000L, weight = 2,
-                    ),
-                ),
-            )
-        }
-    }
-}
-
 /**
  * One map owns one instance of this runtime. Invoke tick on the map's server tick, and dispose before unloading it.
  * Player attack packets never enter this class: applyDamage accepts targets already resolved by server hit shapes.
@@ -104,6 +72,7 @@ class QuestEncounterCombat(
     private val canTarget: (Player) -> Boolean = {
         !it.isDead && it.gameMode != GameMode.SPECTATOR && it.gameMode != GameMode.CREATIVE
     },
+    contentSeed: Long = 0L,
 ) {
     private class Mob(
         val entity: EntityCreature,
@@ -118,11 +87,15 @@ class QuestEncounterCombat(
         var lastAttacker: Player? = null
         var nextPathAt = 0L
         var nextWarningAt = 0L
+        var warningRetryAt = 0L
         var returningSince = 0L
+        var slowPercent = 0.0
+        var slowedUntil = 0L
         @Volatile var spawnFailure: Throwable? = null
     }
 
     private val mobs = linkedMapOf<UUID, Mob>()
+    private val telegraphs = MobGroundTelegraph(instance)
     @Volatile private var disposed = false
     private var lastTickAt = Long.MIN_VALUE
     val totalEncounterCount: Int = encounters.size
@@ -132,13 +105,17 @@ class QuestEncounterCombat(
             mobs.values.filter { it.encounterIndex == index }.all { it.life.phase == QuestMobPhase.DEAD }
         }
     val bossDefeated: Boolean get() = mobs.values.any { it.boss && it.life.phase == QuestMobPhase.DEAD }
+    var latestDefeat: QuestMobDefeat? = null
+        private set
+    internal val groundDisplayCount: Int get() = telegraphs.displayCount
 
     init {
         require(tier in 1..4)
         encounters.forEachIndexed { index, encounter ->
-            encounter.spawnPositions.forEach { spawn(it, index, false) }
+            val archetypes = encounter.archetypes.ifEmpty { QuestMobContent.composition(contentSeed, index, encounter.spawnPositions.size) }
+            encounter.spawnPositions.zip(archetypes).forEach { (position, archetype) -> spawn(position, index, archetype) }
         }
-        spawn(bossPosition, -1, true)
+        spawn(bossPosition, -1, QuestMobContent.boss(contentSeed))
     }
 
     fun entities(): List<EntityCreature> = mobs.values.filter { it.life.isAlive }.map { it.entity }
@@ -146,25 +123,61 @@ class QuestEncounterCombat(
     fun isBoss(targetId: UUID): Boolean = mobs[targetId]?.boss == true
     fun bossHealth(): Double = mobs.values.first { it.boss }.life.health
     fun bossMaxHealth(): Double = mobs.values.first { it.boss }.life.maximumHealth
+    fun bossName(): String = mobs.values.first { it.boss }.definition.name
+    fun weaknessOf(targetId: UUID): String? = mobs[targetId]?.definition?.archetype?.weakness
+    fun mobInfo(targetId: UUID): QuestMobInfo? = mobs[targetId]?.let {
+        QuestMobInfo(targetId, it.definition.archetype, it.definition.archetype.rarity, tier,
+            it.entity.position, it.life.health, it.life.maximumHealth)
+    }
+
+    /** Percent is a fraction: .25 means 25%. Bosses resist half the reduction; strongest duration wins. */
+    fun applySlow(targetId: UUID, percent: Double, durationMillis: Long): Boolean {
+        if (disposed || !percent.isFinite() || percent <= 0.0 || durationMillis <= 0L) return false
+        val mob = mobs[targetId] ?: return false
+        if (!mob.life.isAlive || mob.life.phase == QuestMobPhase.RETURNING) return false
+        val now = if (lastTickAt == Long.MIN_VALUE) System.currentTimeMillis() else lastTickAt
+        val effective = percent.coerceAtMost(0.65) * if (mob.boss) 0.5 else 1.0
+        mob.slowPercent = maxOf(if (now < mob.slowedUntil) mob.slowPercent else 0.0, effective)
+        mob.slowedUntil = maxOf(mob.slowedUntil, now + durationMillis.coerceAtMost(30_000L))
+        updateMovementSpeed(mob, now)
+        return true
+    }
 
     fun combatTargets(): List<CombatTarget> = if (disposed) emptyList() else mobs.values
         .filter { it.life.isAlive && it.life.phase != QuestMobPhase.RETURNING && isSpawned(it) }
         .map { mob ->
-            CombatTarget(mob.entity.uuid, mob.entity.position.add(0.0, 0.9, 0.0), Vec(0.35, 0.9, 0.35))
+            val scale = mob.definition.scale
+            CombatTarget(mob.entity.uuid, mob.entity.position.add(0.0, 0.9 * scale, 0.0), Vec(0.35 * scale, 0.9 * scale, 0.35 * scale))
         }
 
     fun applyDamage(targetId: UUID, attacker: Player, amount: Double): Boolean {
+        return damage(targetId, attacker, amount, effect = false)
+    }
+
+    /** Only for an effect whose initial server hit was already validated (burn/chain), never packet input. */
+    fun applyEffectDamage(targetId: UUID, attacker: Player, amount: Double): Boolean {
+        return damage(targetId, attacker, amount, effect = true)
+    }
+
+    private fun damage(targetId: UUID, attacker: Player, amount: Double, effect: Boolean): Boolean {
         if (disposed || attacker.instance !== instance || !canTarget(attacker)) return false
         val mob = mobs[targetId] ?: return false
-        if (!isSpawned(mob) || attacker.position.distanceSquared(mob.entity.position) > 8.0 * 8.0) return false
-        if (!mob.entity.hasLineOfSight(attacker)) return false
-        if (!mob.life.damage(amount)) return false
+        val range = if (effect) 24.0 else 8.0
+        if (!isSpawned(mob) || attacker.position.distanceSquared(mob.entity.position) > range * range) return false
+        if (!effect && !mob.entity.hasLineOfSight(attacker)) return false
+        val guarded = !effect && guarding(mob) &&
+            normalizeHorizontal(attacker.position.sub(mob.entity.position)).dot(normalizeHorizontal(mob.entity.position.direction())) >= 0.5
+        if (!mob.life.damage(amount * if (guarded) mob.definition.frontalDamageMultiplier else 1.0)) return false
         mob.lastAttacker = attacker
         if (!mob.life.isAlive) {
             mob.abilities.cancel()
+            telegraphs.clear(mob.entity.uuid)
+            castingPose(mob, false)
             stopNavigation(mob)
-            sound(mob.entity.position, "minecraft:entity.vindicator.death", 1.0f, if (mob.boss) 0.65f else 1.0f)
+            sound(mob.entity.position, "minecraft:entity.${mob.definition.soundFamily}.death", 1.0f, if (mob.boss) 0.65f else 1.0f)
             particle(mob.entity.position.add(0.0, 1.0, 0.0), Particle.POOF, 8)
+            latestDefeat = QuestMobDefeat("mob:${mob.entity.uuid}", mob.entity.uuid, mob.definition.archetype,
+                mob.definition.archetype.rarity, mob.definition.dropKind, tier, mob.entity.position, attacker.uuid)
             mob.entity.kill()
             // Health is already terminal before this callback can re-enter the runtime.
             onMobDefeated(attacker, mob.boss)
@@ -172,7 +185,7 @@ class QuestEncounterCombat(
             mob.target = attacker
             if (mob.life.phase == QuestMobPhase.IDLE) mob.life.phase = QuestMobPhase.CHASING
             updateName(mob)
-            sound(mob.entity.position, "minecraft:entity.vindicator.hurt", 0.6f, 1.0f)
+            sound(mob.entity.position, if (guarded) "minecraft:item.shield.block" else "minecraft:entity.${mob.definition.soundFamily}.hurt", 0.6f, 1.0f)
             particle(mob.entity.position.add(0.0, 1.0, 0.0), Particle.DAMAGE_INDICATOR, 4)
         }
         return true
@@ -181,6 +194,7 @@ class QuestEncounterCombat(
     fun tick(nowMillis: Long) {
         if (disposed || nowMillis <= lastTickAt) return
         lastTickAt = nowMillis
+        telegraphs.tick(nowMillis)
         val players = instance.players.filter { canTarget(it) }
         for (mob in mobs.values) {
             mob.spawnFailure?.let { throw IllegalStateException("Quest mob failed to spawn at ${mob.home}", it) }
@@ -192,6 +206,7 @@ class QuestEncounterCombat(
     fun dispose() {
         if (disposed) return
         disposed = true
+        telegraphs.dispose()
         mobs.values.forEach { mob ->
             mob.abilities.cancel()
             stopNavigation(mob)
@@ -202,17 +217,20 @@ class QuestEncounterCombat(
         }
     }
 
-    private fun spawn(position: Pos, encounterIndex: Int, boss: Boolean) {
-        val definition = QuestMobDefinition.forTier(tier, boss)
-        val entity = EntityCreature(EntityType.VINDICATOR)
+    private fun spawn(position: Pos, encounterIndex: Int, archetype: QuestMobArchetype) {
+        val definition = QuestMobContent.definition(tier, archetype)
+        val entity = EntityCreature(definition.entityType)
         entity.isInvulnerable = true
         entity.isCustomNameVisible = true
         entity.setCanPickupItem(false)
         (entity.entityMeta as MobMeta).isAggressive = false
         entity.getAttribute(Attribute.MOVEMENT_SPEED).baseValue = definition.movementSpeed
-        if (boss) entity.getAttribute(Attribute.SCALE).baseValue = 1.35
-        entity.setEquipment(EquipmentSlot.MAIN_HAND, ItemStack.of(if (boss) Material.NETHERITE_AXE else Material.IRON_AXE))
-        val mob = Mob(entity, position, encounterIndex, boss, definition)
+        entity.getAttribute(Attribute.SCALE).baseValue = definition.scale
+        entity.setEquipment(EquipmentSlot.MAIN_HAND, ItemStack.of(definition.weapon))
+        entity.setEquipment(EquipmentSlot.OFF_HAND, ItemStack.of(definition.offhand))
+        entity.setEquipment(EquipmentSlot.HELMET, ItemStack.of(definition.helmet))
+        entity.setEquipment(EquipmentSlot.CHESTPLATE, ItemStack.of(definition.chestplate))
+        val mob = Mob(entity, position, encounterIndex, definition.boss, definition)
         mobs[entity.uuid] = mob
         updateName(mob)
         entity.setInstance(instance, position).whenComplete { _, error ->
@@ -224,6 +242,8 @@ class QuestEncounterCombat(
     private fun isSpawned(mob: Mob): Boolean = !mob.entity.isRemoved && mob.entity.instance === instance
 
     private fun tickMob(mob: Mob, players: List<Player>, now: Long) {
+        updateMovementSpeed(mob, now)
+        mob.entity.refreshActiveHand(guarding(mob), true, false)
         if (mob.life.phase == QuestMobPhase.RETURNING) {
             if (mob.entity.position.distanceSquared(mob.home) < 1.5 * 1.5 || now - mob.returningSince > 6000L) {
                 // Failed paths cannot leave a damaged, invulnerable encounter stranded forever.
@@ -262,22 +282,24 @@ class QuestEncounterCombat(
         (mob.entity.entityMeta as MobMeta).isAggressive = true
         if (mob.abilities.isActive) {
             for (event in mob.abilities.tick(now, target.position)) {
-                handleAbilityEvent(mob, event, players)
+                if (!handleAbilityEvent(mob, event, players)) return
                 if (disposed || !mob.life.isAlive) return
             }
             val frame = mob.abilities.current
             if (frame != null) {
                 mob.entity.setView(Pos.ZERO.withDirection(frame.facing).yaw(), 0.0f)
                 if (frame.phase != MobAbilityPhase.RECOVERY && now >= mob.nextWarningAt) {
-                    drawWarning(frame, false)
+                    if (!drawWarning(mob, frame, false)) {
+                        cancelWarning(mob)
+                    }
                     mob.nextWarningAt = now + 180L
                 }
                 return
             }
             mob.life.phase = QuestMobPhase.CHASING
         }
-        if (mob.entity.hasLineOfSight(target)) {
-            val start = mob.abilities.tryStart(now, mob.entity.position, target.position)
+        if (now >= mob.warningRetryAt && mob.entity.hasLineOfSight(target) && telegraphs.canStart(mob.entity.uuid)) {
+            val start = mob.abilities.tryStart(now, mob.entity.position, target.position, mob.life.health / mob.life.maximumHealth)
             if (start != null) {
                 mob.life.phase = QuestMobPhase.ATTACKING
                 stopNavigation(mob)
@@ -287,13 +309,23 @@ class QuestEncounterCombat(
         }
         mob.life.phase = QuestMobPhase.CHASING
         if (now >= mob.nextPathAt) {
-            mob.entity.navigator.setPathTo(target.position, 2.0, null)
+            val distance = mob.definition.preferredDistance
+            val retreat = if (distance >= 6.0 && mob.entity.position.distanceSquared(target.position) < 4.5 * 4.5) {
+                val away = normalizeHorizontal(mob.entity.position.sub(target.position))
+                safeRetreat(mob.entity.position.add(away.mul(3.0)), mob.home, mob.definition.leashRange)
+            } else null
+            mob.entity.navigator.setPathTo(retreat ?: target.position, if (retreat == null) distance else 0.6, null)
             mob.nextPathAt = now + 550L
         }
     }
 
     private fun startReturn(mob: Mob, now: Long) {
         mob.abilities.cancel()
+        telegraphs.clear(mob.entity.uuid)
+        castingPose(mob, false)
+        mob.slowedUntil = 0L
+        mob.slowPercent = 0.0
+        updateMovementSpeed(mob, now)
         stopNavigation(mob)
         mob.target = null
         (mob.entity.entityMeta as MobMeta).isAggressive = false
@@ -308,67 +340,106 @@ class QuestEncounterCombat(
         mob.entity.velocity = Vec(0.0, mob.entity.velocity.y(), 0.0)
     }
 
-    private fun handleAbilityEvent(mob: Mob, event: MobAbilityEvent, players: List<Player>) {
+    private fun guarding(mob: Mob): Boolean = mob.definition.frontalDamageMultiplier < 1.0 &&
+        mob.life.phase in listOf(QuestMobPhase.IDLE, QuestMobPhase.CHASING)
+
+    private fun castingPose(mob: Mob, active: Boolean) {
+        (mob.entity.entityMeta as? SpellcasterIllagerMeta)?.spell =
+            if (active) SpellcasterIllagerMeta.Spell.ATTACK else SpellcasterIllagerMeta.Spell.NONE
+    }
+
+    private fun cancelWarning(mob: Mob) {
+        mob.abilities.cancel()
+        telegraphs.clear(mob.entity.uuid)
+        mob.life.phase = QuestMobPhase.CHASING
+        mob.warningRetryAt = lastTickAt + 600L
+        castingPose(mob, false)
+        updateName(mob)
+    }
+
+    private fun updateMovementSpeed(mob: Mob, now: Long) {
+        if (now >= mob.slowedUntil) mob.slowPercent = 0.0
+        val speed = mob.definition.movementSpeed * (1.0 - mob.slowPercent)
+        if (mob.entity.getAttribute(Attribute.MOVEMENT_SPEED).baseValue != speed) {
+            mob.entity.getAttribute(Attribute.MOVEMENT_SPEED).baseValue = speed
+        }
+    }
+
+    private fun safeRetreat(position: Pos, home: Pos, leash: Double): Pos? {
+        val ground = telegraphs.groundHeight(position) ?: return null
+        val candidate = position.withY(ground)
+        if (candidate.distanceSquared(home) > leash * leash) return null
+        val x = floor(candidate.x()).toInt()
+        val z = floor(candidate.z()).toInt()
+        val y = floor(candidate.y()).toInt()
+        return candidate.takeUnless { (y..y + 2).any { instance.getBlock(x, it, z).isSolid } }
+    }
+
+    private fun handleAbilityEvent(mob: Mob, event: MobAbilityEvent, players: List<Player>): Boolean {
         when (event) {
             is MobAbilityEvent.Started -> {
                 updateName(mob, event.frame.ability.displayName)
-                drawWarning(event.frame, false)
+                if (!drawWarning(mob, event.frame, false)) {
+                    cancelWarning(mob)
+                    return false
+                }
+                mob.entity.refreshActiveHand(false, true, false)
+                castingPose(mob, true)
                 sound(event.frame.origin, "minecraft:block.note_block.hat", 0.7f, 0.8f)
             }
             is MobAbilityEvent.Locked -> {
-                drawWarning(event.frame, false)
+                if (!drawWarning(mob, event.frame, false)) { cancelWarning(mob); return false }
                 sound(event.frame.origin, "minecraft:block.note_block.pling", 0.8f, 0.7f)
             }
             is MobAbilityEvent.Hit -> {
                 mob.entity.swingMainHand()
-                drawWarning(event.frame, true)
+                castingPose(mob, false)
+                if (!drawWarning(mob, event.frame, true)) { cancelWarning(mob); return false }
                 sound(event.frame.origin,
-                    if (event.frame.ability.shape is MobAttackShape.Sweep) "minecraft:entity.player.attack.sweep"
+                    if (mob.entity.entityMeta is SpellcasterIllagerMeta) "minecraft:entity.evoker.cast_spell"
+                    else if (event.frame.ability.shape is MobAttackShape.Sweep) "minecraft:entity.player.attack.sweep"
                     else "minecraft:block.anvil.land", 0.8f, if (mob.boss) 0.7f else 1.0f)
                 for (player in players) {
                     if (player.instance !== instance || !canTarget(player)) continue
                     if (event.frame.ability.shape.contains(event.frame.origin, event.frame.facing, player.position) &&
                         mob.entity.hasLineOfSight(player)
                     ) damagePlayer(player, event.frame.ability.damage)
-                    if (disposed) return
+                    if (disposed) return false
                 }
             }
-            is MobAbilityEvent.Finished -> updateName(mob)
+            is MobAbilityEvent.Finished -> { telegraphs.clear(mob.entity.uuid); updateName(mob) }
         }
+        return true
     }
 
     private fun updateName(mob: Mob, attackName: String? = null) {
-        val base = "T$tier ${mob.definition.name}  ${ceil(mob.life.health).toInt()}/${ceil(mob.life.maximumHealth).toInt()}"
+        val weakness = when (mob.definition.archetype.weakness) { "fire" -> "炎"; "ice" -> "氷"; else -> "雷" }
+        val base = "T$tier ${mob.definition.name}  ${ceil(mob.life.health).toInt()}/${ceil(mob.life.maximumHealth).toInt()}  弱点:$weakness"
         val suffix = when {
             mob.life.phase == QuestMobPhase.RETURNING -> "  帰還中"
             attackName != null -> "  $attackName"
             else -> ""
         }
-        mob.entity.customName = Component.text(base + suffix, if (mob.boss) NamedTextColor.RED else NamedTextColor.GOLD)
+        val color = when (mob.definition.archetype.rarity) {
+            QuestMobRarity.BOSS -> NamedTextColor.RED
+            QuestMobRarity.ELITE -> NamedTextColor.LIGHT_PURPLE
+            QuestMobRarity.NORMAL -> NamedTextColor.GOLD
+        }
+        mob.entity.customName = Component.text(base + suffix, color)
     }
 
-    private fun drawWarning(frame: MobAbilityFrame, impact: Boolean) {
+    private fun drawWarning(mob: Mob, frame: MobAbilityFrame, impact: Boolean): Boolean {
+        if (!telegraphs.show(mob.entity.uuid, frame, impact, lastTickAt)) return false
         val color = when {
-            impact -> NamedTextColor.WHITE
-            frame.phase == MobAbilityPhase.LOCKED -> NamedTextColor.RED
-            else -> NamedTextColor.GOLD
+            impact -> NamedTextColor.RED
+            frame.phase == MobAbilityPhase.LOCKED -> NamedTextColor.DARK_RED
+            else -> NamedTextColor.RED
         }
         val dust = Particle.DUST.withColor(color).withScale(if (impact) 1.5f else 1.0f)
         for (point in frame.ability.shape.outline(frame.origin, frame.facing)) {
-            particle(projectGround(point), dust)
+            telegraphs.groundHeight(point)?.let { particle(point.withY(it + 0.075), dust) }
         }
-    }
-
-    private fun projectGround(point: Pos): Pos {
-        val x = floor(point.x()).toInt()
-        val z = floor(point.z()).toInt()
-        val baseY = floor(point.y()).toInt()
-        for (y in baseY + 1 downTo baseY - 3) {
-            if (instance.getBlock(x, y, z).isSolid && !instance.getBlock(x, y + 1, z).isSolid) {
-                return point.withY(y + 1.1)
-            }
-        }
-        return point
+        return true
     }
 
     private fun particle(position: Pos, type: Particle, count: Int = 1) {
