@@ -38,6 +38,7 @@ data class CoreTooltipModel(
     val affixes: List<CoreTooltipAffix> = emptyList(),
     val modCapacity: Int = 0,
     val footer: List<String> = emptyList(),
+    val rarityLabel: String = rarity.name,
 )
 
 data class CoreHudSkill(

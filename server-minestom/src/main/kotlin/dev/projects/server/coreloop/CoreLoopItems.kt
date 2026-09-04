@@ -19,6 +19,7 @@ internal object CoreLoopItems {
     val ownedMapTag: Tag<String> = Tag.String("projects_core_owned_map")
     val gearTag: Tag<String> = Tag.String("projects_core_gear")
     val stoneTag: Tag<String> = Tag.String("projects_core_stone")
+    val currencyTag: Tag<String> = Tag.String("projects_core_currency")
     val colors = listOf(NamedTextColor.WHITE, NamedTextColor.GREEN, NamedTextColor.AQUA, NamedTextColor.LIGHT_PURPLE)
 
     fun text(value: String, color: NamedTextColor = NamedTextColor.GRAY): Component =
@@ -72,18 +73,23 @@ internal object CoreLoopItems {
             CoreTooltipStat("基礎軽減 / MOD軽減", "${(tier - 1) * 10}% / ${stats.mitigationPercent.toInt()}%", CoreUiIcon.DEFENSE),
             CoreTooltipStat("最大マナ", "${100 + stats.maxManaFlat.toInt()}", CoreUiIcon.MANA))
         return CoreUiTooltip.apply(base, CoreTooltipModel("T$tier 開拓者の${if (slot == CoreGearSlot.WEAPON) "大剣" else "防具"}",
-            rarity = CoreUiRarity.entries[tier - 1], tier = tier, itemLevel = 1 + (tier - 1) * 15,
+            rarity = when (CoreAffixCatalog.rarity(account, slot)) {
+                CoreGearRarity.NORMAL -> CoreUiRarity.COMMON
+                CoreGearRarity.MAGIC -> CoreUiRarity.UNCOMMON
+                CoreGearRarity.RARE -> CoreUiRarity.RARE
+            }, tier = tier, itemLevel = 1 + (tier - 1) * 15,
+            rarityLabel = CoreAffixCatalog.rarity(account, slot).displayName,
             typeLabel = if (slot == CoreGearSlot.WEAPON) "両手剣" else "防具セット",
             stats = rows, affixes = account.equippedAffixes.filter { it.gear == slot }.sortedBy { it.index }.map { affixModel(it.stone) },
             modCapacity = CoreAffixCatalog.capacity(account, slot),
-            footer = listOf("能力欄は装備全体のMODを反映", if (slot == CoreGearSlot.WEAPON) "左：斬撃 / 右：踏み込み / F：回避" else "防具MODはセット全体に1回適用", "港で刻印石を重ねるか、刻印工房へ")), packed)
+            footer = listOf("能力欄は装備全体のMODを反映", "マジック：接頭1＋接尾1 / レア：接頭3＋接尾3", if (slot == CoreGearSlot.WEAPON) "左：斬撃 / 右：踏み込み / F：回避" else "防具MODはセット全体に1回適用", "港でオーブを重ねるか、刻印工房へ")), packed)
     }
 
     fun affixModel(stone: CoreAffixStone): CoreTooltipAffix {
         val definition = CoreAffixCatalog.definition(stone)
         val range = definition?.range(stone.tier)
         val suffix = if (definition?.stat?.percent == true) "%" else ""
-        return CoreTooltipAffix(definition?.displayName?.removeSuffix("の刻印石") ?: "未対応MOD", CoreAffixCatalog.describe(stone),
+        return CoreTooltipAffix((definition?.group?.displayName?.let { "$it · " } ?: "") + (definition?.displayName?.removeSuffix("の刻印石") ?: "未対応MOD"), CoreAffixCatalog.describe(stone),
             if (range == null) "不明" else "${range.first}〜${range.last}$suffix", CoreAffixCatalog.qualityPercent(stone), "R${stone.tier}")
     }
 
@@ -94,14 +100,47 @@ internal object CoreLoopItems {
             CoreAffixStat.LIGHTNING -> Material.ECHO_SHARD; else -> Material.AMETHYST_SHARD
         }
         return CoreUiTooltip.apply(ItemStack.of(material).withTag(stoneTag, stone.id.toString()).withTag(actionTag, "affix"),
-            CoreTooltipModel(definition?.displayName ?: "未対応の刻印石", CoreUiRarity.entries[stone.tier - 1], stone.tier, 1 + (stone.tier - 1) * 15,
-                "装備に刻むMOD素材", affixes = listOf(affixModel(stone)), footer = listOf("対象：${definition?.allowedGear?.joinToString("・") { it.displayName } ?: "不明"}",
-                    "港で武器・防具へ重ねて刻印", "刻印工房で付け替え・抽出・再抽選")), packed)
+            CoreTooltipModel("旧・${definition?.displayName ?: "刻印石"}", CoreUiRarity.entries[stone.tier - 1], stone.tier, 1 + (stone.tier - 1) * 15,
+                "旧仕様の保管品・交換専用", affixes = listOf(affixModel(stone)), footer = listOf("所持品は消さずに保持しています",
+                    "改変のオーブ ×${stone.tier} ＋ 錬金のオーブ ×1 と交換", "直接装着は終了 / 港の刻印工房から交換")), packed)
             .withGlowing(CoreAffixCatalog.qualityPercent(stone) >= 80)
     }
 
     fun stoneId(item: ItemStack): UUID? = item.getTag(stoneTag)?.let { runCatching { UUID.fromString(it) }.getOrNull() }
     fun gearSlot(item: ItemStack): CoreGearSlot? = item.getTag(gearTag)?.let { runCatching { CoreGearSlot.valueOf(it) }.getOrNull() }
+    fun currencyId(item: ItemStack): CoreCraftingCurrency? = item.getTag(currencyTag)?.let { runCatching { CoreCraftingCurrency.valueOf(it) }.getOrNull() }
+
+    fun currencyMaterial(currency: CoreCraftingCurrency): Material = when (currency) {
+        CoreCraftingCurrency.TRANSMUTATION -> Material.PRISMARINE_CRYSTALS
+        CoreCraftingCurrency.AUGMENTATION -> Material.GLOWSTONE_DUST
+        CoreCraftingCurrency.ALTERATION -> Material.ENDER_PEARL
+        CoreCraftingCurrency.ALCHEMY -> Material.GOLD_INGOT
+        CoreCraftingCurrency.CHAOS -> Material.FIRE_CHARGE
+        CoreCraftingCurrency.REGAL -> Material.DIAMOND
+        CoreCraftingCurrency.EXALTED -> Material.NETHER_STAR
+        CoreCraftingCurrency.SCOURING -> Material.QUARTZ
+        CoreCraftingCurrency.DIVINE -> Material.HEART_OF_THE_SEA
+        CoreCraftingCurrency.RIFT -> Material.ECHO_SHARD
+        CoreCraftingCurrency.RITUAL -> Material.ENDER_EYE
+        CoreCraftingCurrency.TRIAL -> Material.NETHERITE_SCRAP
+    }
+
+    fun currency(currency: CoreCraftingCurrency, count: Long, packed: Boolean, quantityLabel: String = "所持"): ItemStack {
+        val exclusive = CoreActivityKind.entries.firstOrNull { it.currency == currency }
+        return CoreUiTooltip.apply(ItemStack.of(currencyMaterial(currency)).withTag(actionTag, "currency")
+            .withTag(currencyTag, currency.name).withAmount(count.coerceIn(1, 64).toInt()),
+            CoreTooltipModel(currency.displayName, if (exclusive == null) CoreUiRarity.RARE else CoreUiRarity.EPIC,
+                tier = 1, itemLevel = 1, typeLabel = if (exclusive == null) "装備加工用の通貨" else "${exclusive.displayName}の専用報酬",
+                stats = listOf(CoreTooltipStat(quantityLabel, "$count 個", CoreUiIcon.MOD)),
+                footer = listOf(CoreCraftingCatalog.description(currency), "消費と加工は確認画面で確定", "港で装備に重ねる / 右クリックで刻印工房")), packed)
+    }
+
+    fun fragment(kind: CoreActivityKind, count: Long): ItemStack = icon(Material.ECHO_SHARD, "${kind.displayName}の欠片",
+        "所持 $count 個 / 3個で専用ボスへ挑戦", when (kind) {
+            CoreActivityKind.RIFT -> "入手：マップ内の裂け目を最後まで追う"
+            CoreActivityKind.RITUAL -> "入手：儀式の波を倒し、報酬を確定する"
+            CoreActivityKind.TRIAL -> "入手：通常マップのボスを討伐する"
+        }, "手帳 → 境界の試練から出発", color = NamedTextColor.LIGHT_PURPLE).withAmount(count.coerceIn(1, 64).toInt())
 
     fun map(data: CoreOwnedMap): ItemStack = icon(Material.FILLED_MAP, "T${data.tier} 未踏の地図",
         *listOf("右クリック：この地図で出発", "石板をつかんで重ねるとMODを付与", "付与MOD ${data.modifiers.size}/3")
@@ -127,6 +166,12 @@ internal object CoreLoopItems {
 
     fun refresh(player: Player, account: CoreAccount, initial: Boolean = false, packed: Boolean = false) {
         if (initial) player.inventory.clear()
+        // These are account projections, not transferable stacks. Remove moved/cursor copies before
+        // rebuilding so spending the last orb cannot leave a stale apparent balance elsewhere.
+        fun projection(item: ItemStack) = currencyId(item) != null || stoneId(item) != null
+        for (slot in 0 until 36) if (projection(player.inventory.getItemStack(slot))) player.inventory.setItemStack(slot, ItemStack.AIR)
+        if (projection(player.itemInOffHand)) player.setItemInOffHand(ItemStack.AIR)
+        if (projection(player.inventory.cursorItem)) player.inventory.cursorItem = ItemStack.AIR
         player.inventory.setItemStack(0, gear(account, CoreGearSlot.WEAPON, packed))
         val skillIcons = listOf(Material.FEATHER, Material.IRON_SWORD, Material.BLAZE_POWDER)
         val descriptions = listOf("前方へ踏み込み斬る / マナ15 / 4秒", "前方の広範囲を叩く / マナ25 / 7秒", "周囲へ3連撃 / マナ35 / 11秒")
@@ -145,8 +190,9 @@ internal object CoreLoopItems {
             .withTag(actionTag, "tablet"))
         player.inventory.setItemStack(15, icon(Material.FLINT, "砥石（${account.amount(CoreResource.WHETSTONE)}）",
             "右クリック：攻撃力+20% / 3分", "加工石材とインゴットから作れます").withTag(actionTag, "whetstone"))
-        // An inventory projection of the first page; the full 256-stone bag stays in the forge UI.
-        for (slot in 16..35) player.inventory.setItemStack(slot, account.affixStones.getOrNull(slot - 16)?.let { stone(it, packed) } ?: ItemStack.AIR)
+        // Only owned currencies are projected. Their exact quantity is always ledger-authoritative.
+        val owned = CoreCraftingCurrency.entries.filter { account.amount(it) > 0 }
+        for (slot in 16..35) player.inventory.setItemStack(slot, owned.getOrNull(slot - 16)?.let { currency(it, account.amount(it), packed) } ?: ItemStack.AIR)
         val existingMapId = mapId(player.inventory.getItemStack(7))
         player.inventory.setItemStack(7, account.maps.firstOrNull { it.id == existingMapId }?.let(::map) ?: ItemStack.AIR)
         val tier = account.armorTier

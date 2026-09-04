@@ -22,7 +22,7 @@ object CoreUiTooltip {
         // remain in the forge's detail view; every effect, roll range, quality and rank stays here.
         val compactAffixes = model.affixes.size >= 3
         val allLines = buildList {
-            add("${model.rarity.name}  ・  ${model.typeLabel}")
+            add("${model.rarityLabel}  ・  ${model.typeLabel}")
             model.stats.forEach { add("${it.label}   ${it.value}") }
             model.affixes.forEach {
                 if (compactAffixes) add("${it.effect}  ${compactDetails(it)}")
@@ -38,7 +38,7 @@ object CoreUiTooltip {
             .append(CoreUiComponents.text(model.name, model.rarity.color, true))
         else CoreUiComponents.text(" ".repeat(pad / 4) + model.name, model.rarity.color, true)
         val lore = buildList {
-            val rarity = "${model.rarity.name}  ・  ${model.typeLabel}"
+            val rarity = "${model.rarityLabel}  ・  ${model.typeLabel}"
             add(CoreUiComponents.text(rarity, model.rarity.color, true))
             add(divider(width, packed))
             if (model.stats.isNotEmpty()) {

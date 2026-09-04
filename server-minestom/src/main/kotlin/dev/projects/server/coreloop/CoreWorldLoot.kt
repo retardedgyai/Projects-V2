@@ -31,7 +31,7 @@ internal class CoreWorldLoot(
     private val inventoryChanged: () -> Unit,
 ) {
     private class Drop(val source: String, val kind: CoreLootKind, val position: Pos,
-        val stones: List<CoreAffixStone>, val entities: List<Entity>) {
+        val currencies: Map<CoreCraftingCurrency, Long>, val entities: List<Entity>) {
         val collecting = AtomicBoolean()
         @Volatile var future: CompletableFuture<CoreTransactionResult>? = null
     }
@@ -42,26 +42,26 @@ internal class CoreWorldLoot(
 
     fun spawn(source: String, kind: CoreLootKind, deathPosition: Pos) {
         if (disposed || !seenSources.add(source)) return
-        val stones = CoreAffixCatalog.rollLoot(run, source, kind)
+        val currencies = CoreCraftingCatalog.rollLoot(run, source, kind)
         val surface = (0..7).map { deathPosition.sub(0.0, it.toDouble(), 0.0) }
             .firstOrNull { instance.getBlock(it.sub(0.0, 0.2, 0.0)).isSolid } ?: deathPosition
         val position = Pos(surface.x(), surface.blockY() + 0.35, surface.z())
         val item = Entity(EntityType.ITEM_DISPLAY).apply {
             setNoGravity(true); setHasPhysics(false)
             editEntityMeta(ItemDisplayMeta::class.java) { meta ->
-                meta.setItemStack(ItemStack.of(if (stones.isEmpty()) Material.GLOWSTONE_DUST else Material.AMETHYST_SHARD))
+                meta.setItemStack(ItemStack.of(currencies.keys.firstOrNull()?.let(CoreLoopItems::currencyMaterial) ?: Material.GLOWSTONE_DUST))
                 meta.setDisplayContext(ItemDisplayMeta.DisplayContext.GROUND)
                 meta.setScale(Vec(1.2, 1.2, 1.2)); meta.setBrightness(15, 15)
                 meta.setBillboardRenderConstraints(AbstractDisplayMeta.BillboardConstraints.CENTER)
             }
             setInstance(this@CoreWorldLoot.instance, position)
         }
-        val summary = if (stones.isEmpty()) "刻印粉 +${CoreAffixCatalog.lootDust(kind)}  / 戦利品券 +${CoreAffixCatalog.lootTokens(kind)}"
-            else "${CoreAffixCatalog.definition(stones.first())?.displayName ?: "刻印石"}${if (stones.size > 1) " ほか${stones.size - 1}個" else ""}"
+        val summary = if (currencies.isEmpty()) "刻印粉 +${CoreAffixCatalog.lootDust(kind)}  / 戦利品券 +${CoreAffixCatalog.lootTokens(kind)}"
+            else currencies.entries.joinToString(" / ") { "${it.key.displayName} ×${it.value}" }
         val label = Entity(EntityType.TEXT_DISPLAY).apply {
             setNoGravity(true); setHasPhysics(false)
             editEntityMeta(TextDisplayMeta::class.java) { meta ->
-                meta.setText(CoreLoopItems.text(summary, if (stones.isEmpty()) NamedTextColor.GOLD else NamedTextColor.LIGHT_PURPLE)
+                meta.setText(CoreLoopItems.text(summary, if (currencies.isEmpty()) NamedTextColor.GOLD else NamedTextColor.LIGHT_PURPLE)
                     .append(Component.newline()).append(CoreLoopItems.text("近づいて回収", NamedTextColor.GRAY)))
                 meta.setBillboardRenderConstraints(AbstractDisplayMeta.BillboardConstraints.CENTER)
                 meta.setScale(Vec(0.65, 0.65, 0.65)); meta.setShadow(true); meta.setBackgroundColor(0x880e1020.toInt())
@@ -69,9 +69,9 @@ internal class CoreWorldLoot(
             }
             setInstance(this@CoreWorldLoot.instance, position.add(0.0, 0.75, 0.0))
         }
-        val drop = Drop(source, kind, position, stones, listOf(item, label))
+        val drop = Drop(source, kind, position, currencies, listOf(item, label))
         if (drops.putIfAbsent(source, drop) != null) drop.entities.forEach { it.remove() }
-        else owner.playSound(Sound.sound(if (stones.isEmpty()) SoundEvent.ENTITY_ITEM_PICKUP else SoundEvent.BLOCK_AMETHYST_BLOCK_CHIME,
+        else owner.playSound(Sound.sound(if (currencies.isEmpty()) SoundEvent.ENTITY_ITEM_PICKUP else SoundEvent.BLOCK_AMETHYST_BLOCK_CHIME,
             Sound.Source.PLAYER, 0.65f, if (kind == CoreLootKind.BOSS) 0.8f else 1.2f), position.x(), position.y(), position.z())
     }
 
@@ -80,7 +80,7 @@ internal class CoreWorldLoot(
         ticks++
         drops.values.forEach { drop ->
             if (owner.isOnline && owner.instance === instance && owner.position.distanceSquared(drop.position) < 2.6 * 2.6) collect(drop)
-            if (ticks % 16 == 0L && drop.stones.isNotEmpty() && !drop.collecting.get()) {
+            if (ticks % 16 == 0L && drop.currencies.isNotEmpty() && !drop.collecting.get()) {
                 instance.sendGroupedPacket(ParticlePacket(Particle.END_ROD, drop.position.add(0.0, 0.5, 0.0), Vec(0.05, 0.5, 0.05), 0.001f, 3))
             }
         }
@@ -100,9 +100,9 @@ internal class CoreWorldLoot(
                     drop.entities.forEach { it.remove() }
                     if (!disposed && owner.isOnline && owner.instance === instance) {
                         owner.playSound(Sound.sound(SoundEvent.ENTITY_EXPERIENCE_ORB_PICKUP, Sound.Source.PLAYER, 0.6f, 1.25f))
-                        owner.sendMessage(CoreLoopItems.text(if (drop.stones.isEmpty())
+                        owner.sendMessage(CoreLoopItems.text(if (drop.currencies.isEmpty())
                             "戦利品回収：刻印粉 +${CoreAffixCatalog.lootDust(drop.kind)} / 戦利品券 +${CoreAffixCatalog.lootTokens(drop.kind)}"
-                            else "刻印石を${drop.stones.size}個回収！ 手帳 → 刻印工房で装備に刻めます。", NamedTextColor.GOLD))
+                            else "回収：${drop.currencies.entries.joinToString(" / ") { "${it.key.displayName} ×${it.value}" }}。刻印工房で使用できます。", NamedTextColor.GOLD))
                         inventoryChanged()
                     }
                 } else { drop.collecting.set(false); drop.future = null }
