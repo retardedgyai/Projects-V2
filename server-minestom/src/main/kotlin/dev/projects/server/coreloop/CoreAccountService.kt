@@ -111,6 +111,13 @@ class CoreAccountService(private val repository: CoreAccountRepository) {
             CoreCraftingCatalog.craft(account, action.gear, action.currency, requestId) to
                 "${action.gear.displayName}に${action.currency.displayName}を使用しました。結果を確認してください"
         }
+        is CoreAction.EnhanceEquipment -> {
+            requireHub(account)
+            val quote = CoreEnhancementCatalog.quote(account, action.gear, action.mode)
+            require(quote.blockedReason == null) { quote.blockedReason ?: "強化できません" }
+            val paid = recipe(account, quote.recipe).first
+            CoreEnhancementCatalog.resolve(paid, action.gear, quote, requestId, action.mode)
+        }
         is CoreAction.ConvertLegacyStone -> {
             requireHub(account)
             val stone = account.affixStones.singleOrNull { it.id == action.stoneId } ?: error("刻印石が見つかりません")
@@ -150,21 +157,29 @@ class CoreAccountService(private val repository: CoreAccountRepository) {
                     .copy(activeRun = run.copy(bossDefeated = true)) to message
             }
         }
-        is CoreAction.Refine -> { requireHub(account); recipe(account, CoreLoopCatalog.refine(action.resource, action.tier, action.batches)) }
+        is CoreAction.Refine -> {
+            requireHub(account)
+            val refined = recipe(account, CoreLoopCatalog.refine(action.resource, action.tier, action.batches))
+            CoreEnhancementCatalog.gainMastery(refined.first, action.batches.toLong()) to refined.second
+        }
         CoreAction.UpgradeWeapon -> {
             requireHub(account)
             require(account.weaponTier < 4) { "武器は最高Tierです" }
             val upgraded = recipe(account, CoreLoopCatalog.weaponUpgrade(account.weaponTier))
-            upgraded.first.copy(weaponTier = account.weaponTier + 1) to upgraded.second
+            CoreEnhancementCatalog.gainMastery(upgraded.first.copy(weaponTier = account.weaponTier + 1), 5) to upgraded.second
         }
         CoreAction.UpgradeArmor -> {
             requireHub(account)
             require(account.armorTier < 4) { "防具は最高Tierです" }
             val upgraded = recipe(account, CoreLoopCatalog.armorUpgrade(account.armorTier))
-            upgraded.first.copy(armorTier = account.armorTier + 1) to upgraded.second
+            CoreEnhancementCatalog.gainMastery(upgraded.first.copy(armorTier = account.armorTier + 1), 5) to upgraded.second
         }
         is CoreAction.Exchange -> { requireHub(account); recipe(account, CoreLoopCatalog.exchange(action.resource, action.tier, action.batches)) }
-        is CoreAction.Craft -> { requireHub(account); recipe(account, CoreLoopCatalog.craft(action.resource, action.batches, action.tier)) }
+        is CoreAction.Craft -> {
+            requireHub(account)
+            val crafted = recipe(account, CoreLoopCatalog.craft(action.resource, action.batches, action.tier))
+            CoreEnhancementCatalog.gainMastery(crafted.first, action.batches.toLong()) to crafted.second
+        }
         is CoreAction.ClaimMap -> {
             requireHub(account)
             require(action.tier in 1..account.unlockedMapTier) { "そのTierはまだ解放されていません" }
