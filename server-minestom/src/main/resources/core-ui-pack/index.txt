@@ -61,4 +61,17 @@ assets/projects/textures/gui/stats/level.png
 assets/projects/textures/gui/stats/magic_power.png
 assets/projects/textures/gui/stats/mana.png
 assets/projects/textures/gui/stats/xp.png
+assets/projects/textures/item/core_ui/attack.png
+assets/projects/textures/item/core_ui/blank.png
+assets/projects/textures/item/core_ui/critical.png
+assets/projects/textures/item/core_ui/dash.png
+assets/projects/textures/item/core_ui/defense.png
+assets/projects/textures/item/core_ui/health.png
+assets/projects/textures/item/core_ui/magic.png
+assets/projects/textures/item/core_ui/mana.png
+assets/projects/textures/item/core_ui/mod.png
+assets/projects/textures/item/core_ui/reward.png
+assets/projects/textures/item/core_ui/slam.png
+assets/projects/textures/item/core_ui/speed.png
+assets/projects/textures/item/core_ui/whirl.png
 pack.mcmeta

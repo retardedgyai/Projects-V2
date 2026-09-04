@@ -50,6 +50,14 @@ Presentation APIs are independent of account/loot rules:
 - `CoreUiItemSkin.blank(item, packed)` hides a decorative filler item's model without changing its
   inventory hitbox, allowing the authored panel to show in place of gray glass sprites.
 
+Item models use unchanged PNG copies under `assets/projects/textures/item/core_ui/`, separate from
+the original `textures/gui/` files read directly by bitmap fonts. The installed Vanilla 26.2
+`assets/minecraft/atlases/items.json` collects the `item/` directory; a GUI PNG can render in a font
+but still be a missing pink/black texture in an item model. No global atlas override is necessary.
+The [official item-atlas change notes](https://feedback.minecraft.net/hc/en-us/articles/41809981427213-Minecraft-Java-Edition-1-21-11-Mounts-of-Mayhem)
+also document the separate item atlas requirement. Structural checks now validate atlas coverage and
+byte-identical copies, not merely that a referenced PNG exists.
+
 The prior tooltip title-centering and header-plate code used Fabric mixins. Those mixins are not restored.
 Only the reusable visual hierarchy and image resources from `fe0e2e5`, `a25eb2b`, `905fa72` and `b08931c`
 inform this implementation. Old estimated market values are not invented for the new core economy.

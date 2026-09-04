@@ -90,6 +90,25 @@ class CoreUiTest {
         assertEquals(paths.size, paths.distinct().size)
     }
 
+    @Test fun `generated item models reference sprites covered by the stock item atlas`() {
+        val loader = CoreUiPackServer::class.java.classLoader
+        val paths = assertNotNull(loader.getResourceAsStream("core-ui-pack/index.txt"))
+            .bufferedReader().use { it.readLines() }
+        val models = paths.filter { it.startsWith("assets/projects/models/core_ui/") }
+        assertEquals(CoreUiIcon.entries.size + 1, models.size, "Every icon and the invisible filler must be covered")
+        for (path in models) {
+            val json = assertNotNull(loader.getResourceAsStream("core-ui-pack/$path"))
+                .bufferedReader().use { it.readText() }
+            val texture = assertNotNull(Regex("\"layer0\"\\s*:\\s*\"([^\"]+)\"").find(json)).groupValues[1]
+            assertTrue(texture.startsWith("projects:item/core_ui/"), "GUI PNGs are not in Vanilla's item atlas: $path")
+            val texturePath = "assets/projects/textures/${texture.substringAfter(':')}.png"
+            assertTrue(texturePath in paths)
+            assertNotNull(loader.getResourceAsStream("core-ui-pack/$texturePath")).use { stream ->
+                assertContentEquals(byteArrayOf(-119, 80, 78, 71, 13, 10, 26, 10), stream.readNBytes(8))
+            }
+        }
+    }
+
     @Test fun `local optional pack server serves only the generated bundle`() {
         val oldPort = System.getProperty("projects.ui.port")
         System.setProperty("projects.ui.port", "0")

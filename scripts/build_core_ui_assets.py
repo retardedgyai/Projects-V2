@@ -6,6 +6,7 @@ No Japanese/Latin glyph atlas is generated or replaced.
 """
 from pathlib import Path
 import json
+import shutil
 import struct
 import zlib
 
@@ -47,6 +48,16 @@ def image(name, width, height, rectangles):
 
 def bitmap(file, height, ascent, chars):
     return {"type": "bitmap", "file": f"projects:gui/{file}.png", "height": height, "ascent": ascent, "chars": chars}
+
+
+def item_model(name, source):
+    # Bitmap fonts read arbitrary PNGs directly, but generated item models require the item atlas.
+    # Vanilla 26.2's items.json atlas automatically scans textures/item, not textures/gui.
+    target = ASSETS / f"textures/item/core_ui/{name}.png"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(ASSETS / f"textures/gui/{source}.png", target)
+    write_json(ASSETS / f"items/core_ui/{name}.json", {"model": {"type": "minecraft:model", "model": f"projects:core_ui/{name}"}})
+    write_json(ASSETS / f"models/core_ui/{name}.json", {"parent": "minecraft:item/generated", "textures": {"layer0": f"projects:item/core_ui/{name}"}})
 
 
 def build():
@@ -99,14 +110,11 @@ def build():
     providers.append(bitmap("core/skill_charge", 7, 7, [chr(0xE340 + n) for n in range(11)]))
     write_json(ASSETS / "font/core_hud.json", {"providers": providers})
     for name, asset in stats:
-        write_json(ASSETS / f"items/core_ui/{name}.json", {"model": {"type": "minecraft:model", "model": f"projects:core_ui/{name}"}})
-        write_json(ASSETS / f"models/core_ui/{name}.json", {"parent": "minecraft:item/generated", "textures": {"layer0": f"projects:gui/stats/{asset}"}})
+        item_model(name, f"stats/{asset}")
     for name, _ in skills:
-        write_json(ASSETS / f"items/core_ui/{name}.json", {"model": {"type": "minecraft:model", "model": f"projects:core_ui/{name}"}})
-        write_json(ASSETS / f"models/core_ui/{name}.json", {"parent": "minecraft:item/generated", "textures": {"layer0": f"projects:gui/skills/{name}"}})
+        item_model(name, f"skills/{name}")
     image("blank", 1, 1, [])
-    write_json(ASSETS / "items/core_ui/blank.json", {"model": {"type": "minecraft:model", "model": "projects:core_ui/blank"}})
-    write_json(ASSETS / "models/core_ui/blank.json", {"parent": "minecraft:item/generated", "textures": {"layer0": "projects:gui/core/blank"}})
+    item_model("blank", "core/blank")
     paths = sorted(str(path.relative_to(PACK)).replace("\\", "/") for path in PACK.rglob("*") if path.is_file() and path.name != "index.txt")
     (PACK / "index.txt").write_text("\n".join(paths) + "\n", encoding="utf-8")
     print(f"Built {len(paths)} indexed assets under {PACK}")

@@ -1,6 +1,6 @@
 {
   "parent": "minecraft:item/generated",
   "textures": {
-    "layer0": "projects:gui/stats/magic_power"
+    "layer0": "projects:item/core_ui/critical"
   }
 }
