@@ -35,7 +35,9 @@ class CoreOwnedMap(val id: UUID, val seed: Long, val tier: Int, modifiers: List<
     override fun toString() = "CoreOwnedMap($id,$seed,$tier,$modifiers)"
 }
 
-data class CoreActiveRun(val id: UUID, val map: CoreOwnedMap, val bossDefeated: Boolean = false)
+data class CoreActiveRun(val id: UUID, val map: CoreOwnedMap, val bossDefeated: Boolean = false, val trialId: String? = null) {
+    init { require(trialId == null || CoreActivityKind.entries.any { it.bossId == trialId }) }
+}
 data class CoreReceipt(val fingerprint: String, val revision: Long, val message: String)
 
 /** One immutable, independently persisted aggregate; inventories are projections of this ledger. */
@@ -52,6 +54,12 @@ class CoreAccount(
     claimedSources: Set<String> = emptySet(),
     affixStones: List<CoreAffixStone> = emptyList(),
     equippedAffixes: List<CoreEquippedAffix> = emptyList(),
+    val weaponRarity: CoreGearRarity = CoreCraftingCatalog.inferRarity(equippedAffixes, CoreGearSlot.WEAPON),
+    val armorRarity: CoreGearRarity = CoreCraftingCatalog.inferRarity(equippedAffixes, CoreGearSlot.ARMOR),
+    currencies: Map<CoreCraftingCurrency, Long> = emptyMap(),
+    fragments: Map<CoreActivityKind, Long> = emptyMap(),
+    legacyLayouts: Set<CoreGearSlot> = CoreCraftingCatalog.legacyLayouts(equippedAffixes, weaponRarity, armorRarity),
+    val craftingSeed: Long = UUID.randomUUID().leastSignificantBits,
 ) {
     val balances: Map<CoreMaterial, Long> = Collections.unmodifiableMap(LinkedHashMap(balances))
     val maps: List<CoreOwnedMap> = Collections.unmodifiableList(maps.toList())
@@ -59,6 +67,9 @@ class CoreAccount(
     val claimedSources: Set<String> = Collections.unmodifiableSet(LinkedHashSet(claimedSources))
     val affixStones: List<CoreAffixStone> = Collections.unmodifiableList(affixStones.toList())
     val equippedAffixes: List<CoreEquippedAffix> = Collections.unmodifiableList(equippedAffixes.toList())
+    val currencies: Map<CoreCraftingCurrency, Long> = Collections.unmodifiableMap(LinkedHashMap(currencies))
+    val fragments: Map<CoreActivityKind, Long> = Collections.unmodifiableMap(LinkedHashMap(fragments))
+    val legacyLayouts: Set<CoreGearSlot> = Collections.unmodifiableSet(legacyLayouts.toSet())
     init {
         require(revision >= 0 && weaponTier in 1..4 && armorTier in 1..4 && unlockedMapTier in 1..4)
         require(balances.size <= CoreLoopCatalog.MAX_BALANCES && balances.values.all { it in 0..CoreLoopCatalog.MAX_BALANCE })
@@ -67,7 +78,8 @@ class CoreAccount(
         require(receipts.size <= CoreLoopCatalog.MAX_RECEIPTS && claimedSources.size <= CoreLoopCatalog.MAX_SOURCES)
         require(receipts.values.all { it.revision in 1..revision && it.fingerprint.matches(Regex("[0-9a-f]{64}")) && it.message.length <= 256 })
         require(claimedSources.all { it.length in 1..192 && '\n' !in it && '\t' !in it && '\r' !in it })
-        require(affixStones.size <= CoreAffixCatalog.MAX_STONES && equippedAffixes.size <= 8)
+        require(affixStones.size <= CoreAffixCatalog.MAX_STONES && equippedAffixes.size <= 12)
+        require(currencies.values.all { it in 0..CoreLoopCatalog.MAX_BALANCE } && fragments.values.all { it in 0..CoreLoopCatalog.MAX_BALANCE })
         val allStones = affixStones + equippedAffixes.map { it.stone }
         require(allStones.map { it.id }.distinct().size == allStones.size) { "MODの識別番号が重複しています" }
         require(equippedAffixes.map { it.gear to it.index }.distinct().size == equippedAffixes.size)
@@ -76,9 +88,14 @@ class CoreAccount(
         // Known malformed rolls are corrupt data; unknown definitions are retained with effects disabled.
         require(allStones.all { CoreAffixCatalog.definition(it) == null || CoreAffixCatalog.valid(it) })
         require(equippedAffixes.all { CoreAffixCatalog.definition(it.stone)?.allowedGear?.contains(it.gear) != false })
+        CoreGearSlot.entries.forEach { gear ->
+            require(gear in legacyLayouts || CoreCraftingCatalog.validLayout(equippedAffixes.filter { it.gear == gear }, CoreAffixCatalog.rarity(this, gear)))
+        }
     }
     fun amount(resource: CoreResource, tier: Int = 1): Long = balances[CoreMaterial(resource, tier)] ?: 0
     fun amount(material: CoreMaterial): Long = balances[material] ?: 0
+    fun amount(currency: CoreCraftingCurrency): Long = currencies[currency] ?: 0
+    fun amount(kind: CoreActivityKind): Long = fragments[kind] ?: 0
 
     fun copy(
         revision: Long = this.revision, balances: Map<CoreMaterial, Long> = this.balances,
@@ -88,7 +105,13 @@ class CoreAccount(
         claimedSources: Set<String> = this.claimedSources,
         affixStones: List<CoreAffixStone> = this.affixStones,
         equippedAffixes: List<CoreEquippedAffix> = this.equippedAffixes,
-    ) = CoreAccount(playerId, revision, balances, weaponTier, armorTier, unlockedMapTier, maps, activeRun, receipts, claimedSources, affixStones, equippedAffixes)
+        weaponRarity: CoreGearRarity = this.weaponRarity, armorRarity: CoreGearRarity = this.armorRarity,
+        currencies: Map<CoreCraftingCurrency, Long> = this.currencies,
+        fragments: Map<CoreActivityKind, Long> = this.fragments,
+        legacyLayouts: Set<CoreGearSlot> = this.legacyLayouts,
+        craftingSeed: Long = this.craftingSeed,
+    ) = CoreAccount(playerId, revision, balances, weaponTier, armorTier, unlockedMapTier, maps, activeRun, receipts, claimedSources, affixStones, equippedAffixes,
+        weaponRarity, armorRarity, currencies, fragments, legacyLayouts, craftingSeed)
 }
 
 data class CoreOperation(val requestId: UUID, val expectedRevision: Long, val action: CoreAction)
@@ -98,6 +121,10 @@ sealed interface CoreAction {
     data class CombatReward(val runId: UUID, val encounterId: String, val quantity: Int = 2) : CoreAction
     data class BossReward(val runId: UUID) : CoreAction
     data class AffixLoot(val runId: UUID, val sourceId: String, val kind: CoreLootKind) : CoreAction
+    data class CraftEquipment(val gear: CoreGearSlot, val currency: CoreCraftingCurrency) : CoreAction
+    data class ConvertLegacyStone(val stoneId: UUID) : CoreAction
+    data class ActivityReward(val runId: UUID, val sourceId: String, val kind: CoreActivityKind) : CoreAction
+    data class StartTrial(val bossId: String, val tier: Int, val runId: UUID) : CoreAction
     /** Replacing an occupied slot requires its exact currently displayed identity. */
     data class ApplyAffix(val gear: CoreGearSlot, val index: Int, val stoneId: UUID, val expectedReplacedStoneId: UUID? = null) : CoreAction
     data class ExtractAffix(val gear: CoreGearSlot, val index: Int, val expectedStoneId: UUID) : CoreAction

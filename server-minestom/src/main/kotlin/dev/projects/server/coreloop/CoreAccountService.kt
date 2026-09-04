@@ -95,76 +95,60 @@ class CoreAccountService(private val repository: CoreAccountRepository) {
                 // Old token-only and new visible loot callbacks cannot pay for the same enemy twice.
                 if (!tokensAlreadyPaid) updated = addSource(updated, combatSource)
             }
-            val stones = CoreAffixCatalog.rollLoot(run, action.sourceId, action.kind)
-            val room = CoreAffixCatalog.MAX_STONES - account.affixStones.size
-            val stored = stones.take(room)
-            val converted = stones.drop(room)
-            val dust = CoreAffixCatalog.lootDust(action.kind) + converted.sumOf { CoreAffixCatalog.salvageDust(it) }
+            val currencies = CoreCraftingCatalog.rollLoot(run, action.sourceId, action.kind)
+            val dust = CoreAffixCatalog.lootDust(action.kind)
             val outputs = mutableMapOf(CoreMaterial(CoreResource.AFFIX_DUST) to dust)
             val tokens = if (tokensAlreadyPaid) 0L else CoreAffixCatalog.lootTokens(action.kind)
             if (tokens > 0) outputs[CoreMaterial(CoreResource.COMBAT_TOKEN, run.map.tier)] = tokens
-            val message = "戦利品を回収：刻印石${stored.size}個・刻印粉${dust}個" +
-                if (converted.isNotEmpty()) "（袋の上限分は粉に変換）" else ""
+            val message = "戦利品を回収：オーブ${currencies.values.sum()}個・刻印粉${dust}個"
             val rewarded = recipe(updated, CoreRecipe(message, emptyMap(), outputs))
-            rewarded.first.copy(affixStones = account.affixStones + stored) to rewarded.second
+            grantCurrencies(rewarded.first, currencies) to rewarded.second
         }
-        is CoreAction.ApplyAffix -> {
+        is CoreAction.ApplyAffix, is CoreAction.ExtractAffix, is CoreAction.RerollAffix, is CoreAction.SalvageAffix ->
+            error("旧刻印石の直接付与・抽出・再抽選は終了しました。保管庫でオーブへ交換できます")
+        is CoreAction.CraftEquipment -> {
             requireHub(account)
-            require(action.index in 0 until CoreAffixCatalog.capacity(account, action.gear)) { "このMOD枠は未解放です" }
-            val stone = account.affixStones.singleOrNull { it.id == action.stoneId } ?: error("刻印石が見つかりません")
-            val definition = requireNotNull(CoreAffixCatalog.definition(stone)) { "未対応のMODは付与できません" }
-            require(CoreAffixCatalog.valid(stone) && action.gear in definition.allowedGear) { "この装備には付与できません" }
-            require(stone.tier <= CoreAffixCatalog.gearTier(account, action.gear)) { "刻印石のTierが装備より高すぎます" }
-            val previous = account.equippedAffixes.singleOrNull { it.gear == action.gear && it.index == action.index }
-            require(previous?.stone?.id == action.expectedReplacedStoneId) { "置換するMODを確認し直してください" }
-            require(account.equippedAffixes.none { it.gear == action.gear && it.index != action.index && it.stone.modId == stone.modId }) {
-                "同じ装備に同種のMODは重ねられません"
-            }
-            val outputs = previous?.let { mapOf(CoreMaterial(CoreResource.AFFIX_DUST) to CoreAffixCatalog.salvageDust(it.stone)) } ?: emptyMap()
-            val applied = recipe(account, CoreRecipe("${action.gear.displayName}に${definition.displayName}を付与しました" +
-                if (previous != null) "（前のMODは粉に変換）" else "", emptyMap(), outputs))
-            applied.first.copy(affixStones = account.affixStones.filterNot { it.id == stone.id },
-                equippedAffixes = account.equippedAffixes.filterNot { it.gear == action.gear && it.index == action.index } +
-                    CoreEquippedAffix(action.gear, action.index, stone)) to applied.second
+            CoreCraftingCatalog.craft(account, action.gear, action.currency, requestId) to
+                "${action.gear.displayName}に${action.currency.displayName}を使用しました。結果を確認してください"
         }
-        is CoreAction.ExtractAffix -> {
-            requireHub(account)
-            val installed = account.equippedAffixes.singleOrNull { it.gear == action.gear && it.index == action.index }
-                ?: error("この枠にMODはありません")
-            require(installed.stone.id == action.expectedStoneId) { "抽出するMODを確認し直してください" }
-            require(account.affixStones.size < CoreAffixCatalog.MAX_STONES) { "刻印石の袋が満杯です" }
-            val extracted = recipe(account, CoreAffixCatalog.extractionRecipe(installed.stone))
-            extracted.first.copy(affixStones = account.affixStones + installed.stone,
-                equippedAffixes = account.equippedAffixes - installed) to extracted.second
-        }
-        is CoreAction.RerollAffix -> {
+        is CoreAction.ConvertLegacyStone -> {
             requireHub(account)
             val stone = account.affixStones.singleOrNull { it.id == action.stoneId } ?: error("刻印石が見つかりません")
-            val rerolled = CoreAffixCatalog.reroll(stone, requestId)
-            val paid = recipe(account, CoreAffixCatalog.rerollRecipe(stone))
-            paid.first.copy(affixStones = account.affixStones.map { if (it.id == stone.id) rerolled else it }) to paid.second
+            require(CoreAffixCatalog.definition(stone) != null) { "未対応のMODは交換せず保管してください" }
+            grantCurrencies(account, mapOf(CoreCraftingCurrency.ALTERATION to stone.tier.toLong(), CoreCraftingCurrency.ALCHEMY to 1L))
+                .copy(affixStones = account.affixStones.filterNot { it.id == stone.id }) to "旧石を改変${stone.tier}個・錬金1個へ交換しました"
         }
-        is CoreAction.SalvageAffix -> {
-            requireHub(account)
-            val stone = account.affixStones.singleOrNull { it.id == action.stoneId } ?: error("刻印石が見つかりません")
-            require(CoreAffixCatalog.definition(stone) != null) { "未対応のMODは分解せず保管してください" }
-            val salvaged = recipe(account, CoreRecipe("刻印石を魔導の粉に分解しました", emptyMap(),
-                mapOf(CoreMaterial(CoreResource.AFFIX_DUST) to CoreAffixCatalog.salvageDust(stone))))
-            salvaged.first.copy(affixStones = account.affixStones.filterNot { it.id == stone.id }) to salvaged.second
+        is CoreAction.ActivityReward -> {
+            val run = requireRun(account, action.runId)
+            require(run.trialId == null) { "通常マップの探索イベントのみ報酬を受け取れます" }
+            val rewarded = recipe(addSource(account, source("activity", run.id, action.sourceId)), CoreRecipe(
+                "${action.kind.displayName}を制覇！ 専用オーブと入場の欠片を獲得しました", emptyMap(),
+                mapOf(CoreMaterial(CoreResource.COMBAT_TOKEN, run.map.tier) to 3L)))
+            grantFragments(grantCurrencies(rewarded.first, mapOf(action.kind.currency to 1L)), action.kind, 1L) to rewarded.second
         }
         is CoreAction.BossReward -> {
             val run = requireRun(account, action.runId)
             require(!run.bossDefeated) { "この討伐報酬は受取済みです" }
-            require(account.maps.size < CoreLoopCatalog.MAX_MAPS) { "地図の保管庫が満杯です" }
+            if (run.trialId == null) require(account.maps.size < CoreLoopCatalog.MAX_MAPS) { "地図の保管庫が満杯です" }
             val nextTier = (run.map.tier + 1).coerceAtMost(4)
-            val rewardMap = CoreOwnedMap(derived(requestId, "boss-map"), run.map.seed xor requestId.leastSignificantBits, nextTier)
-            val rewarded = recipe(addSource(account, source("boss", run.id, "defeat")), CoreRecipe("討伐完了！ T$nextTier の地図と討伐証を獲得しました", emptyMap(),
+            val message = if (run.trialId == null) "討伐完了！ T$nextTier の地図・討伐証・試練の欠片を獲得しました"
+                else "専用ボス討伐！ 専用オーブ2個・高揚1個・討伐証を獲得しました"
+            val outputs = if (run.trialId == null)
                 mapOf(CoreMaterial(CoreResource.BOSS_SIGIL, run.map.tier) to 2L,
                     CoreMaterial(CoreResource.COMBAT_TOKEN, run.map.tier) to 12L,
                     CoreMaterial(CoreResource.GATHERING_TABLET) to 1L,
-                    CoreMaterial(CoreResource.POTION) to 2L)))
-            rewarded.first.copy(unlockedMapTier = maxOf(account.unlockedMapTier, nextTier),
-                maps = account.maps + rewardMap, activeRun = run.copy(bossDefeated = true)) to rewarded.second
+                    CoreMaterial(CoreResource.POTION) to 2L)
+                else mapOf(CoreMaterial(CoreResource.BOSS_SIGIL, run.map.tier) to 2L, CoreMaterial(CoreResource.COMBAT_TOKEN, run.map.tier) to 12L)
+            val rewarded = recipe(addSource(account, source("boss", run.id, "defeat")), CoreRecipe(message, emptyMap(), outputs)).first
+            if (run.trialId == null) {
+                val rewardMap = CoreOwnedMap(derived(requestId, "boss-map"), run.map.seed xor requestId.leastSignificantBits, nextTier)
+                grantFragments(rewarded, CoreActivityKind.TRIAL, 1L).copy(unlockedMapTier = maxOf(account.unlockedMapTier, nextTier),
+                    maps = account.maps + rewardMap, activeRun = run.copy(bossDefeated = true)) to message
+            } else {
+                val kind = CoreActivityKind.entries.single { it.bossId == run.trialId }
+                grantCurrencies(rewarded, mapOf(kind.currency to 2L, CoreCraftingCurrency.EXALTED to 1L))
+                    .copy(activeRun = run.copy(bossDefeated = true)) to message
+            }
         }
         is CoreAction.Refine -> { requireHub(account); recipe(account, CoreLoopCatalog.refine(action.resource, action.tier, action.batches)) }
         CoreAction.UpgradeWeapon -> {
@@ -205,13 +189,29 @@ class CoreAccountService(private val repository: CoreAccountRepository) {
             addSource(account, source("run", action.runId, "started")).copy(
                 maps = account.maps.filterNot { it.id == map.id }, activeRun = CoreActiveRun(action.runId, map)) to "遠征を準備しています"
         }
+        is CoreAction.StartTrial -> {
+            requireHub(account)
+            val kind = CoreActivityKind.entries.singleOrNull { it.bossId == action.bossId } ?: error("未対応の専用ボスです")
+            require(action.tier in 1..account.unlockedMapTier) { "そのTierはまだ解放されていません" }
+            require(account.claimedSources.none { it.startsWith("run/${action.runId}/") }) { "その遠征番号は使用済みです" }
+            require(account.amount(kind) >= CoreCraftingCatalog.TRIAL_ENTRY_FRAGMENTS) { "${kind.displayName}の欠片が3個必要です" }
+            val map = CoreOwnedMap(derived(requestId, "trial-map"), account.craftingSeed xor requestId.leastSignificantBits, action.tier)
+            addSource(account, source("run", action.runId, "started")).copy(
+                fragments = account.fragments + (kind to account.amount(kind) - CoreCraftingCatalog.TRIAL_ENTRY_FRAGMENTS),
+                activeRun = CoreActiveRun(action.runId, map, trialId = kind.bossId)) to "${kind.displayName}の専用ボス戦を準備しています"
+        }
         is CoreAction.AbortRun -> {
             val run = requireRun(account, action.runId)
-            require(!run.bossDefeated && account.claimedSources.none { it.startsWith("gather/${run.id}/") || it.startsWith("combat/${run.id}/") || it.startsWith("affix/${run.id}/") }) {
+            require(!run.bossDefeated && account.claimedSources.none { it.startsWith("gather/${run.id}/") || it.startsWith("combat/${run.id}/") || it.startsWith("affix/${run.id}/") || it.startsWith("activity/${run.id}/") }) {
                 "開始済みの遠征は中断返却できません"
             }
-            require(account.maps.size < CoreLoopCatalog.MAX_MAPS) { "地図の保管庫が満杯です" }
-            account.copy(maps = account.maps + run.map, activeRun = null) to "遠征の準備に失敗したため地図を返却しました"
+            if (run.trialId == null) {
+                require(account.maps.size < CoreLoopCatalog.MAX_MAPS) { "地図の保管庫が満杯です" }
+                account.copy(maps = account.maps + run.map, activeRun = null) to "遠征の準備に失敗したため地図を返却しました"
+            } else {
+                val kind = CoreActivityKind.entries.single { it.bossId == run.trialId }
+                grantFragments(account, kind, CoreCraftingCatalog.TRIAL_ENTRY_FRAGMENTS).copy(activeRun = null) to "準備に失敗したため入場の欠片3個を返却しました"
+            }
         }
         is CoreAction.FinishRun -> { requireRun(account, action.runId); account.copy(activeRun = null) to "拠点へ帰還しました。獲得した素材は保管済みです" }
         is CoreAction.Consume -> {
@@ -219,6 +219,21 @@ class CoreAccountService(private val repository: CoreAccountRepository) {
             require(account.activeRun != null) { "遠征中のみ使用できます" }
             recipe(account, CoreRecipe("${action.resource.displayName}を使用しました", mapOf(CoreMaterial(action.resource) to 1L), emptyMap()))
         }
+    }
+
+    private fun grantCurrencies(account: CoreAccount, outputs: Map<CoreCraftingCurrency, Long>): CoreAccount {
+        val balances = account.currencies.toMutableMap()
+        outputs.forEach { (currency, amount) ->
+            val next = Math.addExact(balances[currency] ?: 0, amount)
+            require(next in 0..CoreLoopCatalog.MAX_BALANCE) { "オーブの保管上限です" }
+            balances[currency] = next
+        }
+        return account.copy(currencies = balances)
+    }
+    private fun grantFragments(account: CoreAccount, kind: CoreActivityKind, amount: Long): CoreAccount {
+        val next = Math.addExact(account.amount(kind), amount)
+        require(next in 0..CoreLoopCatalog.MAX_BALANCE) { "入場の欠片の保管上限です" }
+        return account.copy(fragments = account.fragments + (kind to next))
     }
 
     private fun recipe(account: CoreAccount, recipe: CoreRecipe): Pair<CoreAccount, String> {
