@@ -99,9 +99,24 @@ Tierとレアリティを対応させたのはこの実験の暫定判断で、�
 ## 自動検証（2026-09-05）
 
 - `:server-minestom:test --offline --no-daemon --max-workers=1 -Pkotlin.compiler.execution.strategy=in-process`：
-  **366 tests、失敗0・エラー0**。1分35秒。
-- MOD台帳14追加テスト、戦闘22テスト、可視戦利品・宝箱12テスト、UI14テストを含む。
-- アセット構造検証：64ファイル・90専用グリフ・標準フォント上書き0。全件PASS。
+  **367 tests、失敗0・エラー0**。1分35秒。`:server-minestom:distZip`も成功。
+- MOD台帳14追加テスト、戦闘22テスト、可視戦利品・宝箱12テスト、UI15テストを含む。
+- アセット構造検証：77ファイル・90専用グリフ・標準フォント上書き0。全件PASS。
 - テスト中に発見した宝箱／ドロップ生成時のreceiver参照不具合を修正。
   回収後の同source再生成、帰還開始後の採取／宝箱追加、上書き誤説明も防止した。
 - `client-fabric/`、`protocol/`への今回の変更は0。
+
+### 実行確認と反映待ち
+
+06:09起動のVanilla 26.2ウィンドウがvisible・非最小化であること、サーバーのPlayer662接続、
+`CORE_UI_PACK ... SUCCESSFULLY_LOADED`を確認。人間の操作による遠征開始ログも確認した：
+SAKURA_GROVE / RIDGE_PASS / BROKEN_HILLS、地形準備3452ms・転送4ms。
+旧データの`.account.v1.bak`生成と、実戦で得た刻印石のv2台帳保存も確認。
+日本語・ツールチップ枠・HUD・薄赤AOEはゲーム画面に表示されている。Agentはゲーム内操作をしていない。
+
+実画面でホットバースキルのmissing textureを発見。`gui/`画像はVanillaのitem atlasへ自動収録されないため、
+13モデルを`textures/item/core_ui/`の無加工コピーへ変更し、回帰テストを追加した。
+**この最終アイコン修正だけ、稼働中の遠征を止めないため再起動の返事待ち。**
+修正済み配布ZIPは`server-minestom/build/distributions/`に生成済み。
+再起動時はクライアントを停止して切断時の報酬保存完了を確認し、`:server-minestom:installDist`後に再起動する。
+起動ログは`server-minestom/run/core-loop-20260905-060924.log`と同名`.error.log`。
