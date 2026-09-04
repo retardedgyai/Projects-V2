@@ -39,6 +39,7 @@ internal object CoreLoopItems {
         CoreResource.POTION -> Material.HONEY_BOTTLE
         CoreResource.GATHERING_TABLET -> Material.AMETHYST_SHARD
         CoreResource.WHETSTONE -> Material.FLINT
+        CoreResource.AFFIX_DUST -> Material.GLOWSTONE_DUST
     }
 
     fun resource(material: CoreMaterial, count: Long): ItemStack = icon(resourceMaterial(material.resource), material.displayName,

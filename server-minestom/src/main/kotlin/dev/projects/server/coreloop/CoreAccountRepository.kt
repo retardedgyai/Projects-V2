@@ -10,6 +10,7 @@ import java.nio.file.Path
 import java.nio.file.StandardCopyOption.ATOMIC_MOVE
 import java.nio.file.StandardCopyOption.REPLACE_EXISTING
 import java.nio.file.StandardOpenOption.CREATE
+import java.nio.file.StandardOpenOption.CREATE_NEW
 import java.nio.file.StandardOpenOption.TRUNCATE_EXISTING
 import java.nio.file.StandardOpenOption.WRITE
 import java.security.MessageDigest
@@ -86,6 +87,7 @@ class CoreAccountRepository(
                         while (buffer.hasRemaining()) output.write(buffer)
                         output.force(true)
                     }
+                    preserveV1Backup(next.playerId)
                     atomicReplace(temp, fileFor(next.playerId))
                     CoreRepositorySave.Saved
                 }
@@ -113,6 +115,25 @@ class CoreAccountRepository(
         require(!Files.exists(directory, NOFOLLOW_LINKS) || Files.isDirectory(directory, NOFOLLOW_LINKS))
     }
     private fun fileFor(playerId: UUID): Path = directory.resolve("$playerId.account")
+
+    /** First successful v2 mutation preserves exact v1 bytes; loading alone never writes or invents MODs. */
+    private fun preserveV1Backup(playerId: UUID) {
+        val original = fileFor(playerId)
+        if (!Files.exists(original, NOFOLLOW_LINKS)) return
+        val bytes = Files.readAllBytes(original)
+        if (!bytes.toString(UTF_8).startsWith("PROJECTS_CORE_LOOP\t1\t")) return
+        val backup = directory.resolve("$playerId.account.v1.bak")
+        if (Files.exists(backup, NOFOLLOW_LINKS)) {
+            require(Files.isRegularFile(backup, NOFOLLOW_LINKS) && Files.size(backup) == bytes.size.toLong() &&
+                Files.readAllBytes(backup).contentEquals(bytes)) { "旧形式のバックアップが既存データと一致しません" }
+            return
+        }
+        FileChannel.open(backup, CREATE_NEW, WRITE).use { output ->
+            val buffer = ByteBuffer.wrap(bytes)
+            while (buffer.hasRemaining()) output.write(buffer)
+            output.force(true)
+        }
+    }
     companion object { const val MAX_FILE_BYTES = 8 * 1024 * 1024 }
 }
 
@@ -120,7 +141,7 @@ class CoreAccountRepository(
 internal object CoreAccountCodec {
     fun encode(account: CoreAccount): String {
         val body = buildString {
-            append("PROJECTS_CORE_LOOP\t1\t${account.playerId}\t${account.revision}\n")
+            append("PROJECTS_CORE_LOOP\t2\t${account.playerId}\t${account.revision}\n")
             append("gear\t${account.weaponTier}\t${account.armorTier}\t${account.unlockedMapTier}\n")
             account.balances.entries.sortedWith(compareBy({ it.key.resource.ordinal }, { it.key.tier })).forEach { (key, amount) ->
                 append("balance\t${key.resource.name}\t${key.tier}\t$amount\n")
@@ -129,6 +150,8 @@ internal object CoreAccountCodec {
             account.activeRun?.let { append("run\t${it.id}\t${it.bossDefeated}\t${mapFields(it.map)}\n") }
             account.receipts.forEach { (id, receipt) -> append("receipt\t$id\t${receipt.fingerprint}\t${receipt.revision}\t${base64(receipt.message)}\n") }
             account.claimedSources.forEach { append("source\t${base64(it)}\n") }
+            account.affixStones.forEach { append("affix\t${affixFields(it)}\n") }
+            account.equippedAffixes.forEach { append("equipped-affix\t${it.gear}\t${it.index}\t${affixFields(it.stone)}\n") }
         }
         return body + "checksum\t${digest(body)}\n"
     }
@@ -141,7 +164,8 @@ internal object CoreAccountCodec {
         require(text.substring(checksumAt) == "checksum\t${digest(body)}\n") { "保存データの検証に失敗しました" }
         val rows = body.trimEnd('\n').split('\n').map { it.split('\t') }
         val header = rows.first()
-        require(header.size == 4 && header[0] == "PROJECTS_CORE_LOOP" && header[1] == "1") { "未対応の保存形式です" }
+        require(header.size == 4 && header[0] == "PROJECTS_CORE_LOOP" && header[1] in setOf("1", "2")) { "未対応の保存形式です" }
+        val version = header[1].toInt()
         require(UUID.fromString(header[2]) == playerId) { "保存データのプレイヤーが一致しません" }
         val gear = rows.getOrNull(1) ?: error("装備データがありません")
         require(gear.size == 4 && gear[0] == "gear")
@@ -150,6 +174,8 @@ internal object CoreAccountCodec {
         var active: CoreActiveRun? = null
         val receipts = linkedMapOf<UUID, CoreReceipt>()
         val sources = linkedSetOf<String>()
+        val stones = mutableListOf<CoreAffixStone>()
+        val equipped = mutableListOf<CoreEquippedAffix>()
         rows.drop(2).forEach { row -> when (row[0]) {
             "balance" -> {
                 require(row.size == 4 && balances.size < CoreLoopCatalog.MAX_BALANCES)
@@ -166,9 +192,20 @@ internal object CoreAccountCodec {
                 require(receipts.put(UUID.fromString(row[1]), CoreReceipt(row[2], row[3].toLong(), unbase64(row[4]))) == null)
             }
             "source" -> { require(row.size == 2 && sources.size < CoreLoopCatalog.MAX_SOURCES && sources.add(unbase64(row[1]))) }
+            "affix" -> { require(version >= 2 && stones.size < CoreAffixCatalog.MAX_STONES); stones += readAffix(row.drop(1)) }
+            "equipped-affix" -> {
+                require(version >= 2 && row.size == 8 && equipped.size < 8)
+                equipped += CoreEquippedAffix(CoreGearSlot.valueOf(row[1]), row[2].toInt(), readAffix(row.drop(3)))
+            }
             else -> error("未知の保存項目: ${row[0].take(32)}")
         } }
-        return CoreAccount(playerId, header[3].toLong(), balances, gear[1].toInt(), gear[2].toInt(), gear[3].toInt(), maps, active, receipts, sources)
+        return CoreAccount(playerId, header[3].toLong(), balances, gear[1].toInt(), gear[2].toInt(), gear[3].toInt(), maps, active, receipts, sources, stones, equipped)
+    }
+
+    private fun affixFields(stone: CoreAffixStone): String = "${stone.id}\t${stone.modId}\t${stone.tier}\t${stone.value}\t${stone.definitionRevision}"
+    private fun readAffix(parts: List<String>): CoreAffixStone {
+        require(parts.size == 5)
+        return CoreAffixStone(UUID.fromString(parts[0]), parts[1], parts[2].toInt(), parts[3].toDouble(), parts[4].toInt())
     }
 
     private fun mapFields(map: CoreOwnedMap): String = "${map.id}\t${map.seed}\t${map.tier}\t" +
