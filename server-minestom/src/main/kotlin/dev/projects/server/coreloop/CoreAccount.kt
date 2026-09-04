@@ -60,6 +60,9 @@ class CoreAccount(
     fragments: Map<CoreActivityKind, Long> = emptyMap(),
     legacyLayouts: Set<CoreGearSlot> = CoreCraftingCatalog.legacyLayouts(equippedAffixes, weaponRarity, armorRarity),
     val craftingSeed: Long = UUID.randomUUID().leastSignificantBits,
+    val weaponEnhancement: CoreEnhancementState = CoreEnhancementState(),
+    val armorEnhancement: CoreEnhancementState = CoreEnhancementState(),
+    val smithingXp: Long = 0,
 ) {
     val balances: Map<CoreMaterial, Long> = Collections.unmodifiableMap(LinkedHashMap(balances))
     val maps: List<CoreOwnedMap> = Collections.unmodifiableList(maps.toList())
@@ -72,6 +75,7 @@ class CoreAccount(
     val legacyLayouts: Set<CoreGearSlot> = Collections.unmodifiableSet(legacyLayouts.toSet())
     init {
         require(revision >= 0 && weaponTier in 1..4 && armorTier in 1..4 && unlockedMapTier in 1..4)
+        require(smithingXp in 0..CoreEnhancementCatalog.MAX_SMITHING_XP)
         require(balances.size <= CoreLoopCatalog.MAX_BALANCES && balances.values.all { it in 0..CoreLoopCatalog.MAX_BALANCE })
         require(maps.size <= CoreLoopCatalog.MAX_MAPS && maps.map { it.id }.distinct().size == maps.size)
         require(activeRun == null || maps.none { it.id == activeRun.map.id })
@@ -110,8 +114,11 @@ class CoreAccount(
         fragments: Map<CoreActivityKind, Long> = this.fragments,
         legacyLayouts: Set<CoreGearSlot> = this.legacyLayouts,
         craftingSeed: Long = this.craftingSeed,
+        weaponEnhancement: CoreEnhancementState = this.weaponEnhancement,
+        armorEnhancement: CoreEnhancementState = this.armorEnhancement,
+        smithingXp: Long = this.smithingXp,
     ) = CoreAccount(playerId, revision, balances, weaponTier, armorTier, unlockedMapTier, maps, activeRun, receipts, claimedSources, affixStones, equippedAffixes,
-        weaponRarity, armorRarity, currencies, fragments, legacyLayouts, craftingSeed)
+        weaponRarity, armorRarity, currencies, fragments, legacyLayouts, craftingSeed, weaponEnhancement, armorEnhancement, smithingXp)
 }
 
 data class CoreOperation(val requestId: UUID, val expectedRevision: Long, val action: CoreAction)
@@ -122,6 +129,7 @@ sealed interface CoreAction {
     data class BossReward(val runId: UUID) : CoreAction
     data class AffixLoot(val runId: UUID, val sourceId: String, val kind: CoreLootKind) : CoreAction
     data class CraftEquipment(val gear: CoreGearSlot, val currency: CoreCraftingCurrency) : CoreAction
+    data class EnhanceEquipment(val gear: CoreGearSlot, val mode: CoreEnhancementMode = CoreEnhancementMode.STANDARD) : CoreAction
     data class ConvertLegacyStone(val stoneId: UUID) : CoreAction
     data class ActivityReward(val runId: UUID, val sourceId: String, val kind: CoreActivityKind) : CoreAction
     data class StartTrial(val bossId: String, val tier: Int, val runId: UUID) : CoreAction

@@ -116,7 +116,7 @@ class CoreAccountRepository(
     }
     private fun fileFor(playerId: UUID): Path = directory.resolve("$playerId.account")
 
-    /** First v3 mutation preserves exact v1/v2 bytes. Loading alone never writes or changes old rolls. */
+    /** First v4 mutation preserves exact v1/v2/v3 bytes. Loading alone never writes or changes old rolls. */
     private fun preserveLegacyBackup(playerId: UUID) {
         val original = fileFor(playerId)
         if (!Files.exists(original, NOFOLLOW_LINKS)) return
@@ -124,6 +124,7 @@ class CoreAccountRepository(
         val version = when {
             bytes.toString(UTF_8).startsWith("PROJECTS_CORE_LOOP\t1\t") -> 1
             bytes.toString(UTF_8).startsWith("PROJECTS_CORE_LOOP\t2\t") -> 2
+            bytes.toString(UTF_8).startsWith("PROJECTS_CORE_LOOP\t3\t") -> 3
             else -> return
         }
         val backup = directory.resolve("$playerId.account.v$version.bak")
@@ -145,9 +146,10 @@ class CoreAccountRepository(
 internal object CoreAccountCodec {
     fun encode(account: CoreAccount): String {
         val body = buildString {
-            append("PROJECTS_CORE_LOOP\t3\t${account.playerId}\t${account.revision}\n")
+            append("PROJECTS_CORE_LOOP\t4\t${account.playerId}\t${account.revision}\n")
             append("gear\t${account.weaponTier}\t${account.armorTier}\t${account.unlockedMapTier}\n")
             append("crafting\t${account.weaponRarity}\t${account.armorRarity}\t${account.craftingSeed}\n")
+            append("enhancement\t${account.weaponEnhancement.level}\t${account.weaponEnhancement.failures}\t${account.armorEnhancement.level}\t${account.armorEnhancement.failures}\t${account.smithingXp}\n")
             account.currencies.entries.sortedBy { it.key.ordinal }.forEach { (key, amount) -> append("currency\t$key\t$amount\n") }
             account.fragments.entries.sortedBy { it.key.ordinal }.forEach { (key, amount) -> append("fragment\t$key\t$amount\n") }
             account.legacyLayouts.sortedBy { it.ordinal }.forEach { append("legacy-layout\t$it\n") }
@@ -172,7 +174,7 @@ internal object CoreAccountCodec {
         require(text.substring(checksumAt) == "checksum\t${digest(body)}\n") { "保存データの検証に失敗しました" }
         val rows = body.trimEnd('\n').split('\n').map { it.split('\t') }
         val header = rows.first()
-        require(header.size == 4 && header[0] == "PROJECTS_CORE_LOOP" && header[1] in setOf("1", "2", "3")) { "未対応の保存形式です" }
+        require(header.size == 4 && header[0] == "PROJECTS_CORE_LOOP" && header[1] in setOf("1", "2", "3", "4")) { "未対応の保存形式です" }
         val version = header[1].toInt()
         require(UUID.fromString(header[2]) == playerId) { "保存データのプレイヤーが一致しません" }
         val gear = rows.getOrNull(1) ?: error("装備データがありません")
@@ -188,27 +190,29 @@ internal object CoreAccountCodec {
         val fragments = linkedMapOf<CoreActivityKind, Long>()
         val legacy = linkedSetOf<CoreGearSlot>()
         var crafting: List<String>? = null
+        var enhancement: List<String>? = null
         rows.drop(2).forEach { row -> when (row[0]) {
-            "crafting" -> { require(version == 3 && crafting == null && row.size == 4); crafting = row }
+            "crafting" -> { require(version >= 3 && crafting == null && row.size == 4); crafting = row }
+            "enhancement" -> { require(version == 4 && enhancement == null && row.size == 6); enhancement = row }
             "currency" -> {
-                require(version == 3 && row.size == 3)
+                require(version >= 3 && row.size == 3)
                 require(currencies.put(CoreCraftingCurrency.valueOf(row[1]), row[2].toLong()) == null)
             }
             "fragment" -> {
-                require(version == 3 && row.size == 3)
+                require(version >= 3 && row.size == 3)
                 require(fragments.put(CoreActivityKind.valueOf(row[1]), row[2].toLong()) == null)
             }
-            "legacy-layout" -> { require(version == 3 && row.size == 2 && legacy.add(CoreGearSlot.valueOf(row[1]))) }
+            "legacy-layout" -> { require(version >= 3 && row.size == 2 && legacy.add(CoreGearSlot.valueOf(row[1]))) }
             "balance" -> {
                 require(row.size == 4 && balances.size < CoreLoopCatalog.MAX_BALANCES)
                 require(balances.put(CoreMaterial(CoreResource.valueOf(row[1]), row[2].toInt()), row[3].toLong()) == null)
             }
             "map" -> { require(maps.size < CoreLoopCatalog.MAX_MAPS); maps += readMap(row.drop(1)) }
             "run" -> {
-                require(active == null && row.size == if (version == 3) 8 else 7)
+                require(active == null && row.size == if (version >= 3) 8 else 7)
                 val defeated = when (row[2]) { "true" -> true; "false" -> false; else -> error("Invalid boolean") }
                 active = CoreActiveRun(UUID.fromString(row[1]), readMap(row.subList(3, 7)), defeated,
-                    if (version == 3) row[7].takeUnless { it.isEmpty() } else null)
+                    if (version >= 3) row[7].takeUnless { it.isEmpty() } else null)
             }
             "receipt" -> {
                 require(row.size == 5 && receipts.size < CoreLoopCatalog.MAX_RECEIPTS)
@@ -217,7 +221,7 @@ internal object CoreAccountCodec {
             "source" -> { require(row.size == 2 && sources.size < CoreLoopCatalog.MAX_SOURCES && sources.add(unbase64(row[1]))) }
             "affix" -> { require(version >= 2 && stones.size < CoreAffixCatalog.MAX_STONES); stones += readAffix(row.drop(1)) }
             "equipped-affix" -> {
-                require(version >= 2 && row.size == 8 && equipped.size < if (version == 3) 12 else 8)
+                require(version >= 2 && row.size == 8 && equipped.size < if (version >= 3) 12 else 8)
                 equipped += CoreEquippedAffix(CoreGearSlot.valueOf(row[1]), row[2].toInt(), readAffix(row.drop(3)))
             }
             else -> error("未知の保存項目: ${row[0].take(32)}")
@@ -231,8 +235,12 @@ internal object CoreAccountCodec {
                 craftingSeed = CoreCraftingCatalog.legacySeed(playerId))
         }
         val craft = requireNotNull(crafting) { "装備クラフトの保存項目がありません" }
+        val enhanced = if (version == 4) requireNotNull(enhancement) { "装備強化の保存項目がありません" } else null
         return CoreAccount(playerId, header[3].toLong(), balances, weaponTier, armorTier, gear[3].toInt(), maps, active, receipts, sources, stones, equipped,
-            CoreGearRarity.valueOf(craft[1]), CoreGearRarity.valueOf(craft[2]), currencies, fragments, legacy, craft[3].toLong())
+            CoreGearRarity.valueOf(craft[1]), CoreGearRarity.valueOf(craft[2]), currencies, fragments, legacy, craft[3].toLong(),
+            enhanced?.let { CoreEnhancementState(it[1].toInt(), it[2].toInt()) } ?: CoreEnhancementState(),
+            enhanced?.let { CoreEnhancementState(it[3].toInt(), it[4].toInt()) } ?: CoreEnhancementState(),
+            enhanced?.get(5)?.toLong() ?: 0L)
     }
 
     private fun affixFields(stone: CoreAffixStone): String = "${stone.id}\t${stone.modId}\t${stone.tier}\t${stone.value}\t${stone.definitionRevision}"
