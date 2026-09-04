@@ -8,6 +8,7 @@ enum class CoreResource(val displayName: String, val raw: Boolean = false) {
     WOOD("木材", true), ORE("鉱石", true), STONE("石材", true), HIDE("獣皮", true), FIBER("植物繊維", true),
     BOARD("板材"), INGOT("インゴット"), STONE_BLOCK("加工石材"), LEATHER("なめし革"), CLOTH("布"),
     BOSS_SIGIL("討伐証"), COMBAT_TOKEN("戦利品券"), POTION("回復薬"), GATHERING_TABLET("採取の石板"), WHETSTONE("砥石"),
+    AFFIX_DUST("魔導の粉"),
 }
 
 data class CoreMaterial(val resource: CoreResource, val tier: Int = 1) {
@@ -49,11 +50,15 @@ class CoreAccount(
     val activeRun: CoreActiveRun? = null,
     receipts: Map<UUID, CoreReceipt> = emptyMap(),
     claimedSources: Set<String> = emptySet(),
+    affixStones: List<CoreAffixStone> = emptyList(),
+    equippedAffixes: List<CoreEquippedAffix> = emptyList(),
 ) {
     val balances: Map<CoreMaterial, Long> = Collections.unmodifiableMap(LinkedHashMap(balances))
     val maps: List<CoreOwnedMap> = Collections.unmodifiableList(maps.toList())
     val receipts: Map<UUID, CoreReceipt> = Collections.unmodifiableMap(LinkedHashMap(receipts))
     val claimedSources: Set<String> = Collections.unmodifiableSet(LinkedHashSet(claimedSources))
+    val affixStones: List<CoreAffixStone> = Collections.unmodifiableList(affixStones.toList())
+    val equippedAffixes: List<CoreEquippedAffix> = Collections.unmodifiableList(equippedAffixes.toList())
     init {
         require(revision >= 0 && weaponTier in 1..4 && armorTier in 1..4 && unlockedMapTier in 1..4)
         require(balances.size <= CoreLoopCatalog.MAX_BALANCES && balances.values.all { it in 0..CoreLoopCatalog.MAX_BALANCE })
@@ -62,6 +67,15 @@ class CoreAccount(
         require(receipts.size <= CoreLoopCatalog.MAX_RECEIPTS && claimedSources.size <= CoreLoopCatalog.MAX_SOURCES)
         require(receipts.values.all { it.revision in 1..revision && it.fingerprint.matches(Regex("[0-9a-f]{64}")) && it.message.length <= 256 })
         require(claimedSources.all { it.length in 1..192 && '\n' !in it && '\t' !in it && '\r' !in it })
+        require(affixStones.size <= CoreAffixCatalog.MAX_STONES && equippedAffixes.size <= 8)
+        val allStones = affixStones + equippedAffixes.map { it.stone }
+        require(allStones.map { it.id }.distinct().size == allStones.size) { "MODの識別番号が重複しています" }
+        require(equippedAffixes.map { it.gear to it.index }.distinct().size == equippedAffixes.size)
+        require(equippedAffixes.map { it.gear to it.stone.modId }.distinct().size == equippedAffixes.size)
+        require(equippedAffixes.all { it.index < CoreAffixCatalog.capacity(this, it.gear) && it.stone.tier <= CoreAffixCatalog.gearTier(this, it.gear) })
+        // Known malformed rolls are corrupt data; unknown definitions are retained with effects disabled.
+        require(allStones.all { CoreAffixCatalog.definition(it) == null || CoreAffixCatalog.valid(it) })
+        require(equippedAffixes.all { CoreAffixCatalog.definition(it.stone)?.allowedGear?.contains(it.gear) != false })
     }
     fun amount(resource: CoreResource, tier: Int = 1): Long = balances[CoreMaterial(resource, tier)] ?: 0
     fun amount(material: CoreMaterial): Long = balances[material] ?: 0
@@ -72,7 +86,9 @@ class CoreAccount(
         unlockedMapTier: Int = this.unlockedMapTier, maps: List<CoreOwnedMap> = this.maps,
         activeRun: CoreActiveRun? = this.activeRun, receipts: Map<UUID, CoreReceipt> = this.receipts,
         claimedSources: Set<String> = this.claimedSources,
-    ) = CoreAccount(playerId, revision, balances, weaponTier, armorTier, unlockedMapTier, maps, activeRun, receipts, claimedSources)
+        affixStones: List<CoreAffixStone> = this.affixStones,
+        equippedAffixes: List<CoreEquippedAffix> = this.equippedAffixes,
+    ) = CoreAccount(playerId, revision, balances, weaponTier, armorTier, unlockedMapTier, maps, activeRun, receipts, claimedSources, affixStones, equippedAffixes)
 }
 
 data class CoreOperation(val requestId: UUID, val expectedRevision: Long, val action: CoreAction)
@@ -81,6 +97,12 @@ sealed interface CoreAction {
     data class Gather(val runId: UUID, val nodeId: String, val resource: CoreResource, val quantity: Int) : CoreAction
     data class CombatReward(val runId: UUID, val encounterId: String, val quantity: Int = 2) : CoreAction
     data class BossReward(val runId: UUID) : CoreAction
+    data class AffixLoot(val runId: UUID, val sourceId: String, val kind: CoreLootKind) : CoreAction
+    /** Replacing an occupied slot requires its exact currently displayed identity. */
+    data class ApplyAffix(val gear: CoreGearSlot, val index: Int, val stoneId: UUID, val expectedReplacedStoneId: UUID? = null) : CoreAction
+    data class ExtractAffix(val gear: CoreGearSlot, val index: Int, val expectedStoneId: UUID) : CoreAction
+    data class RerollAffix(val stoneId: UUID) : CoreAction
+    data class SalvageAffix(val stoneId: UUID) : CoreAction
     data class Refine(val resource: CoreResource, val tier: Int, val batches: Int = 1) : CoreAction
     data object UpgradeWeapon : CoreAction
     data object UpgradeArmor : CoreAction
@@ -112,7 +134,7 @@ data class CoreRecipe(val displayName: String, val costs: Map<CoreMaterial, Long
 /** Explicit provisional benchmark balance, shared by transaction validation and the hub UI. */
 object CoreLoopCatalog {
     const val MAX_BALANCE = 1_000_000L
-    const val MAX_BALANCES = 60
+    const val MAX_BALANCES = 64
     const val MAX_MAPS = 32
     const val MAX_RECEIPTS = 16_384
     const val MAX_SOURCES = 16_384

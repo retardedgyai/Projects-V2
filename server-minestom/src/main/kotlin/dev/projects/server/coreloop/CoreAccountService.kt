@@ -83,6 +83,75 @@ class CoreAccountService(private val repository: CoreAccountRepository) {
                 CoreRecipe("戦利品券を${action.quantity}枚獲得しました", emptyMap(),
                     mapOf(CoreMaterial(CoreResource.COMBAT_TOKEN, run.map.tier) to action.quantity.toLong())))
         }
+        is CoreAction.AffixLoot -> {
+            val run = requireRun(account, action.runId)
+            var updated = addSource(account, source("affix", run.id, action.sourceId))
+            val combatSource = source("combat", run.id, action.sourceId)
+            val tokensAlreadyPaid = combatSource in account.claimedSources
+            if (action.kind == CoreLootKind.BOSS) {
+                require(run.bossDefeated) { "ボスの討伐報酬がまだ確定していません" }
+                updated = addSource(updated, source("boss-affix", run.id, "defeat"))
+            } else {
+                // Old token-only and new visible loot callbacks cannot pay for the same enemy twice.
+                if (!tokensAlreadyPaid) updated = addSource(updated, combatSource)
+            }
+            val stones = CoreAffixCatalog.rollLoot(run, action.sourceId, action.kind)
+            val room = CoreAffixCatalog.MAX_STONES - account.affixStones.size
+            val stored = stones.take(room)
+            val converted = stones.drop(room)
+            val dust = CoreAffixCatalog.lootDust(action.kind) + converted.sumOf { CoreAffixCatalog.salvageDust(it) }
+            val outputs = mutableMapOf(CoreMaterial(CoreResource.AFFIX_DUST) to dust)
+            val tokens = if (tokensAlreadyPaid) 0L else CoreAffixCatalog.lootTokens(action.kind)
+            if (tokens > 0) outputs[CoreMaterial(CoreResource.COMBAT_TOKEN, run.map.tier)] = tokens
+            val message = "戦利品を回収：刻印石${stored.size}個・魔導の粉${dust}個" +
+                if (converted.isNotEmpty()) "（袋の上限分は粉に変換）" else ""
+            val rewarded = recipe(updated, CoreRecipe(message, emptyMap(), outputs))
+            rewarded.first.copy(affixStones = account.affixStones + stored) to rewarded.second
+        }
+        is CoreAction.ApplyAffix -> {
+            requireHub(account)
+            require(action.index in 0 until CoreAffixCatalog.capacity(account, action.gear)) { "このMOD枠は未解放です" }
+            val stone = account.affixStones.singleOrNull { it.id == action.stoneId } ?: error("刻印石が見つかりません")
+            val definition = requireNotNull(CoreAffixCatalog.definition(stone)) { "未対応のMODは付与できません" }
+            require(CoreAffixCatalog.valid(stone) && action.gear in definition.allowedGear) { "この装備には付与できません" }
+            require(stone.tier <= CoreAffixCatalog.gearTier(account, action.gear)) { "刻印石のTierが装備より高すぎます" }
+            val previous = account.equippedAffixes.singleOrNull { it.gear == action.gear && it.index == action.index }
+            require(previous?.stone?.id == action.expectedReplacedStoneId) { "置換するMODを確認し直してください" }
+            require(account.equippedAffixes.none { it.gear == action.gear && it.index != action.index && it.stone.modId == stone.modId }) {
+                "同じ装備に同種のMODは重ねられません"
+            }
+            val outputs = previous?.let { mapOf(CoreMaterial(CoreResource.AFFIX_DUST) to CoreAffixCatalog.salvageDust(it.stone)) } ?: emptyMap()
+            val applied = recipe(account, CoreRecipe("${action.gear.displayName}に${definition.displayName}を付与しました" +
+                if (previous != null) "（前のMODは粉に変換）" else "", emptyMap(), outputs))
+            applied.first.copy(affixStones = account.affixStones.filterNot { it.id == stone.id },
+                equippedAffixes = account.equippedAffixes.filterNot { it.gear == action.gear && it.index == action.index } +
+                    CoreEquippedAffix(action.gear, action.index, stone)) to applied.second
+        }
+        is CoreAction.ExtractAffix -> {
+            requireHub(account)
+            val installed = account.equippedAffixes.singleOrNull { it.gear == action.gear && it.index == action.index }
+                ?: error("この枠にMODはありません")
+            require(installed.stone.id == action.expectedStoneId) { "抽出するMODを確認し直してください" }
+            require(account.affixStones.size < CoreAffixCatalog.MAX_STONES) { "刻印石の袋が満杯です" }
+            val extracted = recipe(account, CoreAffixCatalog.extractionRecipe(installed.stone))
+            extracted.first.copy(affixStones = account.affixStones + installed.stone,
+                equippedAffixes = account.equippedAffixes - installed) to extracted.second
+        }
+        is CoreAction.RerollAffix -> {
+            requireHub(account)
+            val stone = account.affixStones.singleOrNull { it.id == action.stoneId } ?: error("刻印石が見つかりません")
+            val rerolled = CoreAffixCatalog.reroll(stone, requestId)
+            val paid = recipe(account, CoreAffixCatalog.rerollRecipe(stone))
+            paid.first.copy(affixStones = account.affixStones.map { if (it.id == stone.id) rerolled else it }) to paid.second
+        }
+        is CoreAction.SalvageAffix -> {
+            requireHub(account)
+            val stone = account.affixStones.singleOrNull { it.id == action.stoneId } ?: error("刻印石が見つかりません")
+            require(CoreAffixCatalog.definition(stone) != null) { "未対応のMODは分解せず保管してください" }
+            val salvaged = recipe(account, CoreRecipe("刻印石を魔導の粉に分解しました", emptyMap(),
+                mapOf(CoreMaterial(CoreResource.AFFIX_DUST) to CoreAffixCatalog.salvageDust(stone))))
+            salvaged.first.copy(affixStones = account.affixStones.filterNot { it.id == stone.id }) to salvaged.second
+        }
         is CoreAction.BossReward -> {
             val run = requireRun(account, action.runId)
             require(!run.bossDefeated) { "この討伐報酬は受取済みです" }
@@ -138,7 +207,7 @@ class CoreAccountService(private val repository: CoreAccountRepository) {
         }
         is CoreAction.AbortRun -> {
             val run = requireRun(account, action.runId)
-            require(!run.bossDefeated && account.claimedSources.none { it.startsWith("gather/${run.id}/") || it.startsWith("combat/${run.id}/") }) {
+            require(!run.bossDefeated && account.claimedSources.none { it.startsWith("gather/${run.id}/") || it.startsWith("combat/${run.id}/") || it.startsWith("affix/${run.id}/") }) {
                 "開始済みの遠征は中断返却できません"
             }
             require(account.maps.size < CoreLoopCatalog.MAX_MAPS) { "地図の保管庫が満杯です" }
