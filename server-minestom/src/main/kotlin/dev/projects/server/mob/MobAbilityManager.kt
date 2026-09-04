@@ -73,6 +73,25 @@ sealed interface MobAttackShape {
         }
     }
 
+    /** Ring leaves an explicit safe center; innerRadius=0 is a filled circular blast. */
+    data class Ring(val radius: Double, val innerRadius: Double = 0.0) : MobAttackShape {
+        init { require(radius > 0.0 && innerRadius >= 0.0 && innerRadius < radius) }
+
+        override fun contains(origin: Point, facing: Vec, target: Point): Boolean {
+            if (abs(target.y() - origin.y()) > verticalReach) return false
+            val distance = horizontalLength(target.sub(origin))
+            return distance <= radius + EPSILON && distance + EPSILON >= innerRadius
+        }
+
+        override fun outline(origin: Point, facing: Vec): List<Pos> =
+            listOf(radius, innerRadius).filter { it > 0.0 }.flatMap { edge ->
+                (0..48).map { sample ->
+                    val angle = sample * Math.PI * 2.0 / 48.0
+                    groundPoint(origin, cos(angle) * edge, sin(angle) * edge)
+                }
+            }
+    }
+
     companion object {
         private const val EPSILON = 1.0e-8
         private fun groundPoint(origin: Point, x: Double, z: Double) =
@@ -91,15 +110,20 @@ data class MobAbility(
     val recoveryMillis: Long,
     val cooldownMillis: Long,
     val weight: Int = 1,
+    val minimumStartRange: Double = 0.0,
+    val anchor: MobAbilityAnchor = MobAbilityAnchor.CASTER,
+    val maximumHealthRatio: Double = 1.0,
 ) {
     init {
         require(id.isNotBlank() && maximumStartRange > 0.0 && damage > 0.0)
         require(telegraphMillis > 0L && trackingMillis in 0 until telegraphMillis)
         require(recoveryMillis >= 0L && cooldownMillis >= 0L && weight > 0)
+        require(minimumStartRange in 0.0..maximumStartRange && maximumHealthRatio in 0.0..1.0)
     }
 }
 
 enum class MobAbilityPhase { TRACKING, LOCKED, RECOVERY }
+enum class MobAbilityAnchor { CASTER, TARGET }
 
 data class MobAbilityFrame(
     val ability: MobAbility,
@@ -107,6 +131,7 @@ data class MobAbilityFrame(
     val facing: Vec,
     val phase: MobAbilityPhase,
     val startedAt: Long,
+    val casterOrigin: Pos = origin,
 )
 
 sealed interface MobAbilityEvent {
@@ -134,19 +159,21 @@ class MobAbilityManager(
     private val readyAt = mutableMapOf<String, Long>()
     val isActive: Boolean get() = current != null
 
-    fun tryStart(nowMillis: Long, origin: Pos, target: Point): MobAbilityEvent.Started? {
+    fun tryStart(nowMillis: Long, origin: Pos, target: Point, healthRatio: Double = 1.0): MobAbilityEvent.Started? {
         if (current != null || nowMillis < nextSelectionAt) return null
         if (abs(origin.y() - target.y()) > 2.2) return null
         val distance = horizontalLength(target.sub(origin))
         val available = abilities.filter {
-            distance <= it.maximumStartRange && nowMillis >= readyAt.getOrDefault(it.id, Long.MIN_VALUE)
+            distance in it.minimumStartRange..it.maximumStartRange && healthRatio <= it.maximumHealthRatio &&
+                nowMillis >= readyAt.getOrDefault(it.id, Long.MIN_VALUE)
         }
         if (available.isEmpty()) return null
         val choices = available.filter { it.id != previousAbilityId }.ifEmpty { available }
         var roll = random.nextInt(choices.sumOf { it.weight })
         val selected = choices.first { roll -= it.weight; roll < 0 }
         val frame = MobAbilityFrame(
-            selected, origin, normalizeHorizontal(target.sub(origin)), MobAbilityPhase.TRACKING, nowMillis,
+            selected, if (selected.anchor == MobAbilityAnchor.TARGET) Pos(target) else origin,
+            normalizeHorizontal(target.sub(origin)), MobAbilityPhase.TRACKING, nowMillis, origin,
         )
         current = frame
         previousAbilityId = selected.id
@@ -163,7 +190,10 @@ class MobAbilityManager(
                 frame = frame.copy(phase = MobAbilityPhase.LOCKED)
                 events += MobAbilityEvent.Locked(frame)
             } else if (target != null) {
-                frame = frame.copy(facing = normalizeHorizontal(target.sub(frame.origin)))
+                frame = frame.copy(
+                    origin = if (frame.ability.anchor == MobAbilityAnchor.TARGET) Pos(target) else frame.origin,
+                    facing = normalizeHorizontal(target.sub(frame.casterOrigin)),
+                )
             }
         }
         if (frame.phase == MobAbilityPhase.LOCKED && elapsed >= frame.ability.telegraphMillis) {
