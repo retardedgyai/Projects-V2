@@ -6,6 +6,7 @@ import net.minestom.server.coordinate.Pos
 import net.minestom.server.instance.InstanceContainer
 import net.minestom.server.instance.block.Block
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.math.abs
 import kotlin.math.sqrt
 
@@ -17,9 +18,12 @@ data class BossArena(
     val bossId: String,
     val displayName: String,
 ) {
+    private val disposed = AtomicBoolean()
     /** Root moves players out and disposes QuestEncounterCombat before calling this. */
     fun dispose() {
+        if (disposed.get() || !instance.isRegistered) return
         check(instance.players.isEmpty()) { "Move trial players out before unloading their arena" }
+        if (!disposed.compareAndSet(false, true)) return
         instance.entities.toList().forEach { it.remove() }
         MinecraftServer.getInstanceManager().unregisterInstance(instance)
     }
