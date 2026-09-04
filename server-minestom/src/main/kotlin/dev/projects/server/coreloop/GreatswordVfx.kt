@@ -12,7 +12,7 @@ import kotlin.math.*
 import java.util.UUID
 import java.util.WeakHashMap
 
-internal enum class GreatswordVisual { WINDUP, SWEEP, REVERSE, FINISHER, LUNGE, SLAM, WHIRL, HIT }
+internal enum class GreatswordVisual { WINDUP, SWEEP, REVERSE, FINISHER, SLAM_BLADE, LUNGE, SLAM, WHIRL, HIT }
 
 /** Authored consumer, not a second particle framework. All geometry is local and bounded. */
 internal class GreatswordEffect(
@@ -44,7 +44,7 @@ internal class GreatswordEffect(
             GreatswordVisual.WINDUP -> {
                 repeat(9) { n -> point(Vec(.6, 1.1 + n * .12, -.1 - n * .08), 0xd8b57a, .55f) }
             }
-            GreatswordVisual.SWEEP, GreatswordVisual.REVERSE, GreatswordVisual.FINISHER -> {
+            GreatswordVisual.SWEEP, GreatswordVisual.REVERSE, GreatswordVisual.FINISHER, GreatswordVisual.SLAM_BLADE -> {
                 // A bright, thick blade, copper middle and shrinking outer wake. No sweep icons.
                 val movingFrame = min(tick, 2)
                 val start = if (tick <= 2) movingFrame * 8 else 0
@@ -58,14 +58,37 @@ internal class GreatswordEffect(
                         val radius = 3.95 + layer * .20
                         val local = when (visual) {
                             GreatswordVisual.REVERSE -> Vec(-sin(angle) * radius, .15 + t * 2.35, cos(angle) * radius)
-                            GreatswordVisual.FINISHER -> Vec((layer - 1) * .18, 3.7 - t * 3.45, 1.1 + sin(t * PI / 2) * 3.15)
+                            GreatswordVisual.FINISHER, GreatswordVisual.SLAM_BLADE -> Vec((layer - 1) * .18, 3.7 - t * 3.45, 1.1 + sin(t * PI / 2) * 3.15)
                             else -> Vec(sin(angle) * radius, 1.05 + layer * .06, cos(angle) * radius)
                         }
                         point(local, if (layer == 0 && tick < 4) 0xfff6dd else 0xe5ad66,
                             (doubleArrayOf(2.4, 1.6, 1.0)[layer] * decay.coerceAtLeast(.25)).toFloat(), layer == 2 || tick > 3)
                     }
                 }
-                if (visual == GreatswordVisual.FINISHER && tick == 2) burst(Vec(0.0, .2, 3.7), Particle.CRIT, 14, Vec(.7, .15, .7), .12f)
+                if (visual in listOf(GreatswordVisual.FINISHER, GreatswordVisual.SLAM_BLADE) && tick == 2) {
+                    burst(Vec(0.0, .2, 3.7), Particle.CRIT, 14, Vec(.7, .15, .7), .12f)
+                }
+                if (visual == GreatswordVisual.FINISHER && tick != 3) {
+                    // The vertical blade is the source, but its ground shock reaches the whole
+                    // normal-attack cone. Show the exact 4.5m / dot .4 edges, including lateral hits.
+                    // Frame 3 already contains the full bright blade; its ground cue persists
+                    // client-side rather than spending another dense frame on the same outline.
+                    val halfAngle = acos(.4)
+                    val faded = tick > 3
+                    for (n in 0..24) {
+                        if (faded && n % 2 != 0) continue
+                        val angle = -halfAngle + 2 * halfAngle * n / 24.0
+                        point(Vec(sin(angle) * 4.5, .12, cos(angle) * 4.5), 0xffcd83,
+                            (1.5 * decay.coerceAtLeast(.25)).toFloat(), faded)
+                    }
+                    for (ray in -1..1) for (n in 1..6) {
+                        if (faded && n % 2 != 0) continue
+                        val radius = n * .75
+                        val angle = ray * halfAngle + if (ray == 0) sin(n * 1.9) * .035 else 0.0
+                        point(Vec(sin(angle) * radius, .12, cos(angle) * radius), 0xe9a24e,
+                            (1.15 * decay.coerceAtLeast(.25)).toFloat(), faded)
+                    }
+                }
             }
             GreatswordVisual.LUNGE -> {
                 repeat(16) { n ->
@@ -116,10 +139,11 @@ internal class GreatswordVfx(private val player: Player) {
         ParticleBudget(MAX_PARTICLES_PER_VIEWER_TICK))
     private val frame = RecordingParticleSink()
     private val elementalFrame = mutableListOf<ParticleSpawn>()
-    private var instance = player.instance
+    private var instance: Instance? = null
     private var contactHold = 0
     private var holdAfterFrame = 0
     internal val activeEffects: Int get() = scheduler.activeAnimationCount
+    internal val retainsInstance: Boolean get() = instance != null
     internal fun holdContact(ticks: Int) { holdAfterFrame = maxOf(holdAfterFrame, ticks.coerceIn(0, 3)) }
     fun particles(particle: Particle, position: Point, count: Int, spread: Vec = Vec.ZERO, speed: Float = 0f) {
         if (elementalFrame.size < 48) elementalFrame += ParticleSpawn(particle, position, count.coerceIn(0, 16), spread, speed,
@@ -134,8 +158,9 @@ internal class GreatswordVfx(private val player: Player) {
     }
 
     fun tick() {
-        if (player.instance !== instance || player.isRemoved) { cancel(); return }
-        val viewers = instance.players.filter { it.position.distanceSquared(player.position) <= 40.0 * 40.0 }
+        val currentInstance = instance ?: return
+        if (player.instance !== currentInstance || player.isRemoved) { cancel(); return }
+        val viewers = currentInstance.players.filter { it.position.distanceSquared(player.position) <= 40.0 * 40.0 }
         if (viewers.isEmpty()) { cancel(); return }
         // Draw impact first, then let the hot blade linger without emitting or advancing it.
         // Only this player's VFX clock pauses; the server, movement and other players never do.
@@ -152,7 +177,7 @@ internal class GreatswordVfx(private val player: Player) {
             val delegate = PlayerParticleSink(viewer)
             val bounded = ParticleSink { spawn ->
                 val accepted = synchronized(sceneBudgets) {
-                    sceneBudgets.getOrPut(instance) { GreatswordSceneBudget() }.accept(instance.worldAge, viewer.uuid, spawn.count)
+                    sceneBudgets.getOrPut(currentInstance) { GreatswordSceneBudget() }.accept(currentInstance.worldAge, viewer.uuid, spawn.count)
                 }
                 if (accepted > 0) delegate.spawn(spawn.copy(count = accepted))
             }
@@ -171,7 +196,10 @@ internal class GreatswordVfx(private val player: Player) {
         sound(SoundEvent.ENTITY_PLAYER_ATTACK_STRONG, .65f, if (heavy) .55f else .85f)
         sound(SoundEvent.ITEM_TRIDENT_HIT, .45f, if (heavy) .65f else 1.0f)
     }
-    fun cancel() { scheduler.cancelAll(); frame.clear(); elementalFrame.clear(); manager.resetCounters(); contactHold = 0; holdAfterFrame = 0 }
+    fun cancel() {
+        scheduler.cancelAll(); frame.clear(); elementalFrame.clear(); manager.resetCounters()
+        contactHold = 0; holdAfterFrame = 0; instance = null
+    }
     private fun sound(event: SoundEvent, volume: Float, pitch: Float) = player.playSound(Sound.sound(event, Sound.Source.PLAYER, volume, pitch))
 
     companion object {
