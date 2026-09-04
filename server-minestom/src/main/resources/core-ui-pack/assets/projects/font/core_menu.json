@@ -8,6 +8,24 @@
       "chars": [
         "\ue200"
       ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/core/forge_frame.png",
+      "height": 222,
+      "ascent": 13,
+      "chars": [
+        "\ue201"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/core/forge_empty.png",
+      "height": 222,
+      "ascent": 13,
+      "chars": [
+        "\ue202"
+      ]
     }
   ]
 }

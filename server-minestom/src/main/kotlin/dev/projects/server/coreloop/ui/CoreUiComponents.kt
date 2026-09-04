@@ -46,10 +46,11 @@ object CoreUiComponents {
             .decoration(TextDecoration.BOLD, false).decoration(TextDecoration.ITALIC, false)
     }
 
-    fun inventoryTitle(title: String, packed: Boolean): Component {
+    fun inventoryTitle(title: String, packed: Boolean, forge: Boolean = false, emptyForge: Boolean = false): Component {
         if (!packed) return text(trimWidth(title, 158), NamedTextColor.DARK_GRAY)
         // Verified on Vanilla 26.2: extractLabels runs before extractSlots, so this backs the items.
-        return Component.empty().append(space(-8)).append(glyph('\uE200', MENU_FONT))
+        val frame = if (emptyForge) '\uE202' else if (forge) '\uE201' else '\uE200'
+        return Component.empty().append(space(-8)).append(glyph(frame, MENU_FONT))
             .append(space(-169)).append(text(trimWidth(title, 158, bold = true), GOLD, true))
     }
 

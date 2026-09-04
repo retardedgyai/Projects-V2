@@ -91,6 +91,19 @@ def verify():
                   "defense": "stats/defense", "health": "stats/health", "magic": "stats/magic_power",
                   "mana": "stats/mana", "reward": "stats/xp", "mod": "stats/level", "blank": "core/blank"}.get(path.stem, f"skills/{path.stem}")
         assert (PACK / f"{texture}.png").read_bytes() == (PACK / f"assets/projects/textures/gui/{source}.png").read_bytes(), "Item-atlas copies must preserve original artwork"
+    forge_layout = json.loads((ROOT / "assets/core-ui/forge-layout.json").read_text())
+    assert forge_layout["size"] == [176, 222] and forge_layout["execute"] == 52
+    assert forge_layout["categories"] == [0, 9, 18, 27]
+    assert forge_layout["quantities"] == [47, 48, 49]
+    with Image.open(PACK / "assets/projects/textures/gui/core/forge_frame.png") as normal, Image.open(PACK / "assets/projects/textures/gui/core/forge_empty.png") as empty:
+        assert normal.size == empty.size == (176, 222)
+        # Vignette cannot touch the player's inventory, costs, execute button, or result item.
+        box = forge_layout["vignette"]["box"]
+        for y in range(222):
+            for x in range(176):
+                if not (box[0] <= x < box[0]+box[2] and box[1] <= y < box[1]+box[3]):
+                    assert normal.getpixel((x, y)) == empty.getpixel((x, y)), "Forge artwork escaped its empty-state region"
+        assert normal.getpixel((175, 221))[3] == 255  # Both title glyphs keep their 177 px advance.
     digest = hashlib.sha256(b"".join(p.encode() + (PACK / p).read_bytes() for p in paths)).hexdigest()
     print(f"PASS: {len(paths)} assets, {len(glyphs)} private glyphs, {len(overrides)} scoped transparent HUD sprites, no global font overrides; content SHA256 {digest}")
 
