@@ -20,7 +20,8 @@ SOURCE = ROOT / "assets/core-ui"
 FONT_COMMIT = "295d98a7a0c17c68f1341eaeea354e7960ea70d3"
 FONT_URL = f"https://raw.githubusercontent.com/google/fonts/{FONT_COMMIT}/ofl/notosansjp/NotoSansJP%5Bwght%5D.ttf"
 FONT_SHA256 = "c2f3b4d463500a2ddcd3849cded1fceeb9fd6d1c32e6cbecd568453ba50fc68f"
-CELL = 12
+CELL = 14
+BASELINE = 10
 TEXT_BASE = 0xE800
 FRAME_BASE = 0xE600
 BUTTON_BASE = 0xE610
@@ -88,7 +89,11 @@ def build_font():
         cell = Image.new("RGBA", (CELL, CELL))
         if char not in (" ", "　"):
             # A common baseline preserves punctuation position and all kana descenders.
-            ImageDraw.Draw(cell).text((0, 9), char, font=font, anchor="ls", fill="white")
+            # 台/$ overshoot the cap height; square brackets/braces reach four pixels
+            # under the baseline. Keep the entire outline, not just common kanji.
+            _, top, _, bottom = font.getbbox(char, anchor="ls")
+            assert 0 <= BASELINE + top and BASELINE + bottom <= CELL, f"Clipped menu glyph U+{ord(char):04X}"
+            ImageDraw.Draw(cell).text((0, BASELINE), char, font=font, anchor="ls", fill="white")
             box = cell.getchannel("A").getbbox()
             assert box is not None, f"Unexpected empty glyph U+{ord(char):04X}"
             advance = box[2] + 1  # Vanilla BitmapProvider's exact opaque-right-edge + 1 rule.
@@ -175,7 +180,8 @@ def build_buttons():
             draw = ImageDraw.Draw(atlas)
             draw.rectangle((x, y, x + width - 1, y + 15), fill="#" + fill, outline="#" + border)
             if tone == "SELECTED":
-                draw.rectangle((x + 1, y + 13, x + width - 2, y + 14), fill="#D8BC7C")
+                # Row 13 remains free for Japanese descenders; the accent never touches a label.
+                draw.line((x + 1, y + 14, x + width - 2, y + 14), fill="#D8BC7C")
         grid.append("".join(line))
     atlas.save(ASSETS / "textures/gui/core/menu_buttons.png", optimize=True)
     for row in range(6):
