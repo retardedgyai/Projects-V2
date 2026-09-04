@@ -10,6 +10,7 @@ import shutil
 import struct
 import zlib
 from build_core_hud_assets import build_hud
+from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[1]
 PACK = ROOT / "server-minestom/src/main/resources/core-ui-pack"
@@ -93,7 +94,45 @@ def build():
             frame += [(x-1, y-1, 18, 18, "15181B"), (x, y, 16, 16, "303236"),
                       (x, y+16, 17, 1, "4B4B45"), (x+16, y, 1, 16, "44453F")]
     image("menu_frame", 176, 222, frame)
-    write_json(ASSETS / "font/core_menu.json", {"providers": [bitmap("core/menu_frame", 222, 13, [chr(0xE200)])]})
+    # Dedicated workbench: category rail / recipes / subject / costs / explicit bottom actions.
+    # Repaint only the container area; the player's 36 slots retain their original coordinates.
+    forge = frame + [(4, 17, 168, 109, "24272B"), (4, 17, 20, 109, "181C20"),
+                     (25, 17, 36, 89, "202326"), (62, 17, 53, 89, "2A2927"),
+                     (116, 17, 56, 89, "202326"), (25, 107, 147, 19, "292922"),
+                     (24, 17, 1, 109, "746547"), (61, 17, 1, 89, "514732"),
+                     (115, 17, 1, 89, "514732"), (25, 106, 147, 1, "746547")]
+    used = {0, 9, 18, 27, 36, 45, 1, 3, 4, 5, 7, 8, 13, 22, 31, 40,
+            10, 11, 19, 20, 28, 29, 37, 38, 16, 17, 25, 26, 34, 35, 43, 44,
+            46, 47, 48, 49, 50, 52}
+    for slot in sorted(used):
+        x, y = 8 + slot % 9 * 18, 18 + slot // 9 * 18
+        color = "756344" if slot == 52 else "303236"
+        forge += [(x-1, y-1, 18, 18, "15181B"), (x, y, 16, 16, color),
+                  (x, y+16, 17, 1, "746547" if slot == 52 else "4B4B45")]
+    # Quiet direction marks occupy the unused gutters, never a slot or a text field.
+    for x in (66, 103):
+        forge += [(x, 60, 5, 1, "9D8554"), (x+3, 59, 1, 3, "9D8554"), (x+4, 60, 1, 1, "D5BB7D")]
+    image("forge_frame", 176, 222, forge)
+    # The authored illustration appears ONLY while no MOD recipe is selected.
+    # It is a technical thumbnail derivative of the supplied original, not generated pixel art.
+    empty_path = ASSETS / "textures/gui/core/forge_empty.png"
+    with Image.open(ASSETS / "textures/gui/core/forge_frame.png") as base:
+        empty = base.convert("RGBA")
+    master = SOURCE / "forge-vignette-master.png"
+    if master.is_file():
+        with Image.open(master) as original:
+            thumbnail = original.convert("RGBA")
+        thumbnail.thumbnail((48, 32), Image.Resampling.LANCZOS)
+        empty.alpha_composite(thumbnail, (64 + (48-thumbnail.width)//2, 39 + (32-thumbnail.height)//2))
+    empty.save(empty_path)
+    write_json(SOURCE / "forge-layout.json", {"size": [176, 222], "categories": [0, 9, 18, 27],
+               "recipes": [10, 11, 19, 20, 28, 29, 37, 38], "target": 22, "result": 31,
+               "costs": [16, 17, 25, 26, 34, 35, 43, 44], "quantities": [47, 48, 49], "execute": 52,
+               "vignette": {"box": [64, 39, 48, 32], "only_when": "no_selected_mod_recipe"}})
+    write_json(ASSETS / "font/core_menu.json", {"providers": [
+        bitmap("core/menu_frame", 222, 13, [chr(0xE200)]),
+        bitmap("core/forge_frame", 222, 13, [chr(0xE201)]),
+        bitmap("core/forge_empty", 222, 13, [chr(0xE202)])]})
     for name, asset in stats:
         item_model(name, f"stats/{asset}")
     for name, _ in skills:

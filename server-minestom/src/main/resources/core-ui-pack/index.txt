@@ -82,6 +82,8 @@ assets/projects/models/core_ui/whirl.json
 assets/projects/textures/gui/core/bar_digits.png
 assets/projects/textures/gui/core/blank.png
 assets/projects/textures/gui/core/counter_digits.png
+assets/projects/textures/gui/core/forge_empty.png
+assets/projects/textures/gui/core/forge_frame.png
 assets/projects/textures/gui/core/health_bar.png
 assets/projects/textures/gui/core/key_digits.png
 assets/projects/textures/gui/core/mana_bar.png
