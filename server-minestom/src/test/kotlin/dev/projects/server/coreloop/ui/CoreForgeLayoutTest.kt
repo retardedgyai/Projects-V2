@@ -11,15 +11,22 @@ class CoreForgeLayoutTest {
     private fun plain(component: Component): String = (component as? TextComponent)?.content().orEmpty() + component.children().joinToString("") { plain(it) }
 
     @Test fun `forge regions never compete for an actionable six-row hitbox`() {
-        val slots = CoreForgeLayout.Tab.entries.map { it.slot } + CoreForgeLayout.RECIPES + CoreForgeLayout.COSTS +
-            listOf(CoreForgeLayout.WEAPON, CoreForgeLayout.ARMOR, CoreForgeLayout.TARGET, CoreForgeLayout.RESULT, CoreForgeLayout.DETAIL, CoreForgeLayout.EXECUTE) +
-            CoreForgeLayout.QUANTITIES.keys + listOf(1, 4, 7, 8, 13, 36, 45, 46, 50)
+        val regions = CoreForgeLayout.Tab.entries.map { it.slot until it.slot + CoreForgeLayout.TAB_SPAN } +
+            CoreForgeLayout.RECIPES.map { it until it + CoreForgeLayout.RECIPE_SPAN } +
+            listOf(CoreForgeLayout.WEAPON, CoreForgeLayout.ARMOR).map { it until it + CoreForgeLayout.GEAR_SPAN } +
+            listOf(CoreForgeLayout.MATERIALS until CoreForgeLayout.MATERIALS + 3,
+                CoreForgeLayout.BACK until CoreForgeLayout.BACK + 2,
+                CoreForgeLayout.EXECUTE until CoreForgeLayout.EXECUTE + 3) +
+            (CoreForgeLayout.QUANTITIES.keys + listOf(CoreForgeLayout.HELP,
+                CoreForgeLayout.TIER_PREVIOUS, CoreForgeLayout.TIER, CoreForgeLayout.TIER_NEXT)).map { it..it }
+        val slots = regions.flatMap { it.toList() }
         assertEquals(slots.size, slots.distinct().size)
         assertTrue(slots.all { it in 0 until 54 })
-        assertTrue(CoreForgeLayout.Tab.entries.all { it.slot % 9 == 0 })
-        assertTrue(CoreForgeLayout.RECIPES.all { it % 9 in 1..2 })
-        assertTrue(CoreForgeLayout.COSTS.all { it % 9 in 7..8 })
+        assertTrue(regions.all { it.first / 9 == it.last / 9 }, "A painted button must not cross a vanilla row")
+        assertTrue(CoreForgeLayout.Tab.entries.all { it.slot / 9 == 0 })
+        assertTrue(CoreForgeLayout.RECIPES.all { it % 9 in listOf(0, 3, 6) })
         assertEquals(5, CoreForgeLayout.EXECUTE / 9)
+        assertEquals((0 until 54).toSet() - 50, slots.toSet()) // Slot 50 is the action-row spacer.
     }
 
     @Test fun `maximum quantity is limited by every input and by the domain batch cap`() {
