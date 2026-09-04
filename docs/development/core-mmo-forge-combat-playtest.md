@@ -93,3 +93,13 @@ PixelLabではない。PixelLab設定はあるが指定tokenが見つからず�
 手動: 大剣3段の迫力／テンポ、坂上と坂下への命中、工房の数量選択・素材への動線・連続強化、
 実画面のtooltip／文字／アイテムモデルをCreatorが判断する。
 Agentは起動と接続ログ／ウィンドウ状態まで準備し、キャラクター移動やメニューのゲーム操作は行わない。
+
+2026-09-05 08:03 起動確認（コード `6ec1131`）:
+
+- Minestom PID18220 / 127.0.0.1:25565、Vanilla 26.2 PID7224。
+- `Player connected: Player662` と `CORE_UI_PACK ... SUCCESSFULLY_LOADED customGlyphs=true` を確認。
+- pack SHA1 `a89f2ad747cd65b0744372d7f410c8ea44c855ba`。
+- Win32検査で visible・非最小化・taskbar eligible・foreground。読み取り専用の実画面取得で新大剣モデルと既存HUD表示を確認。
+- 起動証跡はローカル `.tools/forge-startup.png`、server logは `server-minestom/run/core-loop-20260905-080253.log`。
+  ローカル生成物・プレイヤーデータはcommitしていない。
+- 工房のクリック、斬撃の体感、遠征操作は未実施。これらはCreatorの手動確認待ち。
