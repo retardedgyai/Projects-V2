@@ -1,9 +1,5 @@
 package dev.projects.server.coreloop
 
-import dev.projects.protocol.AttackInputState
-import dev.projects.server.CombatEvent
-import dev.projects.server.CombatState
-import dev.projects.server.WeaponType
 import dev.projects.server.mob.QuestEncounterCombat
 import net.kyori.adventure.sound.Sound
 import net.kyori.adventure.text.Component
@@ -16,14 +12,13 @@ import net.minestom.server.entity.EntityType
 import net.minestom.server.entity.attribute.Attribute
 import net.minestom.server.entity.metadata.display.TextDisplayMeta
 import net.minestom.server.entity.metadata.display.AbstractDisplayMeta
-import net.minestom.server.network.packet.server.play.ParticlePacket
 import net.minestom.server.particle.Particle
 import net.minestom.server.sound.SoundEvent
 import java.util.UUID
 import java.util.concurrent.ThreadLocalRandom
 import kotlin.math.*
 
-/** Vanilla inputs feed the same server-owned attack geometry used by the combat spike. */
+/** Vanilla inputs feed a bounded, server-owned greatsword combo; clients never declare hits. */
 internal class CorePlayerCombat(
     val player: Player,
     private val weaponTier: () -> Int,
@@ -31,9 +26,15 @@ internal class CorePlayerCombat(
     private val encounter: () -> QuestEncounterCombat?,
     private val statSource: () -> CoreAffixStats = { CoreAffixStats() },
     private val criticalRoll: () -> Double = { ThreadLocalRandom.current().nextDouble() },
+    private val weaponEnhancement: () -> Int = { 0 },
+    private val armorEnhancement: () -> Int = { 0 },
     private val onDefeated: () -> Unit,
 ) {
-    private val normal = CombatState(weaponSource = { WeaponType.HEAVY_BLADE }, attackSpeedSource = { attackSpeed })
+    private val normal = GreatswordCombo()
+    private val vfx = GreatswordVfx(player)
+    private var normalDirection = Vec(0.0, 0.0, 1.0)
+    private var actionEpoch = 0L
+    internal val activeVisualEffects: Int get() = vfx.activeEffects
     private var tickNumber = 0L
     private var nextDodge = 0L
     private var lastCombat = -400L
@@ -49,9 +50,9 @@ internal class CorePlayerCombat(
     var health = 100.0
         private set
     val maxMana: Int get() = 100 + statSource().maxManaFlat.toInt()
-    val maxHealth: Int get() = 100 + (armorTier() - 1) * 30 + statSource().healthFlat.toInt()
-    val attackSpeed: Double get() = 1.0 + statSource().attackSpeedPercent.coerceIn(0.0, 60.0) / 100.0
-    val attackDamage: Double get() = 12.0 * 1.65.pow(weaponTier() - 1) * (1.0 + statSource().damagePercent / 100.0) * if (tickNumber < whetstoneUntil) 1.2 else 1.0
+    val maxHealth: Int get() = ((100 + (armorTier() - 1) * 30) * (1.0 + .02 * armorEnhancement().coerceIn(0, 30))).toInt() + statSource().healthFlat.toInt()
+    val attackSpeed: Double get() = 1.0 + (statSource().attackSpeedPercent.coerceIn(0.0, 60.0) + .8 * weaponEnhancement().coerceIn(0, 30)) / 100.0
+    val attackDamage: Double get() = 12.0 * 1.65.pow(weaponTier() - 1) * (1.0 + .04 * weaponEnhancement().coerceIn(0, 30)) * (1.0 + statSource().damagePercent / 100.0) * if (tickNumber < whetstoneUntil) 1.2 else 1.0
     private data class Burn(val damage: Double, var nextTick: Long, var remaining: Int)
     private val burns = mutableMapOf<UUID, Burn>()
     private val damageLabels = mutableListOf<Pair<Entity, Long>>()
@@ -60,14 +61,17 @@ internal class CorePlayerCombat(
 
     fun attack() {
         if (defeated || pending != null || encounter() == null || player.openInventory != null) return
-        normal.input(AttackInputState.PRESS)
-        normal.input(AttackInputState.RELEASE)
-        lastCombat = tickNumber
+        normal.press(attackSpeed)?.let { swing ->
+            normalDirection = flatFacing()
+            vfx.play(GreatswordVisual.WINDUP, player.position, normalDirection)
+            vfx.startSound(swing.step)
+            lastCombat = tickNumber
+        }
     }
 
     fun skill(id: Int) {
         if (id !in 0..2 || defeated || encounter() == null || player.openInventory != null) return
-        if (normal.isAttacking) { queuedSkill = id; return }
+        if (normal.isAttacking) { normal.clearBuffer(); queuedSkill = id; return }
         if (pending != null) return
         if (tickNumber < readyAt[id]) { notice("${SKILL_NAMES[id]}：あと${cooldownSeconds(id)}秒"); return }
         val cost = intArrayOf(15, 25, 35)[id]
@@ -81,11 +85,12 @@ internal class CorePlayerCombat(
         player.setHeldItemSlot(0)
         player.swingMainHand()
         sound(SoundEvent.ITEM_TRIDENT_THROW, 0.65f, 1.25f)
+        vfx.play(GreatswordVisual.WINDUP, player.position, flatFacing())
     }
 
     fun dodge() {
         if (defeated || encounter() == null || tickNumber < nextDodge) return
-        if (normal.isAttacking || pending != null) { queuedDodge = true; return }
+        if (normal.isAttacking || pending != null) { normal.clearBuffer(); queuedDodge = true; return }
         val input = player.inputs()
         val forward = (if (input.forward()) 1.0 else 0.0) - (if (input.backward()) 1.0 else 0.0)
         val side = (if (input.right()) 1.0 else 0.0) - (if (input.left()) 1.0 else 0.0)
@@ -106,24 +111,27 @@ internal class CorePlayerCombat(
             manaValue = (manaValue + recovery * (1.0 + statSource().manaRegenPercent / 100.0)).coerceAtMost(maxMana.toDouble())
             player.getAttribute(Attribute.MOVEMENT_SPEED).baseValue = 0.1 * (1.0 + statSource().moveSpeedPercent.coerceIn(0.0, 25.0) / 100.0)
         }
-        val enemies = encounter() ?: return
-        burns.entries.removeIf { (id, burn) ->
-            if (enemies.positionOf(id) == null) true
-            else {
-                if (tickNumber >= burn.nextTick) {
-                    enemies.applyEffectDamage(id, player, burn.damage)
-                    burn.nextTick += 20; burn.remaining--
-                }
-                burn.remaining <= 0
+        val enemies = encounter() ?: run { resetActions(); return }
+        val epoch = actionEpoch
+        // A kill callback may synchronously return/reset the actor, including clearing burns.
+        for ((id, burn) in burns.toMap()) {
+            if (!enemies.isAlive(id)) { burns.remove(id); continue }
+            if (tickNumber >= burn.nextTick) {
+                enemies.applyEffectDamage(id, player, burn.damage)
+                if (!actionsValid(enemies, epoch)) return
+                burn.nextTick += 20; burn.remaining--
             }
+            if (burn.remaining <= 0) burns.remove(id)
         }
-        normal.tick(player.position, player.position.direction(), enemies.combatTargets()).forEach { event ->
-            when (event) {
-                is CombatEvent.Active -> arc(player.position, flatFacing(), 4.5, 1.15, Particle.SWEEP_ATTACK)
-                is CombatEvent.HitConfirmed -> if (visibleTo(event.targetId, enemies)) {
-                    hit(enemies, event.targetId, 1.0, skill = false)
+        normal.tick()?.let { swing ->
+            vfx.swingSound(swing.step)
+            player.swingMainHand()
+            vfx.play(arrayOf(GreatswordVisual.SWEEP, GreatswordVisual.REVERSE, GreatswordVisual.FINISHER)[swing.step - 1], player.position, normalDirection)
+            for (target in enemies.combatTargets()) {
+                if (greatswordInRange(player.position, normalDirection, target) && visibleTo(target.id, enemies)) {
+                    hit(enemies, target.id, swing.multiplier, skill = false, heavy = swing.step == 3)
+                    if (!actionsValid(enemies, epoch)) return
                 }
-                is CombatEvent.Started -> Unit
             }
         }
         pending?.let { action ->
@@ -138,41 +146,47 @@ internal class CorePlayerCombat(
                         if (forward >= 0 && lateral <= 0.85 && abs(offset.y()) <= 2.5) (forward - 1.0).coerceAtLeast(0.0) else null
                     }.minOrNull()?.coerceAtMost(2.2) ?: 2.2
                     moveSafely(action.direction, distance)
+                    vfx.play(GreatswordVisual.LUNGE, player.position, action.direction)
                     strike(enemies, player.position, action.direction, 4.5, 0.45, 1.7)
                 }
                 1 -> {
-                    if (action.elapsed < action.startup && action.elapsed % 3 == 0) arc(action.origin, action.direction, 5.0, 0.85, Particle.CRIT)
                     if (action.elapsed == action.startup) {
+                        vfx.play(GreatswordVisual.SLAM, action.origin, action.direction)
+                        vfx.play(GreatswordVisual.FINISHER, action.origin, action.direction)
                         strike(enemies, action.origin, action.direction, 5.0, cos(0.85), 2.6)
-                        arc(action.origin, action.direction, 5.0, 0.85, Particle.SWEEP_ATTACK)
+                        if (!actionsValid(enemies, epoch)) return
                         sound(SoundEvent.ENTITY_GENERIC_EXPLODE, 0.45f, 1.2f)
                     }
                 }
                 2 -> if (action.elapsed in listOf(action.startup, action.startup + 8, action.startup + 16)) {
+                    vfx.play(GreatswordVisual.WHIRL, player.position, action.direction)
+                    vfx.swingSound(2)
                     strike(enemies, player.position, action.direction, 3.3, -1.0, 1.15)
-                    arc(player.position, action.direction, 3.3, PI, Particle.SWEEP_ATTACK)
                 }
             }
+            if (!actionsValid(enemies, epoch)) return
             if (action.elapsed >= action.startup + intArrayOf(11, 13, 25)[action.id]) pending = null
         }
         if (!normal.isAttacking && pending == null) {
-            if (queuedDodge) { queuedDodge = false; dodge() }
-            else queuedSkill?.let { queuedSkill = null; skill(it) }
+            if (queuedDodge) { normal.clearBuffer(); queuedDodge = false; dodge() }
+            else if (queuedSkill != null) { normal.clearBuffer(); val id = queuedSkill!!; queuedSkill = null; skill(id) }
+            else if (normal.takeBuffered()) attack()
         }
+        vfx.tick()
     }
 
     private fun strike(enemies: QuestEncounterCombat, origin: Pos, direction: Vec, range: Double, minDot: Double, multiplier: Double) {
-        enemies.combatTargets().forEach { target ->
-            val offset = Vec(target.position.x() - origin.x(), 0.0, target.position.z() - origin.z())
-            val length = offset.length()
-            if (length <= range && abs(target.position.y() - origin.y()) <= 2.5 &&
-                (length < 0.1 || offset.normalize().dot(direction) >= minDot) && visibleTo(target.id, enemies)) {
-                hit(enemies, target.id, multiplier, skill = true)
+        val epoch = actionEpoch
+        for (target in enemies.combatTargets()) {
+            if (greatswordInRange(origin, direction, target, range, minDot) && visibleTo(target.id, enemies)) {
+                hit(enemies, target.id, multiplier, skill = true, heavy = multiplier >= 2.0)
+                if (!actionsValid(enemies, epoch)) return
             }
         }
     }
 
-    private fun hit(enemies: QuestEncounterCombat, id: UUID, multiplier: Double, skill: Boolean) {
+    private fun hit(enemies: QuestEncounterCombat, id: UUID, multiplier: Double, skill: Boolean, heavy: Boolean = false) {
+        val epoch = actionEpoch
         val stats = statSource()
         val position = enemies.positionOf(id) ?: return
         val tagBonus = if (skill) stats.skillDamagePercent else stats.normalDamagePercent
@@ -184,23 +198,27 @@ internal class CorePlayerCombat(
         }
         val damage = (attackDamage * multiplier * (1 + tagBonus / 100.0) + element) * criticalMultiplier * if (weak) 1.25 else 1.0
         if (!enemies.applyDamage(id, player, damage)) return
-        hitFeedback()
+        if (!actionsValid(enemies, epoch)) return
+        vfx.impactSound(heavy)
+        vfx.play(GreatswordVisual.HIT, position, normalDirection)
+        vfx.holdContact(if (heavy) 3 else 2)
         showDamage(position, damage, critical, weak)
-        if (stats.fireFlat > 0) {
+        if (stats.fireFlat > 0 && enemies.isAlive(id)) {
             burns[id] = Burn(maxOf(burns[id]?.damage ?: 0.0, stats.fireFlat * 0.3), tickNumber + 20, 3)
-            player.instance.sendGroupedPacket(ParticlePacket(Particle.SMALL_FLAME, position.add(0.0, 1.0, 0.0), Vec(0.2, 0.4, 0.2), 0.01f, 7))
+            vfx.particles(Particle.SMALL_FLAME, position.add(0.0, 1.0, 0.0), 7, Vec(0.2, 0.4, 0.2), 0.01f)
         }
         if (stats.iceFlat > 0) {
             enemies.applySlow(id, (0.15 + stats.iceFlat / 100.0).coerceAtMost(0.45), 2000)
-            player.instance.sendGroupedPacket(ParticlePacket(Particle.SNOWFLAKE, position.add(0.0, 0.8, 0.0), Vec(0.3, 0.3, 0.3), 0.03f, 7))
+            vfx.particles(Particle.SNOWFLAKE, position.add(0.0, 0.8, 0.0), 7, Vec(0.3, 0.3, 0.3), 0.03f)
         }
         if (stats.lightningFlat > 0) {
             enemies.combatTargets().filter { it.id != id && it.position.distance(position) <= 4.0 && visibleTo(it.id, enemies) }
                 .minByOrNull { it.position.distance(position) }?.let { chained ->
                     if (enemies.applyEffectDamage(chained.id, player, stats.lightningFlat * 0.8)) {
+                        if (!actionsValid(enemies, epoch)) return
                         val end = enemies.positionOf(chained.id) ?: position
-                        for (step in 0..8) player.instance.sendGroupedPacket(ParticlePacket(Particle.ELECTRIC_SPARK,
-                            position.add(end.sub(position).mul(step / 8.0)).add(0.0, 0.8, 0.0), Vec.ZERO, 0f, 1))
+                        for (step in 0..8) vfx.particles(Particle.ELECTRIC_SPARK,
+                            position.add(end.sub(position).mul(step / 8.0)).add(0.0, 0.8, 0.0), 1)
                     }
                 }
         }
@@ -263,7 +281,9 @@ internal class CorePlayerCombat(
     fun cooldownRemaining(id: Int): Int = (readyAt[id] - tickNumber).coerceAtLeast(0).toInt()
     fun reset() { resetActions(); defeated = false; manaValue = maxMana.toDouble(); health = maxHealth.toDouble(); readyAt.fill(0L); nextDodge = 0L; syncVanillaHealth() }
     fun resetActions() {
+        actionEpoch++
         normal.reset(); pending = null; queuedSkill = null; queuedDodge = false; burns.clear()
+        vfx.cancel()
         damageLabels.forEach { it.first.remove() }; damageLabels.clear()
     }
     private fun syncVanillaHealth() {
@@ -287,19 +307,10 @@ internal class CorePlayerCombat(
     private fun flatFacing(): Vec = Vec(player.position.direction().x(), 0.0, player.position.direction().z()).let {
         if (it.lengthSquared() < 0.001) Vec(0.0, 0.0, 1.0) else it.normalize()
     }
-    private fun hitFeedback() { sound(SoundEvent.ENTITY_PLAYER_ATTACK_STRONG, 0.4f, 1f) }
+    private fun actionsValid(enemies: QuestEncounterCombat, epoch: Long): Boolean =
+        epoch == actionEpoch && !defeated && encounter() === enemies && player.instance != null
     private fun notice(message: String) = player.sendActionBar(Component.text(message, NamedTextColor.YELLOW))
     private fun sound(event: SoundEvent, volume: Float, pitch: Float) = player.playSound(Sound.sound(event, Sound.Source.PLAYER, volume, pitch))
-
-    private fun arc(origin: Pos, facing: Vec, radius: Double, halfAngle: Double, particle: Particle) {
-        val yaw = atan2(facing.z(), facing.x())
-        val points = if (particle == Particle.SWEEP_ATTACK) 5 else 17
-        repeat(points) { index ->
-            val angle = yaw - halfAngle + 2 * halfAngle * index / (points - 1)
-            player.instance.sendGroupedPacket(ParticlePacket(particle,
-                origin.add(cos(angle) * radius, 0.6, sin(angle) * radius), Vec.ZERO, 0f, 1))
-        }
-    }
 
     companion object { val SKILL_NAMES = listOf("踏み込み斬り", "地砕き", "旋風斬り") }
 }
