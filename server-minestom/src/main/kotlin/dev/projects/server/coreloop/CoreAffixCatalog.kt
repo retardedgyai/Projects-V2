@@ -1,6 +1,5 @@
 package dev.projects.server.coreloop
 
-import dev.projects.server.equipment.EquipmentRarity
 import java.nio.charset.StandardCharsets.UTF_8
 import java.util.Collections
 import java.util.Random
@@ -9,6 +8,7 @@ import kotlin.math.roundToInt
 
 enum class CoreGearSlot(val displayName: String) { WEAPON("武器"), ARMOR("防具") }
 enum class CoreLootKind { NORMAL, ELITE, BOSS }
+enum class CoreAffixGroup(val displayName: String) { PREFIX("接頭"), SUFFIX("接尾") }
 enum class CoreAffixCategory(val displayName: String) { OFFENSE("攻撃"), RESOURCE("スキル・資源"), DEFENSE("防御"), UTILITY("機動") }
 enum class CoreAffixStat(val displayName: String, val percent: Boolean = true) {
     DAMAGE("攻撃力"), ATTACK_SPEED("攻撃速度"), SKILL_DAMAGE("スキルダメージ"),
@@ -30,7 +30,7 @@ data class CoreAffixStone(
 }
 
 data class CoreEquippedAffix(val gear: CoreGearSlot, val index: Int, val stone: CoreAffixStone) {
-    init { require(index in 0..3) }
+    init { require(index in 0..5) }
 }
 
 class CoreAffixDefinition(
@@ -39,6 +39,11 @@ class CoreAffixDefinition(
     allowedGear: Set<CoreGearSlot> = CoreGearSlot.entries.toSet(), val weight: Int = 10,
 ) {
     val allowedGear: Set<CoreGearSlot> = Collections.unmodifiableSet(allowedGear.toSet())
+    val group: CoreAffixGroup = when (stat) {
+        CoreAffixStat.DAMAGE, CoreAffixStat.SKILL_DAMAGE, CoreAffixStat.NORMAL_DAMAGE, CoreAffixStat.MAX_MANA,
+        CoreAffixStat.HEALTH, CoreAffixStat.FIRE, CoreAffixStat.ICE, CoreAffixStat.LIGHTNING -> CoreAffixGroup.PREFIX
+        else -> CoreAffixGroup.SUFFIX
+    }
     fun range(tier: Int): IntRange {
         require(tier in 1..4)
         return (baseMinimum + perTier * (tier - 1))..(baseMaximum + perTier * (tier - 1))
@@ -96,8 +101,8 @@ object CoreAffixCatalog {
     fun definition(stone: CoreAffixStone): CoreAffixDefinition? = byId[stone.modId]?.takeIf { stone.definitionRevision == 1 }
     fun valid(stone: CoreAffixStone): Boolean = definition(stone)?.range(stone.tier)?.let { stone.value in it.first.toDouble()..it.last.toDouble() } == true
     fun gearTier(account: CoreAccount, gear: CoreGearSlot): Int = if (gear == CoreGearSlot.WEAPON) account.weaponTier else account.armorTier
-    fun capacity(account: CoreAccount, gear: CoreGearSlot): Int = gearTier(account, gear)
-    fun rarity(account: CoreAccount, gear: CoreGearSlot): EquipmentRarity = EquipmentRarity.entries[capacity(account, gear) - 1]
+    fun capacity(account: CoreAccount, gear: CoreGearSlot): Int = rarity(account, gear).capacity
+    fun rarity(account: CoreAccount, gear: CoreGearSlot): CoreGearRarity = if (gear == CoreGearSlot.WEAPON) account.weaponRarity else account.armorRarity
     fun qualityPercent(stone: CoreAffixStone): Int {
         val range = definition(stone)?.range(stone.tier) ?: return 0
         return ((stone.value - range.first) / (range.last - range.first).coerceAtLeast(1) * 100).roundToInt().coerceIn(0, 100)

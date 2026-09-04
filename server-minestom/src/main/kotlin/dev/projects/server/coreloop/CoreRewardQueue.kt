@@ -118,6 +118,7 @@ class CoreRewardQueue(
         is CoreAction.Gather -> "gather/${action.runId}/${action.nodeId}"
         is CoreAction.CombatReward -> "combat/${action.runId}/${action.encounterId}"
         is CoreAction.BossReward -> "boss/${action.runId}/defeat"
+        is CoreAction.ActivityReward -> "activity/${action.runId}/${action.sourceId}"
         is CoreAction.AffixLoot -> if (action.kind == CoreLootKind.BOSS) "boss-affix/${action.runId}/defeat"
             else "affix/${action.runId}/${action.sourceId}"
         else -> null

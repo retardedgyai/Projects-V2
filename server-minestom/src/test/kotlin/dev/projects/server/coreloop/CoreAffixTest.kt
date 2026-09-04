@@ -96,17 +96,17 @@ class CoreAffixTest {
     @Test fun `visible loot commits exact preview once and cannot also award old combat callback`() {
         val f = Fixture()
         val runId = f.start()
-        val preview = CoreAffixCatalog.rollLoot(f.account.activeRun!!, "elite-1", CoreLootKind.ELITE)
+        val preview = CoreCraftingCatalog.rollLoot(f.account.activeRun!!, "elite-1", CoreLootKind.ELITE)
         val operation = CoreOperation(UUID.randomUUID(), f.account.revision, CoreAction.AffixLoot(runId, "elite-1", CoreLootKind.ELITE))
         assertTrue(f.service.transact(f.player, operation).successful)
-        assertEquals(preview, f.account.affixStones)
+        assertEquals(preview, f.account.currencies)
         assertEquals(3, f.account.amount(CoreResource.AFFIX_DUST))
         assertEquals(6, f.account.amount(CoreResource.COMBAT_TOKEN))
         assertEquals(CoreTransactionStatus.REJECTED, f.perform(CoreAction.CombatReward(runId, "elite-1", 6)).status)
         assertEquals(CoreTransactionStatus.REJECTED, f.perform(CoreAction.AffixLoot(runId, "elite-1", CoreLootKind.NORMAL)).status)
         f.service.forget(f.player); f.service.open(f.player)
         assertEquals(CoreTransactionStatus.REPLAYED, f.service.transact(f.player, operation).status)
-        assertEquals(preview, f.account.affixStones)
+        assertEquals(preview, f.account.currencies)
         assertEquals(CoreTransactionStatus.REJECTED, f.perform(CoreAction.AbortRun(runId)).status)
         f.commit(CoreAction.CombatReward(runId, "legacy-enemy", 2))
         f.commit(CoreAction.AffixLoot(runId, "legacy-enemy", CoreLootKind.NORMAL))
@@ -114,86 +114,25 @@ class CoreAffixTest {
         assertEquals(4, f.account.amount(CoreResource.AFFIX_DUST))
     }
 
-    @Test fun `boss bonus waits for progression and awards three stones without duplicate boss tokens`() {
+    @Test fun `boss bonus waits for progression and awards three currencies without duplicate boss tokens`() {
         val f = Fixture()
         val runId = f.start()
         assertEquals(CoreTransactionStatus.REJECTED, f.perform(CoreAction.AffixLoot(runId, "boss", CoreLootKind.BOSS)).status)
         f.commit(CoreAction.BossReward(runId))
         f.commit(CoreAction.AffixLoot(runId, "boss", CoreLootKind.BOSS))
-        assertEquals(3, f.account.affixStones.size)
+        assertEquals(3L, f.account.currencies.values.sum())
         assertEquals(12, f.account.amount(CoreResource.COMBAT_TOKEN))
         assertEquals(6, f.account.amount(CoreResource.AFFIX_DUST))
         assertEquals(CoreTransactionStatus.REJECTED, f.perform(CoreAction.AffixLoot(runId, "other-boss-source", CoreLootKind.BOSS)).status)
     }
 
-    @Test fun `replacement requires exact confirmation extraction returns same stone upgrade preserves installed mod`() {
-        val force = stone()
-        val haste = stone("projects:haste")
-        val f = Fixture(CoreAccount(UUID.randomUUID(), revision = 1,
-            balances = mapOf(CoreMaterial(CoreResource.AFFIX_DUST) to 30, CoreMaterial(CoreResource.INGOT) to 4,
-                CoreMaterial(CoreResource.BOARD) to 2, CoreMaterial(CoreResource.BOSS_SIGIL) to 1),
-            affixStones = listOf(force, haste)))
-        f.commit(CoreAction.ApplyAffix(CoreGearSlot.WEAPON, 0, force.id))
-        assertEquals(5.0, CoreAffixCatalog.stats(f.account).damagePercent)
-        assertEquals(CoreTransactionStatus.REJECTED, f.perform(CoreAction.ApplyAffix(CoreGearSlot.WEAPON, 0, haste.id)).status)
-        assertEquals(1, f.account.affixStones.size)
-        f.commit(CoreAction.ApplyAffix(CoreGearSlot.WEAPON, 0, haste.id, force.id))
-        assertEquals(32, f.account.amount(CoreResource.AFFIX_DUST))
-        assertEquals(0.0, CoreAffixCatalog.stats(f.account).damagePercent)
-        assertEquals(3.0, CoreAffixCatalog.stats(f.account).attackSpeedPercent)
-        assertEquals(CoreTransactionStatus.REJECTED, f.perform(CoreAction.ExtractAffix(CoreGearSlot.WEAPON, 0, force.id)).status)
-        f.commit(CoreAction.ExtractAffix(CoreGearSlot.WEAPON, 0, haste.id))
-        assertEquals(listOf(haste), f.account.affixStones)
-        assertTrue(f.account.equippedAffixes.isEmpty())
-        assertEquals(30, f.account.amount(CoreResource.AFFIX_DUST))
-        f.commit(CoreAction.ApplyAffix(CoreGearSlot.WEAPON, 0, haste.id))
-        f.commit(CoreAction.UpgradeWeapon)
-        assertEquals(2, CoreAffixCatalog.capacity(f.account, CoreGearSlot.WEAPON))
-        assertEquals(haste, f.account.equippedAffixes.single().stone)
-        f.service.forget(f.player); f.service.open(f.player)
-        assertEquals(haste, f.account.equippedAffixes.single().stone)
-    }
-
-    @Test fun `gear tier slot duplicate and incompatible mod validation never consumes the stone`() {
-        val one = stone()
-        val duplicate = stone()
-        val high = stone(tier = 4)
-        val armor = stone("projects:guard")
-        val f = Fixture(CoreAccount(UUID.randomUUID(), revision = 1, weaponTier = 2, affixStones = listOf(one, duplicate, high, armor)))
-        f.commit(CoreAction.ApplyAffix(CoreGearSlot.WEAPON, 0, one.id))
-        val rejected = listOf(CoreAction.ApplyAffix(CoreGearSlot.WEAPON, 1, duplicate.id),
-            CoreAction.ApplyAffix(CoreGearSlot.WEAPON, 1, high.id), CoreAction.ApplyAffix(CoreGearSlot.WEAPON, 1, armor.id),
-            CoreAction.ApplyAffix(CoreGearSlot.ARMOR, 1, armor.id), CoreAction.ApplyAffix(CoreGearSlot.WEAPON, -1, armor.id))
-        rejected.forEach { assertEquals(CoreTransactionStatus.REJECTED, f.perform(it).status) }
-        assertEquals(3, f.account.affixStones.size)
-        assertEquals(1, f.account.equippedAffixes.size)
-    }
-
-    @Test fun `reroll is paid once deterministic in request and preserves stone identity and type`() {
-        val original = stone()
-        val f = Fixture(CoreAccount(UUID.randomUUID(), revision = 1,
-            balances = mapOf(CoreMaterial(CoreResource.AFFIX_DUST) to 20, CoreMaterial(CoreResource.STONE_BLOCK) to 2), affixStones = listOf(original)))
-        val operation = CoreOperation(UUID.randomUUID(), f.account.revision, CoreAction.RerollAffix(original.id))
-        val expected = CoreAffixCatalog.reroll(original, operation.requestId)
-        assertTrue(f.service.transact(f.player, operation).successful)
-        assertEquals(listOf(expected), f.account.affixStones)
-        assertEquals(original.id, expected.id)
-        assertEquals(original.modId, expected.modId)
-        assertEquals(17, f.account.amount(CoreResource.AFFIX_DUST))
-        assertEquals(1, f.account.amount(CoreResource.STONE_BLOCK))
-        assertEquals(CoreTransactionStatus.REPLAYED, f.service.transact(f.player, operation).status)
-        f.commit(CoreAction.SalvageAffix(original.id))
-        assertEquals(19, f.account.amount(CoreResource.AFFIX_DUST))
-        assertTrue(f.account.affixStones.isEmpty())
-    }
-
-    @Test fun `full bag converts visible loot into powder without blocking run or deleting existing stones`() {
+    @Test fun `full legacy bag does not affect currency rewards or delete existing stones`() {
         val original = List(CoreAffixCatalog.MAX_STONES) { stone() }
         val f = Fixture(CoreAccount(UUID.randomUUID(), revision = 1, affixStones = original))
         val run = f.start()
         f.commit(CoreAction.AffixLoot(run, "elite", CoreLootKind.ELITE))
         assertEquals(original, f.account.affixStones)
-        assertEquals(7, f.account.amount(CoreResource.AFFIX_DUST))
+        assertEquals(3, f.account.amount(CoreResource.AFFIX_DUST))
         assertEquals(6, f.account.amount(CoreResource.COMBAT_TOKEN))
         f.commit(CoreAction.FinishRun(run))
         assertNull(f.account.activeRun)
@@ -212,31 +151,6 @@ class CoreAffixTest {
         assertEquals(original, f.account.affixStones)
     }
 
-    @Test fun `save failure rolls back affix placement powder and reroll while retry commits exactly once`() {
-        var fail = false
-        val original = stone()
-        val repository = CoreAccountRepository(Files.createTempDirectory("projects-affix-failed-write")) { from, to ->
-            if (fail) error("simulated disk outage")
-            Files.move(from, to, ATOMIC_MOVE, REPLACE_EXISTING)
-        }
-        val f = Fixture(CoreAccount(UUID.randomUUID(), revision = 1,
-            balances = mapOf(CoreMaterial(CoreResource.AFFIX_DUST) to 10, CoreMaterial(CoreResource.STONE_BLOCK) to 1),
-            affixStones = listOf(original)), repository)
-        fail = true
-        assertEquals(CoreTransactionStatus.SAVE_FAILED, f.perform(CoreAction.ApplyAffix(CoreGearSlot.WEAPON, 0, original.id)).status)
-        assertEquals(listOf(original), f.account.affixStones)
-        assertTrue(f.account.equippedAffixes.isEmpty())
-        val operation = CoreOperation(UUID.randomUUID(), f.account.revision, CoreAction.RerollAffix(original.id))
-        assertEquals(CoreTransactionStatus.SAVE_FAILED, f.service.transact(f.player, operation).status)
-        assertEquals(10, f.account.amount(CoreResource.AFFIX_DUST))
-        assertEquals(1, f.account.amount(CoreResource.STONE_BLOCK))
-        assertEquals(listOf(original), f.account.affixStones)
-        fail = false
-        assertEquals(CoreTransactionStatus.COMMITTED, f.service.transact(f.player, operation).status)
-        assertEquals(CoreTransactionStatus.REPLAYED, f.service.transact(f.player, operation).status)
-        assertEquals(7, f.account.amount(CoreResource.AFFIX_DUST))
-    }
-
     @Test fun `unknown definitions and future revisions round trip inert while malformed known rolls fail closed`() {
         val unknown = CoreAffixStone(UUID.randomUUID(), "future:effect", 1, 99.5, 2)
         val future = stone().copy(definitionRevision = 2)
@@ -253,15 +167,14 @@ class CoreAffixTest {
         assertFailsWith<IllegalArgumentException> { CoreAccount(UUID.randomUUID(), affixStones = listOf(future, future)) }
     }
 
-    @Test fun `v1 read does not write and first v2 mutation preserves all balances tiers maps receipts and exact backup`() {
+    @Test fun `v1 read does not write and first v3 mutation preserves all balances tiers maps receipts and exact backup`() {
         val directory = Files.createTempDirectory("projects-affix-v1-migration")
         val player = UUID.randomUUID()
         val receiptId = UUID.randomUUID()
         val original = CoreAccount(player, revision = 1, balances = mapOf(CoreMaterial(CoreResource.ORE, 4) to 77),
             weaponTier = 3, armorTier = 4, unlockedMapTier = 4, maps = listOf(CoreOwnedMap(UUID.randomUUID(), 111, 4)),
             receipts = mapOf(receiptId to CoreReceipt("a".repeat(64), 1, "旧記録")), claimedSources = setOf("combat/old-source"))
-        val v2 = CoreAccountCodec.encode(original)
-        val body = v2.substringBefore("checksum\t").replaceFirst("PROJECTS_CORE_LOOP\t2\t", "PROJECTS_CORE_LOOP\t1\t")
+        val body = legacyBody(original, 1)
         val v1 = body + "checksum\t" + MessageDigest.getInstance("SHA-256").digest(body.toByteArray(UTF_8)).joinToString("") { "%02x".format(it) } + "\n"
         val path = directory.resolve("$player.account")
         val backup = directory.resolve("$player.account.v1.bak")
@@ -273,7 +186,7 @@ class CoreAffixTest {
         assertTrue(read.affixStones.isEmpty() && read.equippedAffixes.isEmpty())
         assertEquals(CoreTransactionStatus.COMMITTED, service.transact(player, CoreOperation(UUID.randomUUID(), 1, CoreAction.ClaimMap(1, 222))).status)
         assertEquals(v1, Files.readString(backup))
-        assertTrue(Files.readString(path).startsWith("PROJECTS_CORE_LOOP\t2\t"))
+        assertTrue(Files.readString(path).startsWith("PROJECTS_CORE_LOOP\t3\t"))
         service.forget(player)
         val after = assertIs<CoreAccountLoadResult.Ready>(service.open(player)).account
         assertEquals(77, after.amount(CoreResource.ORE, 4))
@@ -288,8 +201,7 @@ class CoreAffixTest {
         val player = UUID.randomUUID()
         val original = CoreAccount(player, revision = 1, weaponTier = 4, armorTier = 3,
             balances = mapOf(CoreMaterial(CoreResource.LEATHER, 3) to 12))
-        val body = CoreAccountCodec.encode(original).substringBefore("checksum\t")
-            .replaceFirst("PROJECTS_CORE_LOOP\t2\t", "PROJECTS_CORE_LOOP\t1\t")
+        val body = legacyBody(original, 1)
         val v1 = body + "checksum\t" + MessageDigest.getInstance("SHA-256").digest(body.toByteArray(UTF_8))
             .joinToString("") { "%02x".format(it) } + "\n"
         val path = directory.resolve("$player.account")
@@ -320,7 +232,7 @@ class CoreAffixTest {
         }
         val f = Fixture(repository = repository)
         val run = f.start()
-        val preview = CoreAffixCatalog.rollLoot(f.account.activeRun!!, "elite-queue", CoreLootKind.ELITE)
+        val preview = CoreCraftingCatalog.rollLoot(f.account.activeRun!!, "elite-queue", CoreLootKind.ELITE)
         val executor = Executors.newSingleThreadScheduledExecutor()
         val attempted = CountDownLatch(1)
         val queue = CoreRewardQueue(f.service, executor, onRetry = { _, _ -> attempted.countDown() }, retryDelayMillis = 10)
@@ -337,9 +249,73 @@ class CoreAffixTest {
             queue.retryPending(f.player)
             assertTrue(future.get(3, TimeUnit.SECONDS).successful)
             barrier.get(3, TimeUnit.SECONDS)
-            assertEquals(preview, f.account.affixStones)
+            assertEquals(preview, f.account.currencies)
             assertEquals(CoreTransactionStatus.REPLAYED, queue.submit(f.player, action).get(3, TimeUnit.SECONDS).status)
             assertEquals(6, f.account.amount(CoreResource.COMBAT_TOKEN))
         } finally { executor.shutdownNow() }
     }
+
+    @Test fun `old direct stone actions all reject and explicit exchange is atomic and once only`() {
+        val original = stone(tier = 4)
+        val equipped = stone("projects:haste")
+        val f = Fixture(CoreAccount(UUID.randomUUID(), revision = 1, affixStones = listOf(original),
+            equippedAffixes = listOf(CoreEquippedAffix(CoreGearSlot.WEAPON, 0, equipped))))
+        listOf(CoreAction.ApplyAffix(CoreGearSlot.WEAPON, 0, original.id, equipped.id),
+            CoreAction.ExtractAffix(CoreGearSlot.WEAPON, 0, equipped.id), CoreAction.RerollAffix(original.id), CoreAction.SalvageAffix(original.id))
+            .forEach { assertEquals(CoreTransactionStatus.REJECTED, f.perform(it).status) }
+        assertEquals(1, f.account.revision)
+        assertEquals(listOf(original), f.account.affixStones)
+        val operation = CoreOperation(UUID.randomUUID(), 1, CoreAction.ConvertLegacyStone(original.id))
+        assertTrue(f.service.transact(f.player, operation).successful)
+        assertTrue(f.account.affixStones.isEmpty())
+        assertEquals(4, f.account.amount(CoreCraftingCurrency.ALTERATION))
+        assertEquals(1, f.account.amount(CoreCraftingCurrency.ALCHEMY))
+        assertEquals(equipped, f.account.equippedAffixes.single().stone)
+        assertEquals(CoreTransactionStatus.REPLAYED, f.service.transact(f.player, operation).status)
+        assertEquals(CoreTransactionStatus.REJECTED, f.perform(CoreAction.ConvertLegacyStone(original.id)).status)
+    }
+
+    @Test fun `v2 migration preserves four prefix layout and exact backup even after failed replacement`() {
+        val directory = Files.createTempDirectory("projects-affix-v2-migration")
+        val player = UUID.randomUUID()
+        val equipped = listOf("projects:force", "projects:technique", "projects:onslaught", "projects:flame")
+            .mapIndexed { index, id -> CoreEquippedAffix(CoreGearSlot.WEAPON, index, stone(id, 4)) }
+        val original = CoreAccount(player, revision = 1, weaponTier = 4, armorTier = 3, equippedAffixes = equipped,
+            balances = mapOf(CoreMaterial(CoreResource.ORE, 4) to 77), affixStones = listOf(stone()))
+        val body = legacyBody(original, 2)
+        val old = body + "checksum\t" + MessageDigest.getInstance("SHA-256").digest(body.toByteArray(UTF_8)).joinToString("") { "%02x".format(it) } + "\n"
+        val path = directory.resolve("$player.account")
+        val backup = directory.resolve("$player.account.v2.bak")
+        Files.writeString(path, old)
+        var fail = true
+        val service = CoreAccountService(CoreAccountRepository(directory) { from, to ->
+            if (fail) error("migration rename outage")
+            Files.move(from, to, ATOMIC_MOVE, REPLACE_EXISTING)
+        })
+        val loaded = assertIs<CoreAccountLoadResult.Ready>(service.open(player)).account
+        assertFalse(Files.exists(backup))
+        assertEquals(equipped, loaded.equippedAffixes)
+        assertEquals(setOf(CoreGearSlot.WEAPON), loaded.legacyLayouts)
+        assertEquals(CoreAffixCatalog.stats(original), CoreAffixCatalog.stats(loaded))
+        val operation = CoreOperation(UUID.randomUUID(), 1, CoreAction.ConvertLegacyStone(original.affixStones.single().id))
+        assertEquals(CoreTransactionStatus.SAVE_FAILED, service.transact(player, operation).status)
+        assertEquals(old, Files.readString(path))
+        assertEquals(old, Files.readString(backup))
+        assertTrue(service.snapshot(player)!!.currencies.isEmpty())
+        assertEquals(original.affixStones, service.snapshot(player)!!.affixStones)
+        fail = false
+        assertEquals(CoreTransactionStatus.COMMITTED, service.transact(player, operation).status)
+        service.forget(player)
+        val after = assertIs<CoreAccountLoadResult.Ready>(service.open(player)).account
+        assertEquals(equipped, after.equippedAffixes)
+        assertEquals(77, after.amount(CoreResource.ORE, 4))
+        assertEquals(4, after.weaponTier); assertEquals(3, after.armorTier)
+        assertEquals(old, Files.readString(backup))
+        assertEquals(CoreTransactionStatus.REPLAYED, service.transact(player, operation).status)
+    }
+
+    private fun legacyBody(account: CoreAccount, version: Int): String =
+        CoreAccountCodec.encode(account).substringBefore("checksum\t").lineSequence()
+            .filterNot { it.startsWith("crafting\t") || it.startsWith("currency\t") || it.startsWith("fragment\t") || it.startsWith("legacy-layout\t") }
+            .joinToString("\n").replaceFirst("PROJECTS_CORE_LOOP\t3\t", "PROJECTS_CORE_LOOP\t$version\t")
 }
