@@ -51,8 +51,8 @@ class CoreUiTest {
         assertTrue(fallback.contains("HP 70/100")); assertTrue(fallback.contains("3:4秒"))
         assertFalse(fallback.any { it.code in 0xE000..0xF8FF })
         val packed = plain(CoreUiComponents.hud(state, true))
-        assertTrue(packed.contains(CoreUiIcon.DASH.glyph)); assertTrue(packed.contains(CoreUiIcon.SLAM.glyph))
-        assertTrue(packed.contains(CoreUiIcon.WHIRL.glyph))
+        assertTrue(packed.any { it.code in 0xE400..0xE415 }); assertTrue(packed.any { it.code in 0xE420..0xE435 })
+        assertTrue(packed.any { it.code in 0xE440..0xE455 })
     }
 
     @Test fun `inventory titles fit their frame using bold Japanese pixel width`() {
@@ -77,7 +77,7 @@ class CoreUiTest {
         assertEquals("", CoreUiComponents.trimWidth("長い", 3, bold = true))
     }
 
-    @Test fun `pack bundling is deterministic and never overrides Minecraft defaults`() {
+    @Test fun `pack bundling is deterministic and overrides only player heart and food sprites`() {
         val first = CoreUiPackServer.bundle()
         assertContentEquals(first, CoreUiPackServer.bundle())
         val paths = mutableListOf<String>()
@@ -86,7 +86,8 @@ class CoreUiTest {
         }
         assertTrue("pack.mcmeta" in paths)
         assertTrue("assets/projects/font/core_icons.json" in paths)
-        assertFalse(paths.any { it.startsWith("assets/minecraft/") })
+        assertEquals(CoreUiPackPolicy.vanillaOverrides, paths.filter { it.startsWith("assets/minecraft/") }.toSet())
+        assertFalse(paths.any { it.startsWith("assets/minecraft/font/") })
         assertEquals(paths.size, paths.distinct().size)
     }
 

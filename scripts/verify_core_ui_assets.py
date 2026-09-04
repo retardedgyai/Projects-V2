@@ -4,6 +4,8 @@ import hashlib
 import json
 import struct
 import zlib
+from PIL import Image
+from build_core_hud_assets import vanilla_overrides
 
 ROOT = Path(__file__).resolve().parents[1]
 PACK = ROOT / "server-minestom/src/main/resources/core-ui-pack"
@@ -12,7 +14,13 @@ PACK = ROOT / "server-minestom/src/main/resources/core-ui-pack"
 def verify():
     paths = (PACK / "index.txt").read_text(encoding="utf-8").splitlines()
     assert len(paths) == len(set(paths)) and paths == sorted(paths)
-    assert not any(p.startswith("assets/minecraft/") or ".." in p for p in paths), "Global override is forbidden"
+    overrides = vanilla_overrides()
+    actual_overrides = {p for p in paths if p.startswith("assets/minecraft/")}
+    assert actual_overrides == overrides, "Only the requested player heart/food overrides are permitted"
+    assert not any(".." in p or "\\" in p or p.startswith("/") for p in paths)
+    for path in overrides:
+        with Image.open(PACK / path) as sprite:
+            assert sprite.size == (9, 9) and sprite.convert("RGBA").getchannel("A").getbbox() is None
     actual = sorted(str(p.relative_to(PACK)).replace("\\", "/") for p in PACK.rglob("*") if p.is_file() and p.name != "index.txt")
     assert actual == paths, "Stale pack index"
     meta = json.loads((PACK / "pack.mcmeta").read_text())
@@ -34,11 +42,32 @@ def verify():
                 assert all(len(row) == len(provider["chars"][0]) for row in provider["chars"])
                 assert width % len(provider["chars"][0]) == 0
                 assert provider["ascent"] <= provider["height"]
+                assert width // len(provider["chars"][0]) <= 256
+                assert height // len(provider["chars"]) <= 256
             for char in chars:
                 assert 0xE000 <= ord(char) <= 0xF8FF, "Custom font must not claim Japanese or Latin characters"
                 key = (path.name, char)
                 assert key not in glyphs, "Duplicate glyph"
                 glyphs.add(key)
+    hud = json.loads((PACK / "assets/projects/font/core_hud.json").read_text())["providers"]
+    assert len(hud) == 8
+    for provider in hud:
+        filename = provider["file"].replace("projects:", "assets/projects/textures/")
+        with Image.open(PACK / filename) as sheet:
+            cell_w, cell_h = sheet.width // len(provider["chars"][0]), sheet.height // len(provider["chars"])
+            for y, row in enumerate(provider["chars"]):
+                for x, char in enumerate(row):
+                    box = sheet.crop((x * cell_w, y * cell_h, (x + 1) * cell_w, (y + 1) * cell_h)).getchannel("A").getbbox()
+                    assert box is not None
+                    advance = round(box[2] * provider["height"] / cell_h) + 1
+                    expected = 82 if ord(char) < 0xE400 else 33 if ord(char) < 0xE500 else 9 if ord(char) < 0xE520 else 4
+                    assert advance == expected, f"HUD anchor drift: {hex(ord(char))} advances {advance}, expected {expected}"
+    layout = json.loads((ROOT / "assets/core-ui/hud-layout.json").read_text())
+    assert layout["bars"] == {"left_x": [-91, 10], "width": 81, "height": 9, "top_from_bottom": 39}
+    for name in ("dash", "slam", "whirl"):
+        with Image.open(PACK / f"assets/projects/textures/gui/core/skill_{name}_states.png") as sheet:
+            def frame(index): return sheet.crop(((index % 4)*32, (index // 4)*32, (index % 4)*32+32, (index // 4)*32+32))
+            assert frame(0).tobytes() != frame(20).tobytes() != frame(21).tobytes()
     # Slots retain exact vanilla coordinates and readable socket centers (items render afterwards).
     png = (PACK / "assets/projects/textures/gui/core/menu_frame.png").read_bytes()
     cursor, compressed = 8, b""
@@ -63,7 +92,7 @@ def verify():
                   "mana": "stats/mana", "reward": "stats/xp", "mod": "stats/level", "blank": "core/blank"}.get(path.stem, f"skills/{path.stem}")
         assert (PACK / f"{texture}.png").read_bytes() == (PACK / f"assets/projects/textures/gui/{source}.png").read_bytes(), "Item-atlas copies must preserve original artwork"
     digest = hashlib.sha256(b"".join(p.encode() + (PACK / p).read_bytes() for p in paths)).hexdigest()
-    print(f"PASS: {len(paths)} assets, {len(glyphs)} private glyphs, no global font overrides; content SHA256 {digest}")
+    print(f"PASS: {len(paths)} assets, {len(glyphs)} private glyphs, {len(overrides)} scoped transparent HUD sprites, no global font overrides; content SHA256 {digest}")
 
 
 if __name__ == "__main__":

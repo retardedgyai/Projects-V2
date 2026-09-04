@@ -156,8 +156,8 @@ class CoreUiPackServer private constructor(
             val paths = requireNotNull(loader.getResourceAsStream("core-ui-pack/index.txt")) { "Missing UI asset index" }
                 .bufferedReader(Charsets.UTF_8).use { reader -> reader.readLines().filter { it.isNotBlank() && !it.startsWith('#') } }
             require(paths.isNotEmpty() && paths.distinct().size == paths.size)
-            require(paths.all { !it.startsWith('/') && ".." !in it && '\\' !in it && !it.startsWith("assets/minecraft/") }) {
-                "The optional UI pack must not override global Minecraft assets/fonts"
+            require(paths.all(CoreUiPackPolicy::allowedPath)) {
+                "Only the explicitly scoped player heart/food sprite overrides are allowed; never global fonts"
             }
             val output = ByteArrayOutputStream()
             ZipOutputStream(output).use { zip ->

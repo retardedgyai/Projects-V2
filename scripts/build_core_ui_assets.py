@@ -9,6 +9,7 @@ import json
 import shutil
 import struct
 import zlib
+from build_core_hud_assets import build_hud
 
 ROOT = Path(__file__).resolve().parents[1]
 PACK = ROOT / "server-minestom/src/main/resources/core-ui-pack"
@@ -61,6 +62,10 @@ def item_model(name, source):
 
 
 def build():
+    for name in ("dash", "slam", "whirl"):
+        master = SOURCE / f"skills/{name}.png"
+        if master.is_file():
+            shutil.copyfile(master, ASSETS / f"textures/gui/skills/{name}.png")
     write_json(PACK / "pack.mcmeta", {"pack": {"description": "ProjectS · 開拓者のUI / Vanilla 26.2", "min_format": [88, 0], "max_format": [88, 0]}})
     stats = [("attack", "attack_power"), ("speed", "attack_speed"), ("critical", "magic_power"), ("defense", "defense"),
              ("health", "health"), ("magic", "magic_power"), ("mana", "mana"), ("reward", "xp"), ("mod", "level")]
@@ -89,32 +94,13 @@ def build():
                       (x, y+16, 17, 1, "4B4B45"), (x+16, y, 1, 16, "44453F")]
     image("menu_frame", 176, 222, frame)
     write_json(ASSETS / "font/core_menu.json", {"providers": [bitmap("core/menu_frame", 222, 13, [chr(0xE200)])]})
-    providers = []
-    for name, base, color, light in [("health_bar", 0xE300, "AA5555", "E2A08C"), ("mana_bar", 0xE320, "477FA1", "91CAE2")]:
-        rectangles = []
-        for step in range(21):
-            y = step * 7
-            rectangles += [(0, y, 40, 7, "706249"), (1, y+1, 38, 5, "24272B")]
-            filled = round(36 * step / 20)
-            if filled:
-                rectangles += [(2, y+2, filled, 3, color), (2, y+2, filled, 1, light)]
-        image(name, 40, 147, rectangles)
-        providers.append(bitmap(f"core/{name}", 7, 7, [chr(base + n) for n in range(21)]))
-    rectangles = []
-    for step in range(11):
-        y = step * 7
-        rectangles += [(0, y, 12, 7, "6A5A3F"), (1, y+1, 10, 5, "24272B")]
-        if step:
-            rectangles.append((1, y+2, step, 3, "CDB77B"))
-    image("skill_charge", 12, 77, rectangles)
-    providers.append(bitmap("core/skill_charge", 7, 7, [chr(0xE340 + n) for n in range(11)]))
-    write_json(ASSETS / "font/core_hud.json", {"providers": providers})
     for name, asset in stats:
         item_model(name, f"stats/{asset}")
     for name, _ in skills:
         item_model(name, f"skills/{name}")
     image("blank", 1, 1, [])
     item_model("blank", "core/blank")
+    build_hud(ASSETS, SOURCE, write_json)
     paths = sorted(str(path.relative_to(PACK)).replace("\\", "/") for path in PACK.rglob("*") if path.is_file() and path.name != "index.txt")
     (PACK / "index.txt").write_text("\n".join(paths) + "\n", encoding="utf-8")
     print(f"Built {len(paths)} indexed assets under {PACK}")

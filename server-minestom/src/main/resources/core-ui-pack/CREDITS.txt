@@ -18,5 +18,13 @@ License for these textures: Creative Commons Attribution-ShareAlike 3.0
 https://creativecommons.org/licenses/by-sa/3.0/
 No endorsement by the original artists or Monumenta is implied.
 
+Positioned HUD derivatives: ProjectS trims transparent margins, enlarges these
+three masters with nearest-neighbour sampling, and adds frames, radial cooldown
+darkening and a blue insufficient-mana state. The skill_*_states.png derivatives
+are also provided under Creative Commons Attribution-ShareAlike 3.0, with the
+same source and artist attribution above. The source PNGs remain unchanged.
+
 Gauge rectangles and slot-aligned menu panel: new ProjectS code-native UI geometry.
 No Minecraft default font, Japanese font or global item texture is overridden.
+Only the explicitly requested player heart and food HUD sprites are transparent;
+armour, experience, air, vehicle hearts and other Vanilla sprites are unchanged.

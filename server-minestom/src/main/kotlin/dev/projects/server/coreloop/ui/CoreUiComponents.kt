@@ -6,7 +6,6 @@ import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.TextColor
 import net.kyori.adventure.text.format.TextDecoration
 import net.kyori.adventure.text.format.ShadowColor
-import kotlin.math.ceil
 import kotlin.math.roundToInt
 
 /** Presentation only. No input, damage, account or progression state is owned by this class. */
@@ -76,34 +75,19 @@ object CoreUiComponents {
     fun hud(state: CoreHudState, packed: Boolean): Component {
         if (!packed) {
             val cooldowns = state.skills.take(3).joinToString(" / ") {
-                "${it.key}:${if (it.remainingSeconds <= 0) "可" else "${ceil(it.remainingSeconds).toInt()}秒"}"
+                val visual = CoreHudLayout.skillVisual(it, state.mana)
+                val status = when (visual.frame) {
+                    CoreHudLayout.READY -> "可"
+                    CoreHudLayout.NO_MANA -> "マナ不足"
+                    else -> "${visual.centre}秒"
+                }
+                "${it.key}:$status"
             }
             return text("HP ${number(state.health)}/${number(state.maxHealth)}  マナ ${number(state.mana)}/${number(state.maxMana)}", GOLD)
                 .append(text("  $cooldowns", IVORY))
                 .append(if (state.hint.isBlank()) Component.empty() else text("  ${state.hint}", MUTED))
         }
-        var result = Component.empty()
-            .append(icon(CoreUiIcon.HEALTH, true)).append(space(3))
-            .append(gauge(state.health, state.maxHealth, 0xE300))
-            .append(space(4)).append(text("${number(state.health)}/${number(state.maxHealth)}", RED))
-            .append(space(10)).append(icon(CoreUiIcon.MANA, true)).append(space(3))
-            .append(gauge(state.mana, state.maxMana, 0xE320))
-            .append(space(4)).append(text("${number(state.mana)}", BLUE)).append(space(12))
-        state.skills.take(3).forEach { skill ->
-            val ready = skill.remainingSeconds <= 0.0
-            val usable = ready && state.mana >= skill.manaCost
-            val progress = if (ready) 10 else ((1.0 - skill.remainingSeconds / skill.totalSeconds.coerceAtLeast(0.1)) * 10).toInt().coerceIn(0, 10)
-            result = result.append(icon(skill.icon, true)).append(space(2))
-                .append(text(skill.key, MUTED)).append(space(2))
-                .append(text(if (ready) if (usable) "可" else "MP" else ceil(skill.remainingSeconds).toInt().toString(), if (usable) GOLD else MUTED))
-                .append(space(2)).append(glyph((0xE340 + progress).toChar(), HUD_FONT)).append(space(8))
-        }
-        return result
-    }
-
-    private fun gauge(value: Double, maximum: Double, base: Int): Component {
-        val fraction = if (!value.isFinite() || !maximum.isFinite() || maximum <= 0.0) 0.0 else (value / maximum).coerceIn(0.0, 1.0)
-        return glyph((base + (fraction * 20).roundToInt()).toChar(), HUD_FONT)
+        return CoreHudLayout.render(state)
     }
 
     private fun number(value: Double): String = if (value.isFinite()) value.coerceAtLeast(0.0).roundToInt().toString() else "0"
