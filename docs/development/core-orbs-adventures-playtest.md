@@ -72,6 +72,11 @@ MOD数値・通貨出現率・波の制限時間・欠片報酬数は手動テ�
   道のブロックが不変、4体を置ける足場、亀裂間距離、儀式との間隔を確認。
 - 帰還停止・保存失敗後の再開・ダメージcallback中の帰還・arena二重cleanup回帰も成功。
 - クライアント／protocol差分0。mainは変更していない。
+- 更新版を起動して、Vanilla 26.2の可視・非最小化ウィンドウ、港への接続、
+  `CORE_UI_PACK ... SUCCESSFULLY_LOADED` を確認。HP/MPが旧ゲージ位置、技能3個が上段で表示される実画面を読み取り確認。
+  起動ログ: `server-minestom/run/core-loop-20260905-065717.log`。
+  ローカル確認画像: `.tools/orbs-hud-startup.png`（生成物のため非追跡）。
+- ゲーム内移動・クリック・スキル操作はしていない。CDの経時変化と各ボス戦の実プレイは未判定。
 - 操作感、ボス難易度、波の90秒制限の妥当性はCreatorの手動テスト待ち。
 
 詳細: [オーブ仕様](core-orb-crafting-v0.md)、[ボスと公式Monumenta参照](adventure-events-and-trials-v0.md)、
