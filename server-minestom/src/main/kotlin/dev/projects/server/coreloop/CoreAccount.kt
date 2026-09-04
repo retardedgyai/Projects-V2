@@ -146,8 +146,10 @@ object CoreLoopCatalog {
         require(tier in 1..4)
         val unit = when (resource) {
             CoreResource.POTION -> CoreRecipe("回復薬を調合", mapOf(CoreMaterial(CoreResource.CLOTH, tier) to 1L), mapOf(CoreMaterial(resource) to 2L))
-            CoreResource.GATHERING_TABLET -> CoreRecipe("採取の石板を彫刻", mapOf(CoreMaterial(CoreResource.STONE_BLOCK, tier) to 2L, CoreMaterial(CoreResource.BOARD, tier) to 1L), mapOf(CoreMaterial(resource) to 1L))
-            CoreResource.WHETSTONE -> CoreRecipe("砥石を加工", mapOf(CoreMaterial(CoreResource.STONE_BLOCK, tier) to 2L), mapOf(CoreMaterial(resource) to 1L))
+            CoreResource.GATHERING_TABLET -> CoreRecipe("採取の石板を彫刻", mapOf(CoreMaterial(CoreResource.STONE_BLOCK, tier) to 1L,
+                CoreMaterial(CoreResource.BOARD, tier) to 1L, CoreMaterial(CoreResource.LEATHER, tier) to 1L), mapOf(CoreMaterial(resource) to 1L))
+            CoreResource.WHETSTONE -> CoreRecipe("砥石を加工", mapOf(CoreMaterial(CoreResource.STONE_BLOCK, tier) to 1L,
+                CoreMaterial(CoreResource.INGOT, tier) to 1L), mapOf(CoreMaterial(resource) to 1L))
             else -> error("この素材は製作できません")
         }
         return CoreRecipe(unit.displayName, unit.costs.mapValues { it.value * batches }, unit.outputs.mapValues { it.value * batches })
