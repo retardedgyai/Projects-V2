@@ -185,7 +185,8 @@ class CorePlayerCombatTest {
         assertEquals(300.0, h.combat.bossHealth())
         h.actor.reset()
         assertFalse(h.actor.defeated)
-        assertEquals(100f, h.player.health)
+        assertEquals(100.0, h.actor.health)
+        assertEquals(20f, h.player.health)
         assertEquals(100, h.actor.mana)
         assertTrue((0..2).all { h.actor.cooldownSeconds(it) == 0L })
         h.ticks(20)
@@ -211,9 +212,11 @@ class CorePlayerCombatTest {
     fun `armor damage reduction and potion healing use logical max health`() = arena(armorTier = 2) { h ->
         assertEquals(130, h.actor.maxHealth)
         h.actor.hurt(20.0)
-        assertEquals(112f, h.player.health)
+        assertEquals(112.0, h.actor.health)
+        assertEquals(20f * 112f / 130f, h.player.health, 0.0001f)
         h.actor.healPotion()
-        assertEquals(130f, h.player.health)
+        assertEquals(130.0, h.actor.health)
+        assertEquals(20f, h.player.health)
     }
 
     @Test
@@ -233,12 +236,104 @@ class CorePlayerCombatTest {
         assertEquals(300.0, h.combat.bossHealth())
     }
 
-    private fun arena(bossDistance: Double = 4.0, armorTier: Int = 1, test: (Harness) -> Unit) {
+    private fun arena(bossDistance: Double = 4.0, armorTier: Int = 1, stats: CoreAffixStats = CoreAffixStats(), roll: Double = 1.0, test: (Harness) -> Unit) {
         MinecraftServer.init(Auth.Offline())
-        Harness(bossDistance, armorTier).use(test)
+        Harness(bossDistance, armorTier, stats, roll).use(test)
     }
 
-    private class Harness(bossDistance: Double, armorTier: Int) : AutoCloseable {
+    @Test
+    fun `damage and normal modifiers multiply actual hit while haste shortens windup`() = arena(
+        stats = CoreAffixStats(damagePercent = 20.0, normalDamagePercent = 10.0, attackSpeedPercent = 50.0)) { h ->
+        assertEquals(1.5, h.actor.attackSpeed)
+        h.actor.attack()
+        h.ticks(7)
+        assertEquals(300.0 - 12.0 * 1.2 * 1.1, h.combat.bossHealth(), 0.00001)
+    }
+
+    @Test
+    fun `critical chance increase and multiplier modify a real server hit`() {
+        arena(roll = 0.075) { h ->
+            h.actor.attack(); h.ticks(8)
+            assertEquals(288.0, h.combat.bossHealth())
+        }
+        arena(stats = CoreAffixStats(critChanceIncreasedPercent = 100.0, critMultiplierBonusPercent = 30.0), roll = 0.075) { h ->
+            h.actor.attack(); h.ticks(8)
+            assertEquals(300.0 - 12.0 * 1.8, h.combat.bossHealth(), 0.00001)
+        }
+    }
+
+    @Test
+    fun `skill damage cast reduction and cooldown reduction affect the actual skill`() = arena(
+        stats = CoreAffixStats(skillDamagePercent = 50.0, castReductionPercent = 40.0, cooldownReductionPercent = 25.0)) { h ->
+        h.actor.skill(1)
+        assertEquals(105, h.actor.cooldownTicks(1))
+        h.ticks(7)
+        assertEquals(300.0, h.combat.bossHealth())
+        h.ticks(1)
+        assertEquals(300.0 - 12.0 * 2.6 * 1.5, h.combat.bossHealth(), 0.00001)
+        assertEquals(97, h.actor.cooldownRemaining(1))
+    }
+
+    @Test
+    fun `health mitigation and mobility mods apply once to the armor set`() = arena(armorTier = 2,
+        stats = CoreAffixStats(healthFlat = 20.0, mitigationPercent = 20.0, moveSpeedPercent = 20.0)) { h ->
+        assertEquals(150, h.actor.maxHealth)
+        h.actor.hurt(20.0)
+        assertEquals(135.6, h.actor.health, 0.00001)
+        assertEquals(20f, h.player.getAttribute(Attribute.MAX_HEALTH).baseValue.toFloat())
+        h.ticks(20)
+        assertEquals(0.12, h.player.getAttribute(Attribute.MOVEMENT_SPEED).baseValue, 0.00001)
+        h.actor.healPotion()
+        assertEquals(150.0, h.actor.health)
+    }
+
+    @Test
+    fun `maximum mana and fractional regeneration are used by the skill pool`() = arena(
+        stats = CoreAffixStats(maxManaFlat = 50.0, manaRegenPercent = 40.0)) { h ->
+        assertEquals(150, h.actor.maxMana)
+        h.actor.skill(2)
+        assertEquals(115, h.actor.mana)
+        h.ticks(20)
+        assertEquals(122, h.actor.mana)
+    }
+
+    @Test
+    fun `fire mod adds direct damage and three nonrecursive burn ticks`() = arena(stats = CoreAffixStats(fireFlat = 10.0)) { h ->
+        h.actor.attack(); h.ticks(8)
+        assertEquals(281.5, h.combat.bossHealth(), 0.00001)
+        h.ticks(59)
+        assertEquals(275.5, h.combat.bossHealth(), 0.00001)
+        h.ticks(1)
+        assertEquals(272.5, h.combat.bossHealth(), 0.00001)
+        h.ticks(60)
+        assertEquals(272.5, h.combat.bossHealth(), 0.00001)
+    }
+
+    @Test
+    fun `ice mod exploits enemy elemental weakness with actual damage`() = arena(stats = CoreAffixStats(iceFlat = 8.0)) { h ->
+        assertEquals("ice", h.combat.weaknessOf(h.combat.combatTargets().single().id))
+        h.actor.attack(); h.ticks(8)
+        assertEquals(300.0 - (12.0 + 8.0 * 0.65) * 1.25, h.combat.bossHealth(), 0.00001)
+    }
+
+    @Test
+    fun `lightning mod chains once to a nearby second enemy`() = arena { h ->
+        h.combat.dispose()
+        val encounter = QuestEncounterCombat(h.instance, 1,
+            listOf(dev.projects.server.mob.QuestCombatEncounter(listOf(Pos(8.5, 40.0, 12.5), Pos(11.5, 40.0, 12.5)),
+                listOf(dev.projects.server.mob.QuestMobArchetype.SOLDIER, dev.projects.server.mob.QuestMobArchetype.SOLDIER))),
+            Pos(25.0, 40.0, 25.0), onMobDefeated = { _, _ -> }, damagePlayer = { _, _ -> })
+        try {
+            val actor = CorePlayerCombat(h.player, { 1 }, { 1 }, { encounter },
+                statSource = { CoreAffixStats(lightningFlat = 10.0) }, criticalRoll = { 1.0 }) {}
+            actor.reset(); actor.attack(); repeat(8) { actor.tick() }
+            val soldiers = encounter.combatTargets().mapNotNull { encounter.mobInfo(it.id) }.filter { it.archetype == dev.projects.server.mob.QuestMobArchetype.SOLDIER }
+            assertEquals(listOf(25.5, 36.0), soldiers.map { it.health }.sorted())
+            actor.resetActions()
+        } finally { encounter.dispose() }
+    }
+
+    private class Harness(bossDistance: Double, armorTier: Int, stats: CoreAffixStats, roll: Double) : AutoCloseable {
         val instance = MinecraftServer.getInstanceManager().createInstanceContainer()
         val player: Player
         val combat: QuestEncounterCombat
@@ -260,7 +355,7 @@ class CorePlayerCombatTest {
             player.gameMode = GameMode.ADVENTURE
             player.getAttribute(Attribute.MAX_HEALTH).baseValue = 100.0 + (armorTier - 1) * 30.0
             player.setInstance(instance, Pos(8.5, 40.0, 8.5)).get(10, TimeUnit.SECONDS)
-            actor = CorePlayerCombat(player, { 1 }, { armorTier }, { activeEncounter }) { deaths++ }
+            actor = CorePlayerCombat(player, { 1 }, { armorTier }, { activeEncounter }, statSource = { stats }, criticalRoll = { roll }) { deaths++ }
             combat = QuestEncounterCombat(instance, 1, emptyList(), Pos(8.5, 40.0, 8.5 + bossDistance),
                 onMobDefeated = { _, _ -> },
                 damagePlayer = { _, amount -> incomingHits += amount; actor.hurt(amount) },

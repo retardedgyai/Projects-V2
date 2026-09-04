@@ -1,6 +1,7 @@
 package dev.projects.server.coreloop
 
 import dev.projects.server.questmap.*
+import dev.projects.server.coreloop.ui.*
 import net.kyori.adventure.text.format.NamedTextColor
 import net.minestom.server.entity.Player
 import net.minestom.server.event.inventory.InventoryPreClickEvent
@@ -31,13 +32,22 @@ internal class CoreLoopMenus(private val game: CoreLoopGame) {
     }
 
     fun forget(playerId: UUID) { views.remove(playerId) }
+    fun refreshTheme(player: Player) {
+        val view = views[player.uuid] ?: return
+        if (player.openInventory === view.inventory) journal(player)
+    }
 
     private fun view(player: Player, title: String, build: (View) -> Unit) {
-        val v = View(Inventory(InventoryType.CHEST_6_ROW, CoreLoopItems.text(title, NamedTextColor.DARK_GRAY)), mutableMapOf())
+        val v = View(Inventory(InventoryType.CHEST_6_ROW, CoreUiComponents.inventoryTitle(title, game.packed(player))), mutableMapOf())
         for (slot in 0 until 54) if (slot < 9 || slot >= 45 || slot % 9 == 0 || slot % 9 == 8) {
-            v.inventory.setItemStack(slot, CoreLoopItems.icon(Material.GRAY_STAINED_GLASS_PANE, " "))
+            v.inventory.setItemStack(slot, CoreUiItemSkin.blank(CoreLoopItems.icon(Material.GRAY_STAINED_GLASS_PANE, " "), game.packed(player)))
         }
         build(v)
+        for (slot in 0 until 54) {
+            val item = v.inventory.getItemStack(slot)
+            if (!item.isAir && item.get(net.minestom.server.component.DataComponents.TOOLTIP_STYLE) == null)
+                v.inventory.setItemStack(slot, CoreLoopItems.menuSkin(item, game.packed(player)))
+        }
         views[player.uuid] = v
         player.openInventory(v.inventory)
     }
@@ -63,12 +73,13 @@ internal class CoreLoopMenus(private val game: CoreLoopGame) {
                 val won = a.activeRun.bossDefeated
                 v.inventory.setItemStack(13, CoreLoopItems.icon(if (won) Material.DRAGON_EGG else Material.IRON_SWORD,
                     if (won) "討伐達成！" else "T${a.activeRun.map.tier} 未踏の地を探索",
-                    if (won) "討伐証と次の地図は倉庫に保存済み" else "道の先の裂け目の執行官を倒そう",
+                    if (won) "討伐証と次の地図は倉庫に保存済み" else "道の先のボスを倒そう",
                     "雑魚戦・採取・寄り道は自由", "採取した素材はすべて自動保存", "${game.sessionSummary(player)}"))
                 button(v, 30, CoreLoopItems.icon(Material.COMPASS, "港へ帰還",
                     "途中帰還でも獲得した素材は残ります", "現在のマップは閉じられます")) { confirmReturn(player) }
                 button(v, 32, CoreLoopItems.icon(Material.CHEST, "獲得素材を見る", "採取物・戦利品は個人倉庫へ")) { storage(player, a.activeRun.map.tier) }
                 button(v, 40, CoreLoopItems.icon(Material.WOODEN_AXE, "採取道具を選ぶ")) { tools(player) }
+                button(v, 22, CoreLoopItems.icon(Material.AMETHYST_SHARD, "刻印石と装備", "集めたMODと現在の装備を確認", "付与・再抽選は港の刻印工房で")) { affixes(player) }
                 button(v, 49, CoreLoopItems.icon(Material.BOOK, "操作ガイド")) { guide(player) }
             }
             return
@@ -79,6 +90,7 @@ internal class CoreLoopMenus(private val game: CoreLoopGame) {
             button(v, 11, CoreLoopItems.icon(Material.CARTOGRAPHY_TABLE, "地図台 — 遠征へ", "地図を選ぶ → 石板で調整 → 出発", "T1地図は何度でも無料")) { expeditions(player) }
             button(v, 13, CoreLoopItems.icon(Material.ANVIL, "工房 — 装備を更新", "素材を精製して武器・防具を作る", "完成した装備は自動で装着")) { workshop(player) }
             button(v, 15, CoreLoopItems.icon(Material.BARREL, "素材倉庫", "採取・討伐の成果を確認", "素材はログアウトしても残ります")) { storage(player) }
+            button(v, 22, CoreLoopItems.icon(Material.ENCHANTING_TABLE, "刻印工房 — 装備MOD", "武器・防具へ刻印石を付与", "付け替え・抽出・再抽選・分解", "所持 ${a.affixStones.size}個 / 装着 ${a.equippedAffixes.size}個")) { affixes(player) }
             button(v, 29, CoreLoopItems.icon(Material.GOLD_NUGGET, "補給所 — 素材交換", "戦利品券を欲しい素材へ", "採取せず戦闘中心でも装備を作れます")) { supplies(player) }
             button(v, 31, CoreLoopItems.icon(Material.OAK_SAPLING, "採取の心得", "マスタリーと採取道具")) { mastery(player) }
             button(v, 33, CoreLoopItems.icon(Material.BOOK, "操作ガイド", "最初の一周と戦闘・採取の操作")) { guide(player) }
@@ -156,6 +168,7 @@ internal class CoreLoopMenus(private val game: CoreLoopGame) {
                     confirmRecipe(player, CoreLoopCatalog.craft(resource, batches, tier), CoreAction.Craft(resource, batches, tier)) { workshop(player, tier) }
                 }
             }
+            button(v, 31, CoreLoopItems.icon(Material.ENCHANTING_TABLE, "刻印工房へ", "拾った刻印石で装備の性能を変える")) { affixes(player) }
             back(v, player)
         }
     }
@@ -167,6 +180,7 @@ internal class CoreLoopMenus(private val game: CoreLoopGame) {
         color = if (recipe.canAfford(a)) NamedTextColor.GREEN else NamedTextColor.GRAY)
 
     private fun confirmRecipe(player: Player, recipe: CoreRecipe, action: CoreAction, backAction: () -> Unit) {
+        if (!game.requireHub(player)) return
         val a = game.account(player) ?: return
         view(player, "工房 — 制作の確認") { v ->
             v.inventory.setItemStack(4, CoreLoopItems.icon(Material.CRAFTING_TABLE, recipe.displayName))
@@ -176,7 +190,7 @@ internal class CoreLoopMenus(private val game: CoreLoopGame) {
             }
             v.inventory.setItemStack(31, recipeIcon(recipe, a, Material.ANVIL))
             button(v, 40, CoreLoopItems.icon(if (recipe.canAfford(a)) Material.LIME_DYE else Material.BARRIER, "制作を確定", "素材を消費し、完成品を保存します")) {
-                game.mutate(player, action, a.revision) { backAction() }
+                if (game.requireHub(player)) game.mutate(player, action, a.revision) { backAction() }
             }
             back(v, player, backAction)
         }
@@ -187,11 +201,12 @@ internal class CoreLoopMenus(private val game: CoreLoopGame) {
         view(player, "素材倉庫 — T$tier") { v ->
             tiers(v, tier) { storage(player, it) }
             CoreResource.entries.forEachIndexed { index, resource ->
-                val material = CoreMaterial(resource, if (resource in listOf(CoreResource.POTION, CoreResource.GATHERING_TABLET, CoreResource.WHETSTONE)) 1 else tier)
+                val material = CoreMaterial(resource, if (resource in listOf(CoreResource.POTION, CoreResource.GATHERING_TABLET, CoreResource.WHETSTONE, CoreResource.AFFIX_DUST)) 1 else tier)
                 v.inventory.setItemStack(contentSlots[index], CoreLoopItems.resource(material, a.amount(material)))
             }
             v.inventory.setItemStack(13, CoreLoopItems.icon(Material.BARREL, "あなたの素材倉庫", "取り出さず、そのまま工房で使えます", "満杯のインベントリでも報酬を失いません"))
             if (a.activeRun == null) button(v, 49, CoreLoopItems.icon(Material.ANVIL, "工房へ")) { workshop(player, tier) }
+            button(v, 50, CoreLoopItems.icon(Material.AMETHYST_SHARD, "刻印石の保管庫", "所持 ${a.affixStones.size}個")) { affixes(player) }
             back(v, player)
         }
     }
@@ -250,7 +265,7 @@ internal class CoreLoopMenus(private val game: CoreLoopGame) {
 
     private fun confirmReturn(player: Player) {
         view(player, "遠征 — 港へ帰還しますか") { v ->
-            v.inventory.setItemStack(13, CoreLoopItems.icon(Material.COMPASS, "遠征を終了", "獲得済み素材は倉庫に残ります", "このマップには戻れません"))
+            v.inventory.setItemStack(13, CoreLoopItems.icon(Material.COMPASS, "遠征を終了", "獲得済み素材は倉庫に残ります", "未回収の戦利品もまとめて保管します", "このマップには戻れません"))
             button(v, 30, CoreLoopItems.icon(Material.LIME_DYE, "港へ帰還する")) { game.returnToHarbor(player) }
             button(v, 32, CoreLoopItems.icon(Material.RED_DYE, "探索を続ける")) { player.closeInventory() }
         }
@@ -263,9 +278,97 @@ internal class CoreLoopMenus(private val game: CoreLoopGame) {
                 Triple(Material.IRON_SWORD, "2. 自由に探索", listOf("道の先にボス / 採取・雑魚は寄り道", "左クリック：通常攻撃 / F：回避", "スキルはホットバー2〜4を右クリック")),
                 Triple(Material.WOODEN_AXE, "3. 採取する", listOf("道具箱で対応する道具を選ぶ", "木・岩・草・死体へ右クリック長押し", "進捗表示が完了すると素材を保存")),
                 Triple(Material.ECHO_SHARD, "4. ボス討伐", listOf("予兆の範囲から移動して避ける", "討伐証・次の地図・石板を獲得", "羅針盤から港へ帰還")),
-                Triple(Material.ANVIL, "5. 装備を更新", listOf("補給所で戦利品券を素材と交換", "工房で精製 → 武器と防具を制作", "完成した装備で次Tierへ！")),
+                Triple(Material.ANVIL, "5. 装備を更新", listOf("工房で精製 → 武器と防具を制作", "刻印工房でドロップした石を装着", "余った石は分解・抽出・再抽選へ")),
             ).forEachIndexed { i, entry -> v.inventory.setItemStack(20 + i, CoreLoopItems.icon(entry.first, entry.second, *entry.third.toTypedArray())) }
+            v.inventory.setItemStack(31, CoreLoopItems.icon(Material.AMETHYST_SHARD, "敵を倒す → 刻印石 → 装備MOD", "紫や金の戦利品へ近づいて回収", "精鋭は刻印石2個、ボスは3個確定", "隠し物資は近くの敵を倒して右クリック"))
             back(v, player)
+        }
+    }
+
+    fun affixes(player: Player, page: Int = 0) {
+        val a = game.account(player) ?: return
+        val packed = game.packed(player)
+        view(player, "刻印工房 — 装備と刻印石") { v ->
+            button(v, 11, CoreLoopItems.gear(a, CoreGearSlot.WEAPON, packed)) { gearMods(player, CoreGearSlot.WEAPON) }
+            button(v, 15, CoreLoopItems.gear(a, CoreGearSlot.ARMOR, packed)) { gearMods(player, CoreGearSlot.ARMOR) }
+            v.inventory.setItemStack(13, CoreLoopItems.icon(Material.ENCHANTING_TABLE, "刻印石 ${a.affixStones.size} / 256",
+                "武器・防具のTierごとにMOD枠が増加", "石と同Tier以上の装備へ刻印できます", "刻印粉 ${a.amount(CoreResource.AFFIX_DUST)}個", "石をクリック → 装着先・再抽選・分解"))
+            val last = (a.affixStones.size - 1).coerceAtLeast(0) / contentSlots.size
+            val current = page.coerceIn(0, last)
+            a.affixStones.drop(current * contentSlots.size).take(contentSlots.size).forEachIndexed { i, stone ->
+                button(v, contentSlots[i], CoreLoopItems.stone(stone, packed)) { stoneDetail(player, stone.id) }
+            }
+            if (a.affixStones.isEmpty()) v.inventory.setItemStack(31, CoreLoopItems.icon(Material.AMETHYST_SHARD, "刻印石はまだありません",
+                "敵の戦利品・隠し物資から獲得", "精鋭2個 / ボス3個 確定", "装着済みの石は上の装備から確認"))
+            if (current > 0) button(v, 48, CoreLoopItems.icon(Material.ARROW, "前のページ")) { affixes(player, current - 1) }
+            if (current < last) button(v, 50, CoreLoopItems.icon(Material.ARROW, "次のページ")) { affixes(player, current + 1) }
+            back(v, player)
+        }
+    }
+
+    fun gearMods(player: Player, gear: CoreGearSlot) {
+        val a = game.account(player) ?: return
+        view(player, "刻印工房 — ${gear.displayName}のMOD") { v ->
+            v.inventory.setItemStack(13, CoreLoopItems.gear(a, gear, game.packed(player)))
+            (0..3).forEach { index ->
+                val equipped = a.equippedAffixes.firstOrNull { it.gear == gear && it.index == index }
+                val slot = 29 + index
+                when {
+                    index >= CoreAffixCatalog.capacity(a, gear) -> v.inventory.setItemStack(slot, CoreLoopItems.icon(Material.BARRIER, "MOD枠 ${index + 1} — 未解放", "工房で装備をT${index + 1}へ更新すると解放"))
+                    equipped == null -> button(v, slot, CoreLoopItems.icon(Material.LIGHT_GRAY_DYE, "MOD枠 ${index + 1} — 空き", "保管庫から石を選んで装着")) { affixes(player) }
+                    else -> button(v, slot, CoreLoopItems.stone(equipped.stone, game.packed(player))) {
+                        confirmRecipe(player, CoreAffixCatalog.extractionRecipe(equipped.stone), CoreAction.ExtractAffix(gear, index, equipped.stone.id)) { gearMods(player, gear) }
+                    }
+                }
+            }
+            v.inventory.setItemStack(40, CoreLoopItems.icon(Material.BOOK, "装着済みの石をクリック：抽出", "刻印粉を消費し、石を保管庫に戻します", "上書き時、古い石は粉に変わります", "残したいMODは先に抽出してください"))
+            back(v, player) { affixes(player) }
+        }
+    }
+
+    fun stoneDetail(player: Player, id: UUID, preferred: CoreGearSlot? = null) {
+        val a = game.account(player) ?: return
+        val stone = a.affixStones.firstOrNull { it.id == id } ?: return affixes(player)
+        val definition = CoreAffixCatalog.definition(stone)
+        view(player, "刻印工房 — 装着先を選ぶ") { v ->
+            v.inventory.setItemStack(13, CoreLoopItems.stone(stone, game.packed(player)))
+            CoreGearSlot.entries.forEach { gear ->
+                (0..3).forEach { index ->
+                    val old = a.equippedAffixes.firstOrNull { it.gear == gear && it.index == index }?.stone
+                    val allowed = definition != null && gear in definition.allowedGear && index < CoreAffixCatalog.capacity(a, gear) && stone.tier <= CoreAffixCatalog.gearTier(a, gear)
+                    val slot = (if (gear == CoreGearSlot.WEAPON) 28 else 37) + index
+                    button(v, slot, CoreLoopItems.icon(if (!allowed) Material.BARRIER else if (gear == CoreGearSlot.WEAPON) Material.IRON_SWORD else Material.IRON_CHESTPLATE,
+                        "${gear.displayName} MOD枠 ${index + 1}", if (old == null) "空き枠に装着" else "現在：${CoreAffixCatalog.describe(old)}",
+                        if (allowed) "クリック：付与内容を確認" else "対応装備・Tier・枠数の条件を満たしていません",
+                        color = if (allowed) NamedTextColor.GREEN else NamedTextColor.GRAY).withGlowing(allowed && preferred == gear)) {
+                        if (allowed) confirmAffix(player, stone, gear, index, old)
+                    }
+                }
+            }
+            button(v, 24, CoreLoopItems.icon(Material.GRINDSTONE, "数値を再抽選", "MODの種類とTierは変わりません", "数値は下がる場合もあります", "費用：刻印粉 ${stone.tier * 3} + T${stone.tier}石材 1")) {
+                if (definition != null) confirmRecipe(player, CoreAffixCatalog.rerollRecipe(stone), CoreAction.RerollAffix(id)) { stoneDetail(player, id) }
+            }
+            button(v, 42, CoreLoopItems.icon(Material.GLOWSTONE_DUST, "この石を分解", "刻印石を消費 → 刻印粉 ${CoreAffixCatalog.salvageDust(stone)}個", "分解は元に戻せません")) {
+                confirmRecipe(player, CoreRecipe("刻印石を分解（石は失われます）", emptyMap(), mapOf(CoreMaterial(CoreResource.AFFIX_DUST) to CoreAffixCatalog.salvageDust(stone))), CoreAction.SalvageAffix(id)) { affixes(player) }
+            }
+            back(v, player) { affixes(player) }
+        }
+    }
+
+    private fun confirmAffix(player: Player, stone: CoreAffixStone, gear: CoreGearSlot, index: Int, old: CoreAffixStone?) {
+        if (!game.requireHub(player)) return
+        val a = game.account(player) ?: return
+        view(player, "刻印工房 — MOD付与の確認") { v ->
+            v.inventory.setItemStack(20, CoreLoopItems.gear(a, gear, game.packed(player)))
+            v.inventory.setItemStack(24, CoreLoopItems.stone(stone, game.packed(player)))
+            v.inventory.setItemStack(13, CoreLoopItems.icon(Material.ENCHANTING_TABLE, "${gear.displayName}のMOD枠 ${index + 1} へ付与",
+                CoreAffixCatalog.describe(stone), if (old == null) "空き枠に装着します" else "上書き消失：${CoreAffixCatalog.describe(old)}",
+                if (old == null) "刻印石は装備へ移動します" else "古い石 → 刻印粉 ${CoreAffixCatalog.salvageDust(old)}個（元に戻せません）",
+                if (old == null) "費用なし" else "古い石を残すならキャンセルして先に抽出"))
+            button(v, 40, CoreLoopItems.icon(Material.LIME_DYE, "付与を確定")) {
+                if (game.requireHub(player)) game.mutate(player, CoreAction.ApplyAffix(gear, index, stone.id, old?.id), a.revision) { gearMods(player, gear) }
+            }
+            back(v, player) { stoneDetail(player, stone.id, gear) }
         }
     }
 }

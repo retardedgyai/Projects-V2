@@ -1,6 +1,8 @@
 package dev.projects.server.coreloop
 
 import dev.projects.server.questmap.*
+import dev.projects.server.coreloop.ui.*
+import net.minestom.server.component.DataComponents
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.TextDecoration
@@ -15,13 +17,15 @@ import kotlin.math.roundToInt
 internal object CoreLoopItems {
     val actionTag: Tag<String> = Tag.String("projects_core_action")
     val ownedMapTag: Tag<String> = Tag.String("projects_core_owned_map")
+    val gearTag: Tag<String> = Tag.String("projects_core_gear")
+    val stoneTag: Tag<String> = Tag.String("projects_core_stone")
     val colors = listOf(NamedTextColor.WHITE, NamedTextColor.GREEN, NamedTextColor.AQUA, NamedTextColor.LIGHT_PURPLE)
 
     fun text(value: String, color: NamedTextColor = NamedTextColor.GRAY): Component =
         Component.text(value, color).decoration(TextDecoration.ITALIC, false)
 
     fun icon(material: Material, name: String, vararg lore: String, color: NamedTextColor = NamedTextColor.GOLD): ItemStack =
-        ItemStack.builder(material).customName(text(name, color)).lore(lore.map { text(it) }).build()
+        ItemStack.builder(material).customName(text(name, color).decoration(TextDecoration.BOLD, true)).lore(lore.map { text(it) }).build().withoutExtraTooltip()
 
     fun resourceMaterial(resource: CoreResource): Material = when (resource) {
         CoreResource.WOOD -> Material.OAK_LOG
@@ -49,7 +53,55 @@ internal object CoreLoopItems {
     fun weapon(tier: Int): ItemStack = icon(listOf(Material.STONE_SWORD, Material.IRON_SWORD, Material.DIAMOND_SWORD, Material.NETHERITE_SWORD)[tier - 1],
         "T$tier 開拓者の大剣", "攻撃力 ${(12 * CoreLoopCatalog.weaponDamage(tier)).roundToInt()}",
         "左クリック：前方を斬る", "右クリック：踏み込み斬り", "F：移動方向へ回避", color = colors[tier - 1])
-        .withTag(actionTag, "weapon")
+        .withTag(actionTag, "weapon").withTag(gearTag, CoreGearSlot.WEAPON.name)
+
+    fun menuSkin(item: ItemStack, packed: Boolean): ItemStack = if (packed)
+        item.with(DataComponents.TOOLTIP_STYLE, CoreUiRarity.COMMON.style).withoutExtraTooltip() else item.without(DataComponents.TOOLTIP_STYLE)
+
+    fun gear(account: CoreAccount, slot: CoreGearSlot, packed: Boolean, material: Material? = null): ItemStack {
+        val tier = CoreAffixCatalog.gearTier(account, slot)
+        val stats = CoreAffixCatalog.stats(account)
+        val base = if (slot == CoreGearSlot.WEAPON) weapon(tier) else icon(material ?: Material.IRON_CHESTPLATE, "開拓者の防具")
+            .withTag(actionTag, "armor").withTag(gearTag, CoreGearSlot.ARMOR.name)
+        val rows = if (slot == CoreGearSlot.WEAPON) buildList {
+            add(CoreTooltipStat("攻撃力", "${(12 * CoreLoopCatalog.weaponDamage(tier) * (1 + stats.damagePercent / 100)).roundToInt()}", CoreUiIcon.ATTACK))
+            add(CoreTooltipStat("攻撃速度", "+${stats.attackSpeedPercent.toInt()}%", CoreUiIcon.SPEED))
+            add(CoreTooltipStat("会心率 / 倍率", "${(stats.criticalChance * 1000).roundToInt() / 10.0}% / ${(stats.criticalMultiplier * 100).toInt()}%", CoreUiIcon.CRITICAL))
+            if (stats.fireFlat + stats.iceFlat + stats.lightningFlat > 0) add(CoreTooltipStat("炎 / 氷 / 雷", "${stats.fireFlat.toInt()} / ${stats.iceFlat.toInt()} / ${stats.lightningFlat.toInt()}", CoreUiIcon.MAGIC))
+        } else listOf(CoreTooltipStat("最大HP", "${CoreLoopCatalog.armorHealth(tier).toInt() + stats.healthFlat.toInt()}", CoreUiIcon.HEALTH),
+            CoreTooltipStat("基礎軽減 / MOD軽減", "${(tier - 1) * 10}% / ${stats.mitigationPercent.toInt()}%", CoreUiIcon.DEFENSE),
+            CoreTooltipStat("最大マナ", "${100 + stats.maxManaFlat.toInt()}", CoreUiIcon.MANA))
+        return CoreUiTooltip.apply(base, CoreTooltipModel("T$tier 開拓者の${if (slot == CoreGearSlot.WEAPON) "大剣" else "防具"}",
+            rarity = CoreUiRarity.entries[tier - 1], tier = tier, itemLevel = 1 + (tier - 1) * 15,
+            typeLabel = if (slot == CoreGearSlot.WEAPON) "両手剣" else "防具セット",
+            stats = rows, affixes = account.equippedAffixes.filter { it.gear == slot }.sortedBy { it.index }.map { affixModel(it.stone) },
+            modCapacity = CoreAffixCatalog.capacity(account, slot),
+            footer = listOf("能力欄は装備全体のMODを反映", if (slot == CoreGearSlot.WEAPON) "左：斬撃 / 右：踏み込み / F：回避" else "防具MODはセット全体に1回適用", "港で刻印石を重ねるか、刻印工房へ")), packed)
+    }
+
+    fun affixModel(stone: CoreAffixStone): CoreTooltipAffix {
+        val definition = CoreAffixCatalog.definition(stone)
+        val range = definition?.range(stone.tier)
+        val suffix = if (definition?.stat?.percent == true) "%" else ""
+        return CoreTooltipAffix(definition?.displayName?.removeSuffix("の刻印石") ?: "未対応MOD", CoreAffixCatalog.describe(stone),
+            if (range == null) "不明" else "${range.first}〜${range.last}$suffix", CoreAffixCatalog.qualityPercent(stone), "R${stone.tier}")
+    }
+
+    fun stone(stone: CoreAffixStone, packed: Boolean): ItemStack {
+        val definition = CoreAffixCatalog.definition(stone)
+        val material = when (definition?.stat) {
+            CoreAffixStat.FIRE -> Material.FIRE_CHARGE; CoreAffixStat.ICE -> Material.PRISMARINE_CRYSTALS
+            CoreAffixStat.LIGHTNING -> Material.ECHO_SHARD; else -> Material.AMETHYST_SHARD
+        }
+        return CoreUiTooltip.apply(ItemStack.of(material).withTag(stoneTag, stone.id.toString()).withTag(actionTag, "affix"),
+            CoreTooltipModel(definition?.displayName ?: "未対応の刻印石", CoreUiRarity.entries[stone.tier - 1], stone.tier, 1 + (stone.tier - 1) * 15,
+                "装備に刻むMOD素材", affixes = listOf(affixModel(stone)), footer = listOf("対象：${definition?.allowedGear?.joinToString("・") { it.displayName } ?: "不明"}",
+                    "港で武器・防具へ重ねて刻印", "刻印工房で付け替え・抽出・再抽選")), packed)
+            .withGlowing(CoreAffixCatalog.qualityPercent(stone) >= 80)
+    }
+
+    fun stoneId(item: ItemStack): UUID? = item.getTag(stoneTag)?.let { runCatching { UUID.fromString(it) }.getOrNull() }
+    fun gearSlot(item: ItemStack): CoreGearSlot? = item.getTag(gearTag)?.let { runCatching { CoreGearSlot.valueOf(it) }.getOrNull() }
 
     fun map(data: CoreOwnedMap): ItemStack = icon(Material.FILLED_MAP, "T${data.tier} 未踏の地図",
         *listOf("右クリック：この地図で出発", "石板をつかんで重ねるとMODを付与", "付与MOD ${data.modifiers.size}/3")
@@ -73,17 +125,17 @@ internal object CoreLoopItems {
 
     fun mapId(item: ItemStack): UUID? = item.getTag(ownedMapTag)?.let { runCatching { UUID.fromString(it) }.getOrNull() }
 
-    fun refresh(player: Player, account: CoreAccount, initial: Boolean = false) {
+    fun refresh(player: Player, account: CoreAccount, initial: Boolean = false, packed: Boolean = false) {
         if (initial) player.inventory.clear()
-        player.inventory.setItemStack(0, weapon(account.weaponTier))
+        player.inventory.setItemStack(0, gear(account, CoreGearSlot.WEAPON, packed))
         val skillIcons = listOf(Material.FEATHER, Material.IRON_SWORD, Material.BLAZE_POWDER)
         val descriptions = listOf("前方へ踏み込み斬る / マナ15 / 4秒", "前方の広範囲を叩く / マナ25 / 7秒", "周囲へ3連撃 / マナ35 / 11秒")
-        for (id in 0..2) player.inventory.setItemStack(id + 1, icon(skillIcons[id], CorePlayerCombat.SKILL_NAMES[id], descriptions[id],
-            "右クリックで使用し、大剣に持ち替える").withTag(actionTag, "skill:$id"))
+        for (id in 0..2) player.inventory.setItemStack(id + 1, CoreUiItemSkin.apply(icon(skillIcons[id], CorePlayerCombat.SKILL_NAMES[id], descriptions[id],
+            "右クリックで使用し、大剣に持ち替える").withTag(actionTag, "skill:$id"), listOf(CoreUiIcon.DASH, CoreUiIcon.SLAM, CoreUiIcon.WHIRL)[id], packed))
         player.inventory.setItemStack(4, icon(Material.HONEY_BOTTLE, "回復薬（倉庫 ${account.amount(CoreResource.POTION)}）",
             "右クリック：最大HPの45%を回復", "工房で布から調合 / 再使用10秒").withTag(actionTag, "potion"))
         player.inventory.setItemStack(5, icon(Material.COMPASS, "帰還の羅針盤", "右クリック：探索状況・帰還", "獲得素材は帰還前から保存されています").withTag(actionTag, "journal"))
-        player.inventory.setItemStack(8, icon(Material.BOOK, "冒険の手帳", "右クリック：地図・工房・倉庫への案内", "港の施設からも同じ操作ができます").withTag(actionTag, "journal"))
+        player.inventory.setItemStack(8, icon(Material.NETHER_STAR, "ProjectS — 冒険の手帳", "右クリック：地図・刻印工房・倉庫", "港の施設からも同じ操作ができます").withTag(actionTag, "journal"))
         if (initial) {
             player.inventory.setItemStack(6, QuestGatheringDiscipline.WOODCUTTING.toolItem())
             QuestGatheringDiscipline.entries.forEachIndexed { i, discipline -> player.inventory.setItemStack(9 + i, discipline.toolItem()) }
@@ -93,6 +145,8 @@ internal object CoreLoopItems {
             .withTag(actionTag, "tablet"))
         player.inventory.setItemStack(15, icon(Material.FLINT, "砥石（${account.amount(CoreResource.WHETSTONE)}）",
             "右クリック：攻撃力+20% / 3分", "加工石材とインゴットから作れます").withTag(actionTag, "whetstone"))
+        // An inventory projection of the first page; the full 256-stone bag stays in the forge UI.
+        for (slot in 16..35) player.inventory.setItemStack(slot, account.affixStones.getOrNull(slot - 16)?.let { stone(it, packed) } ?: ItemStack.AIR)
         val existingMapId = mapId(player.inventory.getItemStack(7))
         player.inventory.setItemStack(7, account.maps.firstOrNull { it.id == existingMapId }?.let(::map) ?: ItemStack.AIR)
         val tier = account.armorTier
@@ -103,8 +157,11 @@ internal object CoreLoopItems {
             listOf(Material.DIAMOND_HELMET, Material.DIAMOND_CHESTPLATE, Material.DIAMOND_LEGGINGS, Material.DIAMOND_BOOTS),
         )[tier - 1]
         listOf(EquipmentSlot.HELMET, EquipmentSlot.CHESTPLATE, EquipmentSlot.LEGGINGS, EquipmentSlot.BOOTS).forEachIndexed { index, slot ->
-            player.setEquipment(slot, icon(armor[index], "T$tier 開拓者の防具", "最大HP ${CoreLoopCatalog.armorHealth(tier).toInt()}",
-                "被ダメージ軽減 ${(tier - 1) * 10}%", "工房で仕立てると自動で装備", color = colors[tier - 1]).withTag(actionTag, "armor"))
+            player.setEquipment(slot, gear(account, CoreGearSlot.ARMOR, packed, armor[index]))
+        }
+        for (slot in 1..15) {
+            val item = player.inventory.getItemStack(slot)
+            if (!item.isAir) player.inventory.setItemStack(slot, menuSkin(item, packed))
         }
     }
 }

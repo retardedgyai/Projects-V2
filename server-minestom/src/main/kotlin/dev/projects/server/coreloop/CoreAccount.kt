@@ -8,7 +8,7 @@ enum class CoreResource(val displayName: String, val raw: Boolean = false) {
     WOOD("木材", true), ORE("鉱石", true), STONE("石材", true), HIDE("獣皮", true), FIBER("植物繊維", true),
     BOARD("板材"), INGOT("インゴット"), STONE_BLOCK("加工石材"), LEATHER("なめし革"), CLOTH("布"),
     BOSS_SIGIL("討伐証"), COMBAT_TOKEN("戦利品券"), POTION("回復薬"), GATHERING_TABLET("採取の石板"), WHETSTONE("砥石"),
-    AFFIX_DUST("魔導の粉"),
+    AFFIX_DUST("刻印粉"),
 }
 
 data class CoreMaterial(val resource: CoreResource, val tier: Int = 1) {

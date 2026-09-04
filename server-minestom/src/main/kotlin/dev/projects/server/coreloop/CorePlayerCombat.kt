@@ -11,9 +11,16 @@ import net.kyori.adventure.text.format.NamedTextColor
 import net.minestom.server.coordinate.Pos
 import net.minestom.server.coordinate.Vec
 import net.minestom.server.entity.Player
+import net.minestom.server.entity.Entity
+import net.minestom.server.entity.EntityType
+import net.minestom.server.entity.attribute.Attribute
+import net.minestom.server.entity.metadata.display.TextDisplayMeta
+import net.minestom.server.entity.metadata.display.AbstractDisplayMeta
 import net.minestom.server.network.packet.server.play.ParticlePacket
 import net.minestom.server.particle.Particle
 import net.minestom.server.sound.SoundEvent
+import java.util.UUID
+import java.util.concurrent.ThreadLocalRandom
 import kotlin.math.*
 
 /** Vanilla inputs feed the same server-owned attack geometry used by the combat spike. */
@@ -22,9 +29,11 @@ internal class CorePlayerCombat(
     private val weaponTier: () -> Int,
     private val armorTier: () -> Int,
     private val encounter: () -> QuestEncounterCombat?,
+    private val statSource: () -> CoreAffixStats = { CoreAffixStats() },
+    private val criticalRoll: () -> Double = { ThreadLocalRandom.current().nextDouble() },
     private val onDefeated: () -> Unit,
 ) {
-    private val normal = CombatState(weaponSource = { WeaponType.HEAVY_BLADE })
+    private val normal = CombatState(weaponSource = { WeaponType.HEAVY_BLADE }, attackSpeedSource = { attackSpeed })
     private var tickNumber = 0L
     private var nextDodge = 0L
     private var lastCombat = -400L
@@ -35,12 +44,19 @@ internal class CorePlayerCombat(
     private var whetstoneUntil = 0L
     var defeated = false
         private set
-    var mana = 100
+    private var manaValue = 100.0
+    val mana: Int get() = manaValue.toInt()
+    var health = 100.0
         private set
-    val maxHealth: Int get() = 100 + (armorTier() - 1) * 30
-    val attackDamage: Double get() = 12.0 * 1.65.pow(weaponTier() - 1) * if (tickNumber < whetstoneUntil) 1.2 else 1.0
+    val maxMana: Int get() = 100 + statSource().maxManaFlat.toInt()
+    val maxHealth: Int get() = 100 + (armorTier() - 1) * 30 + statSource().healthFlat.toInt()
+    val attackSpeed: Double get() = 1.0 + statSource().attackSpeedPercent.coerceIn(0.0, 60.0) / 100.0
+    val attackDamage: Double get() = 12.0 * 1.65.pow(weaponTier() - 1) * (1.0 + statSource().damagePercent / 100.0) * if (tickNumber < whetstoneUntil) 1.2 else 1.0
+    private data class Burn(val damage: Double, var nextTick: Long, var remaining: Int)
+    private val burns = mutableMapOf<UUID, Burn>()
+    private val damageLabels = mutableListOf<Pair<Entity, Long>>()
 
-    private data class PendingSkill(val id: Int, val origin: Pos, val direction: Vec, var elapsed: Int = 0)
+    private data class PendingSkill(val id: Int, val origin: Pos, val direction: Vec, val startup: Int, var elapsed: Int = 0)
 
     fun attack() {
         if (defeated || pending != null || encounter() == null || player.openInventory != null) return
@@ -56,9 +72,11 @@ internal class CorePlayerCombat(
         if (tickNumber < readyAt[id]) { notice("${SKILL_NAMES[id]}：あと${cooldownSeconds(id)}秒"); return }
         val cost = intArrayOf(15, 25, 35)[id]
         if (mana < cost) { notice("マナが足りません（必要 $cost）"); return }
-        mana -= cost
-        readyAt[id] = tickNumber + intArrayOf(80, 140, 220)[id]
-        pending = PendingSkill(id, player.position, flatFacing())
+        manaValue -= cost
+        readyAt[id] = tickNumber + cooldownTicks(id)
+        val castMultiplier = 1.0 - statSource().castReductionPercent.coerceIn(0.0, 40.0) / 100.0
+        val startup = ceil(intArrayOf(5, 12, 6)[id] * castMultiplier).toInt().coerceAtLeast(2)
+        pending = PendingSkill(id, player.position, flatFacing(), startup)
         lastCombat = tickNumber
         player.setHeldItemSlot(0)
         player.swingMainHand()
@@ -81,16 +99,29 @@ internal class CorePlayerCombat(
 
     fun tick() {
         tickNumber++
+        damageLabels.removeAll { (entity, expiry) -> if (tickNumber >= expiry) { entity.remove(); true } else false }
         if (defeated) return
         if (tickNumber % 20 == 0L) {
-            mana = (mana + if (tickNumber - lastCombat > 100) 12 else 5).coerceAtMost(100)
+            val recovery = if (tickNumber - lastCombat > 100) 12.0 else 5.0
+            manaValue = (manaValue + recovery * (1.0 + statSource().manaRegenPercent / 100.0)).coerceAtMost(maxMana.toDouble())
+            player.getAttribute(Attribute.MOVEMENT_SPEED).baseValue = 0.1 * (1.0 + statSource().moveSpeedPercent.coerceIn(0.0, 25.0) / 100.0)
         }
         val enemies = encounter() ?: return
+        burns.entries.removeIf { (id, burn) ->
+            if (enemies.positionOf(id) == null) true
+            else {
+                if (tickNumber >= burn.nextTick) {
+                    enemies.applyEffectDamage(id, player, burn.damage)
+                    burn.nextTick += 20; burn.remaining--
+                }
+                burn.remaining <= 0
+            }
+        }
         normal.tick(player.position, player.position.direction(), enemies.combatTargets()).forEach { event ->
             when (event) {
                 is CombatEvent.Active -> arc(player.position, flatFacing(), 4.5, 1.15, Particle.SWEEP_ATTACK)
                 is CombatEvent.HitConfirmed -> if (visibleTo(event.targetId, enemies)) {
-                    if (enemies.applyDamage(event.targetId, player, attackDamage)) hitFeedback()
+                    hit(enemies, event.targetId, 1.0, skill = false)
                 }
                 is CombatEvent.Started -> Unit
             }
@@ -98,7 +129,7 @@ internal class CorePlayerCombat(
         pending?.let { action ->
             action.elapsed++
             when (action.id) {
-                0 -> if (action.elapsed == 5) {
+                0 -> if (action.elapsed == action.startup) {
                     // Stop in front of a nearby enemy instead of dashing through it and missing behind us.
                     val distance = enemies.combatTargets().mapNotNull { target ->
                         val offset = target.position.sub(player.position)
@@ -110,19 +141,19 @@ internal class CorePlayerCombat(
                     strike(enemies, player.position, action.direction, 4.5, 0.45, 1.7)
                 }
                 1 -> {
-                    if (action.elapsed < 12 && action.elapsed % 3 == 0) arc(action.origin, action.direction, 5.0, 0.85, Particle.CRIT)
-                    if (action.elapsed == 12) {
+                    if (action.elapsed < action.startup && action.elapsed % 3 == 0) arc(action.origin, action.direction, 5.0, 0.85, Particle.CRIT)
+                    if (action.elapsed == action.startup) {
                         strike(enemies, action.origin, action.direction, 5.0, cos(0.85), 2.6)
                         arc(action.origin, action.direction, 5.0, 0.85, Particle.SWEEP_ATTACK)
                         sound(SoundEvent.ENTITY_GENERIC_EXPLODE, 0.45f, 1.2f)
                     }
                 }
-                2 -> if (action.elapsed in listOf(6, 14, 22)) {
+                2 -> if (action.elapsed in listOf(action.startup, action.startup + 8, action.startup + 16)) {
                     strike(enemies, player.position, action.direction, 3.3, -1.0, 1.15)
                     arc(player.position, action.direction, 3.3, PI, Particle.SWEEP_ATTACK)
                 }
             }
-            if (action.elapsed >= intArrayOf(16, 25, 31)[action.id]) pending = null
+            if (action.elapsed >= action.startup + intArrayOf(11, 13, 25)[action.id]) pending = null
         }
         if (!normal.isAttacking && pending == null) {
             if (queuedDodge) { queuedDodge = false; dodge() }
@@ -136,9 +167,59 @@ internal class CorePlayerCombat(
             val length = offset.length()
             if (length <= range && abs(target.position.y() - origin.y()) <= 2.5 &&
                 (length < 0.1 || offset.normalize().dot(direction) >= minDot) && visibleTo(target.id, enemies)) {
-                if (enemies.applyDamage(target.id, player, attackDamage * multiplier)) hitFeedback()
+                hit(enemies, target.id, multiplier, skill = true)
             }
         }
+    }
+
+    private fun hit(enemies: QuestEncounterCombat, id: UUID, multiplier: Double, skill: Boolean) {
+        val stats = statSource()
+        val position = enemies.positionOf(id) ?: return
+        val tagBonus = if (skill) stats.skillDamagePercent else stats.normalDamagePercent
+        val element = (stats.fireFlat + stats.iceFlat + stats.lightningFlat) * multiplier * 0.65
+        val critical = criticalRoll() < (0.05 * (1.0 + stats.critChanceIncreasedPercent / 100.0)).coerceIn(0.0, 0.75)
+        val criticalMultiplier = if (critical) (1.5 + stats.critMultiplierBonusPercent / 100.0).coerceAtMost(4.0) else 1.0
+        val weak = when (enemies.weaknessOf(id)) {
+            "fire" -> stats.fireFlat > 0; "ice" -> stats.iceFlat > 0; "lightning" -> stats.lightningFlat > 0; else -> false
+        }
+        val damage = (attackDamage * multiplier * (1 + tagBonus / 100.0) + element) * criticalMultiplier * if (weak) 1.25 else 1.0
+        if (!enemies.applyDamage(id, player, damage)) return
+        hitFeedback()
+        showDamage(position, damage, critical, weak)
+        if (stats.fireFlat > 0) {
+            burns[id] = Burn(maxOf(burns[id]?.damage ?: 0.0, stats.fireFlat * 0.3), tickNumber + 20, 3)
+            player.instance.sendGroupedPacket(ParticlePacket(Particle.SMALL_FLAME, position.add(0.0, 1.0, 0.0), Vec(0.2, 0.4, 0.2), 0.01f, 7))
+        }
+        if (stats.iceFlat > 0) {
+            enemies.applySlow(id, (0.15 + stats.iceFlat / 100.0).coerceAtMost(0.45), 2000)
+            player.instance.sendGroupedPacket(ParticlePacket(Particle.SNOWFLAKE, position.add(0.0, 0.8, 0.0), Vec(0.3, 0.3, 0.3), 0.03f, 7))
+        }
+        if (stats.lightningFlat > 0) {
+            enemies.combatTargets().filter { it.id != id && it.position.distance(position) <= 4.0 && visibleTo(it.id, enemies) }
+                .minByOrNull { it.position.distance(position) }?.let { chained ->
+                    if (enemies.applyEffectDamage(chained.id, player, stats.lightningFlat * 0.8)) {
+                        val end = enemies.positionOf(chained.id) ?: position
+                        for (step in 0..8) player.instance.sendGroupedPacket(ParticlePacket(Particle.ELECTRIC_SPARK,
+                            position.add(end.sub(position).mul(step / 8.0)).add(0.0, 0.8, 0.0), Vec.ZERO, 0f, 1))
+                    }
+                }
+        }
+    }
+
+    private fun showDamage(position: Pos, amount: Double, critical: Boolean, weak: Boolean) {
+        // Bounded, short-lived combat feedback; never a client damage declaration.
+        if (damageLabels.size >= 24) damageLabels.removeAt(0).first.remove()
+        val entity = Entity(EntityType.TEXT_DISPLAY).apply {
+            setNoGravity(true); setHasPhysics(false)
+            editEntityMeta(TextDisplayMeta::class.java) { meta ->
+                meta.setText(Component.text("${if (critical) "✦ " else ""}${amount.roundToInt()}${if (weak) " 弱点" else ""}",
+                    if (critical) NamedTextColor.GOLD else if (weak) NamedTextColor.AQUA else NamedTextColor.WHITE))
+                meta.setBillboardRenderConstraints(AbstractDisplayMeta.BillboardConstraints.CENTER)
+                meta.setScale(Vec(0.7, 0.7, 0.7)); meta.setShadow(true); meta.setBackgroundColor(0)
+            }
+            setInstance(player.instance, position.add(0.0, 2.35, 0.0))
+        }
+        damageLabels += entity to tickNumber + 18
     }
 
     private fun visibleTo(targetId: java.util.UUID, enemies: QuestEncounterCombat): Boolean {
@@ -154,29 +235,41 @@ internal class CorePlayerCombat(
 
     fun hurt(amount: Double) {
         if (defeated || encounter() == null) return
-        val adjusted = amount * (1.0 - (armorTier() - 1) * 0.10)
+        val adjusted = amount * (1.0 - (armorTier() - 1) * 0.10) * (1.0 - statSource().mitigationPercent.coerceIn(0.0, 45.0) / 100.0)
         lastCombat = tickNumber
-        if (player.health - adjusted <= 0.0) {
+        if (health - adjusted <= 0.0) {
+            health = 0.0
             defeated = true
             resetActions()
             onDefeated()
             return
         }
-        player.health = (player.health - adjusted).toFloat()
+        health -= adjusted
+        syncVanillaHealth()
         sound(SoundEvent.ENTITY_PLAYER_HURT, 0.65f, 1f)
     }
 
     fun healPotion() {
         if (!defeated) {
-            player.health = (player.health + maxHealth * 0.45f).coerceAtMost(maxHealth.toFloat())
+            health = (health + maxHealth * 0.45).coerceAtMost(maxHealth.toDouble())
+            syncVanillaHealth()
             sound(SoundEvent.ENTITY_GENERIC_DRINK, 0.75f, 1f)
         }
     }
 
     fun sharpen() { whetstoneUntil = tickNumber + 20 * 180 }
     fun cooldownSeconds(id: Int): Long = ((readyAt[id] - tickNumber).coerceAtLeast(0) + 19) / 20
-    fun reset() { resetActions(); defeated = false; mana = 100; readyAt.fill(0L); nextDodge = 0L; player.health = maxHealth.toFloat() }
-    fun resetActions() { normal.reset(); pending = null; queuedSkill = null; queuedDodge = false }
+    fun cooldownTicks(id: Int): Int = ceil(intArrayOf(80, 140, 220)[id] * (1.0 - statSource().cooldownReductionPercent.coerceIn(0.0, 45.0) / 100.0)).toInt()
+    fun cooldownRemaining(id: Int): Int = (readyAt[id] - tickNumber).coerceAtLeast(0).toInt()
+    fun reset() { resetActions(); defeated = false; manaValue = maxMana.toDouble(); health = maxHealth.toDouble(); readyAt.fill(0L); nextDodge = 0L; syncVanillaHealth() }
+    fun resetActions() {
+        normal.reset(); pending = null; queuedSkill = null; queuedDodge = false; burns.clear()
+        damageLabels.forEach { it.first.remove() }; damageLabels.clear()
+    }
+    private fun syncVanillaHealth() {
+        player.getAttribute(Attribute.MAX_HEALTH).baseValue = 20.0
+        player.health = (20.0 * health / maxHealth).toFloat().coerceIn(0.1f, 20f)
+    }
 
     private fun moveSafely(direction: Vec, distance: Double) {
         val start = player.position

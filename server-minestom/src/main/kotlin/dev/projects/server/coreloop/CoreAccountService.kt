@@ -103,7 +103,7 @@ class CoreAccountService(private val repository: CoreAccountRepository) {
             val outputs = mutableMapOf(CoreMaterial(CoreResource.AFFIX_DUST) to dust)
             val tokens = if (tokensAlreadyPaid) 0L else CoreAffixCatalog.lootTokens(action.kind)
             if (tokens > 0) outputs[CoreMaterial(CoreResource.COMBAT_TOKEN, run.map.tier)] = tokens
-            val message = "戦利品を回収：刻印石${stored.size}個・魔導の粉${dust}個" +
+            val message = "戦利品を回収：刻印石${stored.size}個・刻印粉${dust}個" +
                 if (converted.isNotEmpty()) "（袋の上限分は粉に変換）" else ""
             val rewarded = recipe(updated, CoreRecipe(message, emptyMap(), outputs))
             rewarded.first.copy(affixStones = account.affixStones + stored) to rewarded.second
