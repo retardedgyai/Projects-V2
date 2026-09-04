@@ -54,8 +54,14 @@ def verify():
     for path in (PACK / "assets/projects/items/core_ui").glob("*.json"):
         ref = json.loads(path.read_text())["model"]["model"].replace("projects:", "assets/projects/models/")
         model = json.loads((PACK / f"{ref}.json").read_text())
-        texture = model["textures"]["layer0"].replace("projects:", "assets/projects/textures/")
+        texture_id = model["textures"]["layer0"]
+        assert texture_id.startswith("projects:item/core_ui/"), "Generated models need stock item-atlas sprites, not direct GUI PNGs"
+        texture = texture_id.replace("projects:", "assets/projects/textures/")
         assert (PACK / f"{texture}.png").is_file()
+        source = {"attack": "stats/attack_power", "speed": "stats/attack_speed", "critical": "stats/magic_power",
+                  "defense": "stats/defense", "health": "stats/health", "magic": "stats/magic_power",
+                  "mana": "stats/mana", "reward": "stats/xp", "mod": "stats/level", "blank": "core/blank"}.get(path.stem, f"skills/{path.stem}")
+        assert (PACK / f"{texture}.png").read_bytes() == (PACK / f"assets/projects/textures/gui/{source}.png").read_bytes(), "Item-atlas copies must preserve original artwork"
     digest = hashlib.sha256(b"".join(p.encode() + (PACK / p).read_bytes() for p in paths)).hexdigest()
     print(f"PASS: {len(paths)} assets, {len(glyphs)} private glyphs, no global font overrides; content SHA256 {digest}")
 

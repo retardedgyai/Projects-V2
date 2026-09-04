@@ -1,6 +1,6 @@
 {
   "parent": "minecraft:item/generated",
   "textures": {
-    "layer0": "projects:gui/stats/xp"
+    "layer0": "projects:item/core_ui/reward"
   }
 }
