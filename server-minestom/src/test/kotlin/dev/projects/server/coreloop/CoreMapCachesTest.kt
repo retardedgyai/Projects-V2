@@ -119,7 +119,7 @@ class CoreMapCachesTest {
         init {
             prepare(instance)
             owner = player(instance, Pos(8.5, 40.0, 8.5), "CacheOwner")
-            caches = CoreMapCaches(owner, instance, List(count) { cachePosition.add(it * 8.0, 0.0, 0.0) },
+            caches = CoreMapCaches(owner, instance, List(count) { cachePosition.add(it * 4.0, 0.0, 0.0) },
                 { guardChecks++; guarded }, { index, position -> opened += index to position })
         }
         private fun prepare(target: InstanceContainer) {

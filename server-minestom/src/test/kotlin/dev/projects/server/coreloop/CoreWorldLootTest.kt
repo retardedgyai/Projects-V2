@@ -146,7 +146,8 @@ class CoreWorldLootTest {
 
         init {
             prepare(instance)
-            owner = player(connection, instance, Pos(8.5, 40.0, -5.5), "LootOwner")
+            // Keep the player's chunk at (0, 0): effective view distance is three chunks.
+            owner = player(connection, instance, Pos(8.5, 40.0, 1.5), "LootOwner")
             loot = CoreWorldLoot(owner, instance, run, { action ->
                 requests += action
                 CompletableFuture<CoreTransactionResult>().also { pending[action.sourceId] = it }
