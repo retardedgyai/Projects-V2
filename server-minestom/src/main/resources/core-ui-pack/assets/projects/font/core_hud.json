@@ -1,0 +1,81 @@
+{
+  "providers": [
+    {
+      "type": "bitmap",
+      "file": "projects:gui/core/health_bar.png",
+      "height": 7,
+      "ascent": 7,
+      "chars": [
+        "\ue300",
+        "\ue301",
+        "\ue302",
+        "\ue303",
+        "\ue304",
+        "\ue305",
+        "\ue306",
+        "\ue307",
+        "\ue308",
+        "\ue309",
+        "\ue30a",
+        "\ue30b",
+        "\ue30c",
+        "\ue30d",
+        "\ue30e",
+        "\ue30f",
+        "\ue310",
+        "\ue311",
+        "\ue312",
+        "\ue313",
+        "\ue314"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/core/mana_bar.png",
+      "height": 7,
+      "ascent": 7,
+      "chars": [
+        "\ue320",
+        "\ue321",
+        "\ue322",
+        "\ue323",
+        "\ue324",
+        "\ue325",
+        "\ue326",
+        "\ue327",
+        "\ue328",
+        "\ue329",
+        "\ue32a",
+        "\ue32b",
+        "\ue32c",
+        "\ue32d",
+        "\ue32e",
+        "\ue32f",
+        "\ue330",
+        "\ue331",
+        "\ue332",
+        "\ue333",
+        "\ue334"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/core/skill_charge.png",
+      "height": 7,
+      "ascent": 7,
+      "chars": [
+        "\ue340",
+        "\ue341",
+        "\ue342",
+        "\ue343",
+        "\ue344",
+        "\ue345",
+        "\ue346",
+        "\ue347",
+        "\ue348",
+        "\ue349",
+        "\ue34a"
+      ]
+    }
+  ]
+}

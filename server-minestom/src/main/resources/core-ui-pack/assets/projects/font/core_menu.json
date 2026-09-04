@@ -1,0 +1,13 @@
+{
+  "providers": [
+    {
+      "type": "bitmap",
+      "file": "projects:gui/core/menu_frame.png",
+      "height": 222,
+      "ascent": 13,
+      "chars": [
+        "\ue200"
+      ]
+    }
+  ]
+}
