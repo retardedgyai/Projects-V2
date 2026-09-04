@@ -18,10 +18,16 @@ object CoreUiTooltip {
     data class Rendered(val title: Component, val lore: List<Component>, val contentWidth: Int)
 
     fun render(model: CoreTooltipModel, packed: Boolean): Rendered {
+        // Three or more affixes would otherwise exceed small Vanilla GUI heights. Names/groups
+        // remain in the forge's detail view; every effect, roll range, quality and rank stays here.
+        val compactAffixes = model.affixes.size >= 3
         val allLines = buildList {
             add("${model.rarity.name}  ・  ${model.typeLabel}")
             model.stats.forEach { add("${it.label}   ${it.value}") }
-            model.affixes.forEach { add("${it.name} ${it.rank}"); add(it.effect); add("範囲 ${it.range}  品質 ${it.qualityPercent.coerceIn(0, 100)}%") }
+            model.affixes.forEach {
+                if (compactAffixes) add("${it.effect}  ${compactDetails(it)}")
+                else { add("${it.name} ${it.rank}"); add(it.effect); add("範囲 ${it.range}  品質 ${it.qualityPercent.coerceIn(0, 100)}%") }
+            }
             add("アイテムレベル ${model.itemLevel}  /  内部Tier T${model.tier}")
             addAll(model.footer)
         }
@@ -50,10 +56,16 @@ object CoreUiTooltip {
                 if (model.affixes.isEmpty()) add(CoreUiComponents.text("  未装着 — 工房で刻印できます", CoreUiComponents.MUTED))
                 model.affixes.forEach { affix ->
                     val quality = affix.qualityPercent.coerceIn(0, 100)
-                    add(Component.empty().append(CoreUiComponents.icon(CoreUiIcon.MOD, packed))
-                        .append(CoreUiComponents.text(" ${affix.name} ${affix.rank}", CoreUiComponents.IVORY, true)))
-                    add(CoreUiComponents.text("  └ ${affix.effect}", qualityColor(quality)))
-                    add(CoreUiComponents.text("    範囲 ${affix.range}  品質 $quality%", CoreUiComponents.MUTED))
+                    if (compactAffixes) {
+                        add(Component.empty().append(CoreUiComponents.icon(CoreUiIcon.MOD, packed))
+                            .append(CoreUiComponents.text(" ${affix.effect}", qualityColor(quality)))
+                            .append(CoreUiComponents.text("  ${compactDetails(affix)}", CoreUiComponents.MUTED)))
+                    } else {
+                        add(Component.empty().append(CoreUiComponents.icon(CoreUiIcon.MOD, packed))
+                            .append(CoreUiComponents.text(" ${affix.name} ${affix.rank}", CoreUiComponents.IVORY, true)))
+                        add(CoreUiComponents.text("  └ ${affix.effect}", qualityColor(quality)))
+                        add(CoreUiComponents.text("    範囲 ${affix.range}  品質 $quality%", CoreUiComponents.MUTED))
+                    }
                 }
                 add(Component.empty())
             }
@@ -63,6 +75,9 @@ object CoreUiTooltip {
         }
         return Rendered(title, lore, width)
     }
+
+    private fun compactDetails(affix: CoreTooltipAffix): String =
+        "範囲 ${affix.range}  品質 ${affix.qualityPercent.coerceIn(0, 100)}%  ${affix.rank}"
 
     private fun divider(width: Int, packed: Boolean): Component =
         if (packed) CoreUiComponents.text(" ").append(CoreUiComponents.space(width - 4))
