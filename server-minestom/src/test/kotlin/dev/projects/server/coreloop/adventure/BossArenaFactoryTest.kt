@@ -23,6 +23,7 @@ import kotlin.random.Random
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertFailsWith
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
@@ -42,7 +43,7 @@ class BossArenaFactoryTest {
                 assertTrue(QuestCombatPlacement.clear(arena.instance, arena.bossSpawn.add(-5.0, 0.0, 0.0)))
                 floors += arena.instance.getBlock(38, 39, 37).name()
                 bosses += arena.archetype
-            } finally { arena.dispose() }
+            } finally { arena.dispose(); arena.dispose(); assertFalse(arena.instance.isRegistered) }
         }
         assertEquals(3, floors.size)
         assertEquals(3, bosses.size)
@@ -81,6 +82,8 @@ class BossArenaFactoryTest {
         connection.player = player
         player.gameMode = GameMode.ADVENTURE
         player.setInstance(arena.instance, arena.bossSpawn.sub(0.0, 0.0, 4.0)).join()
+        assertFailsWith<IllegalStateException> { arena.dispose() }
+        assertTrue(arena.instance.isRegistered)
         var victories = 0
         val combat = QuestEncounterCombat(arena.instance, 1, emptyList(), arena.bossSpawn,
             { _, boss -> if (boss) victories++ }, { _, _ -> }, explicitBossArchetype = arena.archetype)
@@ -109,6 +112,8 @@ class BossArenaFactoryTest {
             combat.dispose()
             player.remove()
             arena.dispose()
+            arena.dispose()
+            assertFalse(arena.instance.isRegistered)
         }
     }
 

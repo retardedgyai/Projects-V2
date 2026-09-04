@@ -100,6 +100,7 @@ class QuestEncounterCombat(
     private val mobs = linkedMapOf<UUID, Mob>()
     private val telegraphs = MobGroundTelegraph(instance)
     @Volatile private var disposed = false
+    private var actionsStoppedForReturn = false
     private var lastTickAt = Long.MIN_VALUE
     val totalEncounterCount: Int = encounters.size
     val defeatedMobCount: Int get() = mobs.values.count { !it.boss && it.life.phase == QuestMobPhase.DEAD }
@@ -218,10 +219,34 @@ class QuestEncounterCombat(
         lastTickAt = nowMillis
         telegraphs.tick(nowMillis)
         val players = instance.players.filter { canTarget(it) }
+        if (actionsStoppedForReturn) {
+            if (players.isEmpty()) return
+            actionsStoppedForReturn = false
+        }
         for (mob in mobs.values.toList()) {
             mob.spawnFailure?.let { throw IllegalStateException("Quest mob failed to spawn at ${mob.home}", it) }
             if (!mob.life.isAlive || !isSpawned(mob)) continue
             tickMob(mob, players, nowMillis)
+            if (actionsStoppedForReturn || disposed) return
+        }
+    }
+
+    /** Root sets returning=true first. A failed save may resume later, but cannot resume an old hit frame. */
+    fun stopActionsForReturn(nowMillis: Long = System.currentTimeMillis()) {
+        if (disposed) return
+        actionsStoppedForReturn = true
+        mobs.values.filter { it.life.isAlive }.forEach { mob ->
+            mob.abilities.cancel()
+            telegraphs.clear(mob.entity.uuid)
+            stopNavigation(mob)
+            castingPose(mob, false)
+            mob.entity.refreshActiveHand(false, true, false)
+            mob.target = null
+            if (mob.life.phase != QuestMobPhase.RETURNING) mob.life.phase = QuestMobPhase.IDLE
+            mob.nextPathAt = nowMillis
+            mob.nextWarningAt = nowMillis
+            mob.warningRetryAt = maxOf(mob.warningRetryAt, nowMillis + 350L)
+            updateName(mob)
         }
     }
 
@@ -454,7 +479,7 @@ class QuestEncounterCombat(
                     if (event.frame.ability.shape.contains(event.frame.origin, event.frame.facing, player.position) &&
                         mob.entity.hasLineOfSight(player)
                     ) damagePlayer(player, event.frame.ability.damage)
-                    if (disposed) return false
+                    if (disposed || actionsStoppedForReturn) return false
                 }
             }
             is MobAbilityEvent.Finished -> { telegraphs.clear(mob.entity.uuid); updateName(mob) }

@@ -135,6 +135,45 @@ class QuestEncounterContentTest {
     }
 
     @Test
+    fun `return cancels warning immediately and failed save resumes with a fresh warning not an overdue hit`() = arena(QuestMobArchetype.RIFT_CASTER) { h ->
+        h.player.teleport(Pos(8.5, 40.0, 2.5)).join()
+        h.combat.tick(0)
+        h.combat.tick(450)
+        assertTrue(h.combat.groundDisplayCount > 0)
+        h.targetable = false
+        h.combat.stopActionsForReturn(450)
+        assertEquals(0, h.combat.groundDisplayCount)
+        h.combat.tick(3000)
+        assertTrue(h.hits.isEmpty())
+        h.targetable = true
+        h.combat.tick(3100)
+        assertTrue(h.hits.isEmpty())
+        assertTrue(h.combat.groundDisplayCount > 0)
+        h.combat.tick(4349)
+        assertTrue(h.hits.isEmpty())
+        h.combat.tick(4350)
+        assertEquals(listOf(12.0), h.hits)
+    }
+
+    @Test
+    fun `return inside damage callback cancels all remaining attacks in the same server tick`() = arena(QuestMobArchetype.RIFT_CASTER) { h ->
+        h.player.teleport(Pos(8.5, 40.0, 2.5)).join()
+        h.combat.spawnEncounter(QuestCombatEncounter(listOf(Pos(10.5, 40.0, 12.5)), listOf(QuestMobArchetype.RIFT_CASTER)))
+        h.onIncomingHit = {
+            h.targetable = false
+            h.combat.stopActionsForReturn(1250)
+        }
+        h.combat.tick(0)
+        h.combat.tick(450)
+        h.combat.tick(1250)
+        assertEquals(listOf(12.0), h.hits)
+        assertEquals(0, h.combat.groundDisplayCount)
+        h.combat.tick(10_000)
+        assertEquals(listOf(12.0), h.hits)
+        assertEquals(0, h.combat.groundDisplayCount)
+    }
+
+    @Test
     fun `losing a live player cancels warning slow and delayed hit and return heals`() = arena(QuestMobArchetype.SOLDIER) { h ->
         h.combat.applyDamage(h.enemyId, h.player, 12.0)
         h.combat.tick(0)
@@ -175,6 +214,7 @@ class QuestEncounterContentTest {
         val enemyId: UUID
         var targetable = true
         val hits = mutableListOf<Double>()
+        var onIncomingHit: (() -> Unit)? = null
         val defeats = mutableListOf<QuestMobDefeat>()
         val displaysAtReward = mutableListOf<Int>()
         init {
@@ -192,7 +232,7 @@ class QuestEncounterContentTest {
                 listOf(QuestCombatEncounter(listOf(Pos(8.5, 40.0, 12.5)), listOf(archetype))),
                 Pos(40.5, 40.0, 40.5),
                 onMobDefeated = { _, _ -> defeats += checkNotNull(combat.latestDefeat); displaysAtReward += combat.groundDisplayCount },
-                damagePlayer = { _, damage -> hits += damage }, canTarget = { it === player && targetable }, contentSeed = seed)
+                damagePlayer = { _, damage -> hits += damage; onIncomingHit?.invoke() }, canTarget = { it === player && targetable }, contentSeed = seed)
             enemyId = combat.entities().first { !combat.isBoss(it.uuid) }.uuid
         }
 
