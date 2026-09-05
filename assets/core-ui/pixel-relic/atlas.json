@@ -1,0 +1,327 @@
+{
+  "cell": 32,
+  "columns": 8,
+  "sizes": [
+    16,
+    32
+  ],
+  "ys": [
+    18,
+    28,
+    30,
+    36,
+    42,
+    54,
+    56,
+    70,
+    72,
+    84,
+    90,
+    98,
+    108,
+    112,
+    126,
+    140,
+    154,
+    168,
+    182,
+    196
+  ],
+  "art": [
+    {
+      "name": "EXPEDITION",
+      "ordinal": 0,
+      "source": "materials",
+      "source_cell": 0,
+      "advances": {
+        "16": 16,
+        "32": 31
+      }
+    },
+    {
+      "name": "FORGE",
+      "ordinal": 1,
+      "source": "materials",
+      "source_cell": 1,
+      "advances": {
+        "16": 16,
+        "32": 30
+      }
+    },
+    {
+      "name": "STORAGE",
+      "ordinal": 2,
+      "source": "materials",
+      "source_cell": 2,
+      "advances": {
+        "16": 16,
+        "32": 30
+      }
+    },
+    {
+      "name": "GEAR",
+      "ordinal": 3,
+      "source": "symbols",
+      "source_cell": 10,
+      "advances": {
+        "16": 16,
+        "32": 30
+      }
+    },
+    {
+      "name": "GATHER",
+      "ordinal": 4,
+      "source": "materials",
+      "source_cell": 5,
+      "advances": {
+        "16": 17,
+        "32": 32
+      }
+    },
+    {
+      "name": "HELP",
+      "ordinal": 5,
+      "source": "symbols",
+      "source_cell": 5,
+      "advances": {
+        "16": 15,
+        "32": 29
+      }
+    },
+    {
+      "name": "TRIAL",
+      "ordinal": 6,
+      "source": "symbols",
+      "source_cell": 3,
+      "advances": {
+        "16": 16,
+        "32": 31
+      }
+    },
+    {
+      "name": "RETURN",
+      "ordinal": 7,
+      "source": "symbols",
+      "source_cell": 6,
+      "advances": {
+        "16": 15,
+        "32": 29
+      }
+    },
+    {
+      "name": "ENHANCE",
+      "ordinal": 8,
+      "source": "symbols",
+      "source_cell": 7,
+      "advances": {
+        "16": 16,
+        "32": 31
+      }
+    },
+    {
+      "name": "REFINE",
+      "ordinal": 9,
+      "source": "symbols",
+      "source_cell": 8,
+      "advances": {
+        "16": 15,
+        "32": 29
+      }
+    },
+    {
+      "name": "CRAFT",
+      "ordinal": 10,
+      "source": "symbols",
+      "source_cell": 9,
+      "advances": {
+        "16": 16,
+        "32": 30
+      }
+    },
+    {
+      "name": "MOD",
+      "ordinal": 11,
+      "source": "symbols",
+      "source_cell": 2,
+      "advances": {
+        "16": 15,
+        "32": 29
+      }
+    },
+    {
+      "name": "WEAPON",
+      "ordinal": 12,
+      "source": "materials",
+      "source_cell": 3,
+      "advances": {
+        "16": 16,
+        "32": 30
+      }
+    },
+    {
+      "name": "ARMOR",
+      "ordinal": 13,
+      "source": "materials",
+      "source_cell": 4,
+      "advances": {
+        "16": 16,
+        "32": 31
+      }
+    },
+    {
+      "name": "WOOD",
+      "ordinal": 14,
+      "source": "materials",
+      "source_cell": 6,
+      "advances": {
+        "16": 16,
+        "32": 31
+      }
+    },
+    {
+      "name": "ORE",
+      "ordinal": 15,
+      "source": "materials",
+      "source_cell": 7,
+      "advances": {
+        "16": 16,
+        "32": 30
+      }
+    },
+    {
+      "name": "STONE",
+      "ordinal": 16,
+      "source": "materials",
+      "source_cell": 8,
+      "advances": {
+        "16": 16,
+        "32": 31
+      }
+    },
+    {
+      "name": "HIDE",
+      "ordinal": 17,
+      "source": "materials",
+      "source_cell": 9,
+      "advances": {
+        "16": 16,
+        "32": 31
+      }
+    },
+    {
+      "name": "FIBER",
+      "ordinal": 18,
+      "source": "materials",
+      "source_cell": 10,
+      "advances": {
+        "16": 16,
+        "32": 30
+      }
+    },
+    {
+      "name": "PLANK",
+      "ordinal": 19,
+      "source": "materials",
+      "source_cell": 11,
+      "advances": {
+        "16": 16,
+        "32": 31
+      }
+    },
+    {
+      "name": "INGOT",
+      "ordinal": 20,
+      "source": "materials",
+      "source_cell": 12,
+      "advances": {
+        "16": 16,
+        "32": 31
+      }
+    },
+    {
+      "name": "CUT_STONE",
+      "ordinal": 21,
+      "source": "materials",
+      "source_cell": 13,
+      "advances": {
+        "16": 16,
+        "32": 31
+      }
+    },
+    {
+      "name": "LEATHER",
+      "ordinal": 22,
+      "source": "materials",
+      "source_cell": 14,
+      "advances": {
+        "16": 16,
+        "32": 30
+      }
+    },
+    {
+      "name": "CLOTH",
+      "ordinal": 23,
+      "source": "materials",
+      "source_cell": 15,
+      "advances": {
+        "16": 16,
+        "32": 31
+      }
+    },
+    {
+      "name": "POTION",
+      "ordinal": 24,
+      "source": "symbols",
+      "source_cell": 0,
+      "advances": {
+        "16": 15,
+        "32": 28
+      }
+    },
+    {
+      "name": "TABLET",
+      "ordinal": 25,
+      "source": "symbols",
+      "source_cell": 1,
+      "advances": {
+        "16": 15,
+        "32": 29
+      }
+    },
+    {
+      "name": "ORB",
+      "ordinal": 26,
+      "source": "symbols",
+      "source_cell": 2,
+      "advances": {
+        "16": 15,
+        "32": 29
+      }
+    },
+    {
+      "name": "BOSS",
+      "ordinal": 27,
+      "source": "symbols",
+      "source_cell": 3,
+      "advances": {
+        "16": 16,
+        "32": 31
+      }
+    },
+    {
+      "name": "SHARD",
+      "ordinal": 28,
+      "source": "symbols",
+      "source_cell": 4,
+      "advances": {
+        "16": 15,
+        "32": 28
+      }
+    }
+  ],
+  "sources": {
+    "materials": "646c707be8181d0d1091211bb43a71ba619b2657495b0c110d3f70801bf0d98b",
+    "symbols": "591a2d87829f84fb8567319ecac283801d4d997db0a3f66eb3e0d549ea5e3a61"
+  },
+  "build": "4x4 cell slicing; nearest-neighbor 32px; binary alpha; 24-color palette per sprite"
+}
