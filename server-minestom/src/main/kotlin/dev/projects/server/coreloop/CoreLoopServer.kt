@@ -52,7 +52,7 @@ object CoreLoopServer {
     }
 }
 
-internal class CoreLoopGame(private val hub: InstanceContainer, private val harbor: HarborScene.Result) {
+internal class CoreLoopGame(private val hub: InstanceContainer, private val harbor: HarborScene.Result) : CoreMenuHost {
     private val io = Executors.newSingleThreadScheduledExecutor { r -> Thread(r, "projects-core-ledger").apply { isDaemon = true } }
     private val mapBuilder = Executors.newSingleThreadExecutor { r -> Thread(r, "projects-core-map-builder").apply { isDaemon = true } }
     private val preparedMaps = CoreMapPreparation(mapBuilder)
@@ -93,9 +93,9 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         var adventures: AdventureRuntime? = null
     }
 
-    fun account(player: Player): CoreAccount? = accounts[player.uuid]
-    fun packed(player: Player): Boolean = uiPack?.enabled(player) == true
-    fun isDeparting(player: Player): Boolean = departing.containsKey(player.uuid)
+    override fun account(player: Player): CoreAccount? = accounts[player.uuid]
+    override fun packed(player: Player): Boolean = uiPack?.enabled(player) == true
+    override fun isDeparting(player: Player): Boolean = departing.containsKey(player.uuid)
 
     fun register() {
         val events = MinecraftServer.getGlobalEventHandler()
@@ -299,7 +299,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         HarborFacilityKind.MASTERY -> menus.mastery(player)
     }
 
-    fun requireHub(player: Player): Boolean {
+    override fun requireHub(player: Player): Boolean {
         val valid = player.instance === hub && account(player)?.activeRun == null && !isDeparting(player)
         if (!valid) player.sendMessage(CoreLoopItems.text("港へ帰還してから操作してください。", NamedTextColor.YELLOW))
         return valid
@@ -314,7 +314,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
             }
         }, io)
 
-    fun mutate(player: Player, action: CoreAction, revision: Long, after: () -> Unit = {}) {
+    override fun mutate(player: Player, action: CoreAction, revision: Long, onRejected: (() -> Unit)?, after: () -> Unit) {
         if (!busy.add(player.uuid)) return
         val beforeEnhancement = (action as? CoreAction.EnhanceEquipment)?.let { operation ->
             account(player)?.let { CoreEnhancementCatalog.state(it, operation.gear).level }
@@ -327,6 +327,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
                 if (error != null || result == null) {
                     player.sendMessage(CoreLoopItems.text("保存できませんでした。操作をやり直してください。", NamedTextColor.RED))
                     System.err.println("CORE_TRANSACTION_FAILURE player=${player.uuid}: $error")
+                    onRejected?.invoke()
                 } else {
                     player.sendMessage(CoreLoopItems.text(result.message, if (result.successful) NamedTextColor.GREEN else NamedTextColor.RED))
                     if (result.successful) {
@@ -341,24 +342,24 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
                         player.playSound(Sound.sound(sound, Sound.Source.MASTER, 0.45f, if (enhanced == false) 0.75f else 1.2f))
                     }
                     refresh(player)
-                    if (result.successful) after() else menus.journal(player)
+                    if (result.successful) after() else (onRejected ?: { menus.journal(player) })()
                 }
             }
         }
     }
 
-    fun applyTablet(player: Player, mapId: UUID, revision: Long, after: () -> Unit) {
+    override fun applyTablet(player: Player, mapId: UUID, revision: Long, onRejected: (() -> Unit)?, after: () -> Unit) {
         if (!requireHub(player)) return
         val map = account(player)?.maps?.firstOrNull { it.id == mapId } ?: return
         val modifier = CoreLoopItems.nextModifier(map, System.nanoTime())
         if (modifier == null) { player.sendMessage(CoreLoopItems.text("MODは最大3個です。", NamedTextColor.YELLOW)); return }
-        mutate(player, CoreAction.ApplyTablet(mapId, modifier), revision) {
+        mutate(player, CoreAction.ApplyTablet(mapId, modifier), revision, onRejected) {
             account(player)?.maps?.firstOrNull { it.id == mapId }?.let { preparedMaps.warm(player.uuid, it) }
             after()
         }
     }
 
-    fun warmMap(player: Player, map: CoreOwnedMap): Boolean = preparedMaps.warm(player.uuid, map)
+    override fun warmMap(player: Player, map: CoreOwnedMap): Boolean = preparedMaps.warm(player.uuid, map)
 
     private fun refresh(player: Player) {
         val a = account(player) ?: return
@@ -367,7 +368,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         CoreLoopItems.refresh(player, a, packed = packed(player))
     }
 
-    fun depart(player: Player, mapId: UUID, revision: Long) {
+    override fun depart(player: Player, mapId: UUID, revision: Long) {
         if (!requireHub(player) || !busy.add(player.uuid)) return
         val runId = UUID.randomUUID()
         departing[player.uuid] = runId
@@ -424,7 +425,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         }
     }
 
-    fun departTrial(player: Player, kind: CoreActivityKind, tier: Int, revision: Long) {
+    override fun departTrial(player: Player, kind: CoreActivityKind, tier: Int, revision: Long) {
         if (!requireHub(player) || !busy.add(player.uuid)) return
         val runId = UUID.randomUUID()
         departing[player.uuid] = runId
@@ -645,7 +646,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         } else p.hideBossBar(session.bossBar)
     }
 
-    fun returnToHarbor(player: Player) {
+    override fun returnToHarbor(player: Player) {
         val session = sessions[player.uuid] ?: return
         if (session.returning || session.rewardPending) return
         if (session.combat.bossDefeated && account(player)?.activeRun?.bossDefeated != true) { awardBoss(session); return }
@@ -731,12 +732,12 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
             icons.mapIndexed { i, icon -> CoreHudSkill(icon, (i + 2).toString(), actor.cooldownRemaining(i) / 20.0, actor.cooldownTicks(i) / 20.0, listOf(15, 25, 35)[i]) }, message), packed(player)))
     }
 
-    fun sessionSummary(player: Player): String = sessions[player.uuid]?.let {
+    override fun sessionSummary(player: Player): String = sessions[player.uuid]?.let {
         val activities = it.adventures?.snapshots().orEmpty()
         "倒した敵 ${it.combat.defeatedMobCount}体 / " + (it.arena?.displayName ?: "発見 ${it.discoveries.size}か所・寄り道 ${activities.count { s -> s.phase == AdventurePhase.COMPLETED }}/${activities.size}")
     } ?: ""
-    fun gatheringMastery(player: Player): QuestGatheringMastery = questMaps.masterySnapshot(player.uuid)
-    fun unlockMastery(player: Player, discipline: QuestGatheringDiscipline, node: QuestGatheringMasteryNode) = questMaps.unlockGatheringMasteryNode(player, discipline.id, node.id)
+    override fun gatheringMastery(player: Player): QuestGatheringMastery = questMaps.masterySnapshot(player.uuid)
+    override fun unlockMastery(player: Player, discipline: QuestGatheringDiscipline, node: QuestGatheringMasteryNode) = questMaps.unlockGatheringMasteryNode(player, discipline.id, node.id)
     fun nextSteps(a: CoreAccount): List<String> = when {
         a.currencies.values.any { it > 0 } && a.equippedAffixes.isEmpty() -> listOf("刻印工房でオーブを使い、MODを抽選", "変成でマジック / 錬金でレア装備へ")
         a.fragments.values.any { it >= 3 } -> listOf("欠片が集まった！境界の試練に挑戦", "専用ボスから特別な加工オーブを狙おう")

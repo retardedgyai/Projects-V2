@@ -1,133 +1,156 @@
 package dev.projects.server.coreloop
 
-import dev.projects.server.questmap.*
 import dev.projects.server.coreloop.ui.*
-import net.kyori.adventure.text.format.NamedTextColor
+import dev.projects.server.coreloop.ui.CoreMenuCanvas.Line
+import dev.projects.server.coreloop.ui.CoreMenuCanvas.Tone
+import dev.projects.server.questmap.*
+import net.kyori.adventure.text.format.TextColor
+import net.minestom.server.component.DataComponents
 import net.minestom.server.entity.Player
 import net.minestom.server.event.inventory.InventoryPreClickEvent
-import net.minestom.server.inventory.Inventory
-import net.minestom.server.inventory.InventoryType
-import net.minestom.server.inventory.click.Click
 import net.minestom.server.item.ItemStack
 import net.minestom.server.item.Material
-import java.util.UUID
 import java.util.Locale
+import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 
-/** One owned inventory per viewer. Display items never become transferable rewards. */
-internal class CoreLoopMenus(private val game: CoreLoopGame) {
-    private data class View(val inventory: Inventory, val actions: MutableMap<Int, (Boolean) -> Unit>)
-    private val views = ConcurrentHashMap<UUID, View>()
-    private val forgeSelections = ConcurrentHashMap<UUID, CoreForgeLayout.Selection>()
-    private val contentSlots = (19..43).filter { it % 9 in 1..7 }
-
-    fun click(event: InventoryPreClickEvent): Boolean {
-        val view = views[event.player.uuid] ?: return false
-        if (event.player.openInventory !== view.inventory) return false
-        // Cancel every click form, including bottom inventory, drag, shift and number keys.
-        event.isCancelled = true
-        if (event.inventory !== view.inventory || event.slot !in 0 until 54) return true
-        if (event.click is Click.Left || event.click is Click.Right) {
-            view.actions[event.slot]?.invoke(event.click is Click.Right)
-        }
-        return true
+/** Labels, previews and actions share vanilla slot bounds. The ledger owns every spend. */
+internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect: ((CoreMenuCanvas) -> Unit)? = null) {
+    private class View(val canvas: CoreMenuCanvas, val packed: Boolean) {
+        val items = Array(54) { ItemStack.AIR }
+        val actions = mutableMapOf<Int, () -> Unit>()
+        val occupied = mutableSetOf<Int>()
+        lateinit var screen: CoreMenuInventory.Screen
     }
+    private val screens = CoreMenuInventory()
+    private val selections = ConcurrentHashMap<UUID, CoreForgeLayout.Selection>()
+    private val journeys = ConcurrentHashMap<UUID, CoreForgeJourney>()
+    private val listSlots = listOf(9, 14, 18, 23, 27, 32, 36, 41)
+    fun click(event: InventoryPreClickEvent): Boolean = screens.click(event)
+    fun forget(playerId: UUID) { screens.forget(playerId); selections.remove(playerId); journeys.remove(playerId) }
+    fun refreshTheme(player: Player) = screens.refresh(player)
+    private fun journey(player: Player) = journeys.computeIfAbsent(player.uuid) { CoreForgeJourney() }
 
-    fun forget(playerId: UUID) { views.remove(playerId); forgeSelections.remove(playerId); forgeViewers.remove(playerId) }
-    fun refreshTheme(player: Player) {
-        val view = views[player.uuid] ?: return
-        if (player.openInventory === view.inventory) {
-            if (forgeSelections.containsKey(player.uuid) && forgeViewers.contains(player.uuid)) forge(player, forgeSelections.getValue(player.uuid))
-            else journal(player)
-        }
-    }
-
-    private val forgeViewers = ConcurrentHashMap.newKeySet<UUID>()
-    private fun view(player: Player, title: String, forge: Boolean = false, emptyForge: Boolean = false, build: (View) -> Unit) {
-        if (forge) forgeViewers.add(player.uuid) else forgeViewers.remove(player.uuid)
-        val v = View(Inventory(InventoryType.CHEST_6_ROW, CoreUiComponents.inventoryTitle(title, game.packed(player), forge, emptyForge)), mutableMapOf())
-        for (slot in 0 until 54) if (slot < 9 || slot >= 45 || slot % 9 == 0 || slot % 9 == 8) {
-            v.inventory.setItemStack(slot, CoreUiItemSkin.blank(CoreLoopItems.icon(Material.GRAY_STAINED_GLASS_PANE, " "), game.packed(player)))
-        }
+    private fun view(player: Player, title: String, redraw: () -> Unit, build: (View) -> Unit) {
+        val v = View(CoreMenuCanvas(title), game.packed(player))
         build(v)
-        for (slot in 0 until 54) {
-            val item = v.inventory.getItemStack(slot)
-            if (!item.isAir && item.get(net.minestom.server.component.DataComponents.TOOLTIP_STYLE) == null)
-                v.inventory.setItemStack(slot, CoreLoopItems.menuSkin(item, game.packed(player)))
+        inspect?.invoke(v.canvas)
+        // Without the optional pack, no private glyph or invisible control is sent.
+        // The always-visible panel's original text remains available in the central details book.
+        if (!v.packed) v.items[8] = CoreLoopItems.icon(Material.BOOK, "画面の詳細 / ヘルプ", *v.canvas.fallbackLines().toTypedArray())
+        v.items.indices.forEach { slot ->
+            val item = v.items[slot]
+            if (!item.isAir && item.get(DataComponents.TOOLTIP_STYLE) == null)
+                v.items[slot] = CoreLoopItems.menuSkin(item, v.packed)
         }
-        views[player.uuid] = v
-        player.openInventory(v.inventory)
+        v.screen = CoreMenuInventory.Screen(if (v.packed) v.canvas.render() else CoreUiComponents.inventoryTitle(title, false), v.items, v.actions, redraw)
+        screens.show(player, v.screen)
     }
 
-    private fun button(v: View, slot: Int, item: ItemStack, action: (Boolean) -> Unit) {
-        v.inventory.setItemStack(slot, item)
-        v.actions[slot] = action
+    /** Every occupied slot activates the label, not just its small icon. */
+    private fun tile(v: View, slot: Int, span: Int, label: String, item: ItemStack = CoreLoopItems.icon(Material.PAPER, label),
+        tone: Tone = Tone.NEUTRAL, icon: Boolean = false, action: (() -> Unit)? = null) {
+        require(slot in 0..53 && span in 1..9 && slot % 9 + span <= 9)
+        val display = item.withAmount(1).withGlowing(false)
+        for (at in slot until slot + span) {
+            check(v.occupied.add(at)) { "Menu button overlaps slot $at: $label" }
+            v.items[at] = if (v.packed && !(icon && at == slot)) CoreUiItemSkin.blank(display, true) else display
+            if (action != null && tone != Tone.DISABLED) v.actions[at] = action
+        }
+        v.canvas.button(slot, span, label, tone, icon)
     }
-
-    private fun back(v: View, player: Player, action: () -> Unit = { journal(player) }) =
-        button(v, 45, CoreLoopItems.icon(Material.ARROW, "戻る")) { action() }
-
+    private fun back(v: View, player: Player, label: String = "戻る", action: () -> Unit = { journal(player) }) =
+        tile(v, 45, 2, label, CoreLoopItems.icon(Material.ARROW, label), action = action)
+    private fun help(v: View, player: Player, returnTo: () -> Unit) =
+        tile(v, 8, 1, "?", CoreLoopItems.icon(Material.BOOK, "画面の見方", "左右：選択内容と費用 / 中央：操作", "表示サイズ・操作の説明")) { displayHelp(player, returnTo) }
+    private fun lines(vararg text: String): List<Line> = text.flatMap { CoreMenuCanvas.wrap(it).map { part -> Line(part) } }
+    private fun paragraph(text: String, color: TextColor = CoreUiComponents.IVORY): List<Line> = CoreMenuCanvas.wrap(text).map { Line(it, color) }
+    private fun pct(value: Double) = if (value % 1.0 == 0.0) value.toInt().toString() else String.format(Locale.ROOT, "%.1f", value)
+    private fun resourceName(resource: CoreResource) = when (resource) {
+        CoreResource.INGOT -> "金属材"
+        CoreResource.GATHERING_TABLET -> "採取石板"
+        else -> resource.displayName
+    }
+    private fun orbName(currency: CoreCraftingCurrency) = currency.displayName.removeSuffix("のオーブ")
+    private fun equipment(a: CoreAccount, gear: CoreGearSlot): List<Line> = buildList {
+        add(Line("T${CoreAffixCatalog.gearTier(a, gear)} ${gear.displayName} +${CoreEnhancementCatalog.state(a, gear).level}", CoreUiComponents.GOLD))
+        add(Line(CoreAffixCatalog.rarity(a, gear).displayName))
+        if (gear == CoreGearSlot.WEAPON) {
+            add(Line("攻撃力 ${CoreWeaponPresentation.damage(a)}")); add(Line("速度 ${CoreWeaponPresentation.attackSpeedLabel(a)}"))
+        } else add(Line("最大HP ${CoreWeaponPresentation.health(a)}"))
+        add(Line("MOD ${a.equippedAffixes.count { it.gear == gear }} / ${CoreAffixCatalog.capacity(a, gear)}"))
+    }
     private fun tiers(v: View, selected: Int, action: (Int) -> Unit) {
-        (1..4).forEach { tier -> button(v, tier + 1, CoreLoopItems.icon(Material.PAPER, "T$tier${if (tier == selected) "  選択中" else ""}",
-            "このTierの素材・地図を表示", color = CoreLoopItems.colors[tier - 1]).withGlowing(tier == selected)) { action(tier) } }
+        (1..4).forEach { tier -> tile(v, (tier - 1) * 2, 2, "T$tier", CoreLoopItems.icon(Material.PAPER, "素材・地図 Tier $tier"),
+            if (tier == selected) Tone.SELECTED else Tone.NEUTRAL) { action(tier) } }
+    }
+    private fun pageButtons(v: View, page: Int, last: Int, action: (Int) -> Unit) {
+        tile(v, 47, 1, "<", CoreLoopItems.icon(Material.ARROW, "前のページ"), if (page > 0) Tone.NEUTRAL else Tone.DISABLED) { action(page - 1) }
+        tile(v, 48, 3, "${page + 1} / ${last + 1}", CoreLoopItems.icon(Material.PAPER, "${page + 1} / ${last + 1} ページ"), Tone.DISABLED)
+        tile(v, 51, 1, ">", CoreLoopItems.icon(Material.ARROW, "次のページ"), if (page < last) Tone.NEUTRAL else Tone.DISABLED) { action(page + 1) }
+    }
+    private fun mutate(v: View, player: Player, action: CoreAction, revision: Long, after: () -> Unit) {
+        game.mutate(player, action, revision, onRejected = {
+            if (screens.isCurrent(player, v.screen)) v.screen.redraw()
+        }) { if (screens.isCurrent(player, v.screen)) after() }
     }
 
     fun journal(player: Player) {
         val a = game.account(player) ?: return
         if (game.isDeparting(player)) { player.sendMessage(CoreLoopItems.text("遠征を準備しています。しばらくお待ちください。")); return }
-        if (a.activeRun != null) {
-            view(player, "冒険の手帳 — 遠征中") { v ->
-                val won = a.activeRun.bossDefeated
-                v.inventory.setItemStack(13, CoreLoopItems.icon(if (won) Material.DRAGON_EGG else Material.IRON_SWORD,
-                    if (won) "討伐達成！" else "T${a.activeRun.map.tier} 未踏の地を探索",
-                    if (won) "討伐証と次の地図は倉庫に保存済み" else "道の先のボスを倒そう",
-                    "雑魚戦・採取・寄り道は自由", "採取した素材はすべて自動保存", "${game.sessionSummary(player)}"))
-                button(v, 30, CoreLoopItems.icon(Material.COMPASS, "港へ帰還",
-                    "途中帰還でも獲得した素材は残ります", "現在のマップは閉じられます")) { confirmReturn(player) }
-                button(v, 32, CoreLoopItems.icon(Material.CHEST, "獲得素材を見る", "採取物・戦利品は個人倉庫へ")) { storage(player, a.activeRun.map.tier) }
-                button(v, 40, CoreLoopItems.icon(Material.WOODEN_AXE, "採取道具を選ぶ")) { tools(player) }
-                button(v, 22, CoreLoopItems.icon(Material.AMETHYST_SHARD, "オーブと装備", "通貨と現在の装備を確認", "MODの抽選は港の刻印工房で")) { affixes(player) }
-                button(v, 49, CoreLoopItems.icon(Material.BOOK, "操作ガイド")) { guide(player) }
+        journey(player).clear()
+        val run = a.activeRun
+        view(player, if (run == null) "開拓港 / 手帳" else "遠征 / 手帳", { journal(player) }) { v ->
+            help(v, player) { journal(player) }
+            v.canvas.left("冒険者", equipment(a, CoreGearSlot.WEAPON) + listOf(Line("")) + equipment(a, CoreGearSlot.ARMOR))
+            if (run == null) {
+                v.canvas.right("次の一歩", lines("地図を選び出発", "採取と討伐で収集", "工房で装備更新", "次のTierへ挑戦", "", "解放済 T1〜${a.unlockedMapTier}", "T1地図は無料", "素材は自動保存"))
+                tile(v, 9, 4, "遠征", CoreLoopItems.icon(Material.CARTOGRAPHY_TABLE, "地図台から遠征", "地図を選ぶ → 調整 → 出発"), Tone.PRIMARY, true) { expeditions(player) }
+                tile(v, 14, 4, "装備工房", CoreLoopItems.icon(Material.ANVIL, "装備工房", "強化・精製・制作・MOD加工"), icon = true) { workshop(player) }
+                tile(v, 18, 4, "素材倉庫", CoreLoopItems.icon(Material.BARREL, "素材倉庫", "持っている素材と正確な所持数"), icon = true) { storage(player) }
+                tile(v, 23, 4, "MOD加工", CoreLoopItems.icon(Material.ENCHANTING_TABLE, "オーブでMOD加工", "結果は使用時にランダム抽選"), icon = true) { affixes(player) }
+                tile(v, 27, 4, "素材交換", CoreLoopItems.icon(Material.GOLD_NUGGET, "戦利品券を素材へ交換"), icon = true) { supplies(player) }
+                tile(v, 32, 4, "採取育成", CoreLoopItems.icon(Material.OAK_SAPLING, "採取の心得・道具"), icon = true) { mastery(player) }
+                tile(v, 36, 4, "ボス試練", CoreLoopItems.icon(Material.END_PORTAL_FRAME, "欠片で専用ボスに挑戦"), icon = true) { trials(player) }
+                tile(v, 41, 4, "遊び方", CoreLoopItems.icon(Material.BOOK, "最初の一周・戦闘・採取操作"), icon = true) { guide(player) }
+            } else {
+                v.canvas.right("遠征の状況", lines(if (run.bossDefeated) "ボス討伐達成！" else "T${run.map.tier} を探索中", "", "道の先にボス", "寄り道は自由", "素材は保存済み", "帰還しても残ります", "", game.sessionSummary(player)))
+                tile(v, 9, 4, "探索再開", CoreLoopItems.icon(Material.MAP, "画面を閉じて探索を続ける"), Tone.PRIMARY, true) { player.closeInventory() }
+                tile(v, 14, 4, "港へ帰還", CoreLoopItems.icon(Material.COMPASS, "帰還の確認へ", "今のマップには戻れなくなります"), icon = true) { confirmReturn(player) }
+                tile(v, 18, 4, "獲得素材", CoreLoopItems.icon(Material.BARREL, "倉庫へ保存された戦利品"), icon = true) { storage(player, run.map.tier) }
+                tile(v, 23, 4, "装備確認", CoreLoopItems.icon(Material.IRON_SWORD, "武器・防具のMODを確認"), icon = true) { gearMods(player, CoreGearSlot.WEAPON) }
+                tile(v, 27, 4, "採取道具", CoreLoopItems.icon(Material.WOODEN_AXE, "採取道具を持つ"), icon = true) { tools(player) }
+                tile(v, 32, 4, "遊び方", CoreLoopItems.icon(Material.BOOK, "操作ガイド"), icon = true) { guide(player) }
             }
-            return
-        }
-        view(player, "開拓港 — 冒険の手帳") { v ->
-            v.inventory.setItemStack(4, CoreLoopItems.icon(Material.LANTERN, "おかえり、${player.username}",
-                "武器 T${a.weaponTier} / 防具 T${a.armorTier}", "挑戦可能な地図：T1〜T${a.unlockedMapTier}"))
-            button(v, 11, CoreLoopItems.icon(Material.CARTOGRAPHY_TABLE, "地図台 — 遠征へ", "地図を選ぶ → 石板で調整 → 出発", "T1地図は何度でも無料")) { expeditions(player) }
-            button(v, 13, CoreLoopItems.icon(Material.ANVIL, "工房 — 装備を更新", "素材を精製して武器・防具を作る", "完成した装備は自動で装着")) { workshop(player) }
-            button(v, 15, CoreLoopItems.icon(Material.BARREL, "素材倉庫", "採取・討伐の成果を確認", "素材はログアウトしても残ります")) { storage(player) }
-            button(v, 22, CoreLoopItems.icon(Material.ENCHANTING_TABLE, "刻印工房 — ランダムMOD", "オーブで昇格・再抽選・MOD追加", "何が付くかは使うまで分かりません", "装着MOD ${a.equippedAffixes.size}個")) { affixes(player) }
-            button(v, 29, CoreLoopItems.icon(Material.GOLD_NUGGET, "補給所 — 素材交換", "戦利品券を欲しい素材へ", "採取せず戦闘中心でも装備を作れます")) { supplies(player) }
-            button(v, 31, CoreLoopItems.icon(Material.OAK_SAPLING, "採取の心得", "マスタリーと採取道具")) { mastery(player) }
-            button(v, 33, CoreLoopItems.icon(Material.BOOK, "操作ガイド", "最初の一周と戦闘・採取の操作")) { guide(player) }
-            button(v, 40, CoreLoopItems.icon(Material.END_PORTAL_FRAME, "境界の試練 — 専用ボス", "裂け目・儀式・討伐から欠片を集める", "欠片3個で専用フィールドへ挑戦", "専用オーブと高揚のオーブを狙う")) { trials(player) }
-            v.inventory.setItemStack(49, CoreLoopItems.icon(Material.CAMPFIRE, "次にすること", *game.nextSteps(a).toTypedArray()))
+            tile(v, 51, 3, "閉じる", CoreLoopItems.icon(Material.BARRIER, "画面を閉じる")) { player.closeInventory() }
         }
     }
 
     fun expeditions(player: Player, tier: Int = 1, page: Int = 0) {
         val a = game.account(player) ?: return
         if (!game.requireHub(player)) return
-        view(player, "地図台 — T$tier の遠征") { v ->
-            tiers(v, tier) { expeditions(player, it) }
-            val available = tier <= a.unlockedMapTier
-            button(v, 13, CoreLoopItems.icon(if (available) Material.MAP else Material.BARRIER,
-                if (available) "T$tier 地図を受け取る" else "T$tier は未解放",
-                if (tier == 1) "費用なし / いつでも再挑戦できます" else "費用：T${tier - 1} 戦利品券 1枚",
-                "前Tierのボスを倒すと解放")) {
-                if (available) game.mutate(player, CoreAction.ClaimMap(tier, System.nanoTime()), a.revision) { expeditions(player, tier, page) }
+        val maps = a.maps.filter { it.tier == tier }
+        val last = (maps.size - 1).coerceAtLeast(0) / listSlots.size
+        val current = page.coerceIn(0, last)
+        val unlocked = tier <= a.unlockedMapTier
+        val affordable = tier == 1 || a.amount(CoreResource.COMBAT_TOKEN, tier - 1) > 0
+        val room = a.maps.size < CoreLoopCatalog.MAX_MAPS
+        view(player, "地図台 / T$tier", { expeditions(player, tier, current) }) { v ->
+            tiers(v, tier) { expeditions(player, it) }; help(v, player) { expeditions(player, tier, current) }
+            v.canvas.left("地図を選ぶ", lines("一覧をクリック", "調整画面へ進む", "まだ消費しません", "", "所持 ${maps.size} 枚", "解放 T1〜${a.unlockedMapTier}", "目安装備 T$tier", "現在 武器T${a.weaponTier}"))
+            v.canvas.right("地図の入手", lines(if (tier == 1) "T1は無料" else "T${tier - 1} 戦利品券1枚", if (tier == 1) "何度でも再挑戦" else "所持 ${a.amount(CoreResource.COMBAT_TOKEN, tier - 1)} 枚", "", "前Tierのボス討伐", "次のTierを解放", "", if (!unlocked) "このTierは未解放" else if (!room) "地図の保管上限" else if (!affordable) "戦利品券が不足" else "右下から受け取る"))
+            maps.drop(current * listSlots.size).take(listSlots.size).forEachIndexed { index, map ->
+                tile(v, listSlots[index], 4, "地図 ${current * listSlots.size + index + 1}", CoreLoopItems.map(map), icon = true) { mapDetail(player, map.id) }
             }
-            val maps = a.maps.filter { it.tier == tier }
-            val lastPage = (maps.size - 1).coerceAtLeast(0) / contentSlots.size
-            val actualPage = page.coerceIn(0, lastPage)
-            maps.drop(actualPage * contentSlots.size).take(contentSlots.size).forEachIndexed { index, map ->
-                button(v, contentSlots[index], CoreLoopItems.map(map)) { mapDetail(player, map.id) }
+            if (maps.isEmpty()) v.canvas.text(8, 56, "地図なし → 右下で入手", CoreUiComponents.MUTED, 160)
+            back(v, player, if (journey(player).isEmpty) "手帳" else "元へ") {
+                journey(player).pop()?.let { forge(player, it) } ?: journal(player)
             }
-            if (maps.isEmpty()) v.inventory.setItemStack(31, CoreLoopItems.icon(Material.PAPER, "地図がありません", "上の白紙の地図をクリックして受け取ろう"))
-            if (actualPage > 0) button(v, 48, CoreLoopItems.icon(Material.ARROW, "前のページ")) { expeditions(player, tier, actualPage - 1) }
-            if (actualPage < lastPage) button(v, 50, CoreLoopItems.icon(Material.ARROW, "次のページ")) { expeditions(player, tier, actualPage + 1) }
-            back(v, player)
+            pageButtons(v, current, last) { expeditions(player, tier, it) }
+            tile(v, 52, 2, "入手", CoreLoopItems.icon(Material.MAP, "T$tier 地図を受け取る", if (tier == 1) "無料" else "T${tier - 1} 戦利品券1枚"),
+                if (unlocked && affordable && room) Tone.PRIMARY else Tone.DISABLED) {
+                mutate(v, player, CoreAction.ClaimMap(tier, System.nanoTime()), a.revision) { expeditions(player, tier, current) }
+            }
         }
     }
 
@@ -135,59 +158,54 @@ internal class CoreLoopMenus(private val game: CoreLoopGame) {
         val a = game.account(player) ?: return
         val map = a.maps.firstOrNull { it.id == id } ?: return expeditions(player)
         val ready = game.warmMap(player, map)
-        view(player, "地図台 — T${map.tier} 遠征の準備") { v ->
-            v.inventory.setItemStack(13, CoreLoopItems.map(map))
-            button(v, 22, CoreLoopItems.icon(Material.LIME_DYE, "この地図で出発", "地図1枚を消費", "道を進めばボスに到達 / 寄り道は自由",
-                "目安装備 T${map.tier} / 現在の武器 T${a.weaponTier}",
-                if (ready) "地形準備済み — 出発できます" else "選択中の地図を裏で準備しています")) { game.depart(player, map.id, a.revision) }
-            button(v, 30, CoreLoopItems.icon(Material.AMETHYST_SHARD, "採取MODを刻む", "採取の石板 1枚を消費 / 所持 ${a.amount(CoreResource.GATHERING_TABLET)}",
-                "最大3個 / 生成量・品質・密集地域", "付いたMODは実際の生成に反映")) {
-                game.applyTablet(player, map.id, a.revision) { mapDetail(player, id) }
+        view(player, "地図台 / 出発準備", { mapDetail(player, id) }) { v ->
+            help(v, player) { mapDetail(player, id) }
+            v.canvas.left("遠征の内容", lines("T${map.tier} のクエスト", "目安装備 T${map.tier}", "武器 T${a.weaponTier}", "", "地図1枚を消費", "道の先にボス", "採取・寄り道は自由", "", if (ready) "地形の準備完了" else "地形を準備中", "出発後は返却なし"))
+            v.canvas.right("採取MOD", listOf(Line("${map.modifiers.size} / 3 個")) +
+                (if (map.modifiers.isEmpty()) lines("まだ付いていません") else map.modifiers.flatMap { paragraph(CoreLoopItems.modifierName(it)) }) +
+                lines("", "石板 所持${a.amount(CoreResource.GATHERING_TABLET)}", "石板1枚で1個付与"))
+            v.items[13] = CoreLoopItems.map(map)
+            v.canvas.text(8, 56, "調整してから出発できます", CoreUiComponents.IVORY, 160)
+            tile(v, 27, 4, "MOD付与", CoreLoopItems.icon(Material.AMETHYST_SHARD, "採取の石板を1枚使う", "採取量・品質・密集地域のMODを追加"),
+                if (map.modifiers.size < 3 && a.amount(CoreResource.GATHERING_TABLET) > 0) Tone.NEUTRAL else Tone.DISABLED, true) {
+                game.applyTablet(player, id, a.revision, onRejected = {
+                    if (screens.isCurrent(player, v.screen)) mapDetail(player, id)
+                }) { if (screens.isCurrent(player, v.screen)) mapDetail(player, id) }
             }
-            button(v, 32, CoreLoopItems.icon(Material.FILLED_MAP, "地図を手元に用意", "ホットバー8番に持ち出す", "Eの中で石板を重ねても付与できます")) {
+            tile(v, 32, 4, "手元へ", CoreLoopItems.icon(Material.FILLED_MAP, "地図をホットバー8へ用意", "インベントリで石板を重ねる操作も使えます"), icon = true) {
                 player.inventory.setItemStack(7, CoreLoopItems.map(map)); player.setHeldItemSlot(7); player.closeInventory()
             }
             back(v, player) { expeditions(player, map.tier) }
+            tile(v, 51, 3, "出発", CoreLoopItems.icon(Material.LIME_DYE, "地図1枚を使って出発"), Tone.PRIMARY) { game.depart(player, id, a.revision) }
         }
     }
 
     fun workshop(player: Player, tier: Int = game.account(player)?.weaponTier ?: 1) {
-        val selection = forgeSelections[player.uuid] ?: CoreForgeLayout.Selection()
-        forge(player, selection.copy(tier = tier.coerceIn(1, 4)))
+        forge(player, (selections[player.uuid] ?: CoreForgeLayout.Selection()).copy(tier = tier.coerceIn(1, 4)))
     }
 
-    /** One workbench, four tabs. Selection never consumes anything; only the gold execute button does. */
     private fun forge(player: Player, requested: CoreForgeLayout.Selection) {
         val a = game.account(player) ?: return
         if (!game.requireHub(player)) return
         val s = requested.copy(tier = requested.tier.coerceIn(1, 4))
-        forgeSelections[player.uuid] = s
-        val empty = s.tab == CoreForgeLayout.Tab.MODS && s.currency == null
-        view(player, "開拓工房 — ${s.tab.label}", forge = true, emptyForge = empty) { v ->
+        selections[player.uuid] = s
+        view(player, "開拓工房 / ${s.tab.label}", { forge(player, s) }) { v ->
             CoreForgeLayout.Tab.entries.forEach { tab ->
-                val icon = when (tab) {
-                    CoreForgeLayout.Tab.ENHANCE -> Material.ANVIL
-                    CoreForgeLayout.Tab.REFINE -> Material.BLAST_FURNACE
-                    CoreForgeLayout.Tab.CRAFT -> Material.CRAFTING_TABLE
-                    CoreForgeLayout.Tab.MODS -> Material.ENCHANTING_TABLE
-                }
-                button(v, tab.slot, CoreLoopItems.icon(icon, "${tab.label}${if (s.tab == tab) " — 選択中" else ""}",
-                    "対象の${s.gear.displayName}を保持して切り替え", color = if (s.tab == tab) NamedTextColor.GOLD else NamedTextColor.GRAY).withGlowing(s.tab == tab)) {
-                    forge(player, s.copy(tab = tab, recipe = 0, quantity = CoreForgeLayout.Quantity.ONE, currency = null))
+                tile(v, tab.slot, 2, if (tab == CoreForgeLayout.Tab.MODS) "MOD" else tab.label,
+                    CoreLoopItems.icon(Material.ANVIL, tab.label, "選ぶだけでは素材を消費しません"), if (tab == s.tab) Tone.SELECTED else Tone.NEUTRAL) {
+                    forge(player, s.copy(tab = tab, recipe = 0, currency = null, quantity = CoreForgeLayout.Quantity.ONE))
                 }
             }
+            help(v, player) { forge(player, s) }
             CoreGearSlot.entries.forEach { gear ->
-                button(v, if (gear == CoreGearSlot.WEAPON) CoreForgeLayout.WEAPON else CoreForgeLayout.ARMOR,
-                    CoreLoopItems.gear(a, gear, game.packed(player)).withGlowing(s.gear == gear)) {
-                    forge(player, s.copy(gear = gear, recipe = 0, currency = null))
-                }
+                tile(v, if (gear == CoreGearSlot.WEAPON) 9 else 12, 3, gear.displayName,
+                    CoreLoopItems.icon(if (gear == CoreGearSlot.WEAPON) Material.IRON_SWORD else Material.IRON_CHESTPLATE,
+                        "対象を${gear.displayName}に変更", *equipment(a, gear).map { it.text }.toTypedArray()),
+                    if (s.gear == gear) Tone.SELECTED else Tone.NEUTRAL) { forge(player, s.copy(gear = gear, recipe = 0, currency = null)) }
             }
-            button(v, 4, CoreLoopItems.icon(Material.BOOK, "対象：${s.gear.displayName}", "左右の装備をクリックして変更", "クリック：現在のMODを詳しく見る")) { gearMods(player, s.gear) }
-            val supplyTier = if (s.tab == CoreForgeLayout.Tab.ENHANCE)
-                CoreEnhancementCatalog.quote(a, s.gear).recipe.costs.keys.firstOrNull()?.tier ?: s.tier else s.tier
-            button(v, 36, CoreLoopItems.icon(Material.BARREL, "T$supplyTier 倉庫・補給へ", "所持品は倉庫から直接消費", "素材が不足したら戦利品券で交換")) { supplies(player, supplyTier) }
-            back(v, player)
-            v.inventory.setItemStack(7, CoreLoopItems.icon(Material.GOLD_NUGGET, "③ 必要素材", "緑：足りています / 赤：不足", "数字は今回の消費数 / 所持は各素材で確認"))
+            back(v, player, if (journey(player).isEmpty) "手帳" else "元へ") {
+                journey(player).pop()?.let { forge(player, it) } ?: journal(player)
+            }
             when (s.tab) {
                 CoreForgeLayout.Tab.ENHANCE -> enhanceTab(v, player, a, s)
                 CoreForgeLayout.Tab.REFINE, CoreForgeLayout.Tab.CRAFT -> recipeTab(v, player, a, s)
@@ -196,257 +214,274 @@ internal class CoreLoopMenus(private val game: CoreLoopGame) {
         }
     }
 
-    private fun forgeTier(v: View, player: Player, s: CoreForgeLayout.Selection) {
-        v.inventory.setItemStack(1, CoreLoopItems.icon(Material.PAPER,
-            if (s.tab == CoreForgeLayout.Tab.CRAFT) "① 制作のレシピ" else "① T${s.tier} レシピ",
-            "消耗品・精製の使用素材：T${s.tier}", "装備制作は現在の装備Tierの素材を使用", "下のTボタンで素材Tierを変更"))
-        if (s.tier > 1) button(v, 46, CoreLoopItems.icon(Material.ARROW, "T${s.tier - 1}の素材へ")) { forge(player, s.copy(tier = s.tier - 1)) }
-        if (s.tier < 4) button(v, 50, CoreLoopItems.icon(Material.ARROW, "T${s.tier + 1}の素材へ")) { forge(player, s.copy(tier = s.tier + 1)) }
+    private fun costPanel(v: View, a: CoreAccount, recipe: CoreRecipe) {
+        val rows = CoreForgeSummary.materials(a, recipe)
+        v.canvas.right("必要素材", listOf(Line("所持 / 必要", CoreUiComponents.MUTED)) + rows.flatMap { row ->
+            listOf(Line("${if (row.satisfied) "" else "! "}T${row.material.tier} ${resourceName(row.material.resource)}",
+                    if (row.satisfied) CoreUiComponents.IVORY else CoreUiComponents.RED),
+                Line("${row.owned}/${row.required}",
+                    if (row.satisfied) TextColor.color(0x95D7AE) else CoreUiComponents.RED))
+        } + if (rows.isEmpty()) lines("消費なし") else emptyList())
     }
 
-    private fun costCards(v: View, player: Player, a: CoreAccount, recipe: CoreRecipe, s: CoreForgeLayout.Selection) {
-        check(recipe.costs.size <= CoreForgeLayout.COSTS.size)
-        recipe.costs.entries.forEachIndexed { index, (material, amount) ->
-            val held = a.amount(material)
-            val missing = (amount - held).coerceAtLeast(0)
-            val refine = CoreForgeLayout.refineSelection(material, s)
-            val shortcut = when {
-                refine != null -> "クリック：T${material.tier}の精製へ"
-                material.resource.raw -> "クリック：戦利品券で補給"
-                material.resource == CoreResource.BOSS_SIGIL -> "クリック：討伐証を探しに遠征"
-                material.resource == CoreResource.AFFIX_DUST -> "魔物を討伐して入手"
-                else -> "倉庫の素材を直接使用します"
-            }
-            val item = CoreLoopItems.icon(CoreLoopItems.resourceMaterial(material.resource), material.displayName,
-                "必要 $amount 個 / 所持 $held 個", if (missing == 0L) "足りています" else "あと $missing 個必要",
-                shortcut, color = if (missing == 0L) NamedTextColor.GREEN else NamedTextColor.RED).withAmount(amount.coerceIn(1, 64).toInt())
-            button(v, CoreForgeLayout.COSTS[index], item) {
-                when {
-                    refine != null -> forge(player, refine)
-                    material.resource.raw -> supplies(player, material.tier, material.resource)
-                    material.resource == CoreResource.BOSS_SIGIL -> expeditions(player, material.tier)
-                }
-            }
+    private fun sourceButton(v: View, player: Player, s: CoreForgeLayout.Selection) =
+        tile(v, 42, 3, "素材へ", CoreLoopItems.icon(Material.BARREL, "必要素材を集める", "精製・補給へ寄り道し、元の操作へ戻れます")) { materials(player, s) }
+
+    private fun execute(v: View, player: Player, label: String, blocked: String?, recipe: CoreRecipe? = null, action: () -> Unit) {
+        val a = game.account(player) ?: return
+        val lore = listOfNotNull(blocked) + recipe?.costs.orEmpty().map { "${it.key.displayName}: 所持 ${a.amount(it.key)} / 必要 ${it.value}" }
+        tile(v, 51, 3, if (blocked == null) label else "実行不可",
+            CoreLoopItems.icon(if (blocked == null) Material.LIME_DYE else Material.BARRIER, label, *lore.toTypedArray()),
+            if (blocked == null) Tone.PRIMARY else Tone.DISABLED) { if (game.requireHub(player)) action() }
+    }
+
+    private fun quantity(v: View, selected: CoreForgeLayout.Quantity, maximum: Int, action: (CoreForgeLayout.Quantity) -> Unit) {
+        v.canvas.text(56, 92, "回数", CoreUiComponents.MUTED, 52)
+        CoreForgeLayout.QUANTITIES.forEach { (slot, q) ->
+            val label = when (q) { CoreForgeLayout.Quantity.ONE -> "1"; CoreForgeLayout.Quantity.FIVE -> "5"; CoreForgeLayout.Quantity.MAX -> "全" }
+            tile(v, slot, 1, label, CoreLoopItems.icon(Material.PAPER, if (q == CoreForgeLayout.Quantity.MAX) "最大 $maximum 回" else "$label 回",
+                "回数を選ぶだけでは消費しません", "完成品数は左に表示"), if (q == selected) Tone.SELECTED else Tone.NEUTRAL) { action(q) }
         }
     }
 
-    private data class ForgeRecipe(val icon: Material, val unit: CoreRecipe, val batches: Boolean = true, val build: (Int) -> Pair<CoreRecipe, CoreAction>)
+    private fun enhanceTab(v: View, player: Player, a: CoreAccount, s: CoreForgeLayout.Selection) {
+        val summary = CoreForgeSummary.enhancement(a, s)
+        val quote = summary.quote
+        val maximum = quote.currentLevel == CoreEnhancementCatalog.MAX_LEVEL
+        val mode = CoreForgeLayout.enhancementMode(a, s)
+        val next = if (s.gear == CoreGearSlot.WEAPON) a.copy(weaponEnhancement = CoreEnhancementState(quote.targetLevel))
+            else a.copy(armorEnhancement = CoreEnhancementState(quote.targetLevel))
+        val changes = if (s.gear == CoreGearSlot.WEAPON) lines("攻撃 ${CoreWeaponPresentation.damage(a)} → ${CoreWeaponPresentation.damage(next)}",
+            "攻撃速度の補正", "${pct(CoreWeaponPresentation.attackSpeedPercent(a))}% → ${pct(CoreWeaponPresentation.attackSpeedPercent(next))}%")
+        else lines("HP ${CoreWeaponPresentation.health(a)} → ${CoreWeaponPresentation.health(next)}")
+        v.canvas.left("装備の変化", lines("T${CoreAffixCatalog.gearTier(a, s.gear)} ${s.gear.displayName}", summary.levelLabel) + changes +
+            lines("", if (maximum) "最大まで強化済み" else "成功率 ${pct(quote.successChancePercent)}%",
+                if (maximum) "" else if (quote.guaranteed) "今回は成功確定" else "失敗 ${quote.failures}/${quote.pityThreshold}",
+                "熟練 ${CoreEnhancementCatalog.masteryRank(a.smithingXp)}/10", "装備・MOD保護", "素材は毎回消費") +
+            if (quote.blockedReason != null) paragraph(quote.blockedReason, CoreUiComponents.RED) else emptyList())
+        costPanel(v, a, quote.recipe)
+        tile(v, 15, 3, if (maximum) "最大強化" else "T${CoreEnhancementCatalog.materialTier(quote.targetLevel)}素材",
+            CoreLoopItems.icon(Material.PAPER, "強化段階に応じた素材Tier", "装備Tierとは別の段階です"), Tone.DISABLED)
+        tile(v, 18, 3, "通常", CoreLoopItems.icon(Material.IRON_INGOT, "通常強化", "追加の精錬触媒を消費しません"),
+            if (mode == CoreEnhancementMode.STANDARD) Tone.SELECTED else Tone.NEUTRAL) { forge(player, s.copy(focused = false)) }
+        val standard = CoreEnhancementCatalog.quote(a, s.gear)
+        tile(v, 21, 3, "触媒あり", CoreLoopItems.icon(Material.GLOWSTONE_DUST, "精錬触媒を追加", "追加素材を消費し成功率+15ポイント", "費用・成功率を表示してから実行できます"),
+            if (maximum || standard.guaranteed) Tone.DISABLED else if (mode == CoreEnhancementMode.FOCUSED) Tone.SELECTED else Tone.NEUTRAL) { forge(player, s.copy(focused = true)) }
+        tile(v, 24, 3, "装備詳細", CoreLoopItems.icon(Material.BOOK, "ロール範囲・品質・全MODを確認")) { gearMods(player, s.gear) }
+        v.items[31] = CoreLoopItems.gear(a, s.gear, v.packed)
+        sourceButton(v, player, s)
+        execute(v, player, "強化する", quote.blockedReason, quote.recipe) {
+            mutate(v, player, CoreAction.EnhanceEquipment(s.gear, mode), a.revision) { forge(player, s) }
+        }
+    }
 
-    private fun recipeTab(v: View, player: Player, a: CoreAccount, s: CoreForgeLayout.Selection) {
-        forgeTier(v, player, s)
-        val recipes = if (s.tab == CoreForgeLayout.Tab.REFINE) {
-            CoreLoopCatalog.refined.map { (raw, refined) ->
-                ForgeRecipe(CoreLoopItems.resourceMaterial(refined), CoreLoopCatalog.refine(raw, s.tier)) { count ->
-                    CoreLoopCatalog.refine(raw, s.tier, count) to CoreAction.Refine(raw, s.tier, count)
-                }
+    private data class ForgeRecipe(val label: String, val icon: Material, val unit: CoreRecipe, val batches: Boolean = true,
+        val build: (Int) -> Pair<CoreRecipe, CoreAction>)
+    private fun recipes(a: CoreAccount, s: CoreForgeLayout.Selection): List<ForgeRecipe> =
+        if (s.tab == CoreForgeLayout.Tab.REFINE) CoreLoopCatalog.refined.map { (raw, refined) ->
+            ForgeRecipe(resourceName(refined), CoreLoopItems.resourceMaterial(refined), CoreLoopCatalog.refine(raw, s.tier)) { count ->
+                CoreLoopCatalog.refine(raw, s.tier, count) to CoreAction.Refine(raw, s.tier, count)
             }
         } else buildList {
             val tier = CoreAffixCatalog.gearTier(a, s.gear)
             if (tier < 4) {
                 val recipe = if (s.gear == CoreGearSlot.WEAPON) CoreLoopCatalog.weaponUpgrade(tier) else CoreLoopCatalog.armorUpgrade(tier)
-                add(ForgeRecipe(if (s.gear == CoreGearSlot.WEAPON) Material.IRON_SWORD else Material.IRON_CHESTPLATE, recipe, false) {
+                add(ForgeRecipe("T${tier + 1}${s.gear.displayName}", if (s.gear == CoreGearSlot.WEAPON) Material.IRON_SWORD else Material.IRON_CHESTPLATE, recipe, false) {
                     recipe to if (s.gear == CoreGearSlot.WEAPON) CoreAction.UpgradeWeapon else CoreAction.UpgradeArmor
                 })
             }
             listOf(CoreResource.POTION, CoreResource.GATHERING_TABLET, CoreResource.WHETSTONE).forEach { resource ->
-                add(ForgeRecipe(CoreLoopItems.resourceMaterial(resource), CoreLoopCatalog.craft(resource, tier = s.tier)) { count ->
+                add(ForgeRecipe(resourceName(resource), CoreLoopItems.resourceMaterial(resource), CoreLoopCatalog.craft(resource, tier = s.tier)) { count ->
                     CoreLoopCatalog.craft(resource, count, s.tier) to CoreAction.Craft(resource, count, s.tier)
                 })
             }
         }
-        val selected = s.recipe.coerceIn(0, recipes.lastIndex)
-        recipes.forEachIndexed { index, entry ->
-            button(v, CoreForgeLayout.RECIPES[index], CoreLoopItems.icon(entry.icon, entry.unit.displayName,
-                if (selected == index) "選択中 — 中央の成果と右の費用を確認" else "クリック：レシピを選択",
-                if (entry.unit.canAfford(a)) "1回分の素材あり" else "素材不足 — 選んで必要数を確認").withGlowing(selected == index)) {
-                forge(player, s.copy(recipe = index, quantity = CoreForgeLayout.Quantity.ONE))
-            }
-        }
-        val entry = recipes[selected]
-        val maximum = if (entry.batches) CoreForgeLayout.maxBatches(a, entry.unit) else 1
+
+    private fun recipeTab(v: View, player: Player, a: CoreAccount, s: CoreForgeLayout.Selection) {
+        val entries = recipes(a, s)
+        val selected = s.recipe.coerceIn(0, entries.lastIndex)
+        val entry = entries[selected]
+        if (entry.batches) {
+            tile(v, 15, 1, "<", CoreLoopItems.icon(Material.ARROW, "下の素材Tier"), if (s.tier > 1) Tone.NEUTRAL else Tone.DISABLED) { forge(player, s.copy(tier = s.tier - 1)) }
+            tile(v, 16, 1, "${s.tier}", CoreLoopItems.icon(Material.PAPER, "使用する素材：T${s.tier}"), Tone.SELECTED)
+            tile(v, 17, 1, ">", CoreLoopItems.icon(Material.ARROW, "上の素材Tier"), if (s.tier < 4) Tone.NEUTRAL else Tone.DISABLED) { forge(player, s.copy(tier = s.tier + 1)) }
+        } else tile(v, 15, 3, "T${CoreAffixCatalog.gearTier(a, s.gear)}素材", CoreLoopItems.icon(Material.PAPER, "現在の装備Tierの素材で制作"), Tone.DISABLED)
+        entries.forEachIndexed { index, e -> tile(v, CoreForgeLayout.RECIPES[index], 3, e.label,
+            CoreLoopItems.icon(e.icon, e.unit.displayName, "クリック：選択。まだ素材は使いません"), if (index == selected) Tone.SELECTED else Tone.NEUTRAL) { forge(player, s.copy(recipe = index)) } }
+        val maximum = if (entry.batches) CoreForgeLayout.maxBatches(a, entry.unit) else if (entry.unit.canAfford(a)) 1 else 0
         val count = if (entry.batches) CoreForgeLayout.batches(s.quantity, maximum) else 1
         val (recipe, action) = entry.build(count)
-        costCards(v, player, a, recipe, s)
-        v.inventory.setItemStack(13, CoreLoopItems.icon(Material.ITEM_FRAME, "② ${recipe.displayName}", "選ぶだけでは消費されません"))
-        v.inventory.setItemStack(CoreForgeLayout.TARGET, if (entry.batches) CoreLoopItems.icon(entry.icon, recipe.displayName,
-            "T${s.tier}素材を使用 / $count 回分", "倉庫の素材から直接制作") else CoreLoopItems.gear(a, s.gear, game.packed(player)))
-        val result = if (entry.batches) recipe.outputs.map { "${it.key.displayName} ×${it.value}" } else listOf(
-            "T${CoreAffixCatalog.gearTier(a, s.gear)} → T${CoreAffixCatalog.gearTier(a, s.gear) + 1} ${s.gear.displayName}", "装備Tierを上げ、次の遠征へ")
-        v.inventory.setItemStack(CoreForgeLayout.RESULT, CoreLoopItems.icon(entry.icon, "完成品", *result.toTypedArray(), color = NamedTextColor.GREEN))
-        val masteryGain = minOf(if (entry.batches) count.toLong() else 5L, CoreEnhancementCatalog.MAX_SMITHING_XP - a.smithingXp)
-        v.inventory.setItemStack(CoreForgeLayout.DETAIL, CoreLoopItems.icon(Material.EXPERIENCE_BOTTLE,
-            if (masteryGain == 0L) "鍛冶熟練は最大です" else "鍛冶熟練が成長", "今回の熟練XP +$masteryGain", "熟練が上がると強化成功率も上昇"))
-        if (entry.batches) quantityButtons(v, s.quantity, maximum) { quantity -> forge(player, s.copy(quantity = quantity)) }
-        val blocked = when {
-            !recipe.canAfford(a) -> "素材不足 — 右側の赤い素材を確認"
-            entry.batches && count > maximum -> "完成品の保管上限、または素材不足"
-            else -> null
-        }
-        execute(v, player, if (entry.batches) "$count 回制作する" else "装備Tierを上げる", blocked, "素材を消費し、完成品を保存") {
-            game.mutate(player, action, a.revision) {
+        val summary = CoreForgeSummary.recipe(a, recipe)
+        val output = if (entry.batches) recipe.outputs.flatMap { (key, amount) -> lines("${resourceName(key.resource)} ×$amount", "所持 ${a.amount(key)}") }
+            else lines("T${CoreAffixCatalog.gearTier(a, s.gear)} → T${CoreAffixCatalog.gearTier(a, s.gear) + 1}", "強化値とMODを維持", "完成後に自動装備")
+        v.canvas.left("完成するもの", paragraph(entry.unit.displayName, CoreUiComponents.GOLD) + output + lines("", "今回 $count 回", "制作可能 $maximum 回") +
+            (summary.blockedReason?.let { paragraph(it, CoreUiComponents.RED) } ?: lines("制作できます")))
+        costPanel(v, a, recipe); sourceButton(v, player, s)
+        if (entry.batches) quantity(v, s.quantity, maximum) { forge(player, s.copy(quantity = it)) }
+        execute(v, player, if (s.tab == CoreForgeLayout.Tab.REFINE) "精製する" else "制作する", summary.blockedReason, recipe) {
+            mutate(v, player, action, a.revision) {
                 forge(player, if (entry.batches) s.copy(recipe = selected) else s.copy(tab = CoreForgeLayout.Tab.ENHANCE, recipe = 0))
             }
         }
     }
 
-    private fun enhanceTab(v: View, player: Player, a: CoreAccount, s: CoreForgeLayout.Selection) {
-        val standard = CoreEnhancementCatalog.quote(a, s.gear)
-        val mode = CoreForgeLayout.enhancementMode(a, s)
-        val useCatalyst = mode == CoreEnhancementMode.FOCUSED
-        val quote = CoreEnhancementCatalog.quote(a, s.gear, mode)
-        val rank = CoreEnhancementCatalog.masteryRank(a.smithingXp)
-        val progress = CoreEnhancementCatalog.masteryProgress(a.smithingXp)
-        v.inventory.setItemStack(1, CoreLoopItems.icon(Material.EXPERIENCE_BOTTLE, "鍛冶熟練 $rank / 10",
-            if (a.smithingXp == CoreEnhancementCatalog.MAX_SMITHING_XP) "熟練は最大です" else "次の熟練：$progress / 20 XP",
-            "成功率 +$rank ポイント", "精製・制作・強化で成長"))
-        v.inventory.setItemStack(10, CoreLoopItems.icon(Material.ANVIL, "+${quote.currentLevel} → +${quote.targetLevel}", "素材を使って、装備を少しずつ強くする", "失敗しても装備・強化値・MODは保護").withGlowing(true))
-        v.inventory.setItemStack(13, CoreLoopItems.icon(Material.ITEM_FRAME, "② T${CoreAffixCatalog.gearTier(a, s.gear)} ${s.gear.displayName}", "強化段階に応じた素材を使用", "Tier制作とは別の +0〜30 段階"))
-        v.inventory.setItemStack(CoreForgeLayout.TARGET, CoreLoopItems.gear(a, s.gear, game.packed(player)))
-        val delta = if (s.gear == CoreGearSlot.WEAPON) listOf(
-            "威力の強化分：+${percent((CoreEnhancementCatalog.weaponDamageMultiplier(quote.currentLevel) - 1) * 100)}% → +${percent((CoreEnhancementCatalog.weaponDamageMultiplier(quote.targetLevel) - 1) * 100)}%",
-            "攻撃速度：+${percent(CoreEnhancementCatalog.weaponAttackSpeedPercent(quote.currentLevel))}% → +${percent(CoreEnhancementCatalog.weaponAttackSpeedPercent(quote.targetLevel))}%")
-        else listOf("最大HPの強化分：+${percent((CoreEnhancementCatalog.armorHealthMultiplier(quote.currentLevel) - 1) * 100)}% → +${percent((CoreEnhancementCatalog.armorHealthMultiplier(quote.targetLevel) - 1) * 100)}%")
-        v.inventory.setItemStack(CoreForgeLayout.RESULT, CoreLoopItems.icon(if (s.gear == CoreGearSlot.WEAPON) Material.IRON_SWORD else Material.IRON_CHESTPLATE,
-            "成功後：${s.gear.displayName} +${quote.targetLevel}", *delta.toTypedArray(), color = NamedTextColor.GREEN))
-        costCards(v, player, a, quote.recipe, s)
-        val pity = when {
-            quote.currentLevel == CoreEnhancementCatalog.MAX_LEVEL -> "最大強化に到達しました"
-            quote.guaranteed -> "今回は成功確定"
-            else -> "連続失敗 ${quote.failures} / ${quote.pityThreshold} → 到達後の次回は確定"
-        }
-        v.inventory.setItemStack(CoreForgeLayout.DETAIL, CoreLoopItems.icon(Material.EXPERIENCE_BOTTLE,
-            if (quote.currentLevel == CoreEnhancementCatalog.MAX_LEVEL) "最大強化 +${CoreEnhancementCatalog.MAX_LEVEL}" else "成功率 ${percent(quote.successChancePercent)}%",
-            "基礎 ${percent(quote.baseChancePercent)} + 熟練 ${percent(quote.masteryBonusPercent)} + 触媒 ${percent(quote.catalystBonusPercent)}",
-            pity, "失敗：強化値は据え置き / 素材は消費", color = if (quote.guaranteed) NamedTextColor.GREEN else NamedTextColor.GOLD))
-        button(v, 47, CoreLoopItems.icon(Material.IRON_INGOT, "通常強化", "追加触媒なし / 成功率 ${percent(standard.successChancePercent)}%").withGlowing(!useCatalyst)) {
-            forge(player, s.copy(focused = false))
-        }
-        if (!standard.guaranteed && standard.currentLevel < CoreEnhancementCatalog.MAX_LEVEL) {
-            button(v, 49, CoreLoopItems.icon(Material.GLOWSTONE_DUST, "精錬触媒を使う", "成功率 +15 ポイント（最大100%）",
-                "追加の加工石材・布・刻印粉を消費", "段階に応じた素材を右の費用へ合算").withGlowing(useCatalyst)) { forge(player, s.copy(focused = true)) }
-        } else v.inventory.setItemStack(49, CoreLoopItems.icon(Material.LIGHT_GRAY_DYE, "追加触媒は不要", "成功確定、または最大強化です"))
-        execute(v, player, "+${quote.targetLevel}へ強化する", quote.blockedReason,
-            "成功率 ${percent(quote.successChancePercent)}% / 失敗時も素材を消費") {
-            game.mutate(player, CoreAction.EnhanceEquipment(s.gear, mode), a.revision) { forge(player, s) }
-        }
-    }
-
-    private fun percent(value: Double): String = if (value % 1.0 == 0.0) value.toInt().toString() else String.format(Locale.ROOT, "%.1f", value)
-
     private fun modTab(v: View, player: Player, a: CoreAccount, s: CoreForgeLayout.Selection) {
-        button(v, 1, CoreLoopItems.icon(Material.COMPASS, "① 目的：${s.purpose.label}", "クリック：加工の目的を選ぶ", "今この装備に使える所持オーブだけ表示")) { forgePurpose(player, s) }
-        button(v, 8, CoreLoopItems.icon(Material.BOOK, "加工一覧・使用条件", "使えないオーブの条件も確認", "ここではオーブを消費しません")) { forgeCurrencies(player, s) }
-        val usable = CoreForgeLayout.usableCurrencies(a, s)
+        tile(v, 15, 3, "全オーブ", CoreLoopItems.icon(Material.BOOK, "全オーブの効果・条件")) { forgeCurrencies(player, s) }
+        val usable = CoreForgeLayout.usableCurrencies(a, s.copy(purpose = CoreForgeLayout.Purpose.ALL))
         check(usable.size <= CoreForgeLayout.RECIPES.size)
-        usable.forEachIndexed { index, currency ->
-            button(v, CoreForgeLayout.RECIPES[index], CoreLoopItems.currency(currency, a.amount(currency), game.packed(player)).withGlowing(currency == s.currency)) {
-                forge(player, s.copy(currency = currency))
-            }
-        }
-        if (usable.isEmpty()) v.inventory.setItemStack(10, CoreLoopItems.icon(Material.BOOK, "使えるオーブがありません", "別の目的・装備を選ぶか、オーブを集める", "右上の本：すべての使用条件"))
-        if (a.affixStones.isNotEmpty()) button(v, 46, CoreLoopItems.icon(Material.AMETHYST_SHARD, "旧刻印石の交換", "所持 ${a.affixStones.size} 個 / 自動では消費しません")) { legacyStones(player) }
+        usable.forEachIndexed { index, currency -> tile(v, CoreForgeLayout.RECIPES[index], 3, orbName(currency),
+            CoreLoopItems.icon(CoreLoopItems.currencyMaterial(currency), currency.displayName, "所持 ${a.amount(currency)} 個", "クリック：選ぶ / 効果は右に表示"),
+            if (currency == s.currency) Tone.SELECTED else Tone.NEUTRAL) { forge(player, s.copy(currency = currency)) } }
         val currency = s.currency
-        if (currency == null) {
-            v.inventory.setItemStack(CoreForgeLayout.RESULT, CoreLoopItems.icon(Material.BOOK, "左のオーブを選んでください", "中央：装備に何が起きるか", "右：消費するオーブ / 下：実行"))
-            return
-        }
-        val reason = CoreCraftingCatalog.canUse(a, s.gear, currency)
-        v.inventory.setItemStack(13, CoreLoopItems.icon(Material.ITEM_FRAME, "② ${s.gear.displayName}を加工", "選択したオーブ：${currency.displayName}"))
-        v.inventory.setItemStack(CoreForgeLayout.TARGET, CoreLoopItems.gear(a, s.gear, game.packed(player)))
-        v.inventory.setItemStack(CoreForgeLayout.COSTS.first(), CoreLoopItems.currency(currency, 1, game.packed(player), "今回の消費"))
-        v.inventory.setItemStack(CoreForgeLayout.COSTS[1], CoreLoopItems.icon(Material.GOLD_NUGGET, "所持 ${a.amount(currency)} 個", if (reason == null) "この装備に使用できます" else reason,
-            color = if (reason == null) NamedTextColor.GREEN else NamedTextColor.RED))
-        v.inventory.setItemStack(CoreForgeLayout.RESULT, CoreLoopItems.icon(CoreLoopItems.currencyMaterial(currency), "加工後の変化",
-            *wrapForgeText(CoreCraftingCatalog.description(currency)).toTypedArray(), color = NamedTextColor.GREEN))
-        v.inventory.setItemStack(CoreForgeLayout.DETAIL, CoreLoopItems.icon(Material.BOOK, "実行前に確認",
-            if (currency == CoreCraftingCurrency.SCOURING) "既存MODをすべて消去します" else "具体的な結果は実行時に決まります",
-            "オーブの消費は取り消せません", "ロール範囲・品質・内部Tierは装備で確認"))
-        execute(v, player, "オーブ1個で加工する", reason, "選択した${s.gear.displayName}に使用します") {
-            game.mutate(player, CoreAction.CraftEquipment(s.gear, currency), a.revision) { forge(player, s) }
+        val reason = currency?.let { CoreCraftingCatalog.canUse(a, s.gear, it) }
+        v.canvas.left("加工する装備", equipment(a, s.gear) + lines("", "使える物を表示", "選ぶだけは無料", "使用時に抽選"))
+        v.canvas.right("加工の内容", if (currency == null) lines("オーブを選ぶ", "右下で加工を実行", "", if (usable.isEmpty()) "使える所持品なし" else "左の装備が対象", "条件は全オーブへ")
+            else paragraph(currency.displayName, CoreUiComponents.GOLD) + orbEffect(currency) +
+                lines("", "所持 ${a.amount(currency)}", "必要 1個") + (reason?.let { paragraph(it, CoreUiComponents.RED) } ?: lines("取り消し不可")))
+        if (usable.isEmpty()) v.canvas.text(8, 74, "使えるオーブがありません", CoreUiComponents.MUTED, 160)
+        tile(v, 42, 3, "装備詳細", CoreLoopItems.icon(Material.BOOK, "現在の全MODを見る")) { gearMods(player, s.gear) }
+        if (a.affixStones.isNotEmpty()) tile(v, 47, 3, "旧石交換", CoreLoopItems.icon(Material.AMETHYST_SHARD, "旧刻印石をオーブへ", "所持 ${a.affixStones.size} 個")) { legacyStones(player) }
+        execute(v, player, "加工する", if (currency == null) "オーブを選んでください" else reason) {
+            if (currency != null) mutate(v, player, CoreAction.CraftEquipment(s.gear, currency), a.revision) { forge(player, s) }
         }
     }
 
-    private fun wrapForgeText(value: String): List<String> {
-        val lines = mutableListOf<String>()
-        var line = ""
-        value.codePoints().forEach { code ->
-            val character = String(Character.toChars(code))
-            if (CoreUiComponents.width(line + character) > 180) { lines += line; line = "" }
-            line += character
-        }
-        if (line.isNotEmpty()) lines += line
-        return lines
+    /** Short, semantically complete menu copy. Full item tooltips keep the catalogue description. */
+    private fun orbEffect(currency: CoreCraftingCurrency): List<Line> = when (currency) {
+        CoreCraftingCurrency.TRANSMUTATION -> lines("ノーマル専用", "マジックへ昇格", "1〜2個を抽選")
+        CoreCraftingCurrency.AUGMENTATION -> lines("マジック専用", "空き枠へ1個追加")
+        CoreCraftingCurrency.ALTERATION -> lines("マジック専用", "全MODを消去", "1〜2個を再抽選")
+        CoreCraftingCurrency.ALCHEMY -> lines("ノーマル専用", "レアへ昇格", "4〜6個を抽選")
+        CoreCraftingCurrency.CHAOS -> lines("レア専用", "全MODを消去", "4〜6個を再抽選")
+        CoreCraftingCurrency.REGAL -> lines("マジック専用", "既存MODは保持", "レアへ昇格", "1個を追加抽選")
+        CoreCraftingCurrency.EXALTED -> lines("レア専用", "空き枠へ1個追加")
+        CoreCraftingCurrency.SCOURING -> lines("全MODを消去", "ノーマルに戻す", "取り消し不可")
+        CoreCraftingCurrency.DIVINE -> lines("MOD・Tier保持", "数値を再抽選", "低下する場合も")
+        CoreCraftingCurrency.RIFT -> lines("レアへ再構成", "全MODを消去", "4〜6個を再抽選", "元素MODを含む")
+        CoreCraftingCurrency.RITUAL -> lines("MOD・Tier保持", "数値を各2回抽選", "高い方を採用", "低下する場合も")
+        CoreCraftingCurrency.TRIAL -> lines("レア専用", "空き枠へ1個追加", "数値の上位25%")
     }
 
-    private fun forgePurpose(player: Player, s: CoreForgeLayout.Selection) {
-        view(player, "刻印加工 — 何を変えますか") { v ->
-            CoreForgeLayout.Purpose.entries.forEachIndexed { index, purpose ->
-                button(v, 20 + index, CoreLoopItems.icon(Material.COMPASS, purpose.label, "使える所持オーブをこの目的で絞る").withGlowing(s.purpose == purpose)) {
-                    forge(player, s.copy(purpose = purpose, currency = null))
-                }
-            }
-            back(v, player) { forge(player, s) }
-        }
-    }
-
-    private fun forgeCurrencies(player: Player, s: CoreForgeLayout.Selection) {
+    private fun materials(player: Player, s: CoreForgeLayout.Selection) {
         val a = game.account(player) ?: return
-        view(player, "刻印加工 — 全オーブの使用条件") { v ->
-            CoreCraftingCurrency.entries.forEachIndexed { index, currency ->
-                val reason = CoreCraftingCatalog.canUse(a, s.gear, currency)
-                button(v, contentSlots[index], CoreLoopItems.icon(CoreLoopItems.currencyMaterial(currency), currency.displayName,
-                    *wrapForgeText(CoreCraftingCatalog.description(currency)).plus("所持 ${a.amount(currency)} 個").plus(reason ?: "使用できます — クリックで選ぶ").toTypedArray(),
-                    color = if (reason == null) NamedTextColor.GREEN else NamedTextColor.GRAY)) {
-                    forge(player, s.copy(tab = CoreForgeLayout.Tab.MODS, currency = currency))
+        val recipe = if (s.tab == CoreForgeLayout.Tab.ENHANCE) CoreEnhancementCatalog.quote(a, s.gear, CoreForgeLayout.enhancementMode(a, s)).recipe
+            else recipes(a, s).let { entries ->
+                val e = entries[s.recipe.coerceIn(0, entries.lastIndex)]
+                e.build(if (e.batches) CoreForgeLayout.batches(s.quantity, CoreForgeLayout.maxBatches(a, e.unit)) else 1).first
+            }
+        view(player, "工房 / 素材の調達", { materials(player, s) }) { v ->
+            help(v, player) { materials(player, s) }
+            v.canvas.left("元の操作", paragraph(recipe.displayName, CoreUiComponents.GOLD) + lines("", "必要な素材を選ぶ", "精製か補給へ進む", "", "元へ：操作を復元", "集めても自動実行", "されません"))
+            costPanel(v, a, recipe)
+            recipe.costs.entries.forEachIndexed { index, (material, required) ->
+                val refine = CoreForgeLayout.refineSelection(material, s)
+                tile(v, listSlots[index], 4, resourceName(material.resource),
+                    CoreLoopItems.icon(CoreLoopItems.resourceMaterial(material.resource), material.displayName, "所持 ${a.amount(material)} / 必要 $required",
+                        if (refine != null) "精製して作る" else if (material.resource.raw) "戦利品券と交換する" else "遠征で入手する"), icon = true) {
+                    when {
+                        refine != null -> { journey(player).push(s); forge(player, refine) }
+                        material.resource.raw -> { journey(player).push(s); supplies(player, material.tier, material.resource) }
+                        else -> sourceGuide(player, material, s)
+                    }
                 }
             }
             back(v, player) { forge(player, s) }
         }
     }
 
-    private fun quantityButtons(v: View, selected: CoreForgeLayout.Quantity, maximum: Int, action: (CoreForgeLayout.Quantity) -> Unit) {
-        CoreForgeLayout.QUANTITIES.forEach { (slot, quantity) ->
-            val count = CoreForgeLayout.batches(quantity, maximum)
-            val label = if (quantity == CoreForgeLayout.Quantity.MAX) "最大 $maximum 回" else "$count 回"
-            button(v, slot, CoreLoopItems.icon(if (maximum >= count) Material.PAPER else Material.GRAY_DYE, label,
-                "クリック：今回の回数を選択", "最大64回 / 完成個数は中央を確認").withGlowing(quantity == selected)) { action(quantity) }
+    private fun sourceGuide(player: Player, material: CoreMaterial, s: CoreForgeLayout.Selection) {
+        view(player, "工房 / 素材の入手先", { sourceGuide(player, material, s) }) { v ->
+            v.canvas.left("探すもの", lines(material.displayName, "", if (material.resource == CoreResource.BOSS_SIGIL) "同Tierのボスを討伐" else "魔物を討伐して入手", "拾うと倉庫に保存"))
+            v.canvas.right("操作を保存", lines("戻ると工房を復元", "地図台へ進んでも", "制作は実行しません"))
+            tile(v, 19, 7, "T${material.tier}の地図台へ", CoreLoopItems.icon(Material.MAP, "素材を集める遠征を選ぶ"), Tone.PRIMARY, true) { journey(player).push(s); expeditions(player, material.tier) }
+            back(v, player) { materials(player, s) }
         }
     }
 
-    private fun execute(v: View, player: Player, label: String, blocked: String?, detail: String, action: () -> Unit) {
-        button(v, CoreForgeLayout.EXECUTE, CoreLoopItems.icon(if (blocked == null) Material.LIME_DYE else Material.BARRIER,
-            if (blocked == null) "④ $label" else "④ 実行できません", blocked ?: detail,
-            color = if (blocked == null) NamedTextColor.GREEN else NamedTextColor.RED)) {
-            if (blocked == null && game.requireHub(player)) action()
+    private fun forgeCurrencies(player: Player, s: CoreForgeLayout.Selection, page: Int = 0, selected: CoreCraftingCurrency? = s.currency) {
+        val a = game.account(player) ?: return
+        val last = (CoreCraftingCurrency.entries.size - 1) / listSlots.size
+        val current = page.coerceIn(0, last)
+        view(player, "工房 / オーブ図鑑", { forgeCurrencies(player, s, current, selected) }) { v ->
+            help(v, player) { forgeCurrencies(player, s, current, selected) }
+            v.canvas.left("対象の装備", equipment(a, s.gear) + lines("", "選ぶと効果を表示", "図鑑は未所持も表示", "ここでは消費なし"))
+            v.canvas.right("効果と使用条件", selected?.let { c -> paragraph(c.displayName, CoreUiComponents.GOLD) + orbEffect(c) +
+                lines("所持 ${a.amount(c)} 個") + paragraph(CoreCraftingCatalog.canUse(a, s.gear, c) ?: "この装備に使用可能") } ?: lines("オーブを選んで詳細", "使用条件を確認"))
+            CoreCraftingCurrency.entries.drop(current * listSlots.size).take(listSlots.size).forEachIndexed { index, c ->
+                tile(v, listSlots[index], 4, orbName(c), CoreLoopItems.icon(CoreLoopItems.currencyMaterial(c), c.displayName,
+                    "所持 ${a.amount(c)} 個", "クリック：効果と使用条件を見る"), if (c == selected) Tone.SELECTED else Tone.NEUTRAL, true) {
+                    forgeCurrencies(player, s, current, c)
+                }
+            }
+            back(v, player) { forge(player, s) }; pageButtons(v, current, last) { forgeCurrencies(player, s, it, selected) }
+            tile(v, 52, 2, "選ぶ", CoreLoopItems.icon(Material.ENCHANTING_TABLE, "選んだオーブを工房へ", "まだオーブは消費しません"),
+                if (selected != null && CoreCraftingCatalog.canUse(a, s.gear, selected) == null) Tone.PRIMARY else Tone.DISABLED) {
+                forge(player, s.copy(tab = CoreForgeLayout.Tab.MODS, currency = selected))
+            }
         }
     }
 
-    private fun recipeIcon(recipe: CoreRecipe, a: CoreAccount, material: Material): ItemStack = CoreLoopItems.icon(material, recipe.displayName,
-        *recipe.costs.map { (key, count) -> "${key.displayName} $count 個 / 所持 ${a.amount(key)}" }
-            .plus(recipe.outputs.map { (key, count) -> "完成：${key.displayName} ×$count" })
-            .plus(if (recipe.canAfford(a)) "クリック：制作内容を確認" else "素材不足 — 補給所で戦利品券と交換も可能").toTypedArray(),
-        color = if (recipe.canAfford(a)) NamedTextColor.GREEN else NamedTextColor.GRAY)
+    private fun compactCount(count: Long): String = if (count < 10_000) count.toString() else "${count / 10_000}万${if (count % 10_000 == 0L) "" else "+"}"
+    private fun stockName(resource: CoreResource) = when (resource) {
+        CoreResource.STONE_BLOCK -> "加工石"
+        CoreResource.FIBER -> "繊維"
+        CoreResource.LEATHER -> "革"
+        CoreResource.GATHERING_TABLET -> "石板"
+        CoreResource.COMBAT_TOKEN -> "戦利品"
+        else -> resourceName(resource)
+    }
 
-    fun storage(player: Player, tier: Int = 1, page: Int = 0) {
+    fun storage(player: Player, tier: Int = 1, page: Int = 0, selected: Int = 0) {
         val a = game.account(player) ?: return
         val entries = CoreStorageView.entries(a, tier)
-        val last = (entries.size - 1).coerceAtLeast(0) / contentSlots.size
+        val last = (entries.size - 1).coerceAtLeast(0) / listSlots.size
         val current = page.coerceIn(0, last)
-        view(player, "素材倉庫 — T$tier") { v ->
-            tiers(v, tier) { storage(player, it) }
-            entries.drop(current * contentSlots.size).take(contentSlots.size).forEachIndexed { index, entry ->
-                when (entry) {
-                    is CoreStorageView.Entry.Material -> v.inventory.setItemStack(contentSlots[index], CoreLoopItems.resource(entry.material, entry.count))
-                    is CoreStorageView.Entry.Currency -> button(v, contentSlots[index], CoreLoopItems.currency(entry.currency, entry.count, game.packed(player))) { affixes(player) }
-                    is CoreStorageView.Entry.Fragment -> button(v, contentSlots[index], CoreLoopItems.fragment(entry.kind, entry.count)) { trials(player, tier) }
+        val shown = entries.drop(current * listSlots.size).take(listSlots.size)
+        val chosen = shown.getOrNull(selected.coerceIn(0, (shown.size - 1).coerceAtLeast(0)))
+        view(player, "素材倉庫 / T$tier", { storage(player, tier, current, selected) }) { v ->
+            tiers(v, tier) { storage(player, it) }; help(v, player) { storage(player, tier, current, selected) }
+            v.canvas.left("個人倉庫", lines("所持 ${entries.size} 種類", "持っている物だけ", "Tierごとに表示", "通貨・欠片は共通", "", "選ぶと右に詳細", "工房で直接使用", "取り出しは不要", "", "万+は端数省略", "正確な個数は右へ"))
+            val detail = when (chosen) {
+                is CoreStorageView.Entry.Material -> lines(chosen.material.displayName, "所持 ${chosen.count}", "", when {
+                    chosen.material.resource.raw -> "精製に使う素材"
+                    chosen.material.resource in CoreLoopCatalog.refined.values -> "制作・強化用の素材"
+                    else -> "工房や冒険で使用"
+                })
+                is CoreStorageView.Entry.Currency -> paragraph(chosen.currency.displayName, CoreUiComponents.GOLD) + lines("所持 ${chosen.count}", "") + orbEffect(chosen.currency)
+                is CoreStorageView.Entry.Fragment -> lines("${chosen.kind.displayName}の欠片", "所持 ${chosen.count}", "", "3個で専用ボスへ", if (a.activeRun == null) "港から挑戦できる" else "港へ帰還後に使用")
+                null -> lines("このTierの保管品なし", "採取・討伐で入手")
+            }
+            v.canvas.right("選択した所持品", detail)
+            shown.forEachIndexed { index, entry ->
+                val name = when (entry) {
+                    is CoreStorageView.Entry.Material -> stockName(entry.material.resource)
+                    is CoreStorageView.Entry.Currency -> orbName(entry.currency)
+                    is CoreStorageView.Entry.Fragment -> entry.kind.displayName
+                }
+                val item = when (entry) {
+                    is CoreStorageView.Entry.Material -> CoreLoopItems.resource(entry.material, entry.count)
+                    is CoreStorageView.Entry.Currency -> CoreLoopItems.currency(entry.currency, entry.count, v.packed)
+                    is CoreStorageView.Entry.Fragment -> CoreLoopItems.fragment(entry.kind, entry.count)
+                }
+                val count = compactCount(entry.count)
+                val label = if (CoreMenuCanvas.width("$name $count") <= 70) "$name $count" else "$name$count"
+                tile(v, listSlots[index], 4, label, item.withAmount(1), if (entry == chosen) Tone.SELECTED else Tone.NEUTRAL) { storage(player, tier, current, index) }
+            }
+            back(v, player); pageButtons(v, current, last) { storage(player, tier, it) }
+            tile(v, 52, 2, if (chosen is CoreStorageView.Entry.Fragment) "試練" else "工房",
+                CoreLoopItems.icon(Material.ANVIL, if (chosen is CoreStorageView.Entry.Fragment) "ボスへの挑戦を選ぶ" else "所持素材を工房で使う"),
+                if (a.activeRun == null && chosen != null) Tone.PRIMARY else Tone.DISABLED) {
+                when (chosen) {
+                    is CoreStorageView.Entry.Currency -> confirmCraft(player, selections[player.uuid]?.gear ?: CoreGearSlot.WEAPON, chosen.currency)
+                    is CoreStorageView.Entry.Fragment -> trials(player, tier)
+                    is CoreStorageView.Entry.Material -> {
+                        val rawIndex = CoreLoopCatalog.refined.keys.indexOf(chosen.material.resource)
+                        if (rawIndex >= 0) forge(player, CoreForgeLayout.Selection(tab = CoreForgeLayout.Tab.REFINE, tier = tier, recipe = rawIndex))
+                        else workshop(player, tier)
+                    }
+                    null -> Unit
                 }
             }
-            v.inventory.setItemStack(13, CoreLoopItems.icon(Material.BARREL, "所持品 ${entries.size}種類 — ${current + 1}/${last + 1}", "所持数が1以上の物だけを表示", "通貨・欠片は全Tier共通", "取り出さず、そのまま工房で使えます"))
-            if (entries.isEmpty()) v.inventory.setItemStack(31, CoreLoopItems.icon(Material.BOOK, "このTierの保管品はありません", "採取・討伐で獲得するとここに並びます"))
-            if (a.activeRun == null) button(v, 49, CoreLoopItems.icon(Material.ANVIL, "工房へ")) { workshop(player, tier) }
-            if (current > 0) button(v, 48, CoreLoopItems.icon(Material.ARROW, "前のページ")) { storage(player, tier, current - 1) }
-            if (current < last) button(v, 50, CoreLoopItems.icon(Material.ARROW, "次のページ")) { storage(player, tier, current + 1) }
-            back(v, player)
         }
     }
 
@@ -458,33 +493,34 @@ internal class CoreLoopMenus(private val game: CoreLoopGame) {
         val maximum = CoreForgeLayout.maxBatches(a, unit)
         val count = CoreForgeLayout.batches(quantity, maximum)
         val recipe = CoreLoopCatalog.exchange(selected, tier, count)
-        view(player, "補給所 — 戦利品を素材へ") { v ->
-            tiers(v, tier) { supplies(player, it, selected, quantity) }
-            v.inventory.setItemStack(13, CoreLoopItems.icon(Material.GOLD_NUGGET, "T$tier 戦利品券：${a.amount(CoreResource.COMBAT_TOKEN, tier)}枚",
-                "雑魚とボスの討伐で獲得", "1枚 → 同じTierの素材4個"))
+        val summary = CoreForgeSummary.recipe(a, recipe)
+        view(player, "補給所 / 素材交換", { supplies(player, tier, selected, quantity) }) { v ->
+            tiers(v, tier) { supplies(player, it, selected, quantity) }; help(v, player) { supplies(player, tier, selected, quantity) }
+            v.canvas.left("交換で受け取る", lines("T$tier ${selected.displayName}", "完成 ${count * 4} 個", "所持 ${a.amount(selected, tier)}", "", "今回 $count 回", "交換可能 $maximum 回", "1枚から素材4個") +
+                (summary.blockedReason?.let { paragraph(it, CoreUiComponents.RED) } ?: lines("交換できます")))
+            costPanel(v, a, recipe)
             CoreResource.entries.filter { it.raw }.forEachIndexed { index, raw ->
-                button(v, 20 + index, recipeIcon(CoreLoopCatalog.exchange(raw, tier), a, CoreLoopItems.resourceMaterial(raw)).withGlowing(raw == selected)) {
-                    supplies(player, tier, raw, quantity)
-                }
+                tile(v, listSlots[index], 4, raw.displayName, CoreLoopItems.icon(CoreLoopItems.resourceMaterial(raw), raw.displayName, "戦利品券1枚 → 素材4個"),
+                    if (raw == selected) Tone.SELECTED else Tone.NEUTRAL, true) { supplies(player, tier, raw, quantity) }
             }
-            v.inventory.setItemStack(31, CoreLoopItems.icon(CoreLoopItems.resourceMaterial(selected), "交換内容を確認",
-                "T$tier 戦利品券 $count 枚 → ${selected.displayName} ${count * 4} 個", "所持券 ${a.amount(CoreResource.COMBAT_TOKEN, tier)} 枚", "下で回数を選択 → 右下で確定"))
-            button(v, 30, CoreLoopItems.icon(Material.WOODEN_AXE, "採取道具を選ぶ", "道具はなくしても無料で用意できます")) { tools(player) }
-            button(v, 40, CoreLoopItems.icon(Material.ANVIL, "素材が揃ったら工房へ")) { workshop(player, tier) }
-            quantityButtons(v, quantity, maximum) { supplies(player, tier, selected, it) }
-            execute(v, player, "$count 回交換する", if (count <= maximum && recipe.canAfford(a)) null else "戦利品券不足、または素材の保管上限", "上記の券を消費して素材を受け取る") {
-                game.mutate(player, CoreAction.Exchange(selected, tier, count), a.revision) { supplies(player, tier, selected, quantity) }
+            back(v, player, if (journey(player).isEmpty) "手帳" else "元へ") {
+                journey(player).pop()?.let { forge(player, it) } ?: journal(player)
             }
-            back(v, player)
+            quantity(v, quantity, maximum) { supplies(player, tier, selected, it) }
+            execute(v, player, "交換する", summary.blockedReason, recipe) {
+                mutate(v, player, CoreAction.Exchange(selected, tier, count), a.revision) { supplies(player, tier, selected, quantity) }
+            }
         }
     }
 
     private fun tools(player: Player) {
-        view(player, "道具箱 — 採取するものを選ぶ") { v ->
-            QuestGatheringDiscipline.entries.forEachIndexed { i, discipline ->
-                button(v, 20 + i, CoreLoopItems.icon(discipline.toolMaterial, discipline.toolName,
-                    "${discipline.commonResourceName}に使う", "ホットバー7番に装備", "対象へ右クリック長押し / 離すと中断")) {
-                    player.inventory.setItemStack(6, discipline.toolItem()); player.setHeldItemSlot(6); player.closeInventory()
+        view(player, "道具箱 / 採取道具", { tools(player) }) { v ->
+            help(v, player) { tools(player) }
+            v.canvas.left("道具を持つ", lines("集めたい素材を選ぶ", "道具を無料で用意", "ホットバー7番へ", "", "道具を持って対象へ", "右クリック長押し", "離すと採取を中断"))
+            v.canvas.right("採取の目印", lines("採取できる対象には", "名前とTierを表示", "", "木・岩・草・死体", "それぞれ対応道具", "完了時に素材を保存"))
+            QuestGatheringDiscipline.entries.forEachIndexed { index, d ->
+                tile(v, listSlots[index], 4, d.commonResourceName, CoreLoopItems.icon(d.toolMaterial, d.toolName, "${d.commonResourceName}の採取用", "ホットバー7番に持ち、画面を閉じます"), icon = true) {
+                    player.inventory.setItemStack(6, d.toolItem()); player.setHeldItemSlot(6); player.closeInventory()
                 }
             }
             back(v, player)
@@ -492,144 +528,168 @@ internal class CoreLoopMenus(private val game: CoreLoopGame) {
     }
 
     fun mastery(player: Player, discipline: QuestGatheringDiscipline? = null) {
-        val mastery = game.gatheringMastery(player)
-        view(player, "採取の心得") { v ->
-            QuestGatheringDiscipline.entries.forEachIndexed { i, kind ->
-                button(v, 19 + i, CoreLoopItems.icon(kind.toolMaterial, "${kind.displayName} Lv${mastery.level(kind)}",
-                    "経験値 ${mastery.experience(kind)} / 未使用ポイント ${mastery.availableTreePoints(kind)}", "Lv3ごとにツリーポイントを獲得")) { mastery(player, kind) }
+        val m = game.gatheringMastery(player)
+        val selected = discipline ?: QuestGatheringDiscipline.entries.first()
+        view(player, "採取 / 育成", { mastery(player, selected) }) { v ->
+            help(v, player) { mastery(player, selected) }
+            v.canvas.left("${selected.displayName}の成長", lines("Lv ${m.level(selected)}", "経験値 ${m.experience(selected)}", "未使用 ${m.availableTreePoints(selected)}pt", "", "Lv3ごとにポイント", "右の能力に使えます"))
+            val nodes = listOf(QuestGatheringMasteryNode.STEADY_HANDS, QuestGatheringMasteryNode.DEEP_YIELD, QuestGatheringMasteryNode.ABUNDANCE_KEYSTONE)
+            v.canvas.right("能力の効果", lines("手つき：時間-4tick", "深掘り：素材+1", "豊穣：素材+2", "豊穣は時間+8tick", "", "左から順番に取得", "手つき → 深掘り", "→ 豊穣"))
+            QuestGatheringDiscipline.entries.forEachIndexed { index, d ->
+                tile(v, CoreForgeLayout.RECIPES[index], 3, d.displayName, CoreLoopItems.icon(d.toolMaterial, "${d.displayName} Lv${m.level(d)}"),
+                    if (d == selected) Tone.SELECTED else Tone.NEUTRAL) { mastery(player, d) }
             }
-            if (discipline != null) {
-                listOf(QuestGatheringMasteryNode.STEADY_HANDS, QuestGatheringMasteryNode.DEEP_YIELD, QuestGatheringMasteryNode.ABUNDANCE_KEYSTONE).forEachIndexed { i, node ->
-                    val unlocked = node in mastery.unlockedNodes(discipline)
-                    button(v, 30 + i, CoreLoopItems.icon(if (unlocked) Material.LIME_DYE else Material.OAK_SAPLING,
-                        node.displayName, node.description, "必要ポイント ${node.cost}", if (unlocked) "取得済み" else "クリックで取得")) {
-                        game.unlockMastery(player, discipline, node); mastery(player, discipline)
-                    }
+            nodes.forEachIndexed { index, node ->
+                val owned = node in m.unlockedNodes(selected)
+                val prior = node.prerequisite == null || node.prerequisite in m.unlockedNodes(selected)
+                val short = listOf("手つき", "深掘り", "豊穣")[index]
+                tile(v, 36 + index * 3, 3, if (owned) "$short 済" else "$short${node.cost}", CoreLoopItems.icon(Material.OAK_SAPLING, node.displayName, node.description, "必要 ${node.cost} ポイント", if (prior) "前提を達成しています" else "先に${node.prerequisite.displayName}を取得してください"),
+                    if (owned || !prior || m.availableTreePoints(selected) < node.cost) Tone.DISABLED else Tone.PRIMARY) {
+                    game.unlockMastery(player, selected, node); mastery(player, selected)
                 }
             }
-            button(v, 40, CoreLoopItems.icon(Material.CHEST, "採取道具を用意")) { tools(player) }
             back(v, player)
+            tile(v, 51, 3, "道具箱", CoreLoopItems.icon(Material.CHEST, "無料で採取道具を用意")) { tools(player) }
         }
     }
 
     private fun confirmReturn(player: Player) {
-        view(player, "遠征 — 港へ帰還しますか") { v ->
-            v.inventory.setItemStack(13, CoreLoopItems.icon(Material.COMPASS, "遠征を終了", "獲得済み素材は倉庫に残ります", "未回収の戦利品もまとめて保管します", "このマップには戻れません"))
-            button(v, 30, CoreLoopItems.icon(Material.LIME_DYE, "港へ帰還する")) { game.returnToHarbor(player) }
-            button(v, 32, CoreLoopItems.icon(Material.RED_DYE, "探索を続ける")) { player.closeInventory() }
-        }
-    }
-
-    fun guide(player: Player) {
-        view(player, "冒険の手帳 — 最初の一周") { v ->
-            listOf(
-                Triple(Material.MAP, "1. 港の地図台", listOf("T1地図を受け取り、出発", "石板があれば採取MODも付与")),
-                Triple(Material.IRON_SWORD, "2. 自由に探索", listOf("道の先にボス / 採取・雑魚は寄り道", "左クリック：通常攻撃 / F：回避", "スキルはホットバー2〜4を右クリック")),
-                Triple(Material.WOODEN_AXE, "3. 採取する", listOf("道具箱で対応する道具を選ぶ", "木・岩・草・死体へ右クリック長押し", "進捗表示が完了すると素材を保存")),
-                Triple(Material.ECHO_SHARD, "4. ボス討伐", listOf("予兆の範囲から移動して避ける", "討伐証・次の地図・石板を獲得", "羅針盤から港へ帰還")),
-                Triple(Material.ANVIL, "5. 装備を更新", listOf("工房で精製 → 武器と防具を制作", "刻印工房でオーブを使ってMOD抽選", "マジック最大2 / レア最大6 MOD")),
-            ).forEachIndexed { i, entry -> v.inventory.setItemStack(20 + i, CoreLoopItems.icon(entry.first, entry.second, *entry.third.toTypedArray())) }
-            v.inventory.setItemStack(30, CoreLoopItems.icon(Material.AMETHYST_SHARD, "敵を倒す → オーブ → ランダムMOD", "紫や金の戦利品へ近づいて回収", "精鋭はオーブ2個、ボスは3個確定", "MODの種類・数値は加工時に決まる"))
-            v.inventory.setItemStack(32, CoreLoopItems.icon(Material.END_PORTAL_FRAME, "寄り道 → 欠片 → 専用ボス", "裂け目：3か所を追って波を倒す", "儀式：続行か確定を選ぶ / 最大3波", "各欠片3個 → 手帳の「境界の試練」"))
+        view(player, "遠征 / 帰還の確認", { confirmReturn(player) }) { v ->
+            v.canvas.left("港へ帰還", lines("今の遠征を終了", "このマップは閉鎖", "同じ地図へ戻れません"))
+            v.canvas.right("獲得物は保持", lines("採取素材は保存済み", "未回収の戦利品も", "まとめて保管します"))
+            tile(v, 19, 7, "探索を続ける", CoreLoopItems.icon(Material.MAP, "閉じて探索を続ける")) { player.closeInventory() }
             back(v, player)
+            tile(v, 51, 3, "帰還する", CoreLoopItems.icon(Material.COMPASS, "遠征を終了し港へ帰還", "このマップへは戻れません"), Tone.PRIMARY) { game.returnToHarbor(player) }
         }
     }
 
-    fun affixes(player: Player, page: Int = 0, selected: CoreGearSlot = forgeSelections[player.uuid]?.gear ?: CoreGearSlot.WEAPON) {
+    fun affixes(player: Player, page: Int = 0, selected: CoreGearSlot = selections[player.uuid]?.gear ?: CoreGearSlot.WEAPON) {
         val a = game.account(player) ?: return
         if (a.activeRun != null) return gearMods(player, selected)
-        val s = forgeSelections[player.uuid] ?: CoreForgeLayout.Selection()
-        forge(player, s.copy(tab = CoreForgeLayout.Tab.MODS, gear = selected, currency = null))
+        forge(player, (selections[player.uuid] ?: CoreForgeLayout.Selection()).copy(tab = CoreForgeLayout.Tab.MODS, gear = selected, currency = null))
     }
 
-    fun gearMods(player: Player, gear: CoreGearSlot) {
+    fun gearMods(player: Player, gear: CoreGearSlot, selected: Int = 0) {
         val a = game.account(player) ?: return
-        view(player, "刻印工房 — ${gear.displayName}のMOD") { v ->
-            v.inventory.setItemStack(13, CoreLoopItems.gear(a, gear, game.packed(player)))
-            (0..5).forEach { index ->
-                val equipped = a.equippedAffixes.firstOrNull { it.gear == gear && it.index == index }
-                val slot = 28 + index
-                when {
-                    index >= CoreAffixCatalog.capacity(a, gear) -> v.inventory.setItemStack(slot, CoreLoopItems.icon(Material.GRAY_DYE, "MOD枠 ${index + 1} — 昇格で解放", "Tierではなく装備のレアリティで枠が増加", "ノーマル0 / マジック2 / レア6"))
-                    equipped == null -> v.inventory.setItemStack(slot, CoreLoopItems.icon(Material.LIGHT_GRAY_DYE, "MOD枠 ${index + 1} — 空き", "増強・高揚などのオーブでランダム追加"))
-                    else -> {
-                        val model = CoreLoopItems.affixModel(equipped.stone)
-                        v.inventory.setItemStack(slot, CoreLoopItems.icon(Material.ENCHANTED_BOOK, model.name,
-                            model.effect, "ロール範囲 ${model.range}", "品質 ${model.qualityPercent}% / 内部Tier ${equipped.stone.tier}", "接頭・接尾はそれぞれ最大3個 / 重複MODなし"))
-                    }
+        val mods = a.equippedAffixes.filter { it.gear == gear }.sortedBy { it.index }
+        val chosen = mods.getOrNull(selected)
+        view(player, "装備 / MOD詳細", { gearMods(player, gear, selected) }) { v ->
+            CoreGearSlot.entries.forEachIndexed { index, g -> tile(v, index * 3, 3, g.displayName,
+                CoreLoopItems.icon(Material.IRON_SWORD, "${g.displayName}を確認"), if (g == gear) Tone.SELECTED else Tone.NEUTRAL) { gearMods(player, g) } }
+            help(v, player) { gearMods(player, gear, selected) }
+            v.canvas.left("現在の装備", equipment(a, gear) + lines("", "アイテムLv ${1 + (CoreAffixCatalog.gearTier(a, gear) - 1) * 15}", "内部Tier T${CoreAffixCatalog.gearTier(a, gear)}", "", "MODを選ぶと詳細", "下の装備に全情報"))
+            v.canvas.right("選択したMOD", chosen?.let {
+                val model = CoreLoopItems.affixModel(it.stone)
+                paragraph(model.name, CoreUiComponents.GOLD) + paragraph(model.effect) + lines("", "ロール範囲", model.range, "品質 ${model.qualityPercent}%", "内部Tier T${it.stone.tier}")
+            } ?: lines("MODがありません", "オーブで昇格・追加", "ノーマル 0枠", "マジック 2枠", "レア 6枠"))
+            mods.forEachIndexed { index, installed ->
+                val model = CoreLoopItems.affixModel(installed.stone)
+                val short = CoreAffixCatalog.definition(installed.stone)?.displayName?.removeSuffix("の刻印石") ?: "MOD ${index + 1}"
+                tile(v, listSlots[index], 4, short, CoreLoopItems.icon(Material.ENCHANTED_BOOK, model.name, model.effect, "範囲 ${model.range}", "品質 ${model.qualityPercent}% / 内部Tier T${installed.stone.tier}"),
+                    if (index == selected) Tone.SELECTED else Tone.NEUTRAL) { gearMods(player, gear, index) }
+            }
+            v.items[40] = CoreLoopItems.gear(a, gear, v.packed)
+            back(v, player) { if (a.activeRun == null) forge(player, (selections[player.uuid] ?: CoreForgeLayout.Selection()).copy(gear = gear)) else journal(player) }
+            tile(v, 51, 3, "加工へ", CoreLoopItems.icon(Material.ENCHANTING_TABLE, "この装備のMODを加工する", "港で使用できます"),
+                if (a.activeRun == null) Tone.PRIMARY else Tone.DISABLED) { affixes(player, selected = gear) }
+        }
+    }
+
+    fun confirmCraft(player: Player, gear: CoreGearSlot, currency: CoreCraftingCurrency) =
+        forge(player, (selections[player.uuid] ?: CoreForgeLayout.Selection()).copy(tab = CoreForgeLayout.Tab.MODS, gear = gear, currency = currency))
+
+    private fun legacyStones(player: Player, page: Int = 0) {
+        val a = game.account(player) ?: return
+        val last = (a.affixStones.size - 1).coerceAtLeast(0) / listSlots.size
+        val current = page.coerceIn(0, last)
+        view(player, "旧刻印石 / 交換", { legacyStones(player, current) }) { v ->
+            v.canvas.left("旧形式の所持品", lines("所持 ${a.affixStones.size} 個", "選んで交換内容へ", "選ぶだけでは未消費"))
+            v.canvas.right("交換について", lines("旧石のMODは消え", "オーブに変わります", "改変は石のTier分", "錬金は1個", "交換は取り消し不可"))
+            a.affixStones.drop(current * listSlots.size).take(listSlots.size).forEachIndexed { index, stone ->
+                tile(v, listSlots[index], 4, "T${stone.tier} 旧石${current * listSlots.size + index + 1}", CoreLoopItems.stone(stone, v.packed)) {
+                    stoneDetail(player, stone.id, selections[player.uuid]?.gear)
                 }
             }
-            if (a.activeRun == null) {
-                button(v, 40, CoreLoopItems.icon(Material.ENCHANTING_TABLE, "この装備を加工する", if (gear in a.legacyLayouts) "旧構成を保持中 / 改変・混沌で新構成へ" else "追加抽選・全抽選・数値抽選を使い分ける")) { affixes(player, selected = gear) }
-                back(v, player) {
-                    val previous = forgeSelections[player.uuid]
-                    if (previous != null) forge(player, previous.copy(gear = gear)) else affixes(player, selected = gear)
-                }
-            } else {
-                v.inventory.setItemStack(40, CoreLoopItems.icon(Material.BOOK, "遠征中は確認のみ", "港へ帰還すると装備を加工できます"))
-                back(v, player)
-            }
+            back(v, player) { affixes(player) }; pageButtons(v, current, last) { legacyStones(player, it) }
         }
     }
 
     fun stoneDetail(player: Player, id: UUID, preferred: CoreGearSlot? = null) {
         val a = game.account(player) ?: return
         val stone = a.affixStones.firstOrNull { it.id == id } ?: return affixes(player)
-        view(player, "旧刻印石 — オーブへの交換") { v ->
-            v.inventory.setItemStack(13, CoreLoopItems.stone(stone, game.packed(player)))
-            v.inventory.setItemStack(29, CoreLoopItems.currency(CoreCraftingCurrency.ALTERATION, stone.tier.toLong(), game.packed(player), "交換で受け取る数"))
-            v.inventory.setItemStack(33, CoreLoopItems.currency(CoreCraftingCurrency.ALCHEMY, 1, game.packed(player), "交換で受け取る数"))
-            button(v, 40, CoreLoopItems.icon(Material.LIME_DYE, "この旧刻印石を消費して交換", "改変 ×${stone.tier} ＋ 錬金 ×1 を受け取る", "石に決まっていたMODは引き継ぎません", "交換は取り消せません")) {
-                if (game.requireHub(player)) game.mutate(player, CoreAction.ConvertLegacyStone(id), a.revision) { affixes(player, selected = preferred ?: CoreGearSlot.WEAPON) }
-            }
+        view(player, "旧刻印石 / 交換確認", { stoneDetail(player, id, preferred) }) { v ->
+            v.canvas.left("消費するもの", lines("T${stone.tier} 旧刻印石1個", "元のMODは失われる", "交換は取り消せない"))
+            v.canvas.right("受け取るもの", lines("改変のオーブ", "${stone.tier} 個", "錬金のオーブ", "1 個"))
+            v.items[22] = CoreLoopItems.stone(stone, v.packed)
             back(v, player) { legacyStones(player) }
+            execute(v, player, "交換する", null) { mutate(v, player, CoreAction.ConvertLegacyStone(id), a.revision) { affixes(player, selected = preferred ?: CoreGearSlot.WEAPON) } }
         }
     }
 
-    fun confirmCraft(player: Player, gear: CoreGearSlot, currency: CoreCraftingCurrency) {
-        val s = forgeSelections[player.uuid] ?: CoreForgeLayout.Selection()
-        forge(player, s.copy(tab = CoreForgeLayout.Tab.MODS, gear = gear, currency = currency))
-    }
-
-    private fun legacyStones(player: Player, page: Int = 0) {
-        val a = game.account(player) ?: return
-        val last = (a.affixStones.size - 1).coerceAtLeast(0) / contentSlots.size
-        val current = page.coerceIn(0, last)
-        view(player, "旧刻印石 — 所持品のみ") { v ->
-            a.affixStones.drop(current * contentSlots.size).take(contentSlots.size).forEachIndexed { i, stone ->
-                button(v, contentSlots[i], CoreLoopItems.stone(stone, game.packed(player))) { stoneDetail(player, stone.id) }
-            }
-            if (current > 0) button(v, 48, CoreLoopItems.icon(Material.ARROW, "前のページ")) { legacyStones(player, current - 1) }
-            if (current < last) button(v, 50, CoreLoopItems.icon(Material.ARROW, "次のページ")) { legacyStones(player, current + 1) }
-            back(v, player) { affixes(player) }
+    private fun displayHelp(player: Player, returnTo: () -> Unit) {
+        view(player, "画面の見方", { displayHelp(player, returnTo) }) { v ->
+            v.canvas.left("操作", lines("枠全体をクリック", "金の下線は選択中", "緑は実行ボタン", "灰色は使用不可", "", "選択だけでは未消費", "右下で確定します", "ESCで閉じられます"))
+            v.canvas.right("表示", lines("左：対象と変化", "右：費用や詳細", "所持 / 必要の順", "赤は不足している物", "", "装備の詳しい数値は", "装備詳細へ残しています"))
+            v.canvas.text(8, 20, "左右が見切れるとき", CoreUiComponents.GOLD, 160)
+            v.canvas.text(8, 38, "設定 → ビデオ設定", CoreUiComponents.IVORY, 160)
+            v.canvas.text(8, 56, "GUI倍率を1段下げる", CoreUiComponents.IVORY, 160)
+            v.canvas.text(8, 92, "クライアントMODは不要", CoreUiComponents.MUTED, 160)
+            back(v, player, action = returnTo)
         }
     }
 
-    fun trials(player: Player, tier: Int = game.account(player)?.unlockedMapTier ?: 1) {
-        val a = game.account(player) ?: return
-        if (!game.requireHub(player)) return
-        view(player, "境界の試練 — T$tier") { v ->
-            tiers(v, tier) { trials(player, it) }
-            v.inventory.setItemStack(13, CoreLoopItems.icon(Material.END_PORTAL_FRAME, "欠片3個で専用フィールドへ", "通常マップとは別のボス戦です", "死亡・帰還・切断で欠片は戻りません", "報酬：専用オーブ2個 ＋ 高揚1個 ＋ 討伐証"))
-            CoreActivityKind.entries.forEachIndexed { i, kind ->
-                val name = when (kind) { CoreActivityKind.RIFT -> "灰燼の王"; CoreActivityKind.RITUAL -> "氷獄の巨兵"; CoreActivityKind.TRIAL -> "嵐の司祭" }
-                button(v, 29 + i * 2, CoreLoopItems.icon(Material.ECHO_SHARD, name,
-                    "${kind.displayName}の欠片 ${a.amount(kind)} / 3個", "専用報酬：${kind.currency.displayName}", "クリック：挑戦内容の確認")) { confirmTrial(player, kind, tier) }
+    fun guide(player: Player, section: Int = 0) {
+        val current = section.coerceIn(0, 3)
+        view(player, "冒険の手帳 / 遊び方", { guide(player, current) }) { v ->
+            listOf("一周", "戦闘", "採取", "育成").forEachIndexed { index, name ->
+                tile(v, index * 2, 2, name, CoreLoopItems.icon(Material.BOOK, name), if (index == current) Tone.SELECTED else Tone.NEUTRAL) { guide(player, index) }
             }
+            help(v, player) { guide(player, current) }
+            val content = when (current) {
+                0 -> lines("地図台でT1を入手", "地図を選んで出発", "道の先のボスを討伐", "素材と地図を獲得", "港へ帰還して工房へ", "装備を更新して次へ") to
+                    lines("採取と雑魚戦は自由", "寄り道で特別な報酬", "採取素材は自動保存", "死亡しても保持", "途中帰還もできます")
+                1 -> lines("左クリックで通常攻撃", "3段階の大剣コンボ", "右クリックで踏み込み", "Fキーで回避", "2〜4番のスキルを", "右クリックで発動") to
+                    lines("赤い予兆から離れる", "5番：回復薬", "砥石：3分間攻撃強化", "マナ・再使用はHUDへ", "敵を倒してオーブ入手", "近づくと戦利品回収")
+                2 -> lines("道具箱で道具を選ぶ", "木・岩・草・死体へ", "右クリック長押し", "離すと採取中断", "対象の表示で進行確認", "完了すると素材を保存") to
+                    lines("マップの石板MODで", "狙う素材を増やせます", "密集地域を探そう", "経験で採取育成を解放", "高Tierの素材は", "同Tierのマップから")
+                else -> lines("採取素材を精製する", "精製素材で装備制作", "武器と防具はT1〜4", "+強化は0〜30", "オーブでランダムMOD", "強化値とMODは保持") to
+                    lines("素材は倉庫から使用", "足りない素材は補給へ", "戦利品券と交換可能", "精製から元の操作へ", "戻って続けられます", "欠片3個で専用ボスへ")
+            }
+            v.canvas.left("基本の流れ", content.first); v.canvas.right("覚えておくこと", content.second)
+            tile(v, 19, 3, "道具箱", CoreLoopItems.icon(Material.WOODEN_AXE, "採取道具を選ぶ")) { tools(player) }
+            tile(v, 23, 3, "手帳へ", CoreLoopItems.icon(Material.NETHER_STAR, "冒険の手帳へ戻る"), Tone.PRIMARY) { journal(player) }
             back(v, player)
         }
     }
 
+    private fun bossName(kind: CoreActivityKind) = when (kind) {
+        CoreActivityKind.RIFT -> "灰燼の王"
+        CoreActivityKind.RITUAL -> "氷獄の巨兵"
+        CoreActivityKind.TRIAL -> "嵐の司祭"
+    }
+    fun trials(player: Player, tier: Int = game.account(player)?.unlockedMapTier ?: 1) {
+        val a = game.account(player) ?: return
+        if (!game.requireHub(player)) return
+        view(player, "境界の試練 / T$tier", { trials(player, tier) }) { v ->
+            tiers(v, tier) { trials(player, it) }; help(v, player) { trials(player, tier) }
+            v.canvas.left("専用ボスへの挑戦", lines("欠片3個で入場", "通常マップとは別", "Tierは上で選択", "解放 T1〜${a.unlockedMapTier}", "", "選ぶと確認画面へ", "まだ消費しません"))
+            v.canvas.right("欠片の入手先", lines("裂け目・儀式・討伐", "遠征中の寄り道で", "同じ欠片を3個集める", "", "報酬は専用オーブ", "高揚のオーブと討伐証", "死亡・帰還で返却なし"))
+            CoreActivityKind.entries.forEachIndexed { index, kind ->
+                tile(v, 10 + index * 9, 7, "${bossName(kind)} ${compactCount(a.amount(kind))}/3",
+                    CoreLoopItems.icon(Material.ECHO_SHARD, bossName(kind), "${kind.displayName}の欠片 所持 ${a.amount(kind)} / 必要3個", "クリック：挑戦内容の確認"), icon = true) { confirmTrial(player, kind, tier) }
+            }
+            back(v, player)
+        }
+    }
     private fun confirmTrial(player: Player, kind: CoreActivityKind, tier: Int) {
         val a = game.account(player) ?: return
         val available = a.amount(kind) >= 3 && tier <= a.unlockedMapTier
-        view(player, "境界の試練 — 出発確認") { v ->
-            v.inventory.setItemStack(13, CoreLoopItems.icon(Material.END_PORTAL_FRAME, "T$tier ${kind.displayName}の試練",
-                "消費：${kind.displayName}の欠片3個 / 所持 ${a.amount(kind)}", "1回限りの挑戦 / 敗北・帰還でも返却なし", "入場準備の失敗時だけ返却されます"))
-            button(v, 30, CoreLoopItems.icon(if (available) Material.LIME_DYE else Material.BARRIER, if (available) "欠片を消費して挑戦" else "欠片不足、またはTier未解放")) {
-                if (available) game.departTrial(player, kind, tier, a.revision)
-            }
+        view(player, "試練 / 出発確認", { confirmTrial(player, kind, tier) }) { v ->
+            v.canvas.left("${bossName(kind)}", lines("T$tier の専用ボス", "${kind.displayName}の欠片", "所持 ${a.amount(kind)} / 必要3", "", "一度きりの挑戦", "敗北・帰還で返却なし", "準備失敗時だけ返却"))
+            v.canvas.right("討伐の報酬", paragraph(kind.currency.displayName, CoreUiComponents.GOLD) + lines("2個", "高揚のオーブ 1個", "討伐証", "", if (available) "挑戦できます" else if (tier > a.unlockedMapTier) "Tierが未解放" else "欠片が不足しています"))
+            v.items[22] = CoreLoopItems.icon(Material.END_PORTAL_FRAME, bossName(kind))
             back(v, player) { trials(player, tier) }
+            tile(v, 51, 3, "挑戦する", CoreLoopItems.icon(Material.LIME_DYE, "欠片3個を使って挑戦する"), if (available) Tone.PRIMARY else Tone.DISABLED) { game.departTrial(player, kind, tier, a.revision) }
         }
     }
 }

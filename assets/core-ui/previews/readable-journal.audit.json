@@ -1,0 +1,240 @@
+{
+  "title": "開拓港 / 手帳",
+  "layer": "actual CoreMenuCanvas title layer",
+  "omitted": [
+    "vanilla item models",
+    "vanilla inventory label",
+    "hover highlights",
+    "tooltips"
+  ],
+  "warnings": [],
+  "icon_slots": [
+    9,
+    14,
+    18,
+    23,
+    27,
+    32,
+    36,
+    41
+  ],
+  "drawn_text": [
+    {
+      "where": "title",
+      "x": 8,
+      "y": 6,
+      "text": "開拓港 / 手帳",
+      "width": 68
+    },
+    {
+      "where": "leftPanel.title",
+      "x": -98,
+      "y": 8,
+      "text": "冒険者",
+      "width": 34
+    },
+    {
+      "where": "leftPanel.lines[0]",
+      "x": -98,
+      "y": 30,
+      "text": "T3 武器 +6",
+      "width": 62
+    },
+    {
+      "where": "leftPanel.lines[1]",
+      "x": -98,
+      "y": 44,
+      "text": "レア",
+      "width": 21
+    },
+    {
+      "where": "leftPanel.lines[2]",
+      "x": -98,
+      "y": 58,
+      "text": "攻撃力 54",
+      "width": 52
+    },
+    {
+      "where": "leftPanel.lines[3]",
+      "x": -98,
+      "y": 72,
+      "text": "速度 +13.8%",
+      "width": 70
+    },
+    {
+      "where": "leftPanel.lines[4]",
+      "x": -98,
+      "y": 86,
+      "text": "MOD 6 / 6",
+      "width": 59
+    },
+    {
+      "where": "leftPanel.lines[5]",
+      "x": -98,
+      "y": 100,
+      "text": "",
+      "width": 0
+    },
+    {
+      "where": "leftPanel.lines[6]",
+      "x": -98,
+      "y": 114,
+      "text": "T3 防具 +6",
+      "width": 61
+    },
+    {
+      "where": "leftPanel.lines[7]",
+      "x": -98,
+      "y": 128,
+      "text": "レア",
+      "width": 21
+    },
+    {
+      "where": "leftPanel.lines[8]",
+      "x": -98,
+      "y": 142,
+      "text": "最大HP 230",
+      "width": 65
+    },
+    {
+      "where": "leftPanel.lines[9]",
+      "x": -98,
+      "y": 156,
+      "text": "MOD 6 / 6",
+      "width": 59
+    },
+    {
+      "where": "rightPanel.title",
+      "x": 184,
+      "y": 8,
+      "text": "次の一歩",
+      "width": 45
+    },
+    {
+      "where": "rightPanel.lines[0]",
+      "x": 184,
+      "y": 30,
+      "text": "地図を選び出発",
+      "width": 76
+    },
+    {
+      "where": "rightPanel.lines[1]",
+      "x": 184,
+      "y": 44,
+      "text": "採取と討伐で収集",
+      "width": 88
+    },
+    {
+      "where": "rightPanel.lines[2]",
+      "x": 184,
+      "y": 58,
+      "text": "工房で装備更新",
+      "width": 79
+    },
+    {
+      "where": "rightPanel.lines[3]",
+      "x": 184,
+      "y": 72,
+      "text": "次のTierへ挑戦",
+      "width": 81
+    },
+    {
+      "where": "rightPanel.lines[4]",
+      "x": 184,
+      "y": 86,
+      "text": "",
+      "width": 0
+    },
+    {
+      "where": "rightPanel.lines[5]",
+      "x": 184,
+      "y": 100,
+      "text": "解放済 T1〜3",
+      "width": 69
+    },
+    {
+      "where": "rightPanel.lines[6]",
+      "x": 184,
+      "y": 114,
+      "text": "T1地図は無料",
+      "width": 71
+    },
+    {
+      "where": "rightPanel.lines[7]",
+      "x": 184,
+      "y": 128,
+      "text": "素材は自動保存",
+      "width": 76
+    },
+    {
+      "where": "button[8]",
+      "x": 156,
+      "y": 20,
+      "text": "?",
+      "width": 7
+    },
+    {
+      "where": "button[9]",
+      "x": 40,
+      "y": 38,
+      "text": "遠征",
+      "width": 23
+    },
+    {
+      "where": "button[14]",
+      "x": 119,
+      "y": 38,
+      "text": "装備工房",
+      "width": 45
+    },
+    {
+      "where": "button[18]",
+      "x": 30,
+      "y": 56,
+      "text": "素材倉庫",
+      "width": 44
+    },
+    {
+      "where": "button[23]",
+      "x": 118,
+      "y": 56,
+      "text": "MOD加工",
+      "width": 48
+    },
+    {
+      "where": "button[27]",
+      "x": 30,
+      "y": 74,
+      "text": "素材交換",
+      "width": 44
+    },
+    {
+      "where": "button[32]",
+      "x": 119,
+      "y": 74,
+      "text": "採取育成",
+      "width": 45
+    },
+    {
+      "where": "button[36]",
+      "x": 29,
+      "y": 92,
+      "text": "ボス試練",
+      "width": 45
+    },
+    {
+      "where": "button[41]",
+      "x": 125,
+      "y": 92,
+      "text": "遊び方",
+      "width": 33
+    },
+    {
+      "where": "button[51]",
+      "x": 126,
+      "y": 110,
+      "text": "閉じる",
+      "width": 32
+    }
+  ]
+}

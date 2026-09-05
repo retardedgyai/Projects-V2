@@ -1,0 +1,280 @@
+{
+  "title": "開拓工房 / 制作",
+  "layer": "actual CoreMenuCanvas title layer",
+  "omitted": [
+    "vanilla item models",
+    "vanilla inventory label",
+    "hover highlights",
+    "tooltips"
+  ],
+  "warnings": [],
+  "icon_slots": [],
+  "drawn_text": [
+    {
+      "where": "title",
+      "x": 8,
+      "y": 6,
+      "text": "開拓工房 / 制作",
+      "width": 79
+    },
+    {
+      "where": "leftPanel.title",
+      "x": -98,
+      "y": 8,
+      "text": "完成するもの",
+      "width": 66
+    },
+    {
+      "where": "leftPanel.lines[0]",
+      "x": -98,
+      "y": 30,
+      "text": "採取の石板を彫刻",
+      "width": 88
+    },
+    {
+      "where": "leftPanel.lines[1]",
+      "x": -98,
+      "y": 44,
+      "text": "採取石板 ×5",
+      "width": 65
+    },
+    {
+      "where": "leftPanel.lines[2]",
+      "x": -98,
+      "y": 58,
+      "text": "所持 500000",
+      "width": 74
+    },
+    {
+      "where": "leftPanel.lines[3]",
+      "x": -98,
+      "y": 72,
+      "text": "",
+      "width": 0
+    },
+    {
+      "where": "leftPanel.lines[4]",
+      "x": -98,
+      "y": 86,
+      "text": "今回 5 回",
+      "width": 48
+    },
+    {
+      "where": "leftPanel.lines[5]",
+      "x": -98,
+      "y": 100,
+      "text": "制作可能 64 回",
+      "width": 79
+    },
+    {
+      "where": "leftPanel.lines[6]",
+      "x": -98,
+      "y": 114,
+      "text": "制作できます",
+      "width": 64
+    },
+    {
+      "where": "rightPanel.title",
+      "x": 184,
+      "y": 8,
+      "text": "必要素材",
+      "width": 44
+    },
+    {
+      "where": "rightPanel.lines[0]",
+      "x": 184,
+      "y": 30,
+      "text": "所持 / 必要",
+      "width": 58
+    },
+    {
+      "where": "rightPanel.lines[1]",
+      "x": 184,
+      "y": 44,
+      "text": "T3 加工石材",
+      "width": 63
+    },
+    {
+      "where": "rightPanel.lines[2]",
+      "x": 184,
+      "y": 58,
+      "text": "500000/5",
+      "width": 59
+    },
+    {
+      "where": "rightPanel.lines[3]",
+      "x": 184,
+      "y": 72,
+      "text": "T3 板材",
+      "width": 41
+    },
+    {
+      "where": "rightPanel.lines[4]",
+      "x": 184,
+      "y": 86,
+      "text": "500000/5",
+      "width": 59
+    },
+    {
+      "where": "rightPanel.lines[5]",
+      "x": 184,
+      "y": 100,
+      "text": "T3 なめし革",
+      "width": 62
+    },
+    {
+      "where": "rightPanel.lines[6]",
+      "x": 184,
+      "y": 114,
+      "text": "500000/5",
+      "width": 59
+    },
+    {
+      "where": "button[0]",
+      "x": 14,
+      "y": 20,
+      "text": "強化",
+      "width": 22
+    },
+    {
+      "where": "button[2]",
+      "x": 50,
+      "y": 20,
+      "text": "精製",
+      "width": 22
+    },
+    {
+      "where": "button[4]",
+      "x": 86,
+      "y": 20,
+      "text": "制作",
+      "width": 22
+    },
+    {
+      "where": "button[6]",
+      "x": 120,
+      "y": 20,
+      "text": "MOD",
+      "width": 26
+    },
+    {
+      "where": "button[8]",
+      "x": 156,
+      "y": 20,
+      "text": "?",
+      "width": 7
+    },
+    {
+      "where": "button[9]",
+      "x": 22,
+      "y": 38,
+      "text": "武器",
+      "width": 23
+    },
+    {
+      "where": "button[12]",
+      "x": 77,
+      "y": 38,
+      "text": "防具",
+      "width": 22
+    },
+    {
+      "where": "button[45]",
+      "x": 14,
+      "y": 110,
+      "text": "手帳",
+      "width": 22
+    },
+    {
+      "where": "button[15]",
+      "x": 120,
+      "y": 38,
+      "text": "<",
+      "width": 7
+    },
+    {
+      "where": "button[16]",
+      "x": 138,
+      "y": 38,
+      "text": "3",
+      "width": 7
+    },
+    {
+      "where": "button[17]",
+      "x": 156,
+      "y": 38,
+      "text": ">",
+      "width": 7
+    },
+    {
+      "where": "button[18]",
+      "x": 15,
+      "y": 56,
+      "text": "T4防具",
+      "width": 37
+    },
+    {
+      "where": "button[21]",
+      "x": 71,
+      "y": 56,
+      "text": "回復薬",
+      "width": 33
+    },
+    {
+      "where": "button[24]",
+      "x": 120,
+      "y": 56,
+      "text": "採取石板",
+      "width": 44
+    },
+    {
+      "where": "button[27]",
+      "x": 23,
+      "y": 74,
+      "text": "砥石",
+      "width": 22
+    },
+    {
+      "where": "button[42]",
+      "x": 125,
+      "y": 92,
+      "text": "素材へ",
+      "width": 33
+    },
+    {
+      "where": "button[47]",
+      "x": 49,
+      "y": 110,
+      "text": "1",
+      "width": 6
+    },
+    {
+      "where": "button[48]",
+      "x": 66,
+      "y": 110,
+      "text": "5",
+      "width": 7
+    },
+    {
+      "where": "button[49]",
+      "x": 82,
+      "y": 110,
+      "text": "全",
+      "width": 11
+    },
+    {
+      "where": "button[51]",
+      "x": 120,
+      "y": 110,
+      "text": "制作する",
+      "width": 44
+    },
+    {
+      "where": "texts[0]",
+      "x": 56,
+      "y": 92,
+      "text": "回数",
+      "width": 22
+    }
+  ]
+}

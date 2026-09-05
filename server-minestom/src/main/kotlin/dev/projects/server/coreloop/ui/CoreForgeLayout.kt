@@ -41,15 +41,6 @@ internal object CoreForgeLayout {
     const val MATERIALS = 42
     const val BACK = 45
     const val EXECUTE = 51
-    // Retained only while old screen builders are migrated to the persistent side panels.
-    @Deprecated("Material costs are displayed together in the right side panel")
-    val COSTS = listOf(16, 17, 25, 26, 34, 35, 43, 44)
-    @Deprecated("Target preview is displayed in the left side panel")
-    const val TARGET = 22
-    @Deprecated("Result preview is displayed in the left side panel")
-    const val RESULT = 31
-    @Deprecated("Details are displayed in the left side panel")
-    const val DETAIL = 40
     val QUANTITIES = mapOf(47 to Quantity.ONE, 48 to Quantity.FIVE, 49 to Quantity.MAX)
 
     fun maxBatches(account: CoreAccount, unit: CoreRecipe): Int {
