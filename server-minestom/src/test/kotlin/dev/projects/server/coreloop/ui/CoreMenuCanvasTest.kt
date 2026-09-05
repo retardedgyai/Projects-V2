@@ -108,4 +108,28 @@ class CoreMenuCanvasTest {
         assertFalse(fallback.any { it.contains('…') || it.any { char -> char.code in 0xE000..0xF8FF } })
         assertFalse("強化する" in fallback)
     }
+
+    @Test fun `panel wrapping keeps Latin names and complete numeric expressions together`() {
+        for (unit in listOf("Tier", "MOD", "1000000/256", "+15.8%", "-12.5%", "+/-10%", "HP/MP")) {
+            val value = "所持素材 $unit を確認"
+            val wrapped = CoreMenuCanvas.wrap(value)
+            assertTrue(wrapped.any { unit in it }, "The unit $unit was split across lines: $wrapped")
+            assertEquals(value, wrapped.joinToString(""))
+            assertTrue(wrapped.all { CoreMenuCanvas.width(it) <= CoreMenuCanvas.PANEL_WIDTH })
+        }
+        assertEquals(listOf("MODの種類と", "Tierを保持"), CoreMenuCanvas.wrap("MODの種類とTierを保持"))
+    }
+
+    @Test fun `oversized ASCII runs fall back safely without erasing explicit empty lines`() {
+        val longWord = "SuperLongUnbrokenInventoryIdentifier1234567890/+100.25%"
+        val text = "\n$longWord\n\n木材"
+        val wrapped = CoreMenuCanvas.wrap(text, 44)
+        assertEquals("", wrapped.first())
+        assertEquals("木材", wrapped.last())
+        assertTrue(wrapped.all { CoreMenuCanvas.width(it) <= 44 })
+        assertEquals(longWord + "木材", wrapped.joinToString(""))
+        assertTrue(wrapped.count { it.isEmpty() } >= 2)
+        val unicode = "\uD83D\uDDE1Tier木材\uD83D\uDDE1"
+        assertEquals(unicode, CoreMenuCanvas.wrap(unicode, 44).joinToString(""))
+    }
 }
