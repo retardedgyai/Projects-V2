@@ -47,7 +47,7 @@
       "x": -98,
       "y": 58,
       "text": "230 → 233",
-      "width": 47,
+      "width": 46,
       "style": "EMPHASIS"
     },
     {
@@ -63,7 +63,7 @@
       "x": -98,
       "y": 86,
       "text": "成功率 100%",
-      "width": 51,
+      "width": 49,
       "style": "EMPHASIS"
     },
     {
@@ -79,7 +79,7 @@
       "x": -98,
       "y": 114,
       "text": "鍛冶熟練 0/10",
-      "width": 59,
+      "width": 58,
       "style": "BODY"
     },
     {
@@ -279,23 +279,23 @@
       "x": 157,
       "y": 20,
       "text": "?",
-      "width": 6,
+      "width": 5,
       "style": "EMPHASIS"
     },
     {
       "where": "button[45]",
-      "x": 11,
+      "x": 12,
       "y": 110,
       "text": "←",
-      "width": 9,
+      "width": 8,
       "style": "EMPHASIS"
     },
     {
       "where": "focus.caption",
-      "x": 42,
+      "x": 43,
       "y": 100,
       "text": "+6 → +7",
-      "width": 37,
+      "width": 36,
       "style": "EMPHASIS"
     }
   ],
@@ -373,7 +373,7 @@
       "size": 48
     }
   ],
-  "raster_scale": 2,
+  "raster_scale": 3,
   "occupied_control_slots": [
     0,
     1,

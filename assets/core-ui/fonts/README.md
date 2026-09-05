@@ -19,9 +19,18 @@ Missing characters are visibly replaced with □ and logged by `CoreMenuCanvas`.
 # Ember menu typography (2026-09-05)
 
 The current menu body, headings, button labels and emphasized figures use
-Fontworks DotGothic16 (16px source / 8 GUI px, weight 400). Both role providers
-retain separate names but share identical bitmaps and measured advances.
+MaruMinya, a native 12px rounded pixel design rasterized at 24px / 8 GUI px.
+One source pixel is added horizontally (1/3 GUI px), without vertical dilation.
+Both role providers retain separate names but share identical bitmaps and measured advances.
 This does not replace Minecraft's global font.
+
+Current source: https://github.com/hicchicc/x12y12pxMaruMinya/tree/ad836b68da9ccb3c51063ca164335db556413969
+
+TTF SHA256: `b05f108a3433602545f1dcb8acef167aaf744965d8d9571045d5f2cdbe12f9e5`.
+License: [MaruMinya-OFL.txt](MaruMinya-OFL.txt), included in the player pack.
+The full TTF stays in `.tools/core-menu` and is not shipped.
+
+Previous 16px experiment:
 
 DotGothic16 source: https://github.com/fontworks-fonts/DotGothic16/tree/14517183ab2f75e8bccafc5a0bff6685d268c687
 

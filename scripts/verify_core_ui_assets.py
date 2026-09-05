@@ -116,9 +116,12 @@ def verify():
     assert menu["slots"] == {"origin": [8, 18], "stride": 18, "columns": 9, "rows": 6}
     font_meta = json.loads((PACK / "assets/projects/menu/font-source.json").read_text())
     assert font_meta["source_sha256"] == DOT_FONT_SHA256 and font_meta["weight"] == 400 and font_meta["size"] == 8
-    assert font_meta["emphasis"] == font_meta["body"], "Menu labels and body must share the same 16px typeface"
+    assert font_meta["emphasis"] == font_meta["body"], "Menu labels and body must share the rounded typeface"
     assert (PACK / "assets/projects/textures/gui/core/menu_text.png").read_bytes() == (PACK / "assets/projects/textures/gui/core/menu_text_emphasis.png").read_bytes()
-    assert font_meta["body"]["source_sha256"] == DOT_FONT_SHA256 and font_meta["body"]["source_size"] == 16
+    assert font_meta["body"]["source_sha256"] == DOT_FONT_SHA256 and font_meta["body"]["source_size"] == 24
+    assert font_meta["native_grid"] == 12 and font_meta["source_scale"] == 3
+    assert font_meta["horizontal_weight_px"] == 1, "Keep the modest horizontal weight adjustment; do not dilate kanji vertically"
+    assert (PACK / "assets/projects/menu/MaruMinya-OFL.txt").read_bytes() == (ROOT / "assets/core-ui/fonts/MaruMinya-OFL.txt").read_bytes()
     assert font_meta["source_scale"] == TEXT_SCALE and font_meta["alpha"] == "binary"
     assert menu["source_cell"] == SOURCE_CELL and menu["text_scale"] == TEXT_SCALE
     assert (PACK / "assets/projects/menu/OFL.txt").read_bytes() == (ROOT / "assets/core-ui/fonts/OFL.txt").read_bytes()
@@ -167,7 +170,7 @@ def verify():
                 assert box is not None and math.floor(0.5 + box[2] / TEXT_SCALE) + 1 == advance
                 if chr(code) in "+0123456789→":
                     assert 100 + box[1] / TEXT_SCALE >= 102, "Caption ink must start below the hero ink"
-    assert emphasized == metrics, "Both menu text roles must preserve the same 16px glyph metrics"
+    assert emphasized == metrics, "Both menu text roles must preserve the same rounded glyph metrics"
     for y in TEXT_YS:
         providers = json.loads((PACK / f"assets/projects/font/core_menu_emphasis_y{y}.json").read_text())["providers"]
         assert len(providers) == 2 and providers[1]["ascent"] == 13 - y and providers[1]["height"] == CELL

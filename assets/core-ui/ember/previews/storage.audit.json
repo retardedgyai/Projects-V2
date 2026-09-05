@@ -31,7 +31,7 @@
       "x": -98,
       "y": 72,
       "text": "31 種類",
-      "width": 31,
+      "width": 30,
       "style": "EMPHASIS"
     },
     {
@@ -71,7 +71,7 @@
       "x": 184,
       "y": 8,
       "text": "手に入れたもの",
-      "width": 62,
+      "width": 63,
       "style": "EMPHASIS"
     },
     {
@@ -103,7 +103,7 @@
       "x": 184,
       "y": 114,
       "text": "精製に使う素材",
-      "width": 61,
+      "width": 63,
       "style": "BODY"
     },
     {
@@ -172,10 +172,10 @@
     },
     {
       "where": "button[0]",
-      "x": 20,
+      "x": 21,
       "y": 20,
       "text": "T1",
-      "width": 9,
+      "width": 8,
       "style": "EMPHASIS"
     },
     {
@@ -196,10 +196,10 @@
     },
     {
       "where": "button[6]",
-      "x": 127,
+      "x": 128,
       "y": 20,
       "text": "T4",
-      "width": 11,
+      "width": 10,
       "style": "EMPHASIS"
     },
     {
@@ -207,7 +207,7 @@
       "x": 157,
       "y": 20,
       "text": "?",
-      "width": 6,
+      "width": 5,
       "style": "EMPHASIS"
     },
     {
@@ -215,7 +215,7 @@
       "x": 16,
       "y": 110,
       "text": "戻る",
-      "width": 17,
+      "width": 18,
       "style": "EMPHASIS"
     },
     {
@@ -228,18 +228,18 @@
     },
     {
       "where": "button[48]",
-      "x": 76,
+      "x": 77,
       "y": 110,
       "text": "1 / 4",
-      "width": 23,
+      "width": 21,
       "style": "EMPHASIS"
     },
     {
       "where": "button[51]",
-      "x": 121,
+      "x": 122,
       "y": 110,
       "text": ">",
-      "width": 5,
+      "width": 4,
       "style": "EMPHASIS"
     },
     {
@@ -313,7 +313,7 @@
       "size": 16
     }
   ],
-  "raster_scale": 2,
+  "raster_scale": 3,
   "occupied_control_slots": [
     0,
     1,

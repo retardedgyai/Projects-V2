@@ -39,7 +39,7 @@
       "x": -98,
       "y": 86,
       "text": "レア",
-      "width": 17,
+      "width": 18,
       "style": "BODY"
     },
     {
@@ -47,7 +47,7 @@
       "x": -98,
       "y": 100,
       "text": "攻撃力 54",
-      "width": 42,
+      "width": 41,
       "style": "BODY"
     },
     {
@@ -55,7 +55,7 @@
       "x": -98,
       "y": 114,
       "text": "速度 +13.8%",
-      "width": 50,
+      "width": 48,
       "style": "BODY"
     },
     {
@@ -103,7 +103,7 @@
       "x": 184,
       "y": 72,
       "text": "T1〜3",
-      "width": 23,
+      "width": 21,
       "style": "EMPHASIS"
     },
     {
@@ -111,7 +111,7 @@
       "x": 184,
       "y": 86,
       "text": "挑戦できる地域",
-      "width": 61,
+      "width": 63,
       "style": "BODY"
     },
     {
@@ -135,15 +135,23 @@
       "x": 184,
       "y": 128,
       "text": "道の先に待つボス",
-      "width": 71,
+      "width": 72,
       "style": "BODY"
     },
     {
       "where": "rightPanel.lines[5]",
       "x": 184,
       "y": 142,
-      "text": "寄り道で見つかる素材",
-      "width": 88,
+      "text": "寄り道で見つかる素",
+      "width": 81,
+      "style": "BODY"
+    },
+    {
+      "where": "rightPanel.lines[6]",
+      "x": 184,
+      "y": 156,
+      "text": "材",
+      "width": 9,
       "style": "BODY"
     },
     {
@@ -215,15 +223,15 @@
       "x": 157,
       "y": 20,
       "text": "?",
-      "width": 6,
+      "width": 5,
       "style": "EMPHASIS"
     },
     {
       "where": "button[51]",
-      "x": 129,
+      "x": 128,
       "y": 110,
       "text": "閉じる",
-      "width": 25,
+      "width": 27,
       "style": "EMPHASIS"
     }
   ],
@@ -289,7 +297,7 @@
       "size": 16
     }
   ],
-  "raster_scale": 2,
+  "raster_scale": 3,
   "occupied_control_slots": [
     8,
     9,

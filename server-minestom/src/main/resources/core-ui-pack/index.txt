@@ -199,6 +199,7 @@ assets/projects/items/weapons/greatsword_t2.json
 assets/projects/items/weapons/greatsword_t3.json
 assets/projects/items/weapons/greatsword_t4.json
 assets/projects/menu/DotGothic16-OFL.txt
+assets/projects/menu/MaruMinya-OFL.txt
 assets/projects/menu/OFL.txt
 assets/projects/menu/art.tsv
 assets/projects/menu/font-source.json

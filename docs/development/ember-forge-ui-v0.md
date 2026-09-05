@@ -40,6 +40,22 @@ Vanilla 26.2 + Minestom + サーバー配信リソースパックのみ。
 
 ## 字形とアート
 
+### 現行: 丸みと太さの調整
+
+16px統一版への「もう少し太く、柔らかく」という評価を受け、本文・見出しを
+MaruMinyaへ交換。12px設計を正確に2倍の24pxで描き、8 GUI pxで表示する。
+42pxセル / 14 GUI px。横方向のみ原画1px（1/3 GUI px）加重し、縦方向は膨張しない。
+これにより小さい漢字の横画間の隙間を保つ。両roleの字形・実測幅は共通。
+配置、アイコン、配色、HUD、Tooltip、ゲーム処理は変更しない。再起動は保留。
+
+Source: https://github.com/hicchicc/x12y12pxMaruMinya/tree/ad836b68da9ccb3c51063ca164335db556413969
+TTF SHA256: `b05f108a3433602545f1dcb8acef167aaf744965d8d9571045d5f2cdbe12f9e5`。
+OFLは原文を同梱。必要849文字を生成時に欠字検査し、字幅を再計算する。
+生成元 `scripts/build_core_menu_assets.py` → atlas/metrics → `CoreMenuCanvas`。
+問題時は `scripts/verify_core_ui_assets.py`と実装snapshotプレビューを確認する。
+
+### 以前の16px試行（置き換え済み）
+
 本文・見出し・操作・強調数値を[Fontworks DotGothic16](https://github.com/fontworks-fonts/DotGothic16)
 の16px原画 / 8 GUI px、weight 400へ統一。Creatorの「文字周り16x」試行として、
 Noto Sans JPの20px見出しを外した。16 GUI pxへの拡大ではなく16px字形への統一。
@@ -56,6 +72,13 @@ SIL OFL 1.1を原文のまま配信。全TTFは配信せず必要文字だけを
 台座と金属の縁はネイティブのピクセル描画。外部ゲームのパックを取り込まない。
 
 ## 検証と残件
+
+### 丸み・太さ調整版
+
+- メニュー関連38テスト成功（17秒）、13画面strictプレビュー警告0。
+- アセット検証288件成功。内容SHA256 `52d876b56f1b73c2f4018591a2b5b733471791bbea50c8136d47d4e1035e662c`。
+- 工房と+29→+30画面の実装プレビューを確認。実クライアントのGUI倍率での最終判断は未実施。
+- Creatorが再起動要求を取り消して文字修正へ切り替えたため、プロセス起動・停止やゲーム内操作は行っていない。
 
 ### 16px統一試行
 

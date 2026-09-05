@@ -23,7 +23,7 @@
       "x": -98,
       "y": 8,
       "text": "完成するもの",
-      "width": 53,
+      "width": 54,
       "style": "EMPHASIS"
     },
     {
@@ -31,7 +31,7 @@
       "x": -98,
       "y": 72,
       "text": "なめし革 ×5",
-      "width": 50,
+      "width": 52,
       "style": "BODY"
     },
     {
@@ -55,7 +55,7 @@
       "x": -98,
       "y": 114,
       "text": "制作可能 64 回",
-      "width": 64,
+      "width": 63,
       "style": "BODY"
     },
     {
@@ -63,7 +63,7 @@
       "x": -98,
       "y": 128,
       "text": "制作できます",
-      "width": 52,
+      "width": 54,
       "style": "BODY"
     },
     {
@@ -183,7 +183,7 @@
       "x": 157,
       "y": 20,
       "text": "?",
-      "width": 6,
+      "width": 5,
       "style": "EMPHASIS"
     },
     {
@@ -212,10 +212,10 @@
     },
     {
       "where": "button[35]",
-      "x": 157,
+      "x": 158,
       "y": 74,
       "text": ">",
-      "width": 5,
+      "width": 4,
       "style": "EMPHASIS"
     },
     {
@@ -223,7 +223,7 @@
       "x": 50,
       "y": 110,
       "text": "1",
-      "width": 4,
+      "width": 3,
       "style": "EMPHASIS"
     },
     {
@@ -299,7 +299,7 @@
       "size": 16
     }
   ],
-  "raster_scale": 2,
+  "raster_scale": 3,
   "occupied_control_slots": [
     0,
     1,

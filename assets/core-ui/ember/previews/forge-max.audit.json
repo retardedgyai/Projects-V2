@@ -31,7 +31,7 @@
       "x": -98,
       "y": 30,
       "text": "T4 武器",
-      "width": 33,
+      "width": 32,
       "style": "BODY"
     },
     {
@@ -47,7 +47,7 @@
       "x": -98,
       "y": 58,
       "text": "119",
-      "width": 13,
+      "width": 11,
       "style": "EMPHASIS"
     },
     {
@@ -63,7 +63,7 @@
       "x": -98,
       "y": 86,
       "text": "24%",
-      "width": 17,
+      "width": 15,
       "style": "EMPHASIS"
     },
     {
@@ -95,7 +95,7 @@
       "x": -98,
       "y": 142,
       "text": "鍛冶熟練 10/10",
-      "width": 63,
+      "width": 61,
       "style": "BODY"
     },
     {
@@ -111,7 +111,7 @@
       "x": 184,
       "y": 30,
       "text": "消費なし",
-      "width": 35,
+      "width": 36,
       "style": "BODY"
     },
     {
@@ -199,15 +199,15 @@
       "x": 157,
       "y": 20,
       "text": "?",
-      "width": 6,
+      "width": 5,
       "style": "EMPHASIS"
     },
     {
       "where": "button[45]",
-      "x": 11,
+      "x": 12,
       "y": 110,
       "text": "←",
-      "width": 9,
+      "width": 8,
       "style": "EMPHASIS"
     },
     {
@@ -271,7 +271,7 @@
       "size": 48
     }
   ],
-  "raster_scale": 2,
+  "raster_scale": 3,
   "occupied_control_slots": [
     0,
     1,

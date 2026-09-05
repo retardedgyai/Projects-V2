@@ -47,7 +47,7 @@
       "x": -98,
       "y": 58,
       "text": "41 → 42",
-      "width": 38,
+      "width": 34,
       "style": "EMPHASIS"
     },
     {
@@ -63,7 +63,7 @@
       "x": -98,
       "y": 86,
       "text": "4.8% → 5.6%",
-      "width": 56,
+      "width": 52,
       "style": "EMPHASIS"
     },
     {
@@ -79,7 +79,7 @@
       "x": -98,
       "y": 114,
       "text": "成功率 87.5%",
-      "width": 55,
+      "width": 54,
       "style": "EMPHASIS"
     },
     {
@@ -87,7 +87,7 @@
       "x": -98,
       "y": 128,
       "text": "天井 2/4",
-      "width": 38,
+      "width": 37,
       "style": "BODY"
     },
     {
@@ -95,7 +95,7 @@
       "x": -98,
       "y": 142,
       "text": "鍛冶熟練 0/10",
-      "width": 59,
+      "width": 58,
       "style": "BODY"
     },
     {
@@ -159,7 +159,7 @@
       "x": 202,
       "y": 58,
       "text": "T1 板材 ×1",
-      "width": 45,
+      "width": 44,
       "style": "BODY"
     },
     {
@@ -279,23 +279,23 @@
       "x": 157,
       "y": 20,
       "text": "?",
-      "width": 6,
+      "width": 5,
       "style": "EMPHASIS"
     },
     {
       "where": "button[45]",
-      "x": 11,
+      "x": 12,
       "y": 110,
       "text": "←",
-      "width": 9,
+      "width": 8,
       "style": "EMPHASIS"
     },
     {
       "where": "focus.caption",
-      "x": 42,
+      "x": 43,
       "y": 100,
       "text": "+6 → +7",
-      "width": 37,
+      "width": 36,
       "style": "EMPHASIS"
     }
   ],
@@ -367,7 +367,7 @@
       "size": 48
     }
   ],
-  "raster_scale": 2,
+  "raster_scale": 3,
   "occupied_control_slots": [
     0,
     1,
