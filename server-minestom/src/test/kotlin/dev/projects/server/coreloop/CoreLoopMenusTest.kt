@@ -132,7 +132,7 @@ class CoreLoopMenusTest {
             check("journal") { f.menus.journal(f.player) }
             for (page in 0..1) check("maps$page") { f.menus.expeditions(f.player, tier, page) }
             check("map detail three modifiers") { f.menus.mapDetail(f.player, f.host.current.maps.first().id) }
-            for (page in 0..4) check("storage$page") { f.menus.storage(f.player, tier, page) }
+            for (page in 0..8) check("storage$page") { f.menus.storage(f.player, tier, page) }
             check("workshop") { f.menus.workshop(f.player, tier) }
             for (tab in CoreForgeLayout.Tab.entries) check("forge ${tab.name}") { f.menus.workshop(f.player, tier); f.click(tab.slot) }
             for (gear in CoreGearSlot.entries) {
@@ -145,7 +145,7 @@ class CoreLoopMenusTest {
             for (section in 0..3) check("guide$section") { f.menus.guide(f.player, section) }
             check("help") { f.menus.journal(f.player); f.click(8) }
             check("trials") { f.menus.trials(f.player, tier) }
-            for (index in 0..2) check("trial confirmation$index") { f.menus.trials(f.player, tier); f.click(10 + index * 9) }
+            for (index in 0..2) check("trial confirmation$index") { f.menus.trials(f.player, tier); f.click(9 + index * 3) }
             f.host.current.affixStones.firstOrNull()?.let { stone -> check("legacy stone") { f.menus.stoneDetail(f.player, stone.id) } }
             assertTrue(f.host.requests.isEmpty(), "Selections consumed resources: $prefix")
         }
@@ -159,7 +159,7 @@ class CoreLoopMenusTest {
             for (recipe in 0 until count) for (quantity in CoreForgeLayout.QUANTITIES.keys) {
                 f.menus.workshop(f.player, 3)
                 f.click(tab.slot)
-                f.click(CoreForgeLayout.RECIPES[recipe])
+                f.click(if (tab == CoreForgeLayout.Tab.REFINE) CoreLoopMenus.REFINE_SLOTS[recipe] else CoreForgeLayout.RECIPES[recipe])
                 // Equipment Tier recipes deliberately have no quantity control.
                 if (tab == CoreForgeLayout.Tab.REFINE || recipe > 0) f.click(quantity)
                 assertTrue(f.host.requests.isEmpty())
@@ -167,12 +167,78 @@ class CoreLoopMenusTest {
         }
     }
 
+    @Test fun `every slot of the three journal illustrations opens the same intended destination`() {
+        for ((start, destination) in listOf(9 to "地図台", 12 to "開拓工房", 15 to "素材倉庫")) {
+            for (row in 0..2) for (column in 0..2) {
+                val f = fixture(account())
+                f.menus.journal(f.player)
+                val original = f.snapshot()
+                assertEquals(listOf("遠征", "工房", "保管庫"), original.cards.filter { it.rows == 3 }.map { it.label })
+                assertNotNull(original.leftPanel?.hero)
+                f.click(start + row * 9 + column, right = column == 1)
+                assertTrue(f.snapshot().title.contains(destination), "Card at $start did not own row=$row column=$column")
+                assertTrue(f.host.requests.isEmpty())
+            }
+        }
+    }
+
+    @Test fun `all six cells of each illustrated refine recipe select the same real output`() {
+        CoreLoopCatalog.refined.keys.forEachIndexed { index, raw ->
+            for (row in 0..1) for (column in 0..2) {
+                val f = fixture(account(tier = 3))
+                f.menus.workshop(f.player, 3)
+                f.click(CoreForgeLayout.Tab.REFINE.slot)
+                f.click(CoreLoopMenus.REFINE_SLOTS[index] + row * 9 + column)
+                assertTrue(f.host.requests.isEmpty())
+                f.click(CoreForgeLayout.EXECUTE)
+                assertEquals(CoreAction.Refine(raw, 3, 1), f.host.requests.single().action)
+                assertEquals(41L, f.host.requests.single().revision)
+            }
+        }
+    }
+
+    @Test fun `material illustrations never replace required and owned figures with decorative progress`() {
+        val f = fixture(account(tier = 3))
+        f.menus.workshop(f.player)
+        val costs = assertNotNull(f.snapshot().rightPanel)
+        assertEquals("必要素材", costs.title)
+        assertEquals(3, costs.lines.count { it.art != null })
+        assertEquals(listOf("500000/2", "500000/1", "500000/2"), costs.lines.filter { it.text.startsWith("500000/") }.map { it.text })
+        assertTrue(costs.lines.filter { it.art != null }.all { it.maxWidth == 70 })
+        assertTrue(costs.lines.filter { it.text.startsWith("500000/") }.all { it.maxWidth == 88 })
+    }
+
+    @Test fun `storage keeps owned entries exact and artwork distinct across its compact cards`() {
+        val a = CoreAccount(UUID.randomUUID(), balances = mapOf(CoreMaterial(CoreResource.WOOD, 2) to 1_000_000L,
+            CoreMaterial(CoreResource.ORE, 2) to 9L, CoreMaterial(CoreResource.STONE, 2) to 1L))
+        val f = fixture(a)
+        f.menus.storage(f.player, 2)
+        val snapshot = f.snapshot()
+        assertEquals(listOf("WOOD", "ORE", "STONE"), snapshot.cards.map { it.art })
+        assertTrue(snapshot.cards.all { it.columns == 4 && it.rows == 1 })
+        assertTrue(assertNotNull(snapshot.rightPanel).lines.any { it.text == "所持 1000000" })
+        f.click(14 + 3)
+        assertTrue(assertNotNull(f.snapshot().rightPanel).lines.any { it.text == "所持 9" })
+        assertTrue(f.host.requests.isEmpty())
+    }
+
+    @Test fun `storage presents eight illustrated stacks per page without hiding exact remainders`() {
+        val a = account().let { it.copy(balances = it.balances + (CoreMaterial(CoreResource.WOOD) to 999_999L)) }
+        val f = fixture(a)
+        f.menus.storage(f.player)
+        assertEquals(8, f.snapshot().cards.size)
+        assertTrue(assertNotNull(f.snapshot().rightPanel).lines.any { it.text == "所持 999999" })
+        assertTrue(assertNotNull(f.snapshot().leftPanel).lines.any { it.text == "万以上は概数" })
+        assertTrue(f.snapshot().cards.first().label.contains("99万"))
+        assertTrue(f.host.requests.isEmpty())
+    }
+
     @Test fun `all three execute label slots dispatch the selected recipe with the displayed revision`() {
         for (offset in 0..2) {
             val f = fixture(account(tier = 2))
             f.menus.workshop(f.player, 2)
             f.click(CoreForgeLayout.Tab.REFINE.slot)
-            f.click(CoreForgeLayout.RECIPES[1] + offset)
+            f.click(CoreLoopMenus.REFINE_SLOTS[1] + offset)
             f.click(CoreForgeLayout.QUANTITIES.entries.first { it.value == CoreForgeLayout.Quantity.FIVE }.key)
             f.host.current = f.host.current.copy(revision = 99)
             f.click(CoreForgeLayout.EXECUTE + offset, right = offset == 1)
@@ -257,7 +323,7 @@ class CoreLoopMenusTest {
         capture("journal") { f.menus.journal(f.player) }
         capture("forge-enhance") { f.menus.workshop(f.player, 3); f.click(CoreForgeLayout.ARMOR); f.click(21) }
         capture("forge-refine") {
-            f.click(CoreForgeLayout.Tab.REFINE.slot); f.click(CoreForgeLayout.RECIPES[3]); f.click(48)
+            f.click(CoreForgeLayout.Tab.REFINE.slot); f.click(CoreLoopMenus.REFINE_SLOTS[3]); f.click(48)
         }
         capture("storage") { f.menus.storage(f.player, 3) }
         capture("mod") { f.menus.confirmCraft(f.player, CoreGearSlot.ARMOR, CoreCraftingCurrency.DIVINE) }
@@ -276,10 +342,27 @@ class CoreLoopMenusTest {
         listOf("left" to snapshot.leftPanel, "right" to snapshot.rightPanel).forEach { (side, panel) ->
             if (panel != null) {
                 check("$side title", panel.title, CoreMenuCanvas.PANEL_WIDTH)
-                panel.lines.forEachIndexed { index, line -> check("$side line $index", line.text, CoreMenuCanvas.PANEL_WIDTH) }
+                panel.lines.forEachIndexed { index, line -> check("$side line $index", line.text, CoreMenuCanvas.PANEL_WIDTH - if (line.art != null) 18 else 0) }
             }
         }
         snapshot.buttons.forEach { button -> check("button ${button.firstSlot}", button.label, button.span * 18 - 2 - if (button.icon) 18 else 0) }
+        val occupied = mutableSetOf<Int>()
+        snapshot.buttons.forEach { button ->
+            (button.firstSlot until button.firstSlot + button.span).forEach { if (!occupied.add(it)) add("Overlapping button $it") }
+        }
+        snapshot.cards.forEach { card ->
+            check("card ${card.firstSlot}", card.label, card.labelMaxWidth)
+            card.occupiedSlots.forEach { slot ->
+                if (slot !in 0..53) add("Card escaped top inventory: $slot")
+                if (!occupied.add(slot)) add("Overlapping card slot $slot")
+            }
+            snapshot.texts.forEach { text ->
+                val width = minOf(CoreMenuCanvas.width(text.value), text.maxWidth)
+                if (text.x < card.x + card.width && text.x + width > card.x &&
+                    text.y < card.y + card.height && text.y + CoreMenuCanvas.LINE_HEIGHT > card.y)
+                    add("Text '${text.value}' overlaps illustrated card ${card.firstSlot}")
+            }
+        }
         snapshot.texts.forEach { text -> check("text ${text.x},${text.y}", text.value, text.maxWidth) }
     }
 
