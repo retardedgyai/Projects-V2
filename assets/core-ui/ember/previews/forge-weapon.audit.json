@@ -86,8 +86,8 @@
       "where": "leftPanel.lines[7]",
       "x": -98,
       "y": 128,
-      "text": "天井 0/4",
-      "width": 37,
+      "text": "成功保証 0/4",
+      "width": 55,
       "style": "BODY"
     },
     {
@@ -150,8 +150,8 @@
       "where": "rightPanel.lines[1]",
       "x": 184,
       "y": 44,
-      "text": "所持 500000",
-      "width": 52,
+      "text": "足りる 所持500000",
+      "width": 79,
       "style": "BODY"
     },
     {
@@ -166,8 +166,8 @@
       "where": "rightPanel.lines[3]",
       "x": 184,
       "y": 72,
-      "text": "所持 500000",
-      "width": 52,
+      "text": "足りる 所持500000",
+      "width": 79,
       "style": "BODY"
     },
     {
@@ -182,8 +182,8 @@
       "where": "rightPanel.lines[5]",
       "x": 184,
       "y": 100,
-      "text": "所持 500000",
-      "width": 52,
+      "text": "足りる 所持500000",
+      "width": 79,
       "style": "BODY"
     },
     {
@@ -230,16 +230,8 @@
       "where": "card[42]",
       "x": 137,
       "y": 92,
-      "text": "素材へ",
+      "text": "入手先",
       "width": 27,
-      "style": "EMPHASIS"
-    },
-    {
-      "where": "card[51]",
-      "x": 142,
-      "y": 110,
-      "text": "強化",
-      "width": 18,
       "style": "EMPHASIS"
     },
     {
@@ -288,6 +280,14 @@
       "y": 110,
       "text": "←",
       "width": 8,
+      "style": "EMPHASIS"
+    },
+    {
+      "where": "button[51]",
+      "x": 124,
+      "y": 110,
+      "text": "強化する",
+      "width": 36,
       "style": "EMPHASIS"
     },
     {
@@ -352,12 +352,6 @@
       "x": 116,
       "y": 90,
       "art": "STORAGE",
-      "size": 16
-    },
-    {
-      "x": 116,
-      "y": 108,
-      "art": "ENHANCE",
       "size": 16
     },
     {

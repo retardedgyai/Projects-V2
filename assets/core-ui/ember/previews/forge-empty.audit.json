@@ -86,8 +86,8 @@
       "where": "leftPanel.lines[7]",
       "x": -98,
       "y": 128,
-      "text": "天井 0/4",
-      "width": 37,
+      "text": "成功保証 0/4",
+      "width": 55,
       "style": "BODY"
     },
     {
@@ -150,8 +150,8 @@
       "where": "rightPanel.lines[1]",
       "x": 184,
       "y": 44,
-      "text": "所持 0",
-      "width": 27,
+      "text": "あと2個 所持0",
+      "width": 59,
       "style": "BODY"
     },
     {
@@ -166,8 +166,8 @@
       "where": "rightPanel.lines[3]",
       "x": 184,
       "y": 72,
-      "text": "所持 0",
-      "width": 27,
+      "text": "あと1個 所持0",
+      "width": 57,
       "style": "BODY"
     },
     {
@@ -182,8 +182,8 @@
       "where": "rightPanel.lines[5]",
       "x": 184,
       "y": 100,
-      "text": "所持 0",
-      "width": 27,
+      "text": "あと2個 所持0",
+      "width": 59,
       "style": "BODY"
     },
     {
@@ -230,7 +230,7 @@
       "where": "card[42]",
       "x": 137,
       "y": 92,
-      "text": "素材へ",
+      "text": "入手先",
       "width": 27,
       "style": "EMPHASIS"
     },
@@ -286,7 +286,7 @@
       "where": "button[51]",
       "x": 124,
       "y": 110,
-      "text": "素材不足",
+      "text": "強化不可",
       "width": 36,
       "style": "EMPHASIS"
     },

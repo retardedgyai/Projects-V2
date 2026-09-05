@@ -15,7 +15,12 @@ items, hover, the inventory label and item Tooltips are deliberately not fabrica
 
 Key previews: [workpiece](previews/forge-weapon.png), [near maximum](previews/forge-near-max.png),
 [missing materials](previews/forge-empty.png), [journal](previews/journal.png),
-[storage](previews/storage.png).
+[mixed material availability](previews/forge-mixed-costs.png).
+
+Storage now uses the actual vanilla chest background and visible item stacks, with
+36 stock cells and restrained navigation-row decoration. It has no wide title-layer
+canvas, so obsolete storage canvas previews have been removed (available in Git history).
+The 13 current canvas previews include mixed shortages and the five-material catalyst case.
 
 The equipment art is a category illustration, not a live view of arbitrary item models.
 Gameplay, persistence, the in-world greatsword model, HUD and detailed gear Tooltips

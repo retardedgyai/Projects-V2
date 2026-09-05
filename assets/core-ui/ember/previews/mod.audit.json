@@ -219,14 +219,6 @@
       "style": "EMPHASIS"
     },
     {
-      "where": "card[51]",
-      "x": 142,
-      "y": 110,
-      "text": "刻印",
-      "width": 18,
-      "style": "EMPHASIS"
-    },
-    {
       "where": "button[0]",
       "x": 16,
       "y": 20,
@@ -289,6 +281,14 @@
       "text": "旧石交換",
       "width": 36,
       "style": "EMPHASIS"
+    },
+    {
+      "where": "button[51]",
+      "x": 124,
+      "y": 110,
+      "text": "刻印する",
+      "width": 36,
+      "style": "EMPHASIS"
     }
   ],
   "drawn_art": [
@@ -344,12 +344,6 @@
       "x": 116,
       "y": 90,
       "art": "GEAR",
-      "size": 16
-    },
-    {
-      "x": 116,
-      "y": 108,
-      "art": "MOD",
       "size": 16
     }
   ],

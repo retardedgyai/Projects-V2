@@ -30,8 +30,8 @@
       "where": "leftPanel.lines[0]",
       "x": -98,
       "y": 30,
-      "text": "T4 武器",
-      "width": 32,
+      "text": "T1 武器",
+      "width": 30,
       "style": "BODY"
     },
     {
@@ -46,8 +46,8 @@
       "where": "leftPanel.lines[2]",
       "x": -98,
       "y": 58,
-      "text": "116 → 119",
-      "width": 38,
+      "text": "15 → 15",
+      "width": 32,
       "style": "EMPHASIS"
     },
     {
@@ -62,8 +62,8 @@
       "where": "leftPanel.lines[4]",
       "x": -98,
       "y": 86,
-      "text": "23.2% → 24%",
-      "width": 54,
+      "text": "4.8% → 5.6%",
+      "width": 52,
       "style": "EMPHASIS"
     },
     {
@@ -78,15 +78,15 @@
       "where": "leftPanel.lines[6]",
       "x": -98,
       "y": 114,
-      "text": "成功率 1%",
-      "width": 39,
+      "text": "成功率 87.5%",
+      "width": 54,
       "style": "EMPHASIS"
     },
     {
       "where": "leftPanel.lines[7]",
       "x": -98,
       "y": 128,
-      "text": "成功保証 6/9",
+      "text": "成功保証 0/4",
       "width": 55,
       "style": "BODY"
     },
@@ -142,48 +142,48 @@
       "where": "rightPanel.lines[0]",
       "x": 202,
       "y": 30,
-      "text": "T4 金属材 ×6",
-      "width": 57,
+      "text": "T1 金属材 ×2",
+      "width": 55,
       "style": "BODY"
     },
     {
       "where": "rightPanel.lines[1]",
       "x": 184,
       "y": 44,
-      "text": "足りる 所持500000",
-      "width": 79,
+      "text": "あと1個 所持1",
+      "width": 55,
       "style": "BODY"
     },
     {
       "where": "rightPanel.lines[2]",
       "x": 202,
       "y": 58,
-      "text": "T4 板材 ×3",
-      "width": 48,
+      "text": "T1 板材 ×1",
+      "width": 44,
       "style": "BODY"
     },
     {
       "where": "rightPanel.lines[3]",
       "x": 184,
       "y": 72,
-      "text": "足りる 所持500000",
-      "width": 79,
+      "text": "足りる 所持1",
+      "width": 52,
       "style": "BODY"
     },
     {
       "where": "rightPanel.lines[4]",
       "x": 202,
       "y": 86,
-      "text": "T4 切石 ×6",
-      "width": 48,
+      "text": "T1 切石 ×2",
+      "width": 46,
       "style": "BODY"
     },
     {
       "where": "rightPanel.lines[5]",
       "x": 184,
       "y": 100,
-      "text": "足りる 所持500000",
-      "width": 79,
+      "text": "足りる 所持2",
+      "width": 54,
       "style": "BODY"
     },
     {
@@ -286,16 +286,16 @@
       "where": "button[51]",
       "x": 124,
       "y": 110,
-      "text": "強化する",
+      "text": "強化不可",
       "width": 36,
       "style": "EMPHASIS"
     },
     {
       "where": "focus.caption",
-      "x": 38,
+      "x": 43,
       "y": 100,
-      "text": "+29 → +30",
-      "width": 46,
+      "text": "+6 → +7",
+      "width": 36,
       "style": "EMPHASIS"
     }
   ],

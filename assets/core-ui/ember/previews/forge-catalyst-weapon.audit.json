@@ -30,7 +30,7 @@
       "where": "leftPanel.lines[0]",
       "x": -98,
       "y": 30,
-      "text": "T4 武器",
+      "text": "T3 武器",
       "width": 32,
       "style": "BODY"
     },
@@ -46,8 +46,8 @@
       "where": "leftPanel.lines[2]",
       "x": -98,
       "y": 58,
-      "text": "116 → 119",
-      "width": 38,
+      "text": "54 → 56",
+      "width": 36,
       "style": "EMPHASIS"
     },
     {
@@ -62,8 +62,8 @@
       "where": "leftPanel.lines[4]",
       "x": -98,
       "y": 86,
-      "text": "23.2% → 24%",
-      "width": 54,
+      "text": "13.8% → 14.6%",
+      "width": 58,
       "style": "EMPHASIS"
     },
     {
@@ -78,16 +78,16 @@
       "where": "leftPanel.lines[6]",
       "x": -98,
       "y": 114,
-      "text": "成功率 1%",
-      "width": 39,
+      "text": "成功率 100%",
+      "width": 49,
       "style": "EMPHASIS"
     },
     {
       "where": "leftPanel.lines[7]",
       "x": -98,
       "y": 128,
-      "text": "成功保証 6/9",
-      "width": 55,
+      "text": "次の強化は成功確定",
+      "width": 81,
       "style": "BODY"
     },
     {
@@ -142,8 +142,8 @@
       "where": "rightPanel.lines[0]",
       "x": 202,
       "y": 30,
-      "text": "T4 金属材 ×6",
-      "width": 57,
+      "text": "T1 金属材 ×2",
+      "width": 55,
       "style": "BODY"
     },
     {
@@ -158,8 +158,8 @@
       "where": "rightPanel.lines[2]",
       "x": 202,
       "y": 58,
-      "text": "T4 板材 ×3",
-      "width": 48,
+      "text": "T1 板材 ×1",
+      "width": 44,
       "style": "BODY"
     },
     {
@@ -174,14 +174,46 @@
       "where": "rightPanel.lines[4]",
       "x": 202,
       "y": 86,
-      "text": "T4 切石 ×6",
-      "width": 48,
+      "text": "T1 切石 ×3",
+      "width": 46,
       "style": "BODY"
     },
     {
       "where": "rightPanel.lines[5]",
       "x": 184,
       "y": 100,
+      "text": "足りる 所持500000",
+      "width": 79,
+      "style": "BODY"
+    },
+    {
+      "where": "rightPanel.lines[6]",
+      "x": 202,
+      "y": 114,
+      "text": "T1 布 ×1",
+      "width": 35,
+      "style": "BODY"
+    },
+    {
+      "where": "rightPanel.lines[7]",
+      "x": 184,
+      "y": 128,
+      "text": "足りる 所持500000",
+      "width": 79,
+      "style": "BODY"
+    },
+    {
+      "where": "rightPanel.lines[8]",
+      "x": 202,
+      "y": 142,
+      "text": "T1 刻印粉 ×2",
+      "width": 55,
+      "style": "BODY"
+    },
+    {
+      "where": "rightPanel.lines[9]",
+      "x": 184,
+      "y": 156,
       "text": "足りる 所持500000",
       "width": 79,
       "style": "BODY"
@@ -292,10 +324,10 @@
     },
     {
       "where": "focus.caption",
-      "x": 38,
+      "x": 43,
       "y": 100,
-      "text": "+29 → +30",
-      "width": 46,
+      "text": "+6 → +7",
+      "width": 36,
       "style": "EMPHASIS"
     }
   ],
@@ -316,6 +348,18 @@
       "x": 184,
       "y": 84,
       "art": "CUT_STONE",
+      "size": 16
+    },
+    {
+      "x": 184,
+      "y": 112,
+      "art": "CLOTH",
+      "size": 16
+    },
+    {
+      "x": 184,
+      "y": 140,
+      "art": "SHARD",
       "size": 16
     },
     {

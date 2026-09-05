@@ -14,6 +14,7 @@ import net.minestom.server.entity.Player
 import net.minestom.server.event.inventory.InventoryPreClickEvent
 import net.minestom.server.inventory.Inventory
 import net.minestom.server.inventory.click.Click
+import net.minestom.server.item.Material
 import net.minestom.server.network.packet.server.SendablePacket
 import net.minestom.server.network.player.GameProfile
 import net.minestom.server.network.player.PlayerConnection
@@ -112,7 +113,7 @@ class CoreLoopMenusTest {
                 try {
                     render()
                     val inventory = requireNotNull(f.player.openInventory)
-                    require((0 until 54).all { inventory.getItemStack(it).let { item -> item.isAir || item.amount() == 1 } }) {
+                    require(name.startsWith("storage") || (0 until 54).all { inventory.getItemStack(it).let { item -> item.isAir || item.amount() == 1 } }) {
                         "A projected menu item would paint its stack count over the persistent label"
                     }
                     auditSnapshot(f.snapshot()).forEach { failures += "$prefix / $name: $it" }
@@ -206,37 +207,90 @@ class CoreLoopMenusTest {
         assertEquals("必要素材", costs.title)
         assertEquals(3, costs.lines.count { it.art != null })
         assertEquals(listOf("T1 金属材 ×2", "T1 板材 ×1", "T1 切石 ×2"), costs.lines.filter { it.art != null }.map { it.text })
-        assertEquals(List(3) { "所持 500000" }, costs.lines.filter { it.text.startsWith("所持 ") }.map { it.text })
+        assertEquals(List(3) { "足りる 所持500000" }, costs.lines.filter { it.art == null }.map { it.text })
         assertTrue(costs.lines.filter { it.art != null }.all { it.maxWidth == 70 })
         assertTrue(costs.lines.filter { it.text.startsWith("所持 ") }.all { it.maxWidth == 88 })
     }
 
-    @Test fun `storage keeps owned entries exact and artwork distinct across its compact cards`() {
-        val a = CoreAccount(UUID.randomUUID(), balances = mapOf(CoreMaterial(CoreResource.WOOD, 2) to 1_000_000L,
-            CoreMaterial(CoreResource.ORE, 2) to 9L, CoreMaterial(CoreResource.STONE, 2) to 1L))
-        val f = fixture(a)
-        f.menus.storage(f.player, 2)
-        val snapshot = f.snapshot()
-        assertEquals(listOf("WOOD", "ORE", "STONE"), snapshot.cards.map { it.art })
-        assertTrue(snapshot.cards.all { it.columns == 4 && it.rows == 1 })
-        assertTrue(assertNotNull(snapshot.rightPanel).lines.any { it.text == "所持 1000000" })
-        f.click(14 + 3)
-        assertTrue(assertNotNull(f.snapshot().rightPanel).lines.any { it.text == "所持 9" })
-        assertTrue(f.host.requests.isEmpty())
+    @Test fun `storage uses visible vanilla stacks full names and exact counts without side panels`() {
+        for (packed in listOf(false, true)) {
+            val a = CoreAccount(UUID.randomUUID(), balances = mapOf(CoreMaterial(CoreResource.WOOD, 2) to 1_000_000L,
+                CoreMaterial(CoreResource.ORE, 2) to 9L, CoreMaterial(CoreResource.STONE, 2) to 1L))
+            val f = fixture(a, packed)
+            f.menus.storage(f.player, 2)
+            val inventory = assertNotNull(f.player.openInventory)
+            assertEquals("素材倉庫 / T2", f.title())
+            assertFalse(plain((inventory as Inventory).title).any { it.code in 0xE000..0xF8FF })
+            assertNull(f.snapshot().leftPanel)
+            assertNull(f.snapshot().rightPanel)
+            assertTrue(f.snapshot().cards.isEmpty())
+            assertEquals(listOf(Material.OAK_LOG, Material.RAW_IRON, Material.COBBLESTONE),
+                (9..11).map { inventory.getItemStack(it).material() })
+            assertEquals(listOf(64, 9, 1), (9..11).map { inventory.getItemStack(it).amount() })
+            assertTrue((12..44).all { inventory.getItemStack(it).isAir })
+            assertTrue(inventory.getItemStack(9).get(DataComponents.LORE).orEmpty().any { plain(it) == "所持 1000000 個" })
+            val before = f.host.current
+            f.click(10)
+            assertTrue(f.title().contains("精製"))
+            assertTrue(f.host.requests.isEmpty())
+            assertEquals(before, f.host.current)
+        }
     }
 
-    @Test fun `storage presents eight illustrated stacks per page without hiding exact remainders`() {
+    @Test fun `storage shows up to thirty six owned kinds and keeps empty cells empty`() {
         val a = account().let { it.copy(balances = it.balances + (CoreMaterial(CoreResource.WOOD) to 999_999L)) }
         val f = fixture(a)
         f.menus.storage(f.player)
-        assertEquals(8, f.snapshot().cards.size)
-        assertTrue(assertNotNull(f.snapshot().rightPanel).lines.any { it.text == "所持 999999" })
-        assertFalse(assertNotNull(f.snapshot().leftPanel).lines.any { it.text.contains("概数") || it.text.contains("表示") })
-        assertTrue(f.snapshot().cards.first().label.contains("99万"))
-        f.click(8)
-        assertTrue(assertNotNull(f.snapshot().rightPanel).lines.any { it.text == "万以上の一覧は概数" })
-        assertTrue(assertNotNull(f.snapshot().rightPanel).lines.any { it.text == "右の個数は常に正確" })
+        val inventory = assertNotNull(f.player.openInventory)
+        val entries = CoreStorageView.entries(a, 1)
+        assertEquals(entries.size.coerceAtMost(36), (9..44).count { !inventory.getItemStack(it).isAir })
+        assertTrue(inventory.getItemStack(9).get(DataComponents.LORE).orEmpty().any { plain(it) == "所持 999999 個" })
+        assertTrue(inventory.getItemStack(8).get(DataComponents.LORE).orEmpty().any { plain(it).contains("最大64") })
+        f.click(6)
+        assertEquals("素材倉庫 / T4", f.title())
         assertTrue(f.host.requests.isEmpty())
+        val empty = fixture(account(wealthy = false))
+        empty.menus.storage(empty.player)
+        val emptyInventory = assertNotNull(empty.player.openInventory)
+        assertEquals(listOf(22), (9..44).filter { !emptyInventory.getItemStack(it).isAir })
+        empty.click(22)
+        assertTrue(empty.host.requests.isEmpty())
+    }
+
+    @Test fun `storage cancels transfers and field shortcuts never spend or navigate to the forge`() {
+        val a = account()
+        val run = CoreActiveRun(UUID.randomUUID(), a.maps.first())
+        val f = fixture(a.copy(activeRun = run, maps = a.maps.drop(1)))
+        f.menus.storage(f.player)
+        val inventory = assertNotNull(f.player.openInventory)
+        val before = inventory.getItemStack(9)
+        val shift = InventoryPreClickEvent(inventory, f.player, Click.LeftShift(9))
+        assertTrue(f.menus.click(shift))
+        assertTrue(shift.isCancelled)
+        f.click(9)
+        f.click(53)
+        assertEquals("素材倉庫 / T1", f.title())
+        assertEquals(before, inventory.getItemStack(9))
+        assertTrue(f.host.requests.isEmpty())
+    }
+
+    @Test fun `mixed cost availability shows exact shortfall and reaching it enables the full execution verb`() {
+        val a = account(wealthy = false).copy(balances = mapOf(
+            CoreMaterial(CoreResource.INGOT) to 1L, CoreMaterial(CoreResource.BOARD) to 1L,
+            CoreMaterial(CoreResource.STONE_BLOCK) to 2L))
+        val f = fixture(a)
+        f.menus.workshop(f.player)
+        val panel = assertNotNull(f.snapshot().rightPanel)
+        assertEquals(2, panel.lines.count { it.text.startsWith("足りる ") })
+        assertEquals(1, panel.lines.count { it.text == "あと1個 所持1" })
+        assertEquals("強化不可", f.snapshot().buttons.single { it.firstSlot == 51 }.label)
+        f.click(51)
+        assertTrue(f.host.requests.isEmpty())
+        f.host.current = a.copy(balances = a.balances + (CoreMaterial(CoreResource.INGOT) to 2L))
+        f.menus.refreshTheme(f.player)
+        assertEquals("強化する", f.snapshot().buttons.single { it.firstSlot == 51 }.label)
+        assertEquals("PRIMARY", f.snapshot().buttons.single { it.firstSlot == 51 }.tone)
+        assertEquals(3, assertNotNull(f.snapshot().rightPanel).lines.count { it.text.startsWith("足りる ") })
     }
 
     @Test fun `the complete anvil subject opens equipment detail without spending or showing repeated item models`() {
@@ -301,14 +355,14 @@ class CoreLoopMenusTest {
             val f = fixture(account(wealthy = false, maximum = maximum))
             f.menus.workshop(f.player)
             val snapshot = f.snapshot()
-            assertEquals(if (maximum) "最大強化" else "素材不足", snapshot.buttons.single { it.firstSlot == 51 }.label)
-            assertEquals("DISABLED", snapshot.buttons.single { it.firstSlot == 51 }.tone)
+            assertEquals(if (maximum) "最大強化" else "強化不可", snapshot.buttons.single { it.firstSlot == 51 }.label)
+            assertEquals(if (maximum) "DISABLED" else "DANGER", snapshot.buttons.single { it.firstSlot == 51 }.tone)
             if (maximum) {
                 assertEquals("+30", snapshot.focus?.caption)
                 assertTrue(assertNotNull(snapshot.leftPanel).lines.any { it.text == "最大強化 +30" })
                 assertTrue(assertNotNull(snapshot.rightPanel).lines.any { it.text == "消費なし" })
             } else {
-                assertTrue(assertNotNull(snapshot.rightPanel).lines.filter { it.art == null }.all { it.text == "所持 0" })
+                assertEquals(listOf("あと2個 所持0", "あと1個 所持0", "あと2個 所持0"), assertNotNull(snapshot.rightPanel).lines.filter { it.art == null }.map { it.text })
             }
             for (slot in 51..53) f.click(slot)
             assertTrue(f.host.requests.isEmpty())
@@ -321,7 +375,7 @@ class CoreLoopMenusTest {
             f.menus.workshop(f.player)
             val snapshot = f.snapshot()
             val panel = assertNotNull(snapshot.leftPanel)
-            if (failures == 2) assertTrue(panel.lines.any { it.text == "天井 2/4" })
+            if (failures == 2) assertTrue(panel.lines.any { it.text == "成功保証 2/4" })
             else {
                 assertTrue(panel.lines.any { it.text == "成功率 100%" && it.style == "EMPHASIS" })
                 assertTrue(panel.lines.any { it.text == "次の強化は成功確定" })
@@ -385,9 +439,9 @@ class CoreLoopMenusTest {
         }
     }
 
-    @Test fun `theme refresh keeps storage tier page and selected detail`() {
+    @Test fun `theme refresh keeps native storage tier and page`() {
         val f = fixture(account(tier = 3))
-        f.menus.storage(f.player, 3, 1, 2)
+        f.menus.storage(f.player, 3, 1)
         val title = f.title()
         f.host.usePack = false
         f.menus.refreshTheme(f.player)
@@ -425,20 +479,23 @@ class CoreLoopMenusTest {
         capture("journal") { f.menus.journal(f.player) }
         capture("forge-enhance") { f.menus.workshop(f.player, 3); f.click(CoreForgeLayout.ARMOR); f.click(CoreLoopMenus.ENHANCE_CATALYST) }
         capture("forge-weapon") { f.click(CoreForgeLayout.WEAPON); f.click(CoreLoopMenus.ENHANCE_STANDARD) }
+        capture("forge-catalyst-weapon") { f.click(CoreLoopMenus.ENHANCE_CATALYST) }
         capture("forge-refine") {
             f.click(CoreForgeLayout.Tab.REFINE.slot); f.click(CoreLoopMenus.REFINE_SLOTS[3]); f.click(48)
         }
-        capture("storage") { f.menus.storage(f.player, 3) }
         capture("mod") { f.menus.confirmCraft(f.player, CoreGearSlot.ARMOR, CoreCraftingCurrency.DIVINE) }
         capture("craft") { f.click(CoreForgeLayout.Tab.CRAFT.slot); f.click(CoreForgeLayout.RECIPES[2]); f.click(48) }
         val empty = fixture(account(wealthy = false))
+        val mixed = fixture(account(wealthy = false).copy(balances = mapOf(
+            CoreMaterial(CoreResource.INGOT) to 1L, CoreMaterial(CoreResource.BOARD) to 1L,
+            CoreMaterial(CoreResource.STONE_BLOCK) to 2L)))
         val maximum = fixture(account(tier = 4, maximum = true))
         val failed = fixture(account(tier = 3).copy(weaponEnhancement = CoreEnhancementState(6, 2)))
         val guaranteed = fixture(account(tier = 3).copy(weaponEnhancement = CoreEnhancementState(6, 4)))
         val nearMaximum = fixture(account(tier = 4).copy(weaponEnhancement = CoreEnhancementState(29, 6)))
         for ((name, subject, render) in listOf(
             Triple("forge-empty", empty) { empty.menus.workshop(empty.player, 1) },
-            Triple("storage-empty", empty) { empty.menus.storage(empty.player, 1) },
+            Triple("forge-mixed-costs", mixed) { mixed.menus.workshop(mixed.player, 1) },
             Triple("forge-max", maximum) { maximum.menus.workshop(maximum.player, 4) },
             Triple("forge-after-failure", failed) { failed.menus.workshop(failed.player, 3) },
             Triple("forge-guaranteed", guaranteed) { guaranteed.menus.workshop(guaranteed.player, 3) },
