@@ -3,6 +3,7 @@ package dev.projects.server.coreloop
 import com.google.gson.GsonBuilder
 import dev.projects.server.coreloop.ui.CoreForgeLayout
 import dev.projects.server.coreloop.ui.CoreMenuCanvas
+import dev.projects.server.coreloop.ui.CoreMenuCanvas.TextStyle
 import dev.projects.server.questmap.*
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.TextComponent
@@ -125,6 +126,7 @@ class CoreLoopMenusTest {
                         for (panel in listOfNotNull(f.snapshot().leftPanel, f.snapshot().rightPanel)) {
                             require(panel.lines.all { fallback.contains(it.text) }) { "Fallback book lost visible panel facts" }
                         }
+                        f.snapshot().focus?.let { require(fallback.contains(it.caption)) { "Fallback book lost the enhancement target" } }
                     }
                 }
                 catch (error: Exception) { failures += "$prefix / $name: ${error.message}" }
@@ -203,9 +205,10 @@ class CoreLoopMenusTest {
         val costs = assertNotNull(f.snapshot().rightPanel)
         assertEquals("必要素材", costs.title)
         assertEquals(3, costs.lines.count { it.art != null })
-        assertEquals(listOf("500000/2", "500000/1", "500000/2"), costs.lines.filter { it.text.startsWith("500000/") }.map { it.text })
+        assertEquals(listOf("T1 金属材 ×2", "T1 板材 ×1", "T1 切石 ×2"), costs.lines.filter { it.art != null }.map { it.text })
+        assertEquals(List(3) { "所持 500000" }, costs.lines.filter { it.text.startsWith("所持 ") }.map { it.text })
         assertTrue(costs.lines.filter { it.art != null }.all { it.maxWidth == 70 })
-        assertTrue(costs.lines.filter { it.text.startsWith("500000/") }.all { it.maxWidth == 88 })
+        assertTrue(costs.lines.filter { it.text.startsWith("所持 ") }.all { it.maxWidth == 88 })
     }
 
     @Test fun `storage keeps owned entries exact and artwork distinct across its compact cards`() {
@@ -228,9 +231,108 @@ class CoreLoopMenusTest {
         f.menus.storage(f.player)
         assertEquals(8, f.snapshot().cards.size)
         assertTrue(assertNotNull(f.snapshot().rightPanel).lines.any { it.text == "所持 999999" })
-        assertTrue(assertNotNull(f.snapshot().leftPanel).lines.any { it.text == "万以上は概数" })
+        assertFalse(assertNotNull(f.snapshot().leftPanel).lines.any { it.text.contains("概数") || it.text.contains("表示") })
         assertTrue(f.snapshot().cards.first().label.contains("99万"))
+        f.click(8)
+        assertTrue(assertNotNull(f.snapshot().rightPanel).lines.any { it.text == "万以上の一覧は概数" })
+        assertTrue(assertNotNull(f.snapshot().rightPanel).lines.any { it.text == "右の個数は常に正確" })
         assertTrue(f.host.requests.isEmpty())
+    }
+
+    @Test fun `the complete anvil subject opens equipment detail without spending or showing repeated item models`() {
+        for (packed in listOf(false, true)) for (gear in CoreGearSlot.entries) for (slot in CoreLoopMenus.ENHANCE_FOCUS_SLOTS) {
+            val f = fixture(account(tier = 3, fullMods = true), packed)
+            f.menus.workshop(f.player, 3)
+            if (gear == CoreGearSlot.ARMOR) f.click(CoreForgeLayout.ARMOR)
+            val snapshot = f.snapshot()
+            val focus = assertNotNull(snapshot.focus)
+            assertEquals(CoreLoopMenus.ENHANCE_FOCUS_SLOTS, focus.reservedSlots)
+            assertEquals(if (gear == CoreGearSlot.WEAPON) "WEAPON" else "ARMOR", focus.artPlacement.art)
+            assertEquals(48, focus.artPlacement.size)
+            assertEquals("+6 → +7", focus.caption)
+            assertNull(snapshot.leftPanel?.hero)
+            val back = snapshot.buttons.single { it.firstSlot == CoreForgeLayout.BACK }
+            assertEquals(1, back.span)
+            assertEquals("←", back.label)
+            assertTrue(snapshot.cards.none { card -> card.occupiedSlots.any { it in CoreLoopMenus.ENHANCE_FOCUS_SLOTS } })
+            val expected = CoreLoopItems.gear(f.host.current, gear, packed)
+            val projected = assertNotNull(f.player.openInventory).getItemStack(slot)
+            assertEquals(expected.get(DataComponents.LORE), projected.get(DataComponents.LORE))
+            assertEquals(expected.get(DataComponents.CUSTOM_NAME), projected.get(DataComponents.CUSTOM_NAME))
+            if (packed) assertEquals("projects:core_ui/blank", projected.get(DataComponents.ITEM_MODEL))
+            f.click(slot, right = slot % 2 == 0)
+            assertEquals("装備 / MOD詳細", f.snapshot().title)
+            assertTrue(f.host.requests.isEmpty())
+        }
+    }
+
+    @Test fun `every catalyst and standard control keeps preview and dispatched enhancement mode in sync`() {
+        for (gear in CoreGearSlot.entries) for (offset in 0..2) for (focused in listOf(false, true)) {
+            val f = fixture(account(tier = 3))
+            f.menus.workshop(f.player, 3)
+            if (gear == CoreGearSlot.ARMOR) f.click(CoreForgeLayout.ARMOR)
+            f.click(CoreLoopMenus.ENHANCE_CATALYST + offset)
+            if (!focused) f.click(CoreLoopMenus.ENHANCE_STANDARD + offset)
+            val mode = if (focused) CoreEnhancementMode.FOCUSED else CoreEnhancementMode.STANDARD
+            val quote = CoreEnhancementCatalog.quote(f.host.current, gear, mode)
+            val panel = assertNotNull(f.snapshot().leftPanel)
+            val chance = quote.successChancePercent.toString().removeSuffix(".0")
+            assertTrue(panel.lines.any { it.text == "成功率 $chance%" && it.style == "EMPHASIS" })
+            val upgraded = if (gear == CoreGearSlot.WEAPON) f.host.current.copy(weaponEnhancement = CoreEnhancementState(7))
+                else f.host.current.copy(armorEnhancement = CoreEnhancementState(7))
+            val stat = if (gear == CoreGearSlot.WEAPON) "${CoreWeaponPresentation.damage(f.host.current)} → ${CoreWeaponPresentation.damage(upgraded)}"
+                else "${CoreWeaponPresentation.health(f.host.current)} → ${CoreWeaponPresentation.health(upgraded)}"
+            assertTrue(panel.lines.any { it.text == stat && it.style == "EMPHASIS" })
+            assertTrue(panel.lines.any { it.text == "素材は毎回消費" })
+            assertTrue(panel.lines.any { it.text == "失敗でも装備は保護" })
+            assertTrue(panel.lines.any { it.text == "強化値・MODも維持" })
+            val costs = assertNotNull(f.snapshot().rightPanel)
+            assertEquals(quote.recipe.costs.size, costs.lines.count { it.art != null })
+            assertEquals(quote.recipe.costs.values.map { "×$it" }, costs.lines.filter { it.art != null }.map { it.text.substringAfterLast(' ') })
+            assertTrue(f.host.requests.isEmpty())
+            f.click(CoreForgeLayout.EXECUTE + offset)
+            assertEquals(CoreAction.EnhanceEquipment(gear, mode), f.host.requests.single().action)
+            assertEquals(41L, f.host.requests.single().revision)
+        }
+    }
+
+    @Test fun `shortage and maximum state explain why enhancement cannot execute and never spend`() {
+        for (maximum in listOf(false, true)) {
+            val f = fixture(account(wealthy = false, maximum = maximum))
+            f.menus.workshop(f.player)
+            val snapshot = f.snapshot()
+            assertEquals(if (maximum) "最大強化" else "素材不足", snapshot.buttons.single { it.firstSlot == 51 }.label)
+            assertEquals("DISABLED", snapshot.buttons.single { it.firstSlot == 51 }.tone)
+            if (maximum) {
+                assertEquals("+30", snapshot.focus?.caption)
+                assertTrue(assertNotNull(snapshot.leftPanel).lines.any { it.text == "最大強化 +30" })
+                assertTrue(assertNotNull(snapshot.rightPanel).lines.any { it.text == "消費なし" })
+            } else {
+                assertTrue(assertNotNull(snapshot.rightPanel).lines.filter { it.art == null }.all { it.text == "所持 0" })
+            }
+            for (slot in 51..53) f.click(slot)
+            assertTrue(f.host.requests.isEmpty())
+        }
+    }
+
+    @Test fun `failure progress remains visible and pity guarantee disables unnecessary catalyst spending`() {
+        for (failures in listOf(2, 4)) {
+            val f = fixture(account(tier = 3).copy(weaponEnhancement = CoreEnhancementState(6, failures)))
+            f.menus.workshop(f.player)
+            val snapshot = f.snapshot()
+            val panel = assertNotNull(snapshot.leftPanel)
+            if (failures == 2) assertTrue(panel.lines.any { it.text == "天井 2/4" })
+            else {
+                assertTrue(panel.lines.any { it.text == "成功率 100%" && it.style == "EMPHASIS" })
+                assertTrue(panel.lines.any { it.text == "次の強化は成功確定" })
+                assertEquals("DISABLED", snapshot.cards.single { it.firstSlot == CoreLoopMenus.ENHANCE_CATALYST }.tone)
+                for (slot in CoreLoopMenus.ENHANCE_CATALYST..CoreLoopMenus.ENHANCE_CATALYST + 2) f.click(slot)
+                assertEquals(3, assertNotNull(f.snapshot().rightPanel).lines.count { it.art != null })
+            }
+            assertTrue(f.host.requests.isEmpty())
+            f.click(CoreForgeLayout.EXECUTE)
+            assertEquals(CoreAction.EnhanceEquipment(CoreGearSlot.WEAPON), f.host.requests.single().action)
+        }
     }
 
     @Test fun `all three execute label slots dispatch the selected recipe with the displayed revision`() {
@@ -321,7 +423,8 @@ class CoreLoopMenusTest {
             auditSnapshot(snapshot).forEach { failures += "$name: $it" }
         }
         capture("journal") { f.menus.journal(f.player) }
-        capture("forge-enhance") { f.menus.workshop(f.player, 3); f.click(CoreForgeLayout.ARMOR); f.click(21) }
+        capture("forge-enhance") { f.menus.workshop(f.player, 3); f.click(CoreForgeLayout.ARMOR); f.click(CoreLoopMenus.ENHANCE_CATALYST) }
+        capture("forge-weapon") { f.click(CoreForgeLayout.WEAPON); f.click(CoreLoopMenus.ENHANCE_STANDARD) }
         capture("forge-refine") {
             f.click(CoreForgeLayout.Tab.REFINE.slot); f.click(CoreLoopMenus.REFINE_SLOTS[3]); f.click(48)
         }
@@ -330,10 +433,16 @@ class CoreLoopMenusTest {
         capture("craft") { f.click(CoreForgeLayout.Tab.CRAFT.slot); f.click(CoreForgeLayout.RECIPES[2]); f.click(48) }
         val empty = fixture(account(wealthy = false))
         val maximum = fixture(account(tier = 4, maximum = true))
+        val failed = fixture(account(tier = 3).copy(weaponEnhancement = CoreEnhancementState(6, 2)))
+        val guaranteed = fixture(account(tier = 3).copy(weaponEnhancement = CoreEnhancementState(6, 4)))
+        val nearMaximum = fixture(account(tier = 4).copy(weaponEnhancement = CoreEnhancementState(29, 6)))
         for ((name, subject, render) in listOf(
             Triple("forge-empty", empty) { empty.menus.workshop(empty.player, 1) },
             Triple("storage-empty", empty) { empty.menus.storage(empty.player, 1) },
             Triple("forge-max", maximum) { maximum.menus.workshop(maximum.player, 4) },
+            Triple("forge-after-failure", failed) { failed.menus.workshop(failed.player, 3) },
+            Triple("forge-guaranteed", guaranteed) { guaranteed.menus.workshop(guaranteed.player, 3) },
+            Triple("forge-near-max", nearMaximum) { nearMaximum.menus.workshop(nearMaximum.player, 4) },
         )) {
             render()
             Files.writeString(output.resolve("$name.json"), gson.toJson(subject.snapshot()))
@@ -345,37 +454,49 @@ class CoreLoopMenusTest {
     }
 
     private fun auditSnapshot(snapshot: CoreMenuCanvas.Snapshot): List<String> = buildList {
-        fun check(label: String, value: String, width: Int) {
-            if (CoreMenuCanvas.width(value) > width) add("$label exceeds $width px: '$value' (${CoreMenuCanvas.width(value)})")
+        fun check(label: String, value: String, width: Int, style: TextStyle = TextStyle.BODY) {
+            if (CoreMenuCanvas.width(value, style) > width) add("$label exceeds $width px: '$value' (${CoreMenuCanvas.width(value, style)})")
             val missing = CoreMenuCanvas.missingCharacters(value)
             if (missing.isNotEmpty()) add("$label has missing glyphs: ${missing.map { "U+${it.toString(16)}" }} '$value'")
         }
-        check("title", snapshot.title, 160)
+        check("title", snapshot.title, 160, TextStyle.EMPHASIS)
         listOf("left" to snapshot.leftPanel, "right" to snapshot.rightPanel).forEach { (side, panel) ->
             if (panel != null) {
-                check("$side title", panel.title, CoreMenuCanvas.PANEL_WIDTH)
-                panel.lines.forEachIndexed { index, line -> check("$side line $index", line.text, CoreMenuCanvas.PANEL_WIDTH - if (line.art != null) 18 else 0) }
+                check("$side title", panel.title, CoreMenuCanvas.PANEL_WIDTH, TextStyle.EMPHASIS)
+                panel.lines.forEachIndexed { index, line -> check("$side line $index", line.text, line.maxWidth, TextStyle.valueOf(line.style)) }
             }
         }
-        snapshot.buttons.forEach { button -> check("button ${button.firstSlot}", button.label, button.span * 18 - 2 - if (button.icon) 18 else 0) }
+        snapshot.buttons.forEach { button -> check("button ${button.firstSlot}", button.label, button.span * 18 - 2 - if (button.icon) 18 else 0, TextStyle.EMPHASIS) }
         val occupied = mutableSetOf<Int>()
         snapshot.buttons.forEach { button ->
             (button.firstSlot until button.firstSlot + button.span).forEach { if (!occupied.add(it)) add("Overlapping button $it") }
         }
         snapshot.cards.forEach { card ->
-            check("card ${card.firstSlot}", card.label, card.labelMaxWidth)
+            check("card ${card.firstSlot}", card.label, card.labelMaxWidth, TextStyle.EMPHASIS)
             card.occupiedSlots.forEach { slot ->
                 if (slot !in 0..53) add("Card escaped top inventory: $slot")
                 if (!occupied.add(slot)) add("Overlapping card slot $slot")
             }
             snapshot.texts.forEach { text ->
-                val width = minOf(CoreMenuCanvas.width(text.value), text.maxWidth)
+                val width = minOf(CoreMenuCanvas.width(text.value, TextStyle.valueOf(text.style)), text.maxWidth)
                 if (text.x < card.x + card.width && text.x + width > card.x &&
                     text.y < card.y + card.height && text.y + CoreMenuCanvas.LINE_HEIGHT > card.y)
                     add("Text '${text.value}' overlaps illustrated card ${card.firstSlot}")
             }
         }
-        snapshot.texts.forEach { text -> check("text ${text.x},${text.y}", text.value, text.maxWidth) }
+        snapshot.focus?.let { focus ->
+            check("focus caption", focus.caption, focus.captionMaxWidth, TextStyle.valueOf(focus.style))
+            focus.reservedSlots.forEach { slot -> if (!occupied.add(slot)) add("Focus overlaps control $slot") }
+            val captionWidth = CoreMenuCanvas.width(focus.caption, TextStyle.valueOf(focus.style))
+            snapshot.buttons.forEach { button ->
+                val x = 8 + button.firstSlot % 9 * 18
+                val y = 18 + button.firstSlot / 9 * 18
+                if (focus.captionX < x + button.span * 18 - 2 && focus.captionX + captionWidth > x &&
+                    focus.captionY < y + 16 && focus.captionY + CoreMenuCanvas.LINE_HEIGHT > y)
+                    add("Enhancement level caption overlaps button ${button.firstSlot}")
+            }
+        }
+        snapshot.texts.forEach { text -> check("text ${text.x},${text.y}", text.value, text.maxWidth, TextStyle.valueOf(text.style)) }
     }
 
     companion object {
