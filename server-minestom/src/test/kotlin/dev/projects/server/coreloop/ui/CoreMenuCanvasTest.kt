@@ -76,4 +76,36 @@ class CoreMenuCanvasTest {
         assertFailsWith<IllegalArgumentException> { CoreMenuCanvas("工房").text(250, 30, "不正", maxWidth = 88) }
         assertFailsWith<IllegalArgumentException> { CoreMenuCanvas("工房").text(0, 222, "不正") }
     }
+
+    @Test fun `snapshot contains actual Unicode and RGB values without mutable references`() {
+        val canvas = CoreMenuCanvas("工房")
+        canvas.left("材料", listOf(CoreMenuCanvas.Line("木材 1 / 2", CoreUiComponents.RED)))
+        canvas.button(9, 3, "木材", CoreMenuCanvas.Tone.DANGER, icon = true)
+        canvas.text(8, 19, "素材を補充", maxWidth = 160)
+        val snapshot = canvas.snapshot()
+        assertEquals("工房", snapshot.title)
+        assertEquals(CoreUiComponents.GOLD.value(), snapshot.titleColor)
+        assertEquals(CoreUiComponents.RED.value(), snapshot.leftPanel!!.lines.single().color)
+        assertEquals("木材 1 / 2", snapshot.leftPanel.lines.single().text)
+        assertEquals("DANGER", snapshot.buttons.single().tone)
+        assertTrue(snapshot.buttons.single().icon)
+        assertEquals(20, snapshot.texts.single().y)
+        canvas.left("材料", listOf(CoreMenuCanvas.Line("木材 2 / 2")))
+        assertEquals("木材 1 / 2", snapshot.leftPanel.lines.single().text)
+        assertEquals("木材 2 / 2", canvas.snapshot().leftPanel!!.lines.single().text)
+    }
+
+    @Test fun `pack declined information retains every untruncated source line but excludes action labels`() {
+        val original = "必要な素材を保管庫から使って強化します"
+        val canvas = CoreMenuCanvas("工房").apply {
+            left("選択内容", listOf(CoreMenuCanvas.Line(original)))
+            right("必要素材", listOf(CoreMenuCanvas.Line("木材 1000000 / 256")))
+            text(8, 38, "追加の説明", maxWidth = 160)
+            button(51, 3, "強化する", CoreMenuCanvas.Tone.PRIMARY)
+        }
+        val fallback = canvas.fallbackLines()
+        assertEquals(listOf("工房", "", "選択内容", original, "", "必要素材", "木材 1000000 / 256", "", "追加の説明"), fallback)
+        assertFalse(fallback.any { it.contains('…') || it.any { char -> char.code in 0xE000..0xF8FF } })
+        assertFalse("強化する" in fallback)
+    }
 }
