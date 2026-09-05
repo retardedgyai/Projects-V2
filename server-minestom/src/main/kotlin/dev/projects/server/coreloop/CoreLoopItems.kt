@@ -48,7 +48,7 @@ internal object CoreLoopItems {
     }
 
     fun resource(material: CoreMaterial, count: Long): ItemStack = icon(resourceMaterial(material.resource), material.displayName,
-        "倉庫：$count 個", "素材は採取・討伐時に自動で保存されます", color = colors[material.tier - 1])
+        "倉庫：$count 個", if (material.resource.raw) "採取、または市場で購入して入手" else if (material.resource in CoreLoopCatalog.refined.values) "採取素材を精製、または市場で購入" else "遠征や工房で入手 / 自動保管", color = colors[material.tier - 1])
         .withAmount(count.coerceIn(1, 64).toInt())
 
     fun weapon(tier: Int): ItemStack = icon(listOf(Material.STONE_SWORD, Material.IRON_SWORD, Material.DIAMOND_SWORD, Material.NETHERITE_SWORD)[tier - 1],
@@ -83,7 +83,9 @@ internal object CoreLoopItems {
             typeLabel = (if (slot == CoreGearSlot.WEAPON) "両手剣" else "防具セット") + " · 強化 +${enhancement.level}/30",
             stats = rows, affixes = account.equippedAffixes.filter { it.gear == slot }.sortedBy { it.index }.map { affixModel(it.stone) },
             modCapacity = CoreAffixCatalog.capacity(account, slot),
-            footer = listOf("能力欄は強化と装備全体のMODを反映", "マジック：接頭1＋接尾1 / レア：接頭3＋接尾3", if (slot == CoreGearSlot.WEAPON) "左：3段斬撃 / 右：踏み込み / F：回避" else "防具MODはセット全体に1回適用", "強化・Tier更新でもMODと強化値を保持")), packed)
+            footer = listOf("整備度 ${CoreEconomy.condition(account, slot)}/100 / 装備庫で整備",
+                if (CoreEconomy.condition(account, slot) == 0) "整備不足で性能低下 / 予備装備1個で回復" else "MOD・強化値は装備ごとに保持",
+                "能力欄は強化と装備全体のMODを反映", "マジック：接頭1＋接尾1 / レア：接頭3＋接尾3", if (slot == CoreGearSlot.WEAPON) "左：3段斬撃 / 右：踏み込み / F：回避" else "防具MODはセット全体に1回適用")), packed)
     }
 
     fun affixModel(stone: CoreAffixStone): CoreTooltipAffix {

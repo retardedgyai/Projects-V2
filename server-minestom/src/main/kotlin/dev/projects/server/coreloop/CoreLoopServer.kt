@@ -94,6 +94,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
     }
 
     override fun account(player: Player): CoreAccount? = accounts[player.uuid]
+    override fun market(): List<CoreMarketEntry> = ledger.marketSnapshot()
     override fun packed(player: Player): Boolean = uiPack?.enabled(player) == true
     override fun isDeparting(player: Player): Boolean = departing.containsKey(player.uuid)
 
@@ -311,6 +312,8 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
                 ?: return@supplyAsync CoreTransactionResult(CoreTransactionStatus.UNAVAILABLE, null, "データを読み込めません")
             ledger.transact(playerId, CoreOperation(UUID.randomUUID(), revision ?: current.revision, action)).also { result ->
                 result.account?.let { accounts[playerId] = it }
+                if (action is CoreAction.BuyOffer && result.successful)
+                    ledger.snapshot(action.seller)?.let { accounts[action.seller] = it }
             }
         }, io)
 
@@ -680,7 +683,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
                             sessions.remove(player.uuid, session)
                             session.arena?.dispose()
                             actors[player.uuid]?.reset(); refresh(player)
-                            player.sendMessage(CoreLoopItems.text("素材倉庫 → 補給所 → 工房 → 地図台。次の遠征に備えよう。", NamedTextColor.GOLD))
+                            player.sendMessage(CoreLoopItems.text("採取素材を精製 → 工房で装備を制作 → 装備庫から使う・売る。市場で素材の売買もできます。", NamedTextColor.GOLD))
                             menus.journal(player)
                             println("CORE_RUN_RETURNED player=${player.username} run=${session.runId}")
                         } else {
@@ -741,7 +744,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
     fun nextSteps(a: CoreAccount): List<String> = when {
         a.currencies.values.any { it > 0 } && a.equippedAffixes.isEmpty() -> listOf("刻印工房でオーブを使い、MODを抽選", "変成でマジック / 錬金でレア装備へ")
         a.fragments.values.any { it >= 3 } -> listOf("欠片が集まった！境界の試練に挑戦", "専用ボスから特別な加工オーブを狙おう")
-        a.weaponTier < a.unlockedMapTier -> listOf("工房でT${a.weaponTier + 1}装備を作ろう", "足りない素材は採取、または補給所で交換")
+        a.weaponTier < a.unlockedMapTier -> listOf("工房で装備を作り、装備庫から装備しよう", "足りない素材は採取、または市場で購入")
         a.weaponTier == 4 && a.armorTier == 4 -> listOf("T4装備完成！石板で地図を調整", "密集地域や高Tierの資源を狙って周回しよう")
         else -> listOf("地図台で地図を選び、遠征へ", "ボス討伐で次Tierの地図を解放")
     }

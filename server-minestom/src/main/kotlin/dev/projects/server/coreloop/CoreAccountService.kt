@@ -5,11 +5,19 @@ import java.security.MessageDigest
 import java.util.UUID
 
 /** Call from the hub's dedicated serial executor; no Minecraft objects or tick-thread I/O. */
-class CoreAccountService(private val repository: CoreAccountRepository) {
+class CoreAccountService(private val repository: CoreAccountRepository,
+    private val epochDay: () -> Long = { java.time.LocalDate.now(java.time.ZoneOffset.UTC).toEpochDay() }) {
     private val accounts = mutableMapOf<UUID, CoreAccount>()
+    @Volatile private var market = emptyList<CoreMarketEntry>()
+    fun marketSnapshot(): List<CoreMarketEntry> = market
+    private fun refreshMarket() {
+        market = repository.marketAccounts().flatMap { a -> a.offers.map { CoreMarketEntry(a.playerId, it,
+            it.gearId?.let { id -> a.storedGear.single { gear -> gear.identity.id == id } }) } }
+    }
 
     @Synchronized
     fun open(playerId: UUID): CoreAccountLoadResult {
+        runCatching { refreshMarket() }.getOrElse { return CoreAccountLoadResult.Invalid("市場の取引を復旧できません") }
         accounts[playerId]?.let { return CoreAccountLoadResult.Ready(it, false) }
         return when (val result = repository.load(playerId)) {
             CoreRepositoryLoad.Missing -> CoreAccount(playerId).let {
@@ -47,6 +55,7 @@ class CoreAccountService(private val repository: CoreAccountRepository) {
         if (current.receipts.size >= CoreLoopCatalog.MAX_RECEIPTS || current.revision == Long.MAX_VALUE) {
             return CoreTransactionResult(CoreTransactionStatus.REJECTED, current, "保存履歴の上限に達しました。管理者に連絡してください")
         }
+        if (operation.action is CoreAction.BuyOffer) return buy(current, operation, fingerprint)
         val proposal = runCatching { apply(current, operation.action, operation.requestId) }.getOrElse {
             return CoreTransactionResult(CoreTransactionStatus.REJECTED, current, it.message?.take(256) ?: "操作できません")
         }
@@ -56,6 +65,7 @@ class CoreAccountService(private val repository: CoreAccountRepository) {
         return when (val saved = repository.commit(current.revision, next)) {
             CoreRepositorySave.Saved -> {
                 accounts[playerId] = next
+                if (next.offers != current.offers) runCatching { refreshMarket() }
                 CoreTransactionResult(CoreTransactionStatus.COMMITTED, next, proposal.second)
             }
             CoreRepositorySave.Conflict -> {
@@ -68,6 +78,71 @@ class CoreAccountService(private val repository: CoreAccountRepository) {
     }
 
     private fun apply(account: CoreAccount, action: CoreAction, requestId: UUID): Pair<CoreAccount, String> = when (action) {
+        is CoreAction.BuyOffer -> error("市場の取引処理を使用してください")
+        is CoreAction.Manufacture -> {
+            requireHub(account)
+            require(account.storedGear.size < CoreEconomy.MAX_GEAR) { "装備庫が満杯です" }
+            val paid = recipe(account, CoreEconomy.manufacture(action.slot, action.tier)).first
+            val item = CoreStoredGear(CoreGearIdentity(derived(requestId, "equipment"), account.playerId),
+                action.slot, action.tier, CoreGearRarity.NORMAL, CoreEnhancementState())
+            CoreEnhancementCatalog.gainMastery(paid.copy(storedGear = paid.storedGear + item), 5) to
+                "${item.displayName}を装備庫へ保管しました。装備・出品・納品を選べます"
+        }
+        is CoreAction.Equip -> {
+            requireHub(account)
+            val item = stored(account, action.id)
+            val old = CoreEconomy.capture(account, item.slot)
+            item.project(account).let { it.copy(storedGear = it.storedGear + old) } to "${item.displayName}を装備しました。以前の装備は装備庫へ保管しました"
+        }
+        is CoreAction.Deliver -> {
+            requireHub(account)
+            val item = stored(account, action.id)
+            require(!item.identity.bound && item.identity.crafter == account.playerId && item.enhancement.level == 0 && item.affixes.isEmpty() && item.rarity == CoreGearRarity.NORMAL && item.condition == 100) {
+                "自分で制作した未加工の装備だけ納品できます"
+            }
+            val today = epochDay()
+            require(today >= account.deliveryDay) { "日付を確認できません" }
+            val count = if (account.deliveryDay == today) account.deliveries else 0
+            require(count < CoreEconomy.DAILY_DELIVERIES) { "本日の納品は完了しました。市場への出品は引き続き可能です" }
+            account.copy(storedGear = account.storedGear.filterNot { it.identity.id == action.id },
+                silver = Math.addExact(account.silver, CoreEconomy.deliveryPrice(item.tier)), deliveryDay = today, deliveries = count + 1) to
+                "港へ納品しました。銀貨${CoreEconomy.deliveryPrice(item.tier)}枚を獲得（本日${count + 1}/3）"
+        }
+        is CoreAction.RedeemTokens -> {
+            requireHub(account); require(action.quantity in 1..999)
+            val paid = recipe(account, CoreRecipe("戦利品券を換金", mapOf(CoreMaterial(CoreResource.COMBAT_TOKEN, action.tier) to action.quantity.toLong()), emptyMap())).first
+            val gain = 10L * action.tier * action.quantity
+            paid.copy(silver = Math.addExact(paid.silver, gain)) to "銀貨${gain}枚を獲得しました。市場で素材や装備を購入できます"
+        }
+        is CoreAction.Repair -> {
+            requireHub(account)
+            require(CoreEconomy.condition(account, action.slot) < 100) { "この装備は整備済みです" }
+            val input = stored(account, action.input)
+            require(CoreEconomy.repairInput(account, action.slot, input)) { "同Tier・同種の新品（未強化・MODなし）が1個必要です" }
+            account.copy(storedGear = account.storedGear.filterNot { it.identity.id == input.identity.id },
+                weaponCondition = if (action.slot == CoreGearSlot.WEAPON) 100 else account.weaponCondition,
+                armorCondition = if (action.slot == CoreGearSlot.ARMOR) 100 else account.armorCondition) to
+                "予備装備1個を消費して整備度を100へ回復しました。対象のMOD・強化値・識別番号は維持しています"
+        }
+        is CoreAction.ListGear -> {
+            requireHub(account)
+            val item = stored(account, action.id)
+            require(!item.identity.bound) { "初期・引継ぎ装備は売却できません" }
+            list(account, CoreMarketOffer(derived(requestId, "listing"), action.price, gearId = action.id))
+        }
+        is CoreAction.ListMaterial -> {
+            requireHub(account)
+            val offer = CoreMarketOffer(derived(requestId, "listing"), action.price, action.material, action.quantity)
+            val paid = recipe(account, CoreRecipe("素材を出品", mapOf(action.material to action.quantity), emptyMap())).first
+            list(paid, offer)
+        }
+        is CoreAction.CancelOffer -> {
+            requireHub(account)
+            val offer = account.offers.singleOrNull { it.id == action.id } ?: error("出品は売却済みか取り下げ済みです")
+            val canceled = account.copy(offers = account.offers.filterNot { it.id == offer.id })
+            if (offer.material != null) recipe(canceled, CoreRecipe("出品を取り下げ素材を返却しました", emptyMap(), mapOf(offer.material to offer.quantity)))
+            else canceled to "出品を取り下げました。装備庫から使用できます"
+        }
         is CoreAction.Gather -> {
             val run = requireRun(account, action.runId)
             require(action.resource.raw && action.quantity in 1..1024) { "採取内容が不正です" }
@@ -174,7 +249,7 @@ class CoreAccountService(private val repository: CoreAccountRepository) {
             val upgraded = recipe(account, CoreLoopCatalog.armorUpgrade(account.armorTier))
             CoreEnhancementCatalog.gainMastery(upgraded.first.copy(armorTier = account.armorTier + 1), 5) to upgraded.second
         }
-        is CoreAction.Exchange -> { requireHub(account); recipe(account, CoreLoopCatalog.exchange(action.resource, action.tier, action.batches)) }
+        is CoreAction.Exchange -> error("戦利品券と採取素材の交換は終了しました。採取または市場で入手してください")
         is CoreAction.Craft -> {
             requireHub(account)
             val crafted = recipe(account, CoreLoopCatalog.craft(action.resource, action.batches, action.tier))
@@ -228,11 +303,66 @@ class CoreAccountService(private val repository: CoreAccountRepository) {
                 grantFragments(account, kind, CoreCraftingCatalog.TRIAL_ENTRY_FRAGMENTS).copy(activeRun = null) to "準備に失敗したため入場の欠片3個を返却しました"
             }
         }
-        is CoreAction.FinishRun -> { requireRun(account, action.runId); account.copy(activeRun = null) to "拠点へ帰還しました。獲得した素材は保管済みです" }
+        is CoreAction.FinishRun -> {
+            requireRun(account, action.runId)
+            account.copy(activeRun = null, weaponCondition = (account.weaponCondition - 10).coerceAtLeast(0),
+                armorCondition = (account.armorCondition - 10).coerceAtLeast(0)) to
+                "拠点へ帰還しました。獲得品は保管済みです。装備の整備度が10減少（装備庫で整備できます）"
+        }
         is CoreAction.Consume -> {
             require(action.resource in setOf(CoreResource.POTION, CoreResource.WHETSTONE)) { "使用できないアイテムです" }
             require(account.activeRun != null) { "遠征中のみ使用できます" }
             recipe(account, CoreRecipe("${action.resource.displayName}を使用しました", mapOf(CoreMaterial(action.resource) to 1L), emptyMap()))
+        }
+    }
+
+    private fun stored(a: CoreAccount, id: UUID): CoreStoredGear {
+        require(a.offers.none { it.gearId == id }) { "出品中です。先に取り下げてください" }
+        return a.storedGear.singleOrNull { it.identity.id == id } ?: error("装備が見つかりません")
+    }
+    private fun list(a: CoreAccount, offer: CoreMarketOffer): Pair<CoreAccount, String> {
+        require(a.offers.size < CoreEconomy.MAX_OFFERS) { "出品上限です。先に取り下げてください" }
+        return a.copy(offers = a.offers + offer) to "銀貨${offer.price}枚で出品しました。成約時に手数料${CoreEconomy.fee(offer.price)}枚が差し引かれます"
+    }
+
+    private fun buy(buyer: CoreAccount, operation: CoreOperation, fingerprint: String): CoreTransactionResult {
+        val action = operation.action as CoreAction.BuyOffer
+        val proposal = runCatching {
+            requireHub(buyer)
+            require(action.seller != buyer.playerId) { "自分の出品は購入できません" }
+            val seller = (repository.load(action.seller) as? CoreRepositoryLoad.Loaded)?.account ?: error("出品者のデータを読み込めません")
+            val offer = seller.offers.singleOrNull { it.id == action.id } ?: error("売り切れか取り下げ済みです")
+            require(offer.price == action.price) { "価格が変わりました。選び直してください" }
+            require(buyer.silver >= offer.price) { "銀貨が${offer.price - buyer.silver}枚不足しています" }
+            var paid = buyer.copy(silver = buyer.silver - offer.price)
+            val removed = seller.copy(offers = seller.offers.filterNot { it.id == offer.id })
+            val credited = removed.copy(silver = Math.addExact(seller.silver, offer.price - CoreEconomy.fee(offer.price)))
+            val sold = if (offer.gearId != null) {
+                require(paid.storedGear.size < CoreEconomy.MAX_GEAR) { "装備庫が満杯です" }
+                val item = seller.storedGear.single { it.identity.id == offer.gearId }
+                paid = paid.copy(storedGear = paid.storedGear + item)
+                credited.copy(storedGear = credited.storedGear.filterNot { it.identity.id == offer.gearId })
+            } else {
+                paid = recipe(paid, CoreRecipe("購入", emptyMap(), mapOf(requireNotNull(offer.material) to offer.quantity))).first
+                credited
+            }
+            val message = "銀貨${offer.price}枚で購入しました。${if (offer.gearId != null) "装備庫" else "素材倉庫"}へ保管しました"
+            val revision = buyer.revision + 1
+            Triple(paid.copy(revision = revision, receipts = buyer.receipts + (operation.requestId to CoreReceipt(fingerprint, revision, message))),
+                sold.copy(revision = seller.revision + 1), message)
+        }.getOrElse { return CoreTransactionResult(CoreTransactionStatus.REJECTED, buyer, it.message?.take(256) ?: "購入できません") }
+        return when (repository.commitTrade(proposal.first, proposal.second)) {
+            CoreRepositorySave.Saved -> {
+                accounts[buyer.playerId] = proposal.first
+                if (action.seller in accounts) accounts[action.seller] = proposal.second
+                runCatching { refreshMarket() }
+                CoreTransactionResult(CoreTransactionStatus.COMMITTED, proposal.first, proposal.third)
+            }
+            else -> {
+                // A durable intent may already exist: never claim rollback or continue with stale balances.
+                accounts.clear(); market = emptyList()
+                CoreTransactionResult(CoreTransactionStatus.UNAVAILABLE, null, "取引結果を確認できません。再接続すると保存済みの取引を復旧します")
+            }
         }
     }
 

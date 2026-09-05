@@ -138,7 +138,7 @@ class CoreEnhancementTest {
         assertEquals(0, CoreEnhancementCatalog.masteryProgress(f.account.smithingXp))
         f.commit(CoreAction.UpgradeWeapon); f.commit(CoreAction.UpgradeArmor)
         assertEquals(30, f.account.smithingXp)
-        f.commit(CoreAction.Exchange(CoreResource.ORE, 1, 5))
+        assertEquals(CoreTransactionStatus.REJECTED, f.perform(CoreAction.Exchange(CoreResource.ORE, 1, 5)).status)
         assertEquals(30, f.account.smithingXp)
         assertEquals(CoreTransactionStatus.REJECTED, f.perform(CoreAction.Refine(CoreResource.INGOT, 1)).status)
         assertEquals(CoreTransactionStatus.REJECTED, f.perform(CoreAction.Craft(CoreResource.POTION, 65, 1)).status)
@@ -253,7 +253,7 @@ class CoreEnhancementTest {
         assertEquals(CoreEnhancementState(1), after.weaponEnhancement)
         assertEquals(1, after.smithingXp)
         assertEquals(encoded, Files.readString(backup))
-        assertTrue(Files.readString(path).startsWith("PROJECTS_CORE_LOOP\t4\t"))
+        assertTrue(Files.readString(path).startsWith("PROJECTS_CORE_LOOP\t5\t"))
         assertEquals(CoreTransactionStatus.REPLAYED, service.transact(old.playerId, operation).status)
     }
 
@@ -280,8 +280,8 @@ class CoreEnhancementTest {
     }
 
     private fun asV3(account: CoreAccount): String = checksum(CoreAccountCodec.encode(account).substringBefore("checksum\t")
-        .lineSequence().filterNot { it.startsWith("enhancement\t") }.joinToString("\n")
-        .replaceFirst("PROJECTS_CORE_LOOP\t4\t", "PROJECTS_CORE_LOOP\t3\t"))
+        .lineSequence().filterNot { it.startsWith("enhancement\t") || it.startsWith("economy\t") || it.startsWith("identity\t") }.joinToString("\n")
+        .replaceFirst("PROJECTS_CORE_LOOP\t5\t", "PROJECTS_CORE_LOOP\t3\t"))
     private fun checksum(body: String): String = body + "checksum\t" + MessageDigest.getInstance("SHA-256")
         .digest(body.toByteArray(UTF_8)).joinToString("") { "%02x".format(it) } + "\n"
 }

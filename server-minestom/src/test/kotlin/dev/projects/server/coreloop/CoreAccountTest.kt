@@ -31,49 +31,30 @@ class CoreAccountTest {
         }
     }
 
-    @Test fun `combat only loop reaches T4 gear and maps without mandatory gathering`() {
+    @Test fun `gather refine manufacture equip loop reaches T4 without combat material exchange`() {
         val f = Fixture()
-        for (tier in 1..3) {
+        for (tier in 1..4) {
             val run = f.start(tier)
-            val awarded = f.commit(CoreAction.BossReward(run))
-            assertEquals(tier + 1, awarded.unlockedMapTier)
-            assertTrue(awarded.maps.any { it.tier == tier + 1 })
-            assertEquals(2, awarded.amount(CoreResource.BOSS_SIGIL, tier))
+            for (raw in CoreLoopCatalog.refined.keys) f.commit(CoreAction.Gather(run, "node-$raw", raw, 16))
+            f.commit(CoreAction.BossReward(run))
             f.commit(CoreAction.FinishRun(run))
-            for ((raw, batches) in listOf(CoreResource.ORE to 2, CoreResource.WOOD to 1, CoreResource.HIDE to 2, CoreResource.FIBER to 1)) {
-                f.commit(CoreAction.Exchange(raw, tier, batches))
-                f.commit(CoreAction.Refine(raw, tier, batches * 2))
+            assertEquals(CoreTransactionStatus.REJECTED, f.perform(CoreAction.Exchange(CoreResource.ORE, tier)).status)
+            for (raw in CoreLoopCatalog.refined.keys) f.commit(CoreAction.Refine(raw, tier, 8))
+            for (slot in CoreGearSlot.entries) {
+                val item = f.commit(CoreAction.Manufacture(slot, tier)).storedGear.last()
+                f.commit(CoreAction.Equip(item.identity.id))
             }
-            f.commit(CoreAction.UpgradeWeapon)
-            val upgraded = f.commit(CoreAction.UpgradeArmor)
-            assertEquals(tier + 1, upgraded.weaponTier)
-            assertEquals(tier + 1, upgraded.armorTier)
-            assertEquals(0, upgraded.amount(CoreResource.BOSS_SIGIL, tier))
+            assertEquals(tier, f.account.weaponTier)
+            assertEquals(tier, f.account.armorTier)
             f.service.forget(f.player)
             assertIs<CoreAccountLoadResult.Ready>(f.service.open(f.player))
-            assertEquals(tier + 1, f.account.weaponTier)
+            assertEquals(tier, f.account.weaponTier)
         }
-        assertEquals(CoreTransactionStatus.REJECTED, f.perform(CoreAction.UpgradeWeapon).status)
+        assertEquals(4, f.account.unlockedMapTier)
         assertTrue(CoreLoopCatalog.weaponDamage(4) > CoreLoopCatalog.weaponDamage(3))
-        assertEquals(190.0, CoreLoopCatalog.armorHealth(4))
-        val run = f.start(4)
-        f.commit(CoreAction.Gather(run, "stone-node", CoreResource.STONE, 8))
-        f.commit(CoreAction.Gather(run, "wood-node", CoreResource.WOOD, 4))
-        f.commit(CoreAction.Gather(run, "hide-node", CoreResource.HIDE, 2))
-        f.commit(CoreAction.Gather(run, "ore-node", CoreResource.ORE, 2))
-        f.commit(CoreAction.BossReward(run))
-        f.commit(CoreAction.FinishRun(run))
-        f.commit(CoreAction.Refine(CoreResource.STONE, 4, 4))
-        f.commit(CoreAction.Refine(CoreResource.WOOD, 4, 2))
-        f.commit(CoreAction.Refine(CoreResource.HIDE, 4))
-        f.commit(CoreAction.Refine(CoreResource.ORE, 4))
         f.commit(CoreAction.Craft(CoreResource.GATHERING_TABLET, tier = 4))
         f.commit(CoreAction.Craft(CoreResource.WHETSTONE, tier = 4))
         assertEquals(1, f.account.amount(CoreResource.WHETSTONE))
-        assertEquals(0, f.account.amount(CoreResource.LEATHER, 4))
-        assertEquals(0, f.account.amount(CoreResource.INGOT, 4))
-        assertEquals(2, f.account.amount(CoreResource.STONE_BLOCK, 4))
-        assertTrue(f.account.maps.any { it.tier == 4 })
     }
 
     @Test fun `gathering stash recipes and map modifiers survive restart with exactly once rewards`() {

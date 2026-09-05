@@ -63,7 +63,18 @@ class CoreAccount(
     val weaponEnhancement: CoreEnhancementState = CoreEnhancementState(),
     val armorEnhancement: CoreEnhancementState = CoreEnhancementState(),
     val smithingXp: Long = 0,
+    val silver: Long = 0,
+    val weaponIdentity: CoreGearIdentity = CoreGearIdentity.legacy(playerId, CoreGearSlot.WEAPON),
+    val armorIdentity: CoreGearIdentity = CoreGearIdentity.legacy(playerId, CoreGearSlot.ARMOR),
+    storedGear: List<CoreStoredGear> = emptyList(),
+    offers: List<CoreMarketOffer> = emptyList(),
+    val deliveryDay: Long = 0,
+    val deliveries: Int = 0,
+    val weaponCondition: Int = 100,
+    val armorCondition: Int = 100,
 ) {
+    val storedGear = Collections.unmodifiableList(storedGear.toList())
+    val offers = Collections.unmodifiableList(offers.toList())
     val balances: Map<CoreMaterial, Long> = Collections.unmodifiableMap(LinkedHashMap(balances))
     val maps: List<CoreOwnedMap> = Collections.unmodifiableList(maps.toList())
     val receipts: Map<UUID, CoreReceipt> = Collections.unmodifiableMap(LinkedHashMap(receipts))
@@ -76,6 +87,21 @@ class CoreAccount(
     init {
         require(revision >= 0 && weaponTier in 1..4 && armorTier in 1..4 && unlockedMapTier in 1..4)
         require(smithingXp in 0..CoreEnhancementCatalog.MAX_SMITHING_XP)
+        require(silver in 0..CoreEconomy.MAX_SILVER && deliveries in 0..CoreEconomy.DAILY_DELIVERIES && deliveryDay >= 0)
+        require(weaponCondition in 0..100 && armorCondition in 0..100)
+        require(storedGear.size <= CoreEconomy.MAX_GEAR && offers.size <= CoreEconomy.MAX_OFFERS)
+        val identities = storedGear.map { it.identity.id } + weaponIdentity.id + armorIdentity.id
+        require(identities.distinct().size == identities.size)
+        require(offers.map { it.id }.distinct().size == offers.size)
+        require(offers.mapNotNull { it.gearId }.distinct().size == offers.count { it.gearId != null })
+        require(offers.all { offer -> offer.gearId == null || storedGear.any { it.identity.id == offer.gearId && !it.identity.bound } })
+        storedGear.forEach { item ->
+            require(item.affixes.map { it.index }.distinct().size == item.affixes.size)
+            require(item.affixes.map { it.stone.modId }.distinct().size == item.affixes.size)
+            require(item.affixes.all { it.index < item.rarity.capacity && it.stone.tier <= item.tier &&
+                CoreAffixCatalog.definition(it.stone)?.allowedGear?.contains(item.slot) != false })
+            require(item.legacy || CoreCraftingCatalog.validLayout(item.affixes, item.rarity))
+        }
         require(balances.size <= CoreLoopCatalog.MAX_BALANCES && balances.values.all { it in 0..CoreLoopCatalog.MAX_BALANCE })
         require(maps.size <= CoreLoopCatalog.MAX_MAPS && maps.map { it.id }.distinct().size == maps.size)
         require(activeRun == null || maps.none { it.id == activeRun.map.id })
@@ -84,7 +110,7 @@ class CoreAccount(
         require(claimedSources.all { it.length in 1..192 && '\n' !in it && '\t' !in it && '\r' !in it })
         require(affixStones.size <= CoreAffixCatalog.MAX_STONES && equippedAffixes.size <= 12)
         require(currencies.values.all { it in 0..CoreLoopCatalog.MAX_BALANCE } && fragments.values.all { it in 0..CoreLoopCatalog.MAX_BALANCE })
-        val allStones = affixStones + equippedAffixes.map { it.stone }
+        val allStones = affixStones + equippedAffixes.map { it.stone } + storedGear.flatMap { it.affixes.map { affix -> affix.stone } }
         require(allStones.map { it.id }.distinct().size == allStones.size) { "MODの識別番号が重複しています" }
         require(equippedAffixes.map { it.gear to it.index }.distinct().size == equippedAffixes.size)
         require(equippedAffixes.map { it.gear to it.stone.modId }.distinct().size == equippedAffixes.size)
@@ -117,13 +143,32 @@ class CoreAccount(
         weaponEnhancement: CoreEnhancementState = this.weaponEnhancement,
         armorEnhancement: CoreEnhancementState = this.armorEnhancement,
         smithingXp: Long = this.smithingXp,
+        silver: Long = this.silver,
+        weaponIdentity: CoreGearIdentity = this.weaponIdentity,
+        armorIdentity: CoreGearIdentity = this.armorIdentity,
+        storedGear: List<CoreStoredGear> = this.storedGear,
+        offers: List<CoreMarketOffer> = this.offers,
+        deliveryDay: Long = this.deliveryDay,
+        deliveries: Int = this.deliveries,
+        weaponCondition: Int = this.weaponCondition,
+        armorCondition: Int = this.armorCondition,
     ) = CoreAccount(playerId, revision, balances, weaponTier, armorTier, unlockedMapTier, maps, activeRun, receipts, claimedSources, affixStones, equippedAffixes,
-        weaponRarity, armorRarity, currencies, fragments, legacyLayouts, craftingSeed, weaponEnhancement, armorEnhancement, smithingXp)
+        weaponRarity, armorRarity, currencies, fragments, legacyLayouts, craftingSeed, weaponEnhancement, armorEnhancement, smithingXp,
+        silver, weaponIdentity, armorIdentity, storedGear, offers, deliveryDay, deliveries, weaponCondition, armorCondition)
 }
 
 data class CoreOperation(val requestId: UUID, val expectedRevision: Long, val action: CoreAction)
 
 sealed interface CoreAction {
+    data class Manufacture(val slot: CoreGearSlot, val tier: Int) : CoreAction
+    data class Equip(val id: UUID) : CoreAction
+    data class Repair(val slot: CoreGearSlot, val input: UUID) : CoreAction
+    data class Deliver(val id: UUID) : CoreAction
+    data class RedeemTokens(val tier: Int, val quantity: Int) : CoreAction
+    data class ListGear(val id: UUID, val price: Long) : CoreAction
+    data class ListMaterial(val material: CoreMaterial, val quantity: Long, val price: Long) : CoreAction
+    data class CancelOffer(val id: UUID) : CoreAction
+    data class BuyOffer(val seller: UUID, val id: UUID, val price: Long) : CoreAction
     data class Gather(val runId: UUID, val nodeId: String, val resource: CoreResource, val quantity: Int) : CoreAction
     data class CombatReward(val runId: UUID, val encounterId: String, val quantity: Int = 2) : CoreAction
     data class BossReward(val runId: UUID) : CoreAction

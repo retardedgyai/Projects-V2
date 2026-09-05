@@ -29,6 +29,8 @@ import kotlin.test.*
 class CoreLoopMenusTest {
     private data class Pending(val action: CoreAction, val revision: Long, val rejected: (() -> Unit)?, val after: () -> Unit)
     private class Host(var current: CoreAccount, var usePack: Boolean = true) : CoreMenuHost {
+        var marketEntries = emptyList<CoreMarketEntry>()
+        override fun market() = marketEntries
         val requests = mutableListOf<Pending>()
         val departures = mutableListOf<Pair<UUID, Long>>()
         var trialDepartures = 0
@@ -66,6 +68,49 @@ class CoreLoopMenusTest {
     }
 
     @BeforeTest fun initializeMinestom() { MinecraftServer.init(Auth.Offline()) }
+
+    @Test fun `manufacturing quote routes to owned equipment and material listing needs explicit confirmation`() {
+        for (packed in listOf(false, true)) {
+            val f = fixture(account(tier = 4), packed)
+            f.menus.workshop(f.player, 4)
+            f.click(CoreForgeLayout.Tab.CRAFT.slot)
+            assertTrue(f.host.requests.isEmpty())
+            f.click(CoreForgeLayout.EXECUTE)
+            assertEquals(CoreAction.Manufacture(CoreGearSlot.WEAPON, 4), f.host.requests.single().action)
+            val item = CoreStoredGear(CoreGearIdentity(UUID.randomUUID(), f.host.current.playerId), CoreGearSlot.WEAPON, 4, CoreGearRarity.NORMAL, CoreEnhancementState())
+            f.host.current = f.host.current.copy(storedGear = listOf(item))
+            f.host.requests.single().after()
+            assertTrue(f.title().contains("装備庫"))
+            f.click(9)
+            assertTrue(f.title().contains(item.displayName))
+            assertEquals(1, f.host.requests.size)
+            f.click(20)
+            assertEquals(CoreAction.Equip(item.identity.id), f.host.requests.last().action)
+
+            f.host.requests.clear()
+            f.menus.supplies(f.player)
+            f.click(46); f.click(9) // WOOD T1 -> quote
+            f.click(34); f.click(14) // 11 items, total 11 silver
+            assertTrue(f.host.requests.isEmpty())
+            f.click(40)
+            assertEquals(CoreAction.ListMaterial(CoreMaterial(CoreResource.WOOD), 11, 11), f.host.requests.single().action)
+        }
+    }
+
+    @Test fun `market insufficient silver is visibly disabled and purchase is separate from selection`() {
+        for (silver in listOf(0L, 100L)) {
+            val f = fixture(account().copy(silver = silver))
+            val offer = CoreMarketOffer(UUID.randomUUID(), 30, CoreMaterial(CoreResource.ORE), 4)
+            val seller = UUID.randomUUID()
+            f.host.marketEntries = listOf(CoreMarketEntry(seller, offer, null))
+            f.menus.supplies(f.player)
+            f.click(9)
+            assertTrue(f.host.requests.isEmpty())
+            f.click(22)
+            if (silver == 0L) assertTrue(f.host.requests.isEmpty())
+            else assertEquals(CoreAction.BuyOffer(seller, offer.id, 30), f.host.requests.single().action)
+        }
+    }
 
     private fun fixture(account: CoreAccount, packed: Boolean = true): Fixture {
         val connection = object : PlayerConnection() {
@@ -414,7 +459,7 @@ class CoreLoopMenusTest {
         assertTrue(f.title().contains("精製"))
         f.click(CoreForgeLayout.MATERIALS)
         f.click(9) // Raw hide -> token supplies; the refining selection is a nested goal.
-        assertTrue(f.title().contains("補給所"))
+        assertTrue(f.title().contains("市場"))
         f.click(CoreForgeLayout.BACK)
         assertTrue(f.title().contains("精製"))
         f.click(CoreForgeLayout.BACK + 1)

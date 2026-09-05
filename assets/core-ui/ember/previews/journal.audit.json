@@ -180,10 +180,10 @@
     },
     {
       "where": "card[36]",
-      "x": 34,
+      "x": 29,
       "y": 92,
-      "text": "装備",
-      "width": 18,
+      "text": "装備庫",
+      "width": 27,
       "style": "EMPHASIS"
     },
     {
@@ -206,7 +206,7 @@
       "where": "card[45]",
       "x": 34,
       "y": 110,
-      "text": "補給",
+      "text": "市場",
       "width": 18,
       "style": "EMPHASIS"
     },

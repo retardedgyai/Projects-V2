@@ -153,10 +153,10 @@ object CoreAffixCatalog {
             }
         }
         fun stat(type: CoreAffixStat, limit: Double) = (totals[type] ?: 0.0).coerceIn(0.0, limit)
-        return CoreAffixStats(stat(CoreAffixStat.DAMAGE, 100.0), stat(CoreAffixStat.ATTACK_SPEED, 60.0),
+        return CoreAffixStats(stat(CoreAffixStat.DAMAGE, 100.0) - if (account.weaponCondition == 0) 25.0 else 0.0, stat(CoreAffixStat.ATTACK_SPEED, 60.0),
             stat(CoreAffixStat.SKILL_DAMAGE, 100.0), stat(CoreAffixStat.MAX_MANA, 100.0),
             stat(CoreAffixStat.MANA_REGEN, 100.0), stat(CoreAffixStat.COOLDOWN_REDUCTION, 45.0),
-            stat(CoreAffixStat.HEALTH, 200.0), stat(CoreAffixStat.MITIGATION, 45.0),
+            stat(CoreAffixStat.HEALTH, 200.0) - if (account.armorCondition == 0) 20.0 else 0.0, stat(CoreAffixStat.MITIGATION, 45.0),
             stat(CoreAffixStat.MOVE_SPEED, 25.0), stat(CoreAffixStat.CRIT_CHANCE_INCREASED, 200.0),
             stat(CoreAffixStat.CRIT_MULTIPLIER, 100.0), stat(CoreAffixStat.NORMAL_DAMAGE, 100.0),
             stat(CoreAffixStat.CAST_REDUCTION, 40.0), stat(CoreAffixStat.FIRE, 100.0),

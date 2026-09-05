@@ -9,6 +9,7 @@ import java.util.UUID
 /** Existing core-loop operations consumed by the real menu; the host retains all mutation authority. */
 internal interface CoreMenuHost {
     fun account(player: Player): CoreAccount?
+    fun market(): List<CoreMarketEntry> = emptyList()
     fun packed(player: Player): Boolean
     fun isDeparting(player: Player): Boolean
     fun requireHub(player: Player): Boolean
