@@ -179,23 +179,43 @@ class CoreMenuCanvas(private val title: String) {
             }
         }
 
-        /** Greedy codepoint-safe wrapping for the concrete menu panels; explicit newlines survive. */
+        /**
+         * Keep Latin words and numeric expressions intact when they fit a panel. Japanese
+         * prose still wraps by codepoint; callers should use short, meaningful UI sentences.
+         * A single oversized ASCII expression falls back to codepoints, never lost content.
+         */
         fun wrap(value: String, maxWidth: Int = PANEL_WIDTH): List<String> {
             require(maxWidth >= width("□")) { "Text width must fit at least one menu glyph" }
             return value.split('\n').flatMap { paragraph ->
                 val result = mutableListOf<String>()
                 var line = StringBuilder()
                 var used = 0
-                for (codepoint in paragraph.codePoints().toArray()) {
-                    val advance = metric(codepoint).advance
+                fun appendUnit(unit: String) {
+                    val advance = width(unit)
                     if (used + advance > maxWidth && line.isNotEmpty()) {
                         result += line.toString(); line = StringBuilder(); used = 0
                     }
-                    line.appendCodePoint(codepoint); used += advance
+                    line.append(unit); used += advance
+                }
+                for (unit in wrapUnits(paragraph)) {
+                    if (width(unit) <= maxWidth) appendUnit(unit)
+                    else unit.codePoints().forEach { appendUnit(String(Character.toChars(it))) }
                 }
                 result += line.toString()
                 result
             }
+        }
+
+        private fun wrapUnits(paragraph: String): List<String> = buildList {
+            val ascii = StringBuilder()
+            fun flushAscii() { if (ascii.isNotEmpty()) { add(ascii.toString()); ascii.setLength(0) } }
+            for (codepoint in paragraph.codePoints().toArray()) {
+                val isAsciiWord = codepoint in 'A'.code..'Z'.code || codepoint in 'a'.code..'z'.code ||
+                    codepoint in '0'.code..'9'.code || (codepoint < 128 && codepoint.toChar() in "_+-.%/")
+                if (isAsciiWord) ascii.appendCodePoint(codepoint)
+                else { flushAscii(); add(String(Character.toChars(codepoint))) }
+            }
+            flushAscii()
         }
 
         private fun toneColor(tone: Tone): TextColor = TextColor.color(when (tone) {
