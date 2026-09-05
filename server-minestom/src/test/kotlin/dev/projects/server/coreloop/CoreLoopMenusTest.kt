@@ -1,6 +1,8 @@
 package dev.projects.server.coreloop
 
+import com.google.gson.GsonBuilder
 import dev.projects.server.coreloop.ui.CoreForgeLayout
+import dev.projects.server.coreloop.ui.CoreMenuCanvas
 import dev.projects.server.questmap.*
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.TextComponent
@@ -16,6 +18,8 @@ import net.minestom.server.network.player.GameProfile
 import net.minestom.server.network.player.PlayerConnection
 import java.net.InetSocketAddress
 import java.net.SocketAddress
+import java.nio.file.Files
+import java.nio.file.Path
 import java.util.UUID
 import kotlin.test.*
 
@@ -47,7 +51,8 @@ class CoreLoopMenusTest {
         override fun departTrial(player: Player, kind: CoreActivityKind, tier: Int, revision: Long) { trialDepartures++ }
     }
 
-    private class Fixture(val player: Player, val host: Host, val menus: CoreLoopMenus) {
+    private class Fixture(val player: Player, val host: Host, val menus: CoreLoopMenus,
+        val snapshots: MutableList<CoreMenuCanvas.Snapshot>) {
         fun click(slot: Int, right: Boolean = false) {
             val inventory = assertNotNull(player.openInventory)
             val event = InventoryPreClickEvent(inventory, player, if (right) Click.Right(slot) else Click.Left(slot))
@@ -55,6 +60,7 @@ class CoreLoopMenusTest {
             assertTrue(event.isCancelled)
         }
         fun title(): String = decode((assertNotNull(player.openInventory) as Inventory).title)
+        fun snapshot(): CoreMenuCanvas.Snapshot = snapshots.last()
     }
 
     @BeforeTest fun initializeMinestom() { MinecraftServer.init(Auth.Offline()) }
@@ -67,28 +73,31 @@ class CoreLoopMenusTest {
         val player = Player(connection, GameProfile(account.playerId, "MenuIntegration"))
         connection.player = player
         val host = Host(account, packed)
-        return Fixture(player, host, CoreLoopMenus(host))
+        val snapshots = mutableListOf<CoreMenuCanvas.Snapshot>()
+        return Fixture(player, host, CoreLoopMenus(host) { snapshots += it.snapshot() }, snapshots)
     }
 
     private fun account(tier: Int = 1, wealthy: Boolean = true, fullMods: Boolean = false, maximum: Boolean = false): CoreAccount {
         val globals = setOf(CoreResource.POTION, CoreResource.GATHERING_TABLET, CoreResource.WHETSTONE, CoreResource.AFFIX_DUST)
         val balances = if (wealthy) buildMap {
             CoreResource.entries.forEach { resource ->
-                (if (resource in globals) listOf(1) else (1..4).toList()).forEach { t -> put(CoreMaterial(resource, t), 500_000L) }
+                (if (resource in globals) listOf(1) else (1..4).toList()).forEach { t -> put(CoreMaterial(resource, t), if (maximum) CoreLoopCatalog.MAX_BALANCE else 500_000L) }
             }
         } else emptyMap()
-        val maps = List(9) { index -> CoreOwnedMap(UUID.randomUUID(), index.toLong(), tier, listOf(
+        fun id(value: String): UUID = UUID.nameUUIDFromBytes("menu-test/$tier/$wealthy/$fullMods/$maximum/$value".toByteArray())
+        val maps = List(9) { index -> CoreOwnedMap(id("map/$index"), index.toLong(), tier, listOf(
             CoreMapModifier("woodcutting", "amount", 200), CoreMapModifier("mining", "dense_regions", 200),
             CoreMapModifier("herbalism", "quality", 200))) }
-        var result = CoreAccount(UUID.randomUUID(), revision = 41, balances = balances, weaponTier = tier, armorTier = tier,
+        var result = CoreAccount(id("player"), revision = 41, balances = balances, weaponTier = tier, armorTier = tier,
             unlockedMapTier = tier, maps = maps, currencies = if (wealthy) CoreCraftingCurrency.entries.associateWith { 500_000L } else emptyMap(),
             fragments = if (wealthy) CoreActivityKind.entries.associateWith { 500_000L } else emptyMap(),
             weaponEnhancement = CoreEnhancementState(if (maximum) 30 else 6), armorEnhancement = CoreEnhancementState(if (maximum) 30 else 6),
-            smithingXp = if (maximum) 200 else 0,
-            affixStones = if (wealthy) listOf(CoreAffixStone(UUID.randomUUID(), "projects:force", tier, CoreAffixCatalog.definitions.first().range(tier).first.toDouble())) else emptyList())
+            smithingXp = if (maximum) 200 else 0, craftingSeed = 0xC0DEL,
+            affixStones = if (wealthy) listOf(CoreAffixStone(id("legacy"), "projects:force", tier, CoreAffixCatalog.definitions.first().range(tier).first.toDouble())) else emptyList())
         if (fullMods) for (gear in CoreGearSlot.entries) {
-            result = CoreCraftingCatalog.craft(result, gear, CoreCraftingCurrency.ALCHEMY, UUID.randomUUID())
-            while (result.equippedAffixes.count { it.gear == gear } < 6) result = CoreCraftingCatalog.craft(result, gear, CoreCraftingCurrency.EXALTED, UUID.randomUUID())
+            result = CoreCraftingCatalog.craft(result, gear, CoreCraftingCurrency.ALCHEMY, id("$gear/alchemy"))
+            while (result.equippedAffixes.count { it.gear == gear } < 6)
+                result = CoreCraftingCatalog.craft(result, gear, CoreCraftingCurrency.EXALTED, id("$gear/exalted/${result.equippedAffixes.size}"))
         }
         return result
     }
@@ -99,7 +108,25 @@ class CoreLoopMenusTest {
             val f = fixture(account(tier, wealthy = variant != 0, fullMods = variant >= 2, maximum = variant == 3), packed)
             val prefix = "T$tier variant=$variant packed=$packed"
             fun check(name: String, render: () -> Unit) {
-                try { render(); assertNotNull(f.player.openInventory) }
+                try {
+                    render()
+                    val inventory = requireNotNull(f.player.openInventory)
+                    require((0 until 54).all { inventory.getItemStack(it).let { item -> item.isAir || item.amount() == 1 } }) {
+                        "A projected menu item would paint its stack count over the persistent label"
+                    }
+                    auditSnapshot(f.snapshot()).forEach { failures += "$prefix / $name: $it" }
+                    if (!packed) {
+                        val components = (0 until 54).flatMap { slot ->
+                            val item = inventory.getItemStack(slot)
+                            listOfNotNull(item.get(DataComponents.CUSTOM_NAME)) + item.get(DataComponents.LORE).orEmpty()
+                        }
+                        require(components.none { component -> plain(component).any { it.code in 0xE000..0xF8FF } }) { "Private glyph sent without the pack" }
+                        val fallback = inventory.getItemStack(8).get(DataComponents.LORE).orEmpty().joinToString("\n", transform = ::plain)
+                        for (panel in listOfNotNull(f.snapshot().leftPanel, f.snapshot().rightPanel)) {
+                            require(panel.lines.all { fallback.contains(it.text) }) { "Fallback book lost visible panel facts" }
+                        }
+                    }
+                }
                 catch (error: Exception) { failures += "$prefix / $name: ${error.message}" }
             }
             check("journal") { f.menus.journal(f.player) }
@@ -212,6 +239,48 @@ class CoreLoopMenusTest {
         assertTrue(f.title().contains("防具"))
         f.click(CoreForgeLayout.EXECUTE)
         assertTrue(f.host.requests.isEmpty())
+    }
+
+    @Test fun `actual menu snapshots keep full labels and essential figures readable and export visual fixtures`() {
+        val root = generateSequence(Path.of("").toAbsolutePath()) { it.parent }
+            .first { Files.isRegularFile(it.resolve("settings.gradle.kts")) }
+        val output = Files.createDirectories(root.resolve("build/readable-ui-preview"))
+        val gson = GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create()
+        val f = fixture(account(tier = 3, fullMods = true))
+        val failures = mutableListOf<String>()
+        fun capture(name: String, render: () -> Unit) {
+            render()
+            val snapshot = f.snapshot()
+            Files.writeString(output.resolve("$name.json"), gson.toJson(snapshot))
+            auditSnapshot(snapshot).forEach { failures += "$name: $it" }
+        }
+        capture("journal") { f.menus.journal(f.player) }
+        capture("forge-enhance") { f.menus.workshop(f.player, 3); f.click(CoreForgeLayout.ARMOR); f.click(21) }
+        capture("forge-refine") {
+            f.click(CoreForgeLayout.Tab.REFINE.slot); f.click(CoreForgeLayout.RECIPES[3]); f.click(48)
+        }
+        capture("storage") { f.menus.storage(f.player, 3) }
+        capture("mod") { f.menus.confirmCraft(f.player, CoreGearSlot.ARMOR, CoreCraftingCurrency.DIVINE) }
+        capture("craft") { f.click(CoreForgeLayout.Tab.CRAFT.slot); f.click(CoreForgeLayout.RECIPES[2]); f.click(48) }
+        assertTrue(f.host.requests.isEmpty())
+        assertTrue(failures.isEmpty(), failures.joinToString("\n"))
+    }
+
+    private fun auditSnapshot(snapshot: CoreMenuCanvas.Snapshot): List<String> = buildList {
+        fun check(label: String, value: String, width: Int) {
+            if (CoreMenuCanvas.width(value) > width) add("$label exceeds $width px: '$value' (${CoreMenuCanvas.width(value)})")
+            val missing = CoreMenuCanvas.missingCharacters(value)
+            if (missing.isNotEmpty()) add("$label has missing glyphs: ${missing.map { "U+${it.toString(16)}" }} '$value'")
+        }
+        check("title", snapshot.title, 160)
+        listOf("left" to snapshot.leftPanel, "right" to snapshot.rightPanel).forEach { (side, panel) ->
+            if (panel != null) {
+                check("$side title", panel.title, CoreMenuCanvas.PANEL_WIDTH)
+                panel.lines.forEachIndexed { index, line -> check("$side line $index", line.text, CoreMenuCanvas.PANEL_WIDTH) }
+            }
+        }
+        snapshot.buttons.forEach { button -> check("button ${button.firstSlot}", button.label, button.span * 18 - 2 - if (button.icon) 18 else 0) }
+        snapshot.texts.forEach { text -> check("text ${text.x},${text.y}", text.value, text.maxWidth) }
     }
 
     companion object {
