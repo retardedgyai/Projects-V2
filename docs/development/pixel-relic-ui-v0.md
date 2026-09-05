@@ -77,7 +77,14 @@ GUI倍率による表示限界は残る。幅400 GUI px以上を推奨し、自�
 プレビューは実装済みのタイトル描画レイヤーの検査であり、実ゲームのスクリーンショットではない。
 バニラの所持アイテムモデル、インベントリ名、hoverとTooltipは描画対象外。
 Minecraftの移動やメニュー操作、最終的な見やすさの判断はCreatorが行う。
-この完了checkpointでは稼働中の旧版を中断せず、再起動は未実施。新パックの実クライアント受信は未検証。
+実装完了checkpointでは旧版を中断せず、後のCreatorの起動指示で再起動した。
+
+2026-09-05 19:37 JST、`installDist`成功後に起動確認:
+
+- サーバー `127.0.0.1:25565`、PID 12128。`Player connected`を確認。
+- Vanilla 26.2、PID 21260。対話デスクトップ上のウィンドウがVISIBLE、非最小化、TASKBAR_ELIGIBLEであることを確認。確認時は前面ではなく、前面化やゲーム操作はしていない。
+- 新パックSHA1 `5e146c56de78a4043f2d8cc0a1000afafb6d81ac`、277,505 bytes。サーバーログの`SUCCESSFULLY_LOADED customGlyphs=true`で受信・読み込み完了を確認。
+- 起動ログ: `server-minestom/run/core-loop-20260905-193641.log`。新UIのゲーム内メニュー操作によるManual SmokeはCreatorが行う。
 
 ## 確認時に知っておくこと
 
