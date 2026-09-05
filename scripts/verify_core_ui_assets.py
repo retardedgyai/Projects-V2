@@ -2,11 +2,13 @@
 from pathlib import Path
 import hashlib
 import json
+import math
 import struct
 import zlib
 from PIL import Image
 from build_core_hud_assets import vanilla_overrides
-from build_core_menu_assets import TEXT_YS, CELL, TEXT_BASE, FRAME_BASE, BUTTON_BASE, PALETTE, FONT_SHA256
+from build_core_menu_assets import TEXT_YS, CELL, SOURCE_CELL, TEXT_SCALE, TEXT_BASE, FRAME_BASE, BUTTON_BASE, CARD_BASE, PALETTE, FONT_SHA256
+from build_core_menu_art import ART, ART_BASE, ART_CELL, ART_YS, ART_SIZES
 
 ROOT = Path(__file__).resolve().parents[1]
 PACK = ROOT / "server-minestom/src/main/resources/core-ui-pack"
@@ -114,6 +116,8 @@ def verify():
     assert menu["slots"] == {"origin": [8, 18], "stride": 18, "columns": 9, "rows": 6}
     font_meta = json.loads((PACK / "assets/projects/menu/font-source.json").read_text())
     assert font_meta["source_sha256"] == FONT_SHA256 and font_meta["weight"] == 600 and font_meta["size"] == 10
+    assert font_meta["source_scale"] == TEXT_SCALE and font_meta["alpha"] == "binary"
+    assert menu["source_cell"] == SOURCE_CELL and menu["text_scale"] == TEXT_SCALE
     assert (PACK / "assets/projects/menu/OFL.txt").read_bytes() == (ROOT / "assets/core-ui/fonts/OFL.txt").read_bytes()
     assert not any(path.endswith((".ttf", ".otf")) for path in paths), "The full authoring font must not bloat the player pack"
     metrics = {}
@@ -126,12 +130,14 @@ def verify():
     with Image.open(PACK / "assets/projects/textures/gui/core/menu_text.png") as atlas:
         for code, (glyph, advance) in metrics.items():
             index = glyph - TEXT_BASE
-            box = atlas.crop(((index % 32) * CELL, (index // 32) * CELL,
-                              (index % 32 + 1) * CELL, (index // 32 + 1) * CELL)).getchannel("A").getbbox()
+            alpha = atlas.crop(((index % 32) * SOURCE_CELL, (index // 32) * SOURCE_CELL,
+                                (index % 32 + 1) * SOURCE_CELL, (index // 32 + 1) * SOURCE_CELL)).getchannel("A")
+            assert set(alpha.tobytes()) <= {0, 255}, "Menu text must use deliberate hard pixels"
+            box = alpha.getbbox()
             if code in (0x20, 0x3000):
                 assert box is None and advance == (4 if code == 0x20 else 10)
             else:
-                assert box is not None and box[2] + 1 == advance, f"Menu text anchor drift U+{code:04X}"
+                assert box is not None and math.floor(0.5 + box[2] / TEXT_SCALE) + 1 == advance, f"Menu text anchor drift U+{code:04X}"
     for y in TEXT_YS:
         providers = json.loads((PACK / f"assets/projects/font/core_menu_y{y}.json").read_text())["providers"]
         assert len(providers) == 2 and providers[1]["ascent"] == 13 - y and providers[1]["height"] == CELL
@@ -146,19 +152,59 @@ def verify():
             assert providers[index]["chars"] == [chr(FRAME_BASE + index)] and providers[index]["ascent"] == 13
     for y in (140, 158, 176, 198):
         for column in range(9):
-            assert canvas.getpixel((104 + 8 + column * 18 + 8, y + 8)) == (48, 59, 69, 255)
-    assert canvas.getpixel((104 + 8, 128)) == (186, 194, 197, 255), "Vanilla inventory text needs a light strip, not a competing overlay"
+            assert canvas.getpixel((104 + 8 + column * 18 + 8, y + 8)) == (53, 73, 81, 255)
+    assert canvas.getpixel((104 + 8, 128)) == (199, 203, 182, 255), "Vanilla inventory text needs a light strip, not a competing overlay"
     with Image.open(PACK / "assets/projects/textures/gui/core/menu_buttons.png") as buttons:
         assert buttons.size == (1440, 80)
         for row, tone in enumerate(PALETTE):
             for span in range(1, 10):
                 cell = buttons.crop(((span - 1) * 160, row * 16, span * 160, row * 16 + 16))
                 assert cell.getchannel("A").getbbox() == (0, 0, span * 18 - 2, 16)
-                if tone == "SELECTED": assert cell.getpixel((2, 14)) == (216, 188, 124, 255)
+                if tone == "SELECTED": assert cell.getpixel((2, 14)) == (145, 213, 204, 255)
         for row in range(6):
             provider = json.loads((PACK / f"assets/projects/font/core_menu_buttons_{row}.json").read_text())["providers"][0]
             assert provider["ascent"] == 13 - (18 + row * 18) and provider["height"] == 16
             assert [ord(char) for char in "".join(provider["chars"])] == list(range(BUTTON_BASE, BUTTON_BASE + 45))
+    # Multi-row buttons still correspond to rectangles of real, unmodified slots.
+    for rows in range(1, 4):
+        height = rows * 18 - 2
+        with Image.open(PACK / f"assets/projects/textures/gui/core/menu_cards_{rows}.png") as cards:
+            assert cards.size == (1440, height * len(PALETTE))
+            for tone_index, tone in enumerate(PALETTE):
+                for columns in range(1, 10):
+                    cell = cards.crop(((columns - 1) * 160, tone_index * height,
+                                       columns * 160, (tone_index + 1) * height))
+                    assert cell.getchannel("A").getbbox() == (0, 0, columns * 18 - 2, height)
+        for row in range(7 - rows):
+            provider = json.loads((PACK / f"assets/projects/font/core_menu_cards_{rows}_{row}.json").read_text())["providers"][0]
+            assert provider["height"] == height and provider["ascent"] == 13 - (18 + row * 18)
+            assert [ord(char) for char in "".join(provider["chars"])] == list(range(CARD_BASE, CARD_BASE + 45))
+    art_metrics = [line.split("\t") for line in (PACK / "assets/projects/menu/art.tsv").read_text().splitlines() if line and not line.startswith("#")]
+    assert [line[0] for line in art_metrics] == [art[0] for art in ART]
+    with Image.open(PACK / "assets/projects/textures/gui/core/menu_art.png") as atlas:
+        assert atlas.size == (256, 128)
+        for index, (name, ordinal, advance16, advance32) in enumerate(art_metrics):
+            assert int(ordinal) == index
+            cell = atlas.crop((index % 8 * ART_CELL, index // 8 * ART_CELL,
+                               (index % 8 + 1) * ART_CELL, (index // 8 + 1) * ART_CELL))
+            alpha = cell.getchannel("A")
+            assert set(alpha.tobytes()) <= {0, 255}
+            box = alpha.getbbox()
+            assert box is not None, f"Empty menu sprite {name}"
+            assert cell.convert("RGB").getcolors(maxcolors=24) is not None
+            for size, advance in zip(ART_SIZES, (advance16, advance32)):
+                assert int(advance) == math.floor(0.5 + box[2] * size / ART_CELL) + 1, f"Artwork anchor drift: {name}"
+        # Raw and processed resources must not become the same tiny graphic.
+        hashes = []
+        for index in range(14, 24):
+            hashes.append(hashlib.sha256(atlas.crop((index % 8 * 32, index // 8 * 32,
+                                                    (index % 8 + 1) * 32, (index // 8 + 1) * 32)).tobytes()).hexdigest())
+        assert len(set(hashes)) == 10
+    for size in ART_SIZES:
+        for y in ART_YS:
+            provider = json.loads((PACK / f"assets/projects/font/core_menu_art_{size}_{y}.json").read_text())["providers"][0]
+            assert provider["height"] == size and provider["ascent"] == 13 - y
+            assert [ord(char) for char in "".join(provider["chars"])] == list(range(ART_BASE, ART_BASE + 32))
     digest = hashlib.sha256(b"".join(p.encode() + (PACK / p).read_bytes() for p in paths)).hexdigest()
     print(f"PASS: {len(paths)} assets, {len(glyphs)} private glyphs, {len(overrides)} scoped transparent HUD sprites, no global font overrides; content SHA256 {digest}")
 
