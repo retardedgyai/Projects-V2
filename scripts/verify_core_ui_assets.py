@@ -7,7 +7,7 @@ import struct
 import zlib
 from PIL import Image
 from build_core_hud_assets import vanilla_overrides
-from build_core_menu_assets import TEXT_YS, CELL, SOURCE_CELL, TEXT_SCALE, TEXT_BASE, FRAME_BASE, BUTTON_BASE, CARD_BASE, PALETTE, FONT_SHA256, DOT_FONT_SHA256
+from build_core_menu_assets import TEXT_YS, CELL, SOURCE_CELL, TEXT_SCALE, TEXT_BASE, FRAME_BASE, BUTTON_BASE, CARD_BASE, PALETTE, DOT_FONT_SHA256
 from build_core_menu_art import ART, ART_BASE, ART_CELL, ART_YS, ART_SIZES
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -115,7 +115,9 @@ def verify():
     assert menu["panel"] == {"left_x": -98, "right_x": 184, "width": 88, "header_y": 8, "line_y": 30, "line_height": 14, "lines": 13}
     assert menu["slots"] == {"origin": [8, 18], "stride": 18, "columns": 9, "rows": 6}
     font_meta = json.loads((PACK / "assets/projects/menu/font-source.json").read_text())
-    assert font_meta["source_sha256"] == FONT_SHA256 and font_meta["weight"] == 500 and font_meta["size"] == 10
+    assert font_meta["source_sha256"] == DOT_FONT_SHA256 and font_meta["weight"] == 400 and font_meta["size"] == 8
+    assert font_meta["emphasis"] == font_meta["body"], "Menu labels and body must share the same 16px typeface"
+    assert (PACK / "assets/projects/textures/gui/core/menu_text.png").read_bytes() == (PACK / "assets/projects/textures/gui/core/menu_text_emphasis.png").read_bytes()
     assert font_meta["body"]["source_sha256"] == DOT_FONT_SHA256 and font_meta["body"]["source_size"] == 16
     assert font_meta["source_scale"] == TEXT_SCALE and font_meta["alpha"] == "binary"
     assert menu["source_cell"] == SOURCE_CELL and menu["text_scale"] == TEXT_SCALE
@@ -165,7 +167,7 @@ def verify():
                 assert box is not None and math.floor(0.5 + box[2] / TEXT_SCALE) + 1 == advance
                 if chr(code) in "+0123456789→":
                     assert 100 + box[1] / TEXT_SCALE >= 102, "Caption ink must start below the hero ink"
-    assert emphasized[ord("強")][1] > metrics[ord("強")][1], "Heading/body hierarchy collapsed"
+    assert emphasized == metrics, "Both menu text roles must preserve the same 16px glyph metrics"
     for y in TEXT_YS:
         providers = json.loads((PACK / f"assets/projects/font/core_menu_emphasis_y{y}.json").read_text())["providers"]
         assert len(providers) == 2 and providers[1]["ascent"] == 13 - y and providers[1]["height"] == CELL

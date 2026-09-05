@@ -19,9 +19,6 @@ ROOT = Path(__file__).resolve().parents[1]
 PACK = ROOT / "server-minestom/src/main/resources/core-ui-pack"
 ASSETS = PACK / "assets/projects"
 SOURCE = ROOT / "assets/core-ui"
-FONT_COMMIT = "295d98a7a0c17c68f1341eaeea354e7960ea70d3"
-FONT_URL = f"https://raw.githubusercontent.com/google/fonts/{FONT_COMMIT}/ofl/notosansjp/NotoSansJP%5Bwght%5D.ttf"
-FONT_SHA256 = "c2f3b4d463500a2ddcd3849cded1fceeb9fd6d1c32e6cbecd568453ba50fc68f"
 DOT_FONT_URL = "https://raw.githubusercontent.com/fontworks-fonts/DotGothic16/14517183ab2f75e8bccafc5a0bff6685d268c687/fonts/ttf/DotGothic16-Regular.ttf"
 DOT_FONT_SHA256 = "155da8f318553c11d9dffc2affbc7c2114c6a46f9740bcf639ed5568af92be71"
 CELL = 14
@@ -48,7 +45,7 @@ def write_json(path, data):
 
 
 def source_font(style="EMPHASIS"):
-    if style == "BODY":
+    if style in ("BODY", "EMPHASIS"):
         target = ROOT / ".tools/core-menu/DotGothic16-Regular.ttf"
         if not target.is_file():
             target.parent.mkdir(parents=True, exist_ok=True)
@@ -58,18 +55,7 @@ def source_font(style="EMPHASIS"):
             target.write_bytes(data)
         assert hashlib.sha256(target.read_bytes()).hexdigest() == DOT_FONT_SHA256
         return ImageFont.truetype(str(target), 16)
-    target = ROOT / ".tools/core-menu/NotoSansJP.ttf"
-    if not target.is_file():
-        target.parent.mkdir(parents=True, exist_ok=True)
-        print("Fetching the pinned Noto Sans JP authoring font (not part of the resource pack)")
-        with urllib.request.urlopen(FONT_URL, timeout=45) as response:
-            data = response.read()
-        assert hashlib.sha256(data).hexdigest() == FONT_SHA256, "Unexpected font download; inspect upstream before accepting it"
-        target.write_bytes(data)
-    assert hashlib.sha256(target.read_bytes()).hexdigest() == FONT_SHA256, "Authoring font hash mismatch"
-    font = ImageFont.truetype(str(target), 10 * TEXT_SCALE)
-    font.set_variation_by_axes([500])
-    return font
+    raise ValueError(f"Unknown menu text style: {style}")
 
 
 def repertoire():
@@ -117,8 +103,8 @@ def build_font(style="BODY"):
             _, top, _, bottom = font.getbbox(char, anchor="ls")
             assert 0 <= BASELINE * TEXT_SCALE + top and BASELINE * TEXT_SCALE + bottom <= SOURCE_CELL, f"Clipped menu glyph U+{ord(char):04X}"
             ImageDraw.Draw(cell).text((0, BASELINE * TEXT_SCALE), char, font=font, anchor="ls", fill="white")
-            # Deliberate hard pixels rather than translucent smudges from a tiny 10px
-            # raster. Two source pixels per GUI pixel preserve Japanese inner spaces.
+            # Both roles use the same 16px dot typeface, with no synthetic bolding.
+            # Two source pixels per GUI pixel preserve Japanese inner spaces.
             cell.putalpha(cell.getchannel("A").point(lambda value: 255 if value >= 100 else 0))
             box = cell.getchannel("A").getbbox()
             assert box is not None, f"Unexpected empty glyph U+{ord(char):04X}"
@@ -154,13 +140,14 @@ def build_font(style="BODY"):
     shutil.copyfile(license_path, ASSETS / "menu/OFL.txt")
     shutil.copyfile(SOURCE / "fonts/DotGothic16-OFL.txt", ASSETS / "menu/DotGothic16-OFL.txt")
     write_json(ASSETS / "menu/font-source.json", {
-        "name": "ProjectS Ember Menu", "derived_from": "DotGothic16 / Noto Sans JP", "weight": 500,
-        "size": 10, "source_size": 20, "source_scale": TEXT_SCALE, "alpha": "binary",
+        "name": "ProjectS Ember Menu", "derived_from": "DotGothic16", "weight": 400,
+        "size": 8, "source_size": 16, "source_scale": TEXT_SCALE, "alpha": "binary",
         "body": {"name": "DotGothic16", "size": 8, "source_size": 16, "weight": 400,
                  "source_url": DOT_FONT_URL, "source_sha256": DOT_FONT_SHA256},
-        "emphasis": {"name": "Noto Sans JP", "size": 10, "source_size": 20, "weight": 500},
-        "source_url": FONT_URL, "source_sha256": FONT_SHA256, "license": "SIL Open Font License 1.1",
-        "copyright": "Copyright 2014-2021 Adobe (http://www.adobe.com/), with Reserved Font Name 'Source'",
+        "emphasis": {"name": "DotGothic16", "size": 8, "source_size": 16, "weight": 400,
+                     "source_url": DOT_FONT_URL, "source_sha256": DOT_FONT_SHA256},
+        "source_url": DOT_FONT_URL, "source_sha256": DOT_FONT_SHA256, "license": "SIL Open Font License 1.1",
+        "copyright": "Copyright 2020 The DotGothic16 Project Authors",
         "scope": "Private-use characters in projects:core_menu_y* only; minecraft:default is never modified",
     })
     return atlas, metrics

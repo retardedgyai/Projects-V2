@@ -40,11 +40,12 @@ Vanilla 26.2 + Minestom + サーバー配信リソースパックのみ。
 
 ## 字形とアート
 
-本文は[Fontworks DotGothic16](https://github.com/fontworks-fonts/DotGothic16)の16px原画を
-8 GUI pxで描画。16×16ビットマップを基礎に設計された字形を利用する。
-見出し・操作・強調数値は既存Noto Sans JPのweight 500、20px原画 / 10 GUI px。
-両方とも28pxセル / 14 GUI px、二値alpha、実bitmap右端からadvanceを算出する。
-別々のメトリクスを使い、長い数値も役割に対応した幅で測定する。
+本文・見出し・操作・強調数値を[Fontworks DotGothic16](https://github.com/fontworks-fonts/DotGothic16)
+の16px原画 / 8 GUI px、weight 400へ統一。Creatorの「文字周り16x」試行として、
+Noto Sans JPの20px見出しを外した。16 GUI pxへの拡大ではなく16px字形への統一。
+28pxセル / 14 GUI px、二値alpha、実bitmap右端からadvanceを算出する。
+BODY/EMPHASISのAPIは保つが字形と幅は同一。強調は既存の色・背景で行う。
+配置、背景、アイコン、HUD、装備Tooltipは変更しない。
 
 DotGothic16 source commit: `14517183ab2f75e8bccafc5a0bff6685d268c687`。
 TTF SHA256: `155da8f318553c11d9dffc2affbc7c2114c6a46f9740bcf639ed5568af92be71`。
@@ -55,6 +56,15 @@ SIL OFL 1.1を原文のまま配信。全TTFは配信せず必要文字だけを
 台座と金属の縁はネイティブのピクセル描画。外部ゲームのパックを取り込まない。
 
 ## 検証と残件
+
+### 16px統一試行
+
+- CoreMenuCanvasTest 21件 + CoreLoopMenusTest 17件、計38件成功（29秒）。
+- 13実装snapshotを再生成、strict警告0。工房プレビューで字形・配置を確認。
+- アセット検証287件成功。内容SHA256 `f35565603729fa4dcb6a94634545b48d206551d0c578cadf481723ff4b56c52d`。
+- 16px版はまだ再起動・ゲーム内確認していない。下記起動記録は変更前の版。
+- 重要な生成元は `scripts/build_core_menu_assets.py`。文字の問題は生成atlasと
+  `glyphs*.tsv`を確認し、`scripts/verify_core_ui_assets.py`で整合性を検査する。
 
 2026-09-05 21:37 JST（空の保管庫の文言修正後に再実行）:
 

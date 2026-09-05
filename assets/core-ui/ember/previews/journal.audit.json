@@ -15,7 +15,7 @@
       "x": 8,
       "y": 6,
       "text": "開拓港 / 手帳",
-      "width": 68,
+      "width": 58,
       "style": "EMPHASIS"
     },
     {
@@ -23,7 +23,7 @@
       "x": -98,
       "y": 8,
       "text": "旅の装備",
-      "width": 44,
+      "width": 36,
       "style": "EMPHASIS"
     },
     {
@@ -95,7 +95,7 @@
       "x": 184,
       "y": 8,
       "text": "次の遠征",
-      "width": 44,
+      "width": 36,
       "style": "EMPHASIS"
     },
     {
@@ -103,7 +103,7 @@
       "x": 184,
       "y": 72,
       "text": "T1〜3",
-      "width": 31,
+      "width": 23,
       "style": "EMPHASIS"
     },
     {
@@ -148,66 +148,66 @@
     },
     {
       "where": "card[9]",
-      "x": 23,
+      "x": 25,
       "y": 74,
       "text": "遠征",
-      "width": 22,
+      "width": 18,
       "style": "EMPHASIS"
     },
     {
       "where": "card[12]",
-      "x": 77,
+      "x": 79,
       "y": 74,
       "text": "工房",
-      "width": 22,
+      "width": 18,
       "style": "EMPHASIS"
     },
     {
       "where": "card[15]",
-      "x": 125,
+      "x": 128,
       "y": 74,
       "text": "保管庫",
-      "width": 33,
+      "width": 27,
       "style": "EMPHASIS"
     },
     {
       "where": "card[36]",
-      "x": 32,
+      "x": 34,
       "y": 92,
       "text": "装備",
-      "width": 22,
+      "width": 18,
       "style": "EMPHASIS"
     },
     {
       "where": "card[39]",
-      "x": 86,
+      "x": 88,
       "y": 92,
       "text": "採取",
-      "width": 22,
+      "width": 18,
       "style": "EMPHASIS"
     },
     {
       "where": "card[42]",
-      "x": 140,
+      "x": 142,
       "y": 92,
       "text": "試練",
-      "width": 22,
+      "width": 18,
       "style": "EMPHASIS"
     },
     {
       "where": "card[45]",
-      "x": 32,
+      "x": 34,
       "y": 110,
       "text": "補給",
-      "width": 22,
+      "width": 18,
       "style": "EMPHASIS"
     },
     {
       "where": "card[48]",
-      "x": 80,
+      "x": 83,
       "y": 110,
       "text": "遊び方",
-      "width": 33,
+      "width": 27,
       "style": "EMPHASIS"
     },
     {
@@ -220,10 +220,10 @@
     },
     {
       "where": "button[51]",
-      "x": 126,
+      "x": 129,
       "y": 110,
       "text": "閉じる",
-      "width": 31,
+      "width": 25,
       "style": "EMPHASIS"
     }
   ],

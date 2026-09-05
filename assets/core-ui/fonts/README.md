@@ -18,10 +18,10 @@ Regenerate after introducing new Japanese menu text, then run the structural ver
 Missing characters are visibly replaced with □ and logged by `CoreMenuCanvas`.
 # Ember menu typography (2026-09-05)
 
-The current menu body uses Fontworks DotGothic16 (16px source / 8 GUI px).
-Headings, button labels and emphasized figures use Noto Sans JP weight 500
-(20px source / 10 GUI px). Both have separate measured bitmap advances and
-private-use font providers. This does not replace Minecraft's global font.
+The current menu body, headings, button labels and emphasized figures use
+Fontworks DotGothic16 (16px source / 8 GUI px, weight 400). Both role providers
+retain separate names but share identical bitmaps and measured advances.
+This does not replace Minecraft's global font.
 
 DotGothic16 source: https://github.com/fontworks-fonts/DotGothic16/tree/14517183ab2f75e8bccafc5a0bff6685d268c687
 

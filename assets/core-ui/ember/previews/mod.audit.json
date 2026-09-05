@@ -15,7 +15,7 @@
       "x": 8,
       "y": 6,
       "text": "開拓工房 / MOD加工",
-      "width": 104,
+      "width": 82,
       "style": "EMPHASIS"
     },
     {
@@ -23,7 +23,7 @@
       "x": -98,
       "y": 8,
       "text": "加工する装備",
-      "width": 65,
+      "width": 53,
       "style": "EMPHASIS"
     },
     {
@@ -87,7 +87,7 @@
       "x": 184,
       "y": 8,
       "text": "加工の内容",
-      "width": 54,
+      "width": 45,
       "style": "EMPHASIS"
     },
     {
@@ -156,106 +156,106 @@
     },
     {
       "where": "card[9]",
-      "x": 32,
+      "x": 34,
       "y": 38,
       "text": "武器",
-      "width": 22,
+      "width": 18,
       "style": "EMPHASIS"
     },
     {
       "where": "card[12]",
-      "x": 86,
+      "x": 88,
       "y": 38,
       "text": "防具",
-      "width": 22,
+      "width": 18,
       "style": "EMPHASIS"
     },
     {
       "where": "card[18]",
-      "x": 32,
+      "x": 34,
       "y": 56,
       "text": "混沌",
-      "width": 22,
+      "width": 18,
       "style": "EMPHASIS"
     },
     {
       "where": "card[21]",
-      "x": 86,
+      "x": 88,
       "y": 56,
       "text": "洗浄",
-      "width": 22,
+      "width": 18,
       "style": "EMPHASIS"
     },
     {
       "where": "card[24]",
-      "x": 140,
+      "x": 142,
       "y": 56,
       "text": "神聖",
-      "width": 22,
+      "width": 18,
       "style": "EMPHASIS"
     },
     {
       "where": "card[27]",
-      "x": 27,
+      "x": 30,
       "y": 74,
       "text": "裂け目",
-      "width": 31,
+      "width": 26,
       "style": "EMPHASIS"
     },
     {
       "where": "card[30]",
-      "x": 86,
+      "x": 88,
       "y": 74,
       "text": "儀式",
-      "width": 22,
+      "width": 18,
       "style": "EMPHASIS"
     },
     {
       "where": "card[42]",
-      "x": 140,
+      "x": 142,
       "y": 92,
       "text": "詳細",
-      "width": 22,
+      "width": 18,
       "style": "EMPHASIS"
     },
     {
       "where": "card[51]",
-      "x": 140,
+      "x": 142,
       "y": 110,
       "text": "刻印",
-      "width": 21,
+      "width": 18,
       "style": "EMPHASIS"
     },
     {
       "where": "button[0]",
-      "x": 14,
+      "x": 16,
       "y": 20,
       "text": "強化",
-      "width": 22,
+      "width": 18,
       "style": "EMPHASIS"
     },
     {
       "where": "button[2]",
-      "x": 50,
+      "x": 52,
       "y": 20,
       "text": "精製",
-      "width": 22,
+      "width": 18,
       "style": "EMPHASIS"
     },
     {
       "where": "button[4]",
-      "x": 86,
+      "x": 88,
       "y": 20,
       "text": "制作",
-      "width": 22,
+      "width": 18,
       "style": "EMPHASIS"
     },
     {
       "where": "button[6]",
-      "x": 122,
+      "x": 124,
       "y": 20,
       "text": "刻印",
-      "width": 21,
+      "width": 18,
       "style": "EMPHASIS"
     },
     {
@@ -268,26 +268,26 @@
     },
     {
       "where": "button[45]",
-      "x": 14,
+      "x": 16,
       "y": 110,
       "text": "手帳",
-      "width": 22,
+      "width": 18,
       "style": "EMPHASIS"
     },
     {
       "where": "button[15]",
-      "x": 121,
+      "x": 124,
       "y": 38,
       "text": "全オーブ",
-      "width": 42,
+      "width": 35,
       "style": "EMPHASIS"
     },
     {
       "where": "button[47]",
-      "x": 48,
+      "x": 52,
       "y": 110,
       "text": "旧石交換",
-      "width": 44,
+      "width": 35,
       "style": "EMPHASIS"
     }
   ],

@@ -124,7 +124,7 @@ class CoreMenuCanvasTest {
             assertEquals(value, wrapped.joinToString(""))
             assertTrue(wrapped.all { CoreMenuCanvas.width(it) <= CoreMenuCanvas.PANEL_WIDTH })
         }
-        assertEquals(listOf("MODの種類と", "Tierを保持"), CoreMenuCanvas.wrap("MODの種類とTierを保持", style = CoreMenuCanvas.TextStyle.EMPHASIS))
+        assertEquals(CoreMenuCanvas.wrap("MODの種類とTierを保持"), CoreMenuCanvas.wrap("MODの種類とTierを保持", style = CoreMenuCanvas.TextStyle.EMPHASIS))
     }
 
     @Test fun `oversized ASCII runs fall back safely without erasing explicit empty lines`() {
@@ -271,7 +271,7 @@ class CoreMenuCanvasTest {
         assertEquals(listOf("工房", "", "装備", "攻撃 42", "", "必要素材", "木材", "12 / 80", "", "結果を確認"), canvas.fallbackLines())
     }
 
-    @Test fun `body and emphasis use independent metrics and matching glyph ordinals`() {
+    @Test fun `body and emphasis share 16px metrics and matching glyph ordinals`() {
         val body = fontMetrics("glyphs")
         val emphasis = fontMetrics("glyphs-emphasis")
         assertEquals(body.keys, emphasis.keys)
@@ -280,7 +280,8 @@ class CoreMenuCanvasTest {
         assertEquals(sample.codePoints().toArray().sumOf { body.getValue(it).second }, CoreMenuCanvas.width(sample))
         assertEquals(sample.codePoints().toArray().sumOf { emphasis.getValue(it).second },
             CoreMenuCanvas.width(sample, CoreMenuCanvas.TextStyle.EMPHASIS))
-        assertTrue(CoreMenuCanvas.width(sample) < CoreMenuCanvas.width(sample, CoreMenuCanvas.TextStyle.EMPHASIS))
+        assertEquals(body, emphasis)
+        assertEquals(CoreMenuCanvas.width(sample), CoreMenuCanvas.width(sample, CoreMenuCanvas.TextStyle.EMPHASIS))
         for (style in CoreMenuCanvas.TextStyle.entries) {
             val text = "必要な素材は保管庫から使用します"
             val trimmed = CoreMenuCanvas.trim(text, 44, style)

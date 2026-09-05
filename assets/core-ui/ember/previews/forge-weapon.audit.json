@@ -15,7 +15,7 @@
       "x": 8,
       "y": 6,
       "text": "開拓工房 / 強化",
-      "width": 79,
+      "width": 67,
       "style": "EMPHASIS"
     },
     {
@@ -23,7 +23,7 @@
       "x": -98,
       "y": 8,
       "text": "強化後の性能",
-      "width": 66,
+      "width": 54,
       "style": "EMPHASIS"
     },
     {
@@ -47,7 +47,7 @@
       "x": -98,
       "y": 58,
       "text": "54 → 56",
-      "width": 44,
+      "width": 38,
       "style": "EMPHASIS"
     },
     {
@@ -63,7 +63,7 @@
       "x": -98,
       "y": 86,
       "text": "13.8% → 14.6%",
-      "width": 85,
+      "width": 64,
       "style": "EMPHASIS"
     },
     {
@@ -79,7 +79,7 @@
       "x": -98,
       "y": 114,
       "text": "成功率 87.5%",
-      "width": 69,
+      "width": 55,
       "style": "EMPHASIS"
     },
     {
@@ -135,7 +135,7 @@
       "x": 184,
       "y": 8,
       "text": "必要素材",
-      "width": 44,
+      "width": 36,
       "style": "EMPHASIS"
     },
     {
@@ -188,90 +188,90 @@
     },
     {
       "where": "card[9]",
-      "x": 32,
+      "x": 34,
       "y": 38,
       "text": "武器",
-      "width": 22,
+      "width": 18,
       "style": "EMPHASIS"
     },
     {
       "where": "card[12]",
-      "x": 86,
+      "x": 88,
       "y": 38,
       "text": "防具",
-      "width": 22,
+      "width": 18,
       "style": "EMPHASIS"
     },
     {
       "where": "card[15]",
-      "x": 140,
+      "x": 142,
       "y": 38,
       "text": "詳細",
-      "width": 22,
+      "width": 18,
       "style": "EMPHASIS"
     },
     {
       "where": "card[24]",
-      "x": 140,
+      "x": 142,
       "y": 56,
       "text": "通常",
-      "width": 21,
+      "width": 18,
       "style": "EMPHASIS"
     },
     {
       "where": "card[33]",
-      "x": 140,
+      "x": 142,
       "y": 74,
       "text": "触媒",
-      "width": 22,
+      "width": 18,
       "style": "EMPHASIS"
     },
     {
       "where": "card[42]",
-      "x": 134,
+      "x": 137,
       "y": 92,
       "text": "素材へ",
-      "width": 33,
+      "width": 27,
       "style": "EMPHASIS"
     },
     {
       "where": "card[51]",
-      "x": 140,
+      "x": 142,
       "y": 110,
       "text": "強化",
-      "width": 22,
+      "width": 18,
       "style": "EMPHASIS"
     },
     {
       "where": "button[0]",
-      "x": 14,
+      "x": 16,
       "y": 20,
       "text": "強化",
-      "width": 22,
+      "width": 18,
       "style": "EMPHASIS"
     },
     {
       "where": "button[2]",
-      "x": 50,
+      "x": 52,
       "y": 20,
       "text": "精製",
-      "width": 22,
+      "width": 18,
       "style": "EMPHASIS"
     },
     {
       "where": "button[4]",
-      "x": 86,
+      "x": 88,
       "y": 20,
       "text": "制作",
-      "width": 22,
+      "width": 18,
       "style": "EMPHASIS"
     },
     {
       "where": "button[6]",
-      "x": 122,
+      "x": 124,
       "y": 20,
       "text": "刻印",
-      "width": 21,
+      "width": 18,
       "style": "EMPHASIS"
     },
     {
@@ -284,18 +284,18 @@
     },
     {
       "where": "button[45]",
-      "x": 10,
+      "x": 11,
       "y": 110,
       "text": "←",
-      "width": 11,
+      "width": 9,
       "style": "EMPHASIS"
     },
     {
       "where": "focus.caption",
-      "x": 38,
+      "x": 42,
       "y": 100,
       "text": "+6 → +7",
-      "width": 45,
+      "width": 37,
       "style": "EMPHASIS"
     }
   ],

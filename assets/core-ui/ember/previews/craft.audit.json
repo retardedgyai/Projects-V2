@@ -15,7 +15,7 @@
       "x": 8,
       "y": 6,
       "text": "開拓工房 / 制作",
-      "width": 79,
+      "width": 67,
       "style": "EMPHASIS"
     },
     {
@@ -23,7 +23,7 @@
       "x": -98,
       "y": 8,
       "text": "完成するもの",
-      "width": 64,
+      "width": 53,
       "style": "EMPHASIS"
     },
     {
@@ -71,7 +71,7 @@
       "x": 184,
       "y": 8,
       "text": "必要素材",
-      "width": 44,
+      "width": 36,
       "style": "EMPHASIS"
     },
     {
@@ -124,98 +124,98 @@
     },
     {
       "where": "card[9]",
-      "x": 32,
+      "x": 34,
       "y": 38,
       "text": "武器",
-      "width": 22,
+      "width": 18,
       "style": "EMPHASIS"
     },
     {
       "where": "card[12]",
-      "x": 86,
+      "x": 88,
       "y": 38,
       "text": "防具",
-      "width": 22,
+      "width": 18,
       "style": "EMPHASIS"
     },
     {
       "where": "card[18]",
-      "x": 36,
+      "x": 37,
       "y": 56,
       "text": "T4",
-      "width": 14,
+      "width": 11,
       "style": "EMPHASIS"
     },
     {
       "where": "card[21]",
-      "x": 80,
+      "x": 83,
       "y": 56,
       "text": "回復薬",
-      "width": 33,
+      "width": 27,
       "style": "EMPHASIS"
     },
     {
       "where": "card[24]",
-      "x": 140,
+      "x": 142,
       "y": 56,
       "text": "石板",
-      "width": 22,
+      "width": 18,
       "style": "EMPHASIS"
     },
     {
       "where": "card[27]",
-      "x": 32,
+      "x": 34,
       "y": 74,
       "text": "砥石",
-      "width": 22,
+      "width": 18,
       "style": "EMPHASIS"
     },
     {
       "where": "card[42]",
-      "x": 134,
+      "x": 137,
       "y": 92,
       "text": "素材へ",
-      "width": 33,
+      "width": 27,
       "style": "EMPHASIS"
     },
     {
       "where": "card[51]",
-      "x": 140,
+      "x": 142,
       "y": 110,
       "text": "制作",
-      "width": 22,
+      "width": 18,
       "style": "EMPHASIS"
     },
     {
       "where": "button[0]",
-      "x": 14,
+      "x": 16,
       "y": 20,
       "text": "強化",
-      "width": 22,
+      "width": 18,
       "style": "EMPHASIS"
     },
     {
       "where": "button[2]",
-      "x": 50,
+      "x": 52,
       "y": 20,
       "text": "精製",
-      "width": 22,
+      "width": 18,
       "style": "EMPHASIS"
     },
     {
       "where": "button[4]",
-      "x": 86,
+      "x": 88,
       "y": 20,
       "text": "制作",
-      "width": 22,
+      "width": 18,
       "style": "EMPHASIS"
     },
     {
       "where": "button[6]",
-      "x": 122,
+      "x": 124,
       "y": 20,
       "text": "刻印",
-      "width": 21,
+      "width": 18,
       "style": "EMPHASIS"
     },
     {
@@ -228,42 +228,42 @@
     },
     {
       "where": "button[45]",
-      "x": 14,
+      "x": 16,
       "y": 110,
       "text": "手帳",
-      "width": 22,
+      "width": 18,
       "style": "EMPHASIS"
     },
     {
       "where": "button[15]",
-      "x": 120,
+      "x": 121,
       "y": 38,
       "text": "<",
-      "width": 7,
+      "width": 5,
       "style": "EMPHASIS"
     },
     {
       "where": "button[16]",
-      "x": 138,
+      "x": 139,
       "y": 38,
       "text": "3",
-      "width": 7,
+      "width": 5,
       "style": "EMPHASIS"
     },
     {
       "where": "button[17]",
-      "x": 156,
+      "x": 157,
       "y": 38,
       "text": ">",
-      "width": 7,
+      "width": 5,
       "style": "EMPHASIS"
     },
     {
       "where": "button[47]",
-      "x": 49,
+      "x": 50,
       "y": 110,
       "text": "1",
-      "width": 6,
+      "width": 4,
       "style": "EMPHASIS"
     },
     {
@@ -271,15 +271,15 @@
       "x": 67,
       "y": 110,
       "text": "5",
-      "width": 6,
+      "width": 5,
       "style": "EMPHASIS"
     },
     {
       "where": "button[49]",
-      "x": 82,
+      "x": 83,
       "y": 110,
       "text": "全",
-      "width": 11,
+      "width": 9,
       "style": "EMPHASIS"
     }
   ],
