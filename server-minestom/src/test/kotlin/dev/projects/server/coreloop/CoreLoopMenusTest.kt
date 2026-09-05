@@ -328,6 +328,18 @@ class CoreLoopMenusTest {
         capture("storage") { f.menus.storage(f.player, 3) }
         capture("mod") { f.menus.confirmCraft(f.player, CoreGearSlot.ARMOR, CoreCraftingCurrency.DIVINE) }
         capture("craft") { f.click(CoreForgeLayout.Tab.CRAFT.slot); f.click(CoreForgeLayout.RECIPES[2]); f.click(48) }
+        val empty = fixture(account(wealthy = false))
+        val maximum = fixture(account(tier = 4, maximum = true))
+        for ((name, subject, render) in listOf(
+            Triple("forge-empty", empty) { empty.menus.workshop(empty.player, 1) },
+            Triple("storage-empty", empty) { empty.menus.storage(empty.player, 1) },
+            Triple("forge-max", maximum) { maximum.menus.workshop(maximum.player, 4) },
+        )) {
+            render()
+            Files.writeString(output.resolve("$name.json"), gson.toJson(subject.snapshot()))
+            auditSnapshot(subject.snapshot()).forEach { failures += "$name: $it" }
+            assertTrue(subject.host.requests.isEmpty())
+        }
         assertTrue(f.host.requests.isEmpty())
         assertTrue(failures.isEmpty(), failures.joinToString("\n"))
     }

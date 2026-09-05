@@ -473,7 +473,7 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
 
     private fun compactCount(count: Long): String = if (count < 10_000) count.toString() else "${count / 10_000}万${if (count % 10_000 == 0L) "" else "+"}"
     private fun stockName(resource: CoreResource) = when (resource) {
-        CoreResource.STONE_BLOCK -> "加工石"
+        CoreResource.STONE_BLOCK -> "切石"
         CoreResource.FIBER -> "繊維"
         CoreResource.LEATHER -> "革"
         CoreResource.GATHERING_TABLET -> "石板"
@@ -485,7 +485,6 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
     // The selected panel and original item tooltip keep the full name and exact count.
     private fun storageName(resource: CoreResource) = when (resource) {
         CoreResource.INGOT -> "金属"
-        CoreResource.STONE_BLOCK -> "石塊"
         CoreResource.BOSS_SIGIL -> "討伐"
         CoreResource.COMBAT_TOKEN -> "券"
         CoreResource.POTION -> "薬"

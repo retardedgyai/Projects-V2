@@ -252,7 +252,9 @@ def build_preview(frame, text_atlas, metrics, buttons):
 
     This is a component QA fixture, explicitly not a gameplay screenshot or a server state.
     """
-    preview = frame.copy()
+    # Compose at source density first: downsampling the font to GUI pixels before
+    # a 3x preview would incorrectly erase Japanese strokes visible in Minecraft.
+    preview = frame.resize((frame.width * TEXT_SCALE, frame.height * TEXT_SCALE), Image.Resampling.NEAREST)
 
     def width(text):
         return sum(metrics.get(char, metrics["□"])["advance"] for char in text)
@@ -265,17 +267,17 @@ def build_preview(frame, text_atlas, metrics, buttons):
             index = metric["index"]
             cell = text_atlas.crop(((index % 32) * SOURCE_CELL, (index // 32) * SOURCE_CELL,
                                     (index % 32 + 1) * SOURCE_CELL, (index // 32 + 1) * SOURCE_CELL))
-            cell = cell.resize((CELL, CELL), Image.Resampling.NEAREST)
             colored = Image.new("RGBA", cell.size, "#" + color)
             colored.putalpha(cell.getchannel("A"))
-            preview.alpha_composite(colored, (x + 104, y))
+            preview.alpha_composite(colored, ((x + 104) * TEXT_SCALE, y * TEXT_SCALE))
             x += metric["advance"]
 
     def button(slot, span, label, tone="NEUTRAL"):
         x, y = 8 + (slot % 9) * 18, 18 + (slot // 9) * 18
         row = list(PALETTE).index(tone)
         crop = buttons.crop(((span - 1) * 160, row * 16, (span - 1) * 160 + span * 18 - 2, row * 16 + 16))
-        preview.alpha_composite(crop, (x + 104, y))
+        preview.alpha_composite(crop.resize((crop.width * TEXT_SCALE, crop.height * TEXT_SCALE), Image.Resampling.NEAREST),
+                                ((x + 104) * TEXT_SCALE, y * TEXT_SCALE))
         text(x + (span * 18 - 2 - width(label)) // 2, y + 2, label, PALETTE[tone][2], span * 18 - 2)
 
     text(8, 6, "開拓工房 / 強化", "E9D5A0", 160)
@@ -303,7 +305,7 @@ def build_preview(frame, text_atlas, metrics, buttons):
     button(51, 3, "保管庫")
     # No substitute for the vanilla inventory title: this offline component QA image
     # deliberately omits the label that the real client draws on the light strip.
-    preview.save(SOURCE / "readable-menu-canvas-preview.png", optimize=True)
+    preview.resize(frame.size, Image.Resampling.NEAREST).save(SOURCE / "readable-menu-canvas-preview.png", optimize=True)
     preview.resize((1152, 666), Image.Resampling.NEAREST).save(SOURCE / "readable-menu-canvas-preview-3x.png", optimize=True)
 
 

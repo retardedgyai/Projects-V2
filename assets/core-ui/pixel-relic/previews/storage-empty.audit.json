@@ -1,0 +1,210 @@
+{
+  "title": "素材倉庫 / T1",
+  "layer": "actual CoreMenuCanvas title layer",
+  "omitted": [
+    "vanilla item models",
+    "vanilla inventory label",
+    "hover highlights",
+    "tooltips"
+  ],
+  "warnings": [],
+  "icon_slots": [],
+  "drawn_text": [
+    {
+      "where": "title",
+      "x": 8,
+      "y": 6,
+      "text": "素材倉庫 / T1",
+      "width": 71
+    },
+    {
+      "where": "leftPanel.title",
+      "x": -98,
+      "y": 8,
+      "text": "個人倉庫",
+      "width": 44
+    },
+    {
+      "where": "leftPanel.lines[0]",
+      "x": -98,
+      "y": 72,
+      "text": "所持 0種類",
+      "width": 55
+    },
+    {
+      "where": "leftPanel.lines[1]",
+      "x": -98,
+      "y": 86,
+      "text": "持っている物だけ",
+      "width": 84
+    },
+    {
+      "where": "leftPanel.lines[2]",
+      "x": -98,
+      "y": 100,
+      "text": "Tierごとに表示",
+      "width": 77
+    },
+    {
+      "where": "leftPanel.lines[3]",
+      "x": -98,
+      "y": 114,
+      "text": "通貨・欠片は共通",
+      "width": 84
+    },
+    {
+      "where": "leftPanel.lines[4]",
+      "x": -98,
+      "y": 128,
+      "text": "工房で直接使用",
+      "width": 75
+    },
+    {
+      "where": "leftPanel.lines[5]",
+      "x": -98,
+      "y": 142,
+      "text": "万以上は概数",
+      "width": 66
+    },
+    {
+      "where": "leftPanel.lines[6]",
+      "x": -98,
+      "y": 156,
+      "text": "正確な個数は右へ",
+      "width": 88
+    },
+    {
+      "where": "rightPanel.title",
+      "x": 184,
+      "y": 8,
+      "text": "選択した所持品",
+      "width": 74
+    },
+    {
+      "where": "rightPanel.lines[0]",
+      "x": 184,
+      "y": 72,
+      "text": "このTierの保管品",
+      "width": 88
+    },
+    {
+      "where": "rightPanel.lines[1]",
+      "x": 184,
+      "y": 86,
+      "text": "なし",
+      "width": 21
+    },
+    {
+      "where": "rightPanel.lines[2]",
+      "x": 184,
+      "y": 100,
+      "text": "採取・討伐で入手",
+      "width": 84
+    },
+    {
+      "where": "button[0]",
+      "x": 18,
+      "y": 20,
+      "text": "T1",
+      "width": 14
+    },
+    {
+      "where": "button[2]",
+      "x": 54,
+      "y": 20,
+      "text": "T2",
+      "width": 14
+    },
+    {
+      "where": "button[4]",
+      "x": 90,
+      "y": 20,
+      "text": "T3",
+      "width": 13
+    },
+    {
+      "where": "button[6]",
+      "x": 126,
+      "y": 20,
+      "text": "T4",
+      "width": 14
+    },
+    {
+      "where": "button[8]",
+      "x": 157,
+      "y": 20,
+      "text": "?",
+      "width": 6
+    },
+    {
+      "where": "button[45]",
+      "x": 14,
+      "y": 110,
+      "text": "戻る",
+      "width": 21
+    },
+    {
+      "where": "button[47]",
+      "x": 48,
+      "y": 110,
+      "text": "<",
+      "width": 7
+    },
+    {
+      "where": "button[48]",
+      "x": 74,
+      "y": 110,
+      "text": "1 / 1",
+      "width": 27
+    },
+    {
+      "where": "button[51]",
+      "x": 120,
+      "y": 110,
+      "text": ">",
+      "width": 7
+    },
+    {
+      "where": "button[52]",
+      "x": 140,
+      "y": 110,
+      "text": "工房",
+      "width": 22
+    }
+  ],
+  "drawn_art": [
+    {
+      "x": -70,
+      "y": 30,
+      "art": "STORAGE",
+      "size": 32
+    },
+    {
+      "x": 212,
+      "y": 30,
+      "art": "STORAGE",
+      "size": 32
+    }
+  ],
+  "raster_scale": 2,
+  "occupied_control_slots": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    45,
+    46,
+    47,
+    48,
+    49,
+    50,
+    51,
+    52,
+    53
+  ]
+}

@@ -12,7 +12,7 @@ not the earlier high-resolution UI concept screenshots.
 - `source/symbols.png`: built-in generated 4x4 source sheet.
 - `atlas.json`: exact source SHA256, cell mapping and rendered advances.
 - `prompts.md`: source art generation instructions.
-- `../../../../scripts/build_core_menu_art.py`: deterministic resource-pack compiler.
+- `../../../scripts/build_core_menu_art.py`: deterministic resource-pack compiler.
 - Actual player texture: `assets/projects/textures/gui/core/menu_art.png` (256x128).
 
 The source sheets remain in the repository for provenance and later art iteration;
@@ -33,3 +33,16 @@ without introducing soft antialiasing over the pixel UI. Widths are remeasured f
 the actual bitmap using Vanilla's rounding formula. Global fonts are untouched.
 The 384x222 canvas, 54 central action slots and 36 player slots are unchanged.
 Frame/card bevels are native code-produced pixel geometry, not generated images.
+
+## Implementation previews
+
+`previews/` contains nine images rendered from actual `CoreMenuCanvas.snapshot()`
+test fixtures, plus strict audit reports. These are the resource-pack title layer,
+not Minecraft screenshots: vanilla item models, the inventory label and hover
+tooltips are intentionally omitted. The source text is composited at 2x density
+before output scaling, matching the new bitmap font's source/display relationship.
+
+- [Journal](previews/journal.png)
+- [Enhancement](previews/forge-enhance.png)
+- [Owned-only storage](previews/storage.png)
+- Empty resources, empty storage and maximum enhancement are included as well.

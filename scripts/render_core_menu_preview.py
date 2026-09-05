@@ -19,6 +19,8 @@ class MenuRenderer:
         self.assets = self.repo / "server-minestom/src/main/resources/core-ui-pack/assets/projects"
         self.layout = json.loads((self.repo / "assets/core-ui/readable-menu-layout.json").read_text(encoding="utf-8"))
         self.cell = self.layout["text_cell"]
+        self.source_cell = self.layout.get("source_cell", self.cell)
+        self.raster_scale = self.layout.get("text_scale", 1)
         self.origin_x = self.layout["origin"][0]
         self.frame = Image.new("RGBA", tuple(self.layout["size"]))
         for index in range(2):
@@ -26,13 +28,21 @@ class MenuRenderer:
                 self.frame.alpha_composite(tile.convert("RGBA"), (index * self.layout["frame_tile_width"], 0))
         self.atlas = Image.open(self.assets / "textures/gui/core/menu_text.png").convert("RGBA")
         self.buttons = Image.open(self.assets / "textures/gui/core/menu_buttons.png").convert("RGBA")
+        self.card_atlases = {rows: Image.open(self.assets / f"textures/gui/core/menu_cards_{rows}.png").convert("RGBA")
+                             for rows in range(1, 4)}
+        self.art_atlas = Image.open(self.assets / "textures/gui/core/menu_art.png").convert("RGBA")
+        self.art_ordinals = {}
+        for line in (self.assets / "menu/art.tsv").read_text().splitlines():
+            if line and not line.startswith("#"):
+                name, ordinal, _, _ = line.split("\t")
+                self.art_ordinals[name] = int(ordinal)
         self.metrics = {}
         for line in (self.assets / "menu/glyphs.tsv").read_text(encoding="utf-8").splitlines():
             if not line or line.startswith("#"): continue
             code, glyph, advance = line.split("\t")
             self.metrics[chr(int(code, 16))] = (int(glyph, 16), int(advance))
         self.text_base = min(glyph for glyph, advance in self.metrics.values())
-        self.columns = self.atlas.width // self.cell
+        self.columns = self.atlas.width // self.source_cell
         self.tones = self.layout["button"]["tones"]
 
     def metric(self, char):
@@ -57,10 +67,25 @@ class MenuRenderer:
         return min(self.layout["text_ys"], key=lambda value: abs(value - y))
 
     def render(self, snapshot, scaled_width=None, show_icon_slots=False):
-        result = self.frame.copy()
+        scale = self.raster_scale
+        result = self.frame.resize((self.frame.width * scale, self.frame.height * scale), Image.Resampling.NEAREST)
         report = {"title": snapshot["title"], "layer": "actual CoreMenuCanvas title layer",
                   "omitted": ["vanilla item models", "vanilla inventory label", "hover highlights", "tooltips"],
-                  "warnings": [], "icon_slots": [], "drawn_text": []}
+                  "warnings": [], "icon_slots": [], "drawn_text": [], "drawn_art": [],
+                  "raster_scale": scale, "occupied_control_slots": []}
+
+        def blit(picture, x, y, width=None, height=None):
+            width, height = width or picture.width, height or picture.height
+            result.alpha_composite(picture.resize((width * scale, height * scale), Image.Resampling.NEAREST),
+                                   ((x - self.origin_x) * scale, y * scale))
+
+        def art(value):
+            if not value: return
+            index = self.art_ordinals[value["art"]]
+            sprite = self.art_atlas.crop((index % 8 * 32, index // 8 * 32,
+                                          (index % 8 + 1) * 32, (index // 8 + 1) * 32))
+            blit(sprite, value["x"], value["y"], value["size"], value["size"])
+            report["drawn_art"].append(value)
 
         def text(x, y, value, color, maximum, where):
             y = self.snap_y(y)
@@ -76,11 +101,11 @@ class MenuRenderer:
             for char in visible:
                 glyph, advance = self.metric(char)
                 index = glyph - self.text_base
-                cell = self.atlas.crop(((index % self.columns) * self.cell, (index // self.columns) * self.cell,
-                                       (index % self.columns + 1) * self.cell, (index // self.columns + 1) * self.cell))
+                cell = self.atlas.crop(((index % self.columns) * self.source_cell, (index // self.columns) * self.source_cell,
+                                       (index % self.columns + 1) * self.source_cell, (index // self.columns + 1) * self.source_cell))
                 tinted = Image.new("RGBA", cell.size, f"#{color & 0xFFFFFF:06x}")
                 tinted.putalpha(cell.getchannel("A"))
-                result.alpha_composite(tinted, (x - self.origin_x, y))
+                blit(tinted, x, y, self.cell, self.cell)
                 x += advance
 
         text(8, 6, snapshot["title"], snapshot["titleColor"], 160, "title")
@@ -91,18 +116,36 @@ class MenuRenderer:
             if len(panel["lines"]) > panel_layout["lines"]:
                 raise ValueError(f"{key} exceeds the canvas line guard: {len(panel['lines'])}")
             text(x, panel_layout["header_y"], panel["title"], panel["titleColor"], panel_layout["width"], key + ".title")
+            art(panel.get("hero"))
             for row, line in enumerate(panel["lines"]):
-                text(x, panel_layout["line_y"] + row * panel_layout["line_height"], line["text"], line["color"],
-                     panel_layout["width"], f"{key}.lines[{row}]")
+                art(line.get("art"))
+                text(line.get("x", x), line.get("y", panel_layout["line_y"] + row * panel_layout["line_height"]),
+                     line["text"], line["color"], line.get("maxWidth", panel_layout["width"]), f"{key}.lines[{row}]")
+        occupied = set()
+        for card in snapshot.get("cards", []):
+            expected = [card["firstSlot"] + row * 9 + column for row in range(card["rows"]) for column in range(card["columns"])]
+            if expected != card["occupiedSlots"] or occupied.intersection(expected):
+                raise ValueError(f"Card click rectangle does not match visual: {card}")
+            occupied.update(expected)
+            tone_row = list(self.tones).index(card["tone"])
+            x = (card["columns"] - 1) * 160
+            y = tone_row * card["height"]
+            backdrop = self.card_atlases[card["rows"]].crop((x, y, x + card["width"], y + card["height"]))
+            blit(backdrop, card["x"], card["y"])
+            art(card["artPlacement"])
+            text(card["labelX"], card["labelY"], card["label"], card["textColor"], card["labelMaxWidth"], f"card[{card['firstSlot']}]")
         for button in snapshot.get("buttons", []):
             slot, span, tone = button["firstSlot"], button["span"], button["tone"]
             if not (0 <= slot <= 53 and 1 <= span <= 9 and slot % 9 + span <= 9):
                 raise ValueError(f"Invalid vanilla button slot: {button}")
+            slots = set(range(slot, slot + span))
+            if occupied.intersection(slots): raise ValueError(f"Overlapping button: {button}")
+            occupied.update(slots)
             x, y = 8 + (slot % 9) * 18, 18 + (slot // 9) * 18
             extent = span * 18 - 2
             row = list(self.tones).index(tone)
             backdrop = self.buttons.crop(((span - 1) * 160, row * 16, (span - 1) * 160 + extent, row * 16 + 16))
-            result.alpha_composite(backdrop, (x - self.origin_x, y))
+            blit(backdrop, x, y)
             inset = self.layout["button"]["icon_reserved_width"] if button["icon"] else 0
             maximum = max(0, extent - inset)
             visible = self.trim(button["label"], maximum)
@@ -114,17 +157,20 @@ class MenuRenderer:
                     # Optional diagnostic, explicitly not an invented Minecraft item render.
                     icon_x = x - self.origin_x
                     draw = ImageDraw.Draw(result)
-                    draw.rectangle((icon_x + 2, y + 2, icon_x + 13, y + 13), outline="#8AA6B5")
-                    draw.line((icon_x + 3, y + 12, icon_x + 12, y + 3), fill="#8AA6B5")
+                    draw.rectangle(tuple(value * scale for value in (icon_x + 2, y + 2, icon_x + 13, y + 13)), outline="#8AA6B5")
+                    draw.line(tuple(value * scale for value in (icon_x + 3, y + 12, icon_x + 12, y + 3)), fill="#8AA6B5")
+        for value in snapshot.get("arts", []): art(value)
         for index, value in enumerate(snapshot.get("texts", [])):
             text(value["x"], value["y"], value["value"], value["color"], value["maxWidth"], f"texts[{index}]")
         if scaled_width is not None:
             if scaled_width < 176: raise ValueError("Scaled width must accommodate the vanilla chest")
-            viewport = Image.new("RGBA", (scaled_width, result.height), "#111B23")
-            viewport.alpha_composite(result, ((scaled_width - result.width) // 2, 0))
+            viewport = Image.new("RGBA", (scaled_width * scale, result.height), "#111B23")
+            viewport.alpha_composite(result, ((scaled_width * scale - result.width) // 2, 0))
             result = viewport
             report["scaled_width"] = scaled_width
             report["horizontal_clipping_each_side"] = max(0, (self.frame.width - scaled_width) // 2)
+        # Snapshot describes presentation; disabled/read-only cards need not dispatch.
+        report["occupied_control_slots"] = sorted(occupied)
         return result, report
 
 
@@ -142,7 +188,8 @@ def main():
     snapshot = json.loads(args.snapshot.read_text(encoding="utf-8-sig"))
     renderer = MenuRenderer(args.repo)
     picture, report = renderer.render(snapshot, args.scaled_width, args.show_icon_slots)
-    picture = picture.resize((picture.width * args.scale, picture.height * args.scale), Image.Resampling.NEAREST)
+    picture = picture.resize((picture.width * args.scale // renderer.raster_scale,
+                              picture.height * args.scale // renderer.raster_scale), Image.Resampling.NEAREST)
     # Caption outside the exact menu region, not a replacement for any Minecraft label.
     captioned = Image.new("RGBA", (picture.width, picture.height + 32), "#101820")
     captioned.alpha_composite(picture)

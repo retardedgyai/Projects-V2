@@ -1,0 +1,353 @@
+{
+  "title": "素材倉庫 / T3",
+  "layer": "actual CoreMenuCanvas title layer",
+  "omitted": [
+    "vanilla item models",
+    "vanilla inventory label",
+    "hover highlights",
+    "tooltips"
+  ],
+  "warnings": [],
+  "icon_slots": [],
+  "drawn_text": [
+    {
+      "where": "title",
+      "x": 8,
+      "y": 6,
+      "text": "素材倉庫 / T3",
+      "width": 70
+    },
+    {
+      "where": "leftPanel.title",
+      "x": -98,
+      "y": 8,
+      "text": "個人倉庫",
+      "width": 44
+    },
+    {
+      "where": "leftPanel.lines[0]",
+      "x": -98,
+      "y": 72,
+      "text": "所持 31種類",
+      "width": 61
+    },
+    {
+      "where": "leftPanel.lines[1]",
+      "x": -98,
+      "y": 86,
+      "text": "持っている物だけ",
+      "width": 84
+    },
+    {
+      "where": "leftPanel.lines[2]",
+      "x": -98,
+      "y": 100,
+      "text": "Tierごとに表示",
+      "width": 77
+    },
+    {
+      "where": "leftPanel.lines[3]",
+      "x": -98,
+      "y": 114,
+      "text": "通貨・欠片は共通",
+      "width": 84
+    },
+    {
+      "where": "leftPanel.lines[4]",
+      "x": -98,
+      "y": 128,
+      "text": "工房で直接使用",
+      "width": 75
+    },
+    {
+      "where": "leftPanel.lines[5]",
+      "x": -98,
+      "y": 142,
+      "text": "万以上は概数",
+      "width": 66
+    },
+    {
+      "where": "leftPanel.lines[6]",
+      "x": -98,
+      "y": 156,
+      "text": "正確な個数は右へ",
+      "width": 88
+    },
+    {
+      "where": "rightPanel.title",
+      "x": 184,
+      "y": 8,
+      "text": "選択した所持品",
+      "width": 74
+    },
+    {
+      "where": "rightPanel.lines[0]",
+      "x": 184,
+      "y": 72,
+      "text": "T3 木材",
+      "width": 39
+    },
+    {
+      "where": "rightPanel.lines[1]",
+      "x": 184,
+      "y": 86,
+      "text": "所持 500000",
+      "width": 68
+    },
+    {
+      "where": "rightPanel.lines[2]",
+      "x": 184,
+      "y": 100,
+      "text": "",
+      "width": 0
+    },
+    {
+      "where": "rightPanel.lines[3]",
+      "x": 184,
+      "y": 114,
+      "text": "精製に使う素材",
+      "width": 75
+    },
+    {
+      "where": "card[9]",
+      "x": 26,
+      "y": 38,
+      "text": "木材 50万",
+      "width": 51
+    },
+    {
+      "where": "card[14]",
+      "x": 116,
+      "y": 38,
+      "text": "鉱石 50万",
+      "width": 51
+    },
+    {
+      "where": "card[18]",
+      "x": 26,
+      "y": 56,
+      "text": "石材 50万",
+      "width": 51
+    },
+    {
+      "where": "card[23]",
+      "x": 116,
+      "y": 56,
+      "text": "獣皮 50万",
+      "width": 51
+    },
+    {
+      "where": "card[27]",
+      "x": 26,
+      "y": 74,
+      "text": "繊維 50万",
+      "width": 51
+    },
+    {
+      "where": "card[32]",
+      "x": 116,
+      "y": 74,
+      "text": "板材 50万",
+      "width": 51
+    },
+    {
+      "where": "card[36]",
+      "x": 27,
+      "y": 92,
+      "text": "金属 50万",
+      "width": 50
+    },
+    {
+      "where": "card[41]",
+      "x": 116,
+      "y": 92,
+      "text": "切石 50万",
+      "width": 51
+    },
+    {
+      "where": "button[0]",
+      "x": 18,
+      "y": 20,
+      "text": "T1",
+      "width": 14
+    },
+    {
+      "where": "button[2]",
+      "x": 54,
+      "y": 20,
+      "text": "T2",
+      "width": 14
+    },
+    {
+      "where": "button[4]",
+      "x": 90,
+      "y": 20,
+      "text": "T3",
+      "width": 13
+    },
+    {
+      "where": "button[6]",
+      "x": 126,
+      "y": 20,
+      "text": "T4",
+      "width": 14
+    },
+    {
+      "where": "button[8]",
+      "x": 157,
+      "y": 20,
+      "text": "?",
+      "width": 6
+    },
+    {
+      "where": "button[45]",
+      "x": 14,
+      "y": 110,
+      "text": "戻る",
+      "width": 21
+    },
+    {
+      "where": "button[47]",
+      "x": 48,
+      "y": 110,
+      "text": "<",
+      "width": 7
+    },
+    {
+      "where": "button[48]",
+      "x": 74,
+      "y": 110,
+      "text": "1 / 4",
+      "width": 27
+    },
+    {
+      "where": "button[51]",
+      "x": 120,
+      "y": 110,
+      "text": ">",
+      "width": 7
+    },
+    {
+      "where": "button[52]",
+      "x": 140,
+      "y": 110,
+      "text": "工房",
+      "width": 22
+    }
+  ],
+  "drawn_art": [
+    {
+      "x": -70,
+      "y": 30,
+      "art": "STORAGE",
+      "size": 32
+    },
+    {
+      "x": 212,
+      "y": 30,
+      "art": "WOOD",
+      "size": 32
+    },
+    {
+      "x": 8,
+      "y": 36,
+      "art": "WOOD",
+      "size": 16
+    },
+    {
+      "x": 98,
+      "y": 36,
+      "art": "ORE",
+      "size": 16
+    },
+    {
+      "x": 8,
+      "y": 54,
+      "art": "STONE",
+      "size": 16
+    },
+    {
+      "x": 98,
+      "y": 54,
+      "art": "HIDE",
+      "size": 16
+    },
+    {
+      "x": 8,
+      "y": 72,
+      "art": "FIBER",
+      "size": 16
+    },
+    {
+      "x": 98,
+      "y": 72,
+      "art": "PLANK",
+      "size": 16
+    },
+    {
+      "x": 8,
+      "y": 90,
+      "art": "INGOT",
+      "size": 16
+    },
+    {
+      "x": 98,
+      "y": 90,
+      "art": "CUT_STONE",
+      "size": 16
+    }
+  ],
+  "raster_scale": 2,
+  "occupied_control_slots": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30,
+    32,
+    33,
+    34,
+    35,
+    36,
+    37,
+    38,
+    39,
+    41,
+    42,
+    43,
+    44,
+    45,
+    46,
+    47,
+    48,
+    49,
+    50,
+    51,
+    52,
+    53
+  ]
+}

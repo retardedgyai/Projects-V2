@@ -1,0 +1,293 @@
+{
+  "title": "開拓工房 / 強化",
+  "layer": "actual CoreMenuCanvas title layer",
+  "omitted": [
+    "vanilla item models",
+    "vanilla inventory label",
+    "hover highlights",
+    "tooltips"
+  ],
+  "warnings": [],
+  "icon_slots": [],
+  "drawn_text": [
+    {
+      "where": "title",
+      "x": 8,
+      "y": 6,
+      "text": "開拓工房 / 強化",
+      "width": 78
+    },
+    {
+      "where": "leftPanel.title",
+      "x": -98,
+      "y": 8,
+      "text": "T4 武器",
+      "width": 40
+    },
+    {
+      "where": "leftPanel.lines[0]",
+      "x": -98,
+      "y": 72,
+      "text": "+30（最大）",
+      "width": 57
+    },
+    {
+      "where": "leftPanel.lines[1]",
+      "x": -98,
+      "y": 86,
+      "text": "攻撃 119 → 119",
+      "width": 87
+    },
+    {
+      "where": "leftPanel.lines[2]",
+      "x": -98,
+      "y": 100,
+      "text": "AS補正 24%",
+      "width": 66
+    },
+    {
+      "where": "leftPanel.lines[3]",
+      "x": -98,
+      "y": 114,
+      "text": "→ 24%",
+      "width": 40
+    },
+    {
+      "where": "leftPanel.lines[4]",
+      "x": -98,
+      "y": 128,
+      "text": "最大まで強化済み",
+      "width": 86
+    },
+    {
+      "where": "leftPanel.lines[5]",
+      "x": -98,
+      "y": 142,
+      "text": "装備・MOD保護",
+      "width": 77
+    },
+    {
+      "where": "leftPanel.lines[6]",
+      "x": -98,
+      "y": 156,
+      "text": "熟練 10/10",
+      "width": 59
+    },
+    {
+      "where": "rightPanel.title",
+      "x": 184,
+      "y": 8,
+      "text": "必要素材",
+      "width": 44
+    },
+    {
+      "where": "rightPanel.lines[0]",
+      "x": 184,
+      "y": 30,
+      "text": "所持 / 必要",
+      "width": 57
+    },
+    {
+      "where": "rightPanel.lines[1]",
+      "x": 184,
+      "y": 44,
+      "text": "消費なし",
+      "width": 43
+    },
+    {
+      "where": "card[9]",
+      "x": 32,
+      "y": 38,
+      "text": "武器",
+      "width": 22
+    },
+    {
+      "where": "card[12]",
+      "x": 86,
+      "y": 38,
+      "text": "防具",
+      "width": 22
+    },
+    {
+      "where": "card[18]",
+      "x": 23,
+      "y": 74,
+      "text": "通常",
+      "width": 22
+    },
+    {
+      "where": "card[21]",
+      "x": 67,
+      "y": 74,
+      "text": "触媒あり",
+      "width": 41
+    },
+    {
+      "where": "card[24]",
+      "x": 120,
+      "y": 74,
+      "text": "装備詳細",
+      "width": 44
+    },
+    {
+      "where": "card[42]",
+      "x": 134,
+      "y": 92,
+      "text": "素材へ",
+      "width": 33
+    },
+    {
+      "where": "card[51]",
+      "x": 140,
+      "y": 110,
+      "text": "不可",
+      "width": 22
+    },
+    {
+      "where": "button[0]",
+      "x": 14,
+      "y": 20,
+      "text": "強化",
+      "width": 22
+    },
+    {
+      "where": "button[2]",
+      "x": 50,
+      "y": 20,
+      "text": "精製",
+      "width": 22
+    },
+    {
+      "where": "button[4]",
+      "x": 86,
+      "y": 20,
+      "text": "制作",
+      "width": 22
+    },
+    {
+      "where": "button[6]",
+      "x": 123,
+      "y": 20,
+      "text": "刻印",
+      "width": 20
+    },
+    {
+      "where": "button[8]",
+      "x": 157,
+      "y": 20,
+      "text": "?",
+      "width": 6
+    },
+    {
+      "where": "button[45]",
+      "x": 14,
+      "y": 110,
+      "text": "手帳",
+      "width": 22
+    },
+    {
+      "where": "button[15]",
+      "x": 120,
+      "y": 38,
+      "text": "最大強化",
+      "width": 44
+    }
+  ],
+  "drawn_art": [
+    {
+      "x": -70,
+      "y": 30,
+      "art": "WEAPON",
+      "size": 32
+    },
+    {
+      "x": 8,
+      "y": 36,
+      "art": "WEAPON",
+      "size": 16
+    },
+    {
+      "x": 62,
+      "y": 36,
+      "art": "ARMOR",
+      "size": 16
+    },
+    {
+      "x": 26,
+      "y": 54,
+      "art": "ENHANCE",
+      "size": 16
+    },
+    {
+      "x": 80,
+      "y": 54,
+      "art": "SHARD",
+      "size": 16
+    },
+    {
+      "x": 134,
+      "y": 54,
+      "art": "GEAR",
+      "size": 16
+    },
+    {
+      "x": 116,
+      "y": 90,
+      "art": "STORAGE",
+      "size": 16
+    },
+    {
+      "x": 116,
+      "y": 108,
+      "art": "ENHANCE",
+      "size": 16
+    }
+  ],
+  "raster_scale": 2,
+  "occupied_control_slots": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30,
+    31,
+    32,
+    33,
+    34,
+    35,
+    42,
+    43,
+    44,
+    45,
+    46,
+    51,
+    52,
+    53
+  ]
+}
