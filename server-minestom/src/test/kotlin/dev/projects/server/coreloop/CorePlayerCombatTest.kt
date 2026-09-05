@@ -414,6 +414,38 @@ class CorePlayerCombatTest {
         assertEquals(288.0, h.combat.bossHealth())
     }
 
+    @Test
+    fun `broken weapon blocks every offensive input without mana cooldown or damage but permits dodge`() = arena { h ->
+        h.weaponBroken = true
+        h.actor.attack()
+        repeat(3) { h.actor.skill(it) }
+        assertEquals(100, h.actor.mana)
+        repeat(3) { assertEquals(0L, h.actor.cooldownSeconds(it)) }
+        h.ticks(40)
+        assertEquals(300.0, h.combat.bossHealth())
+        assertEquals(0, h.actor.activeVisualEffects)
+        val origin = h.player.position
+        h.actor.dodge()
+        assertTrue(origin.distance(h.player.position) > 0)
+        h.weaponBroken = false
+        h.actor.skill(1)
+        assertEquals(75, h.actor.mana)
+    }
+
+    @Test
+    fun `broken armor removes tier mitigation and health bonus`() = arena(armorTier = 4, armorEnhancement = 30) { h ->
+        h.armorBroken = true
+        h.actor.reset()
+        assertEquals(100, h.actor.maxHealth)
+        h.actor.hurt(20.0)
+        assertEquals(80.0, h.actor.health, .00001)
+        h.armorBroken = false
+        h.actor.reset()
+        assertEquals(304, h.actor.maxHealth)
+        h.actor.hurt(20.0)
+        assertEquals(290.0, h.actor.health, .00001)
+    }
+
     private class Harness(bossDistance: Double, armorTier: Int, stats: CoreAffixStats, roll: Double,
         weaponEnhancement: Int, armorEnhancement: Int) : AutoCloseable {
         val instance = MinecraftServer.getInstanceManager().createInstanceContainer()
@@ -421,6 +453,8 @@ class CorePlayerCombatTest {
         val combat: QuestEncounterCombat
         var activeEncounter: QuestEncounterCombat? = null
         val actor: CorePlayerCombat
+        var weaponBroken = false
+        var armorBroken = false
         var deaths = 0
         val incomingHits = mutableListOf<Double>()
         var afterKill: () -> Unit = {}
@@ -439,7 +473,8 @@ class CorePlayerCombatTest {
             player.getAttribute(Attribute.MAX_HEALTH).baseValue = 100.0 + (armorTier - 1) * 30.0
             player.setInstance(instance, Pos(8.5, 40.0, 8.5)).get(10, TimeUnit.SECONDS)
             actor = CorePlayerCombat(player, { 1 }, { armorTier }, { activeEncounter }, statSource = { stats }, criticalRoll = { roll },
-                weaponEnhancement = { weaponEnhancement }, armorEnhancement = { armorEnhancement }) { deaths++ }
+                weaponEnhancement = { weaponEnhancement }, armorEnhancement = { armorEnhancement },
+                weaponBroken = { weaponBroken }, armorBroken = { armorBroken }) { deaths++ }
             combat = QuestEncounterCombat(instance, 1, emptyList(), Pos(8.5, 40.0, 8.5 + bossDistance),
                 onMobDefeated = { _, _ -> afterKill() },
                 damagePlayer = { _, amount -> incomingHits += amount; actor.hurt(amount) },

@@ -70,7 +70,13 @@ class CoreEnhancementTest {
             val originalMods = seed.equippedAffixes
             val f = Fixture(seed)
             var attempts = 0
+            var repairs = 0
             while (CoreEnhancementCatalog.state(f.account, gear).level < 30) {
+                if (CoreEconomy.broken(f.account, gear)) {
+                    val donor = f.commit(CoreAction.Manufacture(gear, 4)).storedGear.last()
+                    f.commit(CoreAction.Repair(gear, donor.identity.id))
+                    repairs++
+                }
                 val before = CoreEnhancementCatalog.state(f.account, gear)
                 val quote = CoreEnhancementCatalog.quote(f.account, gear)
                 val balances = f.account.balances
@@ -85,7 +91,7 @@ class CoreEnhancementTest {
                 assertEquals(originalMods, f.account.equippedAffixes)
                 assertEquals(4, f.account.weaponTier); assertEquals(4, f.account.armorTier)
             }
-            assertEquals(attempts.toLong(), f.account.smithingXp)
+            assertEquals((attempts + repairs * 5).toLong().coerceAtMost(200), f.account.smithingXp)
             val snapshot = CoreAccountCodec.encode(f.account)
             assertEquals(CoreTransactionStatus.REJECTED, f.perform(CoreAction.EnhanceEquipment(gear)).status)
             assertEquals(snapshot, CoreAccountCodec.encode(f.account))
@@ -253,7 +259,7 @@ class CoreEnhancementTest {
         assertEquals(CoreEnhancementState(1), after.weaponEnhancement)
         assertEquals(1, after.smithingXp)
         assertEquals(encoded, Files.readString(backup))
-        assertTrue(Files.readString(path).startsWith("PROJECTS_CORE_LOOP\t5\t"))
+        assertTrue(Files.readString(path).startsWith("PROJECTS_CORE_LOOP\t6\t"))
         assertEquals(CoreTransactionStatus.REPLAYED, service.transact(old.playerId, operation).status)
     }
 
@@ -281,7 +287,7 @@ class CoreEnhancementTest {
 
     private fun asV3(account: CoreAccount): String = checksum(CoreAccountCodec.encode(account).substringBefore("checksum\t")
         .lineSequence().filterNot { it.startsWith("enhancement\t") || it.startsWith("economy\t") || it.startsWith("identity\t") }.joinToString("\n")
-        .replaceFirst("PROJECTS_CORE_LOOP\t5\t", "PROJECTS_CORE_LOOP\t3\t"))
+        .replaceFirst("PROJECTS_CORE_LOOP\t6\t", "PROJECTS_CORE_LOOP\t3\t"))
     private fun checksum(body: String): String = body + "checksum\t" + MessageDigest.getInstance("SHA-256")
         .digest(body.toByteArray(UTF_8)).joinToString("") { "%02x".format(it) } + "\n"
 }

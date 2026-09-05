@@ -69,6 +69,84 @@ class CoreLoopMenusTest {
 
     @BeforeTest fun initializeMinestom() { MinecraftServer.init(Auth.Offline()) }
 
+    @Test fun `risky enhancement quotes then confirms while broken equipment links directly to repair`() {
+        for (packed in listOf(false, true)) {
+            val f = fixture(account(tier = 3).copy(weaponEnhancement = CoreEnhancementState(15)), packed)
+            f.menus.workshop(f.player, 3)
+            assertTrue(f.snapshot().leftPanel!!.lines.any { it.text == "失敗時破損 5%" })
+            f.click(CoreForgeLayout.EXECUTE)
+            assertTrue(f.host.requests.isEmpty())
+            assertTrue(f.title().contains("破損リスク"))
+            val lore = f.player.openInventory!!.getItemStack(4).get(DataComponents.LORE)!!.joinToString("\n") { decode(it) }
+            assertTrue("今回1回あたりの破損確率 3.5%" in lore)
+            f.click(45)
+            assertTrue(f.host.requests.isEmpty())
+            f.click(CoreForgeLayout.EXECUTE)
+            f.click(22)
+            assertEquals(CoreAction.EnhanceEquipment(CoreGearSlot.WEAPON), f.host.requests.single().action)
+            f.host.current = f.host.current.copy(weaponBroken = true)
+            f.host.requests.single().after()
+            assertTrue(f.title().contains("修理"))
+            f.host.requests.clear()
+            f.menus.workshop(f.player, 3)
+            f.click(CoreForgeLayout.EXECUTE)
+            assertTrue(f.host.requests.isEmpty())
+            f.click(42)
+            assertTrue(f.title().contains("修理"))
+            f.click(20)
+            f.click(CoreForgeLayout.EXECUTE)
+            assertEquals(CoreAction.Manufacture(CoreGearSlot.WEAPON, 3), f.host.requests.single().action)
+        }
+    }
+
+    @Test fun `repair market filters incompatible equipment and returns a purchased donor to repair selection`() {
+        for (packed in listOf(false, true)) {
+            val f = fixture(account(tier = 3).copy(weaponBroken = true, silver = 1000), packed)
+            fun entry(slot: CoreGearSlot = CoreGearSlot.WEAPON, tier: Int = 3, level: Int = 0, broken: Boolean = false): CoreMarketEntry {
+                val seller = UUID.randomUUID()
+                val item = CoreStoredGear(CoreGearIdentity(UUID.randomUUID(), seller), slot, tier,
+                    CoreGearRarity.NORMAL, CoreEnhancementState(level), broken = broken)
+                return CoreMarketEntry(seller, CoreMarketOffer(UUID.randomUUID(), 100, gearId = item.identity.id), item)
+            }
+            val good = entry()
+            f.host.marketEntries = listOf(entry(CoreGearSlot.ARMOR), entry(tier = 2), entry(level = 1), entry(broken = true), good)
+            f.menus.equipmentStock(f.player)
+            f.click(3)
+            f.click(24)
+            assertTrue(f.title().contains("修理材料の市場"))
+            assertTrue(f.player.openInventory!!.getItemStack(10).isAir)
+            f.click(9)
+            f.click(22)
+            assertEquals(CoreAction.BuyOffer(good.seller, good.offer.id, 100), f.host.requests.single().action)
+            f.host.current = f.host.current.copy(storedGear = listOf(good.gear!!))
+            f.host.requests.single().after()
+            assertTrue(f.title().contains("修理"))
+            f.host.requests.clear()
+            f.click(9)
+            f.click(22)
+            assertEquals(CoreAction.Repair(CoreGearSlot.WEAPON, good.gear.identity.id), f.host.requests.single().action)
+        }
+    }
+
+    @Test fun `repair selection consumes nothing before explicit confirmation of a modified donor`() {
+        for (packed in listOf(false, true)) {
+            val f = fixture(account(tier = 3), packed)
+            val donorAccount = CoreCraftingCatalog.craft(CoreAccount(UUID.randomUUID(), weaponTier = 3,
+                currencies = mapOf(CoreCraftingCurrency.ALCHEMY to 1L)), CoreGearSlot.WEAPON, CoreCraftingCurrency.ALCHEMY, UUID.randomUUID())
+            val donor = CoreStoredGear(CoreGearIdentity(UUID.randomUUID(), donorAccount.playerId), CoreGearSlot.WEAPON, 3,
+                donorAccount.weaponRarity, CoreEnhancementState(), donorAccount.equippedAffixes)
+            f.host.current = f.host.current.copy(weaponBroken = true, storedGear = listOf(donor))
+            f.menus.equipmentStock(f.player)
+            f.click(3)
+            f.click(9)
+            assertTrue(f.host.requests.isEmpty())
+            val lore = f.player.openInventory!!.getItemStack(22).get(DataComponents.LORE)!!.joinToString("\n") { decode(it) }
+            assertTrue("材料装備のMODも消失" in lore)
+            f.click(22)
+            assertEquals(CoreAction.Repair(CoreGearSlot.WEAPON, donor.identity.id), f.host.requests.single().action)
+        }
+    }
+
     @Test fun `manufacturing quote routes to owned equipment and material listing needs explicit confirmation`() {
         for (packed in listOf(false, true)) {
             val f = fixture(account(tier = 4), packed)
@@ -383,8 +461,8 @@ class CoreLoopMenusTest {
                 else "${CoreWeaponPresentation.health(f.host.current)} → ${CoreWeaponPresentation.health(upgraded)}"
             assertTrue(panel.lines.any { it.text == stat && it.style == "EMPHASIS" })
             assertTrue(panel.lines.any { it.text == "素材は毎回消費" })
-            assertTrue(panel.lines.any { it.text == "失敗でも装備は保護" })
-            assertTrue(panel.lines.any { it.text == "強化値・MODも維持" })
+            assertTrue(panel.lines.any { it.text == "今回の破損なし" })
+            assertTrue(panel.lines.any { it.text == "強化値・MODは維持" })
             val costs = assertNotNull(f.snapshot().rightPanel)
             assertEquals(quote.recipe.costs.size, costs.lines.count { it.art != null })
             assertEquals(quote.recipe.costs.values.map { "×$it" }, costs.lines.filter { it.art != null }.map { it.text.substringAfterLast(' ') })

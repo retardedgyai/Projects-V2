@@ -70,8 +70,8 @@ class CoreAccount(
     offers: List<CoreMarketOffer> = emptyList(),
     val deliveryDay: Long = 0,
     val deliveries: Int = 0,
-    val weaponCondition: Int = 100,
-    val armorCondition: Int = 100,
+    val weaponBroken: Boolean = false,
+    val armorBroken: Boolean = false,
 ) {
     val storedGear = Collections.unmodifiableList(storedGear.toList())
     val offers = Collections.unmodifiableList(offers.toList())
@@ -88,7 +88,6 @@ class CoreAccount(
         require(revision >= 0 && weaponTier in 1..4 && armorTier in 1..4 && unlockedMapTier in 1..4)
         require(smithingXp in 0..CoreEnhancementCatalog.MAX_SMITHING_XP)
         require(silver in 0..CoreEconomy.MAX_SILVER && deliveries in 0..CoreEconomy.DAILY_DELIVERIES && deliveryDay >= 0)
-        require(weaponCondition in 0..100 && armorCondition in 0..100)
         require(storedGear.size <= CoreEconomy.MAX_GEAR && offers.size <= CoreEconomy.MAX_OFFERS)
         val identities = storedGear.map { it.identity.id } + weaponIdentity.id + armorIdentity.id
         require(identities.distinct().size == identities.size)
@@ -150,11 +149,11 @@ class CoreAccount(
         offers: List<CoreMarketOffer> = this.offers,
         deliveryDay: Long = this.deliveryDay,
         deliveries: Int = this.deliveries,
-        weaponCondition: Int = this.weaponCondition,
-        armorCondition: Int = this.armorCondition,
+        weaponBroken: Boolean = this.weaponBroken,
+        armorBroken: Boolean = this.armorBroken,
     ) = CoreAccount(playerId, revision, balances, weaponTier, armorTier, unlockedMapTier, maps, activeRun, receipts, claimedSources, affixStones, equippedAffixes,
         weaponRarity, armorRarity, currencies, fragments, legacyLayouts, craftingSeed, weaponEnhancement, armorEnhancement, smithingXp,
-        silver, weaponIdentity, armorIdentity, storedGear, offers, deliveryDay, deliveries, weaponCondition, armorCondition)
+        silver, weaponIdentity, armorIdentity, storedGear, offers, deliveryDay, deliveries, weaponBroken, armorBroken)
 }
 
 data class CoreOperation(val requestId: UUID, val expectedRevision: Long, val action: CoreAction)

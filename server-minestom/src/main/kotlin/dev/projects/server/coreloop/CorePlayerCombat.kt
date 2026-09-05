@@ -28,6 +28,8 @@ internal class CorePlayerCombat(
     private val criticalRoll: () -> Double = { ThreadLocalRandom.current().nextDouble() },
     private val weaponEnhancement: () -> Int = { 0 },
     private val armorEnhancement: () -> Int = { 0 },
+    private val weaponBroken: () -> Boolean = { false },
+    private val armorBroken: () -> Boolean = { false },
     private val onDefeated: () -> Unit,
 ) {
     private val normal = GreatswordCombo()
@@ -50,9 +52,9 @@ internal class CorePlayerCombat(
     var health = 100.0
         private set
     val maxMana: Int get() = 100 + statSource().maxManaFlat.toInt()
-    val maxHealth: Int get() = ((100 + (armorTier() - 1) * 30) * (1.0 + .02 * armorEnhancement().coerceIn(0, 30))).toInt() + statSource().healthFlat.toInt()
-    val attackSpeed: Double get() = 1.0 + (statSource().attackSpeedPercent.coerceIn(0.0, 60.0) + .8 * weaponEnhancement().coerceIn(0, 30)) / 100.0
-    val attackDamage: Double get() = 12.0 * 1.65.pow(weaponTier() - 1) * (1.0 + .04 * weaponEnhancement().coerceIn(0, 30)) * (1.0 + statSource().damagePercent / 100.0) * if (tickNumber < whetstoneUntil) 1.2 else 1.0
+    val maxHealth: Int get() = (if (armorBroken()) 100 else ((100 + (armorTier() - 1) * 30) * (1.0 + .02 * armorEnhancement().coerceIn(0, 30))).toInt()) + statSource().healthFlat.toInt()
+    val attackSpeed: Double get() = if (weaponBroken()) 1.0 else 1.0 + (statSource().attackSpeedPercent.coerceIn(0.0, 60.0) + .8 * weaponEnhancement().coerceIn(0, 30)) / 100.0
+    val attackDamage: Double get() = if (weaponBroken()) 0.0 else 12.0 * 1.65.pow(weaponTier() - 1) * (1.0 + .04 * weaponEnhancement().coerceIn(0, 30)) * (1.0 + statSource().damagePercent / 100.0) * if (tickNumber < whetstoneUntil) 1.2 else 1.0
     private data class Burn(val damage: Double, var nextTick: Long, var remaining: Int)
     private val burns = mutableMapOf<UUID, Burn>()
     private val damageLabels = mutableListOf<Pair<Entity, Long>>()
@@ -60,6 +62,7 @@ internal class CorePlayerCombat(
     private data class PendingSkill(val id: Int, val origin: Pos, val direction: Vec, val startup: Int, var elapsed: Int = 0)
 
     fun attack() {
+        if (weaponBroken()) { notice("武器が破損しています。装備庫で修理してください"); return }
         if (defeated || pending != null || encounter() == null || player.openInventory != null) return
         normal.press(attackSpeed)?.let { swing ->
             normalDirection = flatFacing()
@@ -70,6 +73,7 @@ internal class CorePlayerCombat(
     }
 
     fun skill(id: Int) {
+        if (weaponBroken()) { notice("武器が破損しています。装備庫で修理してください"); return }
         if (id !in 0..2 || defeated || encounter() == null || player.openInventory != null) return
         if (normal.isAttacking) { normal.clearBuffer(); queuedSkill = id; return }
         if (pending != null) return
@@ -112,6 +116,7 @@ internal class CorePlayerCombat(
             player.getAttribute(Attribute.MOVEMENT_SPEED).baseValue = 0.1 * (1.0 + statSource().moveSpeedPercent.coerceIn(0.0, 25.0) / 100.0)
         }
         val enemies = encounter() ?: run { resetActions(); return }
+        if (weaponBroken()) { resetActions(); return }
         val epoch = actionEpoch
         // A kill callback may synchronously return/reset the actor, including clearing burns.
         for ((id, burn) in burns.toMap()) {
@@ -253,7 +258,7 @@ internal class CorePlayerCombat(
 
     fun hurt(amount: Double) {
         if (defeated || encounter() == null) return
-        val adjusted = amount * (1.0 - (armorTier() - 1) * 0.10) * (1.0 - statSource().mitigationPercent.coerceIn(0.0, 45.0) / 100.0)
+        val adjusted = amount * (if (armorBroken()) 1.0 else (1.0 - (armorTier() - 1) * 0.10)) * (1.0 - statSource().mitigationPercent.coerceIn(0.0, 45.0) / 100.0)
         lastCombat = tickNumber
         if (health - adjusted <= 0.0) {
             health = 0.0

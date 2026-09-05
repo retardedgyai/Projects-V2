@@ -52,6 +52,7 @@ object CoreCraftingCatalog {
     /** Null is usable. This never rolls or reveals the next affix. */
     fun canUse(account: CoreAccount, gear: CoreGearSlot, currency: CoreCraftingCurrency): String? {
         if (account.activeRun != null) return "拠点で操作してください"
+        if (CoreEconomy.broken(account, gear)) return "破損しています。先に装備庫で修理してください"
         if (account.amount(currency) < 1) return "${currency.displayName}が足りません"
         val rarity = CoreAffixCatalog.rarity(account, gear)
         val installed = account.equippedAffixes.filter { it.gear == gear }

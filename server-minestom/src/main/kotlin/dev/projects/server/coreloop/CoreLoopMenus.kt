@@ -286,12 +286,13 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
     private fun execute(v: View, player: Player, label: String, blocked: String?, recipe: CoreRecipe? = null, action: () -> Unit) {
         val a = game.account(player) ?: return
         val lore = listOfNotNull(blocked) + recipe?.costs.orEmpty().map { "${it.key.displayName}: 所持 ${a.amount(it.key)} / 必要 ${it.value}" } +
-            if (label == "強化する") listOf("失敗しても装備・強化値・MODを保護します", "素材は成功・失敗にかかわらず毎回消費します") else emptyList()
+            if (label == "強化する") listOf("+15からは失敗時に破損する可能性があります", "強化値・MODは維持 / 破損時は装備1個で修理", "素材は成功・失敗にかかわらず毎回消費します") else emptyList()
         val short = if (label == "加工する") "刻印する" else label
         if (blocked == null) tile(v, 51, 3, short,
             CoreLoopItems.icon(Material.LIME_DYE, label, *lore.toTypedArray()), Tone.PRIMARY) { if (game.requireHub(player)) action() }
         else {
             val reason = when {
+                "破損" in blocked -> "要修理"
                 "最大強化" in blocked -> "最大強化"
                 "保管上限" in blocked -> "保管上限"
                 "不足" in blocked || "足りません" in blocked -> "素材不足"
@@ -300,7 +301,7 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
                 else -> "条件未達"
             }
             val maximum = "最大強化" in blocked
-            tile(v, 51, 3, if (label == "強化する" && !maximum) "強化不可" else reason,
+            tile(v, 51, 3, if ("破損" in blocked) "要修理" else if (label == "強化する" && !maximum) "強化不可" else reason,
                 CoreLoopItems.icon(Material.BARRIER, "$label：$reason", *lore.toTypedArray()),
                 if (maximum) Tone.DISABLED else Tone.DANGER)
         }
@@ -334,7 +335,11 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
                 listOf(emphasis(if (maximum) "最大強化 +30" else "成功率 ${pct(quote.successChancePercent)}%")) +
                 if (maximum) lines("制作後も強化を維持", "鍛冶熟練 ${CoreEnhancementCatalog.masteryRank(a.smithingXp)}/10")
                 else lines(if (quote.guaranteed) "次の強化は成功確定" else "成功保証 ${quote.failures}/${quote.pityThreshold}",
-                    "鍛冶熟練 ${CoreEnhancementCatalog.masteryRank(a.smithingXp)}/10", "", "失敗でも装備は保護", "強化値・MODも維持", "素材は毎回消費"))
+                    "鍛冶熟練 ${CoreEnhancementCatalog.masteryRank(a.smithingXp)}/10", "") +
+                    listOf(Line(if (CoreEconomy.broken(a, s.gear)) "破損中・修理が必要" else if (quote.breakPerAttemptPercent > 0)
+                        "失敗時破損 ${pct(quote.breakOnFailurePercent)}%" else "今回の破損なし",
+                        if (CoreEconomy.broken(a, s.gear) || quote.breakPerAttemptPercent > 0) CoreUiComponents.RED else CoreUiComponents.IVORY)) +
+                    lines("強化値・MODは維持", "素材は毎回消費"))
         costPanel(v, a, quote.recipe)
         enhancementFocus(v, player, a, s.gear, if (maximum) "+30" else summary.levelLabel)
         card(v, ENHANCE_DETAIL, 3, 1, "詳細", CoreMenuArt.GEAR, CoreLoopItems.gear(a, s.gear, v.packed)) { gearMods(player, s.gear) }
@@ -343,9 +348,41 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
         val standard = CoreEnhancementCatalog.quote(a, s.gear)
         card(v, ENHANCE_CATALYST, 3, 1, "触媒", CoreMenuArt.SHARD, CoreLoopItems.icon(Material.GLOWSTONE_DUST, "精錬触媒を追加", "追加素材を消費し成功率+15ポイント", "費用・成功率を表示してから実行できます"),
             if (maximum || standard.guaranteed) Tone.DISABLED else if (mode == CoreEnhancementMode.FOCUSED) Tone.SELECTED else Tone.NEUTRAL) { forge(player, s.copy(focused = true)) }
-        sourceButton(v, player, s)
+        if (CoreEconomy.broken(a, s.gear))
+            card(v, 42, 3, 1, "修理へ", CoreMenuArt.ENHANCE, CoreLoopItems.icon(Material.ANVIL, "破損した装備を修理する")) { repairMenu(player, s.gear) }
+        else sourceButton(v, player, s)
         execute(v, player, "強化する", quote.blockedReason, quote.recipe) {
-            mutate(v, player, CoreAction.EnhanceEquipment(s.gear, mode), a.revision) { forge(player, s) }
+            if (quote.breakPerAttemptPercent > 0) enhancementConfirm(player, s)
+            else mutate(v, player, CoreAction.EnhanceEquipment(s.gear, mode), a.revision) { forge(player, s) }
+        }
+    }
+
+    /** Risk confirmation spends nothing until the exact displayed account revision commits. */
+    private fun enhancementConfirm(player: Player, s: CoreForgeLayout.Selection) {
+        val a = game.account(player) ?: return
+        if (!game.requireHub(player)) return
+        val mode = CoreForgeLayout.enhancementMode(a, s)
+        val quote = CoreEnhancementCatalog.quote(a, s.gear, mode)
+        view(player, "強化の確認 / 破損リスクあり", { forge(player, s) }, nativeChest = true) { v ->
+            v.items[13] = CoreLoopItems.gear(a, s.gear, v.packed)
+            v.items[4] = CoreLoopItems.icon(Material.BOOK, "+${quote.currentLevel} → +${quote.targetLevel}",
+                "成功率 ${pct(quote.successChancePercent)}%",
+                "失敗した場合の破損率 ${pct(quote.breakOnFailurePercent)}%",
+                "今回1回あたりの破損確率 ${pct(quote.breakPerAttemptPercent)}%",
+                "破損しても対象は消失せず、強化値・MOD・成功保証を維持",
+                "修理には同Tier・同系統・+0・未破損の装備1個を消費")
+            val costs = quote.recipe.costs.map { "${it.key.displayName}: 所持 ${a.amount(it.key)} / 必要 ${it.value}" }
+            v.items[22] = CoreLoopItems.icon(if (quote.blockedReason == null) Material.ORANGE_DYE else Material.BARRIER,
+                if (quote.blockedReason == null) "リスクを確認して強化する" else "強化できません",
+                *(listOfNotNull(quote.blockedReason) + costs + "素材は成功・失敗どちらでも消費 / 取り消せません").toTypedArray())
+            if (quote.blockedReason == null) v.actions[22] = {
+                mutate(v, player, CoreAction.EnhanceEquipment(s.gear, mode), a.revision) {
+                    if (game.account(player)?.let { CoreEconomy.broken(it, s.gear) } == true) repairMenu(player, s.gear)
+                    else forge(player, s)
+                }
+            }
+            v.items[45] = CoreLoopItems.icon(Material.ARROW, "やめる / 強化へ戻る")
+            v.actions[45] = { forge(player, s) }
         }
     }
 
@@ -602,10 +639,10 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
             CoreGearSlot.entries.forEachIndexed { index, slot ->
                 v.items[index] = CoreLoopItems.gear(a, slot, v.packed)
                 v.actions[index] = { gearMods(player, slot) }
-                val condition = CoreEconomy.condition(a, slot)
-                v.items[3 + index * 2] = CoreLoopItems.icon(if (condition < 100) Material.ANVIL else Material.IRON_INGOT,
-                    "${slot.displayName}の整備度 $condition/100", "遠征1回で10減少 / 0のとき性能が低下",
-                    "同Tier・同種の新品1個で全回復", "MOD・強化値は失いません / クリックで整備へ")
+                val broken = CoreEconomy.broken(a, slot)
+                v.items[3 + index * 2] = CoreLoopItems.icon(if (broken) Material.ANVIL else Material.IRON_INGOT,
+                    "${slot.displayName}：${if (broken) "破損中 / 修理が必要" else "未破損"}", "遠征・戦闘では壊れません / +15以降の強化失敗で破損",
+                    "同Tier・同系統・+0・未破損を1個消費して修理", "MOD・強化値は失いません / クリックで修理へ")
                 v.actions[3 + index * 2] = { repairMenu(player, slot) }
             }
             v.items[8] = CoreLoopItems.icon(Material.ANVIL, "新しく制作する", "採取 → 精製 → 武器・防具を制作", "完成品は自動装備せず、この装備庫へ保管")
@@ -650,10 +687,10 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
                 val today = java.time.LocalDate.now(java.time.ZoneOffset.UTC).toEpochDay()
                 val used = if (today == a.deliveryDay) a.deliveries else 0
                 val eligible = !item.identity.bound && item.identity.crafter == a.playerId && item.enhancement.level == 0 &&
-                    item.affixes.isEmpty() && item.rarity == CoreGearRarity.NORMAL && item.condition == 100 && used < CoreEconomy.DAILY_DELIVERIES
+                    item.affixes.isEmpty() && item.rarity == CoreGearRarity.NORMAL && !item.broken && used < CoreEconomy.DAILY_DELIVERIES
                 v.items[24] = CoreLoopItems.icon(if (eligible) Material.EMERALD else Material.BARRIER,
                     if (eligible) "港の依頼へ納品 / 確認へ" else "この装備は納品できません",
-                    "自作・未強化・MODなし・整備度100の装備のみ", "本日 ${used}/3個 / 完成品は消費されます",
+                    "自作・未強化・MODなし・未破損の装備のみ", "本日 ${used}/3個 / 完成品は消費されます",
                     "報酬 銀貨${CoreEconomy.deliveryPrice(item.tier)}枚")
                 if (eligible) v.actions[24] = { deliveryConfirm(player, id) }
             }
@@ -667,23 +704,24 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
         val last = (inputs.size - 1).coerceAtLeast(0) / 36
         val current = page.coerceIn(0, last)
         val input = inputs.singleOrNull { it.identity.id == selected }
-        val condition = CoreEconomy.condition(a, slot)
-        view(player, "${slot.displayName}の整備 / $condition → 100", { repairMenu(player, slot, current) }, nativeChest = true) { v ->
+        val broken = CoreEconomy.broken(a, slot)
+        view(player, "${slot.displayName}の修理 / ${if (!broken) "未破損" else if (selected != null) "材料を確認" else "材料を選択"}", { repairMenu(player, slot, current) }, nativeChest = true) { v ->
             v.items[4] = CoreLoopItems.gear(a, slot, v.packed)
-            v.items[8] = CoreLoopItems.icon(Material.BOOK, "予備装備1個を部品として消費", "同Tier・同種・未強化・MODなし・整備度100", "対象の装備は消えません / MOD・強化値を維持",
-                "整備度0：武器は攻撃補正-25ポイント / 防具はHP-20", "装備が消失したり、遠征不能になったりはしません")
+            v.items[8] = CoreLoopItems.icon(Material.BOOK, "修理材料の装備1個を消費", "同Tier・同系統・+0・未破損 / 初期装備・出品中は不可", "対象の装備は消えません / MOD・強化値・成功保証を維持",
+                "修理材料のレアリティ・MODは問いません", "材料に付いているMODも消失します / 選択後に確認")
             when {
-                condition == 100 -> v.items[22] = CoreLoopItems.icon(Material.IRON_INGOT, "整備済みです", "素材は消費しません")
+                !broken -> v.items[22] = CoreLoopItems.icon(Material.IRON_INGOT, "破損していません", "素材は消費しません")
                 input != null -> {
                     v.items[13] = gearStockIcon(a, input, v.packed)
-                    v.items[22] = CoreLoopItems.icon(Material.LIME_DYE, "この予備装備を消費して整備する", "消費するのは上の予備装備1個です", "対象の装備の整備度を100へ回復 / 取り消せません")
+                    v.items[22] = CoreLoopItems.icon(Material.LIME_DYE, "この材料装備を消費して修理する", "消費するのは上の材料装備1個です", "材料装備のMODも消失 / 取り消せません",
+                        "修理対象の強化値・MOD・成功保証はそのまま")
                     v.actions[22] = { mutate(v, player, CoreAction.Repair(slot, input.identity.id), a.revision) { equipmentStock(player) } }
                 }
                 inputs.isEmpty() -> {
-                    v.items[20] = CoreLoopItems.icon(Material.ANVIL, "予備装備が不足 / 制作へ", "T${CoreAffixCatalog.gearTier(a, slot)} ${slot.displayName}の新品が1個必要")
+                    v.items[20] = CoreLoopItems.icon(Material.ANVIL, "予備装備が不足 / 制作へ", "T${CoreAffixCatalog.gearTier(a, slot)} ${slot.displayName}の+0・未破損が1個必要")
                     v.actions[20] = { forge(player, CoreForgeLayout.Selection(tab = CoreForgeLayout.Tab.CRAFT, gear = slot, tier = CoreAffixCatalog.gearTier(a, slot))) }
                     v.items[24] = CoreLoopItems.icon(Material.GOLD_NUGGET, "市場で予備装備を探す")
-                    v.actions[24] = { supplies(player, CoreAffixCatalog.gearTier(a, slot)) }
+                    v.actions[24] = { supplies(player, CoreAffixCatalog.gearTier(a, slot), repairFor = slot) }
                 }
                 else -> inputs.drop(current * 36).take(36).forEachIndexed { index, item ->
                     v.items[9 + index] = gearStockIcon(a, item, v.packed)
@@ -711,42 +749,45 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
     }
 
     fun supplies(player: Player, tier: Int = 1, selected: CoreResource? = null,
-        quantity: CoreForgeLayout.Quantity = CoreForgeLayout.Quantity.ONE, page: Int = 0) {
+        quantity: CoreForgeLayout.Quantity = CoreForgeLayout.Quantity.ONE, page: Int = 0, repairFor: CoreGearSlot? = null) {
         val a = game.account(player) ?: return
         if (!game.requireHub(player)) return
         val entries = game.market().filter { entry ->
             (entry.gear?.tier ?: entry.offer.material?.tier) == tier &&
-                (selected == null || entry.offer.material?.resource == selected)
+                (selected == null || entry.offer.material?.resource == selected) &&
+                (repairFor == null || (entry.seller != a.playerId && entry.gear?.let { CoreEconomy.repairCompatible(a, repairFor, it) } == true))
         }
         val last = (entries.size - 1).coerceAtLeast(0) / 36
         val current = page.coerceIn(0, last)
-        view(player, "市場 / T$tier / 銀貨${a.silver}", { supplies(player, tier, selected, quantity, current) }, nativeChest = true) { v ->
+        view(player, "${if (repairFor != null) "修理材料の市場" else "市場"} / T$tier / 銀貨${a.silver}", { supplies(player, tier, selected, quantity, current, repairFor) }, nativeChest = true) { v ->
             (1..4).forEach { t ->
-                v.items[(t - 1) * 2] = CoreLoopItems.icon(if (tier == t) Material.GOLD_INGOT else Material.PAPER, "T$t の出品を見る")
-                v.actions[(t - 1) * 2] = { supplies(player, t, selected) }
+                v.items[(t - 1) * 2] = CoreLoopItems.icon(if (tier == t) Material.GOLD_INGOT else if (repairFor != null) Material.BARRIER else Material.PAPER,
+                    if (repairFor != null && tier != t) "修理材料はT${tier}のみ" else "T$t の出品を見る")
+                if (repairFor == null) v.actions[(t - 1) * 2] = { supplies(player, t, selected) }
             }
-            v.items[8] = CoreLoopItems.icon(Material.BOOK, "採取者・職人・戦闘者の市場", "素材は採取者が集め、職人が装備を制作", "戦利品券 → 銀貨 → 素材や装備を購入", "成約手数料5% / 出品時の消費なし", "クリックで素材フィルターを解除")
+            v.items[8] = CoreLoopItems.icon(Material.BOOK, "採取者・職人・戦闘者の市場", "素材は採取者が集め、職人が装備を制作", "戦利品券 → 銀貨 → 素材や装備を購入", "成約手数料5% / 出品時の消費なし",
+                if (repairFor != null) "同Tier・同系統・+0・未破損のみ表示" else "クリックで素材フィルターを解除", "クリックで市場の全商品へ")
             v.actions[8] = { supplies(player, tier) }
             entries.drop(current * 36).take(36).forEachIndexed { index, entry ->
                 v.items[9 + index] = marketIcon(a, entry, v.packed)
-                v.actions[9 + index] = { marketDetail(player, entry) }
+                v.actions[9 + index] = { marketDetail(player, entry, repairFor) }
             }
             if (entries.isEmpty()) {
                 v.items[22] = CoreLoopItems.icon(Material.CHEST, "この条件の出品はありません", "NPCから採取素材は購入できません", "採取して出品する / 装備を制作して出品する", "クリック：同Tierの採取遠征へ")
                 v.actions[22] = { expeditions(player, tier) }
             }
-            v.items[45] = CoreLoopItems.icon(Material.ARROW, if (journey(player).isEmpty) "手帳へ" else "元の工房へ")
-            v.actions[45] = { journey(player).pop()?.let { forge(player, it) } ?: journal(player) }
+            v.items[45] = CoreLoopItems.icon(Material.ARROW, if (repairFor != null) "修理へ" else if (journey(player).isEmpty) "手帳へ" else "元の工房へ")
+            v.actions[45] = { if (repairFor != null) repairMenu(player, repairFor) else journey(player).pop()?.let { forge(player, it) } ?: journal(player) }
             v.items[46] = CoreLoopItems.icon(Material.CHEST, "素材を出品する"); v.actions[46] = { saleMaterials(player, tier) }
             v.items[48] = CoreLoopItems.icon(Material.IRON_SWORD, "装備庫 / 装備を出品"); v.actions[48] = { equipmentStock(player) }
-            v.items[49] = CoreLoopItems.icon(Material.PAPER, "${current + 1}/${last + 1}ページ / クリックで更新"); v.actions[49] = { supplies(player, tier, selected, quantity, current) }
-            if (current > 0) { v.items[47] = CoreLoopItems.icon(Material.ARROW, "前へ"); v.actions[47] = { supplies(player, tier, selected, quantity, current - 1) } }
-            if (current < last) { v.items[51] = CoreLoopItems.icon(Material.ARROW, "次へ"); v.actions[51] = { supplies(player, tier, selected, quantity, current + 1) } }
+            v.items[49] = CoreLoopItems.icon(Material.PAPER, "${current + 1}/${last + 1}ページ / クリックで更新"); v.actions[49] = { supplies(player, tier, selected, quantity, current, repairFor) }
+            if (current > 0) { v.items[47] = CoreLoopItems.icon(Material.ARROW, "前へ"); v.actions[47] = { supplies(player, tier, selected, quantity, current - 1, repairFor) } }
+            if (current < last) { v.items[51] = CoreLoopItems.icon(Material.ARROW, "次へ"); v.actions[51] = { supplies(player, tier, selected, quantity, current + 1, repairFor) } }
             val tokens = a.amount(CoreResource.COMBAT_TOKEN, tier)
             v.items[53] = CoreLoopItems.icon(if (tokens > 0) Material.GOLD_NUGGET else Material.BARRIER,
                 if (tokens > 0) "T$tier 戦利品券を1枚換金" else "T$tier 戦利品券がありません",
                 "所持 ${tokens}枚 / 1枚 → 銀貨${10 * tier}枚", "高Tierの地図入手にも使います")
-            if (tokens > 0) v.actions[53] = { mutate(v, player, CoreAction.RedeemTokens(tier, 1), a.revision) { supplies(player, tier, selected, quantity, current) } }
+            if (tokens > 0) v.actions[53] = { mutate(v, player, CoreAction.RedeemTokens(tier, 1), a.revision) { supplies(player, tier, selected, quantity, current, repairFor) } }
         }
     }
 
@@ -760,22 +801,24 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
             CoreLoopItems.text(if (entry.seller == a.playerId) "自分の出品 / クリックで取り下げ確認" else "クリック：商品と価格を確認")))
     }
 
-    private fun marketDetail(player: Player, entry: CoreMarketEntry) {
+    private fun marketDetail(player: Player, entry: CoreMarketEntry, repairFor: CoreGearSlot? = null) {
         val a = game.account(player) ?: return
         if (!game.requireHub(player)) return
         val own = entry.seller == a.playerId
         val offer = entry.offer
-        view(player, "市場 / ${if (own) "出品の管理" else "購入の確認"}", { supplies(player) }, nativeChest = true) { v ->
+        view(player, "市場 / ${if (own) "出品の管理" else "購入の確認"}", { supplies(player, entry.gear?.tier ?: offer.material?.tier ?: 1, repairFor = repairFor) }, nativeChest = true) { v ->
             v.items[13] = marketIcon(a, entry, v.packed)
             val available = own || a.silver >= offer.price
             v.items[22] = CoreLoopItems.icon(if (available) Material.LIME_DYE else Material.BARRIER,
                 if (own) "出品を取り下げる" else if (available) "銀貨${offer.price}枚で購入する" else "銀貨が${offer.price - a.silver}枚不足",
-                if (own) "商品は自分の倉庫へ戻ります" else "購入品を倉庫に保管 / 装備は自動装備しません")
+                if (own) "商品は自分の倉庫へ戻ります" else "購入品を倉庫に保管 / 装備は自動装備しません",
+                if (entry.gear?.broken == true) "注意：破損品です。別の装備1個で修理するまで性能は無効" else "未破損の商品です")
             if (available) v.actions[22] = { mutate(v, player,
                 if (own) CoreAction.CancelOffer(offer.id) else CoreAction.BuyOffer(entry.seller, offer.id, offer.price), a.revision) {
-                    if (entry.gear != null) equipmentStock(player) else storage(player, offer.material?.tier ?: 1)
+                    if (repairFor != null) repairMenu(player, repairFor)
+                    else if (entry.gear != null) equipmentStock(player) else storage(player, offer.material?.tier ?: 1)
                 } }
-            v.items[45] = CoreLoopItems.icon(Material.ARROW, "市場へ"); v.actions[45] = { supplies(player, entry.gear?.tier ?: offer.material?.tier ?: 1) }
+            v.items[45] = CoreLoopItems.icon(Material.ARROW, "市場へ"); v.actions[45] = { supplies(player, entry.gear?.tier ?: offer.material?.tier ?: 1, repairFor = repairFor) }
         }
     }
 

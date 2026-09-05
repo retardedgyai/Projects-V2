@@ -20,11 +20,14 @@ data class CoreEnhancementQuote(
     val baseChancePercent: Double, val masteryBonusPercent: Double, val catalystBonusPercent: Double,
     val successChancePercent: Double, val failures: Int, val pityThreshold: Int, val guaranteed: Boolean,
     val recipe: CoreRecipe, val blockedReason: String?,
-)
+    val breakOnFailurePercent: Double = 0.0,
+) {
+    val breakPerAttemptPercent: Double get() = (100.0 - successChancePercent) * breakOnFailurePercent / 100.0
+}
 
-/** Experiment policy v2. Stage-based material grades, protection, pity and crafting mastery. */
+/** v3 restores legacy failure-only breakage; V2 pity, catalysts and mastery remain explicit additions. */
 object CoreEnhancementCatalog {
-    const val POLICY_REVISION = 2
+    const val POLICY_REVISION = 3
     const val MAX_LEVEL = 30
     const val MAX_SMITHING_XP = 200L
     const val XP_PER_RANK = 20L
@@ -46,6 +49,12 @@ object CoreEnhancementCatalog {
             in 21..25 -> 10.0 - (targetLevel - 21) * 1.5
             else -> 3.0 - (targetLevel - 26) * 0.5
         }
+    }
+
+    /** Legacy EnhancementManager: current +15 starts a conditional break roll AFTER a failed upgrade. */
+    fun breakOnFailurePercent(currentLevel: Int): Double {
+        require(currentLevel in 0..MAX_LEVEL)
+        return if (currentLevel < 15) 0.0 else (5.0 + (currentLevel - 15) * 3.0).coerceAtMost(50.0)
     }
 
     /** This many failed paid attempts guarantee the next attempt. Zero means the base rate is 100%. */
@@ -90,13 +99,14 @@ object CoreEnhancementCatalog {
         }
         val recipe = CoreRecipe("${gear.displayName}を+$target へ強化", Collections.unmodifiableMap(costs), emptyMap())
         val blocked = when {
+            CoreEconomy.broken(account, gear) -> "破損しています。先に装備庫で修理してください"
             maximum -> "すでに最大強化 +$MAX_LEVEL です"
             account.activeRun != null -> "拠点で操作してください"
             !recipe.canAfford(account) -> "強化素材が足りません"
             else -> null
         }
         return CoreEnhancementQuote(state.level, target, base, mastery, catalyst, chance,
-            state.failures, threshold, guaranteed, recipe, blocked)
+            state.failures, threshold, guaranteed, recipe, blocked, if (maximum) 0.0 else breakOnFailurePercent(state.level))
     }
 
     internal fun gainMastery(account: CoreAccount, amount: Long): CoreAccount {
@@ -111,13 +121,17 @@ object CoreEnhancementCatalog {
         val id = UUID.nameUUIDFromBytes("enhancement-v$POLICY_REVISION/${account.craftingSeed}/${account.playerId}/${account.revision}/$requestId/$gear/$mode".toByteArray(UTF_8))
         val random = Random(id.leastSignificantBits xor id.mostSignificantBits)
         val success = random.nextDouble() * 100.0 < quote.successChancePercent
+        val broken = !success && random.nextDouble() * 100.0 < quote.breakOnFailurePercent
         val next = if (success) CoreEnhancementState(quote.targetLevel) else CoreEnhancementState(quote.currentLevel, quote.failures + 1)
         val updated = gainMastery(account.copy(
             weaponEnhancement = if (gear == CoreGearSlot.WEAPON) next else account.weaponEnhancement,
             armorEnhancement = if (gear == CoreGearSlot.ARMOR) next else account.armorEnhancement,
+            weaponBroken = if (gear == CoreGearSlot.WEAPON) broken else account.weaponBroken,
+            armorBroken = if (gear == CoreGearSlot.ARMOR) broken else account.armorBroken,
         ), 1)
         val message = if (success) "強化成功！ ${gear.displayName}が +${next.level} になりました（鍛冶経験 +1）"
-            else "強化失敗。+${next.level} とMODは保護されました。天井 ${next.failures}/${quote.pityThreshold}（鍛冶経験 +1）"
+            else if (broken) "強化失敗で破損しました。装備庫で同Tier・同系統・+0の装備1個を使い修理できます。+${next.level}・MOD・天井 ${next.failures}/${quote.pityThreshold} は維持"
+            else "強化失敗。破損はありません。+${next.level}・MODは維持。天井 ${next.failures}/${quote.pityThreshold}（鍛冶経験 +1）"
         return updated to message
     }
 }

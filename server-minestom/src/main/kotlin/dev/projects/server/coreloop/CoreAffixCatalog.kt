@@ -147,16 +147,16 @@ object CoreAffixCatalog {
         val totals = mutableMapOf<CoreAffixStat, Double>()
         account.equippedAffixes.forEach { installed ->
             val definition = definition(installed.stone)
-            if (definition != null && valid(installed.stone) && installed.gear in definition.allowedGear &&
+            if (!CoreEconomy.broken(account, installed.gear) && definition != null && valid(installed.stone) && installed.gear in definition.allowedGear &&
                 installed.index < capacity(account, installed.gear) && installed.stone.tier <= gearTier(account, installed.gear)) {
                 totals.merge(definition.stat, installed.stone.value, Double::plus)
             }
         }
         fun stat(type: CoreAffixStat, limit: Double) = (totals[type] ?: 0.0).coerceIn(0.0, limit)
-        return CoreAffixStats(stat(CoreAffixStat.DAMAGE, 100.0) - if (account.weaponCondition == 0) 25.0 else 0.0, stat(CoreAffixStat.ATTACK_SPEED, 60.0),
+        return CoreAffixStats(stat(CoreAffixStat.DAMAGE, 100.0), stat(CoreAffixStat.ATTACK_SPEED, 60.0),
             stat(CoreAffixStat.SKILL_DAMAGE, 100.0), stat(CoreAffixStat.MAX_MANA, 100.0),
             stat(CoreAffixStat.MANA_REGEN, 100.0), stat(CoreAffixStat.COOLDOWN_REDUCTION, 45.0),
-            stat(CoreAffixStat.HEALTH, 200.0) - if (account.armorCondition == 0) 20.0 else 0.0, stat(CoreAffixStat.MITIGATION, 45.0),
+            stat(CoreAffixStat.HEALTH, 200.0), stat(CoreAffixStat.MITIGATION, 45.0),
             stat(CoreAffixStat.MOVE_SPEED, 25.0), stat(CoreAffixStat.CRIT_CHANCE_INCREASED, 200.0),
             stat(CoreAffixStat.CRIT_MULTIPLIER, 100.0), stat(CoreAffixStat.NORMAL_DAMAGE, 100.0),
             stat(CoreAffixStat.CAST_REDUCTION, 40.0), stat(CoreAffixStat.FIRE, 100.0),

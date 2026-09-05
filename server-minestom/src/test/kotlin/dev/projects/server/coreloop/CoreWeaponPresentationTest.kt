@@ -46,6 +46,34 @@ class CoreWeaponPresentationTest {
         }
     }
 
+    @Test fun `broken equipment contributes no performance or affixes and repairing restores the same rolls`() {
+        val p = player()
+        val original = CoreAccount(p.uuid, weaponTier = 4, armorTier = 4,
+            weaponEnhancement = CoreEnhancementState(30), armorEnhancement = CoreEnhancementState(30),
+            equippedAffixes = listOf(
+                CoreEquippedAffix(CoreGearSlot.WEAPON, 0, CoreAffixStone(UUID.randomUUID(), "projects:force", 4, 22.0)),
+                CoreEquippedAffix(CoreGearSlot.ARMOR, 0, CoreAffixStone(UUID.randomUUID(), "projects:vitality", 4, 39.0))))
+        var a = original.copy(weaponBroken = true, armorBroken = true)
+        val actor = CorePlayerCombat(p, { a.weaponTier }, { a.armorTier }, { null },
+            statSource = { CoreAffixCatalog.stats(a) }, weaponEnhancement = { a.weaponEnhancement.level },
+            armorEnhancement = { a.armorEnhancement.level }, weaponBroken = { a.weaponBroken }, armorBroken = { a.armorBroken }) {}
+        assertEquals(CoreAffixStats(), CoreAffixCatalog.stats(a))
+        assertEquals(0.0, actor.attackDamage)
+        assertEquals(0, CoreWeaponPresentation.damage(a))
+        assertEquals(100, actor.maxHealth)
+        assertEquals(100, CoreWeaponPresentation.health(a))
+        assertEquals(0.0, CoreWeaponPresentation.attackSpeedPercent(a))
+        val brokenItem = CoreLoopItems.gear(a, CoreGearSlot.WEAPON, false)
+        assertTrue(plain(brokenItem.get(DataComponents.CUSTOM_NAME)!!).contains("破損"))
+        a = a.copy(weaponBroken = false)
+        assertEquals(22.0, CoreAffixCatalog.stats(a).damagePercent)
+        assertEquals(0.0, CoreAffixCatalog.stats(a).healthFlat)
+        a = original
+        assertEquals(343, actor.maxHealth)
+        assertEquals(actor.attackDamage.roundToInt(), CoreWeaponPresentation.damage(a))
+        assertEquals(original.equippedAffixes, a.equippedAffixes)
+    }
+
     @Test fun `enhancement applies to base health not flat mods and speed retains fractional percentages`() {
         val player = player()
         val mods = listOf(

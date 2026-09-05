@@ -110,15 +110,15 @@
       "where": "leftPanel.lines[10]",
       "x": -98,
       "y": 170,
-      "text": "失敗でも装備は保護",
-      "width": 81,
+      "text": "今回の破損なし",
+      "width": 63,
       "style": "BODY"
     },
     {
       "where": "leftPanel.lines[11]",
       "x": -98,
       "y": 184,
-      "text": "強化値・MODも維持",
+      "text": "強化値・MODは維持",
       "width": 75,
       "style": "BODY"
     },

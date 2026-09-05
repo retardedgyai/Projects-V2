@@ -71,9 +71,9 @@ internal object CoreLoopItems {
             add(CoreTooltipStat("会心率 / 倍率", "${(stats.criticalChance * 1000).roundToInt() / 10.0}% / ${(stats.criticalMultiplier * 100).toInt()}%", CoreUiIcon.CRITICAL))
             if (stats.fireFlat + stats.iceFlat + stats.lightningFlat > 0) add(CoreTooltipStat("炎 / 氷 / 雷", "${stats.fireFlat.toInt()} / ${stats.iceFlat.toInt()} / ${stats.lightningFlat.toInt()}", CoreUiIcon.MAGIC))
         } else listOf(CoreTooltipStat("最大HP", "${CoreWeaponPresentation.health(account)}", CoreUiIcon.HEALTH),
-            CoreTooltipStat("基礎軽減 / MOD軽減", "${(tier - 1) * 10}% / ${stats.mitigationPercent.toInt()}%", CoreUiIcon.DEFENSE),
+            CoreTooltipStat("基礎軽減 / MOD軽減", "${if (account.armorBroken) 0 else (tier - 1) * 10}% / ${stats.mitigationPercent.toInt()}%", CoreUiIcon.DEFENSE),
             CoreTooltipStat("最大マナ", "${100 + stats.maxManaFlat.toInt()}", CoreUiIcon.MANA))
-        return CoreUiTooltip.apply(base, CoreTooltipModel("T$tier 開拓者の${if (slot == CoreGearSlot.WEAPON) "大剣" else "防具"}${if (enhancement.level > 0) " +${enhancement.level}" else ""}",
+        return CoreUiTooltip.apply(base, CoreTooltipModel("${if (CoreEconomy.broken(account, slot)) "【破損】" else ""}T$tier 開拓者の${if (slot == CoreGearSlot.WEAPON) "大剣" else "防具"}${if (enhancement.level > 0) " +${enhancement.level}" else ""}",
             rarity = when (CoreAffixCatalog.rarity(account, slot)) {
                 CoreGearRarity.NORMAL -> CoreUiRarity.COMMON
                 CoreGearRarity.MAGIC -> CoreUiRarity.UNCOMMON
@@ -83,8 +83,9 @@ internal object CoreLoopItems {
             typeLabel = (if (slot == CoreGearSlot.WEAPON) "両手剣" else "防具セット") + " · 強化 +${enhancement.level}/30",
             stats = rows, affixes = account.equippedAffixes.filter { it.gear == slot }.sortedBy { it.index }.map { affixModel(it.stone) },
             modCapacity = CoreAffixCatalog.capacity(account, slot),
-            footer = listOf("整備度 ${CoreEconomy.condition(account, slot)}/100 / 装備庫で整備",
-                if (CoreEconomy.condition(account, slot) == 0) "整備不足で性能低下 / 予備装備1個で回復" else "MOD・強化値は装備ごとに保持",
+            footer = listOf(if (CoreEconomy.broken(account, slot)) "破損中：この装備の性能・MODは無効" else "未破損 / 遠征・戦闘では壊れません",
+                if (CoreEconomy.broken(account, slot)) "装備庫で修理：同Tier・同系統・+0・未破損を1個" else "+15以降の強化失敗で破損する場合があります",
+                "修理対象のMOD・強化値・製作者は維持",
                 "能力欄は強化と装備全体のMODを反映", "マジック：接頭1＋接尾1 / レア：接頭3＋接尾3", if (slot == CoreGearSlot.WEAPON) "左：3段斬撃 / 右：踏み込み / F：回避" else "防具MODはセット全体に1回適用")), packed)
     }
 

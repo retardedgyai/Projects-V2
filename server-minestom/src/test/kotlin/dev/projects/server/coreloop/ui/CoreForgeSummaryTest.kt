@@ -71,7 +71,7 @@ class CoreForgeSummaryTest {
         assertEquals(actual, summary.quote)
         assertEquals("+12 → +13", summary.levelLabel)
         assertEquals("成功率 60%", summary.successLabel)
-        assertEquals("失敗しても保護・天井 2/6", summary.protectionLabel)
+        assertEquals("破損なし・成功保証 2/6", summary.protectionLabel)
         assertEquals(actual.recipe.costs, summary.materials.associate { it.material to it.required })
     }
 

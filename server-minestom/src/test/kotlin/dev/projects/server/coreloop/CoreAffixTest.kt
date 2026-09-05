@@ -186,7 +186,7 @@ class CoreAffixTest {
         assertTrue(read.affixStones.isEmpty() && read.equippedAffixes.isEmpty())
         assertEquals(CoreTransactionStatus.COMMITTED, service.transact(player, CoreOperation(UUID.randomUUID(), 1, CoreAction.ClaimMap(1, 222))).status)
         assertEquals(v1, Files.readString(backup))
-        assertTrue(Files.readString(path).startsWith("PROJECTS_CORE_LOOP\t5\t"))
+        assertTrue(Files.readString(path).startsWith("PROJECTS_CORE_LOOP\t6\t"))
         service.forget(player)
         val after = assertIs<CoreAccountLoadResult.Ready>(service.open(player)).account
         assertEquals(77, after.amount(CoreResource.ORE, 4))
@@ -317,5 +317,5 @@ class CoreAffixTest {
     private fun legacyBody(account: CoreAccount, version: Int): String =
         CoreAccountCodec.encode(account).substringBefore("checksum\t").lineSequence()
             .filterNot { it.startsWith("crafting\t") || it.startsWith("currency\t") || it.startsWith("fragment\t") || it.startsWith("legacy-layout\t") || it.startsWith("enhancement\t") || it.startsWith("economy\t") || it.startsWith("identity\t") }
-            .joinToString("\n").replaceFirst("PROJECTS_CORE_LOOP\t5\t", "PROJECTS_CORE_LOOP\t$version\t")
+            .joinToString("\n").replaceFirst("PROJECTS_CORE_LOOP\t6\t", "PROJECTS_CORE_LOOP\t$version\t")
 }

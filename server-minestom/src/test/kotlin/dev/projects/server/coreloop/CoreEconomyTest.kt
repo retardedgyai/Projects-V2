@@ -74,7 +74,7 @@ class CoreEconomyTest {
         val a = f.a(seller)
         val rolled = CoreCraftingCatalog.craft(a.copy(currencies = mapOf(CoreCraftingCurrency.ALCHEMY to 1L)),
             CoreGearSlot.WEAPON, CoreCraftingCurrency.ALCHEMY, UUID.randomUUID())
-        val modified = rolled.copy(revision = a.revision + 1, weaponEnhancement = CoreEnhancementState(12, 2))
+        val modified = rolled.copy(revision = a.revision + 1, weaponEnhancement = CoreEnhancementState(12, 2), weaponBroken = true)
         assertEquals(CoreRepositorySave.Saved, f.repo.commit(a.revision, modified))
         f.service.forget(seller); f.service.open(seller)
         val starter = f.a(seller).storedGear.single()
@@ -86,8 +86,10 @@ class CoreEconomyTest {
         val bought = f.a(buyer).storedGear.single()
         assertEquals(base.identity, bought.identity); assertEquals(CoreEnhancementState(12, 2), bought.enhancement)
         assertEquals(modified.equippedAffixes, bought.affixes)
+        assertTrue(bought.broken)
         f.commit(buyer, CoreAction.Equip(bought.identity.id))
         assertEquals(4, f.a(buyer).weaponTier)
+        assertTrue(f.a(buyer).weaponBroken)
         f.service.open(seller); assertEquals(380, f.a(seller).silver)
     }
 
@@ -145,7 +147,7 @@ class CoreEconomyTest {
             CoreGearSlot.WEAPON, CoreCraftingCurrency.ALCHEMY, UUID.randomUUID())
         val body = CoreAccountCodec.encode(a).substringBefore("checksum\t").lineSequence()
             .filterNot { it.startsWith("identity\t") || it.startsWith("economy\t") }.joinToString("\n")
-            .replaceFirst("PROJECTS_CORE_LOOP\t5\t", "PROJECTS_CORE_LOOP\t4\t")
+            .replaceFirst("PROJECTS_CORE_LOOP\t6\t", "PROJECTS_CORE_LOOP\t4\t")
         val checksum = java.security.MessageDigest.getInstance("SHA-256").digest(body.toByteArray()).joinToString("") { "%02x".format(it) }
         val old = body + "checksum\t$checksum\n"
         val file = dir.resolve("$id.account")
@@ -158,7 +160,7 @@ class CoreEconomyTest {
         assertEquals(old, Files.readString(file)) // read does not migrate the account
         assertTrue(service.transact(id, CoreOperation(UUID.randomUUID(), 7, CoreAction.ClaimMap(1, 9))).successful)
         assertEquals(old, Files.readString(dir.resolve("$id.account.v4.bak")))
-        assertTrue(Files.readString(file).startsWith("PROJECTS_CORE_LOOP\t5\t"))
+        assertTrue(Files.readString(file).startsWith("PROJECTS_CORE_LOOP\t6\t"))
     }
 
     @Test fun `inventory capacity and failing ordinary save never spend inputs`() {
@@ -196,26 +198,26 @@ class CoreEconomyTest {
         assertEquals(57, f.a(seller).silver)
     }
 
-    @Test fun `expedition wear and repair create demand without deleting target mods or enhancement`() {
+    @Test fun `expeditions preserve breakage and repair consumes donor without deleting target mods or enhancement`() {
         val f = Fixture(); val id = f.create()
         val made = f.craft(id)
         f.commit(id, CoreAction.Equip(made.identity.id))
         val a = f.a(id)
         val modified = CoreCraftingCatalog.craft(a.copy(currencies = mapOf(CoreCraftingCurrency.ALCHEMY to 1L)),
             CoreGearSlot.WEAPON, CoreCraftingCurrency.ALCHEMY, UUID.randomUUID())
-            .copy(revision = a.revision + 1, weaponEnhancement = CoreEnhancementState(20), weaponCondition = 10)
+            .copy(revision = a.revision + 1, weaponEnhancement = CoreEnhancementState(20), weaponBroken = true)
         assertEquals(CoreRepositorySave.Saved, f.repo.commit(a.revision, modified))
         f.service.forget(id); f.service.open(id)
         val map = f.commit(id, CoreAction.ClaimMap(1, 5)).maps.single()
         val run = UUID.randomUUID()
         f.commit(id, CoreAction.StartRun(map.id, run))
         f.commit(id, CoreAction.FinishRun(run))
-        assertEquals(0, f.a(id).weaponCondition)
+        assertTrue(f.a(id).weaponBroken)
         assertEquals(CoreTransactionStatus.REJECTED, f.send(id, CoreAction.FinishRun(run)).status)
         val damageBefore = CoreWeaponPresentation.damage(f.a(id))
         val spare = f.craft(id)
         val repaired = f.commit(id, CoreAction.Repair(CoreGearSlot.WEAPON, spare.identity.id))
-        assertEquals(100, repaired.weaponCondition)
+        assertFalse(repaired.weaponBroken)
         assertEquals(modified.weaponIdentity, repaired.weaponIdentity)
         assertEquals(modified.weaponEnhancement, repaired.weaponEnhancement)
         assertEquals(modified.equippedAffixes, repaired.equippedAffixes)

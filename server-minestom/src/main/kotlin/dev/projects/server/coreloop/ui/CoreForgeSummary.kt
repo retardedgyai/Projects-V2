@@ -58,9 +58,11 @@ internal object CoreForgeSummary {
             else -> "成功率 ${decimal(quote.successChancePercent)}%"
         }
         val protection = when {
-            maximum -> "装備Tierの更新でも強化を維持"
-            quote.guaranteed -> "MOD・強化値を保護"
-            else -> "失敗しても保護・天井 ${quote.failures}/${quote.pityThreshold}"
+            CoreEconomy.broken(account, selection.gear) -> "破損中・装備庫で修理"
+            maximum -> "最大強化・MODと強化値を維持"
+            quote.guaranteed -> "成功確定・破損なし"
+            quote.breakOnFailurePercent > 0 -> "失敗時の破損率 ${decimal(quote.breakOnFailurePercent)}%・修理可能"
+            else -> "破損なし・成功保証 ${quote.failures}/${quote.pityThreshold}"
         }
         return EnhancementSummary(quote, materials(account, quote.recipe), level, success, protection)
     }

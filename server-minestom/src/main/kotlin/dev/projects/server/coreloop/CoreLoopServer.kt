@@ -152,7 +152,9 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
                     { accounts[player.uuid]?.armorTier ?: 1 }, { sessions[player.uuid]?.takeUnless { it.returning }?.combat },
                     statSource = { accounts[player.uuid]?.let(CoreAffixCatalog::stats) ?: CoreAffixStats() },
                     weaponEnhancement = { accounts[player.uuid]?.weaponEnhancement?.level ?: 0 },
-                    armorEnhancement = { accounts[player.uuid]?.armorEnhancement?.level ?: 0 }) {
+                    armorEnhancement = { accounts[player.uuid]?.armorEnhancement?.level ?: 0 },
+                    weaponBroken = { accounts[player.uuid]?.weaponBroken ?: false },
+                    armorBroken = { accounts[player.uuid]?.armorBroken ?: false }) {
                     player.showTitle(Title.title(CoreLoopItems.text("力尽きた…", NamedTextColor.RED), CoreLoopItems.text("獲得素材を持って港へ戻ります")))
                     returnToHarbor(player)
                 }
@@ -332,12 +334,13 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
                     System.err.println("CORE_TRANSACTION_FAILURE player=${player.uuid}: $error")
                     onRejected?.invoke()
                 } else {
-                    player.sendMessage(CoreLoopItems.text(result.message, if (result.successful) NamedTextColor.GREEN else NamedTextColor.RED))
+                    val broke = (action as? CoreAction.EnhanceEquipment)?.let { op -> result.account?.let { CoreEconomy.broken(it, op.gear) } } == true
+                    player.sendMessage(CoreLoopItems.text(result.message, if (result.successful && !broke) NamedTextColor.GREEN else NamedTextColor.RED))
                     if (result.successful) {
                         val enhanced = (action as? CoreAction.EnhanceEquipment)?.let { operation ->
                             result.account?.let { CoreEnhancementCatalog.state(it, operation.gear).level > (beforeEnhancement ?: 0) }
                         }
-                        val sound = when (enhanced) {
+                        val sound = if (broke) SoundEvent.ENTITY_ITEM_BREAK else when (enhanced) {
                             true -> SoundEvent.BLOCK_SMITHING_TABLE_USE
                             false -> SoundEvent.BLOCK_ANVIL_LAND
                             null -> SoundEvent.BLOCK_NOTE_BLOCK_CHIME

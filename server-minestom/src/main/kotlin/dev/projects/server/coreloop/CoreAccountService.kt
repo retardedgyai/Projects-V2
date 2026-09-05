@@ -97,7 +97,7 @@ class CoreAccountService(private val repository: CoreAccountRepository,
         is CoreAction.Deliver -> {
             requireHub(account)
             val item = stored(account, action.id)
-            require(!item.identity.bound && item.identity.crafter == account.playerId && item.enhancement.level == 0 && item.affixes.isEmpty() && item.rarity == CoreGearRarity.NORMAL && item.condition == 100) {
+            require(!item.identity.bound && item.identity.crafter == account.playerId && item.enhancement.level == 0 && item.affixes.isEmpty() && item.rarity == CoreGearRarity.NORMAL && !item.broken) {
                 "自分で制作した未加工の装備だけ納品できます"
             }
             val today = epochDay()
@@ -116,13 +116,13 @@ class CoreAccountService(private val repository: CoreAccountRepository,
         }
         is CoreAction.Repair -> {
             requireHub(account)
-            require(CoreEconomy.condition(account, action.slot) < 100) { "この装備は整備済みです" }
+            require(CoreEconomy.broken(account, action.slot)) { "この装備は破損していません" }
             val input = stored(account, action.input)
-            require(CoreEconomy.repairInput(account, action.slot, input)) { "同Tier・同種の新品（未強化・MODなし）が1個必要です" }
+            require(CoreEconomy.repairInput(account, action.slot, input)) { "同Tier・同系統・+0・未破損の装備が1個必要です（初期装備・出品中は不可）" }
             account.copy(storedGear = account.storedGear.filterNot { it.identity.id == input.identity.id },
-                weaponCondition = if (action.slot == CoreGearSlot.WEAPON) 100 else account.weaponCondition,
-                armorCondition = if (action.slot == CoreGearSlot.ARMOR) 100 else account.armorCondition) to
-                "予備装備1個を消費して整備度を100へ回復しました。対象のMOD・強化値・識別番号は維持しています"
+                weaponBroken = if (action.slot == CoreGearSlot.WEAPON) false else account.weaponBroken,
+                armorBroken = if (action.slot == CoreGearSlot.ARMOR) false else account.armorBroken) to
+                "修理材料の装備1個を消費して修理しました。対象のMOD・強化値・天井・識別番号は維持しています"
         }
         is CoreAction.ListGear -> {
             requireHub(account)
@@ -239,12 +239,14 @@ class CoreAccountService(private val repository: CoreAccountRepository,
         }
         CoreAction.UpgradeWeapon -> {
             requireHub(account)
+            require(!account.weaponBroken) { "先に武器を修理してください" }
             require(account.weaponTier < 4) { "武器は最高Tierです" }
             val upgraded = recipe(account, CoreLoopCatalog.weaponUpgrade(account.weaponTier))
             CoreEnhancementCatalog.gainMastery(upgraded.first.copy(weaponTier = account.weaponTier + 1), 5) to upgraded.second
         }
         CoreAction.UpgradeArmor -> {
             requireHub(account)
+            require(!account.armorBroken) { "先に防具を修理してください" }
             require(account.armorTier < 4) { "防具は最高Tierです" }
             val upgraded = recipe(account, CoreLoopCatalog.armorUpgrade(account.armorTier))
             CoreEnhancementCatalog.gainMastery(upgraded.first.copy(armorTier = account.armorTier + 1), 5) to upgraded.second
@@ -305,9 +307,7 @@ class CoreAccountService(private val repository: CoreAccountRepository,
         }
         is CoreAction.FinishRun -> {
             requireRun(account, action.runId)
-            account.copy(activeRun = null, weaponCondition = (account.weaponCondition - 10).coerceAtLeast(0),
-                armorCondition = (account.armorCondition - 10).coerceAtLeast(0)) to
-                "拠点へ帰還しました。獲得品は保管済みです。装備の整備度が10減少（装備庫で整備できます）"
+            account.copy(activeRun = null) to "拠点へ帰還しました。獲得品は保管済みです"
         }
         is CoreAction.Consume -> {
             require(action.resource in setOf(CoreResource.POTION, CoreResource.WHETSTONE)) { "使用できないアイテムです" }
