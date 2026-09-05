@@ -2,6 +2,7 @@ package dev.projects.server.coreloop
 
 import dev.projects.server.coreloop.ui.*
 import dev.projects.server.coreloop.ui.CoreMenuCanvas.Line
+import dev.projects.server.coreloop.ui.CoreMenuCanvas.TextStyle
 import dev.projects.server.coreloop.ui.CoreMenuCanvas.Tone
 import dev.projects.server.questmap.*
 import net.kyori.adventure.text.format.TextColor
@@ -28,7 +29,13 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
     private val listSlots = listOf(9, 14, 18, 23, 27, 32, 36, 41)
     private val mapSlots = listOf(9, 12, 15, 27, 30, 33)
     private val stockSlots = listSlots
-    internal companion object { val REFINE_SLOTS = listOf(9, 12, 15, 27, 30) }
+    internal companion object {
+        val REFINE_SLOTS = listOf(9, 12, 15, 27, 30)
+        val ENHANCE_FOCUS_SLOTS = listOf(18, 19, 20, 21, 22, 23, 27, 28, 29, 30, 31, 32, 36, 37, 38, 39, 40, 41)
+        const val ENHANCE_STANDARD = 24
+        const val ENHANCE_CATALYST = 33
+        const val ENHANCE_DETAIL = 15
+    }
     fun click(event: InventoryPreClickEvent): Boolean = screens.click(event)
     fun forget(playerId: UUID) { screens.forget(playerId); selections.remove(playerId); journeys.remove(playerId) }
     fun refreshTheme(player: Player) = screens.refresh(player)
@@ -93,12 +100,23 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
         CoreResource.AFFIX_DUST -> CoreMenuArt.SHARD
     }
     private fun gearArt(gear: CoreGearSlot) = if (gear == CoreGearSlot.WEAPON) CoreMenuArt.WEAPON else CoreMenuArt.ARMOR
+    /** A single piece on the anvil, not another rectangular menu card. */
+    private fun enhancementFocus(v: View, player: Player, a: CoreAccount, gear: CoreGearSlot, caption: String) {
+        val display = CoreLoopItems.gear(a, gear, v.packed).withAmount(1).withGlowing(false)
+        ENHANCE_FOCUS_SLOTS.forEach { slot ->
+            check(v.occupied.add(slot)) { "Enhancement subject overlaps slot $slot" }
+            v.items[slot] = if (v.packed) CoreUiItemSkin.blank(display, true) else display
+            v.actions[slot] = { gearMods(player, gear) }
+        }
+        v.canvas.focus(gearArt(gear), caption)
+    }
     private fun gatheringResource(discipline: QuestGatheringDiscipline) = CoreResource.entries.first { it.raw && it.displayName == discipline.commonResourceName }
-    private fun back(v: View, player: Player, label: String = "戻る", action: () -> Unit = { journal(player) }) =
-        tile(v, 45, 2, label, CoreLoopItems.icon(Material.ARROW, label), action = action)
+    private fun back(v: View, player: Player, label: String = "戻る", compact: Boolean = false, action: () -> Unit = { journal(player) }) =
+        tile(v, 45, if (compact) 1 else 2, if (compact) "←" else label, CoreLoopItems.icon(Material.ARROW, label), action = action)
     private fun help(v: View, player: Player, returnTo: () -> Unit) =
         tile(v, 8, 1, "?", CoreLoopItems.icon(Material.BOOK, "画面の見方", "左右：選択内容と費用 / 中央：操作", "表示サイズ・操作の説明")) { displayHelp(player, returnTo) }
     private fun lines(vararg text: String): List<Line> = text.flatMap { CoreMenuCanvas.wrap(it).map { part -> Line(part) } }
+    private fun emphasis(text: String, color: TextColor = CoreUiComponents.GOLD) = Line(text, color, style = TextStyle.EMPHASIS)
     private fun paragraph(text: String, color: TextColor = CoreUiComponents.IVORY): List<Line> = CoreMenuCanvas.wrap(text).map { Line(it, color) }
     private fun pct(value: Double) = if (value % 1.0 == 0.0) value.toInt().toString() else String.format(Locale.ROOT, "%.1f", value)
     private fun resourceName(resource: CoreResource) = when (resource) {
@@ -137,11 +155,11 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
         val run = a.activeRun
         view(player, if (run == null) "開拓港 / 手帳" else "遠征 / 手帳", { journal(player) }) { v ->
             help(v, player) { journal(player) }
-            v.canvas.left("冒険者", equipment(a, CoreGearSlot.WEAPON) + lines("", "防具 T${a.armorTier} +${a.armorEnhancement.level}",
+            v.canvas.left("旅の装備", equipment(a, CoreGearSlot.WEAPON) + lines("", "防具 T${a.armorTier} +${a.armorEnhancement.level}",
                 "HP ${CoreWeaponPresentation.health(a)}"), hero = CoreMenuArt.WEAPON)
             if (run == null) {
-                v.canvas.right("開拓の旅", lines("遠征 → 収集", "工房 → 装備更新", "", "解放 T1〜${a.unlockedMapTier}", "地図 ${a.maps.size}枚", "T1地図は無料", "素材は自動保存"), hero = CoreMenuArt.EXPEDITION)
-                card(v, 9, 3, 3, "遠征", CoreMenuArt.EXPEDITION, CoreLoopItems.icon(Material.CARTOGRAPHY_TABLE, "地図台から遠征", "地図を選ぶ → 調整 → 出発"), Tone.PRIMARY) { expeditions(player) }
+                v.canvas.right("次の遠征", listOf(emphasis("T1〜${a.unlockedMapTier}")) + lines("挑戦できる地域", "", "地図 ${a.maps.size}枚", "道の先に待つボス", "寄り道で見つかる素材"), hero = CoreMenuArt.EXPEDITION)
+                card(v, 9, 3, 3, "遠征", CoreMenuArt.EXPEDITION, CoreLoopItems.icon(Material.CARTOGRAPHY_TABLE, "地図台から遠征", "地図を選ぶ → 調整 → 出発", "T1の地図は無料で何度でも入手できます"), Tone.PRIMARY) { expeditions(player) }
                 card(v, 12, 3, 3, "工房", CoreMenuArt.FORGE, CoreLoopItems.icon(Material.ANVIL, "装備工房", "強化・精製・制作・MOD加工")) { workshop(player) }
                 card(v, 15, 3, 3, "保管庫", CoreMenuArt.STORAGE, CoreLoopItems.icon(Material.BARREL, "素材倉庫", "持っている素材と正確な所持数")) { storage(player) }
                 card(v, 36, 3, 1, "装備", CoreMenuArt.GEAR, CoreLoopItems.icon(Material.IRON_SWORD, "装備とMODを確認")) { gearMods(player, selections[player.uuid]?.gear ?: CoreGearSlot.WEAPON) }
@@ -150,10 +168,10 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
                 card(v, 45, 3, 1, "補給", CoreMenuArt.STORAGE, CoreLoopItems.icon(Material.GOLD_NUGGET, "戦利品券を素材へ交換")) { supplies(player) }
                 card(v, 48, 3, 1, "遊び方", CoreMenuArt.HELP, CoreLoopItems.icon(Material.BOOK, "最初の一周・戦闘・採取操作")) { guide(player) }
             } else {
-                v.canvas.right("遠征の状況", lines(if (run.bossDefeated) "ボス討伐達成！" else "T${run.map.tier} を探索中", "寄り道は自由", "素材は保存済み", "", game.sessionSummary(player)), hero = CoreMenuArt.EXPEDITION)
+                v.canvas.right("遠征の記録", listOf(emphasis(if (run.bossDefeated) "ボス討伐！" else "T${run.map.tier} を探索中")) + lines("寄り道は自由", "", game.sessionSummary(player)), hero = CoreMenuArt.EXPEDITION)
                 card(v, 9, 3, 3, "探索", CoreMenuArt.EXPEDITION, CoreLoopItems.icon(Material.MAP, "画面を閉じて探索を続ける"), Tone.PRIMARY) { player.closeInventory() }
                 card(v, 12, 3, 3, "帰還", CoreMenuArt.RETURN, CoreLoopItems.icon(Material.COMPASS, "帰還の確認へ", "今のマップには戻れなくなります")) { confirmReturn(player) }
-                card(v, 15, 3, 3, "獲得品", CoreMenuArt.STORAGE, CoreLoopItems.icon(Material.BARREL, "倉庫へ保存された戦利品")) { storage(player, run.map.tier) }
+                card(v, 15, 3, 3, "獲得品", CoreMenuArt.STORAGE, CoreLoopItems.icon(Material.BARREL, "倉庫へ保存された戦利品", "採取素材は自動保存され、死亡・帰還しても保持されます")) { storage(player, run.map.tier) }
                 card(v, 36, 3, 1, "装備", CoreMenuArt.GEAR, CoreLoopItems.icon(Material.IRON_SWORD, "武器・防具のMODを確認")) { gearMods(player, CoreGearSlot.WEAPON) }
                 card(v, 39, 3, 1, "道具", CoreMenuArt.GATHER, CoreLoopItems.icon(Material.WOODEN_AXE, "採取道具を持つ")) { tools(player) }
                 card(v, 42, 3, 1, "遊び方", CoreMenuArt.HELP, CoreLoopItems.icon(Material.BOOK, "操作ガイド")) { guide(player) }
@@ -238,7 +256,7 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
                         "対象を${gear.displayName}に変更", *equipment(a, gear).map { it.text }.toTypedArray()),
                     if (s.gear == gear) Tone.SELECTED else Tone.NEUTRAL) { forge(player, s.copy(gear = gear, recipe = 0, currency = null)) }
             }
-            back(v, player, if (journey(player).isEmpty) "手帳" else "元へ") {
+            back(v, player, if (journey(player).isEmpty) "手帳" else "元へ", compact = s.tab == CoreForgeLayout.Tab.ENHANCE) {
                 journey(player).pop()?.let { forge(player, it) } ?: journal(player)
             }
             when (s.tab) {
@@ -251,11 +269,11 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
 
     private fun costPanel(v: View, a: CoreAccount, recipe: CoreRecipe) {
         val rows = CoreForgeSummary.materials(a, recipe)
-        v.canvas.right("必要素材", listOf(Line("所持 / 必要", CoreUiComponents.MUTED)) + rows.flatMap { row ->
-            listOf(Line("${if (row.satisfied) "" else "!"}T${row.material.tier} ${stockName(row.material.resource)}",
+        v.canvas.right("必要素材", rows.flatMap { row ->
+            listOf(Line("T${row.material.tier} ${stockName(row.material.resource)} ×${row.required}",
                     if (row.satisfied) CoreUiComponents.IVORY else CoreUiComponents.RED, materialArt(row.material.resource)),
-                Line("${row.owned}/${row.required}",
-                    if (row.satisfied) TextColor.color(0x95D7AE) else CoreUiComponents.RED))
+                Line("所持 ${row.owned}",
+                    if (row.satisfied) CoreUiComponents.MUTED else CoreUiComponents.RED))
         } + if (rows.isEmpty()) lines("消費なし") else emptyList())
     }
 
@@ -264,7 +282,8 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
 
     private fun execute(v: View, player: Player, label: String, blocked: String?, recipe: CoreRecipe? = null, action: () -> Unit) {
         val a = game.account(player) ?: return
-        val lore = listOfNotNull(blocked) + recipe?.costs.orEmpty().map { "${it.key.displayName}: 所持 ${a.amount(it.key)} / 必要 ${it.value}" }
+        val lore = listOfNotNull(blocked) + recipe?.costs.orEmpty().map { "${it.key.displayName}: 所持 ${a.amount(it.key)} / 必要 ${it.value}" } +
+            if (label == "強化する") listOf("失敗しても装備・強化値・MODを保護します", "素材は成功・失敗にかかわらず毎回消費します") else emptyList()
         val art = when (label) {
             "強化する" -> CoreMenuArt.ENHANCE
             "精製する" -> CoreMenuArt.REFINE
@@ -273,9 +292,19 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
             else -> CoreMenuArt.STORAGE
         }
         val short = if (label == "加工する") "刻印" else label.removeSuffix("する")
-        card(v, 51, 3, 1, if (blocked == null) short else "不可", art,
-            CoreLoopItems.icon(if (blocked == null) Material.LIME_DYE else Material.BARRIER, label, *lore.toTypedArray()),
-            if (blocked == null) Tone.PRIMARY else Tone.DISABLED) { if (game.requireHub(player)) action() }
+        if (blocked == null) card(v, 51, 3, 1, short, art,
+            CoreLoopItems.icon(Material.LIME_DYE, label, *lore.toTypedArray()), Tone.PRIMARY) { if (game.requireHub(player)) action() }
+        else {
+            val reason = when {
+                "最大強化" in blocked -> "最大強化"
+                "保管上限" in blocked -> "保管上限"
+                "不足" in blocked || "足りません" in blocked -> "素材不足"
+                "選んで" in blocked -> "選択待ち"
+                "拠点" in blocked -> "港で使用"
+                else -> "条件未達"
+            }
+            tile(v, 51, 3, reason, CoreLoopItems.icon(Material.BARRIER, label, *lore.toTypedArray()), Tone.DISABLED)
+        }
     }
 
     private fun quantity(v: View, selected: CoreForgeLayout.Quantity, maximum: Int, action: (CoreForgeLayout.Quantity) -> Unit) {
@@ -293,24 +322,28 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
         val mode = CoreForgeLayout.enhancementMode(a, s)
         val next = if (s.gear == CoreGearSlot.WEAPON) a.copy(weaponEnhancement = CoreEnhancementState(quote.targetLevel))
             else a.copy(armorEnhancement = CoreEnhancementState(quote.targetLevel))
-        val changes = if (s.gear == CoreGearSlot.WEAPON) lines("攻撃 ${CoreWeaponPresentation.damage(a)} → ${CoreWeaponPresentation.damage(next)}",
-            "AS補正 ${pct(CoreWeaponPresentation.attackSpeedPercent(a))}%", "→ ${pct(CoreWeaponPresentation.attackSpeedPercent(next))}%")
-        else lines("HP ${CoreWeaponPresentation.health(a)} → ${CoreWeaponPresentation.health(next)}")
-        v.canvas.left("T${CoreAffixCatalog.gearTier(a, s.gear)} ${s.gear.displayName}", lines(summary.levelLabel) + changes +
-            lines(if (maximum) "最大まで強化済み" else "成功率 ${pct(quote.successChancePercent)}%",
-                if (maximum || quote.guaranteed) "装備・MOD保護" else "失敗 ${quote.failures}/${quote.pityThreshold}",
-                "熟練 ${CoreEnhancementCatalog.masteryRank(a.smithingXp)}/10") +
-            if (!maximum) lines(if (quote.guaranteed) "成功確定" else "装備保護", "素材は毎回消費") else emptyList(), hero = gearArt(s.gear))
+        val changes = if (s.gear == CoreGearSlot.WEAPON) listOf(
+            Line("攻撃力", CoreUiComponents.MUTED),
+            emphasis(if (maximum) "${CoreWeaponPresentation.damage(a)}" else "${CoreWeaponPresentation.damage(a)} → ${CoreWeaponPresentation.damage(next)}"),
+            Line("攻撃速度の補正", CoreUiComponents.MUTED),
+            emphasis(if (maximum) "${pct(CoreWeaponPresentation.attackSpeedPercent(a))}%" else
+                "${pct(CoreWeaponPresentation.attackSpeedPercent(a))}% → ${pct(CoreWeaponPresentation.attackSpeedPercent(next))}%"))
+        else listOf(Line("最大HP", CoreUiComponents.MUTED),
+            emphasis(if (maximum) "${CoreWeaponPresentation.health(a)}" else "${CoreWeaponPresentation.health(a)} → ${CoreWeaponPresentation.health(next)}"))
+        v.canvas.left(if (maximum) "鍛え抜いた装備" else "強化後の性能",
+            lines("T${CoreAffixCatalog.gearTier(a, s.gear)} ${s.gear.displayName}") + changes + lines("") +
+                listOf(emphasis(if (maximum) "最大強化 +30" else "成功率 ${pct(quote.successChancePercent)}%")) +
+                if (maximum) lines("制作後も強化を維持", "鍛冶熟練 ${CoreEnhancementCatalog.masteryRank(a.smithingXp)}/10")
+                else lines(if (quote.guaranteed) "次の強化は成功確定" else "天井 ${quote.failures}/${quote.pityThreshold}",
+                    "鍛冶熟練 ${CoreEnhancementCatalog.masteryRank(a.smithingXp)}/10", "", "失敗でも装備は保護", "強化値・MODも維持", "素材は毎回消費"))
         costPanel(v, a, quote.recipe)
-        tile(v, 15, 3, if (maximum) "最大強化" else "T${CoreEnhancementCatalog.materialTier(quote.targetLevel)}素材",
-            CoreLoopItems.icon(Material.PAPER, "強化段階に応じた素材Tier", "装備Tierとは別の段階です"), Tone.DISABLED)
-        card(v, 18, 3, 2, "通常", CoreMenuArt.ENHANCE, CoreLoopItems.icon(Material.IRON_INGOT, "通常強化", "追加の精錬触媒を消費しません"),
-            if (mode == CoreEnhancementMode.STANDARD) Tone.SELECTED else Tone.NEUTRAL) { forge(player, s.copy(focused = false)) }
+        enhancementFocus(v, player, a, s.gear, if (maximum) "+30" else summary.levelLabel)
+        card(v, ENHANCE_DETAIL, 3, 1, "詳細", CoreMenuArt.GEAR, CoreLoopItems.gear(a, s.gear, v.packed)) { gearMods(player, s.gear) }
+        card(v, ENHANCE_STANDARD, 3, 1, "通常", CoreMenuArt.ENHANCE, CoreLoopItems.icon(Material.IRON_INGOT, "通常強化", "追加の精錬触媒を消費しません", "素材Tierは装備Tierではなく強化段階によって決まります"),
+            if (maximum) Tone.DISABLED else if (mode == CoreEnhancementMode.STANDARD) Tone.SELECTED else Tone.NEUTRAL) { forge(player, s.copy(focused = false)) }
         val standard = CoreEnhancementCatalog.quote(a, s.gear)
-        card(v, 21, 3, 2, "触媒あり", CoreMenuArt.SHARD, CoreLoopItems.icon(Material.GLOWSTONE_DUST, "精錬触媒を追加", "追加素材を消費し成功率+15ポイント", "費用・成功率を表示してから実行できます"),
+        card(v, ENHANCE_CATALYST, 3, 1, "触媒", CoreMenuArt.SHARD, CoreLoopItems.icon(Material.GLOWSTONE_DUST, "精錬触媒を追加", "追加素材を消費し成功率+15ポイント", "費用・成功率を表示してから実行できます"),
             if (maximum || standard.guaranteed) Tone.DISABLED else if (mode == CoreEnhancementMode.FOCUSED) Tone.SELECTED else Tone.NEUTRAL) { forge(player, s.copy(focused = true)) }
-        card(v, 24, 3, 2, "装備詳細", CoreMenuArt.GEAR, CoreLoopItems.gear(a, s.gear, v.packed)) { gearMods(player, s.gear) }
-        if (quote.blockedReason != null && !maximum) v.canvas.text(8, 92, "素材不足", CoreUiComponents.RED, 106)
         sourceButton(v, player, s)
         execute(v, player, "強化する", quote.blockedReason, quote.recipe) {
             mutate(v, player, CoreAction.EnhanceEquipment(s.gear, mode), a.revision) { forge(player, s) }
@@ -507,7 +540,7 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
         val chosen = shown.getOrNull(selected.coerceIn(0, (shown.size - 1).coerceAtLeast(0)))
         view(player, "素材倉庫 / T$tier", { storage(player, tier, current, selected) }) { v ->
             tiers(v, tier) { storage(player, it) }; help(v, player) { storage(player, tier, current, selected) }
-            v.canvas.left("個人倉庫", lines("所持 ${entries.size}種類", "持っている物だけ", "Tierごとに表示", "通貨・欠片は共通", "工房で直接使用", "万以上は概数", "正確な個数は右へ"), hero = CoreMenuArt.STORAGE)
+            v.canvas.left("保管庫", listOf(emphasis("${entries.size} 種類")) + lines("T$tier の素材", "", "旅で集めた素材を", "次の装備へ"), hero = CoreMenuArt.STORAGE)
             val detail = when (chosen) {
                 is CoreStorageView.Entry.Material -> lines(chosen.material.displayName, "所持 ${chosen.count}", "", when {
                     chosen.material.resource.raw -> "精製に使う素材"
@@ -524,7 +557,7 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
                 is CoreStorageView.Entry.Fragment -> CoreMenuArt.SHARD
                 null -> CoreMenuArt.STORAGE
             }
-            v.canvas.right("選択した所持品", detail, hero = selectedArt)
+            v.canvas.right("手に入れたもの", detail, hero = selectedArt)
             shown.forEachIndexed { index, entry ->
                 val name = when (entry) {
                     is CoreStorageView.Entry.Material -> storageName(entry.material.resource)
@@ -537,7 +570,7 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
                     is CoreStorageView.Entry.Fragment -> CoreLoopItems.fragment(entry.kind, entry.count)
                 }
                 val count = storageCount(entry.count)
-                val label = if (CoreMenuCanvas.width("$name $count") <= 52) "$name $count" else "$name$count"
+                val label = if (CoreMenuCanvas.width("$name $count", TextStyle.EMPHASIS) <= 52) "$name $count" else "$name$count"
                 val art = when (entry) {
                     is CoreStorageView.Entry.Material -> materialArt(entry.material.resource)
                     is CoreStorageView.Entry.Currency -> CoreMenuArt.ORB
@@ -706,8 +739,8 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
 
     private fun displayHelp(player: Player, returnTo: () -> Unit) {
         view(player, "画面の見方", { displayHelp(player, returnTo) }) { v ->
-            v.canvas.left("操作", lines("枠全体をクリック", "光る枠は選択中", "緑は実行ボタン", "灰色は使用不可", "選択だけでは未消費", "右下で確定します", "ESCで閉じられます"), hero = CoreMenuArt.HELP)
-            v.canvas.right("表示", lines("左：対象と変化", "右：費用や詳細", "所持 / 必要の順", "赤は不足している物", "", "装備の詳しい数値は", "装備詳細へ残しています"))
+            v.canvas.left("操作", lines("絵や名前をクリック", "明るい縁は選択中", "金色は実行ボタン", "暗いボタンは使用不可", "選択だけでは未消費", "右下で確定します", "ESCで閉じられます"), hero = CoreMenuArt.HELP)
+            v.canvas.right("保管と表示", lines("素材は自動で保管", "工房で直接使えます", "所持品だけを表示", "素材はTierごと", "通貨・欠片は共通", "万以上の一覧は概数", "右の個数は常に正確", "", "費用は名前 ×必要数", "所持は手元の総数", "赤い素材は不足", "装備の全情報は詳細"))
             v.canvas.text(8, 20, "左右が見切れるとき", CoreUiComponents.GOLD, 160)
             v.canvas.text(8, 38, "設定 → ビデオ設定", CoreUiComponents.IVORY, 160)
             v.canvas.text(8, 56, "GUI倍率を1段下げる", CoreUiComponents.IVORY, 160)
