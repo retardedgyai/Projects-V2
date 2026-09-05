@@ -57,6 +57,28 @@ class CoreCraftingCurrencyTest {
         assertEquals(123456789L, f.account.craftingSeed)
     }
 
+    @Test fun `astral currency replaces exactly one random mod while preserving quality enhancement and identity`() {
+        repeat(120) { seed ->
+            val f = Fixture(initial(1 + seed % 4).copy(craftingSeed = seed.toLong(),
+                weaponIdentity = initial().weaponIdentity.copy(quality = 17),
+                weaponEnhancement = CoreEnhancementState(12)))
+            f.craft(CoreCraftingCurrency.ALCHEMY)
+            val before = f.account
+            val operation = CoreOperation(UUID.randomUUID(), before.revision, CoreAction.CraftEquipment(weapon, CoreCraftingCurrency.ASTRAL))
+            assertTrue(f.service.transact(f.player, operation).successful)
+            val after = f.account
+            assertEquals(before.equippedAffixes.size, after.equippedAffixes.size)
+            assertEquals(before.equippedAffixes.size - 1, after.equippedAffixes.count { it in before.equippedAffixes })
+            assertEquals(before.weaponIdentity, after.weaponIdentity)
+            assertEquals(before.weaponEnhancement, after.weaponEnhancement)
+            assertEquals(before.weaponRarity, after.weaponRarity)
+            assertEquals(99, after.amount(CoreCraftingCurrency.ASTRAL))
+            assertLayout(after, weapon)
+            assertEquals(CoreTransactionStatus.REPLAYED, f.service.transact(f.player, operation).status)
+            assertEquals(after, f.account)
+        }
+    }
+
     @Test fun `all ordinary currency transitions consume one and preserve only their promised parts`() {
         val f = Fixture(initial())
         f.craft(CoreCraftingCurrency.TRANSMUTATION)
@@ -132,7 +154,7 @@ class CoreCraftingCurrencyTest {
         val f = Fixture(initial())
         listOf(CoreCraftingCurrency.AUGMENTATION, CoreCraftingCurrency.ALTERATION, CoreCraftingCurrency.CHAOS,
             CoreCraftingCurrency.REGAL, CoreCraftingCurrency.EXALTED, CoreCraftingCurrency.SCOURING,
-            CoreCraftingCurrency.DIVINE, CoreCraftingCurrency.RITUAL, CoreCraftingCurrency.TRIAL).forEach {
+            CoreCraftingCurrency.DIVINE, CoreCraftingCurrency.RITUAL, CoreCraftingCurrency.TRIAL, CoreCraftingCurrency.ASTRAL).forEach {
             assertNotNull(CoreCraftingCatalog.canUse(f.account, weapon, it))
             assertEquals(CoreTransactionStatus.REJECTED, f.perform(CoreAction.CraftEquipment(weapon, it)).status)
         }

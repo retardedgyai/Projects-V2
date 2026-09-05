@@ -287,6 +287,7 @@ internal class CorePlayerCombat(
     fun cooldownTicks(id: Int): Int = ceil(intArrayOf(80, 140, 220)[id] * (1.0 - statSource().cooldownReductionPercent.coerceIn(0.0, 45.0) / 100.0)).toInt()
     fun cooldownRemaining(id: Int): Int = (readyAt[id] - tickNumber).coerceAtLeast(0).toInt()
     fun reset() { resetActions(); defeated = false; manaValue = maxMana.toDouble(); health = maxHealth.toDouble(); readyAt.fill(0L); nextDodge = 0L; syncVanillaHealth() }
+    fun revive(fraction: Double) { require(fraction in .1..1.0); reset(); health = maxHealth * fraction; syncVanillaHealth() }
     fun resetActions() {
         actionEpoch++
         normal.reset(); pending = null; queuedSkill = null; queuedDodge = false; burns.clear()

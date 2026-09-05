@@ -20,6 +20,9 @@ enum class QuestMobArchetype(val displayName: String, val rarity: QuestMobRarity
     CINDER_REGENT("灰燼の王", QuestMobRarity.BOSS, "ice"),
     GLACIAL_COLOSSUS("氷獄の巨兵", QuestMobRarity.BOSS, "fire"),
     TEMPEST_HIEROPHANT("嵐の司祭", QuestMobRarity.BOSS, "lightning"),
+    FORGE_SENTINEL("熔星の番人", QuestMobRarity.BOSS, "ice"),
+    TIDE_ARCHIVIST("蒼潮の記録者", QuestMobRarity.BOSS, "fire"),
+    ECLIPSE_REGENT("星蝕の王", QuestMobRarity.BOSS, "lightning"),
 }
 
 data class QuestMobInfo(
@@ -64,8 +67,9 @@ internal data class QuestMobDefinition(
     val boss: Boolean get() = archetype.rarity == QuestMobRarity.BOSS
     val soundFamily: String get() = when (archetype) {
         QuestMobArchetype.SHIELD_GUARD, QuestMobArchetype.IRON_WARDEN, QuestMobArchetype.GLACIAL_COLOSSUS -> "husk"
-        QuestMobArchetype.RIFT_CASTER, QuestMobArchetype.RIFT_ORACLE, QuestMobArchetype.TEMPEST_HIEROPHANT -> "evoker"
-        QuestMobArchetype.ELITE_BRUTE, QuestMobArchetype.CINDER_REGENT -> "piglin_brute"
+        QuestMobArchetype.RIFT_CASTER, QuestMobArchetype.RIFT_ORACLE, QuestMobArchetype.TEMPEST_HIEROPHANT, QuestMobArchetype.TIDE_ARCHIVIST -> "evoker"
+        QuestMobArchetype.ELITE_BRUTE, QuestMobArchetype.CINDER_REGENT, QuestMobArchetype.FORGE_SENTINEL -> "piglin_brute"
+        QuestMobArchetype.ECLIPSE_REGENT -> "wither_skeleton"
         else -> "vindicator"
     }
     val dropKind: QuestMobDropKind get() = when (archetype) {
@@ -157,6 +161,21 @@ internal object QuestMobContent {
                     attack("oracle-pulse", "拒絶の波", MobAttackShape.Ring(3.2), 3.5, 14.0,
                         1100, 0, 1500, 3000),
                 ))
+            QuestMobArchetype.FORGE_SENTINEL -> definition(EntityType.PIGLIN_BRUTE, 650.0, 0.115, 3.0, 1.6,
+                Material.NETHERITE_AXE, chest = Material.NETHERITE_CHESTPLATE, attacks = listOf(
+                    sweep(5.0, 22.0), slam(10.0, 1.8, 27.0),
+                    attack("forge-cross", "熔断・対角線へ", MobAttackShape.Cross(17.0, 1.7), 20.0, 30.0, 1900, 300, 1600, 3200, health = .7, weight = 3),
+                    attack("forge-mark", "火種・足元から離れろ", MobAttackShape.Ring(3.4), 20.0, 24.0, 1600, 400, 1000, 2700, target = true, health = .4)))
+            QuestMobArchetype.TIDE_ARCHIVIST -> definition(EntityType.EVOKER, 600.0, .12, 7.0, 1.45,
+                Material.TRIDENT, Material.ENCHANTED_BOOK, attacks = listOf(
+                    attack("tide-ray", "潮流・横へ回避", MobAttackShape.Slam(20.0, 1.25), 20.0, 23.0, 1500, 350, 1200, 2500),
+                    attack("tide-ring", "満潮・中心へ", MobAttackShape.Ring(17.0, 5.5), 20.0, 28.0, 2100, 0, 1500, 3300, health = .7),
+                    attack("tide-center", "干潮・外へ", MobAttackShape.Ring(5.5), 20.0, 28.0, 1900, 0, 1500, 3100, health = .4)))
+            QuestMobArchetype.ECLIPSE_REGENT -> definition(EntityType.WITHER_SKELETON, 800.0, .12, 3.0, 1.55,
+                Material.NETHERITE_SWORD, helmet = Material.GOLDEN_HELMET, chest = Material.NETHERITE_CHESTPLATE, attacks = listOf(
+                    sweep(5.0, 25.0), slam(12.0, 1.5, 30.0),
+                    attack("eclipse-mark", "星落とし・足元から離れろ", MobAttackShape.Ring(3.3), 21.0, 26.0, 1750, 500, 1000, 2500, target = true),
+                    attack("eclipse-cross", "星蝕十字・斜めへ", MobAttackShape.Cross(18.0, 1.6), 21.0, 34.0, 2000, 200, 1400, 3200, health = .4)))
             QuestMobArchetype.CINDER_REGENT -> definition(EntityType.PIGLIN_BRUTE, 460.0, 0.12, 3.0, 1.4,
                 Material.NETHERITE_AXE, chest = Material.NETHERITE_CHESTPLATE, attacks = listOf(
                     attack("cinder-mark", "焼印・赤い床から離れろ", MobAttackShape.Ring(3.3), 18.0, 24.0,

@@ -31,8 +31,8 @@ class CoreStorageViewTest {
             currencies = CoreCraftingCurrency.entries.associateWith { 2L }, fragments = CoreActivityKind.entries.associateWith { 3L })
         val entries = CoreStorageView.entries(account, 1)
         val pages = entries.chunked(21)
-        assertEquals(31, entries.size)
-        assertEquals(listOf(21, 10), pages.map { it.size })
+        assertEquals(32, entries.size)
+        assertEquals(listOf(21, 11), pages.map { it.size })
         assertEquals(entries, pages.flatten())
         assertEquals(entries.size, entries.distinct().size)
         assertFailsWith<IllegalArgumentException> { CoreStorageView.entries(account, 0) }

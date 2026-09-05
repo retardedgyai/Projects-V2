@@ -127,6 +127,7 @@ internal object CoreLoopItems {
         CoreCraftingCurrency.RIFT -> Material.ECHO_SHARD
         CoreCraftingCurrency.RITUAL -> Material.ENDER_EYE
         CoreCraftingCurrency.TRIAL -> Material.NETHERITE_SCRAP
+        CoreCraftingCurrency.ASTRAL -> Material.NAUTILUS_SHELL
     }
 
     fun currency(currency: CoreCraftingCurrency, count: Long, packed: Boolean, quantityLabel: String = "所持"): ItemStack {
@@ -134,7 +135,7 @@ internal object CoreLoopItems {
         return CoreUiTooltip.apply(ItemStack.of(currencyMaterial(currency)).withTag(actionTag, "currency")
             .withTag(currencyTag, currency.name).withAmount(count.coerceIn(1, 64).toInt()),
             CoreTooltipModel(currency.displayName, if (exclusive == null) CoreUiRarity.RARE else CoreUiRarity.EPIC,
-                tier = 1, itemLevel = 1, typeLabel = if (exclusive == null) "装備加工用の通貨" else "${exclusive.displayName}の専用報酬",
+                tier = 1, itemLevel = 1, typeLabel = if (currency == CoreCraftingCurrency.ASTRAL) "星環の深殿・踏破専用報酬" else if (exclusive == null) "装備加工用の通貨" else "${exclusive.displayName}の専用報酬",
                 stats = listOf(CoreTooltipStat(quantityLabel, "$count 個", CoreUiIcon.MOD)),
                 footer = listOf(CoreCraftingCatalog.description(currency), "消費と加工は確認画面で確定", "港で装備に重ねる / 右クリックで刻印工房")), packed)
     }

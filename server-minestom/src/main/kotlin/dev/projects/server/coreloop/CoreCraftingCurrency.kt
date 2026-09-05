@@ -13,7 +13,7 @@ enum class CoreCraftingCurrency(val displayName: String) {
     TRANSMUTATION("変成のオーブ"), AUGMENTATION("増強のオーブ"), ALTERATION("改変のオーブ"),
     ALCHEMY("錬金のオーブ"), CHAOS("混沌のオーブ"), REGAL("富豪のオーブ"),
     EXALTED("高揚のオーブ"), SCOURING("洗浄のオーブ"), DIVINE("神聖のオーブ"),
-    RIFT("裂け目のオーブ"), RITUAL("儀式のオーブ"), TRIAL("試練のオーブ"),
+    RIFT("裂け目のオーブ"), RITUAL("儀式のオーブ"), TRIAL("試練のオーブ"), ASTRAL("星環のオーブ"),
 }
 
 enum class CoreActivityKind(val displayName: String, val bossId: String, val currency: CoreCraftingCurrency) {
@@ -47,6 +47,7 @@ object CoreCraftingCatalog {
         CoreCraftingCurrency.RIFT -> "全MODを再抽選し、元素MODを1個以上含むレア4〜6個へ変える"
         CoreCraftingCurrency.RITUAL -> "MODの数値をそれぞれ2回抽選し、高い方を採用（元の値を保証しない）"
         CoreCraftingCurrency.TRIAL -> "レアの空き枠へ、数値範囲の上位25％からMODを1個追加"
+        CoreCraftingCurrency.ASTRAL -> "レア装備のMODをランダムに1個置換。他のMOD・強化・製造品質は保持（改善保証なし）"
     }
 
     /** Null is usable. This never rolls or reveals the next affix. */
@@ -68,6 +69,8 @@ object CoreCraftingCatalog {
             CoreCraftingCurrency.SCOURING -> if (rarity == CoreGearRarity.NORMAL) "すでにノーマルです" else null
             CoreCraftingCurrency.DIVINE, CoreCraftingCurrency.RITUAL -> if (installed.isEmpty()) "再抽選するMODがありません"
                 else if (installed.any { !CoreAffixCatalog.valid(it.stone) }) "未対応のMODは数値を変更せず保管してください" else null
+            CoreCraftingCurrency.ASTRAL -> if (rarity != CoreGearRarity.RARE || installed.isEmpty()) "MODのあるレア装備に使用できます"
+                else if (gear in account.legacyLayouts) "旧形式のMOD構成です。先に混沌で移行してください" else null
             CoreCraftingCurrency.RIFT -> null
         }
     }
@@ -118,6 +121,7 @@ object CoreCraftingCatalog {
             CoreCraftingCurrency.REGAL -> { rarity = CoreGearRarity.RARE; add(old, rarity) }
             CoreCraftingCurrency.AUGMENTATION, CoreCraftingCurrency.EXALTED -> add(old, rarity)
             CoreCraftingCurrency.TRIAL -> add(old, rarity, high = true)
+            CoreCraftingCurrency.ASTRAL -> add(old - old[random.nextInt(old.size)], rarity)
             CoreCraftingCurrency.SCOURING -> { rarity = CoreGearRarity.NORMAL; legacy = legacy - gear; emptyList() }
             CoreCraftingCurrency.DIVINE, CoreCraftingCurrency.RITUAL -> old.map { installed ->
                 val range = CoreAffixCatalog.definition(installed.stone)!!.range(installed.stone.tier)

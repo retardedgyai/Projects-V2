@@ -12,7 +12,7 @@ internal object CoreForgeLayout {
         fun accepts(currency: CoreCraftingCurrency): Boolean = this == ALL || this == when (currency) {
             CoreCraftingCurrency.TRANSMUTATION, CoreCraftingCurrency.ALCHEMY, CoreCraftingCurrency.REGAL -> PROMOTE
             CoreCraftingCurrency.AUGMENTATION, CoreCraftingCurrency.EXALTED, CoreCraftingCurrency.TRIAL -> ADD
-            CoreCraftingCurrency.ALTERATION, CoreCraftingCurrency.CHAOS, CoreCraftingCurrency.RIFT -> REROLL
+            CoreCraftingCurrency.ALTERATION, CoreCraftingCurrency.CHAOS, CoreCraftingCurrency.RIFT, CoreCraftingCurrency.ASTRAL -> REROLL
             CoreCraftingCurrency.DIVINE, CoreCraftingCurrency.RITUAL, CoreCraftingCurrency.SCOURING -> TUNE
         }
     }

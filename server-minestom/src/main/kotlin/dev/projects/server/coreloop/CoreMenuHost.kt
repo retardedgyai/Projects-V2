@@ -1,5 +1,6 @@
 package dev.projects.server.coreloop
 
+import dev.projects.server.coreloop.adventure.*
 import dev.projects.server.questmap.QuestGatheringDiscipline
 import dev.projects.server.questmap.QuestGatheringMastery
 import dev.projects.server.questmap.QuestGatheringMasteryNode
@@ -11,6 +12,12 @@ internal interface CoreMenuHost {
     fun account(player: Player): CoreAccount?
     fun market(): List<CoreMarketEntry> = emptyList()
     fun buyOrders(): List<CoreBuyOrderEntry> = emptyList()
+    fun dungeonParties(): List<DungeonParty> = emptyList()
+    fun dungeonView(player: Player): DungeonRunView? = null
+    fun playerName(id: UUID): String = id.toString().take(8)
+    fun dungeonLobby(player: Player, action: DungeonLobbyAction) {}
+    fun dungeonBoon(player: Player, boon: DungeonBoon) {}
+    fun dungeonRoute(player: Player, roomId: Int) {}
     fun packed(player: Player): Boolean
     fun isDeparting(player: Player): Boolean
     fun requireHub(player: Player): Boolean

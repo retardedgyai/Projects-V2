@@ -115,6 +115,7 @@ class CoreRewardQueue(
     }
 
     private fun source(action: CoreAction): String? = when (action) {
+        is CoreAction.DungeonReward -> "dungeon/${action.runId}/${action.stage}"
         is CoreAction.Gather -> "gather/${action.runId}/${action.nodeId}"
         is CoreAction.CombatReward -> "combat/${action.runId}/${action.encounterId}"
         is CoreAction.BossReward -> "boss/${action.runId}/defeat"

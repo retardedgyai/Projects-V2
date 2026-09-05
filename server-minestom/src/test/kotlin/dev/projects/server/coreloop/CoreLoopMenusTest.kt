@@ -5,6 +5,7 @@ import dev.projects.server.coreloop.ui.CoreForgeLayout
 import dev.projects.server.coreloop.ui.CoreMenuCanvas
 import dev.projects.server.coreloop.ui.CoreMenuCanvas.TextStyle
 import dev.projects.server.questmap.*
+import dev.projects.server.coreloop.adventure.*
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.TextComponent
 import net.minestom.server.Auth
@@ -33,6 +34,16 @@ class CoreLoopMenusTest {
         override fun market() = marketEntries
         val requests = mutableListOf<Pending>()
         val departures = mutableListOf<Pair<UUID, Long>>()
+        var partySnapshots = emptyList<DungeonParty>()
+        var dungeonState: DungeonRunView? = null
+        val lobbyActions = mutableListOf<DungeonLobbyAction>()
+        val boons = mutableListOf<DungeonBoon>()
+        val routes = mutableListOf<Int>()
+        override fun dungeonParties() = partySnapshots
+        override fun dungeonView(player: Player) = dungeonState
+        override fun dungeonLobby(player: Player, action: DungeonLobbyAction) { lobbyActions += action }
+        override fun dungeonBoon(player: Player, boon: DungeonBoon) { boons += boon }
+        override fun dungeonRoute(player: Player, roomId: Int) { routes += roomId }
         var trialDepartures = 0
         var returns = 0
         var masteryUnlocks = 0
@@ -68,6 +79,37 @@ class CoreLoopMenusTest {
     }
 
     @BeforeTest fun initializeMinestom() { MinecraftServer.init(Auth.Offline()) }
+
+    @Test fun `dungeon menus gate departure routes and return uses party-safe text in both pack modes`() {
+        for (packed in listOf(false, true)) {
+            val f = fixture(account(), packed)
+            f.menus.dungeons(f.player); assertTrue(auditSnapshot(f.snapshot()).isEmpty(), auditSnapshot(f.snapshot()).toString())
+            f.click(9); assertEquals(DungeonLobbyAction.Solo(1, 0), f.host.lobbyActions.single())
+            f.host.lobbyActions.clear()
+            f.host.current = f.host.current.copy(weaponBroken = true)
+            f.menus.dungeons(f.player); f.click(9); f.click(12); assertTrue(f.host.lobbyActions.isEmpty())
+            f.host.current = f.host.current.copy(weaponBroken = false)
+            val party = DungeonParty(UUID.randomUUID(), f.player.uuid, 1, 0, listOf(f.player.uuid, UUID.randomUUID()))
+            f.host.partySnapshots = listOf(party)
+            f.menus.dungeons(f.player); f.click(41); assertTrue(f.host.lobbyActions.isEmpty())
+            f.click(39); assertEquals(DungeonLobbyAction.Ready, f.host.lobbyActions.single())
+            f.host.partySnapshots = listOf(party.copy(ready = party.members.toSet()))
+            f.menus.dungeons(f.player); f.click(41); assertEquals(DungeonLobbyAction.Start, f.host.lobbyActions.last())
+            val plan = DungeonPlan.generate(1, 1, 0)
+            f.host.dungeonState = DungeonRunView(UUID.randomUUID(), f.player.uuid, plan.choices(1).first(),
+                plan.stages, 0, DungeonRunPhase.CHOOSING, "加護を選ぶ", 2, plan.choices(2),
+                listOf(DungeonBoon.FORCE, DungeonBoon.GUARD, DungeonBoon.FLAME), false, emptyMap(), 2)
+            f.menus.dungeonRun(f.player); assertTrue(auditSnapshot(f.snapshot()).isEmpty(), auditSnapshot(f.snapshot()).toString())
+            f.click(36); assertTrue(f.host.routes.isEmpty())
+            f.click(9); assertEquals(listOf(DungeonBoon.FORCE), f.host.boons)
+            f.host.dungeonState = f.host.dungeonState!!.copy(chosen = true, waitingFor = 0)
+            f.menus.dungeonRun(f.player); f.click(36); assertEquals(listOf(plan.choices(2).first().id), f.host.routes)
+            f.click(45)
+            assertTrue(f.snapshot().leftPanel!!.lines.any { it.text == "仲間の探索は継続" })
+            assertEquals(0, f.host.returns)
+            f.click(51); assertEquals(1, f.host.returns)
+        }
+    }
 
     @Test fun `risky enhancement quotes then confirms while broken equipment links directly to repair`() {
         for (packed in listOf(false, true)) {
@@ -270,6 +312,7 @@ class CoreLoopMenusTest {
             for (discipline in QuestGatheringDiscipline.entries) check("mastery $discipline") { f.menus.mastery(f.player, discipline) }
             for (section in 0..3) check("guide$section") { f.menus.guide(f.player, section) }
             check("help") { f.menus.journal(f.player); f.click(8) }
+            check("dungeon") { f.menus.dungeons(f.player, tier) }
             check("trials") { f.menus.trials(f.player, tier) }
             for (index in 0..2) check("trial confirmation$index") { f.menus.trials(f.player, tier); f.click(9 + index * 3) }
             f.host.current.affixStones.firstOrNull()?.let { stone -> check("legacy stone") { f.menus.stoneDetail(f.player, stone.id) } }
@@ -599,6 +642,13 @@ class CoreLoopMenusTest {
             Files.writeString(output.resolve("$name.json"), gson.toJson(snapshot))
             auditSnapshot(snapshot).forEach { failures += "$name: $it" }
         }
+        capture("dungeon-entry") { f.menus.dungeons(f.player, 3) }
+        val dungeonPlan = DungeonPlan.generate(32, 3, 0)
+        f.host.dungeonState = DungeonRunView(UUID.randomUUID(), f.player.uuid, dungeonPlan.choices(4).first(),
+            dungeonPlan.stages, 0, DungeonRunPhase.CHOOSING, "次の道を選ぶ", 2, dungeonPlan.choices(5),
+            listOf(DungeonBoon.FORCE, DungeonBoon.GUARD, DungeonBoon.FLAME), false, mapOf(DungeonBoon.VITALITY to 2, DungeonBoon.HASTE to 1), 2)
+        capture("dungeon-boons") { f.menus.dungeonRun(f.player) }
+        f.host.dungeonState = null
         capture("journal") { f.menus.journal(f.player) }
         capture("forge-enhance") { f.menus.workshop(f.player, 3); f.click(CoreForgeLayout.ARMOR); f.click(CoreLoopMenus.ENHANCE_CATALYST) }
         capture("forge-weapon") { f.click(CoreForgeLayout.WEAPON); f.click(CoreLoopMenus.ENHANCE_STANDARD) }

@@ -127,7 +127,7 @@ class CoreAccountService(private val repository: CoreAccountRepository,
                 CoreCraftingCurrency.EXALTED to 1L) else mapOf((if (action.treasury) CoreCraftingCurrency.CHAOS else CoreCraftingCurrency.ALTERATION) to 1L)
             updated = grantCurrencies(updated, orbs)
             val complete = action.stage == d.stages
-            if (complete) updated = grantCurrencies(updated, mapOf(CoreCraftingCurrency.DIVINE to (1L + d.ascension / 5)))
+            if (complete) updated = grantCurrencies(updated, mapOf(CoreCraftingCurrency.DIVINE to (1L + d.ascension / 5), CoreCraftingCurrency.ASTRAL to (1L + d.ascension / 10)))
             updated.copy(activeRun = run.copy(dungeon = d.copy(rewardedStage = action.stage), bossDefeated = complete),
                 dungeonRecords = if (complete) account.dungeonRecords + (run.map.tier to maxOf(account.dungeonRecords[run.map.tier] ?: -1, d.ascension)) else account.dungeonRecords) to
                 if (complete) "深殿踏破！次の深度を解放。神聖のオーブを獲得しました" else "第${action.stage}の間を突破。報酬は保管済みです"

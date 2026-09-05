@@ -74,6 +74,9 @@ class QuestEncounterCombat(
     },
     contentSeed: Long = 0L,
     explicitBossArchetype: QuestMobArchetype? = null,
+    spawnBoss: Boolean = true,
+    private val healthMultiplier: Double = 1.0,
+    private val damageMultiplier: Double = 1.0,
 ) {
     private class Mob(
         val entity: EntityCreature,
@@ -100,6 +103,9 @@ class QuestEncounterCombat(
     private val mobs = linkedMapOf<UUID, Mob>()
     private val telegraphs = MobGroundTelegraph(instance)
     @Volatile private var disposed = false
+    private var bossSealed = false
+    private var bossGateFraction = 0.0
+    private var bossStaggerUntil = 0L
     private var actionsStoppedForReturn = false
     private var lastTickAt = Long.MIN_VALUE
     val totalEncounterCount: Int = encounters.size
@@ -115,14 +121,21 @@ class QuestEncounterCombat(
 
     init {
         require(tier in 1..4)
+        require(healthMultiplier.isFinite() && healthMultiplier in .1..20.0 && damageMultiplier.isFinite() && damageMultiplier in .1..10.0)
         require(explicitBossArchetype == null || explicitBossArchetype.rarity == QuestMobRarity.BOSS)
         encounters.forEachIndexed { index, encounter ->
             val archetypes = encounter.archetypes.ifEmpty { QuestMobContent.composition(contentSeed, index, encounter.spawnPositions.size) }
             encounter.spawnPositions.zip(archetypes).forEach { (position, archetype) -> spawn(position, index, archetype) }
         }
-        spawn(bossPosition, -1, explicitBossArchetype ?: QuestMobContent.boss(contentSeed))
+        if (spawnBoss) spawn(bossPosition, -1, explicitBossArchetype ?: QuestMobContent.boss(contentSeed))
     }
 
+    fun sealBoss(sealed: Boolean) {
+        bossSealed = sealed
+        if (sealed) mobs.values.filter { it.boss }.forEach { it.abilities.cancel(); telegraphs.clear(it.entity.uuid); stopNavigation(it) }
+    }
+    fun gateBossHealth(fraction: Double) { require(fraction in 0.0..1.0); bossGateFraction = fraction }
+    fun staggerBoss(untilMillis: Long) { bossStaggerUntil = untilMillis }
     fun entities(): List<EntityCreature> = mobs.values.filter { it.life.isAlive }.map { it.entity }
     fun isAlive(targetId: UUID): Boolean = mobs[targetId]?.life?.isAlive == true
     fun spawnEncounter(encounter: QuestCombatEncounter): Set<UUID> {
@@ -142,9 +155,9 @@ class QuestEncounterCombat(
     }
     fun positionOf(targetId: UUID): Pos? = mobs[targetId]?.entity?.position
     fun isBoss(targetId: UUID): Boolean = mobs[targetId]?.boss == true
-    fun bossHealth(): Double = mobs.values.first { it.boss }.life.health
-    fun bossMaxHealth(): Double = mobs.values.first { it.boss }.life.maximumHealth
-    fun bossName(): String = mobs.values.first { it.boss }.definition.name
+    fun bossHealth(): Double = mobs.values.firstOrNull { it.boss }?.life?.health ?: 0.0
+    fun bossMaxHealth(): Double = mobs.values.firstOrNull { it.boss }?.life?.maximumHealth ?: 1.0
+    fun bossName(): String = mobs.values.firstOrNull { it.boss }?.definition?.name ?: ""
     fun weaknessOf(targetId: UUID): String? = mobs[targetId]?.definition?.archetype?.weakness
     fun mobInfo(targetId: UUID): QuestMobInfo? = mobs[targetId]?.let {
         QuestMobInfo(targetId, it.definition.archetype, it.definition.archetype.rarity, tier,
@@ -188,14 +201,16 @@ class QuestEncounterCombat(
     private fun damage(targetId: UUID, attacker: Player, amount: Double, effect: Boolean): Double? {
         if (disposed || attacker.instance !== instance || !canTarget(attacker)) return null
         val mob = mobs[targetId] ?: return null
-        if (mob.guardianIds.any(::isAlive)) return null
+        if ((mob.boss && bossSealed) || mob.guardianIds.any(::isAlive)) return null
         val range = if (effect) 24.0 else 8.0
         if (!isSpawned(mob) || attacker.position.distanceSquared(mob.entity.position) > range * range) return null
         if (!effect && !mob.entity.hasLineOfSight(attacker)) return null
         val guarded = !effect && guarding(mob) &&
             normalizeHorizontal(attacker.position.sub(mob.entity.position)).dot(normalizeHorizontal(mob.entity.position.direction())) >= 0.5
         val healthBefore = mob.life.health
-        if (!mob.life.damage(amount * if (guarded) mob.definition.frontalDamageMultiplier else 1.0)) return null
+        val mitigated = amount * if (guarded) mob.definition.frontalDamageMultiplier else 1.0
+        val gated = if (mob.boss) minOf(mitigated, (mob.life.health - mob.life.maximumHealth * bossGateFraction).coerceAtLeast(0.0)) else mitigated
+        if (!mob.life.damage(gated)) return null
         val applied = healthBefore - mob.life.health
         mob.lastAttacker = attacker
         if (!mob.life.isAlive) {
@@ -271,7 +286,8 @@ class QuestEncounterCombat(
     }
 
     private fun spawn(position: Pos, encounterIndex: Int, archetype: QuestMobArchetype): UUID {
-        val definition = QuestMobContent.definition(tier, archetype)
+        val base = QuestMobContent.definition(tier, archetype)
+        val definition = base.copy(maximumHealth = base.maximumHealth * healthMultiplier, abilities = base.abilities.map { it.copy(damage = it.damage * damageMultiplier) })
         val entity = EntityCreature(definition.entityType)
         entity.isInvulnerable = true
         entity.isCustomNameVisible = true
@@ -296,6 +312,7 @@ class QuestEncounterCombat(
     private fun isSpawned(mob: Mob): Boolean = !mob.entity.isRemoved && mob.entity.instance === instance
 
     private fun tickMob(mob: Mob, players: List<Player>, now: Long) {
+        if (mob.boss && (bossSealed || now < bossStaggerUntil)) { stopNavigation(mob); return }
         updateMovementSpeed(mob, now)
         mob.entity.refreshActiveHand(guarding(mob), true, false)
         if (mob.life.phase == QuestMobPhase.RETURNING) {
