@@ -16,9 +16,11 @@ import kotlin.math.abs
  */
 class CoreMenuCanvas(private val title: String) {
     enum class Tone { NEUTRAL, SELECTED, PRIMARY, DISABLED, DANGER }
-    data class Line(val text: String, val color: TextColor = CoreUiComponents.IVORY)
-    internal data class Panel(val title: String, val lines: List<Line>)
+    data class Line(val text: String, val color: TextColor = CoreUiComponents.IVORY, val art: CoreMenuArt? = null)
+    internal data class Panel(val title: String, val lines: List<Line>, val hero: CoreMenuArt?)
     internal data class Button(val firstSlot: Int, val span: Int, val label: String, val tone: Tone, val icon: Boolean)
+    internal data class Card(val firstSlot: Int, val columns: Int, val rows: Int, val label: String, val art: CoreMenuArt, val tone: Tone)
+    internal data class Art(val x: Int, val y: Int, val art: CoreMenuArt, val size: Int)
     internal data class Text(val x: Int, val y: Int, val value: String, val color: TextColor, val maxWidth: Int)
     /** Plain data for offline visual QA of an actual constructed menu, not a second UI model. */
     internal data class Snapshot(
@@ -28,34 +30,76 @@ class CoreMenuCanvas(private val title: String) {
         val rightPanel: PanelSnapshot?,
         val buttons: List<ButtonSnapshot>,
         val texts: List<TextSnapshot>,
+        val cards: List<CardSnapshot>,
+        val arts: List<ArtSnapshot>,
     )
-    internal data class PanelSnapshot(val title: String, val titleColor: Int, val lines: List<LineSnapshot>)
-    internal data class LineSnapshot(val text: String, val color: Int)
+    internal data class PanelSnapshot(val title: String, val titleColor: Int, val lines: List<LineSnapshot>, val hero: ArtSnapshot?)
+    internal data class LineSnapshot(val text: String, val color: Int, val x: Int, val y: Int, val maxWidth: Int, val art: ArtSnapshot?)
     internal data class ButtonSnapshot(val firstSlot: Int, val span: Int, val label: String, val tone: String, val icon: Boolean, val textColor: Int)
     internal data class TextSnapshot(val x: Int, val y: Int, val value: String, val color: Int, val maxWidth: Int)
+    internal data class ArtSnapshot(val x: Int, val y: Int, val art: String, val size: Int)
+    internal data class CardSnapshot(
+        val firstSlot: Int, val columns: Int, val rows: Int, val label: String, val art: String,
+        val tone: String, val textColor: Int, val x: Int, val y: Int, val width: Int, val height: Int,
+        val labelX: Int, val labelY: Int, val labelMaxWidth: Int, val artPlacement: ArtSnapshot, val occupiedSlots: List<Int>,
+    )
 
     private var leftPanel: Panel? = null
     private var rightPanel: Panel? = null
     private val buttons = linkedMapOf<Int, Button>()
+    private val cards = linkedMapOf<Int, Card>()
+    private val arts = mutableListOf<Art>()
     private val texts = mutableListOf<Text>()
 
     /** Replaces the panel. Callers can use [wrap] for prose; no required state is silently dropped. */
-    fun left(title: String, lines: List<Line>) { leftPanel = panel(title, lines) }
-    fun right(title: String, lines: List<Line>) { rightPanel = panel(title, lines) }
+    fun left(title: String, lines: List<Line>, hero: CoreMenuArt? = null) { leftPanel = panel(title, lines, hero) }
+    fun right(title: String, lines: List<Line>, hero: CoreMenuArt? = null) { rightPanel = panel(title, lines, hero) }
 
-    private fun panel(title: String, lines: List<Line>): Panel {
-        require(lines.size <= PANEL_LINES) { "Menu panels support $PANEL_LINES lines; paginate or shorten the content" }
-        return Panel(title, lines.toList())
+    private fun panel(title: String, lines: List<Line>, hero: CoreMenuArt?): Panel {
+        val availableLines = if (hero == null) PANEL_LINES else HERO_PANEL_LINES
+        require(lines.size <= availableLines) { "Menu panel supports $availableLines lines; paginate or shorten the content" }
+        require(lines.zipWithNext().none { (first, second) -> first.art != null && second.art != null }) {
+            "Menu panel icons need a plain value or spacer line between them"
+        }
+        return Panel(title, lines.toList(), hero)
     }
 
-    /** All covered slots must invoke the same action. A selected state includes a gold underline. */
+    /** All covered slots must invoke the same action. A selected state has a cyan inset accent. */
     fun button(firstSlot: Int, span: Int, label: String, tone: Tone = Tone.NEUTRAL, icon: Boolean = false) {
         require(firstSlot in 0..53 && span in 1..9 && firstSlot % 9 + span <= 9) { "Button escaped its vanilla slot row" }
         val occupied = firstSlot until firstSlot + span
         require(buttons.values.none { it.firstSlot != firstSlot && (it.firstSlot until it.firstSlot + it.span).any(occupied::contains) }) {
             "Menu buttons overlap: slot $firstSlot, span $span"
         }
+        require(cards.values.none { occupiedSlots(it.firstSlot, it.columns, it.rows).any(occupied::contains) }) {
+            "Menu button overlaps a card: slot $firstSlot, span $span"
+        }
         buttons[firstSlot] = Button(firstSlot, span, label, tone, icon)
+    }
+
+    /**
+     * A single illustrated action covering an entire vanilla-slot rectangle. Callers must
+     * put the same action and blank item model in every covered slot, including the interior.
+     * One-row cards use an inline icon; two/three-row cards put 16/32 px art above the label.
+     */
+    fun card(firstSlot: Int, columns: Int, rows: Int, label: String, art: CoreMenuArt, tone: Tone = Tone.NEUTRAL) {
+        require(firstSlot in 0..53 && columns in 1..9 && rows in 1..3 &&
+            firstSlot % 9 + columns <= 9 && firstSlot / 9 + rows <= 6) { "Card escaped the vanilla slot grid" }
+        require(rows != 1 || columns >= 2 || label.isEmpty()) { "An inline card label needs at least two slots" }
+        require(rows != 3 || columns >= 2) { "A 32 px card illustration needs at least two columns" }
+        val occupied = occupiedSlots(firstSlot, columns, rows).toSet()
+        require(buttons.values.none { (it.firstSlot until it.firstSlot + it.span).any(occupied::contains) } &&
+            cards.values.none { it.firstSlot != firstSlot && occupiedSlots(it.firstSlot, it.columns, it.rows).any(occupied::contains) }) {
+            "Menu card overlaps another action: slot $firstSlot, columns $columns, rows $rows"
+        }
+        cards[firstSlot] = Card(firstSlot, columns, rows, label, art, tone)
+    }
+
+    /** Decorative art is not an extra click target. Only explicitly shipped sizes/rows work. */
+    fun art(x: Int, y: Int, art: CoreMenuArt, size: Int = 16) {
+        require(size in ART_SIZES && y in ART_YS) { "Menu art requested an unshipped size or vertical position" }
+        require(x >= -98 && x + size <= 272 && y + size <= 218) { "Art escaped the readable canvas" }
+        arts += Art(x, y, art, size)
     }
 
     /**
@@ -70,10 +114,32 @@ class CoreMenuCanvas(private val title: String) {
     }
 
     internal fun snapshot(): Snapshot {
-        fun Panel.snapshot() = PanelSnapshot(title, CoreUiComponents.GOLD.value(), lines.map { LineSnapshot(it.text, it.color.value()) })
-        return Snapshot(title, CoreUiComponents.GOLD.value(), leftPanel?.snapshot(), rightPanel?.snapshot(),
+        fun Panel.snapshot(x: Int): PanelSnapshot {
+            val startY = if (hero == null) 30 else 72
+            return PanelSnapshot(title, HEADING.value(), lines.mapIndexed { index, line ->
+                val y = startY + index * LINE_HEIGHT
+                val inset = if (line.art == null) 0 else 18
+                LineSnapshot(line.text, line.color.value(), x + inset, y, PANEL_WIDTH - inset,
+                    line.art?.let { ArtSnapshot(x, y - 2, it.name, 16) })
+            }, hero?.let { ArtSnapshot(x + (PANEL_WIDTH - 32) / 2, 30, it.name, 32) })
+        }
+        return Snapshot(title, HEADING.value(), leftPanel?.snapshot(-98), rightPanel?.snapshot(184),
             buttons.values.map { ButtonSnapshot(it.firstSlot, it.span, it.label, it.tone.name, it.icon, toneColor(it.tone).value()) },
-            texts.map { TextSnapshot(it.x, it.y, it.value, it.color.value(), it.maxWidth) })
+            texts.map { TextSnapshot(it.x, it.y, it.value, it.color.value(), it.maxWidth) },
+            cards.values.map { card ->
+                val x = 8 + card.firstSlot % 9 * 18
+                val y = 18 + card.firstSlot / 9 * 18
+                val extent = card.columns * 18 - 2
+                val size = if (card.rows == 3) 32 else 16
+                val inset = if (card.rows == 1) 18 else 0
+                val room = (extent - inset).coerceAtLeast(0)
+                val visible = trim(card.label, room)
+                CardSnapshot(card.firstSlot, card.columns, card.rows, card.label, card.art.name, card.tone.name,
+                    toneColor(card.tone).value(), x, y, extent, card.rows * 18 - 2,
+                    x + inset + (room - width(visible)) / 2, 20 + (card.firstSlot / 9 + card.rows - 1) * 18, room,
+                    ArtSnapshot(if (card.rows == 1) x else x + (extent - size) / 2, y, card.art.name, size),
+                    occupiedSlots(card.firstSlot, card.columns, card.rows))
+            }, arts.map { ArtSnapshot(it.x, it.y, it.art.name, it.size) })
     }
 
     /** Original Unicode information for a no-pack detail item; never the encoded PUA or ellipsis. */
@@ -104,18 +170,32 @@ class CoreMenuCanvas(private val title: String) {
                 .decoration(net.kyori.adventure.text.format.TextDecoration.ITALIC, false)
             draw(x, rendered, width(visible))
         }
+        fun illustration(value: ArtSnapshot) {
+            val art = CoreMenuArt.valueOf(value.art)
+            draw(value.x, CoreUiComponents.glyph(art.glyph, Key.key("projects", "core_menu_art_${value.size}_${value.y}")), art.advance(value.size))
+        }
 
+        val snapshot = snapshot()
         draw(-104, CoreUiComponents.glyph('\uE600', CANVAS_FONT), 193)
         draw(88, CoreUiComponents.glyph('\uE601', CANVAS_FONT), 193)
-        label(8, 6, title, CoreUiComponents.GOLD, 160)
+        label(8, 6, title, HEADING, 160)
         // Vanilla draws its own player-inventory label at (8,128) after this title.
         // The frame gives that dark text a light strip; adding a label here would overlap it.
-        for ((x, panel) in listOf(-98 to leftPanel, 184 to rightPanel)) {
+        for ((x, panel) in listOf(-98 to snapshot.leftPanel, 184 to snapshot.rightPanel)) {
             if (panel == null) continue
-            label(x, 8, panel.title, CoreUiComponents.GOLD, PANEL_WIDTH)
-            panel.lines.forEachIndexed { index, line ->
-                label(x, 30 + index * LINE_HEIGHT, line.text, line.color, PANEL_WIDTH)
+            label(x, 8, panel.title, HEADING, PANEL_WIDTH)
+            panel.hero?.let(::illustration)
+            panel.lines.forEach { line ->
+                line.art?.let(::illustration)
+                label(line.x, line.y, line.text, TextColor.color(line.color), line.maxWidth)
             }
+        }
+        for (card in snapshot.cards) {
+            val tone = Tone.valueOf(card.tone)
+            val glyph = (0xE650 + tone.ordinal * 9 + card.columns - 1).toChar()
+            draw(card.x, CoreUiComponents.glyph(glyph, Key.key("projects", "core_menu_cards_${card.rows}_${card.firstSlot / 9}")), card.width + 1)
+            illustration(card.artPlacement)
+            label(card.labelX, card.labelY, card.label, TextColor.color(card.textColor), card.labelMaxWidth)
         }
         for (button in buttons.values) {
             val x = 8 + button.firstSlot % 9 * 18
@@ -130,6 +210,7 @@ class CoreMenuCanvas(private val title: String) {
             val visible = trim(button.label, room)
             label(x + inset + (extent - inset - width(visible)) / 2, 20 + row * 18, visible, toneColor(button.tone), room)
         }
+        for (art in snapshot.arts) illustration(art)
         for (text in texts) label(text.x, text.y, text.value, text.color, text.maxWidth)
         return result
     }
@@ -137,7 +218,11 @@ class CoreMenuCanvas(private val title: String) {
     companion object {
         const val PANEL_WIDTH = 88
         const val PANEL_LINES = 13
+        const val HERO_PANEL_LINES = 10
         const val LINE_HEIGHT = 14
+        val HEADING: TextColor = TextColor.color(0xD8F3F5)
+        val ART_SIZES: Set<Int> = setOf(16, 32)
+        val ART_YS: Set<Int> = setOf(18, 28, 30, 36, 42, 54, 56, 70, 72, 84, 90, 98, 108, 112, 126, 140, 154, 168, 182, 196)
         private val CANVAS_FONT = Key.key("projects", "core_menu_canvas")
         internal val TEXT_YS = (listOf(6, 8, 128) + (0..5).map { 20 + 18 * it } + (0..12).map { 30 + 14 * it }).distinct().sorted()
         private data class Metric(val glyph: Char, val advance: Int)
@@ -154,6 +239,8 @@ class CoreMenuCanvas(private val title: String) {
         }
         private val warnedMissing = ConcurrentHashMap.newKeySet<Int>()
         private fun metric(codepoint: Int): Metric = metrics[codepoint] ?: metrics.getValue('□'.code)
+        private fun occupiedSlots(firstSlot: Int, columns: Int, rows: Int): List<Int> =
+            (0 until rows).flatMap { row -> (0 until columns).map { column -> firstSlot + row * 9 + column } }
         fun missingCharacters(value: String): Set<Int> = value.codePoints().toArray().filterNot(metrics::containsKey).toSet()
         private fun warnMissing(value: String) {
             for (codepoint in missingCharacters(value)) if (warnedMissing.add(codepoint)) {
@@ -220,8 +307,8 @@ class CoreMenuCanvas(private val title: String) {
 
         private fun toneColor(tone: Tone): TextColor = TextColor.color(when (tone) {
             Tone.NEUTRAL -> 0xECF1F2
-            Tone.SELECTED -> 0xFFF0BF
-            Tone.PRIMARY -> 0xF1FFF0
+            Tone.SELECTED -> 0xD8F3F5
+            Tone.PRIMARY -> 0xE7F8FA
             Tone.DISABLED -> 0xABB0B4
             Tone.DANGER -> 0xFFE3E0
         })

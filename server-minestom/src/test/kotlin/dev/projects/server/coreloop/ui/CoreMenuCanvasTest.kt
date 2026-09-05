@@ -84,7 +84,7 @@ class CoreMenuCanvasTest {
         canvas.text(8, 19, "素材を補充", maxWidth = 160)
         val snapshot = canvas.snapshot()
         assertEquals("工房", snapshot.title)
-        assertEquals(CoreUiComponents.GOLD.value(), snapshot.titleColor)
+        assertEquals(CoreMenuCanvas.HEADING.value(), snapshot.titleColor)
         assertEquals(CoreUiComponents.RED.value(), snapshot.leftPanel!!.lines.single().color)
         assertEquals("木材 1 / 2", snapshot.leftPanel.lines.single().text)
         assertEquals("DANGER", snapshot.buttons.single().tone)
@@ -131,5 +131,135 @@ class CoreMenuCanvasTest {
         assertTrue(wrapped.count { it.isEmpty() } >= 2)
         val unicode = "\uD83D\uDDE1Tier木材\uD83D\uDDE1"
         assertEquals(unicode, CoreMenuCanvas.wrap(unicode, 44).joinToString(""))
+    }
+
+    @Test fun `cards reserve their entire rectangle including interior slots`() {
+        val canvas = CoreMenuCanvas("遠征")
+        canvas.card(9, 3, 3, "遠征", CoreMenuArt.EXPEDITION)
+        canvas.card(9, 3, 3, "遠征", CoreMenuArt.EXPEDITION, CoreMenuCanvas.Tone.SELECTED)
+        val expected = listOf(9, 10, 11, 18, 19, 20, 27, 28, 29)
+        assertEquals(expected, canvas.snapshot().cards.single().occupiedSlots)
+        for (slot in expected) assertFailsWith<IllegalArgumentException>("Interior slot $slot must not acquire another action") {
+            canvas.button(slot, 1, "不正")
+        }
+        assertFailsWith<IllegalArgumentException> { canvas.card(20, 3, 2, "工房", CoreMenuArt.FORGE) }
+        assertFailsWith<IllegalArgumentException> { canvas.card(0, 3, 2, "工房", CoreMenuArt.FORGE) }
+        canvas.card(12, 3, 3, "工房", CoreMenuArt.FORGE)
+        canvas.button(36, 3, "戻る")
+        assertFailsWith<IllegalArgumentException> { canvas.card(36, 3, 1, "戻る", CoreMenuArt.RETURN) }
+        assertEquals(2, canvas.snapshot().cards.size)
+    }
+
+    @Test fun `card bounds and replacement cannot overwrite neighboring actions`() {
+        val canvas = CoreMenuCanvas("工房")
+        for ((slot, columns, rows) in listOf(Triple(-1, 3, 2), Triple(54, 3, 2), Triple(8, 2, 2),
+            Triple(45, 3, 2), Triple(0, 0, 2), Triple(0, 3, 0), Triple(0, 3, 4), Triple(0, 1, 3))) {
+            assertFailsWith<IllegalArgumentException> { canvas.card(slot, columns, rows, "不正", CoreMenuArt.HELP) }
+        }
+        canvas.card(0, 3, 2, "遠征", CoreMenuArt.EXPEDITION)
+        canvas.button(18, 3, "戻る")
+        assertFailsWith<IllegalArgumentException> { canvas.card(0, 3, 3, "遠征", CoreMenuArt.EXPEDITION) }
+        assertEquals(2, canvas.snapshot().cards.single().rows)
+        assertFailsWith<IllegalArgumentException> { canvas.card(45, 1, 1, "戻る", CoreMenuArt.RETURN) }
+        canvas.card(45, 3, 1, "戻る", CoreMenuArt.RETURN)
+    }
+
+    @Test fun `card snapshot exports exact slot geometry and label positions`() {
+        val canvas = CoreMenuCanvas("保管庫")
+        canvas.card(9, 3, 3, "遠征", CoreMenuArt.EXPEDITION, CoreMenuCanvas.Tone.SELECTED)
+        canvas.card(12, 4, 2, "木材 100万", CoreMenuArt.WOOD)
+        canvas.card(36, 3, 1, "工房", CoreMenuArt.FORGE)
+        val cards = canvas.snapshot().cards
+        with(cards[0]) {
+            assertEquals(8, x); assertEquals(36, y)
+            assertEquals(52, width); assertEquals(52, height)
+            assertEquals(74, labelY); assertEquals(52, labelMaxWidth)
+            assertEquals(CoreMenuCanvas.ArtSnapshot(18, 36, "EXPEDITION", 32), artPlacement)
+            assertEquals(CoreMenuCanvas.HEADING.value(), textColor)
+        }
+        with(cards[1]) {
+            assertEquals(70, width); assertEquals(34, height)
+            assertEquals(56, labelY); assertEquals(70, labelMaxWidth)
+            assertEquals(16, artPlacement.size)
+            assertTrue(CoreMenuCanvas.width(label) <= labelMaxWidth)
+        }
+        with(cards[2]) {
+            assertEquals(34, labelMaxWidth); assertEquals(92, labelY)
+            assertEquals(x, artPlacement.x); assertEquals(y, artPlacement.y)
+            assertTrue(labelX >= x + 18)
+        }
+        for (card in cards) {
+            assertTrue(card.artPlacement.x >= card.x && card.artPlacement.x + card.artPlacement.size <= card.x + card.width)
+            assertTrue(card.artPlacement.y >= card.y && card.artPlacement.y + card.artPlacement.size <= card.y + card.height)
+            assertTrue(card.labelY in CoreMenuCanvas.TEXT_YS)
+            assertTrue(card.artPlacement.y in CoreMenuCanvas.ART_YS)
+        }
+    }
+
+    @Test fun `panel hero reserves space and material icons leave full width value rows`() {
+        val canvas = CoreMenuCanvas("工房")
+        canvas.left("装備", List(10) { CoreMenuCanvas.Line("攻撃 42") }, CoreMenuArt.WEAPON)
+        canvas.right("必要素材", listOf(CoreMenuCanvas.Line("木材 T1", art = CoreMenuArt.WOOD),
+            CoreMenuCanvas.Line("1000000 / 256"), CoreMenuCanvas.Line("金属材", art = CoreMenuArt.INGOT)))
+        val snapshot = canvas.snapshot()
+        with(snapshot.leftPanel!!) {
+            assertEquals(CoreMenuCanvas.ArtSnapshot(-70, 30, "WEAPON", 32), hero)
+            assertEquals(72, lines.first().y); assertEquals(198, lines.last().y)
+        }
+        with(snapshot.rightPanel!!) {
+            assertEquals(null, hero)
+            assertEquals(202, lines[0].x); assertEquals(70, lines[0].maxWidth)
+            assertEquals(CoreMenuCanvas.ArtSnapshot(184, 28, "WOOD", 16), lines[0].art)
+            assertEquals(184, lines[1].x); assertEquals(88, lines[1].maxWidth)
+            assertEquals(null, lines[1].art)
+            assertTrue(lines.mapNotNull { it.art }.all { it.y in CoreMenuCanvas.ART_YS })
+        }
+        assertFailsWith<IllegalArgumentException> {
+            canvas.left("装備", List(11) { CoreMenuCanvas.Line("攻撃 42") }, CoreMenuArt.WEAPON)
+        }
+        assertFailsWith<IllegalArgumentException> {
+            canvas.right("素材", listOf(CoreMenuCanvas.Line("木材", art = CoreMenuArt.WOOD), CoreMenuCanvas.Line("原石", art = CoreMenuArt.ORE)))
+        }
+        canvas.left("装備", List(13) { CoreMenuCanvas.Line("攻撃 42") })
+        assertEquals(null, canvas.snapshot().leftPanel!!.hero)
+        assertEquals(30, canvas.snapshot().leftPanel!!.lines.first().y)
+    }
+
+    @Test fun `decorative art is bounded and only uses shipped rows and sizes`() {
+        val canvas = CoreMenuCanvas("工房")
+        canvas.art(-70, 30, CoreMenuArt.FORGE, 32)
+        canvas.art(184, 196, CoreMenuArt.WOOD)
+        val previous = canvas.snapshot()
+        canvas.art(220, 30, CoreMenuArt.ARMOR, 32)
+        assertEquals(2, previous.arts.size)
+        assertEquals(3, canvas.snapshot().arts.size)
+        assertEquals(CoreMenuCanvas.ArtSnapshot(184, 196, "WOOD", 16), previous.arts.last())
+        for ((x, y, size) in listOf(Triple(-99, 30, 32), Triple(250, 30, 32), Triple(0, 196, 32),
+            Triple(0, 30, 48), Triple(0, 30, 64), Triple(0, 31, 16), Triple(0, -1, 16))) {
+            assertFailsWith<IllegalArgumentException> { canvas.art(x, y, CoreMenuArt.HELP, size) }
+        }
+    }
+
+    @Test fun `art glyph metrics preserve every subject without changing later label anchors`() {
+        assertEquals(29, CoreMenuArt.entries.size)
+        for ((index, art) in CoreMenuArt.entries.withIndex()) {
+            assertEquals(0xE700 + index, art.glyph.code)
+            assertTrue(art.advance(16) in 1..17)
+            assertTrue(art.advance(32) in 1..33)
+        }
+        val canvas = CoreMenuCanvas("工房").apply {
+            card(9, 3, 3, "強化", CoreMenuArt.ENHANCE, CoreMenuCanvas.Tone.SELECTED)
+            left("装備", listOf(CoreMenuCanvas.Line("攻撃 42")), CoreMenuArt.WEAPON)
+            right("必要素材", listOf(CoreMenuCanvas.Line("木材", art = CoreMenuArt.WOOD), CoreMenuCanvas.Line("12 / 80")))
+            art(212, 140, CoreMenuArt.ORE, 32)
+            text(8, 20, "結果を確認", maxWidth = 160)
+        }
+        val render = canvas.render()
+        val glyphs = components(render).filterIsInstance<TextComponent>().filter { it.content().isNotEmpty() }
+        assertTrue(glyphs.all { it.content().all { char -> char.code in 0xE000..0xF8FF } && it.style().font()?.namespace() == "projects" })
+        assertTrue(glyphs.any { it.style().font()?.value() == "core_menu_cards_3_1" && it.content() == "\uE65B" })
+        assertTrue(glyphs.any { it.style().font()?.value() == "core_menu_art_32_36" && it.content() == CoreMenuArt.ENHANCE.glyph.toString() })
+        assertTrue(glyphs.any { it.style().font()?.value() == "core_menu_art_16_28" && it.content() == CoreMenuArt.WOOD.glyph.toString() })
+        assertEquals(listOf("工房", "", "装備", "攻撃 42", "", "必要素材", "木材", "12 / 80", "", "結果を確認"), canvas.fallbackLines())
     }
 }
