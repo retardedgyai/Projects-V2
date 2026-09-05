@@ -11,6 +11,13 @@ import kotlin.test.assertTrue
 class CoreMenuCanvasTest {
     private fun components(value: Component): List<Component> = listOf(value) + value.children().flatMap(::components)
     private fun contents(value: Component): String = components(value).filterIsInstance<TextComponent>().joinToString("") { it.content() }
+    private fun fontMetrics(name: String): Map<Int, Pair<Char, Int>> = requireNotNull(javaClass.classLoader.getResourceAsStream(
+        "core-ui-pack/assets/projects/menu/$name.tsv")).bufferedReader(Charsets.UTF_8).useLines { lines ->
+        lines.filter { it.isNotBlank() && !it.startsWith('#') }.associate { line ->
+            val fields = line.split('\t')
+            fields[0].toInt(16) to (fields[1].toInt(16).toChar() to fields[2].toInt())
+        }
+    }
 
     @Test fun `all menu fonts are private and do not replace default Japanese`() {
         val canvas = CoreMenuCanvas("開拓工房 / 強化")
@@ -53,7 +60,7 @@ class CoreMenuCanvasTest {
         assertTrue(CoreMenuCanvas.width(CoreMenuCanvas.trim(label, 88)) <= 88)
         assertEquals("", CoreMenuCanvas.trim(label, 1))
         assertEquals("木材", CoreMenuCanvas.trim("木材", 88))
-        assertTrue(CoreMenuCanvas.width("金属材") <= 34, "A three-kanji category should fit a two-slot button")
+        assertTrue(CoreMenuCanvas.width("金属材", CoreMenuCanvas.TextStyle.EMPHASIS) <= 34, "A three-kanji category should fit a two-slot button")
     }
 
     @Test fun `wrapping preserves content and Unicode codepoints`() {
@@ -117,7 +124,7 @@ class CoreMenuCanvasTest {
             assertEquals(value, wrapped.joinToString(""))
             assertTrue(wrapped.all { CoreMenuCanvas.width(it) <= CoreMenuCanvas.PANEL_WIDTH })
         }
-        assertEquals(listOf("MODの種類と", "Tierを保持"), CoreMenuCanvas.wrap("MODの種類とTierを保持"))
+        assertEquals(listOf("MODの種類と", "Tierを保持"), CoreMenuCanvas.wrap("MODの種類とTierを保持", style = CoreMenuCanvas.TextStyle.EMPHASIS))
     }
 
     @Test fun `oversized ASCII runs fall back safely without erasing explicit empty lines`() {
@@ -175,13 +182,13 @@ class CoreMenuCanvasTest {
             assertEquals(52, width); assertEquals(52, height)
             assertEquals(74, labelY); assertEquals(52, labelMaxWidth)
             assertEquals(CoreMenuCanvas.ArtSnapshot(18, 36, "EXPEDITION", 32), artPlacement)
-            assertEquals(CoreMenuCanvas.HEADING.value(), textColor)
+            assertEquals(0xF4D59A, textColor)
         }
         with(cards[1]) {
             assertEquals(70, width); assertEquals(34, height)
             assertEquals(56, labelY); assertEquals(70, labelMaxWidth)
             assertEquals(16, artPlacement.size)
-            assertTrue(CoreMenuCanvas.width(label) <= labelMaxWidth)
+            assertTrue(CoreMenuCanvas.width(label, CoreMenuCanvas.TextStyle.EMPHASIS) <= labelMaxWidth)
         }
         with(cards[2]) {
             assertEquals(34, labelMaxWidth); assertEquals(92, labelY)
@@ -235,7 +242,7 @@ class CoreMenuCanvasTest {
         assertEquals(3, canvas.snapshot().arts.size)
         assertEquals(CoreMenuCanvas.ArtSnapshot(184, 196, "WOOD", 16), previous.arts.last())
         for ((x, y, size) in listOf(Triple(-99, 30, 32), Triple(250, 30, 32), Triple(0, 196, 32),
-            Triple(0, 30, 48), Triple(0, 30, 64), Triple(0, 31, 16), Triple(0, -1, 16))) {
+            Triple(0, 182, 48), Triple(0, 30, 64), Triple(0, 31, 16), Triple(0, -1, 16))) {
             assertFailsWith<IllegalArgumentException> { canvas.art(x, y, CoreMenuArt.HELP, size) }
         }
     }
@@ -246,6 +253,7 @@ class CoreMenuCanvasTest {
             assertEquals(0xE700 + index, art.glyph.code)
             assertTrue(art.advance(16) in 1..17)
             assertTrue(art.advance(32) in 1..33)
+            assertTrue(art.advance(48) in 1..49)
         }
         val canvas = CoreMenuCanvas("工房").apply {
             card(9, 3, 3, "強化", CoreMenuArt.ENHANCE, CoreMenuCanvas.Tone.SELECTED)
@@ -261,5 +269,134 @@ class CoreMenuCanvasTest {
         assertTrue(glyphs.any { it.style().font()?.value() == "core_menu_art_32_36" && it.content() == CoreMenuArt.ENHANCE.glyph.toString() })
         assertTrue(glyphs.any { it.style().font()?.value() == "core_menu_art_16_28" && it.content() == CoreMenuArt.WOOD.glyph.toString() })
         assertEquals(listOf("工房", "", "装備", "攻撃 42", "", "必要素材", "木材", "12 / 80", "", "結果を確認"), canvas.fallbackLines())
+    }
+
+    @Test fun `body and emphasis use independent metrics and matching glyph ordinals`() {
+        val body = fontMetrics("glyphs")
+        val emphasis = fontMetrics("glyphs-emphasis")
+        assertEquals(body.keys, emphasis.keys)
+        for ((codepoint, entry) in body) assertEquals(entry.first, emphasis.getValue(codepoint).first)
+        val sample = "木材 123 / 強化 +30"
+        assertEquals(sample.codePoints().toArray().sumOf { body.getValue(it).second }, CoreMenuCanvas.width(sample))
+        assertEquals(sample.codePoints().toArray().sumOf { emphasis.getValue(it).second },
+            CoreMenuCanvas.width(sample, CoreMenuCanvas.TextStyle.EMPHASIS))
+        assertTrue(CoreMenuCanvas.width(sample) < CoreMenuCanvas.width(sample, CoreMenuCanvas.TextStyle.EMPHASIS))
+        for (style in CoreMenuCanvas.TextStyle.entries) {
+            val text = "必要な素材は保管庫から使用します"
+            val trimmed = CoreMenuCanvas.trim(text, 44, style)
+            assertTrue(trimmed.endsWith('…'))
+            assertTrue(CoreMenuCanvas.width(trimmed, style) <= 44)
+            val wrapped = CoreMenuCanvas.wrap(text, 44, style)
+            assertEquals(text, wrapped.joinToString(""))
+            assertTrue(wrapped.all { CoreMenuCanvas.width(it, style) <= 44 })
+        }
+    }
+
+    @Test fun `hierarchy keeps body calm while headings and actions use emphasis`() {
+        val canvas = CoreMenuCanvas("工房").apply {
+            left("装備", listOf(CoreMenuCanvas.Line("攻撃 42"),
+                CoreMenuCanvas.Line("攻撃 46", style = CoreMenuCanvas.TextStyle.EMPHASIS)))
+            button(0, 2, "強化", CoreMenuCanvas.Tone.PRIMARY)
+            card(9, 3, 1, "木材", CoreMenuArt.WOOD)
+            text(8, 56, "素材", maxWidth = 106)
+            text(8, 72, "結果", maxWidth = 106, style = CoreMenuCanvas.TextStyle.EMPHASIS)
+        }
+        val snapshot = canvas.snapshot()
+        assertEquals(listOf("BODY", "EMPHASIS"), snapshot.leftPanel!!.lines.map { it.style })
+        assertEquals(listOf("BODY", "EMPHASIS"), snapshot.texts.map { it.style })
+        assertEquals(0xEAD9BA, snapshot.titleColor)
+        assertEquals(0xFFF0CE, snapshot.buttons.single().textColor)
+        assertEquals(0xD6CBB7, snapshot.cards.single().textColor)
+        val fonts = components(canvas.render()).filterIsInstance<TextComponent>()
+            .filter { it.content().isNotEmpty() }.mapNotNull { it.style().font()?.value() }
+        for (font in listOf("core_menu_emphasis_y6", "core_menu_emphasis_y8", "core_menu_y30",
+            "core_menu_emphasis_y44", "core_menu_emphasis_y20", "core_menu_emphasis_y38", "core_menu_y56", "core_menu_emphasis_y72")) {
+            assertTrue(font in fonts, "Missing hierarchy font $font")
+        }
+    }
+
+    @Test fun `equipment focus has exact pedestal art caption geometry and original fallback`() {
+        val caption = "選択中の武器の強化結果を確認します"
+        val canvas = CoreMenuCanvas("工房").apply { focus(CoreMenuArt.WEAPON, caption) }
+        val snapshot = canvas.snapshot().focus!!
+        assertEquals(8, snapshot.x); assertEquals(44, snapshot.y)
+        assertEquals(106, snapshot.width); assertEquals(64, snapshot.height)
+        assertEquals(CoreMenuCanvas.ArtSnapshot(37, 48, "WEAPON", 48), snapshot.artPlacement)
+        assertEquals(caption, snapshot.caption)
+        assertEquals("EMPHASIS", snapshot.style)
+        assertEquals(100, snapshot.captionY)
+        assertEquals(106, snapshot.captionMaxWidth)
+        assertTrue(snapshot.artPlacement.y + snapshot.artPlacement.size < snapshot.captionY)
+        val visible = CoreMenuCanvas.trim(caption, 106, CoreMenuCanvas.TextStyle.EMPHASIS)
+        assertEquals(8 + (106 - CoreMenuCanvas.width(visible, CoreMenuCanvas.TextStyle.EMPHASIS)) / 2, snapshot.captionX)
+        assertEquals(listOf(18, 19, 20, 21, 22, 23, 27, 28, 29, 30, 31, 32, 36, 37, 38, 39, 40, 41), snapshot.reservedSlots)
+        assertEquals(listOf("工房", "", caption), canvas.fallbackLines())
+        val rendered = components(canvas.render()).filterIsInstance<TextComponent>().filter { it.content().isNotEmpty() }
+        assertTrue(rendered.any { it.content() == "\uE6F0" && it.style().font()?.value() == "core_menu_focus" })
+        assertTrue(rendered.any { it.content() == CoreMenuArt.WEAPON.glyph.toString() && it.style().font()?.value() == "core_menu_art_48_48" })
+        assertTrue(rendered.any { it.style().font()?.value() == "core_menu_emphasis_y100" })
+        canvas.focus(CoreMenuArt.ARMOR, "防具")
+        assertEquals("WEAPON", snapshot.artPlacement.art)
+        assertEquals("ARMOR", canvas.snapshot().focus!!.artPlacement.art)
+        assertEquals(listOf("工房", "", "防具"), canvas.fallbackLines())
+    }
+
+    @Test fun `equipment focus and actions cannot collide regardless of insertion order`() {
+        val canvas = CoreMenuCanvas("工房").apply { focus(CoreMenuArt.WEAPON, "武器") }
+        for (slot in CoreMenuCanvas.FOCUS_SLOTS) {
+            assertFailsWith<IllegalArgumentException> { canvas.button(slot, 1, "不正") }
+            assertFailsWith<IllegalArgumentException> { canvas.card(slot, 1, 1, "", CoreMenuArt.HELP) }
+        }
+        canvas.button(0, 3, "強化")
+        canvas.card(15, 3, 1, "詳細", CoreMenuArt.HELP)
+        canvas.card(24, 3, 1, "通常", CoreMenuArt.ENHANCE)
+        canvas.card(33, 3, 1, "触媒", CoreMenuArt.ORB)
+        canvas.card(42, 3, 1, "素材", CoreMenuArt.GATHER)
+        canvas.button(45, 3, "戻る")
+        assertEquals(6, canvas.snapshot().buttons.size + canvas.snapshot().cards.size)
+        for (card in listOf(false, true)) {
+            val occupied = CoreMenuCanvas("工房")
+            if (card) occupied.card(18, 3, 2, "強化", CoreMenuArt.ENHANCE)
+            else occupied.button(27, 3, "強化")
+            assertFailsWith<IllegalArgumentException> { occupied.focus(CoreMenuArt.WEAPON, "武器") }
+            assertEquals(null, occupied.snapshot().focus)
+        }
+    }
+
+    @Test fun `mixed font sizes and focus restore origin before later primitives`() {
+        val canvas = CoreMenuCanvas("工房").apply {
+            focus(CoreMenuArt.WEAPON, "+6 → +7")
+            button(0, 2, "強化", CoreMenuCanvas.Tone.SELECTED)
+            card(24, 3, 1, "通常", CoreMenuArt.ENHANCE)
+            art(184, 196, CoreMenuArt.ORE)
+            text(-90, 56, "木材 12 / 80", maxWidth = 80)
+            text(190, 72, "+30", maxWidth = 60, style = CoreMenuCanvas.TextStyle.EMPHASIS)
+        }
+        val body = fontMetrics("glyphs").values.toMap()
+        val emphasis = fontMetrics("glyphs-emphasis").values.toMap()
+        var cursor = 0
+        val anchors = mutableMapOf<String, MutableList<Int>>()
+        for (part in components(canvas.render()).filterIsInstance<TextComponent>().filter { it.content().isNotEmpty() }) {
+            val font = part.style().font()!!.value()
+            if (font != "core_spacing") anchors.getOrPut(font) { mutableListOf() }.add(cursor + 8)
+            for (glyph in part.content()) cursor += when {
+                font == "core_spacing" -> if (glyph.code >= 0xE180) -1.shl(glyph.code - 0xE180) else 1.shl(glyph.code - 0xE100)
+                font == "core_menu_canvas" -> 193
+                font == "core_menu_focus" -> 107
+                font.startsWith("core_menu_emphasis_y") -> emphasis.getValue(glyph)
+                font.startsWith("core_menu_y") -> body.getValue(glyph)
+                font.startsWith("core_menu_buttons_") -> ((glyph.code - 0xE610) % 9 + 1) * 18 - 1
+                font.startsWith("core_menu_cards_") -> ((glyph.code - 0xE650) % 9 + 1) * 18 - 1
+                font.startsWith("core_menu_art_") -> CoreMenuArt.entries[glyph.code - 0xE700].advance(font.split('_')[3].toInt())
+                else -> error("Unexpected menu font $font")
+            }
+        }
+        assertEquals(0, cursor, "Every primitive must return the title cursor to its origin")
+        assertEquals(listOf(8), anchors.getValue("core_menu_focus").toList())
+        assertEquals(listOf(37), anchors.getValue("core_menu_art_48_48").toList())
+        assertEquals(listOf(canvas.snapshot().focus!!.captionX), anchors.getValue("core_menu_emphasis_y100").toList())
+        assertEquals(listOf(184), anchors.getValue("core_menu_art_16_196").toList())
+        assertEquals(listOf(-90), anchors.getValue("core_menu_y56").toList())
+        assertEquals(listOf(190), anchors.getValue("core_menu_emphasis_y72").toList())
     }
 }
