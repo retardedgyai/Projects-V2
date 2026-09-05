@@ -176,7 +176,7 @@ class CoreBreakRepairTest {
     private fun checksum(body: String) = body + "checksum\t" + MessageDigest.getInstance("SHA-256")
         .digest(body.toByteArray(UTF_8)).joinToString("") { "%02x".format(it) } + "\n"
     private fun v5(a: CoreAccount, wear: String = "0"): String {
-        val body = CoreAccountCodec.encode(a).substringBefore("checksum\t").lineSequence().map { row ->
+        val body = CoreAccountCodec.encode(a).substringBefore("checksum\t").lineSequence().filterNot(::coreExpansionRow).map { row ->
             val parts = row.split('\t').toMutableList()
             when (parts[0]) {
                 "PROJECTS_CORE_LOOP" -> parts[1] = "5"
@@ -203,7 +203,7 @@ class CoreBreakRepairTest {
             assertFalse(Files.exists(backup)); assertEquals(old, Files.readString(file))
             assertTrue(service.transact(original.playerId, CoreOperation(UUID.randomUUID(), loaded.revision, CoreAction.ClaimMap(1, 8))).successful)
             assertEquals(old, Files.readString(backup))
-            assertTrue(Files.readString(file).startsWith("PROJECTS_CORE_LOOP\t6\t"))
+            assertTrue(Files.readString(file).startsWith("PROJECTS_CORE_LOOP\t7\t"))
         }
         assertFailsWith<IllegalArgumentException> { CoreAccountCodec.decode(v5(original, "-1"), original.playerId) }
         assertFailsWith<IllegalArgumentException> { CoreAccountCodec.decode(v5(original, "101"), original.playerId) }

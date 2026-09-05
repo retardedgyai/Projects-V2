@@ -10,6 +10,7 @@ import java.util.UUID
 internal interface CoreMenuHost {
     fun account(player: Player): CoreAccount?
     fun market(): List<CoreMarketEntry> = emptyList()
+    fun buyOrders(): List<CoreBuyOrderEntry> = emptyList()
     fun packed(player: Player): Boolean
     fun isDeparting(player: Player): Boolean
     fun requireHub(player: Player): Boolean

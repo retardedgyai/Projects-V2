@@ -197,7 +197,7 @@ class CoreAccountRepository(
     }
     private fun fileFor(playerId: UUID): Path = directory.resolve("$playerId.account")
 
-    /** First v6 mutation preserves exact legacy bytes. Loading alone never writes or changes old rolls. */
+    /** First v7 mutation preserves exact legacy bytes. Loading alone never writes or changes old rolls. */
     private fun preserveLegacyBackup(playerId: UUID) {
         val original = fileFor(playerId)
         if (!Files.exists(original, NOFOLLOW_LINKS)) return
@@ -208,6 +208,7 @@ class CoreAccountRepository(
             bytes.toString(UTF_8).startsWith("PROJECTS_CORE_LOOP\t3\t") -> 3
             bytes.toString(UTF_8).startsWith("PROJECTS_CORE_LOOP\t4\t") -> 4
             bytes.toString(UTF_8).startsWith("PROJECTS_CORE_LOOP\t5\t") -> 5
+            bytes.toString(UTF_8).startsWith("PROJECTS_CORE_LOOP\t6\t") -> 6
             else -> return
         }
         val backup = directory.resolve("$playerId.account.v$version.bak")
@@ -229,7 +230,7 @@ class CoreAccountRepository(
 internal object CoreAccountCodec {
     fun encode(account: CoreAccount): String {
         val body = buildString {
-            append("PROJECTS_CORE_LOOP\t6\t${account.playerId}\t${account.revision}\n")
+            append("PROJECTS_CORE_LOOP\t7\t${account.playerId}\t${account.revision}\n")
             append("gear\t${account.weaponTier}\t${account.armorTier}\t${account.unlockedMapTier}\n")
             append("crafting\t${account.weaponRarity}\t${account.armorRarity}\t${account.craftingSeed}\n")
             append("enhancement\t${account.weaponEnhancement.level}\t${account.weaponEnhancement.failures}\t${account.armorEnhancement.level}\t${account.armorEnhancement.failures}\t${account.smithingXp}\n")
@@ -240,6 +241,12 @@ internal object CoreAccountCodec {
                 append("stored-gear\t${identityFields(item.identity)}\t${item.slot}\t${item.tier}\t${item.rarity}\t${item.enhancement.level}\t${item.enhancement.failures}\t${item.legacy}\t${item.broken}\n")
                 item.affixes.forEach { append("stored-affix\t${item.identity.id}\t${it.index}\t${affixFields(it.stone)}\n") }
             }
+            append("survey\t${account.surveyPoints}\n")
+            account.professions.entries.sortedBy { it.key.ordinal }.forEach { (key, p) -> append("profession\t$key\t${p.xp}\t${p.returnCredit}\n") }
+            account.buyOrders.forEach { append("buy-order\t${it.id}\t${it.unitPrice}\t${it.remaining}\t${it.tier}\t${it.resource ?: ""}\t${it.slot ?: ""}\n") }
+            account.dungeonRecords.toSortedMap().forEach { (tier, rank) -> append("dungeon-record\t$tier\t$rank\n") }
+            account.activeRun?.dungeon?.let { append("dungeon-run\t${it.ascension}\t${it.stages}\t${it.roomsPerFloor}\t${it.rewardedStage}\n") }
+            (account.storedGear.map { it.identity } + account.weaponIdentity + account.armorIdentity).forEach { append("gear-quality\t${it.id}\t${it.quality}\n") }
             account.offers.forEach { append("offer\t${it.id}\t${it.price}\t${it.material?.resource ?: ""}\t${it.material?.tier ?: 1}\t${it.quantity}\t${it.gearId ?: ""}\n") }
             account.currencies.entries.sortedBy { it.key.ordinal }.forEach { (key, amount) -> append("currency\t$key\t$amount\n") }
             account.fragments.entries.sortedBy { it.key.ordinal }.forEach { (key, amount) -> append("fragment\t$key\t$amount\n") }
@@ -265,7 +272,7 @@ internal object CoreAccountCodec {
         require(text.substring(checksumAt) == "checksum\t${digest(body)}\n") { "保存データの検証に失敗しました" }
         val rows = body.trimEnd('\n').split('\n').map { it.split('\t') }
         val header = rows.first()
-        require(header.size == 4 && header[0] == "PROJECTS_CORE_LOOP" && header[1] in setOf("1", "2", "3", "4", "5", "6")) { "未対応の保存形式です" }
+        require(header.size == 4 && header[0] == "PROJECTS_CORE_LOOP" && header[1] in setOf("1", "2", "3", "4", "5", "6", "7")) { "未対応の保存形式です" }
         val version = header[1].toInt()
         require(UUID.fromString(header[2]) == playerId) { "保存データのプレイヤーが一致しません" }
         val gear = rows.getOrNull(1) ?: error("装備データがありません")
@@ -287,7 +294,21 @@ internal object CoreAccountCodec {
         val gearRows = linkedMapOf<UUID, List<String>>()
         val storedAffixes = mutableMapOf<UUID, MutableList<Pair<Int, CoreAffixStone>>>()
         val offers = mutableListOf<CoreMarketOffer>()
+        var survey: Long? = null
+        val professions = linkedMapOf<CoreProfession, CoreProfessionProgress>()
+        val buyOrders = mutableListOf<CoreBuyOrder>()
+        val records = linkedMapOf<Int, Int>()
+        val qualities = linkedMapOf<UUID, Int>()
+        var dungeon: CoreDungeonEntry? = null
         rows.drop(2).forEach { row -> when (row[0]) {
+            "survey" -> { require(version >= 7 && row.size == 2 && survey == null); survey = row[1].toLong() }
+            "profession" -> { require(version >= 7 && row.size == 4); require(professions.put(CoreProfession.valueOf(row[1]), CoreProfessionProgress(row[2].toLong(), row[3].toInt())) == null) }
+            "buy-order" -> { require(version >= 7 && row.size == 7 && buyOrders.size < CoreEconomy.MAX_OFFERS)
+                buyOrders += CoreBuyOrder(UUID.fromString(row[1]), row[2].toLong(), row[3].toInt(), row[4].toInt(),
+                    row[5].takeIf { it.isNotEmpty() }?.let(CoreResource::valueOf), row[6].takeIf { it.isNotEmpty() }?.let(CoreGearSlot::valueOf)) }
+            "dungeon-record" -> { require(version >= 7 && row.size == 3); require(records.put(row[1].toInt(), row[2].toInt()) == null) }
+            "gear-quality" -> { require(version >= 7 && row.size == 3); require(qualities.put(UUID.fromString(row[1]), row[2].toInt()) == null) }
+            "dungeon-run" -> { require(version >= 7 && row.size == 5 && dungeon == null); dungeon = CoreDungeonEntry(row[1].toInt(), row[2].toInt(), row[3].toInt(), row[4].toInt()) }
             "economy" -> { require(version >= 5 && economy == null && row.size == 6); economy = row }
             "identity" -> { require(version >= 5 && row.size == 5); require(identities.put(CoreGearSlot.valueOf(row[1]), readIdentity(row.drop(2))) == null) }
             "stored-gear" -> { require(version >= 5 && row.size == 11 && gearRows.size < CoreEconomy.MAX_GEAR); require(gearRows.put(UUID.fromString(row[1]), row) == null) }
@@ -347,9 +368,15 @@ internal object CoreAccountCodec {
         val enhanced = if (version >= 4) requireNotNull(enhancement) { "装備強化の保存項目がありません" } else null
         if (version >= 5) require(economy != null && identities.size == 2)
         require(storedAffixes.keys.all { it in gearRows })
+        if (version >= 7) {
+            require(survey != null && (dungeon == null || active != null))
+            require(qualities.keys == (identities.values.map { it.id } + gearRows.keys).toSet())
+            identities.replaceAll { _, id -> id.copy(quality = qualities.getValue(id.id)) }
+        }
+        active = active?.copy(dungeon = dungeon)
         val stored = gearRows.map { (id, r) ->
             val slot = CoreGearSlot.valueOf(r[4])
-            CoreStoredGear(readIdentity(r.subList(1, 4)), slot, r[5].toInt(), CoreGearRarity.valueOf(r[6]),
+            CoreStoredGear(readIdentity(r.subList(1, 4)).copy(quality = qualities[id] ?: 0), slot, r[5].toInt(), CoreGearRarity.valueOf(r[6]),
                 CoreEnhancementState(r[7].toInt(), r[8].toInt()), storedAffixes[id].orEmpty().map { CoreEquippedAffix(slot, it.first, it.second) }, r[9].toBooleanStrict(), readBroken(r[10], version))
         }
         return CoreAccount(playerId, header[3].toLong(), balances, weaponTier, armorTier, gear[3].toInt(), maps, active, receipts, sources, stones, equipped,
@@ -362,7 +389,8 @@ internal object CoreAccountCodec {
             armorIdentity = identities[CoreGearSlot.ARMOR] ?: CoreGearIdentity.legacy(playerId, CoreGearSlot.ARMOR),
             storedGear = stored, offers = offers, deliveryDay = economy?.get(2)?.toLong() ?: 0, deliveries = economy?.get(3)?.toInt() ?: 0,
             weaponBroken = economy?.get(4)?.let { readBroken(it, version) } ?: false,
-            armorBroken = economy?.get(5)?.let { readBroken(it, version) } ?: false)
+            armorBroken = economy?.get(5)?.let { readBroken(it, version) } ?: false,
+            professions = professions, surveyPoints = survey ?: 0, buyOrders = buyOrders, dungeonRecords = records)
     }
 
     /** Retired v5 wear is validated but never reinterpreted as enhancement damage. */

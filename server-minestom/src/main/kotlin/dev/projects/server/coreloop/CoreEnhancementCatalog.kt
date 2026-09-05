@@ -110,7 +110,7 @@ object CoreEnhancementCatalog {
     }
 
     internal fun gainMastery(account: CoreAccount, amount: Long): CoreAccount {
-        require(amount in 1..64)
+        require(amount in 1..80) // Up to sixteen manufactured pieces per atomic batch.
         return account.copy(smithingXp = (account.smithingXp + amount).coerceAtMost(MAX_SMITHING_XP))
     }
 

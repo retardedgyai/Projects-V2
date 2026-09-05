@@ -35,8 +35,8 @@ class CoreOwnedMap(val id: UUID, val seed: Long, val tier: Int, modifiers: List<
     override fun toString() = "CoreOwnedMap($id,$seed,$tier,$modifiers)"
 }
 
-data class CoreActiveRun(val id: UUID, val map: CoreOwnedMap, val bossDefeated: Boolean = false, val trialId: String? = null) {
-    init { require(trialId == null || CoreActivityKind.entries.any { it.bossId == trialId }) }
+data class CoreActiveRun(val id: UUID, val map: CoreOwnedMap, val bossDefeated: Boolean = false, val trialId: String? = null, val dungeon: CoreDungeonEntry? = null) {
+    init { require(trialId == null || CoreActivityKind.entries.any { it.bossId == trialId }); require(trialId == null || dungeon == null) }
 }
 data class CoreReceipt(val fingerprint: String, val revision: Long, val message: String)
 
@@ -72,7 +72,14 @@ class CoreAccount(
     val deliveries: Int = 0,
     val weaponBroken: Boolean = false,
     val armorBroken: Boolean = false,
+    professions: Map<CoreProfession, CoreProfessionProgress> = emptyMap(),
+    val surveyPoints: Long = 0,
+    buyOrders: List<CoreBuyOrder> = emptyList(),
+    dungeonRecords: Map<Int, Int> = emptyMap(),
 ) {
+    val professions = Collections.unmodifiableMap(professions.toMap())
+    val buyOrders = Collections.unmodifiableList(buyOrders.toList())
+    val dungeonRecords = Collections.unmodifiableMap(dungeonRecords.toMap())
     val storedGear = Collections.unmodifiableList(storedGear.toList())
     val offers = Collections.unmodifiableList(offers.toList())
     val balances: Map<CoreMaterial, Long> = Collections.unmodifiableMap(LinkedHashMap(balances))
@@ -85,6 +92,9 @@ class CoreAccount(
     val fragments: Map<CoreActivityKind, Long> = Collections.unmodifiableMap(LinkedHashMap(fragments))
     val legacyLayouts: Set<CoreGearSlot> = Collections.unmodifiableSet(legacyLayouts.toSet())
     init {
+        require(surveyPoints in 0..1_000_000_000L)
+        require(buyOrders.size <= CoreEconomy.MAX_OFFERS && buyOrders.map { it.id }.distinct().size == buyOrders.size)
+        require(dungeonRecords.all { it.key in 1..4 && it.value in 0..20 })
         require(revision >= 0 && weaponTier in 1..4 && armorTier in 1..4 && unlockedMapTier in 1..4)
         require(smithingXp in 0..CoreEnhancementCatalog.MAX_SMITHING_XP)
         require(silver in 0..CoreEconomy.MAX_SILVER && deliveries in 0..CoreEconomy.DAILY_DELIVERIES && deliveryDay >= 0)
@@ -151,15 +161,25 @@ class CoreAccount(
         deliveries: Int = this.deliveries,
         weaponBroken: Boolean = this.weaponBroken,
         armorBroken: Boolean = this.armorBroken,
+        professions: Map<CoreProfession, CoreProfessionProgress> = this.professions,
+        surveyPoints: Long = this.surveyPoints,
+        buyOrders: List<CoreBuyOrder> = this.buyOrders,
+        dungeonRecords: Map<Int, Int> = this.dungeonRecords,
     ) = CoreAccount(playerId, revision, balances, weaponTier, armorTier, unlockedMapTier, maps, activeRun, receipts, claimedSources, affixStones, equippedAffixes,
         weaponRarity, armorRarity, currencies, fragments, legacyLayouts, craftingSeed, weaponEnhancement, armorEnhancement, smithingXp,
-        silver, weaponIdentity, armorIdentity, storedGear, offers, deliveryDay, deliveries, weaponBroken, armorBroken)
+        silver, weaponIdentity, armorIdentity, storedGear, offers, deliveryDay, deliveries, weaponBroken, armorBroken, professions, surveyPoints, buyOrders, dungeonRecords)
 }
 
 data class CoreOperation(val requestId: UUID, val expectedRevision: Long, val action: CoreAction)
 
 sealed interface CoreAction {
-    data class Manufacture(val slot: CoreGearSlot, val tier: Int) : CoreAction
+    data class SurveyMap(val tier: Int, val raw: CoreResource, val seed: Long) : CoreAction
+    data class PlaceBuyOrder(val resource: CoreResource?, val slot: CoreGearSlot?, val tier: Int, val quantity: Int, val unitPrice: Long) : CoreAction
+    data class CancelBuyOrder(val id: UUID) : CoreAction
+    data class FillBuyOrder(val buyer: UUID, val id: UUID, val unitPrice: Long, val quantity: Int = 1, val gearId: UUID? = null) : CoreAction
+    data class StartDungeon(val runId: UUID, val tier: Int, val ascension: Int, val seed: Long) : CoreAction
+    data class DungeonReward(val runId: UUID, val stage: Int, val boss: Boolean, val treasury: Boolean = false) : CoreAction
+    data class Manufacture(val slot: CoreGearSlot, val tier: Int, val count: Int = 1) : CoreAction
     data class Equip(val id: UUID) : CoreAction
     data class Repair(val slot: CoreGearSlot, val input: UUID) : CoreAction
     data class Deliver(val id: UUID) : CoreAction

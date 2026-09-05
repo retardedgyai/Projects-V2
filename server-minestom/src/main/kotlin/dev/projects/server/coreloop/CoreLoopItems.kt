@@ -83,7 +83,7 @@ internal object CoreLoopItems {
             typeLabel = (if (slot == CoreGearSlot.WEAPON) "両手剣" else "防具セット") + " · 強化 +${enhancement.level}/30",
             stats = rows, affixes = account.equippedAffixes.filter { it.gear == slot }.sortedBy { it.index }.map { affixModel(it.stone) },
             modCapacity = CoreAffixCatalog.capacity(account, slot),
-            footer = listOf(if (CoreEconomy.broken(account, slot)) "破損中：この装備の性能・MODは無効" else "未破損 / 遠征・戦闘では壊れません",
+            footer = listOf("製造品質 +${CoreEconomy.identity(account, slot).quality}%（基礎性能）", if (CoreEconomy.broken(account, slot)) "破損中：この装備の性能・MODは無効" else "未破損 / 遠征・戦闘では壊れません",
                 if (CoreEconomy.broken(account, slot)) "装備庫で修理：同Tier・同系統・+0・未破損を1個" else "+15以降の強化失敗で破損する場合があります",
                 "修理対象のMOD・強化値・製作者は維持",
                 "能力欄は強化と装備全体のMODを反映", "マジック：接頭1＋接尾1 / レア：接頭3＋接尾3", if (slot == CoreGearSlot.WEAPON) "左：3段斬撃 / 右：踏み込み / F：回避" else "防具MODはセット全体に1回適用")), packed)

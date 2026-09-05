@@ -9,7 +9,7 @@ internal object CoreWeaponPresentation {
     fun damage(account: CoreAccount): Int {
         if (account.weaponBroken) return 0
         val stats = CoreAffixCatalog.stats(account)
-        return (12 * CoreLoopCatalog.weaponDamage(account.weaponTier) *
+        return (12 * CoreLoopCatalog.weaponDamage(account.weaponTier) * (1 + account.weaponIdentity.quality / 100.0) *
             CoreEnhancementCatalog.weaponDamageMultiplier(account.weaponEnhancement.level) *
             (1 + stats.damagePercent / 100)).roundToInt()
     }
@@ -22,7 +22,7 @@ internal object CoreWeaponPresentation {
         "+${(attackSpeedPercent(account) * 10).roundToInt() / 10.0}%"
 
     fun health(account: CoreAccount): Int =
-        (if (account.armorBroken) 100 else (CoreLoopCatalog.armorHealth(account.armorTier) *
+        (if (account.armorBroken) 100 else (CoreLoopCatalog.armorHealth(account.armorTier) * (1 + account.armorIdentity.quality / 100.0) *
             CoreEnhancementCatalog.armorHealthMultiplier(account.armorEnhancement.level)).toInt()) +
             CoreAffixCatalog.stats(account).healthFlat.toInt()
 

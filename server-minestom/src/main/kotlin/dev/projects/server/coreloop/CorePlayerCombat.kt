@@ -30,6 +30,8 @@ internal class CorePlayerCombat(
     private val armorEnhancement: () -> Int = { 0 },
     private val weaponBroken: () -> Boolean = { false },
     private val armorBroken: () -> Boolean = { false },
+    private val weaponQuality: () -> Int = { 0 },
+    private val armorQuality: () -> Int = { 0 },
     private val onDefeated: () -> Unit,
 ) {
     private val normal = GreatswordCombo()
@@ -52,9 +54,9 @@ internal class CorePlayerCombat(
     var health = 100.0
         private set
     val maxMana: Int get() = 100 + statSource().maxManaFlat.toInt()
-    val maxHealth: Int get() = (if (armorBroken()) 100 else ((100 + (armorTier() - 1) * 30) * (1.0 + .02 * armorEnhancement().coerceIn(0, 30))).toInt()) + statSource().healthFlat.toInt()
+    val maxHealth: Int get() = (if (armorBroken()) 100 else ((100 + (armorTier() - 1) * 30) * (1.0 + armorQuality().coerceIn(0, 30) / 100.0) * (1.0 + .02 * armorEnhancement().coerceIn(0, 30))).toInt()) + statSource().healthFlat.toInt()
     val attackSpeed: Double get() = if (weaponBroken()) 1.0 else 1.0 + (statSource().attackSpeedPercent.coerceIn(0.0, 60.0) + .8 * weaponEnhancement().coerceIn(0, 30)) / 100.0
-    val attackDamage: Double get() = if (weaponBroken()) 0.0 else 12.0 * 1.65.pow(weaponTier() - 1) * (1.0 + .04 * weaponEnhancement().coerceIn(0, 30)) * (1.0 + statSource().damagePercent / 100.0) * if (tickNumber < whetstoneUntil) 1.2 else 1.0
+    val attackDamage: Double get() = if (weaponBroken()) 0.0 else 12.0 * 1.65.pow(weaponTier() - 1) * (1.0 + weaponQuality().coerceIn(0, 30) / 100.0) * (1.0 + .04 * weaponEnhancement().coerceIn(0, 30)) * (1.0 + statSource().damagePercent / 100.0) * if (tickNumber < whetstoneUntil) 1.2 else 1.0
     private data class Burn(val damage: Double, var nextTick: Long, var remaining: Int)
     private val burns = mutableMapOf<UUID, Burn>()
     private val damageLabels = mutableListOf<Pair<Entity, Long>>()

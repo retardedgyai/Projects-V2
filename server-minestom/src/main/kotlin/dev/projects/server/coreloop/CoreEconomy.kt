@@ -3,7 +3,8 @@ package dev.projects.server.coreloop
 import java.util.UUID
 
 /** Identity follows the equipment through equip, storage and sale; old equipment migrates bound. */
-data class CoreGearIdentity(val id: UUID, val crafter: UUID, val bound: Boolean = false) {
+data class CoreGearIdentity(val id: UUID, val crafter: UUID, val bound: Boolean = false, val quality: Int = 0) {
+    init { require(quality in 0..30) }
     companion object {
         fun legacy(player: UUID, slot: CoreGearSlot) = CoreGearIdentity(
             UUID.nameUUIDFromBytes("$player/legacy/$slot".toByteArray(Charsets.UTF_8)), player, true)

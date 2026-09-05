@@ -166,7 +166,7 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
                 card(v, 12, 3, 3, "工房", CoreMenuArt.FORGE, CoreLoopItems.icon(Material.ANVIL, "装備工房", "強化・精製・制作・MOD加工")) { workshop(player) }
                 card(v, 15, 3, 3, "保管庫", CoreMenuArt.STORAGE, CoreLoopItems.icon(Material.BARREL, "素材倉庫", "持っている素材と正確な所持数")) { storage(player) }
                 card(v, 36, 3, 1, "装備庫", CoreMenuArt.GEAR, CoreLoopItems.icon(Material.IRON_SWORD, "作った装備を使う・出品する・納品する")) { equipmentStock(player) }
-                card(v, 39, 3, 1, "採取", CoreMenuArt.GATHER, CoreLoopItems.icon(Material.OAK_SAPLING, "採取の心得・道具")) { mastery(player) }
+                card(v, 39, 3, 1, "採取", CoreMenuArt.GATHER, CoreLoopItems.icon(Material.OAK_SAPLING, "採取の心得・道具")) { professions(player) }
                 card(v, 42, 3, 1, "試練", CoreMenuArt.TRIAL, CoreLoopItems.icon(Material.END_PORTAL_FRAME, "欠片で専用ボスに挑戦")) { trials(player) }
                 card(v, 45, 3, 1, "市場", CoreMenuArt.STORAGE, CoreLoopItems.icon(Material.GOLD_NUGGET, "素材・装備をプレイヤーと売買", "銀貨 ${a.silver}枚")) { supplies(player) }
                 card(v, 48, 3, 1, "遊び方", CoreMenuArt.HELP, CoreLoopItems.icon(Material.BOOK, "最初の一周・戦闘・採取操作")) { guide(player) }
@@ -193,7 +193,8 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
         val affordable = tier == 1 || a.amount(CoreResource.COMBAT_TOKEN, tier - 1) > 0
         val room = a.maps.size < CoreLoopCatalog.MAX_MAPS
         view(player, "地図台 / T$tier", { expeditions(player, tier, current) }) { v ->
-            tiers(v, tier) { expeditions(player, it) }; help(v, player) { expeditions(player, tier, current) }
+            tiers(v, tier) { expeditions(player, it) }
+            tile(v, 8, 1, "採", CoreLoopItems.icon(Material.OAK_SAPLING, "討伐不要の採取地図")) { surveyMaps(player, tier) }
             v.canvas.left("遠征先 T$tier", lines("所持 ${maps.size}枚", "解放 T1〜${a.unlockedMapTier}", "目安装備 T$tier", "武器 T${a.weaponTier}", "", "選ぶ → 調整", "選択では未消費"), hero = CoreMenuArt.EXPEDITION)
             v.canvas.right("地図の入手", lines(if (tier == 1) "T1は無料" else "T${tier - 1} 戦利品券1枚", if (tier == 1) "何度でも入手可能" else "所持 ${a.amount(CoreResource.COMBAT_TOKEN, tier - 1)}", "", "前Tierのボス討伐", "次のTierを解放", "", if (!unlocked) "このTierは未解放" else if (!room) "地図の保管上限" else if (!affordable) "戦利品券が不足" else "右下から受け取る"), hero = CoreMenuArt.TABLET)
             maps.drop(current * mapSlots.size).take(mapSlots.size).forEachIndexed { index, map ->
@@ -391,12 +392,12 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
     private fun recipes(a: CoreAccount, s: CoreForgeLayout.Selection): List<ForgeRecipe> =
         if (s.tab == CoreForgeLayout.Tab.REFINE) CoreLoopCatalog.refined.map { (raw, refined) ->
             ForgeRecipe(resourceName(refined), CoreLoopItems.resourceMaterial(refined), CoreLoopCatalog.refine(raw, s.tier)) { count ->
-                CoreLoopCatalog.refine(raw, s.tier, count) to CoreAction.Refine(raw, s.tier, count)
+                CoreProfessions.refineQuote(a, raw, s.tier, count).first to CoreAction.Refine(raw, s.tier, count)
             }
         } else buildList {
             val recipe = CoreEconomy.manufacture(s.gear, s.tier)
-            add(ForgeRecipe("T${s.tier}${s.gear.displayName}", if (s.gear == CoreGearSlot.WEAPON) Material.IRON_SWORD else Material.IRON_CHESTPLATE, recipe, false) {
-                recipe to CoreAction.Manufacture(s.gear, s.tier)
+            add(ForgeRecipe("T${s.tier}${s.gear.displayName}", if (s.gear == CoreGearSlot.WEAPON) Material.IRON_SWORD else Material.IRON_CHESTPLATE, recipe) { count ->
+                CoreProfessions.manufacture(s.gear, s.tier, count) to CoreAction.Manufacture(s.gear, s.tier, count)
             })
             listOf(CoreResource.POTION, CoreResource.GATHERING_TABLET, CoreResource.WHETSTONE).forEach { resource ->
                 add(ForgeRecipe(resourceName(resource), CoreLoopItems.resourceMaterial(resource), CoreLoopCatalog.craft(resource, tier = s.tier)) { count ->
@@ -423,21 +424,23 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
             card(v, slot, 3, if (s.tab == CoreForgeLayout.Tab.REFINE) 2 else 1, label, art,
                 CoreLoopItems.icon(e.icon, e.unit.displayName, "クリック：選択。まだ素材は使いません"), if (index == selected) Tone.SELECTED else Tone.NEUTRAL) { forge(player, s.copy(recipe = index)) }
         }
-        val maximum = if (entry.batches) CoreForgeLayout.maxBatches(a, entry.unit) else if (entry.unit.canAfford(a)) 1 else 0
+        val isEquipment = s.tab == CoreForgeLayout.Tab.CRAFT && selected == 0
+        val maximum = if (isEquipment) minOf(16, CoreEconomy.MAX_GEAR - a.storedGear.size, CoreForgeLayout.maxBatches(a, entry.unit))
+            else if (entry.batches) CoreForgeLayout.maxBatches(a, entry.unit) else if (entry.unit.canAfford(a)) 1 else 0
         val count = if (entry.batches) CoreForgeLayout.batches(s.quantity, maximum) else 1
         val (recipe, action) = entry.build(count)
         val summary = CoreForgeSummary.recipe(a, recipe)
-        val output = if (entry.batches) recipe.outputs.flatMap { (key, amount) -> lines("${resourceName(key.resource)} ×$amount", "所持 ${a.amount(key)}") }
-            else lines("T${s.tier} ${s.gear.displayName} ×1", "新品を装備庫へ保管", "装備・出品・納品", "今の装備は変更なし")
+        val output = if (!isEquipment && entry.batches) recipe.outputs.flatMap { (key, amount) -> lines("${resourceName(key.resource)} ×$amount", "所持 ${a.amount(key)}") }
+            else lines("T${s.tier} ${s.gear.displayName} ×$count", "新品を装備庫へ保管", "製造品質を個別抽選", "今の装備は変更なし")
         v.canvas.left("完成するもの", output + lines("今回 $count 回", "制作可能 $maximum 回") +
             (summary.blockedReason?.let { paragraph(it, CoreUiComponents.RED) } ?: lines("制作できます")),
             hero = recipe.outputs.keys.firstOrNull()?.let { materialArt(it.resource) } ?: gearArt(s.gear))
         costPanel(v, a, recipe); sourceButton(v, player, s)
         if (entry.batches) quantity(v, s.quantity, maximum) { forge(player, s.copy(quantity = it)) }
         execute(v, player, if (s.tab == CoreForgeLayout.Tab.REFINE) "精製する" else "制作する",
-            if (!entry.batches && a.storedGear.size >= CoreEconomy.MAX_GEAR) "装備の保管上限です" else summary.blockedReason, recipe) {
+            if (isEquipment && a.storedGear.size + count > CoreEconomy.MAX_GEAR) "装備の保管上限です" else summary.blockedReason, recipe) {
             mutate(v, player, action, a.revision) {
-                if (entry.batches) forge(player, s.copy(recipe = selected)) else equipmentStock(player)
+                if (!isEquipment) forge(player, s.copy(recipe = selected)) else equipmentStock(player)
             }
         }
     }
@@ -779,6 +782,7 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
             v.items[45] = CoreLoopItems.icon(Material.ARROW, if (repairFor != null) "修理へ" else if (journey(player).isEmpty) "手帳へ" else "元の工房へ")
             v.actions[45] = { if (repairFor != null) repairMenu(player, repairFor) else journey(player).pop()?.let { forge(player, it) } ?: journal(player) }
             v.items[46] = CoreLoopItems.icon(Material.CHEST, "素材を出品する"); v.actions[46] = { saleMaterials(player, tier) }
+            v.items[50] = CoreLoopItems.icon(Material.WRITABLE_BOOK, "購入注文 / 買い手を探す", "注文は銀貨を預託済み。持ち物を納品して即時売却"); v.actions[50] = { orders(player, tier) }
             v.items[48] = CoreLoopItems.icon(Material.IRON_SWORD, "装備庫 / 装備を出品"); v.actions[48] = { equipmentStock(player) }
             v.items[49] = CoreLoopItems.icon(Material.PAPER, "${current + 1}/${last + 1}ページ / クリックで更新"); v.actions[49] = { supplies(player, tier, selected, quantity, current, repairFor) }
             if (current > 0) { v.items[47] = CoreLoopItems.icon(Material.ARROW, "前へ"); v.actions[47] = { supplies(player, tier, selected, quantity, current - 1, repairFor) } }
@@ -881,6 +885,150 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
         }
     }
 
+    fun professions(player: Player) {
+        val a = game.account(player) ?: return
+        view(player, "職業 / 好きな仕事を育てる", { professions(player) }, nativeChest = true) { v ->
+            v.items[10] = CoreLoopItems.icon(Material.OAK_SAPLING, "採取技能", "採取時間と収量を育てる。現在の技能を保持しています")
+            v.actions[10] = { mastery(player) }
+            v.items[12] = CoreLoopItems.icon(Material.MAP, "採取実績 ${a.surveyPoints}", "討伐不要の地図：T1〜${CoreProfessions.surveyTier(a.surveyPoints)}", "採取対象1個につき、そのTier分の実績")
+            v.actions[12] = { surveyMaps(player) }
+            v.items[14] = CoreLoopItems.icon(Material.WRITABLE_BOOK, "注文へ納品する", "買い手が求める素材・装備を確認してから作れる")
+            v.actions[14] = { orders(player) }
+            CoreProfession.entries.forEachIndexed { i, p ->
+                val progress = CoreProfessions.progress(a, p)
+                val refine = p.ordinal < 5
+                val level = progress.level()
+                v.items[27 + i] = CoreLoopItems.icon(if (refine) Material.FURNACE else Material.ANVIL, "${p.displayName} Lv$level / 100",
+                    "経験値 ${progress.xp}", if (refine) "原料還元 ${level * CoreMmoTuning.balance.refineReturnMaxPercent / 100}%（端数は保持）" else "Lvが上がると製造品質の下限・抽選回数が向上",
+                    "購入した素材でも経験値を獲得できます", "クリック：工房へ")
+                v.actions[27 + i] = { forge(player, CoreForgeLayout.Selection(tab = if (refine) CoreForgeLayout.Tab.REFINE else CoreForgeLayout.Tab.CRAFT,
+                    recipe = if (refine) i else 0, gear = if (p == CoreProfession.ARMORSMITH) CoreGearSlot.ARMOR else CoreGearSlot.WEAPON)) }
+            }
+            v.items[45] = CoreLoopItems.icon(Material.ARROW, "手帳へ"); v.actions[45] = { journal(player) }
+        }
+    }
+
+    private fun surveyMaps(player: Player, tier: Int = 1) {
+        val a = game.account(player) ?: return
+        if (!game.requireHub(player)) return
+        val b = CoreMmoTuning.balance
+        view(player, "採取地図 / T$tier", { surveyMaps(player, tier) }, nativeChest = true) { v ->
+            (1..4).forEach { t -> v.items[(t - 1) * 2] = CoreLoopItems.icon(Material.MAP, "T$t 採取地図"); v.actions[(t - 1) * 2] = { surveyMaps(player, t) } }
+            v.items[8] = CoreLoopItems.icon(Material.BOOK, "採取実績 ${a.surveyPoints}", "T2 ${b.surveyTier2} / T3 ${b.surveyTier3} / T4 ${b.surveyTier4}", "現在 T${CoreProfessions.surveyTier(a.surveyPoints)}まで", "地図の内容は通常遠征と同じ。討伐せず帰っても素材は保持")
+            CoreLoopCatalog.refined.keys.forEachIndexed { i, raw ->
+                val quote = CoreProfessions.surveyMap(tier, raw)
+                val unlocked = tier <= CoreProfessions.surveyTier(a.surveyPoints)
+                val cost = quote.costs.entries.firstOrNull()
+                val allowed = unlocked && quote.canAfford(a) && a.maps.size < CoreLoopCatalog.MAX_MAPS
+                v.items[20 + i] = CoreLoopItems.icon(if (allowed) CoreLoopItems.resourceMaterial(raw) else Material.BARRIER, "${raw.displayName}で地図を用意",
+                    cost?.let { "${it.key.displayName} 必要${it.value} / 所持${a.amount(it.key)}" } ?: "T1は無料",
+                    if (!unlocked) "採取実績が足りません" else if (!quote.canAfford(a)) "素材不足" else if (!allowed) "地図の保管上限" else "クリック：地図を1枚受け取る")
+                if (allowed) v.actions[20 + i] = { mutate(v, player, CoreAction.SurveyMap(tier, raw, System.nanoTime()), a.revision) { expeditions(player, tier) } }
+            }
+            v.items[45] = CoreLoopItems.icon(Material.ARROW, "地図台へ"); v.actions[45] = { expeditions(player, tier) }
+        }
+    }
+
+    private fun orders(player: Player, tier: Int = 1, page: Int = 0) {
+        val a = game.account(player) ?: return
+        if (!game.requireHub(player)) return
+        val entries = game.buyOrders().filter { it.order.tier == tier }
+        val last = ((entries.size - 1).coerceAtLeast(0) / 36)
+        val p = page.coerceIn(0, last)
+        view(player, "購入注文 / T$tier / 銀貨${a.silver}", { orders(player, tier, p) }, nativeChest = true) { v ->
+            (1..4).forEach { t -> v.items[(t - 1) * 2] = CoreLoopItems.icon(Material.PAPER, "T$t 注文"); v.actions[(t - 1) * 2] = { orders(player, t) } }
+            entries.drop(p * 36).take(36).forEachIndexed { i, e ->
+                val o = e.order
+                v.items[9 + i] = CoreLoopItems.icon(o.resource?.let(CoreLoopItems::resourceMaterial) ?: if (o.slot == CoreGearSlot.WEAPON) Material.IRON_SWORD else Material.IRON_CHESTPLATE,
+                    o.displayName, "残り${o.remaining}個 / 1個 銀貨${o.unitPrice}枚", "代金は預託済み / 納品手数料5%",
+                    if (o.slot == null) "持っている素材を納品できます" else "同Tier・同系統の+0・未破損装備（MOD・品質不問）",
+                    if (e.buyer == a.playerId) "自分の注文：クリックで取り下げ確認" else "クリック：納品の確認へ")
+                v.actions[9 + i] = { orderDetail(player, e) }
+            }
+            if (entries.isEmpty()) v.items[22] = CoreLoopItems.icon(Material.BOOK, "このTierには注文がありません", "自分で銀貨を預けて購入注文を出せます")
+            v.items[45] = CoreLoopItems.icon(Material.ARROW, "市場へ"); v.actions[45] = { supplies(player, tier) }
+            v.items[49] = CoreLoopItems.icon(Material.PAPER, "${p + 1}/${last + 1} 更新"); v.actions[49] = { orders(player, tier, p) }
+            v.items[53] = CoreLoopItems.icon(Material.WRITABLE_BOOK, "新しい購入注文"); v.actions[53] = { orderTargets(player, tier) }
+            if (p > 0) { v.items[47] = CoreLoopItems.icon(Material.ARROW, "前へ"); v.actions[47] = { orders(player, tier, p - 1) } }
+            if (p < last) { v.items[51] = CoreLoopItems.icon(Material.ARROW, "次へ"); v.actions[51] = { orders(player, tier, p + 1) } }
+        }
+    }
+
+    private fun orderTargets(player: Player, tier: Int) {
+        view(player, "購入する品物を選ぶ / T$tier", { orderTargets(player, tier) }, nativeChest = true) { v ->
+            (CoreLoopCatalog.refined.keys + CoreLoopCatalog.refined.values).forEachIndexed { i, r ->
+                v.items[10 + i] = CoreLoopItems.icon(CoreLoopItems.resourceMaterial(r), r.displayName)
+                v.actions[10 + i] = { orderQuote(player, tier, r) }
+            }
+            CoreGearSlot.entries.forEachIndexed { i, s -> v.items[30 + i] = CoreLoopItems.icon(if (s == CoreGearSlot.WEAPON) Material.IRON_SWORD else Material.IRON_CHESTPLATE, "T$tier ${s.displayName} +0")
+                v.actions[30 + i] = { orderQuote(player, tier, slot = s) } }
+            v.items[45] = CoreLoopItems.icon(Material.ARROW, "注文一覧へ"); v.actions[45] = { orders(player, tier) }
+        }
+    }
+
+    private fun orderQuote(player: Player, tier: Int, resource: CoreResource? = null, slot: CoreGearSlot? = null, quantity: Int = 1, price: Long = 10) {
+        val a = game.account(player) ?: return
+        if (!game.requireHub(player)) return
+        val order = CoreBuyOrder(UUID(0, 0), price, quantity, tier, resource, slot)
+        view(player, "購入注文 / 代金を預ける", { orderQuote(player, tier, resource, slot, quantity, price) }, nativeChest = true) { v ->
+            fun redraw(q: Int = quantity, p: Long = price) = orderQuote(player, tier, resource, slot, q.coerceIn(1, if (slot == null) 999 else 16), p.coerceIn(1, CoreEconomy.MAX_SILVER / 999))
+            v.items[13] = CoreLoopItems.icon(Material.BOOK, order.displayName, "数量 $quantity / 単価 $price", "預託合計 ${order.escrow} / 所持${a.silver}", "注文の取消で未成立分を返却", "購入後は素材倉庫・装備庫へ自動保管")
+            listOf(-10, -1, 1, 10).forEachIndexed { i, n ->
+                v.items[19 + i] = CoreLoopItems.icon(Material.PAPER, "数量 ${if (n > 0) "+" else ""}$n"); v.actions[19 + i] = { redraw(q = quantity + n) }
+                v.items[28 + i] = CoreLoopItems.icon(Material.GOLD_NUGGET, "単価 ${if (n > 0) "+" else ""}$n"); v.actions[28 + i] = { redraw(p = price + n) }
+            }
+            val allowed = a.silver >= order.escrow && a.buyOrders.size < CoreEconomy.MAX_OFFERS
+            v.items[40] = CoreLoopItems.icon(if (allowed) Material.LIME_DYE else Material.BARRIER, if (allowed) "銀貨${order.escrow}枚を預けて注文する" else "銀貨不足、または注文上限")
+            if (allowed) v.actions[40] = { mutate(v, player, CoreAction.PlaceBuyOrder(resource, slot, tier, quantity, price), a.revision) { orders(player, tier) } }
+            v.items[45] = CoreLoopItems.icon(Material.ARROW, "戻る"); v.actions[45] = { orderTargets(player, tier) }
+        }
+    }
+
+    private fun orderDetail(player: Player, entry: CoreBuyOrderEntry, page: Int = 0) {
+        val a = game.account(player) ?: return
+        if (!game.requireHub(player)) return
+        val current = game.buyOrders().firstOrNull { it.buyer == entry.buyer && it.order.id == entry.order.id } ?: return orders(player, entry.order.tier)
+        val o = current.order
+        view(player, "注文への納品 / ${o.displayName}", { orderDetail(player, current, page) }, nativeChest = true) { v ->
+            if (current.buyer == player.uuid) {
+                v.items[22] = CoreLoopItems.icon(Material.BARRIER, "注文を取り下げる", "未成立の${o.escrow}枚を返却（確定済み取引は戻りません）")
+                v.actions[22] = { mutate(v, player, CoreAction.CancelBuyOrder(o.id), a.revision) { orders(player, o.tier) } }
+            } else if (o.resource != null) {
+                val held = a.amount(o.resource, o.tier)
+                listOf(1, 10, 64, minOf(held, o.remaining.toLong()).toInt()).distinct().filter { it in 1..o.remaining }.forEachIndexed { i, count ->
+                    val price = o.unitPrice * count
+                    val allowed = held >= count
+                    v.items[20 + i] = CoreLoopItems.icon(if (allowed) CoreLoopItems.resourceMaterial(o.resource) else Material.BARRIER, "$count 個を納品する",
+                        "所持 $held / 手取り${price - CoreEconomy.fee(price)}枚", "クリックで素材を消費し納品します")
+                    if (allowed) v.actions[20 + i] = { mutate(v, player, CoreAction.FillBuyOrder(current.buyer, o.id, o.unitPrice, count), a.revision) { orders(player, o.tier) } }
+                }
+            } else {
+                val gear = a.storedGear.filter { o.accepts(it) && a.offers.none { offer -> offer.gearId == it.identity.id } }
+                gear.drop(page * 27).take(27).forEachIndexed { i, item ->
+                    v.items[9 + i] = CoreLoopItems.gear(item.project(a), item.slot, v.packed)
+                    v.actions[9 + i] = { confirmOrderGear(player, current, item.identity.id) }
+                }
+                if (gear.isEmpty()) v.items[22] = CoreLoopItems.icon(Material.BARRIER, "納品できる装備がありません", "同Tier・同系統・+0・未破損 / 初期・出品中の装備は不可")
+                if (page > 0) { v.items[47] = CoreLoopItems.icon(Material.ARROW, "前へ"); v.actions[47] = { orderDetail(player, current, page - 1) } }
+                if ((page + 1) * 27 < gear.size) { v.items[51] = CoreLoopItems.icon(Material.ARROW, "次へ"); v.actions[51] = { orderDetail(player, current, page + 1) } }
+            }
+            v.items[8] = CoreLoopItems.icon(Material.BOOK, "単価${o.unitPrice}枚 / 残り${o.remaining}個", "装備のMOD・品質もそのまま相手へ渡ります")
+            v.items[45] = CoreLoopItems.icon(Material.ARROW, "注文一覧へ"); v.actions[45] = { orders(player, o.tier) }
+        }
+    }
+
+    private fun confirmOrderGear(player: Player, e: CoreBuyOrderEntry, id: UUID) {
+        val a = game.account(player) ?: return
+        val item = a.storedGear.firstOrNull { it.identity.id == id } ?: return orders(player, e.order.tier)
+        view(player, "この装備を納品しますか", { confirmOrderGear(player, e, id) }, nativeChest = true) { v ->
+            v.items[22] = CoreLoopItems.gear(item.project(a), item.slot, v.packed)
+            v.items[31] = CoreLoopItems.icon(Material.BOOK, "MOD・製造品質も相手へ移ります", "手取り${e.order.unitPrice - CoreEconomy.fee(e.order.unitPrice)}枚", "個体 ${item.identity.id.toString().take(8)}")
+            v.items[40] = CoreLoopItems.icon(Material.LIME_DYE, "この装備を渡して銀貨を受け取る")
+            v.actions[40] = { mutate(v, player, CoreAction.FillBuyOrder(e.buyer, e.order.id, e.order.unitPrice, gearId = id), a.revision) { orders(player, e.order.tier) } }
+            v.items[45] = CoreLoopItems.icon(Material.ARROW, "戻る"); v.actions[45] = { orderDetail(player, e) }
+        }
+    }
+
     fun mastery(player: Player, discipline: QuestGatheringDiscipline? = null) {
         val m = game.gatheringMastery(player)
         val selected = discipline ?: QuestGatheringDiscipline.entries.first()
@@ -902,7 +1050,7 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
                     game.unlockMastery(player, selected, node); mastery(player, selected)
                 }
             }
-            back(v, player)
+            back(v, player) { professions(player) }
             tile(v, 51, 3, "道具箱", CoreLoopItems.icon(Material.CHEST, "無料で採取道具を用意")) { tools(player) }
         }
     }

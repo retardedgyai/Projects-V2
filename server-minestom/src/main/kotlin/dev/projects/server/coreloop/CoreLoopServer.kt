@@ -40,6 +40,7 @@ import kotlin.math.roundToInt
 /** Entry point for the playable solo loop. The original combat laboratory remains opt-in. */
 object CoreLoopServer {
     fun start() {
+        CoreMmoTuning.balance = CoreMmoBalance.load(Path.of("config", "projects", "mmo-balance.properties"))
         val server = MinecraftServer.init(Auth.Offline())
         val hub = MinecraftServer.getInstanceManager().createInstanceContainer()
         val harbor = HarborScene.build(hub)
@@ -95,6 +96,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
 
     override fun account(player: Player): CoreAccount? = accounts[player.uuid]
     override fun market(): List<CoreMarketEntry> = ledger.marketSnapshot()
+    override fun buyOrders(): List<CoreBuyOrderEntry> = ledger.buyOrderSnapshot()
     override fun packed(player: Player): Boolean = uiPack?.enabled(player) == true
     override fun isDeparting(player: Player): Boolean = departing.containsKey(player.uuid)
 
@@ -154,7 +156,9 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
                     weaponEnhancement = { accounts[player.uuid]?.weaponEnhancement?.level ?: 0 },
                     armorEnhancement = { accounts[player.uuid]?.armorEnhancement?.level ?: 0 },
                     weaponBroken = { accounts[player.uuid]?.weaponBroken ?: false },
-                    armorBroken = { accounts[player.uuid]?.armorBroken ?: false }) {
+                    armorBroken = { accounts[player.uuid]?.armorBroken ?: false },
+                    weaponQuality = { accounts[player.uuid]?.weaponIdentity?.quality ?: 0 },
+                    armorQuality = { accounts[player.uuid]?.armorIdentity?.quality ?: 0 }) {
                     player.showTitle(Title.title(CoreLoopItems.text("力尽きた…", NamedTextColor.RED), CoreLoopItems.text("獲得素材を持って港へ戻ります")))
                     returnToHarbor(player)
                 }
@@ -314,8 +318,8 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
                 ?: return@supplyAsync CoreTransactionResult(CoreTransactionStatus.UNAVAILABLE, null, "データを読み込めません")
             ledger.transact(playerId, CoreOperation(UUID.randomUUID(), revision ?: current.revision, action)).also { result ->
                 result.account?.let { accounts[playerId] = it }
-                if (action is CoreAction.BuyOffer && result.successful)
-                    ledger.snapshot(action.seller)?.let { accounts[action.seller] = it }
+                val other = when (action) { is CoreAction.BuyOffer -> action.seller; is CoreAction.FillBuyOrder -> action.buyer; else -> null }
+                if (other != null && result.successful) ledger.snapshot(other)?.let { accounts[other] = it }
             }
         }, io)
 

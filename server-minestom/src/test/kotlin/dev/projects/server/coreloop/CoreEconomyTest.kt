@@ -145,9 +145,9 @@ class CoreEconomyTest {
         val a = CoreCraftingCatalog.craft(CoreAccount(id, revision = 7, weaponTier = 4,
             weaponEnhancement = CoreEnhancementState(23, 1), currencies = mapOf(CoreCraftingCurrency.ALCHEMY to 1L)),
             CoreGearSlot.WEAPON, CoreCraftingCurrency.ALCHEMY, UUID.randomUUID())
-        val body = CoreAccountCodec.encode(a).substringBefore("checksum\t").lineSequence()
+        val body = CoreAccountCodec.encode(a).substringBefore("checksum\t").lineSequence().filterNot(::coreExpansionRow)
             .filterNot { it.startsWith("identity\t") || it.startsWith("economy\t") }.joinToString("\n")
-            .replaceFirst("PROJECTS_CORE_LOOP\t6\t", "PROJECTS_CORE_LOOP\t4\t")
+            .replaceFirst("PROJECTS_CORE_LOOP\t7\t", "PROJECTS_CORE_LOOP\t4\t")
         val checksum = java.security.MessageDigest.getInstance("SHA-256").digest(body.toByteArray()).joinToString("") { "%02x".format(it) }
         val old = body + "checksum\t$checksum\n"
         val file = dir.resolve("$id.account")
@@ -160,7 +160,7 @@ class CoreEconomyTest {
         assertEquals(old, Files.readString(file)) // read does not migrate the account
         assertTrue(service.transact(id, CoreOperation(UUID.randomUUID(), 7, CoreAction.ClaimMap(1, 9))).successful)
         assertEquals(old, Files.readString(dir.resolve("$id.account.v4.bak")))
-        assertTrue(Files.readString(file).startsWith("PROJECTS_CORE_LOOP\t6\t"))
+        assertTrue(Files.readString(file).startsWith("PROJECTS_CORE_LOOP\t7\t"))
     }
 
     @Test fun `inventory capacity and failing ordinary save never spend inputs`() {
