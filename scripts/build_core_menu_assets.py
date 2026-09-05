@@ -12,6 +12,7 @@ import shutil
 import urllib.request
 
 from PIL import Image, ImageDraw, ImageFont
+from build_core_menu_art import build_art
 
 ROOT = Path(__file__).resolve().parents[1]
 PACK = ROOT / "server-minestom/src/main/resources/core-ui-pack"
@@ -21,16 +22,19 @@ FONT_COMMIT = "295d98a7a0c17c68f1341eaeea354e7960ea70d3"
 FONT_URL = f"https://raw.githubusercontent.com/google/fonts/{FONT_COMMIT}/ofl/notosansjp/NotoSansJP%5Bwght%5D.ttf"
 FONT_SHA256 = "c2f3b4d463500a2ddcd3849cded1fceeb9fd6d1c32e6cbecd568453ba50fc68f"
 CELL = 14
+TEXT_SCALE = 2
+SOURCE_CELL = CELL * TEXT_SCALE
 BASELINE = 10
 TEXT_BASE = 0xE800
 FRAME_BASE = 0xE600
 BUTTON_BASE = 0xE610
+CARD_BASE = 0xE650
 TEXT_YS = sorted({6, 8, 128, *(20 + 18 * row for row in range(6)), *(30 + 14 * row for row in range(13))})
 PALETTE = {
-    "NEUTRAL": ("303D48", "667987", "ECF1F2"),
-    "SELECTED": ("314C5B", "C6AD73", "FFF0BF"),
-    "PRIMARY": ("3A674F", "88BE95", "F1FFF0"),
-    "DISABLED": ("2B3035", "555D63", "ABB0B4"),
+    "NEUTRAL": ("31444D", "71847F", "ECF1F2"),
+    "SELECTED": ("284F59", "69BBB7", "D8F3F5"),
+    "PRIMARY": ("32646A", "9BD9CD", "E7F8FA"),
+    "DISABLED": ("27343B", "4B575B", "ABB0B4"),
     "DANGER": ("623F44", "CD8D8A", "FFE3E0"),
 }
 
@@ -50,7 +54,7 @@ def source_font():
         assert hashlib.sha256(data).hexdigest() == FONT_SHA256, "Unexpected font download; inspect upstream before accepting it"
         target.write_bytes(data)
     assert hashlib.sha256(target.read_bytes()).hexdigest() == FONT_SHA256, "Authoring font hash mismatch"
-    font = ImageFont.truetype(str(target), 10)
+    font = ImageFont.truetype(str(target), 10 * TEXT_SCALE)
     font.set_variation_by_axes([600])
     return font
 
@@ -80,24 +84,27 @@ def build_font():
     chars = repertoire()
     columns = 32
     rows = math.ceil(len(chars) / columns)
-    atlas = Image.new("RGBA", (columns * CELL, rows * CELL))
+    atlas = Image.new("RGBA", (columns * SOURCE_CELL, rows * SOURCE_CELL))
     metrics = {}
     private = []
     for index, char in enumerate(chars):
         glyph = chr(TEXT_BASE + index)
         private.append(glyph)
-        cell = Image.new("RGBA", (CELL, CELL))
+        cell = Image.new("RGBA", (SOURCE_CELL, SOURCE_CELL))
         if char not in (" ", "　"):
             # A common baseline preserves punctuation position and all kana descenders.
             # 台/$ overshoot the cap height; square brackets/braces reach four pixels
             # under the baseline. Keep the entire outline, not just common kanji.
             _, top, _, bottom = font.getbbox(char, anchor="ls")
-            assert 0 <= BASELINE + top and BASELINE + bottom <= CELL, f"Clipped menu glyph U+{ord(char):04X}"
-            ImageDraw.Draw(cell).text((0, BASELINE), char, font=font, anchor="ls", fill="white")
+            assert 0 <= BASELINE * TEXT_SCALE + top and BASELINE * TEXT_SCALE + bottom <= SOURCE_CELL, f"Clipped menu glyph U+{ord(char):04X}"
+            ImageDraw.Draw(cell).text((0, BASELINE * TEXT_SCALE), char, font=font, anchor="ls", fill="white")
+            # Deliberate hard pixels rather than translucent smudges from a tiny 10px
+            # raster. Two source pixels per GUI pixel preserve Japanese inner spaces.
+            cell.putalpha(cell.getchannel("A").point(lambda value: 255 if value >= 100 else 0))
             box = cell.getchannel("A").getbbox()
             assert box is not None, f"Unexpected empty glyph U+{ord(char):04X}"
-            advance = box[2] + 1  # Vanilla BitmapProvider's exact opaque-right-edge + 1 rule.
-            atlas.alpha_composite(cell, ((index % columns) * CELL, (index // columns) * CELL))
+            advance = math.floor(0.5 + box[2] / TEXT_SCALE) + 1
+            atlas.alpha_composite(cell, ((index % columns) * SOURCE_CELL, (index // columns) * SOURCE_CELL))
         else:
             advance = 4 if char == " " else 10
         metrics[char] = {"glyph": glyph, "advance": advance, "index": index}
@@ -127,7 +134,8 @@ def build_font():
     assert license_path.is_file(), "The Noto-derived bitmap font must retain its OFL license"
     shutil.copyfile(license_path, ASSETS / "menu/OFL.txt")
     write_json(ASSETS / "menu/font-source.json", {
-        "name": "ProjectS Menu Bitmap", "derived_from": "Noto Sans JP", "weight": 600, "size": 10,
+        "name": "ProjectS Pixel Relic Menu", "derived_from": "Noto Sans JP", "weight": 600,
+        "size": 10, "source_size": 20, "source_scale": TEXT_SCALE, "alpha": "binary",
         "source_url": FONT_URL, "source_sha256": FONT_SHA256, "license": "SIL Open Font License 1.1",
         "copyright": "Copyright 2014-2021 Adobe (http://www.adobe.com/), with Reserved Font Name 'Source'",
         "scope": "Private-use characters in projects:core_menu_y* only; minecraft:default is never modified",
@@ -136,28 +144,41 @@ def build_font():
 
 
 def build_frame():
-    frame = Image.new("RGBA", (384, 222), "#17212B")
+    frame = Image.new("RGBA", (384, 222), "#434C4D")
     draw = ImageDraw.Draw(frame)
-    draw.rectangle((0, 0, 383, 221), outline="#728391")
-    draw.rectangle((1, 1, 382, 220), outline="#283744")
+    # Intentional one-pixel stone steps, not a downscaled photographic slab.
+    draw.rectangle((1, 1, 382, 220), fill="#AAAFA0")
+    draw.line((2, 1, 381, 1), fill="#E1E2CE")
+    draw.line((1, 2, 1, 218), fill="#D4D7C1")
+    draw.line((2, 220, 382, 220), fill="#687471")
+    draw.rectangle((4, 4, 379, 217), fill="#182B35", outline="#506365")
     # x=104 in this image is the unmodified vanilla chest x=0.
-    for left, right in ((2, 100), (282, 381)):
-        draw.rectangle((left, 2, right, 219), fill="#1C2934")
-        draw.line((left + 4, 24, right - 4, 24), fill="#7E7155")
-    draw.rectangle((104, 0, 279, 221), fill="#1C2731")
-    draw.rectangle((107, 3, 276, 16), fill="#223340")
-    draw.line((108, 16, 275, 16), fill="#99825A")
-    draw.rectangle((108, 18, 275, 124), fill="#202F3A")
-    draw.rectangle((108, 126, 275, 138), fill="#BAC2C5")
+    for left, right in ((5, 99), (283, 378)):
+        draw.rectangle((left, 5, right, 23), fill="#293F48")
+        draw.line((left + 3, 24, right - 3, 24), fill="#718D8B")
+        # Quiet carved detail is restricted to the margin below the last line.
+        center = (left + right) // 2
+        draw.line((left + 12, 214, center - 5, 214), fill="#3D5860")
+        draw.line((center + 5, 214, right - 12, 214), fill="#3D5860")
+        draw.polygon([(center, 212), (center + 2, 214), (center, 216), (center - 2, 214)], fill="#6B9B98")
+    for x in (100, 280):
+        draw.rectangle((x, 2, x + 3, 219), fill="#858F84")
+        draw.line((x, 3, x, 218), fill="#C8CEB8")
+        draw.line((x + 3, 3, x + 3, 218), fill="#34494C")
+    draw.rectangle((104, 2, 279, 219), fill="#192E38")
+    draw.rectangle((107, 4, 276, 16), fill="#2B424B")
+    draw.line((108, 16, 275, 16), fill="#718D8B")
+    draw.rectangle((108, 18, 275, 124), fill="#142832")
+    draw.rectangle((108, 126, 275, 138), fill="#C7CBB6")
     # Vanilla draws its own dark inventory title AFTER our component at x=8,y=128.
     # Leave a light strip for that label, and never paint another label over it.
     # The 36 item positions stay exactly unchanged.
     for y in (140, 158, 176, 198):
         for column in range(9):
             x = 104 + 8 + column * 18
-            draw.rectangle((x - 1, y - 1, x + 16, y + 16), fill="#0E1921")
-            draw.rectangle((x, y, x + 15, y + 15), fill="#303B45")
-            draw.line((x, y + 16, x + 16, y + 16), fill="#54616A")
+            draw.rectangle((x - 1, y - 1, x + 16, y + 16), fill="#101F27")
+            draw.rectangle((x, y, x + 15, y + 15), fill="#354951")
+            draw.line((x, y + 16, x + 16, y + 16), fill="#81928A")
     for index in range(2):
         frame.crop((index * 192, 0, (index + 1) * 192, 222)).save(
             ASSETS / f"textures/gui/core/menu_canvas_{index}.png", optimize=True)
@@ -178,10 +199,10 @@ def build_buttons():
             line.append(chr(BUTTON_BASE + row * 9 + span - 1))
             x, y, width = (span - 1) * 160, row * 16, span * 18 - 2
             draw = ImageDraw.Draw(atlas)
-            draw.rectangle((x, y, x + width - 1, y + 15), fill="#" + fill, outline="#" + border)
+            pixel_bevel(draw, (x, y, x + width - 1, y + 15), tone)
             if tone == "SELECTED":
                 # Row 13 remains free for Japanese descenders; the accent never touches a label.
-                draw.line((x + 1, y + 14, x + width - 2, y + 14), fill="#D8BC7C")
+                draw.line((x + 1, y + 14, x + width - 2, y + 14), fill="#91D5CC")
         grid.append("".join(line))
     atlas.save(ASSETS / "textures/gui/core/menu_buttons.png", optimize=True)
     for row in range(6):
@@ -190,6 +211,40 @@ def build_buttons():
              "ascent": 13 - (18 + row * 18), "chars": grid}
         ]})
     return atlas
+
+
+def pixel_bevel(draw, box, tone):
+    x, y, right, bottom = box
+    fill, border, _ = PALETTE[tone]
+    draw.rectangle(box, fill="#" + fill, outline="#" + border)
+    draw.line((x + 1, y + 1, right - 1, y + 1), fill="#96ACA1" if tone == "NEUTRAL" else "#" + border)
+    draw.line((x + 1, bottom - 1, right - 1, bottom - 1), fill="#142B33")
+    draw.line((right - 1, y + 2, right - 1, bottom - 1), fill="#142B33")
+    # Two-pixel cut corners give the same restrained, block-built edge on every control.
+    for corner in ((x, y), (right, y), (x, bottom), (right, bottom)):
+        draw.point(corner, fill="#425B60")
+
+
+def build_cards():
+    for rows in range(1, 4):
+        height = rows * 18 - 2
+        atlas = Image.new("RGBA", (160 * 9, height * len(PALETTE)))
+        draw = ImageDraw.Draw(atlas)
+        grid = []
+        for tone_index, tone in enumerate(PALETTE):
+            grid.append("".join(chr(CARD_BASE + tone_index * 9 + span - 1) for span in range(1, 10)))
+            for span in range(1, 10):
+                x, y, width = (span - 1) * 160, tone_index * height, span * 18 - 2
+                pixel_bevel(draw, (x, y, x + width - 1, y + height - 1), tone)
+                if rows > 1:
+                    draw.rectangle((x + 2, y + height - 16, x + width - 3, y + height - 3), fill="#233C46")
+                if tone == "SELECTED":
+                    draw.line((x + 2, y + height - 2, x + width - 3, y + height - 2), fill="#91D5CC")
+        atlas.save(ASSETS / f"textures/gui/core/menu_cards_{rows}.png", optimize=True)
+        for row in range(7 - rows):
+            write_json(ASSETS / f"font/core_menu_cards_{rows}_{row}.json", {"providers": [
+                {"type": "bitmap", "file": f"projects:gui/core/menu_cards_{rows}.png", "height": height,
+                 "ascent": 13 - (18 + row * 18), "chars": grid}]})
 
 
 def build_preview(frame, text_atlas, metrics, buttons):
@@ -208,8 +263,9 @@ def build_preview(frame, text_atlas, metrics, buttons):
         for char in value:
             metric = metrics.get(char, metrics["□"])
             index = metric["index"]
-            cell = text_atlas.crop(((index % 32) * CELL, (index // 32) * CELL,
-                                    (index % 32 + 1) * CELL, (index // 32 + 1) * CELL))
+            cell = text_atlas.crop(((index % 32) * SOURCE_CELL, (index // 32) * SOURCE_CELL,
+                                    (index % 32 + 1) * SOURCE_CELL, (index // 32 + 1) * SOURCE_CELL))
+            cell = cell.resize((CELL, CELL), Image.Resampling.NEAREST)
             colored = Image.new("RGBA", cell.size, "#" + color)
             colored.putalpha(cell.getchannel("A"))
             preview.alpha_composite(colored, (x + 104, y))
@@ -255,10 +311,13 @@ def build_menu():
     text_atlas, metrics = build_font()
     frame = build_frame()
     buttons = build_buttons()
+    build_cards()
+    build_art()
     build_preview(frame, text_atlas, metrics, buttons)
     write_json(SOURCE / "readable-menu-layout.json", {
         "size": [384, 222], "origin": [-104, 0], "frame_tile_width": 192,
-        "text_cell": CELL, "text_ys": TEXT_YS, "font_size": 10, "font_weight": 600,
+        "text_cell": CELL, "source_cell": SOURCE_CELL, "text_scale": TEXT_SCALE,
+        "text_ys": TEXT_YS, "font_size": 10, "font_weight": 600,
         "panel": {"left_x": -98, "right_x": 184, "width": 88, "header_y": 8, "line_y": 30, "line_height": 14, "lines": 13},
         "slots": {"origin": [8, 18], "stride": 18, "columns": 9, "rows": 6},
         "button": {"height": 16, "width": "span * 18 - 2", "text_y": "slotY + 2", "icon_reserved_width": 18, "tones": PALETTE},
