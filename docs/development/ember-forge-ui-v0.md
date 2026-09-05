@@ -68,7 +68,16 @@ SIL OFL 1.1を原文のまま配信。全TTFは配信せず必要文字だけを
 オフラインプレビューは実装のタイトルレイヤー。実ゲームの所持品モデル・hover・Tooltipを代替しない。
 GUI倍率での見え方と最終的な雰囲気はCreatorのManual Smokeで判断する。
 特にGUI倍率1では半GUIpxの本文画素が縮小されるため、現在のGUI倍率2以上での確認を推奨。
-Minecraftの設定や操作はAgentから変更していない。今回は稼働中の旧版を中断せず、新版への再起動は未実施。
+Minecraftの設定や操作はAgentから変更していない。実装checkpoint時は旧版を中断せず、後のCreatorの指示で再起動した。
+
+### 起動確認（2026-09-05 22:05 JST）
+
+- 旧Minecraftを正常終了し、接続なし・保存checksum正常・activeRunなしを確認して旧サーバーを停止。
+- `installDist`成功、サーバーPID 29868 / `127.0.0.1:25565`。
+- Vanilla 26.2、PID 26708。対話デスクトップ上でVISIBLE / 非最小化 / TASKBAR_ELIGIBLE / FOREGROUNDを確認。
+- 新パックSHA1 `481f3d72cde98f1237d22e10c4d8ebed03e0f885`、376,932 bytes。
+- `server-minestom/run/core-loop-20260905-220437.log`でPlayer662接続と`SUCCESSFULLY_LOADED customGlyphs=true`を確認。
+- ゲーム内の移動・メニュー操作・F2は行っていない。新UIのManual SmokeはCreatorが行う。
 
 文字化けはパックの`SUCCESSFULLY_LOADED customGlyphs=true`と`CORE_MENU_MISSING_GLYPH`を先に確認。
 操作ずれはCanvasの矩形検査、結果や消費の不一致は既存の見積り・ledgerを確認する。
