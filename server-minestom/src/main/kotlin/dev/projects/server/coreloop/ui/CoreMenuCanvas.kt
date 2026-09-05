@@ -20,6 +20,19 @@ class CoreMenuCanvas(private val title: String) {
     internal data class Panel(val title: String, val lines: List<Line>)
     internal data class Button(val firstSlot: Int, val span: Int, val label: String, val tone: Tone, val icon: Boolean)
     internal data class Text(val x: Int, val y: Int, val value: String, val color: TextColor, val maxWidth: Int)
+    /** Plain data for offline visual QA of an actual constructed menu, not a second UI model. */
+    internal data class Snapshot(
+        val title: String,
+        val titleColor: Int,
+        val leftPanel: PanelSnapshot?,
+        val rightPanel: PanelSnapshot?,
+        val buttons: List<ButtonSnapshot>,
+        val texts: List<TextSnapshot>,
+    )
+    internal data class PanelSnapshot(val title: String, val titleColor: Int, val lines: List<LineSnapshot>)
+    internal data class LineSnapshot(val text: String, val color: Int)
+    internal data class ButtonSnapshot(val firstSlot: Int, val span: Int, val label: String, val tone: String, val icon: Boolean, val textColor: Int)
+    internal data class TextSnapshot(val x: Int, val y: Int, val value: String, val color: Int, val maxWidth: Int)
 
     private var leftPanel: Panel? = null
     private var rightPanel: Panel? = null
@@ -54,6 +67,22 @@ class CoreMenuCanvas(private val title: String) {
         require(x >= -98 && x + maxWidth <= 272 && maxWidth > 0) { "Text escaped the readable canvas" }
         require(y in 0..210) { "Text escaped the readable canvas vertically" }
         texts += Text(x, snapY(y), value, color, maxWidth)
+    }
+
+    internal fun snapshot(): Snapshot {
+        fun Panel.snapshot() = PanelSnapshot(title, CoreUiComponents.GOLD.value(), lines.map { LineSnapshot(it.text, it.color.value()) })
+        return Snapshot(title, CoreUiComponents.GOLD.value(), leftPanel?.snapshot(), rightPanel?.snapshot(),
+            buttons.values.map { ButtonSnapshot(it.firstSlot, it.span, it.label, it.tone.name, it.icon, toneColor(it.tone).value()) },
+            texts.map { TextSnapshot(it.x, it.y, it.value, it.color.value(), it.maxWidth) })
+    }
+
+    /** Original Unicode information for a no-pack detail item; never the encoded PUA or ellipsis. */
+    fun fallbackLines(): List<String> = buildList {
+        add(title)
+        for (panel in listOfNotNull(leftPanel, rightPanel)) {
+            add(""); add(panel.title); addAll(panel.lines.map(Line::text))
+        }
+        if (texts.isNotEmpty()) { add(""); addAll(texts.map(Text::value)) }
     }
 
     fun render(): Component {
