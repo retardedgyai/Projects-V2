@@ -163,6 +163,10 @@ internal data class SkillCooldowns(
 )
 
 fun main() {
+    if (!java.lang.Boolean.getBoolean("projects.legacyCombat")) {
+        dev.projects.server.coreloop.CoreLoopServer.start()
+        return
+    }
     val server = MinecraftServer.init(Auth.Offline())
     val instance = MinecraftServer.getInstanceManager().createInstanceContainer()
     val hubSpawn = Pos(0.0, 41.0, 0.0)

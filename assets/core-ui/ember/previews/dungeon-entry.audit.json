@@ -1,0 +1,369 @@
+{
+  "title": "星環の深殿 / T3 深度0",
+  "layer": "actual CoreMenuCanvas title layer",
+  "omitted": [
+    "vanilla item models",
+    "vanilla inventory label",
+    "hover highlights",
+    "tooltips"
+  ],
+  "warnings": [],
+  "icon_slots": [],
+  "drawn_text": [
+    {
+      "where": "title",
+      "x": 8,
+      "y": 6,
+      "text": "星環の深殿 / T3 深度0",
+      "width": 95,
+      "style": "EMPHASIS"
+    },
+    {
+      "where": "leftPanel.title",
+      "x": -98,
+      "y": 8,
+      "text": "分岐する迷宮",
+      "width": 54,
+      "style": "EMPHASIS"
+    },
+    {
+      "where": "leftPanel.lines[0]",
+      "x": -98,
+      "y": 72,
+      "text": "1〜4人で攻略",
+      "width": 52,
+      "style": "BODY"
+    },
+    {
+      "where": "leftPanel.lines[1]",
+      "x": -98,
+      "y": 86,
+      "text": "3層・12部屋を選ぶ",
+      "width": 73,
+      "style": "BODY"
+    },
+    {
+      "where": "leftPanel.lines[2]",
+      "x": -98,
+      "y": 100,
+      "text": "入場料なし",
+      "width": 45,
+      "style": "BODY"
+    },
+    {
+      "where": "leftPanel.lines[3]",
+      "x": -98,
+      "y": 114,
+      "text": "部屋ごとに報酬確定",
+      "width": 81,
+      "style": "BODY"
+    },
+    {
+      "where": "leftPanel.lines[4]",
+      "x": -98,
+      "y": 128,
+      "text": "加護は周回限定",
+      "width": 63,
+      "style": "BODY"
+    },
+    {
+      "where": "leftPanel.lines[5]",
+      "x": -98,
+      "y": 142,
+      "text": "",
+      "width": 0,
+      "style": "BODY"
+    },
+    {
+      "where": "leftPanel.lines[6]",
+      "x": -98,
+      "y": 156,
+      "text": "一つ前を踏破すると",
+      "width": 81,
+      "style": "BODY"
+    },
+    {
+      "where": "leftPanel.lines[7]",
+      "x": -98,
+      "y": 170,
+      "text": "次の深度を解放",
+      "width": 63,
+      "style": "BODY"
+    },
+    {
+      "where": "rightPanel.title",
+      "x": 184,
+      "y": 8,
+      "text": "深度 0",
+      "width": 27,
+      "style": "EMPHASIS"
+    },
+    {
+      "where": "rightPanel.lines[0]",
+      "x": 184,
+      "y": 72,
+      "text": "踏破記録なし",
+      "width": 54,
+      "style": "BODY"
+    },
+    {
+      "where": "rightPanel.lines[1]",
+      "x": 184,
+      "y": 86,
+      "text": "4〜 精鋭の増援",
+      "width": 62,
+      "style": "BODY"
+    },
+    {
+      "where": "rightPanel.lines[2]",
+      "x": 184,
+      "y": 100,
+      "text": "8〜 星落とし拡大",
+      "width": 71,
+      "style": "BODY"
+    },
+    {
+      "where": "rightPanel.lines[3]",
+      "x": 184,
+      "y": 114,
+      "text": "12〜 複合予兆",
+      "width": 56,
+      "style": "BODY"
+    },
+    {
+      "where": "rightPanel.lines[4]",
+      "x": 184,
+      "y": 128,
+      "text": "",
+      "width": 0,
+      "style": "BODY"
+    },
+    {
+      "where": "rightPanel.lines[5]",
+      "x": 184,
+      "y": 142,
+      "text": "ボスは4形態",
+      "width": 50,
+      "style": "BODY"
+    },
+    {
+      "where": "rightPanel.lines[6]",
+      "x": 184,
+      "y": 156,
+      "text": "報酬：オーブと券",
+      "width": 67,
+      "style": "BODY"
+    },
+    {
+      "where": "rightPanel.lines[7]",
+      "x": 184,
+      "y": 170,
+      "text": "採取原料は出ません",
+      "width": 81,
+      "style": "BODY"
+    },
+    {
+      "where": "rightPanel.lines[8]",
+      "x": 184,
+      "y": 184,
+      "text": "挑戦できます",
+      "width": 54,
+      "style": "BODY"
+    },
+    {
+      "where": "card[9]",
+      "x": 20,
+      "y": 74,
+      "text": "一人で",
+      "width": 27,
+      "style": "EMPHASIS"
+    },
+    {
+      "where": "card[12]",
+      "x": 70,
+      "y": 74,
+      "text": "募集する",
+      "width": 36,
+      "style": "EMPHASIS"
+    },
+    {
+      "where": "card[15]",
+      "x": 124,
+      "y": 74,
+      "text": "参加する",
+      "width": 36,
+      "style": "EMPHASIS"
+    },
+    {
+      "where": "card[51]",
+      "x": 142,
+      "y": 110,
+      "text": "試練",
+      "width": 18,
+      "style": "EMPHASIS"
+    },
+    {
+      "where": "button[0]",
+      "x": 21,
+      "y": 20,
+      "text": "T1",
+      "width": 8,
+      "style": "EMPHASIS"
+    },
+    {
+      "where": "button[2]",
+      "x": 56,
+      "y": 20,
+      "text": "T2",
+      "width": 10,
+      "style": "EMPHASIS"
+    },
+    {
+      "where": "button[4]",
+      "x": 92,
+      "y": 20,
+      "text": "T3",
+      "width": 10,
+      "style": "EMPHASIS"
+    },
+    {
+      "where": "button[6]",
+      "x": 128,
+      "y": 20,
+      "text": "T4",
+      "width": 10,
+      "style": "EMPHASIS"
+    },
+    {
+      "where": "button[8]",
+      "x": 157,
+      "y": 20,
+      "text": "?",
+      "width": 5,
+      "style": "EMPHASIS"
+    },
+    {
+      "where": "button[36]",
+      "x": 25,
+      "y": 92,
+      "text": "浅く",
+      "width": 18,
+      "style": "EMPHASIS"
+    },
+    {
+      "where": "button[39]",
+      "x": 76,
+      "y": 92,
+      "text": "深度0",
+      "width": 23,
+      "style": "EMPHASIS"
+    },
+    {
+      "where": "button[42]",
+      "x": 133,
+      "y": 92,
+      "text": "深く",
+      "width": 18,
+      "style": "EMPHASIS"
+    },
+    {
+      "where": "button[45]",
+      "x": 16,
+      "y": 110,
+      "text": "戻る",
+      "width": 18,
+      "style": "EMPHASIS"
+    }
+  ],
+  "drawn_art": [
+    {
+      "x": -70,
+      "y": 30,
+      "art": "EXPEDITION",
+      "size": 32
+    },
+    {
+      "x": 212,
+      "y": 30,
+      "art": "BOSS",
+      "size": 32
+    },
+    {
+      "x": 18,
+      "y": 36,
+      "art": "WEAPON",
+      "size": 32
+    },
+    {
+      "x": 72,
+      "y": 36,
+      "art": "GEAR",
+      "size": 32
+    },
+    {
+      "x": 126,
+      "y": 36,
+      "art": "EXPEDITION",
+      "size": 32
+    },
+    {
+      "x": 116,
+      "y": 108,
+      "art": "TRIAL",
+      "size": 16
+    }
+  ],
+  "raster_scale": 3,
+  "occupied_control_slots": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30,
+    31,
+    32,
+    33,
+    34,
+    35,
+    36,
+    37,
+    38,
+    39,
+    40,
+    41,
+    42,
+    43,
+    44,
+    45,
+    46,
+    51,
+    52,
+    53
+  ]
+}

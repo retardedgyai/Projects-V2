@@ -1,0 +1,49 @@
+{
+  "size": [
+    176,
+    222
+  ],
+  "categories": [
+    0,
+    9,
+    18,
+    27
+  ],
+  "recipes": [
+    10,
+    11,
+    19,
+    20,
+    28,
+    29,
+    37,
+    38
+  ],
+  "target": 22,
+  "result": 31,
+  "costs": [
+    16,
+    17,
+    25,
+    26,
+    34,
+    35,
+    43,
+    44
+  ],
+  "quantities": [
+    47,
+    48,
+    49
+  ],
+  "execute": 52,
+  "vignette": {
+    "box": [
+      64,
+      39,
+      48,
+      32
+    ],
+    "only_when": "no_selected_mod_recipe"
+  }
+}

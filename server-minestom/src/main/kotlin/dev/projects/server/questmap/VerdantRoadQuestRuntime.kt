@@ -1487,6 +1487,7 @@ internal class VerdantRoadQuestRuntime private constructor(
     private val gatheringNodeByEntityId = mutableMapOf<Int, QuestGatheringNode>()
     private val gatheringLabelByNode = mutableMapOf<Int, Entity>()
     private val gatheringRespawnAtMillis = mutableMapOf<Int, Long>()
+    private val closed = java.util.concurrent.atomic.AtomicBoolean()
 
     init {
         gatheringNodes.forEach(::spawnGatheringLabel)
@@ -1511,13 +1512,20 @@ internal class VerdantRoadQuestRuntime private constructor(
         (gatheringRespawnAtMillis[node.id] ?: Long.MIN_VALUE) <= nowMillis
 
     @Synchronized
-    fun tryDepleteGatheringNode(node: QuestGatheringNode, nowMillis: Long): Boolean {
+    fun tryDepleteGatheringNode(node: QuestGatheringNode, nowMillis: Long, permanent: Boolean = false): Boolean {
         if (!isGatheringNodeAvailable(node, nowMillis)) return false
-        gatheringRespawnAtMillis[node.id] = nowMillis + GATHERING_RESPAWN_MILLIS
+        gatheringRespawnAtMillis[node.id] = if (permanent) Long.MAX_VALUE else nowMillis + GATHERING_RESPAWN_MILLIS
         gatheringObjects.getValue(node.id).blocks.keys.forEach { position -> instance.setBlock(position, Block.AIR) }
         removeGatheringInteraction(node.id)
         removeGatheringLabel(node.id)
         return true
+    }
+
+    @Synchronized
+    fun restoreGatheringNode(node: QuestGatheringNode) {
+        if (node.id !in gatheringRespawnAtMillis) return
+        gatheringRespawnAtMillis[node.id] = 0L
+        respawnGatheringNodes(System.currentTimeMillis())
     }
 
     @Synchronized
@@ -1623,6 +1631,7 @@ internal class VerdantRoadQuestRuntime private constructor(
 
     fun close() {
         check(instance.players.isEmpty()) { "Cannot close a quest map while players are inside" }
+        if (!closed.compareAndSet(false, true)) return
         gatheringInteractionByNode.keys.toList().forEach(::removeGatheringInteraction)
         gatheringLabelByNode.keys.toList().forEach(::removeGatheringLabel)
         MinecraftServer.getInstanceManager().unregisterInstance(instance)
@@ -1642,7 +1651,9 @@ internal class VerdantRoadQuestRuntime private constructor(
             seed: Long,
             candidateCount: Int = QuestMapCandidateSelector.DEFAULT_CANDIDATE_COUNT,
             customization: QuestMapCustomization = QuestMapCustomization.NONE,
+            resourceTier: Int = 1,
         ): CompletableFuture<VerdantRoadQuestRuntime> {
+            require(resourceTier in 1..4)
             val startedAt = System.nanoTime()
             val selection = QuestMapCandidateSelector.select(seed, candidateCount)
             val plan = selection.plan
@@ -1662,7 +1673,7 @@ internal class VerdantRoadQuestRuntime private constructor(
             return CompletableFuture.allOf(*chunks.toTypedArray()).thenApply {
                 val missing = chunkCoordinates.filter { (chunkX, chunkZ) -> instance.getChunk(chunkX, chunkZ) == null }
                 check(missing.isEmpty()) { "Quest map render coverage incomplete: ${missing.take(8)} (${missing.size} missing)" }
-                val gatheringNodes = questGatheringNodes(plan, customization)
+                val gatheringNodes = questGatheringNodes(plan, customization).map { it.copy(tier = resourceTier) }
                 VerdantRoadQuestDecorator.decorate(instance, plan, gatheringNodes)
                 val spawn = Pos(plan.start.x + 0.5, plan.heightAt(plan.start) + 1.0, plan.start.z + 0.5)
                 VerdantRoadQuestRuntime(
@@ -1705,6 +1716,9 @@ internal class VerdantRoadQuestService(
         Path.of("config", "projects", "gathering-mastery"),
     ),
     seedBase: Long = System.currentTimeMillis(),
+    private val durableGatheringReward: ((Player, QuestGatheringNode, Int) -> CompletableFuture<Boolean>)? = null,
+    private val respawnResources: Boolean = true,
+    private val technicalMessages: Boolean = true,
 ) {
     private val ready = ConcurrentLinkedQueue<VerdantRoadQuestRuntime>()
     private val activeByPlayer = ConcurrentHashMap<UUID, VerdantRoadQuestRuntime>()
@@ -1729,6 +1743,21 @@ internal class VerdantRoadQuestService(
     fun prewarmInitial(): CompletableFuture<Void> = CompletableFuture.allOf(
         *Array(PREWARM_TARGET) { prepareOne() },
     )
+
+    fun currentRuntime(playerId: UUID): VerdantRoadQuestRuntime? = activeByPlayer[playerId]
+
+    /** The caller prepares the map off-thread and owns the durable expedition reservation. */
+    fun enterPrepared(player: Player, runtime: VerdantRoadQuestRuntime): CompletableFuture<Boolean> {
+        if (!player.isOnline || activeByPlayer.containsKey(player.uuid)) {
+            if (runtime.instance.players.isEmpty()) runtime.close()
+            return CompletableFuture.completedFuture(false)
+        }
+        return enterRuntime(player, runtime, returnToReadyOnFailure = false)
+    }
+
+    fun isGathering(playerId: UUID): Boolean = activeGathering.containsKey(playerId)
+
+    fun masterySnapshot(playerId: UUID): QuestGatheringMastery = gatheringMastery(playerId)
 
     fun enter(player: Player): CompletableFuture<Boolean> {
         if (activeByPlayer.containsKey(player.uuid)) {
@@ -1922,7 +1951,7 @@ internal class VerdantRoadQuestService(
     fun tick(player: Player) {
         val runtime = activeByPlayer[player.uuid] ?: return
         val now = System.currentTimeMillis()
-        runtime.respawnGatheringNodes(now)
+        if (respawnResources) runtime.respawnGatheringNodes(now)
         if (player.aliveTicks % RARE_PARTICLE_INTERVAL_TICKS == 0L) {
             emitRareGatheringParticles(player, runtime, now)
         }
@@ -1954,7 +1983,7 @@ internal class VerdantRoadQuestService(
         updateGatheringProgressDisplay(active)
         if (active.elapsedTicks < active.requiredTicks) return
         cancelGathering(player)
-        if (!runtime.tryDepleteGatheringNode(active.node, now)) return
+        if (!runtime.tryDepleteGatheringNode(active.node, now, permanent = !respawnResources)) return
         playGatheringSound(player, active.node.discipline, active.targetPosition, completion = true)
         completeGathering(player, active.node)
     }
@@ -2070,6 +2099,35 @@ internal class VerdantRoadQuestService(
         val previous = gatheringMastery(player.uuid)
         val previousLevel = previous.level(node.discipline)
         val amount = previous.yieldAmount(node.discipline, node.quality)
+        val rewardSink = durableGatheringReward
+        if (rewardSink != null) {
+            val runtime = activeByPlayer[player.uuid] ?: return
+            rewardSink(player, node, amount).whenComplete { saved, failure ->
+                // This callback must run even if the player disconnected immediately after harvesting.
+                MinecraftServer.getSchedulerManager().scheduleNextTick {
+                    if (failure != null || saved != true) {
+                        if (activeByPlayer[player.uuid] === runtime) runtime.restoreGatheringNode(node)
+                        if (player.isOnline) player.sendMessage(Component.text("素材を保存できませんでした。もう一度採取してください。", NamedTextColor.RED))
+                    } else {
+                        val current = gatheringMastery(player.uuid)
+                        val updated = current.addExperience(node.discipline, node.quality.masteryExperience)
+                        gatheringMasteries[player.uuid] = updated
+                        if (!masteryRepository.save(player.uuid, updated)) {
+                            System.err.println("GATHERING_MASTERY_SAVE_FAILURE player=${player.uuid}")
+                        }
+                        if (!player.isOnline) {
+                            gatheringMasteries.remove(player.uuid, updated)
+                            return@scheduleNextTick
+                        }
+                        player.sendMessage(Component.text("T${node.tier} ${node.discipline.commonResourceName} +$amount → 素材倉庫", NamedTextColor.GREEN))
+                        if (updated.level(node.discipline) > current.level(node.discipline)) {
+                            player.sendMessage(Component.text("${node.discipline.displayName}マスタリー Lv ${updated.level(node.discipline)}", NamedTextColor.GOLD))
+                        }
+                    }
+                }
+            }
+            return
+        }
         val nodeCenter = Vec(
             node.blockPosition.blockX() + 0.5,
             node.blockPosition.blockY() + 0.5,
@@ -2269,7 +2327,7 @@ internal class VerdantRoadQuestService(
                         "terrain=${runtime.plan.terrainProfile} chunks=${runtime.loadedChunkCount} " +
                         "ready=${runtime.preparationMillis}ms transfer=${transferMillis}ms",
                 )
-                player.sendMessage(
+                if (technicalMessages) player.sendMessage(
                     Component.text(
                         "クエストマップ seed=${runtime.plan.seed} 景観=${runtime.plan.style} 経路=${runtime.plan.routeLayout} " +
                             "地形=${runtime.plan.terrainProfile} チャンク=${runtime.loadedChunkCount} " +

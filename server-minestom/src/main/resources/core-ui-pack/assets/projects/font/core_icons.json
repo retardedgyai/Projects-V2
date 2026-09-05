@@ -1,0 +1,112 @@
+{
+  "providers": [
+    {
+      "type": "bitmap",
+      "file": "projects:gui/stats/attack_power.png",
+      "height": 9,
+      "ascent": 8,
+      "chars": [
+        "\ue001"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/stats/attack_speed.png",
+      "height": 9,
+      "ascent": 8,
+      "chars": [
+        "\ue002"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/stats/magic_power.png",
+      "height": 9,
+      "ascent": 8,
+      "chars": [
+        "\ue003"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/stats/defense.png",
+      "height": 9,
+      "ascent": 8,
+      "chars": [
+        "\ue004"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/stats/health.png",
+      "height": 9,
+      "ascent": 8,
+      "chars": [
+        "\ue005"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/stats/magic_power.png",
+      "height": 9,
+      "ascent": 8,
+      "chars": [
+        "\ue006"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/stats/mana.png",
+      "height": 9,
+      "ascent": 8,
+      "chars": [
+        "\ue007"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/stats/xp.png",
+      "height": 9,
+      "ascent": 8,
+      "chars": [
+        "\ue008"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/stats/level.png",
+      "height": 9,
+      "ascent": 8,
+      "chars": [
+        "\ue009"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/skills/dash.png",
+      "height": 16,
+      "ascent": 12,
+      "chars": [
+        "\ue021"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/skills/slam.png",
+      "height": 16,
+      "ascent": 12,
+      "chars": [
+        "\ue022"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/skills/whirl.png",
+      "height": 16,
+      "ascent": 12,
+      "chars": [
+        "\ue023"
+      ]
+    }
+  ]
+}
