@@ -549,7 +549,7 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
                 })
                 is CoreStorageView.Entry.Currency -> paragraph(chosen.currency.displayName, CoreUiComponents.GOLD) + lines("所持 ${chosen.count}", "") + orbEffect(chosen.currency)
                 is CoreStorageView.Entry.Fragment -> lines("${chosen.kind.displayName}の欠片", "所持 ${chosen.count}", "", "3個で専用ボスへ", if (a.activeRun == null) "港から挑戦できる" else "港へ帰還後に使用")
-                null -> lines("このTierの保管品なし", "採取・討伐で入手")
+                null -> lines("まだ何もありません", "採取・討伐で入手")
             }
             val selectedArt = when (chosen) {
                 is CoreStorageView.Entry.Material -> materialArt(chosen.material.resource)

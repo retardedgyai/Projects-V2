@@ -20,6 +20,8 @@ players receive only the small compiled 32px atlas. Compilation uses regular cel
 slicing, nearest-neighbor sampling, binary alpha and at most 24 colors per sprite.
 Raw/processed pairs deliberately have different silhouettes. The GUI renders 16px
 inline icons or 32px feature icons and never changes a real item's model.
+The later Ember UI adds a 48 GUI px category illustration using this same atlas;
+its cradle and typography live in the native menu builder, with previews under `../ember/`.
 
 Source generation is not deterministic; compilation of the checked-in source is.
 The generated weapon illustration is an equipment-category icon, not a live render

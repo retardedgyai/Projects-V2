@@ -27,6 +27,8 @@ class MenuRenderer:
             with Image.open(self.assets / f"textures/gui/core/menu_canvas_{index}.png") as tile:
                 self.frame.alpha_composite(tile.convert("RGBA"), (index * self.layout["frame_tile_width"], 0))
         self.atlas = Image.open(self.assets / "textures/gui/core/menu_text.png").convert("RGBA")
+        self.emphasis_atlas = Image.open(self.assets / "textures/gui/core/menu_text_emphasis.png").convert("RGBA")
+        self.focus_atlas = Image.open(self.assets / "textures/gui/core/menu_focus.png").convert("RGBA")
         self.buttons = Image.open(self.assets / "textures/gui/core/menu_buttons.png").convert("RGBA")
         self.card_atlases = {rows: Image.open(self.assets / f"textures/gui/core/menu_cards_{rows}.png").convert("RGBA")
                              for rows in range(1, 4)}
@@ -34,7 +36,7 @@ class MenuRenderer:
         self.art_ordinals = {}
         for line in (self.assets / "menu/art.tsv").read_text().splitlines():
             if line and not line.startswith("#"):
-                name, ordinal, _, _ = line.split("\t")
+                name, ordinal, *_ = line.split("\t")
                 self.art_ordinals[name] = int(ordinal)
         self.metrics = {}
         for line in (self.assets / "menu/glyphs.tsv").read_text(encoding="utf-8").splitlines():
@@ -42,22 +44,28 @@ class MenuRenderer:
             code, glyph, advance = line.split("\t")
             self.metrics[chr(int(code, 16))] = (int(glyph, 16), int(advance))
         self.text_base = min(glyph for glyph, advance in self.metrics.values())
+        self.emphasis_metrics = {}
+        for line in (self.assets / "menu/glyphs-emphasis.tsv").read_text(encoding="utf-8").splitlines():
+            if not line or line.startswith("#"): continue
+            code, glyph, advance = line.split("\t")
+            self.emphasis_metrics[chr(int(code, 16))] = (int(glyph, 16), int(advance))
         self.columns = self.atlas.width // self.source_cell
         self.tones = self.layout["button"]["tones"]
 
-    def metric(self, char):
-        return self.metrics.get(char, self.metrics["□"])
+    def metric(self, char, style="BODY"):
+        metrics = self.emphasis_metrics if style == "EMPHASIS" else self.metrics
+        return metrics.get(char, metrics["□"])
 
-    def width(self, value):
-        return sum(self.metric(char)[1] for char in value)
+    def width(self, value, style="BODY"):
+        return sum(self.metric(char, style)[1] for char in value)
 
-    def trim(self, value, maximum):
-        if self.width(value) <= maximum: return value
-        available = maximum - self.width("…")
+    def trim(self, value, maximum, style="BODY"):
+        if self.width(value, style) <= maximum: return value
+        available = maximum - self.width("…", style)
         if available < 0: return ""
         result, used = "", 0
         for char in value:
-            advance = self.metric(char)[1]
+            advance = self.metric(char, style)[1]
             if used + advance > available: break
             result += char
             used += advance
@@ -87,41 +95,47 @@ class MenuRenderer:
             blit(sprite, value["x"], value["y"], value["size"], value["size"])
             report["drawn_art"].append(value)
 
-        def text(x, y, value, color, maximum, where):
+        def text(x, y, value, color, maximum, where, style="BODY"):
             y = self.snap_y(y)
-            visible = self.trim(value, maximum)
+            visible = self.trim(value, maximum, style)
             if visible != value:
                 report["warnings"].append({"kind": "truncated", "where": where, "original": value,
-                                           "visible": visible, "width": self.width(value), "available": maximum})
+                                           "visible": visible, "width": self.width(value, style), "available": maximum})
             missing = sorted(set(char for char in value if char not in self.metrics))
             if missing:
                 report["warnings"].append({"kind": "missing_glyph", "where": where,
                                            "characters": missing, "codepoints": [f"U+{ord(char):04X}" for char in missing]})
-            report["drawn_text"].append({"where": where, "x": x, "y": y, "text": visible, "width": self.width(visible)})
+            report["drawn_text"].append({"where": where, "x": x, "y": y, "text": visible, "width": self.width(visible, style), "style": style})
+            atlas = self.emphasis_atlas if style == "EMPHASIS" else self.atlas
             for char in visible:
-                glyph, advance = self.metric(char)
+                glyph, advance = self.metric(char, style)
                 index = glyph - self.text_base
-                cell = self.atlas.crop(((index % self.columns) * self.source_cell, (index // self.columns) * self.source_cell,
+                cell = atlas.crop(((index % self.columns) * self.source_cell, (index // self.columns) * self.source_cell,
                                        (index % self.columns + 1) * self.source_cell, (index // self.columns + 1) * self.source_cell))
                 tinted = Image.new("RGBA", cell.size, f"#{color & 0xFFFFFF:06x}")
                 tinted.putalpha(cell.getchannel("A"))
                 blit(tinted, x, y, self.cell, self.cell)
                 x += advance
 
-        text(8, 6, snapshot["title"], snapshot["titleColor"], 160, "title")
+        text(8, 6, snapshot["title"], snapshot["titleColor"], 160, "title", "EMPHASIS")
         panel_layout = self.layout["panel"]
         for key, x in (("leftPanel", panel_layout["left_x"]), ("rightPanel", panel_layout["right_x"])):
             panel = snapshot.get(key)
             if not panel: continue
             if len(panel["lines"]) > panel_layout["lines"]:
                 raise ValueError(f"{key} exceeds the canvas line guard: {len(panel['lines'])}")
-            text(x, panel_layout["header_y"], panel["title"], panel["titleColor"], panel_layout["width"], key + ".title")
+            text(x, panel_layout["header_y"], panel["title"], panel["titleColor"], panel_layout["width"], key + ".title", "EMPHASIS")
             art(panel.get("hero"))
             for row, line in enumerate(panel["lines"]):
                 art(line.get("art"))
                 text(line.get("x", x), line.get("y", panel_layout["line_y"] + row * panel_layout["line_height"]),
-                     line["text"], line["color"], line.get("maxWidth", panel_layout["width"]), f"{key}.lines[{row}]")
+                     line["text"], line["color"], line.get("maxWidth", panel_layout["width"]), f"{key}.lines[{row}]", line.get("style", "BODY"))
         occupied = set()
+        focus = snapshot.get("focus")
+        if focus:
+            expected = [18 + row * 9 + column for row in range(3) for column in range(6)]
+            if focus["reservedSlots"] != expected: raise ValueError("Focus must reserve its vanilla slot rectangle")
+            occupied.update(expected)
         for card in snapshot.get("cards", []):
             expected = [card["firstSlot"] + row * 9 + column for row in range(card["rows"]) for column in range(card["columns"])]
             if expected != card["occupiedSlots"] or occupied.intersection(expected):
@@ -133,7 +147,7 @@ class MenuRenderer:
             backdrop = self.card_atlases[card["rows"]].crop((x, y, x + card["width"], y + card["height"]))
             blit(backdrop, card["x"], card["y"])
             art(card["artPlacement"])
-            text(card["labelX"], card["labelY"], card["label"], card["textColor"], card["labelMaxWidth"], f"card[{card['firstSlot']}]")
+            text(card["labelX"], card["labelY"], card["label"], card["textColor"], card["labelMaxWidth"], f"card[{card['firstSlot']}]", "EMPHASIS")
         for button in snapshot.get("buttons", []):
             slot, span, tone = button["firstSlot"], button["span"], button["tone"]
             if not (0 <= slot <= 53 and 1 <= span <= 9 and slot % 9 + span <= 9):
@@ -148,9 +162,9 @@ class MenuRenderer:
             blit(backdrop, x, y)
             inset = self.layout["button"]["icon_reserved_width"] if button["icon"] else 0
             maximum = max(0, extent - inset)
-            visible = self.trim(button["label"], maximum)
-            text(x + inset + (extent - inset - self.width(visible)) // 2, y + 2, button["label"],
-                 button["textColor"], maximum, f"button[{slot}]")
+            visible = self.trim(button["label"], maximum, "EMPHASIS")
+            text(x + inset + (extent - inset - self.width(visible, "EMPHASIS")) // 2, y + 2, button["label"],
+                 button["textColor"], maximum, f"button[{slot}]", "EMPHASIS")
             if button["icon"]:
                 report["icon_slots"].append(slot)
                 if show_icon_slots:
@@ -159,12 +173,18 @@ class MenuRenderer:
                     draw = ImageDraw.Draw(result)
                     draw.rectangle(tuple(value * scale for value in (icon_x + 2, y + 2, icon_x + 13, y + 13)), outline="#8AA6B5")
                     draw.line(tuple(value * scale for value in (icon_x + 3, y + 12, icon_x + 12, y + 3)), fill="#8AA6B5")
+        # Match CoreMenuCanvas ordering exactly: focus is after card/button paint.
+        if focus:
+            blit(self.focus_atlas, focus["x"], focus["y"])
+            art(focus["artPlacement"])
+            text(focus["captionX"], focus["captionY"], focus["caption"], focus["textColor"],
+                 focus["captionMaxWidth"], "focus.caption", "EMPHASIS")
         for value in snapshot.get("arts", []): art(value)
         for index, value in enumerate(snapshot.get("texts", [])):
-            text(value["x"], value["y"], value["value"], value["color"], value["maxWidth"], f"texts[{index}]")
+            text(value["x"], value["y"], value["value"], value["color"], value["maxWidth"], f"texts[{index}]", value.get("style", "BODY"))
         if scaled_width is not None:
             if scaled_width < 176: raise ValueError("Scaled width must accommodate the vanilla chest")
-            viewport = Image.new("RGBA", (scaled_width * scale, result.height), "#111B23")
+            viewport = Image.new("RGBA", (scaled_width * scale, result.height), "#171612")
             viewport.alpha_composite(result, ((scaled_width * scale - result.width) // 2, 0))
             result = viewport
             report["scaled_width"] = scaled_width
@@ -191,7 +211,7 @@ def main():
     picture = picture.resize((picture.width * args.scale // renderer.raster_scale,
                               picture.height * args.scale // renderer.raster_scale), Image.Resampling.NEAREST)
     # Caption outside the exact menu region, not a replacement for any Minecraft label.
-    captioned = Image.new("RGBA", (picture.width, picture.height + 32), "#101820")
+    captioned = Image.new("RGBA", (picture.width, picture.height + 32), "#171612")
     captioned.alpha_composite(picture)
     draw = ImageDraw.Draw(captioned)
     draw.text((6, picture.height + 3), "ACTUAL MENU SNAPSHOT / TITLE LAYER ONLY", fill="#C2CBD1")

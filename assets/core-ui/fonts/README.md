@@ -1,4 +1,4 @@
-# ProjectS menu bitmap font
+# Original menu bitmap font (historical)
 
 The menu-only bitmap atlas is derived from **Noto Sans JP**, weight 600, at 10 pixels.
 Its name is ProjectS Menu Bitmap. Only private-use codepoints in the `projects` namespace
@@ -16,3 +16,15 @@ Normal Gradle builds require neither the authoring font nor network access.
 
 Regenerate after introducing new Japanese menu text, then run the structural verifier.
 Missing characters are visibly replaced with □ and logged by `CoreMenuCanvas`.
+# Ember menu typography (2026-09-05)
+
+The current menu body uses Fontworks DotGothic16 (16px source / 8 GUI px).
+Headings, button labels and emphasized figures use Noto Sans JP weight 500
+(20px source / 10 GUI px). Both have separate measured bitmap advances and
+private-use font providers. This does not replace Minecraft's global font.
+
+DotGothic16 source: https://github.com/fontworks-fonts/DotGothic16/tree/14517183ab2f75e8bccafc5a0bff6685d268c687
+
+The source TTF is cached only under `.tools/core-menu`; `DotGothic16-OFL.txt`
+is included with the derived glyph atlas. Older notes above describe the
+previous menu revision.

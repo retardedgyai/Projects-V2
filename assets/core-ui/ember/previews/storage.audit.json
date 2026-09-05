@@ -1,0 +1,369 @@
+{
+  "title": "素材倉庫 / T3",
+  "layer": "actual CoreMenuCanvas title layer",
+  "omitted": [
+    "vanilla item models",
+    "vanilla inventory label",
+    "hover highlights",
+    "tooltips"
+  ],
+  "warnings": [],
+  "icon_slots": [],
+  "drawn_text": [
+    {
+      "where": "title",
+      "x": 8,
+      "y": 6,
+      "text": "素材倉庫 / T3",
+      "width": 71,
+      "style": "EMPHASIS"
+    },
+    {
+      "where": "leftPanel.title",
+      "x": -98,
+      "y": 8,
+      "text": "保管庫",
+      "width": 33,
+      "style": "EMPHASIS"
+    },
+    {
+      "where": "leftPanel.lines[0]",
+      "x": -98,
+      "y": 72,
+      "text": "31 種類",
+      "width": 39,
+      "style": "EMPHASIS"
+    },
+    {
+      "where": "leftPanel.lines[1]",
+      "x": -98,
+      "y": 86,
+      "text": "T3 の素材",
+      "width": 41,
+      "style": "BODY"
+    },
+    {
+      "where": "leftPanel.lines[2]",
+      "x": -98,
+      "y": 100,
+      "text": "",
+      "width": 0,
+      "style": "BODY"
+    },
+    {
+      "where": "leftPanel.lines[3]",
+      "x": -98,
+      "y": 114,
+      "text": "旅で集めた素材を",
+      "width": 72,
+      "style": "BODY"
+    },
+    {
+      "where": "leftPanel.lines[4]",
+      "x": -98,
+      "y": 128,
+      "text": "次の装備へ",
+      "width": 45,
+      "style": "BODY"
+    },
+    {
+      "where": "rightPanel.title",
+      "x": 184,
+      "y": 8,
+      "text": "手に入れたもの",
+      "width": 74,
+      "style": "EMPHASIS"
+    },
+    {
+      "where": "rightPanel.lines[0]",
+      "x": 184,
+      "y": 72,
+      "text": "T3 木材",
+      "width": 32,
+      "style": "BODY"
+    },
+    {
+      "where": "rightPanel.lines[1]",
+      "x": 184,
+      "y": 86,
+      "text": "所持 500000",
+      "width": 52,
+      "style": "BODY"
+    },
+    {
+      "where": "rightPanel.lines[2]",
+      "x": 184,
+      "y": 100,
+      "text": "",
+      "width": 0,
+      "style": "BODY"
+    },
+    {
+      "where": "rightPanel.lines[3]",
+      "x": 184,
+      "y": 114,
+      "text": "精製に使う素材",
+      "width": 61,
+      "style": "BODY"
+    },
+    {
+      "where": "card[9]",
+      "x": 27,
+      "y": 38,
+      "text": "木材 50万",
+      "width": 49,
+      "style": "EMPHASIS"
+    },
+    {
+      "where": "card[14]",
+      "x": 117,
+      "y": 38,
+      "text": "鉱石 50万",
+      "width": 49,
+      "style": "EMPHASIS"
+    },
+    {
+      "where": "card[18]",
+      "x": 27,
+      "y": 56,
+      "text": "石材 50万",
+      "width": 49,
+      "style": "EMPHASIS"
+    },
+    {
+      "where": "card[23]",
+      "x": 117,
+      "y": 56,
+      "text": "獣皮 50万",
+      "width": 49,
+      "style": "EMPHASIS"
+    },
+    {
+      "where": "card[27]",
+      "x": 27,
+      "y": 74,
+      "text": "繊維 50万",
+      "width": 49,
+      "style": "EMPHASIS"
+    },
+    {
+      "where": "card[32]",
+      "x": 117,
+      "y": 74,
+      "text": "板材 50万",
+      "width": 49,
+      "style": "EMPHASIS"
+    },
+    {
+      "where": "card[36]",
+      "x": 27,
+      "y": 92,
+      "text": "金属 50万",
+      "width": 49,
+      "style": "EMPHASIS"
+    },
+    {
+      "where": "card[41]",
+      "x": 117,
+      "y": 92,
+      "text": "切石 50万",
+      "width": 49,
+      "style": "EMPHASIS"
+    },
+    {
+      "where": "button[0]",
+      "x": 18,
+      "y": 20,
+      "text": "T1",
+      "width": 13,
+      "style": "EMPHASIS"
+    },
+    {
+      "where": "button[2]",
+      "x": 54,
+      "y": 20,
+      "text": "T2",
+      "width": 14,
+      "style": "EMPHASIS"
+    },
+    {
+      "where": "button[4]",
+      "x": 90,
+      "y": 20,
+      "text": "T3",
+      "width": 14,
+      "style": "EMPHASIS"
+    },
+    {
+      "where": "button[6]",
+      "x": 126,
+      "y": 20,
+      "text": "T4",
+      "width": 14,
+      "style": "EMPHASIS"
+    },
+    {
+      "where": "button[8]",
+      "x": 157,
+      "y": 20,
+      "text": "?",
+      "width": 6,
+      "style": "EMPHASIS"
+    },
+    {
+      "where": "button[45]",
+      "x": 14,
+      "y": 110,
+      "text": "戻る",
+      "width": 21,
+      "style": "EMPHASIS"
+    },
+    {
+      "where": "button[47]",
+      "x": 48,
+      "y": 110,
+      "text": "<",
+      "width": 7,
+      "style": "EMPHASIS"
+    },
+    {
+      "where": "button[48]",
+      "x": 75,
+      "y": 110,
+      "text": "1 / 4",
+      "width": 26,
+      "style": "EMPHASIS"
+    },
+    {
+      "where": "button[51]",
+      "x": 120,
+      "y": 110,
+      "text": ">",
+      "width": 7,
+      "style": "EMPHASIS"
+    },
+    {
+      "where": "button[52]",
+      "x": 140,
+      "y": 110,
+      "text": "工房",
+      "width": 22,
+      "style": "EMPHASIS"
+    }
+  ],
+  "drawn_art": [
+    {
+      "x": -70,
+      "y": 30,
+      "art": "STORAGE",
+      "size": 32
+    },
+    {
+      "x": 212,
+      "y": 30,
+      "art": "WOOD",
+      "size": 32
+    },
+    {
+      "x": 8,
+      "y": 36,
+      "art": "WOOD",
+      "size": 16
+    },
+    {
+      "x": 98,
+      "y": 36,
+      "art": "ORE",
+      "size": 16
+    },
+    {
+      "x": 8,
+      "y": 54,
+      "art": "STONE",
+      "size": 16
+    },
+    {
+      "x": 98,
+      "y": 54,
+      "art": "HIDE",
+      "size": 16
+    },
+    {
+      "x": 8,
+      "y": 72,
+      "art": "FIBER",
+      "size": 16
+    },
+    {
+      "x": 98,
+      "y": 72,
+      "art": "PLANK",
+      "size": 16
+    },
+    {
+      "x": 8,
+      "y": 90,
+      "art": "INGOT",
+      "size": 16
+    },
+    {
+      "x": 98,
+      "y": 90,
+      "art": "CUT_STONE",
+      "size": 16
+    }
+  ],
+  "raster_scale": 2,
+  "occupied_control_slots": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30,
+    32,
+    33,
+    34,
+    35,
+    36,
+    37,
+    38,
+    39,
+    41,
+    42,
+    43,
+    44,
+    45,
+    46,
+    47,
+    48,
+    49,
+    50,
+    51,
+    52,
+    53
+  ]
+}

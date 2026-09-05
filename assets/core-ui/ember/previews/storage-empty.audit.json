@@ -1,0 +1,209 @@
+{
+  "title": "素材倉庫 / T1",
+  "layer": "actual CoreMenuCanvas title layer",
+  "omitted": [
+    "vanilla item models",
+    "vanilla inventory label",
+    "hover highlights",
+    "tooltips"
+  ],
+  "warnings": [],
+  "icon_slots": [],
+  "drawn_text": [
+    {
+      "where": "title",
+      "x": 8,
+      "y": 6,
+      "text": "素材倉庫 / T1",
+      "width": 70,
+      "style": "EMPHASIS"
+    },
+    {
+      "where": "leftPanel.title",
+      "x": -98,
+      "y": 8,
+      "text": "保管庫",
+      "width": 33,
+      "style": "EMPHASIS"
+    },
+    {
+      "where": "leftPanel.lines[0]",
+      "x": -98,
+      "y": 72,
+      "text": "0 種類",
+      "width": 32,
+      "style": "EMPHASIS"
+    },
+    {
+      "where": "leftPanel.lines[1]",
+      "x": -98,
+      "y": 86,
+      "text": "T1 の素材",
+      "width": 40,
+      "style": "BODY"
+    },
+    {
+      "where": "leftPanel.lines[2]",
+      "x": -98,
+      "y": 100,
+      "text": "",
+      "width": 0,
+      "style": "BODY"
+    },
+    {
+      "where": "leftPanel.lines[3]",
+      "x": -98,
+      "y": 114,
+      "text": "旅で集めた素材を",
+      "width": 72,
+      "style": "BODY"
+    },
+    {
+      "where": "leftPanel.lines[4]",
+      "x": -98,
+      "y": 128,
+      "text": "次の装備へ",
+      "width": 45,
+      "style": "BODY"
+    },
+    {
+      "where": "rightPanel.title",
+      "x": 184,
+      "y": 8,
+      "text": "手に入れたもの",
+      "width": 74,
+      "style": "EMPHASIS"
+    },
+    {
+      "where": "rightPanel.lines[0]",
+      "x": 184,
+      "y": 72,
+      "text": "まだ何もありません",
+      "width": 78,
+      "style": "BODY"
+    },
+    {
+      "where": "rightPanel.lines[1]",
+      "x": 184,
+      "y": 86,
+      "text": "採取・討伐で入手",
+      "width": 69,
+      "style": "BODY"
+    },
+    {
+      "where": "button[0]",
+      "x": 18,
+      "y": 20,
+      "text": "T1",
+      "width": 13,
+      "style": "EMPHASIS"
+    },
+    {
+      "where": "button[2]",
+      "x": 54,
+      "y": 20,
+      "text": "T2",
+      "width": 14,
+      "style": "EMPHASIS"
+    },
+    {
+      "where": "button[4]",
+      "x": 90,
+      "y": 20,
+      "text": "T3",
+      "width": 14,
+      "style": "EMPHASIS"
+    },
+    {
+      "where": "button[6]",
+      "x": 126,
+      "y": 20,
+      "text": "T4",
+      "width": 14,
+      "style": "EMPHASIS"
+    },
+    {
+      "where": "button[8]",
+      "x": 157,
+      "y": 20,
+      "text": "?",
+      "width": 6,
+      "style": "EMPHASIS"
+    },
+    {
+      "where": "button[45]",
+      "x": 14,
+      "y": 110,
+      "text": "戻る",
+      "width": 21,
+      "style": "EMPHASIS"
+    },
+    {
+      "where": "button[47]",
+      "x": 48,
+      "y": 110,
+      "text": "<",
+      "width": 7,
+      "style": "EMPHASIS"
+    },
+    {
+      "where": "button[48]",
+      "x": 75,
+      "y": 110,
+      "text": "1 / 1",
+      "width": 25,
+      "style": "EMPHASIS"
+    },
+    {
+      "where": "button[51]",
+      "x": 120,
+      "y": 110,
+      "text": ">",
+      "width": 7,
+      "style": "EMPHASIS"
+    },
+    {
+      "where": "button[52]",
+      "x": 140,
+      "y": 110,
+      "text": "工房",
+      "width": 22,
+      "style": "EMPHASIS"
+    }
+  ],
+  "drawn_art": [
+    {
+      "x": -70,
+      "y": 30,
+      "art": "STORAGE",
+      "size": 32
+    },
+    {
+      "x": 212,
+      "y": 30,
+      "art": "STORAGE",
+      "size": 32
+    }
+  ],
+  "raster_scale": 2,
+  "occupied_control_slots": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    45,
+    46,
+    47,
+    48,
+    49,
+    50,
+    51,
+    52,
+    53
+  ]
+}

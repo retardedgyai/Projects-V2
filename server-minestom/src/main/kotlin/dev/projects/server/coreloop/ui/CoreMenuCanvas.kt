@@ -165,7 +165,7 @@ class CoreMenuCanvas(private val title: String) {
                     occupiedSlots(card.firstSlot, card.columns, card.rows))
             }, arts.map { ArtSnapshot(it.x, it.y, it.art.name, it.size) }, focus?.let {
                 val visible = trim(it.caption, 106, TextStyle.EMPHASIS)
-                FocusSnapshot(8, 44, 106, 64, ArtSnapshot(37, 48, it.art.name, 48), it.caption,
+                FocusSnapshot(8, 44, 106, 64, ArtSnapshot(37, 54, it.art.name, 48), it.caption,
                     8 + (106 - width(visible, TextStyle.EMPHASIS)) / 2, 100, 106,
                     HEADING.value(), TextStyle.EMPHASIS.name, FOCUS_SLOTS)
             })

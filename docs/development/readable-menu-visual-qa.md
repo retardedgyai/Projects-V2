@@ -19,6 +19,8 @@ python scripts/render_core_menu_preview.py .tools/menu-qa/forge.json --output .t
 描画には、実際のパック内の背景、フォントPNG、文字幅、ボタン状態を使用します。
 石板ピクセルUIでは、カードの全占有スロット・素材アイコン・装備の挿絵も実snapshotから描画します。
 日本語は2倍密度の原画を先に合成してから最終倍率へ変換し、先に1pxへ潰しません。
+炭火工房UIではBODY/EMPHASISの別字形・別advanceと、中央の装備・台座・キャプションも
+実snapshotから描画します。台座とカード／ボタンの描画順も実装と一致させます。
 不足字形・省略された文字列は併出力の `.audit.json` に記録します。
 `--strict` はこれらが1件でもあると終了コード2を返します。
 別worktreeのパックを確認する場合は `--repo <repoの絶対パス>` を指定できます。

@@ -1,0 +1,341 @@
+{
+  "title": "開拓港 / 手帳",
+  "layer": "actual CoreMenuCanvas title layer",
+  "omitted": [
+    "vanilla item models",
+    "vanilla inventory label",
+    "hover highlights",
+    "tooltips"
+  ],
+  "warnings": [],
+  "icon_slots": [],
+  "drawn_text": [
+    {
+      "where": "title",
+      "x": 8,
+      "y": 6,
+      "text": "開拓港 / 手帳",
+      "width": 68,
+      "style": "EMPHASIS"
+    },
+    {
+      "where": "leftPanel.title",
+      "x": -98,
+      "y": 8,
+      "text": "旅の装備",
+      "width": 44,
+      "style": "EMPHASIS"
+    },
+    {
+      "where": "leftPanel.lines[0]",
+      "x": -98,
+      "y": 72,
+      "text": "T3 武器 +6",
+      "width": 46,
+      "style": "BODY"
+    },
+    {
+      "where": "leftPanel.lines[1]",
+      "x": -98,
+      "y": 86,
+      "text": "レア",
+      "width": 17,
+      "style": "BODY"
+    },
+    {
+      "where": "leftPanel.lines[2]",
+      "x": -98,
+      "y": 100,
+      "text": "攻撃力 54",
+      "width": 42,
+      "style": "BODY"
+    },
+    {
+      "where": "leftPanel.lines[3]",
+      "x": -98,
+      "y": 114,
+      "text": "速度 +13.8%",
+      "width": 50,
+      "style": "BODY"
+    },
+    {
+      "where": "leftPanel.lines[4]",
+      "x": -98,
+      "y": 128,
+      "text": "MOD 6 / 6",
+      "width": 42,
+      "style": "BODY"
+    },
+    {
+      "where": "leftPanel.lines[5]",
+      "x": -98,
+      "y": 142,
+      "text": "",
+      "width": 0,
+      "style": "BODY"
+    },
+    {
+      "where": "leftPanel.lines[6]",
+      "x": -98,
+      "y": 156,
+      "text": "防具 T3 +6",
+      "width": 46,
+      "style": "BODY"
+    },
+    {
+      "where": "leftPanel.lines[7]",
+      "x": -98,
+      "y": 170,
+      "text": "HP 230",
+      "width": 29,
+      "style": "BODY"
+    },
+    {
+      "where": "rightPanel.title",
+      "x": 184,
+      "y": 8,
+      "text": "次の遠征",
+      "width": 44,
+      "style": "EMPHASIS"
+    },
+    {
+      "where": "rightPanel.lines[0]",
+      "x": 184,
+      "y": 72,
+      "text": "T1〜3",
+      "width": 31,
+      "style": "EMPHASIS"
+    },
+    {
+      "where": "rightPanel.lines[1]",
+      "x": 184,
+      "y": 86,
+      "text": "挑戦できる地域",
+      "width": 61,
+      "style": "BODY"
+    },
+    {
+      "where": "rightPanel.lines[2]",
+      "x": 184,
+      "y": 100,
+      "text": "",
+      "width": 0,
+      "style": "BODY"
+    },
+    {
+      "where": "rightPanel.lines[3]",
+      "x": 184,
+      "y": 114,
+      "text": "地図 9枚",
+      "width": 36,
+      "style": "BODY"
+    },
+    {
+      "where": "rightPanel.lines[4]",
+      "x": 184,
+      "y": 128,
+      "text": "道の先に待つボス",
+      "width": 71,
+      "style": "BODY"
+    },
+    {
+      "where": "rightPanel.lines[5]",
+      "x": 184,
+      "y": 142,
+      "text": "寄り道で見つかる素材",
+      "width": 88,
+      "style": "BODY"
+    },
+    {
+      "where": "card[9]",
+      "x": 23,
+      "y": 74,
+      "text": "遠征",
+      "width": 22,
+      "style": "EMPHASIS"
+    },
+    {
+      "where": "card[12]",
+      "x": 77,
+      "y": 74,
+      "text": "工房",
+      "width": 22,
+      "style": "EMPHASIS"
+    },
+    {
+      "where": "card[15]",
+      "x": 125,
+      "y": 74,
+      "text": "保管庫",
+      "width": 33,
+      "style": "EMPHASIS"
+    },
+    {
+      "where": "card[36]",
+      "x": 32,
+      "y": 92,
+      "text": "装備",
+      "width": 22,
+      "style": "EMPHASIS"
+    },
+    {
+      "where": "card[39]",
+      "x": 86,
+      "y": 92,
+      "text": "採取",
+      "width": 22,
+      "style": "EMPHASIS"
+    },
+    {
+      "where": "card[42]",
+      "x": 140,
+      "y": 92,
+      "text": "試練",
+      "width": 22,
+      "style": "EMPHASIS"
+    },
+    {
+      "where": "card[45]",
+      "x": 32,
+      "y": 110,
+      "text": "補給",
+      "width": 22,
+      "style": "EMPHASIS"
+    },
+    {
+      "where": "card[48]",
+      "x": 80,
+      "y": 110,
+      "text": "遊び方",
+      "width": 33,
+      "style": "EMPHASIS"
+    },
+    {
+      "where": "button[8]",
+      "x": 157,
+      "y": 20,
+      "text": "?",
+      "width": 6,
+      "style": "EMPHASIS"
+    },
+    {
+      "where": "button[51]",
+      "x": 126,
+      "y": 110,
+      "text": "閉じる",
+      "width": 31,
+      "style": "EMPHASIS"
+    }
+  ],
+  "drawn_art": [
+    {
+      "x": -70,
+      "y": 30,
+      "art": "WEAPON",
+      "size": 32
+    },
+    {
+      "x": 212,
+      "y": 30,
+      "art": "EXPEDITION",
+      "size": 32
+    },
+    {
+      "x": 18,
+      "y": 36,
+      "art": "EXPEDITION",
+      "size": 32
+    },
+    {
+      "x": 72,
+      "y": 36,
+      "art": "FORGE",
+      "size": 32
+    },
+    {
+      "x": 126,
+      "y": 36,
+      "art": "STORAGE",
+      "size": 32
+    },
+    {
+      "x": 8,
+      "y": 90,
+      "art": "GEAR",
+      "size": 16
+    },
+    {
+      "x": 62,
+      "y": 90,
+      "art": "GATHER",
+      "size": 16
+    },
+    {
+      "x": 116,
+      "y": 90,
+      "art": "TRIAL",
+      "size": 16
+    },
+    {
+      "x": 8,
+      "y": 108,
+      "art": "STORAGE",
+      "size": 16
+    },
+    {
+      "x": 62,
+      "y": 108,
+      "art": "HELP",
+      "size": 16
+    }
+  ],
+  "raster_scale": 2,
+  "occupied_control_slots": [
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30,
+    31,
+    32,
+    33,
+    34,
+    35,
+    36,
+    37,
+    38,
+    39,
+    40,
+    41,
+    42,
+    43,
+    44,
+    45,
+    46,
+    47,
+    48,
+    49,
+    50,
+    51,
+    52,
+    53
+  ]
+}
