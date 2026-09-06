@@ -67,6 +67,22 @@ internal object HarborBackdrop {
             max(hill(78,-55,27.0,41.0,30.0),hill(-8,-93,67.0,36.0,35.0)))
         if(rise<1.0) return null
         val erosion=(sin(x*.31+z*.09)*1.5+sin(z*.37-x*.11)).coerceIn(-2.0,2.0)
-        return (37 + rise + erosion).toInt().coerceAtLeast(36)
+        val summit = 37 + rise + erosion
+        // The authored rear lawn ends at y51 / z-62. Clipping the hill there used to expose
+        // a perfectly vertical, 13-block cut face directly in the hall's rear doorway.
+        // Grade the unbuilt side into that lawn; retain the distant summit and coastal cliffs.
+        val depth = (-62-z).toDouble()
+        val joinWeight = ((42.0-abs(x))/12.0).coerceIn(0.0,1.0)
+        val shoulder = sin(x*.19+depth*.13)*2.0 + sin(x*.37-depth*.18)
+        val lawn = 51.0 - (abs(x)-22).coerceAtLeast(0)*3.0
+        val skirt = lawn + depth*.85 + shoulder*(depth/12.0).coerceIn(0.0,1.0)
+        val top = if(depth>0 && depth<36 && joinWeight>0) {
+            // Fill the hill's shallow hollows as well as cutting its high face, so the east
+            // end of the lawn does not become a new drop at the same seam.
+            val t=(depth/36.0).coerceIn(0.0,1.0)
+            val blend=t*t*(3.0-2.0*t)
+            summit + (skirt-summit)*(1.0-blend)*joinWeight
+        } else summit
+        return top.toInt().coerceAtLeast(36)
     }
 }

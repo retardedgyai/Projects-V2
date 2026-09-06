@@ -29,6 +29,8 @@ object HarborPreviewServer {
             "HarborFoundry" to Pos(-7.5, 41.0, 1.5, 123f, -15f),
             "HarborAcademy" to Pos(8.5, 41.0, 0.5, -125f, -22f),
             "HarborHall" to Pos(0.5, 53.0, -33.5, 180f, -18f),
+            "HarborRear" to Pos(10.5, 53.0, -49.5, 180f, -8f),
+            "HarborAlley" to Pos(-27.5, 41.0, 12.5, 180f, -14f),
             "HarborBerth" to Pos(-13.5, 41.0, 23.5, 50f, -10f),
             "HarborBoarding" to Pos(-10.5, 41.0, 34.5, 90f, -8f),
             "HarborOverview" to Pos(43.5, 72.0, 50.5, 147f, 24f),

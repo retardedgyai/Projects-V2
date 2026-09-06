@@ -17,6 +17,15 @@ class HarborSceneTest {
         assertTrue(requireNotNull(HarborBackdrop.height(-72,-45)) > 50)
         assertTrue(requireNotNull(HarborBackdrop.height(78,-55)) > 60)
         assertTrue(requireNotNull(HarborBackdrop.height(-8,-93)) > 65)
+        // The rear lawn is y51: no straight quarry wall may begin at the generator boundary.
+        for(x in -18..18) {
+            assertTrue(requireNotNull(HarborBackdrop.height(x,-63)) in 50..52, "Rear ground jumps at $x")
+            for(z in -79..-63) {
+                val here=requireNotNull(HarborBackdrop.height(x,z))
+                val north=requireNotNull(HarborBackdrop.height(x,z-1))
+                assertTrue(kotlin.math.abs(north-here)<=2, "Cut face in rear foothill $x,$z")
+            }
+        }
     }
 
     @Test
@@ -60,6 +69,7 @@ class HarborSceneTest {
                 )
             }
             assertTrue(0 to 33 in reached, "The pier cannot be reached from arrival")
+            for(z in -2..14) assertTrue(-26 to z in reached, "West alley disconnected at $z")
             assertTrue(-28 to 40 in reached && 29 to 35 in reached, "Both ship decks must connect to the public pier")
             for(xs in listOf(-25..-13,14..27)) for(x in xs) for(z in 33..35)
                 assertTrue(walkable(x,z), "Three-block boarding route blocked $x,$z")
