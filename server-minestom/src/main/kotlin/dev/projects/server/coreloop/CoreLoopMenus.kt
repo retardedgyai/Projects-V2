@@ -200,9 +200,9 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
             tiers(v, tier) { expeditions(player, it) }
             tile(v, 8, 1, "採", CoreLoopItems.icon(Material.OAK_SAPLING, "討伐不要の採取地図")) { surveyMaps(player, tier) }
             v.canvas.left("遠征先 T$tier", lines("所持 ${maps.size}枚", "解放 T1〜${a.unlockedMapTier}", "目安装備 T$tier", "武器 T${a.weaponTier}", "", "選ぶ → 調整", "選択では未消費"), hero = CoreMenuArt.EXPEDITION)
-            v.canvas.right("地図の入手", lines(if (tier == 1) "T1は無料" else "T${tier - 1} 戦利品券1枚", if (tier == 1) "何度でも入手可能" else "所持 ${a.amount(CoreResource.COMBAT_TOKEN, tier - 1)}", "", "前Tierのボス討伐", "次のTierを解放", "", if (!unlocked) "このTierは未解放" else if (!room) "地図の保管上限" else if (!affordable) "戦利品券が不足" else "右下から受け取る"), hero = CoreMenuArt.TABLET)
+            v.canvas.right("地図の入手", lines(if (tier == 1) "T1は無料" else "T${tier - 1} 戦利品券1枚", if (tier == 1) "何度でも入手可能" else "所持 ${a.amount(CoreResource.COMBAT_TOKEN, tier - 1)}", "", "同TierのLv上限で", "ボス討伐→次Tier", "", if (!unlocked) "このTierは未解放" else if (!room) "地図の保管上限" else if (!affordable) "戦利品券が不足" else "右下から受け取る"), hero = CoreMenuArt.TABLET)
             maps.drop(current * mapSlots.size).take(mapSlots.size).forEachIndexed { index, map ->
-                card(v, mapSlots[index], 3, 2, "地図${current * mapSlots.size + index + 1}", CoreMenuArt.EXPEDITION, CoreLoopItems.map(map)) { mapDetail(player, map.id) }
+                card(v, mapSlots[index], 3, 2, "Lv${map.level} 地図", CoreMenuArt.EXPEDITION, CoreLoopItems.map(map)) { mapDetail(player, map.id) }
             }
             if (maps.isEmpty()) v.canvas.text(8, 56, "地図なし → 右下で入手", CoreUiComponents.MUTED, 160)
             back(v, player, if (journey(player).isEmpty) "手帳" else "元へ") {
@@ -246,11 +246,11 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
         view(player, "旅の始まり / 成長と職業", { career(player) }) { v ->
             v.canvas.left("${a.journey.job.displayName} Lv${a.journey.level}",
                 lines("経験 ${a.journey.xp}", if (a.journey.level < 40) "次まで ${CoreJourneyRules.threshold(a.journey.level + 1) - a.journey.xp}" else "冒険Lv最大", "T1 Lv1〜10", "T2 Lv11〜20", "T3 Lv21〜30", "T4 Lv31〜40", "技能解放 Lv1/4/8"), hero = CoreMenuArt.GEAR)
-            v.canvas.right("次の一歩", paragraph(CoreJourneyRules.next(a)) + lines("", "港で職業を変更可能", "装備と経験は保持", "採取でも経験を獲得"), hero = CoreMenuArt.EXPEDITION)
+            v.canvas.right("次の一歩", paragraph(CoreJourneyRules.next(a)) + lines("", "導入 ${(0..5).count(a.journey::knows)}/6", "港で職業を変更可能", "装備と経験は保持", "採取でも経験を獲得"), hero = CoreMenuArt.EXPEDITION)
             CoreClass.entries.forEachIndexed { i, job ->
                 val slot = listOf(9, 12, 15, 27)[i]
                 val eligible = a.activeRun == null && (job != CoreClass.STARWEAVER || ((a.journey.job == CoreClass.MAGE || a.journey.job == CoreClass.STARWEAVER) && a.journey.level >= 20 && a.amount(CoreResource.BOSS_SIGIL, 2) >= 2))
-                card(v, slot, 3, if (i == 3) 1 else 2, if (job == CoreClass.STARWEAVER) "星織り" else job.displayName, if (job.magic) CoreMenuArt.ORB else CoreMenuArt.WEAPON,
+                card(v, slot, 3, if (i == 3) 1 else 2, if (job == CoreClass.STARWEAVER) "星織り" else job.displayName, if (job.magic) CoreMenuArt.ARCANE else if (job == CoreClass.RANGER) CoreMenuArt.ARROW else CoreMenuArt.WEAPON,
                     CoreLoopItems.icon(if (job.magic) Material.AMETHYST_SHARD else Material.IRON_SWORD, job.displayName, job.description,
                         if (job == CoreClass.STARWEAVER) "メイジLv20 + T2討伐証2枚（非消費）" else "港でいつでも選び直せます"),
                     if (!eligible) Tone.DISABLED else if (a.journey.chosen && job == a.journey.job) Tone.SELECTED else Tone.PRIMARY) {
@@ -260,7 +260,7 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
             card(v, 30, 3, 1, "武器型", CoreMenuArt.FORGE) { weaponBases(player, CoreForgeLayout.Selection(tab = CoreForgeLayout.Tab.CRAFT, tier = a.weaponTier)) }
             card(v, 33, 3, 1, "鍛錬", CoreMenuArt.WEAPON) { temper(player) }
             a.journey.job.skills.forEachIndexed { i, name ->
-                tile(v, 36 + i * 3, 3, name.replace("踏み込み斬り", "踏込斬り"), CoreLoopItems.icon(Material.PAPER, name, "ホットバー${i + 2}番 / Lv${listOf(1, 4, 8)[i]}で解放"),
+                tile(v, 36 + i * 3, 3, name.replace("踏み込み斬り", "踏込斬り"), CoreLoopItems.icon(Material.PAPER, name, a.journey.job.skillDescriptions[i], "ホットバー${i + 2}番 / Lv${listOf(1, 4, 8)[i]}で解放"),
                     if (CoreJourneyRules.skillUnlocked(a, i)) Tone.SELECTED else Tone.DISABLED)
             }
             back(v, player, "手帳")
@@ -277,7 +277,7 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
             v.canvas.left("同じTierの選択", lines("T1から全型を制作", "型の特徴は固定", "MODは後から抽選", "強化と品質は保持", "職業で使える系統が変化"), hero = CoreMenuArt.WEAPON)
             v.canvas.right("制作と購入", lines("採取素材から制作", "上位製造に低Tier材", "良い型を選んで厳選", "今の職業", a.journey.job.displayName), hero = CoreMenuArt.FORGE)
             CoreWeaponBase.entries.forEachIndexed { i, base ->
-                card(v, mapSlots[i], 3, 2, base.displayName, CoreMenuArt.WEAPON,
+                card(v, mapSlots[i], 3, 2, base.displayName, when (base) { CoreWeaponBase.LONGBOW -> CoreMenuArt.ARROW; CoreWeaponBase.STAFF -> CoreMenuArt.ARCANE; else -> CoreMenuArt.WEAPON },
                     CoreLoopItems.icon(Material.IRON_SWORD, base.displayName, base.detail, "使用可：${CoreClass.entries.filter(base::usable).joinToString { it.displayName }}"),
                     if (s.base == base) Tone.SELECTED else Tone.NEUTRAL) { forge(player, s.copy(tab = CoreForgeLayout.Tab.CRAFT, gear = CoreGearSlot.WEAPON, base = base, recipe = 0)) }
             }
@@ -500,7 +500,7 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
         val (recipe, action) = entry.build(count)
         val summary = CoreForgeSummary.recipe(a, recipe)
         val output = if (!isEquipment && entry.batches) recipe.outputs.flatMap { (key, amount) -> lines("${resourceName(key.resource)} ×$amount", "所持 ${a.amount(key)}") }
-            else lines("T${s.tier} ${s.gear.displayName} ×$count", "新品を装備庫へ保管", "製造品質を個別抽選", "今の装備は変更なし")
+            else lines("T${s.tier} ${s.gear.displayName} ×$count") + paragraph(if (s.gear == CoreGearSlot.WEAPON) s.base.displayName else "防具セット") + lines("新品を装備庫へ保管", "製造品質を個別抽選", "今の装備は変更なし")
         v.canvas.left("完成するもの", output + lines("今回 $count 回", "制作可能 $maximum 回") +
             (summary.blockedReason?.let { paragraph(it, CoreUiComponents.RED) } ?: lines("制作できます")),
             hero = recipe.outputs.keys.firstOrNull()?.let { materialArt(it.resource) } ?: gearArt(s.gear))

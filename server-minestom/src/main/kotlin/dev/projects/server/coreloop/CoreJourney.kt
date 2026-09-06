@@ -19,6 +19,12 @@ enum class CoreClass(val displayName: String, val description: String) {
         MAGE -> listOf("火炎弾", "霜の波紋", "流星雨")
         STARWEAVER -> listOf("星糸", "星環", "星降る夜")
     }
+    val skillDescriptions get() = when (this) {
+        WARRIOR -> listOf("敵の手前まで踏み込み、前方を斬る", "構えた地点から前方へ強い一撃", "自分の周囲へ三回の斬撃")
+        RANGER -> listOf("狙った射線上の敵を最大三体貫通", "前方の扇へ霜矢。命中した敵を減速", "前方の地点へ三回の矢の雨")
+        MAGE -> listOf("狙った敵へ遠距離の火炎弾", "周囲の敵を術式で攻撃し減速", "前方の地点へ三回の流星")
+        STARWEAVER -> listOf("通常三命中で編む。三蓄積なら星糸が三体貫通", "三蓄積なら減速延長とマナ12回復", "三蓄積なら星降りが四回に増加")
+    }
 }
 
 enum class CoreWeaponBase(val displayName: String, val detail: String, val power: Double = 1.0, val speed: Double = 1.0) {

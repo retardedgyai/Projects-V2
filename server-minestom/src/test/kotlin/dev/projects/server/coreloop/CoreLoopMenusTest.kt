@@ -654,6 +654,9 @@ class CoreLoopMenusTest {
         capture("dungeon-boons") { f.menus.dungeonRun(f.player) }
         f.host.dungeonState = null
         capture("journal") { f.menus.journal(f.player) }
+        capture("career") { f.menus.career(f.player) }
+        capture("weapon-bases") { f.menus.career(f.player); f.click(30) }
+        capture("temper") { f.menus.career(f.player); f.click(33) }
         capture("forge-enhance") { f.menus.workshop(f.player, 3); f.click(CoreForgeLayout.ARMOR); f.click(CoreLoopMenus.ENHANCE_CATALYST) }
         capture("forge-weapon") { f.click(CoreForgeLayout.WEAPON); f.click(CoreLoopMenus.ENHANCE_STANDARD) }
         capture("forge-catalyst-weapon") { f.click(CoreLoopMenus.ENHANCE_CATALYST) }

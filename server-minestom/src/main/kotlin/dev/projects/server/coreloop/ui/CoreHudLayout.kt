@@ -16,12 +16,13 @@ internal object CoreHudLayout {
     val skillLeft = listOf(-52, -16, 20)
     const val READY = 0
     const val NO_MANA = 21
+    const val LOCKED = 22
     private const val DIGITS = "0123456789/HMP"
 
     data class SkillVisual(val frame: Int, val centre: String)
 
     fun skillVisual(skill: CoreHudSkill, mana: Double): SkillVisual {
-        if (!skill.unlocked) return SkillVisual(22, "")
+        if (!skill.unlocked) return SkillVisual(LOCKED, "")
         val remaining = skill.remainingSeconds.takeIf { it.isFinite() }?.coerceAtLeast(0.0) ?: 0.0
         if (remaining > 0.0) {
             val total = skill.totalSeconds.takeIf { it.isFinite() && it > 0.0 } ?: remaining
@@ -59,6 +60,7 @@ internal object CoreHudLayout {
         }
         bar(HEALTH_X, state.health, state.maxHealth, 0xE300, "HP")
         bar(MANA_X, state.mana, state.maxMana, 0xE320, "MP")
+        state.charges?.let { charge -> layer(-6, digits("${charge.coerceIn(0,3)}/3", 0xE540), 12) }
         state.skills.take(3).forEachIndexed { index, skill ->
             val kind = skill.artIndex?.coerceIn(0, 11) ?: when (skill.icon) {
                 CoreUiIcon.DASH -> 0

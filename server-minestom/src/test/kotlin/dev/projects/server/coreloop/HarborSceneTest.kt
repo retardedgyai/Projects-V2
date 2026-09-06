@@ -52,6 +52,12 @@ class HarborSceneTest {
             }
             assertTrue(0 to 33 in reached, "The pier cannot be reached from arrival")
             assertEquals(Block.WATER, instance.getBlock(50, 38, 50), "Outside the harbor should be sea, not void")
+            for (step in 0..11) {
+                val z=-15-step; val y=40+step
+                assertTrue(instance.getBlock(8,y,z).name().contains("stairs"), "Missing upper hall step $step")
+                assertTrue(instance.getBlock(8,y+1,z).isAir && instance.getBlock(8,y+2,z).isAir, "Upper hall stair headroom $step")
+            }
+            for (z in -29..-27) assertTrue(instance.getBlock(8,53,z).isAir && instance.getBlock(8,54,z).isAir, "Hall entry blocked at $z")
             // Export actual generated blocks, not an aspirational concept illustration.
             val target = java.nio.file.Path.of("build/reports/harbor-blocks.tsv")
             java.nio.file.Files.createDirectories(target.parent)

@@ -58,11 +58,12 @@ internal class CorePlayerCombat(
     private var skillBoost = 1.0
     private var castCharges = 0
     private var lastChargeTick = -1L
-    private val taught = mutableSetOf<Int>()
+    private val lessonAttempts = mutableMapOf<Int, Long>()
     val classId get() = journey().job
     val skillNames get() = classId.skills
     fun skillAvailable(index: Int) = journey().legacy || journey().level >= listOf(1, 4, 8)[index]
     val weaponHint get() = if (weaponBase() == CoreWeaponBase.CONDUIT || classId == CoreClass.STARWEAVER) "蓄積 $charges/3" else weaponBase().displayName
+    val chargeCount: Int? get() = if (weaponBase() == CoreWeaponBase.CONDUIT || classId == CoreClass.STARWEAVER) charges else null
     var defeated = false
         private set
     private var manaValue = 100.0
@@ -264,7 +265,10 @@ internal class CorePlayerCombat(
         val damage = (attackDamage * multiplier * (1 + tagBonus / 100.0) + element) * (if (skill) skillBoost else 1.0) * criticalMultiplier * if (weak) 1.25 else 1.0
         val applied = (if (classId != CoreClass.WARRIOR) enemies.applyProjectileDamage(id, player, damage)
             else enemies.applyDamageAmount(id, player, damage)) ?: return
-        if (taught.add(if (skill) 1 else 0)) onLesson(if (skill) 1 else 0)
+        val lesson = if (skill) 1 else 0
+        if (!journey().knows(lesson) && tickNumber - (lessonAttempts[lesson] ?: -100L) >= 20) {
+            lessonAttempts[lesson] = tickNumber; onLesson(lesson)
+        }
         if (!skill && lastChargeTick != tickNumber && (weaponBase() == CoreWeaponBase.CONDUIT || classId == CoreClass.STARWEAVER)) {
             charges = (charges + 1).coerceAtMost(3); lastChargeTick = tickNumber
         }

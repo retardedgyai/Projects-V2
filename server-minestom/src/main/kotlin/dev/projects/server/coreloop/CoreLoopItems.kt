@@ -184,10 +184,11 @@ internal object CoreLoopItems {
         if (projection(player.inventory.cursorItem)) player.inventory.cursorItem = ItemStack.AIR
         player.inventory.setItemStack(0, gear(account, CoreGearSlot.WEAPON, packed))
         val skillIcons = listOf(Material.FEATHER, Material.IRON_SWORD, Material.BLAZE_POWDER)
-        val descriptions = listOf("前方へ踏み込み斬る / マナ15 / 4秒", "前方の広範囲を叩く / マナ25 / 7秒", "周囲へ3連撃 / マナ35 / 11秒")
+        val descriptions = account.journey.job.skillDescriptions
         for (id in 0..2) {
             val available = CoreJourneyRules.skillUnlocked(account, id)
             var item = icon(skillIcons[id], (if (available) "" else "【未解放】") + account.journey.job.skills[id],
+                descriptions[id],
                 "${account.journey.job.displayName} / マナ${listOf(15, 25, 35)[id]} / 再使用${listOf(4, 7, 11)[id]}秒",
                 "Lv${listOf(1, 4, 8)[id]}で解放 / 選んで右クリック").withTag(actionTag, "skill:$id")
             if (packed) item = item.withItemModel("projects:core_ui/${account.journey.job.icons[id]}")

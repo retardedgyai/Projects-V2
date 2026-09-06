@@ -80,12 +80,13 @@ object CoreUiComponents {
                 val status = when (visual.frame) {
                     CoreHudLayout.READY -> "可"
                     CoreHudLayout.NO_MANA -> "マナ不足"
+                    CoreHudLayout.LOCKED -> "未解放"
                     else -> "${visual.centre}秒"
                 }
                 "${it.key}:$status"
             }
             return text("HP ${number(state.health)}/${number(state.maxHealth)}  マナ ${number(state.mana)}/${number(state.maxMana)}", GOLD)
-                .append(text("  $cooldowns", IVORY))
+                .append(text("  $cooldowns" + (state.charges?.let { "  蓄積 ${it.coerceIn(0,3)}/3" } ?: ""), IVORY))
                 .append(if (state.hint.isBlank()) Component.empty() else text("  ${state.hint}", MUTED))
         }
         return CoreHudLayout.render(state)

@@ -788,7 +788,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         else "道の先のボスへ  戦利品 ${session.loot.remainingCount()}"
         val icons = listOf(CoreUiIcon.DASH, CoreUiIcon.SLAM, CoreUiIcon.WHIRL)
         player.sendActionBar(CoreUiComponents.hud(CoreHudState(actor.health, actor.maxHealth.toDouble(), actor.mana.toDouble(), actor.maxMana.toDouble(),
-            icons.mapIndexed { i, icon -> CoreHudSkill(icon, (i + 2).toString(), actor.cooldownRemaining(i) / 20.0, actor.cooldownTicks(i) / 20.0, listOf(15, 25, 35)[i], actor.classId.ordinal * 3 + i, actor.skillAvailable(i)) }, message), packed(player)))
+            icons.mapIndexed { i, icon -> CoreHudSkill(icon, (i + 2).toString(), actor.cooldownRemaining(i) / 20.0, actor.cooldownTicks(i) / 20.0, listOf(15, 25, 35)[i], actor.classId.ordinal * 3 + i, actor.skillAvailable(i)) }, message, actor.chargeCount), packed(player)))
     }
 
     override fun sessionSummary(player: Player): String = dungeons.run(player)?.objective() ?: sessions[player.uuid]?.let {

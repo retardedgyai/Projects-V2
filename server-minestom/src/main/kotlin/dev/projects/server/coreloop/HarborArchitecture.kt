@@ -42,7 +42,7 @@ internal class HarborArchitecture(private val instance: InstanceContainer) {
             if (abs(x) == 12) put(x, roofY - 1, z, Block.DARK_OAK_STAIRS)
         }
         for (x in listOf(-11, 11)) for (z in listOf(-42, -35, -28)) box(x, x, 44, 58, z, z, Block.STRIPPED_DARK_OAK_LOG)
-        for (x in -10..10) put(x, 54, -28, Block.SPRUCE_FENCE)
+        for (x in -10..7) put(x, 54, -28, Block.SPRUCE_FENCE)
         box(-11, 11, 52, 52, -42, -28, Block.SPRUCE_PLANKS)
         box(-10, 10, 53, 57, -42, -42, Block.SANDSTONE)
         for (x in listOf(-11,-6,0,6,11)) box(x,x,41,51,-28,-28,Block.STONE_BRICKS)

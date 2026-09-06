@@ -348,6 +348,28 @@
         "32": 28,
         "48": 42
       }
+    },
+    {
+      "name": "ARROW",
+      "ordinal": 29,
+      "source": "skills",
+      "source_cell": 0,
+      "advances": {
+        "16": 16,
+        "32": 31,
+        "48": 46
+      }
+    },
+    {
+      "name": "ARCANE",
+      "ordinal": 30,
+      "source": "skills",
+      "source_cell": 1,
+      "advances": {
+        "16": 16,
+        "32": 30,
+        "48": 45
+      }
     }
   ],
   "sources": {

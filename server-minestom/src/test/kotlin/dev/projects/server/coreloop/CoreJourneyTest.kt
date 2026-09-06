@@ -6,6 +6,27 @@ import java.util.UUID
 import kotlin.test.*
 
 class CoreJourneyTest {
+    @Test fun `first class through six real tutorial actions can create equip and roll a chosen weapon`() {
+        val f = Fixture(); f.act(CoreAction.ChooseClass(CoreClass.MAGE)); f.act(CoreAction.ClaimMap(1,18)); val run=f.start()
+        f.act(CoreAction.LearnCombat(0)); f.act(CoreAction.LearnCombat(1))
+        f.act(CoreAction.AffixLoot(run,"first-enemy",CoreLootKind.NORMAL))
+        assertTrue(f.a.amount(CoreCraftingCurrency.TRANSMUTATION) >= 1)
+        for (raw in CoreLoopCatalog.refined.keys) f.act(CoreAction.Gather(run,"first-$raw",raw,16))
+        f.act(CoreAction.FinishRun(run))
+        for (raw in CoreLoopCatalog.refined.keys) f.act(CoreAction.Refine(raw,1,8))
+        val staff=f.act(CoreAction.Manufacture(CoreGearSlot.WEAPON,1,1,CoreWeaponBase.STAFF)).storedGear.last()
+        f.act(CoreAction.Equip(staff.identity.id)); f.act(CoreAction.CraftEquipment(CoreGearSlot.WEAPON,CoreCraftingCurrency.TRANSMUTATION))
+        f.reload(); assertEquals(63,f.a.journey.lessons); assertEquals(staff.identity,f.a.weaponIdentity)
+        assertEquals(CoreGearRarity.MAGIC,f.a.weaponRarity); assertTrue(f.a.equippedAffixes.isNotEmpty())
+    }
+    @Test fun `repair buy orders accept same family variants and reject unrelated class gear`() {
+        val id=UUID.randomUUID()
+        fun item(base:CoreWeaponBase)=CoreStoredGear(CoreGearIdentity(UUID.randomUUID(),id,base=base),CoreGearSlot.WEAPON,2,CoreGearRarity.NORMAL,CoreEnhancementState())
+        val order=CoreBuyOrder(UUID.randomUUID(),100,1,2,slot=CoreGearSlot.WEAPON,family="greatsword")
+        assertTrue(order.accepts(item(CoreWeaponBase.FLOW))); assertFalse(order.accepts(item(CoreWeaponBase.STAFF)))
+        val a=CoreAccount(id,buyOrders=listOf(order)); val roundTrip=CoreAccountCodec.decode(CoreAccountCodec.encode(a),id)
+        assertEquals(order,roundTrip.buyOrders.single())
+    }
     private class Fixture(initial: CoreAccount? = null) {
         val dir = Files.createTempDirectory("journey-test-")
         val id = initial?.playerId ?: UUID.randomUUID()

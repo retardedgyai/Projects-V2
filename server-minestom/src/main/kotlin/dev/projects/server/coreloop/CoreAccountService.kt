@@ -266,7 +266,10 @@ class CoreAccountService(private val repository: CoreAccountRepository,
                 // Old token-only and new visible loot callbacks cannot pay for the same enemy twice.
                 if (!tokensAlreadyPaid) updated = addSource(updated, combatSource)
             }
-            val currencies = CoreCraftingCatalog.rollLoot(run, action.sourceId, action.kind)
+            val rolledCurrencies = CoreCraftingCatalog.rollLoot(run, action.sourceId, action.kind)
+            // One deterministic introduction reward: a normal starter must be able to try MOD crafting.
+            val currencies = if (!account.journey.legacy && !account.journey.knows(2))
+                rolledCurrencies + (CoreCraftingCurrency.TRANSMUTATION to ((rolledCurrencies[CoreCraftingCurrency.TRANSMUTATION] ?: 0L) + 1L)) else rolledCurrencies
             val dust = CoreAffixCatalog.lootDust(action.kind)
             val outputs = mutableMapOf(CoreMaterial(CoreResource.AFFIX_DUST) to dust)
             val tokens = if (tokensAlreadyPaid) 0L else CoreAffixCatalog.lootTokens(action.kind)

@@ -24,6 +24,14 @@ import kotlin.test.assertTrue
 
 /** Real Minestom entities, but no sockets, external client, native input, or live server port. */
 class CorePlayerCombatTest {
+    @Test fun `Starweaver weaves three normal hits then consumes them in four enhanced starfall pulses`() = arena(bossDistance = 7.0) { h ->
+        h.journey = CoreJourney(job=CoreClass.STARWEAVER); h.base=CoreWeaponBase.STAFF
+        repeat(3) { h.actor.attack(); h.ticks(20) }
+        assertEquals(3,h.actor.chargeCount)
+        val before=h.combat.bossHealth(); h.actor.skill(2); assertEquals(0,h.actor.chargeCount)
+        h.ticks(40)
+        assertEquals(before - 12 * .92 * 1.35 * 1.45 * 4,h.combat.bossHealth(),.00001)
+    }
     @Test fun `bow and mage projectile hit at twelve blocks but not through a wall`() {
         for (job in listOf(CoreClass.RANGER, CoreClass.MAGE, CoreClass.STARWEAVER)) arena(bossDistance = 12.0) { h ->
             h.journey = CoreJourney(job = job); h.base = if (job == CoreClass.RANGER) CoreWeaponBase.LONGBOW else CoreWeaponBase.STAFF
