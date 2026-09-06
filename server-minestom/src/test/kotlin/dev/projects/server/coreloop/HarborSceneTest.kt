@@ -34,7 +34,7 @@ class HarborSceneTest {
             assertEquals(5, scene.labels.size)
 
             fun walkable(x: Int, z: Int): Boolean =
-                x in -32..32 && z in -28..39 && instance.getBlock(x, 40, z).isSolid &&
+                x in -36..36 && z in -28..56 && instance.getBlock(x, 40, z).isSolid &&
                     instance.getBlock(x, 41, z).isAir && instance.getBlock(x, 42, z).isAir
 
             val reached = mutableSetOf(spawn.blockX() to spawn.blockZ())
@@ -60,6 +60,12 @@ class HarborSceneTest {
                 )
             }
             assertTrue(0 to 33 in reached, "The pier cannot be reached from arrival")
+            assertTrue(-28 to 40 in reached && 29 to 35 in reached, "Both ship decks must connect to the public pier")
+            for(xs in listOf(-25..-13,14..27)) for(x in xs) for(z in 33..35)
+                assertTrue(walkable(x,z), "Three-block boarding route blocked $x,$z")
+            for(z in 21..24) assertTrue(walkable(-29,z), "Cargo bow still overlaps the shore quay $z")
+            assertEquals(Block.DARK_OAK_PLANKS,instance.getBlock(-32,44,51), "Cargo lantern floats above a bottom slab")
+            assertEquals(Block.WAXED_WEATHERED_CUT_COPPER,instance.getBlock(28,43,41), "Cutter lantern floats above a bottom slab")
             assertTrue(10 to -14 in reached, "The upper hall stair foot must connect to the public loop")
             for (x in -2..2) for (z in -11..37) {
                 assertTrue(walkable(x, z), "Five-block arrival spine obstructed at $x,$z")
@@ -90,6 +96,16 @@ class HarborSceneTest {
                 }
             }
             assertTrue(0 to -40 in upperReached, "The gallery stairs must actually reach the hall interior")
+            for(x in -2..2) for(z in -48..-31)
+                assertTrue(upperWalkable(x,z), "Hall central aisle obstructed $x,$z")
+            for(z in listOf(-46,-40,-34)) for(x in listOf(-11,11)) for(y in 52..61)
+                assertTrue(instance.getBlock(x,y,z).isSolid, "Hall frame is unsupported $x,$y,$z")
+            for(z in listOf(-43,-37)) {
+                assertEquals("minecraft:lantern",instance.getBlock(0,59,z).name())
+                assertTrue(instance.getBlock(0,60,z).isSolid, "Hall light has no suspension frame")
+                for(y in 61..63) assertEquals("minecraft:iron_chain",instance.getBlock(0,y,z).name())
+                assertTrue(instance.getBlock(0,64,z).isSolid, "Chandelier chain has no roof beam")
+            }
             for (x in -12..12) for (z in -48..-31)
                 assertTrue(instance.getBlock(x,51,z).isSolid, "The great hall floats above an unsupported floor $x,$z")
             for (x in -22..-12) {
@@ -174,7 +190,7 @@ class HarborSceneTest {
             val target = java.nio.file.Path.of("build/reports/harbor-blocks.tsv")
             java.nio.file.Files.createDirectories(target.parent)
             java.nio.file.Files.newBufferedWriter(target).use { out ->
-                for (x in -55..55) for (z in -62..50) for (y in 34..86) {
+                for (x in -55..55) for (z in -62..58) for (y in 34..86) {
                     val b = instance.getBlock(x,y,z)
                     if (!b.isAir && b != Block.WATER && listOf(Triple(1,0,0),Triple(-1,0,0),Triple(0,1,0),Triple(0,-1,0),Triple(0,0,1),Triple(0,0,-1)).any { (dx,dy,dz) -> instance.getBlock(x+dx,y+dy,z+dz).let { it.isAir || it == Block.WATER } })
                         out.appendLine("$x\t$y\t$z\t${b.name()}")

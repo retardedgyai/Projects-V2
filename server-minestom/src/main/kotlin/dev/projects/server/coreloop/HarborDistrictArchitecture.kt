@@ -47,8 +47,9 @@ internal class HarborDistrictArchitecture(private val instance: InstanceContaine
         tradingOriel()
         streetFurniture()
         planting()
-        ship(-29, 34, Block.RED_WOOL, 1)
+        ship(-29, 42, Block.RED_WOOL, 1)
         fishingCutter(30, 36)
+        boardingPiers()
         connectDetails()
     }
 
@@ -380,12 +381,59 @@ internal class HarborDistrictArchitecture(private val instance: InstanceContaine
         for (x in listOf(-12, -6, 6, 12)) put(x, 58, -30, Block.RED_WALL_BANNER.withProperty("facing", "south"))
         for (x in -16..16) put(x,53,-50,Block.DARK_OAK_FENCE)
         bellTower(-22, -39)
-        for (x in listOf(-9, 9)) for (z in listOf(-43, -37)) {
+        for (x in listOf(-7, 7)) for (z in listOf(-43, -37)) {
             box(x - 1, x + 1, 53, 53, z, z + 1, Block.SPRUCE_FENCE)
             box(x - 1, x + 1, 54, 54, z, z + 1, Block.SPRUCE_SLAB)
             for (dx in listOf(-2, 2)) box(x + dx, x + dx, 53, 53, z, z + 1,
                 stair(Block.SPRUCE_STAIRS, if (dx < 0) "east" else "west"))
         }
+        hallInterior()
+    }
+
+    private fun hallInterior() {
+        // Three supported transverse frames, with continuous braces instead of diagonal floating blocks.
+        for(z in listOf(-46,-40,-34)) {
+            for(side in listOf(-1,1)) {
+                put(side*11,53,z,Block.CHISELED_STONE_BRICKS)
+                box(side*11,side*11,54,61,z,z,timber)
+                for(i in 0..5) {
+                    val x=side*(11-i)
+                    box(x,x,59+i,60+i,z,z,Block.DARK_OAK_PLANKS)
+                }
+                box(minOf(side*11,side*13),maxOf(side*11,side*13),62,62,z,z,logX())
+                put(side*10,58,z,logX())
+                put(side*10,57,z,Block.LANTERN.withProperty("hanging","true"))
+            }
+            box(-6,6,64,64,z,z,logX())
+            box(0,0,65,73,z,z,timber)
+            // Rafters follow the underside of the built roof and meet the side-wall plate.
+            for(x in -13..13) {
+                val underside=62+roofRise(16,abs(x))
+                box(x,x,underside-1,underside,z,z,if(x==0) timber else logX())
+            }
+        }
+        box(0,0,64,64,-46,-34,logZ())
+        for(z in listOf(-43,-37)) {
+            box(0,0,61,63,z,z,Block.IRON_CHAIN)
+            box(-2,2,60,60,z,z,Block.IRON_BARS)
+            for(x in listOf(-2,2)) {
+                box(x,x,60,60,z-1,z+1,Block.IRON_BARS)
+                for(dz in listOf(-1,1)) put(x,59,z+dz,Block.LANTERN.withProperty("hanging","true"))
+            }
+            put(0,59,z,Block.LANTERN.withProperty("hanging","true"))
+        }
+        // Masonry hearth occupies the wall bay between the frames, separated from the dining tables.
+        box(-12,-10,53,53,-43,-41,Block.DEEPSLATE_BRICKS)
+        box(-12,-12,54,57,-43,-41,Block.STONE_BRICKS)
+        for(z in listOf(-43,-41)) box(-11,-10,54,56,z,z,Block.STONE_BRICKS)
+        put(-11,54,-42,Block.CAMPFIRE)
+        box(-12,-10,57,58,-43,-41,Block.STONE_BRICKS)
+        box(-12,-11,59,66,-43,-41,Block.STONE_BRICKS)
+        box(-13,-10,67,67,-44,-40,Block.STONE_BRICK_SLAB)
+        for(x in listOf(-4,4)) put(x,58,-47,Block.RED_WALL_BANNER.withProperty("facing","south"))
+        // A planted strip beyond the rear balustrade replaces the bare cliff as the door's immediate view.
+        box(-4,4,52,52,-51,-51,Block.DIRT)
+        box(-4,4,53,55,-51,-51,leaves)
     }
 
     private fun bellTower(cx: Int, cz: Int) {
@@ -572,7 +620,7 @@ internal class HarborDistrictArchitecture(private val instance: InstanceContaine
         box(cx - 2, cx + 2, 41, 42, cz + 3, cz + 6, Block.STRIPPED_SPRUCE_LOG)
         box(cx - 1, cx + 1, 41, 42, cz + 3, cz + 5, Block.AIR)
         box(cx - 1, cx + 1, 42, 42, cz + 6, cz + 6, Block.LIGHT_BLUE_STAINED_GLASS)
-        box(cx - 2, cx + 2, 43, 43, cz + 3, cz + 6, Block.WAXED_WEATHERED_CUT_COPPER_SLAB)
+        box(cx - 2, cx + 2, 43, 43, cz + 3, cz + 6, Block.WAXED_WEATHERED_CUT_COPPER)
         box(cx, cx, 40, 55, cz - 2, cz - 2, timber)
         box(cx, cx, 45, 45, cz - 2, cz + 5, logZ())
         // Fore-and-aft triangular sail: stretched along the hull, not a reduced copy of a square sail.
@@ -609,6 +657,17 @@ internal class HarborDistrictArchitecture(private val instance: InstanceContaine
         box(-19, -16, 41, 41, 21, 23, Block.BARREL)
         box(-18, -17, 42, 42, 22, 23, Block.BARREL)
     }
+    /** Real boarding routes meet openings in the bulwarks; the cargo bow no longer intersects the shore quay. */
+    private fun boardingPiers() {
+        deck(-24,-13,32,36)
+        deck(14,26,32,36)
+        for(xs in listOf(-24..-14,14..26)) for(x in xs) for(z in listOf(32,36))
+            put(x,41,z,Block.DARK_OAK_FENCE)
+        for(x in listOf(-20,20)) for(z in listOf(32,36)) pile(x,z,false)
+        box(-25,-25,41,42,33,35,Block.AIR)
+        box(27,27,41,42,33,35,Block.AIR)
+    }
+
     private fun deck(x1: Int, x2: Int, z1: Int, z2: Int) {
         for (x in x1..x2) for (z in z1..z2) put(x, 40, z,
             if (x == x1 || x == x2) logZ() else if (z == z1 || z == z2) logX() else Block.SPRUCE_PLANKS)
@@ -738,7 +797,7 @@ internal class HarborDistrictArchitecture(private val instance: InstanceContaine
         box(cx - 3, cx + 3, 41, 43, cz + 6, cz + 10, Block.SPRUCE_PLANKS)
         box(cx - 2, cx + 2, 41, 42, cz + 6, cz + 9, Block.AIR)
         box(cx - 2, cx + 2, 42, 42, cz + 10, cz + 10, Block.ORANGE_STAINED_GLASS)
-        box(cx - 3, cx + 3, 44, 44, cz + 6, cz + 10, Block.DARK_OAK_SLAB)
+        box(cx - 3, cx + 3, 44, 44, cz + 6, cz + 10, Block.DARK_OAK_PLANKS)
         for (mastZ in listOf(cz - 4, cz + 4)) {
             val top = if (mastZ < cz) 59 else 55
             box(cx, cx, 40, top + 1, mastZ, mastZ, timber)
@@ -764,7 +823,7 @@ internal class HarborDistrictArchitecture(private val instance: InstanceContaine
     /** Minestom placement does not run Vanilla neighbour updates: author all rail connections explicitly. */
     private fun connectDetails() {
         val directions = listOf(Triple("north",0,-1),Triple("south",0,1),Triple("east",1,0),Triple("west",-1,0))
-        for (x in -55..55) for (z in -62..50) for (y in 38..85) {
+        for (x in -55..55) for (z in -62..58) for (y in 38..85) {
             var b = instance.getBlock(x,y,z)
             val wall = b.name().endsWith("_wall")
             if (!wall && !b.name().endsWith("_fence") && !b.name().endsWith("_pane") && b.name() != "minecraft:iron_bars") continue
