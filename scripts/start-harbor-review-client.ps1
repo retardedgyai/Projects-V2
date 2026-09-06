@@ -1,10 +1,11 @@
 param(
     [Parameter(Mandatory = $true)][string]$SourceArgumentFile,
     [Parameter(Mandatory = $true)][string]$VisibleLauncher,
-    [ValidateSet('HarborArrival','HarborMarket','HarborGallery','HarborQuay','HarborShipyard','HarborFoundry','HarborAcademy','HarborHall','HarborOutlook','HarborRear','HarborAlley','HarborArcade','HarborCanopy','HarborBerth','HarborBoarding','HarborCutter','HarborCoast','HarborCoastSouth','HarborOverview')]
+    [ValidateSet('HarborArrival','HarborMarket','HarborGallery','HarborQuay','HarborShipyard','HarborFoundry','HarborAcademy','HarborHall','HarborOutlook','HarborRear','HarborAlley','HarborArcade','HarborCanopy','HarborBerth','HarborBoarding','HarborCutter','HarborCoast','HarborCoastSouth','HarborLodging','HarborRooms','HarborBunk','HarborOverview')]
     [string]$View = 'HarborArrival'
 )
 $ErrorActionPreference = 'Stop'
+if ($View -notmatch '^[A-Za-z0-9_]{1,16}$') { throw 'Camera name must be a valid login username (maximum 16 characters)' }
 $projectRoot = Split-Path -Parent $PSScriptRoot
 $placementScript = Join-Path $PSScriptRoot 'place-harbor-preview.ps1'
 $monitorRows = & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $placementScript -ListMonitors

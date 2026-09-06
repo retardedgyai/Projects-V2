@@ -326,6 +326,40 @@ class HarborSceneTest {
             }
             for(x in 41..42) for(z in -27..-18)
                 assertTrue(x to z in coastReached, "Seaward terrace is not connected to the existing stair $x,$z")
+            for(point in listOf(30 to -17,31 to -17,33 to -26,39 to -26,40 to -25))
+                assertTrue(point in coastReached, "Lodging common room/stair/terrace doorway disconnected: $point")
+            for(step in 0..5) for(x in 30..31) {
+                val y=45+step; val z=-18-step
+                assertEquals("minecraft:spruce_stairs",instance.getBlock(x,y,z).name())
+                assertEquals("north",instance.getBlock(x,y,z).getProperty("facing"))
+                assertTrue(instance.getBlock(x,y-1,z).isSolid, "Lodging stair is unsupported")
+                assertTrue(instance.getBlock(x,y+1,z).isAir && instance.getBlock(x,y+2,z).isAir, "Lodging stair headroom blocked")
+            }
+            assertTrue(instance.getBlock(30,50,-24).isSolid && instance.getBlock(30,51,-24).isAir &&
+                instance.getBlock(30,52,-24).isAir, "Lodging stair has no usable upper landing")
+            val lodgingReached=mutableSetOf(30 to -24)
+            val lodgingPending=ArrayDeque(lodgingReached)
+            while(lodgingPending.isNotEmpty()) {
+                val (x,z)=lodgingPending.removeFirst()
+                for((dx,dz) in directions) {
+                    val nx=x+dx; val nz=z+dz
+                    if(nx !in 30..38 || nz !in -28..-15) continue
+                    if(instance.getBlock(nx,50,nz).isSolid && instance.getBlock(nx,51,nz).isAir &&
+                        instance.getBlock(nx,52,nz).isAir && lodgingReached.add(nx to nz)) lodgingPending.add(nx to nz)
+                }
+            }
+            for(point in listOf(36 to -26,36 to -22,36 to -18,33 to -15,34 to -15))
+                assertTrue(point in lodgingReached, "Lodging upper landing does not reach room/balcony: $point")
+            for(z in listOf(-27,-23,-19)) {
+                assertEquals("foot",instance.getBlock(37,51,z).getProperty("part"))
+                assertEquals("head",instance.getBlock(38,51,z).getProperty("part"))
+                assertEquals("east",instance.getBlock(38,51,z).getProperty("facing"))
+                assertTrue(instance.getBlock(38,51,z-1).isSolid, "Bedside light has no cabinet")
+            }
+            for(z in listOf(-25,-21)) {
+                assertEquals("minecraft:lantern",instance.getBlock(33,54,z).name())
+                assertTrue(instance.getBlock(33,55,z).isSolid, "Lodging passage light lost its beam")
+            }
             for(z in -30..-15) {
                 val edge=if(z in -27..-18) 43 else 42
                 assertEquals("minecraft:stone_brick_wall",instance.getBlock(edge,45,z).name(), "Seaward terrace lost its edge guard")

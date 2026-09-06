@@ -58,6 +58,7 @@ internal class HarborDistrictArchitecture(private val instance: InstanceContaine
         streetFurniture()
         planting()
         cliffsideTerrace()
+        lodgingInterior()
         ship(-29, 42, Block.RED_WOOL, 1)
         fishingCutter(30, 36)
         boardingPiers()
@@ -160,6 +161,61 @@ internal class HarborDistrictArchitecture(private val instance: InstanceContaine
             put(edge,42,z-1,stair(Block.STONE_BRICK_STAIRS,"south",true))
             put(edge,42,z+1,stair(Block.STONE_BRICK_STAIRS,"north",true))
         }
+    }
+
+    /** A real common room, stair and three sleeping bays occupy the east lodging's existing shell. */
+    private fun lodgingInterior() {
+        for(z in listOf(-26,-21)) {
+            box(30,38,49,49,z,z,logX())
+            put(34,48,z,Block.LANTERN.withProperty("hanging","true"))
+        }
+        // The hearth's hood joins a flue through the rear wall, not through a bedroom or the corridor.
+        box(35,37,45,45,-28,-27,Block.STONE_BRICKS)
+        for(x in listOf(35,37)) box(x,x,46,48,-28,-28,Block.BRICKS)
+        put(36,46,-28,Block.CAMPFIRE)
+        box(35,37,48,49,-29,-28,Block.BRICKS)
+        box(36,36,50,61,-29,-29,Block.BRICKS)
+        box(35,37,62,62,-30,-28,Block.POLISHED_ANDESITE)
+        put(36,62,-29,Block.CAMPFIRE)
+        // Built-in table and benches leave a two-block spine alongside the stair.
+        for(x in listOf(35,37)) for(z in listOf(-23,-21)) put(x,45,z,Block.SPRUCE_FENCE)
+        box(35,37,46,46,-23,-21,Block.SPRUCE_SLAB)
+        box(38,38,45,45,-23,-21,stair(Block.SPRUCE_STAIRS,"west"))
+        box(35,37,45,45,-24,-24,stair(Block.SPRUCE_STAIRS,"south"))
+        box(36,38,45,45,-18,-18,Block.BARREL)
+        // Convert one wall bay into the seaward doorway; remove its projecting window sill too.
+        box(39,40,45,47,-26,-25,Block.AIR)
+        for(z in listOf(-27,-24)) box(39,39,45,49,z,z,timber)
+        box(39,39,48,48,-26,-25,logZ())
+        // Six full-width steps cut their own headroom through the existing upper floor.
+        for(step in 0..5) {
+            val y=45+step; val z=-18-step
+            box(30,32,44,y-1,z,z,Block.SPRUCE_PLANKS)
+            box(30,31,y,y,z,z,stair(Block.SPRUCE_STAIRS,"north"))
+            box(30,31,y+1,y+3,z,z,Block.AIR)
+            put(32,y,z,timber)
+            put(32,y+1,z,Block.DARK_OAK_FENCE)
+        }
+        box(32,32,51,51,-23,-20,Block.DARK_OAK_FENCE)
+        // Sleeping bays face the existing east windows; their doorways open onto a shared passage.
+        box(35,35,51,54,-28,-17,Block.SPRUCE_PLANKS)
+        for(z in listOf(-25,-21)) box(35,38,51,54,z,z,Block.SPRUCE_PLANKS)
+        for((z,bed) in listOf(-27 to Block.WHITE_BED,-23 to Block.CYAN_BED,-19 to Block.RED_BED)) {
+            box(35,35,51,53,z,z+1,Block.AIR)
+            for(jamb in listOf(z-1,z+2)) box(35,35,51,54,jamb,jamb,timber)
+            put(37,51,z,bed.withProperty("facing","east").withProperty("part","foot"))
+            put(38,51,z,bed.withProperty("facing","east").withProperty("part","head"))
+            put(38,51,z-1,Block.BARREL)
+            put(38,52,z-1,Block.LANTERN)
+        }
+        for(z in listOf(-25,-21)) {
+            box(30,38,55,55,z,z,logX())
+            put(33,54,z,Block.LANTERN.withProperty("hanging","true"))
+        }
+        // Reframe the upper facade for a real balcony door, keeping the outside rail and floor.
+        box(33,34,51,53,-16,-15,Block.AIR)
+        for(x in listOf(32,35)) box(x,x,51,54,-16,-16,timber)
+        box(33,34,54,54,-16,-16,logX())
     }
 
     /** A low public loggia leaves the raised great hall as the only central gable in the market vista. */

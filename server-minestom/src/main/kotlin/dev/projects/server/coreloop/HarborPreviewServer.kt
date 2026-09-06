@@ -39,8 +39,12 @@ object HarborPreviewServer {
             "HarborCutter" to Pos(20.5, 41.0, 34.5, -85f, -18f),
             "HarborCoast" to Pos(48.5, 39.0, -21.5, 90f, -20f),
             "HarborCoastSouth" to Pos(46.5, 41.0, -11.5, 135f, -15f),
+            "HarborLodging" to Pos(34.5, 45.0, -17.5, 180f, -6f),
+            "HarborRooms" to Pos(33.5, 51.0, -25.5, 0f, -5f),
+            "HarborBunk" to Pos(36.5, 51.0, -26.5, -110f, 10f),
             "HarborOverview" to Pos(43.5, 72.0, 50.5, 147f, 24f),
         )
+        require(views.keys.all { it.matches(Regex("[A-Za-z0-9_]{1,16}")) }) { "Camera names must be valid login usernames" }
         val lockCamera = System.getProperty("projects.harbor.preview.lockCamera", "true").toBoolean()
         MinecraftServer.getGlobalEventHandler().addListener(AsyncPlayerConfigurationEvent::class.java) { event ->
             event.spawningInstance = harbor
