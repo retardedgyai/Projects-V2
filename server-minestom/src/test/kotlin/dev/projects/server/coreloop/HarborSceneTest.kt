@@ -25,7 +25,7 @@ class HarborSceneTest {
             assertEquals(5, scene.labels.size)
 
             fun walkable(x: Int, z: Int): Boolean =
-                x in -32..32 && z in -28..34 && instance.getBlock(x, 40, z).isSolid &&
+                x in -32..32 && z in -28..39 && instance.getBlock(x, 40, z).isSolid &&
                     instance.getBlock(x, 41, z).isAir && instance.getBlock(x, 42, z).isAir
 
             val reached = mutableSetOf(spawn.blockX() to spawn.blockZ())
@@ -51,20 +51,51 @@ class HarborSceneTest {
                 )
             }
             assertTrue(0 to 33 in reached, "The pier cannot be reached from arrival")
+            assertTrue(10 to -14 in reached, "The upper hall stair foot must connect to the public loop")
+            for (x in -2..2) for (z in -11..37) {
+                assertTrue(walkable(x, z), "Five-block arrival spine obstructed at $x,$z")
+            }
+            // Preserve the old direct approaches, not merely a circuitous alternative around a new wall.
+            for (x in -17..-15) for (z in 3..8) assertTrue(walkable(x,z), "Storage approach $x,$z")
+            for (x in 15..17) for (z in 3..8) assertTrue(walkable(x,z), "Supplies approach $x,$z")
             assertEquals(Block.WATER, instance.getBlock(50, 38, 50), "Outside the harbor should be sea, not void")
             for (step in 0..11) {
                 val z=-15-step; val y=40+step
-                assertTrue(instance.getBlock(8,y,z).name().contains("stairs"), "Missing upper hall step $step")
-                assertTrue(instance.getBlock(8,y+1,z).isAir && instance.getBlock(8,y+2,z).isAir, "Upper hall stair headroom $step")
+                for (x in 8..12) {
+                    assertTrue(instance.getBlock(x,y,z).name().contains("stairs"), "Missing upper hall step $step at $x")
+                    assertEquals("north", instance.getBlock(x,y,z).getProperty("facing"))
+                    assertTrue(instance.getBlock(x,y+1,z).isAir && instance.getBlock(x,y+2,z).isAir, "Upper hall stair headroom $step at $x")
+                    assertTrue(instance.getBlock(x,y-1,z).isSolid, "Stair has no foundation $step at $x")
+                }
             }
             for (z in -29..-27) assertTrue(instance.getBlock(8,53,z).isAir && instance.getBlock(8,54,z).isAir, "Hall entry blocked at $z")
+            fun upperWalkable(x: Int, z: Int) = x in -15..15 && z in -49..-27 &&
+                instance.getBlock(x,52,z).isSolid && instance.getBlock(x,53,z).isAir && instance.getBlock(x,54,z).isAir
+            val upperReached = mutableSetOf(10 to -27)
+            val upperPending = ArrayDeque(upperReached)
+            while (upperPending.isNotEmpty()) {
+                val (x,z) = upperPending.removeFirst()
+                directions.forEach { (dx,dz) ->
+                    val next = x+dx to z+dz
+                    if (upperWalkable(next.first,next.second) && upperReached.add(next)) upperPending.add(next)
+                }
+            }
+            assertTrue(0 to -40 in upperReached, "The gallery stairs must actually reach the hall interior")
+            for (x in -12..12) for (z in -48..-31)
+                assertTrue(instance.getBlock(x,51,z).isSolid, "The great hall floats above an unsupported floor $x,$z")
+            for (x in -22..-12) {
+                val rail = instance.getBlock(x,47,16)
+                assertTrue(rail.name().endsWith("_fence"), "Warehouse gallery has a missing railing at $x")
+                assertEquals("true",rail.getProperty("east"), "Disconnected east rail at $x")
+                assertEquals("true",rail.getProperty("west"), "Disconnected west rail at $x")
+            }
             // Export actual generated blocks, not an aspirational concept illustration.
             val target = java.nio.file.Path.of("build/reports/harbor-blocks.tsv")
             java.nio.file.Files.createDirectories(target.parent)
             java.nio.file.Files.newBufferedWriter(target).use { out ->
-                for (x in -48..48) for (z in -56..46) for (y in 36..66) {
+                for (x in -55..55) for (z in -62..50) for (y in 34..86) {
                     val b = instance.getBlock(x,y,z)
-                    if (!b.isAir && b != Block.WATER && listOf(Triple(1,0,0),Triple(0,1,0),Triple(0,0,1)).any { (dx,dy,dz) -> instance.getBlock(x+dx,y+dy,z+dz).let { it.isAir || it == Block.WATER } })
+                    if (!b.isAir && b != Block.WATER && listOf(Triple(1,0,0),Triple(-1,0,0),Triple(0,1,0),Triple(0,-1,0),Triple(0,0,1),Triple(0,0,-1)).any { (dx,dy,dz) -> instance.getBlock(x+dx,y+dy,z+dz).let { it.isAir || it == Block.WATER } })
                         out.appendLine("$x\t$y\t$z\t${b.name()}")
                 }
             }
