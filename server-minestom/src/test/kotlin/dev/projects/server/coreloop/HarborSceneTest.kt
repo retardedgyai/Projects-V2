@@ -11,6 +11,15 @@ import net.minestom.server.instance.block.Block
 
 class HarborSceneTest {
     @Test
+    fun `headlands never generate over the town or close the shipping approach`() {
+        for (x in -55..55) for (z in -62..64) assertEquals(null,HarborBackdrop.height(x,z))
+        for (x in -100..100) for (z in 15..100) assertEquals(null,HarborBackdrop.height(x,z))
+        assertTrue(requireNotNull(HarborBackdrop.height(-72,-45)) > 50)
+        assertTrue(requireNotNull(HarborBackdrop.height(78,-55)) > 60)
+        assertTrue(requireNotNull(HarborBackdrop.height(-8,-93)) > 65)
+    }
+
+    @Test
     fun `arrival and every facility connect through level unobstructed walking space`() {
         MinecraftServer.init(Auth.Offline())
         val instance = MinecraftServer.getInstanceManager().createInstanceContainer()
@@ -60,7 +69,7 @@ class HarborSceneTest {
             for (x in 15..17) for (z in 3..8) assertTrue(walkable(x,z), "Supplies approach $x,$z")
             assertEquals(Block.WATER, instance.getBlock(50, 38, 50), "Outside the harbor should be sea, not void")
             for (step in 0..11) {
-                val z=-15-step; val y=40+step
+                val z=-15-step; val y=41+step
                 for (x in 8..12) {
                     assertTrue(instance.getBlock(x,y,z).name().contains("stairs"), "Missing upper hall step $step at $x")
                     assertEquals("north", instance.getBlock(x,y,z).getProperty("facing"))
@@ -88,6 +97,37 @@ class HarborSceneTest {
                 assertTrue(rail.name().endsWith("_fence"), "Warehouse gallery has a missing railing at $x")
                 assertEquals("true",rail.getProperty("east"), "Disconnected east rail at $x")
                 assertEquals("true",rail.getProperty("west"), "Disconnected west rail at $x")
+            }
+            for (step in 0..5) for ((x,z,facing) in listOf(Triple(-23+step,7,"east"),Triple(23-step,6,"west"))) {
+                val y=41+step
+                for (dz in 0..1) {
+                    assertEquals("minecraft:spruce_stairs",instance.getBlock(x,y,z+dz).name())
+                    assertEquals(facing,instance.getBlock(x,y,z+dz).getProperty("facing"))
+                    assertTrue(instance.getBlock(x,y+1,z+dz).isAir && instance.getBlock(x,y+2,z+dz).isAir,
+                        "Occupied storey stair headroom $x,$y,${z+dz}")
+                }
+            }
+            // A bottom stair's high edge is y+1. Final stair and full landing must share the same block y;
+            // placing the landing a block above the final stair would require jumping despite an air-only path.
+            assertEquals("minecraft:stone_brick_stairs",instance.getBlock(10,52,-26).name())
+            assertEquals(Block.SPRUCE_PLANKS,instance.getBlock(10,52,-27))
+            assertEquals("minecraft:stone_brick_stairs",instance.getBlock(31,44,-14).name())
+            assertEquals(Block.SMOOTH_SANDSTONE,instance.getBlock(31,44,-15))
+            assertEquals("minecraft:stone_brick_stairs",instance.getBlock(-33,42,-8).name())
+            for (z in -10..-9) assertEquals(Block.SMOOTH_SANDSTONE,instance.getBlock(-33,42,z))
+            for ((x,z,dx) in listOf(Triple(-18,7,1),Triple(18,6,-1))) {
+                assertEquals("minecraft:spruce_stairs",instance.getBlock(x,46,z).name())
+                assertEquals(Block.SPRUCE_PLANKS,instance.getBlock(x+dx,46,z))
+            }
+            assertTrue(-25 to 7 in reached && 25 to 6 in reached, "Merchant stair alley approaches must be reachable")
+            for ((x,z) in listOf(-24 to 7,24 to 6)) assertTrue(walkable(x,z), "Merchant stair door $x,$z")
+            for (x in listOf(-18,-17,16,17)) for (z in 14..15) {
+                assertTrue(instance.getBlock(x,46,z).isSolid, "Unsupported merchant balcony doorway $x,$z")
+                assertTrue(instance.getBlock(x,47,z).isAir && instance.getBlock(x,48,z).isAir, "Blocked merchant balcony doorway $x,$z")
+            }
+            for (x in listOf(-12,-6,6,12)) {
+                assertEquals("minecraft:red_wall_banner",instance.getBlock(x,58,-30).name())
+                assertTrue(instance.getBlock(x,58,-31).isSolid, "A wall banner has no wall behind it")
             }
             // Export actual generated blocks, not an aspirational concept illustration.
             val target = java.nio.file.Path.of("build/reports/harbor-blocks.tsv")

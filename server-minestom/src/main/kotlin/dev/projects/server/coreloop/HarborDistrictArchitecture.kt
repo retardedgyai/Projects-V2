@@ -43,6 +43,7 @@ internal class HarborDistrictArchitecture(private val instance: InstanceContaine
         upperStairs()
         foundry()
         waterfront()
+        occupiedStoreys()
         streetFurniture()
         planting()
         ship(-29, 34, Block.RED_WOOL, 1)
@@ -245,9 +246,8 @@ internal class HarborDistrictArchitecture(private val instance: InstanceContaine
         for (x in listOf(-3, 3)) put(x, 58, -28, Block.LANTERN.withProperty("hanging", "true"))
         for (x in -16..16) if (x !in -4..4 && x !in 8..12) put(x, 53, -27, Block.DARK_OAK_FENCE)
         for (z in -49..-28) for (x in listOf(-16, 16)) put(x, 53, z, Block.DARK_OAK_FENCE)
-        for (x in listOf(-12, -6, 6, 12)) {
-            box(x, x, 56, 59, -30, -30, Block.RED_WOOL); put(x, 55, -30, Block.YELLOW_WOOL)
-        }
+        for (x in listOf(-12, -6, 6, 12)) put(x, 58, -30, Block.RED_WALL_BANNER.withProperty("facing", "south"))
+        for (x in -16..16) put(x,53,-50,Block.DARK_OAK_FENCE)
         bellTower(-22, -39)
         for (x in listOf(-9, 9)) for (z in listOf(-43, -37)) {
             box(x - 1, x + 1, 53, 53, z, z + 1, Block.SPRUCE_FENCE)
@@ -278,22 +278,30 @@ internal class HarborDistrictArchitecture(private val instance: InstanceContaine
 
     private fun upperStairs() {
         for (step in 0..11) {
-            val z = -15 - step; val y = 40 + step
+            val z = -15 - step; val y = 41 + step
             box(8, 12, 35, y - 1, z, z, Block.STONE_BRICKS)
             box(8, 12, y, y, z, z, stair(Block.STONE_BRICK_STAIRS, "north"))
             box(8, 12, y + 1, y + 4, z, z, Block.AIR)
-            put(7, y + 1, z, Block.STONE_BRICK_WALL); put(13, y + 1, z, Block.STONE_BRICK_WALL)
+            for (x in listOf(7,13)) {
+                box(x,x,35,y,z,z,Block.STONE_BRICKS)
+                put(x,y+1,z,Block.STONE_BRICK_WALL)
+            }
         }
-        box(8, 12, 52, 52, -31, -27, Block.SPRUCE_PLANKS)
-        box(8, 12, 53, 55, -31, -27, Block.AIR)
+        box(8, 12, 52, 52, -30, -27, Block.SPRUCE_PLANKS)
+        box(8, 12, 53, 55, -30, -27, Block.AIR)
         for (step in 0..3) {
-            box(29, 33, 40 + step, 40 + step, -11 - step, -11 - step, stair(Block.STONE_BRICK_STAIRS, "north"))
-            box(29, 33, 41 + step, 44 + step, -11 - step, -11 - step, Block.AIR)
+            box(29, 33, 35, 40 + step, -11 - step, -11 - step, Block.STONE_BRICKS)
+            box(29, 33, 41 + step, 41 + step, -11 - step, -11 - step, stair(Block.STONE_BRICK_STAIRS, "north"))
+            box(29, 33, 42 + step, 45 + step, -11 - step, -11 - step, Block.AIR)
         }
         for (step in 0..1) {
-            box(-35, -31, 40 + step, 40 + step, -7 - step, -7 - step, stair(Block.STONE_BRICK_STAIRS, "north"))
-            box(-35, -31, 41 + step, 44 + step, -7 - step, -7 - step, Block.AIR)
+            box(-35, -31, 35, 40 + step, -7 - step, -7 - step, Block.STONE_BRICKS)
+            box(-35, -31, 41 + step, 41 + step, -7 - step, -7 - step, stair(Block.STONE_BRICK_STAIRS, "north"))
+            box(-35, -31, 42 + step, 45 + step, -7 - step, -7 - step, Block.AIR)
         }
+        box(-35,-31,35,41,-9,-9,Block.STONE_BRICKS)
+        box(-35,-31,42,42,-9,-9,Block.SMOOTH_SANDSTONE)
+        box(-35,-31,43,45,-9,-9,Block.AIR)
     }
 
     private fun foundry() {
@@ -357,6 +365,45 @@ internal class HarborDistrictArchitecture(private val instance: InstanceContaine
         }
         for ((x, z) in listOf(-22 to 15, 20 to 16, -30 to 6, 32 to 7)) {
             box(x, x + 1, 41, 41, z, z + 1, Block.BARREL); put(x, 42, z, Block.BARREL)
+        }
+    }
+
+    /** The front merchants are buildings to enter, not hollow upper facades. Both balconies are walkable. */
+    private fun occupiedStoreys() {
+        for (step in 0..5) {
+            val y = 41 + step
+            for ((x,z,facing) in listOf(Triple(-23+step,7,"east"),Triple(23-step,6,"west"))) {
+                box(x,x,40,y-1,z,z+1,Block.SPRUCE_PLANKS)
+                box(x,x,y,y,z,z+1,stair(Block.SPRUCE_STAIRS,facing))
+                box(x,x,y+1,y+3,z,z+1,Block.AIR)
+            }
+        }
+        // Side-alley doors reach the low end of the stairs without putting a stair foundation in the old north aisle.
+        for ((x,z,dx) in listOf(Triple(-24,7,-1),Triple(24,6,1))) {
+            box(x,x,41,43,z,z+1,Block.AIR)
+            box(x+dx,x+dx,41,43,z,z+1,Block.AIR)
+            box(x,x,44,44,z,z+1,logZ())
+        }
+        // Doorways replace complete window bays, preserving the external frame and balcony joists.
+        for (x in listOf(-18,16)) {
+            box(x,x+1,47,49,14,14,Block.AIR)
+            for (post in listOf(x-1,x+2)) box(post,post,47,50,14,14,timber)
+            box(x,x+1,50,50,14,14,logX())
+            box(x,x+1,47,49,15,15,Block.AIR)
+        }
+        // A warehouse clerk's office and a merchant counting room have distinct useful-looking interiors.
+        box(-13,-12,47,48,6,6,Block.BOOKSHELF)
+        box(-13,-12,47,47,8,8,Block.SPRUCE_FENCE)
+        box(-13,-12,48,48,8,8,Block.SPRUCE_SLAB)
+        put(-13,49,8,Block.LANTERN)
+        box(11,13,47,47,7,7,Block.BARREL)
+        put(11,48,7,Block.BOOKSHELF)
+        put(13,48,7,Block.LANTERN)
+        // Stocked little stalls frame the public spine, without covering or narrowing it.
+        for (x in listOf(-7,5)) {
+            box(x,x+1,41,41,-6,-5,Block.BARREL)
+            put(x,42,-6,if(x<0) Block.MELON else Block.HAY_BLOCK)
+            put(x+1,42,-6,Block.FLOWER_POT)
         }
     }
     private fun planting() {

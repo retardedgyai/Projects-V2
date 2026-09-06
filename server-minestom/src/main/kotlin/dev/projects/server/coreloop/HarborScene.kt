@@ -33,11 +33,8 @@ internal object HarborScene {
         instance.defaultClock()?.pause()
         instance.setWeather(Weather.CLEAR)
         instance.setChunkSupplier(::LightingChunk)
-        instance.setGenerator { unit ->
-            unit.modifier().fillHeight(0, 34, Block.STONE)
-            unit.modifier().fillHeight(34, 36, Block.SAND)
-            unit.modifier().fillHeight(36, 39, Block.WATER)
-        }
+        instance.viewDistance(10)
+        instance.setGenerator(HarborBackdrop::generate)
         val loads = (-4..3).flatMap { x -> (-4..3).map { z -> instance.loadChunk(x, z) } }
         CompletableFuture.allOf(*loads.toTypedArray()).join()
         val builder = Builder(instance)

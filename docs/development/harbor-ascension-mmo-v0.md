@@ -1,5 +1,7 @@
 # 開拓航路 / 職業・装備の横幅と成長 v0
 
+港の建築は別Playgroundで改修中。最新の実景・検証・残課題は [港町建築リワーク](harbor-architecture.md) を参照。
+
 2026-09-06 / play/gyai/harbor-ascension-mmo。Creatorの大型実装依頼に基づくPlayground。
 Base: main bc81a03。main、protocol、client-fabric、共通Particle Frameworkは変更しない。
 新しい専用core-loop保存形式は旧データの正確なバックアップ後に移行する。

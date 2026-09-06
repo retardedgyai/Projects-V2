@@ -32,7 +32,7 @@ public static class HarborPhotograph {
                 EnumWindows((hwnd,p)=>{
                     uint owner; GetWindowThreadProcessId(hwnd,out owner);
                     if(owner!=pid || !IsWindowVisible(hwnd))return true;
-                    found=true; ShowWindow(hwnd,9);
+                    found=true; ShowWindow(hwnd,4);
                     try {
                         SetWindowPos(hwnd,new IntPtr(-1),0,0,0,0,0x13);
                         Thread.Sleep(500);
