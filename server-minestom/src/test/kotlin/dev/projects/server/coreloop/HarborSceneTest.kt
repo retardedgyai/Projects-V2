@@ -139,6 +139,25 @@ class HarborSceneTest {
             assertTrue(0 to -40 in upperReached, "The gallery stairs must actually reach the hall interior")
             for(x in -2..2) for(z in -48..-31)
                 assertTrue(upperWalkable(x,z), "Hall central aisle obstructed $x,$z")
+            for(xs in listOf(-11..-5,5..11)) for(x in xs) for(z in -32..-28)
+                assertTrue(upperWalkable(x,z), "Seaward hall bay is not connected to the veranda $x,$z")
+            for(x in listOf(-14,-7,-3,3,7,14)) {
+                assertEquals(Block.CHISELED_STONE_BRICKS,instance.getBlock(x,53,-27), "Veranda post lost its plinth")
+                for(y in 54..59) assertTrue(instance.getBlock(x,y,-27).isSolid, "Veranda post has a gap $x,$y")
+            }
+            for(x in -16..16) if(x !in 8..12 && x !in listOf(-14,-7,-3,3,7,14))
+                assertEquals("minecraft:dark_oak_fence",instance.getBlock(x,53,-27).name(), "Unguarded podium edge $x")
+            for(x in 8..12) assertTrue(upperWalkable(x,-27), "Balustrade closed the actual hall stairs $x")
+            assertTrue(instance.getBlock(2,68,-31).isAir, "Great hall still has an opaque domestic gable")
+            assertTrue(instance.getBlock(0,62,-31).isSolid, "Open gable king post has no bearing")
+            for(x in listOf(-2,2)) {
+                assertEquals("minecraft:lantern",instance.getBlock(x,65,-31).name())
+                assertTrue(instance.getBlock(x,66,-31).isSolid, "Gable lantern does not hang from the fan truss")
+            }
+            for(side in listOf(-1,1)) for(z in -48..-32 step 4) {
+                assertTrue(instance.getBlock(side*15,60,z).isSolid, "Swept eave has no gallery column")
+                for(i in 1..3) assertTrue(instance.getBlock(side*(15+i),60+i,z).isSolid, "Disconnected eave bracket")
+            }
             for(z in listOf(-46,-40,-34)) for(x in listOf(-11,11)) for(y in 52..61)
                 assertTrue(instance.getBlock(x,y,z).isSolid, "Hall frame is unsupported $x,$y,$z")
             for(z in listOf(-43,-37)) {

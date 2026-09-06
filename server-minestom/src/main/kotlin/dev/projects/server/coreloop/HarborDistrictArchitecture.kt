@@ -369,24 +369,18 @@ internal class HarborDistrictArchitecture(private val instance: InstanceContaine
         for (z in listOf(z1, z2)) {
             box(x1, x2, 53, 62, z, z, plaster)
             for (x in -12..12 step 4) box(x, x, 53, 63, z, z, timber)
-            for (x in listOf(-10, -6, 5, 9)) frontWindow(x, 56, z)
+            if(z==z1) for (x in listOf(-10, -6, 5, 9)) frontWindow(x, 56, z)
             for (y in listOf(59, 62)) box(-13, 13, y, y, z, z, logX())
             box(-2, 2, 53, 58, z, z, Block.AIR)
             for (x in -13..13) for (y in 63..63 + roofRise(15, abs(x)))
-                put(x, y, z, if (x == 0 || y == 65 || y == 69 || abs(x) % 5 == 0) beam else plaster)
+                put(x, y, z, if(z==z2) Block.AIR else if (x == 0 || y == 65 || y == 69 || abs(x) % 5 == 0) beam else plaster)
         }
         gableRoof(-16, 16, -51, -28, 63, true, true)
-        for (x in -3..3) for (y in 65..71) if (abs(x) + abs(y - 68) <= 4)
-            put(x, y, z2, if (x == 0 || y == 68) beam else Block.ORANGE_STAINED_GLASS)
-        for (x in listOf(-4, 4)) {
-            put(x, 53, -27, Block.CHISELED_STONE_BRICKS)
-            box(x, x, 54, 59, -27, -27, timber)
-            box(x, x, 59, 59, -31, -27, logZ())
-        }
-        gableRoof(-5, 5, -31, -26, 60, false, false)
-        box(-3, 3, 59, 59, -27, -27, logX())
-        for (x in listOf(-3, 3)) put(x, 58, -28, Block.LANTERN.withProperty("hanging", "true"))
-        for (x in -16..16) if (x !in -4..4 && x !in 8..12) put(x, 53, -27, Block.DARK_OAK_FENCE)
+        hallSeawardFront()
+        // The old central porch opening led off the podium, not to stairs. Only the actual
+        // east stair landing is an opening in the seaward balustrade.
+        for (x in -16..16) if (x !in 8..12 && x !in listOf(-14,-7,-3,3,7,14))
+            put(x, 53, -27, Block.DARK_OAK_FENCE)
         for (z in -49..-28) for (x in listOf(-16, 16)) put(x, 53, z, Block.DARK_OAK_FENCE)
         for (x in listOf(-12, -6, 6, 12)) put(x, 58, -30, Block.RED_WALL_BANNER.withProperty("facing", "south"))
         for (x in -16..16) put(x,53,-50,Block.DARK_OAK_FENCE)
@@ -398,6 +392,59 @@ internal class HarborDistrictArchitecture(private val instance: InstanceContaine
                 stair(Block.SPRUCE_STAIRS, if (dx < 0) "east" else "west"))
         }
         hallInterior()
+    }
+
+    /** Open seaward gathering veranda and exposed fan truss, unlike the enclosed merchant houses. */
+    private fun hallSeawardFront() {
+        // Open side bays join the dining room to the existing gallery. Retain the central
+        // five-block doorway and banner-bearing lintels, with no floating domestic shutters.
+        for(xs in listOf(-11..-5,5..11)) {
+            box(xs.first,xs.last,53,57,-31,-31,Block.AIR)
+            box(xs.first,xs.last,58,58,-31,-31,logX())
+            put(xs.first,57,-31,stair(Block.DARK_OAK_STAIRS,"west",true))
+            put(xs.last,57,-31,stair(Block.DARK_OAK_STAIRS,"east",true))
+        }
+        // Front gable is a deep, open roof structure, not a larger version of the house windows.
+        box(0,0,63,73,-31,-31,timber)
+        for(side in listOf(-1,1)) for((endX,endY) in listOf(8 to 64,4 to 68)) {
+            val steps=maxOf(endX,endY-63)
+            for(i in 0..steps) {
+                val x=side*(endX*i/steps); val y=63+(endY-63)*i/steps
+                box(x,x,y,y+1,-31,-31,if(endX==8) Block.DARK_OAK_PLANKS else Block.STRIPPED_SPRUCE_WOOD)
+            }
+        }
+        for(x in listOf(-2,2)) put(x,65,-31,Block.LANTERN.withProperty("hanging","true"))
+        // Swept outer eaves widen the red roof silhouette. Brackets carry them from the
+        // existing side-gallery columns, leaving the actual walking decks untouched.
+        for(side in listOf(-1,1)) {
+            for(z in -51..-28) {
+                val rim=if(z in listOf(-51,-28)) Block.DARK_OAK_SLAB else Block.CUT_COPPER_SLAB
+                put(side*17,63,z,rim.withProperty("type","top"))
+                put(side*18,64,z,rim.withProperty("type","bottom"))
+            }
+            box(side*18,side*18,63,63,-49,-30,logZ())
+            for(z in -48..-32 step 4) for(i in 1..3)
+                box(side*(15+i),side*(15+i),59+i,60+i,z,z,Block.DARK_OAK_PLANKS)
+        }
+        // One broad shallow copper canopy replaces the little domestic entrance gable.
+        // The side hips and half-block fall keep it subordinate to the great red roof.
+        for(x in -16..16) for(z in -30..-25) {
+            val inset=minOf(-25-z,16-abs(x))
+            val roof=if(z==-25 || abs(x)==16) Block.DARK_OAK_SLAB else Block.CUT_COPPER_SLAB
+            put(x,59+inset/2,z,roof.withProperty("type",if(inset%2==0) "bottom" else "top"))
+        }
+        box(-14,14,59,59,-27,-27,logX())
+        for(x in listOf(-14,-7,-3,3,7,14)) {
+            put(x,53,-27,Block.CHISELED_STONE_BRICKS)
+            box(x,x,54,59,-27,-27,timber)
+            for(z in -30..-25) {
+                val y=59+minOf(-25-z,16-abs(x))/2
+                put(x,y-1,z,Block.DARK_OAK_SLAB.withProperty("type","top"))
+            }
+            for(dx in listOf(-1,1)) if(abs(x+dx)<=14)
+                put(x+dx,58,-27,stair(Block.DARK_OAK_STAIRS,if(dx<0) "east" else "west",true))
+        }
+        for(x in listOf(-5,5)) put(x,58,-27,Block.LANTERN.withProperty("hanging","true"))
     }
 
     private fun hallInterior() {
