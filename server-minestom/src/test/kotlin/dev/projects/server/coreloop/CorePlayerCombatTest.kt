@@ -24,6 +24,30 @@ import kotlin.test.assertTrue
 
 /** Real Minestom entities, but no sockets, external client, native input, or live server port. */
 class CorePlayerCombatTest {
+    @Test fun `bow and mage projectile hit at twelve blocks but not through a wall`() {
+        for (job in listOf(CoreClass.RANGER, CoreClass.MAGE, CoreClass.STARWEAVER)) arena(bossDistance = 12.0) { h ->
+            h.journey = CoreJourney(job = job); h.base = if (job == CoreClass.RANGER) CoreWeaponBase.LONGBOW else CoreWeaponBase.STAFF
+            h.actor.attack(); h.ticks(3); assertEquals(300.0, h.combat.bossHealth())
+            h.ticks(1); assertTrue(h.combat.bossHealth() < 300.0, "$job cannot hit at range")
+            val hp = h.combat.bossHealth(); h.ticks(20)
+            for (y in 40..45) h.instance.setBlock(8,y,14,Block.STONE)
+            h.actor.attack(); h.ticks(20); assertEquals(hp, h.combat.bossHealth())
+        }
+    }
+    @Test fun `early class cannot cast level4 or level8 skill`() = arena { h ->
+        h.journey = CoreJourney.fresh().copy(chosen = true, job = CoreClass.MAGE); h.base = CoreWeaponBase.STAFF
+        h.actor.skill(1); h.actor.skill(2); assertEquals(100, h.actor.mana)
+        h.ticks(30); assertEquals(300.0, h.combat.bossHealth())
+        h.actor.skill(0); h.ticks(5); assertTrue(h.combat.bossHealth() < 300.0)
+    }
+    @Test fun `weapon sheet attack speed and power match all actual bases`() = arena { h ->
+        for (base in CoreWeaponBase.entries) {
+            h.base = base
+            val a = CoreAccount(UUID.randomUUID(), weaponIdentity = CoreGearIdentity(UUID.randomUUID(), UUID.randomUUID(), base = base))
+            assertEquals(h.actor.attackSpeed, 1 + CoreWeaponPresentation.attackSpeedPercent(a) / 100, .000001)
+            assertEquals(kotlin.math.round(h.actor.attackDamage).toInt(), CoreWeaponPresentation.damage(a))
+        }
+    }
     @Test
     fun `duplicate vanilla swing signals start one normal attack and hit once during active frames`() = arena { h ->
         h.actor.attack()
@@ -455,6 +479,8 @@ class CorePlayerCombatTest {
         val actor: CorePlayerCombat
         var weaponBroken = false
         var armorBroken = false
+        var journey = CoreJourney()
+        var base = CoreWeaponBase.STANDARD
         var deaths = 0
         val incomingHits = mutableListOf<Double>()
         var afterKill: () -> Unit = {}
@@ -474,7 +500,7 @@ class CorePlayerCombatTest {
             player.setInstance(instance, Pos(8.5, 40.0, 8.5)).get(10, TimeUnit.SECONDS)
             actor = CorePlayerCombat(player, { 1 }, { armorTier }, { activeEncounter }, statSource = { stats }, criticalRoll = { roll },
                 weaponEnhancement = { weaponEnhancement }, armorEnhancement = { armorEnhancement },
-                weaponBroken = { weaponBroken }, armorBroken = { armorBroken }) { deaths++ }
+                weaponBroken = { weaponBroken }, armorBroken = { armorBroken }, journey = { journey }, weaponBase = { base }) { deaths++ }
             combat = QuestEncounterCombat(instance, 1, emptyList(), Pos(8.5, 40.0, 8.5 + bossDistance),
                 onMobDefeated = { _, _ -> afterKill() },
                 damagePlayer = { _, amount -> incomingHits += amount; actor.hurt(amount) },

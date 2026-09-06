@@ -96,7 +96,7 @@ class CoreUiTest {
         val paths = assertNotNull(loader.getResourceAsStream("core-ui-pack/index.txt"))
             .bufferedReader().use { it.readLines() }
         val models = paths.filter { it.startsWith("assets/projects/models/core_ui/") }
-        assertEquals(CoreUiIcon.entries.size + 1, models.size, "Every icon and the invisible filler must be covered")
+        assertEquals(CoreUiIcon.entries.size + 1 + 9, models.size, "Base icons, nine additional class skills and the invisible filler must be covered")
         for (path in models) {
             val json = assertNotNull(loader.getResourceAsStream("core-ui-pack/$path"))
                 .bufferedReader().use { it.readText() }

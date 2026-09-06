@@ -107,6 +107,87 @@
       "chars": [
         "\ue023"
       ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/skills/pierce.png",
+      "height": 16,
+      "ascent": 12,
+      "chars": [
+        "\ue024"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/skills/frost_fan.png",
+      "height": 16,
+      "ascent": 12,
+      "chars": [
+        "\ue025"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/skills/arrow_rain.png",
+      "height": 16,
+      "ascent": 12,
+      "chars": [
+        "\ue026"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/skills/firebolt.png",
+      "height": 16,
+      "ascent": 12,
+      "chars": [
+        "\ue027"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/skills/frost_nova.png",
+      "height": 16,
+      "ascent": 12,
+      "chars": [
+        "\ue028"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/skills/meteor.png",
+      "height": 16,
+      "ascent": 12,
+      "chars": [
+        "\ue029"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/skills/star_thread.png",
+      "height": 16,
+      "ascent": 12,
+      "chars": [
+        "\ue02a"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/skills/star_ring.png",
+      "height": 16,
+      "ascent": 12,
+      "chars": [
+        "\ue02b"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/skills/starfall.png",
+      "height": 16,
+      "ascent": 12,
+      "chars": [
+        "\ue02c"
+      ]
     }
   ]
 }

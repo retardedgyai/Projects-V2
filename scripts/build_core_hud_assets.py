@@ -10,6 +10,7 @@ from PIL import Image, ImageDraw, ImageFilter
 ROOT = Path(__file__).resolve().parents[1]
 OVERRIDE_PREFIX = "assets/minecraft/textures/gui/sprites/hud/"
 DIGITS = "0123456789/HMP"
+SKILLS = ("dash", "slam", "whirl", "pierce", "frost_fan", "arrow_rain", "firebolt", "frost_nova", "meteor", "star_thread", "star_ring", "starfall")
 PATTERNS = {
     "0": ["111", "101", "101", "101", "111"], "1": ["010", "110", "010", "010", "111"],
     "2": ["111", "001", "111", "100", "111"], "3": ["111", "001", "111", "001", "111"],
@@ -82,7 +83,7 @@ def skill_frame(master, frame):
                     r, g, b, a = pixels[x, y]
                     pixels[x, y] = (int(r * .23), int(g * .23), int(b * .27), a)
         edge, light = "#5c6067", "#8b8b85"
-    elif frame == 21:
+    elif frame in (21, 22):
         pixels = card.load()
         for y in range(2, 30):
             for x in range(2, 30):
@@ -98,6 +99,10 @@ def skill_frame(master, frame):
     pen.point((0, 0), fill=light)  # Keep exact 32-pixel glyph width at every frame.
     pen.point((31, 31), fill=edge)
     pen.rectangle((23, 24, 29, 29), fill="#11171e")
+    if frame == 22:
+        pen.rectangle((11, 14, 21, 23), fill="#d4c7a4", outline="#181c24")
+        pen.rectangle((13, 9, 19, 15), outline="#e9ddbe", width=2)
+        pen.rectangle((15, 17, 17, 20), fill="#36363c")
     return card
 
 
@@ -122,7 +127,7 @@ def build_hud(assets, source, write_json):
         providers.append(provider(name, 9, -26, [chr(base + n) for n in range(21)]))
     frames = {}
     sources = {}
-    for index, name in enumerate(("dash", "slam", "whirl")):
+    for index, name in enumerate(SKILLS):
         authored = source / f"skills/{name}.png"
         master_path = authored if authored.is_file() else assets / f"textures/gui/skills/{name}.png"
         sources[name] = str(master_path.relative_to(ROOT)).replace("\\", "/")
@@ -137,11 +142,12 @@ def build_hud(assets, source, write_json):
             master = Image.new("RGBA", (28, 28))
             master.alpha_composite(fitted, ((28 - fitted.width) // 2, (28 - fitted.height) // 2))
         sheet = Image.new("RGBA", (128, 192))
-        frames[name] = [skill_frame(master, frame) for frame in range(22)]
+        frames[name] = [skill_frame(master, frame) for frame in range(23)]
         for frame in range(24):
-            sheet.alpha_composite(frames[name][min(frame, 21)], ((frame % 4) * 32, (frame // 4) * 32))
+            sheet.alpha_composite(frames[name][min(frame, 22)], ((frame % 4) * 32, (frame // 4) * 32))
         save(sheet, output / f"skill_{name}_states.png")
-        chars = ["".join(chr(0xE400 + index * 32 + y * 4 + x) for x in range(4)) for y in range(6)]
+        base = 0xE400 + index * 32 if index < 3 else 0xE600 + (index - 3) * 32
+        chars = ["".join(chr(base + y * 4 + x) for x in range(4)) for y in range(6)]
         providers.append(provider(f"skill_{name}_states", 32, 29, chars))
     for name, base, scale, height, ink_y, ascent in (
         ("counter_digits", 0xE500, 2, 32, 11, 29),
@@ -182,3 +188,7 @@ def build_hud(assets, source, write_json):
         preview_digits("HP" if x == 0 else "MP", x + 3, 57)
         preview_digits("100/100", x + 34, 57)
     save(preview.resize((728, 352), Image.Resampling.NEAREST), source / "hud-layout-preview.png")
+    overview = Image.new("RGBA", (112, 152), "#211d22")
+    for index, name in enumerate(SKILLS):
+        overview.alpha_composite(frames[name][0], (4 + index % 3 * 36, 4 + index // 3 * 38))
+    save(overview.resize((448, 608), Image.Resampling.NEAREST), source / "skill-classes-preview.png")

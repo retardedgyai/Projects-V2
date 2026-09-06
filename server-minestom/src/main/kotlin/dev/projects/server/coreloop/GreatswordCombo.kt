@@ -28,7 +28,7 @@ internal class GreatswordCombo {
         if (idleTicks >= RESET_TICKS) nextStep = 1
         val step = nextStep
         nextStep = step % 3 + 1
-        val haste = if (speed.isFinite()) speed.coerceIn(1.0, 1.84) else 1.0
+        val haste = if (speed.isFinite()) speed.coerceIn(.75, 2.1) else 1.0
         val startup = round((if (step == 3) 10.0 else 7.0) / (1 + .25 * (haste - 1))).toInt().coerceAtLeast(4)
         val recovery = round(intArrayOf(12, 14, 19)[step - 1] / haste).toInt().coerceAtLeast(7)
         elapsed = 0
@@ -47,6 +47,7 @@ internal class GreatswordCombo {
     fun takeBuffered(): Boolean = buffered.also { buffered = false }
     fun clearBuffer() { buffered = false }
     fun reset() { swing = null; elapsed = 0; nextStep = 1; idleTicks = RESET_TICKS; buffered = false }
+    fun holdSequence() { idleTicks = -20 }
 
     companion object { const val RESET_TICKS = 18 }
 }

@@ -6,7 +6,7 @@ import java.security.MessageDigest
 import java.util.UUID
 import kotlin.test.*
 
-internal fun coreExpansionRow(row: String) = row.substringBefore('\t') in setOf("survey", "profession", "buy-order", "dungeon-record", "gear-quality", "dungeon-run")
+internal fun coreExpansionRow(row: String) = row.substringBefore('\t') in setOf("survey", "profession", "buy-order", "dungeon-record", "gear-quality", "dungeon-run", "journey", "gear-base", "map-level")
 
 class CoreMmoExpansionTest {
     private class Fixture {
@@ -136,7 +136,7 @@ class CoreMmoExpansionTest {
     @Test fun `v6 upgrade preserves exact backup equipment and enhancement`() {
         val f = Fixture(); val id = f.create()
         val original = f.a(id).copy(weaponEnhancement = CoreEnhancementState(25, 2), weaponBroken = true)
-        val body = CoreAccountCodec.encode(original).substringBefore("checksum\t").lineSequence().filterNot(::coreExpansionRow).joinToString("\n").replaceFirst("\t7\t", "\t6\t")
+        val body = CoreAccountCodec.encode(original).substringBefore("checksum\t").lineSequence().filterNot(::coreExpansionRow).joinToString("\n").replaceFirst("\t8\t", "\t6\t")
         val old = body + "checksum\t" + MessageDigest.getInstance("SHA-256").digest(body.toByteArray()).joinToString("") { "%02x".format(it) } + "\n"
         Files.writeString(f.dir.resolve("$id.account"), old); f.service.forget(id)
         val loaded = assertIs<CoreAccountLoadResult.Ready>(f.service.open(id)).account

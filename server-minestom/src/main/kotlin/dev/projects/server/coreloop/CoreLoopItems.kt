@@ -63,6 +63,7 @@ internal object CoreLoopItems {
         val tier = CoreAffixCatalog.gearTier(account, slot)
         val stats = CoreAffixCatalog.stats(account)
         val enhancement = CoreEnhancementCatalog.state(account, slot)
+        val identity = CoreEconomy.identity(account, slot)
         val base = if (slot == CoreGearSlot.WEAPON) CoreWeaponPresentation.skin(weapon(tier), tier, packed) else icon(material ?: Material.IRON_CHESTPLATE, "開拓者の防具")
             .withTag(actionTag, "armor").withTag(gearTag, CoreGearSlot.ARMOR.name)
         val rows = if (slot == CoreGearSlot.WEAPON) buildList {
@@ -73,20 +74,24 @@ internal object CoreLoopItems {
         } else listOf(CoreTooltipStat("最大HP", "${CoreWeaponPresentation.health(account)}", CoreUiIcon.HEALTH),
             CoreTooltipStat("基礎軽減 / MOD軽減", "${if (account.armorBroken) 0 else (tier - 1) * 10}% / ${stats.mitigationPercent.toInt()}%", CoreUiIcon.DEFENSE),
             CoreTooltipStat("最大マナ", "${100 + stats.maxManaFlat.toInt()}", CoreUiIcon.MANA))
-        return CoreUiTooltip.apply(base, CoreTooltipModel("${if (CoreEconomy.broken(account, slot)) "【破損】" else ""}T$tier 開拓者の${if (slot == CoreGearSlot.WEAPON) "大剣" else "防具"}${if (enhancement.level > 0) " +${enhancement.level}" else ""}",
+        val shown = if (slot == CoreGearSlot.WEAPON && identity.base.family != "greatsword") {
+            val model = if (identity.base == CoreWeaponBase.LONGBOW) "minecraft:bow" else "minecraft:blaze_rod"
+            base.withItemModel(model)
+        } else base
+        return CoreUiTooltip.apply(shown, CoreTooltipModel("${if (CoreEconomy.broken(account, slot)) "【破損】" else ""}T$tier ${if (slot == CoreGearSlot.WEAPON) identity.base.displayName else "開拓者の防具"}${if (enhancement.level > 0) " +${enhancement.level}" else ""}",
             rarity = when (CoreAffixCatalog.rarity(account, slot)) {
                 CoreGearRarity.NORMAL -> CoreUiRarity.COMMON
                 CoreGearRarity.MAGIC -> CoreUiRarity.UNCOMMON
                 CoreGearRarity.RARE -> CoreUiRarity.RARE
-            }, tier = tier, itemLevel = 1 + (tier - 1) * 15,
+            }, tier = tier, itemLevel = CoreJourneyRules.itemLevel(identity, tier),
             rarityLabel = CoreAffixCatalog.rarity(account, slot).displayName,
-            typeLabel = (if (slot == CoreGearSlot.WEAPON) "両手剣" else "防具セット") + " · 強化 +${enhancement.level}/30",
+            typeLabel = (if (slot == CoreGearSlot.WEAPON) identity.base.displayName else "防具セット") + " · 強化 +${enhancement.level}/30",
             stats = rows, affixes = account.equippedAffixes.filter { it.gear == slot }.sortedBy { it.index }.map { affixModel(it.stone) },
             modCapacity = CoreAffixCatalog.capacity(account, slot),
-            footer = listOf("製造品質 +${CoreEconomy.identity(account, slot).quality}%（基礎性能）", if (CoreEconomy.broken(account, slot)) "破損中：この装備の性能・MODは無効" else "未破損 / 遠征・戦闘では壊れません",
+            footer = listOf(if (slot == CoreGearSlot.WEAPON) identity.base.detail else "装備Lv鍛錬で同Tier内の基礎性能が成長", "製造品質 +${CoreEconomy.identity(account, slot).quality}%（基礎性能）", if (CoreEconomy.broken(account, slot)) "破損中：この装備の性能・MODは無効" else "未破損 / 遠征・戦闘では壊れません",
                 if (CoreEconomy.broken(account, slot)) "装備庫で修理：同Tier・同系統・+0・未破損を1個" else "+15以降の強化失敗で破損する場合があります",
                 "修理対象のMOD・強化値・製作者は維持",
-                "能力欄は強化と装備全体のMODを反映", "マジック：接頭1＋接尾1 / レア：接頭3＋接尾3", if (slot == CoreGearSlot.WEAPON) "左：3段斬撃 / 右：踏み込み / F：回避" else "防具MODはセット全体に1回適用")), packed)
+                "能力欄は装備Lv・強化・MODを反映", "マジック：接頭1＋接尾1 / レア：接頭3＋接尾3", if (slot == CoreGearSlot.WEAPON) "左：通常 / 右：第1スキル / F：回避" else "防具MODはセット全体に1回適用")), packed)
     }
 
     fun affixModel(stone: CoreAffixStone): CoreTooltipAffix {
@@ -147,7 +152,7 @@ internal object CoreLoopItems {
             CoreActivityKind.TRIAL -> "入手：通常マップのボスを討伐する"
         }, "手帳 → 境界の試練から出発", color = NamedTextColor.LIGHT_PURPLE).withAmount(count.coerceIn(1, 64).toInt())
 
-    fun map(data: CoreOwnedMap): ItemStack = icon(Material.FILLED_MAP, "T${data.tier} 未踏の地図",
+    fun map(data: CoreOwnedMap): ItemStack = icon(Material.FILLED_MAP, "T${data.tier} Lv${data.level} 未踏の地図",
         *listOf("右クリック：この地図で出発", "石板をつかんで重ねるとMODを付与", "付与MOD ${data.modifiers.size}/3")
             .plus(data.modifiers.map { modifierName(it) }).toTypedArray(), color = colors[data.tier - 1])
         .withTag(ownedMapTag, data.id.toString())
@@ -180,8 +185,14 @@ internal object CoreLoopItems {
         player.inventory.setItemStack(0, gear(account, CoreGearSlot.WEAPON, packed))
         val skillIcons = listOf(Material.FEATHER, Material.IRON_SWORD, Material.BLAZE_POWDER)
         val descriptions = listOf("前方へ踏み込み斬る / マナ15 / 4秒", "前方の広範囲を叩く / マナ25 / 7秒", "周囲へ3連撃 / マナ35 / 11秒")
-        for (id in 0..2) player.inventory.setItemStack(id + 1, CoreUiItemSkin.apply(icon(skillIcons[id], CorePlayerCombat.SKILL_NAMES[id], descriptions[id],
-            "右クリックで使用し、大剣に持ち替える").withTag(actionTag, "skill:$id"), listOf(CoreUiIcon.DASH, CoreUiIcon.SLAM, CoreUiIcon.WHIRL)[id], packed))
+        for (id in 0..2) {
+            val available = CoreJourneyRules.skillUnlocked(account, id)
+            var item = icon(skillIcons[id], (if (available) "" else "【未解放】") + account.journey.job.skills[id],
+                "${account.journey.job.displayName} / マナ${listOf(15, 25, 35)[id]} / 再使用${listOf(4, 7, 11)[id]}秒",
+                "Lv${listOf(1, 4, 8)[id]}で解放 / 選んで右クリック").withTag(actionTag, "skill:$id")
+            if (packed) item = item.withItemModel("projects:core_ui/${account.journey.job.icons[id]}")
+            player.inventory.setItemStack(id + 1, item)
+        }
         player.inventory.setItemStack(4, icon(Material.HONEY_BOTTLE, "回復薬（倉庫 ${account.amount(CoreResource.POTION)}）",
             "右クリック：最大HPの45%を回復", "工房で布から調合 / 再使用10秒").withTag(actionTag, "potion"))
         player.inventory.setItemStack(5, icon(Material.COMPASS, "帰還の羅針盤", "右クリック：探索状況・帰還", "獲得素材は帰還前から保存されています").withTag(actionTag, "journal"))

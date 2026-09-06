@@ -298,6 +298,10 @@ class CoreLoopMenusTest {
                 catch (error: Exception) { failures += "$prefix / $name: ${error.message}" }
             }
             check("journal") { f.menus.journal(f.player) }
+            check("career") { f.menus.career(f.player) }
+            check("weapon bases") { f.menus.career(f.player); f.click(30) }
+            check("temper weapon") { f.menus.career(f.player); f.click(33) }
+            check("temper armor") { f.menus.career(f.player); f.click(33); f.click(12) }
             for (page in 0..1) check("maps$page") { f.menus.expeditions(f.player, tier, page) }
             check("map detail three modifiers") { f.menus.mapDetail(f.player, f.host.current.maps.first().id) }
             for (page in 0..8) check("storage$page") { f.menus.storage(f.player, tier, page) }

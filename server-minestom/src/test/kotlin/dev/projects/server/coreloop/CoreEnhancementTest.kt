@@ -259,7 +259,7 @@ class CoreEnhancementTest {
         assertEquals(CoreEnhancementState(1), after.weaponEnhancement)
         assertEquals(1, after.smithingXp)
         assertEquals(encoded, Files.readString(backup))
-        assertTrue(Files.readString(path).startsWith("PROJECTS_CORE_LOOP\t7\t"))
+        assertTrue(Files.readString(path).startsWith("PROJECTS_CORE_LOOP\t8\t"))
         assertEquals(CoreTransactionStatus.REPLAYED, service.transact(old.playerId, operation).status)
     }
 
@@ -287,7 +287,7 @@ class CoreEnhancementTest {
 
     private fun asV3(account: CoreAccount): String = checksum(CoreAccountCodec.encode(account).substringBefore("checksum\t")
         .lineSequence().filterNot(::coreExpansionRow).filterNot { it.startsWith("enhancement\t") || it.startsWith("economy\t") || it.startsWith("identity\t") }.joinToString("\n")
-        .replaceFirst("PROJECTS_CORE_LOOP\t7\t", "PROJECTS_CORE_LOOP\t3\t"))
+        .replaceFirst("PROJECTS_CORE_LOOP\t8\t", "PROJECTS_CORE_LOOP\t3\t"))
     private fun checksum(body: String): String = body + "checksum\t" + MessageDigest.getInstance("SHA-256")
         .digest(body.toByteArray(UTF_8)).joinToString("") { "%02x".format(it) } + "\n"
 }

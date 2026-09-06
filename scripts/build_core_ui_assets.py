@@ -9,7 +9,7 @@ import json
 import shutil
 import struct
 import zlib
-from build_core_hud_assets import build_hud
+from build_core_hud_assets import build_hud, SKILLS
 from build_core_menu_assets import build_menu
 from PIL import Image
 
@@ -64,14 +64,15 @@ def item_model(name, source):
 
 
 def build():
-    for name in ("dash", "slam", "whirl"):
+    for name in SKILLS:
         master = SOURCE / f"skills/{name}.png"
         if master.is_file():
-            shutil.copyfile(master, ASSETS / f"textures/gui/skills/{name}.png")
+            with Image.open(master) as original:
+                original.convert("RGBA").resize((32, 32), Image.Resampling.NEAREST).save(ASSETS / f"textures/gui/skills/{name}.png")
     write_json(PACK / "pack.mcmeta", {"pack": {"description": "ProjectS · 開拓者のUI / Vanilla 26.2", "min_format": [88, 0], "max_format": [88, 0]}})
     stats = [("attack", "attack_power"), ("speed", "attack_speed"), ("critical", "magic_power"), ("defense", "defense"),
              ("health", "health"), ("magic", "magic_power"), ("mana", "mana"), ("reward", "xp"), ("mod", "level")]
-    skills = [("dash", 0xE021), ("slam", 0xE022), ("whirl", 0xE023)]
+    skills = [(name, 0xE021 + index) for index, name in enumerate(SKILLS)]
     icon_providers = [bitmap(f"stats/{asset}", 9, 8, [chr(0xE001 + i)]) for i, (_, asset) in enumerate(stats)]
     icon_providers += [bitmap(f"skills/{name}", 16, 12, [chr(glyph)]) for name, glyph in skills]
     write_json(ASSETS / "font/core_icons.json", {"providers": icon_providers})

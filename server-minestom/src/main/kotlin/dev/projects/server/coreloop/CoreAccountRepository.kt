@@ -209,6 +209,7 @@ class CoreAccountRepository(
             bytes.toString(UTF_8).startsWith("PROJECTS_CORE_LOOP\t4\t") -> 4
             bytes.toString(UTF_8).startsWith("PROJECTS_CORE_LOOP\t5\t") -> 5
             bytes.toString(UTF_8).startsWith("PROJECTS_CORE_LOOP\t6\t") -> 6
+            bytes.toString(UTF_8).startsWith("PROJECTS_CORE_LOOP\t7\t") -> 7
             else -> return
         }
         val backup = directory.resolve("$playerId.account.v$version.bak")
@@ -230,7 +231,7 @@ class CoreAccountRepository(
 internal object CoreAccountCodec {
     fun encode(account: CoreAccount): String {
         val body = buildString {
-            append("PROJECTS_CORE_LOOP\t7\t${account.playerId}\t${account.revision}\n")
+            append("PROJECTS_CORE_LOOP\t8\t${account.playerId}\t${account.revision}\n")
             append("gear\t${account.weaponTier}\t${account.armorTier}\t${account.unlockedMapTier}\n")
             append("crafting\t${account.weaponRarity}\t${account.armorRarity}\t${account.craftingSeed}\n")
             append("enhancement\t${account.weaponEnhancement.level}\t${account.weaponEnhancement.failures}\t${account.armorEnhancement.level}\t${account.armorEnhancement.failures}\t${account.smithingXp}\n")
@@ -243,10 +244,13 @@ internal object CoreAccountCodec {
             }
             append("survey\t${account.surveyPoints}\n")
             account.professions.entries.sortedBy { it.key.ordinal }.forEach { (key, p) -> append("profession\t$key\t${p.xp}\t${p.returnCredit}\n") }
-            account.buyOrders.forEach { append("buy-order\t${it.id}\t${it.unitPrice}\t${it.remaining}\t${it.tier}\t${it.resource ?: ""}\t${it.slot ?: ""}\n") }
+            account.buyOrders.forEach { append("buy-order\t${it.id}\t${it.unitPrice}\t${it.remaining}\t${it.tier}\t${it.resource ?: ""}\t${it.slot ?: ""}\t${it.family ?: ""}\n") }
             account.dungeonRecords.toSortedMap().forEach { (tier, rank) -> append("dungeon-record\t$tier\t$rank\n") }
             account.activeRun?.dungeon?.let { append("dungeon-run\t${it.ascension}\t${it.stages}\t${it.roomsPerFloor}\t${it.rewardedStage}\n") }
             (account.storedGear.map { it.identity } + account.weaponIdentity + account.armorIdentity).forEach { append("gear-quality\t${it.id}\t${it.quality}\n") }
+            account.journey.let { append("journey\t${it.job}\t${it.chosen}\t${it.xp}\t${it.lessons}\t${it.legacy}\n") }
+            (account.storedGear.map { it.identity } + account.weaponIdentity + account.armorIdentity).forEach { append("gear-base\t${it.id}\t${it.base}\t${it.itemLevel}\n") }
+            (account.maps + listOfNotNull(account.activeRun?.map)).forEach { append("map-level\t${it.id}\t${it.level}\n") }
             account.offers.forEach { append("offer\t${it.id}\t${it.price}\t${it.material?.resource ?: ""}\t${it.material?.tier ?: 1}\t${it.quantity}\t${it.gearId ?: ""}\n") }
             account.currencies.entries.sortedBy { it.key.ordinal }.forEach { (key, amount) -> append("currency\t$key\t$amount\n") }
             account.fragments.entries.sortedBy { it.key.ordinal }.forEach { (key, amount) -> append("fragment\t$key\t$amount\n") }
@@ -272,7 +276,7 @@ internal object CoreAccountCodec {
         require(text.substring(checksumAt) == "checksum\t${digest(body)}\n") { "保存データの検証に失敗しました" }
         val rows = body.trimEnd('\n').split('\n').map { it.split('\t') }
         val header = rows.first()
-        require(header.size == 4 && header[0] == "PROJECTS_CORE_LOOP" && header[1] in setOf("1", "2", "3", "4", "5", "6", "7")) { "未対応の保存形式です" }
+        require(header.size == 4 && header[0] == "PROJECTS_CORE_LOOP" && header[1] in setOf("1", "2", "3", "4", "5", "6", "7", "8")) { "未対応の保存形式です" }
         val version = header[1].toInt()
         require(UUID.fromString(header[2]) == playerId) { "保存データのプレイヤーが一致しません" }
         val gear = rows.getOrNull(1) ?: error("装備データがありません")
@@ -300,12 +304,19 @@ internal object CoreAccountCodec {
         val records = linkedMapOf<Int, Int>()
         val qualities = linkedMapOf<UUID, Int>()
         var dungeon: CoreDungeonEntry? = null
+        var journey: CoreJourney? = null
+        val bases = linkedMapOf<UUID, Pair<CoreWeaponBase, Int>>()
+        val mapLevels = linkedMapOf<UUID, Int>()
         rows.drop(2).forEach { row -> when (row[0]) {
+            "journey" -> { require(version >= 8 && row.size == 6 && journey == null); journey = CoreJourney(CoreClass.valueOf(row[1]), row[2].toBooleanStrict(), row[3].toLong(), row[4].toInt(), row[5].toBooleanStrict()) }
+            "gear-base" -> { require(version >= 8 && row.size == 4); require(bases.put(UUID.fromString(row[1]), CoreWeaponBase.valueOf(row[2]) to row[3].toInt()) == null) }
+            "map-level" -> { require(version >= 8 && row.size == 3); require(mapLevels.put(UUID.fromString(row[1]), row[2].toInt()) == null) }
             "survey" -> { require(version >= 7 && row.size == 2 && survey == null); survey = row[1].toLong() }
             "profession" -> { require(version >= 7 && row.size == 4); require(professions.put(CoreProfession.valueOf(row[1]), CoreProfessionProgress(row[2].toLong(), row[3].toInt())) == null) }
-            "buy-order" -> { require(version >= 7 && row.size == 7 && buyOrders.size < CoreEconomy.MAX_OFFERS)
+            "buy-order" -> { require(version >= 7 && row.size == (if (version >= 8) 8 else 7) && buyOrders.size < CoreEconomy.MAX_OFFERS)
                 buyOrders += CoreBuyOrder(UUID.fromString(row[1]), row[2].toLong(), row[3].toInt(), row[4].toInt(),
-                    row[5].takeIf { it.isNotEmpty() }?.let(CoreResource::valueOf), row[6].takeIf { it.isNotEmpty() }?.let(CoreGearSlot::valueOf)) }
+                    row[5].takeIf { it.isNotEmpty() }?.let(CoreResource::valueOf), row[6].takeIf { it.isNotEmpty() }?.let(CoreGearSlot::valueOf),
+                    if (version >= 8) row[7].takeIf { it.isNotEmpty() } else if (row[6] == "WEAPON") "greatsword" else null) }
             "dungeon-record" -> { require(version >= 7 && row.size == 3); require(records.put(row[1].toInt(), row[2].toInt()) == null) }
             "gear-quality" -> { require(version >= 7 && row.size == 3); require(qualities.put(UUID.fromString(row[1]), row[2].toInt()) == null) }
             "dungeon-run" -> { require(version >= 7 && row.size == 5 && dungeon == null); dungeon = CoreDungeonEntry(row[1].toInt(), row[2].toInt(), row[3].toInt(), row[4].toInt()) }
@@ -374,9 +385,17 @@ internal object CoreAccountCodec {
             identities.replaceAll { _, id -> id.copy(quality = qualities.getValue(id.id)) }
         }
         active = active?.copy(dungeon = dungeon)
+        if (version >= 8) {
+            require(journey != null && bases.keys == qualities.keys)
+            require(mapLevels.keys == (maps.map { it.id } + listOfNotNull(active?.map?.id)).toSet())
+            identities.replaceAll { _, id -> val b = bases.getValue(id.id); id.copy(base = b.first, itemLevel = b.second) }
+            fun leveled(map: CoreOwnedMap) = CoreOwnedMap(map.id, map.seed, map.tier, map.modifiers, mapLevels.getValue(map.id))
+            val upgradedMaps = maps.map(::leveled); maps.clear(); maps.addAll(upgradedMaps)
+            active = active?.let { it.copy(map = leveled(it.map)) }
+        }
         val stored = gearRows.map { (id, r) ->
             val slot = CoreGearSlot.valueOf(r[4])
-            CoreStoredGear(readIdentity(r.subList(1, 4)).copy(quality = qualities[id] ?: 0), slot, r[5].toInt(), CoreGearRarity.valueOf(r[6]),
+            CoreStoredGear(readIdentity(r.subList(1, 4)).copy(quality = qualities[id] ?: 0, base = bases[id]?.first ?: CoreWeaponBase.STANDARD, itemLevel = bases[id]?.second ?: 0), slot, r[5].toInt(), CoreGearRarity.valueOf(r[6]),
                 CoreEnhancementState(r[7].toInt(), r[8].toInt()), storedAffixes[id].orEmpty().map { CoreEquippedAffix(slot, it.first, it.second) }, r[9].toBooleanStrict(), readBroken(r[10], version))
         }
         return CoreAccount(playerId, header[3].toLong(), balances, weaponTier, armorTier, gear[3].toInt(), maps, active, receipts, sources, stones, equipped,
@@ -390,7 +409,8 @@ internal object CoreAccountCodec {
             storedGear = stored, offers = offers, deliveryDay = economy?.get(2)?.toLong() ?: 0, deliveries = economy?.get(3)?.toInt() ?: 0,
             weaponBroken = economy?.get(4)?.let { readBroken(it, version) } ?: false,
             armorBroken = economy?.get(5)?.let { readBroken(it, version) } ?: false,
-            professions = professions, surveyPoints = survey ?: 0, buyOrders = buyOrders, dungeonRecords = records)
+            professions = professions, surveyPoints = survey ?: 0, buyOrders = buyOrders, dungeonRecords = records,
+            journey = journey ?: CoreJourney(xp = CoreJourneyRules.threshold(CoreJourneyRules.floor(gear[3].toInt()))))
     }
 
     /** Retired v5 wear is validated but never reinterpreted as enhancement damage. */

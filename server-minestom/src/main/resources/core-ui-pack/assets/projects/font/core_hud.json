@@ -102,6 +102,132 @@
     },
     {
       "type": "bitmap",
+      "file": "projects:gui/core/skill_pierce_states.png",
+      "height": 32,
+      "ascent": 29,
+      "chars": [
+        "\ue600\ue601\ue602\ue603",
+        "\ue604\ue605\ue606\ue607",
+        "\ue608\ue609\ue60a\ue60b",
+        "\ue60c\ue60d\ue60e\ue60f",
+        "\ue610\ue611\ue612\ue613",
+        "\ue614\ue615\ue616\ue617"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/core/skill_frost_fan_states.png",
+      "height": 32,
+      "ascent": 29,
+      "chars": [
+        "\ue620\ue621\ue622\ue623",
+        "\ue624\ue625\ue626\ue627",
+        "\ue628\ue629\ue62a\ue62b",
+        "\ue62c\ue62d\ue62e\ue62f",
+        "\ue630\ue631\ue632\ue633",
+        "\ue634\ue635\ue636\ue637"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/core/skill_arrow_rain_states.png",
+      "height": 32,
+      "ascent": 29,
+      "chars": [
+        "\ue640\ue641\ue642\ue643",
+        "\ue644\ue645\ue646\ue647",
+        "\ue648\ue649\ue64a\ue64b",
+        "\ue64c\ue64d\ue64e\ue64f",
+        "\ue650\ue651\ue652\ue653",
+        "\ue654\ue655\ue656\ue657"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/core/skill_firebolt_states.png",
+      "height": 32,
+      "ascent": 29,
+      "chars": [
+        "\ue660\ue661\ue662\ue663",
+        "\ue664\ue665\ue666\ue667",
+        "\ue668\ue669\ue66a\ue66b",
+        "\ue66c\ue66d\ue66e\ue66f",
+        "\ue670\ue671\ue672\ue673",
+        "\ue674\ue675\ue676\ue677"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/core/skill_frost_nova_states.png",
+      "height": 32,
+      "ascent": 29,
+      "chars": [
+        "\ue680\ue681\ue682\ue683",
+        "\ue684\ue685\ue686\ue687",
+        "\ue688\ue689\ue68a\ue68b",
+        "\ue68c\ue68d\ue68e\ue68f",
+        "\ue690\ue691\ue692\ue693",
+        "\ue694\ue695\ue696\ue697"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/core/skill_meteor_states.png",
+      "height": 32,
+      "ascent": 29,
+      "chars": [
+        "\ue6a0\ue6a1\ue6a2\ue6a3",
+        "\ue6a4\ue6a5\ue6a6\ue6a7",
+        "\ue6a8\ue6a9\ue6aa\ue6ab",
+        "\ue6ac\ue6ad\ue6ae\ue6af",
+        "\ue6b0\ue6b1\ue6b2\ue6b3",
+        "\ue6b4\ue6b5\ue6b6\ue6b7"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/core/skill_star_thread_states.png",
+      "height": 32,
+      "ascent": 29,
+      "chars": [
+        "\ue6c0\ue6c1\ue6c2\ue6c3",
+        "\ue6c4\ue6c5\ue6c6\ue6c7",
+        "\ue6c8\ue6c9\ue6ca\ue6cb",
+        "\ue6cc\ue6cd\ue6ce\ue6cf",
+        "\ue6d0\ue6d1\ue6d2\ue6d3",
+        "\ue6d4\ue6d5\ue6d6\ue6d7"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/core/skill_star_ring_states.png",
+      "height": 32,
+      "ascent": 29,
+      "chars": [
+        "\ue6e0\ue6e1\ue6e2\ue6e3",
+        "\ue6e4\ue6e5\ue6e6\ue6e7",
+        "\ue6e8\ue6e9\ue6ea\ue6eb",
+        "\ue6ec\ue6ed\ue6ee\ue6ef",
+        "\ue6f0\ue6f1\ue6f2\ue6f3",
+        "\ue6f4\ue6f5\ue6f6\ue6f7"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/core/skill_starfall_states.png",
+      "height": 32,
+      "ascent": 29,
+      "chars": [
+        "\ue700\ue701\ue702\ue703",
+        "\ue704\ue705\ue706\ue707",
+        "\ue708\ue709\ue70a\ue70b",
+        "\ue70c\ue70d\ue70e\ue70f",
+        "\ue710\ue711\ue712\ue713",
+        "\ue714\ue715\ue716\ue717"
+      ]
+    },
+    {
+      "type": "bitmap",
       "file": "projects:gui/core/counter_digits.png",
       "height": 32,
       "ascent": 29,

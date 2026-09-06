@@ -25,14 +25,15 @@ data class CoreMapModifier(val discipline: String?, val stat: String, val percen
     val key: String get() = "${discipline ?: "all"}:$stat"
 }
 
-class CoreOwnedMap(val id: UUID, val seed: Long, val tier: Int, modifiers: List<CoreMapModifier> = emptyList()) {
+class CoreOwnedMap(val id: UUID, val seed: Long, val tier: Int, modifiers: List<CoreMapModifier> = emptyList(), val level: Int = CoreJourneyRules.floor(tier)) {
     val modifiers: List<CoreMapModifier> = Collections.unmodifiableList(modifiers.toList())
     init {
         require(tier in 1..4)
+        require(level in CoreJourneyRules.floor(tier)..CoreJourneyRules.ceiling(tier))
         require(modifiers.size <= 3 && modifiers.map { it.key }.distinct().size == modifiers.size)
     }
-    fun withModifier(modifier: CoreMapModifier) = CoreOwnedMap(id, seed, tier, modifiers + modifier)
-    override fun toString() = "CoreOwnedMap($id,$seed,$tier,$modifiers)"
+    fun withModifier(modifier: CoreMapModifier) = CoreOwnedMap(id, seed, tier, modifiers + modifier, level)
+    override fun toString() = "CoreOwnedMap($id,$seed,$tier,$modifiers,$level)"
 }
 
 data class CoreActiveRun(val id: UUID, val map: CoreOwnedMap, val bossDefeated: Boolean = false, val trialId: String? = null, val dungeon: CoreDungeonEntry? = null) {
@@ -76,6 +77,7 @@ class CoreAccount(
     val surveyPoints: Long = 0,
     buyOrders: List<CoreBuyOrder> = emptyList(),
     dungeonRecords: Map<Int, Int> = emptyMap(),
+    val journey: CoreJourney = CoreJourney(),
 ) {
     val professions = Collections.unmodifiableMap(professions.toMap())
     val buyOrders = Collections.unmodifiableList(buyOrders.toList())
@@ -101,6 +103,9 @@ class CoreAccount(
         require(storedGear.size <= CoreEconomy.MAX_GEAR && offers.size <= CoreEconomy.MAX_OFFERS)
         val identities = storedGear.map { it.identity.id } + weaponIdentity.id + armorIdentity.id
         require(identities.distinct().size == identities.size)
+        (storedGear.map { it.identity to it.tier } + listOf(weaponIdentity to weaponTier, armorIdentity to armorTier)).forEach { (id, tier) ->
+            require(id.itemLevel == 0 || id.itemLevel in CoreJourneyRules.floor(tier)..CoreJourneyRules.ceiling(tier))
+        }
         require(offers.map { it.id }.distinct().size == offers.size)
         require(offers.mapNotNull { it.gearId }.distinct().size == offers.count { it.gearId != null })
         require(offers.all { offer -> offer.gearId == null || storedGear.any { it.identity.id == offer.gearId && !it.identity.bound } })
@@ -165,21 +170,26 @@ class CoreAccount(
         surveyPoints: Long = this.surveyPoints,
         buyOrders: List<CoreBuyOrder> = this.buyOrders,
         dungeonRecords: Map<Int, Int> = this.dungeonRecords,
+        journey: CoreJourney = this.journey,
     ) = CoreAccount(playerId, revision, balances, weaponTier, armorTier, unlockedMapTier, maps, activeRun, receipts, claimedSources, affixStones, equippedAffixes,
         weaponRarity, armorRarity, currencies, fragments, legacyLayouts, craftingSeed, weaponEnhancement, armorEnhancement, smithingXp,
-        silver, weaponIdentity, armorIdentity, storedGear, offers, deliveryDay, deliveries, weaponBroken, armorBroken, professions, surveyPoints, buyOrders, dungeonRecords)
+        silver, weaponIdentity, armorIdentity, storedGear, offers, deliveryDay, deliveries, weaponBroken, armorBroken, professions, surveyPoints, buyOrders, dungeonRecords, journey)
 }
 
 data class CoreOperation(val requestId: UUID, val expectedRevision: Long, val action: CoreAction)
 
 sealed interface CoreAction {
+    data class ChooseClass(val job: CoreClass) : CoreAction
+    /** Emitted only from authoritative server gameplay, never a menu's arbitrary completion claim. */
+    data class LearnCombat(val lesson: Int) : CoreAction
+    data class TemperEquipment(val slot: CoreGearSlot) : CoreAction
     data class SurveyMap(val tier: Int, val raw: CoreResource, val seed: Long) : CoreAction
     data class PlaceBuyOrder(val resource: CoreResource?, val slot: CoreGearSlot?, val tier: Int, val quantity: Int, val unitPrice: Long) : CoreAction
     data class CancelBuyOrder(val id: UUID) : CoreAction
     data class FillBuyOrder(val buyer: UUID, val id: UUID, val unitPrice: Long, val quantity: Int = 1, val gearId: UUID? = null) : CoreAction
     data class StartDungeon(val runId: UUID, val tier: Int, val ascension: Int, val seed: Long) : CoreAction
     data class DungeonReward(val runId: UUID, val stage: Int, val boss: Boolean, val treasury: Boolean = false) : CoreAction
-    data class Manufacture(val slot: CoreGearSlot, val tier: Int, val count: Int = 1) : CoreAction
+    data class Manufacture(val slot: CoreGearSlot, val tier: Int, val count: Int = 1, val base: CoreWeaponBase = CoreWeaponBase.STANDARD) : CoreAction
     data class Equip(val id: UUID) : CoreAction
     data class Repair(val slot: CoreGearSlot, val input: UUID) : CoreAction
     data class Deliver(val id: UUID) : CoreAction
@@ -207,7 +217,7 @@ sealed interface CoreAction {
     data object UpgradeArmor : CoreAction
     data class Exchange(val resource: CoreResource, val tier: Int, val batches: Int = 1) : CoreAction
     data class Craft(val resource: CoreResource, val batches: Int = 1, val tier: Int = 1) : CoreAction
-    data class ClaimMap(val tier: Int, val seed: Long) : CoreAction
+    data class ClaimMap(val tier: Int, val seed: Long, val level: Int? = null) : CoreAction
     data class ApplyTablet(val mapId: UUID, val modifier: CoreMapModifier) : CoreAction
     data class StartRun(val mapId: UUID, val runId: UUID) : CoreAction
     /** Only failed generation/transfer refunds a map. Normal withdrawal/death/disconnect does not. */

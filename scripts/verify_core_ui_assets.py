@@ -6,7 +6,7 @@ import math
 import struct
 import zlib
 from PIL import Image
-from build_core_hud_assets import vanilla_overrides
+from build_core_hud_assets import vanilla_overrides, SKILLS
 from build_core_menu_assets import TEXT_YS, CELL, SOURCE_CELL, TEXT_SCALE, TEXT_BASE, FRAME_BASE, BUTTON_BASE, CARD_BASE, PALETTE, DOT_FONT_SHA256
 from build_core_menu_art import ART, ART_BASE, ART_CELL, ART_YS, ART_SIZES
 
@@ -53,7 +53,7 @@ def verify():
                 assert key not in glyphs, "Duplicate glyph"
                 glyphs.add(key)
     hud = json.loads((PACK / "assets/projects/font/core_hud.json").read_text())["providers"]
-    assert len(hud) == 8
+    assert len(hud) == 5 + len(SKILLS)
     for provider in hud:
         filename = provider["file"].replace("projects:", "assets/projects/textures/")
         with Image.open(PACK / filename) as sheet:
@@ -63,7 +63,7 @@ def verify():
                     box = sheet.crop((x * cell_w, y * cell_h, (x + 1) * cell_w, (y + 1) * cell_h)).getchannel("A").getbbox()
                     assert box is not None
                     advance = round(box[2] * provider["height"] / cell_h) + 1
-                    expected = 82 if ord(char) < 0xE400 else 33 if ord(char) < 0xE500 else 9 if ord(char) < 0xE520 else 4
+                    expected = 33 if ord(char) >= 0xE600 else 82 if ord(char) < 0xE400 else 33 if ord(char) < 0xE500 else 9 if ord(char) < 0xE520 else 4
                     assert advance == expected, f"HUD anchor drift: {hex(ord(char))} advances {advance}, expected {expected}"
     layout = json.loads((ROOT / "assets/core-ui/hud-layout.json").read_text())
     assert layout["bars"] == {"left_x": [-91, 10], "width": 81, "height": 9, "top_from_bottom": 39}

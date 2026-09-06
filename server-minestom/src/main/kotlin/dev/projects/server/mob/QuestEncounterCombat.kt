@@ -77,6 +77,7 @@ class QuestEncounterCombat(
     spawnBoss: Boolean = true,
     private val healthMultiplier: Double = 1.0,
     private val damageMultiplier: Double = 1.0,
+    private val encounterLevel: Int = (tier - 1) * 10 + 1,
 ) {
     private class Mob(
         val entity: EntityCreature,
@@ -98,6 +99,7 @@ class QuestEncounterCombat(
         var challengeStage = 0
         var guardianIds = emptySet<UUID>()
         @Volatile var spawnFailure: Throwable? = null
+        var model: WardenModel? = null
     }
 
     private val mobs = linkedMapOf<UUID, Mob>()
@@ -118,9 +120,11 @@ class QuestEncounterCombat(
     var latestDefeat: QuestMobDefeat? = null
         private set
     internal val groundDisplayCount: Int get() = telegraphs.displayCount
+    internal val modelDisplayCount: Int get() = mobs.values.sumOf { it.model?.count ?: 0 }
 
     init {
         require(tier in 1..4)
+        require(encounterLevel in ((tier - 1) * 10 + 1)..(tier * 10))
         require(healthMultiplier.isFinite() && healthMultiplier in .1..20.0 && damageMultiplier.isFinite() && damageMultiplier in .1..10.0)
         require(explicitBossArchetype == null || explicitBossArchetype.rarity == QuestMobRarity.BOSS)
         encounters.forEachIndexed { index, encounter ->
@@ -182,7 +186,8 @@ class QuestEncounterCombat(
         .filter { it.life.isAlive && it.life.phase != QuestMobPhase.RETURNING && isSpawned(it) }
         .map { mob ->
             val scale = mob.definition.scale
-            CombatTarget(mob.entity.uuid, mob.entity.position.add(0.0, 0.9 * scale, 0.0), Vec(0.35 * scale, 0.9 * scale, 0.35 * scale))
+            if (mob.model != null) CombatTarget(mob.entity.uuid, mob.entity.position.add(0.0, 1.8, 0.0), Vec(1.2, 1.8, .6))
+            else CombatTarget(mob.entity.uuid, mob.entity.position.add(0.0, 0.9 * scale, 0.0), Vec(0.35 * scale, 0.9 * scale, 0.35 * scale))
         }
 
     fun applyDamage(targetId: UUID, attacker: Player, amount: Double): Boolean {
@@ -193,16 +198,20 @@ class QuestEncounterCombat(
     fun applyDamageAmount(targetId: UUID, attacker: Player, amount: Double): Double? =
         damage(targetId, attacker, amount, effect = false)
 
+    /** Only called after the server has resolved an aimed projectile ray, never from packet target IDs. */
+    fun applyProjectileDamage(targetId: UUID, attacker: Player, amount: Double): Double? =
+        damage(targetId, attacker, amount, effect = false, projectile = true)
+
     /** Only for an effect whose initial server hit was already validated (burn/chain), never packet input. */
     fun applyEffectDamage(targetId: UUID, attacker: Player, amount: Double): Boolean {
         return damage(targetId, attacker, amount, effect = true) != null
     }
 
-    private fun damage(targetId: UUID, attacker: Player, amount: Double, effect: Boolean): Double? {
+    private fun damage(targetId: UUID, attacker: Player, amount: Double, effect: Boolean, projectile: Boolean = false): Double? {
         if (disposed || attacker.instance !== instance || !canTarget(attacker)) return null
         val mob = mobs[targetId] ?: return null
         if ((mob.boss && bossSealed) || mob.guardianIds.any(::isAlive)) return null
-        val range = if (effect) 24.0 else 8.0
+        val range = if (effect || projectile) 24.0 else 8.0
         if (!isSpawned(mob) || attacker.position.distanceSquared(mob.entity.position) > range * range) return null
         if (!effect && !mob.entity.hasLineOfSight(attacker)) return null
         val guarded = !effect && guarding(mob) &&
@@ -223,6 +232,7 @@ class QuestEncounterCombat(
             latestDefeat = QuestMobDefeat("mob:${mob.entity.uuid}", mob.entity.uuid, mob.definition.archetype,
                 mob.definition.archetype.rarity, mob.definition.dropKind, tier, mob.entity.position, attacker.uuid)
             mob.entity.kill()
+            mob.model?.dispose()
             // Health is already terminal before this callback can re-enter the runtime.
             onMobDefeated(attacker, mob.boss)
         } else {
@@ -248,6 +258,7 @@ class QuestEncounterCombat(
             mob.spawnFailure?.let { throw IllegalStateException("Quest mob failed to spawn at ${mob.home}", it) }
             if (!mob.life.isAlive || !isSpawned(mob)) continue
             tickMob(mob, players, nowMillis)
+            mob.model?.tick(mob.entity.position, nowMillis, mob.life.phase == QuestMobPhase.ATTACKING, mob.life.health / mob.life.maximumHealth)
             if (actionsStoppedForReturn || disposed) return
         }
     }
@@ -282,12 +293,16 @@ class QuestEncounterCombat(
             mob.target = null
             mob.lastAttacker = null
             mob.entity.remove()
+            mob.model?.dispose()
         }
     }
 
     private fun spawn(position: Pos, encounterIndex: Int, archetype: QuestMobArchetype): UUID {
         val base = QuestMobContent.definition(tier, archetype)
-        val definition = base.copy(maximumHealth = base.maximumHealth * healthMultiplier, abilities = base.abilities.map { it.copy(damage = it.damage * damageMultiplier) })
+        val rank = encounterLevel - ((tier - 1) * 10 + 1)
+        val balance = dev.projects.server.coreloop.CoreMmoTuning.balance
+        val definition = base.copy(maximumHealth = base.maximumHealth * healthMultiplier * (1 + rank * balance.mobRankHealthPermille / 1000.0),
+            abilities = base.abilities.map { it.copy(damage = it.damage * damageMultiplier * (1 + rank * balance.mobRankDamagePermille / 1000.0)) })
         val entity = EntityCreature(definition.entityType)
         entity.isInvulnerable = true
         entity.isCustomNameVisible = true
@@ -305,6 +320,14 @@ class QuestEncounterCombat(
         entity.setInstance(instance, position).whenComplete { _, error ->
             if (error != null) mob.spawnFailure = error
             if (disposed) entity.remove()
+            else if (error == null && WardenModel.supports(archetype)) {
+                runCatching {
+                    mob.model = WardenModel(instance, archetype, position)
+                    entity.isInvisible = true
+                    EquipmentSlot.entries.forEach { entity.setEquipment(it, ItemStack.AIR) }
+                    if (disposed || !mob.life.isAlive) mob.model?.dispose()
+                }.onFailure { mob.spawnFailure = it }
+            }
         }
         return entity.uuid
     }
@@ -523,7 +546,7 @@ class QuestEncounterCombat(
             QuestMobRarity.ELITE -> NamedTextColor.LIGHT_PURPLE
             QuestMobRarity.NORMAL -> NamedTextColor.GOLD
         }
-        mob.entity.customName = Component.text(base + suffix, color)
+        mob.entity.customName = Component.text("Lv$encounterLevel " + base + suffix, color)
     }
 
     private fun drawWarning(mob: Mob, frame: MobAbilityFrame, impact: Boolean): Boolean {

@@ -28,9 +28,18 @@
     "no_mana": 21
   },
   "master_sources": {
-    "dash": "server-minestom/src/main/resources/core-ui-pack/assets/projects/textures/gui/skills/dash.png",
-    "slam": "server-minestom/src/main/resources/core-ui-pack/assets/projects/textures/gui/skills/slam.png",
-    "whirl": "server-minestom/src/main/resources/core-ui-pack/assets/projects/textures/gui/skills/whirl.png"
+    "dash": "assets/core-ui/skills/dash.png",
+    "slam": "assets/core-ui/skills/slam.png",
+    "whirl": "assets/core-ui/skills/whirl.png",
+    "pierce": "assets/core-ui/skills/pierce.png",
+    "frost_fan": "assets/core-ui/skills/frost_fan.png",
+    "arrow_rain": "assets/core-ui/skills/arrow_rain.png",
+    "firebolt": "assets/core-ui/skills/firebolt.png",
+    "frost_nova": "assets/core-ui/skills/frost_nova.png",
+    "meteor": "assets/core-ui/skills/meteor.png",
+    "star_thread": "assets/core-ui/skills/star_thread.png",
+    "star_ring": "assets/core-ui/skills/star_ring.png",
+    "starfall": "assets/core-ui/skills/starfall.png"
   },
   "transparent_vanilla_sprites": [
     "assets/minecraft/textures/gui/sprites/hud/food_empty.png",

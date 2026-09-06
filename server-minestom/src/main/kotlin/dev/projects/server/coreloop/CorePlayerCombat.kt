@@ -32,6 +32,11 @@ internal class CorePlayerCombat(
     private val armorBroken: () -> Boolean = { false },
     private val weaponQuality: () -> Int = { 0 },
     private val armorQuality: () -> Int = { 0 },
+    private val journey: () -> CoreJourney = { CoreJourney() },
+    private val weaponBase: () -> CoreWeaponBase = { CoreWeaponBase.STANDARD },
+    private val weaponLevelPower: () -> Double = { 1.0 },
+    private val armorLevelPower: () -> Double = { 1.0 },
+    private val onLesson: (Int) -> Unit = {},
     private val onDefeated: () -> Unit,
 ) {
     private val normal = GreatswordCombo()
@@ -47,6 +52,17 @@ internal class CorePlayerCombat(
     private var queuedSkill: Int? = null
     private var queuedDodge = false
     private var whetstoneUntil = 0L
+    private var nextShot = 0L
+    private var shot: Pair<Long, Vec>? = null
+    private var charges = 0
+    private var skillBoost = 1.0
+    private var castCharges = 0
+    private var lastChargeTick = -1L
+    private val taught = mutableSetOf<Int>()
+    val classId get() = journey().job
+    val skillNames get() = classId.skills
+    fun skillAvailable(index: Int) = journey().legacy || journey().level >= listOf(1, 4, 8)[index]
+    val weaponHint get() = if (weaponBase() == CoreWeaponBase.CONDUIT || classId == CoreClass.STARWEAVER) "蓄積 $charges/3" else weaponBase().displayName
     var defeated = false
         private set
     private var manaValue = 100.0
@@ -54,9 +70,9 @@ internal class CorePlayerCombat(
     var health = 100.0
         private set
     val maxMana: Int get() = 100 + statSource().maxManaFlat.toInt()
-    val maxHealth: Int get() = (if (armorBroken()) 100 else ((100 + (armorTier() - 1) * 30) * (1.0 + armorQuality().coerceIn(0, 30) / 100.0) * (1.0 + .02 * armorEnhancement().coerceIn(0, 30))).toInt()) + statSource().healthFlat.toInt()
-    val attackSpeed: Double get() = if (weaponBroken()) 1.0 else 1.0 + (statSource().attackSpeedPercent.coerceIn(0.0, 60.0) + .8 * weaponEnhancement().coerceIn(0, 30)) / 100.0
-    val attackDamage: Double get() = if (weaponBroken()) 0.0 else 12.0 * 1.65.pow(weaponTier() - 1) * (1.0 + weaponQuality().coerceIn(0, 30) / 100.0) * (1.0 + .04 * weaponEnhancement().coerceIn(0, 30)) * (1.0 + statSource().damagePercent / 100.0) * if (tickNumber < whetstoneUntil) 1.2 else 1.0
+    val maxHealth: Int get() = (if (armorBroken()) 100 else ((100 + (armorTier() - 1) * 30) * armorLevelPower() * (1.0 + armorQuality().coerceIn(0, 30) / 100.0) * (1.0 + .02 * armorEnhancement().coerceIn(0, 30))).toInt()) + statSource().healthFlat.toInt()
+    val attackSpeed: Double get() = if (weaponBroken()) 1.0 else weaponBase().speed * (1.0 + (statSource().attackSpeedPercent.coerceIn(0.0, 60.0) + .8 * weaponEnhancement().coerceIn(0, 30)) / 100.0)
+    val attackDamage: Double get() = if (weaponBroken()) 0.0 else 12.0 * 1.65.pow(weaponTier() - 1) * weaponBase().power * weaponLevelPower() * (1.0 + weaponQuality().coerceIn(0, 30) / 100.0) * (1.0 + .04 * weaponEnhancement().coerceIn(0, 30)) * (1.0 + statSource().damagePercent / 100.0) * if (tickNumber < whetstoneUntil) 1.2 else 1.0
     private data class Burn(val damage: Double, var nextTick: Long, var remaining: Int)
     private val burns = mutableMapOf<UUID, Burn>()
     private val damageLabels = mutableListOf<Pair<Entity, Long>>()
@@ -66,6 +82,14 @@ internal class CorePlayerCombat(
     fun attack() {
         if (weaponBroken()) { notice("武器が破損しています。装備庫で修理してください"); return }
         if (defeated || pending != null || encounter() == null || player.openInventory != null) return
+        if (classId != CoreClass.WARRIOR) {
+            if (tickNumber < nextShot || shot != null) return
+            shot = tickNumber + 4 to player.position.direction()
+            nextShot = tickNumber + ceil(17.0 / attackSpeed).toLong().coerceAtLeast(8)
+            player.swingMainHand(); lastCombat = tickNumber
+            sound(if (classId == CoreClass.RANGER) SoundEvent.ENTITY_ARROW_SHOOT else SoundEvent.BLOCK_AMETHYST_BLOCK_CHIME, .65f, 1.2f)
+            return
+        }
         normal.press(attackSpeed)?.let { swing ->
             normalDirection = flatFacing()
             vfx.play(GreatswordVisual.WINDUP, player.position, normalDirection)
@@ -77,16 +101,18 @@ internal class CorePlayerCombat(
     fun skill(id: Int) {
         if (weaponBroken()) { notice("武器が破損しています。装備庫で修理してください"); return }
         if (id !in 0..2 || defeated || encounter() == null || player.openInventory != null) return
+        if (!skillAvailable(id)) { notice("${skillNames[id]}はLv${listOf(1, 4, 8)[id]}で解放されます"); return }
         if (normal.isAttacking) { normal.clearBuffer(); queuedSkill = id; return }
-        if (pending != null) return
-        if (tickNumber < readyAt[id]) { notice("${SKILL_NAMES[id]}：あと${cooldownSeconds(id)}秒"); return }
+        if (pending != null || shot != null) return
+        if (tickNumber < readyAt[id]) { notice("${skillNames[id]}：あと${cooldownSeconds(id)}秒"); return }
         val cost = intArrayOf(15, 25, 35)[id]
         if (mana < cost) { notice("マナが足りません（必要 $cost）"); return }
         manaValue -= cost
+        castCharges = charges; skillBoost = 1.0 + charges * .15; charges = 0
         readyAt[id] = tickNumber + cooldownTicks(id)
         val castMultiplier = 1.0 - statSource().castReductionPercent.coerceIn(0.0, 40.0) / 100.0
         val startup = ceil(intArrayOf(5, 12, 6)[id] * castMultiplier).toInt().coerceAtLeast(2)
-        pending = PendingSkill(id, player.position, flatFacing(), startup)
+        pending = PendingSkill(id, player.position, if (id == 0 && classId != CoreClass.WARRIOR) player.position.direction() else flatFacing(), startup)
         lastCombat = tickNumber
         player.setHeldItemSlot(0)
         player.swingMainHand()
@@ -104,6 +130,7 @@ internal class CorePlayerCombat(
         val right = Vec(-facing.z(), 0.0, facing.x())
         val direction = if (forward == 0.0 && side == 0.0) facing else facing.mul(forward).add(right.mul(side)).normalize()
         moveSafely(direction, 2.6)
+        if (weaponBase() == CoreWeaponBase.FLOW) normal.holdSequence()
         nextDodge = tickNumber + 24
         sound(SoundEvent.ENTITY_PLAYER_ATTACK_SWEEP, 0.35f, 1.7f)
     }
@@ -120,6 +147,11 @@ internal class CorePlayerCombat(
         val enemies = encounter() ?: run { resetActions(); return }
         if (weaponBroken()) { resetActions(); return }
         val epoch = actionEpoch
+        shot?.takeIf { tickNumber >= it.first }?.let { (_, direction) ->
+            shot = null
+            rangedStrike(enemies, direction, 18.0, .65, 1, 1.0, false)
+        }
+        if (!actionsValid(enemies, epoch)) return
         // A kill callback may synchronously return/reset the actor, including clearing burns.
         for ((id, burn) in burns.toMap()) {
             if (!enemies.isAlive(id)) { burns.remove(id); continue }
@@ -134,15 +166,41 @@ internal class CorePlayerCombat(
             vfx.swingSound(swing.step)
             player.swingMainHand()
             vfx.play(arrayOf(GreatswordVisual.SWEEP, GreatswordVisual.REVERSE, GreatswordVisual.FINISHER)[swing.step - 1], player.position, normalDirection)
+            var connected = false
+            val heavyFinish = swing.step == 3 && weaponBase() == CoreWeaponBase.CLEAVER
             for (target in enemies.combatTargets()) {
-                if (greatswordInRange(player.position, normalDirection, target) && visibleTo(target.id, enemies)) {
-                    hit(enemies, target.id, swing.multiplier, skill = false, heavy = swing.step == 3)
+                if (greatswordInRange(player.position, normalDirection, target, minDot = if (heavyFinish) .9 else .4) && visibleTo(target.id, enemies)) {
+                    hit(enemies, target.id, swing.multiplier * if (heavyFinish) 1.65 else 1.0, skill = false, heavy = swing.step == 3)
+                    connected = true
                     if (!actionsValid(enemies, epoch)) return
                 }
             }
+            if (connected && swing.step == 3 && weaponBase() == CoreWeaponBase.FLOW) manaValue = min(maxMana.toDouble(), manaValue + 8)
         }
         pending?.let { action ->
             action.elapsed++
+            if (classId != CoreClass.WARRIOR) {
+                val woven = classId == CoreClass.STARWEAVER && castCharges == 3
+                if (action.elapsed == action.startup || (action.id == 2 && action.elapsed in listOf(action.startup + 8, action.startup + 16)) ||
+                    (woven && action.id == 2 && action.elapsed == action.startup + 24)) {
+                    if (action.id == 0) rangedStrike(enemies, action.direction, 20.0, .9, if (classId == CoreClass.RANGER || woven) 3 else 1, 2.0, true)
+                    else if (action.id == 1) {
+                        strike(enemies, player.position, action.direction, 6.5, if (classId == CoreClass.RANGER) .35 else -1.0, 1.8)
+                        if (!actionsValid(enemies, epoch)) return
+                        enemies.combatTargets().filter { greatswordInRange(player.position, action.direction, it, 6.5, if (classId == CoreClass.RANGER) .35 else -1.0) && visibleTo(it.id, enemies) }.forEach { enemies.applySlow(it.id, .4, if (woven) 4500 else 2500) }
+                        if (woven) manaValue = min(maxMana.toDouble(), manaValue + 12)
+                        spellRing(player.position, 5.0)
+                    } else {
+                        val centre = action.origin.add(action.direction.mul(7.0))
+                        strike(enemies, centre, action.direction, 4.5, -1.0, 1.35)
+                        if (!actionsValid(enemies, epoch)) return
+                        spellRing(centre, 4.0, rain = true)
+                    }
+                }
+                if (!actionsValid(enemies, epoch)) return
+                if (action.elapsed >= action.startup + if (action.id == 2) (if (woven) 32 else 24) else 8) pending = null
+                return@let
+            }
             when (action.id) {
                 0 -> if (action.elapsed == action.startup) {
                     // Stop in front of a nearby enemy instead of dashing through it and missing behind us.
@@ -203,12 +261,22 @@ internal class CorePlayerCombat(
         val weak = when (enemies.weaknessOf(id)) {
             "fire" -> stats.fireFlat > 0; "ice" -> stats.iceFlat > 0; "lightning" -> stats.lightningFlat > 0; else -> false
         }
-        val damage = (attackDamage * multiplier * (1 + tagBonus / 100.0) + element) * criticalMultiplier * if (weak) 1.25 else 1.0
-        val applied = enemies.applyDamageAmount(id, player, damage) ?: return
+        val damage = (attackDamage * multiplier * (1 + tagBonus / 100.0) + element) * (if (skill) skillBoost else 1.0) * criticalMultiplier * if (weak) 1.25 else 1.0
+        val applied = (if (classId != CoreClass.WARRIOR) enemies.applyProjectileDamage(id, player, damage)
+            else enemies.applyDamageAmount(id, player, damage)) ?: return
+        if (taught.add(if (skill) 1 else 0)) onLesson(if (skill) 1 else 0)
+        if (!skill && lastChargeTick != tickNumber && (weaponBase() == CoreWeaponBase.CONDUIT || classId == CoreClass.STARWEAVER)) {
+            charges = (charges + 1).coerceAtMost(3); lastChargeTick = tickNumber
+        }
         if (!actionsValid(enemies, epoch)) return
-        vfx.impactSound(heavy)
-        vfx.play(GreatswordVisual.HIT, position, normalDirection)
-        vfx.holdContact(if (heavy) 3 else 2)
+        if (classId == CoreClass.WARRIOR) {
+            vfx.impactSound(heavy)
+            vfx.play(GreatswordVisual.HIT, position, normalDirection)
+            vfx.holdContact(if (heavy) 3 else 2)
+        } else {
+            sound(if (classId == CoreClass.RANGER) SoundEvent.ENTITY_ARROW_HIT else SoundEvent.BLOCK_AMETHYST_BLOCK_CHIME, .4f, 1.4f)
+            vfx.particles(if (classId == CoreClass.MAGE) Particle.FLAME else Particle.END_ROD, position.add(0.0, 1.0, 0.0), 6, Vec(.2, .3, .2), .03f)
+        }
         showDamage(position, applied, critical, weak)
         if (stats.fireFlat > 0 && enemies.isAlive(id)) {
             burns[id] = Burn(maxOf(burns[id]?.damage ?: 0.0, stats.fireFlat * 0.3), tickNumber + 20, 3)
@@ -228,6 +296,38 @@ internal class CorePlayerCombat(
                             position.add(end.sub(position).mul(step / 8.0)).add(0.0, 0.8, 0.0), 1)
                     }
                 }
+        }
+    }
+
+    /** Narrow server ray with block occlusion. No client-selected target or through-wall projectile. */
+    private fun rangedStrike(enemies: QuestEncounterCombat, direction: Vec, range: Double, width: Double, count: Int, multiplier: Double, skill: Boolean) {
+        val origin = player.position.add(0.0, 1.0, 0.0)
+        val candidates = enemies.combatTargets().mapNotNull { target ->
+            val position = enemies.positionOf(target.id)?.add(0.0, 1.0, 0.0) ?: return@mapNotNull null
+            val offset = position.sub(origin)
+            val along = offset.x() * direction.x() + offset.y() * direction.y() + offset.z() * direction.z()
+            if (along !in 0.0..range || origin.add(direction.mul(along)).distance(position) > width + target.halfExtent.x() || !visibleTo(target.id, enemies)) null else target.id to along
+        }.sortedBy { it.second }.take(count)
+        val distance = candidates.lastOrNull()?.second ?: range
+        for (step in 1..ceil(distance * 2).toInt()) {
+            val p = origin.add(direction.mul(step / 2.0))
+            if (player.instance.getBlock(p).isSolid) break
+            vfx.particles(if (classId == CoreClass.MAGE) Particle.FLAME else Particle.END_ROD, p, 1)
+        }
+        val epoch = actionEpoch
+        for ((id, _) in candidates) {
+            hit(enemies, id, multiplier, skill)
+            if (!actionsValid(enemies, epoch)) return
+        }
+    }
+
+    private fun spellRing(centre: Pos, radius: Double, rain: Boolean = false) {
+        for (i in 0 until 28) {
+            val angle = i * Math.PI * 2 / 28
+            val particle = if (classId == CoreClass.STARWEAVER || (rain && classId == CoreClass.RANGER)) Particle.END_ROD else if (rain) Particle.FLAME else Particle.SNOWFLAKE
+            vfx.particles(particle,
+                centre.add(cos(angle) * radius, .25, sin(angle) * radius), 1)
+            if (rain && i % 4 == 0) for (height in 1..5) vfx.particles(particle, centre.add(cos(angle) * radius * .7, height.toDouble(), sin(angle) * radius * .7), 1)
         }
     }
 
@@ -290,7 +390,7 @@ internal class CorePlayerCombat(
     fun revive(fraction: Double) { require(fraction in .1..1.0); reset(); health = maxHealth * fraction; syncVanillaHealth() }
     fun resetActions() {
         actionEpoch++
-        normal.reset(); pending = null; queuedSkill = null; queuedDodge = false; burns.clear()
+        normal.reset(); pending = null; shot = null; charges = 0; castCharges = 0; skillBoost = 1.0; queuedSkill = null; queuedDodge = false; burns.clear()
         vfx.cancel()
         damageLabels.forEach { it.first.remove() }; damageLabels.clear()
     }

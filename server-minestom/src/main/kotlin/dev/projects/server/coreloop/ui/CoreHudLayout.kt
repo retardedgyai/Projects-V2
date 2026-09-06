@@ -21,6 +21,7 @@ internal object CoreHudLayout {
     data class SkillVisual(val frame: Int, val centre: String)
 
     fun skillVisual(skill: CoreHudSkill, mana: Double): SkillVisual {
+        if (!skill.unlocked) return SkillVisual(22, "")
         val remaining = skill.remainingSeconds.takeIf { it.isFinite() }?.coerceAtLeast(0.0) ?: 0.0
         if (remaining > 0.0) {
             val total = skill.totalSeconds.takeIf { it.isFinite() && it > 0.0 } ?: remaining
@@ -59,7 +60,7 @@ internal object CoreHudLayout {
         bar(HEALTH_X, state.health, state.maxHealth, 0xE300, "HP")
         bar(MANA_X, state.mana, state.maxMana, 0xE320, "MP")
         state.skills.take(3).forEachIndexed { index, skill ->
-            val kind = when (skill.icon) {
+            val kind = skill.artIndex?.coerceIn(0, 11) ?: when (skill.icon) {
                 CoreUiIcon.DASH -> 0
                 CoreUiIcon.SLAM -> 1
                 CoreUiIcon.WHIRL -> 2
@@ -67,7 +68,7 @@ internal object CoreHudLayout {
             }
             val visual = skillVisual(skill, state.mana)
             val x = skillLeft[index]
-            layer(x, glyph(0xE400 + kind * 32 + visual.frame), SKILL_SIZE + 1)
+            layer(x, glyph((if (kind < 3) 0xE400 + kind * 32 else 0xE600 + (kind - 3) * 32) + visual.frame), SKILL_SIZE + 1)
             if (visual.centre.isNotEmpty()) {
                 val advance = visual.centre.length * 9
                 layer(x + (SKILL_SIZE - advance + 1) / 2, digits(visual.centre, 0xE500), advance)

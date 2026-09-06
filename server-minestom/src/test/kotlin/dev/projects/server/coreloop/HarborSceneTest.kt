@@ -52,6 +52,16 @@ class HarborSceneTest {
             }
             assertTrue(0 to 33 in reached, "The pier cannot be reached from arrival")
             assertEquals(Block.WATER, instance.getBlock(50, 38, 50), "Outside the harbor should be sea, not void")
+            // Export actual generated blocks, not an aspirational concept illustration.
+            val target = java.nio.file.Path.of("build/reports/harbor-blocks.tsv")
+            java.nio.file.Files.createDirectories(target.parent)
+            java.nio.file.Files.newBufferedWriter(target).use { out ->
+                for (x in -48..48) for (z in -56..46) for (y in 36..66) {
+                    val b = instance.getBlock(x,y,z)
+                    if (!b.isAir && b != Block.WATER && listOf(Triple(1,0,0),Triple(0,1,0),Triple(0,0,1)).any { (dx,dy,dz) -> instance.getBlock(x+dx,y+dy,z+dz).let { it.isAir || it == Block.WATER } })
+                        out.appendLine("$x\t$y\t$z\t${b.name()}")
+                }
+            }
         } finally {
             scene.labels.forEach { it.remove() }
             MinecraftServer.getInstanceManager().unregisterInstance(instance)

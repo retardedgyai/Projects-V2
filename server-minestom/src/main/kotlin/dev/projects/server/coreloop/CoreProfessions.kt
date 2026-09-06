@@ -39,10 +39,10 @@ object CoreProfessions {
         val recipe = base.copy(outputs = base.outputs + if (refunds > 0) mapOf(CoreMaterial(raw, tier) to refunds.toLong()) else emptyMap())
         return recipe to CoreProfessionProgress((p.xp + batches.toLong() * tier * CoreMmoTuning.balance.refineXp).coerceAtMost(1_000_000_000), credits % 100)
     }
-    fun manufacture(slot: CoreGearSlot, tier: Int, count: Int): CoreRecipe {
+    fun manufacture(slot: CoreGearSlot, tier: Int, count: Int, base: CoreWeaponBase = CoreWeaponBase.STANDARD): CoreRecipe {
         require(count in 1..16)
-        val base = CoreEconomy.manufacture(slot, tier)
-        return base.copy(displayName = base.displayName + " ×$count", costs = base.costs.mapValues { it.value * count })
+        val recipe = CoreEconomy.manufacture(slot, tier, base)
+        return recipe.copy(displayName = recipe.displayName + " ×$count", costs = recipe.costs.mapValues { it.value * count })
     }
     /** Quality improves the base, not MOD rarity. Low quality equipment still repairs the same tier. */
     fun quality(a: CoreAccount, slot: CoreGearSlot, random: Random): Int {

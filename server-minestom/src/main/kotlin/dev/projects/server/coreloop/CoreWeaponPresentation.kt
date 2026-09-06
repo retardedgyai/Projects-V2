@@ -9,20 +9,20 @@ internal object CoreWeaponPresentation {
     fun damage(account: CoreAccount): Int {
         if (account.weaponBroken) return 0
         val stats = CoreAffixCatalog.stats(account)
-        return (12 * CoreLoopCatalog.weaponDamage(account.weaponTier) * (1 + account.weaponIdentity.quality / 100.0) *
+        return (12 * CoreLoopCatalog.weaponDamage(account.weaponTier) * account.weaponIdentity.base.power * CoreJourneyRules.power(account.weaponIdentity, account.weaponTier) * (1 + account.weaponIdentity.quality / 100.0) *
             CoreEnhancementCatalog.weaponDamageMultiplier(account.weaponEnhancement.level) *
             (1 + stats.damagePercent / 100)).roundToInt()
     }
 
     fun attackSpeedPercent(account: CoreAccount): Double = if (account.weaponBroken) 0.0 else
-        CoreAffixCatalog.stats(account).attackSpeedPercent.coerceIn(0.0, 60.0) +
-            CoreEnhancementCatalog.weaponAttackSpeedPercent(account.weaponEnhancement.level)
+        (account.weaponIdentity.base.speed * (1.0 + (CoreAffixCatalog.stats(account).attackSpeedPercent.coerceIn(0.0, 60.0) +
+            CoreEnhancementCatalog.weaponAttackSpeedPercent(account.weaponEnhancement.level)) / 100.0) - 1.0) * 100.0
 
     fun attackSpeedLabel(account: CoreAccount): String =
-        "+${(attackSpeedPercent(account) * 10).roundToInt() / 10.0}%"
+        "${if (attackSpeedPercent(account) >= 0) "+" else ""}${(attackSpeedPercent(account) * 10).roundToInt() / 10.0}%"
 
     fun health(account: CoreAccount): Int =
-        (if (account.armorBroken) 100 else (CoreLoopCatalog.armorHealth(account.armorTier) * (1 + account.armorIdentity.quality / 100.0) *
+        (if (account.armorBroken) 100 else (CoreLoopCatalog.armorHealth(account.armorTier) * CoreJourneyRules.power(account.armorIdentity, account.armorTier) * (1 + account.armorIdentity.quality / 100.0) *
             CoreEnhancementCatalog.armorHealthMultiplier(account.armorEnhancement.level)).toInt()) +
             CoreAffixCatalog.stats(account).healthFlat.toInt()
 

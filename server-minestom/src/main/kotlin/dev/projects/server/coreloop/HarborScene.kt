@@ -44,7 +44,7 @@ internal object HarborScene {
         val builder = Builder(instance)
         builder.ground()
         builder.pier()
-        builder.buildings()
+        HarborArchitecture(instance).build()
         builder.furnishings()
         builder.paths()
         builder.landscape()

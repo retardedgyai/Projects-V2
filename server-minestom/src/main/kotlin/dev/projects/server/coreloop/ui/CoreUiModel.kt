@@ -47,6 +47,8 @@ data class CoreHudSkill(
     val remainingSeconds: Double,
     val totalSeconds: Double,
     val manaCost: Int = 0,
+    val artIndex: Int? = null,
+    val unlocked: Boolean = true,
 )
 data class CoreHudState(
     val health: Double,
