@@ -313,6 +313,29 @@ class HarborSceneTest {
             assertEquals(Block.WAXED_WEATHERED_CUT_COPPER,instance.getBlock(23,64,-16), "Tower finial has no full-block support")
             assertTrue(instance.getBlock(42,39,-24).isSolid, "East retaining wall lacks its natural rock apron")
             assertTrue(instance.getBlock(-42,39,-22).isSolid, "West retaining wall lacks its natural rock apron")
+            val coastReached=mutableSetOf(31 to -15)
+            val coastPending=ArrayDeque(coastReached)
+            while(coastPending.isNotEmpty()) {
+                val (x,z)=coastPending.removeFirst()
+                for((dx,dz) in directions) {
+                    val nx=x+dx; val nz=z+dz
+                    if(nx !in 28..43 || nz !in -30..-14) continue
+                    if(instance.getBlock(nx,44,nz).isSolid && instance.getBlock(nx,45,nz).isAir &&
+                        instance.getBlock(nx,46,nz).isAir && coastReached.add(nx to nz)) coastPending.add(nx to nz)
+                }
+            }
+            for(x in 41..42) for(z in -27..-18)
+                assertTrue(x to z in coastReached, "Seaward terrace is not connected to the existing stair $x,$z")
+            for(z in -30..-15) {
+                val edge=if(z in -27..-18) 43 else 42
+                assertEquals("minecraft:stone_brick_wall",instance.getBlock(edge,45,z).name(), "Seaward terrace lost its edge guard")
+                assertTrue(instance.getBlock(edge,44,z).isSolid)
+            }
+            for(z in listOf(-29,-25,-21,-17)) {
+                val edge=if(z in -27..-18) 43 else 42
+                for(x in 40..edge) for(y in 35..44)
+                    assertTrue(instance.getBlock(x,y,z).isSolid, "Cliff buttress is not continuous $x,$y,$z")
+            }
             assertEquals(Block.WATER,instance.getBlock(20,38,38), "Shore rocks intrude into the shipping channel")
             for(x in 20..22) for(z in 14..16) {
                 assertEquals(Block.SPRUCE_PLANKS,instance.getBlock(x,46,z), "Trading bay floor unsupported")

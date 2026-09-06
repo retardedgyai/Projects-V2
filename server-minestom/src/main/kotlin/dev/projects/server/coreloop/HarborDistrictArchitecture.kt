@@ -57,6 +57,7 @@ internal class HarborDistrictArchitecture(private val instance: InstanceContaine
         marketStreet()
         streetFurniture()
         planting()
+        cliffsideTerrace()
         ship(-29, 42, Block.RED_WOOL, 1)
         fishingCutter(30, 36)
         boardingPiers()
@@ -134,6 +135,30 @@ internal class HarborDistrictArchitecture(private val instance: InstanceContaine
             })
             if(top>=41 && contour<.45 && (x+z)%5==0)
                 put(x,top+1,z,Block.FLOWERING_AZALEA_LEAVES.withProperty("persistent","true"))
+        }
+    }
+
+    /** The east lodging stands on a supported, walkable sea terrace rather than an isolated stone box. */
+    private fun cliffsideTerrace() {
+        for(z in -30..-15) {
+            val edge=if(z in -27..-18) 43 else 42
+            // The original one-block side margin stays connected; the seaward projection widens the walk.
+            box(40,edge,44,44,z,z,Block.SMOOTH_SANDSTONE)
+            put(edge,45,z,Block.STONE_BRICK_WALL)
+            put(41,43,z,stair(Block.STONE_BRICK_STAIRS,"west",true))
+            box(42,edge,43,43,z,z,Block.STONE_BRICK_SLAB.withProperty("type","top"))
+        }
+        for(z in listOf(-30,-15)) box(41,42,45,45,z,z,Block.STONE_BRICK_WALL)
+        // Buttresses align with the timber posts above and widen toward the existing rocky shore.
+        for(z in listOf(-29,-25,-21,-17)) {
+            val edge=if(z in -27..-18) 43 else 42
+            for(x in 40..edge) for(y in 35..42) put(x,y,z,
+                if(y<=39) Block.MOSSY_STONE_BRICKS else Block.STONE_BRICKS)
+            box(40,edge,43,43,z,z,Block.POLISHED_ANDESITE)
+            put(edge,44,z,Block.CHISELED_STONE_BRICKS)
+            put(edge,45,z,Block.STONE_BRICK_WALL)
+            put(edge,42,z-1,stair(Block.STONE_BRICK_STAIRS,"south",true))
+            put(edge,42,z+1,stair(Block.STONE_BRICK_STAIRS,"north",true))
         }
     }
 
