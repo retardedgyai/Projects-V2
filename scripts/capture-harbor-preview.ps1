@@ -2,6 +2,8 @@ param([Parameter(Mandatory = $true)][int]$PreviewPid, [Parameter(Mandatory = $tr
 $ErrorActionPreference = 'Stop'
 $client = Get-CimInstance Win32_Process -Filter "ProcessId=$PreviewPid"
 if (-not $client -or $client.CommandLine -notmatch 'harbor-review-client') { throw 'Only the isolated architectural review client may be photographed' }
+& powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot 'place-harbor-preview.ps1') -PreviewPid $PreviewPid
+if ($LASTEXITCODE -ne 0) { throw 'Refusing to raise the preview outside the secondary monitor' }
 Add-Type -AssemblyName System.Drawing
 Add-Type -ReferencedAssemblies System.Drawing -TypeDefinition @'
 using System;

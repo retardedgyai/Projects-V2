@@ -12,6 +12,7 @@ import kotlin.math.sin
 import kotlin.math.cos
 import kotlin.math.atan
 import kotlin.math.sqrt
+import kotlin.math.ceil
 
 /** A built-up working waterfront below a stone acropolis. Existing facility coordinates are contracts. */
 internal class HarborDistrictArchitecture(private val instance: InstanceContainer) {
@@ -681,18 +682,28 @@ internal class HarborDistrictArchitecture(private val instance: InstanceContaine
         box(cx, cx, 40, 55, cz - 2, cz - 2, timber)
         box(cx, cx, 45, 45, cz - 2, cz + 5, logZ())
         // Fore-and-aft triangular sail: stretched along the hull, not a reduced copy of a square sail.
-        for (y in 46..54) {
-            val length = ((55 - y) * 7 / 9).coerceAtLeast(1)
-            for (dz in 0..length) put(cx + 1, y, cz - 2 + dz,
-                if (y <= 47) Block.CYAN_WOOL else Block.WHITE_WOOL)
+        for(row in 0 until 18) {
+            val bulge=1.1*sin(Math.PI*row/18)
+            val next=1.1*sin(Math.PI*(row+1)/18)
+            val roll=-atan((next-bulge)/.5)
+            val mainLength=7*(1-(row+.5)/18)
+            for(segment in 0 until ceil(mainLength).toInt())
+                displayBlock(Pos(cx+.6+bulge,46+row*.5,cz-2+.15+segment),
+                if(row<4) Block.CYAN_WOOL else Block.WHITE_WOOL,
+                Vec(.08,sqrt(.25+(next-bulge)*(next-bulge))+.015,minOf(1.0,mainLength-segment)),
+                floatArrayOf(0f,0f,sin(roll/2).toFloat(),cos(roll/2).toFloat()))
+            val jibBulge=.7*sin(Math.PI*row/18)
+            val jibNext=.7*sin(Math.PI*(row+1)/18)
+            val jibRoll=-atan((jibNext-jibBulge)/.5)
+            val start=cz-10+(row+.5)*8/18
+            val jibLength=cz-2-start
+            for(segment in 0 until ceil(jibLength).toInt())
+                displayBlock(Pos(cx+.5+jibBulge,44+row*.5,start+segment),Block.WHITE_WOOL,
+                Vec(.08,sqrt(.25+(jibNext-jibBulge)*(jibNext-jibBulge))+.015,minOf(1.0,jibLength-segment)),
+                floatArrayOf(0f,0f,sin(jibRoll/2).toFloat(),cos(jibRoll/2).toFloat()))
         }
         // A smaller forward jib, with a continuous stay meeting the bowsprit.
-        for (y in 44..52) {
-            val endZ = cz - 10 + (y - 44) * 8 / 9
-            for (z in endZ + 1 until cz - 2) put(cx, y, z, Block.WHITE_WOOL)
-            put(cx, y, endZ, Block.DARK_OAK_FENCE)
-            if (y < 52) put(cx, y + 1, endZ, Block.DARK_OAK_FENCE)
-        }
+        riggingStay(cx,cz-10,44.0,cz-2,53.0)
         box(cx, cx, 42, 42, cz - 11, cz - 7, logZ())
         box(cx, cx, 43, 44, cz - 10, cz - 10, Block.DARK_OAK_FENCE)
         put(cx - 2, 44, cz + 5, Block.LANTERN)
@@ -740,7 +751,7 @@ internal class HarborDistrictArchitecture(private val instance: InstanceContaine
         for((xs,color) in listOf((-23..-11) to Block.RED_WOOL,(11..23) to Block.ORANGE_TERRACOTTA)) {
             for(x in xs) for(z in 16..19) {
                 val pitch=atan(.4)
-                clothTile(Pos(x.toDouble(),45.8-.4*(z-16),z.toDouble()),
+                displayBlock(Pos(x.toDouble(),45.8-.4*(z-16),z.toDouble()),
                     if(Math.floorMod(x-xs.first,6)<3) color else Block.WHITE_WOOL,
                     Vec(1.0,.1,1.0/cos(pitch)),floatArrayOf(sin(pitch/2).toFloat(),0f,0f,cos(pitch/2).toFloat()))
             }
@@ -757,7 +768,7 @@ internal class HarborDistrictArchitecture(private val instance: InstanceContaine
             // Two pitched halves meet on one ridge; six short spans are not floating stair-step cubes.
             for(x in xs) for(z in -8..-3) {
                 val pitch=atan(if(z< -5) -.35 else .35)
-                clothTile(Pos(x.toDouble(),45.6+.35*minOf(z+8,-2-z),z.toDouble()),
+                displayBlock(Pos(x.toDouble(),45.6+.35*minOf(z+8,-2-z),z.toDouble()),
                     if(x==xs.first || x==xs.last) Block.BROWN_TERRACOTTA else color,
                     Vec(1.0,.1,1.0/cos(pitch)),floatArrayOf(sin(pitch/2).toFloat(),0f,0f,cos(pitch/2).toFloat()))
             }
@@ -770,8 +781,8 @@ internal class HarborDistrictArchitecture(private val instance: InstanceContaine
         }
     }
 
-    /** Static native fabric tile shared by the three authored canopy shapes, with no client assets. */
-    private fun clothTile(at: Pos,block: Block,scale: Vec,rotation: FloatArray) {
+    /** Static native panel for authored cloth and rigging, with no client assets or tick updates. */
+    private fun displayBlock(at: Pos,block: Block,scale: Vec,rotation: FloatArray) {
         val cloth=Entity(EntityType.BLOCK_DISPLAY)
         cloth.setNoGravity(true)
         cloth.setHasPhysics(false)
@@ -784,6 +795,15 @@ internal class HarborDistrictArchitecture(private val instance: InstanceContaine
         }
         cloth.setInstance(instance,at).join()
         scenery += cloth
+    }
+
+    private fun riggingStay(x: Int,fromZ: Int,fromY: Double,toZ: Int,toY: Double) {
+        val dz=(toZ-fromZ).toDouble()
+        val dy=toY-fromY
+        val pitch=atan(dz/dy)
+        displayBlock(Pos(x+.45,fromY,fromZ+.5),Block.DARK_OAK_LOG,
+            Vec(.1,sqrt(dy*dy+dz*dz),.1),
+            floatArrayOf(sin(pitch/2).toFloat(),0f,0f,cos(pitch/2).toFloat()))
     }
 
     /** A built street edge: warehouse arcade on one side, a three-point sail canopy on the other. */
@@ -834,7 +854,7 @@ internal class HarborDistrictArchitecture(private val instance: InstanceContaine
                 // Standard Vanilla display entities retain native texels, but let cloth be
                 // ten centimetres thick instead of a one-metre staircase of wool cubes.
                 // Tiles share exact edges on one plane; no coplanar overlap or per-tick animation.
-                clothTile(Pos(x+.06*(z-11),45.4+(x-4)*.5-.12*(z-11),z.toDouble()),
+                displayBlock(Pos(x+.06*(z-11),45.4+(x-4)*.5-.12*(z-11),z.toDouble()),
                     if(z==6 || z==17 || x==inner) Block.YELLOW_TERRACOTTA else Block.WHITE_WOOL,
                     Vec(sqrt(1.25),.1,1.0/cos(pitch)),floatArrayOf(
                         (cos(tilt/2)*sin(pitch/2)).toFloat(),
@@ -948,8 +968,22 @@ internal class HarborDistrictArchitecture(private val instance: InstanceContaine
                     if (y == 40 && abs(dx) < width) Block.SPRUCE_PLANKS else Block.DARK_OAK_PLANKS)
             }
             for (dx in listOf(-half, half)) {
-                put(cx + dx, 41, cz + dz, stair(Block.SPRUCE_STAIRS, if (dx < 0) "east" else "west"))
-                if (abs(dz) > 9) put(cx + dx, 42, cz + dz, Block.SPRUCE_SLAB)
+                // A rising sheer at each end; the middle bulwark and its boarding gate remain low.
+                val sheer=(abs(dz)-9).coerceAtLeast(0)/2
+                if(sheer>0) box(cx+dx,cx+dx,41,40+sheer,cz+dz,cz+dz,Block.DARK_OAK_PLANKS)
+                put(cx + dx, 41+sheer, cz + dz, stair(Block.SPRUCE_STAIRS, if (dx < 0) "east" else "west"))
+                put(cx+dx,39,cz+dz,stair(Block.SPRUCE_STAIRS,if(dx<0) "east" else "west",true))
+                if(abs(dz)<=9 && Math.floorMod(dz+8,5)==0)
+                    box(cx+dx,cx+dx,38,40,cz+dz,cz+dz,Block.STRIPPED_DARK_OAK_LOG)
+            }
+        }
+        // A stepped forecastle grows out of the hull instead of a flat pointed deck.
+        for(dz in -12..-10) {
+            val half=if(dz==-12) 1 else if(dz==-11) 2 else 3
+            val y=if(dz==-10) 41 else 42
+            for(dx in -half+1 until half) {
+                box(cx+dx,cx+dx,40,y-1,cz+dz,cz+dz,Block.SPRUCE_PLANKS)
+                put(cx+dx,y,cz+dz,stair(Block.SPRUCE_STAIRS,"north"))
             }
         }
         box(cx - 3, cx + 3, 41, 43, cz + 6, cz + 10, Block.SPRUCE_PLANKS)
@@ -960,21 +994,24 @@ internal class HarborDistrictArchitecture(private val instance: InstanceContaine
             val top = if (mastZ < cz) 59 else 55
             box(cx, cx, 40, top + 1, mastZ, mastZ, timber)
             box(cx - 5, cx + 5, top, top, mastZ, mastZ, logX())
-            for (dy in 1..8) for (dx in -4..4) {
-                if (dy > 6 && abs(dx) > 3) continue
-                val bulge = (2 * sin(dy * Math.PI / 9) * cos(dx * .22)).toInt()
-                put(cx + dx, top - dy, mastZ + side * (1 + bulge), if (abs(dx) < 2) sail else Block.WHITE_WOOL)
+            for(row in 0 until 8) {
+                val z=side*(.6+1.8*sin(Math.PI*row/8))
+                val next=side*(.6+1.8*sin(Math.PI*(row+1)/8))
+                val pitch=atan(next-z)
+                val half=if(row<2) 3 else 4
+                for(dx in -half..half) displayBlock(Pos((cx+dx).toDouble(),(top-8+row).toDouble(),mastZ+z),
+                    if(abs(dx)<2) sail else Block.WHITE_WOOL,
+                    Vec(1.0,sqrt(1+(next-z)*(next-z))+.015,.08),
+                    floatArrayOf(sin(pitch/2).toFloat(),0f,0f,cos(pitch/2).toFloat()))
             }
-            val endZ = if (mastZ < cz) cz - 11 else cz + 11
-            var previousZ = mastZ
-            for (y in top downTo 41) {
-                val targetZ = mastZ + ((endZ - mastZ) * (top - y).toDouble() / (top - 41)).toInt()
-                for (z in minOf(previousZ,targetZ)..maxOf(previousZ,targetZ)) put(cx,y,z,Block.DARK_OAK_FENCE)
-                previousZ = targetZ
-            }
-            for (x in cx - 3..cx + 3) put(x,top-9,mastZ + side,Block.DARK_OAK_FENCE)
+            val endZ = if (mastZ < cz) cz - 13 else cz + 9
+            val endY = if (mastZ < cz) 44 else 45
+            riggingStay(cx,endZ,endY.toDouble(),mastZ,top+.5)
+            displayBlock(Pos((cx-3).toDouble(),top-8-.15,mastZ+.55),logX(),
+                Vec(7.0,.15,.15),floatArrayOf(0f,0f,0f,1f))
         }
-        box(cx, cx, 42, 42, cz - 17, cz - 12, logZ())
+        box(cx,cx,39,43,cz-13,cz-13,timber)
+        box(cx, cx, 43, 43, cz - 17, cz - 12, logZ())
         for (x in listOf(cx - 3, cx + 3)) put(x, 45, cz + 9, Block.LANTERN)
     }
 

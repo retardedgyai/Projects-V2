@@ -36,6 +36,7 @@ object HarborPreviewServer {
             "HarborCanopy" to Pos(1.5, 41.0, 17.5, -145f, -22f),
             "HarborBerth" to Pos(-13.5, 41.0, 23.5, 50f, -10f),
             "HarborBoarding" to Pos(-10.5, 41.0, 34.5, 90f, -8f),
+            "HarborCutter" to Pos(20.5, 41.0, 34.5, -85f, -18f),
             "HarborOverview" to Pos(43.5, 72.0, 50.5, 147f, 24f),
         )
         val lockCamera = System.getProperty("projects.harbor.preview.lockCamera", "true").toBoolean()
