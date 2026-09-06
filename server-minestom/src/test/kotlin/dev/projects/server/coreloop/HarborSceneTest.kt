@@ -129,6 +129,19 @@ class HarborSceneTest {
                 assertEquals("minecraft:red_wall_banner",instance.getBlock(x,58,-30).name())
                 assertTrue(instance.getBlock(x,58,-31).isSolid, "A wall banner has no wall behind it")
             }
+            // The repair shed must read as an open working building, with supported frames and clear side aisles.
+            for (z in listOf(-3,3,9)) for (x in listOf(29,40)) {
+                assertTrue(instance.getBlock(x,40,z).isSolid)
+                assertEquals(Block.STRIPPED_SPRUCE_LOG,instance.getBlock(x,47,z))
+            }
+            for (z in -2..10) for (x in listOf(29,39)) {
+                if (x == 29 && z in listOf(3,9)) continue
+                assertTrue(instance.getBlock(x,41,z).isAir && instance.getBlock(x,42,z).isAir,
+                    "Repair shed aisle obstructed $x,$z")
+            }
+            assertEquals(Block.STRIPPED_SPRUCE_LOG,instance.getBlock(30,55,34), "Cutter mast missing")
+            assertEquals(Block.AIR,instance.getBlock(30,54,40), "Cutter must not inherit a second cargo-ship mast")
+            assertEquals(Block.WATER,instance.getBlock(30,38,47), "Cutter must have a shorter hull than the cargo ship")
             // Export actual generated blocks, not an aspirational concept illustration.
             val target = java.nio.file.Path.of("build/reports/harbor-blocks.tsv")
             java.nio.file.Files.createDirectories(target.parent)

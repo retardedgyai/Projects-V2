@@ -39,7 +39,7 @@ internal class HarborDistrictArchitecture(private val instance: InstanceContaine
         merchantHouse(-39, -29, -24, -11, 42, 2, false)
         merchantHouse(29, 39, -29, -16, 44, 2, true)
         merchantHouse(-39, -29, -4, 7, 40, 1, true, true)
-        merchantHouse(29, 39, -3, 9, 40, 1, false)
+        shipwright()
         upperStairs()
         foundry()
         waterfront()
@@ -47,7 +47,7 @@ internal class HarborDistrictArchitecture(private val instance: InstanceContaine
         streetFurniture()
         planting()
         ship(-29, 34, Block.RED_WOOL, 1)
-        ship(30, 36, Block.CYAN_WOOL, -1)
+        fishingCutter(30, 36)
         connectDetails()
     }
 
@@ -313,6 +313,104 @@ internal class HarborDistrictArchitecture(private val instance: InstanceContaine
         box(-24, -21, 43, 44, -11, -11, Block.BRICKS)
         put(-23, 43, -10, Block.CAMPFIRE)
         box(-24, -21, 45, 45, -11, -9, Block.BRICK_SLAB)
+    }
+
+    /** An open repair shed: its visible transverse frames carry a long, low clerestory roof. */
+    private fun shipwright() {
+        box(29, 40, 40, 40, -3, 11, Block.SPRUCE_PLANKS)
+        for (z in listOf(-3, 3, 9)) {
+            for (x in listOf(29, 40)) {
+                box(x, x, 35, 41, z, z, Block.STONE_BRICKS)
+                box(x, x, 42, 48, z, z, timber)
+                val inward = if (x == 29) 1 else -1
+                for (i in 1..3) put(x + inward * i, 44 + i, z,
+                    stair(Block.DARK_OAK_STAIRS, if (inward > 0) "west" else "east", true))
+            }
+            box(29, 40, 48, 48, z, z, logX())
+            box(34, 35, 49, 52, z, z, timber)
+        }
+        for (x in listOf(29, 40)) box(x, x, 48, 48, -4, 12, logZ())
+        // Two shallow outer roof planes and a raised ventilation lantern instead of another house gable.
+        for (x in 28..41) for (z in -4..12) {
+            if (x in 33..36) continue
+            val inset = minOf(x - 28, 41 - x)
+            val y = 49 + inset / 2
+            put(x, y, z, (if (z == -4 || z == 12) Block.DARK_OAK_SLAB else Block.BRICK_SLAB)
+                .withProperty("type", if (inset % 2 == 0) "bottom" else "top"))
+            put(x, y - 1, z, Block.SPRUCE_SLAB.withProperty("type", "top"))
+        }
+        for (x in listOf(33, 36)) {
+            box(x, x, 51, 51, -3, 11, Block.DARK_OAK_FENCE)
+            box(x, x, 52, 52, -4, 12, logZ())
+        }
+        for (x in 32..37) for (z in -5..13) {
+            val inset = minOf(x - 32, 37 - x)
+            put(x, 53 + inset / 2, z,
+                (if (z == -5 || z == 13) Block.DARK_OAK_SLAB else Block.CUT_COPPER_SLAB)
+                    .withProperty("type", if (inset % 2 == 0) "bottom" else "top"))
+        }
+        // A boat under construction, held off the floor by trestles; the side aisles stay open.
+        box(34, 34, 41, 41, -1, 8, logZ())
+        for (z in listOf(0, 3, 6)) {
+            box(31, 37, 41, 41, z, z, logX())
+            for (x in listOf(32, 36)) put(x, 42, z, timber)
+            for (x in listOf(31, 37)) put(x, 43, z,
+                stair(Block.SPRUCE_STAIRS, if (x < 34) "east" else "west"))
+            for (x in listOf(30, 38)) put(x, 44, z, timber)
+        }
+        box(34, 34, 42, 44, -1, -1, timber)
+        box(33, 35, 42, 43, 8, 8, Block.SPRUCE_PLANKS)
+        // A supported gantry reaches the open seaward end, with its lifting tackle above the hull.
+        box(34, 34, 49, 49, -3, 14, logZ())
+        box(34, 34, 45, 48, 10, 10, Block.IRON_CHAIN)
+        put(34, 44, 10, Block.GRINDSTONE.withProperty("face", "ceiling"))
+        for (x in listOf(29, 40)) {
+            box(x, x, 35, 48, 13, 13, timber)
+            put(x, 46, 12, Block.LANTERN.withProperty("hanging", "true"))
+        }
+        box(29, 40, 48, 48, 13, 13, logX())
+        // Slipway extends toward the quay, leaving the public quay and central arrival route untouched.
+        box(29, 40, 40, 40, 12, 19, Block.SPRUCE_PLANKS)
+        for (x in listOf(32, 36)) box(x, x, 40, 40, 10, 19, logZ())
+        for (z in listOf(14, 18)) for (x in listOf(29, 40)) pile(x, z, false)
+    }
+
+    /** A short single-masted working cutter, deliberately unlike the large square-rigged cargo ship. */
+    private fun fishingCutter(cx: Int, cz: Int) {
+        for (dz in -8..8) {
+            val half = when (abs(dz)) { 8 -> 0; 7 -> 1; 6 -> 2; else -> 3 }
+            for (y in 37..40) {
+                val width = (half - if (y == 37) 1 else 0).coerceAtLeast(0)
+                for (dx in -width..width) put(cx + dx, y, cz + dz,
+                    if (y == 40 && abs(dx) < width) Block.SPRUCE_PLANKS else Block.DARK_OAK_PLANKS)
+            }
+            for (dx in listOf(-half, half).distinct()) put(cx + dx, 41, cz + dz,
+                stair(Block.SPRUCE_STAIRS, if (dx < 0) "east" else "west"))
+        }
+        // A low aft wheelhouse leaves most of the hull as an exposed working deck.
+        box(cx - 2, cx + 2, 41, 42, cz + 3, cz + 6, Block.STRIPPED_SPRUCE_LOG)
+        box(cx - 1, cx + 1, 41, 42, cz + 3, cz + 5, Block.AIR)
+        box(cx - 1, cx + 1, 42, 42, cz + 6, cz + 6, Block.LIGHT_BLUE_STAINED_GLASS)
+        box(cx - 2, cx + 2, 43, 43, cz + 3, cz + 6, Block.WAXED_WEATHERED_CUT_COPPER_SLAB)
+        box(cx, cx, 40, 55, cz - 2, cz - 2, timber)
+        box(cx, cx, 45, 45, cz - 2, cz + 5, logZ())
+        // Fore-and-aft triangular sail: stretched along the hull, not a reduced copy of a square sail.
+        for (y in 46..54) {
+            val length = ((55 - y) * 7 / 9).coerceAtLeast(1)
+            for (dz in 0..length) put(cx + 1, y, cz - 2 + dz,
+                if (y <= 47) Block.CYAN_WOOL else Block.WHITE_WOOL)
+        }
+        // A smaller forward jib, with a continuous stay meeting the bowsprit.
+        for (y in 44..52) {
+            val endZ = cz - 10 + (y - 44) * 8 / 9
+            for (z in endZ + 1 until cz - 2) put(cx, y, z, Block.WHITE_WOOL)
+            put(cx, y, endZ, Block.DARK_OAK_FENCE)
+            if (y < 52) put(cx, y + 1, endZ, Block.DARK_OAK_FENCE)
+        }
+        box(cx, cx, 42, 42, cz - 11, cz - 7, logZ())
+        box(cx, cx, 43, 44, cz - 10, cz - 10, Block.DARK_OAK_FENCE)
+        put(cx - 2, 44, cz + 5, Block.LANTERN)
+        for (z in cz..cz + 1) put(cx - 2, 41, z, Block.BARREL)
     }
 
     private fun docks() {
