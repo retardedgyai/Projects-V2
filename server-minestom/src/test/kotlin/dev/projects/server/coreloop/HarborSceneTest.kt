@@ -156,6 +156,20 @@ class HarborSceneTest {
             assertTrue(instance.getBlock(0,51,-12).isAir, "Reception gable still obscures the raised hall")
             for(x in listOf(-7,-3,3,7)) for(y in 40..45)
                 assertTrue(instance.getBlock(x,y,-12).isSolid, "Loggia front post unsupported $x,$y")
+            for(x in 15..18) assertTrue(walkable(x,-5), "Lecture room entrance obstructed $x")
+            assertTrue(19 to -16 in reached && 23 to -16 in reached, "The octagonal reading room must be enterable")
+            assertEquals(Block.AIR,instance.getBlock(23,50,-16), "Reading room should be a tall room, not a solid tower")
+            assertEquals(Block.LIGHT_BLUE_STAINED_GLASS,instance.getBlock(14,45,-8), "Lecture room street wall lost its reading-light window")
+            assertEquals(Block.WAXED_WEATHERED_CUT_COPPER,instance.getBlock(23,64,-16), "Tower finial has no full-block support")
+            assertTrue(instance.getBlock(42,39,-24).isSolid, "East retaining wall lacks its natural rock apron")
+            assertTrue(instance.getBlock(-42,39,-22).isSolid, "West retaining wall lacks its natural rock apron")
+            assertEquals(Block.WATER,instance.getBlock(20,38,38), "Shore rocks intrude into the shipping channel")
+            for(x in 20..22) for(z in 14..16) {
+                assertEquals(Block.SPRUCE_PLANKS,instance.getBlock(x,46,z), "Trading bay floor unsupported")
+                assertTrue(instance.getBlock(x,47,z).isAir && instance.getBlock(x,48,z).isAir, "Trading bay is a sealed facade")
+            }
+            for(x in listOf(19,23)) for(z in 14..17)
+                assertTrue(instance.getBlock(x,45,z).isSolid, "Trading bay has a disconnected cantilever")
             // Export actual generated blocks, not an aspirational concept illustration.
             val target = java.nio.file.Path.of("build/reports/harbor-blocks.tsv")
             java.nio.file.Files.createDirectories(target.parent)

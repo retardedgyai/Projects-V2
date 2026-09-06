@@ -29,9 +29,10 @@ internal class HarborDistrictArchitecture(private val instance: InstanceContaine
     fun build() {
         coastline()
         terraces()
+        coastalRockAprons()
         docks()
         expeditionLoggia()
-        merchantHouse(14, 25, -19, -5, 40, 2, true)
+        academy()
         merchantHouse(-24, -10, 5, 14, 40, 2, false, true)
         merchantHouse(10, 24, 5, 14, 40, 2, true)
         grandHall()
@@ -43,6 +44,7 @@ internal class HarborDistrictArchitecture(private val instance: InstanceContaine
         foundry()
         waterfront()
         occupiedStoreys()
+        tradingOriel()
         streetFurniture()
         planting()
         ship(-29, 34, Block.RED_WOOL, 1)
@@ -100,6 +102,28 @@ internal class HarborDistrictArchitecture(private val instance: InstanceContaine
         }
     }
 
+    /** Rock shelves lap around the outer retaining walls, not across docks, facilities or street edges. */
+    private fun coastalRockAprons() {
+        val shelves = listOf(
+            listOf(-43,-22,6,10),listOf(-44,-2,7,8),listOf(-42,12,5,7),
+            listOf(43,-26,6,10),listOf(44,-5,7,9),listOf(42,12,5,7))
+        for((cx,cz,rx,rz) in shelves) for(x in cx-rx..cx+rx) for(z in cz-rz..cz+rz) {
+            if(abs(x)<41 || abs(x)>54 || z>19) continue
+            val dx=(x-cx).toDouble()/rx; val dz=(z-cz).toDouble()/rz
+            val contour=dx*dx+dz*dz+sin(x*.7+z*.23)*.1
+            if(contour>1.0) continue
+            val top=38+((1.0-contour)*5).toInt().coerceIn(0,5)
+            for(y in 34..top) put(x,y,z,when {
+                y==top && top>=41 && contour<.55 -> Block.GRASS_BLOCK
+                y==top-1 && top>=41 && contour<.55 -> Block.DIRT
+                (y+z/4)%4==0 -> Block.ANDESITE
+                else -> Block.STONE
+            })
+            if(top>=41 && contour<.45 && (x+z)%5==0)
+                put(x,top+1,z,Block.FLOWERING_AZALEA_LEAVES.withProperty("persistent","true"))
+        }
+    }
+
     /** A low public loggia leaves the raised great hall as the only central gable in the market vista. */
     private fun expeditionLoggia() {
         box(-7,7,40,40,-24,-12,Block.SPRUCE_PLANKS)
@@ -132,6 +156,80 @@ internal class HarborDistrictArchitecture(private val instance: InstanceContaine
         box(-1,1,50,50,-18,-17,Block.DARK_OAK_SLAB)
         // The cartography counter is furnished later at its unchanged y41 / z-15 contract.
         for(x in listOf(-3,3)) box(x,x,41,43,-22,-22,timber)
+    }
+
+    /** An open lecture room joins a tall octagonal book room; neither is an inaccessible painted upper floor. */
+    private fun academy() {
+        box(14,22,40,40,-19,-5,Block.SPRUCE_PLANKS)
+        for(x in listOf(14,22)) {
+            box(x,x,41,49,-19,-5,plaster)
+            box(x,x,41,42,-19,-5,Block.STONE_BRICKS)
+            for(z in listOf(-19,-12,-5)) box(x,x,43,50,z,z,timber)
+            box(x,x,49,49,-19,-5,logZ())
+        }
+        box(14,22,41,49,-19,-19,plaster)
+        box(14,22,41,49,-5,-5,plaster)
+        for(x in listOf(14,19,22)) box(x,x,41,50,-5,-5,timber)
+        box(15,18,41,45,-5,-5,Block.AIR)
+        box(15,18,46,46,-5,-5,logX())
+        put(15,45,-5,stair(Block.DARK_OAK_STAIRS,"west",true))
+        put(18,45,-5,stair(Block.DARK_OAK_STAIRS,"east",true))
+        box(20,21,43,47,-5,-5,Block.LIGHT_BLUE_STAINED_GLASS)
+        box(20,21,42,42,-4,-4,Block.DARK_OAK_SLAB)
+        box(14,22,49,49,-5,-5,logX())
+        // Large reading-light windows subdivide the exposed street wall; no shop balcony is needed here.
+        for(z in listOf(-17,-10)) {
+            box(14,14,44,47,z,z+3,Block.LIGHT_BLUE_STAINED_GLASS)
+            box(14,14,44,47,z+1,z+1,Block.DARK_OAK_FENCE)
+            box(14,14,46,46,z,z+3,Block.DARK_OAK_FENCE)
+            box(14,14,48,48,z,z+3,logZ())
+        }
+        // Only the front sill projects: the rear window meets the protected great-hall stair wall.
+        box(13,13,43,43,-10,-7,Block.DARK_OAK_SLAB)
+        for(x in 14..22) for(y in 50..50+roofRise(5,abs(x-18)))
+            put(x,y,-5,if(x==18 || y==50) beam else plaster)
+        gableRoof(13,23,-20,-4,50,false,false)
+        // The faceted room is hollow at player level and entered from the adjoining lecture room.
+        val cx=23; val cz=-16
+        for(dx in -4..4) for(dz in -4..4) {
+            if(abs(dx)+abs(dz)>6) continue
+            val rim=abs(dx)==4 || abs(dz)==4 || abs(dx)+abs(dz)==6
+            box(cx+dx,cx+dx,35,40,cz+dz,cz+dz,Block.STONE_BRICKS)
+            for(y in 41..57) put(cx+dx,y,cz+dz,when {
+                !rim -> Block.AIR
+                y<=43 -> stone(cx+dx,y,cz+dz)
+                abs(dx)==3 && abs(dz)==3 -> timber
+                y==49 || y==55 -> Block.DARK_OAK_PLANKS
+                else -> plaster
+            })
+        }
+        box(19,19,41,45,-17,-15,Block.AIR)
+        box(19,19,46,46,-17,-15,logZ())
+        for(d in listOf(-1,1)) {
+            box(cx+d*4,cx+d*4,46,53,cz-1,cz+1,Block.LIGHT_BLUE_STAINED_GLASS)
+            box(cx-1,cx+1,46,53,cz+d*4,cz+d*4,Block.LIGHT_BLUE_STAINED_GLASS)
+            box(cx+d*4,cx+d*4,46,53,cz,cz,Block.DARK_OAK_FENCE)
+            box(cx,cx,46,53,cz+d*4,cz+d*4,Block.DARK_OAK_FENCE)
+        }
+        box(20,26,56,56,cz,cz,logX())
+        box(cx,cx,56,56,-19,-13,logZ())
+        put(cx,55,cz,Block.LANTERN.withProperty("hanging","true"))
+        // Small weathered-copper cap is secondary to the red great hall, but distinct in the skyline.
+        for(level in 0..6) {
+            val r=6-level
+            for(dx in -r..r) for(dz in -r..r) if(abs(dx)+abs(dz)<=r+r/2) {
+                val edge=abs(dx)==r || abs(dz)==r || abs(dx)+abs(dz)==r+r/2
+                put(cx+dx,58+level,cz+dz,
+                    if(edge) Block.WAXED_WEATHERED_CUT_COPPER_SLAB else Block.WAXED_WEATHERED_CUT_COPPER)
+            }
+        }
+        put(cx,64,cz,Block.WAXED_WEATHERED_CUT_COPPER)
+        box(cx,cx,65,67,cz,cz,Block.DARK_OAK_FENCE)
+        box(20,25,41,43,-18,-18,Block.BOOKSHELF)
+        box(25,25,41,43,-17,-14,Block.BOOKSHELF)
+        put(22,41,-14,Block.SPRUCE_FENCE)
+        put(22,42,-14,Block.SPRUCE_SLAB)
+        put(22,43,-14,Block.LANTERN)
     }
 
     /** Open shop arcade, inset glazed upper floor, projecting joists, close-grained timber frame. */
@@ -587,6 +685,25 @@ internal class HarborDistrictArchitecture(private val instance: InstanceContaine
             put(x+1,42,-6,Block.FLOWER_POT)
         }
     }
+    /** The counting room overlooks the quay through a supported, enterable bay, offset from the public balcony door. */
+    private fun tradingOriel() {
+        box(19,23,46,46,14,17,Block.SPRUCE_PLANKS)
+        for(x in listOf(19,23)) {
+            box(x,x,45,45,14,17,logZ())
+            put(x,44,15,stair(Block.DARK_OAK_STAIRS,"north",true))
+            box(x,x,47,50,14,17,plaster)
+            box(x,x,48,49,15,16,Block.ORANGE_STAINED_GLASS)
+            box(x,x,47,51,17,17,timber)
+        }
+        box(20,22,47,47,17,17,plaster)
+        box(20,22,48,50,17,17,Block.ORANGE_STAINED_GLASS)
+        box(20,22,51,51,17,17,logX())
+        box(20,22,47,50,14,16,Block.AIR)
+        for(x in 19..23) for(y in 52..52+roofRise(3,abs(x-21)))
+            put(x,y,17,if(x==21) beam else plaster)
+        gableRoof(18,24,14,18,52,true,false)
+    }
+
     private fun planting() {
         for ((x, y, z, lean) in listOf(
             listOf(-37, 43, -32, -1), listOf(36, 46, -39, 1), listOf(-42, 40, 0, -1),

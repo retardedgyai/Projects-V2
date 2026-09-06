@@ -111,8 +111,8 @@ internal object HarborScene {
             put(16, 41, -9, Block.LECTERN.withProperty("facing", "south"))
             put(15, 41, -9, Block.BOOKSHELF)
             put(17, 41, -9, Block.BOOKSHELF)
-            box(14, 22, 41, 42, -16, -16, Block.BOOKSHELF)
-            box(20, 21, 41, 41, -13, -12, Block.SPRUCE_STAIRS.withProperty("facing", "west"))
+            box(14, 17, 41, 42, -16, -16, Block.BOOKSHELF)
+            box(20, 21, 41, 41, -11, -10, Block.SPRUCE_STAIRS.withProperty("facing", "west"))
         }
 
         fun paths() {

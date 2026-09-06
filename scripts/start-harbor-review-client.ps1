@@ -1,7 +1,7 @@
 param(
     [Parameter(Mandatory = $true)][string]$SourceArgumentFile,
     [Parameter(Mandatory = $true)][string]$VisibleLauncher,
-    [ValidateSet('HarborArrival','HarborMarket','HarborGallery','HarborQuay','HarborShipyard','HarborFoundry','HarborOverview')]
+    [ValidateSet('HarborArrival','HarborMarket','HarborGallery','HarborQuay','HarborShipyard','HarborFoundry','HarborAcademy','HarborOverview')]
     [string]$View = 'HarborArrival'
 )
 $ErrorActionPreference = 'Stop'
