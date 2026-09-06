@@ -30,8 +30,7 @@ internal class HarborDistrictArchitecture(private val instance: InstanceContaine
         coastline()
         terraces()
         docks()
-        merchantHouse(-7, 7, -24, -12, 40, 1, false)
-        merchantHouse(-25, -11, -17, -3, 40, 2, false)
+        expeditionLoggia()
         merchantHouse(14, 25, -19, -5, 40, 2, true)
         merchantHouse(-24, -10, 5, 14, 40, 2, false, true)
         merchantHouse(10, 24, 5, 14, 40, 2, true)
@@ -99,6 +98,40 @@ internal class HarborDistrictArchitecture(private val instance: InstanceContaine
             box(x1, x2, 35, y - 1, z1, z2, Block.STONE_BRICKS)
             box(x1, x2, y, y, z1, z2, Block.SMOOTH_SANDSTONE)
         }
+    }
+
+    /** A low public loggia leaves the raised great hall as the only central gable in the market vista. */
+    private fun expeditionLoggia() {
+        box(-7,7,40,40,-24,-12,Block.SPRUCE_PLANKS)
+        box(-7,7,41,45,-24,-24,plaster)
+        for(x in listOf(-7,7)) {
+            box(x,x,41,43,-24,-12,plaster)
+            box(x,x,41,41,-24,-12,Block.STONE_BRICKS)
+            for(z in listOf(-24,-18,-12)) {
+                box(x,x,41,41,z,z,Block.CHISELED_STONE_BRICKS)
+                box(x,x,42,45,z,z,timber)
+            }
+            for(z in listOf(-22,-16)) box(x,x,43,44,z,z+2,Block.LIGHT_BLUE_STAINED_GLASS)
+            box(x,x,45,45,-24,-12,logZ())
+        }
+        for(z in listOf(-24,-18,-12)) box(-7,7,45,45,z,z,logX())
+        for(x in listOf(-3,3)) {
+            put(x,41,-12,Block.CHISELED_STONE_BRICKS)
+            box(x,x,42,45,-12,-12,timber)
+            put(x + if(x<0) 1 else -1,44,-12,
+                stair(Block.DARK_OAK_STAIRS,if(x<0) "west" else "east",true))
+            put(x,44,-14,Block.LANTERN.withProperty("hanging","true"))
+            box(x,x,45,45,-14,-12,logZ())
+        }
+        // A continuous half-block hipped slope, without a front dormer competing with the great hall.
+        for(x in -8..8) for(z in -25..-10) {
+            val inset = minOf(x+8,8-x,z+25,-10-z)
+            val slab = if(inset==0) Block.DARK_OAK_SLAB else Block.CUT_COPPER_SLAB
+            put(x,46+inset/2,z,slab.withProperty("type",if(inset%2==0) "bottom" else "top"))
+        }
+        box(-1,1,50,50,-18,-17,Block.DARK_OAK_SLAB)
+        // The cartography counter is furnished later at its unchanged y41 / z-15 contract.
+        for(x in listOf(-3,3)) box(x,x,41,43,-22,-22,timber)
     }
 
     /** Open shop arcade, inset glazed upper floor, projecting joists, close-grained timber frame. */
@@ -305,14 +338,64 @@ internal class HarborDistrictArchitecture(private val instance: InstanceContaine
     }
 
     private fun foundry() {
-        box(-27, -24, 36, 62, -17, -14, Block.STONE_BRICKS)
-        for (y in listOf(43, 51, 59, 62)) box(-28, -23, y, y, -18, -13, Block.POLISHED_ANDESITE)
-        box(-26, -25, 60, 63, -16, -15, Block.AIR)
-        for (x in -26..-25) put(x, 62, -15, Block.CAMPFIRE)
-        box(-24, -21, 41, 42, -11, -9, Block.DEEPSLATE_BRICKS)
-        box(-24, -21, 43, 44, -11, -11, Block.BRICKS)
-        put(-23, 43, -10, Block.CAMPFIRE)
-        box(-24, -21, 45, 45, -11, -9, Block.BRICK_SLAB)
+        // One high working room, not a merchant's balcony and repeated domestic windows.
+        box(-25, -11, 40, 40, -17, -3, Block.POLISHED_ANDESITE)
+        for (x in listOf(-25, -11)) for (z in -17..-7) for (y in 41..49)
+            put(x, y, z, if (y < 45) stone(x,y,z) else plaster)
+        for (x in -25..-11) for (y in 41..49)
+            put(x,y,-17,if(y<45) stone(x,y,-17) else plaster)
+        for (x in listOf(-25,-11)) {
+            for (z in listOf(-17,-7)) {
+                box(x,x,41,44,z,z,Block.STONE_BRICKS)
+                box(x,x,45,50,z,z,timber)
+            }
+            box(x,x,44,47,-14,-11,Block.ORANGE_STAINED_GLASS)
+            box(x,x,44,47,-13,-13,Block.IRON_BARS)
+            box(x,x,46,46,-14,-11,Block.IRON_BARS)
+            box(x,x,48,48,-14,-11,logZ())
+        }
+        box(-25,-11,49,49,-17,-17,logX())
+        box(-25,-11,49,49,-7,-7,logX())
+        // Transverse low roof: the broad stone arcade remains the dominant street-facing shape.
+        for (z in -17..-7) for (y in 50..50+roofRise(6,abs(z+12)))
+            for (x in listOf(-25,-11)) put(x,y,z,if(z==-12 || y==50) beam else plaster)
+        gableRoof(-18,-6,-26,-10,50,false,false,true)
+        for (x in -24..-12) {
+            put(x,48,-7,Block.DARK_OAK_FENCE)
+            put(x,47,-7,logX())
+        }
+        // Two six-block-wide masonry openings, with the workbenches behind, not inside, the piers.
+        for (x in listOf(-25,-18,-11)) {
+            box(x,x,41,44,-3,-3,Block.STONE_BRICKS)
+            put(x,45,-3,Block.CHISELED_STONE_BRICKS)
+            for (dx in listOf(-1,1)) if(x+dx in -25..-11)
+                put(x+dx,45,-3,stair(Block.STONE_BRICK_STAIRS,if(dx>0) "west" else "east",true))
+        }
+        box(-25,-11,46,46,-3,-3,Block.STONE_BRICKS)
+        for (cx in listOf(-22,-15)) {
+            box(cx,cx+1,46,46,-2,-2,Block.CHISELED_STONE_BRICKS)
+            put(cx,45,-5,Block.LANTERN.withProperty("hanging","true"))
+            box(cx,cx,46,46,-7,-4,logZ())
+        }
+        // A shallow tiled fore-roof joins the main roof; half-block rises avoid a repeated sawtooth eave.
+        for (z in -6..-1) for (x in -26..-10) {
+            val rise = -1-z
+            val material = if(x in listOf(-26,-10) || z==-1) Block.DARK_OAK_SLAB else Block.BRICK_SLAB
+            put(x,47+rise/2,z,material.withProperty("type",if(rise%2==0) "bottom" else "top"))
+        }
+        // The forge hood and flue connect physically all the way to the chimney crown.
+        box(-24,-21,41,42,-12,-9,Block.DEEPSLATE_BRICKS)
+        box(-24,-21,43,44,-12,-12,Block.BRICKS)
+        put(-23,43,-11,Block.CAMPFIRE)
+        box(-24,-21,45,45,-12,-9,Block.BRICKS)
+        box(-24,-22,46,47,-14,-10,Block.BRICKS)
+        box(-26,-24,36,61,-17,-14,Block.BRICKS)
+        for (y in listOf(43,50,57,61))
+            box(-27,-23,y,y,-18,-13,Block.POLISHED_ANDESITE)
+        box(-25,-25,47,61,-16,-15,Block.AIR)
+        put(-25,61,-15,Block.CAMPFIRE)
+        for (x in listOf(-27,-23)) for(z in listOf(-18,-13))
+            put(x,62,z,Block.STONE_BRICK_WALL)
     }
 
     /** An open repair shed: its visible transverse frames carry a long, low clerestory roof. */
@@ -567,7 +650,7 @@ internal class HarborDistrictArchitecture(private val instance: InstanceContaine
         for (x in -55..55) for (z in -62..50) for (y in 38..85) {
             var b = instance.getBlock(x,y,z)
             val wall = b.name().endsWith("_wall")
-            if (!wall && !b.name().endsWith("_fence") && !b.name().endsWith("_pane")) continue
+            if (!wall && !b.name().endsWith("_fence") && !b.name().endsWith("_pane") && b.name() != "minecraft:iron_bars") continue
             for ((name,dx,dz) in directions) {
                 val adjacent = instance.getBlock(x+dx,y,z+dz)
                 val connected = adjacent.isSolid && !adjacent.name().contains("leaves")

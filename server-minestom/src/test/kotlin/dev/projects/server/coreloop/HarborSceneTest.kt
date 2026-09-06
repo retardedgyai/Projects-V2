@@ -142,6 +142,20 @@ class HarborSceneTest {
             assertEquals(Block.STRIPPED_SPRUCE_LOG,instance.getBlock(30,55,34), "Cutter mast missing")
             assertEquals(Block.AIR,instance.getBlock(30,54,40), "Cutter must not inherit a second cargo-ship mast")
             assertEquals(Block.WATER,instance.getBlock(30,38,47), "Cutter must have a shorter hull than the cargo ship")
+            // Foundry stays open at bench level, with two real stone arches instead of another merchant facade.
+            for (x in (-24..-19) + (-17..-12)) {
+                assertTrue(walkable(x,-3), "Foundry arcade obstructed $x")
+                assertTrue(instance.getBlock(x,46,-3).isSolid, "Foundry arch crown missing $x")
+            }
+            for (x in listOf(-25,-18,-11)) for (y in 40..46)
+                assertTrue(instance.getBlock(x,y,-3).isSolid, "Foundry arch pier unsupported $x,$y")
+            assertTrue(instance.getBlock(-18,50,-5).isAir, "Old domestic upper floor remains above the foundry forecourt")
+            for (direction in listOf("north","south"))
+                assertEquals("true",instance.getBlock(-11,45,-13).getProperty(direction), "Foundry glazing has disconnected iron bars")
+            for(x in -2..2) assertTrue(walkable(x,-12), "Cartography loggia entry narrowed $x")
+            assertTrue(instance.getBlock(0,51,-12).isAir, "Reception gable still obscures the raised hall")
+            for(x in listOf(-7,-3,3,7)) for(y in 40..45)
+                assertTrue(instance.getBlock(x,y,-12).isSolid, "Loggia front post unsupported $x,$y")
             // Export actual generated blocks, not an aspirational concept illustration.
             val target = java.nio.file.Path.of("build/reports/harbor-blocks.tsv")
             java.nio.file.Files.createDirectories(target.parent)
