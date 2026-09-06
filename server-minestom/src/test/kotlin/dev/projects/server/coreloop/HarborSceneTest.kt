@@ -43,15 +43,43 @@ class HarborSceneTest {
             assertEquals(5, scene.facilities.size)
             assertEquals(HarborFacilityKind.entries.toSet(), scene.facilities.map { it.kind }.toSet())
             assertEquals(5, scene.labels.size)
-            assertTrue(scene.scenery.size in 30..60, "Sail canopy should stay a small static display group")
+            assertEquals(200,scene.scenery.size, "Unexpected growth in static cloth geometry")
             scene.scenery.forEach { cloth ->
                 assertEquals(EntityType.BLOCK_DISPLAY,cloth.entityType)
                 assertEquals(instance,cloth.instance)
                 val meta=cloth.entityMeta as BlockDisplayMeta
                 assertTrue(meta.scale.y()<=.15, "Sail returned to metre-thick wool")
-                assertTrue(cloth.position.x()>=4 && cloth.position.y()>=45, "Sail intrudes into the walking spine")
+                assertTrue(kotlin.math.abs(cloth.position.x())>=4 && cloth.position.y()>=44.5,
+                    "Cloth intrudes into the walking spine or headroom")
+            }
+            val sail=scene.scenery.filter { it.position.x() in 4.0..10.0 && it.position.z()>=6 }
+            assertEquals(42,sail.size)
+            sail.forEach { cloth ->
                 assertEquals(45.4+.5*(cloth.position.x()-4)-.15*(cloth.position.z()-11),
                     cloth.position.y(),1e-6, "Sail panels do not share the same inclined plane")
+            }
+            val quayCloth=scene.scenery.filter { kotlin.math.abs(it.position.x())>=11 }
+            assertEquals(104,quayCloth.size)
+            quayCloth.forEach { cloth ->
+                assertEquals(45.8-.4*(cloth.position.z()-16),cloth.position.y(),1e-6)
+                if(cloth.position.z()==16.0) assertTrue(cloth.position.y()+.15<46,
+                    "Cloth intersects the occupied balcony floor")
+            }
+            val stallCloth=scene.scenery.filter { it.position.z()<0 }
+            assertEquals(54,stallCloth.size)
+            stallCloth.forEach { cloth ->
+                val z=cloth.position.z()
+                assertEquals(45.6+.35*minOf(z+8,-2-z),cloth.position.y(),1e-6, "Split market tent ridge")
+            }
+            for(x in listOf(-8,-4,4,7)) for(z in listOf(-8,-3)) {
+                assertTrue(instance.getBlock(x,40,z).isSolid, "Tent post has no foundation")
+                for(y in 41..45) assertEquals("minecraft:dark_oak_fence",instance.getBlock(x,y,z).name())
+            }
+            for(xs in listOf(-23..-11,11..23)) for(x in xs) for(z in 15..16)
+                assertTrue(instance.getBlock(x,46,z).isSolid, "Fabric replaced the balcony floor $x,$z")
+            for(x in listOf(-23,-17,-11,11,17,23)) {
+                assertEquals("minecraft:lantern",instance.getBlock(x,44,16).name())
+                assertTrue(instance.getBlock(x,45,16).isSolid, "Quay lantern lost its hanger")
             }
             for((x,z) in listOf(9 to 6,9 to 17,4 to 11)) {
                 assertTrue(instance.getBlock(x,40,z).isSolid, "Sail mast has no foundation")

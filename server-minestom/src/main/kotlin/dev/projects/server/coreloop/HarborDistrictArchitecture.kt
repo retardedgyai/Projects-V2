@@ -736,20 +736,54 @@ internal class HarborDistrictArchitecture(private val instance: InstanceContaine
     }
 
     private fun waterfront() {
-        awning(-23, -11, 15, 17, 45, Block.RED_WOOL)
-        awning(11, 23, 15, 17, 45, Block.ORANGE_WOOL)
+        // Fabric hangs below the occupied balconies, rather than replacing their solid floor.
+        for((xs,color) in listOf((-23..-11) to Block.RED_WOOL,(11..23) to Block.ORANGE_TERRACOTTA)) {
+            for(x in xs) for(z in 16..19) {
+                val pitch=atan(.4)
+                clothTile(Pos(x.toDouble(),45.8-.4*(z-16),z.toDouble()),
+                    if(Math.floorMod(x-xs.first,6)<3) color else Block.WHITE_WOOL,
+                    Vec(1.0,.1,1.0/cos(pitch)),floatArrayOf(sin(pitch/2).toFloat(),0f,0f,cos(pitch/2).toFloat()))
+            }
+            box(xs.first,xs.last,44,44,17,17,logX())
+        }
         for (x in listOf(-23, -17, -11, 11, 17, 23)) {
             box(x, x, 41, 45, 17, 17, timber)
+            box(x,x,44,44,18,19,Block.DARK_OAK_FENCE)
+            put(x,45,16,logZ())
+            put(x,43,16,Block.AIR)
             put(x, 44, 16, Block.LANTERN.withProperty("hanging", "true"))
         }
-        awning(-8, -4, -8, -3, 45, Block.WHITE_WOOL)
-        awning(4, 7, -8, -3, 45, Block.RED_WOOL)
-        for (x in listOf(-8, -4, 4, 7)) for (z in listOf(-8, -3)) box(x, x, 41, 45, z, z, timber)
+        for((xs,color) in listOf((-8..-4) to Block.WHITE_WOOL,(4..7) to Block.RED_WOOL)) {
+            // Two pitched halves meet on one ridge; six short spans are not floating stair-step cubes.
+            for(x in xs) for(z in -8..-3) {
+                val pitch=atan(if(z< -5) -.35 else .35)
+                clothTile(Pos(x.toDouble(),45.6+.35*minOf(z+8,-2-z),z.toDouble()),
+                    if(x==xs.first || x==xs.last) Block.BROWN_TERRACOTTA else color,
+                    Vec(1.0,.1,1.0/cos(pitch)),floatArrayOf(sin(pitch/2).toFloat(),0f,0f,cos(pitch/2).toFloat()))
+            }
+            for(x in listOf(xs.first,xs.last)) {
+                for(z in listOf(-8,-3)) box(x,x,41,45,z,z,Block.DARK_OAK_FENCE)
+                box(x,x,45,45,-8,-3,Block.DARK_OAK_FENCE)
+                put(x,46,-5,Block.DARK_OAK_FENCE)
+            }
+            box(xs.first,xs.last,46,46,-5,-5,Block.DARK_OAK_FENCE)
+        }
     }
-    private fun awning(x1: Int, x2: Int, z1: Int, z2: Int, y: Int, cloth: Block) {
-        for (x in x1..x2) for (z in z1..z2) put(x, y + if (z == z1) 1 else 0, z,
-            if (Math.floorMod(x - x1, 4) < 2) cloth else Block.WHITE_WOOL)
-        box(x1, x2, y - 1, y - 1, z2, z2, logX())
+
+    /** Static native fabric tile shared by the three authored canopy shapes, with no client assets. */
+    private fun clothTile(at: Pos,block: Block,scale: Vec,rotation: FloatArray) {
+        val cloth=Entity(EntityType.BLOCK_DISPLAY)
+        cloth.setNoGravity(true)
+        cloth.setHasPhysics(false)
+        cloth.editEntityMeta(BlockDisplayMeta::class.java) { meta ->
+            meta.setBlockState(block)
+            meta.setScale(scale)
+            meta.setLeftRotation(rotation)
+            meta.setViewRange(2f)
+            meta.setShadowRadius(0f)
+        }
+        cloth.setInstance(instance,at).join()
+        scenery += cloth
     }
 
     /** A built street edge: warehouse arcade on one side, a three-point sail canopy on the other. */
@@ -800,22 +834,13 @@ internal class HarborDistrictArchitecture(private val instance: InstanceContaine
                 // Standard Vanilla display entities retain native texels, but let cloth be
                 // ten centimetres thick instead of a one-metre staircase of wool cubes.
                 // Tiles share exact edges on one plane; no coplanar overlap or per-tick animation.
-                val cloth=Entity(EntityType.BLOCK_DISPLAY)
-                cloth.setNoGravity(true)
-                cloth.setHasPhysics(false)
-                cloth.editEntityMeta(BlockDisplayMeta::class.java) { meta ->
-                    meta.setBlockState(if(z==6 || z==17 || x==inner) Block.YELLOW_TERRACOTTA else Block.WHITE_WOOL)
-                    meta.setScale(Vec(sqrt(1.25),.1,1.0/cos(pitch)))
-                    meta.setLeftRotation(floatArrayOf(
+                clothTile(Pos(x+.06*(z-11),45.4+(x-4)*.5-.12*(z-11),z.toDouble()),
+                    if(z==6 || z==17 || x==inner) Block.YELLOW_TERRACOTTA else Block.WHITE_WOOL,
+                    Vec(sqrt(1.25),.1,1.0/cos(pitch)),floatArrayOf(
                         (cos(tilt/2)*sin(pitch/2)).toFloat(),
                         (sin(tilt/2)*sin(pitch/2)).toFloat(),
                         (sin(tilt/2)*cos(pitch/2)).toFloat(),
                         (cos(tilt/2)*cos(pitch/2)).toFloat()))
-                    meta.setViewRange(2f)
-                    meta.setShadowRadius(0f)
-                }
-                cloth.setInstance(instance,Pos(x+.06*(z-11),45.4+(x-4)*.5-.12*(z-11),z.toDouble())).join()
-                scenery += cloth
             }
         }
         for((x,z) in listOf(9 to 6,9 to 17,4 to 11)) {
