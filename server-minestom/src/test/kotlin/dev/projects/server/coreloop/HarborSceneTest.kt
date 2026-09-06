@@ -8,6 +8,8 @@ import kotlin.test.assertTrue
 import net.minestom.server.Auth
 import net.minestom.server.MinecraftServer
 import net.minestom.server.instance.block.Block
+import net.minestom.server.entity.EntityType
+import net.minestom.server.entity.metadata.display.BlockDisplayMeta
 
 class HarborSceneTest {
     @Test
@@ -41,6 +43,24 @@ class HarborSceneTest {
             assertEquals(5, scene.facilities.size)
             assertEquals(HarborFacilityKind.entries.toSet(), scene.facilities.map { it.kind }.toSet())
             assertEquals(5, scene.labels.size)
+            assertTrue(scene.scenery.size in 30..60, "Sail canopy should stay a small static display group")
+            scene.scenery.forEach { cloth ->
+                assertEquals(EntityType.BLOCK_DISPLAY,cloth.entityType)
+                assertEquals(instance,cloth.instance)
+                val meta=cloth.entityMeta as BlockDisplayMeta
+                assertTrue(meta.scale.y()<=.15, "Sail returned to metre-thick wool")
+                assertTrue(cloth.position.x()>=4 && cloth.position.y()>=45, "Sail intrudes into the walking spine")
+                assertEquals(45.4+.5*(cloth.position.x()-4)-.15*(cloth.position.z()-11),
+                    cloth.position.y(),1e-6, "Sail panels do not share the same inclined plane")
+            }
+            for((x,z) in listOf(9 to 6,9 to 17,4 to 11)) {
+                assertTrue(instance.getBlock(x,40,z).isSolid, "Sail mast has no foundation")
+                assertEquals("minecraft:cobblestone_wall",instance.getBlock(x,41,z).name())
+                val roof=45+(x-4)/2+kotlin.math.abs(z-11)/4
+                for(y in 42..roof) assertEquals(
+                    if(x==9 && y==47) "minecraft:dark_oak_log" else "minecraft:dark_oak_fence",
+                    instance.getBlock(x,y,z).name())
+            }
 
             fun walkable(x: Int, z: Int): Boolean =
                 x in -36..36 && z in -28..56 && instance.getBlock(x, 40, z).isSolid &&
@@ -70,6 +90,17 @@ class HarborSceneTest {
             }
             assertTrue(0 to 33 in reached, "The pier cannot be reached from arrival")
             for(z in -2..14) assertTrue(-26 to z in reached, "West alley disconnected at $z")
+            for(x in -7..-5) for(z in 4..16)
+                assertTrue(walkable(x,z), "Warehouse arcade lost its three-block aisle $x,$z")
+            for(x in listOf(-10,-9,9,10)) for(z in 10..12)
+                assertTrue(walkable(x,z) && x to z in reached, "Covered market side door blocked $x,$z")
+            for(z in listOf(4,10,16)) {
+                for(y in 40..45) assertTrue(instance.getBlock(-4,y,z).isSolid, "Arcade post is unsupported $y,$z")
+                assertEquals("minecraft:lantern",instance.getBlock(-6,45,z).name())
+                assertTrue(instance.getBlock(-6,46,z).isSolid, "Arcade lantern is not suspended from a rafter")
+            }
+            for(x in -22..23) for(z in -1..3)
+                assertTrue(walkable(x,z), "Cross-street narrowed by market extension $x,$z")
             assertTrue(-28 to 40 in reached && 29 to 35 in reached, "Both ship decks must connect to the public pier")
             for(xs in listOf(-25..-13,14..27)) for(x in xs) for(z in 33..35)
                 assertTrue(walkable(x,z), "Three-block boarding route blocked $x,$z")
@@ -196,7 +227,8 @@ class HarborSceneTest {
             }
             for(x in listOf(19,23)) for(z in 14..17)
                 assertTrue(instance.getBlock(x,45,z).isSolid, "Trading bay has a disconnected cantilever")
-            // Export actual generated blocks, not an aspirational concept illustration.
+            // Export actual terrain blocks. Thin native cloth displays are verified above
+            // and in Vanilla photographs, not represented by this block-only diagnostic file.
             val target = java.nio.file.Path.of("build/reports/harbor-blocks.tsv")
             java.nio.file.Files.createDirectories(target.parent)
             java.nio.file.Files.newBufferedWriter(target).use { out ->
@@ -208,6 +240,7 @@ class HarborSceneTest {
             }
         } finally {
             scene.labels.forEach { it.remove() }
+            scene.scenery.forEach { it.remove() }
             MinecraftServer.getInstanceManager().unregisterInstance(instance)
         }
     }

@@ -2,12 +2,20 @@ package dev.projects.server.coreloop
 
 import net.minestom.server.instance.InstanceContainer
 import net.minestom.server.instance.block.Block
+import net.minestom.server.coordinate.Pos
+import net.minestom.server.coordinate.Vec
+import net.minestom.server.entity.Entity
+import net.minestom.server.entity.EntityType
+import net.minestom.server.entity.metadata.display.BlockDisplayMeta
 import kotlin.math.abs
 import kotlin.math.sin
 import kotlin.math.cos
+import kotlin.math.atan
+import kotlin.math.sqrt
 
 /** A built-up working waterfront below a stone acropolis. Existing facility coordinates are contracts. */
 internal class HarborDistrictArchitecture(private val instance: InstanceContainer) {
+    private val scenery = mutableListOf<Entity>()
     private val timber = Block.STRIPPED_SPRUCE_LOG
     private val beam = Block.DARK_OAK_LOG
     private val plaster = Block.SMOOTH_SANDSTONE
@@ -26,7 +34,7 @@ internal class HarborDistrictArchitecture(private val instance: InstanceContaine
         else -> Block.STONE_BRICKS
     }
 
-    fun build() {
+    fun build(): List<Entity> {
         coastline()
         terraces()
         coastalRockAprons()
@@ -45,12 +53,14 @@ internal class HarborDistrictArchitecture(private val instance: InstanceContaine
         waterfront()
         occupiedStoreys()
         tradingOriel()
+        marketStreet()
         streetFurniture()
         planting()
         ship(-29, 42, Block.RED_WOOL, 1)
         fishingCutter(30, 36)
         boardingPiers()
         connectDetails()
+        return scenery.toList()
     }
 
     private fun coastline() {
@@ -694,8 +704,84 @@ internal class HarborDistrictArchitecture(private val instance: InstanceContaine
             if (Math.floorMod(x - x1, 4) < 2) cloth else Block.WHITE_WOOL)
         box(x1, x2, y - 1, y - 1, z2, z2, logX())
     }
+
+    /** A built street edge: warehouse arcade on one side, a three-point sail canopy on the other. */
+    private fun marketStreet() {
+        // Keep the five-block spine and the entire east/west cross-street open. The arcade
+        // attaches to the warehouse, rather than standing as another small freestanding stall.
+        box(-9,-4,40,40,4,16,Block.SPRUCE_PLANKS)
+        for(x in -9..-3) for(z in 4..17) {
+            val inset=-3-x
+            put(x,45+inset/2,z,
+                (if(z==4 || z==17 || x == -3) Block.DARK_OAK_SLAB else Block.SPRUCE_SLAB)
+                    .withProperty("type",if(inset%2==0) "bottom" else "top"))
+        }
+        box(-10,-10,47,47,4,16,logZ())
+        box(-4,-4,44,44,4,16,logZ())
+        for(z in listOf(4,10,16)) {
+            put(-4,41,z,Block.CHISELED_STONE_BRICKS)
+            box(-4,-4,42,45,z,z,timber)
+            // Continuous stepped rafters bear on both the street posts and warehouse ledger.
+            for(x in -9..-5) {
+                val y=45+(-3-x)/2
+                put(x,y-1,z,Block.DARK_OAK_SLAB.withProperty("type","top"))
+                put(x,y,z,Block.DARK_OAK_PLANKS)
+            }
+            put(-5,44,z,stair(Block.DARK_OAK_STAIRS,"east",true))
+            put(-6,45,z,Block.LANTERN.withProperty("hanging","true"))
+        }
+        // Actual side doors connect both covered spaces to the existing facilities; no new
+        // interaction blocks, invisible menu copies, or blocked north entrances are introduced.
+        for(x in listOf(-10,10)) {
+            box(x,x,41,44,10,12,Block.AIR)
+            box(x,x,45,45,10,12,logZ())
+        }
+        for(x in listOf(-9,9)) box(x,x,41,44,10,12,Block.AIR)
+        // A fixed built-in packing bench leaves a three-block aisle and the side doorway clear.
+        box(-9,-8,41,41,5,7,Block.SPRUCE_PLANKS)
+
+        // Triangular cloth is taut at three vertices, droops toward the street, and is neither
+        // a mirrored timber arcade nor a repeated striped box. All poles remain outside x±2.
+        val tilt=atan(.5)
+        // Pitch the seaward edge down too: a cross-slope-only sheet appeared edge-on at arrival.
+        // Rz(tilt) * Rx(pitch), with matching tile origins, keeps every seam on one continuous plane.
+        val pitch=atan(.15*cos(tilt))
+        for(z in 6..17) {
+            val halfSpan=if(z<=11) 5.0 else 6.0
+            val inner=4+(abs(z-11)/halfSpan*5).toInt()
+            for(x in inner..9) {
+                // Standard Vanilla display entities retain native texels, but let cloth be
+                // ten centimetres thick instead of a one-metre staircase of wool cubes.
+                // Tiles share exact edges on one plane; no coplanar overlap or per-tick animation.
+                val cloth=Entity(EntityType.BLOCK_DISPLAY)
+                cloth.setNoGravity(true)
+                cloth.setHasPhysics(false)
+                cloth.editEntityMeta(BlockDisplayMeta::class.java) { meta ->
+                    meta.setBlockState(if(z==6 || z==17 || x==inner) Block.YELLOW_TERRACOTTA else Block.WHITE_WOOL)
+                    meta.setScale(Vec(sqrt(1.25),.1,1.0/cos(pitch)))
+                    meta.setLeftRotation(floatArrayOf(
+                        (cos(tilt/2)*sin(pitch/2)).toFloat(),
+                        (sin(tilt/2)*sin(pitch/2)).toFloat(),
+                        (sin(tilt/2)*cos(pitch/2)).toFloat(),
+                        (cos(tilt/2)*cos(pitch/2)).toFloat()))
+                    meta.setViewRange(2f)
+                    meta.setShadowRadius(0f)
+                }
+                cloth.setInstance(instance,Pos(x+.06*(z-11),45.4+(x-4)*.5-.12*(z-11),z.toDouble())).join()
+                scenery += cloth
+            }
+        }
+        for((x,z) in listOf(9 to 6,9 to 17,4 to 11)) {
+            val roof=45+(x-4)/2+abs(z-11)/4
+            put(x,41,z,Block.COBBLESTONE_WALL)
+            box(x,x,42,roof,z,z,Block.DARK_OAK_FENCE)
+        }
+        // Short ledger arms visibly fasten the two high corners to the trading-house frame.
+        for(z in listOf(6,17)) box(9,10,47,47,z,z,logX())
+        box(10,10,47,47,14,17,logZ())
+    }
     private fun streetFurniture() {
-        for ((x, z) in listOf(-8 to 5, 8 to 5, -27 to 1, 27 to 1)) {
+        for ((x, z) in listOf(8 to 5, -27 to 1, 27 to 1)) {
             put(x, 41, z, Block.CHISELED_STONE_BRICKS)
             box(x, x, 42, 45, z, z, timber); put(x, 46, z, Block.DARK_OAK_SLAB)
             val dx = if (x < 0) 1 else -1

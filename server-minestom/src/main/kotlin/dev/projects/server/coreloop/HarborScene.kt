@@ -26,7 +26,7 @@ internal data class HarborFacility(
 
 /** A small, reusable social hub. Call once during startup, before players enter the instance. */
 internal object HarborScene {
-    data class Result(val spawn: Pos, val facilities: List<HarborFacility>, val labels: List<Entity>)
+    data class Result(val spawn: Pos, val facilities: List<HarborFacility>, val labels: List<Entity>, val scenery: List<Entity>)
 
     fun build(instance: InstanceContainer): Result {
         instance.setTime(6000)
@@ -38,7 +38,7 @@ internal object HarborScene {
         val loads = (-4..3).flatMap { x -> (-4..3).map { z -> instance.loadChunk(x, z) } }
         CompletableFuture.allOf(*loads.toTypedArray()).join()
         val builder = Builder(instance)
-        HarborDistrictArchitecture(instance).build()
+        val scenery = HarborDistrictArchitecture(instance).build()
         builder.furnishings()
         builder.paths()
         val facilities = listOf(
@@ -65,7 +65,7 @@ internal object HarborScene {
                 setInstance(instance, facility.position.add(0.0, 1.65, 0.0)).join()
             }
         }
-        return Result(Pos(0.5, 41.0, 7.5, 180f, 0f), facilities, labels)
+        return Result(Pos(0.5, 41.0, 7.5, 180f, 0f), facilities, labels, scenery)
     }
 
     private fun facility(
