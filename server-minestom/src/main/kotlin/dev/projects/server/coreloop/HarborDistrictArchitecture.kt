@@ -47,7 +47,6 @@ internal class HarborDistrictArchitecture(private val instance: InstanceContaine
         grandHall()
         merchantHouse(-39, -29, -24, -11, 42, 2, false)
         merchantHouse(29, 39, -29, -16, 44, 2, true)
-        merchantHouse(-39, -29, -4, 7, 40, 1, true, true)
         shipwright()
         upperStairs()
         foundry()
@@ -57,6 +56,7 @@ internal class HarborDistrictArchitecture(private val instance: InstanceContaine
         marketStreet()
         streetFurniture()
         planting()
+        sailmakersWorkshop()
         cliffsideTerrace()
         lodgingInterior()
         ship(-29, 42, Block.RED_WOOL, 1)
@@ -160,6 +160,77 @@ internal class HarborDistrictArchitecture(private val instance: InstanceContaine
             put(edge,45,z,Block.STONE_BRICK_WALL)
             put(edge,42,z-1,stair(Block.STONE_BRICK_STAIRS,"south",true))
             put(edge,42,z+1,stair(Block.STONE_BRICK_STAIRS,"north",true))
+        }
+    }
+
+    /** A low saltbox workshop opens onto the western lane; its long south roof shelters a working porch. */
+    private fun sailmakersWorkshop() {
+        // This footprint is the former single-storey shop. Keep the northern stair and eastern lane outside it.
+        box(-40,-28,41,55,-5,9,Block.AIR)
+        box(-39,-29,40,40,-4,7,Block.SPRUCE_PLANKS)
+        fun roofHalfHeight(z: Int) = if(z<=-2) 98+(z+5)*2 else 104-(z+2)
+        for(x in listOf(-39,-29)) for(z in -4..6) {
+            val top=roofHalfHeight(z)/2-1
+            box(x,x,41,top,z,z,plaster)
+            put(x,41,z,Block.STONE_BRICKS)
+        }
+        box(-39,-29,41,49,-4,-4,plaster)
+        box(-39,-29,41,41,-4,-4,Block.STONE_BRICKS)
+        // Two wide street-side bays expose the workroom, not another row of domestic windows.
+        box(-29,-29,41,46,-3,1,Block.AIR)
+        box(-29,-29,41,44,4,6,Block.AIR)
+        for(z in listOf(-4,2,7)) for(x in listOf(-39,-29)) {
+            val top=roofHalfHeight(z)/2-1
+            box(x,x,41,top,z,z,timber)
+            put(x,41,z,Block.CHISELED_STONE_BRICKS)
+        }
+        // South porch and north bearing line support three complete transverse roof frames.
+        for(x in listOf(-39,-35,-29)) {
+            box(x,x,41,49,-4,-4,timber)
+            box(x,x,41,46,7,7,timber)
+            put(x,41,7,Block.CHISELED_STONE_BRICKS)
+            box(x,x,46,46,-4,7,logZ())
+            box(x,x,47,51,-2,-2,timber)
+        }
+        box(-39,-29,49,49,-4,-4,logX())
+        box(-39,-29,46,46,7,7,logX())
+        box(-39,-29,47,47,2,2,logX())
+        // The north door aligns with the existing approach to the higher western lodging stair.
+        box(-34,-32,41,44,-4,-4,Block.AIR)
+        box(-34,-32,45,45,-4,-4,logX())
+        for(x in listOf(-38,-36,-34,-30))
+            put(x,45,7,stair(Block.DARK_OAK_STAIRS,if(x in listOf(-38,-34)) "west" else "east",true))
+        // Short steep rear pitch / long half-block front fall. No dormer or false second storey.
+        for(x in -40..-28) for(z in -5..9) {
+            val half=roofHalfHeight(z); val y=half/2
+            val frame=x in listOf(-39,-35,-29)
+            val edge=x in listOf(-40,-28) || z in listOf(-5,9)
+            val material=if(frame || edge) Block.DARK_OAK_SLAB else Block.WAXED_EXPOSED_CUT_COPPER_SLAB
+            put(x,y,z,when {
+                z< -2 -> stair(if(frame || edge) Block.DARK_OAK_STAIRS else Block.WAXED_EXPOSED_CUT_COPPER_STAIRS,"south")
+                frame && half%2==1 -> Block.DARK_OAK_PLANKS
+                else -> material.withProperty("type",if(half%2==0) "bottom" else "top")
+            })
+            if(frame && half%2==0 && instance.getBlock(x,y-1,z).isAir)
+                put(x,y-1,z,Block.DARK_OAK_SLAB.withProperty("type","top"))
+        }
+        box(-40,-28,52,52,-2,-2,logX())
+        // Openings above the north tie beam bring daylight to the tall end of the workroom.
+        for(xs in listOf(-38..-36,-34..-30)) for(x in xs)
+            box(x,x,46,48,-4,-4,Block.LIGHT_BLUE_STAINED_GLASS_PANE)
+        // Seaward working-light windows sit between the posts, below the continuous tie beam.
+        for((start,end,top) in listOf(Triple(-2,0,45),Triple(3,5,44))) {
+            box(-39,-39,43,top,start,end,Block.LIGHT_BLUE_STAINED_GLASS_PANE)
+            box(-39,-39,42,42,start,end,logZ())
+            box(-39,-39,top+1,top+1,start,end,logZ())
+        }
+        // A cutting bench and two looms identify the room without filling its circulation space.
+        for(x in listOf(-36,-33)) for(z in listOf(0,2)) put(x,41,z,Block.SPRUCE_FENCE)
+        box(-36,-33,42,42,0,2,Block.SPRUCE_SLAB)
+        for(z in listOf(-2,-1)) put(-38,41,z,Block.LOOM.withProperty("facing","east"))
+        for(x in listOf(-37,-31)) {
+            put(x,46,2,Block.LANTERN.withProperty("hanging","true"))
+            put(x,45,7,Block.LANTERN.withProperty("hanging","true"))
         }
     }
 

@@ -270,6 +270,35 @@ class HarborSceneTest {
                 assertEquals(Block.SPRUCE_PLANKS,instance.getBlock(x+dx,46,z))
             }
             assertTrue(-25 to 7 in reached && 25 to 6 in reached, "Merchant stair alley approaches must be reachable")
+            for(point in listOf(-33 to 8,-32 to 5,-31 to 0,-33 to -3,-33 to -5,-29 to -1,-29 to 5))
+                assertTrue(point in reached, "Sailmaker workshop or its north/street doorway disconnected: $point")
+            assertTrue(instance.getBlock(-44,42,11).isSolid && instance.getBlock(-44,43,11).isAir &&
+                instance.getBlock(-44,44,11).isAir, "West shore photograph is not standing on the existing rock shelf")
+            for(x in listOf(-39,-35,-29)) {
+                for(y in 40..46) assertTrue(instance.getBlock(x,y,7).isSolid, "Sail workshop porch frame unsupported")
+                for(y in 40..49) assertTrue(instance.getBlock(x,y,-4).isSolid, "Sail workshop north frame unsupported")
+                for(z in -4..7) assertTrue(instance.getBlock(x,46,z).isSolid, "Workshop tie beam ends before its bearing post")
+                assertTrue(instance.getBlock(x,52,-2).isSolid, "Sail workshop ridge lost its frame")
+            }
+            assertEquals("minecraft:dark_oak_log",instance.getBlock(-32,52,-2).name(), "Workshop ridge is not continuous")
+            assertEquals("x",instance.getBlock(-32,52,-2).getProperty("axis"))
+            for(z in -5..-3) {
+                val roof=instance.getBlock(-32,49+z+5,z)
+                assertEquals(if(z == -5) "minecraft:dark_oak_stairs" else "minecraft:waxed_exposed_cut_copper_stairs",
+                    roof.name(), "Steep back pitch has a half-block gap")
+                assertEquals("south",roof.getProperty("facing"))
+            }
+            assertEquals("top",instance.getBlock(-32,46,9).getProperty("type"), "Long porch roof must end in a thin half-step")
+            assertTrue(instance.getBlock(-32,53,3).isAir, "Old domestic dormer remains above the workshop")
+            for(z in listOf(-2,-1)) assertEquals("minecraft:loom",instance.getBlock(-38,41,z).name())
+            for(z in listOf(-2,-1,0,3,4,5)) {
+                assertEquals("minecraft:light_blue_stained_glass_pane",instance.getBlock(-39,43,z).name())
+                assertTrue(instance.getBlock(-39,42,z).isSolid, "Workshop seaward window lost its sill")
+            }
+            for(x in listOf(-37,-31)) for((lightY,z) in listOf(46 to 2,45 to 7)) {
+                assertEquals("minecraft:lantern",instance.getBlock(x,lightY,z).name())
+                assertTrue(instance.getBlock(x,lightY+1,z).isSolid, "Sail workshop lantern lacks a bearing beam")
+            }
             for ((x,z) in listOf(-24 to 7,24 to 6)) assertTrue(walkable(x,z), "Merchant stair door $x,$z")
             for (x in listOf(-18,-17,16,17)) for (z in 14..15) {
                 assertTrue(instance.getBlock(x,46,z).isSolid, "Unsupported merchant balcony doorway $x,$z")
