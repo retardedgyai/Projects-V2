@@ -60,6 +60,7 @@ internal class HarborDistrictArchitecture(private val instance: InstanceContaine
         ship(-29, 42, Block.RED_WOOL, 1)
         fishingCutter(30, 36)
         boardingPiers()
+        pierFrames()
         connectDetails()
         return scenery.toList()
     }
@@ -715,7 +716,9 @@ internal class HarborDistrictArchitecture(private val instance: InstanceContaine
         for (z in listOf(21, 27, 33, 38)) for (x in listOf(-4, 4)) pile(x, z, z == 21 || z == 38)
         for (x in -38..38 step 8) if (abs(x) > 4) { pile(x, 24, false); pile(x, 21, false) }
         for (x in listOf(-13, 13)) for (z in listOf(32, 37)) pile(x, z, true)
-        for (z in 23..37 step 2) for (x in listOf(-4, 4)) put(x, 41, z, Block.SPRUCE_SLAB)
+        for (z in (25..31)+(38..39)) for(x in listOf(-4,4))
+            if(z !in listOf(27,38)) put(x,41,z,Block.DARK_OAK_FENCE)
+        box(-4,4,41,41,39,39,Block.DARK_OAK_FENCE)
         // Braced cargo crane and a continuous vertical chain. No unsupported diagonal chain pixels.
         box(-12, -11, 35, 49, 23, 24, timber)
         box(-12, -11, 49, 49, 22, 30, logZ())
@@ -738,8 +741,27 @@ internal class HarborDistrictArchitecture(private val instance: InstanceContaine
 
     private fun deck(x1: Int, x2: Int, z1: Int, z2: Int) {
         for (x in x1..x2) for (z in z1..z2) put(x, 40, z,
-            if (x == x1 || x == x2) logZ() else if (z == z1 || z == z2) logX() else Block.SPRUCE_PLANKS)
-        for (z in z1..z2 step 5) box(x1, x2, 39, 39, z, z, logX())
+            if (x == x1 || x == x2) logZ() else if (z == z1 || z == z2) logX()
+            else Block.SPRUCE_SLAB.withProperty("type","top"))
+    }
+
+    /** Bearing frames line up with real piles. Upper slabs preserve the old walking height at y41. */
+    private fun pierFrames() {
+        // Arrival bridge: open water between the four transverse frames, not a continuous solid skirt.
+        for(z in listOf(21,27,33,38)) {
+            box(-4,4,39,40,z,z,logX())
+            for(x in listOf(-3,3)) put(x,38,z,
+                stair(Block.DARK_OAK_STAIRS,if(x<0) "east" else "west",true).withProperty("waterlogged","true"))
+        }
+        // The quay's short beams and the boarding fingers bear directly on paired piles.
+        for(x in -38..38 step 8) if(abs(x)>4) box(x,x,39,40,21,24,logZ())
+        for(x in listOf(-24,-20,-14,14,20,26)) {
+            for(z in listOf(32,36)) pile(x,z,false)
+            box(x,x,39,40,32,36,logZ())
+            for(z in listOf(33,35)) put(x,38,z,
+                stair(Block.DARK_OAK_STAIRS,if(z==33) "south" else "north",true).withProperty("waterlogged","true"))
+        }
+        for(x in listOf(-13,13)) box(x,x,39,40,32,37,logZ())
     }
     private fun pile(x: Int, z: Int, light: Boolean) {
         box(x, x, 34, 41, z, z, timber); put(x, 38, z, Block.DARK_OAK_LOG)

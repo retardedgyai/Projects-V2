@@ -162,6 +162,22 @@ class HarborSceneTest {
             assertTrue(-28 to 40 in reached && 29 to 35 in reached, "Both ship decks must connect to the public pier")
             for(xs in listOf(-25..-13,14..27)) for(x in xs) for(z in 33..35)
                 assertTrue(walkable(x,z), "Three-block boarding route blocked $x,$z")
+            for((x,z) in listOf(0 to 29,-18 to 34,18 to 34)) {
+                assertEquals("minecraft:spruce_slab",instance.getBlock(x,40,z).name(), "Pier returned to solid block plating")
+                assertEquals("top",instance.getBlock(x,40,z).getProperty("type"), "Pier walking height changed")
+                assertEquals(Block.AIR,instance.getBlock(x,39,z), "Open bay under pier was filled in")
+                assertTrue(walkable(x,z))
+            }
+            for(z in listOf(21,27,33,38)) {
+                for(x in -4..4) for(y in 39..40)
+                    assertEquals("minecraft:dark_oak_log",instance.getBlock(x,y,z).name(), "Arrival bearer disconnected")
+                for(x in listOf(-4,4)) for(y in 34..38)
+                    assertTrue(instance.getBlock(x,y,z).isSolid, "Arrival frame lost its pile")
+            }
+            for(x in listOf(-24,-20,-14,14,20,26)) for(z in listOf(32,36))
+                for(y in 34..40) assertTrue(instance.getBlock(x,y,z).isSolid, "Boarding bearer has no pile")
+            for(z in 25..31) for(x in listOf(-4,4))
+                assertTrue(instance.getBlock(x,41,z).isSolid, "Arrival edge has a gap")
             for(z in 21..24) assertTrue(walkable(-29,z), "Cargo bow still overlaps the shore quay $z")
             assertEquals(Block.DARK_OAK_PLANKS,instance.getBlock(-32,44,51), "Cargo lantern floats above a bottom slab")
             assertEquals(Block.WAXED_WEATHERED_CUT_COPPER,instance.getBlock(28,43,41), "Cutter lantern floats above a bottom slab")
