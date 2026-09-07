@@ -44,6 +44,24 @@ class HarborSceneTest {
             assertEquals(HarborFacilityKind.entries.toSet(), scene.facilities.map { it.kind }.toSet())
             assertEquals(5, scene.labels.size)
             assertEquals(493,scene.scenery.size, "Unexpected growth in static harbor geometry")
+            // Natural chalk continues from the town's spurs into the separately generated headlands.
+            assertEquals(Block.CALCITE,instance.getBlock(48,45,-3))
+            assertTrue(instance.getBlock(-47,46,-16).isSolid, "West coast spur lost its foundation")
+            assertTrue(instance.getBlock(-44,43,11).isAir, "Chalk spurs obstructed the west shore viewpoint")
+            instance.loadChunk(4,-4).join()
+            instance.loadChunk(5,-4).join()
+            var chalk=0; var foliage=0; var rootedTrees=0
+            for(x in 64..95) for(z in -64..-49) {
+                val top=HarborBackdrop.height(x,z) ?: continue
+                if(instance.getBlock(x,top+1,z).name()=="minecraft:jungle_log") rootedTrees++
+                for(y in 41..top+14) {
+                    val name=instance.getBlock(x,y,z).name()
+                    if(name=="minecraft:calcite") chalk++
+                    if(name=="minecraft:jungle_leaves") foliage++
+                }
+            }
+            assertTrue(chalk>500, "Headland retained its uniform grey quarry face")
+            assertTrue(foliage>500 && rootedTrees>=2, "Headland grove lacks ground-rooted trees")
             // Reference-driven district pass changes silhouettes, not facility contracts or entity density.
             for((x,y,z) in listOf(Triple(26,57,9),Triple(-41,60,-17),Triple(41,61,-23),
                 Triple(17,70,-40),Triple(13,55,-9))) {

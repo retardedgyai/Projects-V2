@@ -132,11 +132,27 @@ internal class HarborDistrictArchitecture(private val instance: InstanceContaine
             for(y in 34..top) put(x,y,z,when {
                 y==top && top>=41 && contour<.55 -> Block.GRASS_BLOCK
                 y==top-1 && top>=41 && contour<.55 -> Block.DIRT
-                (y+z/4)%4==0 -> Block.ANDESITE
-                else -> Block.STONE
+                else -> HarborBackdrop.coastalStone(x,y,z)
             })
             if(top>=41 && contour<.45 && (x+z)%5==0)
                 put(x,top+1,z,Block.FLOWERING_AZALEA_LEAVES.withProperty("persistent","true"))
+        }
+        // Unequal chalk spurs wrap the square podiums. The inner lanes, terrace and shipping approach stay intact.
+        for((cx,cz,rx,rz,rise) in listOf(
+            listOf(-47,-16,4,7,11),listOf(48,-3,5,9,10),listOf(-47,5,4,6,8),
+            listOf(46,13,4,4,8),listOf(-43,-34,4,8,14),listOf(45,-36,4,8,13))) {
+            for(x in cx-rx..cx+rx) for(z in cz-rz..cz+rz) {
+                if(abs(x)<44 || abs(x)>54 || z>18) continue
+                val dx=(x-cx).toDouble()/rx; val dz=(z-cz).toDouble()/rz
+                val edge=1.0-dx*dx-dz*dz+sin(z*.7+x*.31)*.13
+                if(edge<=.12) continue
+                val top=38+(edge.coerceAtMost(1.0)*rise).toInt()
+                for(y in 34..top) put(x,y,z,HarborBackdrop.coastalStone(x,y,z))
+                if(edge>.65 && top>=44 && sin(x*.9+z*.6)>.15) {
+                    put(x,top,z,Block.MOSS_BLOCK)
+                    put(x,top+1,z,leaves)
+                }
+            }
         }
     }
 
