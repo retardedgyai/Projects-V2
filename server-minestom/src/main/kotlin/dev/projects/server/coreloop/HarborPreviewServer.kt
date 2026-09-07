@@ -51,12 +51,14 @@ object HarborPreviewServer {
         val lockCamera = System.getProperty("projects.harbor.preview.lockCamera", "true").toBoolean()
         MinecraftServer.getGlobalEventHandler().addListener(AsyncPlayerConfigurationEvent::class.java) { event ->
             event.spawningInstance = harbor
-            event.player.respawnPoint = views[event.player.username] ?: views.getValue("HarborArrival")
-            event.player.gameMode = GameMode.SPECTATOR
-            event.player.setNoGravity(true)
+            event.player.respawnPoint = if (lockCamera) {
+                views[event.player.username] ?: views.getValue("HarborArrival")
+            } else Pos(0.5, 41.0, 37.5, 180f, 0f)
+            event.player.gameMode = if (lockCamera) GameMode.SPECTATOR else GameMode.ADVENTURE
+            event.player.setNoGravity(lockCamera)
         }
         MinecraftServer.getGlobalEventHandler().addListener(PlayerSpawnEvent::class.java) { event ->
-            println("HARBOR_PREVIEW_CONNECTED player=${event.player.username} camera=${event.player.position}")
+            println("HARBOR_PREVIEW_CONNECTED player=${event.player.username} camera=${event.player.position} mode=${event.player.gameMode} cameraLocked=$lockCamera")
             // A photographic viewport, not a manual-smoke session. Startup focus/input must not alter comparisons.
             if (event.isFirstSpawn && lockCamera) event.player.scheduler().submitTask {
                 if (!event.player.isOnline) TaskSchedule.stop()
@@ -72,6 +74,6 @@ object HarborPreviewServer {
         val port = System.getProperty("projects.harbor.preview.port", "25575").toInt()
         require(port != 25565) { "Architectural preview must not use the gameplay port" }
         server.start("127.0.0.1", port)
-        println("HARBOR_PREVIEW_READY address=127.0.0.1:$port persistence=none")
+        println("HARBOR_PREVIEW_READY address=127.0.0.1:$port persistence=none cameraLocked=$lockCamera")
     }
 }
