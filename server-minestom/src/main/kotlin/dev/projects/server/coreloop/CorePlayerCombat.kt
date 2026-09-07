@@ -60,7 +60,8 @@ internal class CorePlayerCombat(
     private var lastChargeTick = -1L
     private val lessonAttempts = mutableMapOf<Int, Long>()
     val classId get() = journey().job
-    val skillNames get() = classId.skills
+    val skillDefinitions get() = CoreSkillCatalog.skills(classId)
+    val skillNames get() = skillDefinitions.map { it.name }
     fun skillAvailable(index: Int) = journey().legacy || journey().level >= listOf(1, 4, 8)[index]
     val weaponHint get() = if (weaponBase() == CoreWeaponBase.CONDUIT || classId == CoreClass.STARWEAVER) "蓄積 $charges/3" else weaponBase().displayName
     val chargeCount: Int? get() = if (weaponBase() == CoreWeaponBase.CONDUIT || classId == CoreClass.STARWEAVER) charges else null
@@ -70,15 +71,19 @@ internal class CorePlayerCombat(
     val mana: Int get() = manaValue.toInt()
     var health = 100.0
         private set
-    val maxMana: Int get() = 100 + statSource().maxManaFlat.toInt()
-    val maxHealth: Int get() = (if (armorBroken()) 100 else ((100 + (armorTier() - 1) * 30) * armorLevelPower() * (1.0 + armorQuality().coerceIn(0, 30) / 100.0) * (1.0 + .02 * armorEnhancement().coerceIn(0, 30))).toInt()) + statSource().healthFlat.toInt()
-    val attackSpeed: Double get() = if (weaponBroken()) 1.0 else weaponBase().speed * (1.0 + (statSource().attackSpeedPercent.coerceIn(0.0, 60.0) + .8 * weaponEnhancement().coerceIn(0, 30)) / 100.0)
-    val attackDamage: Double get() = if (weaponBroken()) 0.0 else 12.0 * 1.65.pow(weaponTier() - 1) * weaponBase().power * weaponLevelPower() * (1.0 + weaponQuality().coerceIn(0, 30) / 100.0) * (1.0 + .04 * weaponEnhancement().coerceIn(0, 30)) * (1.0 + statSource().damagePercent / 100.0) * if (tickNumber < whetstoneUntil) 1.2 else 1.0
-    private data class Burn(val damage: Double, var nextTick: Long, var remaining: Int)
+    val sheet: CoreCombatSheet get() = CoreCombatSheet.from(CoreCombatGear(weaponTier(), armorTier(), weaponBase(),
+        weaponEnhancement(), armorEnhancement(), weaponQuality(), armorQuality(), weaponLevelPower(), armorLevelPower(),
+        weaponBroken(), armorBroken()), statSource())
+    val maxMana: Int get() = sheet.mana.toInt().coerceAtLeast(1)
+    val maxHealth: Int get() = sheet.health.toInt().coerceAtLeast(1)
+    val attackSpeed: Double get() = sheet.attackSpeed
+    val attackDamage: Double get() = sheet.ad
+    val abilityPower: Double get() = sheet.ap
+    private data class Burn(val damage: Double, val type: CoreDamageType, val stats: CoreAffixStats, var nextTick: Long, var remaining: Int)
     private val burns = mutableMapOf<UUID, Burn>()
     private val damageLabels = mutableListOf<Pair<Entity, Long>>()
 
-    private data class PendingSkill(val id: Int, val origin: Pos, val direction: Vec, val startup: Int, var elapsed: Int = 0)
+    private data class PendingSkill(val id: Int, val definition: CoreSkillDefinition, val origin: Pos, val direction: Vec, val startup: Int, var elapsed: Int = 0)
 
     fun attack() {
         if (weaponBroken()) { notice("武器が破損しています。装備庫で修理してください"); return }
@@ -106,14 +111,14 @@ internal class CorePlayerCombat(
         if (normal.isAttacking) { normal.clearBuffer(); queuedSkill = id; return }
         if (pending != null || shot != null) return
         if (tickNumber < readyAt[id]) { notice("${skillNames[id]}：あと${cooldownSeconds(id)}秒"); return }
-        val cost = intArrayOf(15, 25, 35)[id]
+        val definition = skillDefinitions[id]
+        val cost = definition.mana
         if (mana < cost) { notice("マナが足りません（必要 $cost）"); return }
         manaValue -= cost
         castCharges = charges; skillBoost = 1.0 + charges * .15; charges = 0
         readyAt[id] = tickNumber + cooldownTicks(id)
-        val castMultiplier = 1.0 - statSource().castReductionPercent.coerceIn(0.0, 40.0) / 100.0
-        val startup = ceil(intArrayOf(5, 12, 6)[id] * castMultiplier).toInt().coerceAtLeast(2)
-        pending = PendingSkill(id, player.position, if (id == 0 && classId != CoreClass.WARRIOR) player.position.direction() else flatFacing(), startup)
+        val startup = definition.startupTicks(sheet)
+        pending = PendingSkill(id, definition, player.position, if (id == 0 && classId != CoreClass.WARRIOR) player.position.direction() else flatFacing(), startup)
         lastCombat = tickNumber
         player.setHeldItemSlot(0)
         player.swingMainHand()
@@ -141,8 +146,7 @@ internal class CorePlayerCombat(
         damageLabels.removeAll { (entity, expiry) -> if (tickNumber >= expiry) { entity.remove(); true } else false }
         if (defeated) return
         if (tickNumber % 20 == 0L) {
-            val recovery = if (tickNumber - lastCombat > 100) 12.0 else 5.0
-            manaValue = (manaValue + recovery * (1.0 + statSource().manaRegenPercent / 100.0)).coerceAtMost(maxMana.toDouble())
+            manaValue = (manaValue + CoreCombatMath.manaRegeneration(statSource(), tickNumber - lastCombat > 100)).coerceAtMost(maxMana.toDouble())
             player.getAttribute(Attribute.MOVEMENT_SPEED).baseValue = 0.1 * (1.0 + statSource().moveSpeedPercent.coerceIn(0.0, 25.0) / 100.0)
         }
         val enemies = encounter() ?: run { resetActions(); return }
@@ -157,7 +161,7 @@ internal class CorePlayerCombat(
         for ((id, burn) in burns.toMap()) {
             if (!enemies.isAlive(id)) { burns.remove(id); continue }
             if (tickNumber >= burn.nextTick) {
-                enemies.applyEffectDamage(id, player, burn.damage)
+                enemies.applyCalculatedDamage(id, player, burn.damage, burn.type, burn.stats, effect = true)
                 if (!actionsValid(enemies, epoch)) return
                 burn.nextTick += 20; burn.remaining--
             }
@@ -182,8 +186,9 @@ internal class CorePlayerCombat(
             action.elapsed++
             if (classId != CoreClass.WARRIOR) {
                 val woven = classId == CoreClass.STARWEAVER && castCharges == 3
-                if (action.elapsed == action.startup || (action.id == 2 && action.elapsed in listOf(action.startup + 8, action.startup + 16)) ||
-                    (woven && action.id == 2 && action.elapsed == action.startup + 24)) {
+                val pulseCount = action.definition.pulses + if (woven && action.id == 2) 1 else 0
+                val pulseTick = action.elapsed - action.startup
+                if (pulseTick >= 0 && pulseTick % 8 == 0 && pulseTick / 8 < pulseCount) {
                     if (action.id == 0) rangedStrike(enemies, action.direction, 20.0, .9, if (classId == CoreClass.RANGER || woven) 3 else 1, 2.0, true)
                     else if (action.id == 1) {
                         strike(enemies, player.position, action.direction, 6.5, if (classId == CoreClass.RANGER) .35 else -1.0, 1.8)
@@ -199,7 +204,7 @@ internal class CorePlayerCombat(
                     }
                 }
                 if (!actionsValid(enemies, epoch)) return
-                if (action.elapsed >= action.startup + if (action.id == 2) (if (woven) 32 else 24) else 8) pending = null
+                if (action.elapsed >= action.startup + pulseCount * 8) pending = null
                 return@let
             }
             when (action.id) {
@@ -224,7 +229,8 @@ internal class CorePlayerCombat(
                         sound(SoundEvent.ENTITY_GENERIC_EXPLODE, 0.45f, 1.2f)
                     }
                 }
-                2 -> if (action.elapsed in listOf(action.startup, action.startup + 8, action.startup + 16)) {
+                2 -> if (action.elapsed >= action.startup && (action.elapsed - action.startup) % 8 == 0 &&
+                    (action.elapsed - action.startup) / 8 < action.definition.pulses) {
                     vfx.play(GreatswordVisual.WHIRL, player.position, action.direction)
                     vfx.swingSound(2)
                     strike(enemies, player.position, action.direction, 3.3, -1.0, 1.15)
@@ -251,20 +257,24 @@ internal class CorePlayerCombat(
         }
     }
 
-    private fun hit(enemies: QuestEncounterCombat, id: UUID, multiplier: Double, skill: Boolean, heavy: Boolean = false) {
+    private fun hit(enemies: QuestEncounterCombat, id: UUID, multiplier: Double, skill: Boolean, heavy: Boolean = false, piercing: Boolean = false) {
         val epoch = actionEpoch
         val stats = statSource()
         val position = enemies.positionOf(id) ?: return
-        val tagBonus = if (skill) stats.skillDamagePercent else stats.normalDamagePercent
-        val element = (stats.fireFlat + stats.iceFlat + stats.lightningFlat) * multiplier * 0.65
-        val critical = criticalRoll() < (0.05 * (1.0 + stats.critChanceIncreasedPercent / 100.0)).coerceIn(0.0, 0.75)
-        val criticalMultiplier = if (critical) (1.5 + stats.critMultiplierBonusPercent / 100.0).coerceAtMost(4.0) else 1.0
+        val definition = if (skill) pending?.definition ?: return else null
+        val formula = definition?.formula ?: CoreSkillCatalog.basicFormula
+        val type = definition?.type ?: CoreSkillCatalog.basicType(classId)
+        val tags = definition?.tags ?: CoreSkillCatalog.basicTags(classId)
+        val element = (stats.fireFlat + stats.iceFlat + stats.lightningFlat) * (if (skill) 1.0 else multiplier) * 0.65
+        val critical = criticalRoll() < stats.criticalChance
         val weak = when (enemies.weaknessOf(id)) {
             "fire" -> stats.fireFlat > 0; "ice" -> stats.iceFlat > 0; "lightning" -> stats.lightningFlat > 0; else -> false
         }
-        val damage = (attackDamage * multiplier * (1 + tagBonus / 100.0) + element) * (if (skill) skillBoost else 1.0) * criticalMultiplier * if (weak) 1.25 else 1.0
-        val applied = (if (classId != CoreClass.WARRIOR) enemies.applyProjectileDamage(id, player, damage)
-            else enemies.applyDamageAmount(id, player, damage)) ?: return
+        val baseDamage = definition?.baseDamage(sheet) ?: (formula.evaluate(sheet) * multiplier + element)
+        val damage = CoreCombatMath.outgoing(baseDamage, type, tags, stats, critical) *
+            (if (skill) skillBoost else 1.0) * (if (tickNumber < whetstoneUntil) 1.2 else 1.0) * (if (weak) 1.25 else 1.0)
+        val applied = enemies.applyCalculatedDamage(id, player, damage, type, stats,
+            projectile = classId != CoreClass.WARRIOR) ?: return
         val lesson = if (skill) 1 else 0
         if (!journey().knows(lesson) && tickNumber - (lessonAttempts[lesson] ?: -100L) >= 20) {
             lessonAttempts[lesson] = tickNumber; onLesson(lesson)
@@ -273,6 +283,8 @@ internal class CorePlayerCombat(
             charges = (charges + 1).coerceAtMost(3); lastChargeTick = tickNumber
         }
         if (!actionsValid(enemies, epoch)) return
+        val stolen = CoreCombatMath.lifeSteal(applied, stats, piercing || CoreAttackTag.AREA in tags || classId == CoreClass.WARRIOR)
+        if (stolen > 0) heal(stolen)
         if (classId == CoreClass.WARRIOR) {
             vfx.impactSound(heavy)
             vfx.play(GreatswordVisual.HIT, position, normalDirection)
@@ -283,7 +295,7 @@ internal class CorePlayerCombat(
         }
         showDamage(position, applied, critical, weak)
         if (stats.fireFlat > 0 && enemies.isAlive(id)) {
-            burns[id] = Burn(maxOf(burns[id]?.damage ?: 0.0, stats.fireFlat * 0.3), tickNumber + 20, 3)
+            burns[id] = Burn(maxOf(burns[id]?.damage ?: 0.0, CoreCombatMath.outgoing(stats.fireFlat * .3, type, tags, stats)), type, stats, tickNumber + 20, 3)
             vfx.particles(Particle.SMALL_FLAME, position.add(0.0, 1.0, 0.0), 7, Vec(0.2, 0.4, 0.2), 0.01f)
         }
         if (stats.iceFlat > 0) {
@@ -293,7 +305,7 @@ internal class CorePlayerCombat(
         if (stats.lightningFlat > 0) {
             enemies.combatTargets().filter { it.id != id && it.position.distance(position) <= 4.0 && visibleTo(it.id, enemies) }
                 .minByOrNull { it.position.distance(position) }?.let { chained ->
-                    if (enemies.applyEffectDamage(chained.id, player, stats.lightningFlat * 0.8)) {
+                    if (enemies.applyCalculatedDamage(chained.id, player, CoreCombatMath.outgoing(stats.lightningFlat * .8, type, tags, stats), type, stats, effect = true) != null) {
                         if (!actionsValid(enemies, epoch)) return
                         val end = enemies.positionOf(chained.id) ?: position
                         for (step in 0..8) vfx.particles(Particle.ELECTRIC_SPARK,
@@ -320,7 +332,7 @@ internal class CorePlayerCombat(
         }
         val epoch = actionEpoch
         for ((id, _) in candidates) {
-            hit(enemies, id, multiplier, skill)
+            hit(enemies, id, multiplier, skill, piercing = count > 1)
             if (!actionsValid(enemies, epoch)) return
         }
     }
@@ -362,9 +374,10 @@ internal class CorePlayerCombat(
         }
     }
 
-    fun hurt(amount: Double) {
-        if (defeated || encounter() == null) return
-        val adjusted = amount * (if (armorBroken()) 1.0 else (1.0 - (armorTier() - 1) * 0.10)) * (1.0 - statSource().mitigationPercent.coerceIn(0.0, 45.0) / 100.0)
+    fun hurt(amount: Double, type: CoreDamageType = CoreDamageType.PHYSICAL) {
+        if (defeated || encounter() == null || !amount.isFinite() || amount <= 0.0) return
+        val snapshot = sheet
+        val adjusted = CoreCombatMath.mitigate(amount, type, snapshot.ar, snapshot.mr, damageReduction = snapshot.mods.mitigationPercent)
         lastCombat = tickNumber
         if (health - adjusted <= 0.0) {
             health = 0.0
@@ -380,15 +393,20 @@ internal class CorePlayerCombat(
 
     fun healPotion() {
         if (!defeated) {
-            health = (health + maxHealth * 0.45).coerceAtMost(maxHealth.toDouble())
-            syncVanillaHealth()
+            heal(CoreCombatMath.healing(maxHealth * .45, 1.0, sheet))
             sound(SoundEvent.ENTITY_GENERIC_DRINK, 0.75f, 1f)
         }
     }
 
+    private fun heal(amount: Double) {
+        if (defeated || !amount.isFinite() || amount <= 0) return
+        health = min(maxHealth.toDouble(), health + amount)
+        syncVanillaHealth()
+    }
+
     fun sharpen() { whetstoneUntil = tickNumber + 20 * 180 }
     fun cooldownSeconds(id: Int): Long = ((readyAt[id] - tickNumber).coerceAtLeast(0) + 19) / 20
-    fun cooldownTicks(id: Int): Int = ceil(intArrayOf(80, 140, 220)[id] * (1.0 - statSource().cooldownReductionPercent.coerceIn(0.0, 45.0) / 100.0)).toInt()
+    fun cooldownTicks(id: Int): Int = skillDefinitions[id].cooldownTicks(statSource())
     fun cooldownRemaining(id: Int): Int = (readyAt[id] - tickNumber).coerceAtLeast(0).toInt()
     fun reset() { resetActions(); defeated = false; manaValue = maxMana.toDouble(); health = maxHealth.toDouble(); readyAt.fill(0L); nextDodge = 0L; syncVanillaHealth() }
     fun revive(fraction: Double) { require(fraction in .1..1.0); reset(); health = maxHealth * fraction; syncVanillaHealth() }

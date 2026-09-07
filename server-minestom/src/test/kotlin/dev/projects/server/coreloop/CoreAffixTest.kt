@@ -33,8 +33,8 @@ class CoreAffixTest {
         return CoreAffixStone(UUID.randomUUID(), id, tier, (if (maximum) range.last else range.first).toDouble())
     }
 
-    @Test fun `catalog deterministic source rolls span all sixteen used stats and four ranks`() {
-        assertEquals(16, CoreAffixCatalog.definitions.size)
+    @Test fun `catalog deterministic source rolls span all live stats and four ranks`() {
+        assertEquals(40, CoreAffixCatalog.definitions.size)
         assertEquals(CoreAffixStat.entries.toSet(), CoreAffixCatalog.definitions.map { it.stat }.toSet())
         val seen = mutableSetOf<String>()
         for (tier in 1..4) {
@@ -84,6 +84,7 @@ class CoreAffixTest {
                 CoreAffixStat.FIRE -> stats.fireFlat
                 CoreAffixStat.ICE -> stats.iceFlat
                 CoreAffixStat.LIGHTNING -> stats.lightningFlat
+                else -> stats.bonus(definition.stat)
             }
             assertEquals(value.value, emitted, definition.id)
             assertEquals(1, account.equippedAffixes.size)

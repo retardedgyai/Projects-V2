@@ -1,5 +1,8 @@
 package dev.projects.server.mob
 
+import dev.projects.server.coreloop.CoreAffixStats
+import dev.projects.server.coreloop.CoreDamageType
+
 import net.minestom.server.Auth
 import net.minestom.server.MinecraftServer
 import net.minestom.server.coordinate.Pos
@@ -213,18 +216,39 @@ class QuestEncounterContentTest {
         }
     }
 
-    private fun arena(archetype: QuestMobArchetype, seed: Long = 0L, test: (Harness) -> Unit) {
-        MinecraftServer.init(Auth.Offline())
-        Harness(archetype, seed).use(test)
+    @Test fun `ability runtime dispatches magic and physical hits through typed callback only`() {
+        for ((archetype, type) in listOf(QuestMobArchetype.RIFT_CASTER to CoreDamageType.MAGICAL,
+            QuestMobArchetype.SOLDIER to CoreDamageType.PHYSICAL)) arena(archetype, typed = true) { h ->
+            h.combat.tick(0)
+            h.combat.tick(1500)
+            assertTrue(h.typedHits.isNotEmpty(), "$archetype did not resolve")
+            assertTrue(h.typedHits.all { it == type })
+            assertTrue(h.hits.isEmpty(), "A typed hit also entered the legacy callback")
+        }
     }
 
-    private class Harness(archetype: QuestMobArchetype, seed: Long) : AutoCloseable {
+    @Test fun `tier2 caster real health uses separate AR MR without double mitigation`() = arena(QuestMobArchetype.RIFT_CASTER, tier = 2) { h ->
+        assertEquals(10 * 300.0 / 330, h.combat.applyCalculatedDamage(h.enemyId, h.player, 10.0,
+            CoreDamageType.PHYSICAL, CoreAffixStats())!!, .000001)
+        assertEquals(10 * 300.0 / 345, h.combat.applyCalculatedDamage(h.enemyId, h.player, 10.0,
+            CoreDamageType.MAGICAL, CoreAffixStats())!!, .000001)
+        assertEquals(10.0, h.combat.applyCalculatedDamage(h.enemyId, h.player, 10.0,
+            CoreDamageType.TRUE, CoreAffixStats())!!, .000001)
+    }
+
+    private fun arena(archetype: QuestMobArchetype, seed: Long = 0L, typed: Boolean = false, tier: Int = 1, test: (Harness) -> Unit) {
+        MinecraftServer.init(Auth.Offline())
+        Harness(archetype, seed, typed, tier).use(test)
+    }
+
+    private class Harness(archetype: QuestMobArchetype, seed: Long, typed: Boolean, tier: Int) : AutoCloseable {
         val instance = MinecraftServer.getInstanceManager().createInstanceContainer()
         val player: Player
         lateinit var combat: QuestEncounterCombat
         val enemyId: UUID
         var targetable = true
         val hits = mutableListOf<Double>()
+        val typedHits = mutableListOf<CoreDamageType>()
         var onIncomingHit: (() -> Unit)? = null
         val defeats = mutableListOf<QuestMobDefeat>()
         val displaysAtReward = mutableListOf<Int>()
@@ -239,11 +263,12 @@ class QuestEncounterContentTest {
             connection.player = player
             player.gameMode = GameMode.ADVENTURE
             player.setInstance(instance, Pos(8.5, 40.0, 8.5)).get(10, TimeUnit.SECONDS)
-            combat = QuestEncounterCombat(instance, 1,
+            combat = QuestEncounterCombat(instance, tier,
                 listOf(QuestCombatEncounter(listOf(Pos(8.5, 40.0, 12.5)), listOf(archetype))),
                 Pos(40.5, 40.0, 40.5),
                 onMobDefeated = { _, _ -> defeats += checkNotNull(combat.latestDefeat); displaysAtReward += combat.groundDisplayCount },
-                damagePlayer = { _, damage -> hits += damage; onIncomingHit?.invoke() }, canTarget = { it === player && targetable }, contentSeed = seed)
+                damagePlayer = { _, damage -> hits += damage; onIncomingHit?.invoke() }, canTarget = { it === player && targetable }, contentSeed = seed,
+                typedDamagePlayer = if (typed) { _, _, type -> typedHits += type } else null)
             enemyId = combat.entities().first { !combat.isBoss(it.uuid) }.uuid
         }
 

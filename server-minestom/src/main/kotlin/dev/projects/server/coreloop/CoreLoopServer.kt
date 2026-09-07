@@ -84,6 +84,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         override fun harbor(player: Player) = moveToHub(player)
         override fun refreshed(player: Player) = refresh(player)
         override fun hurt(player: Player, damage: Double) { actors[player.uuid]?.hurt(damage) }
+        override fun hurtTyped(player: Player, damage: Double, type: CoreDamageType) { actors[player.uuid]?.hurt(damage, type) }
         override fun resetActions(player: Player) { actors[player.uuid]?.resetActions() }
         override fun revive(player: Player, fraction: Double) { actors[player.uuid]?.revive(fraction) }
         override fun reward(player: Player, action: CoreAction.DungeonReward) = rewards.submit(player.uuid, action)
@@ -117,7 +118,8 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
     override fun dungeonView(player: Player) = dungeons.view(player)
     override fun playerName(id: UUID) = connections[id]?.username ?: id.toString().take(8)
     override fun dungeonLobby(player: Player, action: DungeonLobbyAction) = dungeons.lobby(player, action)
-    override fun dungeonBoon(player: Player, boon: DungeonBoon) = dungeons.boon(player, boon)
+    override fun dungeonBoon(player: Player, boon: DungeonBoon) { dungeons.boon(player, boon); refresh(player) }
+    override fun combatSheet(player: Player): CoreCombatSheet? = actors[player.uuid]?.sheet ?: account(player)?.let(CoreCombatSheet::from)
     override fun dungeonRoute(player: Player, roomId: Int) = dungeons.route(player, roomId)
     override fun packed(player: Player): Boolean = uiPack?.enabled(player) == true
     override fun isDeparting(player: Player): Boolean = departing.containsKey(player.uuid) || dungeons.isDeparting(player)
@@ -191,7 +193,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
                         returnToHarbor(player)
                     }
                 }
-                CoreLoopItems.refresh(player, a, initial = true, packed = packed(player))
+                CoreLoopItems.refresh(player, a, initial = true, packed = packed(player), combatSheet = combatSheet(player) ?: CoreCombatSheet.from(a))
                 actors[player.uuid]?.reset()
                 player.setHeldItemSlot(0)
                 player.sendMessage(CoreLoopItems.text("開拓港へようこそ。正面の地図台から遠征へ出発できます。", NamedTextColor.GOLD))
@@ -418,7 +420,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         val a = account(player) ?: return
         player.getAttribute(Attribute.MAX_HEALTH).baseValue = 20.0
         if (player.instance === hub) actors[player.uuid]?.reset()
-        CoreLoopItems.refresh(player, a, packed = packed(player))
+        CoreLoopItems.refresh(player, a, packed = packed(player), combatSheet = combatSheet(player) ?: CoreCombatSheet.from(a))
     }
 
     override fun depart(player: Player, mapId: UUID, revision: Long) {
@@ -562,7 +564,8 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
             onMobDefeated = { _, boss -> onMobDefeated(player, boss) },
             damagePlayer = { target, damage -> actors[target.uuid]?.hurt(damage) },
             canTarget = { target -> target === player && actors[target.uuid]?.defeated == false && sessions[target.uuid]?.returning == false },
-            contentSeed = run.map.seed, explicitBossArchetype = arena.archetype)
+            contentSeed = run.map.seed, explicitBossArchetype = arena.archetype,
+            typedDamagePlayer = { target, damage, type -> actors[target.uuid]?.hurt(damage, type) })
         try {
             val loot = CoreWorldLoot(player, arena.instance, run, { rewards.submit(player.uuid, it) }, { refresh(player) })
             sessions[player.uuid] = Session(player, runId, null, combat, bar, loot, arena)
@@ -600,11 +603,12 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         val combat = QuestEncounterCombat(runtime.instance, tier, groups, QuestCombatPlacement.resolve(runtime.instance, pos(plan.boss)),
             onMobDefeated = { _, boss -> onMobDefeated(player, boss) }, damagePlayer = { target, damage -> actors[target.uuid]?.hurt(damage) },
             canTarget = { target -> target.uuid == player.uuid && actors[target.uuid]?.defeated == false && sessions[target.uuid]?.returning == false },
-            contentSeed = plan.seed, encounterLevel = account(player)?.activeRun?.map?.level ?: CoreJourneyRules.floor(tier))
+            contentSeed = plan.seed, encounterLevel = account(player)?.activeRun?.map?.level ?: CoreJourneyRules.floor(tier),
+            typedDamagePlayer = { target, damage, type -> actors[target.uuid]?.hurt(damage, type) })
         val run = requireNotNull(account(player)?.activeRun)
         val loot = CoreWorldLoot(player, runtime.instance, run,
             reward = { rewards.submit(player.uuid, it) },
-            inventoryChanged = { account(player)?.let { CoreLoopItems.refresh(player, it, packed = packed(player)) } })
+            inventoryChanged = { refresh(player) })
         val session = Session(player, runId, runtime, combat, bar, loot)
         try {
             session.caches = CoreMapCaches(player, runtime.instance,
@@ -764,7 +768,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
                 if (result?.status == CoreTransactionStatus.COMMITTED) {
                     if (resource == CoreResource.POTION) { actor.healPotion(); potionReady[player.uuid] = System.currentTimeMillis() + 10_000 }
                     else actor.sharpen()
-                    CoreLoopItems.refresh(player, requireNotNull(account(player)), packed = packed(player))
+                    refresh(player)
                 } else player.sendMessage(CoreLoopItems.text(result?.message ?: "使用できませんでした。", NamedTextColor.RED))
             }
         }
@@ -788,7 +792,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         else "道の先のボスへ  戦利品 ${session.loot.remainingCount()}"
         val icons = listOf(CoreUiIcon.DASH, CoreUiIcon.SLAM, CoreUiIcon.WHIRL)
         player.sendActionBar(CoreUiComponents.hud(CoreHudState(actor.health, actor.maxHealth.toDouble(), actor.mana.toDouble(), actor.maxMana.toDouble(),
-            icons.mapIndexed { i, icon -> CoreHudSkill(icon, (i + 2).toString(), actor.cooldownRemaining(i) / 20.0, actor.cooldownTicks(i) / 20.0, listOf(15, 25, 35)[i], actor.classId.ordinal * 3 + i, actor.skillAvailable(i)) }, message, actor.chargeCount), packed(player)))
+            icons.mapIndexed { i, icon -> CoreHudSkill(icon, (i + 2).toString(), actor.cooldownRemaining(i) / 20.0, actor.cooldownTicks(i) / 20.0, actor.skillDefinitions[i].mana, actor.classId.ordinal * 3 + i, actor.skillAvailable(i)) }, message, actor.chargeCount), packed(player)))
     }
 
     override fun sessionSummary(player: Player): String = dungeons.run(player)?.objective() ?: sessions[player.uuid]?.let {

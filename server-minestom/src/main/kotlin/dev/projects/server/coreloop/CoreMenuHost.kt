@@ -10,6 +10,7 @@ import java.util.UUID
 /** Existing core-loop operations consumed by the real menu; the host retains all mutation authority. */
 internal interface CoreMenuHost {
     fun account(player: Player): CoreAccount?
+    fun combatSheet(player: Player): CoreCombatSheet? = account(player)?.let(CoreCombatSheet::from)
     fun market(): List<CoreMarketEntry> = emptyList()
     fun buyOrders(): List<CoreBuyOrderEntry> = emptyList()
     fun dungeonParties(): List<DungeonParty> = emptyList()

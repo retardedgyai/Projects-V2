@@ -11,12 +11,24 @@ enum class CoreLootKind { NORMAL, ELITE, BOSS }
 enum class CoreAffixGroup(val displayName: String) { PREFIX("接頭"), SUFFIX("接尾") }
 enum class CoreAffixCategory(val displayName: String) { OFFENSE("攻撃"), RESOURCE("スキル・資源"), DEFENSE("防御"), UTILITY("機動") }
 enum class CoreAffixStat(val displayName: String, val percent: Boolean = true) {
-    DAMAGE("攻撃力"), ATTACK_SPEED("攻撃速度"), SKILL_DAMAGE("スキルダメージ"),
-    MAX_MANA("最大マナ", false), MANA_REGEN("マナ回復速度"), COOLDOWN_REDUCTION("クールダウン短縮"),
+    DAMAGE("与ダメージ増加"), ATTACK_SPEED("攻撃速度"), SKILL_DAMAGE("スキルダメージ"),
+    MAX_MANA("最大マナ", false), MANA_REGEN("マナ回復速度"), COOLDOWN_REDUCTION("クールダウン回復速度"),
     HEALTH("最大HP", false), MITIGATION("被ダメージ軽減"), MOVE_SPEED("移動速度"),
     CRIT_CHANCE_INCREASED("クリティカル率増加"), CRIT_MULTIPLIER("クリティカル倍率"),
-    NORMAL_DAMAGE("通常攻撃ダメージ"), CAST_REDUCTION("キャスト短縮"),
+    NORMAL_DAMAGE("通常攻撃ダメージ"), CAST_REDUCTION("詠唱速度"),
     FIRE("火属性値", false), ICE("氷属性値", false), LIGHTNING("雷属性値", false),
+    AD_FLAT("物理攻撃力 AD", false), AD_PERCENT("物理攻撃力 AD"),
+    AP_FLAT("魔法攻撃力 AP", false), AP_PERCENT("魔法攻撃力 AP"),
+    AR_FLAT("物理防御 AR", false), AR_PERCENT("物理防御 AR"),
+    MR_FLAT("魔法防御 MR", false), MR_PERCENT("魔法防御 MR"),
+    PHYSICAL_DAMAGE("物理ダメージ"), MAGICAL_DAMAGE("魔法ダメージ"),
+    MELEE_DAMAGE("近接ダメージ"), PROJECTILE_DAMAGE("投射物ダメージ"),
+    PHYSICAL_PEN_FLAT("物理貫通", false), PHYSICAL_PEN_PERCENT("物理貫通"),
+    MAGICAL_PEN_FLAT("魔法貫通", false), MAGICAL_PEN_PERCENT("魔法貫通"),
+    HEALTH_PERCENT("最大HP"), MANA_PERCENT("最大マナ"), MANA_REGEN_FLAT("毎秒マナ回復", false),
+    HEALING_FLAT("回復力", false), HEALING_PERCENT("回復力"),
+    OUTGOING_HEALING("与回復量"), INCOMING_HEALING("被回復量"),
+    LIFESTEAL("ライフスティール"),
 }
 
 /** Identity and roll are server-owned. Unknown definitions remain serializable but inert. */
@@ -41,7 +53,10 @@ class CoreAffixDefinition(
     val allowedGear: Set<CoreGearSlot> = Collections.unmodifiableSet(allowedGear.toSet())
     val group: CoreAffixGroup = when (stat) {
         CoreAffixStat.DAMAGE, CoreAffixStat.SKILL_DAMAGE, CoreAffixStat.NORMAL_DAMAGE, CoreAffixStat.MAX_MANA,
-        CoreAffixStat.HEALTH, CoreAffixStat.FIRE, CoreAffixStat.ICE, CoreAffixStat.LIGHTNING -> CoreAffixGroup.PREFIX
+        CoreAffixStat.HEALTH, CoreAffixStat.FIRE, CoreAffixStat.ICE, CoreAffixStat.LIGHTNING,
+        CoreAffixStat.AD_FLAT, CoreAffixStat.AD_PERCENT, CoreAffixStat.AP_FLAT, CoreAffixStat.AP_PERCENT,
+        CoreAffixStat.AR_FLAT, CoreAffixStat.MR_FLAT, CoreAffixStat.HEALTH_PERCENT,
+        CoreAffixStat.MANA_PERCENT, CoreAffixStat.HEALING_FLAT -> CoreAffixGroup.PREFIX
         else -> CoreAffixGroup.SUFFIX
     }
     fun range(tier: Int): IntRange {
@@ -68,12 +83,14 @@ data class CoreAffixStats(
     val fireFlat: Double = 0.0,
     val iceFlat: Double = 0.0,
     val lightningFlat: Double = 0.0,
+    val additional: Map<CoreAffixStat, Double> = emptyMap(),
 ) {
-    val criticalChance: Double get() = (0.05 * (1.0 + critChanceIncreasedPercent / 100.0)).coerceAtMost(0.75)
-    val criticalMultiplier: Double get() = (1.5 + critMultiplierBonusPercent / 100.0).coerceAtMost(4.0)
+    fun bonus(stat: CoreAffixStat): Double = CoreCombatMath.safe(additional[stat] ?: 0.0)
+    val criticalChance: Double get() = (0.05 * (1.0 + CoreCombatMath.safe(critChanceIncreasedPercent) / 100.0)).coerceAtMost(0.75)
+    val criticalMultiplier: Double get() = (CoreCombatMath.BASE_CRITICAL_MULTIPLIER + CoreCombatMath.safe(critMultiplierBonusPercent) / 100.0).coerceAtMost(4.0)
 }
 
-/** Provisional, data-driven sixteen-effect catalog; every listed stat has a core combat consumer. */
+/** Stable IDs survive old saves. Values are percentage points; consumers live in CoreCombatMath. */
 object CoreAffixCatalog {
     const val MAX_STONES = 256
     val definitions: List<CoreAffixDefinition> = Collections.unmodifiableList(listOf(
@@ -95,6 +112,30 @@ object CoreAffixCatalog {
         CoreAffixDefinition("projects:flame", "火炎の刻印石", CoreAffixStat.FIRE, CoreAffixCategory.OFFENSE, 2, 4, 2),
         CoreAffixDefinition("projects:frost", "氷結の刻印石", CoreAffixStat.ICE, CoreAffixCategory.OFFENSE, 2, 4, 2),
         CoreAffixDefinition("projects:storm", "雷鳴の刻印石", CoreAffixStat.LIGHTNING, CoreAffixCategory.OFFENSE, 2, 4, 2),
+        CoreAffixDefinition("projects:edge", "刃の刻印石", CoreAffixStat.AD_FLAT, CoreAffixCategory.OFFENSE, 2, 4, 2),
+        CoreAffixDefinition("projects:might", "武威の刻印石", CoreAffixStat.AD_PERCENT, CoreAffixCategory.OFFENSE, 8, 14, 5),
+        CoreAffixDefinition("projects:insight", "叡智の刻印石", CoreAffixStat.AP_FLAT, CoreAffixCategory.OFFENSE, 3, 6, 3),
+        CoreAffixDefinition("projects:sorcery", "魔術の刻印石", CoreAffixStat.AP_PERCENT, CoreAffixCategory.OFFENSE, 8, 14, 5),
+        CoreAffixDefinition("projects:plate", "鋼壁の刻印石", CoreAffixStat.AR_FLAT, CoreAffixCategory.DEFENSE, 12, 24, 12),
+        CoreAffixDefinition("projects:bulwark", "堅牢の刻印石", CoreAffixStat.AR_PERCENT, CoreAffixCategory.DEFENSE, 10, 20, 6),
+        CoreAffixDefinition("projects:ward", "結界の刻印石", CoreAffixStat.MR_FLAT, CoreAffixCategory.DEFENSE, 12, 24, 12),
+        CoreAffixDefinition("projects:aegis", "抗魔の刻印石", CoreAffixStat.MR_PERCENT, CoreAffixCategory.DEFENSE, 10, 20, 6),
+        CoreAffixDefinition("projects:brutality", "武技の刻印石", CoreAffixStat.PHYSICAL_DAMAGE, CoreAffixCategory.OFFENSE, 8, 14, 5),
+        CoreAffixDefinition("projects:arcane", "秘術の刻印石", CoreAffixStat.MAGICAL_DAMAGE, CoreAffixCategory.OFFENSE, 8, 14, 5),
+        CoreAffixDefinition("projects:close-combat", "接戦の刻印石", CoreAffixStat.MELEE_DAMAGE, CoreAffixCategory.OFFENSE, 8, 14, 5),
+        CoreAffixDefinition("projects:ballistics", "弾道の刻印石", CoreAffixStat.PROJECTILE_DAMAGE, CoreAffixCategory.OFFENSE, 8, 14, 5),
+        CoreAffixDefinition("projects:puncture", "穿甲の刻印石", CoreAffixStat.PHYSICAL_PEN_FLAT, CoreAffixCategory.OFFENSE, 5, 10, 5),
+        CoreAffixDefinition("projects:breach", "破甲の刻印石", CoreAffixStat.PHYSICAL_PEN_PERCENT, CoreAffixCategory.OFFENSE, 3, 6, 3),
+        CoreAffixDefinition("projects:dispel", "破魔の刻印石", CoreAffixStat.MAGICAL_PEN_FLAT, CoreAffixCategory.OFFENSE, 5, 10, 5),
+        CoreAffixDefinition("projects:unravel", "解呪の刻印石", CoreAffixStat.MAGICAL_PEN_PERCENT, CoreAffixCategory.OFFENSE, 3, 6, 3),
+        CoreAffixDefinition("projects:vigor", "活力の刻印石", CoreAffixStat.HEALTH_PERCENT, CoreAffixCategory.DEFENSE, 3, 6, 2),
+        CoreAffixDefinition("projects:deep-well", "深泉の刻印石", CoreAffixStat.MANA_PERCENT, CoreAffixCategory.RESOURCE, 4, 8, 3),
+        CoreAffixDefinition("projects:spring", "湧泉の刻印石", CoreAffixStat.MANA_REGEN_FLAT, CoreAffixCategory.RESOURCE, 1, 2, 1),
+        CoreAffixDefinition("projects:restoration", "癒力の刻印石", CoreAffixStat.HEALING_FLAT, CoreAffixCategory.RESOURCE, 3, 6, 3),
+        CoreAffixDefinition("projects:grace", "慈愛の刻印石", CoreAffixStat.HEALING_PERCENT, CoreAffixCategory.RESOURCE, 8, 14, 5),
+        CoreAffixDefinition("projects:benediction", "施療の刻印石", CoreAffixStat.OUTGOING_HEALING, CoreAffixCategory.RESOURCE, 5, 10, 3),
+        CoreAffixDefinition("projects:receptivity", "受容の刻印石", CoreAffixStat.INCOMING_HEALING, CoreAffixCategory.DEFENSE, 5, 10, 3),
+        CoreAffixDefinition("projects:siphon", "吸命の刻印石", CoreAffixStat.LIFESTEAL, CoreAffixCategory.OFFENSE, 1, 2, 1),
     ))
     private val byId = definitions.associateBy { it.id }
 
@@ -160,7 +201,8 @@ object CoreAffixCatalog {
             stat(CoreAffixStat.MOVE_SPEED, 25.0), stat(CoreAffixStat.CRIT_CHANCE_INCREASED, 200.0),
             stat(CoreAffixStat.CRIT_MULTIPLIER, 100.0), stat(CoreAffixStat.NORMAL_DAMAGE, 100.0),
             stat(CoreAffixStat.CAST_REDUCTION, 40.0), stat(CoreAffixStat.FIRE, 100.0),
-            stat(CoreAffixStat.ICE, 100.0), stat(CoreAffixStat.LIGHTNING, 100.0))
+            stat(CoreAffixStat.ICE, 100.0), stat(CoreAffixStat.LIGHTNING, 100.0),
+            Collections.unmodifiableMap(totals.toMap()))
     }
 
     internal fun requireSource(sourceId: String) {

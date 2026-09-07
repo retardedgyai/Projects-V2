@@ -260,7 +260,8 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
             card(v, 30, 3, 1, "武器型", CoreMenuArt.FORGE) { weaponBases(player, CoreForgeLayout.Selection(tab = CoreForgeLayout.Tab.CRAFT, tier = a.weaponTier)) }
             card(v, 33, 3, 1, "鍛錬", CoreMenuArt.WEAPON) { temper(player) }
             a.journey.job.skills.forEachIndexed { i, name ->
-                tile(v, 36 + i * 3, 3, name.replace("踏み込み斬り", "踏込斬り"), CoreLoopItems.icon(Material.PAPER, name, a.journey.job.skillDescriptions[i], "ホットバー${i + 2}番 / Lv${listOf(1, 4, 8)[i]}で解放"),
+                tile(v, 36 + i * 3, 3, name.replace("踏み込み斬り", "踏込斬り"), CoreLoopItems.icon(Material.PAPER, name,
+                    *(CoreSkillCatalog.skills(a.journey.job)[i].tooltip(game.combatSheet(player) ?: CoreCombatSheet.from(a)) + "ホットバー${i + 2}番 / Lv${CoreSkillCatalog.unlockLevels[i]}で解放").toTypedArray()),
                     if (CoreJourneyRules.skillUnlocked(a, i)) Tone.SELECTED else Tone.DISABLED)
             }
             back(v, player, "手帳")

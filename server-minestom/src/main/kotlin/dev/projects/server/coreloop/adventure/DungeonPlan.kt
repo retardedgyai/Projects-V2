@@ -58,8 +58,8 @@ data class DungeonPlan(val seed: Long, val tier: Int, val ascension: Int, val ro
 }
 
 enum class DungeonBoon(val displayName: String, val description: String) {
-    FORCE("剛力", "攻撃力 +8%"), HASTE("疾風", "攻撃速度 +6%"), TECHNIQUE("戦技", "スキル威力 +12%"),
-    VITALITY("生命", "最大HP +20"), FLOW("循環", "マナ回復 +18%・最大マナ +8"), FOCUS("集中", "クールダウン -4%"),
+    FORCE("剛力", "与ダメージ増加 +8%"), HASTE("疾風", "攻撃速度 +6%"), TECHNIQUE("戦技", "スキル威力 +12%"),
+    VITALITY("生命", "最大HP +20"), FLOW("循環", "マナ回復 +18%・最大マナ +8"), FOCUS("集中", "クールダウン回復速度 +4%"),
     GUARD("守護", "被ダメージ軽減 +3%"), STRIDE("軽歩", "移動速度 +4%"),
     FLAME("熾火", "火属性値 +4"), FROST("霜花", "氷属性値 +4"), STORM("雷光", "雷属性値 +4"),
     PRECISION("狩眼", "会心率増加 +40%・会心倍率 +10%");

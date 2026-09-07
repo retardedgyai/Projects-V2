@@ -7,24 +7,9 @@ enum class CoreClass(val displayName: String, val description: String) {
     MAGE("メイジ", "炎と氷の術式。マナを使って集団を制する"),
     STARWEAVER("星織り師", "メイジ上位職。星を編み、術式で解放する");
     val magic get() = this == MAGE || this == STARWEAVER
-    val icons get() = when (this) {
-        WARRIOR -> listOf("dash", "slam", "whirl")
-        RANGER -> listOf("pierce", "frost_fan", "arrow_rain")
-        MAGE -> listOf("firebolt", "frost_nova", "meteor")
-        STARWEAVER -> listOf("star_thread", "star_ring", "starfall")
-    }
-    val skills get() = when (this) {
-        WARRIOR -> listOf("踏み込み斬り", "地砕き", "旋風斬り")
-        RANGER -> listOf("貫通射ち", "霜矢の扇", "矢の嵐")
-        MAGE -> listOf("火炎弾", "霜の波紋", "流星雨")
-        STARWEAVER -> listOf("星糸", "星環", "星降る夜")
-    }
-    val skillDescriptions get() = when (this) {
-        WARRIOR -> listOf("敵の手前まで踏み込み、前方を斬る", "構えた地点から前方へ強い一撃", "自分の周囲へ三回の斬撃")
-        RANGER -> listOf("狙った射線上の敵を最大三体貫通", "前方の扇へ霜矢。命中した敵を減速", "前方の地点へ三回の矢の雨")
-        MAGE -> listOf("狙った敵へ遠距離の火炎弾", "周囲の敵を術式で攻撃し減速", "前方の地点へ三回の流星")
-        STARWEAVER -> listOf("通常三命中で編む。三蓄積なら星糸が三体貫通", "三蓄積なら減速延長とマナ12回復", "三蓄積なら星降りが四回に増加")
-    }
+    val icons get() = CoreSkillCatalog.skills(this).map { it.icon }
+    val skills get() = CoreSkillCatalog.skills(this).map { it.name }
+    val skillDescriptions get() = CoreSkillCatalog.skills(this).map { it.description }
 }
 
 enum class CoreWeaponBase(val displayName: String, val detail: String, val power: Double = 1.0, val speed: Double = 1.0) {

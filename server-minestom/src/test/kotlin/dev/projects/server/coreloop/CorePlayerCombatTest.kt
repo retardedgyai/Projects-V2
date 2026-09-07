@@ -30,7 +30,7 @@ class CorePlayerCombatTest {
         assertEquals(3,h.actor.chargeCount)
         val before=h.combat.bossHealth(); h.actor.skill(2); assertEquals(0,h.actor.chargeCount)
         h.ticks(40)
-        assertEquals(before - 12 * .92 * 1.35 * 1.45 * 4,h.combat.bossHealth(),.00001)
+        assertEquals(before - (4 + 12 * .92 * 1.1) * 1.45 * 4,h.combat.bossHealth(),.00001)
     }
     @Test fun `bow and mage projectile hit at twelve blocks but not through a wall`() {
         for (job in listOf(CoreClass.RANGER, CoreClass.MAGE, CoreClass.STARWEAVER)) arena(bossDistance = 12.0) { h ->
@@ -275,12 +275,12 @@ class CorePlayerCombatTest {
     }
 
     @Test
-    fun `damage and normal modifiers multiply actual hit while haste shortens windup`() = arena(
+    fun `increased damage and normal modifiers add in the same layer while haste shortens windup`() = arena(
         stats = CoreAffixStats(damagePercent = 20.0, normalDamagePercent = 10.0, attackSpeedPercent = 50.0)) { h ->
         assertEquals(1.5, h.actor.attackSpeed)
         h.actor.attack()
         h.ticks(7)
-        assertEquals(300.0 - 12.0 * 1.2 * 1.1, h.combat.bossHealth(), 0.00001)
+        assertEquals(300.0 - 12.0 * 1.3, h.combat.bossHealth(), 0.00001)
     }
 
     @Test
@@ -296,15 +296,15 @@ class CorePlayerCombatTest {
     }
 
     @Test
-    fun `skill damage cast reduction and cooldown reduction affect the actual skill`() = arena(
-        stats = CoreAffixStats(skillDamagePercent = 50.0, castReductionPercent = 40.0, cooldownReductionPercent = 25.0)) { h ->
+    fun `physical skill startup uses attack speed and cooldown uses recovery speed`() = arena(
+        stats = CoreAffixStats(skillDamagePercent = 50.0, attackSpeedPercent = 50.0, cooldownReductionPercent = 25.0)) { h ->
         h.actor.skill(1)
-        assertEquals(105, h.actor.cooldownTicks(1))
+        assertEquals(112, h.actor.cooldownTicks(1))
         h.ticks(7)
         assertEquals(300.0, h.combat.bossHealth())
         h.ticks(1)
         assertEquals(300.0 - 12.0 * 2.6 * 1.5, h.combat.bossHealth(), 0.00001)
-        assertEquals(97, h.actor.cooldownRemaining(1))
+        assertEquals(104, h.actor.cooldownRemaining(1))
     }
 
     @Test
@@ -409,7 +409,7 @@ class CorePlayerCombatTest {
         stats = CoreAffixStats(damagePercent = 20.0, attackSpeedPercent = 60.0, healthFlat = 20.0),
         weaponEnhancement = 30, armorEnhancement = 30) { h ->
         assertEquals(1.84, h.actor.attackSpeed, .00001)
-        assertEquals(12.0 * 2.2 * 1.2, h.actor.attackDamage, .00001)
+        assertEquals(12.0 * 2.2, h.actor.attackDamage, .00001)
         assertEquals(228, h.actor.maxHealth)
         h.actor.attack(); h.ticks(8)
         assertEquals(300.0 - 12.0 * 2.2 * 1.2, h.combat.bossHealth(), .00001)
@@ -476,6 +476,59 @@ class CorePlayerCombatTest {
         assertEquals(304, h.actor.maxHealth)
         h.actor.hurt(20.0)
         assertEquals(290.0, h.actor.health, .00001)
+    }
+
+    @Test fun `real Mage spell gains AP not AD and matches the tooltip preview`() {
+        for (mod in listOf(CoreAffixStat.AD_FLAT, CoreAffixStat.AP_FLAT)) arena(
+            stats = CoreAffixStats(additional = mapOf(mod to 20.0))) { h ->
+            h.journey = CoreJourney(job = CoreClass.MAGE); h.base = CoreWeaponBase.STAFF
+            val expected = 8.0 + (12 * .92 + if (mod == CoreAffixStat.AP_FLAT) 20 else 0) * 1.4
+            assertEquals(expected, h.actor.skillDefinitions[0].preview(h.actor.sheet), .000001)
+            h.actor.skill(0); h.ticks(5)
+            assertEquals(300 - expected, h.combat.bossHealth(), .000001)
+        }
+    }
+
+    @Test fun `real Mage auto still scales only with AD`() {
+        for (mod in listOf(CoreAffixStat.AD_FLAT, CoreAffixStat.AP_FLAT)) arena(
+            stats = CoreAffixStats(additional = mapOf(mod to 20.0))) { h ->
+            h.journey = CoreJourney(job = CoreClass.MAGE); h.base = CoreWeaponBase.STAFF
+            h.actor.attack(); h.ticks(4)
+            assertEquals(300 - 12 * .92 - if (mod == CoreAffixStat.AD_FLAT) 20 else 0, h.combat.bossHealth(), .000001)
+        }
+    }
+
+    @Test fun `player AR and MR mitigate different incoming types`() = arena(
+        stats = CoreAffixStats(additional = mapOf(CoreAffixStat.AR_FLAT to 300.0))) { h ->
+        h.actor.hurt(20.0, CoreDamageType.PHYSICAL)
+        assertEquals(90.0, h.actor.health)
+        h.actor.hurt(20.0, CoreDamageType.MAGICAL)
+        assertEquals(70.0, h.actor.health)
+        h.actor.hurt(Double.NaN)
+        assertEquals(70.0, h.actor.health)
+    }
+
+    @Test fun `lifesteal uses overkill-capped health loss and cannot trigger recursively from burn`() = arena(
+        stats = CoreAffixStats(fireFlat = 10.0, additional = mapOf(CoreAffixStat.LIFESTEAL to 50.0))) { h ->
+        h.actor.hurt(60.0)
+        h.combat.applyEffectDamage(h.combat.combatTargets().single().id, h.player, 296.0)
+        h.actor.attack(); h.ticks(8)
+        assertEquals(40.0 + 4 * .5 * .33, h.actor.health, .000001)
+        h.ticks(80)
+        assertEquals(40.0 + 4 * .5 * .33, h.actor.health, .000001)
+    }
+
+    @Test fun `only cast speed shortens a Mage skill while physical attack speed does not`() {
+        arena(stats = CoreAffixStats(castReductionPercent = 100.0)) { h ->
+            h.journey = CoreJourney(job = CoreClass.MAGE); h.base = CoreWeaponBase.STAFF
+            h.actor.skill(1); h.ticks(5); assertEquals(300.0, h.combat.bossHealth())
+            h.ticks(1); assertTrue(h.combat.bossHealth() < 300)
+        }
+        arena(stats = CoreAffixStats(attackSpeedPercent = 100.0)) { h ->
+            h.journey = CoreJourney(job = CoreClass.MAGE); h.base = CoreWeaponBase.STAFF
+            h.actor.skill(1); h.ticks(11); assertEquals(300.0, h.combat.bossHealth())
+            h.ticks(1); assertTrue(h.combat.bossHealth() < 300)
+        }
     }
 
     private class Harness(bossDistance: Double, armorTier: Int, stats: CoreAffixStats, roll: Double,

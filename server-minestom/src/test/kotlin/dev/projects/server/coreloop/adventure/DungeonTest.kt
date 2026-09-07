@@ -191,6 +191,19 @@ class DungeonTest {
         }
     }
 
+    @Test fun `dungeon production encounter carries magic type through the host`() = harness(1) { h ->
+        val c = requireNotNull(h.run.combat)
+        c.removeEncounter(c.entities().map { it.uuid }.toSet())
+        val centre = h.run.room.center
+        h.players.single().teleport(centre.sub(0.0, 0.0, 4.0)).join()
+        c.spawnEncounter(QuestCombatEncounter(listOf(centre), listOf(QuestMobArchetype.RIFT_CASTER)))
+        c.tick(h.now + 100)
+        c.tick(h.now + 1600)
+        assertTrue(h.typedHits.isNotEmpty())
+        assertTrue(h.typedHits.all { it == CoreDamageType.MAGICAL })
+        assertEquals(0, h.legacyHits)
+    }
+
     private fun harness(count: Int, holdReward: Boolean = false, test: (Harness) -> Unit) {
         MinecraftServer.init(Auth.Offline()); Harness(count, holdReward).use(test)
     }
@@ -201,10 +214,13 @@ class DungeonTest {
         val jobs = ArrayDeque<() -> Unit>()
         val rewards = mutableListOf<Pair<UUID, CoreAction.DungeonReward>>()
         val pendingReward = CompletableFuture<CoreTransactionResult>()
+        val typedHits = mutableListOf<CoreDamageType>()
+        var legacyHits = 0
         val run = DungeonRun(UUID.randomUUID(), world, players, object : DungeonRunHost {
             override fun nowMillis() = now
             override fun connected(player: Player) = !player.isRemoved
-            override fun hurt(player: Player, damage: Double) {}
+            override fun hurt(player: Player, damage: Double) { legacyHits++ }
+            override fun hurtTyped(player: Player, damage: Double, type: CoreDamageType) { typedHits += type }
             override fun resetActions(player: Player) {}
             override fun revive(player: Player, fraction: Double) {}
             override fun showRunMenu(player: Player) {}

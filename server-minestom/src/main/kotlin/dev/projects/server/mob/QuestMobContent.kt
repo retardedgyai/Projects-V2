@@ -107,6 +107,10 @@ internal object QuestMobContent {
             minimumRange: Double = 0.0, target: Boolean = false, health: Double = 1.0, weight: Int = 1) = MobAbility(
             id, label, shape, range, damage * factor, warning, tracking, recovery, cooldown, weight,
             minimumRange, if (target) MobAbilityAnchor.TARGET else MobAbilityAnchor.CASTER, health,
+            if (id in setOf("rift-bolt", "rift-pulse", "oracle-mark", "oracle-ray", "oracle-pulse",
+                    "forge-cross", "forge-mark", "tide-ray", "tide-ring", "tide-center", "eclipse-mark", "eclipse-cross",
+                    "cinder-mark", "furnace-cross", "frost-outside", "frost-inside", "tempest-ray", "tempest-mark", "tempest-cross"))
+                dev.projects.server.coreloop.CoreDamageType.MAGICAL else dev.projects.server.coreloop.CoreDamageType.PHYSICAL,
         )
         fun sweep(radius: Double = 3.4, damage: Double = 10.0) = attack(
             "sweep", "横薙ぎ", MobAttackShape.Sweep(radius), radius - 0.4, damage, weight = 3,

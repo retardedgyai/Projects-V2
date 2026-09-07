@@ -143,6 +143,7 @@ data class MobAbility(
     val minimumStartRange: Double = 0.0,
     val anchor: MobAbilityAnchor = MobAbilityAnchor.CASTER,
     val maximumHealthRatio: Double = 1.0,
+    val damageType: dev.projects.server.coreloop.CoreDamageType = dev.projects.server.coreloop.CoreDamageType.PHYSICAL,
 ) {
     init {
         require(id.isNotBlank() && maximumStartRange > 0.0 && damage > 0.0)

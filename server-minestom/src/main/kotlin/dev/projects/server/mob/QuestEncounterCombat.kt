@@ -1,6 +1,9 @@
 package dev.projects.server.mob
 
 import dev.projects.server.CombatTarget
+import dev.projects.server.coreloop.CoreDamageType
+import dev.projects.server.coreloop.CoreCombatMath
+import dev.projects.server.coreloop.CoreAffixStats
 import net.kyori.adventure.sound.Sound
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
@@ -78,6 +81,7 @@ class QuestEncounterCombat(
     private val healthMultiplier: Double = 1.0,
     private val damageMultiplier: Double = 1.0,
     private val encounterLevel: Int = (tier - 1) * 10 + 1,
+    private val typedDamagePlayer: ((Player, Double, CoreDamageType) -> Unit)? = null,
 ) {
     private class Mob(
         val entity: EntityCreature,
@@ -205,6 +209,18 @@ class QuestEncounterCombat(
     /** Only for an effect whose initial server hit was already validated (burn/chain), never packet input. */
     fun applyEffectDamage(targetId: UUID, attacker: Player, amount: Double): Boolean {
         return damage(targetId, attacker, amount, effect = true) != null
+    }
+
+    /** AR/MR is applied exactly once, before guard, boss phase gates and overkill checks. */
+    fun applyCalculatedDamage(targetId: UUID, attacker: Player, amount: Double, type: CoreDamageType,
+        stats: CoreAffixStats, projectile: Boolean = false, effect: Boolean = false): Double? {
+        if (!amount.isFinite() || amount <= 0) return null
+        val mob = mobs[targetId] ?: return null
+        val defense = (tier - 1) * 30.0 + (encounterLevel - ((tier - 1) * 10 + 1)) * 2.0
+        val armored = mob.definition.archetype in setOf(QuestMobArchetype.SHIELD_GUARD, QuestMobArchetype.IRON_WARDEN)
+        val caster = mob.definition.archetype in setOf(QuestMobArchetype.RIFT_CASTER, QuestMobArchetype.RIFT_ORACLE)
+        return damage(targetId, attacker, CoreCombatMath.mitigate(amount, type,
+            defense * (if (armored) 1.5 else 1.0), defense * (if (caster) 1.5 else 1.0), stats), effect, projectile)
     }
 
     private fun damage(targetId: UUID, attacker: Player, amount: Double, effect: Boolean, projectile: Boolean = false): Double? {
@@ -524,7 +540,10 @@ class QuestEncounterCombat(
                     if (player.instance !== instance || !canTarget(player)) continue
                     if (event.frame.ability.shape.contains(event.frame.origin, event.frame.facing, player.position) &&
                         mob.entity.hasLineOfSight(player)
-                    ) damagePlayer(player, event.frame.ability.damage)
+                    ) {
+                        if (typedDamagePlayer != null) typedDamagePlayer.invoke(player, event.frame.ability.damage, event.frame.ability.damageType)
+                        else damagePlayer(player, event.frame.ability.damage)
+                    }
                     if (disposed || actionsStoppedForReturn) return false
                 }
             }

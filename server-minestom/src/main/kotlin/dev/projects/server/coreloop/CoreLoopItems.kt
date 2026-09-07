@@ -62,18 +62,22 @@ internal object CoreLoopItems {
     fun gear(account: CoreAccount, slot: CoreGearSlot, packed: Boolean, material: Material? = null): ItemStack {
         val tier = CoreAffixCatalog.gearTier(account, slot)
         val stats = CoreAffixCatalog.stats(account)
+        val sheet = CoreCombatSheet.from(account)
         val enhancement = CoreEnhancementCatalog.state(account, slot)
         val identity = CoreEconomy.identity(account, slot)
         val base = if (slot == CoreGearSlot.WEAPON) CoreWeaponPresentation.skin(weapon(tier), tier, packed) else icon(material ?: Material.IRON_CHESTPLATE, "開拓者の防具")
             .withTag(actionTag, "armor").withTag(gearTag, CoreGearSlot.ARMOR.name)
         val rows = if (slot == CoreGearSlot.WEAPON) buildList {
-            add(CoreTooltipStat("攻撃力", "${CoreWeaponPresentation.damage(account)}", CoreUiIcon.ATTACK))
+            add(CoreTooltipStat("物理攻撃 AD", CoreCombatMath.number(sheet.ad), CoreUiIcon.ATTACK))
+            add(CoreTooltipStat("魔法攻撃 AP", CoreCombatMath.number(sheet.ap), CoreUiIcon.MAGIC))
             add(CoreTooltipStat("攻撃速度", CoreWeaponPresentation.attackSpeedLabel(account), CoreUiIcon.SPEED))
             add(CoreTooltipStat("会心率 / 倍率", "${(stats.criticalChance * 1000).roundToInt() / 10.0}% / ${(stats.criticalMultiplier * 100).toInt()}%", CoreUiIcon.CRITICAL))
             if (stats.fireFlat + stats.iceFlat + stats.lightningFlat > 0) add(CoreTooltipStat("炎 / 氷 / 雷", "${stats.fireFlat.toInt()} / ${stats.iceFlat.toInt()} / ${stats.lightningFlat.toInt()}", CoreUiIcon.MAGIC))
         } else listOf(CoreTooltipStat("最大HP", "${CoreWeaponPresentation.health(account)}", CoreUiIcon.HEALTH),
-            CoreTooltipStat("基礎軽減 / MOD軽減", "${if (account.armorBroken) 0 else (tier - 1) * 10}% / ${stats.mitigationPercent.toInt()}%", CoreUiIcon.DEFENSE),
-            CoreTooltipStat("最大マナ", "${100 + stats.maxManaFlat.toInt()}", CoreUiIcon.MANA))
+            CoreTooltipStat("物理防御 AR", CoreCombatMath.number(sheet.ar), CoreUiIcon.DEFENSE),
+            CoreTooltipStat("魔法防御 MR", CoreCombatMath.number(sheet.mr), CoreUiIcon.DEFENSE),
+            CoreTooltipStat("追加軽減", "${stats.mitigationPercent.toInt()}%", CoreUiIcon.DEFENSE),
+            CoreTooltipStat("最大マナ", CoreCombatMath.number(sheet.mana), CoreUiIcon.MANA))
         val shown = if (slot == CoreGearSlot.WEAPON && identity.base.family != "greatsword") {
             val model = if (identity.base == CoreWeaponBase.LONGBOW) "minecraft:bow" else "minecraft:blaze_rod"
             base.withItemModel(model)
@@ -91,7 +95,9 @@ internal object CoreLoopItems {
             footer = listOf(if (slot == CoreGearSlot.WEAPON) identity.base.detail else "装備Lv鍛錬で同Tier内の基礎性能が成長", "製造品質 +${CoreEconomy.identity(account, slot).quality}%（基礎性能）", if (CoreEconomy.broken(account, slot)) "破損中：この装備の性能・MODは無効" else "未破損 / 遠征・戦闘では壊れません",
                 if (CoreEconomy.broken(account, slot)) "装備庫で修理：同Tier・同系統・+0・未破損を1個" else "+15以降の強化失敗で破損する場合があります",
                 "修理対象のMOD・強化値・製作者は維持",
-                "能力欄は装備Lv・強化・MODを反映", "マジック：接頭1＋接尾1 / レア：接頭3＋接尾3", if (slot == CoreGearSlot.WEAPON) "左：通常 / 右：第1スキル / F：回避" else "防具MODはセット全体に1回適用")), packed)
+                "能力欄は装備Lv・強化・MODを反映", "マジック：接頭1＋接尾1 / レア：接頭3＋接尾3",
+                if (slot == CoreGearSlot.WEAPON) "通常攻撃：${CoreSkillCatalog.basicFormula.label()} / ${CoreSkillCatalog.basicType(account.journey.job).label}" else "防御軽減：300 / (300 + 有効防御)",
+                if (slot == CoreGearSlot.WEAPON) "左：通常 / 右：第1スキル / F：回避" else "防具MODはセット全体に1回適用")), packed)
     }
 
     fun affixModel(stone: CoreAffixStone): CoreTooltipAffix {
@@ -174,7 +180,8 @@ internal object CoreLoopItems {
 
     fun mapId(item: ItemStack): UUID? = item.getTag(ownedMapTag)?.let { runCatching { UUID.fromString(it) }.getOrNull() }
 
-    fun refresh(player: Player, account: CoreAccount, initial: Boolean = false, packed: Boolean = false) {
+    fun refresh(player: Player, account: CoreAccount, initial: Boolean = false, packed: Boolean = false,
+        combatSheet: CoreCombatSheet = CoreCombatSheet.from(account)) {
         if (initial) player.inventory.clear()
         // These are account projections, not transferable stacks. Remove moved/cursor copies before
         // rebuilding so spending the last orb cannot leave a stale apparent balance elsewhere.
@@ -184,18 +191,17 @@ internal object CoreLoopItems {
         if (projection(player.inventory.cursorItem)) player.inventory.cursorItem = ItemStack.AIR
         player.inventory.setItemStack(0, gear(account, CoreGearSlot.WEAPON, packed))
         val skillIcons = listOf(Material.FEATHER, Material.IRON_SWORD, Material.BLAZE_POWDER)
-        val descriptions = account.journey.job.skillDescriptions
         for (id in 0..2) {
             val available = CoreJourneyRules.skillUnlocked(account, id)
-            var item = icon(skillIcons[id], (if (available) "" else "【未解放】") + account.journey.job.skills[id],
-                descriptions[id],
-                "${account.journey.job.displayName} / マナ${listOf(15, 25, 35)[id]} / 再使用${listOf(4, 7, 11)[id]}秒",
-                "Lv${listOf(1, 4, 8)[id]}で解放 / 選んで右クリック").withTag(actionTag, "skill:$id")
-            if (packed) item = item.withItemModel("projects:core_ui/${account.journey.job.icons[id]}")
+            val definition = CoreSkillCatalog.skills(account.journey.job)[id]
+            var item = icon(skillIcons[id], (if (available) "" else "【未解放】") + definition.name,
+                *(definition.tooltip(combatSheet) + "Lv${CoreSkillCatalog.unlockLevels[id]}で解放 / 選んで右クリック").toTypedArray())
+                .withTag(actionTag, "skill:$id")
+            if (packed) item = item.withItemModel("projects:core_ui/${definition.icon}")
             player.inventory.setItemStack(id + 1, item)
         }
         player.inventory.setItemStack(4, icon(Material.HONEY_BOTTLE, "回復薬（倉庫 ${account.amount(CoreResource.POTION)}）",
-            "右クリック：最大HPの45%を回復", "工房で布から調合 / 再使用10秒").withTag(actionTag, "potion"))
+            "右クリック：最大HPの45% + 回復力100%", "与回復・被回復MODが適用 / 再使用10秒").withTag(actionTag, "potion"))
         player.inventory.setItemStack(5, icon(Material.COMPASS, "帰還の羅針盤", "右クリック：探索状況・帰還", "獲得素材は帰還前から保存されています").withTag(actionTag, "journal"))
         player.inventory.setItemStack(8, icon(Material.NETHER_STAR, "ProjectS — 冒険の手帳", "右クリック：地図・刻印工房・倉庫", "港の施設からも同じ操作ができます").withTag(actionTag, "journal"))
         if (initial) {
@@ -206,7 +212,7 @@ internal object CoreLoopItems {
             "つかんで地図に重ねるとMODを付与", "地図台でも同じ操作ができます", color = NamedTextColor.LIGHT_PURPLE)
             .withTag(actionTag, "tablet"))
         player.inventory.setItemStack(15, icon(Material.FLINT, "砥石（${account.amount(CoreResource.WHETSTONE)}）",
-            "右クリック：攻撃力+20% / 3分", "加工石材とインゴットから作れます").withTag(actionTag, "whetstone"))
+            "右クリック：直接攻撃の与ダメージ+20% / 3分", "AD・AP自体は変化しません").withTag(actionTag, "whetstone"))
         // Only owned currencies are projected. Their exact quantity is always ledger-authoritative.
         val owned = CoreCraftingCurrency.entries.filter { account.amount(it) > 0 }
         for (slot in 16..35) player.inventory.setItemStack(slot, owned.getOrNull(slot - 16)?.let { currency(it, account.amount(it), packed) } ?: ItemStack.AIR)
