@@ -1,13 +1,14 @@
 """Build positioned HUD sprites and deterministic radial cooldown variants from authored masters.
 
-Pillow is used only for pixel-preserving asset composition. Replace assets/core-ui/skills/*.png
-to adopt new masters; absent overrides deliberately reuse the existing authored skill PNGs.
+Pillow is used only for asset composition. Replace assets/core-ui/skills/*.png to adopt new
+masters. Missing artwork fails explicitly instead of recycling an already-framed pack sprite.
 """
 from pathlib import Path
 import math
 from PIL import Image, ImageDraw, ImageFilter
 
 ROOT = Path(__file__).resolve().parents[1]
+CLASSES = ("warrior", "ranger", "mage", "starweaver", "assassin", "templar", "healer")
 OVERRIDE_PREFIX = "assets/minecraft/textures/gui/sprites/hud/"
 DIGITS = "0123456789/HMPR"
 # Same stable order as CoreClass.entries and its eight skills + two ultimates.
@@ -78,7 +79,36 @@ def digit_sheet(scale, cell_height, ink_y):
     return sheet
 
 
-def skill_frame(master, frame):
+def class_for_skill(name):
+    return CLASSES[SKILLS.index(name) // 10]
+
+
+def class_ornament(name, source=None):
+    source = source or ROOT / "assets/core-ui"
+    with Image.open(source / "skill-frames" / f"{class_for_skill(name)}.png") as loaded:
+        ornament = loaded.convert("RGBA")
+    if ornament.size != (32, 32):
+        raise ValueError(f"Class frame must be 32px: {name}")
+    if ornament.crop((4, 4, 28, 28)).getchannel("A").getbbox() is not None:
+        raise ValueError(f"Class frame overlaps skill artwork: {name}")
+    return ornament
+
+
+def fit_skill(artwork):
+    """Same fit for menu and HUD: never shrink a selected icon twice."""
+    artwork = artwork.convert("RGBA")
+    bounds = artwork.getchannel("A").getbbox()
+    if bounds is None:
+        raise ValueError("Skill master is fully transparent")
+    artwork = artwork.crop(bounds)
+    factor = 24 / max(artwork.size)
+    fitted = artwork.resize((max(1, round(artwork.width * factor)), max(1, round(artwork.height * factor))), Image.Resampling.NEAREST)
+    master = Image.new("RGBA", (28, 28))
+    master.alpha_composite(fitted, ((28 - fitted.width) // 2, (28 - fitted.height) // 2))
+    return master
+
+
+def skill_frame(master, frame, ornament=None, key_badge=True):
     card = Image.new("RGBA", (32, 32), "#10151b")
     card.alpha_composite(master, (2, 2))
     pen = ImageDraw.Draw(card)
@@ -103,12 +133,22 @@ def skill_frame(master, frame):
         edge, light = "#3479ae", "#7bbddd"
     else:
         edge, light = "#c7a964", "#f0d999"
-    pen.rectangle((0, 0, 31, 31), outline="#0b0e13")
-    pen.rectangle((1, 1, 30, 30), outline=edge)
-    pen.line((2, 1, 29, 1), fill=light)
-    pen.point((0, 0), fill=light)  # Keep exact 32-pixel glyph width at every frame.
-    pen.point((31, 31), fill=edge)
-    pen.rectangle((23, 24, 29, 29), fill="#11171e")
+    if ornament is None:
+        # Historical proposal previews only. Production requires authored class ornaments.
+        pen.rectangle((0, 0, 31, 31), outline="#0b0e13")
+        pen.rectangle((1, 1, 30, 30), outline=edge)
+        pen.line((2, 1, 29, 1), fill=light)
+        pen.point((0, 0), fill=light)
+        pen.point((31, 31), fill=edge)
+    else:
+        # Opaque dark backing fixes the 33px glyph advance even with open corner artwork.
+        for inset in range(4):
+            pen.rectangle((inset, inset, 31-inset, 31-inset), outline="#10151b")
+    if ornament is not None:
+        # Keep class identity visible in every state; only the inner art is dimmed.
+        card.alpha_composite(ornament)
+    if key_badge:
+        pen.rectangle((23, 24, 28, 28), fill="#11171e")
     if frame == 22:
         pen.rectangle((11, 14, 21, 23), fill="#d4c7a4", outline="#181c24")
         pen.rectangle((13, 9, 19, 15), outline="#e9ddbe", width=2)
@@ -145,21 +185,13 @@ def build_hud(assets, source, write_json):
     providers.append(provider("shield_icon",9,-11,[chr(0xE380)]))
     sources = {}
     for index, name in enumerate(SKILLS):
-        authored = source / f"skills/{name}.png"
-        master_path = authored if authored.is_file() else assets / f"textures/gui/skills/{name}.png"
+        master_path = source / f"skills/{name}.png"
         sources[name] = str(master_path.relative_to(ROOT)).replace("\\", "/")
         with Image.open(master_path) as loaded:
-            artwork = loaded.convert("RGBA")
-            bounds = artwork.getchannel("A").getbbox()
-            if bounds is None:
-                raise ValueError(f"Skill master is fully transparent: {master_path}")
-            artwork = artwork.crop(bounds)
-            factor = 26 / max(artwork.size)
-            fitted = artwork.resize((max(1, round(artwork.width * factor)), max(1, round(artwork.height * factor))), Image.Resampling.NEAREST)
-            master = Image.new("RGBA", (28, 28))
-            master.alpha_composite(fitted, ((28 - fitted.width) // 2, (28 - fitted.height) // 2))
+            master = fit_skill(loaded)
+        ornament = class_ornament(name, source)
         sheet = Image.new("RGBA", (128, 192))
-        frames[name] = [skill_frame(master, frame) for frame in range(23)]
+        frames[name] = [skill_frame(master, frame, ornament) for frame in range(23)]
         for frame in range(24):
             sheet.alpha_composite(frames[name][min(frame, 22)], ((frame % 4) * 32, (frame // 4) * 32))
         save(sheet, output / f"skill_{name}_states.png")
@@ -183,7 +215,9 @@ def build_hud(assets, source, write_json):
         "bars": {"left_x": [-91, 10], "width": 81, "height": 9, "top_from_bottom": 39},
         "skills": {"left_x": [-88, -52, -16, 20, 56], "size": 32, "top_from_bottom": 94,
                    "ready": 0, "cooldown_remaining_steps": [1, 20], "no_mana": 21},
-        "master_sources": sources, "transparent_vanilla_sprites": sorted(vanilla_overrides()),
+        "master_sources": sources,
+        "class_frames": {name: f"assets/core-ui/skill-frames/{class_for_skill(name)}.png" for name in SKILLS},
+        "transparent_vanilla_sprites": sorted(vanilla_overrides()),
     })
     # Preview is a design aid, not a claim of an in-game render or GUI-scale verification.
     preview = Image.new("RGBA", (182, 88), "#343a43")

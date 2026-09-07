@@ -1,4 +1,4 @@
-"""Build exact-pixel UI geometry and metadata; existing authored PNGs are copied unchanged.
+"""Build exact-pixel UI geometry and metadata, and compose authored skill/frame PNGs.
 
 Only rectangles/lines are generated here (gauges and a slot-safe window wireframe).
 The generated SVG files are editable native geometry; PNG is the Minecraft font transport.
@@ -9,7 +9,7 @@ import json
 import shutil
 import struct
 import zlib
-from build_core_hud_assets import build_hud, SKILLS
+from build_core_hud_assets import build_hud, SKILLS, class_ornament, fit_skill, skill_frame
 from build_core_menu_assets import build_menu
 from PIL import Image
 
@@ -66,9 +66,9 @@ def item_model(name, source):
 def build():
     for name in SKILLS:
         master = SOURCE / f"skills/{name}.png"
-        if master.is_file():
-            with Image.open(master) as original:
-                original.convert("RGBA").resize((32, 32), Image.Resampling.NEAREST).save(ASSETS / f"textures/gui/skills/{name}.png")
+        with Image.open(master) as original:
+            # Frame is part of the menu icon, but never baked back into the authored master.
+            skill_frame(fit_skill(original), 0, class_ornament(name, SOURCE), key_badge=False).save(ASSETS / f"textures/gui/skills/{name}.png")
     write_json(PACK / "pack.mcmeta", {"pack": {"description": "ProjectS · 開拓者のUI / Vanilla 26.2", "min_format": [88, 0], "max_format": [88, 0]}})
     stats = [("attack", "attack_power"), ("speed", "attack_speed"), ("critical", "magic_power"), ("defense", "defense"),
              ("health", "health"), ("magic", "magic_power"), ("mana", "mana"), ("reward", "xp"), ("mod", "level")]
