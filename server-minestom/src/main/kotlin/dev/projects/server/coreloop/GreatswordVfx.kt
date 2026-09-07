@@ -134,6 +134,8 @@ internal class GreatswordEffect(
 /** Player-owned lifetime, no world entities or global tasks; map exit cancels every animation. */
 internal class GreatswordVfx(private val player: Player) {
     private val scheduler = ParticleAnimationScheduler()
+    // Skills and authoritative status ticks must never pause with a normal-attack hit stop.
+    private val combatScheduler = ParticleAnimationScheduler()
     private val manager = ParticleManager(
         ParticleQuality(otherActiveMultiplier = .45, distanceFalloffStart = 12.0, distanceFalloffEnd = 32.0, skipBelowMultiplier = .08),
         ParticleBudget(MAX_PARTICLES_PER_VIEWER_TICK))
@@ -142,7 +144,7 @@ internal class GreatswordVfx(private val player: Player) {
     private var instance: Instance? = null
     private var contactHold = 0
     private var holdAfterFrame = 0
-    internal val activeEffects: Int get() = scheduler.activeAnimationCount
+    internal val activeEffects: Int get() = scheduler.activeAnimationCount + combatScheduler.activeAnimationCount
     internal val retainsInstance: Boolean get() = instance != null
     internal fun holdContact(ticks: Int) { holdAfterFrame = maxOf(holdAfterFrame, ticks.coerceIn(0, 3)) }
     fun particles(particle: Particle, position: Point, count: Int, spread: Vec = Vec.ZERO, speed: Float = 0f) {
@@ -159,8 +161,21 @@ internal class GreatswordVfx(private val player: Player) {
     fun play(effect: ParticleEffect) {
         if (player.instance !== instance) cancel()
         instance = player.instance
-        if (scheduler.activeAnimationCount >= MAX_EFFECTS) return
+        if (activeEffects >= MAX_EFFECTS) return
         scheduler.start(effect, frame)
+    }
+
+    fun playSkill(effect: ParticleEffect) {
+        if (player.instance !== instance) cancel()
+        instance = player.instance
+        if (activeEffects >= MAX_EFFECTS) scheduler.cancelAll() // Shed old normal trails before a skill pulse.
+        if (activeEffects < MAX_EFFECTS) combatScheduler.start(effect, frame)
+    }
+
+    fun status(effect: CorePoisonEffect) {
+        if (player.instance !== instance) cancel()
+        instance = player.instance
+        effect.emit(0, ParticleSink { if (elementalFrame.size < 48) elementalFrame += it })
     }
 
     fun tick() {
@@ -168,14 +183,13 @@ internal class GreatswordVfx(private val player: Player) {
         if (player.instance !== currentInstance || player.isRemoved) { cancel(); return }
         val viewers = currentInstance.players.filter { it.position.distanceSquared(player.position) <= 40.0 * 40.0 }
         if (viewers.isEmpty()) { cancel(); return }
-        // Draw impact first, then let the hot blade linger without emitting or advancing it.
-        // Only this player's VFX clock pauses; the server, movement and other players never do.
-        if (contactHold > 0) { contactHold--; return }
+        // Normal blades can linger on contact. Skill and DOT feedback stay on server time.
         frame.clear()
-        scheduler.tick()
+        if (contactHold > 0) contactHold-- else scheduler.tick()
+        combatScheduler.tick()
         frame.spawns += elementalFrame
         elementalFrame.clear()
-        contactHold = holdAfterFrame
+        contactHold = maxOf(contactHold, holdAfterFrame)
         holdAfterFrame = 0
         manager.beginTick()
         for (viewer in viewers) {
@@ -203,7 +217,7 @@ internal class GreatswordVfx(private val player: Player) {
         sound(SoundEvent.ITEM_TRIDENT_HIT, .45f, if (heavy) .65f else 1.0f)
     }
     fun cancel() {
-        scheduler.cancelAll(); frame.clear(); elementalFrame.clear(); manager.resetCounters()
+        scheduler.cancelAll(); combatScheduler.cancelAll(); frame.clear(); elementalFrame.clear(); manager.resetCounters()
         contactHold = 0; holdAfterFrame = 0; instance = null
     }
     private fun sound(event: SoundEvent, volume: Float, pitch: Float) = player.playSound(Sound.sound(event, Sound.Source.PLAYER, volume, pitch))
