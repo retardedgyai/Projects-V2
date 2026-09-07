@@ -78,15 +78,16 @@ object WardenArena {
                 m.setDisplayContext(ItemDisplayMeta.DisplayContext.NONE);m.setScale(Vec(2.0,2.0,2.0))
                 m.setTransformationInterpolationDuration(1);m.setPosRotInterpolationDuration(0)
                 m.setViewRange(2f);m.setWidth(40f);m.setHeight(12f);m.setShadowRadius(0f)
+                if(b.name=="vfx_chest" || b.name=="weapon_root")m.setBrightness(15,15)
             }
             setInstance(this@Runtime.instance,Pos(0.0,40.0,0.0)).join()
         }}
         val body=Entity(EntityType.INTERACTION).apply {
             setNoGravity(true);setHasPhysics(false)
-            editEntityMeta(InteractionMeta::class.java){m->m.setWidth(1.3f);m.setHeight(2.8f);m.setResponse(true)}
+            editEntityMeta(InteractionMeta::class.java){m->m.setWidth(1.3f);m.setHeight(3.2f);m.setResponse(true)}
             setInstance(this@Runtime.instance,Pos(0.0,40.0,0.0)).join()
         }
-        val bar=BossBar.bossBar(Component.text("灰燼の番人"),1f,BossBar.Color.GREEN,BossBar.Overlay.PROGRESS)
+        val bar=BossBar.bossBar(Component.text("夜葬の番人"),1f,BossBar.Color.PURPLE,BossBar.Overlay.PROGRESS)
         var tick=0L;var sequence= -1;var closed=false
         data class Actor(val player:Player,var loaded:Boolean=false,var hp:Double=100.0,var attackAt:Long=0,var attackReady:Long=0,
             var facing:V3=V3.ZERO,var dodgeUntil:Long=0,var dodgeReady:Long=0,var sneak:Boolean=false,var healReady:Long=0,var defeated:Boolean=false)
@@ -98,9 +99,9 @@ object WardenArena {
                 if(!e.isFirstSpawn)return@addListener
                 val p=e.player;actors[p.uuid]=Actor(p);p.gameMode=GameMode.ADVENTURE;p.food=20;p.foodSaturation=20f
                 p.inventory.setItemStack(0,ItemStack.of(Material.IRON_SWORD).withCustomName(Component.text("番人に挑む剣")))
-                p.sendMessage(Component.text("灰燼の番人｜左クリック：斬撃 ／ Shift：回避 ／ /mend：回復 ／ /fight：開始・再戦"))
+                p.sendMessage(Component.text("夜葬の番人｜左クリック：斬撃 ／ Shift：回避 ／ /mend：回復 ／ /fight：開始・再戦"))
                 p.sendResourcePacks(ResourcePackRequest.resourcePackRequest().packs(pack.info).required(true).replace(false)
-                    .prompt(Component.text("灰燼の番人のモデルとピクセルテクスチャを読み込みます。")).build())
+                    .prompt(Component.text("夜葬の番人のモデルとピクセルテクスチャを読み込みます。")).build())
                 p.showBossBar(bar)
             }
             events.addListener(PlayerResourcePackStatusEvent::class.java) {e->
@@ -119,7 +120,7 @@ object WardenArena {
                 if(!a.loaded){p.sendMessage(Component.text("Resource Packの読み込みを待ってください。"));return@setDefaultExecutor}
                 if(fight.running && !fight.finished){p.sendMessage(Component.text("戦闘中です。敗北後または討伐後に再戦できます。"));return@setDefaultExecutor}
                 actors.values.forEach {it.hp=100.0;it.defeated=false;it.attackAt=0;it.dodgeUntil=0;it.player.health=20f;it.player.teleport(Pos(0.0,40.0,7.0,180f,0f))}
-                fight.begin();announce("灰燼の番人","刃を見極め、振り抜いた隙を狙え")
+                fight.begin();announce("夜葬の番人","刃を見極め、振り抜いた隙を狙え")
             };MinecraftServer.getCommandManager().register(begin)
             val mend=Command("mend");mend.setDefaultExecutor {s,_->
                 val p=s as? Player?:return@setDefaultExecutor;val a=actors[p.uuid]?:return@setDefaultExecutor
@@ -159,7 +160,7 @@ object WardenArena {
                     a.attackAt=0;val origin=playerPos(p)+V3(0.0,1.3,0.0);val end=origin+a.facing*3.4
                     val center=fight.position
                     // The received entity id is never used to select a victim.
-                    if(segmentBoxDistanceSquared(origin,end,center+V3(-.65,.0,-.55),center+V3(.65,2.8,.55))<=.12*.12 && fight.damage(if(fight.recovery)22.0 else 16.0)) {
+                    if(segmentBoxDistanceSquared(origin,end,center+V3(-.65,.0,-.55),center+V3(.65,3.2,.55))<=.12*.12 && fight.damage(if(fight.recovery)22.0 else 16.0)) {
                         particles(Particle.CRIT,center+V3(0.0,1.5,0.0),10);sound("entity.iron_golem.hurt",center,.8f,.7f)
                     }
                 }
@@ -176,7 +177,7 @@ object WardenArena {
                     "heavy_slash"->sound("block.anvil.land",fight.position,.45f,.55f)
                     "dash"->sound("entity.ravager.ambient",fight.position,.8f,.7f)
                     "phase_transition"->announce("封印崩壊","番人の攻勢が激しくなる")
-                    "death"->{announce("灰燼の番人 討伐","/fight で再戦");sound("entity.wither.death",fight.position,.55f,.7f)}
+                    "death"->{announce("夜葬の番人 討伐","/fight で再戦");sound("entity.wither.death",fight.position,.55f,.7f)}
                 }
             }
             if(fight.active) {
@@ -206,7 +207,7 @@ object WardenArena {
             if(fight.dead && fight.frame==32)particles(Particle.SMOKE,fight.position+V3(0.0,.7,0.0),35)
             fight.tick(target?.takeUnless {it.defeated}?.let {playerPos(it.player)})
             render(fight.worldPose());body.teleport(Pos(fight.position.x,40.0,fight.position.z))
-            bar.progress((fight.health/360).toFloat());bar.name(Component.text("灰燼の番人  ${fight.health.toInt()}/360  第${fight.phase}形態"))
+            bar.progress((fight.health/360).toFloat());bar.name(Component.text("夜葬の番人  ${fight.health.toInt()}/360  第${fight.phase}形態"))
             bar.color(if(fight.phase==2)BossBar.Color.PURPLE else BossBar.Color.GREEN)
             val smoke=Integer.getInteger("projects.warden.smokeTicks",0)
             if(smoke>0 && tick>=smoke) {

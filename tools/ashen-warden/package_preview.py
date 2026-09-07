@@ -7,7 +7,7 @@ palette=Image.open(frames/'0000.png').convert('RGB').quantize(colors=128)
 images=[]
 for i,name in enumerate(labels):
     im=Image.open(frames/f'{i:04d}.png').convert('RGB')
-    d=ImageDraw.Draw(im);d.rectangle((0,438,480,480),fill=(16,22,25));d.text((16,448),f'ASHEN WARDEN  /  {name}',font=font,fill=(165,228,210))
+    d=ImageDraw.Draw(im);d.rectangle((0,438,480,480),fill=(16,22,25));d.text((16,448),f'NIGHT WARDEN  /  {name}',font=font,fill=(194,188,239))
     images.append(im.quantize(palette=palette,dither=Image.Dither.NONE))
 images[0].save(out/'animation-preview.gif',save_all=True,append_images=images[1:],duration=50,loop=0,optimize=False)
 selected=[0,48,115,119,127,160,164,173,204,241,276,351]

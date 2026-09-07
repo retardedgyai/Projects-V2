@@ -18,6 +18,9 @@ with zipfile.ZipFile(root/'warden-pack.zip') as z:
             for e in model['elements']:
                 assert all(-16<=v<=32 for v in e['from']+e['to'])
                 assert all(lo<hi for lo,hi in zip(e['from'],e['to']))
+                if 'rotation' in e:
+                    r=e['rotation'];assert set(r)=={'origin','x','y','z'}
+                    assert len(r['origin'])==3 and all(math.isfinite(v) for v in r['origin']+[r[k] for k in 'xyz'])
                 assert set(e['faces'])==set(['north','south','east','west','up','down'])
                 for face in e['faces'].values():
                     assert all(0<=v<=16 for v in face['uv'])
@@ -28,6 +31,6 @@ with zipfile.ZipFile(root/'warden-pack.zip') as z:
     assert models==len(set(p['bone'] for p in a['parts'])) and textures==7
 report={'status':'PASS','bones':len(a['bones']),'rigid_cuboids':len(a['parts']),'triangles':len(a['parts'])*12,
     'visible_item_displays':models,'pixel_textures':textures,'texture_size':'32x32','clips':[{k:c[k] for k in ('name','duration','active')} for c in a['clips']],
-    'minecraft':'26.2','pack_format':'88.0','runtime':'Minestom 2026.08.16-26.2','runtime_model_dependency':'none'}
+    'minecraft':'26.2','pack_format':'88.0','element_rotation':'1.21.11+ native XYZ','runtime':'Minestom 2026.08.16-26.2','runtime_model_dependency':'none'}
 (root/'asset-validation.json').write_text(json.dumps(report,indent=2),encoding='utf8')
 print(json.dumps(report))

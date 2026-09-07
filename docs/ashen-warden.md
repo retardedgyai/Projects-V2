@@ -1,4 +1,4 @@
-# 灰燼の番人 — Minestom / Vanilla client vertical slice
+# 夜葬の番人 — Minestom / Vanilla client vertical slice
 
 対象は **ProjectS v2 / Minestom 2026.08.16-26.2 / Minecraft Java 26.2 / Java 25**。
 `-Dprojects.warden=true` で専用アリーナを起動する。本編の保存データ、経済、ネットワーク契約は使用しない。
@@ -20,13 +20,16 @@
 
 ## 制作物
 
-独自デザインの煤色の鎧、片側の骨装甲、青緑の亀裂、巨大な断頭剣。
-MatE作品やArtoriasのモデル・テクスチャ・動作データは流用していない。
-参考X投稿は取得制限により直接確認できず、ユーザーのlow-poly/pixel-art指定を制作基準にした。
+MatE「The Lord of Night Boss」の実際の回転動画を確認し、外観を作り直した版。
+縦スリットの兜、折れ曲がった黒い双角、刃状の肩鎧、胸の白い光、紫の裂け布、淡紫の大剣を参照。
+ユーザー指定に合わせ、足で歩く二足の下半身を制作した。
+形状・32px模様・動作データはBlenderで新規制作。参照モデルのデータ自体は取得・流用していない。
+見た目は参照に基づく再制作であり、参照作品との同一性やユーザーの最終承認は未確認。
 
 - Blender 4.5.3 LTSのArmature：31 bone、親子関係あり。
-- 71 rigid cuboid / 852 triangle。26個のItemDisplayで描画。
-- 32×32 PNGを7枚。Closest / nearest。diffuseのみ、smooth shading・subdivision・PBRなし。
+- 311 rigid cuboid / 3732 triangle。27個のItemDisplayで描画。
+- 32×32 PNGを7枚。Closest / nearest。diffuseと光部分のemissionのみ、smooth shading・subdivision・写実PBRなし。
+- Minecraft 1.21.11以降のelement XYZ回転を使用。Blenderとpackは同じcuboidと回転値を使用。
 - `weapon_root`、`weapon_tip`、`vfx_blade`、`vfx_chest`、`vfx_ground`。
 - `.blend` に8個の名前付きAction。BlenderのAction Editorで切り替えて編集可能。
 
@@ -100,3 +103,5 @@ Blenderは制作ツールとしてのみ使用し、Blender本体を配布物に
 - Minestom公式: https://github.com/Minestom/Minestom
 - Minestom ItemDisplayMeta: https://javadoc.minestom.net/net.minestom.server/net/minestom/server/entity/metadata/display/ItemDisplayMeta.html
 - Minecraft 26.2 resource pack 88.0: https://feedback.minecraft.net/hc/en-us/articles/46690753273997-Minecraft-Java-Edition-26-2
+- 参照作品: https://x.com/MatE312001/status/2091137786736738493
+- Native XYZ element rotation: https://www.minecraft.net/pl-pl/article/minecraft-java-edition-1-21-11

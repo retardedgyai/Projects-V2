@@ -4,7 +4,7 @@ from mathutils import Vector
 out=pathlib.Path(sys.argv[sys.argv.index('--')+1]).resolve();out.mkdir(parents=True,exist_ok=True)
 scene=bpy.context.scene;rig=bpy.data.objects['ASHEN_WARDEN_RIG']
 scene.render.resolution_x=480;scene.render.resolution_y=480;scene.cycles.samples=3
-scene.camera.location=(5,-8,5);scene.camera.rotation_euler=(Vector((0,-.2,2.0))-scene.camera.location).to_track_quat('-Z','Y').to_euler();scene.camera.data.ortho_scale=6.6
+scene.camera.location=(-3,-9,4.4);scene.camera.rotation_euler=(Vector((.45,-.2,2.0))-scene.camera.location).to_track_quat('-Z','Y').to_euler();scene.camera.data.ortho_scale=6.6
 clips=[('idle',40),('walk',64),('slash_01',34),('heavy_slash',48),('dash',40),('hurt',12),('phase_transition',64),('death',60)]
 index=0;manifest=[]
 for name,length in clips:
