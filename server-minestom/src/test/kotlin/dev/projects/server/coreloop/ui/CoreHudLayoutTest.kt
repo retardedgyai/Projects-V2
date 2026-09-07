@@ -88,10 +88,28 @@ class CoreHudLayoutTest {
     @Test fun `five skill slots resource shield and all seventy art mappings retain exact centering`() {
         for(index in 0..69) {
             val skill=CoreHudSkill(CoreUiIcon.DASH,"6",0.0,30.0,10,artIndex=index,resourceAvailable=false)
-            assertEquals(CoreHudLayout.SkillVisual(21,"RP"),CoreHudLayout.skillVisual(skill,100.0))
+            assertEquals(CoreHudLayout.SkillVisual(21,""),CoreHudLayout.skillVisual(skill,100.0))
             val state=CoreHudState(80.0,140.0,100.0,skills=List(5){skill.copy(key=(it+2).toString())},resource=60.0,shield=42.0)
             assertEquals(0,advance(CoreHudLayout.render(state)))
         }
         assertEquals(listOf(-88,-52,-16,20,56),CoreHudLayout.skillLeft)
+    }
+
+    @Test fun `resource starvation keeps artwork unobscured even when mana is also missing`() {
+        val skill = skills().first().copy(resourceAvailable = false)
+        for (mana in listOf(0.0, 100.0, Double.NaN)) {
+            assertEquals(CoreHudLayout.SkillVisual(CoreHudLayout.NO_MANA, ""), CoreHudLayout.skillVisual(skill, mana))
+            val rendered = CoreHudLayout.render(CoreHudState(100.0, 100.0, mana, skills = listOf(skill)))
+            fun hasCentreGlyph(component: Component): Boolean =
+                (component.style().font() == CoreUiComponents.HUD_FONT &&
+                    (component as? TextComponent)?.content().orEmpty().any { it.code in 0xE500..0xE50D }) ||
+                    component.children().any(::hasCentreGlyph)
+            assertFalse(hasCentreGlyph(rendered), "No RP/MP label may hide a resource-starved skill")
+            assertEquals(0, advance(rendered))
+        }
+        assertEquals(CoreHudLayout.SkillVisual(20, "4"),
+            CoreHudLayout.skillVisual(skill.copy(remainingSeconds = 4.0), 0.0))
+        assertEquals(CoreHudLayout.SkillVisual(CoreHudLayout.LOCKED, ""),
+            CoreHudLayout.skillVisual(skill.copy(unlocked = false), 100.0))
     }
 }

@@ -231,7 +231,6 @@ def build_hud(assets, source, write_json):
                 at = DIGITS.index(char) * cell
                 preview.alpha_composite(sheet.crop((at, 0, at + cell, height)), (x + index * (cell + 1), y))
     preview_digits("4", 39 + 12, 0, large=True)
-    preview_digits("RP", 75 + 7, 0, large=True)
     for column, key in enumerate("23456"):
         preview_digits(key, 3 + column * 36 + 25, 26)
     with Image.open(output / "resource_bar.png") as sheet:

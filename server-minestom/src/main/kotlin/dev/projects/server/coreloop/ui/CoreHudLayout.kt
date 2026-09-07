@@ -29,7 +29,8 @@ internal object CoreHudLayout {
             return SkillVisual(ceil((remaining / total).coerceIn(0.0, 1.0) * 20).toInt().coerceIn(1, 20),
                 ceil(remaining).toInt().coerceIn(1, 99).toString())
         }
-        return if (!skill.resourceAvailable) SkillVisual(NO_MANA, "RP")
+        // Resource starvation dims the artwork without obscuring the skill with a label.
+        return if (!skill.resourceAvailable) SkillVisual(NO_MANA, "")
         else if (!mana.isFinite() || mana < skill.manaCost.coerceAtLeast(0)) SkillVisual(NO_MANA, "MP")
         else SkillVisual(READY, "")
     }
