@@ -161,12 +161,46 @@ class WardenTest {
         val c=asset.clips.getValue("vault_slam");val pelvis=asset.bones.indexOfFirst {it.name=="pelvis"}
         assertTrue(c.frames.maxOf {it[0].p.y}>2.5)
         assertTrue(c.frames.any {it[0].p.y>2.0 && it[pelvis].q.rotate(V3(0.0,1.0,0.0)).y<-.8})
-        assertEquals(listOf(41..46),c.windows)
+        assertEquals(listOf(41..44),c.windows)
         assertEquals(0.0,c.frames.last()[0].p.y,1e-5)
     }
     @Test fun `move demonstration ends after one action without starting another attack`() {
         val f=WardenFight(asset);f.demonstrate("spin_slash")
         repeat(100){f.tick(V3(0.0,0.0,2.0))}
         assertFalse(f.running);assertEquals("idle",f.action)
+    }
+    @Test fun `cutting edge leads the transverse blade travel instead of striking with the flat`() {
+        // The actual exported blade is wide along local Y, thin along X, long along Z.
+        asset.clips.values.filter {it.activeStart>=0}.forEach {c->
+            for(t in 1..c.duration)if(c.active(t)) {
+                val before=c.frames[t-1][asset.weapon];val blade=c.frames[t][asset.weapon]
+                val velocity=blade.point(V3(0.0,0.0,1.6))-before.point(V3(0.0,0.0,1.6))
+                val axis=blade.q.rotate(V3(0.0,0.0,1.0));val transverse=velocity-axis*velocity.dot(axis)
+                if(transverse.length()>.005)assertTrue(abs(transverse.unit().dot(blade.q.rotate(V3(0.0,1.0,0.0))))>.95,"${c.name} tick $t hits with the blade flat")
+            }
+        }
+    }
+    @Test fun `blade and guard stay outside the head and torso cores in every attack pose`() {
+        val cores=listOf(Triple("chest",V3(-.34,-.22,-.23),V3(.34,.29,.30)),Triple("head",V3(-.24,-.23,-.18),V3(.24,.57,.24)),Triple("spine",V3(-.26,-.24,-.18),V3(.26,.25,.25)))
+        val probes=(0..23).flatMap {n->listOf(-.20,0.0,.20).map {y->V3(0.0,y,.43+n*2.21/23)}}+
+            listOf(.30,.44,.60).flatMap {z->listOf(-.45,-.30,0.0,.30,.45).map {y->V3(0.0,y,z)}}
+        asset.clips.values.filter {it.activeStart>=0}.forEach {c->c.frames.forEachIndexed {t,row->
+            cores.forEach {(name,lo,hi)->
+                val body=row[asset.bones.indexOfFirst {it.name==name}];val inverse=Q4(-body.q.x,-body.q.y,-body.q.z,body.q.w)
+                probes.forEach {probe->val p=inverse.rotate(row[asset.weapon].point(probe)-body.p)
+                    assertFalse(p.x>lo.x && p.x<hi.x && p.y>lo.y && p.y<hi.y && p.z>lo.z && p.z<hi.z,"${c.name} tick $t sword enters $name")}
+            }
+        }}
+    }
+    @Test fun `every attack moves upper arm relative to chest and folds then extends the elbow`() {
+        val chest=asset.bones.indexOfFirst {it.name=="chest"};val upper=asset.bones.indexOfFirst {it.name=="upper_arm_r"}
+        val fore=asset.bones.indexOfFirst {it.name=="forearm_r"};val hand=asset.bones.indexOfFirst {it.name=="hand_r"}
+        asset.clips.values.filter {it.activeStart>=0}.forEach {c->
+            val bends=c.frames.map {row->acos(((row[fore].p-row[upper].p).unit().dot((row[hand].p-row[fore].p).unit())).coerceIn(-1.0,1.0))}
+            val arms=c.frames.map {row->val q=row[chest].q;Q4(-q.x,-q.y,-q.z,q.w).rotate((row[fore].p-row[upper].p).unit())}
+            val swing=arms.maxOf {a->arms.maxOf {b->acos(a.dot(b).coerceIn(-1.0,1.0))}}
+            assertTrue(swing>PI/4,"${c.name} upper arm only rides the chest")
+            assertTrue(bends.max()-bends.min()>PI/4,"${c.name} elbow stays fixed")
+        }
     }
 }

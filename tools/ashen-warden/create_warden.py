@@ -136,9 +136,28 @@ pose=make_pose(rig,C,bind)
 exports=[]
 for name,(duration,loop,active) in clips.items():
     rig.animation_data_create(); action=bpy.data.actions.new(name);rig.animation_data.action=action;action.use_fake_user=True
+    # Sample the authored blade travel before baking the final edge orientation.
+    travel=[];raw_rotations=[]
+    for tick in range(duration+1):
+        pose(name,tick)
+        m=C.inverted()@rig.pose.bones['weapon_root'].matrix@C
+        hand=C.inverted()@rig.pose.bones['hand_r'].matrix@C
+        rotation=m.to_quaternion();raw_rotations.append(rotation)
+        axis=rotation@Vector((0,0,1))
+        travel.append(hand.translation+axis*1.6)
+    windows=HIT_WINDOWS.get(name,[active] if active else [])
     samples=[]
     for tick in range(duration+1):
-        scene.frame_set(tick+1);pose(name,tick)
+        edge=None;weight=0.
+        if active:
+            # Pre-align during anticipation; no last-moment 90-degree wrist flip.
+            nearest=min((k for a,b in windows for k in range(a,b+1)),key=lambda k:abs(k-tick))
+            k=tick if any(a<=tick<=b for a,b in windows) else nearest
+            edge=travel[k]-travel[max(0,k-1)]
+            if k!=tick:edge=raw_rotations[tick]@(raw_rotations[k].conjugated()@edge)
+            weight=min(1.,tick/max(1,active[0]-5),(duration-tick)/max(1,duration-active[1]-6))
+            weight=weight*weight*(3-2*weight)
+        scene.frame_set(tick+1);pose(name,tick,edge,weight)
         for p in rig.pose.bones:
             p.keyframe_insert('location',frame=tick+1);p.keyframe_insert('rotation_quaternion',frame=tick+1)
         row=[]

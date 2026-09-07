@@ -5,7 +5,7 @@ from mathutils import Vector,Matrix,Quaternion
 CLIPS={'idle':(60,True,None),'walk':(32,True,None),'slash_01':(48,False,[17,21]),
        'heavy_slash':(62,False,[28,32]),'dash':(44,False,[17,21]),
        'spin_slash':(56,False,[19,31]),'spiral_combo':(78,False,[18,52]),
-       'vault_slam':(72,False,[41,46]),'hurt':(16,False,None),
+       'vault_slam':(72,False,[41,44]),'hurt':(16,False,None),
        'phase_transition':(64,False,None),'death':(60,False,None)}
 HIT_WINDOWS={'spiral_combo':[(18,29),(41,52)]}
 
@@ -20,7 +20,7 @@ def curve(t,keys,linear=False):
 def vector(t,keys):return Vector(tuple(curve(t,[(k,v[i]) for k,v in keys]) for i in range(3)))
 
 def make_pose(rig,C,bind):
-    inverse=C.inverted();names=list(bind);bones=rig.pose.bones;roll=0.
+    inverse=C.inverted();names=list(bind);bones=rig.pose.bones;previous_hand=None
     def cv(v):return (C@Vector((*v,1))).to_3d()
     def matrix(name):return inverse@bones[name].matrix@C
     def set_world(name,p,q):
@@ -36,12 +36,12 @@ def make_pose(rig,C,bind):
         for name,p0,p1 in [(upper,start,joint),(lower,joint,target)]:
             set_world(name,p0,Vector((0,-1,0)).rotation_difference((p1-p0).normalized()))
         return target,(target-joint).normalized()
-    def pose(name,t):
-        nonlocal roll
+    def pose(name,t,edge_hint=None,edge_weight=1.):
+        nonlocal previous_hand
         duration=CLIPS[name][0];p=math.pi
         root=Vector((0,0,0));pelvis=Vector((-.035,-.27,-.025));pelvis_a=(13,-10,-4)
         spine_a=(12,5,-4);chest_a=(5,5,0);head_a=(-25,0,3)
-        right=Vector((.63,-.73,.10));left=Vector((-.58,-.84,.08))
+        right=Vector((.76,-.64,.36));left=Vector((-.58,-.84,.08))
         yaw=65.;pitch=-26.;turn=0.;cape=0.;root_a=(0,0,0)
         spin_y=0.;flip_x=0.;airborne=False;foot_q=Quaternion((1,0,0,0))
         foot_l=Vector((-.32,.13,.24));foot_r=Vector((.30,.13,-.28))
@@ -167,11 +167,42 @@ def make_pose(rig,C,bind):
             yaw=65+38*fall;pitch=-26*(1-fall)
             left.y-=.08*kneel;cape=16*fall
             foot_l.z+=.65*fall;foot_r.z+=.65*fall
+        # The grip travels independently of the torso: retract and fold the elbow,
+        # lead with the shoulder, extend across the front, then bend to recover.
+        # All positions are chest-local; the grip stays outside the head/cuirass.
+        shoulder_r=(0,0,0);shoulder_l=(0,0,0)
+        rest=(.76,-.64,.36)
+        if name in ['slash_01','dash']:
+            wind,hold,contact,end=(12,16,21,48) if name=='slash_01' else (10,15,21,44)
+            right=vector(t,[(0,rest),(wind,(.90,-.06,-.08)),(hold,(.90,-.06,-.08)),
+                (contact-2,(.65,-.17,.73)),(contact,(.06,-.39,.82)),(contact+6,(-.05,-.60,.69)),(end,rest)])
+        elif name=='heavy_slash':
+            right=vector(t,[(0,rest),(20,(.82,.22,.16)),(27,(.82,.22,.16)),
+                (30,(.68,-.08,.72)),(33,(.33,-.60,.79)),(42,(.26,-.65,.70)),(62,rest)])
+        elif name=='vault_slam':
+            right=vector(t,[(0,rest),(20,(.90,.16,.17)),(28,(.88,.20,.18)),
+                (36,(.88,.20,.18)),(41,(.74,-.06,.67)),(45,(.37,-.60,.78)),(54,(.28,-.66,.72)),(72,rest)])
+        elif name in ['spin_slash','spiral_combo']:
+            arm_keys=[(0,rest),(14,(.91,-.06,-.08)),(18,(.91,-.06,-.08)),
+                (24,(.77,-.23,.66)),(31,(.07,-.47,.81)),(39,(.18,-.60,.73)),(56,rest)]
+            yaw_keys=[(0,65),(14,128),(18,128),(24,70),(31,-43),(39,-55),(56,65)]
+            if name=='spiral_combo':
+                arm_keys=[(0,rest),(13,(.91,-.06,-.08)),(17,(.91,-.06,-.08)),
+                    (23,(.77,-.23,.66)),(29,(.07,-.47,.81)),(36,(.83,-.17,.02)),
+                    (40,(.91,-.06,-.08)),(46,(.77,-.23,.66)),(52,(.07,-.47,.81)),(61,(.18,-.60,.73)),(78,rest)]
+                yaw_keys=[(0,65),(13,128),(17,128),(23,70),(29,-43),(36,105),(40,128),(46,70),(52,-43),(61,-55),(78,65)]
+            right=vector(t,arm_keys);yaw=curve(t,yaw_keys)+spin_y
+        if CLIPS[name][2]:
+            raise_arm=max(0,min(1,(right.y+.64)/.86));retract=max(-1,min(1,(.36-right.z)/.44))
+            shoulder_r=(-12*raise_arm,20*retract,-16*raise_arm)
+            shoulder_l=(8*raise_arm,-12*retract,8*raise_arm)
+            left=Vector((-.58-.10*raise_arm,-.84+.32*raise_arm,.08-.26*retract))
         # Head counter-rotates rather than turning away with the attacking chest.
         if name in ['slash_01','heavy_slash','dash']:
             head_a=(-25-(pelvis_a[0]+spine_a[0]+chest_a[0]-30)*.75,
                     -(pelvis_a[1]+spine_a[1]+chest_a[1])*.62,3)
         angles={'root':root_a,'pelvis':pelvis_a,'spine':spine_a,'chest':chest_a,'head':head_a,
+                'shoulder_r':shoulder_r,'shoulder_l':shoulder_l,
                 'cape_01':(-10+cape,0,-turn*5),'cape_02':(-12+cape*.75,0,-turn*8),
                 'crest':(-3+cape*.09,0,0),'tasset_l':(-5-max(0,-pelvis.y-.27)*200,0,-3),'tasset_r':(5-max(0,-pelvis.y-.27)*200,0,3)}
         if name=='death':
@@ -189,25 +220,37 @@ def make_pose(rig,C,bind):
                 local=Vector((s*.29,-1.05+.43*tuck,-.22-.16*tuck))
                 foot[:]=(pelvis_m@local.to_4d()).to_3d()
         for side,local,pole in [('l',left,(-.7,-.2,-.6)),('r',right,(.7,-.1,-.7))]:
-            if spin_y:pole=Quaternion((0,1,0),math.radians(spin_y))@Vector(pole)
-            if name=='vault_slam':pole=Quaternion((1,0,0),math.radians(flip_x))@Vector(pole)
+            pole=chest.to_quaternion()@Vector(pole)
             target=(chest@local.to_4d()).to_3d()
             wrist,direction=limb('upper_arm_'+side,'forearm_'+side,'hand_'+side,target,pole)
             if side=='l':set_world('hand_l',wrist,matrix('forearm_l').to_quaternion())
             else:
-                # Sword axis is the fist axis. Counter-roll changes gradually; no local sword animation.
-                min_pitch=math.degrees(math.asin(max(-.9,min(.9,(.16-wrist.y)/2.64))))
+                # The mesh's cutting width is local Y; its flat face normal is X.
+                # Orient the edge along the transverse blade velocity, not the forearm.
+                min_pitch=math.degrees(math.asin(max(-.9,min(.9,(.25-wrist.y)/2.64))))
                 if not airborne or (name=='vault_slam' and t>=42):pitch=max(pitch,min_pitch)
                 blade=Vector((math.sin(math.radians(yaw))*math.cos(math.radians(pitch)),math.sin(math.radians(pitch)),math.cos(math.radians(yaw))*math.cos(math.radians(pitch))))
                 if name=='vault_slam':blade=Quaternion((1,0,0),math.radians(flip_x))@blade
-                q=Vector((0,0,1)).rotation_difference(blade)
-                yaxis=-(direction-blade*direction.dot(blade))
-                if yaxis.length<.001:yaxis=q@Vector((0,1,0))
-                yaxis.normalize();want=math.atan2(-yaxis.dot(q@Vector((1,0,0))),yaxis.dot(q@Vector((0,1,0))))
-                if t==0:roll=want
-                else:
-                    delta=math.atan2(math.sin(want-roll),math.cos(want-roll));roll+=max(-.105,min(.105,delta))
-                set_world('hand_r',wrist,q@Quaternion((0,0,1),roll))
+                yaxis=-direction+blade*direction.dot(blade)
+                if yaxis.length<.001:yaxis=blade.cross(Vector((0,0,1)))
+                yaxis.normalize()
+                xaxis=yaxis.cross(blade).normalized()
+                q=Matrix((xaxis,yaxis,blade)).transposed().to_quaternion()
+                if name=='death' and fall>0:
+                    flat_edge=blade.cross(Vector((0,1,0))).normalized()
+                    if flat_edge.dot(yaxis)<0:flat_edge=-flat_edge
+                    flat=Matrix((flat_edge.cross(blade),flat_edge,blade)).transposed().to_quaternion()
+                    q=q.slerp(flat,fall)
+                if edge_hint is not None:
+                    edge=Vector(edge_hint)-blade*Vector(edge_hint).dot(blade)
+                    if edge.length>.001:
+                        edge.normalize();normal=edge.cross(blade).normalized()
+                        choices=[Matrix((normal,edge,blade)).transposed().to_quaternion(),Matrix((-normal,-edge,blade)).transposed().to_quaternion()]
+                        reference=previous_hand if t>0 and previous_hand is not None else q
+                        cutting=max(choices,key=lambda candidate:abs(candidate.dot(reference)))
+                        q=q.slerp(cutting,edge_weight)
+                previous_hand=q.copy()
+                set_world('hand_r',wrist,q)
         # Feet are authored in clip/world space. Root translation is NOT added twice.
         for side,target in [('l',foot_l),('r',foot_r)]:
             pole=(0,fall,1-fall) if name=='death' else foot_q@Vector((0,0,1))
