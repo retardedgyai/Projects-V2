@@ -618,6 +618,12 @@ internal class CorePlayerCombat(
     fun cooldownTicks(id: Int): Int = skillDefinitions[id].cooldownTicks(statSource())
     fun cooldownRemaining(id: Int): Int = (readyAt[id] - tickNumber).coerceAtLeast(0).toInt()
     fun reset() { resetActions(); defeated = false; manaValue = maxMana.toDouble(); health = maxHealth.toDouble(); readyAt.fill(0L); nextDodge = 0L; syncVanillaHealth() }
+    /** Explicit laboratory control. Does not cancel the skill currently being observed. */
+    internal fun refillTraining() {
+        manaValue = maxMana.toDouble(); health = maxHealth.toDouble(); readyAt.fill(0L); nextDodge = 0L
+        classState.gain(classState.cap(classId), classId, journey().build)
+        syncVanillaHealth()
+    }
     fun revive(fraction: Double) { require(fraction in .1..1.0); reset(); health = maxHealth * fraction; syncVanillaHealth() }
     fun resetActions() {
         actionEpoch++

@@ -24,6 +24,31 @@ import kotlin.test.assertTrue
 
 /** Real Minestom entities, but no sockets, external client, native input, or live server port. */
 class CorePlayerCombatTest {
+    @Test fun `training refill clears costs but preserves all in-flight whirlwind hit timings`() = arena(bossDistance = 2.0) { h ->
+        h.actor.skill(2)
+        repeat(5) { h.actor.refillTraining(); h.ticks(1) }
+        assertEquals(300.0, h.combat.bossHealth())
+        h.actor.refillTraining(); h.ticks(1)
+        assertEquals(286.8, h.combat.bossHealth(), .00001)
+        repeat(16) { h.actor.refillTraining(); h.ticks(1) }
+        assertEquals(260.4, h.combat.bossHealth(), .00001)
+        assertEquals(0, h.actor.cooldownRemaining(2))
+        assertEquals(h.actor.maxMana, h.actor.mana)
+    }
+
+    @Test fun `all lab classes can fill resources and return to zero without changing their build`() = arena { h ->
+        for (job in CoreClass.entries) {
+            val loadout = CoreLabLoadout(h.player.uuid, job)
+            h.journey = loadout.journey; h.base = loadout.weaponBase
+            h.actor.reset(); h.actor.refillTraining()
+            assertEquals(h.actor.resourceMax, h.actor.resource)
+            assertTrue((0..4).all { h.actor.resourceAvailable(it) && h.actor.skillAvailable(it) })
+            h.actor.reset()
+            assertEquals(0.0, h.actor.resource)
+            assertEquals(CoreClassBuild(), h.journey.build)
+        }
+    }
+
     @Test fun `Starweaver weaves three normal hits then consumes them in four enhanced starfall pulses`() = arena(bossDistance = 7.0) { h ->
         h.journey = CoreJourney(job=CoreClass.STARWEAVER); h.base=CoreWeaponBase.STAFF
         repeat(3) { h.actor.attack(); h.ticks(20) }

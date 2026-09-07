@@ -8,7 +8,8 @@ import net.minestom.server.component.DataComponents
 
 /** Same rarity skin and centered headline as equipment, without irrelevant item-level fields. */
 internal object CoreSkillTooltip {
-    fun item(skill: CoreSkillDefinition, sheet: CoreCombatSheet, j: CoreJourney, packed: Boolean, locked: Boolean = false): ItemStack {
+    fun item(skill: CoreSkillDefinition, sheet: CoreCombatSheet, j: CoreJourney, packed: Boolean, locked: Boolean = false,
+        footer: String = if(locked) "成長するとこの枠を使えます" else "港の成長と職業 → 技選びで変更"): ItemStack {
         val rarity = if(skill.ultimate) CoreUiRarity.EPIC else CoreUiRarity.RARE
         val lines = skill.tooltip(sheet,j)
         val name = (if(locked) "【未解放】" else "")+skill.name
@@ -29,9 +30,8 @@ internal object CoreSkillTooltip {
                 wrap(line).forEach { add(CoreUiComponents.text(it,color,index==2)) }
             }
             add(Component.empty())
-            add(CoreUiComponents.text(if(locked) "成長するとこの枠を使えます" else "港の成長と職業 → 技選びで変更",CoreUiComponents.GOLD))
+            add(CoreUiComponents.text(footer,CoreUiComponents.GOLD))
         }
-        val footer=if(locked) "成長するとこの枠を使えます" else "港の成長と職業 → 技選びで変更"
         val width=maxOf(192,CoreUiComponents.width(footer),lines.flatMap(::wrap).maxOf { CoreUiComponents.width(it) },CoreUiComponents.width(name,true))
         val pad=((width-CoreUiComponents.width(name,true))/2).coerceAtLeast(0)
         val title=(if(packed) CoreUiComponents.space(pad) else CoreUiComponents.text(" ".repeat(pad/4)))
