@@ -49,6 +49,7 @@ data class CoreHudSkill(
     val manaCost: Int = 0,
     val artIndex: Int? = null,
     val unlocked: Boolean = true,
+    val resourceAvailable: Boolean = true,
 )
 data class CoreHudState(
     val health: Double,
@@ -58,4 +59,7 @@ data class CoreHudState(
     val skills: List<CoreHudSkill> = emptyList(),
     val hint: String = "",
     val charges: Int? = null,
+    val resource: Double? = null,
+    val resourceMaximum: Double = 100.0,
+    val shield: Double = 0.0,
 )

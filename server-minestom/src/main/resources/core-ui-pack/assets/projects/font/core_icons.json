@@ -110,7 +110,7 @@
     },
     {
       "type": "bitmap",
-      "file": "projects:gui/skills/pierce.png",
+      "file": "projects:gui/skills/war_guard.png",
       "height": 16,
       "ascent": 12,
       "chars": [
@@ -119,7 +119,7 @@
     },
     {
       "type": "bitmap",
-      "file": "projects:gui/skills/frost_fan.png",
+      "file": "projects:gui/skills/war_wound.png",
       "height": 16,
       "ascent": 12,
       "chars": [
@@ -128,7 +128,7 @@
     },
     {
       "type": "bitmap",
-      "file": "projects:gui/skills/arrow_rain.png",
+      "file": "projects:gui/skills/war_counter.png",
       "height": 16,
       "ascent": 12,
       "chars": [
@@ -137,7 +137,7 @@
     },
     {
       "type": "bitmap",
-      "file": "projects:gui/skills/firebolt.png",
+      "file": "projects:gui/skills/war_cry.png",
       "height": 16,
       "ascent": 12,
       "chars": [
@@ -146,7 +146,7 @@
     },
     {
       "type": "bitmap",
-      "file": "projects:gui/skills/frost_nova.png",
+      "file": "projects:gui/skills/war_breach.png",
       "height": 16,
       "ascent": 12,
       "chars": [
@@ -155,7 +155,7 @@
     },
     {
       "type": "bitmap",
-      "file": "projects:gui/skills/meteor.png",
+      "file": "projects:gui/skills/war_ult.png",
       "height": 16,
       "ascent": 12,
       "chars": [
@@ -164,7 +164,7 @@
     },
     {
       "type": "bitmap",
-      "file": "projects:gui/skills/star_thread.png",
+      "file": "projects:gui/skills/war_banner.png",
       "height": 16,
       "ascent": 12,
       "chars": [
@@ -173,7 +173,7 @@
     },
     {
       "type": "bitmap",
-      "file": "projects:gui/skills/star_ring.png",
+      "file": "projects:gui/skills/pierce.png",
       "height": 16,
       "ascent": 12,
       "chars": [
@@ -182,11 +182,533 @@
     },
     {
       "type": "bitmap",
-      "file": "projects:gui/skills/starfall.png",
+      "file": "projects:gui/skills/frost_fan.png",
       "height": 16,
       "ascent": 12,
       "chars": [
         "\ue02c"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/skills/arrow_rain.png",
+      "height": 16,
+      "ascent": 12,
+      "chars": [
+        "\ue02d"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/skills/hunt_retreat.png",
+      "height": 16,
+      "ascent": 12,
+      "chars": [
+        "\ue02e"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/skills/hunt_pierce.png",
+      "height": 16,
+      "ascent": 12,
+      "chars": [
+        "\ue02f"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/skills/hunt_trap.png",
+      "height": 16,
+      "ascent": 12,
+      "chars": [
+        "\ue030"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/skills/hunt_mark.png",
+      "height": 16,
+      "ascent": 12,
+      "chars": [
+        "\ue031"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/skills/hunt_volley.png",
+      "height": 16,
+      "ascent": 12,
+      "chars": [
+        "\ue032"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/skills/hunt_ult.png",
+      "height": 16,
+      "ascent": 12,
+      "chars": [
+        "\ue033"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/skills/hunt_storm.png",
+      "height": 16,
+      "ascent": 12,
+      "chars": [
+        "\ue034"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/skills/firebolt.png",
+      "height": 16,
+      "ascent": 12,
+      "chars": [
+        "\ue035"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/skills/frost_nova.png",
+      "height": 16,
+      "ascent": 12,
+      "chars": [
+        "\ue036"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/skills/meteor.png",
+      "height": 16,
+      "ascent": 12,
+      "chars": [
+        "\ue037"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/skills/mage_blink.png",
+      "height": 16,
+      "ascent": 12,
+      "chars": [
+        "\ue038"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/skills/mage_mark.png",
+      "height": 16,
+      "ascent": 12,
+      "chars": [
+        "\ue039"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/skills/mage_garden.png",
+      "height": 16,
+      "ascent": 12,
+      "chars": [
+        "\ue03a"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/skills/mage_burst.png",
+      "height": 16,
+      "ascent": 12,
+      "chars": [
+        "\ue03b"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/skills/mage_ward.png",
+      "height": 16,
+      "ascent": 12,
+      "chars": [
+        "\ue03c"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/skills/mage_ult.png",
+      "height": 16,
+      "ascent": 12,
+      "chars": [
+        "\ue03d"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/skills/mage_zero.png",
+      "height": 16,
+      "ascent": 12,
+      "chars": [
+        "\ue03e"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/skills/star_thread.png",
+      "height": 16,
+      "ascent": 12,
+      "chars": [
+        "\ue03f"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/skills/star_ring.png",
+      "height": 16,
+      "ascent": 12,
+      "chars": [
+        "\ue040"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/skills/starfall.png",
+      "height": 16,
+      "ascent": 12,
+      "chars": [
+        "\ue041"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/skills/star_step.png",
+      "height": 16,
+      "ascent": 12,
+      "chars": [
+        "\ue042"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/skills/star_needle.png",
+      "height": 16,
+      "ascent": 12,
+      "chars": [
+        "\ue043"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/skills/star_cloud.png",
+      "height": 16,
+      "ascent": 12,
+      "chars": [
+        "\ue044"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/skills/star_shield.png",
+      "height": 16,
+      "ascent": 12,
+      "chars": [
+        "\ue045"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/skills/star_break.png",
+      "height": 16,
+      "ascent": 12,
+      "chars": [
+        "\ue046"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/skills/star_ult.png",
+      "height": 16,
+      "ascent": 12,
+      "chars": [
+        "\ue047"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/skills/star_constellation.png",
+      "height": 16,
+      "ascent": 12,
+      "chars": [
+        "\ue048"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/skills/ass_stab.png",
+      "height": 16,
+      "ascent": 12,
+      "chars": [
+        "\ue049"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/skills/ass_execute.png",
+      "height": 16,
+      "ascent": 12,
+      "chars": [
+        "\ue04a"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/skills/ass_fan.png",
+      "height": 16,
+      "ascent": 12,
+      "chars": [
+        "\ue04b"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/skills/ass_escape.png",
+      "height": 16,
+      "ascent": 12,
+      "chars": [
+        "\ue04c"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/skills/ass_poison.png",
+      "height": 16,
+      "ascent": 12,
+      "chars": [
+        "\ue04d"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/skills/ass_chase.png",
+      "height": 16,
+      "ascent": 12,
+      "chars": [
+        "\ue04e"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/skills/ass_needle.png",
+      "height": 16,
+      "ascent": 12,
+      "chars": [
+        "\ue04f"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/skills/ass_guard.png",
+      "height": 16,
+      "ascent": 12,
+      "chars": [
+        "\ue050"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/skills/ass_ult.png",
+      "height": 16,
+      "ascent": 12,
+      "chars": [
+        "\ue051"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/skills/ass_contract.png",
+      "height": 16,
+      "ascent": 12,
+      "chars": [
+        "\ue052"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/skills/temp_mace.png",
+      "height": 16,
+      "ascent": 12,
+      "chars": [
+        "\ue053"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/skills/temp_pull.png",
+      "height": 16,
+      "ascent": 12,
+      "chars": [
+        "\ue054"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/skills/temp_ward.png",
+      "height": 16,
+      "ascent": 12,
+      "chars": [
+        "\ue055"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/skills/temp_guard.png",
+      "height": 16,
+      "ascent": 12,
+      "chars": [
+        "\ue056"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/skills/temp_rebuke.png",
+      "height": 16,
+      "ascent": 12,
+      "chars": [
+        "\ue057"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/skills/temp_field.png",
+      "height": 16,
+      "ascent": 12,
+      "chars": [
+        "\ue058"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/skills/temp_break.png",
+      "height": 16,
+      "ascent": 12,
+      "chars": [
+        "\ue059"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/skills/temp_dash.png",
+      "height": 16,
+      "ascent": 12,
+      "chars": [
+        "\ue05a"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/skills/temp_ult.png",
+      "height": 16,
+      "ascent": 12,
+      "chars": [
+        "\ue05b"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/skills/temp_sanctuary.png",
+      "height": 16,
+      "ascent": 12,
+      "chars": [
+        "\ue05c"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/skills/heal_light.png",
+      "height": 16,
+      "ascent": 12,
+      "chars": [
+        "\ue05d"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/skills/heal_ring.png",
+      "height": 16,
+      "ascent": 12,
+      "chars": [
+        "\ue05e"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/skills/heal_pillar.png",
+      "height": 16,
+      "ascent": 12,
+      "chars": [
+        "\ue05f"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/skills/heal_step.png",
+      "height": 16,
+      "ascent": 12,
+      "chars": [
+        "\ue060"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/skills/heal_lamp.png",
+      "height": 16,
+      "ascent": 12,
+      "chars": [
+        "\ue061"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/skills/heal_shield.png",
+      "height": 16,
+      "ascent": 12,
+      "chars": [
+        "\ue062"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/skills/heal_mark.png",
+      "height": 16,
+      "ascent": 12,
+      "chars": [
+        "\ue063"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/skills/heal_wind.png",
+      "height": 16,
+      "ascent": 12,
+      "chars": [
+        "\ue064"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/skills/heal_ult.png",
+      "height": 16,
+      "ascent": 12,
+      "chars": [
+        "\ue065"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/skills/heal_judgment.png",
+      "height": 16,
+      "ascent": 12,
+      "chars": [
+        "\ue066"
       ]
     }
   ]

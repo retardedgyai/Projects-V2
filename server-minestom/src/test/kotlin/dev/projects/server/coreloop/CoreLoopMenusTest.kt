@@ -325,6 +325,23 @@ class CoreLoopMenusTest {
         assertTrue(failures.isEmpty(), failures.joinToString("\n"))
     }
 
+    @Test fun `all class skill tree ultimate and second weapon page layouts fit vanilla hitboxes`() {
+        val failures=mutableListOf<String>()
+        for(job in CoreClass.entries) for(packed in listOf(false,true)) {
+            val f=fixture(account(4).copy(journey=CoreJourney(job=job)),packed)
+            fun check(name:String,show:()->Unit) {
+                show();auditSnapshot(f.snapshot()).forEach { failures+="$job $name packed=$packed: $it" }
+            }
+            check("skills") { f.menus.skillBuild(f.player) }
+            check("ultimates") { f.menus.skillBuild(f.player,4) }
+            check("tree") { f.menus.talentTree(f.player) }
+            check("weapon page 2") { f.menus.career(f.player);f.click(30);f.click(48) }
+            check("character stats") { f.menus.career(f.player);f.click(42) }
+            assertTrue(f.host.requests.isEmpty())
+        }
+        assertTrue(failures.isEmpty(),failures.joinToString("\n"))
+    }
+
     @Test fun `every forge recipe and quantity selector changes selection without consuming anything`() {
         val f = fixture(account(tier = 3))
         for (tab in listOf(CoreForgeLayout.Tab.REFINE, CoreForgeLayout.Tab.CRAFT)) {
@@ -655,6 +672,10 @@ class CoreLoopMenusTest {
         f.host.dungeonState = null
         capture("journal") { f.menus.journal(f.player) }
         capture("career") { f.menus.career(f.player) }
+        capture("class-skills") { f.menus.skillBuild(f.player) }
+        capture("class-ultimates") { f.menus.skillBuild(f.player,4) }
+        capture("class-tree") { f.menus.talentTree(f.player) }
+        capture("class-stats") { f.menus.career(f.player);f.click(42) }
         capture("weapon-bases") { f.menus.career(f.player); f.click(30) }
         capture("temper") { f.menus.career(f.player); f.click(33) }
         capture("forge-enhance") { f.menus.workshop(f.player, 3); f.click(CoreForgeLayout.ARMOR); f.click(CoreLoopMenus.ENHANCE_CATALYST) }

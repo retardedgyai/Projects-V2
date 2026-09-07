@@ -9,8 +9,17 @@ from PIL import Image, ImageDraw, ImageFilter
 
 ROOT = Path(__file__).resolve().parents[1]
 OVERRIDE_PREFIX = "assets/minecraft/textures/gui/sprites/hud/"
-DIGITS = "0123456789/HMP"
-SKILLS = ("dash", "slam", "whirl", "pierce", "frost_fan", "arrow_rain", "firebolt", "frost_nova", "meteor", "star_thread", "star_ring", "starfall")
+DIGITS = "0123456789/HMPR"
+# Same stable order as CoreClass.entries and its eight skills + two ultimates.
+SKILLS = (
+    "dash", "slam", "whirl", "war_guard", "war_wound", "war_counter", "war_cry", "war_breach", "war_ult", "war_banner",
+    "pierce", "frost_fan", "arrow_rain", "hunt_retreat", "hunt_pierce", "hunt_trap", "hunt_mark", "hunt_volley", "hunt_ult", "hunt_storm",
+    "firebolt", "frost_nova", "meteor", "mage_blink", "mage_mark", "mage_garden", "mage_burst", "mage_ward", "mage_ult", "mage_zero",
+    "star_thread", "star_ring", "starfall", "star_step", "star_needle", "star_cloud", "star_shield", "star_break", "star_ult", "star_constellation",
+    "ass_stab", "ass_execute", "ass_fan", "ass_escape", "ass_poison", "ass_chase", "ass_needle", "ass_guard", "ass_ult", "ass_contract",
+    "temp_mace", "temp_pull", "temp_ward", "temp_guard", "temp_rebuke", "temp_field", "temp_break", "temp_dash", "temp_ult", "temp_sanctuary",
+    "heal_light", "heal_ring", "heal_pillar", "heal_step", "heal_lamp", "heal_shield", "heal_mark", "heal_wind", "heal_ult", "heal_judgment",
+)
 PATTERNS = {
     "0": ["111", "101", "101", "101", "111"], "1": ["010", "110", "010", "010", "111"],
     "2": ["111", "001", "111", "100", "111"], "3": ["111", "001", "111", "001", "111"],
@@ -19,6 +28,7 @@ PATTERNS = {
     "8": ["111", "101", "111", "101", "111"], "9": ["111", "101", "111", "001", "111"],
     "/": ["001", "001", "010", "100", "100"], "H": ["101", "101", "111", "101", "101"],
     "M": ["101", "111", "111", "101", "101"], "P": ["111", "101", "111", "100", "100"],
+    "R": ["111", "101", "111", "110", "101"],
 }
 
 
@@ -111,7 +121,8 @@ def build_hud(assets, source, write_json):
     output = assets / "textures/gui/core"
     providers = []
     for name, base, color, highlight in (("health_bar", 0xE300, "#9f3d48", "#e18c82"),
-                                        ("mana_bar", 0xE320, "#265c8d", "#82bbdc")):
+                                        ("mana_bar", 0xE320, "#265c8d", "#82bbdc"),
+                                        ("resource_bar", 0xE340, "#9e7132", "#f6d58b")):
         sheet = Image.new("RGBA", (81, 9 * 21))
         pen = ImageDraw.Draw(sheet)
         for step in range(21):
@@ -124,8 +135,14 @@ def build_hud(assets, source, write_json):
                 pen.rectangle((2, y + 2, 1 + filled, y + 6), fill=color)
                 pen.line((2, y + 2, 1 + filled, y + 2), fill=highlight)
         save(sheet, output / f"{name}.png")
-        providers.append(provider(name, 9, -26, [chr(base + n) for n in range(21)]))
+        providers.append(provider(name, 9, -11 if name == "resource_bar" else -26, [chr(base + n) for n in range(21)]))
     frames = {}
+    shield = Image.new("RGBA", (9,9))
+    pen = ImageDraw.Draw(shield)
+    pen.polygon([(0,0),(4,1),(8,0),(7,6),(4,8),(1,6)], fill="#81c8ed", outline="#ddf5ff")
+    pen.line((4,2,4,6),fill="#275577")
+    save(shield,output / "shield_icon.png")
+    providers.append(provider("shield_icon",9,-11,[chr(0xE380)]))
     sources = {}
     for index, name in enumerate(SKILLS):
         authored = source / f"skills/{name}.png"
@@ -153,6 +170,7 @@ def build_hud(assets, source, write_json):
         ("counter_digits", 0xE500, 2, 32, 11, 29),
         ("key_digits", 0xE520, 1, 5, 0, 3),
         ("bar_digits", 0xE540, 1, 5, 0, -28),
+        ("resource_digits", 0xE560, 1, 5, 0, -13),
     ):
         save(digit_sheet(scale, height, ink_y), output / f"{name}.png")
         providers.append(provider(name, height, ascent, ["".join(chr(base + index) for index in range(len(DIGITS)))]))
@@ -163,14 +181,14 @@ def build_hud(assets, source, write_json):
         "vanilla": "26.2", "gui_coordinates": "relative to integer screen centre and GUI height",
         "actionbar_text_y_from_bottom": 72, "bitmap_top_formula": "height - 65 - ascent",
         "bars": {"left_x": [-91, 10], "width": 81, "height": 9, "top_from_bottom": 39},
-        "skills": {"left_x": [-52, -16, 20], "size": 32, "top_from_bottom": 94,
+        "skills": {"left_x": [-88, -52, -16, 20, 56], "size": 32, "top_from_bottom": 94,
                    "ready": 0, "cooldown_remaining_steps": [1, 20], "no_mana": 21},
         "master_sources": sources, "transparent_vanilla_sprites": sorted(vanilla_overrides()),
     })
     # Preview is a design aid, not a claim of an in-game render or GUI-scale verification.
     preview = Image.new("RGBA", (182, 88), "#343a43")
-    for column, (name, frame) in enumerate((("dash", 0), ("slam", 12), ("whirl", 21))):
-        preview.alpha_composite(frames[name][frame], (39 + column * 36, 0))
+    for column, (name, frame) in enumerate((("dash", 0), ("slam", 12), ("whirl", 21), ("war_guard", 0), ("war_ult", 20))):
+        preview.alpha_composite(frames[name][frame], (3 + column * 36, 0))
     def preview_digits(value, x, y, large=False):
         with Image.open(output / ("counter_digits.png" if large else "bar_digits.png")) as sheet:
             cell = 8 if large else 3
@@ -178,17 +196,20 @@ def build_hud(assets, source, write_json):
             for index, char in enumerate(value):
                 at = DIGITS.index(char) * cell
                 preview.alpha_composite(sheet.crop((at, 0, at + cell, height)), (x + index * (cell + 1), y))
-    preview_digits("4", 39 + 36 + 12, 0, large=True)
-    preview_digits("MP", 39 + 72 + 7, 0, large=True)
-    for column, key in enumerate("234"):
-        preview_digits(key, 39 + column * 36 + 25, 26)
+    preview_digits("4", 39 + 12, 0, large=True)
+    preview_digits("RP", 75 + 7, 0, large=True)
+    for column, key in enumerate("23456"):
+        preview_digits(key, 3 + column * 36 + 25, 26)
+    with Image.open(output / "resource_bar.png") as sheet:
+        preview.alpha_composite(sheet.crop((0, 108, 81, 117)), (51, 40))
+    preview_digits("60/100", 81, 42)
     for name, x in (("health_bar", 0), ("mana_bar", 101)):
         with Image.open(output / f"{name}.png") as sheet:
             preview.alpha_composite(sheet.crop((0, 180, 81, 189)), (x, 55))
         preview_digits("HP" if x == 0 else "MP", x + 3, 57)
         preview_digits("100/100", x + 34, 57)
     save(preview.resize((728, 352), Image.Resampling.NEAREST), source / "hud-layout-preview.png")
-    overview = Image.new("RGBA", (112, 152), "#211d22")
+    overview = Image.new("RGBA", (364, 270), "#211d22")
     for index, name in enumerate(SKILLS):
-        overview.alpha_composite(frames[name][0], (4 + index % 3 * 36, 4 + index // 3 * 38))
-    save(overview.resize((448, 608), Image.Resampling.NEAREST), source / "skill-classes-preview.png")
+        overview.alpha_composite(frames[name][0], (4 + index % 10 * 36, 4 + index // 10 * 38))
+    save(overview.resize((1092, 810), Image.Resampling.NEAREST), source / "skill-classes-preview.png")

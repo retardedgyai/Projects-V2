@@ -32,14 +32,16 @@ class CoreCombatMathTest {
         assertEquals(CoreSkillCatalog.basicFormula.evaluate(plain), CoreSkillCatalog.basicFormula.evaluate(ap))
         for (job in listOf(CoreClass.MAGE, CoreClass.STARWEAVER)) for (skill in CoreSkillCatalog.skills(job)) {
             assertEquals(skill.preview(plain), skill.preview(ad))
-            assertTrue(skill.preview(ap) > skill.preview(plain))
+            if (skill.formula.ap > 0) assertTrue(skill.preview(ap) > skill.preview(plain))
+            else assertEquals(skill.preview(plain), skill.preview(ap))
             assertEquals(0.0, skill.formula.ad)
         }
     }
     @Test fun `physical skills gain nothing from AP`() {
         for (job in listOf(CoreClass.WARRIOR, CoreClass.RANGER)) for (s in CoreSkillCatalog.skills(job)) {
             assertEquals(s.preview(base), s.preview(base.copy(ap = 9999.0)))
-            assertTrue(s.preview(base.copy(ad = 200.0)) > s.preview(base))
+            if (s.formula.ad > 0) assertTrue(s.preview(base.copy(ad = 200.0)) > s.preview(base))
+            else assertEquals(s.preview(base), s.preview(base.copy(ad = 200.0)))
         }
     }
     @Test fun `damage increases add before critical and defence`() {
@@ -79,7 +81,7 @@ class CoreCombatMathTest {
         for (job in CoreClass.entries) for (s in CoreSkillCatalog.skills(job)) {
             val text = s.tooltip(base).joinToString("\n")
             assertContains(text, s.formula.label())
-            assertContains(text, s.type.label)
+            if (s.motion !in setOf(CoreSkillMotion.HEAL, CoreSkillMotion.SHIELD)) assertContains(text, s.type.label)
             assertContains(text, CoreCombatMath.number(s.preview(base)))
             if (s.pulses > 1) assertContains(text, "× ${s.pulses} 回")
         }

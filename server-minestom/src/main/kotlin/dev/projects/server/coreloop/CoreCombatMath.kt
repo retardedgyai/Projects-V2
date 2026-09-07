@@ -36,15 +36,19 @@ data class CoreCombatGear(
 
 data class CoreCombatSheet(val ad: Double, val ap: Double, val ar: Double, val mr: Double,
     val health: Double, val mana: Double, val attackSpeed: Double, val healingPower: Double,
-    val mods: CoreAffixStats = CoreAffixStats()) {
+    val mods: CoreAffixStats = CoreAffixStats(), val shieldTalent: Double = 1.0) {
+    val shieldMultiplier get() = shieldTalent * (1 + mods.bonus(CoreAffixStat.SHIELD_POWER) / 100)
+    fun specialize(j: CoreJourney) = copy(health = health * j.job.healthFactor * if (j.build.has(6)) 1.1 else 1.0,
+        mods = mods.copy(damagePercent = mods.damagePercent + if (j.build.has(0)) 8 else 0),
+        shieldTalent = if(j.build.has(7)) 1.2 else 1.0)
     companion object {
-        fun from(a: CoreAccount) = from(CoreCombatGear.from(a), CoreAffixCatalog.stats(a))
+        fun from(a: CoreAccount) = from(CoreCombatGear.from(a), CoreAffixCatalog.stats(a)).specialize(a.journey)
         fun from(g: CoreCombatGear, s: CoreAffixStats): CoreCombatSheet {
             fun b(stat: CoreAffixStat) = s.bonus(stat)
             val weapon = if (g.weaponBroken) 0.0 else 12.0 * 1.65.pow(g.weaponTier.coerceIn(1, 4) - 1) * g.base.power *
                 g.weaponLevelPower * (1 + g.weaponQuality.coerceIn(0, 30) / 100.0) * (1 + .04 * g.weaponEnhancement.coerceIn(0, 30))
             // A staff grants its own AP. It does not turn AD, or AD affixes, into AP.
-            val spellWeapon = if (g.base == CoreWeaponBase.STAFF) weapon else 0.0
+            val spellWeapon = if (g.base == CoreWeaponBase.STAFF || g.base == CoreWeaponBase.TOME) weapon else 0.0
             val armorHp = if (g.armorBroken) 100.0 else (100 + (g.armorTier - 1) * 30) * g.armorLevelPower *
                 (1 + g.armorQuality.coerceIn(0, 30) / 100.0) * (1 + .02 * g.armorEnhancement.coerceIn(0, 30))
             // Preserve the old unmodified tier protection, expressed as real AR/MR instead of a second reduction layer.

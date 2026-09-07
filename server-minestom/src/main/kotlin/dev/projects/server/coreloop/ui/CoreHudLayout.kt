@@ -13,11 +13,11 @@ internal object CoreHudLayout {
     const val BAR_ASCENT = -26 // height - 65 - ascent = height - 39, exactly the heart/food row.
     const val SKILL_SIZE = 32
     const val SKILL_ASCENT = 29 // top = height - 94; bottom leaves room for item-name and armour rows.
-    val skillLeft = listOf(-52, -16, 20)
+    val skillLeft = listOf(-88, -52, -16, 20, 56)
     const val READY = 0
     const val NO_MANA = 21
     const val LOCKED = 22
-    private const val DIGITS = "0123456789/HMP"
+    private const val DIGITS = "0123456789/HMPR"
 
     data class SkillVisual(val frame: Int, val centre: String)
 
@@ -29,7 +29,8 @@ internal object CoreHudLayout {
             return SkillVisual(ceil((remaining / total).coerceIn(0.0, 1.0) * 20).toInt().coerceIn(1, 20),
                 ceil(remaining).toInt().coerceIn(1, 99).toString())
         }
-        return if (!mana.isFinite() || mana < skill.manaCost.coerceAtLeast(0)) SkillVisual(NO_MANA, "MP")
+        return if (!skill.resourceAvailable) SkillVisual(NO_MANA, "RP")
+        else if (!mana.isFinite() || mana < skill.manaCost.coerceAtLeast(0)) SkillVisual(NO_MANA, "MP")
         else SkillVisual(READY, "")
     }
 
@@ -60,9 +61,18 @@ internal object CoreHudLayout {
         }
         bar(HEALTH_X, state.health, state.maxHealth, 0xE300, "HP")
         bar(MANA_X, state.mana, state.maxMana, 0xE320, "MP")
-        state.charges?.let { charge -> layer(-6, digits("${charge.coerceIn(0,3)}/3", 0xE540), 12) }
-        state.skills.take(3).forEachIndexed { index, skill ->
-            val kind = skill.artIndex?.coerceIn(0, 11) ?: when (skill.icon) {
+        if(state.shield.isFinite() && state.shield>0) {
+            layer(-91,glyph(0xE380),10)
+            val value=number(state.shield)
+            layer(-80,digits(value,0xE560),value.length*4)
+        }
+        if (state.resource != null) {
+            layer(-40, glyph(0xE340 + barFrame(state.resource, state.resourceMaximum)), BAR_WIDTH + 1)
+            val text = "${number(state.resource)}/${number(state.resourceMaximum)}"
+            layer(-text.length * 2, digits(text, 0xE560), text.length * 4)
+        } else state.charges?.let { charge -> layer(-6, digits("${charge.coerceIn(0,3)}/3", 0xE540), 12) }
+        state.skills.take(5).forEachIndexed { index, skill ->
+            val kind = skill.artIndex?.coerceIn(0, 69) ?: when (skill.icon) {
                 CoreUiIcon.DASH -> 0
                 CoreUiIcon.SLAM -> 1
                 CoreUiIcon.WHIRL -> 2

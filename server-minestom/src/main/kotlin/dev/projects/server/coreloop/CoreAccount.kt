@@ -180,6 +180,9 @@ data class CoreOperation(val requestId: UUID, val expectedRevision: Long, val ac
 
 sealed interface CoreAction {
     data class ChooseClass(val job: CoreClass) : CoreAction
+    data class SelectSkill(val slot: Int, val choice: Int) : CoreAction
+    data class ToggleTalent(val index: Int) : CoreAction
+    data object ResetTalents : CoreAction
     /** Emitted only from authoritative server gameplay, never a menu's arbitrary completion claim. */
     data class LearnCombat(val lesson: Int) : CoreAction
     data class TemperEquipment(val slot: CoreGearSlot) : CoreAction

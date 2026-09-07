@@ -19,7 +19,7 @@ internal class GreatswordCombo {
     private var buffered = false
     val isAttacking: Boolean get() = swing != null
 
-    fun press(speed: Double): Swing? {
+    fun press(speed: Double, quick: Boolean = false): Swing? {
         val current = swing
         if (current != null) {
             if (elapsed >= current.totalTicks - 6) buffered = true
@@ -29,8 +29,8 @@ internal class GreatswordCombo {
         val step = nextStep
         nextStep = step % 3 + 1
         val haste = if (speed.isFinite()) speed.coerceIn(.75, 2.1) else 1.0
-        val startup = round((if (step == 3) 10.0 else 7.0) / (1 + .25 * (haste - 1))).toInt().coerceAtLeast(4)
-        val recovery = round(intArrayOf(12, 14, 19)[step - 1] / haste).toInt().coerceAtLeast(7)
+        val startup = round((if (quick) 3.0 else if (step == 3) 10.0 else 7.0) / (1 + .25 * (haste - 1))).toInt().coerceAtLeast(if(quick) 2 else 4)
+        val recovery = round((if(quick) intArrayOf(8, 8, 12) else intArrayOf(12, 14, 19))[step - 1] / haste).toInt().coerceAtLeast(if(quick) 5 else 7)
         elapsed = 0
         idleTicks = 0
         return Swing(step, startup + 1, startup + 1 + recovery).also { swing = it }

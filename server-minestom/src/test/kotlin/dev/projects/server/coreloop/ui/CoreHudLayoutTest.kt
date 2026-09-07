@@ -21,10 +21,12 @@ class CoreHudLayoutTest {
                     else -> error("Unexpected space glyph")
                 }
                 component.style().font() == CoreUiComponents.HUD_FONT -> when (c.code) {
-                    in 0xE300..0xE334 -> 82
+                    in 0xE300..0xE354 -> 82
+                    0xE380 -> 10
                     in 0xE400..0xE457 -> 33
-                    in 0xE500..0xE50D -> 9
-                    in 0xE520..0xE54D -> 4
+                    in 0xE500..0xE50E -> 9
+                    in 0xE520..0xE56E -> 4
+                    in 0xE600..0xEE57 -> 33
                     else -> error("Unexpected HUD glyph ${c.code}")
                 }
                 else -> error("Packed HUD must not depend on a global text font")
@@ -81,5 +83,15 @@ class CoreHudLayoutTest {
         assertFalse(CoreUiPackPolicy.allowedPath("assets/minecraft/textures/gui/sprites/hud/air.png"))
         assertFalse(CoreUiPackPolicy.allowedPath("../invalid"))
         assertTrue(CoreUiPackPolicy.allowedPath("assets/minecraft/textures/gui/sprites/hud/heart/full.png"))
+    }
+
+    @Test fun `five skill slots resource shield and all seventy art mappings retain exact centering`() {
+        for(index in 0..69) {
+            val skill=CoreHudSkill(CoreUiIcon.DASH,"6",0.0,30.0,10,artIndex=index,resourceAvailable=false)
+            assertEquals(CoreHudLayout.SkillVisual(21,"RP"),CoreHudLayout.skillVisual(skill,100.0))
+            val state=CoreHudState(80.0,140.0,100.0,skills=List(5){skill.copy(key=(it+2).toString())},resource=60.0,shield=42.0)
+            assertEquals(0,advance(CoreHudLayout.render(state)))
+        }
+        assertEquals(listOf(-88,-52,-16,20,56),CoreHudLayout.skillLeft)
     }
 }

@@ -29,6 +29,9 @@ enum class CoreAffixStat(val displayName: String, val percent: Boolean = true) {
     HEALING_FLAT("回復力", false), HEALING_PERCENT("回復力"),
     OUTGOING_HEALING("与回復量"), INCOMING_HEALING("被回復量"),
     LIFESTEAL("ライフスティール"),
+    SHIELD_POWER("シールド量"),
+    WAR_AFTERSHOCK("戦士・余波", false), MAGE_ECHO("メイジ・残響", false), HUNT_RETURN("狩人・追矢", false),
+    ASS_VENOM("暗殺者・毒印", false), TEMP_GRAVITY("聖騎士・重力", false), HEAL_CONVERSION("治療師・予防", false), STAR_ORBIT("星織り・公転", false),
 }
 
 /** Identity and roll are server-owned. Unknown definitions remain serializable but inert. */
@@ -136,6 +139,14 @@ object CoreAffixCatalog {
         CoreAffixDefinition("projects:benediction", "施療の刻印石", CoreAffixStat.OUTGOING_HEALING, CoreAffixCategory.RESOURCE, 5, 10, 3),
         CoreAffixDefinition("projects:receptivity", "受容の刻印石", CoreAffixStat.INCOMING_HEALING, CoreAffixCategory.DEFENSE, 5, 10, 3),
         CoreAffixDefinition("projects:siphon", "吸命の刻印石", CoreAffixStat.LIFESTEAL, CoreAffixCategory.OFFENSE, 1, 2, 1),
+        CoreAffixDefinition("projects:sanctuary", "庇護の刻印石", CoreAffixStat.SHIELD_POWER, CoreAffixCategory.DEFENSE, 6, 12, 4),
+        CoreAffixDefinition("projects:aftershock", "余波の刻印石", CoreAffixStat.WAR_AFTERSHOCK, CoreAffixCategory.OFFENSE, 1, 4, 1, weight=3),
+        CoreAffixDefinition("projects:spell-echo", "残響の刻印石", CoreAffixStat.MAGE_ECHO, CoreAffixCategory.OFFENSE, 1, 4, 1, weight=3),
+        CoreAffixDefinition("projects:returning-arrow", "追矢の刻印石", CoreAffixStat.HUNT_RETURN, CoreAffixCategory.OFFENSE, 1, 4, 1, weight=3),
+        CoreAffixDefinition("projects:venom-mark", "毒印の刻印石", CoreAffixStat.ASS_VENOM, CoreAffixCategory.OFFENSE, 1, 4, 1, weight=3),
+        CoreAffixDefinition("projects:gravity-well", "重力の刻印石", CoreAffixStat.TEMP_GRAVITY, CoreAffixCategory.UTILITY, 1, 4, 1, weight=3),
+        CoreAffixDefinition("projects:preventive-prayer", "予防の刻印石", CoreAffixStat.HEAL_CONVERSION, CoreAffixCategory.DEFENSE, 1, 4, 1, weight=3),
+        CoreAffixDefinition("projects:orbit", "公転の刻印石", CoreAffixStat.STAR_ORBIT, CoreAffixCategory.OFFENSE, 1, 4, 1, weight=3),
     ))
     private val byId = definitions.associateBy { it.id }
 
@@ -151,6 +162,17 @@ object CoreAffixCatalog {
     fun describe(stone: CoreAffixStone): String {
         val definition = definition(stone) ?: return "未対応のMOD（効果停止）"
         if (!valid(stone)) return "不正なMOD値（効果停止）"
+        val v = stone.value.toInt()
+        when (definition.stat) {
+            CoreAffixStat.WAR_AFTERSHOCK -> return "戦士：範囲+${v * 8}% / 範囲技の威力85%"
+            CoreAffixStat.MAGE_ECHO -> return "メイジ：起爆+1回 / 各${65 + v}%威力"
+            CoreAffixStat.HUNT_RETURN -> return "狩人：スキル射撃+1回 / 各${60 + v}%威力"
+            CoreAffixStat.ASS_VENOM -> return "暗殺者：印を付けた敵に${10 + v * 2}% ADの毒を3回"
+            CoreAffixStat.TEMP_GRAVITY -> return "聖騎士：吸引+${v * 10}% / 威力80%"
+            CoreAffixStat.HEAL_CONVERSION -> return "治療師：回復の${25 + v * 3}%を同量の障壁に変換"
+            CoreAffixStat.STAR_ORBIT -> return "星織り：三蓄積の解放+1回 / 各${65 + v}%威力"
+            else -> Unit
+        }
         val value = if (stone.value % 1.0 == 0.0) stone.value.toInt().toString() else java.lang.String.format(java.util.Locale.ROOT, "%.1f", stone.value)
         return "${definition.stat.displayName} +$value${if (definition.stat.percent) "%" else ""}"
     }

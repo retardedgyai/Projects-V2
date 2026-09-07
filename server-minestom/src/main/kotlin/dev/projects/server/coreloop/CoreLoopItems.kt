@@ -79,8 +79,9 @@ internal object CoreLoopItems {
             CoreTooltipStat("追加軽減", "${stats.mitigationPercent.toInt()}%", CoreUiIcon.DEFENSE),
             CoreTooltipStat("最大マナ", CoreCombatMath.number(sheet.mana), CoreUiIcon.MANA))
         val shown = if (slot == CoreGearSlot.WEAPON && identity.base.family != "greatsword") {
-            val model = if (identity.base == CoreWeaponBase.LONGBOW) "minecraft:bow" else "minecraft:blaze_rod"
-            base.withItemModel(model)
+            val model = when(identity.base) { CoreWeaponBase.LONGBOW -> "minecraft:bow"; CoreWeaponBase.DAGGERS -> "minecraft:iron_sword";
+                CoreWeaponBase.MACE -> "minecraft:mace"; CoreWeaponBase.TOME -> "minecraft:enchanted_book"; else -> "minecraft:blaze_rod" }
+            base.withItemModel(if(packed && identity.base != CoreWeaponBase.LONGBOW) "projects:weapons/${identity.base.family}_t$tier" else model)
         } else base
         return CoreUiTooltip.apply(shown, CoreTooltipModel("${if (CoreEconomy.broken(account, slot)) "【破損】" else ""}T$tier ${if (slot == CoreGearSlot.WEAPON) identity.base.displayName else "開拓者の防具"}${if (enhancement.level > 0) " +${enhancement.level}" else ""}",
             rarity = when (CoreAffixCatalog.rarity(account, slot)) {
@@ -190,22 +191,17 @@ internal object CoreLoopItems {
         if (projection(player.itemInOffHand)) player.setItemInOffHand(ItemStack.AIR)
         if (projection(player.inventory.cursorItem)) player.inventory.cursorItem = ItemStack.AIR
         player.inventory.setItemStack(0, gear(account, CoreGearSlot.WEAPON, packed))
-        val skillIcons = listOf(Material.FEATHER, Material.IRON_SWORD, Material.BLAZE_POWDER)
-        for (id in 0..2) {
+        for (id in 0..4) {
             val available = CoreJourneyRules.skillUnlocked(account, id)
-            val definition = CoreSkillCatalog.skills(account.journey.job)[id]
-            var item = icon(skillIcons[id], (if (available) "" else "【未解放】") + definition.name,
-                *(definition.tooltip(combatSheet) + "Lv${CoreSkillCatalog.unlockLevels[id]}で解放 / 選んで右クリック").toTypedArray())
+            val definition = CoreSkillCatalog.equipped(account.journey, combatSheet.mods)[id]
+            val item = CoreSkillTooltip.item(definition, combatSheet, account.journey, packed, !available)
                 .withTag(actionTag, "skill:$id")
-            if (packed) item = item.withItemModel("projects:core_ui/${definition.icon}")
             player.inventory.setItemStack(id + 1, item)
         }
-        player.inventory.setItemStack(4, icon(Material.HONEY_BOTTLE, "回復薬（倉庫 ${account.amount(CoreResource.POTION)}）",
+        player.inventory.setItemStack(6, icon(Material.HONEY_BOTTLE, "回復薬（倉庫 ${account.amount(CoreResource.POTION)}）",
             "右クリック：最大HPの45% + 回復力100%", "与回復・被回復MODが適用 / 再使用10秒").withTag(actionTag, "potion"))
-        player.inventory.setItemStack(5, icon(Material.COMPASS, "帰還の羅針盤", "右クリック：探索状況・帰還", "獲得素材は帰還前から保存されています").withTag(actionTag, "journal"))
         player.inventory.setItemStack(8, icon(Material.NETHER_STAR, "ProjectS — 冒険の手帳", "右クリック：地図・刻印工房・倉庫", "港の施設からも同じ操作ができます").withTag(actionTag, "journal"))
         if (initial) {
-            player.inventory.setItemStack(6, QuestGatheringDiscipline.WOODCUTTING.toolItem())
             QuestGatheringDiscipline.entries.forEachIndexed { i, discipline -> player.inventory.setItemStack(9 + i, discipline.toolItem()) }
         }
         player.inventory.setItemStack(14, icon(Material.AMETHYST_SHARD, "採取の石板（${account.amount(CoreResource.GATHERING_TABLET)}）",

@@ -210,6 +210,7 @@ class CoreAccountRepository(
             bytes.toString(UTF_8).startsWith("PROJECTS_CORE_LOOP\t5\t") -> 5
             bytes.toString(UTF_8).startsWith("PROJECTS_CORE_LOOP\t6\t") -> 6
             bytes.toString(UTF_8).startsWith("PROJECTS_CORE_LOOP\t7\t") -> 7
+            bytes.toString(UTF_8).startsWith("PROJECTS_CORE_LOOP\t8\t") -> 8
             else -> return
         }
         val backup = directory.resolve("$playerId.account.v$version.bak")
@@ -231,7 +232,7 @@ class CoreAccountRepository(
 internal object CoreAccountCodec {
     fun encode(account: CoreAccount): String {
         val body = buildString {
-            append("PROJECTS_CORE_LOOP\t8\t${account.playerId}\t${account.revision}\n")
+            append("PROJECTS_CORE_LOOP\t9\t${account.playerId}\t${account.revision}\n")
             append("gear\t${account.weaponTier}\t${account.armorTier}\t${account.unlockedMapTier}\n")
             append("crafting\t${account.weaponRarity}\t${account.armorRarity}\t${account.craftingSeed}\n")
             append("enhancement\t${account.weaponEnhancement.level}\t${account.weaponEnhancement.failures}\t${account.armorEnhancement.level}\t${account.armorEnhancement.failures}\t${account.smithingXp}\n")
@@ -249,6 +250,10 @@ internal object CoreAccountCodec {
             account.activeRun?.dungeon?.let { append("dungeon-run\t${it.ascension}\t${it.stages}\t${it.roomsPerFloor}\t${it.rewardedStage}\n") }
             (account.storedGear.map { it.identity } + account.weaponIdentity + account.armorIdentity).forEach { append("gear-quality\t${it.id}\t${it.quality}\n") }
             account.journey.let { append("journey\t${it.job}\t${it.chosen}\t${it.xp}\t${it.lessons}\t${it.legacy}\n") }
+            account.journey.build.let { append("class-build\t${it.first}\t${it.second}\t${it.third}\t${it.fourth}\t${it.ultimate}\t${it.nodes}\n") }
+            account.journey.savedBuilds.entries.sortedBy { it.key.ordinal }.forEach { (job, b) ->
+                append("class-loadout\t$job\t${b.first}\t${b.second}\t${b.third}\t${b.fourth}\t${b.ultimate}\t${b.nodes}\n")
+            }
             (account.storedGear.map { it.identity } + account.weaponIdentity + account.armorIdentity).forEach { append("gear-base\t${it.id}\t${it.base}\t${it.itemLevel}\n") }
             (account.maps + listOfNotNull(account.activeRun?.map)).forEach { append("map-level\t${it.id}\t${it.level}\n") }
             account.offers.forEach { append("offer\t${it.id}\t${it.price}\t${it.material?.resource ?: ""}\t${it.material?.tier ?: 1}\t${it.quantity}\t${it.gearId ?: ""}\n") }
@@ -276,7 +281,7 @@ internal object CoreAccountCodec {
         require(text.substring(checksumAt) == "checksum\t${digest(body)}\n") { "保存データの検証に失敗しました" }
         val rows = body.trimEnd('\n').split('\n').map { it.split('\t') }
         val header = rows.first()
-        require(header.size == 4 && header[0] == "PROJECTS_CORE_LOOP" && header[1] in setOf("1", "2", "3", "4", "5", "6", "7", "8")) { "未対応の保存形式です" }
+        require(header.size == 4 && header[0] == "PROJECTS_CORE_LOOP" && header[1] in setOf("1", "2", "3", "4", "5", "6", "7", "8", "9")) { "未対応の保存形式です" }
         val version = header[1].toInt()
         require(UUID.fromString(header[2]) == playerId) { "保存データのプレイヤーが一致しません" }
         val gear = rows.getOrNull(1) ?: error("装備データがありません")
@@ -305,9 +310,17 @@ internal object CoreAccountCodec {
         val qualities = linkedMapOf<UUID, Int>()
         var dungeon: CoreDungeonEntry? = null
         var journey: CoreJourney? = null
+        var classBuild: CoreClassBuild? = null
+        val savedBuilds = mutableMapOf<CoreClass, CoreClassBuild>()
         val bases = linkedMapOf<UUID, Pair<CoreWeaponBase, Int>>()
         val mapLevels = linkedMapOf<UUID, Int>()
         rows.drop(2).forEach { row -> when (row[0]) {
+            "class-build" -> { require(version >= 9 && row.size == 7 && classBuild == null); classBuild = CoreClassBuild(row[1].toInt(), row[2].toInt(), row[3].toInt(), row[4].toInt(), row[5].toInt(), row[6].toInt()) }
+            "class-loadout" -> {
+                require(version >= 9 && row.size == 8)
+                val job = CoreClass.valueOf(row[1]); require(job !in savedBuilds)
+                savedBuilds[job] = CoreClassBuild(row[2].toInt(), row[3].toInt(), row[4].toInt(), row[5].toInt(), row[6].toInt(), row[7].toInt())
+            }
             "journey" -> { require(version >= 8 && row.size == 6 && journey == null); journey = CoreJourney(CoreClass.valueOf(row[1]), row[2].toBooleanStrict(), row[3].toLong(), row[4].toInt(), row[5].toBooleanStrict()) }
             "gear-base" -> { require(version >= 8 && row.size == 4); require(bases.put(UUID.fromString(row[1]), CoreWeaponBase.valueOf(row[2]) to row[3].toInt()) == null) }
             "map-level" -> { require(version >= 8 && row.size == 3); require(mapLevels.put(UUID.fromString(row[1]), row[2].toInt()) == null) }
@@ -385,6 +398,13 @@ internal object CoreAccountCodec {
             identities.replaceAll { _, id -> id.copy(quality = qualities.getValue(id.id)) }
         }
         active = active?.copy(dungeon = dungeon)
+        if (version >= 9) {
+            val existingJourney = requireNotNull(journey)
+            val build = requireNotNull(classBuild) { "職業の構成データがありません" }
+            require(build.points <= CoreClassTrees.budget(existingJourney)) { "技能ポイントが不正です" }
+            require(existingJourney.job !in savedBuilds) { "現在の職業の構成が重複しています" }
+            journey = existingJourney.copy(build = build, savedBuilds = savedBuilds.toMap())
+        }
         if (version >= 8) {
             require(journey != null && bases.keys == qualities.keys)
             require(mapLevels.keys == (maps.map { it.id } + listOfNotNull(active?.map?.id)).toSet())

@@ -4,17 +4,16 @@ import argparse
 import json
 import math
 import zipfile
-from build_core_weapon_assets import ASSETS, model
+from build_core_weapon_assets import ASSETS, all_models
 
 
 def verify(jar=None):
     names = set(zipfile.ZipFile(jar).namelist()) if jar else None
-    for tier in range(1, 5):
-        name = f"greatsword_t{tier}"
+    for name, authored in all_models().items():
         definition = json.loads((ASSETS / f"items/weapons/{name}.json").read_text())
         assert definition == {"model": {"type": "minecraft:model", "model": f"projects:item/weapons/{name}"}}
         data = json.loads((ASSETS / f"models/item/weapons/{name}.json").read_text())
-        assert data == model(tier), "Regenerate models after editing their source geometry"
+        assert data == authored, "Regenerate models after editing their source geometry"
         assert len(data["elements"]) <= 24
         for texture in data["textures"].values():
             assert texture.startswith("minecraft:block/")
@@ -53,7 +52,7 @@ def verify(jar=None):
                     gx = (dx*math.cos(angle) - dy*math.sin(angle))*display["scale"][0] + display["translation"][0]
                     gy = (dx*math.sin(angle) + dy*math.cos(angle))*display["scale"][1] + display["translation"][1]
                     assert -8 <= gx <= 8 and -8 <= gy <= 8, (name, element["name"], gx, gy)
-    print("PASS: 4 greatsword models, stock 16px sockets, finite geometry, namespaced items" + (", all vanilla 26.2 source textures found" if names else " (pass --vanilla-jar for texture validation)"))
+    print("PASS: 20 class weapon models, stock 16px sockets, finite geometry, namespaced items" + (", all vanilla 26.2 source textures found" if names else " (pass --vanilla-jar for texture validation)"))
 
 
 if __name__ == "__main__":

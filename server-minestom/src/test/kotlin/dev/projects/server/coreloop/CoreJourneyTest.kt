@@ -109,7 +109,7 @@ class CoreJourneyTest {
             val material = CoreMaterial(if (slot == CoreGearSlot.WEAPON) CoreResource.INGOT else CoreResource.LEATHER, lower)
             assertTrue(CoreEconomy.manufacture(slot, 4).costs.getValue(material) > 0)
         }
-        assertEquals(6, CoreWeaponBase.entries.size)
+        assertEquals(9, CoreWeaponBase.entries.size)
         assertEquals(4, CoreWeaponBase.entries.count { it.family == "greatsword" })
     }
     @Test fun `temper preserves mods quality enhancement crafter and ID and rejects past Tier cap`() {
@@ -126,7 +126,7 @@ class CoreJourneyTest {
     @Test fun `v7 is read only until first commit and gets an exact backup with legacy access preserved`() {
         val id = UUID.randomUUID(); val f = Fixture(CoreAccount(id, unlockedMapTier = 4))
         val body = CoreAccountCodec.encode(f.a).substringBefore("checksum\t").lineSequence()
-            .filterNot { it.substringBefore('\t') in setOf("journey", "gear-base", "map-level") }.joinToString("\n").replaceFirst("\t8\t", "\t7\t")
+            .filterNot { it.substringBefore('\t') in setOf("journey", "gear-base", "map-level", "class-build") }.joinToString("\n").replaceFirst("\t9\t", "\t7\t")
         val old = body + "checksum\t" + MessageDigest.getInstance("SHA-256").digest(body.toByteArray()).joinToString("") { "%02x".format(it) } + "\n"
         Files.writeString(f.dir.resolve("$id.account"), old); f.reload()
         assertTrue(f.a.journey.legacy); assertEquals(31, f.a.journey.level)

@@ -83,16 +83,30 @@ class CoreAccountService(private val repository: CoreAccountRepository,
     }
 
     private fun apply(account: CoreAccount, action: CoreAction, requestId: UUID): Pair<CoreAccount, String> = when (action) {
+        is CoreAction.SelectSkill -> {
+            requireHub(account)
+            require(action.slot in 0..4 && CoreJourneyRules.skillUnlocked(account, action.slot)) { "このスキル枠は未解放です" }
+            account.copy(journey = account.journey.copy(build = account.journey.build.equip(action.slot, action.choice))) to "スキル構成を保存しました"
+        }
+        is CoreAction.ToggleTalent -> {
+            requireHub(account)
+            account.copy(journey = account.journey.copy(build = account.journey.build.toggle(action.index, CoreClassTrees.budget(account.journey)))) to "技能ツリーを保存しました"
+        }
+        CoreAction.ResetTalents -> {
+            requireHub(account)
+            account.copy(journey = account.journey.copy(build = account.journey.build.copy(nodes = 0))) to "技能ポイントをすべて返還しました"
+        }
         is CoreAction.ChooseClass -> {
             requireHub(account)
             if (action.job == CoreClass.STARWEAVER) {
                 require(account.journey.job == CoreClass.MAGE || account.journey.job == CoreClass.STARWEAVER) { "メイジから転職してください" }
                 require(account.journey.level >= 20 && account.amount(CoreResource.BOSS_SIGIL, 2) >= 2) { "Lv20とT2討伐証2枚が必要です（証は消費しません）" }
             }
-            var selected = account.copy(journey = account.journey.copy(job = action.job, chosen = true))
+            var selected = account.copy(journey = account.journey.changeClass(action.job))
             if (!selected.weaponIdentity.base.usable(action.job)) {
                 val old = CoreEconomy.capture(selected, CoreGearSlot.WEAPON)
-                val base = when (action.job) { CoreClass.WARRIOR -> CoreWeaponBase.FLOW; CoreClass.RANGER -> CoreWeaponBase.LONGBOW; else -> CoreWeaponBase.STAFF }
+                val base = when (action.job) { CoreClass.WARRIOR -> CoreWeaponBase.FLOW; CoreClass.ASSASSIN -> CoreWeaponBase.DAGGERS;
+                    CoreClass.TEMPLAR -> CoreWeaponBase.MACE; CoreClass.HEALER -> CoreWeaponBase.TOME; CoreClass.RANGER -> CoreWeaponBase.LONGBOW; else -> CoreWeaponBase.STAFF }
                 val existing = selected.storedGear.firstOrNull { it.slot == CoreGearSlot.WEAPON && it.identity.bound && it.identity.base == base }
                 val starter = existing ?: CoreStoredGear(CoreGearIdentity(derived(selected.playerId, "starter:${base.family}"), selected.playerId, true, base = base), CoreGearSlot.WEAPON, 1, CoreGearRarity.NORMAL, CoreEnhancementState())
                 require(existing != null || selected.storedGear.size < CoreEconomy.MAX_GEAR) { "装備庫に空きが必要です" }

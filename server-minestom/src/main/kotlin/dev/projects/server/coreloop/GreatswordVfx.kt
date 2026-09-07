@@ -146,15 +146,21 @@ internal class GreatswordVfx(private val player: Player) {
     internal val retainsInstance: Boolean get() = instance != null
     internal fun holdContact(ticks: Int) { holdAfterFrame = maxOf(holdAfterFrame, ticks.coerceIn(0, 3)) }
     fun particles(particle: Particle, position: Point, count: Int, spread: Vec = Vec.ZERO, speed: Float = 0f) {
+        if (player.instance !== instance) cancel()
+        instance = player.instance
         if (elementalFrame.size < 48) elementalFrame += ParticleSpawn(particle, position, count.coerceIn(0, 16), spread, speed,
             ParticleCategory.OWN_ACTIVE, importance = ParticleImportance.COMBAT_FEEDBACK)
     }
 
     fun play(visual: GreatswordVisual, origin: Point, direction: Vec) {
+        play(GreatswordEffect(visual, origin, direction))
+    }
+
+    fun play(effect: ParticleEffect) {
         if (player.instance !== instance) cancel()
         instance = player.instance
         if (scheduler.activeAnimationCount >= MAX_EFFECTS) return
-        scheduler.start(GreatswordEffect(visual, origin, direction), frame)
+        scheduler.start(effect, frame)
     }
 
     fun tick() {

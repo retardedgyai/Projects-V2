@@ -70,18 +70,73 @@ def model(tier):
     }
 
 
+def class_model(kind, tier):
+    data = model(tier)
+    data["credit"] = "ProjectS original class arms / 2026-09-08"
+    if kind == "dagger":
+        elements = [box("wrapped grip",[7,2,7],[9,7,9],"grip"),
+                    box("ring pommel",[6.5,1,6.5],[9.5,3,9.5],"trim"),
+                    box("curved guard",[4,7,6.5],[12,8.5,9.5],"trim"),
+                    box("blade spine",[6,8.5,7.2],[10,18,8.8],"body"),
+                    box("honed edge",[5,9,7.5],[6,17,8.5],"edge"),
+                    box("honed edge",[10,9,7.5],[11,17,8.5],"edge"),
+                    box("point",[6,17,7.5],[10,21,8.5],"edge",{"origin":[8,19,8],"axis":"z","angle":45,"rescale":False}),
+                    box("inlaid rune",[7.5,10,7],[8.5,16,7.3],"gem")]
+    elif kind == "mace":
+        elements = [box("wrapped shaft",[7,1,7],[9,17,9],"grip"),
+                    box("pommel",[6,0,6],[10,2,10],"trim"),
+                    box("iron collar",[6,14,6],[10,17,10],"trim"),
+                    box("head core",[5,17,5],[11,24,11],"body"),
+                    box("front flange",[6.5,16,3],[9.5,25,5],"edge"),
+                    box("back flange",[6.5,16,11],[9.5,25,13],"edge"),
+                    box("left flange",[3,16,6.5],[5,25,9.5],"edge"),
+                    box("right flange",[11,16,6.5],[13,25,9.5],"edge"),
+                    box("oathstone",[6,24,6],[10,27,10],"gem"),
+                    box("binding band",[4.5,19,4.5],[11.5,20,11.5],"trim")]
+    elif kind == "staff":
+        elements = [box("carved shaft",[7.1,0,7.1],[8.9,23,8.9],"grip"),
+                    box("ferrule",[6.5,0,6.5],[9.5,3,9.5],"trim"),
+                    box("head base",[5,22,6],[11,24,10],"body"),
+                    box("left prong",[3.5,24,6.5],[5.5,29,9.5],"trim"),
+                    box("right prong",[10.5,24,6.5],[12.5,29,9.5],"trim"),
+                    box("focused crystal",[6,24.5,6],[10,28.5,10],"gem",{"origin":[8,26.5,8],"axis":"z","angle":45,"rescale":False}),
+                    box("grip band",[6.7,10,6.7],[9.3,11,9.3],"trim")]
+    elif kind == "tome":
+        elements = [box("pages",[3,4,6],[13,17,9],"edge"),
+                    box("front cover",[2,3,5],[14,18,6],"body"),
+                    box("back cover",[2,3,9],[14,18,10],"body"),
+                    box("bound spine",[2,3,5],[4,18,10],"grip"),
+                    box("clasp",[11,9,4.5],[14.5,11,10.5],"trim"),
+                    box("cover cross vertical",[7.4,6,4.5],[8.6,15,5],"trim"),
+                    box("cover cross horizontal",[5,9,4.5],[11,10.2,5],"trim"),
+                    box("set jewel",[6.8,8.4,4],[9.2,10.8,4.5],"gem")]
+        for x in (2,12):
+            for y in (3,16): elements.append(box("brass corner",[x,y,4.7],[x+2,y+2,5],"trim"))
+    else: raise ValueError(kind)
+    data["elements"] = elements
+    if kind in ("dagger", "tome"):
+        data["display"]["gui"] = {"rotation":[0,0,-25],"translation":[-1,-1,0],"scale":[.55,.55,.55]}
+        data["display"]["firstperson_righthand"]["scale"] = [.8,.8,.8]
+        data["display"]["firstperson_lefthand"]["scale"] = [.8,.8,.8]
+    return data
+
+
+def all_models():
+    return {f"{kind}_t{tier}": model(tier) if kind == "greatsword" else class_model(kind,tier)
+            for kind in ("greatsword","dagger","mace","staff","tome") for tier in range(1,5)}
+
+
 def build():
-    for tier in range(1, 5):
-        name = f"greatsword_t{tier}"
+    for name, geometry in all_models().items():
         files = {
-            f"models/item/weapons/{name}.json": model(tier),
+            f"models/item/weapons/{name}.json": geometry,
             f"items/weapons/{name}.json": {"model": {"type": "minecraft:model", "model": f"projects:item/weapons/{name}"}},
         }
         for relative, data in files.items():
             path = ASSETS / relative
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
-    print("Built four tier-specific original greatswords (8 namespaced item/model files).")
+    print("Built twenty tier-specific original class weapons (40 namespaced item/model files).")
 
 
 if __name__ == "__main__":

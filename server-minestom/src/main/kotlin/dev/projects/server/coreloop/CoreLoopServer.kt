@@ -187,6 +187,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
                     weaponBase = { accounts[player.uuid]?.weaponIdentity?.base ?: CoreWeaponBase.STANDARD },
                     weaponLevelPower = { accounts[player.uuid]?.let { CoreJourneyRules.power(it.weaponIdentity, it.weaponTier) } ?: 1.0 },
                     armorLevelPower = { accounts[player.uuid]?.let { CoreJourneyRules.power(it.armorIdentity, it.armorTier) } ?: 1.0 },
+                    allies = { actors.values.toList() },
                     onLesson = { bit -> if (accounts[player.uuid]?.journey?.knows(bit) == false) transact(player.uuid, CoreAction.LearnCombat(bit)) }) {
                     if (!dungeons.defeated(player)) {
                         player.showTitle(Title.title(CoreLoopItems.text("力尽きた…", NamedTextColor.RED), CoreLoopItems.text("獲得素材を持って港へ戻ります")))
@@ -790,9 +791,11 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         else if (a.activeRun?.bossDefeated == true) "討伐達成・手帳 [9] で帰還"
         else if (session.arena != null) "${session.arena.displayName} — ${session.combat.bossName()}"
         else "道の先のボスへ  戦利品 ${session.loot.remainingCount()}"
-        val icons = listOf(CoreUiIcon.DASH, CoreUiIcon.SLAM, CoreUiIcon.WHIRL)
+        val icons = listOf(CoreUiIcon.DASH, CoreUiIcon.SLAM, CoreUiIcon.WHIRL, CoreUiIcon.DEFENSE, CoreUiIcon.MAGIC)
         player.sendActionBar(CoreUiComponents.hud(CoreHudState(actor.health, actor.maxHealth.toDouble(), actor.mana.toDouble(), actor.maxMana.toDouble(),
-            icons.mapIndexed { i, icon -> CoreHudSkill(icon, (i + 2).toString(), actor.cooldownRemaining(i) / 20.0, actor.cooldownTicks(i) / 20.0, actor.skillDefinitions[i].mana, actor.classId.ordinal * 3 + i, actor.skillAvailable(i)) }, message, actor.chargeCount), packed(player)))
+            icons.mapIndexed { i, icon -> CoreHudSkill(icon, (i + 2).toString(), actor.cooldownRemaining(i) / 20.0, actor.cooldownTicks(i) / 20.0,
+                actor.skillDefinitions[i].mana, CoreSkillCatalog.artIndex(actor.skillDefinitions[i]), actor.skillAvailable(i), actor.resourceAvailable(i)) },
+            message + " / ${actor.weaponHint}", actor.chargeCount, actor.resource, actor.resourceMax, actor.shield), packed(player)))
     }
 
     override fun sessionSummary(player: Player): String = dungeons.run(player)?.objective() ?: sessions[player.uuid]?.let {

@@ -101,6 +101,9 @@ class QuestEncounterCombat(
         var slowPercent = 0.0
         var slowedUntil = 0L
         var challengeStage = 0
+        var exposedUntil = 0L
+        var tauntedUntil = 0L
+        var pullImmuneUntil = 0L
         var guardianIds = emptySet<UUID>()
         @Volatile var spawnFailure: Throwable? = null
         var model: WardenModel? = null
@@ -162,11 +165,56 @@ class QuestEncounterCombat(
         }
     }
     fun positionOf(targetId: UUID): Pos? = mobs[targetId]?.entity?.position
+    internal fun currentTargetId(targetId: UUID): UUID? = mobs[targetId]?.target?.uuid
     fun isBoss(targetId: UUID): Boolean = mobs[targetId]?.boss == true
     fun bossHealth(): Double = mobs.values.firstOrNull { it.boss }?.life?.health ?: 0.0
     fun bossMaxHealth(): Double = mobs.values.firstOrNull { it.boss }?.life?.maximumHealth ?: 1.0
     fun bossName(): String = mobs.values.firstOrNull { it.boss }?.definition?.name ?: ""
     fun weaknessOf(targetId: UUID): String? = mobs[targetId]?.definition?.archetype?.weakness
+    fun expose(targetId: UUID, durationMillis: Long = 4000): Boolean {
+        val mob = mobs[targetId] ?: return false
+        if (!mob.life.isAlive || mob.life.phase == QuestMobPhase.RETURNING || durationMillis <= 0) return false
+        val now = if (lastTickAt == Long.MIN_VALUE) System.currentTimeMillis() else lastTickAt
+        mob.exposedUntil = maxOf(mob.exposedUntil, now + durationMillis.coerceAtMost(8000))
+        return true
+    }
+    fun taunt(targetId: UUID, player: Player): Boolean {
+        val mob = mobs[targetId] ?: return false
+        if (!mob.life.isAlive || mob.life.phase == QuestMobPhase.RETURNING || (mob.boss && bossSealed) ||
+            !canTarget(player) || player.instance !== instance || player.position.distance(mob.entity.position) > 12 || !mob.entity.hasLineOfSight(player)) return false
+        val now = if(lastTickAt == Long.MIN_VALUE) System.currentTimeMillis() else lastTickAt
+        mob.target = player
+        mob.tauntedUntil = now + 2000
+        return true
+    }
+    /** Pulls only along a clear grounded path. Bosses resist displacement and instead take a short interrupt. */
+    fun pull(targetId: UUID, attacker: Player, maximumDistance: Double = 3.0): Boolean {
+        val mob = mobs[targetId] ?: return false
+        if (!mob.life.isAlive || mob.life.phase == QuestMobPhase.RETURNING || (mob.boss && bossSealed) || mob.guardianIds.any(::isAlive) ||
+            attacker.instance !== instance || !canTarget(attacker) || attacker.position.distance(mob.entity.position) > 12 || !mob.entity.hasLineOfSight(attacker)) return false
+        val now = if (lastTickAt == Long.MIN_VALUE) System.currentTimeMillis() else lastTickAt
+        if (mob.boss) {
+            if(now < mob.pullImmuneUntil) return false
+            mob.pullImmuneUntil = now + 6000
+            mob.abilities.cancel(); telegraphs.clear(targetId); staggerBoss(now + 400); return true
+        }
+        val delta = attacker.position.sub(mob.entity.position)
+        val horizontal = Vec(delta.x(), 0.0, delta.z())
+        if (horizontal.length() < 1.6) return true
+        val direction = horizontal.normalize()
+        val distance = minOf(maximumDistance.coerceIn(0.0, 5.0), horizontal.length() - 1.4)
+        val origin = mob.entity.position
+        var destination = origin
+        for (step in 1..ceil(distance / .2).toInt()) {
+            val point = origin.add(direction.mul(minOf(distance, step * .2)))
+            if (!instance.getBlock(point.sub(0.0, .15, 0.0)).isSolid ||
+                listOf(-.4, .4).any { x -> listOf(-.4, .4).any { z -> listOf(.1, 1.0, 1.8).any { y -> instance.getBlock(point.add(x,y,z)).isSolid } } }) break
+            destination = point
+        }
+        mob.abilities.cancel(); telegraphs.clear(targetId); stopNavigation(mob)
+        mob.entity.teleport(destination); mob.target = attacker
+        return true
+    }
     fun mobInfo(targetId: UUID): QuestMobInfo? = mobs[targetId]?.let {
         QuestMobInfo(targetId, it.definition.archetype, it.definition.archetype.rarity, tier,
             it.entity.position, it.life.health, it.life.maximumHealth)
@@ -219,11 +267,14 @@ class QuestEncounterCombat(
         val defense = (tier - 1) * 30.0 + (encounterLevel - ((tier - 1) * 10 + 1)) * 2.0
         val armored = mob.definition.archetype in setOf(QuestMobArchetype.SHIELD_GUARD, QuestMobArchetype.IRON_WARDEN)
         val caster = mob.definition.archetype in setOf(QuestMobArchetype.RIFT_CASTER, QuestMobArchetype.RIFT_ORACLE)
+        val now = if (lastTickAt == Long.MIN_VALUE) System.currentTimeMillis() else lastTickAt
         return damage(targetId, attacker, CoreCombatMath.mitigate(amount, type,
-            defense * (if (armored) 1.5 else 1.0), defense * (if (caster) 1.5 else 1.0), stats), effect, projectile)
+            defense * (if (armored) 1.5 else 1.0), defense * (if (caster) 1.5 else 1.0), stats,
+            defenseReduction = if (now < mob.exposedUntil) 20.0 else 0.0), effect, projectile)
     }
 
     private fun damage(targetId: UUID, attacker: Player, amount: Double, effect: Boolean, projectile: Boolean = false): Double? {
+        val now = if(lastTickAt == Long.MIN_VALUE) System.currentTimeMillis() else lastTickAt
         if (disposed || attacker.instance !== instance || !canTarget(attacker)) return null
         val mob = mobs[targetId] ?: return null
         if ((mob.boss && bossSealed) || mob.guardianIds.any(::isAlive)) return null
@@ -252,7 +303,7 @@ class QuestEncounterCombat(
             // Health is already terminal before this callback can re-enter the runtime.
             onMobDefeated(attacker, mob.boss)
         } else {
-            mob.target = attacker
+            if(now >= mob.tauntedUntil || mob.target?.let { !canTarget(it) || it.instance !== instance } != false) mob.target = attacker
             if (mob.life.phase == QuestMobPhase.IDLE) mob.life.phase = QuestMobPhase.CHASING
             updateName(mob)
             sound(mob.entity.position, if (guarded) "minecraft:item.shield.block" else "minecraft:entity.${mob.definition.soundFamily}.hurt", 0.6f, 1.0f)
@@ -361,6 +412,9 @@ class QuestEncounterCombat(
                 stopNavigation(mob)
                 mob.abilities.reset()
                 mob.life.finishReturn()
+                mob.exposedUntil = 0L
+                mob.tauntedUntil = 0L
+                mob.pullImmuneUntil = 0L
                 (mob.entity.entityMeta as MobMeta).isAggressive = false
                 updateName(mob)
             } else if (now >= mob.nextPathAt) {
