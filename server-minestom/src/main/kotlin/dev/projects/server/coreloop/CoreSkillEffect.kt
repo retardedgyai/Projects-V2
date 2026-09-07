@@ -72,7 +72,10 @@ internal class CoreSkillEffect(
     prepareTicks: Int = 4,
     rayLength: Double = 0.0,
     internal val clippedRay: Boolean = false,
+    internal val sceneId: String = skill.icon,
+    internal val endpoint: CoreSkillEndpoint = CoreSkillEndpoint.NONE,
 ) : ParticleEffect {
+    internal var solidCompanion: Boolean = false
     internal val valid = listOf(origin.x(), origin.y(), origin.z(), direction.x(), direction.y(), direction.z(), skill.radius, rayLength).all(Double::isFinite)
     private val frame = ParticleTransform.fromDirection(if (valid) origin else Vec.ZERO, direction)
     internal val motif = CoreSkillArt.motifs.getValue(skill.icon)
@@ -87,6 +90,7 @@ internal class CoreSkillEffect(
 
     override fun emit(tick: Int, sink: ParticleSink) {
         if (!valid || tick !in 0 until durationTicks) return
+        if (solidCompanion) { CoreSceneParticles.emit(this,tick,sink); return }
         val t = tick.toDouble() / durationTicks
         val bright = 0xfff4d9
         fun p(x: Double, y: Double, z: Double, ink: Int = color, size: Double = 1.1, key: Boolean = false) {

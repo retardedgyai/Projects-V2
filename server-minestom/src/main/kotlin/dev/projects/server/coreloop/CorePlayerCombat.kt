@@ -279,6 +279,7 @@ internal class CorePlayerCombat(
             CoreSkillMotion.NOVA -> pulse(player.position)
             CoreSkillMotion.FIELD -> pulse(action.origin)
             CoreSkillMotion.EVADE -> {
+                val departure = player.position
                 moveSafely(action.direction.mul(if (s.range < 0) -1.0 else 1.0), abs(s.range))
                 classState.dodgeUntil = tickNumber + 60
                 if (classId == CoreClass.STARWEAVER && build.keystone == 1) classState.gain(1.0, classId, build)
@@ -287,8 +288,8 @@ internal class CorePlayerCombat(
                 else if (s.status == CoreSkillStatus.SLOW) enemies.combatTargets().filter { it.position.distance(action.origin) < 4 && visibleTo(it.id, enemies) }
                     .forEach { enemies.applySlow(it.id, .5, 2500) }
                 if (actionsValid(enemies, epoch) && s.formula.ad == 0.0 && s.formula.ap == 0.0) {
-                    emitSkillPulse(action.origin, 2.0)
-                    emitSkillPulse(player.position, 2.0)
+                    emitSkillPulse(departure, 2.0, CoreSkillEndpoint.DEPARTURE)
+                    emitSkillPulse(player.position, 2.0, CoreSkillEndpoint.ARRIVAL)
                 }
             }
             CoreSkillMotion.GUARD -> {
@@ -506,10 +507,10 @@ internal class CorePlayerCombat(
         }
     }
 
-    private fun emitSkillPulse(centre: Pos, radius: Double) {
+    private fun emitSkillPulse(centre: Pos, radius: Double, endpoint: CoreSkillEndpoint = CoreSkillEndpoint.NONE) {
         val action = pending ?: return
         vfx.playSkill(CoreSkillEffect(classId, action.definition.copy(radius = radius), centre, action.direction,
-            pulse = (action.elapsed - action.startup) / 8))
+            pulse = (action.elapsed - action.startup) / 8, endpoint = endpoint))
     }
 
     /** Lock a ground cast to the visible aimed enemy/block, not a fixed point seven blocks ahead. */

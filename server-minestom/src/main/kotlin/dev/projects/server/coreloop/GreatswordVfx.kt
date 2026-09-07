@@ -157,13 +157,15 @@ internal class GreatswordVfx(private val player: Player) {
     }
 
     fun play(visual: GreatswordVisual, origin: Point, direction: Vec) {
-        play(GreatswordEffect(visual, origin, direction))
         if (visual in setOf(GreatswordVisual.SWEEP, GreatswordVisual.REVERSE, GreatswordVisual.FINISHER, GreatswordVisual.SLAM_BLADE)) {
             val heavy = visual == GreatswordVisual.FINISHER || visual == GreatswordVisual.SLAM_BLADE
             val definition = CoreSkillCatalog.skills(CoreClass.WARRIOR).first { it.icon == (if (heavy) "slam" else "war_wound") }
-            meshes.play(CoreSkillEffect(CoreClass.WARRIOR, definition.copy(radius = 3.9), origin, direction,
-                pulse = if (visual == GreatswordVisual.REVERSE) 1 else 0))
-        }
+            val effect = CoreSkillEffect(CoreClass.WARRIOR, definition.copy(radius = 3.9), origin, direction,
+                sceneId = if(heavy) "normal_finish" else if(visual==GreatswordVisual.REVERSE) "normal_reverse" else "normal_sweep")
+            effect.solidCompanion=CoreCombatPresentation.packed(player)
+            play(if(effect.solidCompanion) effect else GreatswordEffect(visual,origin,direction))
+            meshes.play(effect)
+        } else play(GreatswordEffect(visual,origin,direction))
     }
 
     fun play(effect: ParticleEffect) {
@@ -178,6 +180,7 @@ internal class GreatswordVfx(private val player: Player) {
         instance = player.instance
         if (activeEffects >= MAX_EFFECTS) scheduler.cancelAll() // Shed old normal trails before a skill pulse.
         if (activeEffects < MAX_EFFECTS) {
+            if (effect is CoreSkillEffect) effect.solidCompanion = CoreCombatPresentation.packed(player)
             combatScheduler.start(effect, frame)
             if (effect is CoreSkillEffect) {
                 meshes.play(effect)

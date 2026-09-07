@@ -5,15 +5,16 @@ No concept art or new texture painting: faces are projected directly from pack m
 from pathlib import Path
 import json
 import math
-from PIL import Image, ImageDraw
-from build_core_combat_models import PALETTES, SHAPES
+from PIL import Image, ImageDraw, ImageFont
+from build_core_combat_models import scene_models, scene_rows
 
 ROOT = Path(__file__).resolve().parents[1]
 PACK = ROOT / "server-minestom/src/main/resources/core-ui-pack"
 COLORS = {"white_concrete": "#eeeef0", "light_gray_concrete": "#969a9a", "gray_concrete": "#3b4044",
           "yellow_concrete": "#f1b817", "orange_concrete": "#e16816", "magenta_concrete": "#ab30a0",
           "purple_concrete": "#6a239c", "light_blue_concrete": "#259ad0", "blue_concrete": "#303292",
-          "red_concrete": "#962d29", "lime_concrete": "#67ad18", "green_concrete": "#4d5e21", "cyan_concrete": "#167b82"}
+          "red_concrete": "#962d29", "lime_concrete": "#67ad18", "green_concrete": "#4d5e21", "cyan_concrete": "#167b82",
+          "black_concrete": "#171820", "brown_concrete": "#65452d"}
 
 
 def render(parts, cx, cy, scale=36):
@@ -43,33 +44,36 @@ def render(parts, cx, cy, scale=36):
 def main():
     # Validate every generated model, not only the representative views.
     index = set((PACK / "index.txt").read_text().splitlines())
-    for shape in SHAPES:
-        for palette in PALETTES:
-            path = f"assets/projects/models/combat_vfx/{shape}_{palette}.json"
-            model = json.loads((PACK / path).read_text())
-            assert path in index and 1 < len(model["elements"]) < 400
-            assert all(all(-16 <= n <= 32 for n in e["from"] + e["to"]) for e in model["elements"])
-            assert all(e["to"][i] > e["from"][i] for e in model["elements"] for i in range(3))
-    image = Image.new("RGB", (1200, 740), "#17202b")
-    draw = ImageDraw.Draw(image)
-    scenes = [
-        ("SLASH / continuous edge", [("crescent", "gold", (7.8,7.8,7.8), (0,1,0), 0, -.25, -.28), ("crescent", "gold", (6.4,6.4,6.4), (0,1.15,0), 0, -.43, -.28)]),
-        ("STARFALL / nucleus + orbital rings", [("star", "astral", (2.5,2.5,2.5), (0,1.5,0), math.pi/2, 0, 0), ("orbit", "astral", (6.8,6.8,6.8), (0,1.2,0), .38, 0, 0), ("orbit", "astral", (5.2,5.2,5.2), (0,1.6,0), -.65, .5, 0)]),
-        ("ICE / rising shards", [("lance", "ice", (2.8,2.8,4.8), (math.sin(a)*2.6,.65,math.cos(a)*2.6), -.7, a, 0) for a in (-1,-.5,0,.5,1)]),
-        ("ASTRAL NEEDLE / solid ray and impact", [("lance", "astral", (4.5,4.5,7), (0,1,0), 0, -.8, 0), ("star", "astral", (1.6,1.6,1.6), (-2.5,1,2.45), math.pi/2, -.8, 0)]),
-    ]
-    for i, (label, parts) in enumerate(scenes):
-        left, top = i % 2 * 600, i // 2 * 340
-        draw.text((left + 20, top + 30), label, fill="#f1e7cb")
-        for n in range(-4,5):
-            draw.line((left+80,top+200+n*16,left+520,top+200+n*16), fill="#25313b")
-        for _, points, color in render(parts, left + 300, top + 215):
-            draw.polygon(points, fill=color)
-    draw.text((20,710), "JSON geometry QA projection. No particles, game lighting or bloom; not a Minecraft screenshot.", fill="#acb6c0")
-    out = ROOT / ".tools/combat-mesh-preview.png"
-    out.parent.mkdir(parents=True, exist_ok=True)
-    image.save(out)
-    print(f"Validated 49 meshes + item definitions; preview: {out}")
+    for shape, palette in scene_models():
+        path = f"assets/projects/models/combat_vfx/{shape}_{palette}.json"
+        model = json.loads((PACK / path).read_text())
+        assert path in index and 1 <= len(model["elements"]) < 400, (shape,len(model["elements"]))
+        assert all(all(-16 <= n <= 32 for n in e["from"] + e["to"]) for e in model["elements"])
+        assert all(e["to"][i] > e["from"][i] for e in model["elements"] for i in range(3))
+    poses = json.loads((ROOT / ".tools/skill-scene-poses.json").read_text(encoding="utf-8"))
+    font = ImageFont.truetype("C:/Windows/Fonts/meiryob.ttc", 13)
+    for page in range(7):
+        image = Image.new("RGB", (1080, 1740), "#17202b")
+        draw = ImageDraw.Draw(image)
+        draw.text((15,8), "実装データの形状確認：灰枠は身長1.8m、黄色線は前方。ゲーム画面ではありません。", font=font, fill="#ddd9c9")
+        for row, scene in enumerate(poses[page*10:page*10+10]):
+            for col,t in enumerate((0,.5,1)):
+                x,y = col*360,row*170+30
+                draw.text((x+8,y+2), f"{scene['name']} [{scene['id']}] {int(t*100)}%", font=font, fill="#eee2bd")
+                cx,cy=x+160,y+116
+                draw.line((cx-120,cy,cx+160,cy),fill="#344651")
+                draw.rectangle((cx-9,cy-53,cx+9,cy),outline="#677380")
+                draw.rectangle((cx-7,cy-68,cx+7,cy-54),outline="#677380")
+                draw.line((cx,cy,cx+38,cy+58),fill="#a68d3a",width=2)
+                parts=[]
+                for p in scene['parts']:
+                    size=p['start']+(p['end']-p['start'])*t
+                    parts.append((p['shape'],p['palette'],[v*size for v in p['scale']],
+                        [v+w*t for v,w in zip(p['offset'],p['travel'])],p['pitch'],p['yaw']+p['spin']*t,p['roll']))
+                for _,points,color in render(parts,cx,cy,scale=36): draw.polygon(points,fill=color)
+        out=ROOT/f".tools/skill-scenes-{page+1}.png"
+        image.save(out)
+    print(f"Validated {len(scene_models())} used model/color pairs, {len(set(s for s,p in scene_models()))} distinct shapes, 70 runtime scenes / 7 preview sheets.")
 
 
 if __name__ == "__main__":

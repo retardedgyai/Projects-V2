@@ -6,6 +6,7 @@ Contiguous cells are merged into cuboids; no textures, fonts or client code are 
 import math
 from pathlib import Path
 import json
+from combat_vfx_shapes import AUTHORED_SHAPES, CROSSED, authored_cell
 
 PALETTES = {
     "steel": ("white_concrete", "light_gray_concrete", "gray_concrete"),
@@ -15,10 +16,16 @@ PALETTES = {
     "fire": ("yellow_concrete", "orange_concrete", "red_concrete"),
     "venom": ("white_concrete", "lime_concrete", "green_concrete"),
     "life": ("white_concrete", "lime_concrete", "cyan_concrete"),
+    "shadow": ("light_gray_concrete", "purple_concrete", "black_concrete"),
+    "hunter": ("white_concrete", "green_concrete", "brown_concrete"),
+    "holy": ("white_concrete", "yellow_concrete", "light_blue_concrete"),
+    "lightning": ("white_concrete", "light_blue_concrete", "purple_concrete"),
 }
 
 
 def cell(shape, x, z):
+    if shape in AUTHORED_SHAPES:
+        return authored_cell(shape, x, z)
     r = math.hypot(x, z)
     a = math.atan2(x, z)
     if shape == "crescent":
@@ -84,21 +91,33 @@ def mesh(shape, palette):
                     "faces": {face: {"texture": f"#{ink}", "uv": [2, 2, 3, 3]} for face in ("up", "down", "north", "south", "east", "west")},
                 })
             x = end
-    if shape in ("lance", "bolt", "star"):
+    if shape in ("lance", "bolt", "star") or shape in CROSSED:
         # Cross-section stays visible from the side: beams are not paper-thin ribbons.
         # Swap X/Y for a spear, Y/Z for the star's perpendicular radiant plane.
-        axis = (1, 0, 2) if shape != "star" else (0, 2, 1)
+        axis = (0, 2, 1) if shape in ("star", "star_core", "celestial_core", "star_seed") else (1, 0, 2)
         crossed = [{**e, "from": [e["from"][i] for i in axis], "to": [e["to"][i] for i in axis]} for e in elements]
         elements += crossed
     return {"ambientocclusion": False, "textures": {str(i): f"minecraft:block/{texture}" for i, texture in enumerate(PALETTES[palette])}, "elements": elements}
 
 
+def scene_rows():
+    source = Path(__file__).resolve().parents[1] / "server-minestom/src/main/resources/combat-art/skill-scenes.psv"
+    rows = [line.split("|") for line in source.read_text(encoding="utf-8").splitlines() if line and not line.startswith("#")]
+    assert all(len(row) == 12 for row in rows)
+    assert len({row[0] for row in rows}) == len(rows)
+    return rows
+
+
+def scene_models():
+    return sorted({(shape, row[3]) for row in scene_rows() for shape in row[4:8]})
+
+
 def build_combat_models(assets, write_json):
-    for shape in SHAPES:
-        for palette in PALETTES:
-            name = f"{shape}_{palette}"
-            write_json(assets / f"models/combat_vfx/{name}.json", mesh(shape, palette))
-            write_json(assets / f"items/combat_vfx/{name}.json", {"model": {"type": "minecraft:model", "model": f"projects:combat_vfx/{name}"}})
+    for shape, palette in scene_models():
+        assert shape in AUTHORED_SHAPES, shape
+        name = f"{shape}_{palette}"
+        write_json(assets / f"models/combat_vfx/{name}.json", mesh(shape, palette))
+        write_json(assets / f"items/combat_vfx/{name}.json", {"model": {"type": "minecraft:model", "model": f"projects:combat_vfx/{name}"}})
 
 
 if __name__ == "__main__":

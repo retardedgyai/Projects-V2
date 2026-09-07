@@ -15,7 +15,13 @@ internal object CoreSkillAudio {
         fun cue(event: SoundEvent, volume: Float, pitch: Float) =
             player.playSound(Sound.sound(event, Sound.Source.PLAYER, volume * detail, pitch))
         val astral = effect.job == CoreClass.STARWEAVER
-        val blade = effect.motif in setOf(CoreSkillMotif.SLASH, CoreSkillMotif.CLEAVE, CoreSkillMotif.WHIRL, CoreSkillMotif.THRUST)
+        val scene = CoreSkillScenes.get(effect.sceneId)
+        val blade = scene.kind in setOf(CoreSceneKind.CUT,CoreSceneKind.CLEAVE,CoreSceneKind.SPIN,CoreSceneKind.THRUST) && scene.body!="shield_bash"
+        if(scene.kind==CoreSceneKind.TELEPORT && effect.phase==CoreSkillVisualPhase.PULSE) {
+            cue(if(effect.endpoint==CoreSkillEndpoint.DEPARTURE) SoundEvent.ENTITY_ILLUSIONER_CAST_SPELL else SoundEvent.BLOCK_AMETHYST_BLOCK_CHIME,
+                .65f,if(effect.endpoint==CoreSkillEndpoint.DEPARTURE) .7f else 1.4f)
+            return
+        }
         when (effect.phase) {
             CoreSkillVisualPhase.PREPARE -> {
                 cue(if (blade) SoundEvent.ITEM_TRIDENT_RETURN else SoundEvent.BLOCK_BEACON_ACTIVATE, .50f, if (astral) 1.6f else .8f)
@@ -27,6 +33,10 @@ internal object CoreSkillAudio {
             CoreSkillVisualPhase.PULSE -> {
                 val pitch = (.85 + (effect.pulse % 3) * .13).toFloat()
                 when {
+                    scene.kind == CoreSceneKind.HAMMER -> {
+                        cue(SoundEvent.ENTITY_PLAYER_ATTACK_STRONG,.9f,.65f)
+                        cue(SoundEvent.BLOCK_ANVIL_LAND,.28f,1.35f)
+                    }
                     blade -> {
                         cue(SoundEvent.ENTITY_PLAYER_ATTACK_SWEEP, 1.0f, pitch)
                         cue(SoundEvent.ITEM_TRIDENT_THROW, .85f, if (effect.motif == CoreSkillMotif.CLEAVE) .55f else pitch)
