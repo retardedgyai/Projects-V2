@@ -129,7 +129,7 @@ for b in B:
 
 # Author all clips as Blender actions with a complete pose every frame (20Hz).
 scene=bpy.context.scene; scene.render.fps=20
-from night_lord_motion import CLIPS, make_pose
+from night_lord_motion import CLIPS, HIT_WINDOWS, make_pose
 clips=CLIPS
 pose=make_pose(rig,C,bind)
 
@@ -146,19 +146,21 @@ for name,(duration,loop,active) in clips.items():
             m=C.inverted()@rig.pose.bones[b['name']].matrix@C;pos=m.translation;q=m.to_quaternion()
             row.append([*pos,q.x,q.y,q.z,q.w])
         samples.append(row)
-    exports.append(dict(name=name,duration=duration,loop=loop,active=active,samples=samples))
+    windows=HIT_WINDOWS.get(name,[active] if active else [])
+    exports.append(dict(name=name,duration=duration,loop=loop,active=active,windows=windows,samples=samples))
 
-asset=dict(schema=1,name='夜葬の番人',id='ashen_warden',fps=20,modelScale=2,bones=B,parts=parts,clips=exports)
+asset=dict(schema=2,name='夜葬の番人',id='ashen_warden',fps=20,modelScale=2,bones=B,parts=parts,clips=exports)
 write_json(OUT/'warden.json',asset)
 # Binary has no runtime JSON dependency. Big-endian floats, explicit version/counts.
 with (RES/'warden.bin').open('wb') as f:
     def integer(n):f.write(struct.pack('>i',n))
     def string(s):v=s.encode('utf8');f.write(struct.pack('>H',len(v)));f.write(v)
-    integer(0x41575231);integer(len(B))
+    integer(0x41575232);integer(len(B))
     for b in B:string(b['name']);integer(next((i for i,p in enumerate(B) if p['name']==b['parent']),-1));integer(int(any(p['bone']==b['name'] for p in parts)))
     integer(len(exports))
     for clip in exports:
-        string(clip['name']);integer(clip['duration']);integer(int(clip['loop']));integer((clip['active']or[-1,-1])[0]);integer((clip['active']or[-1,-1])[1])
+        string(clip['name']);integer(clip['duration']);integer(int(clip['loop']));integer(len(clip['windows']))
+        for start,end in clip['windows']:integer(start);integer(end)
         for row in clip['samples']:
             for v in row:f.write(struct.pack('>7f',*v))
 for b in B:

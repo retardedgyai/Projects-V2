@@ -62,13 +62,16 @@ internal fun blendBoneHierarchy(bones:List<WardenBone>,from:List<BonePose>,to:Li
     }
     return result
 }
-internal data class WardenClip(val name:String,val duration:Int,val loop:Boolean,val activeStart:Int,val activeEnd:Int,val frames:List<List<BonePose>>) {
+internal data class WardenClip(val name:String,val duration:Int,val loop:Boolean,val windows:List<IntRange>,val frames:List<List<BonePose>>) {
+    val activeStart get()=windows.firstOrNull()?.first?:-1
+    val activeEnd get()=windows.lastOrNull()?.last?:-1
+    fun hitWindow(t:Int)=windows.indexOfFirst {t in it}
     fun frame(t:Double):List<BonePose> {
         val f=if(loop) ((t%duration)+duration)%duration else t.coerceIn(0.0,duration.toDouble())
         val i=f.toInt();if(i==duration)return frames[i]
         return frames[i].zip(frames[i+1]) {a,b->a.lerp(b,f-i)}
     }
-    fun active(t:Int)=activeStart>=0 && t in activeStart..activeEnd
+    fun active(t:Int)=hitWindow(t)>=0
 }
 internal class WardenAsset(val bones:List<WardenBone>,val clips:Map<String,WardenClip>) {
     val weapon=bones.indexOfFirst {it.name=="weapon_root"}
@@ -76,19 +79,23 @@ internal class WardenAsset(val bones:List<WardenBone>,val clips:Map<String,Warde
     val chest=bones.indexOfFirst {it.name=="vfx_chest"}
     companion object {
         fun load():WardenAsset = DataInputStream(requireNotNull(WardenAsset::class.java.getResourceAsStream("/ashen-warden/warden.bin"))).use {s->
-            require(s.readInt()==0x41575231)
+            require(s.readInt()==0x41575232)
             val count=s.readInt();require(count in 20..35)
             val bones=List(count){i->WardenBone(s.readUTF(),s.readInt().also {require(it in -1 until i)},s.readInt()==1)}
             val clips=List(s.readInt().also {require(it in 8..32)}) {
-                val name=s.readUTF();val n=s.readInt().also {require(it in 1..1200)};val loop=s.readInt()==1;val start=s.readInt();val end=s.readInt()
+                val name=s.readUTF();val n=s.readInt().also {require(it in 1..1200)};val loop=s.readInt()==1
+                val windows=List(s.readInt().also {require(it in 0..8)}) {
+                    val start=s.readInt();val end=s.readInt();require(start in 0..end && end<n);start..end
+                }
+                require(windows.zipWithNext().all {(a,b)->a.last<b.first})
                 val frames=List(n+1){List(count){
                     val v=DoubleArray(7){s.readFloat().toDouble().also {require(it.isFinite())}}
                     BonePose(V3(v[0],v[1],v[2]),Q4(v[3],v[4],v[5],v[6]))
                 }}
-                WardenClip(name,n,loop,start,end,frames)
+                WardenClip(name,n,loop,windows,frames)
             }.associateBy {it.name}
             require(s.read()==-1);require(bones.map {it.name}.distinct().size==count)
-            require(clips.keys.containsAll(listOf("idle","walk","slash_01","heavy_slash","dash","hurt","phase_transition","death")))
+            require(clips.keys.containsAll(listOf("idle","walk","slash_01","heavy_slash","dash","spin_slash","spiral_combo","vault_slam","hurt","phase_transition","death")))
             WardenAsset(bones,clips).also {require(it.weapon>=0 && it.tip>=0 && it.chest>=0)}
         }
     }

@@ -17,8 +17,9 @@ internal class WardenFight(val asset:WardenAsset) {
     private var phasePending=false
     private var nextAttack=30L
     private var attackIndex=0
+    private var demonstration=false
     private var noTarget=0
-    private val hit=mutableSetOf<UUID>()
+    private val hit=mutableSetOf<Pair<Int,UUID>>()
     private var transitionFrom:List<BonePose>?=null
     private var transitionAt=0L
     private var transitionPosition=V3.ZERO
@@ -28,12 +29,13 @@ internal class WardenFight(val asset:WardenAsset) {
     val active get()=running && clip.active(frame)
     val dead get()=action=="death"
     val finished get()=dead && frame>=clip.duration
-    val recovery get()=action in listOf("slash_01","heavy_slash","dash") && frame>clip.activeEnd
+    val recovery get()=clip.activeStart>=0 && frame>clip.activeEnd
     fun reset() {
-        health=360.0;phase=1;position=V3.ZERO;yaw=0.0;running=false;phasePending=false;nextAttack=ticks+30;attackIndex=0;noTarget=0
+        health=360.0;phase=1;position=V3.ZERO;yaw=0.0;running=false;phasePending=false;nextAttack=ticks+30;attackIndex=0;noTarget=0;demonstration=false
         start("idle",false);currentWeapon=worldPose()[asset.weapon];previousWeapon=currentWeapon
     }
     fun begin(){reset();running=true}
+    fun demonstrate(name:String){require(asset.clips.getValue(name).activeStart>=0);begin();demonstration=true;start(name)}
     private fun start(name:String,blend:Boolean=true){
         val from=if(blend)worldPose() else null
         action=name;frame=0;sequence++;hit.clear()
@@ -61,7 +63,7 @@ internal class WardenFight(val asset:WardenAsset) {
         val moved=from.map {BonePose(it.p+position-transitionPosition,it.q)}
         return blendBoneHierarchy(asset.bones,moved,target,t*t*(3-2*t))
     }
-    fun claimHit(id:UUID):Boolean=active && hit.add(id)
+    fun claimHit(id:UUID):Boolean=active && hit.add(clip.hitWindow(frame) to id)
     fun tick(target:V3?) {
         ticks++;previousWeapon=currentWeapon
         if(!running){frame=(frame+1)%clip.duration;currentWeapon=worldPose()[asset.weapon];return}
@@ -73,14 +75,17 @@ internal class WardenFight(val asset:WardenAsset) {
             val after=clip.frame((frame+1).toDouble())[0].p
             position+=V3(after.x-before.x,0.0,after.z-before.z).rotateYaw(yaw)
             frame++
-            if(frame>=clip.duration){if(action=="phase_transition")phase=2;start("idle");nextAttack=ticks+if(phase==2)10 else 18}
+            if(frame>=clip.duration){if(action=="phase_transition")phase=2;if(demonstration)running=false;start("idle");nextAttack=ticks+if(phase==2)4 else 8}
         } else {
             if(phasePending){phasePending=false;start("phase_transition")}
             else if(target!=null) {
                 val delta=target-position;val distance=hypot(delta.x,delta.z)
                 val desired=atan2(delta.x,delta.z);val turn=atan2(sin(desired-yaw),cos(desired-yaw));yaw+=turn.coerceIn(-.06,.06)
-                if(ticks>=nextAttack && distance<7 && abs(turn)<.20) {
-                    val selected=if(distance>3.9)"dash" else if(attackIndex++%3==2)"heavy_slash" else "slash_01"
+                if(ticks>=nextAttack && distance<5.8 && abs(turn)<.20) {
+                    val choices=if(distance>3.7)listOf("dash","vault_slam","dash","vault_slam")
+                        else if(phase==2)listOf("spin_slash","spiral_combo","slash_01","spiral_combo","heavy_slash","spin_slash")
+                        else listOf("slash_01","spin_slash","heavy_slash","spiral_combo","slash_01")
+                    val selected=choices[attackIndex++%choices.size]
                     start(selected)
                 } else if(distance>2.35) {
                     if(action!="walk")start("walk")

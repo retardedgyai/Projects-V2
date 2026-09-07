@@ -7,8 +7,8 @@ import kotlin.test.*
 
 class WardenTest {
     private val asset=WardenAsset.load()
-    @Test fun `asset has hierarchy locators eight full clips and normalized transforms`() {
-        assertEquals(31,asset.bones.size);assertEquals(8,asset.clips.size)
+    @Test fun `asset has hierarchy locators eleven full clips and normalized transforms`() {
+        assertEquals(31,asset.bones.size);assertEquals(11,asset.clips.size)
         assertTrue(asset.bones.any {it.name=="vfx_ground"});assertTrue(asset.bones[asset.tip].parent==asset.weapon)
         asset.clips.values.forEach {c->
             assertEquals(c.duration+1,c.frames.size)
@@ -28,10 +28,10 @@ class WardenTest {
         assertFalse(sweptBladeHit(a,b,V3(8.0,0.0,8.0),V3(8.6,1.8,8.6)))
     }
     @Test fun `each authored attack crosses reachable player height`() {
-        for(name in listOf("slash_01","heavy_slash","dash")) {
+        for(name in listOf("slash_01","heavy_slash","dash","spin_slash","spiral_combo","vault_slam")) {
             val c=asset.clips.getValue(name)
-            val hits=(c.activeStart..c.activeEnd).any {t->
-                val distance=if(name=="dash")4.3 else 2.1
+            val hits=(c.activeStart..c.activeEnd).filter(c::active).any {t->
+                val distance=when(name){"dash"->3.6;"vault_slam"->4.3;else->2.1}
                 sweptBladeHit(c.frames[t-1][asset.weapon],c.frames[t][asset.weapon],V3(-.3,0.0,distance-.3),V3(.3,1.8,distance+.3))
             }
             assertTrue(hits,"$name never crosses a player in front")
@@ -141,5 +141,32 @@ class WardenTest {
                 assertTrue((displayed-bone.point(local)).length()<1e-6,"${c.name}: display differs from authoritative bone")
             }
         }}}
+    }
+    @Test fun `double spin has two separate damage windows and one hit per victim per pass`() {
+        val f=WardenFight(asset);f.demonstrate("spiral_combo");val id=UUID.randomUUID()
+        while(f.frame<18)f.tick(null)
+        assertTrue(f.claimHit(id));assertFalse(f.claimHit(id))
+        while(f.frame<35)f.tick(null)
+        assertFalse(f.active);assertFalse(f.claimHit(UUID.randomUUID()))
+        while(f.frame<41)f.tick(null)
+        assertTrue(f.claimHit(id));assertFalse(f.claimHit(id))
+    }
+    @Test fun `rebuilt dash stays grounded and returns without reversing its travel`() {
+        val c=asset.clips.getValue("dash")
+        assertTrue(c.frames.all {abs(it[0].p.y)<1e-5})
+        assertEquals(1.70,c.frames.last()[0].p.z,1e-4)
+        assertTrue(c.frames.zipWithNext().all {(a,b)->b[0].p.z>=a[0].p.z-1e-5})
+    }
+    @Test fun `somersault has genuine inverted torso at jump apex and a finite landing window`() {
+        val c=asset.clips.getValue("vault_slam");val pelvis=asset.bones.indexOfFirst {it.name=="pelvis"}
+        assertTrue(c.frames.maxOf {it[0].p.y}>2.5)
+        assertTrue(c.frames.any {it[0].p.y>2.0 && it[pelvis].q.rotate(V3(0.0,1.0,0.0)).y<-.8})
+        assertEquals(listOf(41..46),c.windows)
+        assertEquals(0.0,c.frames.last()[0].p.y,1e-5)
+    }
+    @Test fun `move demonstration ends after one action without starting another attack`() {
+        val f=WardenFight(asset);f.demonstrate("spin_slash")
+        repeat(100){f.tick(V3(0.0,0.0,2.0))}
+        assertFalse(f.running);assertEquals("idle",f.action)
     }
 }

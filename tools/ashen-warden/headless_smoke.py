@@ -36,8 +36,10 @@ try:
     code=p.wait(timeout=30);assert code==0
     assert any('WARDEN_SERVER_SMOKE_PASS' in l for l in lines)
     result.update(status='PASS',exit_code=code,log=lines)
-except BaseException:
-    p.terminate();p.wait(timeout=10);raise
+except BaseException as error:
+    result.update(status='FAIL',error=repr(error),log=lines)
+    if p.poll() is None:p.terminate()
+    p.wait(timeout=10);raise
 finally:
     pathlib.Path(report).write_text(json.dumps(result,ensure_ascii=False,indent=2),encoding='utf8')
 print(json.dumps(result,ensure_ascii=False))

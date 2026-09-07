@@ -13,6 +13,7 @@ import net.kyori.adventure.title.Title
 import net.minestom.server.Auth
 import net.minestom.server.MinecraftServer
 import net.minestom.server.command.builder.Command
+import net.minestom.server.command.builder.arguments.ArgumentType
 import net.minestom.server.component.DataComponents
 import net.minestom.server.coordinate.Pos
 import net.minestom.server.coordinate.Vec
@@ -132,6 +133,16 @@ object WardenArena {
                 if(a.defeated || tick<a.healReady)return@setDefaultExecutor
                 a.hp=min(100.0,a.hp+35);a.healReady=tick+400;p.sendMessage(Component.text("体力を35回復しました（再使用20秒）。"))
             };MinecraftServer.getCommandManager().register(mend)
+            val moveNames=asset.clips.values.filter {it.activeStart>=0}.map {it.name}.toTypedArray()
+            val move=Command("move");val moveArgument=ArgumentType.Word("attack").from(*moveNames)
+            move.setDefaultExecutor {s,_->s.sendMessage(Component.text("/move dash（踏み込み） /move spin_slash（大回転） /move spiral_combo（連続回転） /move vault_slam（跳躍叩き斬り）"))}
+            move.addSyntax({s,ctx->
+                val p=s as? Player?:return@addSyntax;val actor=actors[p.uuid]?:return@addSyntax
+                if(!actor.loaded)return@addSyntax
+                actors.values.forEach {it.hp=100.0;it.defeated=false;it.attackAt=0;it.dodgeUntil=0;it.player.health=20f;it.player.teleport(Pos(0.0,40.0,5.2,180f,0f))}
+                fight.demonstrate(ctx.get(moveArgument))
+                p.sendMessage(Component.text("指定した技を1回再生します。通常戦闘は /fight。"))
+            },moveArgument);MinecraftServer.getCommandManager().register(move)
             render(fight.worldPose())
         }
         fun attack(p:Player) {
@@ -191,11 +202,11 @@ object WardenArena {
                     val pose=fight.previousWeapon.lerp(fight.currentWeapon,s/2.0)
                     for(n in 0..8)particles(bladeTrail,pose.point(V3(0.0,0.0,.44+n*2.2/8)))
                 }
-                if(fight.frame==fight.clip.activeStart)sound("entity.player.attack.sweep",fight.position,1f,.55f)
+                if(fight.clip.windows.any {it.first==fight.frame})sound("entity.player.attack.sweep",fight.position,1f,.55f)
                 available.filter {!it.defeated && tick>=it.dodgeUntil}.forEach {a->
                     val pos=playerPos(a.player)
                     if(sweptBladeHit(fight.previousWeapon,fight.currentWeapon,pos+V3(-.3,0.0,-.3),pos+V3(.3,1.8,.3)) && fight.claimHit(a.player.uuid)) {
-                        val damage=when(fight.action){"heavy_slash"->34.0;"dash"->27.0;else->20.0}*(if(fight.phase==2)1.15 else 1.0)
+                        val damage=when(fight.action){"heavy_slash"->34.0;"dash"->24.0;"spin_slash"->27.0;"spiral_combo"->21.0;"vault_slam"->38.0;else->20.0}*(if(fight.phase==2)1.15 else 1.0)
                         a.hp=max(0.0,a.hp-damage);val away=(pos-fight.position).unit();a.player.velocity=Vec(away.x*5,2.0,away.z*5)
                         sound("entity.player.hurt",pos,.8f,.8f);if(a.hp<=0)defeat(a)
                     }
@@ -221,7 +232,7 @@ object WardenArena {
                 MinecraftServer.stopCleanly()
             }
         }
-        fun label()=when(fight.action){"slash_01"->if(fight.recovery)"斬撃後の隙" else "横薙ぎ";"heavy_slash"->if(fight.recovery)"叩き斬り後の隙" else "叩き斬り";"dash"->"踏み込み斬り";"phase_transition"->"形態移行";"death"->"討伐";else->if(fight.running)"交戦中" else "/fight で開始"}
+        fun label()=when(fight.action){"slash_01"->if(fight.recovery)"斬撃後の隙" else "横薙ぎ";"heavy_slash"->if(fight.recovery)"叩き斬り後の隙" else "叩き斬り";"dash"->"踏み込み斬り";"spin_slash"->"大回転薙ぎ";"spiral_combo"->"連続回転斬り";"vault_slam"->"跳躍叩き斬り";"phase_transition"->"形態移行";"death"->"討伐";else->if(fight.running)"交戦中" else "/fight で開始"}
         fun defeat(a:Actor){if(a.defeated)return;a.defeated=true;a.hp=0.0;a.attackAt=0;a.player.sendMessage(Component.text("力尽きた…。全員の戦闘終了後、/fight で再戦できます。"));a.player.teleport(Pos(0.0,40.0,13.0,180f,0f))}
         fun announce(title:String,sub:String){actors.values.forEach {it.player.showTitle(Title.title(Component.text(title),Component.text(sub),
             Title.Times.times(Duration.ofMillis(100),Duration.ofMillis(900),Duration.ofMillis(200))))}}

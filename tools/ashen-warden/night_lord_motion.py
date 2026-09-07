@@ -3,8 +3,11 @@ import math,bpy
 from mathutils import Vector,Matrix,Quaternion
 
 CLIPS={'idle':(60,True,None),'walk':(32,True,None),'slash_01':(48,False,[17,21]),
-       'heavy_slash':(62,False,[28,32]),'dash':(50,False,[23,27]),'hurt':(16,False,None),
+       'heavy_slash':(62,False,[28,32]),'dash':(44,False,[17,21]),
+       'spin_slash':(56,False,[19,31]),'spiral_combo':(78,False,[18,52]),
+       'vault_slam':(72,False,[41,46]),'hurt':(16,False,None),
        'phase_transition':(64,False,None),'death':(60,False,None)}
+HIT_WINDOWS={'spiral_combo':[(18,29),(41,52)]}
 
 def curve(t,keys,linear=False):
     for (a,v),(b,w) in zip(keys,keys[1:]):
@@ -40,6 +43,7 @@ def make_pose(rig,C,bind):
         spine_a=(12,5,-4);chest_a=(5,5,0);head_a=(-25,0,3)
         right=Vector((.63,-.73,.10));left=Vector((-.58,-.84,.08))
         yaw=65.;pitch=-26.;turn=0.;cape=0.;root_a=(0,0,0)
+        spin_y=0.;flip_x=0.;airborne=False;foot_q=Quaternion((1,0,0,0))
         foot_l=Vector((-.32,.13,.24));foot_r=Vector((.30,.13,-.28))
         if name=='idle':
             breath=math.sin(t*p/30);pelvis.y+=.009*breath;chest_a=(5+1.1*breath,5,0)
@@ -86,21 +90,63 @@ def make_pose(rig,C,bind):
             if 40<t<53:foot_r.y+=.10*math.sin((t-40)/13*p)
             left=vector(t,[(0,tuple(left)),(22,(-.52,-.55,-.15)),(34,(-.61,-.81,.19)),(62,tuple(left))]);cape=-tension*17
         elif name=='dash':
-            root.z=curve(t,[(0,0),(13,0),(17,.35),(23,2.25),(27,2.80),(50,2.80)])
-            root.y=curve(t,[(0,0),(14,0),(19,.59),(23,.35),(26,0),(50,0)])
-            crouch=curve(t,[(0,0),(12,.24),(18,-.02),(24,.04),(27,.25),(35,.20),(50,0)])
-            pelvis.y-=crouch;pelvis_a=(13+curve(t,[(0,0),(12,8),(20,-7),(27,14),(50,0)]),-10,-4)
-            spine_a=(12+curve(t,[(0,0),(12,10),(20,-9),(27,13),(50,0)]),5,-4)
-            right=vector(t,[(0,tuple(right)),(13,(.60,-.12,-.30)),(21,(.48,.06,-.24)),
-                (25,(.17,-.47,.64)),(29,(.04,-.73,.54)),(36,(.13,-.75,.48)),(50,tuple(right))])
-            yaw=curve(t,[(0,65),(14,26),(22,20),(26,-28),(33,-39),(50,65)])
-            pitch=curve(t,[(0,-26),(14,79),(22,86),(25,-10),(28,-27),(37,-27),(50,-26)],linear=23<=t<=27)
-            if t>=14:
-                foot_l.z+=root.z;foot_r.z+=root.z
-                foot_l.y+=root.y;foot_r.y+=root.y
-                tuck=curve(t,[(14,0),(19,.18),(24,.11),(26,0),(50,0)])
-                foot_r.y+=tuck;foot_l.z+=tuck;foot_r.z-=tuck
-            cape=curve(t,[(0,0),(13,-8),(21,-40),(27,-32),(37,12),(50,0)])
+            # Low travelling cut: rear-foot drive, extended lead step, braced contact.
+            root.z=curve(t,[(0,0),(11,0),(15,.58),(18,1.40),(21,1.70),(44,1.70)])
+            crouch=curve(t,[(0,0),(10,.18),(15,.11),(20,.21),(27,.16),(44,0)])
+            pelvis.y-=crouch
+            twist=curve(t,[(0,0),(10,1),(15,1),(21,-1),(29,-.7),(44,0)])
+            pelvis_a=(13+10*abs(twist),-10+30*twist,-4);spine_a=(12+4*abs(twist),5+16*twist,-4)
+            chest_a=(5,5+12*twist,-4*twist)
+            right=vector(t,[(0,tuple(right)),(10,(.66,-.39,-.36)),(15,(.66,-.39,-.36)),
+                (18,(.26,-.48,.63)),(21,(-.40,-.64,.45)),(29,(-.36,-.73,.26)),(44,tuple(right))])
+            yaw=curve(t,[(0,65),(10,118),(15,118),(21,-76),(27,-104),(35,-30),(44,65)],linear=16<=t<=21)
+            pitch=curve(t,[(0,-26),(10,6),(15,6),(20,-8),(28,-20),(44,-26)])
+            foot_l.z+=curve(t,[(0,0),(10,0),(18,1.92),(29,1.92),(44,1.70)])
+            foot_r.z+=curve(t,[(0,0),(14,0),(22,.95),(28,.95),(38,1.70),(44,1.70)])
+            if 10<t<18:foot_l.y+=.26*math.sin((t-10)/8*p)
+            if 14<t<22:foot_r.y+=.20*math.sin((t-14)/8*p)
+            if 28<t<38:foot_r.y+=.14*math.sin((t-28)/10*p)
+            if 29<t<44:foot_l.y+=.09*math.sin((t-29)/15*p)
+            left.x-=.16*abs(twist);left.z-=.18*twist;cape=-22*abs(twist)
+        elif name in ['spin_slash','spiral_combo']:
+            double=name=='spiral_combo';end=78 if double else 56
+            spin_keys=[(0,0),(14,45),(18,45),(31,-315),(39,-315),(end,-360)]
+            if double:spin_keys=[(0,0),(13,45),(17,45),(29,-315),(36,-315),(40,-280),(52,-675),(61,-695),(78,-720)]
+            spin_y=curve(t,spin_keys,linear=(18<=t<=31 if not double else 18<=t<=29 or 41<=t<=52))
+            effort=curve(t,[(0,0),(12,1),(end-15,1),(end,0)])
+            pelvis.y-=.12*effort;pelvis_a=(13+4*effort,-10,-4);spine_a=(12,5,-4+5*effort)
+            chest_a=(5,5,-7*effort)
+            root.z=curve(t,[(0,0),(15,0),(31,.8),(end,.8)]) if not double else curve(t,[(0,0),(14,0),(29,.75),(38,.75),(52,1.70),(78,1.70)])
+            right=vector(t,[(0,tuple(right)),(13,(.77,-.36,.03)),(end-16,(.77,-.36,.03)),(end,tuple(right))])
+            left=vector(t,[(0,tuple(left)),(14,(-.54,-.43,-.25)),(end-16,(-.54,-.43,-.25)),(end,tuple(left))])
+            yaw=curve(t,[(0,65),(14,75),(end-14,75),(end,65)])
+            pitch=curve(t,[(0,-26),(14,-3),(end-14,-3),(end,-26)])
+            yaw+=spin_y;root_a=(0,spin_y,0);cape=-25*effort
+            # Pivot steps follow the body. Alternate each foot's lift; soles turn with the pelvis.
+            foot_q=Quaternion((0,1,0),math.radians(spin_y))
+            for foot,offset in [(foot_l,0),(foot_r,p)]:
+                local=foot.copy();phase=math.radians(-spin_y)*2+offset
+                foot[:]=foot_q@local+Vector((0,0,root.z))
+                foot.y+=.15*max(0,math.sin(phase))*effort
+        elif name=='vault_slam':
+            # Pelvis-centred forward somersault: gameplay root follows only the leap trajectory.
+            root.z=curve(t,[(0,0),(21,0),(28,.40),(38,1.90),(45,2.40),(72,2.40)])
+            root.y=curve(t,[(0,0),(21,0),(27,1.50),(31,2.75),(36,2.75),(41,1.40),(45,0),(72,0)])
+            flip_x=curve(t,[(0,0),(27,0),(30,60),(38,310),(42,360),(72,360)],linear=28<=t<=42)
+            airborne=22<t<45
+            crouch=curve(t,[(0,0),(17,.22),(21,.22),(27,-.05),(39,-.05),(45,.28),(54,.21),(72,0)])
+            pelvis.y-=crouch;pelvis_a=(13+flip_x,-10,-4)
+            spine_a=(12+curve(t,[(0,0),(20,8),(30,24),(38,24),(45,20),(72,0)]),5,-4)
+            right=vector(t,[(0,tuple(right)),(20,(.54,.04,-.29)),(28,(.42,.10,-.27)),
+                (36,(.42,.10,-.27)),(43,(.15,-.47,.63)),(47,(.12,-.74,.56)),(56,(.22,-.74,.46)),(72,tuple(right))])
+            yaw=curve(t,[(0,65),(20,18),(37,18),(44,-8),(54,-8),(72,65)])
+            pitch=curve(t,[(0,-26),(20,74),(36,74),(44,-23),(54,-23),(72,-26)])
+            left=vector(t,[(0,tuple(left)),(22,(-.47,-.35,-.18)),(37,(-.47,-.35,-.18)),(46,(-.68,-.72,.20)),(72,tuple(left))])
+            cape=curve(t,[(0,0),(21,-15),(30,-48),(41,-35),(47,20),(60,8),(72,0)])
+            foot_l.z+=root.z;foot_r.z+=root.z
+            if airborne:
+                # Feet are solved below after the pelvis transform has been evaluated.
+                foot_q=Quaternion((1,0,0),math.radians(flip_x))
         elif name=='hurt':
             hit=curve(t,[(0,0),(2,1),(5,.8),(10,.2),(16,0)])
             spine_a=(12-17*hit,5,-4-10*hit);head_a=(-25-13*hit,0,3)
@@ -137,15 +183,23 @@ def make_pose(rig,C,bind):
             pb.rotation_quaternion=(C@q.to_matrix().to_4x4()@inverse).to_quaternion()
         bpy.context.view_layer.update()
         chest=matrix('chest')
+        if name=='vault_slam' and airborne:
+            pelvis_m=matrix('pelvis');tuck=curve(t,[(22,0),(28,1),(38,1),(44,0)])
+            for foot,s in [(foot_l,-1),(foot_r,1)]:
+                local=Vector((s*.29,-1.05+.43*tuck,-.22-.16*tuck))
+                foot[:]=(pelvis_m@local.to_4d()).to_3d()
         for side,local,pole in [('l',left,(-.7,-.2,-.6)),('r',right,(.7,-.1,-.7))]:
+            if spin_y:pole=Quaternion((0,1,0),math.radians(spin_y))@Vector(pole)
+            if name=='vault_slam':pole=Quaternion((1,0,0),math.radians(flip_x))@Vector(pole)
             target=(chest@local.to_4d()).to_3d()
             wrist,direction=limb('upper_arm_'+side,'forearm_'+side,'hand_'+side,target,pole)
             if side=='l':set_world('hand_l',wrist,matrix('forearm_l').to_quaternion())
             else:
                 # Sword axis is the fist axis. Counter-roll changes gradually; no local sword animation.
                 min_pitch=math.degrees(math.asin(max(-.9,min(.9,(.16-wrist.y)/2.64))))
-                pitch=max(pitch,min_pitch)
+                if not airborne or (name=='vault_slam' and t>=42):pitch=max(pitch,min_pitch)
                 blade=Vector((math.sin(math.radians(yaw))*math.cos(math.radians(pitch)),math.sin(math.radians(pitch)),math.cos(math.radians(yaw))*math.cos(math.radians(pitch))))
+                if name=='vault_slam':blade=Quaternion((1,0,0),math.radians(flip_x))@blade
                 q=Vector((0,0,1)).rotation_difference(blade)
                 yaxis=-(direction-blade*direction.dot(blade))
                 if yaxis.length<.001:yaxis=q@Vector((0,1,0))
@@ -156,8 +210,8 @@ def make_pose(rig,C,bind):
                 set_world('hand_r',wrist,q@Quaternion((0,0,1),roll))
         # Feet are authored in clip/world space. Root translation is NOT added twice.
         for side,target in [('l',foot_l),('r',foot_r)]:
-            pole=(0,fall,1-fall) if name=='death' else (0,0,1)
+            pole=(0,fall,1-fall) if name=='death' else foot_q@Vector((0,0,1))
             end,_=limb('thigh_'+side,'shin_'+side,'foot_'+side,target,pole)
-            set_world('foot_'+side,end,Quaternion((1,0,0,0)))
+            set_world('foot_'+side,end,foot_q)
         bpy.context.view_layer.update()
     return pose
