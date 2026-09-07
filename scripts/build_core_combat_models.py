@@ -1,11 +1,13 @@
 """Native voxel meshes for transient ITEM_DISPLAY combat silhouettes, not UI icons.
 
 XZ-plane geometry has a white-hot edge, saturated body and a darker trailing rim.
-Contiguous cells are merged into cuboids; no textures, fonts or client code are replaced.
+Contiguous cells are merged into cuboids. Original slash flipbook textures are added
+alongside them; accepted UI textures, fonts and client code are not replaced.
 """
 import math
 from pathlib import Path
 import json
+from PIL import Image
 from combat_vfx_shapes import AUTHORED_SHAPES, CROSSED, authored_cell
 
 PALETTES = {
@@ -116,8 +118,51 @@ def build_combat_models(assets, write_json):
     for shape, palette in scene_models():
         assert shape in AUTHORED_SHAPES, shape
         name = f"{shape}_{palette}"
-        write_json(assets / f"models/combat_vfx/{name}.json", mesh(shape, palette))
+        model = mesh(shape, palette)
+        write_json(assets / f"models/combat_vfx/{name}.json", model)
         write_json(assets / f"items/combat_vfx/{name}.json", {"model": {"type": "minecraft:model", "model": f"projects:combat_vfx/{name}"}})
+        # Spatial erosion, not collapsing the entire effect into a paper-thin plane.
+        for stage in range(1, 8):
+            def remains(element):
+                center = [(a+b)*.5 for a,b in zip(element['from'],element['to'])]
+                noise = (math.sin(center[0]*12.9898+center[1]*37.719+center[2]*78.233)*43758.5453)%1
+                return noise > stage/8
+            eroded = {**model, "elements": [e for e in model['elements'] if remains(e)]}
+            fade = f"{name}_fade{stage}"
+            write_json(assets / f"models/combat_vfx/{fade}.json", eroded)
+            write_json(assets / f"items/combat_vfx/{fade}.json", {"model": {"type": "minecraft:model", "model": f"projects:combat_vfx/{fade}"}})
+    build_slash_frames(assets, write_json)
+
+
+def build_slash_frames(assets, write_json):
+    master = Path(__file__).resolve().parents[1] / 'assets/combat-vfx/slash-luminance-atlas.png'
+    atlas = Image.open(master).convert('RGB')
+    colors = dict(steel=0xeaf4ff,gold=0xffd87b,astral=0xdca6ff,ice=0x85e2ff,fire=0xffab52,
+                  venom=0xb5ff5a,life=0xadffcb,shadow=0xe1b5ff,hunter=0xe8ffa3,holy=0xffedb0,lightning=0xb9dfff)
+    for frame in range(16):
+        x,y=frame%4,frame//4
+        tile=atlas.crop((round(x*atlas.width/4),round(y*atlas.height/4),round((x+1)*atlas.width/4),round((y+1)*atlas.height/4)))
+        # The generated master is a luminance/emission plate, not an RGBA promise.
+        # Convert that production mask to cutout alpha; never ship its black canvas into the world.
+        tile=tile.resize((128,128),Image.Resampling.LANCZOS).convert('L')
+        alpha=tile.point(lambda value: min(255,max(0,value-12)*2))
+        rgba=Image.merge('RGBA',(tile,tile,tile,alpha))
+        texture=assets/f'textures/combat_vfx/ribbon/slash_{frame}.png'
+        texture.parent.mkdir(parents=True,exist_ok=True);rgba.save(texture)
+        # Vanilla FaceInfo.UP starts at MIN_Z. Reverse V so the image top is +Z.
+        # The underside maps to the same world texels. Return cuts mirror U, never negative scale.
+        for reverse in (False,True):
+            name=f'slash_{"reverse_" if reverse else ""}'
+            u0,u1=(16,0) if reverse else (0,16)
+            model={"ambientocclusion":False,"textures":{"0":f"projects:combat_vfx/ribbon/slash_{frame}"},
+                   "elements":[{"from":[0,8,0],"to":[16,8,16],"shade":False,
+                      "faces":{"up":{"texture":"#0","uv":[u0,16,u1,0],"tintindex":0},
+                               "down":{"texture":"#0","uv":[u0,0,u1,16],"tintindex":0}}}]}
+            write_json(assets/f'models/combat_vfx/ribbon/{name}{frame}.json',model)
+            for palette,color in colors.items():
+                write_json(assets/f'items/combat_vfx/ribbon/{name}{palette}_{frame}.json',
+                           {"model":{"type":"minecraft:model","model":f"projects:combat_vfx/ribbon/{name}{frame}",
+                                     "tints":[{"type":"minecraft:constant","value":color}]}})
 
 
 if __name__ == "__main__":

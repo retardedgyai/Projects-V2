@@ -29,12 +29,12 @@ class CoreSkillEffectTest {
         }
     }
 
-    @Test fun `multihit blades have distinct cuts and fade before the next real pulse`() {
+    @Test fun `multihit blades have distinct cuts with readable overlapping afterglow`() {
         for ((job, id) in listOf(CoreClass.ASSASSIN to "ass_ult", CoreClass.ASSASSIN to "ass_fan", CoreClass.WARRIOR to "whirl")) {
             val s = skill(job, id)
             val cuts = (0 until s.pulses).map { pulse ->
                 val effect = CoreSkillEffect(job, s, Vec.ZERO, forward, pulse = pulse)
-                assertTrue(effect.durationTicks < 8)
+                assertTrue(effect.durationTicks in 16..40)
                 val points = frame(effect)
                 assertTrue(points.any { it.importance == ParticleImportance.COMBAT_FEEDBACK })
                 assertTrue(points.any { it.position.x() > s.radius * .8 })

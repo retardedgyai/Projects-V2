@@ -76,30 +76,31 @@ class CoreCombatMeshTest {
             assertEquals(0, meshes.size, "No PAPER items may appear for a missing pack")
             CoreCombatPresentation.pack(p, true)
             meshes.play(effect); meshes.tick()
-            assertEquals(2, meshes.size)
+            val expected=CoreSkillChoreography.parts(effect).size
+            assertEquals(expected, meshes.size)
             scene.entities.filter { it !== p }.forEach { entity ->
                 val meta=entity.entityMeta as net.minestom.server.entity.metadata.display.ItemDisplayMeta
                 assertContentEquals(CoreCombatMeshArt.vanillaItemCorrection,meta.rightRotation)
             }
-            assertEquals(2, scene.entities.count { it !== p && p in it.viewers })
+            assertEquals(expected, scene.entities.count { it !== p && p in it.viewers })
             assertEquals(CoreCombatPresentation.Detail.SUBDUED, CoreCombatPresentation.cycle(p))
             meshes.tick()
             assertEquals(1, scene.entities.count { it !== p && p in it.viewers })
             assertEquals(CoreCombatPresentation.Detail.MINIMAL, CoreCombatPresentation.cycle(p))
             meshes.tick()
             assertEquals(0, scene.entities.count { it !== p && p in it.viewers })
-            repeat(8) { meshes.tick() }
+            repeat(80) { meshes.tick() }
             assertEquals(0, meshes.size)
             assertEquals(original, scene.entities.size)
             assertEquals(CoreCombatPresentation.Detail.FULL, CoreCombatPresentation.cycle(p))
             repeat(20) { meshes.play(effect) }
-            assertEquals(20, meshes.size)
+            assertEquals(CoreCombatMeshes.OWNER_LIMIT, meshes.size)
             meshes.cancel(); meshes.cancel()
             assertEquals(original, scene.entities.size)
-            val party = List(7) { CoreCombatMeshes(p) }
+            val party = List(9) { CoreCombatMeshes(p) }
             try {
                 party.forEach { renderer -> repeat(20) { renderer.play(effect) } }
-                assertEquals(120, party.sumOf { it.size }, "The shared scene cap must apply across actors")
+                assertEquals(CoreCombatMeshes.SCENE_LIMIT, party.sumOf { it.size }, "The shared scene cap must apply across actors")
                 assertEquals(0, party.last().size)
             } finally { party.forEach { it.cancel() } }
             assertEquals(original, scene.entities.size)

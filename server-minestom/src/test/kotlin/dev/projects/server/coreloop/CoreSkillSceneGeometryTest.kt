@@ -117,7 +117,7 @@ class CoreSkillSceneGeometryTest {
         val poses=mutableListOf<Map<String,Any>>()
         for(job in CoreClass.entries) for(s in CoreSkillCatalog.skills(job)) {
             val e=effect(job,s.icon);e.solidCompanion=true
-            repeat(e.durationTicks) { tick -> val sink=RecordingParticleSink();e.emit(tick,sink);assertTrue(sink.spawns.size<=24) }
+            repeat(e.durationTicks) { tick -> val sink=RecordingParticleSink();e.emit(tick,sink);assertTrue(sink.spawns.size<=60) }
             poses+=mapOf("id" to s.icon,"name" to s.name,"parts" to CoreCombatMeshArt.parts(e).map { p ->
                 mapOf("shape" to p.shape,"palette" to p.palette,"scale" to listOf(p.scale.x(),p.scale.y(),p.scale.z()),
                     "offset" to listOf(p.offset.x()+e.origin.x(),p.offset.y()+e.origin.y(),p.offset.z()+e.origin.z()),"yaw" to p.yaw,"pitch" to p.pitch,"roll" to p.roll,

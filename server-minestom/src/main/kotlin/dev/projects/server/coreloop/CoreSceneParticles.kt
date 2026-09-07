@@ -18,12 +18,15 @@ internal object CoreSceneParticles {
             sink.spawn(ParticleSpawn(dustTransition(if(key) 0xfff4db else color,color,size),at,
                 category=ParticleCategory.OWN_ACTIVE,importance=if(key) ParticleImportance.COMBAT_FEEDBACK else ParticleImportance.COSMETIC))
         }
-        val parts=CoreCombatMeshArt.parts(e)
-        for((index,part) in parts.take(5).withIndex()) {
-            val center=origin.add(part.offset).add(part.travel.mul(t))
-            repeat(if(e.phase==CoreSkillVisualPhase.CONTACT) 6 else 2) { i ->
+        val parts=CoreSkillChoreography.parts(e)
+        for((index,part) in parts.take(10).withIndex()) {
+            val pose=CoreSkillChoreography.pose(part,tick.toDouble())
+            if(!pose.visible) continue
+            val center=origin.add(pose.offset)
+            val previous=origin.add(CoreSkillChoreography.pose(part,(tick-1).toDouble()).offset)
+            repeat(if(e.phase==CoreSkillVisualPhase.CONTACT) 6 else 3) { i ->
                 val a=i*2.4+index*1.7+tick*.5
-                var at=center.add(cos(a)*.12,.08+sin(a)*.12,sin(a)*.12)
+                var at=previous.add(center.sub(previous).mul((i+1)/3.0)).add(cos(a)*.16,.08+sin(a)*.16,sin(a)*.16)
                 if(e.clippedRay && e.direction.lengthSquared()>1e-8) {
                     val direction=e.direction.normalize()
                     val delta=at.sub(origin)
@@ -31,6 +34,18 @@ internal object CoreSceneParticles {
                     at=at.add(direction.mul(along.coerceIn(0.0,e.length)-along))
                 }
                 mote(at,if(e.phase==CoreSkillVisualPhase.CONTACT) .9f else .6f,tick==0 && e.phase==CoreSkillVisualPhase.CONTACT)
+            }
+        }
+        // The beam's traveling energy wraps its axis; unlike random point clouds its motion reads as a ray.
+        if(e.clippedRay && e.length>.1 && e.direction.lengthSquared()>1e-8 && e.phase==CoreSkillVisualPhase.PULSE) {
+            val d=e.direction.normalize()
+            val side=if(abs(d.y())>.95) Vec(1.0,0.0,0.0) else Vec(d.z(),0.0,-d.x()).normalize()
+            val up=Vec(d.y()*side.z()-d.z()*side.y(),d.z()*side.x()-d.x()*side.z(),d.x()*side.y()-d.y()*side.x())
+            repeat(12) { i ->
+                val along=(i+.5)/12*e.length
+                val a=i*.9-tick*.65
+                val radius=.13*(1-t)
+                mote(origin.add(d.mul(along)).add(side.mul(cos(a)*radius)).add(up.mul(sin(a)*radius)),.7f,i%3==0 && tick<5)
             }
         }
         // Sparse ground reach marks are deliberately separate from the weapon's physical size.

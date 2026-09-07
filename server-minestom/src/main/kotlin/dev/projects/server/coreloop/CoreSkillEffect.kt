@@ -82,11 +82,8 @@ internal class CoreSkillEffect(
     private val color = CoreSkillArt.color(job, skill)
     internal val radius = if (skill.radius.isFinite()) skill.radius.coerceIn(.3, 10.5) else .3
     internal val length = if (rayLength.isFinite()) rayLength.coerceIn(0.0, 24.0) else 0.0
-    override val durationTicks = when (phase) {
-        CoreSkillVisualPhase.PREPARE -> prepareTicks.coerceIn(1, 60)
-        CoreSkillVisualPhase.CONTACT -> 3
-        CoreSkillVisualPhase.PULSE -> 6 // Leaves a real gap before the next eight-tick damage pulse.
-    }
+    internal val prepareDuration = prepareTicks.coerceIn(1,60)
+    override val durationTicks get() = CoreSkillChoreography.duration(this)
 
     override fun emit(tick: Int, sink: ParticleSink) {
         if (!valid || tick !in 0 until durationTicks) return
