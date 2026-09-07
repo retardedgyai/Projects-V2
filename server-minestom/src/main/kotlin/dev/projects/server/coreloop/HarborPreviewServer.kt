@@ -44,6 +44,7 @@ object HarborPreviewServer {
             "HarborBunk" to Pos(36.5, 51.0, -26.5, -110f, 10f),
             "HarborSailshop" to Pos(-33.5, 41.0, 8.5, 180f, -15f),
             "HarborWestShore" to Pos(-43.5, 43.0, 11.5, -145f, -18f),
+            "HarborEastPalm" to Pos(48.5, 39.0, -21.5, 20f, -26f),
             "HarborOverview" to Pos(43.5, 72.0, 50.5, 147f, 24f),
         )
         require(views.keys.all { it.matches(Regex("[A-Za-z0-9_]{1,16}")) }) { "Camera names must be valid login usernames" }

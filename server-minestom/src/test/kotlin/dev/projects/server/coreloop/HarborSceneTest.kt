@@ -44,6 +44,56 @@ class HarborSceneTest {
             assertEquals(HarborFacilityKind.entries.toSet(), scene.facilities.map { it.kind }.toSet())
             assertEquals(5, scene.labels.size)
             assertEquals(493,scene.scenery.size, "Unexpected growth in static harbor geometry")
+            // Reference-driven district pass changes silhouettes, not facility contracts or entity density.
+            for((x,y,z) in listOf(Triple(26,57,9),Triple(-41,60,-17),Triple(41,61,-23),
+                Triple(17,70,-40),Triple(13,55,-9))) {
+                assertEquals("minecraft:dark_oak_log",instance.getBlock(x,y,z).name(), "Cross-gable ridge missing $x,$y,$z")
+                assertEquals("x",instance.getBlock(x,y,z).getProperty("axis"))
+            }
+            assertEquals("minecraft:orange_stained_glass_pane",instance.getBlock(25,51,8).name(), "Trading roof bay has no recessed light")
+            assertTrue(instance.getBlock(26,51,8).isAir, "Roof-bay window is flush instead of recessed")
+            for(z in listOf(6,12)) for(x in 21..26)
+                assertTrue(instance.getBlock(x,49,z).isSolid, "Trading roof bay has disconnected bearings")
+            assertEquals("minecraft:dark_oak_log",instance.getBlock(-20,55,18).name(), "Loading hoist has no beam")
+            for(y in 52..54) assertEquals("minecraft:iron_chain",instance.getBlock(-20,y,19).name())
+            for(z in listOf(22,24)) for(y in 35..51)
+                assertTrue(instance.getBlock(-35,y,z).isSolid, "Cargo crane mast is not supported")
+            for(x in -36..-25) for(z in 23..24)
+                assertTrue(instance.getBlock(x,51,z).isSolid, "Cargo crane arm has a gap")
+            for(y in 45..50) assertEquals("minecraft:iron_chain",instance.getBlock(-26,y,24).name())
+            val roofFamilies=mutableSetOf<String>()
+            for(x in -40..40) for(z in -51..18) for(y in 49..76) {
+                val name=instance.getBlock(x,y,z).name()
+                if(name.endsWith("_stairs")) roofFamilies.add(name)
+            }
+            for(material in listOf("red_nether_brick","brick","resin_brick","waxed_cut_copper",
+                "waxed_exposed_cut_copper","waxed_weathered_cut_copper","waxed_oxidized_cut_copper"))
+                assertTrue("minecraft:${material}_stairs" in roofFamilies, "District roof palette missing $material")
+            // The west palm has a connected bent stem and separated fronds, not a solid ellipsoid canopy.
+            for(rise in 1..11) {
+                val x=-42-((rise-4).coerceAtLeast(0)/3)
+                val z=if(rise>=8) -1 else 0
+                assertEquals("minecraft:jungle_log",instance.getBlock(x,40+rise,z).name())
+            }
+            assertEquals("minecraft:jungle_leaves",instance.getBlock(-51,50,-1).name(), "Seaward palm frond lost its drooping tip")
+            assertEquals("minecraft:jungle_leaves",instance.getBlock(-41,51,-1).name(), "Short inland frond is missing")
+            assertTrue(instance.getBlock(-48,53,1).isAir, "Palm canopy filled the gap between fronds")
+            val westCrown=mutableSetOf<Triple<Int,Int,Int>>()
+            for(x in -51..-38) for(y in 48..55) for(z in -8..6)
+                if(instance.getBlock(x,y,z).name()=="minecraft:jungle_leaves") westCrown.add(Triple(x,y,z))
+            assertTrue(westCrown.size in 50..150, "Palm returned to a dense blob: ${westCrown.size} leaves")
+            val joinedLeaves=mutableSetOf(Triple(-44,52,-1))
+            val leafQueue=ArrayDeque(joinedLeaves)
+            while(leafQueue.isNotEmpty()) {
+                val (x,y,z)=leafQueue.removeFirst()
+                for((dx,dy,dz) in listOf(Triple(1,0,0),Triple(-1,0,0),Triple(0,1,0),Triple(0,-1,0),Triple(0,0,1),Triple(0,0,-1))) {
+                    val next=Triple(x+dx,y+dy,z+dz)
+                    if(next in westCrown && joinedLeaves.add(next)) leafQueue.add(next)
+                }
+            }
+            assertEquals(westCrown,joinedLeaves, "Palm leaf tips do not connect back to the crown by block faces")
+            for(x in -40..-28) for(y in 41..55) for(z in -5..9)
+                assertFalse(instance.getBlock(x,y,z).name().endsWith("_leaves"), "Palm frond entered the sail workshop $x,$y,$z")
             scene.scenery.forEach { detail ->
                 assertEquals(EntityType.BLOCK_DISPLAY,detail.entityType)
                 assertEquals(instance,detail.instance)

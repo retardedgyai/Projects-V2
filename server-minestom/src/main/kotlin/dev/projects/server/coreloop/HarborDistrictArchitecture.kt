@@ -19,7 +19,7 @@ internal class HarborDistrictArchitecture(private val instance: InstanceContaine
     private val scenery = mutableListOf<Entity>()
     private val timber = Block.STRIPPED_SPRUCE_LOG
     private val beam = Block.DARK_OAK_LOG
-    private val plaster = Block.SMOOTH_SANDSTONE
+    private val plaster = Block.CALCITE
     private val leaves = Block.JUNGLE_LEAVES.withProperty("persistent", "true")
     private fun put(x: Int, y: Int, z: Int, b: Block) = instance.setBlock(x, y, z, b)
     private fun box(x1: Int, x2: Int, y1: Int, y2: Int, z1: Int, z2: Int, b: Block) {
@@ -55,10 +55,11 @@ internal class HarborDistrictArchitecture(private val instance: InstanceContaine
         tradingOriel()
         marketStreet()
         streetFurniture()
-        planting()
         sailmakersWorkshop()
         cliffsideTerrace()
         lodgingInterior()
+        districtSilhouettes()
+        planting()
         ship(-29, 42, Block.RED_WOOL, 1)
         fishingCutter(30, 36)
         boardingPiers()
@@ -353,7 +354,7 @@ internal class HarborDistrictArchitecture(private val instance: InstanceContaine
         box(13,13,43,43,-10,-7,Block.DARK_OAK_SLAB)
         for(x in 14..22) for(y in 50..50+roofRise(5,abs(x-18)))
             put(x,y,-5,if(x==18 || y==50) beam else plaster)
-        gableRoof(13,23,-20,-4,50,false,false)
+        gableRoof(13,23,-20,-4,50,false,false,finish=RoofFinish.VERDIGRIS)
         // The faceted room is hollow at player level and entered from the adjoining lecture room.
         val cx=23; val cz=-16
         for(dx in -4..4) for(dz in -4..4) {
@@ -450,13 +451,13 @@ internal class HarborDistrictArchitecture(private val instance: InstanceContaine
                 val b = if (z == mz || y == eave + 1) beam else plaster
                 put(x1,y,z,b); put(x2,y,z,b)
             }
-            gableRoof(z1 - 1, z2 + 1, x1 - 1, x2 + 1, eave + 1, copper, true, true)
+            gableRoof(z1 - 1, z2 + 1, x1 - 1, x2 + 1, eave + 1, copper, true, true,RoofFinish.WINE)
             // Small loading dormer, deliberately offset from the street centre.
             val dormer = x1 + 4
             box(dormer - 2, dormer + 2, eave, eave + 3, z2, z2 + 1, plaster)
             for (x in listOf(dormer - 2,dormer + 2)) box(x,x,eave,eave+4,z2+1,z2+1,timber)
             frontWindow(dormer - 1, eave + 1, z2 + 1)
-            gableRoof(dormer - 3,dormer + 3,z2-2,z2+2,eave+4,copper,false)
+            gableRoof(dormer - 3,dormer + 3,z2-2,z2+2,eave+4,copper,false,finish=RoofFinish.WINE)
         } else {
             val half = (x2 - x1) / 2 + 1
             for (x in x1..x2) for (y in eave + 1..eave + roofRise(half, abs(x - mid))) {
@@ -471,10 +472,36 @@ internal class HarborDistrictArchitecture(private val instance: InstanceContaine
     }
 
     private fun frontWindow(x: Int, y: Int, z: Int) {
-        box(x, x + 1, y, y + 1, z, z, Block.LIGHT_BLUE_STAINED_GLASS)
+        box(x, x + 1, y, y + 1, z, z, Block.LIGHT_BLUE_STAINED_GLASS_PANE)
         box(x, x + 1, y - 1, y - 1, z + 1, z + 1, Block.DARK_OAK_SLAB)
+        // A deep lintel and inward shoulders frame the recess without filling its glass plane.
+        box(x-1,x+2,y+2,y+2,z+1,z+1,Block.SPRUCE_SLAB.withProperty("type","top"))
         for (sx in listOf(x - 1, x + 2)) box(sx, sx, y, y + 1, z + 1, z + 1,
             Block.SPRUCE_TRAPDOOR.withProperty("facing", "south").withProperty("open", "true"))
+    }
+
+    private enum class RoofFinish { COPPER, TILE, WINE, VERDIGRIS }
+
+    /** Broad courses and staggered transitions, not independently randomized roof tiles. */
+    private fun roofMaterial(finish: RoofFinish, rise: Int, course: Int, shape: String): Block {
+        val stagger = if(Math.floorMod(course,9) in 2..5) 1 else 0
+        val family = when(finish) {
+            RoofFinish.COPPER -> if(rise+stagger<=2) "waxed_exposed_cut_copper" else "waxed_cut_copper"
+            RoofFinish.TILE -> when {
+                rise+stagger<=1 -> "red_nether_brick"
+                rise+stagger>=5 -> "resin_brick"
+                else -> "brick"
+            }
+            RoofFinish.WINE -> if(rise+stagger<=3) "red_nether_brick" else "brick"
+            RoofFinish.VERDIGRIS -> if(rise+stagger<=2) "waxed_oxidized_cut_copper" else "waxed_weathered_cut_copper"
+        }
+        val id = if(shape.isNotEmpty()) "${family}_$shape" else when(family) {
+            "brick" -> "bricks"
+            "red_nether_brick" -> "red_nether_bricks"
+            "resin_brick" -> "resin_bricks"
+            else -> family
+        }
+        return requireNotNull(Block.fromState("minecraft:$id")) { "Missing native roofing material: $id" }
     }
 
     private fun roofRise(half: Int, distance: Int): Int {
@@ -486,20 +513,21 @@ internal class HarborDistrictArchitecture(private val instance: InstanceContaine
         }
         return if (inset <= 2) inset / 2 else inset - 1
     }
-    private fun gableRoof(x1: Int, x2: Int, z1: Int, z2: Int, base: Int, copper: Boolean, ribs: Boolean, transpose: Boolean = false) {
+    private fun gableRoof(x1: Int, x2: Int, z1: Int, z2: Int, base: Int, copper: Boolean, ribs: Boolean, transpose: Boolean = false,
+                          finish: RoofFinish = if(copper) RoofFinish.COPPER else RoofFinish.TILE) {
         fun roofPut(x: Int,y: Int,z: Int,b: Block) = if (transpose) put(z,y,x,b) else put(x,y,z,b)
         val mid = (x1 + x2) / 2; val half = (x2 - x1) / 2
         for (x in x1..x2) for (z in z1..z2) {
-            val y = base + roofRise(half, abs(x - mid))
+            val rise = roofRise(half, abs(x - mid)); val y = base + rise
             val edge = z == z1 || z == z2
             val facing = if (transpose) { if (x < mid) "south" else "north" } else if (x < mid) "east" else "west"
             roofPut(x, y, z, when {
-                x == mid -> if (edge) Block.DARK_OAK_PLANKS else Block.CUT_COPPER
-                edge || (ribs && (z - z1) % 7 == 0) -> stair(Block.DARK_OAK_STAIRS, facing)
-                copper -> stair(Block.CUT_COPPER_STAIRS, facing)
-                else -> stair(Block.BRICK_STAIRS, facing)
+                x == mid -> if (edge) Block.DARK_OAK_PLANKS else roofMaterial(finish,rise,z-z1,"")
+                edge -> stair(Block.DARK_OAK_STAIRS, facing)
+                else -> stair(roofMaterial(finish,rise,z-z1,"stairs"), facing)
             })
-            roofPut(x, y - 1, z, if (edge) Block.DARK_OAK_PLANKS else if (copper) Block.CUT_COPPER else Block.BRICKS)
+            // Roof frames belong beneath the tiles, not as thick stripes across every roof surface.
+            roofPut(x, y - 1, z, if (edge || (ribs && (z-z1)%7==0)) Block.DARK_OAK_PLANKS else roofMaterial(finish,rise,z-z1,""))
             if (abs(x - mid) == half) roofPut(x, y - 1, z, stair(Block.DARK_OAK_STAIRS, facing, true))
         }
         val ridge = base + roofRise(half,0) + 1
@@ -1115,15 +1143,179 @@ internal class HarborDistrictArchitecture(private val instance: InstanceContaine
         gableRoof(18,24,14,18,52,true,false)
     }
 
+    /** Whole-district silhouette pass. All projections start above existing doors, stairs and balconies. */
+    private fun districtSilhouettes() {
+        // Warehouse: a broad loading gable and hoist break the long waterfront ridge.
+        // The projection begins above the balcony door lintel; the occupied gallery remains below it.
+        box(-24,-16,51,51,14,15,logX())
+        for(x in listOf(-24,-16)) {
+            box(x,x,50,55,14,15,timber)
+            put(x,49,15,stair(Block.DARK_OAK_STAIRS,"north",true))
+        }
+        for(x in -23..-17) {
+            box(x,x,52,55,15,15,Block.SPRUCE_PLANKS)
+            if(x != -20) box(x,x,52,54,15,15,Block.ORANGE_STAINED_GLASS_PANE)
+        }
+        for(x in -24..-16) for(y in 54..54+roofRise(5,abs(x+20)))
+            put(x,y,15,if(x == -20 || y == 55) timber else plaster)
+        box(-22,-18,55,56,15,15,Block.ORANGE_STAINED_GLASS_PANE)
+        box(-20,-20,52,58,15,15,timber)
+        gableRoof(-25,-15,10,17,54,false,false,finish=RoofFinish.WINE)
+        box(-20,-20,55,55,15,19,logZ())
+        box(-20,-20,52,54,19,19,Block.IRON_CHAIN)
+        put(-20,51,19,Block.GRINDSTONE.withProperty("face","ceiling"))
+
+        // Cross-gables are offset from one another, rather than a repeated central dormer on every house.
+        sideRoofBay(26,21,9,3,50,53,RoofFinish.COPPER)
+        sideRoofBay(-41,-36,-17,3,53,56,RoofFinish.TILE)
+        sideRoofBay(41,37,-23,2,55,58,RoofFinish.COPPER)
+        // The hall's east transept catches the approach from the quay without competing with its main ridge.
+        sideRoofBay(17,8,-40,5,62,64,RoofFinish.COPPER)
+        // A small green reading-room gable is seen from the market; the high book tower remains dominant.
+        sideRoofBay(13,17,-9,2,49,52,RoofFinish.VERDIGRIS)
+
+        // Side elevations gain continuous floor belts and a shallow outer frame around inset glazing.
+        // Frames are at upper-floor level only; lower side-alley entrances keep their full width.
+        fun exposedDetail(x: Int, y: Int, z: Int, block: Block) {
+            if(instance.getBlock(x,y,z).isAir) put(x,y,z,block)
+        }
+        for((x1,x2,z1,z2,floor) in listOf(
+            listOf(-24,-10,5,14,40),listOf(10,24,5,14,40),
+            listOf(-39,-29,-24,-11,42),listOf(29,39,-29,-16,44))) {
+            for(x in listOf(x1,x2)) {
+                val outside=x+if(x==x1) -1 else 1
+                for(z in z1..z2) exposedDetail(outside,floor+6,z,Block.SPRUCE_SLAB.withProperty("type","top"))
+                for(z in z1..z2 step 4) {
+                    for(y in floor+7..floor+10) exposedDetail(outside,y,z,Block.SPRUCE_FENCE)
+                    exposedDetail(outside,floor+5,z,stair(Block.DARK_OAK_STAIRS,if(x==x1) "east" else "west",true))
+                }
+                for(z in z1+2 until z2-1 step 4) {
+                    for(wz in z..z+1) exposedDetail(outside,floor+10,wz,Block.SPRUCE_SLAB.withProperty("type","top"))
+                }
+            }
+        }
+        // Long flat industrial roof planes use darker gutters and warm upper courses as one material family.
+        for(x in 28..41) for(z in -3..11) {
+            if(x in 33..36) continue
+            val inset=minOf(x-28,41-x)
+            put(x,49+inset/2,z,roofMaterial(RoofFinish.TILE,inset,z+3,"slab")
+                .withProperty("type",if(inset%2==0) "bottom" else "top"))
+        }
+        for(z in -6..-2) for(x in -25..-11) {
+            val rise=-1-z
+            put(x,47+rise/2,z,roofMaterial(RoofFinish.TILE,rise/2,x+25,"slab")
+                .withProperty("type",if(rise%2==0) "bottom" else "top"))
+        }
+        // The main veranda's broad copper apron belongs to the same weathering gradient as the hall roof.
+        for(x in -15..15) for(z in -30..-26) {
+            val inset=minOf(-25-z,16-abs(x))
+            put(x,59+inset/2,z,roofMaterial(RoofFinish.COPPER,inset/2,x+15,"slab")
+                .withProperty("type",if(inset%2==0) "bottom" else "top"))
+        }
+        harborCargoCrane()
+    }
+
+    /** A bearing frame and lifting arm give the long working quay a distinct skyline, not more loose crates. */
+    private fun harborCargoCrane() {
+        for(z in listOf(22,24)) {
+            box(-36,-34,35,40,z,z,Block.DARK_OAK_LOG)
+            box(-35,-35,41,51,z,z,timber)
+            box(-36,-34,41,41,z,z,Block.IRON_BLOCK)
+        }
+        box(-35,-35,49,49,22,24,logZ())
+        box(-36,-25,51,51,23,24,logX())
+        // Two continuous diagonal knees climb from the mast to the underside of the boom.
+        for(z in listOf(23,24)) for(i in 0..4)
+            box(-35+i,-34+i,46+i,47+i,z,z,Block.DARK_OAK_PLANKS)
+        box(-35,-35,52,53,23,24,Block.SPRUCE_FENCE)
+        box(-26,-26,45,50,24,24,Block.IRON_CHAIN)
+        put(-26,44,24,Block.GRINDSTONE.withProperty("face","ceiling"))
+        // A rear counterweight is tied into the short end of the same boom.
+        box(-37,-36,49,50,23,24,Block.POLISHED_DEEPSLATE)
+    }
+
+    /** Projected attic bay with a transverse roof, recessed lights, and bearings into its parent wall. */
+    private fun sideRoofBay(faceX: Int, joinX: Int, cz: Int, half: Int, sill: Int, eave: Int, finish: RoofFinish) {
+        val outward=if(faceX>joinX) 1 else -1
+        val left=minOf(faceX,joinX); val right=maxOf(faceX,joinX)
+        box(left,right,sill,sill,cz-half,cz+half,Block.SPRUCE_PLANKS)
+        for(z in listOf(cz-half,cz+half)) {
+            box(left,right,sill+1,eave-1,z,z,plaster)
+            box(faceX,faceX,sill,eave,z,z,timber)
+            box(left,right,eave-1,eave-1,z,z,logX())
+            // A stepped bracket makes the cantilever visibly meet the main shell.
+            for(i in 0..abs(faceX-joinX)) {
+                val x=joinX+outward*i
+                box(x,x,sill-1-(abs(faceX-joinX)-i).coerceAtMost(2),sill-1,z,z,Block.DARK_OAK_PLANKS)
+            }
+        }
+        for(z in cz-half..cz+half) {
+            val top=eave+roofRise(half+1,abs(z-cz))
+            box(faceX,faceX,sill+1,top,z,z,plaster)
+            put(faceX,sill,z,logZ())
+        }
+        // The pane is a block behind its jambs; copper grate arches make a readable silhouette in daylight.
+        val glassX=faceX-outward
+        for(z in cz-half+1 until cz+half) {
+            box(faceX,faceX,sill+1,eave,z,z,Block.AIR)
+            box(glassX,glassX,sill+1,eave,z,z,Block.ORANGE_STAINED_GLASS_PANE)
+            put(faceX,eave,z,stair(Block.DARK_OAK_STAIRS,if(z<cz) "north" else "south",true))
+        }
+        box(faceX,faceX,sill+1,eave+roofRise(half+1,0),cz,cz,timber)
+        gableRoof(cz-half-1,cz+half+1,left-1,right+1,eave,true,false,true,finish)
+    }
+
     private fun planting() {
-        for ((x, y, z, lean) in listOf(
+        for ((index,palm) in listOf(
             listOf(-37, 43, -32, -1), listOf(36, 46, -39, 1), listOf(-42, 40, 0, -1),
-            listOf(43, 40, -8, 1), listOf(15, 50, -54, 1), listOf(-9, 50, -55, -1))) {
-            box(x, x, y - 4, y + 6, z, z, Block.JUNGLE_LOG)
-            for (i in 0..5) put(x + lean * (i / 2), y + 6 + i / 2, z - i / 3, Block.JUNGLE_LOG)
-            for (dx in -5..5) for (dz in -4..4) for (dy in -1..3) {
-                if (dx * dx / 25.0 + dz * dz / 18.0 + dy * dy / 8.0 < 1 + sin(dx * 2.1 + dz * 3.2) * .16)
-                    put(x + lean * 2 + dx, y + 9 + dy, z - 1 + dz, leaves)
+            listOf(43, 40, -8, 1), listOf(15, 50, -54, 1), listOf(-9, 50, -55, -1)).withIndex()) {
+            val (x,y,z,lean)=palm
+            val height=9+index%3
+            box(x,x,y-4,y,z,z,Block.JUNGLE_LOG)
+            var previousX=x; var previousZ=z
+            for(rise in 1..height) {
+                val tx=x+lean*((rise-4).coerceAtLeast(0)/3)
+                val tz=z-if(rise>=8) 1 else 0
+                // Face-connected bends keep the slender trunk continuous, including each sideways step.
+                box(minOf(previousX,tx),maxOf(previousX,tx),y+rise,y+rise,
+                    minOf(previousZ,tz),maxOf(previousZ,tz),Block.JUNGLE_LOG)
+                previousX=tx; previousZ=tz
+            }
+            val crownY=y+height
+            fun leaf(lx: Int,ly: Int,lz: Int) {
+                // Finish trees after architecture, without replacing a roof, window or structural member.
+                val existing=instance.getBlock(lx,ly,lz)
+                if(existing.isAir || existing.name().endsWith("_leaves")) put(lx,ly,lz,leaves)
+            }
+            for((dx,dz) in listOf(-1 to 0,1 to 0,0 to -1,0 to 1,-1 to -1,-1 to 1,1 to -1,1 to 1)) {
+                // Longer seaward fronds, short inward growth beside the workshop / hall roofline.
+                val length=when {
+                    abs(x)>40 && dx == -lean -> 3
+                    z< -25 && dz>0 -> 3
+                    dx!=0 && dz!=0 -> 5
+                    dx==lean -> 7
+                    else -> 6
+                }
+                var bladeY=crownY+1; var bladeZ=previousZ
+                for(step in 0..length) {
+                    val lift=when {
+                        step==0 -> 1
+                        length==3 -> if(step==1) 2 else 3-step
+                        step<=length-3 -> 2
+                        else -> length-step-1
+                    }
+                    val lx=previousX+dx*step; val lz=previousZ+dz*step
+                    // Join the horizontal and falling steps by faces, rather than isolated diagonal cubes.
+                    leaf(lx,bladeY,bladeZ)
+                    leaf(lx,bladeY,lz)
+                    leaf(lx,crownY+lift,lz)
+                    bladeY=crownY+lift; bladeZ=lz
+                    // Broad middle, single-block tips; open sky remains between individual blades.
+                    if((dx==0 || dz==0) && step in 2..3 && step<length-1) {
+                        leaf(lx-dz,crownY+lift,lz+dx)
+                        leaf(lx+dz,crownY+lift,lz-dx)
+                    }
+                }
             }
         }
         for (x in listOf(-18, 18)) for (z in -46..-33 step 3) {
