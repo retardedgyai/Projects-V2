@@ -1,0 +1,193 @@
+{
+  "providers": [
+    {
+      "type": "bitmap",
+      "file": "projects:gui/core/tree_4_10.png",
+      "height": 90,
+      "ascent": -5,
+      "chars": [
+        "\ue7be"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/core/tree_10_18.png",
+      "height": 90,
+      "ascent": -5,
+      "chars": [
+        "\ue8d4"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/core/tree_10_20.png",
+      "height": 90,
+      "ascent": -5,
+      "chars": [
+        "\ue8d6"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/core/tree_18_27.png",
+      "height": 90,
+      "ascent": -5,
+      "chars": [
+        "\uea45"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/core/tree_20_29.png",
+      "height": 90,
+      "ascent": -5,
+      "chars": [
+        "\ueaa1"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/core/tree_27_37.png",
+      "height": 90,
+      "ascent": -5,
+      "chars": [
+        "\uebe4"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/core/tree_29_37.png",
+      "height": 90,
+      "ascent": -5,
+      "chars": [
+        "\uec3e"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/core/tree_4_13.png",
+      "height": 90,
+      "ascent": -5,
+      "chars": [
+        "\ue7c1"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/core/tree_13_21.png",
+      "height": 90,
+      "ascent": -5,
+      "chars": [
+        "\ue95e"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/core/tree_13_23.png",
+      "height": 90,
+      "ascent": -5,
+      "chars": [
+        "\ue960"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/core/tree_21_30.png",
+      "height": 90,
+      "ascent": -5,
+      "chars": [
+        "\ueacf"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/core/tree_23_32.png",
+      "height": 90,
+      "ascent": -5,
+      "chars": [
+        "\ueb2b"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/core/tree_30_40.png",
+      "height": 90,
+      "ascent": -5,
+      "chars": [
+        "\uec6e"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/core/tree_32_40.png",
+      "height": 90,
+      "ascent": -5,
+      "chars": [
+        "\uecc8"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/core/tree_4_16.png",
+      "height": 90,
+      "ascent": -5,
+      "chars": [
+        "\ue7c4"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/core/tree_16_24.png",
+      "height": 90,
+      "ascent": -5,
+      "chars": [
+        "\ue9e8"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/core/tree_16_26.png",
+      "height": 90,
+      "ascent": -5,
+      "chars": [
+        "\ue9ea"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/core/tree_24_33.png",
+      "height": 90,
+      "ascent": -5,
+      "chars": [
+        "\ueb59"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/core/tree_26_35.png",
+      "height": 90,
+      "ascent": -5,
+      "chars": [
+        "\uebb5"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/core/tree_33_43.png",
+      "height": 90,
+      "ascent": -5,
+      "chars": [
+        "\uecf8"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects:gui/core/tree_35_43.png",
+      "height": 90,
+      "ascent": -5,
+      "chars": [
+        "\ued52"
+      ]
+    }
+  ]
+}

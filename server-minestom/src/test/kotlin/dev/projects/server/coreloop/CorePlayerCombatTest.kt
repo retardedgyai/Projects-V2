@@ -541,7 +541,7 @@ class CorePlayerCombatTest {
         assertEquals(before-30,h.actor.resource);assertEquals(80,h.actor.mana)
     }
     @Test fun `warrior timed guard reduces real incoming damage and rewards a strong counter`() = arena { h ->
-        h.journey=CoreJourney(build=CoreClassBuild(first=3,second=5,third=2,fourth=0,nodes=56))
+        h.journey=CoreJourney(build=CoreClassBuild(first=3,second=5,third=2,fourth=0,nodes=8248))
         h.actor.reset();h.actor.skill(0);h.ticks(h.actor.skillDefinitions[0].startupTicks(h.actor.sheet))
         h.actor.hurt(50.0);assertEquals(90.0,h.actor.health)
         assertEquals(36.0,h.actor.resource)
@@ -549,7 +549,7 @@ class CorePlayerCombatTest {
         assertEquals(before-(10+12*2.8)*1.6,h.combat.bossHealth(),.00001)
     }
     @Test fun `assassin mark consumption enhances one real hit and shadow keystone resets dodge`() = arena(bossDistance=2.0) { h ->
-        h.journey=CoreJourney(job=CoreClass.ASSASSIN,build=CoreClassBuild(nodes=56));h.base=CoreWeaponBase.DAGGERS;h.actor.reset()
+        h.journey=CoreJourney(job=CoreClass.ASSASSIN,build=CoreClassBuild(nodes=8248));h.base=CoreWeaponBase.DAGGERS;h.actor.reset()
         h.actor.skill(0);h.ticks(18)
         val id=h.combat.combatTargets().single().id;assertTrue(h.actor.classState.marked(id,18))
         h.actor.classState.gain(40.0,h.journey.job,h.journey.build)
@@ -577,7 +577,7 @@ class CorePlayerCombatTest {
         assertEquals(before+heal.preview(h.actor.sheet),h.actor.health,.00001)
     }
     @Test fun `healing conversion splits real recovery and shield and cannot extend a stronger shield`() = arena { h ->
-        h.journey=CoreJourney(job=CoreClass.HEALER,build=CoreClassBuild(nodes=7));h.base=CoreWeaponBase.TOME;h.actor.reset()
+        h.journey=CoreJourney(job=CoreClass.HEALER,build=CoreClassBuild(nodes=1031));h.base=CoreWeaponBase.TOME;h.actor.reset()
         h.actor.hurt(60.0);h.actor.classState.gain(100.0,h.journey.job,h.journey.build)
         val value=h.actor.skillDefinitions[1].preview(h.actor.sheet);val before=h.actor.health
         h.actor.skill(1);h.ticks(6)
@@ -586,7 +586,7 @@ class CorePlayerCombatTest {
         h.ticks(100);assertEquals(0.0,h.actor.shield)
     }
     @Test fun `templar shielding supports nearby allies but never passes walls`() = arena { h ->
-        h.journey=CoreJourney(job=CoreClass.TEMPLAR,build=CoreClassBuild(nodes=448));h.base=CoreWeaponBase.MACE;h.actor.reset()
+        h.journey=CoreJourney(job=CoreClass.TEMPLAR,build=CoreClassBuild(nodes=65984));h.base=CoreWeaponBase.MACE;h.actor.reset()
         val ally=h.addAlly(Pos(10.5,40.0,8.5))
         val blocked=h.addAlly(Pos(5.5,40.0,8.5))
         for(y in 40..43) h.instance.setBlock(6,y,8,Block.STONE)
@@ -643,7 +643,7 @@ class CorePlayerCombatTest {
         assertTrue(h.combat.pull(id,h.player))
     }
     @Test fun `shield keystone enhances the next normal mace attack once`() = arena { h ->
-        h.journey=CoreJourney(job=CoreClass.TEMPLAR,build=CoreClassBuild(nodes=7));h.base=CoreWeaponBase.MACE;h.actor.reset()
+        h.journey=CoreJourney(job=CoreClass.TEMPLAR,build=CoreClassBuild(nodes=1031));h.base=CoreWeaponBase.MACE;h.actor.reset()
         h.actor.skill(2);h.ticks(20);h.actor.attack();h.ticks(10)
         assertEquals(300-12*.95*1.08*1.35,h.combat.bossHealth(),.00001)
         assertEquals(-1,h.actor.classState.counterUntil)

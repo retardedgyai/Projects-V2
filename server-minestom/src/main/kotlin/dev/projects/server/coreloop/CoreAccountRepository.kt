@@ -211,6 +211,7 @@ class CoreAccountRepository(
             bytes.toString(UTF_8).startsWith("PROJECTS_CORE_LOOP\t6\t") -> 6
             bytes.toString(UTF_8).startsWith("PROJECTS_CORE_LOOP\t7\t") -> 7
             bytes.toString(UTF_8).startsWith("PROJECTS_CORE_LOOP\t8\t") -> 8
+            bytes.toString(UTF_8).startsWith("PROJECTS_CORE_LOOP\t9\t") -> 9
             else -> return
         }
         val backup = directory.resolve("$playerId.account.v$version.bak")
@@ -232,7 +233,7 @@ class CoreAccountRepository(
 internal object CoreAccountCodec {
     fun encode(account: CoreAccount): String {
         val body = buildString {
-            append("PROJECTS_CORE_LOOP\t9\t${account.playerId}\t${account.revision}\n")
+            append("PROJECTS_CORE_LOOP\t10\t${account.playerId}\t${account.revision}\n")
             append("gear\t${account.weaponTier}\t${account.armorTier}\t${account.unlockedMapTier}\n")
             append("crafting\t${account.weaponRarity}\t${account.armorRarity}\t${account.craftingSeed}\n")
             append("enhancement\t${account.weaponEnhancement.level}\t${account.weaponEnhancement.failures}\t${account.armorEnhancement.level}\t${account.armorEnhancement.failures}\t${account.smithingXp}\n")
@@ -281,7 +282,7 @@ internal object CoreAccountCodec {
         require(text.substring(checksumAt) == "checksum\t${digest(body)}\n") { "保存データの検証に失敗しました" }
         val rows = body.trimEnd('\n').split('\n').map { it.split('\t') }
         val header = rows.first()
-        require(header.size == 4 && header[0] == "PROJECTS_CORE_LOOP" && header[1] in setOf("1", "2", "3", "4", "5", "6", "7", "8", "9")) { "未対応の保存形式です" }
+        require(header.size == 4 && header[0] == "PROJECTS_CORE_LOOP" && header[1] in setOf("1", "2", "3", "4", "5", "6", "7", "8", "9", "10")) { "未対応の保存形式です" }
         val version = header[1].toInt()
         require(UUID.fromString(header[2]) == playerId) { "保存データのプレイヤーが一致しません" }
         val gear = rows.getOrNull(1) ?: error("装備データがありません")
@@ -311,15 +312,22 @@ internal object CoreAccountCodec {
         var dungeon: CoreDungeonEntry? = null
         var journey: CoreJourney? = null
         var classBuild: CoreClassBuild? = null
+        val legacyTreeMasks = mutableListOf<Int>()
+        fun readTreeMask(value: String): Int {
+            val mask=value.toInt()
+            if(version!=9)return mask
+            legacyTreeMasks += mask
+            return CoreClassTrees.refundLegacyMask(mask)
+        }
         val savedBuilds = mutableMapOf<CoreClass, CoreClassBuild>()
         val bases = linkedMapOf<UUID, Pair<CoreWeaponBase, Int>>()
         val mapLevels = linkedMapOf<UUID, Int>()
         rows.drop(2).forEach { row -> when (row[0]) {
-            "class-build" -> { require(version >= 9 && row.size == 7 && classBuild == null); classBuild = CoreClassBuild(row[1].toInt(), row[2].toInt(), row[3].toInt(), row[4].toInt(), row[5].toInt(), row[6].toInt()) }
+            "class-build" -> { require(version >= 9 && row.size == 7 && classBuild == null); classBuild = CoreClassBuild(row[1].toInt(), row[2].toInt(), row[3].toInt(), row[4].toInt(), row[5].toInt(), readTreeMask(row[6])) }
             "class-loadout" -> {
                 require(version >= 9 && row.size == 8)
                 val job = CoreClass.valueOf(row[1]); require(job !in savedBuilds)
-                savedBuilds[job] = CoreClassBuild(row[2].toInt(), row[3].toInt(), row[4].toInt(), row[5].toInt(), row[6].toInt(), row[7].toInt())
+                savedBuilds[job] = CoreClassBuild(row[2].toInt(), row[3].toInt(), row[4].toInt(), row[5].toInt(), row[6].toInt(), readTreeMask(row[7]))
             }
             "journey" -> { require(version >= 8 && row.size == 6 && journey == null); journey = CoreJourney(CoreClass.valueOf(row[1]), row[2].toBooleanStrict(), row[3].toLong(), row[4].toInt(), row[5].toBooleanStrict()) }
             "gear-base" -> { require(version >= 8 && row.size == 4); require(bases.put(UUID.fromString(row[1]), CoreWeaponBase.valueOf(row[2]) to row[3].toInt()) == null) }
@@ -400,6 +408,10 @@ internal object CoreAccountCodec {
         active = active?.copy(dungeon = dungeon)
         if (version >= 9) {
             val existingJourney = requireNotNull(journey)
+            if(version==9) {
+                val oldBudget=if(existingJourney.legacy)6 else (2+existingJourney.level/8).coerceAtMost(6)
+                require(legacyTreeMasks.all { Integer.bitCount(it)<=oldBudget }) { "旧技能ポイントが不正です" }
+            }
             val build = requireNotNull(classBuild) { "職業の構成データがありません" }
             require(build.points <= CoreClassTrees.budget(existingJourney)) { "技能ポイントが不正です" }
             require(existingJourney.job !in savedBuilds) { "現在の職業の構成が重複しています" }

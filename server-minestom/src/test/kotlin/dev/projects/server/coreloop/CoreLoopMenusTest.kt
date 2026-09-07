@@ -335,6 +335,9 @@ class CoreLoopMenusTest {
             check("skills") { f.menus.skillBuild(f.player) }
             check("ultimates") { f.menus.skillBuild(f.player,4) }
             check("tree") { f.menus.talentTree(f.player) }
+            for(i in 0..17) check("tree node $i") { f.menus.talentTree(f.player,i) }
+            for(slot in 0..4) for(i in 0 until if(slot==4)2 else 8)
+                check("candidate $slot/$i") { f.menus.skillBuild(f.player,slot,i,i/4) }
             check("weapon page 2") { f.menus.career(f.player);f.click(30);f.click(48) }
             check("character stats") { f.menus.career(f.player);f.click(42) }
             assertTrue(f.host.requests.isEmpty())
@@ -342,6 +345,22 @@ class CoreLoopMenusTest {
         assertTrue(failures.isEmpty(),failures.joinToString("\n"))
     }
 
+    @Test fun `skill candidate and tree inspection never spend before the explicit confirm button`() {
+        for(packed in listOf(false,true)) {
+            val f=fixture(account(4),packed)
+            f.menus.skillBuild(f.player)
+            f.click(22)
+            assertTrue(f.host.requests.isEmpty())
+            assertEquals("技能1 に装備",f.snapshot().buttons.single { it.firstSlot==49 }.label)
+            f.click(49)
+            assertEquals(CoreAction.SelectSkill(0,1),f.host.requests.single().action)
+            f.host.requests.clear()
+            f.menus.talentTree(f.player)
+            assertEquals(21,f.snapshot().treeEdges.size)
+            f.click(CoreClassTrees.slot(3));assertTrue(f.host.requests.isEmpty())
+            f.click(48);assertEquals(CoreAction.ToggleTalent(3),f.host.requests.single().action)
+        }
+    }
     @Test fun `every forge recipe and quantity selector changes selection without consuming anything`() {
         val f = fixture(account(tier = 3))
         for (tab in listOf(CoreForgeLayout.Tab.REFINE, CoreForgeLayout.Tab.CRAFT)) {
@@ -724,7 +743,7 @@ class CoreLoopMenusTest {
                 panel.lines.forEachIndexed { index, line -> check("$side line $index", line.text, line.maxWidth, TextStyle.valueOf(line.style)) }
             }
         }
-        snapshot.buttons.forEach { button -> check("button ${button.firstSlot}", button.label, button.span * 18 - 2 - if (button.icon) 18 else 0, TextStyle.EMPHASIS) }
+        snapshot.buttons.forEach { button -> check("button ${button.firstSlot}", button.label, (button.span * 18 - 2 - if (button.icon) 18 else 0).coerceAtLeast(0), TextStyle.EMPHASIS) }
         val occupied = mutableSetOf<Int>()
         snapshot.buttons.forEach { button ->
             (button.firstSlot until button.firstSlot + button.span).forEach { if (!occupied.add(it)) add("Overlapping button $it") }

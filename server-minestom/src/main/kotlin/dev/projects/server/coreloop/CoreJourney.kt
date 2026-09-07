@@ -53,7 +53,7 @@ data class CoreJourney(val job: CoreClass = CoreClass.WARRIOR, val chosen: Boole
     val savedBuilds: Map<CoreClass, CoreClassBuild> = emptyMap()) {
     init {
         require(xp in 0..1_000_000_000L && lessons in 0..63)
-        val budget = if(legacy) 6 else (2 + CoreJourneyRules.level(xp)/8).coerceAtMost(6)
+        val budget = CoreClassTrees.budget(this)
         require(build.points <= budget && savedBuilds.values.all { it.points <= budget })
     }
     fun changeClass(next: CoreClass) = if(next == job) copy(chosen = true) else copy(job = next, chosen = true,

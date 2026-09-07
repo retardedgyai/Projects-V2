@@ -136,7 +136,7 @@ class CoreMmoExpansionTest {
     @Test fun `v6 upgrade preserves exact backup equipment and enhancement`() {
         val f = Fixture(); val id = f.create()
         val original = f.a(id).copy(weaponEnhancement = CoreEnhancementState(25, 2), weaponBroken = true)
-        val body = CoreAccountCodec.encode(original).substringBefore("checksum\t").lineSequence().filterNot(::coreExpansionRow).joinToString("\n").replaceFirst("\t9\t", "\t6\t")
+        val body = CoreAccountCodec.encode(original).substringBefore("checksum\t").lineSequence().filterNot(::coreExpansionRow).joinToString("\n").replaceFirst("\t10\t", "\t6\t")
         val old = body + "checksum\t" + MessageDigest.getInstance("SHA-256").digest(body.toByteArray()).joinToString("") { "%02x".format(it) } + "\n"
         Files.writeString(f.dir.resolve("$id.account"), old); f.service.forget(id)
         val loaded = assertIs<CoreAccountLoadResult.Ready>(f.service.open(id)).account

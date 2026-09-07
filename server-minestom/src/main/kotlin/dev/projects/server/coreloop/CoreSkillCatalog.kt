@@ -92,8 +92,30 @@ object CoreSkillCatalog {
             if (gravity > 0) { radius *= 1 + gravity.coerceAtMost(10.0) * .1; power *= .8; notes += "重力MOD" }
             if (j.build.keystone == 1) radius += 1.5
         }
+        var cooldown = s.cooldown
+        var startup = s.startup
+        var mana = s.mana
+        var gain = s.gain
+        var spend = s.spend
+        val index = skills(j.job).indexOf(s)
+        if (index == CoreClassTrees.signature(j.job)) {
+            if (j.build.has(9)) { radius *= 1.3; power *= .9; notes += "広域化" }
+            if (j.build.has(10)) { pulses++; power *= .75; notes += "追加発動" }
+            if (j.build.has(14)) { cooldown = (cooldown * .8).toInt(); power *= .9; notes += "循環" }
+        }
+        if (index == 0) {
+            if (j.build.has(11)) { startup = (startup * .7).toInt().coerceAtLeast(1); gain = kotlin.math.ceil(gain * 1.25).toInt(); notes += "高速始動" }
+            if (j.build.has(13)) { mana = (mana * .6).toInt(); gain = kotlin.math.ceil(gain * 1.25).toInt(); notes += "始動の備え" }
+        }
+        if (index == 3 && j.build.has(12)) { cooldown = (cooldown * .75).toInt(); notes += "軽やかな構え" }
+        if (index == 5 && j.build.has(15)) { radius += 1.5; mana = (mana * .6).toInt(); notes += "広い備え" }
+        if (s.ultimate) {
+            if (j.build.has(16)) { spend = kotlin.math.ceil(spend * .8).toInt(); notes += "奥義の備え" }
+            if (j.build.has(17)) { cooldown = (cooldown * .85).toInt(); power *= .9; notes += "奥義の循環" }
+        }
         return s.copy(formula = CoreDamageFormula(s.formula.base * power, s.formula.ad * power, s.formula.ap * power),
-            pulses = pulses.coerceAtMost(8), radius = radius.coerceAtMost(10.5), spend = kotlin.math.ceil(s.spend * if (j.build.has(1)) .85 else 1.0).toInt(),
+            cooldown = cooldown, startup = startup, mana = mana, gain = gain,
+            pulses = pulses.coerceAtMost(8), radius = radius.coerceAtMost(10.5), spend = kotlin.math.ceil(spend * if (j.build.has(1)) .85 else 1.0).toInt(),
             description = s.description + if (notes.isEmpty()) "" else " / ${notes.joinToString("・")}適用")
     }
     val artNames: List<String> = CoreClass.entries.flatMap { skills(it).map(CoreSkillDefinition::icon) }

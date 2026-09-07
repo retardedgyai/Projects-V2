@@ -365,6 +365,8 @@ def build_preview(frame, text_atlas, metrics, buttons):
 
 
 def build_menu():
+    from build_core_tree_assets import build_tree
+    build_tree()
     text_atlas, metrics = build_font()
     build_font("EMPHASIS")
     frame = build_frame()

@@ -136,6 +136,11 @@ class MenuRenderer:
             expected = [18 + row * 9 + column for row in range(3) for column in range(6)]
             if focus["reservedSlots"] != expected: raise ValueError("Focus must reserve its vanilla slot rectangle")
             occupied.update(expected)
+        for edge in snapshot.get("treeEdges", []):
+            mask=Image.open(self.assets / f"textures/gui/core/tree_{edge['from']}_{edge['to']}.png").convert('RGBA')
+            tile=Image.new('RGBA',mask.size,'#E4BD70' if edge['learned'] else '#625C50')
+            tile.putalpha(mask.getchannel('A'))
+            blit(tile,8,18)
         for card in snapshot.get("cards", []):
             expected = [card["firstSlot"] + row * 9 + column for row in range(card["rows"]) for column in range(card["columns"])]
             if expected != card["occupiedSlots"] or occupied.intersection(expected):
