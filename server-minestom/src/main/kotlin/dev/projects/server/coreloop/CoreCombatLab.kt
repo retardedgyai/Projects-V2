@@ -202,6 +202,9 @@ internal class CoreCombatLab(
             state.free = false; actor.reset(); player.closeInventory()
         }
         button(44, Material.OAK_DOOR, "港へ帰還", "テスト場を破棄し、元の装備・職業に戻ります") { leave(player) }
+        button(41, Material.FIREWORK_STAR, "戦闘演出：${CoreCombatPresentation.detail(player).label}", "華やか → 控えめ → 最小。自分の表示だけ変更、再接続で華やかに戻ります") {
+            CoreCombatPresentation.cycle(player); menu(player)
+        }
         button(49, Material.ARROW, "閉じて試す", "ホットバー2～6のスキルを右クリック。設定は手帳9") { player.closeInventory() }
         screens.show(player, CoreMenuInventory.Screen(CoreLoopItems.text("スキル試験場：職業 → 枠 → 技"), items, actions) { menu(player) })
     }

@@ -11,6 +11,7 @@ import struct
 import zlib
 from build_core_hud_assets import build_hud, SKILLS, class_ornament, fit_skill, skill_frame
 from build_core_menu_assets import build_menu
+from build_core_combat_models import build_combat_models
 from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -143,6 +144,7 @@ def build():
     item_model("blank", "core/blank")
     build_hud(ASSETS, SOURCE, write_json)
     build_menu()
+    build_combat_models(ASSETS, write_json)
     paths = sorted(str(path.relative_to(PACK)).replace("\\", "/") for path in PACK.rglob("*") if path.is_file() and path.name != "index.txt")
     (PACK / "index.txt").write_text("\n".join(paths) + "\n", encoding="utf-8")
     print(f"Built {len(paths)} indexed assets under {PACK}")

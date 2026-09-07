@@ -210,6 +210,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
                 player.sendMessage(CoreLoopItems.text("ホットバー9番の「冒険の手帳」を右クリックすると、一周の流れを確認できます。"))
                 a.maps.firstOrNull()?.let { preparedMaps.warm(player.uuid, it) }
                 uiPack?.offer(player) { loadedPlayer, _ ->
+                    CoreCombatPresentation.pack(loadedPlayer, packed(loadedPlayer))
                     refresh(loadedPlayer)
                     menus.refreshTheme(loadedPlayer)
                 }
@@ -324,6 +325,11 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         })
         MinecraftServer.getCommandManager().register(Command("hub").apply {
             setDefaultExecutor { sender, _ -> (sender as? Player)?.let { returnToHarbor(it) } }
+        })
+        MinecraftServer.getCommandManager().register(Command("effects").apply {
+            setDefaultExecutor { sender, _ -> (sender as? Player)?.let {
+                it.sendMessage(CoreLoopItems.text("戦闘演出：${CoreCombatPresentation.cycle(it).label}（/effects で切替。自分の表示だけ変更）"))
+            } }
         })
     }
 
@@ -835,6 +841,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
 
     private fun disconnect(player: Player) {
         if (!connections.remove(player.uuid, player)) return
+        CoreCombatPresentation.forget(player)
         combatLab.disconnect(player)
         dungeons.disconnect(player)
         preparedMaps.forget(player.uuid)
@@ -867,6 +874,8 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
     }
 
     fun close() {
+        actors.values.forEach { it.resetActions() }
+        connections.values.forEach { CoreCombatPresentation.forget(it) }
         combatLab.close()
         dungeons.close()
         preparedMaps.close()

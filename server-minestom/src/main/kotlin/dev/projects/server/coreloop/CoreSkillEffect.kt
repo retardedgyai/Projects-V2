@@ -55,7 +55,7 @@ internal object CoreSkillArt {
             CoreClass.RANGER -> 0xc8da96
             CoreClass.TEMPLAR -> 0xf1d57f
             CoreClass.HEALER -> 0x85edc5
-            CoreClass.STARWEAVER -> 0xb1a1fa
+            CoreClass.STARWEAVER -> 0xca58ff
             CoreClass.MAGE -> 0xabbbff
         }
     }
@@ -63,21 +63,22 @@ internal object CoreSkillArt {
 
 /** Bright hit silhouette, moving edge, then a sparse fading wake. No cosmetic extra impacts. */
 internal class CoreSkillEffect(
-    private val job: CoreClass,
-    private val skill: CoreSkillDefinition,
-    origin: Point,
-    direction: Vec,
-    private val phase: CoreSkillVisualPhase = CoreSkillVisualPhase.PULSE,
-    private val pulse: Int = 0,
+    internal val job: CoreClass,
+    internal val skill: CoreSkillDefinition,
+    internal val origin: Point,
+    internal val direction: Vec,
+    internal val phase: CoreSkillVisualPhase = CoreSkillVisualPhase.PULSE,
+    internal val pulse: Int = 0,
     prepareTicks: Int = 4,
     rayLength: Double = 0.0,
+    internal val clippedRay: Boolean = false,
 ) : ParticleEffect {
-    private val valid = listOf(origin.x(), origin.y(), origin.z(), skill.radius, rayLength).all(Double::isFinite)
+    internal val valid = listOf(origin.x(), origin.y(), origin.z(), direction.x(), direction.y(), direction.z(), skill.radius, rayLength).all(Double::isFinite)
     private val frame = ParticleTransform.fromDirection(if (valid) origin else Vec.ZERO, direction)
     internal val motif = CoreSkillArt.motifs.getValue(skill.icon)
     private val color = CoreSkillArt.color(job, skill)
-    private val radius = if (skill.radius.isFinite()) skill.radius.coerceIn(.3, 10.5) else .3
-    private val length = if (rayLength.isFinite()) rayLength.coerceIn(0.0, 24.0) else 0.0
+    internal val radius = if (skill.radius.isFinite()) skill.radius.coerceIn(.3, 10.5) else .3
+    internal val length = if (rayLength.isFinite()) rayLength.coerceIn(0.0, 24.0) else 0.0
     override val durationTicks = when (phase) {
         CoreSkillVisualPhase.PREPARE -> prepareTicks.coerceIn(1, 60)
         CoreSkillVisualPhase.CONTACT -> 3

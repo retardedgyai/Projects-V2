@@ -152,7 +152,6 @@ internal class CorePlayerCombat(
         lastCombat = tickNumber
         player.setHeldItemSlot(0)
         player.swingMainHand()
-        sound(if (classId.magic) SoundEvent.BLOCK_AMETHYST_BLOCK_CHIME else SoundEvent.ITEM_ARMOR_EQUIP_IRON, .35f, .9f)
         if (startup > 1) vfx.playSkill(CoreSkillEffect(classId, castDefinition, pending!!.origin, pending!!.direction,
             CoreSkillVisualPhase.PREPARE, prepareTicks = startup - 1))
     }
@@ -253,7 +252,6 @@ internal class CorePlayerCombat(
         val s = action.definition
         val epoch = actionEpoch
         val build = journey().build
-        skillPulseSound(s, (action.elapsed - action.startup) / 8)
         fun pulse(at: Pos, radius: Double = s.radius) {
             emitSkillPulse(at, radius)
             strike(enemies, at, action.direction, radius, -1.0, 1.0)
@@ -499,7 +497,7 @@ internal class CorePlayerCombat(
         }
         if (skill) pending?.let { action ->
             vfx.playSkill(CoreSkillEffect(classId, action.definition, origin, direction,
-                pulse = (action.elapsed - action.startup) / 8, rayLength = visibleDistance))
+                pulse = (action.elapsed - action.startup) / 8, rayLength = visibleDistance, clippedRay = true))
         }
         val epoch = actionEpoch
         for ((id, _) in candidates) {
@@ -512,20 +510,6 @@ internal class CorePlayerCombat(
         val action = pending ?: return
         vfx.playSkill(CoreSkillEffect(classId, action.definition.copy(radius = radius), centre, action.direction,
             pulse = (action.elapsed - action.startup) / 8))
-    }
-
-    private fun skillPulseSound(skill: CoreSkillDefinition, pulse: Int) {
-        val event = when (CoreSkillArt.motifs.getValue(skill.icon)) {
-            CoreSkillMotif.ARROW, CoreSkillMotif.RAIN, CoreSkillMotif.FROST_FAN -> SoundEvent.ENTITY_ARROW_SHOOT
-            CoreSkillMotif.CLEAVE, CoreSkillMotif.SHOCK -> SoundEvent.ENTITY_PLAYER_ATTACK_STRONG
-            CoreSkillMotif.SLASH, CoreSkillMotif.WHIRL, CoreSkillMotif.THRUST, CoreSkillMotif.NEEDLE -> SoundEvent.ENTITY_PLAYER_ATTACK_SWEEP
-            CoreSkillMotif.VENOM, CoreSkillMotif.TRAP -> SoundEvent.BLOCK_BREWING_STAND_BREW
-            CoreSkillMotif.FIRE, CoreSkillMotif.METEOR -> SoundEvent.ITEM_FIRECHARGE_USE
-            CoreSkillMotif.FROST -> SoundEvent.BLOCK_GLASS_BREAK
-            CoreSkillMotif.GUARD, CoreSkillMotif.WARD -> SoundEvent.ITEM_SHIELD_BLOCK
-            else -> SoundEvent.BLOCK_AMETHYST_BLOCK_CHIME
-        }
-        sound(event, if (skill.ultimate) .65f else .45f, (.85 + pulse * .09).toFloat())
     }
 
     /** Lock a ground cast to the visible aimed enemy/block, not a fixed point seven blocks ahead. */

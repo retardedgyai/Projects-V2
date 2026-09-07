@@ -131,8 +131,9 @@ internal class GreatswordEffect(
     }
 }
 
-/** Player-owned lifetime, no world entities or global tasks; map exit cancels every animation. */
+/** Player-owned particles and transient meshes; map exit cancels both lifetimes. */
 internal class GreatswordVfx(private val player: Player) {
+    private val meshes = CoreCombatMeshes(player)
     private val scheduler = ParticleAnimationScheduler()
     // Skills and authoritative status ticks must never pause with a normal-attack hit stop.
     private val combatScheduler = ParticleAnimationScheduler()
@@ -144,6 +145,7 @@ internal class GreatswordVfx(private val player: Player) {
     private var instance: Instance? = null
     private var contactHold = 0
     private var holdAfterFrame = 0
+    private var contactSoundThisTick = false
     internal val activeEffects: Int get() = scheduler.activeAnimationCount + combatScheduler.activeAnimationCount
     internal val retainsInstance: Boolean get() = instance != null
     internal fun holdContact(ticks: Int) { holdAfterFrame = maxOf(holdAfterFrame, ticks.coerceIn(0, 3)) }
@@ -156,6 +158,12 @@ internal class GreatswordVfx(private val player: Player) {
 
     fun play(visual: GreatswordVisual, origin: Point, direction: Vec) {
         play(GreatswordEffect(visual, origin, direction))
+        if (visual in setOf(GreatswordVisual.SWEEP, GreatswordVisual.REVERSE, GreatswordVisual.FINISHER, GreatswordVisual.SLAM_BLADE)) {
+            val heavy = visual == GreatswordVisual.FINISHER || visual == GreatswordVisual.SLAM_BLADE
+            val definition = CoreSkillCatalog.skills(CoreClass.WARRIOR).first { it.icon == (if (heavy) "slam" else "war_wound") }
+            meshes.play(CoreSkillEffect(CoreClass.WARRIOR, definition.copy(radius = 3.9), origin, direction,
+                pulse = if (visual == GreatswordVisual.REVERSE) 1 else 0))
+        }
     }
 
     fun play(effect: ParticleEffect) {
@@ -169,7 +177,14 @@ internal class GreatswordVfx(private val player: Player) {
         if (player.instance !== instance) cancel()
         instance = player.instance
         if (activeEffects >= MAX_EFFECTS) scheduler.cancelAll() // Shed old normal trails before a skill pulse.
-        if (activeEffects < MAX_EFFECTS) combatScheduler.start(effect, frame)
+        if (activeEffects < MAX_EFFECTS) {
+            combatScheduler.start(effect, frame)
+            if (effect is CoreSkillEffect) {
+                meshes.play(effect)
+                if (effect.phase != CoreSkillVisualPhase.CONTACT || !contactSoundThisTick) CoreSkillAudio.play(player, effect)
+                if (effect.phase == CoreSkillVisualPhase.CONTACT) contactSoundThisTick = true
+            }
+        }
     }
 
     fun status(effect: CorePoisonEffect) {
@@ -187,6 +202,8 @@ internal class GreatswordVfx(private val player: Player) {
         frame.clear()
         if (contactHold > 0) contactHold-- else scheduler.tick()
         combatScheduler.tick()
+        meshes.tick()
+        contactSoundThisTick = false
         frame.spawns += elementalFrame
         elementalFrame.clear()
         contactHold = maxOf(contactHold, holdAfterFrame)
@@ -201,7 +218,8 @@ internal class GreatswordVfx(private val player: Player) {
                 }
                 if (accepted > 0) delegate.spawn(spawn.copy(count = accepted))
             }
-            manager.dispatchAll(ParticleViewer(viewer.position, viewer), frame.spawns.map { it.copy(category = category) }, bounded)
+            val stride = CoreCombatPresentation.detail(viewer).particleStride
+            manager.dispatchAll(ParticleViewer(viewer.position, viewer), frame.spawns.filterIndexed { i, _ -> i % stride == 0 }.map { it.copy(category = category) }, bounded)
         }
     }
 
@@ -217,8 +235,8 @@ internal class GreatswordVfx(private val player: Player) {
         sound(SoundEvent.ITEM_TRIDENT_HIT, .45f, if (heavy) .65f else 1.0f)
     }
     fun cancel() {
-        scheduler.cancelAll(); combatScheduler.cancelAll(); frame.clear(); elementalFrame.clear(); manager.resetCounters()
-        contactHold = 0; holdAfterFrame = 0; instance = null
+        scheduler.cancelAll(); combatScheduler.cancelAll(); meshes.cancel(); frame.clear(); elementalFrame.clear(); manager.resetCounters()
+        contactHold = 0; holdAfterFrame = 0; contactSoundThisTick = false; instance = null
     }
     private fun sound(event: SoundEvent, volume: Float, pitch: Float) = player.playSound(Sound.sound(event, Sound.Source.PLAYER, volume, pitch))
 
