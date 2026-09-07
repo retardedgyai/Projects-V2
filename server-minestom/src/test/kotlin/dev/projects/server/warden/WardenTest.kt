@@ -245,10 +245,12 @@ class WardenTest {
     @Test fun `combo wrist does not snap ninety degrees between swings or during recovery`() {
         for(name in listOf("rush_combo","onslaught")) {
             val c=asset.clips.getValue(name)
+            val rest=c.frames.first()[asset.weapon].q;val end=c.frames.last()[asset.weapon].q
+            assertTrue(abs(rest.x*end.x+rest.y*end.y+rest.z*end.z+rest.w*end.w)>.9999,"$name returns with a twisted grip")
             for(t in 1..c.duration)if(!c.active(t)) {
                 val a=c.frames[t-1][asset.weapon].q;val b=c.frames[t][asset.weapon].q
                 val dot=abs(a.x*b.x+a.y*b.y+a.z*b.z+a.w*b.w).coerceIn(0.0,1.0)
-                assertTrue(2*acos(dot)<Math.toRadians(65.0),"$name wrist snaps at tick $t")
+                assertTrue(2*acos(dot)<Math.toRadians(35.0),"$name wrist snaps at tick $t")
             }
         }
     }

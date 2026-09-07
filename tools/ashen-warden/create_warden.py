@@ -130,12 +130,13 @@ exports=[]
 for name,(duration,loop,active) in clips.items():
     rig.animation_data_create(); action=bpy.data.actions.new(name);rig.animation_data.action=action;action.use_fake_user=True
     # Sample the authored blade travel before baking the final edge orientation.
-    travel=[];raw_rotations=[]
+    travel=[];raw_rotations=[];rest_rotation=None
     for tick in range(duration+1):
         pose(name,tick)
         m=C.inverted()@rig.pose.bones['weapon_root'].matrix@C
         hand=C.inverted()@rig.pose.bones['hand_r'].matrix@C
         rotation=m.to_quaternion()
+        if tick==0:rest_rotation=rotation.copy()
         axis=rotation@Vector((0,0,1))
         # Parallel transport the roll frame. The bent forearm's projected basis can
         # flip near a straight elbow; it must not flip the wrist between two cuts.
@@ -145,8 +146,9 @@ for name,(duration,loop,active) in clips.items():
         raw_rotations.append(rotation)
         travel.append(hand.translation+axis*1.6)
     windows=HIT_WINDOWS.get(name,[active] if active else [])
-    edge_angles={}
-    previous_angle=None
+    continuous_roll=name in ['rush_combo','onslaught']
+    edge_angles={0:0.} if continuous_roll else {}
+    previous_angle=0. if continuous_roll else None
     for start,end in windows:
         for tick in range(start,end+1):
             local=raw_rotations[tick].conjugated()@(travel[tick]-travel[max(0,tick-1)])
@@ -154,6 +156,10 @@ for name,(duration,loop,active) in clips.items():
             if previous_angle is not None:
                 angle=previous_angle+(angle-previous_angle+math.pi/2)%math.pi-math.pi/2
             edge_angles[tick]=angle;previous_angle=angle
+    if continuous_roll:
+        local=raw_rotations[-1].conjugated()@(rest_rotation@Vector((0,1,0)))
+        angle=math.atan2(local.x,local.y)
+        edge_angles[duration]=previous_angle+(angle-previous_angle+math.pi)%(2*math.pi)-math.pi
     samples=[]
     for tick in range(duration+1):
         edge=None;weight=0.
@@ -167,6 +173,7 @@ for name,(duration,loop,active) in clips.items():
             edge=raw_rotations[tick]@Vector((math.sin(angle),math.cos(angle),0))
             weight=min(1.,tick/max(1,active[0]-5),(duration-tick)/max(1,duration-active[1]-6))
             weight=weight*weight*(3-2*weight)
+            if continuous_roll:weight=1.
         scene.frame_set(tick+1);pose(name,tick,edge,weight)
         for p in rig.pose.bones:
             p.keyframe_insert('location',frame=tick+1);p.keyframe_insert('rotation_quaternion',frame=tick+1)
