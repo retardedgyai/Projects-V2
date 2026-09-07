@@ -7,8 +7,8 @@ import kotlin.test.*
 
 class WardenTest {
     private val asset=WardenAsset.load()
-    @Test fun `asset has hierarchy locators eleven full clips and normalized transforms`() {
-        assertEquals(31,asset.bones.size);assertEquals(11,asset.clips.size)
+    @Test fun `asset has hierarchy locators thirteen full clips and normalized transforms`() {
+        assertEquals(31,asset.bones.size);assertEquals(13,asset.clips.size)
         assertTrue(asset.bones.any {it.name=="vfx_ground"});assertTrue(asset.bones[asset.tip].parent==asset.weapon)
         asset.clips.values.forEach {c->
             assertEquals(c.duration+1,c.frames.size)
@@ -28,7 +28,7 @@ class WardenTest {
         assertFalse(sweptBladeHit(a,b,V3(8.0,0.0,8.0),V3(8.6,1.8,8.6)))
     }
     @Test fun `each authored attack crosses reachable player height`() {
-        for(name in listOf("slash_01","heavy_slash","dash","spin_slash","spiral_combo","vault_slam")) {
+        for(name in asset.clips.values.filter {it.activeStart>=0}.map {it.name}) {
             val c=asset.clips.getValue(name)
             val hits=(c.activeStart..c.activeEnd).filter(c::active).any {t->
                 val distance=when(name){"dash"->3.6;"vault_slam"->4.3;else->2.1}
@@ -39,7 +39,7 @@ class WardenTest {
     }
     @Test fun `weapon locator is rigidly attached to display bone`() {
         asset.clips.values.forEach {c->c.frames.forEach {row->
-            val expected=row[asset.weapon].point(V3(0.0,0.0,2.64))
+            val expected=row[asset.weapon].point(V3(0.0,0.0,WardenBlade.TIP))
             assertTrue((expected-row[asset.tip].p).length()<1e-4)
         }}
     }
@@ -74,7 +74,9 @@ class WardenTest {
     @Test fun `attack locks facing and only claims a victim once`() {
         val f=WardenFight(asset);f.begin();val target=V3(0.0,0.0,2.5)
         repeat(31){f.tick(target)}
-        assertEquals("slash_01",f.action);val yaw=f.yaw
+        assertEquals("slash_01",f.action)
+        while(f.frame<f.clip.activeStart-4)f.tick(target)
+        val yaw=f.yaw
         while(!f.active)f.tick(V3(4.0,0.0,0.0))
         assertEquals(yaw,f.yaw);val id=UUID.randomUUID();assertTrue(f.claimHit(id));assertFalse(f.claimHit(id))
         while(f.active)f.tick(target)
@@ -131,12 +133,12 @@ class WardenTest {
     }
     @Test fun `vanilla item renderer half-turn is cancelled for all animated bone bases`() {
         // Actual 26.2 client pipeline: bone T R S, right rotation, renderer Y(pi),
-        // then the centered model whose export uses 8 model pixels per world block.
+        // then the centered model whose export uses 6 model pixels per world block.
         val clientRotation=Q4(0.0,1.0,0.0,0.0)
-        val probes=listOf(V3(.31,.12,.27),V3(-.23,-.41,.16),V3(0.0,0.0,2.64))
+        val probes=listOf(V3(.31,.12,.27),V3(-.23,-.41,.16),V3(0.0,0.0,WardenBlade.TIP))
         asset.clips.values.forEach {c->c.frames.forEach {row->row.forEach {bone->
             probes.forEach {local->
-                val model=local*.5
+                val model=local*(1.0/WardenItemDisplay.SCALE)
                 val displayed=bone.point(WardenItemDisplay.rightRotation.rotate(clientRotation.rotate(model))*WardenItemDisplay.SCALE)
                 assertTrue((displayed-bone.point(local)).length()<1e-6,"${c.name}: display differs from authoritative bone")
             }
@@ -159,9 +161,9 @@ class WardenTest {
     }
     @Test fun `somersault has genuine inverted torso at jump apex and a finite landing window`() {
         val c=asset.clips.getValue("vault_slam");val pelvis=asset.bones.indexOfFirst {it.name=="pelvis"}
-        assertTrue(c.frames.maxOf {it[0].p.y}>2.5)
-        assertTrue(c.frames.any {it[0].p.y>2.0 && it[pelvis].q.rotate(V3(0.0,1.0,0.0)).y<-.8})
-        assertEquals(listOf(41..44),c.windows)
+        assertTrue(c.frames.maxOf {it[0].p.y}>2.3)
+        assertTrue(c.frames.any {it[0].p.y>1.8 && it[pelvis].q.rotate(V3(0.0,1.0,0.0)).y<-.8})
+        assertEquals(listOf(34..37),c.windows)
         assertEquals(0.0,c.frames.last()[0].p.y,1e-5)
     }
     @Test fun `move demonstration ends after one action without starting another attack`() {
@@ -182,7 +184,7 @@ class WardenTest {
     }
     @Test fun `blade and guard stay outside the head and torso cores in every attack pose`() {
         val cores=listOf(Triple("chest",V3(-.34,-.22,-.23),V3(.34,.29,.30)),Triple("head",V3(-.24,-.23,-.18),V3(.24,.57,.24)),Triple("spine",V3(-.26,-.24,-.18),V3(.26,.25,.25)))
-        val probes=(0..23).flatMap {n->listOf(-.20,0.0,.20).map {y->V3(0.0,y,.43+n*2.21/23)}}+
+        val probes=(0..31).flatMap {n->listOf(-.30,0.0,.30).map {y->V3(0.0,y,.43+n*(WardenBlade.TIP-.43)/31)}}+
             listOf(.30,.44,.60).flatMap {z->listOf(-.45,-.30,0.0,.30,.45).map {y->V3(0.0,y,z)}}
         asset.clips.values.filter {it.activeStart>=0}.forEach {c->c.frames.forEachIndexed {t,row->
             cores.forEach {(name,lo,hi)->
@@ -201,6 +203,53 @@ class WardenTest {
             val swing=arms.maxOf {a->arms.maxOf {b->acos(a.dot(b).coerceIn(-1.0,1.0))}}
             assertTrue(swing>PI/4,"${c.name} upper arm only rides the chest")
             assertTrue(bends.max()-bends.min()>PI/4,"${c.name} elbow stays fixed")
+        }
+    }
+    @Test fun `circling either side cannot starve attacks in either phase`() {
+        for(direction in listOf(-1,1))for(secondPhase in listOf(false,true)) {
+            val f=WardenFight(asset);f.begin();if(secondPhase)f.damage(190.0)
+            val attacks=mutableSetOf<Int>();val names=mutableSetOf<String>()
+            repeat(700){t->
+                val angle=direction*t*.22
+                f.tick(f.position+V3(sin(angle)*2.6,0.0,cos(angle)*2.6))
+                if(f.active){attacks+=f.sequence;names+=f.action}
+            }
+            assertTrue(attacks.size>=5,"orbit $direction phase2=$secondPhase starved attacks: $attacks")
+            assertTrue(names.any {it in listOf("rush_combo","onslaught","spin_slash")})
+        }
+    }
+    @Test fun `rush and onslaught deliver three and four independently claimable fast hits`() {
+        for((name,count)in listOf("rush_combo" to 3,"onslaught" to 4)) {
+            val f=WardenFight(asset);f.demonstrate(name);val id=UUID.randomUUID();var hits=0
+            repeat(f.clip.duration){if(f.claimHit(id)){hits++;assertFalse(f.claimHit(id))};f.tick(null)}
+            assertEquals(count,hits,name)
+            assertTrue(asset.clips.getValue(name).windows.zipWithNext().all {(a,b)->b.first-a.last<=14})
+        }
+    }
+    @Test fun `leap rises and falls continuously instead of hovering during the rotation`() {
+        val c=asset.clips.getValue("vault_slam")
+        for(t in 20..35)assertTrue(c.frames[t+1][0].p.y-2*c.frames[t][0].p.y+c.frames[t-1][0].p.y<-.02)
+        assertEquals(3.2,c.frames.last()[0].p.z,1e-4)
+        assertTrue(WardenBlade.TIP>3.4)
+    }
+    @Test fun `pixel surfaces have small discrete palettes instead of continuous material noise`() {
+        ZipInputStream(requireNotNull(javaClass.getResourceAsStream("/ashen-warden/warden-pack.zip"))).use {z->
+            while(true){val e=z.nextEntry?:break;if(!e.name.endsWith(".png"))continue
+                val im=javax.imageio.ImageIO.read(z.readAllBytes().inputStream());val colors=mutableSetOf<Int>()
+                for(y in 0 until im.height)for(x in 0 until im.width)colors+=im.getRGB(x,y)
+                assertTrue(colors.size in 3..5,"${e.name} has ${colors.size} colors")
+                if(e.name.endsWith("/iron.png"))assertTrue(colors.contains(0xFF7896BE.toInt()),"sRGB palette was darkened during export")
+            }
+        }
+    }
+    @Test fun `combo wrist does not snap ninety degrees between swings or during recovery`() {
+        for(name in listOf("rush_combo","onslaught")) {
+            val c=asset.clips.getValue(name)
+            for(t in 1..c.duration)if(!c.active(t)) {
+                val a=c.frames[t-1][asset.weapon].q;val b=c.frames[t][asset.weapon].q
+                val dot=abs(a.x*b.x+a.y*b.y+a.z*b.z+a.w*b.w).coerceIn(0.0,1.0)
+                assertTrue(2*acos(dot)<Math.toRadians(65.0),"$name wrist snaps at tick $t")
+            }
         }
     }
 }

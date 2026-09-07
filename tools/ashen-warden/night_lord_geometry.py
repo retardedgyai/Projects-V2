@@ -10,12 +10,12 @@ def build_model(box):
             r=(turn@Euler(tuple(math.radians(a) for a in rot),'XYZ').to_matrix()).to_euler('XYZ')
             rot=tuple(math.degrees(a) for a in r)
         original_box(b,c,size,mat,rot,front_uv)
-    def plate(b,points,c=(0,0,0),depth=.05,mat='iron',rot=(0,0,0),rim=True,step=.04):
+    def plate(b,points,c=(0,0,0),depth=.05,mat='iron',rot=(0,0,0),rim=True,step=.075):
         # Rasterize a designed outline into thin strips. Native vanilla cuboids,
         # one continuous 32px UV field, no conical stack or smoothed mesh.
         low=min(y for x,y in points);high=max(y for x,y in points)
         left=min(x for x,y in points);right=max(x for x,y in points)
-        rows=max(1,math.ceil((high-low)/step));dy=(high-low)/rows
+        step=max(step,.065);rows=max(1,math.ceil((high-low)/step));dy=(high-low)/rows
         rotation=Euler(tuple(math.radians(a) for a in rot),'XYZ').to_matrix()
         for row in range(rows):
             y=low+(row+.5)*dy;cuts=[]
@@ -25,12 +25,12 @@ def build_model(box):
             a=min(cuts);z=max(cuts);width=z-a
             if width<.006:continue
             segments=[(a,z,mat)]
-            if rim and width>.08:
-                segments=[(a,a+.025,'edge'),(a+.025,z-.025,mat),(z-.025,z,'edge')]
+            if rim and width>.16:
+                segments=[(a,a+.045,'edge'),(a+.045,z-.045,mat),(z-.045,z,'edge')]
             for x0,x1,m in segments:
                 pos=Vector(c)+rotation@Vector(((x0+x1)/2,y,0))
-                uv=[(x0-left)/(right-left)*24,(y-dy/2-low)/(high-low)*28,
-                    (x1-left)/(right-left)*24,(y+dy/2-low)/(high-low)*28]
+                uv=[(x0-left)/(right-left)*16,(y-dy/2-low)/(high-low)*24,
+                    (x1-left)/(right-left)*16,(y+dy/2-low)/(high-low)*24]
                 box(b,list(pos),(x1-x0,dy+.0002,depth),m,rot,uv)
     def bar(b,a,z,width,depth,mat='iron'):
         a=Vector(a);z=Vector(z);v=z-a;r=Vector((0,1,0)).rotation_difference(v.normalized()).to_euler('XYZ')
@@ -77,7 +77,7 @@ def build_model(box):
                   (s*(.23+j*.12),-.12,-.08),.022,'cloth',(-12,0,-s*7),False,.05)
         shard('cape_02',(s*.18,.08,-.03),(s*.28,-.62,-.12),.17,.022,'cloth')
     # Shoulder shells overlap outward, with flat blade-like projections.
-    shell=[(-.27,.17),(.12,.25),(.55,.05),(.34,-.02),(.27,-.16),(-.19,-.08)]
+    shell=[(-.25,.17),(.10,.25),(.43,.05),(.30,-.02),(.24,-.16),(-.19,-.08)]
     for side,s in [('l',-1),('r',1)]:
         b='shoulder_'+side
         box(b,(s*.08,-.045,-.015),(.38,.22,.38),'bronze',(0,0,-s*19))
@@ -85,9 +85,9 @@ def build_model(box):
             points=[(s*x,y) for x,y in shell]
             plate(b,points,(s*j*.075,.03-j*.13,.15-j*.025),.065,'iron',(0,0,-s*13),True,.045)
             plate(b,points,(s*j*.075,.03-j*.13,-.16),.055,'iron',(0,0,-s*13),True,.06)
-        for a,end,w in [((-.10,.10,.13),(.08,.57,.08),.12),((.02,.10,.13),(.47,.55,.08),.13),
-                        ((.10,.08,.11),(.73,.37,.06),.14),((.20,0,.12),(.71,.03,.08),.12),
-                        ((.04,.10,-.13),(.48,.40,-.30),.12)]:
+        for a,end,w in [((-.10,.10,.13),(.06,.48,.08),.14),
+                        ((.10,.08,.11),(.56,.29,.06),.17),
+                        ((.04,.10,-.13),(.35,.37,-.28),.13)]:
             shard(b,(s*a[0],a[1],a[2]),(s*end[0],end[1],end[2]),w,.03,'edge')
         u='upper_arm_'+side;f='forearm_'+side;h='hand_'+side
         box(u,(0,-.23,0),(.23,.46,.24),'bronze')
@@ -128,9 +128,8 @@ def build_model(box):
     for row in range(-6,7):
         half=math.sqrt(max(0,6.7**2-row*row))*.030
         box('vfx_chest',(0,-.055+row*.041,.105),(half*2,.041,.028),'cloth')
-    for row in range(-5,6):
-        half=math.sqrt(max(0,5.7**2-row*row))*.029
-        box('vfx_chest',(0,-.055+row*.040,.132),(half*2,.040,.023),'ember')
+    for row,half in enumerate([1,2,2,4,3,4,3,2,3,1,1]):
+        box('vfx_chest',(0,-.255+row*.040,.132),(half*.075,.040,.023),'ember')
     shard('vfx_chest',(-.09,.05,.11),(-.15,.27,.105),.07,.016,'ember')
     shard('vfx_chest',(.075,.035,.11),(.06,.22,.105),.07,.016,'ember')
     box('vfx_chest',(0,-.055,.15),(1.20,.013,.012),'ember')
@@ -147,10 +146,11 @@ def build_model(box):
         for a,z in zip(pts,pts[1:]):bar('weapon_root',a,z,.075,.075,'dark')
         bar('weapon_root',(s*.20,0,.41),(s*.31,0,.21),.07,.07,'dark')
         shard('weapon_root',(s*.30,0,.24),(s*.48,0,.27),.06,.055,'dark')
-    plate('weapon_root',[(-.17,.43),(.17,.43),(.215,.69),(.17,2.24),(0,2.64),(-.17,2.24),(-.215,.69)],
+    plate('weapon_root',[(x*1.4,.43+(y-.43)*1.35) for x,y in [(-.17,.43),(.17,.43),(.215,.69),(.17,2.24),(0,2.64),(-.17,2.24),(-.215,.69)]],
           (0,0,0),.065,'bone',(90,0,0),True,.075)
     # Central fuller and small angular traces, kept flat on the blade surface.
-    bar('weapon_root',(0,.043,.62),(0,.043,2.35),.036,.013,'edge')
+    def blade_point(x,y,z):return x*1.4,y,.43+(z-.43)*1.35
+    bar('weapon_root',blade_point(0,.043,.62),blade_point(0,.043,2.35),.045,.013,'edge')
     for s in (-1,1):
-        bar('weapon_root',(0,.045,.87),(s*.12,.045,.65),.024,.012,'bronze')
-        bar('weapon_root',(s*.12,.045,.65),(s*.12,.045,1.30),.022,.012,'edge')
+        bar('weapon_root',blade_point(0,.045,.87),blade_point(s*.12,.045,.65),.032,.012,'bronze')
+        bar('weapon_root',blade_point(s*.12,.045,.65),blade_point(s*.12,.045,1.30),.030,.012,'edge')

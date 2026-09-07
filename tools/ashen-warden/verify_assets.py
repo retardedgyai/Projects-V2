@@ -2,8 +2,8 @@
 import pathlib,json,sys,zipfile,struct,math
 root=pathlib.Path(sys.argv[1]);a=json.loads((root/'warden.json').read_text(encoding='utf8'))
 assert 20<=len(a['bones'])<=35
-assert a['fps']==20 and a['modelScale']==2
-assert len(a['clips'])==11
+assert a['fps']==20 and abs(a['modelScale']-8/3)<1e-6
+assert len(a['clips'])==13
 for c in a['clips']:
     previous=-1
     for start,end in c['windows']:

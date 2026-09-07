@@ -4,6 +4,10 @@ All meshes are rigid cuboids; each pixel texture is 32x32. No AI image assets.
 """
 import bpy, math, json, sys, pathlib, random, zipfile, struct
 from mathutils import Vector, Matrix, Quaternion
+sys.path.insert(0,str(pathlib.Path(__file__).resolve().parent))
+from night_lord_palette import PALETTES,pixel,region
+MODEL_PIXELS=6.0
+BLADE_TIP=3.4135
 
 OUT = pathlib.Path(sys.argv[sys.argv.index('--')+1]).resolve()
 OUT.mkdir(parents=True, exist_ok=True)
@@ -50,7 +54,7 @@ for b in B:
     x,y,z=b['bind'];b['bind']=(x,y*1.18,z)
 for b in B:
     if b['name'] in ['weapon_root','weapon_tip','vfx_blade']:
-        length={'weapon_root':0,'weapon_tip':2.64,'vfx_blade':1.28}[b['name']]
+        length={'weapon_root':0,'weapon_tip':BLADE_TIP,'vfx_blade':1.92}[b['name']]
         b['bind']=(.5856,1.15*1.18-.08,-.06+length)
 bind={b['name']:Vector(b['bind']) for b in B}
 bpy.ops.object.armature_add(); rig=bpy.context.object; rig.name='ASHEN_WARDEN_RIG'
@@ -60,31 +64,22 @@ for b in B:
     if b['parent']: e.parent=rig.data.edit_bones[b['parent']]
 bpy.ops.object.mode_set(mode='OBJECT'); rig.show_in_front=True
 
-colors={'iron':(135,155,178),'edge':(176,195,215),'dark':(66,62,72),'bronze':(107,128,153),'cloth':(103,58,126),'ember':(250,247,255),'bone':(196,191,230)}
+colors={name:palette[2] for name,palette in PALETTES.items()}
 materials={}
 for name,col in colors.items():
     rng=random.Random(503+list(colors).index(name)); im=bpy.data.images.new(name+'_32px',32,32,alpha=True)
     px=[]
     for y in range(32):
         for x in range(32):
-            # Broad hammered panels and intentional 1px chips, never filtered noise.
-            # Hand-placed pixel clusters: broken edge highlights and plate bevels.
-            cluster=((x//3)*5+(y//3)*7+(x//6)*(y//6))%7
-            d=[-18,-10,-5,0,4,10,18][cluster]
-            if (x+y//3)%13 in (0,1) and y%11<6:d+=17
-            if (x-y//4)%17==9 and y%9<4:d-=15
-            if name=='dark':d*=.38
-            if name=='cloth':d*=.70
-            if name=='ember':d=5 if (x//2+y//3)%4==0 else -6
-            rgb=[max(0,min(255,c+d))/255 for c in col]
-            px.extend([v/12.92 if v<=.04045 else ((v+.055)/1.055)**2.4 for v in rgb]+[1])
-    im.pixels=px; dest=PACK/f'assets/projects/textures/item/warden/{name}.png';dest.parent.mkdir(parents=True,exist_ok=True)
+            rgb=[c/255 for c in pixel(name,x,y)]
+            px.extend(rgb+[1])
+    im.colorspace_settings.name='sRGB';im.pixels=px; dest=PACK/f'assets/projects/textures/item/warden/{name}.png';dest.parent.mkdir(parents=True,exist_ok=True)
     im.filepath_raw=str(dest);im.file_format='PNG';im.save();im.pack()
     write_json(dest.with_suffix('.png.mcmeta'),{'texture':{'blur':False,'clamp':False,'mipmaps':[]}})
     m=bpy.data.materials.new(name);m.use_nodes=True;nodes=m.node_tree.nodes;nodes.clear()
     tex=nodes.new('ShaderNodeTexImage');tex.image=im;tex.interpolation='Closest'
-    diffuse=nodes.new('ShaderNodeEmission' if name=='ember' else 'ShaderNodeBsdfDiffuse')
-    if name!='ember':diffuse.inputs['Roughness'].default_value=1
+    # Reference-like painted lighting: inspect the actual texel colors without a studio metal sheen.
+    diffuse=nodes.new('ShaderNodeEmission')
     output=nodes.new('ShaderNodeOutputMaterial');m.node_tree.links.new(tex.outputs['Color'],diffuse.inputs['Color']);m.node_tree.links.new(diffuse.outputs[0],output.inputs[0]); materials[name]=m
 
 parts=[]
@@ -103,13 +98,11 @@ def box(b,center,size,material='iron',rotation=(0,0,0),front_uv=None):
     for poly in mesh.polygons:
         poly.use_smooth=False
         axes=(0,2) if abs(poly.normal.z)>.5 else ((0,1) if abs(poly.normal.y)>.5 else (2,1))
-        w=max(1,min(32,round(size[axes[0]]*32)));h=max(1,min(32,round(size[axes[1]]*32)))
-        u=(idx*7)%(33-w);v=(idx*11)%(33-h)
-        region=front_uv if front_uv is not None and abs(poly.normal.y)>.5 else (u,v,u+w,v+h)
+        uv_region=region(center,size,axes,front_uv if abs(poly.normal.y)>.5 else None)
         for li in poly.loop_indices:
             p=(C.inverted()@mesh.vertices[mesh.loops[li].vertex_index].co.to_4d()).to_3d()
             uu=p[axes[0]]/size[axes[0]]+.5;vv=p[axes[1]]/size[axes[1]]+.5
-            mesh.uv_layers.active.data[li].uv=((region[0]+uu*(region[2]-region[0]))/32,(region[1]+vv*(region[3]-region[1]))/32)
+            mesh.uv_layers.active.data[li].uv=((uv_region[0]+uu*(uv_region[2]-uv_region[0]))/32,(uv_region[1]+vv*(uv_region[3]-uv_region[1]))/32)
     for v in mesh.vertices:v.co=(rotation_bl@v.co.to_4d()).to_3d()
     mesh.update()
     o.data.materials.append(materials[material]);g=o.vertex_groups.new(name=b);g.add(list(range(len(o.data.vertices))),1,'REPLACE')
@@ -142,19 +135,36 @@ for name,(duration,loop,active) in clips.items():
         pose(name,tick)
         m=C.inverted()@rig.pose.bones['weapon_root'].matrix@C
         hand=C.inverted()@rig.pose.bones['hand_r'].matrix@C
-        rotation=m.to_quaternion();raw_rotations.append(rotation)
+        rotation=m.to_quaternion()
         axis=rotation@Vector((0,0,1))
+        # Parallel transport the roll frame. The bent forearm's projected basis can
+        # flip near a straight elbow; it must not flip the wrist between two cuts.
+        if raw_rotations:
+            previous=raw_rotations[-1]
+            rotation=(previous@Vector((0,0,1))).rotation_difference(axis)@previous
+        raw_rotations.append(rotation)
         travel.append(hand.translation+axis*1.6)
     windows=HIT_WINDOWS.get(name,[active] if active else [])
+    edge_angles={}
+    previous_angle=None
+    for start,end in windows:
+        for tick in range(start,end+1):
+            local=raw_rotations[tick].conjugated()@(travel[tick]-travel[max(0,tick-1)])
+            angle=math.atan2(local.x,local.y)
+            if previous_angle is not None:
+                angle=previous_angle+(angle-previous_angle+math.pi/2)%math.pi-math.pi/2
+            edge_angles[tick]=angle;previous_angle=angle
     samples=[]
     for tick in range(duration+1):
         edge=None;weight=0.
         if active:
             # Pre-align during anticipation; no last-moment 90-degree wrist flip.
-            nearest=min((k for a,b in windows for k in range(a,b+1)),key=lambda k:abs(k-tick))
-            k=tick if any(a<=tick<=b for a,b in windows) else nearest
-            edge=travel[k]-travel[max(0,k-1)]
-            if k!=tick:edge=raw_rotations[tick]@(raw_rotations[k].conjugated()@edge)
+            before=max((k for k in edge_angles if k<=tick),default=min(edge_angles))
+            after=min((k for k in edge_angles if k>=tick),default=max(edge_angles))
+            u=0. if before==after else (tick-before)/(after-before)
+            u=u*u*(3-2*u)
+            angle=edge_angles[before]+(edge_angles[after]-edge_angles[before])*u
+            edge=raw_rotations[tick]@Vector((math.sin(angle),math.cos(angle),0))
             weight=min(1.,tick/max(1,active[0]-5),(duration-tick)/max(1,duration-active[1]-6))
             weight=weight*weight*(3-2*weight)
         scene.frame_set(tick+1);pose(name,tick,edge,weight)
@@ -168,7 +178,7 @@ for name,(duration,loop,active) in clips.items():
     windows=HIT_WINDOWS.get(name,[active] if active else [])
     exports.append(dict(name=name,duration=duration,loop=loop,active=active,windows=windows,samples=samples))
 
-asset=dict(schema=2,name='夜葬の番人',id='ashen_warden',fps=20,modelScale=2,bones=B,parts=parts,clips=exports)
+asset=dict(schema=2,name='夜葬の番人',id='ashen_warden',fps=20,modelScale=16/MODEL_PIXELS,bladeTip=BLADE_TIP,bones=B,parts=parts,clips=exports)
 write_json(OUT/'warden.json',asset)
 # Binary has no runtime JSON dependency. Big-endian floats, explicit version/counts.
 with (RES/'warden.bin').open('wb') as f:
@@ -186,20 +196,18 @@ for b in B:
     elements=[]
     for idx,p in enumerate(parts):
         if p['bone']!=b['name']:continue
-        lo=[8+(c-s/2)*8 for c,s in zip(p['center'],p['size'])];hi=[8+(c+s/2)*8 for c,s in zip(p['center'],p['size'])]
+        lo=[8+(c-s/2)*MODEL_PIXELS for c,s in zip(p['center'],p['size'])];hi=[8+(c+s/2)*MODEL_PIXELS for c,s in zip(p['center'],p['size'])]
         assert all(-16<=a<=32 for a in lo+hi)
         faces={}
         for face in ['north','south','east','west','up','down']:
             axes=(0,1) if face in ['north','south'] else ((2,1) if face in ['east','west'] else (0,2))
-            w=max(1,min(32,round(p['size'][axes[0]]*32)));h=max(1,min(32,round(p['size'][axes[1]]*32)))
-            u=(idx*7)%(33-w);v=(idx*11)%(33-h);uv=[u/2,v/2,(u+w)/2,(v+h)/2]
-            if p.get('front_uv') is not None and face in ['north','south']:uv=[a/2 for a in p['front_uv']]
+            uv=[v/2 for v in region(p['center'],p['size'],axes,p.get('front_uv') if face in ['north','south'] else None)]
             faces[face]={'uv':uv,'texture':'#'+p['material']}
-        element={'from':lo,'to':hi,'faces':faces}
-        if any(p.get('rotation',[])):element['rotation']={'origin':[8+c*8 for c in p['center']],**dict(zip('xyz',p['rotation']))}
+        element={'from':lo,'to':hi,'faces':faces,'shade':False,'light_emission':15}
+        if any(p.get('rotation',[])):element['rotation']={'origin':[8+c*MODEL_PIXELS for c in p['center']],**dict(zip('xyz',p['rotation']))}
         elements.append(element)
     if elements:
-        name=b['name'];write_json(PACK/f'assets/projects/models/item/warden/{name}.json',{'textures':{k:f'projects:item/warden/{k}' for k in colors},'elements':elements,'gui_light':'front'})
+        name=b['name'];write_json(PACK/f'assets/projects/models/item/warden/{name}.json',{'textures':{k:f'projects:item/warden/{k}' for k in colors},'elements':elements,'gui_light':'front','ambientocclusion':False})
         write_json(PACK/f'assets/projects/items/warden/{name}.json',{'model':{'type':'minecraft:model','model':f'projects:item/warden/{name}'}})
 write_json(PACK/'pack.mcmeta',{'pack':{'min_format':[88,0],'max_format':[88,0],'description':'ProjectS | Ashen Warden | Minecraft 26.2'}})
 with zipfile.ZipFile(RES/'warden-pack.zip','w',zipfile.ZIP_DEFLATED) as z:
@@ -214,7 +222,7 @@ m=bpy.data.materials.new('Preview floor');m.diffuse_color=(.06,.075,.08,1);floor
 world=scene.world;world.color=(.08,.08,.08)
 for loc,power,size in [((3,-4,7),850,5),((-4,-1,4),600,4),((0,4,5),850,3)]:
     bpy.ops.object.light_add(type='AREA',location=loc);light=bpy.context.object;light.data.energy=power;light.data.shape='DISK';light.data.size=size;light.rotation_euler=(Vector((0,0,1.3))-light.location).to_track_quat('-Z','Y').to_euler()
-bpy.ops.object.camera_add(location=(-3,-9,4.4));camera=bpy.context.object;camera.rotation_euler=(Vector((.8,-.25,1.95))-camera.location).to_track_quat('-Z','Y').to_euler();camera.data.type='ORTHO';camera.data.ortho_scale=5.8;scene.camera=camera
+bpy.ops.object.camera_add(location=(-3,-9,4.4));camera=bpy.context.object;camera.rotation_euler=(Vector((.8,-.25,1.95))-camera.location).to_track_quat('-Z','Y').to_euler();camera.data.type='ORTHO';camera.data.ortho_scale=7.2;scene.camera=camera
 scene.render.engine='CYCLES';scene.cycles.samples=16;scene.render.resolution_x=960;scene.render.resolution_y=960;scene.render.resolution_percentage=100
 scene.view_settings.view_transform='Standard';scene.render.image_settings.file_format='PNG'
 scene.render.filepath=str(OUT/'warden-preview.png');bpy.ops.render.render(write_still=True)

@@ -42,8 +42,13 @@ internal data class WardenBone(val name:String,val parent:Int,val visible:Boolea
 /** 26.2 ItemDisplayRenderer appends a Y half-turn after the entity transformation.
  * Cancel it in local model space, preserving the animated bone rotation and locators. */
 internal object WardenItemDisplay {
-    const val SCALE=2.0
+    const val SCALE=8.0/3.0
     val rightRotation=Q4.yaw(PI)
+}
+internal object WardenBlade {
+    const val START=.44
+    const val TIP=3.4135
+    const val RADIUS=.33
 }
 /** Blend joint-local transforms before FK so changing actions cannot detach the grip. */
 internal fun blendBoneHierarchy(bones:List<WardenBone>,from:List<BonePose>,to:List<BonePose>,t:Double):List<BonePose> {
@@ -95,7 +100,7 @@ internal class WardenAsset(val bones:List<WardenBone>,val clips:Map<String,Warde
                 WardenClip(name,n,loop,windows,frames)
             }.associateBy {it.name}
             require(s.read()==-1);require(bones.map {it.name}.distinct().size==count)
-            require(clips.keys.containsAll(listOf("idle","walk","slash_01","heavy_slash","dash","spin_slash","spiral_combo","vault_slam","hurt","phase_transition","death")))
+            require(clips.keys.containsAll(listOf("idle","walk","slash_01","heavy_slash","dash","spin_slash","spiral_combo","vault_slam","rush_combo","onslaught","hurt","phase_transition","death")))
             WardenAsset(bones,clips).also {require(it.weapon>=0 && it.tip>=0 && it.chest>=0)}
         }
     }
@@ -124,9 +129,9 @@ internal fun segmentBoxDistanceSquared(a:V3,b:V3,lo:V3,hi:V3):Double {
  * half a spacing is added to the blade radius to cover between samples. */
 internal fun sweptBladeHit(previous:BonePose,current:BonePose,lo:V3,hi:V3):Boolean {
     val dot=abs(previous.q.x*current.q.x+previous.q.y*current.q.y+previous.q.z*current.q.z+previous.q.w*current.q.w).coerceIn(0.0,1.0)
-    val travel=(current.p-previous.p).length()+2.65*2*acos(dot)
+    val travel=(current.p-previous.p).length()+WardenBlade.TIP*2*acos(dot)
     val steps=ceil(travel/.06).toInt().coerceIn(1,512)
-    val radius=.25+travel/steps/2
+    val radius=WardenBlade.RADIUS+travel/steps/2
     return (0..steps).any {i->val p=previous.lerp(current,i.toDouble()/steps)
-        segmentBoxDistanceSquared(p.point(V3(0.0,0.0,.44)),p.point(V3(0.0,0.0,2.64)),lo,hi)<=radius*radius}
+        segmentBoxDistanceSquared(p.point(V3(0.0,0.0,WardenBlade.START)),p.point(V3(0.0,0.0,WardenBlade.TIP)),lo,hi)<=radius*radius}
 }
