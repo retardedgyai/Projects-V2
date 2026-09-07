@@ -39,6 +39,23 @@ internal data class BonePose(val p:V3,val q:Q4) {
     fun point(local:V3)=p+q.rotate(local)
 }
 internal data class WardenBone(val name:String,val parent:Int,val visible:Boolean)
+/** Blend joint-local transforms before FK so changing actions cannot detach the grip. */
+internal fun blendBoneHierarchy(bones:List<WardenBone>,from:List<BonePose>,to:List<BonePose>,t:Double):List<BonePose> {
+    val result=ArrayList<BonePose>(bones.size)
+    fun local(p:BonePose,parent:BonePose):BonePose {
+        val inverse=Q4(-parent.q.x,-parent.q.y,-parent.q.z,parent.q.w)
+        return BonePose(inverse.rotate(p.p-parent.p),inverse*p.q)
+    }
+    bones.forEachIndexed {i,b->
+        if(b.parent<0)result+=from[i].lerp(to[i],t)
+        else {
+            val pose=local(from[i],from[b.parent]).lerp(local(to[i],to[b.parent]),t)
+            val parent=result[b.parent]
+            result+=BonePose(parent.point(pose.p),parent.q*pose.q)
+        }
+    }
+    return result
+}
 internal data class WardenClip(val name:String,val duration:Int,val loop:Boolean,val activeStart:Int,val activeEnd:Int,val frames:List<List<BonePose>>) {
     fun frame(t:Double):List<BonePose> {
         val f=if(loop) ((t%duration)+duration)%duration else t.coerceIn(0.0,duration.toDouble())

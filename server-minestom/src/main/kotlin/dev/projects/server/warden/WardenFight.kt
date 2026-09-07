@@ -19,6 +19,9 @@ internal class WardenFight(val asset:WardenAsset) {
     private var attackIndex=0
     private var noTarget=0
     private val hit=mutableSetOf<UUID>()
+    private var transitionFrom:List<BonePose>?=null
+    private var transitionAt=0L
+    private var transitionPosition=V3.ZERO
     var previousWeapon:BonePose=worldPose()[asset.weapon];private set
     var currentWeapon=previousWeapon;private set
     val clip get()=asset.clips.getValue(action)
@@ -28,10 +31,14 @@ internal class WardenFight(val asset:WardenAsset) {
     val recovery get()=action in listOf("slash_01","heavy_slash","dash") && frame>clip.activeEnd
     fun reset() {
         health=360.0;phase=1;position=V3.ZERO;yaw=0.0;running=false;phasePending=false;nextAttack=ticks+30;attackIndex=0;noTarget=0
-        start("idle");currentWeapon=worldPose()[asset.weapon];previousWeapon=currentWeapon
+        start("idle",false);currentWeapon=worldPose()[asset.weapon];previousWeapon=currentWeapon
     }
     fun begin(){reset();running=true}
-    private fun start(name:String){action=name;frame=0;sequence++;hit.clear()}
+    private fun start(name:String,blend:Boolean=true){
+        val from=if(blend)worldPose() else null
+        action=name;frame=0;sequence++;hit.clear()
+        transitionFrom=from;transitionAt=ticks;transitionPosition=position
+    }
     fun damage(amount:Double):Boolean {
         require(amount.isFinite() && amount>=0)
         if(!running || dead || action=="phase_transition")return false
@@ -42,8 +49,17 @@ internal class WardenFight(val asset:WardenAsset) {
         if(action in listOf("idle","walk"))start("hurt")
         return true
     }
-    fun worldPose(ahead:Int=0):List<BonePose> = clip.frame((frame+ahead).toDouble()).map {
-        BonePose(position+it.p.rotateYaw(yaw),Q4.yaw(yaw)*it.q)
+    fun worldPose(ahead:Int=0):List<BonePose> {
+        val poses=clip.frame((frame+ahead).toDouble())
+        val root=clip.frame(frame.toDouble())[0].p.let {V3(it.x,0.0,it.z)}
+        val target=poses.map {
+            BonePose(position+(it.p-root).rotateYaw(yaw),Q4.yaw(yaw)*it.q)
+        }
+        val from=transitionFrom?:return target
+        val t=((ticks+ahead-transitionAt)/6.0).coerceIn(0.0,1.0)
+        if(t>=1)return target
+        val moved=from.map {BonePose(it.p+position-transitionPosition,it.q)}
+        return blendBoneHierarchy(asset.bones,moved,target,t*t*(3-2*t))
     }
     fun claimHit(id:UUID):Boolean=active && hit.add(id)
     fun tick(target:V3?) {
@@ -53,7 +69,9 @@ internal class WardenFight(val asset:WardenAsset) {
         if(target==null)noTarget++ else noTarget=0
         if(noTarget>100 || position.length()>15){reset();return}
         if(action !in listOf("idle","walk")) {
-            if(action=="dash" && frame in 13..20)position+=V3(0.0,0.0,.34).rotateYaw(yaw)
+            val before=clip.frame(frame.toDouble())[0].p
+            val after=clip.frame((frame+1).toDouble())[0].p
+            position+=V3(after.x-before.x,0.0,after.z-before.z).rotateYaw(yaw)
             frame++
             if(frame>=clip.duration){if(action=="phase_transition")phase=2;start("idle");nextAttack=ticks+if(phase==2)10 else 18}
         } else {

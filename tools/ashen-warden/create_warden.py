@@ -60,7 +60,7 @@ for b in B:
     if b['parent']: e.parent=rig.data.edit_bones[b['parent']]
 bpy.ops.object.mode_set(mode='OBJECT'); rig.show_in_front=True
 
-colors={'iron':(112,132,163),'edge':(166,185,211),'dark':(39,38,46),'bronze':(101,119,153),'cloth':(92,41,116),'ember':(217,218,255),'bone':(170,175,214)}
+colors={'iron':(135,155,178),'edge':(176,195,215),'dark':(66,62,72),'bronze':(107,128,153),'cloth':(103,58,126),'ember':(250,247,255),'bone':(196,191,230)}
 materials={}
 for name,col in colors.items():
     rng=random.Random(503+list(colors).index(name)); im=bpy.data.images.new(name+'_32px',32,32,alpha=True)
@@ -69,13 +69,13 @@ for name,col in colors.items():
         for x in range(32):
             # Broad hammered panels and intentional 1px chips, never filtered noise.
             # Hand-placed pixel clusters: broken edge highlights and plate bevels.
-            cluster=((x//3)*7+(y//5)*11+(x//7)*(y//4))%9
-            d=[-23,-14,-8,-3,0,4,10,17,27][cluster]
-            if x%16 in (1,2) or y%16==2:d+=16
-            if x%16==14 or y%16==14:d-=15
+            cluster=((x//3)*5+(y//3)*7+(x//6)*(y//6))%7
+            d=[-18,-10,-5,0,4,10,18][cluster]
+            if (x+y//3)%13 in (0,1) and y%11<6:d+=17
+            if (x-y//4)%17==9 and y%9<4:d-=15
             if name=='dark':d*=.38
             if name=='cloth':d*=.70
-            if name=='ember':d=18 if (x//2+y//3)%4==0 else -14
+            if name=='ember':d=5 if (x//2+y//3)%4==0 else -6
             rgb=[max(0,min(255,c+d))/255 for c in col]
             px.extend([v/12.92 if v<=.04045 else ((v+.055)/1.055)**2.4 for v in rgb]+[1])
     im.pixels=px; dest=PACK/f'assets/projects/textures/item/warden/{name}.png';dest.parent.mkdir(parents=True,exist_ok=True)
@@ -88,11 +88,14 @@ for name,col in colors.items():
     output=nodes.new('ShaderNodeOutputMaterial');m.node_tree.links.new(tex.outputs['Color'],diffuse.inputs['Color']);m.node_tree.links.new(diffuse.outputs[0],output.inputs[0]); materials[name]=m
 
 parts=[]
-def box(b,center,size,material='iron',rotation=(0,0,0)):
+def box(b,center,size,material='iron',rotation=(0,0,0),front_uv=None):
     # Native mesh source and resource-pack cuboid use exactly the same coordinates.
     idx=len(parts); center=Vector(center); size=Vector(size)
-    bpy.ops.mesh.primitive_cube_add(size=1, location=cv(bind[b]+center));o=bpy.context.object;o.name=f'{b}_{idx:03}_{material}'
-    o.scale=(size.x,size.z,size.y);bpy.ops.object.transform_apply(location=False,rotation=False,scale=True)
+    mesh=bpy.data.meshes.new(f'part_{idx}')
+    vertices=[(x*size.x/2,y*size.z/2,z*size.y/2) for x,y,z in [(-1,-1,-1),(-1,-1,1),(-1,1,-1),(-1,1,1),(1,-1,-1),(1,-1,1),(1,1,-1),(1,1,1)]]
+    mesh.from_pydata(vertices,[],[(0,4,6,2),(1,3,7,5),(0,1,5,4),(2,6,7,3),(0,2,3,1),(4,5,7,6)])
+    mesh.update();mesh.uv_layers.new(name='PixelUV')
+    o=bpy.data.objects.new(f'{b}_{idx:04}_{material}',mesh);bpy.context.collection.objects.link(o);o.location=cv(bind[b]+center)
     rotation_mc=Matrix.Rotation(math.radians(rotation[2]),4,'Z')@Matrix.Rotation(math.radians(rotation[1]),4,'Y')@Matrix.Rotation(math.radians(rotation[0]),4,'X')
     rotation_bl=C@rotation_mc@C.inverted()
     # Apply per-face pixel UVs at 32 texels per block, capped to one 32px tile.
@@ -102,173 +105,33 @@ def box(b,center,size,material='iron',rotation=(0,0,0)):
         axes=(0,2) if abs(poly.normal.z)>.5 else ((0,1) if abs(poly.normal.y)>.5 else (2,1))
         w=max(1,min(32,round(size[axes[0]]*32)));h=max(1,min(32,round(size[axes[1]]*32)))
         u=(idx*7)%(33-w);v=(idx*11)%(33-h)
-        for li,uv in zip(poly.loop_indices,[(u/32,v/32),((u+w)/32,v/32),((u+w)/32,(v+h)/32),(u/32,(v+h)/32)]): mesh.uv_layers.active.data[li].uv=uv
+        region=front_uv if front_uv is not None and abs(poly.normal.y)>.5 else (u,v,u+w,v+h)
+        for li in poly.loop_indices:
+            p=(C.inverted()@mesh.vertices[mesh.loops[li].vertex_index].co.to_4d()).to_3d()
+            uu=p[axes[0]]/size[axes[0]]+.5;vv=p[axes[1]]/size[axes[1]]+.5
+            mesh.uv_layers.active.data[li].uv=((region[0]+uu*(region[2]-region[0]))/32,(region[1]+vv*(region[3]-region[1]))/32)
     for v in mesh.vertices:v.co=(rotation_bl@v.co.to_4d()).to_3d()
     mesh.update()
     o.data.materials.append(materials[material]);g=o.vertex_groups.new(name=b);g.add(list(range(len(o.data.vertices))),1,'REPLACE')
     mod=o.modifiers.new('Rigid bone','ARMATURE');mod.object=rig
-    parts.append(dict(bone=b,center=list(center),size=list(size),material=material,rotation=list(rotation)))
+    parts.append(dict(bone=b,center=list(center),size=list(size),material=material,rotation=list(rotation),front_uv=front_uv))
 
 sys.path.insert(0,str(pathlib.Path(__file__).resolve().parent))
-from night_lord_model import build_model
+from night_lord_geometry import build_model
 build_model(box)
+for b in B:
+    objects=[o for o in bpy.context.scene.objects if o.type=='MESH' and o.vertex_groups.get(b['name'])]
+    if len(objects)>1:
+        bpy.ops.object.select_all(action='DESELECT')
+        for o in objects:o.select_set(True)
+        bpy.context.view_layer.objects.active=objects[0];bpy.ops.object.join()
+        objects[0].name=b['name']+'_MESH'
 
 # Author all clips as Blender actions with a complete pose every frame (20Hz).
 scene=bpy.context.scene; scene.render.fps=20
-clips={'idle':(60,True,None),'walk':(32,True,None),'slash_01':(34,False,[13,18]),'heavy_slash':(48,False,[23,27]),'dash':(40,False,[18,22]),'hurt':(12,False,None),'phase_transition':(64,False,None),'death':(60,False,None)}
-def interp(t,keys):
-    for (a,v),(b,w) in zip(keys,keys[1:]):
-        if t<=b:
-            u=max(0,(t-a)/(b-a));u=u*u*(3-2*u);return v+(w-v)*u
-    return keys[-1][1]
-grip_roll=0.0
-def pose(name,t):
-    global grip_roll
-    rot={};delta={};pi=math.pi
-    rot.update(pelvis=(10,0,0),spine=(4,-6,-3),chest=(3,0,0),head=(-12,10,0),upper_arm_l=(-10,0,-10),forearm_l=(-15,0,0),upper_arm_r=(-9,-8,18),forearm_r=(-12,0,0),weapon_root=(44,0,0),cape_01=(-8,0,0),cape_02=(-8,0,0))
-    delta['pelvis']=(0,-.09+.015*math.sin(t*pi/30),0)
-    twist=0; reach=0;raise_arm=0; lean=0
-    if name=='walk':
-        rot['chest']=(3,5*math.sin(t*pi/16),0);rot['upper_arm_l']=(-10+9*math.sin(t*pi/16),0,10)
-        rot['cape_01']=(-10+5*math.sin((t-3)*pi/16),0,0)
-    if name=='slash_01':
-        twist=interp(t,[(0,0),(11,-65),(13,-70),(18,85),(23,95),(34,0)])
-        raise_arm=interp(t,[(0,0),(12,-10),(18,-5),(24,4),(34,0)])
-        reach=interp(t,[(0,0),(11,0),(18,.36),(23,.36),(34,0)])
-    if name=='heavy_slash':
-        raise_arm=interp(t,[(0,0),(19,-135),(23,-140),(27,25),(34,35),(48,0)])
-        twist=interp(t,[(0,0),(20,-22),(27,18),(34,25),(48,0)])
-        lean=interp(t,[(0,0),(20,-15),(27,28),(35,30),(48,0)])
-        reach=interp(t,[(0,0),(21,-.10),(27,.38),(36,.38),(48,0)])
-    if name=='dash':
-        raise_arm=interp(t,[(0,0),(13,-70),(17,-85),(22,45),(29,30),(40,0)])
-        lean=interp(t,[(0,0),(12,22),(18,5),(24,32),(40,0)])
-        twist=interp(t,[(0,0),(15,-35),(22,60),(28,65),(40,0)])
-    if name in ['slash_01','heavy_slash','dash']:
-        rot['pelvis']=(10+lean*.5,twist*.30,0);rot['spine']=(4+lean*.5,twist*.45,-5)
-        rot['chest']=(3,twist*.25,0);rot['upper_arm_r']=(-22+raise_arm,-8,-12)
-        rot['forearm_r']=(-20+raise_arm*.12,0,0)
-        rot['head']=(-12-lean,-twist*.35,0);delta['root']=(0,0,reach)
-        rot['cape_01']=(-8-abs(twist)*.20,0,-twist*.10)
-        if name=='slash_01':
-            turns=[(0,0),(11,-65),(13,-70),(18,85),(23,95),(34,0)]
-            rot['pelvis']=(14,interp(t+2,turns)*.30,0)
-            rot['spine']=(7,interp(t+1,turns)*.45,-5)
-            delta['pelvis']=(0,-.09-interp(t,[(0,0),(10,.10),(18,.06),(25,.07),(34,0)]),0)
-    if name=='hurt':
-        w=interp(t,[(0,0),(3,1),(6,.7),(12,0)]);rot['chest']=(-18*w,0,-9*w);rot['head']=(-12-15*w,10,0)
-    if name=='phase_transition':
-        w=interp(t,[(0,0),(22,1),(28,1),(34,-.6),(46,-.4),(64,0)])
-        rot['spine']=(4+32*w,-6,0);rot['head']=(-12+24*w,0,0);rot['upper_arm_l']=(-10-65*max(0,-w),0,30*max(0,-w))
-        delta['pelvis']=(0,-.09-.20*max(0,w),0)
-    if name=='death':
-        w=interp(t,[(0,0),(12,.30),(22,.35),(36,1),(60,1)])
-        delta['root']=(0,.40*w,0);rot['root']=(78*w,0,-12*w);rot['head']=(-12+24*w,0,0)
-    for b in B:
-        p=rig.pose.bones[b['name']];p.rotation_mode='QUATERNION'
-        p.location=cv(delta.get(b['name'],(0,0,0)))
-        p.rotation_quaternion=(C @ mat((0,0,0),rot.get(b['name'],(0,0,0))) @ C.inverted()).to_quaternion()
-    bpy.context.view_layer.update()
-    # Rest pose carries the sword outside the right leg, with its point near ground.
-    m=C.inverted()@rig.pose.bones['weapon_root'].matrix@C
-    down=max(-.92,min(-.1,(.14-m.translation.y)/2.64))
-    heading=math.radians(65);horizontal=math.sqrt(1-down*down)
-    direction=Vector((math.sin(heading)*horizontal,down,math.cos(heading)*horizontal))
-    q=Vector((0,0,1)).rotation_difference(direction)
-    rig.pose.bones['weapon_root'].matrix=C@(Matrix.Translation(m.translation)@q.to_matrix().to_4x4())@C.inverted()
-    bpy.context.view_layer.update()
-    # Wrist follows the authored cutting plane. Keep the edge above the arena floor
-    # instead of letting a long rigid blade tunnel under it during recovery.
-    if name in ['slash_01','heavy_slash','dash']:
-        m=C.inverted()@rig.pose.bones['weapon_root'].matrix@C
-        if name=='slash_01':
-            pitch=interp(t,[(0,-18),(11,5),(13,0),(18,-8),(25,-12),(34,-18)])
-            heading=twist-8;weight=interp(t,[(0,0),(8,1),(25,1),(34,0)])
-        elif name=='heavy_slash':
-            pitch=interp(t,[(0,-18),(19,120),(23,120),(25,15),(27,-30),(36,-30),(48,-18)])
-            heading=twist*.35;weight=interp(t,[(0,0),(12,1),(37,1),(48,0)])
-        else:
-            pitch=interp(t,[(0,-18),(13,65),(18,55),(20,-8),(22,-30),(30,-25),(40,-18)])
-            heading=twist*.10-12;weight=interp(t,[(0,0),(10,1),(30,1),(40,0)])
-        pitch=math.radians(pitch);heading=math.radians(heading)
-        direction=Vector((math.sin(heading)*math.cos(pitch),math.sin(pitch),math.cos(heading)*math.cos(pitch)))
-        if m.translation.y+direction.y*2.64 < .10:
-            direction.y=(.10-m.translation.y)/2.64
-            horizontal=math.sqrt(max(0,1-direction.y**2));xz=Vector((direction.x,0,direction.z)).normalized()
-            direction.x=xz.x*horizontal;direction.z=xz.z*horizontal
-        q=Vector((0,0,1)).rotation_difference(direction)
-        q=m.to_quaternion().slerp(q,weight)
-        rig.pose.bones['weapon_root'].matrix=C@(Matrix.Translation(m.translation)@q.to_matrix().to_4x4())@C.inverted()
-        bpy.context.view_layer.update()
-    if name=='death':
-        m=C.inverted()@rig.pose.bones['weapon_root'].matrix@C
-        weight=interp(t,[(0,0),(16,.2),(36,1),(60,1)])
-        q=m.to_quaternion().slerp(Quaternion((0,1,0),math.radians(65)),weight)
-        p=m.translation;p.y=max(.14,p.y)
-        rig.pose.bones['weapon_root'].matrix=C@(Matrix.Translation(p)@q.to_matrix().to_4x4())@C.inverted()
-        bpy.context.view_layer.update()
-    # Solve the arm to the authored grip. The weapon is rigid in the closed fist;
-    # it must never acquire an independent local wrist rotation or translation.
-    desired_weapon=C.inverted()@rig.pose.bones['weapon_root'].matrix@C
-    hand=C.inverted()@rig.pose.bones['hand_r'].matrix@C
-    shoulder=(C.inverted()@rig.pose.bones['upper_arm_r'].matrix@C).translation
-    target=hand.translation.copy()
-    if name=='slash_01':
-        # A hilt path: draw behind shoulder, drive across chest, settle left.
-        keys=[(0,(.72,-.79,.12)),(10,(.73,-.22,-.22)),(13,(.62,-.40,.21)),
-              (18,(-.42,-.70,.61)),(23,(-.52,-.75,.42)),(34,(.72,-.79,.12))]
-        local=Vector(tuple(interp(t,[(k,v[i]) for k,v in keys]) for i in range(3)))
-        chest=C.inverted()@rig.pose.bones['chest'].matrix@C
-        weight=interp(t,[(0,0),(6,1),(25,1),(34,0)])
-        target=target.lerp((chest@local.to_4d()).to_3d(),weight)
-    l1=(bind['forearm_r']-bind['upper_arm_r']).length
-    l2=(bind['hand_r']-bind['forearm_r']).length
-    axis=target-shoulder;distance=max(.12,min((l1+l2)*.97,axis.length))
-    axis.normalize();target=shoulder+axis*distance
-    along=(l1*l1-l2*l2+distance*distance)/(2*distance)
-    pole=Vector((.65,-.12,-.75));bend=pole-axis*pole.dot(axis)
-    if bend.length<.01:bend=Vector((1,0,0))-axis*axis.x
-    bend.normalize();elbow=shoulder+axis*along+bend*math.sqrt(max(0,l1*l1-along*along))
-    for bn,p0,p1 in [('upper_arm_r',shoulder,elbow),('forearm_r',elbow,target)]:
-        arm_q=Vector((0,-1,0)).rotation_difference((p1-p0).normalized())
-        rig.pose.bones[bn].matrix=C@(Matrix.Translation(p0)@arm_q.to_matrix().to_4x4())@C.inverted()
-        bpy.context.view_layer.update()
-    # Roll the fist around the blade so the knuckles follow the forearm.
-    blade=desired_weapon.to_quaternion()@Vector((0,0,1))
-    wrist=(target-elbow).normalized();yaxis=-(wrist-blade*wrist.dot(blade))
-    if yaxis.length<.01:yaxis=Vector((0,1,0))-blade*blade.y
-    yaxis.normalize();base_q=desired_weapon.to_quaternion()
-    base_x=base_q@Vector((1,0,0));base_y=base_q@Vector((0,1,0))
-    wanted_roll=math.atan2(-yaxis.dot(base_x),yaxis.dot(base_y))
-    if t==0:grip_roll=wanted_roll
-    else:
-        change=math.atan2(math.sin(wanted_roll-grip_roll),math.cos(wanted_roll-grip_roll))
-        grip_roll+=max(-math.radians(6),min(math.radians(6),change))
-    grip_q=base_q@Quaternion((0,0,1),grip_roll)
-    rig.pose.bones['hand_r'].matrix=C@(Matrix.Translation(target)@grip_q.to_matrix().to_4x4())@C.inverted()
-    bpy.context.view_layer.update()
-    weapon=rig.pose.bones['weapon_root'];weapon.location=(0,0,0);weapon.rotation_quaternion=(1,0,0,0)
-    bpy.context.view_layer.update()
-    # Two-bone IK with stance lock. Geometry and animation both remain rigid.
-    if name!='death':
-        for side,x,off in [('l',-.25,0),('r',.25,16)]:
-            z=.17 if side=='l' else -.17;y=.13
-            if name=='walk':
-                u=(t+off)%32
-                if u<20:z=.40-u*.04
-                else:z=-.40+(u-20)/12*.8;y+=.17*math.sin((u-20)/12*pi)
-            elif name=='slash_01' and side=='l':
-                z+=interp(t,[(0,0),(9,0),(16,.28),(24,.28),(34,0)])
-                if 9<t<16:y+=.12*math.sin((t-9)/7*pi)
-                elif 24<t<34:y+=.09*math.sin((t-24)/10*pi)
-            hip=(C.inverted()@rig.pose.bones['thigh_'+side].matrix@C).translation
-            foot=Vector((x,y,z));axis=foot-hip;dist=min(1.293,axis.length);direction=axis.normalized()
-            bend=Vector((0,0,1));bend=(bend-direction*bend.dot(direction)).normalized()
-            knee=hip+direction*dist*.5+bend*math.sqrt(max(0,(.55*1.18)**2-(dist*.5)**2))
-            for bn,p0,p1 in [('thigh_'+side,hip,knee),('shin_'+side,knee,foot)]:
-                q=Vector((0,-1,0)).rotation_difference((p1-p0).normalized());m=Matrix.Translation(p0)@q.to_matrix().to_4x4()
-                rig.pose.bones[bn].matrix=C@m@C.inverted();bpy.context.view_layer.update()
-            rig.pose.bones['foot_'+side].matrix=C@Matrix.Translation(foot)@C.inverted();bpy.context.view_layer.update()
+from night_lord_motion import CLIPS, make_pose
+clips=CLIPS
+pose=make_pose(rig,C,bind)
 
 exports=[]
 for name,(duration,loop,active) in clips.items():
@@ -309,6 +172,7 @@ for b in B:
             axes=(0,1) if face in ['north','south'] else ((2,1) if face in ['east','west'] else (0,2))
             w=max(1,min(32,round(p['size'][axes[0]]*32)));h=max(1,min(32,round(p['size'][axes[1]]*32)))
             u=(idx*7)%(33-w);v=(idx*11)%(33-h);uv=[u/2,v/2,(u+w)/2,(v+h)/2]
+            if p.get('front_uv') is not None and face in ['north','south']:uv=[a/2 for a in p['front_uv']]
             faces[face]={'uv':uv,'texture':'#'+p['material']}
         element={'from':lo,'to':hi,'faces':faces}
         if any(p.get('rotation',[])):element['rotation']={'origin':[8+c*8 for c in p['center']],**dict(zip('xyz',p['rotation']))}

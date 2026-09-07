@@ -27,7 +27,7 @@ MatE「The Lord of Night Boss」の実際の回転動画を確認し、外観を
 見た目は参照に基づく再制作であり、参照作品との同一性やユーザーの最終承認は未確認。
 
 - Blender 4.5.3 LTSのArmature：31 bone、親子関係あり。
-- 316 rigid cuboid / 3792 triangle。27個のItemDisplayで描画。
+- 1695 rigid cuboid / 20340 triangle（内部面を含む）。薄い板のピクセル輪郭をvanilla cuboidへ分割し、27個のItemDisplayで描画。
 - 32×32 PNGを7枚。Closest / nearest。diffuseと光部分のemissionのみ、smooth shading・subdivision・写実PBRなし。
 - Minecraft 1.21.11以降のelement XYZ回転を使用。Blenderとpackは同じcuboidと回転値を使用。
 - `weapon_root`、`weapon_tip`、`vfx_blade`、`vfx_chest`、`vfx_ground`。
@@ -37,10 +37,10 @@ MatE「The Lord of Night Boss」の実際の回転動画を確認し、外観を
 |---|---:|---:|---|
 | idle | 60 tick loop | なし | 前傾・非対称構え・呼吸 |
 | walk | 32 tick loop | なし | 2骨IK、接地中の足を固定、移動0.04 block/tick |
-| slash_01 | 34 tick | 13–18 | 腰・胸を捻る横薙ぎ、長い後隙 |
-| heavy_slash | 48 tick | 23–27 | 頭上に担ぐ→高速叩き斬り |
-| dash | 40 tick | 18–22 | 溜め→接近→斬撃、方向固定 |
-| hurt | 12 tick | なし | 肩と頭の反動 |
+| slash_01 | 48 tick | 17–21 | 柄を引いて保持→踏み込み横薙ぎ→足を運び構え直す |
+| heavy_slash | 62 tick | 28–32 | 頭上に担いで保持→叩き斬り→膝を曲げて受け止める |
+| dash | 50 tick | 23–27 | 沈み込み→膝を引いた飛び込み→着地と斬撃 |
+| hurt | 16 tick | なし | 肩と頭の反動 |
 | phase_transition | 64 tick | なし | HP50%以下、攻撃終了を待って封印崩壊 |
 | death | 60 tick | なし | 崩れ落ち、剣を地面へ |
 
@@ -49,14 +49,17 @@ MatE「The Lord of Night Boss」の実際の回転動画を確認し、外観を
 
 ## 判定と表示の関係
 
-### 握りと通常斬りの修正段階
+### 全体リワーク
 
 前版は開いた指の外で剣を独立回転させており、ユーザーから外観・全体の動作とも不一致と指摘された。
 現在は右手を閉じ、手に対する剣の位置を(0, -0.08, -0.06)、回転を固定した。
 肩・肘・手首を2骨IKでつなぎ、上腕0.5074・前腕0.4838 blockの長さを保つ。
-手首のひねりは1tickあたり6度まで。通常斬りは柄の引き・横切り・戻り、前足の踏み込み、腰と胸の時間差を追加。
-全clipの握りの固定と腕の接続を含む13件のボス専用テストで確認する。
-これは基礎修正のcheckpoint。参照に沿った全体造形、全8動作の重量感、最終的な見た目は未完成。
+手首のひねりは1tickあたり6度まで。全8動作を組み直し、柄の引き・保持・短い刃の通過・長い立て直し、前足と後ろ足の運び、腰と胸の時間差を追加。
+切り替え時は6tickで関節のローカル姿勢を補間してから親子関係を評価し、剣と手・腕の接続を保つ。
+横斬り0.55、重斬り0.43、飛び込み2.80 blockの移動をBlenderデータから読み、終了後のサーバー位置に残す。
+全clipの握り、腕の接続、接地、攻撃判定、移動の連続性、切り替えを含む15件のボス専用テストを実行。
+実際に確認したDark Souls / Nightreign / Gael映像とGDC資料、反映内容は `night-lord-rework-study.md` に記録した。
+造形と全8動作のリワークを納品するが、参照との一致度・見た目・重量感についてユーザーの最終評価は未確認。
 
 Blenderで評価したboneの位置・quaternionを20Hzで書き出し、表示と判定で同一データを読む。
 剣元から0.44〜2.64 blockの刃を半径0.25のcapsuleとして、前tickと現tickの間をslerpする。
@@ -85,6 +88,8 @@ python tools/ashen-warden/verify_assets.py <asset-output-directory>
 ```
 
 `create_warden.py` はBlenderのmesh/Armature/Actionを作成・評価した後に、Resource Packとbinaryを出力する。
+造形は `night_lord_geometry.py`、動作とIKは `night_lord_motion.py`。旧 `night_lord_model.py` は過去版で現在の生成には使用しない。
+`animate_warden.py` の歩行プレビューだけは、runtimeと同じ毎tick 0.04 blockの前進を加える。攻撃の前進はAction自体に入っている。
 バイナリは `AW R1` magic、bone階層、各clipの位置とquaternion。新しいruntimeライブラリは追加していない。
 
 ## 実装の入口

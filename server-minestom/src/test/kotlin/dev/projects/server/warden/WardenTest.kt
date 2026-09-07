@@ -31,7 +31,8 @@ class WardenTest {
         for(name in listOf("slash_01","heavy_slash","dash")) {
             val c=asset.clips.getValue(name)
             val hits=(c.activeStart..c.activeEnd).any {t->
-                sweptBladeHit(c.frames[t-1][asset.weapon],c.frames[t][asset.weapon],V3(-.3,0.0,1.8),V3(.3,1.8,2.4))
+                val distance=if(name=="dash")4.3 else 2.1
+                sweptBladeHit(c.frames[t-1][asset.weapon],c.frames[t][asset.weapon],V3(-.3,0.0,distance-.3),V3(.3,1.8,distance+.3))
             }
             assertTrue(hits,"$name never crosses a player in front")
         }
@@ -96,6 +97,16 @@ class WardenTest {
         val f=WardenFight(asset);assertFalse(f.active);f.begin();repeat(110){f.tick(null)}
         assertFalse(f.running);assertEquals(V3.ZERO,f.position)
     }
+    @Test fun `authored lunge remains in server position after attack recovery`() {
+        val f=WardenFight(asset);f.begin();val target=V3(0.0,0.0,2.5)
+        repeat(31){f.tick(target)};assertEquals("slash_01",f.action)
+        val start=f.position
+        while(f.action=="slash_01")f.tick(target)
+        assertEquals(.55,(f.position-start).z,1e-4)
+        val pelvis=asset.bones.indexOfFirst {it.name=="pelvis"}
+        val expected=f.position+asset.clips.getValue("idle").frames[0][pelvis].p.rotateYaw(f.yaw)
+        assertTrue((expected-f.worldPose()[pelvis].p).length()<1e-4)
+    }
     @Test fun `bundled pack has every visible bone model and only 32px textures`() {
         val files=mutableMapOf<String,ByteArray>()
         ZipInputStream(requireNotNull(javaClass.getResourceAsStream("/ashen-warden/warden-pack.zip"))).use {z->
@@ -106,5 +117,16 @@ class WardenTest {
         val png=files.filterKeys {it.endsWith(".png")};assertEquals(7,png.size)
         png.forEach {(name,bytes)->val im=javax.imageio.ImageIO.read(bytes.inputStream());assertEquals(32,im.width,name);assertEquals(32,im.height,name)}
         assertTrue(files.keys.none {it.startsWith("assets/minecraft/")})
+    }
+    @Test fun `interrupted pose blends preserve rigid grip and arm joints`() {
+        val from=asset.clips.getValue("slash_01").frames[21]
+        val to=asset.clips.getValue("death").frames[3]
+        val hand=asset.bones.indexOfFirst {it.name=="hand_r"}
+        val fore=asset.bones.indexOfFirst {it.name=="forearm_r"}
+        for(step in 0..6) {
+            val poses=blendBoneHierarchy(asset.bones,from,to,step/6.0)
+            assertTrue((poses[hand].point(V3(0.0,-.08,-.06))-poses[asset.weapon].p).length()<1e-4)
+            assertTrue((poses[fore].point(V3(0.0,-.41*1.18,0.0))-poses[hand].p).length()<1e-4)
+        }
     }
 }
