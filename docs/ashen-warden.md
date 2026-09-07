@@ -27,7 +27,7 @@ MatE「The Lord of Night Boss」の実際の回転動画を確認し、外観を
 見た目は参照に基づく再制作であり、参照作品との同一性やユーザーの最終承認は未確認。
 
 - Blender 4.5.3 LTSのArmature：31 bone、親子関係あり。
-- 311 rigid cuboid / 3732 triangle。27個のItemDisplayで描画。
+- 316 rigid cuboid / 3792 triangle。27個のItemDisplayで描画。
 - 32×32 PNGを7枚。Closest / nearest。diffuseと光部分のemissionのみ、smooth shading・subdivision・写実PBRなし。
 - Minecraft 1.21.11以降のelement XYZ回転を使用。Blenderとpackは同じcuboidと回転値を使用。
 - `weapon_root`、`weapon_tip`、`vfx_blade`、`vfx_chest`、`vfx_ground`。
@@ -48,6 +48,15 @@ MatE「The Lord of Night Boss」の実際の回転動画を確認し、外観を
 既存本編の報酬・進行へ接続する前の独立した戦闘スライス。
 
 ## 判定と表示の関係
+
+### 握りと通常斬りの修正段階
+
+前版は開いた指の外で剣を独立回転させており、ユーザーから外観・全体の動作とも不一致と指摘された。
+現在は右手を閉じ、手に対する剣の位置を(0, -0.08, -0.06)、回転を固定した。
+肩・肘・手首を2骨IKでつなぎ、上腕0.5074・前腕0.4838 blockの長さを保つ。
+手首のひねりは1tickあたり6度まで。通常斬りは柄の引き・横切り・戻り、前足の踏み込み、腰と胸の時間差を追加。
+全clipの握りの固定と腕の接続を含む13件のボス専用テストで確認する。
+これは基礎修正のcheckpoint。参照に沿った全体造形、全8動作の重量感、最終的な見た目は未完成。
 
 Blenderで評価したboneの位置・quaternionを20Hzで書き出し、表示と判定で同一データを読む。
 剣元から0.44〜2.64 blockの刃を半径0.25のcapsuleとして、前tickと現tickの間をslerpする。

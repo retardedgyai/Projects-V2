@@ -42,6 +42,25 @@ class WardenTest {
             assertTrue((expected-row[asset.tip].p).length()<1e-4)
         }}
     }
+    @Test fun `sword grip cannot rotate or drift independently of the closed hand`() {
+        val hand=asset.bones.indexOfFirst {it.name=="hand_r"}
+        asset.clips.values.forEach {c->c.frames.forEach {row->
+            val h=row[hand];val w=row[asset.weapon]
+            assertTrue((h.point(V3(0.0,-.08,-.06))-w.p).length()<1e-4,c.name)
+            for(axis in listOf(V3(1.0,0.0,0.0),V3(0.0,1.0,0.0),V3(0.0,0.0,1.0))) {
+                assertTrue(((h.point(axis)-h.p)-(w.point(axis)-w.p)).length()<1e-4,c.name)
+            }
+        }}
+    }
+    @Test fun `right arm joints remain connected without stretching across all clips`() {
+        val upper=asset.bones.indexOfFirst {it.name=="upper_arm_r"}
+        val fore=asset.bones.indexOfFirst {it.name=="forearm_r"}
+        val hand=asset.bones.indexOfFirst {it.name=="hand_r"}
+        asset.clips.values.forEach {c->c.frames.forEach {row->
+            assertTrue((row[upper].point(V3(0.0,-.43*1.18,0.0))-row[fore].p).length()<1e-4,c.name)
+            assertTrue((row[fore].point(V3(0.0,-.41*1.18,0.0))-row[hand].p).length()<1e-4,c.name)
+        }}
+    }
     @Test fun `walking stance foot remains planted when root advances at authored speed`() {
         val c=asset.clips.getValue("walk")
         val foot=asset.bones.indexOfFirst {it.name=="foot_l"}

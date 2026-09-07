@@ -48,6 +48,10 @@ bone('tasset_l','pelvis',(-.25,1.23,.09)); bone('tasset_r','pelvis',(.25,1.23,.0
 bone('vfx_chest','chest',(0,1.97,.29)); bone('vfx_ground','root',(0,.06,0))
 for b in B:
     x,y,z=b['bind'];b['bind']=(x,y*1.18,z)
+for b in B:
+    if b['name'] in ['weapon_root','weapon_tip','vfx_blade']:
+        length={'weapon_root':0,'weapon_tip':2.64,'vfx_blade':1.28}[b['name']]
+        b['bind']=(.5856,1.15*1.18-.08,-.06+length)
 bind={b['name']:Vector(b['bind']) for b in B}
 bpy.ops.object.armature_add(); rig=bpy.context.object; rig.name='ASHEN_WARDEN_RIG'
 bpy.ops.object.mode_set(mode='EDIT'); rig.data.edit_bones.remove(rig.data.edit_bones[0])
@@ -117,7 +121,9 @@ def interp(t,keys):
         if t<=b:
             u=max(0,(t-a)/(b-a));u=u*u*(3-2*u);return v+(w-v)*u
     return keys[-1][1]
+grip_roll=0.0
 def pose(name,t):
+    global grip_roll
     rot={};delta={};pi=math.pi
     rot.update(pelvis=(10,0,0),spine=(4,-6,-3),chest=(3,0,0),head=(-12,10,0),upper_arm_l=(-10,0,-10),forearm_l=(-15,0,0),upper_arm_r=(-9,-8,18),forearm_r=(-12,0,0),weapon_root=(44,0,0),cape_01=(-8,0,0),cape_02=(-8,0,0))
     delta['pelvis']=(0,-.09+.015*math.sin(t*pi/30),0)
@@ -144,6 +150,11 @@ def pose(name,t):
         rot['forearm_r']=(-20+raise_arm*.12,0,0)
         rot['head']=(-12-lean,-twist*.35,0);delta['root']=(0,0,reach)
         rot['cape_01']=(-8-abs(twist)*.20,0,-twist*.10)
+        if name=='slash_01':
+            turns=[(0,0),(11,-65),(13,-70),(18,85),(23,95),(34,0)]
+            rot['pelvis']=(14,interp(t+2,turns)*.30,0)
+            rot['spine']=(7,interp(t+1,turns)*.45,-5)
+            delta['pelvis']=(0,-.09-interp(t,[(0,0),(10,.10),(18,.06),(25,.07),(34,0)]),0)
     if name=='hurt':
         w=interp(t,[(0,0),(3,1),(6,.7),(12,0)]);rot['chest']=(-18*w,0,-9*w);rot['head']=(-12-15*w,10,0)
     if name=='phase_transition':
@@ -196,6 +207,48 @@ def pose(name,t):
         p=m.translation;p.y=max(.14,p.y)
         rig.pose.bones['weapon_root'].matrix=C@(Matrix.Translation(p)@q.to_matrix().to_4x4())@C.inverted()
         bpy.context.view_layer.update()
+    # Solve the arm to the authored grip. The weapon is rigid in the closed fist;
+    # it must never acquire an independent local wrist rotation or translation.
+    desired_weapon=C.inverted()@rig.pose.bones['weapon_root'].matrix@C
+    hand=C.inverted()@rig.pose.bones['hand_r'].matrix@C
+    shoulder=(C.inverted()@rig.pose.bones['upper_arm_r'].matrix@C).translation
+    target=hand.translation.copy()
+    if name=='slash_01':
+        # A hilt path: draw behind shoulder, drive across chest, settle left.
+        keys=[(0,(.72,-.79,.12)),(10,(.73,-.22,-.22)),(13,(.62,-.40,.21)),
+              (18,(-.42,-.70,.61)),(23,(-.52,-.75,.42)),(34,(.72,-.79,.12))]
+        local=Vector(tuple(interp(t,[(k,v[i]) for k,v in keys]) for i in range(3)))
+        chest=C.inverted()@rig.pose.bones['chest'].matrix@C
+        weight=interp(t,[(0,0),(6,1),(25,1),(34,0)])
+        target=target.lerp((chest@local.to_4d()).to_3d(),weight)
+    l1=(bind['forearm_r']-bind['upper_arm_r']).length
+    l2=(bind['hand_r']-bind['forearm_r']).length
+    axis=target-shoulder;distance=max(.12,min((l1+l2)*.97,axis.length))
+    axis.normalize();target=shoulder+axis*distance
+    along=(l1*l1-l2*l2+distance*distance)/(2*distance)
+    pole=Vector((.65,-.12,-.75));bend=pole-axis*pole.dot(axis)
+    if bend.length<.01:bend=Vector((1,0,0))-axis*axis.x
+    bend.normalize();elbow=shoulder+axis*along+bend*math.sqrt(max(0,l1*l1-along*along))
+    for bn,p0,p1 in [('upper_arm_r',shoulder,elbow),('forearm_r',elbow,target)]:
+        arm_q=Vector((0,-1,0)).rotation_difference((p1-p0).normalized())
+        rig.pose.bones[bn].matrix=C@(Matrix.Translation(p0)@arm_q.to_matrix().to_4x4())@C.inverted()
+        bpy.context.view_layer.update()
+    # Roll the fist around the blade so the knuckles follow the forearm.
+    blade=desired_weapon.to_quaternion()@Vector((0,0,1))
+    wrist=(target-elbow).normalized();yaxis=-(wrist-blade*wrist.dot(blade))
+    if yaxis.length<.01:yaxis=Vector((0,1,0))-blade*blade.y
+    yaxis.normalize();base_q=desired_weapon.to_quaternion()
+    base_x=base_q@Vector((1,0,0));base_y=base_q@Vector((0,1,0))
+    wanted_roll=math.atan2(-yaxis.dot(base_x),yaxis.dot(base_y))
+    if t==0:grip_roll=wanted_roll
+    else:
+        change=math.atan2(math.sin(wanted_roll-grip_roll),math.cos(wanted_roll-grip_roll))
+        grip_roll+=max(-math.radians(6),min(math.radians(6),change))
+    grip_q=base_q@Quaternion((0,0,1),grip_roll)
+    rig.pose.bones['hand_r'].matrix=C@(Matrix.Translation(target)@grip_q.to_matrix().to_4x4())@C.inverted()
+    bpy.context.view_layer.update()
+    weapon=rig.pose.bones['weapon_root'];weapon.location=(0,0,0);weapon.rotation_quaternion=(1,0,0,0)
+    bpy.context.view_layer.update()
     # Two-bone IK with stance lock. Geometry and animation both remain rigid.
     if name!='death':
         for side,x,off in [('l',-.25,0),('r',.25,16)]:
@@ -204,6 +257,10 @@ def pose(name,t):
                 u=(t+off)%32
                 if u<20:z=.40-u*.04
                 else:z=-.40+(u-20)/12*.8;y+=.17*math.sin((u-20)/12*pi)
+            elif name=='slash_01' and side=='l':
+                z+=interp(t,[(0,0),(9,0),(16,.28),(24,.28),(34,0)])
+                if 9<t<16:y+=.12*math.sin((t-9)/7*pi)
+                elif 24<t<34:y+=.09*math.sin((t-24)/10*pi)
             hip=(C.inverted()@rig.pose.bones['thigh_'+side].matrix@C).translation
             foot=Vector((x,y,z));axis=foot-hip;dist=min(1.293,axis.length);direction=axis.normalized()
             bend=Vector((0,0,1));bend=(bend-direction*bend.dot(direction)).normalized()

@@ -72,11 +72,21 @@ def build_model(box):
         box(f,(0,-.20,.215),(.20,.47,.10),'iron',(0,0,-s*5))
         box(f,(s*.13,-.22,.205),(.045,.48,.06),'edge',(0,0,-s*5))
         box(f,(-s*.12,-.22,.205),(.038,.48,.06),'edge',(0,0,-s*5))
-        for x in (-.13,0,.13):spike(f,(x,-.40,.07),(x+s*.055,-.70,.12),.10,.09,'edge',4)
+        for x in (-.13,0,.13):
+            spike(f,(x,-.34 if side=='r' else -.40,.07),
+                  (x+s*.055,-.48 if side=='r' else -.70,.12),.10,.09,'edge',4)
         h='hand_'+side
-        box(h,(0,-.075,.015),(.20,.23,.22),'dark')
-        for x in (-.09,-.03,.03,.09):
-            box(h,(x,-.205,.045),(.042,.15,.065),'dark',(18,0,0))
+        if side=='r':
+            # Closed fist around the Z-axis handle; the grip center is (0,-.08,-.01).
+            box(h,(.074,-.07,-.01),(.065,.17,.22),'iron')
+            for z in (-.085,-.035,.015,.065):
+                box(h,(.015,-.151,z),(.13,.047,.043),'bronze')
+                box(h,(-.055,-.104,z),(.045,.12,.043),'iron')
+            box(h,(.014,-.025,.09),(.13,.065,.06),'edge',(0,0,-22))
+        else:
+            box(h,(0,-.075,.015),(.20,.23,.22),'dark')
+            for x in (-.09,-.03,.03,.09):
+                box(h,(x,-.205,.045),(.042,.15,.065),'dark',(18,0,0))
         # Articulated legs visible beneath long split armor skirts.
         box('thigh_'+side,(0,-.29,0),(.24,.61,.28),'dark')
         sh='shin_'+side
