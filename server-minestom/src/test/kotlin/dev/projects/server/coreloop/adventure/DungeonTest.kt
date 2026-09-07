@@ -5,6 +5,7 @@ import dev.projects.server.mob.*
 import net.minestom.server.Auth
 import net.minestom.server.MinecraftServer
 import net.minestom.server.coordinate.Pos
+import net.minestom.server.instance.LightingChunk
 import net.minestom.server.entity.*
 import net.minestom.server.network.ConnectionState
 import net.minestom.server.network.packet.server.SendablePacket
@@ -74,11 +75,17 @@ class DungeonTest {
         MinecraftServer.init(Auth.Offline())
         val world = DungeonWorld.create(DungeonPlan.generate(10, 1, 0))
         try {
+            assertTrue(world.instance.chunks.all { it is LightingChunk })
+            LightingChunk.relight(world.instance, world.instance.chunks)
             for (room in world.plan.rooms) {
                 for (dx in -17..17) for (dz in -17..17) {
                     val at = room.center.add(dx.toDouble(), 0.0, dz.toDouble())
                     assertTrue(world.instance.getBlock(at.sub(0.0, 1.0, 0.0)).isSolid)
                     assertTrue(world.instance.getBlock(at).isAir); assertTrue(world.instance.getBlock(at.add(0.0, 1.0, 0.0)).isAir)
+                    val chunk = requireNotNull(world.instance.getChunkAt(at))
+                    val light = chunk.getSection(41 shr 4).blockLight()
+                        .getLevel(at.blockX() and 15, 41 and 15, at.blockZ() and 15)
+                    assertTrue(light >= 5, "Dark combat core: ${room.theme}/${room.layout} at $at light=$light")
                 }
                 assertTrue(DungeonWorld.safe(room, room.spawn)); assertTrue(world.instance.getBlock(room.spawn).isAir)
             }

@@ -3,6 +3,8 @@ package dev.projects.server.coreloop.adventure
 import net.minestom.server.MinecraftServer
 import net.minestom.server.coordinate.Pos
 import net.minestom.server.instance.InstanceContainer
+import net.minestom.server.instance.LightingChunk
+import net.minestom.server.instance.Weather
 import net.minestom.server.instance.block.Block
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.atomic.AtomicBoolean
@@ -22,8 +24,11 @@ class DungeonWorld(val plan: DungeonPlan, val instance: InstanceContainer) {
         fun create(plan: DungeonPlan): DungeonWorld {
             plan.validate()
             val instance = MinecraftServer.getInstanceManager().createInstanceContainer()
+            instance.setChunkSupplier(::LightingChunk)
             instance.viewDistance(2)
             instance.time = 18000
+            instance.defaultClock()?.pause()
+            instance.setWeather(Weather.CLEAR)
             instance.setGenerator { unit ->
                 val start = unit.absoluteStart(); val end = unit.absoluteEnd()
                 val near = plan.rooms.filter { it.center.x() + 26 >= start.x() && it.center.x() - 26 < end.x() && it.center.z() + 26 >= start.z() && it.center.z() - 26 < end.z() }
@@ -78,6 +83,9 @@ class DungeonWorld(val plan: DungeonPlan, val instance: InstanceContainer) {
         }
         internal fun floorBlock(r: DungeonRoom, x: Int, z: Int): Block {
             val dx = abs(x - r.center.blockX()); val dz = abs(z - r.center.blockZ())
+            // Flush floor lights keep the combat core readable under the closed ceiling.
+            // Eight-block spacing leaves no point in the core more than eight horizontal steps away.
+            if (dx % 8 == 0 && dz % 8 == 0) return lightBlock(r)
             if (maxOf(dx, dz) in 16..17 || (dx == 0 || dz == 0) && maxOf(dx, dz) > 13) return when (r.theme) {
                 DungeonTheme.EMBER -> Block.CUT_COPPER; DungeonTheme.TIDE -> Block.SMOOTH_QUARTZ; DungeonTheme.ASTRAL -> Block.POLISHED_ANDESITE
             }
