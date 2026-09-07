@@ -8,6 +8,7 @@ import net.kyori.adventure.resource.ResourcePackRequest
 import net.kyori.adventure.resource.ResourcePackStatus
 import net.kyori.adventure.sound.Sound
 import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.format.TextColor
 import net.kyori.adventure.title.Title
 import net.minestom.server.Auth
 import net.minestom.server.MinecraftServer
@@ -31,6 +32,7 @@ import net.minestom.server.particle.Particle
 import java.net.InetSocketAddress
 import java.net.URI
 import java.security.MessageDigest
+import java.time.Duration
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
@@ -75,7 +77,9 @@ object WardenArena {
             setNoGravity(true);setHasPhysics(false)
             editEntityMeta(ItemDisplayMeta::class.java) {m->
                 m.setItemStack(ItemStack.of(Material.PAPER).with(DataComponents.ITEM_MODEL,"projects:warden/${b.name}"))
-                m.setDisplayContext(ItemDisplayMeta.DisplayContext.NONE);m.setScale(Vec(2.0,2.0,2.0))
+                m.setDisplayContext(ItemDisplayMeta.DisplayContext.NONE)
+                m.setScale(Vec(WardenItemDisplay.SCALE,WardenItemDisplay.SCALE,WardenItemDisplay.SCALE))
+                m.setRightRotation(WardenItemDisplay.rightRotation.array())
                 m.setTransformationInterpolationDuration(1);m.setPosRotInterpolationDuration(0)
                 m.setViewRange(2f);m.setWidth(40f);m.setHeight(12f);m.setShadowRadius(0f)
                 if(b.name=="vfx_chest" || b.name=="weapon_root")m.setBrightness(15,15)
@@ -88,6 +92,7 @@ object WardenArena {
             setInstance(this@Runtime.instance,Pos(0.0,40.0,0.0)).join()
         }
         val bar=BossBar.bossBar(Component.text("夜葬の番人"),1f,BossBar.Color.PURPLE,BossBar.Overlay.PROGRESS)
+        val bladeTrail=Particle.DUST.withProperties(TextColor.color(0xBDA9F5),.5f)
         var tick=0L;var sequence= -1;var closed=false
         data class Actor(val player:Player,var loaded:Boolean=false,var hp:Double=100.0,var attackAt:Long=0,var attackReady:Long=0,
             var facing:V3=V3.ZERO,var dodgeUntil:Long=0,var dodgeReady:Long=0,var sneak:Boolean=false,var healReady:Long=0,var defeated:Boolean=false)
@@ -182,9 +187,9 @@ object WardenArena {
             }
             if(fight.active) {
                 // Trail and damage share these exact blade poses and active ticks.
-                for(s in 0..3) {
-                    val pose=fight.previousWeapon.lerp(fight.currentWeapon,s/3.0)
-                    for(n in 0..12)particles(Particle.SOUL_FIRE_FLAME,pose.point(V3(0.0,0.0,.44+n*2.2/12)))
+                for(s in 0..2) {
+                    val pose=fight.previousWeapon.lerp(fight.currentWeapon,s/2.0)
+                    for(n in 0..8)particles(bladeTrail,pose.point(V3(0.0,0.0,.44+n*2.2/8)))
                 }
                 if(fight.frame==fight.clip.activeStart)sound("entity.player.attack.sweep",fight.position,1f,.55f)
                 available.filter {!it.defeated && tick>=it.dodgeUntil}.forEach {a->
@@ -218,7 +223,8 @@ object WardenArena {
         }
         fun label()=when(fight.action){"slash_01"->if(fight.recovery)"斬撃後の隙" else "横薙ぎ";"heavy_slash"->if(fight.recovery)"叩き斬り後の隙" else "叩き斬り";"dash"->"踏み込み斬り";"phase_transition"->"形態移行";"death"->"討伐";else->if(fight.running)"交戦中" else "/fight で開始"}
         fun defeat(a:Actor){if(a.defeated)return;a.defeated=true;a.hp=0.0;a.attackAt=0;a.player.sendMessage(Component.text("力尽きた…。全員の戦闘終了後、/fight で再戦できます。"));a.player.teleport(Pos(0.0,40.0,13.0,180f,0f))}
-        fun announce(title:String,sub:String){actors.values.forEach {it.player.showTitle(Title.title(Component.text(title),Component.text(sub)))}}
+        fun announce(title:String,sub:String){actors.values.forEach {it.player.showTitle(Title.title(Component.text(title),Component.text(sub),
+            Title.Times.times(Duration.ofMillis(100),Duration.ofMillis(900),Duration.ofMillis(200))))}}
         fun sound(id:String,pos:V3,volume:Float,pitch:Float){instance.players.forEach {it.playSound(Sound.sound(Key.key("minecraft:$id"),Sound.Source.HOSTILE,volume,pitch),pos.x,pos.y+40,pos.z)}}
         fun particles(type:Particle,pos:V3,count:Int=1){instance.sendGroupedPacket(ParticlePacket(type,Pos(pos.x,pos.y+40,pos.z),Vec.ZERO,0f,count))}
         override fun close(){if(closed)return;closed=true;actors.values.forEach {it.player.hideBossBar(bar)};actors.clear();displays.forEach {it.second.remove()};body.remove();pack.close()}

@@ -129,4 +129,17 @@ class WardenTest {
             assertTrue((poses[fore].point(V3(0.0,-.41*1.18,0.0))-poses[hand].p).length()<1e-4)
         }
     }
+    @Test fun `vanilla item renderer half-turn is cancelled for all animated bone bases`() {
+        // Actual 26.2 client pipeline: bone T R S, right rotation, renderer Y(pi),
+        // then the centered model whose export uses 8 model pixels per world block.
+        val clientRotation=Q4(0.0,1.0,0.0,0.0)
+        val probes=listOf(V3(.31,.12,.27),V3(-.23,-.41,.16),V3(0.0,0.0,2.64))
+        asset.clips.values.forEach {c->c.frames.forEach {row->row.forEach {bone->
+            probes.forEach {local->
+                val model=local*.5
+                val displayed=bone.point(WardenItemDisplay.rightRotation.rotate(clientRotation.rotate(model))*WardenItemDisplay.SCALE)
+                assertTrue((displayed-bone.point(local)).length()<1e-6,"${c.name}: display differs from authoritative bone")
+            }
+        }}}
+    }
 }

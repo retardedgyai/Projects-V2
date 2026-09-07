@@ -39,6 +39,12 @@ internal data class BonePose(val p:V3,val q:Q4) {
     fun point(local:V3)=p+q.rotate(local)
 }
 internal data class WardenBone(val name:String,val parent:Int,val visible:Boolean)
+/** 26.2 ItemDisplayRenderer appends a Y half-turn after the entity transformation.
+ * Cancel it in local model space, preserving the animated bone rotation and locators. */
+internal object WardenItemDisplay {
+    const val SCALE=2.0
+    val rightRotation=Q4.yaw(PI)
+}
 /** Blend joint-local transforms before FK so changing actions cannot detach the grip. */
 internal fun blendBoneHierarchy(bones:List<WardenBone>,from:List<BonePose>,to:List<BonePose>,t:Double):List<BonePose> {
     val result=ArrayList<BonePose>(bones.size)
