@@ -65,8 +65,12 @@ def render(parts, name, tick, view='iso'):
             def element_point(v):
                 rotation=e.get('rotation')
                 if not rotation: return v
-                assert rotation['axis']=='z' and not rotation.get('rescale',False), 'Unsupported preview rotation'
+                assert rotation['axis'] in ('x','z') and not rotation.get('rescale',False), 'Unsupported preview rotation'
                 angle=math.radians(rotation['angle']); origin=rotation['origin']
+                if rotation['axis']=='x':
+                    y,z=v[1]-origin[1],v[2]-origin[2]
+                    return [v[0],origin[1]+y*math.cos(angle)-z*math.sin(angle),
+                            origin[2]+y*math.sin(angle)+z*math.cos(angle)]
                 x,y=v[0]-origin[0],v[1]-origin[1]
                 return [origin[0]+x*math.cos(angle)-y*math.sin(angle),
                         origin[1]+x*math.sin(angle)+y*math.cos(angle),v[2]]
@@ -79,6 +83,8 @@ def render(parts, name, tick, view='iso'):
                                       round(max(uv[0],uv[2])/16*texture.width),round(max(uv[1],uv[3])/16*texture.height)))
                 if uv[1]>uv[3]: texture=texture.transpose(Image.Transpose.FLIP_TOP_BOTTOM)
                 if uv[0]>uv[2]: texture=texture.transpose(Image.Transpose.FLIP_LEFT_RIGHT)
+                rotation=face.get('rotation',0)
+                if rotation: texture=texture.rotate(-rotation,expand=True,resample=Image.Resampling.NEAREST)
                 points=[vertices[i] for i in (2,3,7,6)] # image TL,TR,BR,BL before UV reversal
                 target=((0,0),(texture.width,0),(texture.width,texture.height),(0,texture.height))
                 matrix=[]; result=[]

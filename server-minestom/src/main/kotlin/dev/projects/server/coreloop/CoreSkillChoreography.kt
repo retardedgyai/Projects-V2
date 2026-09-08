@@ -34,6 +34,7 @@ internal object CoreSkillChoreography {
     }
     private fun ease(t: Double)=1-(1-t.coerceIn(0.0,1.0)).pow(3)
     fun pose(p: CoreCombatMeshPart, age: Double): CoreMeshPose {
+        CoreStarweaverChoreography.pose(p,age)?.let { return it }
         CoreTemplarChoreography.pose(p,age)?.let { return it }
         val localAge=(age-p.delayTicks).coerceAtLeast(0.0)
         val t=((age-p.delayTicks)/(p.durationTicks-1).coerceAtLeast(1)).coerceIn(0.0,1.0)
@@ -69,7 +70,9 @@ internal object CoreSkillChoreography {
         }
         // Stroke peaks in 0.20s regardless of the longer aftermath. Extending readability
         // must not postpone the visually strongest beat until half a second after damage.
-        val stage=if(p.atlas in setOf(CoreMeshAtlas.NEBULA_STREAM,CoreMeshAtlas.SHADOW_SMOKE)) {
+        val stage=if(p.shape in setOf("star_crest","star_fold","star_mantle_stream")) {
+            CoreStarweaverChoreography.frame(p,age)
+        } else if(p.atlas in setOf(CoreMeshAtlas.NEBULA_STREAM,CoreMeshAtlas.SHADOW_SMOKE)) {
             floor(t*15).toInt()
         } else if(p.stellarBurst) {
             // Ignition peaks at frame 3 in 0.10s; the hollow broken wake then unravels.
@@ -79,7 +82,12 @@ internal object CoreSkillChoreography {
             if(localAge<=4.0) floor(localAge/4.0*7).toInt() else
                 8+floor(((localAge-5)/(p.durationTicks-6).coerceAtLeast(1)).coerceIn(0.0,1.0)*7).toInt()
         } else floor(((t-.42)/.58).coerceIn(0.0,1.0)*7).toInt()
-        val model=if(p.shape=="purifying_column" || p.shape=="prayer_flame") {
+        val model=if(p.shape=="star_crest") {
+            "combat_vfx/weave/crest_${p.palette}_$stage"
+        } else if(p.shape=="weave_ray") {
+            val segments=ceil(p.scale.z()/1.5).toInt().coerceIn(1,16)
+            "combat_vfx/weave/ray_${segments}_${CoreStarweaverChoreography.frame(p,age)}"
+        } else if(p.shape=="purifying_column" || p.shape=="prayer_flame") {
             "combat_vfx/prayer/column_${p.palette}_${CoreHealerChoreography.frame(p,age)}"
         } else if(p.shape=="prayer_ray") {
             val segments=ceil(p.scale.z()/(2*p.scale.x())).toInt().coerceIn(1,24)
@@ -115,6 +123,9 @@ internal object CoreSkillChoreography {
         if(e.job==CoreClass.RANGER) return CoreRangerChoreography.parts(e,raw,life)
         if(e.job==CoreClass.TEMPLAR && s.kind!=CoreSceneKind.PULL) return CoreTemplarChoreography.parts(e,life)
         if(e.sceneId in CoreHealerChoreography.sceneIds) return CoreHealerChoreography.parts(e,raw,life)
+        // CONTACT keeps the accepted-hit-only stellar bursts below.
+        if(e.sceneId in CoreStarweaverChoreography.sceneIds && e.phase!=CoreSkillVisualPhase.CONTACT)
+            return CoreStarweaverChoreography.parts(e,raw,life)
         if(e.phase==CoreSkillVisualPhase.PREPARE) return raw.map { it.copy(
             motion=if(s.kind==CoreSceneKind.RAIN) CoreMeshMotion.FALL else CoreMeshMotion.GATHER,
             durationTicks=life,erode=false) }

@@ -16,6 +16,34 @@ internal object CoreSkillAudio {
             player.playSound(Sound.sound(event, Sound.Source.PLAYER, volume * detail, pitch))
         val astral = effect.job == CoreClass.STARWEAVER
         val scene = CoreSkillScenes.get(effect.sceneId)
+        if(effect.sceneId in CoreStarweaverChoreography.sceneIds) {
+            when(effect.phase) {
+                CoreSkillVisualPhase.PREPARE -> cue(SoundEvent.BLOCK_AMETHYST_BLOCK_RESONATE,.7f,1.6f)
+                CoreSkillVisualPhase.CONTACT -> {
+                    cue(SoundEvent.BLOCK_GLASS_BREAK,.8f,if(effect.sceneId=="star_break") .7f else 1.6f)
+                    cue(SoundEvent.BLOCK_AMETHYST_BLOCK_CHIME,.55f,1.25f)
+                }
+                CoreSkillVisualPhase.PULSE -> when(effect.sceneId) {
+                    "star_step" -> {
+                        cue(SoundEvent.ENTITY_ENDERMAN_TELEPORT,.65f,if(effect.endpoint==CoreSkillEndpoint.DEPARTURE) .65f else 1.5f)
+                        cue(SoundEvent.BLOCK_AMETHYST_BLOCK_CHIME,.8f,1.6f)
+                    }
+                    "star_shield","star_constellation" -> {
+                        cue(SoundEvent.BLOCK_BEACON_POWER_SELECT,.65f,if(effect.skill.ultimate) .85f else 1.3f)
+                        cue(SoundEvent.BLOCK_AMETHYST_BLOCK_RESONATE,.9f,1.1f)
+                    }
+                    "star_ring" -> {
+                        cue(SoundEvent.ENTITY_ILLUSIONER_CAST_SPELL,.9f,.75f)
+                        cue(SoundEvent.ITEM_TRIDENT_RETURN,.7f,1.5f)
+                    }
+                    else -> {
+                        cue(SoundEvent.ITEM_TRIDENT_THROW,.85f,if(effect.sceneId=="star_break") .7f else 1.5f)
+                        cue(SoundEvent.BLOCK_AMETHYST_BLOCK_RESONATE,.85f,1.2f)
+                    }
+                }
+            }
+            return
+        }
         if(effect.sceneId in CoreHealerChoreography.sceneIds) {
             when(effect.phase) {
                 CoreSkillVisualPhase.PREPARE -> {

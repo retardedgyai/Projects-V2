@@ -63,12 +63,12 @@ heal_wind|清めの風|HEAL|life|feather|healing_wave|holy_seal|light_spark|2.0|
 heal_ult|救済|HEAL|life|prayer_wing|healing_wave|holy_seal|light_spark|3.2|1.0|1.0|大きな回復波と上向きの翼。画面中央を埋める板にしない
 heal_judgment|最後の審判|PILLAR|holy|judgment_sword|holy_seal|holy_seal|light_spark|1.8|1.0|1.0|四判定ごとに天からの裁きの剣。地面の印と同期
 star_thread|星糸|RAY|astral|star_thread|light_thread|star_seed|star_spark|0.7|0.4|0.4|二本の細い星糸と小さな星節。巨大な光槍を使わない
-star_ring|星環|NOVA|astral|star_orbit|star_shard|star_seed|star_spark|3.1|1.0|1.0|足元中心の水平星環が一度広がる。流星落下とは区別
+star_ring|星環|NOVA|astral|star_orbit|star_shard|star_seed|star_spark|3.1|1.0|1.0|六方向へ立ち上がる星雲の波。実範囲まで一度広がり裂けて消える
 starfall|星降る夜|RAIN|astral|star_core|astral_crack|star_seed|star_spark|0.9|1.0|1.0|指定地点上空の星が落ちて星片へ。各判定で着弾点を小さくずらす
-star_step|星渡り|TELEPORT|astral|star_gate|star_shard|star_seed|star_spark|1.0|1.0|1.0|星形の門が二地点で閉じ開く。転移に星環攻撃を出さない
+star_step|星渡り|TELEPORT|astral|star_gate|star_shard|star_seed|star_spark|1.0|1.0|1.0|四本の星雲が出発点へ閉じ、到着点で外へほどける。平面の門と攻撃環は出さない
 star_needle|星の針|RAY|astral|star_needle|light_thread|star_seed|star_mark|1.0|0.5|0.5|細長い星針。印は確定命中した敵のみに付ける
 star_cloud|星雲|FIELD|astral|nebula_wisp|constellation|star_seed|star_spark|2.8|1.0|1.0|指定地点の低い雲筋と星座。毎回核が落ちる演出は禁止
-star_shield|星衣|SHIELD|astral|star_mantle|constellation|star_seed|star_spark|1.1|1.0|1.0|胴の外側に星の衣と短い星座弧。星雨の流用は禁止
+star_shield|星衣|SHIELD|astral|star_mantle|constellation|star_seed|star_spark|1.1|1.0|1.0|肩の外側に開く星座と垂れる光の帯。正面を空けて星雨と区別
 star_break|星砕き|RAY|astral|star_shard|light_thread|star_seed|star_fracture|1.2|0.7|0.7|圧縮した星片を撃ち込み確定命中点で分裂。空振りに崩壊を出さない
 star_ult|天球崩壊|RAIN|astral|celestial_core|astral_crack|constellation|star_fracture|1.5|1.0|1.0|大きな天球の落下と放射星片。五回以上の実判定に同期
-star_constellation|星座の守り|SHIELD|astral|constellation_crown|star_mantle|constellation|star_spark|1.5|1.0|1.0|頭の外周と胴を結ぶ星座の守り。攻撃の破裂を出さない
+star_constellation|星座の守り|SHIELD|astral|constellation_crown|star_mantle|constellation|star_spark|1.5|1.0|1.0|頭の外周に編む六辺の星座と四本の光の衣。星と接続線は離さず攻撃の破裂を出さない

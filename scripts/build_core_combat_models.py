@@ -147,6 +147,71 @@ def build_combat_models(assets, write_json):
     build_ranger_phrases(assets, write_json)
     build_templar_phrases(assets, write_json)
     build_healer_prayers(assets, write_json)
+    build_star_weaving(assets, write_json)
+
+
+def build_star_weaving(assets,write_json):
+    """Reuse the authored pixel nebula, tiled along rays; native star links are separate solids."""
+    def emit(name,model,tint=None):
+        name=f'combat_vfx/{name}'
+        write_json(assets/f'models/{name}.json',model)
+        item={'type':'minecraft:model','model':f'projects:{name}'}
+        if tint is not None: item['tints']=[{'type':'minecraft:constant','value':tint}]
+        write_json(assets/f'items/{name}.json',{'model':item})
+    for frame in range(16):
+        # Crossing tilted planes preserve the rolling crest at grazing view angles.
+        elements=[{'from':[0,8,0],'to':[16,8,16],'shade':False,
+                   'rotation':{'origin':[8,8,8],'axis':'x','angle':angle},
+                   'faces':{'up':{'texture':'#0','uv':[0,16,16,0],'tintindex':0},
+                            'down':{'texture':'#0','uv':[0,0,16,16],'tintindex':0}}}
+                  for angle in (-45,45)]
+        model={'ambientocclusion':False,'textures':{'0':f'projects:combat_vfx/nebula/stream_{frame}'},'elements':elements}
+        for palette,color in dict(astral=0xdca6ff,ice=0x85e2ff).items():
+            emit(f'weave/crest_{palette}_{frame}',model,color)
+    for count in range(1,17):
+        for frame in range(16):
+            elements=[];textures={}
+            for i in range(count):
+                local=min(15,frame+int((count-1-i)*frame/(count*3)))
+                textures[str(i)]=f'projects:combat_vfx/nebula/stream_{local}'
+                z0=(i-.4)*16/count;z1=(i+1.4)*16/count
+                lo=max(0,z0);hi=min(16,z1)
+                u0=(lo-z0)/(z1-z0)*16;u1=(hi-z0)/(z1-z0)*16
+                for angle in (-45,45):
+                    # UV rotation maps the original horizontal stream along +Z.
+                    elements.append({'from':[0,8,lo],'to':[16,8,hi],'shade':False,
+                        'rotation':{'origin':[8,8,8],'axis':'z','angle':angle},
+                        'faces':{face:{'texture':f'#{i}','uv':[u0,4,u1,12],
+                                      'rotation':90 if face=='up' else 270,'tintindex':0}
+                                 for face in ('up','down')}})
+            emit(f'weave/ray_{count}_{frame}',{'ambientocclusion':False,'textures':textures,'elements':elements},0xdca6ff)
+    textures={str(i):f'minecraft:block/{t}' for i,t in enumerate(PALETTES['astral'])}
+    for count in range(1,17):
+        for stage in range(8):
+            elements=[]
+            for i in range(count):
+                if (i*5)%8<stage: continue
+                z0=i*16/count;z1=(i+1)*16/count
+                elements.append(vfx_box([7.7,7.7,z0],[8.3,8.3,z1],1 if i%2 else 0))
+            # Endpoint stars have depth. Their length contracts with the exact edge,
+            # but their transverse size doesn't inflate as the constellation opens.
+            for z in (0,16):
+                for layer in range(3):
+                    if layer<stage//3: continue
+                    w=2.5-layer*.7
+                    a=max(0,z-1.5+layer*.4);b=min(16,z+1.5-layer*.4)
+                    elements.append(vfx_box([8-w,7.6,a],[8+w,8.4,b],0))
+                    elements.append(vfx_box([7.6,8-w,a],[8.4,8+w,b],0 if layer else 1))
+            emit(f'weave/link_{count}_{stage}',{'ambientocclusion':False,'textures':textures,'elements':elements})
+    spindle=[]
+    for z in range(16):
+        width=max(.2,3.2*(1-abs(z-7.5)/8))
+        spindle.extend([vfx_box([8-width,7.6,z],[8+width,8.4,z+1],0),
+                        vfx_box([7.6,8-width,z],[8.4,8+width,z+1],1)])
+    for stage in range(8):
+        emit('weave_spindle_astral'+(f'_fade{stage}' if stage else ''),
+             {'ambientocclusion':False,'textures':textures,
+              'elements':[e for i,e in enumerate(spindle) if (i*5)%8>=stage]})
 
 
 def vfx_box(lo, hi, ink):
