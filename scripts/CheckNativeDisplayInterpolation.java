@@ -67,6 +67,20 @@ class CheckNativeDisplayInterpolation {
     }
     public static void main(String[] args) throws Exception {
         require(args.length==1,"Supply Kotlin-exported flow-display-contract.json");
+        // Approved v3 is a fixed-transform model sequence, not articulated flow.
+        // Its authored first frame must arrive at full size, without the old spawn tween.
+        var approved=display(0);
+        approved.getEntityData().assignValues(List.of(
+            SynchedEntityData.DataValue.create(DELAY,0),
+            SynchedEntityData.DataValue.create(SCALE,new Vector3f(3,2,4)),
+            SynchedEntityData.DataValue.create(TRANSLATION,new Vector3f(0,1,1.2f))));
+        approved.tickCount=1;approved.tick();
+        for(float partial:new float[]{0f,.25f,.75f}) {
+            var t=approved.renderState().transformation().get(approved.calculateInterpolationProgress(partial));
+            require(t.scale().equals(new Vector3f(3,2,4)),"Approved frame was incorrectly scaled during spawn");
+            require(t.translation().equals(new Vector3f(0,1,1.2f)),"Approved frame was incorrectly moved during spawn");
+        }
+        System.out.println("PASS: zero-duration approved frame keeps its exact full transform at every render sample.");
         float[] missedTickTravel=new float[3];
         for(int duration:new int[]{1,2}) {
             var d=display(duration);

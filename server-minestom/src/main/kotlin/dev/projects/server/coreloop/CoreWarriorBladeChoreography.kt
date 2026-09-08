@@ -13,7 +13,7 @@ internal object CoreWarriorBladeChoreography {
         val height: Double,val width: Double,val ticks: Int,val accent: Boolean=false,val vertical: Boolean=false)
 
     fun parts(e: CoreSkillEffect): List<CoreCombatMeshPart>? {
-        if(e.job!=CoreClass.WARRIOR || e.sceneId !in sceneIds || !e.valid) return null
+        if(e.job!=CoreClass.WARRIOR || e.sceneId=="dash" || e.sceneId !in sceneIds || !e.valid) return null
         val yaw=atan2(e.direction.x(),e.direction.z())
         val heavy=e.sceneId in setOf("normal_finish","slam","war_ult")
         if(e.phase==CoreSkillVisualPhase.CONTACT) return listOf(CoreCombatMeshPart("warrior_impact","warred",

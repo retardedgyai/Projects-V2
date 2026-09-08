@@ -15,7 +15,7 @@ class CoreWarriorBladeChoreographyTest {
     }
     private fun parts(id: String,pulse: Int=0)=CoreSkillChoreography.parts(effect(id,pulse))
     @Test fun `warrior has one class route while other classes retain their existing routes`() {
-        for(id in CoreWarriorBladeChoreography.sceneIds) {
+        for(id in (CoreWarriorBladeChoreography.sceneIds - "dash")) {
             assertTrue(parts(id).all { it.shape.startsWith("warrior_trace:") },id)
             assertEquals(8,parts(id).size,id)
             assertTrue(parts(id).all { it.palette in setOf("warsteel","warred") && !it.sprite && !it.followOwner })
@@ -27,7 +27,7 @@ class CoreWarriorBladeChoreographyTest {
         }
     }
     @Test fun `wake stays on the cut path with stable model and orientation and fades before removal`() {
-        for(id in CoreWarriorBladeChoreography.sceneIds) for(p in parts(id)) {
+        for(id in (CoreWarriorBladeChoreography.sceneIds - "dash")) for(p in parts(id)) {
             val poses=(0..32).map { CoreSkillChoreography.pose(p,p.delayTicks+it/4.0) }
             assertEquals(1,poses.map { it.model }.distinct().size,id)
             assertEquals(1,poses.map { it.offset }.distinct().size,id)
@@ -60,7 +60,7 @@ class CoreWarriorBladeChoreographyTest {
         assertEquals(3,ult.map { p -> p.map { it.offset } }.distinct().size)
     }
     @Test fun `all enclosing model corners remain above ground and within reach at eight headings`() {
-        for(id in CoreWarriorBladeChoreography.sceneIds) repeat(8) { heading ->
+        for(id in (CoreWarriorBladeChoreography.sceneIds - "dash")) repeat(8) { heading ->
             val a=heading*PI/4
             for(pulse in 0 until effect(id).skill.pulses)
             for(p in CoreSkillChoreography.parts(effect(id,pulse,heading=a))) {
@@ -78,7 +78,7 @@ class CoreWarriorBladeChoreographyTest {
         }
     }
     @Test fun `anticipation does not draw a complete second stroke and contact remains hit located`() {
-        for(id in CoreWarriorBladeChoreography.sceneIds) {
+        for(id in (CoreWarriorBladeChoreography.sceneIds - "dash")) {
             val prep=CoreSkillChoreography.parts(effect(id,phase=CoreSkillVisualPhase.PREPARE))
             assertEquals(listOf("warrior_charge"),prep.map { it.shape })
             assertTrue(prep.single().scale.x()<.2)
@@ -88,7 +88,7 @@ class CoreWarriorBladeChoreographyTest {
         }
     }
     @Test fun `apex is a connected broad surface rather than a solitary white needle`() {
-        for(id in CoreWarriorBladeChoreography.sceneIds) {
+        for(id in (CoreWarriorBladeChoreography.sceneIds - "dash")) {
             val p=parts(id)
             val apex=(1..8).maxOf { t -> p.count {
                 val pose=CoreSkillChoreography.pose(it,t.toDouble())
@@ -102,7 +102,7 @@ class CoreWarriorBladeChoreographyTest {
     }
     @Test fun `export every warrior attack and pulse as server targets for the native display check`() {
         fun xyz(v: Vec)=listOf(v.x(),v.y(),v.z())
-        val rows=CoreWarriorBladeChoreography.sceneIds.flatMap { id ->
+        val rows=(CoreWarriorBladeChoreography.sceneIds - "dash").flatMap { id ->
             val pulses=if(id.startsWith("normal_")) 1 else effect(id).skill.pulses
             (0 until pulses).flatMap { pulse -> parts(id,pulse).map { part ->
                 val targets=(-2 until CoreCombatMeshes.removalAge(part)).map { age ->

@@ -18,6 +18,40 @@ import kotlin.math.abs
 import kotlin.test.*
 
 class CoreCombatMeshTest {
+    @Test fun `approved dash sends the original model frames at full fixed transform without tween distortion`() = player { owner ->
+        val meshes=CoreCombatMeshes(owner)
+        CoreCombatPresentation.pack(owner,true)
+        try {
+            for(phase in CoreSkillVisualPhase.entries) {
+                val e=effect(CoreClass.WARRIOR,"dash",phase)
+                val parts=CoreSkillChoreography.parts(e)
+                meshes.play(e)
+                val pairs=parts.map { p ->
+                    val name="projects:"+CoreSkillChoreography.pose(p,0.0).model
+                    val entity=owner.instance.entities.single { it.entityType==net.minestom.server.entity.EntityType.ITEM_DISPLAY &&
+                        (it.entityMeta as net.minestom.server.entity.metadata.display.ItemDisplayMeta).itemStack
+                            .get(net.minestom.server.component.DataComponents.ITEM_MODEL)==name }
+                    p to entity
+                }
+                repeat(2) { meshes.tick() } // Existing hidden spawn lead-in, not artwork frames.
+                for(age in 0..parts.maxOf { it.durationTicks }) {
+                    meshes.tick()
+                    for((p,entity) in pairs) {
+                        if(age>=p.durationTicks) { assertTrue(entity.isRemoved);continue }
+                        val pose=CoreSkillChoreography.pose(p,age.toDouble())
+                        val meta=entity.entityMeta as net.minestom.server.entity.metadata.display.ItemDisplayMeta
+                        assertEquals(0,meta.transformationInterpolationDuration)
+                        assertEquals(pose.scale,meta.scale)
+                        assertEquals(pose.offset,meta.translation)
+                        assertContentEquals(CoreCombatMeshArt.rotation(pose.yaw,pose.pitch,pose.roll),meta.leftRotation)
+                        assertContentEquals(CoreCombatMeshArt.vanillaItemCorrection,meta.rightRotation)
+                        assertEquals("projects:"+pose.model,meta.itemStack.get(net.minestom.server.component.DataComponents.ITEM_MODEL))
+                    }
+                }
+                assertEquals(0,meshes.size)
+            }
+        } finally { meshes.cancel();CoreCombatPresentation.forget(owner) }
+    }
     @Test fun `normal warrior swings actually dispatch their sound packets`() {
         val packets=mutableListOf<SendablePacket>()
         player(packets) { owner ->

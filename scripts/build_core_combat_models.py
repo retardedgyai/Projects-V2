@@ -949,6 +949,8 @@ def build_slash_frames(assets, write_json):
     build_greatsword_sweep(assets, write_json)
     from build_warrior_blade_art import build as build_warrior_blade_art
     build_warrior_blade_art(assets, write_json)
+    from build_approved_dash_v3 import build as build_approved_dash_v3
+    build_approved_dash_v3(assets, write_json)
 
 
 if __name__ == "__main__":
