@@ -16,6 +16,7 @@ internal object CoreSkillAudio {
             player.playSound(Sound.sound(event, Sound.Source.PLAYER, volume * detail, pitch))
         val astral = effect.job == CoreClass.STARWEAVER
         val scene = CoreSkillScenes.get(effect.sceneId)
+        val restoration=scene.kind==CoreSceneKind.HEAL || effect.sceneId=="heal_shield"
         val blade = scene.kind in setOf(CoreSceneKind.CUT,CoreSceneKind.CLEAVE,CoreSceneKind.SPIN,CoreSceneKind.THRUST) && scene.body!="shield_bash"
         if(scene.kind==CoreSceneKind.TELEPORT && effect.phase==CoreSkillVisualPhase.PULSE) {
             cue(if(effect.endpoint==CoreSkillEndpoint.DEPARTURE) SoundEvent.ENTITY_ILLUSIONER_CAST_SPELL else SoundEvent.BLOCK_AMETHYST_BLOCK_CHIME,
@@ -33,6 +34,10 @@ internal object CoreSkillAudio {
             CoreSkillVisualPhase.PULSE -> {
                 val pitch = (.85 + (effect.pulse % 3) * .13).toFloat()
                 when {
+                    restoration -> {
+                        cue(SoundEvent.BLOCK_AMETHYST_BLOCK_CHIME,.9f,1.15f+effect.pulse%3*.12f)
+                        cue(SoundEvent.BLOCK_ENCHANTMENT_TABLE_USE,.6f,1.25f)
+                    }
                     scene.kind == CoreSceneKind.PULL -> {
                         cue(SoundEvent.BLOCK_CHAIN_BREAK,.85f,.7f)
                         cue(SoundEvent.ITEM_TRIDENT_RETURN,.9f,.55f)
@@ -74,7 +79,7 @@ internal object CoreSkillAudio {
                         cue(SoundEvent.BLOCK_AMETHYST_BLOCK_CHIME, .65f, 1.35f)
                     }
                 }
-                if (effect.skill.ultimate || effect.motif == CoreSkillMotif.CLEAVE || effect.motif == CoreSkillMotif.PULL)
+                if (!restoration && (effect.skill.ultimate || effect.motif == CoreSkillMotif.CLEAVE || effect.motif == CoreSkillMotif.PULL))
                     cue(SoundEvent.ENTITY_GENERIC_EXPLODE, if (effect.skill.ultimate) .60f else .3f, .6f)
             }
         }

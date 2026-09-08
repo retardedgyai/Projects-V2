@@ -10,6 +10,55 @@ import kotlin.test.*
 import kotlin.math.*
 
 class CoreSkillChoreographyTest {
+    @Test fun `healing phrases distinguish opening petals rising feathers and articulated wings`() {
+        val ring=CoreSkillChoreography.parts(effect(CoreClass.HEALER,"heal_ring"))
+        val wind=CoreSkillChoreography.parts(effect(CoreClass.HEALER,"heal_wind"))
+        val shield=CoreSkillChoreography.parts(effect(CoreClass.HEALER,"heal_shield"))
+        val ultimate=CoreSkillChoreography.parts(effect(CoreClass.HEALER,"heal_ult"))
+        assertEquals(6,ring.size);assertEquals(8,wind.size);assertEquals(8,shield.size);assertEquals(14,ultimate.size)
+        assertTrue(ring.all { it.shape=="healing_petal" && it.pitchTravel<0 && it.travel.y()>0 })
+        assertTrue(wind.all { it.shape=="feather_plume" && it.motion==CoreMeshMotion.ORBIT })
+        assertTrue(shield.all { it.followOwner && it.motion==CoreMeshMotion.EMERGE })
+        assertTrue(ultimate.none { it.followOwner })
+        assertEquals(8,ultimate.count { !it.secondary })
+        for(parts in listOf(ring,wind,shield,ultimate)) {
+            assertTrue(parts.all { it.atlas==CoreMeshAtlas.NONE && it.chainAnchor==null })
+            assertFalse(parts.any { it.shape=="healing_wave" || it.shape=="prayer_wing" },"Do not leave the old static full symbol under the new phrase")
+        }
+    }
+    @Test fun `healing wind rises within its orbit and each feather finishes inside phrase lifetime`() {
+        for(id in listOf("heal_wind","heal_ult")) {
+            val e=effect(CoreClass.HEALER,id)
+            val parts=CoreSkillChoreography.parts(e)
+            for(p in parts) assertEquals(e.durationTicks,p.delayTicks+p.durationTicks,id)
+            for(p in parts.filter { it.motion==CoreMeshMotion.ORBIT }) {
+                val start=CoreSkillChoreography.pose(p,p.delayTicks.toDouble())
+                val end=CoreSkillChoreography.pose(p,(p.delayTicks+p.durationTicks-1).toDouble())
+                assertTrue(end.offset.y()-start.offset.y()>=1.5,id)
+                assertEquals(hypot(start.offset.x(),start.offset.z()),hypot(end.offset.x(),end.offset.z()),.00001,id)
+                assertTrue(abs(end.yaw-start.yaw)>1.0,id)
+            }
+        }
+    }
+    @Test fun `prayer feathers fan out on both sides while keeping the body center empty`() {
+        val parts=CoreSkillChoreography.parts(effect(CoreClass.HEALER,"heal_shield"))
+        assertEquals(4,parts.count { it.offset.x()>0 });assertEquals(4,parts.count { it.offset.x()<0 })
+        for(p in parts) {
+            val initial=CoreSkillChoreography.pose(p,p.delayTicks.toDouble())
+            val opened=CoreSkillChoreography.pose(p,p.delayTicks+8.0)
+            assertTrue(abs(opened.roll)>abs(initial.roll))
+            assertTrue(abs(opened.offset.x())>.6)
+            assertTrue(opened.roll*opened.offset.x()<0,"Feathers should fan away from the center")
+        }
+    }
+    @Test fun `healing feather has a volumetric quill and separate stepped barbs`() {
+        val model=javaClass.getResourceAsStream("/core-ui-pack/assets/projects/models/combat_vfx/feather_plume_life.json")!!
+            .bufferedReader().use { JsonParser.parseReader(it).asJsonObject }
+        val elements=model.getAsJsonArray("elements").map { it.asJsonObject }
+        assertTrue(elements.size>80)
+        assertTrue(elements.all { e -> (0..2).all { e.getAsJsonArray("to")[it].asDouble>e.getAsJsonArray("from")[it].asDouble } })
+        assertTrue(elements.any { it.getAsJsonArray("to")[2].asDouble-it.getAsJsonArray("from")[2].asDouble>=15.0 })
+    }
     @Test fun `pull chains keep both endpoints attached as hooks converge at every heading`() {
         for(id in listOf("temp_pull","temp_ult")) repeat(8) { heading ->
             val a=heading*PI/4

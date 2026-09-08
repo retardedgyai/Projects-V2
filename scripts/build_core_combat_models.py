@@ -136,6 +136,31 @@ def build_combat_models(assets, write_json):
     build_magic_frames(assets, write_json, 'nebula-stream-pixel-v1.png', 'nebula/stream')
     build_ice_growth(assets, write_json)
     build_pull_chains(assets, write_json)
+    build_healing_feather(assets, write_json)
+
+
+def build_healing_feather(assets, write_json):
+    # Not a borrowed UI glyph: a thick quill with separated, stepped barbs. The
+    # feather is independently articulated by the server to form wings or wind.
+    elements=[]
+    def box(lo,hi,ink):
+        return {'from':lo,'to':hi,'shade':False,'faces':{
+            f:{'texture':f'#{ink}','uv':[2,2,3,3]} for f in ('up','down','north','south','east','west')}}
+    elements.append(box([7.65,7.7,.5],[8.35,8.3,15.5],0))
+    widths=(.6,1.3,2.2,3.1,3.8,4.2,4.1,3.7,3.1,2.5,1.7,.8)
+    for row,width in enumerate(widths):
+        for side in (-1,1):
+            for step in range(math.ceil(width*2)):
+                x=8+side*(step*.5+.55)
+                z=2+row+step*.18+(0 if side==1 else .35)
+                elements.append(box([x-.3,7.75,z],[x+.3,8.25,z+.78],
+                                    0 if step<width*.8 else 1 if side==1 else 2))
+    for stage in range(8):
+        kept=elements if stage==0 else [e for i,e in enumerate(elements) if i%8>=stage]
+        name='combat_vfx/feather_plume_life'+(f'_fade{stage}' if stage else '')
+        write_json(assets/f'models/{name}.json',{'ambientocclusion':False,
+            'textures':{str(i):f'minecraft:block/{t}' for i,t in enumerate(PALETTES['life'])},'elements':kept})
+        write_json(assets/f'items/{name}.json',{'model':{'type':'minecraft:model','model':f'projects:{name}'}})
 
 
 def build_pull_chains(assets, write_json):

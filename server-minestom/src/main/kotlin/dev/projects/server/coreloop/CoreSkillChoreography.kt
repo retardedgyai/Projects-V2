@@ -108,6 +108,7 @@ internal object CoreSkillChoreography {
         if(e.sceneId=="mage_garden") return iceGarden(e,life)
         if(s.kind==CoreSceneKind.PULL) return chainPull(e,life)
         if(e.sceneId=="mage_ward") return arcaneWard(e,life)
+        if(e.sceneId in setOf("heal_ring","heal_wind","heal_ult","heal_shield")) return healingPhrase(e,life)
         val ray=s.kind==CoreSceneKind.RAY
         val base=raw.mapIndexed { i,p ->
             val motion=when(s.kind) {
@@ -283,5 +284,45 @@ internal object CoreSkillChoreography {
                 delayTicks=i%2,durationTicks=life-i%2,motion=CoreMeshMotion.EMERGE,
                 followOwner=true,erode=true)
         }
+    }
+
+    private fun healingPhrase(e: CoreSkillEffect,life: Int): List<CoreCombatMeshPart> {
+        val yaw=atan2(e.direction.x(),e.direction.z())
+        val r=min(e.radius,CoreSkillScenes.get(e.sceneId).reach)
+        fun local(x: Double,y: Double,z: Double)=Vec(cos(yaw)*x+sin(yaw)*z,y,-sin(yaw)*x+cos(yaw)*z)
+        val result=mutableListOf<CoreCombatMeshPart>()
+        val wings=e.sceneId in setOf("heal_shield","heal_ult")
+        if(wings) for(side in listOf(-1,1)) repeat(4) { feather ->
+            val delay=feather
+            val large=e.skill.ultimate
+            result+=CoreCombatMeshPart("feather_plume","life",
+                local(side*(.5+feather*.04),1.1+feather*.03,-.15),
+                Vec(if(large) 1.15 else 1.0,1.0,(if(large) 2.0 else 1.5)-feather*.13),
+                yaw=yaw+side*.2,pitch=-PI/2,roll=-side*(.1+feather*.02),
+                rollTravel=-side*(.2+feather*.26),travel=local(side*.18,.12,0.0),
+                startSize=.45,endSize=1.0,delayTicks=delay,durationTicks=life-delay,
+                motion=CoreMeshMotion.EMERGE,followOwner=e.sceneId=="heal_shield",erode=true,
+                secondary=feather>=2)
+        }
+        if(e.sceneId=="heal_ring") repeat(6) { i ->
+            val a=i*PI/3+e.pulse*.2
+            val delay=(i%3)*2
+            result+=CoreCombatMeshPart("healing_petal","life",Vec(sin(a)*r*.22,.28,cos(a)*r*.22),
+                Vec(.7,.7,1.15),yaw=a,pitch=-.25,pitchTravel=-.9,
+                travel=Vec(sin(a)*r*.55,.85,cos(a)*r*.55),bend=Vec(0.0,.3,0.0),
+                startSize=.3,endSize=1.0,delayTicks=delay,durationTicks=life-delay,
+                motion=CoreMeshMotion.FLOAT,erode=true)
+        }
+        if(e.sceneId in setOf("heal_wind","heal_ult")) repeat(if(wings) 6 else 8) { i ->
+            val count=if(wings) 6 else 8
+            val a=i*PI*2/count+e.pulse*.3
+            val delay=(i%4)*2
+            result+=CoreCombatMeshPart("feather_plume","life",Vec(sin(a)*r*.5,.3,cos(a)*r*.5),
+                Vec(.75,.8,if(wings) 1.4 else 1.2),yaw=a,pitch=-PI/2+.25,roll=.2,
+                spin=1.2,rollTravel=-.6,travel=Vec(0.0,if(wings) 1.9 else 1.5,0.0),
+                startSize=.75,endSize=.55,delayTicks=delay,durationTicks=life-delay,
+                motion=CoreMeshMotion.ORBIT,erode=true,secondary=if(wings) i>=4 else i>=6)
+        }
+        return result
     }
 }
