@@ -4,6 +4,16 @@
 
 ## 最新状態 — Python加工の許可後
 
+### ほかの指定作品の再確認（2026-09-09）
+
+ログイン後に [Ice Storm](../../../docs/research/ice-storm-direct-reference-2026-09-09.md) と
+[Blighted Mace](../../../docs/research/blighted-mace-2026-09-09.md) の指定X版を直接確認した。
+Ice Stormは武器展示ではなく、床の渦・上方の角張った帯・雪の結晶を重ねた範囲VFX。
+現在の氷スキルのコードと比較し、次の改善対象を `mage_zero` に絞った。
+メイスは柄まで続く青緑の縁と離れた小片を追加の照合条件にした。
+今回この二つの実装変更はまだ行っていない。動画の正確な周期/元メッシュは未確定。
+SamusDev動画の確認数は増えていない。防具制作は中止のまま。
+
 ### 大剣v02を手動テストへつなぐ専用起動モード（2026-09-09）
 
 `scripts/build_material_playtest_pack.py` でインストール済みサーバーJARのRPを読み、
