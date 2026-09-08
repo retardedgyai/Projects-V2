@@ -53,6 +53,28 @@ def turn(elements,axis,angle,origin):
     return result
 
 
+def mace_body(spec,pixels):
+    """Four radial painted flanges, not an edge-on flat head or a cuboid cage.
+
+    The v02 head ends at row 35, above the narrow fixed neck. Traced face masks
+    ensure each panel samples only head artwork, never another copy of the grip.
+    Two thin crossed silhouettes supply four radial fins at +/-45 degrees.
+    """
+    yy,_=np.indices(pixels.shape[:2])
+    opaque=pixels[:,:,3]>0
+    head=opaque & (yy<35)
+    shaft=opaque & ~head
+    origin=[8,(spec['bottom_pixel']-35)*spec['height']/(spec['bottom_pixel']-spec['top_pixel']),8]
+    result=[]
+    for label,mask,depth,angle in (('flange_a',head,.18,45),('flange_b',head,.18,-45),
+                                   ('shaft',shaft,.7,0)):
+        model,_=compile_model({**spec,'parts':[{'name':f'body:{label}',
+            'rows':[spec['top_pixel'],spec['bottom_pixel']],
+            'thickness':depth,'trace_painted_faces':True}]},np.where(mask,255,0).astype(np.uint8))
+        result.extend(turn(model['elements'],'y',angle,origin))
+    return result
+
+
 def geometry(key,entry):
     textures = {part:np.asarray(Image.open(SOURCE/f'{key}-{part}.png')) for part in entry['parts']}
     # Each weapon is anchored at its grip/gutter, never at the texture's center.
@@ -67,6 +89,7 @@ def geometry(key,entry):
             'texture':f'projects:item/weapons/pixel_{key}_{part}',
             'parts':[{'name':part,'rows':[top,bottom],'thickness':DEPTHS[key][part]}]}
         model,_ = compile_model(spec,pixels[:,:,3])
+        if key=='mace' and part=='body': model['elements']=mace_body(spec,pixels)
         if base is None: base = model
         for e in model['elements']:
             for face in e['faces'].values(): face['texture'] = '#'+part
