@@ -4,7 +4,7 @@ import net.minestom.server.coordinate.Vec
 import kotlin.math.*
 
 /** An effect's readable phrase is longer than its damage beat. Never feeds back into hit timing. */
-internal enum class CoreMeshMotion { LINEAR, SNAP, SWEEP, REVOLVE, THRUST, FALL, RADIATE, ORBIT, GATHER, FLOAT }
+internal enum class CoreMeshMotion { LINEAR, SNAP, SWEEP, REVOLVE, THRUST, FALL, RADIATE, ORBIT, GATHER, FLOAT, EMERGE }
 internal data class CoreMeshPose(val offset: Vec, val scale: Vec, val yaw: Double, val pitch: Double,
     val roll: Double, val model: String, val visible: Boolean)
 
@@ -43,6 +43,7 @@ internal object CoreSkillChoreography {
             CoreMeshMotion.THRUST,CoreMeshMotion.SWEEP -> ease(localAge/5.0)
             CoreMeshMotion.REVOLVE -> (localAge/6.0).coerceIn(0.0,1.0)
             CoreMeshMotion.SNAP,CoreMeshMotion.RADIATE -> ease(t/.65)
+            CoreMeshMotion.EMERGE -> ease(localAge/5.0)*(1-ease((t-.72)/.28))
         }
         val grow=p.startSize+(p.endSize-p.startSize)*u
         val arc=sin(PI*t)
@@ -53,7 +54,9 @@ internal object CoreSkillChoreography {
         } else p.offset.add(travel)
         // Stroke peaks in 0.20s regardless of the longer aftermath. Extending readability
         // must not postpone the visually strongest beat until half a second after damage.
-        val stage=if(p.stellarBurst) {
+        val stage=if(p.atlas==CoreMeshAtlas.NEBULA_STREAM) {
+            floor(t*15).toInt()
+        } else if(p.stellarBurst) {
             // Ignition peaks at frame 3 in 0.10s; the hollow broken wake then unravels.
             if(localAge<=2.0) floor(localAge/2*3).toInt() else
                 4+floor(((localAge-3)/(p.durationTicks-4).coerceAtLeast(1)).coerceIn(0.0,1.0)*11).toInt()
@@ -61,7 +64,8 @@ internal object CoreSkillChoreography {
             if(localAge<=4.0) floor(localAge/4.0*7).toInt() else
                 8+floor(((localAge-5)/(p.durationTicks-6).coerceAtLeast(1)).coerceIn(0.0,1.0)*7).toInt()
         } else floor(((t-.42)/.58).coerceIn(0.0,1.0)*7).toInt()
-        val model=if(p.stellarBurst) "combat_vfx/stellar/burst_${p.palette}_$stage" else
+        val model=if(p.atlas==CoreMeshAtlas.NEBULA_STREAM) "combat_vfx/nebula/stream_${p.palette}_$stage" else
+            if(p.stellarBurst) "combat_vfx/stellar/burst_${p.palette}_$stage" else
             if(p.sprite) "combat_vfx/ribbon/slash_${if(p.spriteMirror) "reverse_" else ""}${p.palette}_$stage" else
             "combat_vfx/${p.shape}_${p.palette}" + if(p.erode && stage>0) "_fade$stage" else ""
         return CoreMeshPose(at,p.scale.mul(grow),p.yaw+angle,p.pitch+p.pitchTravel*u,p.roll+p.rollTravel*u,
@@ -89,6 +93,8 @@ internal object CoreSkillChoreography {
                 p.copy(offset=p.offset.add(.25,.15,.02),scale=p.scale.mul(.5),delayTicks=3,durationTicks=16,
                     motion=CoreMeshMotion.RADIATE,travel=Vec(.5,.55,.1),spin=.7,secondary=true,erode=true))
         }
+        if(e.sceneId=="star_cloud") return nebulaField(e,life)
+        if(e.sceneId=="mage_garden") return iceGarden(e,life)
         val ray=s.kind==CoreSceneKind.RAY
         val base=raw.mapIndexed { i,p ->
             val motion=when(s.kind) {
@@ -121,7 +127,7 @@ internal object CoreSkillChoreography {
             val spin=s.kind==CoreSceneKind.SPIN
             val sign=if(((if(s.body=="slash_reverse") 1 else 0)+e.pulse)%2==0) 1.0 else -1.0
             // The atlas is an evolving trail, not a full silhouette scaled away at the end.
-            val ribbon=p.copy(sprite=true,spriteMirror=sign<0,erode=false,
+            val ribbon=p.copy(atlas=CoreMeshAtlas.SLASH,spriteMirror=sign<0,erode=false,
                 offset=Vec(0.0,if(vertical) 1.25 else 1.1,0.0).add(forward.mul(if(spin) 0.0 else r*.55)),
                 // A perfectly horizontal sweep or forward YZ cleave is edge-on from the
                 // owner's eyes. Cant the authored stroke planes, without camera billboarding.
@@ -175,7 +181,7 @@ internal object CoreSkillChoreography {
             if(floorIndex>=0) {
                 val floor=base[floorIndex]
                 val size=min(e.radius,3.6)*2
-                base[floorIndex]=floor.copy(shape="star_spark",stellarBurst=true,erode=false,
+                base[floorIndex]=floor.copy(shape="star_spark",atlas=CoreMeshAtlas.STELLAR_BURST,erode=false,
                     scale=Vec(size,1.0,size),startSize=.6,endSize=1.0,spin=.35,
                     delayTicks=2,durationTicks=life-2,motion=CoreMeshMotion.RADIATE)
             }
@@ -188,11 +194,51 @@ internal object CoreSkillChoreography {
     private fun stellarBurst(at: Vec,yaw: Double,size: Double,life: Int): List<CoreCombatMeshPart> {
         val main=CoreCombatMeshPart("star_spark","astral",at,Vec(size,1.0,size),
             yaw=yaw-PI/4,pitch=-PI/2,roll=.18,startSize=.8,endSize=1.0,
-            durationTicks=life,motion=CoreMeshMotion.SNAP,stellarBurst=true,rollTravel=.45)
+            durationTicks=life,motion=CoreMeshMotion.SNAP,atlas=CoreMeshAtlas.STELLAR_BURST,rollTravel=.45)
         // Crossing planes provide depth and side visibility, rather than viewer-facing cards.
         // The cool secondary wake has a different clock, angle and upward drift.
         return listOf(main,main.copy(palette="ice",yaw=yaw+PI/4,roll=-.3,
             scale=Vec(size*.82,1.0,size*.82),delayTicks=2,durationTicks=life-2,
             travel=Vec(0.0,.2,0.0),secondary=true,rollTravel=-.5))
+    }
+
+    private fun nebulaField(e: CoreSkillEffect,life: Int): List<CoreCombatMeshPart> {
+        val r=min(e.radius,CoreSkillScenes.get(e.sceneId).reach)
+        // Six low cloud currents, three heights and two crossing directions. No falling
+        // core, giant ground diagram or camera-facing card. Each damage wave refreshes a
+        // bounded visual phrase; it does not create a second gameplay field or timer.
+        val clouds=(0 until 6).map { i ->
+            val a=i*PI/3+e.pulse*.45
+            val tangent=Vec(cos(a),0.0,-sin(a))
+            val delay=(i%3)*3
+            CoreCombatMeshPart("nebula_wisp",if(i%3==1) "ice" else "astral",
+                Vec(sin(a)*r*.22,.45+(i%3)*.24,cos(a)*r*.22).sub(tangent.mul(r*.13)),
+                Vec(r*1.35,1.0,r*.85),yaw=a,pitch=if(i%2==0) -.6 else .45,roll=if(i%2==0) .08 else -.08,
+                travel=tangent.mul(r*.26),bend=Vec(0.0,.16,0.0),spin=if(i%2==0) .25 else -.2,
+                startSize=.85,endSize=1.0,durationTicks=life-delay,delayTicks=delay,
+                motion=CoreMeshMotion.FLOAT,atlas=CoreMeshAtlas.NEBULA_STREAM,secondary=i>=3)
+        }
+        // Small stellar knots move with the cloud volume rather than outlining another logo.
+        return clouds+(0 until 3).map { i ->
+            val a=i*PI*2/3+e.pulse*.45
+            CoreCombatMeshPart("star_seed","astral",Vec(sin(a)*r*.5,.65,cos(a)*r*.5),
+                Vec(.25,.25,.25),pitch=-PI/2,spin=.7,travel=Vec(0.0,.4,0.0),
+                delayTicks=4+i*2,durationTicks=life-4-i*2,startSize=.5,endSize=.2,
+                motion=CoreMeshMotion.ORBIT,secondary=true,erode=true)
+        }
+    }
+
+    private fun iceGarden(e: CoreSkillEffect,life: Int): List<CoreCombatMeshPart> {
+        val r=min(e.radius,CoreSkillScenes.get(e.sceneId).reach)
+        return (0 until 8).map { i ->
+            val a=i*PI/4+e.pulse*.2
+            val radius=r*if(i%2==0) .58 else .3
+            val height=if(i%2==0) 1.35 else .8
+            val delay=(i%4)*2
+            CoreCombatMeshPart("ice_growth","ice",Vec(sin(a)*radius,.12,cos(a)*radius),
+                Vec(.8,.8,height),yaw=a,pitch=-PI/2,ground=true,
+                startSize=.02,endSize=1.0,durationTicks=life-delay,delayTicks=delay,
+                motion=CoreMeshMotion.EMERGE,secondary=i%2!=0)
+        }
     }
 }

@@ -81,9 +81,11 @@ def render(parts, name, tick, view='iso'):
                 warped=texture.transform((W,H),Image.Transform.PERSPECTIVE,tuple(coefficients),Image.Resampling.NEAREST)
                 faces.append((sum(v[2] for v in points)/4,warped,None))
             else:
-                for ids in ((0,1,3,2),(4,6,7,5),(0,4,5,1),(2,3,7,6),(0,2,6,4),(1,5,7,3)):
+                for face,ids in (('north',(0,1,3,2)),('south',(4,6,7,5)),
+                                 ('down',(0,4,5,1)),('up',(2,3,7,6)),
+                                 ('west',(0,2,6,4)),('east',(1,5,7,3))):
                     points=[vertices[i] for i in ids]
-                    key=e['faces']['up']['texture'][1:]
+                    key=e['faces'][face]['texture'][1:]
                     color=COLORS[model['textures'][key].split('/')[-1]]
                     faces.append((sum(v[2] for v in points)/4,[v[:2] for v in points],color))
     for _,content,color in sorted(faces,key=lambda v:v[0],reverse=True):

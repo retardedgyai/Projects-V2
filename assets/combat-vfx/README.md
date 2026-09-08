@@ -3,6 +3,11 @@
 World-space skill artwork, **not** the approved UI skill icons. Those icons and
 Japanese fonts are untouched.
 
+## Active: nebula-stream-pixel-v1.png / ice_growth_ice
+
+星雲専用の流れるピクセル連番と、氷の庭の底支点・立体氷晶モデル。
+[用途、生成プロンプト、処理と確認箇所](nebula-stream-pixel-v1.md)。
+
 ## Active: stellar-burst-pixel-v1.png
 
 星術の着弾・確定命中専用の16枚ピクセル連番。

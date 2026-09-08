@@ -16,6 +16,50 @@ class CoreSkillChoreographyTest {
     @Test fun `stellar burst pack contains crisp sequential frames without tile borders`() {
         assertPixelFrames("stellar/burst")
     }
+    @Test fun `nebula stream pack has pixel contours and changing cloud mass`() {
+        assertPixelFrames("nebula/stream")
+    }
+    @Test fun `nebula is staggered low moving currents not an explosion or orbit diagram`() {
+        val e=effect(CoreClass.STARWEAVER,"star_cloud")
+        val parts=CoreSkillChoreography.parts(e)
+        val streams=parts.filter { it.atlas==CoreMeshAtlas.NEBULA_STREAM }
+        assertEquals(6,streams.size)
+        assertTrue(streams.map { it.offset.y() }.distinct().size>=3)
+        assertEquals(setOf(0,3,6),streams.map { it.delayTicks }.toSet())
+        assertTrue(parts.none { it.stellarBurst || it.sprite || it.shape=="constellation" })
+        for(p in streams) {
+            assertTrue(p.delayTicks+p.durationTicks==e.durationTicks)
+            assertFalse(p.followOwner)
+            val poses=(0 until p.durationTicks).map { CoreSkillChoreography.pose(p,(p.delayTicks+it).toDouble()) }
+            assertEquals(16,poses.map { it.model }.distinct().size)
+            assertTrue(poses.first().offset.distance(poses.last().offset)>.4)
+            for(pose in poses) {
+                assertTrue(pose.offset.y() in .3..1.2)
+                assertTrue(hypot(pose.offset.x(),pose.offset.z())<e.radius)
+            }
+        }
+    }
+    @Test fun `ice garden grows anchored volume in waves without circling pillars`() {
+        val parts=CoreSkillChoreography.parts(effect(CoreClass.MAGE,"mage_garden"))
+        assertEquals(8,parts.size)
+        assertEquals(setOf(0,2,4,6),parts.map { it.delayTicks }.toSet())
+        for(p in parts) {
+            assertEquals(CoreMeshMotion.EMERGE,p.motion)
+            assertTrue(p.ground && !p.followOwner && !p.erode)
+            val first=CoreSkillChoreography.pose(p,p.delayTicks.toDouble())
+            val grown=CoreSkillChoreography.pose(p,p.delayTicks+8.0)
+            val last=CoreSkillChoreography.pose(p,(p.delayTicks+p.durationTicks-1).toDouble())
+            assertEquals(first.offset,grown.offset)
+            assertTrue(grown.scale.z()>first.scale.z()*10)
+            assertTrue(last.scale.z()<grown.scale.z()*.1)
+        }
+        val model=javaClass.getResourceAsStream("/core-ui-pack/assets/projects/models/combat_vfx/ice_growth_ice.json")!!
+            .bufferedReader().use { JsonParser.parseReader(it).asJsonObject }
+        val elements=model.getAsJsonArray("elements").map { it.asJsonObject }
+        assertTrue(elements.size>=16)
+        assertTrue(elements.all { e -> (0..2).all { e.getAsJsonArray("to")[it].asDouble>e.getAsJsonArray("from")[it].asDouble } })
+        assertEquals(8.0,elements.minOf { it.getAsJsonArray("from")[2].asDouble })
+    }
     private fun assertPixelFrames(prefix: String) {
         val frameHashes=mutableSetOf<Int>()
         var maximumInk=0

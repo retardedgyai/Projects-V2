@@ -5,6 +5,7 @@ import kotlin.math.*
 
 internal enum class CoreSceneKind { CUT, CLEAVE, SPIN, GUARD, SHIELD, THRUST, BANNER, RAY, NOVA, RAIN, TELEPORT, FIELD, FAN, AFTERIMAGE, HAMMER, PULL, HEAL, PILLAR }
 internal enum class CoreSkillEndpoint { NONE, DEPARTURE, ARRIVAL }
+internal enum class CoreMeshAtlas { NONE, SLASH, STELLAR_BURST, NEBULA_STREAM }
 
 /** Concrete authored contract for every existing skill. Shared with the mesh builder and art sheet. */
 internal data class CoreSkillScene(val id: String, val name: String, val kind: CoreSceneKind, val palette: String,
@@ -29,9 +30,10 @@ internal data class CoreCombatMeshPart(
     val followOwner: Boolean = false, val ground: Boolean = false,
     val delayTicks: Int = 0, val motion: CoreMeshMotion = CoreMeshMotion.LINEAR,
     val bend: Vec = Vec.ZERO, val pitchTravel: Double = 0.0, val rollTravel: Double = 0.0,
-    val sprite: Boolean = false, val erode: Boolean = false, val spriteMirror: Boolean = false,
-    val stellarBurst: Boolean = false,
+    val atlas: CoreMeshAtlas = CoreMeshAtlas.NONE, val erode: Boolean = false, val spriteMirror: Boolean = false,
 ) {
+    val sprite get() = atlas==CoreMeshAtlas.SLASH
+    val stellarBurst get() = atlas==CoreMeshAtlas.STELLAR_BURST
     fun sizeAt(t: Double) = startSize + (endSize-startSize) * t.coerceIn(0.0,1.0)
 }
 

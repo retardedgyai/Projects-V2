@@ -132,11 +132,31 @@ def build_combat_models(assets, write_json):
             write_json(assets / f"models/combat_vfx/{fade}.json", eroded)
             write_json(assets / f"items/combat_vfx/{fade}.json", {"model": {"type": "minecraft:model", "model": f"projects:combat_vfx/{fade}"}})
     build_slash_frames(assets, write_json)
-    build_stellar_frames(assets, write_json)
+    build_magic_frames(assets, write_json, 'stellar-burst-pixel-v1.png', 'stellar/burst')
+    build_magic_frames(assets, write_json, 'nebula-stream-pixel-v1.png', 'nebula/stream')
+    build_ice_growth(assets, write_json)
 
 
-def build_stellar_frames(assets, write_json):
-    master = Path(__file__).resolve().parents[1] / 'assets/combat-vfx/stellar-burst-pixel-v1.png'
+def build_ice_growth(assets, write_json):
+    # Real stepped volume, not two crossing crystal silhouettes. Local +Z is height
+    # after the runtime's -90 degree pitch. The base pivot is (8,8,8), so scale grows
+    # out of the terrain instead of lifting a centre-pivoted sprite above it.
+    elements=[]
+    for x,y,height,width in ((8,8,16,3.1),(3.6,8.8,9,1.7),(12,7.1,11,1.8)):
+        for i in range(8):
+            w=width*(1-i/8)**.65
+            elements.append({'from':[x-w,y-w*.75,8+height*i/8],
+                'to':[x+w,y+w*.75,8+height*(i+1)/8],'shade':False,
+                'faces':{face:{'texture':f'#{ink}','uv':[2,2,3,3]} for face,ink in
+                    (('up',1),('down',2),('north',2),('south',0),('east',0),('west',1))}})
+    name='combat_vfx/ice_growth_ice'
+    write_json(assets/f'models/{name}.json',{'ambientocclusion':False,
+        'textures':{str(i):f'minecraft:block/{t}' for i,t in enumerate(PALETTES['ice'])},'elements':elements})
+    write_json(assets/f'items/{name}.json',{'model':{'type':'minecraft:model','model':f'projects:{name}'}})
+
+
+def build_magic_frames(assets, write_json, source, family):
+    master = Path(__file__).resolve().parents[1] / 'assets/combat-vfx' / source
     atlas = Image.open(master).convert('L')
     for frame in range(16):
         x,y=frame%4,frame//4
@@ -147,17 +167,17 @@ def build_stellar_frames(assets, write_json):
         alpha=tile.point(lambda v: 255 if v else 0)
         for box in ((0,0,64,4),(0,60,64,64),(0,0,4,64),(60,0,64,64)):
             assert alpha.crop(box).getbbox() is None, f'{master.name} frame {frame}: clipped border'
-        target=assets/f'textures/combat_vfx/stellar/burst_{frame}.png'
+        target=assets/f'textures/combat_vfx/{family}_{frame}.png'
         target.parent.mkdir(parents=True,exist_ok=True)
         Image.merge('RGBA',(tile,tile,tile,alpha)).save(target)
-        name=f'combat_vfx/stellar/burst_{frame}'
+        name=f'combat_vfx/{family}_{frame}'
         write_json(assets/f'models/{name}.json',{
             'ambientocclusion':False,'textures':{'0':f'projects:{name}'},
             'elements':[{'from':[0,8,0],'to':[16,8,16],'shade':False,'faces':{
                 'up':{'texture':'#0','uv':[0,16,16,0],'tintindex':0},
                 'down':{'texture':'#0','uv':[0,0,16,16],'tintindex':0}}}]})
         for palette,color in dict(astral=0xdca6ff,ice=0x85e2ff).items():
-            write_json(assets/f'items/combat_vfx/stellar/burst_{palette}_{frame}.json',
+            write_json(assets/f'items/combat_vfx/{family}_{palette}_{frame}.json',
                 {'model':{'type':'minecraft:model','model':f'projects:{name}',
                           'tints':[{'type':'minecraft:constant','value':color}]}})
 
