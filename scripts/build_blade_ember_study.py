@@ -1,10 +1,11 @@
 """One isolated sword with an animated, blade-attached pixel effect layer.
 
-The existing (unapproved) body is retained to isolate the missing motion. This
-does not certify material parity, replace game assets, or create other tiers.
+The default retains the old body to isolate motion; --redraw uses the separate
+direct-reference candidate. Neither certifies material parity or replaces game assets.
 Animation uses Vanilla texture metadata, not a mod or server particle packets.
 """
 import hashlib
+import argparse
 import json
 import shutil
 import zipfile
@@ -34,13 +35,19 @@ RAMP = ((252, 87, 72, 255), (221, 47, 71, 255),
         (171, 30, 72, 255), (117, 28, 59, 255))
 
 
-def source():
+def source(redraw=False):
+    if redraw:
+        from process_sword_material_redraw import convert, guard_depth
+        _, textures, entry = convert()
+        base, gem, textures = geometry('greatsword', entry, textures)
+        base = guard_depth(base, textures, entry)
+        return entry, pose(base, gem, 'greatsword'), textures
     entry = json.loads((SOURCE / 'manifest.json').read_text())['weapons']['greatsword']
     base, gem, textures = geometry('greatsword', entry)
     return entry, pose(base, gem, 'greatsword'), textures
 
 
-def effect_frames(body):
+def effect_frames(body, emitters=EMITTERS):
     """Attached tongue -> detached shard -> smaller dark remnant -> empty.
 
     Pixel coordinates share the body's grid. There is no blur, smooth alpha
@@ -50,7 +57,7 @@ def effect_frames(body):
     for frame in range(FRAME_COUNT):
         art = Image.new('RGBA', (WIDTH, HEIGHT))
         draw = ImageDraw.Draw(art)
-        for row, side, born, life, outward, upward in EMITTERS:
+        for row, side, born, life, outward, upward in emitters:
             age = (frame - born) % FRAME_COUNT
             if age >= life:
                 continue
@@ -115,15 +122,21 @@ def metadata():
                           'frames': list(range(FRAME_COUNT))}}
 
 
-def build():
-    entry, original, textures = source()
-    frames = effect_frames(textures['body'])
+def build(redraw=False):
+    out = ROOT / '.tools/blade-ember-redraw' if redraw else OUT
+    pack = out / 'pack'
+    source_dir = ROOT / 'assets/class-armaments/texture-first/processed-material-v02' if redraw else SOURCE
+    if redraw:
+        from process_sword_material_redraw import build as process_redraw
+        process_redraw()
+    entry, original, textures = source(redraw)
+    frames = effect_frames(textures['body'], entry.get('ember_emitters', EMITTERS))
     model = animated_model(entry, original, textures, frames)
-    assets = PACK / 'assets/projects'
+    assets = pack / 'assets/projects'
     texdir = assets / 'textures/item/weapons'
     texdir.mkdir(parents=True, exist_ok=True)
     for part in ('body', 'jewel'):
-        shutil.copyfile(SOURCE / f'greatsword-{part}.png', texdir / f'pixel_greatsword_{part}.png')
+        shutil.copyfile(source_dir / f'greatsword-{part}.png', texdir / f'pixel_greatsword_{part}.png')
     atlas = Image.fromarray(np.concatenate(frames, axis=0))
     atlas.save(texdir / f'{KEY}_embers.png')
     write_json(texdir / f'{KEY}_embers.png.mcmeta', metadata())
@@ -131,7 +144,7 @@ def build():
     write_json(assets / f'items/weapons/{KEY}.json', {
         'hand_animation_on_swap': False,
         'model': {'type': 'minecraft:model', 'model': f'projects:item/weapons/{KEY}'}})
-    write_json(PACK / 'pack.mcmeta', {'pack': {'description': 'ProjectS blade ember study (unapproved)',
+    write_json(pack / 'pack.mcmeta', {'pack': {'description': 'ProjectS blade ember study (unapproved)',
                                             'min_format': [88, 0], 'max_format': [88, 0]}})
     # Render from SAVED model, sprite sheet, and metadata, not synthetic VFX.
     saved = json.loads((assets / f'models/item/weapons/{KEY}.json').read_text())
@@ -147,26 +160,28 @@ def build():
             ImageDraw.Draw(canvas).text((col * 240 + 8, 9),
                 ('正面', '斜め', '真横')[col] + ' / 刃の動き試作', font=FONT, fill='#ddd3c5')
         previews.append(canvas)
-    previews[0].save(OUT / 'blade-motion.gif', save_all=True, append_images=previews[1:],
+    previews[0].save(out / 'blade-motion.gif', save_all=True, append_images=previews[1:],
                      duration=timing['frametime'] * 50, loop=0, disposal=2)
     contact = Image.new('RGB', (720, 430 * 4))
     for row, i in enumerate((1, 6, 12, 19)):
         contact.paste(previews[i], (0, row * 430))
-    contact.save(OUT / 'blade-motion-frames.png')
-    with zipfile.ZipFile(OUT / 'projects-blade-motion-study.zip', 'w', zipfile.ZIP_DEFLATED) as archive:
-        for path in sorted(PACK.rglob('*')):
+    contact.save(out / 'blade-motion-frames.png')
+    with zipfile.ZipFile(out / 'projects-blade-motion-study.zip', 'w', zipfile.ZIP_DEFLATED) as archive:
+        for path in sorted(pack.rglob('*')):
             if path.is_file():
-                archive.write(path, path.relative_to(PACK).as_posix())
+                archive.write(path, path.relative_to(pack).as_posix())
     report = {'runtime_applied': False, 'quality_approved': False,
-              'scope': 'one greatsword only; existing body retained, no tier rollout',
+              'scope': 'one greatsword only; no tier rollout', 'body_redraw': redraw,
               'frames': FRAME_COUNT, 'frame_ticks': FRAME_TICKS,
               'timing_source': 'prototype, not measured reference timing',
               'elements': len(model['elements']),
-              'body_sha256': hashlib.sha256((SOURCE / 'greatsword-body.png').read_bytes()).hexdigest(),
+              'body_sha256': hashlib.sha256((source_dir / 'greatsword-body.png').read_bytes()).hexdigest(),
               'preview': 'exported JSON and animated atlas orthographic render; not game footage'}
-    write_json(OUT / 'report.json', report)
+    write_json(out / 'report.json', report)
     print(json.dumps(report))
 
 
 if __name__ == '__main__':
-    build()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--redraw', action='store_true', help='Isolated direct-reference material candidate')
+    build(parser.parse_args().redraw)

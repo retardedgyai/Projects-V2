@@ -4,6 +4,30 @@
 
 ## 最新状態 — Python加工の許可後
 
+### 指定作品を直接参照した大剣本体v02（2026-09-09）
+
+ログイン済みのMatE指定ポストの正面寄りフレームを、組み込みimagegenに直接渡して
+[本体原稿v02](sources/greatsword-material-v02.png) を生成した。
+過去の自作原稿は生成のスタイル参照に渡していない。
+[全文プロンプト・生成記録](generation-material-v12.json)。CLI/APIは使用していない。
+
+- 以前の紫黒い素材に比べ、灰色の鍔・柄と赤い刃の色面が区別しやすくなった。
+  元PNGはRGBの描かれたチェック背景だったため、許可済みの専用抽出/中央値ピクセル化を行った。
+  本体80画素高/32×128キャンバス。旧16色パレットへは押し込まず、原稿の色面を維持する。
+  生成原稿内の細かな色差も残るため、色数の多さを品質向上の根拠にはしない。
+- `scripts/process_sword_material_redraw.py` が原稿SHA固定、抽出、宝石/受け皿分離、
+  鍔の実際の灰色部分の輪郭分離を行う。左右の薄い鍔は±22度の別平面にし、
+  刃と握りは固定。鍔の空隙をブロックで埋めない。
+- `scripts/build_blade_ember_study.py --redraw` で新しい輪郭専用の5か所から赤い形を出す。
+  既存v01と別の `.tools/blade-ember-redraw` に出力する。
+  同ディレクトリの `blade-motion.gif` / `blade-motion-frames.png` は保存JSON/PNGの確認用正投影。
+- 原稿 → processed-material-v02 → 薄い本体/独立した鍔と宝石 → 連番エフェクト → 独立確認用RP。
+  最重要/不具合時の確認先は上記processorの `convert` / `guard_depth`。
+  赤い形がずれる場合はmanifestの `ember_emitters` とbuilderの座標変換を確認する。
+- 対象Python31件、実26.2モデル1件と24コマのmetadata検査が成功。
+  実機表示は未確認。参考と完全に同じ作画/動きの認定はしない。
+  他の武器やTier、通常RP、起動用review pack、稼働中ゲームは未変更。防具は中止のまま。
+
 ### 大剣一本の刃エフェクト試作（2026-09-09）
 
 `scripts/build_blade_ember_study.py` で、刃の縁に伸びる角張った赤い形と、
