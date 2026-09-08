@@ -410,7 +410,10 @@ class CoreSkillChoreographyTest {
         val checked=mutableSetOf<String>()
         for(job in CoreClass.entries) for(s in CoreSkillCatalog.skills(job)) for(phase in CoreSkillVisualPhase.entries) {
             val e=effect(job,s.icon,phase)
-            if(phase==CoreSkillVisualPhase.PULSE) assertTrue(e.durationTicks in 18..40,s.icon)
+            if(phase==CoreSkillVisualPhase.PULSE) {
+                if(s.icon=="war_banner") assertEquals(60,e.durationTicks)
+                else assertTrue(e.durationTicks in 18..40,s.icon)
+            }
             val parts=CoreSkillChoreography.parts(e)
             assertTrue(parts.size in 1..16,"${s.icon}: ${parts.size}")
             for(p in parts) for(tick in 0..p.delayTicks+p.durationTicks) {

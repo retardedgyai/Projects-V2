@@ -16,6 +16,28 @@ internal object CoreSkillAudio {
             player.playSound(Sound.sound(event, Sound.Source.PLAYER, volume * detail, pitch))
         val astral = effect.job == CoreClass.STARWEAVER
         val scene = CoreSkillScenes.get(effect.sceneId)
+        if(effect.sceneId in CoreWarriorSupportChoreography.sceneIds) {
+            when(effect.phase) {
+                CoreSkillVisualPhase.PREPARE -> cue(if(effect.sceneId=="war_banner") SoundEvent.BLOCK_WOOL_PLACE else SoundEvent.ITEM_TRIDENT_RETURN,.6f,.75f)
+                CoreSkillVisualPhase.CONTACT -> cue(SoundEvent.ITEM_SHIELD_BLOCK,.8f,1.2f)
+                CoreSkillVisualPhase.PULSE -> when(effect.sceneId) {
+                    "war_guard" -> {
+                        cue(SoundEvent.ITEM_ARMOR_EQUIP_IRON,.9f,.7f)
+                        cue(SoundEvent.ITEM_TRIDENT_RETURN,.7f,.75f)
+                    }
+                    "war_cry" -> {
+                        cue(SoundEvent.ENTITY_RAVAGER_ROAR,.55f,1.6f)
+                        cue(SoundEvent.ENTITY_PLAYER_ATTACK_STRONG,.8f,.7f)
+                    }
+                    else -> {
+                        cue(SoundEvent.BLOCK_ANVIL_LAND,.35f,.65f)
+                        cue(SoundEvent.BLOCK_WOOL_PLACE,1f,.65f)
+                        cue(SoundEvent.EVENT_RAID_HORN,.5f,1.15f)
+                    }
+                }
+            }
+            return
+        }
         if(effect.sceneId in CoreStarweaverChoreography.sceneIds) {
             when(effect.phase) {
                 CoreSkillVisualPhase.PREPARE -> cue(SoundEvent.BLOCK_AMETHYST_BLOCK_RESONATE,.7f,1.6f)

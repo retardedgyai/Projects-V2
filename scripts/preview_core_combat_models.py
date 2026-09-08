@@ -14,7 +14,9 @@ COLORS = {"white_concrete": "#eeeef0", "light_gray_concrete": "#969a9a", "gray_c
           "yellow_concrete": "#f1b817", "orange_concrete": "#e16816", "magenta_concrete": "#ab30a0",
           "purple_concrete": "#6a239c", "light_blue_concrete": "#259ad0", "blue_concrete": "#303292",
           "red_concrete": "#962d29", "lime_concrete": "#67ad18", "green_concrete": "#4d5e21", "cyan_concrete": "#167b82",
-          "black_concrete": "#171820", "brown_concrete": "#65452d", "blackstone": "#2a232b"}
+          "black_concrete": "#171820", "brown_concrete": "#65452d", "blackstone": "#2a232b",
+          "white_wool": "#e9ecec", "yellow_wool": "#f9c629", "red_wool": "#a02722", "black_wool": "#15191a",
+          "stripped_dark_oak_log": "#493a23", "gold_block": "#f6d33d"}
 
 
 def render(parts, cx, cy, scale=36):

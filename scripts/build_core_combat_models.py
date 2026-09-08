@@ -148,6 +148,73 @@ def build_combat_models(assets, write_json):
     build_templar_phrases(assets, write_json)
     build_healer_prayers(assets, write_json)
     build_star_weaving(assets, write_json)
+    build_warrior_support(assets, write_json)
+
+
+def build_warrior_support(assets,write_json):
+    """Articulated greatsword and stitched cloth: Minecraft solids, not new raster artwork."""
+    def emit(name,elements,textures):
+        write_json(assets/f'models/combat_vfx/{name}.json',{'ambientocclusion':False,'textures':textures,'elements':elements})
+        write_json(assets/f'items/combat_vfx/{name}.json',{'model':{'type':'minecraft:model','model':f'projects:combat_vfx/{name}'}})
+    def solid(name,palette,elements):
+        textures={str(i):f'minecraft:block/{t}' for i,t in enumerate(PALETTES[palette])}
+        for stage in range(8):
+            emit(f'{name}_{palette}'+(f'_fade{stage}' if stage else ''),
+                 [e for i,e in enumerate(elements) if (i*5)%8>=stage],textures)
+    blade=[vfx_box([7,7,0],[9,9,5],2),vfx_box([6.5,6.5,0],[9.5,9.5,1.5],1),
+           vfx_box([2,6.75,4],[14,9.25,5.5],1),vfx_box([1,6,4],[3,10,6],0),vfx_box([13,6,4],[15,10,6],0)]
+    for z in range(6,16):
+        width=3.4 if z<12 else (16-z)*.85
+        blade += [vfx_box([8-width,7.4,z],[8+width,8.6,z+1],0),
+                  vfx_box([8-width*.7,7.15,z],[8+width*.7,8.85,z+1],1),
+                  vfx_box([7.6,7.05,z],[8.4,8.95,z+1],2)]
+    solid('war_parry_blade','steel',blade)
+    glint=[]
+    for z in range(16):
+        w=max(.25,3.5*(1-abs(z-7.5)/8))
+        glint += [vfx_box([8-w,7.6,z],[8+w,8.4,z+1],0),vfx_box([7.6,8-w,z],[8.4,8+w,z+1],0)]
+    solid('war_parry_glint','steel',glint)
+    voice=[]
+    for z in range(32):
+        for x in range(32):
+            dx=(x+.5-16)/16;dz=(z+.5-16)/16;r=math.hypot(dx,dz)
+            # Two broad interrupted rims leave the middle completely open.
+            if .69<r<.94 and abs(dx)>.2:
+                voice.append(vfx_box([x*.5,7.65,z*.5],[(x+1)*.5,8.35,(z+1)*.5],0 if r>.85 else 1))
+    for palette in ('steel','gold'): solid('war_voice_band',palette,voice)
+    crest=[]
+    # A tapering cloth-like wake, not an upgrade-chevron UI glyph.
+    for z in range(16):
+        x=8+math.sin(z*.35)*2;w=.25+(15-z)*.12
+        crest += [vfx_box([x-w,7.5,z],[x+w,8.5,z+1],1),
+                  vfx_box([x-w,8.5,z],[x-w+.4,8.8,z+1],0)]
+    solid('war_rally_streamer','gold',crest)
+    cloth_textures={'0':'minecraft:block/white_wool','1':'minecraft:block/yellow_wool',
+                    '2':'minecraft:block/red_wool','3':'minecraft:block/stripped_dark_oak_log',
+                    '4':'minecraft:block/gold_block','5':'minecraft:block/black_wool'}
+    pole=[vfx_box([7.4,0,7.4],[8.6,30,8.6],3),vfx_box([-13,26.5,7.4],[10,27.5,8.6],3),
+          vfx_box([6.9,0,6.9],[9.1,2,9.1],4),vfx_box([6.7,27.5,6.7],[9.3,29,9.3],4)]
+    for y in range(29,32):
+        w=(32-y)*.65;pole.append(vfx_box([8-w,y,7.6],[8+w,y+1,8.4],4))
+    for x in range(-12,7,4): pole.append(vfx_box([x,26,7],[x+.7,28,9],1))
+    for frame in range(12):
+        opened=min(frame/3,1.0);phase=0 if frame<4 else (frame-4)*math.pi/4
+        fabric=[]
+        for x in range(-12,8,2):
+            for y in range(12,26,2):
+                if y<16 and abs(x+3)<(16-y): continue  # swallowtail
+                depth=math.sin((x+12)*.34-phase)*(26-y)/14*1.6
+                # Top edge stays sewn to the crossbar through all wind phases.
+                depth*=opened
+                low=26-(26-y)*opened;high=26-(24-y)*opened
+                if high-low<.05: continue
+                border=x in (-12,6) or y==24
+                sword=abs(x+3)<2 or (y==18 and abs(x+3)<6)
+                ink=1 if border else 0 if sword else 2
+                fabric.append(vfx_box([x,low,8+depth-.35],[x+2,high,8+depth+.35],ink))
+        for stage in range(8):
+            elems=pole+fabric
+            emit(f'warrior/standard_{frame}_{stage}',[e for i,e in enumerate(elems) if (i*5)%8>=stage],cloth_textures)
 
 
 def build_star_weaving(assets,write_json):

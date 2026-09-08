@@ -12,8 +12,8 @@ internal object CoreSkillChoreography {
     // Explicit durations in server ticks. Assassin is not allowed to disappear in three frames.
     private val duration = mapOf(
         "normal_sweep" to 16,"normal_reverse" to 16,"normal_finish" to 24,
-        "dash" to 20,"slam" to 28,"whirl" to 20,"war_guard" to 24,"war_wound" to 18,
-        "war_counter" to 22,"war_cry" to 28,"war_breach" to 22,"war_ult" to 30,"war_banner" to 40,
+        "dash" to 20,"slam" to 28,"whirl" to 20,"war_guard" to 30,"war_wound" to 18,
+        "war_counter" to 22,"war_cry" to 28,"war_breach" to 22,"war_ult" to 30,"war_banner" to 60,
         "firebolt" to 22,"frost_nova" to 30,"meteor" to 30,"mage_blink" to 24,"mage_mark" to 22,
         "mage_garden" to 32,"mage_burst" to 28,"mage_ward" to 30,"mage_ult" to 34,"mage_zero" to 32,
         "pierce" to 18,"frost_fan" to 24,"arrow_rain" to 24,"hunt_retreat" to 20,"hunt_pierce" to 22,
@@ -34,6 +34,7 @@ internal object CoreSkillChoreography {
     }
     private fun ease(t: Double)=1-(1-t.coerceIn(0.0,1.0)).pow(3)
     fun pose(p: CoreCombatMeshPart, age: Double): CoreMeshPose {
+        CoreWarriorSupportChoreography.pose(p,age)?.let { return it }
         CoreStarweaverChoreography.pose(p,age)?.let { return it }
         CoreTemplarChoreography.pose(p,age)?.let { return it }
         val localAge=(age-p.delayTicks).coerceAtLeast(0.0)
@@ -123,6 +124,8 @@ internal object CoreSkillChoreography {
         if(e.job==CoreClass.RANGER) return CoreRangerChoreography.parts(e,raw,life)
         if(e.job==CoreClass.TEMPLAR && s.kind!=CoreSceneKind.PULL) return CoreTemplarChoreography.parts(e,life)
         if(e.sceneId in CoreHealerChoreography.sceneIds) return CoreHealerChoreography.parts(e,raw,life)
+        if(e.sceneId in CoreWarriorSupportChoreography.sceneIds && e.phase!=CoreSkillVisualPhase.CONTACT)
+            return CoreWarriorSupportChoreography.parts(e,life)
         // CONTACT keeps the accepted-hit-only stellar bursts below.
         if(e.sceneId in CoreStarweaverChoreography.sceneIds && e.phase!=CoreSkillVisualPhase.CONTACT)
             return CoreStarweaverChoreography.parts(e,raw,life)

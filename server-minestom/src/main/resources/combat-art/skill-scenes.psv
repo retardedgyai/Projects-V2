@@ -5,13 +5,13 @@ normal_finish|通常攻撃三段目|CLEAVE|gold|slash_heavy|ground_crack|edge_gl
 dash|踏み込み斬り|CUT|steel|slash_short|speed_streak|edge_glint|cut_spark|2.1|1.0|1.0|移動後の胸元前方を短く横断する刃。突進距離を刃の長さにしない
 slam|地砕き|CLEAVE|gold|slash_heavy|ground_crack|edge_glint|stone_impact|2.7|1.0|1.0|正面の縦斬りと前方地割れ。背後へ振らない
 whirl|旋風斬り|SPIN|steel|spin_blade|speed_streak|edge_glint|cut_spark|2.4|1.0|1.0|一回の判定に一周の回転刃。三回は三つの独立した斬撃
-war_guard|受け流し|GUARD|steel|parry_blade|edge_glint|edge_glint|cut_spark|0.9|1.0|1.0|胸前の交差した刃。構えの実時間だけ追従
+war_guard|受け流し|GUARD|steel|parry_blade|edge_glint|edge_glint|cut_spark|0.9|1.0|1.0|一振りの大剣を握り位置から胸前へ起こす。実防御時間保持し最初の12tickだけ刃の光が走る
 war_wound|裂傷斬り|CUT|steel|slash_short|blood_notch|edge_glint|cut_spark|1.8|1.0|1.0|素早い斜め斬り。小さな傷跡を確定命中時に表示
 war_counter|返し刃|CUT|gold|slash_reverse|speed_streak|edge_glint|cut_spark|2.3|1.0|1.0|横斬りと逆向きの返し。全身を囲う輪にしない
-war_cry|雄叫び|SHIELD|gold|roar_wave|shield_arch|cast_spark|light_spark|1.2|1.0|1.0|口元から前後へ広がる声の波と短い防護弧。斬撃なし
+war_cry|雄叫び|SHIELD|gold|roar_wave|shield_arch|cast_spark|light_spark|1.2|1.0|1.0|口元から前後へ三度ずつ抜ける開いた声の波。一回の障壁付与に対応し斬撃や追撃は出さない
 war_breach|破城突き|THRUST|steel|thrust_tip|speed_streak|edge_glint|armor_break|2.6|0.8|0.8|移動後の正面への細い刺突。横の刀身や回転は禁止
 war_ult|天断|CLEAVE|gold|slash_heavy|ground_crack|edge_glint|stone_impact|3.4|1.2|1.0|三回の垂直叩きつけ。広い当たり判定は薄い地上表示で補足
-war_banner|不屈の旗|BANNER|gold|battle_banner|shield_arch|cast_spark|light_spark|1.5|1.0|1.0|足元に立つ旗と仲間へ広がる防護の弧。旗は発動地点に残る
+war_banner|不屈の旗|BANNER|gold|battle_banner|shield_arch|cast_spark|light_spark|1.5|1.0|1.0|金縁の赤い旗を打ち立て布を展開。発動地点で3秒揺れ四方へ金色の吹き流しが一度散る
 firebolt|火炎弾|RAY|fire|fire_orb|flame_tail|cast_spark|fire_burst|0.6|0.9|0.9|視線方向の火球と短い炎尾。画面全長を巨大な槍にしない
 frost_nova|霜の波紋|NOVA|ice|ice_wave|ice_spike|cast_spark|ice_shatter|3.6|1.0|1.0|足元から全周へ広がる氷の波と低い霜。正面扇ではない
 meteor|流星雨|RAIN|fire|meteor_rock|fire_crater|cast_spark|fire_burst|0.9|1.0|1.0|狙った地点の上空から岩塊が落下。各判定に一組の着弾痕
