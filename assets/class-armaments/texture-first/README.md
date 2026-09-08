@@ -4,6 +4,47 @@
 
 ## 最新状態 — Python加工の許可後
 
+### 武器だけの任意テスト起動
+
+**防具はユーザーの中止指示により制作終了。既存防具を変更/削除しない。**
+
+`scripts/build_weapon_playtest_pack.py` は、現在installDist済みのサーバーJARに入っている
+パックを土台に、7武器のnative資産を追加したテスト用スナップショットを作る。
+出力先は `.tools/weapon-playtest-resources/core-ui-pack/` と同フォルダのzip/report。
+通常のソースRP、インストール済みJAR、稼働中の配布パックは変更しない。
+
+28個の既存武器item定義（7系統×T1〜4）だけを新しいモデルの選択グラフへ差し替える。
+従来の装備IDとfloat0による構え/放出通知をそのまま使えるため、性能/判定/保存形式/
+クラス共通基盤への変更はない。新しい専用テクスチャと175モデルも同じパックに含める。
+UI・フォント・HUD・防具を含む他の既存ファイルはバイト単位で同一。
+**このモードでは各系統のT1〜4が同じ確認用原稿を使う。Tier作画の完成を意味しない。**
+
+準備:
+
+```powershell
+python scripts/build_weapon_playtest_pack.py
+python scripts/test_weapon_playtest_pack.py
+```
+
+ユーザーの次回起動要求時に、既存サーバーを正規に停止した後だけ:
+
+```powershell
+.\scripts\start-core-loop.ps1 -JavaHome <Java25のパス> -WeaponArtReview
+```
+
+スイッチなしは従来通り。スイッチありは確認用リソースディレクトリをclasspathの先頭に置く。
+ポート使用中なら起動を拒否し、既存プロセスを終了しない。installDist更新後の古い
+スナップショットもJARのSHA256照合で拒否する。実行中に切り替える機能ではない。
+
+4件のパック検証が成功。さらに `CheckWeaponPlaytestResources.java` から実際の
+`CoreUiPackServer` のbundle処理をHTTPサーバー起動なしで呼び、8,698ファイルと28武器参照を確認した。
+`test_weapon_review_launch.ps1` はプロセス起動をmockし、通常/確認モードのclasspathと
+使用中ポート/古いスナップショットの拒否を検査する。実機表示の成功とは別の検証。
+
+最初に見る場所: 新モデルが出ない場合は起動時の確認モード表示 → reportのJARハッシュ →
+`core-ui-pack/index.txt` と `items/weapons/<family>_t<tier>.json`。
+重要ファイルは `build_weapon_playtest_pack.py` と `start-core-loop.ps1`。
+
 ### 追加4種のnative可動モデル（原稿分離の次工程）
 
 `scripts/build_specialist_armament_pack.py` を追加し、下記の4種の分離PNGから
