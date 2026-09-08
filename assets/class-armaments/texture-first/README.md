@@ -2,6 +2,51 @@
 
 基準: [MatE / The Dark Sister](https://x.com/MatE312001/status/2096478906299699459)
 
+## 最新状態 — Python加工の許可後
+
+ユーザーから透過処理・固定ピクセル解像度・減色の許可を得て、剣・短剣・杖を加工した。
+下部の「許可待ち」「RGB不採用」は当時の記録。加工前の原稿はそのまま保存している。
+通常RPにはまだ適用していない。ユーザーのテストプレイ中はサーバーを更新/再起動しない。
+
+- 原稿: 既存 `sword-material-study-v01.png` と `sources/dagger-v01.png`、`sources/staff-v01.png`。
+  内蔵画像生成によるもの。元プロンプトは `prompt-v01.txt` / `generation-attempts-v03.json`。
+  CLI/API fallbackは使用していない。全原稿のSHAを固定して改変を検知する。
+- 加工済み: `processed-v01/`。剣32×128・短剣32×64・杖32×128の実PNG。
+  不透明部分は剣22×92・短剣20×60・杖20×92。余白を高解像度の作画と混同しない。
+  赤系の2本は共通16色以内、杖12色。背景は実アルファ0、前景は255。ディザ/補間なし。
+- RGB原稿の背景抽出は、実際に確認した明るい無彩色の市松背景専用。
+  その判定を白い武器等へ汎用適用しない。縮小セルの色は前景だけの中央値から選び、
+  背景色を刃へ混ぜない。制作済みの絵の輪郭を縮小し、別の武器をコードで描き直してはいない。
+- 宝石は別PNGへ分離。剣/短剣の下には暗い台座色を置き、杖の下は透明な空間にする。
+  宝石が動いても下に同じ宝石の絵が残らない。
+- 形状: 刃/薄飾りは0.14〜0.18、握り等0.45〜0.9の厚さ。アルファ輪郭の側面のみ。
+  不透明ピクセルを立方体で埋めない。3本の物理寸法に対するピクセル密度は同じ。
+- 各武器に待機12・構え6・放出6ポーズ。独立した宝石の浮遊/前後移動であり、
+  参考映像の全機構を再現したという意味ではない。手持ち以外は静止。
+- 剣202要素、短剣138、杖156。旧高解像度剣の781要素から減ったが、数だけで品質合格にしない。
+
+処理と確認:
+
+```powershell
+python scripts/process_armament_art.py
+python scripts/build_pixel_armament_pack.py
+python scripts/test_pixel_armaments.py
+python scripts/test_texture_first_sword.py
+```
+
+独立したnative RP: `.tools/pixel-armament-pack/projects-pixel-armaments-review.zip`。
+アイテムキーは `projects:weapons/pixel_greatsword` / `pixel_dagger` / `pixel_staff`。
+通常サーバーの許可リスト/装備への登録はまだしていないので、現在のプレイには出現しない。
+`model-review.png` / `actions.gif` は出力JSONとPNGから描いた確認用。ゲーム画面ではない。
+
+新規8件+既存10件成功。元原稿SHA、再生成一致、実透過/色数、宝石分離、全ポーズの
+UV/座標/参照先、静止復帰、zip構成、通常RPに混入していないことを検査した。
+重要な処理は `process_armament_art.py` → `processed-v01/manifest.json` →
+`build_pixel_armament_pack.py`。絵の欠けは最初の加工PNG、形やポーズは出力JSONから調べる。
+
+残件: 裏面専用作画はなく正面を再使用。側面/握りの見やすさと実際の手持ちサイズの
+確認が必要。現時点で参考と同じ完成品質とは認定しない。残りの武器、防具、全動画確認も未完了。
+
 `sword-material-study-v01.png` は内蔵画像生成による原稿。CLI/API fallbackは使用していない。
 参考動画の公開画面をスタイル参照として使用した。元作品のテクスチャファイルやメッシュを取得したものではない。
 生成プロンプト全文は [prompt-v01.txt](prompt-v01.txt)。

@@ -1,0 +1,258 @@
+{
+  "status": "pixel-cleanup-and-model-review-not-final-art",
+  "authorization": "User approved Python transparency, fixed pixel resolution and palette reduction.",
+  "source_tool": "built-in image_gen; no CLI/API fallback",
+  "palettes": {
+    "crimson": [
+      [
+        252,
+        87,
+        72
+      ],
+      [
+        246,
+        64,
+        66
+      ],
+      [
+        221,
+        47,
+        71
+      ],
+      [
+        147,
+        68,
+        100
+      ],
+      [
+        195,
+        32,
+        67
+      ],
+      [
+        171,
+        30,
+        72
+      ],
+      [
+        142,
+        31,
+        70
+      ],
+      [
+        117,
+        28,
+        59
+      ],
+      [
+        78,
+        66,
+        89
+      ],
+      [
+        62,
+        52,
+        70
+      ],
+      [
+        60,
+        37,
+        60
+      ],
+      [
+        38,
+        34,
+        48
+      ],
+      [
+        81,
+        23,
+        50
+      ],
+      [
+        57,
+        20,
+        43
+      ],
+      [
+        44,
+        20,
+        40
+      ],
+      [
+        28,
+        18,
+        36
+      ]
+    ],
+    "cyan": [
+      [
+        128,
+        234,
+        252
+      ],
+      [
+        79,
+        111,
+        142
+      ],
+      [
+        72,
+        77,
+        108
+      ],
+      [
+        95,
+        59,
+        113
+      ],
+      [
+        75,
+        60,
+        100
+      ],
+      [
+        58,
+        59,
+        89
+      ],
+      [
+        67,
+        49,
+        92
+      ],
+      [
+        52,
+        46,
+        78
+      ],
+      [
+        45,
+        44,
+        70
+      ],
+      [
+        41,
+        37,
+        63
+      ],
+      [
+        34,
+        33,
+        55
+      ],
+      [
+        25,
+        23,
+        43
+      ]
+    ]
+  },
+  "weapons": {
+    "greatsword": {
+      "source": "sword-material-study-v01.png",
+      "source_sha256": "05f6fc344fad0e9a2b34143276fac13fcecb1230c7fb36260c2752521e14c650",
+      "source_crop": [
+        95,
+        89,
+        563,
+        2091
+      ],
+      "content_size": [
+        22,
+        92
+      ],
+      "canvas_size": [
+        32,
+        128
+      ],
+      "padding": 2,
+      "palette": "crimson",
+      "rows": [
+        2,
+        58,
+        77,
+        94
+      ],
+      "jewel_box": [
+        11,
+        64,
+        18,
+        72
+      ],
+      "height": 30.0,
+      "colors": 15,
+      "jewel_pixels": 30
+    },
+    "dagger": {
+      "source": "sources/dagger-v01.png",
+      "source_sha256": "094a1357ccdb9ec9e946efb7ef873878c0fa4e82b0ccdfacd9612625ed159193",
+      "source_crop": [
+        294,
+        59,
+        765,
+        1462
+      ],
+      "content_size": [
+        20,
+        60
+      ],
+      "canvas_size": [
+        32,
+        64
+      ],
+      "padding": 2,
+      "palette": "crimson",
+      "rows": [
+        2,
+        40,
+        47,
+        62
+      ],
+      "jewel_box": [
+        7,
+        38,
+        11,
+        42
+      ],
+      "height": 19.565217,
+      "colors": 14,
+      "jewel_pixels": 15
+    },
+    "staff": {
+      "source": "sources/staff-v01.png",
+      "source_sha256": "dc1b338a366eb175cd6d29efd0095b596c801ebac524722bc4af607174e448f0",
+      "source_crop": [
+        346,
+        24,
+        677,
+        1513
+      ],
+      "content_size": [
+        20,
+        92
+      ],
+      "canvas_size": [
+        32,
+        128
+      ],
+      "padding": 2,
+      "palette": "cyan",
+      "rows": [
+        2,
+        47,
+        86,
+        94
+      ],
+      "jewel_box": [
+        10,
+        16,
+        16,
+        28
+      ],
+      "height": 30.0,
+      "colors": 12,
+      "jewel_pixels": 15
+    }
+  }
+}
