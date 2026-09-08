@@ -9,6 +9,8 @@ import kotlin.math.*
 import kotlin.test.*
 
 class CoreExpandedSlashChoreographyTest {
+    // Retain coverage of the old art still used by assassin; warrior routing has its own tests.
+    private fun legacyParts(e: CoreSkillEffect)=CoreExpandedSlashChoreography.parts(e) ?: CoreGreatswordSweepChoreography.parts(e)!!
     private fun job(id: String)=if(id.startsWith("ass_")) CoreClass.ASSASSIN else CoreClass.WARRIOR
     private fun skill(id: String)=CoreSkillCatalog.skills(job(id)).first { it.icon==id }
     private fun effect(id: String,phase: CoreSkillVisualPhase=CoreSkillVisualPhase.PULSE,pulse: Int=0,d: Vec=Vec(0.0,0.0,1.0))=
@@ -37,7 +39,7 @@ class CoreExpandedSlashChoreographyTest {
 
     @Test fun `each accepted pulse owns its stroke with stable headings and separate aftermath`() {
         for(id in CoreExpandedSlashChoreography.sceneIds) for(pulse in 0 until skill(id).pulses) {
-            val parts=CoreSkillChoreography.parts(effect(id,pulse=pulse))
+            val parts=legacyParts(effect(id,pulse=pulse))
             assertEquals(if(id in setOf("ass_execute","whirl","ass_fan")) 8 else 4,parts.count { !it.secondary },id)
             assertEquals(if(id=="ass_execute") 8 else 4,parts.count { it.secondary },id)
             assertTrue(parts.none { it.shape.endsWith(":impact") || it.delayTicks!=0 },id)
@@ -53,12 +55,12 @@ class CoreExpandedSlashChoreographyTest {
                 assertFalse(CoreSkillChoreography.pose(p,-1.0).visible)
                 assertFalse(CoreSkillChoreography.pose(p,p.durationTicks.toDouble()).visible)
             }
-            val contact=CoreSkillChoreography.parts(effect(id,CoreSkillVisualPhase.CONTACT,pulse)).single()
+            val contact=legacyParts(effect(id,CoreSkillVisualPhase.CONTACT,pulse)).single()
             assertTrue(contact.shape.endsWith(":impact"))
             assertEquals(Vec(0.0,1.0,0.0),contact.offset)
         }
-        assertNotEquals(CoreSkillChoreography.parts(effect("ass_fan",pulse=0)).first().shape,
-            CoreSkillChoreography.parts(effect("ass_fan",pulse=1)).first().shape)
+        assertNotEquals(legacyParts(effect("ass_fan",pulse=0)).first().shape,
+            legacyParts(effect("ass_fan",pulse=1)).first().shape)
     }
 
     @Test fun `real bent vertices respect front reach and ground for every heading`() {
@@ -66,7 +68,7 @@ class CoreExpandedSlashChoreographyTest {
             val a=h*PI/4; val d=Vec(sin(a),0.0,cos(a))
             val radial=id in setOf("whirl","ass_fan")
             for(phase in listOf(CoreSkillVisualPhase.PREPARE,CoreSkillVisualPhase.PULSE))
-                for(p in CoreSkillChoreography.parts(effect(id,phase,d=d))) repeat(p.durationTicks) { t ->
+                for(p in legacyParts(effect(id,phase,d=d))) repeat(p.durationTicks) { t ->
                     for(v in vertices(CoreSkillChoreography.pose(p,t.toDouble()))) {
                         assertTrue(v.y()>=.02,"$id enters ground: $v")
                         assertTrue(hypot(v.x(),v.z())<=CoreSkillScenes.get(id).reach+.25,"$id exceeds reach: $v")
@@ -78,7 +80,7 @@ class CoreExpandedSlashChoreographyTest {
 
     @Test fun `forward cutting surfaces are not edge on to the owner eye`() {
         for(id in listOf("war_wound","war_counter","slam","ass_execute")) {
-            for(p in CoreSkillChoreography.parts(effect(id)).filter { !it.secondary }) {
+            for(p in legacyParts(effect(id)).filter { !it.secondary }) {
                 for (age in listOf(1.0, 2.0)) {
                     val points=vertices(CoreSkillChoreography.pose(p,age))
                     var area=0.0;var projected=0.0
@@ -97,13 +99,13 @@ class CoreExpandedSlashChoreographyTest {
 
     @Test fun `prepare spends startup before the first pulse and never has contact art`() {
         for(id in CoreExpandedSlashChoreography.sceneIds) {
-            val prepare=CoreSkillChoreography.parts(effect(id,CoreSkillVisualPhase.PREPARE))
+            val prepare=legacyParts(effect(id,CoreSkillVisualPhase.PREPARE))
             for((i,p) in prepare.withIndex()) {
                 assertEquals(skill(id).startup,p.durationTicks)
-                val release=CoreSkillChoreography.parts(effect(id)).filter { !it.secondary }[i]
+                val release=legacyParts(effect(id)).filter { !it.secondary }[i]
                 assertEquals(CoreSkillChoreography.pose(p,p.durationTicks-1.0),CoreSkillChoreography.pose(release,0.0))
             }
-            assertTrue(CoreSkillChoreography.parts(effect(id)).all { CoreSkillChoreography.pose(it,0.0).model.startsWith("combat_vfx/flow/") })
+            assertTrue(legacyParts(effect(id)).all { CoreSkillChoreography.pose(it,0.0).model.startsWith("combat_vfx/flow/") })
         }
         assertNull(CoreExpandedSlashChoreography.parts(effect("war_breach")))
         assertNull(CoreExpandedSlashChoreography.parts(effect("ass_ult")))
@@ -113,8 +115,8 @@ class CoreExpandedSlashChoreographyTest {
         fun xyz(v: Vec)=listOf(v.x(),v.y(),v.z())
         val rows=(listOf("dash")+CoreExpandedSlashChoreography.sceneIds).map { id ->
             val s=skill(id)
-            val prepare=CoreSkillChoreography.parts(effect(id,CoreSkillVisualPhase.PREPARE))
-            val beats=listOf(0 to prepare)+(0 until s.pulses).map { (s.startup+it*8) to CoreSkillChoreography.parts(effect(id,pulse=it)) }
+            val prepare=legacyParts(effect(id,CoreSkillVisualPhase.PREPARE))
+            val beats=listOf(0 to prepare)+(0 until s.pulses).map { (s.startup+it*8) to legacyParts(effect(id,pulse=it)) }
             val end=s.startup+(s.pulses-1)*8+18
             val frames=(0..end).map { tick -> beats.flatMap { (start,parts) -> parts.mapNotNull { p ->
                 val pose=CoreSkillChoreography.pose(p,tick-start.toDouble())

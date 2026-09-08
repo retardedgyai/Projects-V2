@@ -48,6 +48,8 @@ internal object CoreArmamentPresentation {
     fun skill(player: Player, effect: CoreSkillEffect) {
         // Contacts and delayed field pulses do not mean the player cast again.
         if (!effect.valid || effect.pulse != 0 || effect.phase == CoreSkillVisualPhase.CONTACT) return
+        // A shout or planting a standard is not a sword release.
+        if(effect.job==CoreClass.WARRIOR && effect.sceneId in CoreWarriorSupportChoreography.sceneIds) return
         if (!usesWeapon(player.itemInMainHand, effect.motif)) return
         if (effect.phase == CoreSkillVisualPhase.PREPARE)
             begin(player, Stage.PREPARE, effect.prepareDuration + 1)

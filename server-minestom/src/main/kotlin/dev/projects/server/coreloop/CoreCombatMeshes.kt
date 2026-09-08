@@ -93,7 +93,7 @@ internal class CoreCombatMeshes(private val owner: Player) {
         while(iterator.hasNext()) {
             val v=iterator.next();val p=v.part
             if(owner.isRemoved || owner.instance!==v.instance || v.entity.isRemoved || v.age>=removalAge(p)) {
-                if(traceTiming && p.shape.contains(":cut:0:")) println("CORE_VFX_TIMING shape=${p.shape} updates=${v.updateCount} maxServerGapMs=${v.maxUpdateGapNanos/1_000_000.0} interpolationTicks=${interpolationTicks(p)} endAge=${v.age}")
+                if(traced(p)) println("CORE_VFX_TIMING shape=${p.shape} updates=${v.updateCount} maxServerGapMs=${v.maxUpdateGapNanos/1_000_000.0} interpolationTicks=${interpolationTicks(p)} endAge=${v.age}")
                 v.cancelled.set(true);v.entity.remove();release(v.instance);iterator.remove();continue
             }
             if(v.entity.instance!==v.instance) continue
@@ -105,7 +105,7 @@ internal class CoreCombatMeshes(private val owner: Player) {
             // Let the final zero-width target finish. Restarting its interpolation
             // during drain ticks or removing at the authored endpoint cuts off the fade.
             if(v.age<p.delayTicks+p.durationTicks) v.entity.editEntityMeta(ItemDisplayMeta::class.java) { meta ->
-                if(traceTiming && p.shape.contains(":cut:0:")) {
+                if(traced(p)) {
                     val now=System.nanoTime()
                     if(v.lastUpdateNanos!=0L) v.maxUpdateGapNanos=maxOf(v.maxUpdateGapNanos,now-v.lastUpdateNanos)
                     v.lastUpdateNanos=now;v.updateCount++
@@ -137,11 +137,14 @@ internal class CoreCombatMeshes(private val owner: Player) {
     companion object {
         // Opt-in server-side cadence evidence, not client FPS or packet-arrival telemetry.
         private val traceTiming=java.lang.Boolean.getBoolean("projects.vfx.traceTiming")
+        private fun traced(part: CoreCombatMeshPart)=traceTiming &&
+            (part.shape.contains(":cut:0:") || part.shape=="warrior_trace:tail")
         // One client tick can contain zero or two server updates. A one-tick
         // transform runs out during a single missed delivery and visibly holds.
         // Only persistent flow surfaces get this extra tick of presentation slack.
         internal fun interpolationTicks(part: CoreCombatMeshPart)=
-            if(part.shape.startsWith("flow:") && !part.shape.contains(":prepare:")) 2 else 1
+            if(part.shape.startsWith("warrior_trace:") ||
+                part.shape.startsWith("flow:") && !part.shape.contains(":prepare:")) 2 else 1
         internal fun removalAge(part: CoreCombatMeshPart)=part.delayTicks+part.durationTicks+
             if(interpolationTicks(part)==2) 2 else 0
         const val OWNER_LIMIT=48

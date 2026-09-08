@@ -25,6 +25,7 @@ internal object CoreSceneParticles {
             if(part.shape in setOf("greatsword_prepare","greatsword_blade","greatsword_wake")) continue
             if(part.shape.startsWith("sweep:") && !part.shape.endsWith(":impact")) continue
             if(part.shape.startsWith("flow:")) continue
+            if(part.shape.startsWith("warrior_trace:") || part.shape=="warrior_charge") continue
             val pose=CoreSkillChoreography.pose(part,tick.toDouble())
             if(!pose.visible) continue
             val center=origin.add(pose.offset)

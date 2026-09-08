@@ -12,11 +12,11 @@ class CoreSlashChoreographyTest {
     private fun effect(job: CoreClass,id: String,pulse: Int=0)=CoreSkillEffect(job,skill(job,id),
         Vec.ZERO,Vec(0.0,0.0,1.0),pulse=pulse,sceneId=id)
 
-    @Test fun `normal combo and every hit of assassin ultimate use fixed cutting planes`() {
+    @Test fun `legacy normal assets and assassin ultimate use fixed cutting planes`() {
         for(id in listOf("normal_sweep","normal_reverse","normal_finish","ass_ult")) {
             val job=if(id=="ass_ult") CoreClass.ASSASSIN else CoreClass.WARRIOR
             for(pulse in 0 until skill(job,id).pulses) {
-                val parts=CoreSkillChoreography.parts(effect(job,id,pulse))
+                val parts=CoreSlashChoreography.parts(effect(job,id,pulse))
                 assertEquals(if(id=="ass_ult") 2 else 1,parts.size)
                 for(p in parts) {
                     assertEquals("directional_cut",p.shape)

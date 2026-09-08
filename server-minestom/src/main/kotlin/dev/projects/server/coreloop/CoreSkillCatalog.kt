@@ -137,7 +137,7 @@ object CoreSkillCatalog {
                 s("返し刃", "war_counter", "闘気を使う強い返し。受け流し直後はさらに強化", CoreSkillMotion.CONE, 10.0, 2.8, cd=130, startup=4, gain=0, spend=30),
                 s("雄叫び", "war_cry", "仲間に短い障壁。足を止めず次の交戦に備える", CoreSkillMotion.SHIELD, 12.0, .5, mana=18, cd=240, gain=0, radius=7.0, duration=100),
                 s("破城突き", "war_breach", "長い踏み込み。横には狭いが防御を崩せる", CoreSkillMotion.LUNGE, 8.0, 1.5, mana=18, cd=160, startup=8, status=CoreSkillStatus.EXPOSE, range=4.0),
-                s("天断", "war_ult", "闘気を解放し三度叩きつける。詠唱中に回避で中断可", CoreSkillMotion.CONE, 20.0, 2.4, mana=30, cd=600, startup=18, pulses=3, gain=0, spend=80, radius=7.0, ult=true),
+                s("天断", "war_ult", "闘気を解放し斬り上げ・返し・叩きつけ。途中の回避で中断可", CoreSkillMotion.CONE, 20.0, 2.4, mana=30, cd=600, startup=18, pulses=3, gain=0, spend=80, radius=7.0, ult=true),
                 s("不屈の旗", "war_banner", "仲間全員に大きな障壁。自分は3秒防御姿勢", CoreSkillMotion.SHIELD, 50.0, 1.5, mana=25, cd=700, gain=0, spend=70, radius=10.0, duration=160, ult=true))
             CoreClass.MAGE -> listOf(
                 s("火炎弾", "firebolt", "火の術式を刻む。直前と違う属性なら獲得量増加", CoreSkillMotion.RAY, 8.0, 1.4, cd=60, startup=5, element=1),

@@ -19,6 +19,7 @@ class CoreFlowSlashChoreographyTest {
         assertEquals(2,updates,"Every tick must restart the vanilla transform interpolation")
     }
     private val ids=listOf("dash","war_wound","war_counter","slam","whirl","ass_execute","ass_fan")
+    private fun legacyParts(e: CoreSkillEffect)=CoreExpandedSlashChoreography.parts(e) ?: CoreGreatswordSweepChoreography.parts(e)!!
     private fun effect(id: String,phase: CoreSkillVisualPhase=CoreSkillVisualPhase.PULSE,pulse: Int=0): CoreSkillEffect {
         val job=if(id.startsWith("ass_")) CoreClass.ASSASSIN else CoreClass.WARRIOR
         val skill=CoreSkillCatalog.skills(job).first { it.icon==id }
@@ -53,7 +54,7 @@ class CoreFlowSlashChoreographyTest {
     }
 
     @Test fun `short segments keep their model while moving continuously between server ticks`() {
-        for(id in ids) for(p in CoreSkillChoreography.parts(effect(id))) {
+        for(id in ids) for(p in legacyParts(effect(id))) {
             val poses=(0..p.durationTicks*10).map { CoreSkillChoreography.pose(p,it/10.0) }
             assertEquals(1,poses.map { it.model }.distinct().size,id)
             assertTrue(poses.map { it.offset }.distinct().size>5,id)
@@ -72,7 +73,7 @@ class CoreFlowSlashChoreographyTest {
 
     @Test fun `primary joints fit observer budget and previous pulses expire before next hit`() {
         for(id in ids) {
-            val e=effect(id);val p=CoreSkillChoreography.parts(e)
+            val e=effect(id);val p=legacyParts(e)
             assertTrue(p.count { !it.secondary }<=8)
             assertTrue(p.all { it.delayTicks==0 && !it.followOwner && !it.sprite })
             assertTrue(p.filter { !it.secondary }.all { it.durationTicks<=8 })

@@ -418,7 +418,7 @@ class CoreSkillChoreographyTest {
             assertTrue(parts.size in 1..16,"${s.icon}: ${parts.size}")
             for(p in parts) for(tick in 0..p.delayTicks+p.durationTicks) {
                 val pose=CoreSkillChoreography.pose(p,tick.toDouble())
-                if(p.shape.startsWith("flow:")) assertTrue(pose.scale.x()>=0 && pose.scale.y()>0 && pose.scale.z()>=0)
+                if(p.shape.startsWith("flow:") || p.shape.startsWith("warrior_trace:")) assertTrue(pose.scale.x()>=0 && pose.scale.y()>0 && pose.scale.z()>=0)
                 else assertTrue(pose.scale.x()>0 && pose.scale.y()>0 && pose.scale.z()>0)
                 assertTrue(listOf(pose.offset.x(),pose.offset.y(),pose.offset.z(),pose.yaw,pose.pitch,pose.roll).all(Double::isFinite))
                 if(checked.add(pose.model)) {
@@ -483,14 +483,15 @@ class CoreSkillChoreographyTest {
     @Test fun `return cuts have dedicated contours and full circles no longer duplicate fixed sectors`() {
         val first=CoreSkillChoreography.parts(effect(CoreClass.WARRIOR,"dash")).first()
         val reverse=CoreSkillChoreography.parts(effect(CoreClass.WARRIOR,"war_counter")).first()
-        assertTrue(reverse.shape.startsWith("flow:counter:"))
+        assertTrue(reverse.shape.startsWith("warrior_trace:"))
         assertNotEquals(CoreSkillChoreography.pose(first,0.0).model,CoreSkillChoreography.pose(reverse,0.0).model)
         assertEquals(0.0,first.spin);assertEquals(0.0,reverse.spin)
         for((job,id) in listOf(CoreClass.ASSASSIN to "ass_fan",CoreClass.WARRIOR to "whirl")) {
             val sectors=CoreSkillChoreography.parts(effect(job,id))
             assertEquals(8,sectors.count { !it.secondary })
-            assertEquals(4,sectors.count { it.secondary })
-            assertTrue(sectors.all { it.delayTicks==0 })
+            assertEquals(if(job==CoreClass.WARRIOR) 0 else 4,sectors.count { it.secondary })
+            if(job==CoreClass.WARRIOR) assertEquals((0..7).toList(),sectors.map { it.delayTicks })
+            else assertTrue(sectors.all { it.delayTicks==0 })
             for(p in sectors) assertEquals(CoreSkillChoreography.pose(p,0.0).model,CoreSkillChoreography.pose(p,p.delayTicks+3.0).model)
         }
         assertEquals(2,CoreSkillChoreography.parts(effect(CoreClass.ASSASSIN,"ass_ult")).size)

@@ -9,12 +9,14 @@ import kotlin.test.*
 import kotlin.math.*
 
 class CoreGreatswordSweepChoreographyTest {
+    // Legacy asset contract, not the active warrior route.
+    private fun legacyParts(e: CoreSkillEffect)=CoreGreatswordSweepChoreography.parts(e)!!
     private val skill=CoreSkillCatalog.skills(CoreClass.WARRIOR).first { it.icon=="dash" }
     private fun effect(phase: CoreSkillVisualPhase=CoreSkillVisualPhase.PULSE,direction: Vec=Vec(0.0,0.0,1.0))=
         CoreSkillEffect(CoreClass.WARRIOR,skill,Vec.ZERO,direction,phase,prepareTicks=skill.startup)
 
     @Test fun `blade and aftermath are separate geometry sequences with no extra damage flashes`() {
-        val parts=CoreSkillChoreography.parts(effect())
+        val parts=legacyParts(effect())
         assertEquals(4,parts.count { !it.secondary });assertEquals(4,parts.count { it.secondary })
         assertFalse(parts.first().secondary)
         assertTrue(parts.last().secondary)
@@ -27,10 +29,10 @@ class CoreGreatswordSweepChoreographyTest {
             for(pose in poses) assertNotNull(javaClass.getResource("/core-ui-pack/assets/projects/items/${pose.model}.json"))
         }
         assertTrue(parts.last().durationTicks>parts.first().durationTicks)
-        val hit=CoreSkillChoreography.parts(effect(CoreSkillVisualPhase.CONTACT))
+        val hit=legacyParts(effect(CoreSkillVisualPhase.CONTACT))
         assertEquals(listOf("greatsword_impact"),hit.map { it.shape })
         assertEquals(Vec(0.0,1.0,0.0),hit.single().offset)
-        val prepare=CoreSkillChoreography.parts(effect(CoreSkillVisualPhase.PREPARE)).first()
+        val prepare=legacyParts(effect(CoreSkillVisualPhase.PREPARE)).first()
         assertEquals(skill.startup,prepare.durationTicks)
         assertEquals(CoreSkillChoreography.pose(prepare,skill.startup-1.0),CoreSkillChoreography.pose(parts.first(),0.0))
         val other=skill.copy(icon="war_wound")
@@ -41,8 +43,8 @@ class CoreGreatswordSweepChoreographyTest {
         repeat(8) { heading ->
             val a=heading*PI/4
             val d=Vec(sin(a),0.0,cos(a))
-            val parts=CoreSkillChoreography.parts(effect(CoreSkillVisualPhase.PREPARE,d))+
-                CoreSkillChoreography.parts(effect(direction=d))
+            val parts=legacyParts(effect(CoreSkillVisualPhase.PREPARE,d))+
+                legacyParts(effect(direction=d))
             for(p in parts) repeat(p.durationTicks) { tick ->
                 val pose=CoreSkillChoreography.pose(p,tick.toDouble())
                 val vertices=mutableListOf<Vec>()
@@ -87,9 +89,9 @@ class CoreGreatswordSweepChoreographyTest {
     @Test fun `export complete prepare swing and accepted hit plus a miss comparison`() {
         fun xyz(v: Vec)=listOf(v.x(),v.y(),v.z())
         val scenes=listOf(false,true).map { hit ->
-            val prepare=CoreSkillChoreography.parts(effect(CoreSkillVisualPhase.PREPARE))
-            val swing=CoreSkillChoreography.parts(effect())
-            val contact=if(hit) CoreSkillChoreography.parts(effect(CoreSkillVisualPhase.CONTACT)) else emptyList()
+            val prepare=legacyParts(effect(CoreSkillVisualPhase.PREPARE))
+            val swing=legacyParts(effect())
+            val contact=if(hit) legacyParts(effect(CoreSkillVisualPhase.CONTACT)) else emptyList()
             val beats=listOf(Triple(0,prepare,Vec.ZERO),Triple(skill.startup,swing,Vec.ZERO),
                 Triple(skill.startup,contact,Vec(0.0,0.0,1.5)))
             val frames=(0..(skill.startup+17)).map { tick -> beats.flatMap { (start,parts,at) -> parts.mapNotNull { p ->

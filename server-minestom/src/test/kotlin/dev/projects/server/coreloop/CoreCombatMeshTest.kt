@@ -115,7 +115,7 @@ class CoreCombatMeshTest {
         val scene=owner.instance
         CoreCombatPresentation.pack(owner,true)
         try {
-            val e=effect(CoreClass.WARRIOR,"dash")
+            val e=effect(CoreClass.ASSASSIN,"ass_fan")
             val parts=CoreSkillChoreography.parts(e)
             meshes.play(e)
             val displays=scene.entities.filter { it!==owner }.toList()
@@ -139,7 +139,7 @@ class CoreCombatMeshTest {
             assertTrue(cuts.all { it.isRemoved })
             repeat(8) { meshes.tick() }
             assertEquals(0,meshes.size)
-            val prepare=CoreSkillChoreography.parts(effect(CoreClass.WARRIOR,"dash",CoreSkillVisualPhase.PREPARE)).first()
+            val prepare=CoreSkillChoreography.parts(effect(CoreClass.ASSASSIN,"ass_fan",CoreSkillVisualPhase.PREPARE)).first()
             assertEquals(1,CoreCombatMeshes.interpolationTicks(prepare),"Do not extend the prepare/pulse handoff")
             assertEquals(prepare.delayTicks+prepare.durationTicks,CoreCombatMeshes.removalAge(prepare))
         } finally { meshes.cancel(); CoreCombatPresentation.forget(owner) }
