@@ -3,6 +3,11 @@
 World-space skill artwork, **not** the approved UI skill icons. Those icons and
 Japanese fonts are untouched.
 
+## Active: purifying-light-pixel-v1.png
+
+ヒーラーの攻撃光・光柱・祈灯・審判専用の16コマ。
+[原画、生成・修正プロンプト、用途](purifying-light-pixel-v1.md)。回復の花弁や移動の羽根には転用しない。
+
 ## Active: shot-wake-pixel-v1.png
 
 レンジャー6射撃と霜矢の扇専用の16コマ。細い立体線を置換し、短い交差面を

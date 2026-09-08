@@ -79,7 +79,12 @@ internal object CoreSkillChoreography {
             if(localAge<=4.0) floor(localAge/4.0*7).toInt() else
                 8+floor(((localAge-5)/(p.durationTicks-6).coerceAtLeast(1)).coerceIn(0.0,1.0)*7).toInt()
         } else floor(((t-.42)/.58).coerceIn(0.0,1.0)*7).toInt()
-        val model=if(p.shape=="shot_wake") {
+        val model=if(p.shape=="purifying_column" || p.shape=="prayer_flame") {
+            "combat_vfx/prayer/column_${p.palette}_${CoreHealerChoreography.frame(p,age)}"
+        } else if(p.shape=="prayer_ray") {
+            val segments=ceil(p.scale.z()/(2*p.scale.x())).toInt().coerceIn(1,24)
+            "combat_vfx/prayer/ray_${segments}_${CoreHealerChoreography.frame(p,age)}"
+        } else if(p.shape=="shot_wake") {
             val segments=ceil(p.scale.z()/(2*p.scale.x().coerceAtLeast(.1))).toInt().coerceIn(1,12)
             "combat_vfx/shot/wake_${p.palette}_${segments}_${floor(t*15).toInt()}"
         } else
@@ -109,6 +114,7 @@ internal object CoreSkillChoreography {
         val life=duration(e)
         if(e.job==CoreClass.RANGER) return CoreRangerChoreography.parts(e,raw,life)
         if(e.job==CoreClass.TEMPLAR && s.kind!=CoreSceneKind.PULL) return CoreTemplarChoreography.parts(e,life)
+        if(e.sceneId in CoreHealerChoreography.sceneIds) return CoreHealerChoreography.parts(e,raw,life)
         if(e.phase==CoreSkillVisualPhase.PREPARE) return raw.map { it.copy(
             motion=if(s.kind==CoreSceneKind.RAIN) CoreMeshMotion.FALL else CoreMeshMotion.GATHER,
             durationTicks=life,erode=false) }

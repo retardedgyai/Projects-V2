@@ -146,6 +146,7 @@ def build_combat_models(assets, write_json):
     build_assassin_phrases(assets, write_json)
     build_ranger_phrases(assets, write_json)
     build_templar_phrases(assets, write_json)
+    build_healer_prayers(assets, write_json)
 
 
 def vfx_box(lo, hi, ink):
@@ -317,6 +318,72 @@ def build_templar_phrases(assets,write_json):
     armor=[vfx_box([3,5,2],[11,8,12],1),vfx_box([2,4,2],[5,9,12],0),
            vfx_box([4,4,10],[13,9,13],0),vfx_box([7,5,3],[10,8,9],2)]
     save('oath_stone_chip','steel',stone);save('oath_armor_chip','gold',armor)
+
+
+def build_healer_prayers(assets,write_json):
+    master=Path(__file__).resolve().parents[1]/'assets/combat-vfx/purifying-light-pixel-v1.png'
+    source=Image.open(master).convert('L')
+    def emit(name,model,tint=None):
+        write_json(assets/f'models/combat_vfx/{name}.json',model)
+        item={'type':'minecraft:model','model':f'projects:combat_vfx/{name}'}
+        if tint is not None: item['tints']=[{'type':'minecraft:constant','value':tint}]
+        write_json(assets/f'items/combat_vfx/{name}.json',{'model':item})
+    def planes(lo,hi,texture,uv=(0,16,16,0)):
+        return [{'from':[0,8,lo],'to':[16,8,hi],'shade':False,
+            'rotation':{'origin':[8,8,8],'axis':'z','angle':angle,'rescale':False},
+            'faces':{'up':{'texture':texture,'uv':list(uv),'tintindex':0},
+                     'down':{'texture':texture,'uv':[uv[0],16-uv[1],uv[2],16-uv[3]],'tintindex':0}}}
+            for angle in (-45,45)]
+    for frame in range(16):
+        x,y=frame%4,frame//4
+        crop=source.crop((round(x*source.width/4),round(y*source.height/4),
+            round((x+1)*source.width/4),round((y+1)*source.height/4)))
+        tile=Image.new('L',(32,64),0)
+        tile.paste(crop.resize((12,28),Image.Resampling.NEAREST).resize((24,56),Image.Resampling.NEAREST),(4,4))
+        tile=tile.point(lambda v: 0 if v<40 else 85 if v<128 else 170 if v<213 else 255)
+        alpha=tile.point(lambda v: 255 if v else 0)
+        name=f'prayer/light_{frame}'
+        path=assets/f'textures/combat_vfx/{name}.png';path.parent.mkdir(parents=True,exist_ok=True)
+        Image.merge('RGBA',(tile,tile,tile,alpha)).save(path)
+        emit(f'prayer/column_holy_{frame}',{'ambientocclusion':False,
+            'textures':{'0':f'projects:combat_vfx/{name}'},'elements':planes(8,24,'#0')},0xffedb0)
+    for count in range(1,25):
+        for frame in range(16):
+            textures={};elements=[]
+            for segment in range(count):
+                local=min(15,frame+int((count-1-segment)*frame/(count*3)))
+                textures[str(segment)]=f'projects:combat_vfx/prayer/light_{local}'
+                z0=(segment-.4)*16/count;z1=(segment+1.4)*16/count
+                lo=max(0,z0);hi=min(16,z1)
+                v0=(lo-z0)/(z1-z0)*16;v1=(hi-z0)/(z1-z0)*16
+                u0,u1=(16,0) if segment%2 else (0,16)
+                elements+=planes(lo,hi,f'#{segment}',(u0,16-v0,u1,16-v1))
+            emit(f'prayer/ray_{count}_{frame}',{'ambientocclusion':False,'textures':textures,'elements':elements},0xffedb0)
+    def solid(name,elements):
+        for stage in range(8):
+            suffix=f'_fade{stage}' if stage else ''
+            emit(f'{name}_holy{suffix}',{'ambientocclusion':False,
+                'textures':{str(i):f'minecraft:block/{t}' for i,t in enumerate(PALETTES['holy'])},
+                'elements':elements if not stage else [e for i,e in enumerate(elements) if (i*5)%8>=stage]})
+    lantern=[vfx_box([3,3,3],[13,5,13],1),vfx_box([4,2,4],[12,3,12],2),
+             vfx_box([3,12,3],[13,14,13],1),vfx_box([6,14,6],[10,16,10],0)]
+    for x in (3,11):
+        for z in (3,11): lantern.append(vfx_box([x,5,z],[x+2,12,z+2],0))
+    # Open windows: the separate animated light is visible through the cage.
+    solid('prayer_lantern',lantern)
+    sword=[vfx_box([7,7,0],[9,9,5],1),vfx_box([6,6,0],[10,10,2],0),
+           vfx_box([2,6,4],[14,10,6],1),vfx_box([1,5,3],[3,11,6],0),vfx_box([13,5,3],[15,11,6],0)]
+    for z in range(6,16):
+        width=3 if z<12 else (16-z)*.6
+        sword += [vfx_box([8-width,7,z],[8+width,9,z+1],0),
+                  vfx_box([7.6,6.7,z],[8.4,9.3,z+1],2)]
+    solid('prayer_sword',sword)
+    petal=[]
+    for z in range(16):
+        width=max(.5,3.5*(1-abs(z-7)/9))
+        petal += [vfx_box([8-width,7.5,z],[8+width,8.5,z+1],0 if z>10 else 1),
+                  vfx_box([7.6,7.2,z],[8.4,8.8,z+1],0)]
+    solid('guidance_petal',petal)
 
 
 def molten_core(shape):

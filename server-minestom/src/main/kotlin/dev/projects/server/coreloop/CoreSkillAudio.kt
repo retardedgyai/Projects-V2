@@ -16,6 +16,34 @@ internal object CoreSkillAudio {
             player.playSound(Sound.sound(event, Sound.Source.PLAYER, volume * detail, pitch))
         val astral = effect.job == CoreClass.STARWEAVER
         val scene = CoreSkillScenes.get(effect.sceneId)
+        if(effect.sceneId in CoreHealerChoreography.sceneIds) {
+            when(effect.phase) {
+                CoreSkillVisualPhase.PREPARE -> {
+                    if(effect.sceneId!="heal_lamp" || effect.pulse==0)
+                        cue(if(effect.sceneId=="heal_judgment") SoundEvent.ITEM_TRIDENT_RETURN else SoundEvent.BLOCK_ENCHANTMENT_TABLE_USE,.65f,1.2f)
+                }
+                CoreSkillVisualPhase.CONTACT -> cue(SoundEvent.BLOCK_AMETHYST_BLOCK_HIT,.75f,if(effect.sceneId=="heal_mark") 1.6f else 1.15f)
+                CoreSkillVisualPhase.PULSE -> when(effect.sceneId) {
+                    "heal_step" -> {
+                        cue(SoundEvent.ENTITY_ENDERMAN_TELEPORT,.5f,if(effect.endpoint==CoreSkillEndpoint.DEPARTURE) .9f else 1.6f)
+                        cue(SoundEvent.ITEM_BOOK_PAGE_TURN,.7f,1.2f)
+                    }
+                    "heal_judgment" -> {
+                        cue(SoundEvent.ITEM_TRIDENT_HIT_GROUND,.9f,.75f)
+                        cue(SoundEvent.BLOCK_BELL_USE,.4f,.85f+effect.pulse*.1f)
+                    }
+                    "heal_lamp" -> {
+                        cue(SoundEvent.BLOCK_AMETHYST_BLOCK_CHIME,.85f,1.0f+effect.pulse*.2f)
+                        cue(SoundEvent.BLOCK_ENCHANTMENT_TABLE_USE,.5f,1.3f)
+                    }
+                    else -> {
+                        cue(SoundEvent.BLOCK_BEACON_ACTIVATE,.6f,1.65f)
+                        cue(SoundEvent.BLOCK_AMETHYST_BLOCK_RESONATE,.8f,1.35f)
+                    }
+                }
+            }
+            return
+        }
         if(effect.job==CoreClass.TEMPLAR && scene.kind!=CoreSceneKind.PULL) {
             when(effect.phase) {
                 CoreSkillVisualPhase.PREPARE -> {
