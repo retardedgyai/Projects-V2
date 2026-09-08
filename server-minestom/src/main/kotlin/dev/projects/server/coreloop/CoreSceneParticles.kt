@@ -24,6 +24,7 @@ internal object CoreSceneParticles {
             // ItemDisplay origin. Do not leave an unrelated cloud at that origin.
             if(part.shape in setOf("greatsword_prepare","greatsword_blade","greatsword_wake")) continue
             if(part.shape.startsWith("sweep:") && !part.shape.endsWith(":impact")) continue
+            if(part.shape.startsWith("flow:")) continue
             val pose=CoreSkillChoreography.pose(part,tick.toDouble())
             if(!pose.visible) continue
             val center=origin.add(pose.offset)

@@ -15,13 +15,13 @@ class CoreGreatswordSweepChoreographyTest {
 
     @Test fun `blade and aftermath are separate geometry sequences with no extra damage flashes`() {
         val parts=CoreSkillChoreography.parts(effect())
-        assertEquals(listOf("greatsword_blade","greatsword_wake"),parts.map { it.shape })
+        assertEquals(4,parts.count { !it.secondary });assertEquals(4,parts.count { it.secondary })
         assertFalse(parts.first().secondary)
         assertTrue(parts.last().secondary)
         for(p in parts) {
             val poses=(0 until p.durationTicks).map { CoreSkillChoreography.pose(p,it.toDouble()) }
-            assertEquals(p.durationTicks,poses.map { it.model }.distinct().size)
-            assertTrue(poses.all { it.offset==p.offset && it.yaw==p.yaw && it.scale==p.scale })
+            assertEquals(1,poses.map { it.model }.distinct().size,"No animated item replacement")
+            assertTrue(poses.map { it.offset }.distinct().size>2)
             assertFalse(CoreSkillChoreography.pose(p,-1.0).visible)
             assertFalse(CoreSkillChoreography.pose(p,p.durationTicks.toDouble()).visible)
             for(pose in poses) assertNotNull(javaClass.getResource("/core-ui-pack/assets/projects/items/${pose.model}.json"))
@@ -30,11 +30,9 @@ class CoreGreatswordSweepChoreographyTest {
         val hit=CoreSkillChoreography.parts(effect(CoreSkillVisualPhase.CONTACT))
         assertEquals(listOf("greatsword_impact"),hit.map { it.shape })
         assertEquals(Vec(0.0,1.0,0.0),hit.single().offset)
-        val prepare=CoreSkillChoreography.parts(effect(CoreSkillVisualPhase.PREPARE)).single()
+        val prepare=CoreSkillChoreography.parts(effect(CoreSkillVisualPhase.PREPARE)).first()
         assertEquals(skill.startup,prepare.durationTicks)
-        assertTrue(CoreSkillChoreography.pose(prepare,0.0).model.endsWith("blade_0"))
-        assertTrue(CoreSkillChoreography.pose(prepare,skill.startup-1.0).model.endsWith("blade_2"))
-        assertTrue(CoreSkillChoreography.pose(parts.first(),0.0).model.endsWith("blade_3"))
+        assertEquals(CoreSkillChoreography.pose(prepare,skill.startup-1.0),CoreSkillChoreography.pose(parts.first(),0.0))
         val other=skill.copy(icon="war_wound")
         assertNull(CoreGreatswordSweepChoreography.parts(CoreSkillEffect(CoreClass.WARRIOR,other,Vec.ZERO,Vec(0.0,0.0,1.0))))
     }
@@ -72,7 +70,7 @@ class CoreGreatswordSweepChoreographyTest {
                         val y=y0*cos(pose.pitch)-z0*sin(pose.pitch)
                         val z=y0*sin(pose.pitch)+z0*cos(pose.pitch)
                         val x=x0*cos(pose.roll)-y*sin(pose.roll)
-                        val at=Vec(x*cos(a)+z*sin(a),x0*sin(pose.roll)+y*cos(pose.roll),-x*sin(a)+z*cos(a)).add(pose.offset)
+                        val at=Vec(x*cos(pose.yaw)+z*sin(pose.yaw),x0*sin(pose.roll)+y*cos(pose.roll),-x*sin(pose.yaw)+z*cos(pose.yaw)).add(pose.offset)
                         vertices+=at
                         assertTrue(at.x()*d.x()+at.z()*d.z()>=-.05,"behind $heading $tick")
                         assertTrue(hypot(at.x(),at.z())<=CoreSkillScenes.get("dash").reach+.25,"reach $heading $tick $at")

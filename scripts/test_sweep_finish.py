@@ -11,7 +11,7 @@ class SweepFinishTest(unittest.TestCase):
             self.assertEqual(json.loads(path.read_text()),value,str(path.relative_to(PACK)))
             checked.append(path)
         build(PACK/'assets/projects',compare)
-        self.assertEqual(len(checked),630)
+        self.assertEqual(len(checked),654)
 
     def test_actual_shipped_models_resolve_three_pigments_and_stay_within_budget(self):
         assets=PACK/'assets/projects'

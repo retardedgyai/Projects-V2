@@ -1,5 +1,7 @@
 # 7技のリファレンス比較と仕上げ
 
+> このcheckpointは実機でガタつきを指摘された。後続の原因と描画方式の修正は [連続した斬撃への変更](slash-continuous-motion-2026-09-09.md) を参照。
+
 ## 比較したもの
 
 - [SamusDev / Dragon Warrior](https://www.youtube.com/watch?v=WR6NQB7NmgY)：指定された動画を再生し、Dragon Comboの約30秒付近をコマ送り。大きな紫の切断面、空間に離れる破片、対象側の金色の接触光、主面が消えた後の細い軌跡を確認。音の比較はしていない。

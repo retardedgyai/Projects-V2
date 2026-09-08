@@ -40,11 +40,7 @@ internal object CoreExpandedSlashChoreography {
             pitch=when { down -> 0.0; radial -> -.08; e.sceneId=="war_wound" -> -.80; else -> -.50 },
             roll=roll,durationTicks=if(assassin || e.sceneId=="war_wound") 5 else 7)
         val blades=if(e.sceneId=="ass_execute") listOf(blade,blade.copy(shape="sweep:execute_return:blade",roll=.7)) else listOf(blade)
-        if(e.phase==CoreSkillVisualPhase.PREPARE) return blades.map {
-            it.copy(shape=it.shape.replace(":blade",":prepare"),durationTicks=e.prepareDuration)
-        }
-        return blades+blades.map { it.copy(shape=it.shape.replace(":blade",":wake"),
-            durationTicks=if(assassin || radial) 9 else 13,secondary=true) }
+        return CoreFlowSlashChoreography.parts(e,blades)
     }
 
     fun pose(p: CoreCombatMeshPart,age: Double): CoreMeshPose? {

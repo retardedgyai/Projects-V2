@@ -32,12 +32,12 @@ def texture_for(name, tint):
     texture[:,:,:3] = (texture[:,:,:3].astype(float) * color / 255).astype('uint8')
     return Image.fromarray(texture)
 
-def render(parts, name, tick, view='iso', world_scale=34):
+def render(parts, name, tick, view='iso', world_scale=34, fps=20):
     image = Image.new('RGBA', (W,H), '#1b222a')
     draw = ImageDraw.Draw(image)
     cx, cy, scale = 160, 184, world_scale
     draw.text((8,5), name, font=FONT, fill='#efe4c9')
-    draw.text((8,25), f'{tick/20:.2f}s / 20 ticks per second', font=FONT, fill='#b8b8b0')
+    draw.text((8,25), f'{tick/fps:.2f}s / {fps} review frames per second', font=FONT, fill='#b8b8b0')
     def project(x,y,z):
         if view=='side':
             return (cx+z*scale,cy-y*scale,-x)
@@ -61,6 +61,11 @@ def render(parts, name, tick, view='iso', world_scale=34):
         pitch,yaw,roll=p['pitch'],p['yaw'],p['roll']
         def transform(v):
             x,y,z=[(v[i]-8)/16*p['scale'][i] for i in range(3)]
+            if 'quaternion' in p:
+                qx,qy,qz,qw=p['quaternion']
+                tx,ty,tz=2*(qy*z-qz*y),2*(qz*x-qx*z),2*(qx*y-qy*x)
+                x,y,z=x+qw*tx+qy*tz-qz*ty,y+qw*ty+qz*tx-qx*tz,z+qw*tz+qx*ty-qy*tx
+                return project(x+p['offset'][0],y+p['offset'][1],z+p['offset'][2])
             y,z=y*math.cos(pitch)-z*math.sin(pitch),y*math.sin(pitch)+z*math.cos(pitch)
             x,y=x*math.cos(roll)-y*math.sin(roll),x*math.sin(roll)+y*math.cos(roll)
             x,z=x*math.cos(yaw)+z*math.sin(yaw),-x*math.sin(yaw)+z*math.cos(yaw)
@@ -123,6 +128,7 @@ def main():
     parser.add_argument('--timeline',default='.tools/skill-choreography-frames.json')
     parser.add_argument('--world-scale',type=float,default=34,help='Isometric pixels per block; does not alter gameplay/model size')
     parser.add_argument('--ticks',help='Comma-separated snapshot ticks; skips GIF rendering for broad reviews')
+    parser.add_argument('--fps',type=int,default=20,choices=(20,60),help='60 requires the exported client interpolation timeline')
     args=parser.parse_args()
     source=json.loads((ROOT/args.timeline).read_text(encoding='utf-8'))
     ids=args.ids.split(',')
@@ -138,11 +144,14 @@ def main():
         ImageDraw.Draw(sheet).text((8,3),heading,font=FONT,fill='#d7d0be')
         for i,s in enumerate(scenes):
             parts=s['frames'][tick] if tick<len(s['frames']) else []
-            sheet.paste(render(parts,s['name']+' / '+s['id'],tick,args.view,args.world_scale),(i%columns*W,i//columns*H+26))
+            sheet.paste(render(parts,s['name']+' / '+s['id'],tick,args.view,args.world_scale,args.fps),(i%columns*W,i//columns*H+26))
         frames.append(sheet)
         if args.ticks or tick in (0,3,6,10,16,24,32): sheet.save(ROOT/f'.tools/{args.prefix}-{tick:02d}.png')
     if not args.ticks:
-        frames[0].save(ROOT/f'.tools/{args.prefix}.gif',save_all=True,append_images=frames[1:],duration=50,loop=0)
+        # GIF delays are quantized to 10ms. Distribute 10/20ms holds rather than
+        # truncating every 60fps frame to 10ms and accidentally speeding it up.
+        durations=[round((i+1)*100/args.fps)*10-round(i*100/args.fps)*10 for i in range(len(frames))]
+        frames[0].save(ROOT/f'.tools/{args.prefix}.gif',save_all=True,append_images=frames[1:],duration=durations,loop=0)
     print(f'{len(scenes)} scenes / {len(selected)} review ticks rendered: .tools/{args.prefix}')
 
 if __name__=='__main__': main()

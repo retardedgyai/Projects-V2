@@ -418,7 +418,8 @@ class CoreSkillChoreographyTest {
             assertTrue(parts.size in 1..16,"${s.icon}: ${parts.size}")
             for(p in parts) for(tick in 0..p.delayTicks+p.durationTicks) {
                 val pose=CoreSkillChoreography.pose(p,tick.toDouble())
-                assertTrue(pose.scale.x()>0 && pose.scale.y()>0 && pose.scale.z()>0)
+                if(p.shape.startsWith("flow:")) assertTrue(pose.scale.x()>=0 && pose.scale.y()>0 && pose.scale.z()>=0)
+                else assertTrue(pose.scale.x()>0 && pose.scale.y()>0 && pose.scale.z()>0)
                 assertTrue(listOf(pose.offset.x(),pose.offset.y(),pose.offset.z(),pose.yaw,pose.pitch,pose.roll).all(Double::isFinite))
                 if(checked.add(pose.model)) {
                     val path="assets/projects/items/${pose.model}.json"
@@ -435,14 +436,19 @@ class CoreSkillChoreographyTest {
             val parts=CoreSkillChoreography.parts(effect(CoreClass.ASSASSIN,id))
             val blade=parts.first()
             val expanded=id in CoreExpandedSlashChoreography.sceneIds
-            assertTrue(if(expanded) blade.shape.startsWith("sweep:") else blade.shape=="directional_cut",id)
+            assertTrue(if(expanded) blade.shape.startsWith("flow:") else blade.shape=="directional_cut",id)
             assertTrue(blade.durationTicks in 5..14,id)
             val states=(0 until blade.durationTicks).map { CoreSkillChoreography.pose(blade,it.toDouble()) }
-            assertTrue(states.map { it.model }.distinct().size>=5,id)
-            assertEquals(1,states.map { Triple(it.yaw,it.pitch,it.roll) }.distinct().size,id)
-            assertEquals(1,states.map { it.offset to it.scale }.distinct().size,id)
+            if(expanded) {
+                assertEquals(1,states.map { it.model }.distinct().size,id)
+                assertTrue(states.map { it.offset }.distinct().size>2,id)
+            } else {
+                assertTrue(states.map { it.model }.distinct().size>=5,id)
+                assertEquals(1,states.map { Triple(it.yaw,it.pitch,it.roll) }.distinct().size,id)
+                assertEquals(1,states.map { it.offset to it.scale }.distinct().size,id)
+            }
             assertTrue(parts.none { it.sprite },id)
-            assertTrue(parts.filter { it.secondary }.all { it.shape.endsWith(":wake") },id)
+            assertTrue(parts.filter { it.secondary }.all { it.shape.contains(":wake:") },id)
             assertFalse(CoreSkillChoreography.pose(parts.last(),-1.0).visible)
         }
         val poison=CoreSkillChoreography.parts(effect(CoreClass.ASSASSIN,"ass_poison"))
@@ -477,15 +483,15 @@ class CoreSkillChoreographyTest {
     @Test fun `return cuts have dedicated contours and full circles no longer duplicate fixed sectors`() {
         val first=CoreSkillChoreography.parts(effect(CoreClass.WARRIOR,"dash")).first()
         val reverse=CoreSkillChoreography.parts(effect(CoreClass.WARRIOR,"war_counter")).first()
-        assertTrue(reverse.shape.startsWith("sweep:counter:"))
+        assertTrue(reverse.shape.startsWith("flow:counter:"))
         assertNotEquals(CoreSkillChoreography.pose(first,0.0).model,CoreSkillChoreography.pose(reverse,0.0).model)
         assertEquals(0.0,first.spin);assertEquals(0.0,reverse.spin)
         for((job,id) in listOf(CoreClass.ASSASSIN to "ass_fan",CoreClass.WARRIOR to "whirl")) {
             val sectors=CoreSkillChoreography.parts(effect(job,id))
-            assertEquals(1,sectors.count { !it.secondary })
-            assertEquals(1,sectors.count { it.secondary })
+            assertEquals(8,sectors.count { !it.secondary })
+            assertEquals(4,sectors.count { it.secondary })
             assertTrue(sectors.all { it.delayTicks==0 })
-            for(p in sectors) assertEquals(p.yaw,CoreSkillChoreography.pose(p,p.delayTicks+3.0).yaw)
+            for(p in sectors) assertEquals(CoreSkillChoreography.pose(p,0.0).model,CoreSkillChoreography.pose(p,p.delayTicks+3.0).model)
         }
         assertEquals(2,CoreSkillChoreography.parts(effect(CoreClass.ASSASSIN,"ass_ult")).size)
         for(reverseUv in listOf(false,true)) {

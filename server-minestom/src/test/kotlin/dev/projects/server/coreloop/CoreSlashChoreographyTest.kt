@@ -44,7 +44,10 @@ class CoreSlashChoreographyTest {
                 val pose=CoreSkillChoreography.pose(p,tick-pulse*8.0)
                 if(!pose.visible) null else mapOf("model" to pose.model,"offset" to xyz(pose.offset),
                     "scale" to xyz(pose.scale),"yaw" to pose.yaw,"pitch" to pose.pitch,"roll" to pose.roll)
-            } }.also { assertTrue(it.size<=12,"$id: duplicated attacks at tick $tick") } }
+            } }.also {
+                val limit=if(waves.any { parts -> parts.any { p -> p.shape.startsWith("flow:") } }) 16 else 12
+                assertTrue(it.size<=limit,"$id: overlapping display budget at tick $tick")
+            } }
             assertTrue(frames.last().isEmpty())
             mapOf("id" to id,"name" to CoreSkillScenes.get(id).name,"frames" to frames)
         }

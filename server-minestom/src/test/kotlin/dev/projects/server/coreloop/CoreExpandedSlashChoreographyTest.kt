@@ -38,16 +38,16 @@ class CoreExpandedSlashChoreographyTest {
     @Test fun `each accepted pulse owns its stroke with stable headings and separate aftermath`() {
         for(id in CoreExpandedSlashChoreography.sceneIds) for(pulse in 0 until skill(id).pulses) {
             val parts=CoreSkillChoreography.parts(effect(id,pulse=pulse))
-            assertEquals(if(id=="ass_execute") 2 else 1,parts.count { !it.secondary },id)
-            assertEquals(parts.count { !it.secondary },parts.count { it.secondary },id)
+            assertEquals(if(id in setOf("ass_execute","whirl","ass_fan")) 8 else 4,parts.count { !it.secondary },id)
+            assertEquals(if(id=="ass_execute") 8 else 4,parts.count { it.secondary },id)
             assertTrue(parts.none { it.shape.endsWith(":impact") || it.delayTicks!=0 },id)
             for(p in parts) {
                 assertTrue(p.durationTicks<=13)
                 if(!p.secondary) assertTrue(p.durationTicks<=8,"No cutting core overlaps next server hit")
                 for(t in 0 until p.durationTicks) {
                     val pose=CoreSkillChoreography.pose(p,t.toDouble())
-                    assertEquals(Triple(p.yaw,p.pitch,p.roll),Triple(pose.yaw,pose.pitch,pose.roll))
-                    assertEquals(p.offset,pose.offset);assertEquals(p.scale,pose.scale)
+                    assertEquals(CoreSkillChoreography.pose(p,0.0).model,pose.model,"Model identity is stable for interpolation")
+                    assertTrue(listOf(pose.yaw,pose.pitch,pose.roll,pose.scale.x(),pose.scale.z()).all { it.isFinite() })
                     assertNotNull(javaClass.getResource("/core-ui-pack/assets/projects/items/${pose.model}.json"))
                 }
                 assertFalse(CoreSkillChoreography.pose(p,-1.0).visible)
@@ -89,7 +89,7 @@ class CoreExpandedSlashChoreographyTest {
                         area+=n.length()
                         projected+=abs(n.x()*sight.x()+n.y()*sight.y()+n.z()*sight.z())
                     }
-                    assertTrue(area>0 && projected/area>.18,"$id at $age edge-on fraction ${projected/area}")
+                    if(area>1e-8) assertTrue(projected/area>.18,"$id at $age edge-on fraction ${projected/area}")
                 }
             }
         }
@@ -98,12 +98,12 @@ class CoreExpandedSlashChoreographyTest {
     @Test fun `prepare spends startup before the first pulse and never has contact art`() {
         for(id in CoreExpandedSlashChoreography.sceneIds) {
             val prepare=CoreSkillChoreography.parts(effect(id,CoreSkillVisualPhase.PREPARE))
-            for(p in prepare) {
+            for((i,p) in prepare.withIndex()) {
                 assertEquals(skill(id).startup,p.durationTicks)
-                assertTrue(CoreSkillChoreography.pose(p,0.0).model.endsWith("blade_0"))
-                assertTrue(CoreSkillChoreography.pose(p,p.durationTicks-1.0).model.endsWith("blade_2"))
+                val release=CoreSkillChoreography.parts(effect(id)).filter { !it.secondary }[i]
+                assertEquals(CoreSkillChoreography.pose(p,p.durationTicks-1.0),CoreSkillChoreography.pose(release,0.0))
             }
-            assertTrue(CoreSkillChoreography.parts(effect(id)).all { CoreSkillChoreography.pose(it,0.0).model.endsWith("_3") })
+            assertTrue(CoreSkillChoreography.parts(effect(id)).all { CoreSkillChoreography.pose(it,0.0).model.startsWith("combat_vfx/flow/") })
         }
         assertNull(CoreExpandedSlashChoreography.parts(effect("war_breach")))
         assertNull(CoreExpandedSlashChoreography.parts(effect("ass_ult")))
@@ -122,7 +122,7 @@ class CoreExpandedSlashChoreographyTest {
                     "yaw" to pose.yaw,"pitch" to pose.pitch,"roll" to pose.roll)
             } } }
             assertTrue(frames.last().isEmpty())
-            assertTrue(frames.maxOf { it.size }<=6)
+            assertTrue(frames.maxOf { it.size }<=16)
             mapOf("id" to id,"name" to s.name,"frames" to frames)
         }
         val cwd=Path.of(System.getProperty("user.dir"));val root=if(cwd.fileName.toString()=="server-minestom") cwd.parent else cwd

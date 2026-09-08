@@ -270,6 +270,7 @@ def impact_mesh(frame,inks):
 
 def build(assets, write):
     from build_expanded_slashes import build as build_expanded
+    from build_flow_slashes import build as build_flow
     inks = ink_uvs(assets)
     for layer, count in (('blade', 10), ('wake', 16), ('impact', 9)):
         for frame in range(count):
@@ -284,6 +285,7 @@ def build(assets, write):
             write(assets/f'items/{name}.json', {'model':{'type':'minecraft:model',
                 'model':f'projects:{name}', 'tints':pigments('steel',layer)}})
     build_expanded(assets,write)
+    build_flow(assets,write)
 
 
 if __name__ == '__main__':

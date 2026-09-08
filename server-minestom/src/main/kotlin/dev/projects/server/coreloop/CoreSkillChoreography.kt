@@ -34,6 +34,7 @@ internal object CoreSkillChoreography {
     }
     private fun ease(t: Double)=1-(1-t.coerceIn(0.0,1.0)).pow(3)
     fun pose(p: CoreCombatMeshPart, age: Double): CoreMeshPose {
+        CoreFlowSlashChoreography.pose(p,age)?.let { return it }
         CoreExpandedSlashChoreography.pose(p,age)?.let { return it }
         CoreGreatswordSweepChoreography.pose(p,age)?.let { return it }
         CoreSlashChoreography.pose(p,age)?.let { return it }

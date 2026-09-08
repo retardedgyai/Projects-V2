@@ -22,10 +22,7 @@ internal object CoreGreatswordSweepChoreography {
             Vec(reach*1.8,reach*1.5,reach*1.65),yaw=yaw,pitch=-.50,roll=-.28,
             durationTicks=7,startSize=1.0,endSize=1.0)
         // Spend the slow first three frames in the ACTUAL startup, not after damage.
-        if(e.phase==CoreSkillVisualPhase.PREPARE)
-            return listOf(blade.copy(shape="greatsword_prepare",durationTicks=e.prepareDuration))
-        val wake=blade.copy(shape="greatsword_wake",palette="steel",durationTicks=13,secondary=true)
-        return listOf(blade,wake)
+        return CoreFlowSlashChoreography.parts(e,listOf(blade))
     }
 
     fun pose(p: CoreCombatMeshPart,age: Double): CoreMeshPose? {
