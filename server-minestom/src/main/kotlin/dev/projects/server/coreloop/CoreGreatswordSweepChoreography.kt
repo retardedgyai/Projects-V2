@@ -11,7 +11,7 @@ internal object CoreGreatswordSweepChoreography {
         if(e.phase==CoreSkillVisualPhase.CONTACT) {
             // e.origin is the authoritative accepted-hit position, not an invented cast endpoint.
             return listOf(CoreCombatMeshPart("greatsword_impact","gold",Vec(0.0,1.0,0.0),
-                Vec(2.1,1.0,2.1),yaw=yaw,pitch=-PI/2,durationTicks=9))
+                Vec(2.8,1.0,2.8),yaw=yaw,pitch=-PI/2,durationTicks=9))
         }
         val reach=min(CoreSkillScenes.get(e.sceneId).reach,e.radius.coerceAtLeast(.5))
         val forward=reach*.40
@@ -19,7 +19,7 @@ internal object CoreGreatswordSweepChoreography {
         // The native contour occupies less than a unit square. Keep cast heading fixed;
         // only the blade tip moves. Separate wake samples outlive their own cutting edge.
         val blade=CoreCombatMeshPart("greatsword_blade","steel",anchor,
-            Vec(reach*1.8,1.0,reach*1.65),yaw=yaw,pitch=-.72,roll=-.18,
+            Vec(reach*1.8,reach*1.5,reach*1.65),yaw=yaw,pitch=-.50,roll=-.28,
             durationTicks=7,startSize=1.0,endSize=1.0)
         // Spend the slow first three frames in the ACTUAL startup, not after damage.
         if(e.phase==CoreSkillVisualPhase.PREPARE)

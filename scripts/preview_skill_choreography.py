@@ -39,6 +39,8 @@ def render(parts, name, tick, view='iso', world_scale=34):
     draw.text((8,5), name, font=FONT, fill='#efe4c9')
     draw.text((8,25), f'{tick/20:.2f}s / 20 ticks per second', font=FONT, fill='#b8b8b0')
     def project(x,y,z):
+        if view=='side':
+            return (cx+z*scale,cy-y*scale,-x)
         if view=='eye':
             depth=max(.1,z+.7)
             return (W/2+x/depth*160,H/2+(1.62-y)/depth*160,depth)
@@ -116,7 +118,7 @@ def main():
     parser=argparse.ArgumentParser()
     parser.add_argument('--ids',default='dash,slam,ass_execute,ass_fan,ass_poison,starfall,star_cloud,temp_pull')
     parser.add_argument('--prefix',default='choreography-review')
-    parser.add_argument('--view',choices=('iso','eye'),default='iso')
+    parser.add_argument('--view',choices=('iso','eye','side'),default='iso')
     parser.add_argument('--timeline',default='.tools/skill-choreography-frames.json')
     parser.add_argument('--world-scale',type=float,default=34,help='Isometric pixels per block; does not alter gameplay/model size')
     parser.add_argument('--ticks',help='Comma-separated snapshot ticks; skips GIF rendering for broad reviews')
