@@ -62,11 +62,21 @@ def render(parts, name, tick, view='iso'):
             return project(x+p['offset'][0],y+p['offset'][1],z+p['offset'][2])
         for e in model['elements']:
             lo,hi=e['from'],e['to']
-            vertices=[transform([hi[j] if i & (1<<j) else lo[j] for j in range(3)]) for i in range(8)]
+            def element_point(v):
+                rotation=e.get('rotation')
+                if not rotation: return v
+                assert rotation['axis']=='z' and not rotation.get('rescale',False), 'Unsupported preview rotation'
+                angle=math.radians(rotation['angle']); origin=rotation['origin']
+                x,y=v[0]-origin[0],v[1]-origin[1]
+                return [origin[0]+x*math.cos(angle)-y*math.sin(angle),
+                        origin[1]+x*math.sin(angle)+y*math.cos(angle),v[2]]
+            vertices=[transform(element_point([hi[j] if i & (1<<j) else lo[j] for j in range(3)])) for i in range(8)]
             if lo[1]==hi[1]:
                 # Vanilla FaceInfo.UP: (-X,+Y,-Z), (-X,+Y,+Z), (+X,+Y,+Z), (+X,+Y,-Z).
                 face=e['faces']['up']; uv=face['uv']
                 texture=texture_for(model['textures'][face['texture'][1:]],tint)
+                texture=texture.crop((round(min(uv[0],uv[2])/16*texture.width),round(min(uv[1],uv[3])/16*texture.height),
+                                      round(max(uv[0],uv[2])/16*texture.width),round(max(uv[1],uv[3])/16*texture.height)))
                 if uv[1]>uv[3]: texture=texture.transpose(Image.Transpose.FLIP_TOP_BOTTOM)
                 if uv[0]>uv[2]: texture=texture.transpose(Image.Transpose.FLIP_LEFT_RIGHT)
                 points=[vertices[i] for i in (2,3,7,6)] # image TL,TR,BR,BL before UV reversal

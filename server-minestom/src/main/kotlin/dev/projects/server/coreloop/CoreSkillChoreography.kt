@@ -78,7 +78,10 @@ internal object CoreSkillChoreography {
             if(localAge<=4.0) floor(localAge/4.0*7).toInt() else
                 8+floor(((localAge-5)/(p.durationTicks-6).coerceAtLeast(1)).coerceIn(0.0,1.0)*7).toInt()
         } else floor(((t-.42)/.58).coerceIn(0.0,1.0)*7).toInt()
-        val model=if(p.shape=="shot_wake") "combat_vfx/shot_wake_${p.palette}_${floor(t*11).toInt()}" else
+        val model=if(p.shape=="shot_wake") {
+            val segments=ceil(p.scale.z()/(2*p.scale.x().coerceAtLeast(.1))).toInt().coerceIn(1,12)
+            "combat_vfx/shot/wake_${p.palette}_${segments}_${floor(t*15).toInt()}"
+        } else
             if(p.shape=="shadow_echo") "combat_vfx/shadow_echo_shadow_${floor(t*7).toInt()}" else
             if(p.atlas==CoreMeshAtlas.SHADOW_SMOKE) "combat_vfx/shadow/smoke_shadow_$stage" else
             if(p.shape=="flame_plume" || p.shape=="flame_tail") {

@@ -194,17 +194,7 @@ def build_ranger_phrases(assets,write_json):
                                    'to':[8+(e['to'][0]-8)*.6+x,8+(e['to'][1]-8)*.6+y,e['to'][2]]})
         fading(f'{name}_hunter','hunter',cluster)
 
-    for palette in ('hunter','ice'):
-        for frame in range(12):
-            elements=[]
-            for z in range(16):
-                if z<frame*1.2: continue
-                for strand in (-1,0,1):
-                    x=8+strand*(1.6+math.sin(z*.55-frame*.6)*1.1)
-                    y=8+math.cos(z*.55-frame*.6+strand)*.7
-                    width=.45 if strand==0 else .25
-                    elements.append(vfx_box([x-width,y-width,z],[x+width,y+width,z+1],0 if strand==0 else 1))
-            save(f'shot_wake_{palette}_{frame}',palette,elements)
+    build_shot_wake_frames(assets,write_json)
 
     feather=[vfx_box([7.7,7.7,0],[8.3,8.3,16],2)]
     for z in range(1,15):
@@ -458,6 +448,52 @@ def build_assassin_phrases(assets, write_json):
         width=(2.5*math.sin((z+1)/8*math.pi/2) if z<4 else max(.35,3.0*(1-(z-4)/8)))
         drops.append(vfx_box([8-width,8-width,2+z],[8+width,8+width,3+z],0 if z>=9 else 1 if z>=3 else 2))
     fading('venom_bead_venom','venom',drops)
+
+
+def build_shot_wake_frames(assets,write_json):
+    """Short crossed pixel ribbons, never one 64px picture stretched over a 23m ray.
+
+    Native element Z rotation keeps the crossed planes perpendicular to the ray
+    under pitch/yaw. Only two faces per segment, and still one display per ray.
+    """
+    master=Path(__file__).resolve().parents[1]/'assets/combat-vfx/shot-wake-pixel-v1.png'
+    source=Image.open(master).convert('L')
+    for frame in range(16):
+        x,y=frame%4,frame//4
+        crop=source.crop((round(x*source.width/4),round(y*source.height/4),
+                          round((x+1)*source.width/4),round((y+1)*source.height/4)))
+        tile=Image.new('L',(64,32),0)
+        # Coarse connected clusters remain readable at the actual metre scale.
+        logical=crop.resize((28,14),Image.Resampling.NEAREST)
+        tile.paste(logical.resize((56,28),Image.Resampling.NEAREST),(4,2))
+        tile=tile.point(lambda v: 0 if v<40 else 85 if v<128 else 170 if v<213 else 255)
+        # Source left is the forward-facing point; image top maps to model +Z.
+        tile=tile.transpose(Image.Transpose.ROTATE_270)
+        alpha=tile.point(lambda v: 255 if v else 0)
+        target=assets/f'textures/combat_vfx/shot/wake_{frame}.png'
+        target.parent.mkdir(parents=True,exist_ok=True)
+        Image.merge('RGBA',(tile,tile,tile,alpha)).save(target)
+    for count in range(1,13):
+        for frame in range(16):
+            elements=[]; textures={}
+            for segment in range(count):
+                # Alternate phases/mirroring break a repeated-stamp silhouette.
+                local=min(15,frame+int((count-1-segment)*frame/(count*3)))
+                textures[str(segment)]=f'projects:combat_vfx/shot/wake_{local}'
+                z0=(segment-.4)*16/count; z1=(segment+1.4)*16/count
+                lo=max(0,z0); hi=min(16,z1)
+                v0=(lo-z0)/(z1-z0)*16; v1=(hi-z0)/(z1-z0)*16
+                u0,u1=(16,0) if segment%2 else (0,16)
+                for angle in (-45,45):
+                    elements.append({'from':[0,8,lo],'to':[16,8,hi],'shade':False,
+                        'rotation':{'origin':[8,8,8],'axis':'z','angle':angle,'rescale':False},
+                        'faces':{'up':{'texture':f'#{segment}','uv':[u0,16-v0,u1,16-v1],'tintindex':0},
+                                 'down':{'texture':f'#{segment}','uv':[u0,v0,u1,v1],'tintindex':0}}})
+            for palette,color in dict(hunter=0xe8ffa3,ice=0x85e2ff).items():
+                name=f'combat_vfx/shot/wake_{palette}_{count}_{frame}'
+                write_json(assets/f'models/{name}.json',{'ambientocclusion':False,'textures':textures,'elements':elements})
+                write_json(assets/f'items/{name}.json',{'model':{'type':'minecraft:model','model':f'projects:{name}',
+                    'tints':[{'type':'minecraft:constant','value':color}]}})
 
 
 def build_magic_frames(assets, write_json, source, family, colors=None, inset=0):

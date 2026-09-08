@@ -9,6 +9,45 @@ import kotlin.math.*
 import kotlin.test.*
 
 class CoreRangerChoreographyTest {
+    @Test fun `shot wake frames are opaque pixel clusters that break apart without soft alpha`() {
+        val areas=(0..15).map { frame ->
+            val image=javax.imageio.ImageIO.read(javaClass.getResourceAsStream(
+                "/core-ui-pack/assets/projects/textures/combat_vfx/shot/wake_$frame.png"))
+            assertEquals(32,image.width); assertEquals(64,image.height)
+            var area=0
+            for(y in 0 until image.height) for(x in 0 until image.width) {
+                val rgba=image.getRGB(x,y);val alpha=rgba ushr 24
+                assertTrue(alpha==0 || alpha==255,"soft alpha at $frame $x $y")
+                if(alpha>0) {
+                    area++
+                    assertTrue((rgba and 255) in setOf(85,170,255))
+                    assertTrue(x in 2..29 && y in 4..59,"missing empty gutter")
+                }
+            }
+            area
+        }
+        assertTrue(areas.first()>300,"the shot needs a substantial connected stroke")
+        assertTrue(areas.last()<areas.first()/4,"aftermath must break apart, not hold a full PNG")
+    }
+    @Test fun `long rays use short crossed textured sections without adding displays`() {
+        for(id in listOf("pierce","hunt_ult")) for(length in listOf(.06,1.0,5.0,23.0)) {
+            val p=CoreSkillChoreography.parts(effect(id,length=length)).last()
+            val pose=CoreSkillChoreography.pose(p,0.0)
+            val model=javaClass.getResourceAsStream("/core-ui-pack/assets/projects/models/${pose.model}.json")!!
+                .bufferedReader().use { JsonParser.parseReader(it).asJsonObject }
+            val elements=model.getAsJsonArray("elements")
+            val count=ceil(length/(2*p.scale.x())).toInt().coerceIn(1,12)
+            assertEquals(count*2,elements.size())
+            assertTrue(length/count<=2*p.scale.x()+.001)
+            for(element in elements) {
+                val e=element.asJsonObject
+                assertEquals("z",e.getAsJsonObject("rotation")["axis"].asString)
+                assertEquals(45.0,abs(e.getAsJsonObject("rotation")["angle"].asDouble))
+                for(face in e.getAsJsonObject("faces").entrySet())
+                    assertTrue(face.value.asJsonObject.getAsJsonArray("uv").all { it.asDouble in 0.0..16.0 })
+            }
+        }
+    }
     private fun effect(id: String,phase: CoreSkillVisualPhase=CoreSkillVisualPhase.PULSE,pulse: Int=0,
         direction: Vec=Vec(0.0,0.0,1.0),length: Double=5.0): CoreSkillEffect {
         val skill=CoreSkillCatalog.skills(CoreClass.RANGER).first { it.icon==id }
@@ -26,7 +65,7 @@ class CoreRangerChoreographyTest {
             val wake=parts.last()
             assertEquals("shot_wake",wake.shape)
             assertEquals(e.durationTicks,wake.durationTicks)
-            assertEquals(12,(0 until wake.durationTicks).map { CoreSkillChoreography.pose(wake,it.toDouble()).model }.toSet().size)
+            assertEquals(16,(0 until wake.durationTicks).map { CoreSkillChoreography.pose(wake,it.toDouble()).model }.toSet().size)
             assertFalse(CoreSkillChoreography.pose(parts.first(),6.0).visible)
             assertTrue(CoreSkillChoreography.pose(wake,8.0).visible)
         }

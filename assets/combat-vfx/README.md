@@ -3,6 +3,11 @@
 World-space skill artwork, **not** the approved UI skill icons. Those icons and
 Japanese fonts are untouched.
 
+## Active: shot-wake-pixel-v1.png
+
+レンジャー6射撃と霜矢の扇専用の16コマ。細い立体線を置換し、短い交差面を
+重ねて手元から崩す。[原画、生成・修正プロンプト、使用範囲](shot-wake-pixel-v1.md)。
+
 ## Active: nebula-stream-pixel-v1.png / ice_growth_ice
 
 星雲専用の流れるピクセル連番と、氷の庭の底支点・立体氷晶モデル。
