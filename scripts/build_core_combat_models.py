@@ -73,6 +73,8 @@ SHAPES = ("crescent", "orbit", "star", "lance", "burst", "rune", "bolt")
 def mesh(shape, palette):
     if shape in ('fire_orb', 'meteor_rock', 'meteor_crown'):
         return molten_core(shape)
+    if shape in ('arrow_head','rain_arrow','barbed_arrow','mark_arrow','great_arrow','frost_arrow'):
+        return ranger_arrow(shape,palette)
     elements = []
     grid = [[cell(shape, (x + .5) / 24 - 1, (z + .5) / 24 - 1) for x in range(48)] for z in range(48)]
     for z, row in enumerate(grid):
@@ -142,12 +144,97 @@ def build_combat_models(assets, write_json):
     build_healing_feather(assets, write_json)
     build_elemental_phrases(assets, write_json)
     build_assassin_phrases(assets, write_json)
+    build_ranger_phrases(assets, write_json)
 
 
 def vfx_box(lo, hi, ink):
     return {'from': lo, 'to': hi, 'shade': False, 'faces': {
         face: {'texture': f'#{ink}', 'uv': [2, 2, 3, 3]}
         for face in ('up', 'down', 'north', 'south', 'east', 'west')}}
+
+
+def ranger_arrow(shape,palette):
+    # Actual shaft, four fletches and a broadhead; all vertices stay in [0,16]
+    # along +Z so short/vertical/clipped rays can use the same exact bounds.
+    elements=[vfx_box([7.7,7.7,0],[8.3,8.3,13],2)]
+    broad=1.1 if shape in ('barbed_arrow','great_arrow') else .7
+    for z in range(11,16):
+        width=(16-z)*broad*.6
+        elements.append(vfx_box([8-width,7.55,z],[8+width,8.45,z+1],0))
+        elements.append(vfx_box([7.55,8-width,z],[8.45,8+width,z+1],0))
+    for z in range(1,6):
+        width=1.0+(5-z)*.45
+        for side in (-1,1):
+            x=8+side*width
+            elements.append(vfx_box([min(8,x),7.7,z],[max(8,x),8.3,z+1],0 if z%2 else 1))
+            y=8+side*width
+            elements.append(vfx_box([7.7,min(8,y),z],[8.3,max(8,y),z+1],1))
+    if shape in ('barbed_arrow','great_arrow'):
+        for side in (-1,1):
+            x=8+side*2.5
+            elements.append(vfx_box([x-.5,7.5,8],[x+.5,8.5,12],0))
+    return {'ambientocclusion':False,'textures':{str(i):f'minecraft:block/{t}' for i,t in enumerate(PALETTES[palette])},'elements':elements}
+
+
+def build_ranger_phrases(assets,write_json):
+    def save(name,palette,elements):
+        write_json(assets/f'models/combat_vfx/{name}.json',{'ambientocclusion':False,
+            'textures':{str(i):f'minecraft:block/{t}' for i,t in enumerate(PALETTES[palette])},'elements':elements})
+        write_json(assets/f'items/combat_vfx/{name}.json',{'model':{'type':'minecraft:model','model':f'projects:combat_vfx/{name}'}})
+    def fading(name,palette,elements):
+        save(name,palette,elements)
+        for stage in range(1,8):
+            save(f'{name}_fade{stage}',palette,[e for i,e in enumerate(elements) if (i*5)%8>=stage])
+
+    for name,shape in (('rain_cluster','rain_arrow'),('barbed_rain_cluster','barbed_arrow')):
+        cluster=[]
+        for x,y in ((0,0),(-4,-2.5),(4,2.5)):
+            for e in ranger_arrow(shape,'hunter')['elements']:
+                cluster.append({**e,'from':[8+(e['from'][0]-8)*.6+x,8+(e['from'][1]-8)*.6+y,e['from'][2]],
+                                   'to':[8+(e['to'][0]-8)*.6+x,8+(e['to'][1]-8)*.6+y,e['to'][2]]})
+        fading(f'{name}_hunter','hunter',cluster)
+
+    for palette in ('hunter','ice'):
+        for frame in range(12):
+            elements=[]
+            for z in range(16):
+                if z<frame*1.2: continue
+                for strand in (-1,0,1):
+                    x=8+strand*(1.6+math.sin(z*.55-frame*.6)*1.1)
+                    y=8+math.cos(z*.55-frame*.6+strand)*.7
+                    width=.45 if strand==0 else .25
+                    elements.append(vfx_box([x-width,y-width,z],[x+width,y+width,z+1],0 if strand==0 else 1))
+            save(f'shot_wake_{palette}_{frame}',palette,elements)
+
+    feather=[vfx_box([7.7,7.7,0],[8.3,8.3,16],2)]
+    for z in range(1,15):
+        width=math.sin(z/16*math.pi)*3.2
+        feather.append(vfx_box([8-width,7.6,z],[8+width,8.4,z+.7],0 if z%3 else 1))
+    fading('fletching_hunter','hunter',feather)
+    tension=[]
+    for z in range(16):
+        x=8+math.sin(z/16*math.pi)*3
+        tension.append(vfx_box([x-.3,7.7,z],[x+.3,8.3,z+1],0 if z>8 else 1))
+    save('draw_tension_hunter','hunter',tension)
+    hooks=[vfx_box([8,7.7,14],[15,8.3,15],0),vfx_box([14,7.7,8],[15,8.3,15],0),
+           vfx_box([9,7.65,12.5],[13,8.35,13.5],1),vfx_box([12.5,7.65,9],[13.5,8.35,13],1)]
+    fading('mark_hook_hunter','hunter',hooks)
+    jaw=[]
+    for i in range(24):
+        a=i*math.pi/24;b=(i+1)*math.pi/24
+        x0=8+math.cos(a)*6;x1=8+math.cos(b)*6
+        z0=8+math.sin(a)*6;z1=8+math.sin(b)*6
+        jaw.append(vfx_box([min(x0,x1)-.4,7.8,min(z0,z1)-.4],
+                           [max(x0,x1)+.4,8.5,max(z0,z1)+.4],2))
+        if i%2==0:
+            for tooth in range(3):
+                r=5.8-tooth*.5
+                x=8+math.cos(a)*r;z=8+math.sin(a)*r;w=.4-tooth*.09
+                jaw.append(vfx_box([x-w,8.4,z-w],[x+w,9.2,z+w],0))
+    save('snare_jaw_hunter','hunter',jaw)
+    mirrored=[{**e,'from':[e['from'][0],e['from'][1],16-e['to'][2]],
+                  'to':[e['to'][0],e['to'][1],16-e['from'][2]]} for e in jaw]
+    save('snare_jaw_reverse_hunter','hunter',mirrored)
 
 
 def molten_core(shape):

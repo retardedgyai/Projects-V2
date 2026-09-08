@@ -98,8 +98,9 @@ def main():
     parser.add_argument('--ids',default='dash,slam,ass_execute,ass_fan,ass_poison,starfall,star_cloud,temp_pull')
     parser.add_argument('--prefix',default='choreography-review')
     parser.add_argument('--view',choices=('iso','eye'),default='iso')
+    parser.add_argument('--timeline',default='.tools/skill-choreography-frames.json')
     args=parser.parse_args()
-    source=json.loads((ROOT/'.tools/skill-choreography-frames.json').read_text(encoding='utf-8'))
+    source=json.loads((ROOT/args.timeline).read_text(encoding='utf-8'))
     ids=args.ids.split(',')
     scenes=[next(s for s in source if s['id']==i) for i in ids]
     frames=[]

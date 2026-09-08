@@ -78,7 +78,8 @@ internal object CoreSkillChoreography {
             if(localAge<=4.0) floor(localAge/4.0*7).toInt() else
                 8+floor(((localAge-5)/(p.durationTicks-6).coerceAtLeast(1)).coerceIn(0.0,1.0)*7).toInt()
         } else floor(((t-.42)/.58).coerceIn(0.0,1.0)*7).toInt()
-        val model=if(p.shape=="shadow_echo") "combat_vfx/shadow_echo_shadow_${floor(t*7).toInt()}" else
+        val model=if(p.shape=="shot_wake") "combat_vfx/shot_wake_${p.palette}_${floor(t*11).toInt()}" else
+            if(p.shape=="shadow_echo") "combat_vfx/shadow_echo_shadow_${floor(t*7).toInt()}" else
             if(p.atlas==CoreMeshAtlas.SHADOW_SMOKE) "combat_vfx/shadow/smoke_shadow_$stage" else
             if(p.shape=="flame_plume" || p.shape=="flame_tail") {
             val frame=if(localAge<=3.0) floor(localAge/3*2).toInt() else
@@ -102,6 +103,7 @@ internal object CoreSkillChoreography {
         if(raw.isEmpty()) return raw
         val s=CoreSkillScenes.get(e.sceneId)
         val life=duration(e)
+        if(e.job==CoreClass.RANGER) return CoreRangerChoreography.parts(e,raw,life)
         if(e.phase==CoreSkillVisualPhase.PREPARE) return raw.map { it.copy(
             motion=if(s.kind==CoreSceneKind.RAIN) CoreMeshMotion.FALL else CoreMeshMotion.GATHER,
             durationTicks=life,erode=false) }

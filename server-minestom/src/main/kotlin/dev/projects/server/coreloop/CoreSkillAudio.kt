@@ -16,6 +16,31 @@ internal object CoreSkillAudio {
             player.playSound(Sound.sound(event, Sound.Source.PLAYER, volume * detail, pitch))
         val astral = effect.job == CoreClass.STARWEAVER
         val scene = CoreSkillScenes.get(effect.sceneId)
+        if(effect.job==CoreClass.RANGER) {
+            val trap=effect.sceneId=="hunt_trap"
+            when(effect.phase) {
+                CoreSkillVisualPhase.PREPARE -> {
+                    if(!trap || effect.pulse==0) cue(if(trap) SoundEvent.BLOCK_CHAIN_PLACE else SoundEvent.ITEM_CROSSBOW_LOADING_MIDDLE,
+                        .6f,if(effect.skill.ultimate) .65f else 1.0f)
+                }
+                CoreSkillVisualPhase.CONTACT -> {
+                    cue(if(trap) SoundEvent.BLOCK_BREWING_STAND_BREW else SoundEvent.ENTITY_ARROW_HIT,
+                        .75f,if(effect.skill.ultimate) .65f else 1.2f)
+                    if(effect.sceneId=="hunt_mark") cue(SoundEvent.BLOCK_NOTE_BLOCK_PLING,.35f,1.6f)
+                }
+                CoreSkillVisualPhase.PULSE -> {
+                    if(trap) {
+                        cue(SoundEvent.BLOCK_IRON_TRAPDOOR_CLOSE,.9f,.65f)
+                        cue(SoundEvent.BLOCK_BREWING_STAND_BREW,.7f,.9f)
+                    } else {
+                        cue(SoundEvent.ENTITY_ARROW_SHOOT,1.0f,if(effect.skill.ultimate) .6f else 1.0f+effect.pulse%3*.12f)
+                        cue(SoundEvent.ITEM_CROSSBOW_SHOOT,.65f,if(effect.skill.ultimate) .65f else 1.25f)
+                        if(effect.sceneId=="frost_fan") cue(SoundEvent.BLOCK_GLASS_BREAK,.5f,1.45f)
+                    }
+                }
+            }
+            return
+        }
         val restoration=scene.kind==CoreSceneKind.HEAL || effect.sceneId=="heal_shield"
         val blade = scene.kind in setOf(CoreSceneKind.CUT,CoreSceneKind.CLEAVE,CoreSceneKind.SPIN,CoreSceneKind.THRUST) && scene.body!="shield_bash"
         if(scene.kind==CoreSceneKind.TELEPORT && effect.phase==CoreSkillVisualPhase.PULSE) {
