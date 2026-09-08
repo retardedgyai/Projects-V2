@@ -30,7 +30,8 @@ internal object CoreCombatPresentation {
 /** Concrete scene consumer. Each display has an owner, a hard lifetime and a scene budget. */
 internal class CoreCombatMeshes(private val owner: Player) {
     private data class Live(val entity: Entity,val instance: Instance,val part: CoreCombatMeshPart,
-        val ownerStart: Pos,val baseYaw: Double,var age: Int=-2,var model: String="",val cancelled: AtomicBoolean=AtomicBoolean())
+        val ownerStart: Pos,val baseYaw: Double,var age: Int=-2,var model: String="",val cancelled: AtomicBoolean=AtomicBoolean(),
+        var lastUpdateNanos: Long=0,var maxUpdateGapNanos: Long=0,var updateCount: Int=0)
     private val live=mutableListOf<Live>()
     internal val size get()=live.size
 
@@ -64,7 +65,7 @@ internal class CoreCombatMeshes(private val owner: Player) {
                 meta.setItemStack(ItemStack.of(Material.PAPER).withItemModel("projects:${record.model}"))
                 meta.setDisplayContext(ItemDisplayMeta.DisplayContext.FIXED)
                 meta.setBrightness(15,15);meta.setViewRange(1.0f)
-                meta.setTransformationInterpolationDuration(1)
+                meta.setTransformationInterpolationDuration(interpolationTicks(part))
                 // Send spawn before reveal; the animation clock waits for setInstance to finish.
                 meta.setScale(Vec.ZERO);meta.setTranslation(part.offset)
                 meta.setLeftRotation(CoreCombatMeshArt.rotation(part.yaw,part.pitch,part.roll))
@@ -84,14 +85,15 @@ internal class CoreCombatMeshes(private val owner: Player) {
                 emptySet<Entity>()
             else live.asReversed().asSequence().filter { v ->
                 !v.part.secondary && !v.entity.isRemoved && v.entity.instance===owner.instance &&
-                    v.age>=v.part.delayTicks && v.age<v.part.delayTicks+v.part.durationTicks &&
+                    v.age>=v.part.delayTicks && v.age<removalAge(v.part) &&
                     viewer.position.distanceSquared(v.entity.position)<=256.0
             }.take(8).map { it.entity }.toSet()
         } ?: emptyMap()
         val iterator=live.iterator()
         while(iterator.hasNext()) {
             val v=iterator.next();val p=v.part
-            if(owner.isRemoved || owner.instance!==v.instance || v.entity.isRemoved || v.age>=p.delayTicks+p.durationTicks) {
+            if(owner.isRemoved || owner.instance!==v.instance || v.entity.isRemoved || v.age>=removalAge(p)) {
+                if(traceTiming && p.shape.contains(":cut:0:")) println("CORE_VFX_TIMING shape=${p.shape} updates=${v.updateCount} maxServerGapMs=${v.maxUpdateGapNanos/1_000_000.0} interpolationTicks=${interpolationTicks(p)} endAge=${v.age}")
                 v.cancelled.set(true);v.entity.remove();release(v.instance);iterator.remove();continue
             }
             if(v.entity.instance!==v.instance) continue
@@ -100,7 +102,14 @@ internal class CoreCombatMeshes(private val owner: Player) {
             val at=pose.offset
             val offset=if(p.followOwner) Vec(cos(facing)*at.x()+sin(facing)*at.z(),at.y(),-sin(facing)*at.x()+cos(facing)*at.z())
                 .add(owner.position.sub(v.ownerStart).asVec()) else at
-            v.entity.editEntityMeta(ItemDisplayMeta::class.java) { meta ->
+            // Let the final zero-width target finish. Restarting its interpolation
+            // during drain ticks or removing at the authored endpoint cuts off the fade.
+            if(v.age<p.delayTicks+p.durationTicks) v.entity.editEntityMeta(ItemDisplayMeta::class.java) { meta ->
+                if(traceTiming && p.shape.contains(":cut:0:")) {
+                    val now=System.nanoTime()
+                    if(v.lastUpdateNanos!=0L) v.maxUpdateGapNanos=maxOf(v.maxUpdateGapNanos,now-v.lastUpdateNanos)
+                    v.lastUpdateNanos=now;v.updateCount++
+                }
                 meta.setTransformationInterpolationStartDelta(0)
                 meta.setScale(if(pose.visible) pose.scale else Vec.ZERO)
                 meta.setTranslation(offset)
@@ -126,6 +135,15 @@ internal class CoreCombatMeshes(private val owner: Player) {
 
     fun cancel() { live.forEach { it.cancelled.set(true);it.entity.remove();release(it.instance) };live.clear() }
     companion object {
+        // Opt-in server-side cadence evidence, not client FPS or packet-arrival telemetry.
+        private val traceTiming=java.lang.Boolean.getBoolean("projects.vfx.traceTiming")
+        // One client tick can contain zero or two server updates. A one-tick
+        // transform runs out during a single missed delivery and visibly holds.
+        // Only persistent flow surfaces get this extra tick of presentation slack.
+        internal fun interpolationTicks(part: CoreCombatMeshPart)=
+            if(part.shape.startsWith("flow:") && !part.shape.contains(":prepare:")) 2 else 1
+        internal fun removalAge(part: CoreCombatMeshPart)=part.delayTicks+part.durationTicks+
+            if(interpolationTicks(part)==2) 2 else 0
         const val OWNER_LIMIT=48
         const val SCENE_LIMIT=384
         private val sceneCounts=WeakHashMap<Instance,Int>()

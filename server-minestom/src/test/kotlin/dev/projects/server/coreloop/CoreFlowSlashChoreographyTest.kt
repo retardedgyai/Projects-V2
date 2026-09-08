@@ -25,6 +25,22 @@ class CoreFlowSlashChoreographyTest {
         return CoreSkillEffect(job,skill,Vec.ZERO,Vec(0.0,0.0,1.0),phase,pulse,prepareTicks=skill.startup)
     }
     private fun quaternion(p: CoreMeshPose)=CoreCombatMeshArt.rotation(p.yaw,p.pitch,p.roll).map { it.toDouble() }
+    @Test fun `export actual flow transform targets including hidden spawn and drain ticks`() {
+        fun xyz(v: Vec)=listOf(v.x(),v.y(),v.z())
+        val rows=ids.flatMap { id -> CoreSkillChoreography.parts(effect(id)).map { part ->
+            val targets=(-2 until CoreCombatMeshes.removalAge(part)).map { age ->
+                if(age>=part.delayTicks+part.durationTicks) null else {
+                    val pose=CoreSkillChoreography.pose(part,age.toDouble())
+                    mapOf("model" to pose.model,"translation" to xyz(pose.offset),
+                        "scale" to xyz(if(pose.visible) pose.scale else Vec.ZERO),"rotation" to quaternion(pose))
+                }
+            }
+            mapOf("skill" to id,"interpolation" to CoreCombatMeshes.interpolationTicks(part),"targets" to targets)
+        } }
+        val cwd=Path.of(System.getProperty("user.dir"));val root=if(cwd.fileName.toString()=="server-minestom") cwd.parent else cwd
+        Files.createDirectories(root.resolve(".tools"))
+        Files.writeString(root.resolve(".tools/flow-display-contract.json"),Gson().toJson(rows))
+    }
     private fun dot(a: List<Double>,b: List<Double>)=a.indices.sumOf { a[it]*b[it] }
     private fun slerp(a: List<Double>,raw: List<Double>,t: Double): List<Double> {
         val b=if(dot(a,raw)<0) raw.map { -it } else raw
@@ -67,7 +83,9 @@ class CoreFlowSlashChoreographyTest {
         }
     }
 
-    @Test fun `export client interpolation not imaginary higher frequency server model swaps`() {
+    // Idealised authoring-only export, NOT a Vanilla display or delivery simulation.
+    // Real client interpolation is checked by CheckNativeDisplayInterpolation.java.
+    @Test fun `export ideal authoring interpolation not proof of client smoothness`() {
         fun xyz(v: Vec)=listOf(v.x(),v.y(),v.z())
         val rows=ids.map { id ->
             val s=effect(id).skill
@@ -90,6 +108,6 @@ class CoreFlowSlashChoreographyTest {
         }
         val cwd=Path.of(System.getProperty("user.dir"));val root=if(cwd.fileName.toString()=="server-minestom") cwd.parent else cwd
         Files.createDirectories(root.resolve(".tools"))
-        Files.writeString(root.resolve(".tools/flow-slash-client-60fps.json"),Gson().toJson(rows))
+        Files.writeString(root.resolve(".tools/flow-slash-ideal-authoring-60fps.json"),Gson().toJson(rows))
     }
 }

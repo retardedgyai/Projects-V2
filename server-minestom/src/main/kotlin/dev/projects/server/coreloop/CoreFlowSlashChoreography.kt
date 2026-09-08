@@ -4,7 +4,8 @@ import net.minestom.server.coordinate.Vec
 import kotlin.math.*
 
 /** Seven concrete slashes: persistent short surfaces, not swapped whole-stroke meshes.
- * The existing one-tick ItemDisplay interpolation connects their transforms on the client.
+ * Two-tick ItemDisplay interpolation tolerates a single missing delivery tick.
+ * The consumer drains the final zero-width transform before removing the display.
  */
 internal object CoreFlowSlashChoreography {
     private data class Path(val angles: List<Double>, val radii: List<Double>, val center: Double,

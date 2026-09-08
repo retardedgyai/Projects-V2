@@ -110,6 +110,41 @@ class CoreCombatMeshTest {
         } finally { meshes.cancel(); CoreCombatPresentation.forget(p) }
     }
 
+    @Test fun `flow cut targets use two tick interpolation and drain zero scale before removal`() = player { owner ->
+        val meshes=CoreCombatMeshes(owner)
+        val scene=owner.instance
+        CoreCombatPresentation.pack(owner,true)
+        try {
+            val e=effect(CoreClass.WARRIOR,"dash")
+            val parts=CoreSkillChoreography.parts(e)
+            meshes.play(e)
+            val displays=scene.entities.filter { it!==owner }.toList()
+            assertEquals(parts.size,displays.size)
+            displays.forEach {
+                assertEquals(2,(it.entityMeta as net.minestom.server.entity.metadata.display.ItemDisplayMeta).transformationInterpolationDuration)
+            }
+            val cuts=displays.filter {
+                !(it.entityMeta as net.minestom.server.entity.metadata.display.ItemDisplayMeta).itemStack
+                    .get(net.minestom.server.component.DataComponents.ITEM_MODEL)!!.endsWith("_wake")
+            }
+            // Live starts at -2: after ten ticks, cut age 7 (zero width) was sent.
+            repeat(10) { meshes.tick() }
+            assertTrue(cuts.all { !it.isRemoved })
+            cuts.forEach {
+                assertEquals(0.0,(it.entityMeta as net.minestom.server.entity.metadata.display.ItemDisplayMeta).scale.x(),1e-8)
+            }
+            repeat(2) { meshes.tick() }
+            assertTrue(cuts.all { !it.isRemoved },"Do not delete before the client drains its last transform")
+            meshes.tick()
+            assertTrue(cuts.all { it.isRemoved })
+            repeat(8) { meshes.tick() }
+            assertEquals(0,meshes.size)
+            val prepare=CoreSkillChoreography.parts(effect(CoreClass.WARRIOR,"dash",CoreSkillVisualPhase.PREPARE)).first()
+            assertEquals(1,CoreCombatMeshes.interpolationTicks(prepare),"Do not extend the prepare/pulse handoff")
+            assertEquals(prepare.delayTicks+prepare.durationTicks,CoreCombatMeshes.removalAge(prepare))
+        } finally { meshes.cancel(); CoreCombatPresentation.forget(owner) }
+    }
+
     @Test fun `observers see fresh nearby beats instead of older or distant primary tails`() = player { owner ->
         val map=owner.instance
         val near=connect(map,Pos(8.0,40.0,9.0),"NearVfx")
