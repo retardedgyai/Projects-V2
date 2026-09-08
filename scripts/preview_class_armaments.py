@@ -82,6 +82,11 @@ def main():
     for tier in range(1,5):
         for i,kind in enumerate(KINDS): sheet.paste(render(kind,tier,0),(i*W,(tier-1)*H+30))
     sheet.save(OUT/'all-tiers.png')
+    views=Image.new('RGB',(W*7,H*3+30),'#171b20')
+    ImageDraw.Draw(views).text((10,5),'T4 正面 / 側面 / 背面（実装JSONの正投影・ゲーム画面ではありません）',font=FONT,fill='#d5cec0')
+    for row,yaw in enumerate((0,90,180)):
+        for i,kind in enumerate(KINDS): views.paste(render(kind,4,0,yaw=yaw),(i*W,row*H+30))
+    views.save(OUT/'hero-views.png')
     if args.animate:
         frames=[]
         for frame in range(FRAMES):
