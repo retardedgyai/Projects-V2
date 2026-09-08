@@ -1,9 +1,10 @@
-param([int]$PreviewPid, [switch]$ListMonitors)
+param([int]$PreviewPid, [switch]$ListMonitors, [switch]$CorePlaytest)
 $ErrorActionPreference = 'Stop'
 if (-not $ListMonitors) {
     $client = Get-CimInstance Win32_Process -Filter "ProcessId=$PreviewPid"
-    if (-not $client -or $client.CommandLine -notmatch 'harbor-review-client') {
-        throw 'Only the isolated harbor review client may be moved'
+    $expected = if ($CorePlaytest) { [regex]::Escape((Join-Path (Split-Path -Parent $PSScriptRoot) '.tools/astra-vanilla.args').Replace('\','/')) } else { 'harbor-review-client' }
+    if (-not $client -or $client.Name -notmatch '^javaw?\.exe$' -or $client.CommandLine.Replace('\','/') -notmatch $expected) {
+        throw 'Only the explicitly selected ProjectS client may be moved'
     }
 }
 Add-Type @'

@@ -77,6 +77,9 @@ class CoreHudLayoutTest {
 
     @Test fun `override allowlist cannot hide other HUD information or alter any default font`() {
         assertEquals(50, CoreUiPackPolicy.vanillaOverrides.size)
+        assertEquals(setOf("assets/minecraft/atlases/items.json"), CoreUiPackPolicy.vanillaAdditions)
+        assertTrue(CoreUiPackPolicy.allowedPath("assets/minecraft/atlases/items.json"))
+        assertFalse(CoreUiPackPolicy.allowedPath("assets/minecraft/atlases/blocks.json"))
         assertFalse(CoreUiPackPolicy.allowedPath("assets/minecraft/font/default.json"))
         assertFalse(CoreUiPackPolicy.allowedPath("assets/minecraft/textures/gui/sprites/hud/armor_full.png"))
         assertFalse(CoreUiPackPolicy.allowedPath("assets/minecraft/textures/gui/sprites/hud/heart/vehicle_full.png"))

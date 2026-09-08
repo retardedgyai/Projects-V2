@@ -120,6 +120,11 @@ def scene_models():
 
 
 def build_combat_models(assets, write_json):
+    # 26.2 only discovers item/ sprites by default. These flipbooks live in
+    # combat_vfx/: packaging a PNG without an atlas source produces missingno.
+    # Atlas sources append to Vanilla's list; no vanilla sprite is replaced.
+    write_json(assets.parent / "minecraft/atlases/items.json", {"sources": [
+        {"type": "minecraft:directory", "source": "combat_vfx", "prefix": "combat_vfx/"}]})
     for shape, palette in scene_models():
         assert shape in AUTHORED_SHAPES, shape
         name = f"{shape}_{palette}"
