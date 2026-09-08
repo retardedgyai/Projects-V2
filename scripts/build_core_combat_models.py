@@ -71,6 +71,8 @@ SHAPES = ("crescent", "orbit", "star", "lance", "burst", "rune", "bolt")
 
 
 def mesh(shape, palette):
+    if shape in ('fire_orb', 'meteor_rock', 'meteor_crown'):
+        return molten_core(shape)
     elements = []
     grid = [[cell(shape, (x + .5) / 24 - 1, (z + .5) / 24 - 1) for x in range(48)] for z in range(48)]
     for z, row in enumerate(grid):
@@ -137,6 +139,108 @@ def build_combat_models(assets, write_json):
     build_ice_growth(assets, write_json)
     build_pull_chains(assets, write_json)
     build_healing_feather(assets, write_json)
+    build_elemental_phrases(assets, write_json)
+
+
+def vfx_box(lo, hi, ink):
+    return {'from': lo, 'to': hi, 'shade': False, 'faces': {
+        face: {'texture': f'#{ink}', 'uv': [2, 2, 3, 3]}
+        for face in ('up', 'down', 'north', 'south', 'east', 'west')}}
+
+
+def molten_core(shape):
+    # A shell with visible molten fault lines, not two crossing orb drawings.
+    # Stay inside [0,16] on every axis: firebolt's clipped ray uses these bounds.
+    cells={}
+    for x in range(7):
+        for y in range(7):
+            for z in range(7):
+                d=(x-3)**2+(y-3)**2+(z-3)**2
+                if d<=11:
+                    crack=(x+2*y-z)%5==0 or (x-y+2*z)%7==0
+                    cells[x,y,z]=0 if crack else (1 if shape=='fire_orb' else 3)
+    elements=[]
+    for (x,y,z),ink in cells.items():
+        if all((x+dx,y+dy,z+dz) in cells for dx,dy,dz in
+               ((1,0,0),(-1,0,0),(0,1,0),(0,-1,0),(0,0,1),(0,0,-1))):
+            continue
+        elements.append(vfx_box([1+2*x,1+2*y,1+2*z],[3+2*x,3+2*y,3+2*z],ink))
+    textures={str(i):f'minecraft:block/{t}' for i,t in enumerate(PALETTES['fire'])}
+    textures['3']='minecraft:block/blackstone'
+    return {'ambientocclusion':False,'textures':textures,'elements':elements}
+
+
+def build_elemental_phrases(assets, write_json):
+    def save(name, palette, elements):
+        colors=PALETTES[palette]
+        if palette=='fire': colors=('white_concrete','yellow_concrete','orange_concrete')
+        write_json(assets/f'models/combat_vfx/{name}.json',{'ambientocclusion':False,
+            'textures':{str(i):f'minecraft:block/{t}' for i,t in enumerate(colors)},
+            'elements':elements})
+        write_json(assets/f'items/combat_vfx/{name}.json',
+            {'model':{'type':'minecraft:model','model':f'projects:combat_vfx/{name}'}})
+
+    # Twelve changing silhouettes: the lower flame ignites, forks and releases
+    # detached tips. Local +Z becomes vertical; the root is the (8,8,8) pivot.
+    for frame in range(12):
+        t=frame/11
+        elements=[]
+        for tongue in range(3):
+            height=(15 if tongue==1 else 10)*(1-.45*t)+(2 if frame in (1,2,3) else 0)
+            for row in range(math.ceil(height)):
+                u=row/height
+                if frame>=7 and row < (frame-6)*1.2:
+                    continue  # the root burns away, leaving rising broken tips
+                center=8+(tongue-1)*3+round((u*u*5+math.sin(frame*.85+tongue)*u*2)*(-1 if tongue==0 else 1))
+                width=max(.55,(2.7 if tongue==1 else 1.7)*(1-u)**.7)
+                for column in range(-math.ceil(width),math.ceil(width)+1):
+                    if abs(column)>width: continue
+                    ink=0 if abs(column)<width*.4 and u<.72 else 1 if abs(column)<width*.8 else 2
+                    depth=max(.45,(1-u)*1.7)
+                    elements.append(vfx_box([center+column-.5,8-depth,8+row],
+                                            [center+column+.5,8+depth,9+row],ink))
+        save(f'flame_plume_fire_{frame}','fire',elements)
+        # Same flame anatomy, flowing back from the projectile head at +Z.
+        # Normalize to [0,16] so no frame extends beyond a clipped ray endpoint.
+        wake=[{**e,'from':[e['from'][0],e['from'][1],16-(e['to'][2]-8)*16/18],
+                    'to':[e['to'][0],e['to'][1],16-(e['from'][2]-8)*16/18]} for e in elements]
+        save(f'fire_wake_fire_{frame}','fire',wake)
+
+    # Four different fork paths, then four stages of broken residual charge.
+    # Voxel-stair segments have thickness in all axes, with a white conductor
+    # inside a blue rim. +Z spans the radial direction, never a vertical spear.
+    for frame in range(8):
+        elements=[]
+        variant=frame%4
+        for branch in range(3):
+            begin=0 if branch==0 else 5+branch*2
+            previous=0.0
+            for z in range(begin,16):
+                if frame>=4 and (z+branch*2)%(frame-2)==0: continue
+                x=(math.sin((z//3)*2.1+variant)*3 if branch==0 else
+                   math.sin((begin//3)*2.1+variant)*3+(branch*2-3)*(z-begin)*.75+math.sin(z*.8+variant)*.8)
+                if z==begin: previous=x
+                y=8+round(math.sin(z*.65+variant+branch)*.8)
+                lo=8+min(previous,x)-.4;hi=8+max(previous,x)+.4
+                elements.append(vfx_box([lo-.35,y-.5,z],[hi+.35,y+.5,z+1],1))
+                elements.append(vfx_box([lo,y-.65,z+.15],[hi,y+.65,z+.85],0))
+                previous=x
+        save(f'storm_branch_lightning_{frame}','lightning',elements)
+
+    # A broad, curved frost crest: low serrated ridge with a broken lip, not a
+    # ring of upright garden crystals. The +Z height axis shares the ground pivot.
+    crest=[]
+    for column in range(-10,11):
+        x=8+column*.7
+        y=8+column*column*.021
+        height=3.4+(2.0 if column%5==0 else .8 if column%3==0 else 0)
+        for row in range(math.ceil(height)):
+            taper=max(.32,1-row/height)
+            crest.append(vfx_box([x-.36,y-taper,8+row],[x+.36,y+taper,9+row],
+                                 0 if row>=height-1.2 else 1))
+    save('frost_crest_ice','ice',crest)
+    for stage in range(1,8):
+        save(f'frost_crest_ice_fade{stage}','ice',[e for i,e in enumerate(crest) if (i*5)%8>=stage])
 
 
 def build_healing_feather(assets, write_json):
@@ -201,6 +305,13 @@ def build_ice_growth(assets, write_json):
     write_json(assets/f'models/{name}.json',{'ambientocclusion':False,
         'textures':{str(i):f'minecraft:block/{t}' for i,t in enumerate(PALETTES['ice'])},'elements':elements})
     write_json(assets/f'items/{name}.json',{'model':{'type':'minecraft:model','model':f'projects:{name}'}})
+
+    for stage in range(1,8):
+        fade=f'{name}_fade{stage}'
+        write_json(assets/f'models/{fade}.json',{'ambientocclusion':False,
+            'textures':{str(i):f'minecraft:block/{t}' for i,t in enumerate(PALETTES['ice'])},
+            'elements':[e for i,e in enumerate(elements) if (i*5)%8>=stage]})
+        write_json(assets/f'items/{fade}.json',{'model':{'type':'minecraft:model','model':f'projects:{fade}'}})
 
 
 def build_magic_frames(assets, write_json, source, family):

@@ -75,7 +75,15 @@ internal object CoreSkillChoreography {
             if(localAge<=4.0) floor(localAge/4.0*7).toInt() else
                 8+floor(((localAge-5)/(p.durationTicks-6).coerceAtLeast(1)).coerceIn(0.0,1.0)*7).toInt()
         } else floor(((t-.42)/.58).coerceIn(0.0,1.0)*7).toInt()
-        val model=if(p.atlas==CoreMeshAtlas.NEBULA_STREAM) "combat_vfx/nebula/stream_${p.palette}_$stage" else
+        val model=if(p.shape=="flame_plume" || p.shape=="flame_tail") {
+            val frame=if(localAge<=3.0) floor(localAge/3*2).toInt() else
+                3+floor(((localAge-4)/(p.durationTicks-5).coerceAtLeast(1)).coerceIn(0.0,1.0)*8).toInt()
+            "combat_vfx/${if(p.shape=="flame_tail") "fire_wake" else "flame_plume"}_fire_$frame"
+        } else if(p.shape=="storm_branch") {
+            val frame=if(t<.42) (localAge.toInt()/2)%4 else
+                4+floor(((t-.42)/.58).coerceIn(0.0,1.0)*3).toInt()
+            "combat_vfx/storm_branch_lightning_$frame"
+        } else if(p.atlas==CoreMeshAtlas.NEBULA_STREAM) "combat_vfx/nebula/stream_${p.palette}_$stage" else
             if(p.stellarBurst) "combat_vfx/stellar/burst_${p.palette}_$stage" else
             if(p.sprite) "combat_vfx/ribbon/slash_${if(p.spriteMirror) "reverse_" else ""}${p.palette}_$stage" else
             "combat_vfx/${p.shape}_${p.palette}" + if(p.erode && stage>0) "_fade$stage" else ""
@@ -109,6 +117,9 @@ internal object CoreSkillChoreography {
         if(s.kind==CoreSceneKind.PULL) return chainPull(e,life)
         if(e.sceneId=="mage_ward") return arcaneWard(e,life)
         if(e.sceneId in setOf("heal_ring","heal_wind","heal_ult","heal_shield")) return healingPhrase(e,life)
+        if(e.sceneId in setOf("meteor","mage_ult")) return fireLanding(e,raw.first().offset,life)
+        if(e.sceneId in setOf("frost_nova","mage_zero")) return frostWave(e,life)
+        if(e.sceneId=="mage_burst") return stormDischarge(e,life)
         val ray=s.kind==CoreSceneKind.RAY
         val base=raw.mapIndexed { i,p ->
             val motion=when(s.kind) {
@@ -324,5 +335,65 @@ internal object CoreSkillChoreography {
                 motion=CoreMeshMotion.ORBIT,erode=true,secondary=if(wings) i>=4 else i>=6)
         }
         return result
+    }
+
+    private fun fireLanding(e: CoreSkillEffect,landed: Vec,life: Int): List<CoreCombatMeshPart> {
+        // PREPARE owns the falling rock. On the authoritative landing it breaks into
+        // a forked flame column and separate outward debris, never a second intact rock.
+        val ultimate=e.skill.ultimate
+        val yaw=atan2(e.direction.x(),e.direction.z())+e.pulse*.31
+        val root=Vec(landed.x(),.12,landed.z())
+        val count=if(ultimate) 5 else 3
+        val flames=(0 until count).map { i ->
+            val a=yaw+i*PI*2/count
+            val center=i==0
+            val delay=if(center) 0 else 2+i%2
+            CoreCombatMeshPart("flame_plume","fire",root.add(sin(a)*if(center) 0.0 else .55,0.0,cos(a)*if(center) 0.0 else .55),
+                Vec(if(center) 2.4 else 1.3,1.0,if(center) (if(ultimate) 2.8 else 1.9) else 1.5),
+                yaw=a,pitch=-PI/2,roll=if(center) 0.0 else .25,
+                travel=Vec(sin(a)*if(center) 0.0 else .45,.4,cos(a)*if(center) 0.0 else .45),
+                startSize=.65,endSize=1.0,delayTicks=delay,durationTicks=life-delay,
+                motion=CoreMeshMotion.SNAP,secondary=i>=3)
+        }
+        return flames+(0 until if(ultimate) 6 else 4).map { i ->
+            val a=yaw+i*PI*2/(if(ultimate) 6 else 4)+.4
+            val reach=min(e.radius,3.5)*.7
+            CoreCombatMeshPart("meteor_rock","fire",root.add(0.0,.4,0.0),Vec(.38,.32,.42),
+                yaw=a,pitch=.3,spin=1.8,pitchTravel=2.0,rollTravel=1.3,
+                travel=Vec(sin(a)*reach,0.0,cos(a)*reach),bend=Vec(0.0,if(ultimate) 1.6 else 1.1,0.0),
+                startSize=1.0,endSize=.3,delayTicks=1,durationTicks=life-1,
+                motion=CoreMeshMotion.FLOAT,erode=true,secondary=i>=3)
+        }
+    }
+
+    private fun frostWave(e: CoreSkillEffect,life: Int): List<CoreCombatMeshPart> {
+        val r=min(e.radius,CoreSkillScenes.get(e.sceneId).reach)
+        val count=if(e.skill.ultimate) 12 else 8
+        // Low, outward-moving crests. Unlike the garden, these do not sit and grow
+        // into tall pillars. Every gameplay pulse owns exactly one expanding wave.
+        return (0 until count).map { i ->
+            val a=i*PI*2/count+e.pulse*.23
+            val from=.3
+            val end=(r-.55).coerceAtLeast(from)
+            val delay=i%2
+            CoreCombatMeshPart("frost_crest","ice",Vec(sin(a)*from,.12,cos(a)*from),
+                Vec(r*(if(e.skill.ultimate) .6 else .85),1.5,.8),yaw=a,pitch=-PI/2,
+                travel=Vec(sin(a)*(end-from),0.0,cos(a)*(end-from)),
+                startSize=.35,endSize=1.0,delayTicks=delay,durationTicks=life-delay,
+                motion=CoreMeshMotion.RADIATE,erode=true,secondary=i%3==2)
+        }
+    }
+
+    private fun stormDischarge(e: CoreSkillEffect,life: Int): List<CoreCombatMeshPart> {
+        val r=min(e.radius,CoreSkillScenes.get(e.sceneId).reach)
+        return (0 until 8).map { i ->
+            val a=i*PI/4+e.pulse*.23+if(i%2==0) -.09 else .12
+            val length=r*(.72+(i%3)*.08)
+            val delay=if(i%2==0) 0 else 2
+            CoreCombatMeshPart("storm_branch","lightning",Vec(sin(a)*length*.5,.55+(i%3)*.13,cos(a)*length*.5),
+                Vec(2.0,.8,length),yaw=a,pitch=if(i%2==0) -.08 else .08,
+                startSize=1.0,endSize=1.0,delayTicks=delay,durationTicks=life-delay,
+                motion=CoreMeshMotion.LINEAR,secondary=i%2!=0)
+        }
     }
 }

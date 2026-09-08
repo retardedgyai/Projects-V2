@@ -46,6 +46,10 @@ internal object CoreSkillAudio {
                         cue(SoundEvent.BLOCK_AMETHYST_BLOCK_RESONATE,.85f,1.25f)
                         cue(SoundEvent.ITEM_SHIELD_BLOCK,.6f,1.4f)
                     }
+                    effect.sceneId == "mage_burst" -> {
+                        cue(SoundEvent.ENTITY_LIGHTNING_BOLT_IMPACT,.7f,1.65f)
+                        cue(SoundEvent.BLOCK_RESPAWN_ANCHOR_DEPLETE,.55f,1.8f)
+                    }
                     scene.kind == CoreSceneKind.HAMMER -> {
                         cue(SoundEvent.ENTITY_PLAYER_ATTACK_STRONG,.9f,.65f)
                         cue(SoundEvent.BLOCK_ANVIL_LAND,.28f,1.35f)
