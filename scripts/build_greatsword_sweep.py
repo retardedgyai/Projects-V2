@@ -192,6 +192,7 @@ def geometry(grid, inks, wake=False, frame=0, curved=True):
 
 
 def build(assets, write):
+    from build_expanded_slashes import build as build_expanded
     inks = ink_uvs(assets)
     for layer, count in (('blade', 10), ('wake', 16), ('impact', 9)):
         for frame in range(count):
@@ -204,6 +205,7 @@ def build(assets, write):
             color = {'blade':0xeaf4ff, 'wake':0x9dc4e3, 'impact':0xffd899}[layer]
             write(assets/f'items/{name}.json', {'model':{'type':'minecraft:model',
                 'model':f'projects:{name}', 'tints':[{'type':'minecraft:constant','value':color}]}})
+    build_expanded(assets,write)
 
 
 if __name__ == '__main__':

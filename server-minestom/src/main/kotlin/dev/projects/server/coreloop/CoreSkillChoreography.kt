@@ -34,6 +34,7 @@ internal object CoreSkillChoreography {
     }
     private fun ease(t: Double)=1-(1-t.coerceIn(0.0,1.0)).pow(3)
     fun pose(p: CoreCombatMeshPart, age: Double): CoreMeshPose {
+        CoreExpandedSlashChoreography.pose(p,age)?.let { return it }
         CoreGreatswordSweepChoreography.pose(p,age)?.let { return it }
         CoreSlashChoreography.pose(p,age)?.let { return it }
         CoreFrostChoreography.pose(p,age)?.let { return it }
@@ -126,6 +127,7 @@ internal object CoreSkillChoreography {
     fun parts(e: CoreSkillEffect): List<CoreCombatMeshPart> {
         val raw=CoreCombatMeshArt.parts(e)
         if(raw.isEmpty()) return raw
+        CoreExpandedSlashChoreography.parts(e)?.let { return it }
         CoreGreatswordSweepChoreography.parts(e)?.let { return it }
         val s=CoreSkillScenes.get(e.sceneId)
         val life=duration(e)

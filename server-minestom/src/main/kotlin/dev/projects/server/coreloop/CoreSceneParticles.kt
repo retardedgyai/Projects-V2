@@ -23,6 +23,7 @@ internal object CoreSceneParticles {
             // The greatsword's tip moves inside its deforming mesh, not around the
             // ItemDisplay origin. Do not leave an unrelated cloud at that origin.
             if(part.shape in setOf("greatsword_prepare","greatsword_blade","greatsword_wake")) continue
+            if(part.shape.startsWith("sweep:") && !part.shape.endsWith(":impact")) continue
             val pose=CoreSkillChoreography.pose(part,tick.toDouble())
             if(!pose.visible) continue
             val center=origin.add(pose.offset)

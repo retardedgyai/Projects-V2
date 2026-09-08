@@ -434,13 +434,15 @@ class CoreSkillChoreographyTest {
         for(id in listOf("ass_execute","ass_fan","ass_ult")) {
             val parts=CoreSkillChoreography.parts(effect(CoreClass.ASSASSIN,id))
             val blade=parts.first()
-            assertEquals("directional_cut",blade.shape,id)
-            assertTrue(blade.durationTicks in 6..14,id)
+            val expanded=id in CoreExpandedSlashChoreography.sceneIds
+            assertTrue(if(expanded) blade.shape.startsWith("sweep:") else blade.shape=="directional_cut",id)
+            assertTrue(blade.durationTicks in 5..14,id)
             val states=(0 until blade.durationTicks).map { CoreSkillChoreography.pose(blade,it.toDouble()) }
-            assertTrue(states.map { it.model }.distinct().size>=6,id)
+            assertTrue(states.map { it.model }.distinct().size>=5,id)
             assertEquals(1,states.map { Triple(it.yaw,it.pitch,it.roll) }.distinct().size,id)
             assertEquals(1,states.map { it.offset to it.scale }.distinct().size,id)
-            assertTrue(parts.none { it.secondary || it.sprite },id)
+            assertTrue(parts.none { it.sprite },id)
+            assertTrue(parts.filter { it.secondary }.all { it.shape.endsWith(":wake") },id)
             assertFalse(CoreSkillChoreography.pose(parts.last(),-1.0).visible)
         }
         val poison=CoreSkillChoreography.parts(effect(CoreClass.ASSASSIN,"ass_poison"))
@@ -458,7 +460,8 @@ class CoreSkillChoreographyTest {
         }
     }
     @Test fun `warrior blade planes are not edge on from owner eye height`() {
-        for(id in listOf("dash","war_wound","war_counter","slam","war_ult")) {
+        // Curved native strips have multiple normals; their real vertices are tested separately.
+        for(id in listOf("dash","war_ult")) {
             val part=CoreSkillChoreography.parts(effect(CoreClass.WARRIOR,id)).first()
             for(tick in 1..6) {
                 val p=CoreSkillChoreography.pose(part,tick.toDouble())
@@ -471,15 +474,17 @@ class CoreSkillChoreographyTest {
             }
         }
     }
-    @Test fun `return cuts reverse the stroke and full circles traverse four fixed sectors`() {
+    @Test fun `return cuts have dedicated contours and full circles no longer duplicate fixed sectors`() {
         val first=CoreSkillChoreography.parts(effect(CoreClass.WARRIOR,"dash")).first()
         val reverse=CoreSkillChoreography.parts(effect(CoreClass.WARRIOR,"war_counter")).first()
-        assertNotEquals(first.spriteMirror,reverse.spriteMirror)
+        assertTrue(reverse.shape.startsWith("sweep:counter:"))
+        assertNotEquals(CoreSkillChoreography.pose(first,0.0).model,CoreSkillChoreography.pose(reverse,0.0).model)
         assertEquals(0.0,first.spin);assertEquals(0.0,reverse.spin)
         for((job,id) in listOf(CoreClass.ASSASSIN to "ass_fan",CoreClass.WARRIOR to "whirl")) {
             val sectors=CoreSkillChoreography.parts(effect(job,id))
-            assertEquals(listOf(0,2,4,6),sectors.map { it.delayTicks })
-            assertEquals(4,sectors.map { it.yaw }.distinct().size)
+            assertEquals(1,sectors.count { !it.secondary })
+            assertEquals(1,sectors.count { it.secondary })
+            assertTrue(sectors.all { it.delayTicks==0 })
             for(p in sectors) assertEquals(p.yaw,CoreSkillChoreography.pose(p,p.delayTicks+3.0).yaw)
         }
         assertEquals(2,CoreSkillChoreography.parts(effect(CoreClass.ASSASSIN,"ass_ult")).size)
