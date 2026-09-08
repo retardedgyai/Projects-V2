@@ -11,10 +11,16 @@ import kotlin.math.*
 
 class CoreSkillChoreographyTest {
     @Test fun `slash pack contains crisp pixel frames without opaque tile borders`() {
+        assertPixelFrames("ribbon/slash")
+    }
+    @Test fun `stellar burst pack contains crisp sequential frames without tile borders`() {
+        assertPixelFrames("stellar/burst")
+    }
+    private fun assertPixelFrames(prefix: String) {
         val frameHashes=mutableSetOf<Int>()
         var maximumInk=0
         repeat(16) { frame ->
-            val path="/core-ui-pack/assets/projects/textures/combat_vfx/ribbon/slash_$frame.png"
+            val path="/core-ui-pack/assets/projects/textures/combat_vfx/${prefix}_$frame.png"
             val image=javaClass.getResourceAsStream(path)!!.use { ImageIO.read(it) }
             assertEquals(64,image.width,path);assertEquals(64,image.height,path)
             val pixels=image.getRGB(0,0,64,64,null,0,64)
@@ -30,6 +36,32 @@ class CoreSkillChoreographyTest {
         assertTrue(maximumInk in 100..1600,"Blade must be a connected readable mass, not blank or an opaque card: $maximumInk")
         assertTrue(frameHashes.size>=12,"Animation must change its artwork, not just transform a static PNG")
     }
+    @Test fun `stellar bursts belong to landings and accepted ray hits not fields or defense`() {
+        for(id in listOf("starfall","star_ult")) {
+            val pulse=CoreSkillChoreography.parts(effect(CoreClass.STARWEAVER,id))
+            val burst=pulse.filter { it.stellarBurst && !it.ground }
+            assertEquals(2,burst.size,id)
+            assertTrue(burst.map { it.yaw }.distinct().size==2)
+            assertTrue(burst.any { it.delayTicks==2 && it.secondary })
+            assertTrue(burst.all { it.durationTicks>=28 && !it.followOwner && !it.ground })
+            assertTrue(pulse.any { it.ground && it.stellarBurst })
+            assertFalse(pulse.any { it.shape=="astral_crack" },"Static forked ground diagram must not compete with the breakup")
+            assertFalse(CoreSkillChoreography.parts(effect(CoreClass.STARWEAVER,id,CoreSkillVisualPhase.PREPARE)).any { it.stellarBurst })
+        }
+        for(id in listOf("star_thread","star_needle","star_break")) {
+            assertFalse(CoreSkillChoreography.parts(effect(CoreClass.STARWEAVER,id)).any { it.stellarBurst },"Empty ray must not explode: $id")
+            val hit=CoreSkillChoreography.parts(effect(CoreClass.STARWEAVER,id,CoreSkillVisualPhase.CONTACT))
+            assertEquals(2,hit.count { it.stellarBurst },id)
+            if(id=="star_needle") assertTrue(hit.any { it.shape=="star_mark" && !it.stellarBurst })
+        }
+        for(id in listOf("star_cloud","star_shield","star_constellation","star_step","star_ring")) {
+            assertFalse(CoreSkillChoreography.parts(effect(CoreClass.STARWEAVER,id)).any { it.stellarBurst },id)
+        }
+        val burst=CoreSkillChoreography.parts(effect(CoreClass.STARWEAVER,"starfall")).first()
+        assertTrue(CoreSkillChoreography.pose(burst,2.0).model.endsWith("_3"))
+        assertTrue(CoreSkillChoreography.pose(burst,6.0).model.endsWith("_5"))
+        assertTrue(CoreSkillChoreography.pose(burst,(burst.durationTicks-1).toDouble()).model.endsWith("_15"))
+    }
     private fun effect(job: CoreClass,id: String,phase: CoreSkillVisualPhase=CoreSkillVisualPhase.PULSE): CoreSkillEffect {
         val skill=CoreSkillCatalog.skills(job).first { it.icon==id }
         val ray=CoreSkillScenes.get(id).kind==CoreSceneKind.RAY
@@ -39,9 +71,9 @@ class CoreSkillChoreographyTest {
         assertEquals(CoreSkillScenes.all.keys,CoreSkillChoreography.sceneIds)
         val index=javaClass.getResourceAsStream("/core-ui-pack/index.txt")!!.bufferedReader().use { it.readLines().toSet() }
         val checked=mutableSetOf<String>()
-        for(job in CoreClass.entries) for(s in CoreSkillCatalog.skills(job)) {
-            val e=effect(job,s.icon)
-            assertTrue(e.durationTicks in 18..40,s.icon)
+        for(job in CoreClass.entries) for(s in CoreSkillCatalog.skills(job)) for(phase in CoreSkillVisualPhase.entries) {
+            val e=effect(job,s.icon,phase)
+            if(phase==CoreSkillVisualPhase.PULSE) assertTrue(e.durationTicks in 18..40,s.icon)
             val parts=CoreSkillChoreography.parts(e)
             assertTrue(parts.size in 1..16,"${s.icon}: ${parts.size}")
             for(p in parts) for(tick in 0..p.delayTicks+p.durationTicks) {
@@ -165,6 +197,15 @@ class CoreSkillChoreographyTest {
                     mapOf("model" to pose.model,"offset" to xyz(pose.offset.add(e.origin)),"scale" to xyz(pose.scale),
                         "yaw" to pose.yaw,"pitch" to pose.pitch,"roll" to pose.roll) }
             })
+            if(s.icon in setOf("star_thread","star_needle","star_break")) {
+                val contact=CoreSkillChoreography.parts(effect(job,s.icon,CoreSkillVisualPhase.CONTACT))
+                scenes+=mapOf("id" to "${s.icon}_contact","name" to "${s.name} 命中","job" to job.name,
+                    "frames" to (0..contact.maxOf { it.delayTicks+it.durationTicks }).map { tick ->
+                        contact.mapNotNull { p -> val pose=CoreSkillChoreography.pose(p,tick.toDouble());if(!pose.visible) null else
+                            mapOf("model" to pose.model,"offset" to xyz(pose.offset.add(0.0,0.0,4.0)),"scale" to xyz(pose.scale),
+                                "yaw" to pose.yaw,"pitch" to pose.pitch,"roll" to pose.roll) }
+                    })
+            }
         }
         val cwd=Path.of(System.getProperty("user.dir"))
         val root=if(cwd.fileName.toString()=="server-minestom") cwd.parent else cwd

@@ -3,6 +3,12 @@
 World-space skill artwork, **not** the approved UI skill icons. Those icons and
 Japanese fonts are untouched.
 
+## Active: stellar-burst-pixel-v1.png
+
+星術の着弾・確定命中専用の16枚ピクセル連番。
+[用途、生成と修正の完全なプロンプト、再生成手順](stellar-burst-pixel-v1.md)。
+星雲・防護・転移には流用しない。
+
 ## Active: slash-pixel-atlas-v1.png
 
 - Original pixel-styled artwork generated with Codex built-in `image_gen`, text-to-image mode, 2026-09-08.

@@ -30,6 +30,7 @@ internal data class CoreCombatMeshPart(
     val delayTicks: Int = 0, val motion: CoreMeshMotion = CoreMeshMotion.LINEAR,
     val bend: Vec = Vec.ZERO, val pitchTravel: Double = 0.0, val rollTravel: Double = 0.0,
     val sprite: Boolean = false, val erode: Boolean = false, val spriteMirror: Boolean = false,
+    val stellarBurst: Boolean = false,
 ) {
     fun sizeAt(t: Double) = startSize + (endSize-startSize) * t.coerceIn(0.0,1.0)
 }

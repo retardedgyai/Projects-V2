@@ -53,11 +53,16 @@ internal object CoreSkillChoreography {
         } else p.offset.add(travel)
         // Stroke peaks in 0.20s regardless of the longer aftermath. Extending readability
         // must not postpone the visually strongest beat until half a second after damage.
-        val stage=if(p.sprite) {
+        val stage=if(p.stellarBurst) {
+            // Ignition peaks at frame 3 in 0.10s; the hollow broken wake then unravels.
+            if(localAge<=2.0) floor(localAge/2*3).toInt() else
+                4+floor(((localAge-3)/(p.durationTicks-4).coerceAtLeast(1)).coerceIn(0.0,1.0)*11).toInt()
+        } else if(p.sprite) {
             if(localAge<=4.0) floor(localAge/4.0*7).toInt() else
                 8+floor(((localAge-5)/(p.durationTicks-6).coerceAtLeast(1)).coerceIn(0.0,1.0)*7).toInt()
         } else floor(((t-.42)/.58).coerceIn(0.0,1.0)*7).toInt()
-        val model=if(p.sprite) "combat_vfx/ribbon/slash_${if(p.spriteMirror) "reverse_" else ""}${p.palette}_$stage" else
+        val model=if(p.stellarBurst) "combat_vfx/stellar/burst_${p.palette}_$stage" else
+            if(p.sprite) "combat_vfx/ribbon/slash_${if(p.spriteMirror) "reverse_" else ""}${p.palette}_$stage" else
             "combat_vfx/${p.shape}_${p.palette}" + if(p.erode && stage>0) "_fade$stage" else ""
         return CoreMeshPose(at,p.scale.mul(grow),p.yaw+angle,p.pitch+p.pitchTravel*u,p.roll+p.rollTravel*u,
             model,age>=p.delayTicks && age<p.delayTicks+p.durationTicks)
@@ -73,6 +78,13 @@ internal object CoreSkillChoreography {
             durationTicks=life,erode=false) }
         if(e.phase==CoreSkillVisualPhase.CONTACT) {
             val p=raw.first()
+            // Only accepted hits reach CONTACT. Never attach this explosion to an empty ray.
+            if(e.sceneId in setOf("star_thread","star_needle","star_break")) {
+                val burst=stellarBurst(p.offset,atan2(e.direction.x(),e.direction.z()),
+                    if(e.sceneId=="star_break") 3.6 else 1.7,if(e.sceneId=="star_break") 24 else 16)
+                // Star Needle's gameplay mark retains its own identity and location.
+                return if(e.sceneId=="star_needle") burst+ p.copy(durationTicks=14,secondary=true) else burst
+            }
             return listOf(p.copy(durationTicks=14,motion=CoreMeshMotion.SNAP,erode=true,startSize=.35,endSize=1.35),
                 p.copy(offset=p.offset.add(.25,.15,.02),scale=p.scale.mul(.5),delayTicks=3,durationTicks=16,
                     motion=CoreMeshMotion.RADIATE,travel=Vec(.5,.55,.1),spin=.7,secondary=true,erode=true))
@@ -155,11 +167,32 @@ internal object CoreSkillChoreography {
                     motion=if(inward) CoreMeshMotion.GATHER else CoreMeshMotion.RADIATE,erode=true)
             }
         }
-        if(s.kind==CoreSceneKind.RAIN && s.palette=="astral") {
-            repeat(2) { i -> base+=CoreCombatMeshPart("star_orbit",s.palette,Vec(0.0,.85,0.0),Vec(2.5,1.0,2.5),
-                pitch=if(i==0) .55 else -.55,spin=if(i==0) 1.5 else -1.5,secondary=true,
-                startSize=.3,endSize=1.5,durationTicks=life,delayTicks=i*3,motion=CoreMeshMotion.RADIATE,erode=true) }
+        if(e.sceneId in setOf("starfall","star_ult")) {
+            // The core was already seen descending in PREPARE. PULSE is its breakup,
+            // not a second stationary core and two unrelated orbit diagrams.
+            val landed=base.removeAt(0)
+            val floorIndex=base.indexOfFirst { it.ground }
+            if(floorIndex>=0) {
+                val floor=base[floorIndex]
+                val size=min(e.radius,3.6)*2
+                base[floorIndex]=floor.copy(shape="star_spark",stellarBurst=true,erode=false,
+                    scale=Vec(size,1.0,size),startSize=.6,endSize=1.0,spin=.35,
+                    delayTicks=2,durationTicks=life-2,motion=CoreMeshMotion.RADIATE)
+            }
+            base.addAll(0,stellarBurst(landed.offset,atan2(e.direction.x(),e.direction.z()),
+                if(e.skill.ultimate) 6.0 else 4.3,life))
         }
         return base
+    }
+
+    private fun stellarBurst(at: Vec,yaw: Double,size: Double,life: Int): List<CoreCombatMeshPart> {
+        val main=CoreCombatMeshPart("star_spark","astral",at,Vec(size,1.0,size),
+            yaw=yaw-PI/4,pitch=-PI/2,roll=.18,startSize=.8,endSize=1.0,
+            durationTicks=life,motion=CoreMeshMotion.SNAP,stellarBurst=true,rollTravel=.45)
+        // Crossing planes provide depth and side visibility, rather than viewer-facing cards.
+        // The cool secondary wake has a different clock, angle and upward drift.
+        return listOf(main,main.copy(palette="ice",yaw=yaw+PI/4,roll=-.3,
+            scale=Vec(size*.82,1.0,size*.82),delayTicks=2,durationTicks=life-2,
+            travel=Vec(0.0,.2,0.0),secondary=true,rollTravel=-.5))
     }
 }
