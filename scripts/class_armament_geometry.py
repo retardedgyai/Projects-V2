@@ -283,6 +283,9 @@ def item_definition(name):
     base={'type':'minecraft:model','model':f'projects:item/weapons/{name}'}
     animated={'type':'minecraft:range_dispatch','property':'minecraft:custom_model_data','index':0,
         'fallback':base, 'entries':[{'threshold':i,'model':{'type':'minecraft:model','model':f'projects:item/weapons/{name}_frame{i:02d}'}} for i in range(FRAMES)]}
+    for stage,offset in (('prepare',12),('release',18)):
+        animated['entries'] += [{'threshold':offset+i,'model':{'type':'minecraft:model',
+            'model':f'projects:item/weapons/{name}_{stage}{i:02d}'}} for i in range(6)]
     return {'model':{'type':'minecraft:select','property':'minecraft:display_context',
         'cases':[{'when':['gui','fixed','ground'],'model':base}], 'fallback':animated}, 'hand_animation_on_swap':False}
 

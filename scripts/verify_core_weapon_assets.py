@@ -5,6 +5,7 @@ import math
 from pathlib import Path
 from PIL import Image
 from class_armament_geometry import ASSETS, KINDS, FRAMES, MATERIALS, authored_model, item_definition
+from class_armament_actions import ACTION_FRAMES, action_model
 
 
 def point(v, rotation):
@@ -29,7 +30,7 @@ def verify(jar=None):
     def read(path):
         assert 'assets/projects/'+path in index, path
         return json.loads((ASSETS/path).read_text())
-    count=0
+    count=0; action_count=0
     for kind in KINDS:
         for tier in range(1,5):
             name=f'{kind}_t{tier}'
@@ -67,8 +68,30 @@ def verify(jar=None):
                         assert -8<=gx<=8 and -8<=gy<=8,(name,e['name'],gx,gy)
                 count+=1
             assert len(set(poses))>=6,(name,'idle animation has insufficient distinct poses')
+            for stage in ('prepare','release'):
+                actions=[]
+                for frame in range(ACTION_FRAMES):
+                    data=read(f'models/item/weapons/{name}_{stage}{frame:02d}.json')
+                    assert data==action_model(kind,tier,stage,frame)
+                    assert 15<=len(data['elements'])<=128
+                    actions.append(json.dumps(data['elements'],sort_keys=True))
+                    for e in data['elements']:
+                        assert all(-16<=a<b<=32 for a,b in zip(e['from'],e['to'])),(name,stage,frame,e['name'])
+                        if r:=e.get('rotation'):
+                            assert r['angle'] in (-45,-22.5,0,22.5,45) and r['axis'] in ('x','y','z') and not r['rescale']
+                        for corner in range(8):
+                            p=point([e['to'][j] if corner&(1<<j) else e['from'][j] for j in range(3)],e.get('rotation'))
+                            assert all(math.isfinite(v) and -16<=v<=32 for v in p),(name,stage,frame,e['name'],p)
+                        for face in e['faces'].values():
+                            uv=face['uv']
+                            assert face['texture']=='#atlas' and all(0<=v<=16 for v in uv)
+                            assert uv[0]<uv[2] and uv[1]<uv[3]
+                            assert int(uv[0]//4)==int((uv[2]-1e-7)//4) and int(uv[1]//4)==int((uv[3]-1e-7)//4)
+                    action_count+=1
+                assert len(set(actions))==ACTION_FRAMES,(name,stage,'must have six distinct poses')
+            assert read(f'models/item/weapons/{name}_release05.json')==authored_model(kind,tier,0)
     assert not any(x.startswith(('assets/minecraft/items/','assets/minecraft/models/')) for x in index)
-    print(f'PASS: {len(KINDS)*4} weapons / {count} exported frames; 64px atlas, max 4 shades per material, UV tiles, finite bounds, GUI sockets, index, changed geometry, no vanilla overrides.')
+    print(f'PASS: {len(KINDS)*4} weapons / {count} idle + {action_count} action poses; 64px atlas, max 4 shades per material, UV tiles, finite bounds, GUI sockets, index, changed geometry, no vanilla overrides.')
     if jar: print('No vanilla source textures are referenced; --vanilla-jar retained for command compatibility.')
 
 

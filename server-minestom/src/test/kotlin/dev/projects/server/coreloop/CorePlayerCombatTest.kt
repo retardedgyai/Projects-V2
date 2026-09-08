@@ -4,6 +4,7 @@ import dev.projects.server.mob.QuestEncounterCombat
 import net.minestom.server.Auth
 import net.minestom.server.MinecraftServer
 import net.minestom.server.coordinate.Pos
+import net.minestom.server.component.DataComponents
 import net.minestom.server.entity.GameMode
 import net.minestom.server.entity.Player
 import net.minestom.server.entity.attribute.Attribute
@@ -24,6 +25,66 @@ import kotlin.test.assertTrue
 
 /** Real Minestom entities, but no sockets, external client, native input, or live server port. */
 class CorePlayerCombatTest {
+    @Test fun `switching held weapons or disabling pack cancels stale action poses`() = arena { h ->
+        CoreCombatPresentation.pack(h.player,true)
+        try {
+            val item=CoreLoopItems.gear(CoreAccount(h.player.uuid),CoreGearSlot.WEAPON,true)
+            h.player.setItemInMainHand(item)
+            val definition=CoreSkillCatalog.skills(CoreClass.WARRIOR).first { it.icon=="war_wound" }
+            val effect=CoreSkillEffect(CoreClass.WARRIOR,definition,h.player.position,h.player.position.direction(),CoreSkillVisualPhase.PREPARE)
+            CoreArmamentPresentation.skill(h.player,effect)
+            assertEquals(12f,h.player.itemInMainHand.get(DataComponents.CUSTOM_MODEL_DATA)!!.floats().first())
+            h.player.setItemInMainHand(net.minestom.server.item.ItemStack.AIR)
+            CoreArmamentPresentation.tick(h.player,true)
+            h.player.setItemInMainHand(item);CoreArmamentPresentation.tick(h.player,true)
+            assertEquals(0f,h.player.itemInMainHand.get(DataComponents.CUSTOM_MODEL_DATA)!!.floats().first())
+            CoreArmamentPresentation.skill(h.player,effect)
+            CoreArmamentPresentation.tick(h.player,false)
+            CoreArmamentPresentation.tick(h.player,true)
+            assertEquals(0f,h.player.itemInMainHand.get(DataComponents.CUSTOM_MODEL_DATA)!!.floats().first())
+        } finally { CoreCombatPresentation.forget(h.player) }
+    }
+
+    @Test fun `accepted class casts animate equipped models and cancellation returns them to idle`() = arena { h ->
+        CoreCombatPresentation.pack(h.player,true)
+        try {
+            for(job in CoreClass.entries) {
+                h.journey=CoreJourney(job=job);h.base=CoreWeaponBase.entries.first { it.usable(job) };h.actor.reset()
+                val a=CoreAccount(h.player.uuid,journey=h.journey,
+                    weaponIdentity=CoreGearIdentity(UUID.randomUUID(),h.player.uuid,base=h.base))
+                h.player.setItemInMainHand(CoreLoopItems.gear(a,CoreGearSlot.WEAPON,true))
+                h.actor.refillTraining()
+                h.actor.skill(0)
+                fun pose()=h.player.itemInMainHand.get(DataComponents.CUSTOM_MODEL_DATA)?.floats()?.firstOrNull()
+                assertEquals(12f,pose(),"$job accepted anticipation")
+                h.ticks(h.actor.skillDefinitions[0].startupTicks(h.actor.sheet))
+                assertEquals(18f,pose(),"$job first authoritative pulse")
+                h.actor.resetActions();CoreArmamentPresentation.tick(h.player,true)
+                assertEquals(0f,pose(),"$job cancelled visual clip")
+            }
+        } finally { CoreCombatPresentation.forget(h.player) }
+    }
+
+    @Test fun `rejected casts and target contact do not invent or restart weapon release`() = arena { h ->
+        CoreCombatPresentation.pack(h.player,true)
+        try {
+            h.journey=CoreJourney(job=CoreClass.MAGE);h.base=CoreWeaponBase.STAFF;h.actor.reset()
+            val a=CoreAccount(h.player.uuid,journey=h.journey,
+                weaponIdentity=CoreGearIdentity(UUID.randomUUID(),h.player.uuid,base=h.base))
+            h.player.setItemInMainHand(CoreLoopItems.gear(a,CoreGearSlot.WEAPON,true))
+            h.weaponBroken=true;h.actor.skill(0)
+            assertEquals(null,h.player.itemInMainHand.get(DataComponents.CUSTOM_MODEL_DATA))
+            h.weaponBroken=false;h.actor.skill(0)
+            val prepared=h.player.itemInMainHand
+            val definition=h.actor.skillDefinitions[0]
+            CoreArmamentPresentation.skill(h.player,CoreSkillEffect(CoreClass.MAGE,definition,h.player.position,h.player.position.direction(),CoreSkillVisualPhase.CONTACT))
+            CoreArmamentPresentation.skill(h.player,CoreSkillEffect(CoreClass.MAGE,definition,h.player.position,h.player.position.direction(),pulse=1))
+            assertEquals(prepared,h.player.itemInMainHand)
+            h.actor.skill(0) // Pending cast rejects the repeated command.
+            assertEquals(prepared,h.player.itemInMainHand)
+        } finally { CoreCombatPresentation.forget(h.player) }
+    }
+
     @Test fun `training refill clears costs but preserves all in-flight whirlwind hit timings`() = arena(bossDistance = 2.0) { h ->
         h.actor.skill(2)
         repeat(5) { h.actor.refillTraining(); h.ticks(1) }

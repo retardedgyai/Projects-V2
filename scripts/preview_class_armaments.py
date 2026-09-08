@@ -65,12 +65,12 @@ def render_model(model,textures,yaw=-25,size=(W,H),scale=9.2):
     return Image.fromarray(pixels)
 
 
-def render(kind,tier,frame,yaw=-25):
-    model=json.loads((ASSETS/f'models/item/weapons/{kind}_t{tier}_frame{frame:02d}.json').read_text())
+def render(kind,tier,frame,yaw=-25,stage='frame'):
+    model=json.loads((ASSETS/f'models/item/weapons/{kind}_t{tier}_{stage}{frame:02d}.json').read_text())
     atlas=np.array(Image.open(ASSETS/'textures/item/weapons/materials.png').convert('RGBA'))
     image=render_model(model,{'atlas':atlas},yaw); draw=ImageDraw.Draw(image)
     draw.text((10,8),LABELS[KINDS.index(kind)],font=FONT,fill='#ece3cd')
-    draw.text((10,28),f'T{tier} / frame {frame:02d}',font=FONT,fill='#9faeb8')
+    draw.text((10,28),f'T{tier} / {stage} {frame:02d}',font=FONT,fill='#9faeb8')
     return image
 
 
@@ -90,6 +90,18 @@ def main():
             for i,kind in enumerate(KINDS): strip.paste(render(kind,4,frame),(i*W,30))
             frames.append(strip)
         frames[0].save(OUT/'idle.gif',save_all=True,append_images=frames[1:],duration=100,loop=0)
+        actions=[]
+        for stage in ('prepare','release'):
+            for frame in range(6):
+                strip=Image.new('RGB',(W*7,H+30),'#171b20')
+                ImageDraw.Draw(strip).text((10,5),'構え→放出→復帰のモデル確認（実機では構え時間をスキルに合わせる）',font=FONT,fill='#d5cec0')
+                for i,kind in enumerate(KINDS): strip.paste(render(kind,4,frame,stage=stage),(i*W,30))
+                actions.append(strip)
+        actions[0].save(OUT/'actions.gif',save_all=True,append_images=actions[1:],duration=100,loop=0)
+        actions[5].save(OUT/'prepared.png')
+        action_sheet=Image.new('RGB',(W*7,(H+30)*6),'#171b20')
+        for row,index in enumerate((0,2,5,6,8,11)): action_sheet.paste(actions[index],(0,row*(H+30)))
+        action_sheet.save(OUT/'action-poses.png')
     print(OUT)
 
 

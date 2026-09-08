@@ -11,6 +11,50 @@ import java.util.UUID
 import kotlin.test.*
 
 class CoreArmamentPresentationTest {
+    @Test fun `bow firing poses are assigned to arrows and rain never traps guards or blink`() {
+        MinecraftServer.init(Auth.Offline())
+        val id=UUID.randomUUID()
+        val a=CoreAccount(id,journey=CoreJourney(job=CoreClass.RANGER),
+            weaponIdentity=CoreGearIdentity(UUID.randomUUID(),id,base=CoreWeaponBase.LONGBOW))
+        val item=CoreLoopItems.gear(a,CoreGearSlot.WEAPON,true)
+        for(motif in CoreSkillMotif.entries) assertEquals(motif in setOf(CoreSkillMotif.ARROW,CoreSkillMotif.RAIN),CoreArmamentPresentation.usesWeapon(item,motif))
+        assertFalse(CoreArmamentPresentation.usesWeapon(ItemStack.of(Material.BOW),CoreSkillMotif.ARROW))
+    }
+
+    @Test fun `action clock spans anticipation and settles with no extrapolated or negative frames`() {
+        MinecraftServer.init(Auth.Offline())
+        for (stage in CoreArmamentPresentation.Stage.entries) for (duration in 2..61) {
+            val clip=CoreArmamentPresentation.Clip(stage,100,duration,ItemStack.AIR,UUID.randomUUID())
+            assertNull(clip.poseAt(99)); assertNull(clip.poseAt(100L+duration))
+            assertEquals(stage.offset,clip.poseAt(100))
+            assertEquals(stage.offset+5,clip.poseAt(99L+duration))
+            val poses=(0 until duration).map { clip.poseAt(100L+it)!! }
+            assertEquals(poses.sorted(),poses)
+            assertTrue(poses.all { it in stage.offset..stage.offset+5 })
+        }
+    }
+
+    @Test fun `action poses preserve all gear components and export every requested frame`() {
+        MinecraftServer.init(Auth.Offline())
+        for(job in CoreClass.entries) for(tier in 1..4) {
+            val id=UUID.randomUUID(); val base=CoreWeaponBase.entries.first { it.usable(job) }
+            val a=CoreAccount(id,weaponTier=tier,journey=CoreJourney(job=job),
+                weaponIdentity=CoreGearIdentity(UUID.randomUUID(),id,base=base))
+            val item=CoreLoopItems.gear(a,CoreGearSlot.WEAPON,true)
+                .with(DataComponents.CUSTOM_MODEL_DATA,CustomModelData(listOf(0f,42f),listOf(true),listOf("keep"),emptyList()))
+            for(stage in CoreArmamentPresentation.Stage.entries) for(frame in 0..5) {
+                val pose=CoreArmamentPresentation.pose(item,stage.offset+frame)
+                val data=pose.get(DataComponents.CUSTOM_MODEL_DATA)!!
+                assertEquals((stage.offset+frame).toFloat(),data.floats().first())
+                assertEquals(listOf(42f),data.floats().drop(1)); assertEquals(listOf(true),data.flags()); assertEquals(listOf("keep"),data.strings())
+                assertEquals(item.without(DataComponents.CUSTOM_MODEL_DATA),pose.without(DataComponents.CUSTOM_MODEL_DATA))
+                val key=CoreArmamentPresentation.model(base,job,tier).substringAfter(':')
+                val suffix=stage.name.lowercase()+"%02d".format(frame)
+                assertNotNull(javaClass.classLoader.getResource("core-ui-pack/assets/projects/models/item/${key}_$suffix.json"))
+            }
+        }
+    }
+
     @Test fun `every class and tier selects an exported dedicated model only with pack`() {
         MinecraftServer.init(Auth.Offline())
         val seen = mutableSetOf<String>()

@@ -178,6 +178,7 @@ internal class GreatswordVfx(private val player: Player) {
     fun playSkill(effect: ParticleEffect) {
         if (player.instance !== instance) cancel()
         instance = player.instance
+        if (effect is CoreSkillEffect) CoreArmamentPresentation.skill(player, effect)
         if (activeEffects >= MAX_EFFECTS) scheduler.cancelAll() // Shed old normal trails before a skill pulse.
         if (activeEffects < MAX_EFFECTS) {
             if (effect is CoreSkillEffect) effect.solidCompanion = CoreCombatPresentation.packed(player)
@@ -230,6 +231,9 @@ internal class GreatswordVfx(private val player: Player) {
         sound(SoundEvent.ITEM_ARMOR_EQUIP_IRON, .30f, if (step == 3) .65f else .9f)
     }
     fun swingSound(step: Int) {
+        if (player.instance !== instance) cancel()
+        instance = player.instance
+        CoreArmamentPresentation.meleeRelease(player)
         sound(SoundEvent.ITEM_TRIDENT_THROW, .7f, floatArrayOf(.78f, .9f, .55f)[step - 1])
         sound(SoundEvent.ENTITY_PLAYER_ATTACK_SWEEP, .55f, if (step == 3) .65f else .8f)
     }
@@ -238,6 +242,7 @@ internal class GreatswordVfx(private val player: Player) {
         sound(SoundEvent.ITEM_TRIDENT_HIT, .45f, if (heavy) .65f else 1.0f)
     }
     fun cancel() {
+        CoreArmamentPresentation.cancel(player)
         scheduler.cancelAll(); combatScheduler.cancelAll(); meshes.cancel(); frame.clear(); elementalFrame.clear(); manager.resetCounters()
         contactHold = 0; holdAfterFrame = 0; contactSoundThisTick = false; instance = null
     }
