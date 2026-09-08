@@ -16,6 +16,7 @@ from build_texture_first_sword import compile_model
 from build_pixel_armament_pack import definition, write_json
 from preview_class_armaments import FONT, render_model, rotated
 from process_specialist_armament_art import OUT as SOURCE, JOBS
+from pixel_weapon_display import grip_pixels, grip_point, calibrated_display
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT/'.tools/specialist-armament-pack'
@@ -54,12 +55,7 @@ def turn(elements,axis,angle,origin):
 def geometry(key,entry):
     textures = {part:np.asarray(Image.open(SOURCE/f'{key}-{part}.png')) for part in entry['parts']}
     # Each weapon is anchored at its grip/gutter, never at the texture's center.
-    if key=='bow': pivot = centroid(textures['grip'])[0]
-    elif key=='tome': pivot = entry['padding']+entry['content_size'][0]/2
-    elif key=='mace':
-        yy,xx = np.nonzero(textures['body'][:,:,3]>0)
-        pivot = float(np.median(xx[(yy>42)&(yy<68)]))+.5
-    else: pivot = centroid(textures['shaft'])[0]
+    pivot,_ = grip_pixels(key,entry,textures)
     scale = entry['height']/entry['content_size'][1]
     top,bottom = entry['padding'],entry['padding']+entry['content_size'][1]
     def point(px,py,z=8): return [round(8+(px-pivot)*scale,6),round((bottom-py)*scale,6),z]
@@ -77,11 +73,6 @@ def geometry(key,entry):
     base['elements'] = []
     base['textures'] = {part:f'projects:item/weapons/pixel_{key}_{part}' for part in textures}
     base['textures']['particle'] = next(iter(base['textures'].values()))
-    for context in ('firstperson','thirdperson'):
-        left = deepcopy(base['display'][f'{context}_righthand'])
-        left['rotation'][1] *= -1; left['rotation'][2] *= -1
-        base['display'][f'{context}_lefthand'] = left
-    base['display']['fixed'] = {'rotation':[0,180,0],'translation':[0,-3,0],'scale':[.45]*3}
     base['credit'] = 'ProjectS specialist texture-led weapon; isolated native animation review'
     anchors = {}
     if key=='bow':
@@ -99,9 +90,10 @@ def geometry(key,entry):
         anchors['hinge'] = point(pivot,top+entry['content_size'][1]/2,7.54)
         parts['left_page'] = translate(parts['left_page'],[0,0,-.46])
         parts['right_page'] = translate(parts['right_page'],[0,0,-.46])
-        base['display']['gui'] = {'rotation':[0,0,0],'translation':[0,0,0],'scale':[.72]*3}
     elif key=='astrolabe': anchors['star'] = point(*centroid(textures['star']))
     else: anchors['crystal'] = point(*centroid(textures['crystal']))
+    base['display'] = calibrated_display(key,grip_point(key,entry,textures),
+        pose(key,base,parts,anchors)['elements'],base['display'])
     return base,parts,textures,anchors
 
 

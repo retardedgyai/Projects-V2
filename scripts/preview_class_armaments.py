@@ -27,11 +27,12 @@ def rotated(v, r):
     return p@matrix.T+o
 
 
-def render_model(model,textures,yaw=-25,size=(W,H),scale=9.2):
+def render_model(model,textures,yaw=-25,size=(W,H),scale=9.2,projector=None):
     width,height=size
     pixels=np.full((height,width,3),[27,30,35],dtype=np.uint8); depth=np.full((height,width),np.inf)
     yaw,pitch=math.radians(yaw),math.radians(8)
     def project(v):
+        if projector is not None: return projector(v)
         x,y,z=v-np.array([8,0,8]); x,z=x*math.cos(yaw)+z*math.sin(yaw),-x*math.sin(yaw)+z*math.cos(yaw)
         y,z=y*math.cos(pitch)-z*math.sin(pitch),y*math.sin(pitch)+z*math.cos(pitch)
         return np.array([width/2+x*scale,height-33-y*scale,z])

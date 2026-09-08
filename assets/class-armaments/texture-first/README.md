@@ -4,6 +4,38 @@
 
 ## 最新状態 — Python加工の許可後
 
+### 7武器の表示位置補正（2026-09-09）
+
+`pixel_weapon_display.py` で、武器ごとの描かれた握りをモデルの基準点にする。
+魔杖は末端の石突きではなく中央の柄、弓は握り、聖典は綴じの下側を使う。
+通常/三人称それぞれの指定点へ平行移動を解き、全アニメーションで同じdisplayを保つ。
+左手の回転をこちらでも反転していた二重反転を修正した。
+26.2の `ItemTransform.apply` 自体が左手のrotation.y/zとtranslation.xを反転するため、
+モデルJSONの左右のrotationは同じ値でよい。
+
+GUIは静止形状の外接範囲を回転後に中央へ合わせ、XYを14単位以内へ等比縮小。
+額縁用fixedは12単位以内。聖典は斜めにせず正面。PNG/UV/作画は変更していない。
+
+確認:
+
+- Python 40件と起動mock 4件が成功。追加5件は左右の握り、回転順、全175ポーズの
+  display固定、GUI/fixedの中央配置/非伸長、原稿の握り領域を検査。
+- `test_pixel_weapon_display.py` を直接実行すると `.tools/native-cuboid-check/display-contract.json`
+  を生成。`CheckNativeWeaponDisplay.java` に渡し、実際の26.2クラスで全175ポーズ×4手持ち
+  コンテキスト＝700点の変換を確認した。クライアントの起動/操作/改造はしていない。
+- `CheckNativeCuboidModels.java` で175モデルの読み込みと不正軸の拒否を再確認。
+  実際のサーバーbundle処理も8,698ファイル/28武器参照を再確認。
+- `preview_pixel_weapon_displays.py` の `.tools/weapon-playtest-resources/display-review.png` は
+  保存済みJSON/PNG/displayからGUI倍率2/4相当を正投影した確認画像。ゲーム画面ではない。
+  見切れ/偏りはなくなったが、低倍率では弓/杖の暗く細い部分が弱い。
+  リファレンス同等の視認性/作画品質を達成したとは扱わない。
+
+主な流れ: 原稿内の握り → nativeモデル座標 → 左右の表示変換 → 静止形状のGUI配置 →
+任意テストパック。重要ファイル/ずれの初動調査先は `pixel_weapon_display.py` と
+`display-contract.json`、縮小表示は `display-review.png`。
+**指定点への数学的な一致と、実機で掌に自然に収まることは別。後者は未確認。**
+稼働中ゲーム/通常RP/防具/UIは変更していない。Tier別原稿・全動画確認・品質一致は引き続き未完。
+
 ### 武器だけの任意テスト起動
 
 **防具はユーザーの中止指示により制作終了。既存防具を変更/削除しない。**

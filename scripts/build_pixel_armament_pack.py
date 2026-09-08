@@ -14,6 +14,7 @@ import numpy as np
 from PIL import Image, ImageDraw
 from build_texture_first_sword import compile_model
 from preview_class_armaments import render_model, FONT
+from pixel_weapon_display import grip_pixels, grip_point, calibrated_display
 
 ROOT=Path(__file__).resolve().parents[1]
 SOURCE=ROOT/'assets/class-armaments/texture-first/processed-v01'
@@ -30,9 +31,8 @@ SHAPES={
 def geometry(key,entry):
     body=np.asarray(Image.open(SOURCE/f'{key}-body.png'))
     jewel=np.asarray(Image.open(SOURCE/f'{key}-jewel.png'))
-    ys,xs=np.nonzero(body[:,:,3]>0)
-    grip_x=xs[ys>entry['rows'][-2]]
-    pivot=float(np.median(grip_x))+.5
+    textures={'body':body,'jewel':jewel}
+    pivot,_=grip_pixels(key,entry,textures)
     names,thickness,jewel_depth=SHAPES[key]
     spec={'height':entry['height'],'top_pixel':entry['rows'][0],
           'bottom_pixel':entry['rows'][-1],'pivot_pixel_x':pivot,'alpha_cutoff':128,
@@ -50,13 +50,10 @@ def geometry(key,entry):
         for face in e['faces'].values(): face['texture']='#body'
     for e in gem['elements']:
         for face in e['faces'].values(): face['texture']='#jewel'
-    for prefix in ('firstperson','thirdperson'):
-        left=deepcopy(base['display'][f'{prefix}_righthand'])
-        left['rotation'][1]*=-1; left['rotation'][2]*=-1
-        base['display'][f'{prefix}_lefthand']=left
-    base['display']['fixed']={'rotation':[0,180,0],'translation':[0,-3,0],'scale':[.45]*3}
+    base['display']=calibrated_display(key,grip_point(key,entry,textures),
+                                      pose(base,gem,key)['elements'],base['display'])
     base['credit']='ProjectS texture-led pixel armament; isolated art review, no client mod'
-    return base,gem,{'body':body,'jewel':jewel}
+    return base,gem,textures
 
 
 def pose(base,gem,key,stage='rest',frame=0):
