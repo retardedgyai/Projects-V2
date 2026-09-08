@@ -1,0 +1,47 @@
+{
+  "tool": "built-in image_gen; no CLI/API fallback",
+  "reference": {
+    "url": "https://x.com/MatE312001/status/2096478906299699459",
+    "role": "Dark Sister video screenshot, material style only; website UI ignored"
+  },
+  "generation": [
+    {
+      "key": "bow",
+      "prompt": "Use case: stylized-concept. Create one Minecraft weapon texture artwork. Image 1 is a STYLE reference ONLY: the red dark sword inside the video, ignore all website UI and words. Match its coarse deliberate square pixel clusters, restrained charcoal/plum body, broad clean painted highlight bands, hard stepped sharp silhouette and nearly flat thin fins. Texture defines shape, not stacked boxes. Flat orthographic view, no perspective, no lighting render, no glossy/PBR metal, no blur, bloom, gradients, antialiasing, tiny noise, or voxel cubes. Intended native artwork about 32x80 pixels enlarged with nearest-neighbor. One fully visible weapon with generous margin. Actual RGBA transparent background if possible; no painted checkerboard, shadow or extra props. No text/logos. An upright long recurved bow viewed from the SIDE, its whole dark curved limb profile visible. Both slender tips sweep toward the LEFT, the handgrip is at the farthest RIGHT at middle height. Charcoal and dark forest green limbs, a wide continuous moss-green stepped highlight ribbon following the outer bend, only a few pale yellow-green edge accents. Distinct wrapped central grip with a small green gem. Two asymmetric thin leaflike fin ornaments near the grip, not a chunky dragon head. Draw NO STRING and NO ARROW; the string will be a separate moving native model. Preserve a large open space left of the limb, not a filled shield or thick wooden bar.",
+      "source": "sources/bow-v01.png",
+      "generatedFile": "exec-f7c3a512-6eb0-498c-9711-9a325cfcb79e.png",
+      "status": "selected-for-pixel-texture-review"
+    },
+    {
+      "key": "mace",
+      "prompt": "Use case: stylized-concept. Create one Minecraft weapon texture artwork. Image 1 is a STYLE reference ONLY: the red dark sword inside the video, ignore all website UI and words. Match its coarse deliberate square pixel clusters, restrained charcoal/plum body, broad clean painted highlight bands, hard stepped sharp silhouette and nearly flat thin fins. Texture defines shape, not stacked boxes. Flat orthographic view, no perspective, no lighting render, no glossy/PBR metal, no blur, bloom, gradients, antialiasing, tiny noise, or voxel cubes. Intended native artwork about 32x80 pixels enlarged with nearest-neighbor. One fully visible weapon with generous margin. Actual RGBA transparent background if possible; no painted checkerboard, shadow or extra props. No text/logos. An upright templar's flanged mace, head up and long slender dark wrapped handle down. Dark charcoal-blue head occupying the upper third, with a clear hollow diamond core and four sharply tapering flanges silhouetted as thin painted fins. Broad teal edge bands and pale gold restrained near the socket; one small teal diamond suspended in the hollow core. Purposeful powerful mace profile, not a hammer, axe, staff or spiky ball. Tapered geometric surfaces with the reference sword's texture-led fin finish. No stacked rectangular blocks and no thick cage of rods.",
+      "generatedFile": "exec-8f9cc90f-478a-4ce3-a95a-7e9d31b51436.png",
+      "status": "rejected-spear-like-silhouette; original not shipped"
+    },
+    {
+      "key": "tome",
+      "prompt": "Use case: stylized-concept. Create one Minecraft weapon texture artwork. Image 1 is a STYLE reference ONLY: the red dark sword inside the video, ignore all website UI and words. Match its coarse deliberate square pixel clusters, restrained charcoal/plum body, broad clean painted highlight bands, hard stepped sharp silhouette and nearly flat thin fins. Texture defines shape, not stacked boxes. Flat orthographic view, no perspective, no lighting render, no glossy/PBR metal, no blur, bloom, gradients, antialiasing, tiny noise, or voxel cubes. Intended native artwork about 32x80 pixels enlarged with nearest-neighbor. One fully visible weapon with generous margin. Actual RGBA transparent background if possible; no painted checkerboard, shadow or extra props. No text/logos. A healer's OPEN spellbook laid flat and seen exactly from the FRONT above its open pages, book filling most of a nearly square composition. Two distinct flat warm parchment pages side-by-side, dark plum center binding, dark leather cover peeking around the silhouette with small sharply tapered brass corners and one red ribbon below. Page shading is 3 broad flat ivory/ochre blocks, NOT noisy parchment. Left page has one large angular gold cross/star motif, right page has one large warm amber diamond sigil. No readable letters or tiny handwriting. Leave a clear dark central gutter so pages can later hinge independently. Same hard pixel clusters and dark-to-bright weight as the reference blade, absolutely no smooth painting, isometric projection or 3D render.",
+      "source": "sources/tome-v01.png",
+      "generatedFile": "exec-978ce957-ef01-47c9-b55b-ead1c06c1f6d.png",
+      "status": "selected-for-pixel-texture-review"
+    },
+    {
+      "key": "astrolabe",
+      "prompt": "Use case: stylized-concept. Create one Minecraft weapon texture artwork. Image 1 is a STYLE reference ONLY: the red dark sword inside the video, ignore all website UI and words. Match its coarse deliberate square pixel clusters, restrained charcoal/plum body, broad clean painted highlight bands, hard stepped sharp silhouette and nearly flat thin fins. Texture defines shape, not stacked boxes. Flat orthographic view, no perspective, no lighting render, no glossy/PBR metal, no blur, bloom, gradients, antialiasing, tiny noise, or voxel cubes. Intended native artwork about 32x80 pixels enlarged with nearest-neighbor. One fully visible weapon with generous margin. Actual RGBA transparent background if possible; no painted checkerboard, shadow or extra props. No text/logos. An upright starweaver's astral staff with a large OPEN broken circular star ring in the upper third and a long restrained dark navy wrapped shaft below. Ring is made of thin sharply tapered dark violet flat fins with a broad muted gold edge ribbon and isolated lilac accents. Its circle has deliberate open breaks at upper-right and lower-left, NOT a continuous solid disk. A single small pale lilac four-point star floats independently at the center of the large transparent hole, separated from every ring segment. Do not draw other stars or particles. Two small thin dark brackets connect the lower ring to the shaft. Distinct from a forked crystal staff: the open ring and center star are the silhouette focal point. Same coarse pixel density, hard painted bands and thin ornament feel as the reference.",
+      "source": "sources/astrolabe-v01.png",
+      "generatedFile": "exec-911b4a82-0466-46f8-a98b-5e7f17f715f4.png",
+      "status": "selected-for-pixel-texture-review"
+    }
+  ],
+  "edit": {
+    "key": "mace",
+    "prompt": "Use case: precise-object-edit. Image 1 is the edit target: a weapon texture whose head mistakenly resembles a spear. Change ONLY the upper weapon head into a short, broad, heavy flanged MACE crown. Preserve the dark charcoal/plum body, broad teal highlight ribbons, muted brass socket, wrapped slender handle and decorated lower pommel. Head WIDTH should be greater than head HEIGHT; remove the long pointed central spear spike entirely. Four broad striking flanges surround a small hollow diamond with teal crystal, top has short blunt crown teeth, side flanges end in substantial stepped striking corners, not long points. The result must read as a heavy mace, never a spear, sword or staff. Match the existing coarse square painted pixel clusters, hard stepped silhouette, thin fin material finish; no stacked voxel boxes, no glossy/PBR render, blur or antialiasing. Flat front orthographic view, entire weapon visible, unchanged handle proportions, transparent RGBA background if possible, no painted checkerboard, shadows, labels or extra props.",
+    "editTarget": "exec-8f9cc90f-478a-4ce3-a95a-7e9d31b51436.png",
+    "generatedFile": "exec-fa744b52-b646-4c0d-95ed-8cd5ca8846ec.png",
+    "source": "sources/mace-v02.png",
+    "status": "selected for review; shorter crown improves blunt silhouette, not final quality approval"
+  },
+  "actualSourceMode": "All four selected sources are RGB and contain painted checkerboard, not real alpha.",
+  "processing": "User-authorized Python: source-specific extraction, foreground-only median pooling, 16-color palette and part separation. Originals retained byte-for-byte; hashes and sizes in processed-specialists-v01/manifest.json.",
+  "runtime_applied": false
+}
