@@ -2,7 +2,7 @@
 
 No post-process bloom or painted-in embellishment. Texture UVs/tints/alpha are read
 from the pack; native model faces use the vanilla concrete base colours. This
-orthographic QA does not emulate Minecraft occlusion, packet latency or lighting.
+projection QA does not emulate Minecraft occlusion, packet latency or lighting.
 Run CoreSkillChoreographyTest first, then this script. Outputs stay in .tools.
 """
 import argparse
@@ -32,19 +32,23 @@ def texture_for(name, tint):
     texture[:,:,:3] = (texture[:,:,:3].astype(float) * color / 255).astype('uint8')
     return Image.fromarray(texture)
 
-def render(parts, name, tick):
+def render(parts, name, tick, view='iso'):
     image = Image.new('RGBA', (W,H), '#1b222a')
     draw = ImageDraw.Draw(image)
     cx, cy, scale = 160, 184, 34
     draw.text((8,5), name, font=FONT, fill='#efe4c9')
     draw.text((8,25), f'{tick/20:.2f}s / 20 ticks per second', font=FONT, fill='#b8b8b0')
     def project(x,y,z):
+        if view=='eye':
+            depth=max(.1,z+.7)
+            return (W/2+x/depth*160,H/2+(1.62-y)/depth*160,depth)
         return (cx + (x*.94+z*.34)*scale, cy+(z*.53-x*.19-y*.82)*scale, z*.77-x*.28+y*.58)
     for n in range(-4,5):
-        draw.line([project(n,0,-3)[:2],project(n,0,5)[:2]], fill='#2a343e')
-        draw.line([project(-4,0,n)[:2],project(4,0,n)[:2]], fill='#2a343e')
-    draw.rectangle((cx-9,cy-48,cx+9,cy),outline='#82909c')
-    draw.rectangle((cx-8,cy-61,cx+8,cy-49),outline='#82909c')
+        draw.line([project(n,0,0 if view=='eye' else -3)[:2],project(n,0,5)[:2]], fill='#2a343e')
+        if view!='eye' or n>=0: draw.line([project(-4,0,n)[:2],project(4,0,n)[:2]], fill='#2a343e')
+    if view!='eye':
+        draw.rectangle((cx-9,cy-48,cx+9,cy),outline='#82909c')
+        draw.rectangle((cx-8,cy-61,cx+8,cy-49),outline='#82909c')
     draw.line([project(0,0,0)[:2],project(0,0,4)[:2]],fill='#ab923e',width=2)
     faces=[]
     for p in parts:
@@ -65,13 +69,17 @@ def render(parts, name, tick):
                 texture=texture_for(model['textures'][face['texture'][1:]],tint)
                 if uv[1]>uv[3]: texture=texture.transpose(Image.Transpose.FLIP_TOP_BOTTOM)
                 if uv[0]>uv[2]: texture=texture.transpose(Image.Transpose.FLIP_LEFT_RIGHT)
-                points=[vertices[i] for i in (2,3,6)] # image TL,TR,BL before UV reversal
-                source=np.array([[v[0],v[1],1] for v in points])
-                if abs(np.linalg.det(source))<.01: continue
-                target=np.array([[0,0],[texture.width,0],[0,texture.height]])
-                matrix=np.linalg.solve(source,target).T
-                warped=texture.transform((W,H),Image.Transform.AFFINE,tuple(matrix.flatten()),Image.Resampling.BILINEAR)
-                faces.append((sum(v[2] for v in points)/3,warped,None))
+                points=[vertices[i] for i in (2,3,7,6)] # image TL,TR,BR,BL before UV reversal
+                target=((0,0),(texture.width,0),(texture.width,texture.height),(0,texture.height))
+                matrix=[]; result=[]
+                for (x,y,_),(u,v) in zip(points,target):
+                    matrix.extend(((x,y,1,0,0,0,-u*x,-u*y),(0,0,0,x,y,1,-v*x,-v*y)))
+                    result.extend((u,v))
+                try: coefficients=np.linalg.solve(matrix,result)
+                except np.linalg.LinAlgError: continue
+                # Preserve the pack's visible texels. Smoothing this QA would conceal pixel-art defects.
+                warped=texture.transform((W,H),Image.Transform.PERSPECTIVE,tuple(coefficients),Image.Resampling.NEAREST)
+                faces.append((sum(v[2] for v in points)/4,warped,None))
             else:
                 for ids in ((0,1,3,2),(4,6,7,5),(0,4,5,1),(2,3,7,6),(0,2,6,4),(1,5,7,3)):
                     points=[vertices[i] for i in ids]
@@ -87,6 +95,7 @@ def main():
     parser=argparse.ArgumentParser()
     parser.add_argument('--ids',default='dash,slam,ass_execute,ass_fan,ass_poison,starfall,star_cloud,temp_pull')
     parser.add_argument('--prefix',default='choreography-review')
+    parser.add_argument('--view',choices=('iso','eye'),default='iso')
     args=parser.parse_args()
     source=json.loads((ROOT/'.tools/skill-choreography-frames.json').read_text(encoding='utf-8'))
     ids=args.ids.split(',')
@@ -95,10 +104,11 @@ def main():
     end=max(len(s['frames']) for s in scenes)
     for tick in range(end+10):
         sheet=Image.new('RGB',(W*4,H*math.ceil(len(scenes)/4)+26),'#111820')
-        ImageDraw.Draw(sheet).text((8,3),'実装モデル＋実時間の連続確認（ゲーム画面ではありません／灰枠は身長1.8m）',font=FONT,fill='#d7d0be')
+        label='目線高1.62mの簡易透視投影' if args.view=='eye' else '灰枠は身長1.8m'
+        ImageDraw.Draw(sheet).text((8,3),f'実装モデル＋実時間の連続確認（ゲーム画面ではありません／{label}）',font=FONT,fill='#d7d0be')
         for i,s in enumerate(scenes):
             parts=s['frames'][tick] if tick<len(s['frames']) else []
-            sheet.paste(render(parts,s['name']+' / '+s['id'],tick),(i%4*W,i//4*H+26))
+            sheet.paste(render(parts,s['name']+' / '+s['id'],tick,args.view),(i%4*W,i//4*H+26))
         frames.append(sheet)
         if tick in (0,3,6,10,16,24,32): sheet.save(ROOT/f'.tools/{args.prefix}-{tick:02d}.png')
     frames[0].save(ROOT/f'.tools/{args.prefix}.gif',save_all=True,append_images=frames[1:],duration=50,loop=0)

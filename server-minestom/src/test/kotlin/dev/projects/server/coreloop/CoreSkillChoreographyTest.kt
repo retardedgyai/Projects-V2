@@ -5,10 +5,31 @@ import com.google.gson.JsonParser
 import net.minestom.server.coordinate.Vec
 import java.nio.file.Files
 import java.nio.file.Path
+import javax.imageio.ImageIO
 import kotlin.test.*
 import kotlin.math.*
 
 class CoreSkillChoreographyTest {
+    @Test fun `slash pack contains crisp pixel frames without opaque tile borders`() {
+        val frameHashes=mutableSetOf<Int>()
+        var maximumInk=0
+        repeat(16) { frame ->
+            val path="/core-ui-pack/assets/projects/textures/combat_vfx/ribbon/slash_$frame.png"
+            val image=javaClass.getResourceAsStream(path)!!.use { ImageIO.read(it) }
+            assertEquals(64,image.width,path);assertEquals(64,image.height,path)
+            val pixels=image.getRGB(0,0,64,64,null,0,64)
+            val colors=pixels.toSet()
+            assertTrue(colors.size<=5,"$path colors=${colors.size}")
+            assertTrue(colors.all { (it ushr 24) in setOf(0,255) },"$path has soft alpha")
+            for(y in 0 until 64) for(x in 0 until 64) {
+                if(x<4 || x>=60 || y<4 || y>=60) assertEquals(0,pixels[y*64+x] ushr 24,"$path gutter ($x,$y)")
+            }
+            maximumInk=maxOf(maximumInk,pixels.count { it ushr 24>0 })
+            frameHashes+=pixels.contentHashCode()
+        }
+        assertTrue(maximumInk in 100..1600,"Blade must be a connected readable mass, not blank or an opaque card: $maximumInk")
+        assertTrue(frameHashes.size>=12,"Animation must change its artwork, not just transform a static PNG")
+    }
     private fun effect(job: CoreClass,id: String,phase: CoreSkillVisualPhase=CoreSkillVisualPhase.PULSE): CoreSkillEffect {
         val skill=CoreSkillCatalog.skills(job).first { it.icon==id }
         val ray=CoreSkillScenes.get(id).kind==CoreSceneKind.RAY
@@ -58,6 +79,20 @@ class CoreSkillChoreographyTest {
             for(p in CoreSkillChoreography.parts(effect(job,s.icon)).filter { it.sprite }) {
                 assertTrue(CoreSkillChoreography.pose(p,p.delayTicks+4.0).model.endsWith("_7"),s.icon)
                 assertTrue(CoreSkillChoreography.pose(p,p.delayTicks+p.durationTicks-1.0).model.endsWith("_15"),s.icon)
+            }
+        }
+    }
+    @Test fun `warrior blade planes are not edge on from owner eye height`() {
+        for(id in listOf("dash","war_wound","war_counter","slam","war_ult")) {
+            val part=CoreSkillChoreography.parts(effect(CoreClass.WARRIOR,id)).first()
+            for(tick in 1..6) {
+                val p=CoreSkillChoreography.pose(part,tick.toDouble())
+                // The quad normal is +Y before pitch, roll and yaw (same order as runtime).
+                val x=-sin(p.roll)*cos(p.pitch);val y=cos(p.roll)*cos(p.pitch);val z=sin(p.pitch)
+                val normal=Vec(x*cos(p.yaw)+z*sin(p.yaw),y,-x*sin(p.yaw)+z*cos(p.yaw))
+                val sight=Vec(0.0,1.62,-.7).sub(p.offset).normalize()
+                val projected=abs(normal.x()*sight.x()+normal.y()*sight.y()+normal.z()*sight.z())
+                assertTrue(projected>.18,"$id tick=$tick visible-plane fraction=$projected")
             }
         }
     }

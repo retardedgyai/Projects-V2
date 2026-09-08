@@ -135,17 +135,24 @@ def build_combat_models(assets, write_json):
 
 
 def build_slash_frames(assets, write_json):
-    master = Path(__file__).resolve().parents[1] / 'assets/combat-vfx/slash-luminance-atlas.png'
+    master = Path(__file__).resolve().parents[1] / 'assets/combat-vfx/slash-pixel-atlas-v1.png'
     atlas = Image.open(master).convert('RGB')
+    layout=json.loads(master.with_suffix('.layout.json').read_text())
+    assert list(atlas.size)==layout['sourceSize'] and len(layout['frames'])==16
     colors = dict(steel=0xeaf4ff,gold=0xffd87b,astral=0xdca6ff,ice=0x85e2ff,fire=0xffab52,
                   venom=0xb5ff5a,life=0xadffcb,shadow=0xe1b5ff,hunter=0xe8ffa3,holy=0xffedb0,lightning=0xb9dfff)
     for frame in range(16):
-        x,y=frame%4,frame//4
-        tile=atlas.crop((round(x*atlas.width/4),round(y*atlas.height/4),round((x+1)*atlas.width/4),round((y+1)*atlas.height/4)))
-        # The generated master is a luminance/emission plate, not an RGBA promise.
-        # Convert that production mask to cutout alpha; never ship its black canvas into the world.
-        tile=tile.resize((128,128),Image.Resampling.LANCZOS).convert('L')
-        alpha=tile.point(lambda value: min(255,max(0,value-12)*2))
+        # Generated rows are not perfectly evenly spaced: use inspected frame rectangles,
+        # including their empty gutters, rather than cutting a shard into the next frame.
+        tile=atlas.crop(layout['frames'][frame])
+        # This source was authored as pixel clusters, not the rejected smooth atlas.
+        # Import to its 64px logical grid without smoothing and normalize the four inks.
+        # RGB black is background, not a translucent rectangle; frame breakup supplies the fade.
+        tile=tile.resize((64,64),Image.Resampling.NEAREST).convert('L')
+        tile=tile.point(lambda v: 0 if v<32 else 64 if v<96 else 128 if v<160 else 192 if v<224 else 255)
+        alpha=tile.point(lambda v: 255 if v else 0)
+        for box in ((0,0,64,4),(0,60,64,64),(0,0,4,64),(60,0,64,64)):
+            assert alpha.crop(box).getbbox() is None, f'{master.name} frame {frame}: artwork reaches tile gutter'
         rgba=Image.merge('RGBA',(tile,tile,tile,alpha))
         texture=assets/f'textures/combat_vfx/ribbon/slash_{frame}.png'
         texture.parent.mkdir(parents=True,exist_ok=True);rgba.save(texture)

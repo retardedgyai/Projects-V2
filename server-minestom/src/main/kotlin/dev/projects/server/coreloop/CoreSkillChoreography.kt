@@ -111,14 +111,21 @@ internal object CoreSkillChoreography {
             // The atlas is an evolving trail, not a full silhouette scaled away at the end.
             val ribbon=p.copy(sprite=true,spriteMirror=sign<0,erode=false,
                 offset=Vec(0.0,if(vertical) 1.25 else 1.1,0.0).add(forward.mul(if(spin) 0.0 else r*.55)),
-                scale=Vec(if(vertical) 2.25 else r*2,1.0,if(spin) r*2 else r),pitch=0.0,roll=if(vertical) PI/2 else p.roll,
-                yaw=if(spin) yaw else yaw-sign*.15,spin=if(spin) sign*PI*2 else sign*.3,startSize=.9,endSize=1.0,
+                // A perfectly horizontal sweep or forward YZ cleave is edge-on from the
+                // owner's eyes. Cant the authored stroke planes, without camera billboarding.
+                scale=Vec(if(vertical) 2.25 else r*2,1.0,if(spin) r*2 else r),
+                pitch=if(!vertical && !spin) -.45 else 0.0,roll=if(vertical) PI/2 else p.roll,
+                yaw=if(vertical) yaw+sign*.38 else if(spin) yaw else yaw-sign*.15,
+                spin=if(spin) sign*PI*2 else if(vertical) -sign*.12 else sign*.3,startSize=.9,endSize=1.0,
                 durationTicks=life,travel=if(vertical) Vec(0.0,-.15,0.0) else forward.mul(.12),
                 rollTravel=if(vertical) -.12 else sign*.12,motion=if(spin) CoreMeshMotion.REVOLVE else CoreMeshMotion.SWEEP)
             base[0]=ribbon
             // A delayed separate curved wake has its own plane and shorter lifetime, not an identical stamped copy.
             base+=ribbon.copy(offset=ribbon.offset.add(0.0,.13,0.0),scale=ribbon.scale.mul(.82),
-                delayTicks=3,durationTicks=(life*.8).toInt(),secondary=true,roll=ribbon.roll+.2,spin=ribbon.spin*.7)
+                delayTicks=3,durationTicks=(life*.8).toInt(),secondary=true,
+                yaw=if(vertical) yaw-sign*.38 else ribbon.yaw,
+                pitch=if(!vertical && !spin) -.25 else ribbon.pitch,
+                roll=ribbon.roll+.2,spin=if(vertical) sign*.12 else ribbon.spin*.7)
             if(s.body=="cross_cut") {
                 // Two upright opposing cuts, not the warrior's horizontal crescent recoloured.
                 base[0]=ribbon.copy(pitch=-PI/2,roll=.72,scale=Vec(r,1.0,r),spin=0.0,rollTravel=-.2)
