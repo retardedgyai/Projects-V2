@@ -23,10 +23,10 @@ function Start-Process {
 function Check([bool]$Condition, [string]$Message) {
     if (-not $Condition) { throw $Message }
 }
-function Invoke-Intercepted([bool]$Review, [string]$ExpectedError) {
+function Invoke-Intercepted([bool]$Review, [string]$ExpectedError, [bool]$Material = $false) {
     $taskLaunchState.Arguments = @()
     try {
-        & $taskLauncher -JavaHome $JavaHome -WeaponArtReview:$Review
+        & $taskLauncher -JavaHome $JavaHome -WeaponArtReview:$Review -WeaponMaterialReview:$Material
         throw 'Expected launcher interception/guard'
     } catch {
         Check ($_.Exception.Message.Contains($ExpectedError)) "Unexpected launcher error: $($_.Exception.Message)"
@@ -34,15 +34,24 @@ function Invoke-Intercepted([bool]$Review, [string]$ExpectedError) {
 }
 
 Invoke-Intercepted $false 'TEST_LAUNCH_INTERCEPTED'
-Check (($taskLaunchState.Arguments -join ' ') -notmatch 'weapon-playtest-resources') 'Default launch changed its resource source'
+Check (($taskLaunchState.Arguments -join ' ') -notmatch '(weapon|material)-playtest-resources') 'Default launch changed its resource source'
 Invoke-Intercepted $true 'TEST_LAUNCH_INTERCEPTED'
 $taskArgumentString = $taskLaunchState.Arguments -join ' '
 Check ($taskArgumentString -match 'weapon-playtest-resources;') 'Review root must precede the installed jars'
 Check ($taskLaunchState.Calls -eq 2) 'Both valid cases should reach the intercepted launcher'
+Invoke-Intercepted $false 'TEST_LAUNCH_INTERCEPTED' $true
+Check (($taskLaunchState.Arguments -join ' ') -match 'material-playtest-resources;') 'Material root must precede installed jars'
+Check (($taskLaunchState.Arguments -join ' ') -notmatch 'weapon-playtest-resources') 'Material review must not enable all weapon replacements'
+Check ($taskLaunchState.Calls -eq 3) 'Material mode should reach the intercepted launcher'
 $taskLaunchState.Mode = 'stale'
 Invoke-Intercepted $true '古い武器確認パック'
-Check ($taskLaunchState.Calls -eq 2) 'Stale resources must not launch'
+Invoke-Intercepted $false '古い武器確認パック' $true
+Check ($taskLaunchState.Calls -eq 3) 'Stale resources must not launch'
 $taskLaunchState.Mode = 'busy'
 Invoke-Intercepted $true '使用中'
-Check ($taskLaunchState.Calls -eq 2) 'Busy server must never be replaced or stopped'
-'4 launch checks passed; Start-Process was mocked; no process was started.'
+Invoke-Intercepted $false '使用中' $true
+Check ($taskLaunchState.Calls -eq 3) 'Busy server must never be replaced or stopped'
+$taskLaunchState.Mode = 'normal'
+Invoke-Intercepted $true '同時に選べません' $true
+Check ($taskLaunchState.Calls -eq 3) 'Conflicting review modes must not launch'
+'8 launch checks passed; Start-Process was mocked; no process was started.'

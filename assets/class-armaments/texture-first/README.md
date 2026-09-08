@@ -4,6 +4,29 @@
 
 ## 最新状態 — Python加工の許可後
 
+### 大剣v02を手動テストへつなぐ専用起動モード（2026-09-09）
+
+`scripts/build_material_playtest_pack.py` でインストール済みサーバーJARのRPを読み、
+**T1大剣のアイテム参照一つだけ**を本体v02/鍔の奥行き/赤い刃のエフェクトへ変更する確認用snapshotを追加。
+元JAR・通常RPを変更しない。ほかの武器/Tier・防具・UI・装備性能はそのまま。
+
+次にユーザーが起動を求めたときは、snapshotを生成してから
+`scripts/start-core-loop.ps1 -WeaponMaterialReview -JavaHome <Java25>` で選択できる。
+通常起動では選ばれない。全武器を変える既存の `-WeaponArtReview` とは同時指定不可。
+今回この起動コマンドは実行していない。ユーザーのゲーム・サーバーは操作していない。
+
+- 原稿再変換 → 薄い本体/独立鍔/宝石 → 25ポーズと24コマの刃テクスチャ →
+  JAR内RPに一つの装備参照だけ差し替え → 専用classpathから次回起動時に配布。
+- `projects:weapons/greatsword_t1` を維持し、既存サーバーのCustomModelDataの
+  0〜11待機/12〜17構え/18〜23放出/24以上静止のRPグラフを接続する。
+  ステータス、ダメージ、サーバーのクラス共通処理、クライアントコードは変更しない。
+- 対象Python35件、起動mock8件成功。ポート使用中/古いJARのsnapshot/両モード同時指定は起動前に拒否。
+  実26.2の25モデルと連番metadataを検査。実サーバーのbundle関数で8,510ファイルをbyte単位で照合。
+  ゲーム内の表示/握り/最終feelは未確認。参考同等の作画認定はしていない。
+- 最重要/不具合時の確認先: `build_material_playtest_pack.py` の `candidate_resources` / `assemble`。
+  出力は `.tools/material-playtest-resources`。古いsnapshotで起動拒否されたらbuilderを再実行する。
+  この確認用パックは全武器の完成や本編採用を意味しない。防具中止の方針も変わらない。
+
 ### 指定作品を直接参照した大剣本体v02（2026-09-09）
 
 ログイン済みのMatE指定ポストの正面寄りフレームを、組み込みimagegenに直接渡して

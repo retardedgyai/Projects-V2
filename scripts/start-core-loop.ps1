@@ -2,10 +2,14 @@ param(
     [string]$JavaHome = $env:JAVA_HOME,
     [int]$Port = 25565,
     [int]$MaxMemoryMb = 3072,
-    [switch]$WeaponArtReview
+    [switch]$WeaponArtReview,
+    [switch]$WeaponMaterialReview
 )
 
 $ErrorActionPreference = 'Stop'
+if ($WeaponArtReview -and $WeaponMaterialReview) {
+    throw '武器全体の確認と大剣一本の質感確認は同時に選べません。どちらか一方を指定してください。'
+}
 $projectRoot = Split-Path -Parent $PSScriptRoot
 if (-not $JavaHome) { throw 'Java 25 の JAVA_HOME または -JavaHome を指定してください。' }
 $java = Join-Path $JavaHome 'bin\java.exe'
@@ -18,22 +22,28 @@ if (Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyCon
     throw "ポート $Port は使用中です。既存サーバーを確認してから停止してください。"
 }
 $classPath = "$libraries\*"
-if ($WeaponArtReview) {
-    $reviewRoot = Join-Path $projectRoot '.tools\weapon-playtest-resources'
+if ($WeaponArtReview -or $WeaponMaterialReview) {
+    $reviewFolder = if ($WeaponMaterialReview) { '.tools\material-playtest-resources' } else { '.tools\weapon-playtest-resources' }
+    $reviewBuilder = if ($WeaponMaterialReview) { 'build_material_playtest_pack.py' } else { 'build_weapon_playtest_pack.py' }
+    $reviewRoot = Join-Path $projectRoot $reviewFolder
     $reviewReportPath = Join-Path $reviewRoot 'report.json'
     if (-not (Test-Path -LiteralPath $reviewReportPath)) {
-        throw '先に scripts/build_weapon_playtest_pack.py を実行してください。'
+        throw "先に scripts/$reviewBuilder を実行してください。"
     }
     $reviewReport = Get-Content -LiteralPath $reviewReportPath -Raw | ConvertFrom-Json
     $installedHash = (Get-FileHash -LiteralPath (Join-Path $libraries 'server-minestom-0.1.0-SNAPSHOT.jar') -Algorithm SHA256).Hash.ToLowerInvariant()
     if ($installedHash -ne $reviewReport.server_jar_sha256) {
-        throw 'サーバー更新後の古い武器確認パックです。build_weapon_playtest_pack.py で再生成してください。'
+        throw "サーバー更新後の古い武器確認パックです。$reviewBuilder で再生成してください。"
     }
     if (-not (Test-Path -LiteralPath (Join-Path $reviewRoot 'core-ui-pack\index.txt'))) {
         throw '武器確認パックの索引がありません。再生成してください。'
     }
     $classPath = "$reviewRoot;$classPath"
-    Write-Host '武器作画確認モード：大剣・短剣・魔杖・メイス・弓はT1〜4別原稿、魔導書・星盤はTier共通原稿。UI・防具・性能は変更しません。'
+    if ($WeaponMaterialReview) {
+        Write-Host '大剣一本の質感確認モード：T1大剣のみ本体v02と赤い刃のエフェクトに変更。UI・ほかの装備・性能は通常版のままです。'
+    } else {
+        Write-Host '武器作画確認モード：大剣・短剣・魔杖・メイス・弓はT1〜4別原稿、魔導書・星盤はTier共通原稿。UI・防具・性能は変更しません。'
+    }
 }
 $runDirectory = Join-Path $projectRoot 'server-minestom\run'
 [void](New-Item -ItemType Directory -Path $runDirectory -Force)
