@@ -430,15 +430,17 @@ class CoreSkillChoreographyTest {
             }
         }
     }
-    @Test fun `slash changes artwork over time and keeps a separate delayed wake`() {
+    @Test fun `slash draws through a fixed plane without a duplicate delayed crescent`() {
         for(id in listOf("ass_execute","ass_fan","ass_ult")) {
             val parts=CoreSkillChoreography.parts(effect(CoreClass.ASSASSIN,id))
             val blade=parts.first()
-            assertTrue(blade.sprite,id)
-            assertTrue(blade.durationTicks>=22,id)
+            assertEquals("directional_cut",blade.shape,id)
+            assertTrue(blade.durationTicks in 6..14,id)
             val states=(0 until blade.durationTicks).map { CoreSkillChoreography.pose(blade,it.toDouble()) }
-            assertTrue(states.map { it.model }.distinct().size>=12,id)
-            assertTrue(parts.any { it.secondary && it.delayTicks>=3 && it.sprite },id)
+            assertTrue(states.map { it.model }.distinct().size>=6,id)
+            assertEquals(1,states.map { Triple(it.yaw,it.pitch,it.roll) }.distinct().size,id)
+            assertEquals(1,states.map { it.offset to it.scale }.distinct().size,id)
+            assertTrue(parts.none { it.secondary || it.sprite },id)
             assertFalse(CoreSkillChoreography.pose(parts.last(),-1.0).visible)
         }
         val poison=CoreSkillChoreography.parts(effect(CoreClass.ASSASSIN,"ass_poison"))
@@ -448,9 +450,10 @@ class CoreSkillChoreographyTest {
     }
     @Test fun `stroke peaks early while its dissolving wake remains readable`() {
         for(job in CoreClass.entries) for(s in CoreSkillCatalog.skills(job)) {
-            for(p in CoreSkillChoreography.parts(effect(job,s.icon)).filter { it.sprite }) {
-                assertTrue(CoreSkillChoreography.pose(p,p.delayTicks+4.0).model.endsWith("_7"),s.icon)
-                assertTrue(CoreSkillChoreography.pose(p,p.delayTicks+p.durationTicks-1.0).model.endsWith("_15"),s.icon)
+            for(p in CoreSkillChoreography.parts(effect(job,s.icon)).filter { it.shape=="directional_cut" }) {
+                val peak=if(p.durationTicks<=6) 2.0 else if(p.durationTicks<=10) 3.0 else 4.0
+                assertTrue(CoreSkillChoreography.pose(p,p.delayTicks+peak).model.endsWith("_4"),s.icon)
+                assertTrue(CoreSkillChoreography.pose(p,p.delayTicks+p.durationTicks-1.0).model.endsWith("_11"),s.icon)
             }
         }
     }
@@ -468,17 +471,18 @@ class CoreSkillChoreographyTest {
             }
         }
     }
-    @Test fun `return cuts mirror their UVs and orbital cuts stay centered on their owner`() {
+    @Test fun `return cuts reverse the stroke and full circles traverse four fixed sectors`() {
         val first=CoreSkillChoreography.parts(effect(CoreClass.WARRIOR,"dash")).first()
         val reverse=CoreSkillChoreography.parts(effect(CoreClass.WARRIOR,"war_counter")).first()
         assertNotEquals(first.spriteMirror,reverse.spriteMirror)
-        assertTrue(first.spin*reverse.spin<0)
-        for(id in listOf("ass_fan","ass_ult")) {
-            val p=CoreSkillChoreography.parts(effect(CoreClass.ASSASSIN,id)).first()
-            assertEquals(0.0,p.offset.x());assertEquals(0.0,p.offset.z())
-            assertEquals(CoreMeshMotion.REVOLVE,p.motion)
-            assertEquals(2*PI,abs(CoreSkillChoreography.pose(p,6.0).yaw-p.yaw),.00001)
+        assertEquals(0.0,first.spin);assertEquals(0.0,reverse.spin)
+        for((job,id) in listOf(CoreClass.ASSASSIN to "ass_fan",CoreClass.WARRIOR to "whirl")) {
+            val sectors=CoreSkillChoreography.parts(effect(job,id))
+            assertEquals(listOf(0,2,4,6),sectors.map { it.delayTicks })
+            assertEquals(4,sectors.map { it.yaw }.distinct().size)
+            for(p in sectors) assertEquals(p.yaw,CoreSkillChoreography.pose(p,p.delayTicks+3.0).yaw)
         }
+        assertEquals(2,CoreSkillChoreography.parts(effect(CoreClass.ASSASSIN,"ass_ult")).size)
         for(reverseUv in listOf(false,true)) {
             val name="slash_${if(reverseUv) "reverse_" else ""}0"
             val model=javaClass.getResourceAsStream("/core-ui-pack/assets/projects/models/combat_vfx/ribbon/$name.json")!!
@@ -499,7 +503,7 @@ class CoreSkillChoreographyTest {
                 val a=heading*PI/4
                 val direction=Vec(sin(a),0.0,cos(a))
                 val e=CoreSkillEffect(job,skill,Vec.ZERO,direction,CoreSkillVisualPhase.PULSE)
-                for(p in CoreSkillChoreography.parts(e).filter { it.sprite }) repeat(p.durationTicks) { tick ->
+                for(p in CoreSkillChoreography.parts(e).filter { it.shape=="directional_cut" }) repeat(p.durationTicks) { tick ->
                     val pose=CoreSkillChoreography.pose(p,(p.delayTicks+tick).toDouble())
                     for(x0 in listOf(-.5,.5)) for(z0 in listOf(-.5,.5)) {
                         var x=x0*pose.scale.x();var y=0.0;var z=z0*pose.scale.z()

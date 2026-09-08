@@ -34,6 +34,7 @@ internal object CoreSkillChoreography {
     }
     private fun ease(t: Double)=1-(1-t.coerceIn(0.0,1.0)).pow(3)
     fun pose(p: CoreCombatMeshPart, age: Double): CoreMeshPose {
+        CoreSlashChoreography.pose(p,age)?.let { return it }
         CoreFrostChoreography.pose(p,age)?.let { return it }
         CoreWarriorSupportChoreography.pose(p,age)?.let { return it }
         CoreStarweaverChoreography.pose(p,age)?.let { return it }
@@ -164,6 +165,8 @@ internal object CoreSkillChoreography {
         if(e.sceneId in setOf("ass_stab","ass_chase","ass_contract")) return assassinThrust(e,life)
         if(e.sceneId in setOf("ass_escape","ass_guard")) return shadowDeparture(e,life)
         if(e.sceneId=="ass_poison") return venomBite(e,life)
+        if(s.kind in setOf(CoreSceneKind.CUT,CoreSceneKind.CLEAVE,CoreSceneKind.SPIN))
+            return CoreSlashChoreography.parts(e)
         val ray=s.kind==CoreSceneKind.RAY
         val base=raw.mapIndexed { i,p ->
             val motion=when(s.kind) {
@@ -186,40 +189,6 @@ internal object CoreSkillChoreography {
                 spin=if(s.kind==CoreSceneKind.FIELD && p.secondary) (if(i%2==0) 1 else -1)*1.4 else p.spin,
                 bend=if(p.secondary && !p.ground && !ray) Vec(0.0,.3,0.0) else Vec.ZERO)
         }.toMutableList()
-        val blade=s.kind in setOf(CoreSceneKind.CUT,CoreSceneKind.CLEAVE,CoreSceneKind.SPIN)
-        if(blade) {
-            val p=base.first()
-            val yaw=atan2(e.direction.x(),e.direction.z())
-            val r=min(s.reach,e.radius.coerceAtLeast(.5))
-            val forward=Vec(sin(yaw),0.0,cos(yaw))
-            val vertical=s.kind==CoreSceneKind.CLEAVE
-            val spin=s.kind==CoreSceneKind.SPIN
-            val sign=if(((if(s.body=="slash_reverse") 1 else 0)+e.pulse)%2==0) 1.0 else -1.0
-            // The atlas is an evolving trail, not a full silhouette scaled away at the end.
-            val ribbon=p.copy(atlas=CoreMeshAtlas.SLASH,spriteMirror=sign<0,erode=false,
-                offset=Vec(0.0,if(vertical) 1.25 else 1.1,0.0).add(forward.mul(if(spin) 0.0 else r*.55)),
-                // A perfectly horizontal sweep or forward YZ cleave is edge-on from the
-                // owner's eyes. Cant the authored stroke planes, without camera billboarding.
-                scale=Vec(if(vertical) 2.25 else r*2,1.0,if(spin) r*2 else r),
-                pitch=if(!vertical && !spin) -.45 else 0.0,roll=if(vertical) PI/2 else p.roll,
-                yaw=if(vertical) yaw+sign*.38 else if(spin) yaw else yaw-sign*.15,
-                spin=if(spin) sign*PI*2 else if(vertical) -sign*.12 else sign*.3,startSize=.9,endSize=1.0,
-                durationTicks=life,travel=if(vertical) Vec(0.0,-.15,0.0) else forward.mul(.12),
-                rollTravel=if(vertical) -.12 else sign*.12,motion=if(spin) CoreMeshMotion.REVOLVE else CoreMeshMotion.SWEEP)
-            base[0]=ribbon
-            // A delayed separate curved wake has its own plane and shorter lifetime, not an identical stamped copy.
-            base+=ribbon.copy(offset=ribbon.offset.add(0.0,.13,0.0),scale=ribbon.scale.mul(.82),
-                delayTicks=3,durationTicks=(life*.8).toInt(),secondary=true,
-                yaw=if(vertical) yaw-sign*.38 else ribbon.yaw,
-                pitch=if(!vertical && !spin) -.25 else ribbon.pitch,
-                roll=ribbon.roll+.2,spin=if(vertical) sign*.12 else ribbon.spin*.7)
-            if(s.body=="cross_cut") {
-                // Two upright opposing cuts, not the warrior's horizontal crescent recoloured.
-                base[0]=ribbon.copy(pitch=-PI/2,roll=.72,scale=Vec(r,1.0,r),spin=0.0,rollTravel=-.2)
-                base[base.lastIndex]=ribbon.copy(pitch=-PI/2,roll=-.72,scale=Vec(r,1.0,r),spin=0.0,
-                    rollTravel=.2,spriteMirror=!ribbon.spriteMirror,delayTicks=3,secondary=true)
-            }
-        }
         // Each family keeps its own visual verb, but gains a spatial foreground/midground/aftermath.
         if(!ray && s.kind in setOf(CoreSceneKind.RAIN,CoreSceneKind.NOVA,CoreSceneKind.PULL,CoreSceneKind.HAMMER)) {
             val count=if(e.skill.ultimate) 6 else 4

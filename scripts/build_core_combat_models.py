@@ -10,6 +10,7 @@ import json
 from PIL import Image
 from combat_vfx_shapes import AUTHORED_SHAPES, CROSSED, authored_cell
 from build_frost_domain import build_frost_domain
+from build_directional_slash_models import build as build_directional_slashes
 
 PALETTES = {
     "steel": ("white_concrete", "light_gray_concrete", "gray_concrete"),
@@ -943,6 +944,7 @@ def build_slash_frames(assets, write_json):
                 write_json(assets/f'items/combat_vfx/ribbon/{name}{palette}_{frame}.json',
                            {"model":{"type":"minecraft:model","model":f"projects:combat_vfx/ribbon/{name}{frame}",
                                      "tints":[{"type":"minecraft:constant","value":color}]}})
+    build_directional_slashes(assets, write_json)
 
 
 if __name__ == "__main__":

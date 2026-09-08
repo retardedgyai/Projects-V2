@@ -40,7 +40,7 @@ ass_poison|毒牙|CUT|venom|poison_fang|poison_drop|edge_glint|poison_splash|1.6
 ass_chase|追影|THRUST|shadow|dagger_tip|shadow_wisp|edge_glint|cut_spark|2.0|0.8|0.8|接近先から前方への短い追い突き。移動距離で巨大化しない
 ass_needle|影の針|RAY|shadow|shadow_needle|arrow_trail|edge_glint|blood_notch|1.1|0.4|0.4|視線に沿う細い黒紫の針。星核や輪を付けない
 ass_guard|残像|AFTERIMAGE|shadow|afterimage|shadow_wisp|cast_spark|shadow_spark|0.8|1.0|1.0|人型の影を本人の背後へずらす。盾として描かない
-ass_ult|無明連刃|SPIN|shadow|shadow_claw|dagger_fan|edge_glint|cut_spark|2.5|1.0|1.0|五判定に五回の短い周回斬撃。刃の傾きを交互に変える
+ass_ult|無明連刃|SPIN|shadow|shadow_claw|dagger_fan|edge_glint|cut_spark|2.5|1.0|1.0|五判定に五組の短い交差斬り。傾きと切る方向を交互に変え、斬撃画像を周回させない
 ass_contract|死の契約|THRUST|shadow|contract_blade|shadow_wisp|edge_glint|armor_break|2.6|1.0|1.0|接近後の一本の強い刺突と命中点の装甲割れ
 temp_mace|裁きの槌|HAMMER|gold|hammer_head|ground_crack|edge_glint|stone_impact|1.8|1.0|1.0|槌頭が正面へ落ちる。剣の三日月は使用しない
 temp_pull|集束|PULL|gold|chain_hook|gravity_funnel|cast_spark|light_spark|3.0|1.0|1.0|外周の鉤が本人へ収束。爆発のように外へ飛ばさない
