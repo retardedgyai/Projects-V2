@@ -79,16 +79,18 @@ class CoreExpandedSlashChoreographyTest {
     @Test fun `forward cutting surfaces are not edge on to the owner eye`() {
         for(id in listOf("war_wound","war_counter","slam","ass_execute")) {
             for(p in CoreSkillChoreography.parts(effect(id)).filter { !it.secondary }) {
-                val points=vertices(CoreSkillChoreography.pose(p,1.0))
-                var area=0.0;var projected=0.0
-                for(v in points.chunked(8)) {
-                    val a=v[3].sub(v[2]);val b=v[6].sub(v[2])
-                    val n=Vec(a.y()*b.z()-a.z()*b.y(),a.z()*b.x()-a.x()*b.z(),a.x()*b.y()-a.y()*b.x())
-                    val sight=Vec(0.0,1.62,-.7).sub(v[2].add(v[7]).mul(.5)).normalize()
-                    area+=n.length()
-                    projected+=abs(n.x()*sight.x()+n.y()*sight.y()+n.z()*sight.z())
+                for (age in listOf(1.0, 2.0)) {
+                    val points=vertices(CoreSkillChoreography.pose(p,age))
+                    var area=0.0;var projected=0.0
+                    for(v in points.chunked(8)) {
+                        val a=v[3].sub(v[2]);val b=v[6].sub(v[2])
+                        val n=Vec(a.y()*b.z()-a.z()*b.y(),a.z()*b.x()-a.x()*b.z(),a.x()*b.y()-a.y()*b.x())
+                        val sight=Vec(0.0,1.62,-.7).sub(v[2].add(v[7]).mul(.5)).normalize()
+                        area+=n.length()
+                        projected+=abs(n.x()*sight.x()+n.y()*sight.y()+n.z()*sight.z())
+                    }
+                    assertTrue(area>0 && projected/area>.18,"$id at $age edge-on fraction ${projected/area}")
                 }
-                assertTrue(area>0 && projected/area>.12,"$id edge-on fraction ${projected/area}")
             }
         }
     }

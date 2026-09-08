@@ -23,7 +23,7 @@ W, H = 360, 260
 def model_for(key):
     item = json.loads((PACK / f'items/{key}.json').read_text())['model']
     model = json.loads((PACK / ('models/' + item['model'].split(':')[1] + '.json')).read_text())
-    return model, item.get('tints', [{'value':0xffffff}])[0]['value']
+    return model, tuple(t['value'] for t in item.get('tints', [{'value':0xffffff}]))
 
 @lru_cache(maxsize=256)
 def texture_for(name, tint):
@@ -57,7 +57,7 @@ def render(parts, name, tick, view='iso', world_scale=34):
     draw.line([project(0,0,0)[:2],project(0,0,4)[:2]],fill='#ab923e',width=2)
     faces=[]
     for p in parts:
-        model,tint=model_for(p['model'])
+        model,tints=model_for(p['model'])
         pitch,yaw,roll=p['pitch'],p['yaw'],p['roll']
         def transform(v):
             x,y,z=[(v[i]-8)/16*p['scale'][i] for i in range(3)]
@@ -83,6 +83,7 @@ def render(parts, name, tick, view='iso', world_scale=34):
             if lo[1]==hi[1]:
                 # Vanilla FaceInfo.UP: (-X,+Y,-Z), (-X,+Y,+Z), (+X,+Y,+Z), (+X,+Y,-Z).
                 face=e['faces']['up']; uv=face['uv']
+                tint=tints[face.get('tintindex',0)] if 'tintindex' in face else 0xffffff
                 texture=texture_for(model['textures'][face['texture'][1:]],tint)
                 texture=texture.crop((round(min(uv[0],uv[2])/16*texture.width),round(min(uv[1],uv[3])/16*texture.height),
                                       round(max(uv[0],uv[2])/16*texture.width),round(max(uv[1],uv[3])/16*texture.height)))

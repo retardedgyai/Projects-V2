@@ -66,7 +66,7 @@ def ribbon(frame, wake=False):
                 continue
             speed = abs(lerp(ANGLES, birth+.2)-lerp(ANGLES, birth-.2))/.4
             # Speed changes the actual silhouette, not the global display scale.
-            width = (.35+speed*3.8)*math.sin(math.pi*(age+.12)/2.65)**.6
+            width = (.35+speed*4.6)*math.sin(math.pi*(age+.12)/2.65)**.6
             # Long tapered scallops, not a uniform crescent or noisy teeth.
             width *= .78 + .22*math.sin(birth*2.1)**2
             ink, drift = 2, 0
@@ -81,6 +81,11 @@ def ribbon(frame, wake=False):
             polygon(g, [pa, pb, pb-nb*width*.66, pa-na*width*.66], 2)
             polygon(g, [pa, pb, pb-nb*min(.45, width*.28),
                         pa-na*min(.45, width*.28)], 3)
+            if 16<i<40 and age<1.8:
+                # A broken internal highlight follows the blade, not its outer rim.
+                ridge=.35+.1*math.sin(birth*2)
+                polygon(g,[pa-na*width*ridge,pb-nb*width*ridge,
+                           pb-nb*(width*ridge+.14),pa-na*(width*ridge+.14)],3)
     if not wake and frame <= 6:
         p = tip(frame)
         tangent = tip(min(6, frame+.15))-tip(max(0, frame-.15))
@@ -164,7 +169,7 @@ def ink_uvs(assets):
     return out
 
 
-def geometry(grid, inks, wake=False, frame=0, curved=True):
+def geometry(grid, inks, wake=False, frame=0, curved=True, pigment=False):
     elements = []
     rows = fold_rows()
     for z, row in enumerate(grid):
@@ -178,16 +183,88 @@ def geometry(grid, inks, wake=False, frame=0, curved=True):
                 y, center_z, angle = rows[z] if curved else (8,z/4+.125,0)
                 if wake:
                     y += .10*max(0, frame-3)
-                u0, v0, u1, v1 = inks[ink]
+                u0, v0, u1, v1 = inks[3 if pigment else ink]
+                tint=ink-1 if pigment else 0
                 element = {'from':[start/4, y, center_z-.125], 'to':[end/4, y, center_z+.125],
                     'shade':False, 'faces':{
-                        'up':{'texture':'#0','uv':[u0,v1,u1,v0],'tintindex':0},
-                        'down':{'texture':'#0','uv':[u0,v0,u1,v1],'tintindex':0}}}
+                        'up':{'texture':'#0','uv':[u0,v1,u1,v0],'tintindex':tint},
+                        'down':{'texture':'#0','uv':[u0,v0,u1,v1],'tintindex':tint}}}
                 if angle:
                     element['rotation']={'origin':[(start+end)/8,y,center_z],
                                          'axis':'x','angle':angle,'rescale':False}
                 elements.append(element)
             start = end
+    return elements
+
+
+def pigments(family,layer):
+    """Authored colour clusters, not one grey value multiplied over the whole art."""
+    main={'steel':(0x46617b,0x9bcce8,0xf4fdff),
+          'gold':(0x8a4826,0xe9ae56,0xfff2c5),
+          'shadow':(0x56376e,0xbd75e4,0xf9e8ff)}[family]
+    if layer=='wake':
+        main={'steel':(0x35506a,0x6ba6c6,0xc8f0ff),
+              'gold':(0x664629,0xbe8c45,0xffdeb0),
+              'shadow':(0x423057,0x9663bf,0xe9c8ff)}[family]
+    if layer=='impact':
+        main=(0x915427,0xffb747,0xfffae1) if family!='shadow' else (0x733d85,0xe9a7ed,0xfff2ff)
+    return [{'type':'minecraft:constant','value':c} for c in main]
+
+
+def chips(point,frame,inks):
+    """Seven trailing splinters born on the cutting path, with actual depth.
+
+    Independent launch times, tapered shapes and normal-direction drift distinguish
+    these from a duplicate crescent. They remain in the existing wake display.
+    """
+    elements=[]
+    for i,birth in enumerate((2.0,2.55,3.1,3.65,4.2,4.75,5.3)):
+        age=frame-birth-.5
+        if not 0<age<5: continue
+        a,b=point(birth-.1),point(birth+.1)
+        tangent=(b-a)/max(.001,np.linalg.norm(b-a))
+        inward=np.array((8.,8.))-point(birth)
+        inward/=max(.001,np.linalg.norm(inward))
+        center=point(birth)+inward*.8+tangent*age*.13
+        normal=np.array((-tangent[1],tangent[0]))
+        # Three readable torn plates lead four narrow sparks. Equal tiny needles
+        # collapsed into pixel noise in the reference-scale review.
+        hero=i in (1,3,5)
+        length=(2.3 if hero else 1.3)*(1-age/5)**.65
+        width=(.65 if hero else .27)*(1-age/5)
+        g=np.zeros((SIZE,SIZE),dtype=np.uint8)
+        polygon(g,[center-tangent*length*.65,center+normal*width,
+                   center+tangent*length*.65,center-normal*width*.5],2 if age<3 else 1)
+        if age<2:
+            polygon(g,[center-tangent*length*.4,center+normal*width*.35,center+tangent*length*.6],3)
+        lift=(1 if i%2==0 else -1)*(.25+age*.18)
+        for e in geometry(g,inks,curved=False,pigment=True):
+            e['from'][1]+=lift;e['to'][1]+=lift
+            e['rotation']={'origin':[(e['from'][0]+e['to'][0])/2,8+lift,
+                                     (e['from'][2]+e['to'][2])/2],
+                           'axis':'x','angle':22.5 if i%2==0 else -22.5,'rescale':False}
+            elements.append(e)
+    return elements
+
+
+def impact_mesh(frame,inks):
+    if frame<2: return geometry(impact(frame),inks,curved=False,pigment=True)
+    if frame>=8: return []
+    elements=[]
+    life=(frame-2)/6
+    for i,(angle,length) in enumerate(((.15,4.2),(1.4,2.5),(2.8,3.4),(4.,2.2),(5.3,3.))):
+        if life>.6 and i%2==0: continue
+        d=np.array((math.cos(angle),math.sin(angle)));n=np.array((-d[1],d[0]))
+        c=np.array((8.,8.))+d*(1.2+life*3.1)
+        g=np.zeros((SIZE,SIZE),dtype=np.uint8)
+        polygon(g,[c-d*(1-life)*1.3,c+n*(1-life)*.3,c+d*(1-life)*.65,c-n*(1-life)*.2],2 if frame<5 else 1)
+        depth=(1 if i%2 else -1)*life*1.6
+        for e in geometry(g,inks,curved=False,pigment=True):
+            e['from'][1]+=depth;e['to'][1]+=depth
+            e['rotation']={'origin':[(e['from'][0]+e['to'][0])/2,8+depth,
+                                     (e['from'][2]+e['to'][2])/2],
+                           'axis':'x','angle':22.5 if i%2 else -22.5,'rescale':False}
+            elements.append(e)
     return elements
 
 
@@ -198,13 +275,14 @@ def build(assets, write):
         for frame in range(count):
             grid = impact(frame) if layer == 'impact' else ribbon(frame, layer == 'wake')
             name = f'combat_vfx/greatsword/{layer}_{frame}'
+            elements=impact_mesh(frame,inks) if layer=='impact' else geometry(grid,inks,layer=='wake',frame,pigment=True)
+            if layer=='wake': elements+=chips(tip,frame,inks)
             write(assets/f'models/{name}.json', {'ambientocclusion':False,
                 'textures':{'0':'projects:combat_vfx/ribbon/slash_5'},
-                'elements':geometry(grid, inks, layer=='wake', frame, curved=layer!='impact')})
+                'elements':elements})
             # Steel-white edge, blue-gray wake, warm contact. No borrowed purple/red identity.
-            color = {'blade':0xeaf4ff, 'wake':0x9dc4e3, 'impact':0xffd899}[layer]
             write(assets/f'items/{name}.json', {'model':{'type':'minecraft:model',
-                'model':f'projects:{name}', 'tints':[{'type':'minecraft:constant','value':color}]}})
+                'model':f'projects:{name}', 'tints':pigments('steel',layer)}})
     build_expanded(assets,write)
 
 

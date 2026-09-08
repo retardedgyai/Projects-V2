@@ -8,14 +8,14 @@ import numpy as np
 
 # angles, radii, center depth, ellipse, core width, steel/shadow family
 PROFILES = {
-    'wound': ((-1.1,-1.05,-.87,-.3,.5,.91,1.03),(4.8,4.9,5.0,5.3,5.5,5.3,5.1),6.5,.60,1.55,'steel'),
+    'wound': ((-1.1,-1.05,-.87,-.3,.5,.91,1.03),(4.8,4.9,5.0,5.3,5.5,5.3,5.1),6.5,.60,3.0,'steel'),
     'counter': ((1.35,1.30,1.12,.35,-.55,-1.08,-1.32),(5.1,5.2,5.6,6.3,6.2,5.9,5.7),6.3,.72,3.7,'gold'),
-    'fall': ((-1.45,-1.40,-1.25,-.48,.6,1.2,1.42),(5.7,5.8,6.0,6.3,6.2,5.7,5.2),6.5,.65,3.3,'steel'),
-    'orbit': ((0,.035,.12,1.9,3.8,5.55,math.tau),(5.5,5.6,5.7,6,6,5.8,5.6),8,1,1.25,'steel'),
-    'execute': ((-1.3,-1.26,-1.05,-.35,.55,1.03,1.2),(4.8,4.9,5.0,5.6,5.5,5.2,4.9),6.3,.62,1.6,'shadow'),
-    'execute_return': ((1.2,1.16,.96,.25,-.55,-1.08,-1.3),(4.6,4.7,4.8,5.4,5.6,5.2,4.9),6.3,.62,1.3,'shadow'),
-    'fan': ((0,.04,.13,2.05,3.7,5.5,math.tau),(4.7,4.8,4.9,5.4,5.3,5.1,4.9),8,1,.78,'shadow'),
-    'fan_return': ((0,-.04,-.13,-2.05,-3.7,-5.5,-math.tau),(4.9,5.0,5.1,5.5,5.4,5.2,5.0),8,1,.78,'shadow'),
+    'fall': ((-1.45,-1.40,-1.25,-.48,.6,1.2,1.42),(5.7,5.8,6.0,6.3,6.2,5.7,5.2),6.5,.65,4.5,'steel'),
+    'orbit': ((0,.035,.12,1.9,3.8,5.55,math.tau),(5.5,5.6,5.7,6,6,5.8,5.6),8,1,2.3,'steel'),
+    'execute': ((-1.3,-1.26,-1.05,-.35,.55,1.03,1.2),(4.8,4.9,5.0,5.6,5.5,5.2,4.9),6.3,.62,3.5,'shadow'),
+    'execute_return': ((1.2,1.16,.96,.25,-.55,-1.08,-1.3),(4.6,4.7,4.8,5.4,5.6,5.2,4.9),6.3,.62,2.7,'shadow'),
+    'fan': ((0,.04,.13,2.05,3.7,5.5,math.tau),(4.7,4.8,4.9,5.4,5.3,5.1,4.9),8,1,1.5,'shadow'),
+    'fan_return': ((0,-.04,-.13,-2.05,-3.7,-5.5,-math.tau),(4.9,5.0,5.1,5.5,5.4,5.2,5.0),8,1,1.5,'shadow'),
 }
 
 
@@ -53,6 +53,10 @@ def contour(name, frame, wake=False):
             polygon(g,[pa,pb,point(birth+.125,-band*.65),point(birth,-band*.65)],2)
             edge=min(.3,band*.25)
             polygon(g,[pa,pb,point(birth+.125,-edge),point(birth,-edge)],3)
+            if 16<i<40 and age<1.8:
+                ridge=band*(.35+.1*math.sin(birth*2))
+                polygon(g,[point(birth,-ridge),point(birth+.125,-ridge),
+                           point(birth+.125,-ridge-.14),point(birth,-ridge-.14)],3)
         elif age<3.5:
             # One fine detached rail, narrower than the primary cutting surface.
             polygon(g,[point(birth,drift+.35),point(birth+.125,drift+.35),
@@ -61,7 +65,7 @@ def contour(name, frame, wake=False):
 
 
 def build(assets,write):
-    from build_greatsword_sweep import geometry, ink_uvs, impact
+    from build_greatsword_sweep import geometry, ink_uvs, impact, impact_mesh, chips, pigments, lerp
     inks=ink_uvs(assets)
     for name,profile in PROFILES.items():
         family=profile[-1]
@@ -69,12 +73,15 @@ def build(assets,write):
             for frame in range(count):
                 grid=impact(frame) if layer=='impact' else contour(name,frame,layer=='wake')
                 key=f'combat_vfx/sweeps/{name}/{layer}_{frame}'
+                elements=impact_mesh(frame,inks) if layer=='impact' else geometry(grid,inks,layer=='wake',frame,pigment=True)
+                if layer=='wake':
+                    def point(t):
+                        angles,radii,center,ellipse,_,_=profile
+                        a,r=lerp(angles,t),lerp(radii,t)
+                        return np.array((8+math.sin(a)*r,center+math.cos(a)*r*ellipse))
+                    elements+=chips(point,frame,inks)
                 write(assets/f'models/{key}.json',{'ambientocclusion':False,
                     'textures':{'0':'projects:combat_vfx/ribbon/slash_5'},
-                    'elements':geometry(grid,inks,layer=='wake',frame,curved=layer!='impact')})
-                colors={'steel':(0xeaf4ff,0x9dc4e3,0xffd899),
-                        'gold':(0xffebbb,0xccad74,0xffd899),
-                        'shadow':(0xecdfff,0xb28bdc,0xfbd3fa)}[family]
-                color=colors[('blade','wake','impact').index(layer)]
+                    'elements':elements})
                 write(assets/f'items/{key}.json',{'model':{'type':'minecraft:model',
-                    'model':f'projects:{key}','tints':[{'type':'minecraft:constant','value':color}]}})
+                    'model':f'projects:{key}','tints':pigments(family,layer)}})

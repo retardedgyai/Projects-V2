@@ -36,7 +36,8 @@ internal object CoreExpandedSlashChoreography {
         val roll=when(e.sceneId) { "slam" -> -PI/2; "war_counter" -> .40; "war_wound" -> -.55; "ass_execute" -> -.7; else -> -.10 }
         val blade=CoreCombatMeshPart("sweep:$profile:blade",if(assassin) "shadow" else "steel",anchor,scale,
             // The downstroke plane is slightly oblique, not edge-on to the owner's eye.
-            yaw=yaw+(if(down) .4 else if(radial) e.pulse*PI*.35 else 0.0),pitch=if(down) 0.0 else if(radial) -.08 else -.50,
+            yaw=yaw+(if(down) .65 else if(radial) e.pulse*PI*.35 else 0.0),
+            pitch=when { down -> 0.0; radial -> -.08; e.sceneId=="war_wound" -> -.80; else -> -.50 },
             roll=roll,durationTicks=if(assassin || e.sceneId=="war_wound") 5 else 7)
         val blades=if(e.sceneId=="ass_execute") listOf(blade,blade.copy(shape="sweep:execute_return:blade",roll=.7)) else listOf(blade)
         if(e.phase==CoreSkillVisualPhase.PREPARE) return blades.map {
