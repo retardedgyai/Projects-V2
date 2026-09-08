@@ -38,7 +38,7 @@ class PixelWeaponDisplayTest(unittest.TestCase):
             for prefix, target in TARGETS.items():
                 right = model['display'][prefix+'_righthand']
                 left = model['display'][prefix+'_lefthand']
-                self.assertEqual(left['rotation'],right['rotation'])
+                if key!='bow': self.assertEqual(left['rotation'],right['rotation'])
                 np.testing.assert_allclose(transformed(grip,right),target,atol=2e-6,err_msg=key)
                 np.testing.assert_allclose(transformed(grip,left,True),[-target[0],*target[1:]],atol=2e-6,err_msg=key)
 

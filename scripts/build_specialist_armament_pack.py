@@ -17,6 +17,7 @@ from build_pixel_armament_pack import definition, write_json
 from preview_class_armaments import FONT, render_model, rotated
 from process_specialist_armament_art import OUT as SOURCE, JOBS
 from pixel_weapon_display import grip_pixels, grip_point, calibrated_display
+from process_bow_arrow_art import geometry as arrow_geometry, build as build_arrow_art
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT/'.tools/specialist-armament-pack'
@@ -86,6 +87,8 @@ def geometry(key,entry):
         # One authored-material-colored texel used only by two thin cord surfaces.
         textures['string'] = np.array([[[214,225,145,255]]],dtype=np.uint8)
         base['textures']['string'] = 'projects:item/weapons/pixel_bow_string'
+        parts['arrow'],textures['arrow'],_ = arrow_geometry()
+        base['textures']['arrow'] = 'projects:item/weapons/pixel_bow_arrow'
     elif key=='tome':
         anchors['hinge'] = point(pivot,top+entry['content_size'][1]/2,7.54)
         parts['left_page'] = translate(parts['left_page'],[0,0,-.46])
@@ -130,6 +133,18 @@ def bow_points(anchors,charge):
     return tips,nock
 
 
+def arrow_offset(anchors,stage,frame):
+    """A held cosmetic arrow, never a substitute for a server projectile.
+
+    Prepare and the first release pose share the exact nock. The next two poses
+    move forward; then the held arrow disappears instead of returning backwards.
+    """
+    if stage=='prepare': return bow_points(anchors,motion(stage,frame)[0])[1]
+    if stage=='release' and frame<3:
+        return bow_points(anchors,1)[1]+np.array([(0,5.5,12)[frame],0,0])
+    return None
+
+
 def pose(key,base,parts,anchors,stage='rest',frame=0):
     charge,idle = motion(stage,frame)
     result = deepcopy(base); elements = result['elements']
@@ -139,6 +154,8 @@ def pose(key,base,parts,anchors,stage='rest',frame=0):
             elements.extend(turn(parts[label+'_limb'],'z',sign*12*charge,anchors[label+'_root']))
         tips,nock = bow_points(anchors,charge)
         elements.extend((cord('string_upper',nock,tips[0]),cord('string_lower',tips[1],nock)))
+        arrow = arrow_offset(anchors,stage,frame)
+        if arrow is not None: elements.extend(translate(parts['arrow'],arrow))
     elif key=='tome':
         elements.extend(deepcopy(parts['binding_cover']+parts['page_backing']))
         lift = .6*(1-math.cos(frame*math.tau/12)) if stage=='idle' else 0
@@ -168,6 +185,7 @@ def pose(key,base,parts,anchors,stage='rest',frame=0):
 
 
 def build():
+    build_arrow_art()
     manifest = json.loads((SOURCE/'manifest.json').read_text())
     write_json(PACK/'pack.mcmeta',{'pack':{'description':'ProjectS articulated specialists / review',
         'min_format':[88,0],'max_format':[88,0]}})
@@ -178,7 +196,7 @@ def build():
         for part,array in textures.items():
             target = ASSETS/f'textures/item/weapons/pixel_{key}_{part}.png'
             target.parent.mkdir(parents=True,exist_ok=True)
-            if part=='string': Image.fromarray(array).save(target)
+            if part in ('string','arrow'): Image.fromarray(array).save(target)
             else: shutil.copyfile(SOURCE/f'{key}-{part}.png',target)
             write_json(target.with_suffix('.png.mcmeta'),{'texture':{'blur':False,'clamp':False}})
         for stage,count in (('rest',1),('idle',12),('prepare',6),('release',6)):
@@ -207,6 +225,14 @@ def build():
             frames.append(strip)
     frames[0].save(OUT/'actions.gif',save_all=True,append_images=frames[1:],duration=100,loop=0)
     frames[5].save(OUT/'prepared.png')
+    bow_sequence=Image.new('RGB',(960,760),'#1b1e23')
+    for i,(stage,frame) in enumerate((('prepare',0),('prepare',5),('release',0),
+                                     ('release',1),('release',2),('release',3))):
+        model=json.loads((ASSETS/f'models/item/weapons/pixel_bow_{stage}{frame:02d}.json').read_text())
+        col,row=i%3,i//3
+        bow_sequence.paste(render_model(model,loaded['bow'],yaw=0,size=(320,350)),(col*320,row*380+30))
+        ImageDraw.Draw(bow_sequence).text((col*320+12,row*380+8),f'{stage} {frame}',font=FONT,fill='#e0d2bb')
+    bow_sequence.save(OUT/'bow-sequence.png')
     with zipfile.ZipFile(OUT/'projects-specialist-armaments-review.zip','w',zipfile.ZIP_DEFLATED) as archive:
         for path in sorted(PACK.rglob('*')):
             if path.is_file(): archive.write(path,path.relative_to(PACK).as_posix())

@@ -17,7 +17,7 @@ class CheckNativeWeaponDisplay {
         if (args.length!=1) throw new IllegalArgumentException("Supply generated display-contract.json");
         var cases = JsonParser.parseString(Files.readString(Path.of(args[0]))).getAsJsonArray();
         if (cases.size()!=250) throw new IllegalStateException("Expected 175 family poses plus 75 greatsword Tier poses");
-        int count=0;
+        int count=0, bowDirections=0;
         for (var value:cases) {
             var check=value.getAsJsonObject();
             var path=Path.of(check.get("path").getAsString());
@@ -35,9 +35,21 @@ class CheckNativeWeaponDisplay {
                 if (context.leftHand()) target.x=-target.x;
                 if (actual.distance(target)>1e-4) throw new IllegalStateException(
                     path.getFileName()+" "+context+": "+actual+" != "+target);
+                if (path.getFileName().toString().startsWith("pixel_bow")) {
+                    var tail=new Vector3f(.5f,.5f,.5f);
+                    var head=new Vector3f(9f/16,.5f,.5f);
+                    pose.pose().transformPosition(tail);
+                    pose.pose().transformPosition(head);
+                    head.sub(tail).normalize();
+                    if (head.distance(new Vector3f(0,0,-1))>1e-4)
+                        throw new IllegalStateException("Arrow points backward in "+context+": "+head);
+                    bowDirections++;
+                }
                 count++;
             }
         }
         System.out.println("Vanilla 26.2 ItemTransform: "+count+" grip placements accepted across "+cases.size()+" poses; not in-game palm/camera approval.");
+        if (bowDirections!=100) throw new IllegalStateException("Expected 100 bow hand-local direction checks");
+        System.out.println("Bow +X maps to hand-local -Z in "+bowDirections+" transforms; outer arm/camera motion not tested.");
     }
 }

@@ -1,8 +1,9 @@
 """Grip anchoring and inventory framing for the seven authored pixel weapons.
 
 Matches 26.2 ItemTransform.apply: T * rotationXYZ * S * translate(-.5).
-Left-handed rendering negates translation.x and rotation.y/z in the CLIENT;
-do not pre-mirror the authored Euler angles a second time.
+Left-handed rendering negates translation.x and rotation.y/z in the CLIENT.
+Blades share authored angles; directional bow art compensates once so its +X
+arrow points toward hand-local -Z on both sides.
 """
 from copy import deepcopy
 import itertools
@@ -62,12 +63,15 @@ def calibrated_display(key,grip,elements,previous):
         ('firstperson',[0,-90,25],[1.13,3.2,-1.5],.72),
         ('thirdperson',[0,-90,55],[0,2,1],.75)):
         for hand,left in (('righthand',False),('lefthand',True)):
-            actual_angles = np.array(angles,dtype=float)
+            # The arrow's authored +X must face -Z in BOTH hand-local frames.
+            # A sword can share mirrored angles; an asymmetric bow cannot.
+            authored_angles = [0,-90 if left else 90,0] if key=='bow' else angles
+            actual_angles = np.array(authored_angles,dtype=float)
             actual_target = np.array(target,dtype=float)
             if left: actual_angles[1:]*=-1; actual_target[0]*=-1
             translation = actual_target-rotation_xyz(actual_angles)@((np.asarray(grip)-8)*scale)
             if left: translation[0]*=-1  # ItemTransform.apply mirrors this field.
-            result[f'{prefix}_{hand}'] = {'rotation':angles.copy(),
+            result[f'{prefix}_{hand}'] = {'rotation':authored_angles.copy(),
                 'translation':translation.round(6).tolist(),'scale':[scale]*3}
     corners = vertices(elements)-8
     for context,angles,extent in (('gui',[0,0,0 if key=='tome' else -30],14),('fixed',[0,180,0],12)):

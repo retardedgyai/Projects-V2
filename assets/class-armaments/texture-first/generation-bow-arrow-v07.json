@@ -1,0 +1,10 @@
+{
+  "tool": "built-in image_gen; no CLI/API fallback",
+  "inputRole": "sources/bow-v02.png is material/pixel-cluster style reference, not an edit target",
+  "prompt": "Use case: stylized-concept. Asset type: one flat pixel-art ARROW texture for a Minecraft native weapon animation. Input image is a MATERIAL/PIXEL CLUSTER style reference only; DO NOT draw another bow. Subject: a single long straight arrow, vertical TIP UP / NOCK DOWN, complete orthographic side profile. A sharp leaf-shaped jade arrowhead with two clear painted facets, dark green outer rim and pale yellow-green edge; a long quiet dark brown shaft with one broad lighter brown stripe; two short swept moss-green feather vanes near the tail; tiny dark notched nock at bottom. Keep shaft perfectly straight on same vertical axis as tip and nock. Shape led by painted square pixels, not filled voxel cubes. Uniform deliberately coarse pixel clusters intended for native 12x52 pixels, enlarged nearest-neighbor: broad clean 8-12 matte colors, no tiny decorative texture/noise. Same dark green, moss, jade and muted bronze family as reference, with a visibly brighter arrowhead. Single object with transparent RGBA background, preserve alpha, no painted checkerboard, no ground/shadow, no bow, hand, scene, particles, multiple views, labels, text, border, PBR/gloss, smoothing or bloom. This artwork will be wrapped onto wafer-thin native faces, not a thick block-built 3D model.",
+  "source": "sources/bow-arrow-v01.png",
+  "generatedFile": "exec-72159600-3111-4c5c-ad27-27de47253fcb.png",
+  "sha256": "3229c1c4c5db36af9b518851e1cbc9a407687c83f595786be5579110f320985a",
+  "status": "native animation review, not reference-equivalent certified",
+  "processing": "Generated RGB checker: authorized foreground-only pixel conversion, palette reduction and 90-degree orientation. Original preserved."
+}
