@@ -3,6 +3,12 @@
 World-space skill artwork, **not** the approved UI skill icons. Those icons and
 Japanese fonts are untouched.
 
+## Active: needle-rift-pixel-v1.png
+
+アサシン「影の針」の射線と確定命中専用の16コマ。
+[原画・生成と修正の完全なプロンプト](needle-rift-pixel-v1.md)。
+3段階の明暗・不透明なドット・2倍の整数拡大で取り込む。矢や雷には転用しない。
+
 ## Active: purifying-light-pixel-v1.png
 
 ヒーラーの攻撃光・光柱・祈灯・審判専用の16コマ。

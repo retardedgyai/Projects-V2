@@ -149,6 +149,83 @@ def build_combat_models(assets, write_json):
     build_healer_prayers(assets, write_json)
     build_star_weaving(assets, write_json)
     build_warrior_support(assets, write_json)
+    build_precision_casts(assets, write_json)
+
+
+def build_precision_casts(assets,write_json):
+    def emit(name,model,tint=None):
+        name=f'combat_vfx/{name}'
+        write_json(assets/f'models/{name}.json',model)
+        item={'type':'minecraft:model','model':f'projects:{name}'}
+        if tint is not None: item['tints']=[{'type':'minecraft:constant','value':tint}]
+        write_json(assets/f'items/{name}.json',{'model':item})
+    lightning={str(i):f'minecraft:block/{t}' for i,t in enumerate(PALETTES['lightning'])}
+    for count in range(1,17):
+        steps=count*8
+        for frame in range(8):
+            elements=[];variant=min(frame,3)
+            points=[(8+round(math.sin(i*.9+variant)*2.2),8+round(math.cos(i*.7+variant)*1.6),i*16/steps)
+                    for i in range(steps+1)]
+            def wire(a,b,width):
+                # Trace a stepped conductor, not the filled bounding rectangle
+                # between bends. The white strip protrudes through the blue rim
+                # on Y; nesting a smaller white box hides it inside the shell.
+                subdivisions=max(1,math.ceil(max(abs(b[0]-a[0]),abs(b[1]-a[1]))/.6))
+                for step in range(subdivisions):
+                    t=(step+.5)/subdivisions
+                    x=a[0]+(b[0]-a[0])*t;y=a[1]+(b[1]-a[1])*t
+                    lo=a[2]+(b[2]-a[2])*step/subdivisions
+                    hi=a[2]+(b[2]-a[2])*(step+1)/subdivisions
+                    elements.append(vfx_box([x-width,y-width*.7,lo],[x+width,y+width*.7,hi],1))
+                    elements.append(vfx_box([x-width*.55,y-width,lo],[x+width*.55,y+width,hi],0))
+            for i in range(steps):
+                if frame>=4 and i%8<(frame-3)*2-1: continue
+                wire(points[i],points[i+1],.6)
+                if i%8==4:
+                    for side in (-1,1):
+                        prior=points[i]
+                        for fork in range(1,4):
+                            nxt=(points[i][0]+side*fork*1.3,points[i][1]+side*fork*.6,min(16,(i+fork)*16/steps))
+                            if nxt[2]>prior[2]: wire(prior,nxt,.4)
+                            prior=nxt
+            emit(f'precision/bolt_{count}_{frame}',{'ambientocclusion':False,'textures':lightning,'elements':elements})
+    source=Path(__file__).resolve().parents[1]/'assets/combat-vfx/needle-rift-pixel-v1.png'
+    master=Image.open(source).convert('L')
+    for frame in range(16):
+        x,y=frame%4,frame//4
+        tile=master.crop((round(x*master.width/4),round(y*master.height/4),
+                          round((x+1)*master.width/4),round((y+1)*master.height/4)))
+        tile=tile.resize((40,24),Image.Resampling.NEAREST)
+        padded=Image.new('L',(48,32),0);padded.paste(tile,(4,4))
+        tile=padded.resize((96,64),Image.Resampling.NEAREST)
+        tile=tile.point(lambda v:0 if v<40 else 85 if v<128 else 170 if v<213 else 255)
+        alpha=tile.point(lambda v:255 if v else 0)
+        path=assets/f'textures/combat_vfx/precision/needle_{frame}.png';path.parent.mkdir(parents=True,exist_ok=True)
+        Image.merge('RGBA',(tile,tile,tile,alpha)).save(path)
+    for count in range(1,13):
+        for frame in range(16):
+            elements=[];textures={}
+            for i in range(count):
+                local=min(15,frame+int((count-1-i)*frame/(count*3)))
+                textures[str(i)]=f'projects:combat_vfx/precision/needle_{local}'
+                z0=(i-.4)*16/count;z1=(i+1.4)*16/count
+                lo=max(0,z0);hi=min(16,z1)
+                u0=(lo-z0)/(z1-z0)*16;u1=(hi-z0)/(z1-z0)*16
+                for angle in (-45,45):
+                    elements.append({'from':[0,8,lo],'to':[16,8,hi],'shade':False,
+                        'rotation':{'origin':[8,8,8],'axis':'z','angle':angle},
+                        'faces':{face:{'texture':f'#{i}','uv':[u0,0,u1,16],
+                                      'rotation':90 if face=='up' else 270,'tintindex':0} for face in ('up','down')}})
+            emit(f'precision/needle_{count}_{frame}',{'ambientocclusion':False,'textures':textures,'elements':elements},0xc5a2e8)
+    pin=[]
+    for z in range(16):
+        w=max(.2,.9*(1-abs(z-7)/9))
+        pin.extend([vfx_box([8-w,8-w,z],[8+w,8+w,z+1],1),
+                    vfx_box([7.8,8+w,z],[8.2,8+w+.3,z+1],0)])
+    for stage in range(8):
+        emit('shadow_pin_shadow'+(f'_fade{stage}' if stage else ''),
+             {'ambientocclusion':False,'textures':{str(i):f'minecraft:block/{t}' for i,t in enumerate(PALETTES['shadow'])},
+              'elements':[e for i,e in enumerate(pin) if (i*5)%8>=stage]})
 
 
 def build_warrior_support(assets,write_json):
@@ -581,19 +658,24 @@ def build_elemental_phrases(assets, write_json):
     # inside a blue rim. +Z spans the radial direction, never a vertical spear.
     for frame in range(8):
         elements=[]
-        variant=frame%4
+        variant=min(frame,3)
         for branch in range(3):
             begin=0 if branch==0 else 5+branch*2
             previous=0.0
             for z in range(begin,16):
-                if frame>=4 and (z+branch*2)%(frame-2)==0: continue
                 x=(math.sin((z//3)*2.1+variant)*3 if branch==0 else
                    math.sin((begin//3)*2.1+variant)*3+(branch*2-3)*(z-begin)*.75+math.sin(z*.8+variant)*.8)
                 if z==begin: previous=x
+                if frame>=4 and (z+branch*2)%8<(frame-3)*2-1:
+                    previous=x
+                    continue
                 y=8+round(math.sin(z*.65+variant+branch)*.8)
-                lo=8+min(previous,x)-.4;hi=8+max(previous,x)+.4
-                elements.append(vfx_box([lo-.35,y-.5,z],[hi+.35,y+.5,z+1],1))
-                elements.append(vfx_box([lo,y-.65,z+.15],[hi,y+.65,z+.85],0))
+                subdivisions=max(1,math.ceil(abs(x-previous)/.6))
+                for step in range(subdivisions):
+                    center=8+previous+(x-previous)*(step+.5)/subdivisions
+                    lo=z+step/subdivisions;hi=z+(step+1)/subdivisions
+                    elements.append(vfx_box([center-.55,y-.35,lo],[center+.55,y+.35,hi],1))
+                    elements.append(vfx_box([center-.3,y-.5,lo],[center+.3,y+.5,hi],0))
                 previous=x
         save(f'storm_branch_lightning_{frame}','lightning',elements)
 

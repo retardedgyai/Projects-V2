@@ -16,6 +16,25 @@ internal object CoreSkillAudio {
             player.playSound(Sound.sound(event, Sound.Source.PLAYER, volume * detail, pitch))
         val astral = effect.job == CoreClass.STARWEAVER
         val scene = CoreSkillScenes.get(effect.sceneId)
+        if(effect.sceneId in CorePrecisionChoreography.sceneIds) {
+            val needle=effect.sceneId=="ass_needle"
+            when(effect.phase) {
+                CoreSkillVisualPhase.PREPARE -> cue(if(needle) SoundEvent.ITEM_TRIDENT_RETURN else SoundEvent.BLOCK_RESPAWN_ANCHOR_CHARGE,.6f,1.5f)
+                CoreSkillVisualPhase.CONTACT -> {
+                    cue(if(needle) SoundEvent.ITEM_TRIDENT_HIT else SoundEvent.ENTITY_LIGHTNING_BOLT_IMPACT,.75f,1.6f)
+                    if(!needle) cue(SoundEvent.BLOCK_AMETHYST_BLOCK_RESONATE,.65f,1.4f)
+                }
+                CoreSkillVisualPhase.PULSE -> if(effect.sceneId=="mage_blink") {
+                    cue(SoundEvent.ENTITY_ENDERMAN_TELEPORT,.65f,if(effect.endpoint==CoreSkillEndpoint.DEPARTURE) .8f else 1.6f)
+                    cue(SoundEvent.BLOCK_RESPAWN_ANCHOR_DEPLETE,.7f,1.65f)
+                } else {
+                    cue(if(needle) SoundEvent.ITEM_TRIDENT_THROW else SoundEvent.BLOCK_RESPAWN_ANCHOR_DEPLETE,.9f,if(needle) 1.65f else 1.3f)
+                    if(needle) cue(SoundEvent.ENTITY_PLAYER_ATTACK_SWEEP,.45f,1.7f)
+                    else cue(SoundEvent.ENTITY_LIGHTNING_BOLT_IMPACT,.5f,1.8f)
+                }
+            }
+            return
+        }
         if(effect.sceneId in CoreWarriorSupportChoreography.sceneIds) {
             when(effect.phase) {
                 CoreSkillVisualPhase.PREPARE -> cue(if(effect.sceneId=="war_banner") SoundEvent.BLOCK_WOOL_PLACE else SoundEvent.ITEM_TRIDENT_RETURN,.6f,.75f)

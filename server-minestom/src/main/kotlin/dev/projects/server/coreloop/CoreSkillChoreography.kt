@@ -83,7 +83,11 @@ internal object CoreSkillChoreography {
             if(localAge<=4.0) floor(localAge/4.0*7).toInt() else
                 8+floor(((localAge-5)/(p.durationTicks-6).coerceAtLeast(1)).coerceIn(0.0,1.0)*7).toInt()
         } else floor(((t-.42)/.58).coerceIn(0.0,1.0)*7).toInt()
-        val model=if(p.shape=="star_crest") {
+        val model=if(p.shape=="inscribed_bolt") {
+            "combat_vfx/precision/bolt_${ceil(p.scale.z()/1.5).toInt().coerceIn(1,16)}_${CorePrecisionChoreography.lightningFrame(p,age)}"
+        } else if(p.shape=="needle_rift") {
+            "combat_vfx/precision/needle_${ceil(p.scale.z()/2).toInt().coerceIn(1,12)}_${CorePrecisionChoreography.needleFrame(p,age)}"
+        } else if(p.shape=="star_crest") {
             "combat_vfx/weave/crest_${p.palette}_$stage"
         } else if(p.shape=="weave_ray") {
             val segments=ceil(p.scale.z()/1.5).toInt().coerceIn(1,16)
@@ -121,6 +125,7 @@ internal object CoreSkillChoreography {
         if(raw.isEmpty()) return raw
         val s=CoreSkillScenes.get(e.sceneId)
         val life=duration(e)
+        if(e.sceneId in CorePrecisionChoreography.sceneIds) return CorePrecisionChoreography.parts(e,raw,life)
         if(e.job==CoreClass.RANGER) return CoreRangerChoreography.parts(e,raw,life)
         if(e.job==CoreClass.TEMPLAR && s.kind!=CoreSceneKind.PULL) return CoreTemplarChoreography.parts(e,life)
         if(e.sceneId in CoreHealerChoreography.sceneIds) return CoreHealerChoreography.parts(e,raw,life)
