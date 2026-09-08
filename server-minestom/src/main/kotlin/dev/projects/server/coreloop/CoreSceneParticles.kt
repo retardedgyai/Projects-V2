@@ -12,7 +12,7 @@ internal object CoreSceneParticles {
     fun emit(e: CoreSkillEffect,tick: Int,sink: ParticleSink) {
         // This accepted clip already contains its blade, wake and hit-local flash.
         // Do not decorate it with a competing cloud absent from the approved GIF.
-        if(e.job==CoreClass.WARRIOR && e.sceneId=="dash") return
+        if(e.job==CoreClass.WARRIOR && (e.sceneId=="dash" || e.sceneId in CoreApprovedNormalV3.sceneIds)) return
         val scene=CoreSkillScenes.get(e.sceneId)
         val color=if(e.job==CoreClass.WARRIOR && scene.palette=="gold") 0xc74155 else colors.getValue(scene.palette)
         val t=tick.toDouble()/e.durationTicks

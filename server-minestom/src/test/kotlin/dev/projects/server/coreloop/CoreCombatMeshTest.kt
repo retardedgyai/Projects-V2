@@ -18,12 +18,13 @@ import kotlin.math.abs
 import kotlin.test.*
 
 class CoreCombatMeshTest {
-    @Test fun `approved dash sends the original model frames at full fixed transform without tween distortion`() = player { owner ->
+    @Test fun `approved dash and AA send original frames at full fixed transform without tween distortion`() = player { owner ->
         val meshes=CoreCombatMeshes(owner)
         CoreCombatPresentation.pack(owner,true)
         try {
-            for(phase in CoreSkillVisualPhase.entries) {
-                val e=effect(CoreClass.WARRIOR,"dash",phase)
+            for(id in listOf("dash") + CoreApprovedNormalV3.sceneIds) for(phase in CoreSkillVisualPhase.entries) {
+                val base=effect(CoreClass.WARRIOR,"dash",phase)
+                val e=CoreSkillEffect(base.job,base.skill,base.origin,base.direction,phase,sceneId=id)
                 val parts=CoreSkillChoreography.parts(e)
                 meshes.play(e)
                 val pairs=parts.map { p ->
@@ -51,6 +52,30 @@ class CoreCombatMeshTest {
                 assertEquals(0,meshes.size)
             }
         } finally { meshes.cancel();CoreCombatPresentation.forget(owner) }
+    }
+    @Test fun `normal attack entry points display approved preparation release and contact and clean up`() = player { owner ->
+        CoreCombatPresentation.pack(owner,true)
+        val vfx=GreatswordVfx(owner)
+        fun models()=owner.instance.entities.filter { it.entityType==net.minestom.server.entity.EntityType.ITEM_DISPLAY }.map {
+            (it.entityMeta as net.minestom.server.entity.metadata.display.ItemDisplayMeta).itemStack
+                .get(net.minestom.server.component.DataComponents.ITEM_MODEL)
+        }
+        try {
+            for((index,visual) in listOf(GreatswordVisual.SWEEP,GreatswordVisual.REVERSE,GreatswordVisual.FINISHER).withIndex()) {
+                val prefix=if(index==1) "approved_aa_reverse_v3" else "approved_dash_v3"
+                vfx.normalPrepare(GreatswordCombo.Swing(index+1,8,20),owner.position,Vec(0.0,0.0,1.0))
+                assertEquals(listOf("projects:combat_vfx/$prefix/blade_0"),models())
+                repeat(10) { vfx.tick() }
+                vfx.play(visual,owner.position,Vec(0.0,0.0,1.0))
+                assertEquals(setOf("projects:combat_vfx/$prefix/blade_3","projects:combat_vfx/$prefix/wake_3"),models().toSet())
+                repeat(18) { vfx.tick() }
+                assertTrue(models().isEmpty())
+            }
+            vfx.normalContact(owner.position.add(0.0,0.0,1.5),Vec(0.0,0.0,1.0))
+            assertEquals(listOf("projects:combat_vfx/approved_dash_v3/impact_0"),models())
+            vfx.cancel()
+            assertTrue(models().isEmpty())
+        } finally { vfx.cancel();CoreCombatPresentation.forget(owner) }
     }
     @Test fun `normal warrior swings actually dispatch their sound packets`() {
         val packets=mutableListOf<SendablePacket>()

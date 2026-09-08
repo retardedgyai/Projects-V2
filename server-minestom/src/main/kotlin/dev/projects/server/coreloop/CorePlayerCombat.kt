@@ -111,7 +111,7 @@ internal class CorePlayerCombat(
             normalEmpowerment = if(classId == CoreClass.TEMPLAR && classState.counterUntil >= tickNumber) 1.35 else 1.0
             if(normalEmpowerment > 1) classState.counterUntil = -1
             normalDirection = flatFacing()
-            if (classId == CoreClass.WARRIOR) vfx.play(GreatswordVisual.WINDUP, player.position, normalDirection)
+            if (classId == CoreClass.WARRIOR) vfx.normalPrepare(swing, player.position, normalDirection)
             vfx.startSound(swing.step)
             lastCombat = tickNumber
         }
@@ -451,7 +451,9 @@ internal class CorePlayerCombat(
             if (burns.containsKey(DotKey(id, true))) vfx.status(CorePoisonEffect(position, tickNumber, false))
         } else if (classId.melee) {
             vfx.impactSound(heavy)
-            vfx.play(GreatswordVisual.HIT, position, normalDirection)
+            if (classId == CoreClass.WARRIOR) {
+                if (visualContactsThisTick++ < 3) vfx.normalContact(position, normalDirection)
+            } else vfx.play(GreatswordVisual.HIT, position, normalDirection)
             vfx.holdContact(if (heavy) 3 else 2)
         } else {
             sound(if (classId == CoreClass.RANGER) SoundEvent.ENTITY_ARROW_HIT else SoundEvent.BLOCK_AMETHYST_BLOCK_CHIME, .4f, 1.4f)

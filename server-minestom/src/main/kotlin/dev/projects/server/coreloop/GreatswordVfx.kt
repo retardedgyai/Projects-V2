@@ -156,6 +156,31 @@ internal class GreatswordVfx(private val player: Player) {
             ParticleCategory.OWN_ACTIVE, importance = ParticleImportance.COMBAT_FEEDBACK)
     }
 
+    fun normalPrepare(swing: GreatswordCombo.Swing, origin: Point, direction: Vec) {
+        if (!CoreCombatPresentation.packed(player)) {
+            play(GreatswordEffect(GreatswordVisual.WINDUP, origin, direction))
+            return
+        }
+        normalPhase(swing.step, origin, direction, CoreSkillVisualPhase.PREPARE, swing.impactTick - 1)
+    }
+
+    fun normalContact(origin: Point, direction: Vec) {
+        if (!CoreCombatPresentation.packed(player)) {
+            play(GreatswordEffect(GreatswordVisual.HIT, origin, direction))
+            return
+        }
+        normalPhase(1, origin, direction, CoreSkillVisualPhase.CONTACT)
+    }
+
+    private fun normalPhase(step: Int, origin: Point, direction: Vec, phase: CoreSkillVisualPhase, prepareTicks: Int = 4) {
+        val definition = CoreSkillCatalog.skills(CoreClass.WARRIOR).first { it.icon == "dash" }
+        val effect = CoreSkillEffect(CoreClass.WARRIOR, definition.copy(radius = 3.9), origin, direction, phase,
+            prepareTicks = prepareTicks, sceneId = arrayOf("normal_sweep", "normal_reverse", "normal_finish")[step - 1])
+        effect.solidCompanion = true
+        play(effect)
+        meshes.play(effect)
+    }
+
     fun play(visual: GreatswordVisual, origin: Point, direction: Vec) {
         if (visual in setOf(GreatswordVisual.SWEEP, GreatswordVisual.REVERSE, GreatswordVisual.FINISHER, GreatswordVisual.SLAM_BLADE)) {
             val heavy = visual == GreatswordVisual.FINISHER || visual == GreatswordVisual.SLAM_BLADE
