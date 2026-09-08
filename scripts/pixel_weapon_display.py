@@ -20,7 +20,9 @@ def grip_pixels(key,entry,textures):
     if key in ('greatsword','dagger'):
         keep = (yy>=entry['rows'][-2]) & (yy<entry['rows'][-1])
     elif key=='staff': keep = (yy>=entry['rows'][1]) & (yy<entry['rows'][2])
-    elif key=='mace': keep = (yy>42) & (yy<68)
+    elif key=='mace':
+        low,high=entry.get('grip_rows',[43,68])
+        keep = (yy>=low) & (yy<high)
     elif key=='astrolabe':
         span = yy.max()-yy.min()
         keep = (yy>=yy.min()+span/3) & (yy<=yy.min()+span*2/3)
