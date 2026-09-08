@@ -32,10 +32,10 @@ def texture_for(name, tint):
     texture[:,:,:3] = (texture[:,:,:3].astype(float) * color / 255).astype('uint8')
     return Image.fromarray(texture)
 
-def render(parts, name, tick, view='iso'):
+def render(parts, name, tick, view='iso', world_scale=34):
     image = Image.new('RGBA', (W,H), '#1b222a')
     draw = ImageDraw.Draw(image)
-    cx, cy, scale = 160, 184, 34
+    cx, cy, scale = 160, 184, world_scale
     draw.text((8,5), name, font=FONT, fill='#efe4c9')
     draw.text((8,25), f'{tick/20:.2f}s / 20 ticks per second', font=FONT, fill='#b8b8b0')
     def project(x,y,z):
@@ -47,8 +47,11 @@ def render(parts, name, tick, view='iso'):
         draw.line([project(n,0,0 if view=='eye' else -3)[:2],project(n,0,5)[:2]], fill='#2a343e')
         if view!='eye' or n>=0: draw.line([project(-4,0,n)[:2],project(4,0,n)[:2]], fill='#2a343e')
     if view!='eye':
-        draw.rectangle((cx-9,cy-48,cx+9,cy),outline='#82909c')
-        draw.rectangle((cx-8,cy-61,cx+8,cy-49),outline='#82909c')
+        # Scale the 1.8m reference body with the world, including wide-area reviews.
+        for width,bottom,top in ((.5,0,1.4),(.4,1.4,1.8)):
+            corners=[project(x,y,0)[:2] for x,y in
+                     ((-width/2,bottom),(width/2,bottom),(width/2,top),(-width/2,top))]
+            draw.line(corners+[corners[0]],fill='#82909c')
     draw.line([project(0,0,0)[:2],project(0,0,4)[:2]],fill='#ab923e',width=2)
     faces=[]
     for p in parts:
@@ -115,21 +118,24 @@ def main():
     parser.add_argument('--prefix',default='choreography-review')
     parser.add_argument('--view',choices=('iso','eye'),default='iso')
     parser.add_argument('--timeline',default='.tools/skill-choreography-frames.json')
+    parser.add_argument('--world-scale',type=float,default=34,help='Isometric pixels per block; does not alter gameplay/model size')
     parser.add_argument('--ticks',help='Comma-separated snapshot ticks; skips GIF rendering for broad reviews')
     args=parser.parse_args()
     source=json.loads((ROOT/args.timeline).read_text(encoding='utf-8'))
     ids=args.ids.split(',')
     scenes=[next(s for s in source if s['id']==i) for i in ids]
+    columns=min(4,len(scenes))
     frames=[]
     end=max(len(s['frames']) for s in scenes)
     selected=[int(t) for t in args.ticks.split(',')] if args.ticks else range(end+10)
     for tick in selected:
-        sheet=Image.new('RGB',(W*4,H*math.ceil(len(scenes)/4)+26),'#111820')
+        sheet=Image.new('RGB',(W*columns,H*math.ceil(len(scenes)/columns)+26),'#111820')
         label='目線高1.62mの簡易透視投影' if args.view=='eye' else '灰枠は身長1.8m'
-        ImageDraw.Draw(sheet).text((8,3),f'実装モデル＋実時間の連続確認（ゲーム画面ではありません／{label}）',font=FONT,fill='#d7d0be')
+        heading='実装モデルの確認／ゲーム画面ではありません' if columns==1 else f'実装モデル＋実時間の連続確認（ゲーム画面ではありません／{label}）'
+        ImageDraw.Draw(sheet).text((8,3),heading,font=FONT,fill='#d7d0be')
         for i,s in enumerate(scenes):
             parts=s['frames'][tick] if tick<len(s['frames']) else []
-            sheet.paste(render(parts,s['name']+' / '+s['id'],tick,args.view),(i%4*W,i//4*H+26))
+            sheet.paste(render(parts,s['name']+' / '+s['id'],tick,args.view,args.world_scale),(i%columns*W,i//columns*H+26))
         frames.append(sheet)
         if args.ticks or tick in (0,3,6,10,16,24,32): sheet.save(ROOT/f'.tools/{args.prefix}-{tick:02d}.png')
     if not args.ticks:

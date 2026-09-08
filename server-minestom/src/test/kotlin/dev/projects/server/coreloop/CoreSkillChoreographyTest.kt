@@ -154,7 +154,7 @@ class CoreSkillChoreographyTest {
         }
     }
     @Test fun `frost crests expand in all directions below waist instead of stationary garden pillars`() {
-        for(id in listOf("frost_nova","mage_zero")) {
+        for(id in listOf("frost_nova")) {
             val e=effect(CoreClass.MAGE,id)
             val parts=CoreSkillChoreography.parts(e)
             assertEquals(if(e.skill.ultimate) 12 else 8,parts.size)

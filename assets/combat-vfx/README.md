@@ -3,6 +3,11 @@
 World-space skill artwork, **not** the approved UI skill icons. Those icons and
 Japanese fonts are untouched.
 
+## Review branch: frost-domain-source-v1.png
+
+絶対零界だけに床の渦・立体的な帯・雪の結晶を追加。
+[直接参照・生成プロンプト・用途・検証](frost-domain-v1.md)。稼働中のゲームには未反映、画質の承認前。
+
 ## Active: needle-rift-pixel-v1.png
 
 アサシン「影の針」の射線と確定命中専用の16コマ。

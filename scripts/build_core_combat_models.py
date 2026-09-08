@@ -9,6 +9,7 @@ from pathlib import Path
 import json
 from PIL import Image
 from combat_vfx_shapes import AUTHORED_SHAPES, CROSSED, authored_cell
+from build_frost_domain import build_frost_domain
 
 PALETTES = {
     "steel": ("white_concrete", "light_gray_concrete", "gray_concrete"),
@@ -150,6 +151,7 @@ def build_combat_models(assets, write_json):
     build_star_weaving(assets, write_json)
     build_warrior_support(assets, write_json)
     build_precision_casts(assets, write_json)
+    build_frost_domain(assets, write_json)
 
 
 def build_precision_casts(assets,write_json):

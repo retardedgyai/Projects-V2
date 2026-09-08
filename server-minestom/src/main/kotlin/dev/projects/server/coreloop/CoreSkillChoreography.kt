@@ -34,6 +34,7 @@ internal object CoreSkillChoreography {
     }
     private fun ease(t: Double)=1-(1-t.coerceIn(0.0,1.0)).pow(3)
     fun pose(p: CoreCombatMeshPart, age: Double): CoreMeshPose {
+        CoreFrostChoreography.pose(p,age)?.let { return it }
         CoreWarriorSupportChoreography.pose(p,age)?.let { return it }
         CoreStarweaverChoreography.pose(p,age)?.let { return it }
         CoreTemplarChoreography.pose(p,age)?.let { return it }
@@ -157,7 +158,8 @@ internal object CoreSkillChoreography {
         if(e.sceneId=="mage_ward") return arcaneWard(e,life)
         if(e.sceneId in setOf("heal_ring","heal_wind","heal_ult","heal_shield")) return healingPhrase(e,life)
         if(e.sceneId in setOf("meteor","mage_ult")) return fireLanding(e,raw.first().offset,life)
-        if(e.sceneId in setOf("frost_nova","mage_zero")) return frostWave(e,life)
+        if(e.sceneId=="mage_zero") return CoreFrostChoreography.parts(e)
+        if(e.sceneId=="frost_nova") return frostWave(e,life)
         if(e.sceneId=="mage_burst") return stormDischarge(e,life)
         if(e.sceneId in setOf("ass_stab","ass_chase","ass_contract")) return assassinThrust(e,life)
         if(e.sceneId in setOf("ass_escape","ass_guard")) return shadowDeparture(e,life)
