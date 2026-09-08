@@ -28,16 +28,20 @@ SHAPES={
 }
 
 
-def staff_fins(spec,body):
-    """Articulate the two painted v02 branches above their shared neck.
+def staff_fins(spec,body,layout=None):
+    """Articulate two painted branches above the original-specific shared neck.
 
     Geometry masks only: UVs still sample the byte-identical body PNG. Traced
     front faces are essential here so one branch cannot show the other branch.
     """
+    layout=layout or {'split_x':16,'head_bottom':37}
+    split,head_bottom=layout['split_x'],layout['head_bottom']
+    if not (0<split<body.shape[1] and spec['top_pixel']<head_bottom<spec['parts'][0]['rows'][1]):
+        raise ValueError('Staff branch layout is outside its painted head/neck')
     yy,xx=np.indices(body.shape[:2])
-    head=(body[:,:,3]>0)&(yy<37)
-    masks={'fin_left':head&(xx<16),'fin_right':head&(xx>=16),
-           'fin_neck':(body[:,:,3]>0)&(yy>=37)&(yy<spec['parts'][0]['rows'][1])}
+    head=(body[:,:,3]>0)&(yy<head_bottom)
+    masks={'fin_left':head&(xx<split),'fin_right':head&(xx>=split),
+           'fin_neck':(body[:,:,3]>0)&(yy>=head_bottom)&(yy<spec['parts'][0]['rows'][1])}
     scale=spec['height']/(spec['bottom_pixel']-spec['top_pixel'])
     elements=[]
     for name,mask in masks.items():
@@ -69,7 +73,7 @@ def geometry(key,entry,source_textures=None):
                    for i,(name,depth) in enumerate(zip(names,thickness))]}
     base,_=compile_model(spec,body[:,:,3])
     if key=='staff':
-        base['elements']=[e for e in base['elements'] if not e['name'].startswith('fins:')]+staff_fins(spec,body)
+        base['elements']=[e for e in base['elements'] if not e['name'].startswith('fins:')]+staff_fins(spec,body,entry.get('fin_layout'))
     gem_spec={**spec,'texture':f'projects:item/weapons/pixel_{key}_jewel',
         'parts':[{'name':'jewel','rows':[spec['top_pixel'],spec['bottom_pixel']],
                   'thickness':jewel_depth}]}

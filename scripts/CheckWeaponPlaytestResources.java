@@ -31,7 +31,7 @@ class CheckWeaponPlaytestResources {
         }
         for (String family : new String[]{"greatsword","staff","bow","dagger","mace","tome","astrolabe"}) {
             for (int tier=1;tier<=4;tier++) {
-                String key=(family.equals("greatsword") || family.equals("dagger")) && tier>1 ? family+"_t"+tier : family;
+                String key=(family.equals("greatsword") || family.equals("dagger") || family.equals("staff")) && tier>1 ? family+"_t"+tier : family;
                 byte[] reference = files.get("assets/projects/items/weapons/pixel_"+key+".json");
                 if (reference==null) throw new IllegalStateException("Missing pixel graph: "+key);
                 var normal = files.get("assets/projects/items/weapons/"+family+"_t"+tier+".json");

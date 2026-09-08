@@ -94,6 +94,12 @@ def export_native_contract():
         grip=grip_point('dagger',entry,textures).tolist()
         for path in sorted((ASSETS/'models/item/weapons').glob(f'pixel_{tier_key(tier)}*.json')):
             cases.append({'path':str(path),'grip':grip,'targets':TARGETS})
+    from build_staff_tiers import JOBS, ASSETS, model_data, tier_key
+    for tier in JOBS:
+        _,textures,entry,_,_=model_data(tier)
+        grip=grip_point('staff',entry,textures).tolist()
+        for path in sorted((ASSETS/'models/item/weapons').glob(f'pixel_{tier_key(tier)}*.json')):
+            cases.append({'path':str(path),'grip':grip,'targets':TARGETS})
     output = ROOT/'.tools/native-cuboid-check/display-contract.json'
     output.parent.mkdir(parents=True,exist_ok=True)
     output.write_text(json.dumps(cases,indent=2)+'\n',encoding='utf-8')
