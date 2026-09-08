@@ -309,6 +309,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
             questMaps.tick(player)
             combatLab.beforeTick(player)
             actor(player)?.tick()
+            CoreArmamentPresentation.tick(player, packed(player))
             if (player.aliveTicks % 5 == 0L) updateHud(player)
             if (player.instance === hub && player.position.y() < 38) { player.teleport(harbor.spawn); actors[player.uuid]?.reset() }
             if (player.instance !== hub && player.position.y() < 15 && !isDeparting(player)) returnToHarbor(player)

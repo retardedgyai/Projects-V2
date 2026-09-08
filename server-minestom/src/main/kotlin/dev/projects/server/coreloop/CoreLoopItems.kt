@@ -78,10 +78,12 @@ internal object CoreLoopItems {
             CoreTooltipStat("魔法防御 MR", CoreCombatMath.number(sheet.mr), CoreUiIcon.DEFENSE),
             CoreTooltipStat("追加軽減", "${stats.mitigationPercent.toInt()}%", CoreUiIcon.DEFENSE),
             CoreTooltipStat("最大マナ", CoreCombatMath.number(sheet.mana), CoreUiIcon.MANA))
-        val shown = if (slot == CoreGearSlot.WEAPON && identity.base.family != "greatsword") {
+        val shown = if (slot == CoreGearSlot.WEAPON && packed) {
+            base.withItemModel(CoreArmamentPresentation.model(identity.base, account.journey.job, tier))
+        } else if (slot == CoreGearSlot.WEAPON && identity.base.family != "greatsword") {
             val model = when(identity.base) { CoreWeaponBase.LONGBOW -> "minecraft:bow"; CoreWeaponBase.DAGGERS -> "minecraft:iron_sword";
                 CoreWeaponBase.MACE -> "minecraft:mace"; CoreWeaponBase.TOME -> "minecraft:enchanted_book"; else -> "minecraft:blaze_rod" }
-            base.withItemModel(if(packed && identity.base != CoreWeaponBase.LONGBOW) "projects:weapons/${identity.base.family}_t$tier" else model)
+            base.withItemModel(model)
         } else base
         return CoreUiTooltip.apply(shown, CoreTooltipModel("${if (CoreEconomy.broken(account, slot)) "【破損】" else ""}T$tier ${if (slot == CoreGearSlot.WEAPON) identity.base.displayName else "開拓者の防具"}${if (enhancement.level > 0) " +${enhancement.level}" else ""}",
             rarity = when (CoreAffixCatalog.rarity(account, slot)) {
