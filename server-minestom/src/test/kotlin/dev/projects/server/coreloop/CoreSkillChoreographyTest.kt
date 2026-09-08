@@ -490,7 +490,7 @@ class CoreSkillChoreographyTest {
             val sectors=CoreSkillChoreography.parts(effect(job,id))
             assertEquals(8,sectors.count { !it.secondary })
             assertEquals(if(job==CoreClass.WARRIOR) 0 else 4,sectors.count { it.secondary })
-            if(job==CoreClass.WARRIOR) assertEquals((0..7).toList(),sectors.map { it.delayTicks })
+            if(job==CoreClass.WARRIOR) assertEquals(listOf(0,0,1,2,3,3,4,5),sectors.map { it.delayTicks })
             else assertTrue(sectors.all { it.delayTicks==0 })
             for(p in sectors) assertEquals(CoreSkillChoreography.pose(p,0.0).model,CoreSkillChoreography.pose(p,p.delayTicks+3.0).model)
         }

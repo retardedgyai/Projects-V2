@@ -18,6 +18,19 @@ import kotlin.math.abs
 import kotlin.test.*
 
 class CoreCombatMeshTest {
+    @Test fun `normal warrior swings actually dispatch their sound packets`() {
+        val packets=mutableListOf<SendablePacket>()
+        player(packets) { owner ->
+            val vfx=GreatswordVfx(owner)
+            try {
+                for((visual,expected) in listOf(GreatswordVisual.SWEEP to 2,GreatswordVisual.REVERSE to 2,GreatswordVisual.FINISHER to 3)) {
+                    packets.clear()
+                    vfx.play(visual,owner.position,Vec(0.0,0.0,1.0))
+                    assertEquals(expected,packets.count { it.javaClass.simpleName.contains("SoundEffectPacket") },visual.name)
+                }
+            } finally { vfx.cancel() }
+        }
+    }
     private fun effect(job: CoreClass, id: String, phase: CoreSkillVisualPhase = CoreSkillVisualPhase.PULSE, pulse: Int = 0, length: Double = 0.0) =
         CoreSkillEffect(job, CoreSkillCatalog.skills(job).first { it.icon == id }, Vec(8.0, 41.0, 8.0), Vec(0.0, 0.0, 1.0), phase, pulse, rayLength = length,clippedRay=length>0)
 
@@ -192,14 +205,14 @@ class CoreCombatMeshTest {
         p.setInstance(map,at).get(10,TimeUnit.SECONDS)
         return p
     }
-    private fun player(action: (Player) -> Unit) {
+    private fun player(packets: MutableList<SendablePacket>?=null,action: (Player) -> Unit) {
         MinecraftServer.init(Auth.Offline())
         val map = MinecraftServer.getInstanceManager().createInstanceContainer()
         map.viewDistance(2)
         map.setGenerator { it.modifier().fillHeight(0, 40, Block.STONE) }
         for (x in -3..5) for (z in -3..3) map.loadChunk(x, z).get(10, TimeUnit.SECONDS)
         val connection = object : PlayerConnection() {
-            override fun sendPacket(packet: SendablePacket) = Unit
+            override fun sendPacket(packet: SendablePacket) { packets?.add(packet) }
             override fun getRemoteAddress(): SocketAddress = InetSocketAddress("127.0.0.1", 0)
         }
         connection.setClientState(ConnectionState.PLAY); connection.setServerState(ConnectionState.PLAY)

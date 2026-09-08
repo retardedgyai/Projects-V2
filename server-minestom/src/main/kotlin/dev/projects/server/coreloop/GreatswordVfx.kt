@@ -165,6 +165,7 @@ internal class GreatswordVfx(private val player: Player) {
             effect.solidCompanion=CoreCombatPresentation.packed(player)
             play(if(effect.solidCompanion) effect else GreatswordEffect(visual,origin,direction))
             meshes.play(effect)
+            CoreSkillAudio.play(player, effect)
         } else play(GreatswordEffect(visual,origin,direction))
     }
 

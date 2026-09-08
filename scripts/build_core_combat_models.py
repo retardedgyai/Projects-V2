@@ -947,6 +947,8 @@ def build_slash_frames(assets, write_json):
                                      "tints":[{"type":"minecraft:constant","value":color}]}})
     build_directional_slashes(assets, write_json)
     build_greatsword_sweep(assets, write_json)
+    from build_warrior_blade_art import build as build_warrior_blade_art
+    build_warrior_blade_art(assets, write_json)
 
 
 if __name__ == "__main__":

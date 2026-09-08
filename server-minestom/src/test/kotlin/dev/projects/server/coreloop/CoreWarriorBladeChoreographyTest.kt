@@ -18,7 +18,7 @@ class CoreWarriorBladeChoreographyTest {
         for(id in CoreWarriorBladeChoreography.sceneIds) {
             assertTrue(parts(id).all { it.shape.startsWith("warrior_trace:") },id)
             assertEquals(8,parts(id).size,id)
-            assertTrue(parts(id).all { it.palette in setOf("steel","gold") && !it.sprite && !it.followOwner })
+            assertTrue(parts(id).all { it.palette in setOf("warsteel","warred") && !it.sprite && !it.followOwner })
         }
         for(job in CoreClass.entries.filter { it!=CoreClass.WARRIOR }) for(skill in CoreSkillCatalog.skills(job)) {
             val e=CoreSkillEffect(job,skill,Vec.ZERO,Vec(0.0,0.0,1.0))
@@ -28,7 +28,7 @@ class CoreWarriorBladeChoreographyTest {
     }
     @Test fun `wake stays on the cut path with stable model and orientation and fades before removal`() {
         for(id in CoreWarriorBladeChoreography.sceneIds) for(p in parts(id)) {
-            val poses=(0..20).map { CoreSkillChoreography.pose(p,p.delayTicks+it/4.0) }
+            val poses=(0..32).map { CoreSkillChoreography.pose(p,p.delayTicks+it/4.0) }
             assertEquals(1,poses.map { it.model }.distinct().size,id)
             assertEquals(1,poses.map { it.offset }.distinct().size,id)
             assertEquals(1,poses.map { Triple(it.yaw,it.pitch,it.roll) }.distinct().size,id)
@@ -52,10 +52,10 @@ class CoreWarriorBladeChoreographyTest {
         for(p in beats) {
             assertEquals(0.0,p.sumOf { it.offset.x() }/p.size,1e-7)
             assertEquals(0.0,p.sumOf { it.offset.z() }/p.size,1e-7)
-            assertEquals((0..7).toList(),p.map { it.delayTicks })
+            assertEquals(listOf(0,0,1,2,3,3,4,5),p.map { it.delayTicks })
         }
         assertEquals(3,beats.map { p -> p.map { it.offset to it.scale } }.distinct().size)
-        assertTrue(beats[2].all { it.palette=="gold" })
+        assertTrue(beats[2].all { it.palette=="warred" })
         val ult=(0..2).map { parts("war_ult",it) }
         assertEquals(3,ult.map { p -> p.map { it.offset } }.distinct().size)
     }
@@ -83,8 +83,21 @@ class CoreWarriorBladeChoreographyTest {
             assertEquals(listOf("warrior_charge"),prep.map { it.shape })
             assertTrue(prep.single().scale.x()<.2)
             val hit=CoreSkillChoreography.parts(effect(id,phase=CoreSkillVisualPhase.CONTACT)).single()
-            assertEquals("greatsword_impact",hit.shape)
+            assertEquals("warrior_impact",hit.shape)
             assertEquals(Vec(0.0,1.0,0.0),hit.offset)
+        }
+    }
+    @Test fun `apex is a connected broad surface rather than a solitary white needle`() {
+        for(id in CoreWarriorBladeChoreography.sceneIds) {
+            val p=parts(id)
+            val apex=(1..8).maxOf { t -> p.count {
+                val pose=CoreSkillChoreography.pose(it,t.toDouble())
+                pose.visible && pose.scale.x()>=it.scale.x()*.8
+            } }
+            assertTrue(apex>=6,"$id only $apex sections coexist")
+            assertTrue(p.all { it.scale.x()>=.7 },"$id reverted to sub-block needles")
+            // Every main face uses coarse class art, never the smooth shared flow strip.
+            assertTrue(p.all { CoreSkillChoreography.pose(it,3.0).model.startsWith("combat_vfx/warrior_blade/") })
         }
     }
     @Test fun `export every warrior attack and pulse as server targets for the native display check`() {

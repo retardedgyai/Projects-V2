@@ -18,13 +18,13 @@ internal object CoreWarriorSupportChoreography {
         }
         if(e.sceneId=="war_banner") {
             val root=local(-.9,if(prepare) .85 else .12,.55)
-            val standard=CoreCombatMeshPart("war_standard","gold",root,Vec(1.4,1.4,1.4),yaw=yaw,
+            val standard=CoreCombatMeshPart("war_standard","warred",root,Vec(1.4,1.4,1.4),yaw=yaw,
                 travel=if(prepare) Vec(0.0,-.73,0.0) else Vec.ZERO,
                 durationTicks=life,startSize=1.0,endSize=1.0,followOwner=prepare,erode=!prepare)
             if(prepare) return listOf(standard)
             val crest=(0 until 4).map { i ->
                 val a=yaw+PI/4+i*PI/2
-                CoreCombatMeshPart("war_rally_streamer","gold",root.add(sin(a)*.35,1.0,cos(a)*.35),Vec(.9,.8,1.8),
+                CoreCombatMeshPart("war_rally_streamer","warred",root.add(sin(a)*.35,1.0,cos(a)*.35),Vec(.9,.8,1.8),
                     yaw=a,pitch=-.2,travel=Vec(sin(a)*2.2,.3,cos(a)*2.2),bend=Vec(0.0,.6,0.0),
                     durationTicks=28,startSize=1.0,endSize=.4,motion=CoreMeshMotion.FLOAT,erode=true)
             }
@@ -44,7 +44,7 @@ internal object CoreWarriorSupportChoreography {
         // breaking rim. They are sound echoes of one shield grant, not three hits.
         return listOf(0.0,PI).flatMap { side -> (0 until 3).map { echo ->
             val a=yaw+side;val delay=echo*4
-            CoreCombatMeshPart("war_voice_band",if(echo==1) "gold" else "steel",
+            CoreCombatMeshPart("war_voice_band",if(echo==1) "warred" else "steel",
                 Vec(sin(a)*.35,1.25,cos(a)*.35),Vec(1.8+echo*.2,1.0,1.6+echo*.2),
                 yaw=a,pitch=-PI/2,travel=Vec(sin(a)*.16*(life-delay-1),.05,cos(a)*.16*(life-delay-1)),
                 startSize=.3,endSize=1.0,delayTicks=delay,durationTicks=life-delay,

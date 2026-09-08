@@ -11,11 +11,11 @@ internal object CoreSceneParticles {
         "hunter" to 0xc9db8b,"holy" to 0xffe5a0,"lightning" to 0x91bcff)
     fun emit(e: CoreSkillEffect,tick: Int,sink: ParticleSink) {
         val scene=CoreSkillScenes.get(e.sceneId)
-        val color=colors.getValue(scene.palette)
+        val color=if(e.job==CoreClass.WARRIOR && scene.palette=="gold") 0xc74155 else colors.getValue(scene.palette)
         val t=tick.toDouble()/e.durationTicks
         val origin=Vec(e.origin.x(),e.origin.y(),e.origin.z())
         fun mote(at: Vec,size: Float=.65f,key: Boolean=false) {
-            sink.spawn(ParticleSpawn(dustTransition(if(key) 0xfff4db else color,color,size),at,
+            sink.spawn(ParticleSpawn(dustTransition(if(key) { if(e.job==CoreClass.WARRIOR) 0xffeeeb else 0xfff4db } else color,color,size),at,
                 category=ParticleCategory.OWN_ACTIVE,importance=if(key) ParticleImportance.COMBAT_FEEDBACK else ParticleImportance.COSMETIC))
         }
         val parts=CoreSkillChoreography.parts(e)

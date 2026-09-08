@@ -6,6 +6,37 @@ import net.minestom.server.sound.SoundEvent
 
 /** Immediate cues on the same authoritative phase as the visual. No delayed sound tasks. */
 internal object CoreSkillAudio {
+    internal data class Cue(val event: SoundEvent, val volume: Float, val pitch: Float)
+
+    /** Distinct attack layers, shared by normal swings and skill pulses. No volume-setting override. */
+    internal fun warriorCues(effect: CoreSkillEffect): List<Cue> {
+        if(effect.job!=CoreClass.WARRIOR || effect.sceneId !in CoreWarriorBladeChoreography.sceneIds) return emptyList()
+        val heavy=effect.sceneId in setOf("slam","normal_finish") || effect.sceneId=="war_ult" && effect.pulse%3==2
+        val quick=effect.sceneId=="war_wound"
+        val pitch=when {
+            heavy -> .62f
+            quick -> 1.4f
+            effect.sceneId=="whirl" -> floatArrayOf(1.2f,.95f,.7f)[effect.pulse%3]
+            effect.sceneId=="normal_reverse" -> 1.15f
+            effect.sceneId=="war_counter" -> .8f
+            else -> .95f
+        }
+        return when(effect.phase) {
+            CoreSkillVisualPhase.PREPARE -> listOf(Cue(SoundEvent.ITEM_TRIDENT_RETURN,.65f,if(heavy) .6f else 1.0f))
+            CoreSkillVisualPhase.CONTACT -> buildList {
+                add(Cue(SoundEvent.ITEM_TRIDENT_HIT,1f,if(heavy) .65f else 1.15f))
+                add(Cue(SoundEvent.ENTITY_PLAYER_ATTACK_CRIT,.8f,1.1f))
+                if(heavy) add(Cue(SoundEvent.ENTITY_ZOMBIE_ATTACK_IRON_DOOR,.55f,.7f))
+            }
+            CoreSkillVisualPhase.PULSE -> buildList {
+                add(Cue(SoundEvent.ENTITY_PLAYER_ATTACK_SWEEP,1f,pitch))
+                add(Cue(SoundEvent.ITEM_TRIDENT_THROW,if(quick) .75f else 1f,pitch))
+                // Low body only on committed finishers; not an explosion on every click.
+                if(heavy) add(Cue(SoundEvent.ENTITY_IRON_GOLEM_ATTACK,.8f,.7f))
+            }
+        }
+    }
+
     fun play(player: Player, effect: CoreSkillEffect) {
         val detail = when (CoreCombatPresentation.detail(player)) {
             CoreCombatPresentation.Detail.FULL -> 1f
@@ -17,28 +48,7 @@ internal object CoreSkillAudio {
         val astral = effect.job == CoreClass.STARWEAVER
         val scene = CoreSkillScenes.get(effect.sceneId)
         if(effect.job==CoreClass.WARRIOR && effect.sceneId in CoreWarriorBladeChoreography.sceneIds) {
-            val finisher=effect.sceneId in setOf("slam","normal_finish") || effect.sceneId=="war_ult" && effect.pulse%3==2
-            val quick=effect.sceneId=="war_wound"
-            when(effect.phase) {
-                CoreSkillVisualPhase.PREPARE -> cue(SoundEvent.ITEM_ARMOR_EQUIP_IRON,.35f,if(finisher) .65f else 1.0f)
-                CoreSkillVisualPhase.CONTACT -> {
-                    cue(SoundEvent.ENTITY_PLAYER_ATTACK_CRIT,if(finisher) .9f else .6f,if(finisher) .65f else 1.1f)
-                    if(finisher) cue(SoundEvent.BLOCK_ANVIL_LAND,.20f,.85f)
-                }
-                CoreSkillVisualPhase.PULSE -> {
-                    val pitch=when {
-                        finisher -> .55f
-                        quick -> 1.45f
-                        effect.sceneId=="whirl" -> floatArrayOf(1.1f,.9f,.65f)[effect.pulse%3]
-                        effect.sceneId=="war_breach" -> 1.2f
-                        effect.sceneId=="war_counter" -> .75f
-                        else -> .95f
-                    }
-                    cue(SoundEvent.ENTITY_PLAYER_ATTACK_SWEEP,if(quick) .65f else 1f,pitch)
-                    cue(if(effect.sceneId=="war_breach") SoundEvent.ITEM_TRIDENT_THROW else SoundEvent.ENTITY_PLAYER_ATTACK_STRONG,
-                        if(finisher) .85f else .45f,pitch)
-                }
-            }
+            warriorCues(effect).forEach { cue(it.event,it.volume,it.pitch) }
             return
         }
         if(effect.sceneId in CorePrecisionChoreography.sceneIds) {
