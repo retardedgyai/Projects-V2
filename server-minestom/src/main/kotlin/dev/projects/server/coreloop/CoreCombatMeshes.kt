@@ -77,8 +77,18 @@ internal class CoreCombatMeshes(private val owner: Player) {
     }
 
     fun tick() {
+        // Select independently for each observer: old/delayed/off-screen parts
+        // must not consume the eight slots before a fresh nearby damage beat.
+        val observerParts=owner.instance?.players?.filter { it!==owner }?.associateWith { viewer ->
+            if(!CoreCombatPresentation.packed(viewer) || CoreCombatPresentation.detail(viewer)==CoreCombatPresentation.Detail.MINIMAL)
+                emptySet<Entity>()
+            else live.asReversed().asSequence().filter { v ->
+                !v.part.secondary && !v.entity.isRemoved && v.entity.instance===owner.instance &&
+                    v.age>=v.part.delayTicks && v.age<v.part.delayTicks+v.part.durationTicks &&
+                    viewer.position.distanceSquared(v.entity.position)<=256.0
+            }.take(8).map { it.entity }.toSet()
+        } ?: emptyMap()
         val iterator=live.iterator()
-        var otherVisible=0
         while(iterator.hasNext()) {
             val v=iterator.next();val p=v.part
             if(owner.isRemoved || owner.instance!==v.instance || v.entity.isRemoved || v.age>=p.delayTicks+p.durationTicks) {
@@ -105,11 +115,10 @@ internal class CoreCombatMeshes(private val owner: Player) {
                     CoreCombatPresentation.packed(viewer) && detail!=CoreCombatPresentation.Detail.MINIMAL &&
                         (!p.secondary || detail==CoreCombatPresentation.Detail.FULL && viewer===owner) &&
                         viewer.position.distanceSquared(v.entity.position)<=(if(viewer===owner) 1600.0 else 256.0) &&
-                        (viewer===owner || otherVisible<8)
+                        (viewer===owner || v.entity in observerParts[viewer].orEmpty())
                 }.toSet()
                 v.entity.viewers.toList().filter { it !in allowed }.forEach { v.entity.removeViewer(it) }
                 allowed.filter { it !in v.entity.viewers }.forEach { v.entity.addViewer(it) }
-                if(!p.secondary) otherVisible++
             }
             v.age++
         }

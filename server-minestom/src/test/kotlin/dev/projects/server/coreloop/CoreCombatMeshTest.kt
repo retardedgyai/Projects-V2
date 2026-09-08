@@ -110,12 +110,59 @@ class CoreCombatMeshTest {
         } finally { meshes.cancel(); CoreCombatPresentation.forget(p) }
     }
 
+    @Test fun `observers see fresh nearby beats instead of older or distant primary tails`() = player { owner ->
+        val map=owner.instance
+        val near=connect(map,Pos(8.0,40.0,9.0),"NearVfx")
+        val far=connect(map,Pos(40.0,40.0,9.0),"FarVfx")
+        val meshes=CoreCombatMeshes(owner)
+        fun cast(id: String,job: CoreClass,x: Double)=CoreSkillEffect(job,
+            CoreSkillCatalog.skills(job).first { it.icon==id },Vec(x,40.0,8.0),Vec(0.0,0.0,1.0))
+        try {
+            listOf(owner,near,far).forEach { CoreCombatPresentation.pack(it,true) }
+            // More than eight old primaries, with the far scene inserted first.
+            meshes.play(cast("war_banner",CoreClass.WARRIOR,40.0))
+            repeat(2) { meshes.play(cast("war_banner",CoreClass.WARRIOR,8.0)) }
+            repeat(5) { meshes.tick() }
+            val old=map.entities.toSet()
+            val incoming=cast("mage_blink",CoreClass.MAGE,8.0)
+            meshes.play(incoming)
+            val fresh=map.entities.filter { it !in old }.toSet()
+            assertEquals(6,fresh.size)
+            meshes.tick() // New displays still have a hidden spawn frame.
+            assertTrue(fresh.none { near in it.viewers },"Hidden displays must not reserve observer slots")
+            assertTrue(old.any { it.entityType==net.minestom.server.entity.EntityType.ITEM_DISPLAY && near in it.viewers })
+            repeat(3) { meshes.tick() }
+            assertEquals(4,fresh.count { near in it.viewers },"All four current primary arcs must survive older tails")
+            assertTrue(fresh.none { far in it.viewers })
+            assertTrue(map.entities.any { it.entityType==net.minestom.server.entity.EntityType.ITEM_DISPLAY && far in it.viewers },
+                "A nearby observer's choices must not consume the distant observer's slots")
+            assertTrue(map.entities.count { near in it.viewers && it.entityType==net.minestom.server.entity.EntityType.ITEM_DISPLAY }<=8)
+            CoreCombatPresentation.cycle(near);CoreCombatPresentation.cycle(near)
+            meshes.tick()
+            assertTrue(fresh.none { near in it.viewers },"Minimal still opts out")
+        } finally {
+            meshes.cancel()
+            listOf(owner,near,far).forEach { CoreCombatPresentation.forget(it) }
+            near.remove();far.remove()
+        }
+    }
+
+    private fun connect(map: net.minestom.server.instance.Instance,at: Pos,name: String): Player {
+        val connection=object : PlayerConnection() {
+            override fun sendPacket(packet: SendablePacket)=Unit
+            override fun getRemoteAddress(): SocketAddress=InetSocketAddress("127.0.0.1",0)
+        }
+        connection.setClientState(ConnectionState.PLAY);connection.setServerState(ConnectionState.PLAY)
+        val p=Player(connection,GameProfile(UUID.randomUUID(),name));connection.player=p
+        p.setInstance(map,at).get(10,TimeUnit.SECONDS)
+        return p
+    }
     private fun player(action: (Player) -> Unit) {
         MinecraftServer.init(Auth.Offline())
         val map = MinecraftServer.getInstanceManager().createInstanceContainer()
         map.viewDistance(2)
         map.setGenerator { it.modifier().fillHeight(0, 40, Block.STONE) }
-        for (x in -3..3) for (z in -3..3) map.loadChunk(x, z).get(10, TimeUnit.SECONDS)
+        for (x in -3..5) for (z in -3..3) map.loadChunk(x, z).get(10, TimeUnit.SECONDS)
         val connection = object : PlayerConnection() {
             override fun sendPacket(packet: SendablePacket) = Unit
             override fun getRemoteAddress(): SocketAddress = InetSocketAddress("127.0.0.1", 0)
@@ -124,6 +171,9 @@ class CoreCombatMeshTest {
         val p = Player(connection, GameProfile(UUID.randomUUID(), "CombatMeshTest"))
         connection.player = p
         p.setInstance(map, Pos(8.0, 40.0, 8.0)).get(10, TimeUnit.SECONDS)
-        try { action(p) } finally { p.remove(); MinecraftServer.getInstanceManager().unregisterInstance(map) }
+        try { action(p) } finally {
+            map.players.toList().forEach { it.remove() }
+            MinecraftServer.getInstanceManager().unregisterInstance(map)
+        }
     }
 }

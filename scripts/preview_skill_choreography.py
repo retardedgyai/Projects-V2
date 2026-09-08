@@ -115,13 +115,15 @@ def main():
     parser.add_argument('--prefix',default='choreography-review')
     parser.add_argument('--view',choices=('iso','eye'),default='iso')
     parser.add_argument('--timeline',default='.tools/skill-choreography-frames.json')
+    parser.add_argument('--ticks',help='Comma-separated snapshot ticks; skips GIF rendering for broad reviews')
     args=parser.parse_args()
     source=json.loads((ROOT/args.timeline).read_text(encoding='utf-8'))
     ids=args.ids.split(',')
     scenes=[next(s for s in source if s['id']==i) for i in ids]
     frames=[]
     end=max(len(s['frames']) for s in scenes)
-    for tick in range(end+10):
+    selected=[int(t) for t in args.ticks.split(',')] if args.ticks else range(end+10)
+    for tick in selected:
         sheet=Image.new('RGB',(W*4,H*math.ceil(len(scenes)/4)+26),'#111820')
         label='目線高1.62mの簡易透視投影' if args.view=='eye' else '灰枠は身長1.8m'
         ImageDraw.Draw(sheet).text((8,3),f'実装モデル＋実時間の連続確認（ゲーム画面ではありません／{label}）',font=FONT,fill='#d7d0be')
@@ -129,8 +131,9 @@ def main():
             parts=s['frames'][tick] if tick<len(s['frames']) else []
             sheet.paste(render(parts,s['name']+' / '+s['id'],tick,args.view),(i%4*W,i//4*H+26))
         frames.append(sheet)
-        if tick in (0,3,6,10,16,24,32): sheet.save(ROOT/f'.tools/{args.prefix}-{tick:02d}.png')
-    frames[0].save(ROOT/f'.tools/{args.prefix}.gif',save_all=True,append_images=frames[1:],duration=50,loop=0)
-    print(f'{len(scenes)} scenes / {end} timeline ticks rendered: .tools/{args.prefix}.gif')
+        if args.ticks or tick in (0,3,6,10,16,24,32): sheet.save(ROOT/f'.tools/{args.prefix}-{tick:02d}.png')
+    if not args.ticks:
+        frames[0].save(ROOT/f'.tools/{args.prefix}.gif',save_all=True,append_images=frames[1:],duration=50,loop=0)
+    print(f'{len(scenes)} scenes / {len(selected)} review ticks rendered: .tools/{args.prefix}')
 
 if __name__=='__main__': main()
