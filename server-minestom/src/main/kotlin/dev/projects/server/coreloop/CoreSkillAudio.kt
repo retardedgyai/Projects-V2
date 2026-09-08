@@ -19,6 +19,11 @@ internal object CoreSkillAudio {
         val restoration=scene.kind==CoreSceneKind.HEAL || effect.sceneId=="heal_shield"
         val blade = scene.kind in setOf(CoreSceneKind.CUT,CoreSceneKind.CLEAVE,CoreSceneKind.SPIN,CoreSceneKind.THRUST) && scene.body!="shield_bash"
         if(scene.kind==CoreSceneKind.TELEPORT && effect.phase==CoreSkillVisualPhase.PULSE) {
+            if(effect.sceneId=="ass_escape") {
+                cue(SoundEvent.ENTITY_ENDERMAN_TELEPORT,.55f,if(effect.endpoint==CoreSkillEndpoint.DEPARTURE) .65f else 1.45f)
+                cue(SoundEvent.BLOCK_FIRE_EXTINGUISH,.55f,.75f)
+                return
+            }
             cue(if(effect.endpoint==CoreSkillEndpoint.DEPARTURE) SoundEvent.ENTITY_ILLUSIONER_CAST_SPELL else SoundEvent.BLOCK_AMETHYST_BLOCK_CHIME,
                 .65f,if(effect.endpoint==CoreSkillEndpoint.DEPARTURE) .7f else 1.4f)
             return
@@ -49,6 +54,14 @@ internal object CoreSkillAudio {
                     effect.sceneId == "mage_burst" -> {
                         cue(SoundEvent.ENTITY_LIGHTNING_BOLT_IMPACT,.7f,1.65f)
                         cue(SoundEvent.BLOCK_RESPAWN_ANCHOR_DEPLETE,.55f,1.8f)
+                    }
+                    effect.sceneId == "ass_poison" -> {
+                        cue(SoundEvent.ENTITY_PLAYER_ATTACK_SWEEP,.8f,1.25f)
+                        cue(SoundEvent.BLOCK_BREWING_STAND_BREW,.9f,.7f)
+                    }
+                    effect.sceneId in setOf("ass_stab","ass_chase","ass_contract") -> {
+                        cue(SoundEvent.ITEM_TRIDENT_THROW,.9f,if(effect.skill.ultimate) .65f else 1.45f)
+                        cue(SoundEvent.ENTITY_PLAYER_ATTACK_CRIT,.7f,if(effect.skill.ultimate) .7f else 1.2f)
                     }
                     scene.kind == CoreSceneKind.HAMMER -> {
                         cue(SoundEvent.ENTITY_PLAYER_ATTACK_STRONG,.9f,.65f)
@@ -83,7 +96,7 @@ internal object CoreSkillAudio {
                         cue(SoundEvent.BLOCK_AMETHYST_BLOCK_CHIME, .65f, 1.35f)
                     }
                 }
-                if (!restoration && (effect.skill.ultimate || effect.motif == CoreSkillMotif.CLEAVE || effect.motif == CoreSkillMotif.PULL))
+                if (!restoration && effect.sceneId!="ass_contract" && (effect.skill.ultimate || effect.motif == CoreSkillMotif.CLEAVE || effect.motif == CoreSkillMotif.PULL))
                     cue(SoundEvent.ENTITY_GENERIC_EXPLODE, if (effect.skill.ultimate) .60f else .3f, .6f)
             }
         }

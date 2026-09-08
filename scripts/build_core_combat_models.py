@@ -136,10 +136,12 @@ def build_combat_models(assets, write_json):
     build_slash_frames(assets, write_json)
     build_magic_frames(assets, write_json, 'stellar-burst-pixel-v1.png', 'stellar/burst')
     build_magic_frames(assets, write_json, 'nebula-stream-pixel-v1.png', 'nebula/stream')
+    build_magic_frames(assets, write_json, 'shadow-smoke-pixel-v1.png', 'shadow/smoke', {'shadow':0xd6b2ff}, inset=4)
     build_ice_growth(assets, write_json)
     build_pull_chains(assets, write_json)
     build_healing_feather(assets, write_json)
     build_elemental_phrases(assets, write_json)
+    build_assassin_phrases(assets, write_json)
 
 
 def vfx_box(lo, hi, ink):
@@ -314,14 +316,75 @@ def build_ice_growth(assets, write_json):
         write_json(assets/f'items/{fade}.json',{'model':{'type':'minecraft:model','model':f'projects:{fade}'}})
 
 
-def build_magic_frames(assets, write_json, source, family):
+def build_assassin_phrases(assets, write_json):
+    def save(name,palette,elements):
+        colors=PALETTES[palette]
+        if name.startswith('shadow_echo'): colors=('light_gray_concrete','purple_concrete','magenta_concrete')
+        write_json(assets/f'models/combat_vfx/{name}.json',{'ambientocclusion':False,
+            'textures':{str(i):f'minecraft:block/{t}' for i,t in enumerate(colors)},'elements':elements})
+        write_json(assets/f'items/combat_vfx/{name}.json',
+            {'model':{'type':'minecraft:model','model':f'projects:combat_vfx/{name}'}})
+    def fading(name,palette,elements):
+        save(name,palette,elements)
+        for stage in range(1,8):
+            save(f'{name}_fade{stage}',palette,[e for i,e in enumerate(elements) if (i*5)%8>=stage])
+
+    # Minecraft-proportioned phantom, sliced horizontally so the lower body can
+    # tear away into strips. Eight poses change the limbs and dissolve the body.
+    for frame in range(8):
+        parts=[]
+        limbs=((4,12,4,12,16,24),(4,12,6,10,4,16),(0,4,6,10,4,16),
+               (12,16,6,10,4,16),(4,8,6,10,-8,4),(8,12,6,10,-8,4))
+        for limb,(x0,x1,y0,y1,z0,z1) in enumerate(limbs):
+            step=z1-z0 if frame<4 else 1
+            for z in range(z0,z1,step):
+                if frame>=4 and (z+limb*3)%8<frame-3: continue
+                stride=math.sin(frame*.65)*(1 if limb%2==0 else -1)*(16-z)*.14 if limb>=2 else 0
+                tear=max(0,frame-3)*(24-z)*.045
+                parts.append(vfx_box([x0+tear,y0+stride,z],[x1+tear,y1+stride,z+step],1 if limb<2 else 2))
+        save(f'shadow_echo_shadow_{frame}','shadow',parts)
+
+    streaks=[]
+    for z in range(16):
+        width=(1-z/16)*4.5+.35
+        streaks.append(vfx_box([8-width*.36,8-width*.3,z],[8+width*.36,8+width*.3,z+1],0))
+        for side in (-1,1):
+            x=8+side*width*.65
+            streaks.append(vfx_box([x-width*.28,7.7,z],[x+width*.28,8.3,z+1],1))
+            y=8+side*width*.65
+            streaks.append(vfx_box([7.7,y-width*.28,z],[8.3,y+width*.28,z+1],1))
+    fading('piercing_wake_shadow','shadow',streaks)
+
+    # An individual hooked fang, not the old two-fang symbol. Each blade closes
+    # independently; mirrored anatomy uses a distinct model, not negative scale.
+    fang=[]
+    for z in range(16):
+        x=5+(z/15)**2*6
+        width=max(.35,2.2*(1-z/16))
+        fang.append(vfx_box([x-width,7.4,z],[x+width,8.6,z+1],0 if z>10 else 1))
+    fading('venom_fang_venom','venom',fang)
+    mirror=[{**e,'from':[16-e['to'][0],e['from'][1],e['from'][2]],
+                  'to':[16-e['from'][0],e['to'][1],e['to'][2]]} for e in fang]
+    fading('venom_fang_reverse_venom','venom',mirror)
+    drops=[]
+    for z in range(12):
+        width=(2.5*math.sin((z+1)/8*math.pi/2) if z<4 else max(.35,3.0*(1-(z-4)/8)))
+        drops.append(vfx_box([8-width,8-width,2+z],[8+width,8+width,3+z],0 if z>=9 else 1 if z>=3 else 2))
+    fading('venom_bead_venom','venom',drops)
+
+
+def build_magic_frames(assets, write_json, source, family, colors=None, inset=0):
     master = Path(__file__).resolve().parents[1] / 'assets/combat-vfx' / source
     atlas = Image.open(master).convert('L')
     for frame in range(16):
         x,y=frame%4,frame//4
         tile=atlas.crop((round(x*atlas.width/4),round(y*atlas.height/4),
                          round((x+1)*atlas.width/4),round((y+1)*atlas.height/4)))
-        tile=tile.resize((64,64),Image.Resampling.NEAREST)
+        tile=tile.resize((64-2*inset,64-2*inset),Image.Resampling.NEAREST)
+        if inset:
+            padded=Image.new('L',(64,64),0)
+            padded.paste(tile,(inset,inset))
+            tile=padded
         tile=tile.point(lambda v: 0 if v<32 else 64 if v<96 else 128 if v<160 else 192 if v<224 else 255)
         alpha=tile.point(lambda v: 255 if v else 0)
         for box in ((0,0,64,4),(0,60,64,64),(0,0,4,64),(60,0,64,64)):
@@ -335,7 +398,7 @@ def build_magic_frames(assets, write_json, source, family):
             'elements':[{'from':[0,8,0],'to':[16,8,16],'shade':False,'faces':{
                 'up':{'texture':'#0','uv':[0,16,16,0],'tintindex':0},
                 'down':{'texture':'#0','uv':[0,0,16,16],'tintindex':0}}}]})
-        for palette,color in dict(astral=0xdca6ff,ice=0x85e2ff).items():
+        for palette,color in (colors if colors is not None else dict(astral=0xdca6ff,ice=0x85e2ff)).items():
             write_json(assets/f'items/combat_vfx/{family}_{palette}_{frame}.json',
                 {'model':{'type':'minecraft:model','model':f'projects:{name}',
                           'tints':[{'type':'minecraft:constant','value':color}]}})

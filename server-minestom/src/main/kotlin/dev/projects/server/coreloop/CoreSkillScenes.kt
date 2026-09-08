@@ -5,7 +5,7 @@ import kotlin.math.*
 
 internal enum class CoreSceneKind { CUT, CLEAVE, SPIN, GUARD, SHIELD, THRUST, BANNER, RAY, NOVA, RAIN, TELEPORT, FIELD, FAN, AFTERIMAGE, HAMMER, PULL, HEAL, PILLAR }
 internal enum class CoreSkillEndpoint { NONE, DEPARTURE, ARRIVAL }
-internal enum class CoreMeshAtlas { NONE, SLASH, STELLAR_BURST, NEBULA_STREAM }
+internal enum class CoreMeshAtlas { NONE, SLASH, STELLAR_BURST, NEBULA_STREAM, SHADOW_SMOKE }
 
 /** Concrete authored contract for every existing skill. Shared with the mesh builder and art sheet. */
 internal data class CoreSkillScene(val id: String, val name: String, val kind: CoreSceneKind, val palette: String,

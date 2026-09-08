@@ -49,7 +49,10 @@ internal object CoreSkillChoreography {
         val arc=sin(PI*t)
         val travel=p.travel.mul(u).add(p.bend.mul(arc))
         val angle=if(p.motion==CoreMeshMotion.ORBIT) p.spin*t else p.spin*u
-        val at=if(p.motion==CoreMeshMotion.ORBIT) {
+        val at=if(p.shape=="piercing_wake") {
+            // Keep the rear at the cast origin and the front attached to the dagger.
+            p.offset.add(Vec(sin(p.yaw),0.0,cos(p.yaw)).mul(p.scale.z()*grow*.5))
+        } else if(p.motion==CoreMeshMotion.ORBIT) {
             Vec(cos(angle)*p.offset.x()+sin(angle)*p.offset.z(),p.offset.y(),-sin(angle)*p.offset.x()+cos(angle)*p.offset.z()).add(travel)
         } else p.offset.add(travel)
         p.chainAnchor?.let { anchor ->
@@ -65,7 +68,7 @@ internal object CoreSkillChoreography {
         }
         // Stroke peaks in 0.20s regardless of the longer aftermath. Extending readability
         // must not postpone the visually strongest beat until half a second after damage.
-        val stage=if(p.atlas==CoreMeshAtlas.NEBULA_STREAM) {
+        val stage=if(p.atlas in setOf(CoreMeshAtlas.NEBULA_STREAM,CoreMeshAtlas.SHADOW_SMOKE)) {
             floor(t*15).toInt()
         } else if(p.stellarBurst) {
             // Ignition peaks at frame 3 in 0.10s; the hollow broken wake then unravels.
@@ -75,7 +78,9 @@ internal object CoreSkillChoreography {
             if(localAge<=4.0) floor(localAge/4.0*7).toInt() else
                 8+floor(((localAge-5)/(p.durationTicks-6).coerceAtLeast(1)).coerceIn(0.0,1.0)*7).toInt()
         } else floor(((t-.42)/.58).coerceIn(0.0,1.0)*7).toInt()
-        val model=if(p.shape=="flame_plume" || p.shape=="flame_tail") {
+        val model=if(p.shape=="shadow_echo") "combat_vfx/shadow_echo_shadow_${floor(t*7).toInt()}" else
+            if(p.atlas==CoreMeshAtlas.SHADOW_SMOKE) "combat_vfx/shadow/smoke_shadow_$stage" else
+            if(p.shape=="flame_plume" || p.shape=="flame_tail") {
             val frame=if(localAge<=3.0) floor(localAge/3*2).toInt() else
                 3+floor(((localAge-4)/(p.durationTicks-5).coerceAtLeast(1)).coerceIn(0.0,1.0)*8).toInt()
             "combat_vfx/${if(p.shape=="flame_tail") "fire_wake" else "flame_plume"}_fire_$frame"
@@ -87,7 +92,8 @@ internal object CoreSkillChoreography {
             if(p.stellarBurst) "combat_vfx/stellar/burst_${p.palette}_$stage" else
             if(p.sprite) "combat_vfx/ribbon/slash_${if(p.spriteMirror) "reverse_" else ""}${p.palette}_$stage" else
             "combat_vfx/${p.shape}_${p.palette}" + if(p.erode && stage>0) "_fade$stage" else ""
-        return CoreMeshPose(at,p.scale.mul(grow),p.yaw+angle,p.pitch+p.pitchTravel*u,p.roll+p.rollTravel*u,
+        val scale=if(p.shape=="piercing_wake") Vec(p.scale.x(),p.scale.y(),p.scale.z()*grow) else p.scale.mul(grow)
+        return CoreMeshPose(at,scale,p.yaw+angle,p.pitch+p.pitchTravel*u,p.roll+p.rollTravel*u,
             model,age>=p.delayTicks && age<p.delayTicks+p.durationTicks)
     }
 
@@ -101,6 +107,7 @@ internal object CoreSkillChoreography {
             durationTicks=life,erode=false) }
         if(e.phase==CoreSkillVisualPhase.CONTACT) {
             val p=raw.first()
+            if(e.sceneId=="ass_poison") return venomDrops(p.offset,atan2(e.direction.x(),e.direction.z()),18)
             // Only accepted hits reach CONTACT. Never attach this explosion to an empty ray.
             if(e.sceneId in setOf("star_thread","star_needle","star_break")) {
                 val burst=stellarBurst(p.offset,atan2(e.direction.x(),e.direction.z()),
@@ -120,6 +127,9 @@ internal object CoreSkillChoreography {
         if(e.sceneId in setOf("meteor","mage_ult")) return fireLanding(e,raw.first().offset,life)
         if(e.sceneId in setOf("frost_nova","mage_zero")) return frostWave(e,life)
         if(e.sceneId=="mage_burst") return stormDischarge(e,life)
+        if(e.sceneId in setOf("ass_stab","ass_chase","ass_contract")) return assassinThrust(e,life)
+        if(e.sceneId in setOf("ass_escape","ass_guard")) return shadowDeparture(e,life)
+        if(e.sceneId=="ass_poison") return venomBite(e,life)
         val ray=s.kind==CoreSceneKind.RAY
         val base=raw.mapIndexed { i,p ->
             val motion=when(s.kind) {
@@ -174,11 +184,6 @@ internal object CoreSkillChoreography {
                 base[0]=ribbon.copy(pitch=-PI/2,roll=.72,scale=Vec(r,1.0,r),spin=0.0,rollTravel=-.2)
                 base[base.lastIndex]=ribbon.copy(pitch=-PI/2,roll=-.72,scale=Vec(r,1.0,r),spin=0.0,
                     rollTravel=.2,spriteMirror=!ribbon.spriteMirror,delayTicks=3,secondary=true)
-            }
-            if(s.body=="poison_fang") {
-                // Keep the identifying paired fangs at the striking point, with a smaller toxic wake.
-                base[0]=p.copy(durationTicks=12,startSize=.75,endSize=1.0,motion=CoreMeshMotion.SWEEP,erode=true)
-                base[base.lastIndex]=ribbon.copy(scale=ribbon.scale.mul(.75),delayTicks=1,secondary=true)
             }
         }
         // Each family keeps its own visual verb, but gains a spatial foreground/midground/aftermath.
@@ -395,5 +400,86 @@ internal object CoreSkillChoreography {
                 startSize=1.0,endSize=1.0,delayTicks=delay,durationTicks=life-delay,
                 motion=CoreMeshMotion.LINEAR,secondary=i%2!=0)
         }
+    }
+
+    private fun assassinThrust(e: CoreSkillEffect,life: Int): List<CoreCombatMeshPart> {
+        val s=CoreSkillScenes.get(e.sceneId)
+        val r=min(e.radius,s.reach)
+        val yaw=atan2(e.direction.x(),e.direction.z())
+        val forward=Vec(sin(yaw),0.0,cos(yaw))
+        val root=Vec(0.0,1.08,0.0).add(forward.mul(.18))
+        val bladeLength=if(e.skill.ultimate) 1.25 else .8
+        val distance=(r-.18-bladeLength).coerceAtLeast(.05)
+        val blade=CoreCombatMeshPart(s.body,"shadow",root.add(forward.mul(bladeLength*.5)),
+            Vec(if(e.skill.ultimate) .85 else .65,.65,bladeLength),yaw=yaw,roll=.35,
+            travel=forward.mul(distance),startSize=1.0,endSize=1.0,
+            durationTicks=life,motion=CoreMeshMotion.THRUST,erode=true)
+        val wake=CoreCombatMeshPart("piercing_wake","shadow",root,Vec(1.15,1.15,r-.18),yaw=yaw,
+            startSize=bladeLength/(r-.18),endSize=1.0,durationTicks=life,
+            motion=CoreMeshMotion.THRUST,erode=true)
+        // Chase leans into a crossing pair of speed wakes, contract adds four.
+        // They are forward acceleration traces, never extra slashes or hit pulses.
+        val traces=if(e.sceneId=="ass_stab") emptyList() else (0 until if(e.skill.ultimate) 4 else 2).map { i ->
+            val a=yaw+i*PI*2/(if(e.skill.ultimate) 4 else 2)
+            wake.copy(offset=root.add(cos(a)*.23,if(i%2==0) .18 else -.18,-sin(a)*.23),
+                scale=Vec(.42,.42,r-.18),delayTicks=1,durationTicks=life-1,
+                secondary=i>=2)
+        }
+        return listOf(blade,wake)+traces
+    }
+
+    private fun shadowDeparture(e: CoreSkillEffect,life: Int): List<CoreCombatMeshPart> {
+        val yaw=atan2(e.direction.x(),e.direction.z())
+        fun local(x: Double,y: Double,z: Double)=Vec(cos(yaw)*x+sin(yaw)*z,y,-sin(yaw)*x+cos(yaw)*z)
+        val guard=e.sceneId=="ass_guard"
+        val departure=e.endpoint!=CoreSkillEndpoint.ARRIVAL
+        val result=mutableListOf<CoreCombatMeshPart>()
+        if(guard) for(side in listOf(-1,1)) {
+            result+=CoreCombatMeshPart("shadow_echo","shadow",local(side*.2,.9,-.15),Vec(.95,.95,.95),
+                yaw=yaw,pitch=-PI/2,roll=side*.05,travel=local(side*.8,.05,-.65),
+                rollTravel=side*.13,startSize=1.0,endSize=.9,delayTicks=if(side==1) 0 else 3,
+                durationTicks=life-if(side==1) 0 else 3,motion=CoreMeshMotion.FLOAT)
+        } else {
+            result+=CoreCombatMeshPart("shadow_gate","shadow",Vec(0.0,1.0,0.0),Vec(1.3,1.0,2.0),
+                yaw=yaw,pitch=-PI/2,startSize=if(departure) 1.0 else .2,endSize=if(departure) .05 else 1.0,
+                durationTicks=12,motion=if(departure) CoreMeshMotion.GATHER else CoreMeshMotion.SNAP,erode=true)
+        }
+        repeat(if(guard) 4 else 3) { i ->
+            val side=if(i%2==0) -1 else 1
+            val delay=if(guard) 4+i*2 else i*2
+            // The two primary wisps stay by the hands, in front of the owner.
+            // Rear-only smoke would hide the activation from a first-person player.
+            val front=guard && i<2
+            val at=local(side*(if(front) .8 else if(guard) .55 else .35),.65+(i%2)*.55,
+                if(front) .4 else if(guard) -.45 else 0.0)
+            result+=CoreCombatMeshPart("shadow_wisp","shadow",at,Vec(2.1,1.0,2.7),
+                yaw=yaw+side*.65,pitch=-PI/2,roll=side*.2,
+                travel=local(side*(if(departure || guard) .7 else .25),.6,if(front) .35 else if(guard) -.4 else .15),
+                startSize=if(departure || guard) .7 else .4,endSize=1.0,
+                delayTicks=delay,durationTicks=life-delay,motion=CoreMeshMotion.FLOAT,
+                rollTravel=-side*.45,atlas=CoreMeshAtlas.SHADOW_SMOKE,secondary=i>=2)
+        }
+        return result
+    }
+
+    private fun venomBite(e: CoreSkillEffect,life: Int): List<CoreCombatMeshPart> {
+        val yaw=atan2(e.direction.x(),e.direction.z())
+        val r=min(e.radius,CoreSkillScenes.get(e.sceneId).reach)
+        fun local(x: Double,y: Double,z: Double)=Vec(cos(yaw)*x+sin(yaw)*z,y,-sin(yaw)*x+cos(yaw)*z)
+        val fangs=listOf(-1,1).map { side ->
+            CoreCombatMeshPart(if(side<0) "venom_fang" else "venom_fang_reverse","venom",
+                local(side*.65,1.7,r*.38),Vec(1.0,.65,1.4),yaw=yaw,pitch=PI/2-.4,
+                roll=side*.55,rollTravel=-side*.45,travel=local(-side*.42,-.35,r*.22),
+                startSize=1.0,endSize=1.0,durationTicks=life,motion=CoreMeshMotion.THRUST,erode=true)
+        }
+        return fangs+venomDrops(local(0.0,1.0,r*.6),yaw,life-3).map { it.copy(delayTicks=3,secondary=true) }
+    }
+
+    private fun venomDrops(at: Vec,yaw: Double,life: Int): List<CoreCombatMeshPart> = (0 until 5).map { i ->
+        val a=yaw+(i-2)*.45
+        CoreCombatMeshPart("venom_bead","venom",at.add(sin(a)*.15,0.0,cos(a)*.15),
+            Vec(.65,.65,.8),yaw=a,pitch=-PI/2,roll=(i-2)*.15,
+            travel=Vec(sin(a)*.75,-.75,cos(a)*.75),bend=Vec(0.0,.35+(i%2)*.15,0.0),
+            startSize=1.0,endSize=.2,durationTicks=life,motion=CoreMeshMotion.FLOAT,erode=true)
     }
 }

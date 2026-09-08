@@ -10,6 +10,104 @@ import kotlin.test.*
 import kotlin.math.*
 
 class CoreSkillChoreographyTest {
+    @Test fun `shadow smoke frames retain hard pixel clusters and empty gutters`() {
+        assertPixelFrames("shadow/smoke")
+    }
+    @Test fun `assassin thrust wake stays attached to the dagger tip at every heading`() {
+        for(id in listOf("ass_stab","ass_chase","ass_contract")) repeat(8) { heading ->
+            val skill=CoreSkillCatalog.skills(CoreClass.ASSASSIN).first { it.icon==id }
+            val a=heading*PI/4
+            val forward=Vec(sin(a),0.0,cos(a))
+            val e=CoreSkillEffect(CoreClass.ASSASSIN,skill,Vec.ZERO,forward)
+            val parts=CoreSkillChoreography.parts(e)
+            assertEquals(when(id) { "ass_stab" -> 2; "ass_chase" -> 4; else -> 6 },parts.size)
+            assertTrue(parts.none { it.sprite || it.atlas==CoreMeshAtlas.SHADOW_SMOKE })
+            val blade=parts[0];val wake=parts[1]
+            val r=CoreSkillScenes.get(id).reach
+            for(tick in 0 until e.durationTicks) {
+                val p=CoreSkillChoreography.pose(blade,tick.toDouble())
+                val w=CoreSkillChoreography.pose(wake,tick.toDouble())
+                val bladeTip=p.offset.add(forward.mul(p.scale.z()*.5))
+                val wakeTip=w.offset.add(forward.mul(w.scale.z()*.5))
+                assertTrue(bladeTip.distance(wakeTip)<.00001,"$id heading=$heading tick=$tick")
+                assertTrue(w.offset.sub(forward.mul(w.scale.z()*.5)).distance(wake.offset)<.00001)
+                assertTrue(hypot(bladeTip.x(),bladeTip.z())<=r+.00001)
+            }
+            assertTrue(CoreSkillChoreography.pose(blade,5.0).offset.distance(blade.offset)>.5)
+        }
+    }
+    @Test fun `shadow departure closes while arrival opens and smoke has a separate lifetime`() {
+        val skill=CoreSkillCatalog.skills(CoreClass.ASSASSIN).first { it.icon=="ass_escape" }
+        for(endpoint in listOf(CoreSkillEndpoint.DEPARTURE,CoreSkillEndpoint.ARRIVAL)) {
+            val e=CoreSkillEffect(CoreClass.ASSASSIN,skill,Vec.ZERO,Vec(0.0,0.0,1.0),endpoint=endpoint)
+            val parts=CoreSkillChoreography.parts(e)
+            assertEquals(4,parts.size)
+            val gate=parts.first()
+            val start=CoreSkillChoreography.pose(gate,0.0);val end=CoreSkillChoreography.pose(gate,7.0)
+            assertEquals(endpoint==CoreSkillEndpoint.DEPARTURE,end.scale.x()<start.scale.x())
+            assertEquals(12,gate.durationTicks)
+            for(p in parts.drop(1)) {
+                assertEquals(CoreMeshAtlas.SHADOW_SMOKE,p.atlas)
+                assertFalse(p.followOwner)
+                assertEquals(e.durationTicks,p.durationTicks+p.delayTicks)
+                assertEquals(16,(0 until p.durationTicks).map { CoreSkillChoreography.pose(p,(p.delayTicks+it).toDouble()).model }.toSet().size)
+                assertTrue(CoreSkillChoreography.pose(p,(p.delayTicks+p.durationTicks-1).toDouble()).offset.y()>p.offset.y())
+            }
+        }
+    }
+    @Test fun `afterimages move away from the body and break into smoke instead of following as shields`() {
+        val e=effect(CoreClass.ASSASSIN,"ass_guard")
+        val parts=CoreSkillChoreography.parts(e)
+        assertEquals(6,parts.size)
+        val echoes=parts.filter { it.shape=="shadow_echo" }
+        assertEquals(2,echoes.size)
+        assertEquals(4,parts.count { it.atlas==CoreMeshAtlas.SHADOW_SMOKE })
+        val foreground=parts.filter { it.atlas==CoreMeshAtlas.SHADOW_SMOKE && !it.secondary }
+        assertEquals(2,foreground.size)
+        assertTrue(foreground.all { it.offset.z()>.3 && it.travel.z()>0 && abs(it.offset.x())>=.8 },
+            "The owner needs visible hand-side smoke, not only phantoms behind the camera")
+        assertTrue(parts.none { it.followOwner || it.shape=="afterimage" || it.shape=="shadow_gate" })
+        for(p in echoes) {
+            val states=(0 until p.durationTicks).map { CoreSkillChoreography.pose(p,(p.delayTicks+it).toDouble()) }
+            assertEquals(8,states.map { it.model }.toSet().size)
+            assertTrue(abs(states.last().offset.x())>abs(states.first().offset.x())+.7)
+            assertTrue(states.last().offset.z()<states.first().offset.z()-.6)
+            assertEquals(e.durationTicks,p.durationTicks+p.delayTicks)
+        }
+    }
+    @Test fun `venom is a closing paired bite with falling liquid not a green sword ribbon`() {
+        val e=effect(CoreClass.ASSASSIN,"ass_poison")
+        val parts=CoreSkillChoreography.parts(e)
+        assertEquals(7,parts.size)
+        assertTrue(parts.none { it.sprite || it.atlas==CoreMeshAtlas.SHADOW_SMOKE })
+        for(p in parts.take(2)) {
+            val peak=CoreSkillChoreography.pose(p,5.0)
+            assertTrue(abs(peak.offset.x())<abs(p.offset.x())*.5)
+            assertTrue(peak.offset.z()>p.offset.z())
+        }
+        for(p in parts.drop(2)) {
+            val end=CoreSkillChoreography.pose(p,(p.delayTicks+p.durationTicks-1).toDouble())
+            assertTrue(end.offset.y()<p.offset.y()-.7)
+            assertEquals(e.durationTicks,p.delayTicks+p.durationTicks)
+        }
+        val contact=CoreSkillChoreography.parts(effect(CoreClass.ASSASSIN,"ass_poison",CoreSkillVisualPhase.CONTACT))
+        assertEquals(5,contact.size)
+        assertTrue(contact.all { it.shape=="venom_bead" && it.durationTicks==18 })
+    }
+    @Test fun `phantom poses and venom models are bounded solid geometry`() {
+        val names=(0..7).map { "shadow_echo_shadow_$it" }+
+            listOf("venom_fang_venom","venom_fang_reverse_venom","venom_bead_venom","piercing_wake_shadow")
+        for(name in names) {
+            val model=javaClass.getResourceAsStream("/core-ui-pack/assets/projects/models/combat_vfx/$name.json")!!
+                .bufferedReader().use { JsonParser.parseReader(it).asJsonObject }
+            val elements=model.getAsJsonArray("elements")
+            assertTrue(elements.size()>=if(name.startsWith("shadow_echo")) 6 else 10)
+            for(element in elements) {
+                val lo=element.asJsonObject.getAsJsonArray("from");val hi=element.asJsonObject.getAsJsonArray("to")
+                assertTrue((0..2).all { hi[it].asDouble>lo[it].asDouble && lo[it].asDouble>=-16 && hi[it].asDouble<=32 },name)
+            }
+        }
+    }
     @Test fun `fire landing breaks the prepared rock into flames and arcing debris`() {
         for(id in listOf("meteor","mage_ult")) {
             val e=effect(CoreClass.MAGE,id)
@@ -341,9 +439,9 @@ class CoreSkillChoreographyTest {
             assertFalse(CoreSkillChoreography.pose(parts.last(),-1.0).visible)
         }
         val poison=CoreSkillChoreography.parts(effect(CoreClass.ASSASSIN,"ass_poison"))
-        assertEquals("poison_fang",poison.first().shape)
-        assertFalse(poison.first().sprite)
-        assertTrue(poison.any { it.sprite && it.palette=="venom" })
+        assertEquals(2,poison.count { it.shape.startsWith("venom_fang") })
+        assertTrue(poison.none { it.sprite },"The bite must not inherit the generic sword ribbon")
+        assertEquals(5,poison.count { it.shape=="venom_bead" })
     }
     @Test fun `stroke peaks early while its dissolving wake remains readable`() {
         for(job in CoreClass.entries) for(s in CoreSkillCatalog.skills(job)) {
@@ -436,12 +534,21 @@ class CoreSkillChoreographyTest {
                     mapOf("model" to pose.model,"offset" to xyz(pose.offset.add(e.origin)),"scale" to xyz(pose.scale),
                         "yaw" to pose.yaw,"pitch" to pose.pitch,"roll" to pose.roll) }
             })
-            if(s.icon in setOf("star_thread","star_needle","star_break")) {
+            if(s.icon in setOf("star_thread","star_needle","star_break","ass_poison")) {
                 val contact=CoreSkillChoreography.parts(effect(job,s.icon,CoreSkillVisualPhase.CONTACT))
                 scenes+=mapOf("id" to "${s.icon}_contact","name" to "${s.name} 命中","job" to job.name,
                     "frames" to (0..contact.maxOf { it.delayTicks+it.durationTicks }).map { tick ->
                         contact.mapNotNull { p -> val pose=CoreSkillChoreography.pose(p,tick.toDouble());if(!pose.visible) null else
                             mapOf("model" to pose.model,"offset" to xyz(pose.offset.add(0.0,0.0,4.0)),"scale" to xyz(pose.scale),
+                                "yaw" to pose.yaw,"pitch" to pose.pitch,"roll" to pose.roll) }
+                    })
+            }
+            if(s.icon=="ass_escape") {
+                val arrival=CoreSkillChoreography.parts(CoreSkillEffect(job,s,Vec.ZERO,Vec(0.0,0.0,1.0),endpoint=CoreSkillEndpoint.ARRIVAL))
+                scenes+=mapOf("id" to "ass_escape_arrival","name" to "影抜け 到着","job" to job.name,
+                    "frames" to (0..arrival.maxOf { it.delayTicks+it.durationTicks }).map { tick ->
+                        arrival.mapNotNull { p -> val pose=CoreSkillChoreography.pose(p,tick.toDouble());if(!pose.visible) null else
+                            mapOf("model" to pose.model,"offset" to xyz(pose.offset),"scale" to xyz(pose.scale),
                                 "yaw" to pose.yaw,"pitch" to pose.pitch,"roll" to pose.roll) }
                     })
             }

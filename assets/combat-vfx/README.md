@@ -43,6 +43,13 @@ The master and shipped textures are versioned. `.tools` QA outputs are not.
 Generation need not run during normal builds. This is a pixel-style checkpoint,
 not Creator approval of all effects or proof of in-game appearance.
 
+## Shadow smoke
+
+The newer shadow-smoke source and its complete generation/edit prompts are documented
+in [shadow-smoke-pixel-v1.md](shadow-smoke-pixel-v1.md). It is a separate 16-frame
+pixel animation for Assassin departure and afterimage only; it is not a replacement
+for slashes, poison or UI icons. Integration details: `docs/development/assassin-phrase-vfx.md`.
+
 ## Deprecated: slash-luminance-atlas.png
 
 **Not consumed by the current exporter.** Retained as historical source, not a
