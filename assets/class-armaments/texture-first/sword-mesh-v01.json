@@ -1,0 +1,15 @@
+{
+  "source": "sword-material-study-v01.png",
+  "status": "geometry-prototype-not-production-art",
+  "texture": "projects:item/weapons/texture_first_sword_study",
+  "height": 30,
+  "pivot_pixel_x": 366,
+  "top_pixel": 88,
+  "bottom_pixel": 2092,
+  "alpha_cutoff": 128,
+  "parts": [
+    {"name": "blade", "rows": [88, 1300], "thickness": 0.12},
+    {"name": "guard", "rows": [1300, 1730], "thickness": 0.5},
+    {"name": "grip", "rows": [1730, 2092], "thickness": 0.85}
+  ]
+}

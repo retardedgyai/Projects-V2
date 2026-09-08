@@ -1,6 +1,6 @@
 """Textured orthographic QA of exported native models. NOT a Minecraft screenshot.
 
-Reads real exported geometry/UVs and nearest-samples the actual 64px atlas.
+Reads real exported geometry/UVs and nearest-samples the actual textures.
 No invented texture, smooth shading, bloom or retouching of the rendered art.
 """
 import argparse
@@ -39,7 +39,8 @@ def render_model(model,textures,yaw=-25,size=(W,H),scale=9.2):
         vertices=[project(rotated(np.array([e['to'][j] if i&(1<<j) else e['from'][j] for j in range(3)]),e.get('rotation'))) for i in range(8)]
         # Screen TL/TR/BR/BL at the unrotated visible front; each face still uses
         # the exported UV rectangle. Independent z-buffer handles recessed parts.
-        for name,indices in [('north',(2,3,1,0)),('south',(7,6,4,5)),('west',(6,2,0,4)),('east',(3,7,5,1)),('up',(6,7,3,2)),('down',(0,1,5,4))]:
+        for name,indices in [('north',(3,2,0,1)),('south',(6,7,5,4)),('west',(2,6,4,0)),('east',(7,3,1,5)),('up',(6,7,3,2)),('down',(0,1,5,4))]:
+            if name not in e['faces']: continue
             face=e['faces'][name]; atlas=textures[face['texture'][1:]]
             uv=face['uv']; tex=np.array([[uv[0],uv[1]],[uv[2],uv[1]],[uv[2],uv[3]],[uv[0],uv[3]]])*np.array([atlas.shape[1]/16,atlas.shape[0]/16])
             p=np.array([vertices[i] for i in indices])
@@ -60,7 +61,7 @@ def render_model(model,textures,yaw=-25,size=(W,H),scale=9.2):
                 # cubes; floating-point solve noise is not material detail.
                 mask=np.all(bary>=-1e-6,axis=0)&(z<depth[ys,xs]-1e-6)&visible
                 xs,ys=xs[mask],ys[mask]; coords=coords[:,mask]
-                shade={'up':1,'down':.5,'north':.85,'south':.85,'east':.65,'west':.65}[name]
+                shade={'up':1,'down':.5,'north':.85,'south':.85,'east':.65,'west':.65}[name] if e.get('shade',True) else 1
                 pixels[ys,xs]=(atlas[coords[1],coords[0],:3]*shade).astype(np.uint8); depth[ys,xs]=z[mask]
     return Image.fromarray(pixels)
 
