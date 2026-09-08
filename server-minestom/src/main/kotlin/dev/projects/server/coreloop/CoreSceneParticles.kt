@@ -20,6 +20,9 @@ internal object CoreSceneParticles {
         }
         val parts=CoreSkillChoreography.parts(e)
         for((index,part) in parts.take(10).withIndex()) {
+            // The greatsword's tip moves inside its deforming mesh, not around the
+            // ItemDisplay origin. Do not leave an unrelated cloud at that origin.
+            if(part.shape in setOf("greatsword_prepare","greatsword_blade","greatsword_wake")) continue
             val pose=CoreSkillChoreography.pose(part,tick.toDouble())
             if(!pose.visible) continue
             val center=origin.add(pose.offset)
