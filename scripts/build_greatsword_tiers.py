@@ -35,13 +35,14 @@ def tier_key(tier):
     return 'greatsword' if tier==1 else f'greatsword_t{tier}'
 
 
-def convert(tier):
-    job=JOBS[tier]; path=SOURCE/job['source']
+def convert_original(job,pixel_height,model_height):
+    """Shared red blade material; source-specific cuts remain authored per Tier."""
+    path=SOURCE/job['source']
     digest=hashlib.sha256(path.read_bytes()).hexdigest()
-    if digest!=job['sha256']: raise ValueError('Changed Tier original: '+str(tier))
+    if digest!=job['sha256']: raise ValueError('Changed Tier original: '+job['source'])
     with Image.open(path) as image:
         mode,size=image.mode,list(image.size)
-        pixels,transform=pixelize(image,92)
+        pixels,transform=pixelize(image,pixel_height)
     # Keep the existing first-tier material exactly; do not recolor other weapons.
     palette=np.array(json.loads((FIRST/'manifest.json').read_text())['palettes']['crimson'],dtype=np.uint8)
     mask=pixels[:,:,3]>0
@@ -51,14 +52,17 @@ def convert(tier):
     rgb=pixels[:,:,:3].astype(int)
     selected=np.zeros(mask.shape,dtype=bool)
     selected[y0:y1,x0:x1]=(mask & (rgb[:,:,0]>rgb[:,:,1]*1.5) & (rgb[:,:,0]>rgb[:,:,2]*1.2))[y0:y1,x0:x1]
-    if selected.sum()<6: raise ValueError('Missing drawn Tier gem: '+str(tier))
+    if selected.sum()<6: raise ValueError('Missing drawn Tier gem: '+job['source'])
     jewel=np.zeros_like(pixels); jewel[selected]=pixels[selected]
     body=pixels.copy(); body[selected]=[48,35,54,255]
     entry={'source':job['source'],'source_sha256':digest,'source_mode':mode,'source_size':size,
-        **transform,'height':30.0,'palette':palette.tolist(),
-        'rows':[2]+[projected_box([0,y,0,y],transform)[1] for y in job['split_y']]+[94],
+        **transform,'height':model_height,'palette':palette.tolist(),
+        'rows':[2]+[projected_box([0,y,0,y],transform)[1] for y in job['split_y']]+[pixel_height+2],
         'jewel_box':[x0,y0,x1,y1],'jewel_pixels':int(selected.sum())}
     return pixels,{'body':body,'jewel':jewel},entry
+
+
+def convert(tier): return convert_original(JOBS[tier],92,30.0)
 
 
 def model_data(tier):

@@ -33,7 +33,7 @@ if ($WeaponArtReview) {
         throw '武器確認パックの索引がありません。再生成してください。'
     }
     $classPath = "$reviewRoot;$classPath"
-    Write-Host '武器作画確認モード：大剣はT1〜4別原稿、他の6武器はTier共通原稿。UI・防具・性能は変更しません。'
+    Write-Host '武器作画確認モード：大剣・短剣はT1〜4別原稿、他の5武器はTier共通原稿。UI・防具・性能は変更しません。'
 }
 $runDirectory = Join-Path $projectRoot 'server-minestom\run'
 [void](New-Item -ItemType Directory -Path $runDirectory -Force)

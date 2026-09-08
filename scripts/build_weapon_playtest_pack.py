@@ -3,7 +3,7 @@
 Keep the installed server's complete pack, including approved UI and frozen armor,
 byte-for-byte except the 28 weapon item definitions. Existing equipment IDs and
 pose channels then select the seven pixel weapons without touching gameplay code.
-Greatswords have four original Tier appearances; the other families still share art.
+Greatswords/daggers have four original Tier appearances; other families share art.
 """
 import hashlib
 import json
@@ -11,7 +11,8 @@ from pathlib import Path, PurePosixPath
 import zipfile
 from build_pixel_armament_pack import build as build_blades, PACK as BLADES, definition
 from build_specialist_armament_pack import build as build_specialists, PACK as SPECIALISTS
-from build_greatsword_tiers import build as build_tiers, PACK as TIERS, tier_key
+from build_greatsword_tiers import build as build_tiers, PACK as TIERS
+from build_dagger_tiers import build as build_daggers, PACK as DAGGERS
 
 ROOT = Path(__file__).resolve().parents[1]
 SERVER_JAR = ROOT/'server-minestom/build/install/server-minestom/lib/server-minestom-0.1.0-SNAPSHOT.jar'
@@ -40,7 +41,7 @@ def installed_pack():
 def assemble(base):
     files = dict(base)
     additions = []
-    for pack in (BLADES,SPECIALISTS,TIERS):
+    for pack in (BLADES,SPECIALISTS,TIERS,DAGGERS):
         for path in sorted((pack/'assets/projects').rglob('*')):
             if not path.is_file(): continue
             name = path.relative_to(pack).as_posix()
@@ -58,7 +59,7 @@ def assemble(base):
         parsed = json.loads(files[pixel])
         if parsed != definition(family): raise ValueError('Unexpected pose contract: '+family)
         for tier in range(1,5):
-            selected_key=tier_key(tier) if family=='greatsword' else family
+            selected_key=f'{family}_t{tier}' if family in ('greatsword','dagger') and tier>1 else family
             selected=f'assets/projects/items/weapons/pixel_{selected_key}.json'
             if selected not in files or json.loads(files[selected])!=definition(selected_key):
                 raise ValueError('Missing/invalid Tier graph: '+selected_key)
@@ -72,7 +73,7 @@ def assemble(base):
 def build():
     if not SERVER_JAR.is_file(): raise ValueError('InstallDist is required before creating a review snapshot')
     # Regenerate from authored scripts every time, never package stale .tools art.
-    build_blades(); build_specialists(); build_tiers()
+    build_blades(); build_specialists(); build_tiers(); build_daggers()
     base = installed_pack()
     files,additions,replacements = assemble(base)
     OUT.mkdir(parents=True,exist_ok=True)
@@ -87,7 +88,7 @@ def build():
             archive.writestr(entry,data)
     report = {'status':'opt-in weapon art playtest snapshot; not automatically active',
         'runtime_applied':False,'armor_changes':0,'tier_art_distinct':False,
-        'distinct_tier_families':['greatsword'],
+        'distinct_tier_families':['greatsword','dagger'],
         'server_jar':SERVER_JAR.relative_to(ROOT).as_posix(),
         'server_jar_sha256':digest(SERVER_JAR.read_bytes()),
         'replaced_item_definitions':replacements,'added_files':additions,

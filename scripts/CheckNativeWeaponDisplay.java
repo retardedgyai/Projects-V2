@@ -16,7 +16,7 @@ class CheckNativeWeaponDisplay {
     public static void main(String[] args) throws Exception {
         if (args.length!=1) throw new IllegalArgumentException("Supply generated display-contract.json");
         var cases = JsonParser.parseString(Files.readString(Path.of(args[0]))).getAsJsonArray();
-        if (cases.size()!=250) throw new IllegalStateException("Expected 175 family poses plus 75 greatsword Tier poses");
+        if (cases.size()!=325) throw new IllegalStateException("Expected 175 family poses plus 150 greatsword/dagger Tier poses");
         int count=0, bowDirections=0;
         for (var value:cases) {
             var check=value.getAsJsonObject();
