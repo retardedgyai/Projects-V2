@@ -1,0 +1,23 @@
+{
+  "date": "2026-09-08",
+  "tool": "built-in image_gen",
+  "fallback_used": false,
+  "input": "sword-material-study-v01.png",
+  "attempts": [
+    {
+      "purpose": "separate blade, guard, grip, jewel",
+      "prompt": "Use case: precise-object-edit. Input image 1 is the edit target, our red/plum coarse pixel sword texture. Primary request: separate this SAME weapon into FOUR disjoint texture islands on a genuinely transparent square background, suitable for a Minecraft native model: one entire blade alone in the left half; one entire forked dark guard alone in the upper-right area; one grip with pommel alone below the guard; the red diamond jewel alone in the lower-right area. Keep the same silhouette, proportions and red/plum/coral/charcoal palette and coarse flat pixel clusters. No perspective, each component orthographic front face, same pixel scale across every island. Only change the assembly into separated components; don't redesign, add ornament, smooth, or add finer detail. The blade must have its full base, the guard's central socket must be empty (no jewel fused into guard), the jewel must be separate and have hard four-facet red shading. All four islands must be completely disconnected and separated by generous truly transparent margins. Pixel boundaries absolutely crisp, uniformly aligned square grid, limited flat opaque colors, no antialiasing, no colored fringe, no gradients, no noise, no bloom. This is an actual coarse pixel texture source, not a voxel render, not box stacks, not realistic metallic paint. No words, labels, webpage UI, grid lines, background checkerboard, shadows or extra objects. Preserve texture-led contours; the thin blade will remain nearly flat and only the grip and separate jewel get physical depth later.",
+      "output_file": "exec-db759b71-1063-45e2-b72d-f4e81882792c.png",
+      "result": "rejected: RGB, painted checkerboard instead of alpha"
+    },
+    {
+      "purpose": "remove painted checkerboard without restyling",
+      "prompt": "Use case: background-extraction. Input image is the edit target. Change ONLY its background: remove every gray-and-white checkerboard square and replace the entire background with actual alpha=0 transparency in an RGBA PNG. Keep the four sword component islands, their layout, silhouettes, opaque red/plum/charcoal pixel colors, proportions and coarse pixel shading unchanged. No new painted background, no checkerboard representation, no white fill, no shadow, no halo. The background must be machine-readable transparent alpha, not a visual illustration of transparency. Preserve the existing four separated components exactly.",
+      "output_file": "exec-3e5fb9c3-a36f-4424-8e8f-9a2f5f41b0a2.png",
+      "result": "rejected: still RGB"
+    }
+  ],
+  "production_asset_written": false,
+  "fallback": "Continue with byte-identical existing RGBA source and geometry-only jewel selection.",
+  "pending_question": "User approval requested for Python alpha extraction, fixed-resolution conversion and palette reduction; no answer yet."
+}

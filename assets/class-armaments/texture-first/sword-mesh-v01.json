@@ -7,6 +7,17 @@
   "top_pixel": 88,
   "bottom_pixel": 2092,
   "alpha_cutoff": 128,
+  "jewel": {
+    "pixel_bounds": [286, 1428, 437, 1609],
+    "seed_pixel": [365, 1520],
+    "red_minimum": 40,
+    "red_over_green": 1.6,
+    "red_over_blue": 1.4,
+    "thickness": 0.4,
+    "rest_z_offset": -0.4,
+    "prepare_travel": 0.3,
+    "release_travel": 0.5
+  },
   "parts": [
     {"name": "blade", "rows": [88, 1300], "thickness": 0.12},
     {"name": "guard", "rows": [1300, 1730], "thickness": 0.5},
