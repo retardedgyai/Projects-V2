@@ -9,11 +9,47 @@ import numpy as np
 from PIL import Image
 
 from build_texture_first_sword import (OUT, SOURCE, compile_model, runs, rectangles,
-    load_art, jewel_geometry_mask, jewel_model, posed_model)
+    load_art, jewel_geometry_mask, jewel_model, posed_model, item_definition)
 from preview_class_armaments import render_model
 
 
 class TextureFirstSwordTest(unittest.TestCase):
+    def test_exported_item_resolves_all_action_poses_only_in_hand_contexts(self):
+        # Evaluate the exported native select/range graph, not merely the number
+        # of JSON files. Minecraft runtime rendering still needs a manual check.
+        path = OUT/'assets/projects/items/weapons/texture_first_sword_study.json'
+        definition = json.loads(path.read_text())
+        self.assertEqual(definition, item_definition())
+        self.assertIs(definition['hand_animation_on_swap'], False)
+        root = definition['model']
+        self.assertEqual((root['type'], root['property']),
+                         ('minecraft:select', 'minecraft:display_context'))
+        case, = root['cases']
+        hand_contexts = {'firstperson_righthand','firstperson_lefthand',
+                         'thirdperson_righthand','thirdperson_lefthand'}
+        self.assertEqual(set(case['when']), hand_contexts)
+        dispatch = case['model']
+        self.assertEqual((dispatch['type'],dispatch['property'],dispatch['index']),
+                         ('minecraft:range_dispatch','minecraft:custom_model_data',0))
+        self.assertEqual([e['threshold'] for e in dispatch['entries']],
+                         [0, *range(12,25)])
+        rest = 'projects:item/weapons/texture_first_sword_study'
+        for context in hand_contexts | {'gui','fixed','ground','head','none'}:
+            for value in (None,-1,0,5,11,11.99,*range(12,24),23.99,24,100):
+                node = root['fallback']
+                if context in hand_contexts:
+                    node = dispatch['fallback']
+                    if value is not None:
+                        for entry in dispatch['entries']:
+                            if value >= entry['threshold']: node = entry['model']
+                expected = rest
+                if context in hand_contexts and value is not None and 12 <= value < 24:
+                    stage = 'prepare' if value < 18 else 'release'
+                    expected += f'_{stage}{int(value) % 6:02d}'
+                self.assertEqual(node, {'type':'minecraft:model','model':expected})
+                namespace, resource = expected.split(':')
+                self.assertTrue((OUT/f'assets/{namespace}/models/{resource}.json').is_file())
+
     def fixture(self, alpha):
         h, w = alpha.shape
         return {'height': h, 'top_pixel': 0, 'bottom_pixel': h, 'pivot_pixel_x': w/2,

@@ -177,6 +177,31 @@ def posed_model(base, jewel, spec, stage='rest', frame=0):
     return model
 
 
+def item_definition():
+    """Native hand-only pose selection; matches the existing server pose channel.
+
+    This study has no idle loop yet. Floats 0..11 select rest, 12..17 prepare,
+    18..23 release. Unknown higher values must not latch the final action pose.
+    No server registration or existing equipment is changed by this definition.
+    """
+    key = 'projects:item/weapons/texture_first_sword_study'
+    rest = {'type': 'minecraft:model', 'model': key}
+    entries = [{'threshold': 0, 'model': rest}]
+    for offset, stage in ((12, 'prepare'), (18, 'release')):
+        for frame in range(6):
+            entries.append({'threshold': offset + frame,
+                'model': {'type': 'minecraft:model', 'model': f'{key}_{stage}{frame:02d}'}})
+    entries.append({'threshold': 24, 'model': rest})
+    return {'hand_animation_on_swap': False, 'model': {
+        'type': 'minecraft:select', 'property': 'minecraft:display_context',
+        'cases': [{'when': ['firstperson_righthand', 'firstperson_lefthand',
+                           'thirdperson_righthand', 'thirdperson_lefthand'],
+                   'model': {'type': 'minecraft:range_dispatch',
+                       'property': 'minecraft:custom_model_data', 'index': 0,
+                       'fallback': rest, 'entries': entries}}],
+        'fallback': rest}}
+
+
 def build():
     spec = json.loads((SOURCE / 'sword-mesh-v01.json').read_text(encoding='utf-8'))
     pixels = load_art(SOURCE / spec['source'])
@@ -192,8 +217,7 @@ def build():
     for path in (texture_path, model_path, item_path): path.parent.mkdir(parents=True, exist_ok=True)
     shutil.copyfile(SOURCE / spec['source'], texture_path)
     model_path.write_text(json.dumps(model, separators=(',', ':')) + '\n', encoding='utf-8')
-    item_path.write_text(json.dumps({'model': {'type': 'minecraft:model',
-        'model': 'projects:item/weapons/texture_first_sword_study'}}) + '\n', encoding='utf-8')
+    item_path.write_text(json.dumps(item_definition(), separators=(',', ':')) + '\n', encoding='utf-8')
     texture_path.with_suffix('.png.mcmeta').write_text(
         '{"texture":{"blur":false,"clamp":false}}\n', encoding='utf-8')
     for stage in ('prepare','release'):
@@ -204,6 +228,7 @@ def build():
     report = {'status': spec['status'], 'source_size': [pixels.shape[1], pixels.shape[0]], 'parts': parts,
         'elements': len(model['elements']), 'model_bytes': model_path.stat().st_size,
         'jewel_elements': len(jewel['elements']), 'action_poses': 12,
+        'native_item_pose_selection': 'hand contexts, custom_model_data float0: 12..23',
         'production_selected': False,
         'remaining': ['source art alpha fringe / inconsistent pixel grid',
                       'too many contour edges for a final low-resolution asset',
