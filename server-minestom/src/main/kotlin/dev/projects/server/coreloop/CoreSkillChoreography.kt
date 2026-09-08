@@ -34,6 +34,7 @@ internal object CoreSkillChoreography {
     }
     private fun ease(t: Double)=1-(1-t.coerceIn(0.0,1.0)).pow(3)
     fun pose(p: CoreCombatMeshPart, age: Double): CoreMeshPose {
+        CoreTemplarChoreography.pose(p,age)?.let { return it }
         val localAge=(age-p.delayTicks).coerceAtLeast(0.0)
         val t=((age-p.delayTicks)/(p.durationTicks-1).coerceAtLeast(1)).coerceIn(0.0,1.0)
         val u=when(p.motion) {
@@ -107,6 +108,7 @@ internal object CoreSkillChoreography {
         val s=CoreSkillScenes.get(e.sceneId)
         val life=duration(e)
         if(e.job==CoreClass.RANGER) return CoreRangerChoreography.parts(e,raw,life)
+        if(e.job==CoreClass.TEMPLAR && s.kind!=CoreSceneKind.PULL) return CoreTemplarChoreography.parts(e,life)
         if(e.phase==CoreSkillVisualPhase.PREPARE) return raw.map { it.copy(
             motion=if(s.kind==CoreSceneKind.RAIN) CoreMeshMotion.FALL else CoreMeshMotion.GATHER,
             durationTicks=life,erode=false) }

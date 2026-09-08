@@ -145,6 +145,7 @@ def build_combat_models(assets, write_json):
     build_elemental_phrases(assets, write_json)
     build_assassin_phrases(assets, write_json)
     build_ranger_phrases(assets, write_json)
+    build_templar_phrases(assets, write_json)
 
 
 def vfx_box(lo, hi, ink):
@@ -225,6 +226,97 @@ def build_ranger_phrases(assets,write_json):
     mirrored=[{**e,'from':[e['from'][0],e['from'][1],16-e['to'][2]],
                   'to':[e['to'][0],e['to'][1],16-e['from'][2]]} for e in jaw]
     save('snare_jaw_reverse_hunter','hunter',mirrored)
+
+
+def build_templar_phrases(assets,write_json):
+    """Stepped Minecraft solids: articulated equipment, open arches and fractured stone.
+
+    These are physical-looking objects, not a replacement for the pixel flipbooks.
+    No smooth vector rings, translucent billboard shields or copied game images.
+    """
+    def save(name,palette,elements):
+        model={'ambientocclusion':False,'textures':{str(i):f'minecraft:block/{t}' for i,t in enumerate(PALETTES[palette])},'elements':elements}
+        for stage in range(8):
+            key=f'{name}_{palette}'+(f'_fade{stage}' if stage else '')
+            value=model if not stage else {**model,'elements':[e for i,e in enumerate(elements) if (i*5)%8>=stage]}
+            write_json(assets/f'models/combat_vfx/{key}.json',value)
+            write_json(assets/f'items/combat_vfx/{key}.json',{'model':{'type':'minecraft:model','model':f'projects:combat_vfx/{key}'}})
+
+    for heavy in (False,True):
+        hammer=[vfx_box([7,7,0],[9,9,12],2)]
+        for z in (1,3,5,7,9): hammer.append(vfx_box([6.5,6.5,z],[9.5,9.5,z+1],1))
+        hammer+= [vfx_box([3,5,11],[13,11,15],2),vfx_box([2,4,12],[14,12,14],1),
+                  vfx_box([1,5,11],[3,11,16],0),vfx_box([13,5,11],[15,11,16],0),
+                  vfx_box([7,3,11],[9,13,14],0),vfx_box([5,7,14],[11,9,16],0)]
+        if heavy:
+            for x in (2,6,10,14): hammer.append(vfx_box([x-1,4,14],[x+1,12,16],0))
+        save('oath_breaker' if heavy else 'oath_hammer','gold',hammer)
+
+    shield=[]
+    # A hollow escutcheon and embossed ribs; the centre isn't an opaque billboard.
+    for y in range(16):
+        width=min(7,2+y//2) if y<10 else 7-(y-10)//3
+        for side in (-1,1):
+            x=8+side*width
+            shield.append(vfx_box([x-.5,y,7],[x+.5,y+1,9],0))
+            if y%2==0: shield.append(vfx_box([x-side*1.5-.5,y,7.25],[x-side*1.5+.5,y+1,8.75],1))
+    shield += [vfx_box([3,14,7],[13,15,9],0),vfx_box([7,3,7.5],[9,13,9.5],1),
+               vfx_box([4,10,7.5],[12,12,9.5],1)]
+    save('oath_shield','gold',shield)
+    for side,name in ((-1,'left'),(1,'right')):
+        half=[]
+        for e in shield:
+            lo=e['from'].copy();hi=e['to'].copy()
+            if side<0: hi[0]=min(7,hi[0])
+            else: lo[0]=max(9,lo[0])
+            if hi[0]>lo[0]: half.append({**e,'from':lo,'to':hi})
+        save(f'oath_guard_{name}','gold',half)
+
+    # Metre-bucket density: widening the radius must not widen an opaque gold band.
+    # Each crest remains about .25m thick, with gaps between four separate fronts.
+    for metres in range(1,12):
+        n=metres*8; wave=[]
+        for x in range(2,n):
+            for z in range(2,n):
+                radius=math.hypot(x+.5,z+.5)
+                if n-2<=radius and math.hypot(x+1,z+1)<=n:
+                    height=2+(1 if (x+z)%4==0 else 0)
+                    wave.append(vfx_box([8+x/n*16,8,8+z/n*16],
+                        [8+(x+1)/n*16,8+height,8+(z+1)/n*16],0 if (x+z)%3 else 1))
+        save(f'oath_wave_{metres}','gold',wave)
+    fracture=[]
+    for step in range(16):
+        x=8+((step//3)%2)*2
+        fracture.append(vfx_box([x-.5,8,8+step],[x+.5,8.7,9+step],0 if step%4 else 1))
+        if step in (5,9,12):
+            for branch in range(1,4):
+                fracture.append(vfx_box([x+branch,8,8+step+branch*.5],
+                    [x+branch+1,8.5,9+step+branch*.5],1))
+    save('oath_fracture','steel',fracture)
+    rune=[vfx_box([7,2,7],[9,14,9],0),vfx_box([4,6,6],[12,9,10],1),
+          vfx_box([6,12,6],[10,15,10],0),vfx_box([6,1,6],[10,4,10],1)]
+    save('oath_rune','gold',rune)
+
+    # Arches stand on local +Z; their bottoms remain fixed when opening from zero.
+    arch=[]
+    for side in (-1,1):
+        x=8+side*6
+        arch += [vfx_box([x-1,7,8],[x+1,9,19],1),vfx_box([x-1.5,6.5,8],[x+1.5,9.5,10],0)]
+        for step in range(6):
+            dx=side*(6-step)
+            arch.append(vfx_box([8+dx-1,7,18+step],[8+dx+1,9,20+step],0 if step%2 else 1))
+        for z in (12,16): arch.append(vfx_box([x-1.5,6.5,z],[x+1.5,9.5,z+1],0))
+    arch += [vfx_box([7,7,23],[9,9,25],0),vfx_box([5,7,22],[11,9,23],1)]
+    save('oath_arch','gold',arch)
+    post=[vfx_box([5,5,8],[11,11,10],2),vfx_box([6,6,10],[10,10,20],1),
+          vfx_box([5,5,19],[11,11,21],0),vfx_box([7,7,21],[9,9,24],0)]
+    for z in (12,15,18): post.append(vfx_box([5.5,5.5,z],[10.5,10.5,z+1],0))
+    save('oath_boundary','gold',post)
+    stone=[vfx_box([2,4,3],[12,11,12],2),vfx_box([4,3,5],[14,10,14],1),
+           vfx_box([2,9,3],[9,12,10],0),vfx_box([9,6,10],[13,9,15],1)]
+    armor=[vfx_box([3,5,2],[11,8,12],1),vfx_box([2,4,2],[5,9,12],0),
+           vfx_box([4,4,10],[13,9,13],0),vfx_box([7,5,3],[10,8,9],2)]
+    save('oath_stone_chip','steel',stone);save('oath_armor_chip','gold',armor)
 
 
 def molten_core(shape):

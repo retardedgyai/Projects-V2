@@ -16,6 +16,35 @@ internal object CoreSkillAudio {
             player.playSound(Sound.sound(event, Sound.Source.PLAYER, volume * detail, pitch))
         val astral = effect.job == CoreClass.STARWEAVER
         val scene = CoreSkillScenes.get(effect.sceneId)
+        if(effect.job==CoreClass.TEMPLAR && scene.kind!=CoreSceneKind.PULL) {
+            when(effect.phase) {
+                CoreSkillVisualPhase.PREPARE -> {
+                    if(effect.sceneId!="temp_field" || effect.pulse==0)
+                        cue(if(scene.kind==CoreSceneKind.HAMMER) SoundEvent.ITEM_TRIDENT_RETURN else SoundEvent.BLOCK_CHAIN_PLACE,.65f,.65f)
+                }
+                CoreSkillVisualPhase.CONTACT -> {
+                    cue(SoundEvent.ENTITY_PLAYER_ATTACK_STRONG,.75f,.65f)
+                    if(effect.sceneId=="temp_break") cue(SoundEvent.ENTITY_ITEM_BREAK,.7f,.75f)
+                    else cue(SoundEvent.BLOCK_STONE_BREAK,.45f,1.1f)
+                }
+                CoreSkillVisualPhase.PULSE -> when(effect.sceneId) {
+                    "temp_mace","temp_break","temp_rebuke" -> {
+                        cue(SoundEvent.BLOCK_ANVIL_LAND,.4f,if(effect.sceneId=="temp_break") .6f else .85f)
+                        cue(SoundEvent.BLOCK_STONE_BREAK,.9f,.6f)
+                    }
+                    "temp_field" -> {
+                        cue(SoundEvent.BLOCK_CHAIN_PLACE,.85f,.75f+effect.pulse*.12f)
+                        cue(SoundEvent.BLOCK_AMETHYST_BLOCK_RESONATE,.45f,.85f)
+                    }
+                    "temp_guard","temp_dash" -> cue(SoundEvent.ITEM_SHIELD_BLOCK,1f,if(effect.sceneId=="temp_dash") .6f else .85f)
+                    else -> {
+                        cue(SoundEvent.BLOCK_BELL_USE,.65f,if(effect.skill.ultimate) .6f else 1.1f)
+                        cue(SoundEvent.BLOCK_AMETHYST_BLOCK_RESONATE,.75f,.8f)
+                    }
+                }
+            }
+            return
+        }
         if(effect.job==CoreClass.RANGER) {
             val trap=effect.sceneId=="hunt_trap"
             when(effect.phase) {
