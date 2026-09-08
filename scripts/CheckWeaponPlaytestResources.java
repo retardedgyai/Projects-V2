@@ -30,9 +30,10 @@ class CheckWeaponPlaytestResources {
             }
         }
         for (String family : new String[]{"greatsword","staff","bow","dagger","mace","tome","astrolabe"}) {
-            byte[] reference = files.get("assets/projects/items/weapons/pixel_"+family+".json");
-            if (reference==null) throw new IllegalStateException("Missing pixel graph: "+family);
             for (int tier=1;tier<=4;tier++) {
+                String key=family.equals("greatsword") && tier>1 ? family+"_t"+tier : family;
+                byte[] reference = files.get("assets/projects/items/weapons/pixel_"+key+".json");
+                if (reference==null) throw new IllegalStateException("Missing pixel graph: "+key);
                 var normal = files.get("assets/projects/items/weapons/"+family+"_t"+tier+".json");
                 if (!java.util.Arrays.equals(normal,reference)) throw new IllegalStateException("Wrong equipment alias");
             }

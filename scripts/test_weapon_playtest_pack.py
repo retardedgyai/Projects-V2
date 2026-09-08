@@ -37,6 +37,10 @@ class WeaponPlaytestPackTest(unittest.TestCase):
                     for resource in model['textures'].values():
                         self.assertIn('assets/projects/textures/'+resource.split(':')[1]+'.png',self.files)
         self.assertFalse(self.report['tier_art_distinct'])
+        self.assertEqual(self.report['distinct_tier_families'],['greatsword'])
+        for family in FAMILIES:
+            appearances={self.files[f'assets/projects/items/weapons/{family}_t{tier}.json'] for tier in range(1,5)}
+            self.assertEqual(len(appearances),4 if family=='greatsword' else 1)
         self.assertFalse(self.report['runtime_applied'])
 
     def test_index_report_zip_and_classpath_files_match_exactly(self):

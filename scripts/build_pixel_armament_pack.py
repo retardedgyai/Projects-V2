@@ -56,9 +56,9 @@ def staff_fins(spec,body):
     return elements
 
 
-def geometry(key,entry):
-    body=np.asarray(Image.open(SOURCE/f'{key}-body.png'))
-    jewel=np.asarray(Image.open(SOURCE/f'{key}-jewel.png'))
+def geometry(key,entry,source_textures=None):
+    body=np.asarray(Image.open(SOURCE/f'{key}-body.png')) if source_textures is None else source_textures['body']
+    jewel=np.asarray(Image.open(SOURCE/f'{key}-jewel.png')) if source_textures is None else source_textures['jewel']
     textures={'body':body,'jewel':jewel}
     pivot,_=grip_pixels(key,entry,textures)
     names,thickness,jewel_depth=SHAPES[key]

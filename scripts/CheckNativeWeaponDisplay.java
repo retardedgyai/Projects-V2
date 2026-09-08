@@ -16,7 +16,7 @@ class CheckNativeWeaponDisplay {
     public static void main(String[] args) throws Exception {
         if (args.length!=1) throw new IllegalArgumentException("Supply generated display-contract.json");
         var cases = JsonParser.parseString(Files.readString(Path.of(args[0]))).getAsJsonArray();
-        if (cases.size()!=175) throw new IllegalStateException("Expected all 175 exported poses");
+        if (cases.size()!=250) throw new IllegalStateException("Expected 175 family poses plus 75 greatsword Tier poses");
         int count=0;
         for (var value:cases) {
             var check=value.getAsJsonObject();
@@ -38,6 +38,6 @@ class CheckNativeWeaponDisplay {
                 count++;
             }
         }
-        System.out.println("Vanilla 26.2 ItemTransform: "+count+" grip placements accepted across 175 poses; not in-game palm/camera approval.");
+        System.out.println("Vanilla 26.2 ItemTransform: "+count+" grip placements accepted across "+cases.size()+" poses; not in-game palm/camera approval.");
     }
 }
