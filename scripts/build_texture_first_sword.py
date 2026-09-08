@@ -77,8 +77,13 @@ def jewel_geometry_mask(spec, pixels):
     return selected
 
 
-def compile_model(spec, alpha):
+def compile_model(spec, alpha, *, boundary_frames=None):
     h, w = alpha.shape
+    if boundary_frames is not None:
+        if not len(boundary_frames) or any(frame.shape != alpha.shape for frame in boundary_frames):
+            raise ValueError('Animation boundary frames must match the silhouette dimensions')
+        if not np.array_equal(np.maximum.reduce(boundary_frames) >= spec['alpha_cutoff'], alpha >= spec['alpha_cutoff']):
+            raise ValueError('Animation silhouette must be the union of its frames')
     rows = [part['rows'] for part in spec['parts']]
     if (not rows or rows[0][0] != spec['top_pixel'] or rows[-1][1] != spec['bottom_pixel']
             or any(a[1] != b[0] for a, b in zip(rows, rows[1:]))):
@@ -122,6 +127,17 @@ def compile_model(spec, alpha):
                      'up': padded[:-2, 1:-1], 'down': padded[2:, 1:-1]}
         for direction, neighbor in neighbors.items():
             boundary = mask & ~neighbor
+            if boundary_frames is not None:
+                # Union of EACH FRAME'S boundaries, not boundary of the union.
+                # A moving shard has edges inside its combined motion silhouette.
+                # Omitting them makes it disappear edge-on while travelling.
+                boundary = np.zeros_like(mask)
+                for frame in boundary_frames:
+                    current = frame[start:end] >= spec['alpha_cutoff']
+                    padded_frame = np.pad(current, ((1, 1), (1, 1)))
+                    adjacent = {'west': padded_frame[1:-1, :-2], 'east': padded_frame[1:-1, 2:],
+                                'up': padded_frame[:-2, 1:-1], 'down': padded_frame[2:, 1:-1]}[direction]
+                    boundary |= current & ~adjacent
             horizontal = direction in ('up', 'down')
             lines = boundary if horizontal else boundary.T
             for fixed, line in enumerate(lines):

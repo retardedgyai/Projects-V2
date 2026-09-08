@@ -101,7 +101,7 @@ def animated_model(entry, body_model, textures, frames):
             'texture': f'projects:item/weapons/{KEY}_embers',
             'parts': [{'name': 'blade_embers', 'rows': [0, HEIGHT],
                        'thickness': .20, 'trace_painted_faces': True}]}
-    layer, _ = compile_model(spec, union)
+    layer, _ = compile_model(spec, union, boundary_frames=[f[:, :, 3] for f in frames])
     shift_y = (HEIGHT - entry['rows'][-1] - PAD_Y) * scale
     result = deepcopy(body_model)
     result['textures']['embers'] = spec['texture']
