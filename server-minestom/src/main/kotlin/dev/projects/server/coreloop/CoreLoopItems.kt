@@ -84,7 +84,7 @@ internal object CoreLoopItems {
             val model = when(identity.base) { CoreWeaponBase.LONGBOW -> "minecraft:bow"; CoreWeaponBase.DAGGERS -> "minecraft:iron_sword";
                 CoreWeaponBase.MACE -> "minecraft:mace"; CoreWeaponBase.TOME -> "minecraft:enchanted_book"; else -> "minecraft:blaze_rod" }
             base.withItemModel(model)
-        } else base
+        } else if (slot == CoreGearSlot.ARMOR) CoreArmorPresentation.skin(base, account.journey.job, tier, packed) else base
         return CoreUiTooltip.apply(shown, CoreTooltipModel("${if (CoreEconomy.broken(account, slot)) "【破損】" else ""}T$tier ${if (slot == CoreGearSlot.WEAPON) identity.base.displayName else "開拓者の防具"}${if (enhancement.level > 0) " +${enhancement.level}" else ""}",
             rarity = when (CoreAffixCatalog.rarity(account, slot)) {
                 CoreGearRarity.NORMAL -> CoreUiRarity.COMMON
