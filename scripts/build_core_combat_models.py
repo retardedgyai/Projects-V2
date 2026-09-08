@@ -135,6 +135,29 @@ def build_combat_models(assets, write_json):
     build_magic_frames(assets, write_json, 'stellar-burst-pixel-v1.png', 'stellar/burst')
     build_magic_frames(assets, write_json, 'nebula-stream-pixel-v1.png', 'nebula/stream')
     build_ice_growth(assets, write_json)
+    build_pull_chains(assets, write_json)
+
+
+def build_pull_chains(assets, write_json):
+    # Short alternating three-dimensional links. Runtime chooses link count from
+    # endpoint distance instead of stretching four enormous loops across the map.
+    for count in range(1,13):
+        elements=[]
+        span=16/count
+        for i in range(count):
+            z0=i*span; z1=(i+1)*span
+            bars=(([5.8,7.55,z0],[6.55,8.45,z1]),([9.45,7.55,z0],[10.2,8.45,z1]),
+                  ([5.8,7.55,z0],[10.2,8.45,z0+span*.16]),
+                  ([5.8,7.55,z1-span*.16],[10.2,8.45,z1]))
+            for j,(lo,hi) in enumerate(bars):
+                if i%2: lo=[lo[1],lo[0],lo[2]];hi=[hi[1],hi[0],hi[2]]
+                elements.append({'from':lo,'to':hi,'shade':False,
+                    'faces':{face:{'texture':f'#{0 if j==0 else 1 if j<3 else 2}','uv':[2,2,3,3]}
+                             for face in ('up','down','north','south','east','west')}})
+        name=f'combat_vfx/chain_{count}_gold'
+        write_json(assets/f'models/{name}.json',{'ambientocclusion':False,
+            'textures':{str(i):f'minecraft:block/{t}' for i,t in enumerate(PALETTES['gold'])},'elements':elements})
+        write_json(assets/f'items/{name}.json',{'model':{'type':'minecraft:model','model':f'projects:{name}'}})
 
 
 def build_ice_growth(assets, write_json):

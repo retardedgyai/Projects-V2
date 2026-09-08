@@ -52,6 +52,17 @@ internal object CoreSkillChoreography {
         val at=if(p.motion==CoreMeshMotion.ORBIT) {
             Vec(cos(angle)*p.offset.x()+sin(angle)*p.offset.z(),p.offset.y(),-sin(angle)*p.offset.x()+cos(angle)*p.offset.z()).add(travel)
         } else p.offset.add(travel)
+        p.chainAnchor?.let { anchor ->
+            // The moving end is exactly the hook's trajectory. Recompute the midpoint,
+            // direction and length each tick; scaling a static line would detach an end.
+            val delta=at.sub(anchor)
+            val length=delta.length().coerceAtLeast(.01)
+            val links=ceil(length/.45).toInt().coerceIn(1,12)
+            val width=(1-ease((t-.5)/.5)).coerceAtLeast(.025)
+            return CoreMeshPose(anchor.add(delta.mul(.5)),Vec(p.scale.x()*width,p.scale.y()*width,length),
+                atan2(delta.x(),delta.z()),-atan2(delta.y(),hypot(delta.x(),delta.z())),0.0,
+                "combat_vfx/chain_${links}_${p.palette}",age>=p.delayTicks && age<p.delayTicks+p.durationTicks)
+        }
         // Stroke peaks in 0.20s regardless of the longer aftermath. Extending readability
         // must not postpone the visually strongest beat until half a second after damage.
         val stage=if(p.atlas==CoreMeshAtlas.NEBULA_STREAM) {
@@ -95,6 +106,8 @@ internal object CoreSkillChoreography {
         }
         if(e.sceneId=="star_cloud") return nebulaField(e,life)
         if(e.sceneId=="mage_garden") return iceGarden(e,life)
+        if(s.kind==CoreSceneKind.PULL) return chainPull(e,life)
+        if(e.sceneId=="mage_ward") return arcaneWard(e,life)
         val ray=s.kind==CoreSceneKind.RAY
         val base=raw.mapIndexed { i,p ->
             val motion=when(s.kind) {
@@ -239,6 +252,36 @@ internal object CoreSkillChoreography {
                 Vec(.8,.8,height),yaw=a,pitch=-PI/2,ground=true,
                 startSize=.02,endSize=1.0,durationTicks=life-delay,delayTicks=delay,
                 motion=CoreMeshMotion.EMERGE,secondary=i%2!=0)
+        }
+    }
+
+    private fun chainPull(e: CoreSkillEffect,life: Int): List<CoreCombatMeshPart> {
+        val r=min(e.radius,CoreSkillScenes.get(e.sceneId).reach)
+        val count=if(e.skill.ultimate) 6 else 4
+        val yaw=atan2(e.direction.x(),e.direction.z())+e.pulse*.18
+        return (0 until count).flatMap { i ->
+            val a=yaw+i*PI*2/count
+            val end=Vec(sin(a)*r,.65+(i%2)*.2,cos(a)*r)
+            val travel=Vec(-sin(a)*(r-.45),.1,-cos(a)*(r-.45))
+            val hook=CoreCombatMeshPart("chain_hook","gold",end,Vec(.75,.8,.9),yaw=a,
+                pitch=-.3,travel=travel,startSize=1.0,endSize=.45,
+                durationTicks=life,motion=CoreMeshMotion.GATHER,erode=true,secondary=i>=4)
+            listOf(hook,hook.copy(shape="chain",scale=Vec(1.0,1.0,1.0),pitch=0.0,
+                erode=false,chainAnchor=Vec(0.0,.9,0.0)))
+        }
+    }
+
+    private fun arcaneWard(e: CoreSkillEffect,life: Int): List<CoreCombatMeshPart> {
+        val yaw=atan2(e.direction.x(),e.direction.z())
+        // Four opening facets around the torso. The forward sight line stays empty;
+        // this is an activation envelope, not a new collision wall or buff timer.
+        return listOf(-2,-1,1,2).mapIndexed { i,side ->
+            val a=yaw+side*PI/3
+            CoreCombatMeshPart("arcane_shield","lightning",Vec(sin(a)*.3,1.0,cos(a)*.3),
+                Vec(.7,1.0,1.45),yaw=a,pitch=-PI/2,roll=side*.06,
+                travel=Vec(sin(a)*.55,0.0,cos(a)*.55),startSize=.2,endSize=1.0,
+                delayTicks=i%2,durationTicks=life-i%2,motion=CoreMeshMotion.EMERGE,
+                followOwner=true,erode=true)
         }
     }
 }

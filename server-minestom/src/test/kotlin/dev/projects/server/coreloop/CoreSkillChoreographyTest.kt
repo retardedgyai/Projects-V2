@@ -10,6 +10,55 @@ import kotlin.test.*
 import kotlin.math.*
 
 class CoreSkillChoreographyTest {
+    @Test fun `pull chains keep both endpoints attached as hooks converge at every heading`() {
+        for(id in listOf("temp_pull","temp_ult")) repeat(8) { heading ->
+            val a=heading*PI/4
+            val skill=CoreSkillCatalog.skills(CoreClass.TEMPLAR).first { it.icon==id }
+            val effect=CoreSkillEffect(CoreClass.TEMPLAR,skill,Vec.ZERO,Vec(sin(a),0.0,cos(a)))
+            val parts=CoreSkillChoreography.parts(effect)
+            assertEquals(if(skill.ultimate) 12 else 8,parts.size)
+            assertEquals(8,parts.count { !it.secondary },"Other viewers must see four complete hook-and-chain pairs")
+            for(pair in parts.chunked(2)) {
+                val hook=pair[0];val chain=pair[1]
+                var previous=Double.POSITIVE_INFINITY
+                for(tick in 0 until hook.durationTicks) {
+                    val tip=CoreSkillChoreography.pose(hook,tick.toDouble())
+                    val line=CoreSkillChoreography.pose(chain,tick.toDouble())
+                    val direction=Vec(sin(line.yaw)*cos(line.pitch),-sin(line.pitch),cos(line.yaw)*cos(line.pitch))
+                    val from=line.offset.sub(direction.mul(line.scale.z()/2))
+                    val to=line.offset.add(direction.mul(line.scale.z()/2))
+                    assertTrue(from.distance(chain.chainAnchor!!)<.00001,"$id anchor detached at $tick")
+                    assertTrue(to.distance(tip.offset)<.00001,"$id hook detached at $tick")
+                    assertTrue(line.scale.z()<=previous+.00001,"$id chain must tighten, not radiate")
+                    previous=line.scale.z()
+                }
+            }
+        }
+    }
+    @Test fun `chain assets are hollow alternating volume not painted lines`() {
+        for(count in 1..12) {
+            val model=javaClass.getResourceAsStream("/core-ui-pack/assets/projects/models/combat_vfx/chain_${count}_gold.json")!!
+                .bufferedReader().use { JsonParser.parseReader(it).asJsonObject }
+            val parts=model.getAsJsonArray("elements").map { it.asJsonObject }
+            assertEquals(count*4,parts.size)
+            assertEquals(0.0,parts.minOf { it.getAsJsonArray("from")[2].asDouble })
+            assertEquals(16.0,parts.maxOf { it.getAsJsonArray("to")[2].asDouble },.00001)
+            assertTrue(parts.all { e -> (0..2).all { e.getAsJsonArray("to")[it].asDouble>e.getAsJsonArray("from")[it].asDouble } })
+        }
+    }
+    @Test fun `arcane ward unfolds around torso and leaves a forward opening`() {
+        val parts=CoreSkillChoreography.parts(effect(CoreClass.MAGE,"mage_ward"))
+        assertEquals(4,parts.size)
+        assertTrue(parts.all { it.followOwner && it.shape=="arcane_shield" })
+        for(p in parts) {
+            val start=CoreSkillChoreography.pose(p,p.delayTicks.toDouble())
+            val open=CoreSkillChoreography.pose(p,p.delayTicks+7.0)
+            assertTrue(open.offset.distance(Vec(0.0,1.0,0.0))>start.offset.distance(Vec(0.0,1.0,0.0)))
+            // At full opening even the conservative half-diagonal leaves the crosshair gap.
+            assertTrue(abs(open.offset.x())>open.scale.x()/2+.1)
+            assertTrue(open.offset.y() in .8..1.2)
+        }
+    }
     @Test fun `slash pack contains crisp pixel frames without opaque tile borders`() {
         assertPixelFrames("ribbon/slash")
     }

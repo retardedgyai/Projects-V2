@@ -33,6 +33,14 @@ internal object CoreSkillAudio {
             CoreSkillVisualPhase.PULSE -> {
                 val pitch = (.85 + (effect.pulse % 3) * .13).toFloat()
                 when {
+                    scene.kind == CoreSceneKind.PULL -> {
+                        cue(SoundEvent.BLOCK_CHAIN_BREAK,.85f,.7f)
+                        cue(SoundEvent.ITEM_TRIDENT_RETURN,.9f,.55f)
+                    }
+                    effect.sceneId == "mage_ward" -> {
+                        cue(SoundEvent.BLOCK_AMETHYST_BLOCK_RESONATE,.85f,1.25f)
+                        cue(SoundEvent.ITEM_SHIELD_BLOCK,.6f,1.4f)
+                    }
                     scene.kind == CoreSceneKind.HAMMER -> {
                         cue(SoundEvent.ENTITY_PLAYER_ATTACK_STRONG,.9f,.65f)
                         cue(SoundEvent.BLOCK_ANVIL_LAND,.28f,1.35f)
