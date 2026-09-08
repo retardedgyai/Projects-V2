@@ -28,6 +28,34 @@ SHAPES={
 }
 
 
+def staff_fins(spec,body):
+    """Articulate the two painted v02 branches above their shared neck.
+
+    Geometry masks only: UVs still sample the byte-identical body PNG. Traced
+    front faces are essential here so one branch cannot show the other branch.
+    """
+    yy,xx=np.indices(body.shape[:2])
+    head=(body[:,:,3]>0)&(yy<37)
+    masks={'fin_left':head&(xx<16),'fin_right':head&(xx>=16),
+           'fin_neck':(body[:,:,3]>0)&(yy>=37)&(yy<spec['parts'][0]['rows'][1])}
+    scale=spec['height']/(spec['bottom_pixel']-spec['top_pixel'])
+    elements=[]
+    for name,mask in masks.items():
+        model,_=compile_model({**spec,'parts':[{'name':name,
+            'rows':[spec['top_pixel'],spec['bottom_pixel']],
+            'thickness':.18,'trace_painted_faces':True}]},np.where(mask,255,0).astype(np.uint8))
+        if name!='fin_neck':
+            ry,rx=np.nonzero(mask)
+            bottom=int(ry.max())+1
+            center=float(np.median(rx[ry==bottom-1]))+.5
+            pivot=[round(8+(center-spec['pivot_pixel_x'])*scale,6),
+                   round((spec['bottom_pixel']-bottom)*scale,6),8]
+            for e in model['elements']:
+                e['rotation']={'axis':'z','angle':0.0,'origin':pivot,'rescale':False}
+        elements.extend(model['elements'])
+    return elements
+
+
 def geometry(key,entry):
     body=np.asarray(Image.open(SOURCE/f'{key}-body.png'))
     jewel=np.asarray(Image.open(SOURCE/f'{key}-jewel.png'))
@@ -40,6 +68,8 @@ def geometry(key,entry):
           'parts':[{'name':name,'rows':entry['rows'][i:i+2],'thickness':depth}
                    for i,(name,depth) in enumerate(zip(names,thickness))]}
     base,_=compile_model(spec,body[:,:,3])
+    if key=='staff':
+        base['elements']=[e for e in base['elements'] if not e['name'].startswith('fins:')]+staff_fins(spec,body)
     gem_spec={**spec,'texture':f'projects:item/weapons/pixel_{key}_jewel',
         'parts':[{'name':'jewel','rows':[spec['top_pixel'],spec['bottom_pixel']],
                   'thickness':jewel_depth}]}
@@ -72,10 +102,28 @@ def pose(base,gem,key,stage='rest',frame=0):
         dz-=.5*(1-frame/5)
         if key=='staff': dy=.35*(1-frame/5)
     model=deepcopy(base)
+    opening=0.0
+    if key=='staff':
+        # The windup opens, first release matches that pose, then the fins settle.
+        if stage=='prepare':
+            u=frame/5; opening=u*u*(3-2*u)
+        elif stage=='release': opening=(1,.68,.30,.09,.02,0)[frame]
+        dy=.9*opening+(.22*math.sin(frame*math.tau/12) if stage=='idle' else 0)
+        dz=-.65*opening
+        for e in model['elements']:
+            if e['name'].startswith('fin_left:'): e['rotation']['angle']=round(9*opening,6)
+            elif e['name'].startswith('fin_right:'): e['rotation']['angle']=round(-14*opening,6)
+    gem_pivot=None
+    if key=='staff' and opening:
+        lo=np.min([e['from'] for e in gem['elements']],axis=0)
+        hi=np.max([e['to'] for e in gem['elements']],axis=0)
+        gem_pivot=((lo+hi)*.5+np.array([0,dy,dz])).round(6).tolist()
     for e in deepcopy(gem['elements']):
         for edge in ('from','to'):
             e[edge][1]=round(e[edge][1]+dy,6)
             e[edge][2]=round(e[edge][2]+dz,6)
+        if gem_pivot is not None:
+            e['rotation']={'axis':'y','angle':round(18*opening,6),'origin':gem_pivot,'rescale':False}
         model['elements'].append(e)
     return model
 
@@ -139,6 +187,7 @@ def build():
             action_frames.append(strip)
     sheet.save(OUT/'model-review.png')
     action_frames[0].save(OUT/'actions.gif',save_all=True,append_images=action_frames[1:],duration=100,loop=0)
+    action_frames[5].save(OUT/'prepared.png')
     with zipfile.ZipFile(OUT/'projects-pixel-armaments-review.zip','w',zipfile.ZIP_DEFLATED) as archive:
         for path in sorted(PACK.rglob('*')):
             if path.is_file(): archive.write(path,path.relative_to(PACK).as_posix())

@@ -97,7 +97,12 @@ class PixelArmamentTest(unittest.TestCase):
                     expected=pose(base,gem,key,stage,frame)
                     path=ASSETS/f'models/item/weapons/pixel_{key}_{stage}{frame:02d}.json'
                     exported=json.loads(path.read_text()); self.assertEqual(exported,expected)
-                    self.assertEqual(exported['elements'][:len(base['elements'])],base['elements'])
+                    for original,actual in zip(base['elements'],exported['elements']):
+                        if key=='staff' and original['name'].startswith(('fin_left:','fin_right:')):
+                            # Only the two explicitly articulated branches may rotate.
+                            self.assertEqual({k:v for k,v in actual.items() if k!='rotation'},
+                                             {k:v for k,v in original.items() if k!='rotation'})
+                        else: self.assertEqual(actual,original)
                     seen.add(path.read_text())
                     for e in exported['elements']:
                         # Only broad front/back surfaces or boundary side quads, never six-face cubes.
