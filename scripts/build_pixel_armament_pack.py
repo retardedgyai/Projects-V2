@@ -1,6 +1,6 @@
 """Three texture-shaped weapons, isolated from the running server's resource pack.
 
-Uses the user-approved processed PNGs. Native faces follow alpha contours, not
+Uses experimental processed PNGs, not quality-approved art. Native faces follow alpha contours, not
 filled voxel cubes. Each gemstone is a separate texture/layer with its own depth;
 the staff's negative space remains genuinely empty when its stone moves.
 """
