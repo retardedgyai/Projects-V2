@@ -37,10 +37,11 @@ RAMP = ((252, 87, 72, 255), (221, 47, 71, 255),
 
 def source(redraw=False):
     if redraw:
-        from process_sword_material_redraw import convert, guard_depth
+        from process_sword_material_redraw import convert, guard_depth, approved_hand_display
         _, textures, entry = convert()
         base, gem, textures = geometry('greatsword', entry, textures)
         base = guard_depth(base, textures, entry)
+        base = approved_hand_display(base, textures, entry)
         return entry, pose(base, gem, 'greatsword'), textures
     entry = json.loads((SOURCE / 'manifest.json').read_text())['weapons']['greatsword']
     base, gem, textures = geometry('greatsword', entry)

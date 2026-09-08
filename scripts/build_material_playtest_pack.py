@@ -11,7 +11,7 @@ from PIL import Image
 
 from build_pixel_armament_pack import geometry, pose, definition
 from build_blade_ember_study import animated_model, effect_frames, metadata, material_lighting
-from process_sword_material_redraw import convert, guard_depth
+from process_sword_material_redraw import convert, guard_depth, approved_hand_display
 from build_weapon_playtest_pack import ROOT, SERVER_JAR, installed_pack, digest
 
 OUT = ROOT / '.tools/material-playtest-resources'
@@ -35,6 +35,7 @@ def candidate_resources():
     _, textures, entry = convert()
     base, gem, _ = geometry('greatsword', entry, textures)
     base = guard_depth(base, textures, entry)
+    base = approved_hand_display(base, textures, entry)
     base['textures'] = {part: f'projects:item/weapons/{MODEL_NAME}_{part}' for part in textures}
     base['textures']['particle'] = base['textures']['body']
     frames = effect_frames(textures['body'], entry['ember_emitters'])

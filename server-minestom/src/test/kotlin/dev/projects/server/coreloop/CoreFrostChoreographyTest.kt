@@ -12,22 +12,22 @@ class CoreFrostChoreographyTest {
     private fun effect(pulse: Int=0,radius: Double=skill.radius)=
         CoreSkillEffect(CoreClass.MAGE,skill.copy(radius=radius),Vec.ZERO,Vec(0.0,0.0,1.0),pulse=pulse)
 
-    @Test fun `each accepted wave owns a short floor four raised bands and four optional flakes`() {
+    @Test fun `first pulse starts one persistent field and later damage beats never restart it`() {
         assertEquals(5,skill.pulses)
         for(i in 0 until skill.pulses) {
             val parts=CoreSkillChoreography.parts(effect(i))
+            if(i>0) { assertTrue(parts.isEmpty()); continue }
             assertEquals(9,parts.size)
             assertEquals(5,parts.count { !it.secondary })
             assertEquals(1,parts.count { it.ground })
             assertEquals(4,parts.count { it.shape=="frost_domain_band" })
             assertEquals(4,parts.count { it.shape=="frost_domain_flake" && it.secondary })
-            assertTrue(parts.none { it.followOwner || it.sprite || it.shape=="frost_crest" })
-            assertTrue(parts.all { it.durationTicks==if(i==4) 16 else 8 })
+            assertTrue(parts.all { it.followOwner && !it.sprite && it.durationTicks==48 })
             for(p in parts) {
                 assertFalse(CoreSkillChoreography.pose(p,-1.0).visible)
                 assertTrue(CoreSkillChoreography.pose(p,0.0).visible)
                 assertFalse(CoreSkillChoreography.pose(p,p.durationTicks.toDouble()).visible)
-                val full=CoreSkillChoreography.pose(p,2.0)
+                val full=CoreSkillChoreography.pose(p,8.0)
                 assertEquals(p.scale,full.scale)
                 assertNotEquals(full.yaw,CoreSkillChoreography.pose(p,5.0).yaw)
             }
@@ -48,12 +48,26 @@ class CoreFrostChoreographyTest {
                     }
                     "frost_domain_band" -> {
                         assertEquals(reach*.65,hypot(pose.offset.x(),pose.offset.z()),.00001)
-                        assertTrue(pose.offset.y() in .4..1.0)
+                        assertTrue(pose.offset.y() in .4..1.4)
                         // Tangential card corners remain inside the gameplay circle.
                         assertTrue(hypot(reach*.65,pose.scale.x()*.5)<reach)
                     }
                 }
             }
+        }
+    }
+
+    @Test fun `five damage beats share one expanding rotating shape and erosion only happens at the end`() {
+        for(p in CoreSkillChoreography.parts(effect())) {
+            for(tick in 8..35) {
+                val a=CoreSkillChoreography.pose(p,tick.toDouble())
+                val b=CoreSkillChoreography.pose(p,tick-1.0)
+                assertEquals(p.scale,a.scale,"No size reset at tick $tick")
+                assertTrue(a.model.endsWith("_0"),"No dissolve/reappear between hits")
+                assertTrue(abs(a.yaw-b.yaw)<.3,"No angular reset")
+                assertTrue(a.visible)
+            }
+            assertNotEquals(CoreSkillChoreography.pose(p,36.0).model,CoreSkillChoreography.pose(p,44.0).model)
         }
     }
 
@@ -85,6 +99,6 @@ class CoreFrostChoreographyTest {
         val root=if(cwd.fileName.toString()=="server-minestom") cwd.parent else cwd
         Files.createDirectories(root.resolve(".tools"))
         Files.writeString(root.resolve(".tools/frost-domain-frames.json"),Gson().toJson(listOf(
-            mapOf("id" to "mage_zero","name" to "絶対零界・実際の五連波","frames" to frames))))
+            mapOf("id" to "mage_zero","name" to "絶対零界・展開→旋回→崩壊","frames" to frames))))
     }
 }

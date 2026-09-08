@@ -5,12 +5,13 @@ family palette. No other weapon/Tier source or runtime pack is changed.
 """
 import hashlib
 import json
+from copy import deepcopy
 import numpy as np
 from PIL import Image, ImageDraw
 
 from process_armament_art import ROOT, pixelize, projected_box
 from build_texture_first_sword import compile_model
-from pixel_weapon_display import grip_pixels
+from pixel_weapon_display import grip_pixels, rotation_xyz, transformed
 
 SOURCE = ROOT / 'assets/class-armaments/texture-first/sources/greatsword-material-v02.png'
 OUT = ROOT / 'assets/class-armaments/texture-first/processed-material-v02'
@@ -102,6 +103,43 @@ def guard_depth(base, textures, entry):
                                        'origin': [8, (entry['rows'][-1] - 54) * scale, 8],
                                        'rescale': False}
         result['elements'].extend(model['elements'])
+    return result
+
+
+def approved_grip_point(textures, entry):
+    """Authored bare handle above the lower ornaments, not their pixel-weighted median."""
+    px, py = 10.5, 63.5
+    if textures['body'][int(py), int(px), 3] != 255:
+        raise ValueError('Approved grip point no longer lies on painted handle')
+    pivot, _ = grip_pixels('greatsword', entry, textures)
+    scale = entry['height'] / entry['content_size'][1]
+    return np.array([8+(px-pivot)*scale, (entry['rows'][-1]-py)*scale, 8])
+
+
+def approved_hand_display(model, textures, entry):
+    """Match the painted grip of the stock 26.2 iron sword, not its display translation.
+
+    item/handheld's translation is NOT a hand socket. Its diagonal sprite's grip
+    is near (3.5,3.5,8) in model coordinates. Our art is vertical: compensate
+    its extra 45 degrees and put the bare handle at that same transformed point.
+    No artwork, UV, geometry, GUI framing or other weapon changes.
+    """
+    result=deepcopy(model)
+    grip=approved_grip_point(textures,entry)
+    for context,angle,translation,scale in (
+            ('firstperson',25,[1.13,3.2,1.13],.68),
+            ('thirdperson',55,[0,4,.5],.85)):
+        for hand,left in (('righthand',False),('lefthand',True)):
+            native={'rotation':[0,90 if left else -90,-angle if left else angle],
+                    'translation':translation,'scale':[scale]*3}
+            target=transformed([3.5,3.5,8],native,left)
+            authored=[0,90 if left else -90,-(angle-45) if left else angle-45]
+            actual=np.array(authored,dtype=float)
+            if left: actual[1:]*=-1
+            offset=target-rotation_xyz(actual)@((grip-8)*.72)
+            if left: offset[0]*=-1
+            result['display'][context+'_'+hand]={'rotation':authored,
+                'translation':offset.round(6).tolist(),'scale':[.72]*3}
     return result
 
 
