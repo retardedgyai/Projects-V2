@@ -21,9 +21,9 @@ JOBS = {
     'dagger': {'source':'sources/dagger-v01.png', 'height':60, 'family':'crimson',
         'sha256':'094a1357ccdb9ec9e946efb7ef873878c0fa4e82b0ccdfacd9612625ed159193',
         'split_y':[938,1120], 'jewel_box':[408,893,503,1002]},
-    'staff': {'source':'sources/staff-v01.png', 'height':92, 'family':'cyan',
-        'sha256':'dc1b338a366eb175cd6d29efd0095b596c801ebac524722bc4af607174e448f0',
-        'split_y':[754,1390], 'jewel_box':[480,250,574,440]},
+    'staff': {'source':'sources/staff-v02.png', 'height':92, 'family':'cyan',
+        'sha256':'a7d12a881e4cd9e451e92f6d4a6c45f584d6e9cda1b45fb7f0c9c9c5725d3a25',
+        'split_y':[778,1348], 'jewel_box':[475,250,580,480]},
 }
 
 
@@ -112,6 +112,10 @@ def build():
                  else (rgb[:,:,1]>rgb[:,:,0]*1.4)&(rgb[:,:,2]>rgb[:,:,0]*1.4))
         selected=np.zeros(pixels.shape[:2],dtype=bool)
         selected[y0:y1,x0:x1]=color[y0:y1,x0:x1] & (pixels[y0:y1,x0:x1,3]>0)
+        if key=='staff':
+            # The floating gem includes its dark outline. Leaving that outline
+            # on the shaft layer would create a ghost gem when the crystal moves.
+            selected[y0:y1,x0:x1]=pixels[y0:y1,x0:x1,3]>0
         if not selected.any(): raise ValueError(f'{key}: missing crystal')
         jewel=np.zeros_like(pixels); jewel[selected]=pixels[selected]
         body=pixels.copy()

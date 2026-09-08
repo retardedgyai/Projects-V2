@@ -1,0 +1,23 @@
+{
+  "tool": "built-in image_gen; no CLI/API fallback",
+  "scope": "Bow and staff revision only. Armor stopped. Running pack untouched.",
+  "generation": [
+    {
+      "key": "bow",
+      "source": "sources/bow-v02.png",
+      "sha256": "3abcbed6f825523ca03e72d2a3d01e4ec24c4507537c5c9ac18808bfa4dd9ebd",
+      "generatedFile": "exec-e83bab93-1c22-4f60-8536-ec9e2b25f6d7.png",
+      "prompt": "Use case: precise-object-edit. ProjectS Minecraft pixel weapon texture revision. Input roles: the screenshot of the RED Dark Sister sword is the governing MATERIAL/PIXEL STYLE reference; the isolated upright GREEN recurved bow on checker is the EDIT TARGET; the cyan staff is NOT the target; the YouTube green Phantom Bow screenshots show the broader painted light bands to learn from, not bloom to copy. Create exactly ONE revised upright green bow, orthographic SIDE profile, entire weapon in frame, tips to left, central handgrip to right, no string, no arrow, no character, no other objects or text. Preserve the target bow's overall recurved silhouette, central wrapped grip, two small asymmetric leaf-fin ornaments, pointed tips and large empty concavity. Main change: make the limbs convincingly visible at Minecraft inventory size. Each dark forest-green limb must have a BROAD CONTINUOUS moss/jade medium-light painted band and a narrower pale yellow-green sharp edge, not a nearly black surface with isolated dots. Keep a dark boundary and large restrained stepped color clusters like Dark Sister; 3-4 distinct value planes, not smooth gradients, not material noise. Make a decisive readable light/dark division at the grip: dark charcoal wrapping, two desaturated bronze cuff accents, small saturated emerald diamond socket. Keep handle quieter than limbs. Pixel art: uniform clearly square coarse pixels, intended logical sprite 40 pixels wide by 92 pixels tall enlarged nearest-neighbor. No micro-pixels, no anti-aliased painted texture, no photorealism/PBR, no bloom/glow halo, no volumetric lighting. The fins remain razor-thin texture silhouettes, never thick voxel boxes. Deliver a clean, genuinely RGBA TRANSPARENT background; do not paint a checkerboard. One flat texture artwork, no sheet or comparisons. This is a texture to wrap on extremely thin native Minecraft geometry, not a 3D render.",
+      "status": "selected-for-native-review-not-reference-quality-certified"
+    },
+    {
+      "key": "staff",
+      "source": "sources/staff-v02.png",
+      "sha256": "a7d12a881e4cd9e451e92f6d4a6c45f584d6e9cda1b45fb7f0c9c9c5725d3a25",
+      "generatedFile": "exec-f33b4030-fee1-4a58-a280-2008c5db8b18.png",
+      "prompt": "Use case: precise-object-edit. Asset type: flat pixel-art texture for a thin Minecraft native weapon model. Image 1 is the EDIT TARGET: cyan/purple mage staff. Produce one revised version of exactly this staff, upright full object, orthographic front, no perspective. Preserve its asymmetric two open tapered fins, solitary separated cyan diamond, dark plum long shaft, and restrained pointed ferrule. Improve small-size silhouette and hierarchy: expand the HEAD sideways to about one third of the overall weapon height, not by making it a solid mass; keep the negative space between fins and floating diamond fully OPEN. The lower fin should reach further sideways and have a broad, clearly cyan painted inner face. The taller fin has a stepped violet midtone outer face and broad cyan edge ribbon. Enlarge the solitary diamond enough to have 3 clean facets (navy, cyan, pale cyan) that survive reduction to a native 92px-tall sprite. The dark plum shaft should have a readable desaturated violet side plane, a few purposeful chunky dark wrap diagonal bands, and two quiet steel collars, not tiny metallic noise. The intended native sprite is about 32px wide x92px tall enlarged with nearest-neighbor. Match a sharp dark-fantasy Minecraft painted lowpoly/pixel weapon: uniform coarse square pixel clusters, broad deliberate angular value planes, stepped sharp silhouette, only 12-16 colors. These are razor-thin painted fins with texture defining shape, NOT thick cuboids or a voxel model. No smooth gradient, blur, antialiasing, PBR metal, bloom, luminous halo, extra particles, little floating fragments, text, logo, UI, character, or weapon variants. Exactly one flat weapon texture on genuine RGBA transparent background; do NOT paint a checkerboard. Keep generous outer margin, no clipping.",
+      "status": "selected-for-native-review-not-reference-quality-certified"
+    }
+  ],
+  "background": "Both outputs are RGB with painted checker, not actual alpha. Source-specific extraction follows the previously authorized Python conversion."
+}

@@ -74,6 +74,17 @@ class PixelArmamentTest(unittest.TestCase):
             if key=='staff': self.assertTrue(np.all(body[mask]==0))
             else: self.assertTrue(np.all(body[mask]==[48,35,54,255]))
 
+    def test_revised_staff_moves_the_entire_crystal_region(self):
+        entry=self.manifest['weapons']['staff']
+        x0,y0,x1,y1=entry['jewel_box']
+        body=np.asarray(Image.open(PIXELS/'staff-body.png'))
+        jewel=np.asarray(Image.open(PIXELS/'staff-jewel.png'))
+        self.assertTrue(np.all(body[y0:y1,x0:x1]==0))
+        self.assertGreater(int((jewel[:,:,3]>0).sum()),30)
+        self.assertGreaterEqual(entry['content_size'][0],25)
+        original=np.asarray(Image.open(PIXELS/'staff.png'))
+        np.testing.assert_array_equal(jewel[y0:y1,x0:x1],original[y0:y1,x0:x1])
+
     def test_every_exported_pose_is_native_bounded_and_returns_to_rest(self):
         for key,entry in self.manifest['weapons'].items():
             base,gem,_=geometry(key,entry)

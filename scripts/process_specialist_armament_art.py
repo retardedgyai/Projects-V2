@@ -14,8 +14,8 @@ ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT/'assets/class-armaments/texture-first'
 OUT = SOURCE/'processed-specialists-v01'
 JOBS = {
-    'bow': {'source':'sources/bow-v01.png', 'height':92,
-        'sha256':'a2083526f39f4bbbb2b96c8f4fe72e475bd08628340f582fc0197bc86594d17b'},
+    'bow': {'source':'sources/bow-v02.png', 'height':92,
+        'sha256':'3abcbed6f825523ca03e72d2a3d01e4ec24c4507537c5c9ac18808bfa4dd9ebd'},
     'mace': {'source':'sources/mace-v02.png', 'height':84,
         'sha256':'612191609ce1ae0bb9c6d6a4bfc65af88ce2c7f1d762ad41d9773c163c643def'},
     'tome': {'source':'sources/tome-v01.png', 'height':48,
@@ -91,8 +91,9 @@ def layers(key, pixels, transform):
     opaque = pixels[:,:,3]>0
     rgb = pixels[:,:,:3].astype(int)
     if key == 'bow':
-        upper = region(pixels,transform,[0,0,793,790])
-        lower = region(pixels,transform,[0,1220,793,1983])
+        # v02 cuffs bound the fixed handgrip; do not reuse v01 source coordinates.
+        upper = region(pixels,transform,[0,0,827,758])
+        lower = region(pixels,transform,[0,1180,827,1902])
         masks = {'upper_limb':upper,'grip':opaque & ~upper & ~lower,'lower_limb':lower}
     elif key == 'mace':
         crystal = region(pixels,transform,[350,435,445,560]) & (rgb[:,:,1]>rgb[:,:,0]*1.4)
