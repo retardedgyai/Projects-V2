@@ -10,7 +10,7 @@ import numpy as np
 from PIL import Image
 
 from build_pixel_armament_pack import geometry, pose, definition
-from build_blade_ember_study import animated_model, effect_frames, metadata
+from build_blade_ember_study import animated_model, effect_frames, metadata, material_lighting
 from process_sword_material_redraw import convert, guard_depth
 from build_weapon_playtest_pack import ROOT, SERVER_JAR, installed_pack, digest
 
@@ -48,7 +48,7 @@ def candidate_resources():
     for stage, count in (('rest', 1), ('idle', 12), ('prepare', 6), ('release', 6)):
         for frame in range(count):
             suffix = '' if stage == 'rest' else f'_{stage}{frame:02d}'
-            model = animated_model(entry, pose(base, gem, 'greatsword', stage, frame), textures, frames)
+            model = material_lighting(animated_model(entry, pose(base, gem, 'greatsword', stage, frame), textures, frames))
             model['textures']['embers'] = f'projects:item/weapons/{MODEL_NAME}_embers'
             files[f'assets/projects/models/item/weapons/{MODEL_NAME}{suffix}.json'] = encoded(model)
     files[f'assets/projects/items/weapons/{MODEL_NAME}.json'] = encoded(definition(KEY))

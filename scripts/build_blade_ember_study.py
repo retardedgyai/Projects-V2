@@ -122,6 +122,21 @@ def metadata():
                           'frames': list(range(FRAME_COUNT))}}
 
 
+def material_lighting(model):
+    """v02 energy material only: native minimum light, not bloom/dynamic lighting.
+
+    Keep graphite guard/grip at normal world light. Never repaint their texture
+    or set the entire item fullbright just to make the red fragments readable.
+    """
+    result=deepcopy(model)
+    for element in result['elements']:
+        name=element['name']
+        emission=(15 if name.startswith('blade_embers:') else
+                  12 if name.startswith('blade:') else 9 if name.startswith('jewel:') else 0)
+        if emission: element['light_emission']=emission
+    return result
+
+
 def build(redraw=False):
     out = ROOT / '.tools/blade-ember-redraw' if redraw else OUT
     pack = out / 'pack'
@@ -132,6 +147,8 @@ def build(redraw=False):
     entry, original, textures = source(redraw)
     frames = effect_frames(textures['body'], entry.get('ember_emitters', EMITTERS))
     model = animated_model(entry, original, textures, frames)
+    if redraw:
+        model = material_lighting(model)
     assets = pack / 'assets/projects'
     texdir = assets / 'textures/item/weapons'
     texdir.mkdir(parents=True, exist_ok=True)

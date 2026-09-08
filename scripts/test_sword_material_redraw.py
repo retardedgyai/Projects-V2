@@ -48,7 +48,7 @@ class SwordMaterialRedrawTest(unittest.TestCase):
             for bound in ('from', 'to'):
                 self.assertTrue(all(-16 <= v <= 32 for v in element[bound]))
         exported = motion.ROOT / '.tools/blade-ember-redraw/pack/assets/projects'
-        self.assertEqual(json.loads((exported / f'models/item/weapons/{motion.KEY}.json').read_text()), model)
+        self.assertEqual(json.loads((exported / f'models/item/weapons/{motion.KEY}.json').read_text()), motion.material_lighting(model))
         atlas = np.array(Image.open(exported / f'textures/item/weapons/{motion.KEY}_embers.png'))
         np.testing.assert_array_equal(atlas, np.concatenate(frames, axis=0))
 

@@ -61,6 +61,31 @@ class MaterialPlaytestPackTest(unittest.TestCase):
                 self.assertEqual((review.PACK / name).read_bytes(), data, name)
                 self.assertEqual(self.report['files_sha256'][name], review.digest(data), name)
 
+    def test_energy_material_keeps_native_light_in_all_twenty_five_poses(self):
+        models=[json.loads(data) for name,data in self.candidate.items() if '/models/' in name]
+        self.assertEqual(25,len(models))
+        for model in models:
+            found=set()
+            for e in model['elements']:
+                name=e['name']
+                expected=(15 if name.startswith('blade_embers:') else
+                          12 if name.startswith('blade:') else 9 if name.startswith('jewel:') else 0)
+                self.assertEqual(expected,e.get('light_emission',0),name)
+                found.add(expected)
+            self.assertEqual({0,9,12,15},found)
+
+    def test_lighting_does_not_repaint_or_modify_geometry_uvs_and_display(self):
+        from copy import deepcopy
+        from build_blade_ember_study import source,effect_frames,animated_model,material_lighting
+        entry,base,textures=source(True)
+        frames=effect_frames(textures['body'],entry['ember_emitters'])
+        original=animated_model(entry,base,textures,frames)
+        before=deepcopy(original)
+        lit=material_lighting(original)
+        self.assertEqual(original,before)
+        for e in lit['elements']: e.pop('light_emission',None)
+        self.assertEqual(original,lit)
+
     def test_missing_assets_collisions_and_scope_expansion_fail_closed(self):
         bad = dict(self.candidate)
         bad.pop(next(iter(bad)))

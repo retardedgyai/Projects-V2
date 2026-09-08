@@ -4,6 +4,28 @@
 
 ## 最新状態 — Python加工の許可後
 
+### 赤い刃/余韻と灰色金属の受光を分離（2026-09-09）
+
+v02の赤いエネルギー部分も通常の受光のみだったため、明るい原画だけでは暗所での材質差を保てなかった。
+確認用v02にネイティブ `light_emission` を明示: 刃12、離れる赤い破片15、宝石9。
+灰色の鍔/柄は0（通常の環境光）のまま。数値はProjectSの調整値で、参照作品の測定値ではない。
+
+[公式1.21.2リリースノート](https://feedback.minecraft.net/hc/en-us/articles/31261174284557-Minecraft-Java-Edition-1-21-2-Bundles-of-Bravery)
+では、このフィールドは要素の最低受光レベル（0〜15）と定義されている。
+実26.2 JARの `CuboidModelElement.lightEmission()` と、`UnbakedCuboidGeometry.bake` から
+`FaceBakery.bakeQuad` への値の受け渡しも確認した。カスタムシェーダー、ブルーム、周囲への動的照明ではない。
+
+- 処理: 既存の絵/薄い形/刃の24コマ → `material_lighting` で該当要素だけ設定 →
+  T1大剣確認用snapshotの全25ポーズへ保存。全体を明るくする代用はしない。
+- `scripts/CheckNativeSwordLighting.java` で25ポーズ/11,475要素の値が実クライアントのパーサーへ
+  そのまま届くことを検証。不正値-1/16の対照は拒否。
+- 関連Python40件成功。snapshot内の無関係なリソースのbyte不変、zip/index/ハッシュも再検証済み。
+- 最重要/最初の確認先: `scripts/build_blade_ember_study.py` の `material_lighting`。
+  `test_material_playtest_pack.py` で全25状態の設定と、絵・UV・形・握りの不変性を検査する。
+- 通常の旧試作には適用せず、v02確認用出力だけ更新。実機の夜/洞窟/手持ちの最終表示は未確認。
+  既存の正投影プレビューはMinecraftの受光を再現していないので、照明改善の証拠に使わない。
+- 稼働中のゲーム、インストール済みJAR、通常RP、防具、ほかの武器/Tierは未変更。
+
 ### 刃の余韻の側面欠けを修正（2026-09-09）
 
 動く赤い破片の側面を「全フレームの塗りの合成外周」だけから作っていたため、
