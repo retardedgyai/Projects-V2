@@ -16,7 +16,7 @@ class CheckNativeWeaponDisplay {
     public static void main(String[] args) throws Exception {
         if (args.length!=1) throw new IllegalArgumentException("Supply generated display-contract.json");
         var cases = JsonParser.parseString(Files.readString(Path.of(args[0]))).getAsJsonArray();
-        if (cases.size()!=475) throw new IllegalStateException("Expected 175 family poses plus 300 greatsword/dagger/staff/mace Tier poses");
+        if (cases.size()!=550) throw new IllegalStateException("Expected 175 family poses plus 375 greatsword/dagger/staff/mace/bow Tier poses");
         int count=0, bowDirections=0;
         for (var value:cases) {
             var check=value.getAsJsonObject();
@@ -49,7 +49,7 @@ class CheckNativeWeaponDisplay {
             }
         }
         System.out.println("Vanilla 26.2 ItemTransform: "+count+" grip placements accepted across "+cases.size()+" poses; not in-game palm/camera approval.");
-        if (bowDirections!=100) throw new IllegalStateException("Expected 100 bow hand-local direction checks");
+        if (bowDirections!=400) throw new IllegalStateException("Expected 400 bow hand-local direction checks");
         System.out.println("Bow +X maps to hand-local -Z in "+bowDirections+" transforms; outer arm/camera motion not tested.");
     }
 }
