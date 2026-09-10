@@ -34,7 +34,7 @@ class CoreCombatMeshTest {
                             .get(net.minestom.server.component.DataComponents.ITEM_MODEL)==name }
                     p to entity
                 }
-                repeat(2) { meshes.tick() } // Existing hidden spawn lead-in, not artwork frames.
+                if(id=="dash") repeat(2) { meshes.tick() } // Skills retain their existing lead-in; AA does not.
                 for(age in 0..parts.maxOf { it.durationTicks }) {
                     meshes.tick()
                     for((p,entity) in pairs) {
@@ -53,7 +53,7 @@ class CoreCombatMeshTest {
             }
         } finally { meshes.cancel();CoreCombatPresentation.forget(owner) }
     }
-    @Test fun `normal attack entry points display approved preparation release and contact and clean up`() = player { owner ->
+    @Test fun `normal release and contact are visible to owner before any tick and clean up`() = player { owner ->
         CoreCombatPresentation.pack(owner,true)
         val vfx=GreatswordVfx(owner)
         fun models()=owner.instance.entities.filter { it.entityType==net.minestom.server.entity.EntityType.ITEM_DISPLAY }.map {
@@ -63,20 +63,40 @@ class CoreCombatMeshTest {
         try {
             for((index,visual) in listOf(GreatswordVisual.SWEEP,GreatswordVisual.REVERSE,GreatswordVisual.FINISHER).withIndex()) {
                 val prefix=if(index==1) "approved_aa_reverse_v3" else "approved_dash_v3"
-                vfx.normalPrepare(GreatswordCombo.Swing(index+1,8,20),owner.position,Vec(0.0,0.0,1.0))
-                assertEquals(listOf("projects:combat_vfx/$prefix/blade_0"),models())
-                repeat(10) { vfx.tick() }
                 vfx.play(visual,owner.position,Vec(0.0,0.0,1.0))
                 assertEquals(setOf("projects:combat_vfx/$prefix/blade_3","projects:combat_vfx/$prefix/wake_3"),models().toSet())
+                for(entity in owner.instance.entities.filter { it.entityType==net.minestom.server.entity.EntityType.ITEM_DISPLAY }) {
+                    assertTrue(owner in entity.viewers, "No hidden spawn wait for AA")
+                    assertTrue((entity.entityMeta as net.minestom.server.entity.metadata.display.ItemDisplayMeta).scale.x()>0)
+                }
                 repeat(18) { vfx.tick() }
                 assertTrue(models().isEmpty())
             }
             vfx.normalContact(owner.position.add(0.0,0.0,1.5),Vec(0.0,0.0,1.0))
             assertEquals(listOf("projects:combat_vfx/approved_dash_v3/impact_0"),models())
+            assertTrue(owner.instance.entities.filter { it.entityType==net.minestom.server.entity.EntityType.ITEM_DISPLAY }.all { owner in it.viewers })
             vfx.cancel()
             assertTrue(models().isEmpty())
         } finally { vfx.cancel();CoreCombatPresentation.forget(owner) }
     }
+    @Test fun `immediate normal reveal respects full subdued minimal and unloaded owner settings`() = player { owner ->
+        val meshes=CoreCombatMeshes(owner)
+        fun displayed()=owner.instance.entities.count { it.entityType==net.minestom.server.entity.EntityType.ITEM_DISPLAY && owner in it.viewers }
+        val base=effect(CoreClass.WARRIOR,"dash")
+        val normal=CoreSkillEffect(base.job,base.skill,base.origin,base.direction,sceneId="normal_sweep")
+        try {
+            meshes.play(normal)
+            assertEquals(0,displayed())
+            CoreCombatPresentation.pack(owner,true)
+            for(expected in listOf(2,1,0)) {
+                meshes.play(normal)
+                assertEquals(expected,displayed())
+                meshes.cancel()
+                CoreCombatPresentation.cycle(owner)
+            }
+        } finally { meshes.cancel();CoreCombatPresentation.forget(owner) }
+    }
+
     @Test fun `normal warrior swings actually dispatch their sound packets`() {
         val packets=mutableListOf<SendablePacket>()
         player(packets) { owner ->

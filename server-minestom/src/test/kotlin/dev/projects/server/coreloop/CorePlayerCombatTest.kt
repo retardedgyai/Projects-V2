@@ -143,11 +143,12 @@ class CorePlayerCombatTest {
         }
     }
     @Test
-    fun `duplicate vanilla swing signals start one normal attack and hit once during active frames`() = arena { h ->
+    fun `warrior hits on accepted click before any tick and duplicate swing signals never repeat damage`() = arena { h ->
         h.actor.attack()
+        assertEquals(288.0, h.combat.bossHealth(), "No startup timer before damage")
         h.actor.attack()
         h.ticks(7)
-        assertEquals(300.0, h.combat.bossHealth())
+        assertEquals(288.0, h.combat.bossHealth())
         h.ticks(1)
         assertEquals(288.0, h.combat.bossHealth())
         h.ticks(20)
@@ -418,7 +419,7 @@ class CorePlayerCombatTest {
 
     @Test
     fun `fire mod adds direct damage and three nonrecursive burn ticks`() = arena(stats = CoreAffixStats(fireFlat = 10.0)) { h ->
-        h.actor.attack(); h.ticks(8)
+        h.actor.attack()
         assertEquals(281.5, h.combat.bossHealth(), 0.00001)
         h.ticks(59)
         assertEquals(275.5, h.combat.bossHealth(), 0.00001)
@@ -505,11 +506,37 @@ class CorePlayerCombatTest {
     fun `kill callback can return actor during direct hit without late VFX or burn`() = arena(stats = CoreAffixStats(fireFlat = 10.0)) { h ->
         h.combat.applyEffectDamage(h.combat.combatTargets().single().id, h.player, 290.0)
         h.afterKill = { h.actor.resetActions(); h.activeEncounter = null }
-        h.actor.attack(); h.ticks(8)
+        h.actor.attack()
         assertTrue(h.combat.bossDefeated)
         assertEquals(0, h.actor.activeVisualEffects)
         h.ticks(60)
         assertEquals(0, h.actor.activeVisualEffects)
+    }
+
+    @Test fun `accepted warrior input sends blade wake and hit with damage before actor tick`() = arena { h ->
+        CoreCombatPresentation.pack(h.player,true)
+        try {
+            h.actor.attack()
+            assertEquals(288.0,h.combat.bossHealth())
+            val displays=h.instance.entities.filter {
+                it.entityType==net.minestom.server.entity.EntityType.ITEM_DISPLAY
+            }.filter {
+                (it.entityMeta as net.minestom.server.entity.metadata.display.ItemDisplayMeta).itemStack
+                    .get(DataComponents.ITEM_MODEL)?.startsWith("projects:combat_vfx/")==true
+            }
+            assertEquals(3,displays.size)
+            for(display in displays) {
+                assertTrue(h.player in display.viewers)
+                val meta=display.entityMeta as net.minestom.server.entity.metadata.display.ItemDisplayMeta
+                assertTrue(meta.scale.x()>0)
+                assertEquals(0,meta.transformationInterpolationDuration)
+            }
+            repeat(10) { h.actor.attack() }
+            assertEquals(288.0,h.combat.bossHealth())
+            assertEquals(3,h.instance.entities.count { it in displays })
+            h.actor.resetActions()
+            assertTrue(displays.all { it.isRemoved })
+        } finally { CoreCombatPresentation.forget(h.player) }
     }
 
     @Test

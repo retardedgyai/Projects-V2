@@ -18,6 +18,29 @@ import java.util.concurrent.TimeUnit
 import kotlin.test.*
 
 class GreatswordTest {
+    @Test fun `immediate mode moves startup after hit while preserving every stage cadence and buffer`() {
+        for (speed in listOf(.75, 1.0, 1.84, 2.1, Double.NaN, Double.POSITIVE_INFINITY)) {
+            val original = GreatswordCombo()
+            val immediate = GreatswordCombo()
+            repeat(3) { stage ->
+                val old = original.press(speed)!!
+                val now = immediate.press(speed, immediate=true)!!
+                assertEquals(stage+1, now.step)
+                assertEquals(0, now.impactTick)
+                assertEquals(old.totalTicks, now.totalTicks)
+                assertEquals(old.multiplier, now.multiplier)
+                repeat(now.totalTicks) { tick ->
+                    repeat(5) { assertNull(immediate.press(speed, immediate=true)) }
+                    assertNull(immediate.tick(), "Input-time strike must not replay")
+                    original.tick()
+                    assertEquals(tick < now.totalTicks-1, immediate.isAttacking)
+                }
+                assertTrue(immediate.takeBuffered())
+                assertFalse(immediate.takeBuffered())
+            }
+        }
+    }
+
     @Test fun `three combo stages have one impact and the final swing is heavier and slower`() {
         val combo = GreatswordCombo()
         val impacts = mutableListOf<GreatswordCombo.Swing>()

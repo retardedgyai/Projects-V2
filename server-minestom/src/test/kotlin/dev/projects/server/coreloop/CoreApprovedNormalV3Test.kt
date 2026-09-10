@@ -47,20 +47,16 @@ class CoreApprovedNormalV3Test {
         }
     }
 
-    @Test fun `startup follows actual combo speed while release never replays preparation`() {
+    @Test fun `immediate AA has no preparation at every speed and ticks never repeat its input hit`() {
         for (speed in listOf(.75, 1.0, 2.1)) {
             val combo = GreatswordCombo()
             for (id in CoreApprovedNormalV3.sceneIds) {
-                val swing = combo.press(speed)!!
-                val duration = swing.impactTick - 1
-                val p = CoreSkillChoreography.parts(effect(id, CoreSkillVisualPhase.PREPARE, prepare = duration)).single()
-                assertEquals(duration, p.durationTicks)
-                assertTrue(CoreSkillChoreography.pose(p, 0.0).model.endsWith("blade_0"))
-                assertTrue(CoreSkillChoreography.pose(p, duration - 1.0).model.endsWith("blade_2"))
+                val swing = combo.press(speed, immediate=true)!!
+                assertEquals(0, swing.impactTick)
                 assertTrue(CoreSkillChoreography.pose(CoreSkillChoreography.parts(effect(id)).first(), 0.0).model.endsWith("blade_3"))
                 var hits = 0
                 repeat(swing.totalTicks) { if (combo.tick() != null) hits++ }
-                assertEquals(1, hits)
+                assertEquals(0, hits)
             }
         }
     }
@@ -113,14 +109,13 @@ class CoreApprovedNormalV3Test {
         }
     }
 
-    @Test fun `export actual runtime AA preparation cut and accepted hit for review`() {
+    @Test fun `export immediate AA cut and accepted hit for review`() {
         fun xyz(v: Vec) = listOf(v.x(), v.y(), v.z())
         val combo = GreatswordCombo()
         val scenes = CoreApprovedNormalV3.sceneIds.mapIndexed { index, id ->
-            val swing = combo.press(1.0)!!
-            val startup = swing.impactTick - 1
-            val beats = listOf(Triple(0, CoreSkillVisualPhase.PREPARE, Vec.ZERO),
-                Triple(startup, CoreSkillVisualPhase.PULSE, Vec.ZERO),
+            val swing = combo.press(1.0, immediate=true)!!
+            val startup = swing.impactTick
+            val beats = listOf(Triple(startup, CoreSkillVisualPhase.PULSE, Vec.ZERO),
                 Triple(startup, CoreSkillVisualPhase.CONTACT, Vec(0.0, 0.0, 1.5)))
             val frames = (0..(startup+17)).map { tick -> beats.flatMap { (start, phase, at) ->
                 CoreSkillChoreography.parts(effect(id, phase, prepare=startup)).mapNotNull { p ->

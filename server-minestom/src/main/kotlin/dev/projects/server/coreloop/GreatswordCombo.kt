@@ -19,7 +19,7 @@ internal class GreatswordCombo {
     private var buffered = false
     val isAttacking: Boolean get() = swing != null
 
-    fun press(speed: Double, quick: Boolean = false): Swing? {
+    fun press(speed: Double, quick: Boolean = false, immediate: Boolean = false): Swing? {
         val current = swing
         if (current != null) {
             if (elapsed >= current.totalTicks - 6) buffered = true
@@ -33,7 +33,9 @@ internal class GreatswordCombo {
         val recovery = round((if(quick) intArrayOf(8, 8, 12) else intArrayOf(12, 14, 19))[step - 1] / haste).toInt().coerceAtLeast(if(quick) 5 else 7)
         elapsed = 0
         idleTicks = 0
-        return Swing(step, startup + 1, startup + 1 + recovery).also { swing = it }
+        // Immediate AA spends its former startup AFTER the hit. Preserve cadence and
+        // the one-slot late input buffer; repeated clicks cannot create extra strikes.
+        return Swing(step, if (immediate) 0 else startup + 1, startup + 1 + recovery).also { swing = it }
     }
 
     /** Returns the sole impact frame; recovery includes a two/three-tick contact hold. */

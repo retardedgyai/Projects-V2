@@ -98,7 +98,8 @@ internal class CorePlayerCombat(
 
     fun attack() {
         if (weaponBroken()) { notice("武器が破損しています。装備庫で修理してください"); return }
-        if (defeated || pending != null || encounter() == null || player.openInventory != null) return
+        if (defeated || pending != null || player.openInventory != null) return
+        val enemies = encounter() ?: return
         if (!classId.melee) {
             if (tickNumber < nextShot || shot != null) return
             shot = tickNumber + 4 to player.position.direction()
@@ -107,13 +108,13 @@ internal class CorePlayerCombat(
             sound(if (classId == CoreClass.RANGER) SoundEvent.ENTITY_ARROW_SHOOT else SoundEvent.BLOCK_AMETHYST_BLOCK_CHIME, .65f, 1.2f)
             return
         }
-        normal.press(attackSpeed, quick = classId == CoreClass.ASSASSIN)?.let { swing ->
+        normal.press(attackSpeed, quick = classId == CoreClass.ASSASSIN, immediate = classId == CoreClass.WARRIOR)?.let { swing ->
             normalEmpowerment = if(classId == CoreClass.TEMPLAR && classState.counterUntil >= tickNumber) 1.35 else 1.0
             if(normalEmpowerment > 1) classState.counterUntil = -1
             normalDirection = flatFacing()
-            if (classId == CoreClass.WARRIOR) vfx.normalPrepare(swing, player.position, normalDirection)
-            vfx.startSound(swing.step)
             lastCombat = tickNumber
+            if (swing.impactTick == 0) releaseNormal(enemies, swing)
+            else vfx.startSound(swing.step)
         }
     }
 
@@ -209,24 +210,7 @@ internal class CorePlayerCombat(
             }
             if (burn.remaining <= 0) burns.remove(key)
         }
-        normal.tick()?.let { swing ->
-            vfx.swingSound(swing.step)
-            player.swingMainHand()
-            if (classId == CoreClass.WARRIOR) vfx.play(arrayOf(GreatswordVisual.SWEEP, GreatswordVisual.REVERSE, GreatswordVisual.FINISHER)[swing.step - 1], player.position, normalDirection)
-            else vfx.play(CoreClassEffect(classId, CoreSkillMotion.CONE, player.position, normalDirection,
-                if (classId == CoreClass.ASSASSIN) 3.0 else 4.5, swing.step == 3, reverse = swing.step == 2))
-            var connected = false
-            val heavyFinish = swing.step == 3 && weaponBase() == CoreWeaponBase.CLEAVER
-            for (target in enemies.combatTargets()) {
-                if (greatswordInRange(player.position, normalDirection, target, range = if (classId == CoreClass.ASSASSIN) 3.0 else 4.5,
-                        minDot = if (heavyFinish) .9 else .4) && visibleTo(target.id, enemies)) {
-                    hit(enemies, target.id, swing.multiplier * normalEmpowerment * if (heavyFinish) 1.65 else 1.0, skill = false, heavy = swing.step == 3)
-                    connected = true
-                    if (!actionsValid(enemies, epoch)) return
-                }
-            }
-            if (connected && swing.step == 3 && weaponBase() == CoreWeaponBase.FLOW) manaValue = min(maxMana.toDouble(), manaValue + 8)
-        }
+        normal.tick()?.let { swing -> if (!releaseNormal(enemies, swing)) return }
         pending?.let { action ->
             action.elapsed++
             val pulse = action.elapsed - action.startup
@@ -246,6 +230,28 @@ internal class CorePlayerCombat(
             else if (normal.takeBuffered()) attack()
         }
         vfx.tick()
+    }
+
+    /** Same server-owned strike for input-time warrior AA and delayed other melee jobs. */
+    private fun releaseNormal(enemies: QuestEncounterCombat, swing: GreatswordCombo.Swing): Boolean {
+        val epoch = actionEpoch
+        vfx.swingSound(swing.step)
+        player.swingMainHand()
+        if (classId == CoreClass.WARRIOR) vfx.play(arrayOf(GreatswordVisual.SWEEP, GreatswordVisual.REVERSE, GreatswordVisual.FINISHER)[swing.step - 1], player.position, normalDirection)
+        else vfx.play(CoreClassEffect(classId, CoreSkillMotion.CONE, player.position, normalDirection,
+            if (classId == CoreClass.ASSASSIN) 3.0 else 4.5, swing.step == 3, reverse = swing.step == 2))
+        var connected = false
+        val heavyFinish = swing.step == 3 && weaponBase() == CoreWeaponBase.CLEAVER
+        for (target in enemies.combatTargets()) {
+            if (greatswordInRange(player.position, normalDirection, target, range = if (classId == CoreClass.ASSASSIN) 3.0 else 4.5,
+                    minDot = if (heavyFinish) .9 else .4) && visibleTo(target.id, enemies)) {
+                hit(enemies, target.id, swing.multiplier * normalEmpowerment * if (heavyFinish) 1.65 else 1.0, skill = false, heavy = swing.step == 3)
+                connected = true
+                if (!actionsValid(enemies, epoch)) return false
+            }
+        }
+        if (connected && swing.step == 3 && weaponBase() == CoreWeaponBase.FLOW) manaValue = min(maxMana.toDouble(), manaValue + 8)
+        return actionsValid(enemies, epoch)
     }
 
     private fun executeSkill(enemies: QuestEncounterCombat, action: PendingSkill) {
