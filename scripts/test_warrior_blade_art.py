@@ -17,7 +17,10 @@ class WarriorBladeArtTest(unittest.TestCase):
     def test_generated_resources_reproduce_and_keep_white_edge_red_accent(self):
         generated = {}
         build(PACK / 'assets/projects', lambda p, v: generated.__setitem__(p, v))
-        self.assertEqual(50, len(generated))
+        # 32 support aliases moved to the texture-led support compiler; this old
+        # blade helper must not recolour those new materials into concrete again.
+        self.assertEqual(18, len(generated))
+        self.assertTrue(all('warrior_blade/' in p.as_posix() for p in generated))
         for path, value in generated.items():
             self.assertEqual(value, json.loads(path.read_text(encoding='utf-8')), str(path))
             if '/models/' in path.as_posix():

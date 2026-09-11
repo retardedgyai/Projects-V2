@@ -27,4 +27,24 @@ class CoreSkillAudioTest {
         }
         assertEquals(3,(0..2).map { CoreSkillAudio.warriorCues(effect("whirl",it)) }.distinct().size)
     }
+    @Test fun `support cues describe guard voice and planted cloth without fake attack hits`() {
+        val signatures=CoreWarriorSupportChoreography.sceneIds.map { id ->
+            val prepare=CoreSkillAudio.warriorCues(effect(id,phase=CoreSkillVisualPhase.PREPARE))
+            val release=CoreSkillAudio.warriorCues(effect(id))
+            assertEquals(1,prepare.size)
+            assertTrue(release.size in 2..3)
+            assertTrue(release.none { it.event in setOf(SoundEvent.ITEM_TRIDENT_HIT,SoundEvent.ENTITY_PLAYER_ATTACK_SWEEP) })
+            assertTrue((prepare+release).all { it.volume in .25f..1f && it.pitch in .6f..1.5f })
+            if(id!="war_guard") assertTrue(CoreSkillAudio.warriorCues(effect(id,phase=CoreSkillVisualPhase.CONTACT)).isEmpty())
+            release
+        }
+        assertEquals(3,signatures.distinct().size)
+    }
+    @Test fun `thrust has no sweep sound and only ground finishers add fracture audio`() {
+        assertTrue(CoreSkillAudio.warriorCues(effect("war_breach")).none { it.event==SoundEvent.ENTITY_PLAYER_ATTACK_SWEEP })
+        assertEquals(3,(0..2).map { CoreSkillAudio.warriorCues(effect("war_ult",it)) }.distinct().size)
+        for(pulse in 0..2) assertEquals(pulse==2,CoreSkillAudio.warriorCues(effect("war_ult",pulse)).any { it.event==SoundEvent.BLOCK_STONE_BREAK })
+        assertTrue(CoreSkillAudio.warriorCues(effect("slam")).any { it.event==SoundEvent.BLOCK_STONE_BREAK })
+        assertTrue(CoreSkillAudio.warriorCues(effect("normal_finish")).none { it.event==SoundEvent.BLOCK_STONE_BREAK })
+    }
 }

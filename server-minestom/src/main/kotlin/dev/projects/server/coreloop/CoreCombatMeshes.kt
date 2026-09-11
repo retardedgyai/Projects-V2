@@ -38,7 +38,8 @@ internal class CoreCombatMeshes(private val owner: Player) {
     fun play(effect: CoreSkillEffect) {
         val instance=owner.instance ?: return
         val immediateContour=effect.job==CoreClass.WARRIOR &&
-            (effect.sceneId in CoreApprovedNormalV3.sceneIds || effect.sceneId in CoreWarriorBladeChoreography.sceneIds && effect.sceneId!="dash")
+            (effect.sceneId in CoreApprovedNormalV3.sceneIds || effect.sceneId in CoreWarriorBladeChoreography.sceneIds && effect.sceneId!="dash" ||
+                effect.sceneId in CoreWarriorSupportChoreography.sceneIds)
         if(!instance.players.any { CoreCombatPresentation.packed(it) && CoreCombatPresentation.detail(it)!=CoreCombatPresentation.Detail.MINIMAL && it.position.distanceSquared(effect.origin)<1600 }) return
         for(authored in CoreSkillChoreography.parts(effect).sortedBy { it.secondary }) {
             if(live.size>=OWNER_LIMIT) {
@@ -64,15 +65,20 @@ internal class CoreCombatMeshes(private val owner: Player) {
                 age=if(immediateContour) 0 else -2)
             live+=record
             entity.editEntityMeta(ItemDisplayMeta::class.java) { meta ->
-                record.model=CoreSkillChoreography.pose(part,0.0).model
+                val initial=CoreSkillChoreography.pose(part,0.0)
+                record.model=initial.model
                 meta.setItemStack(ItemStack.of(Material.PAPER).withItemModel("projects:${record.model}"))
                 meta.setDisplayContext(ItemDisplayMeta.DisplayContext.FIXED)
                 meta.setBrightness(15,15);meta.setViewRange(1.0f)
                 meta.setTransformationInterpolationDuration(interpolationTicks(part))
                 // Authored warrior contours start at their real phase, not a hidden extra
                 // two-tick delay after damage. Other scene clocks remain unchanged.
-                meta.setScale(if(immediateContour) CoreSkillChoreography.pose(part,0.0).scale else Vec.ZERO);meta.setTranslation(part.offset)
-                meta.setLeftRotation(CoreCombatMeshArt.rotation(part.yaw,part.pitch,part.roll))
+                // The first pose includes the guard's grip pivot and planted flag root.
+                // Delayed echoes must remain hidden even though their entity is ready.
+                meta.setScale(if(immediateContour && initial.visible) initial.scale else Vec.ZERO)
+                meta.setTranslation(if(immediateContour) initial.offset else part.offset)
+                meta.setLeftRotation(if(immediateContour) CoreCombatMeshArt.rotation(initial.yaw,initial.pitch,initial.roll)
+                    else CoreCombatMeshArt.rotation(part.yaw,part.pitch,part.roll))
                 meta.setRightRotation(CoreCombatMeshArt.vanillaItemCorrection)
             }
             entity.setInstance(instance,Pos(effect.origin.x(),effect.origin.y(),effect.origin.z())).whenComplete { _,failure ->

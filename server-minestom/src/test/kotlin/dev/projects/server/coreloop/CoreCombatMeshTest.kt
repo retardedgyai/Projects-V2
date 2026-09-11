@@ -18,6 +18,36 @@ import kotlin.math.abs
 import kotlin.test.*
 
 class CoreCombatMeshTest {
+    @Test fun `warrior support reveals its actual first pose immediately but never reveals future echoes`() = player { owner ->
+        val meshes=CoreCombatMeshes(owner)
+        CoreCombatPresentation.pack(owner,true)
+        try {
+            for(id in CoreWarriorSupportChoreography.sceneIds) {
+                val e=effect(CoreClass.WARRIOR,id)
+                val parts=CoreSkillChoreography.parts(e)
+                meshes.play(e)
+                val displays=owner.instance.entities.filter { it.entityType==net.minestom.server.entity.EntityType.ITEM_DISPLAY }
+                assertEquals(parts.size,displays.size)
+                val expected=parts.map { part ->
+                    val pose=CoreSkillChoreography.pose(part,0.0)
+                    listOf("projects:"+pose.model,pose.offset,if(pose.visible) pose.scale else Vec.ZERO,
+                        CoreCombatMeshArt.rotation(pose.yaw,pose.pitch,pose.roll).toList())
+                }
+                val actual=displays.map { display ->
+                    val meta=display.entityMeta as net.minestom.server.entity.metadata.display.ItemDisplayMeta
+                    assertTrue(owner in display.viewers)
+                    listOf(meta.itemStack.get(net.minestom.server.component.DataComponents.ITEM_MODEL),
+                        meta.translation,meta.scale,meta.leftRotation.toList())
+                }
+                // Four flag fragments share a model and origin but not a rotation.
+                // Compare the complete multiset, not an arbitrary first entity match.
+                assertEquals(expected.groupingBy { it }.eachCount(),actual.groupingBy { it }.eachCount(),id)
+                repeat(parts.maxOf { it.durationTicks+it.delayTicks }+1) { meshes.tick() }
+                assertEquals(0,meshes.size)
+                assertTrue(displays.all { it.isRemoved })
+            }
+        } finally { meshes.cancel();CoreCombatPresentation.forget(owner) }
+    }
     @Test fun `approved dash and AA send original frames at full fixed transform without tween distortion`() = player { owner ->
         val meshes=CoreCombatMeshes(owner)
         CoreCombatPresentation.pack(owner,true)
@@ -108,6 +138,18 @@ class CoreCombatMeshTest {
                     assertEquals(expected,packets.count { it.javaClass.simpleName.contains("SoundEffectPacket") },visual.name)
                 }
             } finally { vfx.cancel() }
+        }
+    }
+    @Test fun `support audio sends once per actual phase not once per echo mesh`() {
+        val packets=mutableListOf<SendablePacket>()
+        player(packets) { owner ->
+            for(id in CoreWarriorSupportChoreography.sceneIds) for(phase in CoreSkillVisualPhase.entries) {
+                packets.clear()
+                val e=effect(CoreClass.WARRIOR,id,phase)
+                CoreSkillAudio.play(owner,e)
+                assertEquals(CoreSkillAudio.warriorCues(e).size,
+                    packets.count { it.javaClass.simpleName.contains("SoundEffectPacket") },"$id $phase")
+            }
         }
     }
     private fun effect(job: CoreClass, id: String, phase: CoreSkillVisualPhase = CoreSkillVisualPhase.PULSE, pulse: Int = 0, length: Double = 0.0) =

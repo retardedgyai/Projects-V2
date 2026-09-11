@@ -10,13 +10,16 @@ internal object CoreSkillAudio {
 
     /** Distinct attack layers, shared by normal swings and skill pulses. No volume-setting override. */
     internal fun warriorCues(effect: CoreSkillEffect): List<Cue> {
-        if(effect.job!=CoreClass.WARRIOR || effect.sceneId !in CoreWarriorBladeChoreography.sceneIds) return emptyList()
+        if(effect.job!=CoreClass.WARRIOR) return emptyList()
+        if(effect.sceneId in CoreWarriorSupportChoreography.sceneIds) return warriorSupportCues(effect)
+        if(effect.sceneId !in CoreWarriorBladeChoreography.sceneIds) return emptyList()
         val heavy=effect.sceneId in setOf("slam","normal_finish") || effect.sceneId=="war_ult" && effect.pulse%3==2
         val quick=effect.sceneId=="war_wound"
         val pitch=when {
             heavy -> .62f
             quick -> 1.4f
             effect.sceneId=="whirl" -> floatArrayOf(1.2f,.95f,.7f)[effect.pulse%3]
+            effect.sceneId=="war_ult" -> floatArrayOf(1.25f,.9f,.62f)[effect.pulse%3]
             effect.sceneId=="normal_reverse" -> 1.15f
             effect.sceneId=="war_counter" -> .8f
             else -> .95f
@@ -29,11 +32,35 @@ internal object CoreSkillAudio {
                 if(heavy) add(Cue(SoundEvent.ENTITY_ZOMBIE_ATTACK_IRON_DOOR,.55f,.7f))
             }
             CoreSkillVisualPhase.PULSE -> buildList {
-                add(Cue(SoundEvent.ENTITY_PLAYER_ATTACK_SWEEP,1f,pitch))
+                // Thrust moves air forward; it must not sound like a sideways sweep.
+                add(Cue(if(effect.sceneId=="war_breach") SoundEvent.ENTITY_PLAYER_ATTACK_STRONG else SoundEvent.ENTITY_PLAYER_ATTACK_SWEEP,
+                    if(effect.sceneId=="war_breach") .7f else 1f,pitch))
                 add(Cue(SoundEvent.ITEM_TRIDENT_THROW,if(quick) .75f else 1f,pitch))
                 // Low body only on committed finishers; not an explosion on every click.
                 if(heavy) add(Cue(SoundEvent.ENTITY_IRON_GOLEM_ATTACK,.8f,.7f))
+                // Ground fracture is a cast effect, separate from accepted enemy contact.
+                if(effect.sceneId=="slam" || effect.sceneId=="war_ult" && effect.pulse%3==2)
+                    add(Cue(SoundEvent.BLOCK_STONE_BREAK,.7f,.65f))
             }
+        }
+    }
+
+    private fun warriorSupportCues(effect: CoreSkillEffect): List<Cue> = when(effect.phase) {
+        CoreSkillVisualPhase.PREPARE -> listOf(when(effect.sceneId) {
+            "war_banner" -> Cue(SoundEvent.BLOCK_WOOL_PLACE,.7f,.9f)
+            "war_guard" -> Cue(SoundEvent.ITEM_ARMOR_EQUIP_IRON,.55f,1.15f)
+            else -> Cue(SoundEvent.ITEM_TRIDENT_RETURN,.35f,.7f)
+        })
+        // Shield grants and voice fronts are not cosmetic damage impacts.
+        CoreSkillVisualPhase.CONTACT -> if(effect.sceneId=="war_guard")
+            listOf(Cue(SoundEvent.ITEM_SHIELD_BLOCK,.85f,1.1f)) else emptyList()
+        CoreSkillVisualPhase.PULSE -> when(effect.sceneId) {
+            "war_guard" -> listOf(Cue(SoundEvent.ITEM_ARMOR_EQUIP_IRON,.9f,.8f),
+                Cue(SoundEvent.ITEM_TRIDENT_RETURN,.6f,1.1f))
+            "war_cry" -> listOf(Cue(SoundEvent.ENTITY_RAVAGER_ROAR,.7f,1.45f),
+                Cue(SoundEvent.ENTITY_PLAYER_ATTACK_STRONG,.55f,.65f))
+            else -> listOf(Cue(SoundEvent.BLOCK_ANVIL_LAND,.5f,.8f),
+                Cue(SoundEvent.BLOCK_WOOL_PLACE,1f,.75f),Cue(SoundEvent.EVENT_RAID_HORN,.35f,1.4f))
         }
     }
 
@@ -47,7 +74,8 @@ internal object CoreSkillAudio {
             player.playSound(Sound.sound(event, Sound.Source.PLAYER, volume * detail, pitch))
         val astral = effect.job == CoreClass.STARWEAVER
         val scene = CoreSkillScenes.get(effect.sceneId)
-        if(effect.job==CoreClass.WARRIOR && effect.sceneId in CoreWarriorBladeChoreography.sceneIds) {
+        if(effect.job==CoreClass.WARRIOR && (effect.sceneId in CoreWarriorBladeChoreography.sceneIds ||
+                effect.sceneId in CoreWarriorSupportChoreography.sceneIds)) {
             warriorCues(effect).forEach { cue(it.event,it.volume,it.pitch) }
             return
         }
@@ -66,28 +94,6 @@ internal object CoreSkillAudio {
                     cue(if(needle) SoundEvent.ITEM_TRIDENT_THROW else SoundEvent.BLOCK_RESPAWN_ANCHOR_DEPLETE,.9f,if(needle) 1.65f else 1.3f)
                     if(needle) cue(SoundEvent.ENTITY_PLAYER_ATTACK_SWEEP,.45f,1.7f)
                     else cue(SoundEvent.ENTITY_LIGHTNING_BOLT_IMPACT,.5f,1.8f)
-                }
-            }
-            return
-        }
-        if(effect.sceneId in CoreWarriorSupportChoreography.sceneIds) {
-            when(effect.phase) {
-                CoreSkillVisualPhase.PREPARE -> cue(if(effect.sceneId=="war_banner") SoundEvent.BLOCK_WOOL_PLACE else SoundEvent.ITEM_TRIDENT_RETURN,.6f,.75f)
-                CoreSkillVisualPhase.CONTACT -> cue(SoundEvent.ITEM_SHIELD_BLOCK,.8f,1.2f)
-                CoreSkillVisualPhase.PULSE -> when(effect.sceneId) {
-                    "war_guard" -> {
-                        cue(SoundEvent.ITEM_ARMOR_EQUIP_IRON,.9f,.7f)
-                        cue(SoundEvent.ITEM_TRIDENT_RETURN,.7f,.75f)
-                    }
-                    "war_cry" -> {
-                        cue(SoundEvent.ENTITY_RAVAGER_ROAR,.55f,1.6f)
-                        cue(SoundEvent.ENTITY_PLAYER_ATTACK_STRONG,.8f,.7f)
-                    }
-                    else -> {
-                        cue(SoundEvent.BLOCK_ANVIL_LAND,.35f,.65f)
-                        cue(SoundEvent.BLOCK_WOOL_PLACE,1f,.65f)
-                        cue(SoundEvent.EVENT_RAID_HORN,.5f,1.15f)
-                    }
                 }
             }
             return

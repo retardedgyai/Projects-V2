@@ -56,16 +56,18 @@ internal object CoreWarriorSupportChoreography {
         val local=(age-p.delayTicks).coerceAtLeast(0.0)
         val visible=age>=p.delayTicks && local<p.durationTicks
         val t=(local/(p.durationTicks-1).coerceAtLeast(1)).coerceIn(0.0,1.0)
-        if(p.shape=="war_voice_band" && !p.followOwner) {
-            val grow=p.startSize+(p.endSize-p.startSize)*(1-(1-(local/6).coerceIn(0.0,1.0)).pow(3))
-            val fade=floor(((t-.3)/.7).coerceIn(0.0,1.0)*7).toInt()
+        if(p.shape=="war_voice_band") {
+            val grow=if(p.followOwner) p.startSize+(p.endSize-p.startSize)*t*t else
+                p.startSize+(p.endSize-p.startSize)*(1-(1-(local/6).coerceIn(0.0,1.0)).pow(3))
+            val frame=if(p.followOwner) 0 else floor(t*19).toInt()
+            val variant=if(p.followOwner) 0 else (p.delayTicks/4).coerceIn(0,2)
             return CoreMeshPose(p.offset.add(p.travel.mul(t)),p.scale.mul(grow),p.yaw,p.pitch,p.roll,
-                "combat_vfx/war_voice_band_${p.palette}"+(if(fade>0) "_fade$fade" else ""),visible)
+                "combat_vfx/warrior_support/voice_${variant}_$frame",visible)
         }
         if(p.shape=="war_standard") {
             val wind=if(!p.erode && p.durationTicks==1) 1.0 else t
             val root=p.offset.add(p.travel.mul(wind*wind))
-            val frame=if(!p.erode) floor(wind*3).toInt() else if(local<2) 3 else 4+((local-2).toInt()/2)%8
+            val frame=if(!p.erode) floor(wind*3).toInt() else if(local<2) 3 else 4+(local-2).toInt()%16
             val fade=if(p.erode) floor(((local-(p.durationTicks-10))/9).coerceIn(0.0,1.0)*7).toInt() else 0
             return CoreMeshPose(root.add(0.0,p.scale.y()*.5,0.0),p.scale,p.yaw,0.0,0.0,
                 "combat_vfx/warrior/standard_${frame}_$fade",visible)

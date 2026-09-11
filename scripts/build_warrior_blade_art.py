@@ -67,16 +67,8 @@ def build(assets, write):
         write(assets / f'items/combat_vfx/warrior_blade/impact_{frame}.json', {
             'model': {'type': 'minecraft:model', 'model': f'projects:combat_vfx/greatsword/impact_{frame}',
                       'tints': [{'type': 'minecraft:constant', 'value': c} for c in COLOURS['warred'][:3]]}})
-    for shape in ('war_voice_band', 'war_rally_streamer'):
-        for stage in range(8):
-            suffix = f'_fade{stage}' if stage else ''
-            source = assets / f'models/combat_vfx/{shape}_gold{suffix}.json'
-            model = json.loads(source.read_text(encoding='utf-8'))
-            model['textures'] = {'0': 'minecraft:block/white_concrete',
-                                 '1': 'minecraft:block/red_concrete', '2': 'minecraft:block/black_concrete'}
-            key = f'combat_vfx/{shape}_warred{suffix}'
-            write(assets / f'models/{key}.json', model)
-            write(assets / f'items/{key}.json', {'model': {'type': 'minecraft:model', 'model': f'projects:{key}'}})
+    # Support materials are authored separately in build_warrior_support_art;
+    # do not overwrite their texture bindings with recoloured vanilla concrete.
 
 
 if __name__ == '__main__':

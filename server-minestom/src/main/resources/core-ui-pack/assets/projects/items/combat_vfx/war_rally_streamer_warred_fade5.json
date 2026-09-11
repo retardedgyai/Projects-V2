@@ -1,1 +1,1 @@
-{"model":{"type":"minecraft:model","model":"projects:combat_vfx/war_rally_streamer_warred_fade5"}}
+{"model":{"type":"minecraft:model","model":"projects:combat_vfx/war_rally_streamer_warred_fade5","tints":[{"type":"minecraft:constant","value":12143714}]}}

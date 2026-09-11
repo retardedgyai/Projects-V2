@@ -85,18 +85,35 @@ def render(parts, name, tick, view='iso', world_scale=34, fps=20):
                 return [origin[0]+x*math.cos(angle)-y*math.sin(angle),
                         origin[1]+x*math.sin(angle)+y*math.cos(angle),v[2]]
             vertices=[transform(element_point([hi[j] if i & (1<<j) else lo[j] for j in range(3)])) for i in range(8)]
-            if lo[1]==hi[1]:
-                # Vanilla FaceInfo.UP: (-X,+Y,-Z), (-X,+Y,+Z), (+X,+Y,+Z), (+X,+Y,-Z).
-                face=e['faces']['up']; uv=face['uv']
+            # Render only authored faces. Thin weapon backs and folded cloth may
+            # use any plane; the old XZ-only shortcut painted nonexistent cube sides.
+            for face_name,ids in (('north',(3,2,0,1)),('south',(6,7,5,4)),
+                                  ('down',(4,5,1,0)),('up',(2,3,7,6)),
+                                  ('west',(2,6,4,0)),('east',(7,3,1,5))):
+                if face_name not in e['faces']:
+                    continue
+                face=e['faces'][face_name]
+                points=[vertices[i] for i in ids]
+                area=sum(a[0]*b[1]-b[0]*a[1] for a,b in zip(points,points[1:]+points[:1]))
+                if area>=-1e-7:
+                    continue
+                texture_name=model['textures'][face['texture'][1:]]
+                if texture_name.startswith('minecraft:'):
+                    color=COLORS[texture_name.split('/')[-1]]
+                    faces.append((sum(v[2] for v in points)/4,[v[:2] for v in points],color))
+                    continue
+                uv=face['uv']
                 tint=tints[face.get('tintindex',0)] if 'tintindex' in face else 0xffffff
-                texture=texture_for(model['textures'][face['texture'][1:]],tint)
-                texture=texture.crop((round(min(uv[0],uv[2])/16*texture.width),round(min(uv[1],uv[3])/16*texture.height),
-                                      round(max(uv[0],uv[2])/16*texture.width),round(max(uv[1],uv[3])/16*texture.height)))
+                texture=texture_for(texture_name,tint)
+                box=(round(min(uv[0],uv[2])/16*texture.width),round(min(uv[1],uv[3])/16*texture.height),
+                     round(max(uv[0],uv[2])/16*texture.width),round(max(uv[1],uv[3])/16*texture.height))
+                if box[2]<=box[0] or box[3]<=box[1]:
+                    raise ValueError('Subtexel UV in preview: '+texture_name)
+                texture=texture.crop(box)
                 if uv[1]>uv[3]: texture=texture.transpose(Image.Transpose.FLIP_TOP_BOTTOM)
                 if uv[0]>uv[2]: texture=texture.transpose(Image.Transpose.FLIP_LEFT_RIGHT)
                 rotation=face.get('rotation',0)
                 if rotation: texture=texture.rotate(-rotation,expand=True,resample=Image.Resampling.NEAREST)
-                points=[vertices[i] for i in (2,3,7,6)] # image TL,TR,BR,BL before UV reversal
                 target=((0,0),(texture.width,0),(texture.width,texture.height),(0,texture.height))
                 matrix=[]; result=[]
                 for (x,y,_),(u,v) in zip(points,target):
@@ -104,17 +121,8 @@ def render(parts, name, tick, view='iso', world_scale=34, fps=20):
                     result.extend((u,v))
                 try: coefficients=np.linalg.solve(matrix,result)
                 except np.linalg.LinAlgError: continue
-                # Preserve the pack's visible texels. Smoothing this QA would conceal pixel-art defects.
                 warped=texture.transform((W,H),Image.Transform.PERSPECTIVE,tuple(coefficients),Image.Resampling.NEAREST)
                 faces.append((sum(v[2] for v in points)/4,warped,None))
-            else:
-                for face,ids in (('north',(0,1,3,2)),('south',(4,6,7,5)),
-                                 ('down',(0,4,5,1)),('up',(2,3,7,6)),
-                                 ('west',(0,2,6,4)),('east',(1,5,7,3))):
-                    points=[vertices[i] for i in ids]
-                    key=e['faces'][face]['texture'][1:]
-                    color=COLORS[model['textures'][key].split('/')[-1]]
-                    faces.append((sum(v[2] for v in points)/4,[v[:2] for v in points],color))
     for _,content,color in sorted(faces,key=lambda v:v[0],reverse=True):
         if color is None: image.alpha_composite(content)
         else: ImageDraw.Draw(image).polygon(content,fill=color)

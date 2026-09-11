@@ -91,3 +91,48 @@ AA/dashだけが承認済みのネイティブ輪郭モデルを使い、残り�
 壊れた時は、形なら `CoreWarriorBladeChoreography` と生成スクリプト、表示遅延なら
 `CoreCombatMeshes`、HUDなら `CoreWarriorSkillPresentation` → `CoreHudLayout` → `build_warrior_hud.py`。
 本作業branchは `play/gyai/warrior-design-rework`。main、client-fabric、protocol、稼働中サーバー/クライアントは変更していない。
+
+## 補助技能のテクスチャ主体化チェックポイント
+
+- `build_warrior_support_art.py` が防御3技の専用原画/輪郭を生成する。
+  旧 `build_core_combat_models.build_warrior_support` はこの生成器へ委譲。
+  `build_warrior_blade_art` に残っていたコンクリート色への上書きを除去。
+- 不屈の旗：imagegenの原画をworkspaceの `assets/combat-vfx/warrior-support/standard-cloth-v1.png`
+  に保存。プロンプトと変換条件は隣のREADME。布を48×80のnearest-neighborテクスチャにし、
+  12×20の両面パネルで描く。各行は合法角度の折りを累積し、上端と隣接行が離れない。
+  16風姿勢を1tickずつ進め、裾から消す。剣章や縁取りをブロックの色で描かない。
+- 受け流し：承認済み大剣の既存pixel compiler出力と同じ画素を利用。
+  握り(10.5,63.5)を原点にした輪郭面で、元の武器原画や手持ち設定は変更しない。
+  金属ブロックで作った別デザインの大剣は廃止。刃に沿う短い白い光は別の薄い面。
+- 雄叫び：3種類×20フレームの開いた薄い声の波。白灰/局所的な紅の輪郭が外へ進み、
+  時間とともに切れ目を広げて消える。3回の攻撃/障壁付与にはしない。
+- 全補助技能で表示原点を埋めていた汎用particle cloudを抑止。
+  支援演出のエンティティ初期化も本来のphaseのposeを使い、追加2tickの非表示待ちを外す。
+  delayed echoのscaleは0のまま。実防御/障壁時間、ダメージ、範囲、入力、資源は不変。
+- 音：刺突から横斬り音を外す。地砕き/天断終段に地割れ音、天断3段に異なる調子を設定。
+  防御/声/旗の一連の音はphaseごとに一度だけ送る。声と旗に偽の敵命中音を付けない。
+  AA音、個人のFULL/SUBDUED/MINIMAL設定、音源カテゴリーは維持。
+- プレビューの旧制約（水平面以外を単色cubeと仮定）も修正。
+  `preview_skill_choreography.py` は記述された各面だけを、実UV/alpha/textureで投影する。
+  `.tools/warrior-support-detail-*.png` は実Kotlin poseとパックの投影。Minecraft画面ではない。
+
+### このチェックポイントの検証
+
+- Python `test_warrior*.py` 12件成功。承認済み大剣との全画素一致、布のalpha/接続/固定端、
+  声の空洞/3種の独立/完全消散、504 JSONの再生成一致と参照先/合法座標を含む。
+- 最初の全サーバー821件で新規test一件が失敗。同モデル・同位置で異なる向きの四破片を
+  テストが任意に取り違えていた。期待/実測の完全なpose multisetを比較する形へ修正。
+  この結果を全テスト成功として数えない。最終結果は追記する。
+- pack検証：10,960 assets / 50,694 private glyphs / グローバルフォント上書きなし。
+- 最終コードで全サーバー824テスト成功（失敗0・エラー0・skip0、96レポート、3分6秒）。
+  各支援技の初回pose/遅延echoの非表示/寿命終了、phaseごとの実音声packet送信も含む。
+- 凍結済みAA/dashのPython4件も成功。`client-fabric` / `protocol` / 既存アイコン原画 / 大剣原画の差分なし。
+- 3技能の実pose全67tickに終了後10tickを加えた投影を `.tools/warrior-support-texture.gif` へ保存。
+  変更/追加したモデルJSONは合計7,139,917 bytes。本人48/シーン384の表示数上限を維持。
+- 原画生成・検証のためのゲーム起動/操作、稼働中dist更新は行っていない。
+
+### 残る完成条件
+
+補助技と音の実装差し替えは進んだが、MatE相当の最終品質は引き続き未証明。
+特に縦斬り/奥義の一人称での太さ・強弱、アイコンを含めた編成UI/HUD全体、
+実機の音の聞こえ方と複数人表示を確認する必要がある。既存の承認済みAA/dashと武器は凍結を維持する。

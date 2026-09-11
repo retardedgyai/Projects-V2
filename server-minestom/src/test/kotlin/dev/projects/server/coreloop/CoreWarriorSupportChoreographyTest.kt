@@ -59,10 +59,10 @@ class CoreWarriorSupportChoreographyTest {
             assertEquals(start.offset,CoreSkillChoreography.pose(planted,40.0).offset)
         }
     }
-    @Test fun `cloth unfurls then has eight wind poses without moving its sewn top or pole`() {
+    @Test fun `cloth unfurls then has sixteen textured wind poses without moving its sewn top or pole`() {
         val hashes=mutableSetOf<Int>()
         val pole=mutableListOf<String>()
-        for(frame in 0..11) {
+        for(frame in 0..19) {
             val m=model("combat_vfx/warrior/standard_${frame}_0")
             val elements=m.getAsJsonArray("elements")
             hashes+=elements.toString().hashCode()
@@ -70,16 +70,39 @@ class CoreWarriorSupportChoreographyTest {
             pole+=elements.first().toString()
             for(element in elements) {
                 val e=element.asJsonObject;val lo=e.getAsJsonArray("from");val hi=e.getAsJsonArray("to")
-                assertTrue((0..2).all { lo[it].asDouble<hi[it].asDouble && lo[it].asDouble>=-16 && hi[it].asDouble<=32 })
+                assertTrue((0..2).all { lo[it].asDouble<=hi[it].asDouble && lo[it].asDouble>=-16 && hi[it].asDouble<=32 })
+                assertTrue((0..2).count { lo[it].asDouble<hi[it].asDouble }>=2)
             }
-            assertTrue(m.getAsJsonObject("textures").entrySet().all { it.value.asString.startsWith("minecraft:block/") })
+            assertTrue(m.getAsJsonObject("textures").entrySet().all { it.value.asString.startsWith("projects:combat_vfx/warrior_support/") })
+            if(frame>0) {
+                val top=elements[4].asJsonObject
+                assertEquals(27.0,top.getAsJsonArray("to")[1].asDouble,.00001)
+                assertEquals(8.0,top.getAsJsonArray("to")[2].asDouble,.00001)
+                assertEquals("#cloth",top.getAsJsonObject("faces").getAsJsonObject("south")["texture"].asString)
+            }
         }
         // frame 3 (fully unfurled) intentionally matches wind pose 4.
-        assertEquals(11,hashes.size);assertEquals(1,pole.toSet().size)
+        assertEquals(19,hashes.size);assertEquals(1,pole.toSet().size)
         val p=CoreSkillChoreography.parts(effect("war_banner")).first()
         assertEquals(CoreSkillChoreography.pose(p,2.0).model,CoreSkillChoreography.pose(p,18.0).model)
         assertTrue(CoreSkillChoreography.pose(p,59.0).model.endsWith("_7"))
         assertFalse(CoreSkillChoreography.pose(p,60.0).visible)
+    }
+    @Test fun `guard uses approved painted sword texture and voice fronts disappear completely`() {
+        val guard=model("combat_vfx/war_parry_blade_steel")
+        assertEquals("projects:combat_vfx/warrior_support/guard",guard.getAsJsonObject("textures")["sword"].asString)
+        assertTrue(guard.getAsJsonArray("elements").all {
+            val e=it.asJsonObject
+            e.getAsJsonArray("to")[1].asDouble-e.getAsJsonArray("from")[1].asDouble<=.5
+        })
+        assertEquals(0,model("combat_vfx/war_parry_blade_steel_fade7").getAsJsonArray("elements").size())
+        for(p in CoreSkillChoreography.parts(effect("war_cry"))) {
+            val hashes=(0 until p.durationTicks).map {
+                model(CoreSkillChoreography.pose(p,(it+p.delayTicks).toDouble()).model).toString().hashCode()
+            }.toSet()
+            assertTrue(hashes.size>=14,"Voice should deform and tear, not scale one static hoop")
+            assertEquals(0,model(CoreSkillChoreography.pose(p,27.0).model).getAsJsonArray("elements").size())
+        }
     }
     @Test fun `roar has three independently moving open voice fronts in each direction not slashes`() {
         val e=effect("war_cry");val parts=CoreSkillChoreography.parts(e)

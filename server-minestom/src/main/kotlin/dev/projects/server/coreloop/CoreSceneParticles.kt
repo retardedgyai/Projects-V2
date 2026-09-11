@@ -31,6 +31,9 @@ internal object CoreSceneParticles {
             if(part.shape.startsWith("warrior_trace:") || part.shape=="warrior_charge") continue
             // Moving tips live inside these native contours, not at the display origin.
             if(CoreWarriorBladeChoreography.owns(part)) continue
+            // Cloth, guard and voice already carry their own moving edges. A cloud
+            // at each display origin would fill the voice aperture and hide the art.
+            if(e.sceneId in CoreWarriorSupportChoreography.sceneIds) continue
             val pose=CoreSkillChoreography.pose(part,tick.toDouble())
             if(!pose.visible) continue
             val center=origin.add(pose.offset)

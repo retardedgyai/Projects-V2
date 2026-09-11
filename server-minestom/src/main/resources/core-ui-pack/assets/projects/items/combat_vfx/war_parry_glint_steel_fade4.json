@@ -1,1 +1,1 @@
-{"model":{"type":"minecraft:model","model":"projects:combat_vfx/war_parry_glint_steel_fade4"}}
+{"model":{"type":"minecraft:model","model":"projects:combat_vfx/war_parry_glint_steel_fade4","tints":[{"type":"minecraft:constant","value":15398143}]}}
