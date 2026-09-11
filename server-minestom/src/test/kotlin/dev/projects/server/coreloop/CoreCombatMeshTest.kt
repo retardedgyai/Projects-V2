@@ -18,6 +18,66 @@ import kotlin.math.abs
 import kotlin.test.*
 
 class CoreCombatMeshTest {
+    @Test fun `warrior attack phases keep every authored frame through consecutive pulses for owner and observer`() = player { owner ->
+        val meshes=CoreCombatMeshes(owner)
+        val observer=connect(owner.instance,owner.position.add(1.0,0.0,0.0),"WarriorObserver")
+        data class Track(val part:CoreCombatMeshPart,val entity:net.minestom.server.entity.Entity,val started:Int)
+        val tracks=mutableListOf<Track>()
+        val attacks=CoreSkillCatalog.skills(CoreClass.WARRIOR).filter {
+            it.icon in CoreWarriorBladeChoreography.sceneIds && it.icon!="dash"
+        }
+        try {
+            listOf(owner,observer).forEach { CoreCombatPresentation.pack(it,true) }
+            for(skill in attacks) {
+                tracks.clear()
+                fun cast(phase:CoreSkillVisualPhase,pulse:Int,tick:Int) {
+                    val e=CoreSkillEffect(CoreClass.WARRIOR,skill,owner.position,Vec(0.0,0.0,1.0),
+                        phase,pulse,prepareTicks=skill.startup-1)
+                    val before=owner.instance.entities.toSet()
+                    meshes.play(e)
+                    val fresh=owner.instance.entities.filter { it !in before }
+                    val parts=CoreSkillChoreography.parts(e)
+                    assertEquals(parts.size,fresh.size,"${skill.icon} $phase/$pulse")
+                    parts.forEach { p ->
+                        val model="projects:"+CoreSkillChoreography.pose(p,0.0).model
+                        val entity=fresh.single { display ->
+                            (display.entityMeta as net.minestom.server.entity.metadata.display.ItemDisplayMeta).itemStack
+                                .get(net.minestom.server.component.DataComponents.ITEM_MODEL)==model
+                        }
+                        assertTrue(owner in entity.viewers,"The first phase must not wait for a hidden spawn lead-in")
+                        tracks+=Track(p,entity,tick)
+                    }
+                }
+                val finalPulse=skill.startup+(skill.pulses-1)*8
+                for(tick in 0..finalPulse+20) {
+                    if(tick==0) cast(CoreSkillVisualPhase.PREPARE,0,tick)
+                    if(tick>=skill.startup && (tick-skill.startup)%8==0 && tick<=finalPulse)
+                        cast(CoreSkillVisualPhase.PULSE,(tick-skill.startup)/8,tick)
+                    meshes.tick()
+                    for((p,entity,start) in tracks) {
+                        val age=tick-start
+                        if(age>=CoreCombatMeshes.removalAge(p)) { assertTrue(entity.isRemoved);continue }
+                        val pose=CoreSkillChoreography.pose(p,age.toDouble())
+                        val meta=entity.entityMeta as net.minestom.server.entity.metadata.display.ItemDisplayMeta
+                        assertEquals("projects:"+pose.model,meta.itemStack.get(net.minestom.server.component.DataComponents.ITEM_MODEL),
+                            "${skill.icon} ${p.shape} tick=$tick age=$age")
+                        assertEquals(pose.scale,meta.scale)
+                        assertContentEquals(CoreCombatMeshArt.rotation(pose.yaw,pose.pitch,pose.roll),meta.leftRotation)
+                        assertEquals(0,meta.transformationInterpolationDuration)
+                        assertTrue(owner in entity.viewers)
+                        assertEquals(!p.secondary,observer in entity.viewers,"Observer must keep each main cut, not the secondary trail")
+                    }
+                }
+                assertEquals(0,meshes.size,skill.icon)
+                assertTrue(tracks.all { it.entity.isRemoved })
+            }
+        } finally {
+            meshes.cancel()
+            listOf(owner,observer).forEach { CoreCombatPresentation.forget(it) }
+            observer.remove()
+        }
+    }
+
     @Test fun `warrior support reveals its actual first pose immediately but never reveals future echoes`() = player { owner ->
         val meshes=CoreCombatMeshes(owner)
         CoreCombatPresentation.pack(owner,true)

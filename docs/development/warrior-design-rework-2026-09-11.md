@@ -188,3 +188,44 @@ AA/dashだけが承認済みのネイティブ輪郭モデルを使い、残り�
   main/稼働中ゲーム/distは変更していない。起動・ゲーム操作はこのチェックポイントでは行わない。
 - 壊れた時：入れ替えは `CoreLoopMenus.warriorSkills`、輪郭は前述compilerと
   `CoreWarriorBladeChoreography`、HUD位置は `CoreHudLayout` と出力したglyphのascentを最初に見る。
+
+## 表示ランタイム検証・手動確認への引き渡し
+
+この段階では新しい絵やゲーム内処理を追加していない。未検証の描画経路を検査し、
+最終的な見た目/feelを確認するための配布物を作った。
+
+- `CoreCombatMeshTest` に攻撃6技能（裂傷・地砕き・旋風・返し・破城・天断）の通し検証を追加。
+  実Minestom instanceにcaster/observerとitem displayを作成し、予備動作から8tick間隔の
+  全pulse、消散、削除まで `CoreCombatMeshes.play/tick` を実行。
+  各tickでモデルID、scale、rotation、補間0、caster表示、observerへのprimary表示、
+  secondary非表示、寿命後の削除を実物のentity/meta/viewersから検証する。
+  新規phaseの最初の絵がcasterへ即時公開されることも含む。
+- 対象29テスト成功（CoreCombatMesh 13 / Blade 5 / Support 8 / Presentation 3）。
+  本番コード/パックは前チェックポイントから不変。直近全体827件成功は前節の記録で、
+  今回29件を全サーバーテストとして報告しない。
+- `:server-minestom:distZip --no-daemon --offline -Pkotlin.compiler.execution.strategy=in-process --max-workers=2` 成功。
+  `build/distributions/server-minestom-0.1.0-SNAPSHOT.zip` は38,602,341 bytes。
+  SHA256 `08724540c869fc62a37cfcbb677a5c439605f26f621ce2fc0b40c6b628511ade`。
+  ZIP内のserver JARはbuild/libsと全byte一致。JAR内のパック10,961ファイル
+  （index含む）も現在のsrc/main/resources/core-ui-packと全byte一致。
+  配布物は生成物としてcommitしない。稼働中のinstall先、server、clientには触っていない。
+- MatE Hollow Monarchの投稿をブラウザーで再確認。武器を掲げる状態・身体周りの放電・
+  武器周りの小片を別々の時点で見た。全動画の連続解析を済ませたという意味ではなく、
+  これだけでMatE相当の品質を達成したとは判定しない。
+
+### 完成監査
+
+| 条件 | 現在の根拠 | 判定 |
+|---|---|---|
+| 戦士全10技能に役割別の形/時間構成 | Blade/Support/ApprovedDashの実モデル・pose・前節の投影 | 実装済み。実機品質は未確定 |
+| AA・踏み込み・大剣・日本語原画の維持 | 凍結テスト、原画差分なし、HUD原画画素一致 | 確認済み |
+| 編成UI/HUD/tooltipと実数値の接続 | メニューテスト、実Inventory/Componentの合成、操作制限とswap検証 | 自動検証済み。実機可読性は未確定 |
+| 始動/連撃/消散・観戦者への主役表示 | 今回の実entity通し検証、既存音packet/寿命/上限テスト | サーバー側確認済み |
+| Vanilla＋サーバー/RPのみ | client-fabric/protocol変更なし、dist ZIP/JAR/全pack一致 | 配布物確認済み |
+| MatE相当の完成品質・音・入力の手触り | 実クライアントの新しい手動確認結果がない | 未達成扱い |
+
+ここで追加のオフライン微調整だけを繰り返しても、最後の条件の証拠は増えない。
+次はCreatorのManual Smokeで、地砕き→天断、受け流し→返し刃、旋風、旗/声、編成の入れ替えを確認する。
+「音が聴こえるか」「向き/大きさ/フレーム感が実際に正しいか」「技が別の動きとして読めるか」を
+基準にする。ゲーム操作はAGENTSの規定によりCreatorが行う。起動指示を受けてから配布物を適用する。
+ゴールは未完了のまま維持し、手動判断なしに同等品質と断定しない。
