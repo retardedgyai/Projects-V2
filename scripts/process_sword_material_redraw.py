@@ -126,9 +126,9 @@ def approved_hand_display(model, textures, entry):
     """
     result=deepcopy(model)
     grip=approved_grip_point(textures,entry)
-    for context,angle,translation,scale in (
-            ('firstperson',25,[1.13,3.2,1.13],.68),
-            ('thirdperson',55,[0,4,.5],.85)):
+    for context,angle,translation,scale,authored_scale in (
+            ('firstperson',25,[1.13,3.2,1.13],.68,1.02),
+            ('thirdperson',55,[0,4,.5],.85,1.16)):
         for hand,left in (('righthand',False),('lefthand',True)):
             native={'rotation':[0,90 if left else -90,-angle if left else angle],
                     'translation':translation,'scale':[scale]*3}
@@ -136,10 +136,10 @@ def approved_hand_display(model, textures, entry):
             authored=[0,90 if left else -90,-(angle-45) if left else angle-45]
             actual=np.array(authored,dtype=float)
             if left: actual[1:]*=-1
-            offset=target-rotation_xyz(actual)@((grip-8)*.72)
+            offset=target-rotation_xyz(actual)@((grip-8)*authored_scale)
             if left: offset[0]*=-1
             result['display'][context+'_'+hand]={'rotation':authored,
-                'translation':offset.round(6).tolist(),'scale':[.72]*3}
+                'translation':offset.round(6).tolist(),'scale':[authored_scale]*3}
     return result
 
 

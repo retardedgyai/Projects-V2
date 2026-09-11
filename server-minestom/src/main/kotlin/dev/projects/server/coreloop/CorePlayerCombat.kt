@@ -58,6 +58,9 @@ internal class CorePlayerCombat(
     private var pending: PendingSkill? = null
     private var queuedSkill: Int? = null
     private var queuedDodge = false
+    private var warriorQueued: Int? = null
+    private var warriorQueueUntil = -1L
+    private var warriorNextNormalAt = -1L
     private var whetstoneUntil = 0L
     private var nextShot = 0L
     private var shot: Pair<Long, Vec>? = null
@@ -101,8 +104,12 @@ internal class CorePlayerCombat(
 
     fun attack() {
         if (weaponBroken()) { notice("武器が破損しています。装備庫で修理してください"); return }
-        if (defeated || pending != null || player.openInventory != null) return
+        if (defeated || player.openInventory != null) return
         val enemies = encounter() ?: return
+        if (classId == CoreClass.WARRIOR && (pending != null || tickNumber < warriorNextNormalAt)) {
+            queueWarrior(CoreWarriorCombatRules.NORMAL); return
+        }
+        if (pending != null) return
         if (!classId.melee) {
             if (tickNumber < nextShot || shot != null) return
             shot = tickNumber + 4 to player.position.direction()
@@ -112,6 +119,11 @@ internal class CorePlayerCombat(
             return
         }
         normal.press(attackSpeed, quick = classId == CoreClass.ASSASSIN, immediate = classId == CoreClass.WARRIOR)?.let { swing ->
+            if (classId == CoreClass.WARRIOR) {
+                warriorQueued = null
+                warriorNextNormalAt = tickNumber + swing.totalTicks
+                classState.guardUntil = -1; classState.perfectUntil = -1
+            }
             normalEmpowerment = if(classId == CoreClass.TEMPLAR && classState.counterUntil >= tickNumber) 1.35 else 1.0
             if(normalEmpowerment > 1) classState.counterUntil = -1
             normalDirection = flatFacing()
@@ -125,22 +137,39 @@ internal class CorePlayerCombat(
         if (weaponBroken()) { notice("武器が破損しています。装備庫で修理してください"); return }
         if (id !in 0..4 || defeated || encounter() == null || player.openInventory != null) return
         if (!skillAvailable(id)) { notice("${skillNames[id]}はLv${CoreSkillCatalog.unlockLevels[id]}で解放されます"); return }
-        if (normal.isAttacking) { normal.clearBuffer(); queuedSkill = id; return }
-        if (pending != null || shot != null) return
+        if (classId != CoreClass.WARRIOR) {
+            if (normal.isAttacking) { normal.clearBuffer(); queuedSkill = id; return }
+            if (pending != null || shot != null) return
+        }
         if (tickNumber < readyAt[id]) { notice("${skillNames[id]}：あと${cooldownSeconds(id)}秒"); return }
         val definition = skillDefinitions[id]
         if (!classState.canCast(definition, journey().build)) { notice("${classId.resourceName}が足りません（必要 ${definition.spend} / 現在 ${resource.toInt()}）"); return }
         val cost = definition.mana
         if (mana < cost) { notice("マナが足りません（必要 $cost）"); return }
+        if (classId == CoreClass.WARRIOR) {
+            val guard = definition.icon == "war_guard"
+            val action = pending
+            val canLeaveSkill = action == null || guard && action.elapsed >= CoreWarriorCombatRules.lastImpact(action.definition, action.startup)
+            val canLeaveNormal = !normal.isAttacking || normal.elapsed >= CoreWarriorCombatRules.AA_LINK_TICKS || guard
+            if (!canLeaveSkill || !canLeaveNormal || shot != null) { queueWarrior(id); return }
+            warriorQueued = null
+            if (normal.isAttacking) normal.endRecovery()
+            if (action != null) { pending = null; vfx.cancel() }
+            if (definition.motion !in setOf(CoreSkillMotion.GUARD, CoreSkillMotion.SHIELD)) {
+                classState.guardUntil = -1; classState.perfectUntil = -1
+            }
+        }
         manaValue -= cost
         val spentFrom = classState.spend(definition, classId, journey().build)
         castCharges = if (classId == CoreClass.STARWEAVER) spentFrom.toInt() else 0
         skillBoost = if (classId == CoreClass.STARWEAVER && definition.gain == 0 && definition.motion != CoreSkillMotion.EVADE) 1 + spentFrom * .15 else 1.0
         if (weaponBase() == CoreWeaponBase.CONDUIT && definition.spend > 0) skillBoost *= 1.12
         val counter = classState.counterUntil >= tickNumber && definition.formula.ad > 0 &&
+            (classId != CoreClass.WARRIOR || CoreWarriorCombatRules.counterSkill(definition.icon)) &&
             definition.motion !in setOf(CoreSkillMotion.SHIELD,CoreSkillMotion.HEAL,CoreSkillMotion.GUARD)
         if (counter) { skillBoost *= if (journey().build.keystone == 1 && classId == CoreClass.WARRIOR) 1.6 else 1.35; classState.counterUntil = -1 }
         var castDefinition = definition
+        if (classId == CoreClass.WARRIOR && counter) castDefinition = definition.copy(startup = minOf(3, definition.startup))
         if (classId == CoreClass.STARWEAVER && spentFrom == 3.0 && definition.motion !in setOf(CoreSkillMotion.EVADE, CoreSkillMotion.HEAL, CoreSkillMotion.SHIELD)) {
             var extra = if (definition.motion == CoreSkillMotion.FIELD) 1 else 0
             if (journey().build.keystone == 0) { extra++; skillBoost *= .85 }
@@ -149,7 +178,7 @@ internal class CorePlayerCombat(
             castDefinition = definition.copy(pulses = (definition.pulses + extra).coerceAtMost(8))
         }
         readyAt[id] = tickNumber + cooldownTicks(id)
-        val startup = definition.startupTicks(sheet)
+        val startup = castDefinition.startupTicks(sheet)
         pending = PendingSkill(id, castDefinition, if(definition.motion == CoreSkillMotion.FIELD) aimedGround(definition, encounter()!!) else player.position,
             if (definition.motion == CoreSkillMotion.RAY) player.position.direction() else flatFacing(), startup,
             empowered = spentFrom, counter = counter)
@@ -162,6 +191,11 @@ internal class CorePlayerCombat(
 
     fun dodge() {
         if (defeated || encounter() == null || tickNumber < nextDodge) return
+        if (classId == CoreClass.WARRIOR) {
+            warriorQueued = null
+            if (normal.isAttacking) normal.endRecovery()
+            classState.guardUntil = -1; classState.perfectUntil = -1
+        }
         if (pending != null) { pending = null; vfx.cancel(); queuedSkill = null }
         if (normal.isAttacking) { normal.clearBuffer(); queuedDodge = true; return }
         val input = player.inputs()
@@ -225,8 +259,11 @@ internal class CorePlayerCombat(
                 vfx.playSkill(CoreSkillEffect(classId, action.definition, action.origin, action.direction,
                     CoreSkillVisualPhase.PREPARE, pulse = pulse / 8 + 1, prepareTicks = 4))
             }
-            if (action.elapsed >= action.startup + action.definition.pulses * 8 + 3) pending = null
+            val finish = if (classId == CoreClass.WARRIOR) CoreWarriorCombatRules.finish(action.definition, action.startup)
+                else action.startup + action.definition.pulses * 8 + 3
+            if (action.elapsed >= finish) pending = null
         }
+        drainWarriorInput()
         if (!normal.isAttacking && pending == null) {
             if (queuedDodge) { normal.clearBuffer(); queuedDodge = false; dodge() }
             else if (queuedSkill != null) { normal.clearBuffer(); val id = queuedSkill!!; queuedSkill = null; skill(id) }
@@ -236,6 +273,22 @@ internal class CorePlayerCombat(
             warriorMarks.update(enemies.combatTargets().filter { classState.marked(it.id,tickNumber) && visibleTo(it.id,enemies) },classState,tickNumber)
         } else warriorMarks.clear()
         vfx.tick()
+    }
+
+    private fun queueWarrior(action: Int) {
+        warriorQueued = action; warriorQueueUntil = tickNumber + CoreWarriorCombatRules.BUFFER_TICKS
+    }
+
+    private fun drainWarriorInput() {
+        val input = warriorQueued ?: return
+        if (classId != CoreClass.WARRIOR || tickNumber > warriorQueueUntil || player.openInventory != null) { warriorQueued = null; return }
+        val action = pending
+        val guarding = input >= 0 && skillDefinitions[input].icon == "war_guard"
+        if (action != null && !(guarding && action.elapsed >= CoreWarriorCombatRules.lastImpact(action.definition, action.startup))) return
+        if (normal.isAttacking && (input == CoreWarriorCombatRules.NORMAL || !guarding && normal.elapsed < CoreWarriorCombatRules.AA_LINK_TICKS)) return
+        if (input == CoreWarriorCombatRules.NORMAL && tickNumber < warriorNextNormalAt) return
+        warriorQueued = null
+        if (input == CoreWarriorCombatRules.NORMAL) attack() else skill(input)
     }
 
     /** Same server-owned strike for input-time warrior AA and delayed other melee jobs. */
@@ -281,11 +334,11 @@ internal class CorePlayerCombat(
                 }.minOrNull()?.coerceAtMost(maximum) ?: maximum
                 moveSafely(action.direction, distance)
                 emitSkillPulse(player.position, s.radius)
-                strike(enemies, player.position, action.direction, s.radius, .35, 1.0)
+                strike(enemies, player.position, action.direction, s.radius, if(classId==CoreClass.WARRIOR) CoreWarriorCombatRules.minDot(s.icon) else .35, 1.0)
             }
             CoreSkillMotion.CONE -> {
                 emitSkillPulse(player.position, s.radius)
-                strike(enemies, player.position, action.direction, s.radius, .35, 1.0)
+                strike(enemies, player.position, action.direction, s.radius, if(classId==CoreClass.WARRIOR) CoreWarriorCombatRules.minDot(s.icon) else .35, 1.0)
             }
             CoreSkillMotion.SPIN -> pulse(player.position)
             CoreSkillMotion.NOVA -> pulse(player.position)
@@ -409,7 +462,7 @@ internal class CorePlayerCombat(
         if (classId == CoreClass.WARRIOR && build.keystone == 0 && resource >= 60) classMultiplier *= 1.2
         if (classId == CoreClass.HEALER && build.keystone == 0) classMultiplier *= 1.25
         if (classId == CoreClass.TEMPLAR && build.keystone == 2) classMultiplier *= .9
-        val consumeMark = skill && classState.marked(id, tickNumber) && (definition!!.spend > 0 || (classId == CoreClass.STARWEAVER && castCharges > 0))
+        val consumeMark = skill && classId != CoreClass.WARRIOR && classState.marked(id, tickNumber) && (definition!!.spend > 0 || (classId == CoreClass.STARWEAVER && castCharges > 0))
         if (consumeMark) {
             classMultiplier *= 1.35
             val info = enemies.mobInfo(id)
@@ -580,9 +633,17 @@ internal class CorePlayerCombat(
         var adjusted = CoreCombatMath.mitigate(amount, type, snapshot.ar, snapshot.mr, damageReduction = snapshot.mods.mitigationPercent)
         if (classId == CoreClass.WARRIOR && journey().build.keystone == 0 && resource >= 60) adjusted *= 1.1
         if (tickNumber < classState.guardUntil) {
-            adjusted *= if (tickNumber <= classState.perfectUntil) .2 else .45
+            val perfect = tickNumber <= classState.perfectUntil
+            adjusted *= if (perfect) .2 else .45
             classState.guarded(classId, tickNumber, journey().build)
-            sound(SoundEvent.ITEM_SHIELD_BLOCK, .8f, if (tickNumber <= classState.perfectUntil) 1.4f else .8f)
+            if (classId == CoreClass.WARRIOR && perfect) {
+                // One successful read, one refresh; sustained damage cannot repeatedly reset it.
+                skillDefinitions.forEachIndexed { i, s -> if(s.icon == "slam") readyAt[i] = tickNumber }
+                classState.perfectUntil = -1
+                val guard = CoreSkillCatalog.skills(CoreClass.WARRIOR).first { it.icon == "war_guard" }
+                vfx.playSkill(CoreSkillEffect(classId, guard, player.position, flatFacing(), CoreSkillVisualPhase.CONTACT))
+            }
+            sound(SoundEvent.ITEM_SHIELD_BLOCK, .8f, if (perfect) 1.4f else .8f)
         }
         val absorbed = min(adjusted, classState.shield)
         classState.shield -= absorbed; adjusted -= absorbed
@@ -628,6 +689,7 @@ internal class CorePlayerCombat(
         actionEpoch++
         normal.reset(); pending = null; shot = null; lastConduitGain = -1; castCharges = 0; skillBoost = 1.0; queuedSkill = null; queuedDodge = false; burns.clear()
         normalEmpowerment = 1.0
+        warriorQueued = null; warriorQueueUntil = -1; warriorNextNormalAt = -1
         classState.reset(); moveHasteUntil = -1; previousPosition = null
         vfx.cancel()
         warriorMarks.clear()
@@ -661,5 +723,5 @@ internal class CorePlayerCombat(
     private fun notice(message: String) = player.sendActionBar(Component.text(message, NamedTextColor.YELLOW))
     private fun sound(event: SoundEvent, volume: Float, pitch: Float) = player.playSound(Sound.sound(event, Sound.Source.PLAYER, volume, pitch))
 
-    companion object { val SKILL_NAMES = listOf("踏み込み斬り", "地砕き", "旋風斬り") }
+    companion object { val SKILL_NAMES = listOf("踏み込み斬り", "叩きつけ", "薙ぎ払い") }
 }

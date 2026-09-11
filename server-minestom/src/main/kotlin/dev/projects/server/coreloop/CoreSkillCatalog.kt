@@ -44,6 +44,15 @@ data class CoreSkillDefinition(
         add("発生 ${CoreCombatMath.number(startupTicks(sheet) / 20.0)}秒 / ${if (type == CoreDamageType.MAGICAL) "詠唱速度" else "攻撃速度"}で短縮")
         if(motion == CoreSkillMotion.GUARD) add("最初の0.6秒：被害80%軽減 / 以降55%軽減 / ${duration/20.0}秒")
         if(status != CoreSkillStatus.NONE) add(when(status) { CoreSkillStatus.MARK -> "印6秒：消費技の最初の命中が35%強化"; CoreSkillStatus.EXPOSE -> "防御崩し4秒：敵のAR・MRを20%低下"; CoreSkillStatus.POISON -> "毒3秒：1秒ごとに係数の30%（重複しない）"; else -> "減速：敵の移動を40%低下" })
+        if (journey?.job == CoreClass.WARRIOR) {
+            if (icon == "war_guard") add("成功時：叩きつけの再使用を回復 / 3秒以内の叩きつけ・返し刃を反撃化")
+            if (CoreWarriorCombatRules.counterSkill(icon)) {
+                val boost = if(journey.build.keystone == 1) 1.6 else 1.35
+                val counterTicks = copy(startup = minOf(3, startup)).startupTicks(sheet)
+                add("反撃時：発生${CoreCombatMath.number(counterTicks/20.0)}秒 / 威力+${((boost-1)*100).toInt()}%")
+            }
+            add("後隙 ${CoreWarriorCombatRules.recovery(icon)/20.0}秒 / 次の入力は0.3秒先行受付")
+        }
     }
 }
 
@@ -130,10 +139,10 @@ object CoreSkillCatalog {
         return when (job) {
             CoreClass.WARRIOR -> listOf(
                 s("踏み込み斬り", "dash", "敵の手前へ踏み込み、闘気を得る", CoreSkillMotion.LUNGE, 6.0, 1.2, cd=80, startup=5),
-                s("地砕き", "slam", "闘気を消費。重い一撃で敵の防御を崩す", CoreSkillMotion.CONE, 14.0, 2.2, mana=20, cd=120, startup=12, gain=0, spend=30, status=CoreSkillStatus.EXPOSE),
-                s("旋風斬り", "whirl", "移動しながら周囲へ三連撃。途中の回避で中断可能", CoreSkillMotion.SPIN, 3.0, .85, mana=24, cd=180, pulses=3, radius=3.8),
-                s("受け流し", "war_guard", "1.5秒防御。最初の0.6秒に受けると反撃の好機", CoreSkillMotion.GUARD, 0.0, 0.0, mana=8, cd=120, startup=1, gain=0, duration=30),
-                s("裂傷斬り", "war_wound", "素早い一撃で傷を刻む。印は次の重撃が消費", CoreSkillMotion.CONE, 3.0, .9, cd=65, startup=3, status=CoreSkillStatus.MARK),
+                s("叩きつけ", "slam", "正面の狭い範囲へ重撃。受け流し成功後は素早い反撃に変化", CoreSkillMotion.CONE, 14.0, 2.2, mana=20, cd=120, startup=12, gain=0, status=CoreSkillStatus.EXPOSE),
+                s("薙ぎ払い", "whirl", "前方180度を一度で薙ぐ。正面の集団をまとめて捉える", CoreSkillMotion.CONE, 6.0, 1.4, mana=12, cd=70, startup=4, radius=4.2),
+                s("受け流し", "war_guard", "攻撃直前に構えると叩きつけが再使用可能。攻撃すると構え解除", CoreSkillMotion.GUARD, 0.0, 0.0, mana=8, cd=120, startup=1, gain=0, duration=30),
+                s("牽制斬り", "war_wound", "素早い一撃で敵を減速。間合いを取り直すための選択技", CoreSkillMotion.CONE, 3.0, .9, cd=65, startup=3, status=CoreSkillStatus.SLOW),
                 s("返し刃", "war_counter", "闘気を使う強い返し。受け流し直後はさらに強化", CoreSkillMotion.CONE, 10.0, 2.8, cd=130, startup=4, gain=0, spend=30),
                 s("雄叫び", "war_cry", "仲間に短い障壁。足を止めず次の交戦に備える", CoreSkillMotion.SHIELD, 12.0, .5, mana=18, cd=240, gain=0, radius=7.0, duration=100),
                 s("破城突き", "war_breach", "長い踏み込み。横には狭いが防御を崩せる", CoreSkillMotion.LUNGE, 8.0, 1.5, mana=18, cd=160, startup=8, status=CoreSkillStatus.EXPOSE, range=4.0),

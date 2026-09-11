@@ -32,8 +32,10 @@ internal object CoreWarriorFlourish {
             "war_counter" -> pair("counter",local(0.0,1.15,reach*.45),Vec(reach*1.4,1.0,2.3),-.45,20,.4)
             "slam" -> pair("eruption",local(0.0,1.2,reach*.5),Vec(reach*.95,.8,2.6),-PI/2)+
                 pair("ground",local(0.0,.18,reach*.5),Vec(reach*1.3,.6,2.2),0.0,18)
-            "whirl" -> pair(listOf("spin_a","spin_b","spin_c")[e.pulse%3],Vec(0.0,.45+e.pulse%3*.23,0.0),
-                Vec(reach*1.85,1.0,reach*1.85),.1,20)
+            "whirl" -> if(e.skill.motion == CoreSkillMotion.CONE)
+                pair("fan",local(0.0,1.05,reach*.42),Vec(reach*1.4,1.0,2.3),-.25,16)
+                else pair(listOf("spin_a","spin_b","spin_c")[e.pulse%3],Vec(0.0,.45+e.pulse%3*.23,0.0),
+                    Vec(reach*1.85,1.0,reach*1.85),.1,20)
             "war_ult" -> when(e.pulse%3) {
                 0 -> pair("lift",local(0.0,1.4,reach*.4),Vec(reach*.8,1.0,3.1),-PI/2)
                 1 -> pair("counter",local(0.0,1.3,reach*.43),Vec(reach*1.5,1.0,2.5),-.35,20,.3)

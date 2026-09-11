@@ -33,13 +33,21 @@ class CoreWarriorBladeChoreographyTest {
     }
 
     @Test fun `multi hit attacks author distinct paths not rotated identical frames`() {
-        for(id in listOf("whirl","war_ult")) {
+        for(id in listOf("war_ult")) {
             val s=skills.first { it.icon==id }
             val parts=(0..2).map { CoreSkillChoreography.parts(effect(s,it)).first() }
             assertEquals(3,parts.map { CoreSkillChoreography.pose(it,1.0).model }.distinct().size)
             assertTrue(parts.all { it.spin==0.0 && !it.followOwner })
-            if(id=="whirl") assertTrue(parts.all { it.offset.x()==0.0 && it.offset.z()==0.0 })
         }
+    }
+
+    @Test fun `core sweep has one frontal horizontal contour rather than a rotating combo`() {
+        val s=skills.first { it.icon=="whirl" }
+        assertEquals(1,s.pulses)
+        val blade=CoreSkillChoreography.parts(effect(s)).first()
+        assertEquals("warrior_skill:wound:blade",blade.shape)
+        assertTrue(blade.offset.z()>0)
+        assertEquals(-.35,blade.pitch);assertEquals(-.08,blade.roll);assertEquals(0.0,blade.spin)
     }
 
     @Test fun `preparation stays in startup frames and contact is only target located`() {

@@ -19,12 +19,13 @@ internal object CoreWarriorBladeChoreography {
         if (e.phase == CoreSkillVisualPhase.CONTACT) return listOf(CoreCombatMeshPart(
             "${PREFIX}contact", "warred", Vec(0.0, 1.0, 0.0), Vec(1.65, 1.0, 1.65),
             yaw = yaw, pitch = -PI/2, durationTicks = 9))
+        val sweep = e.sceneId == "whirl" && e.skill.motion == CoreSkillMotion.CONE
         val clip = when (e.sceneId) {
             "war_wound" -> "wound"
             "war_counter" -> "counter"
             "slam" -> "cleave"
             "war_breach" -> "thrust"
-            "whirl" -> listOf("spin_a", "spin_b", "spin_c")[e.pulse % 3]
+            "whirl" -> if(sweep) "wound" else listOf("spin_a", "spin_b", "spin_c")[e.pulse % 3]
             else -> listOf("rise", "return", "finish")[e.pulse % 3]
         }
         val vertical = clip in setOf("cleave", "rise", "finish")
@@ -33,14 +34,15 @@ internal object CoreWarriorBladeChoreography {
         val forward = when { spin -> 0.0; vertical -> reach*.53; clip=="thrust" -> reach*.55; else -> reach*.43 }
         val offset = Vec(sin(yaw)*forward, if(vertical) 1.65 else if(spin) 1.02+e.pulse%3*.12 else 1.15, cos(yaw)*forward)
         val scale = when {
+            sweep -> Vec(reach*1.85, 1.0, reach*1.7)
             vertical -> Vec(reach*.95, reach*.75, 3.25)
             spin -> Vec(reach*1.85, 1.0, reach*1.85)
             clip == "thrust" -> Vec(.95, 1.0, reach*1.6)
             else -> Vec(reach*1.75, reach*1.35, reach*1.5)
         }
         val blade = CoreCombatMeshPart("$PREFIX$clip:blade", "warsteel", offset, scale, yaw = yaw,
-            pitch = if(vertical) -PI/2 else if(spin) 0.0 else -.45,
-            roll = when(clip) { "wound" -> -.38; "counter", "return" -> .26; else -> 0.0 },
+            pitch = if(vertical) -PI/2 else if(spin) 0.0 else if(sweep) -.35 else -.45,
+            roll = if(sweep) -.08 else when(clip) { "wound" -> -.38; "counter", "return" -> .26; else -> 0.0 },
             durationTicks = 8, startSize = 1.0, endSize = 1.0)
         if (e.phase == CoreSkillVisualPhase.PREPARE)
             return listOf(blade.copy(shape = "$PREFIX$clip:prepare", durationTicks = e.prepareDuration))

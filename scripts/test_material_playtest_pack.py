@@ -2,6 +2,8 @@
 import json
 import unittest
 import zipfile
+from pathlib import Path
+from tempfile import TemporaryDirectory
 from build_pixel_armament_pack import definition
 import build_material_playtest_pack as review
 
@@ -12,7 +14,11 @@ class MaterialPlaytestPackTest(unittest.TestCase):
         cls.base = review.installed_pack()
         cls.candidate = review.candidate_resources()
         cls.files = review.assemble(cls.base, cls.candidate)
-        cls.report = json.loads((review.OUT / 'report.json').read_text())
+        cls.temp = TemporaryDirectory(prefix='projects-material-pack-')
+        cls.addClassCleanup(cls.temp.cleanup)
+        cls.output = Path(cls.temp.name)
+        review.build(cls.output)
+        cls.report = json.loads((cls.output / 'report.json').read_text())
 
     def test_exactly_one_existing_equipment_graph_changes(self):
         changed = {name for name, data in self.base.items() if self.files[name] != data}
@@ -52,13 +58,13 @@ class MaterialPlaytestPackTest(unittest.TestCase):
 
     def test_saved_snapshot_index_zip_and_source_hash_are_exact(self):
         self.assertEqual(self.report['server_jar_sha256'], review.digest(review.SERVER_JAR.read_bytes()))
-        self.assertEqual((review.PACK / 'index.txt').read_text().splitlines(), sorted(self.files))
-        with zipfile.ZipFile(review.OUT / 'projects-material-playtest.zip') as archive:
+        self.assertEqual((self.output / 'core-ui-pack/index.txt').read_text().splitlines(), sorted(self.files))
+        with zipfile.ZipFile(self.output / 'projects-material-playtest.zip') as archive:
             self.assertEqual(archive.namelist(), sorted(self.files))
             self.assertIsNone(archive.testzip())
             for name, data in self.files.items():
                 self.assertEqual(archive.read(name), data, name)
-                self.assertEqual((review.PACK / name).read_bytes(), data, name)
+                self.assertEqual((self.output / 'core-ui-pack' / name).read_bytes(), data, name)
                 self.assertEqual(self.report['files_sha256'][name], review.digest(data), name)
 
     def test_energy_material_keeps_native_light_in_all_twenty_five_poses(self):

@@ -37,5 +37,12 @@ class MaterialGripTest(unittest.TestCase):
                     np.testing.assert_allclose(transformed(grip,model['display'][context],left),
                         transformed([3.5,3.5,8],native,left),atol=1e-6)
 
+    def test_greatsword_has_separate_larger_first_and_third_person_scales(self):
+        models=[json.loads(v) for k,v in candidate_resources().items() if '/models/' in k]
+        for model in models:
+            for hand in ('righthand','lefthand'):
+                self.assertEqual([1.02]*3,model['display']['firstperson_'+hand]['scale'])
+                self.assertEqual([1.16]*3,model['display']['thirdperson_'+hand]['scale'])
+
 
 if __name__=='__main__': unittest.main()

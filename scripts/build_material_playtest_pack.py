@@ -74,7 +74,8 @@ def assemble(base, candidate):
     return files
 
 
-def build():
+def build(output=OUT):
+    pack = output / 'core-ui-pack'
     if not SERVER_JAR.is_file():
         raise ValueError('InstallDist is required before creating a material review snapshot')
     before = digest(SERVER_JAR.read_bytes())
@@ -83,13 +84,13 @@ def build():
     files = assemble(base, candidate)
     if digest(SERVER_JAR.read_bytes()) != before:
         raise ValueError('Installed server changed while building snapshot; retry after build finishes')
-    OUT.mkdir(parents=True, exist_ok=True)
+    output.mkdir(parents=True, exist_ok=True)
     for name, data in files.items():
-        target = PACK / name
+        target = pack / name
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_bytes(data)
-    (PACK / 'index.txt').write_text('\n'.join(sorted(files)) + '\n', encoding='utf-8')
-    with zipfile.ZipFile(OUT / 'projects-material-playtest.zip', 'w', zipfile.ZIP_DEFLATED) as archive:
+    (pack / 'index.txt').write_text('\n'.join(sorted(files)) + '\n', encoding='utf-8')
+    with zipfile.ZipFile(output / 'projects-material-playtest.zip', 'w', zipfile.ZIP_DEFLATED) as archive:
         for name, data in sorted(files.items()):
             info = zipfile.ZipInfo(name, date_time=(1980, 1, 1, 0, 0, 0))
             info.compress_type = zipfile.ZIP_DEFLATED
@@ -100,7 +101,7 @@ def build():
               'added_files': sorted(candidate), 'indexed_files': len(files),
               'unchanged_installed_files': len(base) - 1,
               'files_sha256': {name: digest(data) for name, data in sorted(files.items())}}
-    (OUT / 'report.json').write_text(json.dumps(report, indent=2) + '\n', encoding='utf-8')
+    (output / 'report.json').write_text(json.dumps(report, indent=2) + '\n', encoding='utf-8')
     print(f'Material review: {len(files)} files, only greatsword T1 replaced; no runtime changes.')
 
 

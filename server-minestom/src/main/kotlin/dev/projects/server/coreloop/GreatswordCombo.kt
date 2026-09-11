@@ -48,6 +48,11 @@ internal class GreatswordCombo {
 
     fun takeBuffered(): Boolean = buffered.also { buffered = false }
     fun clearBuffer() { buffered = false }
+    /** Warrior follow-through cancel: preserve the combo step; caller preserves AA cadence. */
+    fun endRecovery() {
+        idleTicks = -(swing?.let { it.totalTicks - elapsed } ?: 0).coerceAtLeast(0)
+        swing = null; buffered = false
+    }
     fun reset() { swing = null; elapsed = 0; nextStep = 1; idleTicks = RESET_TICKS; buffered = false }
     fun holdSequence() { idleTicks = -20 }
 

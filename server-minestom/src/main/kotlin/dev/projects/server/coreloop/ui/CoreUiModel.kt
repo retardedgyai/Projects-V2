@@ -17,7 +17,7 @@ enum class CoreUiIcon(val glyph: Char, val fallback: String, val asset: String) 
     HEALTH('\uE005', "HP", "health"), MAGIC('\uE006', "魔", "magic_power"),
     MANA('\uE007', "MP", "mana"), REWARD('\uE008', "報", "xp"),
     MOD('\uE009', "◆", "level"),
-    DASH('\uE021', "踏込", "dash"), SLAM('\uE022', "地砕", "slam"), WHIRL('\uE023', "旋風", "whirl"),
+    DASH('\uE021', "踏込", "dash"), SLAM('\uE022', "叩付", "slam"), WHIRL('\uE023', "薙払", "whirl"),
 }
 
 data class CoreTooltipStat(val label: String, val value: String, val icon: CoreUiIcon = CoreUiIcon.MOD)

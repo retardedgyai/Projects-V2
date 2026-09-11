@@ -22,7 +22,7 @@ internal object CoreWarriorCompanions {
                 startSize=1.0,endSize=1.0,erode=true,ground=true))
         val contact=e.phase==CoreSkillVisualPhase.CONTACT
         val ground=e.sceneId=="slam" || e.sceneId=="war_ult" && e.pulse%3==2
-        val spin=e.sceneId=="whirl"
+        val spin=e.sceneId=="whirl" && e.skill.motion==CoreSkillMotion.SPIN
         val dash=e.sceneId in setOf("dash","war_breach")
         val count=when { contact->5; support->2; ground->6; spin->6; else->4 }
         return (0 until count).map { i ->

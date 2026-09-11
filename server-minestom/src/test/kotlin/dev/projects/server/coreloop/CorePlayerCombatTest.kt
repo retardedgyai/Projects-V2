@@ -85,14 +85,14 @@ class CorePlayerCombatTest {
         } finally { CoreCombatPresentation.forget(h.player) }
     }
 
-    @Test fun `training refill clears costs but preserves all in-flight whirlwind hit timings`() = arena(bossDistance = 2.0) { h ->
+    @Test fun `training refill clears costs but never repeats the single sweep`() = arena(bossDistance = 2.0) { h ->
         h.actor.skill(2)
-        repeat(5) { h.actor.refillTraining(); h.ticks(1) }
+        repeat(3) { h.actor.refillTraining(); h.ticks(1) }
         assertEquals(300.0, h.combat.bossHealth())
         h.actor.refillTraining(); h.ticks(1)
-        assertEquals(286.8, h.combat.bossHealth(), .00001)
+        assertEquals(277.2, h.combat.bossHealth(), .00001)
         repeat(16) { h.actor.refillTraining(); h.ticks(1) }
-        assertEquals(260.4, h.combat.bossHealth(), .00001)
+        assertEquals(277.2, h.combat.bossHealth(), .00001)
         assertEquals(0, h.actor.cooldownRemaining(2))
         assertEquals(h.actor.maxMana, h.actor.mana)
     }
@@ -224,29 +224,26 @@ class CorePlayerCombatTest {
     }
 
     @Test
-    fun `whirlwind damages surrounding target in exactly three timed pulses`() = arena(bossDistance = 2.0) { h ->
-        h.player.setView(180f, 0f)
+    fun `sweep hits the front once and cannot damage a target behind the warrior`() = arena(bossDistance = 2.0) { h ->
         h.actor.skill(2)
-        assertEquals(76, h.actor.mana)
-        assertEquals(9L, h.actor.cooldownSeconds(2))
-        h.ticks(5)
+        assertEquals(88, h.actor.mana)
+        assertEquals(4L, h.actor.cooldownSeconds(2))
+        h.ticks(3)
         assertEquals(300.0, h.combat.bossHealth())
         h.ticks(1)
-        assertEquals(286.8, h.combat.bossHealth(), 0.00001)
-        h.ticks(8)
-        assertEquals(273.6, h.combat.bossHealth(), 0.00001)
-        h.ticks(8)
-        assertEquals(260.4, h.combat.bossHealth(), 0.00001)
-        h.ticks(15)
-        assertEquals(260.4, h.combat.bossHealth(), 0.00001)
+        assertEquals(277.2, h.combat.bossHealth(), 0.00001)
+        h.ticks(70)
+        assertEquals(277.2, h.combat.bossHealth(), 0.00001)
+        h.player.setView(180f, 0f);h.actor.skill(2);h.ticks(15)
+        assertEquals(277.2, h.combat.bossHealth(), 0.00001)
     }
 
     @Test
-    fun `skill requested during normal swing waits for normal recovery`() = arena { h ->
+    fun `skill links after six AA ticks instead of waiting the entire AA recovery`() = arena { h ->
         h.actor.attack()
         h.actor.classState.gain(100.0, h.journey.job, h.journey.build); h.actor.skill(1)
         assertEquals(100, h.actor.mana)
-        h.ticks(19)
+        h.ticks(5)
         assertEquals(100, h.actor.mana)
         h.ticks(1)
         assertEquals(80, h.actor.mana)
@@ -412,9 +409,9 @@ class CorePlayerCombatTest {
         stats = CoreAffixStats(maxManaFlat = 50.0, manaRegenPercent = 40.0)) { h ->
         assertEquals(150, h.actor.maxMana)
         h.actor.skill(2)
-        assertEquals(126, h.actor.mana)
+        assertEquals(138, h.actor.mana)
         h.ticks(20)
-        assertEquals(133, h.actor.mana)
+        assertEquals(145, h.actor.mana)
     }
 
     @Test
@@ -645,18 +642,20 @@ class CorePlayerCombatTest {
     }
 
     @Test fun `resource rejection costs no mana cooldown or enemy health`() = arena { h ->
+        h.journey = CoreJourney(build=CoreClassBuild(second=5));h.actor.reset()
         h.actor.skill(1);h.ticks(30)
         assertEquals(100,h.actor.mana);assertEquals(0,h.actor.cooldownRemaining(1));assertEquals(300.0,h.combat.bossHealth())
         repeat(3) { h.actor.attack();h.ticks(24) }
         h.ticks(20)
         assertTrue(h.actor.resource>=30)
         val before=h.actor.resource;h.actor.skill(1)
-        assertEquals(before-30,h.actor.resource);assertEquals(80,h.actor.mana)
+        assertEquals(before-30,h.actor.resource);assertEquals(88,h.actor.mana)
     }
-    @Test fun `warrior mark label appears on real wound hit and disappears on consuming skill and reset`() = arena(bossDistance=2.0) { h ->
+    @Test fun `warrior feint no longer places a mark or requires detonation`() = arena(bossDistance=2.0) { h ->
         h.journey=CoreJourney(build=CoreClassBuild(first=4,second=1,third=2,fourth=0));h.actor.reset()
         h.actor.skill(0);h.ticks(h.actor.skillDefinitions[0].startupTicks(h.actor.sheet))
-        assertEquals(1,h.actor.activeMarkLabels)
+        assertEquals(0,h.actor.activeMarkLabels)
+        assertFalse(h.actor.classState.marked(h.combat.combatTargets().first().id, 3))
         h.ticks(12);h.actor.classState.gain(100.0,CoreClass.WARRIOR,h.journey.build)
         h.actor.skill(1);h.ticks(h.actor.skillDefinitions[1].startupTicks(h.actor.sheet))
         assertEquals(0,h.actor.activeMarkLabels)
@@ -785,6 +784,95 @@ class CorePlayerCombatTest {
         h.journey=CoreJourney(job=CoreClass.MAGE);h.base=CoreWeaponBase.STAFF;h.actor.reset()
         h.actor.classState.gain(100.0,h.journey.job,h.journey.build);h.actor.skill(2);h.ticks(12)
         assertTrue(h.combat.bossHealth()<300)
+    }
+
+    @Test fun `core four skills cast with empty rage and preserve resource for optional skills`() = arena { h ->
+        assertEquals(0.0, h.actor.resource)
+        assertTrue(h.actor.skillDefinitions.take(4).all { it.spend == 0 })
+        h.actor.skill(1); h.ticks(12)
+        assertEquals(259.6, h.combat.bossHealth(), .00001)
+    }
+
+    @Test fun `wide sweep catches lateral enemies that a committed slam misses`() = arena(bossDistance=3.0) { h ->
+        h.player.setView(70f, 0f)
+        h.actor.skill(1); h.ticks(20)
+        assertEquals(300.0, h.combat.bossHealth())
+        h.actor.skill(2); h.ticks(4)
+        assertEquals(277.2, h.combat.bossHealth(), .00001)
+    }
+
+    @Test fun `late AA during a skill executes once when recovery ends`() = arena { h ->
+        h.actor.skill(1); h.ticks(14)
+        repeat(10) { h.actor.attack() }
+        h.ticks(4); assertEquals(259.6, h.combat.bossHealth(), .00001)
+        h.ticks(1); assertEquals(247.6, h.combat.bossHealth(), .00001)
+        h.ticks(60); assertEquals(247.6, h.combat.bossHealth(), .00001)
+    }
+
+    @Test fun `early expired input is not stored for an unexpected attack much later`() = arena { h ->
+        h.actor.skill(1); h.actor.attack(); h.ticks(40)
+        assertEquals(259.6, h.combat.bossHealth(), .00001)
+    }
+
+    @Test fun `pending skill accepts only the latest intent and rechecks costs`() = arena { h ->
+        h.actor.skill(1); h.ticks(14)
+        h.actor.skill(2); h.actor.attack(); h.ticks(9)
+        assertEquals(0, h.actor.cooldownRemaining(2))
+        assertEquals(247.6, h.combat.bossHealth(), .00001)
+    }
+
+    @Test fun `queued skill starts at prior recovery end without a second input`() = arena { h ->
+        h.actor.skill(1); h.ticks(14); h.actor.skill(2)
+        h.ticks(5); assertTrue(h.actor.cooldownRemaining(2)>0)
+        h.ticks(4); assertEquals(236.8, h.combat.bossHealth(), .00001)
+    }
+
+    @Test fun `guard can cancel AA follow through but cannot bypass its attack cadence`() = arena { h ->
+        h.actor.attack(); h.actor.skill(3); h.ticks(1)
+        h.actor.hurt(50.0); assertEquals(90.0, h.actor.health)
+        h.actor.attack(); h.ticks(8)
+        assertEquals(288.0, h.combat.bossHealth())
+        h.ticks(6); h.actor.attack(); h.ticks(5)
+        assertEquals(274.2, h.combat.bossHealth(), .00001)
+        h.ticks(40); assertEquals(274.2, h.combat.bossHealth(), .00001)
+    }
+
+    @Test fun `dodge is immediate during AA but repeated cancel inputs cannot manufacture AA hits`() = arena { h ->
+        h.actor.attack(); val origin=h.player.position
+        h.actor.dodge(); assertTrue(h.player.position.distance(origin)>2.0)
+        h.player.teleport(origin).join()
+        repeat(10) { h.actor.attack();h.actor.dodge() }
+        h.ticks(10); assertEquals(288.0, h.combat.bossHealth())
+    }
+
+    @Test fun `parry refreshes slam once and turns it into fast retaliation rather than boosting any attack`() = arena { h ->
+        h.actor.skill(1);h.ticks(12)
+        h.actor.skill(3);h.ticks(1) // Guard cancels only the completed hit's recovery.
+        assertTrue(h.actor.cooldownRemaining(1)>0)
+        h.actor.hurt(50.0)
+        assertEquals(0,h.actor.cooldownRemaining(1))
+        assertEquals(90.0,h.actor.health)
+        val before=h.combat.bossHealth()
+        h.actor.skill(1);h.ticks(2);assertEquals(before,h.combat.bossHealth())
+        h.ticks(1);assertEquals(before-40.4*1.35,h.combat.bossHealth(),.00001)
+        assertFalse(h.actor.combatCue.startsWith("反撃"))
+        val cd=h.actor.cooldownRemaining(1)
+        h.actor.hurt(10.0);assertEquals(cd,h.actor.cooldownRemaining(1))
+        assertEquals(80.0,h.actor.health) // Attacking ended the defensive stance.
+    }
+
+    @Test fun `sweep does not steal a reserved slam counter`() = arena { h ->
+        h.actor.skill(3);h.ticks(1);h.actor.hurt(10.0)
+        h.actor.skill(2);h.ticks(4)
+        assertEquals(277.2,h.combat.bossHealth(),.00001)
+        assertTrue(h.actor.combatCue.startsWith("反撃"))
+    }
+
+    @Test fun `warrior buffer is discarded on map reset`() = arena { h ->
+        h.actor.skill(1);h.ticks(14);h.actor.skill(2)
+        h.actor.resetActions();h.ticks(30)
+        assertEquals(259.6,h.combat.bossHealth(),.00001)
+        assertEquals(0,h.actor.cooldownRemaining(2))
     }
 
     private class Harness(bossDistance: Double, armorTier: Int, stats: CoreAffixStats, roll: Double,

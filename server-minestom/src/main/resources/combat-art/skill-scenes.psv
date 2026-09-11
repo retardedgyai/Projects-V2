@@ -3,10 +3,10 @@ normal_sweep|通常攻撃一段目|CUT|steel|slash_short|speed_streak|edge_glint
 normal_reverse|通常攻撃二段目|CUT|steel|slash_reverse|speed_streak|edge_glint|cut_spark|2.2|1.0|1.0|大剣の二段目。前方の左から右へ返す
 normal_finish|通常攻撃三段目|CLEAVE|gold|slash_heavy|ground_crack|edge_glint|stone_impact|2.7|1.0|1.0|大剣の三段目。前方へ縦に下ろす
 dash|踏み込み斬り|CUT|steel|slash_short|speed_streak|edge_glint|cut_spark|2.1|1.0|1.0|移動後の胸元前方を短く横断する刃。突進距離を刃の長さにしない
-slam|地砕き|CLEAVE|gold|slash_heavy|ground_crack|edge_glint|stone_impact|2.7|1.0|1.0|正面の縦斬りと前方地割れ。背後へ振らない
-whirl|旋風斬り|SPIN|steel|spin_blade|speed_streak|edge_glint|cut_spark|2.4|1.0|1.0|一回の判定に一周の回転刃。三回は三つの独立した斬撃
+slam|叩きつけ|CLEAVE|gold|slash_heavy|ground_crack|edge_glint|stone_impact|2.7|1.0|1.0|正面の縦斬りと前方地割れ。背後へ振らない。反撃時は予備動作だけ短縮
+whirl|薙ぎ払い|CUT|steel|slash_short|speed_streak|edge_glint|cut_spark|2.4|1.0|1.0|一回の判定に一度の前方横薙ぎ。承認済みの刃と扇状の余波を水平に出す
 war_guard|受け流し|GUARD|steel|parry_blade|edge_glint|edge_glint|cut_spark|0.9|1.0|1.0|一振りの大剣を握り位置から胸前へ起こす。実防御時間保持し最初の12tickだけ刃の光が走る
-war_wound|裂傷斬り|CUT|steel|slash_short|blood_notch|edge_glint|cut_spark|1.8|1.0|1.0|素早い斜め斬り。小さな傷跡を確定命中時に表示
+war_wound|牽制斬り|CUT|steel|slash_short|blood_notch|edge_glint|cut_spark|1.8|1.0|1.0|素早い斜め斬りで追う敵を減速。印は付けず命中時だけ刃の接触を表示
 war_counter|返し刃|CUT|gold|slash_reverse|speed_streak|edge_glint|cut_spark|2.3|1.0|1.0|横斬りと逆向きの返し。全身を囲う輪にしない
 war_cry|雄叫び|SHIELD|gold|roar_wave|shield_arch|cast_spark|light_spark|1.2|1.0|1.0|口元から前後へ三度ずつ抜ける開いた声の波。一回の障壁付与に対応し斬撃や追撃は出さない
 war_breach|破城突き|THRUST|steel|thrust_tip|speed_streak|edge_glint|armor_break|2.6|0.8|0.8|移動後の正面への細い刺突。横の刀身や回転は禁止

@@ -34,10 +34,14 @@ class CoreWarriorCompanionsTest {
                 assertEquals(PI/2,q.yaw-p.yaw,1e-8)
             }
         }
-        val spin=skills.first { it.icon=="whirl" }
+        val spin=skills.first { it.icon=="war_ult" }
         val stages=(0..2).map { pulse -> CoreWarriorFlourish.parts(
             CoreSkillEffect(CoreClass.WARRIOR,spin,Vec.ZERO,Vec(0.0,0.0,1.0),pulse=pulse)).first().shape }
         assertEquals(3,stages.toSet().size)
+        val sweep=skills.first { it.icon=="whirl" }
+        val fan=CoreWarriorFlourish.parts(CoreSkillEffect(CoreClass.WARRIOR,sweep,Vec.ZERO,Vec(0.0,0.0,1.0))).first()
+        assertTrue(fan.shape.startsWith("war_flourish:fan:"))
+        assertTrue(fan.offset.z()>0)
     }
     @Test fun `warrior emits no vanilla companions and every authored model resolves`() {
         for(s in CoreSkillCatalog.skills(CoreClass.WARRIOR)) for(phase in CoreSkillVisualPhase.entries) {
