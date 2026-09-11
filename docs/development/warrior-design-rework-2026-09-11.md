@@ -272,3 +272,12 @@ Creatorより「過去一番いい」「旗は完璧」と評価。承認済み�
   再起動指示を受けて反映する。粒子の実機密度/見やすさはその時のCreator判断で調整する。
 - 問題の入口：粒子の形/量は `CoreWarriorParticles`、markの追従/表示は
   `CoreWarriorMarkDisplay`、状態との接続/削除は `CorePlayerCombat.tick/resetActions`。
+
+### 配信経路の追加確認
+
+- `CoreCombatMeshTest`で`GreatswordVfx.playSkill → tick → PlayerConnection`まで接続して検証。
+  旗の発動フレームは本人に40/20/10個のParticlePacketが届き、華やか/控えめ/最小の設定に対応。
+  近距離の別プレイヤーにも各設定で範囲粒子が届く。cancel後20tickで粒子送信0、activeEffects 0、instance参照なし。
+- 追加後の`CoreCombatMeshTest`と`CoreWarriorParticlesTest`は成功。製品コード・承認済み作画・稼働中ゲームは変更していない。
+- これは配信と設定の証拠であり、クライアント描画の密度・質感やMatE作品と同等の品質の証明ではない。
+  次の判断に必要なのは再起動後のCreatorによる実機確認。確認前にモデルや配色を再改変しない。

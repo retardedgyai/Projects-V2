@@ -18,6 +18,35 @@ import kotlin.math.abs
 import kotlin.test.*
 
 class CoreCombatMeshTest {
+    @Test fun `banner companion reaches owner and observer packets at every detail and stops on cancel`() {
+        val packets=mutableListOf<SendablePacket>()
+        player(packets) { owner ->
+            val observerPackets=mutableListOf<SendablePacket>()
+            val observer=connect(owner.instance,owner.position.add(1.0,0.0,0.0),"ParticleObserver",observerPackets)
+            val vfx=GreatswordVfx(owner)
+            fun count(items:List<SendablePacket>)=items.count { it.javaClass.simpleName=="ParticlePacket" }
+            try {
+                CoreCombatPresentation.pack(owner,true)
+                CoreCombatPresentation.pack(observer,true)
+                for(expected in listOf(40,20,10)) {
+                    val skill=CoreSkillCatalog.skills(CoreClass.WARRIOR).first { it.icon=="war_banner" }
+                    vfx.playSkill(CoreSkillEffect(CoreClass.WARRIOR,skill,owner.position,Vec(0.0,0.0,1.0)))
+                    packets.clear();observerPackets.clear()
+                    vfx.tick()
+                    assertEquals(expected,count(packets),"The actual banner boundary must survive each detail setting")
+                    assertTrue(count(observerPackets) in 1..expected,"Nearby observers must receive the boundary too")
+                    vfx.cancel();packets.clear();observerPackets.clear()
+                    repeat(20) { vfx.tick() }
+                    assertEquals(0,count(packets));assertEquals(0,count(observerPackets))
+                    assertEquals(0,vfx.activeEffects);assertFalse(vfx.retainsInstance)
+                    CoreCombatPresentation.cycle(owner);CoreCombatPresentation.cycle(observer)
+                }
+            } finally {
+                vfx.cancel();CoreCombatPresentation.forget(owner);CoreCombatPresentation.forget(observer);observer.remove()
+            }
+        }
+    }
+
     @Test fun `warrior marks follow actual target height stay private and clear when targets or marks disappear`() = player { owner ->
         val display=CoreWarriorMarkDisplay(owner)
         val state=CoreClassState()
@@ -405,9 +434,9 @@ class CoreCombatMeshTest {
         }
     }
 
-    private fun connect(map: net.minestom.server.instance.Instance,at: Pos,name: String): Player {
+    private fun connect(map: net.minestom.server.instance.Instance,at: Pos,name: String,packets:MutableList<SendablePacket>?=null): Player {
         val connection=object : PlayerConnection() {
-            override fun sendPacket(packet: SendablePacket)=Unit
+            override fun sendPacket(packet: SendablePacket) { packets?.add(packet) }
             override fun getRemoteAddress(): SocketAddress=InetSocketAddress("127.0.0.1",0)
         }
         connection.setClientState(ConnectionState.PLAY);connection.setServerState(ConnectionState.PLAY)
