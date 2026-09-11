@@ -89,6 +89,10 @@ internal object CoreHudLayout {
             val key = skill.key.filter { it in '0'..'9' }.take(2)
             if (key.isNotEmpty()) layer(x + 29 - key.length * 4, digits(key, 0xE520), key.length * 4)
         }
+        if(state.combatCue.isNotBlank()) {
+            val width=CoreMenuCanvas.width(state.combatCue,CoreMenuCanvas.TextStyle.EMPHASIS)
+            layer(-width/2,CoreMenuCanvas.combatCaption(state.combatCue),width)
+        }
         return result
     }
 }

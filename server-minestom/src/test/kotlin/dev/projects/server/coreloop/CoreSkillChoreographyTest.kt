@@ -483,16 +483,18 @@ class CoreSkillChoreographyTest {
     @Test fun `return cuts have dedicated contours and full circles no longer duplicate fixed sectors`() {
         val first=CoreSkillChoreography.parts(effect(CoreClass.WARRIOR,"dash")).first()
         val reverse=CoreSkillChoreography.parts(effect(CoreClass.WARRIOR,"war_counter")).first()
-        assertTrue(reverse.shape.startsWith("warrior_trace:"))
+        assertTrue(CoreWarriorBladeChoreography.owns(reverse))
         assertNotEquals(CoreSkillChoreography.pose(first,0.0).model,CoreSkillChoreography.pose(reverse,0.0).model)
         assertEquals(0.0,first.spin);assertEquals(0.0,reverse.spin)
         for((job,id) in listOf(CoreClass.ASSASSIN to "ass_fan",CoreClass.WARRIOR to "whirl")) {
             val sectors=CoreSkillChoreography.parts(effect(job,id))
-            assertEquals(8,sectors.count { !it.secondary })
-            assertEquals(if(job==CoreClass.WARRIOR) 0 else 4,sectors.count { it.secondary })
-            if(job==CoreClass.WARRIOR) assertEquals(listOf(0,0,1,2,3,3,4,5),sectors.map { it.delayTicks })
-            else assertTrue(sectors.all { it.delayTicks==0 })
-            for(p in sectors) assertEquals(CoreSkillChoreography.pose(p,0.0).model,CoreSkillChoreography.pose(p,p.delayTicks+3.0).model)
+            assertEquals(if(job==CoreClass.WARRIOR) 1 else 8,sectors.count { !it.secondary })
+            assertEquals(if(job==CoreClass.WARRIOR) 2 else 4,sectors.count { it.secondary })
+            assertTrue(sectors.all { it.delayTicks==0 })
+            for(p in sectors) {
+                if(job==CoreClass.WARRIOR) assertNotEquals(CoreSkillChoreography.pose(p,0.0).model,CoreSkillChoreography.pose(p,3.0).model)
+                else assertEquals(CoreSkillChoreography.pose(p,0.0).model,CoreSkillChoreography.pose(p,3.0).model)
+            }
         }
         assertEquals(2,CoreSkillChoreography.parts(effect(CoreClass.ASSASSIN,"ass_ult")).size)
         for(reverseUv in listOf(false,true)) {

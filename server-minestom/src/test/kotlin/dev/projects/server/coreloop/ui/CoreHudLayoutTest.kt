@@ -8,6 +8,10 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class CoreHudLayoutTest {
+    private val acceptedWidths by lazy { javaClass.getResourceAsStream("/core-ui-pack/assets/projects/menu/glyphs-emphasis.tsv")!!
+        .bufferedReader().readLines().filter { it.isNotBlank() && !it.startsWith('#') }.associate {
+            val parts=it.split('\t');parts[1].toInt(16).toChar() to parts[2].toInt()
+        } }
     private fun skills(remaining: Double = 0.0) = listOf(
         CoreHudSkill(CoreUiIcon.DASH, "2", remaining, 4.0, 15),
         CoreHudSkill(CoreUiIcon.SLAM, "3", remaining, 7.0, 25),
@@ -29,6 +33,8 @@ class CoreHudLayoutTest {
                     in 0xE600..0xEE57 -> 33
                     else -> error("Unexpected HUD glyph ${c.code}")
                 }
+                component.style().font()?.asString()=="projects:warrior_hud_status" ->
+                    acceptedWidths.getValue(c)
                 else -> error("Packed HUD must not depend on a global text font")
             }
         }
@@ -86,6 +92,26 @@ class CoreHudLayoutTest {
         assertFalse(CoreUiPackPolicy.allowedPath("assets/minecraft/textures/gui/sprites/hud/air.png"))
         assertFalse(CoreUiPackPolicy.allowedPath("../invalid"))
         assertTrue(CoreUiPackPolicy.allowedPath("assets/minecraft/textures/gui/sprites/hud/heart/full.png"))
+    }
+
+    @Test fun `combat opportunity caption keeps exact centering without covering the skill row`() {
+        val font=javaClass.getResourceAsStream("/core-ui-pack/assets/projects/font/warrior_hud_status.json")!!
+            .bufferedReader().use { com.google.gson.JsonParser.parseReader(it).asJsonObject }
+        val providers=font.getAsJsonArray("providers").map { it.asJsonObject }
+        val characters=providers.filter { it.get("type").asString=="bitmap" }
+            .flatMap { it.getAsJsonArray("chars").map { row -> row.asString }.joinToString("").toList() }.toSet()
+        for(text in listOf("反撃の好機 3秒","防御 1秒")) {
+            val encoded=(CoreMenuCanvas.combatCaption(text) as TextComponent).content()
+            assertTrue(encoded.filter { it.code!=0xE800 }.all { it in characters })
+            val state=CoreHudState(100.0,100.0,100.0,skills=skills(),combatCue=text)
+            assertEquals(0,advance(CoreHudLayout.render(state)))
+        }
+        providers.filter { it.get("type").asString=="bitmap" }.forEach {
+            assertEquals(45,it.get("ascent").asInt)
+            assertTrue(it.get("ascent").asInt<=it.get("height").asInt)
+            assertEquals(48,it.get("height").asInt)
+            assertTrue(65+it.get("ascent").asInt-14>=94+2,"Actual ink, not transparent padding, stays above icons")
+        }
     }
 
     @Test fun `five skill slots resource shield and all seventy art mappings retain exact centering`() {

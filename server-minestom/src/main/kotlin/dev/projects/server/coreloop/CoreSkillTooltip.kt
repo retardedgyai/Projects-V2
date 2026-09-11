@@ -11,7 +11,8 @@ internal object CoreSkillTooltip {
     fun item(skill: CoreSkillDefinition, sheet: CoreCombatSheet, j: CoreJourney, packed: Boolean, locked: Boolean = false,
         footer: String = if(locked) "成長するとこの枠を使えます" else "港の成長と職業 → 技選びで変更"): ItemStack {
         val rarity = if(skill.ultimate) CoreUiRarity.EPIC else CoreUiRarity.RARE
-        val lines = skill.tooltip(sheet,j)
+        val warrior = j.job == CoreClass.WARRIOR
+        val lines = if(warrior) CoreWarriorSkillPresentation.tooltip(skill,sheet,j) else skill.tooltip(sheet,j)
         val name = (if(locked) "【未解放】" else "")+skill.name
         fun wrap(line: String): List<String> = buildList {
             var part="";var width=0
@@ -26,8 +27,11 @@ internal object CoreSkillTooltip {
             add(CoreUiComponents.text("${j.job.displayName}  ·  ${if(skill.ultimate) "奥義" else "選択技能"}",rarity.color,true))
             add(Component.empty())
             lines.forEachIndexed { index,line ->
-                val color=when(index) { 2 -> CoreUiComponents.GOLD;3 -> CoreUiComponents.IVORY;5,6 -> CoreUiComponents.BLUE;else -> CoreUiComponents.MUTED }
-                wrap(line).forEach { add(CoreUiComponents.text(it,color,index==2)) }
+                val heading = if(warrior) index in setOf(0,3,4) else index==2
+                val color=if(warrior) when(index) { 0,3,4 -> CoreUiComponents.GOLD;1,5 -> CoreUiComponents.IVORY;else -> CoreUiComponents.MUTED }
+                    else when(index) { 2 -> CoreUiComponents.GOLD;3 -> CoreUiComponents.IVORY;5,6 -> CoreUiComponents.BLUE;else -> CoreUiComponents.MUTED }
+                if(line.isEmpty()) add(Component.empty())
+                else wrap(line).forEach { add(CoreUiComponents.text(it,color,heading)) }
             }
             add(Component.empty())
             add(CoreUiComponents.text(footer,CoreUiComponents.GOLD))

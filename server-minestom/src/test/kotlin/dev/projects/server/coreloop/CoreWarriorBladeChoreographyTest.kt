@@ -2,116 +2,112 @@ package dev.projects.server.coreloop
 
 import net.minestom.server.coordinate.Vec
 import com.google.gson.Gson
+import com.google.gson.JsonParser
 import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.math.*
 import kotlin.test.*
 
 class CoreWarriorBladeChoreographyTest {
-    private val remainingSkills = CoreWarriorBladeChoreography.sceneIds - "dash" - CoreApprovedNormalV3.sceneIds
-    private fun effect(id: String,pulse: Int=0,heading: Double=0.0,phase: CoreSkillVisualPhase=CoreSkillVisualPhase.PULSE): CoreSkillEffect {
-        val skill=CoreSkillCatalog.skills(CoreClass.WARRIOR).first { it.icon==if(id.startsWith("normal_")) "dash" else id }
-        return CoreSkillEffect(CoreClass.WARRIOR,skill.copy(radius=if(id.startsWith("normal_")) 3.9 else skill.radius),
-            Vec.ZERO,Vec(sin(heading),0.0,cos(heading)),phase,pulse,sceneId=id,prepareTicks=skill.startup)
-    }
-    private fun parts(id: String,pulse: Int=0)=CoreSkillChoreography.parts(effect(id,pulse))
-    @Test fun `warrior has one class route while other classes retain their existing routes`() {
-        for(id in remainingSkills) {
-            assertTrue(parts(id).all { it.shape.startsWith("warrior_trace:") },id)
-            assertEquals(8,parts(id).size,id)
-            assertTrue(parts(id).all { it.palette in setOf("warsteel","warred") && !it.sprite && !it.followOwner })
+    private val skills = CoreSkillCatalog.skills(CoreClass.WARRIOR).filter { it.icon in CoreWarriorBladeChoreography.sceneIds && it.icon!="dash" }
+    private fun effect(s: CoreSkillDefinition, pulse: Int=0, yaw: Double=0.0, phase: CoreSkillVisualPhase=CoreSkillVisualPhase.PULSE) =
+        CoreSkillEffect(CoreClass.WARRIOR,s,Vec.ZERO,Vec(sin(yaw),0.0,cos(yaw)),phase,pulse,prepareTicks=s.startup)
+
+    @Test fun `all attacks use native contours with stable transform and valid model sequence`() {
+        for(s in skills) repeat(s.pulses) { beat ->
+            for(phase in CoreSkillVisualPhase.entries) for(p in CoreSkillChoreography.parts(effect(s,beat,phase=phase))) {
+                assertTrue(CoreWarriorBladeChoreography.owns(p))
+                assertEquals(0,CoreCombatMeshes.interpolationTicks(p))
+                val poses=(0 until p.durationTicks).map { CoreSkillChoreography.pose(p,it.toDouble()) }
+                assertEquals(1,poses.map { it.offset to it.scale }.distinct().size)
+                assertEquals(1,poses.map { Triple(it.yaw,it.pitch,it.roll) }.distinct().size)
+                assertTrue(poses.all { it.visible })
+                assertFalse(CoreSkillChoreography.pose(p,-1.0).visible)
+                assertFalse(CoreSkillChoreography.pose(p,p.durationTicks.toDouble()).visible)
+                poses.forEach { assertNotNull(javaClass.getResource("/core-ui-pack/assets/projects/items/${it.model}.json"),it.model) }
+            }
         }
-        for(job in CoreClass.entries.filter { it!=CoreClass.WARRIOR }) for(skill in CoreSkillCatalog.skills(job)) {
-            val e=CoreSkillEffect(job,skill,Vec.ZERO,Vec(0.0,0.0,1.0))
-            assertNull(CoreWarriorBladeChoreography.parts(e))
-            assertTrue(CoreSkillChoreography.parts(e).none { it.shape.startsWith("warrior_") })
-        }
+        for(job in CoreClass.entries.filter { it!=CoreClass.WARRIOR }) for(s in CoreSkillCatalog.skills(job))
+            assertNull(CoreWarriorBladeChoreography.parts(CoreSkillEffect(job,s,Vec.ZERO,Vec(0.0,0.0,1.0))))
     }
-    @Test fun `wake stays on the cut path with stable model and orientation and fades before removal`() {
-        for(id in remainingSkills) for(p in parts(id)) {
-            val poses=(0..32).map { CoreSkillChoreography.pose(p,p.delayTicks+it/4.0) }
-            assertEquals(1,poses.map { it.model }.distinct().size,id)
-            assertEquals(1,poses.map { it.offset }.distinct().size,id)
-            assertEquals(1,poses.map { Triple(it.yaw,it.pitch,it.roll) }.distinct().size,id)
-            assertEquals(0.0,poses.first().scale.x(),id)
-            assertEquals(0.0,poses.last().scale.x(),id)
-            assertTrue(poses.maxOf { it.scale.x() }>.1,id)
-            assertFalse(CoreSkillChoreography.pose(p,p.delayTicks-1.0).visible)
-            assertEquals(p.delayTicks+p.durationTicks+2,CoreCombatMeshes.removalAge(p))
-            assertNotNull(javaClass.getResource("/core-ui-pack/assets/projects/items/${poses.first().model}.json"))
+
+    @Test fun `multi hit attacks author distinct paths not rotated identical frames`() {
+        for(id in listOf("whirl","war_ult")) {
+            val s=skills.first { it.icon==id }
+            val parts=(0..2).map { CoreSkillChoreography.parts(effect(s,it)).first() }
+            assertEquals(3,parts.map { CoreSkillChoreography.pose(it,1.0).model }.distinct().size)
+            assertTrue(parts.all { it.spin==0.0 && !it.followOwner })
+            if(id=="whirl") assertTrue(parts.all { it.offset.x()==0.0 && it.offset.z()==0.0 })
         }
     }
-    @Test fun `spin is centered on the fighter and three beats have distinct silhouettes`() {
-        val beats=(0..2).map { parts("whirl",it) }
-        for(p in beats) {
-            assertEquals(0.0,p.sumOf { it.offset.x() }/p.size,1e-7)
-            assertEquals(0.0,p.sumOf { it.offset.z() }/p.size,1e-7)
-            assertEquals(listOf(0,0,1,2,3,3,4,5),p.map { it.delayTicks })
+
+    @Test fun `preparation stays in startup frames and contact is only target located`() {
+        for(s in skills) {
+            val prepare=CoreSkillChoreography.parts(effect(s,phase=CoreSkillVisualPhase.PREPARE)).single()
+            assertTrue(CoreSkillChoreography.pose(prepare,0.0).model.endsWith("blade_0"))
+            assertTrue(CoreSkillChoreography.pose(prepare,(prepare.durationTicks-1).toDouble()).model.endsWith("blade_2"))
+            val pulse=CoreSkillChoreography.parts(effect(s))
+            assertTrue(CoreSkillChoreography.pose(pulse.first(),0.0).model.endsWith("blade_3"))
+            assertTrue(pulse.none { it.shape.contains("contact") })
+            val contact=CoreSkillChoreography.parts(effect(s,phase=CoreSkillVisualPhase.CONTACT)).single()
+            assertEquals(Vec(0.0,1.0,0.0),contact.offset)
         }
-        assertEquals(3,beats.map { p -> p.map { it.offset to it.scale } }.distinct().size)
-        assertTrue(beats[2].all { it.palette=="warred" })
-        val ult=(0..2).map { parts("war_ult",it) }
-        assertEquals(3,ult.map { p -> p.map { it.offset } }.distinct().size)
     }
-    @Test fun `all enclosing model corners remain above ground and within reach at eight headings`() {
-        for(id in remainingSkills) repeat(8) { heading ->
-            val a=heading*PI/4
-            for(pulse in 0 until effect(id).skill.pulses)
-            for(p in CoreSkillChoreography.parts(effect(id,pulse,heading=a))) {
-                val pose=CoreSkillChoreography.pose(p,p.delayTicks+1.0)
-                for(x0 in listOf(-.5,.5)) for(z0 in listOf(-.5,.5)) {
-                    val x=x0*pose.scale.x();val z=z0*pose.scale.z()
-                    val y1=-z*sin(pose.pitch);val z1=z*cos(pose.pitch)
-                    val x2=x*cos(pose.roll)-y1*sin(pose.roll);val y2=x*sin(pose.roll)+y1*cos(pose.roll)
-                    val v=Vec(x2*cos(pose.yaw)+z1*sin(pose.yaw),y2,-x2*sin(pose.yaw)+z1*cos(pose.yaw)).add(pose.offset)
-                    assertTrue(v.y()>.02,"$id buried $v")
-                    assertTrue(hypot(v.x(),v.z())<=CoreSkillScenes.get(id).reach+.1,"$id reach $v")
-                    if(id!="whirl") assertTrue(v.x()*sin(a)+v.z()*cos(a)>-.05,"$id behind $v")
+
+    @Test fun `actual folded model corners stay above floor and inside cast envelope in eight headings`() {
+        // Inspect the shipped legal model element rotations, not imaginary unit-square bounds.
+        val cache=mutableMapOf<String,List<DoubleArray>>()
+        fun corners(model: String)=cache.getOrPut(model) {
+            javaClass.getResourceAsStream("/core-ui-pack/assets/projects/models/$model.json")!!.bufferedReader().use { reader ->
+                JsonParser.parseReader(reader).asJsonObject.getAsJsonArray("elements").flatMap { element ->
+                    val e=element.asJsonObject; val lo=e.getAsJsonArray("from"); val hi=e.getAsJsonArray("to")
+                    (0..7).map { c ->
+                        DoubleArray(3) { axis -> (if(c and (1 shl axis)==0) lo[axis] else hi[axis]).asDouble }.also { v ->
+                            e.getAsJsonObject("rotation")?.let { r ->
+                                val o=r.getAsJsonArray("origin"); val a=Math.toRadians(r.get("angle").asDouble)
+                                val y=v[1]-o[1].asDouble; val z=v[2]-o[2].asDouble
+                                v[1]=o[1].asDouble+y*cos(a)-z*sin(a);v[2]=o[2].asDouble+y*sin(a)+z*cos(a)
+                            }
+                        }
+                    }
                 }
             }
         }
+        for(s in skills) repeat(s.pulses) { beat -> repeat(8) { heading ->
+            val yaw=heading*PI/4
+            for(phase in listOf(CoreSkillVisualPhase.PREPARE,CoreSkillVisualPhase.PULSE))
+            for(p in CoreSkillChoreography.parts(effect(s,beat,yaw,phase))) repeat(p.durationTicks) { age ->
+                val pose=CoreSkillChoreography.pose(p,age.toDouble())
+                for(v in corners(pose.model)) {
+                    val x=(v[0]-8)/16*pose.scale.x();val y=(v[1]-8)/16*pose.scale.y();val z=(v[2]-8)/16*pose.scale.z()
+                    val y1=y*cos(pose.pitch)-z*sin(pose.pitch);val z1=y*sin(pose.pitch)+z*cos(pose.pitch)
+                    val x2=x*cos(pose.roll)-y1*sin(pose.roll);val y2=x*sin(pose.roll)+y1*cos(pose.roll)
+                    val point=Vec(x2*cos(yaw)+z1*sin(yaw),y2,-x2*sin(yaw)+z1*cos(yaw)).add(pose.offset)
+                    assertTrue(point.y()>=.02,"${s.icon} buried at $age: $point")
+                    assertTrue(hypot(point.x(),point.z())<=s.radius+.1,"${s.icon} beyond damage reach: $point")
+                    if(s.icon!="whirl") assertTrue(point.x()*sin(yaw)+point.z()*cos(yaw)>=-.1,"${s.icon} behind: $point")
+                }
+            }
+        } }
     }
-    @Test fun `anticipation does not draw a complete second stroke and contact remains hit located`() {
-        for(id in remainingSkills) {
-            val prep=CoreSkillChoreography.parts(effect(id,phase=CoreSkillVisualPhase.PREPARE))
-            assertEquals(listOf("warrior_charge"),prep.map { it.shape })
-            assertTrue(prep.single().scale.x()<.2)
-            val hit=CoreSkillChoreography.parts(effect(id,phase=CoreSkillVisualPhase.CONTACT)).single()
-            assertEquals("warrior_impact",hit.shape)
-            assertEquals(Vec(0.0,1.0,0.0),hit.offset)
-        }
-    }
-    @Test fun `apex is a connected broad surface rather than a solitary white needle`() {
-        for(id in remainingSkills) {
-            val p=parts(id)
-            val apex=(1..8).maxOf { t -> p.count {
-                val pose=CoreSkillChoreography.pose(it,t.toDouble())
-                pose.visible && pose.scale.x()>=it.scale.x()*.8
-            } }
-            assertTrue(apex>=6,"$id only $apex sections coexist")
-            assertTrue(p.all { it.scale.x()>=.7 },"$id reverted to sub-block needles")
-            // Every main face uses coarse class art, never the smooth shared flow strip.
-            assertTrue(p.all { CoreSkillChoreography.pose(it,3.0).model.startsWith("combat_vfx/warrior_blade/") })
-        }
-    }
-    @Test fun `export every warrior attack and pulse as server targets for the native display check`() {
+
+    @Test fun `export actual skill phases for eye height and side review`() {
         fun xyz(v: Vec)=listOf(v.x(),v.y(),v.z())
-        val rows=remainingSkills.flatMap { id ->
-            val pulses=if(id.startsWith("normal_")) 1 else effect(id).skill.pulses
-            (0 until pulses).flatMap { pulse -> parts(id,pulse).map { part ->
-                val targets=(-2 until CoreCombatMeshes.removalAge(part)).map { age ->
-                    if(age>=part.delayTicks+part.durationTicks) null else {
-                        val p=CoreSkillChoreography.pose(part,age.toDouble())
-                        mapOf("model" to p.model,"translation" to xyz(p.offset),
-                            "scale" to xyz(if(p.visible) p.scale else Vec.ZERO),
-                            "rotation" to CoreCombatMeshArt.rotation(p.yaw,p.pitch,p.roll).toList())
+        val scenes=skills.flatMap { s -> (0 until s.pulses).map { beat ->
+            val frames=(0 until s.startup+22).map { tick ->
+                listOf(CoreSkillVisualPhase.PREPARE,CoreSkillVisualPhase.PULSE).flatMap { phase ->
+                    val age=if(phase==CoreSkillVisualPhase.PREPARE) tick else tick-s.startup
+                    CoreSkillChoreography.parts(effect(s,beat,phase=phase)).mapNotNull { p ->
+                        val pose=CoreSkillChoreography.pose(p,age.toDouble())
+                        if(!pose.visible) null else mapOf("model" to pose.model,"offset" to xyz(pose.offset),"scale" to xyz(pose.scale),
+                            "yaw" to pose.yaw,"pitch" to pose.pitch,"roll" to pose.roll)
                     }
                 }
-                mapOf("skill" to id,"pulse" to pulse,"interpolation" to CoreCombatMeshes.interpolationTicks(part),"targets" to targets)
-            } }
-        }
-        val cwd=Path.of(System.getProperty("user.dir"));val root=if(cwd.fileName.toString()=="server-minestom") cwd.parent else cwd
+            }
+            mapOf("id" to "${s.icon}_$beat","name" to "${s.name} ${beat+1}","frames" to frames)
+        } }
+        val cwd=Path.of(System.getProperty("user.dir"));val root=if(cwd.fileName.toString()=="server-minestom")cwd.parent else cwd
         Files.createDirectories(root.resolve(".tools"))
-        Files.writeString(root.resolve(".tools/warrior-display-contract.json"),Gson().toJson(rows))
+        Files.writeString(root.resolve(".tools/warrior-rework-timeline.json"),Gson().toJson(scenes))
     }
 }

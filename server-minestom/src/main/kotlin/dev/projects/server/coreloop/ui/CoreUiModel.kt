@@ -62,4 +62,5 @@ data class CoreHudState(
     val resource: Double? = null,
     val resourceMaximum: Double = 100.0,
     val shield: Double = 0.0,
+    val combatCue: String = "",
 )

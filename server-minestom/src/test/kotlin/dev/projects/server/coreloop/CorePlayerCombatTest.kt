@@ -656,9 +656,12 @@ class CorePlayerCombatTest {
     @Test fun `warrior timed guard reduces real incoming damage and rewards a strong counter`() = arena { h ->
         h.journey=CoreJourney(build=CoreClassBuild(first=3,second=5,third=2,fourth=0,nodes=8248))
         h.actor.reset();h.actor.skill(0);h.ticks(h.actor.skillDefinitions[0].startupTicks(h.actor.sheet))
+        assertTrue(h.actor.combatCue.startsWith("防御 "))
         h.actor.hurt(50.0);assertEquals(90.0,h.actor.health)
+        assertEquals("反撃の好機 3秒",h.actor.combatCue)
         assertEquals(36.0,h.actor.resource)
         h.ticks(15);val before=h.combat.bossHealth();h.actor.skill(1);h.ticks(4)
+        assertFalse(h.actor.combatCue.startsWith("反撃の好機"))
         assertEquals(before-(10+12*2.8)*1.6,h.combat.bossHealth(),.00001)
     }
     @Test fun `assassin mark consumption enhances one real hit and shadow keystone resets dodge`() = arena(bossDistance=2.0) { h ->

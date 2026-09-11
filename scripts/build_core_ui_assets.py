@@ -144,6 +144,8 @@ def build():
     item_model("blank", "core/blank")
     build_hud(ASSETS, SOURCE, write_json)
     build_menu()
+    from build_warrior_hud import build as build_warrior_hud
+    build_warrior_hud(ASSETS, write_json)
     build_combat_models(ASSETS, write_json)
     paths = sorted(str(path.relative_to(PACK)).replace("\\", "/") for path in PACK.rglob("*") if path.is_file() and path.name != "index.txt")
     (PACK / "index.txt").write_text("\n".join(paths) + "\n", encoding="utf-8")

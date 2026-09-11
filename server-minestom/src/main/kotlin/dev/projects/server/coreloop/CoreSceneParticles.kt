@@ -29,6 +29,8 @@ internal object CoreSceneParticles {
             if(part.shape.startsWith("sweep:") && !part.shape.endsWith(":impact")) continue
             if(part.shape.startsWith("flow:")) continue
             if(part.shape.startsWith("warrior_trace:") || part.shape=="warrior_charge") continue
+            // Moving tips live inside these native contours, not at the display origin.
+            if(CoreWarriorBladeChoreography.owns(part)) continue
             val pose=CoreSkillChoreography.pose(part,tick.toDouble())
             if(!pose.visible) continue
             val center=origin.add(pose.offset)

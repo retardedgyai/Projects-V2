@@ -69,6 +69,7 @@ internal class CorePlayerCombat(
     fun skillAvailable(index: Int) = index in 0..4 && (journey().legacy || journey().level >= CoreSkillCatalog.unlockLevels[index])
     fun resourceAvailable(index: Int) = classState.canCast(skillDefinitions[index], journey().build)
     val weaponHint get() = "${classId.resourceName} ${classState.resource.toInt()}/${classState.cap(classId).toInt()}"
+    val combatCue get() = CoreWarriorSkillPresentation.combatCue(classId,tickNumber,classState.counterUntil,classState.guardUntil)
     val chargeCount: Int? get() = if (classId == CoreClass.STARWEAVER) classState.resource.toInt() else null
     val resource get() = classState.resource
     val resourceMax get() = classState.cap(classId)

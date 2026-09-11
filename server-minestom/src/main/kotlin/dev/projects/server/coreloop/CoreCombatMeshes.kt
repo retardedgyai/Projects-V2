@@ -37,7 +37,8 @@ internal class CoreCombatMeshes(private val owner: Player) {
 
     fun play(effect: CoreSkillEffect) {
         val instance=owner.instance ?: return
-        val immediateNormal=effect.job==CoreClass.WARRIOR && effect.sceneId in CoreApprovedNormalV3.sceneIds
+        val immediateContour=effect.job==CoreClass.WARRIOR &&
+            (effect.sceneId in CoreApprovedNormalV3.sceneIds || effect.sceneId in CoreWarriorBladeChoreography.sceneIds && effect.sceneId!="dash")
         if(!instance.players.any { CoreCombatPresentation.packed(it) && CoreCombatPresentation.detail(it)!=CoreCombatPresentation.Detail.MINIMAL && it.position.distanceSquared(effect.origin)<1600 }) return
         for(authored in CoreSkillChoreography.parts(effect).sortedBy { it.secondary }) {
             if(live.size>=OWNER_LIMIT) {
@@ -60,7 +61,7 @@ internal class CoreCombatMeshes(private val owner: Player) {
             val entity=Entity(EntityType.ITEM_DISPLAY)
             entity.setHasPhysics(false);entity.setNoGravity(true);entity.setAutoViewable(false)
             val record=Live(entity,instance,part,owner.position,atan2(effect.direction.x(),effect.direction.z()),
-                age=if(immediateNormal) 0 else -2)
+                age=if(immediateContour) 0 else -2)
             live+=record
             entity.editEntityMeta(ItemDisplayMeta::class.java) { meta ->
                 record.model=CoreSkillChoreography.pose(part,0.0).model
@@ -68,19 +69,19 @@ internal class CoreCombatMeshes(private val owner: Player) {
                 meta.setDisplayContext(ItemDisplayMeta.DisplayContext.FIXED)
                 meta.setBrightness(15,15);meta.setViewRange(1.0f)
                 meta.setTransformationInterpolationDuration(interpolationTicks(part))
-                // Skills retain hidden spawn lead-in. AA starts full-size at registration;
-                // both animation clocks still wait for setInstance to finish.
-                meta.setScale(if(immediateNormal) CoreSkillChoreography.pose(part,0.0).scale else Vec.ZERO);meta.setTranslation(part.offset)
+                // Authored warrior contours start at their real phase, not a hidden extra
+                // two-tick delay after damage. Other scene clocks remain unchanged.
+                meta.setScale(if(immediateContour) CoreSkillChoreography.pose(part,0.0).scale else Vec.ZERO);meta.setTranslation(part.offset)
                 meta.setLeftRotation(CoreCombatMeshArt.rotation(part.yaw,part.pitch,part.roll))
                 meta.setRightRotation(CoreCombatMeshArt.vanillaItemCorrection)
             }
             entity.setInstance(instance,Pos(effect.origin.x(),effect.origin.y(),effect.origin.z())).whenComplete { _,failure ->
                 if(failure!=null || record.cancelled.get() || entity.isRemoved || owner.instance!==instance) entity.remove()
-                else if(immediateNormal && CoreCombatPresentation.packed(owner) &&
+                else if(immediateContour && CoreCombatPresentation.packed(owner) &&
                     CoreCombatPresentation.detail(owner)!=CoreCombatPresentation.Detail.MINIMAL &&
                     (!part.secondary || CoreCombatPresentation.detail(owner)==CoreCombatPresentation.Detail.FULL) &&
                     owner.position.distanceSquared(effect.origin)<1600) {
-                    // Send the accepted AA's first visible frame as soon as registration completes.
+                    // Send the authored phase's first frame as soon as registration completes.
                     // Do not tick other effects or bypass the normal observer budgets/LOD.
                     entity.addViewer(owner)
                 }
@@ -156,7 +157,7 @@ internal class CoreCombatMeshes(private val owner: Player) {
         internal fun interpolationTicks(part: CoreCombatMeshPart)=
             // Approved v3 is an authored 20 Hz model sequence with a fixed transform.
             // Interpolating its initial zero scale would shrink/distort its first frames.
-            if(part.shape.startsWith("approved_dash_")) 0
+            if(part.shape.startsWith("approved_dash_") || CoreWarriorBladeChoreography.owns(part)) 0
             else if(part.shape.startsWith("warrior_trace:") ||
                 part.shape.startsWith("flow:") && !part.shape.contains(":prepare:")) 2 else 1
         internal fun removalAge(part: CoreCombatMeshPart)=part.delayTicks+part.durationTicks+

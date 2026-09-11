@@ -823,7 +823,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         player.sendActionBar(CoreUiComponents.hud(CoreHudState(actor.health, actor.maxHealth.toDouble(), actor.mana.toDouble(), actor.maxMana.toDouble(),
             icons.mapIndexed { i, icon -> CoreHudSkill(icon, (i + 2).toString(), actor.cooldownRemaining(i) / 20.0, actor.cooldownTicks(i) / 20.0,
                 actor.skillDefinitions[i].mana, CoreSkillCatalog.artIndex(actor.skillDefinitions[i]), actor.skillAvailable(i), actor.resourceAvailable(i)) },
-            message + " / ${actor.weaponHint}", actor.chargeCount, actor.resource, actor.resourceMax, actor.shield), packed(player)))
+            message + " / ${actor.weaponHint}", actor.chargeCount, actor.resource, actor.resourceMax, actor.shield,actor.combatCue), packed(player)))
     }
 
     override fun sessionSummary(player: Player): String = dungeons.run(player)?.objective() ?: sessions[player.uuid]?.let {

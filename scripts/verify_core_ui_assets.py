@@ -19,7 +19,10 @@ def verify():
     assert len(paths) == len(set(paths)) and paths == sorted(paths)
     overrides = vanilla_overrides()
     actual_overrides = {p for p in paths if p.startswith("assets/minecraft/")}
-    assert actual_overrides == overrides, "Only the requested player heart/food overrides are permitted"
+    additions = {"assets/minecraft/atlases/items.json"}
+    assert actual_overrides == overrides | additions, "Only player heart/food overrides and the approved VFX atlas addition are permitted"
+    assert json.loads((PACK / "assets/minecraft/atlases/items.json").read_text()) == {
+        "sources":[{"type":"minecraft:directory","source":"combat_vfx","prefix":"combat_vfx/"}]}
     assert not any(".." in p or "\\" in p or p.startswith("/") for p in paths)
     for path in overrides:
         with Image.open(PACK / path) as sprite:

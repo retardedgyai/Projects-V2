@@ -287,6 +287,7 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
 
     fun skillBuild(player: Player, selectedSlot: Int = 0, candidate: Int = -1, page: Int = 0) {
         val a = game.account(player) ?: return
+        if(a.journey.job==CoreClass.WARRIOR) { warriorSkills(player,selectedSlot,candidate); return }
         val slot = selectedSlot.coerceIn(0, 4)
         val sheet = game.combatSheet(player) ?: CoreCombatSheet.from(a)
         val equipped = CoreSkillCatalog.equipped(a.journey, sheet.mods)
@@ -325,6 +326,47 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
             back(v,player) { career(player) }
             tile(v,49,5,if(canEquip) "$target に装備" else if(a.activeRun!=null) "港で変更可能" else if(!CoreJourneyRules.skillUnlocked(a,slot)) "成長で解放" else "候補を選ぶ",tone=if(canEquip)Tone.PRIMARY else Tone.DISABLED) {
                 mutate(v,player,CoreAction.SelectSkill(slot,requireNotNull(choice)),a.revision) { skillBuild(player,slot,-1,selectedPage) }
+            }
+        }
+    }
+
+    /** All eight candidates beside the equipped bar, not two pages of instructions. */
+    private fun warriorSkills(player: Player, selectedSlot: Int, candidate: Int) {
+        val a=game.account(player) ?: return
+        val slot=selectedSlot.coerceIn(0,4)
+        val sheet=game.combatSheet(player) ?: CoreCombatSheet.from(a)
+        val equipped=CoreSkillCatalog.equipped(a.journey,sheet.mods)
+        val candidates=CoreSkillCatalog.skills(CoreClass.WARRIOR).let { if(slot==4) it.drop(8) else it.take(8) }
+        val choice=candidate.takeIf { it in candidates.indices }
+        val preview=choice?.let { CoreSkillCatalog.modify(candidates[it],a.journey,sheet.mods) } ?: equipped[slot]
+        val identity=CoreWarriorSkillPresentation.skills.getValue(preview.icon)
+        val target=if(slot==4) "奥義" else "技能${slot+1}"
+        val available=CoreJourneyRules.skillUnlocked(a,slot)
+        val canEquip=a.activeRun==null && available && choice!=null
+        view(player,"戦士 / 技の組み合わせ",{ warriorSkills(player,slot,candidate) }) { v ->
+            v.canvas.left("$target を選ぶ", lines("現在") + paragraph(equipped[slot].name) +
+                lines("", "上段：使う枠", "中央：技を選ぶ", "右下：装備を確定", "", "闘気をためて重撃", "印を刻んで起爆", "受け流して反撃", "", if(a.activeRun!=null) "遠征中は変更不可" else "港で無料変更"))
+            v.canvas.right(preview.name, listOf(emphasis(identity.role)) + paragraph(identity.use) +
+                lines("", "マナ ${preview.mana}", "闘気 ${if(preview.spend>0) "消費 ${preview.spend}" else "獲得 ${preview.gain}"}",
+                    "再使用 ${CoreCombatMath.number(preview.cooldownTicks(sheet.mods)/20.0)}秒") +
+                paragraph(preview.formula.label()) + lines("", "詳しくは絵に重ねる"))
+            equipped.forEachIndexed { i,s ->
+                tile(v,CoreWarriorSkillPresentation.loadoutSlots[i],1,"",CoreSkillTooltip.item(s,sheet,a.journey,v.packed,
+                    !CoreJourneyRules.skillUnlocked(a,i)),if(i==slot)Tone.SELECTED else Tone.NEUTRAL,icon=true) { warriorSkills(player,i,-1) }
+            }
+            val order=if(slot==4) listOf(0,1) else CoreWarriorSkillPresentation.candidateOrder
+            order.forEachIndexed { index,i ->
+                val skill=CoreSkillCatalog.modify(candidates[i],a.journey,sheet.mods)
+                val equippedHere=if(slot==4) a.journey.build.ultimate==i else a.journey.build.skills[slot]==i
+                tile(v,CoreWarriorSkillPresentation.candidateSlots[index],4,CoreWarriorSkillPresentation.skills.getValue(skill.icon).shortName,
+                    CoreSkillTooltip.item(skill,sheet,a.journey,v.packed,footer=if(equippedHere) "$target に装備中" else "選択して右下で装備"),
+                    if(choice==i)Tone.SELECTED else if(equippedHere)Tone.PRIMARY else Tone.NEUTRAL,icon=true) { warriorSkills(player,slot,i) }
+            }
+            back(v,player) { career(player) }
+            tile(v,47,2,"ツリー") { talentTree(player) }
+            tile(v,49,5,if(canEquip) "$target に装備" else if(a.activeRun!=null) "港で変更可能" else if(!available) "成長で解放" else "候補を選ぶ",
+                tone=if(canEquip)Tone.PRIMARY else Tone.DISABLED) {
+                mutate(v,player,CoreAction.SelectSkill(slot,requireNotNull(choice)),a.revision) { warriorSkills(player,slot,-1) }
             }
         }
     }

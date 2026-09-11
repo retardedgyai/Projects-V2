@@ -349,7 +349,7 @@ class CoreLoopMenusTest {
         for(packed in listOf(false,true)) {
             val f=fixture(account(4),packed)
             f.menus.skillBuild(f.player)
-            f.click(22)
+            f.click(14)
             assertTrue(f.host.requests.isEmpty())
             assertEquals("技能1 に装備",f.snapshot().buttons.single { it.firstSlot==49 }.label)
             f.click(49)
