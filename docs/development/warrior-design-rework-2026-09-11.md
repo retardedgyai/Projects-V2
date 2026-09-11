@@ -281,3 +281,31 @@ Creatorより「過去一番いい」「旗は完璧」と評価。承認済み�
 - 追加後の`CoreCombatMeshTest`と`CoreWarriorParticlesTest`は成功。製品コード・承認済み作画・稼働中ゲームは変更していない。
 - これは配信と設定の証拠であり、クライアント描画の密度・質感やMatE作品と同等の品質の証明ではない。
   次の判断に必要なのは再起動後のCreatorによる実機確認。確認前にモデルや配色を再改変しない。
+
+## F2修正：名前との重なり、状態アイコン、RPの補助表現
+
+- Creatorの`2026-09-11_12.49.04.png`で、赤い「印 5秒」がvanilla customNameの名前/HP行に重なることを確認。
+  原因は別TextDisplayをほぼ同じ頭上高さへ置いていたこと。名前行の基準位置から視線に直交する画面上方向へ
+  0.7m離す。近接・見上げ・大きい敵でも単なるY方向オフセットより行間を保ち、追従時にも再計算する。
+- 同じTextDisplay内に、承認済み裂傷アイコンと白い残り秒数を配置。`warrior_mark` fontは既存の32px原画を
+  12px glyphで参照するだけで、作画・日本語フォントは再生成しない。RP未ロード時のみ「◆ 秒数」にfallback。
+  所有者だけの表示、実際のmark消費/期限/退出で消える規則はそのまま。
+- **前節のバニラ粒子案はCreatorのデザイン不一致の指摘により撤回。** `CoreWarriorParticles`を削除し、
+  packed warriorの`CoreSceneParticles`はvanilla dust/cloud/block/critを出さない。
+- `CoreWarriorCompanions`は承認済み斬撃本体のtimelineとは別に、描画側`CoreCombatMeshes`へ補助部品を追加。
+  風筋4、接触火花5、地砕きの跳ねる欠片6、旋風の外へ逃げる破片6、構えの刃先光2。
+  本体の攻撃判定/発生tick/モデルフレームは変えず、装飾は12tick前後の短い移動と輪郭の消失で終了する。
+  空振りのCONTACTを追加しない。色は白灰に局所的な紅、vanilla煙や石ブロックの見た目を混ぜない。
+- `build_warrior_companions.py`は既存のapproved dashと同じ1/4モデル単位の輪郭コンパイラと同じink UVを使う。
+  4形状×2palette×8fadeのnative薄面モデル/項目定義128ファイル、状態font1ファイルを追加。
+  新規PNGの絵を重ねたり、承認済み斬撃/旗/大剣を塗り直したりはしていない。
+  `build_core_combat_models.py`にも再生成経路を接続。
+- 旗/雄叫びの発動範囲は固定半径の細いRP輪郭。ピクセル輪郭なので半径の見た目は量子化誤差を含む目安。
+  12tickでほどけて消え、継続auraのようには表示しない。装飾を落とすMINIMALでもこの情報輪郭は表示する。
+  本人/近距離observerの既存上限を守り、通常の補助部品はFULLの本人だけに表示する。
+- 原因/修正の入口は`CoreWarriorMarkDisplay.position`と`CoreWarriorCompanions`。
+  検証：名前からのカメラ平面上の間隔、glyph/秒数の合成、実viewer/寿命、vanilla粒子0、モデル参照解決を確認する。
+  稼働中ゲームへの反映と実機での最終見え方の判定は、次回の起動依頼後。
+- 最終検証：全サーバーテスト835件成功（失敗/エラー/スキップ0）、Python warrior系19件＋approved系4件成功。
+  `preview_warrior_companions.py`で実際の配布モデルを描画し、輪郭と消失部品を目視確認。
+  `.tools/warrior-companion-parts.png`は共通拡大率の部品確認で、実機の大きさ/動作を証明するプレビューではない。

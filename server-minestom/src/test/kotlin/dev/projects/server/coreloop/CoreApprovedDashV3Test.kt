@@ -14,7 +14,7 @@ class CoreApprovedDashV3Test {
         CoreSkillEffect(CoreClass.WARRIOR,skill,Vec.ZERO,direction,phase,prepareTicks=skill.startup)
 
     @Test fun `blade and aftermath are separate geometry sequences with no extra damage flashes`() {
-        val parts=CoreSkillChoreography.parts(effect())
+        val parts=CoreSkillChoreography.parts(effect()).filterNot(CoreWarriorCompanions::owns)
         assertEquals(listOf("approved_dash_blade","approved_dash_wake"),parts.map { it.shape })
         assertFalse(parts.first().secondary)
         assertTrue(parts.last().secondary)
@@ -27,7 +27,7 @@ class CoreApprovedDashV3Test {
             for(pose in poses) assertNotNull(javaClass.getResource("/core-ui-pack/assets/projects/items/${pose.model}.json"))
         }
         assertTrue(parts.last().durationTicks>parts.first().durationTicks)
-        val hit=CoreSkillChoreography.parts(effect(CoreSkillVisualPhase.CONTACT))
+        val hit=CoreSkillChoreography.parts(effect(CoreSkillVisualPhase.CONTACT)).filterNot(CoreWarriorCompanions::owns)
         assertEquals(listOf("approved_dash_impact"),hit.map { it.shape })
         assertEquals(Vec(0.0,1.0,0.0),hit.single().offset)
         val prepare=CoreSkillChoreography.parts(effect(CoreSkillVisualPhase.PREPARE)).single()
@@ -45,7 +45,7 @@ class CoreApprovedDashV3Test {
             val d=Vec(sin(a),0.0,cos(a))
             val parts=CoreSkillChoreography.parts(effect(CoreSkillVisualPhase.PREPARE,d))+
                 CoreSkillChoreography.parts(effect(direction=d))
-            for(p in parts) repeat(p.durationTicks) { tick ->
+            for(p in parts.filterNot(CoreWarriorCompanions::owns)) repeat(p.durationTicks) { tick ->
                 val pose=CoreSkillChoreography.pose(p,tick.toDouble())
                 val vertices=mutableListOf<Vec>()
                 val model=javaClass.getResourceAsStream("/core-ui-pack/assets/projects/models/${pose.model}.json")!!

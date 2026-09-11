@@ -28,13 +28,17 @@ class CoreCombatMeshTest {
             try {
                 CoreCombatPresentation.pack(owner,true)
                 CoreCombatPresentation.pack(observer,true)
-                for(expected in listOf(40,20,10)) {
+                repeat(3) {
                     val skill=CoreSkillCatalog.skills(CoreClass.WARRIOR).first { it.icon=="war_banner" }
                     vfx.playSkill(CoreSkillEffect(CoreClass.WARRIOR,skill,owner.position,Vec(0.0,0.0,1.0)))
                     packets.clear();observerPackets.clear()
                     vfx.tick()
-                    assertEquals(expected,count(packets),"The actual banner boundary must survive each detail setting")
-                    assertTrue(count(observerPackets) in 1..expected,"Nearby observers must receive the boundary too")
+                    assertEquals(0,count(packets));assertEquals(0,count(observerPackets))
+                    val boundary=owner.instance.entities.single { entity ->
+                        (entity.entityMeta as? net.minestom.server.entity.metadata.display.ItemDisplayMeta)?.itemStack
+                            ?.get(net.minestom.server.component.DataComponents.ITEM_MODEL)=="projects:combat_vfx/war_mote_boundary_steel"
+                    }
+                    assertTrue(owner in boundary.viewers);assertTrue(observer in boundary.viewers)
                     vfx.cancel();packets.clear();observerPackets.clear()
                     repeat(20) { vfx.tick() }
                     assertEquals(0,count(packets));assertEquals(0,count(observerPackets))
@@ -54,16 +58,19 @@ class CoreCombatMeshTest {
         val id=UUID.randomUUID()
         val target=dev.projects.server.CombatTarget(id,owner.position.add(0.0,1.0,2.0),Vec(.4,1.0,.4))
         try {
+            CoreCombatPresentation.pack(owner,true)
             state.mark(id,10);display.update(listOf(target),state,10)
             assertEquals(1,display.size)
             val label=owner.instance.entities.single { it.entityType==net.minestom.server.entity.EntityType.TEXT_DISPLAY }
             assertEquals(setOf(owner),label.viewers)
             val meta=label.entityMeta as net.minestom.server.entity.metadata.display.TextDisplayMeta
-            assertEquals("印 6秒",(meta.text as net.kyori.adventure.text.TextComponent).content())
+            assertEquals("\uE001",(meta.text as net.kyori.adventure.text.TextComponent).content())
+            assertEquals(net.kyori.adventure.key.Key.key("projects","warrior_mark"),meta.text.font())
+            assertEquals(" 6秒",(meta.text.children().single() as net.kyori.adventure.text.TextComponent).content())
             val moved=target.copy(position=owner.position.add(2.0,2.0,3.0))
             display.update(listOf(moved),state,50)
-            assertEquals("印 4秒",(meta.text as net.kyori.adventure.text.TextComponent).content())
-            assertEquals(moved.position.y()+1.5,label.position.y(),1e-8)
+            assertEquals(" 4秒",(meta.text.children().single() as net.kyori.adventure.text.TextComponent).content())
+            assertEquals(CoreWarriorMarkDisplay.position(moved,owner.position.add(0.0,owner.eyeHeight,0.0)),label.position)
             state.consumeMark(id,51);display.update(listOf(moved),state,51)
             assertTrue(label.isRemoved);assertEquals(0,display.size)
             state.mark(id,60);display.update(listOf(target),state,60)
@@ -73,7 +80,7 @@ class CoreCombatMeshTest {
             val crowd=(0..15).map { n -> target.copy(id=UUID.randomUUID(),position=owner.position.add(n*.1,1.0,2.0)) }
             crowd.forEach { state.mark(it.id,200) };display.update(crowd,state,200)
             assertEquals(12,display.size);display.clear();assertEquals(0,display.size)
-        } finally { display.clear();observer.remove() }
+        } finally { display.clear();CoreCombatPresentation.forget(owner);observer.remove() }
     }
 
     @Test fun `warrior attack phases keep every authored frame through consecutive pulses for owner and observer`() = player { owner ->
@@ -95,8 +102,8 @@ class CoreCombatMeshTest {
                     meshes.play(e)
                     val fresh=owner.instance.entities.filter { it !in before }
                     val parts=CoreSkillChoreography.parts(e)
-                    assertEquals(parts.size,fresh.size,"${skill.icon} $phase/$pulse")
-                    parts.forEach { p ->
+                    assertEquals(parts.size+CoreWarriorCompanions.parts(e).size,fresh.size,"${skill.icon} $phase/$pulse")
+                    parts.filterNot(CoreWarriorCompanions::owns).forEach { p ->
                         val model="projects:"+CoreSkillChoreography.pose(p,0.0).model
                         val entity=fresh.single { display ->
                             (display.entityMeta as net.minestom.server.entity.metadata.display.ItemDisplayMeta).itemStack
@@ -142,16 +149,20 @@ class CoreCombatMeshTest {
         try {
             for(id in CoreWarriorSupportChoreography.sceneIds) {
                 val e=effect(CoreClass.WARRIOR,id)
-                val parts=CoreSkillChoreography.parts(e)
+                val parts=CoreSkillChoreography.parts(e)+CoreWarriorCompanions.parts(e)
                 meshes.play(e)
                 val displays=owner.instance.entities.filter { it.entityType==net.minestom.server.entity.EntityType.ITEM_DISPLAY }
                 assertEquals(parts.size,displays.size)
-                val expected=parts.map { part ->
+                // Ground companion snap is verified separately; retain the exact approved support poses here.
+                val expected=parts.filterNot(CoreWarriorCompanions::owns).map { part ->
                     val pose=CoreSkillChoreography.pose(part,0.0)
                     listOf("projects:"+pose.model,pose.offset,if(pose.visible) pose.scale else Vec.ZERO,
                         CoreCombatMeshArt.rotation(pose.yaw,pose.pitch,pose.roll).toList())
                 }
-                val actual=displays.map { display ->
+                val actual=displays.filterNot { display ->
+                    (display.entityMeta as net.minestom.server.entity.metadata.display.ItemDisplayMeta).itemStack
+                        .get(net.minestom.server.component.DataComponents.ITEM_MODEL)?.contains("war_mote_")==true
+                }.map { display ->
                     val meta=display.entityMeta as net.minestom.server.entity.metadata.display.ItemDisplayMeta
                     assertTrue(owner in display.viewers)
                     listOf(meta.itemStack.get(net.minestom.server.component.DataComponents.ITEM_MODEL),
@@ -207,7 +218,7 @@ class CoreCombatMeshTest {
         fun models()=owner.instance.entities.filter { it.entityType==net.minestom.server.entity.EntityType.ITEM_DISPLAY }.map {
             (it.entityMeta as net.minestom.server.entity.metadata.display.ItemDisplayMeta).itemStack
                 .get(net.minestom.server.component.DataComponents.ITEM_MODEL)
-        }
+        }.filterNot { it?.contains("war_mote_")==true }
         try {
             for((index,visual) in listOf(GreatswordVisual.SWEEP,GreatswordVisual.REVERSE,GreatswordVisual.FINISHER).withIndex()) {
                 val prefix=if(index==1) "approved_aa_reverse_v3" else "approved_dash_v3"
@@ -215,7 +226,9 @@ class CoreCombatMeshTest {
                 assertEquals(setOf("projects:combat_vfx/$prefix/blade_3","projects:combat_vfx/$prefix/wake_3"),models().toSet())
                 for(entity in owner.instance.entities.filter { it.entityType==net.minestom.server.entity.EntityType.ITEM_DISPLAY }) {
                     assertTrue(owner in entity.viewers, "No hidden spawn wait for AA")
-                    assertTrue((entity.entityMeta as net.minestom.server.entity.metadata.display.ItemDisplayMeta).scale.x()>0)
+                    val meta=entity.entityMeta as net.minestom.server.entity.metadata.display.ItemDisplayMeta
+                    if(meta.itemStack.get(net.minestom.server.component.DataComponents.ITEM_MODEL)?.contains("war_mote_")!=true)
+                        assertTrue(meta.scale.x()>0)
                 }
                 repeat(18) { vfx.tick() }
                 assertTrue(models().isEmpty())
@@ -236,7 +249,7 @@ class CoreCombatMeshTest {
             meshes.play(normal)
             assertEquals(0,displayed())
             CoreCombatPresentation.pack(owner,true)
-            for(expected in listOf(2,1,0)) {
+            for(expected in listOf(6,1,0)) {
                 meshes.play(normal)
                 assertEquals(expected,displayed())
                 meshes.cancel()

@@ -894,6 +894,8 @@ def build_slash_frames(assets, write_json):
     build_approved_aa_v3(assets, write_json)
     from build_warrior_skill_contours import build as build_warrior_skill_contours
     build_warrior_skill_contours(assets, write_json)
+    from build_warrior_companions import build as build_warrior_companions
+    build_warrior_companions(assets, write_json)
 
 
 if __name__ == "__main__":

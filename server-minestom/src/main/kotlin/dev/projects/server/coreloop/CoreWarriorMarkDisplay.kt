@@ -3,6 +3,7 @@ package dev.projects.server.coreloop
 import dev.projects.server.CombatTarget
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
+import net.kyori.adventure.key.Key
 import net.minestom.server.coordinate.Pos
 import net.minestom.server.coordinate.Vec
 import net.minestom.server.entity.*
@@ -23,7 +24,7 @@ internal class CoreWarriorMarkDisplay(private val owner:Player) {
             if(id !in ids || e.isRemoved || e.instance!=null && e.instance!==scene) { e.remove();true } else false
         }
         for(target in selected) {
-            val at=Pos(target.position.x(),target.position.y()+target.halfExtent.y()+.5,target.position.z())
+            val at=position(target,owner.position.add(0.0,owner.eyeHeight,0.0))
             val entity=labels[target.id] ?: Entity(EntityType.TEXT_DISPLAY).also { e ->
                 e.setHasPhysics(false);e.setNoGravity(true);e.setAutoViewable(false)
                 e.editEntityMeta(TextDisplayMeta::class.java) { meta ->
@@ -37,9 +38,24 @@ internal class CoreWarriorMarkDisplay(private val owner:Player) {
                 }
             }
             val seconds=(state.markRemaining(target.id,tick)+19)/20
-            entity.editEntityMeta(TextDisplayMeta::class.java) { it.setText(Component.text("印 ${seconds}秒",NamedTextColor.RED)) }
+            val icon=if(CoreCombatPresentation.packed(owner)) Component.text('\uE001',NamedTextColor.WHITE)
+                .font(Key.key("projects","warrior_mark")) else Component.text("◆",NamedTextColor.RED)
+            entity.editEntityMeta(TextDisplayMeta::class.java) { it.setText(icon.append(Component.text(" ${seconds}秒",NamedTextColor.WHITE)
+                .font(Key.key("minecraft","default")))) }
             if(entity.instance===scene && entity.position.distanceSquared(at)>.0025) entity.teleport(at)
         }
     }
     fun clear() { labels.values.forEach { it.remove() };labels.clear() }
+    companion object {
+        /** Separate from the vanilla name in the camera plane, including looking up at large mobs. */
+        internal fun position(target:CombatTarget,eye:net.minestom.server.coordinate.Point):Pos {
+            val name=Vec(target.position.x(),target.position.y()+target.halfExtent.y()+.5,target.position.z())
+            val ray=name.sub(Vec(eye.x(),eye.y(),eye.z()))
+            val horizontal=kotlin.math.hypot(ray.x(),ray.z())
+            val up=if(horizontal<.001) Vec(0.0,1.0,0.0) else
+                Vec(-ray.x()*ray.y()/horizontal,horizontal,-ray.z()*ray.y()/horizontal).normalize()
+            val at=name.add(up.mul(.7))
+            return Pos(at.x(),at.y(),at.z())
+        }
+    }
 }

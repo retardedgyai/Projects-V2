@@ -18,7 +18,7 @@ class CoreApprovedNormalV3Test {
 
     @Test fun `all three steps inherit exact approved blade wake lifetimes and frame order`() {
         for (id in CoreApprovedNormalV3.sceneIds) {
-            val parts = CoreSkillChoreography.parts(effect(id))
+            val parts = CoreSkillChoreography.parts(effect(id)).filterNot(CoreWarriorCompanions::owns)
             assertEquals(listOf("approved_dash_blade", "approved_dash_wake"), parts.map { it.shape })
             assertEquals(listOf(7, 13), parts.map { it.durationTicks })
             assertEquals(listOf(false, true), parts.map { it.secondary })
@@ -36,7 +36,7 @@ class CoreApprovedNormalV3Test {
                 assertFalse(CoreSkillChoreography.pose(p, -1.0).visible)
                 assertFalse(CoreSkillChoreography.pose(p, p.durationTicks.toDouble()).visible)
             }
-            val contact = CoreSkillChoreography.parts(effect(id, CoreSkillVisualPhase.CONTACT)).single()
+            val contact = CoreSkillChoreography.parts(effect(id, CoreSkillVisualPhase.CONTACT)).filterNot(CoreWarriorCompanions::owns).single()
             assertEquals("approved_dash_impact", contact.shape)
             assertEquals(Vec(0.0, 1.0, 0.0), contact.offset)
             assertEquals(9, contact.durationTicks)
@@ -44,7 +44,7 @@ class CoreApprovedNormalV3Test {
             val sink = RecordingParticleSink()
             repeat(e.durationTicks) {
                 sink.clear();e.emit(it, sink)
-                assertTrue(sink.spawns.size<=18,"Companion air must remain below the main blade's visual weight")
+                assertTrue(sink.spawns.isEmpty(),"No vanilla particles around the approved blade")
             }
         }
     }

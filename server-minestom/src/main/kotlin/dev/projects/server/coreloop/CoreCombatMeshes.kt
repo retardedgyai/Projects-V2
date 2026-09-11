@@ -40,8 +40,10 @@ internal class CoreCombatMeshes(private val owner: Player) {
         val immediateContour=effect.job==CoreClass.WARRIOR &&
             (effect.sceneId in CoreApprovedNormalV3.sceneIds || effect.sceneId in CoreWarriorBladeChoreography.sceneIds && effect.sceneId!="dash" ||
                 effect.sceneId in CoreWarriorSupportChoreography.sceneIds)
-        if(!instance.players.any { CoreCombatPresentation.packed(it) && CoreCombatPresentation.detail(it)!=CoreCombatPresentation.Detail.MINIMAL && it.position.distanceSquared(effect.origin)<1600 }) return
-        for(authored in CoreSkillChoreography.parts(effect).sortedBy { it.secondary }) {
+        val parts=CoreSkillChoreography.parts(effect)+CoreWarriorCompanions.parts(effect)
+        if(!instance.players.any { CoreCombatPresentation.packed(it) &&
+            (CoreCombatPresentation.detail(it)!=CoreCombatPresentation.Detail.MINIMAL || parts.any(CoreWarriorCompanions::boundary)) && it.position.distanceSquared(effect.origin)<1600 }) return
+        for(authored in parts.sortedBy { it.secondary }) {
             if(live.size>=OWNER_LIMIT) {
                 // A new strike must not silently vanish behind old secondary afterglow.
                 val tail=live.firstOrNull { it.part.secondary || it.age>it.part.durationTicks*.65 }
@@ -84,7 +86,7 @@ internal class CoreCombatMeshes(private val owner: Player) {
             entity.setInstance(instance,Pos(effect.origin.x(),effect.origin.y(),effect.origin.z())).whenComplete { _,failure ->
                 if(failure!=null || record.cancelled.get() || entity.isRemoved || owner.instance!==instance) entity.remove()
                 else if(immediateContour && CoreCombatPresentation.packed(owner) &&
-                    CoreCombatPresentation.detail(owner)!=CoreCombatPresentation.Detail.MINIMAL &&
+                    (CoreCombatPresentation.detail(owner)!=CoreCombatPresentation.Detail.MINIMAL || CoreWarriorCompanions.boundary(part)) &&
                     (!part.secondary || CoreCombatPresentation.detail(owner)==CoreCombatPresentation.Detail.FULL) &&
                     owner.position.distanceSquared(effect.origin)<1600) {
                     // Send the authored phase's first frame as soon as registration completes.
@@ -99,10 +101,11 @@ internal class CoreCombatMeshes(private val owner: Player) {
         // Select independently for each observer: old/delayed/off-screen parts
         // must not consume the eight slots before a fresh nearby damage beat.
         val observerParts=owner.instance?.players?.filter { it!==owner }?.associateWith { viewer ->
-            if(!CoreCombatPresentation.packed(viewer) || CoreCombatPresentation.detail(viewer)==CoreCombatPresentation.Detail.MINIMAL)
+            if(!CoreCombatPresentation.packed(viewer))
                 emptySet<Entity>()
             else live.asReversed().asSequence().filter { v ->
                 !v.part.secondary && !v.entity.isRemoved && v.entity.instance===owner.instance &&
+                    (CoreCombatPresentation.detail(viewer)!=CoreCombatPresentation.Detail.MINIMAL || CoreWarriorCompanions.boundary(v.part)) &&
                     v.age>=v.part.delayTicks && v.age<removalAge(v.part) &&
                     viewer.position.distanceSquared(v.entity.position)<=256.0
             }.take(8).map { it.entity }.toSet()
@@ -139,7 +142,7 @@ internal class CoreCombatMeshes(private val owner: Player) {
             if(v.entity.instance===v.instance) {
                 val allowed=v.instance.players.filter { viewer ->
                     val detail=CoreCombatPresentation.detail(viewer)
-                    CoreCombatPresentation.packed(viewer) && detail!=CoreCombatPresentation.Detail.MINIMAL &&
+                    CoreCombatPresentation.packed(viewer) && (detail!=CoreCombatPresentation.Detail.MINIMAL || CoreWarriorCompanions.boundary(p)) &&
                         (!p.secondary || detail==CoreCombatPresentation.Detail.FULL && viewer===owner) &&
                         viewer.position.distanceSquared(v.entity.position)<=(if(viewer===owner) 1600.0 else 256.0) &&
                         (viewer===owner || v.entity in observerParts[viewer].orEmpty())

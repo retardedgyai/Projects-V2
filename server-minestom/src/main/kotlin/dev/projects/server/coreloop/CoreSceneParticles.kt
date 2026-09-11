@@ -12,7 +12,7 @@ internal object CoreSceneParticles {
     fun emit(e: CoreSkillEffect,tick: Int,sink: ParticleSink) {
         // Keep the accepted meshes unchanged; the requested companions have their
         // own short motion rather than reconstructing a second particle blade.
-        if(e.job==CoreClass.WARRIOR) { CoreWarriorParticles.emit(e,tick,sink); return }
+        if(e.job==CoreClass.WARRIOR) return // RP-authored companions, never vanilla smoke/dust/crit.
         val scene=CoreSkillScenes.get(e.sceneId)
         val color=if(e.job==CoreClass.WARRIOR && scene.palette=="gold") 0xc74155 else colors.getValue(scene.palette)
         val t=tick.toDouble()/e.durationTicks
