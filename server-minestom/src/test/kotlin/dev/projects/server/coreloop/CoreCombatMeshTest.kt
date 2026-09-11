@@ -18,6 +18,35 @@ import kotlin.math.abs
 import kotlin.test.*
 
 class CoreCombatMeshTest {
+    @Test fun `warrior marks follow actual target height stay private and clear when targets or marks disappear`() = player { owner ->
+        val display=CoreWarriorMarkDisplay(owner)
+        val state=CoreClassState()
+        val observer=connect(owner.instance,owner.position.add(1.0,0.0,0.0),"MarkObserver")
+        val id=UUID.randomUUID()
+        val target=dev.projects.server.CombatTarget(id,owner.position.add(0.0,1.0,2.0),Vec(.4,1.0,.4))
+        try {
+            state.mark(id,10);display.update(listOf(target),state,10)
+            assertEquals(1,display.size)
+            val label=owner.instance.entities.single { it.entityType==net.minestom.server.entity.EntityType.TEXT_DISPLAY }
+            assertEquals(setOf(owner),label.viewers)
+            val meta=label.entityMeta as net.minestom.server.entity.metadata.display.TextDisplayMeta
+            assertEquals("印 6秒",(meta.text as net.kyori.adventure.text.TextComponent).content())
+            val moved=target.copy(position=owner.position.add(2.0,2.0,3.0))
+            display.update(listOf(moved),state,50)
+            assertEquals("印 4秒",(meta.text as net.kyori.adventure.text.TextComponent).content())
+            assertEquals(moved.position.y()+1.5,label.position.y(),1e-8)
+            state.consumeMark(id,51);display.update(listOf(moved),state,51)
+            assertTrue(label.isRemoved);assertEquals(0,display.size)
+            state.mark(id,60);display.update(listOf(target),state,60)
+            display.update(emptyList(),state,61);assertEquals(0,display.size)
+            state.mark(id,70);display.update(listOf(target),state,70)
+            display.update(listOf(target),state,191);assertEquals(0,display.size)
+            val crowd=(0..15).map { n -> target.copy(id=UUID.randomUUID(),position=owner.position.add(n*.1,1.0,2.0)) }
+            crowd.forEach { state.mark(it.id,200) };display.update(crowd,state,200)
+            assertEquals(12,display.size);display.clear();assertEquals(0,display.size)
+        } finally { display.clear();observer.remove() }
+    }
+
     @Test fun `warrior attack phases keep every authored frame through consecutive pulses for owner and observer`() = player { owner ->
         val meshes=CoreCombatMeshes(owner)
         val observer=connect(owner.instance,owner.position.add(1.0,0.0,0.0),"WarriorObserver")

@@ -10,9 +10,9 @@ internal object CoreSceneParticles {
         "fire" to 0xff701d,"venom" to 0x88c92b,"life" to 0x95edc5,"shadow" to 0x8752b0,
         "hunter" to 0xc9db8b,"holy" to 0xffe5a0,"lightning" to 0x91bcff)
     fun emit(e: CoreSkillEffect,tick: Int,sink: ParticleSink) {
-        // This accepted clip already contains its blade, wake and hit-local flash.
-        // Do not decorate it with a competing cloud absent from the approved GIF.
-        if(e.job==CoreClass.WARRIOR && (e.sceneId=="dash" || e.sceneId in CoreApprovedNormalV3.sceneIds)) return
+        // Keep the accepted meshes unchanged; the requested companions have their
+        // own short motion rather than reconstructing a second particle blade.
+        if(e.job==CoreClass.WARRIOR) { CoreWarriorParticles.emit(e,tick,sink); return }
         val scene=CoreSkillScenes.get(e.sceneId)
         val color=if(e.job==CoreClass.WARRIOR && scene.palette=="gold") 0xc74155 else colors.getValue(scene.palette)
         val t=tick.toDouble()/e.durationTicks

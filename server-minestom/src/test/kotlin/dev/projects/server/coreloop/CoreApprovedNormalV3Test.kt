@@ -42,8 +42,10 @@ class CoreApprovedNormalV3Test {
             assertEquals(9, contact.durationTicks)
             val e = effect(id).also { it.solidCompanion = true }
             val sink = RecordingParticleSink()
-            repeat(e.durationTicks) { e.emit(it, sink) }
-            assertTrue(sink.spawns.isEmpty(), "No old competing particle cloud")
+            repeat(e.durationTicks) {
+                sink.clear();e.emit(it, sink)
+                assertTrue(sink.spawns.size<=18,"Companion air must remain below the main blade's visual weight")
+            }
         }
     }
 

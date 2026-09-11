@@ -653,6 +653,17 @@ class CorePlayerCombatTest {
         val before=h.actor.resource;h.actor.skill(1)
         assertEquals(before-30,h.actor.resource);assertEquals(80,h.actor.mana)
     }
+    @Test fun `warrior mark label appears on real wound hit and disappears on consuming skill and reset`() = arena(bossDistance=2.0) { h ->
+        h.journey=CoreJourney(build=CoreClassBuild(first=4,second=1,third=2,fourth=0));h.actor.reset()
+        h.actor.skill(0);h.ticks(h.actor.skillDefinitions[0].startupTicks(h.actor.sheet))
+        assertEquals(1,h.actor.activeMarkLabels)
+        h.ticks(12);h.actor.classState.gain(100.0,CoreClass.WARRIOR,h.journey.build)
+        h.actor.skill(1);h.ticks(h.actor.skillDefinitions[1].startupTicks(h.actor.sheet))
+        assertEquals(0,h.actor.activeMarkLabels)
+        val target=h.combat.combatTargets().first();h.actor.classState.mark(target.id,1000)
+        h.ticks(1);assertEquals(1,h.actor.activeMarkLabels)
+        h.actor.resetActions();assertEquals(0,h.actor.activeMarkLabels)
+    }
     @Test fun `warrior timed guard reduces real incoming damage and rewards a strong counter`() = arena { h ->
         h.journey=CoreJourney(build=CoreClassBuild(first=3,second=5,third=2,fourth=0,nodes=8248))
         h.actor.reset();h.actor.skill(0);h.ticks(h.actor.skillDefinitions[0].startupTicks(h.actor.sheet))

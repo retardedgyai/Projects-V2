@@ -42,6 +42,8 @@ internal class CorePlayerCombat(
 ) {
     private val normal = GreatswordCombo()
     private val vfx = GreatswordVfx(player)
+    private val warriorMarks = CoreWarriorMarkDisplay(player)
+    internal val activeMarkLabels get() = warriorMarks.size
     private var normalDirection = Vec(0.0, 0.0, 1.0)
     private var normalEmpowerment = 1.0
     private var actionEpoch = 0L
@@ -230,6 +232,9 @@ internal class CorePlayerCombat(
             else if (queuedSkill != null) { normal.clearBuffer(); val id = queuedSkill!!; queuedSkill = null; skill(id) }
             else if (normal.takeBuffered()) attack()
         }
+        if(classId==CoreClass.WARRIOR) {
+            warriorMarks.update(enemies.combatTargets().filter { classState.marked(it.id,tickNumber) && visibleTo(it.id,enemies) },classState,tickNumber)
+        } else warriorMarks.clear()
         vfx.tick()
     }
 
@@ -625,6 +630,7 @@ internal class CorePlayerCombat(
         normalEmpowerment = 1.0
         classState.reset(); moveHasteUntil = -1; previousPosition = null
         vfx.cancel()
+        warriorMarks.clear()
         damageLabels.forEach { it.first.remove() }; damageLabels.clear()
     }
     private fun syncVanillaHealth() {

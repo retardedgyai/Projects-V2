@@ -64,6 +64,7 @@ internal class CoreClassState {
     }
     fun mark(id: UUID, tick: Long) { marks[id] = tick + 120 }
     fun marked(id: UUID, tick: Long) = (marks[id] ?: -1) >= tick
+    fun markRemaining(id: UUID, tick: Long): Long = marks[id]?.let { if(it>=tick)(it-tick).coerceAtLeast(1) else 0 } ?: 0
     fun consumeMark(id: UUID, tick: Long): Boolean = marked(id, tick).also { if (it) marks.remove(id) }
     fun tick(tick: Long) { marks.entries.removeIf { it.value < tick }; if (tick >= shieldUntil) shield = 0.0 }
     fun reset() {
