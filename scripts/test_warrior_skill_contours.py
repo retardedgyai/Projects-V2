@@ -53,6 +53,20 @@ class WarriorContoursTest(unittest.TestCase):
             angles=np.unwrap(np.arctan2(points[:,0],points[:,1]))
             self.assertAlmostEqual(2*np.pi,angles[-1]-angles[0])
 
+    def test_vertical_cuts_have_broad_bright_faces_and_a_stronger_final_cut(self):
+        peaks={c:max(np.count_nonzero(contour(c,'blade',f)>=2) for f in range(3,8))
+               for c in ('wound','rise','cleave','finish')}
+        self.assertGreater(peaks['cleave'],peaks['wound']*2)
+        self.assertGreater(peaks['finish'],peaks['cleave']*1.1)
+        for c in ('cleave','rise','finish'):
+            g=contour(c,'blade',5)
+            widths=[np.count_nonzero(row>=2) for row in g]
+            # At least ten native texels across the bright face; the rising cut
+            # is intentionally slimmer than the final downstroke.
+            self.assertGreaterEqual(max(widths),10,c)
+            # A contour must not be clipped into a rectangle at the texture boundary.
+            self.assertFalse(np.any(g[:,0]) or np.any(g[:,-1]),c)
+
     def test_native_parts_remain_legal_and_bounded(self):
         for path in (PACK/'assets/projects/models/combat_vfx/warrior_skills').glob('*.json'):
             model=json.loads(path.read_text())

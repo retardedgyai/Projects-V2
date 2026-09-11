@@ -35,7 +35,11 @@ def tip(clip, t):
         x += .45*math.sin(u*math.pi*2)
     if clip in ('cleave', 'finish', 'rise'):
         # The drawing plane is stood up at runtime. +Z becomes height.
-        x, z = 7.7 + math.cos(a) * 2.1, 8 - math.sin(a) * 5.7
+        # A sword sweeps a broad curved cutting face, not a thin falling line.
+        # Keep the rising stroke on the opposite side so the three-beat ultimate
+        # reads lift -> return -> committed downstroke in the same camera.
+        center,bulge={'cleave':(6.6,4.0),'rise':(5.6,3.0),'finish':(6.2,4.7)}[clip]
+        x, z = center + math.cos(a) * bulge, 8 - math.sin(a) * 5.7
         if clip == 'rise':
             z = 16 - z
         if clip == 'finish':
@@ -68,7 +72,8 @@ def contour(clip, layer, frame):
             if not 0 <= age < 2.6:
                 continue
             width = (.45 + min(3.5, speed * .68)) * math.sin(math.pi * (age + .12) / 2.85) ** .65
-            width *= {'wound': .65, 'thrust': .34, 'finish': 1.1}.get(clip, 1.)
+            vertical=clip in ('cleave','rise','finish')
+            width *= {'wound': .65, 'thrust': .34, 'cleave':1.4,'rise':1.15,'finish':1.7}.get(clip, 1.)
             if clip == 'thrust':
                 # Split spear-like air displacement; never a crescent travelling sideways.
                 for sign in (-1, 1):
@@ -76,8 +81,10 @@ def contour(clip, layer, frame):
                 polygon(g, [a-na*.12,b-nb*.12,b+nb*.12,a+na*.12], 3)
             else:
                 polygon(g, [a,b,b-nb*width,a-na*width], 1)
-                polygon(g, [a,b,b-nb*width*.72,a-na*width*.72], 2)
-                polygon(g, [a,b,b-nb*min(.4,width*.23),a-na*min(.4,width*.23)], 3)
+                body=width*(.86 if vertical else .72)
+                edge=min(.65,width*.3) if vertical else min(.4,width*.23)
+                polygon(g, [a,b,b-nb*body,a-na*body], 2)
+                polygon(g, [a,b,b-nb*edge,a-na*edge], 3)
         else:
             if not 1.8 < age < 10.5:
                 continue
@@ -129,7 +136,7 @@ def build(assets, write):
                       {'blade':0xeaf4ff,'wake':0x9db4c9,'ember':0xcc4359}[layer],
                       curved=not clip.startswith('spin_'))
     for frame in range(14):
-        model(f'fracture_{frame}',fracture(frame),0xbe5362,curved=False)
+        model(f'fracture_{frame}',fracture(frame),0x8f9daa,curved=False)
     for frame in range(9):
         model(f'contact_{frame}',impact(frame),0xffd1ce,curved=False)
 

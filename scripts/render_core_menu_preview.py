@@ -1,7 +1,7 @@
 """Render a real CoreMenuCanvas.snapshot() JSON using the checked-in pack, without Minecraft input.
 
-Only the title/canvas layer is reproduced: vanilla 3D item models, hover highlights,
-tooltips and the localized player inventory label are intentionally not fabricated.
+The title/canvas and exported flat item sprites are reproduced. Vanilla 3D models,
+hover highlights, tooltips and the inventory label are intentionally not fabricated.
 The output includes a footer stating this limitation, plus a machine-readable audit.
 """
 from pathlib import Path
@@ -78,9 +78,11 @@ class MenuRenderer:
         scale = self.raster_scale
         result = self.frame.resize((self.frame.width * scale, self.frame.height * scale), Image.Resampling.NEAREST)
         report = {"title": snapshot["title"], "layer": "actual CoreMenuCanvas title layer",
-                  "omitted": ["vanilla item models", "vanilla inventory label", "hover highlights", "tooltips"],
+                  "omitted": ["non-flat item models", "vanilla inventory label", "hover highlights", "tooltips"],
                   "warnings": [], "icon_slots": [], "drawn_text": [], "drawn_art": [],
                   "raster_scale": scale, "occupied_control_slots": []}
+        report["rendered_item_slots"] = []
+        report["unsupported_item_slots"] = []
 
         def blit(picture, x, y, width=None, height=None):
             width, height = width or picture.width, height or picture.height
@@ -187,6 +189,30 @@ class MenuRenderer:
         for value in snapshot.get("arts", []): art(value)
         for index, value in enumerate(snapshot.get("texts", [])):
             text(value["x"], value["y"], value["value"], value["color"], value["maxWidth"], f"texts[{index}]", value.get("style", "BODY"))
+        # These IDs come from the actual open Inventory, not a guessed skill order.
+        # A flat minecraft:item/generated sprite has a known 16px GUI footprint.
+        for item in snapshot.get("itemModels", []):
+            slot, key = item["slot"], item["model"]
+            if key=="projects:core_ui/blank": continue
+            if not (0<=slot<=53 and key.startswith("projects:core_ui/")):
+                report["unsupported_item_slots"].append(slot)
+                continue
+            definition=json.loads((self.assets/f"items/{key.split(':')[1]}.json").read_text())["model"]
+            if definition.get("type")!="minecraft:model" or not definition.get("model", "").startswith("projects:"):
+                report["unsupported_item_slots"].append(slot)
+                continue
+            model=json.loads((self.assets/f"models/{definition['model'].split(':')[1]}.json").read_text())
+            if model.get("parent")!="minecraft:item/generated" or set(model.get("textures",{}))!={"layer0"} or "display" in model:
+                report["unsupported_item_slots"].append(slot)
+                continue
+            texture=model["textures"]["layer0"]
+            if not texture.startswith("projects:"): raise ValueError("Unsupported flat-item texture: "+texture)
+            with Image.open(self.assets/f"textures/{texture.split(':')[1]}.png") as source:
+                blit(source.convert("RGBA"),8+slot%9*18,18+slot//9*18,16,16)
+            report["rendered_item_slots"].append(slot)
+        if report["rendered_item_slots"]:
+            report["layer"]="actual CoreMenuCanvas title plus exported flat inventory sprites"
+        report["omitted_icon_slots"]=sorted(set(report["icon_slots"])-set(report["rendered_item_slots"]))
         if scaled_width is not None:
             if scaled_width < 176: raise ValueError("Scaled width must accommodate the vanilla chest")
             viewport = Image.new("RGBA", (scaled_width * scale, result.height), "#171612")
@@ -219,14 +245,15 @@ def main():
     captioned = Image.new("RGBA", (picture.width, picture.height + 32), "#171612")
     captioned.alpha_composite(picture)
     draw = ImageDraw.Draw(captioned)
-    draw.text((6, picture.height + 3), "ACTUAL MENU SNAPSHOT / TITLE LAYER ONLY", fill="#C2CBD1")
-    draw.text((6, picture.height + 17), "Item models, inventory label and tooltips are not rendered.", fill="#8697A2")
+    draw.text((6, picture.height + 3), "ACTUAL MENU SNAPSHOT / TITLE + EXPORTED FLAT ITEMS" if report["rendered_item_slots"] else
+              "ACTUAL MENU SNAPSHOT / TITLE LAYER ONLY", fill="#C2CBD1")
+    draw.text((6, picture.height + 17), "3D items, inventory label, hover and tooltips are not rendered.", fill="#8697A2")
     args.output.parent.mkdir(parents=True, exist_ok=True)
     captioned.save(args.output, optimize=True)
     report_path = args.report or args.output.with_suffix(".audit.json")
     report_path.parent.mkdir(parents=True, exist_ok=True)
     report_path.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    print(f"Rendered actual menu snapshot: {args.output}; {len(report['warnings'])} audit warnings; {len(report['icon_slots'])} omitted item icons")
+    print(f"Rendered actual menu snapshot: {args.output}; {len(report['warnings'])} audit warnings; {len(report['rendered_item_slots'])} flat items; {len(report['omitted_icon_slots'])} omitted item icons")
     print(f"Audit: {report_path}")
     if args.strict and report["warnings"]: raise SystemExit(2)
 

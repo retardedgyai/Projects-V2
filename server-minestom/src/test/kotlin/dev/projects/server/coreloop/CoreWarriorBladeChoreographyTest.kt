@@ -10,8 +10,9 @@ import kotlin.test.*
 
 class CoreWarriorBladeChoreographyTest {
     private val skills = CoreSkillCatalog.skills(CoreClass.WARRIOR).filter { it.icon in CoreWarriorBladeChoreography.sceneIds && it.icon!="dash" }
-    private fun effect(s: CoreSkillDefinition, pulse: Int=0, yaw: Double=0.0, phase: CoreSkillVisualPhase=CoreSkillVisualPhase.PULSE) =
-        CoreSkillEffect(CoreClass.WARRIOR,s,Vec.ZERO,Vec(sin(yaw),0.0,cos(yaw)),phase,pulse,prepareTicks=s.startup)
+    private fun effect(s: CoreSkillDefinition, pulse: Int=0, yaw: Double=0.0, phase: CoreSkillVisualPhase=CoreSkillVisualPhase.PULSE,
+        prepareTicks: Int=s.startup) =
+        CoreSkillEffect(CoreClass.WARRIOR,s,Vec.ZERO,Vec(sin(yaw),0.0,cos(yaw)),phase,pulse,prepareTicks=prepareTicks)
 
     @Test fun `all attacks use native contours with stable transform and valid model sequence`() {
         for(s in skills) repeat(s.pulses) { beat ->
@@ -93,19 +94,29 @@ class CoreWarriorBladeChoreographyTest {
 
     @Test fun `export actual skill phases for eye height and side review`() {
         fun xyz(v: Vec)=listOf(v.x(),v.y(),v.z())
-        val scenes=skills.flatMap { s -> (0 until s.pulses).map { beat ->
-            val frames=(0 until s.startup+22).map { tick ->
-                listOf(CoreSkillVisualPhase.PREPARE,CoreSkillVisualPhase.PULSE).flatMap { phase ->
-                    val age=if(phase==CoreSkillVisualPhase.PREPARE) tick else tick-s.startup
-                    CoreSkillChoreography.parts(effect(s,beat,phase=phase)).mapNotNull { p ->
+        fun scene(s: CoreSkillDefinition, beats: List<Int>, id: String, name: String): Map<String,Any> {
+            // AS 1.0 review schedule from CorePlayerCombat: one prepare, then
+            // pulse every 8 ticks. This is not a client packet/FPS recording.
+            val events=listOf(0 to effect(s,beats.first(),phase=CoreSkillVisualPhase.PREPARE,prepareTicks=s.startup-1))+
+                beats.mapIndexed { index,beat -> (s.startup+index*8) to effect(s,beat) }
+            val frames=(0 until s.startup+(beats.size-1)*8+22).map { tick ->
+                events.flatMap { (start,event) ->
+                    CoreSkillChoreography.parts(event).mapNotNull { p ->
+                        val age=tick-start
                         val pose=CoreSkillChoreography.pose(p,age.toDouble())
                         if(!pose.visible) null else mapOf("model" to pose.model,"offset" to xyz(pose.offset),"scale" to xyz(pose.scale),
                             "yaw" to pose.yaw,"pitch" to pose.pitch,"roll" to pose.roll)
                     }
                 }
             }
-            mapOf("id" to "${s.icon}_$beat","name" to "${s.name} ${beat+1}","frames" to frames)
-        } }
+            return mapOf("id" to id,"name" to name,"frames" to frames,
+                "pulseTicks" to events.drop(1).map { it.first },"attackSpeed" to 1.0,
+                "timingSource" to "CorePlayerCombat declared schedule; not a packet capture")
+        }
+        val scenes=skills.flatMap { s ->
+            (0 until s.pulses).map { beat -> scene(s,listOf(beat),"${s.icon}_$beat","${s.name} ${beat+1}") }+
+                if(s.pulses>1) listOf(scene(s,(0 until s.pulses).toList(),"${s.icon}_full","${s.name} / 全段連続")) else emptyList()
+        }
         val cwd=Path.of(System.getProperty("user.dir"));val root=if(cwd.fileName.toString()=="server-minestom")cwd.parent else cwd
         Files.createDirectories(root.resolve(".tools"))
         Files.writeString(root.resolve(".tools/warrior-rework-timeline.json"),Gson().toJson(scenes))

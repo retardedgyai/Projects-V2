@@ -351,7 +351,7 @@ class CoreLoopMenusTest {
             f.menus.skillBuild(f.player)
             f.click(14)
             assertTrue(f.host.requests.isEmpty())
-            assertEquals("技能1 に装備",f.snapshot().buttons.single { it.firstSlot==49 }.label)
+            assertEquals("キー2と3を入替",f.snapshot().buttons.single { it.firstSlot==49 }.label)
             f.click(49)
             assertEquals(CoreAction.SelectSkill(0,1),f.host.requests.single().action)
             f.host.requests.clear()
@@ -361,6 +361,52 @@ class CoreLoopMenusTest {
             f.click(48);assertEquals(CoreAction.ToggleTalent(3),f.host.requests.single().action)
         }
     }
+    @Test fun `warrior loadout keys preview both sides of a swap and disable no-op assignments`() {
+        for(packed in listOf(false,true)) {
+            val f=fixture(account(4),packed)
+            val before=f.host.current.journey.build
+            f.menus.skillBuild(f.player,0,before.skills[0])
+            assertEquals("装備済み",f.snapshot().buttons.single { it.firstSlot==49 }.label)
+            f.click(49);assertTrue(f.host.requests.isEmpty())
+            val bar=f.snapshot().buttons.filter { it.firstSlot<9 }
+            assertEquals(listOf(0,2,4,6,8),bar.map { it.firstSlot })
+            assertEquals(listOf("2","3","4","5",""),bar.map { it.label })
+            assertEquals((0..8).toList(),bar.flatMap { (it.firstSlot until it.firstSlot+it.span).toList() })
+            // The numeral next to an icon is part of the same click target.
+            f.click(3)
+            assertEquals("キー3 の技",f.snapshot().leftPanel!!.title)
+            f.menus.skillBuild(f.player,0,before.skills[1])
+            assertEquals("キー2と3を入替",f.snapshot().buttons.single { it.firstSlot==49 }.label)
+            assertTrue(f.snapshot().leftPanel!!.lines.any { it.text=="キー3へ移動" })
+            assertEquals(before,f.host.current.journey.build)
+            f.click(49)
+            assertEquals(CoreAction.SelectSkill(0,before.skills[1]),f.host.requests.single().action)
+            f.host.requests.clear()
+            f.host.current=f.host.current.copy(journey=f.host.current.journey.copy(build=before.equip(0,before.skills[1])))
+            f.menus.skillBuild(f.player,0,before.skills[1]);f.click(49)
+            assertEquals("装備済み",f.snapshot().buttons.single { it.firstSlot==49 }.label)
+            assertTrue(f.host.requests.isEmpty())
+            f.menus.skillBuild(f.player,0,7)
+            assertEquals("キー2 に装備",f.snapshot().buttons.single { it.firstSlot==49 }.label)
+            f.click(49);assertEquals(CoreAction.SelectSkill(0,7),f.host.requests.single().action)
+        }
+    }
+
+    @Test fun `warrior loadout inspection cannot bypass field or level restrictions`() {
+        for(packed in listOf(false,true)) {
+            val f=fixture(account(4),packed)
+            f.host.current=f.host.current.copy(activeRun=CoreActiveRun(UUID.randomUUID(),f.host.current.maps.first()),
+                maps=f.host.current.maps.drop(1))
+            f.menus.skillBuild(f.player,0,7)
+            assertEquals("港で変更可能",f.snapshot().buttons.single { it.firstSlot==49 }.label)
+            f.click(49);assertTrue(f.host.requests.isEmpty())
+            f.host.current=f.host.current.copy(activeRun=null,journey=CoreJourney(legacy=false))
+            f.menus.skillBuild(f.player,4,1)
+            assertEquals("成長で解放",f.snapshot().buttons.single { it.firstSlot==49 }.label)
+            f.click(49);assertTrue(f.host.requests.isEmpty())
+        }
+    }
+
     @Test fun `every forge recipe and quantity selector changes selection without consuming anything`() {
         val f = fixture(account(tier = 3))
         for (tab in listOf(CoreForgeLayout.Tab.REFINE, CoreForgeLayout.Tab.CRAFT)) {
@@ -679,7 +725,15 @@ class CoreLoopMenusTest {
         fun capture(name: String, render: () -> Unit) {
             render()
             val snapshot = f.snapshot()
-            Files.writeString(output.resolve("$name.json"), gson.toJson(snapshot))
+            val exported=gson.toJsonTree(snapshot).asJsonObject
+            val inventory=assertNotNull(f.player.openInventory)
+            val itemModels=(0..53).mapNotNull { slot ->
+                inventory.getItemStack(slot).get(DataComponents.ITEM_MODEL)?.let { model ->
+                    mapOf("slot" to slot,"model" to model)
+                }
+            }
+            exported.add("itemModels",gson.toJsonTree(itemModels))
+            Files.writeString(output.resolve("$name.json"), gson.toJson(exported))
             auditSnapshot(snapshot).forEach { failures += "$name: $it" }
         }
         capture("dungeon-entry") { f.menus.dungeons(f.player, 3) }

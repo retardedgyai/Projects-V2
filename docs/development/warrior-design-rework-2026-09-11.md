@@ -136,3 +136,55 @@ AA/dashだけが承認済みのネイティブ輪郭モデルを使い、残り�
 補助技と音の実装差し替えは進んだが、MatE相当の最終品質は引き続き未証明。
 特に縦斬り/奥義の一人称での太さ・強弱、アイコンを含めた編成UI/HUD全体、
 実機の音の聞こえ方と複数人表示を確認する必要がある。既存の承認済みAA/dashと武器は凍結を維持する。
+
+## 縦斬り・編成操作・実画像合成チェックポイント
+
+- 地砕き/天断の斬り上げ/最終断撃に異なる曲率と白い刃の幅を設定。
+  横方向の細い線だった縦軌跡を弧にし、終段の切断面を最も強くした。
+  地割れは赤い発光面から石の灰色へ。紅は刃に沿う小片に限定。
+  モデルを全体回転させず、誕生時刻を持つ各輪郭部分の消散と既存寿命を保持。
+  `build_warrior_skill_contours.py` → 既存item/model ID → `CoreWarriorBladeChoreography` の流れ。
+  当たり判定、威力、startup、8tickの連撃間隔は変更していない。
+- 編成UI：上段の4技能をアイコン＋発動キー2〜5にし、選択色が絵に隠れないようにした。
+  奥義は右端のキー6、左の詳細にもキーを明記。候補の8枚一覧と承認済み字形/アイコンは維持。
+  別枠で装備済みの候補は、既存 `CoreClassBuild.equip` と同じ計算で入れ替えを事前表示。
+  変更先と、押し出される技の移動先を左に表示し、確定も「キー2と3を入替」等にする。
+  現在と同じ選択では「装備済み」にして確定不可。港/解放条件の検証は従来通りサーバーで行う。
+  `warriorSkills` の非更新プレビュー → 右下確定 → `CoreAction.SelectSkill` → 既存account検証。
+- UIの確認画像をtitle layerのみから改善。`CoreLoopMenusTest` が実openInventoryの
+  `DataComponents.ITEM_MODEL` を出力し、`render_core_menu_preview.py` が実item→model→textureを読む。
+  単一layerの `minecraft:item/generated` だけを合成し、3D/未対応は明示して代用品を描かない。
+  技能一覧13枚/奥義7枚のアイコンを描画。両画面でアイコン欠落0・文字省略/欠字0。
+- HUDも `CoreHudLayout.render` の実Componentを走査してglyph・font・色・カーソル位置を出力。
+  `render_warrior_hud_preview.py` は実fontのascentとatlasセルで合成する。
+  ready / 反撃 / 防御＋障壁 / cooldown・MP不足・闘気不足・未解放の4状態を扱う。
+  この作業はHUDの原画やゲーム内配置を変更するものではない。
+- `CoreWarriorBladeChoreographyTest` の投影用出力に `war_ult_full` / `whirl_full` を追加。
+  一度だけの予備動作と8tickごとの各pulseを同じ時間軸へ重ねる。
+  AS 1.0、固定地点の空振り用スケジュール。実Kotlin parts/poseだが、クライアントの
+  packet到着・描画FPS・実プレイヤー移動・命中記録のキャプチャではない。
+
+### 検証記録
+
+- 途中のコンパイルで、data classではないeffectにテストがcopyを呼んで失敗。直接構築へ修正。
+- 続く対象34件では追加UIテストのfixtureが、使用中mapを所持mapにも残してaccount制約違反。
+  実際の出発と同様に所持側から外すようfixtureを修正。これらを成功として数えない。
+- Python戦士17件＋凍結AA/dash4件成功。
+  刃の強弱/消散/再生成一致/合法座標、実sprite画素一致、未対応モデルの明示、HUD字幕と絵の非重複を含む。
+- pack検証：10,960 assets / 50,694 private glyphs / グローバルフォント上書きなし。
+  content SHA256 `20bd2332b3f67d7ca0dfff433de13339514564fb91e14105dd43dbecd3a1cbea`。
+- 最終全サーバー827テスト成功（失敗0・エラー0・skip0、3分8秒）。
+- HUD確認画像はGUI scale 3へ直接描画。日本語の42px原画を一度14pxに落としてから
+  拡大すると画素を失うため、その中間縮小を禁止し原画との全画素一致をテストする。
+
+### 確認物と次の判断
+
+- `.tools/warrior-menu-keys.png` / `warrior-ultimate-keys.png`：実メニュー＋実flat icon。
+- `.tools/warrior-hud-composite.png`：実Component＋実HUD画像。背景world、hotbar、
+  バニラの他overlayやclientの文字背景は描かない。
+- `.tools/warrior-continuous-review.gif`：天断/旋風の66review tick。20fpsの実装投影でゲーム画面ではない。
+- 描画チェックから制作を進める根拠は増えたが、MatE相当や実機の滑らかさを達成した証拠ではない。
+  最終的な音・入力・複数人・遮蔽・見た目の判断はCreatorのManual Smokeが必要。
+  main/稼働中ゲーム/distは変更していない。起動・ゲーム操作はこのチェックポイントでは行わない。
+- 壊れた時：入れ替えは `CoreLoopMenus.warriorSkills`、輪郭は前述compilerと
+  `CoreWarriorBladeChoreography`、HUD位置は `CoreHudLayout` と出力したglyphのascentを最初に見る。

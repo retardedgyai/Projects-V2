@@ -8,6 +8,43 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class CoreHudLayoutTest {
+    @Test fun `export complete warrior HUD glyph positions from the actual component`() {
+        val root=generateSequence(java.nio.file.Path.of("").toAbsolutePath()) { it.parent }
+            .first { java.nio.file.Files.isRegularFile(it.resolve("settings.gradle.kts")) }
+        val output=java.nio.file.Files.createDirectories(root.resolve("build/readable-ui-preview"))
+        val loadout=listOf(0,1,2,3,8).mapIndexed { index,art ->
+            CoreHudSkill(CoreUiIcon.DASH,(index+2).toString(),0.0,12.0,15,artIndex=art)
+        }
+        val states=listOf(
+            "ready" to CoreHudState(180.0,240.0,80.0,skills=loadout,resource=60.0,resourceMaximum=100.0),
+            "counter" to CoreHudState(180.0,240.0,80.0,skills=loadout.mapIndexed { i,s ->
+                s.copy(remainingSeconds=if(i==3)3.0 else 0.0) },resource=60.0,resourceMaximum=100.0,combatCue="反撃の好機 3秒"),
+            "guard" to CoreHudState(180.0,240.0,80.0,skills=loadout,resource=60.0,resourceMaximum=100.0,shield=120.0,combatCue="防御 8秒"),
+            "unavailable" to CoreHudState(180.0,240.0,0.0,skills=loadout.mapIndexed { i,s ->
+                s.copy(remainingSeconds=if(i==0)8.0 else 0.0,resourceAvailable=i!=2,unlocked=i!=4) },resource=0.0,resourceMaximum=100.0)
+        )
+        for((name,state) in states) {
+            val glyphs=mutableListOf<Map<String,Any>>()
+            var x=0
+            fun visit(c:Component,inherited:net.kyori.adventure.key.Key?=null,color:Int=0xffffff) {
+                val font=c.font()?:inherited
+                val tint=c.color()?.value()?:color
+                for(char in (c as? TextComponent)?.content().orEmpty()) {
+                    val key=requireNotNull(font)
+                    val width=advance(Component.text(char.toString()).font(key))
+                    glyphs+=mapOf("font" to key.asString(),"code" to char.code,"x" to x,"advance" to width,"color" to tint)
+                    x+=width
+                }
+                c.children().forEach { visit(it,font,tint) }
+            }
+            visit(CoreHudLayout.render(state))
+            assertEquals(0,x)
+            assertTrue(glyphs.isNotEmpty())
+            java.nio.file.Files.writeString(output.resolve("warrior-hud-$name.json"),com.google.gson.Gson().toJson(
+                mapOf("state" to name,"glyphs" to glyphs,"netAdvance" to x)))
+        }
+    }
+
     private val acceptedWidths by lazy { javaClass.getResourceAsStream("/core-ui-pack/assets/projects/menu/glyphs-emphasis.tsv")!!
         .bufferedReader().readLines().filter { it.isNotBlank() && !it.startsWith('#') }.associate {
             val parts=it.split('\t');parts[1].toInt(16).toChar() to parts[2].toInt()

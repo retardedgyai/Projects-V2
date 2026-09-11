@@ -18,7 +18,7 @@ internal object CoreWarriorSkillPresentation {
     // Each row contrasts a way to enter a fight with a payoff or protection.
     val candidateOrder = listOf(0, 1, 4, 5, 2, 3, 7, 6)
     val candidateSlots = listOf(9, 14, 18, 23, 27, 32, 36, 41)
-    val loadoutSlots = listOf(0, 2, 4, 6, 7)
+    val loadoutSlots = listOf(0, 2, 4, 6, 8)
 
     fun combatCue(job: CoreClass, tick: Long, counterUntil: Long, guardUntil: Long): String {
         if(job!=CoreClass.WARRIOR) return ""
