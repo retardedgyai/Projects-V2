@@ -3,11 +3,14 @@ package dev.projects.server.coreloop
 import net.minestom.server.coordinate.Vec
 import kotlin.math.*
 
-/** Small textured planes, not vanilla particles or additional sword swings. */
+/** Fine escaping pieces plus middle-scale force surfaces; no vanilla particle styling. */
 internal object CoreWarriorCompanions {
-    fun owns(p:CoreCombatMeshPart)=p.shape.startsWith("war_mote_")
+    fun owns(p:CoreCombatMeshPart)=p.shape.startsWith("war_mote_") || CoreWarriorFlourish.owns(p)
     fun boundary(p:CoreCombatMeshPart)=p.shape=="war_mote_boundary"
     fun parts(e:CoreSkillEffect):List<CoreCombatMeshPart> {
+        return fineParts(e)+CoreWarriorFlourish.parts(e)
+    }
+    private fun fineParts(e:CoreSkillEffect):List<CoreCombatMeshPart> {
         if(e.job!=CoreClass.WARRIOR || !e.valid || e.phase==CoreSkillVisualPhase.PREPARE) return emptyList()
         val yaw=atan2(e.direction.x(),e.direction.z())
         fun local(x:Double,y:Double,z:Double)=Vec(cos(yaw)*x+sin(yaw)*z,y,-sin(yaw)*x+cos(yaw)*z)

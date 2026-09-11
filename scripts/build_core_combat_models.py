@@ -896,6 +896,8 @@ def build_slash_frames(assets, write_json):
     build_warrior_skill_contours(assets, write_json)
     from build_warrior_companions import build as build_warrior_companions
     build_warrior_companions(assets, write_json)
+    from build_warrior_flourish import build as build_warrior_flourish
+    build_warrior_flourish(assets, write_json)
 
 
 if __name__ == "__main__":

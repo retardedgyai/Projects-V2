@@ -309,3 +309,55 @@ Creatorより「過去一番いい」「旗は完璧」と評価。承認済み�
 - 最終検証：全サーバーテスト835件成功（失敗/エラー/スキップ0）、Python warrior系19件＋approved系4件成功。
   `preview_warrior_companions.py`で実際の配布モデルを描画し、輪郭と消失部品を目視確認。
   `.tools/warrior-companion-parts.png`は共通拡大率の部品確認で、実機の大きさ/動作を証明するプレビューではない。
+
+## リファレンス内での華やかさ：中間サイズの動く形
+
+Creatorから「派手になるまで、渡したリファレンスから逸脱せず続ける」という追加依頼。
+前版の主役斬撃＋小さい欠片だけでは、両者の間をつなぐ面積と動きが不足していた。
+既存のDragon Warrior動画確認フレーム（`.tools/dragon-warrior-30.png`、`30.15.png`、
+`dragon-combo-50.2.png`）を比較し、幅のある裂けた先端→離れて飛ぶ大きめの欠片→細い尾、
+という大小と時間の構成を採る。紫の魔法色や雷のテーマ自体は戦士へ移さない。
+今回、ログイン済みブラウザーでMatE Hollow Monarchの投稿本文とGIFの存在は再確認できたが、
+そのGIFの全アニメーションを視覚確認し直したとは扱わない。
+
+### 実装と技能ごとの用途
+
+- `CoreWarriorFlourish`を具体的な戦士演出として追加。主役timelineには混ぜず、
+  `CoreCombatMeshes → CoreWarriorCompanions → CoreWarriorFlourish`の描画経路で合成する。
+- 踏み込み/破城：前へ抜ける複数の気流。裂傷/返し：広がりながら裂けて消える圧力の面。
+- 地砕き：地面近くの広がり＋下から噴き上がり、分離して消える大きめの破片。
+- 旋風：3段で発生位置・長さ・幅・高さが違う外周の破片。完成済みPNGを回す方式にしない。
+- 天断：斬り上げの上昇→返しの横広がり→叩きつけの噴出と地表、という段ごとの違い。
+- 受け流し：刃の近くへ収束する短い光。雄叫び：胸からほどける気流。
+  旗本体の承認済み布/風は変更せず、前版の実radius輪郭も保持する。
+- CONTACTは実命中/防御のphaseだけで短い破裂。旗/雄叫びへ攻撃火花を追加しない。
+  AAは新しい中間層の対象外。AA/踏み込みの承認済み本体フレームや発生は変更なし。
+- `build_warrior_flourish.py`が10用途×20フレーム×本体/紅アクセントを生成する。
+  計400モデル＋400item定義。既存のピクセルinkと量子化薄面compilerを使い、
+  白灰に局所的な紅、固定transformのまま輪郭そのものが変化・分離・消失する。
+  新規のbitmap描き直し、ぼかし、vanilla煙/crit/石片、完成した絵の全体回転はない。
+- 描画は既存の20Hzモデル列。60fps化したと偽装せず、補間による初動の縮小も入れない。
+  この追加層はFULL本人のみ。観戦者/控えめ設定は主役を優先する既存上限のまま。
+  Damage/Hit/input、class runtime共有基盤、Particle Framework core、client-fabric/protocolは変更なし。
+
+### 確認方法・制約
+
+- 実MinestomのItemDisplayから位置・scale・quaternion・item modelをtickごとに出力するテストを追加。
+  `.tools/warrior-force-timeline.json`の`*_before`は同一フレームから今回の中間層だけを除いた比較。
+  各技能の始動/3段の例を含み、所有者48entity上限と全終了後0を検証。
+  このexportは空振りの発動例。CONTACTの火花を架空の命中として混ぜない。
+- `preview_skill_choreography.py`で実モデル/UVをそのまま簡易投影。
+  `warrior-force-compare-{10,16,24}.png`と`warrior-force-eye-{10,16,24}.png`を目視確認。
+  地砕きに上昇→分離する形が増え、旋風の主役の外周に段違いの破片が加わることを確認した。
+  主役斬撃だけの映像を全演出の確認用として出さない。
+- この投影はゲーム画面ではない。Minecraftの地形遮蔽・照明・通信や実機の滑らかさを再現しない。
+  参照作品と同等の品質を達成したとはまだ判定せず、CreatorのManual Smokeを残す。
+- 形の入口は`CoreWarriorFlourish`、輪郭/消失は`build_warrior_flourish.py`、
+  表示されない場合はpackの`warrior_flourish/`参照と`CoreCombatMeshes`を最初に確認する。
+- 稼働中server/clientへは適用していない。再起動やゲーム操作は行わず、次の起動依頼時に反映する。
+- 最終検証：全サーバーテスト838件成功（失敗/エラー/スキップ0）、Python warrior系21件＋approved系4件成功。
+  モデルの再生成一致・全item/texture参照・合法座標/回転・1モデル420要素以内・
+  フレームの変化/消失・紅の面積比・方位追従・3段の違い・固定transform/実寿命を確認。
+  `warrior-force-slam.gif`は実entity出力を20Hzで投影した追加層なし/ありの比較。
+  天断の22/30/38/46tickの比較画像も確認し、上昇/横方向/噴出/消散の段階を確認した。
+  ゲーム内描画と参照作品に並ぶ最終品質の判定は、これらの自動テストの合否とは別に残る。

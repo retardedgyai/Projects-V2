@@ -18,6 +18,43 @@ import kotlin.math.abs
 import kotlin.test.*
 
 class CoreCombatMeshTest {
+    @Test fun `export complete warrior render path with force layers on the actual entity clock`() = player { owner ->
+        val meshes=CoreCombatMeshes(owner)
+        CoreCombatPresentation.pack(owner,true)
+        val scenes=mutableListOf<Map<String,Any>>()
+        fun xyz(v:net.minestom.server.coordinate.Point)=listOf(v.x(),v.y(),v.z())
+        try {
+            for(skill in CoreSkillCatalog.skills(CoreClass.WARRIOR)) {
+                meshes.cancel()
+                val frames=(0 until skill.startup+(skill.pulses-1)*8+65).map { tick ->
+                    if(tick==0) meshes.play(CoreSkillEffect(CoreClass.WARRIOR,skill,owner.position,Vec(0.0,0.0,1.0),
+                        CoreSkillVisualPhase.PREPARE,prepareTicks=(skill.startup-1).coerceAtLeast(1)))
+                    if(tick>=skill.startup && (tick-skill.startup)%8==0 && (tick-skill.startup)/8<skill.pulses)
+                        meshes.play(CoreSkillEffect(CoreClass.WARRIOR,skill,owner.position,Vec(0.0,0.0,1.0),
+                            pulse=(tick-skill.startup)/8))
+                    meshes.tick()
+                    assertTrue(meshes.size<=CoreCombatMeshes.OWNER_LIMIT)
+                    owner.instance.entities.filter { it.entityType==net.minestom.server.entity.EntityType.ITEM_DISPLAY && owner in it.viewers }
+                        .mapNotNull { entity ->
+                            val meta=entity.entityMeta as net.minestom.server.entity.metadata.display.ItemDisplayMeta
+                            if(meta.scale.lengthSquared()<.00001) null else mapOf<String,Any>(
+                                "model" to meta.itemStack.get(net.minestom.server.component.DataComponents.ITEM_MODEL)!!.removePrefix("projects:"),
+                                "offset" to xyz(entity.position.sub(owner.position).add(meta.translation)),"scale" to xyz(meta.scale),
+                                "quaternion" to meta.leftRotation.toList(),"pitch" to 0.0,"yaw" to 0.0,"roll" to 0.0)
+                        }
+                }
+                assertEquals(0,meshes.size,skill.icon)
+                scenes+=mapOf("id" to skill.icon,"name" to skill.name,"frames" to frames)
+                scenes+=mapOf("id" to skill.icon+"_before","name" to skill.name+" / 中間層なし",
+                    "frames" to frames.map { parts -> parts.filterNot { (it["model"] as String).contains("warrior_flourish/") } })
+            }
+            val cwd=java.nio.file.Path.of(System.getProperty("user.dir"))
+            val root=if(cwd.fileName.toString()=="server-minestom")cwd.parent else cwd
+            java.nio.file.Files.createDirectories(root.resolve(".tools"))
+            java.nio.file.Files.writeString(root.resolve(".tools/warrior-force-timeline.json"),com.google.gson.Gson().toJson(scenes))
+        } finally { meshes.cancel();CoreCombatPresentation.forget(owner) }
+    }
+
     @Test fun `banner companion reaches owner and observer packets at every detail and stops on cancel`() {
         val packets=mutableListOf<SendablePacket>()
         player(packets) { owner ->
@@ -161,7 +198,7 @@ class CoreCombatMeshTest {
                 }
                 val actual=displays.filterNot { display ->
                     (display.entityMeta as net.minestom.server.entity.metadata.display.ItemDisplayMeta).itemStack
-                        .get(net.minestom.server.component.DataComponents.ITEM_MODEL)?.contains("war_mote_")==true
+                        .get(net.minestom.server.component.DataComponents.ITEM_MODEL)?.let { it.contains("war_mote_") || it.contains("warrior_flourish/") }==true
                 }.map { display ->
                     val meta=display.entityMeta as net.minestom.server.entity.metadata.display.ItemDisplayMeta
                     assertTrue(owner in display.viewers)

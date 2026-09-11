@@ -166,7 +166,7 @@ internal class CoreCombatMeshes(private val owner: Player) {
         internal fun interpolationTicks(part: CoreCombatMeshPart)=
             // Approved v3 is an authored 20 Hz model sequence with a fixed transform.
             // Interpolating its initial zero scale would shrink/distort its first frames.
-            if(part.shape.startsWith("approved_dash_") || CoreWarriorBladeChoreography.owns(part)) 0
+            if(part.shape.startsWith("approved_dash_") || CoreWarriorBladeChoreography.owns(part) || CoreWarriorFlourish.owns(part)) 0
             else if(part.shape.startsWith("warrior_trace:") ||
                 part.shape.startsWith("flow:") && !part.shape.contains(":prepare:")) 2 else 1
         internal fun removalAge(part: CoreCombatMeshPart)=part.delayTicks+part.durationTicks+

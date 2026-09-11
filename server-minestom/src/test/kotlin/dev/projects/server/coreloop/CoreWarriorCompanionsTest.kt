@@ -8,13 +8,44 @@ import kotlin.test.*
 import kotlin.math.*
 
 class CoreWarriorCompanionsTest {
+    @Test fun `force surfaces change geometry without rotating a completed image and expire`() {
+        for(s in CoreSkillCatalog.skills(CoreClass.WARRIOR)) for(pulse in 0 until s.pulses) {
+            val e=CoreSkillEffect(CoreClass.WARRIOR,s,Vec.ZERO,Vec(0.0,0.0,1.0),pulse=pulse)
+            for(p in CoreWarriorFlourish.parts(e)) {
+                val poses=(0 until p.durationTicks).map { CoreSkillChoreography.pose(p,it.toDouble()) }
+                assertEquals(1,poses.map { listOf(it.yaw,it.pitch,it.roll) }.toSet().size)
+                assertEquals(1,poses.map { it.offset }.toSet().size)
+                assertEquals(1,poses.map { it.scale }.toSet().size)
+                assertTrue(poses.map { it.model }.toSet().size>=8)
+                assertTrue(poses.last().model.endsWith("_19"))
+                assertFalse(CoreSkillChoreography.pose(p,p.durationTicks.toDouble()).visible)
+            }
+        }
+    }
+    @Test fun `force placement follows attack direction and spin stages are different`() {
+        val skills=CoreSkillCatalog.skills(CoreClass.WARRIOR)
+        for(s in skills) {
+            val a=CoreWarriorFlourish.parts(CoreSkillEffect(CoreClass.WARRIOR,s,Vec.ZERO,Vec(0.0,0.0,1.0)))
+            val b=CoreWarriorFlourish.parts(CoreSkillEffect(CoreClass.WARRIOR,s,Vec.ZERO,Vec(1.0,0.0,0.0)))
+            for((p,q) in a.zip(b)) {
+                assertEquals(p.offset.z(),q.offset.x(),1e-8)
+                assertEquals(-p.offset.x(),q.offset.z(),1e-8)
+                assertEquals(p.offset.y(),q.offset.y(),1e-8)
+                assertEquals(PI/2,q.yaw-p.yaw,1e-8)
+            }
+        }
+        val spin=skills.first { it.icon=="whirl" }
+        val stages=(0..2).map { pulse -> CoreWarriorFlourish.parts(
+            CoreSkillEffect(CoreClass.WARRIOR,spin,Vec.ZERO,Vec(0.0,0.0,1.0),pulse=pulse)).first().shape }
+        assertEquals(3,stages.toSet().size)
+    }
     @Test fun `warrior emits no vanilla companions and every authored model resolves`() {
         for(s in CoreSkillCatalog.skills(CoreClass.WARRIOR)) for(phase in CoreSkillVisualPhase.entries) {
             val e=CoreSkillEffect(CoreClass.WARRIOR,s,Vec.ZERO,Vec(0.0,0.0,1.0),phase).also { it.solidCompanion=true }
             val sink=RecordingParticleSink()
             repeat(e.durationTicks) { e.emit(it,sink) };assertTrue(sink.spawns.isEmpty())
             val parts=CoreWarriorCompanions.parts(e)
-            assertTrue(parts.size<=6)
+            assertTrue(parts.size<=10)
             for(p in parts) repeat(p.durationTicks+p.delayTicks) { t ->
                 val pose=CoreSkillChoreography.pose(p,t.toDouble())
                 assertNotNull(javaClass.getResource("/core-ui-pack/assets/projects/items/${pose.model}.json"),pose.model)
