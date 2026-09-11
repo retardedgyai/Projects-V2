@@ -9,7 +9,7 @@ import math
 import numpy as np
 from build_approved_dash_v3 import PACK, SIZE, polygon, geometry, ink_uvs
 
-CLIPS = ('gather','jet','eruption','lift','fan','spin_a','spin_b','spin_c','burst','rally')
+CLIPS = ('gather','jet','eruption','lift','fan','counter','ground','spin_a','spin_b','spin_c','burst','rally')
 FRAMES = 20
 
 
@@ -41,10 +41,39 @@ def contour(clip, frame, accent=False):
                 pts.append((8+side*(5*(1-t)+.4)*(1-u*.72),2+u*10))
             if not accent or side==1: strip(g,pts,.65*(1-t)+.15)
         return g
-    if clip in ('jet','fan','rally'):
-        for lane in range(4 if clip=='jet' else 5):
-            if accent and lane not in (1,4): continue
-            age=frame-lane*.55
+    if clip=='rally':
+        # A compressed chest release with separated, unequal crests. Not five
+        # parallel bars, a spell disc, or another sword arc pasted on a shout.
+        for i,a in enumerate((-.95,-.3,.45,1.3,2.05,2.8)):
+            if accent and i not in (1,4): continue
+            age=frame-i*.4
+            if age<0 or age>16: continue
+            radius=.6+3.4*(1-math.exp(-age*.38))+max(0,age-6)*.14
+            length=(1.8,1.1,2.5,1.4,2.0,1.0)[i]*max(0,1-max(0,age-3)/13)
+            d=np.array((math.cos(a),math.sin(a)))
+            n=np.array((-d[1],d[0]))
+            head=np.array((8.,8.))+d*radius
+            pts=[head-d*length*(1-u)+n*math.sin(u*math.pi)*.28 for u in np.linspace(0,1,16)]
+            strip(g,pts,(.18 if accent else 1.2)*max(0,1-max(0,age-3)/13))
+        return g
+    if clip=='ground':
+        # One directional impact: a broad central leading shard, two shorter
+        # off-axis splinters. The tails leave the origin as the impulse travels.
+        for i,(side,length,width) in enumerate(((-.42,8.0,.9),(.05,12.0,1.35),(.46,9.2,.65))):
+            if accent and i!=1: continue
+            age=frame-i*.6
+            if age<0 or age>16: continue
+            front=min(1.,.18+age/5)
+            tail=max(0.,(age-3)/13)
+            pts=[]
+            for u in np.linspace(tail,front,22):
+                pts.append((8+side*length*u+math.sin(u*math.pi*2)*.3,1.3+length*u))
+            strip(g,pts,(.16 if accent else width)*max(0,1-max(0,age-3)/13))
+        return g
+    if clip in ('jet','fan','counter'):
+        for lane in range(4 if clip=='jet' else 3):
+            if accent and lane!=1: continue
+            age=frame-lane*(.55 if clip=='jet' else 1.2)
             if age<0 or age>15: continue
             start=max(0.,(age-5)/10)
             end=min(1.,.2+age/5)
@@ -55,36 +84,38 @@ def contour(clip, frame, accent=False):
                     side=-1 if lane%2==0 else 1
                     x=8+side*(.55+lane*.3+math.sin(u*math.pi)*1.8)
                     z=1.5+u*12.6
-                elif clip=='fan':
+                else:
                     angle=-1.05+u*1.95
                     x=8+math.sin(angle)*(4.7+lane*.33)
-                    z=5+math.cos(angle)*4.5+lane*.28
-                else:
-                    x=1.2+u*13.2
-                    z=3+lane*1.7+math.sin(u*math.pi*1.5+lane*.7)*.65
+                    z=4.5+math.cos(angle)*(4.5-lane*.4)+lane*.9
+                    if clip=='counter':
+                        x=16-x
+                        z+=math.sin(u*math.pi*2)*.3
                 pts.append((x,z))
             fade=max(0.,1-max(0.,age-4)/11)
-            strip(g,pts,(.25 if accent else 1.0+lane%2*.4)*fade)
+            width=1.0+lane%2*.4 if clip=='jet' else (1.65,.85,.4)[lane]
+            strip(g,pts,(.25 if accent else width)*fade)
         return g
     if clip in ('eruption','lift'):
-        for i in range(7):
-            if accent and i not in (1,5): continue
-            age=frame-i*.32
+        plumes=((-1.8,-.5,7.0,.8),(-.5,-.15,10.2,1.3),(.35,.12,11.2,1.8),(1.3,.45,7.8,.75),(2.,.65,5.4,.45))
+        if clip=='lift': plumes=((-1.5,-.42,7.2,.8),(-.3,-.16,11.1,1.65),(1.2,.15,8.8,.7))
+        for i,(x,dx,height,width) in enumerate(plumes):
+            if accent and i!=1: continue
+            age=frame-i*.7
             if age<0 or age>16: continue
             grow=1-math.exp(-age*.6)
             drift=max(0,age-3)*.12
-            root=np.array((8+(i-3)*.36,1.2))
-            direction=np.array(((i-3)*.17,1.0))
-            length=(9.8-abs(i-3)*.65)*grow
-            if clip=='lift': length*=.86;direction[0]*=-1
+            root=np.array((8+x,1.2))
+            direction=np.array((dx,1.0))
+            length=height*grow
             pts=[]
             tail=max(0.,(age-4)/12)
             for j in range(20):
                 u=tail+(1-tail)*j/19
                 p=root+direction*(length*u+drift)
-                p[0]+=math.sin(u*math.pi)*(.65 if i%2 else -.65)
+                p[0]+=math.sin(u*math.pi)*(-1.2 if clip=='lift' else .55 if i%2 else -.35)
                 pts.append(p)
-            strip(g,pts,(.22 if accent else 1.4+(.45 if i%3==0 else 0))*max(0.,1-max(0,age-4)/12))
+            strip(g,pts,(.22 if accent else width)*max(0.,1-max(0,age-4)/12))
         return g
     if clip.startswith('spin_'):
         variant=('spin_a','spin_b','spin_c').index(clip)
@@ -98,9 +129,10 @@ def contour(clip, frame, accent=False):
             for j in range(18):
                 u=tail+(1-tail)*j/17
                 a=birth+u*(.35+variant*.06)
-                r=3.1+min(age,5)*.35+u*.7
+                r=3.1+min(age,5)*.35+u*.7+max(0,age-5)*.09
                 pts.append((8+math.sin(a)*r,8+math.cos(a)*r))
-            strip(g,pts,(.2 if accent else .95+variant*.18)*max(0,1-max(0,age-3)/11))
+            weight=(1.4,.5,.85)[i%3]
+            strip(g,pts,(.2 if accent else weight+variant*.12)*max(0,1-max(0,age-3)/11))
         return g
     # Burst: one contact event. Independent rays detach after the compressed first beat.
     for i in range(7):
@@ -118,7 +150,7 @@ def contour(clip, frame, accent=False):
 def build(assets,write):
     inks=ink_uvs(assets)
     for clip in CLIPS:
-        for layer,tint in (('body',0xd1e2ed),('accent',0xb84358)):
+        for layer,tint in (('body',0xeaf4ff),('accent',0xb84358)):
             for frame in range(FRAMES):
                 key=f'combat_vfx/warrior_flourish/{clip}_{layer}_{frame}'
                 write(assets/f'models/{key}.json',{'ambientocclusion':False,

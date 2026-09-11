@@ -36,5 +36,10 @@ class WarriorFlourishTest(unittest.TestCase):
             signatures.append(b''.join(f.tobytes() for f in frames))
         self.assertEqual(len(CLIPS),len(set(signatures)))
 
+    def test_counter_pressure_leads_opposite_to_wound_not_a_rescaled_fan(self):
+        for frame in (2,3):
+            self.assertLess(np.nonzero(contour('fan',frame))[1].mean(),32)
+            self.assertGreater(np.nonzero(contour('counter',frame))[1].mean(),32)
+
 
 if __name__=='__main__': unittest.main()

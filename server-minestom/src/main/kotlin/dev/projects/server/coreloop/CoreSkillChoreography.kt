@@ -143,7 +143,7 @@ internal object CoreSkillChoreography {
         if(e.job==CoreClass.RANGER) return CoreRangerChoreography.parts(e,raw,life)
         if(e.job==CoreClass.TEMPLAR && s.kind!=CoreSceneKind.PULL) return CoreTemplarChoreography.parts(e,life)
         if(e.sceneId in CoreHealerChoreography.sceneIds) return CoreHealerChoreography.parts(e,raw,life)
-        if(e.sceneId in CoreWarriorSupportChoreography.sceneIds && e.phase!=CoreSkillVisualPhase.CONTACT)
+        if(e.sceneId in CoreWarriorSupportChoreography.sceneIds)
             return CoreWarriorSupportChoreography.parts(e,life)
         // CONTACT keeps the accepted-hit-only stellar bursts below.
         if(e.sceneId in CoreStarweaverChoreography.sceneIds && e.phase!=CoreSkillVisualPhase.CONTACT)

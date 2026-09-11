@@ -8,17 +8,20 @@ from build_approved_dash_v3 import PACK, SIZE, polygon, geometry, ink_uvs
 
 
 def contour(kind, fade):
-    g = np.zeros((SIZE, SIZE), dtype=np.uint8)
+    resolution=256 if kind=='boundary' else SIZE
+    g = np.zeros((resolution, resolution), dtype=np.uint8)
     if fade == 7:
         return g
     if kind == 'boundary':
-        # The centreline is exactly seven model units from the origin.
-        for i in range(96):
-            if i % 12 < fade:
-                continue
-            a, b = i*math.tau/96, (i+.82)*math.tau/96
-            def p(angle, r): return (8+math.sin(angle)*r, 8+math.cos(angle)*r)
-            polygon(g, [p(a,6.91),p(a,7.09),p(b,7.09),p(b,6.91)], 2)
+        # Fine native steps keep a seven-metre range marker a LINE, not a
+        # necklace of 25cm squares. This changes geometry, not texture resolution.
+        yy,xx=np.indices(g.shape)
+        x,z=(xx+.5)/16-8,(yy+.5)/16-8
+        radius=np.sqrt(x*x+z*z)
+        angle=np.mod(np.arctan2(x,z),math.tau)
+        sector=np.floor(angle/math.tau*96).astype(int)
+        visible=(np.abs(radius-7)<.065) & (sector%12>=fade)
+        g[visible]=2
         return g
     start = 2+fade*1.5
     if kind == 'wind':
@@ -39,6 +42,23 @@ def contour(kind, fade):
     return g
 
 
+def boundary_geometry(grid,inks):
+    elements=[]
+    for row,values in enumerate(grid):
+        start=0
+        while start<len(values):
+            ink=int(values[start]);end=start+1
+            while end<len(values) and values[end]==ink: end+=1
+            if ink:
+                u0,v0,u1,v1=inks[ink]
+                elements.append({'from':[start/16,8,row/16],'to':[end/16,8,(row+1)/16],
+                    'shade':False,'faces':{
+                        'up':{'texture':'#0','uv':[u0,v1,u1,v0],'tintindex':0},
+                        'down':{'texture':'#0','uv':[u0,v0,u1,v1],'tintindex':0}}})
+            start=end
+    return elements
+
+
 def build(assets, write):
     inks = ink_uvs(assets)
     for kind in ('wind','spark','chip','boundary'):
@@ -47,7 +67,8 @@ def build(assets, write):
                 key=f'combat_vfx/war_mote_{kind}_{palette}'+(f'_fade{fade}' if fade else '')
                 write(assets/f'models/{key}.json', {'ambientocclusion':False,
                     'textures':{'0':'projects:combat_vfx/ribbon/slash_5'},
-                    'elements':geometry(contour(kind,fade),inks,curved=False)})
+                    'elements':boundary_geometry(contour(kind,fade),inks) if kind=='boundary' else
+                        geometry(contour(kind,fade),inks,curved=False)})
                 write(assets/f'items/{key}.json', {'model':{'type':'minecraft:model','model':'projects:'+key,
                     'tints':[{'type':'minecraft:constant','value':tint}]}})
     write(assets/'font/warrior_mark.json', {'providers':[{'type':'bitmap',

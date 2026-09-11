@@ -24,14 +24,25 @@ class CoreCombatMeshTest {
         val scenes=mutableListOf<Map<String,Any>>()
         fun xyz(v:net.minestom.server.coordinate.Point)=listOf(v.x(),v.y(),v.z())
         try {
-            for(skill in CoreSkillCatalog.skills(CoreClass.WARRIOR)) {
+            val skills=CoreSkillCatalog.skills(CoreClass.WARRIOR)
+            val attacks=CoreApprovedNormalV3.sceneIds.mapIndexed { i,id ->
+                skills.first().copy(icon=id,name="通常攻撃 ${i+1}",startup=0,pulses=1,radius=3.9) }
+            for(skill in skills+attacks) for(hit in if(skill.icon in setOf("war_cry","war_banner")) listOf(false) else listOf(false,true)) {
+                val normal=skill.icon in CoreApprovedNormalV3.sceneIds
+                val definition=if(normal) skills.first { it.icon==if(skill.icon=="normal_finish")"slam" else "war_wound" }.copy(radius=3.9) else skill
                 meshes.cancel()
                 val frames=(0 until skill.startup+(skill.pulses-1)*8+65).map { tick ->
-                    if(tick==0) meshes.play(CoreSkillEffect(CoreClass.WARRIOR,skill,owner.position,Vec(0.0,0.0,1.0),
-                        CoreSkillVisualPhase.PREPARE,prepareTicks=(skill.startup-1).coerceAtLeast(1)))
-                    if(tick>=skill.startup && (tick-skill.startup)%8==0 && (tick-skill.startup)/8<skill.pulses)
-                        meshes.play(CoreSkillEffect(CoreClass.WARRIOR,skill,owner.position,Vec(0.0,0.0,1.0),
-                            pulse=(tick-skill.startup)/8))
+                    if(tick==0 && skill.startup>0) meshes.play(CoreSkillEffect(CoreClass.WARRIOR,definition,owner.position,Vec(0.0,0.0,1.0),
+                        CoreSkillVisualPhase.PREPARE,prepareTicks=(skill.startup-1).coerceAtLeast(1),sceneId=skill.icon))
+                    if(tick>=skill.startup && (tick-skill.startup)%8==0 && (tick-skill.startup)/8<skill.pulses) {
+                        meshes.play(CoreSkillEffect(CoreClass.WARRIOR,definition,owner.position,Vec(0.0,0.0,1.0),
+                            pulse=(tick-skill.startup)/8,sceneId=skill.icon))
+                        // A controlled contact phase for visual review, NOT a recorded gameplay hit.
+                        if(hit) meshes.play(CoreSkillEffect(CoreClass.WARRIOR,if(normal)skills.first().copy(radius=3.9) else definition,
+                            owner.position.add(0.0,0.0,kotlin.math.min(skill.radius,CoreSkillScenes.get(skill.icon).reach)*.65),
+                            Vec(0.0,0.0,1.0),CoreSkillVisualPhase.CONTACT,pulse=(tick-skill.startup)/8,
+                            sceneId=if(normal)"normal_sweep" else skill.icon))
+                    }
                     meshes.tick()
                     assertTrue(meshes.size<=CoreCombatMeshes.OWNER_LIMIT)
                     owner.instance.entities.filter { it.entityType==net.minestom.server.entity.EntityType.ITEM_DISPLAY && owner in it.viewers }
@@ -44,8 +55,11 @@ class CoreCombatMeshTest {
                         }
                 }
                 assertEquals(0,meshes.size,skill.icon)
-                scenes+=mapOf("id" to skill.icon,"name" to skill.name,"frames" to frames)
-                scenes+=mapOf("id" to skill.icon+"_before","name" to skill.name+" / 中間層なし",
+                scenes+=mapOf("id" to skill.icon+(if(hit)"_hit" else ""),
+                    "name" to skill.name+(if(hit)" / 接触例" else ""),"frames" to frames,
+                    "startup" to skill.startup,"pulses" to skill.pulses)
+                if(!hit) scenes+=mapOf("id" to skill.icon+"_before","name" to skill.name+" / 中間層なし",
+                    "startup" to skill.startup,"pulses" to skill.pulses,
                     "frames" to frames.map { parts -> parts.filterNot { (it["model"] as String).contains("warrior_flourish/") } })
             }
             val cwd=java.nio.file.Path.of(System.getProperty("user.dir"))

@@ -1,1 +1,1 @@
-{"ambientocclusion":false,"textures":{"0":"projects:combat_vfx/ribbon/slash_5"},"elements":[]}
+{"ambientocclusion":false,"textures":{"0":"projects:combat_vfx/ribbon/slash_5"},"elements":[{"from":[5.5,11.653052295352868,3.555751604500932],"to":[5.75,11.653052295352868,3.805751604500932],"shade":false,"faces":{"up":{"texture":"#0","uv":[8.0,3.75,8.25,3.5],"tintindex":0},"down":{"texture":"#0","uv":[8.0,3.5,8.25,3.75],"tintindex":0}},"rotation":{"origin":[5.625,11.653052295352868,3.680751604500932],"axis":"x","angle":45,"rescale":false}}]}

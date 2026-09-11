@@ -10,6 +10,13 @@ internal object CoreWarriorSupportChoreography {
         val yaw=atan2(e.direction.x(),e.direction.z())
         fun local(x: Double,y: Double,z: Double)=Vec(cos(yaw)*x+sin(yaw)*z,y,-sin(yaw)*x+cos(yaw)*z)
         val prepare=e.phase==CoreSkillVisualPhase.PREPARE
+        if(e.phase==CoreSkillVisualPhase.CONTACT) {
+            if(e.sceneId!="war_guard") return emptyList()
+            // One accepted deflection, not the generic expanding star repeated
+            // a second time three ticks later. Same native ink as blade contact.
+            return listOf(CoreCombatMeshPart("warrior_skill:contact","warred",Vec(0.0,1.0,0.0),
+                Vec(1.3,1.0,1.3),yaw=yaw,pitch=-PI/2,durationTicks=9))
+        }
         if(e.sceneId=="war_guard") {
             val blade=CoreCombatMeshPart("war_parry_blade","steel",local(.6,.82,.72),Vec(.85,.85,1.85),
                 yaw=yaw,durationTicks=if(prepare) life else e.skill.duration,

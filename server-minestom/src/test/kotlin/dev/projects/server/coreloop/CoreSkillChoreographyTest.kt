@@ -415,7 +415,9 @@ class CoreSkillChoreographyTest {
                 else assertTrue(e.durationTicks in 18..40,s.icon)
             }
             val parts=CoreSkillChoreography.parts(e)
-            assertTrue(parts.size in 1..16,"${s.icon}: ${parts.size}")
+            if(job==CoreClass.WARRIOR && phase==CoreSkillVisualPhase.CONTACT && s.icon in setOf("war_cry","war_banner"))
+                assertTrue(parts.isEmpty(),"Support grants must not imply an enemy hit")
+            else assertTrue(parts.size in 1..16,"${s.icon}: ${parts.size}")
             for(p in parts) for(tick in 0..p.delayTicks+p.durationTicks) {
                 val pose=CoreSkillChoreography.pose(p,tick.toDouble())
                 if(p.shape.startsWith("flow:") || p.shape.startsWith("warrior_trace:")) assertTrue(pose.scale.x()>=0 && pose.scale.y()>0 && pose.scale.z()>=0)
