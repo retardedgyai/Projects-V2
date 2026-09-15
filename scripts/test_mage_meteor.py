@@ -3,7 +3,7 @@ import json
 import math
 import unittest
 from build_mage_meteor import METEOR_CLIPS, PALETTE, SOURCE, EMBER_SOURCE, IMPACT_SOURCE, BRIDGE_SOURCE, WAKE_SOURCE, PACK, mesh, ink_uvs, rock, burning_wake, impact_atlas
-from build_mage_meteor import METEOR_FLOW_CLIPS, flow_mesh, flow_grid
+from build_mage_meteor import METEOR_FLOW_CLIPS, flow_mesh, flow_grid, lobe_views, lobe_volume, LOBE_SOURCE, PRESSURE_SOURCE
 
 
 class MeteorTests(unittest.TestCase):
@@ -39,13 +39,11 @@ class MeteorTests(unittest.TestCase):
         import numpy as np
         atlas=impact_atlas();height,width=atlas.shape[:2]
         for clip in METEOR_FLOW_CLIPS:
-            drawing=0 if clip=='meteor_front' else 1
-            grid,_=flow_grid(clip)
-            for x,y in zip(*np.nonzero(grid)):
-                px=int((drawing+(x+.5)/48)*width/4)
-                py=int((y+.5)/48*height/2)
-                rgb=atlas[py,px].astype(int)
-                self.assertGreaterEqual(rgb[0]-rgb[2],32)
+            if clip=='meteor_front':
+                grid,_=flow_grid(clip)
+                for x,y in zip(*np.nonzero(grid)):
+                    rgb=atlas[int((y+.5)/48*height/2),int((x+.5)/48*width/4)].astype(int)
+                    self.assertGreaterEqual(rgb[0]-rgb[2],32)
             for state in range(3):
                 faces=[f for e in flow_mesh(clip,state,self.uv) for f in e['faces'].values()]
                 self.assertTrue(faces)
@@ -93,25 +91,35 @@ class MeteorTests(unittest.TestCase):
         self.assertFalse(any(f['texture'] in ('#2','#4') for frame in range(1,24)
                              for e in mesh('eruption',frame,self.uv) for f in e['faces'].values()))
 
-    def test_initial_flame_regions_tile_one_solid_ignition_at_runtime_pivots(self):
+    def test_full_flame_bodies_have_front_side_and_connected_rounded_volume(self):
         import numpy as np
-        regions=[flow_grid(f'meteor_flow_{i}') for i in range(4)]
-        # These pivots are mapped to world offsets by CoreMageChoreography.
-        self.assertEqual([(34.5,36.5),(31.5,23.5),(15.,35.5),(13.5,27.5)],
-                         [pivot for _,pivot in regions])
-        occupied=np.stack([grid>0 for grid,_ in regions]).sum(axis=0)
-        self.assertEqual(1,int(occupied.max()))  # never four overlapping copies
-        self.assertEqual(569,int((occupied>0).sum()))
-        self.assertTrue(all(int((grid>0).sum())>=60 for grid,_ in regions))
-        self.assertGreater(sum(int((grid==3).sum()) for grid,_ in regions),60)
-        # One joined initial mass; disconnection is caused by the server's
-        # subsequent transforms, not holes already baked into a late blast.
-        pending=set(zip(*np.nonzero(occupied)));stack=[pending.pop()]
-        while stack:
-            x,y=stack.pop()
-            for p in ((x-1,y),(x+1,y),(x,y-1),(x,y+1)):
-                if p in pending:pending.remove(p);stack.append(p)
-        self.assertFalse(pending)
+        for source in (LOBE_SOURCE,PRESSURE_SOURCE):
+            front,side=lobe_views(source);volume=lobe_volume(source)
+            self.assertGreater(volume.sum(),300)
+            self.assertTrue(np.all(~volume.any(axis=2)|(front>0)))
+            self.assertTrue(np.all(~volume.any(axis=0).T|(side>0)))
+            self.assertGreater(volume.any(axis=0).sum(),front.astype(bool).sum()*.5)
+            # The shape isn't just the two unrounded perpendicular extrusions.
+            self.assertLess(volume.sum(),((front>0)[:,:,None]&(side>0).T[None,:,:]).sum())
+            pending=set(zip(*np.nonzero(volume)));stack=[pending.pop()]
+            while stack:
+                x,y,z=stack.pop()
+                for p in ((x-1,y,z),(x+1,y,z),(x,y-1,z),(x,y+1,z),(x,y,z-1),(x,y,z+1)):
+                    if p in pending:pending.remove(p);stack.append(p)
+            self.assertFalse(pending,source.name)
+        for i in range(4):
+            body=flow_mesh(f'meteor_flow_{i}',0,self.uv)
+            spans=[max(e['to'][a] for e in body)-min(e['from'][a] for e in body) for a in range(3)]
+            self.assertGreater(spans[2],3.5)
+            self.assertTrue(all(len(e['faces'])==1 for e in body))
+            # Side/back retain actual light and midtone regions, not a uniform
+            # dark edge hiding a shallow extrusion.
+            for side in ('north','south','east','west'):
+                inks={e['faces'][side]['tintindex'] for e in body if side in e['faces']}
+                self.assertIn(3,inks)
+                self.assertIn(4,inks)
+        self.assertFalse(np.array_equal(lobe_views(LOBE_SOURCE)[0],lobe_views(PRESSURE_SOURCE)[0]))
+        with self.assertRaises(ValueError):flow_grid('meteor_flow_0')
 
     def test_contact_keeps_only_short_heat_residue(self):
         for frame in (0,1):

@@ -20,6 +20,8 @@ EMBER_SOURCE=SOURCE.with_name('meteor-ember-v01.png')
 IMPACT_SOURCE=SOURCE.with_name('meteor-impact-atlas-v01.png')
 BRIDGE_SOURCE=SOURCE.with_name('meteor-impact-bridge-v01.png')
 WAKE_SOURCE=SOURCE.with_name('meteor-wake-v01.png')
+LOBE_SOURCE=SOURCE.with_name('meteor-lobe-orthographic-v01.png')
+PRESSURE_SOURCE=SOURCE.with_name('meteor-pressure-orthographic-v01.png')
 TEXTURE='projects:combat_vfx/mage_material/meteor_basalt_v01'
 
 
@@ -89,7 +91,7 @@ def burning_wake(frame,uv):
     return out
 
 
-@lru_cache(maxsize=2)
+@lru_cache(maxsize=4)
 def impact_atlas(source=IMPACT_SOURCE):
     # Inspect only; the original RGB image is copied byte-for-byte. The image
     # tool supplied a painted checkerboard, NOT an alpha channel. Native faces
@@ -98,16 +100,12 @@ def impact_atlas(source=IMPACT_SOURCE):
     return np.asarray(Image.open(source).convert('RGB'))
 
 
-@lru_cache(maxsize=8)
+@lru_cache(maxsize=1)
 def flow_grid(clip):
-    """Native face layout from one drawing, not a sequence of unrelated pictures.
-
-    R12's impact divides a solid ignition into four unequal flame masses. The source
-    remains byte-identical: this chooses geometry and four existing palette inks,
-    not a raster retouch. Small isolated flecks do not become primary geometry.
-    """
+    """Short contact flash only. Separating flame bodies have their own full art."""
+    if clip!='meteor_front':raise ValueError('Moving lobes use lobe_views(), not cut-up flash art')
     atlas=impact_atlas();height,width=atlas.shape[:2];resolution=48
-    drawing=0 if clip=='meteor_front' else 1
+    drawing=0
     grid=np.zeros((resolution,resolution),dtype=np.int16)
     for x in range(resolution):
         for y in range(resolution):
@@ -131,31 +129,6 @@ def flow_grid(clip):
         for x,y in component:keep[x,y]=grid[x,y]
     grid=keep
     pivot=(24.,43.5)
-    if clip!='meteor_front':
-        # Four material-aware connected regions tile the SAME early ignition.
-        # Starting them at their source coordinates preserves the bright solid
-        # mass; moving them apart opens holes instead of growing an empty arch.
-        # Flood paths favour staying inside one painted value region, so the
-        # fracture follows the material rather than rectangular crop edges.
-        import heapq
-        points=list(zip(*np.nonzero(grid)))
-        seeds=[min(points,key=lambda p:(p[0]-x)**2+(p[1]-y)**2)
-               for x,y in ((35,38),(32,22),(15,39),(15,25))]
-        distance=np.full(grid.shape,np.inf);labels=np.full(grid.shape,-1,dtype=np.int16);queue=[]
-        for label,(x,y) in enumerate(seeds):
-            distance[x,y]=0;labels[x,y]=label;heapq.heappush(queue,(0.,label,x,y))
-        while queue:
-            cost,label,x,y=heapq.heappop(queue)
-            if cost!=distance[x,y] or label!=labels[x,y]:continue
-            for nx,ny in ((x-1,y),(x+1,y),(x,y-1),(x,y+1)):
-                if not(0<=nx<48 and 0<=ny<48 and grid[nx,ny]):continue
-                next_cost=cost+1+abs(int(grid[nx,ny])-int(grid[x,y]))*.75
-                if next_cost<distance[nx,ny]:
-                    distance[nx,ny]=next_cost;labels[nx,ny]=label
-                    heapq.heappush(queue,(next_cost,label,nx,ny))
-        grid=np.where(labels==int(clip.rsplit('_',1)[1]),grid,0)
-        xs,ys=np.nonzero(grid)
-        pivot=((int(xs.min())+int(xs.max())+1)/2,(int(ys.min())+int(ys.max())+1)/2)
     return grid,pivot
 
 
@@ -163,24 +136,127 @@ def flow_mesh(clip,state,uv):
     """Stable silhouettes; only temperature changes between the three states.
 
     Translation/expansion/collapse is animated by native display transforms.
-    A shallow solid follows the source silhouette. It replaces crossed copies
-    of a drawing, which could not reconstruct one coherent initial blast.
+    The brief contact flash stays shallow; the moving lobes use closed volumes.
     """
+    if clip!='meteor_front':return lobe_mesh(clip,state,uv)
     grid,(cx,cy)=flow_grid(clip);out=[]
     for x,y,x1,y1,ink in rectangles(grid):
         x0=8+(x-cx)*.36;xx1=8+(x1-cx)*.36
         y0=8+(cy-y1)*.54;yy1=8+(cy-y)*.54
-        # Shared source-space bow keeps adjoining regions on the same surface
-        # before they split. Thickness is a secondary silhouette, not a second
-        # complete perpendicular picture.
+        # The short contact front bows around the impact; it never separates.
         z=8+(((x+x1)/2-24)*.36)**2*.012
-        depth=.18 if clip=='meteor_front' else .8
+        depth=.18
         tint=ink if state==0 else {3:4,4:5,5:6,6:7}[ink] if state==1 else {3:1,4:2,5:7,6:7}[ink]
         e=box((x0,y0,z-depth),(xx1,yy1,z+depth),tint,uv)
         for n in ('east','west','down'):
             e['faces'][n]['tintindex']={3:4,4:5,5:6,6:6}.get(tint,tint)
         out.append(e)
     return out
+
+
+@lru_cache(maxsize=2)
+def lobe_views(source=LOBE_SOURCE):
+    """Sample complete front/side artwork into native material cells, not a PNG edit.
+
+    The two orthographic silhouettes define all three dimensions. Navy background
+    has no geometry. A larger drawing of the whole blast is never partitioned.
+    """
+    atlas=impact_atlas(source);height,width=atlas.shape[:2];n=14
+    result=[]
+    for view in range(2):
+        pixels=atlas[:,view*width//2:(view+1)*width//2].astype(int)
+        warm=(pixels[:,:,0]-pixels[:,:,2]>60)&(pixels[:,:,0]>100)
+        ys,xs=np.nonzero(warm)
+        # Match the two authored vertical extents; retain each view's contour.
+        x0,x1=xs.min(),xs.max()+1;y0,y1=ys.min(),ys.max()+1
+        xx=np.minimum(x1-1,(x0+(np.arange(n)+.5)*(x1-x0)/n).astype(int))
+        yy=np.minimum(y1-1,(y0+(np.arange(n)+.5)*(y1-y0)/n).astype(int))
+        rgb=pixels[yy[:,None],xx[None,:]]
+        mask=(rgb[:,:,0]-rgb[:,:,2]>60)&(rgb[:,:,0]>100)
+        inks=np.where(rgb[:,:,1]>=205,3,np.where(rgb[:,:,1]>=140,4,np.where(rgb[:,:,1]>=75,5,6)))
+        result.append(np.where(mask,inks,0).T[:,::-1].copy())
+    return tuple(result)
+
+
+@lru_cache(maxsize=2)
+def lobe_volume(source=LOBE_SOURCE):
+    """Artwork-defined visual hull with rounded, rather than rectangular, flanks."""
+    front,side=lobe_views(source);n=front.shape[0]
+    solid=np.zeros((n,n,n),dtype=bool)
+    def intervals(row):
+        positions=np.flatnonzero(row)
+        return np.split(positions,np.flatnonzero(np.diff(positions)>1)+1) if len(positions) else []
+    for y in range(n):
+        for xs in intervals(front[:,y]):
+            for zs in intervals(side[:,y]):
+                u=(xs-(xs[0]+xs[-1])/2)/(len(xs)/2)
+                v=(zs-(zs[0]+zs[-1])/2)/(len(zs)/2)
+                # This only rounds the intersection; its width, leaning, curl,
+                # open cleft and changing depth all come from the two drawings.
+                inside=abs(u[:,None])**2.5+abs(v[None,:])**2.5<=1.12
+                solid[xs[:,None],y,zs[None,:]]=inside
+    # Logical-pixel sampling can strand one-cell tips. They are not independent
+    # particles and must not float rigidly alongside this primary flame body.
+    pending=set(zip(*np.nonzero(solid)));components=[]
+    while pending:
+        stack=[pending.pop()];component=[]
+        while stack:
+            x,y,z=stack.pop();component.append((x,y,z))
+            for p in ((x-1,y,z),(x+1,y,z),(x,y-1,z),(x,y+1,z),(x,y,z-1),(x,y,z+1)):
+                if p in pending:pending.remove(p);stack.append(p)
+        components.append(component)
+    keep=max(components,key=len)
+    if len(keep)<solid.sum()*.98:raise ValueError(f'{source.name}: materially disconnected flame body')
+    solid[:]=False
+    for point in keep:solid[point]=True
+    return solid
+
+
+@lru_cache(maxsize=8)
+def lobe_surface(clip,uv_tuple):
+    """One exposed closed skin, no crossed cards and no internal cube faces."""
+    number=int(clip.rsplit('_',1)[1])
+    source=PRESSURE_SOURCE if number in (0,2) else LOBE_SOURCE
+    front,side=lobe_views(source);solid=lobe_volume(source);n=solid.shape[0]
+    spans=((9.5,5.6,4.8),(7.4,11.,6.5),(8.4,4.8,3.8),(4.2,6.2,4.5))[number]
+    # Two complete pressure tongues unfold below one large rolling body and
+    # a smaller peeling one. They are not four scaled copies of the same curl.
+    if number>=2:solid=solid[::-1].copy();front=front[::-1].copy()
+    if number%2:solid=solid.transpose(2,1,0).copy();front,side=side,front
+    out=[];step=np.array(spans)/n;origin=8-np.array(spans)/2
+    for axis in range(3):
+        other=[i for i in range(3) if i!=axis]
+        for sign in (-1,1):
+            neighbor=np.roll(solid,-sign,axis=axis)
+            edge=[slice(None)]*3;edge[axis]=-1 if sign==1 else 0;neighbor[tuple(edge)]=False
+            exposed=solid&~neighbor
+            name=(('west','east'),('down','up'),('north','south'))[axis][sign==1]
+            # Each direction uses the corresponding authored value groups,
+            # rather than painting every side a uniform dark extrusion colour.
+            ink=np.broadcast_to((side.T[None,:,:] if axis==0 else front[:,:,None]),solid.shape)
+            if axis==1:
+                ink=np.minimum(np.broadcast_to(front[:,:,None],solid.shape),np.broadcast_to(side.T[None,:,:],solid.shape))
+                if sign<0:ink=np.maximum(5,ink)
+            material=np.where(exposed,ink,0)
+            for layer in range(n):
+                mask=np.take(material,layer,axis=axis)
+                choices=(rectangles(mask),[(b,a,end,stop,c) for a,b,stop,end,c in rectangles(mask.T)])
+                for a,b,stop,end,color in min(choices,key=len):
+                    lo=origin.copy();hi=origin.copy()
+                    lo[axis]+=step[axis]*(layer+(sign==1));hi[axis]=lo[axis]+.002
+                    lo[other[0]]+=a*step[other[0]];hi[other[0]]+=stop*step[other[0]]
+                    lo[other[1]]+=b*step[other[1]];hi[other[1]]+=end*step[other[1]]
+                    if sign==1:lo[axis]-=.002;hi[axis]-=.002
+                    e=box(lo,hi,int(color),list(uv_tuple));e['faces']={name:e['faces'][name]};out.append(e)
+    return out
+
+
+def lobe_mesh(clip,state,uv):
+    # Do not re-mesh when the temperature changes: merged face boundaries and
+    # the whole silhouette remain identical for native display interpolation.
+    mapping=({3:3,4:4,5:5,6:6},{3:4,4:5,5:6,6:7},{3:1,4:2,5:7,6:7})[state]
+    return [dict(e,faces={name:dict(f,tintindex=mapping[f['tintindex']]) for name,f in e['faces'].items()})
+            for e in lobe_surface(clip,tuple(uv))]
 
 
 def contact_wake(frame,uv):

@@ -50,6 +50,27 @@ class CoreMageChoreographyTest {
             }
         }
     }
+    @Test fun `meteor pressure unfolds in three dimensions with distinct lobe roles`() {
+        val parts=CoreSkillChoreography.parts(effect("meteor")).filter { it.shape.startsWith("mage_material:meteor_flow_") }
+        assertEquals(4,parts.size)
+        assertTrue(parts.map { it.travel.z() }.max()-parts.map { it.travel.z() }.min()>.8)
+        assertEquals(listOf(6,12,6,12),parts.map { it.durationTicks })
+        for(i in listOf(0,2)) {
+            // Low pressure ends before the ash phase; no two persistent grey
+            // wings remain under the later rising flame/debris.
+            assertEquals(Vec.ZERO,CoreSkillChoreography.pose(parts[i],5.0).scale)
+            assertFalse(CoreSkillChoreography.pose(parts[i],6.0).visible)
+        }
+        val poses=parts.map { CoreSkillChoreography.pose(it,3.0) }
+        assertTrue(poses[1].scale.y()>poses[0].scale.y()*1.3)
+        assertTrue(poses[3].scale.y()<poses[1].scale.y()*.75)
+        assertTrue(poses[0].offset.x()>0 && poses[2].offset.x()<0)
+        for(p in parts) {
+            val rotation=(0..110).map { CoreSkillChoreography.pose(p,it/10.0).roll }
+            assertTrue(rotation.all { it.isFinite() && kotlin.math.abs(it)<.5 })
+            assertTrue(rotation.zipWithNext().all { (a,b)->kotlin.math.abs(a-b)<.05 })
+        }
+    }
     @Test fun `persistent field preparations do not spawn more complete fields between damage beats`() {
         for(id in listOf("mage_garden","mage_ult","mage_zero")) {
             val e=effect(id)

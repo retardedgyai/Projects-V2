@@ -85,13 +85,13 @@ internal object CoreMageChoreography {
                 listOf(piece("eruption",at.add(0.0,.12,0.0),Vec(4.2,2.0,4.2),ground=true),
                     piece("meteor_ring",at.add(0.0,.13,0.0),Vec(6.0,1.0,6.0),ground=true,secondary=true),
                     piece("meteor_front",at.add(0.0,.12,0.0),Vec(4.2,2.0,4.2),life=5,ground=true))+
-                    // Source pivots from flow_grid(), at .36/.54 model units per
-                    // source cell, rendered at 4.2/2.0 scale. At age zero the four
-                    // disjoint material regions reconstruct the whole ignition.
-                    listOf(Vec(.99225,.4725,0.0),Vec(.70875,1.35,0.0),Vec(-.8505,.54,0.0),Vec(-.99225,1.08,0.0)).mapIndexed { i,start ->
-                        val drift=listOf(Vec(.69,.46,.22),Vec(.24,.77,-.08),Vec(-.72,.59,.10),Vec(-.36,.77,-.12))[i]
+                    // Overlapping roots open into two low pressure tongues,
+                    // one raised main lobe and a smaller late peeling lobe.
+                    // These are full bodies, no longer four tiled image regions.
+                    listOf(Vec(.5,.4,.0),Vec(.1,.85,.1),Vec(-.4,.35,-.1),Vec(-.35,.65,-.1)).mapIndexed { i,start ->
+                        val drift=listOf(Vec(1.1,.25,.35),Vec(.3,1.10,.35),Vec(-1.2,.4,-.15),Vec(-.55,.85,-.45))[i]
                         val end=start.add(drift)
-                        piece("meteor_flow_$i",at.add(0.0,.12,0.0),Vec(4.2,2.0,4.2),life=12,ground=true,
+                        piece("meteor_flow_$i",at.add(0.0,.12,0.0),Vec(4.2,2.0,4.2),life=if(i%2==0)6 else 12,ground=true,
                             travel=local(end.x(),end.y(),end.z())).copy(
                             bend=local(start.x(),start.y(),start.z()))
                     }
@@ -155,19 +155,31 @@ internal object CoreMageChoreography {
         val t=(local/(p.durationTicks-1).coerceAtLeast(1)).coerceIn(0.0,1.0)
         if(interpolated(p)) {
             val front=clip=="meteor_front"
-            val rise=((local-.5)/2.5).coerceIn(0.0,1.0)
+            val role=if(front)-1 else clip.substringAfterLast('_').toInt()
+            val openingDelay=when(role) { 0 -> .15; 1 -> .25; 2 -> .5; 3 -> 1.1; else -> .5 }
+            val rise=((local-openingDelay)/2.8).coerceIn(0.0,1.0)
             val open=rise*rise*(3-2*rise)
+            // Short pressure tongues begin losing energy while still opening;
+            // compressing the old long-lobe fade into two ticks made a snap.
+            val collapseStart=if(role==0 || role==2)1.5 else 3.0
             val tail=if(front)(local/(p.durationTicks-1)).coerceIn(0.0,1.0)
-                else ((local-3)/(p.durationTicks-1-3)).coerceIn(0.0,1.0)
+                else ((local-collapseStart)/(p.durationTicks-1-collapseStart)).coerceIn(0.0,1.0)
             val fade=1-tail*tail*(3-2*tail)
             // Solid ignition first, fracture second. Never grow a late-dissolve
             // silhouette from tiny seeds after the contact has already passed.
             val scale=if(front)Vec(1+tail*.8,1-tail*.7,1+tail*.8).mul(fade)
-                else Vec(1.0+open*.08,1.0+open*.15,1.0+open*.08).mul(fade)
+                else when(role) {
+                    0,2 -> Vec(.7+open*.65,.62+open*.35,.85+open*.2)
+                    1 -> Vec(.8+open*.3,.8+open*.6,.8+open*.15)
+                    else -> Vec(.6+open*.24,.55+open*.38,.7+open*.1)
+                }.mul(fade)
             val offset=if(front)p.offset else p.offset.add(p.bend.mul(1-open)).add(p.travel.mul(open))
                 .add(p.travel.x()*tail*.22,tail*.8,p.travel.z()*tail*.22)
             val state=if(local<4)0 else if(local<6)1 else 2
-            return CoreMeshPose(offset,p.scale.mul(scale),p.yaw,p.pitch,p.roll,
+            // Restrained roll of real volumes, not a spinning image. The low
+            // tongues unfold outwards while the lifted pressure rolls inwards.
+            val roll=p.roll+when(role) { 0 -> -.14+open*.25; 1 -> -.22+open*.55; 2 -> .1-open*.3; 3 -> .18-open*.45; else -> 0.0 }
+            return CoreMeshPose(offset,p.scale.mul(scale),p.yaw,p.pitch,roll,
                 "combat_vfx/mage_material/${clip}_$state",age>=p.delayTicks && age<p.delayTicks+p.durationTicks)
         }
         // The final rock pose is still visible immediately before the impact
