@@ -8,7 +8,8 @@ internal object CoreMageChoreography {
     val sceneIds=setOf("firebolt","frost_nova","meteor","mage_blink","mage_mark",
         "mage_garden","mage_burst","mage_ward","mage_ult","mage_zero")
     fun owns(p:CoreCombatMeshPart)=p.shape.startsWith("mage_material:")
-    private val longClips=setOf("pyre","corona","crystal","ice_root","ice_shelf","zero_crown","zero_floor","zero_shelf","zero_wing")
+    private val longClips=setOf("pyre","corona","crystal","ice_root","ice_shelf","zero_crown","zero_floor","zero_shelf","zero_wing",
+        "garden_spires","garden_fan","garden_bed","garden_spray")
     private fun frames(clip:String)=when(clip) {
         in longClips -> 48
         "flame_hit","ice_hit","thunder_hit" -> 18
@@ -41,6 +42,7 @@ internal object CoreMageChoreography {
             // FIELD runtime requests a new preparation before every damage beat.
             // Persistent garden/pyre already own the whole phrase after the first beat.
             if(e.pulse>0 && e.sceneId in setOf("mage_garden","mage_ult")) return emptyList()
+            if(e.sceneId=="mage_garden") return listOf(floor("garden_charge",min(r*.55,2.5),e.prepareDuration))
             val charge=when(e.skill.element) { 1 -> "fire_charge"; 2 -> "ice_charge"; else -> "arcane_charge" }
             if(e.sceneId in setOf("meteor","mage_ult")) {
                 val a=e.pulse*2.39996
@@ -88,12 +90,14 @@ internal object CoreMageChoreography {
                 piece("frost_wave",Vec(sin(a)*r*.24,.12,cos(a)*r*.24),Vec(min(3.0,r*.7)*size,.65*size,1.8),
                     life=18,facing=a,ground=true,travel=Vec(sin(a)*r*.44,0.0,cos(a)*r*.44))
             }
-            "mage_garden" -> if(e.pulse>0) listOf(floor("ice_pulse",r*.68,8).copy(secondary=true)) else {
+            "mage_garden" -> if(e.pulse>0) listOf(piece("garden_beat",Vec(0.0,.12,0.0),
+                Vec(r*1.1,1.8,r*1.1),life=8,ground=true,secondary=true)) else {
                 val life=(e.skill.pulses-1)*8+24
-                listOf(floor("ice_root",r*.68,life),
-                    piece("crystal",local(-r*.31,.12,r*.27),Vec(1.9,1.6,2.2),life=life,ground=true,facing=yaw+.4),
-                    piece("ice_shelf",local(r*.28,.12,-r*.22),Vec(2.3,.6,2.5),life=life-2,ground=true,delay=2,facing=yaw+.3),
-                    piece("crystal",local(r*.38,.12,r*.39),Vec(.9,.85,1.1),life=life-4,ground=true,delay=4,facing=yaw+.15))
+                listOf(floor("garden_bed",r*.55,life),
+                    piece("garden_spires",local(-r*.18,.12,r*.10),Vec(1.8,1.8,1.8),life=life,ground=true,facing=yaw+.25),
+                    piece("garden_fan",local(r*.20,.12,r*.22),Vec(1.8,1.8,1.8),life=life-2,ground=true,delay=2,facing=yaw-.65),
+                    piece("garden_fan",local(r*.08,.12,-r*.23),Vec(1.2,1.15,1.2),life=life-4,ground=true,delay=4,facing=yaw+2.1),
+                    piece("garden_spray",Vec(0.0,.12,0.0),Vec(r*.9,2.3,r*.9),life=life,ground=true,secondary=true))
             }
             "mage_zero" -> if(e.pulse>0) listOf(floor("ice_pulse",r*.68,8,follow=true).copy(secondary=true)) else {
                 val life=(e.skill.pulses-1)*8+16

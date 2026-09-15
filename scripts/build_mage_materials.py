@@ -9,8 +9,12 @@ from build_mage_fire import FIRE_CLIPS, mesh as fire_mesh, palette as fire_palet
 from build_mage_ice import ICE_CLIPS, mesh as ice_mesh, palette as ice_palette
 from build_mage_arcane import ARCANE_CLIPS, mesh as arcane_mesh, PALETTE as ARCANE_PALETTE
 from build_mage_cataclysm import CATACLYSM_CLIPS, mesh as cataclysm_mesh, palette as cataclysm_palette
+from build_mage_garden import GARDEN_CLIPS, mesh as garden_mesh, PALETTE as GARDEN_PALETTE
 
 CLIPS = {
+    'garden_spires': (48, 0x83dbe5), 'garden_fan': (48, 0x83dbe5),
+    'garden_bed': (48, 0x46bed4), 'garden_spray': (48, 0xc4f2f1),
+    'garden_beat': (24, 0xc4f2f1), 'garden_charge': (24, 0x83dbe5),
     'cinder': (24, 0xffaa69), 'fire_stream': (24, 0xffaa69), 'flame_hit': (18, 0xffc385),
     'meteor': (24, 0xff8a58), 'eruption': (24, 0xffbc86),
     'pyre': (48, 0xff865e), 'corona': (48, 0xffbe86),
@@ -31,7 +35,8 @@ CLIPS = {
 
 MATERIALS = ((FIRE_CLIPS,fire_mesh,fire_palette),(ICE_CLIPS,ice_mesh,ice_palette),
              (ARCANE_CLIPS,arcane_mesh,lambda:ARCANE_PALETTE),
-             (CATACLYSM_CLIPS,cataclysm_mesh,cataclysm_palette))
+             (CATACLYSM_CLIPS,cataclysm_mesh,cataclysm_palette),
+             (GARDEN_CLIPS,garden_mesh,lambda:GARDEN_PALETTE))
 assert set(CLIPS)==set.union(*(names for names,_,_ in MATERIALS))
 assert sum(len(names) for names,_,_ in MATERIALS)==len(CLIPS)
 
