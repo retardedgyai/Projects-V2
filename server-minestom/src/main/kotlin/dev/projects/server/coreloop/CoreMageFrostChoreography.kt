@@ -23,12 +23,13 @@ internal object CoreMageFrostChoreography {
         }
         if(e.phase==CoreSkillVisualPhase.PREPARE)
             return listOf(part("footing",.75,e.prepareDuration).copy(followOwner=true))
-        // Each cluster lasts 0.9 s; the outer layer starts 2-3 ticks later.
+        // R04: the high tips end before the short roots. One instant impact,
+        // not a repeating damage field; these lifetimes change visuals only.
         // Three interleaved inner/outer sectors
         // keep the whole circumference present without a rotating carousel.
-        return listOf(part("footing",1.5,18))+listOf("a","b","c").flatMapIndexed { i,suffix ->
-            listOf(part("inner_$suffix",2.3,18,i%2,turn=i*2*PI/3),
-                part("outer_$suffix",3.1,18,2+i%2,turn=i*2*PI/3))
+        return listOf(part("footing",1.5,40))+listOf("a","b","c").flatMapIndexed { i,suffix ->
+            listOf(part("inner_$suffix",2.3,34,i%2,turn=i*2*PI/3),
+                part("outer_$suffix",3.1,28,2+i%2,turn=i*2*PI/3))
         }
     }
 
@@ -41,7 +42,8 @@ internal object CoreMageFrostChoreography {
         // Keep x/z roots fixed: height rises from the earth instead of the
         // whole finished crystal sliding horizontally away from the caster.
         val end=(p.durationTicks-1).coerceAtLeast(1).toDouble()
-        val close=ease((local-(end-4).coerceAtLeast(0.0))/4.0)
+        val fade=if(footing)6.0 else 8.0
+        val close=ease((local-(end-fade).coerceAtLeast(0.0))/fade)
         val scale=if(local>=p.durationTicks-1.0)Vec.ZERO else
             p.scale.mul(Vec(1.0,.018+.982*grow,1.0)).mul(Vec(1.0,1-close,1.0))
         return CoreMeshPose(p.offset.add(0.0,-.14,0.0),scale,p.yaw,p.pitch,p.roll,

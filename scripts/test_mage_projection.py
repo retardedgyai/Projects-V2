@@ -6,6 +6,17 @@ from preview_skill_choreography import raster_quad,clip_textured_face
 
 
 class ProjectionTests(unittest.TestCase):
+    def test_cached_array_sampling_matches_image_sampling_byte_for_byte(self):
+        tex=Image.fromarray(np.array([[[10,20,30,255],[70,80,90,255]],
+                                     [[100,120,130,255],[200,220,240,255]]],dtype=np.uint8))
+        results=[]
+        for source in (tex,np.asarray(tex)):
+            canvas=np.zeros((8,8,4),dtype=np.uint8)
+            depth=np.full((8,8),np.inf)
+            raster_quad(canvas,depth,[(0,0,1),(8,0,1),(8,8,1),(0,8,1)],source,[0,0,16,16])
+            results.append(canvas)
+        np.testing.assert_array_equal(*results)
+
     def test_eye_plane_clips_texture_and_geometry_before_perspective_division(self):
         clipped=clip_textured_face([(-1,0,-1),(1,0,-1),(1,1,1),(-1,1,1)],[0,0,16,16])
         self.assertEqual(4,len(clipped))

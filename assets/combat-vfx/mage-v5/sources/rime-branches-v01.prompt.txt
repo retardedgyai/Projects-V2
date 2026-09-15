@@ -1,0 +1,16 @@
+Mode: built-in image_gen, original generation with MatE R04 as style/shape reference.
+The requested transparent background was returned as baked checkerboard RGB.
+An image_gen background-only edit also returned RGB; that edit is not consumed.
+The original image is preserved byte-identical. Native geometry is fitted only
+to blue painted regions, so no rectangle includes the gray background.
+This is not a claim that the PNG contains transparency.
+
+Use case: stylized-concept.
+Asset type: a production pixel-art UV sprite sheet for ONE rooted ice spell, to be mapped to several fixed thin 3D crystal faces in Minecraft.
+Input image 1 is a STYLE AND SHAPE REFERENCE only: the MatE ice bundles at the character's feet. Do not reproduce the character, staff, black scene, screenshot, or UI.
+Create a genuinely TRANSPARENT PNG with three equal vertical columns, no cell borders, one isolated original ice splinter bundle in each column. Each full bundle fits its column with transparent margin, bottom root near bottom, longest tips upward. This is a flat front-facing painted sprite sheet, NOT a scene, perspective render, concept illustration, icon, or presentation.
+Each bundle has a thick irregular blue shoulder made of overlapping short broken plates; 3-4 much longer pale-cyan shards grow out of that shoulder in almost parallel directions, and a few short splinter fins interrupt the silhouette. Asymmetric layered stepped ends, NOT a radial star and NOT a symmetrical spear. The painted blue body has substantial width, NOT just thin glowing lines. No separate pedestal or rock beneath it.
+Bundle A leans slightly left with one off-centre long tip, B is shorter/wider with split uneven tips, C leans slightly right with a broad central plate and two broken side tips. Their common style and palette must match, while their contours differ.
+Style: authentic coarse pixel art like the reference, roughly a 32 by 64 pixel drawing for each entire bundle enlarged crisply. Deliberate square pixel clusters and stair-step contours. Broad simple light cyan planes, a few long white-cyan ridges, medium blue facets, cobalt and muted indigo concentrated at roots. Crisp broken intermediate shoulders and plate overlaps are painted, not decorative cracks everywhere.
+Use flat solid color clusters with hard edges. No soft gradient, no noise, no glossy high-poly render, no bloom, no luminous halo, no smooth vector curves, no texture grain. Ice material should read at Minecraft scale.
+All empty areas and gaps between shards are genuinely transparent, no black/white/checkerboard background. No ground, no shadow, no text, no letters, no symbols, no stars, no floating decorative particles, no border. Only the three painted ice bundles.

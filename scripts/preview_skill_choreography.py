@@ -43,6 +43,13 @@ def texture_for(name, tint):
     texture[:,:,:3] = (texture[:,:,:3].astype(float) * color / 255).astype('uint8')
     return Image.fromarray(texture)
 
+
+@lru_cache(maxsize=256)
+def texture_pixels_for(name,tint):
+    # PIL's array interface materializes tobytes(). Do this once per texture,
+    # not once for each of thousands of tiny native contour faces per frame.
+    return np.asarray(texture_for(name,tint))
+
 def clip_textured_face(world, uv, rotation=0, near_z=-.6):
     """Clip positions AND UVs before perspective division; never mirror behind-camera faces."""
     corners=[(uv[0],uv[1]),(uv[2],uv[1]),(uv[2],uv[3]),(uv[0],uv[3])]
@@ -66,6 +73,7 @@ def raster_quad(canvas, depth_buffer, points, texture, uv, perspective=False, ve
     an entire short face merely because its average depth is nearer.
     """
     tex=np.asarray(texture)
+    texture_height,texture_width=tex.shape[:2]
     coords=np.array(vertex_uv if vertex_uv is not None else
                     ((uv[0],uv[1]),(uv[2],uv[1]),(uv[2],uv[3]),(uv[0],uv[3])))/16
     for ids in ((0,i,i+1) for i in range(1,len(points)-1)):
@@ -94,8 +102,8 @@ def raster_quad(canvas, depth_buffer, points, texture, uv, perspective=False, ve
         else:
             depth=sum(weights[:,:,i]*verts[i,2] for i in range(3))
             sample=sum(weights[:,:,i,None]*tc[i] for i in range(3))
-        tx=np.clip((sample[:,:,0]*texture.width).astype(int),0,texture.width-1)
-        ty=np.clip((sample[:,:,1]*texture.height).astype(int),0,texture.height-1)
+        tx=np.clip((sample[:,:,0]*texture_width).astype(int),0,texture_width-1)
+        ty=np.clip((sample[:,:,1]*texture_height).astype(int),0,texture_height-1)
         ink=tex[ty,tx]
         target_depth=depth_buffer[ymin:ymax+1,xmin:xmax+1]
         mask=inside & (depth<target_depth-1e-8) & (ink[:,:,3]>127)
@@ -207,7 +215,7 @@ def render(parts, name, tick, view='iso', world_scale=34, fps=20, background='#1
                         uv=[0,0,16,16]
                     else:
                         tint=tints[face.get('tintindex',0)] if 'tintindex' in face else 0xffffff
-                        texture=texture_for(texture_name,tint)
+                        texture=texture_pixels_for(texture_name,tint)
                         uv=face['uv']
                     rotation=face.get('rotation',0)//90
                     if view=='eye':

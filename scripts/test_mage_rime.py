@@ -4,13 +4,16 @@ import json
 import math
 import unittest
 import numpy as np
-from build_mage_rime import CLIPS,GROUPS,PACK,SOURCE,mesh,triangle,spear,cluster_roots
+from build_mage_rime import CLIPS,GROUPS,PACK,SOURCE,BRANCH_SOURCE,mesh,triangle,spear,cluster_roots,painted_profile
+from PIL import Image
 
 
 class RimeTests(unittest.TestCase):
     def test_paint_is_shipped_byte_identical(self):
         dest=PACK/'assets/projects/textures/combat_vfx/mage_material/rime_faces_v02.png'
         self.assertEqual(hashlib.sha256(SOURCE.read_bytes()).digest(),hashlib.sha256(dest.read_bytes()).digest())
+        branch=PACK/'assets/projects/textures/combat_vfx/mage_material/rime_branches_v01.png'
+        self.assertEqual(BRANCH_SOURCE.read_bytes(),branch.read_bytes())
 
     def test_each_cluster_is_individually_composed(self):
         self.assertEqual(6,len({tuple(v) for v in map(tuple,GROUPS.values())}))
@@ -88,11 +91,33 @@ class RimeTests(unittest.TestCase):
                 if i!=graft:
                     self.assertLess(np.linalg.norm(r[[0,2]]-roots[primary][[0,2]]),2.5)
 
-    def test_bundle_axes_agree_and_no_separate_pedestal_is_inserted(self):
+    def test_bundle_axes_agree_and_painted_faces_surround_one_short_solid_core(self):
         for key,specs in GROUPS.items():
-            self.assertEqual(len(specs)*128,len(mesh(key)))
+            variant='abc'.index(key[-1])
+            count=128+len(painted_profile(variant)[2])
+            if 'outer' in key:count+=len(painted_profile((variant+1)%3)[2])
+            self.assertEqual(count,len(mesh(key)))
             self.assertLessEqual(max(s[0] for s in specs)-min(s[0] for s in specs),44)
             self.assertTrue(all(s[5]<s[4]*.55 for s in specs))
+
+    def test_painted_native_faces_exclude_every_background_texel(self):
+        rgb=np.asarray(Image.open(BRANCH_SOURCE)).astype(int)
+        for variant in range(3):
+            iw,ih,rects,_=painted_profile(variant)
+            self.assertGreater(len(rects),30)
+            for x0,y0,x1,y1 in rects:
+                region=rgb[y0:y1,x0:x1]
+                self.assertTrue((region[:,:,2]-region[:,:,0]>10).all())
+                self.assertTrue(variant*iw/3<=x0<x1<=(variant+1)*iw/3)
+        for clip in CLIPS:
+            painted=[e for e in mesh(clip) if e['faces']['south']['texture']=='#1']
+            self.assertTrue(painted)
+            for e in painted:
+                uv=e['faces']['south']['uv']
+                x0,y0,x1,y1=[round(uv[i]/16*(iw if i%2==0 else ih)) for i in range(4)]
+                region=rgb[y0:y1,x0:x1]
+                self.assertTrue((region[:,:,2]-region[:,:,0]>10).all())
+                self.assertGreater(e['to'][2]-e['from'][2],0)
 
 
 if __name__=='__main__':

@@ -6,14 +6,18 @@ shaft; contour strips never repeat a complete painting on every little face.
 import json
 import math
 import shutil
+from functools import lru_cache
 from pathlib import Path
 
 import numpy as np
+from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[1]
 PACK = ROOT/'server-minestom/src/main/resources/core-ui-pack'
 SOURCE = ROOT/'assets/combat-vfx/mage-v5/sources/rime-faces-v02.png'
 TEXTURE = 'projects:combat_vfx/mage_material/rime_faces_v02'
+BRANCH_SOURCE = ROOT/'assets/combat-vfx/mage-v5/sources/rime-branches-v01.png'
+BRANCH_TEXTURE = 'projects:combat_vfx/mage_material/rime_branches_v01'
 CLIPS = ('rime_footing', 'rime_inner_a', 'rime_inner_b', 'rime_inner_c',
          'rime_outer_a', 'rime_outer_b', 'rime_outer_c')
 
@@ -37,6 +41,18 @@ GROUPS = {
 }
 
 
+def plane_rotation(u,v,origin):
+    matrix=np.column_stack((u,v,np.cross(u,v)))
+    ry=math.asin(max(-1,min(1,-matrix[2,0])))
+    if abs(math.cos(ry))>1e-7:
+        rx=math.atan2(matrix[2,1],matrix[2,2])
+        rz=math.atan2(matrix[1,0],matrix[0,0])
+    else:
+        rx=0.0
+        rz=math.atan2(-matrix[0,1],matrix[1,1])
+    return {'origin':list(origin),'x':math.degrees(rx),'y':math.degrees(ry),'z':math.degrees(rz)}
+
+
 def face_band(a, b, top_a, top_b, panel, steps=48, start_fraction=0.0, end_fraction=1.0):
     """Coplanar stepped contour, NOT stairs across the broad painted surface.
 
@@ -50,16 +66,7 @@ def face_band(a, b, top_a, top_b, panel, steps=48, start_fraction=0.0, end_fract
     shear=float(np.dot(delta,u))
     v=delta-u*shear
     h=float(np.linalg.norm(v));v/=h
-    n=np.cross(u,v)
-    matrix=np.column_stack((u,v,n))
-    ry=math.asin(max(-1,min(1,-matrix[2,0])))
-    if abs(math.cos(ry))>1e-7:
-        rx=math.atan2(matrix[2,1],matrix[2,2])
-        rz=math.atan2(matrix[1,0],matrix[0,0])
-    else:
-        rx=0.0
-        rz=math.atan2(-matrix[0,1],matrix[1,1])
-    rotation={'origin':base.tolist(),'x':math.degrees(rx),'y':math.degrees(ry),'z':math.degrees(rz)}
+    rotation=plane_rotation(u,v,base)
     width=float(np.linalg.norm(b-a))
     top_width=float(np.linalg.norm(top_b-top_a))
     out=[]
@@ -88,7 +95,7 @@ def triangle(a, b, c, panel, steps=48):
     return face_band(a,b,c,c,panel,steps)
 
 
-def spear(angle, root, tip, height, width, depth, low=False, root_at=None, blade_roll=0.0):
+def spear(angle, root, tip, height, width, depth, low=False, root_at=None, blade_roll=0.0, panels=(0,1,0,2)):
     a = math.radians(angle)
     def point(tangent, radial):
         return (8+math.cos(a)*tangent+math.sin(a)*radial,
@@ -128,7 +135,7 @@ def spear(angle, root, tip, height, width, depth, low=False, root_at=None, blade
         # Two opposing broad faces carry the pale axial painting. Keeping
         # the entire owner-facing side dark made the cast cobalt spikes,
         # unlike the reference's luminous blue-white ice body.
-        panel=3 if low else (0,1,0,2)[side]
+        panel=3 if low else panels[side]
         if shoulder:
             top_a,top_b=shoulder[side],shoulder[(side+1)%4]
             out.extend(face_band(p,q,top_a,top_b,panel,12,0,.56))
@@ -160,17 +167,89 @@ def cluster_roots(clip):
     return roots
 
 
+@lru_cache(maxsize=3)
+def painted_profile(variant):
+    """Read original pixels to author geometry. Never alter or save the bitmap.
+
+    Imagegen returned RGB with a gray checkerboard even after a requested alpha
+    edit. Only all-blue 8px cells receive native faces. Empty gaps remain actual
+    empty geometry; no background rectangle or fake transparency is shipped.
+    """
+    rgb=np.asarray(Image.open(BRANCH_SOURCE).convert('RGB')).astype(int)
+    ih,iw=rgb.shape[:2]
+    cell=8
+    lo,hi=variant*iw//3,(variant+1)*iw//3
+    blue=rgb[:,:,2]-rgb[:,:,0]>10
+    active={};rects=[]
+    for y in range(0,ih,cell):
+        row=[];start=None
+        for x in range(lo,hi,cell):
+            valid=bool(blue[y:min(ih,y+cell),x:min(hi,x+cell)].all())
+            if valid and start is None:start=x
+            if start is not None and (not valid or x+cell>=hi):
+                row.append((start,x+cell if valid else x));start=None
+        next_active={}
+        for span in row:
+            box=active.pop(span,[span[0],y,span[1],y])
+            box[3]=min(ih,y+cell);next_active[span]=box
+        rects.extend(active.values());active=next_active
+    rects.extend(active.values())
+    if not rects:raise ValueError('No blue painted contour')
+    top=min(r[1] for r in rects);bottom=max(r[3] for r in rects)
+    left=min(r[0] for r in rects);right=max(r[2] for r in rects)
+    roots=[(r[0]+r[2])/2 for r in rects if r[3]>=bottom-cell]
+    return iw,ih,rects,(left,top,right,bottom,float(np.mean(roots)))
+
+
+def painted_branch(variant,origin,end,width,roll):
+    iw,ih,rects,(left,top,right,bottom,root_x)=painted_profile(variant)
+    origin=np.array(origin,dtype=float);axis=np.array(end)-origin
+    length=np.linalg.norm(axis);v=axis/length
+    u=np.array((1.0,0,0));u-=v*np.dot(u,v);u/=np.linalg.norm(u)
+    a=math.radians(roll);u=u*math.cos(a)+np.cross(v,u)*math.sin(a)
+    rotation=plane_rotation(u,v,origin)
+    sx=width/(right-left);sy=length/(bottom-top)
+    out=[]
+    for x0,y0,x1,y1 in rects:
+        # The painting is not squeezed independently into each contour strip.
+        # Every face reads exactly its original atlas rectangle.
+        uv=[x0/iw*16,y0/ih*16,x1/iw*16,y1/ih*16]
+        back=[uv[2],uv[1],uv[0],uv[3]]
+        edges={'texture':'#0','uv':[10,10,10.08,10.08]}
+        out.append({'from':[origin[0]+(x0-root_x)*sx,origin[1]+(bottom-y1)*sy,origin[2]-.055],
+                    'to':[origin[0]+(x1-root_x)*sx,origin[1]+(bottom-y0)*sy,origin[2]+.055],
+                    'shade':False,'rotation':rotation,
+                    'faces':{'south':{'texture':'#1','uv':uv},'north':{'texture':'#1','uv':back},
+                             'up':edges,'down':edges,'west':edges,'east':edges}})
+    return out
+
+
 def mesh(clip):
     if clip=='rime_footing':
-        # Broken low roots connect the crown without filling the caster's
-        # feet with a circular platform. No rune, snowflake or floor decal.
-        return [e for i in range(3) for j in range(3) for e in spear(i*120-25+j*25,
-                    3.8+j*.25,7.5+j*.2,.75+j*.15,2.0,1.7,low=True,
-                    root_at=(8+math.sin(i*2*math.pi/3)*4.0,8,8+math.cos(i*2*math.pi/3)*4.0))]
-    rolls=(-32,19,-24,37,-16,28,-38)
+        # Low painted fragments overlap the roots. Thin spear-lines made
+        # separate clusters look joined by a wire rather than frozen ground.
+        elements=[]
+        for i in range(3):
+            a=i*2*math.pi/3
+            root=(8+math.sin(a)*1.8,8,8+math.cos(a)*1.8)
+            end=(8+math.sin(a)*7.0,10.4,8+math.cos(a)*7.0)
+            elements.extend(painted_branch(i,root,end,6.4,0))
+        return elements
     variant='abc'.index(clip[-1])
-    elements=[e for i,(spec,root) in enumerate(zip(GROUPS[clip],cluster_roots(clip)))
-              for e in spear(*spec,root_at=root,blade_roll=rolls[(i+variant)%len(rolls)])]
+    specs=GROUPS[clip];roots=cluster_roots(clip)
+    primary=max(range(len(specs)),key=lambda i:specs[i][4])
+    spec=specs[primary];root=roots[primary]
+    angle,_,tip,height,width,depth=spec;a=math.radians(angle)
+    end=np.array((8+math.sin(a)*tip,8+height,8+math.cos(a)*tip))
+    # Solid core supplies depth; the painted silhouette supplies the irregular
+    # breaks and short side plates that geometric needles failed to express.
+    core_tip=spec[1]+(tip-spec[1])*.32
+    elements=spear(angle,spec[1],core_tip,height*.35,width*.72,depth*.9,
+                   root_at=root,blade_roll=12-variant*17,panels=(3,3,1,3))
+    elements.extend(painted_branch(variant,root,end,width*3.1,-28+variant*12))
+    if 'outer' in clip:
+        secondary=root+np.array((.65,.1,.15))
+        elements.extend(painted_branch((variant+1)%3,secondary,root+(end-root)*.82,width*2.65,43-variant*9))
     # Ground sampling must occur at this cluster, not at the caster. Rebase
     # the native model; CoreMageFrostChoreography adds the exact same offset
     # in world space before the existing ground resolver runs.
@@ -190,11 +269,13 @@ def build():
     texture=assets/'textures/combat_vfx/mage_material/rime_faces_v02.png'
     texture.parent.mkdir(parents=True,exist_ok=True)
     shutil.copyfile(SOURCE,texture)
-    paths=[texture]
+    branch_texture=assets/'textures/combat_vfx/mage_material/rime_branches_v01.png'
+    shutil.copyfile(BRANCH_SOURCE,branch_texture)
+    paths=[texture,branch_texture]
     for clip in CLIPS:
         key=f'combat_vfx/mage_material/{clip}_0'
         for path,value in ((assets/f'models/{key}.json',
-                {'ambientocclusion':False,'textures':{'0':TEXTURE},'elements':mesh(clip)}),
+                {'ambientocclusion':False,'textures':{'0':TEXTURE,'1':BRANCH_TEXTURE},'elements':mesh(clip)}),
                 (assets/f'items/{key}.json',{'model':{'type':'minecraft:model','model':'projects:'+key}})):
             path.parent.mkdir(parents=True,exist_ok=True)
             path.write_text(json.dumps(value,separators=(',',':'))+'\n',encoding='utf-8')

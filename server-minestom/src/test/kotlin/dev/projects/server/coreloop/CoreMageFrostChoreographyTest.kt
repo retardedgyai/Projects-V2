@@ -57,4 +57,17 @@ class CoreMageFrostChoreographyTest {
             assertTrue(p.ground && !p.followOwner)
         }
     }
+
+    @Test fun `large crowns disappear before short roots without spawning another impact`() {
+        val parts=CoreSkillChoreography.parts(effect())
+        val inner=parts.filter { it.shape.contains("inner_") }
+        val outer=parts.filter { it.shape.contains("outer_") }
+        fun end(p:CoreCombatMeshPart)=p.delayTicks+p.durationTicks
+        assertTrue(outer.maxOf(::end)<inner.minOf(::end))
+        assertTrue(inner.maxOf(::end)<end(parts.first()))
+        val age=outer.maxOf(::end).toDouble()
+        assertTrue(outer.all { !CoreSkillChoreography.pose(it,age).visible })
+        assertTrue(CoreSkillChoreography.pose(parts.first(),age).visible)
+        assertEquals(7,parts.size)
+    }
 }
