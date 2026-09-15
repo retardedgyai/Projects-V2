@@ -2197,6 +2197,7 @@ assets/projects/items/combat_vfx/mage_material/solar_bolt_charge_0.json
 assets/projects/items/combat_vfx/mage_material/solar_bolt_chip_0.json
 assets/projects/items/combat_vfx/mage_material/solar_bolt_core_0.json
 assets/projects/items/combat_vfx/mage_material/solar_bolt_shell_0.json
+assets/projects/items/combat_vfx/mage_material/solar_bolt_spark_0.json
 assets/projects/items/combat_vfx/mage_material/solar_bolt_thread_0.json
 assets/projects/items/combat_vfx/mage_material/solar_bolt_wake_0.json
 assets/projects/items/combat_vfx/mage_material/solar_flare_0.json
@@ -9868,6 +9869,7 @@ assets/projects/models/combat_vfx/mage_material/solar_bolt_charge_0.json
 assets/projects/models/combat_vfx/mage_material/solar_bolt_chip_0.json
 assets/projects/models/combat_vfx/mage_material/solar_bolt_core_0.json
 assets/projects/models/combat_vfx/mage_material/solar_bolt_shell_0.json
+assets/projects/models/combat_vfx/mage_material/solar_bolt_spark_0.json
 assets/projects/models/combat_vfx/mage_material/solar_bolt_thread_0.json
 assets/projects/models/combat_vfx/mage_material/solar_bolt_wake_0.json
 assets/projects/models/combat_vfx/mage_material/solar_flare_0.json

@@ -22,10 +22,28 @@ class SolarBoltTests(unittest.TestCase):
                 for f in e['faces'].values():
                     self.assertTrue(all(0<=n<=16 for n in f['uv']))
 
-    def test_core_and_shell_connect_without_a_duplicate_whole_bolt(self):
-        self.assertEqual(min(e['from'][2] for e in mesh('solar_bolt_core')),9)
-        self.assertEqual(max(e['to'][2] for e in mesh('solar_bolt_shell')),9)
+    def test_core_is_complete_but_surviving_fringe_is_not_a_duplicate_whole_bolt(self):
+        self.assertEqual(min(e['from'][2] for e in mesh('solar_bolt_core')),0)
+        self.assertEqual(max(e['to'][2] for e in mesh('solar_bolt_core')),16)
+        for clip in ('solar_bolt_shell','solar_bolt_spark'):
+            self.assertEqual(len(mesh(clip)),2)
+            self.assertGreater(min(e['from'][2] for e in mesh(clip)),0)
+            self.assertLess(max(e['to'][2] for e in mesh(clip)),16)
         self.assertNotEqual(mesh('solar_bolt_core'),mesh('solar_bolt_shell'))
+
+    def test_side_material_does_not_repeat_whole_atlas_on_each_narrow_panel(self):
+        for e in mesh('solar_bolt_core'):
+            for name,f in e['faces'].items():
+                if name in ('up','down','east','west'):
+                    self.assertLessEqual(abs(f['uv'][3]-f['uv'][1]),1.0)
+
+    def test_forward_layer_is_offset_instead_of_a_concentric_regular_pellet(self):
+        rear=[e for e in mesh('solar_bolt_core') if e['from'][2]==0]
+        front=[e for e in mesh('solar_bolt_core') if e['to'][2]==16]
+        def center(elements,axis):
+            return (min(e['from'][axis] for e in elements)+max(e['to'][axis] for e in elements))/2
+        self.assertGreater(center(front,0),center(rear,0)+.5)
+        self.assertGreater(center(front,1),center(rear,1)+.3)
 
     def test_wakes_are_thin_compared_with_volumetric_head(self):
         for clip in ('solar_bolt_wake','solar_bolt_thread'):

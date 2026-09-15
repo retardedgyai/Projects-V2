@@ -11,7 +11,7 @@ class CoreMageFireboltChoreographyTest {
 
     @Test fun `ray has separate compact front rear shell and narrow wakes immediately`() {
         val parts=CoreSkillChoreography.parts(effect())
-        assertEquals(listOf("core","shell","wake","thread"),parts.map { it.shape.substringAfter("solar_bolt_") })
+        assertEquals(listOf("core","shell","spark","wake","thread"),parts.map { it.shape.substringAfter("solar_bolt_") })
         assertTrue(parts.all { CoreMageFireboltChoreography.owns(it) && !it.followOwner && !it.ground })
         assertTrue(parts.all { CoreSkillChoreography.pose(it,0.0).scale.lengthSquared()>0 })
         assertEquals(.85,parts.first().scale.z())
@@ -43,9 +43,17 @@ class CoreMageFireboltChoreographyTest {
         }
     }
 
-    @Test fun `wake withdraws forward while shell outlasts the brighter core`() {
+    @Test fun `body ends promptly and surviving fringe drifts instead of becoming a miniature bolt`() {
         val parts=CoreSkillChoreography.parts(effect())
         assertTrue(parts[0].durationTicks<parts[1].durationTicks)
+        val core=parts.first()
+        assertEquals(core.scale,CoreSkillChoreography.pose(core,1.9).scale)
+        assertEquals(Vec.ZERO,CoreSkillChoreography.pose(core,3.0).scale)
+        for(p in parts.slice(1..2)) {
+            assertEquals(p.scale,CoreSkillChoreography.pose(p,3.0).scale)
+            assertTrue(CoreSkillChoreography.pose(p,3.0).offset.distance(p.offset)>.1)
+            assertTrue(p.scale.x()<=.42)
+        }
         for(p in parts.takeLast(2)) {
             val poses=(0..p.durationTicks*10).map { CoreSkillChoreography.pose(p,it/10.0) }
             assertTrue(poses.zipWithNext().all { (a,b)->b.offset.z()>=a.offset.z() && b.scale.z()<=a.scale.z() })

@@ -31,11 +31,14 @@ internal object CoreMageFireboltChoreography {
         if(e.length<=.05) return emptyList()
         val length=min(e.length,.85)
         val head=direction.mul(e.length-length*.5)
+        fun across(x:Double,y:Double)=Vec(cos(yaw)*x+sin(yaw)*sin(pitch)*y,
+            cos(pitch)*y,-sin(yaw)*x+cos(yaw)*sin(pitch)*y)
         // Head is already at the resolved ray end on tick zero. A slow visual
         // projectile would contradict immediate damage and is not introduced.
         return listOf(
-            part("core",head,Vec(1.15,1.15,length),6),
-            part("shell",head,Vec(1.15,1.15,length),8),
+            part("core",head,Vec(1.15,1.15,length),4),
+            part("shell",head.add(across(-.29,.14)),Vec(.42,.42,length),8,across(-.28,.20)),
+            part("spark",head.add(across(.27,-.13)),Vec(.30,.30,length),7,across(.20,-.10)),
             part("wake",direction.mul(e.length*.5),Vec(1.0,1.0,e.length),7),
             part("thread",direction.mul(e.length*.5),Vec(1.0,1.0,e.length),9))
     }
@@ -66,11 +69,19 @@ internal object CoreMageFireboltChoreography {
                 offset=offset.add(p.travel.mul(u)).add(0.0,-.10*u*u,0.0)
                 scale=scale.mul(1-ease((local-2)/(end-2).coerceAtLeast(1.0)))
             }
+            "solar_bolt_shell","solar_bolt_spark" -> {
+                // R09 9.08 -> 9.13: the big head is gone, only short pieces
+                // remain. These never contain a scaled duplicate of that head.
+                val release=ease((local-.6)/3.2)
+                offset=offset.add(p.travel.mul(release))
+                val fade=ease((local-3)/(end-3).coerceAtLeast(1.0))
+                scale=scale.mul(Vec(1-fade,1-fade,1-fade))
+            }
             else -> {
-                val fade=ease((local-1.0)/(end-1))
-                // Core dies first; the darker rear shell lingers two ticks.
-                // Keep the forward face fixed while the rear contracts.
-                offset=offset.add(direction.mul(p.scale.z()*.5*fade))
+                // Keep the short hot body's silhouette for two ticks, then
+                // finish it in one interpolated tick. No long shrinking-pellet
+                // phase; the already distinct fringe pieces carry the ending.
+                val fade=ease(local-(end-1))
                 scale=scale.mul(1-fade)
             }
         }

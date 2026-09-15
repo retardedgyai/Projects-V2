@@ -7,7 +7,41 @@ Mage 10技を作り直す目標の一部。Garden の未達点を消したり、
 今回の成果は火炎弾の形・構成・作画・動作・命中確認を分離した実装 checkpoint。
 ゲーム起動、操作、共有描画基盤、クライアントコード、判定、威力、消費、CDは変更しない。
 
-## 作る前に再確認した根拠
+## 最新変更：主弾の縮小残りをなくす
+
+R09本人動画を再度コマ送りし、9.083333秒では短い主弾があり、
+9.133333 / 9.183333秒ではその主形がなく小片が残ることを readyState=4 で実見した。
+この区間に大きく開く爆発は確認できないため、そのような演出は足さない。
+作者内部のモデル構成や全フレームの滑らかさを推測で確定しない。
+
+- 主弾は一つのまとまった体積に変更。2tick保持し、次の1tick補間で終端へ。
+  前版の長い「同じ弾頭を小さくする」区間をなくした。
+- 周辺2片は主弾の縮小コピーではない別形状。同じ場所へ縮むのではなく、
+  射線に直交する別方向へ離れ、主弾より後まで残る。判定後の小片3個は別のCONTACT処理のまま。
+- 放出5体＋命中3体、同時表示上限8を維持。準備を含む全体の生成数は空振り6体／命中9体。
+- 各細面に絵全体を反復していたUVを修正し、外周を通して使う構成へ。
+  元画像は変更せず、白黄の広い面と橙の縁が読めるようにした。
+- 参照より輪郭が均等というレビューを受け、前側の層をモデル座標で少しずらす。
+  大きさや周囲の爆発は増やさない。
+
+独立の読み取り専用レビューでは主面と小片への切替を改善と判定。
+修正後の `solar-bolt-layered-iso-18.png` / `solar-bolt-layered-eye-18.png` / `solar-bolt-layered-iso-30.png`
+も主担当が実見した。主弾後の小型コピーはなくなったが、これで全体の品質を合格とはしない。
+主観・側方での見え方の差、実ゲーム背景での読みやすさ、連続動作の最終視覚確認は残る。
+全10技・全参照との最終比較も未完了。次の確認では同じ数値の微修正を反復せず、
+残る差を実画面／適切な参照で特定する。
+
+新しいbitmap生成なし。変更元は引き続き `build_mage_solar_bolt.py` と
+`CoreMageFireboltChoreography`。以下の実装・検証節は前回checkpointの記録。
+
+今回の検証：生成側7件 PASS、Kotlin対象38件 PASS（下記と同じ内訳、旧frost test 1件を含むがcommit対象外）。
+Vanilla実パーサー7モデル受理、負例拒否。実metadataをVanilla Displayでreplayし、
+空振り6体／命中9体の生成・補間・終端を確認。同時8体以下、除去前ゼロスケール、残留なし。
+`solar-bolt-fringe-native.json` / `solar-bolt-fringe-hit-native.json` を使用し、
+最終モデルの全52フレーム投影は `solar-bolt-layered-motion.gif` / `solar-bolt-layered-hit.gif`。
+これらはGPU・地形遮蔽・ネットワークを含まない確認用出力。ゲーム起動・操作は行っていない。
+
+## 作る前に再確認した根拠（前回checkpoint）
 
 既存の [31件の参照台帳](mage-reference-census-2026-09-15.md) を前提に、
 R09 [MatE本人の Solar Scepter 動画](https://www.youtube.com/watch?v=RQkbCenYNQc) を再観察。
@@ -21,7 +55,7 @@ R09 [MatE本人の Solar Scepter 動画](https://www.youtube.com/watch?v=RQkbCen
 この2フレームから全動作、内部モデル、シェーダー、滑らかさは証明できない。
 新規件数に重複計上しない。既存の瞬間判定を遅い飛翔体へ変える根拠にも使わない。
 
-## 実装
+## 実装（前回checkpoint）
 
 - `CoreMageFireboltChoreography` が火炎弾のみ担当。
 - 準備：小さな熱塊。既存の準備時間を使用し、1tickの境界条件も閉じる。
@@ -39,7 +73,7 @@ R09 [MatE本人の Solar Scepter 動画](https://www.youtube.com/watch?v=RQkbCen
 `scripts/build_mage_solar_bolt.py` のモデル登録・UVを見る。
 元の `build_mage_fire.py` と、既存の未整理のv4資産には触れない。
 
-## 視覚レビューと修正
+## 視覚レビューと修正（前回checkpoint）
 
 最初の native metadata 投影では、参照より赤い結晶弾に寄っていた。
 独立の読み取り専用レビューでも「長い・暗赤の本体が強い・尾がレーザー的」と指摘。
@@ -56,7 +90,7 @@ R09 [MatE本人の Solar Scepter 動画](https://www.youtube.com/watch?v=RQkbCen
 今回も **未合格**。最終3静止画だけから滑らかさを確定していない。
 実ゲームの地形・背景・遮蔽・ネットワークを含む確認、および全31参照との最終比較は未完了。
 
-## 検証結果
+## 検証結果（前回checkpoint）
 
 - `scripts/test_mage_solar_bolt.py`：5件 PASS。元画像同一性、モデル再現、UV範囲、軸方向の形状範囲、登録。
 - 対象Kotlinテスト：38件 PASS（CoreCombatMeshTest 20、CoreMageChoreographyTest 11、
