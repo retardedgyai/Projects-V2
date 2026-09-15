@@ -13,6 +13,7 @@ internal object CoreSceneParticles {
         // Keep the accepted meshes unchanged; the requested companions have their
         // own short motion rather than reconstructing a second particle blade.
         if(e.job==CoreClass.WARRIOR) return // RP-authored companions, never vanilla smoke/dust/crit.
+        if(e.job==CoreClass.MAGE && e.sceneId in CoreMageChoreography.sceneIds) return // Authored flame lobes, facets and sparks carry the material.
         val scene=CoreSkillScenes.get(e.sceneId)
         val color=if(e.job==CoreClass.WARRIOR && scene.palette=="gold") 0xc74155 else colors.getValue(scene.palette)
         val t=tick.toDouble()/e.durationTicks

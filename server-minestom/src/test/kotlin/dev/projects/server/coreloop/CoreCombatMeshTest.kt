@@ -18,6 +18,74 @@ import kotlin.math.abs
 import kotlin.test.*
 
 class CoreCombatMeshTest {
+    @Test fun `mage primary identity reaches subdued owner and observer on first phase without optional fragments`() = player { owner ->
+        val observer=connect(owner.instance,owner.position.add(1.0,0.0,0.0),"MageViewer")
+        val meshes=CoreCombatMeshes(owner)
+        try {
+            listOf(owner,observer).forEach { CoreCombatPresentation.pack(it,true);CoreCombatPresentation.cycle(it) }
+            for(skill in CoreSkillCatalog.skills(CoreClass.MAGE)) {
+                val e=CoreSkillEffect(CoreClass.MAGE,skill,owner.position,Vec(0.0,0.0,1.0),
+                    rayLength=6.0,clippedRay=skill.motion==CoreSkillMotion.RAY)
+                val expected=CoreSkillChoreography.parts(e).count { !it.secondary && it.delayTicks==0 }
+                meshes.play(e);meshes.tick()
+                val displayed=owner.instance.entities.filter {
+                    it.entityType==net.minestom.server.entity.EntityType.ITEM_DISPLAY &&
+                        (it.entityMeta as net.minestom.server.entity.metadata.display.ItemDisplayMeta).scale.lengthSquared()>.00001
+                }
+                assertEquals(expected,displayed.count { owner in it.viewers },skill.icon)
+                assertEquals(expected,displayed.count { observer in it.viewers },skill.icon)
+                meshes.cancel();assertEquals(0,meshes.size)
+            }
+        } finally { meshes.cancel();listOf(owner,observer).forEach(CoreCombatPresentation::forget);observer.remove() }
+    }
+    @Test fun `export mage actual display clock with persistent fields and both teleport endpoints`() = player { owner ->
+        val meshes=CoreCombatMeshes(owner)
+        CoreCombatPresentation.pack(owner,true)
+        val scenes=mutableListOf<Map<String,Any>>()
+        fun xyz(v:net.minestom.server.coordinate.Point)=listOf(v.x(),v.y(),v.z())
+        try {
+            for(skill in CoreSkillCatalog.skills(CoreClass.MAGE)) {
+                meshes.cancel()
+                val field=skill.motion==CoreSkillMotion.FIELD
+                val ray=skill.motion==CoreSkillMotion.RAY
+                val origin=owner.position.add(0.0,if(ray)1.4 else 0.0,if(field)5.0 else 0.0)
+                fun emit(phase:CoreSkillVisualPhase,pulse:Int=0,prep:Int=4) {
+                    val phaseOrigin=if(ray && phase==CoreSkillVisualPhase.PREPARE)owner.position else origin
+                    meshes.play(CoreSkillEffect(CoreClass.MAGE,skill,phaseOrigin,Vec(0.0,0.0,1.0),phase,
+                        pulse=pulse,prepareTicks=prep,rayLength=if(ray)6.0 else 0.0,clippedRay=ray,
+                        endpoint=if(skill.icon=="mage_blink")CoreSkillEndpoint.DEPARTURE else CoreSkillEndpoint.NONE))
+                    if(skill.icon=="mage_blink" && phase==CoreSkillVisualPhase.PULSE)
+                        meshes.play(CoreSkillEffect(CoreClass.MAGE,skill,origin.add(0.0,0.0,4.5),Vec(0.0,0.0,1.0),
+                            endpoint=CoreSkillEndpoint.ARRIVAL))
+                }
+                val frames=(0 until skill.startup+(skill.pulses-1)*8+70).map { tick ->
+                    if(tick==0 && skill.startup>0) emit(CoreSkillVisualPhase.PREPARE,prep=(skill.startup-1).coerceAtLeast(1))
+                    val elapsed=tick-skill.startup
+                    if(elapsed>=0 && elapsed%8==4 && elapsed/8+1<skill.pulses && field)
+                        emit(CoreSkillVisualPhase.PREPARE,elapsed/8+1)
+                    if(elapsed>=0 && elapsed%8==0 && elapsed/8<skill.pulses)
+                        emit(CoreSkillVisualPhase.PULSE,elapsed/8)
+                    meshes.tick()
+                    assertTrue(meshes.size<=CoreCombatMeshes.OWNER_LIMIT,skill.icon)
+                    owner.instance.entities.filter { it.entityType==net.minestom.server.entity.EntityType.ITEM_DISPLAY && owner in it.viewers }
+                        .mapNotNull { entity ->
+                            val meta=entity.entityMeta as net.minestom.server.entity.metadata.display.ItemDisplayMeta
+                            if(meta.scale.lengthSquared()<.00001) null else mapOf<String,Any>(
+                                "model" to meta.itemStack.get(net.minestom.server.component.DataComponents.ITEM_MODEL)!!.removePrefix("projects:"),
+                                "offset" to xyz(entity.position.sub(owner.position).add(meta.translation)),"scale" to xyz(meta.scale),
+                                "quaternion" to meta.leftRotation.toList(),"yaw" to 0.0,"pitch" to 0.0,"roll" to 0.0)
+                        }
+                }
+                assertEquals(0,meshes.size,skill.icon)
+                scenes+=mapOf("id" to skill.icon,"name" to skill.name,"startup" to skill.startup,"pulses" to skill.pulses,"frames" to frames)
+            }
+            val cwd=java.nio.file.Path.of(System.getProperty("user.dir"))
+            val root=if(cwd.fileName.toString()=="server-minestom")cwd.parent else cwd
+            java.nio.file.Files.createDirectories(root.resolve(".tools"))
+            java.nio.file.Files.writeString(root.resolve(".tools/mage-material-timeline.json"),com.google.gson.Gson().toJson(scenes))
+        } finally { meshes.cancel();CoreCombatPresentation.forget(owner) }
+    }
+
     @Test fun `skill identity bodies reach subdued owner and observer without enabling decorative accents`() = player { owner ->
         val observer=connect(owner.instance,owner.position.add(1.0,0.0,0.0),"IdentityViewer",mutableListOf())
         val meshes=CoreCombatMeshes(owner)
@@ -517,12 +585,12 @@ class CoreCombatMeshTest {
             val incoming=cast("mage_blink",CoreClass.MAGE,8.0)
             meshes.play(incoming)
             val fresh=map.entities.filter { it !in old }.toSet()
-            assertEquals(6,fresh.size)
-            meshes.tick() // New displays still have a hidden spawn frame.
-            assertTrue(fresh.none { near in it.viewers },"Hidden displays must not reserve observer slots")
+            assertEquals(2,fresh.size)
+            meshes.tick() // Native Mage contours start on the authoritative phase, without hidden lead-in.
+            assertEquals(1,fresh.count { near in it.viewers },"The primary spatial rift should be immediate")
             assertTrue(old.any { it.entityType==net.minestom.server.entity.EntityType.ITEM_DISPLAY && near in it.viewers })
             repeat(3) { meshes.tick() }
-            assertEquals(4,fresh.count { near in it.viewers },"All four current primary arcs must survive older tails")
+            assertEquals(1,fresh.count { near in it.viewers },"The current primary rift must survive older tails")
             assertTrue(fresh.none { far in it.viewers })
             assertTrue(map.entities.any { it.entityType==net.minestom.server.entity.EntityType.ITEM_DISPLAY && far in it.viewers },
                 "A nearby observer's choices must not consume the distant observer's slots")

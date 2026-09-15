@@ -56,7 +56,12 @@ def render(parts, name, tick, view='iso', world_scale=34, fps=20):
             depth=z+.7
             if abs(depth)<1e-8: depth=math.copysign(1e-8,depth)
             return (W/2+x/depth*160,H/2+(1.62-y)/depth*160,depth)
-        return (cx + (x*.94+z*.34)*scale, cy+(z*.53-x*.19-y*.82)*scale, z*.77-x*.28+y*.58)
+        # Above-ground camera, looking forward and down. The former +Z screen-Y
+        # and +Y depth combination viewed UNDERSIDES while sorting high surfaces
+        # as farther away. It made closed ice faces look like detached boards.
+        return (cx+(x*.8660254+z*.5)*scale,
+                cy+(x*.25-z*.4330127-y*.8660254)*scale,
+                z*.75-x*.4330127-y*.5)
     for n in range(-4,5):
         draw.line([project(n,0,0 if view=='eye' else -3)[:2],project(n,0,5)[:2]], fill='#2a343e')
         if view!='eye' or n>=0: draw.line([project(-4,0,n)[:2],project(4,0,n)[:2]], fill='#2a343e')
@@ -174,7 +179,9 @@ def main():
     scenes=[next(s for s in source if s['id']==i) for i in ids]
     columns=min(4,len(scenes))
     frames=[]
-    end=max(len(s['frames']) for s in scenes)
+    # The exported test clock retains a long empty tail to prove cleanup. Keep
+    # those data unchanged, but don't make a visual review idle for several seconds.
+    end=max(max((i for i,p in enumerate(s['frames']) if p),default=0) for s in scenes)+1
     if args.ticks and args.relative_ticks: parser.error('Choose absolute or relative ticks, not both')
     selection=args.ticks or args.relative_ticks
     selected=[int(t) for t in selection.split(',')] if selection else range(end+10)

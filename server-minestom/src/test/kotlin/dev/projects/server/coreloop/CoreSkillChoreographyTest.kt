@@ -108,42 +108,14 @@ class CoreSkillChoreographyTest {
             }
         }
     }
-    @Test fun `fire landing breaks the prepared rock into flames and arcing debris`() {
-        for(id in listOf("meteor","mage_ult")) {
-            val e=effect(CoreClass.MAGE,id)
-            val prepared=CoreSkillChoreography.parts(effect(CoreClass.MAGE,id,CoreSkillVisualPhase.PREPARE))
-            assertTrue(prepared.any { it.shape in setOf("meteor_rock","meteor_crown") && it.motion==CoreMeshMotion.FALL })
-            val parts=CoreSkillChoreography.parts(e)
-            val flames=parts.filter { it.shape=="flame_plume" }
-            val debris=parts.filter { it.shape=="meteor_rock" }
-            assertEquals(if(e.skill.ultimate) 5 else 3,flames.size)
-            assertEquals(if(e.skill.ultimate) 6 else 4,debris.size)
-            assertFalse(parts.any { it.shape=="fire_crater" || it.shape=="fire_burst" })
-            for(p in parts) assertEquals(e.durationTicks,p.delayTicks+p.durationTicks)
-            for(p in flames) {
-                assertEquals(-PI/2,p.pitch)
-                val states=(0 until p.durationTicks).map { CoreSkillChoreography.pose(p,(p.delayTicks+it).toDouble()) }
-                assertEquals(12,states.map { it.model }.distinct().size)
-                assertTrue(states[3].model.endsWith("_2"),"The ignition peaks at the damage beat, not at the end")
-            }
-            for(p in debris) {
-                val start=CoreSkillChoreography.pose(p,p.delayTicks.toDouble())
-                val middle=CoreSkillChoreography.pose(p,p.delayTicks+p.durationTicks*.5)
-                val end=CoreSkillChoreography.pose(p,(p.delayTicks+p.durationTicks-1).toDouble())
-                assertTrue(middle.offset.y()>start.offset.y()+1.0)
-                assertEquals(start.offset.y(),end.offset.y(),.00001)
-                assertTrue(end.offset.distance(start.offset)>1.0)
-            }
-        }
-    }
     @Test fun `firebolt changes its wake inside the original clipped ray at every pitch`() {
         val skill=CoreSkillCatalog.skills(CoreClass.MAGE).first { it.icon=="firebolt" }
         for(length in listOf(.06,.2,.6,2.0,5.0)) for(pitch in listOf(-1.4,-.5,0.0,.5,1.4)) {
             val dir=Vec(0.0,-sin(pitch),cos(pitch))
             val e=CoreSkillEffect(CoreClass.MAGE,skill,Vec.ZERO,dir,rayLength=length,clippedRay=true)
             val parts=CoreSkillChoreography.parts(e)
-            val wake=parts.first { it.shape=="flame_tail" }
-            assertEquals(12,(0 until wake.durationTicks).map {
+            val wake=parts.first { it.shape=="mage_material:cinder" }
+            assertEquals(24,(0 until wake.durationTicks).map {
                 CoreSkillChoreography.pose(wake,(it+wake.delayTicks).toDouble()).model }.distinct().size)
             for(p in parts) for(tick in 0 until e.durationTicks) {
                 val pose=CoreSkillChoreography.pose(p,tick.toDouble())
@@ -151,37 +123,6 @@ class CoreSkillChoreographyTest {
                 assertTrue(along-pose.scale.z()/2>=-.00001)
                 assertTrue(along+pose.scale.z()/2<=length+.00001)
             }
-        }
-    }
-    @Test fun `frost crests expand in all directions below waist instead of stationary garden pillars`() {
-        for(id in listOf("frost_nova")) {
-            val e=effect(CoreClass.MAGE,id)
-            val parts=CoreSkillChoreography.parts(e)
-            assertEquals(if(e.skill.ultimate) 12 else 8,parts.size)
-            assertTrue(parts.all { it.shape=="frost_crest" && it.motion==CoreMeshMotion.RADIATE && it.erode })
-            assertEquals(4,parts.map { Pair(it.offset.x()>=0,it.offset.z()>=0) }.toSet().size)
-            for(p in parts) {
-                var prior=0.0
-                for(tick in 0 until p.durationTicks) {
-                    val pose=CoreSkillChoreography.pose(p,(p.delayTicks+tick).toDouble())
-                    val r=hypot(pose.offset.x(),pose.offset.z())
-                    assertTrue(r>=prior-.00001 && r<e.radius)
-                    assertTrue(pose.offset.y()+pose.scale.z()<1.0)
-                    prior=r
-                }
-                assertTrue(prior>1.0)
-            }
-        }
-    }
-    @Test fun `lightning discharge changes fork paths and keeps four radial arms for other players`() {
-        val parts=CoreSkillChoreography.parts(effect(CoreClass.MAGE,"mage_burst"))
-        assertEquals(8,parts.size);assertEquals(4,parts.count { !it.secondary })
-        for(p in parts) {
-            assertEquals("storm_branch",p.shape)
-            assertFalse(p.ground || p.followOwner)
-            val models=(0 until p.durationTicks).map { CoreSkillChoreography.pose(p,(it+p.delayTicks).toDouble()).model }
-            assertEquals(8,models.toSet().size)
-            assertTrue(models.last().endsWith("_7"))
         }
     }
     @Test fun `elemental animation models have real volumes and projectile bounds stay normalized`() {
@@ -290,19 +231,6 @@ class CoreSkillChoreographyTest {
             assertTrue(parts.all { e -> (0..2).all { e.getAsJsonArray("to")[it].asDouble>e.getAsJsonArray("from")[it].asDouble } })
         }
     }
-    @Test fun `arcane ward unfolds around torso and leaves a forward opening`() {
-        val parts=CoreSkillChoreography.parts(effect(CoreClass.MAGE,"mage_ward"))
-        assertEquals(4,parts.size)
-        assertTrue(parts.all { it.followOwner && it.shape=="arcane_shield" })
-        for(p in parts) {
-            val start=CoreSkillChoreography.pose(p,p.delayTicks.toDouble())
-            val open=CoreSkillChoreography.pose(p,p.delayTicks+7.0)
-            assertTrue(open.offset.distance(Vec(0.0,1.0,0.0))>start.offset.distance(Vec(0.0,1.0,0.0)))
-            // At full opening even the conservative half-diagonal leaves the crosshair gap.
-            assertTrue(abs(open.offset.x())>open.scale.x()/2+.1)
-            assertTrue(open.offset.y() in .8..1.2)
-        }
-    }
     @Test fun `slash pack contains crisp pixel frames without opaque tile borders`() {
         assertPixelFrames("ribbon/slash")
     }
@@ -331,27 +259,6 @@ class CoreSkillChoreographyTest {
                 assertTrue(hypot(pose.offset.x(),pose.offset.z())<e.radius)
             }
         }
-    }
-    @Test fun `ice garden grows anchored volume in waves without circling pillars`() {
-        val parts=CoreSkillChoreography.parts(effect(CoreClass.MAGE,"mage_garden"))
-        assertEquals(8,parts.size)
-        assertEquals(setOf(0,2,4,6),parts.map { it.delayTicks }.toSet())
-        for(p in parts) {
-            assertEquals(CoreMeshMotion.EMERGE,p.motion)
-            assertTrue(p.ground && !p.followOwner && !p.erode)
-            val first=CoreSkillChoreography.pose(p,p.delayTicks.toDouble())
-            val grown=CoreSkillChoreography.pose(p,p.delayTicks+8.0)
-            val last=CoreSkillChoreography.pose(p,(p.delayTicks+p.durationTicks-1).toDouble())
-            assertEquals(first.offset,grown.offset)
-            assertTrue(grown.scale.z()>first.scale.z()*10)
-            assertTrue(last.scale.z()<grown.scale.z()*.1)
-        }
-        val model=javaClass.getResourceAsStream("/core-ui-pack/assets/projects/models/combat_vfx/ice_growth_ice.json")!!
-            .bufferedReader().use { JsonParser.parseReader(it).asJsonObject }
-        val elements=model.getAsJsonArray("elements").map { it.asJsonObject }
-        assertTrue(elements.size>=16)
-        assertTrue(elements.all { e -> (0..2).all { e.getAsJsonArray("to")[it].asDouble>e.getAsJsonArray("from")[it].asDouble } })
-        assertEquals(8.0,elements.minOf { it.getAsJsonArray("from")[2].asDouble })
     }
     private fun assertPixelFrames(prefix: String) {
         val frameHashes=mutableSetOf<Int>()

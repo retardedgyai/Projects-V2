@@ -27,7 +27,7 @@ class CorePrecisionChoreographyTest {
         for(id in listOf("mage_mark","ass_needle")) for(length in listOf(.06,.5,3.0,24.0))
             for(dir in listOf(Vec(0.0,0.0,1.0),Vec(0.0,1.0,0.0),Vec(.4,-.7,-.6).normalize())) {
                 val parts=CoreSkillChoreography.parts(effect(id,length=length,direction=dir))
-                assertEquals(if(id=="ass_needle") 2 else 1,parts.size)
+                assertEquals(2,parts.size)
                 assertTrue(parts.none { it.shape in setOf("arrow_trail","electric_thread") })
                 for(p in parts) for(tick in 0 until p.durationTicks) {
                     val pose=CoreSkillChoreography.pose(p,tick.toDouble());val center=pose.offset.dot(dir)
@@ -51,8 +51,8 @@ class CorePrecisionChoreographyTest {
         }
         val sizes=(0..7).map { model("combat_vfx/storm_branch_lightning_$it").getAsJsonArray("elements").size() }
         assertTrue((3 until 7).all { sizes[it]>sizes[it+1] },sizes.toString())
-        val p=CoreSkillChoreography.parts(effect("mage_mark")).single()
-        assertEquals(8,(0 until p.durationTicks).map { CoreSkillChoreography.pose(p,it.toDouble()).model }.toSet().size)
+        val p=CoreSkillChoreography.parts(effect("mage_mark")).first { it.shape=="mage_material:conductor" }
+        assertEquals(24,(0 until p.durationTicks).map { CoreSkillChoreography.pose(p,it.toDouble()).model }.toSet().size)
     }
     @Test fun `lightning bends remain thin stepped conductors instead of filled rectangular plates`() {
         for(frame in 0..7) for(name in listOf("combat_vfx/precision/bolt_16_$frame","combat_vfx/storm_branch_lightning_$frame")) {
@@ -97,9 +97,9 @@ class CorePrecisionChoreographyTest {
             val shot=CoreSkillChoreography.parts(effect(id))
             assertTrue(shot.none { it.shape==mark || it.stellarBurst })
             val hit=CoreSkillChoreography.parts(effect(id,CoreSkillVisualPhase.CONTACT))
-            assertEquals(1,hit.count { it.shape==mark })
+            assertEquals(1,hit.count { it.shape==if(id=="mage_mark")"mage_material:thunder_hit" else mark })
             assertTrue(hit.all { it.durationTicks>=18 && !it.followOwner })
-            assertEquals(id=="mage_mark",hit.any { it.shape=="storm_branch" })
+            assertEquals(id=="mage_mark",hit.any { it.shape=="mage_material:thunder_hit" })
             assertEquals(id=="ass_needle",hit.any { it.shape=="needle_rift" })
         }
     }
@@ -119,18 +119,16 @@ class CorePrecisionChoreographyTest {
             }
         }
     }
-    @Test fun `lightning step closes into departure and cracks outward at arrival without a filled gate`() {
-        for(endpoint in listOf(CoreSkillEndpoint.DEPARTURE,CoreSkillEndpoint.ARRIVAL)) {
-            val e=effect("mage_blink",endpoint=endpoint);val parts=CoreSkillChoreography.parts(e)
-            assertEquals(6,parts.size);assertEquals(4,parts.count { !it.secondary })
-            assertTrue(parts.none { it.sprite || it.shape=="lightning_gate" || it.followOwner })
-            for(p in parts.take(4)) {
-                val start=CoreSkillChoreography.pose(p,0.0);val end=CoreSkillChoreography.pose(p,23.0)
-                assertEquals(endpoint==CoreSkillEndpoint.DEPARTURE,abs(end.offset.x())<abs(start.offset.x()))
-                assertEquals(endpoint==CoreSkillEndpoint.DEPARTURE,end.scale.x()<start.scale.x())
-                assertEquals(24,p.durationTicks)
-                assertEquals(8,(0..23).map { CoreSkillChoreography.pose(p,it.toDouble()).model }.toSet().size)
-            }
+    @Test fun `lightning step has different endpoint contours and fixed world origins`() {
+        val departure=CoreSkillChoreography.parts(effect("mage_blink",endpoint=CoreSkillEndpoint.DEPARTURE))
+        val arrival=CoreSkillChoreography.parts(effect("mage_blink",endpoint=CoreSkillEndpoint.ARRIVAL))
+        assertEquals(2,departure.size);assertEquals(1,departure.count { !it.secondary })
+        assertEquals("mage_material:fold_in",departure.first().shape)
+        assertEquals("mage_material:fold_out",arrival.first().shape)
+        for(p in departure+arrival) {
+            assertFalse(p.followOwner || p.sprite)
+            assertEquals(p.offset,CoreSkillChoreography.pose(p,15.0).offset)
+            assertTrue((0 until p.durationTicks).map { CoreSkillChoreography.pose(p,it.toDouble()).model }.toSet().size>=18)
         }
     }
     @Test fun `fast preparation stays positive and dedicated phrases fit existing entity budgets`() {

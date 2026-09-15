@@ -1,104 +1,67 @@
 package dev.projects.server.coreloop
 
-import com.google.gson.Gson
 import net.minestom.server.coordinate.Vec
-import java.nio.file.Files
-import java.nio.file.Path
 import kotlin.math.*
 import kotlin.test.*
 
+/** Lifecycle regressions retained across the replacement of the old spinning frost bands. */
 class CoreFrostChoreographyTest {
     private val skill=CoreSkillCatalog.skills(CoreClass.MAGE).first { it.icon=="mage_zero" }
-    private fun effect(pulse: Int=0,radius: Double=skill.radius)=
+    private fun effect(pulse:Int=0,radius:Double=skill.radius)=
         CoreSkillEffect(CoreClass.MAGE,skill.copy(radius=radius),Vec.ZERO,Vec(0.0,0.0,1.0),pulse=pulse)
 
-    @Test fun `first pulse starts one persistent field and later damage beats never restart it`() {
-        assertEquals(5,skill.pulses)
-        for(i in 0 until skill.pulses) {
-            val parts=CoreSkillChoreography.parts(effect(i))
-            if(i>0) { assertTrue(parts.isEmpty()); continue }
-            assertEquals(9,parts.size)
-            assertEquals(5,parts.count { !it.secondary })
-            assertEquals(1,parts.count { it.ground })
-            assertEquals(4,parts.count { it.shape=="frost_domain_band" })
-            assertEquals(4,parts.count { it.shape=="frost_domain_flake" && it.secondary })
-            assertTrue(parts.all { it.followOwner && !it.sprite && it.durationTicks==48 })
-            for(p in parts) {
-                assertFalse(CoreSkillChoreography.pose(p,-1.0).visible)
-                assertTrue(CoreSkillChoreography.pose(p,0.0).visible)
-                assertFalse(CoreSkillChoreography.pose(p,p.durationTicks.toDouble()).visible)
-                val full=CoreSkillChoreography.pose(p,8.0)
-                assertEquals(p.scale,full.scale)
-                assertNotEquals(full.yaw,CoreSkillChoreography.pose(p,5.0).yaw)
-            }
+    @Test fun `zero starts once follows the actual nova origin and clears after the fifth hit`() {
+        val first=CoreSkillChoreography.parts(effect())
+        assertEquals(4,first.size);assertTrue(first.all { it.ground })
+        assertEquals(4,first.map { it.shape }.toSet().size)
+        assertTrue(first.all { it.followOwner && !it.sprite && it.durationTicks==48 })
+        for(pulse in 1..4) {
+            val beat=CoreSkillChoreography.parts(effect(pulse)).single()
+            assertTrue(beat.secondary && beat.followOwner && beat.durationTicks==8)
+            assertEquals("mage_material:ice_pulse",beat.shape)
+        }
+        for(p in first) {
+            assertFalse(CoreSkillChoreography.pose(p,-1.0).visible)
+            assertTrue(CoreSkillChoreography.pose(p,0.0).visible)
+            assertTrue(CoreSkillChoreography.pose(p,47.0).visible)
+            assertFalse(CoreSkillChoreography.pose(p,48.0).visible)
         }
     }
 
-    @Test fun `planes stay within scaled reach and the open upper layer stays away from the camera centre`() {
-        for(r in listOf(.3,1.0,4.0,8.0,10.5)) {
-            val e=effect(radius=r)
-            val reach=min(e.radius,CoreSkillScenes.get(e.sceneId).reach)
-            for(p in CoreSkillChoreography.parts(e)) for(tick in 0 until p.durationTicks) {
-                val pose=CoreSkillChoreography.pose(p,tick.toDouble())
-                when(p.shape) {
-                    "frost_domain_floor" -> {
-                        // Exported alpha is inside radius 44 on a 96px grid.
-                        assertTrue(pose.scale.x()*.46<=reach)
-                        assertEquals(.12,pose.offset.y())
-                    }
-                    "frost_domain_band" -> {
-                        assertEquals(reach*.65,hypot(pose.offset.x(),pose.offset.z()),.00001)
-                        assertTrue(pose.offset.y() in .4..1.4)
-                        // Tangential card corners remain inside the gameplay circle.
-                        assertTrue(hypot(reach*.65,pose.scale.x()*.5)<reach)
-                    }
+    @Test fun `long frost uses forty eight monotonic material frames never restarts or spins a card`() {
+        for(p in CoreSkillChoreography.parts(effect())) {
+            val poses=(0..47).map { CoreSkillChoreography.pose(p,it.toDouble()) }
+            assertEquals(48,poses.map { it.model }.toSet().size)
+            assertEquals(1,poses.map { it.yaw to it.pitch }.toSet().size)
+            assertEquals(1,poses.map { it.scale to it.offset }.toSet().size)
+            assertEquals((0..47).toList(),poses.map { it.model.substringAfterLast('_').toInt() })
+        }
+    }
+
+    @Test fun `three unequal ice faces stay within reach and point their painted faces toward the owner`() {
+        for(radius in listOf(.5,1.0,4.0,8.0,10.5)) {
+            val reach=min(radius,CoreSkillScenes.get("mage_zero").reach)
+            for(p in CoreSkillChoreography.parts(effect(radius=radius))) {
+                assertEquals(.12,p.offset.y())
+                if(p.shape=="mage_material:zero_floor") {
+                    assertEquals(reach*1.36,p.scale.x(),.00001)
+                } else {
+                    val distance=hypot(p.offset.x(),p.offset.z())
+                    assertTrue(distance in reach*.45..reach*.60)
+                    assertTrue(hypot(distance,p.scale.x()*.5)+p.scale.z()*2.6/32<reach)
+                    // A previous arbitrary yaw exposed only strip-shaped side
+                    // caps to the caster and hid the painted primary faces.
+                    assertEquals(atan2(p.offset.x(),p.offset.z()),atan2(sin(p.yaw),cos(p.yaw)),.00001)
                 }
             }
         }
     }
 
-    @Test fun `five damage beats share one expanding rotating shape and erosion only happens at the end`() {
-        for(p in CoreSkillChoreography.parts(effect())) {
-            for(tick in 8..35) {
-                val a=CoreSkillChoreography.pose(p,tick.toDouble())
-                val b=CoreSkillChoreography.pose(p,tick-1.0)
-                assertEquals(p.scale,a.scale,"No size reset at tick $tick")
-                assertTrue(a.model.endsWith("_0"),"No dissolve/reappear between hits")
-                assertTrue(abs(a.yaw-b.yaw)<.3,"No angular reset")
-                assertTrue(a.visible)
-            }
-            assertNotEquals(CoreSkillChoreography.pose(p,36.0).model,CoreSkillChoreography.pose(p,44.0).model)
-        }
-    }
-
-    @Test fun `invalid effects stay rejected and preparation contact and other frost spells are unchanged`() {
+    @Test fun `invalid frost stays rejected and contact never creates another domain`() {
         assertTrue(CoreSkillChoreography.parts(effect(radius=Double.NaN)).isEmpty())
         for(phase in listOf(CoreSkillVisualPhase.PREPARE,CoreSkillVisualPhase.CONTACT)) {
             val e=CoreSkillEffect(CoreClass.MAGE,skill,Vec.ZERO,Vec(0.0,0.0,1.0),phase)
-            assertTrue(CoreSkillChoreography.parts(e).none { it.shape.startsWith("frost_domain_") })
+            assertTrue(CoreSkillChoreography.parts(e).none { it.shape.contains("zero_") })
         }
-        for(id in listOf("frost_nova","mage_garden")) {
-            val s=CoreSkillCatalog.skills(CoreClass.MAGE).first { it.icon==id }
-            assertTrue(CoreSkillChoreography.parts(CoreSkillEffect(CoreClass.MAGE,s,Vec.ZERO,Vec(0.0,0.0,1.0)))
-                .none { it.shape.startsWith("frost_domain_") })
-        }
-    }
-
-    @Test fun `actual five pulse timeline stays under display budget and exports for visual QA`() {
-        val waves=(0 until skill.pulses).map { CoreSkillChoreography.parts(effect(it)) }
-        fun xyz(v: Vec)=listOf(v.x(),v.y(),v.z())
-        val frames=(0..48).map { tick ->
-            waves.flatMapIndexed { pulse,parts -> parts.mapNotNull { part ->
-                val pose=CoreSkillChoreography.pose(part,(tick-pulse*8).toDouble())
-                if(!pose.visible) null else mapOf("model" to pose.model,"offset" to xyz(pose.offset),
-                    "scale" to xyz(pose.scale),"yaw" to pose.yaw,"pitch" to pose.pitch,"roll" to pose.roll)
-            } }.also { assertTrue(it.size<=9,"tick=$tick displays=${it.size}") }
-        }
-        assertTrue(frames.last().isEmpty())
-        val cwd=Path.of(System.getProperty("user.dir"))
-        val root=if(cwd.fileName.toString()=="server-minestom") cwd.parent else cwd
-        Files.createDirectories(root.resolve(".tools"))
-        Files.writeString(root.resolve(".tools/frost-domain-frames.json"),Gson().toJson(listOf(
-            mapOf("id" to "mage_zero","name" to "絶対零界・展開→旋回→崩壊","frames" to frames))))
     }
 }
