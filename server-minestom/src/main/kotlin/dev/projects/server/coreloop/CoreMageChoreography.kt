@@ -15,7 +15,7 @@ internal object CoreMageChoreography {
         Vec(5.444695259593679,5.404761904761904,3.5327160637981088))
     private val rootedIce=setOf("mage_material:cryo_pillar","mage_material:cryo_root",
         "mage_material:cryo_buttress","mage_material:cryo_crown")
-    fun interpolated(p:CoreCombatMeshPart)=p.shape in movingContours || p.shape in rootedIce || p.shape=="mage_material:cryo_seed"
+    fun interpolated(p:CoreCombatMeshPart)=CoreMageFireboltChoreography.owns(p) || p.shape in movingContours || p.shape in rootedIce || p.shape=="mage_material:cryo_seed"
     internal fun rootedIceHeight(shape:String)=when(shape.substringAfter(':')) {
         "cryo_pillar" -> 1.5
         "cryo_root" -> .75
@@ -42,6 +42,7 @@ internal object CoreMageChoreography {
     fun parts(e:CoreSkillEffect):List<CoreCombatMeshPart>? {
         if(e.job!=CoreClass.MAGE || e.sceneId !in sceneIds) return null
         if(!e.valid) return emptyList()
+        if(e.sceneId=="firebolt") return CoreMageFireboltChoreography.parts(e)
         val yaw=atan2(e.direction.x(),e.direction.z())
         val pitch=-atan2(e.direction.y(),hypot(e.direction.x(),e.direction.z()))
         val r=min(e.radius,CoreSkillScenes.get(e.sceneId).reach)
@@ -88,16 +89,13 @@ internal object CoreMageChoreography {
                 if(charge=="fire_charge")pitch else 0.0,
                 life=e.prepareDuration,follow=true))
         }
-        if(e.sceneId in setOf("firebolt","mage_mark")) {
+        if(e.sceneId=="mage_mark") {
             if(e.length<=.05) return emptyList()
             val d=if(e.direction.lengthSquared()>1e-8)e.direction.normalize() else Vec(0.0,0.0,1.0)
-            val flame=e.sceneId=="firebolt"
-            val length=if(flame) min(e.length,3.4) else e.length
+            val length=e.length
             // Drawing plane is XZ, so its Z extent remains strictly on the accepted segment at every pitch.
-            val main=piece(if(flame)"cinder" else "conductor",d.mul(e.length-length*.5),
-                Vec(if(flame)4.0 else 1.4,if(flame)1.8 else .65,length),pitch)
-            return if(!flame)listOf(main,piece("arcane_forks",d.mul(e.length*.5),Vec(4.0,3.4,e.length),pitch)) else listOf(main,
-                piece("fire_stream",d.mul(e.length*.5),Vec(2.2,2.2,e.length),pitch))
+            val main=piece("conductor",d.mul(e.length-length*.5),Vec(1.4,.65,length),pitch)
+            return listOf(main,piece("arcane_forks",d.mul(e.length*.5),Vec(4.0,3.4,e.length),pitch))
         }
         return when(e.sceneId) {
             "meteor" -> {
@@ -172,6 +170,7 @@ internal object CoreMageChoreography {
     }
     fun pose(p:CoreCombatMeshPart,age:Double):CoreMeshPose? {
         if(!owns(p)) return null
+        if(CoreMageFireboltChoreography.owns(p)) return CoreMageFireboltChoreography.pose(p,age)
         val clip=p.shape.substringAfter(':')
         val local=(age-p.delayTicks).coerceAtLeast(0.0)
         val t=(local/(p.durationTicks-1).coerceAtLeast(1)).coerceIn(0.0,1.0)

@@ -169,6 +169,12 @@ class CoreMageChoreographyTest {
     @Test fun `elemental accepted contact stays small and never starts another cast silhouette`() {
         val clips=mutableSetOf<String>()
         for(id in CoreMageChoreography.sceneIds) {
+            if(id=="firebolt") {
+                val chips=CoreSkillChoreography.parts(effect(id,phase=CoreSkillVisualPhase.CONTACT))
+                assertEquals(3,chips.size)
+                assertTrue(chips.all { it.shape.endsWith("solar_bolt_chip") && it.scale.x()<=.22 && !it.followOwner })
+                continue
+            }
             val p=CoreSkillChoreography.parts(effect(id,phase=CoreSkillVisualPhase.CONTACT)).single()
             assertTrue(p.shape.endsWith("_hit"));assertTrue(p.scale.x()<1.5)
             assertFalse(p.followOwner);clips+=p.shape

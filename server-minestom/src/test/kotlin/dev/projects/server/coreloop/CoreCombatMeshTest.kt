@@ -18,6 +18,48 @@ import kotlin.math.abs
 import kotlin.test.*
 
 class CoreCombatMeshTest {
+    @Test fun `firebolt confirmed contact exports native chips with the ray and cleans all displays`() = player { owner ->
+        val meshes=CoreCombatMeshes(owner)
+        CoreCombatPresentation.pack(owner,true)
+        val skill=CoreSkillCatalog.skills(CoreClass.MAGE).first { it.icon=="firebolt" }
+        fun xyz(v:net.minestom.server.coordinate.Point)=listOf(v.x(),v.y(),v.z())
+        try {
+            val frames=(0 until skill.startup+30).map { tick ->
+                if(tick==0) meshes.play(CoreSkillEffect(CoreClass.MAGE,skill,owner.position,Vec(0.0,0.0,1.0),
+                    CoreSkillVisualPhase.PREPARE,prepareTicks=(skill.startup-1).coerceAtLeast(1)))
+                if(tick==skill.startup) {
+                    meshes.play(CoreSkillEffect(CoreClass.MAGE,skill,owner.position.add(0.0,1.4,0.0),Vec(0.0,0.0,1.0),
+                        rayLength=6.0,clippedRay=true))
+                    meshes.play(CoreSkillEffect(CoreClass.MAGE,skill,owner.position.add(0.0,0.0,6.0),Vec(0.0,0.0,1.0),
+                        CoreSkillVisualPhase.CONTACT))
+                }
+                meshes.tick()
+                val poses=owner.instance.entities.filter {
+                    it.entityType==net.minestom.server.entity.EntityType.ITEM_DISPLAY && owner in it.viewers
+                }.map { entity ->
+                    val meta=entity.entityMeta as net.minestom.server.entity.metadata.display.ItemDisplayMeta
+                    mapOf<String,Any>("entityId" to entity.entityId,"interpolation" to meta.transformationInterpolationDuration,
+                        "model" to meta.itemStack.get(net.minestom.server.component.DataComponents.ITEM_MODEL)!!.removePrefix("projects:"),
+                        "offset" to xyz(entity.position.sub(owner.position).add(meta.translation)),"scale" to xyz(meta.scale),
+                        "quaternion" to meta.leftRotation.toList(),"yaw" to 0.0,"pitch" to 0.0,"roll" to 0.0)
+                }
+                assertTrue(poses.size<=8)
+                poses
+            }
+            val contact=frames[skill.startup].filter { it["model"].toString().endsWith("solar_bolt_chip_0") }
+            assertEquals(3,contact.size)
+            assertTrue(contact.all { it["interpolation"]==1 })
+            assertTrue(frames.take(skill.startup).flatten().none { it["model"].toString().contains("chip") })
+            val ids=contact.map { it["entityId"] }.toSet()
+            assertEquals(ids,frames[skill.startup+1].filter { it["entityId"] in ids }.map { it["entityId"] }.toSet())
+            assertEquals(0,meshes.size)
+            val cwd=java.nio.file.Path.of(System.getProperty("user.dir"))
+            val root=if(cwd.fileName.toString()=="server-minestom")cwd.parent else cwd
+            java.nio.file.Files.createDirectories(root.resolve(".tools"))
+            java.nio.file.Files.writeString(root.resolve(".tools/solar-bolt-contact-timeline.json"),com.google.gson.Gson().toJson(
+                listOf(mapOf("id" to "firebolt_hit","name" to "火炎弾・命中","startup" to skill.startup,"frames" to frames))))
+        } finally { meshes.cancel();CoreCombatPresentation.forget(owner) }
+    }
     @Test fun `mage primary identity reaches subdued owner and observer on first phase without optional fragments`() = player { owner ->
         val observer=connect(owner.instance,owner.position.add(1.0,0.0,0.0),"MageViewer")
         val meshes=CoreCombatMeshes(owner)
