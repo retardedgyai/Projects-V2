@@ -4,18 +4,18 @@ import json
 import math
 import unittest
 import numpy as np
-from build_mage_rime import CLIPS,GROUPS,PACK,SOURCE,mesh,triangle,spear
+from build_mage_rime import CLIPS,GROUPS,PACK,SOURCE,mesh,triangle,spear,cluster_roots
 
 
 class RimeTests(unittest.TestCase):
     def test_paint_is_shipped_byte_identical(self):
-        dest=PACK/'assets/projects/textures/combat_vfx/mage_material/rime_faces_v01.png'
+        dest=PACK/'assets/projects/textures/combat_vfx/mage_material/rime_faces_v02.png'
         self.assertEqual(hashlib.sha256(SOURCE.read_bytes()).digest(),hashlib.sha256(dest.read_bytes()).digest())
 
     def test_each_cluster_is_individually_composed(self):
         self.assertEqual(6,len({tuple(v) for v in map(tuple,GROUPS.values())}))
         for clip,spikes in GROUPS.items():
-            self.assertEqual(3 if 'inner' in clip else 4,len(spikes))
+            self.assertEqual(3 if 'inner' in clip else 7,len(spikes))
             for angle,root,tip,height,width,depth in spikes:
                 self.assertGreater(tip-root,height*.65)
                 self.assertLess(tip,16)
@@ -32,8 +32,9 @@ class RimeTests(unittest.TestCase):
 
     def test_shaft_faces_use_continuous_paint_not_full_tile_per_strip(self):
         for clip in CLIPS[1:]:
-            for index,e in enumerate(mesh(clip)):
-                if index%208>=192: # two ground caps have eight rows; shaft faces have 48
+            shaft_elements=[e for spec in GROUPS[clip] for e in spear(*spec)]
+            for index,e in enumerate(shaft_elements):
+                if index%128>=112: # two ground caps; four split long faces
                     continue
                 for name,f in e['faces'].items():
                     if name not in ('up','down'):
@@ -68,11 +69,30 @@ class RimeTests(unittest.TestCase):
         for key in ('rime_outer_a','rime_outer_b','rime_outer_c'):
             spec=max(GROUPS[key],key=lambda s:s[3])
             elements=spear(*spec)
-            self.assertEqual(208,len(elements))
-            self.assertNotEqual(elements[0]['rotation'],elements[8]['rotation'])
+            self.assertEqual(128,len(elements))
+            self.assertNotEqual(elements[0]['rotation'],elements[12]['rotation'])
             # Lower body and crown meet at the same longitudinal painted value.
-            self.assertAlmostEqual(elements[7]['faces']['south']['uv'][1],
-                                   elements[8]['faces']['south']['uv'][3])
+            self.assertAlmostEqual(elements[11]['faces']['south']['uv'][1],
+                                   elements[12]['faces']['south']['uv'][3])
+
+    def test_outer_side_branch_begins_inside_the_primary_shoulder_above_ground(self):
+        for key in ('rime_outer_a','rime_outer_b','rime_outer_c'):
+            specs=GROUPS[key]
+            roots=cluster_roots(key)
+            primary=max(range(4),key=lambda i:specs[i][4])
+            graft=5
+            self.assertGreater(roots[graft][1],9.5)
+            self.assertEqual(6,sum(r[1]==8 for r in roots))
+            self.assertLess(np.linalg.norm(roots[graft]-roots[primary]),3.1)
+            for i,r in enumerate(roots):
+                if i!=graft:
+                    self.assertLess(np.linalg.norm(r[[0,2]]-roots[primary][[0,2]]),2.5)
+
+    def test_bundle_axes_agree_and_no_separate_pedestal_is_inserted(self):
+        for key,specs in GROUPS.items():
+            self.assertEqual(len(specs)*128,len(mesh(key)))
+            self.assertLessEqual(max(s[0] for s in specs)-min(s[0] for s in specs),44)
+            self.assertTrue(all(s[5]<s[4]*.55 for s in specs))
 
 
 if __name__=='__main__':

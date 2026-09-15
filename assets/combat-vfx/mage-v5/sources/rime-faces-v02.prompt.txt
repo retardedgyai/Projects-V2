@@ -1,0 +1,13 @@
+Built-in image_gen, 2026-09-15. Generation using MatE R04 browser screenshot as style reference, not an edit target.
+Original generated image preserved; shipped texture is a byte-identical copy.
+Use case: stylized-concept.
+Asset type: original pixel-art game UV atlas, a FLAT PAINTING, NOT a rendered 3D object.
+Input image 1: the latest browser screenshot of the blue MatE ice effect is a STYLE AND MATERIAL REFERENCE only. Do not edit it. Do not include its character, weapon, scene or black background.
+Make a square opaque atlas with exactly four equal edge-to-edge rectangular panels, 2 by 2, zero padding, no lines between panels, no labels. Each panel fills its entire rectangle with painted ice material, NOT an isolated ice object.
+All panels: hard-edged genuine pixel art. Apparent pixel grid of 32 by 32 per panel (64 by 64 total), enlarged nearest-neighbor. Flat solid colors inside every pixel cluster. No gradients at all, no lighting render, no soft brush, no airbrush, no blurry or smoothly polished areas.
+Palette and mark-making from the reference ice: deep vivid cobalt and indigo roots, blue midtones, cyan axial streaks, white-cyan tips. Long organized pixel bands following the TOP to BOTTOM axis, not random spots. Flat colors, chunky articulated pixel edges. The surface is mostly large clear planes, with only 2-3 long bright streaks and a few SHORT joined branch streaks. No grain, glitter, tiny pebbles or repeated noise.
+Top left panel: dominant light-facing ice surface. White-cyan upper half, bright icy blue lower half, two long unequal white-cyan stepped streaks continuing into the blue lower half. The base at the very bottom is darker vivid blue. Keep a broad uninterrupted bright face between the streaks.
+Top right panel: blue side-facing surface with a single long pale cyan stepped axial band from near the upper left through the middle, breaking into two shorter branches low down. Strongly blue base, not gray. Still 70 percent large calm planes.
+Bottom left panel: darker cobalt shadow surface, one much narrower blue-cyan axial streak, predominantly dark blue. Indigo-blue low base.
+Bottom right panel: low deep-blue root material, indigo at the lower edge and 2 broad cyan-blue broken rising planes near the upper edge; no white filling.
+This is a readable production texture for sculpted ice. No text, no borders, no scenery, no perspective drawing, no transparent holes. Do not copy the reference image itself; create original face painting with its bold blue-root/white-tip material language.

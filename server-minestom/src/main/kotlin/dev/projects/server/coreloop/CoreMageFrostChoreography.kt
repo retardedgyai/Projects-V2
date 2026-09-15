@@ -12,10 +12,15 @@ internal object CoreMageFrostChoreography {
     fun parts(e:CoreSkillEffect):List<CoreCombatMeshPart> {
         val r=min(e.radius,CoreSkillScenes.get(e.sceneId).reach)
         val yaw=atan2(e.direction.x(),e.direction.z())
-        fun part(clip:String,height:Double,life:Int,delay:Int=0,turn:Double=0.0)=
-            CoreCombatMeshPart("mage_material:rime_$clip",CoreSkillScenes.get(e.sceneId).palette,
-                Vec(0.0,.12,0.0),Vec(r,height,r),yaw=yaw+turn,durationTicks=life,
+        fun part(clip:String,height:Double,life:Int,delay:Int=0,turn:Double=0.0):CoreCombatMeshPart {
+            // Models are rebased to each bundle's root (native units / 16).
+            // The common ground resolver now samples under that root instead
+            // of giving every distant bundle the caster's ground elevation.
+            val distance=r*when { clip.startsWith("inner_")->3.4/16;clip.startsWith("outer_")->5.225/16;else->0.0 }
+            return CoreCombatMeshPart("mage_material:rime_$clip",CoreSkillScenes.get(e.sceneId).palette,
+                Vec(sin(yaw+turn)*distance,.12,cos(yaw+turn)*distance),Vec(r,height,r),yaw=yaw+turn,durationTicks=life,
                 delayTicks=delay,startSize=1.0,endSize=1.0,ground=true)
+        }
         if(e.phase==CoreSkillVisualPhase.PREPARE)
             return listOf(part("footing",.75,e.prepareDuration).copy(followOwner=true))
         // Each cluster lasts 0.9 s; the outer layer starts 2-3 ticks later.

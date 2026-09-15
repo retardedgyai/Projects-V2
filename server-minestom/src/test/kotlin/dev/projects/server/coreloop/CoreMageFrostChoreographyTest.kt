@@ -46,4 +46,15 @@ class CoreMageFrostChoreographyTest {
         assertEquals("mage_material:ice_hit",hit.shape)
         assertTrue(hit.scale.x()<1.5)
     }
+
+    @Test fun `inner and outer bundles resolve terrain beneath their own anchored roots`() {
+        for(p in CoreSkillChoreography.parts(effect()).drop(1)) {
+            val units=if(p.shape.contains("inner_"))3.4 else 5.225
+            val distance=3.6*units/16
+            assertEquals(kotlin.math.sin(p.yaw)*distance,p.offset.x(),1e-9)
+            assertEquals(kotlin.math.cos(p.yaw)*distance,p.offset.z(),1e-9)
+            assertEquals(.12,p.offset.y())
+            assertTrue(p.ground && !p.followOwner)
+        }
+    }
 }
