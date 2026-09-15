@@ -13,7 +13,10 @@ from build_mage_fire import box
 from build_mage_garden import GRID, SHAPE, skin, rectangles
 
 METEOR_CLIPS={'meteor','eruption','meteor_ring'}
-METEOR_FLOW_CLIPS={'meteor_front',*(f'meteor_flow_{i}' for i in range(4))}
+METEOR_FLOW_CLIPS={'meteor_front',*(f'meteor_flow_{i}' for i in range(4)),'meteor_break_1','meteor_break_2'}
+BLAST_RESOLUTION=32
+BLAST_STEP=np.array((24/BLAST_RESOLUTION,16/BLAST_RESOLUTION,24/16))
+BLAST_ORIGIN=np.array((-4.,8.,-4.))
 PALETTE=[0xFFFFFF,0xC6B8C6,0x8D8398,0xFFF2C2,0xFFBE72,0xEF733D,0xA03F35,0x39313B]
 SOURCE=PACK.parents[4]/'assets/combat-vfx/mage-v5/sources/meteor-basalt-v01.png'
 EMBER_SOURCE=SOURCE.with_name('meteor-ember-v01.png')
@@ -133,7 +136,7 @@ def flow_grid(clip):
 
 
 def flow_mesh(clip,state,uv):
-    """Stable silhouettes; only temperature changes between the three states.
+    """Hot silhouettes keep identity; the final ash state loses filling.
 
     Translation/expansion/collapse is animated by native display transforms.
     The brief contact flash stays shallow; the moving lobes use closed volumes.
@@ -212,9 +215,125 @@ def lobe_volume(source=LOBE_SOURCE):
     return solid
 
 
-@lru_cache(maxsize=8)
-def lobe_surface(clip,uv_tuple):
+@lru_cache(maxsize=1)
+def blast_volume():
+    """R12's ground-rooted, open pressure arch, not a floating curled ball.
+
+    The existing authored climax drawing defines the silhouette/material. Bend
+    it into a deep shell and round its thickness; no raster edits or crossed
+    cards. All regions initially belong to this ONE world-space pressure front.
+    """
+    atlas=impact_atlas();h,w=atlas.shape[:2];n=BLAST_RESOLUTION;depth=16
+    art=atlas[:h//2,w//2:3*w//4].astype(int)
+    warm=(art[:,:,0]-art[:,:,2]>60)&(art[:,:,0]>100)
+    ys,xs=np.nonzero(warm)
+    xx=np.minimum(xs.max(),(xs.min()+(np.arange(n)+.5)*(xs.max()+1-xs.min())/n).astype(int))
+    yy=np.minimum(ys.max(),(ys.min()+(np.arange(n)+.5)*(ys.max()+1-ys.min())/n).astype(int))
+    rgb=art[yy[:,None],xx[None,:]]
+    mask=(rgb[:,:,0]-rgb[:,:,2]>60)&(rgb[:,:,0]>100)
+    ink=np.where(rgb[:,:,1]>=205,3,np.where(rgb[:,:,1]>=140,4,np.where(rgb[:,:,1]>=75,5,6)))
+    front=np.where(mask,ink,0).T[:,::-1].copy()
+    x,y,z=np.indices((n,n,depth))
+    across=(x+.5-n/2)/(n/2)
+    centre=3.2+6.8*(1-across**2)+.6*np.sin(y*24/n*.35)
+    thickness=1.3+.5*(front[:,:,None]==3)+.4*(front[:,:,None]==4)
+    solid=(front[:,:,None]>0)&(abs(z+.5-centre)<thickness)
+    # Isolated sparks in the drawing are not part of the main pressure front.
+    pending=set(zip(*np.nonzero(solid)));components=[]
+    while pending:
+        stack=[pending.pop()];component=[]
+        while stack:
+            p=stack.pop();component.append(p)
+            for axis in range(3):
+                for sign in (-1,1):
+                    q=list(p);q[axis]+=sign;q=tuple(q)
+                    if q in pending:pending.remove(q);stack.append(q)
+        components.append(component)
+    solid[:]=False
+    for p in max(components,key=len):solid[p]=True
+    return solid,front
+
+
+@lru_cache(maxsize=1)
+def lobe_partitions():
+    """Connected peeling regions in the actual three-dimensional pressure arch.
+
+    Their union is the intact source shape. The later motion reveals actual
+    internal faces, not rectangular cuts in a flat picture.
+    """
+    import heapq
+    solid,front=blast_volume()
+    points=list(zip(*np.nonzero(solid)))
+    seeds=[min(points,key=lambda p:sum((a-b)**2 for a,b in zip(p,q)))
+           for q in ((5*BLAST_RESOLUTION/24,5*BLAST_RESOLUTION/24,7),
+                     (13*BLAST_RESOLUTION/24,17*BLAST_RESOLUTION/24,10),
+                     (20*BLAST_RESOLUTION/24,5*BLAST_RESOLUTION/24,6))]
+    labels=np.full(solid.shape,-1,dtype=np.int16);distance=np.full(solid.shape,np.inf);queue=[]
+    for i,p in enumerate(seeds):
+        labels[p]=i;distance[p]=0;heapq.heappush(queue,(0.,i,p))
+    while queue:
+        cost,label,(x,y,z)=heapq.heappop(queue)
+        if cost!=distance[x,y,z] or labels[x,y,z]!=label:continue
+        for p in ((x-1,y,z),(x+1,y,z),(x,y-1,z),(x,y+1,z),(x,y,z-1),(x,y,z+1)):
+            if not all(0<=v<solid.shape[i] for i,v in enumerate(p)) or not solid[p]:continue
+            nx,ny,nz=p
+            difference=abs(int(front[x,y])-int(front[nx,ny]))
+            candidate=cost+1+difference*.2
+            if candidate<distance[p]:
+                labels[p]=label;distance[p]=candidate;heapq.heappush(queue,(candidate,label,p))
+    return tuple(labels==i for i in range(3))
+
+
+def lobe_centers():
+    return [(np.argwhere(part).min(axis=0)+np.argwhere(part).max(axis=0)+1)/2*BLAST_STEP+BLAST_ORIGIN-8
+            for part in lobe_partitions()]
+
+
+def blast_surface(clip,uv_tuple,ash):
+    member=int(clip.rsplit('_',1)[1]) if clip.startswith('meteor_break_') else 0
+    solid=lobe_partitions()[member].copy();_,front=blast_volume()
+    if ash:
+        # Break the pressure rim into uneven cool remnants, leaving the open
+        # centre open. Retained fragments inherit the original front/depth.
+        x,y,z=np.indices(solid.shape)
+        filled=front>0;padded=np.pad(filled,1);interior=filled.copy()
+        for dx,dy in ((-1,0),(1,0),(0,-1),(0,1)):
+            interior &= padded[1+dx:1+BLAST_RESOLUTION+dx,1+dy:1+BLAST_RESOLUTION+dy]
+        rim=(filled&~interior)[:,:,None]
+        ax=x*24/BLAST_RESOLUTION;ay=y*24/BLAST_RESOLUTION
+        fragments=rim&((ax//5+ay//4)%4!=0)
+        fragments|=((ax-5)**2+(ay-5)**2<4)|((ax-19)**2+(ay-7)**2<2)
+        solid &= fragments
+    step=BLAST_STEP;origin=BLAST_ORIGIN-lobe_centers()[member]
+    out=[]
+    for axis in range(3):
+        other=[i for i in range(3) if i!=axis]
+        for sign in (-1,1):
+            neighbor=np.roll(solid,-sign,axis=axis)
+            edge=[slice(None)]*3;edge[axis]=-1 if sign==1 else 0;neighbor[tuple(edge)]=False
+            exposed=solid&~neighbor
+            name=(('west','east'),('down','up'),('north','south'))[axis][sign==1]
+            inks=np.broadcast_to(front[:,:,None],solid.shape)
+            if axis==0 or (axis==1 and sign<0):inks=np.minimum(6,inks+1)
+            material=np.where(exposed,inks,0)
+            for layer in range(solid.shape[axis]):
+                mask=np.take(material,layer,axis=axis)
+                choices=(rectangles(mask),[(b,a,end,stop,c) for a,b,stop,end,c in rectangles(mask.T)])
+                for a,b,stop,end,color in min(choices,key=len):
+                    lo=origin.copy();hi=origin.copy()
+                    lo[axis]+=step[axis]*(layer+(sign==1));hi[axis]=lo[axis]+.002
+                    lo[other[0]]+=a*step[other[0]];hi[other[0]]+=stop*step[other[0]]
+                    lo[other[1]]+=b*step[other[1]];hi[other[1]]+=end*step[other[1]]
+                    if sign==1:lo[axis]-=.002;hi[axis]-=.002
+                    e=box(lo,hi,int(color),list(uv_tuple));e['faces']={name:e['faces'][name]};out.append(e)
+    return out
+
+
+@lru_cache(maxsize=18)
+def lobe_surface(clip,uv_tuple,ash=False):
     """One exposed closed skin, no crossed cards and no internal cube faces."""
+    if clip=='meteor_flow_1' or clip.startswith('meteor_break_'):
+        return blast_surface(clip,uv_tuple,ash)
     number=int(clip.rsplit('_',1)[1])
     source=PRESSURE_SOURCE if number in (0,2) else LOBE_SOURCE
     front,side=lobe_views(source);solid=lobe_volume(source);n=solid.shape[0]
@@ -224,6 +343,18 @@ def lobe_surface(clip,uv_tuple):
     if number>=2:solid=solid[::-1].copy();front=front[::-1].copy()
     if number%2:solid=solid.transpose(2,1,0).copy();front,side=side,front
     out=[];step=np.array(spans)/n;origin=8-np.array(spans)/2
+    if ash and number==3:
+        # R12 155.99: the bright filling has burned away, leaving interrupted
+        # dark curled rims, not the complete flame coloured grey. Read the
+        # outline in BOTH authored views so no opaque back card fills the hole.
+        def rim(view):
+            filled=view>0;padded=np.pad(filled,1)
+            interior=filled.copy()
+            for dx,dy in ((-1,0),(1,0),(0,-1),(0,1)):
+                interior&=padded[1+dx:1+dx+n,1+dy:1+dy+n]
+            return filled&~interior
+        remnant=solid&rim(front)[:,:,None]&rim(side).T[None,:,:]
+        solid=remnant
     for axis in range(3):
         other=[i for i in range(3) if i!=axis]
         for sign in (-1,1):
@@ -252,11 +383,12 @@ def lobe_surface(clip,uv_tuple):
 
 
 def lobe_mesh(clip,state,uv):
-    # Do not re-mesh when the temperature changes: merged face boundaries and
-    # the whole silhouette remain identical for native display interpolation.
+    # Hot -> cooling retains topology. Ash deliberately loses its filled core:
+    # the surviving rims keep their original local coordinates while the native
+    # displays continue separating them; it is not a new full-blast drawing.
     mapping=({3:3,4:4,5:5,6:6},{3:4,4:5,5:6,6:7},{3:1,4:2,5:7,6:7})[state]
     return [dict(e,faces={name:dict(f,tintindex=mapping[f['tintindex']]) for name,f in e['faces'].items()})
-            for e in lobe_surface(clip,tuple(uv))]
+            for e in lobe_surface(clip,tuple(uv),ash=state==2)]
 
 
 def contact_wake(frame,uv):

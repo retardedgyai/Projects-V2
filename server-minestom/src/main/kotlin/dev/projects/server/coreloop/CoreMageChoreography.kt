@@ -8,7 +8,10 @@ internal object CoreMageChoreography {
     val sceneIds=setOf("firebolt","frost_nova","meteor","mage_blink","mage_mark",
         "mage_garden","mage_burst","mage_ward","mage_ult","mage_zero")
     fun owns(p:CoreCombatMeshPart)=p.shape.startsWith("mage_material:")
-    private val movingContours=setOf("mage_material:meteor_front")+(0..3).map { "mage_material:meteor_flow_$it" }
+    private val movingContours=setOf("mage_material:meteor_front","mage_material:meteor_break_1","mage_material:meteor_break_2")+(0..3).map { "mage_material:meteor_flow_$it" }
+    // Native model-space centres from build_mage_meteor.lobe_centers().
+    internal val meteorFragmentCenters=listOf(Vec(-6.75,4.0,-.75),
+        Vec(1.875,10.0,.75),Vec(7.5,4.0,-2.25))
     fun interpolated(p:CoreCombatMeshPart)=p.shape in movingContours
     private val longClips=setOf("pyre","corona","crystal","ice_root","ice_shelf","zero_crown","zero_floor","zero_shelf","zero_wing",
         "garden_spires","garden_fan","garden_bed","garden_spray")
@@ -79,22 +82,20 @@ internal object CoreMageChoreography {
             "meteor" -> {
                 val a=e.pulse*2.39996
                 val at=if(e.pulse==0)Vec.ZERO else Vec(cos(a)*min(e.radius*.35,2.4),0.0,sin(a)*min(e.radius*.35,2.4))
-                // R12: contact opens beneath independently moving flame masses.
-                // The same five contours survive the motion; no whole-blast
-                // frame swap, orbit or per-tick shape replacement.
+                // R12: one ground-rooted pressure front opens around an empty
+                // centre. Its three regions only separate AFTER expansion.
                 listOf(piece("eruption",at.add(0.0,.12,0.0),Vec(4.2,2.0,4.2),ground=true),
                     piece("meteor_ring",at.add(0.0,.13,0.0),Vec(6.0,1.0,6.0),ground=true,secondary=true),
-                    piece("meteor_front",at.add(0.0,.12,0.0),Vec(4.2,2.0,4.2),life=5,ground=true))+
-                    // Overlapping roots open into two low pressure tongues,
-                    // one raised main lobe and a smaller late peeling lobe.
-                    // These are full bodies, no longer four tiled image regions.
-                    listOf(Vec(.5,.4,.0),Vec(.1,.85,.1),Vec(-.4,.35,-.1),Vec(-.35,.65,-.1)).mapIndexed { i,start ->
-                        val drift=listOf(Vec(1.1,.25,.35),Vec(.3,1.10,.35),Vec(-1.2,.4,-.15),Vec(-.55,.85,-.45))[i]
+                    piece("meteor_front",at.add(0.0,.12,0.0),Vec(6.2,3.0,4.2),life=5,ground=true))+
+                    listOf(Vec(.5,.4,.0),Vec.ZERO,Vec(-.4,.35,-.1),Vec(-1.3,1.45,-.2)).mapIndexed { i,start ->
+                        val drift=listOf(Vec(1.1,.25,.35),Vec(0.0,.05,.15),Vec(-1.2,.4,-.15),Vec(-.6,.55,-.35))[i]
                         val end=start.add(drift)
-                        piece("meteor_flow_$i",at.add(0.0,.12,0.0),Vec(4.2,2.0,4.2),life=if(i%2==0)6 else 12,ground=true,
+                        val scale=when(i) { 1 -> Vec(4.4,4.8,4.4); 3 -> Vec(4.2,2.0,4.2); else -> Vec(5.6,3.0,4.8) }
+                        piece("meteor_flow_$i",at.add(0.0,.12,0.0),scale,life=if(i%2==0)6 else 12,ground=true,
                             travel=local(end.x(),end.y(),end.z())).copy(
                             bend=local(start.x(),start.y(),start.z()))
-                    }
+                    }.flatMap { p -> if(p.shape!="mage_material:meteor_flow_1")listOf(p)
+                        else listOf(p,p.copy(shape="mage_material:meteor_break_1"),p.copy(shape="mage_material:meteor_break_2")) }
             }
             "mage_ult" -> if(e.pulse>0) listOf(piece("solar_flare",Vec(0.0,.12,0.0),Vec(2.6,2.3,2.3),
                 life=12,ground=true,secondary=true,facing=yaw+e.pulse*.9)) else {
@@ -155,13 +156,14 @@ internal object CoreMageChoreography {
         val t=(local/(p.durationTicks-1).coerceAtLeast(1)).coerceIn(0.0,1.0)
         if(interpolated(p)) {
             val front=clip=="meteor_front"
-            val role=if(front)-1 else clip.substringAfterLast('_').toInt()
+            val fragment=when { clip=="meteor_flow_1" -> 0; clip.startsWith("meteor_break_") -> clip.substringAfterLast('_').toInt(); else -> -1 }
+            val role=if(front)-1 else if(fragment>=0)1 else clip.substringAfterLast('_').toInt()
             val openingDelay=when(role) { 0 -> .15; 1 -> .25; 2 -> .5; 3 -> 1.1; else -> .5 }
             val rise=((local-openingDelay)/2.8).coerceIn(0.0,1.0)
             val open=rise*rise*(3-2*rise)
             // Short pressure tongues begin losing energy while still opening;
             // compressing the old long-lobe fade into two ticks made a snap.
-            val collapseStart=if(role==0 || role==2)1.5 else 3.0
+            val collapseStart=if(role==0 || role==2).5 else 3.0
             val tail=if(front)(local/(p.durationTicks-1)).coerceIn(0.0,1.0)
                 else ((local-collapseStart)/(p.durationTicks-1-collapseStart)).coerceIn(0.0,1.0)
             val fade=1-tail*tail*(3-2*tail)
@@ -170,16 +172,36 @@ internal object CoreMageChoreography {
             val scale=if(front)Vec(1+tail*.8,1-tail*.7,1+tail*.8).mul(fade)
                 else when(role) {
                     0,2 -> Vec(.7+open*.65,.62+open*.35,.85+open*.2)
-                    1 -> Vec(.8+open*.3,.8+open*.6,.8+open*.15)
+                    1 -> Vec(.58+open*.48,.5+open*.5,.65+open*.4)
                     else -> Vec(.6+open*.24,.55+open*.38,.7+open*.1)
                 }.mul(fade)
             val offset=if(front)p.offset else p.offset.add(p.bend.mul(1-open)).add(p.travel.mul(open))
-                .add(p.travel.x()*tail*.22,tail*.8,p.travel.z()*tail*.22)
+                .add(p.travel.x()*tail*.22,tail*(if(fragment>=0).15 else .8),p.travel.z()*tail*.22)
             val state=if(local<4)0 else if(local<6)1 else 2
             // Restrained roll of real volumes, not a spinning image. The low
             // tongues unfold outwards while the lifted pressure rolls inwards.
-            val roll=p.roll+when(role) { 0 -> -.14+open*.25; 1 -> -.22+open*.55; 2 -> .1-open*.3; 3 -> .18-open*.45; else -> 0.0 }
-            return CoreMeshPose(offset,p.scale.mul(scale),p.yaw,p.pitch,roll,
+            val roll=p.roll+when(role) { 0 -> -.14+open*.25; 1 -> 0.0; 2 -> .1-open*.3; 3 -> .18-open*.45; else -> 0.0 }
+            var position=offset
+            var size=p.scale.mul(scale)
+            var tilt=roll
+            if(fragment>=0) {
+                // All three regions reconstruct the intact body through tick 3.
+                // Then their own centres separate: no replacement explosion,
+                // no global shrinking crescent pretending to disintegrate.
+                fun orient(v:Vec,angle:Double):Vec {
+                    val x=v.x()*cos(angle)-v.y()*sin(angle)
+                    val y=v.x()*sin(angle)+v.y()*cos(angle)
+                    return Vec(x*cos(p.yaw)+v.z()*sin(p.yaw),y,-x*sin(p.yaw)+v.z()*cos(p.yaw))
+                }
+                val split=((local-3.0)/4.0).coerceIn(0.0,1.0)
+                val peel=split*split*(3-2*split)
+                val centre=meteorFragmentCenters[fragment].div(16.0).mul(size)
+                val drift=listOf(Vec(-.6,.2,-.3),Vec(.2,.8,.25),Vec(.7,.35,-.2))[fragment]
+                position=position.add(orient(centre,roll)).add(orient(drift.mul(peel),0.0))
+                size=size.mul(1-peel*.6)
+                tilt+=listOf(-.2,.48,-.5)[fragment]*peel
+            }
+            return CoreMeshPose(position,size,p.yaw,p.pitch,tilt,
                 "combat_vfx/mage_material/${clip}_$state",age>=p.delayTicks && age<p.delayTicks+p.durationTicks)
         }
         // The final rock pose is still visible immediately before the impact

@@ -86,8 +86,8 @@ class CoreCombatMeshTest {
                     assertTrue(frames[impact].any { it["model"].toString().endsWith("/eruption_0") })
                     assertFalse(frames[impact].any { Regex(".*/meteor_[0-9]+$").matches(it["model"].toString()) })
                     val moving=frames[impact].filter { it["model"].toString().contains("/meteor_flow_") ||
-                        it["model"].toString().contains("/meteor_front_") }
-                    assertTrue(moving.size>=5)
+                        it["model"].toString().contains("/meteor_front_") || it["model"].toString().contains("/meteor_break_") }
+                    assertTrue(moving.size>=7)
                     assertTrue(moving.all { it["interpolation"]==1 })
                     val newIds=moving.map { it["entityId"] }.toSet()
                     val next=frames[impact+1].filter { it["entityId"] in newIds }

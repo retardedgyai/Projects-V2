@@ -24,8 +24,8 @@ class CoreMageChoreographyTest {
         for(pulse in 0..2) {
             val parts=CoreSkillChoreography.parts(effect("meteor",pulse))
             val flow=parts.filter(CoreMageChoreography::interpolated)
-            assertEquals(5,flow.size)
-            assertEquals(6,parts.count { !it.secondary })
+            assertEquals(7,flow.size)
+            assertEquals(8,parts.count { !it.secondary })
             for(p in flow) {
                 assertTrue(p.ground && !p.followOwner && p.delayTicks==0)
                 assertEquals(1,CoreCombatMeshes.interpolationTicks(p))
@@ -62,7 +62,10 @@ class CoreMageChoreographyTest {
             assertFalse(CoreSkillChoreography.pose(parts[i],6.0).visible)
         }
         val poses=parts.map { CoreSkillChoreography.pose(it,3.0) }
-        assertTrue(poses[1].scale.y()>poses[0].scale.y()*1.3)
+        // The main arch stays rooted instead of lifting a central flame ball.
+        val centre=CoreMageChoreography.meteorFragmentCenters.first().div(16.0).mul(poses[1].scale)
+        assertTrue(poses[1].offset.sub(centre).y()<.3)
+        assertTrue(poses[1].scale.x()>CoreSkillChoreography.pose(parts[1],0.0).scale.x()*1.7)
         assertTrue(poses[3].scale.y()<poses[1].scale.y()*.75)
         assertTrue(poses[0].offset.x()>0 && poses[2].offset.x()<0)
         for(p in parts) {
@@ -70,6 +73,27 @@ class CoreMageChoreographyTest {
             assertTrue(rotation.all { it.isFinite() && kotlin.math.abs(it)<.5 })
             assertTrue(rotation.zipWithNext().all { (a,b)->kotlin.math.abs(a-b)<.05 })
         }
+    }
+    @Test fun `meteor pieces retain one connected frame before peeling around their own centres`() {
+        val parts=CoreSkillChoreography.parts(effect("meteor")).filter {
+            it.shape=="mage_material:meteor_flow_1" || it.shape.startsWith("mage_material:meteor_break_") }
+        assertEquals(3,parts.size)
+        for(age in listOf(0.0,1.5,3.0)) {
+            val poses=parts.map { CoreSkillChoreography.pose(it,age) }
+            assertEquals(1,poses.map { it.scale }.distinct().size)
+            assertEquals(1,poses.map { it.roll }.distinct().size)
+            val recovered=poses.mapIndexed { i,p ->
+                val v=CoreMageChoreography.meteorFragmentCenters[i].div(16.0).mul(p.scale)
+                val c=Vec(v.x()*kotlin.math.cos(p.roll)-v.y()*kotlin.math.sin(p.roll),
+                    v.x()*kotlin.math.sin(p.roll)+v.y()*kotlin.math.cos(p.roll),v.z())
+                p.offset.sub(c)
+            }
+            assertTrue(recovered.all { it.distance(recovered.first())<1e-8 })
+        }
+        val later=parts.map { CoreSkillChoreography.pose(it,8.0) }
+        assertTrue(later.map { it.roll }.distinct().size==3)
+        assertTrue(later[0].offset.distance(later[1].offset)>1.0)
+        assertTrue(later.all { it.scale.x()<CoreSkillChoreography.pose(parts.first(),4.0).scale.x()*.4 })
     }
     @Test fun `persistent field preparations do not spawn more complete fields between damage beats`() {
         for(id in listOf("mage_garden","mage_ult","mage_zero")) {

@@ -2046,6 +2046,12 @@ assets/projects/items/combat_vfx/mage_material/meteor_6.json
 assets/projects/items/combat_vfx/mage_material/meteor_7.json
 assets/projects/items/combat_vfx/mage_material/meteor_8.json
 assets/projects/items/combat_vfx/mage_material/meteor_9.json
+assets/projects/items/combat_vfx/mage_material/meteor_break_1_0.json
+assets/projects/items/combat_vfx/mage_material/meteor_break_1_1.json
+assets/projects/items/combat_vfx/mage_material/meteor_break_1_2.json
+assets/projects/items/combat_vfx/mage_material/meteor_break_2_0.json
+assets/projects/items/combat_vfx/mage_material/meteor_break_2_1.json
+assets/projects/items/combat_vfx/mage_material/meteor_break_2_2.json
 assets/projects/items/combat_vfx/mage_material/meteor_flow_0_0.json
 assets/projects/items/combat_vfx/mage_material/meteor_flow_0_1.json
 assets/projects/items/combat_vfx/mage_material/meteor_flow_0_2.json
@@ -9679,6 +9685,12 @@ assets/projects/models/combat_vfx/mage_material/meteor_6.json
 assets/projects/models/combat_vfx/mage_material/meteor_7.json
 assets/projects/models/combat_vfx/mage_material/meteor_8.json
 assets/projects/models/combat_vfx/mage_material/meteor_9.json
+assets/projects/models/combat_vfx/mage_material/meteor_break_1_0.json
+assets/projects/models/combat_vfx/mage_material/meteor_break_1_1.json
+assets/projects/models/combat_vfx/mage_material/meteor_break_1_2.json
+assets/projects/models/combat_vfx/mage_material/meteor_break_2_0.json
+assets/projects/models/combat_vfx/mage_material/meteor_break_2_1.json
+assets/projects/models/combat_vfx/mage_material/meteor_break_2_2.json
 assets/projects/models/combat_vfx/mage_material/meteor_flow_0_0.json
 assets/projects/models/combat_vfx/mage_material/meteor_flow_0_1.json
 assets/projects/models/combat_vfx/mage_material/meteor_flow_0_2.json
