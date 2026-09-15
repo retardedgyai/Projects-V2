@@ -16,6 +16,7 @@ METEOR_CLIPS={'meteor','eruption','meteor_ring'}
 PALETTE=[0xFFFFFF,0xC6B8C6,0x8D8398,0xFFF2C2,0xFFBE72,0xEF733D,0xA03F35,0x39313B]
 SOURCE=PACK.parents[4]/'assets/combat-vfx/mage-v5/sources/meteor-basalt-v01.png'
 EMBER_SOURCE=SOURCE.with_name('meteor-ember-v01.png')
+IMPACT_SOURCE=SOURCE.with_name('meteor-impact-atlas-v01.png')
 TEXTURE='projects:combat_vfx/mage_material/meteor_basalt_v01'
 
 
@@ -78,66 +79,101 @@ def burning_wake(frame,uv):
     return skin(volume,uv)
 
 
-def pressure_burst(frame,uv):
-    """R12 155.70 -> 155.84s: raised blast opens into separated curved pieces."""
-    if frame>=14:return []
-    x,y,z=np.moveaxis(GRID,-1,0); xx=x-8; zz=z-8; yy=y-8
-    if frame>=3:
-        # The pressure surface becomes separate masses, not the same dome with
-        # deleted wedges. Each piece has its own flight and cooling lifetime.
-        volume=np.zeros(SHAPE,dtype=np.uint8)
-        fragments={}
-        for i,(angle,height,size,speed,life) in enumerate(((.2,1.8,1.2,.42,10),
-            (1.25,5.2,1.45,.31,11),(2.1,2.4,.85,.52,8),(3.2,1.7,1.3,.39,10),
-            (4.25,4.6,1.05,.33,9),(5.4,3.6,1.5,.35,11),
-            (.8,4.0,.55,.6,8),(2.6,5.5,.7,.46,9),(4.8,1.3,.6,.67,7))):
-            age=frame-3
+@lru_cache(maxsize=1)
+def impact_atlas():
+    # Inspect only; the original RGB image is copied byte-for-byte. The image
+    # tool supplied a painted checkerboard, NOT an alpha channel. Native faces
+    # sample coloured flame pixels; achromatic backdrop has no geometry at all.
+    from PIL import Image
+    return np.asarray(Image.open(IMPACT_SOURCE).convert('RGB'))
+
+
+def impact_plane(frame,uv,resolution,side=False):
+    """Authored ignition/burst, then connected fragments advect and cool.
+
+    This is neither a spinning image card nor a dome swapped for random blocks.
+    The drawing defines both the exposed native contour and the colour samples.
+    Shallow per-column depth gives the front thickness without filling its holes.
+    """
+    if not 0<=frame<13:return []
+    atlas=impact_atlas();height,width=atlas.shape[:2]
+    drawing=min(frame,4)
+    cell_x,cell_y=drawing%4,drawing//4
+    out=[];step=17.28/resolution
+    grid=np.zeros((resolution,resolution),dtype=np.int16)
+    colours={};samples=[]
+    for column in range(resolution):
+        for row in range(resolution):
+            px=min(width-1,int((cell_x+(column+.5)/resolution)*width/4))
+            py=min(height-1,int((cell_y+(row+.5)/resolution)*height/2))
+            rgb=atlas[py,px].astype(int)
+            # This atlas contains only warm flame/ember foreground. Neutral
+            # smoke is deliberately not inferred from a grey checkerboard.
+            if rgb[0]-rgb[2]<32:continue
+            # Merge coherent colour clusters, rather than paying one element
+            # for each source pixel's tiny tonal difference. The chosen UV is
+            # still an actual pixel of the unchanged original bitmap.
+            key=tuple(rgb//32)
+            if key not in colours:
+                colours[key]=len(samples)+1
+                samples.append((px,py))
+            grid[column,row]=colours[key]
+    # Preserve the very same separated silhouettes when their heat disappears.
+    # Lifting whole connected pieces avoids replacing the burst with new tiny
+    # dots, or treating grey background pixels as smoke.
+    labels=np.zeros_like(grid);centres={};label=0
+    if frame>4:
+        for cx,cy in zip(*np.nonzero(grid)):
+            if labels[cx,cy]:continue
+            label+=1;stack=[(cx,cy)];pixels=[];labels[cx,cy]=label
+            while stack:
+                xx,yy=stack.pop();pixels.append((xx,yy))
+                for nx,ny in ((xx-1,yy),(xx+1,yy),(xx,yy-1),(xx,yy+1)):
+                    if 0<=nx<resolution and 0<=ny<resolution and grid[nx,ny] and not labels[nx,ny]:
+                        labels[nx,ny]=label;stack.append((nx,ny))
+            centres[label]=(np.mean(pixels,axis=0)+.5,len(pixels))
+    for column,row,right,bottom,ink in rectangles(grid):
+        px,py=samples[ink-1]
+        x0=8+(column-resolution*.5)*step;x1=8+(right-resolution*.5)*step
+        y0=8+(resolution*.90625-bottom)*step*1.5
+        y1=8+(resolution*.90625-row)*step*1.5
+        age=max(0,frame-4)
+        part=0
+        if age:
+            part=int(labels[column,row]);(cx,cy),area=centres[part]
+            life=3 if area<3 else 5 if area<8 else 8
             if age>=life:continue
-            radius=4.5+age*speed
-            cy=height+age*.7-age*age*.035
-            dx=xx-math.cos(angle)*radius; dz=zz-math.sin(angle)*radius; dy=yy-cy
-            size*=max(.05,1-max(0.,age-4)/(life-4))
-            solid=np.maximum.reduce((abs(dx),abs(dy)*1.2,abs(dz),
-                (abs(dx)+abs(dy)+abs(dz))*.57))<size
-            fragments[i]=(8+math.cos(angle)*radius,8+cy,8+math.sin(angle)*radius,size,age)
-            volume[solid]=i+1
-        out=skin(volume,uv)
-        for e in out:
-            for name,f in e['faces'].items():
-                cx,cy,cz,size,age=fragments[f['tintindex']]
-                axes=(2,1) if name in ('east','west') else (0,2) if name in ('up','down') else (0,1)
-                center=(cx,cy,cz)
-                u0,v0=[max(0.,min(16.,8+(e['from'][a]-center[a])/size*7)) for a in axes]
-                u1,v1=[max(0.,min(16.,8+(e['to'][a]-center[a])/size*7)) for a in axes]
-                if name in ('north','east'):u0,u1=u1,u0
-                if age<4:
-                    # A small fragment cannot carry the entire material sheet
-                    # legibly. Keep a broad hot lobe, not a dense tiled pattern.
-                    u0,u1=4+u0*.5,4+u1*.5
-                    v0,v1=4+v0*.5,4+v1*.5
-                f.update(texture='#2' if age<4 else '#1',uv=[u0,16-v1,u1,16-v0],
-                    tintindex=0 if name in ('north','up') else 1 if name in ('east','west') else 2)
-            e['from'][1]=8+(e['from'][1]-8)*1.7
-            e['to'][1]=8+(e['to'][1]-8)*1.7
-        return out
-    angle=np.arctan2(zz,xx)
-    radius=2.6+4.2*(1-math.exp(-frame/2.5))
-    # A lobed pressure front with real height, not an upright reused slash.
-    metric=np.sqrt(xx*xx+zz*zz+(yy*1.22)**2)
-    edge=radius*(1+.10*np.cos(angle*3+.8)+.05*np.sin(angle*5))
-    thickness=1.45
-    solid=(metric<edge)&(yy>=0)&(metric>np.maximum(0.,edge-thickness))
-    # R12's contact has two raised wings and an open center, not an opaque
-    # dome covering the victim. The rear curved pressure front remains visible.
-    solid&=~((abs(xx)<radius*.35)&(zz<radius*.2)&(yy>.5))
-    # Broad pale contact first, peach interior and orange edge on expansion,
-    # dark fragments last. Palette stages are not a long opaque white dome.
-    shade=3
-    out=skin(np.where(solid,shade+1,0).astype(np.uint8),uv)
-    for e in out:
-        e['from'][1]=8+(e['from'][1]-8)*1.7
-        e['to'][1]=8+(e['to'][1]-8)*1.7
+            centre_x=8+(cx-resolution*.5)*step
+            centre_y=8+(resolution*.90625-cy)*step*1.5
+            shrink=max(.10,1-age/life*.85)
+            drift=(1 if centre_x>=8 else -1)*age*(.12+(part%3)*.025)
+            lift=age*(.35+(part%4)*.055)
+            x0=centre_x+(x0-centre_x)*shrink+drift
+            x1=centre_x+(x1-centre_x)*shrink+drift
+            y0=centre_y+(y0-centre_y)*shrink+lift
+            y1=centre_y+(y1-centre_y)*shrink+lift
+        z=8+(((column+right)*.5-resolution*.5)*step)**2*.018
+        if side:
+            e=box((8+(z-8)*.5-.035,8+(y0-8)*.85,8+(x0-8)*.8),
+                  (8+(z-8)*.5+.035,8+(y1-8)*.85,8+(x1-8)*.8),0,uv)
+        else:e=box((x0,y0,z-.035),(x1,y1,z+.035),0,uv)
+        sample=[(px+.15)/width*16,(py+.15)/height*16,
+                (px+.85)/width*16,(py+.85)/height*16]
+        e['faces']={n:{'texture':'#2','uv':sample,'tintindex':0}
+                    for n in (('east','west') if side else ('north','south'))}
+        if age==1:
+            for f in e['faces'].values():f['tintindex']=2
+        elif age>=2:
+            for f in e['faces'].values():
+                f.update(texture='#0',uv=uv,tintindex=2 if part%4==0 else 7)
+        out.append(e)
     return out
+
+
+def pressure_burst(frame,uv):
+    # Unequal crossed, shallow-bowed surfaces: readable from the side as well
+    # as the cast direction. No opaque rectangular card or rotating billboard.
+    return impact_plane(frame,uv,48)+impact_plane(frame,uv,32,side=True)
 
 
 def floor_mesh(mask,uv,height=8.05):
@@ -161,17 +197,20 @@ def geometry(clip,frame,uv_tuple):
     if clip=='meteor_ring':
         # R12: the bright contact disappears first. Two thin uneven wakes
         # continue outward, then lose whole arcs instead of blinking at once.
-        t=frame/23
+        if frame>=18:return []
+        t=frame/18
         for i,(speed,delay) in enumerate(((1.,0.),(.63,1.5))):
             age=frame-delay
             if age<0:continue
             radius=(1.5+5.7*(1-math.exp(-age/5)))*speed
-            width=max(.09,.32*(1-t))
-            contour=(abs(r-radius)<width)
-            if frame>9:
+            width=max(.07,.23*(1-t))
+            contour=(abs(r-radius-.14*np.sin(a*3+i)-.08*np.sin(a*7))<width)
+            if frame>4:
                 phase=(a+math.pi+i*.8)%(2*math.pi)
-                contour&=(phase>max(0.,(frame-9)/14)*4.9)
-            ink=np.where(np.sin(a+i*2)>.3,4,np.where(np.sin(a+i*2)>-.6,5,6))
+                contour&=(phase>max(0.,(frame-4)/14)*5.8)
+            # R12's leftover ground swirl cools to ash; it is not a persistent
+            # bright red spell circle competing with the newly rising flames.
+            ink=np.where(np.sin(a+i*2)>.3,4,5) if frame<3 else np.where(np.sin(a+i*2)>.3,2,7)
             mask[contour]=(ink[contour]+1).astype(np.uint8)
         return floor_mesh(mask,uv)
     # The early ground contact supports the raised pressure front. R12's
@@ -216,13 +255,14 @@ def build(assets,write):
     target.parent.mkdir(parents=True,exist_ok=True)
     shutil.copyfile(SOURCE,target)
     shutil.copyfile(EMBER_SOURCE,target.with_name('meteor_ember_v01.png'))
+    shutil.copyfile(IMPACT_SOURCE,target.with_name('meteor_impact_atlas_v01.png'))
     uv=ink_uvs(assets)[3]
     for clip in sorted(METEOR_CLIPS):
         for frame in range(24):
             key=f'combat_vfx/mage_material/{clip}_{frame}'
             write(assets/f'models/{key}.json',{'ambientocclusion':False,
                 'textures':{'0':'projects:combat_vfx/ribbon/slash_5','1':TEXTURE,
-                            '2':'projects:combat_vfx/mage_material/meteor_ember_v01'},
+                            '2':'projects:combat_vfx/mage_material/meteor_impact_atlas_v01'},
                 'elements':mesh(clip,frame,uv)})
             write(assets/f'items/{key}.json',{'model':{'type':'minecraft:model','model':'projects:'+key,
                 'tints':[{'type':'minecraft:constant','value':c} for c in PALETTE]}})

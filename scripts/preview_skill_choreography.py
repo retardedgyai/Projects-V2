@@ -92,8 +92,12 @@ def render(parts, name, tick, view='iso', world_scale=34, fps=20):
             def element_point(v):
                 rotation=e.get('rotation')
                 if not rotation: return v
-                assert rotation['axis'] in ('x','z') and not rotation.get('rescale',False), 'Unsupported preview rotation'
+                assert rotation['axis'] in ('x','y','z') and not rotation.get('rescale',False), 'Unsupported preview rotation'
                 angle=math.radians(rotation['angle']); origin=rotation['origin']
+                if rotation['axis']=='y':
+                    x,z=v[0]-origin[0],v[2]-origin[2]
+                    return [origin[0]+x*math.cos(angle)+z*math.sin(angle),v[1],
+                            origin[2]-x*math.sin(angle)+z*math.cos(angle)]
                 if rotation['axis']=='x':
                     y,z=v[1]-origin[1],v[2]-origin[2]
                     return [v[0],origin[1]+y*math.cos(angle)-z*math.sin(angle),
@@ -130,7 +134,13 @@ def render(parts, name, tick, view='iso', world_scale=34, fps=20):
                 box=(round(min(uv[0],uv[2])/16*texture.width),round(min(uv[1],uv[3])/16*texture.height),
                      round(max(uv[0],uv[2])/16*texture.width),round(max(uv[1],uv[3])/16*texture.height))
                 if box[2]<=box[0] or box[3]<=box[1]:
-                    raise ValueError('Subtexel UV in preview: '+texture_name)
+                    # Native UV can legitimately cover less than one texel on
+                    # a thin edge. Match nearest sampling instead of rejecting
+                    # the model or painting an unrelated neighboring pixel.
+                    x=max(0,min(texture.width-1,int((uv[0]+uv[2])/32*texture.width)))
+                    y=max(0,min(texture.height-1,int((uv[1]+uv[3])/32*texture.height)))
+                    box=(x if box[2]<=box[0] else box[0],y if box[3]<=box[1] else box[1],
+                         x+1 if box[2]<=box[0] else box[2],y+1 if box[3]<=box[1] else box[3])
                 texture=texture.crop(box)
                 # Native pixel contours sample one opaque ink texel. Projecting
                 # that face directly is identical material-wise and avoids a
@@ -146,20 +156,26 @@ def render(parts, name, tick, view='iso', world_scale=34, fps=20):
                 rotation=face.get('rotation',0)
                 if rotation: texture=texture.rotate(-rotation,expand=True,resample=Image.Resampling.NEAREST)
                 target=((0,0),(texture.width,0),(texture.width,texture.height),(0,texture.height))
+                # Warp only the on-screen face rectangle. Real painted textures
+                # previously allocated a full tile for every tiny native face.
+                bx=max(0,math.floor(min(v[0] for v in visible)));by=max(0,math.floor(min(v[1] for v in visible)))
+                ex=min(W,math.ceil(max(v[0] for v in visible)));ey=min(H,math.ceil(max(v[1] for v in visible)))
+                if ex<=bx or ey<=by:continue
                 matrix=[]; result=[]
                 for (x,y,_),(u,v) in zip(points,target):
+                    x-=bx;y-=by
                     matrix.extend(((x,y,1,0,0,0,-u*x,-u*y),(0,0,0,x,y,1,-v*x,-v*y)))
                     result.extend((u,v))
                 try: coefficients=np.linalg.solve(matrix,result)
                 except np.linalg.LinAlgError: continue
-                warped=texture.transform((W,H),Image.Transform.PERSPECTIVE,tuple(coefficients),Image.Resampling.NEAREST)
+                warped=texture.transform((ex-bx,ey-by),Image.Transform.PERSPECTIVE,tuple(coefficients),Image.Resampling.NEAREST)
                 if view=='eye' and any(v[2]<-.6 for v in world):
-                    mask=Image.new('L',(W,H),0)
-                    ImageDraw.Draw(mask).polygon([v[:2] for v in visible],fill=255)
+                    mask=Image.new('L',(ex-bx,ey-by),0)
+                    ImageDraw.Draw(mask).polygon([(v[0]-bx,v[1]-by) for v in visible],fill=255)
                     warped.putalpha(ImageChops.multiply(warped.getchannel('A'),mask))
-                faces.append((depth,warped,None))
+                faces.append((depth,((bx,by),warped),None))
     for _,content,color in sorted(faces,key=lambda v:v[0],reverse=True):
-        if color is None: image.alpha_composite(content)
+        if color is None: image.alpha_composite(content[1],content[0])
         else: ImageDraw.Draw(image).polygon(content,fill=color)
     return image.convert('RGB')
 

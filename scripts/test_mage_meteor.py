@@ -2,7 +2,7 @@
 import json
 import math
 import unittest
-from build_mage_meteor import METEOR_CLIPS, PALETTE, SOURCE, EMBER_SOURCE, PACK, mesh, ink_uvs, rock, burning_wake, pressure_burst
+from build_mage_meteor import METEOR_CLIPS, PALETTE, SOURCE, EMBER_SOURCE, IMPACT_SOURCE, PACK, mesh, ink_uvs, rock, burning_wake, pressure_burst, impact_atlas
 
 
 class MeteorTests(unittest.TestCase):
@@ -30,6 +30,33 @@ class MeteorTests(unittest.TestCase):
             self.assertEqual([],mesh(clip,23,self.uv))
         self.assertEqual(SOURCE.read_bytes(),(self.assets/'textures/combat_vfx/mage_material/meteor_basalt_v01.png').read_bytes())
         self.assertEqual(EMBER_SOURCE.read_bytes(),(self.assets/'textures/combat_vfx/mage_material/meteor_ember_v01.png').read_bytes())
+        self.assertEqual(IMPACT_SOURCE.read_bytes(),(self.assets/'textures/combat_vfx/mage_material/meteor_impact_atlas_v01.png').read_bytes())
+
+    def test_impact_has_no_checkerboard_faces_and_is_readable_from_side(self):
+        atlas=impact_atlas();height,width=atlas.shape[:2]
+        for frame in range(5):
+            faces=[f for e in pressure_burst(frame,self.uv) for f in e['faces'].values()]
+            self.assertTrue(faces)
+            for f in faces:
+                self.assertEqual('#2',f['texture'])
+                self.assertEqual(0,f['tintindex'])  # original colours, no extra orange tint
+                u0,v0,u1,v1=f['uv']
+                px=int((u0+u1)/32*width);py=int((v0+v1)/32*height)
+                rgb=atlas[py,px].astype(int)
+                self.assertGreaterEqual(rgb[0]-rgb[2],32)
+                self.assertEqual(frame%4,int(px/width*4))
+                self.assertEqual(frame//4,int(py/height*2))
+            self.assertEqual({'north','south','east','west'},
+                             {n for e in pressure_burst(frame,self.uv) for n in e['faces']})
+        # The same separated pieces cool into explicitly authored neutral ash;
+        # the RGB backdrop is never sampled as smoke, and ignition never loops.
+        self.assertTrue(pressure_burst(8,self.uv))
+        for frame in range(6,13):
+            self.assertTrue(all(f['texture']=='#0' and f['tintindex'] in (2,7)
+                                for e in pressure_burst(frame,self.uv) for f in e['faces'].values()))
+        self.assertEqual([],pressure_burst(13,self.uv))
+        self.assertGreater(max(e['to'][1] for e in pressure_burst(2,self.uv)),
+                           max(e['to'][1] for e in pressure_burst(0,self.uv)))
 
     def test_rock_is_one_volume_with_continuous_world_uvs(self):
         body=rock(tuple(self.uv))
