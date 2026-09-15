@@ -154,11 +154,11 @@ class CoreMageChoreographyTest {
     }
     @Test fun `garden has staggered upright roots while ward leaves the aim corridor open`() {
         val garden=CoreSkillChoreography.parts(effect("mage_garden"))
-        assertEquals(5,garden.size);assertEquals(setOf(0,2,4),garden.map { it.delayTicks }.toSet())
+        assertEquals(6,garden.size);assertEquals(setOf(0,1,3,5),garden.map { it.delayTicks }.toSet())
         assertTrue(garden.all { it.ground && it.offset.y()==.12 })
         assertTrue(garden.none { it.followOwner || it.spin!=0.0 })
-        assertTrue(garden.all { it.shape.startsWith("mage_material:garden_") })
-        assertEquals(4,garden.count { !it.secondary })
+        assertTrue(garden.all { it.shape.startsWith("mage_material:cryo_") })
+        assertEquals(6,garden.count { !it.secondary })
         assertTrue(CoreSkillChoreography.parts(effect("mage_garden",phase=CoreSkillVisualPhase.PREPARE))
             .all { it.shape=="mage_material:garden_charge" })
         val ward=CoreSkillChoreography.parts(effect("mage_ward"))

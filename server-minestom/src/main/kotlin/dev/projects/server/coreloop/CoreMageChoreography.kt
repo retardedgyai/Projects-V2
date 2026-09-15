@@ -13,7 +13,8 @@ internal object CoreMageChoreography {
     internal val meteorFragmentCenters=listOf(Vec(-5.390519187358917,5.214285714285714,3.3160117748590565),
         Vec(.9209932279909703,11.238095238095237,4.942499482781218),
         Vec(5.444695259593679,5.404761904761904,3.5327160637981088))
-    fun interpolated(p:CoreCombatMeshPart)=p.shape in movingContours
+    private val rootedIce=setOf("mage_material:cryo_pillar","mage_material:cryo_root")
+    fun interpolated(p:CoreCombatMeshPart)=p.shape in movingContours || p.shape in rootedIce
     internal fun meteorCoolingDelay(clip:String)=when(clip.substringAfter(':')) {
         "meteor_break_1" -> 1.0
         "meteor_break_2","meteor_flow_0" -> .5
@@ -116,11 +117,16 @@ internal object CoreMageChoreography {
             "mage_garden" -> if(e.pulse>0) listOf(piece("garden_beat",Vec(0.0,.12,0.0),
                 Vec(r*1.1,1.8,r*1.1),life=8,ground=true,secondary=true)) else {
                 val life=(e.skill.pulses-1)*8+24
-                listOf(floor("garden_bed",r*.55,life),
-                    piece("garden_spires",local(-r*.18,.12,r*.10),Vec(1.8,1.8,1.8),life=life,ground=true,facing=yaw+.25),
-                    piece("garden_fan",local(r*.20,.12,r*.22),Vec(1.8,1.8,1.8),life=life-2,ground=true,delay=2,facing=yaw-.65),
-                    piece("garden_fan",local(r*.08,.12,-r*.23),Vec(1.2,1.15,1.2),life=life-4,ground=true,delay=4,facing=yaw+2.1),
-                    piece("garden_spray",Vec(0.0,.12,0.0),Vec(r*.9,2.3,r*.9),life=life,ground=true,secondary=true))
+                // R01: low blue roots first, then one dominant shaft and a
+                // shorter counter-shaft. No pedestal, repeated crystal fans,
+                // or repeated full growth on the subsequent damage beats.
+                listOf(
+                    piece("cryo_root",local(-r*.12,.12,r*.13),Vec(1.8,2.3,1.4),life=life,ground=true,facing=yaw+2.8),
+                    piece("cryo_root",local(r*.19,.12,r*.22),Vec(1.3,1.6,1.15),life=life,ground=true,facing=yaw+.2),
+                    piece("cryo_root",local(-r*.02,.12,-r*.01),Vec(1.2,1.1,1.0),life=life-1,ground=true,delay=1,facing=yaw+.85),
+                    piece("cryo_root",local(-r*.10,.12,r*.16),Vec(1.1,1.35,1.0),life=life-1,ground=true,delay=1,facing=yaw-2.3),
+                    piece("cryo_pillar",local(-r*.12,.12,r*.13),Vec(3.7,2.7,2.9),life=life-3,ground=true,delay=3,facing=yaw+.25).copy(roll=.10),
+                    piece("cryo_pillar",local(r*.19,.12,r*.22),Vec(2.6,1.8,2.0),life=life-5,ground=true,delay=5,facing=yaw-.6).copy(roll=-.10))
             }
             "mage_zero" -> if(e.pulse>0) listOf(floor("ice_pulse",r*.68,8,follow=true).copy(secondary=true)) else {
                 val life=(e.skill.pulses-1)*8+16
@@ -158,6 +164,25 @@ internal object CoreMageChoreography {
         val clip=p.shape.substringAfter(':')
         val local=(age-p.delayTicks).coerceAtLeast(0.0)
         val t=(local/(p.durationTicks-1).coerceAtLeast(1)).coerceIn(0.0,1.0)
+        if(p.shape in rootedIce) {
+            fun smooth(v:Double):Double {
+                val u=v.coerceIn(0.0,1.0)
+                return u*u*(3-2*u)
+            }
+            val root=clip=="cryo_root"
+            val growth=smooth(local/if(root)3.0 else 4.0)
+            val size=p.scale.mul(Vec(.8+.2*growth,.025+.975*growth,.8+.2*growth))
+            // One immutable faceted model on one interpolated Display. The
+            // body remains still through the field's active interval, then
+            // withdraws below its resolved ground, leaving the pale tip last.
+            // Terrain depth testing performs the occlusion, not a replacement
+            // PNG or a squashed whole object. Model root is y=8 (= item origin).
+            val retreat=smooth((local-(p.durationTicks-9))/8.0)
+            val height=if(root).75 else 1.5
+            return CoreMeshPose(p.offset.add(0.0,-retreat*(p.scale.y()*height+.18),0.0),
+                size,p.yaw,p.pitch,p.roll,"combat_vfx/mage_material/${clip}_0",
+                age>=p.delayTicks && age<p.delayTicks+p.durationTicks)
+        }
         if(interpolated(p)) {
             val front=clip=="meteor_front"
             val rear=clip in setOf("meteor_flow_0","meteor_flow_2","meteor_flow_3")
