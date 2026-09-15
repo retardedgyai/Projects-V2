@@ -157,13 +157,25 @@ class MeteorTests(unittest.TestCase):
         mask,_,_=drawing(2)
         phases=[thermal_ink(s) for s in range(6)]
         for phase in phases:self.assertFalse(phase[~mask].any())
-        for phase in phases[:2]:np.testing.assert_array_equal(phase>0,mask)
-        np.testing.assert_array_equal(phases[2]>0,phases[3]>0)
-        self.assertLess(np.count_nonzero(phases[2]),mask.sum()*.8)
+        np.testing.assert_array_equal(phases[0]>0,mask)
+        for before,after in zip(phases,phases[1:]):
+            self.assertTrue(np.all((after>0)<=(before>0)))
+        self.assertLess(np.count_nonzero(phases[3]),mask.sum()*.8)
         self.assertTrue(np.all((phases[5]>0)<=(phases[4]>0)))
         self.assertLess(np.count_nonzero(phases[5]),mask.sum()*.25)
-        self.assertEqual({0,2,3,4},set(np.unique(phases[2])))
-        self.assertGreater(np.count_nonzero(phases[2]==3),np.count_nonzero(phases[2]==4))
+        # Both transitional phases contain actual hot and ember paint plus
+        # cooled rims/holes. A whole-item tint swap cannot satisfy this.
+        for phase in phases[1:3]:
+            self.assertEqual({0,1,2,3,4},set(np.unique(phase)))
+            self.assertGreater(np.count_nonzero(phase==1),mask.sum()*.05)
+            self.assertGreater(np.count_nonzero(phase==4),mask.sum()*.1)
+        self.assertLess(np.count_nonzero(phases[2]==1),np.count_nonzero(phases[1]==1))
+        self.assertFalse((phases[3]==1).any())
+        self.assertTrue((phases[3]==4).any())
+        self.assertFalse(np.isin(phases[4:],(1,4)).any())
+        for before,after in zip(phases[1:3],phases[2:4]):
+            self.assertFalse(((before==1)&~np.isin(after,(1,4))).any(),
+                             'A hot patch skipped its ember phase')
         rgba=np.asarray(Image.open(self.assets/'textures/combat_vfx/warrior_support/cloth.png'))
         np.testing.assert_array_equal(rgba[61,24],[37,37,41,68])
         for clip in METEOR_FLOW_CLIPS-{'meteor_front'}:

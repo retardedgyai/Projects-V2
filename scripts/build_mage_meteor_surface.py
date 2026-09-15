@@ -39,17 +39,40 @@ def thermal_ink(state):
     # Unequal breaks along the authored curled edge, not evenly spaced sparks.
     fracture=np.sin(x*41+np.sin(y*23)*.9)+.7*np.sin(x*19-y*31)
     ink=np.zeros(mask.shape,dtype=np.uint8)
-    if state==1:
-        ink[mask]=4  # same painted filling, losing yellow heat
-        ink[mask&(rgb[:,:,0]<155)]=2
-    elif state in (2,3):
+    if state in (1,2,3):
         # The hot interior is gone, not a large translucent panel. R12 leaves
         # a thin torn boundary; filling every old flame area exposed the planar
         # facets as broad gray wedges on a bright background.
         ink[rim]=3
-        solid=rim&(fracture>(-.8 if state==2 else .1))
+        solid=rim&(fracture>(-.8,-.4,.1)[state-1])
         ink[solid]=2
-        if state==2:ink[solid&(fracture>1.3)&(rgb[:,:,0]>190)]=4
+        # Broad connected heat pockets belong to the three painted curls.
+        # Their outer tongues lose heat first; the heavier roots persist.
+        # A material clock per point lets hot paint, ember and empty interior
+        # coexist within ONE display, instead of changing a whole region red
+        # on one tick and charcoal on the next. This is native face coverage,
+        # not a recolored bitmap or per-pixel random/dither dissolve.
+        pockets=np.maximum.reduce([
+            np.exp(-(((x-a)/sx)**2+((y-b)/sy)**2))
+            for a,b,sx,sy in ((.18,.79,.17,.22),(.77,.71,.21,.24),(.56,.41,.17,.20))])
+        # The painted yellow curls, not the Gaussian boundary, determine the
+        # last hot shapes. A purely radial clock left three round red coins.
+        painted_heat=np.clip((rgb[:,:,1]-65)/170,0,1)
+        # Heat belongs to painted pixel clusters. Classifying every enlarged
+        # source texel introduced tiny noisy material faces along smooth RGB
+        # edges. Sample one native coverage cell per four source texels; keep
+        # the original continuous RGB UVs and silhouette completely intact.
+        size=4;ph=(-h)%size;pw=(-w)%size
+        valid=np.pad(mask,((0,ph),(0,pw))).reshape((h+ph)//size,size,(w+pw)//size,size)
+        weights=valid.sum(axis=(1,3))
+        sampled=np.pad(painted_heat*mask,((0,ph),(0,pw))).reshape(valid.shape).sum(axis=(1,3))
+        painted_heat=(sampled/np.maximum(1,weights)).repeat(size,axis=0).repeat(size,axis=1)[:h,:w]
+        local_age=(.90,1.40,2.05)[state-1]-(.05+.55*pockets+painted_heat)
+        # Wider than the largest sampled clock step (.65): every hot patch
+        # must pass through ember at least once, never hot -> gray in one item
+        # change. Display transforms remain interpolated by the client.
+        ink[mask&(local_age<.75)]=4
+        ink[mask&(local_age<0)]=1
     else:
         solid=rim&(fracture>(.55 if state==4 else 1.15))
         ink[solid]=2
