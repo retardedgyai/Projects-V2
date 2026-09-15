@@ -164,9 +164,12 @@ internal class CoreCombatMeshes(private val owner: Player) {
         // transform runs out during a single missed delivery and visibly holds.
         // Only persistent flow surfaces get this extra tick of presentation slack.
         internal fun interpolationTicks(part: CoreCombatMeshPart)=
+            // Only these Mage contours retain their geometry while travelling.
+            // Other Mage assets still author motion inside their model frames.
+            if(CoreMageChoreography.interpolated(part)) 1
             // Approved v3 is an authored 20 Hz model sequence with a fixed transform.
             // Interpolating its initial zero scale would shrink/distort its first frames.
-            if(part.shape.startsWith("approved_dash_") || CoreWarriorBladeChoreography.owns(part) || CoreWarriorFlourish.owns(part) || CoreMageChoreography.owns(part)) 0
+            else if(part.shape.startsWith("approved_dash_") || CoreWarriorBladeChoreography.owns(part) || CoreWarriorFlourish.owns(part) || CoreMageChoreography.owns(part)) 0
             else if(part.shape.startsWith("warrior_trace:") ||
                 part.shape.startsWith("flow:") && !part.shape.contains(":prepare:")) 2 else 1
         internal fun removalAge(part: CoreCombatMeshPart)=part.delayTicks+part.durationTicks+

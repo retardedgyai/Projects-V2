@@ -2,7 +2,8 @@
 import json
 import math
 import unittest
-from build_mage_meteor import METEOR_CLIPS, PALETTE, SOURCE, EMBER_SOURCE, IMPACT_SOURCE, BRIDGE_SOURCE, WAKE_SOURCE, PACK, mesh, ink_uvs, rock, burning_wake, pressure_burst, impact_atlas, impact_drawing
+from build_mage_meteor import METEOR_CLIPS, PALETTE, SOURCE, EMBER_SOURCE, IMPACT_SOURCE, BRIDGE_SOURCE, WAKE_SOURCE, PACK, mesh, ink_uvs, rock, burning_wake, impact_atlas
+from build_mage_meteor import METEOR_FLOW_CLIPS, flow_mesh, flow_grid
 
 
 class MeteorTests(unittest.TestCase):
@@ -34,32 +35,22 @@ class MeteorTests(unittest.TestCase):
         self.assertEqual(BRIDGE_SOURCE.read_bytes(),(self.assets/'textures/combat_vfx/mage_material/meteor_impact_bridge_v01.png').read_bytes())
         self.assertEqual(WAKE_SOURCE.read_bytes(),(self.assets/'textures/combat_vfx/mage_material/meteor_wake_v01.png').read_bytes())
 
-    def test_impact_has_no_checkerboard_faces_and_is_readable_from_side(self):
-        for frame in range(7):
-            source,drawing,columns,rows,texture=impact_drawing(frame)
-            atlas=impact_atlas(source);height,width=atlas.shape[:2]
-            faces=[f for e in pressure_burst(frame,self.uv) for f in e['faces'].values()]
-            self.assertTrue(faces)
-            for f in faces:
-                self.assertEqual(texture,f['texture'])
-                self.assertEqual(0,f['tintindex'])  # original colours, no extra orange tint
-                u0,v0,u1,v1=f['uv']
-                px=int((u0+u1)/32*width);py=int((v0+v1)/32*height)
+    def test_active_flame_geometry_never_uses_checkerboard_as_smoke(self):
+        import numpy as np
+        atlas=impact_atlas();height,width=atlas.shape[:2]
+        for clip in METEOR_FLOW_CLIPS:
+            drawing=0 if clip=='meteor_front' else 1
+            grid,_=flow_grid(clip)
+            for x,y in zip(*np.nonzero(grid)):
+                px=int((drawing+(x+.5)/48)*width/4)
+                py=int((y+.5)/48*height/2)
                 rgb=atlas[py,px].astype(int)
                 self.assertGreaterEqual(rgb[0]-rgb[2],32)
-                self.assertEqual(drawing%columns,int(px/width*columns))
-                self.assertEqual(drawing//columns,int(py/height*rows))
-            self.assertEqual({'north','south','east','west'},
-                             {n for e in pressure_burst(frame,self.uv) for n in e['faces']})
-        # The same separated pieces cool into explicitly authored neutral ash;
-        # the RGB backdrop is never sampled as smoke, and ignition never loops.
-        self.assertTrue(pressure_burst(8,self.uv))
-        for frame in range(8,15):
-            self.assertTrue(all(f['texture']=='#0' and f['tintindex'] in (2,7)
-                                for e in pressure_burst(frame,self.uv) for f in e['faces'].values()))
-        self.assertEqual([],pressure_burst(15,self.uv))
-        self.assertGreater(max(e['to'][1] for e in pressure_burst(4,self.uv)),
-                           max(e['to'][1] for e in pressure_burst(0,self.uv)))
+            for state in range(3):
+                faces=[f for e in flow_mesh(clip,state,self.uv) for f in e['faces'].values()]
+                self.assertTrue(faces)
+                self.assertTrue(all(f['texture']=='#0' for f in faces))
+                if state==2:self.assertTrue(all(f['tintindex'] in (1,2,7) for f in faces))
 
     def test_rock_is_one_volume_with_continuous_world_uvs(self):
         body=rock(tuple(self.uv))
@@ -76,19 +67,53 @@ class MeteorTests(unittest.TestCase):
         # rock-texture animation that restarts its cracks every frame.
         self.assertEqual(body,mesh('meteor',20,self.uv)[:len(body)])
 
-    def test_bridge_opens_central_space_and_contact_keeps_only_short_heat_residue(self):
-        atlas=impact_atlas(BRIDGE_SOURCE);height,width=atlas.shape[:2]
-        holes=[]
-        for drawing in range(4):
-            hole=0
-            for x in range(17,31):
-                for y in range(29,43):
-                    px=int((drawing%2+(x+.5)/48)*width/2)
-                    py=int((drawing//2+(y+.5)/48)*height/2)
-                    rgb=atlas[py,px].astype(int)
-                    hole+=int(rgb[0]-rgb[2]<32)
-            holes.append(hole)
-        self.assertTrue(all(a<b for a,b in zip(holes,holes[1:])),holes)
+    def test_moving_contours_keep_geometry_across_temperature_states(self):
+        self.assertEqual(5,len(METEOR_FLOW_CLIPS))
+        for clip in METEOR_FLOW_CLIPS:
+            def geometry_only(elements):
+                return [(e['from'],e['to'],tuple(e['faces'])) for e in elements]
+            baseline=flow_mesh(clip,0,self.uv)
+            self.assertTrue(baseline,clip)
+            self.assertLess(len(baseline),500,clip)
+            self.assertEqual({'north','south','east','west','up','down'},{n for e in baseline for n in e['faces']})
+            for state in range(3):
+                elements=flow_mesh(clip,state,self.uv)
+                self.assertEqual(geometry_only(baseline),geometry_only(elements))
+                model=json.loads((self.assets/f'models/combat_vfx/mage_material/{clip}_{state}.json').read_text())
+                self.assertEqual(elements,model['elements'])
+                for e in elements:
+                    self.assertTrue(all(math.isfinite(v) and -16<=v<=32 for v in e['from']+e['to']))
+                    self.assertTrue(all(a<b for a,b in zip(e['from'],e['to'])))
+                    for f in e['faces'].values():
+                        self.assertEqual('#0',f['texture'])
+                        self.assertIn(f['tintindex'],range(len(PALETTE)))
+            inks={f['tintindex'] for e in baseline for f in e['faces'].values()}
+            self.assertLessEqual(len(inks),4)
+        # No old complete explosion continues underneath the moving masses.
+        self.assertFalse(any(f['texture'] in ('#2','#4') for frame in range(1,24)
+                             for e in mesh('eruption',frame,self.uv) for f in e['faces'].values()))
+
+    def test_initial_flame_regions_tile_one_solid_ignition_at_runtime_pivots(self):
+        import numpy as np
+        regions=[flow_grid(f'meteor_flow_{i}') for i in range(4)]
+        # These pivots are mapped to world offsets by CoreMageChoreography.
+        self.assertEqual([(34.5,36.5),(31.5,23.5),(15.,35.5),(13.5,27.5)],
+                         [pivot for _,pivot in regions])
+        occupied=np.stack([grid>0 for grid,_ in regions]).sum(axis=0)
+        self.assertEqual(1,int(occupied.max()))  # never four overlapping copies
+        self.assertEqual(569,int((occupied>0).sum()))
+        self.assertTrue(all(int((grid>0).sum())>=60 for grid,_ in regions))
+        self.assertGreater(sum(int((grid==3).sum()) for grid,_ in regions),60)
+        # One joined initial mass; disconnection is caused by the server's
+        # subsequent transforms, not holes already baked into a late blast.
+        pending=set(zip(*np.nonzero(occupied)));stack=[pending.pop()]
+        while stack:
+            x,y=stack.pop()
+            for p in ((x-1,y),(x+1,y),(x,y-1),(x,y+1)):
+                if p in pending:pending.remove(p);stack.append(p)
+        self.assertFalse(pending)
+
+    def test_contact_keeps_only_short_heat_residue(self):
         for frame in (0,1):
             self.assertTrue(any(f['texture']=='#3' for e in mesh('eruption',frame,self.uv)
                                 for f in e['faces'].values()))
@@ -104,9 +129,8 @@ class MeteorTests(unittest.TestCase):
         self.assertGreater(max(e['to'][0] for e in late)-min(e['from'][0] for e in late),5.)
         self.assertEqual({'#3'},{f['texture'] for e in late for f in e['faces'].values()})
         self.assertNotEqual(early,late)
-        self.assertGreater(max(e['to'][1] for e in pressure_burst(3,self.uv)),11.5)
-        self.assertTrue(any('north' in e['faces'] for e in pressure_burst(3,self.uv)))
-        self.assertEqual([],pressure_burst(14,self.uv))
+        self.assertGreater(max(e['to'][1] for e in mesh('eruption',0,self.uv)),11.5)
+        self.assertTrue(any('north' in e['faces'] for e in mesh('eruption',0,self.uv)))
 
     def test_contact_disappears_before_wake_and_debris_are_finished(self):
         def plane_area(clip,frame):

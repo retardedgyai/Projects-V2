@@ -8,6 +8,8 @@ internal object CoreMageChoreography {
     val sceneIds=setOf("firebolt","frost_nova","meteor","mage_blink","mage_mark",
         "mage_garden","mage_burst","mage_ward","mage_ult","mage_zero")
     fun owns(p:CoreCombatMeshPart)=p.shape.startsWith("mage_material:")
+    private val movingContours=setOf("mage_material:meteor_front")+(0..3).map { "mage_material:meteor_flow_$it" }
+    fun interpolated(p:CoreCombatMeshPart)=p.shape in movingContours
     private val longClips=setOf("pyre","corona","crystal","ice_root","ice_shelf","zero_crown","zero_floor","zero_shelf","zero_wing",
         "garden_spires","garden_fan","garden_bed","garden_spray")
     private fun frames(clip:String)=when(clip) {
@@ -77,10 +79,22 @@ internal object CoreMageChoreography {
             "meteor" -> {
                 val a=e.pulse*2.39996
                 val at=if(e.pulse==0)Vec.ZERO else Vec(cos(a)*min(e.radius*.35,2.4),0.0,sin(a)*min(e.radius*.35,2.4))
-                // R12: mass -> low contact flash -> thin expanding ground wake.
-                // The wake survives the flash, not another firebolt hit scaled up.
+                // R12: contact opens beneath independently moving flame masses.
+                // The same five contours survive the motion; no whole-blast
+                // frame swap, orbit or per-tick shape replacement.
                 listOf(piece("eruption",at.add(0.0,.12,0.0),Vec(4.2,2.0,4.2),ground=true),
-                    piece("meteor_ring",at.add(0.0,.13,0.0),Vec(6.0,1.0,6.0),ground=true,secondary=true))
+                    piece("meteor_ring",at.add(0.0,.13,0.0),Vec(6.0,1.0,6.0),ground=true,secondary=true),
+                    piece("meteor_front",at.add(0.0,.12,0.0),Vec(4.2,2.0,4.2),life=5,ground=true))+
+                    // Source pivots from flow_grid(), at .36/.54 model units per
+                    // source cell, rendered at 4.2/2.0 scale. At age zero the four
+                    // disjoint material regions reconstruct the whole ignition.
+                    listOf(Vec(.99225,.4725,0.0),Vec(.70875,1.35,0.0),Vec(-.8505,.54,0.0),Vec(-.99225,1.08,0.0)).mapIndexed { i,start ->
+                        val drift=listOf(Vec(.69,.46,.22),Vec(.24,.77,-.08),Vec(-.72,.59,.10),Vec(-.36,.77,-.12))[i]
+                        val end=start.add(drift)
+                        piece("meteor_flow_$i",at.add(0.0,.12,0.0),Vec(4.2,2.0,4.2),life=12,ground=true,
+                            travel=local(end.x(),end.y(),end.z())).copy(
+                            bend=local(start.x(),start.y(),start.z()))
+                    }
             }
             "mage_ult" -> if(e.pulse>0) listOf(piece("solar_flare",Vec(0.0,.12,0.0),Vec(2.6,2.3,2.3),
                 life=12,ground=true,secondary=true,facing=yaw+e.pulse*.9)) else {
@@ -139,6 +153,23 @@ internal object CoreMageChoreography {
         val clip=p.shape.substringAfter(':')
         val local=(age-p.delayTicks).coerceAtLeast(0.0)
         val t=(local/(p.durationTicks-1).coerceAtLeast(1)).coerceIn(0.0,1.0)
+        if(interpolated(p)) {
+            val front=clip=="meteor_front"
+            val rise=((local-.5)/2.5).coerceIn(0.0,1.0)
+            val open=rise*rise*(3-2*rise)
+            val tail=if(front)(local/(p.durationTicks-1)).coerceIn(0.0,1.0)
+                else ((local-3)/(p.durationTicks-1-3)).coerceIn(0.0,1.0)
+            val fade=1-tail*tail*(3-2*tail)
+            // Solid ignition first, fracture second. Never grow a late-dissolve
+            // silhouette from tiny seeds after the contact has already passed.
+            val scale=if(front)Vec(1+tail*.8,1-tail*.7,1+tail*.8).mul(fade)
+                else Vec(1.0+open*.08,1.0+open*.15,1.0+open*.08).mul(fade)
+            val offset=if(front)p.offset else p.offset.add(p.bend.mul(1-open)).add(p.travel.mul(open))
+                .add(p.travel.x()*tail*.22,tail*.8,p.travel.z()*tail*.22)
+            val state=if(local<4)0 else if(local<6)1 else 2
+            return CoreMeshPose(offset,p.scale.mul(scale),p.yaw,p.pitch,p.roll,
+                "combat_vfx/mage_material/${clip}_$state",age>=p.delayTicks && age<p.delayTicks+p.durationTicks)
+        }
         // The final rock pose is still visible immediately before the impact
         // event. Its empty terminal asset must not erase the last falling tick.
         val frame=floor(t*(frames(clip)-1)+1e-8).toInt().coerceAtMost(frames(clip)-if(clip=="meteor")2 else 1)

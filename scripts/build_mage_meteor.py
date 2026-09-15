@@ -13,6 +13,7 @@ from build_mage_fire import box
 from build_mage_garden import GRID, SHAPE, skin, rectangles
 
 METEOR_CLIPS={'meteor','eruption','meteor_ring'}
+METEOR_FLOW_CLIPS={'meteor_front',*(f'meteor_flow_{i}' for i in range(4))}
 PALETTE=[0xFFFFFF,0xC6B8C6,0x8D8398,0xFFF2C2,0xFFBE72,0xEF733D,0xA03F35,0x39313B]
 SOURCE=PACK.parents[4]/'assets/combat-vfx/mage-v5/sources/meteor-basalt-v01.png'
 EMBER_SOURCE=SOURCE.with_name('meteor-ember-v01.png')
@@ -97,97 +98,89 @@ def impact_atlas(source=IMPACT_SOURCE):
     return np.asarray(Image.open(source).convert('RGB'))
 
 
-def impact_drawing(frame):
-    if 1<=frame<=4:return BRIDGE_SOURCE,frame-1,2,2,'#4'
-    return IMPACT_SOURCE,0 if frame==0 else min(frame-2,4),4,2,'#2'
+@lru_cache(maxsize=8)
+def flow_grid(clip):
+    """Native face layout from one drawing, not a sequence of unrelated pictures.
 
-
-def impact_plane(frame,uv,resolution,side=False):
-    """Authored ignition/burst, then connected fragments advect and cool.
-
-    This is neither a spinning image card nor a dome swapped for random blocks.
-    The drawing defines both the exposed native contour and the colour samples.
-    Shallow per-column depth gives the front thickness without filling its holes.
+    R12's impact divides a solid ignition into four unequal flame masses. The source
+    remains byte-identical: this chooses geometry and four existing palette inks,
+    not a raster retouch. Small isolated flecks do not become primary geometry.
     """
-    if not 0<=frame<15:return []
-    source,drawing,columns,rows,texture=impact_drawing(frame)
-    atlas=impact_atlas(source);height,width=atlas.shape[:2]
-    cell_x,cell_y=drawing%columns,drawing//columns
-    out=[];step=17.28/resolution
+    atlas=impact_atlas();height,width=atlas.shape[:2];resolution=48
+    drawing=0 if clip=='meteor_front' else 1
     grid=np.zeros((resolution,resolution),dtype=np.int16)
-    colours={};samples=[]
-    for column in range(resolution):
-        for row in range(resolution):
-            px=min(width-1,int((cell_x+(column+.5)/resolution)*width/columns))
-            py=min(height-1,int((cell_y+(row+.5)/resolution)*height/rows))
-            rgb=atlas[py,px].astype(int)
-            # This atlas contains only warm flame/ember foreground. Neutral
-            # smoke is deliberately not inferred from a grey checkerboard.
+    for x in range(resolution):
+        for y in range(resolution):
+            rgb=atlas[int((drawing//4+(y+.5)/resolution)*height/2),
+                      int((drawing%4+(x+.5)/resolution)*width/4)].astype(int)
             if rgb[0]-rgb[2]<32:continue
-            # Merge coherent colour clusters, rather than paying one element
-            # for each source pixel's tiny tonal difference. The chosen UV is
-            # still an actual pixel of the unchanged original bitmap.
-            key=tuple(rgb//32)
-            if key not in colours:
-                colours[key]=len(samples)+1
-                samples.append((px,py))
-            grid[column,row]=colours[key]
-    # Preserve the very same separated silhouettes when their heat disappears.
-    # Lifting whole connected pieces avoids replacing the burst with new tiny
-    # dots, or treating grey background pixels as smoke.
-    labels=np.zeros_like(grid);centres={};label=0
-    if frame>6:
-        for cx,cy in zip(*np.nonzero(grid)):
-            if labels[cx,cy]:continue
-            label+=1;stack=[(cx,cy)];pixels=[];labels[cx,cy]=label
-            while stack:
-                xx,yy=stack.pop();pixels.append((xx,yy))
-                for nx,ny in ((xx-1,yy),(xx+1,yy),(xx,yy-1),(xx,yy+1)):
-                    if 0<=nx<resolution and 0<=ny<resolution and grid[nx,ny] and not labels[nx,ny]:
-                        labels[nx,ny]=label;stack.append((nx,ny))
-            centres[label]=(np.mean(pixels,axis=0)+.5,len(pixels))
-    for column,row,right,bottom,ink in rectangles(grid):
-        px,py=samples[ink-1]
-        x0=8+(column-resolution*.5)*step;x1=8+(right-resolution*.5)*step
-        y0=8+(resolution*.90625-bottom)*step*1.5
-        y1=8+(resolution*.90625-row)*step*1.5
-        age=max(0,frame-6)
-        part=0
-        if age:
-            part=int(labels[column,row]);(cx,cy),area=centres[part]
-            life=3 if area<3 else 5 if area<8 else 8
-            if age>=life:continue
-            centre_x=8+(cx-resolution*.5)*step
-            centre_y=8+(resolution*.90625-cy)*step*1.5
-            shrink=max(.10,1-age/life*.85)
-            drift=(1 if centre_x>=8 else -1)*age*(.12+(part%3)*.025)
-            lift=age*(.35+(part%4)*.055)
-            x0=centre_x+(x0-centre_x)*shrink+drift
-            x1=centre_x+(x1-centre_x)*shrink+drift
-            y0=centre_y+(y0-centre_y)*shrink+lift
-            y1=centre_y+(y1-centre_y)*shrink+lift
-        z=8+(((column+right)*.5-resolution*.5)*step)**2*.018
-        if side:
-            e=box((8+(z-8)*.5-.035,8+(y0-8)*.85,8+(x0-8)*.8),
-                  (8+(z-8)*.5+.035,8+(y1-8)*.85,8+(x1-8)*.8),0,uv)
-        else:e=box((x0,y0,z-.035),(x1,y1,z+.035),0,uv)
-        sample=[(px+.15)/width*16,(py+.15)/height*16,
-                (px+.85)/width*16,(py+.85)/height*16]
-        e['faces']={n:{'texture':texture,'uv':sample,'tintindex':0}
-                    for n in (('east','west') if side else ('north','south'))}
-        if age==1:
-            for f in e['faces'].values():f['tintindex']=2
-        elif age>=2:
-            for f in e['faces'].values():
-                f.update(texture='#0',uv=uv,tintindex=2 if part%4==0 else 7)
+            # Four coherent value groups replace tiny per-pixel tonal changes.
+            grid[x,y]=3 if rgb[1]>=205 else 4 if rgb[1]>=140 else 5 if rgb[1]>=75 else 6
+    # Remove disconnected sparks; they must not carry the blast's primary mass.
+    unseen=set(zip(*np.nonzero(grid)));components=[]
+    while unseen:
+        seed=min(unseen);unseen.remove(seed);stack=[seed];component=[]
+        while stack:
+            x,y=stack.pop();component.append((x,y))
+            for neighbour in ((x-1,y),(x+1,y),(x,y-1),(x,y+1)):
+                if neighbour in unseen:unseen.remove(neighbour);stack.append(neighbour)
+        components.append(component)
+    keep=np.zeros_like(grid)
+    chosen=[max(components,key=len)]
+    for component in chosen:
+        for x,y in component:keep[x,y]=grid[x,y]
+    grid=keep
+    pivot=(24.,43.5)
+    if clip!='meteor_front':
+        # Four material-aware connected regions tile the SAME early ignition.
+        # Starting them at their source coordinates preserves the bright solid
+        # mass; moving them apart opens holes instead of growing an empty arch.
+        # Flood paths favour staying inside one painted value region, so the
+        # fracture follows the material rather than rectangular crop edges.
+        import heapq
+        points=list(zip(*np.nonzero(grid)))
+        seeds=[min(points,key=lambda p:(p[0]-x)**2+(p[1]-y)**2)
+               for x,y in ((35,38),(32,22),(15,39),(15,25))]
+        distance=np.full(grid.shape,np.inf);labels=np.full(grid.shape,-1,dtype=np.int16);queue=[]
+        for label,(x,y) in enumerate(seeds):
+            distance[x,y]=0;labels[x,y]=label;heapq.heappush(queue,(0.,label,x,y))
+        while queue:
+            cost,label,x,y=heapq.heappop(queue)
+            if cost!=distance[x,y] or label!=labels[x,y]:continue
+            for nx,ny in ((x-1,y),(x+1,y),(x,y-1),(x,y+1)):
+                if not(0<=nx<48 and 0<=ny<48 and grid[nx,ny]):continue
+                next_cost=cost+1+abs(int(grid[nx,ny])-int(grid[x,y]))*.75
+                if next_cost<distance[nx,ny]:
+                    distance[nx,ny]=next_cost;labels[nx,ny]=label
+                    heapq.heappush(queue,(next_cost,label,nx,ny))
+        grid=np.where(labels==int(clip.rsplit('_',1)[1]),grid,0)
+        xs,ys=np.nonzero(grid)
+        pivot=((int(xs.min())+int(xs.max())+1)/2,(int(ys.min())+int(ys.max())+1)/2)
+    return grid,pivot
+
+
+def flow_mesh(clip,state,uv):
+    """Stable silhouettes; only temperature changes between the three states.
+
+    Translation/expansion/collapse is animated by native display transforms.
+    A shallow solid follows the source silhouette. It replaces crossed copies
+    of a drawing, which could not reconstruct one coherent initial blast.
+    """
+    grid,(cx,cy)=flow_grid(clip);out=[]
+    for x,y,x1,y1,ink in rectangles(grid):
+        x0=8+(x-cx)*.36;xx1=8+(x1-cx)*.36
+        y0=8+(cy-y1)*.54;yy1=8+(cy-y)*.54
+        # Shared source-space bow keeps adjoining regions on the same surface
+        # before they split. Thickness is a secondary silhouette, not a second
+        # complete perpendicular picture.
+        z=8+(((x+x1)/2-24)*.36)**2*.012
+        depth=.18 if clip=='meteor_front' else .8
+        tint=ink if state==0 else {3:4,4:5,5:6,6:7}[ink] if state==1 else {3:1,4:2,5:7,6:7}[ink]
+        e=box((x0,y0,z-depth),(xx1,yy1,z+depth),tint,uv)
+        for n in ('east','west','down'):
+            e['faces'][n]['tintindex']={3:4,4:5,5:6,6:6}.get(tint,tint)
         out.append(e)
     return out
-
-
-def pressure_burst(frame,uv):
-    # Unequal crossed, shallow-bowed surfaces: readable from the side as well
-    # as the cast direction. No opaque rectangular card or rotating billboard.
-    return impact_plane(frame,uv,48)+impact_plane(frame,uv,32,side=True)
 
 
 def contact_wake(frame,uv):
@@ -281,7 +274,8 @@ def geometry(clip,frame,uv_tuple):
             tip=length*(.55+.45*min(1.,frame/2))
             ray=(along>max(0.,frame-2)*.6)&(along<tip)&(across<(.28*(1-along/tip)+.06)*(1-t))
             mask[ray]=4 if frame<4 else 5
-    out=floor_mesh(mask,uv,8.12)+pressure_burst(frame,uv)+contact_wake(frame,uv)
+    # The flash and all main flame masses belong to persistent displays.
+    out=floor_mesh(mask,uv,8.12)+contact_wake(frame,uv)
     # Small detached debris follows a ballistic path and cools. Unequal sizes,
     # not six equally bright projectiles competing with the primary contact.
     for i,(angle,speed,size) in enumerate(((.4,.37,.38),(2.2,.29,.27),(3.8,.42,.2),(5.2,.32,.31))):
@@ -310,15 +304,15 @@ def build(assets,write):
     shutil.copyfile(BRIDGE_SOURCE,target.with_name('meteor_impact_bridge_v01.png'))
     shutil.copyfile(WAKE_SOURCE,target.with_name('meteor_wake_v01.png'))
     uv=ink_uvs(assets)[3]
-    for clip in sorted(METEOR_CLIPS):
-        for frame in range(24):
+    for clip in sorted(METEOR_CLIPS|METEOR_FLOW_CLIPS):
+        for frame in range(3 if clip in METEOR_FLOW_CLIPS else 24):
             key=f'combat_vfx/mage_material/{clip}_{frame}'
             write(assets/f'models/{key}.json',{'ambientocclusion':False,
                 'textures':{'0':'projects:combat_vfx/ribbon/slash_5','1':TEXTURE,
                             '2':'projects:combat_vfx/mage_material/meteor_impact_atlas_v01',
                             '3':'projects:combat_vfx/mage_material/meteor_wake_v01',
                             '4':'projects:combat_vfx/mage_material/meteor_impact_bridge_v01'},
-                'elements':mesh(clip,frame,uv)})
+                'elements':flow_mesh(clip,frame,uv) if clip in METEOR_FLOW_CLIPS else mesh(clip,frame,uv)})
             write(assets/f'items/{key}.json',{'model':{'type':'minecraft:model','model':'projects:'+key,
                 'tints':[{'type':'minecraft:constant','value':c} for c in PALETTE]}})
 

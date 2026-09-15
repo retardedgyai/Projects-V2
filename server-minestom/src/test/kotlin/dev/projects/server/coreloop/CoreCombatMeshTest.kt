@@ -70,7 +70,8 @@ class CoreCombatMeshTest {
                     owner.instance.entities.filter { it.entityType==net.minestom.server.entity.EntityType.ITEM_DISPLAY && owner in it.viewers }
                         .mapNotNull { entity ->
                             val meta=entity.entityMeta as net.minestom.server.entity.metadata.display.ItemDisplayMeta
-                            if(meta.scale.lengthSquared()<.00001) null else mapOf<String,Any>(
+                            if(meta.scale.lengthSquared()<.00001 && meta.transformationInterpolationDuration==0) null else mapOf<String,Any>(
+                                "entityId" to entity.entityId,"interpolation" to meta.transformationInterpolationDuration,
                                 "model" to meta.itemStack.get(net.minestom.server.component.DataComponents.ITEM_MODEL)!!.removePrefix("projects:"),
                                 "offset" to xyz(entity.position.sub(owner.position).add(meta.translation)),"scale" to xyz(meta.scale),
                                 "quaternion" to meta.leftRotation.toList(),"yaw" to 0.0,"pitch" to 0.0,"roll" to 0.0)
@@ -83,8 +84,14 @@ class CoreCombatMeshTest {
                     assertTrue(frames[impact-1].any { it["model"].toString().endsWith("/meteor_22") },
                         "Meteor must reach the contact before disappearing: pulse $pulse")
                     assertTrue(frames[impact].any { it["model"].toString().endsWith("/eruption_0") })
-                    assertFalse(frames[impact].any { it["model"].toString().contains("/meteor_") &&
-                        !it["model"].toString().contains("/meteor_ring_") })
+                    assertFalse(frames[impact].any { Regex(".*/meteor_[0-9]+$").matches(it["model"].toString()) })
+                    val moving=frames[impact].filter { it["model"].toString().contains("/meteor_flow_") ||
+                        it["model"].toString().contains("/meteor_front_") }
+                    assertTrue(moving.size>=5)
+                    assertTrue(moving.all { it["interpolation"]==1 })
+                    val newIds=moving.map { it["entityId"] }.toSet()
+                    val next=frames[impact+1].filter { it["entityId"] in newIds }
+                    assertEquals(newIds,next.map { it["entityId"] }.toSet())
                 }
                 scenes+=mapOf("id" to skill.icon,"name" to skill.name,"startup" to skill.startup,"pulses" to skill.pulses,"frames" to frames)
             }
