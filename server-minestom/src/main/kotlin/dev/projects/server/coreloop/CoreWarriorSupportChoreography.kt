@@ -15,7 +15,7 @@ internal object CoreWarriorSupportChoreography {
             // Only a real deflection gets the skewed metal collision drawing.
             return listOf("body","accent").map { layer ->
                 CoreCombatMeshPart("war_flourish:parry_metal:$layer","steel",Vec(0.0,1.0,0.0),
-                    Vec(1.6,1.0,1.6),yaw=yaw,pitch=-PI/2,durationTicks=9,
+                    Vec(2.2,1.0,2.0),yaw=yaw,pitch=-PI/2,durationTicks=9,
                     secondary=layer=="accent",startSize=1.0,endSize=1.0)
             }
         }

@@ -35,10 +35,16 @@ class CoreCombatMeshTest {
                     model?.contains("warrior_flourish/")==true && model.contains("_body_")
                 }
                 assertTrue(identity.isNotEmpty(),skill.icon)
-                for(entity in identity) {
-                    assertTrue(owner in entity.viewers,skill.icon)
+                val visibleIdentity=identity.filter { owner in it.viewers }
+                val expectedBodies=CoreWarriorFlourish.parts(CoreSkillEffect(CoreClass.WARRIOR,skill,
+                    owner.position,Vec(0.0,0.0,1.0))).count { !it.secondary }
+                assertEquals(expectedBodies,visibleIdentity.size,skill.icon)
+                assertEquals(if(skill.icon=="war_breach")1 else 0,identity.size-visibleIdentity.size,
+                    "Only the perpendicular thrust rib is optional body geometry")
+                for(entity in visibleIdentity) {
                     assertTrue(observer in entity.viewers,skill.icon)
                 }
+                assertTrue(identity.filter { owner !in it.viewers }.none { observer in it.viewers })
                 val accents=owner.instance.entities.filter { entity ->
                     (entity.entityMeta as? net.minestom.server.entity.metadata.display.ItemDisplayMeta)
                         ?.itemStack?.get(net.minestom.server.component.DataComponents.ITEM_MODEL)?.contains("_accent_")==true

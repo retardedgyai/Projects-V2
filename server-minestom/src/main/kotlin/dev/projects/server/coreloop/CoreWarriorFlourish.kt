@@ -32,27 +32,31 @@ internal object CoreWarriorFlourish {
             return pair(clip,local(.25,1.2,.85),Vec(1.35,.7,1.6),-PI/2,e.prepareDuration,follow=true)
         }
         return when(e.sceneId) {
-            "dash" -> pair("step_dust",local(0.0,.14,.5),Vec(2.2,1.0,2.3),0.0,13)
-            "war_breach" -> pair("pierce_shell",local(0.0,1.0,reach*.5),Vec(2.3,1.0,reach*1.1),-.12,18)
-            "war_wound" -> pair("cut_thread",local(0.0,1.05,reach*.42),Vec(reach,1.0,1.7),-.45,14,-.3)
-            "war_counter" -> pair("reversal",local(0.0,1.15,reach*.45),Vec(reach*1.3,1.0,2.3),-.45,18,.4)
+            "dash" -> pair("step_dust",local(0.0,.14,.5),Vec(2.9,1.0,2.7),0.0,13)
+            "war_breach" -> pair("pierce_shell",local(0.0,1.15,reach*.5),Vec(3.0,1.0,reach*1.2),-.12,18).let { shell ->
+                // Two intersecting ribs give the forward puncture depth; never
+                // face the same slash towards the camera or rotate it over time.
+                shell + shell.first().copy(scale=Vec(2.2,1.0,reach*1.2),pitch=0.0,roll=PI/2,secondary=true)
+            }
+            "war_wound" -> pair("cut_thread",local(0.0,1.05,reach*.42),Vec(reach*1.1,1.0,2.0),-.55,14,-.45)
+            "war_counter" -> pair("reversal",local(0.0,1.25,reach*.45),Vec(reach*1.4,1.0,2.7),-.55,18,.4)
             "slam" -> pair("stone_break",local(0.0,.16,reach*.5),Vec(reach*1.3,1.0,reach),0.0,20)+
                 pair("impact_dust",local(0.0,.22,reach*.5),Vec(reach*1.4,1.0,reach*1.05),0.0,20)+
-                pair("stone_spall",local(0.0,1.1,reach*.5),Vec(reach*.95,1.0,2.1),-PI/2,20)
+                pair("stone_spall",local(0.0,1.55,reach*.5),Vec(reach*1.15,1.0,3.0),-PI/2,20)
             "whirl" -> if(e.skill.motion == CoreSkillMotion.CONE)
-                pair("sweep_pressure",local(0.0,1.0,reach*.4),Vec(reach*1.5,1.0,2.6),-.25,16)+
+                pair("sweep_pressure",local(0.0,1.1,reach*.4),Vec(reach*1.55,1.0,3.0),-.3,16)+
                     pair("sweep_dust",local(0.0,.16,reach*.4),Vec(reach*1.5,1.0,2.6),0.0,18)
                 else pair(listOf("spin_a","spin_b","spin_c")[e.pulse%3],Vec(0.0,.45+e.pulse%3*.23,0.0),
                     Vec(reach*1.85,1.0,reach*1.85),.1,20)
             "war_ult" -> when(e.pulse%3) {
-                0 -> pair("ultimate_rise",local(0.0,1.5,reach*.4),Vec(reach*.95,1.0,3.0),-PI/2,18)
-                1 -> pair("ultimate_cross",local(0.0,1.35,reach*.43),Vec(reach*1.4,1.0,2.4),-.45,18,.25)
+                0 -> pair("ultimate_rise",local(0.0,1.9,reach*.4),Vec(reach*1.05,1.0,3.7),-PI/2,18)
+                1 -> pair("ultimate_cross",local(0.0,1.45,reach*.43),Vec(reach*1.5,1.0,2.7),-.55,18,.25)
                 else -> pair("ultimate_rift",local(0.0,.18,reach*.5),Vec(reach*1.45,1.0,reach),0.0,20)+
-                    pair("ultimate_fall",local(0.0,1.45,reach*.5),Vec(reach*.85,1.0,2.8),-PI/2,20)
+                    pair("ultimate_fall",local(0.0,1.9,reach*.5),Vec(reach*1.1,1.0,3.7),-PI/2,20)
             }
-            "war_cry" -> pair("voice_compression",local(0.0,1.3,.8),Vec(2.8,.7,2.1),-PI/2,18)
-            "war_guard" -> pair("guard_edge",local(.5,1.2,.75),Vec(.8,.5,1.2),-PI/2,12)
-            "war_banner" -> pair("standard_foot",local(-.9,.14,.55),Vec(1.6,1.0,1.6),0.0,14)
+            "war_cry" -> pair("voice_compression",local(0.0,1.5,.8),Vec(4.6,.7,2.9),-PI/2,18)
+            "war_guard" -> pair("guard_edge",local(.5,1.2,.75),Vec(1.05,.5,1.5),-PI/2,12)
+            "war_banner" -> pair("standard_foot",local(-.9,.14,.55),Vec(2.3,1.0,2.3),0.0,14)
             else -> emptyList()
         }
     }

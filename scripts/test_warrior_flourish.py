@@ -6,6 +6,23 @@ from warrior_identity_contours import CLIPS as IDENTITY_CLIPS
 
 
 class WarriorFlourishTest(unittest.TestCase):
+    def test_major_skills_have_readable_large_shapes_and_leave_negative_space(self):
+        # Native 64x64 drawing-space coverage, not a claim about game screen area.
+        # Protect against reverting the hero silhouette into tiny flecks.
+        minimum={'stone_spall':500,'sweep_pressure':450,'reversal':700,
+                 'pierce_shell':380,'voice_compression':400,'ultimate_rise':800,
+                 'ultimate_cross':550,'ultimate_fall':800}
+        for clip,area in minimum.items():
+            peak=max(np.count_nonzero(contour(clip,t)) for t in range(FRAMES))
+            self.assertGreaterEqual(peak,area,clip)
+            self.assertLess(peak,64*64*.35,clip)
+
+    def test_dedicated_shapes_do_not_get_cut_off_at_the_drawing_boundary(self):
+        for clip in IDENTITY_CLIPS:
+            for frame in range(FRAMES):
+                g=contour(clip,frame)
+                self.assertFalse(np.any(g[0]) or np.any(g[-1]) or np.any(g[:,0]) or np.any(g[:,-1]),(clip,frame))
+
     def test_all_native_models_and_items_resolve_and_rebuild_exactly(self):
         assets=PACK/'assets/projects'
         index=set((PACK/'index.txt').read_text(encoding='utf-8').splitlines())
