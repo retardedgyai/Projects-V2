@@ -38,11 +38,19 @@ class CoreMageChoreographyTest {
         for(pulse in 0..2) {
             val parts=CoreSkillChoreography.parts(effect("meteor",pulse,CoreSkillVisualPhase.PREPARE))
             val rock=parts.first()
+            assertEquals(1,parts.size) // no unrelated rotating fire-charge beneath the rock
             assertEquals("mage_material:meteor",rock.shape)
             assertTrue(CoreSkillChoreography.pose(rock,rock.durationTicks-1.0).offset.y()<rock.offset.y()-3.0)
+            val last=CoreSkillChoreography.pose(rock,rock.durationTicks-1.0)
+            assertTrue(last.model.endsWith("meteor_22"))
             val land=CoreSkillChoreography.parts(effect("meteor",pulse)).first()
             assertEquals(rock.offset.x(),land.offset.x());assertEquals(rock.offset.z(),land.offset.z())
             assertEquals("mage_material:eruption",land.shape)
+            val wake=CoreSkillChoreography.parts(effect("meteor",pulse))[1]
+            assertEquals("mage_material:meteor_ring",wake.shape)
+            assertTrue(wake.secondary && wake.ground)
+            assertEquals(land.offset.x(),wake.offset.x());assertEquals(land.offset.z(),wake.offset.z())
+            assertTrue(wake.scale.x()>land.scale.x())
         }
     }
     @Test fun `garden has staggered upright roots while ward leaves the aim corridor open`() {

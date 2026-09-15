@@ -11,12 +11,15 @@ from build_mage_arcane import ARCANE_CLIPS, mesh as arcane_mesh, PALETTE as ARCA
 from build_mage_cataclysm import CATACLYSM_CLIPS, mesh as cataclysm_mesh, palette as cataclysm_palette
 from build_mage_garden import GARDEN_CLIPS, mesh as garden_mesh, PALETTE as GARDEN_PALETTE
 
+from build_mage_meteor import METEOR_CLIPS, mesh as meteor_mesh, PALETTE as METEOR_PALETTE, build as build_meteor
+
 CLIPS = {
     'garden_spires': (48, 0x83dbe5), 'garden_fan': (48, 0x83dbe5),
     'garden_bed': (48, 0x46bed4), 'garden_spray': (48, 0xc4f2f1),
     'garden_beat': (24, 0xc4f2f1), 'garden_charge': (24, 0x83dbe5),
     'cinder': (24, 0xffaa69), 'fire_stream': (24, 0xffaa69), 'flame_hit': (18, 0xffc385),
     'meteor': (24, 0xff8a58), 'eruption': (24, 0xffbc86),
+    'meteor_ring': (24, 0xffbc86),
     'pyre': (48, 0xff865e), 'corona': (48, 0xffbe86),
     'solar_flare': (24, 0xffbe86),
     'frost_wave': (30, 0xb6e7f4), 'crystal': (48, 0x8dd7ed),
@@ -35,7 +38,8 @@ CLIPS = {
 
 MATERIALS = ((FIRE_CLIPS,fire_mesh,fire_palette),(ICE_CLIPS,ice_mesh,ice_palette),
              (ARCANE_CLIPS,arcane_mesh,lambda:ARCANE_PALETTE),
-             (CATACLYSM_CLIPS,cataclysm_mesh,cataclysm_palette),
+             (CATACLYSM_CLIPS-METEOR_CLIPS,cataclysm_mesh,cataclysm_palette),
+             (METEOR_CLIPS,meteor_mesh,lambda:METEOR_PALETTE),
              (GARDEN_CLIPS,garden_mesh,lambda:GARDEN_PALETTE))
 assert set(CLIPS)==set.union(*(names for names,_,_ in MATERIALS))
 assert sum(len(names) for names,_,_ in MATERIALS)==len(CLIPS)
@@ -52,6 +56,7 @@ def material_geometry(clip,frame,inks):
 def build(assets,write):
     inks=ink_uvs(assets)
     for clip,(frames,_) in CLIPS.items():
+        if clip in METEOR_CLIPS:continue
         for frame in range(frames):
             key=f'combat_vfx/mage_material/{clip}_{frame}'
             write(assets/f'models/{key}.json',{'ambientocclusion':False,
@@ -59,6 +64,8 @@ def build(assets,write):
                 'elements':material_geometry(clip,frame,inks)})
             write(assets/f'items/{key}.json',{'model':{'type':'minecraft:model','model':'projects:'+key,
                 'tints':[{'type':'minecraft:constant','value':colour} for colour in material_palette(clip)]}})
+
+    build_meteor(assets,write)
 
 
 if __name__=='__main__':

@@ -2,6 +2,7 @@ import hashlib
 import json
 import math
 import unittest
+from build_mage_meteor import METEOR_CLIPS
 from build_mage_materials import CLIPS, PACK, material_geometry, material_palette, ink_uvs
 from build_mage_fire import source as fire_source
 from build_mage_ice import source as ice_source
@@ -31,8 +32,13 @@ class MageMaterialTests(unittest.TestCase):
                     self.assertTrue(all(a<b for a,b in zip(e['from'],e['to'])),(clip,frame))
                     self.assertTrue(set(e['faces'])<={'up','down','east','west','north','south'})
                     for f in e['faces'].values():
-                        self.assertEqual('#0',f['texture'])
-                        self.assertEqual(inks[3],f['uv'])
+                        if clip in METEOR_CLIPS:
+                            self.assertIn(f['texture'],('#0','#1'))
+                            self.assertTrue(all(0<=v<=16 for v in f['uv']))
+                            self.assertNotEqual(f['uv'][0],f['uv'][2]);self.assertNotEqual(f['uv'][1],f['uv'][3])
+                        else:
+                            self.assertEqual('#0',f['texture'])
+                            self.assertEqual(inks[3],f['uv'])
                         self.assertIn(f['tintindex'],range(len(colours)))
                 if clip in ('cinder','fire_stream','conductor'):
                     self.assertTrue(all(.0<=e['from'][2]<e['to'][2]<=16 for e in expected),(clip,frame))

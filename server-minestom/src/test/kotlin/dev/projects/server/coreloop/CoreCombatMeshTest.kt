@@ -77,6 +77,15 @@ class CoreCombatMeshTest {
                         }
                 }
                 assertEquals(0,meshes.size,skill.icon)
+                if(skill.icon=="meteor") for(pulse in 0 until skill.pulses) {
+                    val impact=skill.startup+pulse*8
+                    // Inspect the emitted native display clock, not just pose().
+                    assertTrue(frames[impact-1].any { it["model"].toString().endsWith("/meteor_22") },
+                        "Meteor must reach the contact before disappearing: pulse $pulse")
+                    assertTrue(frames[impact].any { it["model"].toString().endsWith("/eruption_0") })
+                    assertFalse(frames[impact].any { it["model"].toString().contains("/meteor_") &&
+                        !it["model"].toString().contains("/meteor_ring_") })
+                }
                 scenes+=mapOf("id" to skill.icon,"name" to skill.name,"startup" to skill.startup,"pulses" to skill.pulses,"frames" to frames)
             }
             val cwd=java.nio.file.Path.of(System.getProperty("user.dir"))

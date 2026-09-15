@@ -47,6 +47,8 @@ internal object CoreMageChoreography {
             if(e.sceneId in setOf("meteor","mage_ult")) {
                 val a=e.pulse*2.39996
                 val at=if(e.pulse==0) Vec.ZERO else Vec(cos(a)*min(e.radius*.35,2.4),0.0,sin(a)*min(e.radius*.35,2.4))
+                if(e.sceneId=="meteor") return listOf(piece("meteor",at.add(0.0,4.6,0.0),Vec(2.4,2.4,2.4),
+                    life=e.prepareDuration+if(e.pulse==0)1 else 0,travel=Vec(0.0,-3.7,0.0)))
                 return listOf(piece("meteor",at.add(0.0,4.6,0.0),Vec(1.8,2.0,1.8),
                     life=e.prepareDuration,travel=Vec(0.0,-3.1,0.0)),floor(charge,min(e.radius,2.5),e.prepareDuration))
             }
@@ -75,8 +77,10 @@ internal object CoreMageChoreography {
             "meteor" -> {
                 val a=e.pulse*2.39996
                 val at=if(e.pulse==0)Vec.ZERO else Vec(cos(a)*min(e.radius*.35,2.4),0.0,sin(a)*min(e.radius*.35,2.4))
-                listOf(piece("eruption",at.add(0.0,.12,0.0),Vec(3.0,2.0,2.6),ground=true),
-                    piece("flame_hit",at.add(0.0,.2,0.0),Vec(3.8,.6,3.8),ground=true,secondary=true))
+                // R12: mass -> low contact flash -> thin expanding ground wake.
+                // The wake survives the flash, not another firebolt hit scaled up.
+                listOf(piece("eruption",at.add(0.0,.12,0.0),Vec(4.2,2.0,4.2),ground=true),
+                    piece("meteor_ring",at.add(0.0,.13,0.0),Vec(6.0,1.0,6.0),ground=true,secondary=true))
             }
             "mage_ult" -> if(e.pulse>0) listOf(piece("solar_flare",Vec(0.0,.12,0.0),Vec(2.6,2.3,2.3),
                 life=12,ground=true,secondary=true,facing=yaw+e.pulse*.9)) else {
@@ -135,7 +139,9 @@ internal object CoreMageChoreography {
         val clip=p.shape.substringAfter(':')
         val local=(age-p.delayTicks).coerceAtLeast(0.0)
         val t=(local/(p.durationTicks-1).coerceAtLeast(1)).coerceIn(0.0,1.0)
-        val frame=floor(t*(frames(clip)-1)+1e-8).toInt().coerceAtMost(frames(clip)-1)
+        // The final rock pose is still visible immediately before the impact
+        // event. Its empty terminal asset must not erase the last falling tick.
+        val frame=floor(t*(frames(clip)-1)+1e-8).toInt().coerceAtMost(frames(clip)-if(clip=="meteor")2 else 1)
         // Falling anticipation reaches its landing point; everything else moves inside its own contours.
         val u=when(clip) { "meteor" -> t*t; "frost_wave" -> t; else -> 1-(1-t).pow(3) }
         return CoreMeshPose(p.offset.add(p.travel.mul(u)),p.scale,p.yaw,p.pitch,p.roll,
