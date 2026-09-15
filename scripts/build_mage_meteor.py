@@ -17,6 +17,8 @@ PALETTE=[0xFFFFFF,0xC6B8C6,0x8D8398,0xFFF2C2,0xFFBE72,0xEF733D,0xA03F35,0x39313B
 SOURCE=PACK.parents[4]/'assets/combat-vfx/mage-v5/sources/meteor-basalt-v01.png'
 EMBER_SOURCE=SOURCE.with_name('meteor-ember-v01.png')
 IMPACT_SOURCE=SOURCE.with_name('meteor-impact-atlas-v01.png')
+BRIDGE_SOURCE=SOURCE.with_name('meteor-impact-bridge-v01.png')
+WAKE_SOURCE=SOURCE.with_name('meteor-wake-v01.png')
 TEXTURE='projects:combat_vfx/mage_material/meteor_basalt_v01'
 
 
@@ -52,40 +54,52 @@ def rock(uv):
 
 
 def burning_wake(frame,uv):
-    """R12 155.55s: a long rising-back trail behind the descending rock."""
+    """R12 155.55: dense burning matter with a broad hot belt and a long wake."""
     x,y,z=np.moveaxis(GRID,-1,0)
-    volume=np.zeros(SHAPE,dtype=np.uint8)
-    # Individual long/short strips advect rearward and detach. Their positions
-    # are not tied to the silhouette of one growing torch-shaped volume.
-    for i,(birth,cx,cz,length,width,drift) in enumerate((
-        (-2,7.7,8.3,5.5,1.45,-.10),(1,9.1,8.6,7.2,1.1,.11),
-        (4,6.8,7.6,4.6,1.3,-.15),(7,8.1,8.4,8.0,1.2,.03),
-        (11,9.5,7.9,5.2,.95,.14),(15,7.2,8.6,6.4,1.3,-.08),
-        (18,8.3,8.1,7.1,1.1,.05),(21,6.9,8.0,4.8,1.2,-.1))):
-        age=frame-birth
-        if not 0<=age<17:continue
-        bottom=10.5+age*.9
-        u=(y-bottom)/(length+age*.13)
-        xx=x-cx-drift*age-.6*np.sin(u*3+i)
-        zz=z-cz-.4*u*(1 if i%2 else -1)
-        fade=max(.0,1-max(0.,age-9)/8)
-        w=width*fade*np.maximum(0.,1-u*.85)
-        metric=np.maximum(abs(xx),abs(zz)*1.4)
-        solid=(u>=0)&(u<1)&(metric<w)&((abs(xx)+abs(zz))<w*1.5)
-        shade=np.where(u>.6,6,np.where(metric>w*.60,5,4))
-        shade=np.where((u<.2)&(age<10)&(metric<w*.6),3,shade)
-        if age>11:shade=np.where(metric<w*.55,7,6)
-        volume[solid]=(shade[solid]+1).astype(np.uint8)
-    return skin(volume,uv)
+    bottom=10.0
+    length=6.0+min(frame,15)*1.06
+    t=(y-bottom)/length
+    xx=x-8-.22*np.sin(y*.65-frame*.24)
+    zz=z-8-.18*np.sin(y*.46+frame*.20)
+    width=4.25*(1-.18*np.clip(t,0,1))
+    # Chamfered, ragged volume. Most of the rear keeps its breadth; this is not
+    # a narrow triangular torch attached to an otherwise isolated rock.
+    solid=(t>=0)&(t<1)&(abs(xx)<width)&(abs(zz)<width*.8)&(abs(xx)+abs(zz)<width*1.45)
+    rear=length-.7-1.15*(.5+.5*np.sin(xx*1.8+zz*.7))
+    solid&=(y-bottom<rear)
+    # Small open clefts at the very rear, with motion along the fall axis.
+    solid&=~((t>.73)&(np.sin(xx*2.4+frame*.16)> .80)&(zz<-.8))
+    out=skin(np.where(solid,1,0).astype(np.uint8),uv)
+    for e in out:
+        x0,y0,z0=e['from'];x1,y1,z1=e['to']
+        for name,f in e['faces'].items():
+            u0,u1=(x0,x1) if name not in ('east','west') else (z0,z1)
+            u0=max(0.,(u0-3)/10*16);u1=min(16.,(u1-3)/10*16)
+            if name in ('up','down'):
+                v0,v1=max(0.,(z0-3)/10*16),min(16.,(z1-3)/10*16)
+            else:
+                # Continuous material coordinates over all meshed facets.
+                # A small drift transports the fire marks, without resetting
+                # their texture on every narrow rectangle.
+                shift=math.sin(frame*.24)*.45
+                v0=max(0.,min(15.98,16-(y1-bottom)/length*16+shift))
+                v1=max(v0+.01,min(16.,16-(y0-bottom)/length*16+shift))
+            f.update(texture='#3',uv=[u0,v0,u1,v1],tintindex=0)
+    return out
 
 
-@lru_cache(maxsize=1)
-def impact_atlas():
+@lru_cache(maxsize=2)
+def impact_atlas(source=IMPACT_SOURCE):
     # Inspect only; the original RGB image is copied byte-for-byte. The image
     # tool supplied a painted checkerboard, NOT an alpha channel. Native faces
     # sample coloured flame pixels; achromatic backdrop has no geometry at all.
     from PIL import Image
-    return np.asarray(Image.open(IMPACT_SOURCE).convert('RGB'))
+    return np.asarray(Image.open(source).convert('RGB'))
+
+
+def impact_drawing(frame):
+    if 1<=frame<=4:return BRIDGE_SOURCE,frame-1,2,2,'#4'
+    return IMPACT_SOURCE,0 if frame==0 else min(frame-2,4),4,2,'#2'
 
 
 def impact_plane(frame,uv,resolution,side=False):
@@ -95,17 +109,17 @@ def impact_plane(frame,uv,resolution,side=False):
     The drawing defines both the exposed native contour and the colour samples.
     Shallow per-column depth gives the front thickness without filling its holes.
     """
-    if not 0<=frame<13:return []
-    atlas=impact_atlas();height,width=atlas.shape[:2]
-    drawing=min(frame,4)
-    cell_x,cell_y=drawing%4,drawing//4
+    if not 0<=frame<15:return []
+    source,drawing,columns,rows,texture=impact_drawing(frame)
+    atlas=impact_atlas(source);height,width=atlas.shape[:2]
+    cell_x,cell_y=drawing%columns,drawing//columns
     out=[];step=17.28/resolution
     grid=np.zeros((resolution,resolution),dtype=np.int16)
     colours={};samples=[]
     for column in range(resolution):
         for row in range(resolution):
-            px=min(width-1,int((cell_x+(column+.5)/resolution)*width/4))
-            py=min(height-1,int((cell_y+(row+.5)/resolution)*height/2))
+            px=min(width-1,int((cell_x+(column+.5)/resolution)*width/columns))
+            py=min(height-1,int((cell_y+(row+.5)/resolution)*height/rows))
             rgb=atlas[py,px].astype(int)
             # This atlas contains only warm flame/ember foreground. Neutral
             # smoke is deliberately not inferred from a grey checkerboard.
@@ -122,7 +136,7 @@ def impact_plane(frame,uv,resolution,side=False):
     # Lifting whole connected pieces avoids replacing the burst with new tiny
     # dots, or treating grey background pixels as smoke.
     labels=np.zeros_like(grid);centres={};label=0
-    if frame>4:
+    if frame>6:
         for cx,cy in zip(*np.nonzero(grid)):
             if labels[cx,cy]:continue
             label+=1;stack=[(cx,cy)];pixels=[];labels[cx,cy]=label
@@ -137,7 +151,7 @@ def impact_plane(frame,uv,resolution,side=False):
         x0=8+(column-resolution*.5)*step;x1=8+(right-resolution*.5)*step
         y0=8+(resolution*.90625-bottom)*step*1.5
         y1=8+(resolution*.90625-row)*step*1.5
-        age=max(0,frame-4)
+        age=max(0,frame-6)
         part=0
         if age:
             part=int(labels[column,row]);(cx,cy),area=centres[part]
@@ -159,7 +173,7 @@ def impact_plane(frame,uv,resolution,side=False):
         else:e=box((x0,y0,z-.035),(x1,y1,z+.035),0,uv)
         sample=[(px+.15)/width*16,(py+.15)/height*16,
                 (px+.85)/width*16,(py+.85)/height*16]
-        e['faces']={n:{'texture':'#2','uv':sample,'tintindex':0}
+        e['faces']={n:{'texture':texture,'uv':sample,'tintindex':0}
                     for n in (('east','west') if side else ('north','south'))}
         if age==1:
             for f in e['faces'].values():f['tintindex']=2
@@ -174,6 +188,43 @@ def pressure_burst(frame,uv):
     # Unequal crossed, shallow-bowed surfaces: readable from the side as well
     # as the cast direction. No opaque rectangular card or rotating billboard.
     return impact_plane(frame,uv,48)+impact_plane(frame,uv,32,side=True)
+
+
+def contact_wake(frame,uv):
+    """The same burning wake tears apart over the first two contact ticks."""
+    if frame not in (0,1):return []
+    out=[]
+    for e in burning_wake(22,uv):
+        a,b=e['from'],e['to']
+        for name,face in e['faces'].items():
+            if name in ('up','down'):continue  # never cap the torn hot column
+            axis=0 if name in ('north','south') else 2
+            pieces=max(1,math.ceil((b[axis]-a[axis])/.5))
+            for part in range(pieces):
+                lo=part/pieces;hi=(part+1)/pieces
+                aa=list(a);bb=list(b)
+                aa[axis]=a[axis]+(b[axis]-a[axis])*lo
+                bb[axis]=a[axis]+(b[axis]-a[axis])*hi
+                cx=(aa[0]+bb[0])*.5;cz=(aa[2]+bb[2])*.5
+                tear=.5+.5*math.sin(cx*3.11+cz*1.72)
+                if frame==1 and tear>.60:continue
+                low=max(a[1],10.0+frame*1.3)
+                high=min(b[1],22.0-frame*.7-tear*4.2)
+                if high<=low:continue
+                sample=list(face['uv']);u0,v0,u1,v1=sample
+                sample[0]=u0+(u1-u0)*lo;sample[2]=u0+(u1-u0)*hi
+                sample[1]=v0+(v1-v0)*(b[1]-high)/(b[1]-a[1])
+                sample[3]=v0+(v1-v0)*(b[1]-low)/(b[1]-a[1])
+                width=2.4/4.2
+                # The cooler upper streaks separate; the lower end does not
+                # shrink as a rigid column. Horizontal heat is carried by the
+                # contact wings immediately beneath these remaining streaks.
+                spread=frame*.12
+                dx=math.copysign(spread,cx-8);dz=math.copysign(spread,cz-8)
+                out.append({'from':[8+(aa[0]-8)*width+dx,12.64+(low-10)*1.2-frame*.8,8+(aa[2]-8)*width+dz],
+                            'to':[8+(bb[0]-8)*width+dx,12.64+(high-10)*1.2-frame*.8,8+(bb[2]-8)*width+dz],
+                            'faces':{name:dict(face,uv=sample)}})
+    return out
 
 
 def floor_mesh(mask,uv,height=8.05):
@@ -230,7 +281,7 @@ def geometry(clip,frame,uv_tuple):
             tip=length*(.55+.45*min(1.,frame/2))
             ray=(along>max(0.,frame-2)*.6)&(along<tip)&(across<(.28*(1-along/tip)+.06)*(1-t))
             mask[ray]=4 if frame<4 else 5
-    out=floor_mesh(mask,uv,8.12)+pressure_burst(frame,uv)
+    out=floor_mesh(mask,uv,8.12)+pressure_burst(frame,uv)+contact_wake(frame,uv)
     # Small detached debris follows a ballistic path and cools. Unequal sizes,
     # not six equally bright projectiles competing with the primary contact.
     for i,(angle,speed,size) in enumerate(((.4,.37,.38),(2.2,.29,.27),(3.8,.42,.2),(5.2,.32,.31))):
@@ -256,13 +307,17 @@ def build(assets,write):
     shutil.copyfile(SOURCE,target)
     shutil.copyfile(EMBER_SOURCE,target.with_name('meteor_ember_v01.png'))
     shutil.copyfile(IMPACT_SOURCE,target.with_name('meteor_impact_atlas_v01.png'))
+    shutil.copyfile(BRIDGE_SOURCE,target.with_name('meteor_impact_bridge_v01.png'))
+    shutil.copyfile(WAKE_SOURCE,target.with_name('meteor_wake_v01.png'))
     uv=ink_uvs(assets)[3]
     for clip in sorted(METEOR_CLIPS):
         for frame in range(24):
             key=f'combat_vfx/mage_material/{clip}_{frame}'
             write(assets/f'models/{key}.json',{'ambientocclusion':False,
                 'textures':{'0':'projects:combat_vfx/ribbon/slash_5','1':TEXTURE,
-                            '2':'projects:combat_vfx/mage_material/meteor_impact_atlas_v01'},
+                            '2':'projects:combat_vfx/mage_material/meteor_impact_atlas_v01',
+                            '3':'projects:combat_vfx/mage_material/meteor_wake_v01',
+                            '4':'projects:combat_vfx/mage_material/meteor_impact_bridge_v01'},
                 'elements':mesh(clip,frame,uv)})
             write(assets/f'items/{key}.json',{'model':{'type':'minecraft:model','model':'projects:'+key,
                 'tints':[{'type':'minecraft:constant','value':c} for c in PALETTE]}})

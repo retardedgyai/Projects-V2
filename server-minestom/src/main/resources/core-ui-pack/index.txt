@@ -15761,6 +15761,8 @@ assets/projects/textures/combat_vfx/frost/floor_7.png
 assets/projects/textures/combat_vfx/mage_material/meteor_basalt_v01.png
 assets/projects/textures/combat_vfx/mage_material/meteor_ember_v01.png
 assets/projects/textures/combat_vfx/mage_material/meteor_impact_atlas_v01.png
+assets/projects/textures/combat_vfx/mage_material/meteor_impact_bridge_v01.png
+assets/projects/textures/combat_vfx/mage_material/meteor_wake_v01.png
 assets/projects/textures/combat_vfx/nebula/stream_0.png
 assets/projects/textures/combat_vfx/nebula/stream_1.png
 assets/projects/textures/combat_vfx/nebula/stream_10.png

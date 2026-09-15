@@ -33,7 +33,7 @@ class MageMaterialTests(unittest.TestCase):
                     self.assertTrue(set(e['faces'])<={'up','down','east','west','north','south'})
                     for f in e['faces'].values():
                         if clip in METEOR_CLIPS:
-                            self.assertIn(f['texture'],('#0','#1','#2'))
+                            self.assertIn(f['texture'],('#0','#1','#2','#3','#4'))
                             self.assertTrue(all(0<=v<=16 for v in f['uv']))
                             self.assertNotEqual(f['uv'][0],f['uv'][2]);self.assertNotEqual(f['uv'][1],f['uv'][3])
                         else:
