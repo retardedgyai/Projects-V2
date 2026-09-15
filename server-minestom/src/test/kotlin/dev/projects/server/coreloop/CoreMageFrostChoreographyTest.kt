@@ -13,7 +13,7 @@ class CoreMageFrostChoreographyTest {
         assertEquals(7,parts.size)
         assertEquals(7,parts.map { it.shape }.distinct().size)
         assertTrue(parts.all { it.ground && !it.followOwner && it.travel==Vec.ZERO && !it.secondary })
-        assertEquals(3,parts.drop(1).map { it.yaw }.distinct().size)
+        assertEquals(6,parts.drop(1).map { it.yaw }.distinct().size)
         assertTrue(parts.all { it.scale.x()==3.6 && it.scale.z()==3.6 })
         val inner=parts.filter { it.shape.contains("inner_") }
         val outer=parts.filter { it.shape.contains("outer_") }

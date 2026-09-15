@@ -4,7 +4,7 @@ import json
 import math
 import unittest
 import numpy as np
-from build_mage_rime import CLIPS,GROUPS,PACK,SOURCE,BRANCH_SOURCE,mesh,triangle,spear,cluster_roots,painted_profile
+from build_mage_rime import CLIPS,GROUPS,PACK,SOURCE,BRANCH_SOURCE,mesh,triangle,spear,cluster_roots,painted_profile,broken_plate
 from PIL import Image
 
 
@@ -91,14 +91,24 @@ class RimeTests(unittest.TestCase):
                 if i!=graft:
                     self.assertLess(np.linalg.norm(r[[0,2]]-roots[primary][[0,2]]),2.5)
 
-    def test_bundle_axes_agree_and_painted_faces_surround_one_short_solid_core(self):
+    def test_bundle_has_thick_closed_slabs_instead_of_crossed_sprites(self):
         for key,specs in GROUPS.items():
-            variant='abc'.index(key[-1])
-            count=128+len(painted_profile(variant)[2])
-            if 'outer' in key:count+=len(painted_profile((variant+1)%3)[2])
-            self.assertEqual(count,len(mesh(key)))
+            elements=mesh(key)
+            self.assertTrue(all(f['texture']=='#0' for e in elements for f in e['faces'].values()))
+            self.assertGreater(len({tuple(e['rotation']['origin']) for e in elements}),30)
             self.assertLessEqual(max(s[0] for s in specs)-min(s[0] for s in specs),44)
             self.assertTrue(all(s[5]<s[4]*.55 for s in specs))
+
+    def test_chipped_plate_has_multiple_upper_intervals_and_closed_edges(self):
+        for variant in range(3):
+            elems=broken_plate((8,8,8),(8,18,8),4,1,0,variant)
+            rows={}
+            for e in elems[:-12]:
+                rows.setdefault(e['from'][1],[]).append(e)
+            self.assertTrue(any(len(intervals)>=4 for intervals in rows.values()))
+            self.assertEqual(12,len(elems[-12:]))
+            self.assertTrue(all(e['faces']['south']['uv'][0]==12.7 for e in elems[-12:]))
+            self.assertGreater(len({tuple(e['faces']['south']['uv']) for e in elems[-12:]}),4)
 
     def test_painted_native_faces_exclude_every_background_texel(self):
         rgb=np.asarray(Image.open(BRANCH_SOURCE)).astype(int)
@@ -111,7 +121,7 @@ class RimeTests(unittest.TestCase):
                 self.assertTrue(variant*iw/3<=x0<x1<=(variant+1)*iw/3)
         for clip in CLIPS:
             painted=[e for e in mesh(clip) if e['faces']['south']['texture']=='#1']
-            self.assertTrue(painted)
+            self.assertFalse(painted) # Rejected feather sheet no longer drives runtime silhouettes.
             for e in painted:
                 uv=e['faces']['south']['uv']
                 x0,y0,x1,y1=[round(uv[i]/16*(iw if i%2==0 else ih)) for i in range(4)]

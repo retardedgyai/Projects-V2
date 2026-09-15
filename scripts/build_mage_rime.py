@@ -224,16 +224,70 @@ def painted_branch(variant,origin,end,width,roll):
     return out
 
 
+def broken_plate(origin,end,width,depth,roll,variant):
+    """A closed, chipped ice slab, not crossed sprite contours or a pyramid.
+
+    Each broad side samples one uninterrupted painting. The asymmetric upper
+    shoulders leave two unequal chisel tips, with thickness visible at breaks.
+    Native contour rows follow coarse pixel steps without raster repainting.
+    """
+    origin=np.asarray(origin,dtype=float);axis=np.asarray(end)-origin
+    length=float(np.linalg.norm(axis));v=axis/length
+    u=np.array((1.,0.,0.));u-=v*np.dot(u,v);u/=np.linalg.norm(u)
+    a=math.radians(roll);u=u*math.cos(a)+np.cross(v,u)*math.sin(a)
+    n=np.cross(u,v)
+    # Clockwise outline: a broad body, broken shoulders, two uneven ends.
+    profiles=(
+        [(-.42,0),(-.5,.42),(-.34,.42),(-.34,.74),(-.17,.67),(-.09,1),(.10,.88),(.12,.62),(.36,.78),(.31,.40),(.5,.28),(.40,0)],
+        [(-.40,0),(-.48,.30),(-.32,.36),(-.30,.80),(-.10,.69),(.04,.95),(.21,1),(.23,.65),(.40,.74),(.36,.34),(.49,.22),(.38,0)],
+        [(-.43,0),(-.5,.32),(-.33,.35),(-.32,.68),(-.20,.62),(-.13,.87),(.02,1),(.17,.77),(.18,.56),(.39,.70),(.33,.26),(.42,0)],
+    )
+    profile=profiles[variant%3]
+    out=[]
+    def half_depth(f):return depth*.5*max(.025,(1-f)**.7)
+    for row in range(40):
+        f0,f1=row/40,(row+1)/40;mid=(f0+f1)/2
+        crossings=[]
+        for p,q in zip(profile,profile[1:]+profile[:1]):
+            if min(p[1],q[1])<=mid<max(p[1],q[1]):
+                crossings.append(p[0]+(q[0]-p[0])*(mid-p[1])/(q[1]-p[1]))
+        crossings.sort()
+        for left,right in zip(crossings[::2],crossings[1::2]):
+            uv=[4+left*7.7,7.9*(1-f1),4+right*7.7,7.9*(1-f0)]
+            back=[uv[2],uv[1],uv[0],uv[3]]
+            for sign,paint in ((1,uv),(-1,back)):
+                lower=origin+v*f0*length+n*half_depth(f0)*sign
+                upper=origin+v*f1*length+n*half_depth(f1)*sign
+                surfaces=face_band(lower+u*left*width,lower+u*right*width,
+                                    upper+u*left*width,upper+u*right*width,0,steps=1)
+                for surface in surfaces:
+                    for face in surface['faces'].values():face['uv']=paint
+                out.extend(surfaces)
+    # Continuous darker side faces close the volume, including the chipped top.
+    for p,q in zip(profile,profile[1:]+profile[:1]):
+        a=origin+u*p[0]*width+v*p[1]*length
+        b=origin+u*q[0]*width+v*q[1]*length
+        if np.linalg.norm(b-a)<1e-8:continue
+        sides=face_band(a-n*half_depth(p[1]),a+n*half_depth(p[1]),
+                        b-n*half_depth(q[1]),b+n*half_depth(q[1]),2,steps=1)
+        # Map each edge to its own longitudinal portion of the blue face.
+        # Neither an entire decorative tile nor a flat blue fill per edge.
+        for side in sides:
+            for face in side['faces'].values():
+                face['uv']=[12.7,7.9*(1-q[1]),13.2,7.9*(1-p[1])]
+        out.extend(sides)
+    return out
+
+
 def mesh(clip):
     if clip=='rime_footing':
-        # Low painted fragments overlap the roots. Thin spear-lines made
-        # separate clusters look joined by a wire rather than frozen ground.
+        # Low solid plates join the roots; no long luminous feather underneath.
         elements=[]
         for i in range(3):
             a=i*2*math.pi/3
             root=(8+math.sin(a)*1.8,8,8+math.cos(a)*1.8)
-            end=(8+math.sin(a)*7.0,10.4,8+math.cos(a)*7.0)
-            elements.extend(painted_branch(i,root,end,6.4,0))
+            end=(8+math.sin(a)*5.5,10.2,8+math.cos(a)*5.5)
+            elements.extend(broken_plate(root,end,4.4,.65,i*37,i))
         return elements
     variant='abc'.index(clip[-1])
     specs=GROUPS[clip];roots=cluster_roots(clip)
@@ -241,15 +295,21 @@ def mesh(clip):
     spec=specs[primary];root=roots[primary]
     angle,_,tip,height,width,depth=spec;a=math.radians(angle)
     end=np.array((8+math.sin(a)*tip,8+height,8+math.cos(a)*tip))
-    # Solid core supplies depth; the painted silhouette supplies the irregular
-    # breaks and short side plates that geometric needles failed to express.
-    core_tip=spec[1]+(tip-spec[1])*.32
-    elements=spear(angle,spec[1],core_tip,height*.35,width*.72,depth*.9,
-                   root_at=root,blade_roll=12-variant*17,panels=(3,3,1,3))
-    elements.extend(painted_branch(variant,root,end,width*3.1,-28+variant*12))
+    # Rooted, overlapping bodies with calm broad faces. Their short split tips
+    # are part of the slab outline, not many independent radial light needles.
+    direction=end-root
+    direction[[0,2]]*=.77
+    direction[1]*=1.20
+    elements=broken_plate(root,root+direction,width*2.25,depth*1.55,
+                          -24+variant*14,variant)
+    secondary=root+np.array((width*.48,.06,.12))
+    elements.extend(broken_plate(secondary,secondary+direction*.72,
+                    width*1.55,depth*1.2,36-variant*13,(variant+1)%3))
     if 'outer' in clip:
-        secondary=root+np.array((.65,.1,.15))
-        elements.extend(painted_branch((variant+1)%3,secondary,root+(end-root)*.82,width*2.65,43-variant*9))
+        branch=root+direction*.24-np.array((width*.40,0,0))
+        branch_end=branch+direction*.48+np.array((-width*.25,.1,0))
+        elements.extend(broken_plate(branch,branch_end,width*.95,
+                                     depth*.8,-42+variant*9,(variant+2)%3))
     # Ground sampling must occur at this cluster, not at the caster. Rebase
     # the native model; CoreMageFrostChoreography adds the exact same offset
     # in world space before the existing ground resolver runs.

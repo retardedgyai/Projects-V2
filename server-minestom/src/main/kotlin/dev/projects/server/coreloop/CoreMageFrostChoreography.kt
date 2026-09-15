@@ -28,7 +28,7 @@ internal object CoreMageFrostChoreography {
         // Three interleaved inner/outer sectors
         // keep the whole circumference present without a rotating carousel.
         return listOf(part("footing",1.5,40))+listOf("a","b","c").flatMapIndexed { i,suffix ->
-            listOf(part("inner_$suffix",2.3,34,i%2,turn=i*2*PI/3),
+            listOf(part("inner_$suffix",2.3,34,i%2,turn=i*2*PI/3+PI/3),
                 part("outer_$suffix",3.1,28,2+i%2,turn=i*2*PI/3))
         }
     }
