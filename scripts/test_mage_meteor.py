@@ -3,8 +3,8 @@ import json
 import math
 import unittest
 from build_mage_meteor import METEOR_CLIPS, PALETTE, SOURCE, EMBER_SOURCE, IMPACT_SOURCE, BRIDGE_SOURCE, WAKE_SOURCE, PACK, mesh, ink_uvs, rock, burning_wake, impact_atlas
-from build_mage_meteor import METEOR_FLOW_CLIPS, METEOR_FLOW_STATES, COOLING_SOURCE, flow_mesh
-from build_mage_meteor_surface import centers, drawing, region_labels, KNOT_X, KNOT_Z
+from build_mage_meteor import METEOR_FLOW_CLIPS, METEOR_FLOW_STATES, COOLING_SOURCE, FLOW_PALETTE, flow_mesh
+from build_mage_meteor_surface import centers, drawing, region_labels, KNOT_X, KNOT_Z, thermal_ink, VAPOR_UV
 
 
 class MeteorTests(unittest.TestCase):
@@ -41,21 +41,20 @@ class MeteorTests(unittest.TestCase):
         import numpy as np
         for clip in METEOR_FLOW_CLIPS:
             for state in range(METEOR_FLOW_STATES):
-                cooling=state>=2 and clip!='meteor_front'
-                atlas=impact_atlas(COOLING_SOURCE) if cooling else impact_atlas()
+                atlas=impact_atlas()
                 h,w=atlas.shape[:2]
                 colours=set()
                 for e in flow_mesh(clip,state,self.uv):
                     for f in e['faces'].values():
-                        self.assertEqual('#5' if cooling else '#2',f['texture'])
-                        self.assertEqual(0,f['tintindex'])  # white, not four-ink quantization
+                        self.assertNotEqual('#5',f['texture'])  # no unrelated cold-atlas silhouette
+                        if f['texture']!='#2':continue
+                        self.assertIn(f['tintindex'],(0,8))  # authored paint, or cooling ember tint
                         u0,v0,u1,v1=f['uv']
                         x0,x1=round(min(u0,u1)/16*w),round(max(u0,u1)/16*w)
                         y0,y1=round(min(v0,v1)/16*h),round(max(v0,v1)/16*h)
                         rgb=atlas[y0:y1,x0:x1].astype(int)
                         self.assertTrue(rgb.size)
-                        allowed=((np.ptp(rgb,axis=2)<24)&(rgb.min(axis=2)>20) if cooling else
-                                 (rgb[:,:,0]-rgb[:,:,2]>12)&(rgb[:,:,0]-rgb[:,:,1]>6)&(rgb[:,:,0]>20))
+                        allowed=(rgb[:,:,0]-rgb[:,:,2]>12)&(rgb[:,:,0]-rgb[:,:,1]>6)&(rgb[:,:,0]>20)
                         self.assertTrue(np.all(allowed),(clip,state))
                         colours.update(map(tuple,rgb.reshape(-1,3)))
                 if state==0:
@@ -82,9 +81,14 @@ class MeteorTests(unittest.TestCase):
             for state in range(METEOR_FLOW_STATES):
                 elements=flow_mesh(clip,state,self.uv)
                 self.assertTrue(elements,clip)
-                self.assertLess(len(elements),500,(clip,state))
+                # Multi-material rupture uses more boundaries than one opaque
+                # picture. Same 1000-element ceiling as the fixed meteor art;
+                # Display/observer budgets are unchanged.
+                self.assertLessEqual(len(elements),1000,(clip,state))
                 model=json.loads((self.assets/f'models/combat_vfx/mage_material/{clip}_{state}.json').read_text())
                 self.assertEqual(elements,model['elements'])
+                item=json.loads((self.assets/f'items/combat_vfx/mage_material/{clip}_{state}.json').read_text())
+                self.assertEqual(FLOW_PALETTE,[t['value'] for t in item['model']['tints']])
                 for e in elements:
                     self.assertEqual({'east','west'} if clip=='meteor_flow_2' else {'north','south'},set(e['faces']))
                     self.assertFalse(e['shade'])
@@ -108,8 +112,8 @@ class MeteorTests(unittest.TestCase):
 
     def test_regions_cover_actual_paint_once_and_keep_runtime_pivots_in_sync(self):
         import numpy as np
-        for frame,cooling in ((2,False),(3,False),*((i,True) for i in range(4))):
-            mask,_,_=drawing(frame,cooling);labels=region_labels(mask.shape)
+        for state in range(6):
+            mask=thermal_ink(state)>0;labels=region_labels(mask.shape)
             parts=[mask&(labels==i) for i in range(3)]
             np.testing.assert_array_equal(np.stack(parts).sum(axis=0),mask.astype(int))
         kotlin=(PACK.parents[1]/'kotlin/dev/projects/server/coreloop/CoreMageChoreography.kt').read_text(encoding='utf-8')
@@ -127,7 +131,7 @@ class MeteorTests(unittest.TestCase):
         mask,_,_=drawing(2);h,w=mask.shape
         self.assertFalse(mask[int(h*.72):int(h*.84),int(w*.45):int(w*.55)].any())
 
-    def test_rear_is_a_complementary_depth_surface_and_cooling_keeps_dark_paint(self):
+    def test_rear_is_a_complementary_depth_surface(self):
         import numpy as np
         for front,rear in (('meteor_flow_1','meteor_flow_0'),('meteor_break_2','meteor_flow_3')):
             for state in range(METEOR_FLOW_STATES):
@@ -140,18 +144,38 @@ class MeteorTests(unittest.TestCase):
                     self.assertAlmostEqual(f['to'][2],16-r['from'][2])
                     self.assertEqual(f['rotation']['angle'] if 'rotation' in f else 0,
                                      -(r['rotation']['angle'] if 'rotation' in r else 0))
-        mask,_,rgb=drawing(0,True)
-        self.assertGreater(np.sum(mask&(rgb[:,:,0]<100)),100)
-        self.assertGreater(np.sum(mask&(rgb[:,:,0]>180)),100)
-        # The last chips occupy much less area than the ruptured membrane;
-        # their geometry changes, not just the parent Display scale.
-        self.assertLess(drawing(3,True)[0].sum(),mask.sum()*.3)
         # The transverse crest supplies a side-facing painted subject across
         # the impact, not two disconnected vertical edges. It replaces one
         # rear region; it isn't an extra whole explosion or an extra Display.
         crest=flow_mesh('meteor_flow_2',0,self.uv)
         self.assertGreater(max(e['to'][2] for e in crest)-min(e['from'][2] for e in crest),10)
         self.assertEqual({'east','west'},{f for e in crest for f in e['faces']})
+
+    def test_cooling_retains_registered_curls_and_separates_real_vapor_from_solid_rims(self):
+        import numpy as np
+        from PIL import Image
+        mask,_,_=drawing(2)
+        phases=[thermal_ink(s) for s in range(6)]
+        for phase in phases:self.assertFalse(phase[~mask].any())
+        for phase in phases[:2]:np.testing.assert_array_equal(phase>0,mask)
+        np.testing.assert_array_equal(phases[2]>0,phases[3]>0)
+        self.assertLess(np.count_nonzero(phases[2]),mask.sum()*.8)
+        self.assertTrue(np.all((phases[5]>0)<=(phases[4]>0)))
+        self.assertLess(np.count_nonzero(phases[5]),mask.sum()*.25)
+        self.assertEqual({0,2,3,4},set(np.unique(phases[2])))
+        self.assertGreater(np.count_nonzero(phases[2]==3),np.count_nonzero(phases[2]==4))
+        rgba=np.asarray(Image.open(self.assets/'textures/combat_vfx/warrior_support/cloth.png'))
+        np.testing.assert_array_equal(rgba[61,24],[37,37,41,68])
+        for clip in METEOR_FLOW_CLIPS-{'meteor_front'}:
+            model=json.loads((self.assets/f'models/combat_vfx/mage_material/{clip}_2.json').read_text())
+            self.assertEqual('projects:combat_vfx/warrior_support/cloth',model['textures']['6'])
+            vapor=[f for e in model['elements'] for f in e['faces'].values() if f['texture']=='#6']
+            self.assertTrue(vapor)
+            for face in vapor:
+                u0,v0,u1,v1=face['uv']
+                self.assertEqual(sorted(VAPOR_UV[::2]),sorted((u0,u1)))
+                self.assertEqual(VAPOR_UV[1::2],[v0,v1])
+                self.assertEqual(0,face['tintindex'])
 
     def test_contact_keeps_only_short_heat_residue(self):
         for frame in (0,1):

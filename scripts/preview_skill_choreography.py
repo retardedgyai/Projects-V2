@@ -43,8 +43,8 @@ def texture_for(name, tint):
     texture[:,:,:3] = (texture[:,:,:3].astype(float) * color / 255).astype('uint8')
     return Image.fromarray(texture)
 
-def render(parts, name, tick, view='iso', world_scale=34, fps=20):
-    image = Image.new('RGBA', (W,H), '#1b222a')
+def render(parts, name, tick, view='iso', world_scale=34, fps=20, background='#1b222a'):
+    image = Image.new('RGBA', (W,H), background)
     draw = ImageDraw.Draw(image)
     cx, cy, scale = 160, 184, world_scale
     draw.text((8,5), name, font=FONT, fill='#efe4c9')
@@ -189,6 +189,7 @@ def main():
     parser.add_argument('--ticks',help='Comma-separated snapshot ticks; skips GIF rendering for broad reviews')
     parser.add_argument('--relative-ticks',help='Snapshot ticks relative to each scene startup, for fair class-wide comparisons')
     parser.add_argument('--fps',type=int,default=20,choices=(20,60),help='60 requires the exported client interpolation timeline')
+    parser.add_argument('--background',default='#1b222a',help='Flat contrast-review backdrop, not simulated game lighting')
     args=parser.parse_args()
     source=json.loads((ROOT/args.timeline).read_text(encoding='utf-8'))
     ids=args.ids.split(',')
@@ -209,7 +210,7 @@ def main():
         for i,s in enumerate(scenes):
             actual=tick+s['startup'] if args.relative_ticks else tick
             parts=s['frames'][actual] if 0<=actual<len(s['frames']) else []
-            sheet.paste(render(parts,s['name']+' / '+s['id'],actual,args.view,args.world_scale,args.fps),(i%columns*W,i//columns*H+26))
+            sheet.paste(render(parts,s['name']+' / '+s['id'],actual,args.view,args.world_scale,args.fps,args.background),(i%columns*W,i//columns*H+26))
         frames.append(sheet)
         if selection or tick in (0,3,6,10,16,24,32): sheet.save(ROOT/f'.tools/{args.prefix}-{tick:02d}.png')
     if not selection:

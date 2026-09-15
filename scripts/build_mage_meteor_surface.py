@@ -15,6 +15,48 @@ from build_mage_garden import rectangles
 KNOT_X=np.array((-12.,-8.,-4.,4.,8.,12.))
 KNOT_Z=np.array((0.,4.,4.+4*math.tan(math.pi/8),4.+4*math.tan(math.pi/8),4.,0.))
 
+# A material sample, not the banner picture/mesh. This existing texel really
+# has RGBA (37,37,41,68); native UV sampling preserves its partial alpha.
+VAPOR_UV=[24.2/48*16,61.2/80*16,24.8/48*16,61.8/80*16]
+
+
+@lru_cache(maxsize=6)
+def thermal_ink(state):
+    """One registered flame drawing burns into its OWN rims and remnants.
+
+    R12 155.864 -> 155.914 -> 155.964 retains the same curls while the orange
+    filling recedes, leaving dark/red edges, then vapor. No cold-atlas swap.
+    This authors model coverage/materials; it does not edit any bitmap.
+    """
+    mask,_,rgb=drawing(2)
+    if state==0:return mask.astype(np.uint8)
+    inside=mask.copy()
+    for _ in range(6):
+        p=np.pad(inside,1)
+        inside=p[1:-1,1:-1]&p[:-2,1:-1]&p[2:,1:-1]&p[1:-1,:-2]&p[1:-1,2:]
+    rim=mask&~inside
+    h,w=mask.shape;y,x=np.mgrid[:h,:w];x=x/w;y=y/h
+    # Unequal breaks along the authored curled edge, not evenly spaced sparks.
+    fracture=np.sin(x*41+np.sin(y*23)*.9)+.7*np.sin(x*19-y*31)
+    ink=np.zeros(mask.shape,dtype=np.uint8)
+    if state==1:
+        ink[mask]=4  # same painted filling, losing yellow heat
+        ink[mask&(rgb[:,:,0]<155)]=2
+    elif state in (2,3):
+        # The hot interior is gone, not a large translucent panel. R12 leaves
+        # a thin torn boundary; filling every old flame area exposed the planar
+        # facets as broad gray wedges on a bright background.
+        ink[rim]=3
+        solid=rim&(fracture>(-.8 if state==2 else .1))
+        ink[solid]=2
+        if state==2:ink[solid&(fracture>1.3)&(rgb[:,:,0]>190)]=4
+    else:
+        solid=rim&(fracture>(.55 if state==4 else 1.15))
+        ink[solid]=2
+        # Pale detached chips are separate from the translucent membrane.
+        ink[solid&(np.sin(x*17-y*29)>.85)]=5
+    return ink
+
 
 @lru_cache(maxsize=12)
 def drawing(frame,cooling=False):
@@ -85,7 +127,8 @@ def surface(clip,state):
     Later drawings remove hot filling rather than tinting a full orange wall
     brown. A short contact flash is separate from this pressure envelope.
     """
-    from build_mage_meteor import impact_atlas, COOLING_SOURCE
+    from build_mage_meteor import impact_atlas
+    from build_approved_dash_v3 import ink_uvs, PACK
     if clip=='meteor_flow_2':
         # A transverse, curved crest joins the two ground-rooted sides. Merely
         # mirroring another vertical front still vanished edge-on at the top.
@@ -105,31 +148,33 @@ def surface(clip,state):
     main=clip!='meteor_front'
     member=(('meteor_flow_0','meteor_flow_2','meteor_flow_3').index(clip) if rear else
             int(clip.rsplit('_',1)[1]) if clip.startswith('meteor_break_') else 0)
-    # A rupture membrane, torn ribbons, then free gray/charcoal chips. Cooling
-    # is new topology, not the same hot arch with a dark tint or smaller scale.
-    cooling=main and state>=2
-    frame=state-2 if cooling else (2,3)[min(state,1)] if main else 0
-    mask,bounds,_=drawing(frame,cooling);mask=mask.copy();h,w=mask.shape
+    # Every phase shares one artwork coordinate system. Exchanging separately
+    # drawn hot/cold silhouettes made the whole envelope jump between pictures.
+    frame=2 if main else 0
+    mask,bounds,_=drawing(frame);mask=mask.copy();h,w=mask.shape
+    inks=thermal_ink(state).copy() if main else mask.astype(np.uint8)
     if main:
         mask &= region_labels(mask.shape)==member
+        inks[~mask]=0
         pivot=centers()[member].copy()
         if rear:pivot[2]*=-1
     else:
         pivot=np.zeros(3)
-    atlas=impact_atlas(COOLING_SOURCE) if cooling else impact_atlas()
+    atlas=impact_atlas()
     ah,aw=atlas.shape[:2];x0,y0,x1,y1=bounds
+    white_uv=ink_uvs(PACK/'assets/projects')[3]
     out=[]
     # Partition at bend changes before greedy meshing. Within each domain the
     # painted surface is exactly planar and neighboring UVs remain continuous.
     for k in range(len(KNOT_X)-1):
         left=round((KNOT_X[k]+12)/24*w);right=round((KNOT_X[k+1]+12)/24*w)
-        local=mask[:,left:right]
+        local=inks[:,left:right]
         candidates=(rectangles(local.astype(int)),
                     [(b,a,d,c,ink) for a,b,c,d,ink in rectangles(local.T.astype(int))])
         slope=(KNOT_Z[k+1]-KNOT_Z[k])/(KNOT_X[k+1]-KNOT_X[k])
         if rear:slope*=-1
         angle=-math.atan(slope);cosine=math.cos(angle)
-        for ya,xa,yb,xb,_ in min(candidates,key=len):
+        for ya,xa,yb,xb,ink in min(candidates,key=len):
             xa+=left;xb+=left
             # Snap the domain edge to its exact bend; adjacent domains share
             # this endpoint even when source dimensions aren't divisible by 4.
@@ -144,11 +189,16 @@ def surface(clip,state):
             # display the original picture; no dark side face can become a wall.
             uv=[(x0+xa+.02)/aw*16,(y0+ya+.02)/ah*16,
                 (x0+xb-.02)/aw*16,(y0+yb-.02)/ah*16]
+            texture='#2';tint=0
+            if ink==2:texture='#0';uv=white_uv;tint=7
+            elif ink==3:texture='#6';uv=VAPOR_UV;tint=0
+            elif ink==4:tint=8
+            elif ink==5:texture='#0';uv=white_uv;tint=1
             e={'from':[center[0]-half,center[1]-hy,center[2]-.001],
                'to':[center[0]+half,center[1]+hy,center[2]+.001],
                'shade':False,
-               'faces':{'south':{'texture':'#5' if cooling else '#2','uv':uv,'tintindex':0},
-                        'north':{'texture':'#5' if cooling else '#2','uv':[uv[2],uv[1],uv[0],uv[3]],'tintindex':0}}}
+               'faces':{'south':{'texture':texture,'uv':uv,'tintindex':tint},
+                        'north':{'texture':texture,'uv':[uv[2],uv[1],uv[0],uv[3]],'tintindex':tint}}}
             if angle:
                 e['rotation']={'origin':center.tolist(),'axis':'y',
                                'angle':round(math.degrees(angle),4),'rescale':False}
