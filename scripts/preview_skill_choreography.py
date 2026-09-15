@@ -92,7 +92,18 @@ def render(parts, name, tick, view='iso', world_scale=34, fps=20, background='#1
             def element_point(v):
                 rotation=e.get('rotation')
                 if not rotation: return v
-                assert rotation['axis'] in ('x','y','z') and not rotation.get('rescale',False), 'Unsupported preview rotation'
+                assert not rotation.get('rescale',False), 'Unsupported preview rescale'
+                if 'axis' not in rotation:
+                    # 26.2 CuboidRotation.EulerXYZRotation uses rotationZYX:
+                    # apply X, then Y, then Z to the column vector.
+                    origin=rotation['origin']
+                    x,y,z=[v[i]-origin[i] for i in range(3)]
+                    ax,ay,az=[math.radians(rotation.get(k,0)) for k in ('x','y','z')]
+                    y,z=y*math.cos(ax)-z*math.sin(ax),y*math.sin(ax)+z*math.cos(ax)
+                    x,z=x*math.cos(ay)+z*math.sin(ay),-x*math.sin(ay)+z*math.cos(ay)
+                    x,y=x*math.cos(az)-y*math.sin(az),x*math.sin(az)+y*math.cos(az)
+                    return [x+origin[0],y+origin[1],z+origin[2]]
+                assert rotation['axis'] in ('x','y','z'), 'Unsupported preview rotation'
                 angle=math.radians(rotation['angle']); origin=rotation['origin']
                 if rotation['axis']=='y':
                     x,z=v[0]-origin[0],v[2]-origin[2]

@@ -152,6 +152,14 @@ class CoreMageChoreographyTest {
             assertTrue(wake.scale.x()>land.scale.x())
         }
     }
+    @Test fun `frost crown advances through rooted inner then outer ice instead of sliding gardens`() {
+        val parts=CoreSkillChoreography.parts(effect("frost_nova"))
+        assertEquals(7,parts.size)
+        assertTrue(parts.all { CoreMageFrostChoreography.owns(it) && it.ground && it.travel==Vec.ZERO })
+        assertEquals(3,parts.count { it.shape.contains("inner_") })
+        assertEquals(3,parts.count { it.shape.contains("outer_") })
+        assertTrue(parts.filter { it.shape.contains("outer_") }.all { it.delayTicks>=2 && it.scale.y()>3.0 })
+    }
     @Test fun `garden has staggered upright roots while ward leaves the aim corridor open`() {
         val garden=CoreSkillChoreography.parts(effect("mage_garden"))
         assertEquals(6,garden.size);assertEquals(setOf(0,1,3,5),garden.map { it.delayTicks }.toSet())

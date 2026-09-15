@@ -2165,6 +2165,13 @@ assets/projects/items/combat_vfx/mage_material/pyre_6.json
 assets/projects/items/combat_vfx/mage_material/pyre_7.json
 assets/projects/items/combat_vfx/mage_material/pyre_8.json
 assets/projects/items/combat_vfx/mage_material/pyre_9.json
+assets/projects/items/combat_vfx/mage_material/rime_footing_0.json
+assets/projects/items/combat_vfx/mage_material/rime_inner_a_0.json
+assets/projects/items/combat_vfx/mage_material/rime_inner_b_0.json
+assets/projects/items/combat_vfx/mage_material/rime_inner_c_0.json
+assets/projects/items/combat_vfx/mage_material/rime_outer_a_0.json
+assets/projects/items/combat_vfx/mage_material/rime_outer_b_0.json
+assets/projects/items/combat_vfx/mage_material/rime_outer_c_0.json
 assets/projects/items/combat_vfx/mage_material/rupture_0.json
 assets/projects/items/combat_vfx/mage_material/rupture_1.json
 assets/projects/items/combat_vfx/mage_material/rupture_10.json
@@ -9837,6 +9844,13 @@ assets/projects/models/combat_vfx/mage_material/pyre_6.json
 assets/projects/models/combat_vfx/mage_material/pyre_7.json
 assets/projects/models/combat_vfx/mage_material/pyre_8.json
 assets/projects/models/combat_vfx/mage_material/pyre_9.json
+assets/projects/models/combat_vfx/mage_material/rime_footing_0.json
+assets/projects/models/combat_vfx/mage_material/rime_inner_a_0.json
+assets/projects/models/combat_vfx/mage_material/rime_inner_b_0.json
+assets/projects/models/combat_vfx/mage_material/rime_inner_c_0.json
+assets/projects/models/combat_vfx/mage_material/rime_outer_a_0.json
+assets/projects/models/combat_vfx/mage_material/rime_outer_b_0.json
+assets/projects/models/combat_vfx/mage_material/rime_outer_c_0.json
 assets/projects/models/combat_vfx/mage_material/rupture_0.json
 assets/projects/models/combat_vfx/mage_material/rupture_1.json
 assets/projects/models/combat_vfx/mage_material/rupture_10.json
@@ -15874,6 +15888,7 @@ assets/projects/textures/combat_vfx/mage_material/meteor_ember_v01.png
 assets/projects/textures/combat_vfx/mage_material/meteor_impact_atlas_v01.png
 assets/projects/textures/combat_vfx/mage_material/meteor_impact_bridge_v01.png
 assets/projects/textures/combat_vfx/mage_material/meteor_wake_v01.png
+assets/projects/textures/combat_vfx/mage_material/rime_faces_v01.png
 assets/projects/textures/combat_vfx/mage_material/solar_bolt_faces_v01.png
 assets/projects/textures/combat_vfx/nebula/stream_0.png
 assets/projects/textures/combat_vfx/nebula/stream_1.png

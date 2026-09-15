@@ -1,0 +1,11 @@
+Built-in image_gen; generated 2026-09-15. Original bitmap, no postprocessing.
+Style reference: .tools/wynn-ice-new-215.png (Wynncraft Ice Snake observation; not shipped).
+Use case: stylized-concept
+Asset type: original production pixel-art UV trim atlas for a Minecraft ice magic 3D effect, NOT a concept painting or screenshot.
+Input images: image 1 is a STYLE reference for the clear broad ice facets and icy pointed forms, NOT an edit target, not a request to copy the characters or composition.
+Produce a square fully opaque texture atlas, precisely four equally sized rectangular panels in a 2 by 2 layout, no gaps, no borders, no text. Each panel fills its entire quarter; no backdrop or object silhouettes.
+Top left: luminous ice main face. Mostly a large uninterrupted pale icy white plane in the upper two thirds, angular stepped pale cyan area along the lower left edge and bottom. Just one long narrow deeper cyan taper rising from the bottom, NOT lightning. The big white surface is the visual subject.
+Top right: middle blue ice face. Large calm desaturated cyan planes, brighter cyan at top and right, dark steel-blue angular roots near bottom.
+Bottom left: shadow side face. Muted steel blue upper section, deeper slate blue at the bottom, ONE broad angular lighter plane through it.
+Bottom right: low crystalline footing face. Deep slate blue over most area, a few broad angular cyan edges along the top.
+Drawing: deliberate chunky pixel-art at an apparent 64 by 64 pixel grid over the WHOLE atlas, enlarged without smoothing. Long straight stepped facet boundaries. Roughly 10 to 14 flat colors. Each panel should read as 3 to 5 LARGE areas, not mottled noise. Every bright edge belongs to a larger ice plane. No speckling, no dithering, no soft gradients, no photorealism, no glass refraction, no bloom, no tiny decorative crack network, no sparkles, no detached particles. No purple or electric royal blue. Preserve the restrained pale ice/steel cyan/slate blue palette of the reference. All four panels are independent usable rectangular face paintings; no perspective, objects, characters or scenery.

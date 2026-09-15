@@ -15,7 +15,7 @@ internal object CoreMageChoreography {
         Vec(5.444695259593679,5.404761904761904,3.5327160637981088))
     private val rootedIce=setOf("mage_material:cryo_pillar","mage_material:cryo_root",
         "mage_material:cryo_buttress","mage_material:cryo_crown")
-    fun interpolated(p:CoreCombatMeshPart)=CoreMageFireboltChoreography.owns(p) || p.shape in movingContours || p.shape in rootedIce || p.shape=="mage_material:cryo_seed"
+    fun interpolated(p:CoreCombatMeshPart)=CoreMageFireboltChoreography.owns(p) || CoreMageFrostChoreography.owns(p) || p.shape in movingContours || p.shape in rootedIce || p.shape=="mage_material:cryo_seed"
     internal fun rootedIceHeight(shape:String)=when(shape.substringAfter(':')) {
         "cryo_pillar" -> 1.5
         "cryo_root" -> .75
@@ -43,6 +43,7 @@ internal object CoreMageChoreography {
         if(e.job!=CoreClass.MAGE || e.sceneId !in sceneIds) return null
         if(!e.valid) return emptyList()
         if(e.sceneId=="firebolt") return CoreMageFireboltChoreography.parts(e)
+        if(e.sceneId=="frost_nova" && e.phase!=CoreSkillVisualPhase.CONTACT) return CoreMageFrostChoreography.parts(e)
         val yaw=atan2(e.direction.x(),e.direction.z())
         val pitch=-atan2(e.direction.y(),hypot(e.direction.x(),e.direction.z()))
         val r=min(e.radius,CoreSkillScenes.get(e.sceneId).reach)
@@ -119,11 +120,6 @@ internal object CoreMageChoreography {
                     piece("pyre",Vec(0.0,3.4,0.0),Vec(2.6,2.6,2.6),life=life),
                     piece("solar_flare",Vec(0.0,.12,0.0),Vec(2.6,2.3,2.3),life=12,ground=true,secondary=true))
             }
-            "frost_nova" -> listOf(floor("frost_trace",r*.68,18))+
-                listOf(.35 to 1.0,2.45 to .77,4.5 to .58).map { (a,size) ->
-                piece("frost_wave",Vec(sin(a)*r*.24,.12,cos(a)*r*.24),Vec(min(3.0,r*.7)*size,.65*size,1.8),
-                    life=18,facing=a,ground=true,travel=Vec(sin(a)*r*.44,0.0,cos(a)*r*.44))
-            }
             "mage_garden" -> if(e.pulse>0) emptyList() else {
                 val life=(e.skill.pulses-1)*8+24
                 // R01: low blue roots first, then one dominant shaft and a
@@ -171,6 +167,7 @@ internal object CoreMageChoreography {
     fun pose(p:CoreCombatMeshPart,age:Double):CoreMeshPose? {
         if(!owns(p)) return null
         if(CoreMageFireboltChoreography.owns(p)) return CoreMageFireboltChoreography.pose(p,age)
+        if(CoreMageFrostChoreography.owns(p)) return CoreMageFrostChoreography.pose(p,age)
         val clip=p.shape.substringAfter(':')
         val local=(age-p.delayTicks).coerceAtLeast(0.0)
         val t=(local/(p.durationTicks-1).coerceAtLeast(1)).coerceIn(0.0,1.0)
