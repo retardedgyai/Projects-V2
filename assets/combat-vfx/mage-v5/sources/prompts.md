@@ -7,7 +7,24 @@ Meteor's dark mass and hot cracks); R09 (MatE Solar's broad value groups).
 Physical output is larger than the requested logical 32-pixel grid. There is
 some tonal variation inside clusters; do not claim an exact 32x32 bitmap.
 
-## Exact prompt
+## Meteor ember v01 (additional fragment material)
+
+Built-in image_gen, 2026-09-15. Copied unchanged from
+`exec-e99648ae-f979-4307-aa0e-2417455f54b1.png` to `meteor-ember-v01.png`.
+Physical output is larger than the requested logical 16px grid and includes
+tonal variation; it is not an exact 16x16 bitmap. The native fragment UVs use
+the central half of this material so small objects do not repeat dense detail.
+Reference basis: R09 warm layered fragments and R12 155.84s explosion masses.
+
+### Exact ember prompt
+
+Use case: stylized-concept
+Asset type: a single opaque full-bleed pixel-art albedo material swatch for small 3D burning fragments of a Minecraft RPG explosion. NOT a rendered object, NOT a scene, NOT a sprite sheet.
+Primary request: paint the flat surface of a fragment of billowing magical fire. A large irregular pale-cream hot patch folds through two broad peach and amber lobes. Their edges break into chunky square steps. A small deep terracotta cleft separates the lobes, showing thickness through painting. Warm orange-red at the edges, pale peach and cream in the interior. Use about five flat value groups, very large quiet color clusters. The surface should read as scorching material on an irregular fragment, not plain orange plastic.
+Style: hand-authored Minecraft RPG pixel material, coarse logical 16 by 16 grid enlarged cleanly, hard square pixel edges, no subpixel details or airbrushing. No gradients, no speckles, no tiny texture noise. Strong block-cluster hierarchy like premium pixel-painted fantasy spell props.
+Composition: exactly one square flat material, fills every pixel edge to edge, front-facing orthographic. No border, margins, background, alpha, labels or shadows outside the material. No isometric rendering, no cube, no weapon, no star symbol, no circles, no realistic flames.
+
+## Exact basalt prompt
 
 Use case: stylized-concept
 Asset type: opaque pixel-art albedo material texture for a Minecraft resource-pack meteor model, NOT a rendered rock illustration.

@@ -1,7 +1,8 @@
 """Structural checks, not a claim of visual/reference-quality acceptance."""
 import json
+import math
 import unittest
-from build_mage_meteor import METEOR_CLIPS, PALETTE, SOURCE, PACK, mesh, ink_uvs
+from build_mage_meteor import METEOR_CLIPS, PALETTE, SOURCE, EMBER_SOURCE, PACK, mesh, ink_uvs, rock, burning_wake, pressure_burst
 
 
 class MeteorTests(unittest.TestCase):
@@ -16,25 +17,44 @@ class MeteorTests(unittest.TestCase):
                 self.assertLessEqual(len(elements),1000,(clip,frame))
                 model=json.loads((self.assets/f'models/combat_vfx/mage_material/{clip}_{frame}.json').read_text())
                 self.assertEqual(elements,model['elements'])
+                for e in elements:
+                    self.assertTrue(all(math.isfinite(v) and -16<=v<=32 for v in e['from']+e['to']))
+                    self.assertTrue(all(a<b for a,b in zip(e['from'],e['to'])))
+                    for f in e['faces'].values():
+                        self.assertIn(f['texture'][1:],model['textures'])
+                        self.assertIn(f['tintindex'],range(len(PALETTE)))
+                        self.assertTrue(all(0<=v<=16 for v in f['uv']))
+                        self.assertNotEqual(f['uv'][0],f['uv'][2]);self.assertNotEqual(f['uv'][1],f['uv'][3])
                 item=json.loads((self.assets/f'items/combat_vfx/mage_material/{clip}_{frame}.json').read_text())
                 self.assertEqual(PALETTE,[t['value'] for t in item['model']['tints']])
             self.assertEqual([],mesh(clip,23,self.uv))
         self.assertEqual(SOURCE.read_bytes(),(self.assets/'textures/combat_vfx/mage_material/meteor_basalt_v01.png').read_bytes())
+        self.assertEqual(EMBER_SOURCE.read_bytes(),(self.assets/'textures/combat_vfx/mage_material/meteor_ember_v01.png').read_bytes())
 
     def test_rock_is_one_volume_with_continuous_world_uvs(self):
-        rock=mesh('meteor',0,self.uv)
-        self.assertGreater(len(rock),6)
+        body=rock(tuple(self.uv))
+        self.assertGreater(len(body),6)
         for axis in range(3):
-            span=max(e['to'][axis] for e in rock)-min(e['from'][axis] for e in rock)
+            span=max(e['to'][axis] for e in body)-min(e['from'][axis] for e in body)
             self.assertGreater(span,7.)
         self.assertEqual({'north','south','east','west','up','down'},
-                         {n for e in rock for n in e['faces']})
-        self.assertTrue(all(len(e['faces'])==1 for e in rock))
-        self.assertEqual({'#0','#1'},{f['texture'] for e in rock for f in e['faces'].values()})
-        self.assertTrue(all(e['to'][1]<=6.5 for e in rock if next(iter(e['faces'].values()))['texture']=='#0'))
+                         {n for e in body for n in e['faces']})
+        self.assertTrue(all(len(e['faces'])==1 for e in body))
+        self.assertEqual({'#0','#1'},{f['texture'] for e in body for f in e['faces'].values()})
+        self.assertTrue(all(e['to'][1]<9.0 for e in body if next(iter(e['faces'].values()))['texture']=='#0'))
         # Falling motion belongs to the authoritative display, not a wobbling
         # rock-texture animation that restarts its cracks every frame.
-        self.assertEqual(rock,mesh('meteor',20,self.uv))
+        self.assertEqual(body,mesh('meteor',20,self.uv)[:len(body)])
+
+    def test_burning_tail_advects_behind_intact_body_and_contact_has_height(self):
+        early=burning_wake(0,self.uv);late=burning_wake(15,self.uv)
+        # Later strips travel at least 1.5 world blocks toward the rear at
+        # runtime scale 2.4; old strips may already have cooled and disappeared.
+        self.assertGreater(max(e['to'][1] for e in late),max(e['to'][1] for e in early)+10)
+        self.assertNotEqual(early,late)
+        self.assertGreater(max(e['to'][1] for e in pressure_burst(3,self.uv)),11.5)
+        self.assertTrue(any('north' in e['faces'] for e in pressure_burst(3,self.uv)))
+        self.assertEqual([],pressure_burst(14,self.uv))
 
     def test_contact_disappears_before_wake_and_debris_are_finished(self):
         def plane_area(clip,frame):

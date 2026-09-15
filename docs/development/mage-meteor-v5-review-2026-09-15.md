@@ -2,6 +2,9 @@
 
 Verdict: **FIX-FIRST**。全10技の品質目標は継続中。流星も完成扱いにしない。
 
+続行記録: `mage-meteor-motion-review-2026-09-15.md`。尾と爆風の試作を追加したが、
+元サイズの参照比較で飛沫の輪郭・空隙が違うことを再確認しており、引き続きFIX-FIRST。
+
 ## この checkpoint の変更
 
 - `scripts/build_mage_meteor.py`：岩体・着弾・地面の余波を専用の3クリップに分離。
