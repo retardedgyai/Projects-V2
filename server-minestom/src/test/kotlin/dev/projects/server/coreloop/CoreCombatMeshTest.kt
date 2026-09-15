@@ -18,6 +18,39 @@ import kotlin.math.abs
 import kotlin.test.*
 
 class CoreCombatMeshTest {
+    @Test fun `skill identity bodies reach subdued owner and observer without enabling decorative accents`() = player { owner ->
+        val observer=connect(owner.instance,owner.position.add(1.0,0.0,0.0),"IdentityViewer",mutableListOf())
+        val meshes=CoreCombatMeshes(owner)
+        try {
+            listOf(owner,observer).forEach {
+                CoreCombatPresentation.pack(it,true)
+                assertEquals(CoreCombatPresentation.Detail.SUBDUED,CoreCombatPresentation.cycle(it))
+            }
+            for(skill in CoreSkillCatalog.skills(CoreClass.WARRIOR)) {
+                meshes.play(CoreSkillEffect(CoreClass.WARRIOR,skill,owner.position,Vec(0.0,0.0,1.0)))
+                repeat(3) { meshes.tick() }
+                val identity=owner.instance.entities.filter { entity ->
+                    val model=(entity.entityMeta as? net.minestom.server.entity.metadata.display.ItemDisplayMeta)
+                        ?.itemStack?.get(net.minestom.server.component.DataComponents.ITEM_MODEL)
+                    model?.contains("warrior_flourish/")==true && model.contains("_body_")
+                }
+                assertTrue(identity.isNotEmpty(),skill.icon)
+                for(entity in identity) {
+                    assertTrue(owner in entity.viewers,skill.icon)
+                    assertTrue(observer in entity.viewers,skill.icon)
+                }
+                val accents=owner.instance.entities.filter { entity ->
+                    (entity.entityMeta as? net.minestom.server.entity.metadata.display.ItemDisplayMeta)
+                        ?.itemStack?.get(net.minestom.server.component.DataComponents.ITEM_MODEL)?.contains("_accent_")==true
+                }
+                assertTrue(accents.none { owner in it.viewers || observer in it.viewers })
+                meshes.cancel()
+                assertEquals(0,meshes.size)
+            }
+        } finally {
+            meshes.cancel();listOf(owner,observer).forEach(CoreCombatPresentation::forget);observer.remove()
+        }
+    }
     @Test fun `export complete warrior render path with force layers on the actual entity clock`() = player { owner ->
         val meshes=CoreCombatMeshes(owner)
         CoreCombatPresentation.pack(owner,true)

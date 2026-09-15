@@ -8,7 +8,7 @@ import math
 import numpy as np
 from build_approved_dash_v3 import PACK, SIZE, polygon, geometry, ink_uvs, impact
 
-CLIPS = ('wound', 'counter', 'cleave', 'thrust', 'spin_a', 'spin_b', 'spin_c', 'rise', 'return', 'finish')
+CLIPS = ('wound', 'sweep', 'counter', 'cleave', 'thrust', 'spin_a', 'spin_b', 'spin_c', 'rise', 'return', 'finish')
 COUNTS = {'blade': 11, 'wake': 19, 'ember': 19}
 
 
@@ -18,6 +18,10 @@ def tip(clip, t):
     v = u * u * (3 - 2 * u)
     if clip == 'thrust':
         return np.array((8. + .2 * math.sin(u * math.pi), 2.2 + 11.3 * v))
+    if clip == 'sweep':
+        # A long open frontal sweep with a flattening exit, not wound scaled up.
+        a=-1.5+3.0*v
+        return np.array((8+math.sin(a)*6.0,3.0+math.cos(a)*6.1+v*.55))
     if clip.startswith('spin_'):
         turn = {'spin_a': 0, 'spin_b': 1, 'spin_c': 2}[clip]
         a = -math.pi * .8 + math.pi * 2 * v + turn * .55

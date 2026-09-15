@@ -45,7 +45,7 @@ class CoreWarriorBladeChoreographyTest {
         val s=skills.first { it.icon=="whirl" }
         assertEquals(1,s.pulses)
         val blade=CoreSkillChoreography.parts(effect(s)).first()
-        assertEquals("warrior_skill:wound:blade",blade.shape)
+        assertEquals("warrior_skill:sweep:blade",blade.shape)
         assertTrue(blade.offset.z()>0)
         assertEquals(-.35,blade.pitch);assertEquals(-.08,blade.roll);assertEquals(0.0,blade.spin)
     }

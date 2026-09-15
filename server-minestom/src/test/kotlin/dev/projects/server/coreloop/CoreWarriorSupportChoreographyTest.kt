@@ -11,8 +11,10 @@ import kotlin.test.*
 
 class CoreWarriorSupportChoreographyTest {
     @Test fun `accepted parry uses one short native impact and grants have no fake contact stars`() {
-        val contact=CoreSkillChoreography.parts(effect("war_guard",CoreSkillVisualPhase.CONTACT)).single()
-        assertEquals("warrior_skill:contact",contact.shape)
+        val contacts=CoreSkillChoreography.parts(effect("war_guard",CoreSkillVisualPhase.CONTACT))
+        assertEquals(2,contacts.size)
+        val contact=contacts.single { !it.secondary }
+        assertEquals("war_flourish:parry_metal:body",contact.shape)
         assertEquals(9,contact.durationTicks)
         assertEquals(0,contact.delayTicks)
         assertEquals(0,CoreCombatMeshes.interpolationTicks(contact))

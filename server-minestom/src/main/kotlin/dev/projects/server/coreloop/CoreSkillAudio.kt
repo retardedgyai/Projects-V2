@@ -41,6 +41,14 @@ internal object CoreSkillAudio {
                 // Ground fracture is a cast effect, separate from accepted enemy contact.
                 if(effect.sceneId=="slam" || effect.sceneId=="war_ult" && effect.pulse%3==2)
                     add(Cue(SoundEvent.BLOCK_STONE_BREAK,.7f,.65f))
+                // The new material layers also have a physical voice: a step,
+                // a heavy sideways push, or broken ground, not another hit cue.
+                when(effect.sceneId) {
+                    "dash" -> add(Cue(SoundEvent.BLOCK_GRAVEL_STEP,.65f,.85f))
+                    "whirl" -> add(Cue(SoundEvent.ENTITY_PLAYER_ATTACK_STRONG,.75f,.7f))
+                    "war_counter" -> add(Cue(SoundEvent.ITEM_ARMOR_EQUIP_IRON,.45f,1.3f))
+                    "slam" -> add(Cue(SoundEvent.BLOCK_GRAVEL_BREAK,.55f,.7f))
+                }
             }
         }
     }
@@ -53,7 +61,8 @@ internal object CoreSkillAudio {
         })
         // Shield grants and voice fronts are not cosmetic damage impacts.
         CoreSkillVisualPhase.CONTACT -> if(effect.sceneId=="war_guard")
-            listOf(Cue(SoundEvent.ITEM_SHIELD_BLOCK,.85f,1.1f)) else emptyList()
+            listOf(Cue(SoundEvent.ITEM_SHIELD_BLOCK,.85f,1.1f),
+                Cue(SoundEvent.BLOCK_ANVIL_HIT,.55f,1.45f)) else emptyList()
         CoreSkillVisualPhase.PULSE -> when(effect.sceneId) {
             "war_guard" -> listOf(Cue(SoundEvent.ITEM_ARMOR_EQUIP_IRON,.9f,.8f),
                 Cue(SoundEvent.ITEM_TRIDENT_RETURN,.6f,1.1f))

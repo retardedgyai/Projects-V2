@@ -8,8 +8,9 @@ import json
 import math
 import numpy as np
 from build_approved_dash_v3 import PACK, SIZE, polygon, geometry, ink_uvs
+from warrior_identity_contours import CLIPS as IDENTITY_CLIPS, STONE, FLAT, contour as identity_contour
 
-CLIPS = ('gather','jet','eruption','lift','fan','counter','ground','spin_a','spin_b','spin_c','burst','rally')
+CLIPS = ('gather','jet','eruption','lift','fan','counter','ground','spin_a','spin_b','spin_c','burst','rally') + IDENTITY_CLIPS
 FRAMES = 20
 
 
@@ -29,6 +30,8 @@ def strip(g, points, width, ink=3):
 
 
 def contour(clip, frame, accent=False):
+    if clip in IDENTITY_CLIPS:
+        return identity_contour(clip,frame,accent)
     g=np.zeros((SIZE,SIZE),dtype=np.uint8)
     if frame>=FRAMES-1: return g
     # A finite phrase: early broad shapes -> separate trailing shards -> nothing.
@@ -155,9 +158,9 @@ def build(assets,write):
                 key=f'combat_vfx/warrior_flourish/{clip}_{layer}_{frame}'
                 write(assets/f'models/{key}.json',{'ambientocclusion':False,
                     'textures':{'0':'projects:combat_vfx/ribbon/slash_5'},
-                    'elements':geometry(contour(clip,frame,layer=='accent'),inks,curved=clip!='burst')})
+                    'elements':geometry(contour(clip,frame,layer=='accent'),inks,curved=clip not in FLAT and clip!='burst')})
                 write(assets/f'items/{key}.json',{'model':{'type':'minecraft:model','model':'projects:'+key,
-                    'tints':[{'type':'minecraft:constant','value':tint}]}})
+                    'tints':[{'type':'minecraft:constant','value':0x8f9daa if clip in STONE and layer=='body' else tint}]}})
 
 
 if __name__=='__main__':

@@ -12,39 +12,47 @@ internal object CoreWarriorFlourish {
         val reach=min(e.radius,CoreSkillScenes.get(e.sceneId).reach)
         fun local(x:Double,y:Double,z:Double)=Vec(cos(yaw)*x+sin(yaw)*z,y,-sin(yaw)*x+cos(yaw)*z)
         fun pair(clip:String,at:Vec,scale:Vec,pitch:Double,life:Int=20,roll:Double=0.0,follow:Boolean=false):List<CoreCombatMeshPart> =
-            listOf("body","accent").map { layer ->
+            (if(clip in setOf("step_dust","impact_dust","sweep_dust")) listOf("body") else listOf("body","accent")).map { layer ->
                 CoreCombatMeshPart("war_flourish:$clip:$layer","steel",at,scale,yaw=yaw,pitch=pitch,roll=roll,
-                    durationTicks=life,startSize=1.0,endSize=1.0,secondary=true,followOwner=follow,ground=clip=="ground")
+                    durationTicks=life,startSize=1.0,endSize=1.0,secondary=layer=="accent",followOwner=follow,
+                    ground=clip in setOf("step_dust","impact_dust","sweep_dust","stone_break","ultimate_rift","standard_foot"))
             }
-        val support=e.sceneId in CoreWarriorSupportChoreography.sceneIds
+        // Contact already has an authoritative, target-local primary. Do not
+        // bury every hit in the same large burst on top of that primary.
         if(e.phase==CoreSkillVisualPhase.CONTACT) {
-            if(support && e.sceneId!="war_guard") return emptyList()
-            return pair("burst",Vec(0.0,1.0,0.0),Vec(2.0,1.0,1.8),-PI/2,8)
+            return emptyList()
         }
         if(e.phase==CoreSkillVisualPhase.PREPARE) {
-            if(e.sceneId !in setOf("slam","war_breach","war_ult","war_cry")) return emptyList()
-            return pair("gather",local(.25,1.05,.75),Vec(1.35,.7,1.6),-PI/2,e.prepareDuration,follow=true)
+            val clip=when(e.sceneId) {
+                "slam" -> "weight_load"
+                "war_breach" -> "point_load"
+                "war_ult" -> "ultimate_load"
+                else -> return emptyList()
+            }
+            return pair(clip,local(.25,1.2,.85),Vec(1.35,.7,1.6),-PI/2,e.prepareDuration,follow=true)
         }
         return when(e.sceneId) {
-            "dash","war_breach" -> pair("jet",local(0.0,.95,reach*.45),Vec(2.15,1.0,reach*.95),-.12,
-                if(e.sceneId=="dash")13 else 20)
-            "war_wound" -> pair("fan",local(0.0,1.05,reach*.42),Vec(reach*1.15,1.0,2.0),-.45,16,-.3)
-            "war_counter" -> pair("counter",local(0.0,1.15,reach*.45),Vec(reach*1.4,1.0,2.3),-.45,20,.4)
-            "slam" -> pair("eruption",local(0.0,1.2,reach*.5),Vec(reach*.95,.8,2.6),-PI/2)+
-                pair("ground",local(0.0,.18,reach*.5),Vec(reach*1.3,.6,2.2),0.0,18)
+            "dash" -> pair("step_dust",local(0.0,.14,.5),Vec(2.2,1.0,2.3),0.0,13)
+            "war_breach" -> pair("pierce_shell",local(0.0,1.0,reach*.5),Vec(2.3,1.0,reach*1.1),-.12,18)
+            "war_wound" -> pair("cut_thread",local(0.0,1.05,reach*.42),Vec(reach,1.0,1.7),-.45,14,-.3)
+            "war_counter" -> pair("reversal",local(0.0,1.15,reach*.45),Vec(reach*1.3,1.0,2.3),-.45,18,.4)
+            "slam" -> pair("stone_break",local(0.0,.16,reach*.5),Vec(reach*1.3,1.0,reach),0.0,20)+
+                pair("impact_dust",local(0.0,.22,reach*.5),Vec(reach*1.4,1.0,reach*1.05),0.0,20)+
+                pair("stone_spall",local(0.0,1.1,reach*.5),Vec(reach*.95,1.0,2.1),-PI/2,20)
             "whirl" -> if(e.skill.motion == CoreSkillMotion.CONE)
-                pair("fan",local(0.0,1.05,reach*.42),Vec(reach*1.4,1.0,2.3),-.25,16)
+                pair("sweep_pressure",local(0.0,1.0,reach*.4),Vec(reach*1.5,1.0,2.6),-.25,16)+
+                    pair("sweep_dust",local(0.0,.16,reach*.4),Vec(reach*1.5,1.0,2.6),0.0,18)
                 else pair(listOf("spin_a","spin_b","spin_c")[e.pulse%3],Vec(0.0,.45+e.pulse%3*.23,0.0),
                     Vec(reach*1.85,1.0,reach*1.85),.1,20)
             "war_ult" -> when(e.pulse%3) {
-                0 -> pair("lift",local(0.0,1.4,reach*.4),Vec(reach*.8,1.0,3.1),-PI/2)
-                1 -> pair("counter",local(0.0,1.3,reach*.43),Vec(reach*1.5,1.0,2.5),-.35,20,.3)
-                else -> pair("eruption",local(0.0,1.45,reach*.5),Vec(reach*1.2,1.0,3.2),-PI/2)+
-                    pair("ground",local(0.0,.18,reach*.5),Vec(reach*1.65,.7,2.5),0.0)
+                0 -> pair("ultimate_rise",local(0.0,1.5,reach*.4),Vec(reach*.95,1.0,3.0),-PI/2,18)
+                1 -> pair("ultimate_cross",local(0.0,1.35,reach*.43),Vec(reach*1.4,1.0,2.4),-.45,18,.25)
+                else -> pair("ultimate_rift",local(0.0,.18,reach*.5),Vec(reach*1.45,1.0,reach),0.0,20)+
+                    pair("ultimate_fall",local(0.0,1.45,reach*.5),Vec(reach*.85,1.0,2.8),-PI/2,20)
             }
-            "war_cry" -> pair("rally",local(0.0,1.25,1.1),Vec(2.4,.7,1.7),-PI/2,20)
-            "war_guard" -> pair("gather",local(.5,1.2,.75),Vec(.8,.5,1.1),-PI/2,10)
-            // The approved flag already supplies its large form and four flowing ribbons.
+            "war_cry" -> pair("voice_compression",local(0.0,1.3,.8),Vec(2.8,.7,2.1),-PI/2,18)
+            "war_guard" -> pair("guard_edge",local(.5,1.2,.75),Vec(.8,.5,1.2),-PI/2,12)
+            "war_banner" -> pair("standard_foot",local(-.9,.14,.55),Vec(1.6,1.0,1.6),0.0,14)
             else -> emptyList()
         }
     }

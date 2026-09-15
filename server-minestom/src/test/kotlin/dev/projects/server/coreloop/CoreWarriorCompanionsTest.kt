@@ -40,7 +40,7 @@ class CoreWarriorCompanionsTest {
         assertEquals(3,stages.toSet().size)
         val sweep=skills.first { it.icon=="whirl" }
         val fan=CoreWarriorFlourish.parts(CoreSkillEffect(CoreClass.WARRIOR,sweep,Vec.ZERO,Vec(0.0,0.0,1.0))).first()
-        assertTrue(fan.shape.startsWith("war_flourish:fan:"))
+        assertTrue(fan.shape.startsWith("war_flourish:sweep_pressure:"))
         assertTrue(fan.offset.z()>0)
     }
     @Test fun `warrior emits no vanilla companions and every authored model resolves`() {
@@ -61,9 +61,27 @@ class CoreWarriorCompanionsTest {
         val s=CoreSkillCatalog.skills(CoreClass.WARRIOR).first { it.icon=="war_banner" }
         for(r in listOf(3.0,7.5,10.5)) {
             val e=CoreSkillEffect(CoreClass.WARRIOR,s.copy(radius=r),Vec.ZERO,Vec(0.0,0.0,1.0))
-            val p=CoreWarriorCompanions.parts(e).single()
+            val p=CoreWarriorCompanions.parts(e).single(CoreWarriorCompanions::boundary)
             repeat(12) { assertEquals(r,CoreSkillChoreography.pose(p,it.toDouble()).scale.x()*7/16,1e-8) }
             assertFalse(CoreSkillChoreography.pose(p,12.0).visible)
+        }
+    }
+    @Test fun `every skill has a dedicated readable body rather than recoloured shared flourishes`() {
+        val seen=mutableSetOf<String>()
+        for(s in CoreSkillCatalog.skills(CoreClass.WARRIOR)) for(beat in 0 until s.pulses) {
+            val e=CoreSkillEffect(CoreClass.WARRIOR,s,Vec.ZERO,Vec(0.0,0.0,1.0),pulse=beat)
+            val bodies=CoreWarriorFlourish.parts(e).filter { !it.secondary }
+            assertTrue(bodies.isNotEmpty(),s.icon)
+            for(body in bodies) {
+                assertTrue(seen.add(body.shape),"${s.icon} silently reuses ${body.shape}")
+                assertTrue(body.shape.endsWith(":body"))
+            }
+        }
+        val guard=CoreSkillCatalog.skills(CoreClass.WARRIOR).first { it.icon=="war_guard" }
+        for(phase in CoreSkillVisualPhase.entries) {
+            val e=CoreSkillEffect(CoreClass.WARRIOR,guard,Vec.ZERO,Vec(0.0,0.0,1.0),phase)
+            val collision=CoreSkillChoreography.parts(e).filter { it.shape.contains("parry_metal") }
+            assertEquals(if(phase==CoreSkillVisualPhase.CONTACT)2 else 0,collision.size)
         }
     }
     @Test fun `mark row is screen separated from names for close tall and low targets`() {

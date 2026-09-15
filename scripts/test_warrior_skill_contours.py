@@ -29,7 +29,7 @@ class WarriorContoursTest(unittest.TestCase):
             self.assertEqual(value,json.loads(path.read_text(encoding='utf-8')),str(path))
             checked.append(path)
         build(PACK/'assets/projects',verify)
-        self.assertEqual(1026,len(checked))
+        self.assertEqual((len(CLIPS)*sum(COUNTS.values())+14+9)*2,len(checked))
 
     def test_native_paths_have_different_silhouettes_not_only_different_names(self):
         signatures=[hashlib.sha256(b''.join(contour(c,'blade',f).tobytes() for f in range(11))).hexdigest() for c in CLIPS]

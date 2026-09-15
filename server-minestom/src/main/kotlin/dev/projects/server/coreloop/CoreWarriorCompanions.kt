@@ -22,9 +22,13 @@ internal object CoreWarriorCompanions {
                 startSize=1.0,endSize=1.0,erode=true,ground=true))
         val contact=e.phase==CoreSkillVisualPhase.CONTACT
         val ground=e.sceneId=="slam" || e.sceneId=="war_ult" && e.pulse%3==2
+        // The old tall wind needles made unrelated skills look identical.
+        // Authored dust/pressure/shell/thread now supplies those trajectories;
+        // retain shared small particles only for actual contact and stone debris.
+        if(!contact && !ground && !support && e.sceneId !in CoreApprovedNormalV3.sceneIds) return emptyList()
         val spin=e.sceneId=="whirl" && e.skill.motion==CoreSkillMotion.SPIN
         val dash=e.sceneId in setOf("dash","war_breach")
-        val count=when { contact->5; support->2; ground->6; spin->6; else->4 }
+        val count=when { contact->5; support->2; ground->4; spin->6; else->4 }
         return (0 until count).map { i ->
             val a=i*2.399+e.pulse*.6
             val shape=when { contact||support->"spark"; ground->"chip"; else->"wind" }

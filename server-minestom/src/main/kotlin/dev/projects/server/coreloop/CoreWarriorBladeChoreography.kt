@@ -25,7 +25,7 @@ internal object CoreWarriorBladeChoreography {
             "war_counter" -> "counter"
             "slam" -> "cleave"
             "war_breach" -> "thrust"
-            "whirl" -> if(sweep) "wound" else listOf("spin_a", "spin_b", "spin_c")[e.pulse % 3]
+            "whirl" -> if(sweep) "sweep" else listOf("spin_a", "spin_b", "spin_c")[e.pulse % 3]
             else -> listOf("rise", "return", "finish")[e.pulse % 3]
         }
         val vertical = clip in setOf("cleave", "rise", "finish")
@@ -49,10 +49,9 @@ internal object CoreWarriorBladeChoreography {
         return buildList {
             add(blade)
             add(blade.copy(shape = "$PREFIX$clip:wake", durationTicks = 16, secondary = true))
-            if (clip != "wound") add(blade.copy(shape = "$PREFIX$clip:ember", palette = "warred", durationTicks = 16, secondary = true))
-            if (clip in setOf("cleave", "finish")) add(CoreCombatMeshPart("${PREFIX}fracture", "warred",
-                Vec(sin(yaw)*e.radius*.48, .12, cos(yaw)*e.radius*.48),
-                Vec(e.radius*.85, 1.0, e.radius*.9), yaw = yaw, durationTicks = 14, ground = true))
+            if (clip !in setOf("wound","sweep")) add(blade.copy(shape = "$PREFIX$clip:ember", palette = "warred", durationTicks = 16, secondary = true))
+            // Ground break is the dedicated stone/rift drawing in Flourish;
+            // no second generic glowing fracture under the same impact.
         }
     }
 

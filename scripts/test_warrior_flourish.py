@@ -2,6 +2,7 @@ import json
 import unittest
 import numpy as np
 from build_warrior_flourish import CLIPS, FRAMES, PACK, build, contour
+from warrior_identity_contours import CLIPS as IDENTITY_CLIPS
 
 
 class WarriorFlourishTest(unittest.TestCase):
@@ -29,12 +30,34 @@ class WarriorFlourishTest(unittest.TestCase):
             frames=[contour(clip,t) for t in range(FRAMES)]
             coverage=[np.count_nonzero(f) for f in frames]
             self.assertFalse(np.any(frames[-1]))
-            self.assertGreater(max(coverage),90,clip)
+            # Guard glint/thread and the small flag-pole foot must not be
+            # inflated to the coverage of a room-clearing pressure surface.
+            minimum={'guard_edge':20,'cut_thread':20,'point_load':20,'standard_foot':50}.get(clip,90)
+            self.assertGreater(max(coverage),minimum,clip)
             self.assertLess(coverage[-2],max(coverage)*.6,clip)
             self.assertGreaterEqual(len({f.tobytes() for f in frames}),12,clip)
             self.assertLess(sum(np.count_nonzero(contour(clip,t,True)) for t in range(FRAMES)),sum(coverage)*.5,clip)
             signatures.append(b''.join(f.tobytes() for f in frames))
         self.assertEqual(len(CLIPS),len(set(signatures)))
+
+    def test_skill_identity_is_geometry_not_names_tints_or_reversed_common_frames(self):
+        # Detect the old wound/sweep and dash/thrust mistake at the source level.
+        drawings={c:np.stack([contour(c,t)>0 for t in range(FRAMES)]) for c in IDENTITY_CLIPS}
+        for i,a in enumerate(IDENTITY_CLIPS):
+            for b in IDENTITY_CLIPS[i+1:]:
+                x,y=drawings[a],drawings[b]
+                self.assertFalse(np.array_equal(x,y),(a,b))
+                self.assertFalse(np.array_equal(x,y[:,:,::-1]),(a,b,'mirrored'))
+                union=np.count_nonzero(x|y)
+                self.assertLess(np.count_nonzero(x&y)/max(1,union),.8,(a,b))
+
+    def test_dust_has_no_red_light_and_contact_flash_dies_without_restarting(self):
+        for c in ('step_dust','impact_dust','sweep_dust'):
+            self.assertFalse(any(np.any(contour(c,t,True)) for t in range(FRAMES)))
+            self.assertTrue(all(set(np.unique(contour(c,t)))<={0,1,2} for t in range(FRAMES)))
+        contact=[np.count_nonzero(contour('parry_metal',t)) for t in range(FRAMES)]
+        self.assertGreater(contact[0],90)
+        self.assertEqual(0,contact[-1])
 
     def test_counter_pressure_leads_opposite_to_wound_not_a_rescaled_fan(self):
         for frame in (2,3):
