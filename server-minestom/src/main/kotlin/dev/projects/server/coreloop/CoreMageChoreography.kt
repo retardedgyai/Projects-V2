@@ -14,6 +14,13 @@ internal object CoreMageChoreography {
         Vec(.9209932279909703,11.238095238095237,4.942499482781218),
         Vec(5.444695259593679,5.404761904761904,3.5327160637981088))
     fun interpolated(p:CoreCombatMeshPart)=p.shape in movingContours
+    internal fun meteorCoolingDelay(clip:String)=when(clip.substringAfter(':')) {
+        "meteor_break_1" -> 1.0
+        "meteor_break_2","meteor_flow_0" -> .5
+        "meteor_flow_2" -> 1.5
+        "meteor_flow_3" -> 1.0
+        else -> 0.0
+    }
     private val longClips=setOf("pyre","corona","crystal","ice_root","ice_shelf","zero_crown","zero_floor","zero_shelf","zero_wing",
         "garden_spires","garden_fan","garden_bed","garden_spray")
     private fun frames(clip:String)=when(clip) {
@@ -171,7 +178,19 @@ internal object CoreMageChoreography {
             val fade=1-ease(tail)
             val growth=if(front)Vec(1+tail*.8,1-tail*.7,1+tail*.8)
                 else Vec(.58+open*.48,.5+open*.5,.65+open*.4)
-            val state=if(local<4)0 else if(local<6)1 else 2
+            // Keep one Display per region: its pose interpolates continuously
+            // while the drawing tears and cools. No repeated whole explosion.
+            // The lower edge cools before the upper/rear tongues. Avoid one
+            // frame in which the entire orange envelope becomes a gray image.
+            val thermalAge=local-meteorCoolingDelay(clip)
+            val state=if(front)0 else when {
+                thermalAge<4 -> 0
+                thermalAge<5 -> 1
+                thermalAge<6 -> 2
+                thermalAge<7 -> 3
+                thermalAge<9 -> 4
+                else -> 5
+            }
             var position=p.offset
             var size=p.scale.mul(growth).mul(fade)
             var roll=p.roll
@@ -187,6 +206,14 @@ internal object CoreMageChoreography {
                 // Hold each lobe's own centre while its remaining filling dies.
                 // The whole explosion must not collapse back into one point.
                 position=position.add(orient(centre)).add(orient(outward.mul(peel)))
+                // After rupture the remnants leave the old arch footprint.
+                // Unequal launch velocities and gravity replace a frozen arch
+                // that only shrinks. Geometry and gameplay landing stay fixed.
+                val flight=((local-5.0)/20.0).coerceAtLeast(0.0)
+                val launch=listOf(Vec(-2.2,3.6,.8),Vec(.6,5.0,1.5),Vec(2.8,2.8,1.1))[member]
+                position=position.add(orient(Vec(launch.x()*flight,
+                    launch.y()*flight-3.2*flight*flight,
+                    launch.z()*flight*(if(rear)-1 else 1))))
                 size=size.mul(1-peel*.18)
                 roll+=listOf(-.2,.22,.25)[member]*peel*(if(rear)-1 else 1)
             }

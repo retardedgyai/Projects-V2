@@ -14,12 +14,14 @@ from build_mage_garden import GRID, SHAPE, skin, rectangles
 
 METEOR_CLIPS={'meteor','eruption','meteor_ring'}
 METEOR_FLOW_CLIPS={'meteor_front',*(f'meteor_flow_{i}' for i in range(4)),'meteor_break_1','meteor_break_2'}
+METEOR_FLOW_STATES=6
 PALETTE=[0xFFFFFF,0xC6B8C6,0x8D8398,0xFFF2C2,0xFFBE72,0xEF733D,0xA03F35,0x39313B]
 SOURCE=PACK.parents[4]/'assets/combat-vfx/mage-v5/sources/meteor-basalt-v01.png'
 EMBER_SOURCE=SOURCE.with_name('meteor-ember-v01.png')
 IMPACT_SOURCE=SOURCE.with_name('meteor-impact-atlas-v01.png')
 BRIDGE_SOURCE=SOURCE.with_name('meteor-impact-bridge-v01.png')
 WAKE_SOURCE=SOURCE.with_name('meteor-wake-v01.png')
+COOLING_SOURCE=SOURCE.with_name('meteor-cooling-v01.png')
 TEXTURE='projects:combat_vfx/mage_material/meteor_basalt_v01'
 
 
@@ -228,15 +230,17 @@ def build(assets,write):
     shutil.copyfile(IMPACT_SOURCE,target.with_name('meteor_impact_atlas_v01.png'))
     shutil.copyfile(BRIDGE_SOURCE,target.with_name('meteor_impact_bridge_v01.png'))
     shutil.copyfile(WAKE_SOURCE,target.with_name('meteor_wake_v01.png'))
+    shutil.copyfile(COOLING_SOURCE,target.with_name('meteor_cooling_v01.png'))
     uv=ink_uvs(assets)[3]
     for clip in sorted(METEOR_CLIPS|METEOR_FLOW_CLIPS):
-        for frame in range(3 if clip in METEOR_FLOW_CLIPS else 24):
+        for frame in range(METEOR_FLOW_STATES if clip in METEOR_FLOW_CLIPS else 24):
             key=f'combat_vfx/mage_material/{clip}_{frame}'
             write(assets/f'models/{key}.json',{'ambientocclusion':False,
                 'textures':{'0':'projects:combat_vfx/ribbon/slash_5','1':TEXTURE,
                             '2':'projects:combat_vfx/mage_material/meteor_impact_atlas_v01',
                             '3':'projects:combat_vfx/mage_material/meteor_wake_v01',
-                            '4':'projects:combat_vfx/mage_material/meteor_impact_bridge_v01'},
+                            '4':'projects:combat_vfx/mage_material/meteor_impact_bridge_v01',
+                            **({'5':'projects:combat_vfx/mage_material/meteor_cooling_v01'} if clip in METEOR_FLOW_CLIPS else {})},
                 'elements':flow_mesh(clip,frame,uv) if clip in METEOR_FLOW_CLIPS else mesh(clip,frame,uv)})
             write(assets/f'items/{key}.json',{'model':{'type':'minecraft:model','model':'projects:'+key,
                 'tints':[{'type':'minecraft:constant','value':c} for c in PALETTE]}})

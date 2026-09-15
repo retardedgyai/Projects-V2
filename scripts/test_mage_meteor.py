@@ -3,7 +3,7 @@ import json
 import math
 import unittest
 from build_mage_meteor import METEOR_CLIPS, PALETTE, SOURCE, EMBER_SOURCE, IMPACT_SOURCE, BRIDGE_SOURCE, WAKE_SOURCE, PACK, mesh, ink_uvs, rock, burning_wake, impact_atlas
-from build_mage_meteor import METEOR_FLOW_CLIPS, flow_mesh
+from build_mage_meteor import METEOR_FLOW_CLIPS, METEOR_FLOW_STATES, COOLING_SOURCE, flow_mesh
 from build_mage_meteor_surface import centers, drawing, region_labels, KNOT_X, KNOT_Z
 
 
@@ -35,23 +35,28 @@ class MeteorTests(unittest.TestCase):
         self.assertEqual(IMPACT_SOURCE.read_bytes(),(self.assets/'textures/combat_vfx/mage_material/meteor_impact_atlas_v01.png').read_bytes())
         self.assertEqual(BRIDGE_SOURCE.read_bytes(),(self.assets/'textures/combat_vfx/mage_material/meteor_impact_bridge_v01.png').read_bytes())
         self.assertEqual(WAKE_SOURCE.read_bytes(),(self.assets/'textures/combat_vfx/mage_material/meteor_wake_v01.png').read_bytes())
+        self.assertEqual(COOLING_SOURCE.read_bytes(),(self.assets/'textures/combat_vfx/mage_material/meteor_cooling_v01.png').read_bytes())
 
     def test_painted_faces_preserve_original_rgb_and_exclude_every_background_texel(self):
         import numpy as np
-        atlas=impact_atlas();h,w=atlas.shape[:2]
         for clip in METEOR_FLOW_CLIPS:
-            for state in range(3):
+            for state in range(METEOR_FLOW_STATES):
+                cooling=state>=2 and clip!='meteor_front'
+                atlas=impact_atlas(COOLING_SOURCE) if cooling else impact_atlas()
+                h,w=atlas.shape[:2]
                 colours=set()
                 for e in flow_mesh(clip,state,self.uv):
                     for f in e['faces'].values():
-                        self.assertEqual('#2',f['texture'])
+                        self.assertEqual('#5' if cooling else '#2',f['texture'])
                         self.assertEqual(0,f['tintindex'])  # white, not four-ink quantization
                         u0,v0,u1,v1=f['uv']
                         x0,x1=round(min(u0,u1)/16*w),round(max(u0,u1)/16*w)
                         y0,y1=round(min(v0,v1)/16*h),round(max(v0,v1)/16*h)
                         rgb=atlas[y0:y1,x0:x1].astype(int)
                         self.assertTrue(rgb.size)
-                        self.assertTrue(np.all((rgb[:,:,0]-rgb[:,:,2]>12)&(rgb[:,:,0]-rgb[:,:,1]>6)&(rgb[:,:,0]>20)),(clip,state))
+                        allowed=((np.ptp(rgb,axis=2)<24)&(rgb.min(axis=2)>20) if cooling else
+                                 (rgb[:,:,0]-rgb[:,:,2]>12)&(rgb[:,:,0]-rgb[:,:,1]>6)&(rgb[:,:,0]>20))
+                        self.assertTrue(np.all(allowed),(clip,state))
                         colours.update(map(tuple,rgb.reshape(-1,3)))
                 if state==0:
                     self.assertGreater(len(colours),20,clip)  # original paint, not palette cells
@@ -74,7 +79,7 @@ class MeteorTests(unittest.TestCase):
     def test_thin_bent_surfaces_ship_exactly_within_existing_budget(self):
         self.assertEqual(7,len(METEOR_FLOW_CLIPS))
         for clip in METEOR_FLOW_CLIPS:
-            for state in range(3):
+            for state in range(METEOR_FLOW_STATES):
                 elements=flow_mesh(clip,state,self.uv)
                 self.assertTrue(elements,clip)
                 self.assertLess(len(elements),500,(clip,state))
@@ -95,7 +100,7 @@ class MeteorTests(unittest.TestCase):
                     for f in e['faces'].values():
                         self.assertTrue(all(0<=v<=16 for v in f['uv']))
             if clip in ('meteor_flow_1','meteor_break_1','meteor_break_2'):
-                self.assertLess(len(flow_mesh(clip,2,self.uv)),len(flow_mesh(clip,0,self.uv)))
+                self.assertLess(len(flow_mesh(clip,5,self.uv)),len(flow_mesh(clip,0,self.uv)))
                 self.assertNotEqual(flow_mesh(clip,0,self.uv),flow_mesh(clip,1,self.uv))
         # No old complete explosion remains beneath the moving art.
         self.assertFalse(any(f['texture'] in ('#2','#4') for frame in range(1,24)
@@ -103,8 +108,8 @@ class MeteorTests(unittest.TestCase):
 
     def test_regions_cover_actual_paint_once_and_keep_runtime_pivots_in_sync(self):
         import numpy as np
-        for frame in (2,3,6):
-            mask,_,_=drawing(frame);labels=region_labels(mask.shape)
+        for frame,cooling in ((2,False),(3,False),*((i,True) for i in range(4))):
+            mask,_,_=drawing(frame,cooling);labels=region_labels(mask.shape)
             parts=[mask&(labels==i) for i in range(3)]
             np.testing.assert_array_equal(np.stack(parts).sum(axis=0),mask.astype(int))
         kotlin=(PACK.parents[1]/'kotlin/dev/projects/server/coreloop/CoreMageChoreography.kt').read_text(encoding='utf-8')
@@ -125,7 +130,7 @@ class MeteorTests(unittest.TestCase):
     def test_rear_is_a_complementary_depth_surface_and_cooling_keeps_dark_paint(self):
         import numpy as np
         for front,rear in (('meteor_flow_1','meteor_flow_0'),('meteor_break_2','meteor_flow_3')):
-            for state in range(3):
+            for state in range(METEOR_FLOW_STATES):
                 a,b=flow_mesh(front,state,self.uv),flow_mesh(rear,state,self.uv)
                 self.assertEqual(len(a),len(b))
                 for f,r in zip(a,b):
@@ -135,8 +140,12 @@ class MeteorTests(unittest.TestCase):
                     self.assertAlmostEqual(f['to'][2],16-r['from'][2])
                     self.assertEqual(f['rotation']['angle'] if 'rotation' in f else 0,
                                      -(r['rotation']['angle'] if 'rotation' in r else 0))
-        mask,_,rgb=drawing(6)
+        mask,_,rgb=drawing(0,True)
         self.assertGreater(np.sum(mask&(rgb[:,:,0]<100)),100)
+        self.assertGreater(np.sum(mask&(rgb[:,:,0]>180)),100)
+        # The last chips occupy much less area than the ruptured membrane;
+        # their geometry changes, not just the parent Display scale.
+        self.assertLess(drawing(3,True)[0].sum(),mask.sum()*.3)
         # The transverse crest supplies a side-facing painted subject across
         # the impact, not two disconnected vertical edges. It replaces one
         # rear region; it isn't an extra whole explosion or an extra Display.

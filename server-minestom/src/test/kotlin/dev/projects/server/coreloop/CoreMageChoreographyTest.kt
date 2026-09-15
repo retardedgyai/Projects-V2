@@ -101,6 +101,24 @@ class CoreMageChoreographyTest {
         val peak=CoreSkillChoreography.pose(parts.first(),4.0).scale.x()
         assertTrue(later.all { it.scale.x() in peak*.45..peak*.7 })
     }
+    @Test fun `meteor cools through tearing drawings and remnants leave the arch footprint`() {
+        val parts=CoreSkillChoreography.parts(effect("meteor")).filter {
+            CoreMageChoreography.interpolated(it) && it.shape!="mage_material:meteor_front" }
+        for(p in parts) {
+            val ages=listOf(3.0,4.0,5.0,6.0,7.0,9.0)
+            assertEquals((0..5).toList(),ages.map {
+                CoreSkillChoreography.pose(p,it+CoreMageChoreography.meteorCoolingDelay(p.shape))
+                    .model.substringAfterLast('_').toInt() })
+            val a=CoreSkillChoreography.pose(p,7.0)
+            val b=CoreSkillChoreography.pose(p,9.0)
+            assertTrue(b.offset.y()>a.offset.y(),p.shape)
+            assertTrue(b.offset.distance(a.offset)>.2,p.shape)
+            val dense=(0..109).map { CoreSkillChoreography.pose(p,it/10.0) }
+            assertTrue(dense.zipWithNext().all { (x,y)->x.offset.distance(y.offset)<.16 })
+        }
+        val cooling=parts.map { CoreSkillChoreography.pose(it,5.0).model.substringAfterLast('_').toInt() }
+        assertTrue(2 in cooling && cooling.any { it<2 })
+    }
     @Test fun `persistent field preparations do not spawn more complete fields between damage beats`() {
         for(id in listOf("mage_garden","mage_ult","mage_zero")) {
             val e=effect(id)

@@ -16,16 +16,18 @@ KNOT_X=np.array((-12.,-8.,-4.,4.,8.,12.))
 KNOT_Z=np.array((0.,4.,4.+4*math.tan(math.pi/8),4.+4*math.tan(math.pi/8),4.,0.))
 
 
-@lru_cache(maxsize=8)
-def drawing(frame):
-    from build_mage_meteor import impact_atlas
-    atlas=impact_atlas();h,w=atlas.shape[:2]
-    x0=round(frame%4*w/4);x1=round((frame%4+1)*w/4)
-    y0=round(frame//4*h/2);y1=round((frame//4+1)*h/2)
+@lru_cache(maxsize=12)
+def drawing(frame,cooling=False):
+    from build_mage_meteor import impact_atlas, COOLING_SOURCE
+    atlas=impact_atlas(COOLING_SOURCE) if cooling else impact_atlas();h,w=atlas.shape[:2]
+    columns=2 if cooling else 4
+    x0=round(frame%columns*w/columns);x1=round((frame%columns+1)*w/columns)
+    y0=round(frame//columns*h/2);y1=round((frame//columns+1)*h/2)
     rgb=atlas[y0:y1,x0:x1].astype(int)
     # The checkerboard is achromatic. Do NOT require bright red: that erased
     # the authored dark, cooling edges and left only bright orange specks.
-    mask=(rgb[:,:,0]-rgb[:,:,2]>12)&(rgb[:,:,0]-rgb[:,:,1]>6)&(rgb[:,:,0]>20)
+    mask=((np.ptp(rgb,axis=2)<24)&(rgb.min(axis=2)>20) if cooling else
+          (rgb[:,:,0]-rgb[:,:,2]>12)&(rgb[:,:,0]-rgb[:,:,1]>6)&(rgb[:,:,0]>20))
     # Native silhouette cells span two source texels (the painted pixels are
     # larger). Admit a cell only when ALL its texels belong to the artwork.
     # RGB remains untouched and is still sampled continuously by the UVs.
@@ -83,7 +85,7 @@ def surface(clip,state):
     Later drawings remove hot filling rather than tinting a full orange wall
     brown. A short contact flash is separate from this pressure envelope.
     """
-    from build_mage_meteor import impact_atlas
+    from build_mage_meteor import impact_atlas, COOLING_SOURCE
     if clip=='meteor_flow_2':
         # A transverse, curved crest joins the two ground-rooted sides. Merely
         # mirroring another vertical front still vanished edge-on at the top.
@@ -103,17 +105,19 @@ def surface(clip,state):
     main=clip!='meteor_front'
     member=(('meteor_flow_0','meteor_flow_2','meteor_flow_3').index(clip) if rear else
             int(clip.rsplit('_',1)[1]) if clip.startswith('meteor_break_') else 0)
-    # R12 is already cold at +0.3s. Atlas frame 5 still contains large orange
-    # tongues; use its actual late charred debris drawing for the ash state.
-    frame=(2,3,6)[state] if main else 0
-    mask,bounds,_=drawing(frame);mask=mask.copy();h,w=mask.shape
+    # A rupture membrane, torn ribbons, then free gray/charcoal chips. Cooling
+    # is new topology, not the same hot arch with a dark tint or smaller scale.
+    cooling=main and state>=2
+    frame=state-2 if cooling else (2,3)[min(state,1)] if main else 0
+    mask,bounds,_=drawing(frame,cooling);mask=mask.copy();h,w=mask.shape
     if main:
         mask &= region_labels(mask.shape)==member
         pivot=centers()[member].copy()
         if rear:pivot[2]*=-1
     else:
         pivot=np.zeros(3)
-    atlas=impact_atlas();ah,aw=atlas.shape[:2];x0,y0,x1,y1=bounds
+    atlas=impact_atlas(COOLING_SOURCE) if cooling else impact_atlas()
+    ah,aw=atlas.shape[:2];x0,y0,x1,y1=bounds
     out=[]
     # Partition at bend changes before greedy meshing. Within each domain the
     # painted surface is exactly planar and neighboring UVs remain continuous.
@@ -143,8 +147,8 @@ def surface(clip,state):
             e={'from':[center[0]-half,center[1]-hy,center[2]-.001],
                'to':[center[0]+half,center[1]+hy,center[2]+.001],
                'shade':False,
-               'faces':{'south':{'texture':'#2','uv':uv,'tintindex':0},
-                        'north':{'texture':'#2','uv':[uv[2],uv[1],uv[0],uv[3]],'tintindex':0}}}
+               'faces':{'south':{'texture':'#5' if cooling else '#2','uv':uv,'tintindex':0},
+                        'north':{'texture':'#5' if cooling else '#2','uv':[uv[2],uv[1],uv[0],uv[3]],'tintindex':0}}}
             if angle:
                 e['rotation']={'origin':center.tolist(),'axis':'y',
                                'angle':round(math.degrees(angle),4),'rescale':False}
