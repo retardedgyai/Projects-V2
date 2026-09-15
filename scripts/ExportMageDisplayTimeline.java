@@ -52,9 +52,10 @@ class ExportMageDisplayTimeline extends CheckNativeDisplayInterpolation {
                     var p=old.getValue();
                     if(p.get("interpolation").getAsInt()==1) {
                         String model=p.get("model").getAsString();
-                        if(model.contains("/cryo_")) {
+                        if(model.contains("/cryo_") && !model.contains("/cryo_seed_")) {
                             var first=sourceOrigin.get(old.getKey());
-                            float height=model.contains("/cryo_root_")?.75f:1.5f;
+                            float height=model.contains("/cryo_root_")?.75f:
+                                model.contains("/cryo_buttress_")?.3125f:model.contains("/cryo_crown_")?1.08f:1.5f;
                             require(vector(p.getAsJsonArray("offset")).y()+height*vector(p.getAsJsonArray("scale")).y()<first-.1f,
                                 "Ice removed before its tip withdrew below the original ground");
                         } else require(vector(p.getAsJsonArray("scale")).lengthSquared()<1e-7,"Moving contour removed before zero-scale target");

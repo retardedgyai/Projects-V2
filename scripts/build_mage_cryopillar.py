@@ -6,6 +6,7 @@ the shipped texture is a byte-identical copy, including its unused background.
 import json
 import math
 import shutil
+import copy
 from pathlib import Path
 
 import numpy as np
@@ -13,9 +14,9 @@ from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[1]
 PACK = ROOT / 'server-minestom/src/main/resources/core-ui-pack'
-SOURCE = ROOT / 'assets/combat-vfx/mage-v5/sources/cryopillar-faces-v01.png'
-TEXTURE = 'projects:combat_vfx/mage_material/cryopillar_faces_v01'
-CLIPS = ('cryo_pillar', 'cryo_root')
+SOURCE = ROOT / 'assets/combat-vfx/mage-v5/sources/cryopillar-faces-v02.png'
+TEXTURE = 'projects:combat_vfx/mage_material/cryopillar_faces_v02'
+CLIPS = ('cryo_pillar', 'cryo_root', 'cryo_buttress', 'cryo_crown', 'cryo_seed')
 
 
 def profiles():
@@ -58,14 +59,35 @@ def wall(a, b, y0, y1, uv):
         start, end = [cx-length/2,y0,cz], [cx+length/2,y1,cz]
         faces = ('north','south')
         rotation = {'origin':[cx,y0,cz], 'axis':'y', 'angle':round(angle)} if abs(angle)>1e-6 else None
+    # Native north/east face winding runs opposite to south/west. Reflect the
+    # UV, not every strip's painting independently about its changing centre.
     element = {'from':start, 'to':end, 'shade':False,
-               'faces':{name:{'texture':'#0','uv':uv} for name in faces}}
+               'faces':{name:{'texture':'#0','uv':[uv[2],uv[1],uv[0],uv[3]]
+                             if name in ('north','east') else uv} for name in faces}}
     if rotation:
         element['rotation'] = rotation
     return element
 
 
-def mesh(root=False):
+def mesh(clip='cryo_pillar'):
+    if clip=='cryo_crown':
+        # A broken double shoulder, not a scaled duplicate of the main shaft.
+        # Uniform native-coordinate scaling preserves the bevel angles.
+        elements=[]
+        for scale,anchor in ((.72,(6.9,8,8)),(.46,(10.5,8,8.5))):
+            for source in mesh('cryo_pillar'):
+                element=copy.deepcopy(source)
+                def place(v):
+                    return [(c-8)*scale+a for c,a in zip(v,anchor)]
+                element['from']=place(element['from'])
+                element['to']=place(element['to'])
+                if 'rotation' in element:
+                    element['rotation']['origin']=place(element['rotation']['origin'])
+                elements.append(element)
+        return elements
+    if clip=='cryo_seed':
+        return mesh('cryo_buttress')
+    root=clip in ('cryo_root','cryo_buttress')
     rgb, panels = profiles()
     ih, iw = rgb.shape[:2]
     top = max(p[0][0] for p in panels)
@@ -89,15 +111,16 @@ def mesh(root=False):
             # Root slivers remain blue: use the lower painting, while giving
             # them their own narrow tapered silhouette instead of mini towers.
             taper = max(.035, (1-f0)**.65)
-            w,d = 2.65*taper,1.4*taper
+            low=clip=='cryo_buttress'
+            w,d = (3.6 if low else 2.65)*taper,(2.6 if low else 1.4)*taper
             sy0 = int(bottom-(bottom-top)*(.42*f1))
             sy1 = int(bottom-(bottom-top)*(.42*f0))
             bounds = []
             for table in tables:
                 rows = [table[y] for y in range(sy0,sy1+1) if y in table]
                 bounds.append((max(v[0] for v in rows),min(v[1] for v in rows)))
-            height = 12.0
-            cx,cz = 8+f0*8.0,8+f0*.5
+            height = 5.0 if low else 12.0
+            cx,cz = 8+f0*(12.0 if low else 8.0),8+f0*.5
         else:
             w = max(.04, 2.7*(bounds[0][1]-bounds[0][0])/max_width[0])
             d = max(.04, 1.7*(bounds[1][1]-bounds[1][0])/max_width[1])
@@ -129,7 +152,7 @@ def mesh(root=False):
 
 def build():
     assets = PACK/'assets/projects'
-    texture = assets/'textures/combat_vfx/mage_material/cryopillar_faces_v01.png'
+    texture = assets/'textures/combat_vfx/mage_material/cryopillar_faces_v02.png'
     texture.parent.mkdir(parents=True,exist_ok=True)
     shutil.copyfile(SOURCE,texture)
     paths = [texture]
@@ -137,7 +160,7 @@ def build():
         key = f'combat_vfx/mage_material/{clip}_0'
         model = assets/f'models/{key}.json'
         item = assets/f'items/{key}.json'
-        for path,value in ((model,{'ambientocclusion':False,'textures':{'0':TEXTURE},'elements':mesh(clip=='cryo_root')}),
+        for path,value in ((model,{'ambientocclusion':False,'textures':{'0':TEXTURE},'elements':mesh(clip)}),
                            (item,{'model':{'type':'minecraft:model','model':'projects:'+key}})):
             path.parent.mkdir(parents=True,exist_ok=True)
             path.write_text(json.dumps(value,separators=(',',':'))+'\n',encoding='utf-8')
@@ -147,7 +170,7 @@ def build():
     entries = set(index.read_text(encoding='utf-8').splitlines())
     entries.update(p.relative_to(PACK).as_posix() for p in paths)
     index.write_text('\n'.join(sorted(entries))+'\n',encoding='utf-8')
-    print('Cryopillar: 2 native models, unchanged source bitmap, 5 pack entries')
+    print(f'Cryopillar: {len(CLIPS)} native models, unchanged source bitmap, {len(paths)} pack entries')
 
 
 if __name__ == '__main__':

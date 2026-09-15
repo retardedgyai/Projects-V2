@@ -1346,8 +1346,11 @@ assets/projects/items/combat_vfx/mage_material/corona_6.json
 assets/projects/items/combat_vfx/mage_material/corona_7.json
 assets/projects/items/combat_vfx/mage_material/corona_8.json
 assets/projects/items/combat_vfx/mage_material/corona_9.json
+assets/projects/items/combat_vfx/mage_material/cryo_buttress_0.json
+assets/projects/items/combat_vfx/mage_material/cryo_crown_0.json
 assets/projects/items/combat_vfx/mage_material/cryo_pillar_0.json
 assets/projects/items/combat_vfx/mage_material/cryo_root_0.json
+assets/projects/items/combat_vfx/mage_material/cryo_seed_0.json
 assets/projects/items/combat_vfx/mage_material/crystal_0.json
 assets/projects/items/combat_vfx/mage_material/crystal_1.json
 assets/projects/items/combat_vfx/mage_material/crystal_10.json
@@ -9008,8 +9011,11 @@ assets/projects/models/combat_vfx/mage_material/corona_6.json
 assets/projects/models/combat_vfx/mage_material/corona_7.json
 assets/projects/models/combat_vfx/mage_material/corona_8.json
 assets/projects/models/combat_vfx/mage_material/corona_9.json
+assets/projects/models/combat_vfx/mage_material/cryo_buttress_0.json
+assets/projects/models/combat_vfx/mage_material/cryo_crown_0.json
 assets/projects/models/combat_vfx/mage_material/cryo_pillar_0.json
 assets/projects/models/combat_vfx/mage_material/cryo_root_0.json
+assets/projects/models/combat_vfx/mage_material/cryo_seed_0.json
 assets/projects/models/combat_vfx/mage_material/crystal_0.json
 assets/projects/models/combat_vfx/mage_material/crystal_1.json
 assets/projects/models/combat_vfx/mage_material/crystal_10.json
@@ -15847,6 +15853,7 @@ assets/projects/textures/combat_vfx/frost/floor_5.png
 assets/projects/textures/combat_vfx/frost/floor_6.png
 assets/projects/textures/combat_vfx/frost/floor_7.png
 assets/projects/textures/combat_vfx/mage_material/cryopillar_faces_v01.png
+assets/projects/textures/combat_vfx/mage_material/cryopillar_faces_v02.png
 assets/projects/textures/combat_vfx/mage_material/meteor_basalt_v01.png
 assets/projects/textures/combat_vfx/mage_material/meteor_cooling_v01.png
 assets/projects/textures/combat_vfx/mage_material/meteor_ember_v01.png

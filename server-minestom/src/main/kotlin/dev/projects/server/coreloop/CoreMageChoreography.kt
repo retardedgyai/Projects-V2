@@ -13,8 +13,16 @@ internal object CoreMageChoreography {
     internal val meteorFragmentCenters=listOf(Vec(-5.390519187358917,5.214285714285714,3.3160117748590565),
         Vec(.9209932279909703,11.238095238095237,4.942499482781218),
         Vec(5.444695259593679,5.404761904761904,3.5327160637981088))
-    private val rootedIce=setOf("mage_material:cryo_pillar","mage_material:cryo_root")
-    fun interpolated(p:CoreCombatMeshPart)=p.shape in movingContours || p.shape in rootedIce
+    private val rootedIce=setOf("mage_material:cryo_pillar","mage_material:cryo_root",
+        "mage_material:cryo_buttress","mage_material:cryo_crown")
+    fun interpolated(p:CoreCombatMeshPart)=p.shape in movingContours || p.shape in rootedIce || p.shape=="mage_material:cryo_seed"
+    internal fun rootedIceHeight(shape:String)=when(shape.substringAfter(':')) {
+        "cryo_pillar" -> 1.5
+        "cryo_root" -> .75
+        "cryo_buttress" -> .3125
+        "cryo_crown" -> 1.08
+        else -> error("Not rooted ice: $shape")
+    }
     internal fun meteorCoolingDelay(clip:String)=when(clip.substringAfter(':')) {
         "meteor_break_1" -> 1.0
         "meteor_break_2","meteor_flow_0" -> .5
@@ -56,7 +64,11 @@ internal object CoreMageChoreography {
             // FIELD runtime requests a new preparation before every damage beat.
             // Persistent garden/pyre already own the whole phrase after the first beat.
             if(e.pulse>0 && e.sceneId in setOf("mage_garden","mage_ult")) return emptyList()
-            if(e.sceneId=="mage_garden") return listOf(floor("garden_charge",min(r*.55,2.5),e.prepareDuration))
+            if(e.sceneId=="mage_garden") return listOf(
+                piece("cryo_seed",local(-r*.12,.12,r*.13),Vec(1.7,.4,1.3),
+                    life=e.prepareDuration,ground=true,facing=yaw+2.8),
+                piece("cryo_seed",local(r*.19,.12,r*.22),Vec(1.3,.3,1.1),
+                    life=e.prepareDuration,ground=true,facing=yaw+.2))
             val charge=when(e.skill.element) { 1 -> "fire_charge"; 2 -> "ice_charge"; else -> "arcane_charge" }
             if(e.sceneId in setOf("meteor","mage_ult")) {
                 val a=e.pulse*2.39996
@@ -114,8 +126,7 @@ internal object CoreMageChoreography {
                 piece("frost_wave",Vec(sin(a)*r*.24,.12,cos(a)*r*.24),Vec(min(3.0,r*.7)*size,.65*size,1.8),
                     life=18,facing=a,ground=true,travel=Vec(sin(a)*r*.44,0.0,cos(a)*r*.44))
             }
-            "mage_garden" -> if(e.pulse>0) listOf(piece("garden_beat",Vec(0.0,.12,0.0),
-                Vec(r*1.1,1.8,r*1.1),life=8,ground=true,secondary=true)) else {
+            "mage_garden" -> if(e.pulse>0) emptyList() else {
                 val life=(e.skill.pulses-1)*8+24
                 // R01: low blue roots first, then one dominant shaft and a
                 // shorter counter-shaft. No pedestal, repeated crystal fans,
@@ -123,10 +134,10 @@ internal object CoreMageChoreography {
                 listOf(
                     piece("cryo_root",local(-r*.12,.12,r*.13),Vec(1.8,2.3,1.4),life=life,ground=true,facing=yaw+2.8),
                     piece("cryo_root",local(r*.19,.12,r*.22),Vec(1.3,1.6,1.15),life=life,ground=true,facing=yaw+.2),
-                    piece("cryo_root",local(-r*.02,.12,-r*.01),Vec(1.2,1.1,1.0),life=life-1,ground=true,delay=1,facing=yaw+.85),
-                    piece("cryo_root",local(-r*.10,.12,r*.16),Vec(1.1,1.35,1.0),life=life-1,ground=true,delay=1,facing=yaw-2.3),
+                    piece("cryo_buttress",local(-r*.02,.12,-r*.01),Vec(2.1,1.6,1.5),life=life-1,ground=true,delay=1,facing=yaw+.85),
+                    piece("cryo_buttress",local(-r*.10,.12,r*.16),Vec(2.0,1.8,1.4),life=life-1,ground=true,delay=1,facing=yaw-2.3),
                     piece("cryo_pillar",local(-r*.12,.12,r*.13),Vec(3.7,2.7,2.9),life=life-3,ground=true,delay=3,facing=yaw+.25).copy(roll=.10),
-                    piece("cryo_pillar",local(r*.19,.12,r*.22),Vec(2.6,1.8,2.0),life=life-5,ground=true,delay=5,facing=yaw-.6).copy(roll=-.10))
+                    piece("cryo_crown",local(r*.19,.12,r*.22),Vec(2.4,2.4,2.0),life=life-5,ground=true,delay=5,facing=yaw-.6).copy(roll=-.10))
             }
             "mage_zero" -> if(e.pulse>0) listOf(floor("ice_pulse",r*.68,8,follow=true).copy(secondary=true)) else {
                 val life=(e.skill.pulses-1)*8+16
@@ -164,6 +175,15 @@ internal object CoreMageChoreography {
         val clip=p.shape.substringAfter(':')
         val local=(age-p.delayTicks).coerceAtLeast(0.0)
         val t=(local/(p.durationTicks-1).coerceAtLeast(1)).coerceIn(0.0,1.0)
+        if(clip=="cryo_seed") {
+            // Low blue footing precedes the tall body. No old plinth charge
+            // or bright travelling veins are spawned over the held sculpture.
+            val open=(local/3.0).coerceIn(0.0,1.0)
+            val end=((local-(p.durationTicks-3))/2.0).coerceIn(0.0,1.0)
+            val scale=p.scale.mul(Vec(.35+.65*open,.1+.9*open,.35+.65*open)).mul(1-end)
+            return CoreMeshPose(p.offset.add(0.0,-.13,0.0),scale,p.yaw,p.pitch,p.roll,
+                "combat_vfx/mage_material/cryo_seed_0",age>=p.delayTicks && age<p.delayTicks+p.durationTicks)
+        }
         if(p.shape in rootedIce) {
             fun smooth(v:Double):Double {
                 val u=v.coerceIn(0.0,1.0)
@@ -178,8 +198,11 @@ internal object CoreMageChoreography {
             // Terrain depth testing performs the occlusion, not a replacement
             // PNG or a squashed whole object. Model root is y=8 (= item origin).
             val retreat=smooth((local-(p.durationTicks-9))/8.0)
-            val height=if(root).75 else 1.5
-            return CoreMeshPose(p.offset.add(0.0,-retreat*(p.scale.y()*height+.18),0.0),
+            val height=rootedIceHeight(p.shape)
+            // Shared ground resolution includes .12 clearance for flat FX.
+            // Solid roots instead penetrate it by .02, so their bottom is not
+            // suspended above the floor. Keep this correction Mage-local.
+            return CoreMeshPose(p.offset.add(0.0,-.14-retreat*(p.scale.y()*height+.18),0.0),
                 size,p.yaw,p.pitch,p.roll,"combat_vfx/mage_material/${clip}_0",
                 age>=p.delayTicks && age<p.delayTicks+p.durationTicks)
         }

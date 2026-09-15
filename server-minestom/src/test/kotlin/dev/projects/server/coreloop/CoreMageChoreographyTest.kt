@@ -126,7 +126,7 @@ class CoreMageChoreographyTest {
             assertEquals(48,parts.maxOf { it.delayTicks+it.durationTicks })
             for(pulse in 1 until e.skill.pulses) {
                 val beat=CoreSkillChoreography.parts(effect(id,pulse))
-                assertEquals(1,beat.size,id)
+                assertEquals(if(id=="mage_garden")0 else 1,beat.size,id)
                 assertTrue(beat.all { it.secondary && it.durationTicks<=12 },id)
                 if(id!="mage_zero") assertTrue(CoreSkillChoreography.parts(effect(id,pulse,CoreSkillVisualPhase.PREPARE)).isEmpty(),id)
             }
@@ -160,7 +160,7 @@ class CoreMageChoreographyTest {
         assertTrue(garden.all { it.shape.startsWith("mage_material:cryo_") })
         assertEquals(6,garden.count { !it.secondary })
         assertTrue(CoreSkillChoreography.parts(effect("mage_garden",phase=CoreSkillVisualPhase.PREPARE))
-            .all { it.shape=="mage_material:garden_charge" })
+            .all { it.shape=="mage_material:cryo_seed" })
         val ward=CoreSkillChoreography.parts(effect("mage_ward"))
         assertEquals(4,ward.size)
         assertTrue(ward.all { it.followOwner && !it.ground })
