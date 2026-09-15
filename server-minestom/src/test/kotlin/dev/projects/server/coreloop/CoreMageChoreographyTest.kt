@@ -50,28 +50,33 @@ class CoreMageChoreographyTest {
             }
         }
     }
-    @Test fun `meteor pressure unfolds in three dimensions with distinct lobe roles`() {
-        val parts=CoreSkillChoreography.parts(effect("meteor")).filter { it.shape.startsWith("mage_material:meteor_flow_") }
-        assertEquals(4,parts.size)
-        assertTrue(parts.map { it.travel.z() }.max()-parts.map { it.travel.z() }.min()>.8)
-        assertEquals(listOf(6,12,6,12),parts.map { it.durationTicks })
-        for(i in listOf(0,2)) {
-            // Low pressure ends before the ash phase; no two persistent grey
-            // wings remain under the later rising flame/debris.
-            assertEquals(Vec.ZERO,CoreSkillChoreography.pose(parts[i],5.0).scale)
-            assertFalse(CoreSkillChoreography.pose(parts[i],6.0).visible)
+    @Test fun `meteor pressure opens on both sides of the landing with a lower rear face`() {
+        val parts=CoreSkillChoreography.parts(effect("meteor")).filter {
+            CoreMageChoreography.interpolated(it) && it.shape!="mage_material:meteor_front" }
+        assertEquals(6,parts.size)
+        assertTrue(parts.all { it.durationTicks==12 && it.ground })
+        for(age in listOf(0.0,1.5,3.0)) {
+            val poses=parts.map { CoreSkillChoreography.pose(it,age) }
+            assertTrue(poses.take(3).all { it.offset.z()>0 })
+            assertTrue(poses.drop(3).all { it.offset.z()<0 })
+            assertTrue(poses.drop(3).all { it.scale.y()<poses.first().scale.y() })
         }
-        val poses=parts.map { CoreSkillChoreography.pose(it,3.0) }
-        // The main arch stays rooted instead of lifting a central flame ball.
-        val centre=CoreMageChoreography.meteorFragmentCenters.first().div(16.0).mul(poses[1].scale)
-        assertTrue(poses[1].offset.sub(centre).y()<.3)
-        assertTrue(poses[1].scale.x()>CoreSkillChoreography.pose(parts[1],0.0).scale.x()*1.7)
-        assertTrue(poses[3].scale.y()<poses[1].scale.y()*.75)
-        assertTrue(poses[0].offset.x()>0 && poses[2].offset.x()<0)
         for(p in parts) {
+            assertEquals(Vec.ZERO,CoreSkillChoreography.pose(p,11.0).scale)
+            assertFalse(CoreSkillChoreography.pose(p,12.0).visible)
             val rotation=(0..110).map { CoreSkillChoreography.pose(p,it/10.0).roll }
             assertTrue(rotation.all { it.isFinite() && kotlin.math.abs(it)<.5 })
             assertTrue(rotation.zipWithNext().all { (a,b)->kotlin.math.abs(a-b)<.05 })
+        }
+        // Heading changes rotate the depth composition, not only its textures.
+        val turned=CoreSkillChoreography.parts(effect("meteor",direction=Vec(1.0,0.0,0.0)))
+            .filter { CoreMageChoreography.interpolated(it) && it.shape!="mage_material:meteor_front" }
+        for((p,q) in parts.zip(turned)) {
+            val left=CoreSkillChoreography.pose(p,5.0).offset
+            val right=CoreSkillChoreography.pose(q,5.0).offset
+            assertEquals(left.z(),right.x(),1e-8)
+            assertEquals(-left.x(),right.z(),1e-8)
+            assertEquals(left.y(),right.y(),1e-8)
         }
     }
     @Test fun `meteor pieces retain one connected frame before peeling around their own centres`() {
@@ -93,7 +98,8 @@ class CoreMageChoreographyTest {
         val later=parts.map { CoreSkillChoreography.pose(it,8.0) }
         assertTrue(later.map { it.roll }.distinct().size==3)
         assertTrue(later[0].offset.distance(later[1].offset)>1.0)
-        assertTrue(later.all { it.scale.x()<CoreSkillChoreography.pose(parts.first(),4.0).scale.x()*.4 })
+        val peak=CoreSkillChoreography.pose(parts.first(),4.0).scale.x()
+        assertTrue(later.all { it.scale.x() in peak*.45..peak*.7 })
     }
     @Test fun `persistent field preparations do not spawn more complete fields between damage beats`() {
         for(id in listOf("mage_garden","mage_ult","mage_zero")) {
