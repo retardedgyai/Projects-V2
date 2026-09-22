@@ -20,6 +20,11 @@ import java.nio.file.Path
 
 /** Separate loopback-only sandbox; no gameplay saves, economy, client mod, JS engine or RP override. */
 fun main(args: Array<String>) {
+    // This process contains only the UI laboratory, not gameplay. Shorten BOTH polling and inbound
+    // packet-queue intervals. Do not apply this property to the production game server.
+    val uiTps=System.getProperty("projects.ui.tps","60").toInt()
+    require(uiTps in setOf(20,60)) { "UI lab supports 20 or 60 TPS" }
+    System.setProperty("minestom.tps",uiTps.toString())
     val source=Path.of(args.firstOrNull()?:"ui/forge.html").toAbsolutePath()
     UiDocument.parse(Files.readString(source)).layout(ForgeDemo().values(),ForgeDemo().flags())
     val server=MinecraftServer.init(Auth.Offline())
@@ -50,7 +55,7 @@ fun main(args: Array<String>) {
                         try { sessions.open(player);println("UI_LAB_AUTO_OPEN ${player.username}") }
                         catch(ex: Exception) { ex.printStackTrace() }
                     }
-                }.delay(TaskSchedule.tick(30)).schedule()
+                }.delay(TaskSchedule.duration(java.time.Duration.ofMillis(1500))).schedule()
             }
         }
     }
@@ -67,5 +72,5 @@ fun main(args: Array<String>) {
     MinecraftServer.getCommandManager().register(closeCommand)
     Runtime.getRuntime().addShutdownHook(Thread { sessions.close();preview.close() })
     server.start("127.0.0.1",port)
-    println("UI_LAB_READY minecraft=127.0.0.1:$port preview=http://127.0.0.1:$previewPort source=$source")
+    println("UI_LAB_READY minecraft=127.0.0.1:$port preview=http://127.0.0.1:$previewPort inputTps=$uiTps cursor=immediate-position source=$source")
 }

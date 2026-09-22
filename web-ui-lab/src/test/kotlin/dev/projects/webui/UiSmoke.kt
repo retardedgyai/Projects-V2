@@ -16,6 +16,7 @@ import net.minestom.server.network.packet.client.play.ClientUseItemPacket
 import net.minestom.server.network.packet.client.play.ClientHeldItemChangePacket
 import net.minestom.server.network.packet.client.play.ClientSpectatorActionPacket
 import net.minestom.server.network.packet.server.play.EntityMetaDataPacket
+import net.minestom.server.network.packet.server.play.EntityPositionSyncPacket
 import net.minestom.server.network.packet.server.play.ChangeGameStatePacket
 import net.minestom.server.network.packet.server.play.HeldItemChangePacket
 import net.minestom.server.network.packet.server.SendablePacket
@@ -31,7 +32,9 @@ import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.TimeUnit
 
 fun main(args: Array<String>) {
+    System.setProperty("minestom.tps","60")
     MinecraftServer.init(Auth.Offline())
+    check(net.minestom.server.ServerFlag.SERVER_TICKS_PER_SECOND==60)
     val instance=MinecraftServer.getInstanceManager().createInstanceContainer()
     instance.viewDistance(2)
     for(x in -3..3) for(z in -3..3) instance.loadChunk(x,z).get(10,TimeUnit.SECONDS)
@@ -66,15 +69,25 @@ fun main(args: Array<String>) {
             }
             rotate(0f,0f)
             val idleMetadata=packets.filterIsInstance<EntityMetaDataPacket>().size
+            val idlePositions=packets.filterIsInstance<EntityPositionSyncPacket>().size
             repeat(20) { events.call(InstanceTickEvent(instance,0,50)) }
             check(packets.filterIsInstance<EntityMetaDataPacket>().size==idleMetadata) { "Idle UI sends metadata" }
+            check(packets.filterIsInstance<EntityPositionSyncPacket>().size==idlePositions) { "Idle cursor sends positions" }
             val demo=ForgeDemo()
             val button=UiDocument.parse(java.nio.file.Files.readString(Path.of(args.single())))
                 .layout(demo.values(),demo.flags()).nodes.single { it.id=="forge-button" }.box
             rotate(((button.x+button.w/2-400)/8).toFloat(),((button.y+button.h/2-240)/8).toFloat())
             // No tick between movement and click: zero-delay input must update immediately.
             val moveUpdates=packets.filterIsInstance<EntityMetaDataPacket>().size-idleMetadata
-            check(moveUpdates in 3..5) { "Pointer movement metadata count=$moveUpdates (expected 3..5)" }
+            check(moveUpdates in 0..2) { "Pointer movement metadata count=$moveUpdates (expected hover only)" }
+            val cursorMoves=packets.filterIsInstance<EntityPositionSyncPacket>().drop(idlePositions)
+            check(cursorMoves.size==3) { "Expected immediate position updates for all cursor parts, got ${cursorMoves.size}" }
+            cursorMoves.forEach { packet ->
+                val e=instance.entities.single { it.entityId==packet.entityId() }
+                val meta=e.entityMeta as TextDisplayMeta
+                check(meta.posRotInterpolationDuration==0 && meta.transformationInterpolationDuration==0)
+                check(e.position==packet.position()) { "Server/client cursor anchors diverged" }
+            }
             events.call(PlayerPacketEvent(first,ClientSpectatorActionPacket(null)))
             check(instance.entities.mapNotNull { (it.entityMeta as? TextDisplayMeta)?.text as? net.kyori.adventure.text.TextComponent }
                 .any { it.content()=="旅人の大剣 +4" }) { "Packet-driven forge did not execute" }
@@ -97,7 +110,7 @@ fun main(args: Array<String>) {
             check(first.lastSentTeleportId!=first.lastReceivedTeleportId)
         }
         check(instance.entities.all { it===first || it===second })
-        println("UI_SMOKE_PASS 5 cycles; immediate rotation/click; idle metadata=0; move metadata<=5; private entities; client mode/camera/slot restored; late ACK consumed, ordinary movement untouched; zero leaks")
+        println("UI_SMOKE_PASS 60 TPS; 5 cycles; immediate rotation/click; idle updates=0; cursor move=3 position packets, no transform interpolation; hover metadata<=2; private entities; restored mode/camera/slot; zero leaks")
     } finally {
         sessions.close();first.remove();second.remove();MinecraftServer.stopCleanly()
     }

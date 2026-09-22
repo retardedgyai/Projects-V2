@@ -94,7 +94,7 @@ UI定義は96KB/200 DOM/180描画node/深さ12まで。XML外部実体と外部�
 - entityは固定位置で一度spawn。以降は変更されたmetadataだけを送信。cursorだけ1tick transform補間。
   初回spawnは補間なし、静止中は再送なし。hoverは旧/新ボタンの背景色だけ変更。
 - 追加遅延0では受信した回転・クリックを即処理し、次のInstanceTickまで持ち越さない。
-  OSカーソルと同じゼロ遅延にはならない。20Hzの視線取得、実RTT、client補間は残る。
+  OSカーソルと同じゼロ遅延にはならない。実RTTや受信処理・描画フレーム待ちは残る。
 - 終了時にcamera/client mode/slot/位置を復帰。旧sampleのACKだけをIDで消費する。
   IDのないPosRotを推測で消費しない。復帰teleport完了まではMinestom自身のACK gateが移動を保護。
 - 画面サイズを拡大。低FOV時は「表示サイズ」で縮小する。FOVをサーバーから自動取得はできない。
@@ -104,3 +104,15 @@ UI定義は96KB/200 DOM/180描画node/深さ12まで。XML外部実体と外部�
 回帰検証: Kotlin 6件（native背景の四隅とhit領域の一致を全depth/zoomで検査）。
 Native smokeは5周、遅延0の即時click、静止metadata=0、移動metadata<=5、第三者非表示、mode/slot/camera復帰、旧ACK処理と通常移動非干渉、残留0を検査。
 実機でpanel/text/itemの整列と手・HUD非表示を受動撮影で確認。操作感・高遅延回線・異なるFOVの最終判定はCreatorの手動テストが必要。
+
+## カーソル低遅延経路（上記の1tick transform補間を置き換え）
+
+- 独立UI-labプロセスだけ60 TPSへ変更。視線取得要求とサーバーの受信queue処理の間隔を50msから約16.7msへ短縮。
+  本編のTPS、ダメージ/移動/スキル時間には適用しない。比較起動は `-Dprojects.ui.tps=20`。
+- カーソルの形と大きさは固定metadata。移動だけ3個のprivate entityの絶対座標同期へ切り替える。
+  native26.2の `ClientPacketListener.handleEntityPositionSync → InterpolationHandler.interpolateTo(steps=0) → snapTo` を利用。
+  `Display.tick` でのtransform更新待ちと、その後の1tick追従を通さない。サーバーのentity位置も同時に更新する。
+- 画面・文字・hover・クリック判定の座標と見た目は変更しない。推測座標/先読みを入れないため、停止時の行き過ぎを作らない。
+- 止まっているカーソルは送信0、移動は3 position packets、hoverだけ最大2 metadata。回帰smokeで検査。
+- 60 FPS表示やゼロ遅延を保証するものではない。通信jitterやclient FPSによっては段付きが残るのでCreatorが比較する。
+  `SetTickStatePacket(60)` は使わない。26.2 clientのゲームtickは速い側が20Hzに制限されており、この問題の解決にならない。
