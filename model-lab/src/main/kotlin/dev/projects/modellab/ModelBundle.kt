@@ -9,6 +9,7 @@ import java.nio.file.Path
 data class ModelDefinition(val id: String, val animations: Map<String, Double>) {
     // Match the original Scorpius visual constructors; not every boss shares the same raw scale.
     val previewScale: Float get() = when (id) {
+        "ice_fang.bbmodel" -> 1f
         "osirion.bbmodel" -> 3.2f
         "radix.bbmodel", "vesper_bell.bbmodel" -> 4f
         else -> 3f

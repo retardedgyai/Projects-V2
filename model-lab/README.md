@@ -1,5 +1,33 @@
 # ProjectS model laboratory — Scorpius integration
 
+## メイジ試作：氷牙の連鎖
+
+このPlaygroundでは **本編接続前の1スキル** を追加。サーバー処理＋リソースパックのみ。
+既存のメイジ作業ブランチ、本編職業・保存・UIは変更しない。
+
+- `:model-lab:run` で工房を起動し、パック適用後 `/mage`。
+- 杖の右クリックで前方2m → 4.5m → 7mへ氷牙。0.3秒間隔で発生し、各0.2秒後に命中。
+- 1体につき1回、訓練用ダメージ `40 + AP80% = 88`（固定AP60）。マナ20、CD4秒。
+- `/mage` で3体の標的・マナ・CDをリセット。`/mageclear` で杖・標的・演出を終了。
+- 床のある平地専用。壁・未ロード領域・床の穴で伝播停止。空中使用不可。
+- 画像のコマ交換ではなく、32pxのオリジナル面テクスチャ＋輪郭に沿う薄い立体＋8可動部位。
+  地面の亀裂 → 異なる大きさの氷牙3束 → 小片の飛散 → 消失。通常Minecraftパーティクル不使用。
+- 効果音：共鳴／氷の破裂・低い打撃／破片。既存のVanillaサウンドを組み合わせる。
+
+```powershell
+python scripts/build_ice_fang.py
+python -m unittest discover -s scripts -p test_ice_fang.py
+python scripts/preview_ice_fang.py
+.\gradlew.bat :model-lab:test :model-lab:modelSmoke :model-lab:iceFangSmoke --no-daemon "-Pkotlin.compiler.execution.strategy=in-process"
+```
+
+Previewは実bbmodelの正面1束を固定カメラで投影したCPU GIF。**ゲーム画面やクライアント補間の証明ではない。**
+実機の主観視点・音量・最終的な見た目はCreatorの手動確認待ち。
+`IceFangPlan.kt` が射程・タイミング・判定、`IceFangTraining.kt` が入力・コスト・標的・cleanup。
+`build_ice_fang.py` → `model-lab/models/ice_fang.bbmodel` → `collectModels` → `buildBossPack` → WSEE再生。
+紫黒ならpackの適用・bundle一致、向き／命中なら `IceFangPlan`、残留なら `IceFangTraining.finish/clear` を確認。
+Scorpius原本はvendor内に保持し、新作モデルは `model-lab/models` に分離。合計16モデル・65アニメーション。
+
 ## 今回使えるようになったもの
 
 Scorpius の AI 向けボス生成スクリプトを、ProjectS の Java 25 / Kotlin / Minestom `2026.08.16-26.2` で使う独立した制作環境へ取り込んだ。**本編のボス・戦闘・保存データ・既存リソースパックは変更していない。** Minecraft クライアントの変更は不要。
