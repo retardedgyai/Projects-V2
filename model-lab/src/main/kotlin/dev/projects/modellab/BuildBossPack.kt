@@ -39,7 +39,7 @@ fun main(args: Array<String>) {
     try {
         val pack = staging.resolve("resourcepack")
         val geo = staging.resolve("models")
-        val config = PackBuilder.generate(source, pack, geo)
+        val config = withCachedJsonProviderResources { PackBuilder.generate(source, pack, geo) }
         Files.writeString(staging.resolve("mappings.json"), config.modelMappings())
         Files.writeString(staging.resolve("catalog.json"), catalog.toString())
         Files.writeString(pack.resolve("pack.mcmeta"), """{"pack":{"description":"ProjectS / Scorpius model laboratory","min_format":[88,0],"max_format":[88,0]}}""")
@@ -71,6 +71,19 @@ fun main(args: Array<String>) {
     } finally {
         if (Files.exists(staging)) deleteGeneratedTree(staging, output)
     }
+}
+
+/** JSON-P 1.1 looks up this service for every face. Cache only resource discovery during conversion. */
+internal fun <T> withCachedJsonProviderResources(action: () -> T): T {
+    val thread = Thread.currentThread()
+    val original = thread.contextClassLoader
+    val service = "META-INF/services/javax.json.spi.JsonProvider"
+    val resources = java.util.Collections.list(original.getResources(service))
+    thread.contextClassLoader = object : ClassLoader(original) {
+        override fun getResources(name: String): java.util.Enumeration<java.net.URL> =
+            if (name == service) java.util.Collections.enumeration(resources) else super.getResources(name)
+    }
+    return try { action() } finally { thread.contextClassLoader = original }
 }
 
 /** Catch missing model/texture references before a purple-black placeholder reaches the client. */

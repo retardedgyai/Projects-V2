@@ -3,8 +3,23 @@ package dev.projects.modellab
 import java.nio.file.Files
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
+import kotlin.test.assertEquals
+import kotlin.test.assertSame
 
 class PackContractTest {
+    @Test fun jsonProviderLookupKeepsProviderOrderAndRestoresThreadLoader() {
+        val thread = Thread.currentThread()
+        val loader = thread.contextClassLoader
+        val service = "META-INF/services/javax.json.spi.JsonProvider"
+        val expected = java.util.Collections.list(loader.getResources(service))
+        withCachedJsonProviderResources {
+            repeat(3) { assertEquals(expected, java.util.Collections.list(thread.contextClassLoader.getResources(service))) }
+            assertSame(loader.loadClass("javax.json.Json"), thread.contextClassLoader.loadClass("javax.json.Json"))
+        }
+        assertSame(loader, thread.contextClassLoader)
+        assertFailsWith<IllegalStateException> { withCachedJsonProviderResources { error("conversion failed") } }
+        assertSame(loader, thread.contextClassLoader)
+    }
     @Test fun missingTextureRejectedBeforeShipping() {
         val root = Files.createTempDirectory("projects-pack-contract")
         try {

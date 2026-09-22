@@ -54,6 +54,25 @@ class BossModelActor(
         viewers.clear()
         viewers.addAll(current)
     }
+    /** Read the actual live Display transforms for offline projection QA, not an alternate animation. */
+    internal fun displayPose(bone: String): com.google.gson.JsonObject {
+        val entity = requireNotNull(model.getPart(bone)?.entity)
+        val meta = entity.entityMeta as net.minestom.server.entity.metadata.display.ItemDisplayMeta
+        fun vector(vararg v: Number) = com.google.gson.JsonArray().apply { v.forEach { add(it) } }
+        return com.google.gson.JsonObject().apply {
+            addProperty("model", "assets/worldseed/models/mobs/${definition.id}/normal/$bone.json")
+            addProperty("bone", bone)
+            addProperty("context", meta.displayContext.name.lowercase())
+            addProperty("interpolation", meta.transformationInterpolationDuration)
+            add("position", vector(entity.position.x(), entity.position.y(), entity.position.z()))
+            addProperty("yaw", entity.position.yaw())
+            addProperty("pitch", entity.position.pitch())
+            add("translation", vector(meta.translation.x(), meta.translation.y(), meta.translation.z()))
+            add("scale", vector(meta.scale.x(), meta.scale.y(), meta.scale.z()))
+            add("left", vector(*meta.leftRotation.toTypedArray()))
+            add("right", vector(*meta.rightRotation.toTypedArray()))
+        }
+    }
     override fun close() {
         if (closed) return
         closed = true

@@ -10,23 +10,28 @@
 - 1体につき1回、訓練用ダメージ `40 + AP80% = 88`（固定AP60）。マナ20、CD4秒。
 - `/mage` で3体の標的・マナ・CDをリセット。`/mageclear` で杖・標的・演出を終了。
 - 床のある平地専用。壁・未ロード領域・床の穴で伝播停止。空中使用不可。
-- 画像のコマ交換ではなく、32pxのオリジナル面テクスチャ＋輪郭に沿う薄い立体＋8可動部位。
-  地面の亀裂 → 異なる大きさの氷牙3束 → 小片の飛散 → 消失。通常Minecraftパーティクル不使用。
+- Creator提示の「霜の波紋」GIFの原画・輪郭を復元。旧版の単純な槍モデルは置き換えた。
+  白い割れ面・青い根元・不揃いな枝を保持し、低い広がり → 中段 → 高い冠の3種類を順に発生。
+  各束は根元・内枝・外枝の3可動部位。先端が先に縮み、低い根元が最後に消える。
+  PNGのコマ交換・通常Minecraftパーティクル・完成した氷を地面から滑らせる動作は使用しない。
 - 効果音：共鳴／氷の破裂・低い打撃／破片。既存のVanillaサウンドを組み合わせる。
 
 ```powershell
 python scripts/build_ice_fang.py
 python -m unittest discover -s scripts -p test_ice_fang.py
+.\gradlew.bat :model-lab:test :model-lab:modelSmoke :model-lab:iceFangSmoke :model-lab:iceFangVisualTrace --no-daemon "-Pkotlin.compiler.execution.strategy=in-process"
+python -m unittest discover -s scripts -p test_ice_fang_projection.py
 python scripts/preview_ice_fang.py
-.\gradlew.bat :model-lab:test :model-lab:modelSmoke :model-lab:iceFangSmoke --no-daemon "-Pkotlin.compiler.execution.strategy=in-process"
+python scripts/preview_ice_fang.py --stills --view side
 ```
 
-Previewは実bbmodelの正面1束を固定カメラで投影したCPU GIF。**ゲーム画面やクライアント補間の証明ではない。**
+Previewは変換後の実パックと、WSEEを20TPSで動かした実Displayメタデータから3束をCPU投影する。
+原画用の別アニメーションや60fpsの補間を足さない。**ゲーム画面やクライアント補間・照明の証明ではない。**
 実機の主観視点・音量・最終的な見た目はCreatorの手動確認待ち。
 `IceFangPlan.kt` が射程・タイミング・判定、`IceFangTraining.kt` が入力・コスト・標的・cleanup。
-`build_ice_fang.py` → `model-lab/models/ice_fang.bbmodel` → `collectModels` → `buildBossPack` → WSEE再生。
+`build_ice_fang.py` → `model-lab/models/ice_fang*.bbmodel` → `collectModels` → `buildBossPack` → WSEE再生。
 紫黒ならpackの適用・bundle一致、向き／命中なら `IceFangPlan`、残留なら `IceFangTraining.finish/clear` を確認。
-Scorpius原本はvendor内に保持し、新作モデルは `model-lab/models` に分離。合計16モデル・65アニメーション。
+Scorpius原本はvendor内に保持し、新作モデルは `model-lab/models` に分離。合計18モデル・67アニメーション。
 
 ## 今回使えるようになったもの
 
