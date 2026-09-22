@@ -16,8 +16,8 @@ SOURCE = ROOT / "assets/core-ui/pixel-relic"
 ASSETS = ROOT / "server-minestom/src/main/resources/core-ui-pack/assets/projects"
 ART_BASE = 0xE700
 ART_CELL = 32
-ART_YS = [18, 28, 30, 36, 42, 54, 56, 70, 72, 84, 90, 98, 108, 112, 126, 140, 154, 168, 182, 196]
-ART_SIZES = [16, 32]
+ART_YS = [18, 28, 30, 36, 42, 48, 54, 56, 70, 72, 84, 90, 98, 108, 112, 126, 140, 154, 168, 182, 196]
+ART_SIZES = [16, 32, 48]
 # Order is the wire contract with CoreMenuArt. Sources are row-major 4x4 sheets.
 ART = [
     ("EXPEDITION", "materials", 0), ("FORGE", "materials", 1),
@@ -58,7 +58,7 @@ def build_art():
         assert bounds is not None, f"Empty menu artwork: {name}"
         advances = [math.floor(0.5 + bounds[2] * size / ART_CELL) + 1 for size in ART_SIZES]
         atlas.alpha_composite(cell, (ordinal % 8 * ART_CELL, ordinal // 8 * ART_CELL))
-        metrics.append(f"{name}\t{ordinal}\t{advances[0]}\t{advances[1]}\n")
+        metrics.append(f"{name}\t{ordinal}\t" + "\t".join(map(str, advances)) + "\n")
         metadata.append({"name": name, "ordinal": ordinal, "source": source,
                          "source_cell": index, "advances": dict(zip(map(str, ART_SIZES), advances))})
     destination = ASSETS / "textures/gui/core/menu_art.png"
@@ -71,7 +71,7 @@ def build_art():
                                    "height": size, "ascent": 13 - y, "chars": grid}]}
             (ASSETS / f"font/core_menu_art_{size}_{y}.json").write_text(
                 json.dumps(font, separators=(",", ":")) + "\n", encoding="utf-8")
-    (ASSETS / "menu/art.tsv").write_text("# name\tordinal\tadvance16\tadvance32\n" + "".join(metrics), encoding="utf-8")
+    (ASSETS / "menu/art.tsv").write_text("# name\tordinal\tadvance16\tadvance32\tadvance48\n" + "".join(metrics), encoding="utf-8")
     (SOURCE / "atlas.json").write_text(json.dumps({
         "cell": ART_CELL, "columns": 8, "sizes": ART_SIZES, "ys": ART_YS, "art": metadata,
         "sources": {name: hashlib.sha256((SOURCE / f"source/{name}.png").read_bytes()).hexdigest()
