@@ -24,6 +24,6 @@ class IceFangPlanTest {
         assertTrue(IceFangPlan.hits(tooth, IceFangPlan.Point(0.0, 2.7, 7.0)))
         assertFalse(IceFangPlan.hits(tooth, IceFangPlan.Point(2.0, 1.0, 7.0)))
         assertFalse(IceFangPlan.hits(tooth, IceFangPlan.Point(0.0, 8.0, 7.0)))
-        assertEquals(42, tooth.start + IceFangPlan.LIFETIME)
+        assertEquals(52, tooth.start + IceFangPlan.LIFETIME)
     }
 }

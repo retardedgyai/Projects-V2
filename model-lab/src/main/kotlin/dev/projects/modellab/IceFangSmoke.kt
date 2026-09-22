@@ -57,7 +57,7 @@ fun main(args: Array<String>) {
             check(training.mana(player) == 100 && instance.entities.size == baseline) { "Flying cast consumed mana or created model" }
             player.isFlying = false
             repeat(10) { training.requestCast(player) }
-            step(45)
+            step(55)
             check(targets().all { it.health == 440f }) { "Expected one 88 hit per target: ${targets().map { it.health }}" }
             check(instance.entities.size == baseline) { "Completed cast leaked model entities" }
             training.requestCast(player); step(5)
@@ -66,7 +66,7 @@ fun main(args: Array<String>) {
             training.equip(player); step(3)
             check(targets().size == 3)
             instance.setBlock(0, 1, 4, Block.STONE)
-            training.requestCast(player); step(45)
+            training.requestCast(player); step(55)
             check(targets().count { it.health == 440f } == 1) { "Wall did not stop chain" }
             check(targets().count { it.health == 528f } == 2)
             instance.setBlock(0, 1, 4, Block.AIR)

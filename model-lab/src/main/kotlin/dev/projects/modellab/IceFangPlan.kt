@@ -6,7 +6,9 @@ import kotlin.math.sin
 /** Pure server-side plan shared by the visual clock and training hit clock. */
 object IceFangPlan {
     const val MODEL = "ice_fang.bbmodel"
-    const val LIFETIME = 30
+    // Low spread -> broad middle -> tallest crown: the last impact is the visual climax.
+    val MODELS = listOf("ice_fang_c.bbmodel", "ice_fang_b.bbmodel", MODEL)
+    const val LIFETIME = 40
     const val COOLDOWN = 80
     const val COST = 20
     const val HIT_DELAY = 4

@@ -8,7 +8,7 @@ import com.yuuki14202028.WseeAssets
 
 class ModelContractTest {
     @Test fun generatedNamesReferToRealModels() {
-        assertEquals(16, WseeAssets.All.size)
+        assertEquals(18, WseeAssets.All.size)
         assertEquals("ice_fang.bbmodel", WseeAssets.IceFang.Model)
         assertEquals("erupt", WseeAssets.IceFang.Anim.Erupt)
         assertEquals("vesper.bbmodel", WseeAssets.Vesper.Model)

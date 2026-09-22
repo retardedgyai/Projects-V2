@@ -119,7 +119,7 @@ class IceFangTraining(private val bundle: ModelBundle, private val instance: Ins
                         val available = IceFangPlan.path(IceFangPlan.Point(cast.origin.x(), 1.0, cast.origin.z()),
                             cast.origin.yaw(), ::corridorClear)
                         if (index >= available.size) { finish(session); return@let }
-                        val actor = BossModelActor(bundle.definition(IceFangPlan.MODEL), instance, pos, tooth.size)
+                        val actor = BossModelActor(bundle.definition(IceFangPlan.MODELS[index]), instance, pos, tooth.size)
                         actor.move(pos)
                         actor.play("erupt")
                         cast.actors[index] = actor
@@ -136,7 +136,7 @@ class IceFangTraining(private val bundle: ModelBundle, private val instance: Ins
                             }
                         }
                     }
-                    if (local == 16 && cast.actors.containsKey(index)) sound(pos, "block.amethyst_cluster.break", .6f, 1.4f)
+                    if (local == 22 && cast.actors.containsKey(index)) sound(pos, "block.amethyst_cluster.break", .6f, 1.4f)
                     if (local >= IceFangPlan.LIFETIME) cast.actors.remove(index)?.close()
                 }
                 cast.actors.values.forEach(BossModelActor::syncViewers)

@@ -79,6 +79,15 @@ tasks.register<JavaExec>("iceFangSmoke") {
     args(packOutput.get().asFile.absolutePath)
     timeout = Duration.ofSeconds(60)
 }
+tasks.register<JavaExec>("iceFangVisualTrace") {
+    group = "verification"
+    dependsOn("buildBossPack")
+    classpath = sourceSets.main.get().runtimeClasspath
+    mainClass = "dev.projects.modellab.IceFangVisualTraceKt"
+    jvmArgs("--add-opens=java.base/java.lang=ALL-UNNAMED")
+    args(packOutput.get().asFile.absolutePath)
+    timeout = Duration.ofSeconds(60)
+}
 // Protocol bots stay off the server classpath, and cannot target the normal game port.
 val loadtest = sourceSets.create("loadtest")
 dependencies { add(loadtest.implementationConfigurationName, "org.geysermc.mcprotocollib:protocol:26.2-SNAPSHOT") }
