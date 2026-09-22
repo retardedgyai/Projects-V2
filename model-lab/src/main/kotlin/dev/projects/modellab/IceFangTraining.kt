@@ -44,6 +44,7 @@ class IceFangTraining(private val bundle: ModelBundle, private val instance: Ins
         }
     } }
     fun remove(player: Player) { input.add { clear(player.uuid) } }
+    internal fun mana(player: Player): Int? = sessions[player.uuid]?.mana
     fun uses(player: Player, hand: PlayerHand) = hand == PlayerHand.MAIN && player.itemInMainHand.getTag(tag) == true
     fun requestCast(player: Player) { input.add { sessions[player.uuid]?.let(::cast) } }
 
@@ -82,7 +83,7 @@ class IceFangTraining(private val bundle: ModelBundle, private val instance: Ins
         if (session.mana < IceFangPlan.COST) {
             player.sendMessage(Component.text("マナが足りません。", NamedTextColor.RED)); return
         }
-        if (kotlin.math.abs(player.position.y()-1.0) > .3) {
+        if (!player.isOnGround || player.isFlying || kotlin.math.abs(player.position.y()-1.0) > .02) {
             player.sendMessage(Component.text("地面に降りてから使用してください。", NamedTextColor.YELLOW)); return
         }
         val origin = player.position

@@ -30,6 +30,9 @@ base: `16e51ea6`、branch: `play/gyai/mage-ice-fang`。
 - `scripts/preview_ice_fang.py`：実bbmodelの線形ボーン姿勢から正面GIFを生成・静止位相確認。
 - Minecraftは起動していない。ゲーム内の向き・見え方・音量・補間・手触りは未確認。
 
+Sol初回レビューで地面付近の空中発動を指摘。高さだけでなく接地・飛行状態とサーバーの床・空間判定を併用し、
+空中／飛行中の発動がマナ・CDを消費せず、Entity・ダメージを出さない実エンジン検証を追加。
+
 ## 引継ぎ・最初に見る場所
 
 - 形・作画：`scripts/build_ice_fang.py` と `model-lab/models/ice_fang.bbmodel`。
