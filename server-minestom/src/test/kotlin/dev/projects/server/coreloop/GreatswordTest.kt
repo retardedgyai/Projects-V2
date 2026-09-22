@@ -18,6 +18,29 @@ import java.util.concurrent.TimeUnit
 import kotlin.test.*
 
 class GreatswordTest {
+    @Test fun `immediate mode moves startup after hit while preserving every stage cadence and buffer`() {
+        for (speed in listOf(.75, 1.0, 1.84, 2.1, Double.NaN, Double.POSITIVE_INFINITY)) {
+            val original = GreatswordCombo()
+            val immediate = GreatswordCombo()
+            repeat(3) { stage ->
+                val old = original.press(speed)!!
+                val now = immediate.press(speed, immediate=true)!!
+                assertEquals(stage+1, now.step)
+                assertEquals(0, now.impactTick)
+                assertEquals(old.totalTicks, now.totalTicks)
+                assertEquals(old.multiplier, now.multiplier)
+                repeat(now.totalTicks) { tick ->
+                    repeat(5) { assertNull(immediate.press(speed, immediate=true)) }
+                    assertNull(immediate.tick(), "Input-time strike must not replay")
+                    original.tick()
+                    assertEquals(tick < now.totalTicks-1, immediate.isAttacking)
+                }
+                assertTrue(immediate.takeBuffered())
+                assertFalse(immediate.takeBuffered())
+            }
+        }
+    }
+
     @Test fun `three combo stages have one impact and the final swing is heavier and slower`() {
         val combo = GreatswordCombo()
         val impacts = mutableListOf<GreatswordCombo.Swing>()
@@ -177,6 +200,17 @@ class GreatswordTest {
             player.setInstance(instance, Pos(8.0, 40.0, 8.0)).get(10, TimeUnit.SECONDS)
             val vfx = GreatswordVfx(player)
             assertFalse(vfx.retainsInstance)
+            val skillFrames = mutableListOf<Int>()
+            val skillEffect = object : ParticleEffect {
+                override val durationTicks = 6
+                override fun emit(tick: Int, sink: ParticleSink) { skillFrames += tick }
+            }
+            vfx.playSkill(skillEffect)
+            vfx.holdContact(3)
+            repeat(6) { vfx.tick() }
+            assertEquals((0..5).toList(), skillFrames, "Skill clock cannot inherit normal-attack hit stop")
+            vfx.playSkill(skillEffect)
+            vfx.status(CorePoisonEffect(player.position, 20, true))
             vfx.play(GreatswordVisual.FINISHER, player.position, Vec(0.0, 0.0, 1.0))
             assertTrue(vfx.retainsInstance)
             vfx.cancel()

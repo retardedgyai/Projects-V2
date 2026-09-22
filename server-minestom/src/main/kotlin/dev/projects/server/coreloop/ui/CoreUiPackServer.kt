@@ -157,7 +157,7 @@ class CoreUiPackServer private constructor(
                 .bufferedReader(Charsets.UTF_8).use { reader -> reader.readLines().filter { it.isNotBlank() && !it.startsWith('#') } }
             require(paths.isNotEmpty() && paths.distinct().size == paths.size)
             require(paths.all(CoreUiPackPolicy::allowedPath)) {
-                "Only the explicitly scoped player heart/food sprite overrides are allowed; never global fonts"
+                "Only scoped heart/food overrides and the combat atlas addition are allowed; never global fonts"
             }
             val output = ByteArrayOutputStream()
             ZipOutputStream(output).use { zip ->

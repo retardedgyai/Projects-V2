@@ -2,6 +2,8 @@ package dev.projects.server.coreloop.ui
 
 /** The only global overrides explicitly requested: hide player heart/food sprites for the new HUD. */
 internal object CoreUiPackPolicy {
+    // Appends the custom VFX directory to the native atlas, without replacing sprites.
+    val vanillaAdditions: Set<String> = setOf("assets/minecraft/atlases/items.json")
     private const val HUD = "assets/minecraft/textures/gui/sprites/hud/"
     val vanillaOverrides: Set<String> = buildSet {
         for (type in listOf("", "absorbing_", "frozen_", "poisoned_", "withered_")) {
@@ -20,5 +22,5 @@ internal object CoreUiPackPolicy {
     }
 
     fun allowedPath(path: String): Boolean = !path.startsWith('/') && ".." !in path && '\\' !in path &&
-        (!path.startsWith("assets/minecraft/") || path in vanillaOverrides)
+        (!path.startsWith("assets/minecraft/") || path in vanillaOverrides || path in vanillaAdditions)
 }

@@ -3,8 +3,9 @@ package dev.projects.server.coreloop
 import java.util.UUID
 
 /** Identity follows the equipment through equip, storage and sale; old equipment migrates bound. */
-data class CoreGearIdentity(val id: UUID, val crafter: UUID, val bound: Boolean = false, val quality: Int = 0) {
-    init { require(quality in 0..30) }
+data class CoreGearIdentity(val id: UUID, val crafter: UUID, val bound: Boolean = false, val quality: Int = 0,
+    val base: CoreWeaponBase = CoreWeaponBase.STANDARD, val itemLevel: Int = 0) {
+    init { require(quality in 0..30 && itemLevel in 0..40) }
     companion object {
         fun legacy(player: UUID, slot: CoreGearSlot) = CoreGearIdentity(
             UUID.nameUUIDFromBytes("$player/legacy/$slot".toByteArray(Charsets.UTF_8)), player, true)
@@ -34,7 +35,7 @@ class CoreStoredGear(
         weaponIdentity = if (slot == CoreGearSlot.WEAPON) identity else a.weaponIdentity,
         armorIdentity = if (slot == CoreGearSlot.ARMOR) identity else a.armorIdentity,
     )
-    val displayName get() = (if (broken) "【破損】" else "") + "T$tier ${slot.displayName} +${enhancement.level}"
+    val displayName get() = (if (broken) "【破損】" else "") + "T$tier Lv${CoreJourneyRules.itemLevel(identity, tier)} ${if (slot == CoreGearSlot.WEAPON) identity.base.displayName else slot.displayName} +${enhancement.level}"
 }
 
 /** A listing owns its material escrow, or locks exactly one stored equipment identity. */
@@ -57,21 +58,27 @@ object CoreEconomy {
     fun tradeable(resource: CoreResource) = resource.raw || resource in CoreLoopCatalog.refined.values
     fun identity(a: CoreAccount, slot: CoreGearSlot) = if (slot == CoreGearSlot.WEAPON) a.weaponIdentity else a.armorIdentity
     fun broken(a: CoreAccount, slot: CoreGearSlot) = if (slot == CoreGearSlot.WEAPON) a.weaponBroken else a.armorBroken
-    // Each current slot has exactly one family (greatsword / armor set). Add family IDs when a second exists.
+    // Base variants share their family's repair supply, not equipment from unrelated classes.
     fun repairCompatible(a: CoreAccount, slot: CoreGearSlot, item: CoreStoredGear) = item.slot == slot &&
         item.tier == CoreAffixCatalog.gearTier(a, slot) && !item.identity.bound && item.enhancement.level == 0 &&
-        !item.broken
+        !item.broken && (slot != CoreGearSlot.WEAPON || item.identity.base.family == a.weaponIdentity.base.family)
     fun repairInput(a: CoreAccount, slot: CoreGearSlot, item: CoreStoredGear) =
         repairCompatible(a, slot, item) && a.offers.none { it.gearId == item.identity.id }
     fun capture(a: CoreAccount, slot: CoreGearSlot) = CoreStoredGear(identity(a, slot), slot,
         CoreAffixCatalog.gearTier(a, slot), CoreAffixCatalog.rarity(a, slot), CoreEnhancementCatalog.state(a, slot),
         a.equippedAffixes.filter { it.gear == slot }, slot in a.legacyLayouts, broken(a, slot))
-    fun manufacture(slot: CoreGearSlot, tier: Int): CoreRecipe {
+    fun manufacture(slot: CoreGearSlot, tier: Int, base: CoreWeaponBase = CoreWeaponBase.STANDARD): CoreRecipe {
         require(tier in 1..4)
         val main = if (slot == CoreGearSlot.WEAPON) CoreResource.INGOT else CoreResource.LEATHER
         val support = if (slot == CoreGearSlot.WEAPON) CoreResource.BOARD else CoreResource.CLOTH
-        return CoreRecipe("T$tier ${slot.displayName}を制作", mapOf(CoreMaterial(main, tier) to 4L,
-            CoreMaterial(support, tier) to 2L, CoreMaterial(CoreResource.STONE_BLOCK, tier) to 1L), emptyMap())
+        val costs = mutableMapOf(CoreMaterial(main, tier) to 4L, CoreMaterial(support, tier) to 2L, CoreMaterial(CoreResource.STONE_BLOCK, tier) to 1L)
+        if (slot == CoreGearSlot.WEAPON && base != CoreWeaponBase.STANDARD) {
+            val special = when (base) { CoreWeaponBase.FLOW, CoreWeaponBase.LONGBOW -> CoreResource.BOARD; CoreWeaponBase.CLEAVER -> CoreResource.INGOT; else -> CoreResource.CLOTH }
+            costs.merge(CoreMaterial(special, tier), 2L, Long::plus)
+        }
+        // Lower-tier processing remains useful after entering a new generation, without consuming old gear.
+        for (lower in 1 until tier) costs[CoreMaterial(main, lower)] = 1L
+        return CoreRecipe("T$tier ${if (slot == CoreGearSlot.WEAPON) base.displayName else slot.displayName}を制作", costs, emptyMap())
     }
     fun deliveryPrice(tier: Int) = 80L * tier * tier
     fun fee(price: Long) = (price + 19) / 20 // 5%, rounded up; visible before purchase/listing.

@@ -1,0 +1,40 @@
+{
+  "mode": "built-in image_gen; no CLI/API",
+  "status": "isolated Tier art review; not reference-equivalent certified; not running",
+  "input": {
+    "path": "sources/bow-v02.png",
+    "role": "coarse painted pixel material/color reference"
+  },
+  "prompts": [
+    "Use case: stylized-concept. Single Minecraft fantasy BOW texture original, full upright orthographic side profile, open side facing LEFT, handgrip to RIGHT of tip-to-tip line, both limb tips at LEFT. Attached image is coarse painted PIXEL MATERIAL and COLOR reference only, not edit target. Match deep forest/black-green edges, broad moss/lime painted faces with a few yellow-green pixels, dark brown wrapped handle and small central emerald, simple quiet brown collars at each end of the central grip. No string and no arrow in this artwork; they will be separate animated parts. Upper limb meets collar at 40% height, grip extends to60%, lower limb starts below it. All embellishments physically connected to their own upper/lower limb, no ornaments crossing over grip or empty interior. Hard square pixel clusters intended for native 28-38 pixels wide x92 tall, 12-16 matte colors; no blur/gradients/noise/PBR/gloss/bloom/glow. Painted silhouette defines thin fins, no stacked cubes or block-built 3D. Preserve broad graphic light/shadow planes, no tiny veins or busy detail. Whole weapon with margin, no text/labels/hands/scene/shadow/multiple views or detached particles. Real RGBA transparent background, not painted checkerboard. T2 long narrow recurve bow: slim angular single-sweep limbs, hooked pointed tips, ONE short tapered leaf at each root. Outer limb edge mostly smooth stepped curve; more negative space and less width than reference. No many branches, no thick paddle ends.",
+    "Use case: stylized-concept. Single Minecraft fantasy BOW texture original, full upright orthographic side profile, open side facing LEFT, handgrip to RIGHT of tip-to-tip line, both limb tips at LEFT. Attached image is coarse painted PIXEL MATERIAL and COLOR reference only, not edit target. Match deep forest/black-green edges, broad moss/lime painted faces with a few yellow-green pixels, dark brown wrapped handle and small central emerald, simple quiet brown collars at each end of the central grip. No string and no arrow in this artwork; they will be separate animated parts. Upper limb meets collar at 40% height, grip extends to60%, lower limb starts below it. All embellishments physically connected to their own upper/lower limb, no ornaments crossing over grip or empty interior. Hard square pixel clusters intended for native 28-38 pixels wide x92 tall, 12-16 matte colors; no blur/gradients/noise/PBR/gloss/bloom/glow. Painted silhouette defines thin fins, no stacked cubes or block-built 3D. Preserve broad graphic light/shadow planes, no tiny veins or busy detail. Whole weapon with margin, no text/labels/hands/scene/shadow/multiple views or detached particles. Real RGBA transparent background, not painted checkerboard. T3 broad wing bow: each limb has a large wide flattened leaf/fan-shaped middle face with TWO clearly cut long notches in the outside edge, and a pointed swept hook at its terminal end. Broad blade-like outer wings, short single root spur. Upper and lower wings mirror about horizontal center. Wider limb surfaces than reference, no twig-like fingers.",
+    "Use case: stylized-concept. Single Minecraft fantasy BOW texture original, full upright orthographic side profile, open side facing LEFT, handgrip to RIGHT of tip-to-tip line, both limb tips at LEFT. Attached image is coarse painted PIXEL MATERIAL and COLOR reference only, not edit target. Match deep forest/black-green edges, broad moss/lime painted faces with a few yellow-green pixels, dark brown wrapped handle and small central emerald, simple quiet brown collars at each end of the central grip. No string and no arrow in this artwork; they will be separate animated parts. Upper limb meets collar at 40% height, grip extends to60%, lower limb starts below it. All embellishments physically connected to their own upper/lower limb, no ornaments crossing over grip or empty interior. Hard square pixel clusters intended for native 28-38 pixels wide x92 tall, 12-16 matte colors; no blur/gradients/noise/PBR/gloss/bloom/glow. Painted silhouette defines thin fins, no stacked cubes or block-built 3D. Preserve broad graphic light/shadow planes, no tiny veins or busy detail. Whole weapon with margin, no text/labels/hands/scene/shadow/multiple views or detached particles. Real RGBA transparent background, not painted checkerboard. T4 antler bow: strong sweeping limb spine with exactly TWO long connected horn branches on the OUTSIDE of each upper/lower limb. Branches point diagonally outwards away from the open shooting interior, with large gaps separating horns; smooth plain inside edge. One longest hook remains clearly identifiable as the terminal tip for string attachment. Larger and more regal branching silhouette than input, NOT a hedge of many tiny spikes, not a staff."
+  ],
+  "revision_prompt": "Use case: precise-object-edit. Edit attached bow artwork. Preserve central brown handle/emerald/collars, overall upright open-LEFT orientation, green matte coarse pixel palette and painted flat texture style. Replace BOTH limbs' silhouettes with ANTLER FORKS, dramatically different from the current plain S curves. Each upper and lower limb has one curved main spine ending in the LEFTmost top/bottom hooked string tip, plus TWO long thick tapered horns growing toward the RIGHT into the empty area to the right of the limb. The RIGHTmost upper horn extends well beyond the handle's rightmost x position; lower horns mirror this below. Horns attach around the outer middle bend, with large clean wedges of transparent space separating them. No short tiny thorns. Remove the big leftward root leaf so inner left side stays smooth and empty. Exactly two broad external horns per limb. Keep the spine tips the highest and lowest points; horns must not overtake them. This should read as an antlered hunting bow, not the same prior silhouette. Whole weapon within canvas with ample right margin, no crop. No string, no arrow, no glow/noise/blur/gradients/3D cubes/PBR, no text or extra object. Native coarse pixel art suitable for height92, 12-16 colors. Genuine RGBA transparency, not a checker illustration.",
+  "outputs": [
+    {
+      "tier": 2,
+      "source": "sources/bow-t2-v01.png",
+      "generated": "exec-8af29f24-d984-4cb1-868a-c85614c112a8.png"
+    },
+    {
+      "tier": 3,
+      "source": "sources/bow-t3-v01.png",
+      "generated": "exec-b5f4e58d-b44f-42c7-86e4-e3dc191f2f6e.png"
+    },
+    {
+      "tier": 4,
+      "rejected": "exec-0b7532a8-5a44-4557-8248-25d113ca1bdd.png",
+      "reason": "Too close to T1; outward antler silhouette not achieved",
+      "source": "sources/bow-t4-v02.png",
+      "generated": "exec-8e076ce1-d839-4c5d-8bdd-a93e42fe76fb.png"
+    }
+  ],
+  "processing": "Returned RGB checker despite requested RGBA. Authorized Python foreground extraction, median pixelize to 92px high, existing bow 16-color palette. Original-specific upper/grip/lower cuts; same arrow artwork and string color as T1. Actual sources preserved.",
+  "limitations": [
+    "T2 remains in the T1 silhouette family; T3's leaf breadth and T4's outward horns are the more obvious changes.",
+    "2D/wafer-thin limb sides use the same painted front/back; not independent back artwork.",
+    "Hand-local transforms verified separately from live arm/camera motion and manual game feel.",
+    "No full reference-quality approval."
+  ]
+}

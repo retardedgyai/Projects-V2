@@ -18,6 +18,7 @@ internal interface DungeonRunHost {
     fun nowMillis(): Long = System.currentTimeMillis()
     fun connected(player: Player): Boolean
     fun hurt(player: Player, damage: Double)
+    fun hurtTyped(player: Player, damage: Double, type: CoreDamageType) = hurt(player, damage)
     fun resetActions(player: Player)
     fun revive(player: Player, fraction: Double)
     fun reward(player: Player, action: CoreAction.DungeonReward): CompletableFuture<CoreTransactionResult>
@@ -88,9 +89,11 @@ internal class DungeonRun(val id: UUID, val world: DungeonWorld, participants: L
             explicitBossArchetype = when (room.theme) { DungeonTheme.EMBER -> QuestMobArchetype.FORGE_SENTINEL; DungeonTheme.TIDE -> QuestMobArchetype.TIDE_ARCHIVIST; DungeonTheme.ASTRAL -> QuestMobArchetype.ECLIPSE_REGENT },
             spawnBoss = room.kind == DungeonRoomKind.BOSS,
             healthMultiplier = 1 + (members.size - 1) * b.dungeonHealthPerPlayer / 100.0 + world.plan.ascension * b.dungeonHealthPerAscension / 100.0,
-            damageMultiplier = 1 + world.plan.ascension * b.dungeonDamagePerAscension / 100.0)
+            damageMultiplier = 1 + world.plan.ascension * b.dungeonDamagePerAscension / 100.0,
+            typedDamagePlayer = host::hurtTyped)
         combat = c
-        if (room.kind == DungeonRoomKind.BOSS) mechanic = DungeonBossMechanics(instance, room, world.plan.tier, world.plan.ascension, c, ::living, host::hurt)
+        if (room.kind == DungeonRoomKind.BOSS) mechanic = DungeonBossMechanics(instance, room, world.plan.tier, world.plan.ascension, c, ::living,
+            { player, damage -> host.hurtTyped(player, damage, CoreDamageType.MAGICAL) })
         if (room.kind == DungeonRoomKind.SEALS) listOf(room.center.add(-9.0, 0.0, 2.0), room.center.add(9.0, 0.0, 2.0), room.center.add(0.0, 0.0, 10.0)).forEachIndexed { i, p ->
             markers += DungeonMarker(instance, p, "封印${i + 1}・右クリック後5秒近くに留まる", Block.CRYING_OBSIDIAN)
         }

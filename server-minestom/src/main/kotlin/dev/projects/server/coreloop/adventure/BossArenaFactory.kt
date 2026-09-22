@@ -4,6 +4,8 @@ import dev.projects.server.mob.QuestMobArchetype
 import net.minestom.server.MinecraftServer
 import net.minestom.server.coordinate.Pos
 import net.minestom.server.instance.InstanceContainer
+import net.minestom.server.instance.LightingChunk
+import net.minestom.server.instance.Weather
 import net.minestom.server.instance.block.Block
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.atomic.AtomicBoolean
@@ -40,7 +42,10 @@ object BossArenaFactory {
             else -> error("Unknown trial boss: $bossId")
         }
         val instance = MinecraftServer.getInstanceManager().createInstanceContainer()
+        instance.setChunkSupplier(::LightingChunk)
         instance.time = if (bossId == "trial") 18_000L else 6_000L
+        instance.defaultClock()?.pause()
+        instance.setWeather(Weather.CLEAR)
         instance.setGenerator { unit ->
             unit.modifier().fillHeight(0, 39, Block.DEEPSLATE)
             val start = unit.absoluteStart()

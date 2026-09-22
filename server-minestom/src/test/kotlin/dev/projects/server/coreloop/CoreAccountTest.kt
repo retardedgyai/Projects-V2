@@ -33,6 +33,8 @@ class CoreAccountTest {
 
     @Test fun `gather refine manufacture equip loop reaches T4 without combat material exchange`() {
         val f = Fixture()
+        assertEquals(CoreRepositorySave.Saved, f.repository.commit(0, f.account.copy(revision = 1, journey = CoreJourney())))
+        f.service.forget(f.player); f.service.open(f.player)
         for (tier in 1..4) {
             val run = f.start(tier)
             for (raw in CoreLoopCatalog.refined.keys) f.commit(CoreAction.Gather(run, "node-$raw", raw, 16))

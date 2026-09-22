@@ -85,7 +85,9 @@ class CoreWeaponPresentationTest {
             weaponEnhancement = CoreEnhancementState(1), armorEnhancement = CoreEnhancementState(30))
         assertEquals(343, CoreWeaponPresentation.health(account)) // 190 * 1.6 + 39; not (190 + 39) * 1.6.
         assertEquals("+15.8%", CoreWeaponPresentation.attackSpeedLabel(account))
-        assertEquals((12 * CoreLoopCatalog.weaponDamage(4) * 1.04 * 1.22).roundToInt(), CoreWeaponPresentation.damage(account))
+        assertEquals((12 * CoreLoopCatalog.weaponDamage(4) * 1.04).roundToInt(), CoreWeaponPresentation.damage(account))
+        // Generic increased damage is applied to hits, never silently written into AD or AP.
+        assertEquals(22.0, CoreAffixCatalog.stats(account).damagePercent)
     }
 
     @Test fun `model only applies after pack success and fallback retains canonical equipment tags`() {

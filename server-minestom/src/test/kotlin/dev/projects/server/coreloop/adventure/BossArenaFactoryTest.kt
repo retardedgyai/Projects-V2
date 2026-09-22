@@ -10,6 +10,7 @@ import net.minestom.server.Auth
 import net.minestom.server.MinecraftServer
 import net.minestom.server.coordinate.Pos
 import net.minestom.server.coordinate.Vec
+import net.minestom.server.instance.LightingChunk
 import net.minestom.server.entity.GameMode
 import net.minestom.server.entity.Player
 import net.minestom.server.network.ConnectionState
@@ -37,6 +38,16 @@ class BossArenaFactoryTest {
         for (id in listOf("rift", "ritual", "trial")) {
             val arena = BossArenaFactory.create(id, 1)
             try {
+                assertTrue(arena.instance.chunks.all { it is LightingChunk })
+                LightingChunk.relight(arena.instance, arena.instance.chunks)
+                for (at in listOf(arena.playerSpawn, arena.bossSpawn)) {
+                    val chunk = requireNotNull(arena.instance.getChunkAt(at))
+                    val section = chunk.getSection(41 shr 4)
+                    val x = at.blockX() and 15; val z = at.blockZ() and 15
+                    val level = if (id == "trial") section.blockLight().getLevel(x, 41 and 15, z)
+                        else section.skyLight().getLevel(x, 41 and 15, z)
+                    assertTrue(level >= 5, "Dark $id arena at $at light=$level")
+                }
                 assertTrue(QuestCombatPlacement.clear(arena.instance, arena.playerSpawn))
                 assertTrue(QuestCombatPlacement.clear(arena.instance, arena.bossSpawn))
                 assertTrue(QuestCombatPlacement.clear(arena.instance, arena.bossSpawn.add(5.0, 0.0, 0.0)))

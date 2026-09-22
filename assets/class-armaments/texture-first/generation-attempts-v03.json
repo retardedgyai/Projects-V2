@@ -1,0 +1,38 @@
+{
+  "date": "2026-09-08",
+  "tool": "built-in image_gen",
+  "fallback_used": false,
+  "reference": "https://x.com/MatE312001/status/2096478906299699459",
+  "reference_role": "Screenshot of the public video, material/style reference only; original texture/mesh not obtained.",
+  "attempts": [
+    {
+      "key": "dagger",
+      "prompt": "Use case: stylized-concept. Asset type: one flat texture-first Minecraft weapon artwork, not a model render. Input image 1 is ONLY a material/style reference: the red/plum sword inside the video; ignore and omit the webpage, all text, UI, border and logo. Match that sword's coarse deliberate square pixel clusters, hard stepped contours, broad painted light/dark bands, near-flat fin details, limited colors and restrained dark hilt. Texture drives silhouette; no piled cubes, chunky cuboid teeth, repeated material tiles, photorealistic/PBR metal, smooth shading, blur, bloom, tiny noise, glossy gradients or antialiasing. Draw a single upright FRONT ORTHOGRAPHIC weapon, tip up/grip down, fully visible with margin, on ACTUAL transparent RGBA background (alpha=0 outside the weapon, no painted checkerboard). This is a new asset, not an edit of the screenshot. Coarse uniform pixel scale similar to a 32-by-80-pixel sprite, enlarged with nearest-neighbor square pixels. Flat opaque color clusters, crisp clean edges. No extra items, labels, floating particles or backdrop. Primary request: an assassin's compact hooked dagger in exactly this material finish. Blade is about 60% of total length, a clear inward-curving single hook with a sharp upturned tip, broad plum/crimson blade body and one continuous stepped coral cutting band. A small asymmetrical dark violet guard curls around the grip with a deliberate open gap, a modest red stone at the root, dark tightly wrapped grip and restrained sharp pommel. The hook and thin guard silhouette must be drawn by the texture, not made by stacking rectangular blocks. It must clearly be a short dagger, not the reference sword simply shortened or a thick voxel knife.",
+      "output_file": "exec-a3debc3a-b25a-4947-a32f-5eb5c12707f3.png",
+      "sha256": "094a1357ccdb9ec9e946efb7ef873878c0fa4e82b0ccdfacd9612625ed159193",
+      "mode": "RGB",
+      "size": [
+        1024,
+        1536
+      ],
+      "result": "rejected as runtime texture: painted checkerboard, no alpha channel",
+      "visual_review": "Texture-led hooked blade and open guard; uneven pixel grid and mottled color remain. Not reference-equivalent."
+    },
+    {
+      "key": "staff",
+      "prompt": "Use case: stylized-concept. Asset type: one flat texture-first Minecraft weapon artwork, not a model render. Input image 1 is ONLY a material/style reference: the red/plum sword inside the video; ignore and omit the webpage, all text, UI, border and logo. Match that sword's coarse deliberate square pixel clusters, hard stepped contours, broad painted light/dark bands, near-flat fin details, limited colors and restrained dark hilt. Texture drives silhouette; no piled cubes, chunky cuboid teeth, repeated material tiles, photorealistic/PBR metal, smooth shading, blur, bloom, tiny noise, glossy gradients or antialiasing. Draw a single upright FRONT ORTHOGRAPHIC weapon, tip up/grip down, fully visible with margin, on ACTUAL transparent RGBA background (alpha=0 outside the weapon, no painted checkerboard). This is a new asset, not an edit of the screenshot. Coarse uniform pixel scale similar to a 32-by-80-pixel sprite, enlarged with nearest-neighbor square pixels. Flat opaque color clusters, crisp clean edges. No extra items, labels, floating particles or backdrop. Primary request: a mage's ritual staff in exactly this material finish, translated to charcoal-violet and icy cyan. Long slender dark wrapped shaft; the upper third is a large, deliberately asymmetrical fork of tapering flat dark fins which leaves a broad open negative space. One small elongated cyan faceted crystal floats in that open gap, fully disconnected from the fins; keep the gap transparent. Cyan stepped painted bands trace a few inner edges, matching the red/coral band's visual weight in the reference. Lower shaft restrained, a small dark pointed ferrule. No cage of thick rods, circular orb, stacked cubes or symmetric generic trident. The staff's head should read as sharply painted thin shapes surrounding emptiness, with only a small crystal to gain depth later.",
+      "output_file": "exec-bb044482-6608-412b-89fb-90517f25d7a2.png",
+      "sha256": "dc1b338a366eb175cd6d29efd0095b596c801ebac524722bc4af607174e448f0",
+      "mode": "RGB",
+      "size": [
+        1024,
+        1536
+      ],
+      "result": "rejected as runtime texture: painted checkerboard, no alpha channel",
+      "visual_review": "Texture-led thin fork and separate crystal; head occupies roughly half rather than requested upper third. Uneven pixel grid and mottled color remain. Not reference-equivalent."
+    }
+  ],
+  "production_asset_written": false,
+  "source_images": "Rejected previews remain in the image generation output directory; not repo assets or runtime dependencies.",
+  "next_step": "No further identical transparency retries. Python alpha extraction/fixed-grid conversion/palette reduction await the previously asked user approval. These operations would only repair asset format, not establish artistic equivalence."
+}

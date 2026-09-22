@@ -1,0 +1,72 @@
+{
+  "source_crop": [
+    362,
+    56,
+    634,
+    1462
+  ],
+  "content_size": [
+    15,
+    80
+  ],
+  "canvas_size": [
+    32,
+    128
+  ],
+  "padding": 2,
+  "source": "assets\\class-armaments\\texture-first\\sources\\greatsword-material-v02.png",
+  "source_sha256": "5962fb645e63ec851d64fcfff32d281291edea1cf87d59a5a443899aa305f3e3",
+  "height": 30.0,
+  "rows": [
+    2,
+    41,
+    58,
+    82
+  ],
+  "jewel_pixels": 20,
+  "palette_remap": false,
+  "colors": 447,
+  "quality_approved": false,
+  "ember_emitters": [
+    [
+      2,
+      0,
+      0,
+      10,
+      0,
+      4
+    ],
+    [
+      12,
+      -1,
+      4,
+      13,
+      5,
+      7
+    ],
+    [
+      22,
+      1,
+      10,
+      12,
+      4,
+      8
+    ],
+    [
+      31,
+      -1,
+      15,
+      13,
+      5,
+      6
+    ],
+    [
+      38,
+      1,
+      19,
+      12,
+      4,
+      7
+    ]
+  ]
+}
