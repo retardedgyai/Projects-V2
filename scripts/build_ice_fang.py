@@ -1,14 +1,10 @@
-"""Port the painted geometry behind the creator's reference into WSEE.
-
-Both PNGs are unchanged ProjectS originals from 59d6d2e5. Preserve contour,
-facet UVs and element Euler rotation. Three different sectors become a forward
-chain. No synthetic palette, billboard frame swaps or raster repaint.
-"""
+"""Broad fractured ice, with unchanged reference facet painting and native timing."""
 import base64
 import json
 from pathlib import Path
 import uuid
 import reference_rime_geometry as ref
+from ice_fang_geometry import meshes
 from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -29,11 +25,10 @@ def smooth(value):
 
 
 def sections(variant):
-    letter = 'abc'[variant]
-    footing = ref.painted_branch(variant, (8,8,6), (8,9.4,13), 6.4, 0)
+    footing,inner,outer=meshes(variant)
     return [('root', footing, (0,0,-1.5), (2.25,1.5,2.25), 0, 40),
-            ('inner', ref.mesh('rime_inner_'+letter), (0,0,-1.8), (2.7,2.3,2.7), 0, 34),
-            ('outer', ref.mesh('rime_outer_'+letter), (0,0,0), (2.7,3.1,2.7), 2, 28)]
+            ('inner', inner, (0,0,-1.8), (2.7,2.3,2.7), 0, 34),
+            ('outer', outer, (0,0,0), (2.7,3.1,2.7), 2, 28)]
 
 
 def build(variant=0):
@@ -72,7 +67,7 @@ def build(variant=0):
                                  uuid=uid(f'{name}/{part}/{channel}/{tick}'), data_points=[dict(zip('xyz',vector))]))
         animators[bid] = dict(name=part, type='bone', keyframes=keys)
     textures = []
-    for index, path in enumerate((ref.SOURCE, ref.BRANCH_SOURCE)):
+    for index, path in enumerate((ref.SOURCE,)):
         with Image.open(path) as im: width,height = im.size
         textures.append(dict(name=path.name, id=str(index), uuid=uid(path.name),
                              width=width, height=height, uv_width=16, uv_height=16,

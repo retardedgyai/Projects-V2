@@ -17,15 +17,16 @@ class IceFangTests(unittest.TestCase):
         for name,digest in expected.items():
             raw=(ART/name).read_bytes()
             self.assertEqual(digest,hashlib.sha256(raw).hexdigest())
-            for i in range(3):
-                entry=next(t for t in build(i)['textures'] if t['name']==name)
-                self.assertEqual(raw,base64.b64decode(entry['source'].split(',')[1]))
+            if name=='rime-faces-v02.png':
+                for i in range(3):
+                    entry=next(t for t in build(i)['textures'] if t['name']==name)
+                    self.assertEqual(raw,base64.b64decode(entry['source'].split(',')[1]))
 
     def test_native_animation_and_budget(self):
         for i in range(3):
             model=build(i)
             cubes,bones,animations=validate_model(model)
-            self.assertLessEqual(cubes,750) # Original contour art, not per-pixel entities.
+            self.assertLessEqual(cubes,800) # Closed painted facets, not per-pixel entities.
             self.assertEqual(bones,4)
             self.assertEqual(animations,1)
             self.assertEqual(model['animations'][0]['length'],2.0)
@@ -34,7 +35,7 @@ class IceFangTests(unittest.TestCase):
                 self.assertEqual(scales[-1]['data_points'][0],dict(x=0,y=0,z=0))
                 self.assertTrue(all(k['channel'] in ('position','scale') for k in track['keyframes']))
 
-    def test_shapes_uvs_and_rotation_are_the_reference_not_a_new_approximation(self):
+    def test_authored_facets_keep_coordinates_uvs_and_rotations_through_conversion(self):
         for i in range(3):
             actual=build(i)['elements']
             j=0
@@ -46,6 +47,28 @@ class IceFangTests(unittest.TestCase):
                     self.assertEqual(e['rotation'],[source['rotation'].get(a,0) for a in 'xyz'])
                     for face,value in source['faces'].items():
                         self.assertEqual(e['faces'][face]['uv'],value['uv'])
+
+    def test_solid_primary_shapes_do_not_use_the_branch_billboard(self):
+        from ice_fang_geometry import meshes
+        import numpy as np
+        from preview_ice_fang import euler
+        heights=[]
+        for i in range(3):
+            model=build(i)
+            self.assertEqual(len(model['textures']),1)
+            self.assertTrue(all(f['texture']==0 for e in model['elements'] for f in e['faces'].values()))
+            root,inner,outer=meshes(i)
+            points=[]
+            for e in outer:
+                lo,hi=e['from'],e['to'];r=e['rotation'];origin=np.array(r['origin'])
+                v=np.array([[hi[j] if k&(1<<j) else lo[j] for j in range(3)] for k in range(8)])
+                points.extend((v-origin)@euler([r.get(k,0) for k in 'xyz']).T+origin)
+            bounds=np.ptp(np.array(points),axis=0)
+            self.assertGreater(bounds[0],4.8)
+            self.assertGreater(bounds[2],2.0)
+            heights.append(bounds[1])
+        self.assertGreater(heights[0],heights[1])
+        self.assertGreater(heights[1],heights[2])
 
     def test_tall_branches_end_before_low_roots(self):
         model=build()

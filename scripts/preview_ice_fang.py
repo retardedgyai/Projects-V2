@@ -84,6 +84,7 @@ def render(parts,seconds,view='iso'):
     def project(points):
         p=np.asarray(points);x,y,z=p[:,0],p[:,1]-1,p[:,2]
         if view=='side':return np.column_stack((100+z*62,355-y*62,-x))
+        if view=='front':return np.column_stack((360+x*95,375-y*95,z))
         return np.column_stack((195+(x*.8660254+z*.5)*56,
                                 405+(x*.25-z*.4330127-y*.8660254)*56,
                                 z*.75-x*.4330127-y*.5))
@@ -107,7 +108,7 @@ def render(parts,seconds,view='iso'):
 def main():
     parser=argparse.ArgumentParser()
     parser.add_argument('--stills',action='store_true')
-    parser.add_argument('--view',choices=['iso','side'],default='iso')
+    parser.add_argument('--view',choices=['iso','side','front'],default='iso')
     args=parser.parse_args()
     trace=json.loads((OUT/'ice-fang-native.json').read_text())
     frames=trace['frames']
