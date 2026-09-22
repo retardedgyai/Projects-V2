@@ -15,6 +15,11 @@ import net.minestom.server.event.instance.InstanceTickEvent
 import net.minestom.server.event.player.AsyncPlayerConfigurationEvent
 import net.minestom.server.event.player.PlayerDisconnectEvent
 import net.minestom.server.event.player.PlayerSpawnEvent
+import net.minestom.server.event.player.PlayerUseItemEvent
+import net.minestom.server.event.player.PlayerBlockInteractEvent
+import net.minestom.server.event.player.PlayerEntityInteractEvent
+import net.minestom.server.event.player.PlayerResourcePackStatusEvent
+import net.kyori.adventure.resource.ResourcePackStatus
 import net.minestom.server.event.server.ServerTickMonitorEvent
 import net.minestom.server.instance.block.Block
 import net.minestom.server.instance.LightingChunk
@@ -57,6 +62,14 @@ fun main(args: Array<String>) {
         URI("http://127.0.0.1:$httpPort/pack.zip"), packHash)
     val events = MinecraftServer.getGlobalEventHandler()
     val menu = LabMenu(events)
+    val iceFang = IceFangTraining(bundle, instance)
+    val packReady = java.util.concurrent.ConcurrentHashMap.newKeySet<UUID>()
+    events.addListener(PlayerResourcePackStatusEvent::class.java) {
+        if (it.packUuid == info.id()) {
+            if (it.status == ResourcePackStatus.SUCCESSFULLY_LOADED) packReady.add(it.player.uuid)
+            else packReady.remove(it.player.uuid)
+        }
+    }
     events.addListener(AsyncPlayerConfigurationEvent::class.java) {
         it.spawningInstance = instance
         it.player.respawnPoint = Pos(0.5, 1.0, -8.5)
@@ -66,9 +79,21 @@ fun main(args: Array<String>) {
             it.player.gameMode = GameMode.CREATIVE
             it.player.sendResourcePacks(ResourcePackRequest.resourcePackRequest().packs(info).required(true).build())
             it.player.sendMessage(Component.text("モデル工房：/model osirion|radix|vesper|piglin_lord、/anim 名前、/loop 名前、/bone 部位 true|false、/models、/modelclear、/modelstats"))
+            it.player.sendMessage(Component.text("メイジ試作：/mage で杖と訓練標的。右クリックで氷牙の連鎖。/mageclear で終了。"))
         }
     }
     events.addListener(PlayerDisconnectEvent::class.java) { actors.remove(it.player.uuid)?.close() }
+    events.addListener(PlayerDisconnectEvent::class.java) { iceFang.remove(it.player); packReady.remove(it.player.uuid) }
+    events.addListener(PlayerUseItemEvent::class.java) {
+        if (iceFang.uses(it.player, it.hand)) { it.isCancelled = true; iceFang.requestCast(it.player) }
+    }
+    events.addListener(PlayerBlockInteractEvent::class.java) {
+        if (iceFang.uses(it.player, it.hand)) { it.isCancelled = true; iceFang.requestCast(it.player) }
+    }
+    events.addListener(PlayerEntityInteractEvent::class.java) {
+        if (iceFang.uses(it.player, it.hand)) iceFang.requestCast(it.player)
+    }
+    events.addListener(InstanceTickEvent::class.java) { if (it.instance === instance) iceFang.tick() }
     events.addListener(InstanceTickEvent::class.java) { if (it.instance === instance) actors.values.forEach(BossModelActor::syncViewers) }
     events.addListener(ServerTickMonitorEvent::class.java) { metrics.record(it.tickMonitor.tickTime) }
 
@@ -91,6 +116,11 @@ fun main(args: Array<String>) {
     val bosses = mapOf("osirion" to WseeAssets.Osirion.Model, "radix" to WseeAssets.Radix.Model,
         "vesper" to WseeAssets.Vesper.Model, "piglin_lord" to WseeAssets.PiglinLord.Model)
     command("models") { player, _ -> player.sendMessage(Component.text("モデル：${bundle.definitions.keys.joinToString()}")) }
+    command("mage") { player, _ ->
+        if (player.uuid in packReady) iceFang.equip(player)
+        else player.sendMessage(Component.text("リソースパックの適用完了後に /mage を実行してください。"))
+    }
+    command("mageclear") { player, _ -> iceFang.remove(player) }
     command("modelmenu") { player, _ ->
         val names = mapOf("osirion" to "不滅の王", "radix" to "母樹", "vesper" to "鐘の番人", "piglin_lord" to "黄金卿")
         menu.show(player, "ボスのモデル", bosses.map { (name, id) -> LabMenu.Button(names.getValue(name)) {
@@ -126,6 +156,7 @@ fun main(args: Array<String>) {
     command("modelclear") { player, _ -> actors.remove(player.uuid)?.close() }
     command("modelstats") { player, _ -> player.sendMessage(Component.text(metrics.summary(instance.entities.size))) }
     Runtime.getRuntime().addShutdownHook(Thread {
+        iceFang.close()
         actors.values.forEach(BossModelActor::close)
         http.stop(0)
     })
