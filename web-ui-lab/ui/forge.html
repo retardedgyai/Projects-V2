@@ -1,0 +1,93 @@
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<title>ProjectS — 工房UI試作</title>
+<style>
+.screen { display:flex; flex-direction:column; width:800px; height:480px; padding:20px; gap:12px; background-color:#181d24; color:#eee8df; font-size:14px; }
+.row { display:flex; flex-direction:row; gap:12px; }
+.column { display:flex; flex-direction:column; gap:8px; }
+.grow { flex-grow:1; }
+.header { display:flex; flex-direction:row; gap:12px; height:48px; }
+.title { flex-grow:1; font-size:24px; font-weight:bold; }
+.tab { width:112px; background-color:#35414e; text-align:center; font-size:16px; }
+.close { width:48px; background-color:#63483e; text-align:center; }
+.body { display:flex; flex-direction:row; gap:16px; height:300px; }
+.hero { display:flex; flex-direction:column; gap:8px; width:260px; padding:16px; background-color:#26313b; }
+.details { display:flex; flex-direction:column; gap:10px; flex-grow:1; padding:16px; background-color:#25282d; }
+.muted { color:#abb4be; font-size:12px; }
+.gold { color:#e7bc75; }
+.heading { height:28px; font-size:20px; font-weight:bold; }
+.material { display:flex; flex-direction:row; height:56px; padding:8px; gap:12px; background-color:#34373c; }
+.button { height:44px; background-color:#537c65; font-size:18px; font-weight:bold; text-align:center; }
+.control { flex-grow:1; background-color:#35414e; text-align:center; font-size:12px; }
+.card { display:flex; flex-direction:column; flex-grow:1; padding:14px; gap:8px; background-color:#26313b; text-align:center; }
+</style>
+</head>
+<body>
+<main class="screen" id="screen">
+  <div class="header">
+    <p class="title">PROJECTS / 鍛冶工房</p>
+    <button class="tab" data-action="tab:forge">装備強化</button>
+    <button class="tab" data-action="tab:catalog">素材見本</button>
+    <button class="close" data-action="close">閉じる</button>
+  </div>
+  <div class="body" data-if="forge">
+    <div class="hero">
+      <p class="muted" style="height:20px">選択中の装備 / 試作アイテム</p>
+      <div id="weapon" data-item="minecraft:iron_sword" style="height:132px; text-align:center">⚔</div>
+      <p class="heading gold">旅人の大剣 {{level}}</p>
+      <p style="height:28px">攻撃力  {{damage}} → {{nextDamage}}</p>
+      <p class="muted" style="height:24px">T1 / 確定強化・テスト専用</p>
+    </div>
+    <div class="details">
+      <p class="heading">次の強化  {{level}} → {{next}}</p>
+      <p class="muted" style="height:20px">必要な素材と、いま持っている数</p>
+      <div class="material">
+        <div data-item="minecraft:iron_ingot" style="width:40px">▰</div>
+        <p class="grow">精錬鉄   {{ore}} / {{cost}} 個</p>
+      </div>
+      <div class="material">
+        <div data-item="minecraft:gold_nugget" style="width:40px">◆</div>
+        <p class="grow">加工費   {{coins}} / 200 G</p>
+      </div>
+      <button id="forge-button" class="button" data-action="forge" data-enabled="affordable">{{button}}</button>
+    </div>
+  </div>
+  <div class="body" data-if="catalog">
+    <div class="card" data-if="first">
+      <p class="heading gold">鉄鉱石</p>
+      <div class="grow" data-item="minecraft:raw_iron">◆</div>
+      <p style="height:24px">採掘 / 装備の製造</p>
+    </div>
+    <div class="card" data-if="first">
+      <p class="heading gold">木材</p>
+      <div class="grow" data-item="minecraft:oak_log">▣</div>
+      <p style="height:24px">伐採 / 柄と部品</p>
+    </div>
+    <div class="card" data-if="second">
+      <p class="heading gold">革</p>
+      <div class="grow" data-item="minecraft:leather">◆</div>
+      <p style="height:24px">皮剥ぎ / 装備の補修</p>
+    </div>
+    <div class="card" data-if="second">
+      <p class="heading gold">結晶</p>
+      <div class="grow" data-item="minecraft:amethyst_shard">✦</div>
+      <p style="height:24px">探索 / 魔力の加工</p>
+    </div>
+    <div class="column" style="width:100px">
+      <p style="height:32px; text-align:center">{{page}}</p>
+      <button class="button" data-action="page:prev">前へ</button>
+      <button class="button" data-action="page:next">次へ</button>
+      <p class="muted" style="height:24px">ホイール対応</p>
+    </div>
+  </div>
+  <p id="status" class="muted" style="height:24px">{{status}}</p>
+  <div class="row" style="height:32px">
+    <button class="control" data-action="reset">テスト素材を補充</button>
+    <button class="control" data-action="reload">HTMLを再読込</button>
+    <button class="control" data-action="delay">追加応答遅延 {{delay}}</button>
+    <button class="control" data-action="zoom">表示サイズ {{zoom}}</button>
+  </div>
+</main>
+</body>
+</html>
