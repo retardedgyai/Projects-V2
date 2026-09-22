@@ -9,3 +9,4 @@ pluginManagement {
 rootProject.name = "projects-v2"
 
 include("protocol", "server-minestom", "client-fabric")
+include("model-lab")
