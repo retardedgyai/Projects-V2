@@ -35,6 +35,10 @@ class BossModelActor(
         check(!closed)
         animation.playOnce(definition.requireAnimation(name), exclusive, Runnable {})
     }
+    fun stopRepeating() {
+        check(!closed)
+        definition.animations.keys.forEach(animation::stopRepeat)
+    }
     fun setBoneVisible(name: String, visible: Boolean) {
         check(!closed)
         require(model.getPart(name) != null) { "Unknown bone: $name" }
