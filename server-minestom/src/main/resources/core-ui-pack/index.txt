@@ -15882,6 +15882,9 @@ assets/projects/textures/combat_vfx/frost/floor_6.png
 assets/projects/textures/combat_vfx/frost/floor_7.png
 assets/projects/textures/combat_vfx/mage_material/cryopillar_faces_v01.png
 assets/projects/textures/combat_vfx/mage_material/cryopillar_faces_v02.png
+assets/projects/textures/combat_vfx/mage_material/frozen_fracture_v01.png
+assets/projects/textures/combat_vfx/mage_material/glacial_strata_v01.png
+assets/projects/textures/combat_vfx/mage_material/lunar_veins_v01.png
 assets/projects/textures/combat_vfx/mage_material/meteor_basalt_v01.png
 assets/projects/textures/combat_vfx/mage_material/meteor_cooling_v01.png
 assets/projects/textures/combat_vfx/mage_material/meteor_ember_v01.png
@@ -15889,9 +15892,11 @@ assets/projects/textures/combat_vfx/mage_material/meteor_impact_atlas_v01.png
 assets/projects/textures/combat_vfx/mage_material/meteor_impact_bridge_v01.png
 assets/projects/textures/combat_vfx/mage_material/meteor_wake_v01.png
 assets/projects/textures/combat_vfx/mage_material/rime_branches_v01.png
+assets/projects/textures/combat_vfx/mage_material/rime_calm_faces_v01.png
 assets/projects/textures/combat_vfx/mage_material/rime_faces_v01.png
 assets/projects/textures/combat_vfx/mage_material/rime_faces_v02.png
 assets/projects/textures/combat_vfx/mage_material/solar_bolt_faces_v01.png
+assets/projects/textures/combat_vfx/mage_material/solar_flow_v01.png
 assets/projects/textures/combat_vfx/nebula/stream_0.png
 assets/projects/textures/combat_vfx/nebula/stream_1.png
 assets/projects/textures/combat_vfx/nebula/stream_10.png

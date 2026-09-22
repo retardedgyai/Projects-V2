@@ -70,4 +70,17 @@ class CoreMageFrostChoreographyTest {
         assertTrue(CoreSkillChoreography.pose(parts.first(),age).visible)
         assertEquals(7,parts.size)
     }
+
+    @Test fun `contraction preserves branch proportions instead of flattening into bright floor plates`() {
+        for(p in CoreSkillChoreography.parts(effect())) {
+            val end=(p.durationTicks-1).toDouble()
+            val earlier=CoreSkillChoreography.pose(p,p.delayTicks+end-6).scale
+            val later=CoreSkillChoreography.pose(p,p.delayTicks+end-2).scale
+            assertTrue(later.x()<earlier.x() && later.y()<earlier.y() && later.z()<earlier.z())
+            assertEquals(p.scale.x()/p.scale.y(),later.x()/later.y(),1e-8)
+            assertEquals(p.scale.z()/p.scale.y(),later.z()/later.y(),1e-8)
+        }
+        val outer=CoreSkillChoreography.parts(effect()).filter { it.shape.contains("outer_") }
+        assertEquals(3,outer.map { it.delayTicks+it.durationTicks }.distinct().size)
+    }
 }

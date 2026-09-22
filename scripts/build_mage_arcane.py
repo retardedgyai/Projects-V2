@@ -8,10 +8,13 @@ import math
 import numpy as np
 from build_approved_dash_v3 import SIZE, polygon
 from build_mage_fire import box
+from build_mage_uv import painted
 
 ARCANE_CLIPS={'conductor','arcane_forks','thunder_hit','discharge','rupture','fold_in','fold_out',
               'ward','ward_mote','arcane_charge'}
 PALETTE=[0x382663,0x7855c4,0xa68aea,0x72d8e4,0xe8edff]
+PALETTE += [0x615B88,0xAAA6CE,0xD4D3EE,0xF2F2FF,0xFFFFFF]
+PAINTED_ARCANE={'fold_in','fold_out','ward','ward_mote','arcane_charge'}
 
 
 def ribbon(out,points,width,ink,uv):
@@ -22,7 +25,7 @@ def ribbon(out,points,width,ink,uv):
         count=max(1,math.ceil(np.max(abs(b-a))/.24))
         for j in range(count):
             p=a+(b-a)*(j+.5)/count
-            w=width*(.86+.14*(j%3==0))
+            w=width
             lo=p-np.array((w,w,.14));hi=p+np.array((w,w,.14))
             lo[2]=max(.05,lo[2]);hi[2]=min(15.95,hi[2])
             out.append(box(lo,hi,ink,uv,max(0,ink-2)))
@@ -47,7 +50,7 @@ def glass(grid,uv,frame,mode):
     return out
 
 
-def mesh(clip,frame,uv):
+def geometry(clip,frame,uv):
     frames=18 if clip=='thunder_hit' else 28 if clip in ('discharge','rupture') else 30 if clip in ('ward','ward_mote') else 24
     if frame>=frames-1:return []
     t=frame/(frames-1)
@@ -69,8 +72,13 @@ def mesh(clip,frame,uv):
               (8.0,7.8,8.5),(9.0,8.4,11),(7.7,8.1,13),(8,8,15)]
         if frame>9:
             path=path[min(6,(frame-9)//2):]
-        width=(.27 if clip=='conductor' else .48)*max(.08,1-t)
-        ribbon(out,path,width,4 if frame<3 else 3 if frame<7 else 2,uv)
+        width=(.34 if clip=='conductor' else .58)*max(.08,1-t)
+        # Distinct layers: dark violet outer cut, lavender body, narrow white
+        # conductor. Centre stays legible instead of switching the whole wire
+        # between a few flat colours as time passes.
+        ribbon(out,path,width,1,uv)
+        ribbon(out,[np.asarray(p)+[0,.02,-.025] for p in path],width*.58,2,uv)
+        ribbon(out,[np.asarray(p)+[0,.04,-.05] for p in path],width*.19,4,uv)
         if frame<13:
             for branch in ([(7,8.5,4.5),(5.2,9,5.4),(5.9,9.1,6.5),(4.8,9,8)],
                            [(9.3,8.1,7),(11,7.3,9),(10.1,7.1,10.5)]):
@@ -132,3 +140,8 @@ def mesh(clip,frame,uv):
             for col in range(SIZE):
                 if (row+col//3)%19<int((1-fade)*16):g[row,col]=0
     return glass(g,uv,frame,clip)
+
+
+def mesh(clip,frame,uv):
+    elements=geometry(clip,frame,uv)
+    return painted(elements,'y',5) if clip in PAINTED_ARCANE else elements

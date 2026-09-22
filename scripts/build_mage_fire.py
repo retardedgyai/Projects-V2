@@ -9,6 +9,7 @@ from pathlib import Path
 import math
 import numpy as np
 from PIL import Image
+from build_mage_uv import painted
 
 SOURCE = Path(__file__).resolve().parents[1]/'assets/combat-vfx/mage-v2/sources/firebolt-v02.png'
 FIRE_CLIPS = {'cinder', 'fire_stream', 'flame_hit', 'fire_charge'}
@@ -36,7 +37,7 @@ def source():
 
 
 def palette():
-    return source()[1]
+    return source()[1]+[0xA16F85,0xD69BA6,0xFFE1CB,0xFFFFFF]
 
 
 def box(lo,hi,colour,uv,edge=None):
@@ -48,7 +49,7 @@ def box(lo,hi,colour,uv,edge=None):
             'shade':False,'faces':faces}
 
 
-def mesh(clip,frame,uv):
+def geometry(clip,frame,uv):
     count=18 if clip=='flame_hit' else 24
     if frame>=count-1:return []
     grid,_=source()
@@ -131,3 +132,9 @@ def mesh(clip,frame,uv):
                 elements.append(e)
             start=end
     return elements
+
+
+def mesh(clip,frame,uv):
+    elements=geometry(clip,frame,uv)
+    # Fine paths keep solid light; the volume carries the painted hot interior.
+    return elements if clip=='fire_stream' else painted(elements,'z',4)

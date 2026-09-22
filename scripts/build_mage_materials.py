@@ -4,14 +4,18 @@ Source images are read unchanged; native geometry/materials carry their selected
 painted planes. This only builds RP assets, never changes combat authority.
 """
 import json
+import shutil
 from build_approved_dash_v3 import PACK, ink_uvs
 from build_mage_fire import FIRE_CLIPS, mesh as fire_mesh, palette as fire_palette
 from build_mage_ice import ICE_CLIPS, mesh as ice_mesh, palette as ice_palette
-from build_mage_arcane import ARCANE_CLIPS, mesh as arcane_mesh, PALETTE as ARCANE_PALETTE
+from build_mage_arcane import ARCANE_CLIPS, PAINTED_ARCANE, mesh as arcane_mesh, PALETTE as ARCANE_PALETTE
 from build_mage_cataclysm import CATACLYSM_CLIPS, mesh as cataclysm_mesh, palette as cataclysm_palette
-from build_mage_garden import GARDEN_CLIPS, mesh as garden_mesh, PALETTE as GARDEN_PALETTE
-
+from build_mage_garden import GARDEN_CLIPS, TEXTURED_CLIPS, mesh as garden_mesh, PALETTE as GARDEN_PALETTE
+from build_mage_glacier import GLACIER_CLIPS
 from build_mage_meteor import METEOR_CLIPS, mesh as meteor_mesh, PALETTE as METEOR_PALETTE, build as build_meteor
+
+PAINTED_FIRE=(FIRE_CLIPS-{'fire_stream'})|(CATACLYSM_CLIPS-{'corona'})
+TEXTURED_MATERIALS=TEXTURED_CLIPS|GLACIER_CLIPS|PAINTED_FIRE|PAINTED_ARCANE|METEOR_CLIPS
 
 CLIPS = {
     'garden_spires': (48, 0x83dbe5), 'garden_fan': (48, 0x83dbe5),
@@ -54,17 +58,34 @@ def material_geometry(clip,frame,inks):
 
 
 def build(assets,write):
+    texture=assets/'textures/combat_vfx/mage_material/glacial_strata_v01.png'
+    texture.parent.mkdir(parents=True,exist_ok=True)
+    # Preserve the generated bitmap bytes. UV density, not destructive image
+    # processing, determines the material's apparent pixel scale on each face.
+    shutil.copyfile(PACK.parents[4]/'assets/combat-vfx/mage-v4/sources/glacial-strata-v01.png',texture)
+    shutil.copyfile(PACK.parents[4]/'assets/combat-vfx/mage-v4/sources/frozen-fracture-v01.png',
+                    texture.with_name('frozen_fracture_v01.png'))
+    for stem in ('solar-flow','lunar-veins'):
+        shutil.copyfile(PACK.parents[4]/f'assets/combat-vfx/mage-v4/sources/{stem}-v01.png',
+                        texture.with_name(stem.replace('-','_')+'_v01.png'))
     inks=ink_uvs(assets)
     for clip,(frames,_) in CLIPS.items():
         if clip in METEOR_CLIPS:continue
         for frame in range(frames):
             key=f'combat_vfx/mage_material/{clip}_{frame}'
+            textures={'0':'projects:combat_vfx/ribbon/slash_5'}
+            if clip in TEXTURED_MATERIALS:
+                textures['1']='projects:combat_vfx/mage_material/glacial_strata_v01'
+                textures['2']='projects:combat_vfx/mage_material/frozen_fracture_v01'
+            if clip in PAINTED_FIRE:
+                textures['1']='projects:combat_vfx/mage_material/solar_flow_v01'
+            if clip in PAINTED_ARCANE:
+                textures['1']='projects:combat_vfx/mage_material/lunar_veins_v01'
             write(assets/f'models/{key}.json',{'ambientocclusion':False,
-                'textures':{'0':'projects:combat_vfx/ribbon/slash_5'},
+                'textures':textures,
                 'elements':material_geometry(clip,frame,inks)})
             write(assets/f'items/{key}.json',{'model':{'type':'minecraft:model','model':'projects:'+key,
                 'tints':[{'type':'minecraft:constant','value':colour} for colour in material_palette(clip)]}})
-
     build_meteor(assets,write)
 
 

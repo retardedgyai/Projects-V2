@@ -11,6 +11,11 @@ from build_mage_fire import box
 
 GARDEN_CLIPS={'garden_spires','garden_fan','garden_bed','garden_spray','garden_beat','garden_charge'}
 PALETTE=[0x233E73,0x285F99,0x278EBA,0x46BED4,0x83DBE5,0xC4F2F1]
+# The first six inks remain for travelling energy and small shards. Solid ice
+# samples the actual painted texture with restrained face lighting, not blue
+# flat tint multiplied over another blue flat tint.
+PALETTE += [0x687B9B,0x889BBC,0xB6C9DD,0xD7E5F1,0xF1FBFF,0xFFFFFF]
+TEXTURED_CLIPS={'garden_spires','garden_fan','garden_bed','garden_charge'}
 STEP=.5
 SHAPE=(40,48,36)
 ORIGIN=np.array((-2.,8.,-1.))
@@ -193,4 +198,39 @@ def geometry(clip,frame,uv_tuple):
     return skin(v,uv)
 
 
-def mesh(clip,frame,uv):return geometry(clip,frame,tuple(uv))
+def textured_faces(elements,clip):
+    import copy
+    result=copy.deepcopy(elements)
+    for e in result:
+        lo,hi=e['from'],e['to']
+        for name,face in e['faces'].items():
+            if name in ('up','down'):
+                axes=(0,2);ranges=((-2.,18.),(-1.,17.))
+            elif name in ('north','south'):
+                axes=(0,1);ranges=((-2.,18.),(8.,32.))
+            else:
+                axes=(2,1);ranges=((-1.,17.),(8.,32.))
+            coords=[]
+            for bound in (lo,hi):
+                coords.extend(max(0.,min(16.,(bound[axis]-a)/(b-a)*16))
+                              for axis,(a,b) in zip(axes,ranges))
+            if axes[1]==1:coords[1],coords[3]=16-coords[3],16-coords[1]
+            # Native north/east quads begin at the high horizontal coordinate;
+            # down quads begin at high Z. Without these inversions every merged
+            # rectangle mirrors its own crop and long veins break at each seam.
+            if name in ('north','east'):coords[0],coords[2]=coords[2],coords[0]
+            if name=='down':coords[1],coords[3]=coords[3],coords[1]
+            fracture=clip in ('garden_bed','garden_charge') or name in ('up','down')
+            if fracture:
+                # Only the large plate region: the source's finer edge detail
+                # must not become high-frequency noise across a four-metre bed.
+                coords=[4+v*.375 for v in coords]
+            face['texture']='#2' if fracture else '#1'
+            face['uv']=[round(v,6) for v in coords]
+            face['tintindex']+=6
+    return result
+
+
+def mesh(clip,frame,uv):
+    elements=geometry(clip,frame,tuple(uv))
+    return textured_faces(elements,clip) if clip in TEXTURED_CLIPS else elements
