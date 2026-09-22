@@ -64,6 +64,7 @@ fun main(args: Array<String>) {
     val menu = LabMenu(events)
     val iceFang = IceFangTraining(bundle, instance)
     val packReady = java.util.concurrent.ConcurrentHashMap.newKeySet<UUID>()
+    val testUi = LabTestUi(events,menu,bundle,instance,iceFang,actors,{ it.uuid in packReady },metrics)
     events.addListener(PlayerResourcePackStatusEvent::class.java) {
         if (it.packUuid == info.id()) {
             if (it.status == ResourcePackStatus.SUCCESSFULLY_LOADED) packReady.add(it.player.uuid)
@@ -78,8 +79,8 @@ fun main(args: Array<String>) {
         if (it.isFirstSpawn) {
             it.player.gameMode = GameMode.CREATIVE
             it.player.sendResourcePacks(ResourcePackRequest.resourcePackRequest().packs(info).required(true).build())
-            it.player.sendMessage(Component.text("モデル工房：/model osirion|radix|vesper|piglin_lord、/anim 名前、/loop 名前、/bone 部位 true|false、/models、/modelclear、/modelstats"))
-            it.player.sendMessage(Component.text("メイジ試作：/mage で杖と訓練標的。右クリックで氷牙の連鎖。/mageclear で終了。"))
+            testUi.giveOpener(it.player)
+            it.player.sendMessage(Component.text("テスト工房：ホットバー9番のコンパスを右クリック。Shift＋Fでもメニューを開けます。"))
         }
     }
     events.addListener(PlayerDisconnectEvent::class.java) { actors.remove(it.player.uuid)?.close() }
@@ -116,22 +117,15 @@ fun main(args: Array<String>) {
     val bosses = mapOf("osirion" to WseeAssets.Osirion.Model, "radix" to WseeAssets.Radix.Model,
         "vesper" to WseeAssets.Vesper.Model, "piglin_lord" to WseeAssets.PiglinLord.Model)
     command("models") { player, _ -> player.sendMessage(Component.text("モデル：${bundle.definitions.keys.joinToString()}")) }
+    command("test") { player, _ -> testUi.home(player) }
+    command("menu") { player, _ -> testUi.home(player) }
     command("mage") { player, _ ->
         if (player.uuid in packReady) iceFang.equip(player)
         else player.sendMessage(Component.text("リソースパックの適用完了後に /mage を実行してください。"))
     }
     command("mageclear") { player, _ -> iceFang.remove(player) }
     command("modelmenu") { player, _ ->
-        val names = mapOf("osirion" to "不滅の王", "radix" to "母樹", "vesper" to "鐘の番人", "piglin_lord" to "黄金卿")
-        menu.show(player, "ボスのモデル", bosses.map { (name, id) -> LabMenu.Button(names.getValue(name)) {
-            val definition = bundle.definition(id)
-            actors.remove(player.uuid)?.close()
-            val actor = BossModelActor(definition, instance, player.position.add(0.0, 0.0, 6.0))
-            actors[player.uuid] = actor
-            menu.show(player, "アニメーション", definition.animations.keys.map { anim -> LabMenu.Button(anim) {
-                if (actors[player.uuid] === actor) actor.play(anim)
-            } })
-        } })
+        testUi.bosses(player)
     }
     command("model") { player, words ->
         val name = words.firstOrNull() ?: "vesper"

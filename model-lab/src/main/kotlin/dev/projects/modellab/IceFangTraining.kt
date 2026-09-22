@@ -36,9 +36,10 @@ class IceFangTraining(private val bundle: ModelBundle, private val instance: Ins
             sessions[player.uuid] = session
             val wand = ItemStack.builder(Material.BLAZE_ROD).customName(Component.text("氷牙の連鎖", NamedTextColor.AQUA))
                 .lore(listOf("右クリック：正面7mへ氷牙を連ねる", "威力 40 + AP80% = 88（訓練AP60）",
-                    "敵1体につき1回命中 / マナ20 / 再使用4秒", "壁で停止 / 空中使用不可", "/mage：標的・マナをリセット /mageclear：終了")
+                    "敵1体につき1回命中 / マナ20 / 再使用4秒", "壁で停止 / 空中使用不可", "コンパス／Shift＋F：リセット・終了")
                     .map { Component.text(it, NamedTextColor.GRAY) }).set(tag, true).build()
-            player.itemInMainHand = wand
+            player.inventory.setItemStack(0,wand)
+            player.setHeldItemSlot(0)
             spawnTargets(session)
             player.sendMessage(Component.text("氷牙の連鎖：杖を右クリック。手前から奥へ発生し、標的を1回ずつ攻撃します。"))
         }
@@ -157,7 +158,10 @@ class IceFangTraining(private val bundle: ModelBundle, private val instance: Ins
             finish(session)
             session.targets.forEach { it.remove() }
             if (!session.player.isRemoved) {
-                if (uses(session.player, PlayerHand.MAIN)) session.player.itemInMainHand = ItemStack.AIR
+                for (slot in 0 until session.player.inventory.size) {
+                    if (session.player.inventory.getItemStack(slot).getTag(tag) == true)
+                        session.player.inventory.setItemStack(slot,ItemStack.AIR)
+                }
                 session.player.sendActionBar(Component.empty())
             }
         }

@@ -6,6 +6,9 @@ import net.minestom.server.coordinate.Pos
 import net.minestom.server.entity.EntityCreature
 import net.minestom.server.entity.Player
 import net.minestom.server.entity.EntityType
+import net.minestom.server.entity.PlayerHand
+import net.minestom.server.event.inventory.InventoryPreClickEvent
+import net.minestom.server.inventory.click.Click
 import net.minestom.server.instance.block.Block
 import net.minestom.server.network.ConnectionState
 import net.minestom.server.network.packet.server.SendablePacket
@@ -44,7 +47,22 @@ fun main(args: Array<String>) {
                 training.tick(); process.ticker().tick(++ticks * 50_000_000L)
             } }
             fun targets() = instance.entities.filterIsInstance<EntityCreature>().filter { it.entityType == EntityType.HUSK }
-            training.equip(player); step(3)
+            val events=MinecraftServer.getGlobalEventHandler()
+            val actors=java.util.concurrent.ConcurrentHashMap<UUID,BossModelActor>()
+            var packLoaded=false
+            val ui=LabTestUi(events,LabMenu(events),bundle,instance,training,actors,{packLoaded},TickMetrics())
+            fun click(slot:Int) {
+                val event=InventoryPreClickEvent(checkNotNull(player.openInventory),player,Click.Left(slot))
+                events.call(event); check(event.isCancelled)
+            }
+            ui.giveOpener(player); player.setHeldItemSlot(8)
+            check(LabTestUi.usesOpener(player,PlayerHand.MAIN))
+            ui.home(player); click(10); step(3)
+            check(targets().isEmpty()) { "UI bypassed pack gate" }
+            packLoaded=true
+            ui.home(player); click(10); step(3)
+            check(player.openInventory==null && training.uses(player,PlayerHand.MAIN))
+            check(player.inventory.getItemStack(8)==LabTestUi.opener()) { "Wand overwrote menu compass" }
             check(targets().size == 3) { "Missing training targets" }
             val baseline = instance.entities.size
             player.refreshOnGround(false) // Jump's first packet: feet can still be near floor height.
@@ -63,8 +81,9 @@ fun main(args: Array<String>) {
             training.requestCast(player); step(5)
             check(targets().all { it.health == 440f }) { "Cooldown bypass" }
             // Reset reproduces normal /mage, closes previous targets and replenishes training state.
-            training.equip(player); step(3)
+            ui.home(player); click(11); step(3)
             check(targets().size == 3)
+            check(training.mana(player)==100)
             instance.setBlock(0, 1, 4, Block.STONE)
             training.requestCast(player); step(55)
             check(targets().count { it.health == 440f } == 1) { "Wall did not stop chain" }
@@ -74,12 +93,25 @@ fun main(args: Array<String>) {
             training.requestCast(player); step(2)
             training.remove(player); step(3)
             check(instance.entities.size == 1) { "Cancel leaked: ${instance.entities.size}" }
+            ui.home(player); click(14); click(0); step(3)
+            check(actors.size==1) { "Boss selection did not create an actor" }
+            click(24); click(1); step(3) // Switch to continuous playback, then attack.
+            check(player.openInventory==null) { "Animation playback left the menu covering the model" }
+            ui.home(player); click(15); click(24); click(1); step(3) // Return to one-shot without the old repeat.
+            ui.home(player); click(16); step(3)
+            check(actors.isEmpty() && instance.entities.size==1) { "UI model cleanup leaked" }
+            click(10); step(3)
+            // Removing the staff works even after switching back to the compass.
+            player.setHeldItemSlot(8)
+            ui.home(player); click(22); step(3)
+            check(instance.entities.size==1 && player.inventory.getItemStack(0).isAir)
+            check(LabTestUi.usesOpener(player,PlayerHand.MAIN))
             training.equip(player); step(3)
             training.requestCast(player); step(2)
             player.remove(); step(4)
             check(instance.entities.isEmpty()) { "Disconnect leaked ${instance.entities.size} entities" }
         }
-        println("ICE FANG SMOKE PASS: 3 targets, 88 damage once each, air/flight rejection without mana or cooldown, spam/cooldown/wall/reset/cancel/disconnect, zero entity leaks; no game launched")
+        println("ICE FANG SMOKE PASS: UI pack gate/start/reset/boss/animation/cleanup/compass preserved; 3 targets, 88 damage once each, air/flight rejection, spam/cooldown/wall/reset/cancel/disconnect, zero entity leaks; no game launched")
     } finally {
         process.dispatcher().shutdown()
         MinecraftServer.stopCleanly()
