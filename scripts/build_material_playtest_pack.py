@@ -1,7 +1,9 @@
-"""One-sword opt-in playable snapshot; no running process or installed RP writes.
+"""Legacy one-sword preview snapshot; no running process or installed RP writes.
 
 Preserves every installed resource except the existing greatsword T1 item graph.
 Regenerates the material candidate and all existing cosmetic pose-channel states.
+The approved candidate is now also shipped in the normal pack; identical
+already-promoted assets make this operation a no-op for their content.
 """
 import io
 import json
@@ -103,7 +105,7 @@ def build(output=OUT):
               'unchanged_installed_files': sum(files[name] == data for name, data in base.items()),
               'files_sha256': {name: digest(data) for name, data in sorted(files.items())}}
     (output / 'report.json').write_text(json.dumps(report, indent=2) + '\n', encoding='utf-8')
-    print(f'Material review: {len(files)} files, only greatsword T1 replaced; no runtime changes.')
+    print(f'Material review: {len(files)} files, {len(report["replaced_item_definitions"])} equipment definitions replaced; no runtime changes.')
 
 
 if __name__ == '__main__':

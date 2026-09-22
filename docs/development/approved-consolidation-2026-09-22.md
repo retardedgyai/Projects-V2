@@ -24,8 +24,9 @@
 
 ## ブランチ整理・復元
 
-対象は今回の自分たちの `play/gyai/*`、`integrate/gyai/*`、`experiment/gyai/*` と `ui/item-tooltip-assets-v0`。
+対象は今回のローカル作業ブランチのうち `play/gyai/*`、`integrate/gyai/*`、`experiment/gyai/*` と `ui/item-tooltip-assets-v0`。正確な一覧は `branch-archive-2026-09-22.json`。
 別Creatorの `play/mare/*`、その他の従来開発ブランチ、mainは削除しない。
+ローカル作業にない別タスク `play/gyai/combat-build-decisions-20260919` と `play/gyai/creative-mode` も対象外として保持する。
 
 削除前に `archive/2026-09-22/<元ブランチ名>` をoriginへ公開してSHAを照合する。
 ローカル先端とリモート先端が異なる場合は `archive/2026-09-22/remote/<元ブランチ名>` も保持。
@@ -40,6 +41,9 @@ Obsidianの個人メモ・ローカル設定・セーブ・ログ・`.tools/`・
 
 - Solのread-only review: committed gameplay統合と大剣通常パック化の両方で重大blockerなし。
 - Creatorは統合元の職業/戦士/工房を実機で試用済み。今回新規アートやAIゲーム操作は行わない。
-- full server tests / installDist、model-lab tests / native model smoke / ice fang smoke、通常パックの資産検証と大剣回帰テストをmerge前に実行する。
+- 全体Gradle検証: BUILD SUCCESSFUL。server 853 tests、model-lab 14 tests、失敗・error 0。installDist成功。
+- native model smoke: 18 models / 67 animations / 2,770 ticks、leak 0。氷牙のUI・命中・壁遮断・CD・reset・切断cleanup smoke成功。
+- 通常パック資産検証: 13,779 assets成功。大剣既定化・旧overlay互換・grip・redraw・氷牙・boss model・pack componentのPython回帰テスト29件成功。
+- ブランチ退避・閉鎖スクリプトもSol review PASS。リモート退避SHA・未コミットsnapshot・mainへの統合完了を確認してから閉じる。
 
 不具合時: 通常大剣なら `test_default_greatsword.py` と `core-ui-pack/index.txt`、工房の紫黒なら `ModelBundle` の世代照合、保存なら `CoreAccountRepository` とv1〜v9移行バックアップを確認する。
