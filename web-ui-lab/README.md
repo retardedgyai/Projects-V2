@@ -8,7 +8,7 @@
 - チェスト枠外の、装備モデル＋素材＋実行ボタンの自由配置。
 - HTMLとCSSをAI/人間が編集し、再コンパイルなしで反映。
 - 固定カメラとサーバー側カーソル。見た目とクリック判定に同じレイアウトを使用。
-- 無効状態・素材不足・タブ・ページ送り・ホイール・追加応答遅延・表示サイズ。
+- 無効状態・素材不足・タブ・ページ送り・追加応答遅延・表示サイズ。
 - 購入/強化はメモリ内のダミー値のみ。課金・本編装備・所持金・保存は一切触らない。
 
 ## 起動
@@ -22,10 +22,13 @@ Java25と既存Gradle cache/patch環境を使う。
 
 - Minecraft Vanilla 26.2: `127.0.0.1:25570`（本編25565とは別）。
 - ブラウザ: `http://127.0.0.1:18090/`。
-- コンパスを右クリック、または `/ui`。マウス移動でカーソル、左右クリックで決定。
-- 素材見本ではホイール/数字キーもページ送り。Shift / 「閉じる」/ `/uiclose` で終了。
+- コンパスを右クリック、または `/ui`。マウス移動でカーソル、**左クリック**で決定。
+- 素材見本は画面内の「前へ・次へ」。Shift / 「閉じる」/ `/uiclose` で終了。
+- UI中だけクライアント表示をspectatorにして手・通常HUDを隠す。サーバーのAdventure権限/所持品は変更しない。
+- この表示モードでは空中右クリックは届かず、ホイール/数字キーはバニラ観戦メニュー側に処理される。UIページ操作には使わない。
 - Escはバニラの一時停止画面になる。独自のEscキー検出はしていない。
-- ゲーム起動・ゲーム操作は自動化しない。本編サーバーを停止しない。
+- ゲーム操作・feel評価はCreatorが行う。本編サーバーを停止しない。
+- 許可された表示確認のみ `start-web-ui-lab.ps1 -OpenOnJoin` で参加後にUIを自動表示できる。クリック・マウス操作はしない。
 
 ## AIにUIを編集させる場所
 
@@ -68,7 +71,7 @@ background-color/color（6桁HEX）、font-size、font-weight、text-align。
 ## 構造 / 故障時
 
 `forge.html → UiDocument.layout → UiScene → UiRenderer / hit test → ForgeDemo`。
-パケット入力とカメラ復帰は`UiSessions`。見た目なら`UiRenderer`、レイアウトerrorなら`UiDocument`、
+パケット入力とカメラ復帰は`UiSessions`。見た目なら`UiRenderer`と`UiGeometry`、レイアウトerrorなら`UiDocument`、
 起動ログは`.tools/web-ui-lab/`。接続ログは`UI_LAB_PLAYER_CONNECTED`。
 UI定義は96KB/200 DOM/180描画node/深さ12まで。XML外部実体と外部アクセスを禁止。
 サンプル要求8件、遅延入力64件で上限を設け、無応答5秒で解除する。
@@ -82,10 +85,22 @@ UI定義は96KB/200 DOM/180描画node/深さ12まで。XML外部実体と外部�
 
 研究用クローンは`.tools/`のみ。配布物へ第三者コードは混入しない。
 
-## 今回の検証結果
+## 2026-09-22 入力・描画修正
 
-- Kotlin tests: 5件合格（全画面状態、hit領域、二重強化拒否、不正HTML/CSS/未知item、pointer境界）。
-- Native Minestom smoke: カメラ開始→回転パケット→強化click→slot復帰→終了を5周、第三者へのentity非表示と残留0を確認。
-- ブラウザ: 強化/素材不足/素材2ページの4画面、枠外はみ出し0、無効ボタン、タブ→次ページ遷移を確認。
-- Sol read-only review: 指摘2件（未知itemのreload、終了時slot同期）修正後PASS。
-- localhostサーバーとHTTP 200を確認。本物のMinecraftクライアントによる表示・操作感は未検証、Creator確認待ち。
+初回Creatorテストで遅延と背景の位置ずれが判明。初回のbrowser/smoke PASSは実機品質の保証にはならなかった。
+
+- 26.2 vanillaクライアントのTextDisplay描画処理を確認。空白背景のローカル境界は `x=[-.05,.075], y=[0,.25]`。
+  背景を上へ二重にずらしていた式を修正し、文字の原点も基準線へ補正。全layerで遠近差を補償する。
+- entityは固定位置で一度spawn。以降は変更されたmetadataだけを送信。cursorだけ1tick transform補間。
+  初回spawnは補間なし、静止中は再送なし。hoverは旧/新ボタンの背景色だけ変更。
+- 追加遅延0では受信した回転・クリックを即処理し、次のInstanceTickまで持ち越さない。
+  OSカーソルと同じゼロ遅延にはならない。20Hzの視線取得、実RTT、client補間は残る。
+- 終了時にcamera/client mode/slot/位置を復帰。旧sampleのACKだけをIDで消費する。
+  IDのないPosRotを推測で消費しない。復帰teleport完了まではMinestom自身のACK gateが移動を保護。
+- 画面サイズを拡大。低FOV時は「表示サイズ」で縮小する。FOVをサーバーから自動取得はできない。
+- 平地の独立labではUIカメラを目線より4block上に置き、拡大した画面下端が地面で隠れないようにする。
+  本編の任意地形で使う場合の壁・天井遮蔽までは保証しない。
+
+回帰検証: Kotlin 6件（native背景の四隅とhit領域の一致を全depth/zoomで検査）。
+Native smokeは5周、遅延0の即時click、静止metadata=0、移動metadata<=5、第三者非表示、mode/slot/camera復帰、旧ACK処理と通常移動非干渉、残留0を検査。
+実機でpanel/text/itemの整列と手・HUD非表示を受動撮影で確認。操作感・高遅延回線・異なるFOVの最終判定はCreatorの手動テストが必要。

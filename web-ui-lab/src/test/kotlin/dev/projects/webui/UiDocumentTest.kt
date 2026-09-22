@@ -49,4 +49,19 @@ class UiDocumentTest {
         p.move(-120f,60f,800.0,480.0);assertTrue(p.x<800 && p.y<480)
         p.reset();p.move(0f,0f,800.0,480.0);assertTrue(p.x>0)
     }
+    @Test fun nativePanelCornersProjectOntoTheAuthoredHitBoxAtEveryDepthAndZoom() {
+        // Independent 26.2 native background vertices for the default-font single space.
+        for(zoom in listOf(1.0,0.8,0.65)) for(depth in listOf(0.0,0.01,0.05,0.4,0.42)) {
+            val geometry=UiGeometry(zoom)
+            for(box in listOf(Box(0.0,0.0,800.0,480.0),Box(430.0,220.0,210.0,48.0),Box(317.0,150.0,2.0,12.0))) {
+                val t=geometry.panel(box,depth)
+                val left=(t.translation.x()-.05*t.scale.x())/geometry.unit(depth)+400
+                val right=(t.translation.x()+.075*t.scale.x())/geometry.unit(depth)+400
+                val top=240-(t.translation.y()+.25*t.scale.y())/geometry.unit(depth)
+                val bottom=240-t.translation.y()/geometry.unit(depth)
+                assertEquals(box.x,left,1e-8);assertEquals(box.x+box.w,right,1e-8)
+                assertEquals(box.y,top,1e-8);assertEquals(box.y+box.h,bottom,1e-8)
+            }
+        }
+    }
 }

@@ -1,7 +1,8 @@
 param(
     [string]$JavaHome='C:/Users/xgaiz/Documents/Codex/minecraft-runtime/temurin-25/jdk-25.0.4.1+1',
     [int]$Port=25570,
-    [int]$PreviewPort=18090
+    [int]$PreviewPort=18090,
+    [switch]$OpenOnJoin
 )
 $ErrorActionPreference='Stop'
 $labRepo=Split-Path -Parent $PSScriptRoot
@@ -19,7 +20,7 @@ $stamp=Get-Date -Format 'yyyyMMdd-HHmmss'
 $outLog=Join-Path $logDir "$stamp.out.log"
 $errLog=Join-Path $logDir "$stamp.err.log"
 $process=Start-Process -FilePath $java -ArgumentList @(
-    '-Xms128m','-Xmx512m',"-Dprojects.ui.port=$Port","-Dprojects.ui.previewPort=$PreviewPort",
+    '-Xms128m','-Xmx512m','-XX:ActiveProcessorCount=2',"-Dprojects.ui.port=$Port","-Dprojects.ui.previewPort=$PreviewPort",("-Dprojects.ui.openOnJoin="+$OpenOnJoin.IsPresent.ToString().ToLowerInvariant()),
     '-cp',('"'+$lib+'/*"'),'dev.projects.webui.WebUiLabKt',('"'+$source+'"')
 ) -WorkingDirectory $labRepo -WindowStyle Hidden -PassThru -RedirectStandardOutput $outLog -RedirectStandardError $errLog
 Write-Output "UI laboratory started: PID=$($process.Id), Minecraft=127.0.0.1:$Port, preview=http://127.0.0.1:$PreviewPort"

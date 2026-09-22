@@ -15,6 +15,7 @@ import net.minestom.server.event.player.PlayerDisconnectEvent
 import net.minestom.server.event.player.PlayerPacketEvent
 import net.minestom.server.network.packet.client.play.*
 import net.minestom.server.network.packet.server.play.CameraPacket
+import net.minestom.server.network.packet.server.play.ChangeGameStatePacket
 import net.minestom.server.network.packet.server.play.PlayerPositionAndLookPacket
 import java.nio.file.Files
 import java.nio.file.Path
@@ -39,13 +40,15 @@ class UiSessions(events: EventNode<Event>, private val path: Path) : AutoCloseab
         var lastResponse=System.nanoTime()
         var recenter=false
     }
+    private data class Retired(val pending: MutableSet<Int>,val expires: Long)
+    private val retired=mutableMapOf<UUID,Retired>()
     private val sessions=ConcurrentHashMap<UUID,Session>()
     private val ids=AtomicInteger(-10_000)
     val sessionCount get() = sessions.size
     val entityCount get() = sessions.values.sumOf { it.renderer.size+1 }
     init {
         events.addListener(PlayerPacketEvent::class.java,::packet)
-        events.addListener(PlayerDisconnectEvent::class.java) { close(it.player,false) }
+        events.addListener(PlayerDisconnectEvent::class.java) { close(it.player,false);retired.remove(it.player.uuid) }
         events.addListener(InstanceTickEvent::class.java) { e -> sessions.values.filter { it.player.instance===e.instance }.forEach { s ->
             try { tick(s) } catch(ex: Exception) {
                 close(s.player)
@@ -59,7 +62,9 @@ class UiSessions(events: EventNode<Event>, private val path: Path) : AutoCloseab
         val document=UiDocument.parse(Files.readString(path))
         // Compile and validate before changing the camera or creating any entity.
         val initial=ForgeDemo(); document.layout(initial.values(),initial.flags())
-        val origin=player.position.add(0.0,player.eyeHeight,0.0).withView(0f,0f)
+        // This isolated lab is a flat world: lift the presentation plane clear of its floor.
+        // Eye-level placement lets the lower buttons intersect blocks at larger UI scales.
+        val origin=player.position.add(0.0,player.eyeHeight+4.0,0.0).withView(0f,0f)
         val camera=Entity(EntityType.TEXT_DISPLAY).apply {
             setHasPhysics(false);setNoGravity(true);setAutoViewable(false)
             (entityMeta as TextDisplayMeta).apply {
@@ -77,6 +82,8 @@ class UiSessions(events: EventNode<Event>, private val path: Path) : AutoCloseab
                 try {
                     camera.addViewer(player)
                     s.renderer.render(s.scene,null,s.pointer)
+                    // Only the client's presentation changes. The authoritative player stays Adventure.
+                    player.sendPacket(ChangeGameStatePacket(ChangeGameStatePacket.Reason.CHANGE_GAMEMODE,3f))
                     player.sendPacket(CameraPacket(camera.entityId))
                     sample(s,true)
                 } catch(ex: Exception) { close(player);player.sendMessage(Component.text("UIを表示できません：${ex.message?.take(160)}")) }
@@ -85,8 +92,12 @@ class UiSessions(events: EventNode<Event>, private val path: Path) : AutoCloseab
     }
     fun close(player: Player, restore: Boolean=true) {
         val s=sessions.remove(player.uuid)?:return
+        // Replies to already sent sample packets may arrive after the menu has closed.
+        val old=retired[player.uuid]
+        retired[player.uuid]=Retired(((old?.pending?:emptySet())+s.pending.keys).toList().takeLast(64).toMutableSet(),System.nanoTime()+5_000_000_000L)
         if(restore) {
             player.sendPacket(CameraPacket(player.entityId))
+            player.sendPacket(ChangeGameStatePacket(ChangeGameStatePacket.Reason.CHANGE_GAMEMODE,player.gameMode.ordinal.toFloat()))
             player.setHeldItemSlot(player.heldSlot)
             player.teleport(s.saved)
         }
@@ -102,10 +113,24 @@ class UiSessions(events: EventNode<Event>, private val path: Path) : AutoCloseab
         s.player.sendPacket(PlayerPositionAndLookPacket(id,Vec.ZERO,Vec.ZERO,0f,0f,flags))
     }
     private fun enqueue(s: Session, yaw: Float?=null, pitch: Float?=null, action: String?=null) {
+        if(!s.active || s.recenter) return
         if(s.queue.size>=64) return
         s.queue.addLast(Input(System.nanoTime()+s.demo.delayMs*1_000_000L,s.generation,yaw,pitch,action))
+        // PlayerPacketEvent is already dispatched by Minestom on the player's tick thread.
+        // Do not wait for a second InstanceTickEvent when no artificial latency was requested.
+        if(s.demo.delayMs==0) { drain(s,System.nanoTime()); if(sessions[s.player.uuid]===s) paintPointer(s) }
     }
     private fun packet(event: PlayerPacketEvent) {
+        val old=retired[event.player.uuid]
+        if(old!=null) {
+            if(System.nanoTime()>old.expires) retired.remove(event.player.uuid)
+            else when(val packet=event.packet) {
+                is ClientTeleportConfirmPacket -> if(old.pending.remove(packet.teleportId())) {
+                    event.isCancelled=true;return
+                }
+                else -> Unit
+            }
+        }
         val s=sessions[event.player.uuid]?:return
         when(val packet=event.packet) {
             is ClientTeleportConfirmPacket -> if(packet.teleportId()<0) {
@@ -120,8 +145,12 @@ class UiSessions(events: EventNode<Event>, private val path: Path) : AutoCloseab
             is ClientPlayerPositionPacket, is ClientPlayerPositionStatusPacket, is ClientVehicleMovePacket -> event.isCancelled=true
             is ClientUseItemPacket -> {
                 event.isCancelled=true
-                if(packet.hand()==net.minestom.server.entity.PlayerHand.MAIN) enqueue(s,action="click")
+                if(packet.hand()==net.minestom.server.entity.PlayerHand.MAIN) {
+                    rotation(s,packet.yaw(),packet.pitch());enqueue(s,action="click")
+                }
             }
+            // 26.2 spectator rendering sends this for LEFT click, including clicks on empty space.
+            is ClientSpectatorActionPacket -> { event.isCancelled=true;enqueue(s,action="click") }
             is ClientPlayerBlockPlacementPacket, is ClientInteractEntityPacket -> { event.isCancelled=true; enqueue(s,action="click") }
             is ClientAnimationPacket, is ClientAttackPacket -> { event.isCancelled=true;enqueue(s,action="click") }
             is ClientHeldItemChangePacket -> {
@@ -136,7 +165,8 @@ class UiSessions(events: EventNode<Event>, private val path: Path) : AutoCloseab
                 event.isCancelled=true
                 if(packet.shift()) close(s.player)
             }
-            is ClientPlayerActionPacket, is ClientSpectatorActionPacket, is ClientCreativeInventoryActionPacket -> event.isCancelled=true
+            is ClientPlayerActionPacket, is ClientCreativeInventoryActionPacket,
+            is ClientClickWindowPacket, is ClientPlayerAbilitiesPacket -> event.isCancelled=true
             else -> Unit
         }
     }
@@ -157,6 +187,11 @@ class UiSessions(events: EventNode<Event>, private val path: Path) : AutoCloseab
             close(s.player);s.player.sendMessage(Component.text("UIの応答が途切れたため終了しました。/ui で再度開けます。"));return
         }
         if(s.active) sample(s)
+        drain(s,now)
+        if(sessions[s.player.uuid]===s) paintPointer(s)
+        retired.entries.removeIf { now>it.value.expires }
+    }
+    private fun drain(s: Session,now: Long) {
         while(s.queue.isNotEmpty() && s.queue.first().due<=now) {
             val input=s.queue.removeFirst()
             if(input.generation!=s.generation) continue
@@ -184,12 +219,15 @@ class UiSessions(events: EventNode<Event>, private val path: Path) : AutoCloseab
                 s.generation++
                 s.scene=s.document.layout(s.demo.values(),s.demo.flags())
                 s.renderer.zoom=s.demo.zoom
-                s.renderer.render(s.scene,null,s.pointer)
+                s.hover=s.scene.hit(s.pointer.x,s.pointer.y)?.id
+                s.renderer.render(s.scene,s.hover,s.pointer)
             }
         }
+    }
+    private fun paintPointer(s: Session) {
         val hover=s.scene.hit(s.pointer.x,s.pointer.y)?.id
-        if(hover!=s.hover) { s.hover=hover;s.renderer.render(s.scene,hover,s.pointer) }
-        else s.renderer.cursor(s.pointer)
+        if(hover!=s.hover) { s.renderer.hover(s.scene,s.hover,hover);s.hover=hover }
+        s.renderer.cursor(s.pointer)
     }
     override fun close() { sessions.values.toList().forEach { close(it.player) } }
 }

@@ -42,8 +42,16 @@ fun main(args: Array<String>) {
             val player=e.player
             player.gameMode=GameMode.ADVENTURE
             player.inventory.setItemStack(0,ItemStack.of(Material.COMPASS).withCustomName(Component.text("UI試作を開く")))
-            player.sendMessage(Component.text("UI試作：コンパスを右クリック /ui。マウスで選択、クリックで決定、Shiftで終了。追加遅延・表示サイズは画面下で変更できます。"))
+            player.sendMessage(Component.text("UI試作：コンパスを右クリック /ui。マウスで選択、左クリックで決定、Shiftで終了。ページは画面内の前へ・次へ。"))
             println("UI_LAB_PLAYER_CONNECTED ${player.username}")
+            if(java.lang.Boolean.getBoolean("projects.ui.openOnJoin")) {
+                player.scheduler().buildTask {
+                    if(player.instance===instance && !player.isRemoved) {
+                        try { sessions.open(player);println("UI_LAB_AUTO_OPEN ${player.username}") }
+                        catch(ex: Exception) { ex.printStackTrace() }
+                    }
+                }.delay(TaskSchedule.tick(30)).schedule()
+            }
         }
     }
     events.addListener(PlayerUseItemEvent::class.java) {
