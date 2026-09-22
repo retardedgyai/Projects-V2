@@ -248,7 +248,7 @@ class CoreMenuCanvasTest {
     }
 
     @Test fun `art glyph metrics preserve every subject without changing later label anchors`() {
-        assertEquals(29, CoreMenuArt.entries.size)
+        assertEquals(31, CoreMenuArt.entries.size)
         for ((index, art) in CoreMenuArt.entries.withIndex()) {
             assertEquals(0xE700 + index, art.glyph.code)
             assertTrue(art.advance(16) in 1..17)

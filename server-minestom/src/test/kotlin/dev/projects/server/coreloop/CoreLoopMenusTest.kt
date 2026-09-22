@@ -298,6 +298,10 @@ class CoreLoopMenusTest {
                 catch (error: Exception) { failures += "$prefix / $name: ${error.message}" }
             }
             check("journal") { f.menus.journal(f.player) }
+            check("career") { f.menus.career(f.player) }
+            check("weapon bases") { f.menus.career(f.player); f.click(30) }
+            check("temper weapon") { f.menus.career(f.player); f.click(33) }
+            check("temper armor") { f.menus.career(f.player); f.click(33); f.click(12) }
             for (page in 0..1) check("maps$page") { f.menus.expeditions(f.player, tier, page) }
             check("map detail three modifiers") { f.menus.mapDetail(f.player, f.host.current.maps.first().id) }
             for (page in 0..8) check("storage$page") { f.menus.storage(f.player, tier, page) }
@@ -319,6 +323,88 @@ class CoreLoopMenusTest {
             assertTrue(f.host.requests.isEmpty(), "Selections consumed resources: $prefix")
         }
         assertTrue(failures.isEmpty(), failures.joinToString("\n"))
+    }
+
+    @Test fun `all class skill tree ultimate and second weapon page layouts fit vanilla hitboxes`() {
+        val failures=mutableListOf<String>()
+        for(job in CoreClass.entries) for(packed in listOf(false,true)) {
+            val f=fixture(account(4).copy(journey=CoreJourney(job=job)),packed)
+            fun check(name:String,show:()->Unit) {
+                show();auditSnapshot(f.snapshot()).forEach { failures+="$job $name packed=$packed: $it" }
+            }
+            check("skills") { f.menus.skillBuild(f.player) }
+            check("ultimates") { f.menus.skillBuild(f.player,4) }
+            check("tree") { f.menus.talentTree(f.player) }
+            for(i in 0..17) check("tree node $i") { f.menus.talentTree(f.player,i) }
+            for(slot in 0..4) for(i in 0 until if(slot==4)2 else 8)
+                check("candidate $slot/$i") { f.menus.skillBuild(f.player,slot,i,i/4) }
+            check("weapon page 2") { f.menus.career(f.player);f.click(30);f.click(48) }
+            check("character stats") { f.menus.career(f.player);f.click(42) }
+            assertTrue(f.host.requests.isEmpty())
+        }
+        assertTrue(failures.isEmpty(),failures.joinToString("\n"))
+    }
+
+    @Test fun `skill candidate and tree inspection never spend before the explicit confirm button`() {
+        for(packed in listOf(false,true)) {
+            val f=fixture(account(4),packed)
+            f.menus.skillBuild(f.player)
+            f.click(14)
+            assertTrue(f.host.requests.isEmpty())
+            assertEquals("キー2と4を入替",f.snapshot().buttons.single { it.firstSlot==49 }.label)
+            f.click(49)
+            assertEquals(CoreAction.SelectSkill(0,2),f.host.requests.single().action)
+            f.host.requests.clear()
+            f.menus.talentTree(f.player)
+            assertEquals(21,f.snapshot().treeEdges.size)
+            f.click(CoreClassTrees.slot(3));assertTrue(f.host.requests.isEmpty())
+            f.click(48);assertEquals(CoreAction.ToggleTalent(3),f.host.requests.single().action)
+        }
+    }
+    @Test fun `warrior loadout keys preview both sides of a swap and disable no-op assignments`() {
+        for(packed in listOf(false,true)) {
+            val f=fixture(account(4),packed)
+            val before=f.host.current.journey.build
+            f.menus.skillBuild(f.player,0,before.skills[0])
+            assertEquals("装備済み",f.snapshot().buttons.single { it.firstSlot==49 }.label)
+            f.click(49);assertTrue(f.host.requests.isEmpty())
+            val bar=f.snapshot().buttons.filter { it.firstSlot<9 }
+            assertEquals(listOf(0,2,4,6,8),bar.map { it.firstSlot })
+            assertEquals(listOf("2","3","4","5",""),bar.map { it.label })
+            assertEquals((0..8).toList(),bar.flatMap { (it.firstSlot until it.firstSlot+it.span).toList() })
+            // The numeral next to an icon is part of the same click target.
+            f.click(3)
+            assertEquals("キー3 の技",f.snapshot().leftPanel!!.title)
+            f.menus.skillBuild(f.player,0,before.skills[1])
+            assertEquals("キー2と3を入替",f.snapshot().buttons.single { it.firstSlot==49 }.label)
+            assertTrue(f.snapshot().leftPanel!!.lines.any { it.text=="キー3へ移動" })
+            assertEquals(before,f.host.current.journey.build)
+            f.click(49)
+            assertEquals(CoreAction.SelectSkill(0,before.skills[1]),f.host.requests.single().action)
+            f.host.requests.clear()
+            f.host.current=f.host.current.copy(journey=f.host.current.journey.copy(build=before.equip(0,before.skills[1])))
+            f.menus.skillBuild(f.player,0,before.skills[1]);f.click(49)
+            assertEquals("装備済み",f.snapshot().buttons.single { it.firstSlot==49 }.label)
+            assertTrue(f.host.requests.isEmpty())
+            f.menus.skillBuild(f.player,0,7)
+            assertEquals("キー2 に装備",f.snapshot().buttons.single { it.firstSlot==49 }.label)
+            f.click(49);assertEquals(CoreAction.SelectSkill(0,7),f.host.requests.single().action)
+        }
+    }
+
+    @Test fun `warrior loadout inspection cannot bypass field or level restrictions`() {
+        for(packed in listOf(false,true)) {
+            val f=fixture(account(4),packed)
+            f.host.current=f.host.current.copy(activeRun=CoreActiveRun(UUID.randomUUID(),f.host.current.maps.first()),
+                maps=f.host.current.maps.drop(1))
+            f.menus.skillBuild(f.player,0,7)
+            assertEquals("港で変更可能",f.snapshot().buttons.single { it.firstSlot==49 }.label)
+            f.click(49);assertTrue(f.host.requests.isEmpty())
+            f.host.current=f.host.current.copy(activeRun=null,journey=CoreJourney(legacy=false))
+            f.menus.skillBuild(f.player,4,1)
+            assertEquals("成長で解放",f.snapshot().buttons.single { it.firstSlot==49 }.label)
+            f.click(49);assertTrue(f.host.requests.isEmpty())
+        }
     }
 
     @Test fun `every forge recipe and quantity selector changes selection without consuming anything`() {
@@ -639,7 +725,15 @@ class CoreLoopMenusTest {
         fun capture(name: String, render: () -> Unit) {
             render()
             val snapshot = f.snapshot()
-            Files.writeString(output.resolve("$name.json"), gson.toJson(snapshot))
+            val exported=gson.toJsonTree(snapshot).asJsonObject
+            val inventory=assertNotNull(f.player.openInventory)
+            val itemModels=(0..53).mapNotNull { slot ->
+                inventory.getItemStack(slot).get(DataComponents.ITEM_MODEL)?.let { model ->
+                    mapOf("slot" to slot,"model" to model)
+                }
+            }
+            exported.add("itemModels",gson.toJsonTree(itemModels))
+            Files.writeString(output.resolve("$name.json"), gson.toJson(exported))
             auditSnapshot(snapshot).forEach { failures += "$name: $it" }
         }
         capture("dungeon-entry") { f.menus.dungeons(f.player, 3) }
@@ -650,6 +744,13 @@ class CoreLoopMenusTest {
         capture("dungeon-boons") { f.menus.dungeonRun(f.player) }
         f.host.dungeonState = null
         capture("journal") { f.menus.journal(f.player) }
+        capture("career") { f.menus.career(f.player) }
+        capture("class-skills") { f.menus.skillBuild(f.player) }
+        capture("class-ultimates") { f.menus.skillBuild(f.player,4) }
+        capture("class-tree") { f.menus.talentTree(f.player) }
+        capture("class-stats") { f.menus.career(f.player);f.click(42) }
+        capture("weapon-bases") { f.menus.career(f.player); f.click(30) }
+        capture("temper") { f.menus.career(f.player); f.click(33) }
         capture("forge-enhance") { f.menus.workshop(f.player, 3); f.click(CoreForgeLayout.ARMOR); f.click(CoreLoopMenus.ENHANCE_CATALYST) }
         capture("forge-weapon") { f.click(CoreForgeLayout.WEAPON); f.click(CoreLoopMenus.ENHANCE_STANDARD) }
         capture("forge-catalyst-weapon") { f.click(CoreLoopMenus.ENHANCE_CATALYST) }
@@ -696,7 +797,7 @@ class CoreLoopMenusTest {
                 panel.lines.forEachIndexed { index, line -> check("$side line $index", line.text, line.maxWidth, TextStyle.valueOf(line.style)) }
             }
         }
-        snapshot.buttons.forEach { button -> check("button ${button.firstSlot}", button.label, button.span * 18 - 2 - if (button.icon) 18 else 0, TextStyle.EMPHASIS) }
+        snapshot.buttons.forEach { button -> check("button ${button.firstSlot}", button.label, (button.span * 18 - 2 - if (button.icon) 18 else 0).coerceAtLeast(0), TextStyle.EMPHASIS) }
         val occupied = mutableSetOf<Int>()
         snapshot.buttons.forEach { button ->
             (button.firstSlot until button.firstSlot + button.span).forEach { if (!occupied.add(it)) add("Overlapping button $it") }

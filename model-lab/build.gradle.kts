@@ -23,12 +23,20 @@ application {
     mainClass = "dev.projects.modellab.ModelLabKt"
     applicationDefaultJvmArgs = listOf("--add-opens=java.base/java.lang=ALL-UNNAMED")
 }
-val modelSource = rootProject.file(providers.gradleProperty("modelSource").getOrElse("vendor/scorpius/bbmodel"))
+val importedSource = rootProject.file(providers.gradleProperty("modelSource").getOrElse("vendor/scorpius/bbmodel"))
+val collectModels = tasks.register<Sync>("collectModels") {
+    from(importedSource) { include("*.bbmodel") }
+    from("models") { include("*.bbmodel") }
+    duplicatesStrategy = DuplicatesStrategy.FAIL
+    into(layout.buildDirectory.dir("model-sources"))
+}
+val modelSource = layout.buildDirectory.dir("model-sources").get().asFile
 val packOutput = layout.buildDirectory.dir("boss-pack")
 val generator = sourceSets.create("generator")
 dependencies { add(generator.implementationConfigurationName, "com.google.code.gson:gson:2.14.0") }
 val generatedNames = layout.buildDirectory.dir("generated/model-names")
 val generateModelNames = tasks.register<JavaExec>("generateModelNames") {
+    dependsOn(collectModels)
     classpath = generator.runtimeClasspath
     mainClass = "com.yuuki14202028.generator.GenerateWseeAssets"
     args(modelSource.absolutePath, generatedNames.get().asFile.absolutePath)
@@ -39,6 +47,7 @@ sourceSets.main { java.srcDir(generatedNames) }
 tasks.named("compileKotlin") { dependsOn(generateModelNames) }
 tasks.named("compileJava") { dependsOn(generateModelNames) }
 tasks.register<JavaExec>("buildBossPack") {
+    dependsOn(collectModels)
     group = "models"
     description = "Build isolated WSEE geometry, animations, mappings and resource pack from bbmodel sources"
     classpath = sourceSets.main.get().runtimeClasspath
@@ -60,6 +69,24 @@ tasks.named<JavaExec>("run") {
     dependsOn("buildBossPack")
     workingDir = projectDir
     args(packOutput.get().asFile.absolutePath)
+}
+tasks.register<JavaExec>("iceFangSmoke") {
+    group = "verification"
+    dependsOn("buildBossPack")
+    classpath = sourceSets.main.get().runtimeClasspath
+    mainClass = "dev.projects.modellab.IceFangSmokeKt"
+    jvmArgs("--add-opens=java.base/java.lang=ALL-UNNAMED")
+    args(packOutput.get().asFile.absolutePath)
+    timeout = Duration.ofSeconds(60)
+}
+tasks.register<JavaExec>("iceFangVisualTrace") {
+    group = "verification"
+    dependsOn("buildBossPack")
+    classpath = sourceSets.main.get().runtimeClasspath
+    mainClass = "dev.projects.modellab.IceFangVisualTraceKt"
+    jvmArgs("--add-opens=java.base/java.lang=ALL-UNNAMED")
+    args(packOutput.get().asFile.absolutePath)
+    timeout = Duration.ofSeconds(60)
 }
 // Protocol bots stay off the server classpath, and cannot target the normal game port.
 val loadtest = sourceSets.create("loadtest")

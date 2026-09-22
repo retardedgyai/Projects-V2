@@ -26,6 +26,7 @@ internal object CoreForgeLayout {
         val purpose: Purpose = Purpose.ALL,
         val currency: CoreCraftingCurrency? = null,
         val focused: Boolean = false,
+        val base: CoreWeaponBase = CoreWeaponBase.STANDARD,
     )
     // Each visual button owns every slot under its painted label, not just the icon.
     const val TAB_SPAN = 2

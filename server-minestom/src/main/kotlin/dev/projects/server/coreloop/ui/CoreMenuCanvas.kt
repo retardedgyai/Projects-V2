@@ -24,6 +24,7 @@ class CoreMenuCanvas(private val title: String) {
     internal data class Art(val x: Int, val y: Int, val art: CoreMenuArt, val size: Int)
     internal data class Text(val x: Int, val y: Int, val value: String, val color: TextColor, val maxWidth: Int, val style: TextStyle)
     internal data class Focus(val art: CoreMenuArt, val caption: String)
+    internal data class TreeEdge(val from: Int, val to: Int, val learned: Boolean)
     /** Plain data for offline visual QA of an actual constructed menu, not a second UI model. */
     internal data class Snapshot(
         val title: String,
@@ -35,6 +36,7 @@ class CoreMenuCanvas(private val title: String) {
         val cards: List<CardSnapshot>,
         val arts: List<ArtSnapshot>,
         val focus: FocusSnapshot?,
+        val treeEdges: List<TreeEdge> = emptyList(),
     )
     internal data class PanelSnapshot(val title: String, val titleColor: Int, val lines: List<LineSnapshot>, val hero: ArtSnapshot?)
     internal data class LineSnapshot(val text: String, val color: Int, val x: Int, val y: Int, val maxWidth: Int, val art: ArtSnapshot?, val style: String)
@@ -59,6 +61,11 @@ class CoreMenuCanvas(private val title: String) {
     private val arts = mutableListOf<Art>()
     private val texts = mutableListOf<Text>()
     private var focus: Focus? = null
+    private val treeEdges = mutableListOf<TreeEdge>()
+    fun treeEdge(from: Int, to: Int, learned: Boolean) {
+        require(from in 0..44 && to in 0..44 && from != to)
+        treeEdges += TreeEdge(from,to,learned)
+    }
 
     /** Replaces the panel. Callers can use [wrap] for prose; no required state is silently dropped. */
     fun left(title: String, lines: List<Line>, hero: CoreMenuArt? = null) { leftPanel = panel(title, lines, hero) }
@@ -168,7 +175,7 @@ class CoreMenuCanvas(private val title: String) {
                 FocusSnapshot(8, 44, 106, 64, ArtSnapshot(37, 54, it.art.name, 48), it.caption,
                     8 + (106 - width(visible, TextStyle.EMPHASIS)) / 2, 100, 106,
                     HEADING.value(), TextStyle.EMPHASIS.name, FOCUS_SLOTS)
-            })
+            }, treeEdges.toList())
     }
 
     /** Original Unicode information for a no-pack detail item; never the encoded PUA or ellipsis. */
@@ -221,6 +228,11 @@ class CoreMenuCanvas(private val title: String) {
                 label(line.x, line.y, line.text, TextColor.color(line.color), line.maxWidth, TextStyle.valueOf(line.style))
             }
         }
+        for (edge in treeEdges) {
+            val glyph=(0xE700+edge.from*45+edge.to).toChar()
+            draw(8,CoreUiComponents.glyph(glyph,Key.key("projects","core_menu_tree"))
+                .color(TextColor.color(if(edge.learned)0xE4BD70 else 0x625C50)),163)
+        }
         for (card in snapshot.cards) {
             val tone = Tone.valueOf(card.tone)
             val glyph = (0xE650 + tone.ordinal * 9 + card.columns - 1).toChar()
@@ -261,6 +273,12 @@ class CoreMenuCanvas(private val title: String) {
         val ART_SIZES: Set<Int> = setOf(16, 32, 48)
         val ART_YS: Set<Int> = setOf(18, 28, 30, 36, 42, 48, 54, 56, 70, 72, 84, 90, 98, 108, 112, 126, 140, 154, 168, 182, 196)
         val FOCUS_SLOTS: List<Int> = occupiedSlots(18, 6, 3)
+        /** Same approved glyph mapping, in padded cells positioned above the combat HUD. */
+        internal fun combatCaption(value: String): Component = Component.text(buildString {
+            value.codePoints().forEach { append(metric(it,TextStyle.EMPHASIS).glyph) }
+        },CoreUiComponents.IVORY).font(Key.key("projects:warrior_hud_status"))
+            .decoration(net.kyori.adventure.text.format.TextDecoration.BOLD,false)
+            .decoration(net.kyori.adventure.text.format.TextDecoration.ITALIC,false)
         private val CANVAS_FONT = Key.key("projects", "core_menu_canvas")
         private val FOCUS_FONT = Key.key("projects", "core_menu_focus")
         internal val TEXT_YS = (listOf(6, 8, 128) + (0..5).map { 20 + 18 * it } + (0..12).map { 30 + 14 * it }).distinct().sorted()

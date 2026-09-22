@@ -154,12 +154,14 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
 
     fun journal(player: Player) {
         val a = game.account(player) ?: return
+        if (!a.journey.chosen) { career(player); return }
         if (game.isDeparting(player)) { player.sendMessage(CoreLoopItems.text("遠征を準備しています。しばらくお待ちください。")); return }
         journey(player).clear()
         val run = a.activeRun
         if (run?.dungeon != null && game.dungeonView(player) != null) { dungeonRun(player); return }
         view(player, if (run == null) "開拓港 / 手帳" else "遠征 / 手帳", { journal(player) }) { v ->
             help(v, player) { journal(player) }
+            tile(v, 0, 8, "${a.journey.job.displayName} Lv${a.journey.level} / 成長と職業", CoreLoopItems.icon(Material.EXPERIENCE_BOTTLE, CoreJourneyRules.next(a))) { career(player) }
             v.canvas.left("旅の装備", equipment(a, CoreGearSlot.WEAPON) + lines("", "防具 T${a.armorTier} +${a.armorEnhancement.level}",
                 "HP ${CoreWeaponPresentation.health(a)}"), hero = CoreMenuArt.WEAPON)
             if (run == null) {
@@ -171,7 +173,7 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
                 card(v, 39, 3, 1, "採取", CoreMenuArt.GATHER, CoreLoopItems.icon(Material.OAK_SAPLING, "採取の心得・道具")) { professions(player) }
                 card(v, 42, 3, 1, "深殿", CoreMenuArt.TRIAL, CoreLoopItems.icon(Material.END_PORTAL_FRAME, "自動生成ダンジョン・専用ボス・仲間と挑戦")) { dungeons(player) }
                 card(v, 45, 3, 1, "市場", CoreMenuArt.STORAGE, CoreLoopItems.icon(Material.GOLD_NUGGET, "素材・装備をプレイヤーと売買", "銀貨 ${a.silver}枚")) { supplies(player) }
-                card(v, 48, 3, 1, "遊び方", CoreMenuArt.HELP, CoreLoopItems.icon(Material.BOOK, "最初の一周・戦闘・採取操作")) { guide(player) }
+                card(v, 48, 3, 1, "目標", CoreMenuArt.HELP, CoreLoopItems.icon(Material.BOOK, CoreJourneyRules.next(a))) { career(player) }
             } else {
                 v.canvas.right("遠征の記録", listOf(emphasis(if (run.bossDefeated) "ボス討伐！" else "T${run.map.tier} を探索中")) + lines("寄り道は自由", "", game.sessionSummary(player)), hero = CoreMenuArt.EXPEDITION)
                 card(v, 9, 3, 3, "探索", CoreMenuArt.EXPEDITION, CoreLoopItems.icon(Material.MAP, "画面を閉じて探索を続ける"), Tone.PRIMARY) { player.closeInventory() }
@@ -198,9 +200,9 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
             tiers(v, tier) { expeditions(player, it) }
             tile(v, 8, 1, "採", CoreLoopItems.icon(Material.OAK_SAPLING, "討伐不要の採取地図")) { surveyMaps(player, tier) }
             v.canvas.left("遠征先 T$tier", lines("所持 ${maps.size}枚", "解放 T1〜${a.unlockedMapTier}", "目安装備 T$tier", "武器 T${a.weaponTier}", "", "選ぶ → 調整", "選択では未消費"), hero = CoreMenuArt.EXPEDITION)
-            v.canvas.right("地図の入手", lines(if (tier == 1) "T1は無料" else "T${tier - 1} 戦利品券1枚", if (tier == 1) "何度でも入手可能" else "所持 ${a.amount(CoreResource.COMBAT_TOKEN, tier - 1)}", "", "前Tierのボス討伐", "次のTierを解放", "", if (!unlocked) "このTierは未解放" else if (!room) "地図の保管上限" else if (!affordable) "戦利品券が不足" else "右下から受け取る"), hero = CoreMenuArt.TABLET)
+            v.canvas.right("地図の入手", lines(if (tier == 1) "T1は無料" else "T${tier - 1} 戦利品券1枚", if (tier == 1) "何度でも入手可能" else "所持 ${a.amount(CoreResource.COMBAT_TOKEN, tier - 1)}", "", "同TierのLv上限で", "ボス討伐→次Tier", "", if (!unlocked) "このTierは未解放" else if (!room) "地図の保管上限" else if (!affordable) "戦利品券が不足" else "右下から受け取る"), hero = CoreMenuArt.TABLET)
             maps.drop(current * mapSlots.size).take(mapSlots.size).forEachIndexed { index, map ->
-                card(v, mapSlots[index], 3, 2, "地図${current * mapSlots.size + index + 1}", CoreMenuArt.EXPEDITION, CoreLoopItems.map(map)) { mapDetail(player, map.id) }
+                card(v, mapSlots[index], 3, 2, "Lv${map.level} 地図", CoreMenuArt.EXPEDITION, CoreLoopItems.map(map)) { mapDetail(player, map.id) }
             }
             if (maps.isEmpty()) v.canvas.text(8, 56, "地図なし → 右下で入手", CoreUiComponents.MUTED, 160)
             back(v, player, if (journey(player).isEmpty) "手帳" else "元へ") {
@@ -220,7 +222,7 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
         val ready = game.warmMap(player, map)
         view(player, "地図台 / 出発準備", { mapDetail(player, id) }) { v ->
             help(v, player) { mapDetail(player, id) }
-            v.canvas.left("遠征の内容", lines("T${map.tier} のクエスト", "目安装備 T${map.tier}", "武器 T${a.weaponTier}", "地図1枚を消費", "道の先にボス", "寄り道は自由", if (ready) "地形の準備完了" else "地形を準備中", "出発後は返却なし"), hero = CoreMenuArt.EXPEDITION)
+            v.canvas.left("遠征の内容", lines("T${map.tier} / 敵Lv${map.level}", "冒険Lv${a.journey.level}", "武器 T${a.weaponTier}", "地図1枚を消費", "道の先にボス", "寄り道は自由", if (ready) "地形の準備完了" else "地形を準備中", "出発後は返却なし"), hero = CoreMenuArt.EXPEDITION)
             v.canvas.right("採取MOD", listOf(Line("${map.modifiers.size} / 3 個")) +
                 (if (map.modifiers.isEmpty()) lines("まだ付いていません") else map.modifiers.flatMap { paragraph(CoreLoopItems.modifierName(it)) }) +
                 lines("", "石板 所持${a.amount(CoreResource.GATHERING_TABLET)}", "石板1枚で1個付与"))
@@ -236,6 +238,228 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
             }
             back(v, player) { expeditions(player, map.tier) }
             card(v, 51, 3, 1, "出発", CoreMenuArt.EXPEDITION, CoreLoopItems.icon(Material.LIME_DYE, "地図1枚を使って出発"), Tone.PRIMARY) { game.depart(player, id, a.revision) }
+        }
+    }
+
+    fun career(player: Player) {
+        val a = game.account(player) ?: return
+        view(player, "旅の始まり / 成長と職業", { career(player) }) { v ->
+            v.canvas.left("${a.journey.job.displayName} Lv${a.journey.level}",
+                lines("経験 ${a.journey.xp}", if (a.journey.level < 40) "次まで ${CoreJourneyRules.threshold(a.journey.level + 1) - a.journey.xp}" else "冒険Lv最大", "T1 Lv1〜10", "T2 Lv11〜20", "T3 Lv21〜30", "T4 Lv31〜40", "技 Lv1/4/8/12", "奥義 Lv16"), hero = CoreMenuArt.GEAR)
+            v.canvas.right("次の一歩", paragraph(CoreJourneyRules.next(a)) + lines("", "導入 ${(0..5).count(a.journey::knows)}/6", "港で職業を変更可能", "装備と経験は保持", "採取でも経験を獲得"), hero = CoreMenuArt.EXPEDITION)
+            CoreClass.entries.sortedBy { it == CoreClass.STARWEAVER }.forEachIndexed { i, job ->
+                val slot = listOf(9, 12, 15, 18, 21, 24, 27)[i]
+                val eligible = a.activeRun == null && (job != CoreClass.STARWEAVER || ((a.journey.job == CoreClass.MAGE || a.journey.job == CoreClass.STARWEAVER) && a.journey.level >= 20 && a.amount(CoreResource.BOSS_SIGIL, 2) >= 2))
+                tile(v, slot, 3, if (job == CoreClass.STARWEAVER) "星織り" else job.displayName,
+                    CoreLoopItems.icon(if (job.magic) Material.AMETHYST_SHARD else Material.IRON_SWORD, job.displayName, job.description,
+                        if (job == CoreClass.STARWEAVER) "メイジLv20 + T2討伐証2枚（非消費）" else "港でいつでも選び直せます"),
+                    if (!eligible) Tone.DISABLED else if (a.journey.chosen && job == a.journey.job) Tone.SELECTED else Tone.PRIMARY) {
+                    mutate(v, player, CoreAction.ChooseClass(job), a.revision) { career(player) }
+                }
+            }
+            card(v, 30, 3, 1, "武器型", CoreMenuArt.FORGE) { weaponBases(player, CoreForgeLayout.Selection(tab = CoreForgeLayout.Tab.CRAFT, tier = a.weaponTier)) }
+            card(v, 33, 3, 1, "鍛錬", CoreMenuArt.WEAPON) { temper(player) }
+            card(v, 36, 3, 1, "技選び", CoreMenuArt.ARCANE, CoreLoopItems.icon(Material.BOOK, "四つの技と奥義を選ぶ")) { skillBuild(player) }
+            card(v, 39, 3, 1, "成長樹", CoreMenuArt.GEAR, CoreLoopItems.icon(Material.EXPERIENCE_BOTTLE, "成長の分岐を選ぶ")) { talentTree(player) }
+            card(v, 42, 3, 1, "能力値", CoreMenuArt.WEAPON, CoreLoopItems.icon(Material.PAPER, "今のAD・AP・防御を確認")) { combatDetails(player) }
+            back(v, player, "手帳")
+            tile(v, 48, 3, "操作ガイド", CoreLoopItems.icon(Material.BOOK, "左クリック：通常攻撃 / 右：最初のスキル / F：回避")) { guide(player) }
+            tile(v, 51, 3, if (a.activeRun == null) "遠征へ" else "探索へ", tone = if (a.journey.chosen) Tone.PRIMARY else Tone.DISABLED) {
+                if (a.activeRun != null) player.closeInventory() else expeditions(player)
+            }
+        }
+    }
+
+    private fun weaponBases(player: Player, s: CoreForgeLayout.Selection, page: Int = 0) {
+        val a = game.account(player) ?: return
+        view(player, "工房 / 武器の型", { weaponBases(player, s, page) }) { v ->
+            v.canvas.left("同じTierの選択", lines("T1から全型を制作", "型の特徴は固定", "MODは後から抽選", "強化と品質は保持", "職業で使える系統が変化"), hero = CoreMenuArt.WEAPON)
+            v.canvas.right("制作と購入", lines("採取素材から制作", "上位製造に低Tier材", "良い型を選んで厳選", "今の職業", a.journey.job.displayName), hero = CoreMenuArt.FORGE)
+            CoreWeaponBase.entries.drop(page.coerceIn(0, 1) * 6).take(6).forEachIndexed { i, base ->
+                card(v, mapSlots[i], 3, 2, base.displayName, when (base) { CoreWeaponBase.LONGBOW -> CoreMenuArt.ARROW; CoreWeaponBase.STAFF -> CoreMenuArt.ARCANE; else -> CoreMenuArt.WEAPON },
+                    CoreLoopItems.icon(Material.IRON_SWORD, base.displayName, base.detail, "使用可：${CoreClass.entries.filter(base::usable).joinToString { it.displayName }}"),
+                    if (s.base == base) Tone.SELECTED else Tone.NEUTRAL) { forge(player, s.copy(tab = CoreForgeLayout.Tab.CRAFT, gear = CoreGearSlot.WEAPON, base = base, recipe = 0)) }
+            }
+            back(v, player) { career(player) }
+            tile(v, 48, 3, if (page == 0) "次の武器" else "前の武器") { weaponBases(player, s, 1 - page.coerceIn(0, 1)) }
+        }
+    }
+
+    fun skillBuild(player: Player, selectedSlot: Int = 0, candidate: Int = -1, page: Int = 0) {
+        val a = game.account(player) ?: return
+        if(a.journey.job==CoreClass.WARRIOR) { warriorSkills(player,selectedSlot,candidate); return }
+        val slot = selectedSlot.coerceIn(0, 4)
+        val sheet = game.combatSheet(player) ?: CoreCombatSheet.from(a)
+        val equipped = CoreSkillCatalog.equipped(a.journey, sheet.mods)
+        val current = equipped[slot]
+        val candidates = if (slot == 4) CoreSkillCatalog.skills(a.journey.job).drop(8) else CoreSkillCatalog.skills(a.journey.job).take(8)
+        val choice = candidate.takeIf { it in candidates.indices }
+        val preview = choice?.let { CoreSkillCatalog.modify(candidates[it],a.journey,sheet.mods) } ?: current
+        val target = if(slot==4) "奥義" else "技能${slot+1}"
+        val selectedPage=if(slot==4)0 else page.coerceIn(0,1)
+        val canEquip=a.activeRun==null && CoreJourneyRules.skillUnlocked(a,slot) && choice!=null
+        view(player, "${a.journey.job.displayName} / 技能編成", { skillBuild(player, slot, candidate, selectedPage) }) { v ->
+            v.canvas.left("変更先：$target", lines("1. 上段で枠を選ぶ", "2. 候補で詳細を見る", "3. 右下で装備する", "", "現在の技能") + paragraph(current.name) + lines("", if(a.activeRun!=null) "遠征中は変更不可" else "港で無料変更", "重複する技は入替"))
+            v.canvas.right(if(choice==null) "装備中の技能" else "候補の詳細", paragraph(preview.name,CoreUiComponents.GOLD) +
+                lines("", "マナ ${preview.mana}", "必要${preview.spend} / 獲得${preview.gain}", "再使用 ${CoreCombatMath.number(preview.cooldownTicks(sheet.mods)/20.0)}秒") +
+                paragraph(preview.formula.label()) + lines("", "説明と補正の詳細は", "アイコンに重ねる"))
+            equipped.forEachIndexed { i, skill ->
+                val at = listOf(9,11,13,15,17)[i]
+                val item = CoreSkillTooltip.item(skill,sheet,a.journey,v.packed,!CoreJourneyRules.skillUnlocked(a,i))
+                tile(v, at, if (i == 4) 1 else 2, if (i == 4) "" else "${i+1}", item, if(i==slot) Tone.SELECTED else Tone.NEUTRAL, icon=true) { skillBuild(player, i) }
+            }
+            candidates.withIndex().drop(selectedPage*4).take(4).forEachIndexed { shown, (i,raw) ->
+                val skill = CoreSkillCatalog.modify(raw, a.journey, sheet.mods)
+                val item = CoreSkillTooltip.item(skill,sheet,a.journey,v.packed)
+                val owned = if(slot == 4) a.journey.build.ultimate == i else a.journey.build.skills[slot] == i
+                val label=when(skill.icon) { "dash" -> "踏込斬り"; "hunt_storm" -> "狩場支配"; "mage_ult" -> "天火術式"; else -> skill.name }
+                tile(v, listOf(18,22,27,31)[shown], 4, label, item,
+                    if(choice==i) Tone.SELECTED else if(owned) Tone.PRIMARY else Tone.NEUTRAL, icon=true) {
+                    skillBuild(player,slot,i,selectedPage)
+                }
+            }
+            if(slot!=4) {
+                tile(v,36,3,"前の候補",tone=if(selectedPage==0)Tone.DISABLED else Tone.NEUTRAL) { skillBuild(player,slot,choice?:-1,0) }
+                tile(v,42,3,"次の候補",tone=if(selectedPage==1)Tone.DISABLED else Tone.NEUTRAL) { skillBuild(player,slot,choice?:-1,1) }
+                v.canvas.text(64,92,"${selectedPage+1} / 2",CoreUiComponents.GOLD,48)
+            }
+            back(v,player) { career(player) }
+            tile(v,49,5,if(canEquip) "$target に装備" else if(a.activeRun!=null) "港で変更可能" else if(!CoreJourneyRules.skillUnlocked(a,slot)) "成長で解放" else "候補を選ぶ",tone=if(canEquip)Tone.PRIMARY else Tone.DISABLED) {
+                mutate(v,player,CoreAction.SelectSkill(slot,requireNotNull(choice)),a.revision) { skillBuild(player,slot,-1,selectedPage) }
+            }
+        }
+    }
+
+    /** All eight candidates beside the equipped bar, not two pages of instructions. */
+    private fun warriorSkills(player: Player, selectedSlot: Int, candidate: Int) {
+        val a=game.account(player) ?: return
+        val slot=selectedSlot.coerceIn(0,4)
+        val sheet=game.combatSheet(player) ?: CoreCombatSheet.from(a)
+        val equipped=CoreSkillCatalog.equipped(a.journey,sheet.mods)
+        val candidates=CoreSkillCatalog.skills(CoreClass.WARRIOR).let { if(slot==4) it.drop(8) else it.take(8) }
+        val choice=candidate.takeIf { it in candidates.indices }
+        val preview=choice?.let { CoreSkillCatalog.modify(candidates[it],a.journey,sheet.mods) } ?: equipped[slot]
+        val identity=CoreWarriorSkillPresentation.skills.getValue(preview.icon)
+        val target="キー${slot+2}"
+        val available=CoreJourneyRules.skillUnlocked(a,slot)
+        val after=choice?.let { a.journey.build.equip(slot,it) }
+        val changed=after!=null && after!=a.journey.build
+        // Preview the same swap the domain model will commit, rather than silently
+        // moving a second skill when the player thought only one slot would change.
+        val swap=if(changed && slot<4) a.journey.build.skills.indices.firstOrNull {
+            it!=slot && a.journey.build.skills[it]!=after.skills[it]
+        } else null
+        val canEquip=a.activeRun==null && available && changed
+        val confirm=when {
+            a.activeRun!=null -> "港で変更可能"
+            !available -> "成長で解放"
+            choice==null -> "候補を選ぶ"
+            !changed -> "装備済み"
+            swap!=null -> "キー${slot+2}と${swap+2}を入替"
+            else -> "$target に装備"
+        }
+        view(player,"戦士 / 技の組み合わせ",{ warriorSkills(player,slot,candidate) }) { v ->
+            v.canvas.left(if(slot==4) "奥義 / $target" else "$target の技", buildList {
+                addAll(lines("装備中"));addAll(paragraph(equipped[slot].name));addAll(lines(""))
+                if(choice==null) addAll(lines("上段で枠を選び", "中央から技を選ぶ", "", "2〜5：技能", "6：奥義"))
+                else if(!changed) addAll(lines("この枠に装備済み"))
+                else {
+                    add(emphasis("変更後"));addAll(paragraph(preview.name))
+                    if(swap!=null) { addAll(lines("", "キー${swap+2}へ移動"));addAll(paragraph(equipped[slot].name)) }
+                }
+                addAll(lines("",if(a.activeRun!=null) "遠征中は変更不可" else if(!available) "この枠は未解放" else "港で無料変更"))
+            })
+            v.canvas.right(preview.name, listOf(emphasis(identity.role)) + paragraph(identity.use) +
+                lines("", "マナ ${preview.mana}", "闘気 ${if(preview.spend>0) "消費 ${preview.spend}" else "獲得 ${preview.gain}"}",
+                    "再使用 ${CoreCombatMath.number(preview.cooldownTicks(sheet.mods)/20.0)}秒") +
+                paragraph(preview.formula.label()) + lines("", "詳しくは絵に重ねる"))
+            equipped.forEachIndexed { i,s ->
+                tile(v,CoreWarriorSkillPresentation.loadoutSlots[i],if(i<4)2 else 1,if(i<4)(i+2).toString() else "",
+                    CoreSkillTooltip.item(s,sheet,a.journey,v.packed,!CoreJourneyRules.skillUnlocked(a,i),
+                        footer="キー${i+2} / この枠の技を変更"),if(i==slot)Tone.SELECTED else Tone.NEUTRAL,icon=true) { warriorSkills(player,i,-1) }
+            }
+            val order=if(slot==4) listOf(0,1) else CoreWarriorSkillPresentation.candidateOrder
+            order.forEachIndexed { index,i ->
+                val skill=CoreSkillCatalog.modify(candidates[i],a.journey,sheet.mods)
+                val equippedHere=if(slot==4) a.journey.build.ultimate==i else a.journey.build.skills[slot]==i
+                val other=if(slot<4) a.journey.build.skills.indexOf(i).takeIf { it>=0 && it!=slot } else null
+                tile(v,CoreWarriorSkillPresentation.candidateSlots[index],4,CoreWarriorSkillPresentation.skills.getValue(skill.icon).shortName,
+                    CoreSkillTooltip.item(skill,sheet,a.journey,v.packed,footer=if(equippedHere) "$target に装備中" else
+                        if(other!=null) "キー${other+2}に装備中 / 選択すると入替" else "選択して右下で装備"),
+                    if(choice==i)Tone.SELECTED else if(equippedHere)Tone.PRIMARY else Tone.NEUTRAL,icon=true) { warriorSkills(player,slot,i) }
+            }
+            back(v,player) { career(player) }
+            tile(v,47,2,"ツリー") { talentTree(player) }
+            tile(v,49,5,confirm,
+                tone=if(canEquip)Tone.PRIMARY else Tone.DISABLED) {
+                mutate(v,player,CoreAction.SelectSkill(slot,requireNotNull(choice)),a.revision) { warriorSkills(player,slot,-1) }
+            }
+        }
+    }
+
+    fun talentTree(player: Player, selectedNode: Int = 0) {
+        val a = game.account(player) ?: return
+        val build = a.journey.build
+        val nodes = CoreClassTrees.nodes(a.journey.job)
+        val budget = CoreClassTrees.budget(a.journey)
+        val selected=selectedNode.coerceIn(nodes.indices)
+        val node=nodes[selected]
+        val change=runCatching { build.toggle(selected,budget) }
+        val permitted=a.activeRun==null && change.isSuccess
+        val reason=if(a.activeRun!=null) "港で変更できます" else change.exceptionOrNull()?.message ?: if(build.has(selected)) "切れた先も返還" else "1ポイントで習得"
+        view(player, "${a.journey.job.displayName} / スキルツリー", { talentTree(player,selected) }) { v ->
+            v.canvas.left("残り ${budget-build.points} ポイント", lines("Lv4ごとに増える", "最大12ポイント", "", "上の起点から進む", "分岐を選んで育てる", "最終パッシブは一つ", "", "金の線：習得済み", "灰の線：未習得", "右下で習得を確定"))
+            v.canvas.right(node.name, paragraph(node.description) + lines("", if(build.has(selected)) "習得済み" else "未習得") + paragraph(reason))
+            val root = CoreSkillTooltip.item(CoreSkillCatalog.skills(a.journey.job)[8],game.combatSheet(player)?:CoreCombatSheet.from(a),a.journey,v.packed)
+            tile(v,4,1,"",root,Tone.SELECTED,icon=true)
+            for(i in nodes.indices) {
+                val parents=CoreClassTrees.parents(i)
+                if(parents.isEmpty()) v.canvas.treeEdge(4,CoreClassTrees.slot(i),build.has(i))
+                else parents.forEach { parent -> v.canvas.treeEdge(CoreClassTrees.slot(parent),CoreClassTrees.slot(i),build.has(parent)&&build.has(i)) }
+            }
+            nodes.forEachIndexed { i, node ->
+                val learned=build.has(i)
+                val available=runCatching { build.toggle(i,budget) }.isSuccess
+                val art=CoreSkillCatalog.skills(a.journey.job)[when(i) { 2,5,8 -> 8+i/3%2;9,10,14 -> CoreClassTrees.signature(a.journey.job);11,13 -> 0;12 -> 3;15 -> 5;16,17 -> 9;else -> i.coerceAtMost(7) }].icon
+                var item=CoreLoopItems.icon(if(learned)Material.ENCHANTED_BOOK else Material.BOOK,node.name,node.description,
+                    if(learned) "習得済み" else if(available) "習得可能 / 1ポイント" else "前提未達・ポイント不足・最終パッシブの排他", "クリック：詳細を確認")
+                if(v.packed)item=item.withItemModel("projects:core_ui/$art")
+                tile(v,CoreClassTrees.slot(i),1,"",item,if(i==selected)Tone.SELECTED else if(learned)Tone.PRIMARY else Tone.NEUTRAL,icon=true) { talentTree(player,i) }
+            }
+            back(v, player) { career(player) }
+            tile(v,48,3,if(build.has(selected)) "返還する" else "習得する",tone=if(permitted)Tone.PRIMARY else Tone.DISABLED) {
+                mutate(v,player,CoreAction.ToggleTalent(selected),a.revision) { talentTree(player,selected) }
+            }
+            tile(v,51,3,"技能編成") { skillBuild(player) }
+        }
+    }
+
+    private fun combatDetails(player: Player) {
+        val a = game.account(player) ?: return
+        val s = game.combatSheet(player) ?: CoreCombatSheet.from(a)
+        view(player, "戦闘能力 / 計算の内訳", { combatDetails(player) }) { v ->
+            v.canvas.left(a.journey.job.displayName, lines("通常はADで伸びる", "魔法技はAPで伸びる", "物理はARで軽減", "魔法はMRで軽減", "攻撃ごとに係数あり", "技能の説明で確認"), hero=CoreMenuArt.WEAPON)
+            v.canvas.right("固有の戦い方", paragraph(a.journey.job.passive), hero=CoreMenuArt.ARCANE)
+            val values = listOf("物理 AD" to s.ad, "魔法 AP" to s.ap, "物防 AR" to s.ar, "魔防 MR" to s.mr, "最大HP" to s.health, "最大MP" to s.mana)
+            values.forEachIndexed { i, (label, value) -> card(v, mapSlots[i], 3, 2, label, CoreMenuArt.GEAR, CoreLoopItems.icon(Material.PAPER, "$label ${CoreCombatMath.number(value)}")) }
+            back(v, player) { career(player) }
+        }
+    }
+
+    private fun temper(player: Player, slot: CoreGearSlot = CoreGearSlot.WEAPON) {
+        val a = game.account(player) ?: return
+        val quote = runCatching { CoreJourneyRules.temper(a, slot) }
+        view(player, "工房 / 装備レベル鍛錬", { temper(player, slot) }) { v ->
+            val level = CoreJourneyRules.itemLevel(CoreEconomy.identity(a, slot), CoreAffixCatalog.gearTier(a, slot))
+            v.canvas.left("${slot.displayName} Lv$level", lines("同Tier内で最大+9段階", "MODと強化はそのまま", "基礎性能を少しずつ向上", "冒険Lv+2まで鍛錬可能"), hero = gearArt(slot))
+            quote.getOrNull()?.let { costPanel(v, a, it) } ?: v.canvas.right("このTierは完成", lines("次のTierでも好きな型を", "制作・購入できます"))
+            card(v, 9, 3, 2, "武器", CoreMenuArt.WEAPON) { temper(player, CoreGearSlot.WEAPON) }
+            card(v, 12, 3, 2, "防具", CoreMenuArt.ARMOR) { temper(player, CoreGearSlot.ARMOR) }
+            val ready = a.activeRun == null && !CoreEconomy.broken(a, slot) && quote.getOrNull()?.canAfford(a) == true && (a.journey.legacy || level + 1 <= a.journey.level + 2)
+            card(v, 15, 3, 2, if (ready) "Lvを上げる" else "鍛錬不可", CoreMenuArt.FORGE, tone = if (ready) Tone.PRIMARY else Tone.DISABLED) {
+                mutate(v, player, CoreAction.TemperEquipment(slot), a.revision) { temper(player, slot) }
+            }
+            back(v, player) { career(player) }
         }
     }
 
@@ -260,7 +484,10 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
                 card(v, if (gear == CoreGearSlot.WEAPON) 9 else 12, 3, 1, gear.displayName, gearArt(gear),
                     CoreLoopItems.icon(if (gear == CoreGearSlot.WEAPON) Material.IRON_SWORD else Material.IRON_CHESTPLATE,
                         "対象を${gear.displayName}に変更", *equipment(a, gear).map { it.text }.toTypedArray()),
-                    if (s.gear == gear) Tone.SELECTED else Tone.NEUTRAL) { forge(player, s.copy(gear = gear, recipe = 0, currency = null)) }
+                    if (s.gear == gear) Tone.SELECTED else Tone.NEUTRAL) {
+                    if (gear == CoreGearSlot.WEAPON && s.gear == gear && s.tab == CoreForgeLayout.Tab.CRAFT) weaponBases(player, s)
+                    else forge(player, s.copy(gear = gear, recipe = 0, currency = null))
+                }
             }
             back(v, player, if (journey(player).isEmpty) "手帳" else "元へ", compact = s.tab == CoreForgeLayout.Tab.ENHANCE) {
                 journey(player).pop()?.let { forge(player, it) } ?: journal(player)
@@ -397,9 +624,10 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
                 CoreProfessions.refineQuote(a, raw, s.tier, count).first to CoreAction.Refine(raw, s.tier, count)
             }
         } else buildList {
-            val recipe = CoreEconomy.manufacture(s.gear, s.tier)
+            val base = if (s.gear == CoreGearSlot.WEAPON) s.base else CoreWeaponBase.STANDARD
+            val recipe = CoreEconomy.manufacture(s.gear, s.tier, base)
             add(ForgeRecipe("T${s.tier}${s.gear.displayName}", if (s.gear == CoreGearSlot.WEAPON) Material.IRON_SWORD else Material.IRON_CHESTPLATE, recipe) { count ->
-                CoreProfessions.manufacture(s.gear, s.tier, count) to CoreAction.Manufacture(s.gear, s.tier, count)
+                CoreProfessions.manufacture(s.gear, s.tier, count, base) to CoreAction.Manufacture(s.gear, s.tier, count, base)
             })
             listOf(CoreResource.POTION, CoreResource.GATHERING_TABLET, CoreResource.WHETSTONE).forEach { resource ->
                 add(ForgeRecipe(resourceName(resource), CoreLoopItems.resourceMaterial(resource), CoreLoopCatalog.craft(resource, tier = s.tier)) { count ->
@@ -433,7 +661,7 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
         val (recipe, action) = entry.build(count)
         val summary = CoreForgeSummary.recipe(a, recipe)
         val output = if (!isEquipment && entry.batches) recipe.outputs.flatMap { (key, amount) -> lines("${resourceName(key.resource)} ×$amount", "所持 ${a.amount(key)}") }
-            else lines("T${s.tier} ${s.gear.displayName} ×$count", "新品を装備庫へ保管", "製造品質を個別抽選", "今の装備は変更なし")
+            else lines("T${s.tier} ${s.gear.displayName} ×$count") + paragraph(if (s.gear == CoreGearSlot.WEAPON) s.base.displayName else "防具セット") + lines("新品を装備庫へ保管", "製造品質を個別抽選", "今の装備は変更なし")
         v.canvas.left("完成するもの", output + lines("今回 $count 回", "制作可能 $maximum 回") +
             (summary.blockedReason?.let { paragraph(it, CoreUiComponents.RED) } ?: lines("制作できます")),
             hero = recipe.outputs.keys.firstOrNull()?.let { materialArt(it.resource) } ?: gearArt(s.gear))
@@ -972,7 +1200,7 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
     private fun orderQuote(player: Player, tier: Int, resource: CoreResource? = null, slot: CoreGearSlot? = null, quantity: Int = 1, price: Long = 10) {
         val a = game.account(player) ?: return
         if (!game.requireHub(player)) return
-        val order = CoreBuyOrder(UUID(0, 0), price, quantity, tier, resource, slot)
+        val order = CoreBuyOrder(UUID(0, 0), price, quantity, tier, resource, slot, if (slot == CoreGearSlot.WEAPON) a.weaponIdentity.base.family else null)
         view(player, "購入注文 / 代金を預ける", { orderQuote(player, tier, resource, slot, quantity, price) }, nativeChest = true) { v ->
             fun redraw(q: Int = quantity, p: Long = price) = orderQuote(player, tier, resource, slot, q.coerceIn(1, if (slot == null) 999 else 16), p.coerceIn(1, CoreEconomy.MAX_SILVER / 999))
             v.items[13] = CoreLoopItems.icon(Material.BOOK, order.displayName, "数量 $quantity / 単価 $price", "預託合計 ${order.escrow} / 所持${a.silver}", "注文の取消で未成立分を返却", "購入後は素材倉庫・装備庫へ自動保管")

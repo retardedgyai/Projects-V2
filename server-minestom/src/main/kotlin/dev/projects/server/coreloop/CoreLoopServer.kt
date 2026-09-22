@@ -77,13 +77,14 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         override fun account(player: Player) = this@CoreLoopGame.account(player)
         override fun player(id: UUID) = connections[id]
         override fun connected(player: Player) = connections[player.uuid] === player && player.isOnline
-        override fun eligible(player: Player) = player.instance === hub && account(player)?.activeRun == null &&
+        override fun eligible(player: Player) = account(player)?.journey?.chosen == true && player.instance === hub && account(player)?.activeRun == null &&
             !busy.contains(player.uuid) && !this@CoreLoopGame.isDeparting(player)
         override fun transact(player: Player, action: CoreAction, revision: Long?) = this@CoreLoopGame.transact(player.uuid, action, revision)
         override fun drain(player: Player) = rewards.drain(player.uuid)
         override fun harbor(player: Player) = moveToHub(player)
         override fun refreshed(player: Player) = refresh(player)
         override fun hurt(player: Player, damage: Double) { actors[player.uuid]?.hurt(damage) }
+        override fun hurtTyped(player: Player, damage: Double, type: CoreDamageType) { actors[player.uuid]?.hurt(damage, type) }
         override fun resetActions(player: Player) { actors[player.uuid]?.resetActions() }
         override fun revive(player: Player, fraction: Double) { actors[player.uuid]?.revive(fraction) }
         override fun reward(player: Player, action: CoreAction.DungeonReward) = rewards.submit(player.uuid, action)
@@ -97,6 +98,15 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
             else rewards.submit(player.uuid, CoreAction.Gather(run.id, node.id.toString(), disciplineResource(node.discipline), count))
                 .thenApply { it.successful }
         }, respawnResources = false, technicalMessages = false)
+
+    private val combatLab = CoreCombatLab(mapBuilder,
+        eligible = { player -> player.instance === hub && accounts[player.uuid]?.activeRun == null && accounts.containsKey(player.uuid) &&
+            !busy.contains(player.uuid) && !isDeparting(player) },
+        packed = ::packed,
+        resetOriginal = { actors[it.uuid]?.reset() },
+        harbor = ::moveToHub,
+        restored = ::refresh)
+    private fun actor(player: Player) = combatLab.actor(player) ?: actors[player.uuid]
 
     private class Session(val owner: Player, val runId: UUID, val runtime: VerdantRoadQuestRuntime?,
         val combat: QuestEncounterCombat, val bossBar: BossBar, val loot: CoreWorldLoot, val arena: BossArena? = null) {
@@ -117,10 +127,11 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
     override fun dungeonView(player: Player) = dungeons.view(player)
     override fun playerName(id: UUID) = connections[id]?.username ?: id.toString().take(8)
     override fun dungeonLobby(player: Player, action: DungeonLobbyAction) = dungeons.lobby(player, action)
-    override fun dungeonBoon(player: Player, boon: DungeonBoon) = dungeons.boon(player, boon)
+    override fun dungeonBoon(player: Player, boon: DungeonBoon) { dungeons.boon(player, boon); refresh(player) }
+    override fun combatSheet(player: Player): CoreCombatSheet? = actor(player)?.sheet ?: account(player)?.let(CoreCombatSheet::from)
     override fun dungeonRoute(player: Player, roomId: Int) = dungeons.route(player, roomId)
     override fun packed(player: Player): Boolean = uiPack?.enabled(player) == true
-    override fun isDeparting(player: Player): Boolean = departing.containsKey(player.uuid) || dungeons.isDeparting(player)
+    override fun isDeparting(player: Player): Boolean = departing.containsKey(player.uuid) || dungeons.isDeparting(player) || combatLab.contains(player)
 
     fun register() {
         val events = MinecraftServer.getGlobalEventHandler()
@@ -180,27 +191,36 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
                     weaponBroken = { accounts[player.uuid]?.weaponBroken ?: false },
                     armorBroken = { accounts[player.uuid]?.armorBroken ?: false },
                     weaponQuality = { accounts[player.uuid]?.weaponIdentity?.quality ?: 0 },
-                    armorQuality = { accounts[player.uuid]?.armorIdentity?.quality ?: 0 }) {
+                    armorQuality = { accounts[player.uuid]?.armorIdentity?.quality ?: 0 },
+                    journey = { accounts[player.uuid]?.journey ?: CoreJourney() },
+                    weaponBase = { accounts[player.uuid]?.weaponIdentity?.base ?: CoreWeaponBase.STANDARD },
+                    weaponLevelPower = { accounts[player.uuid]?.let { CoreJourneyRules.power(it.weaponIdentity, it.weaponTier) } ?: 1.0 },
+                    armorLevelPower = { accounts[player.uuid]?.let { CoreJourneyRules.power(it.armorIdentity, it.armorTier) } ?: 1.0 },
+                    allies = { actors.values.toList() },
+                    onLesson = { bit -> if (accounts[player.uuid]?.journey?.knows(bit) == false) transact(player.uuid, CoreAction.LearnCombat(bit)) }) {
                     if (!dungeons.defeated(player)) {
                         player.showTitle(Title.title(CoreLoopItems.text("力尽きた…", NamedTextColor.RED), CoreLoopItems.text("獲得素材を持って港へ戻ります")))
                         returnToHarbor(player)
                     }
                 }
-                CoreLoopItems.refresh(player, a, initial = true, packed = packed(player))
+                CoreLoopItems.refresh(player, a, initial = true, packed = packed(player), combatSheet = combatSheet(player) ?: CoreCombatSheet.from(a))
                 actors[player.uuid]?.reset()
                 player.setHeldItemSlot(0)
                 player.sendMessage(CoreLoopItems.text("開拓港へようこそ。正面の地図台から遠征へ出発できます。", NamedTextColor.GOLD))
                 player.sendMessage(CoreLoopItems.text("ホットバー9番の「冒険の手帳」を右クリックすると、一周の流れを確認できます。"))
                 a.maps.firstOrNull()?.let { preparedMaps.warm(player.uuid, it) }
                 uiPack?.offer(player) { loadedPlayer, _ ->
+                    CoreCombatPresentation.pack(loadedPlayer, packed(loadedPlayer))
                     refresh(loadedPlayer)
                     menus.refreshTheme(loadedPlayer)
                 }
+                if (!a.journey.chosen) player.scheduler().scheduleNextTick { if (connections[player.uuid] === player) menus.career(player) }
             }
             println("Player connected: ${player.username} uuid=${player.uuid} firstSpawn=${event.isFirstSpawn} coreLoop=true")
         }
         events.addListener(PlayerDisconnectEvent::class.java) { event -> disconnect(event.player) }
         events.addListener(InventoryPreClickEvent::class.java) { event ->
+            if (combatLab.click(event)) return@addListener
             if (menus.click(event)) return@addListener
             val stoneId = CoreLoopItems.stoneId(event.player.inventory.cursorItem)
             val currency = CoreLoopItems.currencyId(event.player.inventory.cursorItem)
@@ -237,7 +257,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
             }
         }
         events.addListener(ItemDropEvent::class.java) { event ->
-            if (event.itemStack.getTag(CoreLoopItems.actionTag) != null || event.itemStack.getTag(QUEST_GATHERING_TOOL_TAG) != null || CoreLoopItems.mapId(event.itemStack) != null) event.isCancelled = true
+            if (combatLab.contains(event.player) || event.itemStack.getTag(CoreLoopItems.actionTag) != null || event.itemStack.getTag(QUEST_GATHERING_TOOL_TAG) != null || CoreLoopItems.mapId(event.itemStack) != null) event.isCancelled = true
         }
         events.addListener(PlayerBlockInteractEvent::class.java) { event ->
             if (event.hand != PlayerHand.MAIN) return@addListener
@@ -269,15 +289,15 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         }
         events.addListener(PlayerCancelItemUseEvent::class.java) { event -> if (event.hand == PlayerHand.MAIN) questMaps.cancelGathering(event.player) }
         events.addListener(PlayerHandAnimationEvent::class.java) { event ->
-            if (event.hand == PlayerHand.MAIN && event.player.itemInMainHand.getTag(CoreLoopItems.actionTag) == "weapon") actors[event.player.uuid]?.attack()
+            if (event.hand == PlayerHand.MAIN && event.player.itemInMainHand.getTag(CoreLoopItems.actionTag) == "weapon") actor(event.player)?.attack()
         }
         events.addListener(EntityAttackEvent::class.java) { event ->
             val player = event.entity as? Player ?: return@addListener
-            if (player.itemInMainHand.getTag(CoreLoopItems.actionTag) == "weapon") actors[player.uuid]?.attack()
+            if (player.itemInMainHand.getTag(CoreLoopItems.actionTag) == "weapon") actor(player)?.attack()
         }
         events.addListener(PlayerSwapItemEvent::class.java) { event ->
             event.isCancelled = true
-            actors[event.player.uuid]?.dodge()
+            actor(event.player)?.dodge()
         }
         events.addListener(PlayerBlockBreakEvent::class.java) { it.isCancelled = true }
         events.addListener(PlayerBlockPlaceEvent::class.java) { it.isCancelled = true }
@@ -287,7 +307,9 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         events.addListener(PlayerTickEvent::class.java) { event ->
             val player = event.player
             questMaps.tick(player)
-            actors[player.uuid]?.tick()
+            combatLab.beforeTick(player)
+            actor(player)?.tick()
+            CoreArmamentPresentation.tick(player, packed(player))
             if (player.aliveTicks % 5 == 0L) updateHud(player)
             if (player.instance === hub && player.position.y() < 38) { player.teleport(harbor.spawn); actors[player.uuid]?.reset() }
             if (player.instance !== hub && player.position.y() < 15 && !isDeparting(player)) returnToHarbor(player)
@@ -297,10 +319,18 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
             dungeons.tick(event.instance, System.currentTimeMillis())
         }
         MinecraftServer.getCommandManager().register(Command("projects").apply {
-            setDefaultExecutor { sender, _ -> (sender as? Player)?.let { menus.journal(it) } }
+            setDefaultExecutor { sender, _ -> (sender as? Player)?.let { if (combatLab.contains(it)) combatLab.menu(it) else menus.journal(it) } }
+        })
+        MinecraftServer.getCommandManager().register(Command("skilltest").apply {
+            setDefaultExecutor { sender, _ -> (sender as? Player)?.let { combatLab.enter(it, account(it)?.journey?.job ?: CoreClass.WARRIOR) } }
         })
         MinecraftServer.getCommandManager().register(Command("hub").apply {
             setDefaultExecutor { sender, _ -> (sender as? Player)?.let { returnToHarbor(it) } }
+        })
+        MinecraftServer.getCommandManager().register(Command("effects").apply {
+            setDefaultExecutor { sender, _ -> (sender as? Player)?.let {
+                it.sendMessage(CoreLoopItems.text("戦闘演出：${CoreCombatPresentation.cycle(it).label}（/effects で切替。自分の表示だけ変更）"))
+            } }
         })
     }
 
@@ -310,14 +340,19 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         if (mapId == null && action == null) return false
         val previous = lastUseAt.put(player.uuid, player.aliveTicks)
         if (previous != null && player.aliveTicks - previous < 2) return true
+        if (combatLab.contains(player)) {
+            if (action == "journal") { combatLab.menu(player); return true }
+            if (action == "potion") { combatLab.actor(player)?.refillTraining(); return true }
+            if (action != "weapon" && action?.startsWith("skill:") != true) return true
+        }
         when {
             mapId != null -> account(player)?.let { depart(player, mapId, it.revision) }
             action == "journal" -> menus.journal(player)
             action == "affix" -> CoreLoopItems.stoneId(item)?.let { menus.stoneDetail(player, it) }
             action == "currency" -> menus.affixes(player)
             action == "armor" -> menus.gearMods(player, CoreGearSlot.ARMOR)
-            action == "weapon" -> actors[player.uuid]?.skill(0)
-            action?.startsWith("skill:") == true -> action.substringAfter(':').toIntOrNull()?.let { actors[player.uuid]?.skill(it) }
+            action == "weapon" -> actor(player)?.skill(0)
+            action?.startsWith("skill:") == true -> action.substringAfter(':').toIntOrNull()?.let { actor(player)?.skill(it) }
             action == "potion" -> consume(player, CoreResource.POTION)
             action == "whetstone" -> consume(player, CoreResource.WHETSTONE)
         }
@@ -343,7 +378,18 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
             val current = ledger.snapshot(playerId)
                 ?: return@supplyAsync CoreTransactionResult(CoreTransactionStatus.UNAVAILABLE, null, "データを読み込めません")
             ledger.transact(playerId, CoreOperation(UUID.randomUUID(), revision ?: current.revision, action)).also { result ->
-                result.account?.let { accounts[playerId] = it }
+                result.account?.let { next ->
+                    accounts[playerId] = next
+                    if (result.successful && (next.journey.level != current.journey.level || CoreJourneyRules.next(next) != CoreJourneyRules.next(current))) {
+                        connections[playerId]?.let { player -> player.scheduler().scheduleNextTick {
+                            if (connections[playerId] === player && player.isOnline) {
+                                if (next.journey.level > current.journey.level) player.sendMessage(CoreLoopItems.text("冒険Lv${next.journey.level}！ 成長と職業の手帳で解放内容を確認できます", NamedTextColor.GOLD))
+                                player.sendMessage(CoreLoopItems.text("次の目標：${CoreJourneyRules.next(next)}", NamedTextColor.AQUA))
+                                refresh(player)
+                            }
+                        } }
+                    }
+                }
                 val other = when (action) { is CoreAction.BuyOffer -> action.seller; is CoreAction.FillBuyOrder -> action.buyer; else -> null }
                 if (other != null && result.successful) ledger.snapshot(other)?.let { accounts[other] = it }
             }
@@ -398,13 +444,15 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
     override fun warmMap(player: Player, map: CoreOwnedMap): Boolean = preparedMaps.warm(player.uuid, map)
 
     private fun refresh(player: Player) {
+        if (combatLab.refresh(player)) return
         val a = account(player) ?: return
         player.getAttribute(Attribute.MAX_HEALTH).baseValue = 20.0
         if (player.instance === hub) actors[player.uuid]?.reset()
-        CoreLoopItems.refresh(player, a, packed = packed(player))
+        CoreLoopItems.refresh(player, a, packed = packed(player), combatSheet = combatSheet(player) ?: CoreCombatSheet.from(a))
     }
 
     override fun depart(player: Player, mapId: UUID, revision: Long) {
+        if (account(player)?.journey?.chosen != true) { menus.career(player); return }
         if (!requireHub(player) || !busy.add(player.uuid)) return
         val runId = UUID.randomUUID()
         departing[player.uuid] = runId
@@ -462,6 +510,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
     }
 
     override fun departTrial(player: Player, kind: CoreActivityKind, tier: Int, revision: Long) {
+        if (account(player)?.journey?.chosen != true) { menus.career(player); return }
         if (!requireHub(player) || !busy.add(player.uuid)) return
         val runId = UUID.randomUUID()
         departing[player.uuid] = runId
@@ -543,7 +592,8 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
             onMobDefeated = { _, boss -> onMobDefeated(player, boss) },
             damagePlayer = { target, damage -> actors[target.uuid]?.hurt(damage) },
             canTarget = { target -> target === player && actors[target.uuid]?.defeated == false && sessions[target.uuid]?.returning == false },
-            contentSeed = run.map.seed, explicitBossArchetype = arena.archetype)
+            contentSeed = run.map.seed, explicitBossArchetype = arena.archetype,
+            typedDamagePlayer = { target, damage, type -> actors[target.uuid]?.hurt(damage, type) })
         try {
             val loot = CoreWorldLoot(player, arena.instance, run, { rewards.submit(player.uuid, it) }, { refresh(player) })
             sessions[player.uuid] = Session(player, runId, null, combat, bar, loot, arena)
@@ -581,11 +631,12 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         val combat = QuestEncounterCombat(runtime.instance, tier, groups, QuestCombatPlacement.resolve(runtime.instance, pos(plan.boss)),
             onMobDefeated = { _, boss -> onMobDefeated(player, boss) }, damagePlayer = { target, damage -> actors[target.uuid]?.hurt(damage) },
             canTarget = { target -> target.uuid == player.uuid && actors[target.uuid]?.defeated == false && sessions[target.uuid]?.returning == false },
-            contentSeed = plan.seed)
+            contentSeed = plan.seed, encounterLevel = account(player)?.activeRun?.map?.level ?: CoreJourneyRules.floor(tier),
+            typedDamagePlayer = { target, damage, type -> actors[target.uuid]?.hurt(damage, type) })
         val run = requireNotNull(account(player)?.activeRun)
         val loot = CoreWorldLoot(player, runtime.instance, run,
             reward = { rewards.submit(player.uuid, it) },
-            inventoryChanged = { account(player)?.let { CoreLoopItems.refresh(player, it, packed = packed(player)) } })
+            inventoryChanged = { refresh(player) })
         val session = Session(player, runId, runtime, combat, bar, loot)
         try {
             session.caches = CoreMapCaches(player, runtime.instance,
@@ -683,6 +734,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
     }
 
     override fun returnToHarbor(player: Player) {
+        if (combatLab.leave(player)) return
         if (dungeons.returnToHarbor(player)) return
         val session = sessions[player.uuid] ?: return
         if (session.returning || session.rewardPending) return
@@ -745,29 +797,33 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
                 if (result?.status == CoreTransactionStatus.COMMITTED) {
                     if (resource == CoreResource.POTION) { actor.healPotion(); potionReady[player.uuid] = System.currentTimeMillis() + 10_000 }
                     else actor.sharpen()
-                    CoreLoopItems.refresh(player, requireNotNull(account(player)), packed = packed(player))
+                    refresh(player)
                 } else player.sendMessage(CoreLoopItems.text(result?.message ?: "使用できませんでした。", NamedTextColor.RED))
             }
         }
     }
 
     private fun updateHud(player: Player) {
-        val a = account(player) ?: return
-        val actor = actors[player.uuid] ?: return
+        val a = combatLab.account(player) ?: account(player) ?: return
+        val actor = actor(player) ?: return
         player.food = 20
         player.foodSaturation = 20f
-        player.level = a.unlockedMapTier
-        player.exp = (actor.mana.toFloat() / actor.maxMana).coerceIn(0f, 1f)
+        player.level = a.journey.level
+        val currentXp = CoreJourneyRules.threshold(a.journey.level)
+        val nextXp = CoreJourneyRules.threshold((a.journey.level + 1).coerceAtMost(40))
+        player.exp = if (nextXp == currentXp) 1f else ((a.journey.xp - currentXp).toFloat() / (nextXp - currentXp)).coerceIn(0f, 1f)
         val session = sessions[player.uuid]
-        val message = if (isDeparting(player)) "遠征先を準備中…"
+        val message = combatLab.summary(player) ?: if (isDeparting(player)) "遠征先を準備中…"
         else if (dungeons.run(player) != null) dungeons.run(player)!!.objective()
         else if (session == null) "開拓港  T${a.weaponTier} / T${a.armorTier}  手帳 [9]"
         else if (a.activeRun?.bossDefeated == true) "討伐達成・手帳 [9] で帰還"
         else if (session.arena != null) "${session.arena.displayName} — ${session.combat.bossName()}"
         else "道の先のボスへ  戦利品 ${session.loot.remainingCount()}"
-        val icons = listOf(CoreUiIcon.DASH, CoreUiIcon.SLAM, CoreUiIcon.WHIRL)
+        val icons = listOf(CoreUiIcon.DASH, CoreUiIcon.SLAM, CoreUiIcon.WHIRL, CoreUiIcon.DEFENSE, CoreUiIcon.MAGIC)
         player.sendActionBar(CoreUiComponents.hud(CoreHudState(actor.health, actor.maxHealth.toDouble(), actor.mana.toDouble(), actor.maxMana.toDouble(),
-            icons.mapIndexed { i, icon -> CoreHudSkill(icon, (i + 2).toString(), actor.cooldownRemaining(i) / 20.0, actor.cooldownTicks(i) / 20.0, listOf(15, 25, 35)[i]) }, message), packed(player)))
+            icons.mapIndexed { i, icon -> CoreHudSkill(icon, (i + 2).toString(), actor.cooldownRemaining(i) / 20.0, actor.cooldownTicks(i) / 20.0,
+                actor.skillDefinitions[i].mana, CoreSkillCatalog.artIndex(actor.skillDefinitions[i]), actor.skillAvailable(i), actor.resourceAvailable(i)) },
+            message + " / ${actor.weaponHint}", actor.chargeCount, actor.resource, actor.resourceMax, actor.shield,actor.combatCue), packed(player)))
     }
 
     override fun sessionSummary(player: Player): String = dungeons.run(player)?.objective() ?: sessions[player.uuid]?.let {
@@ -786,6 +842,8 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
 
     private fun disconnect(player: Player) {
         if (!connections.remove(player.uuid, player)) return
+        CoreCombatPresentation.forget(player)
+        combatLab.disconnect(player)
         dungeons.disconnect(player)
         preparedMaps.forget(player.uuid)
         uiPack?.forget(player)
@@ -817,6 +875,9 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
     }
 
     fun close() {
+        actors.values.forEach { it.resetActions() }
+        connections.values.forEach { CoreCombatPresentation.forget(it) }
+        combatLab.close()
         dungeons.close()
         preparedMaps.close()
         mapBuilder.shutdown()

@@ -16,6 +16,13 @@ import kotlin.test.assertTrue
 class CoreUiTest {
     private fun plain(component: Component): String = (component as? TextComponent)?.content().orEmpty() + component.children().joinToString("") { plain(it) }
     private fun children(component: Component): List<Component> = listOf(component) + component.children().flatMap(::children)
+    @Test fun `pack declined shows locked class skill and weaving charges in Japanese`() {
+        val state=CoreHudState(100.0,100.0,100.0,skills=listOf(CoreHudSkill(CoreUiIcon.DASH,"2",0.0,4.0,artIndex=9,unlocked=false)),charges=3)
+        val text=plain(CoreUiComponents.hud(state,false))
+        assertTrue(text.contains("2:未解放")); assertTrue(text.contains("蓄積 3/3"))
+        assertFalse(text.any { it.code in 0xE000..0xF8FF })
+        assertEquals(CoreHudLayout.LOCKED,CoreHudLayout.skillVisual(state.skills.single(),100.0).frame)
+    }
     private val model = CoreTooltipModel("開拓者の大剣", CoreUiRarity.EPIC, 4, 28, "大剣", listOf(
         CoreTooltipStat("攻撃力", "+42", CoreUiIcon.ATTACK)), listOf(CoreTooltipAffix("鋭刃", "攻撃力 +12%", "8〜15%", 57, "IV")), 4)
 
@@ -86,7 +93,8 @@ class CoreUiTest {
         }
         assertTrue("pack.mcmeta" in paths)
         assertTrue("assets/projects/font/core_icons.json" in paths)
-        assertEquals(CoreUiPackPolicy.vanillaOverrides, paths.filter { it.startsWith("assets/minecraft/") }.toSet())
+        assertEquals(CoreUiPackPolicy.vanillaOverrides + CoreUiPackPolicy.vanillaAdditions,
+            paths.filter { it.startsWith("assets/minecraft/") }.toSet())
         assertFalse(paths.any { it.startsWith("assets/minecraft/font/") })
         assertEquals(paths.size, paths.distinct().size)
     }
@@ -96,7 +104,7 @@ class CoreUiTest {
         val paths = assertNotNull(loader.getResourceAsStream("core-ui-pack/index.txt"))
             .bufferedReader().use { it.readLines() }
         val models = paths.filter { it.startsWith("assets/projects/models/core_ui/") }
-        assertEquals(CoreUiIcon.entries.size + 1, models.size, "Every icon and the invisible filler must be covered")
+        assertEquals(80, models.size, "Nine stat icons, seventy class skills and the invisible filler must be covered")
         for (path in models) {
             val json = assertNotNull(loader.getResourceAsStream("core-ui-pack/$path"))
                 .bufferedReader().use { it.readText() }

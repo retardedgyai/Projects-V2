@@ -34,6 +34,7 @@ ART = [
     ("LEATHER", "materials", 14), ("CLOTH", "materials", 15),
     ("POTION", "symbols", 0), ("TABLET", "symbols", 1),
     ("ORB", "symbols", 2), ("BOSS", "symbols", 3), ("SHARD", "symbols", 4),
+    ("ARROW", "skills", 0), ("ARCANE", "skills", 1),
 ]
 
 
@@ -43,11 +44,18 @@ def build_art():
     atlas = Image.new("RGBA", (ART_CELL * 8, ART_CELL * 4))
     metadata, metrics = [], []
     for ordinal, (name, source, index) in enumerate(ART):
-        sheet = sheets[source]
-        assert abs(sheet.width - sheet.height) <= 2, "Source atlas must be square"
-        w, h = sheet.width / 4, sheet.height / 4
-        original = sheet.crop(tuple(round(value) for value in (
-            (index % 4) * w, (index // 4) * h, (index % 4 + 1) * w, (index // 4 + 1) * h)))
+        if source == "skills":
+            master = Image.open(ROOT / f"assets/core-ui/skills/{('pierce','star_thread')[index]}.png").convert("RGBA")
+            master = master.crop(master.getchannel('A').getbbox())
+            master.thumbnail((28,28), Image.Resampling.NEAREST)
+            original = Image.new('RGBA',(32,32))
+            original.alpha_composite(master,((32-master.width)//2,(32-master.height)//2))
+        else:
+            sheet = sheets[source]
+            assert abs(sheet.width - sheet.height) <= 2, "Source atlas must be square"
+            w, h = sheet.width / 4, sheet.height / 4
+            original = sheet.crop(tuple(round(value) for value in (
+                (index % 4) * w, (index // 4) * h, (index % 4 + 1) * w, (index // 4 + 1) * h)))
         # Fixed-cell sampling preserves the authored grid; never stretch tight bounds
         # separately (that would make each material a different apparent scale).
         cell = original.resize((ART_CELL, ART_CELL), Image.Resampling.NEAREST)

@@ -55,10 +55,27 @@ class LabMenuTest {
             assertEquals(1, calls)
             events.call(InventoryPreClickEvent(player.openInventory!!, player, Click.Left(0)))
             assertEquals(11, calls)
+            menu.panel(player,"panel",mapOf(10 to LabMenu.Button("disabled",enabled=false) { calls++ }))
+            assertEquals(27,player.openInventory!!.size)
+            events.call(InventoryPreClickEvent(player.openInventory!!,player,Click.Left(10)))
+            events.call(InventoryPreClickEvent(player.openInventory!!,player,Click.Left(0)))
+            assertEquals(11,calls)
+            var back=0
+            menu.show(player,"pages",List(46) { i -> LabMenu.Button("$i") { calls=i } },back={back++})
+            events.call(InventoryPreClickEvent(player.openInventory!!,player,Click.Left(53)))
+            events.call(InventoryPreClickEvent(player.openInventory!!,player,Click.Left(0)))
+            assertEquals(45,calls)
+            events.call(InventoryPreClickEvent(player.openInventory!!,player,Click.Left(47)))
+            assertEquals(1,back)
         } finally {
             player.remove()
             MinecraftServer.getInstanceManager().unregisterInstance(instance)
             MinecraftServer.stopCleanly()
         }
+    }
+    @Test fun compoundAnimationNamesAreReadableJapanese() {
+        assertEquals("振り払い・予備動作・解放形態",LabTestUi.animationLabel("sweep_windup_unbound"))
+        assertEquals("開花待機",LabTestUi.animationLabel("idle_bloom"))
+        assertEquals("斬り上げ・溜め",LabTestUi.animationLabel("uppercut_hold"))
     }
 }

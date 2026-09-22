@@ -33,14 +33,14 @@ class CoreAffixTest {
         return CoreAffixStone(UUID.randomUUID(), id, tier, (if (maximum) range.last else range.first).toDouble())
     }
 
-    @Test fun `catalog deterministic source rolls span all sixteen used stats and four ranks`() {
-        assertEquals(16, CoreAffixCatalog.definitions.size)
+    @Test fun `catalog deterministic source rolls span all live stats and four ranks`() {
+        assertEquals(48, CoreAffixCatalog.definitions.size)
         assertEquals(CoreAffixStat.entries.toSet(), CoreAffixCatalog.definitions.map { it.stat }.toSet())
         val seen = mutableSetOf<String>()
         for (tier in 1..4) {
             val run = CoreActiveRun(UUID(77, 88), CoreOwnedMap(UUID(99, 11), 1234567, tier))
             var normalDrops = 0
-            repeat(200) { index ->
+            repeat(2000) { index ->
                 val source = "enemy-$index"
                 val first = CoreAffixCatalog.rollLoot(run, source, CoreLootKind.ELITE)
                 assertEquals(first, CoreAffixCatalog.rollLoot(run, source, CoreLootKind.ELITE))
@@ -49,7 +49,7 @@ class CoreAffixTest {
                 first.forEach { assertEquals(tier, it.tier); assertTrue(CoreAffixCatalog.valid(it)); seen += it.modId }
                 normalDrops += CoreAffixCatalog.rollLoot(run, source, CoreLootKind.NORMAL).size
             }
-            assertTrue(normalDrops in 30..110, "normal drops=$normalDrops")
+            assertTrue(normalDrops in 300..1100, "normal drops=$normalDrops")
             assertEquals(3, CoreAffixCatalog.rollLoot(run, "boss", CoreLootKind.BOSS).size)
             CoreAffixCatalog.definitions.forEach { definition ->
                 assertEquals(0, CoreAffixCatalog.qualityPercent(stone(definition.id, tier)))
@@ -84,6 +84,7 @@ class CoreAffixTest {
                 CoreAffixStat.FIRE -> stats.fireFlat
                 CoreAffixStat.ICE -> stats.iceFlat
                 CoreAffixStat.LIGHTNING -> stats.lightningFlat
+                else -> stats.bonus(definition.stat)
             }
             assertEquals(value.value, emitted, definition.id)
             assertEquals(1, account.equippedAffixes.size)
@@ -186,7 +187,7 @@ class CoreAffixTest {
         assertTrue(read.affixStones.isEmpty() && read.equippedAffixes.isEmpty())
         assertEquals(CoreTransactionStatus.COMMITTED, service.transact(player, CoreOperation(UUID.randomUUID(), 1, CoreAction.ClaimMap(1, 222))).status)
         assertEquals(v1, Files.readString(backup))
-        assertTrue(Files.readString(path).startsWith("PROJECTS_CORE_LOOP\t7\t"))
+        assertTrue(Files.readString(path).startsWith("PROJECTS_CORE_LOOP\t10\t"))
         service.forget(player)
         val after = assertIs<CoreAccountLoadResult.Ready>(service.open(player)).account
         assertEquals(77, after.amount(CoreResource.ORE, 4))
@@ -317,5 +318,5 @@ class CoreAffixTest {
     private fun legacyBody(account: CoreAccount, version: Int): String =
         CoreAccountCodec.encode(account).substringBefore("checksum\t").lineSequence().filterNot(::coreExpansionRow)
             .filterNot { it.startsWith("crafting\t") || it.startsWith("currency\t") || it.startsWith("fragment\t") || it.startsWith("legacy-layout\t") || it.startsWith("enhancement\t") || it.startsWith("economy\t") || it.startsWith("identity\t") }
-            .joinToString("\n").replaceFirst("PROJECTS_CORE_LOOP\t7\t", "PROJECTS_CORE_LOOP\t$version\t")
+            .joinToString("\n").replaceFirst("PROJECTS_CORE_LOOP\t10\t", "PROJECTS_CORE_LOOP\t$version\t")
 }

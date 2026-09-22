@@ -131,9 +131,12 @@ internal class GreatswordEffect(
     }
 }
 
-/** Player-owned lifetime, no world entities or global tasks; map exit cancels every animation. */
+/** Player-owned particles and transient meshes; map exit cancels both lifetimes. */
 internal class GreatswordVfx(private val player: Player) {
+    private val meshes = CoreCombatMeshes(player)
     private val scheduler = ParticleAnimationScheduler()
+    // Skills and authoritative status ticks must never pause with a normal-attack hit stop.
+    private val combatScheduler = ParticleAnimationScheduler()
     private val manager = ParticleManager(
         ParticleQuality(otherActiveMultiplier = .45, distanceFalloffStart = 12.0, distanceFalloffEnd = 32.0, skipBelowMultiplier = .08),
         ParticleBudget(MAX_PARTICLES_PER_VIEWER_TICK))
@@ -142,19 +145,70 @@ internal class GreatswordVfx(private val player: Player) {
     private var instance: Instance? = null
     private var contactHold = 0
     private var holdAfterFrame = 0
-    internal val activeEffects: Int get() = scheduler.activeAnimationCount
+    private var contactSoundThisTick = false
+    internal val activeEffects: Int get() = scheduler.activeAnimationCount + combatScheduler.activeAnimationCount
     internal val retainsInstance: Boolean get() = instance != null
     internal fun holdContact(ticks: Int) { holdAfterFrame = maxOf(holdAfterFrame, ticks.coerceIn(0, 3)) }
     fun particles(particle: Particle, position: Point, count: Int, spread: Vec = Vec.ZERO, speed: Float = 0f) {
+        if (player.instance !== instance) cancel()
+        instance = player.instance
         if (elementalFrame.size < 48) elementalFrame += ParticleSpawn(particle, position, count.coerceIn(0, 16), spread, speed,
             ParticleCategory.OWN_ACTIVE, importance = ParticleImportance.COMBAT_FEEDBACK)
     }
 
+    fun normalContact(origin: Point, direction: Vec) {
+        if (!CoreCombatPresentation.packed(player)) {
+            play(GreatswordEffect(GreatswordVisual.HIT, origin, direction))
+            return
+        }
+        val definition = CoreSkillCatalog.skills(CoreClass.WARRIOR).first { it.icon == "dash" }
+        val effect = CoreSkillEffect(CoreClass.WARRIOR, definition.copy(radius = 3.9), origin, direction,
+            CoreSkillVisualPhase.CONTACT, sceneId = "normal_sweep")
+        effect.solidCompanion = true
+        play(effect)
+        meshes.play(effect)
+    }
+
     fun play(visual: GreatswordVisual, origin: Point, direction: Vec) {
+        if (visual in setOf(GreatswordVisual.SWEEP, GreatswordVisual.REVERSE, GreatswordVisual.FINISHER, GreatswordVisual.SLAM_BLADE)) {
+            val heavy = visual == GreatswordVisual.FINISHER || visual == GreatswordVisual.SLAM_BLADE
+            val definition = CoreSkillCatalog.skills(CoreClass.WARRIOR).first { it.icon == (if (heavy) "slam" else "war_wound") }
+            val effect = CoreSkillEffect(CoreClass.WARRIOR, definition.copy(radius = 3.9), origin, direction,
+                sceneId = if(heavy) "normal_finish" else if(visual==GreatswordVisual.REVERSE) "normal_reverse" else "normal_sweep")
+            effect.solidCompanion=CoreCombatPresentation.packed(player)
+            play(if(effect.solidCompanion) effect else GreatswordEffect(visual,origin,direction))
+            meshes.play(effect)
+            CoreSkillAudio.play(player, effect)
+        } else play(GreatswordEffect(visual,origin,direction))
+    }
+
+    fun play(effect: ParticleEffect) {
         if (player.instance !== instance) cancel()
         instance = player.instance
-        if (scheduler.activeAnimationCount >= MAX_EFFECTS) return
-        scheduler.start(GreatswordEffect(visual, origin, direction), frame)
+        if (activeEffects >= MAX_EFFECTS) return
+        scheduler.start(effect, frame)
+    }
+
+    fun playSkill(effect: ParticleEffect) {
+        if (player.instance !== instance) cancel()
+        instance = player.instance
+        if (effect is CoreSkillEffect) CoreArmamentPresentation.skill(player, effect)
+        if (activeEffects >= MAX_EFFECTS) scheduler.cancelAll() // Shed old normal trails before a skill pulse.
+        if (activeEffects < MAX_EFFECTS) {
+            if (effect is CoreSkillEffect) effect.solidCompanion = CoreCombatPresentation.packed(player)
+            combatScheduler.start(effect, frame)
+            if (effect is CoreSkillEffect) {
+                meshes.play(effect)
+                if (effect.phase != CoreSkillVisualPhase.CONTACT || !contactSoundThisTick) CoreSkillAudio.play(player, effect)
+                if (effect.phase == CoreSkillVisualPhase.CONTACT) contactSoundThisTick = true
+            }
+        }
+    }
+
+    fun status(effect: CorePoisonEffect) {
+        if (player.instance !== instance) cancel()
+        instance = player.instance
+        effect.emit(0, ParticleSink { if (elementalFrame.size < 48) elementalFrame += it })
     }
 
     fun tick() {
@@ -162,14 +216,15 @@ internal class GreatswordVfx(private val player: Player) {
         if (player.instance !== currentInstance || player.isRemoved) { cancel(); return }
         val viewers = currentInstance.players.filter { it.position.distanceSquared(player.position) <= 40.0 * 40.0 }
         if (viewers.isEmpty()) { cancel(); return }
-        // Draw impact first, then let the hot blade linger without emitting or advancing it.
-        // Only this player's VFX clock pauses; the server, movement and other players never do.
-        if (contactHold > 0) { contactHold--; return }
+        // Normal blades can linger on contact. Skill and DOT feedback stay on server time.
         frame.clear()
-        scheduler.tick()
+        if (contactHold > 0) contactHold-- else scheduler.tick()
+        combatScheduler.tick()
+        meshes.tick()
+        contactSoundThisTick = false
         frame.spawns += elementalFrame
         elementalFrame.clear()
-        contactHold = holdAfterFrame
+        contactHold = maxOf(contactHold, holdAfterFrame)
         holdAfterFrame = 0
         manager.beginTick()
         for (viewer in viewers) {
@@ -181,7 +236,8 @@ internal class GreatswordVfx(private val player: Player) {
                 }
                 if (accepted > 0) delegate.spawn(spawn.copy(count = accepted))
             }
-            manager.dispatchAll(ParticleViewer(viewer.position, viewer), frame.spawns.map { it.copy(category = category) }, bounded)
+            val stride = CoreCombatPresentation.detail(viewer).particleStride
+            manager.dispatchAll(ParticleViewer(viewer.position, viewer), frame.spawns.filterIndexed { i, _ -> i % stride == 0 }.map { it.copy(category = category) }, bounded)
         }
     }
 
@@ -189,6 +245,9 @@ internal class GreatswordVfx(private val player: Player) {
         sound(SoundEvent.ITEM_ARMOR_EQUIP_IRON, .30f, if (step == 3) .65f else .9f)
     }
     fun swingSound(step: Int) {
+        if (player.instance !== instance) cancel()
+        instance = player.instance
+        CoreArmamentPresentation.meleeRelease(player)
         sound(SoundEvent.ITEM_TRIDENT_THROW, .7f, floatArrayOf(.78f, .9f, .55f)[step - 1])
         sound(SoundEvent.ENTITY_PLAYER_ATTACK_SWEEP, .55f, if (step == 3) .65f else .8f)
     }
@@ -197,8 +256,9 @@ internal class GreatswordVfx(private val player: Player) {
         sound(SoundEvent.ITEM_TRIDENT_HIT, .45f, if (heavy) .65f else 1.0f)
     }
     fun cancel() {
-        scheduler.cancelAll(); frame.clear(); elementalFrame.clear(); manager.resetCounters()
-        contactHold = 0; holdAfterFrame = 0; instance = null
+        CoreArmamentPresentation.cancel(player)
+        scheduler.cancelAll(); combatScheduler.cancelAll(); meshes.cancel(); frame.clear(); elementalFrame.clear(); manager.resetCounters()
+        contactHold = 0; holdAfterFrame = 0; contactSoundThisTick = false; instance = null
     }
     private fun sound(event: SoundEvent, volume: Float, pitch: Float) = player.playSound(Sound.sound(event, Sound.Source.PLAYER, volume, pitch))
 

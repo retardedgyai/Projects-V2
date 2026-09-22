@@ -1,0 +1,450 @@
+{
+  "generation": "built-in image_gen; one call per asset",
+  "approved": "2026-09-08 v3 slash/flame/guard",
+  "queue": [
+    {
+      "id": "slam",
+      "job": "warrior",
+      "type": "skill",
+      "prompt": "Use case: stylized-concept. ONE original ProjectS Minecraft RPG skill sprite. Reference images show the APPROVED pixel art style: coherent recognizable objects, chunky facets, restrained local highlights, bold silhouette. Match that style exactly, not a glossy mobile-game illustration, not thin line or polygon symbols. Square image, artwork occupies 80% of canvas, actual 32x32 logical pixel art enlarged with nearest-neighbor hard square pixels. Simple dark charcoal background, no border, no letters, no text, no watermark. Must remain recognizable at 16x16. 3-4 shading tones per material. No subpixel details. Class: warrior. Subject: A broad steel greatsword striking downward into cracked stone, two ochre chips thrown sideways. Focus on the blade meeting a short fractured stone ledge."
+    },
+    {
+      "id": "whirl",
+      "job": "warrior",
+      "type": "skill",
+      "prompt": "Use case: stylized-concept. ONE original ProjectS Minecraft RPG skill sprite. Reference images show the APPROVED pixel art style: coherent recognizable objects, chunky facets, restrained local highlights, bold silhouette. Match that style exactly, not a glossy mobile-game illustration, not thin line or polygon symbols. Square image, artwork occupies 80% of canvas, actual 32x32 logical pixel art enlarged with nearest-neighbor hard square pixels. Simple dark charcoal background, no border, no letters, no text, no watermark. Must remain recognizable at 16x16. 3-4 shading tones per material. No subpixel details. Class: warrior. Subject: A single silver sword sweeping sideways with two short pale bronze curved motion trails wrapping around it; unmistakable rotating sword attack, not an abstract swirl."
+    },
+    {
+      "id": "war_guard",
+      "job": "warrior",
+      "type": "skill",
+      "prompt": "Use case: stylized-concept. ONE original ProjectS Minecraft RPG skill sprite. Reference images show the APPROVED pixel art style: coherent recognizable objects, chunky facets, restrained local highlights, bold silhouette. Match that style exactly, not a glossy mobile-game illustration, not thin line or polygon symbols. Square image, artwork occupies 80% of canvas, actual 32x32 logical pixel art enlarged with nearest-neighbor hard square pixels. Simple dark charcoal background, no border, no letters, no text, no watermark. Must remain recognizable at 16x16. 3-4 shading tones per material. No subpixel details. Class: warrior. Subject: Two sturdy steel blades crossing in a parry, one warm spark precisely at their meeting point. Clearly connected grips and blades."
+    },
+    {
+      "id": "war_wound",
+      "job": "warrior",
+      "type": "skill",
+      "prompt": "Use case: stylized-concept. ONE original ProjectS Minecraft RPG skill sprite. Reference images show the APPROVED pixel art style: coherent recognizable objects, chunky facets, restrained local highlights, bold silhouette. Match that style exactly, not a glossy mobile-game illustration, not thin line or polygon symbols. Square image, artwork occupies 80% of canvas, actual 32x32 logical pixel art enlarged with nearest-neighbor hard square pixels. Simple dark charcoal background, no border, no letters, no text, no watermark. Must remain recognizable at 16x16. 3-4 shading tones per material. No subpixel details. Class: warrior. Subject: A hooked steel cutting edge dragging across dark leather armor, leaving three short crimson slash marks. No gore."
+    },
+    {
+      "id": "war_counter",
+      "job": "warrior",
+      "type": "skill",
+      "prompt": "Use case: stylized-concept. ONE original ProjectS Minecraft RPG skill sprite. Reference images show the APPROVED pixel art style: coherent recognizable objects, chunky facets, restrained local highlights, bold silhouette. Match that style exactly, not a glossy mobile-game illustration, not thin line or polygon symbols. Square image, artwork occupies 80% of canvas, actual 32x32 logical pixel art enlarged with nearest-neighbor hard square pixels. Simple dark charcoal background, no border, no letters, no text, no watermark. Must remain recognizable at 16x16. 3-4 shading tones per material. No subpixel details. Class: warrior. Subject: A broad steel blade sweeping back from right to left with one hooked amber return trail behind it; emphasize the reversed cutting direction."
+    },
+    {
+      "id": "war_cry",
+      "job": "warrior",
+      "type": "skill",
+      "prompt": "Use case: stylized-concept. ONE original ProjectS Minecraft RPG skill sprite. Reference images show the APPROVED pixel art style: coherent recognizable objects, chunky facets, restrained local highlights, bold silhouette. Match that style exactly, not a glossy mobile-game illustration, not thin line or polygon symbols. Square image, artwork occupies 80% of canvas, actual 32x32 logical pixel art enlarged with nearest-neighbor hard square pixels. Simple dark charcoal background, no border, no letters, no text, no watermark. Must remain recognizable at 16x16. 3-4 shading tones per material. No subpixel details. Class: warrior. Subject: An iron war horn with a brown wrapped handle and two broad pale gold sound waves issuing from its open mouth."
+    },
+    {
+      "id": "war_breach",
+      "job": "warrior",
+      "type": "skill",
+      "prompt": "Use case: stylized-concept. ONE original ProjectS Minecraft RPG skill sprite. Reference images show the APPROVED pixel art style: coherent recognizable objects, chunky facets, restrained local highlights, bold silhouette. Match that style exactly, not a glossy mobile-game illustration, not thin line or polygon symbols. Square image, artwork occupies 80% of canvas, actual 32x32 logical pixel art enlarged with nearest-neighbor hard square pixels. Simple dark charcoal background, no border, no letters, no text, no watermark. Must remain recognizable at 16x16. 3-4 shading tones per material. No subpixel details. Class: warrior. Subject: A forward-pointed long steel sword punching through a cracked gray shield, tiny ochre splinters. Simple clean silhouette."
+    },
+    {
+      "id": "war_ult",
+      "job": "warrior",
+      "type": "skill",
+      "prompt": "Use case: stylized-concept. ONE original ProjectS Minecraft RPG skill sprite. Reference images show the APPROVED pixel art style: coherent recognizable objects, chunky facets, restrained local highlights, bold silhouette. Match that style exactly, not a glossy mobile-game illustration, not thin line or polygon symbols. Square image, artwork occupies 80% of canvas, actual 32x32 logical pixel art enlarged with nearest-neighbor hard square pixels. Simple dark charcoal background, no border, no letters, no text, no watermark. Must remain recognizable at 16x16. 3-4 shading tones per material. No subpixel details. Class: warrior. Subject: A heavy upright silver greatsword descending tip-first, flanked by two shorter amber impact streaks and a burst of broken stone underneath. More forceful than the normal sword."
+    },
+    {
+      "id": "war_banner",
+      "job": "warrior",
+      "type": "skill",
+      "prompt": "Use case: stylized-concept. ONE original ProjectS Minecraft RPG skill sprite. Reference images show the APPROVED pixel art style: coherent recognizable objects, chunky facets, restrained local highlights, bold silhouette. Match that style exactly, not a glossy mobile-game illustration, not thin line or polygon symbols. Square image, artwork occupies 80% of canvas, actual 32x32 logical pixel art enlarged with nearest-neighbor hard square pixels. Simple dark charcoal background, no border, no letters, no text, no watermark. Must remain recognizable at 16x16. 3-4 shading tones per material. No subpixel details. Class: warrior. Subject: A crimson cloth battle banner hanging from an iron spear, simple gold crest and a sturdy dark wooden pole. A small warm protective glow at the base."
+    },
+    {
+      "id": "pierce",
+      "job": "ranger",
+      "type": "skill",
+      "prompt": "Use case: stylized-concept. ONE original ProjectS Minecraft RPG skill sprite. Reference images show the APPROVED pixel art style: coherent recognizable objects, chunky facets, restrained local highlights, bold silhouette. Match that style exactly, not a glossy mobile-game illustration, not thin line or polygon symbols. Square image, artwork occupies 80% of canvas, actual 32x32 logical pixel art enlarged with nearest-neighbor hard square pixels. Simple dark charcoal background, no border, no letters, no text, no watermark. Must remain recognizable at 16x16. 3-4 shading tones per material. No subpixel details. Class: ranger. Subject: A wooden recurve bow with one straight silver-tipped arrow nocked and drawn toward upper right, muted green fletching, taut simple string."
+    },
+    {
+      "id": "frost_fan",
+      "job": "ranger",
+      "type": "skill",
+      "prompt": "Use case: stylized-concept. ONE original ProjectS Minecraft RPG skill sprite. Reference images show the APPROVED pixel art style: coherent recognizable objects, chunky facets, restrained local highlights, bold silhouette. Match that style exactly, not a glossy mobile-game illustration, not thin line or polygon symbols. Square image, artwork occupies 80% of canvas, actual 32x32 logical pixel art enlarged with nearest-neighbor hard square pixels. Simple dark charcoal background, no border, no letters, no text, no watermark. Must remain recognizable at 16x16. 3-4 shading tones per material. No subpixel details. Class: ranger. Subject: Three distinct ice-tipped wooden arrows fanning outward toward upper right, pale cyan frozen heads and dark teal shadows."
+    },
+    {
+      "id": "arrow_rain",
+      "job": "ranger",
+      "type": "skill",
+      "prompt": "Use case: stylized-concept. ONE original ProjectS Minecraft RPG skill sprite. Reference images show the APPROVED pixel art style: coherent recognizable objects, chunky facets, restrained local highlights, bold silhouette. Match that style exactly, not a glossy mobile-game illustration, not thin line or polygon symbols. Square image, artwork occupies 80% of canvas, actual 32x32 logical pixel art enlarged with nearest-neighbor hard square pixels. Simple dark charcoal background, no border, no letters, no text, no watermark. Must remain recognizable at 16x16. 3-4 shading tones per material. No subpixel details. Class: ranger. Subject: Four wooden arrows falling diagonally downward onto a small earthy ground patch; green fletching and sharp pale steel heads. Clear descending direction."
+    },
+    {
+      "id": "hunt_retreat",
+      "job": "ranger",
+      "type": "skill",
+      "prompt": "Use case: stylized-concept. ONE original ProjectS Minecraft RPG skill sprite. Reference images show the APPROVED pixel art style: coherent recognizable objects, chunky facets, restrained local highlights, bold silhouette. Match that style exactly, not a glossy mobile-game illustration, not thin line or polygon symbols. Square image, artwork occupies 80% of canvas, actual 32x32 logical pixel art enlarged with nearest-neighbor hard square pixels. Simple dark charcoal background, no border, no letters, no text, no watermark. Must remain recognizable at 16x16. 3-4 shading tones per material. No subpixel details. Class: ranger. Subject: A dark brown leather boot stepping backward to lower left while a single arrow travels to upper right, a short green motion trail."
+    },
+    {
+      "id": "hunt_pierce",
+      "job": "ranger",
+      "type": "skill",
+      "prompt": "Use case: stylized-concept. ONE original ProjectS Minecraft RPG skill sprite. Reference images show the APPROVED pixel art style: coherent recognizable objects, chunky facets, restrained local highlights, bold silhouette. Match that style exactly, not a glossy mobile-game illustration, not thin line or polygon symbols. Square image, artwork occupies 80% of canvas, actual 32x32 logical pixel art enlarged with nearest-neighbor hard square pixels. Simple dark charcoal background, no border, no letters, no text, no watermark. Must remain recognizable at 16x16. 3-4 shading tones per material. No subpixel details. Class: ranger. Subject: One long steel arrowhead bursting through two small splintered wooden plates, muted green trail. Arrow is central and largest."
+    },
+    {
+      "id": "hunt_trap",
+      "job": "ranger",
+      "type": "skill",
+      "prompt": "Use case: stylized-concept. ONE original ProjectS Minecraft RPG skill sprite. Reference images show the APPROVED pixel art style: coherent recognizable objects, chunky facets, restrained local highlights, bold silhouette. Match that style exactly, not a glossy mobile-game illustration, not thin line or polygon symbols. Square image, artwork occupies 80% of canvas, actual 32x32 logical pixel art enlarged with nearest-neighbor hard square pixels. Simple dark charcoal background, no border, no letters, no text, no watermark. Must remain recognizable at 16x16. 3-4 shading tones per material. No subpixel details. Class: ranger. Subject: An open iron jaw hunting trap sitting on a dark wood base, tiny green poison vial beside one hinge; toothed semicircle readable at tiny size."
+    },
+    {
+      "id": "hunt_mark",
+      "job": "ranger",
+      "type": "skill",
+      "prompt": "Use case: stylized-concept. ONE original ProjectS Minecraft RPG skill sprite. Reference images show the APPROVED pixel art style: coherent recognizable objects, chunky facets, restrained local highlights, bold silhouette. Match that style exactly, not a glossy mobile-game illustration, not thin line or polygon symbols. Square image, artwork occupies 80% of canvas, actual 32x32 logical pixel art enlarged with nearest-neighbor hard square pixels. Simple dark charcoal background, no border, no letters, no text, no watermark. Must remain recognizable at 16x16. 3-4 shading tones per material. No subpixel details. Class: ranger. Subject: A stag antler trophy with a small amber aiming glint over the forehead; brown and cream horns, muted forest green haze. No text."
+    },
+    {
+      "id": "hunt_volley",
+      "job": "ranger",
+      "type": "skill",
+      "prompt": "Use case: stylized-concept. ONE original ProjectS Minecraft RPG skill sprite. Reference images show the APPROVED pixel art style: coherent recognizable objects, chunky facets, restrained local highlights, bold silhouette. Match that style exactly, not a glossy mobile-game illustration, not thin line or polygon symbols. Square image, artwork occupies 80% of canvas, actual 32x32 logical pixel art enlarged with nearest-neighbor hard square pixels. Simple dark charcoal background, no border, no letters, no text, no watermark. Must remain recognizable at 16x16. 3-4 shading tones per material. No subpixel details. Class: ranger. Subject: Three parallel fast arrows clustered tightly and travelling horizontally to upper right, brown shafts and contrasting bright pale green fletching."
+    },
+    {
+      "id": "hunt_ult",
+      "job": "ranger",
+      "type": "skill",
+      "prompt": "Use case: stylized-concept. ONE original ProjectS Minecraft RPG skill sprite. Reference images show the APPROVED pixel art style: coherent recognizable objects, chunky facets, restrained local highlights, bold silhouette. Match that style exactly, not a glossy mobile-game illustration, not thin line or polygon symbols. Square image, artwork occupies 80% of canvas, actual 32x32 logical pixel art enlarged with nearest-neighbor hard square pixels. Simple dark charcoal background, no border, no letters, no text, no watermark. Must remain recognizable at 16x16. 3-4 shading tones per material. No subpixel details. Class: ranger. Subject: An oversized brilliant ivory arrowhead on a dark oak shaft, emerald fletching behind and a concentrated gold forward streak, one precise lethal shot."
+    },
+    {
+      "id": "hunt_storm",
+      "job": "ranger",
+      "type": "skill",
+      "prompt": "Use case: stylized-concept. ONE original ProjectS Minecraft RPG skill sprite. Reference images show the APPROVED pixel art style: coherent recognizable objects, chunky facets, restrained local highlights, bold silhouette. Match that style exactly, not a glossy mobile-game illustration, not thin line or polygon symbols. Square image, artwork occupies 80% of canvas, actual 32x32 logical pixel art enlarged with nearest-neighbor hard square pixels. Simple dark charcoal background, no border, no letters, no text, no watermark. Must remain recognizable at 16x16. 3-4 shading tones per material. No subpixel details. Class: ranger. Subject: A tall green hunter banner planted beside three arrows stuck into earth, an arcing shower of two small arrows overhead; strong dominant banner silhouette."
+    },
+    {
+      "id": "frost_nova",
+      "job": "mage",
+      "type": "skill",
+      "prompt": "Use case: stylized-concept. ONE original ProjectS Minecraft RPG skill sprite. Reference images show the APPROVED pixel art style: coherent recognizable objects, chunky facets, restrained local highlights, bold silhouette. Match that style exactly, not a glossy mobile-game illustration, not thin line or polygon symbols. Square image, artwork occupies 80% of canvas, actual 32x32 logical pixel art enlarged with nearest-neighbor hard square pixels. Simple dark charcoal background, no border, no letters, no text, no watermark. Must remain recognizable at 16x16. 3-4 shading tones per material. No subpixel details. Class: mage. Subject: A central jagged ice crystal with a low spreading ring of pale cyan frost, chunky three-tone ice facets and dark navy shadows."
+    },
+    {
+      "id": "meteor",
+      "job": "mage",
+      "type": "skill",
+      "prompt": "Use case: stylized-concept. ONE original ProjectS Minecraft RPG skill sprite. Reference images show the APPROVED pixel art style: coherent recognizable objects, chunky facets, restrained local highlights, bold silhouette. Match that style exactly, not a glossy mobile-game illustration, not thin line or polygon symbols. Square image, artwork occupies 80% of canvas, actual 32x32 logical pixel art enlarged with nearest-neighbor hard square pixels. Simple dark charcoal background, no border, no letters, no text, no watermark. Must remain recognizable at 16x16. 3-4 shading tones per material. No subpixel details. Class: mage. Subject: Three burning dark basalt meteors descending from upper left to lower right, one large leading rock and two small companions, ember orange tails."
+    },
+    {
+      "id": "mage_blink",
+      "job": "mage",
+      "type": "skill",
+      "prompt": "Use case: stylized-concept. ONE original ProjectS Minecraft RPG skill sprite. Reference images show the APPROVED pixel art style: coherent recognizable objects, chunky facets, restrained local highlights, bold silhouette. Match that style exactly, not a glossy mobile-game illustration, not thin line or polygon symbols. Square image, artwork occupies 80% of canvas, actual 32x32 logical pixel art enlarged with nearest-neighbor hard square pixels. Simple dark charcoal background, no border, no letters, no text, no watermark. Must remain recognizable at 16x16. 3-4 shading tones per material. No subpixel details. Class: mage. Subject: A single dark violet wizard boot emerging from a bright cyan crescent portal, trailing two blocky blue afterimages. Pictorial teleport, no rune lettering."
+    },
+    {
+      "id": "mage_mark",
+      "job": "mage",
+      "type": "skill",
+      "prompt": "Use case: stylized-concept. ONE original ProjectS Minecraft RPG skill sprite. Reference images show the APPROVED pixel art style: coherent recognizable objects, chunky facets, restrained local highlights, bold silhouette. Match that style exactly, not a glossy mobile-game illustration, not thin line or polygon symbols. Square image, artwork occupies 80% of canvas, actual 32x32 logical pixel art enlarged with nearest-neighbor hard square pixels. Simple dark charcoal background, no border, no letters, no text, no watermark. Must remain recognizable at 16x16. 3-4 shading tones per material. No subpixel details. Class: mage. Subject: One branched golden lightning bolt striking a violet crystal, a tiny blue-white impact spark; focused lightning spell."
+    },
+    {
+      "id": "mage_garden",
+      "job": "mage",
+      "type": "skill",
+      "prompt": "Use case: stylized-concept. ONE original ProjectS Minecraft RPG skill sprite. Reference images show the APPROVED pixel art style: coherent recognizable objects, chunky facets, restrained local highlights, bold silhouette. Match that style exactly, not a glossy mobile-game illustration, not thin line or polygon symbols. Square image, artwork occupies 80% of canvas, actual 32x32 logical pixel art enlarged with nearest-neighbor hard square pixels. Simple dark charcoal background, no border, no letters, no text, no watermark. Must remain recognizable at 16x16. 3-4 shading tones per material. No subpixel details. Class: mage. Subject: A cluster of three tall blue ice spikes rising from a round dark frozen ground patch, pale cyan edges, visibly a field of ice."
+    },
+    {
+      "id": "mage_burst",
+      "job": "mage",
+      "type": "skill",
+      "prompt": "Use case: stylized-concept. ONE original ProjectS Minecraft RPG skill sprite. Reference images show the APPROVED pixel art style: coherent recognizable objects, chunky facets, restrained local highlights, bold silhouette. Match that style exactly, not a glossy mobile-game illustration, not thin line or polygon symbols. Square image, artwork occupies 80% of canvas, actual 32x32 logical pixel art enlarged with nearest-neighbor hard square pixels. Simple dark charcoal background, no border, no letters, no text, no watermark. Must remain recognizable at 16x16. 3-4 shading tones per material. No subpixel details. Class: mage. Subject: A purple faceted spell crystal shattering into four chunky fragments around an intense golden core, small cyan electricity accents."
+    },
+    {
+      "id": "mage_ward",
+      "job": "mage",
+      "type": "skill",
+      "prompt": "Use case: stylized-concept. ONE original ProjectS Minecraft RPG skill sprite. Reference images show the APPROVED pixel art style: coherent recognizable objects, chunky facets, restrained local highlights, bold silhouette. Match that style exactly, not a glossy mobile-game illustration, not thin line or polygon symbols. Square image, artwork occupies 80% of canvas, actual 32x32 logical pixel art enlarged with nearest-neighbor hard square pixels. Simple dark charcoal background, no border, no letters, no text, no watermark. Must remain recognizable at 16x16. 3-4 shading tones per material. No subpixel details. Class: mage. Subject: A deep violet faceted crystal enclosed by a translucent-looking cyan magical shield dome, hard pixel edges and three-tone blue protective shell."
+    },
+    {
+      "id": "mage_ult",
+      "job": "mage",
+      "type": "skill",
+      "prompt": "Use case: stylized-concept. ONE original ProjectS Minecraft RPG skill sprite. Reference images show the APPROVED pixel art style: coherent recognizable objects, chunky facets, restrained local highlights, bold silhouette. Match that style exactly, not a glossy mobile-game illustration, not thin line or polygon symbols. Square image, artwork occupies 80% of canvas, actual 32x32 logical pixel art enlarged with nearest-neighbor hard square pixels. Simple dark charcoal background, no border, no letters, no text, no watermark. Must remain recognizable at 16x16. 3-4 shading tones per material. No subpixel details. Class: mage. Subject: A massive orange fireball breaking open above a small violet spellbook, two ascending red fire tongues, bright ivory core. Powerful fire ritual, legible simple two-object composition."
+    },
+    {
+      "id": "mage_zero",
+      "job": "mage",
+      "type": "skill",
+      "prompt": "Use case: stylized-concept. ONE original ProjectS Minecraft RPG skill sprite. Reference images show the APPROVED pixel art style: coherent recognizable objects, chunky facets, restrained local highlights, bold silhouette. Match that style exactly, not a glossy mobile-game illustration, not thin line or polygon symbols. Square image, artwork occupies 80% of canvas, actual 32x32 logical pixel art enlarged with nearest-neighbor hard square pixels. Simple dark charcoal background, no border, no letters, no text, no watermark. Must remain recognizable at 16x16. 3-4 shading tones per material. No subpixel details. Class: mage. Subject: A large pale blue ice crown of five spikes with a dark frozen orb below, icy white highlights and deep blue shade; frozen domain ultimate."
+    },
+    {
+      "id": "star_thread",
+      "job": "starweaver",
+      "type": "skill",
+      "prompt": "Use case: stylized-concept. ONE original ProjectS Minecraft RPG skill sprite. Reference images show the APPROVED pixel art style: coherent recognizable objects, chunky facets, restrained local highlights, bold silhouette. Match that style exactly, not a glossy mobile-game illustration, not thin line or polygon symbols. Square image, artwork occupies 80% of canvas, actual 32x32 logical pixel art enlarged with nearest-neighbor hard square pixels. Simple dark charcoal background, no border, no letters, no text, no watermark. Must remain recognizable at 16x16. 3-4 shading tones per material. No subpixel details. Class: starweaver. Subject: A silver needle drawing a luminous blue-white thread from a four-pointed star, purple shadow and one long curved strand, clear sewing metaphor."
+    },
+    {
+      "id": "star_ring",
+      "job": "starweaver",
+      "type": "skill",
+      "prompt": "Use case: stylized-concept. ONE original ProjectS Minecraft RPG skill sprite. Reference images show the APPROVED pixel art style: coherent recognizable objects, chunky facets, restrained local highlights, bold silhouette. Match that style exactly, not a glossy mobile-game illustration, not thin line or polygon symbols. Square image, artwork occupies 80% of canvas, actual 32x32 logical pixel art enlarged with nearest-neighbor hard square pixels. Simple dark charcoal background, no border, no letters, no text, no watermark. Must remain recognizable at 16x16. 3-4 shading tones per material. No subpixel details. Class: starweaver. Subject: A pale silver four-pointed star surrounded by a tilted blue orbital ring, dark indigo body, two small bright satellite stars."
+    },
+    {
+      "id": "starfall",
+      "job": "starweaver",
+      "type": "skill",
+      "prompt": "Use case: stylized-concept. ONE original ProjectS Minecraft RPG skill sprite. Reference images show the APPROVED pixel art style: coherent recognizable objects, chunky facets, restrained local highlights, bold silhouette. Match that style exactly, not a glossy mobile-game illustration, not thin line or polygon symbols. Square image, artwork occupies 80% of canvas, actual 32x32 logical pixel art enlarged with nearest-neighbor hard square pixels. Simple dark charcoal background, no border, no letters, no text, no watermark. Must remain recognizable at 16x16. 3-4 shading tones per material. No subpixel details. Class: starweaver. Subject: Three white-blue shooting stars falling toward lower right, one large leading star with an indigo violet tail and two small companions."
+    },
+    {
+      "id": "star_step",
+      "job": "starweaver",
+      "type": "skill",
+      "prompt": "Use case: stylized-concept. ONE original ProjectS Minecraft RPG skill sprite. Reference images show the APPROVED pixel art style: coherent recognizable objects, chunky facets, restrained local highlights, bold silhouette. Match that style exactly, not a glossy mobile-game illustration, not thin line or polygon symbols. Square image, artwork occupies 80% of canvas, actual 32x32 logical pixel art enlarged with nearest-neighbor hard square pixels. Simple dark charcoal background, no border, no letters, no text, no watermark. Must remain recognizable at 16x16. 3-4 shading tones per material. No subpixel details. Class: starweaver. Subject: A small silver slipper stepping across two blue-white star-shaped stepping stones, violet comet trail behind the heel."
+    },
+    {
+      "id": "star_needle",
+      "job": "starweaver",
+      "type": "skill",
+      "prompt": "Use case: stylized-concept. ONE original ProjectS Minecraft RPG skill sprite. Reference images show the APPROVED pixel art style: coherent recognizable objects, chunky facets, restrained local highlights, bold silhouette. Match that style exactly, not a glossy mobile-game illustration, not thin line or polygon symbols. Square image, artwork occupies 80% of canvas, actual 32x32 logical pixel art enlarged with nearest-neighbor hard square pixels. Simple dark charcoal background, no border, no letters, no text, no watermark. Must remain recognizable at 16x16. 3-4 shading tones per material. No subpixel details. Class: starweaver. Subject: A long narrow silver sewing needle piercing a small violet star crystal, a single teal light thread through its eye."
+    },
+    {
+      "id": "star_cloud",
+      "job": "starweaver",
+      "type": "skill",
+      "prompt": "Use case: stylized-concept. ONE original ProjectS Minecraft RPG skill sprite. Reference images show the APPROVED pixel art style: coherent recognizable objects, chunky facets, restrained local highlights, bold silhouette. Match that style exactly, not a glossy mobile-game illustration, not thin line or polygon symbols. Square image, artwork occupies 80% of canvas, actual 32x32 logical pixel art enlarged with nearest-neighbor hard square pixels. Simple dark charcoal background, no border, no letters, no text, no watermark. Must remain recognizable at 16x16. 3-4 shading tones per material. No subpixel details. Class: starweaver. Subject: A rounded violet nebula cloud cradling three pale blue stars of different sizes; large connected cloud clusters, not noisy smoke."
+    },
+    {
+      "id": "star_shield",
+      "job": "starweaver",
+      "type": "skill",
+      "prompt": "Use case: stylized-concept. ONE original ProjectS Minecraft RPG skill sprite. Reference images show the APPROVED pixel art style: coherent recognizable objects, chunky facets, restrained local highlights, bold silhouette. Match that style exactly, not a glossy mobile-game illustration, not thin line or polygon symbols. Square image, artwork occupies 80% of canvas, actual 32x32 logical pixel art enlarged with nearest-neighbor hard square pixels. Simple dark charcoal background, no border, no letters, no text, no watermark. Must remain recognizable at 16x16. 3-4 shading tones per material. No subpixel details. Class: starweaver. Subject: A folded deep indigo cloak with silver trim and a bright star clasp, a small protective cyan rim glint. Cloth garment is dominant."
+    },
+    {
+      "id": "star_break",
+      "job": "starweaver",
+      "type": "skill",
+      "prompt": "Use case: stylized-concept. ONE original ProjectS Minecraft RPG skill sprite. Reference images show the APPROVED pixel art style: coherent recognizable objects, chunky facets, restrained local highlights, bold silhouette. Match that style exactly, not a glossy mobile-game illustration, not thin line or polygon symbols. Square image, artwork occupies 80% of canvas, actual 32x32 logical pixel art enlarged with nearest-neighbor hard square pixels. Simple dark charcoal background, no border, no letters, no text, no watermark. Must remain recognizable at 16x16. 3-4 shading tones per material. No subpixel details. Class: starweaver. Subject: A cracked silver-blue star gemstone split into two large halves by a sharp white ray, a violet bright core between the halves."
+    },
+    {
+      "id": "star_ult",
+      "job": "starweaver",
+      "type": "skill",
+      "prompt": "Use case: stylized-concept. ONE original ProjectS Minecraft RPG skill sprite. Reference images show the APPROVED pixel art style: coherent recognizable objects, chunky facets, restrained local highlights, bold silhouette. Match that style exactly, not a glossy mobile-game illustration, not thin line or polygon symbols. Square image, artwork occupies 80% of canvas, actual 32x32 logical pixel art enlarged with nearest-neighbor hard square pixels. Simple dark charcoal background, no border, no letters, no text, no watermark. Must remain recognizable at 16x16. 3-4 shading tones per material. No subpixel details. Class: starweaver. Subject: A dark celestial globe with a silver orbital hoop breaking into large blue-white star fragments, purple deep shadow, controlled bright core."
+    },
+    {
+      "id": "star_constellation",
+      "job": "starweaver",
+      "type": "skill",
+      "prompt": "Use case: stylized-concept. ONE original ProjectS Minecraft RPG skill sprite. Reference images show the APPROVED pixel art style: coherent recognizable objects, chunky facets, restrained local highlights, bold silhouette. Match that style exactly, not a glossy mobile-game illustration, not thin line or polygon symbols. Square image, artwork occupies 80% of canvas, actual 32x32 logical pixel art enlarged with nearest-neighbor hard square pixels. Simple dark charcoal background, no border, no letters, no text, no watermark. Must remain recognizable at 16x16. 3-4 shading tones per material. No subpixel details. Class: starweaver. Subject: A silver crescent sheltering three connected blue stars like a protective crown, two elegant indigo ribbon ends. Simple large pixel clusters."
+    },
+    {
+      "id": "ass_stab",
+      "job": "assassin",
+      "type": "skill",
+      "prompt": "Use case: stylized-concept. ONE original ProjectS Minecraft RPG skill sprite. Reference images show the APPROVED pixel art style: coherent recognizable objects, chunky facets, restrained local highlights, bold silhouette. Match that style exactly, not a glossy mobile-game illustration, not thin line or polygon symbols. Square image, artwork occupies 80% of canvas, actual 32x32 logical pixel art enlarged with nearest-neighbor hard square pixels. Simple dark charcoal background, no border, no letters, no text, no watermark. Must remain recognizable at 16x16. 3-4 shading tones per material. No subpixel details. Class: assassin. Subject: A short steel dagger thrusting out of a charcoal hood-shaped shadow, violet glint along the blade, dark leather grip."
+    },
+    {
+      "id": "ass_execute",
+      "job": "assassin",
+      "type": "skill",
+      "prompt": "Use case: stylized-concept. ONE original ProjectS Minecraft RPG skill sprite. Reference images show the APPROVED pixel art style: coherent recognizable objects, chunky facets, restrained local highlights, bold silhouette. Match that style exactly, not a glossy mobile-game illustration, not thin line or polygon symbols. Square image, artwork occupies 80% of canvas, actual 32x32 logical pixel art enlarged with nearest-neighbor hard square pixels. Simple dark charcoal background, no border, no letters, no text, no watermark. Must remain recognizable at 16x16. 3-4 shading tones per material. No subpixel details. Class: assassin. Subject: Two short hooked daggers closing toward a central crimson diamond-shaped mark, dark steel with silver sharp edges, no blood."
+    },
+    {
+      "id": "ass_fan",
+      "job": "assassin",
+      "type": "skill",
+      "prompt": "Use case: stylized-concept. ONE original ProjectS Minecraft RPG skill sprite. Reference images show the APPROVED pixel art style: coherent recognizable objects, chunky facets, restrained local highlights, bold silhouette. Match that style exactly, not a glossy mobile-game illustration, not thin line or polygon symbols. Square image, artwork occupies 80% of canvas, actual 32x32 logical pixel art enlarged with nearest-neighbor hard square pixels. Simple dark charcoal background, no border, no letters, no text, no watermark. Must remain recognizable at 16x16. 3-4 shading tones per material. No subpixel details. Class: assassin. Subject: Three silver throwing knives arranged as a circular fan, dark purple motion arc behind them, clear individual blade shapes."
+    },
+    {
+      "id": "ass_escape",
+      "job": "assassin",
+      "type": "skill",
+      "prompt": "Use case: stylized-concept. ONE original ProjectS Minecraft RPG skill sprite. Reference images show the APPROVED pixel art style: coherent recognizable objects, chunky facets, restrained local highlights, bold silhouette. Match that style exactly, not a glossy mobile-game illustration, not thin line or polygon symbols. Square image, artwork occupies 80% of canvas, actual 32x32 logical pixel art enlarged with nearest-neighbor hard square pixels. Simple dark charcoal background, no border, no letters, no text, no watermark. Must remain recognizable at 16x16. 3-4 shading tones per material. No subpixel details. Class: assassin. Subject: A black leather boot vanishing into a low curl of violet smoke, one sharp silver buckle and two chunky shadow afterimages."
+    },
+    {
+      "id": "ass_poison",
+      "job": "assassin",
+      "type": "skill",
+      "prompt": "Use case: stylized-concept. ONE original ProjectS Minecraft RPG skill sprite. Reference images show the APPROVED pixel art style: coherent recognizable objects, chunky facets, restrained local highlights, bold silhouette. Match that style exactly, not a glossy mobile-game illustration, not thin line or polygon symbols. Square image, artwork occupies 80% of canvas, actual 32x32 logical pixel art enlarged with nearest-neighbor hard square pixels. Simple dark charcoal background, no border, no letters, no text, no watermark. Must remain recognizable at 16x16. 3-4 shading tones per material. No subpixel details. Class: assassin. Subject: A curved dark steel dagger with vivid emerald poison dripping from its tip, brown wrapped handle, green edge highlight."
+    },
+    {
+      "id": "ass_chase",
+      "job": "assassin",
+      "type": "skill",
+      "prompt": "Use case: stylized-concept. ONE original ProjectS Minecraft RPG skill sprite. Reference images show the APPROVED pixel art style: coherent recognizable objects, chunky facets, restrained local highlights, bold silhouette. Match that style exactly, not a glossy mobile-game illustration, not thin line or polygon symbols. Square image, artwork occupies 80% of canvas, actual 32x32 logical pixel art enlarged with nearest-neighbor hard square pixels. Simple dark charcoal background, no border, no letters, no text, no watermark. Must remain recognizable at 16x16. 3-4 shading tones per material. No subpixel details. Class: assassin. Subject: A silver dagger angled forward with two trailing violet hood-shaped shadow echoes, long concentrated forward motion."
+    },
+    {
+      "id": "ass_needle",
+      "job": "assassin",
+      "type": "skill",
+      "prompt": "Use case: stylized-concept. ONE original ProjectS Minecraft RPG skill sprite. Reference images show the APPROVED pixel art style: coherent recognizable objects, chunky facets, restrained local highlights, bold silhouette. Match that style exactly, not a glossy mobile-game illustration, not thin line or polygon symbols. Square image, artwork occupies 80% of canvas, actual 32x32 logical pixel art enlarged with nearest-neighbor hard square pixels. Simple dark charcoal background, no border, no letters, no text, no watermark. Must remain recognizable at 16x16. 3-4 shading tones per material. No subpixel details. Class: assassin. Subject: Two slim dark steel throwing needles crossing at their lower ends, violet tassels and silver points; projectile weapon silhouette."
+    },
+    {
+      "id": "ass_guard",
+      "job": "assassin",
+      "type": "skill",
+      "prompt": "Use case: stylized-concept. ONE original ProjectS Minecraft RPG skill sprite. Reference images show the APPROVED pixel art style: coherent recognizable objects, chunky facets, restrained local highlights, bold silhouette. Match that style exactly, not a glossy mobile-game illustration, not thin line or polygon symbols. Square image, artwork occupies 80% of canvas, actual 32x32 logical pixel art enlarged with nearest-neighbor hard square pixels. Simple dark charcoal background, no border, no letters, no text, no watermark. Must remain recognizable at 16x16. 3-4 shading tones per material. No subpixel details. Class: assassin. Subject: Two overlapping dark purple hooded masks, one solid with silver eye slit, the rear one a faded blue silhouette; defensive decoy."
+    },
+    {
+      "id": "ass_ult",
+      "job": "assassin",
+      "type": "skill",
+      "prompt": "Use case: stylized-concept. ONE original ProjectS Minecraft RPG skill sprite. Reference images show the APPROVED pixel art style: coherent recognizable objects, chunky facets, restrained local highlights, bold silhouette. Match that style exactly, not a glossy mobile-game illustration, not thin line or polygon symbols. Square image, artwork occupies 80% of canvas, actual 32x32 logical pixel art enlarged with nearest-neighbor hard square pixels. Simple dark charcoal background, no border, no letters, no text, no watermark. Must remain recognizable at 16x16. 3-4 shading tones per material. No subpixel details. Class: assassin. Subject: Five compact silver dagger blades spiraling around a dark violet center, one prominent blade larger than the rest, crimson local sparks."
+    },
+    {
+      "id": "ass_contract",
+      "job": "assassin",
+      "type": "skill",
+      "prompt": "Use case: stylized-concept. ONE original ProjectS Minecraft RPG skill sprite. Reference images show the APPROVED pixel art style: coherent recognizable objects, chunky facets, restrained local highlights, bold silhouette. Match that style exactly, not a glossy mobile-game illustration, not thin line or polygon symbols. Square image, artwork occupies 80% of canvas, actual 32x32 logical pixel art enlarged with nearest-neighbor hard square pixels. Simple dark charcoal background, no border, no letters, no text, no watermark. Must remain recognizable at 16x16. 3-4 shading tones per material. No subpixel details. Class: assassin. Subject: A rolled dark parchment contract pierced by a black steel dagger, crimson wax seal at lower edge, no writing or letters."
+    },
+    {
+      "id": "temp_mace",
+      "job": "templar",
+      "type": "skill",
+      "prompt": "Use case: stylized-concept. ONE original ProjectS Minecraft RPG skill sprite. Reference images show the APPROVED pixel art style: coherent recognizable objects, chunky facets, restrained local highlights, bold silhouette. Match that style exactly, not a glossy mobile-game illustration, not thin line or polygon symbols. Square image, artwork occupies 80% of canvas, actual 32x32 logical pixel art enlarged with nearest-neighbor hard square pixels. Simple dark charcoal background, no border, no letters, no text, no watermark. Must remain recognizable at 16x16. 3-4 shading tones per material. No subpixel details. Class: templar. Subject: A heavy flanged silver mace with a stout brown handle and muted gold fittings, one small pale yellow impact glint."
+    },
+    {
+      "id": "temp_pull",
+      "job": "templar",
+      "type": "skill",
+      "prompt": "Use case: stylized-concept. ONE original ProjectS Minecraft RPG skill sprite. Reference images show the APPROVED pixel art style: coherent recognizable objects, chunky facets, restrained local highlights, bold silhouette. Match that style exactly, not a glossy mobile-game illustration, not thin line or polygon symbols. Square image, artwork occupies 80% of canvas, actual 32x32 logical pixel art enlarged with nearest-neighbor hard square pixels. Simple dark charcoal background, no border, no letters, no text, no watermark. Must remain recognizable at 16x16. 3-4 shading tones per material. No subpixel details. Class: templar. Subject: Two thick iron chains bending inward toward a small glowing gold core, cool blue gravity accents. Heavy links clearly visible."
+    },
+    {
+      "id": "temp_ward",
+      "job": "templar",
+      "type": "skill",
+      "prompt": "Use case: stylized-concept. ONE original ProjectS Minecraft RPG skill sprite. Reference images show the APPROVED pixel art style: coherent recognizable objects, chunky facets, restrained local highlights, bold silhouette. Match that style exactly, not a glossy mobile-game illustration, not thin line or polygon symbols. Square image, artwork occupies 80% of canvas, actual 32x32 logical pixel art enlarged with nearest-neighbor hard square pixels. Simple dark charcoal background, no border, no letters, no text, no watermark. Must remain recognizable at 16x16. 3-4 shading tones per material. No subpixel details. Class: templar. Subject: Two overlapping sturdy steel shields beneath one pale gold protective arc, small blue rim highlights; protection for allies."
+    },
+    {
+      "id": "temp_guard",
+      "job": "templar",
+      "type": "skill",
+      "prompt": "Use case: stylized-concept. ONE original ProjectS Minecraft RPG skill sprite. Reference images show the APPROVED pixel art style: coherent recognizable objects, chunky facets, restrained local highlights, bold silhouette. Match that style exactly, not a glossy mobile-game illustration, not thin line or polygon symbols. Square image, artwork occupies 80% of canvas, actual 32x32 logical pixel art enlarged with nearest-neighbor hard square pixels. Simple dark charcoal background, no border, no letters, no text, no watermark. Must remain recognizable at 16x16. 3-4 shading tones per material. No subpixel details. Class: templar. Subject: A tall heavy tower shield with horizontal iron braces and a short mace resting behind it, slate steel, muted gold rivets."
+    },
+    {
+      "id": "temp_rebuke",
+      "job": "templar",
+      "type": "skill",
+      "prompt": "Use case: stylized-concept. ONE original ProjectS Minecraft RPG skill sprite. Reference images show the APPROVED pixel art style: coherent recognizable objects, chunky facets, restrained local highlights, bold silhouette. Match that style exactly, not a glossy mobile-game illustration, not thin line or polygon symbols. Square image, artwork occupies 80% of canvas, actual 32x32 logical pixel art enlarged with nearest-neighbor hard square pixels. Simple dark charcoal background, no border, no letters, no text, no watermark. Must remain recognizable at 16x16. 3-4 shading tones per material. No subpixel details. Class: templar. Subject: A steel gauntlet driving a gold-edged mace head forward with a short warm crescent of impact, hefty and compact."
+    },
+    {
+      "id": "temp_field",
+      "job": "templar",
+      "type": "skill",
+      "prompt": "Use case: stylized-concept. ONE original ProjectS Minecraft RPG skill sprite. Reference images show the APPROVED pixel art style: coherent recognizable objects, chunky facets, restrained local highlights, bold silhouette. Match that style exactly, not a glossy mobile-game illustration, not thin line or polygon symbols. Square image, artwork occupies 80% of canvas, actual 32x32 logical pixel art enlarged with nearest-neighbor hard square pixels. Simple dark charcoal background, no border, no letters, no text, no watermark. Must remain recognizable at 16x16. 3-4 shading tones per material. No subpixel details. Class: templar. Subject: Three silver defensive stakes linked by a taut golden chain over a dark stone strip, pale blue ward light below. Strong barricade silhouette."
+    },
+    {
+      "id": "temp_break",
+      "job": "templar",
+      "type": "skill",
+      "prompt": "Use case: stylized-concept. ONE original ProjectS Minecraft RPG skill sprite. Reference images show the APPROVED pixel art style: coherent recognizable objects, chunky facets, restrained local highlights, bold silhouette. Match that style exactly, not a glossy mobile-game illustration, not thin line or polygon symbols. Square image, artwork occupies 80% of canvas, actual 32x32 logical pixel art enlarged with nearest-neighbor hard square pixels. Simple dark charcoal background, no border, no letters, no text, no watermark. Must remain recognizable at 16x16. 3-4 shading tones per material. No subpixel details. Class: templar. Subject: A silver warhammer smashing a small purple crystal ward, two large crystal fragments and pale gold impact flash."
+    },
+    {
+      "id": "temp_dash",
+      "job": "templar",
+      "type": "skill",
+      "prompt": "Use case: stylized-concept. ONE original ProjectS Minecraft RPG skill sprite. Reference images show the APPROVED pixel art style: coherent recognizable objects, chunky facets, restrained local highlights, bold silhouette. Match that style exactly, not a glossy mobile-game illustration, not thin line or polygon symbols. Square image, artwork occupies 80% of canvas, actual 32x32 logical pixel art enlarged with nearest-neighbor hard square pixels. Simple dark charcoal background, no border, no letters, no text, no watermark. Must remain recognizable at 16x16. 3-4 shading tones per material. No subpixel details. Class: templar. Subject: A broad steel tower shield charging forward to upper right, two short blue-gold horizontal motion trails behind it."
+    },
+    {
+      "id": "temp_ult",
+      "job": "templar",
+      "type": "skill",
+      "prompt": "Use case: stylized-concept. ONE original ProjectS Minecraft RPG skill sprite. Reference images show the APPROVED pixel art style: coherent recognizable objects, chunky facets, restrained local highlights, bold silhouette. Match that style exactly, not a glossy mobile-game illustration, not thin line or polygon symbols. Square image, artwork occupies 80% of canvas, actual 32x32 logical pixel art enlarged with nearest-neighbor hard square pixels. Simple dark charcoal background, no border, no letters, no text, no watermark. Must remain recognizable at 16x16. 3-4 shading tones per material. No subpixel details. Class: templar. Subject: A dense dark blue gravity orb enclosed by three heavy steel chain hooks pulling inward, silver highlights and a tiny brilliant gold center."
+    },
+    {
+      "id": "temp_sanctuary",
+      "job": "templar",
+      "type": "skill",
+      "prompt": "Use case: stylized-concept. ONE original ProjectS Minecraft RPG skill sprite. Reference images show the APPROVED pixel art style: coherent recognizable objects, chunky facets, restrained local highlights, bold silhouette. Match that style exactly, not a glossy mobile-game illustration, not thin line or polygon symbols. Square image, artwork occupies 80% of canvas, actual 32x32 logical pixel art enlarged with nearest-neighbor hard square pixels. Simple dark charcoal background, no border, no letters, no text, no watermark. Must remain recognizable at 16x16. 3-4 shading tones per material. No subpixel details. Class: templar. Subject: A small fortified silver shrine with two sturdy pillars and a gold roof, sheltered beneath a pale blue protective dome."
+    },
+    {
+      "id": "heal_light",
+      "job": "healer",
+      "type": "skill",
+      "prompt": "Use case: stylized-concept. ONE original ProjectS Minecraft RPG skill sprite. Reference images show the APPROVED pixel art style: coherent recognizable objects, chunky facets, restrained local highlights, bold silhouette. Match that style exactly, not a glossy mobile-game illustration, not thin line or polygon symbols. Square image, artwork occupies 80% of canvas, actual 32x32 logical pixel art enlarged with nearest-neighbor hard square pixels. Simple dark charcoal background, no border, no letters, no text, no watermark. Must remain recognizable at 16x16. 3-4 shading tones per material. No subpixel details. Class: healer. Subject: A slim ivory-and-gold ceremonial wand firing a single bright golden light projectile, cream light with muted teal shadows."
+    },
+    {
+      "id": "heal_ring",
+      "job": "healer",
+      "type": "skill",
+      "prompt": "Use case: stylized-concept. ONE original ProjectS Minecraft RPG skill sprite. Reference images show the APPROVED pixel art style: coherent recognizable objects, chunky facets, restrained local highlights, bold silhouette. Match that style exactly, not a glossy mobile-game illustration, not thin line or polygon symbols. Square image, artwork occupies 80% of canvas, actual 32x32 logical pixel art enlarged with nearest-neighbor hard square pixels. Simple dark charcoal background, no border, no letters, no text, no watermark. Must remain recognizable at 16x16. 3-4 shading tones per material. No subpixel details. Class: healer. Subject: Two open pale gloved hands cradling a small warm golden healing light, a short mint-green protective arc underneath."
+    },
+    {
+      "id": "heal_pillar",
+      "job": "healer",
+      "type": "skill",
+      "prompt": "Use case: stylized-concept. ONE original ProjectS Minecraft RPG skill sprite. Reference images show the APPROVED pixel art style: coherent recognizable objects, chunky facets, restrained local highlights, bold silhouette. Match that style exactly, not a glossy mobile-game illustration, not thin line or polygon symbols. Square image, artwork occupies 80% of canvas, actual 32x32 logical pixel art enlarged with nearest-neighbor hard square pixels. Simple dark charcoal background, no border, no letters, no text, no watermark. Must remain recognizable at 16x16. 3-4 shading tones per material. No subpixel details. Class: healer. Subject: A thick vertical pillar of ivory light striking a small gold altar, two compact golden sparks flanking the beam."
+    },
+    {
+      "id": "heal_step",
+      "job": "healer",
+      "type": "skill",
+      "prompt": "Use case: stylized-concept. ONE original ProjectS Minecraft RPG skill sprite. Reference images show the APPROVED pixel art style: coherent recognizable objects, chunky facets, restrained local highlights, bold silhouette. Match that style exactly, not a glossy mobile-game illustration, not thin line or polygon symbols. Square image, artwork occupies 80% of canvas, actual 32x32 logical pixel art enlarged with nearest-neighbor hard square pixels. Simple dark charcoal background, no border, no letters, no text, no watermark. Must remain recognizable at 16x16. 3-4 shading tones per material. No subpixel details. Class: healer. Subject: A white cloth slipper with gold trim stepping forward on a mint-green ribbon of light, two small pale glints behind."
+    },
+    {
+      "id": "heal_lamp",
+      "job": "healer",
+      "type": "skill",
+      "prompt": "Use case: stylized-concept. ONE original ProjectS Minecraft RPG skill sprite. Reference images show the APPROVED pixel art style: coherent recognizable objects, chunky facets, restrained local highlights, bold silhouette. Match that style exactly, not a glossy mobile-game illustration, not thin line or polygon symbols. Square image, artwork occupies 80% of canvas, actual 32x32 logical pixel art enlarged with nearest-neighbor hard square pixels. Simple dark charcoal background, no border, no letters, no text, no watermark. Must remain recognizable at 16x16. 3-4 shading tones per material. No subpixel details. Class: healer. Subject: A brass lantern with a warm ivory flame inside, cream and bronze pixel facets, small mint glow at its foot."
+    },
+    {
+      "id": "heal_mark",
+      "job": "healer",
+      "type": "skill",
+      "prompt": "Use case: stylized-concept. ONE original ProjectS Minecraft RPG skill sprite. Reference images show the APPROVED pixel art style: coherent recognizable objects, chunky facets, restrained local highlights, bold silhouette. Match that style exactly, not a glossy mobile-game illustration, not thin line or polygon symbols. Square image, artwork occupies 80% of canvas, actual 32x32 logical pixel art enlarged with nearest-neighbor hard square pixels. Simple dark charcoal background, no border, no letters, no text, no watermark. Must remain recognizable at 16x16. 3-4 shading tones per material. No subpixel details. Class: healer. Subject: A short gold ceremonial staff pointing at a small radiant ivory sun seal, muted mint leaves around the staff grip, no text."
+    },
+    {
+      "id": "heal_wind",
+      "job": "healer",
+      "type": "skill",
+      "prompt": "Use case: stylized-concept. ONE original ProjectS Minecraft RPG skill sprite. Reference images show the APPROVED pixel art style: coherent recognizable objects, chunky facets, restrained local highlights, bold silhouette. Match that style exactly, not a glossy mobile-game illustration, not thin line or polygon symbols. Square image, artwork occupies 80% of canvas, actual 32x32 logical pixel art enlarged with nearest-neighbor hard square pixels. Simple dark charcoal background, no border, no letters, no text, no watermark. Must remain recognizable at 16x16. 3-4 shading tones per material. No subpixel details. Class: healer. Subject: Two pale mint leaves carried by a broad curving white breeze ribbon, one small gold glint in the curl, not abstract line art."
+    },
+    {
+      "id": "heal_ult",
+      "job": "healer",
+      "type": "skill",
+      "prompt": "Use case: stylized-concept. ONE original ProjectS Minecraft RPG skill sprite. Reference images show the APPROVED pixel art style: coherent recognizable objects, chunky facets, restrained local highlights, bold silhouette. Match that style exactly, not a glossy mobile-game illustration, not thin line or polygon symbols. Square image, artwork occupies 80% of canvas, actual 32x32 logical pixel art enlarged with nearest-neighbor hard square pixels. Simple dark charcoal background, no border, no letters, no text, no watermark. Must remain recognizable at 16x16. 3-4 shading tones per material. No subpixel details. Class: healer. Subject: A pair of large ivory feathered wings cupping a brilliant gold healing light, deep teal shadows beneath, strong symmetrical silhouette."
+    },
+    {
+      "id": "heal_judgment",
+      "job": "healer",
+      "type": "skill",
+      "prompt": "Use case: stylized-concept. ONE original ProjectS Minecraft RPG skill sprite. Reference images show the APPROVED pixel art style: coherent recognizable objects, chunky facets, restrained local highlights, bold silhouette. Match that style exactly, not a glossy mobile-game illustration, not thin line or polygon symbols. Square image, artwork occupies 80% of canvas, actual 32x32 logical pixel art enlarged with nearest-neighbor hard square pixels. Simple dark charcoal background, no border, no letters, no text, no watermark. Must remain recognizable at 16x16. 3-4 shading tones per material. No subpixel details. Class: healer. Subject: A heavy gold ceremonial hammer descending through a brilliant ivory beam above a tiny dark stone altar, decisive vertical silhouette."
+    },
+    {
+      "id": "warrior",
+      "job": "warrior",
+      "type": "frame",
+      "prompt": "Use case: stylized-concept. ONE original Minecraft RPG skill-icon FRAME only. The first reference is Monumenta's actual framed skill HUD and guides the compact in-game look; the second is our accepted pixel-art style. Create a square 32x32 logical pixel-art frame enlarged with hard nearest-neighbor pixel squares. Ornament belongs only to the OUTERMOST THREE logical pixels on every edge, thin rails and distinctive corners, large completely EMPTY central square 26x26 logical pixels. Transparent background and transparent empty center. No icon or object inside, no text, no numbers, no grid, no gradient, no blur. Must read at tiny size. Class-specific design: heavy hammered dark iron and steel corner plates, a small copper rivet in each corner, a tiny crimson enamel inset at top middle. Original design, not direct copy. Ornament stays INSIDE square bounds, no projections beyond canvas. Avoid chunky thick borders that shrink the skill. Three-tone pixel shading with restrained highlights."
+    },
+    {
+      "id": "ranger",
+      "job": "ranger",
+      "type": "frame",
+      "prompt": "Use case: stylized-concept. ONE original Minecraft RPG skill-icon FRAME only. The first reference is Monumenta's actual framed skill HUD and guides the compact in-game look; the second is our accepted pixel-art style. Create a square 32x32 logical pixel-art frame enlarged with hard nearest-neighbor pixel squares. Ornament belongs only to the OUTERMOST THREE logical pixels on every edge, thin rails and distinctive corners, large completely EMPTY central square 26x26 logical pixels. Transparent background and transparent empty center. No icon or object inside, no text, no numbers, no grid, no gradient, no blur. Must read at tiny size. Class-specific design: dark oak twigs and olive vine corner bindings, tiny green leaves hugging the outer corners, a small amber inset at top middle. Original design, not direct copy. Ornament stays INSIDE square bounds, no projections beyond canvas. Avoid chunky thick borders that shrink the skill. Three-tone pixel shading with restrained highlights."
+    },
+    {
+      "id": "mage",
+      "job": "mage",
+      "type": "frame",
+      "prompt": "Use case: stylized-concept. ONE original Minecraft RPG skill-icon FRAME only. The first reference is Monumenta's actual framed skill HUD and guides the compact in-game look; the second is our accepted pixel-art style. Create a square 32x32 logical pixel-art frame enlarged with hard nearest-neighbor pixel squares. Ornament belongs only to the OUTERMOST THREE logical pixels on every edge, thin rails and distinctive corners, large completely EMPTY central square 26x26 logical pixels. Transparent background and transparent empty center. No icon or object inside, no text, no numbers, no grid, no gradient, no blur. Must read at tiny size. Class-specific design: antique dark bronze square rails, angular blue-violet crystal corner caps, tiny violet crystal at top middle. Original design, not direct copy. Ornament stays INSIDE square bounds, no projections beyond canvas. Avoid chunky thick borders that shrink the skill. Three-tone pixel shading with restrained highlights."
+    },
+    {
+      "id": "starweaver",
+      "job": "starweaver",
+      "type": "frame",
+      "prompt": "Use case: stylized-concept. ONE original Minecraft RPG skill-icon FRAME only. The first reference is Monumenta's actual framed skill HUD and guides the compact in-game look; the second is our accepted pixel-art style. Create a square 32x32 logical pixel-art frame enlarged with hard nearest-neighbor pixel squares. Ornament belongs only to the OUTERMOST THREE logical pixels on every edge, thin rails and distinctive corners, large completely EMPTY central square 26x26 logical pixels. Transparent background and transparent empty center. No icon or object inside, no text, no numbers, no grid, no gradient, no blur. Must read at tiny size. Class-specific design: slender tarnished silver rails, pale blue pointed star corner caps and indigo inlays, a tiny star jewel at top middle. Original design, not direct copy. Ornament stays INSIDE square bounds, no projections beyond canvas. Avoid chunky thick borders that shrink the skill. Three-tone pixel shading with restrained highlights."
+    },
+    {
+      "id": "assassin",
+      "job": "assassin",
+      "type": "frame",
+      "prompt": "Use case: stylized-concept. ONE original Minecraft RPG skill-icon FRAME only. The first reference is Monumenta's actual framed skill HUD and guides the compact in-game look; the second is our accepted pixel-art style. Create a square 32x32 logical pixel-art frame enlarged with hard nearest-neighbor pixel squares. Ornament belongs only to the OUTERMOST THREE logical pixels on every edge, thin rails and distinctive corners, large completely EMPTY central square 26x26 logical pixels. Transparent background and transparent empty center. No icon or object inside, no text, no numbers, no grid, no gradient, no blur. Must read at tiny size. Class-specific design: blackened steel rails, inward hooked dagger-tip corner caps, dark violet wraps and tiny crimson inset at top middle. Original design, not direct copy. Ornament stays INSIDE square bounds, no projections beyond canvas. Avoid chunky thick borders that shrink the skill. Three-tone pixel shading with restrained highlights."
+    },
+    {
+      "id": "templar",
+      "job": "templar",
+      "type": "frame",
+      "prompt": "Use case: stylized-concept. ONE original Minecraft RPG skill-icon FRAME only. The first reference is Monumenta's actual framed skill HUD and guides the compact in-game look; the second is our accepted pixel-art style. Create a square 32x32 logical pixel-art frame enlarged with hard nearest-neighbor pixel squares. Ornament belongs only to the OUTERMOST THREE logical pixels on every edge, thin rails and distinctive corners, large completely EMPTY central square 26x26 logical pixels. Transparent background and transparent empty center. No icon or object inside, no text, no numbers, no grid, no gradient, no blur. Must read at tiny size. Class-specific design: sturdy pale steel rails, blocky gold buttress corner caps suggesting a cathedral, a tiny blue enamel inset at top middle. Original design, not direct copy. Ornament stays INSIDE square bounds, no projections beyond canvas. Avoid chunky thick borders that shrink the skill. Three-tone pixel shading with restrained highlights."
+    },
+    {
+      "id": "healer",
+      "job": "healer",
+      "type": "frame",
+      "prompt": "Use case: stylized-concept. ONE original Minecraft RPG skill-icon FRAME only. The first reference is Monumenta's actual framed skill HUD and guides the compact in-game look; the second is our accepted pixel-art style. Create a square 32x32 logical pixel-art frame enlarged with hard nearest-neighbor pixel squares. Ornament belongs only to the OUTERMOST THREE logical pixels on every edge, thin rails and distinctive corners, large completely EMPTY central square 26x26 logical pixels. Transparent background and transparent empty center. No icon or object inside, no text, no numbers, no grid, no gradient, no blur. Must read at tiny size. Class-specific design: ivory and warm brass rails, small mint leaf corner flourishes, a tiny pale gold teardrop at top middle. Original design, not direct copy. Ornament stays INSIDE square bounds, no projections beyond canvas. Avoid chunky thick borders that shrink the skill. Three-tone pixel shading with restrained highlights."
+    }
+  ]
+}

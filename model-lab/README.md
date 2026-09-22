@@ -1,5 +1,45 @@
 # ProjectS model laboratory — Scorpius integration
 
+## メイジ試作：氷牙の連鎖
+
+このPlaygroundでは **本編接続前の1スキル** を追加。サーバー処理＋リソースパックのみ。
+既存のメイジ作業ブランチ、本編職業・保存・UIは変更しない。
+
+- `:model-lab:run` で工房を起動し、パック適用後 `/mage`。
+- 通常はコマンド不要。ホットバー9番の「テストメニュー」を右クリック、または **Shift＋F**。
+  日本語・アイコンのチェストUIで氷魔法の準備／リセット／終了、ボス選択、動作選択、片づけを行う。
+  コンパスをなくしてもShift＋F、予備の `/test`・`/menu` で開ける。
+- 杖はホットバー1番に装備。メニュー用コンパスは消さない。UIの「試す」「リセット」は
+  自分のボスモデルを片づけて標的・マナ・再使用待ちをリセットする。既存コマンドも維持。
+- 動作選択画面のレバーで単発／連続を切り替える。動きを選ぶとUIを閉じて再生する。
+  動作名は日本語で表示し、識別用の原名は説明文に残す。前の連続再生は切り替え時に停止する。
+- 杖の右クリックで前方2m → 4.5m → 7mへ氷牙。0.3秒間隔で発生し、各0.2秒後に命中。
+- 1体につき1回、訓練用ダメージ `40 + AP80% = 88`（固定AP60）。マナ20、CD4秒。
+- `/mage` で3体の標的・マナ・CDをリセット。`/mageclear` で杖・標的・演出を終了。
+- 床のある平地専用。壁・未ロード領域・床の穴で伝播停止。空中使用不可。
+- Creator提示の「霜の波紋」GIFの原画・輪郭を復元。旧版の単純な槍モデルは置き換えた。
+  白い割れ面・青い根元・不揃いな枝を保持し、低い広がり → 中段 → 高い冠の3種類を順に発生。
+  各束は根元・内枝・外枝の3可動部位。先端が先に縮み、低い根元が最後に消える。
+  PNGのコマ交換・通常Minecraftパーティクル・完成した氷を地面から滑らせる動作は使用しない。
+- 効果音：共鳴／氷の破裂・低い打撃／破片。既存のVanillaサウンドを組み合わせる。
+
+```powershell
+python scripts/build_ice_fang.py
+python -m unittest discover -s scripts -p test_ice_fang.py
+.\gradlew.bat :model-lab:test :model-lab:modelSmoke :model-lab:iceFangSmoke :model-lab:iceFangVisualTrace --no-daemon "-Pkotlin.compiler.execution.strategy=in-process"
+python -m unittest discover -s scripts -p test_ice_fang_projection.py
+python scripts/preview_ice_fang.py
+python scripts/preview_ice_fang.py --stills --view side
+```
+
+Previewは変換後の実パックと、WSEEを20TPSで動かした実Displayメタデータから3束をCPU投影する。
+原画用の別アニメーションや60fpsの補間を足さない。**ゲーム画面やクライアント補間・照明の証明ではない。**
+実機の主観視点・音量・最終的な見た目はCreatorの手動確認待ち。
+`IceFangPlan.kt` が射程・タイミング・判定、`IceFangTraining.kt` が入力・コスト・標的・cleanup。
+`build_ice_fang.py` → `model-lab/models/ice_fang*.bbmodel` → `collectModels` → `buildBossPack` → WSEE再生。
+紫黒ならpackの適用・bundle一致、向き／命中なら `IceFangPlan`、残留なら `IceFangTraining.finish/clear` を確認。
+Scorpius原本はvendor内に保持し、新作モデルは `model-lab/models` に分離。合計18モデル・67アニメーション。
+
 ## 今回使えるようになったもの
 
 Scorpius の AI 向けボス生成スクリプトを、ProjectS の Java 25 / Kotlin / Minestom `2026.08.16-26.2` で使う独立した制作環境へ取り込んだ。**本編のボス・戦闘・保存データ・既存リソースパックは変更していない。** Minecraft クライアントの変更は不要。

@@ -1,0 +1,37 @@
+{
+  "mode": "built-in image_gen; no CLI/API",
+  "status": "isolated Tier art review, not reference-equivalent certified; not running",
+  "input": {
+    "path": "sources/mace-v02.png",
+    "role": "material/colors and coarse pixel clusters, not edit target"
+  },
+  "prompts": [
+    "Use case: stylized-concept. Asset: a single original Minecraft MACE front texture artwork, full upright weapon, head up, handle down, centered with margin. Attached image is MATERIAL/COLOR and coarse PIXEL CLUSTER reference only; invent the specified DIFFERENT HEAD silhouette. Flat orthographic front, broad matte dark charcoal/plum planes, turquoise edge faces, few brass collar/cap accents, dark purple wrapped grip and small pointed pommel. ONE faceted teal diamond floating in a clear empty center socket of the head; no stem through the diamond, no more detached ornaments. All surrounding metal branches connected to shared neck. Head about upper 40%, wrapped haft middle 45%, pommel bottom15%. Square hard pixels intended for native 30-40 wide x84 high; consistent coarse pixel blocks, 12-16 matte colors, no smooth gradients/antialiasing/gloss/noise/halo. This is painted silhouette for thin radial metal flanges, not a stacked-cuboid or thick voxel/PBR 3D render. Preserve actual gaps, large legible negative spaces. No text, labels, scene, hands, shadow, extra views, floating particles or extra weapons. Real transparent RGBA background, never a painted checkerboard. T2: narrow elongated gothic lantern-shaped flanged mace. Two straight broad flanges forming a long vertical diamond socket, squared narrow shoulders with ONE downward barb each. Short centered chisel spike at top. Very angular slim silhouette, no large horizontal crossbar and no curling wings. Cyan faces follow the long inner edges.",
+    "Use case: stylized-concept. Asset: a single original Minecraft MACE front texture artwork, full upright weapon, head up, handle down, centered with margin. Attached image is MATERIAL/COLOR and coarse PIXEL CLUSTER reference only; invent the specified DIFFERENT HEAD silhouette. Flat orthographic front, broad matte dark charcoal/plum planes, turquoise edge faces, few brass collar/cap accents, dark purple wrapped grip and small pointed pommel. ONE faceted teal diamond floating in a clear empty center socket of the head; no stem through the diamond, no more detached ornaments. All surrounding metal branches connected to shared neck. Head about upper 40%, wrapped haft middle 45%, pommel bottom15%. Square hard pixels intended for native 30-40 wide x84 high; consistent coarse pixel blocks, 12-16 matte colors, no smooth gradients/antialiasing/gloss/noise/halo. This is painted silhouette for thin radial metal flanges, not a stacked-cuboid or thick voxel/PBR 3D render. Preserve actual gaps, large legible negative spaces. No text, labels, scene, hands, shadow, extra views, floating particles or extra weapons. Real transparent RGBA background, never a painted checkerboard. T3: broad crushing mace with two WIDE outward flared fan-shaped striking flanges, each a blunt stepped trapezoid with one deep notch; no thin scythe blades. Head noticeably wider and shorter than input, central low peak above the empty diamond socket. Squat powerful shoulder silhouette, broad turquoise face along top of each flange, no tall spikes.",
+    "Use case: stylized-concept. Asset: a single original Minecraft MACE front texture artwork, full upright weapon, head up, handle down, centered with margin. Attached image is MATERIAL/COLOR and coarse PIXEL CLUSTER reference only; invent the specified DIFFERENT HEAD silhouette. Flat orthographic front, broad matte dark charcoal/plum planes, turquoise edge faces, few brass collar/cap accents, dark purple wrapped grip and small pointed pommel. ONE faceted teal diamond floating in a clear empty center socket of the head; no stem through the diamond, no more detached ornaments. All surrounding metal branches connected to shared neck. Head about upper 40%, wrapped haft middle 45%, pommel bottom15%. Square hard pixels intended for native 30-40 wide x84 high; consistent coarse pixel blocks, 12-16 matte colors, no smooth gradients/antialiasing/gloss/noise/halo. This is painted silhouette for thin radial metal flanges, not a stacked-cuboid or thick voxel/PBR 3D render. Preserve actual gaps, large legible negative spaces. No text, labels, scene, hands, shadow, extra views, floating particles or extra weapons. Real transparent RGBA background, never a painted checkerboard. T4: crowned morningstar mace head. Tall central pointed crest flanked by two shorter diagonal upward broad triangular spikes, plus two short outward lower points. Clear heavy crown-shaped silhouette with exactly five connected major points, not many tiny needles. Large hollow rhombus under central crest containing one teal diamond. Broad cyan painted blade planes and dark plum side planes. Restrained brass collar only, not an ornate gold weapon."
+  ],
+  "outputs": [
+    {
+      "tier": 2,
+      "source": "sources/mace-t2-v01.png",
+      "generated": "exec-d68c0b8a-144e-4bbb-8f8f-7df997b79e33.png"
+    },
+    {
+      "tier": 3,
+      "source": "sources/mace-t3-v01.png",
+      "generated": "exec-05e6496f-027f-4b59-ba67-cb0485716073.png"
+    },
+    {
+      "tier": 4,
+      "source": "sources/mace-t4-v01.png",
+      "generated": "exec-c8be8cf9-75a0-4745-bceb-2bc9988475cc.png"
+    }
+  ],
+  "processing": "RGB checker returned despite requested transparent RGBA. Authorized Python dark/chromatic foreground extraction, median resampling to 84 pixels high, nearest existing T1 mace 16-color palette, source-specific crystal bounding-box extraction and head/grip rows. Originals preserved.",
+  "limitations": [
+    "T4 retains slender links above/below the crystal, unlike the requested fully floating crystal. They remain static body art, not a duplicate crystal.",
+    "T2 is visibly slimmer than T1; T3 is much broader than T4. Tier is not expressed as monotonically increasing size.",
+    "Crossed head uses same front painting on two thin panels; independent backside painting not produced.",
+    "No runtime or art-quality approval."
+  ]
+}

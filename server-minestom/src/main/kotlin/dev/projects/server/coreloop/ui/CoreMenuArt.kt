@@ -4,7 +4,7 @@ package dev.projects.server.coreloop.ui
 enum class CoreMenuArt {
     EXPEDITION, FORGE, STORAGE, GEAR, GATHER, HELP, TRIAL, RETURN,
     ENHANCE, REFINE, CRAFT, MOD, WEAPON, ARMOR, WOOD, ORE, STONE, HIDE,
-    FIBER, PLANK, INGOT, CUT_STONE, LEATHER, CLOTH, POTION, TABLET, ORB, BOSS, SHARD;
+    FIBER, PLANK, INGOT, CUT_STONE, LEATHER, CLOTH, POTION, TABLET, ORB, BOSS, SHARD, ARROW, ARCANE;
 
     internal val glyph: Char get() = (0xE700 + ordinal).toChar()
 

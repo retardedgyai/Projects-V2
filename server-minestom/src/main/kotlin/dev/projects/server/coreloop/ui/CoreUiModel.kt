@@ -17,7 +17,7 @@ enum class CoreUiIcon(val glyph: Char, val fallback: String, val asset: String) 
     HEALTH('\uE005', "HP", "health"), MAGIC('\uE006', "魔", "magic_power"),
     MANA('\uE007', "MP", "mana"), REWARD('\uE008', "報", "xp"),
     MOD('\uE009', "◆", "level"),
-    DASH('\uE021', "踏込", "dash"), SLAM('\uE022', "地砕", "slam"), WHIRL('\uE023', "旋風", "whirl"),
+    DASH('\uE021', "踏込", "dash"), SLAM('\uE022', "叩付", "slam"), WHIRL('\uE023', "薙払", "whirl"),
 }
 
 data class CoreTooltipStat(val label: String, val value: String, val icon: CoreUiIcon = CoreUiIcon.MOD)
@@ -47,6 +47,9 @@ data class CoreHudSkill(
     val remainingSeconds: Double,
     val totalSeconds: Double,
     val manaCost: Int = 0,
+    val artIndex: Int? = null,
+    val unlocked: Boolean = true,
+    val resourceAvailable: Boolean = true,
 )
 data class CoreHudState(
     val health: Double,
@@ -55,4 +58,9 @@ data class CoreHudState(
     val maxMana: Double = 100.0,
     val skills: List<CoreHudSkill> = emptyList(),
     val hint: String = "",
+    val charges: Int? = null,
+    val resource: Double? = null,
+    val resourceMaximum: Double = 100.0,
+    val shield: Double = 0.0,
+    val combatCue: String = "",
 )

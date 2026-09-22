@@ -1,0 +1,14 @@
+{
+  "date": "2026-09-09",
+  "mode": "built-in image_gen, generate with direct reference",
+  "reference_url": "https://x.com/MatE312001/status/2096478906299699459",
+  "reference_input": "One current logged-in X screenshot, central sword front-oblique frame; no previous generated weapon supplied",
+  "prompt": "Use case: stylized-concept. Asset type: one front-face texture painting for a texture-led Minecraft weapon, not a presentation render. Input image 1 is the DIRECT STYLE AND MATERIAL REFERENCE: the sword in the center of the X post screenshot; ignore every UI element and all text. Re-create that sword's material language faithfully as a single upright, tip-up orthographic front-view weapon on genuine transparent alpha. The reference has a thin angular red energy blade with a deliberate bent lightning silhouette, broad clean vermilion/coral color planes, a narrow orange-red inner edge and restrained wine-magenta shadow planes; dark cool graphite metal below the blade with clearly legible gray facets; a compact red faceted inset jewel; open forked guard and a lean long grip with a few thin asymmetrical barbs. Follow the reference's actual proportions, angular contour rhythm, crisp pixel clusters and separation of materials. Preserve the lean blade rather than making a conventional broad steel sword. The graphite metal must read as gray metal, not nearly black purple mud. Paint broad coherent facets, not random tiny square shading. The result must feel exactly like the low-poly/pixel-art material of the reference, not realistic rendered metal, glossy plastic, watercolor, noisy AI illustration or a pile of cubes. Crisp intentional pixel steps with flat color clusters and no smooth gradients, bloom, blur, outlines around every cluster, dithering or PBR grain. The surface painting defines the shape; it will be mounted on thin textured geometry with separate jewel depth. Full weapon visible with clear padding, blade up, grip down, no perspective foreshortening, no rotation, no floor, no shadows, no text, no UI, no border, no extra objects, no alternate views. Do not paint the detached sparks into this base texture: those will be animated separately. Do not remove or darken the red energy blade itself. One weapon only.",
+  "generated_path": "C:/Users/xgaiz/.codex/generated_images/01a060a6-6e32-7e13-a4cd-2730ddc429e9/exec-0e115b52-754d-4628-b46e-95f2e34b7b28.png",
+  "workspace_source": "sources/greatsword-material-v02.png",
+  "status": "candidate; material quality not approved; animation will remain separate",
+  "limitations": [
+    "Generated source has a painted checkerboard rather than genuine transparency; authorized source-specific cleanup required",
+    "Some smooth diagonals and within-facet color variation remain in original; runtime raster must be inspected"
+  ]
+}
