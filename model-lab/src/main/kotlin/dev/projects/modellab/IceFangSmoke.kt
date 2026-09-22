@@ -36,6 +36,7 @@ fun main(args: Array<String>) {
         val player = Player(connection, GameProfile(UUID.randomUUID(), "IceFangSmoke"))
         connection.player = player
         player.setInstance(instance, Pos(.5, 1.0, .5)).get(10, TimeUnit.SECONDS)
+        player.refreshOnGround(true)
         process.dispatcher().start()
         var ticks = 0L
         IceFangTraining(bundle, instance).use { training ->
@@ -46,6 +47,15 @@ fun main(args: Array<String>) {
             training.equip(player); step(3)
             check(targets().size == 3) { "Missing training targets" }
             val baseline = instance.entities.size
+            player.refreshOnGround(false) // Jump's first packet: feet can still be near floor height.
+            training.requestCast(player); step(2)
+            check(training.mana(player) == 100 && instance.entities.size == baseline)
+            check(targets().all { it.health == 528f }) { "Airborne cast damaged target" }
+            player.refreshOnGround(true)
+            player.isFlying = true
+            training.requestCast(player); step(2)
+            check(training.mana(player) == 100 && instance.entities.size == baseline) { "Flying cast consumed mana or created model" }
+            player.isFlying = false
             repeat(10) { training.requestCast(player) }
             step(45)
             check(targets().all { it.health == 440f }) { "Expected one 88 hit per target: ${targets().map { it.health }}" }
@@ -69,7 +79,7 @@ fun main(args: Array<String>) {
             player.remove(); step(4)
             check(instance.entities.isEmpty()) { "Disconnect leaked ${instance.entities.size} entities" }
         }
-        println("ICE FANG SMOKE PASS: 3 targets, 88 damage once each, spam/cooldown/wall/reset/cancel/disconnect, zero entity leaks; no game launched")
+        println("ICE FANG SMOKE PASS: 3 targets, 88 damage once each, air/flight rejection without mana or cooldown, spam/cooldown/wall/reset/cancel/disconnect, zero entity leaks; no game launched")
     } finally {
         process.dispatcher().shutdown()
         MinecraftServer.stopCleanly()
