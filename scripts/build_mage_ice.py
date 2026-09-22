@@ -10,6 +10,7 @@ import numpy as np
 from PIL import Image
 from build_mage_fire import box
 from build_approved_dash_v3 import SIZE, polygon
+from build_mage_glacier import GLACIER_CLIPS,mesh as glacier_mesh
 
 SOURCE=Path(__file__).resolve().parents[1]/'assets/combat-vfx/mage-v2/sources/ice-forms-v01.png'
 ICE_CLIPS={'frost_wave','frost_trace','crystal','ice_shelf','ice_root','zero_crown',
@@ -37,7 +38,7 @@ def source():
     return forms,colours
 
 
-def palette():return source()[1]
+def palette():return source()[1]+[0x687B9B,0x889BBC,0xB6C9DD,0xD7E5F1,0xF1FBFF,0xFFFFFF]
 
 
 def prismatic_shell(clip,frame,uv):
@@ -132,8 +133,7 @@ def floor_mesh(clip,frame,frames,uv):
 def mesh(clip,frame,uv):
     frames=18 if clip=='ice_hit' else 24 if clip in ('ice_charge','ice_pulse') else 30 if clip in ('frost_wave','frost_trace') else 48
     if frame>=frames-1:return []
-    if clip in ('zero_crown','zero_wing','zero_shelf'):
-        return prismatic_shell(clip,frame,uv)
+    if clip in GLACIER_CLIPS:return glacier_mesh(clip,frame,uv)
     floor=clip in ('frost_trace','ice_root','zero_floor','ice_pulse')
     if floor:return floor_mesh(clip,frame,frames,uv)
     index=2 if clip=='zero_crown' else 1 if clip in ('crystal','zero_wing','ice_hit','ice_charge') else 0

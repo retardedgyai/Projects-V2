@@ -1,11 +1,26 @@
 """Geometry invariants, not a visual-quality score."""
 import unittest
 import numpy as np
-from build_mage_garden import SHAPE,STEP,skin,crystal,mesh
+from build_mage_garden import SHAPE,STEP,skin,crystal,mesh,textured_faces
+from build_mage_fire import box
 from build_approved_dash_v3 import PACK,ink_uvs
 
 
 class GardenSculptureTests(unittest.TestCase):
+    def test_adjacent_native_faces_keep_the_same_texture_coordinate_at_shared_edges(self):
+        for face,axis in (('north',0),('east',2)):
+            elements=[]
+            for start in (0,2):
+                lo=[0,8,0];hi=[2,12,2]
+                lo[axis]=start;hi[axis]=start+2
+                e=box(lo,hi,2,[0,0,1,1]);e['faces']={face:e['faces'][face]};elements.append(e)
+            a,b=textured_faces(elements,'garden_spires')
+            self.assertEqual(a['faces'][face]['uv'][0],b['faces'][face]['uv'][2],face)
+        # Fracture caps use a separate material, not a rotated crystal stripe.
+        e=textured_faces([box((0,8,0),(2,12,2),2,[0,0,1,1])],'garden_spires')[0]
+        self.assertEqual('#2',e['faces']['up']['texture'])
+        self.assertEqual('#1',e['faces']['north']['texture'])
+
     def test_surface_mesher_preserves_exposed_area_without_interior_faces(self):
         volume=np.zeros(SHAPE,dtype=np.uint8)
         volume[5:12,4:14,7:15]=3
@@ -43,6 +58,19 @@ class GardenSculptureTests(unittest.TestCase):
             self.assertEqual([],mesh(clip,47,uv))
         self.assertEqual([],mesh('garden_beat',23,uv))
         self.assertLess(len(mesh('garden_beat',7,uv)),40)
+
+    def test_zero_floor_has_real_surface_growth_and_wave_has_a_forward_lean(self):
+        from build_mage_glacier import mesh as glacier
+        uv=ink_uvs(PACK/'assets/projects')[3]
+        def top_area(elements):
+            return sum((e['to'][0]-e['from'][0])*(e['to'][2]-e['from'][2])
+                       for e in elements if 'up' in e['faces'])
+        early=glacier('zero_floor',2,uv);grown=glacier('zero_floor',18,uv)
+        self.assertGreater(top_area(grown),top_area(early)*2)
+        self.assertEqual([],glacier('zero_floor',47,uv))
+        wave=glacier('frost_wave',7,uv)
+        self.assertGreater(max(e['to'][1] for e in wave)-8,5)
+        self.assertTrue(any(e['to'][2]>11 for e in wave))
 
 
 if __name__=='__main__':unittest.main()

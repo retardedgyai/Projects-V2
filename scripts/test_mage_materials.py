@@ -3,9 +3,10 @@ import json
 import math
 import unittest
 from build_mage_meteor import METEOR_CLIPS
-from build_mage_materials import CLIPS, PACK, material_geometry, material_palette, ink_uvs
+from build_mage_materials import CLIPS, PACK, TEXTURED_MATERIALS, material_geometry, material_palette, ink_uvs
 from build_mage_fire import source as fire_source
 from build_mage_ice import source as ice_source
+from build_mage_garden import TEXTURED_CLIPS
 
 
 class MageMaterialTests(unittest.TestCase):
@@ -32,8 +33,8 @@ class MageMaterialTests(unittest.TestCase):
                     self.assertTrue(all(a<b for a,b in zip(e['from'],e['to'])),(clip,frame))
                     self.assertTrue(set(e['faces'])<={'up','down','east','west','north','south'})
                     for f in e['faces'].values():
-                        if clip in METEOR_CLIPS:
-                            self.assertIn(f['texture'],('#0','#1','#2','#3','#4'))
+                        if clip in TEXTURED_MATERIALS:
+                            self.assertIn(f['texture'],('#0','#1','#2','#3','#4') if clip in METEOR_CLIPS else ('#0','#1','#2'))
                             self.assertTrue(all(0<=v<=16 for v in f['uv']))
                             self.assertNotEqual(f['uv'][0],f['uv'][2]);self.assertNotEqual(f['uv'][1],f['uv'][3])
                         else:
@@ -72,6 +73,21 @@ class MageMaterialTests(unittest.TestCase):
         anchor=PACK.parents[4]/'assets/class-armaments/texture-first/sources/greatsword-material-v02.png'
         self.assertEqual('5962fb645e63ec851d64fcfff32d281291edea1cf87d59a5a443899aa305f3e3',
                          hashlib.sha256(anchor.read_bytes()).hexdigest())
+
+    def test_original_material_png_bytes_are_shipped_and_every_model_texture_resolves(self):
+        sources=PACK.parents[4]/'assets/combat-vfx/mage-v4/sources'
+        folder=PACK/'assets/projects/textures/combat_vfx/mage_material'
+        for name in ('glacial-strata','frozen-fracture','solar-flow','lunar-veins'):
+            self.assertEqual((sources/f'{name}-v01.png').read_bytes(),
+                             (folder/(name.replace('-','_')+'_v01.png')).read_bytes())
+        for p in (PACK/'assets/projects/models/combat_vfx/mage_material').glob('*.json'):
+            model=json.loads(p.read_text(encoding='utf-8'))
+            for resource in model['textures'].values():
+                namespace,path=resource.split(':')
+                self.assertTrue((PACK/f'assets/{namespace}/textures/{path}.png').is_file(),(p,resource))
+            for e in model['elements']:
+                for f in e['faces'].values():
+                    self.assertIn(f['texture'][1:],model['textures'],p)
 
 
 if __name__=='__main__':unittest.main()

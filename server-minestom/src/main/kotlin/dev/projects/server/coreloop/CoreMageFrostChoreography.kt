@@ -28,8 +28,8 @@ internal object CoreMageFrostChoreography {
         // Three interleaved inner/outer sectors
         // keep the whole circumference present without a rotating carousel.
         return listOf(part("footing",1.5,40))+listOf("a","b","c").flatMapIndexed { i,suffix ->
-            listOf(part("inner_$suffix",2.3,34,i%2,turn=i*2*PI/3+PI/3),
-                part("outer_$suffix",3.1,28,2+i%2,turn=i*2*PI/3))
+            listOf(part("inner_$suffix",2.3,listOf(34,33,35)[i],i%2,turn=i*2*PI/3+PI/3),
+                part("outer_$suffix",3.1,listOf(26,28,25)[i],2+i%2,turn=i*2*PI/3))
         }
     }
 
@@ -39,13 +39,17 @@ internal object CoreMageFrostChoreography {
         fun ease(v:Double):Double { val u=v.coerceIn(0.0,1.0);return u*u*(3-2*u) }
         val footing=clip=="rime_footing"
         val grow=ease(local/if(footing)2.0 else 3.0)
-        // Keep x/z roots fixed: height rises from the earth instead of the
-        // whole finished crystal sliding horizontally away from the caster.
+        // Local geometry is planted at native (8,8,8). Grow and contract each
+        // complete branch junction about that anchor, never slide it outward.
         val end=(p.durationTicks-1).coerceAtLeast(1).toDouble()
         val fade=if(footing)6.0 else 8.0
         val close=ease((local-(end-fade).coerceAtLeast(0.0))/fade)
+        // R04's remaining pieces become short AND narrow. Flattening only Y
+        // left bright wide floor pancakes. Preserve the chipped shape instead;
+        // unequal bundle lifetimes leave the low roots last. No flying debris
+        // is inferred from the author footage's character-occluded ending.
         val scale=if(local>=p.durationTicks-1.0)Vec.ZERO else
-            p.scale.mul(Vec(1.0,.018+.982*grow,1.0)).mul(Vec(1.0,1-close,1.0))
+            p.scale.mul(.018+.982*grow).mul(1-close)
         return CoreMeshPose(p.offset.add(0.0,-.14,0.0),scale,p.yaw,p.pitch,p.roll,
             "combat_vfx/mage_material/${clip}_0",age>=p.delayTicks && age<p.delayTicks+p.durationTicks)
     }

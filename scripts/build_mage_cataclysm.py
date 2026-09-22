@@ -9,6 +9,7 @@ import math
 import numpy as np
 from PIL import Image
 from build_mage_fire import box
+from build_mage_uv import painted
 
 SOURCE=Path(__file__).resolve().parents[1]/'assets/combat-vfx/mage-v2/sources/meteor-eruption-v01.png'
 CATACLYSM_CLIPS={'meteor','eruption','pyre','corona','solar_flare'}
@@ -36,10 +37,10 @@ def source():
     return forms,colours
 
 
-def palette():return source()[1]
+def palette():return source()[1]+[0x584D6C,0x85758B,0xAE8399,0xC99CAD,0xDFB1B9,0xEFD1CF,0xFFF2DE,0xFFFFFF]
 
 
-def mesh(clip,frame,uv):
+def legacy_geometry(clip,frame,uv):
     frames=48 if clip in ('pyre','corona') else 24
     if frame>=frames-1:return []
     t=frame/(frames-1)
@@ -107,3 +108,67 @@ def mesh(clip,frame,uv):
                 out.append(e)
             col=end
     return out
+
+
+@lru_cache(maxsize=168)
+def solid_geometry(clip,frame,uv_tuple):
+    # Concrete volumes for the three fire phrases. Not the former extrusion
+    # of a single illustration; all cameras see shaped mass and open clefts.
+    from build_mage_garden import GRID,SHAPE,skin
+    uv=list(uv_tuple)
+    frames=48 if clip=='pyre' else 24
+    if frame>=frames-1:return []
+    x,y,z=np.moveaxis(GRID,-1,0)
+    v=np.zeros(SHAPE,dtype=np.uint8)
+    if clip in ('meteor','pyre'):
+        t=frame/(frames-1)
+        xx=x-8;yy=y-15;zz=z-8
+        split=max(0.,t-.5)*2 if clip=='pyre' else 0
+        # Three unequal hot lobes separate along their existing molten seams.
+        for i,(cx,cy,cz,r) in enumerate(((-1.3,0,-.4,3.9),(2,1.1,.6,2.6),(.6,-2,1.8,2.5))):
+            dx=xx-cx*(1+split*.7);dy=yy-cy*(1+split*.8);dz=zz-cz*(1+split)
+            metric=np.maximum.reduce((np.abs(dx)*.75,np.abs(dy)*.85,np.abs(dz),
+                                      (np.abs(dx)+np.abs(dy)+np.abs(dz))*.46))
+            radius=r*(1-max(0.,t-.80)*4.8) if clip=='pyre' else r
+            solid=metric<radius
+            fault=np.abs(dx*.5+dy*.7-dz-.25)
+            ink=np.where(fault<.5,7,np.where(dy>r*.25,6,np.where(dz<-.3,5,3)))
+            if clip=='meteor':ink=np.where(fault<.65,7,np.where(dz<-.3,1,0))
+            v[solid]=(ink[solid]+1).astype(np.uint8)
+        out=skin(v,uv)
+        for e in out:
+            e['from'][1]-=7;e['to'][1]-=7
+        if clip=='meteor':
+            # Rock faces stay broad and dark; only molten faults are textured.
+            result=[]
+            for e in out:
+                ink=next(iter(e['faces'].values()))['tintindex']
+                result.extend(painted([e],'y',8) if ink>=5 else [e])
+            return result
+        return painted(out,'y',8)
+    # Eruption and downward flare each have three differently timed tongues,
+    # a lower pressure mass and detached hot fragments. Not five copies of one
+    # repeated short explosion.
+    for i,(cx,cz,h,w,lx,lz) in enumerate(((6.5,7.0,12,2.4,-3,-1),
+                                       (10,9,8,1.8,2,1.8),(7,11,5.5,1.6,-1,2))):
+        age=frame-i*1.5
+        if not 0<=age<20:continue
+        grow=min(1.,.22+age/3);fade=max(0.,(age-8)/12)
+        u=(y-8)/max(.01,h*grow)
+        xx=x-cx-lx*u-fade*lx*.6;zz=z-cz-lz*u
+        width=w*np.maximum(0.,1-u)**.8*(1-fade*.75)
+        solid=(u>=fade*.55)&(u<1)&(np.abs(xx)<width)&(np.abs(zz)<width*.65)&((abs(xx)+abs(zz))<width*1.3)
+        ink=np.where(xx<-.2,5,np.where(zz<0,7,4))
+        v[solid]=(ink[solid]+1).astype(np.uint8)
+    out=skin(v,uv)
+    if clip=='solar_flare':
+        for e in out:
+            e['from'][1],e['to'][1]=28-e['to'][1],28-e['from'][1]
+            faces=e['faces']
+            if 'up' in faces:faces['down']=faces.pop('up')
+            elif 'down' in faces:faces['up']=faces.pop('down')
+    return painted(out,'y',8)
+
+
+def mesh(clip,frame,uv):
+    return legacy_geometry(clip,frame,uv) if clip=='corona' else solid_geometry(clip,frame,tuple(uv))
