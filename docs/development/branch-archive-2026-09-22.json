@@ -1,0 +1,381 @@
+{
+  "status": "Archive refs published; branch closure follows successful PR merge.",
+  "records": [
+    {
+      "branch": "experiment/gyai/swarm-mmo-vslice-20260830/combat-encounter",
+      "sha": "299cb62e918aff320a64bbc3e17a95450235dae1",
+      "tag": "archive/2026-09-22/experiment/gyai/swarm-mmo-vslice-20260830/combat-encounter",
+      "remoteSha": null,
+      "remoteTag": null,
+      "snapshotTag": null
+    },
+    {
+      "branch": "experiment/gyai/swarm-mmo-vslice-20260830/integration",
+      "sha": "0abc78fd82386861d026b5dda1511f87c35f1818",
+      "tag": "archive/2026-09-22/experiment/gyai/swarm-mmo-vslice-20260830/integration",
+      "remoteSha": null,
+      "remoteTag": null,
+      "snapshotTag": null
+    },
+    {
+      "branch": "experiment/gyai/swarm-mmo-vslice-20260830/verification",
+      "sha": "d17eafff1cb5e1822963251ad94164e84afa2ab2",
+      "tag": "archive/2026-09-22/experiment/gyai/swarm-mmo-vslice-20260830/verification",
+      "remoteSha": null,
+      "remoteTag": null,
+      "snapshotTag": null
+    },
+    {
+      "branch": "experiment/gyai/swarm-mmo-vslice-20260830/world-loop",
+      "sha": "e2f52b81d07180b10ef47102555234b6b683be47",
+      "tag": "archive/2026-09-22/experiment/gyai/swarm-mmo-vslice-20260830/world-loop",
+      "remoteSha": null,
+      "remoteTag": null,
+      "snapshotTag": null
+    },
+    {
+      "branch": "integrate/gyai/model-gameplay-137",
+      "sha": "b60d5b6c781372c7a2163213fac546080d43a09a",
+      "tag": "archive/2026-09-22/integrate/gyai/model-gameplay-137",
+      "remoteSha": "1df9c8326360f71ff271180487f764ac8e9a7097",
+      "remoteTag": "archive/2026-09-22/remote/integrate/gyai/model-gameplay-137",
+      "snapshotTag": null
+    },
+    {
+      "branch": "integrate/gyai/scorpius-tooling",
+      "sha": "d34854f19c9e985803206dd6cd10bad873cfd252",
+      "tag": "archive/2026-09-22/integrate/gyai/scorpius-tooling",
+      "remoteSha": "d34854f19c9e985803206dd6cd10bad873cfd252",
+      "remoteTag": null,
+      "snapshotTag": null
+    },
+    {
+      "branch": "play/gyai/ashen-warden",
+      "sha": "323a834de1c0e8ceb7a4d1d6398f303ccfe682f7",
+      "tag": "archive/2026-09-22/play/gyai/ashen-warden",
+      "remoteSha": "323a834de1c0e8ceb7a4d1d6398f303ccfe682f7",
+      "remoteTag": null,
+      "snapshotTag": null
+    },
+    {
+      "branch": "play/gyai/astra-core-economy",
+      "sha": "38515c31f31a5b9d2311e18d62b55cbb60105d89",
+      "tag": "archive/2026-09-22/play/gyai/astra-core-economy",
+      "remoteSha": "38515c31f31a5b9d2311e18d62b55cbb60105d89",
+      "remoteTag": null,
+      "snapshotTag": null
+    },
+    {
+      "branch": "play/gyai/astra-core-harbor",
+      "sha": "2497011b33db328957cc271136fb884bb22b4c89",
+      "tag": "archive/2026-09-22/play/gyai/astra-core-harbor",
+      "remoteSha": "2497011b33db328957cc271136fb884bb22b4c89",
+      "remoteTag": null,
+      "snapshotTag": null
+    },
+    {
+      "branch": "play/gyai/astra-core-loop",
+      "sha": "cbee1a2b4bdbdd25b351bdd435c46f46c3862d1c",
+      "tag": "archive/2026-09-22/play/gyai/astra-core-loop",
+      "remoteSha": "cbee1a2b4bdbdd25b351bdd435c46f46c3862d1c",
+      "remoteTag": null,
+      "snapshotTag": null
+    },
+    {
+      "branch": "play/gyai/astra-core-mobs",
+      "sha": "87c82ff699724dba6609b1b8928cb4dfd145e7f0",
+      "tag": "archive/2026-09-22/play/gyai/astra-core-mobs",
+      "remoteSha": "87c82ff699724dba6609b1b8928cb4dfd145e7f0",
+      "remoteTag": null,
+      "snapshotTag": "archive/2026-09-22/snapshots/play/gyai/astra-core-mobs"
+    },
+    {
+      "branch": "play/gyai/class-armament-art",
+      "sha": "3dd9d949a4d13b31c7f1e3b46300f32401bb5c1e",
+      "tag": "archive/2026-09-22/play/gyai/class-armament-art",
+      "remoteSha": "3dd9d949a4d13b31c7f1e3b46300f32401bb5c1e",
+      "remoteTag": null,
+      "snapshotTag": null
+    },
+    {
+      "branch": "play/gyai/class-combat-rework",
+      "sha": "a5c0a972275c264bdf953943514d58e464012c15",
+      "tag": "archive/2026-09-22/play/gyai/class-combat-rework",
+      "remoteSha": "a5c0a972275c264bdf953943514d58e464012c15",
+      "remoteTag": null,
+      "snapshotTag": null
+    },
+    {
+      "branch": "play/gyai/core-adventure-content",
+      "sha": "da102142eaee0eac8f81d0186c32085ee3e90ce6",
+      "tag": "archive/2026-09-22/play/gyai/core-adventure-content",
+      "remoteSha": "da102142eaee0eac8f81d0186c32085ee3e90ce6",
+      "remoteTag": null,
+      "snapshotTag": null
+    },
+    {
+      "branch": "play/gyai/core-affix-loot",
+      "sha": "b63821ffc04bc978a40d9fd776b16745a72f1819",
+      "tag": "archive/2026-09-22/play/gyai/core-affix-loot",
+      "remoteSha": "b63821ffc04bc978a40d9fd776b16745a72f1819",
+      "remoteTag": null,
+      "snapshotTag": "archive/2026-09-22/snapshots/play/gyai/core-affix-loot"
+    },
+    {
+      "branch": "play/gyai/core-encounter-content",
+      "sha": "0bb58428fff47a51f082d43fb38e35876d75430a",
+      "tag": "archive/2026-09-22/play/gyai/core-encounter-content",
+      "remoteSha": "0bb58428fff47a51f082d43fb38e35876d75430a",
+      "remoteTag": null,
+      "snapshotTag": null
+    },
+    {
+      "branch": "play/gyai/core-enhancement",
+      "sha": "21bcd255e0c1037d5084bf58602dc9f7ef5013b9",
+      "tag": "archive/2026-09-22/play/gyai/core-enhancement",
+      "remoteSha": "21bcd255e0c1037d5084bf58602dc9f7ef5013b9",
+      "remoteTag": null,
+      "snapshotTag": null
+    },
+    {
+      "branch": "play/gyai/core-forge-ui",
+      "sha": "9d4bd370876b6d1a454482bdb8c98efc187711c0",
+      "tag": "archive/2026-09-22/play/gyai/core-forge-ui",
+      "remoteSha": "9d4bd370876b6d1a454482bdb8c98efc187711c0",
+      "remoteTag": null,
+      "snapshotTag": null
+    },
+    {
+      "branch": "play/gyai/core-greatsword",
+      "sha": "a429b417ea2cf91c9feab429101d85c145d1eaf7",
+      "tag": "archive/2026-09-22/play/gyai/core-greatsword",
+      "remoteSha": "a429b417ea2cf91c9feab429101d85c145d1eaf7",
+      "remoteTag": null,
+      "snapshotTag": null
+    },
+    {
+      "branch": "play/gyai/core-hud-layout",
+      "sha": "a00dd37b6f49ddb391f4769c9ff2d841e433ba19",
+      "tag": "archive/2026-09-22/play/gyai/core-hud-layout",
+      "remoteSha": "a00dd37b6f49ddb391f4769c9ff2d841e433ba19",
+      "remoteTag": null,
+      "snapshotTag": null
+    },
+    {
+      "branch": "play/gyai/core-orb-crafting",
+      "sha": "68b84ba6335ed60db43c1e78df2acfa9568ac534",
+      "tag": "archive/2026-09-22/play/gyai/core-orb-crafting",
+      "remoteSha": "68b84ba6335ed60db43c1e78df2acfa9568ac534",
+      "remoteTag": null,
+      "snapshotTag": null
+    },
+    {
+      "branch": "play/gyai/core-ui-pack",
+      "sha": "ce3e2ca04b9c95fa61d66ff6294cd958826757bb",
+      "tag": "archive/2026-09-22/play/gyai/core-ui-pack",
+      "remoteSha": "ce3e2ca04b9c95fa61d66ff6294cd958826757bb",
+      "remoteTag": null,
+      "snapshotTag": null
+    },
+    {
+      "branch": "play/gyai/ember-canvas",
+      "sha": "a7922d023b538f90e293c3c12ef9486e4173c4b3",
+      "tag": "archive/2026-09-22/play/gyai/ember-canvas",
+      "remoteSha": "a7922d023b538f90e293c3c12ef9486e4173c4b3",
+      "remoteTag": null,
+      "snapshotTag": "archive/2026-09-22/snapshots/play/gyai/ember-canvas"
+    },
+    {
+      "branch": "play/gyai/ember-forge-ui",
+      "sha": "d173a0065a4d3043425955fe87058cdfeab74666",
+      "tag": "archive/2026-09-22/play/gyai/ember-forge-ui",
+      "remoteSha": "d173a0065a4d3043425955fe87058cdfeab74666",
+      "remoteTag": null,
+      "snapshotTag": null
+    },
+    {
+      "branch": "play/gyai/ember-menus",
+      "sha": "2ff1f87f7eb44457dc204eef68fc33a6adc36183",
+      "tag": "archive/2026-09-22/play/gyai/ember-menus",
+      "remoteSha": "2ff1f87f7eb44457dc204eef68fc33a6adc36183",
+      "remoteTag": null,
+      "snapshotTag": "archive/2026-09-22/snapshots/play/gyai/ember-menus"
+    },
+    {
+      "branch": "play/gyai/enhancement-break-repair",
+      "sha": "d505af54c108ac62ab2e00cc786e57c653730288",
+      "tag": "archive/2026-09-22/play/gyai/enhancement-break-repair",
+      "remoteSha": "d505af54c108ac62ab2e00cc786e57c653730288",
+      "remoteTag": null,
+      "snapshotTag": null
+    },
+    {
+      "branch": "play/gyai/gathering-equipment-economy",
+      "sha": "e834995c7d4ce92d483da284880e1813a96cca70",
+      "tag": "archive/2026-09-22/play/gyai/gathering-equipment-economy",
+      "remoteSha": "e834995c7d4ce92d483da284880e1813a96cca70",
+      "remoteTag": null,
+      "snapshotTag": null
+    },
+    {
+      "branch": "play/gyai/harbor-architecture",
+      "sha": "df69ef6f019a454b0361c4e563deaa5e12b1f59f",
+      "tag": "archive/2026-09-22/play/gyai/harbor-architecture",
+      "remoteSha": "df69ef6f019a454b0361c4e563deaa5e12b1f59f",
+      "remoteTag": null,
+      "snapshotTag": null
+    },
+    {
+      "branch": "play/gyai/harbor-ascension-mmo",
+      "sha": "cfd17adcedb63fe7e477c8509762f14cadbe60b6",
+      "tag": "archive/2026-09-22/play/gyai/harbor-ascension-mmo",
+      "remoteSha": "cfd17adcedb63fe7e477c8509762f14cadbe60b6",
+      "remoteTag": null,
+      "snapshotTag": null
+    },
+    {
+      "branch": "play/gyai/harbor-main-integration",
+      "sha": "ba04095773c481f9cb99e6f26cc0f57d20cc4e92",
+      "tag": "archive/2026-09-22/play/gyai/harbor-main-integration",
+      "remoteSha": "9e96b07e9eb822ebc4af0ac597d4ef8cf3699eb3",
+      "remoteTag": "archive/2026-09-22/remote/play/gyai/harbor-main-integration",
+      "snapshotTag": null
+    },
+    {
+      "branch": "play/gyai/instance-lighting",
+      "sha": "c8f11a0e8d61e43072c66147d9f335778867e131",
+      "tag": "archive/2026-09-22/play/gyai/instance-lighting",
+      "remoteSha": "c8f11a0e8d61e43072c66147d9f335778867e131",
+      "remoteTag": null,
+      "snapshotTag": null
+    },
+    {
+      "branch": "play/gyai/living-mmo-expansion",
+      "sha": "f8c4b362c396d2b845c28adaa985d3b2546685f9",
+      "tag": "archive/2026-09-22/play/gyai/living-mmo-expansion",
+      "remoteSha": "f8c4b362c396d2b845c28adaa985d3b2546685f9",
+      "remoteTag": null,
+      "snapshotTag": null
+    },
+    {
+      "branch": "play/gyai/mage-ice-fang",
+      "sha": "e6366eae3a23a073f4efd70f3822e88b4e123dc8",
+      "tag": "archive/2026-09-22/play/gyai/mage-ice-fang",
+      "remoteSha": "e6366eae3a23a073f4efd70f3822e88b4e123dc8",
+      "remoteTag": null,
+      "snapshotTag": "archive/2026-09-22/snapshots/play/gyai/mage-ice-fang"
+    },
+    {
+      "branch": "play/gyai/mage-visual-rework",
+      "sha": "1df9c8326360f71ff271180487f764ac8e9a7097",
+      "tag": "archive/2026-09-22/play/gyai/mage-visual-rework",
+      "remoteSha": "1df9c8326360f71ff271180487f764ac8e9a7097",
+      "remoteTag": null,
+      "snapshotTag": "archive/2026-09-22/snapshots/play/gyai/mage-visual-rework"
+    },
+    {
+      "branch": "play/gyai/mmo-forge-combat",
+      "sha": "2434cd335f51c166ade49eb330a44d4c9a3cf5c2",
+      "tag": "archive/2026-09-22/play/gyai/mmo-forge-combat",
+      "remoteSha": "2434cd335f51c166ade49eb330a44d4c9a3cf5c2",
+      "remoteTag": null,
+      "snapshotTag": null
+    },
+    {
+      "branch": "play/gyai/obsidian-director-console",
+      "sha": "e4e4ab6c80c12c4a4fd6c482d7f34a32bdbc3a9c",
+      "tag": "archive/2026-09-22/play/gyai/obsidian-director-console",
+      "remoteSha": null,
+      "remoteTag": null,
+      "snapshotTag": null
+    },
+    {
+      "branch": "play/gyai/pixel-relic-canvas",
+      "sha": "a8896adcecf941979d0353fb483bd221552d8e31",
+      "tag": "archive/2026-09-22/play/gyai/pixel-relic-canvas",
+      "remoteSha": "a8896adcecf941979d0353fb483bd221552d8e31",
+      "remoteTag": null,
+      "snapshotTag": null
+    },
+    {
+      "branch": "play/gyai/pixel-relic-menus",
+      "sha": "a7bce4d49283a371c594979eb54abe3d51b9fb5b",
+      "tag": "archive/2026-09-22/play/gyai/pixel-relic-menus",
+      "remoteSha": "a7bce4d49283a371c594979eb54abe3d51b9fb5b",
+      "remoteTag": null,
+      "snapshotTag": "archive/2026-09-22/snapshots/play/gyai/pixel-relic-menus"
+    },
+    {
+      "branch": "play/gyai/pixel-relic-ui",
+      "sha": "9dfd8c58a72c255bfe4bef9587e080624e55cd66",
+      "tag": "archive/2026-09-22/play/gyai/pixel-relic-ui",
+      "remoteSha": "9dfd8c58a72c255bfe4bef9587e080624e55cd66",
+      "remoteTag": null,
+      "snapshotTag": null
+    },
+    {
+      "branch": "play/gyai/quest-map-core",
+      "sha": "2b65b57494d2c65ad335a45041a3c1a51e4a2292",
+      "tag": "archive/2026-09-22/play/gyai/quest-map-core",
+      "remoteSha": "2b65b57494d2c65ad335a45041a3c1a51e4a2292",
+      "remoteTag": null,
+      "snapshotTag": null
+    },
+    {
+      "branch": "play/gyai/readable-ui",
+      "sha": "bb4d29a8ac687ce7049a1534cf24fb3f93325c06",
+      "tag": "archive/2026-09-22/play/gyai/readable-ui",
+      "remoteSha": "bb4d29a8ac687ce7049a1534cf24fb3f93325c06",
+      "remoteTag": null,
+      "snapshotTag": null
+    },
+    {
+      "branch": "play/gyai/readable-ui-canvas",
+      "sha": "46c9c9142d45ee91c5a4880af1046d88d049101e",
+      "tag": "archive/2026-09-22/play/gyai/readable-ui-canvas",
+      "remoteSha": "46c9c9142d45ee91c5a4880af1046d88d049101e",
+      "remoteTag": null,
+      "snapshotTag": null
+    },
+    {
+      "branch": "play/gyai/readable-ui-flow",
+      "sha": "83b58c92b03fe1472ba0b59dd690ca254fbe2a59",
+      "tag": "archive/2026-09-22/play/gyai/readable-ui-flow",
+      "remoteSha": "83b58c92b03fe1472ba0b59dd690ca254fbe2a59",
+      "remoteTag": null,
+      "snapshotTag": null
+    },
+    {
+      "branch": "play/gyai/readable-ui-session",
+      "sha": "5216ddecb1ed4bb777b2bf84b897f47e6b561ac3",
+      "tag": "archive/2026-09-22/play/gyai/readable-ui-session",
+      "remoteSha": "5216ddecb1ed4bb777b2bf84b897f47e6b561ac3",
+      "remoteTag": null,
+      "snapshotTag": "archive/2026-09-22/snapshots/play/gyai/readable-ui-session"
+    },
+    {
+      "branch": "play/gyai/scorpius-tooling",
+      "sha": "854b773d84b32faf04efc2223d757b960df96c5d",
+      "tag": "archive/2026-09-22/play/gyai/scorpius-tooling",
+      "remoteSha": "854b773d84b32faf04efc2223d757b960df96c5d",
+      "remoteTag": null,
+      "snapshotTag": null
+    },
+    {
+      "branch": "play/gyai/warrior-design-rework",
+      "sha": "53d0ee8d8790e3435d849ab33c51661c636817e8",
+      "tag": "archive/2026-09-22/play/gyai/warrior-design-rework",
+      "remoteSha": "53d0ee8d8790e3435d849ab33c51661c636817e8",
+      "remoteTag": null,
+      "snapshotTag": null
+    },
+    {
+      "branch": "ui/item-tooltip-assets-v0",
+      "sha": "3373ec20ae07997e2b791f9be463a177179add75",
+      "tag": "archive/2026-09-22/ui/item-tooltip-assets-v0",
+      "remoteSha": "3373ec20ae07997e2b791f9be463a177179add75",
+      "remoteTag": null,
+      "snapshotTag": null
+    }
+  ]
+}

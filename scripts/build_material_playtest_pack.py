@@ -65,7 +65,8 @@ def assemble(base, candidate):
                      for stage, count in (('idle', 12), ('prepare', 6), ('release', 6)) for i in range(count)]}
     if set(candidate) != expected:
         raise ValueError('Incomplete or out-of-scope material review resources')
-    if expected & base.keys():
+    overlap = expected & base.keys()
+    if overlap and (overlap != expected or any(base[name] != candidate[name] for name in overlap)):
         raise ValueError('Candidate resource collides with installed assets')
     if TARGET not in base:
         raise ValueError('Installed server lacks greatsword T1 equipment model')
@@ -97,9 +98,9 @@ def build(output=OUT):
             archive.writestr(info, data)
     report = {'status': 'opt-in single-sword material review, not art approval',
               'runtime_applied': False, 'quality_approved': False,
-              'server_jar_sha256': before, 'replaced_item_definitions': [TARGET],
+              'server_jar_sha256': before, 'replaced_item_definitions': [TARGET] if files[TARGET] != base[TARGET] else [],
               'added_files': sorted(candidate), 'indexed_files': len(files),
-              'unchanged_installed_files': len(base) - 1,
+              'unchanged_installed_files': sum(files[name] == data for name, data in base.items()),
               'files_sha256': {name: digest(data) for name, data in sorted(files.items())}}
     (output / 'report.json').write_text(json.dumps(report, indent=2) + '\n', encoding='utf-8')
     print(f'Material review: {len(files)} files, only greatsword T1 replaced; no runtime changes.')

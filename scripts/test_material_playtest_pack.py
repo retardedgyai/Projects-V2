@@ -11,8 +11,12 @@ import build_material_playtest_pack as review
 class MaterialPlaytestPackTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.base = review.installed_pack()
+        cls.installed = review.installed_pack()
         cls.candidate = review.candidate_resources()
+        # Exercise the legacy pre-promotion route even when installDist already
+        # contains the approved artwork. Production idempotence has its own test.
+        cls.base = {name: data for name, data in cls.installed.items() if name not in cls.candidate}
+        cls.base[review.TARGET] = b'{"model":{"type":"minecraft:model","model":"projects:item/weapons/greatsword_t1"}}'
         cls.files = review.assemble(cls.base, cls.candidate)
         cls.temp = TemporaryDirectory(prefix='projects-material-pack-')
         cls.addClassCleanup(cls.temp.cleanup)
@@ -23,8 +27,11 @@ class MaterialPlaytestPackTest(unittest.TestCase):
     def test_exactly_one_existing_equipment_graph_changes(self):
         changed = {name for name, data in self.base.items() if self.files[name] != data}
         self.assertEqual(changed, {review.TARGET})
-        self.assertEqual(self.report['replaced_item_definitions'], [review.TARGET])
-        self.assertEqual(self.report['unchanged_installed_files'], len(self.base) - 1)
+        rebuilt = review.assemble(self.installed, self.candidate)
+        self.assertEqual(self.report['replaced_item_definitions'],
+                         [review.TARGET] if rebuilt[review.TARGET] != self.installed[review.TARGET] else [])
+        self.assertEqual(self.report['unchanged_installed_files'],
+                         sum(rebuilt[name] == data for name, data in self.installed.items()))
         self.assertFalse(self.report['runtime_applied'])
         self.assertFalse(self.report['quality_approved'])
         self.assertEqual(len(self.candidate), 32)
@@ -58,11 +65,12 @@ class MaterialPlaytestPackTest(unittest.TestCase):
 
     def test_saved_snapshot_index_zip_and_source_hash_are_exact(self):
         self.assertEqual(self.report['server_jar_sha256'], review.digest(review.SERVER_JAR.read_bytes()))
-        self.assertEqual((self.output / 'core-ui-pack/index.txt').read_text().splitlines(), sorted(self.files))
+        output_files = review.assemble(self.installed, self.candidate)
+        self.assertEqual((self.output / 'core-ui-pack/index.txt').read_text().splitlines(), sorted(output_files))
         with zipfile.ZipFile(self.output / 'projects-material-playtest.zip') as archive:
-            self.assertEqual(archive.namelist(), sorted(self.files))
+            self.assertEqual(archive.namelist(), sorted(output_files))
             self.assertIsNone(archive.testzip())
-            for name, data in self.files.items():
+            for name, data in output_files.items():
                 self.assertEqual(archive.read(name), data, name)
                 self.assertEqual((self.output / 'core-ui-pack' / name).read_bytes(), data, name)
                 self.assertEqual(self.report['files_sha256'][name], review.digest(data), name)
