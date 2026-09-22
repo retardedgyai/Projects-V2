@@ -61,7 +61,7 @@ def repertoire():
     chars = set(chr(code) for code in range(0x20, 0x7F))
     chars.update(chr(code) for code in range(0x3041, 0x3097))
     chars.update(chr(code) for code in range(0x30A1, 0x30FB))
-    chars.update("□…→←↑↓×÷±％〜・。、：「」『』（）【】！？ー　")
+    chars.update("□…→←↑↓×÷±％〜・·。、：「」『』（）【】！？ー　")
     for directory in ROOT.glob("*/src/main/kotlin"):
         for path in directory.rglob("*.kt"):
             chars.update(char for char in path.read_text(encoding="utf-8")
