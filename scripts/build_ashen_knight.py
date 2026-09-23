@@ -264,10 +264,10 @@ def build(out=ROOT / "model-lab" / "models"):
     # The lower torso narrows toward the belt. A single full-depth cuboid
     # exposed a long, ruler-straight side between the scarf and the tassets.
     add_rotated(m, chest, "waist_mail_tunic_upper",
-                [-2.78, 15.8, -1.48], [2.78, 18.4, 1.45], "void",
+                [-2.48, 15.8, -1.48], [2.48, 18.4, 1.45], "void",
                 [-6, 0, -2], [0, 17.1, 0], "worn_tunic")
     add_rotated(m, chest, "waist_mail_tunic_lower",
-                [-2.42, 12.9, -1.1], [2.42, 16.25, 1.17], "void",
+                [-1.82, 12.9, -1.1], [1.82, 16.25, 1.17], "void",
                 [7, 0, 3], [0, 14.6, 0], "worn_tunic")
     def paint_chest_mail(px, py):
         side = abs(px - 63.5) / 64
@@ -473,9 +473,33 @@ def build(out=ROOT / "model-lab" / "models"):
            face_uv={"north": right_pauldron_uv, "south": right_pauldron_uv,
                     "east": open_pauldron_edge, "west": open_pauldron_edge,
                     "up": open_pauldron_edge, "down": open_pauldron_edge})
-    add_rotated(m, chest, "diagonal_chest_binding", [-3.1, 15.05, -2.85],
-                [2.4, 15.52, -2.55], "leather", [0, 0, -20],
-                [-.35, 15.3, -2.7], "scuffed_leather")
+    def paint_harness(px, py):
+        edge = 1 + authoring.noise(px // 5, 0, 4081) % 2
+        if py < edge or py > 15 - edge:
+            return (0, 0, 0, 0)
+        grain = authoring.noise(px // 3, py // 2, 4093)
+        if py <= edge + 1 or py >= 14 - edge:
+            color = (30, 28, 27)
+        elif py in (4, 11) and px % 12 in (2, 3) and grain % 3:
+            color = (80, 71, 57)
+        elif grain % 29 == 0:
+            color = (81, 67, 51)
+        elif grain % 7 == 0:
+            color = (34, 31, 29)
+        else:
+            color = (56, 49, 40)
+        return (*color, 255)
+
+    harness_uv = m.patch(96, 16, paint_harness, "worn_diagonal_harness")
+    harness_edge_uv = m.patch(1, 1, lambda _x, _y: (34, 31, 28, 255),
+                              "dark_harness_edge")
+    harness_faces = {side: harness_uv if side in ("north", "south")
+                     else harness_edge_uv for side in
+                     ("north", "south", "east", "west", "up", "down")}
+    add_rotated(m, chest, "diagonal_chest_binding",
+                [-2.6, 15.59, -2.85], [2.6, 16.21, -2.55],
+                "leather", [0, 0, -48], [0, 15.9, -2.7],
+                "scuffed_leather", harness_faces)
 
     def paint_worn_backplate(px, py):
         shoulder = min(1, max(0, (py - 4) / 14))
@@ -1164,12 +1188,27 @@ def build(out=ROOT / "model-lab" / "models"):
                 {"east": outer_mail_uv, "west": outer_mail_uv})
     add(m, right_forearm, "right_elbow_dark", [3.9, 15.35, -.83],
         [5.9, 16.15, 1.42], "void")
+    def paint_gauntlet_leather(px, py):
+        grain = authoring.noise(px // 2, py // 2, 2291)
+        seam = abs(px - (7 + py // 6)) < 1
+        if seam and 4 < py < 29:
+            return (43, 44, 42, 255)
+        if grain % 47 == 0:
+            return (52, 53, 48, 255)
+        if grain % 11 == 0 or (px + py * 2) % 29 == 0:
+            return (12, 18, 22, 255)
+        return (27, 31, 33, 255)
+
+    gauntlet_uv = m.patch(24, 32, paint_gauntlet_leather,
+                         "sword_gauntlet_dark_leather")
+    gauntlet_faces = {face: gauntlet_uv for face in
+                      ("north", "south", "east", "west", "up", "down")}
     add_rotated(m, right_forearm, "right_bracer_upper", [3.92, 13.45, -1.05],
                 [6.0, 16.05, 1.38], "void", [0, 0, -10],
                 [4.94, 14.8, .1], "battered_scale")
     add_rotated(m, right_forearm, "right_bracer_wrist", [4.04, 11.08, -1.1],
                 [5.92, 13.65, 1.37], "leather", [0, 0, 5],
-                [4.98, 12.4, .1], "battered_scale")
+                [4.98, 12.4, .1], "battered_scale", gauntlet_faces)
     def paint_bracer_shard(px, py, seed):
         left = (4 + py // 10) if seed == 0 else (3 + py // 15)
         right = (25 - py // 12) if seed == 0 else (28 - py // 19)
@@ -1196,8 +1235,18 @@ def build(out=ROOT / "model-lab" / "models"):
                      f"bracer_shard_{shard}")
         m.cube(f"right_bracer_shard_{shard}", lo, hi, "armor", right_forearm,
                face_uv={"north": uv, "south": uv})
-    add(m, right_forearm, "right_hand", [4, 9.7, -1.2], [6, 12.2, 1.2], "leather")
-    add(m, right_forearm, "right_knuckles", [4, 9.5, -1.5], [6, 10.5, -1.15], "leather")
+    add_rotated(m, right_forearm, "right_palm", [4.18, 10.18, -.98],
+                [5.83, 11.94, 1.06], "leather", [0, 0, -4],
+                [5, 11.06, 0], "scuffed_leather", gauntlet_faces)
+    for finger, x in enumerate((4.35, 4.91, 5.47)):
+        add_rotated(m, right_forearm, f"right_grip_finger_{finger}",
+                    [x, 9.54 + finger * .09, -1.03],
+                    [x + .43, 10.6 + finger * .04, -.42], "leather",
+                    [5, 0, (-8, 2, 10)[finger]], [x + .21, 10.32, -.65],
+                    "scuffed_leather", gauntlet_faces)
+        add(m, right_forearm, f"right_knuckle_plate_{finger}",
+            [x - .03, 10.3 + finger * .04, -1.24],
+            [x + .45, 10.8 + finger * .04, -1.0], "armor", "battered_scale")
     add(m, right_forearm, "right_bracer_chip", [3.65, 12.2, -1.38], [5.45, 13.1, -.98], "armor")
 
     # At rest the heavy blade hangs beside the right leg.
