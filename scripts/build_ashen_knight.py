@@ -299,6 +299,20 @@ def build(out=ROOT / "model-lab" / "models"):
     plume_uv = m.patch(96, 48, paint_plume, "worn_plume")
     m.cube("worn_plume_sides", [-.68, 24.7, 1.2], [.68, 30.5, 9.5],
            "void", plume, face_uv={"east": plume_uv, "west": plume_uv})
+    for strand, x in enumerate((-1.55, -1.2, -.82, -.42, 0, .4, .8, 1.18, 1.5)):
+        stagger = ((strand * 7) % 5) * .18
+        for segment, (z0, z1, height) in enumerate(((1.9, 4.7, 28.7),
+                                                     (4.3, 7.9, 27.6),
+                                                     (7.5, 10.8, 26.2))):
+            if segment == 2 and strand in (0, 2, 7):
+                continue
+            width = .36 if segment < 2 else .23
+            drift = (strand - 4) * .11 * segment
+            add_rotated(m, plume, f"mane_{strand}_{segment}",
+                        [x + drift - width, height - stagger - .38, z0],
+                        [x + drift + width, height - stagger + .35, z1 + ((strand + segment) % 3) * .3],
+                        "void", [-7 + strand % 3 * 3, 0, (strand - 4) * 2],
+                        [x + drift, height - stagger, z0])
 
     for side, x in (("left", -2.1), ("right", 2.1)):
         thigh = left_thigh if side == "left" else right_thigh
@@ -389,7 +403,8 @@ def build(out=ROOT / "model-lab" / "models"):
             return (0, 0, 0, 0)
         if v > .66 and (px + 2 * py) % 37 < 2:
             return (0, 0, 0, 0)
-        if v > .84 and py > 245 - authoring.noise(px // 4, 0, 2741) % 19:
+        ragged_hem = 247 - (px // 17 % 5) * 8 - authoring.noise(px // 4, 0, 2741) % 11
+        if v > .7 and py > ragged_hem:
             return (0, 0, 0, 0)
         fold = math.sin(u * 20 + v * 2.7) + .34 * math.sin(u * 39 - v * 5)
         if fold > .72:
@@ -411,7 +426,7 @@ def build(out=ROOT / "model-lab" / "models"):
     # occupy volume instead of stacking long coplanar cloth rectangles.
     for row in range(6):
         top = 21.55 - row * 3.35
-        bottom = top - 3.55
+        bottom = top - (2.65 if row == 5 else 3.55)
         for col in range(4):
             left = -5.65 - row * .03 + col * 2.35 + (1.45 if col >= 2 else 0)
             right = left + 3.0
@@ -420,6 +435,7 @@ def build(out=ROOT / "model-lab" / "models"):
                 (cape_left_mid if col < 2 else cape_center_mid) if row < 3 else
                 (cape_left_tail if col < 2 else cape_center_tail))
             yaw = (-29, -9, 9, 29)[col] + (row - 2) * (2 if col in (1, 2) else -1)
+            pitch = (-8, -1, 8, 14, 7, -5)[row] + (-3, 2, -2, 3)[col]
             motif = f"ragged_cape_{row}_{col}" if row == 5 else f"cape_facet_{row}_{col}"
             tx0 = cloak_uv[0] + round((5.4 - right) / 12.0 * 128)
             tx1 = cloak_uv[0] + round((5.4 - left) / 12.0 * 128)
@@ -429,7 +445,7 @@ def build(out=ROOT / "model-lab" / "models"):
                        "south": [tx0, ty0, tx1, ty1]}
             add_rotated(m, bucket, f"cape_facet_{row}_{col}",
                         [left, bottom, depth], [right, top, depth + .34],
-                        "cloth", [0, yaw, 0], [(left + right) / 2, top, depth + .17], motif, face_uv)
+                        "cloth", [pitch, yaw, 0], [(left + right) / 2, top, depth + .17], motif, face_uv)
     add(m, cape_left_edge, "left_shoulder_cloth", [-5.75, 19.5, 1.0], [-4.65, 21.5, 2.95], "cloth")
     add_rotated(m, cape_right, "right_mantle_remnant", [3.0, 17.8, 2.55], [4.75, 21.65, 3.15],
                 "cloth", [0, 17, 0], [3.85, 21.65, 2.85], "ragged_mantle")
