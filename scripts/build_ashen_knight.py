@@ -245,9 +245,6 @@ def build(out=ROOT / "model-lab" / "models"):
     add(m, chest, "high_collar", [-2.8, 21.4, -1.65], [2.8, 23.2, 2.2], "void")
     add(m, chest, "mail_under_left", [-4.25, 15.8, -1.8], [-3.55, 20.8, 1.5], "mail")
     add(m, chest, "mail_under_right", [3.5, 15.4, -1.7], [4.25, 20.5, 1.4], "mail")
-    add_rotated(m, chest, "left_pauldron_upper_scale", [-5.7, 22.05, -1.96],
-                [-3.35, 23.35, 1.58], "armor", [0, 0, -11],
-                [-4.4, 22.35, 0], "battered_scale")
     add_rotated(m, chest, "left_pauldron_middle_scale", [-6.12, 20.9, -2.12],
                 [-3.35, 22.25, 1.42], "armor", [0, 0, 8],
                 [-4.55, 21.55, 0], "battered_scale")
@@ -333,10 +330,9 @@ def build(out=ROOT / "model-lab" / "models"):
     # Uneven, broad fabric folds wrap the neck. Repeated narrow ridges looked
     # like a mechanical grille at the scale used in the boss fight.
     cowl_bands = (
-        (-3.15, 2.95, 23.60, -3.18, 1.20),
-        (-3.75, 3.50, 22.45, -3.55, 1.35),
-        (-4.22, 4.04, 21.10, -3.88, 1.44),
-        (-3.75, 1.2, 19.82, -4.02, 1.18),
+        (-3.15, 2.95, 23.42, -3.18, 1.65),
+        (-4.05, 3.65, 21.88, -3.64, 1.72),
+        (-3.75, 1.2, 20.12, -4.02, 1.45),
     )
     for layer, (x0, x1, top_y, z, thickness) in enumerate(cowl_bands):
         def paint_cowl(px, py, seed=layer):
@@ -345,17 +341,26 @@ def build(out=ROOT / "model-lab" / "models"):
             hem = 30 - round(4 * side) - authoring.noise(px // 6, seed, 3341) % 3
             if py < top or py > hem:
                 return (0, 0, 0, 0)
-            if seed == 3 and py > 20 and (px + py * 2) % 23 < 2:
-                return (0, 0, 0, 0)
-            fold = math.sin(px * .043 + seed * 1.1)
-            color = ((15, 29, 47) if fold < -.48 else
-                     (43, 67, 91) if fold > .62 else (26, 47, 70))
-            if py - top < 3 or hem - py < 4:
-                color = (12, 27, 44)
-            elif py > top + (hem - top) * .36 and py < hem - 5 and fold > .2:
-                color = (38, 62, 86)
-            if authoring.noise(px // 3, py // 3, 3367 + seed) % 137 == 0:
-                color = (69, 78, 85)
+            # Paint the depth of a folded strip, not four more plate-shaped
+            # rectangles. A wandering highlight follows the fabric while the
+            # upper tucked seam and underside remain nearly black.
+            v = (py - top) / max(1, hem - top)
+            sweep = math.sin(px * .052 + seed * 1.7)
+            ridge = .36 + .14 * sweep + .055 * math.sin(px * .12 - seed)
+            trough = .69 + .075 * math.sin(px * .063 + seed * 2.3)
+            grain = authoring.noise(px // 3, py // 2, 3367 + seed) % 13
+            if v < .13 or v > .89 or abs(v - trough) < .055:
+                color = (12, 25, 43)
+            elif abs(v - ridge) < .095:
+                color = (43, 68, 94) if grain > 2 else (34, 56, 80)
+            elif v < ridge:
+                color = (25, 45, 70)
+            else:
+                color = (20, 39, 64)
+            if grain == 0 and .18 < v < .84:
+                color = tuple(min(255, c + 7) for c in color)
+            if authoring.noise(px, py, 3391 + seed) % 181 == 0:
+                color = (71, 81, 90)
             return (*color, 255)
 
         band_uv = m.patch(96, 32, paint_cowl, f"cowl_band_{layer}")
@@ -364,8 +369,9 @@ def build(out=ROOT / "model-lab" / "models"):
             xlo = x0 + (x1 - x0) * facet / 5
             xhi = x0 + (x1 - x0) * (facet + 1) / 5
             side = abs(u - .5) * 2
-            center_y = (top_y - thickness / 2 + 2.15 * side ** 1.45
-                        + .16 * math.sin(u * math.tau * 1.4 + layer))
+            center_y = (top_y - thickness / 2 + 1.85 * side ** 1.45
+                        + .24 * math.sin(u * math.tau * 1.4 + layer)
+                        + (.35, -.28, .42)[layer] * (u - .5))
             center_z = z + .67 * side + .18 * math.cos(u * math.tau)
             uvlo = band_uv[0] + round(facet * 96 / 5)
             uvhi = band_uv[0] + round((facet + 1) * 96 / 5)
@@ -375,7 +381,7 @@ def build(out=ROOT / "model-lab" / "models"):
                         [xlo - .09, center_y - thickness / 2, center_z],
                         [xhi + .09, center_y + thickness / 2, center_z + .32],
                         "cloth", [7 - layer, (facet - 2) * 9,
-                                  (facet - 2) * 12 + (-5, 1, -4, 13)[layer]],
+                                  (facet - 2) * 12 + (-5, 4, 13)[layer]],
                         [(xlo + xhi) / 2, center_y, center_z + .16],
                         "worn_cowl", face_uv)
     add(m, scarf, "scarf_left_drape", [-5.1, 19.5, -1.8], [-3.45, 22.2, 2.25], "cloth")
@@ -504,7 +510,9 @@ def build(out=ROOT / "model-lab" / "models"):
                                   "east": visor_profile_uv, "west": visor_profile_uv})
     # Separate tapered strands keep the mane from becoming one dark wing in
     # profile. The root carries their shared mass above the hood.
-    add(m, plume, "crest_root", [-1.3, 27.15, .55], [1.25, 28.15, 3.2], "hair")
+    add_rotated(m, plume, "crest_root_torn", [-1.05, 27.15, .55],
+                [1.05, 27.72, 2.8], "hair", [0, -13, 8],
+                [0, 27.4, 1.4], "black_fiber")
 
     for strand, (x, y0, y1, z0, z1, bend) in enumerate((
             (-1.55, 25.0, 29.0, 1.1, 6.5, -4),
@@ -539,9 +547,9 @@ def build(out=ROOT / "model-lab" / "models"):
         add(m, shin, f"{side}_shin_underlayer", [x - 1.24, 1.7, -1.36],
             [x + 1.24, 7.1, 1.28], "void")
         add(m, shin, f"{side}_upper_greave_side", [x - 1.44, 4.75, -1.47],
-            [x + 1.44, 6.95, 1.34], "armor")
+            [x + 1.44, 6.95, 1.34], "armor" if side == "left" else "mail")
         add(m, shin, f"{side}_lower_greave_side", [x - 1.18, 2.1, -1.4],
-            [x + 1.18, 4.95, 1.26], "armor")
+            [x + 1.18, 4.95, 1.26], "armor" if side == "left" else "leather")
         add(m, shin, f"{side}_worn_boot", [x - 1.38, -.15, -2.6], [x + 1.38, 2.2, 1.58], "leather")
         add(m, shin, f"{side}_toe_cap", [x - 1.15, .1, -3.25], [x + 1.1, 1.0, -2.12], "armor")
         if side == "left":
@@ -557,6 +565,12 @@ def build(out=ROOT / "model-lab" / "models"):
         right = 29 - taper
         if seed == 1 and 9 < py < 24:
             right -= round((24 - py) * .36)
+        if seed == 1:
+            # The sword-side leg has a torn partial plate, exposing mail and
+            # leather instead of repeating the other leg's full greave.
+            left += 7 + round(4 * math.sin(py * .085))
+            if py > 39:
+                right -= round((py - 39) * .36)
         if seed == 0 and 33 < py < 52:
             left += round((py - 33) * .3)
         hem = 61 - authoring.noise(px // 4, seed, 1083) % 6
@@ -852,6 +866,16 @@ def build(out=ROOT / "model-lab" / "models"):
         elif element["uuid"] in plume_ids:
             for key in ("from", "to", "origin"):
                 element[key][1] -= .7
+
+    # The sword-side gauntlet should still carry weight, but its old uniform
+    # width made the whole arm read as a mechanical piston from three-quarter
+    # view. Keep the grip aligned while tapering the armor around it.
+    right_arm_ids = set(right_arm)
+    for element in m.elements:
+        if element["uuid"] in right_arm_ids:
+            for key in ("from", "to", "origin"):
+                x, y, z = element[key]
+                element[key] = [4.8 + (x - 4.8) * .82, y, z * .86]
 
     plume_bone = m.bone("plume", [0, 26.5, 1], plume)
     head_bone = m.bone("head", [0, 22, 0], helm + [plume_bone])
