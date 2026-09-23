@@ -423,15 +423,16 @@ class CoreLoopMenusTest {
     }
 
     @Test fun `every cell of the journal's main actions opens the intended destination`() {
-        for ((page, start, destination) in listOf(Triple(0, 9, "地図台"), Triple(6, 9, "工房"), Triple(6, 15, "素材倉庫"))) {
-            for (offset in 0..2) {
+        for ((page, destination) in listOf(0 to "地図台", 3 to "装備庫", 6 to "工房")) {
+            for (offset in (0..2).flatMap { row -> (0..4).map { column -> row * 9 + column } }) {
                 val f = fixture(account())
                 f.menus.journal(f.player)
                 if (page != 0) f.click(page)
                 val original = f.snapshot()
-                assertTrue(original.buttons.any { it.firstSlot == start && it.icon && it.span == 3 })
-                f.click(start + offset, right = offset == 1)
-                assertTrue(f.snapshot().title.contains(destination), "Action at $start did not own offset=$offset")
+                assertEquals(page / 3, original.journalPage)
+                assertTrue(original.cards.any { it.firstSlot == 9 && it.columns == 5 && it.rows == 3 && it.icon })
+                f.click(9 + offset, right = offset == 1)
+                assertTrue(f.snapshot().title.contains(destination), "Journal hero did not own page=$page offset=$offset")
                 assertTrue(f.host.requests.isEmpty())
             }
         }
@@ -456,12 +457,12 @@ class CoreLoopMenusTest {
         val f = fixture(account(tier = 3))
         f.menus.workshop(f.player)
         val costs = assertNotNull(f.snapshot().rightPanel)
-        assertEquals("必要素材", costs.title)
-        assertEquals(3, costs.lines.count { it.art != null })
-        assertEquals(listOf("T1 金属材 ×2", "T1 板材 ×1", "T1 切石 ×2"), costs.lines.filter { it.art != null }.map { it.text })
-        assertEquals(List(3) { "足りる 所持500000" }, costs.lines.filter { it.art == null }.map { it.text })
-        assertTrue(costs.lines.filter { it.art != null }.all { it.maxWidth == 70 })
-        assertTrue(costs.lines.filter { it.text.startsWith("所持 ") }.all { it.maxWidth == 88 })
+        assertEquals("素材 所持/必要", costs.title)
+        assertEquals(3, costs.lines.size)
+        assertTrue(costs.lines.all { it.art != null && it.maxWidth == 70 && '/' in it.text && !it.text.endsWith("不足") })
+        listOf("金属材", "板材", "切石").forEachIndexed { index, name ->
+            assertTrue(costs.lines[index].text.contains(name))
+        }
     }
 
     @Test fun `storage uses visible vanilla stacks full names and exact counts without side panels`() {
@@ -533,8 +534,8 @@ class CoreLoopMenusTest {
         val f = fixture(a)
         f.menus.workshop(f.player)
         val panel = assertNotNull(f.snapshot().rightPanel)
-        assertEquals(2, panel.lines.count { it.text.startsWith("足りる ") })
-        assertEquals(1, panel.lines.count { it.text == "あと1個 所持1" })
+        assertEquals(2, panel.lines.count { !it.text.endsWith("不足") })
+        assertEquals(1, panel.lines.count { it.text.contains("1/2") && it.text.endsWith("不足") })
         assertEquals("強化不可", f.snapshot().buttons.single { it.firstSlot == 51 }.label)
         f.click(51)
         assertTrue(f.host.requests.isEmpty())
@@ -542,7 +543,7 @@ class CoreLoopMenusTest {
         f.menus.refreshTheme(f.player)
         assertEquals("強化する", f.snapshot().buttons.single { it.firstSlot == 51 }.label)
         assertEquals("PRIMARY", f.snapshot().buttons.single { it.firstSlot == 51 }.tone)
-        assertEquals(3, assertNotNull(f.snapshot().rightPanel).lines.count { it.text.startsWith("足りる ") })
+        assertEquals(3, assertNotNull(f.snapshot().rightPanel).lines.count { !it.text.endsWith("不足") })
     }
 
     @Test fun `the complete anvil subject opens equipment detail without spending or showing repeated item models`() {
@@ -592,12 +593,10 @@ class CoreLoopMenusTest {
             val stat = if (gear == CoreGearSlot.WEAPON) "${CoreWeaponPresentation.damage(f.host.current)} → ${CoreWeaponPresentation.damage(upgraded)}"
                 else "${CoreWeaponPresentation.health(f.host.current)} → ${CoreWeaponPresentation.health(upgraded)}"
             assertTrue(panel.lines.any { it.text == stat && it.style == "EMPHASIS" })
-            assertTrue(panel.lines.any { it.text == "素材は毎回消費" })
             assertTrue(panel.lines.any { it.text == "今回の破損なし" })
-            assertTrue(panel.lines.any { it.text == "強化値・MODは維持" })
             val costs = assertNotNull(f.snapshot().rightPanel)
             assertEquals(quote.recipe.costs.size, costs.lines.count { it.art != null })
-            assertEquals(quote.recipe.costs.values.map { "×$it" }, costs.lines.filter { it.art != null }.map { it.text.substringAfterLast(' ') })
+            assertEquals(quote.recipe.costs.values.toList(), costs.lines.map { it.text.substringAfterLast('/').substringBefore(' ').toLong() })
             assertTrue(f.host.requests.isEmpty())
             f.click(CoreForgeLayout.EXECUTE + offset)
             assertEquals(CoreAction.EnhanceEquipment(gear, mode), f.host.requests.single().action)
@@ -617,7 +616,11 @@ class CoreLoopMenusTest {
                 assertTrue(assertNotNull(snapshot.leftPanel).lines.any { it.text == "最大強化 +30" })
                 assertTrue(assertNotNull(snapshot.rightPanel).lines.any { it.text == "消費なし" })
             } else {
-                assertEquals(listOf("あと2個 所持0", "あと1個 所持0", "あと2個 所持0"), assertNotNull(snapshot.rightPanel).lines.filter { it.art == null }.map { it.text })
+                val costs = assertNotNull(snapshot.rightPanel).lines
+                assertTrue(costs.all { it.text.endsWith("不足") })
+                listOf("0/2", "0/1", "0/2").forEachIndexed { index, count ->
+                    assertTrue(costs[index].text.contains(count))
+                }
             }
             for (slot in 51..53) f.click(slot)
             assertTrue(f.host.requests.isEmpty())
@@ -762,12 +765,12 @@ class CoreLoopMenusTest {
 
     @Test fun `journal entry points expose the item and reach each content family`() {
         val destinations = listOf(
-            Triple(0, 9, "地図台"), Triple(0, 12, "星環の深殿"), Triple(0, 15, "境界の試練"),
-            Triple(0, 18, "採取地図"), Triple(0, 21, "道具箱"), Triple(0, 24, "遊び方"),
-            Triple(3, 9, "成長と職業"), Triple(3, 12, "技の組み合わせ"), Triple(3, 15, "スキルツリー"),
-            Triple(3, 18, "装備庫"), Triple(3, 21, "MOD詳細"), Triple(3, 24, "戦闘能力"), Triple(3, 27, "装備レベル鍛錬"),
-            Triple(6, 9, "工房"), Triple(6, 12, "職業"), Triple(6, 15, "素材倉庫"),
-            Triple(6, 18, "市場"), Triple(6, 21, "購入注文"), Triple(6, 24, "採取 / 育成"),
+            Triple(0, 20, "地図台"), Triple(0, 14, "星環の深殿"), Triple(0, 23, "境界の試練"),
+            Triple(0, 32, "採取地図"), Triple(0, 36, "地図台"), Triple(0, 39, "道具箱"), Triple(0, 42, "遊び方"),
+            Triple(3, 20, "装備庫"), Triple(3, 14, "成長と職業"), Triple(3, 23, "技の組み合わせ"),
+            Triple(3, 32, "スキルツリー"), Triple(3, 36, "MOD詳細"), Triple(3, 39, "戦闘能力"), Triple(3, 42, "装備レベル鍛錬"),
+            Triple(6, 20, "工房"), Triple(6, 14, "職業"), Triple(6, 23, "素材倉庫"),
+            Triple(6, 32, "市場"), Triple(6, 36, "購入注文"), Triple(6, 39, "採取 / 育成"),
         )
         for (packed in listOf(false, true)) {
             val f = fixture(account(tier = 2), packed)
@@ -812,6 +815,8 @@ class CoreLoopMenusTest {
         capture("dungeon-boons") { f.menus.dungeonRun(f.player) }
         f.host.dungeonState = null
         capture("journal") { f.menus.journal(f.player) }
+        capture("journal-character") { f.menus.journal(f.player); f.click(3) }
+        capture("journal-living") { f.menus.journal(f.player); f.click(6) }
         capture("career") { f.menus.career(f.player) }
         capture("class-skills") { f.menus.skillBuild(f.player) }
         capture("class-ultimates") { f.menus.skillBuild(f.player,4) }

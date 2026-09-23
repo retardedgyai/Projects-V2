@@ -229,8 +229,11 @@ class CoreMenuCanvasTest {
         assertFailsWith<IllegalArgumentException> {
             canvas.left("装備", List(11) { CoreMenuCanvas.Line("攻撃 42") }, CoreMenuArt.WEAPON)
         }
+        canvas.right("素材", listOf(CoreMenuCanvas.Line("木材", art = CoreMenuArt.WOOD), CoreMenuCanvas.Line("原石", art = CoreMenuArt.ORE)))
+        assertEquals(58, canvas.snapshot().rightPanel!!.lines[1].y)
+        assertEquals(56, canvas.snapshot().rightPanel!!.lines[1].art!!.y)
         assertFailsWith<IllegalArgumentException> {
-            canvas.right("素材", listOf(CoreMenuCanvas.Line("木材", art = CoreMenuArt.WOOD), CoreMenuCanvas.Line("原石", art = CoreMenuArt.ORE)))
+            canvas.right("素材", List(13) { CoreMenuCanvas.Line("木材", art = CoreMenuArt.WOOD) })
         }
         canvas.left("装備", List(13) { CoreMenuCanvas.Line("攻撃 42") })
         assertEquals(null, canvas.snapshot().leftPanel!!.hero)

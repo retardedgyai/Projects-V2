@@ -11,15 +11,13 @@ import math
 import shutil
 import urllib.request
 
-from PIL import Image, ImageChops, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFont
 from build_core_menu_art import build_art
 
 ROOT = Path(__file__).resolve().parents[1]
 PACK = ROOT / "server-minestom/src/main/resources/core-ui-pack"
 ASSETS = PACK / "assets/projects"
 SOURCE = ROOT / "assets/core-ui"
-DOT_FONT_URL = "https://raw.githubusercontent.com/hicchicc/x12y12pxMaruMinya/ad836b68da9ccb3c51063ca164335db556413969/fonts/ttf/x12y12pxMaruMinya.ttf"
-DOT_FONT_SHA256 = "b05f108a3433602545f1dcb8acef167aaf744965d8d9571045d5f2cdbe12f9e5"
 BODY_FONT_URL = "https://raw.githubusercontent.com/google/fonts/295d98a7a0c17c68f1341eaeea354e7960ea70d3/ofl/notosansjp/NotoSansJP%5Bwght%5D.ttf"
 BODY_FONT_SHA256 = "c2f3b4d463500a2ddcd3849cded1fceeb9fd6d1c32e6cbecd568453ba50fc68f"
 CELL = 14
@@ -50,8 +48,8 @@ def source_font(style="EMPHASIS"):
         target = ROOT / ".tools/core-menu/NotoSansJP[wght].ttf"
         source_url, checksum = BODY_FONT_URL, BODY_FONT_SHA256
     elif style == "EMPHASIS":
-        target = ROOT / ".tools/core-menu/x12y12pxMaruMinya.ttf"
-        source_url, checksum = DOT_FONT_URL, DOT_FONT_SHA256
+        target = ROOT / ".tools/core-menu/NotoSansJP[wght].ttf"
+        source_url, checksum = BODY_FONT_URL, BODY_FONT_SHA256
     else:
         raise ValueError(f"Unknown menu text style: {style}")
     if not target.is_file():
@@ -62,8 +60,7 @@ def source_font(style="EMPHASIS"):
         target.write_bytes(data)
     assert hashlib.sha256(target.read_bytes()).hexdigest() == checksum
     font = ImageFont.truetype(str(target), 24)
-    if style == "BODY":
-        font.set_variation_by_axes([600])
+    font.set_variation_by_axes([600 if style == "BODY" else 700])
     return font
 
 
@@ -112,15 +109,8 @@ def build_font(style="BODY"):
             _, top, _, bottom = font.getbbox(char, anchor="ls")
             assert 0 <= BASELINE * TEXT_SCALE + top and BASELINE * TEXT_SCALE + bottom <= SOURCE_CELL, f"Clipped menu glyph U+{ord(char):04X}"
             ImageDraw.Draw(cell).text((0, BASELINE * TEXT_SCALE), char, font=font, anchor="ls", fill="white")
-            if emphasis:
-                # Pixel headings remain hard edged. Body text keeps the source alpha
-                # so Japanese counters and punctuation survive at small GUI scales.
-                cell.putalpha(cell.getchannel("A").point(lambda value: 255 if value >= 100 else 0))
-                alpha = cell.getchannel("A")
-                shifted = Image.new("L", alpha.size)
-                shifted.paste(alpha, (1, 0))
-                cell = Image.new("RGBA", cell.size, "white")
-                cell.putalpha(ImageChops.lighter(alpha, shifted))
+            # Both sizes retain source alpha. Geometry and illustrations carry the
+            # pixel language; Japanese labels need clear counters at GUI scale.
             box = cell.getchannel("A").getbbox()
             assert box is not None, f"Unexpected empty glyph U+{ord(char):04X}"
             advance = math.floor(0.5 + box[2] / TEXT_SCALE) + 1
@@ -156,12 +146,12 @@ def build_font(style="BODY"):
     shutil.copyfile(SOURCE / "fonts/DotGothic16-OFL.txt", ASSETS / "menu/DotGothic16-OFL.txt")
     shutil.copyfile(SOURCE / "fonts/MaruMinya-OFL.txt", ASSETS / "menu/MaruMinya-OFL.txt")
     write_json(ASSETS / "menu/font-source.json", {
-        "name": "ProjectS Hybrid Menu", "derived_from": "Noto Sans JP and MaruMinya",
+        "name": "ProjectS Hybrid Menu", "derived_from": "Noto Sans JP",
         "size": 8, "source_size": 24, "source_scale": TEXT_SCALE,
         "body": {"name": "Noto Sans JP", "size": 8, "source_size": 24, "weight": 600, "alpha": "smooth",
                  "source_url": BODY_FONT_URL, "source_sha256": BODY_FONT_SHA256},
-        "emphasis": {"name": "MaruMinya", "size": 8, "source_size": 24, "weight": 400,
-                     "alpha": "binary", "source_url": DOT_FONT_URL, "source_sha256": DOT_FONT_SHA256},
+        "emphasis": {"name": "Noto Sans JP", "size": 8, "source_size": 24, "weight": 700,
+                     "alpha": "smooth", "source_url": BODY_FONT_URL, "source_sha256": BODY_FONT_SHA256},
         "license": "SIL Open Font License 1.1",
         "scope": "Private-use characters in projects:core_menu_y* only; minecraft:default is never modified",
     })
@@ -211,6 +201,89 @@ def build_frame():
          "ascent": 13, "chars": [chr(FRAME_BASE + index)]} for index in range(2)
     ]})
     return frame
+
+
+def build_journal_frames():
+    """Three leaves of the port log. Subjects are drawn at GUI pixel scale, under real items."""
+    providers = []
+    for page in range(3):
+        frame = Image.new("RGBA", (384, 222))
+        draw = ImageDraw.Draw(frame)
+        # The journal floats over the actual world; side notes end above the inventory.
+        draw.rectangle((104, 2, 279, 122), fill="#17262D", outline="#88785C")
+        draw.line((110, 4, 273, 4), fill="#B2A079")
+        draw.rectangle((4, 4, 100, 96), fill="#D6C8A9", outline="#88785C")
+        draw.rectangle((283, 4, 379, 96), fill="#D6C8A9", outline="#88785C")
+        draw.polygon([(91, 4), (100, 4), (100, 13)], fill="#A79876")
+        draw.polygon([(283, 87), (292, 96), (283, 96)], fill="#A79876")
+        for x in (11, 287):
+            draw.line((x, 30, x, 91), fill="#B8AA8E")
+        draw.rectangle((104, 17, 279, 125), fill="#16252D", outline="#738077")
+        draw.line((101, 10, 101, 121), fill="#A18B64")
+        draw.line((282, 10, 282, 121), fill="#A18B64")
+        # The main destination has one large image field and a separate title strip.
+        draw.rectangle((111, 35, 200, 88), fill="#21343A", outline="#A0906A", width=1)
+        draw.rectangle((112, 72, 199, 87), fill="#14252C")
+        draw.line((113, 72, 198, 72), fill="#A0906A")
+        # Real player inventory keeps the exact vanilla slot locations.
+        draw.rectangle((104, 126, 279, 215), fill="#111B20")
+        draw.polygon([(111, 126), (189, 126), (194, 131), (194, 137), (111, 137)], fill="#C9BEA8")
+        draw.line((112, 127, 187, 127), fill="#F0E4C8")
+        for y in (140, 158, 176, 198):
+            for column in range(9):
+                x = 112 + column * 18
+                draw.rectangle((x, y, x + 15, y + 15), fill="#293236", outline="#566064")
+                draw.line((x, y, x + 15, y), fill="#0C1519")
+
+        if page == 0:
+            # Harbor chart: coast, shoals and a single route, not a filler texture.
+            draw.rectangle((113, 37, 198, 71), fill="#23434C")
+            draw.polygon([(113, 37), (135, 37), (139, 44), (132, 49), (137, 56),
+                          (125, 62), (129, 71), (113, 71)], fill="#67715F")
+            draw.line([(136, 38), (141, 44), (134, 49), (139, 56), (127, 62), (131, 71)], fill="#A9A17C", width=2)
+            draw.polygon([(179, 69), (188, 66), (198, 70), (198, 71), (176, 71), (171, 68)], fill="#637267")
+            draw.line([(170, 68), (177, 64), (186, 62), (198, 69)], fill="#AAA17D", width=2)
+            for x, y in [(145, 65), (150, 62), (155, 59), (161, 56), (166, 53), (172, 50), (178, 48)]:
+                draw.rectangle((x, y, x + 1, y + 1), fill="#D3BC86")
+            for x, y in [(147, 44), (157, 40), (187, 44), (191, 59), (146, 62)]:
+                draw.line((x, y, x + 3, y), fill="#638E98")
+            draw.ellipse((151, 44, 177, 70), outline="#708F91")
+            draw.line((164, 41, 164, 71), fill="#7C9A99")
+            draw.line((147, 57, 181, 57), fill="#7C9A99")
+            ink = "#68A6B2"
+        elif page == 1:
+            # Equipment leaf: a weapon rack with space reserved for the live 16 px model.
+            draw.rectangle((113, 37, 198, 71), fill="#303332")
+            draw.rectangle((121, 43, 190, 47), fill="#655D4C")
+            draw.rectangle((121, 68, 190, 71), fill="#655D4C")
+            for x in (127, 184):
+                draw.rectangle((x, 43, x + 2, 71), fill="#A38E68")
+            draw.line((130, 66, 187, 66), fill="#929582")
+            draw.ellipse((150, 42, 177, 69), outline="#858E84")
+            ink = "#A8C3B7"
+        else:
+            # Workshop leaf: cold metal slab, measured grid and a restrained ember bed.
+            draw.rectangle((113, 37, 198, 71), fill="#2D383A")
+            for x in (125, 141, 157, 173, 189):
+                draw.line((x, 39, x, 71), fill="#344649")
+            for y in (47, 63):
+                draw.line((114, y, 197, y), fill="#344649")
+            draw.line((127, 70, 192, 70), fill="#A06F46")
+            for x in (132, 148, 169, 185):
+                draw.point((x, 70), fill="#D09357")
+            draw.ellipse((151, 42, 177, 69), outline="#768B89")
+            ink = "#D6A06B"
+        # Edge marks are restrained; color identifies the leaf, not every action.
+        draw.line((17, 25, 92, 25), fill="#8B795D")
+        draw.line((292, 25, 368, 25), fill="#8B795D")
+        draw.line((119, 111, 263, 111), fill=ink)
+        for half in range(2):
+            name = f"menu_journal_{page}_{half}"
+            frame.crop((half * 192, 0, (half + 1) * 192, 222)).save(
+                ASSETS / f"textures/gui/core/{name}.png", optimize=True)
+            providers.append({"type": "bitmap", "file": f"projects:gui/core/{name}.png",
+                              "height": 222, "ascent": 13, "chars": [chr(FRAME_BASE + 2 + page * 2 + half)]})
+    write_json(ASSETS / "font/core_menu_journal.json", {"providers": providers})
 
 
 def build_buttons():
@@ -373,6 +446,7 @@ def build_menu():
     text_atlas, metrics = build_font()
     build_font("EMPHASIS")
     frame = build_frame()
+    build_journal_frames()
     buttons = build_buttons()
     build_cards()
     build_focus()
@@ -381,7 +455,7 @@ def build_menu():
     write_json(SOURCE / "readable-menu-layout.json", {
         "size": [384, 222], "origin": [-104, 0], "frame_tile_width": 192,
         "text_cell": CELL, "source_cell": SOURCE_CELL, "text_scale": TEXT_SCALE,
-        "text_ys": TEXT_YS, "font_size": 8, "font_weight": 400,
+        "text_ys": TEXT_YS, "font_size": 8, "font_weight": {"BODY": 600, "EMPHASIS": 700},
         "text_styles": {"BODY": {"atlas": "menu_text.png", "metrics": "glyphs.tsv"},
                         "EMPHASIS": {"atlas": "menu_text_emphasis.png", "metrics": "glyphs-emphasis.tsv"}},
         "panel": {"left_x": -98, "right_x": 184, "width": 88, "header_y": 8, "line_y": 30, "line_height": 14, "lines": 13},

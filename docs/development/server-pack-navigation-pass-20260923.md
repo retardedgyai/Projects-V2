@@ -6,7 +6,9 @@ Vanilla 26.2 の6行チェストとサーバー配信リソースパックだけ
 
 - Wynncraft 2.1の[公式変更履歴](https://forums.wynncraft.com/threads/2-1-rekindled-world-changelog.316880/)は、Inventory、Blacksmith、Bank、Content Book、Ability Treeを同じ更新で改修対象に挙げる。一つのメニューだけの色替えではゲーム全体の言語が揃わない。
 - Hypixel SkyBlockの[公式紹介](https://hypixel.net/threads/new-prototype-game-hypixel-skyblock.3503358/)では、常設メニューからProfile、Quest Log、Recipe Book、Trades、Collections、Skills等に入る。入口の予測しやすさを参考にする。
-- Riotの[Clarity in League](https://www.leagueoflegends.com/en-au/news/dev/clarity-in-league/)が示す情報の優先順位、判別可能なシルエット、ノイズ抑制を18pxのクリック領域に当てはめる。
+- Riotの[Clarity in League](https://www.leagueoflegends.com/en-au/news/dev/clarity-in-league/)が示す情報の優先順位、判別可能なシルエット、ノイズ抑制を18pxのクリック領域に当てはめる。[アイテムショップ改修の説明](https://www.leagueoflegends.com/en-au/news/dev/preseason-item-shop-update/)では小さい表示でシルエットと色が区別できることを最優先にしている。[発売後の振り返り](https://www.leagueoflegends.com/en-us/news/dev/quick-gameplay-thoughts-nov-20/)では背景の細部を減らして前景とのコントラストを上げる修正を挙げている。
+- [Wynncraft 2.1](https://forums.wynncraft.com/threads/2-1-rekindled-world-changelog.316880/)は用途別に多くの画面を描き直した。[Ability Tree](https://wynncraft.wiki.gg/wiki/Ability_Tree)の接続やノード色は技能の関係を直接表す。[Character Menu](https://wynncraft.wiki.gg/wiki/Character_Menu)は人物と場面を主役に置く。箱の形を共有することを一貫性とは呼ばない。
+- [Ravengard公式プレイテスト](https://hypixel.net/threads/ravengard-0-1-public-playtest-weekend.6104973/)のメニューは置かれた物を入口に使い、地図は危険域・仲間・脱出先を一枚で示す。装備のレア度も現物を読ませる補助として使う。[公式の既知問題](https://hypixel.net/threads/ravengard-known-issues.6132746/)はVanillaクライアントと配信パックを前提にしている。
 - Blizzardの[Diablo IV UI開発記録](https://news.blizzard.com/en-gb/article/23308274/diablo-iv-quarterly-updatefebruary-2020)では、小さなアイテム絵の読み取りやすさを重視している。ProjectSでも所持装備の実モデルを隠さない。
 - 添付の `Telos_ResourcePacks_5.zip` 内 `production_telos137.zip` と `isles.zip` のGUI画像を観察した。用途別の画面の形、枠とアイコンの分離、ツールチップの段階差を参考にした。画像やフォントはコピーしていない。`isles.zip` に同梱された `mythichud` はクライアント側資料なのでUIの根拠に使わない。
 
@@ -25,8 +27,8 @@ Vanilla 26.2 の6行チェストとサーバー配信リソースパックだけ
 ## 表現規則
 
 - プレイヤー装備と主要入口は実アイテムモデルを見せる。強化対象を汎用の剣・鎧の大きな代用絵に置き換えない。重要な数値とクリック範囲は維持する。
-- 枠・見出し・操作ラベルは硬いピクセル表現、説明本文はNoto Sans JP 600の8 GUI pxラスタにする。日本語の画数が密な箇所を読みやすくし、世界のピクセル感は操作部分で保つ。標準Minecraftフォントは上書きしない。
-- 面は炭色、選択は鈍い金、主操作は温かい銅色。レア度の色は装備アイコンとツールチップに限定し、一般操作の色と競合させない。
+- ピクセルは地形、道具、枠の輪郭と間隔で出す。日本語はNoto Sans JP 600の本文と700の見出しを8 GUI pxで独立ラスタ化する。読めない和文ドット書体を強制しない。標準Minecraftフォントは上書きしない。
+- 手帳は港の記録として、冒険は海図、人物は装備台、生活は作業台の静かな画面にする。レア度の色は装備アイコンとツールチップに限定し、一般操作の色と競合させない。
 - ラベルだけで選択・不足・確定の区別がつくようにする。色だけを情報源にしない。
 
 ## 2026-09-23 売り物品質レビュー：FIX-FIRST
@@ -43,7 +45,7 @@ Vanilla 26.2 の6行チェストとサーバー配信リソースパックだけ
 
 `docs/00-product-vision.md` の主ループは、港で討伐を選び、準備、探索、帰還、装備更新の一周。手帳の最上位はこの一周を見せるべきで、全機能の均等な入口は二段目に置く。`assets/harbor-architecture/overview-r38.png` の港には木造の桟橋、白い帆、水色の海、赤茶の屋根という具体的な場所の特徴がある。現行の炭色・銅色だけでは、この港から出る画面としての手触りが弱い。色を増やす前に、画面を手帳・地図台・工房それぞれの道具として構成し直す。
 
-次の代表画面は手帳と工房。手帳では現在地と次の一手を主役にし、各入口は実アイテムと短い名だけにする。工房では装備・変化量・費用・実行の順に視線が流れる構成を作る。二つが通るまで、残りの画面へ同じ型を複製しない。
+今回の代表画面は手帳の3面。中心を現在の地図、実装備、工房の道具へ切り替えた。周辺入口は短い名前と実アイテムを使う。実アイテムと港の道具が主役になるまで、同じ型を他画面へ複製しない。工房の装備・変化量・費用・実行の視線も継続して審査する。
 
 代表画面の通過条件：開いた瞬間に画面の用途と第一行動が分かること。選択可能・選択済み・不足・実行が色だけに依存せず判別できること。16pxのアイテムが種類として読めること。常設説明文が所持品・変化量・費用より目立たないこと。GUI倍率2〜4で装備、文字、hover、Tooltip、Vanillaのインベントリ名が衝突しないこと。これらを満たしてもCreatorの実機feel判定が不合格ならFIX-FIRSTのままにする。
 

@@ -187,6 +187,7 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
         if (run?.dungeon != null && game.dungeonView(player) != null) { dungeonRun(player); return }
         view(player, if (run == null) "開拓港 / ${when (page) { JournalPage.ADVENTURE -> "冒険"; JournalPage.CHARACTER -> "人物"; JournalPage.LIVING -> "生活" }}" else "遠征 / 手帳", { journal(player, page) }) { v ->
             if (run == null) {
+                v.canvas.journal(page.ordinal)
                 for ((index, tab) in JournalPage.entries.withIndex()) {
                     val label = when (tab) { JournalPage.ADVENTURE -> "冒険"; JournalPage.CHARACTER -> "人物"; JournalPage.LIVING -> "生活" }
                     val material = when (tab) { JournalPage.ADVENTURE -> Material.FILLED_MAP; JournalPage.CHARACTER -> Material.IRON_SWORD; JournalPage.LIVING -> Material.ANVIL }
@@ -194,42 +195,43 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
                 }
                 when (page) {
                     JournalPage.ADVENTURE -> {
-                        v.canvas.left("冒険の現在地", lines("${a.journey.job.displayName} Lv${a.journey.level}", "解放 T1〜${a.unlockedMapTier}", "地図 ${a.maps.size}枚", "", "遠征・深殿・試練", "採取だけでも進める"))
-                        v.canvas.right("次の一歩", paragraph(CoreJourneyRules.next(a)) + lines("", "地図を選ぶ", "準備して出発", "港で装備を整える"))
-                        tile(v, 9, 3, "遠征", CoreLoopItems.icon(Material.FILLED_MAP, "地図台 / 遠征", "地図を選ぶ → 準備 → 出発"), Tone.PRIMARY, icon = true) { expeditions(player) }
-                        tile(v, 12, 3, "深殿", CoreLoopItems.icon(Material.END_PORTAL_FRAME, "星環の深殿", "一人または仲間と迷宮へ"), icon = true) { dungeons(player) }
-                        tile(v, 15, 3, "試練", CoreLoopItems.icon(Material.ECHO_SHARD, "境界の試練", "欠片3個で専用ボスに挑む"), icon = true) { trials(player) }
-                        tile(v, 18, 3, "採取図", CoreLoopItems.icon(Material.MAP, "討伐不要の採取地図"), icon = true) { surveyMaps(player) }
-                        tile(v, 21, 3, "道具", CoreLoopItems.icon(Material.IRON_AXE, "採取道具を持つ", "ホットバー7番へ用意"), icon = true) { tools(player) }
-                        tile(v, 24, 3, "案内", CoreLoopItems.icon(Material.BOOK, "冒険と操作のガイド"), icon = true) { guide(player) }
+                        v.canvas.left("出航の記録", lines("${a.journey.job.displayName} Lv${a.journey.level}", "到達 T${a.unlockedMapTier}", "地図 ${a.maps.size}枚"))
+                        v.canvas.right("次の目標", paragraph(CoreJourneyRules.next(a)))
                         val map = a.maps.firstOrNull()
-                        tile(v, 27, 9, if (map == null) "地図を受け取って冒険を始める" else "T${map.tier} Lv${map.level} の地図を選ぶ",
+                        card(v, 9, 5, 3, if (map == null) "地図を受け取る" else "T${map.tier} Lv${map.level} の遠征", CoreMenuArt.EXPEDITION,
                             map?.let(CoreLoopItems::map) ?: CoreLoopItems.icon(Material.MAP, "地図台で地図を入手", "T1は無料で何度でも入手可能"),
                             Tone.PRIMARY, icon = true) { if (map == null) expeditions(player) else mapDetail(player, map.id) }
+                        tile(v, 14, 4, "星環の深殿", CoreLoopItems.icon(Material.END_PORTAL_FRAME, "星環の深殿", "一人または仲間と迷宮へ"), icon = true) { dungeons(player) }
+                        tile(v, 23, 4, "境界の試練", CoreLoopItems.icon(Material.ECHO_SHARD, "境界の試練", "欠片3個で専用ボスに挑む"), icon = true) { trials(player) }
+                        tile(v, 32, 4, "採取地図", CoreLoopItems.icon(Material.MAP, "討伐不要の採取地図"), icon = true) { surveyMaps(player) }
+                        tile(v, 36, 3, "地図台", CoreLoopItems.icon(Material.FILLED_MAP, "地図台 / 遠征", "手持ちの地図を見る・地図を受け取る"), icon = true) { expeditions(player) }
+                        tile(v, 39, 3, "道具", CoreLoopItems.icon(Material.IRON_AXE, "採取道具を持つ", "ホットバー7番へ用意"), icon = true) { tools(player) }
+                        tile(v, 42, 3, "案内", CoreLoopItems.icon(Material.BOOK, "冒険と操作のガイド"), icon = true) { guide(player) }
                     }
                     JournalPage.CHARACTER -> {
-                        v.canvas.left("現在の装備", equipment(a, CoreGearSlot.WEAPON) + lines("", "防具 T${a.armorTier} +${a.armorEnhancement.level}", "HP ${CoreWeaponPresentation.health(a)}"))
-                        v.canvas.right("成長", paragraph(CoreJourneyRules.next(a)) + lines("", "技と成長樹を編成", "装備を見直して出発"))
-                        tile(v, 9, 3, "職業", CoreLoopItems.icon(Material.EXPERIENCE_BOTTLE, "職業と冒険レベル"), icon = true) { career(player) }
-                        tile(v, 12, 3, "技能", CoreLoopItems.icon(Material.ENCHANTED_BOOK, "技と奥義の編成"), icon = true) { skillBuild(player) }
-                        tile(v, 15, 3, "成長樹", CoreLoopItems.icon(Material.OAK_SAPLING, "成長の分岐を選ぶ"), icon = true) { talentTree(player) }
-                        tile(v, 18, 3, "装備庫", CoreLoopItems.gear(a, CoreGearSlot.WEAPON, v.packed), icon = true) { equipmentStock(player) }
-                        tile(v, 21, 3, "MOD", CoreLoopItems.icon(Material.AMETHYST_SHARD, "装備のMODと能力"), icon = true) { gearMods(player, CoreGearSlot.WEAPON) }
-                        tile(v, 24, 3, "能力値", CoreLoopItems.icon(Material.PAPER, "AD・AP・防御の内訳"), icon = true) { combatDetails(player) }
-                        tile(v, 27, 3, "鍛錬", CoreLoopItems.icon(Material.SMITHING_TABLE, "同Tier内の装備レベル鍛錬"), icon = true) { temper(player) }
+                        v.canvas.left("装備の記録", equipment(a, CoreGearSlot.WEAPON).take(3))
+                        v.canvas.right("戦闘の備え", lines("防具 T${a.armorTier} +${a.armorEnhancement.level}", "HP ${CoreWeaponPresentation.health(a)}"))
+                        card(v, 9, 5, 3, "装備を見直す", CoreMenuArt.GEAR, CoreLoopItems.gear(a, CoreGearSlot.WEAPON, v.packed), Tone.PRIMARY, icon = true) { equipmentStock(player) }
+                        tile(v, 14, 4, "職業", CoreLoopItems.icon(Material.EXPERIENCE_BOTTLE, "職業と冒険レベル"), icon = true) { career(player) }
+                        tile(v, 23, 4, "技能編成", CoreLoopItems.icon(Material.ENCHANTED_BOOK, "技と奥義の編成"), icon = true) { skillBuild(player) }
+                        tile(v, 32, 4, "成長樹", CoreLoopItems.icon(Material.OAK_SAPLING, "成長の分岐を選ぶ"), icon = true) { talentTree(player) }
+                        tile(v, 36, 3, "MOD", CoreLoopItems.icon(Material.AMETHYST_SHARD, "装備のMODと能力"), icon = true) { gearMods(player, CoreGearSlot.WEAPON) }
+                        tile(v, 39, 3, "能力値", CoreLoopItems.icon(Material.PAPER, "AD・AP・防御の内訳"), icon = true) { combatDetails(player) }
+                        tile(v, 42, 3, "鍛錬", CoreLoopItems.icon(Material.SMITHING_TABLE, "同Tier内の装備レベル鍛錬"), icon = true) { temper(player) }
                     }
                     JournalPage.LIVING -> {
-                        v.canvas.left("仕事と保管", lines("銀貨 ${a.silver}枚", "素材は倉庫へ自動保存", "採取技能を育てる", "", "採取 → 精製 → 制作"))
-                        v.canvas.right("交易", lines("素材や装備を出品", "買い手の注文に納品", "売上は銀貨で受取", "", "装備は装備庫から", "出品・納品できる"))
-                        tile(v, 9, 3, "工房", CoreLoopItems.icon(Material.ANVIL, "強化・精製・制作・MOD加工"), icon = true) { workshop(player) }
-                        tile(v, 12, 3, "採取", CoreLoopItems.icon(Material.IRON_PICKAXE, "採取技能・地図・道具"), icon = true) { professions(player) }
-                        tile(v, 15, 3, "倉庫", CoreLoopItems.icon(Material.BARREL, "素材と所持数を確認"), icon = true) { storage(player) }
-                        tile(v, 18, 3, "市場", CoreLoopItems.icon(Material.EMERALD, "素材と装備を売買"), icon = true) { supplies(player) }
-                        tile(v, 21, 3, "注文", CoreLoopItems.icon(Material.WRITABLE_BOOK, "買い手の依頼へ納品"), icon = true) { orders(player) }
-                        tile(v, 24, 3, "育成", CoreLoopItems.icon(Material.OAK_SAPLING, "採取技能の成長"), icon = true) { mastery(player) }
+                        v.canvas.left("港の手持ち", lines("銀貨 ${a.silver}枚", "素材 → 倉庫へ保存"))
+                        v.canvas.right("港の仕事", lines("採取 → 精製 → 制作", "市場へ出品・納品"))
+                        card(v, 9, 5, 3, "工房で装備を更新", CoreMenuArt.FORGE, CoreLoopItems.icon(Material.ANVIL, "強化・精製・制作・MOD加工"), Tone.PRIMARY, icon = true) { workshop(player) }
+                        tile(v, 14, 4, "採取", CoreLoopItems.icon(Material.IRON_PICKAXE, "採取技能・地図・道具"), icon = true) { professions(player) }
+                        tile(v, 23, 4, "素材倉庫", CoreLoopItems.icon(Material.BARREL, "素材と所持数を確認"), icon = true) { storage(player) }
+                        tile(v, 32, 4, "市場", CoreLoopItems.icon(Material.EMERALD, "素材と装備を売買"), icon = true) { supplies(player) }
+                        tile(v, 36, 3, "注文", CoreLoopItems.icon(Material.WRITABLE_BOOK, "買い手の依頼へ納品"), icon = true) { orders(player) }
+                        tile(v, 39, 3, "育成", CoreLoopItems.icon(Material.OAK_SAPLING, "採取技能の成長"), icon = true) { mastery(player) }
+                        tile(v, 42, 3, "道具", CoreLoopItems.icon(Material.IRON_AXE, "採取道具を持つ"), icon = true) { tools(player) }
                     }
                 }
-                tile(v, 45, 6, "次の目標を確認", CoreLoopItems.icon(Material.COMPASS, CoreJourneyRules.next(a)), icon = true) { career(player) }
+                tile(v, 45, 6, "成長を見る", CoreLoopItems.icon(Material.COMPASS, CoreJourneyRules.next(a)), icon = true) { career(player) }
             } else {
                 help(v, player) { journal(player) }
                 tile(v, 0, 8, "${a.journey.job.displayName} Lv${a.journey.level}", CoreLoopItems.gear(a, CoreGearSlot.WEAPON, v.packed), Tone.SELECTED, icon = true) { career(player) }
@@ -596,11 +598,13 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
 
     private fun costPanel(v: View, a: CoreAccount, recipe: CoreRecipe) {
         val rows = CoreForgeSummary.materials(a, recipe)
-        v.canvas.right("必要素材", rows.flatMap { row ->
-            listOf(Line("T${row.material.tier} ${stockName(row.material.resource)} ×${row.required}",
-                    if (row.satisfied) CoreUiComponents.IVORY else CoreUiComponents.RED, materialArt(row.material.resource))) +
-                paragraph(if (row.satisfied) "足りる 所持${row.owned}" else "あと${row.missing}個 所持${row.owned}",
-                    if (row.satisfied) TextColor.color(0xB6CA91) else CoreUiComponents.RED)
+        v.canvas.right("素材 所持/必要", rows.map { row ->
+            val name = stockName(row.material.resource)
+            val owned = if (row.owned >= 10000 && row.owned % 10000 == 0L) "${row.owned / 10000}万" else row.owned.toString()
+            val exact = "T${row.material.tier} $name $owned/${row.required}${if (row.satisfied) "" else " 不足"}"
+            val compact = "$name $owned/${row.required}${if (row.satisfied) "" else " 不足"}"
+            Line(if (CoreMenuCanvas.width(exact) <= CoreMenuCanvas.PANEL_WIDTH - 18) exact else compact,
+                if (row.satisfied) CoreUiComponents.IVORY else CoreUiComponents.RED, materialArt(row.material.resource))
         } + if (rows.isEmpty()) lines("消費なし") else emptyList())
     }
 
@@ -663,7 +667,7 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
                     listOf(Line(if (CoreEconomy.broken(a, s.gear)) "破損中・修理が必要" else if (quote.breakPerAttemptPercent > 0)
                         "失敗時破損 ${pct(quote.breakOnFailurePercent)}%" else "今回の破損なし",
                         if (CoreEconomy.broken(a, s.gear) || quote.breakPerAttemptPercent > 0) CoreUiComponents.RED else CoreUiComponents.IVORY)) +
-                    lines("強化値・MODは維持", "素材は毎回消費"))
+                    emptyList())
         costPanel(v, a, quote.recipe)
         enhancementFocus(v, player, a, s.gear, if (maximum) "+30" else summary.levelLabel)
         card(v, ENHANCE_DETAIL, 3, 1, "詳細", CoreMenuArt.GEAR, CoreLoopItems.gear(a, s.gear, v.packed)) { gearMods(player, s.gear) }

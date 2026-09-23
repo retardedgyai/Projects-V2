@@ -188,6 +188,7 @@ assets/projects/font/core_menu_emphasis_y8.json
 assets/projects/font/core_menu_emphasis_y86.json
 assets/projects/font/core_menu_emphasis_y92.json
 assets/projects/font/core_menu_focus.json
+assets/projects/font/core_menu_journal.json
 assets/projects/font/core_menu_tree.json
 assets/projects/font/core_menu_y100.json
 assets/projects/font/core_menu_y110.json
@@ -13496,6 +13497,12 @@ assets/projects/textures/gui/core/menu_cards_2.png
 assets/projects/textures/gui/core/menu_cards_3.png
 assets/projects/textures/gui/core/menu_focus.png
 assets/projects/textures/gui/core/menu_frame.png
+assets/projects/textures/gui/core/menu_journal_0_0.png
+assets/projects/textures/gui/core/menu_journal_0_1.png
+assets/projects/textures/gui/core/menu_journal_1_0.png
+assets/projects/textures/gui/core/menu_journal_1_1.png
+assets/projects/textures/gui/core/menu_journal_2_0.png
+assets/projects/textures/gui/core/menu_journal_2_1.png
 assets/projects/textures/gui/core/menu_text.png
 assets/projects/textures/gui/core/menu_text_emphasis.png
 assets/projects/textures/gui/core/resource_bar.png

@@ -26,6 +26,13 @@ class MenuRenderer:
         for index in range(2):
             with Image.open(self.assets / f"textures/gui/core/menu_canvas_{index}.png") as tile:
                 self.frame.alpha_composite(tile.convert("RGBA"), (index * self.layout["frame_tile_width"], 0))
+        self.journal_frames = {}
+        for page in range(3):
+            frame = Image.new("RGBA", tuple(self.layout["size"]))
+            for index in range(2):
+                with Image.open(self.assets / f"textures/gui/core/menu_journal_{page}_{index}.png") as tile:
+                    frame.alpha_composite(tile.convert("RGBA"), (index * self.layout["frame_tile_width"], 0))
+            self.journal_frames[page] = frame
         self.atlas = Image.open(self.assets / "textures/gui/core/menu_text.png").convert("RGBA")
         self.emphasis_atlas = Image.open(self.assets / "textures/gui/core/menu_text_emphasis.png").convert("RGBA")
         self.focus_atlas = Image.open(self.assets / "textures/gui/core/menu_focus.png").convert("RGBA")
@@ -76,7 +83,9 @@ class MenuRenderer:
 
     def render(self, snapshot, scaled_width=None, show_icon_slots=False):
         scale = self.raster_scale
-        result = self.frame.resize((self.frame.width * scale, self.frame.height * scale), Image.Resampling.NEAREST)
+        journal_page = snapshot.get("journalPage")
+        frame = self.frame if journal_page is None else self.journal_frames[journal_page]
+        result = frame.resize((frame.width * scale, frame.height * scale), Image.Resampling.NEAREST)
         report = {"title": snapshot["title"], "layer": "actual CoreMenuCanvas title layer",
                   "omitted": ["non-flat item models", "vanilla inventory label", "hover highlights", "tooltips"],
                   "warnings": [], "icon_slots": [], "drawn_text": [], "drawn_art": [],
@@ -152,7 +161,8 @@ class MenuRenderer:
             x = (card["columns"] - 1) * 160
             y = tone_row * card["height"]
             backdrop = self.card_atlases[card["rows"]].crop((x, y, x + card["width"], y + card["height"]))
-            blit(backdrop, card["x"], card["y"])
+            if not (journal_page is not None and card["firstSlot"] == 9 and card["columns"] == 5 and card["rows"] == 3):
+                blit(backdrop, card["x"], card["y"])
             art(card.get("artPlacement"))
             if card.get("icon"):
                 center = card["firstSlot"] + (0 if card["rows"] == 1 else (card["rows"] - 1) // 2 * 9) + (0 if card["rows"] == 1 else card["columns"] // 2)

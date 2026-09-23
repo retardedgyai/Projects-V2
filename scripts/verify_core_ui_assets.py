@@ -7,7 +7,7 @@ import struct
 import zlib
 from PIL import Image
 from build_core_hud_assets import vanilla_overrides, SKILLS
-from build_core_menu_assets import TEXT_YS, CELL, SOURCE_CELL, TEXT_SCALE, TEXT_BASE, FRAME_BASE, BUTTON_BASE, CARD_BASE, PALETTE, DOT_FONT_SHA256, BODY_FONT_SHA256
+from build_core_menu_assets import TEXT_YS, CELL, SOURCE_CELL, TEXT_SCALE, TEXT_BASE, FRAME_BASE, BUTTON_BASE, CARD_BASE, PALETTE, BODY_FONT_SHA256
 from build_core_menu_art import ART, ART_BASE, ART_CELL, ART_YS, ART_SIZES
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -122,9 +122,9 @@ def verify():
     font_meta = json.loads((PACK / "assets/projects/menu/font-source.json").read_text())
     assert font_meta["size"] == 8
     assert font_meta["body"]["source_sha256"] == BODY_FONT_SHA256 and font_meta["body"]["source_size"] == 24
-    assert font_meta["emphasis"]["source_sha256"] == DOT_FONT_SHA256 and font_meta["emphasis"]["source_size"] == 24
-    assert font_meta["body"]["weight"] == 600 and font_meta["emphasis"]["weight"] == 400
-    assert font_meta["body"]["alpha"] == "smooth" and font_meta["emphasis"]["alpha"] == "binary"
+    assert font_meta["emphasis"]["source_sha256"] == BODY_FONT_SHA256 and font_meta["emphasis"]["source_size"] == 24
+    assert font_meta["body"]["weight"] == 600 and font_meta["emphasis"]["weight"] == 700
+    assert font_meta["body"]["alpha"] == "smooth" and font_meta["emphasis"]["alpha"] == "smooth"
     assert (PACK / "assets/projects/textures/gui/core/menu_text.png").read_bytes() != (PACK / "assets/projects/textures/gui/core/menu_text_emphasis.png").read_bytes()
     assert (PACK / "assets/projects/menu/MaruMinya-OFL.txt").read_bytes() == (ROOT / "assets/core-ui/fonts/MaruMinya-OFL.txt").read_bytes()
     assert font_meta["source_scale"] == TEXT_SCALE
@@ -168,7 +168,8 @@ def verify():
             index = glyph - TEXT_BASE
             alpha = atlas.crop(((index % 32) * SOURCE_CELL, (index // 32) * SOURCE_CELL,
                                 (index % 32 + 1) * SOURCE_CELL, (index // 32 + 1) * SOURCE_CELL)).getchannel("A")
-            assert set(alpha.tobytes()) <= {0, 255}
+            if code == ord("木"):
+                assert any(0 < value < 255 for value in alpha.tobytes()), "Japanese headings must preserve counters"
             box = alpha.getbbox()
             if code in (0x20, 0x3000):
                 assert box is None and advance == (4 if code == 0x20 else 10)
@@ -176,7 +177,7 @@ def verify():
                 assert box is not None and math.floor(0.5 + box[2] / TEXT_SCALE) + 1 == advance
                 if chr(code) in "+0123456789→":
                     assert 100 + box[1] / TEXT_SCALE >= 102, "Caption ink must start below the hero ink"
-    assert emphasized != metrics, "Body and pixel emphasis must retain distinct measured metrics"
+    assert emphasized != metrics, "Body and heading weights must retain distinct measured metrics"
     for y in TEXT_YS:
         providers = json.loads((PACK / f"assets/projects/font/core_menu_emphasis_y{y}.json").read_text())["providers"]
         assert len(providers) == 2 and providers[1]["ascent"] == 13 - y and providers[1]["height"] == CELL
@@ -200,6 +201,16 @@ def verify():
             assert canvas.getpixel((104 + 8 + column * 18 + 8, y + 8)) == (48, 50, 47, 255)
     assert canvas.getpixel((104 + 8, 128)) == (199, 188, 164, 255), "Vanilla inventory text needs a light tab, not a competing overlay"
     assert canvas.getpixel((270, 128)) != canvas.getpixel((112, 128)), "Do not restore the full-width bright inventory bar"
+    journal = json.loads((PACK / "assets/projects/font/core_menu_journal.json").read_text())["providers"]
+    assert len(journal) == 6
+    for page in range(3):
+        for half in range(2):
+            provider = journal[page * 2 + half]
+            assert provider["chars"] == [chr(FRAME_BASE + 2 + page * 2 + half)]
+            with Image.open(PACK / f"assets/projects/textures/gui/core/menu_journal_{page}_{half}.png") as tile:
+                assert tile.size == (192, 222)
+                if half == 0:
+                    assert tile.getpixel((50, 180))[3] == 0, "Journal side notes must reveal the world below"
     with Image.open(PACK / "assets/projects/textures/gui/core/menu_buttons.png") as buttons:
         assert buttons.size == (1440, 80)
         for row, tone in enumerate(PALETTE):

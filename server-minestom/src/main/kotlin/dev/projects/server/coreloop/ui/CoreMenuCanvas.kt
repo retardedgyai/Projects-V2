@@ -29,6 +29,7 @@ class CoreMenuCanvas(private val title: String) {
     internal data class Snapshot(
         val title: String,
         val titleColor: Int,
+        val journalPage: Int?,
         val leftPanel: PanelSnapshot?,
         val rightPanel: PanelSnapshot?,
         val buttons: List<ButtonSnapshot>,
@@ -61,7 +62,10 @@ class CoreMenuCanvas(private val title: String) {
     private val arts = mutableListOf<Art>()
     private val texts = mutableListOf<Text>()
     private var focus: Focus? = null
+    private var journalPage: Int? = null
     private val treeEdges = mutableListOf<TreeEdge>()
+    /** The three journal leaves use one physical atlas with distinct destination subjects. */
+    fun journal(page: Int) { require(page in 0..2); journalPage = page }
     fun treeEdge(from: Int, to: Int, learned: Boolean) {
         require(from in 0..44 && to in 0..44 && from != to)
         treeEdges += TreeEdge(from,to,learned)
@@ -74,8 +78,10 @@ class CoreMenuCanvas(private val title: String) {
     private fun panel(title: String, lines: List<Line>, hero: CoreMenuArt?): Panel {
         val availableLines = if (hero == null) PANEL_LINES else HERO_PANEL_LINES
         require(lines.size <= availableLines) { "Menu panel supports $availableLines lines; paginate or shorten the content" }
-        require(lines.zipWithNext().none { (first, second) -> first.art != null && second.art != null }) {
-            "Menu panel icons need a plain value or spacer line between them"
+        val extraIconGap = lines.zipWithNext().count { (first, second) -> first.art != null && second.art != null } * LINE_HEIGHT
+        val startY = if (hero == null) 30 else 72
+        require(lines.isEmpty() || startY + (lines.size - 1) * LINE_HEIGHT + extraIconGap <= 206) {
+            "Menu panel icon rows escaped the readable canvas"
         }
         return Panel(title, lines.toList(), hero)
     }
@@ -147,14 +153,15 @@ class CoreMenuCanvas(private val title: String) {
     internal fun snapshot(): Snapshot {
         fun Panel.snapshot(x: Int): PanelSnapshot {
             val startY = if (hero == null) 30 else 72
-            return PanelSnapshot(title, HEADING.value(), lines.mapIndexed { index, line ->
-                val y = startY + index * LINE_HEIGHT
+            return PanelSnapshot(title, (if (journalPage == null) HEADING else JOURNAL_INK).value(), lines.mapIndexed { index, line ->
+                val iconGap = lines.zipWithNext().take(index).count { (first, second) -> first.art != null && second.art != null } * LINE_HEIGHT
+                val y = startY + index * LINE_HEIGHT + iconGap
                 val inset = if (line.art == null) 0 else 18
-                LineSnapshot(line.text, line.color.value(), x + inset, y, PANEL_WIDTH - inset,
+                LineSnapshot(line.text, (if (journalPage == null) line.color else JOURNAL_INK).value(), x + inset, y, PANEL_WIDTH - inset,
                     line.art?.let { ArtSnapshot(x, y - 2, it.name, 16) }, line.style.name)
             }, hero?.let { ArtSnapshot(x + (PANEL_WIDTH - 32) / 2, 30, it.name, 32) })
         }
-        return Snapshot(title, HEADING.value(), leftPanel?.snapshot(-98), rightPanel?.snapshot(184),
+        return Snapshot(title, HEADING.value(), journalPage, leftPanel?.snapshot(-98), rightPanel?.snapshot(184),
             buttons.values.map { ButtonSnapshot(it.firstSlot, it.span, it.label, it.tone.name, it.icon, toneColor(it.tone).value()) },
             texts.map { TextSnapshot(it.x, it.y, it.value, it.color.value(), it.maxWidth, it.style.name) },
             cards.values.map { card ->
@@ -214,14 +221,15 @@ class CoreMenuCanvas(private val title: String) {
         }
 
         val snapshot = snapshot()
-        draw(-104, CoreUiComponents.glyph('\uE600', CANVAS_FONT), 193)
-        draw(88, CoreUiComponents.glyph('\uE601', CANVAS_FONT), 193)
+        val background = if (journalPage != null) JOURNAL_FONT else CANVAS_FONT
+        draw(-104, CoreUiComponents.glyph(journalPage?.let { (0xE602 + it * 2).toChar() } ?: '\uE600', background), 193)
+        draw(88, CoreUiComponents.glyph(journalPage?.let { (0xE603 + it * 2).toChar() } ?: '\uE601', background), 193)
         label(8, 6, title, HEADING, 160, TextStyle.EMPHASIS)
         // Vanilla draws its own player-inventory label at (8,128) after this title.
         // The frame gives that dark text a light strip; adding a label here would overlap it.
         for ((x, panel) in listOf(-98 to snapshot.leftPanel, 184 to snapshot.rightPanel)) {
             if (panel == null) continue
-            label(x, 8, panel.title, HEADING, PANEL_WIDTH, TextStyle.EMPHASIS)
+            label(x, 8, panel.title, TextColor.color(panel.titleColor), PANEL_WIDTH, TextStyle.EMPHASIS)
             panel.hero?.let(::illustration)
             panel.lines.forEach { line ->
                 line.art?.let(::illustration)
@@ -236,7 +244,9 @@ class CoreMenuCanvas(private val title: String) {
         for (card in snapshot.cards) {
             val tone = Tone.valueOf(card.tone)
             val glyph = (0xE650 + tone.ordinal * 9 + card.columns - 1).toChar()
-            draw(card.x, CoreUiComponents.glyph(glyph, Key.key("projects", "core_menu_cards_${card.rows}_${card.firstSlot / 9}")), card.width + 1)
+            // The journal's chart already contains the primary destination plate.
+            if (!(journalPage != null && card.firstSlot == 9 && card.columns == 5 && card.rows == 3))
+                draw(card.x, CoreUiComponents.glyph(glyph, Key.key("projects", "core_menu_cards_${card.rows}_${card.firstSlot / 9}")), card.width + 1)
             card.artPlacement?.let(::illustration)
             label(card.labelX, card.labelY, card.label, TextColor.color(card.textColor), card.labelMaxWidth, TextStyle.EMPHASIS)
         }
@@ -270,6 +280,7 @@ class CoreMenuCanvas(private val title: String) {
         const val LINE_HEIGHT = 14
         val HEADING: TextColor = TextColor.color(0xF0E4CE)
         val BODY_COLOR: TextColor = TextColor.color(0xE2D9C8)
+        val JOURNAL_INK: TextColor = TextColor.color(0x28343B)
         val ART_SIZES: Set<Int> = setOf(16, 32, 48)
         val ART_YS: Set<Int> = setOf(18, 28, 30, 36, 42, 48, 54, 56, 70, 72, 84, 90, 98, 108, 112, 126, 140, 154, 168, 182, 196)
         val FOCUS_SLOTS: List<Int> = occupiedSlots(18, 6, 3)
@@ -280,6 +291,7 @@ class CoreMenuCanvas(private val title: String) {
             .decoration(net.kyori.adventure.text.format.TextDecoration.BOLD,false)
             .decoration(net.kyori.adventure.text.format.TextDecoration.ITALIC,false)
         private val CANVAS_FONT = Key.key("projects", "core_menu_canvas")
+        private val JOURNAL_FONT = Key.key("projects", "core_menu_journal")
         private val FOCUS_FONT = Key.key("projects", "core_menu_focus")
         internal val TEXT_YS = (listOf(6, 8, 128) + (0..5).map { 20 + 18 * it } + (0..12).map { 30 + 14 * it }).distinct().sorted()
         private data class Metric(val glyph: Char, val advance: Int)
