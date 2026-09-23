@@ -120,9 +120,16 @@ class KnightModel(authoring.Model):
                 weave = authoring.noise(x // 5, y // 7, seed + 233)
                 tone = (2 if y % 4 == 1 and link in (2, 3) and weave % 2 == 0
                         else 0 if link in (0, 7) and weave % 2 == 0 else 1)
-            elif material in ("leather", "boot"):
+            elif material == "leather":
                 tone = 0 if x % 9 in (0, 1) or fine % 29 == 0 else 1
-                if y <= 1 and material == "leather":
+                if y <= 1:
+                    tone = 2
+            elif material == "boot":
+                # Uneven, worn hide: regular dark stripes resembled a machine
+                # grille once projected onto the small boot cuboids.
+                crease = math.sin(x * .18 + y * .11 + seed * .013)
+                tone = 0 if crease < -.81 or coarse % 23 == 0 else 1
+                if fine % 89 == 0 and y > 2:
                     tone = 2
             elif material == "skin":
                 tone = 2 if coarse % 17 == 0 else 0 if coarse % 7 == 0 else 1
@@ -682,17 +689,26 @@ def build(out=ROOT / "model-lab" / "models"):
         add(m, thigh, f"{side}_cloth_undertunic", [x - 1.58, 8.0, -1.71], [x + 1.58, 10.7, 1.6], "void")
         add(m, shin, f"{side}_shin_underlayer", [x - 1.24, 1.7, -1.36],
             [x + 1.24, 7.1, 1.28], "void")
-        heel_width = 1.13 if side == "left" else 1.02
-        vamp_width = 1.30 if side == "left" else 1.18
-        add(m, shin, f"{side}_boot_heel", [x - heel_width, -.15, -.95],
-            [x + heel_width, 1.84, 1.38], "boot")
+        # A narrow leather ankle sits in a wider, low heel.  The old single
+        # heel/vamp/toe cuboids read as a pair of mechanical rectangular feet.
+        heel_width = .95 if side == "left" else .88
+        add(m, shin, f"{side}_boot_heel", [x - heel_width, -.15, -.67],
+            [x + heel_width, .69, 1.16], "boot")
+        add_rotated(m, shin, f"{side}_boot_ankle",
+                    [x - .82, .50, -.72], [x + .82, 1.97, .98],
+                    "boot", [0, 0, -5 if side == "left" else 4],
+                    [x, .76, .1], "worn_vamp")
+        add_rotated(m, shin, f"{side}_boot_instep",
+                    [x - 1.02, .12, -1.79], [x + 1.02, 1.12, -.34],
+                    "boot", [-11, 0, 0], [x, .52, -1.05], "worn_vamp")
         add_rotated(m, shin, f"{side}_boot_vamp",
-                    [x - vamp_width, .02, -2.75], [x + vamp_width, 1.28, -.55],
-                    "boot", [-8 if side == "left" else -11, 0, 0],
-                    [x, .58, -1.4], "worn_vamp")
-        toe_width = 1.04 if side == "left" else .88
-        add(m, shin, f"{side}_toe_cap", [x - toe_width, .08, -3.18],
-            [x + toe_width, .76, -2.35], "boot")
+                    [x - .90, .07, -2.67], [x + .90, .75, -1.32],
+                    "boot", [-8, 0, -4 if side == "left" else 3],
+                    [x, .36, -1.85], "worn_vamp")
+        toe_width = .81 if side == "left" else .75
+        add_rotated(m, shin, f"{side}_toe_cap", [x - toe_width, .08, -3.03],
+                    [x + toe_width, .52, -2.46], "boot", [0, 0, -3],
+                    [x, .28, -2.67], "worn_vamp")
         if side == "left":
             add_rotated(m, shin, "left_worn_toe_shard",
                         [x - .58, .42, -3.12], [x + .34, .63, -2.55],
