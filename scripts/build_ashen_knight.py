@@ -157,7 +157,8 @@ def build(out=ROOT / "model-lab" / "models"):
     # readable at Minecraft viewing distances. The front faces negative Z.
     add(m, hips, "fauld_core", [-3.1, 10.5, -1.7], [3.1, 14, 1.9], "mail")
     add(m, hips, "belt", [-3.5, 12.2, -2.05], [3.5, 13, -1.52], "leather")
-    add(m, hips, "mail_skirt", [-3.4, 8.6, -1.5], [3.4, 12.4, 2.35], "mail")
+    add(m, hips, "mail_skirt_underlayer", [-2.75, 8.6, -1.5],
+        [2.75, 12.4, 2.1], "void")
     add(m, hips, "broken_tasset_left", [-3.8, 9.3, -2.1], [-1.65, 12.1, -.95], "armor")
     add(m, hips, "broken_tasset_right", [1.85, 10.3, -2.0], [3.4, 12.2, -.9], "armor")
     add(m, hips, "belt_buckle", [-.65, 11.9, -2.3], [.45, 12.9, -1.94], "edge")
@@ -208,6 +209,34 @@ def build(out=ROOT / "model-lab" / "models"):
                     "ragged_hip", face_uv={"north": rag_uv, "south": rag_uv})
     add(m, chest, "upper_mail_tunic", [-3.7, 17.1, -2.15], [3.7, 22, 2.1], "void")
     add(m, chest, "waist_mail_tunic", [-2.9, 13, -1.85], [2.9, 18.3, 1.85], "void")
+    def paint_chest_mail(px, py):
+        side = abs(px - 63.5) / 64
+        top = 4 + round(10 * side ** 1.6)
+        taper = max(0, py - 32) * .19
+        left = 4 + round(taper)
+        right = 123 - round(taper)
+        hem = 91 - authoring.noise(px // 6, 0, 7451) % 6
+        if py < top or py > hem or px < left or px > right:
+            return (0, 0, 0, 0)
+        if py > 58 and 78 < px < 100 and (px + py * 2) % 41 < 5:
+            return (0, 0, 0, 0)
+        row = py // 6
+        tx = (px + (row % 2) * 4) % 8
+        ty = py % 6
+        wear = authoring.noise(px // 4, py // 4, 7477)
+        base = (20, 26, 30)
+        ring = (ty == 1 and tx in (2, 3, 4)) or (ty in (2, 3) and tx in (1, 5))
+        if ring and wear % 7 != 0:
+            base = (53, 61, 65) if wear % 5 else (67, 73, 76)
+        elif ty == 4 and tx in (2, 3, 4):
+            base = (11, 17, 21)
+        if abs(px - 61) < 17 and 43 < py < 66 and wear % 4 == 0:
+            base = (13, 19, 23)
+        return (*base, 255)
+
+    chest_mail_uv = m.patch(128, 96, paint_chest_mail, "worn_chest_mail")
+    m.cube("worn_chest_mail", [-3.63, 16.5, -2.24], [3.63, 21.9, -2.17],
+           "mail", chest, face_uv={"north": chest_mail_uv})
     add_rotated(m, chest, "fractured_left_breastplate", [-3.0, 17.75, -2.78],
                 [-.65, 20.1, -2.1], "armor", [0, 0, -7],
                 [-1.8, 19.0, -2.5], "battered_scale")
@@ -355,7 +384,7 @@ def build(out=ROOT / "model-lab" / "models"):
     add(m, scarf, "scarf_back_right_end", [3.2, 20.35, 2.25], [4.9, 22.25, 3.18], "cloth", "ragged_scarf")
     add(m, scarf, "scarf_hanging_point", [-3.55, 14.2, -3.1], [-1.7, 18.1, -2.78], "cloth", "ragged_scarf")
 
-    add(m, helm, "hood_crown", [-1.85, 25.25, -2.1], [1.85, 27.15, 2.3], "void")
+    add(m, helm, "hood_crown", [-1.38, 25.25, -2.1], [1.38, 27.15, 2.3], "void")
     add_rotated(m, helm, "hood_left_temple", [-2.7, 23.9, -2.3], [-.85, 26.6, 2.3],
                 "void", [0, 0, -12], [-1.65, 25.2, 0])
     add_rotated(m, helm, "hood_right_temple", [.8, 24.1, -2.2], [2.55, 26.3, 2.25],
@@ -531,8 +560,22 @@ def build(out=ROOT / "model-lab" / "models"):
     add(m, right_thigh, "right_thigh_leather_wear", [2.9, 8.1, -1.87], [3.45, 10.9, -1.65], "leather")
 
     add(m, left_arm, "bound_upper_arm", [-6, 15.8, -.8], [-3.7, 21, 1.3], "mail")
-    add(m, left_arm, "bound_forearm", [-6.3, 10, -1], [-4, 16.4, 1.2], "skin")
-    add(m, left_arm, "left_hand", [-6.1, 8.8, -1.2], [-4.2, 11, 1], "skin")
+    add_rotated(m, left_arm, "wounded_upper_forearm", [-6.18, 12.8, -1.02],
+                [-4.05, 16.35, 1.12], "skin", [0, 0, 5],
+                [-5.1, 14.5, 0], "scarred_skin")
+    add_rotated(m, left_arm, "wounded_tapered_forearm", [-5.91, 10.0, -.93],
+                [-4.28, 13.45, .98], "skin", [0, 0, -4],
+                [-5.1, 11.9, 0], "scarred_skin")
+    add(m, left_arm, "left_palm", [-5.85, 8.8, -1.05], [-4.35, 10.55, .91], "skin")
+    for finger, (x0, x1, low, high, tilt) in enumerate((
+            (-5.92, -5.56, 7.7, 9.1, -8),
+            (-5.51, -5.14, 7.45, 9.0, -2),
+            (-5.08, -4.73, 7.55, 9.0, 5),
+            (-4.68, -4.37, 8.0, 9.1, 13),
+    )):
+        add_rotated(m, left_arm, f"loose_finger_{finger}",
+                    [x0, low, -.82], [x1, high, .44], "skin",
+                    [0, 0, tilt], [(x0 + x1) / 2, high, -.2], "scarred_skin")
     add(m, left_arm, "left_arm_tear", [-6.5, 11.2, 1.1], [-4.9, 16.2, 1.8], "void")
     add(m, left_arm, "left_mail_shoulder", [-6.15, 17.2, -1], [-3.55, 20.2, 1.5], "mail")
     add_rotated(m, left_arm, "left_wrapping_low", [-6.45, 13.0, -1.4], [-3.95, 13.85, 1.25],
@@ -581,9 +624,9 @@ def build(out=ROOT / "model-lab" / "models"):
     # Leave the chainmail back exposed. The short scarf above and torn cloth
     # tied at the hips have separate silhouettes, like a battle-worn knight.
     cape_strips = (
-        (-4.65, 4.25, 3.05, 3.2, -37),
-        (-.55, 3.65, 4.35, 4.0, 0),
-        (3.35, 3.35, 3.15, 6.2, 35),
+        (-5.1, 3.9, 3.05, 1.25, -43),
+        (-.4, 2.7, 4.55, 7.8, -6),
+        (4.45, 3.3, 3.05, 3.65, 39),
     )
 
     for strip, (center, width, depth, hem, yaw) in enumerate(cape_strips):
@@ -684,7 +727,31 @@ def build(out=ROOT / "model-lab" / "models"):
     add_rotated(m, cape_right, "right_hanging_remnant", [3.1, 9.2, 3.0], [5.05, 18.0, 3.55],
                 "cloth", [0, -24, 0], [4.05, 18.0, 3.3], "ragged_right")
     add(m, cape_right_edge, "right_shoulder_cloth", [4.75, 19.5, 1.0], [5.75, 21.5, 2.95], "cloth")
-    add(m, hips, "back_mail", [-4.05, 8.3, 2.35], [4.1, 13.2, 3.05], "mail")
+    def paint_back_mail(px, py):
+        # The hem follows the hips and breaks into missing links instead of
+        # filling the exposed back with one rectangular grey surface.
+        crown = 3 + round(abs(px - 47.5) * .12)
+        taper = max(0, py - 17) * .53
+        left = 5 + round(taper) + authoring.noise(py // 5, 0, 8013) % 3
+        right = 90 - round(taper) - authoring.noise(py // 6, 0, 8021) % 4
+        hem = 58 - authoring.noise(px // 6, 0, 8039) % 13
+        if py < crown or py > hem or px < left or px > right:
+            return (0, 0, 0, 0)
+        if py > 39 and (px * 2 + py * 3) % 29 < 3:
+            return (0, 0, 0, 0)
+        offset = (py // 5 % 2) * 4
+        link = (px + offset) % 9
+        wear = authoring.noise(px // 5, py // 5, 8047)
+        base = (28, 34, 37)
+        if py % 5 == 1 and link in (2, 3) and wear % 4 == 0:
+            base = (59, 67, 69)
+        elif link == 0 and wear % 3 == 0:
+            base = (17, 22, 26)
+        return (*base, 255)
+
+    back_mail_uv = m.patch(96, 64, paint_back_mail, "ragged_back_mail")
+    m.cube("ragged_back_mail", [-3.65, 8.35, 2.35], [3.65, 13.15, 2.43],
+           "mail", hips, face_uv={"south": back_mail_uv})
 
     # The head should read as a narrow animal mask embedded in hair, rather
     # than a full-width box above the shoulders. Keep the muzzle's depth.
