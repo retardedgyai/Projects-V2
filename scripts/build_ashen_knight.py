@@ -716,29 +716,25 @@ def build(out=ROOT / "model-lab" / "models"):
                "cloth", cape_left_edge, face_uv=face_uv)
     add(m, scarf, "scarf_hanging_point", [-3.55, 14.2, -3.1], [-1.7, 18.1, -2.78], "cloth", "ragged_scarf")
 
-    add_rotated(m, helm, "hood_crown_front",
-                [-1.29, 25.5, -2.08], [1.29, 26.85, -.12], "void",
-                [8, 0, 0], [0, 26.1, -1.1], "burned_hood")
-    add_rotated(m, helm, "hood_crown_rear",
-                [-1.22, 25.18, -.2], [1.22, 26.48, 1.75], "void",
-                [-13, 0, 0], [0, 25.8, .78], "burned_hood")
-    add_rotated(m, helm, "hood_left_temple_front", [-2.38, 24.4, -2.3],
-                [-1.0, 26.55, .28], "void", [6, 0, -15],
-                [-1.65, 25.2, -1])
-    add_rotated(m, helm, "hood_left_temple_rear", [-2.52, 23.85, -.1],
-                [-.95, 25.55, 2.3], "void", [12, 0, -11],
-                [-1.65, 24.7, 1])
-    add_rotated(m, helm, "hood_right_temple_front", [.95, 24.55, -2.2],
-                [2.25, 26.2, .3], "void", [5, 0, 12], [1.65, 25.2, -.9])
-    add_rotated(m, helm, "hood_right_temple_rear", [1.05, 23.9, -.15],
-                [2.15, 25.2, 1.85], "void", [18, 0, -9], [1.6, 24.6, .85])
+    # The mask is the face; only a narrow, dark head and a short mount sit
+    # behind it. The mane supplies the rear silhouette.
+    hood_uv = m.patch(16, 16,
+                      lambda px, py: (13, 22, 32, 255) if (px * 3 + py * 5) % 17
+                      else (22, 32, 42, 255), "burned_hood_shared")
+    hood_faces = {face: hood_uv for face in
+                  ("north", "south", "east", "west", "up", "down")}
+    add_rotated(m, helm, "hood_skull_core",
+                [-.78, 23.82, -1.02], [.78, 26.18, .8], "void",
+                [-8, 0, 0], [0, 25.0, -.1], "burned_hood", hood_faces)
+    add_rotated(m, helm, "hood_brow_overhang",
+                [-.99, 25.53, -2.04], [.99, 26.1, -.63], "void",
+                [13, 0, 0], [0, 25.84, -1.3], "burned_hood", hood_faces)
     add_rotated(m, helm, "hood_lower_jaw",
-                [-1.68, 22.4, -1.43], [1.68, 24.85, .28], "void",
-                [7, 0, 0], [0, 23.6, -.55], "burned_hood")
-    add_rotated(m, helm, "hood_lower_neck",
-                [-1.48, 23.25, .03], [1.48, 25.08, 1.78], "void",
-                [-9, 0, 0], [0, 24.2, .85], "burned_hood")
-    add(m, helm, "hood_muzzle_base", [-1.35, 22.25, -4.8], [1.35, 24.0, -1.5], "void")
+                [-.74, 22.75, -2.34], [.74, 24.0, -.66], "void",
+                [-11, 0, 0], [0, 23.3, -1.5], "burned_hood", hood_faces)
+    add_rotated(m, helm, "hood_muzzle_base",
+                [-.65, 22.52, -2.46], [.65, 23.62, -.62], "void",
+                [-9, 0, 0], [0, 23.0, -1.5], "burned_hood", hood_faces)
     add(m, helm, "snout_dark_tip", [-.45, 21.15, -5.75], [.45, 21.85, -5.1], "void")
     add_rotated(m, helm, "left_cheek_armor", [-2.25, 23.05, -2.85],
                 [-1.59, 24.78, -1.05], "armor", [0, -8, -9],
@@ -1437,12 +1433,11 @@ def build(out=ROOT / "model-lab" / "models"):
             if element["name"] == "engraved_wolf_visor":
                 for key in ("from", "to", "origin"):
                     element[key][0] *= .94
-            if element["name"] in ("hood_muzzle_base", "snout_left_ridge",
-                                   "snout_right_ridge", "snout_dark_tip",
+            if element["name"] in ("snout_left_ridge", "snout_right_ridge", "snout_dark_tip",
                                    "engraved_wolf_visor"):
                 for key in ("from", "to", "origin"):
                     element[key][1] += 1.55
-                    element[key][2] += 2.1
+                    element[key][2] += 3.15
         elif element["uuid"] in plume_ids:
             for key in ("from", "to", "origin"):
                 element[key][1] -= .7
