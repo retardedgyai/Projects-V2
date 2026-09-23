@@ -411,22 +411,6 @@ def build(out=ROOT / "model-lab" / "models"):
     # The blue wrapping crosses the chest and continues onto the back. Keep
     # the folds exposed; a solid neck-filling box made them read as machinery.
 
-    def paint_cowl_under(px, py):
-        side = abs(px - 47.5) / 48
-        top = 3 + round(10 * side ** 1.5)
-        hem = 73 - round(19 * side) - authoring.noise(px // 5, 0, 3329) % 5
-        if py < top or py > hem:
-            return (0, 0, 0, 0)
-        if py > 54 and (px + py * 2) % 37 < 3:
-            return (0, 0, 0, 0)
-        fold = math.sin(px * .071 + py * .11)
-        color = (13, 30, 53) if fold < -.4 else (21, 42, 69)
-        return (*color, 255)
-
-    cowl_under_uv = m.patch(96, 80, paint_cowl_under, "cowl_under")
-    m.cube("cowl_under_sheet", [-2.55, 22.05, -3.12], [2.45, 24.45, -3.04],
-           "cloth", scarf, face_uv={"north": cowl_under_uv, "south": cowl_under_uv})
-
     def paint_cowl_edge(px, py):
         # Give the thick folds their own dark side, not the transparent atlas
         # default used by a front-only decal.
@@ -440,107 +424,106 @@ def build(out=ROOT / "model-lab" / "models"):
 
     cowl_edge_uv = m.patch(12, 48, paint_cowl_edge, "cowl_fabric_edge")
 
-    # Uneven, broad fabric folds wrap the neck. Repeated narrow ridges looked
-    # like a mechanical grille at the scale used in the boss fight.
-    cowl_bands = (
-        (-2.7, 2.4, 23.42, -3.18, 1.08),
+    # The reference cowl has broad nested folds around the neck. A diagonal
+    # six-facet sheet made the chest look like blue armor plates. Paint each
+    # drooping fold continuously so its silhouette and shading read as cloth.
+    front_cowl_folds = (
+        (-3.45, 3.0, 20.85, 23.65, -3.83, 0),
+        (-4.02, 3.48, 19.67, 22.75, -4.02, 1),
+        (-4.35, 3.18, 18.55, 21.85, -4.2, 2),
     )
-    for layer, (x0, x1, top_y, z, thickness) in enumerate(cowl_bands):
-        def paint_cowl(px, py, seed=layer):
-            side = abs(px - 47.5) / 48
-            top = 1 + round(5 * side ** 1.4)
-            hem = 30 - round(4 * side) - authoring.noise(px // 6, seed, 3341) % 3
-            if py < top or py > hem:
+    for left, right, low, high, depth, layer in front_cowl_folds:
+        def paint_draped_fold(px, py, seed=layer):
+            u = px / 95
+            arc = max(0, math.sin(math.pi * u)) ** 1.2
+            top = 3 + round((14 + seed * 2) * arc + (seed - 1) * 3 * u)
+            top += authoring.noise(px // 6, seed, 3451) % 3
+            hem = top + 22 - seed * 2 - authoring.noise(px // 7, seed, 3457) % 5
+            if py < top or py > hem or px < 2 or px > 93:
                 return (0, 0, 0, 0)
-            # Paint the depth of a folded strip, not four more plate-shaped
-            # rectangles. A wandering highlight follows the fabric while the
-            # upper tucked seam and underside remain nearly black.
             v = (py - top) / max(1, hem - top)
-            sweep = math.sin(px * .052 + seed * 1.7)
-            ridge = .36 + .14 * sweep + .055 * math.sin(px * .12 - seed)
-            trough = .69 + .075 * math.sin(px * .063 + seed * 2.3)
-            grain = authoring.noise(px // 3, py // 2, 3367 + seed) % 13
-            if v < .13 or v > .89 or abs(v - trough) < .055:
-                color = (12, 25, 43)
-            elif abs(v - ridge) < .095:
-                color = (43, 68, 94) if grain > 2 else (34, 56, 80)
-            elif v < ridge:
-                color = (25, 45, 70)
+            grain = authoring.noise(px // 3, py // 3, 3467 + seed) % 13
+            ridge = .34 + .09 * math.sin(px * .067 + seed * 1.3)
+            if v < .12 or v > .87:
+                color = (11, 25, 41)
+            elif abs(v - ridge) < .13:
+                color = (34, 53, 73) if grain > 2 else (29, 47, 66)
+            elif v > .65:
+                color = (16, 33, 52)
             else:
-                color = (20, 39, 64)
-            if grain == 0 and .18 < v < .84:
-                color = tuple(min(255, c + 7) for c in color)
-            if authoring.noise(px, py, 3391 + seed) % 181 == 0:
-                color = (71, 81, 90)
+                color = (24, 43, 65)
+            if grain == 0:
+                color = tuple(min(255, channel + 5) for channel in color)
             return (*color, 255)
 
-        band_uv = m.patch(96, 32, paint_cowl, f"cowl_band_{layer}")
-        for facet in range(5):
-            u = (facet + .5) / 5
-            xlo = x0 + (x1 - x0) * facet / 5
-            xhi = x0 + (x1 - x0) * (facet + 1) / 5
-            side = abs(u - .5) * 2
-            center_y = (top_y - thickness / 2 + 1.85 * side ** 1.45
-                        + .24 * math.sin(u * math.tau * 1.4 + layer)
-                        + (.35, -.28, .42)[layer] * (u - .5))
-            center_z = z + .67 * side + .18 * math.cos(u * math.tau)
-            uvlo = band_uv[0] + round(facet * 96 / 5)
-            uvhi = band_uv[0] + round((facet + 1) * 96 / 5)
-            face_uv = {"north": [uvlo, band_uv[1], uvhi, band_uv[3]],
-                       "south": [uvlo, band_uv[1], uvhi, band_uv[3]]}
-            if facet == 0:
-                face_uv["west"] = cowl_edge_uv
-            if facet == 4:
-                face_uv["east"] = cowl_edge_uv
-            add_rotated(m, scarf, f"layered_cowl_{layer}_{facet}",
-                        [xlo - .09, center_y - thickness / 2, center_z],
-                        [xhi + .09, center_y + thickness / 2, center_z + .42],
-                        "cloth", [7 - layer, (facet - 2) * 9,
-                                  (facet - 2) * 12 + (-5, 4, 13)[layer]],
-                        [(xlo + xhi) / 2, center_y, center_z + .21],
-                        "worn_cowl", face_uv)
+        fold_uv = m.patch(96, 48, paint_draped_fold,
+                          f"front_draped_cowl_{layer}")
+        m.cube(f"front_draped_cowl_{layer}", [left, low, depth - .5],
+               [right, high, depth + .35], "cloth", scarf,
+               face_uv={"north": fold_uv, "south": fold_uv,
+                        "west": cowl_edge_uv, "east": cowl_edge_uv})
 
-    # The lower wrap breaks away from the neck and falls diagonally across
-    # the chest. Its irregular silhouette and slanted woven folds keep this
-    # large blue area readable as loose fabric rather than stacked armor.
-    def paint_cowl_fall(px, py):
+    def paint_side_wrap(px, py):
         u = px / 95
-        top = 3 + round(7 * u + 2 * math.sin(u * 3.2))
-        hem = 77 - round(62 * u) - authoring.noise(px // 4, 0, 3441) % 5
-        if py < top or py > hem:
+        top = 3 + round(12 * max(0, math.sin(math.pi * u)) ** 1.15)
+        top += authoring.noise(px // 7, 0, 3491) % 3
+        hem = top + 25 - authoring.noise(px // 5, 0, 3497) % 5
+        if px < 2 or px > 93 or py < top or py > hem:
             return (0, 0, 0, 0)
-        if py > 44 and px < 16 and (px * 2 + py) % 27 < 4:
-            return (0, 0, 0, 0)
-        fold = (py - 15 - .61 * px + 3.0 * math.sin(px * .09)) % 38
-        grain = authoring.noise(px // 3, py // 3, 3467) % 11
-        if py < top + 3 or py > hem - 3 or fold < 3:
-            color = (10, 24, 42)
-        elif 8 < fold < 17:
-            color = (43, 69, 96) if grain > 2 else (35, 58, 84)
-        elif fold > 32:
-            color = (15, 32, 55)
+        v = (py - top) / max(1, hem - top)
+        grain = authoring.noise(px // 3, py // 3, 3503) % 11
+        ridge = .31 + .08 * math.sin(px * .077)
+        if v < .12 or v > .9:
+            color = (10, 24, 39)
+        elif abs(v - ridge) < .12:
+            color = (30, 48, 66) if grain else (25, 41, 59)
+        elif v > .67:
+            color = (14, 30, 48)
         else:
-            color = (24, 45, 71)
+            color = (21, 40, 60)
         return (*color, 255)
 
-    cowl_fall_uv = m.patch(96, 80, paint_cowl_fall, "diagonal_cowl_fall")
-    for facet in range(6):
-        uvlo = cowl_fall_uv[0] + round(facet * 96 / 6)
-        uvhi = cowl_fall_uv[0] + round((facet + 1) * 96 / 6)
-        xlo = -4.5 + facet * 7.55 / 6
-        xhi = -4.5 + (facet + 1) * 7.55 / 6
-        z = (-3.87, -4.29, -4.61, -4.56, -4.25, -3.91)[facet]
-        face_uv = {"north": [uvlo, cowl_fall_uv[1], uvhi, cowl_fall_uv[3]],
-                   "south": [uvlo, cowl_fall_uv[1], uvhi, cowl_fall_uv[3]]}
-        if facet == 0:
-            face_uv["west"] = cowl_edge_uv
-        if facet == 5:
-            face_uv["east"] = cowl_edge_uv
-        add_rotated(m, scarf, f"scarf_diagonal_chest_fall_{facet}",
-                    [xlo - .025, 16.75, z - .12],
-                    [xhi + .025, 22.3, z + .12], "cloth",
-                    [0, (facet - 2.5) * 5, 0], [(xlo + xhi) / 2, 19.5, z],
-                    "chest_wrap", face_uv)
+    side_wrap_uv = m.patch(96, 48, paint_side_wrap, "wrapped_cowl_sides")
+    for name, x0, x1 in (("left", -3.66, -3.28),
+                         ("right", 3.07, 3.46)):
+        m.cube(f"side_wrapped_cowl_{name}", [x0, 20.05, -3.65],
+               [x1, 23.6, 2.5], "cloth", scarf,
+               face_uv={"east": side_wrap_uv, "west": side_wrap_uv})
+
+    back_cowl_folds = (
+        (-3.3, 3.1, 21.55, 23.9, 2.8, 0),
+        (-4.02, 3.86, 20.35, 23.02, 3.02, 1),
+        (-4.45, 4.08, 19.25, 22.2, 3.2, 2),
+    )
+    for left, right, low, high, depth, layer in back_cowl_folds:
+        def paint_back_wrap(px, py, seed=layer):
+            u = px / 95
+            arc = max(0, math.sin(math.pi * u)) ** 1.2
+            top = 2 + round((12 + seed * 2) * arc)
+            top += authoring.noise(px // 6, seed, 3511) % 3
+            hem = top + 22 - authoring.noise(px // 7, seed, 3517) % 5
+            if px < 2 or px > 93 or py < top or py > hem:
+                return (0, 0, 0, 0)
+            v = (py - top) / max(1, hem - top)
+            grain = authoring.noise(px // 3, py // 3, 3527 + seed) % 13
+            ridge = .33 + .08 * math.sin(px * .067 + seed)
+            if v < .12 or v > .9:
+                color = (10, 23, 37)
+            elif abs(v - ridge) < .12:
+                color = (31, 49, 67) if grain > 2 else (25, 42, 59)
+            elif v > .67:
+                color = (15, 30, 46)
+            else:
+                color = (22, 39, 57)
+            return (*color, 255)
+
+        back_uv = m.patch(96, 48, paint_back_wrap,
+                          f"back_draped_cowl_{layer}")
+        m.cube(f"back_draped_cowl_{layer}", [left, low, depth - .22],
+               [right, high, depth + .5], "cloth", scarf,
+               face_uv={"south": back_uv, "north": back_uv,
+                        "east": cowl_edge_uv, "west": cowl_edge_uv})
+
     def paint_shoulder_cowl(px, py):
         left = 4 + py // 12
         right = 29 - py // 15
