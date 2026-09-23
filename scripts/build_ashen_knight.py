@@ -336,7 +336,7 @@ def build(out=ROOT / "model-lab" / "models"):
         (-3.15, 2.95, 23.60, -3.18, 1.20),
         (-3.75, 3.50, 22.45, -3.55, 1.35),
         (-4.22, 4.04, 21.10, -3.88, 1.44),
-        (-3.65, 3.54, 19.82, -4.02, 1.18),
+        (-3.75, 1.2, 19.82, -4.02, 1.18),
     )
     for layer, (x0, x1, top_y, z, thickness) in enumerate(cowl_bands):
         def paint_cowl(px, py, seed=layer):
@@ -375,12 +375,26 @@ def build(out=ROOT / "model-lab" / "models"):
                         [xlo - .09, center_y - thickness / 2, center_z],
                         [xhi + .09, center_y + thickness / 2, center_z + .32],
                         "cloth", [7 - layer, (facet - 2) * 9,
-                                  (facet - 2) * 12],
+                                  (facet - 2) * 12 + (-5, 1, -4, 13)[layer]],
                         [(xlo + xhi) / 2, center_y, center_z + .16],
                         "worn_cowl", face_uv)
     add(m, scarf, "scarf_left_drape", [-5.1, 19.5, -1.8], [-3.45, 22.2, 2.25], "cloth")
     add(m, scarf, "scarf_right_drape", [2.7, 20.1, -1.8], [4.5, 22.5, 2.2], "cloth")
-    add(m, scarf, "scarf_back_left", [-4.8, 19.3, 2.25], [.85, 22.6, 3.18], "cloth", "ragged_scarf")
+    def paint_back_cowl(px, py):
+        side = abs(px - 47.5) / 48
+        top = 2 + round(8 * side ** 1.4)
+        hem = 44 - round(16 * side) - authoring.noise(px // 7, 0, 3659) % 4
+        if py < top or py > hem:
+            return (0, 0, 0, 0)
+        fold = math.sin(px * .072 + py * .045)
+        color = (12, 26, 44) if fold < -.35 else (36, 58, 80) if fold > .7 else (22, 41, 64)
+        if py - top < 2 or hem - py < 3:
+            color = (9, 21, 37)
+        return (*color, 255)
+
+    back_cowl_uv = m.patch(96, 48, paint_back_cowl, "back_cowl_fold")
+    m.cube("scarf_back_left", [-4.8, 19.3, 2.38], [.85, 22.6, 2.68],
+           "cloth", scarf, face_uv={"south": back_cowl_uv, "north": back_cowl_uv})
     add(m, scarf, "scarf_back_right_end", [3.2, 20.35, 2.25], [4.9, 22.25, 3.18], "cloth", "ragged_scarf")
     add(m, scarf, "scarf_hanging_point", [-3.55, 14.2, -3.1], [-1.7, 18.1, -2.78], "cloth", "ragged_scarf")
 
@@ -391,10 +405,6 @@ def build(out=ROOT / "model-lab" / "models"):
                 "void", [0, 0, 9], [1.65, 25.1, 0])
     add(m, helm, "hood_lower", [-2.25, 22.0, -1.15], [2.25, 25.1, 2.8], "void")
     add(m, helm, "hood_muzzle_base", [-1.6, 22.6, -3.8], [1.6, 24.0, -1.5], "armor")
-    add_rotated(m, helm, "snout_left_ridge", [-.95, 22.6, -5.05], [-.4, 24.45, -3.65],
-                "armor", [15, 0, -9], [-.65, 23.5, -4.0])
-    add_rotated(m, helm, "snout_right_ridge", [.4, 22.65, -5.05], [.95, 24.4, -3.65],
-                "armor", [15, 0, 9], [.65, 23.5, -4.0])
     add(m, helm, "snout_dark_tip", [-.6, 22.15, -5.55], [.6, 22.8, -4.8], "void")
     add(m, helm, "crest_base", [-.85, 26.5, -.4], [.85, 27.6, 1.4], "armor")
     add(m, helm, "left_cheek_armor", [-2.65, 22.7, -3.0], [-1.75, 25.0, -.9], "armor")
@@ -449,35 +459,45 @@ def build(out=ROOT / "model-lab" / "models"):
         return (67, 75, 78, 255)
 
     faceplate_uv = m.patch(48, 64, paint_faceplate, "ashen_faceplate")
-    m.cube("engraved_wolf_visor", [-2.65, 22.2, -5.86], [2.65, 27.35, -5.78],
-           "edge", helm, face_uv={"north": faceplate_uv, "south": faceplate_uv})
-    # A painted hair-like plume curves back from the crown. The cutout is
-    # visible from both sides and avoids a row of hard rectangular spikes.
+    def paint_visor_profile(px, py):
+        # The front plane needs a physical tapered cheek and muzzle when seen
+        # edge-on. A paper-thin visor looked detached from the hood in profile.
+        forward = 1 - px / 47
+        top = round(10 + 22 * forward ** 1.35)
+        bottom = round(54 - 12 * forward ** 1.1)
+        if py < top or py > bottom:
+            return (0, 0, 0, 0)
+        eye = 24 < px < 35 and 24 < py < 29
+        if eye:
+            return (8, 14, 19, 255)
+        if py < top + 2 or py > bottom - 2:
+            return (80, 90, 94, 255)
+        if px < 12 and py > 38:
+            return (61, 69, 72, 255)
+        if authoring.noise(px // 3, py // 3, 5933) % 39 == 0:
+            return (110, 117, 118, 255)
+        return (47, 55, 59, 255)
+
+    visor_profile_uv = m.patch(48, 64, paint_visor_profile, "wolf_visor_profile")
+    visor_back_uv = m.patch(1, 1, lambda _x, _y: (0, 0, 0, 0), "wolf_visor_back")
+    m.cube("engraved_wolf_visor", [-2.65, 22.2, -5.45], [2.65, 27.35, -4.15],
+           "edge", helm, face_uv={"north": faceplate_uv, "south": visor_back_uv,
+                                  "east": visor_profile_uv, "west": visor_profile_uv})
+    # Separate tapered strands keep the mane from becoming one dark wing in
+    # profile. The root carries their shared mass above the hood.
     add(m, plume, "crest_root", [-1.3, 27.15, .55], [1.25, 28.15, 3.2], "hair")
 
-    def paint_plume(px, py):
-        sweep = px / 95
-        centerline = 10 + 24 * sweep ** 1.4
-        half_width = 8 - 5 * sweep
-        if abs(py - centerline) > half_width:
-            return (0, 0, 0, 0)
-        if px > 58 and (px * 3 + py) % 17 in (0, 1):
-            return (0, 0, 0, 0)
-        streak = (py - centerline + px // 13) % 9
-        tone = 2 if streak < 2 else 0 if streak > 6 else 1
-        return (*authoring.MATERIALS["void"][tone], 255)
-
-    plume_uv = m.patch(96, 48, paint_plume, "worn_plume")
-    m.cube("worn_plume_sides", [-.68, 24.5, 1.2], [.68, 28.6, 9.5],
-           "hair", plume, face_uv={"east": plume_uv, "west": plume_uv})
     for strand, (x, y0, y1, z0, z1, bend) in enumerate((
-            (-1.23, 25.0, 29.1, 1.1, 8.5, -3),
-            (.94, 22.8, 27.0, 2.2, 11.2, 4),
+            (-1.55, 25.0, 29.0, 1.1, 6.5, -4),
+            (-.46, 24.8, 28.6, 1.2, 7.6, 2),
+            (.78, 22.8, 27.0, 2.2, 8.0, 4),
+            (1.6, 23.4, 26.7, 1.5, 6.8, -5),
     )):
         def paint_mane(px, py, layer=strand, curve=bend):
             along = px / 95
-            centerline = 13 + (18 + curve) * along ** 1.35
-            half_width = 10 - 5 * along
+            centerline = (13 + (18 + curve) * along ** 1.35
+                          + 2 * math.sin(along * 8 + layer))
+            half_width = 5.2 * (1 - along) ** .8 + .7
             if abs(py - centerline) > half_width:
                 return (0, 0, 0, 0)
             if along > .68 and (px + 3 * py + layer * 13) % 19 < 3:
@@ -624,9 +644,9 @@ def build(out=ROOT / "model-lab" / "models"):
     # Leave the chainmail back exposed. The short scarf above and torn cloth
     # tied at the hips have separate silhouettes, like a battle-worn knight.
     cape_strips = (
-        (-5.1, 3.9, 3.05, 1.25, -43),
+        (-5.15, 4.65, 3.05, 1.25, -26),
         (-.4, 2.7, 4.55, 7.8, -6),
-        (4.45, 3.3, 3.05, 3.65, 39),
+        (4.5, 4.0, 3.05, 3.65, 27),
     )
 
     for strip, (center, width, depth, hem, yaw) in enumerate(cape_strips):
@@ -770,7 +790,7 @@ def build(out=ROOT / "model-lab" / "models"):
                                    "engraved_wolf_visor"):
                 for key in ("from", "to", "origin"):
                     element[key][1] += 1.55
-                    element[key][2] += 1.2
+                    element[key][2] += 2.1
         elif element["uuid"] in plume_ids:
             for key in ("from", "to", "origin"):
                 element[key][1] -= .7
