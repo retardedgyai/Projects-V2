@@ -329,9 +329,7 @@ def build(out=ROOT / "model-lab" / "models"):
     # Uneven, broad fabric folds wrap the neck. Repeated narrow ridges looked
     # like a mechanical grille at the scale used in the boss fight.
     cowl_bands = (
-        (-3.15, 2.95, 23.42, -3.18, 1.65),
-        (-4.05, 3.65, 21.88, -3.64, 1.72),
-        (-3.75, 1.2, 20.12, -4.02, 1.45),
+        (-2.7, 2.4, 23.42, -3.18, 1.08),
     )
     for layer, (x0, x1, top_y, z, thickness) in enumerate(cowl_bands):
         def paint_cowl(px, py, seed=layer):
@@ -383,6 +381,42 @@ def build(out=ROOT / "model-lab" / "models"):
                                   (facet - 2) * 12 + (-5, 4, 13)[layer]],
                         [(xlo + xhi) / 2, center_y, center_z + .16],
                         "worn_cowl", face_uv)
+
+    # The lower wrap breaks away from the neck and falls diagonally across
+    # the chest. Its irregular silhouette and slanted woven folds keep this
+    # large blue area readable as loose fabric rather than stacked armor.
+    def paint_cowl_fall(px, py):
+        u = px / 95
+        top = 3 + round(7 * u + 2 * math.sin(u * 3.2))
+        hem = 77 - round(62 * u) - authoring.noise(px // 4, 0, 3441) % 5
+        if py < top or py > hem:
+            return (0, 0, 0, 0)
+        if py > 44 and px < 16 and (px * 2 + py) % 27 < 4:
+            return (0, 0, 0, 0)
+        fold = (py - 15 - .61 * px + 3.0 * math.sin(px * .09)) % 38
+        grain = authoring.noise(px // 3, py // 3, 3467) % 11
+        if py < top + 3 or py > hem - 3 or fold < 3:
+            color = (10, 24, 42)
+        elif 8 < fold < 17:
+            color = (43, 69, 96) if grain > 2 else (35, 58, 84)
+        elif fold > 32:
+            color = (15, 32, 55)
+        else:
+            color = (24, 45, 71)
+        return (*color, 255)
+
+    cowl_fall_uv = m.patch(96, 80, paint_cowl_fall, "diagonal_cowl_fall")
+    for facet in range(6):
+        uvlo = cowl_fall_uv[0] + round(facet * 96 / 6)
+        uvhi = cowl_fall_uv[0] + round((facet + 1) * 96 / 6)
+        xlo = -4.5 + facet * 7.55 / 6
+        xhi = -4.5 + (facet + 1) * 7.55 / 6
+        z = (-4.11, -4.28, -4.38, -4.29, -4.16, -4.08)[facet]
+        face_uv = {"north": [uvlo, cowl_fall_uv[1], uvhi, cowl_fall_uv[3]],
+                   "south": [uvlo, cowl_fall_uv[1], uvhi, cowl_fall_uv[3]]}
+        m.cube(f"scarf_diagonal_chest_fall_{facet}",
+               [xlo - .015, 16.75, z], [xhi + .015, 22.3, z + .11],
+               "cloth", scarf, face_uv=face_uv)
     add(m, scarf, "scarf_left_drape", [-4.85, 20.0, -1.75],
         [-3.48, 22.1, 1.8], "void")
     add(m, scarf, "scarf_right_dark_under", [2.7, 20.1, -1.8],
