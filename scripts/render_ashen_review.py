@@ -18,6 +18,8 @@ axis_project = preview.project
 
 
 def review_project(points, view):
+    if view == "back":
+        return np.stack((points[:, 0], -points[:, 1], -points[:, 2]), axis=1)
     if view != "quarter":
         return axis_project(points, view)
     yaw = math.radians(35)
@@ -43,6 +45,11 @@ for index, (label, tile) in enumerate(tiles):
 target.parent.mkdir(parents=True, exist_ok=True)
 sheet.save(target)
 print(target)
+
+back = preview.render(data, elements, atlas, animations["idle"], 0, "back", 12)
+back_target = target.with_name("ashen_knight_back_review.png")
+back.save(back_target)
+print(back_target)
 
 motion = [("walk", .4), ("run", .3), ("cleave", .65),
           ("thrust", .55), ("leap", .55), ("slam", .95)]

@@ -17,8 +17,8 @@ import gen_vesper as authoring  # noqa: E402
 
 PALETTE = {
     "armor": ("161c22", "293139", "505d65"),
-    "edge": ("344047", "718189", "b4b9b0"),
-    "cloth": ("132948", "204772", "406d98"),
+    "edge": ("252e35", "4d5c62", "81908f"),
+    "cloth": ("0d1c32", "183554", "315878"),
     "void": ("090d14", "161d29", "313b49"),
     "ash": ("343a42", "5d6871", "98a4a9"),
     "ember": ("9d342f", "e56948", "ffc383"),
@@ -81,9 +81,12 @@ class KnightModel(authoring.Model):
                 if y == height - 1:
                     tone = 0
                 if side in ("north", "south") and height >= 12 and motif.startswith("rag"):
-                    tear = 1 + authoring.noise(x // 4, 0, seed + 41) % max(3, height // 3)
-                    edge = max(0, y - height // 2) // 6
-                    if x < edge or x >= width - edge or y >= height - tear:
+                    tail = y / height
+                    edge_left = 1 + round(tail * width * .16) + authoring.noise(y // 6, 0, seed + 11) % 3
+                    edge_right = 1 + round(tail * width * .08) + authoring.noise(y // 7, 0, seed + 17) % 3
+                    tear = 2 + authoring.noise(x // 3, 0, seed + 41) % max(4, height // 4)
+                    slit = tail > .58 and (x + seed) % 23 in (0, 1) and y > height * .72
+                    if x < edge_left or x >= width - edge_right or y >= height - tear or slit:
                         return (0, 0, 0, 0)
             elif material == "void":
                 if coarse % 9 < 6:
@@ -123,6 +126,24 @@ def build(out=ROOT / "model-lab" / "models"):
     add(m, hips, "broken_tasset_left", [-3.8, 9.3, -2.1], [-1.65, 12.1, -.95], "armor")
     add(m, hips, "broken_tasset_right", [1.85, 10.3, -2.0], [3.4, 12.2, -.9], "armor")
     add(m, hips, "belt_buckle", [-.65, 11.9, -2.3], [.45, 12.9, -1.94], "edge")
+
+    def paint_torn_tabard(px, py):
+        left = 5 + py // 10
+        right = 30 - py // 7
+        if px < left or px > right or (py > 56 and (px + py * 3) % 17 < 3):
+            return (0, 0, 0, 0)
+        if py > 72 - authoring.noise(px // 3, 0, 1007) % 16:
+            return (0, 0, 0, 0)
+        fold = (px + py // 3) % 13
+        if fold < 3:
+            return (12, 27, 45, 255)
+        if fold > 10:
+            return (43, 74, 98, 255)
+        return (23, 49, 76, 255)
+
+    tabard_uv = m.patch(36, 80, paint_torn_tabard, "torn_tabard")
+    m.cube("front_torn_tabard", [-1.75, 4.7, -2.38], [1.75, 11.5, -2.31],
+           "cloth", hips, face_uv={"north": tabard_uv, "south": tabard_uv})
     add(m, chest, "mail_tunic", [-3.7, 13, -2.15], [3.7, 22, 2.1], "mail")
     add(m, chest, "damaged_cuirass", [-3.1, 14.2, -2.7], [2.4, 21.3, -1.85], "armor")
     add(m, chest, "fractured_breastplate", [-2.9, 16.7, -2.91], [-.4, 20.7, -2.63], "edge", "engraved")
@@ -182,30 +203,26 @@ def build(out=ROOT / "model-lab" / "models"):
     scarf_uv = m.patch(96, 80, paint_wound_scarf, "wound_scarf")
     m.cube("wound_scarf_front", [-4.85, 16.5, -3.6], [4.85, 24.0, -3.52],
            "cloth", scarf, face_uv={"north": scarf_uv, "south": scarf_uv})
-    add(m, scarf, "scarf_left_drape", [-5.6, 18.8, -2.2], [-3.25, 22.4, 2.25], "cloth")
-    add(m, scarf, "scarf_right_drape", [2.4, 19.7, -2.45], [5.2, 22.7, 2.65], "cloth")
+    add(m, scarf, "scarf_left_drape", [-5.1, 19.5, -1.8], [-3.45, 22.2, 2.25], "cloth")
+    add(m, scarf, "scarf_right_drape", [2.7, 20.1, -1.8], [4.5, 22.5, 2.2], "cloth")
     add(m, scarf, "scarf_back", [-4.8, 19.3, 2.25], [4.9, 22.6, 3.18], "cloth")
     add(m, scarf, "scarf_hanging_point", [-3.55, 14.2, -3.1], [-1.7, 18.1, -2.78], "cloth", "ragged_scarf")
 
     add(m, helm, "hood", [-2.7, 21.9, -2.3], [2.7, 27.5, 2.8], "void")
-    add(m, helm, "visor", [-2.25, 23.3, -3.15], [2.25, 26.3, -2.25], "edge", "engraved")
-    add(m, helm, "visor_brow", [-2.5, 25.6, -3.62], [2.5, 26.3, -2.7], "edge")
-    add(m, helm, "visor_bridge", [-.55, 23.3, -3.92], [.55, 26.1, -3.18], "edge")
-    add(m, helm, "visor_beak_upper", [-1.45, 23.1, -4.25], [1.45, 24.1, -3.31], "edge")
-    add(m, helm, "visor_beak_point", [-.78, 22.55, -4.52], [.78, 23.45, -3.77], "edge")
-    add(m, helm, "visor_left_carving", [-2.35, 23.65, -3.78], [-1.75, 25.3, -3.56], "edge")
-    add(m, helm, "visor_right_carving", [1.75, 23.65, -3.78], [2.35, 25.3, -3.56], "edge")
-    add(m, helm, "visor_left_eye_frame", [-2.15, 24.25, -3.81], [-.3, 25, -3.55], "armor")
-    add(m, helm, "visor_right_eye_frame", [.3, 24.25, -3.81], [2.15, 25, -3.55], "armor")
+    add(m, helm, "visor", [-2.25, 23.3, -3.15], [2.25, 26.3, -2.25], "armor", "engraved")
+    add(m, helm, "visor_brow", [-2.5, 25.6, -3.62], [2.5, 26.1, -2.7], "armor")
+    add(m, helm, "visor_bridge", [-.45, 23.3, -3.92], [.45, 26.1, -3.18], "armor")
+    add(m, helm, "visor_beak_upper", [-1.35, 23.1, -4.25], [1.35, 23.85, -3.31], "armor")
+    add(m, helm, "visor_beak_point", [-.65, 22.55, -4.52], [.65, 23.25, -3.77], "armor")
+    add(m, helm, "visor_left_eye_frame", [-2.15, 24.25, -3.81], [-.3, 24.75, -3.55], "armor")
+    add(m, helm, "visor_right_eye_frame", [.3, 24.25, -3.81], [2.15, 24.75, -3.55], "armor")
     add(m, helm, "left_eye", [-1.95, 24.5, -3.59], [-.45, 24.75, -3.49], "eye")
     add(m, helm, "right_eye", [.45, 24.5, -3.59], [1.95, 24.75, -3.49], "eye")
     add(m, helm, "crest_base", [-.85, 26.9, -.4], [.85, 28.1, 1.4], "armor")
-    add(m, helm, "crest_tip", [-.45, 27.6, -.1], [.45, 29, .8], "edge")
-    add(m, helm, "left_cheek_plate", [-2.9, 22.8, -3.0], [-1.8, 25.3, -.9], "edge")
-    add(m, helm, "right_cheek_plate", [1.8, 22.8, -3.0], [2.9, 25.3, -.9], "edge")
-    add(m, helm, "helmet_left_cheek_fin", [-3.45, 22.5, -2.55], [-2.6, 26.3, -.9], "armor")
-    add(m, helm, "helmet_right_cheek_fin", [2.6, 22.5, -2.55], [3.45, 26.3, -.9], "armor")
-    add(m, helm, "face_lower_mask", [-1.9, 21.8, -3.55], [1.9, 23.5, -2.8], "edge")
+    add(m, helm, "crest_tip", [-.45, 27.6, -.1], [.45, 29, .8], "armor")
+    add(m, helm, "left_cheek_plate", [-2.9, 22.8, -3.0], [-1.8, 25.3, -.9], "armor")
+    add(m, helm, "right_cheek_plate", [2.05, 23.0, -2.9], [2.9, 24.45, -.9], "armor")
+    add(m, helm, "face_lower_mask", [-1.9, 21.8, -3.55], [1.9, 23.5, -2.8], "armor")
 
     # A cutout engraved faceplate supplies a distinct long-muzzled silhouette
     # without reproducing another game's texture or sculpt. The existing helm
@@ -230,20 +247,22 @@ def build(out=ROOT / "model-lab" / "models"):
             return (0, 0, 0, 0)
         if px < center - 11 and 35 < py < 43 and (px + py) % 4 != 0:
             return (0, 0, 0, 0)
-        if 28 <= py <= 33 and 4 <= distance <= 13:
+        if 28 <= py <= 32 and 4 <= distance <= 13:
             return (8, 15, 23, 255)
+        if 20 <= py < 36 and px > 28 and (px + py * 2) % 7 < 2:
+            return (0, 0, 0, 0)
         ridge = center + (1 if py > 34 else 0)
         if abs(px - ridge) <= 1 and 12 <= py < 53 and py not in (31, 32):
-            return (177, 188, 184, 255)
+            return (83, 98, 99, 255)
         if abs(distance - width) <= 1 or (py < 18 and distance <= 3):
-            return (172, 185, 179, 255)
+            return (82, 98, 99, 255)
         if py in (20, 21, 39, 40) and distance < width - 2:
             return (44, 62, 69, 255)
         if 35 < py < 49 and distance in (4, 5):
             return (32, 46, 55, 255)
         if (px * 3 + py * 5) % 31 == 0:
-            return (139, 151, 148, 255)
-        return (76, 92, 98, 255)
+            return (98, 111, 111, 255)
+        return (45, 56, 62, 255)
 
     faceplate_uv = m.patch(48, 64, paint_faceplate, "ashen_faceplate")
     m.cube("engraved_wolf_visor", [-3.25, 21.25, -4.78], [3.25, 29.25, -4.7],
@@ -271,24 +290,42 @@ def build(out=ROOT / "model-lab" / "models"):
     for side, x in (("left", -2.1), ("right", 2.1)):
         thigh = left_thigh if side == "left" else right_thigh
         shin = left_shin if side == "left" else right_shin
-        add(m, thigh, f"{side}_thigh_mail", [x - 1.38, 6.6, -1.48], [x + 1.38, 11.2, 1.48], "mail")
-        add(m, thigh, f"{side}_cloth_undertunic", [x - 1.42, 7.5, -1.66], [x + 1.42, 10.7, 1.6], "void")
-        add(m, shin, f"{side}_dark_greave", [x - 1.2, 1.7, -1.48], [x + 1.2, 7.1, 1.4], "armor")
+        add(m, thigh, f"{side}_thigh_mail", [x - 1.63, 6.6, -1.55], [x + 1.63, 11.2, 1.55], "mail")
+        add(m, thigh, f"{side}_cloth_undertunic", [x - 1.58, 8.0, -1.71], [x + 1.58, 10.7, 1.6], "void")
+        add(m, shin, f"{side}_dark_greave", [x - 1.48, 1.7, -1.6], [x + 1.48, 7.1, 1.45], "armor")
         add(m, shin, f"{side}_worn_boot", [x - 1.38, -.15, -2.6], [x + 1.38, 2.2, 1.58], "leather")
         add(m, shin, f"{side}_toe_cap", [x - 1.15, .1, -3.25], [x + 1.1, 1.0, -2.12], "armor")
         if side == "left":
-            add(m, thigh, "left_broken_knee_plate", [x - 1.35, 6.0, -1.95], [x + .8, 7.4, -.98], "edge")
-            add(m, shin, "left_greave_rim", [x - 1.2, 2.35, -1.72], [x - .82, 6.7, -1.39], "ash")
+            add(m, thigh, "left_broken_knee_plate", [x - 1.4, 6.0, -1.95], [x + .8, 7.4, -.98], "armor")
+            add(m, shin, "left_greave_rim", [x - 1.48, 2.35, -1.72], [x - 1.1, 6.7, -1.39], "ash")
         else:
-            add(m, thigh, "right_knee_cloth", [x - 1.45, 6.2, -1.9], [x + 1.15, 7.65, -.95], "cloth")
+            add(m, thigh, "right_knee_cloth", [x - 1.45, 6.2, -1.9], [x + 1.15, 7.65, -.95], "void")
             add(m, shin, "right_greave_chip", [x + .72, 3.2, -1.65], [x + 1.22, 5.1, -1.35], "edge")
 
+    def paint_battered_thigh(px, py):
+        left = 3 + py // 15
+        right = 26 - py // 12
+        if py < 3 or py > 47 or px < left or px > right:
+            return (0, 0, 0, 0)
+        if py > 35 and (px + py * 3) % 13 < 3:
+            return (0, 0, 0, 0)
+        if px - left < 2 or right - px < 2 or py < 6:
+            return (92, 103, 104, 255)
+        if (px + py * 2) % 37 == 0:
+            return (65, 75, 78, 255)
+        return (39, 48, 54, 255)
+
+    thigh_uv = m.patch(32, 52, paint_battered_thigh, "battered_thigh")
+    m.cube("left_outer_thigh_plate", [-3.85, 6.55, -1.9], [-.65, 11.7, -1.83],
+           "armor", left_thigh, face_uv={"north": thigh_uv, "south": thigh_uv})
+    add(m, right_thigh, "right_thigh_leather_wear", [2.9, 8.1, -1.87], [3.45, 10.9, -1.65], "leather")
+
     add(m, left_arm, "bound_upper_arm", [-6, 15.8, -.8], [-3.7, 21, 1.3], "mail")
-    add(m, left_arm, "bound_forearm", [-6.3, 10, -1], [-4, 16.4, 1.2], "cloth")
+    add(m, left_arm, "bound_forearm", [-6.3, 10, -1], [-4, 16.4, 1.2], "mail")
     add(m, left_arm, "left_hand", [-6.1, 8.8, -1.2], [-4.2, 11, 1], "leather")
     add(m, left_arm, "left_arm_tear", [-6.5, 11.2, 1.1], [-4.9, 16.2, 1.8], "void")
     add(m, left_arm, "left_mail_shoulder", [-6.15, 17.2, -1], [-3.55, 20.2, 1.5], "mail")
-    add(m, left_arm, "left_wrapping_low", [-6.5, 10.6, -1.4], [-3.9, 12.2, 1.2], "cloth")
+    add(m, left_arm, "left_wrapping_low", [-6.45, 13.15, -1.4], [-3.95, 13.75, 1.25], "cloth")
     add(m, left_arm, "left_gauntlet_fragment", [-6.25, 8.85, -1.52], [-4.4, 10.1, -.96], "armor")
     add(m, right_arm, "right_upper_arm", [3.7, 15.8, -.8], [6, 21, 1.5], "mail")
     add(m, right_arm, "right_bracer", [3.8, 11.1, -1.1], [6.2, 16.5, 1.5], "armor")
@@ -332,20 +369,42 @@ def build(out=ROOT / "model-lab" / "models"):
 
     # Keep the cloak close to the body. It falls in unequal, overlapping
     # lengths instead of spreading into rigid wing-like side panels.
-    add(m, cape_left, "left_cape_upper", [-4.7, 16.8, 2.5], [.2, 21.8, 3.25], "cloth")
+    add(m, cape_left, "left_cape_upper", [-4.7, 16.8, 2.5], [.2, 21.8, 3.25], "cloth", "ragged_upper_left")
     add(m, cape_left, "left_cape_tail", [-6.25, 3.8, 2.9], [-.8, 18.2, 3.52], "cloth", "ragged_left")
     add(m, cape_left, "left_cape_under", [-5.5, 5.2, 3.38], [-1.4, 13.2, 3.78], "void", "ragged_under")
     add(m, cape_left_edge, "left_edge_strip", [-6.75, 7.6, 3.05], [-5.4, 16.4, 3.42], "cloth", "ragged_left_edge")
-    add(m, cape_left_edge, "left_shoulder_cloth", [-6.05, 17.3, .5], [-4.45, 21.5, 2.95], "cloth")
-    add(m, cape_right, "right_cape_upper", [-.3, 17, 2.5], [4.5, 21.8, 3.24], "cloth")
+    add(m, cape_left_edge, "left_shoulder_cloth", [-5.75, 19.5, 1.0], [-4.65, 21.5, 2.95], "cloth")
+    add(m, cape_right, "right_cape_upper", [-.3, 17, 2.5], [4.5, 21.8, 3.24], "cloth", "ragged_upper_right")
     add(m, cape_right, "right_cape_tail", [.5, 6.6, 2.9], [5.45, 18.4, 3.52], "cloth", "ragged_right")
     add(m, cape_right, "right_cape_under", [1.8, 8.1, 3.39], [5.1, 15.2, 3.78], "void", "ragged_under")
     add(m, cape_right_edge, "right_edge_strip", [4.75, 9.3, 3.05], [6.1, 17.0, 3.43], "cloth", "ragged_right_edge")
-    add(m, cape_right_edge, "right_shoulder_cloth", [4.55, 17.5, .55], [5.95, 21.5, 2.95], "cloth")
+    add(m, cape_right_edge, "right_shoulder_cloth", [4.75, 19.5, 1.0], [5.75, 21.5, 2.95], "cloth")
     add(m, cape_center, "back_mail", [-4.05, 8.3, 3.55], [4.1, 13.2, 3.82], "mail")
-    add(m, cape_center, "cape_middle_upper", [-3.35, 11.8, 3.83], [3.1, 19.6, 4.15], "cloth")
+    add(m, cape_center, "cape_middle_upper", [-3.35, 11.8, 3.83], [3.1, 19.6, 4.15], "cloth", "ragged_upper_middle")
     add(m, cape_center, "cape_middle_rag", [-2.15, 3.2, 3.92], [1.5, 13.2, 4.25], "cloth", "ragged_middle")
     add(m, cape_center, "cape_middle_point", [-1.25, 1.9, 4.02], [-.2, 5, 4.3], "cloth", "ragged_point")
+
+    # Cloth should occupy depth as well as width. A shaped side face runs from
+    # the shoulder into an uneven trailing fold, breaking the straight strip
+    # silhouette left by the thin front and back cape planes.
+    def paint_cape_profile(px, py):
+        sweep = py / 119
+        start = 2 + round(9 * (1 - sweep))
+        end = 15 + round(21 * sweep)
+        torn = 4 + authoring.noise(px // 3, 0, 391) % 13
+        if px < start or px > end or py > 118 - torn:
+            return (0, 0, 0, 0)
+        if px in (start, end) or (px + py * 2) % 41 < 4:
+            return (15, 31, 49, 255)
+        if (px - start + py // 5) % 13 in (4, 5, 6):
+            return (46, 80, 108, 255)
+        return (24, 53, 82, 255)
+
+    cape_profile_uv = m.patch(40, 120, paint_cape_profile, "cape_profile")
+    m.cube("left_trailing_cloth_fold", [-5.0, 4.4, 2.8], [-4.85, 18.4, 7.0],
+           "cloth", cape_left, face_uv={"east": cape_profile_uv, "west": cape_profile_uv})
+    m.cube("right_trailing_cloth_fold", [4.65, 7.1, 2.9], [4.82, 18.2, 6.3],
+           "cloth", cape_right, face_uv={"east": cape_profile_uv, "west": cape_profile_uv})
 
     plume_bone = m.bone("plume", [0, 28, 1], plume)
     head_bone = m.bone("head", [0, 22, 0], helm + [plume_bone])
@@ -356,6 +415,9 @@ def build(out=ROOT / "model-lab" / "models"):
     left_cape_bone = m.bone("cape_left", [-2.3, 21, 2.8], cape_left)
     right_cape_bone = m.bone("cape_right", [2.2, 21, 2.8], cape_right)
     middle_cape_bone = m.bone("cape_center", [0, 18, 3], cape_center)
+    left_cape_bone["rotation"] = [-13, 0, -4]
+    right_cape_bone["rotation"] = [-10, 0, 3]
+    middle_cape_bone["rotation"] = [-16, 0, 0]
     left_edge_bone = m.bone("cape_left_edge", [-6, 20, 2.7], cape_left_edge)
     right_edge_bone = m.bone("cape_right_edge", [6, 20, 2.7], cape_right_edge)
     torso_bone = m.bone("torso", [0, 13, 0], chest + scarf + [head_bone, left_arm_bone, right_arm_bone,
@@ -392,6 +454,8 @@ def build(out=ROOT / "model-lab" / "models"):
         "left_knee": [(0, [16, 0, 0]), (.4, [-4, 0, 0]), (.8, [16, 0, 0])],
         "right_knee": [(0, [-4, 0, 0]), (.4, [16, 0, 0]), (.8, [-4, 0, 0])],
         "torso": [(0, [11, -4, -3]), (.4, [11, 4, -3]), (.8, [11, -4, -3])],
+        "left_arm": [(0, [-3, 0, -3]), (.4, [5, 0, 2]), (.8, [-3, 0, -3])],
+        "right_arm": [(0, [1, 0, 3]), (.4, [-5, 0, -2]), (.8, [1, 0, 3])],
         "cape_left": [(0, [-13, 0, 0]), (.4, [-6, 0, -8]), (.8, [-13, 0, 0])],
         "cape_right": [(0, [-7, 0, 7]), (.4, [-14, 0, 0]), (.8, [-7, 0, 7])],
         "cape_center": [(0, [-10, 0, 0]), (.4, [-5, 0, 3]), (.8, [-10, 0, 0])],
@@ -403,6 +467,8 @@ def build(out=ROOT / "model-lab" / "models"):
         "right_leg": [(0, [35, 0, 0]), (.3, [-35, 0, 0]), (.6, [35, 0, 0])],
         "left_knee": [(0, [28, 0, 0]), (.3, [-12, 0, 0]), (.6, [28, 0, 0])],
         "right_knee": [(0, [-12, 0, 0]), (.3, [28, 0, 0]), (.6, [-12, 0, 0])],
+        "left_arm": [(0, [-10, 0, -8]), (.3, [7, 0, 2]), (.6, [-10, 0, -8])],
+        "right_arm": [(0, [-6, 0, 5]), (.3, [8, 0, -2]), (.6, [-6, 0, 5])],
         "cape_left": [(0, [-25, 0, -9]), (.3, [-40, 0, -14]), (.6, [-25, 0, -9])],
         "cape_right": [(0, [-35, 0, 12]), (.3, [-22, 0, 6]), (.6, [-35, 0, 12])],
         "cape_center": [(0, [-29, 0, 0]), (.3, [-39, 0, 7]), (.6, [-29, 0, 0])],
