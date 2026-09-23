@@ -319,6 +319,37 @@ def build_dungeon_frame(base):
     write_json(ASSETS / "font/core_menu_dungeon.json", {"providers": providers})
 
 
+def build_map_desk_frame(base):
+    """A chart occupies the selected map's large hitbox; the live map item stays visible."""
+    frame = base.copy()
+    draw = ImageDraw.Draw(frame)
+    draw.rectangle((110, 35, 201, 88), fill="#CFC3A4", outline="#9F8962")
+    draw.polygon([(111, 35), (117, 35), (111, 41)], fill="#7A6D55")
+    draw.polygon([(195, 88), (201, 82), (201, 88)], fill="#8A7A5D")
+    draw.rectangle((113, 38, 198, 71), fill="#B7C8C0")
+    draw.polygon([(113, 38), (138, 38), (142, 43), (135, 48), (140, 55),
+                  (129, 60), (131, 71), (113, 71)], fill="#788B75")
+    draw.line([(138, 38), (144, 44), (137, 49), (142, 55), (131, 61)], fill="#E0D8B6", width=2)
+    draw.polygon([(181, 68), (188, 64), (198, 67), (198, 71), (176, 71)], fill="#7F9582")
+    for x, y in ((173, 56), (177, 54), (181, 52), (185, 50), (189, 47), (193, 44)):
+        draw.rectangle((x, y, x + 1, y + 1), fill="#A57B4F")
+    draw.line((186, 42, 186, 49), fill="#586F70")
+    draw.line((182, 46, 190, 46), fill="#586F70")
+    draw.rectangle((112, 72, 199, 87), fill="#192B31")
+    draw.line((113, 72, 198, 72), fill="#A48D63")
+    draw.line((204, 35, 204, 88), fill="#8A795E")
+    draw.line((207, 35, 271, 35), fill="#5A655E")
+    draw.line((207, 88, 271, 88), fill="#5A655E")
+    providers = []
+    for half in range(2):
+        name = f"menu_map_desk_{half}"
+        frame.crop((half * 192, 0, (half + 1) * 192, 222)).save(
+            ASSETS / f"textures/gui/core/{name}.png", optimize=True)
+        providers.append({"type": "bitmap", "file": f"projects:gui/core/{name}.png",
+                          "height": 222, "ascent": 13, "chars": [chr(FRAME_BASE + 10 + half)]})
+    write_json(ASSETS / "font/core_menu_map_desk.json", {"providers": providers})
+
+
 def build_buttons():
     # Nine span widths, five states. Every backdrop is confined to the actual slot strip.
     atlas = Image.new("RGBA", (160 * 9, 16 * len(PALETTE)))
@@ -481,6 +512,7 @@ def build_menu():
     frame = build_frame()
     build_journal_frames()
     build_dungeon_frame(frame)
+    build_map_desk_frame(frame)
     buttons = build_buttons()
     build_cards()
     build_focus()

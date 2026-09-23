@@ -166,6 +166,12 @@ internal object CoreLoopItems {
             .plus(data.modifiers.map { modifierName(it) }).toTypedArray(), color = colors[data.tier - 1])
         .withTag(ownedMapTag, data.id.toString())
 
+    /** Keep the real map item and identity, but describe what a chest-menu click actually does. */
+    fun mapInMenu(data: CoreOwnedMap, selected: Boolean = false): ItemStack = map(data).with(DataComponents.LORE,
+        listOf(if (selected) "画面下の出発で地図1枚を消費" else "クリックで出発準備へ",
+            "石板付与で採取MODを追加", "付与MOD ${data.modifiers.size}/3")
+            .plus(data.modifiers.map { modifierName(it) }).map(::text))
+
     fun modifierName(mod: CoreMapModifier): String = QuestMapGatheringModifier(
         mod.discipline?.let { id -> QuestGatheringDiscipline.entries.first { it.id == id } },
         QuestMapGatheringStat.entries.first { it.id == mod.stat }, mod.percent).displayName()

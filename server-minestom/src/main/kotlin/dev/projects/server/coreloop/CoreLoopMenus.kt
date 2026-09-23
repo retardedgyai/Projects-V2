@@ -199,7 +199,7 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
                         v.canvas.right("次の目標", paragraph(CoreJourneyRules.next(a)))
                         val map = a.maps.firstOrNull()
                         card(v, 9, 5, 3, if (map == null) "地図を受け取る" else "T${map.tier} Lv${map.level} の遠征", CoreMenuArt.EXPEDITION,
-                            map?.let(CoreLoopItems::map) ?: CoreLoopItems.icon(Material.MAP, "地図台で地図を入手", "T1は無料で何度でも入手可能"),
+                            map?.let { CoreLoopItems.mapInMenu(it) } ?: CoreLoopItems.icon(Material.MAP, "地図台で地図を入手", "T1は無料で何度でも入手可能"),
                             Tone.PRIMARY, icon = true) { if (map == null) expeditions(player) else mapDetail(player, map.id) }
                         tile(v, 14, 4, "星環の深殿", CoreLoopItems.icon(Material.END_PORTAL_FRAME, "星環の深殿", "一人または仲間と迷宮へ"), icon = true) { dungeons(player) }
                         tile(v, 23, 4, "境界の試練", CoreLoopItems.icon(Material.ECHO_SHARD, "境界の試練", "欠片3個で専用ボスに挑む"), icon = true) { trials(player) }
@@ -260,17 +260,20 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
         view(player, "地図台 / T$tier", { expeditions(player, tier, current) }) { v ->
             tiers(v, tier) { expeditions(player, it) }
             tile(v, 8, 1, "採", CoreLoopItems.icon(Material.OAK_SAPLING, "討伐不要の採取地図")) { surveyMaps(player, tier) }
-            v.canvas.left("遠征先 T$tier", lines("所持 ${maps.size}枚", "解放 T1〜${a.unlockedMapTier}", "目安装備 T$tier", "武器 T${a.weaponTier}", "", "選ぶ → 調整", "選択では未消費"), hero = CoreMenuArt.EXPEDITION)
-            v.canvas.right("地図の入手", lines(if (tier == 1) "T1は無料" else "T${tier - 1} 戦利品券1枚", if (tier == 1) "何度でも入手可能" else "所持 ${a.amount(CoreResource.COMBAT_TOKEN, tier - 1)}", "", "同TierのLv上限で", "ボス討伐→次Tier", "", if (!unlocked) "このTierは未解放" else if (!room) "地図の保管上限" else if (!affordable) "戦利品券が不足" else "右下から受け取る"), hero = CoreMenuArt.TABLET)
+            v.canvas.left("遠征先 T$tier", lines("地図 ${maps.size}枚", "武器 T${a.weaponTier}", "目安 T$tier", "解放 T1〜${a.unlockedMapTier}"))
+            v.canvas.right("地図の受取", lines(if (tier == 1) "T1は無料" else "T${tier - 1} 戦利品券 ×1",
+                if (tier == 1) "何度でも受取可能" else "券 所持 ${a.amount(CoreResource.COMBAT_TOKEN, tier - 1)}",
+                "保管 ${a.maps.size}/${CoreLoopCatalog.MAX_MAPS}", "",
+                if (!unlocked) "Tier未解放" else if (!room) "保管上限" else if (!affordable) "戦利品券が不足" else "受取可能"))
             maps.drop(current * mapSlots.size).take(mapSlots.size).forEachIndexed { index, map ->
-                card(v, mapSlots[index], 3, 2, "Lv${map.level} 地図", CoreMenuArt.EXPEDITION, CoreLoopItems.map(map), icon = true) { mapDetail(player, map.id) }
+                card(v, mapSlots[index], 3, 2, "Lv${map.level} 地図", CoreMenuArt.EXPEDITION, CoreLoopItems.mapInMenu(map), icon = true) { mapDetail(player, map.id) }
             }
             if (maps.isEmpty()) v.canvas.text(8, 56, "地図なし → 右下で入手", CoreUiComponents.MUTED, 160)
             back(v, player, if (journey(player).isEmpty) "手帳" else "元へ") {
                 journey(player).pop()?.let { forge(player, it) } ?: journal(player)
             }
             pageButtons(v, current, last) { expeditions(player, tier, it) }
-            tile(v, 52, 2, "入手", CoreLoopItems.icon(Material.MAP, "T$tier 地図を受け取る", if (tier == 1) "無料" else "T${tier - 1} 戦利品券1枚"),
+            tile(v, 52, 2, "受取", CoreLoopItems.icon(Material.MAP, "T$tier 地図を受け取る", if (tier == 1) "無料" else "T${tier - 1} 戦利品券1枚"),
                 if (unlocked && affordable && room) Tone.PRIMARY else Tone.DISABLED) {
                 mutate(v, player, CoreAction.ClaimMap(tier, System.nanoTime()), a.revision) { expeditions(player, tier, current) }
             }
@@ -282,23 +285,25 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
         val map = a.maps.firstOrNull { it.id == id } ?: return expeditions(player)
         val ready = game.warmMap(player, map)
         view(player, "地図台 / 出発準備", { mapDetail(player, id) }) { v ->
+            v.canvas.mapDesk()
             help(v, player) { mapDetail(player, id) }
-            v.canvas.left("遠征の内容", lines("T${map.tier} / 敵Lv${map.level}", "冒険Lv${a.journey.level}", "武器 T${a.weaponTier}", "地図1枚を消費", "道の先にボス", "寄り道は自由", if (ready) "地形の準備完了" else "地形を準備中", "出発後は返却なし"), hero = CoreMenuArt.EXPEDITION)
+            v.canvas.left("出発の条件", lines("敵 T${map.tier} Lv${map.level}", "冒険 Lv${a.journey.level}", "武器 T${a.weaponTier}", "地図1枚を消費", "", if (ready) "地形の準備完了" else "地形を準備中", "出発後は返却なし"))
             v.canvas.right("採取MOD", listOf(Line("${map.modifiers.size} / 3 個")) +
                 (if (map.modifiers.isEmpty()) lines("まだ付いていません") else map.modifiers.flatMap { paragraph(CoreLoopItems.modifierName(it)) }) +
                 lines("", "石板 所持${a.amount(CoreResource.GATHERING_TABLET)}", "石板1枚で1個付与"))
-            card(v, 9, 3, 3, "地図", CoreMenuArt.EXPEDITION, CoreLoopItems.map(map), Tone.SELECTED, icon = true)
-            card(v, 12, 3, 3, "石板付与", CoreMenuArt.TABLET, CoreLoopItems.icon(Material.AMETHYST_SHARD, "採取の石板を1枚使う", "採取量・品質・密集地域のMODを追加"),
+            card(v, 9, 5, 3, "T${map.tier} Lv${map.level} 地図", CoreMenuArt.EXPEDITION, CoreLoopItems.mapInMenu(map, selected = true), Tone.SELECTED, icon = true)
+            tile(v, 14, 4, "石板付与", CoreLoopItems.icon(Material.AMETHYST_SHARD, "採取の石板を1枚使う", "採取量・品質・密集地域のMODを追加"),
                 if (map.modifiers.size < 3 && a.amount(CoreResource.GATHERING_TABLET) > 0) Tone.NEUTRAL else Tone.DISABLED, icon = true) {
                 game.applyTablet(player, id, a.revision, onRejected = {
                     if (screens.isCurrent(player, v.screen)) mapDetail(player, id)
                 }) { if (screens.isCurrent(player, v.screen)) mapDetail(player, id) }
             }
-            card(v, 15, 3, 3, "手元へ", CoreMenuArt.GEAR, CoreLoopItems.icon(Material.FILLED_MAP, "地図をホットバー8へ用意", "インベントリで石板を重ねる操作も使えます"), icon = true) {
+            tile(v, 23, 4, "手元へ", CoreLoopItems.icon(Material.FILLED_MAP, "地図をホットバー8へ用意", "インベントリで石板を重ねる操作も使えます"), icon = true) {
                 player.inventory.setItemStack(7, CoreLoopItems.map(map)); player.setHeldItemSlot(7); player.closeInventory()
             }
+            tile(v, 32, 4, "MOD ${map.modifiers.size}/3", tone = Tone.DISABLED)
+            tile(v, 36, 9, "地図1枚で出発", CoreLoopItems.icon(Material.LIME_DYE, "地図1枚を使って出発"), Tone.PRIMARY, icon = true) { game.depart(player, id, a.revision) }
             back(v, player) { expeditions(player, map.tier) }
-            card(v, 51, 3, 1, "出発", CoreMenuArt.EXPEDITION, CoreLoopItems.icon(Material.LIME_DYE, "地図1枚を使って出発"), Tone.PRIMARY) { game.depart(player, id, a.revision) }
         }
     }
 

@@ -37,6 +37,10 @@ class MenuRenderer:
         for index in range(2):
             with Image.open(self.assets / f"textures/gui/core/menu_dungeon_{index}.png") as tile:
                 self.dungeon_frame.alpha_composite(tile.convert("RGBA"), (index * self.layout["frame_tile_width"], 0))
+        self.map_desk_frame = Image.new("RGBA", tuple(self.layout["size"]))
+        for index in range(2):
+            with Image.open(self.assets / f"textures/gui/core/menu_map_desk_{index}.png") as tile:
+                self.map_desk_frame.alpha_composite(tile.convert("RGBA"), (index * self.layout["frame_tile_width"], 0))
         self.atlas = Image.open(self.assets / "textures/gui/core/menu_text.png").convert("RGBA")
         self.emphasis_atlas = Image.open(self.assets / "textures/gui/core/menu_text_emphasis.png").convert("RGBA")
         self.focus_atlas = Image.open(self.assets / "textures/gui/core/menu_focus.png").convert("RGBA")
@@ -88,7 +92,9 @@ class MenuRenderer:
     def render(self, snapshot, scaled_width=None, show_icon_slots=False):
         scale = self.raster_scale
         journal_page = snapshot.get("journalPage")
-        frame = self.journal_frames[journal_page] if journal_page is not None else self.dungeon_frame if snapshot.get("dungeonEntrance") else self.frame
+        frame = (self.journal_frames[journal_page] if journal_page is not None else
+                 self.dungeon_frame if snapshot.get("dungeonEntrance") else
+                 self.map_desk_frame if snapshot.get("mapDesk") else self.frame)
         result = frame.resize((frame.width * scale, frame.height * scale), Image.Resampling.NEAREST)
         report = {"title": snapshot["title"], "layer": "actual CoreMenuCanvas title layer",
                   "omitted": ["non-flat item models", "vanilla inventory label", "hover highlights", "tooltips"],
@@ -165,7 +171,7 @@ class MenuRenderer:
             x = (card["columns"] - 1) * 160
             y = tone_row * card["height"]
             backdrop = self.card_atlases[card["rows"]].crop((x, y, x + card["width"], y + card["height"]))
-            if not (journal_page is not None and card["firstSlot"] == 9 and card["columns"] == 5 and card["rows"] == 3):
+            if not ((journal_page is not None or snapshot.get("mapDesk")) and card["firstSlot"] == 9 and card["columns"] == 5 and card["rows"] == 3):
                 blit(backdrop, card["x"], card["y"])
             art(card.get("artPlacement"))
             if card.get("icon"):

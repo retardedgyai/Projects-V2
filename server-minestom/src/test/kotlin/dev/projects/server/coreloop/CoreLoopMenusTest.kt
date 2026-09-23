@@ -113,6 +113,53 @@ class CoreLoopMenusTest {
         }
     }
 
+    @Test fun `map desk keeps the selected map visible and every departure slot uses that map`() {
+        val f = fixture(account(tier = 3), packed = true)
+        val map = f.host.current.maps.first()
+        f.menus.mapDetail(f.player, map.id)
+        val snapshot = f.snapshot()
+        assertTrue(snapshot.mapDesk)
+        assertEquals(listOf(9), snapshot.cards.map { it.firstSlot })
+        assertEquals(listOf("石板付与", "手元へ", "MOD 3/3", "地図1枚で出発"),
+            snapshot.buttons.filter { it.firstSlot in listOf(14, 23, 32, 36) }.map { it.label })
+        f.click(14)
+        assertTrue(f.host.requests.isEmpty(), "A map with three modifiers cannot take another tablet")
+        for (slot in 36..44) f.click(slot)
+        assertEquals(List(9) { map.id to 41L }, f.host.departures)
+    }
+
+    @Test fun `map desk routes tablet application only when the selected map has room`() {
+        val original = account(tier = 3)
+        val unmodified = CoreOwnedMap(original.maps.first().id, 17L, 3)
+        val f = fixture(original.copy(maps = listOf(unmodified)), packed = true)
+        f.menus.mapDetail(f.player, unmodified.id)
+        f.click(14)
+        assertEquals(CoreAction.ApplyTablet(unmodified.id, CoreMapModifier(null, "amount", 10)), f.host.requests.single().action)
+        assertEquals(41L, f.host.requests.single().revision)
+    }
+
+    @Test fun `map table opens the exact map and clearly gates receiving another`() {
+        val f = fixture(account(tier = 3), packed = true)
+        f.menus.expeditions(f.player, 3)
+        assertEquals(6, f.snapshot().cards.size)
+        assertEquals("地図の受取", f.snapshot().rightPanel!!.title)
+        assertTrue(f.player.openInventory!!.getItemStack(10).get(DataComponents.LORE).orEmpty().map(::plain).any { it == "クリックで出発準備へ" })
+        f.click(9)
+        assertTrue(f.snapshot().mapDesk)
+        assertEquals("T3 Lv21 地図", f.snapshot().cards.single().label)
+        assertTrue(f.player.openInventory!!.getItemStack(20).get(DataComponents.LORE).orEmpty().map(::plain).any { it == "画面下の出発で地図1枚を消費" })
+        f.menus.expeditions(f.player, 3)
+        f.click(52)
+        assertTrue(f.host.requests.single().action is CoreAction.ClaimMap)
+        assertEquals(41L, f.host.requests.single().revision)
+
+        val noToken = fixture(account(tier = 3, wealthy = false), packed = true)
+        noToken.menus.expeditions(noToken.player, 3)
+        assertTrue(noToken.snapshot().rightPanel!!.lines.any { it.text == "戦利品券が不足" })
+        noToken.click(52)
+        assertTrue(noToken.host.requests.isEmpty())
+    }
+
     @Test fun `risky enhancement quotes then confirms while broken equipment links directly to repair`() {
         for (packed in listOf(false, true)) {
             val f = fixture(account(tier = 3).copy(weaponEnhancement = CoreEnhancementState(15)), packed)
@@ -809,6 +856,8 @@ class CoreLoopMenusTest {
             Files.writeString(output.resolve("$name.json"), gson.toJson(exported))
             auditSnapshot(snapshot).forEach { failures += "$name: $it" }
         }
+        capture("map-table") { f.menus.expeditions(f.player, 3) }
+        capture("map-detail") { f.menus.mapDetail(f.player, f.host.current.maps.first().id) }
         capture("dungeon-entry") { f.menus.dungeons(f.player, 3) }
         val dungeonPlan = DungeonPlan.generate(32, 3, 0)
         f.host.dungeonState = DungeonRunView(UUID.randomUUID(), f.player.uuid, dungeonPlan.choices(4).first(),
