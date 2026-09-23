@@ -16,15 +16,15 @@ import gen_vesper as authoring  # noqa: E402
 
 
 PALETTE = {
-    "armor": ("1b1d1c", "383d3a", "68716a"),
-    "edge": ("292b28", "5a625a", "909a89"),
+    "armor": ("181b1f", "32383c", "61696a"),
+    "edge": ("24282b", "555d61", "929a9a"),
     "cloth": ("0d1c32", "183554", "315878"),
     "void": ("090d14", "161d29", "313b49"),
     "hair": ("0b0f16", "202833", "3d4853"),
-    "ash": ("363733", "666b63", "a7aea0"),
+    "ash": ("333738", "646b6a", "a4adac"),
     "ember": ("9d342f", "e56948", "ffc383"),
     "eye": ("0a101a", "121d29", "2d4857"),
-    "mail": ("191c19", "343934", "50584f"),
+    "mail": ("14191c", "2e3538", "596165"),
     "leather": ("16191b", "2c2c2c", "504b45"),
     "skin": ("251c1c", "513a35", "806052"),
     "bandage": ("3b3530", "776b5d", "a79783"),
@@ -107,7 +107,8 @@ class KnightModel(authoring.Model):
             elif material == "mail":
                 link = (x + 3 * (y // 4 % 2)) % 8
                 weave = authoring.noise(x // 5, y // 7, seed + 233)
-                tone = 2 if y % 4 == 1 and link in (2, 3) and weave % 4 == 0 else 0 if link in (0, 7) and weave % 3 == 0 else 1
+                tone = (2 if y % 4 == 1 and link in (2, 3) and weave % 2 == 0
+                        else 0 if link in (0, 7) and weave % 2 == 0 else 1)
             elif material == "leather":
                 tone = 0 if x % 9 in (0, 1) or fine % 29 == 0 else 1
                 if y <= 1:
@@ -178,10 +179,37 @@ def build(out=ROOT / "model-lab" / "models"):
     tabard_uv = m.patch(36, 80, paint_torn_tabard, "torn_tabard")
     m.cube("front_torn_tabard", [-1.75, 4.7, -2.38], [1.75, 11.5, -2.31],
            "cloth", hips, face_uv={"north": tabard_uv, "south": tabard_uv})
+    # Torn hip panels partially cover the rigid thigh silhouette. Different
+    # hems and angles keep them from reading as a symmetrical armored skirt.
+    for panel, (x0, x1, top, hem, depth, lean) in enumerate((
+            (-5.05, -2.05, 11.85, 5.55, -2.46, -13),
+            (1.8, 4.55, 11.4, 6.35, -2.39, 12),
+            (-3.9, -1.05, 10.45, 7.15, -2.65, 7),
+    )):
+        def paint_hip_rag(px, py, seed=panel):
+            side = abs(px - 23.5) / 24
+            left = 3 + round(py * (.075 + seed * .015))
+            right = 44 - round(py * (.055 + seed * .01))
+            bottom = 91 - (px // 7 % 4) * (3 + seed) - authoring.noise(px // 3, seed, 9187) % 8
+            if px < left or px > right or py > bottom or py < 3 + round(side * 5):
+                return (0, 0, 0, 0)
+            if py > 54 and abs(px - (17 + seed * 5 + py // 9)) < 2:
+                return (0, 0, 0, 0)
+            fold = math.sin(px * .24 + py * .075 + seed * 1.7)
+            color = (15, 30, 49) if fold < -.35 else (40, 61, 81) if fold > .72 else (25, 45, 68)
+            if authoring.noise(px // 2, py // 2, 9203 + seed) % 63 == 0:
+                color = (69, 77, 78)
+            return (*color, 255)
+
+        rag_uv = m.patch(48, 96, paint_hip_rag, f"front_hip_rag_{panel}")
+        add_rotated(m, hips, f"front_hip_rag_{panel}",
+                    [x0, hem, depth], [x1, top, depth + .14], "cloth",
+                    [5 + panel * 3, 0, lean], [(x0 + x1) / 2, top, depth],
+                    "ragged_hip", face_uv={"north": rag_uv, "south": rag_uv})
     add(m, chest, "upper_mail_tunic", [-3.7, 17.1, -2.15], [3.7, 22, 2.1], "void")
     add(m, chest, "waist_mail_tunic", [-2.9, 13, -1.85], [2.9, 18.3, 1.85], "void")
     add(m, chest, "upper_damaged_cuirass", [-3.1, 17.0, -2.7], [2.4, 21.3, -1.85], "armor")
-    add(m, chest, "lower_damaged_cuirass", [-2.5, 14.2, -2.48], [1.8, 17.5, -1.78], "armor")
+    add(m, chest, "lower_damaged_cuirass", [-2.0, 14.9, -2.37], [1.15, 17.45, -1.78], "armor")
     add(m, chest, "fractured_breastplate", [-2.9, 17.6, -2.91], [-.4, 20.7, -2.63], "edge", "engraved")
     add(m, chest, "high_collar", [-2.8, 21.4, -1.65], [2.8, 23.2, 2.2], "void")
     add(m, chest, "mail_under_left", [-4.25, 15.8, -1.8], [-3.55, 20.8, 1.5], "mail")
@@ -209,7 +237,9 @@ def build(out=ROOT / "model-lab" / "models"):
     pauldron_uv = m.patch(40, 40, paint_worn_pauldron, "worn_pauldron")
     m.cube("worn_left_shoulder_face", [-6.45, 19.2, -2.55], [-2.75, 24.4, -2.48],
            "armor", chest, face_uv={"north": pauldron_uv, "south": pauldron_uv})
-    add(m, chest, "chest_leather_binding", [-3.3, 15.2, -2.8], [2.55, 15.8, -2.58], "leather")
+    add_rotated(m, chest, "diagonal_chest_binding", [-3.1, 15.05, -2.85],
+                [2.4, 15.52, -2.55], "leather", [0, 0, -20],
+                [-.35, 15.3, -2.7], "scuffed_leather")
 
     def paint_worn_backplate(px, py):
         shoulder = min(1, max(0, (py - 4) / 14))
@@ -259,22 +289,26 @@ def build(out=ROOT / "model-lab" / "models"):
         return (*color, 255)
 
     cowl_under_uv = m.patch(96, 80, paint_cowl_under, "cowl_under")
-    m.cube("cowl_under_sheet", [-4.7, 17.6, -3.18], [4.4, 23.6, -3.1],
+    m.cube("cowl_under_sheet", [-4.45, 19.65, -3.18], [4.25, 23.65, -3.1],
            "cloth", scarf, face_uv={"north": cowl_under_uv, "south": cowl_under_uv})
 
+    # Five narrow, drooping fabric folds read as a cowl wrapped around the
+    # neck. Broad rectangular folds looked like stacked breastplate panels.
     cowl_bands = (
-        (-3.6, 3.4, 22.2, 24.3, -3.3, -5),
-        (-4.7, 4.4, 20.3, 23.1, -3.58, 4),
-        (-4.5, 4.0, 18.4, 21.4, -3.88, -6),
+        (-3.15, 3.05, 23.55, -3.18, .88),
+        (-3.65, 3.55, 22.90, -3.48, .92),
+        (-4.05, 3.95, 22.20, -3.73, .96),
+        (-4.3, 4.15, 21.47, -3.95, 1.00),
+        (-3.75, 3.9, 20.70, -4.02, 1.00),
     )
-    for layer, (x0, x1, y0, y1, z, bank) in enumerate(cowl_bands):
+    for layer, (x0, x1, top_y, z, thickness) in enumerate(cowl_bands):
         def paint_cowl(px, py, seed=layer):
             side = abs(px - 47.5) / 48
-            top = 2 + round(8 * side ** 1.4)
-            hem = 29 - round(7 * side) - authoring.noise(px // 6, seed, 3341) % 3
+            top = 1 + round(5 * side ** 1.4)
+            hem = 30 - round(4 * side) - authoring.noise(px // 6, seed, 3341) % 3
             if py < top or py > hem:
                 return (0, 0, 0, 0)
-            if seed == 2 and py > 20 and (px + py * 2) % 19 < 3:
+            if seed == 4 and py > 20 and (px + py * 2) % 19 < 3:
                 return (0, 0, 0, 0)
             fold = math.sin(px * .072 + py * .18 + seed * 1.4)
             color = ((12, 29, 50) if fold < -.35 else
@@ -286,23 +320,23 @@ def build(out=ROOT / "model-lab" / "models"):
             return (*color, 255)
 
         band_uv = m.patch(96, 32, paint_cowl, f"cowl_band_{layer}")
-        for facet in range(3):
-            u = (facet + .5) / 3
-            xlo = x0 + (x1 - x0) * facet / 3
-            xhi = x0 + (x1 - x0) * (facet + 1) / 3
+        for facet in range(7):
+            u = (facet + .5) / 7
+            xlo = x0 + (x1 - x0) * facet / 7
+            xhi = x0 + (x1 - x0) * (facet + 1) / 7
             side = abs(u - .5) * 2
-            center_y = (y0 + y1) / 2 + 1.45 * side
-            center_z = z + .8 * side
-            uvlo = band_uv[0] + facet * 32
-            uvhi = band_uv[0] + (facet + 1) * 32
+            center_y = top_y - thickness / 2 + 2.0 * side ** 1.45
+            center_z = z + .67 * side + .18 * math.cos(u * math.tau)
+            uvlo = band_uv[0] + round(facet * 96 / 7)
+            uvhi = band_uv[0] + round((facet + 1) * 96 / 7)
             face_uv = {"north": [uvlo, band_uv[1], uvhi, band_uv[3]],
                        "south": [uvlo, band_uv[1], uvhi, band_uv[3]]}
             add_rotated(m, scarf, f"layered_cowl_{layer}_{facet}",
-                        [xlo - .08, center_y - (y1 - y0) / 2, center_z],
-                        [xhi + .08, center_y + (y1 - y0) / 2, center_z + .3],
-                        "cloth", [6 - layer * 2, (facet - 1) * 19,
-                                  bank + (facet - 1) * 19],
-                        [(xlo + xhi) / 2, center_y, center_z + .15],
+                        [xlo - .09, center_y - thickness / 2, center_z],
+                        [xhi + .09, center_y + thickness / 2, center_z + .32],
+                        "cloth", [7 - layer, (facet - 3) * 7,
+                                  (facet - 3) * 9],
+                        [(xlo + xhi) / 2, center_y, center_z + .16],
                         "worn_cowl", face_uv)
     add(m, scarf, "scarf_left_drape", [-5.1, 19.5, -1.8], [-3.45, 22.2, 2.25], "cloth")
     add(m, scarf, "scarf_right_drape", [2.7, 20.1, -1.8], [4.5, 22.5, 2.2], "cloth")
@@ -355,10 +389,10 @@ def build(out=ROOT / "model-lab" / "models"):
         if 4 <= distance <= 15 and abs(py - eye_line) < 1.65:
             return (5, 10, 17, 255)
         if 4 <= distance <= 15 and abs(py - (eye_line - 2.4)) < 1:
-            return (122, 126, 113, 255)
+            return (125, 132, 136, 255)
         snout_ridge = 7 - (py - 36) * .28
         if 36 <= py <= 55 and abs(distance - snout_ridge) < .9:
-            return (105, 108, 96, 255)
+            return (106, 115, 120, 255)
         if 35 <= py <= 54 and distance <= 2:
             return (25, 32, 36, 255)
         if py >= 56 and distance < 4:
@@ -366,13 +400,13 @@ def build(out=ROOT / "model-lab" / "models"):
         if 34 < py < 51 and distance in (4, 5):
             return (30, 42, 48, 255)
         if abs(distance - width) <= 1 and py % 5 != 0:
-            return (111, 116, 103, 255)
+            return (112, 122, 126, 255)
         if px > center + 8 and 18 < py < 43 and (px + py * 2) % 9 < 2:
             return (0, 0, 0, 0)
         scratch = (px * 3 + py * 5) % 47
         if scratch == 0:
-            return (135, 136, 120, 255)
-        return (69, 72, 66, 255)
+            return (140, 145, 143, 255)
+        return (67, 75, 78, 255)
 
     faceplate_uv = m.patch(48, 64, paint_faceplate, "ashen_faceplate")
     m.cube("engraved_wolf_visor", [-2.65, 22.2, -5.86], [2.65, 27.35, -5.78],
@@ -502,9 +536,9 @@ def build(out=ROOT / "model-lab" / "models"):
     # Leave the chainmail back exposed. The short scarf above and torn cloth
     # tied at the hips have separate silhouettes, like a battle-worn knight.
     cape_strips = (
-        (-4.5, 5.5, 3.2, 3.2, -35),
-        (-.7, 5.0, 4.2, 4.0, 0),
-        (3.2, 4.3, 3.3, 6.2, 32),
+        (-4.65, 4.25, 3.05, 3.2, -37),
+        (-.55, 3.65, 4.35, 4.0, 0),
+        (3.35, 3.35, 3.15, 6.2, 35),
     )
 
     for strip, (center, width, depth, hem, yaw) in enumerate(cape_strips):

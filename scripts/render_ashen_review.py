@@ -32,7 +32,7 @@ preview.project = review_project
 
 
 def lit_render(*args):
-    return preview.render(*args, continuous_light=True)
+    return preview.render(*args, continuous_light=True, show_grid=False)
 
 
 views = [("idle", 0, "front"), ("idle", 0, "side"),

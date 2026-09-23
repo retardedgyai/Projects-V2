@@ -108,7 +108,7 @@ def project(points, view):
 
 
 def render(data, elements, atlas, anim, t, view, px, canvas=None, origin=None,
-           continuous_light=False):
+           continuous_light=False, show_grid=True):
     """canvas=(幅,高さ), origin=(u0,v0) を与えると同じ枡で描く。無ければ自動で収める。"""
     world = transforms(data["outliner"][0], anim, t, np.eye(4), {})
     quads = []
@@ -169,15 +169,17 @@ def render(data, elements, atlas, anim, t, view, px, canvas=None, origin=None,
         img[y0:y1, x0:x1][hit, :3] = np.clip(texel[hit][:, :3] * shade, 0, 255).astype(np.uint8)
     out = Image.fromarray(img)
     draw = ImageDraw.Draw(out)
-    if view != "top":
+    if view != "top" and show_grid:
         for k in range(0, 8):
             y = int((-k * BLOCK_UNITS - origin[1]) * px)
             if 0 <= y < h:
                 draw.line([(0, y), (w, y)], fill=(70, 64, 80, 255))
+    if view != "top":
         ground = int((0 - origin[1]) * px)
         draw.line([(0, ground), (w, ground)], fill=(150, 120, 60, 255))
-    ucenter = int((0 - origin[0]) * px)
-    draw.line([(ucenter, 0), (ucenter, h)], fill=(70, 64, 80, 255))
+    if show_grid:
+        ucenter = int((0 - origin[0]) * px)
+        draw.line([(ucenter, 0), (ucenter, h)], fill=(70, 64, 80, 255))
     return out
 
 
