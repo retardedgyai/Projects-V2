@@ -268,8 +268,8 @@ class CoreMenuCanvas(private val title: String) {
         const val PANEL_LINES = 13
         const val HERO_PANEL_LINES = 10
         const val LINE_HEIGHT = 14
-        val HEADING: TextColor = TextColor.color(0xEAD9BA)
-        val BODY_COLOR: TextColor = TextColor.color(0xD6CBB7)
+        val HEADING: TextColor = TextColor.color(0xE8EFEC)
+        val BODY_COLOR: TextColor = TextColor.color(0xD3DAD9)
         val ART_SIZES: Set<Int> = setOf(16, 32, 48)
         val ART_YS: Set<Int> = setOf(18, 28, 30, 36, 42, 48, 54, 56, 70, 72, 84, 90, 98, 108, 112, 126, 140, 154, 168, 182, 196)
         val FOCUS_SLOTS: List<Int> = occupiedSlots(18, 6, 3)
@@ -381,11 +381,11 @@ class CoreMenuCanvas(private val title: String) {
         }
 
         private fun toneColor(tone: Tone): TextColor = TextColor.color(when (tone) {
-            Tone.NEUTRAL -> 0xD6CBB7
-            Tone.SELECTED -> 0xF4D59A
-            Tone.PRIMARY -> 0xFFF0CE
-            Tone.DISABLED -> 0x837C70
-            Tone.DANGER -> 0xFFE3E0
+            Tone.NEUTRAL -> 0xD3DAD9
+            Tone.SELECTED -> 0xF2F2E9
+            Tone.PRIMARY -> 0xFFF1D3
+            Tone.DISABLED -> 0x899397
+            Tone.DANGER -> 0xF1C1B8
         })
     }
 }

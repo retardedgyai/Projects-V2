@@ -83,38 +83,38 @@ def build():
 
     # 26.2 AbstractContainerScreen extracts labels before items: the bitmap is a true backdrop.
     # Keep every vanilla hitbox untouched; render socket recesses at their exact existing coordinates.
-    frame = [(0, 0, 176, 222, "24272B"), (4, 17, 20, 109, "1D2023"),
-             (25, 17, 1, 109, "5D5038"), (4, 127, 168, 11, "B8AF99"),
-             (0, 0, 176, 3, "24272B"), (0, 219, 176, 3, "24272B"),
-             (0, 3, 3, 216, "24272B"), (173, 3, 3, 216, "24272B"),
-             (3, 3, 170, 12, "24272B"), (4, 15, 168, 1, "746547"),
-             (1, 1, 174, 1, "B7A16A"), (1, 220, 174, 1, "746547"),
-             (1, 1, 1, 220, "8F7C52"), (174, 1, 1, 220, "8F7C52"),
-             (3, 3, 3, 3, "D7C188"), (170, 3, 3, 3, "D7C188"),
-             (3, 216, 3, 3, "8F7C52"), (170, 216, 3, 3, "8F7C52")]
+    frame = [(0, 0, 176, 222, "1B252A"), (4, 17, 20, 109, "151D21"),
+             (25, 17, 1, 109, "53666D"), (4, 127, 168, 11, "B9C8C7"),
+             (0, 0, 176, 3, "1B252A"), (0, 219, 176, 3, "1B252A"),
+             (0, 3, 3, 216, "1B252A"), (173, 3, 3, 216, "1B252A"),
+             (3, 3, 170, 12, "1B252A"), (4, 15, 168, 1, "5A6D72"),
+             (1, 1, 174, 1, "A6B8BA"), (1, 220, 174, 1, "5A6D72"),
+             (1, 1, 1, 220, "82989B"), (174, 1, 1, 220, "82989B"),
+             (3, 3, 3, 3, "D3DCD8"), (170, 3, 3, 3, "D3DCD8"),
+             (3, 216, 3, 3, "82989B"), (170, 216, 3, 3, "82989B")]
     for y in list(range(18, 126, 18)) + list(range(140, 194, 18)) + [198]:
         for x in range(8, 168, 18):
-            frame += [(x-1, y-1, 18, 18, "15181B"), (x, y, 16, 16, "303236"),
-                      (x, y+16, 17, 1, "4B4B45"), (x+16, y, 1, 16, "44453F")]
+            frame += [(x-1, y-1, 18, 18, "11191D"), (x, y, 16, 16, "303236"),
+                      (x, y+16, 17, 1, "53666D"), (x+16, y, 1, 16, "46575D")]
     image("menu_frame", 176, 222, frame)
     # Dedicated workbench: category rail / recipes / subject / costs / explicit bottom actions.
     # Repaint only the container area; the player's 36 slots retain their original coordinates.
-    forge = frame + [(4, 17, 168, 109, "24272B"), (4, 17, 20, 109, "181C20"),
-                     (25, 17, 36, 89, "202326"), (62, 17, 53, 89, "2A2927"),
-                     (116, 17, 56, 89, "202326"), (25, 107, 147, 19, "292922"),
-                     (24, 17, 1, 109, "746547"), (61, 17, 1, 89, "514732"),
-                     (115, 17, 1, 89, "514732"), (25, 106, 147, 1, "746547")]
+    forge = frame + [(4, 17, 168, 109, "1B252A"), (4, 17, 20, 109, "151D21"),
+                     (25, 17, 36, 89, "1C272C"), (62, 17, 53, 89, "263239"),
+                     (116, 17, 56, 89, "1C272C"), (25, 107, 147, 19, "222D32"),
+                     (24, 17, 1, 109, "5A6D72"), (61, 17, 1, 89, "45575E"),
+                     (115, 17, 1, 89, "45575E"), (25, 106, 147, 1, "5A6D72")]
     used = {0, 9, 18, 27, 36, 45, 1, 3, 4, 5, 7, 8, 13, 22, 31, 40,
             10, 11, 19, 20, 28, 29, 37, 38, 16, 17, 25, 26, 34, 35, 43, 44,
             46, 47, 48, 49, 50, 52}
     for slot in sorted(used):
         x, y = 8 + slot % 9 * 18, 18 + slot // 9 * 18
-        color = "756344" if slot == 52 else "303236"
-        forge += [(x-1, y-1, 18, 18, "15181B"), (x, y, 16, 16, color),
-                  (x, y+16, 17, 1, "746547" if slot == 52 else "4B4B45")]
+        color = "534029" if slot == 52 else "303236"
+        forge += [(x-1, y-1, 18, 18, "11191D"), (x, y, 16, 16, color),
+                  (x, y+16, 17, 1, "D0A363" if slot == 52 else "53666D")]
     # Quiet direction marks occupy the unused gutters, never a slot or a text field.
     for x in (66, 103):
-        forge += [(x, 60, 5, 1, "9D8554"), (x+3, 59, 1, 3, "9D8554"), (x+4, 60, 1, 1, "D5BB7D")]
+        forge += [(x, 60, 5, 1, "8EA5A9"), (x+3, 59, 1, 3, "8EA5A9"), (x+4, 60, 1, 1, "D3DCD8")]
     image("forge_frame", 176, 222, forge)
     # The authored illustration appears ONLY while no MOD recipe is selected.
     # It is a technical thumbnail derivative of the supplied original, not generated pixel art.

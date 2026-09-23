@@ -196,8 +196,8 @@ def verify():
             assert providers[index]["chars"] == [chr(FRAME_BASE + index)] and providers[index]["ascent"] == 13
     for y in (140, 158, 176, 198):
         for column in range(9):
-            assert canvas.getpixel((104 + 8 + column * 18 + 8, y + 8)) == (41, 36, 29, 255)
-    assert canvas.getpixel((104 + 8, 128)) == (191, 167, 122, 255), "Vanilla inventory text needs a light tab, not a competing overlay"
+            assert canvas.getpixel((104 + 8 + column * 18 + 8, y + 8)) == (45, 57, 63, 255)
+    assert canvas.getpixel((104 + 8, 128)) == (185, 200, 199, 255), "Vanilla inventory text needs a light tab, not a competing overlay"
     assert canvas.getpixel((270, 128)) != canvas.getpixel((112, 128)), "Do not restore the full-width bright inventory bar"
     with Image.open(PACK / "assets/projects/textures/gui/core/menu_buttons.png") as buttons:
         assert buttons.size == (1440, 80)
@@ -205,7 +205,7 @@ def verify():
             for span in range(1, 10):
                 cell = buttons.crop(((span - 1) * 160, row * 16, span * 160, row * 16 + 16))
                 assert cell.getchannel("A").getbbox() == (0, 0, span * 18 - 2, 16)
-                if tone == "SELECTED": assert cell.getpixel((2, 14)) == (203, 161, 102, 255)
+                if tone == "SELECTED": assert cell.getpixel((2, 14)) == (207, 219, 216, 255)
         for row in range(6):
             provider = json.loads((PACK / f"assets/projects/font/core_menu_buttons_{row}.json").read_text())["providers"][0]
             assert provider["ascent"] == 13 - (18 + row * 18) and provider["height"] == 16

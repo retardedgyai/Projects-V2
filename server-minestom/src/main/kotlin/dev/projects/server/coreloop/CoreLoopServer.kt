@@ -321,6 +321,9 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         MinecraftServer.getCommandManager().register(Command("projects").apply {
             setDefaultExecutor { sender, _ -> (sender as? Player)?.let { if (combatLab.contains(it)) combatLab.menu(it) else menus.journal(it) } }
         })
+        MinecraftServer.getCommandManager().register(Command("uipreview").apply {
+            setDefaultExecutor { sender, _ -> (sender as? Player)?.let(menus::uiPreview) }
+        })
         MinecraftServer.getCommandManager().register(Command("skilltest").apply {
             setDefaultExecutor { sender, _ -> (sender as? Player)?.let { combatLab.enter(it, account(it)?.journey?.job ?: CoreClass.WARRIOR) } }
         })

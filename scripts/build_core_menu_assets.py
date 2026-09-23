@@ -8,7 +8,6 @@ from pathlib import Path
 import hashlib
 import json
 import math
-import random
 import shutil
 import urllib.request
 
@@ -31,11 +30,11 @@ BUTTON_BASE = 0xE610
 CARD_BASE = 0xE650
 TEXT_YS = sorted({6, 8, 128, *(20 + 18 * row for row in range(6)), *(30 + 14 * row for row in range(13))})
 PALETTE = {
-    "NEUTRAL": ("29251F", "4C4132", "D6CBB7"),
-    "SELECTED": ("443421", "B68A4D", "F4D59A"),
-    "PRIMARY": ("73502C", "D8AA62", "FFF0CE"),
-    "DISABLED": ("211F1B", "343028", "837C70"),
-    "DANGER": ("482922", "A15D42", "F0B19A"),
+    "NEUTRAL": ("252D32", "46535A", "D3DAD9"),
+    "SELECTED": ("35434A", "A5BDC0", "F2F2E9"),
+    "PRIMARY": ("534029", "D0A363", "FFF1D3"),
+    "DISABLED": ("20262A", "394349", "899397"),
+    "DANGER": ("402D2D", "A76B64", "F1C1B8"),
 }
 
 
@@ -161,45 +160,40 @@ def build_font(style="BODY"):
 
 
 def build_frame():
-    frame = Image.new("RGBA", (384, 222), "#171612")
+    frame = Image.new("RGBA", (384, 222), "#11191D")
     draw = ImageDraw.Draw(frame)
-    # A single charcoal work surface, not three framed dashboard columns.
-    draw.rectangle((2, 2, 381, 219), fill="#211D18", outline="#56452F")
-    draw.line((12, 3, 371, 3), fill="#84633B")
-    draw.line((4, 12, 4, 207), fill="#3B3023")
-    draw.line((379, 12, 379, 207), fill="#30281E")
-    draw.line((12, 217, 371, 217), fill="#332A1F")
-    # Quiet, deterministic chips in warm stone. Never a photographic/noisy texture.
-    grain = random.Random(7319)
-    for _ in range(850):
-        x, y = grain.randrange(7, 377), grain.randrange(5, 217)
-        draw.point((x, y), fill=grain.choice(("#231F19", "#211D18", "#1F1B17")))
-    # Worn brass corner fittings provide a bounded fantasy identity.
+    # Broad quiet surfaces preserve the item's silhouette and the Japanese labels.
+    draw.rectangle((2, 2, 381, 219), fill="#1B252A", outline="#526169")
+    draw.line((12, 3, 371, 3), fill="#8B9FA4")
+    draw.line((4, 12, 4, 207), fill="#34434A")
+    draw.line((379, 12, 379, 207), fill="#34434A")
+    draw.line((12, 217, 371, 217), fill="#34434A")
+    # Four stepped corners carry the identity without a noisy texture.
     for right in (False, True):
         for bottom in (False, True):
             def point(x, y): return (383 - x if right else x, 221 - y if bottom else y)
-            draw.line([point(2, 19), point(2, 9), point(9, 2), point(26, 2)], fill="#977344", width=2)
-            draw.line([point(6, 17), point(6, 10), point(11, 6), point(21, 6)], fill="#57442C")
-            draw.polygon([point(8, 9), point(10, 7), point(12, 9), point(10, 11)], fill="#CEAC70")
+            draw.line([point(2, 19), point(2, 9), point(9, 2), point(26, 2)], fill="#A6B8BA", width=2)
+            draw.line([point(6, 17), point(6, 10), point(11, 6), point(21, 6)], fill="#52676D")
+            draw.polygon([point(8, 9), point(10, 7), point(12, 9), point(10, 11)], fill="#D3DCD8")
     # Headers sit on the surface with short engraved accents; no full-height rules.
     for left, right in ((8, 92), (290, 374)):
-        draw.line((left, 25, left + 24, 25), fill="#86623B")
-        draw.line((left + 25, 25, right, 25), fill="#332B20")
-    draw.line((111, 16, 269, 16), fill="#54412A")
+        draw.line((left, 25, left + 24, 25), fill="#90A6AA")
+        draw.line((left + 25, 25, right, 25), fill="#35474E")
+    draw.line((111, 16, 269, 16), fill="#5A6D72")
     # The item bag is visually recessed, subordinate to the workshop above it.
-    draw.rectangle((108, 138, 276, 214), fill="#1A1713")
+    draw.rectangle((108, 138, 276, 214), fill="#141C20")
     # Vanilla draws its dark inventory title at x=8,y=128 after this component.
     # A small parchment tab replaces the old full-width bright separator bar.
-    draw.polygon([(111, 126), (190, 126), (194, 130), (194, 137), (111, 137)], fill="#BFA77A")
-    draw.line((112, 127, 187, 127), fill="#DBC69B")
-    draw.polygon([(189, 126), (194, 131), (189, 131)], fill="#887049")
+    draw.polygon([(111, 126), (190, 126), (194, 130), (194, 137), (111, 137)], fill="#B9C8C7")
+    draw.line((112, 127, 187, 127), fill="#E0E8E3")
+    draw.polygon([(189, 126), (194, 131), (189, 131)], fill="#718A8D")
     for y in (140, 158, 176, 198):
         for column in range(9):
             x = 104 + 8 + column * 18
-            draw.rectangle((x, y, x + 15, y + 15), fill="#29241D")
-            draw.line((x, y, x + 15, y), fill="#15130F")
-            draw.line((x, y, x, y + 15), fill="#15130F")
-            draw.line((x + 1, y + 16, x + 15, y + 16), fill="#3C3326")
+            draw.rectangle((x, y, x + 15, y + 15), fill="#2D393F")
+            draw.line((x, y, x + 15, y), fill="#11191D")
+            draw.line((x, y, x, y + 15), fill="#11191D")
+            draw.line((x + 1, y + 16, x + 15, y + 16), fill="#506167")
     for index in range(2):
         frame.crop((index * 192, 0, (index + 1) * 192, 222)).save(
             ASSETS / f"textures/gui/core/menu_canvas_{index}.png", optimize=True)
@@ -223,7 +217,7 @@ def build_buttons():
             pixel_bevel(draw, (x, y, x + width - 1, y + 15), tone)
             if tone == "SELECTED":
                 # Row 13 remains free for Japanese descenders; the accent never touches a label.
-                draw.line((x + 1, y + 14, x + width - 2, y + 14), fill="#CBA166")
+                draw.line((x + 1, y + 14, x + width - 2, y + 14), fill="#CFDBD8")
         grid.append("".join(line))
     atlas.save(ASSETS / "textures/gui/core/menu_buttons.png", optimize=True)
     for row in range(6):
@@ -247,7 +241,7 @@ def pixel_bevel(draw, box, tone):
         draw.point((x + 1, y + 1), fill="#" + border)
         draw.point((right - 1, y + 1), fill="#" + border)
     if tone == "PRIMARY":
-        draw.line((x + 3, y + 1, right - 3, y + 1), fill="#AC7B41")
+        draw.line((x + 3, y + 1, right - 3, y + 1), fill="#E2BA78")
 
 
 def build_cards():
@@ -262,13 +256,13 @@ def build_cards():
                 x, y, width = (span - 1) * 160, tone_index * height, span * 18 - 2
                 pixel_bevel(draw, (x, y, x + width - 1, y + height - 1), tone)
                 if rows > 1:
-                    draw.rectangle((x + 2, y + height - 16, x + width - 3, y + height - 3), fill="#241F19")
+                    draw.rectangle((x + 2, y + height - 16, x + width - 3, y + height - 3), fill="#202B30")
                     # A dim inset glow binds the illustration to its plate.
                     center = x + width // 2
                     draw.line((center - min(10, width // 3), y + height - 18,
-                               center + min(10, width // 3), y + height - 18), fill="#4B3924")
+                               center + min(10, width // 3), y + height - 18), fill="#53666D")
                 if tone == "SELECTED":
-                    draw.line((x + 2, y + height - 2, x + width - 3, y + height - 2), fill="#CBA166")
+                    draw.line((x + 2, y + height - 2, x + width - 3, y + height - 2), fill="#CFDBD8")
         atlas.save(ASSETS / f"textures/gui/core/menu_cards_{rows}.png", optimize=True)
         for row in range(7 - rows):
             write_json(ASSETS / f"font/core_menu_cards_{rows}_{row}.json", {"providers": [
@@ -314,7 +308,7 @@ def build_preview(frame, text_atlas, metrics, buttons):
     def width(text):
         return sum(metrics.get(char, metrics["□"])["advance"] for char in text)
 
-    def text(x, y, value, color="ECF1F2", limit=88):
+    def text(x, y, value, color="D3DAD9", limit=88):
         assert width(value) <= limit, f"QA fixture overflow: {value}={width(value)} > {limit}"
         assert all(char in metrics for char in value), f"QA fixture contains an unrenderable character: {value}"
         for char in value:
@@ -335,14 +329,14 @@ def build_preview(frame, text_atlas, metrics, buttons):
                                 ((x + 104) * TEXT_SCALE, y * TEXT_SCALE))
         text(x + (span * 18 - 2 - width(label)) // 2, y + 2, label, PALETTE[tone][2], span * 18 - 2)
 
-    text(8, 6, "開拓工房 / 強化", "E9D5A0", 160)
-    text(-98, 8, "装備の変化", "E9D5A0")
-    text(184, 8, "必要な素材", "E9D5A0")
+    text(8, 6, "開拓工房 / 強化", "E8EFEC", 160)
+    text(-98, 8, "装備の変化", "E8EFEC")
+    text(184, 8, "必要な素材", "E8EFEC")
     left = ["大剣 T2", "強化 +5 → +6", "攻撃 42 → 46", "", "成功率 85%", "失敗しても", "装備は消えない", "", "通常の強化", "を選択中"]
     right = ["必要 / 所持", "木材 T1", "12 / 80", "金属材 T1", "8 / 24", "結晶 T1", "4 / 2 不足", "", "素材をクリック", "して補充へ"]
     for x, lines in ((-98, left), (184, right)):
         for row, value in enumerate(lines):
-            text(x, 30 + row * 14, value, "E99E97" if "不足" in value else "ECF1F2")
+            text(x, 30 + row * 14, value, "F1C1B8" if "不足" in value else "D3DAD9")
     for slot, label in ((0, "強化"), (2, "精製"), (4, "制作"), (6, "MOD")):
         button(slot, 2, label, "SELECTED" if slot == 0 else "NEUTRAL")
     button(8, 1, "?")

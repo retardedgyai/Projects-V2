@@ -113,6 +113,16 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
             v.actions[slot] = { gearMods(player, gear) }
         }
         v.canvas.focus(gearArt(gear), caption)
+        // Two tiny rarity marks frame the subject art without coloring over its silhouette.
+        val rarity = when (CoreAffixCatalog.rarity(a, gear)) {
+            CoreGearRarity.NORMAL -> CoreUiRarity.COMMON
+            CoreGearRarity.MAGIC -> CoreUiRarity.UNCOMMON
+            CoreGearRarity.RARE -> CoreUiRarity.RARE
+        }
+        if (rarity != CoreUiRarity.COMMON) {
+            v.canvas.text(30, 84, "<", rarity.color, maxWidth = 8)
+            v.canvas.text(91, 84, ">", rarity.color, maxWidth = 8)
+        }
     }
     private fun gatheringResource(discipline: QuestGatheringDiscipline) = CoreResource.entries.first { it.raw && it.displayName == discipline.commonResourceName }
     private fun back(v: View, player: Player, label: String = "戻る", compact: Boolean = false, action: () -> Unit = { journal(player) }) =
@@ -120,7 +130,7 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
     private fun help(v: View, player: Player, returnTo: () -> Unit) =
         tile(v, 8, 1, "?", CoreLoopItems.icon(Material.BOOK, "画面の見方", "左右：選択内容と費用 / 中央：操作", "表示サイズ・操作の説明")) { displayHelp(player, returnTo) }
     private fun lines(vararg text: String): List<Line> = text.flatMap { CoreMenuCanvas.wrap(it).map { part -> Line(part) } }
-    private fun emphasis(text: String, color: TextColor = CoreUiComponents.GOLD) = Line(text, color, style = TextStyle.EMPHASIS)
+    private fun emphasis(text: String, color: TextColor = CoreMenuCanvas.HEADING) = Line(text, color, style = TextStyle.EMPHASIS)
     private fun paragraph(text: String, color: TextColor = CoreUiComponents.IVORY): List<Line> = CoreMenuCanvas.wrap(text).map { Line(it, color) }
     private fun pct(value: Double) = if (value % 1.0 == 0.0) value.toInt().toString() else String.format(Locale.ROOT, "%.1f", value)
     private fun resourceName(resource: CoreResource) = when (resource) {
@@ -465,6 +475,29 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
 
     fun workshop(player: Player, tier: Int = game.account(player)?.weaponTier ?: 1) {
         forge(player, (selections[player.uuid] ?: CoreForgeLayout.Selection()).copy(tier = tier.coerceIn(1, 4)))
+    }
+
+    /** Read-only local visual check: real pack models and tooltip styles, no account mutation. */
+    fun uiPreview(player: Player) {
+        if (game.account(player) == null) return
+        view(player, "UI確認 / レア度", { uiPreview(player) }) { v ->
+            v.canvas.left("アイコンの読みやすさ", lines("武器の形が見えるか", "色が武器を隠さないか", "4段階を見比べる", "", "カーソルを合わせて", "説明枠と日本語を確認"))
+            v.canvas.right("工房との整合性", lines("選択は明るい石板色", "実行だけ金色", "レア度は装備に添える", "", "見本は持ち出せません", "制作・消費も行いません"))
+            val materials = listOf(Material.STONE_SWORD, Material.IRON_SWORD, Material.DIAMOND_SWORD, Material.NETHERITE_SWORD)
+            CoreUiRarity.entries.forEachIndexed { index, rarity ->
+                val tier = index + 1
+                val base = ItemStack.of(materials[index])
+                val model = if (v.packed) base.withItemModel(CoreArmamentPresentation.model(CoreWeaponBase.STANDARD, CoreClass.WARRIOR, tier)) else base
+                val sample = CoreUiTooltip.apply(model, CoreTooltipModel("T$tier 開拓者の大剣", rarity,
+                    tier = tier, itemLevel = tier * 10, typeLabel = "大剣 / UI見本",
+                    stats = listOf(CoreTooltipStat("物理攻撃 AD", "${12 + tier * 9}", CoreUiIcon.ATTACK)),
+                    footer = listOf("UI確認用 / 持ち出せません"), rarityLabel = rarity.japanese), v.packed)
+                tile(v, 10 + index * 9, 3, rarity.japanese, sample, icon = true)
+                v.canvas.text(88, 38 + index * 18, "T$tier  ${rarity.japanese}", rarity.color, maxWidth = 80)
+            }
+            back(v, player) { journal(player) }
+            tile(v, 51, 3, "工房へ", CoreLoopItems.icon(Material.ANVIL, "実際の工房を開く"), Tone.PRIMARY) { workshop(player) }
+        }
     }
 
     private fun forge(player: Player, requested: CoreForgeLayout.Selection) {

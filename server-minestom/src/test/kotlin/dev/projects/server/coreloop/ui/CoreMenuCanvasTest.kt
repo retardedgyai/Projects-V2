@@ -182,7 +182,7 @@ class CoreMenuCanvasTest {
             assertEquals(52, width); assertEquals(52, height)
             assertEquals(74, labelY); assertEquals(52, labelMaxWidth)
             assertEquals(CoreMenuCanvas.ArtSnapshot(18, 36, "EXPEDITION", 32), artPlacement)
-            assertEquals(0xF4D59A, textColor)
+            assertEquals(0xF2F2E9, textColor)
         }
         with(cards[1]) {
             assertEquals(70, width); assertEquals(34, height)
@@ -305,9 +305,9 @@ class CoreMenuCanvasTest {
         val snapshot = canvas.snapshot()
         assertEquals(listOf("BODY", "EMPHASIS"), snapshot.leftPanel!!.lines.map { it.style })
         assertEquals(listOf("BODY", "EMPHASIS"), snapshot.texts.map { it.style })
-        assertEquals(0xEAD9BA, snapshot.titleColor)
-        assertEquals(0xFFF0CE, snapshot.buttons.single().textColor)
-        assertEquals(0xD6CBB7, snapshot.cards.single().textColor)
+        assertEquals(0xE8EFEC, snapshot.titleColor)
+        assertEquals(0xFFF1D3, snapshot.buttons.single().textColor)
+        assertEquals(0xD3DAD9, snapshot.cards.single().textColor)
         val fonts = components(canvas.render()).filterIsInstance<TextComponent>()
             .filter { it.content().isNotEmpty() }.mapNotNull { it.style().font()?.value() }
         for (font in listOf("core_menu_emphasis_y6", "core_menu_emphasis_y8", "core_menu_y30",
