@@ -429,12 +429,13 @@ def build(out=ROOT / "model-lab" / "models"):
                 [0, 25.9, -.1], "burned_hood")
     add_rotated(m, helm, "hood_left_temple", [-2.7, 23.9, -2.3], [-.85, 26.6, 2.3],
                 "void", [0, 0, -12], [-1.65, 25.2, 0])
-    add_rotated(m, helm, "hood_right_temple", [.8, 24.1, -2.2], [2.55, 26.3, 2.25],
-                "void", [0, 0, 9], [1.65, 25.1, 0])
+    add_rotated(m, helm, "hood_right_temple_front", [.95, 24.55, -2.2],
+                [2.25, 26.2, .3], "void", [5, 0, 12], [1.65, 25.2, -.9])
+    add_rotated(m, helm, "hood_right_temple_rear", [1.05, 23.9, -.15],
+                [2.15, 25.2, 1.85], "void", [18, 0, -9], [1.6, 24.6, .85])
     add(m, helm, "hood_lower", [-1.85, 22.35, -1.15], [1.85, 24.95, 2.0], "void")
     add(m, helm, "hood_muzzle_base", [-1.6, 22.6, -3.8], [1.6, 24.0, -1.5], "armor")
     add(m, helm, "snout_dark_tip", [-.6, 22.15, -5.55], [.6, 22.8, -4.8], "void")
-    add(m, helm, "crest_base", [-.85, 26.5, -.4], [.85, 27.6, 1.4], "armor")
     add(m, helm, "left_cheek_armor", [-2.65, 22.7, -3.0], [-1.75, 25.0, -.9], "armor")
     add(m, helm, "right_broken_cheek", [2.1, 23.25, -2.8], [2.8, 24.35, -.9], "armor")
 
@@ -752,6 +753,10 @@ def build(out=ROOT / "model-lab" / "models"):
             taper = round(progress ** 1.5 * 12)
             left_edge = 1 + taper + authoring.noise(py // 7, seed, 817) % 6
             right_edge = 46 - taper - authoring.noise(py // 8, seed, 829) % 7
+            if seed == 0 and py < 55:
+                root_taper = round((1 - py / 55) * 7)
+                left_edge += root_taper
+                right_edge -= root_taper
             if seed == 0 and 70 < py < 125:
                 left_edge += round(11 * (1 - abs(py - 97) / 28))
             if seed == 1 and 93 < py < 153:
@@ -810,7 +815,8 @@ def build(out=ROOT / "model-lab" / "models"):
             drift = segment * (-.72, -.15, .65)[strip]
             x = center + drift
             base_z = depth + (.22, 1.15, 2.35)[segment]
-            segment_width = width * (1 - segment * .17)
+            segment_width = width * ((.76, 1.0, .66)[segment] if strip == 0
+                                     else (1 - segment * .17))
             for row in range(2):
                 row_top = top - (top - bottom) * row / 2
                 row_bottom = top - (top - bottom) * (row + 1) / 2
@@ -839,7 +845,7 @@ def build(out=ROOT / "model-lab" / "models"):
                                 "cloth",
                                 [(-6, 8, -3)[segment] + strip % 3 * 2
                                  + max(-12, min(12, math.degrees(math.atan(dv)))),
-                                 yaw + (-4, 3, 8)[segment]
+                                 yaw + ((-6, 15, 46) if strip == 0 else (-4, 3, 8))[segment]
                                  - max(-32, min(32, math.degrees(math.atan(du)))), 0],
                                 [center_x, center_y, z],
                                 f"ragged_cape_{strip}_{segment}", face_uv)
