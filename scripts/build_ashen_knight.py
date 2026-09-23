@@ -1216,18 +1216,16 @@ def build(out=ROOT / "model-lab" / "models"):
         return ((47, 57, 62, 255) if grain % 4 else (55, 63, 66, 255))
 
     blade_uv = m.patch(48, 160, paint_worn_blade, "worn_blade")
-    m.cube("blade_worn_faces", [2.6, -5.7, -.9], [7.4, 8.6, -.78],
+    m.cube("blade_worn_faces", [3.12, -5.7, -.9], [6.88, 8.6, -.78],
            "armor", blade, face_uv={"north": blade_uv, "south": blade_uv})
-    m.cube("blade_worn_back_face", [2.6, -5.7, .78], [7.4, 8.6, .9],
+    m.cube("blade_worn_back_face", [3.12, -5.7, .78], [6.88, 8.6, .9],
            "armor", blade, face_uv={"north": blade_uv, "south": blade_uv})
-    # The earlier blade length forced a diagonal idle stance to avoid burying
-    # the tip below the floor. Keep the broad blade, but fit its reach to a
-    # hand carried at the hip so it can hang beside the leg.
+    # Preserve the greatsword's long silhouette while it hangs beside the leg.
     for element in m.elements:
         if element["name"].startswith(("blade_spine_", "blade_worn_faces",
                                        "blade_worn_back_face")):
             for key in ("from", "to", "origin"):
-                element[key][1] = round(8.6 + (element[key][1] - 8.6) * .6, 3)
+                element[key][1] = round(8.6 + (element[key][1] - 8.6) * .72, 3)
 
     # Leave the chainmail back exposed. The short scarf above and torn cloth
     # tied at the hips have separate silhouettes, like a battle-worn knight.
@@ -1469,7 +1467,7 @@ def build(out=ROOT / "model-lab" / "models"):
         "right_knee": [(0, [-17, 0, 0]), (1, [-17, 0, 0]), (2, [-17, 0, 0])],
         "right_arm": [(0, [4, 0, -16]), (1, [4, 0, -16]), (2, [4, 0, -16])],
         "right_elbow": [(0, [0, 0, 5]), (1, [0, 0, 5]), (2, [0, 0, 5])],
-        "sword": [(0, [-15, 0, 30]), (1, [-15, 0, 30]), (2, [-15, 0, 30])],
+        "sword": [(0, [6, 0, 30]), (1, [6, 0, 30]), (2, [6, 0, 30])],
         "cape_left": [(0, [0, 0, -5]), (1, [-6, 0, -10]), (2, [0, 0, -5])],
         "cape_right": [(0, [0, 0, 4]), (1, [-4, 0, 8]), (2, [0, 0, 4])],
         "cape_center": [(0, [-2, 0, -2]), (1, [-7, 0, 3]), (2, [-2, 0, -2])],
