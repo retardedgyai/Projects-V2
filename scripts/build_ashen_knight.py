@@ -1242,8 +1242,8 @@ def build(out=ROOT / "model-lab" / "models"):
             taper = round(progress ** 1.5 * (5 if seed == 0 else 8))
             left_edge = 1 + taper + authoring.noise(py // 7, seed, 817) % 6
             right_edge = 46 - taper - authoring.noise(py // 8, seed, 829) % 7
-            if seed == 0 and py < 55:
-                root_taper = round((1 - py / 55) * 7)
+            if py < 55:
+                root_taper = round((1 - py / 55) * (7, 5, 4)[seed])
                 left_edge += root_taper
                 right_edge -= root_taper
             if seed == 0 and 70 < py < 125:
@@ -1318,8 +1318,8 @@ def build(out=ROOT / "model-lab" / "models"):
             drift = segment * (-.72, -.15, .65)[strip]
             x = center + drift
             base_z = depth + (.22, .72, 1.32)[segment]
-            segment_width = width * ((.85, 1.0, .78)[segment] if strip == 0
-                                     else (1 - segment * .1))
+            segment_width = width * ((.72, 1.05, .87)[segment] if strip == 0
+                                     else (.7, 1.08, .9)[segment])
             for row in range(3):
                 row_top = top - (top - bottom) * row / 3
                 row_bottom = top - (top - bottom) * (row + 1) / 3
@@ -1339,7 +1339,11 @@ def build(out=ROOT / "model-lab" / "models"):
                     center_x = row_center + (u - .5) * row_width
                     center_y = (row_top + row_bottom) / 2
                     billow = 1.2 * math.sin(math.pi * max(0, min(1, v))) if strip == 0 else 0
-                    z = base_z + .9 * fold_depth(u, v) + billow
+                    # A curved cross-section gives the hanging cloth a
+                    # visible front-to-back span from the side. The root and
+                    # hem stay closer to the body; the middle catches wind.
+                    cross_section = .9 + 2.4 * math.sin(math.pi * max(0, min(1, v)))
+                    z = base_z + cross_section * fold_depth(u, v) + billow
                     face_uv = {"north": [uv[0] + round(facet * 48 / 5), ty0,
                                          uv[0] + round((facet + 1) * 48 / 5), ty1],
                                "south": [uv[0] + round(facet * 48 / 5), ty0,
