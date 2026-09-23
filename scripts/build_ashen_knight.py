@@ -1101,10 +1101,14 @@ def build(out=ROOT / "model-lab" / "models"):
             color = (139, 123, 103) if grain % 5 else (111, 98, 84)
         return (*color, 255)
 
+    # Uneven narrow bindings expose the wounded arm between strips. Broad,
+    # evenly spaced hoops made its silhouette read like a machine cylinder.
     for wrap, (lo, hi, tilt, pivot) in enumerate((
-            ((-6.32, 14.18, -1.7), (-3.91, 15.25, 1.32), -11, (-5.1, 14.7, 0)),
-            ((-6.24, 12.45, -1.66), (-4.02, 13.55, 1.29), 8, (-5.1, 13.0, 0)),
-            ((-6.05, 10.43, -1.57), (-4.15, 11.35, 1.19), -5, (-5.1, 10.85, 0)),
+            ((-6.27, 14.61, -1.59), (-3.96, 15.19, 1.26), -17, (-5.1, 14.9, 0)),
+            ((-6.25, 13.94, -1.59), (-3.99, 14.43, 1.27), 6, (-5.1, 14.2, 0)),
+            ((-6.16, 12.76, -1.57), (-4.04, 13.32, 1.23), 13, (-5.1, 13.0, 0)),
+            ((-6.1, 11.91, -1.53), (-4.1, 12.31, 1.2), -8, (-5.1, 12.1, 0)),
+            ((-6.01, 10.6, -1.47), (-4.17, 11.08, 1.13), -12, (-5.1, 10.85, 0)),
     )):
         wrap_uv = m.patch(64, 28,
                           lambda px, py, seed=wrap: paint_wounded_wrap(px, py, seed),
