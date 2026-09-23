@@ -338,9 +338,46 @@ def build(out=ROOT / "model-lab" / "models"):
         return (*color, 255)
 
     side_mail_uv = m.patch(64, 96, paint_side_mail, "worn_side_mail")
-    m.cube("worn_sword_side_mail", [4.15, 15.1, -1.78],
-           [4.22, 20.85, 1.68], "mail", chest,
-           face_uv={"east": side_mail_uv, "west": side_mail_uv})
+    def paint_side_cloth(px, py):
+        left = 3 + round(py * .13) + authoring.noise(py // 5, 0, 2451) % 3
+        right = 60 - round(py * .16) - authoring.noise(py // 6, 0, 2459) % 4
+        hem = 89 - authoring.noise(px // 4, 0, 2467) % 16
+        slit = py > 52 and abs(px - (27 + py // 9)) < 2 + (py - 52) // 16
+        if px < left or px > right or py > hem or slit:
+            return (0, 0, 0, 0)
+        fold = math.sin(px * .17 + py * .043) + .3 * math.sin(py * .11)
+        grain = authoring.noise(px // 3, py // 4, 2477)
+        if fold < -.35:
+            color = (10, 23, 38)
+        elif fold > .65:
+            color = (29, 49, 67)
+        else:
+            color = (17, 34, 51)
+        if px - left < 2 or right - px < 2 or py > hem - 3:
+            color = (9, 20, 32)
+        if grain % 67 == 0:
+            color = (48, 62, 72)
+        return (*color, 255)
+
+    side_cloth_uv = m.patch(64, 96, paint_side_cloth,
+                            "torn_sword_side_cloth")
+    mail_edge_uv = m.patch(1, 1, lambda _x, _y: (17, 23, 27, 255),
+                           "dark_mail_edge")
+    for tier, (lo, hi, y0, y1, tilt, sweep) in enumerate((
+            ((4.02, 18.78, -1.78), (4.35, 20.85, 1.68), 0, 34, -4, 0),
+            ((3.86, 16.72, -1.55), (4.22, 18.94, 1.38), 32, 67, 5, 18),
+            ((3.64, 15.2, -.98), (4.03, 16.92, .87), 65, 96, -7, 26),
+    )):
+        source_uv = side_mail_uv if tier == 0 else side_cloth_uv
+        segment_uv = [source_uv[0], source_uv[1] + y0,
+                      source_uv[2], source_uv[1] + y1]
+        add_rotated(m, chest, f"worn_sword_side_layer_{tier}", lo, hi,
+                    "mail" if tier == 0 else "cloth", [tilt, sweep, 0],
+                    [(lo[0] + hi[0]) / 2, (lo[1] + hi[1]) / 2,
+                     (lo[2] + hi[2]) / 2], "torn_mail",
+                    {"east": segment_uv, "west": segment_uv,
+                     "north": mail_edge_uv, "south": mail_edge_uv,
+                     "up": mail_edge_uv, "down": mail_edge_uv})
 
     add_rotated(m, chest, "left_pauldron_dark_mount", [-5.54, 19.9, -1.62],
                 [-3.72, 21.38, .86], "sleeve", [0, -8, -12],
