@@ -106,7 +106,8 @@ class AshenPoseTest(unittest.TestCase):
     def test_cloak_keeps_visible_side_faces(self):
         strips = [element for element in self.cape.values()
                   if element["name"].startswith("cape_strip_")]
-        self.assertGreater(len(strips), 100)
+        self.assertEqual({int(element["name"].split("_")[2]) for element in strips},
+                         {0, 1, 2})
         for element in strips:
             for side in ("east", "west"):
                 uv = element["faces"][side]["uv"]

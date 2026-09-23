@@ -1452,13 +1452,13 @@ def build(out=ROOT / "model-lab" / "models"):
                 v = (cape_top - (row_top + row_bottom) / 2) / (cape_top - hem)
                 ty0 = uv[1] + round((cape_top - row_top) / (cape_top - hem) * 192)
                 ty1 = uv[1] + round((cape_top - row_bottom) / (cape_top - hem) * 192)
-                for facet in range(5):
-                    edge_seed = strip * 150 + segment * 15 + row * 5 + facet
+                for facet in range(3):
+                    edge_seed = strip * 150 + segment * 15 + row * 3 + facet
                     edge_uv = m.patch(8, 32,
                                       lambda px, py, seed=edge_seed:
                                       paint_cloak_edge(px, py, seed),
                                       f"ashen_cloak_edge_{edge_seed}")
-                    u = (facet + .5) / 5
+                    u = (facet + .5) / 3
                     center_x = row_center + (u - .5) * row_width
                     center_y = (row_top + row_bottom) / 2
                     billow = 1.2 * math.sin(math.pi * max(0, min(1, v))) if strip == 0 else 0
@@ -1467,17 +1467,17 @@ def build(out=ROOT / "model-lab" / "models"):
                     # hem stay closer to the body; the middle catches wind.
                     cross_section = .9 + 2.4 * math.sin(math.pi * max(0, min(1, v)))
                     z = base_z + cross_section * fold_depth(u, v) + billow
-                    face_uv = {"north": [uv[0] + round(facet * 48 / 5), ty0,
-                                         uv[0] + round((facet + 1) * 48 / 5), ty1],
-                               "south": [uv[0] + round(facet * 48 / 5), ty0,
-                                         uv[0] + round((facet + 1) * 48 / 5), ty1],
+                    face_uv = {"north": [uv[0] + round(facet * 48 / 3), ty0,
+                                         uv[0] + round((facet + 1) * 48 / 3), ty1],
+                               "south": [uv[0] + round(facet * 48 / 3), ty0,
+                                         uv[0] + round((facet + 1) * 48 / 3), ty1],
                                "east": edge_uv, "west": edge_uv,
                                "down": open_hem_uv}
                     half_depth = ((.58, .44, .29)[segment] if strip == 0
                                   else (.43, .33, .22)[segment]) * (1 - .10 * row)
                     add_rotated(m, buckets[segment], f"cape_strip_{strip}_{segment}_{row}_{facet}",
-                                [center_x - row_width / 10 - .06, row_bottom - .08, z - half_depth],
-                                [center_x + row_width / 10 + .06, row_top + .08, z + half_depth],
+                                [center_x - row_width / 6 - .06, row_bottom - .08, z - half_depth],
+                                [center_x + row_width / 6 + .06, row_top + .08, z + half_depth],
                                 "cloth",
                                 [(-6, 8, -3)[segment] + strip % 3 * 2,
                                  yaw + ((-5, 8, 18) if strip == 0 else (-4, 3, 8))[segment], 0],
