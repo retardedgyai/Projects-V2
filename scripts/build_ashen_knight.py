@@ -265,9 +265,16 @@ def build(out=ROOT / "model-lab" / "models"):
                 [-1.8, 19.0, -2.5], "battered_scale")
     add(m, chest, "right_chest_scrap", [1.25, 17.3, -2.48],
         [2.55, 19.0, -1.92], "armor", "battered_scale")
-    add(m, chest, "high_collar", [-2.8, 21.4, -1.65], [2.8, 23.2, 2.2], "void")
+    add_rotated(m, chest, "high_collar",
+                [-1.95, 21.5, -1.45], [1.95, 23.1, 1.48], "void",
+                [-6, 0, -3], [0, 22.3, 0], "worn_collar")
     add(m, chest, "mail_under_left", [-4.25, 15.8, -1.8], [-3.55, 20.8, 1.5], "mail")
-    add(m, chest, "mail_under_right", [3.5, 15.4, -1.7], [4.25, 20.5, 1.4], "mail")
+    add_rotated(m, chest, "right_rib_tunic_upper",
+                [3.44, 17.85, -1.45], [4.12, 20.6, 1.28], "void",
+                [6, 0, -5], [3.8, 19.2, 0], "worn_tunic")
+    add_rotated(m, chest, "right_rib_tunic_lower",
+                [3.14, 15.45, -1.26], [3.83, 18.15, 1.12], "void",
+                [-4, 0, 6], [3.5, 16.8, 0], "worn_tunic")
     add_rotated(m, chest, "left_pauldron_lower_scale", [-5.8, 19.75, -1.96],
                 [-3.65, 21.15, 1.12], "armor", [0, 0, -8],
                 [-4.5, 20.45, 0], "battered_scale")
@@ -432,12 +439,14 @@ def build(out=ROOT / "model-lab" / "models"):
         uvhi = cowl_fall_uv[0] + round((facet + 1) * 96 / 6)
         xlo = -4.5 + facet * 7.55 / 6
         xhi = -4.5 + (facet + 1) * 7.55 / 6
-        z = (-4.11, -4.28, -4.38, -4.29, -4.16, -4.08)[facet]
+        z = (-3.87, -4.29, -4.61, -4.56, -4.25, -3.91)[facet]
         face_uv = {"north": [uvlo, cowl_fall_uv[1], uvhi, cowl_fall_uv[3]],
                    "south": [uvlo, cowl_fall_uv[1], uvhi, cowl_fall_uv[3]]}
-        m.cube(f"scarf_diagonal_chest_fall_{facet}",
-               [xlo - .015, 16.75, z], [xhi + .015, 22.3, z + .11],
-               "cloth", scarf, face_uv=face_uv)
+        add_rotated(m, scarf, f"scarf_diagonal_chest_fall_{facet}",
+                    [xlo - .025, 16.75, z - .12],
+                    [xhi + .025, 22.3, z + .12], "cloth",
+                    [0, (facet - 2.5) * 5, 0], [(xlo + xhi) / 2, 19.5, z],
+                    "chest_wrap", face_uv)
     add(m, scarf, "scarf_left_drape", [-4.85, 20.0, -1.75],
         [-3.48, 22.1, 1.8], "void")
     def paint_shoulder_cowl(px, py):
