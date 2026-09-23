@@ -933,8 +933,8 @@ def build(out=ROOT / "model-lab" / "models"):
     # tied at the hips have separate silhouettes, like a battle-worn knight.
     cape_strips = (
         (-5.15, 5.2, 3.05, 1.25, -20),
-        (-.4, 3.0, 4.15, 7.8, -3),
-        (4.5, 3.7, 3.05, 8.8, 20),
+        (-.9, 3.8, 4.15, 7.8, -3),
+        (2.2, 4.0, 3.05, 8.8, 20),
     )
     open_hem_uv = m.patch(1, 1, lambda _x, _y: (0, 0, 0, 0), "open_cloth_hem")
 
@@ -1009,11 +1009,12 @@ def build(out=ROOT / "model-lab" / "models"):
             base_z = depth + (.22, .72, 1.32)[segment]
             segment_width = width * ((.85, 1.0, .78)[segment] if strip == 0
                                      else (1 - segment * .1))
-            for row in range(2):
-                row_top = top - (top - bottom) * row / 2
-                row_bottom = top - (top - bottom) * (row + 1) / 2
-                row_width = segment_width * (1 - row * .08)
-                row_center = x + row * (-.22, -.06, .20)[strip]
+            for row in range(3):
+                row_top = top - (top - bottom) * row / 3
+                row_bottom = top - (top - bottom) * (row + 1) / 3
+                row_width = segment_width * (1 - row * .055)
+                row_center = (x + row * (-.15, -.04, .14)[strip]
+                              + .13 * math.sin((segment * 3 + row) * 1.5 + strip))
                 v = (cape_top - (row_top + row_bottom) / 2) / (cape_top - hem)
                 ty0 = uv[1] + round((cape_top - row_top) / (cape_top - hem) * 192)
                 ty1 = uv[1] + round((cape_top - row_bottom) / (cape_top - hem) * 192)
@@ -1028,8 +1029,8 @@ def build(out=ROOT / "model-lab" / "models"):
                                          uv[0] + round((facet + 1) * 48 / 5), ty1],
                                "down": open_hem_uv}
                     add_rotated(m, buckets[segment], f"cape_strip_{strip}_{segment}_{row}_{facet}",
-                                [center_x - row_width / 10 - .06, row_bottom - .08, z - .09],
-                                [center_x + row_width / 10 + .06, row_top + .08, z + .09],
+                                [center_x - row_width / 10 - .06, row_bottom - .08, z - .22],
+                                [center_x + row_width / 10 + .06, row_top + .08, z + .22],
                                 "cloth",
                                 [(-6, 8, -3)[segment] + strip % 3 * 2,
                                  yaw + ((-5, 8, 18) if strip == 0 else (-4, 3, 8))[segment], 0],
