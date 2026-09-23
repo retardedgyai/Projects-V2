@@ -76,16 +76,23 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
     }
     /** Art remains a server projection; every vanilla slot beneath a card shares one action. */
     private fun card(v: View, slot: Int, columns: Int, rows: Int, label: String, art: CoreMenuArt,
-        item: ItemStack = CoreLoopItems.icon(Material.PAPER, label), tone: Tone = Tone.NEUTRAL, action: (() -> Unit)? = null) {
+        item: ItemStack = CoreLoopItems.icon(Material.PAPER, label), tone: Tone = Tone.NEUTRAL,
+        icon: Boolean = false, action: (() -> Unit)? = null) {
         require(slot in 0..53 && columns > 0 && rows > 0 && slot % 9 + columns <= 9 && slot / 9 + rows <= 6)
         val display = item.withAmount(1).withGlowing(false)
+        val visibleSlot = slot + (if (rows == 1) 0 else (rows - 1) / 2 * 9) + (if (rows == 1) 0 else columns / 2)
         repeat(rows) { row -> repeat(columns) { column ->
             val at = slot + row * 9 + column
             check(v.occupied.add(at)) { "Menu card overlaps slot $at: $label" }
-            v.items[at] = if (v.packed) CoreUiItemSkin.blank(display, true) else display
+            v.items[at] = when {
+                icon && at == visibleSlot -> display
+                v.packed -> CoreUiItemSkin.blank(display, true)
+                icon -> ItemStack.AIR
+                else -> display
+            }
             if (action != null && tone != Tone.DISABLED) v.actions[at] = action
         } }
-        v.canvas.card(slot, columns, rows, label, art, tone)
+        v.canvas.card(slot, columns, rows, label, art, tone, icon)
     }
     private fun materialArt(resource: CoreResource): CoreMenuArt = when (resource) {
         CoreResource.WOOD -> CoreMenuArt.WOOD
@@ -254,7 +261,7 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
             v.canvas.left("遠征先 T$tier", lines("所持 ${maps.size}枚", "解放 T1〜${a.unlockedMapTier}", "目安装備 T$tier", "武器 T${a.weaponTier}", "", "選ぶ → 調整", "選択では未消費"), hero = CoreMenuArt.EXPEDITION)
             v.canvas.right("地図の入手", lines(if (tier == 1) "T1は無料" else "T${tier - 1} 戦利品券1枚", if (tier == 1) "何度でも入手可能" else "所持 ${a.amount(CoreResource.COMBAT_TOKEN, tier - 1)}", "", "同TierのLv上限で", "ボス討伐→次Tier", "", if (!unlocked) "このTierは未解放" else if (!room) "地図の保管上限" else if (!affordable) "戦利品券が不足" else "右下から受け取る"), hero = CoreMenuArt.TABLET)
             maps.drop(current * mapSlots.size).take(mapSlots.size).forEachIndexed { index, map ->
-                card(v, mapSlots[index], 3, 2, "Lv${map.level} 地図", CoreMenuArt.EXPEDITION, CoreLoopItems.map(map)) { mapDetail(player, map.id) }
+                card(v, mapSlots[index], 3, 2, "Lv${map.level} 地図", CoreMenuArt.EXPEDITION, CoreLoopItems.map(map), icon = true) { mapDetail(player, map.id) }
             }
             if (maps.isEmpty()) v.canvas.text(8, 56, "地図なし → 右下で入手", CoreUiComponents.MUTED, 160)
             back(v, player, if (journey(player).isEmpty) "手帳" else "元へ") {
@@ -278,14 +285,14 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
             v.canvas.right("採取MOD", listOf(Line("${map.modifiers.size} / 3 個")) +
                 (if (map.modifiers.isEmpty()) lines("まだ付いていません") else map.modifiers.flatMap { paragraph(CoreLoopItems.modifierName(it)) }) +
                 lines("", "石板 所持${a.amount(CoreResource.GATHERING_TABLET)}", "石板1枚で1個付与"))
-            card(v, 9, 3, 3, "地図", CoreMenuArt.EXPEDITION, CoreLoopItems.map(map), Tone.SELECTED)
+            card(v, 9, 3, 3, "地図", CoreMenuArt.EXPEDITION, CoreLoopItems.map(map), Tone.SELECTED, icon = true)
             card(v, 12, 3, 3, "石板付与", CoreMenuArt.TABLET, CoreLoopItems.icon(Material.AMETHYST_SHARD, "採取の石板を1枚使う", "採取量・品質・密集地域のMODを追加"),
-                if (map.modifiers.size < 3 && a.amount(CoreResource.GATHERING_TABLET) > 0) Tone.NEUTRAL else Tone.DISABLED) {
+                if (map.modifiers.size < 3 && a.amount(CoreResource.GATHERING_TABLET) > 0) Tone.NEUTRAL else Tone.DISABLED, icon = true) {
                 game.applyTablet(player, id, a.revision, onRejected = {
                     if (screens.isCurrent(player, v.screen)) mapDetail(player, id)
                 }) { if (screens.isCurrent(player, v.screen)) mapDetail(player, id) }
             }
-            card(v, 15, 3, 3, "手元へ", CoreMenuArt.GEAR, CoreLoopItems.icon(Material.FILLED_MAP, "地図をホットバー8へ用意", "インベントリで石板を重ねる操作も使えます")) {
+            card(v, 15, 3, 3, "手元へ", CoreMenuArt.GEAR, CoreLoopItems.icon(Material.FILLED_MAP, "地図をホットバー8へ用意", "インベントリで石板を重ねる操作も使えます"), icon = true) {
                 player.inventory.setItemStack(7, CoreLoopItems.map(map)); player.setHeldItemSlot(7); player.closeInventory()
             }
             back(v, player) { expeditions(player, map.tier) }
@@ -328,9 +335,21 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
             v.canvas.left("同じTierの選択", lines("T1から全型を制作", "型の特徴は固定", "MODは後から抽選", "強化と品質は保持", "職業で使える系統が変化"), hero = CoreMenuArt.WEAPON)
             v.canvas.right("制作と購入", lines("採取素材から制作", "上位製造に低Tier材", "良い型を選んで厳選", "今の職業", a.journey.job.displayName), hero = CoreMenuArt.FORGE)
             CoreWeaponBase.entries.drop(page.coerceIn(0, 1) * 6).take(6).forEachIndexed { i, base ->
+                val material = when (base) {
+                    CoreWeaponBase.LONGBOW -> Material.BOW
+                    CoreWeaponBase.STAFF -> Material.BLAZE_ROD
+                    CoreWeaponBase.DAGGERS -> Material.IRON_SWORD
+                    CoreWeaponBase.MACE -> Material.MACE
+                    CoreWeaponBase.TOME -> Material.ENCHANTED_BOOK
+                    else -> Material.IRON_SWORD
+                }
+                val preview = CoreLoopItems.icon(material, base.displayName, base.detail,
+                    "使用可：${CoreClass.entries.filter(base::usable).joinToString { it.displayName }}")
+                    .let { if (v.packed) it.withItemModel(CoreArmamentPresentation.model(base, a.journey.job, s.tier)) else it }
                 card(v, mapSlots[i], 3, 2, base.displayName, when (base) { CoreWeaponBase.LONGBOW -> CoreMenuArt.ARROW; CoreWeaponBase.STAFF -> CoreMenuArt.ARCANE; else -> CoreMenuArt.WEAPON },
-                    CoreLoopItems.icon(Material.IRON_SWORD, base.displayName, base.detail, "使用可：${CoreClass.entries.filter(base::usable).joinToString { it.displayName }}"),
-                    if (s.base == base) Tone.SELECTED else Tone.NEUTRAL) { forge(player, s.copy(tab = CoreForgeLayout.Tab.CRAFT, gear = CoreGearSlot.WEAPON, base = base, recipe = 0)) }
+                    preview, if (s.base == base) Tone.SELECTED else Tone.NEUTRAL, icon = true) {
+                    forge(player, s.copy(tab = CoreForgeLayout.Tab.CRAFT, gear = CoreGearSlot.WEAPON, base = base, recipe = 0))
+                }
             }
             back(v, player) { career(player) }
             tile(v, 48, 3, if (page == 0) "次の武器" else "前の武器") { weaponBases(player, s, 1 - page.coerceIn(0, 1)) }
@@ -727,7 +746,8 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
             val label = outputResource?.let(::stockName) ?: "T${s.tier}"
             val slot = if (s.tab == CoreForgeLayout.Tab.REFINE) REFINE_SLOTS[index] else CoreForgeLayout.RECIPES[index]
             card(v, slot, 3, if (s.tab == CoreForgeLayout.Tab.REFINE) 2 else 1, label, art,
-                CoreLoopItems.icon(e.icon, e.unit.displayName, "クリック：選択。まだ素材は使いません"), if (index == selected) Tone.SELECTED else Tone.NEUTRAL) { forge(player, s.copy(recipe = index)) }
+                CoreLoopItems.icon(e.icon, e.unit.displayName, "クリック：選択。まだ素材は使いません"), if (index == selected) Tone.SELECTED else Tone.NEUTRAL,
+                icon = s.tab == CoreForgeLayout.Tab.REFINE) { forge(player, s.copy(recipe = index)) }
         }
         val isEquipment = s.tab == CoreForgeLayout.Tab.CRAFT && selected == 0
         val maximum = if (isEquipment) minOf(16, CoreEconomy.MAX_GEAR - a.storedGear.size, CoreForgeLayout.maxBatches(a, entry.unit))
@@ -1183,7 +1203,7 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
             v.canvas.left("道具を持つ", lines("集めたい素材を選ぶ", "道具を無料で用意", "ホットバー7番へ", "", "右クリック長押し", "離すと採取を中断"), hero = CoreMenuArt.GATHER)
             v.canvas.right("採取の目印", lines("名前とTierが目印", "木・岩・草・死体", "それぞれ対応道具", "完了時に素材を保存"), hero = CoreMenuArt.WOOD)
             QuestGatheringDiscipline.entries.forEachIndexed { index, d ->
-                card(v, mapSlots[index], 3, 2, stockName(gatheringResource(d)), materialArt(gatheringResource(d)), CoreLoopItems.icon(d.toolMaterial, d.toolName, "${d.commonResourceName}の採取用", "ホットバー7番に持ち、画面を閉じます")) {
+                card(v, mapSlots[index], 3, 2, stockName(gatheringResource(d)), materialArt(gatheringResource(d)), CoreLoopItems.icon(d.toolMaterial, d.toolName, "${d.commonResourceName}の採取用", "ホットバー7番に持ち、画面を閉じます"), icon = true) {
                     player.inventory.setItemStack(6, d.toolItem()); player.setHeldItemSlot(6); player.closeInventory()
                 }
             }
@@ -1482,13 +1502,13 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
             tiers(v, tier) { dungeons(player, it) }; help(v, player) { dungeons(player, tier, depth) }
             v.canvas.left("分岐する迷宮", lines("1〜4人で攻略", "${CoreMmoTuning.balance.dungeonFloors}層・${CoreMmoTuning.balance.dungeonStages}部屋を選ぶ", "入場料なし", "部屋ごとに報酬確定", "加護は周回限定", "", "一つ前を踏破すると", "次の深度を解放"), hero = CoreMenuArt.EXPEDITION)
             v.canvas.right("深度 $depth", lines(if (tier in a.dungeonRecords) "最高踏破 ${a.dungeonRecords[tier]}" else "踏破記録なし", "4〜 精鋭の増援", "8〜 星落とし拡大", "12〜 複合予兆", "", "ボスは4形態", "報酬：オーブと券", "採取原料は出ません", if (allowed) "挑戦できます" else "未解放・武器破損"), hero = CoreMenuArt.BOSS)
-            card(v, 9, 3, 3, "一人で", CoreMenuArt.WEAPON, CoreLoopItems.icon(Material.IRON_SWORD, "一人で出発", "クリックで生成・転送を開始"), if (allowed) Tone.PRIMARY else Tone.DISABLED) {
+            card(v, 9, 3, 3, "一人で", CoreMenuArt.WEAPON, CoreLoopItems.icon(Material.IRON_SWORD, "一人で出発", "クリックで生成・転送を開始"), if (allowed) Tone.PRIMARY else Tone.DISABLED, icon = true) {
                 game.dungeonLobby(player, DungeonLobbyAction.Solo(tier, depth)); if (!game.isDeparting(player)) dungeons(player, tier, depth)
             }
-            card(v, 12, 3, 3, "募集する", CoreMenuArt.GEAR, CoreLoopItems.icon(Material.CAMPFIRE, "仲間を募集", "港の掲示から参加できます"), if (allowed) Tone.NEUTRAL else Tone.DISABLED) {
+            card(v, 12, 3, 3, "募集する", CoreMenuArt.GEAR, CoreLoopItems.icon(Material.CAMPFIRE, "仲間を募集", "港の掲示から参加できます"), if (allowed) Tone.NEUTRAL else Tone.DISABLED, icon = true) {
                 game.dungeonLobby(player, DungeonLobbyAction.Create(tier, depth)); dungeons(player, tier, depth)
             }
-            card(v, 15, 3, 3, "参加する", CoreMenuArt.EXPEDITION, CoreLoopItems.icon(Material.PLAYER_HEAD, "募集中のパーティへ")) { dungeonParties(player) }
+            card(v, 15, 3, 3, "参加する", CoreMenuArt.EXPEDITION, CoreLoopItems.icon(Material.PLAYER_HEAD, "募集中のパーティへ"), icon = true) { dungeonParties(player) }
             tile(v, 36, 3, "浅く", CoreLoopItems.icon(Material.ARROW, "深度を下げる"), if (depth > 0) Tone.NEUTRAL else Tone.DISABLED) { dungeons(player, tier, depth - 1) }
             tile(v, 39, 3, "深度$depth", CoreLoopItems.icon(Material.BOOK, "今の難度"), Tone.SELECTED)
             tile(v, 42, 3, "深く", CoreLoopItems.icon(Material.ARROW, "深度を上げる"), if (depth < maximum) Tone.NEUTRAL else Tone.DISABLED) { dungeons(player, tier, depth + 1) }

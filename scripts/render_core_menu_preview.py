@@ -153,7 +153,10 @@ class MenuRenderer:
             y = tone_row * card["height"]
             backdrop = self.card_atlases[card["rows"]].crop((x, y, x + card["width"], y + card["height"]))
             blit(backdrop, card["x"], card["y"])
-            art(card["artPlacement"])
+            art(card.get("artPlacement"))
+            if card.get("icon"):
+                center = card["firstSlot"] + (0 if card["rows"] == 1 else (card["rows"] - 1) // 2 * 9) + (0 if card["rows"] == 1 else card["columns"] // 2)
+                report["icon_slots"].append(center)
             text(card["labelX"], card["labelY"], card["label"], card["textColor"], card["labelMaxWidth"], f"card[{card['firstSlot']}]", "EMPHASIS")
         for button in snapshot.get("buttons", []):
             slot, span, tone = button["firstSlot"], button["span"], button["tone"]

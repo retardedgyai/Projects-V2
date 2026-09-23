@@ -718,6 +718,48 @@ class CoreLoopMenusTest {
         assertTrue(f.host.requests.isEmpty())
     }
 
+    @Test fun `map and material cards show one real item without shrinking their click target`() {
+        for (packed in listOf(false, true)) {
+            val f = fixture(account(tier = 3), packed)
+            f.menus.expeditions(f.player, 3)
+            val map = f.snapshot().cards.first { it.firstSlot == 9 }
+            assertTrue(map.icon)
+            assertNull(map.artPlacement)
+            for (offset in listOf(0, 1, 2, 9, 10, 11)) {
+                val item = assertNotNull(f.player.openInventory).getItemStack(9 + offset)
+                if (offset == 1) assertEquals(CoreLoopItems.map(f.host.current.maps.first()).get(DataComponents.ITEM_MODEL), item.get(DataComponents.ITEM_MODEL))
+                else if (packed) assertEquals("projects:core_ui/blank", item.get(DataComponents.ITEM_MODEL))
+                else assertTrue(item.isAir)
+            }
+            f.click(19)
+            assertTrue(f.title().contains("出発準備"))
+            f.menus.workshop(f.player, 3)
+            f.click(CoreForgeLayout.Tab.REFINE.slot)
+            val refine = f.snapshot().cards.first { it.firstSlot == CoreLoopMenus.REFINE_SLOTS.first() }
+            assertTrue(refine.icon)
+            assertNull(refine.artPlacement)
+            val resource = assertNotNull(f.player.openInventory).getItemStack(refine.firstSlot + 1)
+            assertNotEquals("projects:core_ui/blank", resource.get(DataComponents.ITEM_MODEL))
+        }
+    }
+
+    @Test fun `weapon choices show the weapon model and retain the full card action`() {
+        for (packed in listOf(false, true)) {
+            val f = fixture(account(tier = 3), packed)
+            f.menus.career(f.player)
+            f.click(30)
+            val card = f.snapshot().cards.first { it.firstSlot == 30 }
+            assertTrue(card.icon)
+            assertNull(card.artPlacement)
+            val bow = assertNotNull(f.player.openInventory).getItemStack(31)
+            if (packed) assertEquals("projects:weapons/bow_t3", bow.get(DataComponents.ITEM_MODEL))
+            else assertEquals(Material.BOW, bow.material())
+            f.click(39)
+            assertTrue(f.title().contains("工房"))
+            assertTrue(f.host.requests.isEmpty())
+        }
+    }
+
     @Test fun `journal entry points expose the item and reach each content family`() {
         val destinations = listOf(
             Triple(0, 9, "地図台"), Triple(0, 12, "星環の深殿"), Triple(0, 15, "境界の試練"),

@@ -191,19 +191,20 @@ class CoreMenuCanvasTest {
         with(cards[1]) {
             assertEquals(70, width); assertEquals(34, height)
             assertEquals(56, labelY); assertEquals(70, labelMaxWidth)
-            assertEquals(16, artPlacement.size)
+            assertEquals(16, requireNotNull(artPlacement).size)
             assertTrue(CoreMenuCanvas.width(label, CoreMenuCanvas.TextStyle.EMPHASIS) <= labelMaxWidth)
         }
         with(cards[2]) {
             assertEquals(34, labelMaxWidth); assertEquals(92, labelY)
-            assertEquals(x, artPlacement.x); assertEquals(y, artPlacement.y)
+            assertEquals(x, requireNotNull(artPlacement).x); assertEquals(y, artPlacement.y)
             assertTrue(labelX >= x + 18)
         }
         for (card in cards) {
-            assertTrue(card.artPlacement.x >= card.x && card.artPlacement.x + card.artPlacement.size <= card.x + card.width)
-            assertTrue(card.artPlacement.y >= card.y && card.artPlacement.y + card.artPlacement.size <= card.y + card.height)
+            val art = requireNotNull(card.artPlacement)
+            assertTrue(art.x >= card.x && art.x + art.size <= card.x + card.width)
+            assertTrue(art.y >= card.y && art.y + art.size <= card.y + card.height)
             assertTrue(card.labelY in CoreMenuCanvas.TEXT_YS)
-            assertTrue(card.artPlacement.y in CoreMenuCanvas.ART_YS)
+            assertTrue(art.y in CoreMenuCanvas.ART_YS)
         }
     }
 

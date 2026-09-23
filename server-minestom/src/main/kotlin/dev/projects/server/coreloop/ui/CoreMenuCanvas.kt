@@ -20,7 +20,7 @@ class CoreMenuCanvas(private val title: String) {
     data class Line(val text: String, val color: TextColor = BODY_COLOR, val art: CoreMenuArt? = null, val style: TextStyle = TextStyle.BODY)
     internal data class Panel(val title: String, val lines: List<Line>, val hero: CoreMenuArt?)
     internal data class Button(val firstSlot: Int, val span: Int, val label: String, val tone: Tone, val icon: Boolean)
-    internal data class Card(val firstSlot: Int, val columns: Int, val rows: Int, val label: String, val art: CoreMenuArt, val tone: Tone)
+    internal data class Card(val firstSlot: Int, val columns: Int, val rows: Int, val label: String, val art: CoreMenuArt, val tone: Tone, val icon: Boolean)
     internal data class Art(val x: Int, val y: Int, val art: CoreMenuArt, val size: Int)
     internal data class Text(val x: Int, val y: Int, val value: String, val color: TextColor, val maxWidth: Int, val style: TextStyle)
     internal data class Focus(val art: CoreMenuArt?, val caption: String)
@@ -49,9 +49,9 @@ class CoreMenuCanvas(private val title: String) {
         val textColor: Int, val style: String, val reservedSlots: List<Int>,
     )
     internal data class CardSnapshot(
-        val firstSlot: Int, val columns: Int, val rows: Int, val label: String, val art: String,
+        val firstSlot: Int, val columns: Int, val rows: Int, val label: String, val art: String, val icon: Boolean,
         val tone: String, val textColor: Int, val x: Int, val y: Int, val width: Int, val height: Int,
-        val labelX: Int, val labelY: Int, val labelMaxWidth: Int, val artPlacement: ArtSnapshot, val occupiedSlots: List<Int>,
+        val labelX: Int, val labelY: Int, val labelMaxWidth: Int, val artPlacement: ArtSnapshot?, val occupiedSlots: List<Int>,
     )
 
     private var leftPanel: Panel? = null
@@ -96,10 +96,10 @@ class CoreMenuCanvas(private val title: String) {
 
     /**
      * A single illustrated action covering an entire vanilla-slot rectangle. Callers must
-     * put the same action and blank item model in every covered slot, including the interior.
-     * One-row cards use an inline icon; two/three-row cards put 16/32 px art above the label.
+     * put the same action in every covered slot. Item cards keep one real item model in the
+     * visual center and use blank models for the surrounding click targets.
      */
-    fun card(firstSlot: Int, columns: Int, rows: Int, label: String, art: CoreMenuArt, tone: Tone = Tone.NEUTRAL) {
+    fun card(firstSlot: Int, columns: Int, rows: Int, label: String, art: CoreMenuArt, tone: Tone = Tone.NEUTRAL, icon: Boolean = false) {
         require(firstSlot in 0..53 && columns in 1..9 && rows in 1..3 &&
             firstSlot % 9 + columns <= 9 && firstSlot / 9 + rows <= 6) { "Card escaped the vanilla slot grid" }
         require(rows != 1 || columns >= 2 || label.isEmpty()) { "An inline card label needs at least two slots" }
@@ -110,7 +110,7 @@ class CoreMenuCanvas(private val title: String) {
             cards.values.none { it.firstSlot != firstSlot && occupiedSlots(it.firstSlot, it.columns, it.rows).any(occupied::contains) }) {
             "Menu card overlaps another action: slot $firstSlot, columns $columns, rows $rows"
         }
-        cards[firstSlot] = Card(firstSlot, columns, rows, label, art, tone)
+        cards[firstSlot] = Card(firstSlot, columns, rows, label, art, tone, icon)
     }
 
     /**
@@ -165,10 +165,10 @@ class CoreMenuCanvas(private val title: String) {
                 val inset = if (card.rows == 1) 18 else 0
                 val room = (extent - inset).coerceAtLeast(0)
                 val visible = trim(card.label, room, TextStyle.EMPHASIS)
-                CardSnapshot(card.firstSlot, card.columns, card.rows, card.label, card.art.name, card.tone.name,
+                CardSnapshot(card.firstSlot, card.columns, card.rows, card.label, card.art.name, card.icon, card.tone.name,
                     toneColor(card.tone).value(), x, y, extent, card.rows * 18 - 2,
                     x + inset + (room - width(visible, TextStyle.EMPHASIS)) / 2, 20 + (card.firstSlot / 9 + card.rows - 1) * 18, room,
-                    ArtSnapshot(if (card.rows == 1) x else x + (extent - size) / 2, y, card.art.name, size),
+                    if (card.icon) null else ArtSnapshot(if (card.rows == 1) x else x + (extent - size) / 2, y, card.art.name, size),
                     occupiedSlots(card.firstSlot, card.columns, card.rows))
             }, arts.map { ArtSnapshot(it.x, it.y, it.art.name, it.size) }, focus?.let {
                 val visible = trim(it.caption, 106, TextStyle.EMPHASIS)
@@ -237,7 +237,7 @@ class CoreMenuCanvas(private val title: String) {
             val tone = Tone.valueOf(card.tone)
             val glyph = (0xE650 + tone.ordinal * 9 + card.columns - 1).toChar()
             draw(card.x, CoreUiComponents.glyph(glyph, Key.key("projects", "core_menu_cards_${card.rows}_${card.firstSlot / 9}")), card.width + 1)
-            illustration(card.artPlacement)
+            card.artPlacement?.let(::illustration)
             label(card.labelX, card.labelY, card.label, TextColor.color(card.textColor), card.labelMaxWidth, TextStyle.EMPHASIS)
         }
         for (button in buttons.values) {
