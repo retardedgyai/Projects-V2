@@ -212,7 +212,7 @@ def build(out=ROOT / "model-lab" / "models"):
             tone = 0
         if authoring.noise(px, py, 2751) % 151 == 0:
             tone = 0
-        return (*authoring.MATERIALS["cloth"][tone], 255)
+        return (*(round(channel * .78) for channel in authoring.MATERIALS["cloth"][tone]), 255)
 
     scarf_uv = m.patch(96, 80, paint_wound_scarf, "wound_scarf")
     m.cube("wound_scarf_front", [-4.85, 16.5, -3.6], [4.85, 24.0, -3.52],
@@ -223,9 +223,16 @@ def build(out=ROOT / "model-lab" / "models"):
     add(m, scarf, "scarf_back_right_end", [3.2, 20.35, 2.25], [4.9, 22.25, 3.18], "cloth", "ragged_scarf")
     add(m, scarf, "scarf_hanging_point", [-3.55, 14.2, -3.1], [-1.7, 18.1, -2.78], "cloth", "ragged_scarf")
 
-    add(m, helm, "hood_crown", [-2.7, 24.2, -2.3], [2.7, 27.5, 2.5], "void")
+    add(m, helm, "hood_crown", [-1.85, 25.4, -2.1], [1.85, 27.5, 2.3], "void")
+    add_rotated(m, helm, "hood_left_temple", [-2.7, 23.9, -2.3], [-.85, 26.6, 2.3],
+                "void", [0, 0, -12], [-1.65, 25.2, 0])
+    add_rotated(m, helm, "hood_right_temple", [.8, 24.1, -2.2], [2.55, 26.3, 2.25],
+                "void", [0, 0, 9], [1.65, 25.1, 0])
     add(m, helm, "hood_lower", [-2.25, 22.0, -1.15], [2.25, 25.1, 2.8], "void")
     add(m, helm, "hood_muzzle_base", [-1.6, 22.6, -3.8], [1.6, 24.0, -1.5], "armor")
+    add_rotated(m, helm, "snout_bridge", [-.75, 22.5, -5.25], [.75, 24.65, -3.55],
+                "armor", [16, 0, 0], [0, 23.5, -4.0])
+    add(m, helm, "snout_dark_tip", [-.6, 22.15, -5.55], [.6, 22.8, -4.8], "void")
     add(m, helm, "crest_base", [-.85, 26.9, -.4], [.85, 28.1, 1.4], "armor")
     add(m, helm, "left_cheek_armor", [-2.65, 22.7, -3.0], [-1.75, 25.0, -.9], "armor")
     add(m, helm, "right_broken_cheek", [2.1, 23.25, -2.8], [2.8, 24.35, -.9], "armor")
@@ -259,9 +266,9 @@ def build(out=ROOT / "model-lab" / "models"):
             return (0, 0, 0, 0)
         ridge = center + (1 if py > 34 else 0)
         if abs(px - ridge) <= 1 and 12 <= py < 53 and py not in (31, 32):
-            return (83, 98, 99, 255)
+            return (64, 75, 78, 255)
         if abs(distance - width) <= 1 or (py < 18 and distance <= 3):
-            return (82, 98, 99, 255)
+            return (70, 81, 83, 255)
         if py in (20, 21, 39, 40) and distance < width - 2:
             return (44, 62, 69, 255)
         if 35 < py < 49 and distance in (4, 5):
@@ -271,7 +278,7 @@ def build(out=ROOT / "model-lab" / "models"):
         return (45, 56, 62, 255)
 
     faceplate_uv = m.patch(48, 64, paint_faceplate, "ashen_faceplate")
-    m.cube("engraved_wolf_visor", [-3.25, 21.25, -4.78], [3.25, 29.25, -4.7],
+    m.cube("engraved_wolf_visor", [-2.65, 21.85, -4.78], [2.65, 27.8, -4.7],
            "edge", helm, face_uv={"north": faceplate_uv, "south": faceplate_uv})
     # A painted hair-like plume curves back from the crown. The cutout is
     # visible from both sides and avoids a row of hard rectangular spikes.
@@ -340,18 +347,17 @@ def build(out=ROOT / "model-lab" / "models"):
     add(m, right_arm, "right_mail_shoulder", [3.5, 17.3, -1], [6.05, 20, 1.55], "mail")
     add(m, right_arm, "right_bracer_chip", [3.65, 12.2, -1.38], [5.45, 13.1, -.98], "edge")
 
-    # The sword arm reaches across the chest, holding the long blade behind
-    # the shoulder at rest; animation rotates the arm and blade separately.
+    # At rest the heavy blade hangs beside the right leg.
     add(m, blade, "pommel", [4.1, 11.8, -1], [5.9, 13.7, 1], "ash")
     add(m, blade, "grip", [4.45, 9, -.55], [5.55, 12.4, .55], "void")
     add(m, blade, "guard", [1.7, 8.6, -.95], [8.3, 9.4, .95], "armor")
     add(m, blade, "guard_left_tooth", [1.35, 8.2, -1.1], [2.65, 10.6, 1.1], "armor")
     add(m, blade, "guard_right_tooth", [7.45, 8.2, -1.1], [8.55, 9.8, 1.1], "armor")
-    add(m, blade, "blade_dark_spine", [4.15, -9.3, -.5], [5.85, 8.6, .5], "armor")
+    add(m, blade, "blade_dark_spine", [4.15, -.1, -.5], [5.85, 8.6, .5], "armor")
 
     def paint_worn_blade(px, py):
         center = 23.5
-        narrowing = max(0, py - 96) * .27
+        narrowing = max(0, py - 128) * .55
         width = max(1, 20 - narrowing)
         distance = abs(px - center)
         nick_left = 87 < py < 103 and px < 11
@@ -372,7 +378,7 @@ def build(out=ROOT / "model-lab" / "models"):
         return (43, 54, 60, 255)
 
     blade_uv = m.patch(48, 160, paint_worn_blade, "worn_blade")
-    m.cube("blade_worn_faces", [2.6, -11.8, -.85], [7.4, 8.6, .85],
+    m.cube("blade_worn_faces", [2.6, -.7, -.85], [7.4, 8.6, .85],
            "armor", blade, face_uv={"north": blade_uv, "south": blade_uv})
 
     def paint_cloak(px, py):
@@ -387,11 +393,11 @@ def build(out=ROOT / "model-lab" / "models"):
             return (0, 0, 0, 0)
         fold = math.sin(u * 20 + v * 2.7) + .34 * math.sin(u * 39 - v * 5)
         if fold > .72:
-            color = (52, 87, 115)
+            color = (43, 69, 92)
         elif fold < -.45:
             color = (10, 25, 43)
         else:
-            color = (24, 52, 78)
+            color = (20, 43, 66)
         if v < .12 or px - left < 3 or right - px < 3:
             color = tuple(round(channel * .75) for channel in color)
         if authoring.noise(px, py, 2777) % 167 == 0:
@@ -403,22 +409,22 @@ def build(out=ROOT / "model-lab" / "models"):
     # A curved, asymmetrical mantle: overlapping short facets follow a bowed
     # cross section. Distinct yaw angles and depth offsets make each fold
     # occupy volume instead of stacking long coplanar cloth rectangles.
-    for row in range(5):
+    for row in range(6):
         top = 21.55 - row * 3.35
         bottom = top - 3.55
-        for col in range(3):
-            left = -4.85 - row * .24 + col * 1.9
-            right = left + 2.8
-            depth = 2.7 + row * .22 + (1.25 if col == 1 else .12 if col == 2 else 0)
+        for col in range(4):
+            left = -5.65 - row * .03 + col * 2.35 + (1.45 if col >= 2 else 0)
+            right = left + 3.0
+            depth = 5.0 + row * .18 + (1.25 if col in (1, 2) else .12)
             bucket = (cape_left if col < 2 else cape_center) if row == 0 else (
                 (cape_left_mid if col < 2 else cape_center_mid) if row < 3 else
                 (cape_left_tail if col < 2 else cape_center_tail))
-            yaw = (-25, 0, 24)[col] + (row - 2) * (2 if col == 1 else -1)
-            motif = f"ragged_cape_{row}_{col}" if row == 4 else f"cape_facet_{row}_{col}"
-            tx0 = cloak_uv[0] + round((1.8 - right) / 8.3 * 128)
-            tx1 = cloak_uv[0] + round((1.8 - left) / 8.3 * 128)
-            ty0 = cloak_uv[1] + round((21.55 - top) / 16.95 * 256)
-            ty1 = cloak_uv[1] + round((21.55 - bottom) / 16.95 * 256)
+            yaw = (-29, -9, 9, 29)[col] + (row - 2) * (2 if col in (1, 2) else -1)
+            motif = f"ragged_cape_{row}_{col}" if row == 5 else f"cape_facet_{row}_{col}"
+            tx0 = cloak_uv[0] + round((5.4 - right) / 12.0 * 128)
+            tx1 = cloak_uv[0] + round((5.4 - left) / 12.0 * 128)
+            ty0 = cloak_uv[1] + round((21.55 - top) / 20.3 * 256)
+            ty1 = cloak_uv[1] + round((21.55 - bottom) / 20.3 * 256)
             face_uv = {"north": [tx0, ty0, tx1, ty1],
                        "south": [tx0, ty0, tx1, ty1]}
             add_rotated(m, bucket, f"cape_facet_{row}_{col}",
@@ -436,7 +442,7 @@ def build(out=ROOT / "model-lab" / "models"):
     head_bone = m.bone("head", [0, 22, 0], helm + [plume_bone])
     left_arm_bone = m.bone("left_arm", [-4.8, 21, 0], left_arm)
     sword_bone = m.bone("sword", [5, 10.5, 0], blade)
-    sword_bone["rotation"] = [0, 0, -140]
+    sword_bone["rotation"] = [20, 0, -30]
     right_arm_bone = m.bone("right_arm", [4.8, 21, 0], right_arm + [sword_bone])
     left_tail_bone = m.bone("cape_left_tail", [-3.6, 10.3, 3.6], cape_left_tail)
     left_mid_bone = m.bone("cape_left_mid", [-3.1, 17.2, 3.2], cape_left_mid + [left_tail_bone])
@@ -445,9 +451,9 @@ def build(out=ROOT / "model-lab" / "models"):
     center_tail_bone = m.bone("cape_center_tail", [-.8, 9.0, 4.1], cape_center_tail)
     center_mid_bone = m.bone("cape_center_mid", [-.5, 16, 3.9], cape_center_mid + [center_tail_bone])
     middle_cape_bone = m.bone("cape_center", [0, 20, 3], cape_center + [center_mid_bone])
-    left_cape_bone["rotation"] = [18, 0, -3]
-    left_mid_bone["rotation"] = [-5, -6, -4]
-    left_tail_bone["rotation"] = [-6, 8, -3]
+    left_cape_bone["rotation"] = [18, 0, 2]
+    left_mid_bone["rotation"] = [-5, -6, 0]
+    left_tail_bone["rotation"] = [-6, 8, 0]
     right_cape_bone["rotation"] = [18, 0, 3]
     middle_cape_bone["rotation"] = [20, 0, 0]
     center_mid_bone["rotation"] = [-4, 7, 1]
@@ -461,7 +467,7 @@ def build(out=ROOT / "model-lab" / "models"):
     left_leg_bone = m.bone("left_leg", [-2.1, 10.7, 0], left_thigh + [left_knee_bone])
     right_leg_bone = m.bone("right_leg", [2.1, 10.7, 0], right_thigh + [right_knee_bone])
     torso_bone["rotation"] = [-12, 0, -5]
-    right_arm_bone["rotation"] = [0, 0, -70]
+    right_arm_bone["rotation"] = [0, 0, 30]
     left_leg_bone["rotation"] = [-16, 0, -18]
     right_leg_bone["rotation"] = [19, 0, 18]
     left_knee_bone["rotation"] = [25, 0, 0]
@@ -519,7 +525,7 @@ def build(out=ROOT / "model-lab" / "models"):
         "root": [(0, [0, 0, 0], "position"), (.35, [0, -.55, 0], "position"), (.72, [0, .4, -1], "position"), (1.25, [0, 0, 0], "position")],
         "torso": [(0, [8, 0, -4]), (.38, [9, -32, -13]), (.7, [20, 38, 7]), (.92, [22, 46, 9]), (1.25, [8, 0, -4])],
         "right_arm": [(0, [4, 0, 4]), (.38, [-85, 0, -25]), (.72, [-24, 0, 0]), (.92, [18, 0, 7]), (1.25, [4, 0, 4])],
-        "sword": [(0, [0, 0, 0]), (.38, [0, 0, 25]), (.72, [0, 0, 150]), (.92, [0, 0, 130]), (1.25, [0, 0, 0])],
+        "sword": [(0, [0, 0, 0]), (.38, [0, 0, -95]), (.72, [0, 0, 25]), (.92, [0, 0, 10]), (1.25, [0, 0, 0])],
         "cape_left": [(0, [0, 0, -5]), (.72, [-22, 0, -19]), (1.25, [0, 0, -5])],
         "cape_center": [(0, [-4, 0, 0]), (.72, [-29, 0, 11]), (1.25, [-4, 0, 0])],
     })
@@ -527,14 +533,14 @@ def build(out=ROOT / "model-lab" / "models"):
         "root": [(0, [0, 0, 0], "position"), (.5, [0, .45, -.6], "position"), (1.05, [0, 0, 0], "position")],
         "torso": [(0, [18, 40, 9]), (.22, [20, 48, 10]), (.5, [13, -40, -12]), (1.05, [16, 0, -6])],
         "right_arm": [(0, [22, 0, 90]), (.22, [28, 0, 100]), (.5, [-40, 0, -65]), (.78, [-25, 0, -80]), (1.05, [4, 0, 4])],
-        "sword": [(0, [0, 0, 45]), (.5, [0, 0, -75]), (1.05, [0, 0, 0])],
+        "sword": [(0, [0, 0, 0]), (.22, [0, 0, 105]), (.5, [0, 0, -50]), (1.05, [0, 0, 0])],
         "cape_right": [(0, [-8, 0, 8]), (.5, [-30, 0, 22]), (1.05, [0, 0, 4])],
     })
     m.anim("thrust", 1.0, {
         "root": [(0, [0, 0, 0], "position"), (.32, [0, -.4, 0], "position"), (.55, [0, .1, -2], "position"), (1, [0, 0, 0], "position")],
         "torso": [(0, [16, 0, -6]), (.32, [7, 18, -7]), (.55, [27, -12, 3]), (1, [16, 0, -6])],
         "right_arm": [(0, [4, 0, 4]), (.32, [-75, 0, -28]), (.55, [-96, 0, 3]), (.8, [-90, 0, 2]), (1, [4, 0, 4])],
-        "sword": [(0, [0, 0, 0]), (.32, [0, 0, -60]), (.55, [0, 0, -75]), (1, [0, 0, 0])],
+        "sword": [(0, [0, 0, 0]), (.32, [0, 0, -105]), (.55, [0, 0, -120]), (1, [0, 0, 0])],
         "left_leg": [(0, [0, 0, 0]), (.55, [-33, 0, 0]), (1, [0, 0, 0])],
         "right_leg": [(0, [0, 0, 0]), (.55, [19, 0, 0]), (1, [0, 0, 0])],
     })
@@ -559,8 +565,8 @@ def build(out=ROOT / "model-lab" / "models"):
     m.anim("slam", 1.35, {
         "root": [(0, [0, 0, 0], "position"), (.72, [0, 1.4, 0], "position"), (.95, [0, -1, -1], "position"), (1.35, [0, 0, 0], "position")],
         "torso": [(0, [8, 0, -4]), (.7, [-18, 0, -4]), (.94, [43, 0, -4]), (1.35, [8, 0, -4])],
-        "right_arm": [(0, [4, 0, 4]), (.7, [-30, 0, -5]), (.94, [45, 0, 4]), (1.35, [4, 0, 4])],
-        "sword": [(0, [0, 0, 0]), (.7, [0, 0, 30]), (.94, [-150, 0, 120]), (1.35, [0, 0, 0])],
+        "right_arm": [(0, [4, 0, 4]), (.7, [-30, 0, -5]), (.94, [0, 0, 0]), (1.35, [4, 0, 4])],
+        "sword": [(0, [0, 0, 0]), (.7, [0, 0, -90]), (.94, [0, 0, 0]), (1.35, [0, 0, 0])],
         "left_arm": [(0, [0, 0, 0]), (.7, [-30, 0, -15]), (.94, [20, 0, -12]), (1.35, [0, 0, 0])],
         "left_knee": [(0, [0, 0, 0]), (.94, [22, 0, 0]), (1.35, [0, 0, 0])],
         "right_knee": [(0, [0, 0, 0]), (.94, [-18, 0, 0]), (1.35, [0, 0, 0])],

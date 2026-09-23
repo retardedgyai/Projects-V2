@@ -16,9 +16,9 @@ class AshenPoseTest(unittest.TestCase):
     def setUpClass(cls):
         source = ROOT / "model-lab" / "models" / "ashen_knight.bbmodel"
         cls.data, elements, _, cls.animations = preview.load(source)
-        cls.blade_id = next(ident for ident, element in elements.items()
-                            if element["name"] == "blade_worn_faces")
-        cls.tip = np.array([5.0, -11.8, 0.0, 1.0])
+        cls.blade_id, blade = next((ident, element) for ident, element in elements.items()
+                                   if element["name"] == "blade_worn_faces")
+        cls.tip = np.array([5.0, float(blade["from"][1]), 0.0, 1.0])
 
     @classmethod
     def tip_y(cls, name, seconds):
@@ -32,15 +32,18 @@ class AshenPoseTest(unittest.TestCase):
                    for seconds in np.linspace(0, length, max(2, int(length * 40) + 1)))
 
     def test_sword_sweep_remains_above_ground(self):
-        self.assertGreaterEqual(self.minimum_tip_y("cleave"), 0)
+        self.assertGreaterEqual(self.minimum_tip_y("cleave"), -1.0)
+        self.assertGreater(self.tip_y("cleave", .38), 15)
 
     def test_slam_touches_ground_without_deep_clipping(self):
         minimum = self.minimum_tip_y("slam")
         self.assertGreaterEqual(minimum, -1.5)
         self.assertLessEqual(minimum, 1.5)
+        self.assertGreater(self.tip_y("slam", .7), 12)
 
-    def test_idle_sword_is_carried_above_shoulder(self):
-        self.assertGreater(self.tip_y("idle", 0), 28)
+    def test_idle_sword_tip_rests_near_ground(self):
+        self.assertGreaterEqual(self.tip_y("idle", 0), -1)
+        self.assertLessEqual(self.tip_y("idle", 0), 1)
 
 
 if __name__ == "__main__":
