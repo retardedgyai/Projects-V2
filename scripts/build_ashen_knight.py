@@ -789,33 +789,50 @@ def build(out=ROOT / "model-lab" / "models"):
            "edge", helm, face_uv={"north": faceplate_uv, "south": visor_back_uv,
                                   "east": visor_profile_uv, "west": visor_profile_uv,
                                   "up": visor_back_uv, "down": visor_back_uv})
-    # The separate tapered strands begin inside the hood. A solid crest root
-    # formed a brightly lit rectangular cap in the boss-fight front view.
+    # Wind-torn locks start inside the hood and follow different curved paths.
+    # Each short segment is aligned to its path so the mane has depth from all
+    # angles without long, rectangular planes behind the head.
+    def paint_mane(px, py):
+        ridge = (px + py // 3) % 7
+        tone = (43, 49, 53) if ridge == 0 else (28, 34, 39)
+        if (px * 5 + py * 3) % 23 < 2:
+            tone = (16, 22, 28)
+        return (*tone, 255)
 
-    for strand, (x, y0, y1, z0, z1, bend) in enumerate((
-            (-1.55, 25.0, 29.0, 1.1, 6.5, -4),
-            (-.46, 24.8, 28.6, 1.2, 7.6, 2),
-            (.78, 22.8, 27.0, 2.2, 8.0, 4),
-            (1.6, 23.4, 26.7, 1.5, 6.8, -5),
-    )):
-        def paint_mane(px, py, layer=strand, curve=bend):
-            along = px / 95
-            centerline = (13 + (18 + curve) * along ** 1.35
-                          + 2 * math.sin(along * 8 + layer))
-            half_width = 5.2 * (1 - along) ** .8 + .7
-            if abs(py - centerline) > half_width:
-                return (0, 0, 0, 0)
-            if along > .68 and (px + 3 * py + layer * 13) % 19 < 3:
-                return (0, 0, 0, 0)
-            streak = (py + px // 11 + layer * 3) % 12
-            color = (20, 27, 33) if streak in (0, 1, 2) else (10, 15, 23)
-            if streak == 6 and px < 72:
-                color = (34, 42, 48)
-            return (*color, 255)
+    mane_uv = m.patch(8, 8, paint_mane, "braided_mane_lock")
+    mane_faces = {side: mane_uv for side in
+                  ("north", "south", "east", "west", "up", "down")}
+    mane_paths = (
+        ((-1.1, 27.1, 1.1), (-3.0, 28.4, 4.0), (-7.0, 26.4, 8.2), .58),
+        ((-.35, 27.3, 1.2), (-2.0, 28.6, 4.3), (-6.0, 27.2, 8.4), .49),
+        ((.6, 27.0, 1.2), (-1.0, 28.3, 4.0), (-5.0, 25.9, 7.2), .51),
+        ((1.5, 26.9, 1.5), (-.4, 27.6, 3.8), (-4.3, 24.9, 6.8), .45),
+        ((-1.7, 27.1, 1.6), (-3.8, 28.1, 3.4), (-8.0, 25.6, 7.1), .48),
+        ((.15, 26.9, 1.5), (-1.8, 27.4, 4.1), (-6.0, 24.7, 6.9), .36),
+    )
+    for strand, (start, control, tip, root_width) in enumerate(mane_paths):
+        def point(u):
+            a, b, c = (1 - u) ** 2, 2 * (1 - u) * u, u ** 2
+            return tuple(a * start[i] + b * control[i] + c * tip[i]
+                         for i in range(3))
 
-        strand_uv = m.patch(96, 48, paint_mane, f"mane_sheet_{strand}")
-        m.cube(f"mane_sheet_{strand}", [x - .13, y0, z0], [x + .13, y1, z1],
-               "hair", plume, face_uv={"east": strand_uv, "west": strand_uv})
+        for section in range(8):
+            u0, u1 = section / 8, (section + 1) / 8
+            ax, ay, az = point(u0)
+            bx, by, bz = point(u1)
+            cx, cy, cz = ((ax + bx) / 2, (ay + by) / 2, (az + bz) / 2)
+            dx, dy, dz = bx - ax, by - ay, bz - az
+            horizontal = math.hypot(dx, dz)
+            length = math.hypot(horizontal, dy)
+            taper = (1 - (u0 + u1) / 2) ** .75
+            width = .11 + root_width * taper
+            height = .12 + root_width * .85 * taper
+            add_rotated(m, plume, f"mane_lock_{strand}_{section}",
+                        [cx - width / 2, cy - height / 2, cz - length / 2 - .09],
+                        [cx + width / 2, cy + height / 2, cz + length / 2 + .09],
+                        "hair", [-math.degrees(math.atan2(dy, horizontal)),
+                                 math.degrees(math.atan2(dx, dz)), 0],
+                        [cx, cy, cz], "worn_mane", mane_faces)
 
     for side, x in (("left", -2.1), ("right", 2.1)):
         thigh = left_thigh if side == "left" else right_thigh
