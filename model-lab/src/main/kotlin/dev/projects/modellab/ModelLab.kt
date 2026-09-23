@@ -63,8 +63,9 @@ fun main(args: Array<String>) {
     val events = MinecraftServer.getGlobalEventHandler()
     val menu = LabMenu(events)
     val iceFang = IceFangTraining(bundle, instance)
+    val ashenPreview = AshenVisualPreview(bundle, instance)
     val packReady = java.util.concurrent.ConcurrentHashMap.newKeySet<UUID>()
-    val testUi = LabTestUi(events,menu,bundle,instance,iceFang,actors,{ it.uuid in packReady },metrics)
+    val testUi = LabTestUi(events,menu,bundle,instance,iceFang,actors,{ it.uuid in packReady },metrics,ashenPreview)
     events.addListener(PlayerResourcePackStatusEvent::class.java) {
         if (it.packUuid == info.id()) {
             if (it.status == ResourcePackStatus.SUCCESSFULLY_LOADED) packReady.add(it.player.uuid)
@@ -83,7 +84,7 @@ fun main(args: Array<String>) {
             it.player.sendMessage(Component.text("テスト工房：ホットバー9番のコンパスを右クリック。Shift＋Fでもメニューを開けます。"))
         }
     }
-    events.addListener(PlayerDisconnectEvent::class.java) { actors.remove(it.player.uuid)?.close() }
+    events.addListener(PlayerDisconnectEvent::class.java) { ashenPreview.clear(it.player.uuid); actors.remove(it.player.uuid)?.close() }
     events.addListener(PlayerDisconnectEvent::class.java) { iceFang.remove(it.player); packReady.remove(it.player.uuid) }
     events.addListener(PlayerUseItemEvent::class.java) {
         if (iceFang.uses(it.player, it.hand)) { it.isCancelled = true; iceFang.requestCast(it.player) }
@@ -96,6 +97,7 @@ fun main(args: Array<String>) {
     }
     events.addListener(InstanceTickEvent::class.java) { if (it.instance === instance) iceFang.tick() }
     events.addListener(InstanceTickEvent::class.java) { if (it.instance === instance) actors.values.forEach(BossModelActor::syncViewers) }
+    events.addListener(InstanceTickEvent::class.java) { if (it.instance === instance) ashenPreview.tick() }
     events.addListener(ServerTickMonitorEvent::class.java) { metrics.record(it.tickMonitor.tickTime) }
 
     fun command(name: String, execute: (Player, List<String>) -> Unit) {
@@ -131,26 +133,29 @@ fun main(args: Array<String>) {
         val name = words.firstOrNull() ?: "vesper"
         val id = bosses[name] ?: "$name.bbmodel"
         val definition = bundle.definition(id)
-        actors.remove(player.uuid)?.close()
+        ashenPreview.clear(player.uuid); actors.remove(player.uuid)?.close()
         actors[player.uuid] = BossModelActor(definition, instance, player.position.add(0.0, 0.0, 6.0))
         player.sendMessage(Component.text("再生可能：${definition.animations.keys.joinToString()}"))
     }
     command("anim") { player, words ->
         val actor = requireNotNull(actors[player.uuid]) { "先に /model を実行してください" }
-        actor.play(words.firstOrNull() ?: "idle")
+        val animation = words.firstOrNull() ?: "idle"
+        actor.play(animation); ashenPreview.play(player, actor, animation, false)
     }
     command("loop") { player, words ->
         val actor = requireNotNull(actors[player.uuid]) { "先に /model を実行してください" }
-        actor.repeat(words.firstOrNull() ?: "idle")
+        val animation = words.firstOrNull() ?: "idle"
+        actor.repeat(animation); ashenPreview.play(player, actor, animation, true)
     }
     command("bone") { player, words ->
         require(words.size == 2) { "/bone 部位名 true|false" }
         requireNotNull(actors[player.uuid]) { "先に /model" }.setBoneVisible(words[0], words[1].toBooleanStrict())
     }
-    command("modelclear") { player, _ -> actors.remove(player.uuid)?.close() }
+    command("modelclear") { player, _ -> ashenPreview.clear(player.uuid); actors.remove(player.uuid)?.close() }
     command("modelstats") { player, _ -> player.sendMessage(Component.text(metrics.summary(instance.entities.size))) }
     Runtime.getRuntime().addShutdownHook(Thread {
         iceFang.close()
+        ashenPreview.close()
         actors.values.forEach(BossModelActor::close)
         http.stop(0)
     })

@@ -3,9 +3,12 @@
 ## 灰淵の騎士（制作中）
 
 `scripts/build_ashen_knight.py` はScorpiusの `.bbmodel` 生成機構を使い、
-オリジナルの騎士本体・テクスチャ・13動作と、床予兆・亀裂の別モデルを `model-lab/models/` に生成する。
+オリジナルの騎士本体・テクスチャ・13動作と、床予兆・亀裂・斬撃弧の別モデルを `model-lab/models/` に生成する。
 工房の「ボスモデルを選ぶ」から灰淵の騎士を配置できる。現在はモデル確認用で、
+薙ぎ払い・返し斬り・突きでは斬撃弧、叩きつけ・跳躍では亀裂を動作に合わせて表示する。
 ProjectS本編の戦闘AIと攻撃判定への接続はこれから行う。
+造形の参照先、比較観点、現時点の未達判定は
+[`ASHEN_KNIGHT_ART_DIRECTION.md`](ASHEN_KNIGHT_ART_DIRECTION.md) に記録している。
 
 ```powershell
 python scripts/build_ashen_knight.py

@@ -16,13 +16,14 @@ import gen_vesper as authoring  # noqa: E402
 
 
 PALETTE = {
-    "armor": ("303943", "566674", "8796a0"),
-    "edge": ("667984", "a7b6be", "d4dedc"),
-    "cloth": ("192a50", "315b86", "568db4"),
-    "void": ("101923", "263540", "394e5a"),
-    "ash": ("4c4550", "796c74", "ab9391"),
+    "armor": ("20252d", "343d48", "64727c"),
+    "edge": ("35414b", "71828b", "b2bcb6"),
+    "cloth": ("142b58", "28548e", "5686ba"),
+    "void": ("090d14", "161d29", "313b49"),
+    "ash": ("343a42", "5d6871", "98a4a9"),
     "ember": ("9d342f", "e56948", "ffc383"),
-    "eye": ("357b9d", "7bced6", "c5fff2"),
+    "eye": ("0a101a", "121d29", "2d4857"),
+    "mail": ("11161d", "2d343b", "55616a"),
 }
 authoring.MATERIALS = {
     name: tuple(bytes.fromhex(color) for color in shades)
@@ -56,9 +57,11 @@ class KnightModel(authoring.Model):
                 if fine % 89 == 0:
                     tone = 2
             elif material == "cloth":
-                if (x + y * 2 + seed) % 13 == 0:
+                fold = (x // 4 + y // 17 + seed) % 11
+                tone = 0 if fold in (0, 1) else 2 if fold in (5, 6) else 1
+                if (x + y * 2 + seed) % 29 == 0:
                     tone = 2
-                if x % 11 == 0 and y % 3 != 0:
+                if fine % 67 == 0:
                     tone = 0
                 if y == height - 1:
                     tone = 0
@@ -69,6 +72,8 @@ class KnightModel(authoring.Model):
             elif material == "void":
                 if coarse % 9 < 6:
                     tone = 0
+            elif material == "mail":
+                tone = 2 if (x + y) % 5 == 0 else 0 if x % 3 == 0 else 1
             elif material in ("ember", "eye"):
                 tone = 2 if (x + y) % 5 < 3 else 1
             return (*shades[tone], 255)
@@ -82,11 +87,12 @@ def add(model, bucket, name, lo, hi, material, motif="plain"):
 
 def build(out=ROOT / "model-lab" / "models"):
     out.mkdir(parents=True, exist_ok=True)
-    m = KnightModel("ashen_knight", size=256, texels=2)
+    m = KnightModel("ashen_knight", size=512, texels=2)
 
     hips, chest, helm = [], [], []
     left_leg, right_leg, left_arm, right_arm, blade = [], [], [], [], []
     cape_left, cape_right, cape_left_edge, cape_right_edge = [], [], [], []
+    scarf, plume, cape_center = [], [], []
 
     # Narrow waist, uneven shoulders and a hunched profile keep the outline
     # readable at Minecraft viewing distances. The front faces negative Z.
@@ -94,11 +100,14 @@ def build(out=ROOT / "model-lab" / "models"):
     add(m, hips, "fauld_left", [-3.8, 9.2, -2], [-.3, 12, 2.2], "edge")
     add(m, hips, "fauld_right", [.3, 9.6, -2], [3.5, 12, 2.2], "armor")
     add(m, hips, "belt", [-3.4, 12.3, -2.15], [3.4, 13.2, -1.7], "ash")
+    add(m, hips, "mail_skirt", [-3.25, 8.7, -1.55], [3.25, 12.5, 2.4], "mail")
+    add(m, hips, "waist_tasset_left", [-3.7, 9, -2.5], [-2, 12.3, -.9], "armor")
+    add(m, hips, "waist_tasset_right", [1.9, 9.8, -2.45], [3.6, 12.4, -.9], "armor")
+    add(m, hips, "belt_buckle", [-.8, 11.9, -2.55], [.8, 13.1, -1.96], "edge")
     add(m, chest, "cuirass", [-3.6, 13, -2.4], [3.6, 22, 2.1], "armor")
     add(m, chest, "left_breast_plate", [-4.1, 17, -2.8], [-.4, 22.5, -2.1], "edge")
     add(m, chest, "right_breast_plate", [.5, 17.2, -2.7], [3.8, 21.7, -2.1], "armor")
-    add(m, chest, "heart_fissure", [-.5, 17, -2.84], [.5, 20.3, -2.75], "ember")
-    add(m, chest, "heart_ember", [-1, 18.1, -2.92], [1, 19, -2.83], "ember")
+    add(m, chest, "heart_fissure", [-.35, 16, -2.84], [.35, 17.2, -2.75], "void")
     add(m, chest, "high_collar", [-3, 21.2, -1.7], [3, 23.2, 2.3], "void")
     add(m, chest, "left_pauldron", [-6.5, 19.8, -2.2], [-2.7, 23.8, 2.8], "edge")
     add(m, chest, "left_pauldron_ridge", [-6.9, 22.5, -2.3], [-3.2, 23.8, 2.9], "ash")
@@ -111,21 +120,84 @@ def build(out=ROOT / "model-lab" / "models"):
     add(m, chest, "cuirass_rib_left", [-3.5, 14.8, -2.9], [-2.8, 20.2, -2.4], "edge")
     add(m, chest, "cuirass_rib_right", [2.7, 15.5, -2.9], [3.45, 20.8, -2.4], "edge")
     add(m, chest, "cuirass_lower_rib", [-2.7, 14.1, -2.75], [2.8, 14.9, -2.35], "ash")
+    add(m, chest, "mail_under_left", [-4.35, 15.8, -1.8], [-3.75, 20.7, 1.5], "mail")
+    add(m, chest, "mail_under_right", [3.7, 15.4, -1.7], [4.35, 20.5, 1.4], "mail")
+    add(m, chest, "left_pauldron_second_plate", [-6.6, 20.5, -2.98], [-3.3, 21.5, -2.72], "edge")
+    add(m, chest, "right_pauldron_second_plate", [3.7, 20.3, -2.92], [6.1, 21.1, -2.46], "edge")
+
+    # Royal-blue wrapping interrupts the chest armor and makes the head/torso
+    # one continuous shape. The shoulder scarf also extends over the back.
+    add(m, scarf, "scarf_dark_under", [-3.35, 20.5, -3.02], [3.1, 23.5, 2.45], "void")
+    add(m, scarf, "scarf_fold_high", [-3.8, 21.5, -3.48], [2.1, 23.2, -2.78], "cloth")
+    add(m, scarf, "scarf_fold_mid", [-3.4, 19.7, -3.42], [2.9, 21.4, -2.82], "cloth")
+    add(m, scarf, "scarf_fold_low", [-2.6, 18.5, -3.24], [3.25, 19.9, -2.8], "cloth")
+    add(m, scarf, "scarf_left_drape", [-5.6, 18.8, -2.2], [-3.25, 22.4, 2.25], "cloth")
+    add(m, scarf, "scarf_right_drape", [2.4, 19.7, -2.45], [5.2, 22.7, 2.65], "cloth")
+    add(m, scarf, "scarf_back", [-4.8, 19.3, 2.25], [4.9, 22.6, 3.18], "cloth")
+    add(m, scarf, "scarf_hanging_point", [-3.75, 15.2, -3.1], [-1.6, 19.6, -2.78], "cloth")
 
     add(m, helm, "hood", [-2.7, 21.9, -2.3], [2.7, 27.5, 2.8], "void")
-    add(m, helm, "visor", [-2.4, 23.2, -3.1], [2.4, 26.4, -2.25], "armor")
-    add(m, helm, "visor_brow", [-2.8, 25.6, -3.4], [2.8, 26.5, -2.5], "edge")
-    add(m, helm, "visor_muzzle", [-1.5, 22.9, -3.35], [1.5, 24.4, -2.6], "armor")
-    add(m, helm, "left_eye", [-1.8, 24.45, -3.47], [-.35, 24.85, -3.39], "eye")
-    add(m, helm, "right_eye", [.35, 24.45, -3.47], [1.8, 24.85, -3.39], "eye")
-    add(m, helm, "crest_base", [-.9, 27, -.7], [.9, 29.3, 1], "edge")
-    add(m, helm, "crest_tip", [-.65, 28.5, -.4], [.65, 31, .7], "armor")
+    add(m, helm, "visor", [-2.25, 23.3, -3.15], [2.25, 26.3, -2.25], "edge")
+    add(m, helm, "visor_brow", [-2.5, 25.6, -3.62], [2.5, 26.3, -2.7], "edge")
+    add(m, helm, "visor_bridge", [-.55, 23.3, -3.92], [.55, 26.1, -3.18], "edge")
+    add(m, helm, "visor_beak_upper", [-1.45, 23.1, -4.25], [1.45, 24.1, -3.31], "edge")
+    add(m, helm, "visor_beak_point", [-.78, 22.55, -4.52], [.78, 23.45, -3.77], "edge")
+    add(m, helm, "visor_left_carving", [-2.35, 23.65, -3.78], [-1.75, 25.3, -3.56], "edge")
+    add(m, helm, "visor_right_carving", [1.75, 23.65, -3.78], [2.35, 25.3, -3.56], "edge")
+    add(m, helm, "visor_left_eye_frame", [-2.15, 24.25, -3.81], [-.3, 25, -3.55], "armor")
+    add(m, helm, "visor_right_eye_frame", [.3, 24.25, -3.81], [2.15, 25, -3.55], "armor")
+    add(m, helm, "left_eye", [-1.95, 24.5, -3.59], [-.45, 24.75, -3.49], "eye")
+    add(m, helm, "right_eye", [.45, 24.5, -3.59], [1.95, 24.75, -3.49], "eye")
+    add(m, helm, "crest_base", [-.85, 26.9, -.4], [.85, 28.1, 1.4], "armor")
+    add(m, helm, "crest_tip", [-.45, 27.6, -.1], [.45, 29, .8], "edge")
     add(m, helm, "left_cheek_plate", [-2.9, 22.8, -3.0], [-1.8, 25.3, -.9], "edge")
     add(m, helm, "right_cheek_plate", [1.8, 22.8, -3.0], [2.9, 25.3, -.9], "edge")
-    add(m, helm, "helmet_left_horn", [-3.5, 25.1, -.2], [-2.4, 29.4, 1.3], "armor")
-    add(m, helm, "helmet_left_horn_tip", [-3.3, 28.5, .1], [-2.7, 31.6, 1], "edge")
-    add(m, helm, "helmet_right_horn_broken", [2.4, 25.3, -.2], [3.5, 27.6, 1.3], "armor")
-    add(m, helm, "face_lower_mask", [-2.2, 21.8, -3.5], [2.2, 23.5, -2.8], "edge")
+    add(m, helm, "helmet_left_cheek_fin", [-3.45, 22.5, -2.55], [-2.6, 26.3, -.9], "armor")
+    add(m, helm, "helmet_right_cheek_fin", [2.6, 22.5, -2.55], [3.45, 26.3, -.9], "armor")
+    add(m, helm, "face_lower_mask", [-1.9, 21.8, -3.55], [1.9, 23.5, -2.8], "edge")
+
+    # A cutout engraved faceplate supplies a distinct long-muzzled silhouette
+    # without reproducing another game's texture or sculpt. The existing helm
+    # cubes retain the depth from the side and above.
+    def paint_faceplate(px, py):
+        center = 24
+        distance = abs(px - center)
+        if py < 6:
+            width = 3 + py // 2
+        elif py < 18:
+            width = 13 if py < 13 else 17
+        elif py < 35:
+            width = 18 - max(0, py - 27) // 3
+        elif py < 52:
+            width = 13 - (py - 35) // 5
+        else:
+            width = max(1, 9 - (py - 52))
+        ear = 8 <= py < 22 and 17 <= distance <= 21 - (py - 8) // 6
+        if distance > width and not ear:
+            return (0, 0, 0, 0)
+        if 28 <= py <= 33 and 4 <= distance <= 13:
+            return (8, 15, 23, 255)
+        if distance <= 2 and 12 <= py < 53:
+            return (177, 188, 184, 255)
+        if abs(distance - width) <= 1 or (py < 18 and distance <= 3):
+            return (172, 185, 179, 255)
+        if py in (20, 21, 39, 40) and distance < width - 2:
+            return (44, 62, 69, 255)
+        if 35 < py < 49 and distance in (4, 5):
+            return (32, 46, 55, 255)
+        if (px * 3 + py * 5) % 31 == 0:
+            return (139, 151, 148, 255)
+        return (76, 92, 98, 255)
+
+    faceplate_uv = m.patch(48, 64, paint_faceplate, "ashen_faceplate")
+    m.cube("engraved_wolf_visor", [-3.25, 21.25, -4.78], [3.25, 29.25, -4.7],
+           "edge", helm, face_uv={"north": faceplate_uv, "south": faceplate_uv})
+    # The loose black crest gives the helmet a long, backward swept profile.
+    add(m, plume, "crest_root", [-1.3, 28, .55], [1.25, 29, 3.2], "void")
+    add(m, plume, "crest_arch", [-1.65, 28.5, 2.7], [1.5, 29.25, 5.9], "void")
+    add(m, plume, "crest_back", [-2.2, 27.6, 5.25], [1.05, 28.4, 8.1], "void")
+    add(m, plume, "crest_long_tip", [-2.7, 25.4, 7.4], [-1.75, 28.1, 8.05], "void")
+    add(m, plume, "crest_short_tip", [.4, 26.25, 6.7], [1.1, 28.15, 7.3], "void")
 
     for side, x in (("left", -2.1), ("right", 2.1)):
         leg = left_leg if side == "left" else right_leg
@@ -135,6 +207,10 @@ def build(out=ROOT / "model-lab" / "models"):
         add(m, leg, f"{side}_knee", [x - 1.45, 6.2, -2], [x + 1.45, 7.6, -.95], "armor")
         add(m, leg, f"{side}_knee_ridge", [x - 1.1, 6.8, -2.35], [x + 1.1, 7.2, -1.9], "edge")
         add(m, leg, f"{side}_shin_trim", [x - .8, 2.7, -1.78], [x + .8, 5.9, -1.62], "ash")
+        add(m, leg, f"{side}_thigh_mail", [x - 1.5, 7.3, -1.8], [x + 1.5, 10.4, 1.65], "mail")
+        add(m, leg, f"{side}_greave_lip", [x - 1.43, 4.65, -1.98], [x + 1.43, 5.45, 1.55], "armor")
+        add(m, leg, f"{side}_sabatons", [x - 1.2, .15, -3.8], [x + 1.15, 1.15, -1.95], "edge")
+        add(m, leg, f"{side}_ankle_guard", [x - 1.45, 1.15, -1.85], [x + 1.45, 2.3, 1.25], "armor")
 
     add(m, left_arm, "bound_upper_arm", [-6, 15.8, -.8], [-3.7, 21, 1.3], "void")
     add(m, left_arm, "bound_forearm", [-6.3, 10, -1], [-4, 16.4, 1.2], "cloth")
@@ -142,28 +218,35 @@ def build(out=ROOT / "model-lab" / "models"):
     add(m, left_arm, "arm_binding", [-6.35, 12.7, -1.35], [-3.9, 13.6, 1.4], "ash")
     add(m, left_arm, "left_arm_tear", [-6.5, 11.2, 1.1], [-4.9, 16.2, 1.8], "void")
     add(m, left_arm, "left_gauntlet_finger", [-5.6, 7.8, -1], [-4.8, 9.4, .6], "edge")
+    add(m, left_arm, "left_mail_shoulder", [-6.15, 17.2, -1], [-3.55, 20.2, 1.5], "mail")
+    add(m, left_arm, "left_wrapping_low", [-6.5, 10.6, -1.4], [-3.9, 12.2, 1.2], "cloth")
+    add(m, left_arm, "left_gauntlet_plate", [-6.4, 8.8, -1.55], [-4.05, 10.5, -.95], "armor")
     add(m, right_arm, "right_upper_arm", [3.7, 15.8, -.8], [6, 21, 1.5], "armor")
     add(m, right_arm, "right_bracer", [3.8, 11.1, -1.1], [6.2, 16.5, 1.5], "edge")
     add(m, right_arm, "right_hand", [4, 9.7, -1.2], [6, 12.2, 1.2], "armor")
-    add(m, right_arm, "bracer_ember", [4, 13.1, -1.28], [6, 13.7, -1.16], "ember")
+    add(m, right_arm, "bracer_engraving", [4, 13.1, -1.28], [6, 13.7, -1.16], "ash")
     add(m, right_arm, "right_elbow_ridge", [3.5, 15.8, -1.4], [6.5, 16.5, 1.7], "edge")
     add(m, right_arm, "right_knuckles", [4, 9.5, -1.5], [6, 10.5, -1.15], "edge")
+    add(m, right_arm, "right_mail_shoulder", [3.5, 17.3, -1], [6.05, 20, 1.55], "mail")
+    add(m, right_arm, "right_bracer_ridge", [3.55, 12.2, -1.45], [6.45, 13.05, 1.62], "armor")
+    add(m, right_arm, "right_gauntlet_plate", [3.85, 10.1, -1.55], [6.15, 11.2, -.95], "edge")
 
-    # The blade hangs from the hand at rest. Arm rotation gives it one clean
-    # arc for telegraphed sweeps instead of many independently animated cubes.
+    # The sword arm reaches across the chest, holding the long blade behind
+    # the shoulder at rest; animation rotates the arm and blade separately.
     add(m, blade, "pommel", [4.1, 11.8, -1], [5.9, 13.7, 1], "ash")
     add(m, blade, "grip", [4.45, 9, -.55], [5.55, 12.4, .55], "void")
-    add(m, blade, "guard", [1.9, 8.6, -.75], [8.1, 9.4, .75], "edge")
-    add(m, blade, "guard_left_tooth", [1.4, 8.4, -.9], [2.5, 10.4, .9], "ash")
-    add(m, blade, "guard_right_tooth", [7.5, 8.4, -.9], [8.6, 10.4, .9], "ash")
-    add(m, blade, "blade_core", [3.55, -8, -.55], [6.45, 8.6, .55], "armor")
-    add(m, blade, "blade_left_edge", [3.15, -5.8, -.65], [3.65, 7.7, .65], "edge")
-    add(m, blade, "blade_right_edge", [6.35, -5.8, -.65], [6.85, 7.7, .65], "edge")
-    add(m, blade, "blade_ember", [4.7, -5.6, -.68], [5.3, 7.2, -.57], "ember")
-    add(m, blade, "blade_point", [4.15, -10.2, -.45], [5.85, -7.9, .45], "ash")
-    add(m, blade, "blade_notch_left", [3.4, -4.9, -.8], [4.05, -3.7, .8], "void")
-    add(m, blade, "blade_notch_right", [5.95, -1.4, -.8], [6.7, -.4, .8], "void")
-    add(m, blade, "blade_back_ridge", [4.5, -6.7, .55], [5.5, 7.5, .9], "edge")
+    add(m, blade, "guard", [1.7, 8.6, -.95], [8.3, 9.4, .95], "edge")
+    add(m, blade, "guard_left_tooth", [1.35, 8.2, -1.1], [2.65, 10.6, 1.1], "ash")
+    add(m, blade, "guard_right_tooth", [7.35, 8.2, -1.1], [8.65, 10.6, 1.1], "ash")
+    add(m, blade, "blade_core", [3.15, -9.4, -.78], [6.85, 8.6, .78], "armor")
+    add(m, blade, "blade_left_edge", [2.8, -7.7, -.86], [3.25, 7.7, .86], "edge")
+    add(m, blade, "blade_right_edge", [6.75, -7.7, -.86], [7.2, 7.7, .86], "edge")
+    add(m, blade, "blade_fuller", [4.8, -7.2, -.83], [5.2, 6.8, -.72], "void")
+    add(m, blade, "blade_weathering", [5.45, -3.6, -.84], [6, 3.4, -.76], "ash")
+    add(m, blade, "blade_point", [4, -11.8, -.5], [6, -9.2, .5], "ash")
+    add(m, blade, "blade_notch_left", [2.75, -6.8, -.9], [3.55, -5.8, .9], "void")
+    add(m, blade, "blade_notch_right", [6.45, -2.9, -.9], [7.2, -1.9, .9], "void")
+    add(m, blade, "blade_back_ridge", [4.55, -8.1, .78], [5.45, 7.5, 1.1], "edge")
 
     # Separate ragged cape strips move as two broad masses while the tattered
     # ends make a stepped silhouette. No borrowed game meshes or textures.
@@ -174,25 +257,49 @@ def build(out=ROOT / "model-lab" / "models"):
     add(m, cape_left_edge, "left_cape_fringe_tip", [-8, 5.8, 2.9], [-6.4, 8.7, 3.35], "void")
     add(m, cape_left_edge, "left_shouldercape", [-7.2, 17.4, -.2], [-5.5, 21.9, 2.8], "cloth")
     add(m, cape_left_edge, "left_frayed_front", [-7.5, 11.2, -.4], [-6.1, 17.9, 1.6], "cloth")
+    for index, bottom in enumerate((4.4, 2.8, 5.9)):
+        x = -9.6 + index * 1.8
+        add(m, cape_left_edge, f"left_rag_{index}", [x, bottom, 3], [x + 1.45, 11.8 + index % 2, 3.55], "cloth", f"rag{index}")
     add(m, cape_right, "right_cape_upper", [0, 17, 2.4], [4.2, 22, 3.2], "cloth")
     add(m, cape_right, "right_cape_tail", [1, 8.3, 2.8], [6.2, 18, 3.55], "cloth")
     add(m, cape_right, "right_cape_tip", [2.7, 6, 3], [6, 9, 3.5], "void")
     add(m, cape_right_edge, "right_cape_fringe", [5.6, 12.6, 2.8], [7.3, 19.3, 3.45], "cloth")
     add(m, cape_right_edge, "right_shouldercape", [5.3, 17.4, -.2], [7, 21.5, 2.8], "cloth")
+    for index, bottom in enumerate((7.1, 4.8)):
+        x = 3.6 + index * 1.75
+        add(m, cape_right_edge, f"right_rag_{index}", [x, bottom, 3], [x + 1.3, 13 + index, 3.55], "cloth", f"rag{index}")
 
-    head_bone = m.bone("head", [0, 22, 0], helm)
+    # Layered back silhouette: short mail at the waist, then long staggered
+    # blue strips. Each piece is independently textured with cutout tears.
+    add(m, cape_center, "back_mail", [-4.25, 8.3, 3.6], [4.3, 13.2, 3.85], "mail")
+    add(m, cape_center, "cape_middle_upper", [-3.45, 12.2, 3.9], [3.2, 19.5, 4.25], "cloth")
+    add(m, cape_center, "cape_middle_rag", [-2.25, 3.5, 4], [1.55, 13.2, 4.36], "cloth")
+    add(m, cape_center, "cape_middle_point", [-1.55, 1.7, 4.06], [-.45, 5.4, 4.38], "cloth")
+    add(m, cape_left_edge, "left_outer_streamer", [-10.4, 7.2, 3.2], [-8.2, 18.6, 3.62], "cloth")
+    add(m, cape_left_edge, "left_outer_tip", [-10.15, 2.1, 3.28], [-9, 8.4, 3.65], "cloth")
+    add(m, cape_right_edge, "right_outer_streamer", [7.1, 8.8, 3.15], [9.65, 17.3, 3.54], "cloth")
+    add(m, cape_right_edge, "right_outer_tip", [8.15, 3.3, 3.24], [9.35, 9.3, 3.59], "cloth")
+
+    plume_bone = m.bone("plume", [0, 28, 1], plume)
+    head_bone = m.bone("head", [0, 22, 0], helm + [plume_bone])
     left_arm_bone = m.bone("left_arm", [-4.8, 21, 0], left_arm)
     sword_bone = m.bone("sword", [5, 10.5, 0], blade)
-    sword_bone["rotation"] = [0, 0, 60]
+    sword_bone["rotation"] = [0, 0, -140]
     right_arm_bone = m.bone("right_arm", [4.8, 21, 0], right_arm + [sword_bone])
     left_cape_bone = m.bone("cape_left", [-2.3, 21, 2.8], cape_left)
     right_cape_bone = m.bone("cape_right", [2.2, 21, 2.8], cape_right)
+    middle_cape_bone = m.bone("cape_center", [0, 18, 3], cape_center)
     left_edge_bone = m.bone("cape_left_edge", [-6, 20, 2.7], cape_left_edge)
     right_edge_bone = m.bone("cape_right_edge", [6, 20, 2.7], cape_right_edge)
-    torso_bone = m.bone("torso", [0, 13, 0], chest + [head_bone, left_arm_bone, right_arm_bone,
-        left_cape_bone, right_cape_bone, left_edge_bone, right_edge_bone])
+    torso_bone = m.bone("torso", [0, 13, 0], chest + scarf + [head_bone, left_arm_bone, right_arm_bone,
+        left_cape_bone, right_cape_bone, middle_cape_bone, left_edge_bone, right_edge_bone])
     left_leg_bone = m.bone("left_leg", [-2.1, 10.7, 0], left_leg)
     right_leg_bone = m.bone("right_leg", [2.1, 10.7, 0], right_leg)
+    torso_bone["rotation"] = [-12, 0, -5]
+    right_arm_bone["rotation"] = [0, 0, -70]
+    left_leg_bone["rotation"] = [-6, 0, -10]
+    right_leg_bone["rotation"] = [12, 0, 10]
+    plume_bone["rotation"] = [0, -9, 0]
     root = m.bone("root", [0, 0, 0], hips + [torso_bone, left_leg_bone, right_leg_bone])
 
     m.anim("idle", 2.0, {
@@ -299,6 +406,7 @@ def build(out=ROOT / "model-lab" / "models"):
     m.write(out, root)
     build_warning(out)
     build_fissure(out)
+    build_slash(out)
 
 
 def build_warning(out):
@@ -349,6 +457,33 @@ def build_fissure(out):
             (1.3, [0, -5, 0], "position"),
         ]
     m.anim("burst", 1.3, tracks)
+    m.write(out, root)
+
+
+def build_slash(out):
+    """Broad pixel-painted blade arc, animated as one brief detached effect."""
+    m = authoring.Model("ashen_slash", size=64)
+    for y in range(64):
+        for x in range(64):
+            dx, dy = x - 31.5, y - 37
+            radius = math.hypot(dx, dy)
+            angle = math.atan2(dy, dx)
+            if -2.95 < angle < -.15 and 19 < radius < 30:
+                if radius > 28.5:
+                    m.pixels[y][x] = (247, 230, 203, 255)
+                elif radius > 25:
+                    m.pixels[y][x] = (252, 133, 88, 245)
+                elif (x * 7 + y * 3) % 11 < 8:
+                    m.pixels[y][x] = (134, 57, 65, 210)
+            if -2.7 < angle < -.35 and 15 < radius <= 19 and (x + y) % 7 < 2:
+                m.pixels[y][x] = (77, 139, 171, 175)
+    pieces = []
+    m.cube("arc", [-16, 0, -.05], [16, 32, .05], "armor", pieces,
+           face_uv={"north": [0, 0, 64, 64], "south": [0, 0, 64, 64]})
+    root = m.bone("root", [0, 16, 0], pieces)
+    m.anim("slash", .38, {
+        "root": [(0, [0, 0, -25]), (.09, [0, 0, -25]), (.26, [0, 0, 43]), (.38, [0, 0, 52])],
+    })
     m.write(out, root)
 
 

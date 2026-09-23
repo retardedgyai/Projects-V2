@@ -18,6 +18,7 @@ class BossModelActor(
     private val animation: AnimationHandlerImpl
     private val viewers = mutableSetOf<Player>()
     private var position = position
+    val currentPosition: Pos get() = position
     private var closed = false
     init {
         require(scale.isFinite() && scale > 0 && scale <= 16)

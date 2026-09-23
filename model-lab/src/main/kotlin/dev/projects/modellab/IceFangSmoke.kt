@@ -43,14 +43,15 @@ fun main(args: Array<String>) {
         process.dispatcher().start()
         var ticks = 0L
         IceFangTraining(bundle, instance).use { training ->
+            val ashenPreview = AshenVisualPreview(bundle, instance)
             fun step(count: Int) { repeat(count) {
-                training.tick(); process.ticker().tick(++ticks * 50_000_000L)
+                training.tick(); ashenPreview.tick(); process.ticker().tick(++ticks * 50_000_000L)
             } }
             fun targets() = instance.entities.filterIsInstance<EntityCreature>().filter { it.entityType == EntityType.HUSK }
             val events=MinecraftServer.getGlobalEventHandler()
             val actors=java.util.concurrent.ConcurrentHashMap<UUID,BossModelActor>()
             var packLoaded=false
-            val ui=LabTestUi(events,LabMenu(events),bundle,instance,training,actors,{packLoaded},TickMetrics())
+            val ui=LabTestUi(events,LabMenu(events),bundle,instance,training,actors,{packLoaded},TickMetrics(),ashenPreview)
             fun click(slot:Int) {
                 val event=InventoryPreClickEvent(checkNotNull(player.openInventory),player,Click.Left(slot))
                 events.call(event); check(event.isCancelled)

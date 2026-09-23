@@ -18,7 +18,8 @@ import java.util.concurrent.ConcurrentHashMap
 /** Only the isolated lab: a persistent entry point and short Japanese testing flows. */
 class LabTestUi(events: GlobalEventHandler, private val menu: LabMenu, private val bundle: ModelBundle,
     private val instance: Instance, private val ice: IceFangTraining,
-    private val actors: MutableMap<UUID,BossModelActor>, private val ready: (Player)->Boolean, private val metrics: TickMetrics) {
+    private val actors: MutableMap<UUID,BossModelActor>, private val ready: (Player)->Boolean,
+    private val metrics: TickMetrics, private val ashenPreview: AshenVisualPreview) {
     private val repeat=ConcurrentHashMap.newKeySet<UUID>()
     init {
         events.addListener(PlayerUseItemEvent::class.java) { e ->
@@ -40,6 +41,7 @@ class LabTestUi(events: GlobalEventHandler, private val menu: LabMenu, private v
         val hasModel=actors.containsKey(player.uuid)
         fun prepare() {
             if(!ensureReady(player)) return
+            ashenPreview.clear(player.uuid)
             actors.remove(player.uuid)?.close()
             player.closeInventory(); ice.equip(player)
         }
@@ -58,11 +60,11 @@ class LabTestUi(events: GlobalEventHandler, private val menu: LabMenu, private v
             15 to LabMenu.Button("表示中モデルの動きを選ぶ",Material.BLAZE_POWDER,
                 listOf(if(hasModel) "単発／連続を切り替えて再生" else "先にボスモデルを選んでください"),loaded && hasModel) { animations(player) },
             16 to LabMenu.Button("表示中モデルを片づける",Material.CAULDRON,
-                listOf("自分が出したモデルだけ削除"),hasModel) { actors.remove(player.uuid)?.close(); home(player) },
+                listOf("自分が出したモデルだけ削除"),hasModel) { ashenPreview.clear(player.uuid); actors.remove(player.uuid)?.close(); home(player) },
             20 to LabMenu.Button("動作状況",Material.CLOCK,listOf(metrics.summary(instance.entities.size))) { home(player) },
             22 to LabMenu.Button("自分のテストを全部片づける",Material.LAVA_BUCKET,
                 listOf("モデル・杖・標的・氷を削除", "ほかのプレイヤーには影響しません")) {
-                actors.remove(player.uuid)?.close(); ice.remove(player); player.closeInventory()
+                ashenPreview.clear(player.uuid); actors.remove(player.uuid)?.close(); ice.remove(player); player.closeInventory()
             },
             26 to LabMenu.Button("閉じてテストする",Material.BARRIER) { player.closeInventory() },
         ))
@@ -72,6 +74,7 @@ class LabTestUi(events: GlobalEventHandler, private val menu: LabMenu, private v
         menu.show(player,"ボスモデルを選ぶ",bosses.map { (id,name,icon) ->
             LabMenu.Button(name,icon,listOf("正面8mに配置して、動きの一覧を開く")) {
                 if(ensureReady(player)) {
+                    ashenPreview.clear(player.uuid)
                     val definition=bundle.definition(id)
                     val direction=IceFangPlan.direction(player.position.yaw())
                     val pos=Pos(player.position.x()+direction.x*8,1.0,player.position.z()+direction.z*8,player.position.yaw()+180f,0f)
@@ -96,6 +99,7 @@ class LabTestUi(events: GlobalEventHandler, private val menu: LabMenu, private v
                 if(ensureReady(player) && actors[player.uuid] === actor) {
                     actor.stopRepeating()
                     if(looping) actor.repeat(animation) else actor.play(animation)
+                    ashenPreview.play(player,actor,animation,looping)
                     player.closeInventory()
                 }
             }
