@@ -308,7 +308,7 @@ def build(out=ROOT / "model-lab" / "models"):
 
     # Royal-blue wrapping interrupts the chest armor and makes the head/torso
     # one continuous shape. The shoulder scarf also extends over the back.
-    add(m, scarf, "scarf_dark_under", [-3.35, 20.5, -3.02], [3.1, 23.5, 2.45], "void")
+    add(m, scarf, "scarf_dark_under", [-2.55, 21.1, -2.86], [2.45, 23.8, 2.25], "void")
 
     def paint_cowl_under(px, py):
         side = abs(px - 47.5) / 48
@@ -323,7 +323,7 @@ def build(out=ROOT / "model-lab" / "models"):
         return (*color, 255)
 
     cowl_under_uv = m.patch(96, 80, paint_cowl_under, "cowl_under")
-    m.cube("cowl_under_sheet", [-4.45, 19.65, -3.18], [4.25, 23.65, -3.1],
+    m.cube("cowl_under_sheet", [-2.55, 22.05, -3.12], [2.45, 24.45, -3.04],
            "cloth", scarf, face_uv={"north": cowl_under_uv, "south": cowl_under_uv})
 
     # Uneven, broad fabric folds wrap the neck. Repeated narrow ridges looked
