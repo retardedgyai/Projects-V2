@@ -26,6 +26,7 @@ PALETTE = {
     "eye": ("0a101a", "121d29", "2d4857"),
     "mail": ("14191c", "2e3538", "596165"),
     "leather": ("16191b", "2c2c2c", "504b45"),
+    "boot": ("10151a", "272d31", "41484a"),
     "skin": ("251c1c", "513a35", "806052"),
     "bandage": ("3b3530", "776b5d", "a79783"),
 }
@@ -109,7 +110,7 @@ class KnightModel(authoring.Model):
                 weave = authoring.noise(x // 5, y // 7, seed + 233)
                 tone = (2 if y % 4 == 1 and link in (2, 3) and weave % 2 == 0
                         else 0 if link in (0, 7) and weave % 2 == 0 else 1)
-            elif material == "leather":
+            elif material in ("leather", "boot"):
                 tone = 0 if x % 9 in (0, 1) or fine % 29 == 0 else 1
                 if y <= 1:
                     tone = 2
@@ -551,8 +552,17 @@ def build(out=ROOT / "model-lab" / "models"):
             [x + 1.44, 6.95, 1.34], "armor" if side == "left" else "mail")
         add(m, shin, f"{side}_lower_greave_side", [x - 1.18, 2.1, -1.4],
             [x + 1.18, 4.95, 1.26], "armor" if side == "left" else "leather")
-        add(m, shin, f"{side}_worn_boot", [x - 1.38, -.15, -2.6], [x + 1.38, 2.2, 1.58], "leather")
-        add(m, shin, f"{side}_toe_cap", [x - 1.15, .1, -3.25], [x + 1.1, 1.0, -2.12], "armor")
+        heel_width = 1.13 if side == "left" else 1.02
+        vamp_width = 1.30 if side == "left" else 1.18
+        add(m, shin, f"{side}_boot_heel", [x - heel_width, -.15, -.95],
+            [x + heel_width, 1.84, 1.38], "boot")
+        add_rotated(m, shin, f"{side}_boot_vamp",
+                    [x - vamp_width, .02, -2.75], [x + vamp_width, 1.28, -.55],
+                    "boot", [-8 if side == "left" else -11, 0, 0],
+                    [x, .58, -1.4], "worn_vamp")
+        toe_width = 1.04 if side == "left" else .88
+        add(m, shin, f"{side}_toe_cap", [x - toe_width, .08, -3.18],
+            [x + toe_width, .76, -2.35], "armor")
         if side == "left":
             add(m, thigh, "left_broken_knee_plate", [x - 1.4, 6.0, -1.95], [x + .8, 7.4, -.98], "armor")
             add(m, shin, "left_greave_rim", [x - 1.48, 2.35, -1.72], [x - 1.1, 6.7, -1.39], "ash")
@@ -666,20 +676,20 @@ def build(out=ROOT / "model-lab" / "models"):
            "mail", right_arm, face_uv={"north": sleeve_uv, "south": sleeve_uv})
     add(m, right_arm, "right_elbow_dark", [3.9, 15.35, -.83],
         [5.9, 16.15, 1.42], "void")
-    add_rotated(m, right_arm, "right_bracer_upper", [3.73, 13.45, -1.15],
-                [6.15, 16.05, 1.48], "void", [0, 0, -7],
+    add_rotated(m, right_arm, "right_bracer_upper", [3.92, 13.45, -1.05],
+                [6.0, 16.05, 1.38], "void", [0, 0, -10],
                 [4.94, 14.8, .1], "battered_scale")
     add_rotated(m, right_arm, "right_bracer_wrist", [4.04, 11.08, -1.1],
                 [5.92, 13.65, 1.37], "leather", [0, 0, 5],
                 [4.98, 12.4, .1], "battered_scale")
     def paint_bracer_shard(px, py, seed):
-        left = 3 + py // (12 + seed * 3)
-        right = 28 - py // (16 + seed * 3)
+        left = (4 + py // 10) if seed == 0 else (3 + py // 15)
+        right = (25 - py // 12) if seed == 0 else (28 - py // 19)
         top = 2 + abs(px - 15) // 8
         hem = 37 - authoring.noise(px // 4, seed, 2241) % 5
         if px < left or px > right or py < top or py > hem:
             return (0, 0, 0, 0)
-        if seed == 0 and 18 < py < 31 and px > right - 4:
+        if seed == 0 and 16 < py < 32 and px > right - 5:
             return (0, 0, 0, 0)
         if seed == 1 and 11 < py < 25 and px < left + 3:
             return (0, 0, 0, 0)
