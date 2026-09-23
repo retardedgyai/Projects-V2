@@ -27,6 +27,7 @@ PALETTE = {
     "mail": ("14191c", "2e3538", "596165"),
     "leather": ("16191b", "2c2c2c", "504b45"),
     "boot": ("10151a", "272d31", "41484a"),
+    "sleeve": ("0a1016", "121920", "1c252b"),
     "skin": ("251c1c", "513a35", "806052"),
     "bandage": ("3b3530", "776b5d", "a79783"),
 }
@@ -101,6 +102,11 @@ class KnightModel(authoring.Model):
                         return (0, 0, 0, 0)
             elif material == "void":
                 if coarse % 9 < 6:
+                    tone = 0
+            elif material == "sleeve":
+                fold = math.sin(x * .23 + y * .07 + seed)
+                tone = 0 if fold < -.32 else 2 if fold > .78 and coarse % 7 == 0 else 1
+                if fine % 113 == 0:
                     tone = 0
             elif material == "hair":
                 strand = (x // 3 + y // 11 + seed) % 9
@@ -677,10 +683,10 @@ def build(out=ROOT / "model-lab" / "models"):
     add(m, left_arm, "left_mail_shoulder", [-6.15, 17.2, -1], [-3.55, 20.2, 1.5], "mail")
     add_rotated(m, left_arm, "left_wrapping_low", [-6.45, 13.0, -1.4], [-3.95, 13.85, 1.25],
                 "bandage", [0, 0, 9], [-5.2, 13.4, 0], "torn_wrap")
-    add(m, right_arm, "right_deltoid_dark_under", [3.65, 18.1, -.78],
-        [5.95, 21, 1.42], "void")
-    add_rotated(m, right_arm, "right_bicep_dark_under", [3.9, 15.7, -.72],
-                [5.8, 18.55, 1.34], "void", [0, 0, -5],
+    add(m, right_arm, "right_deltoid_dark_under", [3.75, 18.1, -.78],
+        [5.82, 21, 1.42], "sleeve")
+    add_rotated(m, right_arm, "right_bicep_dark_under", [4.05, 15.7, -.72],
+                [5.58, 18.55, 1.34], "sleeve", [0, 0, -11],
                 [4.85, 17.3, .3], "torn_mail")
 
     def paint_right_sleeve(px, py):
@@ -707,6 +713,26 @@ def build(out=ROOT / "model-lab" / "models"):
     sleeve_uv = m.patch(40, 64, paint_right_sleeve, "torn_sword_sleeve")
     m.cube("right_torn_mail_sleeve", [3.5, 15.55, -1.2], [6.05, 21.1, -1.12],
            "mail", right_arm, face_uv={"north": sleeve_uv, "south": sleeve_uv})
+    def paint_outer_mail(px, py):
+        left = 3 + py // 11
+        right = 29 - py // 9
+        hem = 38 - authoring.noise(px // 3, 0, 2279) % 9
+        if px < left or px > right or py > hem:
+            return (0, 0, 0, 0)
+        if py > 23 and (px * 3 + py) % 17 < 3:
+            return (0, 0, 0, 0)
+        ring = (px + (py // 4 % 2) * 3) % 7
+        if py % 4 == 1 and ring in (2, 3):
+            return (48, 58, 61, 255)
+        if ring in (0, 6) or py % 4 == 3:
+            return (11, 18, 23, 255)
+        return (24, 32, 37, 255)
+
+    outer_mail_uv = m.patch(32, 48, paint_outer_mail, "frayed_outer_mail")
+    add_rotated(m, right_arm, "right_outer_mail_fray",
+                [5.51, 15.8, -.65], [5.6, 18.55, 1.3], "mail",
+                [0, 0, -11], [4.85, 17.3, .3], "torn_mail",
+                {"east": outer_mail_uv, "west": outer_mail_uv})
     add(m, right_arm, "right_elbow_dark", [3.9, 15.35, -.83],
         [5.9, 16.15, 1.42], "void")
     add_rotated(m, right_arm, "right_bracer_upper", [3.92, 13.45, -1.05],
