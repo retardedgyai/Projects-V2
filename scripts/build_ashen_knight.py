@@ -410,8 +410,8 @@ def build(out=ROOT / "model-lab" / "models"):
     # heights, leaving dark gaps visible from the oblique rear views.
     cape_strips = (
         (-4.9, 3.4, 4.1, 3.4, -30), (-2.45, 3.35, 6.5, 5.1, -13),
-        (0, 3.95, 4.5, 2.5, 5), (2.55, 3.3, 7.0, 4.6, 23),
-        (4.7, 3.1, 5.25, 6.1, 37),
+        (0, 3.95, 4.5, 2.5, 5), (2.55, 3.3, 7.0, 11.3, 23),
+        (4.7, 3.1, 5.25, 14.1, 37),
     )
 
     for strip, (center, width, depth, hem, yaw) in enumerate(cape_strips):
@@ -424,14 +424,17 @@ def build(out=ROOT / "model-lab" / "models"):
             slit = progress > .72 and (px + 3 * seed) % 29 == 0 and py > 155
             if px < left_edge or px > right_edge or py > tear or slit:
                 return (0, 0, 0, 0)
-            fold = math.sin(px * .37 + progress * 3.1 + seed * .8)
+            ridge = 14 + 5 * math.sin(progress * 3.4 + seed * 1.35)
+            distance_to_ridge = abs(px - ridge)
             grain = authoring.noise(px // 2, py // 3, seed + 2800)
-            if fold > .45:
-                color = (42, 65, 87)
-            elif fold < -.5:
-                color = (9, 22, 37)
+            if distance_to_ridge < 2.5:
+                color = (54, 77, 99)
+            elif distance_to_ridge > 11:
+                color = (11, 26, 44)
             else:
-                color = (19, 39, 61)
+                color = (26, 48, 70)
+            if (py + px * 2 + seed * 17) % 79 < 2 and progress > .24:
+                color = (13, 30, 49)
             if px - left_edge < 2 or right_edge - px < 2 or grain % 103 == 0:
                 color = (12, 26, 43)
             if grain % 173 == 0:
@@ -442,8 +445,11 @@ def build(out=ROOT / "model-lab" / "models"):
         side = strip < 2
         buckets = ((cape_left, cape_left_mid, cape_left_tail) if side else
                    (cape_center, cape_center_mid, cape_center_tail))
-        boundaries = ((21.6, 16.2), (16.45, 9.4), (9.65, hem))
+        boundaries = ((21.6, max(16.2, hem)),
+                      (16.45, max(9.4, hem)), (9.65, hem))
         for segment, (top, bottom) in enumerate(boundaries):
+            if top <= bottom + .1:
+                continue
             drift = (segment * (strip % 3 - 1) * .26)
             x = center + drift
             z = depth + (.22, 1.15, 2.35)[segment]
