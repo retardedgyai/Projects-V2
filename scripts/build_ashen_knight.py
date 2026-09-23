@@ -935,8 +935,41 @@ def build(out=ROOT / "model-lab" / "models"):
                     [0, 0, tilt], [(x0 + x1) / 2, high, -.2], "scarred_skin")
     add(m, left_arm, "left_arm_tear", [-6.5, 11.2, 1.1], [-4.9, 16.2, 1.8], "void")
     add(m, left_arm, "left_mail_shoulder", [-6.15, 17.2, -1], [-3.55, 20.2, 1.5], "mail")
-    add_rotated(m, left_arm, "left_wrapping_low", [-6.45, 13.0, -1.4], [-3.95, 13.85, 1.25],
-                "bandage", [0, 0, 9], [-5.2, 13.4, 0], "torn_wrap")
+    def paint_wounded_wrap(px, py, seed):
+        top = 2 + authoring.noise(px // 5, seed, 2301) % 3
+        hem = 25 - authoring.noise(px // 6, seed, 2311) % 5
+        left = 3 + authoring.noise(py // 4, seed, 2321) % 3
+        right = 60 - authoring.noise(py // 5, seed, 2333) % 5
+        if px < left or px > right or py < top or py > hem:
+            return (0, 0, 0, 0)
+        if py > 15 and (px + seed * 11) % 31 < 3:
+            return (0, 0, 0, 0)
+        grain = authoring.noise(px // 2, py // 2, 2341 + seed)
+        crease = abs(py - (11 + 2 * math.sin(px * .09 + seed))) < 2
+        stain = ((px - (15 + seed * 17)) ** 2 / 100
+                 + (py - (15 - seed * 2)) ** 2 / 32) < 1
+        if stain and grain % 4 != 0:
+            color = (87, 48, 44)
+        elif crease:
+            color = (78, 69, 63)
+        elif py <= top + 2 or py >= hem - 2:
+            color = (83, 75, 68)
+        else:
+            color = (139, 123, 103) if grain % 5 else (111, 98, 84)
+        return (*color, 255)
+
+    for wrap, (lo, hi, tilt, pivot) in enumerate((
+            ((-6.32, 14.18, -1.7), (-3.91, 15.25, 1.32), -11, (-5.1, 14.7, 0)),
+            ((-6.24, 12.45, -1.66), (-4.02, 13.55, 1.29), 8, (-5.1, 13.0, 0)),
+            ((-6.05, 10.43, -1.57), (-4.15, 11.35, 1.19), -5, (-5.1, 10.85, 0)),
+    )):
+        wrap_uv = m.patch(64, 28,
+                          lambda px, py, seed=wrap: paint_wounded_wrap(px, py, seed),
+                          f"wounded_arm_wrap_{wrap}")
+        add_rotated(m, left_arm, f"wounded_arm_wrap_{wrap}", lo, hi,
+                    "bandage", [0, 0, tilt], pivot, "torn_wrap",
+                    {"north": wrap_uv, "south": wrap_uv,
+                     "east": wrap_uv, "west": wrap_uv})
     add(m, right_arm, "right_deltoid_dark_under", [3.75, 18.1, -.78],
         [5.82, 21, 1.42], "sleeve")
     add_rotated(m, right_arm, "right_bicep_dark_under", [4.05, 15.7, -.72],
