@@ -7,7 +7,7 @@ import struct
 import zlib
 from PIL import Image
 from build_core_hud_assets import vanilla_overrides, SKILLS
-from build_core_menu_assets import TEXT_YS, CELL, SOURCE_CELL, TEXT_SCALE, TEXT_BASE, FRAME_BASE, BUTTON_BASE, CARD_BASE, PALETTE, DOT_FONT_SHA256
+from build_core_menu_assets import TEXT_YS, CELL, SOURCE_CELL, TEXT_SCALE, TEXT_BASE, FRAME_BASE, BUTTON_BASE, CARD_BASE, PALETTE, DOT_FONT_SHA256, BODY_FONT_SHA256
 from build_core_menu_art import ART, ART_BASE, ART_CELL, ART_YS, ART_SIZES
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -120,14 +120,14 @@ def verify():
     assert menu["panel"] == {"left_x": -98, "right_x": 184, "width": 88, "header_y": 8, "line_y": 30, "line_height": 14, "lines": 13}
     assert menu["slots"] == {"origin": [8, 18], "stride": 18, "columns": 9, "rows": 6}
     font_meta = json.loads((PACK / "assets/projects/menu/font-source.json").read_text())
-    assert font_meta["source_sha256"] == DOT_FONT_SHA256 and font_meta["weight"] == 400 and font_meta["size"] == 8
-    assert font_meta["emphasis"] == font_meta["body"], "Menu labels and body must share the rounded typeface"
-    assert (PACK / "assets/projects/textures/gui/core/menu_text.png").read_bytes() == (PACK / "assets/projects/textures/gui/core/menu_text_emphasis.png").read_bytes()
-    assert font_meta["body"]["source_sha256"] == DOT_FONT_SHA256 and font_meta["body"]["source_size"] == 24
-    assert font_meta["native_grid"] == 12 and font_meta["source_scale"] == 3
-    assert font_meta["horizontal_weight_px"] == 1, "Keep the modest horizontal weight adjustment; do not dilate kanji vertically"
+    assert font_meta["size"] == 8
+    assert font_meta["body"]["source_sha256"] == BODY_FONT_SHA256 and font_meta["body"]["source_size"] == 24
+    assert font_meta["emphasis"]["source_sha256"] == DOT_FONT_SHA256 and font_meta["emphasis"]["source_size"] == 24
+    assert font_meta["body"]["weight"] == 600 and font_meta["emphasis"]["weight"] == 400
+    assert font_meta["body"]["alpha"] == "smooth" and font_meta["emphasis"]["alpha"] == "binary"
+    assert (PACK / "assets/projects/textures/gui/core/menu_text.png").read_bytes() != (PACK / "assets/projects/textures/gui/core/menu_text_emphasis.png").read_bytes()
     assert (PACK / "assets/projects/menu/MaruMinya-OFL.txt").read_bytes() == (ROOT / "assets/core-ui/fonts/MaruMinya-OFL.txt").read_bytes()
-    assert font_meta["source_scale"] == TEXT_SCALE and font_meta["alpha"] == "binary"
+    assert font_meta["source_scale"] == TEXT_SCALE
     assert menu["source_cell"] == SOURCE_CELL and menu["text_scale"] == TEXT_SCALE
     assert (PACK / "assets/projects/menu/OFL.txt").read_bytes() == (ROOT / "assets/core-ui/fonts/OFL.txt").read_bytes()
     assert (PACK / "assets/projects/menu/DotGothic16-OFL.txt").read_bytes() == (ROOT / "assets/core-ui/fonts/DotGothic16-OFL.txt").read_bytes()
@@ -144,7 +144,8 @@ def verify():
             index = glyph - TEXT_BASE
             alpha = atlas.crop(((index % 32) * SOURCE_CELL, (index // 32) * SOURCE_CELL,
                                 (index % 32 + 1) * SOURCE_CELL, (index // 32 + 1) * SOURCE_CELL)).getchannel("A")
-            assert set(alpha.tobytes()) <= {0, 255}, "Menu text must use deliberate hard pixels"
+            if code not in (0x20, 0x3000) and code == ord("木"):
+                assert any(0 < value < 255 for value in alpha.tobytes()), "Body text must keep smooth Japanese edges"
             box = alpha.getbbox()
             if code in (0x20, 0x3000):
                 assert box is None and advance == (4 if code == 0x20 else 10)
@@ -175,7 +176,7 @@ def verify():
                 assert box is not None and math.floor(0.5 + box[2] / TEXT_SCALE) + 1 == advance
                 if chr(code) in "+0123456789→":
                     assert 100 + box[1] / TEXT_SCALE >= 102, "Caption ink must start below the hero ink"
-    assert emphasized == metrics, "Both menu text roles must preserve the same rounded glyph metrics"
+    assert emphasized != metrics, "Body and pixel emphasis must retain distinct measured metrics"
     for y in TEXT_YS:
         providers = json.loads((PACK / f"assets/projects/font/core_menu_emphasis_y{y}.json").read_text())["providers"]
         assert len(providers) == 2 and providers[1]["ascent"] == 13 - y and providers[1]["height"] == CELL
@@ -196,8 +197,8 @@ def verify():
             assert providers[index]["chars"] == [chr(FRAME_BASE + index)] and providers[index]["ascent"] == 13
     for y in (140, 158, 176, 198):
         for column in range(9):
-            assert canvas.getpixel((104 + 8 + column * 18 + 8, y + 8)) == (45, 57, 63, 255)
-    assert canvas.getpixel((104 + 8, 128)) == (185, 200, 199, 255), "Vanilla inventory text needs a light tab, not a competing overlay"
+            assert canvas.getpixel((104 + 8 + column * 18 + 8, y + 8)) == (48, 50, 47, 255)
+    assert canvas.getpixel((104 + 8, 128)) == (199, 188, 164, 255), "Vanilla inventory text needs a light tab, not a competing overlay"
     assert canvas.getpixel((270, 128)) != canvas.getpixel((112, 128)), "Do not restore the full-width bright inventory bar"
     with Image.open(PACK / "assets/projects/textures/gui/core/menu_buttons.png") as buttons:
         assert buttons.size == (1440, 80)
@@ -205,7 +206,7 @@ def verify():
             for span in range(1, 10):
                 cell = buttons.crop(((span - 1) * 160, row * 16, span * 160, row * 16 + 16))
                 assert cell.getchannel("A").getbbox() == (0, 0, span * 18 - 2, 16)
-                if tone == "SELECTED": assert cell.getpixel((2, 14)) == (207, 219, 216, 255)
+                if tone == "SELECTED": assert cell.getpixel((2, 14)) == (224, 196, 143, 255)
         for row in range(6):
             provider = json.loads((PACK / f"assets/projects/font/core_menu_buttons_{row}.json").read_text())["providers"][0]
             assert provider["ascent"] == 13 - (18 + row * 18) and provider["height"] == 16

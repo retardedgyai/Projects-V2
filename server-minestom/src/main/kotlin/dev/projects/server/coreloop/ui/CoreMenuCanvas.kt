@@ -23,7 +23,7 @@ class CoreMenuCanvas(private val title: String) {
     internal data class Card(val firstSlot: Int, val columns: Int, val rows: Int, val label: String, val art: CoreMenuArt, val tone: Tone)
     internal data class Art(val x: Int, val y: Int, val art: CoreMenuArt, val size: Int)
     internal data class Text(val x: Int, val y: Int, val value: String, val color: TextColor, val maxWidth: Int, val style: TextStyle)
-    internal data class Focus(val art: CoreMenuArt, val caption: String)
+    internal data class Focus(val art: CoreMenuArt?, val caption: String)
     internal data class TreeEdge(val from: Int, val to: Int, val learned: Boolean)
     /** Plain data for offline visual QA of an actual constructed menu, not a second UI model. */
     internal data class Snapshot(
@@ -44,7 +44,7 @@ class CoreMenuCanvas(private val title: String) {
     internal data class TextSnapshot(val x: Int, val y: Int, val value: String, val color: Int, val maxWidth: Int, val style: String)
     internal data class ArtSnapshot(val x: Int, val y: Int, val art: String, val size: Int)
     internal data class FocusSnapshot(
-        val x: Int, val y: Int, val width: Int, val height: Int, val artPlacement: ArtSnapshot,
+        val x: Int, val y: Int, val width: Int, val height: Int, val artPlacement: ArtSnapshot?,
         val caption: String, val captionX: Int, val captionY: Int, val captionMaxWidth: Int,
         val textColor: Int, val style: String, val reservedSlots: List<Int>,
     )
@@ -114,11 +114,11 @@ class CoreMenuCanvas(private val title: String) {
     }
 
     /**
-     * A non-clicking equipment subject on its own pedestal. The caller may install the same
-     * blank-model detail item in [FOCUS_SLOTS], but no action card/button belongs in that area.
-     * Replacing the focus replaces both its art and its original, untruncated caption.
+     * An equipment subject on its own pedestal. The caller owns the slots and may show the
+     * real equipped model in one slot while retaining blank-model click targets around it.
+     * Null art avoids drawing a generic illustration over that actual item model.
      */
-    fun focus(art: CoreMenuArt, caption: String) {
+    fun focus(art: CoreMenuArt?, caption: String) {
         require(buttons.values.none { (it.firstSlot until it.firstSlot + it.span).any(FOCUS_SLOTS::contains) } &&
             cards.values.none { occupiedSlots(it.firstSlot, it.columns, it.rows).any(FOCUS_SLOTS::contains) }) {
             "Menu equipment focus overlaps an action"
@@ -172,7 +172,7 @@ class CoreMenuCanvas(private val title: String) {
                     occupiedSlots(card.firstSlot, card.columns, card.rows))
             }, arts.map { ArtSnapshot(it.x, it.y, it.art.name, it.size) }, focus?.let {
                 val visible = trim(it.caption, 106, TextStyle.EMPHASIS)
-                FocusSnapshot(8, 44, 106, 64, ArtSnapshot(37, 54, it.art.name, 48), it.caption,
+                FocusSnapshot(8, 44, 106, 64, it.art?.let { art -> ArtSnapshot(37, 54, art.name, 48) }, it.caption,
                     8 + (106 - width(visible, TextStyle.EMPHASIS)) / 2, 100, 106,
                     HEADING.value(), TextStyle.EMPHASIS.name, FOCUS_SLOTS)
             }, treeEdges.toList())
@@ -255,7 +255,7 @@ class CoreMenuCanvas(private val title: String) {
         }
         snapshot.focus?.let {
             draw(it.x, CoreUiComponents.glyph('\uE6F0', FOCUS_FONT), it.width + 1)
-            illustration(it.artPlacement)
+            it.artPlacement?.let(::illustration)
             label(it.captionX, it.captionY, it.caption, TextColor.color(it.textColor), it.captionMaxWidth, TextStyle.EMPHASIS)
         }
         for (art in snapshot.arts) illustration(art)
@@ -268,8 +268,8 @@ class CoreMenuCanvas(private val title: String) {
         const val PANEL_LINES = 13
         const val HERO_PANEL_LINES = 10
         const val LINE_HEIGHT = 14
-        val HEADING: TextColor = TextColor.color(0xE8EFEC)
-        val BODY_COLOR: TextColor = TextColor.color(0xD3DAD9)
+        val HEADING: TextColor = TextColor.color(0xF0E4CE)
+        val BODY_COLOR: TextColor = TextColor.color(0xE2D9C8)
         val ART_SIZES: Set<Int> = setOf(16, 32, 48)
         val ART_YS: Set<Int> = setOf(18, 28, 30, 36, 42, 48, 54, 56, 70, 72, 84, 90, 98, 108, 112, 126, 140, 154, 168, 182, 196)
         val FOCUS_SLOTS: List<Int> = occupiedSlots(18, 6, 3)
@@ -381,11 +381,11 @@ class CoreMenuCanvas(private val title: String) {
         }
 
         private fun toneColor(tone: Tone): TextColor = TextColor.color(when (tone) {
-            Tone.NEUTRAL -> 0xD3DAD9
-            Tone.SELECTED -> 0xF2F2E9
-            Tone.PRIMARY -> 0xFFF1D3
-            Tone.DISABLED -> 0x899397
-            Tone.DANGER -> 0xF1C1B8
+            Tone.NEUTRAL -> 0xE2D9C8
+            Tone.SELECTED -> 0xFFF1D8
+            Tone.PRIMARY -> 0xFFF0DC
+            Tone.DISABLED -> 0x93958E
+            Tone.DANGER -> 0xFFD3C5
         })
     }
 }

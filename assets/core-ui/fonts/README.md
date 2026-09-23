@@ -16,13 +16,18 @@ Normal Gradle builds require neither the authoring font nor network access.
 
 Regenerate after introducing new Japanese menu text, then run the structural verifier.
 Missing characters are visibly replaced with □ and logged by `CoreMenuCanvas`.
-# Ember menu typography (2026-09-05)
+# Menu typography (2026-09-23)
 
-The current menu body, headings, button labels and emphasized figures use
-MaruMinya, a native 12px rounded pixel design rasterized at 24px / 8 GUI px.
-One source pixel is added horizontally (1/3 GUI px), without vertical dilation.
-Both role providers retain separate names but share identical bitmaps and measured advances.
-This does not replace Minecraft's global font.
+The menu body uses Noto Sans JP weight 600 at 24px source / 8 GUI px with
+smooth edges. Headings, button labels and emphasized figures use MaruMinya,
+a native 12px rounded pixel design rasterized at 24px / 8 GUI px. Its glyphs
+stay hard edged with one source pixel added horizontally. Both roles retain
+the same private glyph ordinals, but have their own measured advances. This
+does not replace Minecraft's global font.
+
+Noto Sans JP source: https://github.com/google/fonts/tree/295d98a7a0c17c68f1341eaeea354e7960ea70d3/ofl/notosansjp
+TTF SHA256: `c2f3b4d463500a2ddcd3849cded1fceeb9fd6d1c32e6cbecd568453ba50fc68f`.
+License: [OFL.txt](OFL.txt), included in the player pack.
 
 Current source: https://github.com/hicchicc/x12y12pxMaruMinya/tree/ad836b68da9ccb3c51063ca164335db556413969
 

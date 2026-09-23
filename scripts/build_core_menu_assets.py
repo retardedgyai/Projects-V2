@@ -20,6 +20,8 @@ ASSETS = PACK / "assets/projects"
 SOURCE = ROOT / "assets/core-ui"
 DOT_FONT_URL = "https://raw.githubusercontent.com/hicchicc/x12y12pxMaruMinya/ad836b68da9ccb3c51063ca164335db556413969/fonts/ttf/x12y12pxMaruMinya.ttf"
 DOT_FONT_SHA256 = "b05f108a3433602545f1dcb8acef167aaf744965d8d9571045d5f2cdbe12f9e5"
+BODY_FONT_URL = "https://raw.githubusercontent.com/google/fonts/295d98a7a0c17c68f1341eaeea354e7960ea70d3/ofl/notosansjp/NotoSansJP%5Bwght%5D.ttf"
+BODY_FONT_SHA256 = "c2f3b4d463500a2ddcd3849cded1fceeb9fd6d1c32e6cbecd568453ba50fc68f"
 CELL = 14
 TEXT_SCALE = 3
 SOURCE_CELL = CELL * TEXT_SCALE
@@ -30,11 +32,11 @@ BUTTON_BASE = 0xE610
 CARD_BASE = 0xE650
 TEXT_YS = sorted({6, 8, 128, *(20 + 18 * row for row in range(6)), *(30 + 14 * row for row in range(13))})
 PALETTE = {
-    "NEUTRAL": ("252D32", "46535A", "D3DAD9"),
-    "SELECTED": ("35434A", "A5BDC0", "F2F2E9"),
-    "PRIMARY": ("534029", "D0A363", "FFF1D3"),
-    "DISABLED": ("20262A", "394349", "899397"),
-    "DANGER": ("402D2D", "A76B64", "F1C1B8"),
+    "NEUTRAL": ("292B2A", "56534C", "E2D9C8"),
+    "SELECTED": ("39352B", "B9A174", "FFF1D8"),
+    "PRIMARY": ("603D2A", "D49A61", "FFF0DC"),
+    "DISABLED": ("202221", "3E413E", "93958E"),
+    "DANGER": ("4A2826", "B56855", "FFD3C5"),
 }
 
 
@@ -44,17 +46,25 @@ def write_json(path, data):
 
 
 def source_font(style="EMPHASIS"):
-    if style in ("BODY", "EMPHASIS"):
+    if style == "BODY":
+        target = ROOT / ".tools/core-menu/NotoSansJP[wght].ttf"
+        source_url, checksum = BODY_FONT_URL, BODY_FONT_SHA256
+    elif style == "EMPHASIS":
         target = ROOT / ".tools/core-menu/x12y12pxMaruMinya.ttf"
-        if not target.is_file():
-            target.parent.mkdir(parents=True, exist_ok=True)
-            with urllib.request.urlopen(DOT_FONT_URL, timeout=45) as response:
-                data = response.read()
-            assert hashlib.sha256(data).hexdigest() == DOT_FONT_SHA256
-            target.write_bytes(data)
-        assert hashlib.sha256(target.read_bytes()).hexdigest() == DOT_FONT_SHA256
-        return ImageFont.truetype(str(target), 24)
-    raise ValueError(f"Unknown menu text style: {style}")
+        source_url, checksum = DOT_FONT_URL, DOT_FONT_SHA256
+    else:
+        raise ValueError(f"Unknown menu text style: {style}")
+    if not target.is_file():
+        target.parent.mkdir(parents=True, exist_ok=True)
+        with urllib.request.urlopen(source_url, timeout=45) as response:
+            data = response.read()
+        assert hashlib.sha256(data).hexdigest() == checksum
+        target.write_bytes(data)
+    assert hashlib.sha256(target.read_bytes()).hexdigest() == checksum
+    font = ImageFont.truetype(str(target), 24)
+    if style == "BODY":
+        font.set_variation_by_axes([600])
+    return font
 
 
 def repertoire():
@@ -102,14 +112,15 @@ def build_font(style="BODY"):
             _, top, _, bottom = font.getbbox(char, anchor="ls")
             assert 0 <= BASELINE * TEXT_SCALE + top and BASELINE * TEXT_SCALE + bottom <= SOURCE_CELL, f"Clipped menu glyph U+{ord(char):04X}"
             ImageDraw.Draw(cell).text((0, BASELINE * TEXT_SCALE), char, font=font, anchor="ls", fill="white")
-            # Draw the native 12px rounded design at exactly 2x. Add only 1/3 GUI
-            # px horizontally: full dilation would close small kanji counters.
-            cell.putalpha(cell.getchannel("A").point(lambda value: 255 if value >= 100 else 0))
-            alpha = cell.getchannel("A")
-            shifted = Image.new("L", alpha.size)
-            shifted.paste(alpha, (1, 0))
-            cell = Image.new("RGBA", cell.size, "white")
-            cell.putalpha(ImageChops.lighter(alpha, shifted))
+            if emphasis:
+                # Pixel headings remain hard edged. Body text keeps the source alpha
+                # so Japanese counters and punctuation survive at small GUI scales.
+                cell.putalpha(cell.getchannel("A").point(lambda value: 255 if value >= 100 else 0))
+                alpha = cell.getchannel("A")
+                shifted = Image.new("L", alpha.size)
+                shifted.paste(alpha, (1, 0))
+                cell = Image.new("RGBA", cell.size, "white")
+                cell.putalpha(ImageChops.lighter(alpha, shifted))
             box = cell.getchannel("A").getbbox()
             assert box is not None, f"Unexpected empty glyph U+{ord(char):04X}"
             advance = math.floor(0.5 + box[2] / TEXT_SCALE) + 1
@@ -145,55 +156,53 @@ def build_font(style="BODY"):
     shutil.copyfile(SOURCE / "fonts/DotGothic16-OFL.txt", ASSETS / "menu/DotGothic16-OFL.txt")
     shutil.copyfile(SOURCE / "fonts/MaruMinya-OFL.txt", ASSETS / "menu/MaruMinya-OFL.txt")
     write_json(ASSETS / "menu/font-source.json", {
-        "name": "ProjectS Ember Menu", "derived_from": "MaruMinya", "weight": 400,
-        "size": 8, "source_size": 24, "native_grid": 12, "source_scale": TEXT_SCALE, "alpha": "binary",
-        "horizontal_weight_px": 1,
-        "body": {"name": "MaruMinya", "size": 8, "source_size": 24, "weight": 400,
-                 "source_url": DOT_FONT_URL, "source_sha256": DOT_FONT_SHA256},
+        "name": "ProjectS Hybrid Menu", "derived_from": "Noto Sans JP and MaruMinya",
+        "size": 8, "source_size": 24, "source_scale": TEXT_SCALE,
+        "body": {"name": "Noto Sans JP", "size": 8, "source_size": 24, "weight": 600, "alpha": "smooth",
+                 "source_url": BODY_FONT_URL, "source_sha256": BODY_FONT_SHA256},
         "emphasis": {"name": "MaruMinya", "size": 8, "source_size": 24, "weight": 400,
-                     "source_url": DOT_FONT_URL, "source_sha256": DOT_FONT_SHA256},
-        "source_url": DOT_FONT_URL, "source_sha256": DOT_FONT_SHA256, "license": "SIL Open Font License 1.1",
-        "copyright": "Copyright 2026 The x12y12pxMaruMinya Project Authors",
+                     "alpha": "binary", "source_url": DOT_FONT_URL, "source_sha256": DOT_FONT_SHA256},
+        "license": "SIL Open Font License 1.1",
         "scope": "Private-use characters in projects:core_menu_y* only; minecraft:default is never modified",
     })
     return atlas, metrics
 
 
 def build_frame():
-    frame = Image.new("RGBA", (384, 222), "#11191D")
+    frame = Image.new("RGBA", (384, 222), "#111313")
     draw = ImageDraw.Draw(frame)
     # Broad quiet surfaces preserve the item's silhouette and the Japanese labels.
-    draw.rectangle((2, 2, 381, 219), fill="#1B252A", outline="#526169")
-    draw.line((12, 3, 371, 3), fill="#8B9FA4")
-    draw.line((4, 12, 4, 207), fill="#34434A")
-    draw.line((379, 12, 379, 207), fill="#34434A")
-    draw.line((12, 217, 371, 217), fill="#34434A")
+    draw.rectangle((2, 2, 381, 219), fill="#202321", outline="#675D4D")
+    draw.line((12, 3, 371, 3), fill="#AE9265")
+    draw.line((4, 12, 4, 207), fill="#49463E")
+    draw.line((379, 12, 379, 207), fill="#49463E")
+    draw.line((12, 217, 371, 217), fill="#49463E")
     # Four stepped corners carry the identity without a noisy texture.
     for right in (False, True):
         for bottom in (False, True):
             def point(x, y): return (383 - x if right else x, 221 - y if bottom else y)
-            draw.line([point(2, 19), point(2, 9), point(9, 2), point(26, 2)], fill="#A6B8BA", width=2)
-            draw.line([point(6, 17), point(6, 10), point(11, 6), point(21, 6)], fill="#52676D")
-            draw.polygon([point(8, 9), point(10, 7), point(12, 9), point(10, 11)], fill="#D3DCD8")
+            draw.line([point(2, 19), point(2, 9), point(9, 2), point(26, 2)], fill="#AF9061", width=2)
+            draw.line([point(6, 17), point(6, 10), point(11, 6), point(21, 6)], fill="#665540")
+            draw.polygon([point(8, 9), point(10, 7), point(12, 9), point(10, 11)], fill="#E1C48F")
     # Headers sit on the surface with short engraved accents; no full-height rules.
     for left, right in ((8, 92), (290, 374)):
-        draw.line((left, 25, left + 24, 25), fill="#90A6AA")
-        draw.line((left + 25, 25, right, 25), fill="#35474E")
-    draw.line((111, 16, 269, 16), fill="#5A6D72")
+        draw.line((left, 25, left + 24, 25), fill="#B59A6D")
+        draw.line((left + 25, 25, right, 25), fill="#49463E")
+    draw.line((111, 16, 269, 16), fill="#75684F")
     # The item bag is visually recessed, subordinate to the workshop above it.
-    draw.rectangle((108, 138, 276, 214), fill="#141C20")
+    draw.rectangle((108, 138, 276, 214), fill="#161817")
     # Vanilla draws its dark inventory title at x=8,y=128 after this component.
     # A small parchment tab replaces the old full-width bright separator bar.
-    draw.polygon([(111, 126), (190, 126), (194, 130), (194, 137), (111, 137)], fill="#B9C8C7")
-    draw.line((112, 127, 187, 127), fill="#E0E8E3")
-    draw.polygon([(189, 126), (194, 131), (189, 131)], fill="#718A8D")
+    draw.polygon([(111, 126), (190, 126), (194, 130), (194, 137), (111, 137)], fill="#C7BCA4")
+    draw.line((112, 127, 187, 127), fill="#E9DEC5")
+    draw.polygon([(189, 126), (194, 131), (189, 131)], fill="#87785F")
     for y in (140, 158, 176, 198):
         for column in range(9):
             x = 104 + 8 + column * 18
-            draw.rectangle((x, y, x + 15, y + 15), fill="#2D393F")
-            draw.line((x, y, x + 15, y), fill="#11191D")
-            draw.line((x, y, x, y + 15), fill="#11191D")
-            draw.line((x + 1, y + 16, x + 15, y + 16), fill="#506167")
+            draw.rectangle((x, y, x + 15, y + 15), fill="#30322F")
+            draw.line((x, y, x + 15, y), fill="#111313")
+            draw.line((x, y, x, y + 15), fill="#111313")
+            draw.line((x + 1, y + 16, x + 15, y + 16), fill="#554F44")
     for index in range(2):
         frame.crop((index * 192, 0, (index + 1) * 192, 222)).save(
             ASSETS / f"textures/gui/core/menu_canvas_{index}.png", optimize=True)
@@ -217,7 +226,7 @@ def build_buttons():
             pixel_bevel(draw, (x, y, x + width - 1, y + 15), tone)
             if tone == "SELECTED":
                 # Row 13 remains free for Japanese descenders; the accent never touches a label.
-                draw.line((x + 1, y + 14, x + width - 2, y + 14), fill="#CFDBD8")
+                draw.line((x + 1, y + 14, x + width - 2, y + 14), fill="#E0C48F")
         grid.append("".join(line))
     atlas.save(ASSETS / "textures/gui/core/menu_buttons.png", optimize=True)
     for row in range(6):
@@ -241,7 +250,7 @@ def pixel_bevel(draw, box, tone):
         draw.point((x + 1, y + 1), fill="#" + border)
         draw.point((right - 1, y + 1), fill="#" + border)
     if tone == "PRIMARY":
-        draw.line((x + 3, y + 1, right - 3, y + 1), fill="#E2BA78")
+        draw.line((x + 3, y + 1, right - 3, y + 1), fill="#E1AE70")
 
 
 def build_cards():
@@ -256,13 +265,13 @@ def build_cards():
                 x, y, width = (span - 1) * 160, tone_index * height, span * 18 - 2
                 pixel_bevel(draw, (x, y, x + width - 1, y + height - 1), tone)
                 if rows > 1:
-                    draw.rectangle((x + 2, y + height - 16, x + width - 3, y + height - 3), fill="#202B30")
+                    draw.rectangle((x + 2, y + height - 16, x + width - 3, y + height - 3), fill="#222320")
                     # A dim inset glow binds the illustration to its plate.
                     center = x + width // 2
                     draw.line((center - min(10, width // 3), y + height - 18,
-                               center + min(10, width // 3), y + height - 18), fill="#53666D")
+                               center + min(10, width // 3), y + height - 18), fill="#786549")
                 if tone == "SELECTED":
-                    draw.line((x + 2, y + height - 2, x + width - 3, y + height - 2), fill="#CFDBD8")
+                    draw.line((x + 2, y + height - 2, x + width - 3, y + height - 2), fill="#D8C399")
         atlas.save(ASSETS / f"textures/gui/core/menu_cards_{rows}.png", optimize=True)
         for row in range(7 - rows):
             write_json(ASSETS / f"font/core_menu_cards_{rows}_{row}.json", {"providers": [

@@ -183,7 +183,7 @@ class MenuRenderer:
         # Match CoreMenuCanvas ordering exactly: focus is after card/button paint.
         if focus:
             blit(self.focus_atlas, focus["x"], focus["y"])
-            art(focus["artPlacement"])
+            art(focus.get("artPlacement"))
             text(focus["captionX"], focus["captionY"], focus["caption"], focus["textColor"],
                  focus["captionMaxWidth"], "focus.caption", "EMPHASIS")
         for value in snapshot.get("arts", []): art(value)

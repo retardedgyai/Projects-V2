@@ -315,7 +315,7 @@ class CoreLoopMenusTest {
                 check("exchange $raw/$q") { f.menus.supplies(f.player, tier, raw, q) }
             for (discipline in QuestGatheringDiscipline.entries) check("mastery $discipline") { f.menus.mastery(f.player, discipline) }
             for (section in 0..3) check("guide$section") { f.menus.guide(f.player, section) }
-            check("help") { f.menus.journal(f.player); f.click(8) }
+            check("guide from journal") { f.menus.journal(f.player); f.click(24) }
             check("dungeon") { f.menus.dungeons(f.player, tier) }
             check("trials") { f.menus.trials(f.player, tier) }
             for (index in 0..2) check("trial confirmation$index") { f.menus.trials(f.player, tier); f.click(9 + index * 3) }
@@ -422,16 +422,16 @@ class CoreLoopMenusTest {
         }
     }
 
-    @Test fun `every slot of the three journal illustrations opens the same intended destination`() {
-        for ((start, destination) in listOf(9 to "地図台", 12 to "開拓工房", 15 to "素材倉庫")) {
-            for (row in 0..2) for (column in 0..2) {
+    @Test fun `every cell of the journal's main actions opens the intended destination`() {
+        for ((page, start, destination) in listOf(Triple(0, 9, "地図台"), Triple(6, 9, "工房"), Triple(6, 15, "素材倉庫"))) {
+            for (offset in 0..2) {
                 val f = fixture(account())
                 f.menus.journal(f.player)
+                if (page != 0) f.click(page)
                 val original = f.snapshot()
-                assertEquals(listOf("遠征", "工房", "保管庫"), original.cards.filter { it.rows == 3 }.map { it.label })
-                assertNotNull(original.leftPanel?.hero)
-                f.click(start + row * 9 + column, right = column == 1)
-                assertTrue(f.snapshot().title.contains(destination), "Card at $start did not own row=$row column=$column")
+                assertTrue(original.buttons.any { it.firstSlot == start && it.icon && it.span == 3 })
+                f.click(start + offset, right = offset == 1)
+                assertTrue(f.snapshot().title.contains(destination), "Action at $start did not own offset=$offset")
                 assertTrue(f.host.requests.isEmpty())
             }
         }
@@ -553,8 +553,7 @@ class CoreLoopMenusTest {
             val snapshot = f.snapshot()
             val focus = assertNotNull(snapshot.focus)
             assertEquals(CoreLoopMenus.ENHANCE_FOCUS_SLOTS, focus.reservedSlots)
-            assertEquals(if (gear == CoreGearSlot.WEAPON) "WEAPON" else "ARMOR", focus.artPlacement.art)
-            assertEquals(48, focus.artPlacement.size)
+            assertNull(focus.artPlacement, "The focus must not replace the equipped model with generic art")
             assertEquals("+6 → +7", focus.caption)
             assertNull(snapshot.leftPanel?.hero)
             val back = snapshot.buttons.single { it.firstSlot == CoreForgeLayout.BACK }
@@ -563,9 +562,13 @@ class CoreLoopMenusTest {
             assertTrue(snapshot.cards.none { card -> card.occupiedSlots.any { it in CoreLoopMenus.ENHANCE_FOCUS_SLOTS } })
             val expected = CoreLoopItems.gear(f.host.current, gear, packed)
             val projected = assertNotNull(f.player.openInventory).getItemStack(slot)
-            assertEquals(expected.get(DataComponents.LORE), projected.get(DataComponents.LORE))
-            assertEquals(expected.get(DataComponents.CUSTOM_NAME), projected.get(DataComponents.CUSTOM_NAME))
-            if (packed) assertEquals("projects:core_ui/blank", projected.get(DataComponents.ITEM_MODEL))
+            if (slot == CoreLoopMenus.ENHANCE_VISIBLE_SLOT || packed) {
+                assertEquals(expected.get(DataComponents.LORE), projected.get(DataComponents.LORE))
+                assertEquals(expected.get(DataComponents.CUSTOM_NAME), projected.get(DataComponents.CUSTOM_NAME))
+            }
+            if (slot == CoreLoopMenus.ENHANCE_VISIBLE_SLOT) assertEquals(expected.get(DataComponents.ITEM_MODEL), projected.get(DataComponents.ITEM_MODEL))
+            else if (packed) assertEquals("projects:core_ui/blank", projected.get(DataComponents.ITEM_MODEL))
+            else assertTrue(projected.isAir)
             f.click(slot, right = slot % 2 == 0)
             assertEquals("装備 / MOD詳細", f.snapshot().title)
             assertTrue(f.host.requests.isEmpty())
@@ -713,6 +716,29 @@ class CoreLoopMenusTest {
         assertTrue(f.title().contains("防具"))
         f.click(CoreForgeLayout.EXECUTE)
         assertTrue(f.host.requests.isEmpty())
+    }
+
+    @Test fun `journal entry points expose the item and reach each content family`() {
+        val destinations = listOf(
+            Triple(0, 9, "地図台"), Triple(0, 12, "星環の深殿"), Triple(0, 15, "境界の試練"),
+            Triple(0, 18, "採取地図"), Triple(0, 21, "道具箱"), Triple(0, 24, "遊び方"),
+            Triple(3, 9, "成長と職業"), Triple(3, 12, "技の組み合わせ"), Triple(3, 15, "スキルツリー"),
+            Triple(3, 18, "装備庫"), Triple(3, 21, "MOD詳細"), Triple(3, 24, "戦闘能力"), Triple(3, 27, "装備レベル鍛錬"),
+            Triple(6, 9, "工房"), Triple(6, 12, "職業"), Triple(6, 15, "素材倉庫"),
+            Triple(6, 18, "市場"), Triple(6, 21, "購入注文"), Triple(6, 24, "採取 / 育成"),
+        )
+        for (packed in listOf(false, true)) {
+            val f = fixture(account(tier = 2), packed)
+            for ((page, slot, destination) in destinations) {
+                f.menus.journal(f.player)
+                if (page != 0) f.click(page)
+                val entry = assertNotNull(f.player.openInventory).getItemStack(slot)
+                assertFalse(entry.isAir, "Journal $slot has no visible item")
+                if (packed) assertNotEquals("projects:core_ui/blank", entry.get(DataComponents.ITEM_MODEL), "Journal $slot hid its icon")
+                f.click(slot)
+                assertTrue(f.title().contains(destination), "Journal $slot opened ${f.title()} instead of $destination")
+            }
+        }
     }
 
     @Test fun `actual menu snapshots keep full labels and essential figures readable and export visual fixtures`() {

@@ -124,7 +124,11 @@ class CoreMenuCanvasTest {
             assertEquals(value, wrapped.joinToString(""))
             assertTrue(wrapped.all { CoreMenuCanvas.width(it) <= CoreMenuCanvas.PANEL_WIDTH })
         }
-        assertEquals(CoreMenuCanvas.wrap("MODの種類とTierを保持"), CoreMenuCanvas.wrap("MODの種類とTierを保持", style = CoreMenuCanvas.TextStyle.EMPHASIS))
+        for (style in CoreMenuCanvas.TextStyle.entries) {
+            val wrapped = CoreMenuCanvas.wrap("MODの種類とTierを保持", style = style)
+            assertEquals("MODの種類とTierを保持", wrapped.joinToString(""))
+            assertTrue(wrapped.all { CoreMenuCanvas.width(it, style) <= CoreMenuCanvas.PANEL_WIDTH })
+        }
     }
 
     @Test fun `oversized ASCII runs fall back safely without erasing explicit empty lines`() {
@@ -182,7 +186,7 @@ class CoreMenuCanvasTest {
             assertEquals(52, width); assertEquals(52, height)
             assertEquals(74, labelY); assertEquals(52, labelMaxWidth)
             assertEquals(CoreMenuCanvas.ArtSnapshot(18, 36, "EXPEDITION", 32), artPlacement)
-            assertEquals(0xF2F2E9, textColor)
+            assertEquals(0xFFF1D8, textColor)
         }
         with(cards[1]) {
             assertEquals(70, width); assertEquals(34, height)
@@ -271,7 +275,7 @@ class CoreMenuCanvasTest {
         assertEquals(listOf("工房", "", "装備", "攻撃 42", "", "必要素材", "木材", "12 / 80", "", "結果を確認"), canvas.fallbackLines())
     }
 
-    @Test fun `body and emphasis share 16px metrics and matching glyph ordinals`() {
+    @Test fun `body and pixel emphasis share glyph ordinals but keep measured widths`() {
         val body = fontMetrics("glyphs")
         val emphasis = fontMetrics("glyphs-emphasis")
         assertEquals(body.keys, emphasis.keys)
@@ -280,8 +284,7 @@ class CoreMenuCanvasTest {
         assertEquals(sample.codePoints().toArray().sumOf { body.getValue(it).second }, CoreMenuCanvas.width(sample))
         assertEquals(sample.codePoints().toArray().sumOf { emphasis.getValue(it).second },
             CoreMenuCanvas.width(sample, CoreMenuCanvas.TextStyle.EMPHASIS))
-        assertEquals(body, emphasis)
-        assertEquals(CoreMenuCanvas.width(sample), CoreMenuCanvas.width(sample, CoreMenuCanvas.TextStyle.EMPHASIS))
+        assertTrue(body != emphasis)
         for (style in CoreMenuCanvas.TextStyle.entries) {
             val text = "必要な素材は保管庫から使用します"
             val trimmed = CoreMenuCanvas.trim(text, 44, style)
@@ -305,9 +308,9 @@ class CoreMenuCanvasTest {
         val snapshot = canvas.snapshot()
         assertEquals(listOf("BODY", "EMPHASIS"), snapshot.leftPanel!!.lines.map { it.style })
         assertEquals(listOf("BODY", "EMPHASIS"), snapshot.texts.map { it.style })
-        assertEquals(0xE8EFEC, snapshot.titleColor)
-        assertEquals(0xFFF1D3, snapshot.buttons.single().textColor)
-        assertEquals(0xD3DAD9, snapshot.cards.single().textColor)
+        assertEquals(0xF0E4CE, snapshot.titleColor)
+        assertEquals(0xFFF0DC, snapshot.buttons.single().textColor)
+        assertEquals(0xE2D9C8, snapshot.cards.single().textColor)
         val fonts = components(canvas.render()).filterIsInstance<TextComponent>()
             .filter { it.content().isNotEmpty() }.mapNotNull { it.style().font()?.value() }
         for (font in listOf("core_menu_emphasis_y6", "core_menu_emphasis_y8", "core_menu_y30",
@@ -327,8 +330,9 @@ class CoreMenuCanvasTest {
         assertEquals("EMPHASIS", snapshot.style)
         assertEquals(100, snapshot.captionY)
         assertEquals(106, snapshot.captionMaxWidth)
-        assertTrue(snapshot.artPlacement.y >= 54, "Hero must not paint over gear selectors")
-        assertTrue(snapshot.artPlacement.y + snapshot.artPlacement.size <= 108, "Hero cell must finish before footer controls")
+        val art = requireNotNull(snapshot.artPlacement)
+        assertTrue(art.y >= 54, "Hero must not paint over gear selectors")
+        assertTrue(art.y + art.size <= 108, "Hero cell must finish before footer controls")
         val visible = CoreMenuCanvas.trim(caption, 106, CoreMenuCanvas.TextStyle.EMPHASIS)
         assertEquals(8 + (106 - CoreMenuCanvas.width(visible, CoreMenuCanvas.TextStyle.EMPHASIS)) / 2, snapshot.captionX)
         assertEquals(listOf(18, 19, 20, 21, 22, 23, 27, 28, 29, 30, 31, 32, 36, 37, 38, 39, 40, 41), snapshot.reservedSlots)
@@ -338,8 +342,8 @@ class CoreMenuCanvasTest {
         assertTrue(rendered.any { it.content() == CoreMenuArt.WEAPON.glyph.toString() && it.style().font()?.value() == "core_menu_art_48_54" })
         assertTrue(rendered.any { it.style().font()?.value() == "core_menu_emphasis_y100" })
         canvas.focus(CoreMenuArt.ARMOR, "防具")
-        assertEquals("WEAPON", snapshot.artPlacement.art)
-        assertEquals("ARMOR", canvas.snapshot().focus!!.artPlacement.art)
+        assertEquals("WEAPON", snapshot.artPlacement?.art)
+        assertEquals("ARMOR", canvas.snapshot().focus!!.artPlacement?.art)
         assertEquals(listOf("工房", "", "防具"), canvas.fallbackLines())
     }
 
