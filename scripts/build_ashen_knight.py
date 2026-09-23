@@ -1095,6 +1095,14 @@ def build(out=ROOT / "model-lab" / "models"):
            "armor", blade, face_uv={"north": blade_uv, "south": blade_uv})
     m.cube("blade_worn_back_face", [2.6, -5.7, .78], [7.4, 8.6, .9],
            "armor", blade, face_uv={"north": blade_uv, "south": blade_uv})
+    # The earlier blade length forced a diagonal idle stance to avoid burying
+    # the tip below the floor. Keep the broad blade, but fit its reach to a
+    # hand carried at the hip so it can hang beside the leg.
+    for element in m.elements:
+        if element["name"].startswith(("blade_spine_", "blade_worn_faces",
+                                       "blade_worn_back_face")):
+            for key in ("from", "to", "origin"):
+                element[key][1] = round(8.6 + (element[key][1] - 8.6) * .6, 3)
 
     # Leave the chainmail back exposed. The short scarf above and torn cloth
     # tied at the hips have separate silhouettes, like a battle-worn knight.
@@ -1327,12 +1335,16 @@ def build(out=ROOT / "model-lab" / "models"):
 
     m.anim("idle", 2.0, {
         "root": [(0, [0, 0, 0], "position"), (1, [0, .28, 0], "position"), (2, [0, 0, 0], "position")],
-        "torso": [(0, [14, 0, -8]), (1, [14, 0, -8]), (2, [14, 0, -8])],
+        "torso": [(0, [0, 0, -3]), (1, [0, 0, -3]), (2, [0, 0, -3])],
         "head": [(0, [-10, -5, 0]), (1, [-12, -2, 0]), (2, [-10, -5, 0])],
         "plume": [(0, [0, 0, -3]), (1, [2, 0, 5]), (2, [0, 0, -3])],
-        "right_arm": [(0, [4, 0, 4]), (1, [4, 0, 4]), (2, [4, 0, 4])],
-        "right_elbow": [(0, [0, 0, -3]), (1, [0, 0, -3]), (2, [0, 0, -3])],
-        "sword": [(0, [-15, 0, -19]), (1, [-15, 0, -19]), (2, [-15, 0, -19])],
+        "left_leg": [(0, [-10, 0, 12]), (1, [-10, 0, 12]), (2, [-10, 0, 12])],
+        "right_leg": [(0, [12, 0, -12]), (1, [12, 0, -12]), (2, [12, 0, -12])],
+        "left_knee": [(0, [20, 0, 0]), (1, [20, 0, 0]), (2, [20, 0, 0])],
+        "right_knee": [(0, [-17, 0, 0]), (1, [-17, 0, 0]), (2, [-17, 0, 0])],
+        "right_arm": [(0, [4, 0, -16]), (1, [4, 0, -16]), (2, [4, 0, -16])],
+        "right_elbow": [(0, [0, 0, 5]), (1, [0, 0, 5]), (2, [0, 0, 5])],
+        "sword": [(0, [-15, 0, 30]), (1, [-15, 0, 30]), (2, [-15, 0, 30])],
         "cape_left": [(0, [0, 0, -5]), (1, [-6, 0, -10]), (2, [0, 0, -5])],
         "cape_right": [(0, [0, 0, 4]), (1, [-4, 0, 8]), (2, [0, 0, 4])],
         "cape_center": [(0, [-2, 0, -2]), (1, [-7, 0, 3]), (2, [-2, 0, -2])],
@@ -1431,7 +1443,7 @@ def build(out=ROOT / "model-lab" / "models"):
         "torso": [(0, [8, 0, -4]), (.7, [-18, 0, -4]), (.94, [43, 0, -4]), (1.35, [8, 0, -4])],
         "right_arm": [(0, [4, 0, 4]), (.2, [4, 0, 4]), (.7, [-120, 0, -10]), (.84, [0, 0, 0]), (.94, [0, 0, 30]), (1.35, [4, 0, 4])],
         "right_elbow": [(0, [0, 0, -3]), (.2, [0, 0, -15]), (.7, [0, 0, -24]), (.84, [0, 0, 8]), (.94, [0, 0, 15]), (1.35, [0, 0, -3])],
-        "sword": [(0, [0, 0, 0]), (.2, [30, 0, -26]), (.7, [-50, 0, -60]), (.84, [10, 0, -90]), (.94, [-30, 0, -20]), (1.35, [0, 0, 0])],
+        "sword": [(0, [0, 0, 0]), (.2, [30, 0, -26]), (.7, [-50, 0, -60]), (.84, [10, 0, -90]), (.94, [-75, 0, -10]), (1.35, [0, 0, 0])],
         "left_arm": [(0, [0, 0, 0]), (.7, [-30, 0, -15]), (.94, [20, 0, -12]), (1.35, [0, 0, 0])],
         "left_knee": [(0, [0, 0, 0]), (.94, [22, 0, 0]), (1.35, [0, 0, 0])],
         "right_knee": [(0, [0, 0, 0]), (.94, [-18, 0, 0]), (1.35, [0, 0, 0])],
