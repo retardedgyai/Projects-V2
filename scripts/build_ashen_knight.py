@@ -419,7 +419,9 @@ def build(out=ROOT / "model-lab" / "models"):
     back_cowl_uv = m.patch(96, 48, paint_back_cowl, "back_cowl_fold")
     m.cube("scarf_back_left", [-4.8, 19.3, 2.38], [.85, 22.6, 2.68],
            "cloth", scarf, face_uv={"south": back_cowl_uv, "north": back_cowl_uv})
-    add(m, scarf, "scarf_back_right_end", [3.2, 20.35, 2.25], [4.9, 22.25, 3.18], "cloth", "ragged_scarf")
+    m.cube("scarf_back_right_end", [3.2, 20.35, 2.25], [4.9, 22.25, 3.18],
+           "void", cape_right, face_uv={"south": shoulder_cowl_uv,
+                                        "north": shoulder_cowl_uv})
     add(m, scarf, "scarf_hanging_point", [-3.55, 14.2, -3.1], [-1.7, 18.1, -2.78], "cloth", "ragged_scarf")
 
     add_rotated(m, helm, "hood_crown", [-1.28, 25.35, -2.0],
@@ -700,7 +702,7 @@ def build(out=ROOT / "model-lab" / "models"):
     add(m, right_arm, "right_bracer_chip", [3.65, 12.2, -1.38], [5.45, 13.1, -.98], "armor")
 
     # At rest the heavy blade hangs beside the right leg.
-    add(m, blade, "pommel", [4.1, 11.8, -1], [5.9, 13.7, 1], "ash")
+    add(m, blade, "pommel", [4.38, 12.0, -.65], [5.62, 13.25, .65], "armor")
     add(m, blade, "grip", [4.45, 9, -.55], [5.55, 12.4, .55], "void")
     add(m, blade, "guard", [1.7, 8.6, -.95], [8.3, 9.4, .95], "armor")
     add(m, blade, "guard_left_tooth", [1.35, 8.2, -1.1], [2.65, 10.6, 1.1], "armor")
@@ -740,8 +742,9 @@ def build(out=ROOT / "model-lab" / "models"):
     cape_strips = (
         (-5.15, 4.65, 3.05, 1.25, -32),
         (-.4, 2.7, 4.55, 7.8, -6),
-        (4.5, 4.0, 3.05, 3.65, 31),
+        (4.5, 4.0, 3.05, 8.8, 31),
     )
+    open_hem_uv = m.patch(1, 1, lambda _x, _y: (0, 0, 0, 0), "open_cloth_hem")
 
     for strip, (center, width, depth, hem, yaw) in enumerate(cape_strips):
         def paint_strip(px, py, seed=strip):
@@ -828,10 +831,11 @@ def build(out=ROOT / "model-lab" / "models"):
                     face_uv = {"north": [uv[0] + round(facet * 48 / 5), ty0,
                                          uv[0] + round((facet + 1) * 48 / 5), ty1],
                                "south": [uv[0] + round(facet * 48 / 5), ty0,
-                                         uv[0] + round((facet + 1) * 48 / 5), ty1]}
+                                         uv[0] + round((facet + 1) * 48 / 5), ty1],
+                               "down": open_hem_uv}
                     add_rotated(m, buckets[segment], f"cape_strip_{strip}_{segment}_{row}_{facet}",
-                                [center_x - row_width / 10 - .06, row_bottom - .08, z - .18],
-                                [center_x + row_width / 10 + .06, row_top + .08, z + .18],
+                                [center_x - row_width / 10 - .06, row_bottom - .08, z - .09],
+                                [center_x + row_width / 10 + .06, row_top + .08, z + .09],
                                 "cloth",
                                 [(-6, 8, -3)[segment] + strip % 3 * 2
                                  + max(-12, min(12, math.degrees(math.atan(dv)))),
@@ -840,10 +844,6 @@ def build(out=ROOT / "model-lab" / "models"):
                                 [center_x, center_y, z],
                                 f"ragged_cape_{strip}_{segment}", face_uv)
 
-    add_rotated(m, cape_right, "right_mantle_remnant", [3.0, 17.8, 2.55], [4.75, 21.65, 3.15],
-                "cloth", [0, 17, 0], [3.85, 21.65, 2.85], "ragged_mantle")
-    add_rotated(m, cape_right, "right_hanging_remnant", [3.1, 9.2, 3.0], [5.05, 18.0, 3.55],
-                "cloth", [0, -24, 0], [4.05, 18.0, 3.3], "ragged_right")
     def paint_back_mail(px, py):
         # The hem follows the hips and breaks into missing links instead of
         # filling the exposed back with one rectangular grey surface.
