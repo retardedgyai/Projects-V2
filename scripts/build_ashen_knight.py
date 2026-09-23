@@ -214,9 +214,16 @@ def build(out=ROOT / "model-lab" / "models"):
     add(m, chest, "high_collar", [-2.8, 21.4, -1.65], [2.8, 23.2, 2.2], "void")
     add(m, chest, "mail_under_left", [-4.25, 15.8, -1.8], [-3.55, 20.8, 1.5], "mail")
     add(m, chest, "mail_under_right", [3.5, 15.4, -1.7], [4.25, 20.5, 1.4], "mail")
-    add(m, chest, "worn_left_shoulder_core", [-5.85, 20.1, -1.95], [-3.35, 22.9, 1.9], "armor")
+    add_rotated(m, chest, "left_pauldron_upper_scale", [-5.7, 22.05, -1.96],
+                [-3.35, 23.35, 1.58], "armor", [0, 0, -11],
+                [-4.4, 22.35, 0], "battered_scale")
+    add_rotated(m, chest, "left_pauldron_middle_scale", [-6.12, 20.9, -2.12],
+                [-3.35, 22.25, 1.42], "armor", [0, 0, 8],
+                [-4.55, 21.55, 0], "battered_scale")
+    add_rotated(m, chest, "left_pauldron_lower_scale", [-5.8, 19.75, -1.96],
+                [-3.65, 21.15, 1.12], "armor", [0, 0, -8],
+                [-4.5, 20.45, 0], "battered_scale")
     add(m, chest, "right_shoulder_mail", [3.0, 20.0, -1.75], [5.5, 22.5, 1.9], "mail")
-    add(m, chest, "right_shoulder_scrap", [3.5, 21.2, -2.15], [5.55, 22.8, 1.5], "armor")
     def paint_worn_pauldron(px, py):
         top = 3 + abs(px - 15) // 4
         bottom = 34 - abs(px - 18) // 5 - authoring.noise(px // 5, 0, 1901) % 4
@@ -457,7 +464,12 @@ def build(out=ROOT / "model-lab" / "models"):
         shin = left_shin if side == "left" else right_shin
         add(m, thigh, f"{side}_thigh_mail", [x - 1.63, 6.6, -1.55], [x + 1.63, 11.2, 1.55], "mail")
         add(m, thigh, f"{side}_cloth_undertunic", [x - 1.58, 8.0, -1.71], [x + 1.58, 10.7, 1.6], "void")
-        add(m, shin, f"{side}_dark_greave", [x - 1.48, 1.7, -1.6], [x + 1.48, 7.1, 1.45], "armor")
+        add(m, shin, f"{side}_shin_underlayer", [x - 1.24, 1.7, -1.36],
+            [x + 1.24, 7.1, 1.28], "void")
+        add(m, shin, f"{side}_upper_greave_side", [x - 1.44, 4.75, -1.47],
+            [x + 1.44, 6.95, 1.34], "armor")
+        add(m, shin, f"{side}_lower_greave_side", [x - 1.18, 2.1, -1.4],
+            [x + 1.18, 4.95, 1.26], "armor")
         add(m, shin, f"{side}_worn_boot", [x - 1.38, -.15, -2.6], [x + 1.38, 2.2, 1.58], "leather")
         add(m, shin, f"{side}_toe_cap", [x - 1.15, .1, -3.25], [x + 1.1, 1.0, -2.12], "armor")
         if side == "left":
@@ -466,6 +478,35 @@ def build(out=ROOT / "model-lab" / "models"):
         else:
             add(m, thigh, "right_knee_cloth", [x - 1.45, 6.2, -1.9], [x + 1.15, 7.65, -.95], "void")
             add(m, shin, "right_greave_chip", [x + .72, 3.2, -1.65], [x + 1.22, 5.1, -1.35], "edge")
+
+    def paint_greave_face(px, py, seed):
+        taper = round(py * .045)
+        left = 2 + taper
+        right = 29 - taper
+        if seed == 1 and 9 < py < 24:
+            right -= round((24 - py) * .36)
+        if seed == 0 and 33 < py < 52:
+            left += round((py - 33) * .3)
+        hem = 61 - authoring.noise(px // 4, seed, 1083) % 6
+        if px < left or px > right or py > hem:
+            return (0, 0, 0, 0)
+        nick = abs(px - (13 + py * .17 + seed * 5))
+        if 26 < py < 50 and nick < 1.1:
+            return (18, 24, 29, 255)
+        if px - left < 2 or right - px < 2 or py < 2:
+            return (89, 97, 100, 255)
+        if (px * 7 + py * 11 + seed * 17) % 83 < 2:
+            return (105, 111, 112, 255)
+        return ((43, 50, 54, 255) if (px + py // 4) % 9 < 3
+                else (36, 43, 48, 255))
+
+    for side, x, seed, shin in (("left", -2.1, 0, left_shin),
+                                ("right", 2.1, 1, right_shin)):
+        face_uv = m.patch(32, 64, lambda px, py, s=seed: paint_greave_face(px, py, s),
+                          f"battered_greave_{side}")
+        m.cube(f"{side}_battered_greave_face", [x - 1.5, 1.95, -1.63],
+               [x + 1.5, 7.15, -1.56], "armor", shin,
+               face_uv={"north": face_uv, "south": face_uv})
 
     def paint_battered_thigh(px, py):
         left = 3 + py // 15
