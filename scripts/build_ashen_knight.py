@@ -256,24 +256,24 @@ def build(out=ROOT / "model-lab" / "models"):
                 [-4.5, 20.45, 0], "battered_scale")
     add(m, chest, "right_shoulder_mail", [3.0, 20.0, -1.75], [5.5, 22.5, 1.9], "mail")
     def paint_worn_pauldron(px, py):
-        top = 3 + abs(px - 15) // 4
-        bottom = 34 - abs(px - 18) // 5 - authoring.noise(px // 5, 0, 1901) % 4
+        top = 5 + abs(px - 20) // 3
+        bottom = 32 - abs(px - 20) // 3 - authoring.noise(px // 5, 0, 1901) % 4
         if py < top or py > bottom or (px > 32 and py < 13):
             return (0, 0, 0, 0)
         if px < 4 and py < 14 and (px + py) % 3:
             return (0, 0, 0, 0)
         edge = py <= top + 1 or py >= bottom - 1
         if edge and authoring.noise(px // 3, py // 3, 1907) % 4 != 0:
-            return (89, 94, 84, 255)
+            return (83, 91, 92, 255)
         scar = abs(px - (12 + py * .31))
         if 11 < py < 31 and scar < 1.5:
-            return (100, 103, 91, 255)
+            return (91, 99, 101, 255)
         if px < 9 and py > 23:
             return (22, 29, 34, 255)
-        return (51, 57, 53, 255)
+        return (43, 50, 52, 255)
 
     pauldron_uv = m.patch(40, 40, paint_worn_pauldron, "worn_pauldron")
-    m.cube("worn_left_shoulder_face", [-6.45, 19.2, -2.55], [-2.75, 24.4, -2.48],
+    m.cube("worn_left_shoulder_face", [-6.15, 19.75, -2.55], [-3.0, 23.65, -2.48],
            "armor", chest, face_uv={"north": pauldron_uv, "south": pauldron_uv})
     add_rotated(m, chest, "diagonal_chest_binding", [-3.1, 15.05, -2.85],
                 [2.4, 15.52, -2.55], "leather", [0, 0, -20],
@@ -379,7 +379,26 @@ def build(out=ROOT / "model-lab" / "models"):
                         [(xlo + xhi) / 2, center_y, center_z + .16],
                         "worn_cowl", face_uv)
     add(m, scarf, "scarf_left_drape", [-5.1, 19.5, -1.8], [-3.45, 22.2, 2.25], "cloth")
-    add(m, scarf, "scarf_right_drape", [2.7, 20.1, -1.8], [4.5, 22.5, 2.2], "cloth")
+    add(m, scarf, "scarf_right_dark_under", [2.7, 20.1, -1.8],
+        [4.5, 22.5, 2.2], "void")
+    def paint_shoulder_cowl(px, py):
+        left = 4 + py // 12
+        right = 29 - py // 15
+        hem = 43 - authoring.noise(px // 3, 0, 3413) % 8
+        if px < left or px > right or py > hem or py < 2 + abs(px - 16) // 6:
+            return (0, 0, 0, 0)
+        if py > 26 and abs(px - (13 + py // 7)) < 2:
+            return (0, 0, 0, 0)
+        fold = math.sin(px * .19 + py * .07)
+        color = (14, 30, 49) if fold < -.35 else (39, 64, 89) if fold > .75 else (23, 44, 68)
+        if px - left < 2 or right - px < 2 or hem - py < 2:
+            color = (11, 25, 41)
+        return (*color, 255)
+
+    shoulder_cowl_uv = m.patch(32, 48, paint_shoulder_cowl, "torn_shoulder_cowl")
+    m.cube("scarf_right_torn_face", [2.65, 19.75, -2.24],
+           [4.55, 22.65, -2.17], "cloth", scarf,
+           face_uv={"north": shoulder_cowl_uv, "south": shoulder_cowl_uv})
     def paint_back_cowl(px, py):
         side = abs(px - 47.5) / 48
         top = 2 + round(8 * side ** 1.4)
@@ -600,8 +619,45 @@ def build(out=ROOT / "model-lab" / "models"):
     add(m, left_arm, "left_mail_shoulder", [-6.15, 17.2, -1], [-3.55, 20.2, 1.5], "mail")
     add_rotated(m, left_arm, "left_wrapping_low", [-6.45, 13.0, -1.4], [-3.95, 13.85, 1.25],
                 "bandage", [0, 0, 9], [-5.2, 13.4, 0], "torn_wrap")
-    add(m, right_arm, "right_upper_arm", [3.7, 15.8, -.8], [6, 21, 1.5], "mail")
-    add(m, right_arm, "right_bracer", [3.8, 11.1, -1.1], [6.2, 16.5, 1.5], "armor")
+    add(m, right_arm, "right_deltoid_mail", [3.55, 18.1, -.83],
+        [6.1, 21, 1.5], "mail")
+    add_rotated(m, right_arm, "right_bicep_mail", [3.82, 15.7, -.76],
+                [5.88, 18.55, 1.43], "mail", [0, 0, -5],
+                [4.85, 17.3, .3], "torn_mail")
+    add(m, right_arm, "right_elbow_dark", [3.9, 15.35, -.83],
+        [5.9, 16.15, 1.42], "void")
+    add_rotated(m, right_arm, "right_bracer_upper", [3.73, 13.45, -1.15],
+                [6.15, 16.05, 1.48], "void", [0, 0, -7],
+                [4.94, 14.8, .1], "battered_scale")
+    add_rotated(m, right_arm, "right_bracer_wrist", [4.04, 11.08, -1.1],
+                [5.92, 13.65, 1.37], "leather", [0, 0, 5],
+                [4.98, 12.4, .1], "battered_scale")
+    def paint_bracer_shard(px, py, seed):
+        left = 3 + py // (12 + seed * 3)
+        right = 28 - py // (16 + seed * 3)
+        top = 2 + abs(px - 15) // 8
+        hem = 37 - authoring.noise(px // 4, seed, 2241) % 5
+        if px < left or px > right or py < top or py > hem:
+            return (0, 0, 0, 0)
+        if seed == 0 and 18 < py < 31 and px > right - 4:
+            return (0, 0, 0, 0)
+        if seed == 1 and 11 < py < 25 and px < left + 3:
+            return (0, 0, 0, 0)
+        scar = abs(px - (9 + py * .38 + seed * 4))
+        if scar < 1.1 and 8 < py < 31:
+            return (91, 100, 102, 255)
+        if py <= top + 1 or px - left < 2 or right - px < 2:
+            return (89, 98, 100, 255)
+        grain = authoring.noise(px // 3, py // 3, 2251 + seed)
+        base = (42, 50, 53) if grain % 5 else (32, 39, 43)
+        return (*base, 255)
+
+    for shard, (lo, hi) in enumerate((((3.7, 13.45, -1.27), (6.1, 16.12, -1.2)),
+                                      ((4.03, 11.05, -1.21), (5.95, 13.6, -1.14)))):
+        uv = m.patch(32, 40, lambda px, py, s=shard: paint_bracer_shard(px, py, s),
+                     f"bracer_shard_{shard}")
+        m.cube(f"right_bracer_shard_{shard}", lo, hi, "armor", right_arm,
+               face_uv={"north": uv, "south": uv})
     add(m, right_arm, "right_hand", [4, 9.7, -1.2], [6, 12.2, 1.2], "leather")
     add(m, right_arm, "right_knuckles", [4, 9.5, -1.5], [6, 10.5, -1.15], "leather")
     add(m, right_arm, "right_mail_shoulder", [3.5, 17.3, -1], [6.05, 20, 1.55], "mail")
@@ -638,7 +694,9 @@ def build(out=ROOT / "model-lab" / "models"):
         return (43, 54, 60, 255)
 
     blade_uv = m.patch(48, 160, paint_worn_blade, "worn_blade")
-    m.cube("blade_worn_faces", [2.6, -5.7, -.85], [7.4, 8.6, .85],
+    m.cube("blade_worn_faces", [2.6, -5.7, -.9], [7.4, 8.6, -.78],
+           "armor", blade, face_uv={"north": blade_uv, "south": blade_uv})
+    m.cube("blade_worn_back_face", [2.6, -5.7, .78], [7.4, 8.6, .9],
            "armor", blade, face_uv={"north": blade_uv, "south": blade_uv})
 
     # Leave the chainmail back exposed. The short scarf above and torn cloth
