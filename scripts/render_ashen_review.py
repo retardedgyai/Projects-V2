@@ -29,9 +29,15 @@ def review_project(points, view):
 
 
 preview.project = review_project
+
+
+def lit_render(*args):
+    return preview.render(*args, continuous_light=True)
+
+
 views = [("idle", 0, "front"), ("idle", 0, "side"),
          ("idle", 0, "quarter"), ("cleave", .9, "quarter")]
-tiles = [(f"{name} {view}", preview.render(data, elements, atlas,
+tiles = [(f"{name} {view}", lit_render(data, elements, atlas,
           animations[name], at, view, 10)) for name, at, view in views]
 width = max(image.width for _, image in tiles) * 2 + 36
 height = max(image.height for _, image in tiles) * 2 + 56
@@ -46,13 +52,20 @@ target.parent.mkdir(parents=True, exist_ok=True)
 sheet.save(target)
 print(target)
 
-back = preview.render(data, elements, atlas, animations["idle"], 0, "back", 12)
+hero_target = target.with_name("ashen_knight_hero_review.png")
+lit_render(data, elements, atlas, animations["idle"], 0, "quarter", 22).save(hero_target)
+print(hero_target)
+front_target = target.with_name("ashen_knight_front_review.png")
+lit_render(data, elements, atlas, animations["idle"], 0, "front", 22).save(front_target)
+print(front_target)
+
+back = lit_render(data, elements, atlas, animations["idle"], 0, "back", 12)
 back_target = target.with_name("ashen_knight_back_review.png")
 back.save(back_target)
 print(back_target)
 
 turn_angles = range(0, 360, 45)
-turn_tiles = [(angle, preview.render(data, elements, atlas, animations["idle"],
+turn_tiles = [(angle, lit_render(data, elements, atlas, animations["idle"],
                0, f"yaw_{angle}", 8)) for angle in turn_angles]
 turn_w = max(tile.width for _, tile in turn_tiles)
 turn_h = max(tile.height for _, tile in turn_tiles)
@@ -69,7 +82,7 @@ print(turn_target)
 
 motion = [("walk", .4), ("run", .3), ("cleave", .65),
           ("thrust", .55), ("leap", .55), ("slam", .95)]
-poses = [(f"{name} {at:g}", preview.render(data, elements, atlas,
+poses = [(f"{name} {at:g}", lit_render(data, elements, atlas,
           animations[name], at, "quarter", 8)) for name, at in motion]
 tile_w = max(tile.width for _, tile in poses)
 tile_h = max(tile.height for _, tile in poses)
@@ -87,7 +100,7 @@ print(motion_target)
 
 slam_views = [("windup front", .7, "front"), ("impact front", .95, "front"),
               ("impact side", .95, "side"), ("impact quarter", .95, "quarter")]
-slam_tiles = [(label, preview.render(data, elements, atlas, animations["slam"], at, view, 10))
+slam_tiles = [(label, lit_render(data, elements, atlas, animations["slam"], at, view, 10))
               for label, at, view in slam_views]
 slam_w = max(tile.width for _, tile in slam_tiles)
 slam_h = max(tile.height for _, tile in slam_tiles)

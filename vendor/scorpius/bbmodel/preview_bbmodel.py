@@ -18,6 +18,8 @@ import numpy as np
 from PIL import Image, ImageDraw
 
 SHADE = {(1, 1): 1.0, (1, -1): .45, (2, -1): .82, (2, 1): .72, (0, 1): .6, (0, -1): .6}
+KEY_LIGHT = np.array([.45, .75, -.45]) / np.linalg.norm([.45, .75, -.45])
+FILL_LIGHT = np.array([-.4, .45, .65]) / np.linalg.norm([-.4, .45, .65])
 BLOCK_UNITS = 16 / 3  # ModelScale 3 での 1 ブロック
 FACES = {
     "north": ((1, 1, 0), (0, 1, 0), (0, 0, 0), (1, 0, 0), (0, 0, -1)),
@@ -35,7 +37,8 @@ VIEWS = {  # (u 軸, v 軸, 奥行き軸) を [係数, 成分] で。奥行き�
 
 
 def load(path, hidden=()):
-    data = json.load(open(path))
+    with open(path, encoding="utf-8") as source_file:
+        data = json.load(source_file)
     source = data["textures"][0]["source"].split(",", 1)[1]
     atlas = np.array(Image.open(io.BytesIO(base64.b64decode(source))).convert("RGBA"))
     skip = set()
@@ -104,7 +107,8 @@ def project(points, view):
     return np.stack([su * points[:, au], sv * points[:, av], sd * points[:, ad]], axis=1)
 
 
-def render(data, elements, atlas, anim, t, view, px, canvas=None, origin=None):
+def render(data, elements, atlas, anim, t, view, px, canvas=None, origin=None,
+           continuous_light=False):
     """canvas=(幅,高さ), origin=(u0,v0) を与えると同じ枡で描く。無ければ自動で収める。"""
     world = transforms(data["outliner"][0], anim, t, np.eye(4), {})
     quads = []
@@ -153,8 +157,12 @@ def render(data, elements, atlas, anim, t, view, px, canvas=None, origin=None):
         tx = np.clip(np.floor(uv[0] + s * (uv[2] - uv[0])).astype(int), min(uv[0], uv[2]), max(uv[0], uv[2]) - 1)
         ty = np.clip(np.floor(uv[1] + tt * (uv[3] - uv[1])).astype(int), min(uv[1], uv[3]), max(uv[1], uv[3]) - 1)
         texel = atlas[ty, tx]
-        axis = int(np.argmax(np.abs(n)))
-        shade = SHADE[(axis, 1 if n[axis] >= 0 else -1)]
+        if continuous_light:
+            shade = min(1.5, .85 + .55 * max(0.0, np.dot(n, KEY_LIGHT))
+                        + .2 * max(0.0, np.dot(n, FILL_LIGHT)))
+        else:
+            axis = int(np.argmax(np.abs(n)))
+            shade = SHADE[(axis, 1 if n[axis] >= 0 else -1)]
         win = depth[y0:y1, x0:x1]
         hit = inside & (texel[..., 3] > 0) & (d < win)
         win[hit] = d[hit]
