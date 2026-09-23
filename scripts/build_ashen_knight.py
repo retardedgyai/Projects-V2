@@ -173,10 +173,28 @@ def build(out=ROOT / "model-lab" / "models"):
 
     # Narrow waist, uneven shoulders and a hunched profile keep the outline
     # readable at Minecraft viewing distances. The front faces negative Z.
-    add(m, hips, "fauld_core", [-3.1, 10.5, -1.7], [3.1, 14, 1.9], "mail")
+    # The old full-width mail cuboid made the waist a bright horizontal box
+    # when viewed from either side. Keep the cloth body dark and let narrow
+    # broken mail remnants show beneath the belt and hip rags.
+    add_rotated(m, hips, "fauld_cloth_core", [-2.35, 10.75, -1.36],
+                [2.35, 13.95, 1.48], "void", [4, 0, -3], [0, 12.4, 0],
+                "worn_tunic")
+    add_rotated(m, hips, "fauld_mail_left", [-3.04, 11.45, -1.2],
+                [-2.02, 13.75, 1.3], "mail", [2, 0, -7], [-2.45, 12.6, 0],
+                "worn_mail")
+    add_rotated(m, hips, "fauld_mail_right", [2.03, 11.1, -1.09],
+                [2.95, 13.42, 1.16], "mail", [-3, 0, 6], [2.5, 12.25, 0],
+                "worn_mail")
     add(m, hips, "belt", [-3.5, 12.2, -2.05], [3.5, 13, -1.52], "leather")
-    add(m, hips, "mail_skirt_underlayer", [-2.75, 8.6, -1.5],
-        [2.75, 12.4, 2.1], "void")
+    add_rotated(m, hips, "skirt_underlayer_root", [-2.55, 10.25, -1.43],
+                [2.55, 12.4, 1.72], "void", [3, 0, 2], [0, 11.2, 0],
+                "worn_tunic")
+    add_rotated(m, hips, "skirt_underlayer_left", [-2.4, 8.55, -1.31],
+                [.22, 10.8, 1.56], "void", [-6, 0, -7], [-1.05, 10.1, 0],
+                "worn_tunic")
+    add_rotated(m, hips, "skirt_underlayer_right", [-.18, 9.05, -1.2],
+                [2.23, 10.83, 1.72], "void", [7, 0, 6], [1.1, 10.0, 0],
+                "worn_tunic")
     add(m, hips, "broken_tasset_left", [-3.8, 9.3, -2.1], [-1.65, 12.1, -.95], "armor")
     add(m, hips, "broken_tasset_right", [1.85, 10.3, -2.0], [3.4, 12.2, -.9], "armor")
     add(m, hips, "belt_buckle", [-.65, 11.9, -2.3], [.45, 12.9, -1.94], "edge")
@@ -225,18 +243,24 @@ def build(out=ROOT / "model-lab" / "models"):
                     [x0, hem, depth], [x1, top, depth + .14], "cloth",
                     [5 + panel * 3, 0, lean], [(x0 + x1) / 2, top, depth],
                     "ragged_hip", face_uv={"north": rag_uv, "south": rag_uv})
-    add_rotated(m, chest, "upper_tunic_center",
-                [-2.45, 16.95, -2.13], [2.45, 22.05, 1.05], "void",
-                [-6, 0, 0], [0, 19.5, -.6], "worn_tunic")
+    add_rotated(m, chest, "upper_tunic_sternum",
+                [-2.4, 19.1, -2.05], [2.4, 22.05, 1.02], "void",
+                [-8, 0, -3], [0, 20.45, -.5], "worn_tunic")
+    add_rotated(m, chest, "upper_tunic_abdomen",
+                [-2.12, 16.95, -1.89], [2.12, 19.53, .95], "void",
+                [-3, 0, 4], [0, 18.2, -.47], "worn_tunic")
     add_rotated(m, chest, "upper_tunic_left_rib",
                 [-3.8, 17.5, -1.82], [-2.12, 21.8, .85], "void",
                 [-6, 0, -8], [-3.0, 19.65, -.45], "worn_tunic")
     add_rotated(m, chest, "upper_tunic_right_rib",
                 [2.12, 17.35, -1.78], [3.72, 21.65, .82], "void",
                 [-6, 0, 7], [2.92, 19.5, -.45], "worn_tunic")
-    add_rotated(m, chest, "upper_mail_tunic_back",
-                [-3.25, 17.55, .35], [3.25, 21.8, 2.1], "void",
-                [7, 0, 0], [0, 19.55, 1.25])
+    add_rotated(m, chest, "upper_tunic_back_shoulders",
+                [-3.05, 19.45, .4], [3.05, 21.8, 2.02], "void",
+                [7, 0, 2], [0, 20.6, 1.2], "worn_tunic")
+    add_rotated(m, chest, "upper_tunic_back_waist",
+                [-2.55, 17.55, .5], [2.55, 19.85, 1.9], "void",
+                [2, 0, -3], [0, 18.6, 1.15], "worn_tunic")
     # The lower torso narrows toward the belt. A single full-depth cuboid
     # exposed a long, ruler-straight side between the scarf and the tassets.
     add_rotated(m, chest, "waist_mail_tunic_upper",
