@@ -17,6 +17,7 @@ import gen_vesper as authoring  # noqa: E402
 
 PALETTE = {
     "armor": ("181b1f", "32383c", "61696a"),
+    "guard": ("151a1d", "292f32", "4c5556"),
     "edge": ("24282b", "555d61", "929a9a"),
     "cloth": ("0d1c32", "183554", "315878"),
     "void": ("090d14", "161d29", "313b49"),
@@ -50,7 +51,7 @@ class KnightModel(authoring.Model):
             coarse = authoring.noise(x // 3, y // 3, seed)
             fine = authoring.noise(x, y, seed + 73)
             tone = 0 if coarse % 31 == 0 else 2 if coarse % 47 == 0 else 1
-            if material in ("armor", "edge", "ash"):
+            if material in ("armor", "edge", "ash", "guard"):
                 # Directional bevel, a few dents and selected engravings. Do
                 # not turn a large armor face into uniform visual noise.
                 if y <= 1 and authoring.noise(x // 3, 0, seed + 281) % 5 < 2:
@@ -896,32 +897,50 @@ def build(out=ROOT / "model-lab" / "models"):
     # At rest the heavy blade hangs beside the right leg.
     add(m, blade, "pommel", [4.38, 12.0, -.65], [5.62, 13.25, .65], "armor")
     add(m, blade, "grip", [4.45, 9, -.55], [5.55, 12.4, .55], "void")
-    add(m, blade, "guard", [1.7, 8.6, -.95], [8.3, 9.4, .95], "armor")
-    add(m, blade, "guard_left_tooth", [1.35, 8.2, -1.1], [2.65, 10.6, 1.1], "armor")
-    add(m, blade, "guard_right_tooth", [7.45, 8.2, -1.1], [8.55, 9.8, 1.1], "armor")
-    add(m, blade, "blade_dark_spine", [4.15, -5.1, -.5], [5.85, 8.6, .5], "armor")
+    add_rotated(m, blade, "guard", [1.9, 8.6, -.9], [7.95, 9.3, .9],
+                "guard", [0, 0, -3], [5, 8.95, 0], "battered_guard")
+    add_rotated(m, blade, "guard_left_tooth",
+                [1.47, 8.15, -1.0], [2.63, 10.35, 1.0], "guard",
+                [0, 0, 11], [2.1, 9.2, 0], "battered_guard")
+    add_rotated(m, blade, "guard_right_tooth",
+                [7.17, 8.22, -.96], [8.12, 9.65, .96], "guard",
+                [0, 0, -17], [7.67, 8.95, 0], "battered_guard")
+    add(m, blade, "blade_spine_upper", [4.15, -.8, -.52],
+        [5.85, 8.6, .52], "armor")
+    add(m, blade, "blade_spine_middle", [4.32, -3.65, -.39],
+        [5.68, -.75, .39], "armor")
+    add(m, blade, "blade_spine_tip", [4.65, -5.33, -.22],
+        [5.35, -3.6, .22], "armor")
 
     def paint_worn_blade(px, py):
         center = 23.5
-        narrowing = max(0, py - 128) * .55
-        width = max(1, 20 - narrowing)
+        progress = py / 159
+        narrowing = 4.0 * progress + 14.5 * max(0, (progress - .7) / .3) ** 1.25
+        width = max(1.2, 20.5 - narrowing)
         distance = abs(px - center)
-        nick_left = 87 < py < 103 and px < 11
-        nick_right = 48 < py < 59 and px > 36
-        if distance > width or nick_left or nick_right:
+        edge_wear = authoring.noise(py // 4, 1 if px < center else 2, 709) % 4
+        edge = width - (.42 * edge_wear if py > 24 else 0)
+        nick_left = 78 < py < 103 and px < center - width + 4 + (py - 78) // 9
+        nick_right = 43 < py < 61 and px > center + width - 4
+        if distance > edge or nick_left or nick_right:
             return (0, 0, 0, 0)
-        if distance > width - 2.3:
-            return (93, 111, 114, 255)
-        if distance < 2 and py < 130:
-            return (27, 37, 43, 255)
-        if 5 < distance < 13 and abs((py // 9) % 8 - (px // 6) % 8) <= 1:
-            return (30, 39, 45, 255)
-        if 42 < py < 108 and abs(px - center - 5 * math.sin(py / 25)) < 1.5:
-            return (29, 43, 51, 255)
-        grain = authoring.noise(px // 2, py // 3, 713)
-        if grain % 37 == 0:
-            return (75, 89, 91, 255)
-        return (43, 54, 60, 255)
+        grain = authoring.noise(px // 3, py // 4, 713)
+        if distance > edge - 1.6:
+            return ((72, 80, 81, 255) if grain % 5 == 0
+                    else (51, 61, 63, 255))
+        if distance > edge - 5:
+            return ((62, 71, 73, 255) if (py // 17 + grain) % 5 == 0
+                    else (44, 54, 58, 255))
+        if distance < 2.4 and py < 139:
+            return (22, 30, 35, 255)
+        scar = abs(px - (center + 5 * math.sin(py / 22 + .8)))
+        if 40 < py < 124 and scar < 1.2 and grain % 5 != 0:
+            return (69, 75, 76, 255)
+        if 5 < distance < 13 and abs((py // 11) % 7 - (px // 7) % 7) <= 1:
+            return (29, 38, 42, 255)
+        if grain % 43 == 0:
+            return (72, 79, 80, 255)
+        return ((47, 57, 62, 255) if grain % 4 else (55, 63, 66, 255))
 
     blade_uv = m.patch(48, 160, paint_worn_blade, "worn_blade")
     m.cube("blade_worn_faces", [2.6, -5.7, -.9], [7.4, 8.6, -.78],
