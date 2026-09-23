@@ -111,13 +111,16 @@ def render(data, elements, atlas, anim, t, view, px, canvas=None, origin=None):
     for uuid, el in elements.items():
         m = world.get(uuid, np.eye(4))
         lo, hi = np.array(el["from"], dtype=float), np.array(el["to"], dtype=float)
+        element_rotation = rot(el.get("rotation", [0, 0, 0]))
+        element_pivot = np.array(el.get("origin", [0, 0, 0]), dtype=float)
         for face, (*corners, normal) in FACES.items():
             uv = el["faces"][face]["uv"]
             if uv == [0, 0, 1, 1]:
                 continue
             pts = np.array([[lo[i] if c[i] == 0 else hi[i] for i in range(3)] for c in corners])
+            pts = (element_rotation @ (pts - element_pivot).T).T + element_pivot
             pts = (m[:3, :3] @ pts.T).T + m[:3, 3]
-            n = m[:3, :3] @ np.array(normal, dtype=float)
+            n = m[:3, :3] @ element_rotation @ np.array(normal, dtype=float)
             quads.append((project(pts, view), n, uv, el["name"]))
     allp = np.concatenate([q[0] for q in quads])
     if canvas is None:

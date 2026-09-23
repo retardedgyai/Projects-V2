@@ -80,6 +80,13 @@ class KnightModel(authoring.Model):
                     tone = 2 if x % 6 < 3 else 0
                 if y == height - 1:
                     tone = 0
+                if side in ("north", "south") and motif.startswith("cape_facet"):
+                    inset = 1 + round((y / height) ** 1.4 * width * .23)
+                    inset += authoring.noise(y // 4, 0, seed + 83) % 2
+                    if x < inset or x >= width - inset:
+                        return (0, 0, 0, 0)
+                    if y > height - 3 and (x + seed) % 5 < 2:
+                        return (0, 0, 0, 0)
                 if side in ("north", "south") and height >= 12 and motif.startswith("rag"):
                     tail = y / height
                     edge_left = 1 + round(tail * width * .22) + authoring.noise(y // 6, 0, seed + 11) % 4
@@ -107,6 +114,12 @@ class KnightModel(authoring.Model):
 
 def add(model, bucket, name, lo, hi, material, motif="plain"):
     model.cube(name, lo, hi, material, bucket, motif)
+
+
+def add_rotated(model, bucket, name, lo, hi, material, rotation, pivot, motif="plain", face_uv=None):
+    model.cube(name, lo, hi, material, bucket, motif, face_uv=face_uv)
+    model.elements[-1]["rotation"] = list(rotation)
+    model.elements[-1]["origin"] = list(pivot)
 
 
 def build(out=ROOT / "model-lab" / "models"):
@@ -331,9 +344,9 @@ def build(out=ROOT / "model-lab" / "models"):
     # the shoulder at rest; animation rotates the arm and blade separately.
     add(m, blade, "pommel", [4.1, 11.8, -1], [5.9, 13.7, 1], "ash")
     add(m, blade, "grip", [4.45, 9, -.55], [5.55, 12.4, .55], "void")
-    add(m, blade, "guard", [1.7, 8.6, -.95], [8.3, 9.4, .95], "edge")
-    add(m, blade, "guard_left_tooth", [1.35, 8.2, -1.1], [2.65, 10.6, 1.1], "ash")
-    add(m, blade, "guard_right_tooth", [7.35, 8.2, -1.1], [8.65, 10.6, 1.1], "ash")
+    add(m, blade, "guard", [1.7, 8.6, -.95], [8.3, 9.4, .95], "armor")
+    add(m, blade, "guard_left_tooth", [1.35, 8.2, -1.1], [2.65, 10.6, 1.1], "armor")
+    add(m, blade, "guard_right_tooth", [7.45, 8.2, -1.1], [8.55, 9.8, 1.1], "armor")
     add(m, blade, "blade_dark_spine", [4.15, -9.3, -.5], [5.85, 8.6, .5], "armor")
 
     def paint_worn_blade(px, py):
@@ -346,33 +359,78 @@ def build(out=ROOT / "model-lab" / "models"):
         if distance > width or nick_left or nick_right:
             return (0, 0, 0, 0)
         if distance > width - 2.3:
-            return (157, 170, 169, 255)
+            return (93, 111, 114, 255)
         if distance < 2 and py < 130:
             return (27, 37, 43, 255)
         if 5 < distance < 13 and abs((py // 9) % 8 - (px // 6) % 8) <= 1:
-            return (38, 47, 53, 255)
+            return (30, 39, 45, 255)
+        if 42 < py < 108 and abs(px - center - 5 * math.sin(py / 25)) < 1.5:
+            return (29, 43, 51, 255)
         grain = authoring.noise(px // 2, py // 3, 713)
         if grain % 37 == 0:
-            return (94, 105, 106, 255)
-        return (54, 65, 70, 255)
+            return (75, 89, 91, 255)
+        return (43, 54, 60, 255)
 
     blade_uv = m.patch(48, 160, paint_worn_blade, "worn_blade")
     m.cube("blade_worn_faces", [2.6, -11.8, -.85], [7.4, 8.6, .85],
            "armor", blade, face_uv={"north": blade_uv, "south": blade_uv})
 
-    # Short overlapping folds follow separate pivots. Their pitches and hems
-    # diverge, so the cloak has a broken volume rather than a flat wall.
-    add(m, cape_left, "left_mantle", [-4.8, 16.7, 2.5], [-1.35, 21.8, 3.15], "cloth", "ragged_mantle")
-    add(m, cape_left_mid, "left_fold_middle", [-5.55, 9.1, 3.05], [-1.85, 17.45, 3.7], "cloth", "ragged_middle")
-    add(m, cape_left_tail, "left_fold_lower", [-6.4, 3.75, 3.6], [-2.55, 10.8, 4.3], "cloth", "ragged_lower")
+    def paint_cloak(px, py):
+        u, v = px / 127, py / 255
+        left = 2 + round(3 * v) + authoring.noise(py // 11, 0, 2719) % 3
+        right = 126 - round(7 * v) - authoring.noise(py // 13, 0, 2729) % 4
+        if px < left or px > right:
+            return (0, 0, 0, 0)
+        if v > .66 and (px + 2 * py) % 37 < 2:
+            return (0, 0, 0, 0)
+        if v > .84 and py > 245 - authoring.noise(px // 4, 0, 2741) % 19:
+            return (0, 0, 0, 0)
+        fold = math.sin(u * 20 + v * 2.7) + .34 * math.sin(u * 39 - v * 5)
+        if fold > .72:
+            color = (52, 87, 115)
+        elif fold < -.45:
+            color = (10, 25, 43)
+        else:
+            color = (24, 52, 78)
+        if v < .12 or px - left < 3 or right - px < 3:
+            color = tuple(round(channel * .75) for channel in color)
+        if authoring.noise(px, py, 2777) % 167 == 0:
+            color = (70, 85, 93)
+        return (*color, 255)
+
+    cloak_uv = m.patch(128, 256, paint_cloak, "ashen_cloak_continuous")
+
+    # A curved, asymmetrical mantle: overlapping short facets follow a bowed
+    # cross section. Distinct yaw angles and depth offsets make each fold
+    # occupy volume instead of stacking long coplanar cloth rectangles.
+    for row in range(5):
+        top = 21.55 - row * 3.35
+        bottom = top - 3.55
+        for col in range(3):
+            left = -4.85 - row * .24 + col * 1.9
+            right = left + 2.8
+            depth = 2.7 + row * .22 + (1.25 if col == 1 else .12 if col == 2 else 0)
+            bucket = (cape_left if col < 2 else cape_center) if row == 0 else (
+                (cape_left_mid if col < 2 else cape_center_mid) if row < 3 else
+                (cape_left_tail if col < 2 else cape_center_tail))
+            yaw = (-25, 0, 24)[col] + (row - 2) * (2 if col == 1 else -1)
+            motif = f"ragged_cape_{row}_{col}" if row == 4 else f"cape_facet_{row}_{col}"
+            tx0 = cloak_uv[0] + round((1.8 - right) / 8.3 * 128)
+            tx1 = cloak_uv[0] + round((1.8 - left) / 8.3 * 128)
+            ty0 = cloak_uv[1] + round((21.55 - top) / 16.95 * 256)
+            ty1 = cloak_uv[1] + round((21.55 - bottom) / 16.95 * 256)
+            face_uv = {"north": [tx0, ty0, tx1, ty1],
+                       "south": [tx0, ty0, tx1, ty1]}
+            add_rotated(m, bucket, f"cape_facet_{row}_{col}",
+                        [left, bottom, depth], [right, top, depth + .34],
+                        "cloth", [0, yaw, 0], [(left + right) / 2, top, depth + .17], motif, face_uv)
     add(m, cape_left_edge, "left_shoulder_cloth", [-5.75, 19.5, 1.0], [-4.65, 21.5, 2.95], "cloth")
-    add(m, cape_right, "right_mantle_remnant", [3.0, 17.8, 2.55], [4.75, 21.65, 3.15], "cloth", "ragged_mantle")
-    add(m, cape_right, "right_hanging_remnant", [3.1, 9.2, 3.0], [5.05, 18.0, 3.55], "cloth", "ragged_right")
+    add_rotated(m, cape_right, "right_mantle_remnant", [3.0, 17.8, 2.55], [4.75, 21.65, 3.15],
+                "cloth", [0, 17, 0], [3.85, 21.65, 2.85], "ragged_mantle")
+    add_rotated(m, cape_right, "right_hanging_remnant", [3.1, 9.2, 3.0], [5.05, 18.0, 3.55],
+                "cloth", [0, -24, 0], [4.05, 18.0, 3.3], "ragged_right")
     add(m, cape_right_edge, "right_shoulder_cloth", [4.75, 19.5, 1.0], [5.75, 21.5, 2.95], "cloth")
-    add(m, cape_center, "back_mail", [-4.05, 8.3, 3.55], [4.1, 13.2, 3.82], "mail")
-    add(m, cape_center, "center_mantle_fold", [-1.75, 15.5, 3.65], [.75, 20.2, 4.05], "cloth", "ragged_mantle")
-    add(m, cape_center_mid, "center_fold_middle", [-1.95, 7.9, 3.95], [.45, 16.0, 4.45], "cloth", "ragged_middle")
-    add(m, cape_center_tail, "center_fold_tail", [-2.25, 3.1, 4.2], [-.2, 9.0, 4.75], "cloth", "ragged_lower")
+    add(m, cape_center, "back_mail", [-4.05, 8.3, 2.35], [4.1, 13.2, 3.05], "mail")
 
     plume_bone = m.bone("plume", [0, 28, 1], plume)
     head_bone = m.bone("head", [0, 22, 0], helm + [plume_bone])
@@ -387,11 +445,11 @@ def build(out=ROOT / "model-lab" / "models"):
     center_tail_bone = m.bone("cape_center_tail", [-.8, 9.0, 4.1], cape_center_tail)
     center_mid_bone = m.bone("cape_center_mid", [-.5, 16, 3.9], cape_center_mid + [center_tail_bone])
     middle_cape_bone = m.bone("cape_center", [0, 20, 3], cape_center + [center_mid_bone])
-    left_cape_bone["rotation"] = [-2, 0, -3]
+    left_cape_bone["rotation"] = [18, 0, -3]
     left_mid_bone["rotation"] = [-5, -6, -4]
     left_tail_bone["rotation"] = [-6, 8, -3]
-    right_cape_bone["rotation"] = [-4, 0, 3]
-    middle_cape_bone["rotation"] = [-3, 0, 0]
+    right_cape_bone["rotation"] = [18, 0, 3]
+    middle_cape_bone["rotation"] = [20, 0, 0]
     center_mid_bone["rotation"] = [-4, 7, 1]
     center_tail_bone["rotation"] = [-6, -5, 0]
     left_edge_bone = m.bone("cape_left_edge", [-6, 20, 2.7], cape_left_edge)
