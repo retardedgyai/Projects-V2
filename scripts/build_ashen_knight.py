@@ -43,26 +43,40 @@ class KnightModel(authoring.Model):
         def paint(x, y):
             coarse = authoring.noise(x // 3, y // 3, seed)
             fine = authoring.noise(x, y, seed + 73)
-            tone = 0 if coarse % 17 < 3 else 2 if coarse % 23 == 0 else 1
+            tone = 0 if coarse % 31 == 0 else 2 if coarse % 47 == 0 else 1
             if material in ("armor", "edge", "ash"):
-                # Broken light-catching rim, dents and sparse metal scratches.
-                if y == 0 and x % 7 != 3:
+                # Directional bevel, a few dents and selected engravings. Do
+                # not turn a large armor face into uniform visual noise.
+                if y <= 1 and x % 11 != 3:
                     tone = 2
-                if y == height - 1 or x == width - 1:
+                if y >= height - 2 or x >= width - 2:
                     tone = 0
-                if width >= 8 and height >= 8 and y in (2, height - 3) and x in (2, width - 3):
+                if x <= 1 and y > 1:
                     tone = 2
-                if fine % 79 == 0 or (x + y * 2 + seed) % 47 == 0:
+                if width >= 8 and height >= 8 and y in (3, height - 4) and x in (3, width - 4):
+                    tone = 2
+                if motif == "engraved" and width >= 12 and height >= 12:
+                    cx, cy = (width - 1) / 2, (height - 1) / 2
+                    rhombus = abs(x - cx) / max(1, width * .32) + abs(y - cy) / max(1, height * .33)
+                    if .85 < rhombus < 1.1:
+                        tone = 2
+                    elif rhombus < .42:
+                        tone = 0
+                    if abs(x - cx) < 1 and height * .2 < y < height * .8:
+                        tone = 2
+                if fine % 107 == 0:
                     tone = 0
-                if fine % 89 == 0:
+                if fine % 139 == 0:
                     tone = 2
             elif material == "cloth":
                 fold = (x // 4 + y // 17 + seed) % 11
                 tone = 0 if fold in (0, 1) else 2 if fold in (5, 6) else 1
-                if (x + y * 2 + seed) % 29 == 0:
+                if (x + y * 2 + seed) % 59 == 0:
                     tone = 2
-                if fine % 67 == 0:
+                if fine % 127 == 0:
                     tone = 0
+                if motif == "embroidered" and y in (height - 4, height - 2):
+                    tone = 2 if x % 6 < 3 else 0
                 if y == height - 1:
                     tone = 0
                 if side in ("north", "south") and height >= 12 and motif.startswith("rag"):
@@ -105,14 +119,14 @@ def build(out=ROOT / "model-lab" / "models"):
     add(m, hips, "waist_tasset_left", [-3.7, 9, -2.5], [-2, 12.3, -.9], "armor")
     add(m, hips, "waist_tasset_right", [1.9, 9.8, -2.45], [3.6, 12.4, -.9], "armor")
     add(m, hips, "belt_buckle", [-.8, 11.9, -2.55], [.8, 13.1, -1.96], "edge")
-    add(m, chest, "cuirass", [-3.6, 13, -2.4], [3.6, 22, 2.1], "armor")
-    add(m, chest, "left_breast_plate", [-4.1, 17, -2.8], [-.4, 22.5, -2.1], "edge")
+    add(m, chest, "cuirass", [-3.6, 13, -2.4], [3.6, 22, 2.1], "armor", "engraved")
+    add(m, chest, "left_breast_plate", [-4.1, 17, -2.8], [-.4, 22.5, -2.1], "edge", "engraved")
     add(m, chest, "right_breast_plate", [.5, 17.2, -2.7], [3.8, 21.7, -2.1], "armor")
     add(m, chest, "heart_fissure", [-.35, 16, -2.84], [.35, 17.2, -2.75], "void")
     add(m, chest, "high_collar", [-3, 21.2, -1.7], [3, 23.2, 2.3], "void")
-    add(m, chest, "left_pauldron", [-6.5, 19.8, -2.2], [-2.7, 23.8, 2.8], "edge")
+    add(m, chest, "left_pauldron", [-6.5, 19.8, -2.2], [-2.7, 23.8, 2.8], "edge", "engraved")
     add(m, chest, "left_pauldron_ridge", [-6.9, 22.5, -2.3], [-3.2, 23.8, 2.9], "ash")
-    add(m, chest, "right_pauldron", [2.8, 20.1, -1.9], [5.8, 23, 2.2], "armor")
+    add(m, chest, "right_pauldron", [2.8, 20.1, -1.9], [5.8, 23, 2.2], "armor", "engraved")
     add(m, chest, "right_pauldron_lip", [3.7, 20.2, -2.5], [6.2, 21.3, 2.3], "edge")
     add(m, chest, "left_pauldron_front", [-6.7, 20.2, -2.8], [-3.6, 22.8, -2.15], "armor")
     add(m, chest, "left_spike_base", [-6.2, 22.9, -.3], [-4.8, 25.4, 1.8], "edge")
@@ -131,14 +145,14 @@ def build(out=ROOT / "model-lab" / "models"):
     add(m, scarf, "scarf_dark_under", [-3.35, 20.5, -3.02], [3.1, 23.5, 2.45], "void")
     add(m, scarf, "scarf_fold_high", [-3.8, 21.5, -3.48], [2.1, 23.2, -2.78], "cloth")
     add(m, scarf, "scarf_fold_mid", [-3.4, 19.7, -3.42], [2.9, 21.4, -2.82], "cloth")
-    add(m, scarf, "scarf_fold_low", [-2.6, 18.5, -3.24], [3.25, 19.9, -2.8], "cloth")
+    add(m, scarf, "scarf_fold_low", [-2.6, 18.5, -3.24], [3.25, 19.9, -2.8], "cloth", "embroidered")
     add(m, scarf, "scarf_left_drape", [-5.6, 18.8, -2.2], [-3.25, 22.4, 2.25], "cloth")
     add(m, scarf, "scarf_right_drape", [2.4, 19.7, -2.45], [5.2, 22.7, 2.65], "cloth")
     add(m, scarf, "scarf_back", [-4.8, 19.3, 2.25], [4.9, 22.6, 3.18], "cloth")
     add(m, scarf, "scarf_hanging_point", [-3.75, 15.2, -3.1], [-1.6, 19.6, -2.78], "cloth")
 
     add(m, helm, "hood", [-2.7, 21.9, -2.3], [2.7, 27.5, 2.8], "void")
-    add(m, helm, "visor", [-2.25, 23.3, -3.15], [2.25, 26.3, -2.25], "edge")
+    add(m, helm, "visor", [-2.25, 23.3, -3.15], [2.25, 26.3, -2.25], "edge", "engraved")
     add(m, helm, "visor_brow", [-2.5, 25.6, -3.62], [2.5, 26.3, -2.7], "edge")
     add(m, helm, "visor_bridge", [-.55, 23.3, -3.92], [.55, 26.1, -3.18], "edge")
     add(m, helm, "visor_beak_upper", [-1.45, 23.1, -4.25], [1.45, 24.1, -3.31], "edge")
