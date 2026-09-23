@@ -20,9 +20,9 @@ axis_project = preview.project
 def review_project(points, view):
     if view == "back":
         return np.stack((points[:, 0], -points[:, 1], -points[:, 2]), axis=1)
-    if view != "quarter":
+    if view != "quarter" and not view.startswith("yaw_"):
         return axis_project(points, view)
-    yaw = math.radians(35)
+    yaw = math.radians(35 if view == "quarter" else int(view.split("_", 1)[1]))
     x = math.cos(yaw) * points[:, 0] + math.sin(yaw) * points[:, 2]
     z = -math.sin(yaw) * points[:, 0] + math.cos(yaw) * points[:, 2]
     return np.stack((-x, -points[:, 1], z), axis=1)
@@ -50,6 +50,22 @@ back = preview.render(data, elements, atlas, animations["idle"], 0, "back", 12)
 back_target = target.with_name("ashen_knight_back_review.png")
 back.save(back_target)
 print(back_target)
+
+turn_angles = range(0, 360, 45)
+turn_tiles = [(angle, preview.render(data, elements, atlas, animations["idle"],
+               0, f"yaw_{angle}", 8)) for angle in turn_angles]
+turn_w = max(tile.width for _, tile in turn_tiles)
+turn_h = max(tile.height for _, tile in turn_tiles)
+turn_sheet = Image.new("RGBA", (4 * (turn_w + 16), 2 * (turn_h + 26)), (18, 19, 25, 255))
+turn_draw = ImageDraw.Draw(turn_sheet)
+for index, (angle, tile) in enumerate(turn_tiles):
+    x = (index % 4) * (turn_w + 16) + 8
+    y = (index // 4) * (turn_h + 26) + 8
+    turn_draw.text((x, y), f"{angle}°", fill=(240, 235, 227, 255))
+    turn_sheet.paste(tile, (x, y + 16))
+turn_target = target.with_name("ashen_knight_turntable.png")
+turn_sheet.save(turn_target)
+print(turn_target)
 
 motion = [("walk", .4), ("run", .3), ("cleave", .65),
           ("thrust", .55), ("leap", .55), ("slam", .95)]
