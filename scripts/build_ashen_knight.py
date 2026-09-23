@@ -348,6 +348,42 @@ def build(out=ROOT / "model-lab" / "models"):
     pauldron_uv = m.patch(40, 40, paint_worn_pauldron, "worn_pauldron")
     m.cube("worn_left_shoulder_face", [-6.15, 19.75, -2.55], [-3.0, 23.65, -2.48],
            "armor", chest, face_uv={"north": pauldron_uv, "south": pauldron_uv})
+
+    def paint_shoulder_lame(px, py, seed):
+        left = 3 + authoring.noise(py // 4, seed, 1961) % 3
+        right = 43 - authoring.noise(py // 5, seed, 1973) % 5
+        top = 3 + abs(px - (22 + seed * 2)) // 10
+        hem = 29 - abs(px - (18 + seed * 3)) // 9
+        hem -= authoring.noise(px // 4, seed, 1987) % 5
+        if px < left or px > right or py < top or py > hem:
+            return (0, 0, 0, 0)
+        if seed == 1 and px > 30 and py > 17 and (px + py) % 11 < 4:
+            return (0, 0, 0, 0)
+        grain = authoring.noise(px // 3, py // 3, 1993 + seed)
+        gouge = abs(px - (10 + py * .42 + seed * 5)) < 1.2
+        if gouge and 9 < py < hem - 2:
+            color = (18, 25, 29)
+        elif py <= top + 2 or py >= hem - 2:
+            color = (78, 85, 83) if grain % 3 else (58, 66, 67)
+        else:
+            color = (42, 50, 52) if grain % 4 else (53, 61, 62)
+        if grain % 47 == 0:
+            color = (89, 94, 89)
+        return (*color, 255)
+
+    for lame, (lo, hi, tilt) in enumerate((
+            ((-5.7, 22.1, -2.79), (-3.48, 23.36, -2.62), -5),
+            ((-6.05, 20.92, -2.87), (-3.52, 22.25, -2.67), 3),
+            ((-5.84, 19.84, -2.8), (-3.86, 21.18, -2.61), -7),
+    )):
+        lame_uv = m.patch(48, 32,
+                          lambda px, py, seed=lame: paint_shoulder_lame(px, py, seed),
+                          f"broken_shoulder_lame_{lame}")
+        add_rotated(m, chest, f"broken_shoulder_lame_{lame}", lo, hi,
+                    "armor", [0, 0, tilt],
+                    [(lo[0] + hi[0]) / 2, (lo[1] + hi[1]) / 2, lo[2]],
+                    "battered_scale", {"north": lame_uv, "south": lame_uv})
+
     open_pauldron_edge = m.patch(1, 1, lambda _x, _y: (0, 0, 0, 0),
                                  "open_pauldron_edge")
     def paint_broken_right_pauldron(px, py):
@@ -916,7 +952,33 @@ def build(out=ROOT / "model-lab" / "models"):
            "armor", left_thigh, face_uv={"north": thigh_uv, "south": thigh_uv})
     add(m, right_thigh, "right_thigh_leather_wear", [2.9, 8.1, -1.87], [3.45, 10.9, -1.65], "leather")
 
-    add(m, left_arm, "bound_upper_arm", [-6, 15.8, -.8], [-3.7, 21, 1.3], "mail")
+    add(m, left_arm, "bound_upper_arm", [-6, 15.8, -.8], [-3.7, 21, 1.3], "sleeve")
+    def paint_wounded_mail(px, py):
+        left = 3 + round(py * .07) + authoring.noise(py // 6, 0, 2363) % 3
+        right = 38 - round(py * .1) - authoring.noise(py // 5, 0, 2371) % 4
+        hem = 63 - authoring.noise(px // 3, 0, 2381) % 12
+        if px < left or px > right or py > hem:
+            return (0, 0, 0, 0)
+        if py > 43 and px > 22 and (px + py * 2) % 19 < 4:
+            return (0, 0, 0, 0)
+        row = py // 6
+        tx = (px + (row % 2) * 4) % 8
+        grain = authoring.noise(px // 3, py // 3, 2387)
+        ring = ((py % 6 == 1 and tx in (2, 3, 4)) or
+                (py % 6 in (2, 3) and tx in (1, 5)))
+        if ring and grain % 7 != 0:
+            color = (59, 66, 66) if grain % 5 else (72, 76, 73)
+        elif py % 6 == 4 and tx in (2, 3, 4):
+            color = (10, 17, 22)
+        else:
+            color = (22, 30, 36)
+        return (*color, 255)
+
+    wounded_mail_uv = m.patch(40, 64, paint_wounded_mail,
+                              "torn_wounded_arm_mail")
+    m.cube("torn_wounded_arm_mail", [-6.22, 15.65, -1.21],
+           [-3.5, 20.95, -1.13], "mail", left_arm,
+           face_uv={"north": wounded_mail_uv, "south": wounded_mail_uv})
     add_rotated(m, left_arm, "wounded_upper_forearm", [-6.18, 12.8, -1.02],
                 [-4.05, 16.35, 1.12], "skin", [0, 0, 5],
                 [-5.1, 14.5, 0], "scarred_skin")
@@ -934,7 +996,7 @@ def build(out=ROOT / "model-lab" / "models"):
                     [x0, low, -.82], [x1, high, .44], "skin",
                     [0, 0, tilt], [(x0 + x1) / 2, high, -.2], "scarred_skin")
     add(m, left_arm, "left_arm_tear", [-6.5, 11.2, 1.1], [-4.9, 16.2, 1.8], "void")
-    add(m, left_arm, "left_mail_shoulder", [-6.15, 17.2, -1], [-3.55, 20.2, 1.5], "mail")
+    add(m, left_arm, "left_mail_shoulder", [-6.15, 17.2, -1], [-3.55, 20.2, 1.5], "sleeve")
     def paint_wounded_wrap(px, py, seed):
         top = 2 + authoring.noise(px // 5, seed, 2301) % 3
         hem = 25 - authoring.noise(px // 6, seed, 2311) % 5
