@@ -230,8 +230,10 @@ def build(out=ROOT / "model-lab" / "models"):
                 "void", [0, 0, 9], [1.65, 25.1, 0])
     add(m, helm, "hood_lower", [-2.25, 22.0, -1.15], [2.25, 25.1, 2.8], "void")
     add(m, helm, "hood_muzzle_base", [-1.6, 22.6, -3.8], [1.6, 24.0, -1.5], "armor")
-    add_rotated(m, helm, "snout_bridge", [-.75, 22.5, -5.25], [.75, 24.65, -3.55],
-                "armor", [16, 0, 0], [0, 23.5, -4.0])
+    add_rotated(m, helm, "snout_left_ridge", [-.95, 22.6, -5.05], [-.4, 24.45, -3.65],
+                "armor", [15, 0, -9], [-.65, 23.5, -4.0])
+    add_rotated(m, helm, "snout_right_ridge", [.4, 22.65, -5.05], [.95, 24.4, -3.65],
+                "armor", [15, 0, 9], [.65, 23.5, -4.0])
     add(m, helm, "snout_dark_tip", [-.6, 22.15, -5.55], [.6, 22.8, -4.8], "void")
     add(m, helm, "crest_base", [-.85, 26.9, -.4], [.85, 28.1, 1.4], "armor")
     add(m, helm, "left_cheek_armor", [-2.65, 22.7, -3.0], [-1.75, 25.0, -.9], "armor")
@@ -243,39 +245,47 @@ def build(out=ROOT / "model-lab" / "models"):
     def paint_faceplate(px, py):
         center = 24
         distance = abs(px - center)
-        if py < 6:
-            width = 3 + py // 2
-        elif py < 18:
-            width = 13 if py < 13 else 17
-        elif py < 35:
-            width = 18 - max(0, py - 27) // 3
-        elif py < 52:
-            width = 13 - (py - 35) // 5
+        if py < 8:
+            width = 4 + py // 2
+        elif py < 20:
+            width = 13 + (py - 8) // 4
+        elif py < 34:
+            width = 18 - max(0, py - 29) // 2
+        elif py < 51:
+            width = 14 - (py - 34) // 4
         else:
-            width = max(1, 9 - (py - 52))
-        ear = 8 <= py < 22 and 17 <= distance <= 21 - (py - 8) // 6
-        if px > center and py > 14:
+            width = max(1, 10 - (py - 51))
+        if px > center and py > 34:
+            width -= 2
+        ear = 6 <= py < 21 and 16 <= distance <= 21 - abs(py - 12) // 3
+        if px > center and py > 16:
             ear = False
         if distance > width and not ear:
             return (0, 0, 0, 0)
-        if px < center - 11 and 35 < py < 43 and (px + py) % 4 != 0:
+        if px < center - 10 and 38 < py < 46 and (px + py) % 4 != 0:
             return (0, 0, 0, 0)
-        if 28 <= py <= 32 and 4 <= distance <= 13:
-            return (8, 15, 23, 255)
-        if 20 <= py < 36 and px > 28 and (px + py * 2) % 7 < 2:
+        eye_line = 29 - distance * .27
+        if 4 <= distance <= 15 and abs(py - eye_line) < 1.65:
+            return (5, 10, 17, 255)
+        if 4 <= distance <= 15 and abs(py - (eye_line - 2.4)) < 1:
+            return (84, 92, 90, 255)
+        snout_ridge = 7 - (py - 36) * .28
+        if 36 <= py <= 55 and abs(distance - snout_ridge) < .9:
+            return (76, 82, 79, 255)
+        if 35 <= py <= 54 and distance <= 2:
+            return (25, 32, 36, 255)
+        if py >= 56 and distance < 4:
+            return (24, 30, 32, 255)
+        if 34 < py < 51 and distance in (4, 5):
+            return (30, 42, 48, 255)
+        if abs(distance - width) <= 1 and py % 5 != 0:
+            return (68, 78, 78, 255)
+        if px > center + 8 and 18 < py < 43 and (px + py * 2) % 9 < 2:
             return (0, 0, 0, 0)
-        ridge = center + (1 if py > 34 else 0)
-        if abs(px - ridge) <= 1 and 12 <= py < 53 and py not in (31, 32):
-            return (64, 75, 78, 255)
-        if abs(distance - width) <= 1 or (py < 18 and distance <= 3):
-            return (70, 81, 83, 255)
-        if py in (20, 21, 39, 40) and distance < width - 2:
-            return (44, 62, 69, 255)
-        if 35 < py < 49 and distance in (4, 5):
-            return (32, 46, 55, 255)
-        if (px * 3 + py * 5) % 31 == 0:
-            return (98, 111, 111, 255)
-        return (45, 56, 62, 255)
+        scratch = (px * 3 + py * 5) % 47
+        if scratch == 0:
+            return (94, 101, 98, 255)
+        return (43, 51, 53, 255)
 
     faceplate_uv = m.patch(48, 64, paint_faceplate, "ashen_faceplate")
     m.cube("engraved_wolf_visor", [-2.65, 21.85, -4.78], [2.65, 27.8, -4.7],
@@ -395,57 +405,71 @@ def build(out=ROOT / "model-lab" / "models"):
     m.cube("blade_worn_faces", [2.6, -.7, -.85], [7.4, 8.6, .85],
            "armor", blade, face_uv={"north": blade_uv, "south": blade_uv})
 
-    def paint_cloak(px, py):
-        u, v = px / 127, py / 255
-        left = 2 + round(3 * v) + authoring.noise(py // 11, 0, 2719) % 3
-        right = 126 - round(7 * v) - authoring.noise(py // 13, 0, 2729) % 4
-        if px < left or px > right:
-            return (0, 0, 0, 0)
-        if v > .66 and (px + 2 * py) % 37 < 2:
-            return (0, 0, 0, 0)
-        ragged_hem = 247 - (px // 17 % 5) * 8 - authoring.noise(px // 4, 0, 2741) % 11
-        if v > .7 and py > ragged_hem:
-            return (0, 0, 0, 0)
-        fold = math.sin(u * 20 + v * 2.7) + .34 * math.sin(u * 39 - v * 5)
-        if fold > .72:
-            color = (43, 69, 92)
-        elif fold < -.45:
-            color = (10, 25, 43)
-        else:
-            color = (20, 43, 66)
-        if v < .12 or px - left < 3 or right - px < 3:
-            color = tuple(round(channel * .75) for channel in color)
-        if authoring.noise(px, py, 2777) % 167 == 0:
-            color = (70, 85, 93)
-        return (*color, 255)
+    # Individual torn cloth lengths replace the continuous gridded sheet.
+    # They overlap at different depths, bend at the hip, and end at unequal
+    # heights, leaving dark gaps visible from the oblique rear views.
+    cape_strips = (
+        (-4.9, 3.4, 4.1, 3.4, -30), (-2.45, 3.35, 6.5, 5.1, -13),
+        (0, 3.95, 4.5, 2.5, 5), (2.55, 3.3, 7.0, 4.6, 23),
+        (4.7, 3.1, 5.25, 6.1, 37),
+    )
 
-    cloak_uv = m.patch(128, 256, paint_cloak, "ashen_cloak_continuous")
+    for strip, (center, width, depth, hem, yaw) in enumerate(cape_strips):
+        def paint_strip(px, py, seed=strip):
+            progress = py / 191
+            edge = 1 + int(progress * 2)
+            left_edge = edge + authoring.noise(py // 9, seed, 817) % 2
+            right_edge = 31 - edge - authoring.noise(py // 11, seed, 829) % 2
+            tear = 188 - (px // 6 % 4) * (2 + seed % 2) - authoring.noise(px, seed, 839) % 6
+            slit = progress > .72 and (px + 3 * seed) % 29 == 0 and py > 155
+            if px < left_edge or px > right_edge or py > tear or slit:
+                return (0, 0, 0, 0)
+            fold = math.sin(px * .37 + progress * 3.1 + seed * .8)
+            grain = authoring.noise(px // 2, py // 3, seed + 2800)
+            if fold > .45:
+                color = (42, 65, 87)
+            elif fold < -.5:
+                color = (9, 22, 37)
+            else:
+                color = (19, 39, 61)
+            if px - left_edge < 2 or right_edge - px < 2 or grain % 103 == 0:
+                color = (12, 26, 43)
+            if grain % 173 == 0:
+                color = (68, 79, 85)
+            return (*color, 255)
 
-    # A curved, asymmetrical mantle: overlapping short facets follow a bowed
-    # cross section. Distinct yaw angles and depth offsets make each fold
-    # occupy volume instead of stacking long coplanar cloth rectangles.
-    for row in range(6):
-        top = 21.55 - row * 3.35
-        bottom = top - (2.65 if row == 5 else 3.55)
-        for col in range(4):
-            left = -5.65 - row * .03 + col * 2.35 + (1.45 if col >= 2 else 0)
-            right = left + 3.0
-            depth = 5.0 + row * .18 + (1.25 if col in (1, 2) else .12)
-            bucket = (cape_left if col < 2 else cape_center) if row == 0 else (
-                (cape_left_mid if col < 2 else cape_center_mid) if row < 3 else
-                (cape_left_tail if col < 2 else cape_center_tail))
-            yaw = (-29, -9, 9, 29)[col] + (row - 2) * (2 if col in (1, 2) else -1)
-            pitch = (-8, -1, 8, 14, 7, -5)[row] + (-3, 2, -2, 3)[col]
-            motif = f"ragged_cape_{row}_{col}" if row == 5 else f"cape_facet_{row}_{col}"
-            tx0 = cloak_uv[0] + round((5.4 - right) / 12.0 * 128)
-            tx1 = cloak_uv[0] + round((5.4 - left) / 12.0 * 128)
-            ty0 = cloak_uv[1] + round((21.55 - top) / 20.3 * 256)
-            ty1 = cloak_uv[1] + round((21.55 - bottom) / 20.3 * 256)
-            face_uv = {"north": [tx0, ty0, tx1, ty1],
-                       "south": [tx0, ty0, tx1, ty1]}
-            add_rotated(m, bucket, f"cape_facet_{row}_{col}",
-                        [left, bottom, depth], [right, top, depth + .34],
-                        "cloth", [pitch, yaw, 0], [(left + right) / 2, top, depth + .17], motif, face_uv)
+        uv = m.patch(32, 192, paint_strip, f"ashen_cloak_strip_{strip}")
+        side = strip < 2
+        buckets = ((cape_left, cape_left_mid, cape_left_tail) if side else
+                   (cape_center, cape_center_mid, cape_center_tail))
+        boundaries = ((21.6, 16.2), (16.45, 9.4), (9.65, hem))
+        for segment, (top, bottom) in enumerate(boundaries):
+            drift = (segment * (strip % 3 - 1) * .26)
+            x = center + drift
+            z = depth + (.22, 1.15, 2.35)[segment]
+            segment_width = width * (1 - segment * .065)
+            ty0 = uv[1] + round((21.6 - top) / (21.6 - hem) * 192)
+            ty1 = uv[1] + round((21.6 - bottom) / (21.6 - hem) * 192)
+            face_uv = {"north": [uv[0], ty0, uv[0] + 32, ty1],
+                       "south": [uv[0], ty0, uv[0] + 32, ty1]}
+            add_rotated(m, buckets[segment], f"cape_strip_{strip}_{segment}",
+                        [x - segment_width / 2, bottom, z],
+                        [x + segment_width / 2, top, z + .35], "cloth",
+                        [(-6, 8, -3)[segment] + strip % 3 * 2,
+                         yaw + (-4, 3, 8)[segment], 0],
+                        [x, top, z + .17], f"ragged_cape_{strip}_{segment}", face_uv)
+        for fold, (top, segment) in enumerate(((17.4, 0), (13.6, 1), (9.8, 1), (6.7, 2))):
+            if top < hem + 1.7:
+                continue
+            x = center + (.35 if (fold + strip) % 2 else -.38)
+            z = depth + (.22, 1.15, 2.35)[segment] + .47
+            fold_width = width * (.56 if fold % 2 else .7)
+            length = 2.3 + ((strip + fold) % 3) * .38
+            add_rotated(m, buckets[segment], f"cape_fold_{strip}_{fold}",
+                        [x - fold_width / 2, top - length, z],
+                        [x + fold_width / 2, top, z + .22], "cloth",
+                        [7 + fold * 3, yaw - 12 + ((strip + fold) % 3) * 8, 0],
+                        [x, top, z + .1], f"ragged_fold_{strip}_{fold}")
     add(m, cape_left_edge, "left_shoulder_cloth", [-5.75, 19.5, 1.0], [-4.65, 21.5, 2.95], "cloth")
     add_rotated(m, cape_right, "right_mantle_remnant", [3.0, 17.8, 2.55], [4.75, 21.65, 3.15],
                 "cloth", [0, 17, 0], [3.85, 21.65, 2.85], "ragged_mantle")
