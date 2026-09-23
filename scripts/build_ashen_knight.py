@@ -65,9 +65,10 @@ class KnightModel(authoring.Model):
                     tone = 0
                 if y == height - 1:
                     tone = 0
-                if side in ("north", "south") and height >= 12:
-                    tear = 1 + authoring.noise(x // 3, 0, seed + 41) % 5
-                    if y >= height - tear and (x + seed) % 11 > 2:
+                if side in ("north", "south") and height >= 12 and motif.startswith("rag"):
+                    tear = 1 + authoring.noise(x // 4, 0, seed + 41) % max(3, height // 3)
+                    edge = max(0, y - height // 2) // 6
+                    if x < edge or x >= width - edge or y >= height - tear:
                         return (0, 0, 0, 0)
             elif material == "void":
                 if coarse % 9 < 6:
@@ -87,7 +88,7 @@ def add(model, bucket, name, lo, hi, material, motif="plain"):
 
 def build(out=ROOT / "model-lab" / "models"):
     out.mkdir(parents=True, exist_ok=True)
-    m = KnightModel("ashen_knight", size=512, texels=2)
+    m = KnightModel("ashen_knight", size=1024, texels=4)
 
     hips, chest, helm = [], [], []
     left_leg, right_leg, left_arm, right_arm, blade = [], [], [], [], []
@@ -251,9 +252,9 @@ def build(out=ROOT / "model-lab" / "models"):
     # Separate ragged cape strips move as two broad masses while the tattered
     # ends make a stepped silhouette. No borrowed game meshes or textures.
     add(m, cape_left, "left_cape_upper", [-4.4, 17, 2.4], [0, 22, 3.2], "cloth")
-    add(m, cape_left, "left_cape_tail", [-6.7, 5.5, 2.8], [-1, 18.1, 3.55], "cloth")
+    add(m, cape_left, "left_cape_tail", [-6.7, 5.5, 2.8], [-1, 18.1, 3.55], "cloth", "ragged_left")
     add(m, cape_left, "left_cape_tip", [-6.4, 3.1, 3], [-2.4, 6.3, 3.5], "void")
-    add(m, cape_left_edge, "left_cape_fringe", [-8.1, 8, 2.7], [-5.6, 16.9, 3.4], "cloth")
+    add(m, cape_left_edge, "left_cape_fringe", [-8.1, 8, 2.7], [-5.6, 16.9, 3.4], "cloth", "ragged_left_edge")
     add(m, cape_left_edge, "left_cape_fringe_tip", [-8, 5.8, 2.9], [-6.4, 8.7, 3.35], "void")
     add(m, cape_left_edge, "left_shouldercape", [-7.2, 17.4, -.2], [-5.5, 21.9, 2.8], "cloth")
     add(m, cape_left_edge, "left_frayed_front", [-7.5, 11.2, -.4], [-6.1, 17.9, 1.6], "cloth")
@@ -261,9 +262,9 @@ def build(out=ROOT / "model-lab" / "models"):
         x = -9.6 + index * 1.8
         add(m, cape_left_edge, f"left_rag_{index}", [x, bottom, 3], [x + 1.45, 11.8 + index % 2, 3.55], "cloth", f"rag{index}")
     add(m, cape_right, "right_cape_upper", [0, 17, 2.4], [4.2, 22, 3.2], "cloth")
-    add(m, cape_right, "right_cape_tail", [1, 8.3, 2.8], [6.2, 18, 3.55], "cloth")
+    add(m, cape_right, "right_cape_tail", [1, 8.3, 2.8], [6.2, 18, 3.55], "cloth", "ragged_right")
     add(m, cape_right, "right_cape_tip", [2.7, 6, 3], [6, 9, 3.5], "void")
-    add(m, cape_right_edge, "right_cape_fringe", [5.6, 12.6, 2.8], [7.3, 19.3, 3.45], "cloth")
+    add(m, cape_right_edge, "right_cape_fringe", [5.6, 12.6, 2.8], [7.3, 19.3, 3.45], "cloth", "ragged_right_edge")
     add(m, cape_right_edge, "right_shouldercape", [5.3, 17.4, -.2], [7, 21.5, 2.8], "cloth")
     for index, bottom in enumerate((7.1, 4.8)):
         x = 3.6 + index * 1.75
@@ -273,11 +274,11 @@ def build(out=ROOT / "model-lab" / "models"):
     # blue strips. Each piece is independently textured with cutout tears.
     add(m, cape_center, "back_mail", [-4.25, 8.3, 3.6], [4.3, 13.2, 3.85], "mail")
     add(m, cape_center, "cape_middle_upper", [-3.45, 12.2, 3.9], [3.2, 19.5, 4.25], "cloth")
-    add(m, cape_center, "cape_middle_rag", [-2.25, 3.5, 4], [1.55, 13.2, 4.36], "cloth")
+    add(m, cape_center, "cape_middle_rag", [-2.25, 3.5, 4], [1.55, 13.2, 4.36], "cloth", "ragged_middle")
     add(m, cape_center, "cape_middle_point", [-1.55, 1.7, 4.06], [-.45, 5.4, 4.38], "cloth")
-    add(m, cape_left_edge, "left_outer_streamer", [-10.4, 7.2, 3.2], [-8.2, 18.6, 3.62], "cloth")
+    add(m, cape_left_edge, "left_outer_streamer", [-10.4, 7.2, 3.2], [-8.2, 18.6, 3.62], "cloth", "ragged_outer_left")
     add(m, cape_left_edge, "left_outer_tip", [-10.15, 2.1, 3.28], [-9, 8.4, 3.65], "cloth")
-    add(m, cape_right_edge, "right_outer_streamer", [7.1, 8.8, 3.15], [9.65, 17.3, 3.54], "cloth")
+    add(m, cape_right_edge, "right_outer_streamer", [7.1, 8.8, 3.15], [9.65, 17.3, 3.54], "cloth", "ragged_outer_right")
     add(m, cape_right_edge, "right_outer_tip", [8.15, 3.3, 3.24], [9.35, 9.3, 3.59], "cloth")
 
     plume_bone = m.bone("plume", [0, 28, 1], plume)
@@ -297,8 +298,8 @@ def build(out=ROOT / "model-lab" / "models"):
     right_leg_bone = m.bone("right_leg", [2.1, 10.7, 0], right_leg)
     torso_bone["rotation"] = [-12, 0, -5]
     right_arm_bone["rotation"] = [0, 0, -70]
-    left_leg_bone["rotation"] = [-6, 0, -10]
-    right_leg_bone["rotation"] = [12, 0, 10]
+    left_leg_bone["rotation"] = [-16, 0, -18]
+    right_leg_bone["rotation"] = [19, 0, 18]
     plume_bone["rotation"] = [0, -9, 0]
     root = m.bone("root", [0, 0, 0], hips + [torso_bone, left_leg_bone, right_leg_bone])
 
