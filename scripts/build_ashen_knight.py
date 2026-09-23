@@ -245,13 +245,11 @@ def build(out=ROOT / "model-lab" / "models"):
     add(m, chest, "high_collar", [-2.8, 21.4, -1.65], [2.8, 23.2, 2.2], "void")
     add(m, chest, "mail_under_left", [-4.25, 15.8, -1.8], [-3.55, 20.8, 1.5], "mail")
     add(m, chest, "mail_under_right", [3.5, 15.4, -1.7], [4.25, 20.5, 1.4], "mail")
-    add_rotated(m, chest, "left_pauldron_middle_scale", [-6.12, 20.9, -2.12],
-                [-3.35, 22.25, 1.42], "armor", [0, 0, 8],
-                [-4.55, 21.55, 0], "battered_scale")
     add_rotated(m, chest, "left_pauldron_lower_scale", [-5.8, 19.75, -1.96],
                 [-3.65, 21.15, 1.12], "armor", [0, 0, -8],
                 [-4.5, 20.45, 0], "battered_scale")
-    add(m, chest, "right_shoulder_mail", [3.0, 20.0, -1.75], [5.5, 22.5, 1.9], "mail")
+    add(m, chest, "right_shoulder_dark_under", [3.25, 20.0, -1.6],
+        [5.25, 22.3, 1.7], "void")
     def paint_worn_pauldron(px, py):
         top = 5 + abs(px - 20) // 3
         bottom = 32 - abs(px - 20) // 3 - authoring.noise(px // 5, 0, 1901) % 4
@@ -384,7 +382,8 @@ def build(out=ROOT / "model-lab" / "models"):
                                   (facet - 2) * 12 + (-5, 4, 13)[layer]],
                         [(xlo + xhi) / 2, center_y, center_z + .16],
                         "worn_cowl", face_uv)
-    add(m, scarf, "scarf_left_drape", [-5.1, 19.5, -1.8], [-3.45, 22.2, 2.25], "cloth")
+    add(m, scarf, "scarf_left_drape", [-4.85, 20.0, -1.75],
+        [-3.48, 22.1, 1.8], "void")
     add(m, scarf, "scarf_right_dark_under", [2.7, 20.1, -1.8],
         [4.5, 22.5, 2.2], "void")
     def paint_shoulder_cowl(px, py):
@@ -466,10 +465,10 @@ def build(out=ROOT / "model-lab" / "models"):
         if 4 <= distance <= 15 and abs(py - eye_line) < 1.65:
             return (5, 10, 17, 255)
         if 4 <= distance <= 15 and abs(py - (eye_line - 2.4)) < 1:
-            return (125, 132, 136, 255)
+            return (101, 109, 114, 255)
         snout_ridge = 7 - (py - 36) * .28
         if 36 <= py <= 55 and abs(distance - snout_ridge) < .9:
-            return (106, 115, 120, 255)
+            return (89, 99, 105, 255)
         if 35 <= py <= 54 and distance <= 2:
             return (25, 32, 36, 255)
         if py >= 56 and distance < 4:
@@ -477,13 +476,13 @@ def build(out=ROOT / "model-lab" / "models"):
         if 34 < py < 51 and distance in (4, 5):
             return (30, 42, 48, 255)
         if abs(distance - width) <= 1 and py % 5 != 0:
-            return (112, 122, 126, 255)
+            return (91, 102, 107, 255)
         if px > center + 8 and 18 < py < 43 and (px + py * 2) % 9 < 2:
             return (0, 0, 0, 0)
         scratch = (px * 3 + py * 5) % 47
         if scratch == 0:
-            return (140, 145, 143, 255)
-        return (67, 75, 78, 255)
+            return (119, 125, 126, 255)
+        return (53, 61, 66, 255)
 
     faceplate_uv = m.patch(48, 64, paint_faceplate, "ashen_faceplate")
     def paint_visor_profile(px, py):
@@ -632,11 +631,36 @@ def build(out=ROOT / "model-lab" / "models"):
     add(m, left_arm, "left_mail_shoulder", [-6.15, 17.2, -1], [-3.55, 20.2, 1.5], "mail")
     add_rotated(m, left_arm, "left_wrapping_low", [-6.45, 13.0, -1.4], [-3.95, 13.85, 1.25],
                 "bandage", [0, 0, 9], [-5.2, 13.4, 0], "torn_wrap")
-    add(m, right_arm, "right_deltoid_mail", [3.55, 18.1, -.83],
-        [6.1, 21, 1.5], "mail")
-    add_rotated(m, right_arm, "right_bicep_mail", [3.82, 15.7, -.76],
-                [5.88, 18.55, 1.43], "mail", [0, 0, -5],
+    add(m, right_arm, "right_deltoid_dark_under", [3.65, 18.1, -.78],
+        [5.95, 21, 1.42], "void")
+    add_rotated(m, right_arm, "right_bicep_dark_under", [3.9, 15.7, -.72],
+                [5.8, 18.55, 1.34], "void", [0, 0, -5],
                 [4.85, 17.3, .3], "torn_mail")
+
+    def paint_right_sleeve(px, py):
+        # One ragged mail silhouette spans the underlying dark anatomy. The
+        # former overlapping full grey cuboids made a uniform metal piston.
+        left = 2 + round(py * .085) + authoring.noise(py // 5, 0, 2171) % 3
+        right = 38 - round(py * .11) - authoring.noise(py // 6, 0, 2179) % 4
+        hem = 62 - authoring.noise(px // 3, 0, 2191) % 10
+        if px < left or px > right or py > hem:
+            return (0, 0, 0, 0)
+        if py > 42 and (px * 2 + py * 3) % 23 < 3:
+            return (0, 0, 0, 0)
+        offset = (py // 5 % 2) * 4
+        ring_x = (px + offset) % 9
+        grain = authoring.noise(px // 3, py // 3, 2203)
+        if py % 5 in (1, 2) and ring_x in (2, 3, 4) and grain % 6 != 0:
+            color = (58, 68, 70) if grain % 5 == 0 else (42, 51, 55)
+        elif ring_x in (0, 8) or py % 5 == 4:
+            color = (13, 20, 27)
+        else:
+            color = (26, 35, 41)
+        return (*color, 255)
+
+    sleeve_uv = m.patch(40, 64, paint_right_sleeve, "torn_sword_sleeve")
+    m.cube("right_torn_mail_sleeve", [3.5, 15.55, -1.2], [6.05, 21.1, -1.12],
+           "mail", right_arm, face_uv={"north": sleeve_uv, "south": sleeve_uv})
     add(m, right_arm, "right_elbow_dark", [3.9, 15.35, -.83],
         [5.9, 16.15, 1.42], "void")
     add_rotated(m, right_arm, "right_bracer_upper", [3.73, 13.45, -1.15],
@@ -673,7 +697,6 @@ def build(out=ROOT / "model-lab" / "models"):
                face_uv={"north": uv, "south": uv})
     add(m, right_arm, "right_hand", [4, 9.7, -1.2], [6, 12.2, 1.2], "leather")
     add(m, right_arm, "right_knuckles", [4, 9.5, -1.5], [6, 10.5, -1.15], "leather")
-    add(m, right_arm, "right_mail_shoulder", [3.5, 17.3, -1], [6.05, 20, 1.55], "mail")
     add(m, right_arm, "right_bracer_chip", [3.65, 12.2, -1.38], [5.45, 13.1, -.98], "armor")
 
     # At rest the heavy blade hangs beside the right leg.
@@ -788,16 +811,18 @@ def build(out=ROOT / "model-lab" / "models"):
             for row in range(2):
                 row_top = top - (top - bottom) * row / 2
                 row_bottom = top - (top - bottom) * (row + 1) / 2
+                row_width = segment_width * (1 - row * .15)
+                row_center = x + row * (-.22, -.06, .20)[strip]
                 v = (cape_top - (row_top + row_bottom) / 2) / (cape_top - hem)
                 ty0 = uv[1] + round((cape_top - row_top) / (cape_top - hem) * 192)
                 ty1 = uv[1] + round((cape_top - row_bottom) / (cape_top - hem) * 192)
                 for facet in range(5):
                     u = (facet + .5) / 5
-                    center_x = x + (u - .5) * segment_width
+                    center_x = row_center + (u - .5) * row_width
                     center_y = (row_top + row_bottom) / 2
                     z = base_z + fold_depth(u, v)
                     du = (fold_depth(min(1, u + .01), v)
-                          - fold_depth(max(0, u - .01), v)) / (.02 * segment_width)
+                          - fold_depth(max(0, u - .01), v)) / (.02 * row_width)
                     dv = (fold_depth(u, min(1, v + .01))
                           - fold_depth(u, max(0, v - .01))) / (.02 * (cape_top - hem))
                     face_uv = {"north": [uv[0] + round(facet * 48 / 5), ty0,
@@ -805,8 +830,8 @@ def build(out=ROOT / "model-lab" / "models"):
                                "south": [uv[0] + round(facet * 48 / 5), ty0,
                                          uv[0] + round((facet + 1) * 48 / 5), ty1]}
                     add_rotated(m, buckets[segment], f"cape_strip_{strip}_{segment}_{row}_{facet}",
-                                [center_x - segment_width / 10 - .06, row_bottom - .08, z - .18],
-                                [center_x + segment_width / 10 + .06, row_top + .08, z + .18],
+                                [center_x - row_width / 10 - .06, row_bottom - .08, z - .18],
+                                [center_x + row_width / 10 + .06, row_top + .08, z + .18],
                                 "cloth",
                                 [(-6, 8, -3)[segment] + strip % 3 * 2
                                  + max(-12, min(12, math.degrees(math.atan(dv)))),
@@ -814,6 +839,7 @@ def build(out=ROOT / "model-lab" / "models"):
                                  - max(-32, min(32, math.degrees(math.atan(du)))), 0],
                                 [center_x, center_y, z],
                                 f"ragged_cape_{strip}_{segment}", face_uv)
+
     add_rotated(m, cape_right, "right_mantle_remnant", [3.0, 17.8, 2.55], [4.75, 21.65, 3.15],
                 "cloth", [0, 17, 0], [3.85, 21.65, 2.85], "ragged_mantle")
     add_rotated(m, cape_right, "right_hanging_remnant", [3.1, 9.2, 3.0], [5.05, 18.0, 3.55],
