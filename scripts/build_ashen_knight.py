@@ -247,7 +247,7 @@ def build(out=ROOT / "model-lab" / "models"):
                 [-2.4, 19.1, -2.05], [2.4, 22.05, 1.02], "void",
                 [-8, 0, -3], [0, 20.45, -.5], "worn_tunic")
     add_rotated(m, chest, "upper_tunic_abdomen",
-                [-2.12, 16.95, -1.89], [2.12, 19.53, .95], "void",
+                [-2.05, 16.95, -1.72], [2.05, 19.53, .95], "void",
                 [-3, 0, 4], [0, 18.2, -.47], "worn_tunic")
     add_rotated(m, chest, "upper_tunic_left_rib",
                 [-3.8, 17.5, -1.82], [-2.12, 21.8, .85], "void",
@@ -259,15 +259,15 @@ def build(out=ROOT / "model-lab" / "models"):
                 [-3.05, 19.45, .4], [3.05, 21.8, 2.02], "void",
                 [7, 0, 2], [0, 20.6, 1.2], "worn_tunic")
     add_rotated(m, chest, "upper_tunic_back_waist",
-                [-2.55, 17.55, .5], [2.55, 19.85, 1.9], "void",
+                [-2.45, 17.55, .5], [2.45, 19.85, 1.55], "void",
                 [2, 0, -3], [0, 18.6, 1.15], "worn_tunic")
     # The lower torso narrows toward the belt. A single full-depth cuboid
     # exposed a long, ruler-straight side between the scarf and the tassets.
     add_rotated(m, chest, "waist_mail_tunic_upper",
-                [-2.95, 15.8, -1.75], [2.95, 18.4, 1.8], "void",
+                [-2.78, 15.8, -1.48], [2.78, 18.4, 1.45], "void",
                 [-6, 0, -2], [0, 17.1, 0], "worn_tunic")
     add_rotated(m, chest, "waist_mail_tunic_lower",
-                [-2.65, 12.9, -1.55], [2.65, 16.25, 1.55], "void",
+                [-2.42, 12.9, -1.1], [2.42, 16.25, 1.17], "void",
                 [7, 0, 3], [0, 14.6, 0], "worn_tunic")
     def paint_chest_mail(px, py):
         side = abs(px - 63.5) / 64
@@ -312,6 +312,36 @@ def build(out=ROOT / "model-lab" / "models"):
     add_rotated(m, chest, "right_rib_tunic_lower",
                 [3.14, 15.45, -1.26], [3.83, 18.15, 1.12], "void",
                 [-4, 0, 6], [3.5, 16.8, 0], "worn_tunic")
+
+    def paint_side_mail(px, py):
+        top = 3 + round(abs(px - 29) * .13)
+        hem = 87 - authoring.noise(px // 4, 0, 2411) % 13
+        front = 3 + py // 15
+        rear = 61 - py // 17
+        if py < top or py > hem or px < front or px > rear:
+            return (0, 0, 0, 0)
+        if py > 56 and 16 < px < 30 and (px + py * 2) % 25 < 5:
+            return (0, 0, 0, 0)
+        row = py // 6
+        tx = (px + 4 * (row % 2)) % 8
+        grain = authoring.noise(px // 3, py // 3, 2423)
+        ring = ((py % 6 == 1 and tx in (2, 3, 4)) or
+                (py % 6 in (2, 3) and tx in (1, 5)))
+        if ring and grain % 7 != 0:
+            color = (45, 55, 58) if grain % 6 else (61, 68, 68)
+        elif py % 6 == 4 and tx in (2, 3, 4):
+            color = (10, 17, 22)
+        else:
+            color = (20, 29, 36)
+        if px - front < 2 or rear - px < 2 or py > hem - 2:
+            color = (12, 21, 28)
+        return (*color, 255)
+
+    side_mail_uv = m.patch(64, 96, paint_side_mail, "worn_side_mail")
+    m.cube("worn_sword_side_mail", [4.15, 15.1, -1.78],
+           [4.22, 20.85, 1.68], "mail", chest,
+           face_uv={"east": side_mail_uv, "west": side_mail_uv})
+
     add_rotated(m, chest, "left_pauldron_dark_mount", [-5.54, 19.9, -1.62],
                 [-3.72, 21.38, .86], "sleeve", [0, -8, -12],
                 [-4.55, 20.55, -.3], "worn_sleeve")
