@@ -510,9 +510,12 @@ def build(out=ROOT / "model-lab" / "models"):
                "cloth", cape_left_edge, face_uv=face_uv)
     add(m, scarf, "scarf_hanging_point", [-3.55, 14.2, -3.1], [-1.7, 18.1, -2.78], "cloth", "ragged_scarf")
 
-    add_rotated(m, helm, "hood_crown", [-1.28, 25.35, -2.0],
-                [1.28, 26.85, 1.75], "void", [-4, 0, 0],
-                [0, 25.9, -.1], "burned_hood")
+    add_rotated(m, helm, "hood_crown_front",
+                [-1.29, 25.5, -2.08], [1.29, 26.85, -.12], "void",
+                [8, 0, 0], [0, 26.1, -1.1], "burned_hood")
+    add_rotated(m, helm, "hood_crown_rear",
+                [-1.22, 25.18, -.2], [1.22, 26.48, 1.75], "void",
+                [-13, 0, 0], [0, 25.8, .78], "burned_hood")
     add_rotated(m, helm, "hood_left_temple_front", [-2.38, 24.4, -2.3],
                 [-1.0, 26.55, .28], "void", [6, 0, -15],
                 [-1.65, 25.2, -1])
@@ -523,7 +526,12 @@ def build(out=ROOT / "model-lab" / "models"):
                 [2.25, 26.2, .3], "void", [5, 0, 12], [1.65, 25.2, -.9])
     add_rotated(m, helm, "hood_right_temple_rear", [1.05, 23.9, -.15],
                 [2.15, 25.2, 1.85], "void", [18, 0, -9], [1.6, 24.6, .85])
-    add(m, helm, "hood_lower", [-1.85, 22.35, -1.15], [1.85, 24.95, 2.0], "void")
+    add_rotated(m, helm, "hood_lower_jaw",
+                [-1.68, 22.4, -1.43], [1.68, 24.85, .28], "void",
+                [7, 0, 0], [0, 23.6, -.55], "burned_hood")
+    add_rotated(m, helm, "hood_lower_neck",
+                [-1.48, 23.25, .03], [1.48, 25.08, 1.78], "void",
+                [-9, 0, 0], [0, 24.2, .85], "burned_hood")
     add(m, helm, "hood_muzzle_base", [-1.35, 22.25, -3.8], [1.35, 24.0, -1.5], "void")
     add(m, helm, "snout_dark_tip", [-.45, 21.15, -5.75], [.45, 21.85, -5.1], "void")
     add(m, helm, "left_cheek_armor", [-2.65, 22.7, -3.0], [-1.75, 25.0, -.9], "armor")
@@ -1095,7 +1103,7 @@ def build(out=ROOT / "model-lab" / "models"):
                 element[key] = [x * .82, 22 + (y - 22) * .83, z]
             if element["name"] == "engraved_wolf_visor":
                 for key in ("from", "to", "origin"):
-                    element[key][0] *= .86
+                    element[key][0] *= .94
             if element["name"] in ("hood_muzzle_base", "snout_left_ridge",
                                    "snout_right_ridge", "snout_dark_tip",
                                    "engraved_wolf_visor"):
