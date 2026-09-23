@@ -121,7 +121,7 @@ class KnightModel(authoring.Model):
                         else 0 if link in (0, 7) and weave % 2 == 0 else 1)
             elif material in ("leather", "boot"):
                 tone = 0 if x % 9 in (0, 1) or fine % 29 == 0 else 1
-                if y <= 1:
+                if y <= 1 and material == "leather":
                     tone = 2
             elif material == "skin":
                 tone = 2 if coarse % 17 == 0 else 0 if coarse % 7 == 0 else 1
@@ -631,10 +631,6 @@ def build(out=ROOT / "model-lab" / "models"):
         add(m, thigh, f"{side}_cloth_undertunic", [x - 1.58, 8.0, -1.71], [x + 1.58, 10.7, 1.6], "void")
         add(m, shin, f"{side}_shin_underlayer", [x - 1.24, 1.7, -1.36],
             [x + 1.24, 7.1, 1.28], "void")
-        add(m, shin, f"{side}_upper_greave_side", [x - 1.44, 4.75, -1.47],
-            [x + 1.44, 6.95, 1.34], "armor" if side == "left" else "mail")
-        add(m, shin, f"{side}_lower_greave_side", [x - 1.18, 2.1, -1.4],
-            [x + 1.18, 4.95, 1.26], "armor" if side == "left" else "leather")
         heel_width = 1.13 if side == "left" else 1.02
         vamp_width = 1.30 if side == "left" else 1.18
         add(m, shin, f"{side}_boot_heel", [x - heel_width, -.15, -.95],
@@ -645,13 +641,58 @@ def build(out=ROOT / "model-lab" / "models"):
                     [x, .58, -1.4], "worn_vamp")
         toe_width = 1.04 if side == "left" else .88
         add(m, shin, f"{side}_toe_cap", [x - toe_width, .08, -3.18],
-            [x + toe_width, .76, -2.35], "armor")
+            [x + toe_width, .76, -2.35], "boot")
+        if side == "left":
+            add_rotated(m, shin, "left_worn_toe_shard",
+                        [x - .58, .42, -3.12], [x + .34, .63, -2.55],
+                        "armor", [-8, 0, 14], [x, .5, -2.8], "worn_toe")
         if side == "left":
             add(m, thigh, "left_broken_knee_plate", [x - 1.4, 6.0, -1.95], [x + .8, 7.4, -.98], "armor")
             add(m, shin, "left_greave_rim", [x - 1.48, 2.35, -1.72], [x - 1.1, 6.7, -1.39], "ash")
         else:
             add(m, thigh, "right_knee_cloth", [x - 1.45, 6.2, -1.9], [x + 1.15, 7.65, -.95], "void")
             add(m, shin, "right_greave_chip", [x + .72, 3.2, -1.65], [x + 1.22, 5.1, -1.35], "edge")
+
+    def paint_side_greave(px, py, seed, upper):
+        left = 3 + round(py * (.16 if upper else .12))
+        right = 29 - round(py * (.30 if upper else .22))
+        top = 2 + abs(px - (18 if upper else 12)) // 5
+        hem = 36 - authoring.noise(px // 4, seed + upper, 1091) % 8
+        if px < left or px > right or py < top or py > hem:
+            return (0, 0, 0, 0)
+        if (seed == 0 and upper and 14 < py < 32 and px > right - 5
+                or seed == 1 and not upper and 17 < py < 34 and px < left + 5):
+            return (0, 0, 0, 0)
+        scratch = abs(px - (9 + py * .33 + seed * 5))
+        if 8 < py < 27 and scratch < 1.1:
+            return (66, 74, 76, 255)
+        grain = authoring.noise(px // 3, py // 3, 1103 + seed * 3 + upper)
+        if py - top < 2 and grain % 3 == 0:
+            return (63, 72, 75, 255)
+        base = (37, 45, 50) if grain % 5 else (24, 32, 37)
+        if px - left < 2 or right - px < 2 or py > hem - 2:
+            base = (23, 31, 36)
+        if seed == 1:
+            base = tuple(round(channel * .74) for channel in base)
+        return (*base, 255)
+
+    side_greave_clear = m.patch(1, 1, lambda _x, _y: (0, 0, 0, 0),
+                                "open_greave_edge")
+    for side, x, seed, shin in (("left", -2.1, 0, left_shin),
+                                ("right", 2.1, 1, right_shin)):
+        outer = x - 1.32 if seed == 0 else x + 1.32
+        for upper, (low, high, zlo, zhi) in enumerate((
+                (2.35, 4.85, -1.27, .95),
+                (4.75, 6.85, -1.43, .85))):
+            uv = m.patch(32, 40,
+                         lambda px, py, s=seed, u=upper: paint_side_greave(px, py, s, u),
+                         f"broken_{side}_side_greave_{upper}")
+            m.cube(f"{side}_side_greave_shard_{upper}",
+                   [outer - .07, low, zlo], [outer + .07, high, zhi],
+                   "armor", shin,
+                   face_uv={"east": uv, "west": uv,
+                            "north": side_greave_clear, "south": side_greave_clear,
+                            "up": side_greave_clear, "down": side_greave_clear})
 
     def paint_greave_face(px, py, seed):
         taper = round(py * .045)
@@ -687,6 +728,39 @@ def build(out=ROOT / "model-lab" / "models"):
         m.cube(f"{side}_battered_greave_face", [x - 1.5, 1.95, -1.63],
                [x + 1.5, 7.15, -1.56], "armor", shin,
                face_uv={"north": face_uv, "south": face_uv})
+
+    def paint_rear_greave(px, py, seed):
+        progress = py / 63
+        left = 3 + round(progress * (9 if seed == 0 else 7))
+        right = 29 - round(progress * (8 if seed == 0 else 10))
+        top = 3 + abs(px - (15 + seed * 2)) // 6
+        hem = 58 - authoring.noise(px // 4, seed, 1129) % 9
+        if px < left or px > right or py < top or py > hem:
+            return (0, 0, 0, 0)
+        if 22 < py < 47 and abs(px - (12 + py * .13 + seed * 4)) < 2:
+            return (0, 0, 0, 0)
+        if seed == 1 and py > 31 and px < left + 5:
+            return (0, 0, 0, 0)
+        scar = abs(px - (22 - py * .23 + seed * 3))
+        if 9 < py < 37 and scar < 1:
+            return (81, 88, 88, 255)
+        grain = authoring.noise(px // 3, py // 3, 1147 + seed)
+        if px - left < 2 or right - px < 2 or py > hem - 2:
+            return (19, 26, 30, 255)
+        return ((42, 49, 52, 255) if grain % 7 else (29, 36, 39, 255))
+
+    rear_greave_clear = m.patch(1, 1, lambda _x, _y: (0, 0, 0, 0),
+                                "open_rear_greave")
+    for side, x, seed, shin in (("left", -2.1, 0, left_shin),
+                                ("right", 2.1, 1, right_shin)):
+        uv = m.patch(32, 64,
+                     lambda px, py, s=seed: paint_rear_greave(px, py, s),
+                     f"worn_rear_greave_{side}")
+        m.cube(f"{side}_worn_rear_greave", [x - 1.2, 2.15, 1.35],
+               [x + 1.2, 6.85, 1.43], "armor", shin,
+               face_uv={"south": uv, "north": uv,
+                        "east": rear_greave_clear, "west": rear_greave_clear,
+                        "up": rear_greave_clear, "down": rear_greave_clear})
 
     def paint_battered_thigh(px, py):
         left = 3 + py // 15
