@@ -211,6 +211,12 @@ def verify():
                 assert tile.size == (192, 222)
                 if half == 0:
                     assert tile.getpixel((50, 180))[3] == 0, "Journal side notes must reveal the world below"
+    dungeon = json.loads((PACK / "assets/projects/font/core_menu_dungeon.json").read_text())["providers"]
+    assert len(dungeon) == 2
+    for half, provider in enumerate(dungeon):
+        assert provider["chars"] == [chr(FRAME_BASE + 8 + half)] and provider["ascent"] == 13
+        with Image.open(PACK / f"assets/projects/textures/gui/core/menu_dungeon_{half}.png") as tile:
+            assert tile.size == (192, 222)
     with Image.open(PACK / "assets/projects/textures/gui/core/menu_buttons.png") as buttons:
         assert buttons.size == (1440, 80)
         for row, tone in enumerate(PALETTE):

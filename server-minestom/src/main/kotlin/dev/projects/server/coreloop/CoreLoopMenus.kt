@@ -1503,16 +1503,17 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
         val depth = ascension.coerceIn(0, maximum)
         val allowed = tier <= a.unlockedMapTier && !a.weaponBroken
         view(player, "星環の深殿 / T$tier 深度$depth", { dungeons(player, tier, depth) }) { v ->
+            v.canvas.dungeonEntrance()
             tiers(v, tier) { dungeons(player, it) }; help(v, player) { dungeons(player, tier, depth) }
-            v.canvas.left("分岐する迷宮", lines("1〜4人で攻略", "${CoreMmoTuning.balance.dungeonFloors}層・${CoreMmoTuning.balance.dungeonStages}部屋を選ぶ", "入場料なし", "部屋ごとに報酬確定", "加護は周回限定", "", "一つ前を踏破すると", "次の深度を解放"), hero = CoreMenuArt.EXPEDITION)
-            v.canvas.right("深度 $depth", lines(if (tier in a.dungeonRecords) "最高踏破 ${a.dungeonRecords[tier]}" else "踏破記録なし", "4〜 精鋭の増援", "8〜 星落とし拡大", "12〜 複合予兆", "", "ボスは4形態", "報酬：オーブと券", "採取原料は出ません", if (allowed) "挑戦できます" else "未解放・武器破損"), hero = CoreMenuArt.BOSS)
-            card(v, 9, 3, 3, "一人で", CoreMenuArt.WEAPON, CoreLoopItems.icon(Material.IRON_SWORD, "一人で出発", "クリックで生成・転送を開始"), if (allowed) Tone.PRIMARY else Tone.DISABLED, icon = true) {
+            v.canvas.left("深殿の記録", lines("1〜4人", "${CoreMmoTuning.balance.dungeonFloors}層・${CoreMmoTuning.balance.dungeonStages}部屋", "入場無料", "部屋ごとに報酬確定", "加護はこの周回だけ", "", "前の深度を踏破", "次の深度を解放"), hero = CoreMenuArt.EXPEDITION)
+            v.canvas.right("深度 $depth", lines(if (tier in a.dungeonRecords) "最高踏破 ${a.dungeonRecords[tier]}" else "踏破記録なし", "4〜 精鋭増援", "8〜 星落とし拡大", "12〜 複合予兆", "", "報酬 オーブ・券", if (allowed) "挑戦可能" else if (a.weaponBroken) "武器の修理が必要" else "Tier未解放"), hero = CoreMenuArt.BOSS)
+            tile(v, 27, 3, "一人で", CoreLoopItems.icon(Material.IRON_SWORD, "一人で出発", "クリックで生成・転送を開始"), if (allowed) Tone.PRIMARY else Tone.DISABLED, icon = true) {
                 game.dungeonLobby(player, DungeonLobbyAction.Solo(tier, depth)); if (!game.isDeparting(player)) dungeons(player, tier, depth)
             }
-            card(v, 12, 3, 3, "募集する", CoreMenuArt.GEAR, CoreLoopItems.icon(Material.CAMPFIRE, "仲間を募集", "港の掲示から参加できます"), if (allowed) Tone.NEUTRAL else Tone.DISABLED, icon = true) {
+            tile(v, 30, 3, "募集", CoreLoopItems.icon(Material.CAMPFIRE, "仲間を募集", "港の掲示から参加できます"), if (allowed) Tone.NEUTRAL else Tone.DISABLED, icon = true) {
                 game.dungeonLobby(player, DungeonLobbyAction.Create(tier, depth)); dungeons(player, tier, depth)
             }
-            card(v, 15, 3, 3, "参加する", CoreMenuArt.EXPEDITION, CoreLoopItems.icon(Material.PLAYER_HEAD, "募集中のパーティへ"), icon = true) { dungeonParties(player) }
+            tile(v, 33, 3, "参加", CoreLoopItems.icon(Material.PLAYER_HEAD, "募集中のパーティへ"), icon = true) { dungeonParties(player) }
             tile(v, 36, 3, "浅く", CoreLoopItems.icon(Material.ARROW, "深度を下げる"), if (depth > 0) Tone.NEUTRAL else Tone.DISABLED) { dungeons(player, tier, depth - 1) }
             tile(v, 39, 3, "深度$depth", CoreLoopItems.icon(Material.BOOK, "今の難度"), Tone.SELECTED)
             tile(v, 42, 3, "深く", CoreLoopItems.icon(Material.ARROW, "深度を上げる"), if (depth < maximum) Tone.NEUTRAL else Tone.DISABLED) { dungeons(player, tier, depth + 1) }

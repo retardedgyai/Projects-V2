@@ -286,6 +286,39 @@ def build_journal_frames():
     write_json(ASSETS / "font/core_menu_journal.json", {"providers": providers})
 
 
+def build_dungeon_frame(base):
+    """A carved threshold gives the dungeon lobby a subject above its three actions."""
+    frame = base.copy()
+    draw = ImageDraw.Draw(frame)
+    draw.rectangle((111, 35, 271, 70), fill="#18252A", outline="#677169")
+    for x in (116, 122, 128, 134, 140, 146, 238, 244, 250, 256, 262):
+        draw.line((x, 42, x + 3, 42), fill="#3F4C4A")
+        draw.line((x, 55, x + 3, 55), fill="#3F4C4A")
+    draw.polygon([(165, 70), (165, 50), (169, 44), (176, 39), (207, 39),
+                  (214, 44), (218, 50), (218, 70)], fill="#59615B", outline="#BAA476")
+    draw.polygon([(171, 70), (171, 51), (177, 45), (185, 42), (199, 42),
+                  (207, 45), (212, 51), (212, 70)], fill="#0E3540")
+    draw.polygon([(178, 70), (178, 54), (183, 48), (190, 46), (195, 46),
+                  (202, 48), (206, 54), (206, 70)], fill="#20505A")
+    draw.line((192, 47, 192, 69), fill="#7AA3A0")
+    draw.line((179, 62, 205, 62), fill="#52868C")
+    for x, y in ((174, 48), (209, 48), (180, 43), (203, 43), (192, 40)):
+        draw.rectangle((x, y, x + 1, y + 1), fill="#D0B784")
+    for x in (130, 253):
+        draw.rectangle((x - 2, 61, x + 2, 69), fill="#46524F")
+        draw.rectangle((x - 1, 57, x + 1, 61), fill="#D19057")
+        draw.point((x, 56), fill="#F4D69A")
+    draw.line((116, 70, 268, 70), fill="#A38A61")
+    providers = []
+    for half in range(2):
+        name = f"menu_dungeon_{half}"
+        frame.crop((half * 192, 0, (half + 1) * 192, 222)).save(
+            ASSETS / f"textures/gui/core/{name}.png", optimize=True)
+        providers.append({"type": "bitmap", "file": f"projects:gui/core/{name}.png",
+                          "height": 222, "ascent": 13, "chars": [chr(FRAME_BASE + 8 + half)]})
+    write_json(ASSETS / "font/core_menu_dungeon.json", {"providers": providers})
+
+
 def build_buttons():
     # Nine span widths, five states. Every backdrop is confined to the actual slot strip.
     atlas = Image.new("RGBA", (160 * 9, 16 * len(PALETTE)))
@@ -447,6 +480,7 @@ def build_menu():
     build_font("EMPHASIS")
     frame = build_frame()
     build_journal_frames()
+    build_dungeon_frame(frame)
     buttons = build_buttons()
     build_cards()
     build_focus()
