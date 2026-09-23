@@ -423,12 +423,14 @@ def build(out=ROOT / "model-lab" / "models"):
     add(m, scarf, "scarf_back_right_end", [3.2, 20.35, 2.25], [4.9, 22.25, 3.18], "cloth", "ragged_scarf")
     add(m, scarf, "scarf_hanging_point", [-3.55, 14.2, -3.1], [-1.7, 18.1, -2.78], "cloth", "ragged_scarf")
 
-    add(m, helm, "hood_crown", [-1.38, 25.25, -2.1], [1.38, 27.15, 2.3], "void")
+    add_rotated(m, helm, "hood_crown", [-1.28, 25.35, -2.0],
+                [1.28, 26.85, 1.75], "void", [-4, 0, 0],
+                [0, 25.9, -.1], "burned_hood")
     add_rotated(m, helm, "hood_left_temple", [-2.7, 23.9, -2.3], [-.85, 26.6, 2.3],
                 "void", [0, 0, -12], [-1.65, 25.2, 0])
     add_rotated(m, helm, "hood_right_temple", [.8, 24.1, -2.2], [2.55, 26.3, 2.25],
                 "void", [0, 0, 9], [1.65, 25.1, 0])
-    add(m, helm, "hood_lower", [-2.25, 22.0, -1.15], [2.25, 25.1, 2.8], "void")
+    add(m, helm, "hood_lower", [-1.85, 22.35, -1.15], [1.85, 24.95, 2.0], "void")
     add(m, helm, "hood_muzzle_base", [-1.6, 22.6, -3.8], [1.6, 24.0, -1.5], "armor")
     add(m, helm, "snout_dark_tip", [-.6, 22.15, -5.55], [.6, 22.8, -4.8], "void")
     add(m, helm, "crest_base", [-.85, 26.5, -.4], [.85, 27.6, 1.4], "armor")
@@ -508,11 +510,8 @@ def build(out=ROOT / "model-lab" / "models"):
     m.cube("engraved_wolf_visor", [-2.65, 22.2, -5.45], [2.65, 27.35, -4.15],
            "edge", helm, face_uv={"north": faceplate_uv, "south": visor_back_uv,
                                   "east": visor_profile_uv, "west": visor_profile_uv})
-    # Separate tapered strands keep the mane from becoming one dark wing in
-    # profile. The root carries their shared mass above the hood.
-    add_rotated(m, plume, "crest_root_torn", [-1.05, 27.15, .55],
-                [1.05, 27.72, 2.8], "hair", [0, -13, 8],
-                [0, 27.4, 1.4], "black_fiber")
+    # The separate tapered strands begin inside the hood. A solid crest root
+    # formed a brightly lit rectangular cap in the boss-fight front view.
 
     for strand, (x, y0, y1, z0, z1, bend) in enumerate((
             (-1.55, 25.0, 29.0, 1.1, 6.5, -4),
@@ -716,25 +715,29 @@ def build(out=ROOT / "model-lab" / "models"):
     # Leave the chainmail back exposed. The short scarf above and torn cloth
     # tied at the hips have separate silhouettes, like a battle-worn knight.
     cape_strips = (
-        (-5.15, 4.65, 3.05, 1.25, -26),
+        (-5.15, 4.65, 3.05, 1.25, -32),
         (-.4, 2.7, 4.55, 7.8, -6),
-        (4.5, 4.0, 3.05, 3.65, 27),
+        (4.5, 4.0, 3.05, 3.65, 31),
     )
 
     for strip, (center, width, depth, hem, yaw) in enumerate(cape_strips):
         def paint_strip(px, py, seed=strip):
             progress = py / 191
-            taper = int(progress * 8)
-            left_edge = 1 + taper + authoring.noise(py // 9, seed, 817) % 4
-            right_edge = 46 - taper - authoring.noise(py // 11, seed, 829) % 5
+            taper = round(progress ** 1.5 * 12)
+            left_edge = 1 + taper + authoring.noise(py // 7, seed, 817) % 6
+            right_edge = 46 - taper - authoring.noise(py // 8, seed, 829) % 7
             if seed == 0 and 70 < py < 125:
                 left_edge += round(11 * (1 - abs(py - 97) / 28))
             if seed == 1 and 93 < py < 153:
                 right_edge -= round(12 * (1 - abs(py - 123) / 30))
             if seed == 2 and 46 < py < 107:
                 right_edge -= round(8 * (1 - abs(py - 76) / 31))
-            tear = 190 - (px // 7 % 5) * (2 + seed % 2) - authoring.noise(px, seed, 839) % 7
-            slit = progress > .72 and (px + 3 * seed) % 41 == 0 and py > 151
+            tear = 191 - (px // 5 % 5) * (2 + seed % 2) - authoring.noise(px // 3, seed, 839) % 10
+            # A forked, missing wedge opens as the cloth descends. The former
+            # one-pixel slits disappeared at boss-fight viewing distance.
+            split_center = 20 + 4 * math.sin(progress * 3 + seed * 1.4)
+            split_width = max(0, progress - (.63, .74, .58)[seed]) * (23, 12, 26)[seed]
+            slit = abs(px - split_center) < split_width
             if px < left_edge or px > right_edge or py > tear or slit:
                 return (0, 0, 0, 0)
             if seed in (0, 2) and 88 <= py <= 145:
@@ -745,8 +748,6 @@ def build(out=ROOT / "model-lab" / "models"):
                 notch = max(0, 9 - abs(py - 143) * .36)
                 if px < left_edge + notch:
                     return (0, 0, 0, 0)
-            if seed < 3 and py > 151 and abs(px - (19 + seed * 3)) < 2 + (py - 151) * .08:
-                return (0, 0, 0, 0)
             ridge = 23 + 7 * math.sin(progress * 3.4 + seed * 1.35)
             distance_to_ridge = abs(px - ridge)
             grain = authoring.noise(px // 2, py // 3, seed + 2800)
@@ -774,16 +775,16 @@ def build(out=ROOT / "model-lab" / "models"):
         boundaries = ((cape_top, max(11.2, hem)),
                       (11.3, max(7.8, hem)), (7.9, hem))
         def fold_depth(u, v):
-            return (1.15 * math.sin((u * .95 + v * .22 + strip * .29) * math.tau)
-                    + .65 * math.sin((u * 1.8 - v * .58 + strip * .4) * math.tau))
+            return (1.50 * math.sin((u * .95 + v * .22 + strip * .29) * math.tau)
+                    + .80 * math.sin((u * 1.8 - v * .58 + strip * .4) * math.tau))
 
         for segment, (top, bottom) in enumerate(boundaries):
             if top <= bottom + .1:
                 continue
-            drift = (segment * (strip % 3 - 1) * .26)
+            drift = segment * (-.72, -.15, .65)[strip]
             x = center + drift
             base_z = depth + (.22, 1.15, 2.35)[segment]
-            segment_width = width * (1 - segment * .065)
+            segment_width = width * (1 - segment * .17)
             for row in range(2):
                 row_top = top - (top - bottom) * row / 2
                 row_bottom = top - (top - bottom) * (row + 1) / 2
@@ -813,12 +814,10 @@ def build(out=ROOT / "model-lab" / "models"):
                                  - max(-32, min(32, math.degrees(math.atan(du)))), 0],
                                 [center_x, center_y, z],
                                 f"ragged_cape_{strip}_{segment}", face_uv)
-    add(m, cape_left_edge, "left_shoulder_cloth", [-5.75, 19.5, 1.0], [-4.65, 21.5, 2.95], "cloth")
     add_rotated(m, cape_right, "right_mantle_remnant", [3.0, 17.8, 2.55], [4.75, 21.65, 3.15],
                 "cloth", [0, 17, 0], [3.85, 21.65, 2.85], "ragged_mantle")
     add_rotated(m, cape_right, "right_hanging_remnant", [3.1, 9.2, 3.0], [5.05, 18.0, 3.55],
                 "cloth", [0, -24, 0], [4.05, 18.0, 3.3], "ragged_right")
-    add(m, cape_right_edge, "right_shoulder_cloth", [4.75, 19.5, 1.0], [5.75, 21.5, 2.95], "cloth")
     def paint_back_mail(px, py):
         # The hem follows the hips and breaks into missing links instead of
         # filling the exposed back with one rectangular grey surface.
@@ -916,10 +915,11 @@ def build(out=ROOT / "model-lab" / "models"):
 
     m.anim("idle", 2.0, {
         "root": [(0, [0, 0, 0], "position"), (1, [0, .28, 0], "position"), (2, [0, 0, 0], "position")],
-        "torso": [(0, [16, 0, -6]), (1, [18, 0, -5]), (2, [16, 0, -6])],
-        "head": [(0, [-9, -5, 0]), (1, [-11, -2, 0]), (2, [-9, -5, 0])],
+        "torso": [(0, [26, 0, -8]), (1, [28, 0, -7]), (2, [26, 0, -8])],
+        "head": [(0, [-15, -5, 0]), (1, [-17, -2, 0]), (2, [-15, -5, 0])],
         "plume": [(0, [0, 0, -3]), (1, [2, 0, 5]), (2, [0, 0, -3])],
         "right_arm": [(0, [4, 0, 4]), (1, [0, 0, 6]), (2, [4, 0, 4])],
+        "sword": [(0, [-15, 0, 0]), (1, [-15, 0, 0]), (2, [-15, 0, 0])],
         "cape_left": [(0, [0, 0, -5]), (1, [-6, 0, -10]), (2, [0, 0, -5])],
         "cape_right": [(0, [0, 0, 4]), (1, [-4, 0, 8]), (2, [0, 0, 4])],
         "cape_center": [(0, [-2, 0, -2]), (1, [-7, 0, 3]), (2, [-2, 0, -2])],
