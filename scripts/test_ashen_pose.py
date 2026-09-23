@@ -39,7 +39,13 @@ class AshenPoseTest(unittest.TestCase):
         minimum = self.minimum_tip_y("slam")
         self.assertGreaterEqual(minimum, -1.5)
         self.assertLessEqual(minimum, 1.5)
-        self.assertGreater(self.tip_y("slam", .7), 12)
+        self.assertGreater(self.tip_y("slam", .7), 25)
+        self.assertLessEqual(abs(self.tip_y("slam", .94)), 1.5)
+
+    def test_long_blade_does_not_cut_through_floor_in_other_motions(self):
+        for name in self.animations:
+            with self.subTest(animation=name):
+                self.assertGreaterEqual(self.minimum_tip_y(name), -1.5)
 
     def test_idle_sword_tip_rests_near_ground(self):
         self.assertGreaterEqual(self.tip_y("idle", 0), -1)
