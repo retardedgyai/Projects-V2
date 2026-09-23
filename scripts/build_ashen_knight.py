@@ -218,9 +218,15 @@ def build(out=ROOT / "model-lab" / "models"):
                     [x0, hem, depth], [x1, top, depth + .14], "cloth",
                     [5 + panel * 3, 0, lean], [(x0 + x1) / 2, top, depth],
                     "ragged_hip", face_uv={"north": rag_uv, "south": rag_uv})
-    add_rotated(m, chest, "upper_mail_tunic_front",
-                [-3.7, 17.1, -2.15], [3.7, 22, .65], "void",
-                [-6, 0, 0], [0, 19.55, -.75])
+    add_rotated(m, chest, "upper_tunic_center",
+                [-2.45, 16.95, -2.13], [2.45, 22.05, 1.05], "void",
+                [-6, 0, 0], [0, 19.5, -.6], "worn_tunic")
+    add_rotated(m, chest, "upper_tunic_left_rib",
+                [-3.8, 17.5, -1.82], [-2.12, 21.8, .85], "void",
+                [-6, 0, -8], [-3.0, 19.65, -.45], "worn_tunic")
+    add_rotated(m, chest, "upper_tunic_right_rib",
+                [2.12, 17.35, -1.78], [3.72, 21.65, .82], "void",
+                [-6, 0, 7], [2.92, 19.5, -.45], "worn_tunic")
     add_rotated(m, chest, "upper_mail_tunic_back",
                 [-3.25, 17.55, .35], [3.25, 21.8, 2.1], "void",
                 [7, 0, 0], [0, 19.55, 1.25])
@@ -278,8 +284,6 @@ def build(out=ROOT / "model-lab" / "models"):
     add_rotated(m, chest, "left_pauldron_lower_scale", [-5.8, 19.75, -1.96],
                 [-3.65, 21.15, 1.12], "armor", [0, 0, -8],
                 [-4.5, 20.45, 0], "battered_scale")
-    add(m, chest, "right_shoulder_dark_under", [3.25, 20.0, -1.6],
-        [5.25, 22.3, 1.7], "void")
     def paint_worn_pauldron(px, py):
         top = 5 + abs(px - 20) // 3
         bottom = 32 - abs(px - 20) // 3 - authoring.noise(px // 5, 0, 1901) % 4
@@ -300,6 +304,31 @@ def build(out=ROOT / "model-lab" / "models"):
     pauldron_uv = m.patch(40, 40, paint_worn_pauldron, "worn_pauldron")
     m.cube("worn_left_shoulder_face", [-6.15, 19.75, -2.55], [-3.0, 23.65, -2.48],
            "armor", chest, face_uv={"north": pauldron_uv, "south": pauldron_uv})
+    open_pauldron_edge = m.patch(1, 1, lambda _x, _y: (0, 0, 0, 0),
+                                 "open_pauldron_edge")
+    def paint_broken_right_pauldron(px, py):
+        top = 4 + abs(px - 18) // 4
+        hem = 34 - abs(px - 14) // 5 - authoring.noise(px // 4, 0, 1921) % 5
+        if py < top or py > hem or px < 3 or px > 29:
+            return (0, 0, 0, 0)
+        if px > 21 and 17 < py < 30 and (px + py * 2) % 7 < 3:
+            return (0, 0, 0, 0)
+        if px < 8 and py > 23 and (px * 3 + py) % 5 < 2:
+            return (0, 0, 0, 0)
+        grain = authoring.noise(px // 3, py // 3, 1931)
+        if py - top < 2 or px < 5:
+            return ((75, 83, 84, 255) if grain % 3 else (56, 64, 67, 255))
+        if 9 < py < 27 and abs(px - (13 + py * .22)) < 1:
+            return (17, 24, 28, 255)
+        return ((38, 46, 50, 255) if grain % 4 else (48, 55, 58, 255))
+
+    right_pauldron_uv = m.patch(32, 40, paint_broken_right_pauldron,
+                                 "broken_right_pauldron")
+    m.cube("broken_right_shoulder_face", [3.72, 18.78, -1.46],
+           [6.18, 21.55, -1.38], "armor", right_arm,
+           face_uv={"north": right_pauldron_uv, "south": right_pauldron_uv,
+                    "east": open_pauldron_edge, "west": open_pauldron_edge,
+                    "up": open_pauldron_edge, "down": open_pauldron_edge})
     add_rotated(m, chest, "diagonal_chest_binding", [-3.1, 15.05, -2.85],
                 [2.4, 15.52, -2.55], "leather", [0, 0, -20],
                 [-.35, 15.3, -2.7], "scuffed_leather")
