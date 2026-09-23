@@ -469,8 +469,8 @@ def build(out=ROOT / "model-lab" / "models"):
     add_rotated(m, helm, "hood_right_temple_rear", [1.05, 23.9, -.15],
                 [2.15, 25.2, 1.85], "void", [18, 0, -9], [1.6, 24.6, .85])
     add(m, helm, "hood_lower", [-1.85, 22.35, -1.15], [1.85, 24.95, 2.0], "void")
-    add(m, helm, "hood_muzzle_base", [-1.6, 22.6, -3.8], [1.6, 24.0, -1.5], "armor")
-    add(m, helm, "snout_dark_tip", [-.6, 22.15, -5.55], [.6, 22.8, -4.8], "void")
+    add(m, helm, "hood_muzzle_base", [-1.35, 22.25, -3.8], [1.35, 24.0, -1.5], "void")
+    add(m, helm, "snout_dark_tip", [-.45, 21.15, -5.75], [.45, 21.85, -5.1], "void")
     add(m, helm, "left_cheek_armor", [-2.65, 22.7, -3.0], [-1.75, 25.0, -.9], "armor")
     add(m, helm, "right_broken_cheek", [2.1, 23.25, -2.8], [2.8, 24.35, -.9], "armor")
 
@@ -480,73 +480,72 @@ def build(out=ROOT / "model-lab" / "models"):
     def paint_faceplate(px, py):
         center = 24
         distance = abs(px - center)
-        if py < 8:
-            width = 4 + py // 2
-        elif py < 20:
-            width = 13 + (py - 8) // 4
-        elif py < 34:
-            width = 18 - max(0, py - 29) // 2
-        elif py < 51:
-            width = 14 - (py - 34) // 4
+        if py < 7:
+            width = 2 + py // 2
+        elif py < 19:
+            width = 7 + (py - 7) // 2
+        elif py < 33:
+            width = 14 - max(0, py - 28) // 3
+        elif py < 52:
+            width = 12 - (py - 33) // 3
         else:
-            width = max(1, 10 - (py - 51))
-        if px > center and py > 34:
-            width -= 2
-        ear = 6 <= py < 21 and 16 <= distance <= 21 - abs(py - 12) // 3
-        if px > center and py > 16:
+            width = max(1, 6 - (py - 52) // 2)
+        if px > center and py > 32:
+            width -= 1
+        ear = 5 <= py < 19 and 14 <= distance <= 19 - abs(py - 11) // 3
+        if px > center and py > 13:
             ear = False
         if distance > width and not ear:
             return (0, 0, 0, 0)
-        if px < center - 10 and 38 < py < 46 and (px + py) % 4 != 0:
+        if px < center - 8 and 38 < py < 47 and (px + py) % 4 != 0:
             return (0, 0, 0, 0)
-        eye_line = 29 - distance * .27
-        if 4 <= distance <= 15 and abs(py - eye_line) < 1.65:
+        eye_line = (28 if px < center else 30) - distance * .32
+        if 4 <= distance <= 12 and abs(py - eye_line) < (1.2 if px < center else 1.5):
             return (5, 10, 17, 255)
-        if 4 <= distance <= 15 and abs(py - (eye_line - 2.4)) < 1:
-            return (101, 109, 114, 255)
-        snout_ridge = 7 - (py - 36) * .28
-        if 36 <= py <= 55 and abs(distance - snout_ridge) < .9:
-            return (89, 99, 105, 255)
-        if 35 <= py <= 54 and distance <= 2:
-            return (25, 32, 36, 255)
-        if py >= 56 and distance < 4:
-            return (24, 30, 32, 255)
-        if 34 < py < 51 and distance in (4, 5):
-            return (30, 42, 48, 255)
-        if abs(distance - width) <= 1 and py % 5 != 0:
-            return (91, 102, 107, 255)
-        if px > center + 8 and 18 < py < 43 and (px + py * 2) % 9 < 2:
+        if 4 <= distance <= 12 and abs(py - (eye_line - 2.2)) < 1:
+            return (82, 91, 95, 255)
+        snout_ridge = 6 - (py - 37) * .18
+        if 37 <= py <= 59 and abs(distance - snout_ridge) < .85:
+            return (73, 81, 84, 255)
+        if 36 <= py <= 60 and distance <= 1:
+            return (20, 27, 31, 255)
+        if py >= 59 and distance < 3:
+            return (17, 23, 27, 255)
+        if abs(distance - width) <= 1 and py % 7 != 0:
+            return (72, 81, 85, 255)
+        if px > center + 7 and 17 < py < 45 and (px + py * 2) % 8 < 2:
             return (0, 0, 0, 0)
         scratch = (px * 3 + py * 5) % 47
         if scratch == 0:
-            return (119, 125, 126, 255)
-        return (53, 61, 66, 255)
+            return (101, 109, 110, 255)
+        return (42, 49, 53, 255)
 
     faceplate_uv = m.patch(48, 64, paint_faceplate, "ashen_faceplate")
     def paint_visor_profile(px, py):
         # The front plane needs a physical tapered cheek and muzzle when seen
         # edge-on. A paper-thin visor looked detached from the hood in profile.
         forward = 1 - px / 47
-        top = round(10 + 22 * forward ** 1.35)
-        bottom = round(54 - 12 * forward ** 1.1)
+        top = round(24 + 3 * forward)
+        bottom = round(52 + 4 * forward)
         if py < top or py > bottom:
             return (0, 0, 0, 0)
         eye = 24 < px < 35 and 24 < py < 29
         if eye:
             return (8, 14, 19, 255)
         if py < top + 2 or py > bottom - 2:
-            return (80, 90, 94, 255)
+            return (58, 67, 71, 255)
         if px < 12 and py > 38:
             return (61, 69, 72, 255)
         if authoring.noise(px // 3, py // 3, 5933) % 39 == 0:
             return (110, 117, 118, 255)
-        return (47, 55, 59, 255)
+        return (37, 44, 48, 255)
 
     visor_profile_uv = m.patch(48, 64, paint_visor_profile, "wolf_visor_profile")
     visor_back_uv = m.patch(1, 1, lambda _x, _y: (0, 0, 0, 0), "wolf_visor_back")
-    m.cube("engraved_wolf_visor", [-2.65, 22.2, -5.45], [2.65, 27.35, -4.15],
+    m.cube("engraved_wolf_visor", [-2.45, 21.05, -5.7], [2.45, 27.5, -4.15],
            "edge", helm, face_uv={"north": faceplate_uv, "south": visor_back_uv,
-                                  "east": visor_profile_uv, "west": visor_profile_uv})
+                                  "east": visor_profile_uv, "west": visor_profile_uv,
+                                  "up": visor_back_uv, "down": visor_back_uv})
     # The separate tapered strands begin inside the hood. A solid crest root
     # formed a brightly lit rectangular cap in the boss-fight front view.
 
