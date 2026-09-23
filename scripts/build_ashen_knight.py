@@ -312,9 +312,12 @@ def build(out=ROOT / "model-lab" / "models"):
     add_rotated(m, chest, "right_rib_tunic_lower",
                 [3.14, 15.45, -1.26], [3.83, 18.15, 1.12], "void",
                 [-4, 0, 6], [3.5, 16.8, 0], "worn_tunic")
-    add_rotated(m, chest, "left_pauldron_lower_scale", [-5.8, 19.75, -1.96],
-                [-3.65, 21.15, 1.12], "armor", [0, 0, -8],
-                [-4.5, 20.45, 0], "battered_scale")
+    add_rotated(m, chest, "left_pauldron_dark_mount", [-5.54, 19.9, -1.62],
+                [-3.72, 21.38, .86], "sleeve", [0, -8, -12],
+                [-4.55, 20.55, -.3], "worn_sleeve")
+    add_rotated(m, chest, "left_pauldron_broken_hem", [-5.35, 19.38, -.45],
+                [-4.02, 20.22, 1.02], "armor", [0, -6, -9],
+                [-4.62, 19.88, .24], "battered_scale")
     def paint_worn_pauldron(px, py):
         top = 5 + abs(px - 20) // 3
         bottom = 32 - abs(px - 20) // 3 - authoring.noise(px // 5, 0, 1901) % 4
@@ -322,15 +325,25 @@ def build(out=ROOT / "model-lab" / "models"):
             return (0, 0, 0, 0)
         if px < 4 and py < 14 and (px + py) % 3:
             return (0, 0, 0, 0)
+        grain = authoring.noise(px // 2, py // 2, 1897)
         edge = py <= top + 1 or py >= bottom - 1
         if edge and authoring.noise(px // 3, py // 3, 1907) % 4 != 0:
-            return (83, 91, 92, 255)
+            return ((78, 83, 81, 255) if grain % 4 else (94, 99, 96, 255))
         scar = abs(px - (12 + py * .31))
         if 11 < py < 31 and scar < 1.5:
-            return (91, 99, 101, 255)
+            return (82, 90, 88, 255)
+        fracture = abs(px - (29 - py * .37 + 2.4 * math.sin(py * .23)))
+        if 14 < py < 31 and fracture < 1.2 and grain % 4 != 0:
+            return (18, 25, 29, 255)
         if px < 9 and py > 23:
             return (22, 29, 34, 255)
-        return (43, 50, 52, 255)
+        if grain % 31 == 0:
+            return (23, 31, 34, 255)
+        if grain % 19 == 0 and 10 < px < 34:
+            return (63, 69, 68, 255)
+        if 16 < px < 32 and 12 < py < 28 and grain % 5 == 0:
+            return (51, 56, 54, 255)
+        return (39, 47, 49, 255)
 
     pauldron_uv = m.patch(40, 40, paint_worn_pauldron, "worn_pauldron")
     m.cube("worn_left_shoulder_face", [-6.15, 19.75, -2.55], [-3.0, 23.65, -2.48],
