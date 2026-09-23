@@ -302,9 +302,6 @@ def build(out=ROOT / "model-lab" / "models"):
                 [-1.8, 19.0, -2.5], "battered_scale")
     add(m, chest, "right_chest_scrap", [1.25, 17.3, -2.48],
         [2.55, 19.0, -1.92], "armor", "battered_scale")
-    add_rotated(m, chest, "high_collar",
-                [-1.95, 21.5, -1.45], [1.95, 23.1, 1.48], "void",
-                [-6, 0, -3], [0, 22.3, 0], "worn_collar")
     add(m, chest, "mail_under_left", [-4.25, 15.8, -1.8], [-3.55, 20.8, 1.5], "mail")
     add_rotated(m, chest, "right_rib_tunic_upper",
                 [3.44, 17.85, -1.45], [4.12, 20.6, 1.28], "void",
