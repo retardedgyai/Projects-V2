@@ -463,6 +463,38 @@ def build(out=ROOT / "model-lab" / "models"):
     m.cube("scarf_back_right_end", [3.2, 20.35, 2.25], [4.9, 22.25, 3.18],
            "void", cape_right, face_uv={"south": shoulder_cowl_uv,
                                         "north": shoulder_cowl_uv})
+    def paint_shoulder_bridge(px, py):
+        taper = py / 79
+        left = 3 + round(8 * taper) + authoring.noise(py // 6, 0, 3731) % 3
+        right = 45 - round(11 * taper) - authoring.noise(py // 7, 0, 3737) % 3
+        hem = 73 - authoring.noise(px // 4, 0, 3749) % 10
+        top = 3 + round(px * .25) + authoring.noise(px // 6, 0, 3757) % 3
+        if py < top or py > hem or px < left or px > right:
+            return (0, 0, 0, 0)
+        if py > 43 and px > right - 5 and (px * 2 + py) % 17 < 5:
+            return (0, 0, 0, 0)
+        ridge = abs(px - (18 + 4 * math.sin(py * .09)))
+        grain = authoring.noise(px // 3, py // 3, 3761) % 13
+        if px - left < 2 or right - px < 2 or py > hem - 2:
+            color = (8, 19, 33)
+        elif ridge < 4 and grain > 6:
+            color = (27, 45, 65)
+        elif ridge > 15:
+            color = (10, 23, 38)
+        else:
+            color = (17, 34, 52)
+        return (*color, 255)
+
+    bridge_uv = m.patch(48, 80, paint_shoulder_bridge, "shoulder_to_cape_bridge")
+    for facet, depth in enumerate((2.75, 3.08, 2.84)):
+        xlo = -6.25 + facet * .9
+        uvlo = bridge_uv[0] + facet * 16
+        uvhi = uvlo + 16
+        face_uv = {"north": [uvlo, bridge_uv[1], uvhi, bridge_uv[3]],
+                   "south": [uvlo, bridge_uv[1], uvhi, bridge_uv[3]]}
+        m.cube(f"scarf_left_shoulder_bridge_{facet}",
+               [xlo - .02, 14.65, depth], [xlo + .92, 21.15, depth + .13],
+               "cloth", cape_left_edge, face_uv=face_uv)
     add(m, scarf, "scarf_hanging_point", [-3.55, 14.2, -3.1], [-1.7, 18.1, -2.78], "cloth", "ragged_scarf")
 
     add_rotated(m, helm, "hood_crown", [-1.28, 25.35, -2.0],
@@ -810,16 +842,16 @@ def build(out=ROOT / "model-lab" / "models"):
     # Leave the chainmail back exposed. The short scarf above and torn cloth
     # tied at the hips have separate silhouettes, like a battle-worn knight.
     cape_strips = (
-        (-5.15, 4.65, 3.05, 1.25, -32),
-        (-.4, 2.7, 4.55, 7.8, -6),
-        (4.5, 4.0, 3.05, 8.8, 31),
+        (-5.15, 5.2, 3.05, 1.25, -20),
+        (-.4, 3.0, 4.15, 7.8, -3),
+        (4.5, 3.7, 3.05, 8.8, 20),
     )
     open_hem_uv = m.patch(1, 1, lambda _x, _y: (0, 0, 0, 0), "open_cloth_hem")
 
     for strip, (center, width, depth, hem, yaw) in enumerate(cape_strips):
         def paint_strip(px, py, seed=strip):
             progress = py / 191
-            taper = round(progress ** 1.5 * 12)
+            taper = round(progress ** 1.5 * (5 if seed == 0 else 8))
             left_edge = 1 + taper + authoring.noise(py // 7, seed, 817) % 6
             right_edge = 46 - taper - authoring.noise(py // 8, seed, 829) % 7
             if seed == 0 and py < 55:
@@ -836,23 +868,24 @@ def build(out=ROOT / "model-lab" / "models"):
             # A forked, missing wedge opens as the cloth descends. The former
             # one-pixel slits disappeared at boss-fight viewing distance.
             split_center = 20 + 4 * math.sin(progress * 3 + seed * 1.4)
-            split_width = max(0, progress - (.63, .74, .58)[seed]) * (23, 12, 26)[seed]
+            split_width = max(0, progress - (.63, .74, .58)[seed]) * (10, 10, 15)[seed]
             slit = abs(px - split_center) < split_width
             if px < left_edge or px > right_edge or py > tear or slit:
                 return (0, 0, 0, 0)
             if seed in (0, 2) and 88 <= py <= 145:
-                notch = max(0, 12 - abs(py - (115 + seed * 5)) * .43)
+                notch = max(0, 7 - abs(py - (115 + seed * 5)) * .43)
                 if px > right_edge - notch:
                     return (0, 0, 0, 0)
             if seed == 1 and 116 <= py <= 168:
                 notch = max(0, 9 - abs(py - 143) * .36)
                 if px < left_edge + notch:
                     return (0, 0, 0, 0)
-            ridge = 23 + 7 * math.sin(progress * 3.4 + seed * 1.35)
+            ridge = (23 + 7 * math.sin(progress * 3.4 + seed * 1.35)
+                     + 3 * math.sin(py * .17 + seed))
             distance_to_ridge = abs(px - ridge)
             grain = authoring.noise(px // 2, py // 3, seed + 2800)
-            if distance_to_ridge < 2.5:
-                color = (54, 77, 99)
+            if distance_to_ridge < 3 and grain % 5 != 0:
+                color = (42, 63, 85)
             elif distance_to_ridge > 16:
                 color = (11, 26, 44)
             else:
@@ -875,21 +908,21 @@ def build(out=ROOT / "model-lab" / "models"):
         boundaries = ((cape_top, max(11.2, hem)),
                       (11.3, max(7.8, hem)), (7.9, hem))
         def fold_depth(u, v):
-            return (1.50 * math.sin((u * .95 + v * .22 + strip * .29) * math.tau)
-                    + .80 * math.sin((u * 1.8 - v * .58 + strip * .4) * math.tau))
+            return (.55 * math.sin((u * .95 + v * .22 + strip * .29) * math.tau)
+                    + .28 * math.sin((u * 1.8 - v * .58 + strip * .4) * math.tau))
 
         for segment, (top, bottom) in enumerate(boundaries):
             if top <= bottom + .1:
                 continue
             drift = segment * (-.72, -.15, .65)[strip]
             x = center + drift
-            base_z = depth + (.22, 1.15, 2.35)[segment]
-            segment_width = width * ((.76, 1.0, .66)[segment] if strip == 0
-                                     else (1 - segment * .17))
+            base_z = depth + (.22, .72, 1.32)[segment]
+            segment_width = width * ((.85, 1.0, .78)[segment] if strip == 0
+                                     else (1 - segment * .1))
             for row in range(2):
                 row_top = top - (top - bottom) * row / 2
                 row_bottom = top - (top - bottom) * (row + 1) / 2
-                row_width = segment_width * (1 - row * .15)
+                row_width = segment_width * (1 - row * .08)
                 row_center = x + row * (-.22, -.06, .20)[strip]
                 v = (cape_top - (row_top + row_bottom) / 2) / (cape_top - hem)
                 ty0 = uv[1] + round((cape_top - row_top) / (cape_top - hem) * 192)
@@ -898,11 +931,7 @@ def build(out=ROOT / "model-lab" / "models"):
                     u = (facet + .5) / 5
                     center_x = row_center + (u - .5) * row_width
                     center_y = (row_top + row_bottom) / 2
-                    z = base_z + fold_depth(u, v)
-                    du = (fold_depth(min(1, u + .01), v)
-                          - fold_depth(max(0, u - .01), v)) / (.02 * row_width)
-                    dv = (fold_depth(u, min(1, v + .01))
-                          - fold_depth(u, max(0, v - .01))) / (.02 * (cape_top - hem))
+                    z = base_z + .9 * fold_depth(u, v)
                     face_uv = {"north": [uv[0] + round(facet * 48 / 5), ty0,
                                          uv[0] + round((facet + 1) * 48 / 5), ty1],
                                "south": [uv[0] + round(facet * 48 / 5), ty0,
@@ -912,10 +941,8 @@ def build(out=ROOT / "model-lab" / "models"):
                                 [center_x - row_width / 10 - .06, row_bottom - .08, z - .09],
                                 [center_x + row_width / 10 + .06, row_top + .08, z + .09],
                                 "cloth",
-                                [(-6, 8, -3)[segment] + strip % 3 * 2
-                                 + max(-12, min(12, math.degrees(math.atan(dv)))),
-                                 yaw + ((-6, 15, 46) if strip == 0 else (-4, 3, 8))[segment]
-                                 - max(-32, min(32, math.degrees(math.atan(du)))), 0],
+                                [(-6, 8, -3)[segment] + strip % 3 * 2,
+                                 yaw + ((-5, 8, 18) if strip == 0 else (-4, 3, 8))[segment], 0],
                                 [center_x, center_y, z],
                                 f"ragged_cape_{strip}_{segment}", face_uv)
 
