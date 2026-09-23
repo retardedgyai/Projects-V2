@@ -29,8 +29,8 @@ PALETTE = {
     "leather": ("16191b", "2c2c2c", "504b45"),
     "boot": ("10151a", "272d31", "41484a"),
     "sleeve": ("0a1016", "121920", "1c252b"),
-    "skin": ("251c1c", "513a35", "806052"),
-    "bandage": ("3b3530", "776b5d", "a79783"),
+    "skin": ("231c1d", "44302c", "66473d"),
+    "bandage": ("302826", "67554d", "91786a"),
 }
 authoring.MATERIALS = {
     name: tuple(bytes.fromhex(color) for color in shades)
@@ -185,7 +185,12 @@ def build(out=ROOT / "model-lab" / "models"):
     add_rotated(m, hips, "fauld_mail_right", [2.03, 11.1, -1.09],
                 [2.95, 13.42, 1.16], "mail", [-3, 0, 6], [2.5, 12.25, 0],
                 "worn_mail")
-    add(m, hips, "belt", [-3.5, 12.2, -2.05], [3.5, 13, -1.52], "leather")
+    add_rotated(m, hips, "belt_left", [-3.5, 12.35, -2.04],
+                [-.08, 12.88, -1.63], "leather", [0, 0, -3],
+                [-1.75, 12.62, -1.83], "scuffed_leather")
+    add_rotated(m, hips, "belt_right", [-.12, 12.28, -2.04],
+                [3.4, 12.82, -1.63], "leather", [0, 0, 2],
+                [1.65, 12.55, -1.83], "scuffed_leather")
     add_rotated(m, hips, "skirt_underlayer_root", [-2.55, 10.25, -1.43],
                 [2.55, 12.4, 1.72], "void", [3, 0, 2], [0, 11.2, 0],
                 "worn_tunic")
@@ -197,7 +202,7 @@ def build(out=ROOT / "model-lab" / "models"):
                 "worn_tunic")
     add(m, hips, "broken_tasset_left", [-3.8, 9.3, -2.1], [-1.65, 12.1, -.95], "armor")
     add(m, hips, "broken_tasset_right", [1.85, 10.3, -2.0], [3.4, 12.2, -.9], "armor")
-    add(m, hips, "belt_buckle", [-.65, 11.9, -2.3], [.45, 12.9, -1.94], "edge")
+    add(m, hips, "belt_buckle", [-.42, 12.26, -2.19], [.35, 12.91, -1.96], "guard")
 
     def paint_torn_tabard(px, py):
         left = 5 + py // 10
@@ -297,6 +302,38 @@ def build(out=ROOT / "model-lab" / "models"):
     chest_mail_uv = m.patch(128, 96, paint_chest_mail, "worn_chest_mail")
     m.cube("worn_chest_mail", [-3.63, 16.5, -2.24], [3.63, 21.9, -2.17],
            "mail", chest, face_uv={"north": chest_mail_uv})
+    def paint_torn_waist_mail(px, py):
+        # Chain links fade into scorched cloth rather than ending in a straight
+        # horizontal line above the belt. Missing patches expose the tunic.
+        u = px / 95
+        edge = 5 + round(8 * abs(u - .47))
+        hem = 59 - round(10 * abs(u - .34))
+        hem -= authoring.noise(px // 5, 0, 8121) % 9
+        if px < edge or px > 93 - edge or py < 2 or py > hem:
+            return (0, 0, 0, 0)
+        if px > 63 and py > 29 and abs(py - (.8 * px - 21)) < 5:
+            return (0, 0, 0, 0)
+        if px < 26 and py > 42 and authoring.noise(px // 4, py // 3, 8131) % 5 < 2:
+            return (0, 0, 0, 0)
+        grain = authoring.noise(px // 3, py // 3, 8141)
+        row = py // 5
+        link_x = (px + 3 * (row % 2)) % 7
+        link_y = py % 5
+        if ((link_y == 1 and link_x in (2, 3, 4)) or
+                (link_y in (2, 3) and link_x in (1, 5))) and grain % 6 != 0:
+            color = (48, 54, 55) if grain % 4 else (64, 66, 64)
+        elif link_y == 4 and link_x in (2, 3, 4):
+            color = (11, 17, 20)
+        else:
+            color = (20, 25, 27)
+        if py > hem - 3 or px < edge + 2 or px > 91 - edge:
+            color = (15, 20, 23)
+        return (*color, 255)
+
+    waist_mail_uv = m.patch(96, 64, paint_torn_waist_mail, "torn_waist_mail")
+    m.cube("torn_waist_mail", [-2.7, 13.45, -1.94], [2.7, 17.05, -1.87],
+           "mail", chest, face_uv={"north": waist_mail_uv,
+                                   "south": waist_mail_uv})
     add_rotated(m, chest, "fractured_left_breastplate", [-3.0, 17.75, -2.78],
                 [-.65, 20.1, -2.1], "armor", [0, 0, -7],
                 [-1.8, 19.0, -2.5], "battered_scale")
@@ -362,8 +399,8 @@ def build(out=ROOT / "model-lab" / "models"):
                            "dark_mail_edge")
     for tier, (lo, hi, y0, y1, tilt, sweep) in enumerate((
             ((4.02, 18.78, -1.78), (4.35, 20.85, 1.68), 0, 34, -4, 0),
-            ((3.86, 16.72, -1.55), (4.22, 18.94, 1.38), 32, 67, 5, 18),
-            ((3.64, 15.2, -.98), (4.03, 16.92, .87), 65, 96, -7, 26),
+            ((4.08, 16.6, -1.67), (4.39, 19.05, 1.35), 32, 67, 7, 14),
+            ((3.82, 14.22, -1.16), (4.22, 17.1, .96), 65, 96, -9, 26),
     )):
         source_uv = side_mail_uv if tier == 0 else side_cloth_uv
         segment_uv = [source_uv[0], source_uv[1] + y0,
@@ -856,12 +893,18 @@ def build(out=ROOT / "model-lab" / "models"):
     mane_faces = {side: mane_uv for side in
                   ("north", "south", "east", "west", "up", "down")}
     mane_paths = (
-        ((-1.1, 27.1, 1.1), (-3.0, 28.4, 4.0), (-7.0, 26.4, 8.2), .58),
-        ((-.35, 27.3, 1.2), (-2.0, 28.6, 4.3), (-6.0, 27.2, 8.4), .49),
-        ((.6, 27.0, 1.2), (-1.0, 28.3, 4.0), (-5.0, 25.9, 7.2), .51),
-        ((1.5, 26.9, 1.5), (-.4, 27.6, 3.8), (-4.3, 24.9, 6.8), .45),
-        ((-1.7, 27.1, 1.6), (-3.8, 28.1, 3.4), (-8.0, 25.6, 7.1), .48),
-        ((.15, 26.9, 1.5), (-1.8, 27.4, 4.1), (-6.0, 24.7, 6.9), .36),
+        ((-1.35, 27.0, 1.0), (-3.8, 28.7, 3.7), (-9.2, 25.6, 8.6), 1.12),
+        ((-.75, 27.35, 1.15), (-2.8, 29.0, 4.4), (-7.5, 27.4, 9.2), 1.06),
+        ((-.05, 27.45, 1.2), (-1.8, 28.8, 4.5), (-6.4, 26.1, 8.6), 1.13),
+        ((.65, 27.35, 1.35), (-.8, 28.2, 4.4), (-5.1, 24.5, 8.1), 1.0),
+        ((1.35, 27.1, 1.5), (-.2, 27.9, 3.7), (-4.8, 22.8, 7.7), .88),
+        ((-1.8, 26.75, 1.55), (-4.1, 27.7, 3.8), (-8.0, 23.8, 7.9), .92),
+        ((.15, 26.9, 1.6), (-1.5, 27.3, 4.8), (-6.8, 22.9, 9.4), .8),
+        ((-.9, 26.6, 1.8), (-3.1, 27.0, 4.3), (-7.7, 21.8, 7.8), .72),
+        ((-1.25, 26.75, 1.7), (-2.6, 27.0, 3.9), (-4.7, 22.4, 6.0), .72),
+        ((-.4, 26.85, 1.8), (-1.45, 26.7, 4.8), (-3.6, 20.9, 7.0), .65),
+        ((.8, 26.7, 1.8), (-.2, 27.4, 4.4), (-2.75, 24.0, 6.5), .69),
+        ((-1.55, 26.5, 1.65), (-3.6, 26.6, 4.2), (-6.2, 20.4, 7.4), .6),
     )
     for strand, (start, control, tip, root_width) in enumerate(mane_paths):
         def point(u):
@@ -878,8 +921,8 @@ def build(out=ROOT / "model-lab" / "models"):
             horizontal = math.hypot(dx, dz)
             length = math.hypot(horizontal, dy)
             taper = (1 - (u0 + u1) / 2) ** .75
-            width = .11 + root_width * taper
-            height = .12 + root_width * .85 * taper
+            width = .17 + root_width * taper
+            height = .18 + root_width * .85 * taper
             add_rotated(m, plume, f"mane_lock_{strand}_{section}",
                         [cx - width / 2, cy - height / 2, cz - length / 2 - .09],
                         [cx + width / 2, cy + height / 2, cz + length / 2 + .09],
@@ -1124,9 +1167,7 @@ def build(out=ROOT / "model-lab" / "models"):
     # evenly spaced hoops made its silhouette read like a machine cylinder.
     for wrap, (lo, hi, tilt, pivot) in enumerate((
             ((-6.27, 14.61, -1.59), (-3.96, 15.19, 1.26), -17, (-5.1, 14.9, 0)),
-            ((-6.25, 13.94, -1.59), (-3.99, 14.43, 1.27), 6, (-5.1, 14.2, 0)),
             ((-6.16, 12.76, -1.57), (-4.04, 13.32, 1.23), 13, (-5.1, 13.0, 0)),
-            ((-6.1, 11.91, -1.53), (-4.1, 12.31, 1.2), -8, (-5.1, 12.1, 0)),
             ((-6.01, 10.6, -1.47), (-4.17, 11.08, 1.13), -12, (-5.1, 10.85, 0)),
     )):
         wrap_uv = m.patch(64, 28,
