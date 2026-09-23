@@ -350,6 +350,36 @@ def build_map_desk_frame(base):
     write_json(ASSETS / "font/core_menu_map_desk.json", {"providers": providers})
 
 
+def build_trade_frame(base):
+    """A harbor counter and paper invoice for one selected market offer."""
+    frame = base.copy()
+    draw = ImageDraw.Draw(frame)
+    draw.rectangle((111, 35, 271, 72), fill="#283331", outline="#81785F")
+    draw.line((114, 38, 268, 38), fill="#AE976B")
+    for x in (116, 132, 148, 232, 248, 264):
+        draw.line((x, 42, x + 8, 42), fill="#42504A")
+        draw.line((x, 53, x + 8, 53), fill="#42504A")
+    draw.polygon([(174, 42), (208, 42), (215, 68), (168, 68)], fill="#4A5550", outline="#B19B6D")
+    draw.rectangle((178, 44, 205, 66), fill="#263B3C")
+    draw.line((181, 66, 204, 66), fill="#D1B784")
+    for x in (123, 254):
+        draw.ellipse((x - 5, 58, x + 5, 68), fill="#AA8652", outline="#D4BA7B")
+        draw.ellipse((x - 2, 61, x + 2, 65), outline="#654F35")
+    draw.rectangle((111, 69, 271, 72), fill="#765D3E")
+    draw.line((114, 69, 268, 69), fill="#B99B6B")
+    draw.rectangle((111, 74, 271, 88), fill="#D3C4A5", outline="#8C795A")
+    draw.polygon([(264, 74), (271, 74), (271, 81)], fill="#A89874")
+    draw.line((115, 86, 267, 86), fill="#A79A80")
+    providers = []
+    for half in range(2):
+        name = f"menu_trade_{half}"
+        frame.crop((half * 192, 0, (half + 1) * 192, 222)).save(
+            ASSETS / f"textures/gui/core/{name}.png", optimize=True)
+        providers.append({"type": "bitmap", "file": f"projects:gui/core/{name}.png",
+                          "height": 222, "ascent": 13, "chars": [chr(FRAME_BASE + 12 + half)]})
+    write_json(ASSETS / "font/core_menu_trade.json", {"providers": providers})
+
+
 def build_buttons():
     # Nine span widths, five states. Every backdrop is confined to the actual slot strip.
     atlas = Image.new("RGBA", (160 * 9, 16 * len(PALETTE)))
@@ -513,6 +543,7 @@ def build_menu():
     build_journal_frames()
     build_dungeon_frame(frame)
     build_map_desk_frame(frame)
+    build_trade_frame(frame)
     buttons = build_buttons()
     build_cards()
     build_focus()

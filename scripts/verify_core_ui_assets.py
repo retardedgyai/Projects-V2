@@ -223,6 +223,12 @@ def verify():
         assert provider["chars"] == [chr(FRAME_BASE + 10 + half)] and provider["ascent"] == 13
         with Image.open(PACK / f"assets/projects/textures/gui/core/menu_map_desk_{half}.png") as tile:
             assert tile.size == (192, 222)
+    trade = json.loads((PACK / "assets/projects/font/core_menu_trade.json").read_text())["providers"]
+    assert len(trade) == 2
+    for half, provider in enumerate(trade):
+        assert provider["chars"] == [chr(FRAME_BASE + 12 + half)] and provider["ascent"] == 13
+        with Image.open(PACK / f"assets/projects/textures/gui/core/menu_trade_{half}.png") as tile:
+            assert tile.size == (192, 222)
     with Image.open(PACK / "assets/projects/textures/gui/core/menu_buttons.png") as buttons:
         assert buttons.size == (1440, 80)
         for row, tone in enumerate(PALETTE):

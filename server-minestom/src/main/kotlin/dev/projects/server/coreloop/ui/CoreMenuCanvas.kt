@@ -32,6 +32,7 @@ class CoreMenuCanvas(private val title: String) {
         val journalPage: Int?,
         val dungeonEntrance: Boolean,
         val mapDesk: Boolean,
+        val tradeCounter: Boolean,
         val leftPanel: PanelSnapshot?,
         val rightPanel: PanelSnapshot?,
         val buttons: List<ButtonSnapshot>,
@@ -67,6 +68,7 @@ class CoreMenuCanvas(private val title: String) {
     private var journalPage: Int? = null
     private var dungeonEntrance = false
     private var mapDesk = false
+    private var tradeCounter = false
     private val treeEdges = mutableListOf<TreeEdge>()
     /** The three journal leaves use one physical atlas with distinct destination subjects. */
     fun journal(page: Int) { require(page in 0..2); journalPage = page }
@@ -74,6 +76,8 @@ class CoreMenuCanvas(private val title: String) {
     fun dungeonEntrance() { dungeonEntrance = true }
     /** Selected map, live model and preparation controls share one chart desk. */
     fun mapDesk() { mapDesk = true }
+    /** A market quote places the actual product above an invoice and the one commit action. */
+    fun tradeCounter() { tradeCounter = true }
     fun treeEdge(from: Int, to: Int, learned: Boolean) {
         require(from in 0..44 && to in 0..44 && from != to)
         treeEdges += TreeEdge(from,to,learned)
@@ -169,7 +173,8 @@ class CoreMenuCanvas(private val title: String) {
                     line.art?.let { ArtSnapshot(x, y - 2, it.name, 16) }, line.style.name)
             }, hero?.let { ArtSnapshot(x + (PANEL_WIDTH - 32) / 2, 30, it.name, 32) })
         }
-        return Snapshot(title, HEADING.value(), journalPage, dungeonEntrance, mapDesk, leftPanel?.snapshot(-98), rightPanel?.snapshot(184),
+        return Snapshot(title, HEADING.value(), journalPage, dungeonEntrance, mapDesk, tradeCounter,
+            leftPanel?.snapshot(-98), rightPanel?.snapshot(184),
             buttons.values.map { ButtonSnapshot(it.firstSlot, it.span, it.label, it.tone.name, it.icon, toneColor(it.tone).value()) },
             texts.map { TextSnapshot(it.x, it.y, it.value, it.color.value(), it.maxWidth, it.style.name) },
             cards.values.map { card ->
@@ -230,8 +235,10 @@ class CoreMenuCanvas(private val title: String) {
 
         val snapshot = snapshot()
         val page = journalPage
-        val background = when { page != null -> JOURNAL_FONT; dungeonEntrance -> DUNGEON_FONT; mapDesk -> MAP_DESK_FONT; else -> CANVAS_FONT }
-        val frameStart = when { page != null -> 0xE602 + page * 2; dungeonEntrance -> 0xE608; mapDesk -> 0xE60A; else -> 0xE600 }
+        val background = when { page != null -> JOURNAL_FONT; dungeonEntrance -> DUNGEON_FONT; mapDesk -> MAP_DESK_FONT;
+            tradeCounter -> TRADE_FONT; else -> CANVAS_FONT }
+        val frameStart = when { page != null -> 0xE602 + page * 2; dungeonEntrance -> 0xE608; mapDesk -> 0xE60A;
+            tradeCounter -> 0xE60C; else -> 0xE600 }
         draw(-104, CoreUiComponents.glyph(frameStart.toChar(), background), 193)
         draw(88, CoreUiComponents.glyph((frameStart + 1).toChar(), background), 193)
         label(8, 6, title, HEADING, 160, TextStyle.EMPHASIS)
@@ -304,6 +311,7 @@ class CoreMenuCanvas(private val title: String) {
         private val JOURNAL_FONT = Key.key("projects", "core_menu_journal")
         private val DUNGEON_FONT = Key.key("projects", "core_menu_dungeon")
         private val MAP_DESK_FONT = Key.key("projects", "core_menu_map_desk")
+        private val TRADE_FONT = Key.key("projects", "core_menu_trade")
         private val FOCUS_FONT = Key.key("projects", "core_menu_focus")
         internal val TEXT_YS = (listOf(6, 8, 128) + (0..5).map { 20 + 18 * it } + (0..12).map { 30 + 14 * it }).distinct().sorted()
         private data class Metric(val glyph: Char, val advance: Int)

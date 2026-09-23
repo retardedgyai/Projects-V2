@@ -207,7 +207,7 @@ class CoreLoopMenusTest {
             assertTrue(f.title().contains("修理材料の市場"))
             assertTrue(f.player.openInventory!!.getItemStack(10).isAir)
             f.click(9)
-            f.click(22)
+            f.click(36)
             assertEquals(CoreAction.BuyOffer(good.seller, good.offer.id, 100), f.host.requests.single().action)
             f.host.current = f.host.current.copy(storedGear = listOf(good.gear!!))
             f.host.requests.single().after()
@@ -275,7 +275,9 @@ class CoreLoopMenusTest {
             f.menus.supplies(f.player)
             f.click(9)
             assertTrue(f.host.requests.isEmpty())
-            f.click(22)
+            assertTrue(f.snapshot().tradeCounter)
+            assertEquals(if (silver == 0L) "銀貨不足" else "購入を確定", f.snapshot().buttons.first { it.firstSlot == 36 }.label)
+            f.click(36)
             if (silver == 0L) assertTrue(f.host.requests.isEmpty())
             else assertEquals(CoreAction.BuyOffer(seller, offer.id, 30), f.host.requests.single().action)
         }
@@ -313,6 +315,20 @@ class CoreLoopMenusTest {
             f.click(14)
             assertEquals(CoreAction.CancelOffer(offer.id), f.host.requests.single().action)
         }
+    }
+
+    @Test fun `own market offer has a distinct cancellation action`() {
+        val a = account().copy(silver = 0)
+        val f = fixture(a, packed = true)
+        val offer = CoreMarketOffer(UUID.randomUUID(), 30, CoreMaterial(CoreResource.ORE), 4)
+        f.host.marketEntries = listOf(CoreMarketEntry(a.playerId, offer, null))
+        f.menus.supplies(f.player)
+        f.click(9)
+        assertEquals("出品を取り下げる", f.snapshot().buttons.first { it.firstSlot == 36 }.label)
+        assertTrue(f.player.openInventory!!.getItemStack(13).get(DataComponents.LORE).orEmpty().map(::plain)
+            .any { it == "自分の出品 / 下で取り下げ" })
+        f.click(36)
+        assertEquals(CoreAction.CancelOffer(offer.id), f.host.requests.single().action)
     }
 
     private fun fixture(account: CoreAccount, packed: Boolean = true): Fixture {
@@ -911,6 +927,13 @@ class CoreLoopMenusTest {
         f.host.current = f.host.current.copy(offers = listOf(CoreMarketOffer(UUID.randomUUID(), 130, gearId = stored.identity.id)))
         capture("equipment-listed") { f.menus.equipmentStock(f.player); f.click(9) }
         f.host.current = previousAccount
+        val marketOffer = CoreMarketOffer(UUID.randomUUID(), 130, CoreMaterial(CoreResource.ORE, 3), 4)
+        f.host.marketEntries = listOf(CoreMarketEntry(UUID.randomUUID(), marketOffer, null))
+        f.host.current = previousAccount.copy(silver = 1000)
+        capture("market-detail") { f.menus.supplies(f.player, 3); f.click(9) }
+        f.host.current = previousAccount
+        capture("market-insufficient") { f.menus.supplies(f.player, 3); f.click(9) }
+        f.host.marketEntries = emptyList()
         capture("career") { f.menus.career(f.player) }
         capture("class-skills") { f.menus.skillBuild(f.player) }
         capture("class-ultimates") { f.menus.skillBuild(f.player,4) }

@@ -191,6 +191,7 @@ assets/projects/font/core_menu_emphasis_y92.json
 assets/projects/font/core_menu_focus.json
 assets/projects/font/core_menu_journal.json
 assets/projects/font/core_menu_map_desk.json
+assets/projects/font/core_menu_trade.json
 assets/projects/font/core_menu_tree.json
 assets/projects/font/core_menu_y100.json
 assets/projects/font/core_menu_y110.json
@@ -13511,6 +13512,8 @@ assets/projects/textures/gui/core/menu_map_desk_0.png
 assets/projects/textures/gui/core/menu_map_desk_1.png
 assets/projects/textures/gui/core/menu_text.png
 assets/projects/textures/gui/core/menu_text_emphasis.png
+assets/projects/textures/gui/core/menu_trade_0.png
+assets/projects/textures/gui/core/menu_trade_1.png
 assets/projects/textures/gui/core/resource_bar.png
 assets/projects/textures/gui/core/resource_digits.png
 assets/projects/textures/gui/core/shield_icon.png

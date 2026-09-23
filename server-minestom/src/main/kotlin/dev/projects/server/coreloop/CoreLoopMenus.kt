@@ -1146,14 +1146,16 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
         }
     }
 
-    private fun marketIcon(a: CoreAccount, entry: CoreMarketEntry, packed: Boolean): ItemStack {
+    private fun marketIcon(a: CoreAccount, entry: CoreMarketEntry, packed: Boolean, inDetail: Boolean = false): ItemStack {
         val offer = entry.offer
         val base = entry.gear?.let { CoreLoopItems.gear(it.project(a), it.slot, packed) }
             ?: CoreLoopItems.icon(CoreLoopItems.resourceMaterial(requireNotNull(offer.material).resource),
                 "${offer.material.displayName} ×${offer.quantity}").withAmount(offer.quantity.toInt().coerceAtMost(64))
         return base.with(DataComponents.LORE, base.get(DataComponents.LORE).orEmpty() + listOf(
             CoreLoopItems.text("合計 銀貨${offer.price}枚 / 所持 ${a.silver}枚"),
-            CoreLoopItems.text(if (entry.seller == a.playerId) "自分の出品 / クリックで取り下げ確認" else "クリック：商品と価格を確認")))
+            CoreLoopItems.text(if (inDetail) {
+                if (entry.seller == a.playerId) "自分の出品 / 下で取り下げ" else "選択中の商品 / 下で購入を確定"
+            } else if (entry.seller == a.playerId) "自分の出品 / クリックで管理" else "クリック：商品と価格を確認")))
     }
 
     private fun marketDetail(player: Player, entry: CoreMarketEntry, repairFor: CoreGearSlot? = null) {
@@ -1161,19 +1163,35 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
         if (!game.requireHub(player)) return
         val own = entry.seller == a.playerId
         val offer = entry.offer
-        view(player, "市場 / ${if (own) "出品の管理" else "購入の確認"}", { supplies(player, entry.gear?.tier ?: offer.material?.tier ?: 1, repairFor = repairFor) }, nativeChest = true) { v ->
-            v.items[13] = marketIcon(a, entry, v.packed)
+        val gear = entry.gear
+        val tier = gear?.tier ?: offer.material?.tier ?: 1
+        view(player, "市場 / ${if (own) "出品の管理" else "購入の確認"}", { supplies(player, tier, repairFor = repairFor) }) { v ->
+            v.canvas.tradeCounter()
+            if (gear != null) v.canvas.left("品物の詳細", equipment(gear.project(a), gear.slot).take(5) +
+                if (gear.broken) lines("破損・修理が必要") else emptyList())
+            else {
+                val material = requireNotNull(offer.material)
+                v.canvas.left("品物の詳細", lines("T${material.tier} ${resourceName(material.resource)}", "数量 ${offer.quantity}個"))
+            }
             val available = own || a.silver >= offer.price
-            v.items[22] = CoreLoopItems.icon(if (available) Material.LIME_DYE else Material.BARRIER,
-                if (own) "出品を取り下げる" else if (available) "銀貨${offer.price}枚で購入する" else "銀貨が${offer.price - a.silver}枚不足",
-                if (own) "商品は自分の倉庫へ戻ります" else "購入品を倉庫に保管 / 装備は自動装備しません",
-                if (entry.gear?.broken == true) "注意：破損品です。別の装備1個で修理するまで性能は無効" else "未破損の商品です")
-            if (available) v.actions[22] = { mutate(v, player,
+            v.canvas.right(if (own) "出品の管理" else "支払い", lines(
+                if (own) "自分の出品" else "所持 銀貨${a.silver}",
+                if (own) "取下げで返却" else if (available) "購入後 銀貨${a.silver - offer.price}" else "不足 銀貨${offer.price - a.silver}",
+                if (repairFor != null) "修理材料として保管" else if (gear != null) "装備庫へ保管" else "素材倉庫へ保管"))
+            v.canvas.text(12, 74, "${if (own) "出品価格" else "合計"}  銀貨${offer.price}", CoreMenuCanvas.JOURNAL_INK, 150, TextStyle.EMPHASIS)
+            v.items[13] = marketIcon(a, entry, v.packed, inDetail = true)
+            tile(v, 36, 9, if (own) "出品を取り下げる" else if (available) "購入を確定" else "銀貨不足",
+                CoreLoopItems.icon(if (available) Material.LIME_DYE else Material.BARRIER,
+                    if (own) "出品を取り下げる" else if (available) "銀貨${offer.price}枚で購入する" else "銀貨が${offer.price - a.silver}枚不足",
+                    if (own) "商品は自分の倉庫へ戻ります" else "購入品を倉庫に保管 / 装備は自動装備しません",
+                    if (gear?.broken == true) "注意：破損品です。別の装備1個で修理するまで性能は無効" else "未破損の商品です"),
+                if (own) Tone.NEUTRAL else if (available) Tone.PRIMARY else Tone.DISABLED, icon = true) { mutate(v, player,
                 if (own) CoreAction.CancelOffer(offer.id) else CoreAction.BuyOffer(entry.seller, offer.id, offer.price), a.revision) {
                     if (repairFor != null) repairMenu(player, repairFor)
-                    else if (entry.gear != null) equipmentStock(player) else storage(player, offer.material?.tier ?: 1)
+                    else if (gear != null) equipmentStock(player) else storage(player, offer.material?.tier ?: 1)
                 } }
-            v.items[45] = CoreLoopItems.icon(Material.ARROW, "市場へ"); v.actions[45] = { supplies(player, entry.gear?.tier ?: offer.material?.tier ?: 1, repairFor = repairFor) }
+            tile(v, 45, 6, "市場へ", CoreLoopItems.icon(Material.ARROW, "市場へ戻る")) { supplies(player, tier, repairFor = repairFor) }
+            tile(v, 51, 3, "閉じる", CoreLoopItems.icon(Material.BARRIER, "画面を閉じる")) { player.closeInventory() }
         }
     }
 
