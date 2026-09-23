@@ -714,7 +714,6 @@ def build(out=ROOT / "model-lab" / "models"):
                [xlo - .02, 14.65, depth],
                [xlo + .92, 21.15, depth + (1.38, 1.02, 1.21)[facet]],
                "cloth", cape_left_edge, face_uv=face_uv)
-    add(m, scarf, "scarf_hanging_point", [-3.55, 14.2, -3.1], [-1.7, 18.1, -2.78], "cloth", "ragged_scarf")
 
     # The mask is the face; only a narrow, dark head and a short mount sit
     # behind it. The mane supplies the rear silhouette.
