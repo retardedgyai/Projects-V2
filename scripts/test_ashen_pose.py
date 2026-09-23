@@ -16,6 +16,18 @@ class AshenPoseTest(unittest.TestCase):
     def setUpClass(cls):
         source = ROOT / "model-lab" / "models" / "ashen_knight.bbmodel"
         cls.data, elements, cls.atlas, cls.animations = preview.load(source)
+        def find_bone(node, name):
+            if node["name"] == name:
+                return node
+            for child in node.get("children", []):
+                if isinstance(child, dict):
+                    found = find_bone(child, name)
+                    if found is not None:
+                        return found
+            return None
+
+        sword = find_bone(cls.data["outliner"][0], "sword")
+        cls.sword_elements = {ident: elements[ident] for ident in sword["children"]}
         cls.blade_id, blade = next((ident, element) for ident, element in elements.items()
                                    if element["name"] == "blade_worn_faces")
         cls.tip = np.array([5.0, float(blade["from"][1]), 0.0, 1.0])
@@ -53,6 +65,21 @@ class AshenPoseTest(unittest.TestCase):
     def test_idle_sword_tip_rests_near_ground(self):
         self.assertGreaterEqual(self.tip_y("idle", 0), -1)
         self.assertLessEqual(self.tip_y("idle", 0), 1)
+
+    def test_idle_visible_blade_stays_above_ground(self):
+        background = np.array((36, 32, 40))
+        ground = np.array((150, 120, 60))
+        for view in ("front", "side"):
+            for seconds in np.linspace(0, 2, 9):
+                pixels = np.asarray(preview.render(
+                    self.data, self.sword_elements, self.atlas,
+                    self.animations["idle"], float(seconds), view, 12,
+                    continuous_light=True, show_grid=False))[:, :, :3]
+                ground_rows = np.flatnonzero(np.all(pixels == ground, axis=2).any(axis=1))
+                self.assertGreater(len(ground_rows), 0)
+                below = pixels[int(ground_rows[0]) + 1:]
+                with self.subTest(view=view, seconds=seconds):
+                    self.assertFalse(np.any(np.any(below != background, axis=2)))
 
     def test_long_cloak_does_not_pass_through_ground(self):
         for name, animation in self.animations.items():
