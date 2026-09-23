@@ -208,9 +208,11 @@ def build(out=ROOT / "model-lab" / "models"):
                     "ragged_hip", face_uv={"north": rag_uv, "south": rag_uv})
     add(m, chest, "upper_mail_tunic", [-3.7, 17.1, -2.15], [3.7, 22, 2.1], "void")
     add(m, chest, "waist_mail_tunic", [-2.9, 13, -1.85], [2.9, 18.3, 1.85], "void")
-    add(m, chest, "upper_damaged_cuirass", [-3.1, 17.0, -2.7], [2.4, 21.3, -1.85], "armor")
-    add(m, chest, "lower_damaged_cuirass", [-2.0, 14.9, -2.37], [1.15, 17.45, -1.78], "armor")
-    add(m, chest, "fractured_breastplate", [-2.9, 17.6, -2.91], [-.4, 20.7, -2.63], "edge", "engraved")
+    add_rotated(m, chest, "fractured_left_breastplate", [-3.0, 17.75, -2.78],
+                [-.65, 20.1, -2.1], "armor", [0, 0, -7],
+                [-1.8, 19.0, -2.5], "battered_scale")
+    add(m, chest, "right_chest_scrap", [1.25, 17.3, -2.48],
+        [2.55, 19.0, -1.92], "armor", "battered_scale")
     add(m, chest, "high_collar", [-2.8, 21.4, -1.65], [2.8, 23.2, 2.2], "void")
     add(m, chest, "mail_under_left", [-4.25, 15.8, -1.8], [-3.55, 20.8, 1.5], "mail")
     add(m, chest, "mail_under_right", [3.5, 15.4, -1.7], [4.25, 20.5, 1.4], "mail")
@@ -299,14 +301,13 @@ def build(out=ROOT / "model-lab" / "models"):
     m.cube("cowl_under_sheet", [-4.45, 19.65, -3.18], [4.25, 23.65, -3.1],
            "cloth", scarf, face_uv={"north": cowl_under_uv, "south": cowl_under_uv})
 
-    # Five narrow, drooping fabric folds read as a cowl wrapped around the
-    # neck. Broad rectangular folds looked like stacked breastplate panels.
+    # Uneven, broad fabric folds wrap the neck. Repeated narrow ridges looked
+    # like a mechanical grille at the scale used in the boss fight.
     cowl_bands = (
-        (-3.15, 3.05, 23.55, -3.18, .88),
-        (-3.65, 3.55, 22.90, -3.48, .92),
-        (-4.05, 3.95, 22.20, -3.73, .96),
-        (-4.3, 4.15, 21.47, -3.95, 1.00),
-        (-3.75, 3.9, 20.70, -4.02, 1.00),
+        (-3.15, 2.95, 23.60, -3.18, 1.20),
+        (-3.75, 3.50, 22.45, -3.55, 1.35),
+        (-4.22, 4.04, 21.10, -3.88, 1.44),
+        (-3.65, 3.54, 19.82, -4.02, 1.18),
     )
     for layer, (x0, x1, top_y, z, thickness) in enumerate(cowl_bands):
         def paint_cowl(px, py, seed=layer):
@@ -315,34 +316,37 @@ def build(out=ROOT / "model-lab" / "models"):
             hem = 30 - round(4 * side) - authoring.noise(px // 6, seed, 3341) % 3
             if py < top or py > hem:
                 return (0, 0, 0, 0)
-            if seed == 4 and py > 20 and (px + py * 2) % 19 < 3:
+            if seed == 3 and py > 20 and (px + py * 2) % 23 < 2:
                 return (0, 0, 0, 0)
-            fold = math.sin(px * .072 + py * .18 + seed * 1.4)
-            color = ((12, 29, 50) if fold < -.35 else
-                     (47, 73, 103) if fold > .72 else (26, 48, 75))
-            if py - top < 2 or hem - py < 2:
-                color = (12, 28, 47)
-            if authoring.noise(px // 2, py // 2, 3367 + seed) % 79 == 0:
-                color = (73, 81, 90)
+            fold = math.sin(px * .043 + seed * 1.1)
+            color = ((15, 29, 47) if fold < -.48 else
+                     (43, 67, 91) if fold > .62 else (26, 47, 70))
+            if py - top < 3 or hem - py < 4:
+                color = (12, 27, 44)
+            elif py > top + (hem - top) * .36 and py < hem - 5 and fold > .2:
+                color = (38, 62, 86)
+            if authoring.noise(px // 3, py // 3, 3367 + seed) % 137 == 0:
+                color = (69, 78, 85)
             return (*color, 255)
 
         band_uv = m.patch(96, 32, paint_cowl, f"cowl_band_{layer}")
-        for facet in range(7):
-            u = (facet + .5) / 7
-            xlo = x0 + (x1 - x0) * facet / 7
-            xhi = x0 + (x1 - x0) * (facet + 1) / 7
+        for facet in range(5):
+            u = (facet + .5) / 5
+            xlo = x0 + (x1 - x0) * facet / 5
+            xhi = x0 + (x1 - x0) * (facet + 1) / 5
             side = abs(u - .5) * 2
-            center_y = top_y - thickness / 2 + 2.0 * side ** 1.45
+            center_y = (top_y - thickness / 2 + 2.15 * side ** 1.45
+                        + .16 * math.sin(u * math.tau * 1.4 + layer))
             center_z = z + .67 * side + .18 * math.cos(u * math.tau)
-            uvlo = band_uv[0] + round(facet * 96 / 7)
-            uvhi = band_uv[0] + round((facet + 1) * 96 / 7)
+            uvlo = band_uv[0] + round(facet * 96 / 5)
+            uvhi = band_uv[0] + round((facet + 1) * 96 / 5)
             face_uv = {"north": [uvlo, band_uv[1], uvhi, band_uv[3]],
                        "south": [uvlo, band_uv[1], uvhi, band_uv[3]]}
             add_rotated(m, scarf, f"layered_cowl_{layer}_{facet}",
                         [xlo - .09, center_y - thickness / 2, center_z],
                         [xhi + .09, center_y + thickness / 2, center_z + .32],
-                        "cloth", [7 - layer, (facet - 3) * 7,
-                                  (facet - 3) * 9],
+                        "cloth", [7 - layer, (facet - 2) * 9,
+                                  (facet - 2) * 12],
                         [(xlo + xhi) / 2, center_y, center_z + .16],
                         "worn_cowl", face_uv)
     add(m, scarf, "scarf_left_drape", [-5.1, 19.5, -1.8], [-3.45, 22.2, 2.25], "cloth")
