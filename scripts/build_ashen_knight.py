@@ -601,10 +601,14 @@ def build(out=ROOT / "model-lab" / "models"):
     add_rotated(m, helm, "hood_lower_neck",
                 [-1.48, 23.25, .03], [1.48, 25.08, 1.78], "void",
                 [-9, 0, 0], [0, 24.2, .85], "burned_hood")
-    add(m, helm, "hood_muzzle_base", [-1.35, 22.25, -3.8], [1.35, 24.0, -1.5], "void")
+    add(m, helm, "hood_muzzle_base", [-1.35, 22.25, -4.8], [1.35, 24.0, -1.5], "void")
     add(m, helm, "snout_dark_tip", [-.45, 21.15, -5.75], [.45, 21.85, -5.1], "void")
-    add(m, helm, "left_cheek_armor", [-2.65, 22.7, -3.0], [-1.75, 25.0, -.9], "armor")
-    add(m, helm, "right_broken_cheek", [2.1, 23.25, -2.8], [2.8, 24.35, -.9], "armor")
+    add_rotated(m, helm, "left_cheek_armor", [-2.25, 23.05, -2.85],
+                [-1.59, 24.78, -1.05], "armor", [0, -8, -9],
+                [-1.9, 24.0, -1.9], "battered_scale")
+    add_rotated(m, helm, "right_broken_cheek", [1.93, 23.48, -2.65],
+                [2.52, 24.4, -1.2], "armor", [0, 6, 12],
+                [2.18, 23.95, -1.9], "battered_scale")
 
     # A cutout engraved faceplate supplies a distinct long-muzzled silhouette
     # without reproducing another game's texture or sculpt. The existing helm
@@ -654,27 +658,31 @@ def build(out=ROOT / "model-lab" / "models"):
 
     faceplate_uv = m.patch(48, 64, paint_faceplate, "ashen_faceplate")
     def paint_visor_profile(px, py):
-        # The front plane needs a physical tapered cheek and muzzle when seen
-        # edge-on. A paper-thin visor looked detached from the hood in profile.
+        # A full-height rectangle on each side made the mask look like a pair
+        # of machine housings. Follow the brow down toward a thin muzzle.
         forward = 1 - px / 47
-        top = round(24 + 3 * forward)
-        bottom = round(52 + 4 * forward)
+        top = round(17 + 23 * forward ** 1.25)
+        bottom = round(42 + 17 * forward ** .75)
         if py < top or py > bottom:
             return (0, 0, 0, 0)
-        eye = 24 < px < 35 and 24 < py < 29
+        if px < 9 and py < top + 3:
+            return (0, 0, 0, 0)
+        if px > 35 and py > bottom - 3:
+            return (0, 0, 0, 0)
+        eye = 24 < px < 35 and top + 3 < py < top + 7
         if eye:
             return (8, 14, 19, 255)
         if py < top + 2 or py > bottom - 2:
-            return (58, 67, 71, 255)
-        if px < 12 and py > 38:
-            return (61, 69, 72, 255)
+            return (54, 62, 66, 255)
+        if px < 12 and py > bottom - 8:
+            return (57, 64, 68, 255)
         if authoring.noise(px // 3, py // 3, 5933) % 39 == 0:
-            return (110, 117, 118, 255)
-        return (37, 44, 48, 255)
+            return (85, 92, 94, 255)
+        return (31, 38, 42, 255)
 
     visor_profile_uv = m.patch(48, 64, paint_visor_profile, "wolf_visor_profile")
     visor_back_uv = m.patch(1, 1, lambda _x, _y: (0, 0, 0, 0), "wolf_visor_back")
-    m.cube("engraved_wolf_visor", [-2.45, 21.05, -5.7], [2.45, 27.5, -4.15],
+    m.cube("engraved_wolf_visor", [-2.45, 21.05, -5.7], [2.45, 27.5, -4.75],
            "edge", helm, face_uv={"north": faceplate_uv, "south": visor_back_uv,
                                   "east": visor_profile_uv, "west": visor_profile_uv,
                                   "up": visor_back_uv, "down": visor_back_uv})
