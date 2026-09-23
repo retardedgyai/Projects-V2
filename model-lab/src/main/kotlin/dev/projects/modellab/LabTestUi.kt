@@ -54,7 +54,7 @@ class LabTestUi(events: GlobalEventHandler, private val menu: LabMenu, private v
                 ice.remove(player); player.closeInventory()
             },
             14 to LabMenu.Button("ボスモデルを選ぶ",Material.ARMOR_STAND,
-                listOf("4体から選んで目の前に表示", "戦闘AIではなくモデルの動作確認"),loaded) { bosses(player) },
+                listOf("5体から選んで目の前に表示", "戦闘AIではなくモデルの動作確認"),loaded) { bosses(player) },
             15 to LabMenu.Button("表示中モデルの動きを選ぶ",Material.BLAZE_POWDER,
                 listOf(if(hasModel) "単発／連続を切り替えて再生" else "先にボスモデルを選んでください"),loaded && hasModel) { animations(player) },
             16 to LabMenu.Button("表示中モデルを片づける",Material.CAULDRON,
@@ -120,10 +120,13 @@ class LabTestUi(events: GlobalEventHandler, private val menu: LabMenu, private v
         fun usesOpener(player: Player,hand: PlayerHand)=hand==PlayerHand.MAIN && player.itemInMainHand.getTag(openerTag)==true
         private data class Boss(val id:String,val name:String,val icon:Material)
         private val bosses=listOf(Boss("osirion.bbmodel","不滅の王",Material.GOLDEN_HELMET),Boss("radix.bbmodel","母樹",Material.FLOWERING_AZALEA),
-            Boss("vesper.bbmodel","鐘の番人",Material.BELL),Boss("piglin_lord.bbmodel","黄金卿",Material.GOLD_INGOT))
+            Boss("vesper.bbmodel","鐘の番人",Material.BELL),Boss("piglin_lord.bbmodel","黄金卿",Material.GOLD_INGOT),
+            Boss("ashen_knight.bbmodel","灰淵の騎士",Material.NETHERITE_SWORD))
         internal fun animationLabel(key:String):String {
             val words=mapOf("idle" to "待機","idle_bloom" to "開花待機","attack" to "攻撃","charge" to "突進","cast" to "詠唱",
                 "death" to "倒れる","walk" to "歩く","cleave" to "薙ぎ払い","slam" to "叩きつけ","leap" to "跳躍",
+                "dash" to "突進","awaken" to "目覚め","stagger" to "よろめく",
+                "run" to "走る","cleave_reverse" to "返し斬り","thrust" to "突き","enrage" to "狂化",
                 "roar" to "咆哮","crash" to "衝突","shatter" to "粉砕","spin" to "回転攻撃","uppercut" to "斬り上げ",
                 "stomp" to "踏みつけ","devour" to "捕食","bite" to "噛みつき","bloom" to "開花","choke" to "締めつけ",
                 "unbound" to "解放","hoist" to "持ち上げ","suspend" to "空中で保持","drop" to "落下","sweep" to "振り払い",

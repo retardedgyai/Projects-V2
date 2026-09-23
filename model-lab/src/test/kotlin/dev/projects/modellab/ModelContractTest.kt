@@ -8,7 +8,10 @@ import com.yuuki14202028.WseeAssets
 
 class ModelContractTest {
     @Test fun generatedNamesReferToRealModels() {
-        assertEquals(18, WseeAssets.All.size)
+        assertEquals(21, WseeAssets.All.size)
+        assertEquals("ashen_knight.bbmodel", WseeAssets.AshenKnight.Model)
+        assertEquals("cleave", WseeAssets.AshenKnight.Anim.Cleave)
+        assertEquals("burst", WseeAssets.AshenFissure.Anim.Burst)
         assertEquals("ice_fang.bbmodel", WseeAssets.IceFang.Model)
         assertEquals("erupt", WseeAssets.IceFang.Anim.Erupt)
         assertEquals("vesper.bbmodel", WseeAssets.Vesper.Model)
@@ -25,6 +28,7 @@ class ModelContractTest {
         assertEquals(4f, ModelDefinition(WseeAssets.Radix.Model, emptyMap()).previewScale)
         assertEquals(3f, ModelDefinition(WseeAssets.Vesper.Model, emptyMap()).previewScale)
         assertEquals(3f, ModelDefinition(WseeAssets.PiglinLord.Model, emptyMap()).previewScale)
+        assertEquals(2.5f, ModelDefinition(WseeAssets.AshenKnight.Model, emptyMap()).previewScale)
     }
     @Test fun metricsAreBoundedAndSnapshotsDoNotMutate() {
         val metrics = TickMetrics(3)

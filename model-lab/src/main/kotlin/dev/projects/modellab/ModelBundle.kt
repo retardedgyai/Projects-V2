@@ -11,7 +11,8 @@ data class ModelDefinition(val id: String, val animations: Map<String, Double>) 
     val previewScale: Float get() = when (id) {
         "ice_fang.bbmodel", "ice_fang_b.bbmodel", "ice_fang_c.bbmodel" -> 1f
         "osirion.bbmodel" -> 3.2f
-        "radix.bbmodel", "vesper_bell.bbmodel" -> 4f
+        "radix.bbmodel", "vesper_bell.bbmodel", "ashen_warning.bbmodel" -> 4f
+        "ashen_knight.bbmodel" -> 2.5f
         else -> 3f
     }
     fun requireAnimation(name: String): String {

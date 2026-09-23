@@ -1,5 +1,18 @@
 # ProjectS model laboratory — Scorpius integration
 
+## 灰淵の騎士（制作中）
+
+`scripts/build_ashen_knight.py` はScorpiusの `.bbmodel` 生成機構を使い、
+オリジナルの騎士本体・テクスチャ・13動作と、床予兆・亀裂の別モデルを `model-lab/models/` に生成する。
+工房の「ボスモデルを選ぶ」から灰淵の騎士を配置できる。現在はモデル確認用で、
+ProjectS本編の戦闘AIと攻撃判定への接続はこれから行う。
+
+```powershell
+python scripts/build_ashen_knight.py
+python scripts/boss_models.py validate --source model-lab/models
+.\gradlew.bat :model-lab:modelSmoke --no-daemon "-Pkotlin.compiler.execution.strategy=in-process"
+```
+
 ## メイジ試作：氷牙の連鎖
 
 このPlaygroundでは **本編接続前の1スキル** を追加。サーバー処理＋リソースパックのみ。
