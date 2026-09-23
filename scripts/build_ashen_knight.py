@@ -1186,8 +1186,8 @@ def build(out=ROOT / "model-lab" / "models"):
     # tied at the hips have separate silhouettes, like a battle-worn knight.
     cape_strips = (
         (-5.15, 5.2, 3.05, 1.25, -20),
-        (-.9, 3.8, 4.15, 7.8, -3),
-        (2.2, 4.0, 3.05, 8.8, 20),
+        (-.9, 4.25, 4.15, 2.0, -3),
+        (2.2, 4.15, 3.05, 4.0, 20),
     )
     open_hem_uv = m.patch(1, 1, lambda _x, _y: (0, 0, 0, 0), "open_cloth_hem")
 
@@ -1211,7 +1211,7 @@ def build(out=ROOT / "model-lab" / "models"):
             # A forked, missing wedge opens as the cloth descends. The former
             # one-pixel slits disappeared at boss-fight viewing distance.
             split_center = 20 + 4 * math.sin(progress * 3 + seed * 1.4)
-            split_width = max(0, progress - (.63, .74, .58)[seed]) * (10, 10, 15)[seed]
+            split_width = max(0, progress - (.63, .65, .58)[seed]) * (10, 16, 15)[seed]
             slit = abs(px - split_center) < split_width
             if px < left_edge or px > right_edge or py > tear or slit:
                 return (0, 0, 0, 0)
@@ -1220,7 +1220,7 @@ def build(out=ROOT / "model-lab" / "models"):
                 if px > right_edge - notch:
                     return (0, 0, 0, 0)
             if seed == 1 and 116 <= py <= 168:
-                notch = max(0, 9 - abs(py - 143) * .36)
+                notch = max(0, 11 - abs(py - 143) * .36)
                 if px < left_edge + notch:
                     return (0, 0, 0, 0)
             ridge = (23 + 7 * math.sin(progress * 3.4 + seed * 1.35)
