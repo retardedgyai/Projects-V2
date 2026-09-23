@@ -414,6 +414,19 @@ def build(out=ROOT / "model-lab" / "models"):
     m.cube("cowl_under_sheet", [-2.55, 22.05, -3.12], [2.45, 24.45, -3.04],
            "cloth", scarf, face_uv={"north": cowl_under_uv, "south": cowl_under_uv})
 
+    def paint_cowl_edge(px, py):
+        # Give the thick folds their own dark side, not the transparent atlas
+        # default used by a front-only decal.
+        if px < 1 or px > 10 or py < 2 or py > 45 - authoring.noise(px, 0, 3317) % 4:
+            return (0, 0, 0, 0)
+        wear = authoring.noise(px // 2, py // 4, 3323)
+        color = (10, 23, 38) if wear % 5 else (18, 35, 53)
+        if wear % 71 == 0:
+            color = (29, 47, 64)
+        return (*color, 255)
+
+    cowl_edge_uv = m.patch(12, 48, paint_cowl_edge, "cowl_fabric_edge")
+
     # Uneven, broad fabric folds wrap the neck. Repeated narrow ridges looked
     # like a mechanical grille at the scale used in the boss fight.
     cowl_bands = (
@@ -462,12 +475,16 @@ def build(out=ROOT / "model-lab" / "models"):
             uvhi = band_uv[0] + round((facet + 1) * 96 / 5)
             face_uv = {"north": [uvlo, band_uv[1], uvhi, band_uv[3]],
                        "south": [uvlo, band_uv[1], uvhi, band_uv[3]]}
+            if facet == 0:
+                face_uv["west"] = cowl_edge_uv
+            if facet == 4:
+                face_uv["east"] = cowl_edge_uv
             add_rotated(m, scarf, f"layered_cowl_{layer}_{facet}",
                         [xlo - .09, center_y - thickness / 2, center_z],
-                        [xhi + .09, center_y + thickness / 2, center_z + .32],
+                        [xhi + .09, center_y + thickness / 2, center_z + .42],
                         "cloth", [7 - layer, (facet - 2) * 9,
                                   (facet - 2) * 12 + (-5, 4, 13)[layer]],
-                        [(xlo + xhi) / 2, center_y, center_z + .16],
+                        [(xlo + xhi) / 2, center_y, center_z + .21],
                         "worn_cowl", face_uv)
 
     # The lower wrap breaks away from the neck and falls diagonally across
@@ -502,13 +519,15 @@ def build(out=ROOT / "model-lab" / "models"):
         z = (-3.87, -4.29, -4.61, -4.56, -4.25, -3.91)[facet]
         face_uv = {"north": [uvlo, cowl_fall_uv[1], uvhi, cowl_fall_uv[3]],
                    "south": [uvlo, cowl_fall_uv[1], uvhi, cowl_fall_uv[3]]}
+        if facet == 0:
+            face_uv["west"] = cowl_edge_uv
+        if facet == 5:
+            face_uv["east"] = cowl_edge_uv
         add_rotated(m, scarf, f"scarf_diagonal_chest_fall_{facet}",
                     [xlo - .025, 16.75, z - .12],
                     [xhi + .025, 22.3, z + .12], "cloth",
                     [0, (facet - 2.5) * 5, 0], [(xlo + xhi) / 2, 19.5, z],
                     "chest_wrap", face_uv)
-    add(m, scarf, "scarf_left_drape", [-4.85, 20.0, -1.75],
-        [-3.48, 22.1, 1.8], "void")
     def paint_shoulder_cowl(px, py):
         left = 4 + py // 12
         right = 29 - py // 15
@@ -541,10 +560,12 @@ def build(out=ROOT / "model-lab" / "models"):
 
     back_cowl_uv = m.patch(96, 48, paint_back_cowl, "back_cowl_fold")
     m.cube("scarf_back_left", [-4.8, 19.3, 2.38], [.85, 22.6, 2.68],
-           "cloth", scarf, face_uv={"south": back_cowl_uv, "north": back_cowl_uv})
+           "cloth", scarf, face_uv={"south": back_cowl_uv, "north": back_cowl_uv,
+                                    "east": cowl_edge_uv, "west": cowl_edge_uv})
     m.cube("scarf_back_right_end", [3.2, 20.35, 2.25], [4.9, 22.25, 3.18],
            "void", cape_right, face_uv={"south": shoulder_cowl_uv,
-                                        "north": shoulder_cowl_uv})
+                                        "north": shoulder_cowl_uv,
+                                        "east": cowl_edge_uv, "west": cowl_edge_uv})
     def paint_shoulder_bridge(px, py):
         taper = py / 79
         left = 3 + round(8 * taper) + authoring.noise(py // 6, 0, 3731) % 3
