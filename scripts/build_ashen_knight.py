@@ -26,6 +26,8 @@ PALETTE = {
     "eye": ("0a101a", "121d29", "2d4857"),
     "mail": ("191c19", "343934", "50584f"),
     "leather": ("16191b", "2c2c2c", "504b45"),
+    "skin": ("251c1c", "513a35", "806052"),
+    "bandage": ("3b3530", "776b5d", "a79783"),
 }
 authoring.MATERIALS = {
     name: tuple(bytes.fromhex(color) for color in shades)
@@ -110,6 +112,18 @@ class KnightModel(authoring.Model):
                 tone = 0 if x % 9 in (0, 1) or fine % 29 == 0 else 1
                 if y <= 1:
                     tone = 2
+            elif material == "skin":
+                tone = 2 if coarse % 17 == 0 else 0 if coarse % 7 == 0 else 1
+                if (x * 2 + y * 3 + seed) % 47 < 2:
+                    tone = 0
+                if side in ("north", "south") and height > 14:
+                    wound = x - (width * .38 + 1.9 * math.sin(y / 5 + seed))
+                    if abs(wound) < 1.2 and height * .17 < y < height * .84:
+                        tone = 0
+            elif material == "bandage":
+                tone = 2 if (y + x // 3 + seed) % 13 < 4 else 0 if coarse % 11 == 0 else 1
+                if fine % 31 == 0:
+                    tone = 0
             elif material in ("ember", "eye"):
                 tone = 2 if (x + y) % 5 < 3 else 1
             return (*shades[tone], 255)
@@ -164,8 +178,8 @@ def build(out=ROOT / "model-lab" / "models"):
     tabard_uv = m.patch(36, 80, paint_torn_tabard, "torn_tabard")
     m.cube("front_torn_tabard", [-1.75, 4.7, -2.38], [1.75, 11.5, -2.31],
            "cloth", hips, face_uv={"north": tabard_uv, "south": tabard_uv})
-    add(m, chest, "upper_mail_tunic", [-3.7, 17.1, -2.15], [3.7, 22, 2.1], "mail")
-    add(m, chest, "waist_mail_tunic", [-2.9, 13, -1.85], [2.9, 18.3, 1.85], "mail")
+    add(m, chest, "upper_mail_tunic", [-3.7, 17.1, -2.15], [3.7, 22, 2.1], "void")
+    add(m, chest, "waist_mail_tunic", [-2.9, 13, -1.85], [2.9, 18.3, 1.85], "void")
     add(m, chest, "upper_damaged_cuirass", [-3.1, 17.0, -2.7], [2.4, 21.3, -1.85], "armor")
     add(m, chest, "lower_damaged_cuirass", [-2.5, 14.2, -2.48], [1.8, 17.5, -1.78], "armor")
     add(m, chest, "fractured_breastplate", [-2.9, 17.6, -2.91], [-.4, 20.7, -2.63], "edge", "engraved")
@@ -197,31 +211,99 @@ def build(out=ROOT / "model-lab" / "models"):
            "armor", chest, face_uv={"north": pauldron_uv, "south": pauldron_uv})
     add(m, chest, "chest_leather_binding", [-3.3, 15.2, -2.8], [2.55, 15.8, -2.58], "leather")
 
+    def paint_worn_backplate(px, py):
+        shoulder = min(1, max(0, (py - 4) / 14))
+        half_width = 22 + round(7 * shoulder) if py < 25 else 29 - round((py - 25) * .2)
+        if py > 53:
+            half_width -= round((py - 53) * .5)
+        left = 31 - half_width
+        right = 32 + half_width
+        top = 3 + round(abs(px - 31.5) * .15)
+        hem = 73 - authoring.noise(px // 5, 0, 4001) % 6
+        if py < top or py > hem or px < left or px > right:
+            return (0, 0, 0, 0)
+        if 44 < py < 55 and px > right - 5 and (px + py) % 3 != 0:
+            return (0, 0, 0, 0)
+        scar = abs(px - (19 + py * .46))
+        if scar < 1.5 and 18 < py < 62:
+            return (87, 92, 82, 255)
+        if abs(px - 31.5) < 3 and py < 65:
+            return (56, 64, 60, 255)
+        if py - top < 2 or px - left < 2 or right - px < 2:
+            return (65, 72, 65, 255)
+        grain = authoring.noise(px // 3, py // 3, 4019)
+        color = (34, 40, 39) if grain % 9 else (46, 52, 47)
+        return (*color, 255)
+
+    backplate_uv = m.patch(64, 80, paint_worn_backplate, "worn_backplate")
+    m.cube("worn_backplate", [-2.3, 15.1, 2.24], [2.3, 22.3, 2.32],
+           "armor", chest, face_uv={"south": backplate_uv})
+    add_rotated(m, chest, "back_leather_binding", [-.35, 15.7, 2.48],
+                [.35, 21.4, 2.74], "leather", [0, 0, 27],
+                [0, 18.6, 2.6], "scuffed_leather")
+
     # Royal-blue wrapping interrupts the chest armor and makes the head/torso
     # one continuous shape. The shoulder scarf also extends over the back.
     add(m, scarf, "scarf_dark_under", [-3.35, 20.5, -3.02], [3.1, 23.5, 2.45], "void")
 
-    def paint_wound_scarf(px, py):
-        collar = py < 18 and 9 + py // 5 <= px <= 86 - py // 6
-        broad_fold = abs(px - (22 + py * .68)) < max(10, 25 - py // 6)
-        crossing_fold = py < 61 and abs(px - (76 - py * .74)) < 10
-        if not (collar or broad_fold or crossing_fold):
+    def paint_cowl_under(px, py):
+        side = abs(px - 47.5) / 48
+        top = 3 + round(10 * side ** 1.5)
+        hem = 73 - round(19 * side) - authoring.noise(px // 5, 0, 3329) % 5
+        if py < top or py > hem:
             return (0, 0, 0, 0)
-        if py > 65 and (px + py * 2) % 13 < 4:
+        if py > 54 and (px + py * 2) % 37 < 3:
             return (0, 0, 0, 0)
-        if py > 74 - authoring.noise(px // 3, 0, 2307) % 7:
-            return (0, 0, 0, 0)
-        diagonal_fold = (px + py * 2 // 3) % 19
-        tone = 0 if diagonal_fold < 4 else 2 if 11 <= diagonal_fold < 15 else 1
-        if py < 2 or abs(px - (22 + py * .68)) > max(7, 22 - py // 6):
-            tone = 0
-        if authoring.noise(px, py, 2751) % 151 == 0:
-            tone = 0
-        return (*(round(channel * .78) for channel in authoring.MATERIALS["cloth"][tone]), 255)
+        fold = math.sin(px * .071 + py * .11)
+        color = (13, 30, 53) if fold < -.4 else (21, 42, 69)
+        return (*color, 255)
 
-    scarf_uv = m.patch(96, 80, paint_wound_scarf, "wound_scarf")
-    m.cube("wound_scarf_front", [-4.85, 16.5, -3.6], [4.85, 24.0, -3.52],
-           "cloth", scarf, face_uv={"north": scarf_uv, "south": scarf_uv})
+    cowl_under_uv = m.patch(96, 80, paint_cowl_under, "cowl_under")
+    m.cube("cowl_under_sheet", [-4.7, 17.6, -3.18], [4.4, 23.6, -3.1],
+           "cloth", scarf, face_uv={"north": cowl_under_uv, "south": cowl_under_uv})
+
+    cowl_bands = (
+        (-3.6, 3.4, 22.2, 24.3, -3.3, -5),
+        (-4.7, 4.4, 20.3, 23.1, -3.58, 4),
+        (-4.5, 4.0, 18.4, 21.4, -3.88, -6),
+    )
+    for layer, (x0, x1, y0, y1, z, bank) in enumerate(cowl_bands):
+        def paint_cowl(px, py, seed=layer):
+            side = abs(px - 47.5) / 48
+            top = 2 + round(8 * side ** 1.4)
+            hem = 29 - round(7 * side) - authoring.noise(px // 6, seed, 3341) % 3
+            if py < top or py > hem:
+                return (0, 0, 0, 0)
+            if seed == 2 and py > 20 and (px + py * 2) % 19 < 3:
+                return (0, 0, 0, 0)
+            fold = math.sin(px * .072 + py * .18 + seed * 1.4)
+            color = ((12, 29, 50) if fold < -.35 else
+                     (47, 73, 103) if fold > .72 else (26, 48, 75))
+            if py - top < 2 or hem - py < 2:
+                color = (12, 28, 47)
+            if authoring.noise(px // 2, py // 2, 3367 + seed) % 79 == 0:
+                color = (73, 81, 90)
+            return (*color, 255)
+
+        band_uv = m.patch(96, 32, paint_cowl, f"cowl_band_{layer}")
+        for facet in range(3):
+            u = (facet + .5) / 3
+            xlo = x0 + (x1 - x0) * facet / 3
+            xhi = x0 + (x1 - x0) * (facet + 1) / 3
+            side = abs(u - .5) * 2
+            center_y = (y0 + y1) / 2 + 1.45 * side
+            center_z = z + .8 * side
+            uvlo = band_uv[0] + facet * 32
+            uvhi = band_uv[0] + (facet + 1) * 32
+            face_uv = {"north": [uvlo, band_uv[1], uvhi, band_uv[3]],
+                       "south": [uvlo, band_uv[1], uvhi, band_uv[3]]}
+            add_rotated(m, scarf, f"layered_cowl_{layer}_{facet}",
+                        [xlo - .08, center_y - (y1 - y0) / 2, center_z],
+                        [xhi + .08, center_y + (y1 - y0) / 2, center_z + .3],
+                        "cloth", [6 - layer * 2, (facet - 1) * 19,
+                                  bank + (facet - 1) * 19],
+                        [(xlo + xhi) / 2, center_y, center_z + .15],
+                        "worn_cowl", face_uv)
     add(m, scarf, "scarf_left_drape", [-5.1, 19.5, -1.8], [-3.45, 22.2, 2.25], "cloth")
     add(m, scarf, "scarf_right_drape", [2.7, 20.1, -1.8], [4.5, 22.5, 2.2], "cloth")
     add(m, scarf, "scarf_back_left", [-4.8, 19.3, 2.25], [.85, 22.6, 3.18], "cloth", "ragged_scarf")
@@ -314,15 +396,27 @@ def build(out=ROOT / "model-lab" / "models"):
     plume_uv = m.patch(96, 48, paint_plume, "worn_plume")
     m.cube("worn_plume_sides", [-.68, 24.5, 1.2], [.68, 28.6, 9.5],
            "hair", plume, face_uv={"east": plume_uv, "west": plume_uv})
-    for strand, (x, z_end, height) in enumerate(((-1.3, 10.6, 25.5),
-                                                 (-.55, 11.7, 24.9),
-                                                 (.25, 9.8, 25.9),
-                                                 (1.05, 10.9, 25.25))):
-        add_rotated(m, plume, f"loose_mane_{strand}",
-                    [x - .29, height - .38, 6.0],
-                    [x + .29, height + .38, z_end],
-                    "hair", [-8 + strand * 3, (strand - 2) * 4, 0],
-                    [x, height, 6.0])
+    for strand, (x, y0, y1, z0, z1, bend) in enumerate((
+            (-1.23, 25.0, 29.1, 1.1, 8.5, -3),
+            (.94, 22.8, 27.0, 2.2, 11.2, 4),
+    )):
+        def paint_mane(px, py, layer=strand, curve=bend):
+            along = px / 95
+            centerline = 13 + (18 + curve) * along ** 1.35
+            half_width = 10 - 5 * along
+            if abs(py - centerline) > half_width:
+                return (0, 0, 0, 0)
+            if along > .68 and (px + 3 * py + layer * 13) % 19 < 3:
+                return (0, 0, 0, 0)
+            streak = (py + px // 11 + layer * 3) % 12
+            color = (20, 27, 33) if streak in (0, 1, 2) else (10, 15, 23)
+            if streak == 6 and px < 72:
+                color = (34, 42, 48)
+            return (*color, 255)
+
+        strand_uv = m.patch(96, 48, paint_mane, f"mane_sheet_{strand}")
+        m.cube(f"mane_sheet_{strand}", [x - .13, y0, z0], [x + .13, y1, z1],
+               "hair", plume, face_uv={"east": strand_uv, "west": strand_uv})
 
     for side, x in (("left", -2.1), ("right", 2.1)):
         thigh = left_thigh if side == "left" else right_thigh
@@ -358,12 +452,12 @@ def build(out=ROOT / "model-lab" / "models"):
     add(m, right_thigh, "right_thigh_leather_wear", [2.9, 8.1, -1.87], [3.45, 10.9, -1.65], "leather")
 
     add(m, left_arm, "bound_upper_arm", [-6, 15.8, -.8], [-3.7, 21, 1.3], "mail")
-    add(m, left_arm, "bound_forearm", [-6.3, 10, -1], [-4, 16.4, 1.2], "mail")
-    add(m, left_arm, "left_hand", [-6.1, 8.8, -1.2], [-4.2, 11, 1], "leather")
+    add(m, left_arm, "bound_forearm", [-6.3, 10, -1], [-4, 16.4, 1.2], "skin")
+    add(m, left_arm, "left_hand", [-6.1, 8.8, -1.2], [-4.2, 11, 1], "skin")
     add(m, left_arm, "left_arm_tear", [-6.5, 11.2, 1.1], [-4.9, 16.2, 1.8], "void")
     add(m, left_arm, "left_mail_shoulder", [-6.15, 17.2, -1], [-3.55, 20.2, 1.5], "mail")
-    add(m, left_arm, "left_wrapping_low", [-6.45, 13.15, -1.4], [-3.95, 13.75, 1.25], "cloth")
-    add(m, left_arm, "left_gauntlet_fragment", [-6.25, 8.85, -1.52], [-4.4, 10.1, -.96], "armor")
+    add_rotated(m, left_arm, "left_wrapping_low", [-6.45, 13.0, -1.4], [-3.95, 13.85, 1.25],
+                "bandage", [0, 0, 9], [-5.2, 13.4, 0], "torn_wrap")
     add(m, right_arm, "right_upper_arm", [3.7, 15.8, -.8], [6, 21, 1.5], "mail")
     add(m, right_arm, "right_bracer", [3.8, 11.1, -1.1], [6.2, 16.5, 1.5], "armor")
     add(m, right_arm, "right_hand", [4, 9.7, -1.2], [6, 12.2, 1.2], "leather")
@@ -405,31 +499,12 @@ def build(out=ROOT / "model-lab" / "models"):
     m.cube("blade_worn_faces", [2.6, -5.7, -.85], [7.4, 8.6, .85],
            "armor", blade, face_uv={"north": blade_uv, "south": blade_uv})
 
-    # A short, folded shoulder mantle hides the straight top seams of the
-    # longer panels and supplies the dark weight visible on the concept's back.
-    def paint_mantle(px, py):
-        arc = 4 + round(7 * abs(px - 47.5) / 48)
-        hem = 54 - round(13 * abs(px - 47.5) / 48)
-        hem -= authoring.noise(px // 5, 0, 3349) % 7
-        if py < arc or py > hem or (py > 36 and 35 < px < 39):
-            return (0, 0, 0, 0)
-        fold = (px * .47 + py * .21) % 23
-        color = (14, 30, 49) if fold < 6 else (32, 53, 74) if fold > 18 else (22, 42, 63)
-        if py - arc < 3 or hem - py < 3:
-            color = (11, 24, 40)
-        return (*color, 255)
-
-    mantle_uv = m.patch(96, 64, paint_mantle, "ashen_shoulder_mantle")
-    m.cube("torn_shoulder_mantle", [-6.4, 17.3, 6.05], [3.9, 22.8, 6.18],
-           "cloth", cape_left, face_uv={"south": mantle_uv, "north": mantle_uv})
-
-    # Individual torn cloth lengths replace the continuous gridded sheet.
-    # They overlap at different depths, bend at the hip, and end at unequal
-    # heights, leaving dark gaps visible from the oblique rear views.
+    # Leave the chainmail back exposed. The short scarf above and torn cloth
+    # tied at the hips have separate silhouettes, like a battle-worn knight.
     cape_strips = (
-        (-4.8, 5.8, 4.8, 1.5, -24),
-        (-1.5, 6.1, 5.8, 2.6, -4),
-        (2.5, 4.2, 4.9, 11.9, 19),
+        (-4.5, 5.5, 3.2, 3.2, -35),
+        (-.7, 5.0, 4.2, 4.0, 0),
+        (3.2, 4.3, 3.3, 6.2, 32),
     )
 
     for strip, (center, width, depth, hem, yaw) in enumerate(cape_strips):
@@ -481,52 +556,56 @@ def build(out=ROOT / "model-lab" / "models"):
         side = strip < 2
         buckets = ((cape_left, cape_left_mid, cape_left_tail) if side else
                    (cape_center, cape_center_mid, cape_center_tail))
-        boundaries = ((21.6, max(16.2, hem)),
-                      (16.45, max(9.4, hem)), (9.65, hem))
+        cape_top = 14.8
+        boundaries = ((cape_top, max(11.2, hem)),
+                      (11.3, max(7.8, hem)), (7.9, hem))
+        def fold_depth(u, v):
+            return (1.15 * math.sin((u * .95 + v * .22 + strip * .29) * math.tau)
+                    + .65 * math.sin((u * 1.8 - v * .58 + strip * .4) * math.tau))
+
         for segment, (top, bottom) in enumerate(boundaries):
             if top <= bottom + .1:
                 continue
             drift = (segment * (strip % 3 - 1) * .26)
             x = center + drift
-            z = depth + (.22, 1.15, 2.35)[segment]
+            base_z = depth + (.22, 1.15, 2.35)[segment]
             segment_width = width * (1 - segment * .065)
-            ty0 = uv[1] + round((21.6 - top) / (21.6 - hem) * 192)
-            ty1 = uv[1] + round((21.6 - bottom) / (21.6 - hem) * 192)
-            # Three facets meet at their seams to give each falling panel a
-            # shallow curve. The cloth retains the continuous painted fold.
-            for facet in range(3):
-                part_lo = x - segment_width / 2 + facet * segment_width / 3
-                part_hi = part_lo + segment_width / 3
-                face_uv = {"north": [uv[0] + facet * 16, ty0, uv[0] + (facet + 1) * 16, ty1],
-                           "south": [uv[0] + facet * 16, ty0, uv[0] + (facet + 1) * 16, ty1]}
-                seam_x = part_hi if facet == 0 else part_lo if facet == 2 else x
-                add_rotated(m, buckets[segment], f"cape_strip_{strip}_{segment}_{facet}",
-                            [part_lo, bottom, z], [part_hi, top, z + .5], "cloth",
-                            [(-6, 8, -3)[segment] + strip % 3 * 2,
-                             yaw + (-4, 3, 8)[segment] + (-22, 0, 22)[facet], 0],
-                            [seam_x, top, z + .25],
-                            f"ragged_cape_{strip}_{segment}", face_uv)
-        for fold, (top, segment, length) in enumerate(((18.1, 0, 4.1), (14.7, 1, 5.0),
-                                                       (10.9, 1, 4.4), (7.5, 2, 4.8))):
-            if top < hem + 2.2:
-                continue
-            x = center + (.42 if (fold + strip) % 2 else -.49)
-            z = depth + (.22, 1.15, 2.35)[segment] + .83 + .13 * fold
-            fold_width = width * (.67 if fold % 2 else .79)
-            length += ((strip + fold) % 3) * .3
-            add_rotated(m, buckets[segment], f"cape_fold_{strip}_{fold}",
-                        [x - fold_width / 2, top - length, z],
-                        [x + fold_width / 2, top, z + .34], "cloth",
-                        [12 + fold * 3, yaw - 17 + ((strip + fold) % 3) * 12,
-                         -9 if (strip + fold) % 2 else 7],
-                        [x, top, z + .17], f"ragged_fold_{strip}_{fold}")
+            for row in range(2):
+                row_top = top - (top - bottom) * row / 2
+                row_bottom = top - (top - bottom) * (row + 1) / 2
+                v = (cape_top - (row_top + row_bottom) / 2) / (cape_top - hem)
+                ty0 = uv[1] + round((cape_top - row_top) / (cape_top - hem) * 192)
+                ty1 = uv[1] + round((cape_top - row_bottom) / (cape_top - hem) * 192)
+                for facet in range(5):
+                    u = (facet + .5) / 5
+                    center_x = x + (u - .5) * segment_width
+                    center_y = (row_top + row_bottom) / 2
+                    z = base_z + fold_depth(u, v)
+                    du = (fold_depth(min(1, u + .01), v)
+                          - fold_depth(max(0, u - .01), v)) / (.02 * segment_width)
+                    dv = (fold_depth(u, min(1, v + .01))
+                          - fold_depth(u, max(0, v - .01))) / (.02 * (cape_top - hem))
+                    face_uv = {"north": [uv[0] + round(facet * 48 / 5), ty0,
+                                         uv[0] + round((facet + 1) * 48 / 5), ty1],
+                               "south": [uv[0] + round(facet * 48 / 5), ty0,
+                                         uv[0] + round((facet + 1) * 48 / 5), ty1]}
+                    add_rotated(m, buckets[segment], f"cape_strip_{strip}_{segment}_{row}_{facet}",
+                                [center_x - segment_width / 10 - .06, row_bottom - .08, z - .18],
+                                [center_x + segment_width / 10 + .06, row_top + .08, z + .18],
+                                "cloth",
+                                [(-6, 8, -3)[segment] + strip % 3 * 2
+                                 + max(-12, min(12, math.degrees(math.atan(dv)))),
+                                 yaw + (-4, 3, 8)[segment]
+                                 - max(-32, min(32, math.degrees(math.atan(du)))), 0],
+                                [center_x, center_y, z],
+                                f"ragged_cape_{strip}_{segment}", face_uv)
     add(m, cape_left_edge, "left_shoulder_cloth", [-5.75, 19.5, 1.0], [-4.65, 21.5, 2.95], "cloth")
     add_rotated(m, cape_right, "right_mantle_remnant", [3.0, 17.8, 2.55], [4.75, 21.65, 3.15],
                 "cloth", [0, 17, 0], [3.85, 21.65, 2.85], "ragged_mantle")
     add_rotated(m, cape_right, "right_hanging_remnant", [3.1, 9.2, 3.0], [5.05, 18.0, 3.55],
                 "cloth", [0, -24, 0], [4.05, 18.0, 3.3], "ragged_right")
     add(m, cape_right_edge, "right_shoulder_cloth", [4.75, 19.5, 1.0], [5.75, 21.5, 2.95], "cloth")
-    add(m, cape_center, "back_mail", [-4.05, 8.3, 2.35], [4.1, 13.2, 3.05], "mail")
+    add(m, hips, "back_mail", [-4.05, 8.3, 2.35], [4.1, 13.2, 3.05], "mail")
 
     # The head should read as a narrow animal mask embedded in hair, rather
     # than a full-width box above the shoulders. Keep the muzzle's depth.
@@ -556,13 +635,13 @@ def build(out=ROOT / "model-lab" / "models"):
     sword_bone = m.bone("sword", [5, 10.5, 0], blade)
     sword_bone["rotation"] = [-20, 0, -30]
     right_arm_bone = m.bone("right_arm", [4.8, 21, 0], right_arm + [sword_bone])
-    left_tail_bone = m.bone("cape_left_tail", [-3.6, 10.3, 3.6], cape_left_tail)
-    left_mid_bone = m.bone("cape_left_mid", [-3.1, 17.2, 3.2], cape_left_mid + [left_tail_bone])
-    left_cape_bone = m.bone("cape_left", [-2.3, 21, 2.8], cape_left + [left_mid_bone])
+    left_tail_bone = m.bone("cape_left_tail", [-3.6, 7.8, 3.6], cape_left_tail)
+    left_mid_bone = m.bone("cape_left_mid", [-3.1, 11.2, 3.2], cape_left_mid + [left_tail_bone])
+    left_cape_bone = m.bone("cape_left", [-2.3, 14.7, 2.8], cape_left + [left_mid_bone])
     right_cape_bone = m.bone("cape_right", [2.2, 21, 2.8], cape_right)
-    center_tail_bone = m.bone("cape_center_tail", [-.8, 9.0, 4.1], cape_center_tail)
-    center_mid_bone = m.bone("cape_center_mid", [-.5, 16, 3.9], cape_center_mid + [center_tail_bone])
-    middle_cape_bone = m.bone("cape_center", [0, 20, 3], cape_center + [center_mid_bone])
+    center_tail_bone = m.bone("cape_center_tail", [-.8, 7.8, 4.1], cape_center_tail)
+    center_mid_bone = m.bone("cape_center_mid", [-.5, 11.2, 3.9], cape_center_mid + [center_tail_bone])
+    middle_cape_bone = m.bone("cape_center", [0, 14.7, 3], cape_center + [center_mid_bone])
     left_cape_bone["rotation"] = [18, 0, 2]
     left_mid_bone["rotation"] = [-5, -6, 0]
     left_tail_bone["rotation"] = [-6, 8, 0]
