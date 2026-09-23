@@ -1022,15 +1022,17 @@ def build(out=ROOT / "model-lab" / "models"):
                     u = (facet + .5) / 5
                     center_x = row_center + (u - .5) * row_width
                     center_y = (row_top + row_bottom) / 2
-                    z = base_z + .9 * fold_depth(u, v)
+                    billow = 1.2 * math.sin(math.pi * max(0, min(1, v))) if strip == 0 else 0
+                    z = base_z + .9 * fold_depth(u, v) + billow
                     face_uv = {"north": [uv[0] + round(facet * 48 / 5), ty0,
                                          uv[0] + round((facet + 1) * 48 / 5), ty1],
                                "south": [uv[0] + round(facet * 48 / 5), ty0,
                                          uv[0] + round((facet + 1) * 48 / 5), ty1],
                                "down": open_hem_uv}
+                    half_depth = .4 if strip == 0 else .22
                     add_rotated(m, buckets[segment], f"cape_strip_{strip}_{segment}_{row}_{facet}",
-                                [center_x - row_width / 10 - .06, row_bottom - .08, z - .22],
-                                [center_x + row_width / 10 + .06, row_top + .08, z + .22],
+                                [center_x - row_width / 10 - .06, row_bottom - .08, z - half_depth],
+                                [center_x + row_width / 10 + .06, row_top + .08, z + half_depth],
                                 "cloth",
                                 [(-6, 8, -3)[segment] + strip % 3 * 2,
                                  yaw + ((-5, 8, 18) if strip == 0 else (-4, 3, 8))[segment], 0],
