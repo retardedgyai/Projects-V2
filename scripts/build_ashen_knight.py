@@ -101,8 +101,11 @@ class KnightModel(authoring.Model):
                     if x < edge_left or x >= width - edge_right or y >= height - tear or slit:
                         return (0, 0, 0, 0)
             elif material == "void":
-                if coarse % 9 < 6:
-                    tone = 0
+                fold = (math.sin(x * .17 + y * .075 + seed * .013)
+                        + .35 * math.sin(x * .08 - y * .13 + seed * .031))
+                tone = 0 if fold < -.18 else 1
+                if fold > 1.1 and fine % 37 == 0:
+                    tone = 2
             elif material == "sleeve":
                 fold = math.sin(x * .23 + y * .07 + seed)
                 tone = 0 if fold < -.32 else 2 if fold > .78 and coarse % 7 == 0 else 1
@@ -214,7 +217,12 @@ def build(out=ROOT / "model-lab" / "models"):
                     [x0, hem, depth], [x1, top, depth + .14], "cloth",
                     [5 + panel * 3, 0, lean], [(x0 + x1) / 2, top, depth],
                     "ragged_hip", face_uv={"north": rag_uv, "south": rag_uv})
-    add(m, chest, "upper_mail_tunic", [-3.7, 17.1, -2.15], [3.7, 22, 2.1], "void")
+    add_rotated(m, chest, "upper_mail_tunic_front",
+                [-3.7, 17.1, -2.15], [3.7, 22, .65], "void",
+                [-6, 0, 0], [0, 19.55, -.75])
+    add_rotated(m, chest, "upper_mail_tunic_back",
+                [-3.25, 17.55, .35], [3.25, 21.8, 2.1], "void",
+                [7, 0, 0], [0, 19.55, 1.25])
     add(m, chest, "waist_mail_tunic", [-2.9, 13, -1.85], [2.9, 18.3, 1.85], "void")
     def paint_chest_mail(px, py):
         side = abs(px - 63.5) / 64
@@ -500,8 +508,12 @@ def build(out=ROOT / "model-lab" / "models"):
     add_rotated(m, helm, "hood_crown", [-1.28, 25.35, -2.0],
                 [1.28, 26.85, 1.75], "void", [-4, 0, 0],
                 [0, 25.9, -.1], "burned_hood")
-    add_rotated(m, helm, "hood_left_temple", [-2.7, 23.9, -2.3], [-.85, 26.6, 2.3],
-                "void", [0, 0, -12], [-1.65, 25.2, 0])
+    add_rotated(m, helm, "hood_left_temple_front", [-2.38, 24.4, -2.3],
+                [-1.0, 26.55, .28], "void", [6, 0, -15],
+                [-1.65, 25.2, -1])
+    add_rotated(m, helm, "hood_left_temple_rear", [-2.52, 23.85, -.1],
+                [-.95, 25.55, 2.3], "void", [12, 0, -11],
+                [-1.65, 24.7, 1])
     add_rotated(m, helm, "hood_right_temple_front", [.95, 24.55, -2.2],
                 [2.25, 26.2, .3], "void", [5, 0, 12], [1.65, 25.2, -.9])
     add_rotated(m, helm, "hood_right_temple_rear", [1.05, 23.9, -.15],
