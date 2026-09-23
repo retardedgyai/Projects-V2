@@ -23,7 +23,7 @@ PALETTE = {
     "ash": ("343a42", "5d6871", "98a4a9"),
     "ember": ("9d342f", "e56948", "ffc383"),
     "eye": ("0a101a", "121d29", "2d4857"),
-    "mail": ("11161d", "2d343b", "55616a"),
+    "mail": ("141b21", "303940", "59656b"),
     "leather": ("16191b", "2c2c2c", "504b45"),
 }
 authoring.MATERIALS = {
@@ -92,7 +92,8 @@ class KnightModel(authoring.Model):
                 if coarse % 9 < 6:
                     tone = 0
             elif material == "mail":
-                tone = 2 if (x + y) % 5 == 0 else 0 if x % 3 == 0 else 1
+                link = (x + 3 * (y // 4 % 2)) % 8
+                tone = 2 if y % 4 == 1 and link in (2, 3) else 0 if link in (0, 4, 7) else 1
             elif material == "leather":
                 tone = 0 if x % 9 in (0, 1) or fine % 29 == 0 else 1
                 if y <= 1:
@@ -212,20 +213,9 @@ def build(out=ROOT / "model-lab" / "models"):
     add(m, helm, "hood_crown", [-2.7, 24.2, -2.3], [2.7, 27.5, 2.5], "void")
     add(m, helm, "hood_lower", [-2.25, 22.0, -1.15], [2.25, 25.1, 2.8], "void")
     add(m, helm, "hood_muzzle_base", [-1.6, 22.6, -3.8], [1.6, 24.0, -1.5], "armor")
-    add(m, helm, "visor", [-2.25, 23.3, -3.15], [2.25, 26.3, -2.25], "armor", "engraved")
-    add(m, helm, "visor_brow", [-2.5, 25.6, -3.62], [2.5, 26.1, -2.7], "armor")
-    add(m, helm, "visor_bridge", [-.45, 23.3, -3.92], [.45, 26.1, -3.18], "armor")
-    add(m, helm, "visor_beak_upper", [-1.35, 23.1, -4.25], [1.35, 23.85, -3.31], "armor")
-    add(m, helm, "visor_beak_point", [-.65, 22.55, -4.52], [.65, 23.25, -3.77], "armor")
-    add(m, helm, "visor_left_eye_frame", [-2.15, 24.25, -3.81], [-.3, 24.75, -3.55], "armor")
-    add(m, helm, "visor_right_eye_frame", [.3, 24.25, -3.81], [2.15, 24.75, -3.55], "armor")
-    add(m, helm, "left_eye", [-1.95, 24.5, -3.59], [-.45, 24.75, -3.49], "eye")
-    add(m, helm, "right_eye", [.45, 24.5, -3.59], [1.95, 24.75, -3.49], "eye")
     add(m, helm, "crest_base", [-.85, 26.9, -.4], [.85, 28.1, 1.4], "armor")
-    add(m, helm, "crest_tip", [-.45, 27.6, -.1], [.45, 29, .8], "armor")
-    add(m, helm, "left_cheek_plate", [-2.9, 22.8, -3.0], [-1.8, 25.3, -.9], "armor")
-    add(m, helm, "right_cheek_plate", [2.05, 23.0, -2.9], [2.9, 24.45, -.9], "armor")
-    add(m, helm, "face_lower_mask", [-1.9, 21.8, -3.55], [1.9, 23.5, -2.8], "armor")
+    add(m, helm, "left_cheek_armor", [-2.65, 22.7, -3.0], [-1.75, 25.0, -.9], "armor")
+    add(m, helm, "right_broken_cheek", [2.1, 23.25, -2.8], [2.8, 24.35, -.9], "armor")
 
     # A cutout engraved faceplate supplies a distinct long-muzzled silhouette
     # without reproducing another game's texture or sculpt. The existing helm
