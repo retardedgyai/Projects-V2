@@ -1177,11 +1177,15 @@ def build(out=ROOT / "model-lab" / "models"):
                     "bandage", [0, 0, tilt], pivot, "torn_wrap",
                     {"north": wrap_uv, "south": wrap_uv,
                      "east": wrap_uv, "west": wrap_uv})
-    add(m, right_arm, "right_deltoid_dark_under", [3.75, 18.1, -.78],
-        [5.82, 21, 1.42], "sleeve")
-    add_rotated(m, right_arm, "right_bicep_dark_under", [4.05, 15.7, -.72],
-                [5.58, 18.55, 1.34], "sleeve", [0, 0, -11],
-                [4.85, 17.3, .3], "torn_mail")
+    add_rotated(m, right_arm, "right_deltoid_dark_under", [3.7, 19.5, -.78],
+                [5.7, 21.15, 1.32], "sleeve", [-3, -5, -7],
+                [4.7, 20.3, .2], "worn_sleeve")
+    add_rotated(m, right_arm, "right_bicep_dark_under", [3.97, 17.65, -.73],
+                [5.63, 19.79, 1.28], "sleeve", [3, 3, -10],
+                [4.8, 18.7, .25], "worn_sleeve")
+    add_rotated(m, right_arm, "right_bicep_tapered_under", [4.15, 15.72, -.65],
+                [5.43, 17.95, 1.14], "sleeve", [-2, -6, -12],
+                [4.8, 16.85, .2], "worn_sleeve")
 
     def paint_right_sleeve(px, py):
         # One ragged mail silhouette spans the underlying dark anatomy. The
@@ -1193,15 +1197,20 @@ def build(out=ROOT / "model-lab" / "models"):
             return (0, 0, 0, 0)
         if py > 42 and (px * 2 + py * 3) % 23 < 3:
             return (0, 0, 0, 0)
-        offset = (py // 5 % 2) * 4
-        ring_x = (px + offset) % 9
+        row = py // 3
+        ring_x = (px + (row % 2) * 2) % 5
         grain = authoring.noise(px // 3, py // 3, 2203)
-        if py % 5 in (1, 2) and ring_x in (2, 3, 4) and grain % 6 != 0:
-            color = (58, 68, 70) if grain % 5 == 0 else (42, 51, 55)
-        elif ring_x in (0, 8) or py % 5 == 4:
-            color = (13, 20, 27)
+        missing = grain % 11 < 3 or (px > 24 and 25 < py < 53 and
+                                     authoring.noise(px // 5, py // 6, 2211) % 4 == 0)
+        if not missing and ((py % 3 == 0 and ring_x in (1, 2)) or
+                            (py % 3 == 1 and ring_x in (0, 3))):
+            color = (43, 50, 52) if grain % 5 else (51, 57, 57)
+        elif py % 3 == 2 and ring_x in (1, 2):
+            color = (11, 18, 23)
         else:
-            color = (26, 35, 41)
+            color = (23, 31, 36)
+        if missing:
+            color = (15, 24, 30) if grain % 3 else (20, 30, 36)
         return (*color, 255)
 
     sleeve_uv = m.patch(40, 64, paint_right_sleeve, "torn_sword_sleeve")
@@ -1215,12 +1224,16 @@ def build(out=ROOT / "model-lab" / "models"):
             return (0, 0, 0, 0)
         if py > 23 and (px * 3 + py) % 17 < 3:
             return (0, 0, 0, 0)
-        ring = (px + (py // 4 % 2) * 3) % 7
-        if py % 4 == 1 and ring in (2, 3):
-            return (48, 58, 61, 255)
-        if ring in (0, 6) or py % 4 == 3:
+        row = py // 3
+        ring = (px + (row % 2) * 2) % 5
+        wear = authoring.noise(px // 3, py // 3, 2287)
+        if wear % 9 < 3:
+            return (18, 26, 31, 255)
+        if py % 3 == 0 and ring in (1, 2):
+            return (39, 47, 49, 255)
+        if py % 3 == 2 and ring in (1, 2):
             return (11, 18, 23, 255)
-        return (24, 32, 37, 255)
+        return (23, 31, 36, 255)
 
     outer_mail_uv = m.patch(32, 48, paint_outer_mail, "frayed_outer_mail")
     add_rotated(m, right_arm, "right_outer_mail_fray",
