@@ -34,6 +34,8 @@ class AshenPoseTest(unittest.TestCase):
         cls.cape = {ident: element for ident, element in elements.items()
                     if element["name"].startswith(("cape_strip_", "cape_fold_",
                                                    "torn_shoulder_mantle"))}
+        cls.shoulder_bridge = [element for element in elements.values()
+                               if element["name"].startswith("scarf_left_shoulder_bridge_")]
 
     @classmethod
     def tip_y(cls, name, seconds):
@@ -111,6 +113,16 @@ class AshenPoseTest(unittest.TestCase):
                 x, y = (uv[0] + uv[2]) // 2, (uv[1] + uv[3]) // 2
                 with self.subTest(element=element["name"], side=side):
                     self.assertGreater(self.atlas[y, x, 3], 0)
+
+    def test_shoulder_to_cape_connection_has_visible_depth(self):
+        self.assertEqual(len(self.shoulder_bridge), 3)
+        for element, side in ((self.shoulder_bridge[0], "west"),
+                              (self.shoulder_bridge[-1], "east")):
+            uv = element["faces"][side]["uv"]
+            x, y = (uv[0] + uv[2]) // 2, (uv[1] + uv[3]) // 2
+            with self.subTest(side=side):
+                self.assertGreater(self.atlas[y, x, 3], 0)
+                self.assertGreater(element["to"][2] - element["from"][2], 1)
 
 
 if __name__ == "__main__":

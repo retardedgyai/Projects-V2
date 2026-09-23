@@ -602,14 +602,34 @@ def build(out=ROOT / "model-lab" / "models"):
         return (*color, 255)
 
     bridge_uv = m.patch(48, 80, paint_shoulder_bridge, "shoulder_to_cape_bridge")
-    for facet, depth in enumerate((2.75, 3.08, 2.84)):
+    def paint_bridge_edge(px, py):
+        taper = py / 79
+        left = 2 + round(3 * taper) + authoring.noise(py // 7, 0, 3781) % 2
+        right = 14 - round(3 * taper) - authoring.noise(py // 6, 0, 3787) % 2
+        hem = 75 - authoring.noise(px // 3, 0, 3793) % 7
+        if px < left or px > right or py < 3 + px // 5 or py > hem:
+            return (0, 0, 0, 0)
+        grain = authoring.noise(px // 2, py // 3, 3797)
+        color = (8, 20, 33) if grain % 4 else (15, 30, 45)
+        if grain % 61 == 0:
+            color = (26, 43, 59)
+        return (*color, 255)
+
+    bridge_edge_uv = m.patch(16, 80, paint_bridge_edge,
+                             "shoulder_to_cape_edge")
+    for facet, depth in enumerate((2.15, 2.86, 2.36)):
         xlo = -6.25 + facet * .9
         uvlo = bridge_uv[0] + facet * 16
         uvhi = uvlo + 16
         face_uv = {"north": [uvlo, bridge_uv[1], uvhi, bridge_uv[3]],
                    "south": [uvlo, bridge_uv[1], uvhi, bridge_uv[3]]}
+        if facet == 0:
+            face_uv["west"] = bridge_edge_uv
+        if facet == 2:
+            face_uv["east"] = bridge_edge_uv
         m.cube(f"scarf_left_shoulder_bridge_{facet}",
-               [xlo - .02, 14.65, depth], [xlo + .92, 21.15, depth + .13],
+               [xlo - .02, 14.65, depth],
+               [xlo + .92, 21.15, depth + (1.38, 1.02, 1.21)[facet]],
                "cloth", cape_left_edge, face_uv=face_uv)
     add(m, scarf, "scarf_hanging_point", [-3.55, 14.2, -3.1], [-1.7, 18.1, -2.78], "cloth", "ragged_scarf")
 
