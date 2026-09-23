@@ -15,7 +15,7 @@ class AshenPoseTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         source = ROOT / "model-lab" / "models" / "ashen_knight.bbmodel"
-        cls.data, elements, _, cls.animations = preview.load(source)
+        cls.data, elements, cls.atlas, cls.animations = preview.load(source)
         cls.blade_id, blade = next((ident, element) for ident, element in elements.items()
                                    if element["name"] == "blade_worn_faces")
         cls.tip = np.array([5.0, float(blade["from"][1]), 0.0, 1.0])
@@ -73,6 +73,17 @@ class AshenPoseTest(unittest.TestCase):
                     lowest = min(lowest, float(corners[:, 1].min()))
             with self.subTest(animation=name):
                 self.assertGreaterEqual(lowest, -1.5)
+
+    def test_cloak_keeps_visible_side_faces(self):
+        strips = [element for element in self.cape.values()
+                  if element["name"].startswith("cape_strip_")]
+        self.assertGreater(len(strips), 100)
+        for element in strips:
+            for side in ("east", "west"):
+                uv = element["faces"][side]["uv"]
+                x, y = (uv[0] + uv[2]) // 2, (uv[1] + uv[3]) // 2
+                with self.subTest(element=element["name"], side=side):
+                    self.assertGreater(self.atlas[y, x, 3], 0)
 
 
 if __name__ == "__main__":

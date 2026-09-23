@@ -1104,6 +1104,19 @@ def build(out=ROOT / "model-lab" / "models"):
             return (*color, 255)
 
         uv = m.patch(48, 192, paint_strip, f"ashen_cloak_strip_{strip}")
+        def paint_cloak_edge(px, py, seed=strip):
+            # The front/back cutout used to be paired with transparent cube
+            # sides, making every strip vanish edge-on despite its geometry.
+            left = 1 if authoring.noise(py // 5, seed, 8251) % 4 else 2
+            right = 7 if authoring.noise(py // 4, seed, 8253) % 4 else 6
+            torn_hem = 31 - authoring.noise(px // 2, seed, 8257) % 4
+            if px < left or px > right or py < 1 or py > torn_hem:
+                return (0, 0, 0, 0)
+            grain = authoring.noise(px // 2, py // 3, 8267 + seed)
+            color = (9, 20, 31) if grain % 5 else (14, 27, 39)
+            if grain % 47 == 0:
+                color = (20, 34, 46)
+            return (*color, 255)
         side = strip < 2
         buckets = ((cape_left, cape_left_mid, cape_left_tail) if side else
                    (cape_center, cape_center_mid, cape_center_tail))
@@ -1132,6 +1145,11 @@ def build(out=ROOT / "model-lab" / "models"):
                 ty0 = uv[1] + round((cape_top - row_top) / (cape_top - hem) * 192)
                 ty1 = uv[1] + round((cape_top - row_bottom) / (cape_top - hem) * 192)
                 for facet in range(5):
+                    edge_seed = strip * 150 + segment * 15 + row * 5 + facet
+                    edge_uv = m.patch(8, 32,
+                                      lambda px, py, seed=edge_seed:
+                                      paint_cloak_edge(px, py, seed),
+                                      f"ashen_cloak_edge_{edge_seed}")
                     u = (facet + .5) / 5
                     center_x = row_center + (u - .5) * row_width
                     center_y = (row_top + row_bottom) / 2
@@ -1141,8 +1159,10 @@ def build(out=ROOT / "model-lab" / "models"):
                                          uv[0] + round((facet + 1) * 48 / 5), ty1],
                                "south": [uv[0] + round(facet * 48 / 5), ty0,
                                          uv[0] + round((facet + 1) * 48 / 5), ty1],
+                               "east": edge_uv, "west": edge_uv,
                                "down": open_hem_uv}
-                    half_depth = .4 if strip == 0 else .22
+                    half_depth = ((.58, .44, .29)[segment] if strip == 0
+                                  else (.43, .33, .22)[segment]) * (1 - .10 * row)
                     add_rotated(m, buckets[segment], f"cape_strip_{strip}_{segment}_{row}_{facet}",
                                 [center_x - row_width / 10 - .06, row_bottom - .08, z - half_depth],
                                 [center_x + row_width / 10 + .06, row_top + .08, z + half_depth],
