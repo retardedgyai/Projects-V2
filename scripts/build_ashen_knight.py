@@ -223,7 +223,14 @@ def build(out=ROOT / "model-lab" / "models"):
     add_rotated(m, chest, "upper_mail_tunic_back",
                 [-3.25, 17.55, .35], [3.25, 21.8, 2.1], "void",
                 [7, 0, 0], [0, 19.55, 1.25])
-    add(m, chest, "waist_mail_tunic", [-2.9, 13, -1.85], [2.9, 18.3, 1.85], "void")
+    # The lower torso narrows toward the belt. A single full-depth cuboid
+    # exposed a long, ruler-straight side between the scarf and the tassets.
+    add_rotated(m, chest, "waist_mail_tunic_upper",
+                [-2.95, 15.8, -1.75], [2.95, 18.4, 1.8], "void",
+                [-6, 0, -2], [0, 17.1, 0], "worn_tunic")
+    add_rotated(m, chest, "waist_mail_tunic_lower",
+                [-2.65, 12.9, -1.55], [2.65, 16.25, 1.55], "void",
+                [7, 0, 3], [0, 14.6, 0], "worn_tunic")
     def paint_chest_mail(px, py):
         side = abs(px - 63.5) / 64
         top = 4 + round(10 * side ** 1.6)
@@ -320,9 +327,8 @@ def build(out=ROOT / "model-lab" / "models"):
                 [.35, 21.4, 2.74], "leather", [0, 0, 27],
                 [0, 18.6, 2.6], "scuffed_leather")
 
-    # Royal-blue wrapping interrupts the chest armor and makes the head/torso
-    # one continuous shape. The shoulder scarf also extends over the back.
-    add(m, scarf, "scarf_dark_under", [-2.55, 21.1, -2.86], [2.45, 23.8, 2.25], "void")
+    # The blue wrapping crosses the chest and continues onto the back. Keep
+    # the folds exposed; a solid neck-filling box made them read as machinery.
 
     def paint_cowl_under(px, py):
         side = abs(px - 47.5) / 48
@@ -433,8 +439,6 @@ def build(out=ROOT / "model-lab" / "models"):
                "cloth", scarf, face_uv=face_uv)
     add(m, scarf, "scarf_left_drape", [-4.85, 20.0, -1.75],
         [-3.48, 22.1, 1.8], "void")
-    add(m, scarf, "scarf_right_dark_under", [2.7, 20.1, -1.8],
-        [4.5, 22.5, 2.2], "void")
     def paint_shoulder_cowl(px, py):
         left = 4 + py // 12
         right = 29 - py // 15
