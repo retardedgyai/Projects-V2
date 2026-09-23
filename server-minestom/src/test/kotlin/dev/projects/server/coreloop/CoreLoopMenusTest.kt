@@ -251,9 +251,9 @@ class CoreLoopMenusTest {
             f.host.requests.single().after()
             assertTrue(f.title().contains("装備庫"))
             f.click(9)
-            assertTrue(f.title().contains(item.displayName))
+            assertTrue(f.title().contains("装備の詳細"))
             assertEquals(1, f.host.requests.size)
-            f.click(20)
+            f.click(14)
             assertEquals(CoreAction.Equip(item.identity.id), f.host.requests.last().action)
 
             f.host.requests.clear()
@@ -278,6 +278,40 @@ class CoreLoopMenusTest {
             f.click(22)
             if (silver == 0L) assertTrue(f.host.requests.isEmpty())
             else assertEquals(CoreAction.BuyOffer(seller, offer.id, 30), f.host.requests.single().action)
+        }
+    }
+
+    @Test fun `equipment detail makes equip listing delivery and cancellation separate visible actions`() {
+        for (packed in listOf(false, true)) {
+            val a = account(tier = 3)
+            val item = CoreStoredGear(CoreGearIdentity(UUID.randomUUID(), a.playerId), CoreGearSlot.WEAPON, 3,
+                CoreGearRarity.NORMAL, CoreEnhancementState())
+            val f = fixture(a.copy(storedGear = listOf(item)), packed)
+            f.menus.equipmentStock(f.player)
+            assertTrue(f.player.openInventory!!.getItemStack(9).get(DataComponents.LORE).orEmpty().map(::plain).any { it == "クリック：装備の詳細へ" })
+            f.click(9)
+            assertEquals(1, f.snapshot().journalPage)
+            assertEquals(listOf(9), f.snapshot().cards.map { it.firstSlot })
+            assertTrue(f.player.openInventory!!.getItemStack(20).get(DataComponents.LORE).orEmpty().map(::plain).any { it == "右の操作で用途を選ぶ" })
+            assertEquals(listOf("装備する", "出品する", "納品する"),
+                f.snapshot().buttons.filter { it.firstSlot in listOf(14, 23, 32) }.map { it.label })
+            f.click(14)
+            assertEquals(CoreAction.Equip(item.identity.id), f.host.requests.single().action)
+            f.host.requests.clear()
+            f.menus.equipmentStock(f.player); f.click(9); f.click(23)
+            assertTrue(f.title().contains("出品"))
+            assertTrue(f.host.requests.isEmpty())
+            f.menus.equipmentStock(f.player); f.click(9); f.click(32)
+            assertTrue(f.title().contains("納品"))
+            assertTrue(f.host.requests.isEmpty())
+
+            val offer = CoreMarketOffer(UUID.randomUUID(), 130, gearId = item.identity.id)
+            f.host.current = f.host.current.copy(offers = listOf(offer))
+            f.menus.equipmentStock(f.player); f.click(9)
+            assertEquals(listOf("取り下げ", "市場を見る", "出品中"),
+                f.snapshot().buttons.filter { it.firstSlot in listOf(14, 23, 32) }.map { it.label })
+            f.click(14)
+            assertEquals(CoreAction.CancelOffer(offer.id), f.host.requests.single().action)
         }
     }
 
@@ -868,6 +902,15 @@ class CoreLoopMenusTest {
         capture("journal") { f.menus.journal(f.player) }
         capture("journal-character") { f.menus.journal(f.player); f.click(3) }
         capture("journal-living") { f.menus.journal(f.player); f.click(6) }
+        val previousAccount = f.host.current
+        val stored = CoreStoredGear(CoreGearIdentity(UUID.randomUUID(), previousAccount.playerId), CoreGearSlot.WEAPON, 3,
+            CoreGearRarity.RARE, CoreEnhancementState(6), previousAccount.equippedAffixes.filter { it.gear == CoreGearSlot.WEAPON })
+        f.host.current = previousAccount.copy(equippedAffixes = previousAccount.equippedAffixes.filterNot { it.gear == CoreGearSlot.WEAPON },
+            storedGear = listOf(stored))
+        capture("equipment-detail") { f.menus.equipmentStock(f.player); f.click(9) }
+        f.host.current = f.host.current.copy(offers = listOf(CoreMarketOffer(UUID.randomUUID(), 130, gearId = stored.identity.id)))
+        capture("equipment-listed") { f.menus.equipmentStock(f.player); f.click(9) }
+        f.host.current = previousAccount
         capture("career") { f.menus.career(f.player) }
         capture("class-skills") { f.menus.skillBuild(f.player) }
         capture("class-ultimates") { f.menus.skillBuild(f.player,4) }
