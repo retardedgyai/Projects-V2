@@ -9,6 +9,7 @@ import net.minestom.server.entity.GameMode
 import net.minestom.server.entity.Player
 import net.minestom.server.event.player.AsyncPlayerConfigurationEvent
 import net.minestom.server.event.player.PlayerSpawnEvent
+import net.minestom.server.event.player.PlayerDisconnectEvent
 import net.minestom.server.event.player.PlayerUseItemEvent
 import net.minestom.server.instance.LightingChunk
 import net.minestom.server.instance.block.Block
@@ -34,7 +35,8 @@ fun main(args: Array<String>) {
         time=6000
     }
     val events=MinecraftServer.getGlobalEventHandler()
-    val sessions=UiSessions(events,source)
+    val pack=System.getProperty("projects.ui.pack")?.let { Polish05Pack.start(Path.of(it),System.getProperty("projects.ui.packPort","18091").toInt()) }
+    val sessions=UiSessions(events,source) { player -> pack?.ready(player) ?: true }
     val port=System.getProperty("projects.ui.port","25570").toInt()
     val previewPort=System.getProperty("projects.ui.previewPort","18090").toInt()
     require(port in 1024..65535 && port !in setOf(25565,25566) && previewPort!=port)
@@ -49,6 +51,7 @@ fun main(args: Array<String>) {
             player.inventory.setItemStack(0,ItemStack.of(Material.COMPASS).withCustomName(Component.text("UI試作を開く")))
             player.sendMessage(Component.text("UI試作：コンパスを右クリック /ui。マウスで選択、左クリックで決定、Shiftで終了。ページは画面内の前へ・次へ。"))
             println("UI_LAB_PLAYER_CONNECTED ${player.username}")
+            pack?.offer(player)
             if(java.lang.Boolean.getBoolean("projects.ui.openOnJoin")) {
                 player.scheduler().buildTask {
                     if(player.instance===instance && !player.isRemoved) {
@@ -59,6 +62,7 @@ fun main(args: Array<String>) {
             }
         }
     }
+    events.addListener(PlayerDisconnectEvent::class.java) { pack?.forget(it.player) }
     events.addListener(PlayerUseItemEvent::class.java) {
         if(it.player.itemInMainHand.material()==Material.COMPASS) { it.isCancelled=true;sessions.open(it.player) }
     }
@@ -70,7 +74,7 @@ fun main(args: Array<String>) {
     val closeCommand=Command("uiclose")
     closeCommand.setDefaultExecutor { sender,_ -> if(sender is Player) sessions.close(sender) }
     MinecraftServer.getCommandManager().register(closeCommand)
-    Runtime.getRuntime().addShutdownHook(Thread { sessions.close();preview.close() })
+    Runtime.getRuntime().addShutdownHook(Thread { sessions.close();pack?.close();preview.close() })
     server.start("127.0.0.1",port)
     println("UI_LAB_READY minecraft=127.0.0.1:$port preview=http://127.0.0.1:$previewPort inputTps=$uiTps cursor=immediate-position source=$source")
 }

@@ -24,7 +24,10 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
 
 /** Only installed in the separate UI lab server. Never intercepts normal ProjectS gameplay packets. */
-class UiSessions(events: EventNode<Event>, private val path: Path) : AutoCloseable {
+class UiSessions(
+    events: EventNode<Event>, private val path: Path,
+    private val packReady: (Player) -> Boolean = { true },
+) : AutoCloseable {
     private data class Input(val due: Long, val generation: Int, val yaw: Float?=null, val pitch: Float?=null, val action: String?=null)
     private class Session(val player: Player, val saved: Pos, var document: UiDocument, val camera: Entity, val renderer: UiRenderer) {
         val demo=ForgeDemo()
@@ -59,6 +62,10 @@ class UiSessions(events: EventNode<Event>, private val path: Path) : AutoCloseab
     }
     fun open(player: Player) {
         if(sessions.containsKey(player.uuid)) return
+        if(!packReady(player)) {
+            player.sendMessage(Component.text("Polish05素材の読込完了後に /ui で開いてください。"))
+            return
+        }
         val document=UiDocument.parse(Files.readString(path))
         // Compile and validate before changing the camera or creating any entity.
         val initial=ForgeDemo(); document.layout(initial.values(),initial.flags())
