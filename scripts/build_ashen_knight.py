@@ -285,16 +285,18 @@ def build(out=ROOT / "model-lab" / "models"):
             return (0, 0, 0, 0)
         if py > 58 and 78 < px < 100 and (px + py * 2) % 41 < 5:
             return (0, 0, 0, 0)
-        row = py // 6
-        tx = (px + (row % 2) * 4) % 8
-        ty = py % 6
-        wear = authoring.noise(px // 4, py // 4, 7477)
-        base = (20, 26, 30)
-        ring = (ty == 1 and tx in (2, 3, 4)) or (ty in (2, 3) and tx in (1, 5))
-        if ring and wear % 7 != 0:
-            base = (53, 61, 65) if wear % 5 else (67, 73, 76)
-        elif ty == 4 and tx in (2, 3, 4):
-            base = (11, 17, 21)
+        # Smaller, partly buried links break the old regular keypad grid.
+        row = py // 4
+        tx = (px + (row % 2) * 3) % 6
+        ty = py % 4
+        wear = authoring.noise(px // 3, py // 3, 7477)
+        missing = wear % 11 < 3 or (py > 48 and px > 79 and wear % 5 == 0)
+        base = (20, 27, 31)
+        ring = (ty == 0 and tx in (2, 3)) or (ty == 1 and tx in (1, 4))
+        if ring and not missing:
+            base = (43, 52, 56) if wear % 6 else (51, 59, 62)
+        elif ty == 3 and tx in (2, 3) and not missing:
+            base = (12, 19, 23)
         if abs(px - 61) < 17 and 43 < py < 66 and wear % 4 == 0:
             base = (13, 19, 23)
         return (*base, 255)
@@ -590,16 +592,19 @@ def build(out=ROOT / "model-lab" / "models"):
     # drooping fold continuously so its silhouette and shading read as cloth.
     front_cowl_folds = (
         (-3.45, 3.0, 20.85, 23.65, -3.83, 0),
-        (-4.02, 3.48, 19.67, 22.75, -4.02, 1),
-        (-4.35, 3.18, 18.55, 21.85, -4.2, 2),
+        (-4.12, 2.68, 19.67, 22.75, -4.02, 1),
+        (-4.38, .82, 18.55, 21.85, -4.2, 2),
     )
     for left, right, low, high, depth, layer in front_cowl_folds:
         def paint_draped_fold(px, py, seed=layer):
             u = px / 95
             arc = max(0, math.sin(math.pi * u)) ** 1.2
-            top = 3 + round((14 + seed * 2) * arc + (seed - 1) * 3 * u)
+            # Each fold has a different pull toward the wounded shoulder;
+            # identical centred sags turned the wrap into stacked plating.
+            pull = (0, 7, 15)[seed] * u
+            top = 3 + round((12 + seed * 2) * arc + pull)
             top += authoring.noise(px // 6, seed, 3451) % 3
-            hem = top + 22 - seed * 2 - authoring.noise(px // 7, seed, 3457) % 5
+            hem = top + 22 - seed * 3 - authoring.noise(px // 7, seed, 3457) % 7
             if py < top or py > hem or px < 2 or px > 93:
                 return (0, 0, 0, 0)
             v = (py - top) / max(1, hem - top)
@@ -920,9 +925,11 @@ def build(out=ROOT / "model-lab" / "models"):
             dx, dy, dz = bx - ax, by - ay, bz - az
             horizontal = math.hypot(dx, dz)
             length = math.hypot(horizontal, dy)
-            taper = (1 - (u0 + u1) / 2) ** .75
-            width = .17 + root_width * taper
-            height = .18 + root_width * .85 * taper
+            taper = (1 - (u0 + u1) / 2) ** .95
+            # A connected wind-torn mane needs mass near the hood. Thin,
+            # evenly separated rods read as a crown of mechanical antennae.
+            width = .12 + root_width * 1.48 * taper
+            height = .13 + root_width * 1.27 * taper
             add_rotated(m, plume, f"mane_lock_{strand}_{section}",
                         [cx - width / 2, cy - height / 2, cz - length / 2 - .09],
                         [cx + width / 2, cy + height / 2, cz + length / 2 + .09],
