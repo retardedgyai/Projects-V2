@@ -254,18 +254,27 @@ def build(out=ROOT / "model-lab" / "models"):
     add(m, hips, "belt_buckle", [-.42, 12.26, -2.19], [.35, 12.91, -1.96], "guard")
 
     def paint_torn_tabard(px, py):
-        left = 5 + py // 10
-        right = 30 - py // 7
-        if px < left or px > right or (py > 56 and (px + py * 3) % 17 < 3):
+        left = 4 + py // 18 + round(2 * math.sin(py * .12))
+        right = 32 - py // 11 - round(2 * math.sin(py * .09 + 1.4))
+        if px < left or px > right:
             return (0, 0, 0, 0)
-        if py > 72 - authoring.noise(px // 3, 0, 1007) % 16:
+        slit = py > 52 and abs(px - (19 + py // 13)) < (py - 48) // 12
+        hem = 72 - authoring.noise(px // 4, 0, 1007) % 13 - (px // 8 % 3) * 2
+        if slit or py > hem:
             return (0, 0, 0, 0)
-        fold = (px + py // 3) % 13
-        if fold < 3:
-            return (12, 27, 45, 255)
-        if fold > 10:
-            return (43, 74, 98, 255)
-        return (23, 49, 76, 255)
+        fold = math.sin(px * .31 + py * .025) + .32 * math.sin(px * .73 - py * .037)
+        grain = authoring.noise(px // 3, py // 3, 1013) % 11
+        if fold < -.52:
+            color = (11, 25, 39)
+        elif fold > .8:
+            color = (29, 49, 65)
+        else:
+            color = (18, 36, 53)
+        if px - left < 2 or right - px < 2 or py > hem - 3 or slit:
+            color = (10, 22, 34)
+        if grain == 0:
+            color = tuple(min(255, c + 4) for c in color)
+        return (*color, 255)
 
     tabard_uv = m.patch(36, 80, paint_torn_tabard, "torn_tabard")
     m.cube("front_torn_tabard", [-1.75, 4.7, -2.38], [1.75, 11.5, -2.31],
@@ -281,15 +290,19 @@ def build(out=ROOT / "model-lab" / "models"):
     )):
         def paint_hip_rag(px, py, seed=panel):
             side = abs(px - 23.5) / 24
-            left = 3 + round(py * (.075 + seed * .015))
-            right = 44 - round(py * (.055 + seed * .01))
-            bottom = 91 - (px // 7 % 4) * (3 + seed) - authoring.noise(px // 3, seed, 9187) % 8
+            left = 3 + round(py * (.085 + seed * .018)) + round(2 * math.sin(py * .11 + seed))
+            right = 44 - round(py * (.075 + seed * .012)) - round(2 * math.sin(py * .13 + seed))
+            bottom = (88 - (px // 8 % 4) * (3 + seed)
+                      - authoring.noise(px // 4, seed, 9187) % 11)
             if px < left or px > right or py > bottom or py < 3 + round(side * 5):
                 return (0, 0, 0, 0)
-            if py > 54 and abs(px - (17 + seed * 5 + py // 9)) < 2:
+            if py > 48 and abs(px - (17 + seed * 5 + py // 12)) < 1 + (py - 48) // 18:
                 return (0, 0, 0, 0)
-            fold = math.sin(px * .24 + py * .075 + seed * 1.7)
-            color = (15, 30, 49) if fold < -.35 else (40, 61, 81) if fold > .72 else (25, 45, 68)
+            fold = (math.sin(px * .27 + py * .027 + seed * 1.7)
+                    + .29 * math.sin(px * .57 - py * .021 + seed))
+            color = (11, 26, 40) if fold < -.55 else (31, 49, 64) if fold > .8 else (19, 37, 53)
+            if px - left < 2 or right - px < 2 or py > bottom - 3:
+                color = (9, 21, 32)
             if authoring.noise(px // 2, py // 2, 9203 + seed) % 63 == 0:
                 color = (69, 77, 78)
             return (*color, 255)
@@ -740,6 +753,8 @@ def build(out=ROOT / "model-lab" / "models"):
             top = 3 + round((12 + seed * 2) * arc + pull)
             top += authoring.noise(px // 6, seed, 3451) % 3
             hem = top + 29 - seed * 2 - authoring.noise(px // 7, seed, 3457) % 7
+            if seed == 2:
+                hem -= round(8 * max(0, (u - .5) * 2))
             if py < top or py > hem or px < 2 or px > 93:
                 return (0, 0, 0, 0)
             v = (py - top) / max(1, hem - top)
@@ -776,6 +791,10 @@ def build(out=ROOT / "model-lab" / "models"):
         if px < 2 or px > 93 or py < top or py > hem:
             return (0, 0, 0, 0)
         v = (py - top) / max(1, hem - top)
+        torn_fold = max(0, 1 - abs(u - .52) / .17)
+        rear_nick = max(0, 1 - abs(u - .83) / .1)
+        if v > .83 - .38 * torn_fold or v > .88 - .23 * rear_nick:
+            return (0, 0, 0, 0)
         grain = authoring.noise(px // 3, py // 3, 3503) % 11
         ridge = .31 + .08 * math.sin(px * .077)
         if v < .12 or v > .9:
