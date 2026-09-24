@@ -682,11 +682,16 @@ def build(out=ROOT / "model-lab" / "models"):
             return (0, 0, 0, 0)
         if 19 < py < 43 and px < left + max(0, 6 - abs(py - 31) // 3):
             return (0, 0, 0, 0)
-        scar = abs(px - (19 + py * .46))
-        if scar < 1.5 and 18 < py < 62:
-            return (88, 95, 97, 255)
-        if abs(px - 31.5) < 3 and py < 65:
-            return (59, 67, 70, 255)
+        fracture = abs(px - (19 + py * .42 + 2.2 * math.sin(py * .17)))
+        fracture_width = 1.8 + max(0, py - 29) * .11
+        if 17 < py < 70 and fracture < fracture_width:
+            return (0, 0, 0, 0)
+        if py > 51 and px > 47 - (py - 51) * .59:
+            return (0, 0, 0, 0)
+        if 17 < py < 70 and fracture < fracture_width + 1.4:
+            return (56, 64, 66, 255)
+        if abs(px - 31.5) < 2 and py < 32:
+            return (52, 61, 65, 255)
         if py - top < 2 or px - left < 2 or right - px < 2:
             return (68, 77, 81, 255)
         grain = authoring.noise(px // 3, py // 3, 4019)
@@ -1591,7 +1596,7 @@ def build(out=ROOT / "model-lab" / "models"):
     # Leave the chainmail back exposed. The short scarf above and torn cloth
     # tied at the hips have separate silhouettes, like a battle-worn knight.
     cape_strips = (
-        (-5.15, 5.2, 3.05, 1.25, -20),
+        (-4.7, 4.25, 3.05, 1.25, -20),
         (-.9, 4.25, 4.15, 2.0, -3),
         (2.2, 4.15, 3.05, 4.0, 20),
     )
