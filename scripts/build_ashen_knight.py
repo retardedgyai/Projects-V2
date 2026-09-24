@@ -2160,6 +2160,15 @@ def build(out=ROOT / "model-lab" / "models"):
                 row[x] = (lift(red), lift(green), lift(blue), alpha)
 
     m.write(out, root)
+    # Author the higher-relief head separately, then keep the boss's existing
+    # head/plume bones and animation channels while replacing their geometry.
+    from build_ashen_head_v3 import build as build_head_candidate
+    from merge_ashen_head_v3 import merge as merge_head_candidate
+    head_out = ROOT / "model-lab" / "build" / "head-v3"
+    build_head_candidate(head_out)
+    count = merge_head_candidate(out / "ashen_knight.bbmodel",
+                                 head_out / "ashen_head_v3.bbmodel")
+    print(f"Ashen Knight with sculpted head: {count} cubes")
     build_warning(out)
     build_fissure(out)
     build_slash(out)
