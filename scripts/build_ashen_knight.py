@@ -347,7 +347,11 @@ def build(out=ROOT / "model-lab" / "models"):
             return (0, 0, 0, 0)
         grain = authoring.noise(px // 3, py // 4, 5279 + seed)
         fold = math.sin(px * .15 + py * .035 + seed * 1.4)
-        color = (9, 18, 26) if fold < -.5 else (26, 36, 44) if fold > .6 else (17, 28, 37)
+        if seed == 0:
+            color = ((10, 22, 35) if fold < -.5 else
+                     (29, 47, 65) if fold > .6 else (18, 34, 50))
+        else:
+            color = (9, 18, 26) if fold < -.5 else (26, 36, 44) if fold > .6 else (17, 28, 37)
         if px - left < 2 or right - px < 2 or py > hem - 2:
             color = (8, 16, 23)
         if grain % 67 == 0:
@@ -517,34 +521,6 @@ def build(out=ROOT / "model-lab" / "models"):
                 [3.14, 15.45, -1.26], [3.83, 18.15, 1.12], "void",
                 [-4, 0, 6], [3.5, 16.8, 0], "worn_tunic")
 
-    def paint_side_mail(px, py):
-        top = 4 + round(abs(px - 27) * .19)
-        hem = 32 - authoring.noise(px // 4, 0, 2411) % 8
-        hem -= max(0, abs(px - 29) - 13) // 5
-        front = 5 + py // 8 + authoring.noise(py // 4, 0, 2413) % 3
-        rear = 58 - py // 9 - authoring.noise(py // 5, 0, 2417) % 4
-        if py < top or py > hem or px < front or px > rear:
-            return (0, 0, 0, 0)
-        if py > 19 and 17 < px < 30 and abs(px - (18 + py * .35)) < 2.8:
-            return (0, 0, 0, 0)
-        if py > 16 and px > 44 and authoring.noise(px // 4, py // 4, 2420) % 5 < 2:
-            return (0, 0, 0, 0)
-        row = py // 6
-        tx = (px + 4 * (row % 2) + authoring.noise(row, 0, 2421) % 3) % 8
-        grain = authoring.noise(px // 3, py // 3, 2423)
-        ring = ((py % 6 == 1 and tx in (2, 3, 4)) or
-                (py % 6 in (2, 3) and tx in (1, 5)))
-        if ring and grain % 5 < 3:
-            color = (34, 43, 47) if grain % 7 else (55, 61, 61)
-        elif py % 6 == 4 and tx in (2, 3, 4):
-            color = (10, 17, 22)
-        else:
-            color = (20, 29, 36)
-        if px - front < 2 or rear - px < 2 or py > hem - 2:
-            color = (12, 21, 28)
-        return (*color, 255)
-
-    side_mail_uv = m.patch(64, 96, paint_side_mail, "worn_side_mail")
     def paint_side_cloth(px, py):
         left = 3 + round(py * .13) + authoring.noise(py // 5, 0, 2451) % 3
         right = 60 - round(py * .16) - authoring.noise(py // 6, 0, 2459) % 4
@@ -571,15 +547,15 @@ def build(out=ROOT / "model-lab" / "models"):
     mail_edge_uv = m.patch(1, 1, lambda _x, _y: (17, 23, 27, 255),
                            "dark_mail_edge")
     for tier, (lo, hi, y0, y1, tilt, sweep) in enumerate((
-            ((4.02, 18.78, -1.78), (4.35, 20.85, 1.68), 0, 34, -4, 0),
+            ((4.02, 18.78, -1.78), (4.35, 20.85, 1.68), 0, 34, -20, 0),
             ((4.08, 16.6, -1.67), (4.39, 19.05, 1.35), 32, 67, 7, 14),
             ((3.82, 14.22, -1.16), (4.22, 17.1, .96), 65, 96, -9, 26),
     )):
-        source_uv = side_mail_uv if tier == 0 else side_cloth_uv
+        source_uv = side_cloth_uv
         segment_uv = [source_uv[0], source_uv[1] + y0,
                       source_uv[2], source_uv[1] + y1]
         add_rotated(m, chest, f"worn_sword_side_layer_{tier}", lo, hi,
-                    "mail" if tier == 0 else "cloth", [tilt, sweep, 0],
+                    "cloth", [tilt, sweep, 0],
                     [(lo[0] + hi[0]) / 2, (lo[1] + hi[1]) / 2,
                      (lo[2] + hi[2]) / 2], "torn_mail",
                     {"east": segment_uv, "west": segment_uv,
@@ -1721,9 +1697,9 @@ def build(out=ROOT / "model-lab" / "models"):
     # Leave the chainmail back exposed. The short scarf above and torn cloth
     # tied at the hips have separate silhouettes, like a battle-worn knight.
     cape_strips = (
-        (-4.2, 5.05, 3.05, 1.25, -13),
-        (-.75, 5.05, 4.15, 2.0, -2),
-        (2.2, 4.15, 3.05, 4.0, 20),
+        (-4.3, 4.5, 3.05, 1.25, -13),
+        (-.35, 4.2, 4.15, 2.0, -2),
+        (3.0, 3.8, 3.05, 4.0, 20),
     )
     open_hem_uv = m.patch(1, 1, lambda _x, _y: (0, 0, 0, 0), "open_cloth_hem")
 
@@ -1810,8 +1786,8 @@ def build(out=ROOT / "model-lab" / "models"):
             drift = segment * (-.72, -.15, .65)[strip]
             x = center + drift
             base_z = depth + (.22, .55, .88)[segment]
-            segment_width = width * ((.9, 1.0, .9)[segment] if strip == 0
-                                     else (.88, 1.0, .9)[segment])
+            segment_width = width * ((.96, .88, .74)[segment] if strip == 0
+                                     else (.93, .88, .76)[segment])
             for row in range(3):
                 row_top = top - (top - bottom) * row / 3
                 row_bottom = top - (top - bottom) * (row + 1) / 3
