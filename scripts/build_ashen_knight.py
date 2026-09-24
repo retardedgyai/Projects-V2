@@ -1550,7 +1550,7 @@ def build(out=ROOT / "model-lab" / "models"):
                 color = (12, 26, 43)
             if grain % 173 == 0:
                 color = (68, 79, 85)
-            shade = (.87, .72, .92)[seed]
+            shade = (.74, .62, .78)[seed]
             color = tuple(round(channel * shade) for channel in color)
             return (*color, 255)
 
