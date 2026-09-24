@@ -1617,7 +1617,35 @@ def build(out=ROOT / "model-lab" / "models"):
     gauntlet_uv = m.patch(24, 32, paint_gauntlet_leather,
                          "sword_gauntlet_dark_leather")
     gauntlet_faces = {face: gauntlet_uv for face in
-                      ("north", "south", "east", "west", "up", "down")}
+                       ("north", "south", "east", "west", "up", "down")}
+    def paint_wrist_profile(px, py):
+        top = 3 + abs(px - 15) // 7
+        left = 2 + py // 19 + authoring.noise(py // 6, 0, 2511) % 2
+        right = 29 - py // 12 - authoring.noise(py // 7, 0, 2517) % 3
+        hem = 52 - authoring.noise(px // 4, 0, 2521) % 7
+        if px < left or px > right or py < top or py > hem:
+            return (0, 0, 0, 0)
+        if 19 < py < 44 and px > right - 4 and (px + py // 3) % 7 < 4:
+            return (0, 0, 0, 0)
+        grain = authoring.noise(px // 3, py // 3, 2527)
+        crease = abs(px - (9 + py * .18 + 2 * math.sin(py * .13)))
+        if crease < 2:
+            color = (11, 17, 21)
+        elif crease < 5:
+            color = (36, 39, 38)
+        else:
+            color = (25, 29, 31)
+        if px - left < 2 or right - px < 2 or py > hem - 3:
+            color = (10, 16, 20)
+        elif grain % 29 == 0:
+            color = (48, 49, 45)
+        return (*color, 255)
+
+    wrist_profile_uv = m.patch(32, 56, paint_wrist_profile,
+                               "sword_gauntlet_worn_profile")
+    wrist_faces = dict(gauntlet_faces)
+    wrist_faces.update({"east": wrist_profile_uv, "west": wrist_profile_uv,
+                        "south": wrist_profile_uv})
     add_rotated(m, right_forearm, "right_bracer_upper", [4.09, 14.58, -.89],
                 [5.79, 16.02, 1.2], "leather", [0, 0, -13],
                 [4.94, 15.3, .1], "scuffed_leather", gauntlet_faces)
@@ -1625,8 +1653,8 @@ def build(out=ROOT / "model-lab" / "models"):
                 [5.71, 14.78, 1.17], "leather", [0, 0, -4],
                 [4.94, 14.05, .1], "scuffed_leather", gauntlet_faces)
     add_rotated(m, right_forearm, "right_bracer_wrist", [4.27, 11.08, -.97],
-                [5.68, 13.65, 1.23], "leather", [0, 0, 5],
-                [4.98, 12.4, .1], "battered_scale", gauntlet_faces)
+                [5.68, 13.65, 1.02], "leather", [0, 0, 5],
+                [4.98, 12.4, .03], "battered_scale", wrist_faces)
     def paint_bracer_shard(px, py, seed):
         left = (5 + py // 8) if seed == 0 else (5 + py // 12)
         right = (23 - py // 10) if seed == 0 else (25 - py // 15)
@@ -1830,13 +1858,14 @@ def build(out=ROOT / "model-lab" / "models"):
                 v = (cape_top - (row_top + row_bottom) / 2) / (cape_top - hem)
                 ty0 = uv[1] + round((cape_top - row_top) / (cape_top - hem) * 192)
                 ty1 = uv[1] + round((cape_top - row_bottom) / (cape_top - hem) * 192)
-                for facet in range(4):
+                facets = 3
+                for facet in range(facets):
                     edge_seed = strip * 200 + segment * 48 + row * 8 + facet
                     edge_uv = m.patch(8, 32,
                                       lambda px, py, seed=edge_seed:
                                       paint_cloak_edge(px, py, seed),
                                       f"ashen_cloak_edge_{edge_seed}")
-                    u = (facet + .5) / 4
+                    u = (facet + .5) / facets
                     center_x = row_center + (u - .5) * row_width
                     center_y = (row_top + row_bottom) / 2
                     def cloth_z(across, down):
@@ -1856,19 +1885,18 @@ def build(out=ROOT / "model-lab" / "models"):
                         cloth_z(u, v_top) - cloth_z(u, v_bottom),
                         row_top - row_bottom))
                     yaw_fold = -math.degrees(math.atan2(
-                        cloth_z((facet + 1) / 4, v) - cloth_z(facet / 4, v),
-                        row_width / 4))
-                    face_uv = {"north": [uv[0] + round(facet * 48 / 4), ty0,
-                                         uv[0] + round((facet + 1) * 48 / 4), ty1],
-                               "south": [uv[0] + round(facet * 48 / 4), ty0,
-                                         uv[0] + round((facet + 1) * 48 / 4), ty1],
+                         cloth_z((facet + 1) / facets, v) - cloth_z(facet / facets, v),
+                         row_width / facets))
+                    face_uv = {"north": [uv[0] + round(facet * 48 / facets), ty0,
+                                         uv[0] + round((facet + 1) * 48 / facets), ty1],
+                               "south": [uv[0] + round(facet * 48 / facets), ty0,
+                                         uv[0] + round((facet + 1) * 48 / facets), ty1],
                                "east": edge_uv, "west": edge_uv,
                                "up": open_hem_uv, "down": open_hem_uv}
-                    half_depth = ((.58, .44, .29)[segment] if strip == 0
-                                  else (.43, .33, .22)[segment]) * (1 - .10 * row)
+                    half_depth = (.36, .29, .21)[segment] * (1 - .10 * row)
                     add_rotated(m, buckets[segment], f"cape_strip_{strip}_{segment}_{row}_{facet}",
-                                [center_x - row_width / 8 - .04, row_bottom - .05, z - half_depth],
-                                [center_x + row_width / 8 + .04, row_top + .05, z + half_depth],
+                                [center_x - row_width / (2 * facets) - .04, row_bottom - .05, z - half_depth],
+                                [center_x + row_width / (2 * facets) + .04, row_top + .05, z + half_depth],
                                 "cloth",
                                 [max(-28, min(28, pitch)),
                                  yaw + max(-24, min(24, yaw_fold)), 0],
