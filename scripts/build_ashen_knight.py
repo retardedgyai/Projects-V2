@@ -1181,15 +1181,40 @@ def build(out=ROOT / "model-lab" / "models"):
                     "bandage", [0, 0, tilt], pivot, "torn_wrap",
                     {"north": wrap_uv, "south": wrap_uv,
                      "east": wrap_uv, "west": wrap_uv})
-    add_rotated(m, right_arm, "right_deltoid_dark_under", [3.7, 19.5, -.78],
-                [5.7, 21.15, 1.32], "sleeve", [-3, -5, -7],
-                [4.7, 20.3, .2], "worn_sleeve")
+    def paint_sword_sleeve_side(px, py, seed):
+        left = 2 + py // 19 + authoring.noise(py // 5, seed, 5971) % 3
+        right = 45 - py // 16 - authoring.noise(py // 6, seed, 5981) % 3
+        hem = 61 - authoring.noise(px // 4, seed, 5987) % 7
+        if px < left or px > right or py > hem:
+            return (0, 0, 0, 0)
+        if py > 44 and (px * 3 + py + seed * 7) % 23 < 3:
+            return (0, 0, 0, 0)
+        fold = math.sin(px * .13 + py * .09 + seed) + .25 * math.sin(py * .17)
+        grain = authoring.noise(px // 3, py // 4, 5993 + seed)
+        if fold > .65:
+            color = (32, 43, 51)
+        elif fold < -.4:
+            color = (12, 23, 31)
+        else:
+            color = (21, 33, 41)
+        if grain % 31 == 0:
+            color = (46, 53, 56)
+        return (*color, 255)
+
+    sword_sleeve_upper_uv = m.patch(48, 64,
+                                     lambda px, py: paint_sword_sleeve_side(px, py, 0),
+                                     "sword_sleeve_upper_side")
+    sword_sleeve_lower_uv = m.patch(48, 64,
+                                     lambda px, py: paint_sword_sleeve_side(px, py, 1),
+                                     "sword_sleeve_lower_side")
     add_rotated(m, right_arm, "right_bicep_dark_under", [3.97, 17.65, -.73],
                 [5.63, 19.79, 1.28], "sleeve", [3, 3, -10],
-                [4.8, 18.7, .25], "worn_sleeve")
+                [4.8, 18.7, .25], "worn_sleeve",
+                {"east": sword_sleeve_upper_uv, "west": sword_sleeve_upper_uv})
     add_rotated(m, right_arm, "right_bicep_tapered_under", [4.15, 15.72, -.65],
                 [5.43, 17.95, 1.14], "sleeve", [-2, -6, -12],
-                [4.8, 16.85, .2], "worn_sleeve")
+                [4.8, 16.85, .2], "worn_sleeve",
+                {"east": sword_sleeve_lower_uv, "west": sword_sleeve_lower_uv})
 
     def paint_right_sleeve(px, py):
         # One ragged mail silhouette spans the underlying dark anatomy. The
@@ -1261,9 +1286,12 @@ def build(out=ROOT / "model-lab" / "models"):
                          "sword_gauntlet_dark_leather")
     gauntlet_faces = {face: gauntlet_uv for face in
                       ("north", "south", "east", "west", "up", "down")}
-    add_rotated(m, right_forearm, "right_bracer_upper", [3.92, 13.45, -1.05],
-                [6.0, 16.05, 1.38], "void", [0, 0, -10],
-                [4.94, 14.8, .1], "battered_scale")
+    add_rotated(m, right_forearm, "right_bracer_upper", [3.97, 14.58, -.99],
+                [5.91, 16.02, 1.29], "leather", [0, 0, -13],
+                [4.94, 15.3, .1], "scuffed_leather", gauntlet_faces)
+    add_rotated(m, right_forearm, "right_bracer_middle", [4.06, 13.34, -1.02],
+                [5.83, 14.78, 1.25], "leather", [0, 0, -4],
+                [4.94, 14.05, .1], "scuffed_leather", gauntlet_faces)
     add_rotated(m, right_forearm, "right_bracer_wrist", [4.04, 11.08, -1.1],
                 [5.92, 13.65, 1.37], "leather", [0, 0, 5],
                 [4.98, 12.4, .1], "battered_scale", gauntlet_faces)
