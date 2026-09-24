@@ -271,9 +271,6 @@ def build(out=ROOT / "model-lab" / "models"):
     add_rotated(m, chest, "waist_mail_tunic_upper",
                 [-2.48, 15.8, -1.48], [2.48, 18.4, 1.45], "void",
                 [-6, 0, -2], [0, 17.1, 0], "worn_tunic")
-    add_rotated(m, chest, "waist_mail_tunic_lower",
-                [-1.82, 12.9, -1.1], [1.82, 16.25, 1.17], "void",
-                [7, 0, 3], [0, 14.6, 0], "worn_tunic")
     def paint_chest_mail(px, py):
         side = abs(px - 63.5) / 64
         top = 4 + round(10 * side ** 1.6)
@@ -1359,9 +1356,9 @@ def build(out=ROOT / "model-lab" / "models"):
         return ((47, 57, 62, 255) if grain % 4 else (55, 63, 66, 255))
 
     blade_uv = m.patch(48, 160, paint_worn_blade, "worn_blade")
-    m.cube("blade_worn_faces", [3.12, -5.7, -.9], [6.88, 8.6, -.78],
+    m.cube("blade_worn_faces", [3.48, -5.7, -.9], [6.52, 8.6, -.78],
            "armor", blade, face_uv={"north": blade_uv, "south": blade_uv})
-    m.cube("blade_worn_back_face", [3.12, -5.7, .78], [6.88, 8.6, .9],
+    m.cube("blade_worn_back_face", [3.48, -5.7, .78], [6.52, 8.6, .9],
            "armor", blade, face_uv={"north": blade_uv, "south": blade_uv})
     # Preserve the greatsword's long silhouette while it hangs beside the leg.
     for element in m.elements:
