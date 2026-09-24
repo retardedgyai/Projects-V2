@@ -526,20 +526,22 @@ def build(out=ROOT / "model-lab" / "models"):
         right = 60 - round(py * .16) - authoring.noise(py // 6, 0, 2459) % 4
         hem = 89 - authoring.noise(px // 4, 0, 2467) % 16
         slit = py > 52 and abs(px - (27 + py // 9)) < 2 + (py - 52) // 16
-        if px < left or px > right or py > hem or slit:
+        torn_fold = (14 < py < 39 and
+                     abs(px - (20 + py * .47)) < 1 + (py - 14) // 13)
+        if px < left or px > right or py > hem or slit or torn_fold:
             return (0, 0, 0, 0)
         fold = math.sin(px * .17 + py * .043) + .3 * math.sin(py * .11)
         grain = authoring.noise(px // 3, py // 4, 2477)
         if fold < -.35:
-            color = (10, 23, 38)
+            color = (11, 19, 27)
         elif fold > .65:
-            color = (29, 49, 67)
+            color = (27, 37, 47)
         else:
-            color = (17, 34, 51)
+            color = (18, 29, 40)
         if px - left < 2 or right - px < 2 or py > hem - 3:
-            color = (9, 20, 32)
+            color = (9, 17, 25)
         if grain % 67 == 0:
-            color = (48, 62, 72)
+            color = (40, 50, 55)
         return (*color, 255)
 
     side_cloth_uv = m.patch(64, 96, paint_side_cloth,
@@ -547,8 +549,8 @@ def build(out=ROOT / "model-lab" / "models"):
     mail_edge_uv = m.patch(1, 1, lambda _x, _y: (17, 23, 27, 255),
                            "dark_mail_edge")
     for tier, (lo, hi, y0, y1, tilt, sweep) in enumerate((
-            ((4.02, 18.78, -1.78), (4.35, 20.85, 1.68), 0, 34, -20, 0),
-            ((4.08, 16.6, -1.67), (4.39, 19.05, 1.35), 32, 67, 7, 14),
+            ((4.02, 18.78, -1.39), (4.35, 20.85, 1.31), 0, 34, -20, 0),
+            ((4.08, 16.6, -1.43), (4.39, 19.05, 1.24), 32, 67, 7, 14),
             ((3.82, 14.22, -1.16), (4.22, 17.1, .96), 65, 96, -9, 26),
     )):
         source_uv = side_cloth_uv
@@ -794,13 +796,13 @@ def build(out=ROOT / "model-lab" / "models"):
         u = px / 95
         top = 3 + round(12 * max(0, math.sin(math.pi * u)) ** 1.15)
         top += authoring.noise(px // 7, 0, 3491) % 3
-        hem = top + 25 - authoring.noise(px // 5, 0, 3497) % 5
+        hem = top + 20 - authoring.noise(px // 5, 0, 3497) % 7
         if px < 2 or px > 93 or py < top or py > hem:
             return (0, 0, 0, 0)
         v = (py - top) / max(1, hem - top)
         torn_fold = max(0, 1 - abs(u - .52) / .17)
         rear_nick = max(0, 1 - abs(u - .83) / .1)
-        if v > .83 - .38 * torn_fold or v > .88 - .23 * rear_nick:
+        if v > .80 - .42 * torn_fold or v > .83 - .32 * rear_nick:
             return (0, 0, 0, 0)
         grain = authoring.noise(px // 3, py // 3, 3503) % 11
         ridge = .31 + .08 * math.sin(px * .077)
@@ -816,7 +818,7 @@ def build(out=ROOT / "model-lab" / "models"):
 
     side_wrap_uv = m.patch(96, 48, paint_side_wrap, "wrapped_cowl_sides")
     for name, x0, x1 in (("left", -3.66, -3.28),
-                         ("right", 3.07, 3.46)):
+                          ("right", 3.07, 3.46)):
         m.cube(f"side_wrapped_cowl_{name}", [x0, 20.05, -3.65],
                [x1, 23.6, 2.5], "cloth", scarf,
                face_uv={"east": side_wrap_uv, "west": side_wrap_uv})
@@ -1747,18 +1749,18 @@ def build(out=ROOT / "model-lab" / "models"):
             distance_to_ridge = abs(px - ridge)
             grain = authoring.noise(px // 2, py // 3, seed + 2800)
             if distance_to_ridge < 3 and grain % 5 != 0:
-                color = (42, 63, 85)
+                color = (35, 53, 69)
             elif distance_to_ridge > 16:
-                color = (11, 26, 44)
+                color = (10, 22, 35)
             else:
-                color = (26, 48, 70)
+                color = (22, 39, 56)
             if (py + px * 2 + seed * 17) % 79 < 2 and progress > .24:
                 color = (13, 30, 49)
             if px - left_edge < 2 or right_edge - px < 2 or grain % 103 == 0:
                 color = (12, 26, 43)
             if grain % 173 == 0:
                 color = (68, 79, 85)
-            shade = (.70, .68, .72)[seed]
+            shade = (.70, .68, .70)[seed]
             color = tuple(round(channel * shade) for channel in color)
             return (*color, 255)
 
@@ -1792,8 +1794,8 @@ def build(out=ROOT / "model-lab" / "models"):
             drift = segment * (-.72, -.15, .65)[strip]
             x = center + drift
             base_z = depth + (.22, .55, .88)[segment]
-            segment_width = width * ((.96, .88, .74)[segment] if strip == 0
-                                     else (.93, .88, .76)[segment])
+            segment_width = width * ((.96, .92, .93)[segment] if strip == 0
+                                     else (.93, .91, .94)[segment])
             for row in range(3):
                 row_top = top - (top - bottom) * row / 3
                 row_bottom = top - (top - bottom) * (row + 1) / 3
@@ -1816,11 +1818,12 @@ def build(out=ROOT / "model-lab" / "models"):
                         # Keep a curved cross-section, then tilt each facet
                         # along that curve so neighboring rows meet at their
                         # edges instead of forming separated horizontal slabs.
-                        billow = (1.2 * math.sin(math.pi * max(0, min(1, down)))
+                        billow = (1.55 * math.sin(math.pi * max(0, min(1, down)))
                                   if strip == 0 else 0)
                         cross_section = (.8 + 1.4 * math.sin(
                             math.pi * max(0, min(1, down))))
-                        return base_z + cross_section * fold_depth(across, down) + billow
+                        trailing = (.65, .28, .34)[strip] * down ** 1.6
+                        return base_z + cross_section * fold_depth(across, down) + billow + trailing
                     z = cloth_z(u, v)
                     v_top = (cape_top - row_top) / (cape_top - hem)
                     v_bottom = (cape_top - row_bottom) / (cape_top - hem)
