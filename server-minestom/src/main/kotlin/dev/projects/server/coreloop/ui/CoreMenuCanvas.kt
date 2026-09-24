@@ -14,7 +14,8 @@ import kotlin.math.abs
  * 104 px to each side, but never moves a vanilla slot. Use only after the pack reports loaded.
  * Labels draw before item stacks, so every text-only button slot must use the blank item model.
  */
-class CoreMenuCanvas(private val title: String) {
+class CoreMenuCanvas(private val title: String, private val background: Background = Background.CORE) {
+    enum class Background { CORE, FIRST_MAGIC_DESK, FIRST_MAGIC_DISTILLER, FIRST_MAGIC_JARS, FIRST_MAGIC_JOURNAL }
     enum class Tone { NEUTRAL, SELECTED, PRIMARY, DISABLED, DANGER }
     enum class TextStyle { BODY, EMPHASIS }
     data class Line(val text: String, val color: TextColor = BODY_COLOR, val art: CoreMenuArt? = null, val style: TextStyle = TextStyle.BODY)
@@ -214,8 +215,15 @@ class CoreMenuCanvas(private val title: String) {
         }
 
         val snapshot = snapshot()
-        draw(-104, CoreUiComponents.glyph('\uE600', CANVAS_FONT), 193)
-        draw(88, CoreUiComponents.glyph('\uE601', CANVAS_FONT), 193)
+        val canvasFont = when (background) {
+            Background.CORE -> CANVAS_FONT
+            Background.FIRST_MAGIC_DESK -> MAGIC_DESK_FONT
+            Background.FIRST_MAGIC_DISTILLER -> MAGIC_DISTILLER_FONT
+            Background.FIRST_MAGIC_JARS -> MAGIC_JARS_FONT
+            Background.FIRST_MAGIC_JOURNAL -> MAGIC_JOURNAL_FONT
+        }
+        draw(-104, CoreUiComponents.glyph('\uE600', canvasFont), 193)
+        draw(88, CoreUiComponents.glyph('\uE601', canvasFont), 193)
         label(8, 6, title, HEADING, 160, TextStyle.EMPHASIS)
         // Vanilla draws its own player-inventory label at (8,128) after this title.
         // The frame gives that dark text a light strip; adding a label here would overlap it.
@@ -280,6 +288,10 @@ class CoreMenuCanvas(private val title: String) {
             .decoration(net.kyori.adventure.text.format.TextDecoration.BOLD,false)
             .decoration(net.kyori.adventure.text.format.TextDecoration.ITALIC,false)
         private val CANVAS_FONT = Key.key("projects", "core_menu_canvas")
+        private val MAGIC_DESK_FONT = Key.key("projects", "first_magic_canvas_desk")
+        private val MAGIC_DISTILLER_FONT = Key.key("projects", "first_magic_canvas_distiller")
+        private val MAGIC_JARS_FONT = Key.key("projects", "first_magic_canvas_jars")
+        private val MAGIC_JOURNAL_FONT = Key.key("projects", "first_magic_canvas_journal")
         private val FOCUS_FONT = Key.key("projects", "core_menu_focus")
         internal val TEXT_YS = (listOf(6, 8, 128) + (0..5).map { 20 + 18 * it } + (0..12).map { 30 + 14 * it }).distinct().sorted()
         private data class Metric(val glyph: Char, val advance: Int)

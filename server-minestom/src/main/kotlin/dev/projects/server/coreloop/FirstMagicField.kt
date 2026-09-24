@@ -21,6 +21,7 @@ internal class FirstMagicField(
     private val player: Player,
     private val runtime: VerdantRoadQuestRuntime,
     private val collect: (AnomalousMaterial) -> CompletableFuture<FirstMagicChange>,
+    private val packed: (Player) -> Boolean,
 ) {
     private class Find(val material: AnomalousMaterial, val position: Pos, val displays: List<Entity>) {
         var pending = false
@@ -37,14 +38,22 @@ internal class FirstMagicField(
             val icon = Entity(EntityType.ITEM_DISPLAY).apply {
                 setNoGravity(true); setHasPhysics(false)
                 editEntityMeta(ItemDisplayMeta::class.java) { meta ->
-                    meta.setItemStack(ItemStack.of(when (material) {
+                    val stack = ItemStack.of(when (material) {
                         AnomalousMaterial.MOONBELL -> Material.BLUE_ORCHID
                         AnomalousMaterial.EMBER_MOSS -> Material.RED_MUSHROOM
                         AnomalousMaterial.HOLLOW_CRYSTAL -> Material.AMETHYST_SHARD
                         AnomalousMaterial.WARM_ORE -> Material.RAW_COPPER
                         AnomalousMaterial.TIDEWING_FEATHER -> Material.FEATHER
                         AnomalousMaterial.WITHERED_CORE -> Material.ECHO_SHARD
-                    }))
+                    })
+                    meta.setItemStack(if (packed(player)) stack.withItemModel("projects:first_magic/icon_${when (material) {
+                        AnomalousMaterial.MOONBELL -> "moonbell"
+                        AnomalousMaterial.EMBER_MOSS -> "ember_moss"
+                        AnomalousMaterial.HOLLOW_CRYSTAL -> "hollow_crystal"
+                        AnomalousMaterial.WARM_ORE -> "warm_ore"
+                        AnomalousMaterial.TIDEWING_FEATHER -> "tidewing_feather"
+                        AnomalousMaterial.WITHERED_CORE -> "withered_core"
+                    }}") else stack)
                     meta.setDisplayContext(ItemDisplayMeta.DisplayContext.GROUND)
                     meta.setScale(Vec(1.3, 1.3, 1.3))
                     meta.setBillboardRenderConstraints(AbstractDisplayMeta.BillboardConstraints.CENTER)

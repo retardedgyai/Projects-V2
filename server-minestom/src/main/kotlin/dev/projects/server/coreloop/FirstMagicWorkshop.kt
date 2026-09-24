@@ -1,6 +1,7 @@
 package dev.projects.server.coreloop
 
 import dev.projects.server.coreloop.ui.CoreMenuInventory
+import dev.projects.server.coreloop.ui.CoreMenuCanvas
 import net.kyori.adventure.text.format.NamedTextColor
 import net.minestom.server.entity.Player
 import net.minestom.server.event.inventory.InventoryPreClickEvent
@@ -36,10 +37,12 @@ internal class FirstMagicWorkshop(
     private val change: (Player, FirstMagicAction, () -> Unit) -> Unit,
     private val inColony: (Player) -> Boolean,
     private val exit: (Player) -> Unit,
+    private val packed: (Player) -> Boolean,
 ) {
     private val screens = CoreMenuInventory()
     private val brewing = ConcurrentHashMap<UUID, Pair<AnomalousMaterial, Long>>()
     private val materialSlots = listOf(10, 12, 14, 28, 30, 32)
+    private val aspectSlots = listOf(37, 38, 42, 43)
 
     fun click(event: InventoryPreClickEvent) = screens.click(event)
     fun forget(playerId: UUID) { screens.forget(playerId); brewing.remove(playerId) }
@@ -59,59 +62,167 @@ internal class FirstMagicWorkshop(
         FirstAspect.GALE -> Material.FEATHER
         FirstAspect.STONE -> Material.AMETHYST_SHARD
     }
-    private fun frame(): Array<ItemStack> = Array(54) { index ->
-        when {
-            index < 9 || index >= 45 || index % 9 == 0 || index % 9 == 8 -> CoreLoopItems.icon(Material.BROWN_STAINED_GLASS_PANE, " ")
-            else -> CoreLoopItems.icon(Material.GRAY_STAINED_GLASS_PANE, " ")
-        }
+    private fun materialArt(material: AnomalousMaterial) = when (material) {
+        AnomalousMaterial.MOONBELL -> "moonbell"
+        AnomalousMaterial.EMBER_MOSS -> "ember_moss"
+        AnomalousMaterial.HOLLOW_CRYSTAL -> "hollow_crystal"
+        AnomalousMaterial.WARM_ORE -> "warm_ore"
+        AnomalousMaterial.TIDEWING_FEATHER -> "tidewing_feather"
+        AnomalousMaterial.WITHERED_CORE -> "withered_core"
     }
-    private fun show(player: Player, title: String, items: Array<ItemStack>, actions: Map<Int, () -> Unit>, redraw: () -> Unit) {
+    private fun magicIcon(player: Player, art: String, fallback: Material, name: String, vararg lore: String): ItemStack {
+        val item = CoreLoopItems.icon(fallback, name, *lore)
+        return if (packed(player)) item.withItemModel("projects:first_magic/icon_$art") else item
+    }
+    private fun jarIcon(player: Player, aspect: FirstAspect, amount: Int): ItemStack {
+        val item = CoreLoopItems.icon(Material.GLASS_BOTTLE, aspect.label,
+            "${"▰".repeat(amount / 2)}${"▱".repeat((FirstMagicRules.JAR_CAPACITY - amount) / 2)}",
+            "$amount / ${FirstMagicRules.JAR_CAPACITY} Essentia")
+        val fill = if (amount == 0) "empty" else if (amount < 8) "low" else "high"
+        return if (packed(player)) item.withItemModel("projects:first_magic/jar_${aspect.name.lowercase()}_$fill") else item
+    }
+    private fun frame(player: Player): Array<ItemStack> = if (packed(player)) Array(54) { ItemStack.AIR }
+        else Array(54) { index ->
+            CoreLoopItems.icon(if (index < 9 || index >= 45 || index % 9 == 0 || index % 9 == 8)
+                Material.BROWN_STAINED_GLASS_PANE else Material.GRAY_STAINED_GLASS_PANE, " ")
+        }
+    private enum class Page { DESK, DISTILLER, JARS, JOURNAL }
+    private fun show(player: Player, page: Page, title: String, progress: FirstMagicState,
+                     items: Array<ItemStack>, actions: Map<Int, () -> Unit>, redraw: () -> Unit) {
         if (!inColony(player)) return
-        items[53] = CoreLoopItems.icon(Material.COMPASS, "港へ帰還")
-        screens.show(player, CoreMenuInventory.Screen(CoreLoopItems.text(title, NamedTextColor.GOLD), items,
+        items[53] = magicIcon(player, "return", Material.COMPASS, "港へ帰還")
+        val heading = if (packed(player)) {
+            val canvas = CoreMenuCanvas(title, when (page) {
+                Page.DESK -> CoreMenuCanvas.Background.FIRST_MAGIC_DESK
+                Page.DISTILLER -> CoreMenuCanvas.Background.FIRST_MAGIC_DISTILLER
+                Page.JARS -> CoreMenuCanvas.Background.FIRST_MAGIC_JARS
+                Page.JOURNAL -> CoreMenuCanvas.Background.FIRST_MAGIC_JOURNAL
+            })
+            val known = progress.knownAspects.size
+            val collected = AnomalousMaterial.entries.count { progress.count(it) > 0 }
+            when (page) {
+                Page.DESK -> {
+                    canvas.left("観測手順", listOf(
+                        CoreMenuCanvas.Line("01 素材を持ち帰る"),
+                        CoreMenuCanvas.Line("02 観測盤を修復"),
+                        CoreMenuCanvas.Line("03 素材を分析"),
+                        CoreMenuCanvas.Line("04 記録帳へ残す"),
+                        CoreMenuCanvas.Line(""),
+                        CoreMenuCanvas.Line("素材 $collected / 6"),
+                        CoreMenuCanvas.Line("性質 $known / 4"),
+                    ))
+                    canvas.right("古い観測工房", listOf(
+                        CoreMenuCanvas.Line(if (progress.deskRestored) "観測盤は起動中" else "観測盤は休眠中"),
+                        CoreMenuCanvas.Line(""),
+                        CoreMenuCanvas.Line("紙上の小さな星図は"),
+                        CoreMenuCanvas.Line("持ち帰った未知に応える"),
+                        CoreMenuCanvas.Line(""),
+                        CoreMenuCanvas.Line("素材を選ぶと分析"),
+                        CoreMenuCanvas.Line("素材は消費しない"),
+                    ))
+                }
+                Page.DISTILLER -> {
+                    canvas.left("抽出工程", listOf(
+                        CoreMenuCanvas.Line("研究済み素材を選ぶ"),
+                        CoreMenuCanvas.Line("炉が約3秒で加熱"),
+                        CoreMenuCanvas.Line("冷却管からJarへ"),
+                        CoreMenuCanvas.Line(""),
+                        CoreMenuCanvas.Line("投入素材は1個消費"),
+                        CoreMenuCanvas.Line("Jar上限 16 / 性質"),
+                    ))
+                    canvas.right("炉の状態", listOf(
+                        CoreMenuCanvas.Line(brewing[player.uuid]?.let { "加熱中 ${it.first.label}" } ?: "待機中"),
+                        CoreMenuCanvas.Line(""),
+                        CoreMenuCanvas.Line("熾火は熱として"),
+                        CoreMenuCanvas.Line("潮は循環として"),
+                        CoreMenuCanvas.Line("風は流れとして"),
+                        CoreMenuCanvas.Line("石は沈殿として残る"),
+                    ))
+                }
+                Page.JARS -> {
+                    canvas.left("四つの保存瓶", listOf(
+                        CoreMenuCanvas.Line("瓶ごとに一性質"),
+                        CoreMenuCanvas.Line("中身と残量を見る"),
+                        CoreMenuCanvas.Line(""),
+                        CoreMenuCanvas.Line("初回抽出 ${if (progress.firstDistillation) "済" else "未"}"),
+                    ))
+                    canvas.right("保管記録", FirstAspect.entries.map { aspect ->
+                        CoreMenuCanvas.Line("${aspect.name}  ${progress.jar(aspect)} / 16")
+                    } + listOf(CoreMenuCanvas.Line(""), CoreMenuCanvas.Line("瓶の色は性質に対応")))
+                }
+                Page.JOURNAL -> {
+                    canvas.left("第一頁", listOf(
+                        CoreMenuCanvas.Line("観測済み ${progress.studied.size} / 6"),
+                        CoreMenuCanvas.Line("判明した性質 $known / 4"),
+                        CoreMenuCanvas.Line(""),
+                        CoreMenuCanvas.Line("未知から性質を知る"),
+                        CoreMenuCanvas.Line("抽出して瓶へ残す"),
+                    ))
+                    canvas.right("その先の余白", listOf(
+                        CoreMenuCanvas.Line("封印区画の円形台座"),
+                        CoreMenuCanvas.Line("まだ共鳴が足りない"),
+                        CoreMenuCanvas.Line(""),
+                        CoreMenuCanvas.Line("四性質は入口にすぎない"),
+                    ))
+                }
+            }
+            canvas.render()
+        } else CoreLoopItems.text(title, NamedTextColor.GOLD)
+        screens.show(player, CoreMenuInventory.Screen(heading, items,
             actions + (53 to { exit(player) }), redraw))
     }
 
     fun desk(player: Player) {
         val progress = state(player) ?: return
-        val items = frame()
+        val items = frame(player)
         val actions = mutableMapOf<Int, () -> Unit>()
-        items[4] = CoreLoopItems.icon(Material.LECTERN, "観測記録", if (progress.deskRestored) "机は起動している" else "古い観測盤は眠っている")
-        items[22] = CoreLoopItems.icon(if (progress.deskRestored) Material.AMETHYST_BLOCK else Material.COPPER_INGOT,
+        items[4] = magicIcon(player, "journal", Material.LECTERN, "観測記録", if (progress.deskRestored) "机は起動している" else "古い観測盤は眠っている")
+        items[22] = magicIcon(player, "desk", if (progress.deskRestored) Material.AMETHYST_BLOCK else Material.COPPER_INGOT,
             if (progress.deskRestored) "観測盤 / 稼働中" else "研究机を修復", if (progress.reacted) "クリックして修復" else "異質素材を持ち帰ると反応する")
         if (!progress.deskRestored) actions[22] = { change(player, FirstMagicAction.RestoreDesk) { desk(player) } }
         AnomalousMaterial.entries.forEachIndexed { index, material ->
             val known = material in progress.studied
             val detail = if (known) material.aspects.entries.joinToString("  ") { "${it.key.name} ×${it.value}" } else "性質はまだ不明"
-            items[materialSlots[index]] = CoreLoopItems.icon(materialIcon(material),
+            items[materialSlots[index]] = magicIcon(player, materialArt(material), materialIcon(material),
                 "${material.label}  ×${progress.count(material)}", detail,
                 if (progress.count(material) > 0 && !known) "クリックで分析 / 素材は残る" else if (known) "記録帳に保存済み" else "遠征で拾える")
             actions[materialSlots[index]] = { change(player, FirstMagicAction.Analyze(material)) { desk(player) } }
         }
-        items[40] = CoreLoopItems.icon(Material.WRITABLE_BOOK, "魔導記録帳", "判明した性質：${progress.knownAspects.joinToString { it.name }.ifEmpty { "なし" }}", "クリックで記録を読む")
+        FirstAspect.entries.forEachIndexed { index, aspect ->
+            val known = aspect in progress.knownAspects
+            items[aspectSlots[index]] = magicIcon(player, if (known) aspect.name.lowercase() else "sealed",
+                if (known) aspectIcon(aspect) else Material.GRAY_DYE,
+                if (known) aspect.label else "未解明の性質",
+                if (known) "分析により判明した" else "未知の素材に眠っている")
+        }
+        items[40] = magicIcon(player, "journal", Material.WRITABLE_BOOK, "魔導記録帳", "判明した性質：${progress.knownAspects.joinToString { it.name }.ifEmpty { "なし" }}", "クリックで記録を読む")
         actions[40] = { journal(player) }
-        items[49] = CoreLoopItems.icon(Material.BREWING_STAND, "蒸留器へ", "分析済み素材からEssentiaを抽出")
+        items[49] = magicIcon(player, "distiller", Material.BREWING_STAND, "蒸留器へ", "分析済み素材からEssentiaを抽出")
         actions[49] = { distiller(player) }
-        show(player, "古い観測工房 | 研究机", items, actions) { desk(player) }
+        show(player, Page.DESK, "観測工房・研究机", progress, items, actions) { desk(player) }
     }
 
     fun distiller(player: Player) {
         val progress = state(player) ?: return
-        val items = frame()
+        val items = frame(player)
         val actions = mutableMapOf<Int, () -> Unit>()
-        items[4] = CoreLoopItems.icon(Material.BREWING_STAND, "粗末な蒸留器", "研究済み素材を1個消費", "沸騰 → 冷却 → Jarへ保存")
-        items[22] = CoreLoopItems.icon(Material.CAULDRON, brewing[player.uuid]?.let { "蒸留中：${it.first.label}" } ?: "蒸留槽", "1回につき約3秒")
+        items[4] = magicIcon(player, "distiller", Material.BREWING_STAND, "粗末な蒸留器", "研究済み素材を1個消費", "沸騰 → 冷却 → Jarへ保存")
+        items[22] = magicIcon(player, "distiller", Material.CAULDRON, brewing[player.uuid]?.let { "蒸留中：${it.first.label}" } ?: "蒸留槽", "1回につき約3秒")
         AnomalousMaterial.entries.forEachIndexed { index, material ->
             val known = material in progress.studied
             val detail = if (known) material.aspects.entries.joinToString("  ") { "${it.key.name} +${it.value}" } else "研究机で先に分析"
-            items[materialSlots[index]] = CoreLoopItems.icon(materialIcon(material), "${material.label} ×${progress.count(material)}", detail, "クリックで蒸留開始")
+            items[materialSlots[index]] = magicIcon(player, materialArt(material), materialIcon(material), "${material.label} ×${progress.count(material)}", detail, "クリックで蒸留開始")
             actions[materialSlots[index]] = { startDistillation(player, material) }
         }
-        items[40] = CoreLoopItems.icon(Material.GLASS_BOTTLE, "Jar棚を見る", "保存されたEssentiaを確認")
+        FirstAspect.entries.forEachIndexed { index, aspect ->
+            items[aspectSlots[index]] = magicIcon(player, aspect.name.lowercase(), aspectIcon(aspect), aspect.label,
+                "Jarに ${progress.jar(aspect)} / ${FirstMagicRules.JAR_CAPACITY}")
+        }
+        items[40] = magicIcon(player, "jar", Material.GLASS_BOTTLE, "Jar棚を見る", "保存されたEssentiaを確認")
         actions[40] = { jars(player) }
-        items[49] = CoreLoopItems.icon(Material.LECTERN, "研究机へ")
+        items[49] = magicIcon(player, "desk", Material.LECTERN, "研究机へ")
         actions[49] = { desk(player) }
-        show(player, "古い観測工房 | 蒸留器", items, actions) { distiller(player) }
+        show(player, Page.DISTILLER, "観測工房・蒸留器", progress, items, actions) { distiller(player) }
     }
 
     private fun startDistillation(player: Player, material: AnomalousMaterial) {
@@ -140,36 +251,36 @@ internal class FirstMagicWorkshop(
 
     fun jars(player: Player) {
         val progress = state(player) ?: return
-        val items = frame()
+        val items = frame(player)
         val actions = mutableMapOf<Int, () -> Unit>()
-        items[4] = CoreLoopItems.icon(Material.GLASS_BOTTLE, "Essentia Jar棚", "1瓶につき1性質 / 容量${FirstMagicRules.JAR_CAPACITY}")
+        items[4] = magicIcon(player, "jar", Material.GLASS_BOTTLE, "Essentia Jar棚", "1瓶につき1性質 / 容量${FirstMagicRules.JAR_CAPACITY}")
         FirstAspect.entries.forEachIndexed { index, aspect ->
             val amount = progress.jar(aspect)
-            items[listOf(19, 21, 23, 25)[index]] = CoreLoopItems.icon(aspectIcon(aspect), aspect.label,
-                "${"▰".repeat(amount / 2)}${"▱".repeat((FirstMagicRules.JAR_CAPACITY - amount) / 2)}",
+            items[listOf(19, 21, 23, 25)[index]] = jarIcon(player, aspect, amount)
+            items[aspectSlots[index]] = magicIcon(player, aspect.name.lowercase(), aspectIcon(aspect), aspect.label,
                 "${amount} / ${FirstMagicRules.JAR_CAPACITY} Essentia")
         }
-        items[40] = CoreLoopItems.icon(Material.WRITABLE_BOOK, "魔導記録帳", "初回の観測結果を確認")
+        items[40] = magicIcon(player, "journal", Material.WRITABLE_BOOK, "魔導記録帳", "初回の観測結果を確認")
         actions[40] = { journal(player) }
-        items[49] = CoreLoopItems.icon(Material.BREWING_STAND, "蒸留器へ")
+        items[49] = magicIcon(player, "distiller", Material.BREWING_STAND, "蒸留器へ")
         actions[49] = { distiller(player) }
-        show(player, "古い観測工房 | Jar棚", items, actions) { jars(player) }
+        show(player, Page.JARS, "観測工房・Jar棚", progress, items, actions) { jars(player) }
     }
 
     fun journal(player: Player) {
         val progress = state(player) ?: return
-        val items = frame()
+        val items = frame(player)
         val actions = mutableMapOf<Int, () -> Unit>()
-        items[4] = CoreLoopItems.icon(Material.WRITABLE_BOOK, "魔導記録帳 第一頁", "発見した性質 ${progress.knownAspects.size} / 4")
+        items[4] = magicIcon(player, "journal", Material.WRITABLE_BOOK, "魔導記録帳 第一頁", "発見した性質 ${progress.knownAspects.size} / 4")
         AnomalousMaterial.entries.forEachIndexed { index, material ->
-            items[materialSlots[index]] = CoreLoopItems.icon(if (material in progress.studied) materialIcon(material) else Material.PAPER,
+            items[materialSlots[index]] = magicIcon(player, if (material in progress.studied) materialArt(material) else "journal", if (material in progress.studied) materialIcon(material) else Material.PAPER,
                 if (material in progress.studied) material.label else "未分析の頁",
                 if (material in progress.studied) material.aspects.entries.joinToString(" / ") { "${it.key.name} ×${it.value}" } else "未知を持ち帰り研究机に置く")
         }
-        items[40] = CoreLoopItems.icon(Material.AMETHYST_SHARD, if (progress.firstDistillation) "最初の蒸留を記録" else "まだ白紙の余白",
+        items[40] = magicIcon(player, "sealed", Material.AMETHYST_SHARD, if (progress.firstDistillation) "最初の蒸留を記録" else "まだ白紙の余白",
             if (progress.firstDistillation) "封印区画にはさらに大きな装置が眠る" else "Jarが満たされる日を待つ")
-        items[49] = CoreLoopItems.icon(Material.LECTERN, "研究机へ")
+        items[49] = magicIcon(player, "desk", Material.LECTERN, "研究机へ")
         actions[49] = { desk(player) }
-        show(player, "魔導記録帳 | 第一頁", items, actions) { journal(player) }
+        show(player, Page.JOURNAL, "魔導記録帳・第一頁", progress, items, actions) { journal(player) }
     }
 }

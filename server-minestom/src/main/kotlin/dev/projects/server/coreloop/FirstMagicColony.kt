@@ -8,12 +8,16 @@ import net.minestom.server.coordinate.Point
 import net.minestom.server.coordinate.Vec
 import net.minestom.server.entity.Entity
 import net.minestom.server.entity.EntityType
+import net.minestom.server.entity.Player
 import net.minestom.server.entity.metadata.display.AbstractDisplayMeta
+import net.minestom.server.entity.metadata.display.ItemDisplayMeta
 import net.minestom.server.entity.metadata.display.TextDisplayMeta
 import net.minestom.server.instance.InstanceContainer
 import net.minestom.server.instance.LightingChunk
 import net.minestom.server.instance.Weather
 import net.minestom.server.instance.block.Block
+import net.minestom.server.item.ItemStack
+import net.minestom.server.item.Material
 import java.util.concurrent.CompletableFuture
 import kotlin.math.abs
 
@@ -23,6 +27,42 @@ internal enum class ColonyFixture { EXIT, DESK, DISTILLER, JARS, SEALED_DOOR }
 internal class FirstMagicColony private constructor(val instance: InstanceContainer) {
     val spawn = Pos(0.5, 41.0, -3.5, 145f, 0f)
     private val labels = mutableListOf<Entity>()
+    private val models = mutableListOf<Entity>()
+    private lateinit var deskModel: Entity
+    private lateinit var distillerModel: Entity
+    private val jarModels = mutableListOf<Entity>()
+
+    fun showModels(player: Player, packed: Boolean) {
+        for (entity in models) if (packed) entity.addViewer(player) else entity.removeViewer(player)
+        if (packed) {
+            box(7, 9, 42, 42, 3, 4, Block.BARRIER)
+            box(13, 15, 42, 43, 3, 5, Block.BARRIER)
+            box(7, 12, 42, 43, 12, 12, Block.BARRIER)
+        } else {
+            box(7, 9, 42, 42, 3, 4, Block.DARK_OAK_SLAB)
+            put(8, 43, 4, Block.LECTERN)
+            box(13, 15, 42, 42, 3, 5, Block.CUT_COPPER)
+            put(14, 43, 4, Block.BREWING_STAND)
+            box(7, 12, 42, 43, 12, 12, Block.DARK_OAK_FENCE)
+            for (x in 8..11) put(x, 43, 12, Block.GLASS)
+        }
+    }
+
+    private fun display(model: String, at: Pos, scale: Vec): Entity = Entity(EntityType.ITEM_DISPLAY).apply {
+        setNoGravity(true); setHasPhysics(false); setAutoViewable(false)
+        editEntityMeta(ItemDisplayMeta::class.java) { meta ->
+            meta.setItemStack(ItemStack.of(Material.PAPER).withItemModel("projects:first_magic/$model"))
+            meta.setDisplayContext(ItemDisplayMeta.DisplayContext.FIXED)
+            meta.setScale(scale)
+            meta.setViewRange(0.9f)
+        }
+        setInstance(this@FirstMagicColony.instance, at)
+        models += this
+    }
+
+    private fun model(entity: Entity, name: String) = entity.editEntityMeta(ItemDisplayMeta::class.java) { meta ->
+        meta.setItemStack(ItemStack.of(Material.PAPER).withItemModel("projects:first_magic/$name"))
+    }
 
     fun fixture(point: Point): ColonyFixture? = when {
         point.blockX() in -3..-2 && point.blockZ() in -4..-3 && point.blockY() in 41..42 -> ColonyFixture.EXIT
@@ -34,21 +74,11 @@ internal class FirstMagicColony private constructor(val instance: InstanceContai
     }
 
     fun update(state: FirstMagicState) {
-        put(8, 42, 4, if (state.deskRestored) Block.AMETHYST_BLOCK else Block.CRACKED_STONE_BRICKS)
-        put(8, 43, 4, if (state.deskRestored) Block.LIGHT_BLUE_STAINED_GLASS_PANE else Block.COBWEB)
-        put(14, 43, 4, if (state.firstDistillation) Block.CYAN_STAINED_GLASS else Block.GLASS)
+        if (::deskModel.isInitialized) model(deskModel, if (state.deskRestored) "research_desk" else "research_desk_dormant")
         FirstAspect.entries.forEachIndexed { index, aspect ->
-            val x = 8 + index
             val amount = state.jar(aspect)
-            val colored = when (aspect) {
-                FirstAspect.EMBER -> Block.ORANGE_STAINED_GLASS
-                FirstAspect.TIDE -> Block.CYAN_STAINED_GLASS
-                FirstAspect.GALE -> Block.LIGHT_BLUE_STAINED_GLASS
-                FirstAspect.STONE -> Block.WHITE_STAINED_GLASS
-            }
-            put(x, 42, 12, if (amount > 0) colored else Block.GLASS)
-            put(x, 43, 12, if (amount >= 8) colored else Block.GLASS)
-            put(x, 44, 12, Block.CUT_COPPER_SLAB)
+            if (index < jarModels.size) model(jarModels[index],
+                "jar_${aspect.name.lowercase()}_${if (amount == 0) "empty" else if (amount < 8) "low" else "high"}")
         }
     }
 
@@ -56,6 +86,7 @@ internal class FirstMagicColony private constructor(val instance: InstanceContai
         if (!instance.isRegistered) return
         check(instance.players.isEmpty())
         labels.forEach(Entity::remove)
+        models.forEach(Entity::remove)
         MinecraftServer.getInstanceManager().unregisterInstance(instance)
     }
 
@@ -116,25 +147,30 @@ internal class FirstMagicColony private constructor(val instance: InstanceContai
         }
         for (z in listOf(1, 17)) for (x in 5..17) if (x % 4 == 1) put(x, 41, z, Block.STONE_BRICK_WALL)
         for (x in listOf(5, 17)) for (z in 2..16) if (z % 5 == 2) put(x, 41, z, Block.STONE_BRICK_WALL)
-        // Desk: broad wood silhouette, paper, ink and a dormant observation disc.
+        // An observatory wall gives the apparatus a room-like backdrop without closing the yard.
+        box(6, 16, 41, 44, 1, 1, Block.STONE_BRICKS)
+        for (x in listOf(6, 11, 16)) box(x, x, 41, 45, 1, 1, Block.STRIPPED_DARK_OAK_LOG)
+        box(6, 16, 45, 45, 1, 1, Block.DARK_OAK_PLANKS)
+        for (x in listOf(7, 15)) put(x, 43, 2, Block.LANTERN)
+        display("star_chart", Pos(11.5, 43.6, 1.75), Vec(3.2, 2.3, .2))
+        // Solid plinths hold the interaction target; authored item-display models carry the shape.
         box(7, 9, 41, 41, 3, 4, Block.DARK_OAK_PLANKS)
-        put(7, 42, 3, Block.LECTERN.withProperty("facing", "south"))
-        put(9, 42, 3, Block.CANDLE)
-        put(8, 42, 4, Block.CRACKED_STONE_BRICKS)
+        box(7, 9, 42, 42, 3, 4, Block.BARRIER)
+        deskModel = display("research_desk_dormant", Pos(8.5, 42.25, 4.0), Vec(2.9, 1.8, 1.8))
         sign("研究机 / 観測盤", 8.5, 44.3, 3.8)
-        // Distiller: copper firebox, glass neck, lateral receiver.
+        // One compact copper-glass apparatus, with visible furnace, retort and receiving tube.
         box(13, 15, 41, 41, 3, 5, Block.CUT_COPPER)
-        put(14, 42, 4, Block.BLAST_FURNACE.withProperty("facing", "south"))
-        put(14, 43, 4, Block.GLASS)
-        put(13, 43, 4, Block.COPPER_GRATE)
-        put(15, 42, 4, Block.CAULDRON)
-        put(14, 44, 4, Block.COPPER_TRAPDOOR)
+        box(13, 15, 42, 43, 3, 5, Block.BARRIER)
+        distillerModel = display("crude_distiller", Pos(14.5, 43.0, 4.5), Vec(2.7, 2.9, 2.1))
         sign("粗末な蒸留器", 14.5, 45.3, 4.3)
-        // Four legible jars, each with its own shelf opening and label.
+        // Four separate jars change their fill level from saved state.
         box(7, 12, 41, 41, 11, 12, Block.DARK_OAK_PLANKS)
-        box(7, 12, 44, 44, 11, 11, Block.DARK_OAK_SLAB)
-        for (x in 8..11) { put(x, 42, 12, Block.GLASS); put(x, 43, 12, Block.GLASS); put(x, 44, 12, Block.CUT_COPPER_SLAB) }
-        sign("Ember   Tide   Gale   Stone", 9.7, 45.1, 12.0, NamedTextColor.AQUA)
+        box(7, 12, 42, 43, 12, 12, Block.BARRIER)
+        display("jar_shelf", Pos(9.5, 42.6, 11.9), Vec(5.5, 2.7, 1.25))
+        FirstAspect.entries.forEachIndexed { index, aspect ->
+            jarModels += display("jar_${aspect.name.lowercase()}_empty", Pos(7.9 + index * 1.1, 42.1, 11.7), Vec(.72, 1.25, .72))
+        }
+        sign("Essentia / 四つの瓶", 9.7, 45.1, 12.0, NamedTextColor.AQUA)
         // A single closed threshold and visible ring promise scale beyond this slice.
         box(7, 13, 40, 40, 19, 23, Block.POLISHED_ANDESITE)
         for (x in 7..13) for (z in 19..23) if (abs(x - 10) + abs(z - 21) == 3) put(x, 40, z, Block.CHISELED_STONE_BRICKS)

@@ -82,6 +82,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         change = ::changeMagic,
         inColony = { player -> colonies[player.uuid]?.instance === player.instance },
         exit = ::leaveColony,
+        packed = ::packed,
     )
     private val uiPack = CoreUiPackServer.start()
     private val dungeons = CoreDungeonExpeditions(object : CoreDungeonHost {
@@ -230,8 +231,14 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
                     CoreCombatPresentation.pack(loadedPlayer, packed(loadedPlayer))
                     refresh(loadedPlayer)
                     menus.refreshTheme(loadedPlayer)
+                    colonies[loadedPlayer.uuid]?.takeIf { it.instance === loadedPlayer.instance }
+                        ?.showModels(loadedPlayer, packed(loadedPlayer))
+                    if (!a.journey.chosen && connections[loadedPlayer.uuid] === loadedPlayer && loadedPlayer.openInventory == null)
+                        menus.career(loadedPlayer)
                 }
-                if (!a.journey.chosen) player.scheduler().scheduleNextTick { if (connections[player.uuid] === player) menus.career(player) }
+                if (uiPack == null && !a.journey.chosen) player.scheduler().scheduleNextTick {
+                    if (connections[player.uuid] === player) menus.career(player)
+                }
             }
             println("Player connected: ${player.username} uuid=${player.uuid} firstSpawn=${event.isFirstSpawn} coreLoop=true")
         }
@@ -420,6 +427,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
                 }
                 player.respawnPoint = colony.spawn
                 actors[player.uuid]?.reset()
+                colony.showModels(player, packed(player))
                 player.showTitle(Title.title(CoreLoopItems.text("自分のコロニー", NamedTextColor.GOLD),
                     CoreLoopItems.text("古い観測工房が庭の奥に眠っている", NamedTextColor.AQUA)))
                 if (state.hasMaterial && !state.reacted) changeMagic(player, FirstMagicAction.React) { magicMenus.desk(player) }
@@ -762,7 +770,8 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
             inventoryChanged = { refresh(player) })
         val session = Session(player, runId, runtime, combat, bar, loot)
         try {
-            session.anomalies = FirstMagicField(player, runtime) { material -> firstMagic.change(player.uuid, FirstMagicAction.Collect(material)) }
+            session.anomalies = FirstMagicField(player, runtime,
+                { material -> firstMagic.change(player.uuid, FirstMagicAction.Collect(material)) }, ::packed)
             session.caches = CoreMapCaches(player, runtime.instance,
             plan.contents.filter { it.kind == QuestMapContentKind.DISCOVERY }.map { pos(it.position) },
             guarded = { at -> combat.combatTargets().any { it.position.distance(at) < 12.0 } },

@@ -6,11 +6,10 @@ import net.minestom.server.coordinate.Vec
 import net.minestom.server.instance.block.Block
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class FirstMagicColonyTest {
-    @Test fun fourSpacesAndJarLevelsBuildInPrivateInstance() {
+    @Test fun fourSpacesAndModelInteractionTargetsBuildInPrivateInstance() {
         MinecraftServer.init(Auth.Offline())
         val colony = FirstMagicColony.create(FirstMagicState())
         try {
@@ -21,11 +20,10 @@ class FirstMagicColonyTest {
             assertEquals(ColonyFixture.SEALED_DOOR, colony.fixture(Vec(10.0, 42.0, 22.0)))
             assertEquals(Block.AIR, colony.instance.getBlock(colony.spawn))
             assertTrue(colony.instance.getBlock(-1, 40, -3).isSolid)
-            assertEquals(Block.GLASS, colony.instance.getBlock(8, 42, 12))
+            assertEquals(Block.BARRIER, colony.instance.getBlock(8, 42, 12))
             colony.update(FirstMagicState(jars = mapOf(FirstAspect.EMBER to 9)))
-            assertEquals(Block.ORANGE_STAINED_GLASS, colony.instance.getBlock(8, 42, 12))
-            assertEquals(Block.ORANGE_STAINED_GLASS, colony.instance.getBlock(8, 43, 12))
-            assertNotNull(colony.instance.entities.firstOrNull())
+            assertEquals(Block.BARRIER, colony.instance.getBlock(8, 43, 12))
+            assertTrue(colony.instance.entities.count() >= 7, "desk, distiller, shelf and four jars must exist")
         } finally { colony.dispose() }
     }
 }
