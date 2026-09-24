@@ -14,7 +14,9 @@ import net.kyori.adventure.title.Title
 import net.minestom.server.Auth
 import net.minestom.server.MinecraftServer
 import net.minestom.server.coordinate.Pos
+import net.minestom.server.coordinate.Point
 import net.minestom.server.coordinate.Vec
+import net.minestom.server.coordinate.BlockVec
 import net.minestom.server.entity.GameMode
 import net.minestom.server.entity.Player
 import net.minestom.server.entity.PlayerHand
@@ -29,6 +31,7 @@ import net.minestom.server.event.player.*
 import net.minestom.server.instance.InstanceContainer
 import net.minestom.server.inventory.click.Click
 import net.minestom.server.item.ItemStack
+import net.minestom.server.instance.block.BlockFace
 import net.minestom.server.network.packet.server.play.ParticlePacket
 import net.minestom.server.particle.Particle
 import net.minestom.server.sound.SoundEvent
@@ -61,6 +64,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
     private val preparedMaps = CoreMapPreparation(mapBuilder)
     private val ledger = CoreAccountService(CoreAccountRepository(Path.of("config", "projects", "core-loop")))
     private val firstMagic = FirstMagicService(Path.of("config", "projects", "first-magic"), io)
+    private val colonyLayouts = FirstMagicColonyLayoutRepository(Path.of("config", "projects", "first-magic"))
     private val colonies = ConcurrentHashMap<UUID, FirstMagicColony>()
     private val magicBusy = ConcurrentHashMap.newKeySet<UUID>()
     private val accounts = ConcurrentHashMap<UUID, CoreAccount>()
@@ -83,6 +87,9 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         inColony = { player -> colonies[player.uuid]?.instance === player.instance },
         exit = ::leaveColony,
         packed = ::packed,
+        jarPlaced = { player, aspect -> colonies[player.uuid]?.takeIf { it.instance === player.instance }
+            ?.has(ColonyPlaceable.valueOf("JAR_${aspect.name}")) == true },
+        stationPlaced = { player, kind -> colonies[player.uuid]?.takeIf { it.instance === player.instance }?.has(kind) == true },
     )
     private val uiPack = CoreUiPackServer.start()
     private val dungeons = CoreDungeonExpeditions(object : CoreDungeonHost {
@@ -233,6 +240,8 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
                     menus.refreshTheme(loadedPlayer)
                     colonies[loadedPlayer.uuid]?.takeIf { it.instance === loadedPlayer.instance }
                         ?.showModels(loadedPlayer, packed(loadedPlayer))
+                    colonies[loadedPlayer.uuid]?.takeIf { it.instance === loadedPlayer.instance }
+                        ?.let { FirstMagicColonyItems.issue(loadedPlayer, it, packed(loadedPlayer)) }
                     if (!a.journey.chosen && connections[loadedPlayer.uuid] === loadedPlayer && loadedPlayer.openInventory == null)
                         menus.career(loadedPlayer)
                 }
@@ -282,13 +291,19 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
             }
         }
         events.addListener(ItemDropEvent::class.java) { event ->
-            if (combatLab.contains(event.player) || event.itemStack.getTag(CoreLoopItems.actionTag) != null || event.itemStack.getTag(QUEST_GATHERING_TOOL_TAG) != null || CoreLoopItems.mapId(event.itemStack) != null) event.isCancelled = true
+            if (combatLab.contains(event.player) || FirstMagicColonyItems.kind(event.itemStack) != null || event.itemStack.getTag(CoreLoopItems.actionTag) != null || event.itemStack.getTag(QUEST_GATHERING_TOOL_TAG) != null || CoreLoopItems.mapId(event.itemStack) != null) event.isCancelled = true
         }
         events.addListener(PlayerBlockInteractEvent::class.java) { event ->
             if (event.hand != PlayerHand.MAIN) return@addListener
             if (sessions[event.player.uuid]?.returning == true) { event.isCancelled = true; return@addListener }
             val colony = colonies[event.player.uuid]
             if (colony != null && event.player.instance === colony.instance) {
+                if (event.player.isSneaking && colony.placementAt(event.blockPosition) != null) {
+                    event.isCancelled = true
+                    pickUpColonyItem(event.player, colony, event.blockPosition)
+                    return@addListener
+                }
+                if (FirstMagicColonyItems.kind(event.player.itemInMainHand) != null) return@addListener
                 colony.fixture(event.blockPosition)?.let { fixture ->
                     if (event.player.position.distance(Pos(event.blockPosition.x(), event.blockPosition.y(), event.blockPosition.z())) <= 6.0) {
                         event.isCancelled = true
@@ -315,10 +330,25 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
             }
         }
         events.addListener(PlayerUseItemOnBlockEvent::class.java) { event ->
-            if (event.hand == PlayerHand.MAIN) useAction(event.player, event.itemStack)
+            if (event.hand != PlayerHand.MAIN) return@addListener
+            val colony = colonies[event.player.uuid]
+            val kind = FirstMagicColonyItems.kind(event.itemStack)
+            if (colony != null && event.player.instance === colony.instance && kind != null) {
+                if (!event.player.isSneaking) placeColonyItem(event.player, colony, kind, event.position, event.blockFace)
+            } else useAction(event.player, event.itemStack)
         }
         events.addListener(PlayerUseItemEvent::class.java) { event ->
+            if (event.hand == PlayerHand.MAIN && FirstMagicColonyItems.kind(event.itemStack) != null) {
+                event.isCancelled = true
+                return@addListener
+            }
             if (event.hand == PlayerHand.MAIN && useAction(event.player, event.itemStack)) event.isCancelled = true
+        }
+        events.addListener(PlayerStartDiggingEvent::class.java) { event ->
+            val colony = colonies[event.player.uuid] ?: return@addListener
+            if (event.player.instance !== colony.instance || colony.placementAt(event.blockPosition) == null) return@addListener
+            event.isCancelled = true
+            pickUpColonyItem(event.player, colony, event.blockPosition)
         }
         events.addListener(PlayerCancelItemUseEvent::class.java) { event -> if (event.hand == PlayerHand.MAIN) questMaps.cancelGathering(event.player) }
         events.addListener(PlayerHandAnimationEvent::class.java) { event ->
@@ -406,10 +436,53 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         HarborFacilityKind.COLONY -> enterColony(player)
     }
 
+    private fun placeColonyItem(player: Player, colony: FirstMagicColony, kind: ColonyPlaceable,
+                                clicked: Point, face: BlockFace) {
+        if (player.position.distance(Pos(clicked.x(), clicked.y(), clicked.z())) > 6.0) return
+        val x = clicked.blockX() + when (face) { BlockFace.EAST -> 1; BlockFace.WEST -> -1; else -> 0 }
+        val y = clicked.blockY() + when (face) { BlockFace.TOP -> 1; BlockFace.BOTTOM -> -1; else -> 0 }
+        val z = clicked.blockZ() + when (face) { BlockFace.SOUTH -> 1; BlockFace.NORTH -> -1; else -> 0 }
+        if (kind != ColonyPlaceable.STAR_CHART && kotlin.math.abs(player.position.x() - x - .5) < .7 &&
+            kotlin.math.abs(player.position.z() - z - .5) < .7 && y <= player.position.y() + 1.8 && y + 1 > player.position.y()) {
+            player.sendMessage(CoreLoopItems.text("自分と重なる場所には置けない", NamedTextColor.RED))
+            return
+        }
+        val facing = if (kind == ColonyPlaceable.STAR_CHART) face else BlockFace.fromYaw(player.position.yaw())
+        try {
+            if (!colony.place(kind, BlockVec(x, y, z), facing)) {
+                player.sendMessage(CoreLoopItems.text("ここには置けない。床と空きスペースを確かめよう", NamedTextColor.RED))
+                return
+            }
+            colony.update(firstMagic.snapshot(player.uuid) ?: FirstMagicState())
+            FirstMagicColonyItems.issue(player, colony, packed(player))
+            player.sendMessage(CoreLoopItems.text("${kind.label}を設置した。左クリックかしゃがみ右クリックで回収", NamedTextColor.AQUA))
+        } catch (failure: Exception) {
+            player.sendMessage(CoreLoopItems.text("配置を保存できなかったため設置していません", NamedTextColor.RED))
+            System.err.println("COLONY_LAYOUT_SAVE_FAILURE player=${player.uuid}: $failure")
+        }
+    }
+
+    private fun pickUpColonyItem(player: Player, colony: FirstMagicColony, point: Point) {
+        if (player.position.distance(Pos(point.x(), point.y(), point.z())) > 6.0) return
+        try {
+            val kind = colony.pickUp(point) ?: run {
+                player.sendMessage(CoreLoopItems.text("上に別の設備がある。先にそれを回収しよう", NamedTextColor.RED))
+                return
+            }
+            FirstMagicColonyItems.issue(player, colony, packed(player))
+            player.sendMessage(CoreLoopItems.text("${kind.label}をアイテムに戻した", NamedTextColor.AQUA))
+        } catch (failure: Exception) {
+            player.sendMessage(CoreLoopItems.text("配置を保存できなかったため回収していません", NamedTextColor.RED))
+            System.err.println("COLONY_LAYOUT_SAVE_FAILURE player=${player.uuid}: $failure")
+        }
+    }
+
     private fun enterColony(player: Player) {
         if (!requireHub(player) || !magicBusy.add(player.uuid)) return
         val state = firstMagic.snapshot(player.uuid) ?: run { magicBusy.remove(player.uuid); return }
-        val colony = try { FirstMagicColony.create(state) } catch (failure: Exception) {
+        val colony = try {
+            FirstMagicColony.create(state, colonyLayouts.load(player.uuid)) { colonyLayouts.save(player.uuid, it) }
+        } catch (failure: Exception) {
             magicBusy.remove(player.uuid)
             player.sendMessage(CoreLoopItems.text("コロニーを準備できませんでした: ${failure.message}", NamedTextColor.RED))
             return
@@ -428,10 +501,13 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
                 player.respawnPoint = colony.spawn
                 actors[player.uuid]?.reset()
                 colony.showModels(player, packed(player))
+                FirstMagicColonyItems.issue(player, colony, packed(player))
                 player.showTitle(Title.title(CoreLoopItems.text("自分のコロニー", NamedTextColor.GOLD),
                     CoreLoopItems.text("古い観測工房が庭の奥に眠っている", NamedTextColor.AQUA)))
-                if (state.hasMaterial && !state.reacted) changeMagic(player, FirstMagicAction.React) { magicMenus.desk(player) }
-                else player.sendMessage(CoreLoopItems.text(if (state.hasMaterial) "庭の研究机、蒸留器、Jar棚を調べよう" else "遠征で異質素材を拾い、この庭へ持ち帰ろう", NamedTextColor.AQUA))
+                if (state.hasMaterial && !state.reacted) changeMagic(player, FirstMagicAction.React) {
+                    player.sendMessage(CoreLoopItems.text("持ち帰った素材に古い区画が反応した。研究机を手に持って、庭へ置こう", NamedTextColor.AQUA))
+                }
+                else player.sendMessage(CoreLoopItems.text(if (state.hasMaterial) "手持ちの設備を庭へ置き、研究机から未知を調べよう" else "設備を手に持って右クリックで配置。遠征で異質素材を拾い、この庭へ持ち帰ろう", NamedTextColor.AQUA))
             }
         }
     }
@@ -451,6 +527,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
                 player.respawnPoint = harbor.spawn
                 colonies.remove(player.uuid, colony)
                 if (colony.instance.players.isEmpty()) colony.dispose()
+                FirstMagicColonyItems.clear(player)
                 actors[player.uuid]?.reset()
                 refresh(player)
                 player.sendMessage(CoreLoopItems.text("港へ戻った。遠征路の未知をまた持ち帰ろう", NamedTextColor.GOLD))
@@ -463,6 +540,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         ColonyFixture.DESK -> magicMenus.desk(player)
         ColonyFixture.DISTILLER -> magicMenus.distiller(player)
         ColonyFixture.JARS -> magicMenus.jars(player)
+        ColonyFixture.CHART -> player.sendMessage(CoreLoopItems.text("星図にはまだ描かれていない輪がある。Essentiaはその入口にすぎない", NamedTextColor.LIGHT_PURPLE))
         ColonyFixture.SEALED_DOOR -> player.sendMessage(CoreLoopItems.text(
             if (firstMagic.snapshot(player.uuid)?.firstDistillation == true) "封印の向こうに大きな円形装置が見える。今のEssentiaではまだ共鳴が足りない"
             else "共鳴が不足している。まず研究机とJarを満たそう", NamedTextColor.LIGHT_PURPLE))
@@ -485,13 +563,17 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
                 if (result.changed && action == FirstMagicAction.React) {
                     player.showTitle(Title.title(CoreLoopItems.text("古い工房の目覚め", NamedTextColor.AQUA),
                         CoreLoopItems.text("持ち帰った未知に、紙と石が応えた", NamedTextColor.GOLD)))
-                    player.instance.sendGroupedPacket(ParticlePacket(Particle.END_ROD, Pos(8.5, 43.0, 4.5), Vec(0.25, 0.35, 0.25), 0.005f, 7))
+                    player.instance.sendGroupedPacket(ParticlePacket(Particle.END_ROD, Pos(11.5, 42.0, 9.5), Vec(0.25, 0.35, 0.25), 0.005f, 7))
                 }
                 if (result.changed && action == FirstMagicAction.RestoreDesk)
-                    player.instance.sendGroupedPacket(ParticlePacket(Particle.END_ROD, Pos(8.5, 43.0, 4.5), Vec(0.15, 0.2, 0.15), 0.001f, 5))
+                    colonies[player.uuid]?.modelPosition(ColonyPlaceable.DESK)?.let { at ->
+                        player.instance.sendGroupedPacket(ParticlePacket(Particle.END_ROD, at, Vec(0.15, 0.2, 0.15), 0.001f, 5))
+                    }
                 if (result.changed && action is FirstMagicAction.Distill && result.state.firstDistillation) {
-                    player.showTitle(Title.title(CoreLoopItems.text("最初のEssentia", NamedTextColor.AQUA), CoreLoopItems.text("4つのJarが、次の魔術を待っている", NamedTextColor.GOLD)))
-                    player.instance.sendGroupedPacket(ParticlePacket(Particle.END_ROD, Pos(14.5, 44.0, 4.5), Vec(0.25, 0.5, 0.25), 0.002f, 6))
+                    player.showTitle(Title.title(CoreLoopItems.text("最初のEssentia", NamedTextColor.AQUA), CoreLoopItems.text("置いたJarに、最初の性質が宿った", NamedTextColor.GOLD)))
+                    colonies[player.uuid]?.modelPosition(ColonyPlaceable.DISTILLER)?.let { at ->
+                        player.instance.sendGroupedPacket(ParticlePacket(Particle.END_ROD, at, Vec(0.25, 0.5, 0.25), 0.002f, 6))
+                    }
                 }
                 after()
             }
@@ -580,6 +662,8 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         player.getAttribute(Attribute.MAX_HEALTH).baseValue = 20.0
         if (player.instance === hub) actors[player.uuid]?.reset()
         CoreLoopItems.refresh(player, a, packed = packed(player), combatSheet = combatSheet(player) ?: CoreCombatSheet.from(a))
+        colonies[player.uuid]?.takeIf { it.instance === player.instance }
+            ?.let { FirstMagicColonyItems.issue(player, it, packed(player)) }
     }
 
     override fun depart(player: Player, mapId: UUID, revision: Long) {

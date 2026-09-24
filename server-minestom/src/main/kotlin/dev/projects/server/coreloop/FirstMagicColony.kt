@@ -6,6 +6,7 @@ import net.minestom.server.MinecraftServer
 import net.minestom.server.coordinate.Pos
 import net.minestom.server.coordinate.Point
 import net.minestom.server.coordinate.Vec
+import net.minestom.server.coordinate.BlockVec
 import net.minestom.server.entity.Entity
 import net.minestom.server.entity.EntityType
 import net.minestom.server.entity.Player
@@ -16,27 +17,32 @@ import net.minestom.server.instance.InstanceContainer
 import net.minestom.server.instance.LightingChunk
 import net.minestom.server.instance.Weather
 import net.minestom.server.instance.block.Block
+import net.minestom.server.instance.block.BlockFace
 import net.minestom.server.item.ItemStack
 import net.minestom.server.item.Material
 import java.util.UUID
 import java.util.concurrent.CompletableFuture
 import kotlin.math.abs
 
-internal enum class ColonyFixture { EXIT, DESK, DISTILLER, JARS, SEALED_DOOR }
+internal enum class ColonyFixture { EXIT, DESK, DISTILLER, JARS, CHART, SEALED_DOOR }
 
-/** A private fixed prototype: four readable spaces with all important silhouettes in one courtyard. */
-internal class FirstMagicColony private constructor(val instance: InstanceContainer) {
+/** A private island whose workshop blocks are saved and placed by the player. */
+internal class FirstMagicColony private constructor(
+    val instance: InstanceContainer,
+    private val persist: (Collection<ColonyPlacement>) -> Unit,
+) {
     val spawn = Pos(0.5, 41.0, -3.5, 145f, 0f)
     private val labels = mutableListOf<Entity>()
     private val models = mutableListOf<Entity>()
     private val modelReady = mutableMapOf<Entity, CompletableFuture<*>>()
     private val packedViewers = mutableSetOf<UUID>()
-    private lateinit var deskModel: Entity
-    private lateinit var distillerModel: Entity
-    private val jarModels = mutableListOf<Entity>()
+    private val placements = linkedMapOf<ColonyPlaceable, ColonyPlacement>()
+    private val furniture = mutableMapOf<ColonyPlaceable, Entity>()
+    private var packedBlocks = false
 
     fun showModels(player: Player, packed: Boolean) {
         if (packed) packedViewers += player.uuid else packedViewers -= player.uuid
+        packedBlocks = packed
         for (entity in models) {
             if (!packed) entity.removeViewer(player)
             else {
@@ -50,18 +56,7 @@ internal class FirstMagicColony private constructor(val instance: InstanceContai
                 }
             }
         }
-        if (packed) {
-            box(7, 9, 42, 42, 3, 4, Block.BARRIER)
-            box(13, 15, 42, 43, 3, 5, Block.BARRIER)
-            box(7, 12, 42, 43, 12, 12, Block.BARRIER)
-        } else {
-            box(7, 9, 42, 42, 3, 4, Block.DARK_OAK_SLAB)
-            put(8, 43, 4, Block.LECTERN)
-            box(13, 15, 42, 42, 3, 5, Block.CUT_COPPER)
-            put(14, 43, 4, Block.BREWING_STAND)
-            box(7, 12, 42, 43, 12, 12, Block.DARK_OAK_FENCE)
-            for (x in 8..11) put(x, 43, 12, Block.GLASS)
-        }
+        placements.values.forEach { instance.setBlock(it.x, it.y, it.z, blockFor(it.kind)) }
     }
 
     private fun display(model: String, at: Pos, scale: Vec): Entity = Entity(EntityType.ITEM_DISPLAY).apply {
@@ -74,6 +69,11 @@ internal class FirstMagicColony private constructor(val instance: InstanceContai
         }
         modelReady[this] = setInstance(this@FirstMagicColony.instance, at)
         models += this
+        for (id in packedViewers) instance.players.firstOrNull { it.uuid == id }?.let { player ->
+            modelReady.getValue(this).whenComplete { _, failure -> if (failure == null) player.scheduler().scheduleNextTick {
+                if (player.isOnline && player.instance === instance && id in packedViewers && !isRemoved) addViewer(player)
+            } }
+        }
     }
 
     private fun model(entity: Entity, name: String) = entity.editEntityMeta(ItemDisplayMeta::class.java) { meta ->
@@ -82,19 +82,93 @@ internal class FirstMagicColony private constructor(val instance: InstanceContai
 
     fun fixture(point: Point): ColonyFixture? = when {
         point.blockX() in -3..-2 && point.blockZ() in -4..-3 && point.blockY() in 41..42 -> ColonyFixture.EXIT
-        point.blockX() in 7..9 && point.blockZ() in 3..4 && point.blockY() in 41..43 -> ColonyFixture.DESK
-        point.blockX() in 13..15 && point.blockZ() in 3..5 && point.blockY() in 41..44 -> ColonyFixture.DISTILLER
-        point.blockX() in 7..13 && point.blockZ() in 11..12 && point.blockY() in 41..44 -> ColonyFixture.JARS
         point.blockX() in 9..11 && point.blockZ() in 21..22 && point.blockY() in 41..45 -> ColonyFixture.SEALED_DOOR
-        else -> null
+        else -> placementAt(point)?.kind?.fixture
+    }
+
+    fun placementAt(point: Point): ColonyPlacement? = placements.values.firstOrNull {
+        it.x == point.blockX() && it.y == point.blockY() && it.z == point.blockZ()
+    }
+
+    fun missingItems(): List<ColonyPlaceable> = ColonyPlaceable.entries.filterNot(placements::containsKey)
+    fun has(kind: ColonyPlaceable): Boolean = kind in placements
+
+    fun modelPosition(kind: ColonyPlaceable): Pos? = placements[kind]?.let { Pos(it.x + .5, it.y + 1.0, it.z + .5) }
+
+    fun place(kind: ColonyPlaceable, point: Point, facing: BlockFace, save: Boolean = true): Boolean {
+        val x = point.blockX(); val y = point.blockY(); val z = point.blockZ()
+        if (kind in placements || x !in -21..21 || z !in -20..23 || y !in 41..47 ||
+            facing !in listOf(BlockFace.NORTH, BlockFace.EAST, BlockFace.SOUTH, BlockFace.WEST) ||
+            instance.getBlock(x, y, z) != Block.AIR) return false
+        if (kind == ColonyPlaceable.STAR_CHART) {
+            val backing = when (facing) {
+                BlockFace.NORTH -> BlockVec(x, y, z + 1)
+                BlockFace.SOUTH -> BlockVec(x, y, z - 1)
+                BlockFace.EAST -> BlockVec(x - 1, y, z)
+                else -> BlockVec(x + 1, y, z)
+            }
+            if (!instance.getBlock(backing).isSolid) return false
+        } else if (!instance.getBlock(x, y - 1, z).isSolid) return false
+        val placement = ColonyPlacement(kind, x, y, z, facing)
+        if (save) persist(placements.values + placement)
+        placements[kind] = placement
+        render(placement)
+        return true
+    }
+
+    fun pickUp(point: Point): ColonyPlaceable? {
+        val placement = placementAt(point) ?: return null
+        if (placements.values.any { it.x == placement.x && it.y == placement.y + 1 && it.z == placement.z }) return null
+        if (placements.values.any { other ->
+                if (other.kind != ColonyPlaceable.STAR_CHART) false else when (other.facing) {
+                    BlockFace.NORTH -> other.x == placement.x && other.y == placement.y && other.z + 1 == placement.z
+                    BlockFace.SOUTH -> other.x == placement.x && other.y == placement.y && other.z - 1 == placement.z
+                    BlockFace.EAST -> other.x - 1 == placement.x && other.y == placement.y && other.z == placement.z
+                    else -> other.x + 1 == placement.x && other.y == placement.y && other.z == placement.z
+                }
+            }) return null
+        persist(placements.values.filterNot { it.kind == placement.kind })
+        placements.remove(placement.kind)
+        furniture.remove(placement.kind)?.let { entity ->
+            models.remove(entity); modelReady.remove(entity); entity.remove()
+        }
+        instance.setBlock(placement.x, placement.y, placement.z, Block.AIR)
+        return placement.kind
+    }
+
+    private fun blockFor(kind: ColonyPlaceable): Block = if (packedBlocks) Block.BARRIER else when (kind) {
+        ColonyPlaceable.DESK -> Block.LECTERN
+        ColonyPlaceable.DISTILLER -> Block.BREWING_STAND
+        ColonyPlaceable.SHELF -> Block.BOOKSHELF
+        ColonyPlaceable.JAR_EMBER -> Block.ORANGE_STAINED_GLASS
+        ColonyPlaceable.JAR_TIDE -> Block.CYAN_STAINED_GLASS
+        ColonyPlaceable.JAR_GALE -> Block.LIGHT_BLUE_STAINED_GLASS
+        ColonyPlaceable.JAR_STONE -> Block.LIGHT_GRAY_STAINED_GLASS
+        ColonyPlaceable.STAR_CHART -> Block.OAK_TRAPDOOR
+    }
+
+    private fun render(placement: ColonyPlacement) {
+        instance.setBlock(placement.x, placement.y, placement.z, blockFor(placement.kind))
+        val yaw = when (placement.facing) {
+            BlockFace.NORTH -> 180f
+            BlockFace.SOUTH -> 0f
+            BlockFace.WEST -> 90f
+            else -> -90f
+        }
+        val entity = display(placement.kind.model,
+            Pos(placement.x + .5, placement.y + .5, placement.z + .5, yaw, 0f), Vec(1.0, 1.0, 1.0))
+        furniture[placement.kind] = entity
     }
 
     fun update(state: FirstMagicState) {
-        if (::deskModel.isInitialized) model(deskModel, if (state.deskRestored) "research_desk" else "research_desk_dormant")
-        FirstAspect.entries.forEachIndexed { index, aspect ->
-            val amount = state.jar(aspect)
-            if (index < jarModels.size) model(jarModels[index],
-                "jar_${aspect.name.lowercase()}_${if (amount == 0) "empty" else if (amount < 8) "low" else "high"}")
+        furniture.forEach { (kind, entity) ->
+            when (kind) {
+                ColonyPlaceable.DESK -> model(entity, if (state.deskRestored) "research_desk" else "research_desk_dormant")
+                else -> kind.aspect?.let { aspect ->
+                    val amount = state.jar(aspect)
+                    model(entity, "jar_${aspect.name.lowercase()}_${if (amount == 0) "empty" else if (amount < 8) "low" else "high"}")
+                }
+            }
         }
     }
 
@@ -169,27 +243,7 @@ internal class FirstMagicColony private constructor(val instance: InstanceContai
         for (x in listOf(6, 11, 16)) box(x, x, 41, 45, 1, 1, Block.STRIPPED_DARK_OAK_LOG)
         box(6, 16, 45, 45, 1, 1, Block.DARK_OAK_PLANKS)
         for (x in listOf(7, 15)) put(x, 43, 2, Block.LANTERN)
-        display("star_chart", Pos(11.5, 43.6, 1.75), Vec(3.2, 2.3, .2))
-        // Solid plinths hold the interaction target; authored item-display models carry the shape.
-        box(7, 9, 41, 41, 3, 4, Block.DARK_OAK_PLANKS)
-        box(7, 9, 42, 42, 3, 4, Block.BARRIER)
-        deskModel = display("research_desk_dormant", Pos(8.5, 42.25, 4.0), Vec(2.9, 1.8, 1.8))
-        sign("研究机 / 観測盤", 8.5, 44.3, 3.8)
-        // One compact copper-glass apparatus, with visible furnace, retort and receiving tube.
-        box(13, 15, 41, 41, 3, 5, Block.CUT_COPPER)
-        box(13, 15, 42, 43, 3, 5, Block.BARRIER)
-        distillerModel = display("crude_distiller", Pos(14.5, 43.0, 4.5), Vec(2.7, 2.9, 2.1))
-        sign("粗末な蒸留器", 14.5, 45.3, 4.3)
-        // Four separate jars change their fill level from saved state.
-        box(7, 12, 41, 41, 11, 12, Block.DARK_OAK_PLANKS)
-        box(7, 12, 42, 43, 12, 12, Block.BARRIER)
-        display("jar_shelf", Pos(9.5, 42.6, 11.9), Vec(5.5, 2.7, 1.25))
-        FirstAspect.entries.forEachIndexed { index, aspect ->
-            // The authored bottles stand on the shelf's middle board; their
-            // filled silhouettes remain visible from the yard approach.
-            jarModels += display("jar_${aspect.name.lowercase()}_empty", Pos(7.9 + index * 1.1, 43.1, 11.7), Vec(.72, 1.25, .72))
-        }
-        sign("Essentia / 四つの瓶", 9.7, 45.1, 12.0, NamedTextColor.AQUA)
+        // The yard is left clear. The player places every apparatus from their inventory.
         // A single closed threshold and visible ring promise scale beyond this slice.
         box(7, 13, 40, 40, 19, 23, Block.POLISHED_ANDESITE)
         for (x in 7..13) for (z in 19..23) if (abs(x - 10) + abs(z - 21) == 3) put(x, 40, z, Block.CHISELED_STONE_BRICKS)
@@ -202,7 +256,8 @@ internal class FirstMagicColony private constructor(val instance: InstanceContai
     }
 
     companion object {
-        fun create(state: FirstMagicState): FirstMagicColony {
+        fun create(state: FirstMagicState, saved: List<ColonyPlacement> = emptyList(),
+                   persist: (Collection<ColonyPlacement>) -> Unit = {}): FirstMagicColony {
             val instance = MinecraftServer.getInstanceManager().createInstanceContainer()
             instance.setChunkSupplier(::LightingChunk)
             instance.time = 13_000L
@@ -216,7 +271,15 @@ internal class FirstMagicColony private constructor(val instance: InstanceContai
             }
             try {
                 CompletableFuture.allOf(*(-2..2).flatMap { x -> (-2..2).map { z -> instance.loadChunk(x, z) } }.toTypedArray()).join()
-                return FirstMagicColony(instance).also { it.build(); it.update(state) }
+                return FirstMagicColony(instance, persist).also { colony ->
+                    colony.build()
+                    saved.forEach { placement ->
+                        require(colony.place(placement.kind, BlockVec(placement.x, placement.y, placement.z), placement.facing, save = false)) {
+                            "Saved colony placement is obstructed: $placement"
+                        }
+                    }
+                    colony.update(state)
+                }
             } catch (failure: Throwable) {
                 MinecraftServer.getInstanceManager().unregisterInstance(instance)
                 throw failure

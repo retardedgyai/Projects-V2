@@ -38,6 +38,8 @@ internal class FirstMagicWorkshop(
     private val inColony: (Player) -> Boolean,
     private val exit: (Player) -> Unit,
     private val packed: (Player) -> Boolean,
+    private val jarPlaced: (Player, FirstAspect) -> Boolean,
+    private val stationPlaced: (Player, ColonyPlaceable) -> Boolean,
 ) {
     private val screens = CoreMenuInventory()
     private val brewing = ConcurrentHashMap<UUID, Pair<AnomalousMaterial, Long>>()
@@ -128,6 +130,7 @@ internal class FirstMagicWorkshop(
                         CoreMenuCanvas.Line("冷却管からJarへ"),
                         CoreMenuCanvas.Line(""),
                         CoreMenuCanvas.Line("投入素材は1個消費"),
+                        CoreMenuCanvas.Line("対応するJarを先に置く"),
                         CoreMenuCanvas.Line("Jar上限 16 / 性質"),
                     ))
                     canvas.right("炉の状態", listOf(
@@ -173,6 +176,10 @@ internal class FirstMagicWorkshop(
     }
 
     fun desk(player: Player) {
+        if (!stationPlaced(player, ColonyPlaceable.DESK)) {
+            player.sendMessage(CoreLoopItems.text("研究机を庭に配置してから調べよう", NamedTextColor.YELLOW))
+            return
+        }
         val progress = state(player) ?: return
         val items = frame(player)
         val actions = mutableMapOf<Int, () -> Unit>()
@@ -203,6 +210,10 @@ internal class FirstMagicWorkshop(
     }
 
     fun distiller(player: Player) {
+        if (!stationPlaced(player, ColonyPlaceable.DISTILLER)) {
+            player.sendMessage(CoreLoopItems.text("蒸留器を庭に配置してから使おう", NamedTextColor.YELLOW))
+            return
+        }
         val progress = state(player) ?: return
         val items = frame(player)
         val actions = mutableMapOf<Int, () -> Unit>()
@@ -216,7 +227,7 @@ internal class FirstMagicWorkshop(
         }
         FirstAspect.entries.forEachIndexed { index, aspect ->
             items[aspectSlots[index]] = magicIcon(player, aspect.name.lowercase(), aspectIcon(aspect), aspect.label,
-                "Jarに ${progress.jar(aspect)} / ${FirstMagicRules.JAR_CAPACITY}")
+                if (jarPlaced(player, aspect)) "Jarに ${progress.jar(aspect)} / ${FirstMagicRules.JAR_CAPACITY}" else "Jarを庭に置くと受け取れる")
         }
         items[40] = magicIcon(player, "jar", Material.GLASS_BOTTLE, "Jar棚を見る", "保存されたEssentiaを確認")
         actions[40] = { jars(player) }
@@ -233,6 +244,10 @@ internal class FirstMagicWorkshop(
             change(player, FirstMagicAction.Distill(material)) { distiller(player) }
             return
         }
+        if (material.aspects.keys.any { !jarPlaced(player, it) }) {
+            player.sendMessage(CoreLoopItems.text("${material.label}に対応するJarを先に配置しよう", NamedTextColor.YELLOW))
+            return
+        }
         brewing[player.uuid] = material to (player.aliveTicks + 60)
         player.sendMessage(CoreLoopItems.text("${material.label}を加熱中…色のついた蒸気がガラス管を昇る", NamedTextColor.AQUA))
         distiller(player)
@@ -246,7 +261,12 @@ internal class FirstMagicWorkshop(
             if (remaining % 20L == 0L) player.sendActionBar(CoreLoopItems.text("蒸留中  ${remaining / 20 + 1}…", NamedTextColor.AQUA))
             return
         }
-        if (brewing.remove(player.uuid, brew)) change(player, FirstMagicAction.Distill(brew.first)) { distiller(player) }
+        if (brewing.remove(player.uuid, brew)) {
+            if (brew.first.aspects.keys.any { !jarPlaced(player, it) }) {
+                player.sendMessage(CoreLoopItems.text("Jarが外されたため蒸留を中止した。素材は残っている", NamedTextColor.YELLOW))
+                distiller(player)
+            } else change(player, FirstMagicAction.Distill(brew.first)) { distiller(player) }
+        }
     }
 
     fun jars(player: Player) {
@@ -258,7 +278,7 @@ internal class FirstMagicWorkshop(
             val amount = progress.jar(aspect)
             items[listOf(19, 21, 23, 25)[index]] = jarIcon(player, aspect, amount)
             items[aspectSlots[index]] = magicIcon(player, aspect.name.lowercase(), aspectIcon(aspect), aspect.label,
-                "${amount} / ${FirstMagicRules.JAR_CAPACITY} Essentia")
+                "${amount} / ${FirstMagicRules.JAR_CAPACITY} Essentia", if (jarPlaced(player, aspect)) "庭に設置中" else "手持ちのJarを庭に配置")
         }
         items[40] = magicIcon(player, "journal", Material.WRITABLE_BOOK, "魔導記録帳", "初回の観測結果を確認")
         actions[40] = { journal(player) }
