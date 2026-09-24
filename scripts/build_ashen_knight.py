@@ -29,7 +29,7 @@ PALETTE = {
     "leather": ("16191b", "2c2c2c", "504b45"),
     "boot": ("101315", "262421", "423b33"),
     "sleeve": ("0a1016", "121920", "1c252b"),
-    "skin": ("231c1d", "44302c", "66473d"),
+    "skin": ("211b1c", "392826", "553b35"),
     "bandage": ("302826", "67554d", "91786a"),
 }
 authoring.MATERIALS = {
@@ -135,6 +135,14 @@ class KnightModel(authoring.Model):
                 tone = 2 if coarse % 17 == 0 else 0 if coarse % 7 == 0 else 1
                 if (x * 2 + y * 3 + seed) % 47 < 2:
                     tone = 0
+                if side in ("north", "south") and width >= 12:
+                    # Shade the limb's edges like an uneven, scarred cylinder.
+                    # A uniform light face made the bare arm a salmon cuboid.
+                    edge = min(x, width - 1 - x) / width
+                    if edge < .15 and coarse % 5:
+                        tone = 0
+                    elif edge > .28 and coarse % 11 == 0:
+                        tone = 2
                 if side in ("north", "south") and height >= 12:
                     wound = x - (width * .38 + 1.9 * math.sin(y / 5 + seed))
                     if abs(wound) < 1.2 and height * .17 < y < height * .84:
@@ -1761,9 +1769,9 @@ def build(out=ROOT / "model-lab" / "models"):
     # Leave the chainmail back exposed. The short scarf above and torn cloth
     # tied at the hips have separate silhouettes, like a battle-worn knight.
     cape_strips = (
-        (-4.3, 4.5, 3.05, 1.25, -13),
-        (-.35, 4.2, 4.15, 2.0, -2),
-        (3.0, 3.8, 3.05, 4.0, 20),
+        (-4.3, 3.85, 3.05, 1.25, -13),
+        (-.35, 3.8, 4.15, 2.0, -2),
+        (3.0, 3.1, 3.05, 4.0, 20),
     )
     open_hem_uv = m.patch(1, 1, lambda _x, _y: (0, 0, 0, 0), "open_cloth_hem")
 
@@ -1971,6 +1979,18 @@ def build(out=ROOT / "model-lab" / "models"):
             for key in ("from", "to", "origin"):
                 x, y, z = element[key]
                 element[key] = [4.8 + (x - 4.8) * .72, y, z * .76]
+
+    # Keep the boots and surviving greaves broad enough to carry the weight of
+    # the torso and sword. The previous lower legs nearly vanished under the
+    # hanging cloth at the normal combat camera distance.
+    shin_centers = {**{uuid: -2.1 for uuid in left_shin},
+                    **{uuid: 2.1 for uuid in right_shin}}
+    for element in m.elements:
+        center = shin_centers.get(element["uuid"])
+        if center is not None:
+            for key in ("from", "to", "origin"):
+                x, y, z = element[key]
+                element[key] = [center + (x - center) * 1.18, y, z]
 
     plume_bone = m.bone("plume", [0, 26.5, 1], plume)
     head_bone = m.bone("head", [0, 22, 0], helm + [plume_bone])
