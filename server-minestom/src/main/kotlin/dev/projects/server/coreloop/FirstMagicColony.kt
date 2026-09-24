@@ -18,6 +18,7 @@ import net.minestom.server.instance.Weather
 import net.minestom.server.instance.block.Block
 import net.minestom.server.item.ItemStack
 import net.minestom.server.item.Material
+import java.util.UUID
 import java.util.concurrent.CompletableFuture
 import kotlin.math.abs
 
@@ -28,12 +29,27 @@ internal class FirstMagicColony private constructor(val instance: InstanceContai
     val spawn = Pos(0.5, 41.0, -3.5, 145f, 0f)
     private val labels = mutableListOf<Entity>()
     private val models = mutableListOf<Entity>()
+    private val modelReady = mutableMapOf<Entity, CompletableFuture<*>>()
+    private val packedViewers = mutableSetOf<UUID>()
     private lateinit var deskModel: Entity
     private lateinit var distillerModel: Entity
     private val jarModels = mutableListOf<Entity>()
 
     fun showModels(player: Player, packed: Boolean) {
-        for (entity in models) if (packed) entity.addViewer(player) else entity.removeViewer(player)
+        if (packed) packedViewers += player.uuid else packedViewers -= player.uuid
+        for (entity in models) {
+            if (!packed) entity.removeViewer(player)
+            else {
+                val ready = modelReady.getValue(entity)
+                if (ready.isDone && !ready.isCompletedExceptionally) entity.addViewer(player)
+                else ready.whenComplete { _, failure ->
+                    if (failure == null) player.scheduler().scheduleNextTick {
+                        if (player.isOnline && player.instance === instance && player.uuid in packedViewers && !entity.isRemoved)
+                            entity.addViewer(player)
+                    }
+                }
+            }
+        }
         if (packed) {
             box(7, 9, 42, 42, 3, 4, Block.BARRIER)
             box(13, 15, 42, 43, 3, 5, Block.BARRIER)
@@ -56,7 +72,7 @@ internal class FirstMagicColony private constructor(val instance: InstanceContai
             meta.setScale(scale)
             meta.setViewRange(0.9f)
         }
-        setInstance(this@FirstMagicColony.instance, at)
+        modelReady[this] = setInstance(this@FirstMagicColony.instance, at)
         models += this
     }
 
@@ -87,6 +103,7 @@ internal class FirstMagicColony private constructor(val instance: InstanceContai
         check(instance.players.isEmpty())
         labels.forEach(Entity::remove)
         models.forEach(Entity::remove)
+        packedViewers.clear()
         MinecraftServer.getInstanceManager().unregisterInstance(instance)
     }
 
