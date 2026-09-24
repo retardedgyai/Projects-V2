@@ -1992,6 +1992,22 @@ def build(out=ROOT / "model-lab" / "models"):
                 x, y, z = element[key]
                 element[key] = [center + (x - center) * 1.18, y, z]
 
+    # The two long left-side cloths previously overlapped from waist to hem,
+    # becoming one vertical board in the back view. Separate only their lower
+    # halves so the root remains tied together and the tails can move apart.
+    for element in m.elements:
+        name = element["name"]
+        if not name.startswith("cape_strip_"):
+            continue
+        strip = int(name.split("_")[2])
+        if strip not in (0, 1):
+            continue
+        y = (element["from"][1] + element["to"][1]) / 2
+        progress = max(0, min(1, (14.8 - y) / 13))
+        spread = .9 * progress * (-1 if strip == 0 else 1)
+        for key in ("from", "to", "origin"):
+            element[key][0] += spread
+
     plume_bone = m.bone("plume", [0, 26.5, 1], plume)
     head_bone = m.bone("head", [0, 22, 0], helm + [plume_bone])
     left_arm_bone = m.bone("left_arm", [-4.8, 21, 0], left_arm)
