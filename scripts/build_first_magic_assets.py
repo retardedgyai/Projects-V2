@@ -87,6 +87,16 @@ def preview() -> None:
         small = Image.open(ASSET / f"textures/item/{MAGIC}/{name}.png").convert("RGBA").resize((16, 16), Image.Resampling.NEAREST)
         im.alpha_composite(small, (x, y))
     save(im, ROOT / "assets/first-magic/workshop-screen-preview.png")
+    pages = Image.new("RGBA", (768, 444), "#171d21")
+    for index, page in enumerate(("desk", "distiller", "jars", "journal")):
+        spread = Image.new("RGBA", (384, 222))
+        for side in (0, 1):
+            half = Image.open(ASSET / f"textures/gui/first_magic/{page}_{side}.png").convert("RGBA")
+            spread.alpha_composite(half, (side*192, 0))
+        x, y = (index%2)*384, (index//2)*222
+        pages.alpha_composite(spread, (x,y))
+        ImageDraw.Draw(pages).text((x+110,y+4), page.upper(), fill="#e7d4ae")
+    save(pages, ROOT / "assets/first-magic/ui-pages.png")
 
 
 def build() -> None:

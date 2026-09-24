@@ -396,9 +396,11 @@ def build_ui(root: Path, asset: Path, write_json) -> None:
             d.rectangle((x+3,y+3,x+5,y+5), fill="#5b3d28")
         # The side folios are navy book cloth, with inset aged paper ruled for
         # text. The accepted light text stays legible on a deep manuscript ink.
-        for l,r in ((11,98),(286,373)):
+        # CoreMenuCanvas anchors the left folio text at x=6. The ink field
+        # reaches that pixel so no heading lands on the timber margin.
+        for l,r in ((5,100),(283,379)):
             d.rectangle((l,10,r,126), fill="#192932", outline="#a97c45", width=1)
-            d.rectangle((l+2,28,r-2,123), fill="#243038")
+            d.rectangle((l+1,28,r-2,123), fill="#243038")
             for yy in range(29,123,3):
                 d.line((l+3,yy,r-3,yy), fill="#283b43")
             d.rectangle((l+2,11,r-2,25), fill="#503823", outline="#89623c")
