@@ -300,13 +300,20 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
             if (colony != null && event.player.instance === colony.instance) {
                 if (event.player.isSneaking && colony.placementAt(event.blockPosition) != null) {
                     event.isCancelled = true
+                    event.isBlockingItemUse = true
                     pickUpColonyItem(event.player, colony, event.blockPosition)
                     return@addListener
                 }
-                if (FirstMagicColonyItems.kind(event.player.itemInMainHand) != null) return@addListener
+                FirstMagicColonyItems.kind(event.player.itemInMainHand)?.let { kind ->
+                    event.isCancelled = true
+                    event.isBlockingItemUse = true
+                    placeColonyItem(event.player, colony, kind, event.blockPosition, event.blockFace)
+                    return@addListener
+                }
                 colony.fixture(event.blockPosition)?.let { fixture ->
                     if (event.player.position.distance(Pos(event.blockPosition.x(), event.blockPosition.y(), event.blockPosition.z())) <= 6.0) {
                         event.isCancelled = true
+                        event.isBlockingItemUse = true
                         openColonyFixture(event.player, fixture)
                     }
                 }

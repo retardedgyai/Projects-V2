@@ -2,6 +2,7 @@ package dev.projects.server.coreloop
 
 import net.minestom.server.Auth
 import net.minestom.server.MinecraftServer
+import net.minestom.server.component.DataComponents
 import net.minestom.server.coordinate.BlockVec
 import net.minestom.server.instance.block.Block
 import net.minestom.server.instance.block.BlockFace
@@ -11,6 +12,7 @@ import java.util.UUID
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class FirstMagicColonyTest {
@@ -21,6 +23,12 @@ class FirstMagicColonyTest {
         val playerId = UUID.randomUUID()
         val repository = FirstMagicColonyLayoutRepository(directory)
         val state = FirstMagicState(jars = mapOf(FirstAspect.EMBER to 9))
+        for (kind in ColonyPlaceable.entries) {
+            val item = FirstMagicColonyItems.item(kind, packed = true)
+            assertEquals(kind, FirstMagicColonyItems.kind(item))
+            assertTrue(assertNotNull(item.get(DataComponents.CAN_PLACE_ON)).test(Block.STONE_BRICKS),
+                "${kind.name} must send a placement click in adventure mode")
+        }
         val colony = FirstMagicColony.create(state, persist = { repository.save(playerId, it) })
         try {
             assertEquals(Block.AIR, colony.instance.getBlock(8, 41, 4), "old oversized desk plinth must be gone")

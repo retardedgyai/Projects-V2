@@ -2,8 +2,11 @@ package dev.projects.server.coreloop
 
 import net.kyori.adventure.text.format.NamedTextColor
 import net.minestom.server.entity.Player
+import net.minestom.server.component.DataComponents
+import net.minestom.server.instance.block.predicate.BlockPredicate
 import net.minestom.server.item.ItemStack
 import net.minestom.server.item.Material
+import net.minestom.server.item.component.BlockPredicates
 import net.minestom.server.tag.Tag
 
 /** Physical one-of-each build items. Their ownership follows the saved private-island layout. */
@@ -28,6 +31,7 @@ internal object FirstMagicColonyItems {
             "しゃがみながら右クリック：回収",
             if (kind == ColonyPlaceable.STAR_CHART) "壁面に設置" else "コロニー内の好きな場所に設置",
             color = NamedTextColor.AQUA).withTag(tag, kind.name)
+            .with(DataComponents.CAN_PLACE_ON, BlockPredicates(BlockPredicate.ALL))
         return if (packed) base.withItemModel("projects:first_magic/${kind.model}") else base
     }
 
