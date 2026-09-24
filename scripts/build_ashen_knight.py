@@ -1103,7 +1103,7 @@ def build(out=ROOT / "model-lab" / "models"):
         fiber = (px + py // 11 + seed * 3) % 16
         wear = authoring.noise(px // 4, py // 7, 6721 + seed)
         if fiber in (2, 3) and wear % 13 != 0:
-            tone = (34, 38, 40)
+            tone = (27, 31, 34)
         elif fiber in (5, 6) or wear % 17 == 0:
             tone = (10, 15, 20)
         else:
