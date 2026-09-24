@@ -1703,8 +1703,8 @@ def build(out=ROOT / "model-lab" / "models"):
     # Leave the chainmail back exposed. The short scarf above and torn cloth
     # tied at the hips have separate silhouettes, like a battle-worn knight.
     cape_strips = (
-        (-4.7, 4.25, 3.05, 1.25, -20),
-        (-.9, 4.25, 4.15, 2.0, -3),
+        (-4.2, 5.05, 3.05, 1.25, -13),
+        (-.75, 5.05, 4.15, 2.0, -2),
         (2.2, 4.15, 3.05, 4.0, 20),
     )
     open_hem_uv = m.patch(1, 1, lambda _x, _y: (0, 0, 0, 0), "open_cloth_hem")
@@ -1716,7 +1716,7 @@ def build(out=ROOT / "model-lab" / "models"):
             left_edge = 1 + taper + authoring.noise(py // 7, seed, 817) % 6
             right_edge = 46 - taper - authoring.noise(py // 8, seed, 829) % 7
             if py < 55:
-                root_taper = round((1 - py / 55) * (7, 5, 4)[seed])
+                root_taper = round((1 - py / 55) * (3, 2, 4)[seed])
                 left_edge += root_taper
                 right_edge -= root_taper
             if seed == 0 and 70 < py < 125:
@@ -1731,7 +1731,8 @@ def build(out=ROOT / "model-lab" / "models"):
             split_center = 20 + 4 * math.sin(progress * 3 + seed * 1.4)
             split_width = max(0, progress - (.63, .65, .58)[seed]) * (10, 16, 15)[seed]
             slit = abs(px - split_center) < split_width
-            if px < left_edge or px > right_edge or py > tear or slit:
+            root_arch = 2 + abs(px - 23) // 7
+            if px < left_edge or px > right_edge or py < root_arch or py > tear or slit:
                 return (0, 0, 0, 0)
             if seed in (0, 2) and 88 <= py <= 145:
                 notch = max(0, 7 - abs(py - (115 + seed * 5)) * .43)
@@ -1782,8 +1783,8 @@ def build(out=ROOT / "model-lab" / "models"):
         boundaries = ((cape_top, max(11.2, hem)),
                       (11.3, max(7.8, hem)), (7.9, hem))
         def fold_depth(u, v):
-            return (.35 * math.sin((u * .95 + v * .22 + strip * .29) * math.tau)
-                    + .18 * math.sin((u * 1.8 - v * .58 + strip * .4) * math.tau))
+            return (.57 * math.sin((u * .95 + v * .22 + strip * .29) * math.tau)
+                    + .26 * math.sin((u * 1.8 - v * .58 + strip * .4) * math.tau))
 
         for segment, (top, bottom) in enumerate(boundaries):
             if top <= bottom + .1:
@@ -1931,11 +1932,11 @@ def build(out=ROOT / "model-lab" / "models"):
     middle_cape_bone = m.bone("cape_center", [0, 14.7, 3], cape_center + [center_mid_bone])
     # The idle hunch pitches the cloth with the torso; keep its waist-tied
     # panels falling behind the legs rather than projecting as one side slab.
-    left_cape_bone["rotation"] = [32, 0, 2]
+    left_cape_bone["rotation"] = [28, 0, 2]
     left_mid_bone["rotation"] = [-5, -6, 0]
     left_tail_bone["rotation"] = [-6, 8, 0]
     right_cape_bone["rotation"] = [18, 0, 3]
-    middle_cape_bone["rotation"] = [32, 0, 0]
+    middle_cape_bone["rotation"] = [28, 0, 0]
     center_mid_bone["rotation"] = [-4, 7, 1]
     center_tail_bone["rotation"] = [-6, -5, 0]
     left_edge_bone = m.bone("cape_left_edge", [-6, 20, 2.7], cape_left_edge)
