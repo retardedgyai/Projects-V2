@@ -16,6 +16,7 @@ class AshenPoseTest(unittest.TestCase):
     def setUpClass(cls):
         source = ROOT / "model-lab" / "models" / "ashen_knight.bbmodel"
         cls.data, elements, cls.atlas, cls.animations = preview.load(source)
+        cls.elements = elements
         def find_bone(node, name):
             if node["name"] == name:
                 return node
@@ -151,6 +152,21 @@ class AshenPoseTest(unittest.TestCase):
                 depth = element["to"][2] - element["from"][2]
                 self.assertGreater(depth, .15)
                 self.assertLess(depth, .4)
+
+    def test_thigh_profile_tapers_below_frayed_mail(self):
+        by_name = {element["name"]: element for element in self.elements.values()}
+        for side in ("left", "right"):
+            upper = by_name[f"{side}_thigh_underlayer_upper"]
+            lower = by_name[f"{side}_thigh_underlayer_lower"]
+            with self.subTest(side=side):
+                self.assertLess(lower["to"][0] - lower["from"][0],
+                                upper["to"][0] - upper["from"][0])
+                self.assertLess(lower["to"][2] - lower["from"][2],
+                                upper["to"][2] - upper["from"][2])
+                uv = upper["faces"]["east"]["uv"]
+                alpha = self.atlas[uv[1]:uv[3], uv[0]:uv[2], 3]
+                self.assertTrue(np.any(alpha == 0))
+                self.assertTrue(np.any(alpha > 0))
 
 
 if __name__ == "__main__":

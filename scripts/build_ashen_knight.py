@@ -185,12 +185,34 @@ def build(out=ROOT / "model-lab" / "models"):
     add_rotated(m, hips, "fauld_mail_right", [2.03, 11.1, -1.09],
                 [2.95, 13.42, 1.16], "mail", [-3, 0, 6], [2.5, 12.25, 0],
                 "worn_mail")
+    def paint_worn_belt(px, py):
+        top = 2 + authoring.noise(px // 6, 0, 9921) % 2
+        hem = 17 - authoring.noise(px // 7, 0, 9929) % 3
+        if py < top or py > hem:
+            return (0, 0, 0, 0)
+        grain = authoring.noise(px // 3, py // 2, 9937)
+        if py <= top + 1 or py >= hem - 1:
+            color = (35, 30, 27)
+        elif grain % 37 == 0 or (px + py * 2) % 89 == 0:
+            color = (73, 58, 45)
+        elif grain % 5 == 0:
+            color = (43, 36, 30)
+        else:
+            color = (52, 43, 35)
+        return (*color, 255)
+
+    belt_uv = m.patch(96, 20, paint_worn_belt, "worn_waist_leather")
+    belt_edge_uv = m.patch(1, 1, lambda _x, _y: (36, 31, 28, 255),
+                           "worn_waist_edge")
+    belt_faces = {"north": belt_uv, "south": belt_uv,
+                  "east": belt_edge_uv, "west": belt_edge_uv,
+                  "up": belt_edge_uv, "down": belt_edge_uv}
     add_rotated(m, hips, "belt_left", [-3.5, 12.35, -2.04],
                 [-.08, 12.88, -1.63], "leather", [0, 0, -3],
-                [-1.75, 12.62, -1.83], "scuffed_leather")
+                [-1.75, 12.62, -1.83], "scuffed_leather", belt_faces)
     add_rotated(m, hips, "belt_right", [-.12, 12.28, -2.04],
                 [3.4, 12.82, -1.63], "leather", [0, 0, 2],
-                [1.65, 12.55, -1.83], "scuffed_leather")
+                [1.65, 12.55, -1.83], "scuffed_leather", belt_faces)
     add_rotated(m, hips, "skirt_underlayer_root", [-2.55, 10.25, -1.43],
                 [2.55, 12.4, 1.72], "void", [3, 0, 2], [0, 11.2, 0],
                 "worn_tunic")
@@ -307,12 +329,39 @@ def build(out=ROOT / "model-lab" / "models"):
     add_rotated(m, chest, "upper_tunic_abdomen",
                 [-2.05, 16.95, -1.72], [2.05, 19.53, .95], "void",
                 [-3, 0, 4], [0, 18.2, -.47], "worn_tunic")
+    def paint_torn_rib(px, py):
+        # A solid east/west face made the torso a ruler-straight dark box in
+        # profile. Leave the underlying tunic visible through a frayed side.
+        left = 5 + round(py * .09) + authoring.noise(py // 6, 0, 5197) % 3
+        right = 59 - round(py * .13) - authoring.noise(py // 7, 0, 5201) % 3
+        crown = 3 + round(abs(px - 28) * .11)
+        hem = 91 - authoring.noise(px // 5, 0, 5207) % 12
+        split = py > 61 and abs(px - (24 + py // 9)) < (py - 60) // 11
+        if px < left or px > right or py < crown or py > hem or split:
+            return (0, 0, 0, 0)
+        fold = math.sin(px * .18 + py * .065) + .35 * math.sin(py * .15)
+        grain = authoring.noise(px // 3, py // 4, 5219)
+        if fold < -.45:
+            color = (10, 20, 30)
+        elif fold > .68:
+            color = (30, 43, 55)
+        else:
+            color = (19, 31, 43)
+        if px - left < 2 or right - px < 2 or py > hem - 3:
+            color = (7, 17, 26)
+        if grain % 83 == 0:
+            color = (38, 47, 55)
+        return (*color, 255)
+
+    rib_uv = m.patch(64, 96, paint_torn_rib, "torn_tunic_rib_profile")
+    rib_faces = {"east": rib_uv, "west": rib_uv,
+                 "up": open_waist_uv, "down": open_waist_uv}
     add_rotated(m, chest, "upper_tunic_left_rib",
                 [-3.8, 17.5, -1.82], [-2.12, 21.8, .85], "void",
-                [-6, 0, -8], [-3.0, 19.65, -.45], "worn_tunic")
+                [-6, 0, -8], [-3.0, 19.65, -.45], "worn_tunic", rib_faces)
     add_rotated(m, chest, "upper_tunic_right_rib",
                 [2.12, 17.35, -1.78], [3.72, 21.65, .82], "void",
-                [-6, 0, 7], [2.92, 19.5, -.45], "worn_tunic")
+                [-6, 0, 7], [2.92, 19.5, -.45], "worn_tunic", rib_faces)
     def paint_back_tunic(px, py, seed):
         grain = authoring.noise(px // 3, py // 3, 5251 + seed)
         fold = math.sin(px * .11 + py * .06 + seed * 1.9)
@@ -437,12 +486,12 @@ def build(out=ROOT / "model-lab" / "models"):
         if py > 56 and 16 < px < 30 and (px + py * 2) % 25 < 5:
             return (0, 0, 0, 0)
         row = py // 6
-        tx = (px + 4 * (row % 2)) % 8
+        tx = (px + 4 * (row % 2) + authoring.noise(row, 0, 2421) % 3) % 8
         grain = authoring.noise(px // 3, py // 3, 2423)
         ring = ((py % 6 == 1 and tx in (2, 3, 4)) or
                 (py % 6 in (2, 3) and tx in (1, 5)))
-        if ring and grain % 7 != 0:
-            color = (45, 55, 58) if grain % 6 else (61, 68, 68)
+        if ring and grain % 5 < 3:
+            color = (34, 43, 47) if grain % 7 else (55, 61, 61)
         elif py % 6 == 4 and tx in (2, 3, 4):
             color = (10, 17, 22)
         else:
@@ -1022,11 +1071,57 @@ def build(out=ROOT / "model-lab" / "models"):
                                  math.degrees(math.atan2(dx, dz)), 0],
                         [cx, cy, cz], "worn_mane", mane_faces)
 
+    def paint_frayed_thigh_mail(px, py, seed):
+        # A torn sheet of chainmail sits over the dark trouser. The old solid
+        # mail cuboid exposed a bright, perfectly straight wall in profile.
+        taper = round(py * (.12 if seed == 0 else .17))
+        left = 3 + taper + authoring.noise(py // 5, seed, 1161) % 3
+        right = 44 - taper - authoring.noise(py // 6, seed, 1169) % 4
+        crown = 2 + round(abs(px - 23) * .12)
+        hem = 59 - authoring.noise(px // 4, seed, 1171) % 11
+        missing_wedge = (seed == 1 and py > 31 and
+                         px > right - (py - 31) * .23)
+        if px < left or px > right or py < crown or py > hem or missing_wedge:
+            return (0, 0, 0, 0)
+        grain = authoring.noise(px // 3, py // 3, 1177 + seed)
+        if py > 35 and grain % 19 < 3:
+            return (0, 0, 0, 0)
+        row = py // 5
+        link = (px + (row % 2) * 3 + authoring.noise(row, seed, 1181) % 2) % 7
+        if grain % 9 < 3:
+            color = (15, 23, 29)
+        elif (py % 5 == 1 and link in (2, 3, 4)) or (py % 5 == 2 and link in (1, 5)):
+            color = (39, 47, 49) if grain % 7 else (51, 57, 58)
+        else:
+            color = (22, 31, 36)
+        if px - left < 2 or right - px < 2 or py > hem - 3:
+            color = (12, 20, 26)
+        return (*color, 255)
+
+    torn_mail_open = m.patch(1, 1, lambda _x, _y: (0, 0, 0, 0),
+                             "open_torn_thigh_mail_edge")
     for side, x in (("left", -2.1), ("right", 2.1)):
         thigh = left_thigh if side == "left" else right_thigh
         shin = left_shin if side == "left" else right_shin
-        add(m, thigh, f"{side}_thigh_mail", [x - 1.63, 6.6, -1.55], [x + 1.63, 11.2, 1.55], "mail")
-        add(m, thigh, f"{side}_cloth_undertunic", [x - 1.58, 8.0, -1.71], [x + 1.58, 10.7, 1.6], "void")
+        seed = 0 if side == "left" else 1
+        thigh_mail_uv = m.patch(48, 64,
+                                lambda px, py, s=seed: paint_frayed_thigh_mail(px, py, s),
+                                f"frayed_{side}_thigh_mail")
+        upper_uv = [thigh_mail_uv[0], thigh_mail_uv[1],
+                    thigh_mail_uv[2], thigh_mail_uv[1] + 38]
+        lower_uv = [thigh_mail_uv[0], thigh_mail_uv[1] + 31,
+                    thigh_mail_uv[2], thigh_mail_uv[3]]
+        m.cube(f"{side}_thigh_underlayer_upper", [x - 1.51, 8.58, -1.42],
+               [x + 1.51, 11.2, 1.42], "void", thigh,
+               face_uv={"east": upper_uv, "west": upper_uv})
+        m.cube(f"{side}_thigh_underlayer_lower", [x - 1.25, 6.6, -1.21],
+               [x + 1.25, 8.88, 1.21], "void", thigh,
+               face_uv={"east": lower_uv, "west": lower_uv})
+        m.cube(f"{side}_thigh_mail_front", [x - 1.55, 6.7, -1.65],
+               [x + 1.55, 11.12, -1.58], "mail", thigh,
+               face_uv={"north": thigh_mail_uv, "south": thigh_mail_uv,
+                        "east": torn_mail_open, "west": torn_mail_open,
+                        "up": torn_mail_open, "down": torn_mail_open})
         add_rotated(m, shin, f"{side}_shin_upper_underlayer",
                     [x - 1.16, 4.2, -1.28], [x + 1.16, 7.1, 1.2],
                     "void", [0, 0, -3 if side == "left" else 4],
