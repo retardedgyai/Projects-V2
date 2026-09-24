@@ -651,15 +651,15 @@ def build(out=ROOT / "model-lab" / "models"):
             return (0, 0, 0, 0)
         grain = authoring.noise(px // 3, py // 3, 1931)
         if py - top < 2 or px < 5:
-            return ((75, 83, 84, 255) if grain % 3 else (56, 64, 67, 255))
+            return ((54, 61, 62, 255) if grain % 3 else (42, 49, 52, 255))
         if 9 < py < 27 and abs(px - (13 + py * .22)) < 1:
             return (17, 24, 28, 255)
-        return ((38, 46, 50, 255) if grain % 4 else (48, 55, 58, 255))
+        return ((30, 37, 41, 255) if grain % 4 else (39, 46, 49, 255))
 
     right_pauldron_uv = m.patch(32, 40, paint_broken_right_pauldron,
                                  "broken_right_pauldron")
-    m.cube("broken_right_shoulder_face", [3.72, 18.78, -1.46],
-           [6.18, 21.55, -1.38], "armor", right_arm,
+    m.cube("broken_right_shoulder_face", [3.84, 19.03, -1.38],
+           [5.99, 21.49, -1.3], "armor", right_arm,
            face_uv={"north": right_pauldron_uv, "south": right_pauldron_uv,
                     "east": open_pauldron_edge, "west": open_pauldron_edge,
                     "up": open_pauldron_edge, "down": open_pauldron_edge})
@@ -758,20 +758,26 @@ def build(out=ROOT / "model-lab" / "models"):
                 hem -= round(16 * max(0, (u - .42) / .58))
             if py < top or py > hem or px < 2 or px > 93:
                 return (0, 0, 0, 0)
+            # Missing threads follow the pull of the cloth rather than making
+            # a second smooth blue band across the whole chest.
+            if seed == 0 and 59 < px < 77 and py > hem - 4 - (px - 59) // 5:
+                return (0, 0, 0, 0)
+            if seed == 2 and 18 < px < 32 and py > hem - 3:
+                return (0, 0, 0, 0)
             v = (py - top) / max(1, hem - top)
             grain = authoring.noise(px // 3, py // 3, 3467 + seed) % 13
             ridge = (.34 + .09 * math.sin(px * .067 + seed * 1.3)
                      + .05 * math.sin(px * .19 + seed * 2.1))
             if v < .12 or v > .87:
-                color = (12, 22, 32)
+                color = (11, 18, 25)
             elif abs(v - ridge) < .13 and grain > 2:
-                color = (29, 43, 57) if grain > 6 else (24, 38, 53)
+                color = (26, 36, 45) if grain > 6 else (22, 32, 42)
             elif v > .65:
-                color = (16, 29, 43)
+                color = (15, 24, 34)
             else:
-                color = (23, 37, 54)
+                color = (20, 30, 41)
             if grain == 0:
-                color = tuple(min(255, channel + 5) for channel in color)
+                color = tuple(min(255, channel + 3) for channel in color)
             return (*color, 255)
 
         fold_uv = m.patch(96, 48, paint_draped_fold,
@@ -967,15 +973,15 @@ def build(out=ROOT / "model-lab" / "models"):
                 [-.99, 25.53, -2.04], [.99, 26.1, -.63], "void",
                 [13, 0, 0], [0, 25.84, -1.3], "burned_hood", hood_faces)
     add_rotated(m, helm, "hood_lower_jaw",
-                [-.74, 22.75, -2.34], [.74, 24.0, -.66], "void",
-                [-11, 0, 0], [0, 23.3, -1.5], "burned_hood", hood_faces)
+                [-.6, 22.91, -1.64], [.6, 23.77, -.67], "void",
+                [-15, 0, 0], [0, 23.3, -1.15], "burned_hood", hood_faces)
     add_rotated(m, helm, "hood_muzzle_base",
-                [-.65, 22.52, -2.46], [.65, 23.62, -.62], "void",
-                [-9, 0, 0], [0, 23.0, -1.5], "burned_hood", hood_faces)
+                [-.48, 22.65, -1.91], [.48, 23.31, -.72], "void",
+                [-13, 0, 0], [0, 22.95, -1.25], "burned_hood", hood_faces)
     def paint_hood_cheek(px, py):
         u = px / 63
-        top = 4 + round(5 * math.sin(math.pi * u))
-        hem = 59 - round(12 * abs(u - .53))
+        top = 9 + round(11 * math.sin(math.pi * u))
+        hem = 51 - round(16 * abs(u - .53))
         if px < 2 or px > 61 or py < top or py > hem:
             return (0, 0, 0, 0)
         grain = authoring.noise(px // 3, py // 3, 5639)
@@ -991,12 +997,12 @@ def build(out=ROOT / "model-lab" / "models"):
     hood_clear = m.patch(1, 1, lambda _x, _y: (0, 0, 0, 0),
                          "open_hood_cheek_edge")
     add_rotated(m, helm, "hood_recessed_cheek",
-                [-.79, 23.55, -2.17], [.79, 25.67, -.45], "void",
-                [-5, 0, 0], [0, 24.6, -1.3], "burned_hood",
+                [-.71, 23.74, -1.88], [.71, 25.53, -.47], "void",
+                [-10, 0, 0], [0, 24.6, -1.15], "burned_hood",
                 {"east": cheek_uv, "west": cheek_uv,
                  "north": hood_clear, "south": hood_clear,
                  "up": hood_clear, "down": hood_clear})
-    add(m, helm, "snout_dark_tip", [-.45, 21.15, -5.75], [.45, 21.85, -5.1], "void")
+    add(m, helm, "snout_dark_tip", [-.28, 21.47, -5.74], [.28, 21.73, -5.49], "void")
 
     # A cutout engraved faceplate supplies a distinct long-muzzled silhouette
     # without reproducing another game's texture or sculpt. The existing helm
@@ -1028,35 +1034,35 @@ def build(out=ROOT / "model-lab" / "models"):
         if 4 <= distance <= 12 and abs(py - eye_line) < (1.2 if px < center else 1.5):
             return (5, 10, 17, 255)
         if 4 <= distance <= 12 and abs(py - (eye_line - 2.2)) < 1 and px > center:
-            return (72, 81, 85, 255)
+            return (52, 60, 63, 255)
         snout_ridge = 6 - (py - 37) * .18
         if 37 <= py <= 59 and abs(distance - snout_ridge) < .85:
             if px < center and 43 < py < 52:
                 return (23, 31, 36, 255)
-            return (64, 72, 75, 255) if px > center else (49, 57, 60, 255)
+            return (49, 56, 59, 255) if px > center else (37, 45, 48, 255)
         if 36 <= py <= 60 and distance <= 1:
             return (20, 27, 31, 255)
         if py >= 59 and distance < 3:
             return (17, 23, 27, 255)
         if abs(distance - width) <= 1 and py % 7 != 0 and (px > center or py < 23):
-            return (62, 70, 73, 255)
+            return (48, 55, 58, 255)
         if px > center + 7 and 17 < py < 45 and (px + py * 2) % 8 < 2:
             return (0, 0, 0, 0)
         scratch = (px * 3 + py * 5) % 47
         if scratch == 0:
-            return (75, 83, 84, 255)
+            return (58, 65, 66, 255)
         contour = distance / max(1, width)
         if py < 24:
             if contour > .68:
-                return (33, 42, 46, 255)
+                return (27, 35, 39, 255)
             if abs(px - (center - 2 + py * .08)) < 1.2:
-                return (53, 61, 64, 255)
+                return (42, 49, 52, 255)
         if 30 < py < 44 and contour > .56:
             return (29, 37, 41, 255)
         grain = authoring.noise(px // 3, py // 3, 5981)
         if grain % 17 == 0:
-            return (53, 60, 62, 255)
-        return (44, 52, 55, 255)
+            return (42, 49, 51, 255)
+        return (32, 39, 42, 255)
 
     faceplate_uv = m.patch(48, 64, paint_faceplate, "ashen_faceplate")
     def paint_visor_profile(px, py):
@@ -1066,32 +1072,32 @@ def build(out=ROOT / "model-lab" / "models"):
             return (0, 0, 0, 0)
         u = (px - 2) / 43
         snout = max(0, (u - .75) / .25)
-        top = 21 + round(12 * u + 12 * snout)
+        top = 23 + round(13 * u + 12 * snout)
         cheek_hollow = 3 * max(0, 1 - abs(u - .54) / .3)
-        bottom = 43 + round(8 * u - cheek_hollow)
+        bottom = 42 + round(6 * u - cheek_hollow)
         if py < top or py > bottom:
             return (0, 0, 0, 0)
         eye = 23 < px < 35 and top + 3 < py < top + 7
         if eye:
             return (8, 14, 19, 255)
         if py <= top + 2:
-            return (52, 61, 64, 255)
+            return (42, 49, 51, 255)
         if py >= bottom - 2:
             return (18, 25, 31, 255)
         if abs(py - (31 + 10 * u)) < 1.2 and px > 18:
-            return (49, 56, 58, 255)
+            return (41, 47, 49, 255)
         if authoring.noise(px // 3, py // 3, 5933) % 39 == 0:
-            return (57, 64, 66, 255)
-        return (23, 32, 39, 255)
+            return (44, 50, 52, 255)
+        return (16, 23, 29, 255)
 
     visor_profile_uv = m.patch(48, 64, paint_visor_profile, "wolf_visor_profile")
     visor_back_uv = m.patch(1, 1, lambda _x, _y: (0, 0, 0, 0), "wolf_visor_back")
     m.cube("engraved_wolf_visor", [-2.45, 21.05, -5.7], [2.45, 27.5, -4.15],
            "edge", helm, face_uv={"north": faceplate_uv, "south": visor_back_uv,
-                                  "east": visor_profile_uv,
-                                  "west": [visor_profile_uv[2], visor_profile_uv[1],
-                                           visor_profile_uv[0], visor_profile_uv[3]],
-                                  "up": visor_back_uv, "down": visor_back_uv})
+                                   "east": visor_profile_uv,
+                                   "west": [visor_profile_uv[2], visor_profile_uv[1],
+                                            visor_profile_uv[0], visor_profile_uv[3]],
+                                   "up": visor_back_uv, "down": visor_back_uv})
     # Wind-torn locks start inside the hood and follow different curved paths.
     # Each short segment is aligned to its path so the mane has depth from all
     # angles without long, rectangular planes behind the head.
@@ -1585,20 +1591,20 @@ def build(out=ROOT / "model-lab" / "models"):
                          "sword_gauntlet_dark_leather")
     gauntlet_faces = {face: gauntlet_uv for face in
                       ("north", "south", "east", "west", "up", "down")}
-    add_rotated(m, right_forearm, "right_bracer_upper", [3.97, 14.58, -.99],
-                [5.91, 16.02, 1.29], "leather", [0, 0, -13],
+    add_rotated(m, right_forearm, "right_bracer_upper", [4.09, 14.58, -.89],
+                [5.79, 16.02, 1.2], "leather", [0, 0, -13],
                 [4.94, 15.3, .1], "scuffed_leather", gauntlet_faces)
-    add_rotated(m, right_forearm, "right_bracer_middle", [4.06, 13.34, -1.02],
-                [5.83, 14.78, 1.25], "leather", [0, 0, -4],
+    add_rotated(m, right_forearm, "right_bracer_middle", [4.18, 13.34, -.9],
+                [5.71, 14.78, 1.17], "leather", [0, 0, -4],
                 [4.94, 14.05, .1], "scuffed_leather", gauntlet_faces)
-    add_rotated(m, right_forearm, "right_bracer_wrist", [4.04, 11.08, -1.1],
-                [5.92, 13.65, 1.37], "leather", [0, 0, 5],
+    add_rotated(m, right_forearm, "right_bracer_wrist", [4.27, 11.08, -.97],
+                [5.68, 13.65, 1.23], "leather", [0, 0, 5],
                 [4.98, 12.4, .1], "battered_scale", gauntlet_faces)
     def paint_bracer_shard(px, py, seed):
-        left = (4 + py // 10) if seed == 0 else (3 + py // 15)
-        right = (25 - py // 12) if seed == 0 else (28 - py // 19)
+        left = (5 + py // 8) if seed == 0 else (5 + py // 12)
+        right = (23 - py // 10) if seed == 0 else (25 - py // 15)
         top = 2 + abs(px - 15) // 8
-        hem = 37 - authoring.noise(px // 4, seed, 2241) % 5
+        hem = 35 - authoring.noise(px // 4, seed, 2241) % 8
         if px < left or px > right or py < top or py > hem:
             return (0, 0, 0, 0)
         if seed == 0 and 16 < py < 32 and px > right - 5:
@@ -1607,15 +1613,15 @@ def build(out=ROOT / "model-lab" / "models"):
             return (0, 0, 0, 0)
         scar = abs(px - (9 + py * .38 + seed * 4))
         if scar < 1.1 and 8 < py < 31:
-            return (91, 100, 102, 255)
+            return (59, 66, 67, 255)
         if py <= top + 1 or px - left < 2 or right - px < 2:
-            return (89, 98, 100, 255)
+            return (54, 61, 63, 255)
         grain = authoring.noise(px // 3, py // 3, 2251 + seed)
-        base = (42, 50, 53) if grain % 5 else (32, 39, 43)
+        base = (32, 39, 42) if grain % 5 else (25, 32, 36)
         return (*base, 255)
 
-    for shard, (lo, hi) in enumerate((((3.7, 13.45, -1.27), (6.1, 16.12, -1.2)),
-                                      ((4.03, 11.05, -1.21), (5.95, 13.6, -1.14)))):
+    for shard, (lo, hi) in enumerate((((4.11, 13.71, -1.14), (5.83, 15.92, -1.07)),
+                                      ((4.31, 11.32, -1.1), (5.67, 13.36, -1.03)))):
         uv = m.patch(32, 40, lambda px, py, s=shard: paint_bracer_shard(px, py, s),
                      f"bracer_shard_{shard}")
         m.cube(f"right_bracer_shard_{shard}", lo, hi, "armor", right_forearm,
