@@ -185,7 +185,9 @@ internal class FirstMagicColony private constructor(val instance: InstanceContai
         box(7, 12, 42, 43, 12, 12, Block.BARRIER)
         display("jar_shelf", Pos(9.5, 42.6, 11.9), Vec(5.5, 2.7, 1.25))
         FirstAspect.entries.forEachIndexed { index, aspect ->
-            jarModels += display("jar_${aspect.name.lowercase()}_empty", Pos(7.9 + index * 1.1, 42.1, 11.7), Vec(.72, 1.25, .72))
+            // The authored bottles stand on the shelf's middle board; their
+            // filled silhouettes remain visible from the yard approach.
+            jarModels += display("jar_${aspect.name.lowercase()}_empty", Pos(7.9 + index * 1.1, 43.1, 11.7), Vec(.72, 1.25, .72))
         }
         sign("Essentia / 四つの瓶", 9.7, 45.1, 12.0, NamedTextColor.AQUA)
         // A single closed threshold and visible ring promise scale beyond this slice.
