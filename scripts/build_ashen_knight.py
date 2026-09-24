@@ -732,7 +732,6 @@ def build(out=ROOT / "model-lab" / "models"):
                face_uv={"east": side_wrap_uv, "west": side_wrap_uv})
 
     back_cowl_folds = (
-        (-3.3, 3.1, 20.95, 23.3, 2.8, 0),
         (-4.02, 2.94, 19.75, 22.42, 3.02, 1),
         (-4.45, 1.54, 18.65, 21.6, 3.2, 2),
     )
@@ -962,16 +961,19 @@ def build(out=ROOT / "model-lab" / "models"):
     # Wind-torn locks start inside the hood and follow different curved paths.
     # Each short segment is aligned to its path so the mane has depth from all
     # angles without long, rectangular planes behind the head.
-    def paint_mane(px, py):
-        ridge = (px + py // 3) % 7
-        tone = (43, 49, 53) if ridge == 0 else (28, 34, 39)
-        if (px * 5 + py * 3) % 23 < 2:
-            tone = (16, 22, 28)
+    def paint_mane(px, py, seed):
+        fiber = (px * 3 + py // 3 + seed * 5) % 13
+        wear = authoring.noise(px // 2, py // 4, 6721 + seed)
+        if fiber in (0, 1) and wear % 5 != 0:
+            tone = (34, 38, 40)
+        elif fiber == 2:
+            tone = (25, 29, 32)
+        elif wear % 7 == 0:
+            tone = (12, 17, 22)
+        else:
+            tone = (19, 23, 27)
         return (*tone, 255)
 
-    mane_uv = m.patch(8, 8, paint_mane, "braided_mane_lock")
-    mane_faces = {side: mane_uv for side in
-                  ("north", "south", "east", "west", "up", "down")}
     mane_paths = (
         ((-1.35, 27.0, 1.0), (-3.8, 28.7, 3.7), (-9.2, 25.6, 8.6), 1.12),
         ((-.75, 27.35, 1.15), (-2.8, 29.0, 4.4), (-7.5, 27.4, 9.2), 1.06),
@@ -987,6 +989,11 @@ def build(out=ROOT / "model-lab" / "models"):
         ((-1.55, 26.5, 1.65), (-3.6, 26.6, 4.2), (-6.2, 20.4, 7.4), .6),
     )
     for strand, (start, control, tip, root_width) in enumerate(mane_paths):
+        mane_uv = m.patch(16, 32,
+                          lambda px, py, s=strand: paint_mane(px, py, s),
+                          f"wind_torn_mane_{strand}")
+        mane_faces = {side: mane_uv for side in
+                      ("north", "south", "east", "west", "up", "down")}
         def point(u):
             a, b, c = (1 - u) ** 2, 2 * (1 - u) * u, u ** 2
             return tuple(a * start[i] + b * control[i] + c * tip[i]
@@ -1098,8 +1105,10 @@ def build(out=ROOT / "model-lab" / "models"):
                             "up": side_greave_clear, "down": side_greave_clear})
 
     def paint_greave_face(px, py, seed):
-        taper = round(py * .045)
-        left = 2 + taper
+        # The surviving plate narrows over the calf and ends in an uneven,
+        # broken point. A uniform rectangular shin made the legs look robotic.
+        taper = round(py * (.12 if seed == 0 else .055))
+        left = 2 + taper + (2 if seed == 0 and 17 < py < 38 else 0)
         right = 29 - taper
         if seed == 1 and 9 < py < 24:
             right -= round((24 - py) * .36)
@@ -1111,18 +1120,22 @@ def build(out=ROOT / "model-lab" / "models"):
                 right -= round((py - 39) * .36)
         if seed == 0 and 33 < py < 52:
             left += round((py - 33) * .3)
-        hem = 61 - authoring.noise(px // 4, seed, 1083) % 6
-        if px < left or px > right or py > hem:
+        top = 2 + abs(px - (15 + seed * 2)) // 6
+        hem = (58 - authoring.noise(px // 3, seed, 1083) % 5
+               - max(0, abs(px - 15) - 5) // 2)
+        if px < left or px > right or py < top or py > hem:
+            return (0, 0, 0, 0)
+        if seed == 0 and 25 < py < 48 and abs(px - (left + 1 + (py - 25) * .22)) < 1.3:
             return (0, 0, 0, 0)
         nick = abs(px - (13 + py * .17 + seed * 5))
         if 26 < py < 50 and nick < 1.1:
             return (18, 24, 29, 255)
-        if px - left < 2 or right - px < 2 or py < 2:
-            return (89, 97, 100, 255)
+        if px - left < 2 or right - px < 2 or py - top < 2:
+            return (67, 76, 79, 255)
         if (px * 7 + py * 11 + seed * 17) % 83 < 2:
-            return (105, 111, 112, 255)
-        return ((43, 50, 54, 255) if (px + py // 4) % 9 < 3
-                else (36, 43, 48, 255))
+            return (92, 98, 98, 255)
+        grain = authoring.noise(px // 3, py // 4, 1179 + seed)
+        return ((37, 44, 48, 255) if grain % 5 else (26, 34, 39, 255))
 
     for side, x, seed, shin in (("left", -2.1, 0, left_shin),
                                 ("right", 2.1, 1, right_shin)):
