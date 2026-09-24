@@ -39,6 +39,8 @@ internal class FirstMagicWorkshop(
     private val exit: (Player) -> Unit,
     private val packed: (Player) -> Boolean,
     private val jarPlaced: (Player, FirstAspect) -> Boolean,
+    private val jarOnShelf: (Player, FirstAspect) -> Boolean,
+    private val takeShelfJar: (Player, FirstAspect) -> Boolean,
     private val stationPlaced: (Player, ColonyPlaceable) -> Boolean,
 ) {
     private val screens = CoreMenuInventory()
@@ -146,6 +148,8 @@ internal class FirstMagicWorkshop(
                     canvas.left("四つの保存瓶", listOf(
                         CoreMenuCanvas.Line("瓶ごとに一性質"),
                         CoreMenuCanvas.Line("中身と残量を見る"),
+                        CoreMenuCanvas.Line("Jarを持って棚を右クリック"),
+                        CoreMenuCanvas.Line("棚の瓶をクリックで取り出す"),
                         CoreMenuCanvas.Line(""),
                         CoreMenuCanvas.Line("初回抽出 ${if (progress.firstDistillation) "済" else "未"}"),
                     ))
@@ -276,9 +280,13 @@ internal class FirstMagicWorkshop(
         items[4] = magicIcon(player, "jar", Material.GLASS_BOTTLE, "Essentia Jar棚", "1瓶につき1性質 / 容量${FirstMagicRules.JAR_CAPACITY}")
         FirstAspect.entries.forEachIndexed { index, aspect ->
             val amount = progress.jar(aspect)
-            items[listOf(19, 21, 23, 25)[index]] = jarIcon(player, aspect, amount)
+            val slot = listOf(19, 21, 23, 25)[index]
+            items[slot] = jarIcon(player, aspect, amount)
             items[aspectSlots[index]] = magicIcon(player, aspect.name.lowercase(), aspectIcon(aspect), aspect.label,
-                "${amount} / ${FirstMagicRules.JAR_CAPACITY} Essentia", if (jarPlaced(player, aspect)) "庭に設置中" else "手持ちのJarを庭に配置")
+                "${amount} / ${FirstMagicRules.JAR_CAPACITY} Essentia",
+                if (jarOnShelf(player, aspect)) "棚に収納中 / 瓶をクリックして取り出す"
+                else if (jarPlaced(player, aspect)) "庭に設置中" else "Jarを持って棚を右クリック")
+            if (jarOnShelf(player, aspect)) actions[slot] = { if (takeShelfJar(player, aspect)) jars(player) }
         }
         items[40] = magicIcon(player, "journal", Material.WRITABLE_BOOK, "魔導記録帳", "初回の観測結果を確認")
         actions[40] = { journal(player) }

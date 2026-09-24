@@ -40,20 +40,23 @@ class FirstMagicColonyTest {
             assertTrue(colony.place(ColonyPlaceable.DESK, BlockVec(8, 41, 4), BlockFace.SOUTH))
             assertTrue(colony.place(ColonyPlaceable.DISTILLER, BlockVec(14, 41, 4), BlockFace.SOUTH))
             assertTrue(colony.place(ColonyPlaceable.SHELF, BlockVec(8, 41, 12), BlockFace.SOUTH))
-            assertTrue(colony.place(ColonyPlaceable.JAR_EMBER, BlockVec(8, 43, 12), BlockFace.SOUTH))
+            assertTrue(colony.insertJar(ColonyPlaceable.JAR_EMBER))
+            assertTrue(colony.inShelf(FirstAspect.EMBER))
+            assertEquals(0, repository.load(playerId).first { it.kind == ColonyPlaceable.JAR_EMBER }.shelfSlot)
             assertTrue(colony.place(ColonyPlaceable.JAR_TIDE, BlockVec(11, 41, 12), BlockFace.SOUTH))
             assertTrue(colony.place(ColonyPlaceable.JAR_GALE, BlockVec(12, 41, 12), BlockFace.SOUTH))
             assertTrue(colony.place(ColonyPlaceable.JAR_STONE, BlockVec(13, 41, 12), BlockFace.SOUTH))
             assertTrue(colony.place(ColonyPlaceable.STAR_CHART, BlockVec(11, 42, 2), BlockFace.SOUTH))
             assertTrue(colony.missingItems().isEmpty())
-            assertEquals(ColonyFixture.DESK, colony.fixture(BlockVec(9, 42, 5)))
+            assertEquals(ColonyFixture.DESK, colony.fixture(BlockVec(9, 42, 4)))
             assertEquals(ColonyFixture.DISTILLER, colony.fixture(BlockVec(15, 43, 5)))
             assertEquals(ColonyFixture.JARS, colony.fixture(BlockVec(10, 42, 12)))
             assertEquals(ColonyFixture.CHART, colony.fixture(BlockVec(12, 43, 2)))
             assertFalse(colony.place(ColonyPlaceable.DESK, BlockVec(12, 41, 8), BlockFace.SOUTH))
             assertFalse(colony.place(ColonyPlaceable.DISTILLER, BlockVec(8, 43, 12), BlockFace.SOUTH))
             assertEquals(null, colony.pickUp(BlockVec(8, 41, 12)), "shelf must support its jar until that jar is picked up")
-            assertEquals(ColonyPlaceable.JAR_EMBER, colony.pickUp(BlockVec(8, 43, 12)))
+            assertTrue(colony.removeJarFromShelf(FirstAspect.EMBER))
+            assertFalse(colony.inShelf(FirstAspect.EMBER))
             assertEquals(ColonyPlaceable.SHELF, colony.pickUp(BlockVec(8, 41, 12)))
             assertEquals(Block.AIR, colony.instance.getBlock(8, 41, 12))
             assertEquals(2, colony.missingItems().size)
@@ -68,6 +71,18 @@ class FirstMagicColonyTest {
             assertEquals(ColonyFixture.CHART, restored.fixture(BlockVec(11, 42, 2)))
             assertEquals(2, restored.missingItems().size)
         } finally { restored.dispose() }
+
+        val shelfOnly = FirstMagicColony.create(state, persist = { repository.save(playerId, it) })
+        try {
+            assertTrue(shelfOnly.place(ColonyPlaceable.SHELF, BlockVec(8, 41, 12), BlockFace.SOUTH))
+            assertTrue(shelfOnly.insertJar(ColonyPlaceable.JAR_TIDE))
+        } finally { shelfOnly.dispose() }
+        val filledShelf = FirstMagicColony.create(state, repository.load(playerId))
+        try {
+            assertTrue(filledShelf.inShelf(FirstAspect.TIDE), "a bottle inserted into a shelf must reload inside it")
+            assertEquals(ColonyFixture.JARS, filledShelf.fixture(BlockVec(9, 42, 12)))
+            assertEquals(null, filledShelf.pickUp(BlockVec(9, 42, 12)))
+        } finally { filledShelf.dispose() }
 
         val crowdedLegacy = listOf(
             ColonyPlacement(ColonyPlaceable.DESK, 8, 41, 2, BlockFace.NORTH),

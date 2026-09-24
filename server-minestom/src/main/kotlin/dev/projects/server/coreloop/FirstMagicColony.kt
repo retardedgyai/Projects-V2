@@ -94,8 +94,32 @@ internal class FirstMagicColony private constructor(
 
     fun missingItems(): List<ColonyPlaceable> = ColonyPlaceable.entries.filterNot(placements::containsKey)
     fun has(kind: ColonyPlaceable): Boolean = kind in placements
+    fun inShelf(aspect: FirstAspect): Boolean = placements[ColonyPlaceable.valueOf("JAR_${aspect.name}")]?.shelfSlot != null
+
+    fun insertJar(kind: ColonyPlaceable, save: Boolean = true): Boolean {
+        val shelf = placements[ColonyPlaceable.SHELF] ?: return false
+        if (!kind.isJar || kind in placements) return false
+        val placement = ColonyPlacement(kind, shelf.x, shelf.y, shelf.z, shelf.facing, kind.aspect!!.ordinal)
+        if (save) persist(placements.values + placement)
+        placements[kind] = placement
+        render(placement)
+        return true
+    }
+
+    fun removeJarFromShelf(aspect: FirstAspect): Boolean {
+        val kind = ColonyPlaceable.valueOf("JAR_${aspect.name}")
+        val placement = placements[kind] ?: return false
+        if (placement.shelfSlot == null) return false
+        persist(placements.values.filterNot { it.kind == kind })
+        placements.remove(kind)
+        furniture.remove(kind)?.let { entity ->
+            models.remove(entity); modelReady.remove(entity); entity.remove()
+        }
+        return true
+    }
 
     fun modelPosition(kind: ColonyPlaceable): Pos? = placements[kind]?.let { placement ->
+        if (placement.shelfSlot != null) return@let shelfJarPosition(placement)
         val (width, depth) = footprint(placement)
         Pos(placement.x + width / 2.0, placement.y + placement.kind.visualHeight / 2.0,
             placement.z + depth / 2.0)
@@ -106,6 +130,7 @@ internal class FirstMagicColony private constructor(
             placement.kind.depth to placement.kind.width else placement.kind.width to placement.kind.depth
 
     private fun occupied(placement: ColonyPlacement): List<BlockVec> {
+        if (placement.shelfSlot != null) return emptyList()
         val (width, depth) = footprint(placement)
         return buildList {
             for (dx in 0 until width) for (dz in 0 until depth) for (dy in 0 until placement.kind.height)
@@ -140,6 +165,7 @@ internal class FirstMagicColony private constructor(
 
     fun pickUp(point: Point): ColonyPlaceable? {
         val placement = placementAt(point) ?: return null
+        if (placement.kind == ColonyPlaceable.SHELF && placements.values.any { it.shelfSlot != null }) return null
         val cells = occupied(placement).toSet()
         if (placements.values.any { other ->
                 if (other.kind == placement.kind) false else {
@@ -179,11 +205,23 @@ internal class FirstMagicColony private constructor(
             else -> -90f
         }
         val (width, depth) = footprint(placement)
-        val entity = display(placement.kind.model,
+        val at = if (placement.shelfSlot == null)
             Pos(placement.x + width / 2.0, placement.y + placement.kind.visualHeight / 2.0,
-                placement.z + depth / 2.0, yaw, 0f),
-            Vec(placement.kind.width.toDouble(), placement.kind.visualHeight, placement.kind.visualDepth))
+                placement.z + depth / 2.0, yaw, 0f)
+        else shelfJarPosition(placement).let { Pos(it.x(), it.y(), it.z(), yaw, 0f) }
+        val scale = if (placement.shelfSlot == null)
+            Vec(placement.kind.width.toDouble(), placement.kind.visualHeight, placement.kind.visualDepth)
+        else Vec(.52, .72, .52)
+        val entity = display(placement.kind.model, at, scale)
         furniture[placement.kind] = entity
+    }
+
+    private fun shelfJarPosition(placement: ColonyPlacement): Pos {
+        val shelf = requireNotNull(placements[ColonyPlaceable.SHELF])
+        val along = .45 + requireNotNull(placement.shelfSlot) * .7
+        return if (shelf.facing == BlockFace.EAST || shelf.facing == BlockFace.WEST)
+            Pos(shelf.x + .5, shelf.y + 1.41, shelf.z + along)
+        else Pos(shelf.x + along, shelf.y + 1.41, shelf.z + .5)
     }
 
     fun update(state: FirstMagicState) {
@@ -201,6 +239,10 @@ internal class FirstMagicColony private constructor(
     private fun restore(saved: List<ColonyPlacement>) {
         var relocated = false
         for (old in saved) {
+            if (old.shelfSlot != null) {
+                if (insertJar(old.kind, save = false)) continue
+                relocated = true
+            }
             if (place(old.kind, BlockVec(old.x, old.y, old.z), old.facing, save = false)) continue
             val heights = if (old.kind.isJar) listOf(old.y + 2, old.y + 1, old.y, 41).distinct()
                 else listOf(old.y, 41, 42, 43).distinct()

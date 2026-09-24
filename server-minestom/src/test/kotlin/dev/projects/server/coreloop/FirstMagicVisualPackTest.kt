@@ -47,7 +47,7 @@ class FirstMagicVisualPackTest {
     }
 
     @Test fun workshopCanvasUsesItsOwnArtworkAndHasEveryJapaneseGlyph() {
-        val labels = "観測手順素材修復分析記録帳抽出工程蒸留炉加熱冷却保存瓶熾火潮風石沈殿休眠稼働共鳴余白第一頁"
+        val labels = "観測手順素材修復分析記録帳抽出工程蒸留炉加熱冷却保存瓶熾火潮風石沈殿休眠稼働共鳴余白第一頁Jarを持って棚を右クリック棚の瓶をクリックで取り出す"
         assertTrue(CoreMenuCanvas.missingCharacters(labels).isEmpty())
         val title = CoreMenuCanvas("観測工房・研究机", CoreMenuCanvas.Background.FIRST_MAGIC_DESK).render()
         fun all(component: Component): List<Component> = listOf(component) + component.children().flatMap(::all)

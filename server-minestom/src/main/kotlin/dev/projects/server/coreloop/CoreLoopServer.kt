@@ -89,6 +89,8 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         packed = ::packed,
         jarPlaced = { player, aspect -> colonies[player.uuid]?.takeIf { it.instance === player.instance }
             ?.has(ColonyPlaceable.valueOf("JAR_${aspect.name}")) == true },
+        jarOnShelf = { player, aspect -> colonies[player.uuid]?.takeIf { it.instance === player.instance }?.inShelf(aspect) == true },
+        takeShelfJar = ::takeShelfJar,
         stationPlaced = { player, kind -> colonies[player.uuid]?.takeIf { it.instance === player.instance }?.has(kind) == true },
     )
     private val uiPack = CoreUiPackServer.start()
@@ -307,6 +309,10 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
                 FirstMagicColonyItems.kind(event.player.itemInMainHand)?.let { kind ->
                     event.isCancelled = true
                     event.isBlockingItemUse = true
+                    if (kind.isJar && colony.placementAt(event.blockPosition)?.kind == ColonyPlaceable.SHELF) {
+                        insertShelfJar(event.player, colony, kind)
+                        return@addListener
+                    }
                     placeColonyItem(event.player, colony, kind, event.blockPosition, event.blockFace)
                     return@addListener
                 }
@@ -476,7 +482,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         if (player.position.distance(Pos(point.x(), point.y(), point.z())) > 6.0) return
         try {
             val kind = colony.pickUp(point) ?: run {
-                player.sendMessage(CoreLoopItems.text("上に別の設備がある。先にそれを回収しよう", NamedTextColor.RED))
+                player.sendMessage(CoreLoopItems.text("上か棚の中に設備がある。先にJarを取り出そう", NamedTextColor.RED))
                 return
             }
             FirstMagicColonyItems.issue(player, colony, packed(player))
@@ -484,6 +490,36 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         } catch (failure: Exception) {
             player.sendMessage(CoreLoopItems.text("配置を保存できなかったため回収していません", NamedTextColor.RED))
             System.err.println("COLONY_LAYOUT_SAVE_FAILURE player=${player.uuid}: $failure")
+        }
+    }
+
+    private fun insertShelfJar(player: Player, colony: FirstMagicColony, kind: ColonyPlaceable) {
+        try {
+            if (!colony.insertJar(kind)) {
+                player.sendMessage(CoreLoopItems.text("このJarはすでに設置されている", NamedTextColor.YELLOW))
+                return
+            }
+            colony.update(firstMagic.snapshot(player.uuid) ?: FirstMagicState())
+            FirstMagicColonyItems.issue(player, colony, packed(player))
+            player.sendMessage(CoreLoopItems.text("${kind.label}を棚に収めた。棚を開くと瓶を取り出せる", NamedTextColor.AQUA))
+        } catch (failure: Exception) {
+            player.sendMessage(CoreLoopItems.text("Jarの配置を保存できませんでした", NamedTextColor.RED))
+            System.err.println("COLONY_LAYOUT_SAVE_FAILURE player=${player.uuid}: $failure")
+        }
+    }
+
+    private fun takeShelfJar(player: Player, aspect: FirstAspect): Boolean {
+        val colony = colonies[player.uuid]?.takeIf { it.instance === player.instance } ?: return false
+        return try {
+            if (!colony.removeJarFromShelf(aspect)) false else {
+                FirstMagicColonyItems.issue(player, colony, packed(player))
+                player.sendMessage(CoreLoopItems.text("${aspect.label}のJarを棚から取り出した", NamedTextColor.AQUA))
+                true
+            }
+        } catch (failure: Exception) {
+            player.sendMessage(CoreLoopItems.text("Jarの回収を保存できませんでした", NamedTextColor.RED))
+            System.err.println("COLONY_LAYOUT_SAVE_FAILURE player=${player.uuid}: $failure")
+            false
         }
     }
 
