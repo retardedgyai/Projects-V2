@@ -601,6 +601,10 @@ def build(out=ROOT / "model-lab" / "models"):
     def paint_shoulder_lame(px, py, seed):
         left = 3 + authoring.noise(py // 4, seed, 1961) % 3
         right = 43 - authoring.noise(py // 5, seed, 1973) % 5
+        if seed == 0:
+            right -= max(0, py - 14) // 4
+        elif seed == 2:
+            left += py // 8
         top = 3 + abs(px - (22 + seed * 2)) // 10
         hem = 29 - abs(px - (18 + seed * 3)) // 9
         hem -= authoring.noise(px // 4, seed, 1987) % 5
@@ -621,9 +625,9 @@ def build(out=ROOT / "model-lab" / "models"):
         return (*color, 255)
 
     for lame, (lo, hi, tilt) in enumerate((
-            ((-5.7, 22.1, -2.79), (-3.48, 23.36, -2.62), -5),
-            ((-6.05, 20.92, -2.87), (-3.52, 22.25, -2.67), 3),
-            ((-5.84, 19.84, -2.8), (-3.86, 21.18, -2.61), -7),
+            ((-5.7, 22.1, -2.79), (-3.48, 23.36, -2.62), -8),
+            ((-6.05, 20.92, -2.87), (-3.52, 22.25, -2.67), 5),
+            ((-5.84, 19.84, -2.8), (-3.86, 21.18, -2.61), -13),
     )):
         lame_uv = m.patch(48, 32,
                           lambda px, py, seed=lame: paint_shoulder_lame(px, py, seed),
@@ -1516,18 +1520,22 @@ def build(out=ROOT / "model-lab" / "models"):
     def paint_right_sleeve(px, py):
         # One ragged mail silhouette spans the underlying dark anatomy. The
         # former overlapping full grey cuboids made a uniform metal piston.
-        left = 2 + round(py * .085) + authoring.noise(py // 5, 0, 2171) % 3
-        right = 38 - round(py * .11) - authoring.noise(py // 6, 0, 2179) % 4
+        left = 2 + round(py * .105) + authoring.noise(py // 5, 0, 2171) % 4
+        right = 38 - round(py * .12) - authoring.noise(py // 6, 0, 2179) % 5
         hem = 62 - authoring.noise(px // 3, 0, 2191) % 10
         if px < left or px > right or py > hem:
+            return (0, 0, 0, 0)
+        if 18 < py < 49 and px < left + 3 + round(2 * math.sin(py * .16)):
+            return (0, 0, 0, 0)
+        if py > 31 and px > right - max(1, (py - 31) // 5):
             return (0, 0, 0, 0)
         if py > 42 and (px * 2 + py * 3) % 23 < 3:
             return (0, 0, 0, 0)
         row = py // 3
-        ring_x = (px + (row % 2) * 2) % 5
+        ring_x = (px + (row % 2) * 2 + authoring.noise(px // 8, row // 3, 2201) % 3) % 5
         grain = authoring.noise(px // 3, py // 3, 2203)
-        missing = grain % 11 < 3 or (px > 24 and 25 < py < 53 and
-                                     authoring.noise(px // 5, py // 6, 2211) % 4 == 0)
+        torn_zone = ((px - 27) ** 2 / 70 + (py - 35) ** 2 / 170) < 1
+        missing = grain % 11 < 5 or (torn_zone and grain % 5 < 3)
         if not missing and ((py % 3 == 0 and ring_x in (1, 2)) or
                             (py % 3 == 1 and ring_x in (0, 3))):
             color = (43, 50, 52) if grain % 5 else (51, 57, 57)
