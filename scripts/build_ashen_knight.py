@@ -1669,7 +1669,7 @@ def build(out=ROOT / "model-lab" / "models"):
                 color = (12, 26, 43)
             if grain % 173 == 0:
                 color = (68, 79, 85)
-            shade = (.74, .62, .78)[seed]
+            shade = (.70, .68, .72)[seed]
             color = tuple(round(channel * shade) for channel in color)
             return (*color, 255)
 
@@ -1694,23 +1694,23 @@ def build(out=ROOT / "model-lab" / "models"):
         boundaries = ((cape_top, max(11.2, hem)),
                       (11.3, max(7.8, hem)), (7.9, hem))
         def fold_depth(u, v):
-            return (.55 * math.sin((u * .95 + v * .22 + strip * .29) * math.tau)
-                    + .28 * math.sin((u * 1.8 - v * .58 + strip * .4) * math.tau))
+            return (.35 * math.sin((u * .95 + v * .22 + strip * .29) * math.tau)
+                    + .18 * math.sin((u * 1.8 - v * .58 + strip * .4) * math.tau))
 
         for segment, (top, bottom) in enumerate(boundaries):
             if top <= bottom + .1:
                 continue
             drift = segment * (-.72, -.15, .65)[strip]
             x = center + drift
-            base_z = depth + (.22, .72, 1.32)[segment]
-            segment_width = width * ((.72, 1.05, .87)[segment] if strip == 0
-                                     else (.7, 1.08, .9)[segment])
-            for row in range(3):
-                row_top = top - (top - bottom) * row / 3
-                row_bottom = top - (top - bottom) * (row + 1) / 3
-                row_width = segment_width * (1 - row * .055)
+            base_z = depth + (.22, .55, .88)[segment]
+            segment_width = width * ((.9, 1.0, .9)[segment] if strip == 0
+                                     else (.88, 1.0, .9)[segment])
+            for row in range(2):
+                row_top = top - (top - bottom) * row / 2
+                row_bottom = top - (top - bottom) * (row + 1) / 2
+                row_width = segment_width * (1 - row * .08)
                 row_center = (x + row * (-.15, -.04, .14)[strip]
-                              + .13 * math.sin((segment * 3 + row) * 1.5 + strip))
+                              + .13 * math.sin((segment * 2 + row) * 1.5 + strip))
                 v = (cape_top - (row_top + row_bottom) / 2) / (cape_top - hem)
                 ty0 = uv[1] + round((cape_top - row_top) / (cape_top - hem) * 192)
                 ty1 = uv[1] + round((cape_top - row_bottom) / (cape_top - hem) * 192)
@@ -1729,7 +1729,7 @@ def build(out=ROOT / "model-lab" / "models"):
                         # edges instead of forming separated horizontal slabs.
                         billow = (1.2 * math.sin(math.pi * max(0, min(1, down)))
                                   if strip == 0 else 0)
-                        cross_section = (.9 + 2.4 * math.sin(
+                        cross_section = (.8 + 1.4 * math.sin(
                             math.pi * max(0, min(1, down))))
                         return base_z + cross_section * fold_depth(across, down) + billow
                     z = cloth_z(u, v)
