@@ -1101,11 +1101,11 @@ def build(out=ROOT / "model-lab" / "models"):
         return (*tone, 255)
 
     mane_paths = (
-        ((-1.2, 26.7, 1.2), (-3.5, 27.0, 4.0), (-3.8, 23.0, 8.5), 1.0),
-        ((-.3, 26.8, 1.4), (-2.4, 27.1, 4.6), (-3.5, 24.0, 9.0), .95),
-        ((.7, 26.6, 1.5), (-1.4, 26.3, 4.2), (-3.0, 22.6, 8.2), .9),
-        ((-1.4, 26.2, 1.5), (-3.7, 25.5, 4.2), (-4.2, 20.6, 9.0), .8),
-        ((-.4, 26.2, 1.7), (-2.1, 25.4, 4.7), (-3.7, 19.3, 9.4), .78),
+        ((-1.2, 26.3, 1.2), (-3.5, 27.2, 4.0), (-3.8, 23.0, 8.5), 1.22),
+        ((-.3, 26.8, 1.4), (-2.4, 26.4, 4.6), (-3.5, 24.0, 9.0), 1.13),
+        ((.7, 26.0, 1.5), (-1.4, 27.5, 4.2), (-3.0, 22.6, 8.2), 1.04),
+        ((-1.4, 26.2, 1.5), (-3.7, 25.5, 4.2), (-4.2, 20.6, 9.0), .96),
+        ((-.4, 26.2, 1.7), (-2.1, 25.4, 4.7), (-3.7, 19.3, 9.4), .89),
         ((.7, 26.0, 1.8), (-.9, 25.2, 4.0), (-3.2, 20.6, 7.7), .8),
         ((-1.3, 25.6, 1.7), (-2.8, 24.5, 3.8), (-3.2, 17.8, 6.9), .7),
         ((-.4, 25.5, 1.8), (-1.6, 24.4, 4.5), (-2.8, 18.6, 7.5), .68),
@@ -1115,6 +1115,8 @@ def build(out=ROOT / "model-lab" / "models"):
         ((-.8, 26.0, 1.9), (-.3, 24.2, 5.6), (.5, 18.7, 8.6), .5),
     )
     for strand, (start, control, tip, root_width) in enumerate(mane_paths):
+        control = (control[0], control[1], start[2] + (control[2] - start[2]) * .9)
+        tip = (tip[0], tip[1], start[2] + (tip[2] - start[2]) * .82)
         mane_uv = m.patch(16, 32,
                           lambda px, py, s=strand: paint_mane(px, py, s),
                           f"wind_torn_mane_{strand}")
@@ -1123,8 +1125,12 @@ def build(out=ROOT / "model-lab" / "models"):
                       ("north", "south", "east", "west", "up", "down")}
         def point(u):
             a, b, c = (1 - u) ** 2, 2 * (1 - u) * u, u ** 2
-            return tuple(a * start[i] + b * control[i] + c * tip[i]
+            base = tuple(a * start[i] + b * control[i] + c * tip[i]
                          for i in range(3))
+            wave = math.sin(math.pi * u) * math.sin(2 * math.pi * u + strand * 1.37)
+            return (base[0] + .24 * wave,
+                    base[1] + .64 * wave,
+                    base[2] + .20 * wave)
 
         for section in range(8):
             u0, u1 = section / 8, (section + 1) / 8
