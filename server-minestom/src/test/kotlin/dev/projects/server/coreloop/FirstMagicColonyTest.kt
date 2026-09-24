@@ -40,20 +40,20 @@ class FirstMagicColonyTest {
             assertTrue(colony.place(ColonyPlaceable.DESK, BlockVec(8, 41, 4), BlockFace.SOUTH))
             assertTrue(colony.place(ColonyPlaceable.DISTILLER, BlockVec(14, 41, 4), BlockFace.SOUTH))
             assertTrue(colony.place(ColonyPlaceable.SHELF, BlockVec(8, 41, 12), BlockFace.SOUTH))
-            assertTrue(colony.place(ColonyPlaceable.JAR_EMBER, BlockVec(8, 42, 12), BlockFace.SOUTH))
-            assertTrue(colony.place(ColonyPlaceable.JAR_TIDE, BlockVec(9, 41, 12), BlockFace.SOUTH))
-            assertTrue(colony.place(ColonyPlaceable.JAR_GALE, BlockVec(10, 41, 12), BlockFace.SOUTH))
-            assertTrue(colony.place(ColonyPlaceable.JAR_STONE, BlockVec(11, 41, 12), BlockFace.SOUTH))
+            assertTrue(colony.place(ColonyPlaceable.JAR_EMBER, BlockVec(8, 43, 12), BlockFace.SOUTH))
+            assertTrue(colony.place(ColonyPlaceable.JAR_TIDE, BlockVec(11, 41, 12), BlockFace.SOUTH))
+            assertTrue(colony.place(ColonyPlaceable.JAR_GALE, BlockVec(12, 41, 12), BlockFace.SOUTH))
+            assertTrue(colony.place(ColonyPlaceable.JAR_STONE, BlockVec(13, 41, 12), BlockFace.SOUTH))
             assertTrue(colony.place(ColonyPlaceable.STAR_CHART, BlockVec(11, 42, 2), BlockFace.SOUTH))
             assertTrue(colony.missingItems().isEmpty())
-            assertEquals(ColonyFixture.DESK, colony.fixture(BlockVec(8, 41, 4)))
-            assertEquals(ColonyFixture.DISTILLER, colony.fixture(BlockVec(14, 41, 4)))
-            assertEquals(ColonyFixture.JARS, colony.fixture(BlockVec(8, 42, 12)))
-            assertEquals(ColonyFixture.CHART, colony.fixture(BlockVec(11, 42, 2)))
+            assertEquals(ColonyFixture.DESK, colony.fixture(BlockVec(9, 42, 5)))
+            assertEquals(ColonyFixture.DISTILLER, colony.fixture(BlockVec(15, 43, 5)))
+            assertEquals(ColonyFixture.JARS, colony.fixture(BlockVec(10, 42, 12)))
+            assertEquals(ColonyFixture.CHART, colony.fixture(BlockVec(12, 43, 2)))
             assertFalse(colony.place(ColonyPlaceable.DESK, BlockVec(12, 41, 8), BlockFace.SOUTH))
-            assertFalse(colony.place(ColonyPlaceable.DISTILLER, BlockVec(8, 42, 12), BlockFace.SOUTH))
+            assertFalse(colony.place(ColonyPlaceable.DISTILLER, BlockVec(8, 43, 12), BlockFace.SOUTH))
             assertEquals(null, colony.pickUp(BlockVec(8, 41, 12)), "shelf must support its jar until that jar is picked up")
-            assertEquals(ColonyPlaceable.JAR_EMBER, colony.pickUp(BlockVec(8, 42, 12)))
+            assertEquals(ColonyPlaceable.JAR_EMBER, colony.pickUp(BlockVec(8, 43, 12)))
             assertEquals(ColonyPlaceable.SHELF, colony.pickUp(BlockVec(8, 41, 12)))
             assertEquals(Block.AIR, colony.instance.getBlock(8, 41, 12))
             assertEquals(2, colony.missingItems().size)
@@ -64,9 +64,28 @@ class FirstMagicColonyTest {
         val restored = FirstMagicColony.create(state, saved)
         try {
             assertEquals(ColonyFixture.DESK, restored.fixture(BlockVec(8, 41, 4)))
-            assertEquals(ColonyFixture.JARS, restored.fixture(BlockVec(9, 41, 12)))
+            assertEquals(ColonyFixture.JARS, restored.fixture(BlockVec(11, 41, 12)))
             assertEquals(ColonyFixture.CHART, restored.fixture(BlockVec(11, 42, 2)))
             assertEquals(2, restored.missingItems().size)
         } finally { restored.dispose() }
+
+        val crowdedLegacy = listOf(
+            ColonyPlacement(ColonyPlaceable.DESK, 8, 41, 2, BlockFace.NORTH),
+            ColonyPlacement(ColonyPlaceable.DISTILLER, 9, 41, 3, BlockFace.NORTH),
+            ColonyPlacement(ColonyPlaceable.SHELF, 11, 41, 3, BlockFace.NORTH),
+            ColonyPlacement(ColonyPlaceable.JAR_EMBER, 10, 41, 3, BlockFace.EAST),
+            ColonyPlacement(ColonyPlaceable.JAR_TIDE, 11, 42, 3, BlockFace.SOUTH),
+            ColonyPlacement(ColonyPlaceable.JAR_GALE, 12, 41, 3, BlockFace.WEST),
+            ColonyPlacement(ColonyPlaceable.JAR_STONE, 7, 41, 16, BlockFace.SOUTH),
+            ColonyPlacement(ColonyPlaceable.STAR_CHART, 13, 41, 3, BlockFace.EAST),
+        )
+        val migrated = FirstMagicColony.create(state, crowdedLegacy) { repository.save(playerId, it) }
+        try {
+            assertTrue(migrated.missingItems().isEmpty(), "older close-packed furniture must all remain available")
+            assertEquals(ColonyFixture.DESK, migrated.fixture(BlockVec(8, 41, 2)))
+            assertEquals(8, repository.load(playerId).size)
+            assertTrue(repository.load(playerId).any { savedPlace -> savedPlace !in crowdedLegacy },
+                "overlapping legacy layout must be moved into free cells")
+        } finally { migrated.dispose() }
     }
 }

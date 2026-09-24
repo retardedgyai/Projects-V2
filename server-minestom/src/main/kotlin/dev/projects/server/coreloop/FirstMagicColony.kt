@@ -56,7 +56,9 @@ internal class FirstMagicColony private constructor(
                 }
             }
         }
-        placements.values.forEach { instance.setBlock(it.x, it.y, it.z, blockFor(it.kind)) }
+        placements.values.forEach { placement ->
+            occupied(placement).forEach { cell -> instance.setBlock(cell, blockFor(placement.kind)) }
+        }
     }
 
     private fun display(model: String, at: Pos, scale: Vec): Entity = Entity(EntityType.ITEM_DISPLAY).apply {
@@ -86,30 +88,50 @@ internal class FirstMagicColony private constructor(
         else -> placementAt(point)?.kind?.fixture
     }
 
-    fun placementAt(point: Point): ColonyPlacement? = placements.values.firstOrNull {
-        it.x == point.blockX() && it.y == point.blockY() && it.z == point.blockZ()
+    fun placementAt(point: Point): ColonyPlacement? = placements.values.firstOrNull { placement ->
+        occupied(placement).any { it.sameBlock(point) }
     }
 
     fun missingItems(): List<ColonyPlaceable> = ColonyPlaceable.entries.filterNot(placements::containsKey)
     fun has(kind: ColonyPlaceable): Boolean = kind in placements
 
-    fun modelPosition(kind: ColonyPlaceable): Pos? = placements[kind]?.let { Pos(it.x + .5, it.y + 1.0, it.z + .5) }
+    fun modelPosition(kind: ColonyPlaceable): Pos? = placements[kind]?.let { placement ->
+        val (width, depth) = footprint(placement)
+        Pos(placement.x + width / 2.0, placement.y + placement.kind.visualHeight / 2.0,
+            placement.z + depth / 2.0)
+    }
+
+    private fun footprint(placement: ColonyPlacement): Pair<Int, Int> =
+        if (placement.facing == BlockFace.EAST || placement.facing == BlockFace.WEST)
+            placement.kind.depth to placement.kind.width else placement.kind.width to placement.kind.depth
+
+    private fun occupied(placement: ColonyPlacement): List<BlockVec> {
+        val (width, depth) = footprint(placement)
+        return buildList {
+            for (dx in 0 until width) for (dz in 0 until depth) for (dy in 0 until placement.kind.height)
+                add(BlockVec(placement.x + dx, placement.y + dy, placement.z + dz))
+        }
+    }
+
+    private fun backing(placement: ColonyPlacement, cell: Point): BlockVec = when (placement.facing) {
+        BlockFace.NORTH -> BlockVec(cell.blockX(), cell.blockY(), cell.blockZ() + 1)
+        BlockFace.SOUTH -> BlockVec(cell.blockX(), cell.blockY(), cell.blockZ() - 1)
+        BlockFace.EAST -> BlockVec(cell.blockX() - 1, cell.blockY(), cell.blockZ())
+        else -> BlockVec(cell.blockX() + 1, cell.blockY(), cell.blockZ())
+    }
 
     fun place(kind: ColonyPlaceable, point: Point, facing: BlockFace, save: Boolean = true): Boolean {
         val x = point.blockX(); val y = point.blockY(); val z = point.blockZ()
-        if (kind in placements || x !in -21..21 || z !in -20..23 || y !in 41..47 ||
-            facing !in listOf(BlockFace.NORTH, BlockFace.EAST, BlockFace.SOUTH, BlockFace.WEST) ||
-            instance.getBlock(x, y, z) != Block.AIR) return false
-        if (kind == ColonyPlaceable.STAR_CHART) {
-            val backing = when (facing) {
-                BlockFace.NORTH -> BlockVec(x, y, z + 1)
-                BlockFace.SOUTH -> BlockVec(x, y, z - 1)
-                BlockFace.EAST -> BlockVec(x - 1, y, z)
-                else -> BlockVec(x + 1, y, z)
-            }
-            if (!instance.getBlock(backing).isSolid) return false
-        } else if (!instance.getBlock(x, y - 1, z).isSolid) return false
+        if (kind in placements || facing !in listOf(BlockFace.NORTH, BlockFace.EAST, BlockFace.SOUTH, BlockFace.WEST)) return false
         val placement = ColonyPlacement(kind, x, y, z, facing)
+        val cells = occupied(placement)
+        if (cells.any { it.blockX() !in -21..21 || it.blockZ() !in -20..23 || it.blockY() !in 41..47 ||
+                instance.getBlock(it) != Block.AIR || placementAt(it) != null }) return false
+        if (kind == ColonyPlaceable.STAR_CHART) {
+            if (cells.any { !instance.getBlock(backing(placement, it)).isSolid }) return false
+        } else {
+            if (cells.filter { it.blockY() == y }.any { !instance.getBlock(it.blockX(), y - 1, it.blockZ()).isSolid }) return false
+        }
         if (save) persist(placements.values + placement)
         placements[kind] = placement
         render(placement)
@@ -118,13 +140,14 @@ internal class FirstMagicColony private constructor(
 
     fun pickUp(point: Point): ColonyPlaceable? {
         val placement = placementAt(point) ?: return null
-        if (placements.values.any { it.x == placement.x && it.y == placement.y + 1 && it.z == placement.z }) return null
+        val cells = occupied(placement).toSet()
         if (placements.values.any { other ->
-                if (other.kind != ColonyPlaceable.STAR_CHART) false else when (other.facing) {
-                    BlockFace.NORTH -> other.x == placement.x && other.y == placement.y && other.z + 1 == placement.z
-                    BlockFace.SOUTH -> other.x == placement.x && other.y == placement.y && other.z - 1 == placement.z
-                    BlockFace.EAST -> other.x - 1 == placement.x && other.y == placement.y && other.z == placement.z
-                    else -> other.x + 1 == placement.x && other.y == placement.y && other.z == placement.z
+                if (other.kind == placement.kind) false else {
+                    val support = occupied(other).filter { it.blockY() == other.y }.map { cell ->
+                        if (other.kind == ColonyPlaceable.STAR_CHART) backing(other, cell)
+                        else BlockVec(cell.blockX(), cell.blockY() - 1, cell.blockZ())
+                    }
+                    support.any { it in cells }
                 }
             }) return null
         persist(placements.values.filterNot { it.kind == placement.kind })
@@ -132,7 +155,7 @@ internal class FirstMagicColony private constructor(
         furniture.remove(placement.kind)?.let { entity ->
             models.remove(entity); modelReady.remove(entity); entity.remove()
         }
-        instance.setBlock(placement.x, placement.y, placement.z, Block.AIR)
+        cells.forEach { instance.setBlock(it, Block.AIR) }
         return placement.kind
     }
 
@@ -148,15 +171,18 @@ internal class FirstMagicColony private constructor(
     }
 
     private fun render(placement: ColonyPlacement) {
-        instance.setBlock(placement.x, placement.y, placement.z, blockFor(placement.kind))
+        occupied(placement).forEach { instance.setBlock(it, blockFor(placement.kind)) }
         val yaw = when (placement.facing) {
             BlockFace.NORTH -> 180f
             BlockFace.SOUTH -> 0f
             BlockFace.WEST -> 90f
             else -> -90f
         }
+        val (width, depth) = footprint(placement)
         val entity = display(placement.kind.model,
-            Pos(placement.x + .5, placement.y + .5, placement.z + .5, yaw, 0f), Vec(1.0, 1.0, 1.0))
+            Pos(placement.x + width / 2.0, placement.y + placement.kind.visualHeight / 2.0,
+                placement.z + depth / 2.0, yaw, 0f),
+            Vec(placement.kind.width.toDouble(), placement.kind.visualHeight, placement.kind.visualDepth))
         furniture[placement.kind] = entity
     }
 
@@ -170,6 +196,31 @@ internal class FirstMagicColony private constructor(
                 }
             }
         }
+    }
+
+    private fun restore(saved: List<ColonyPlacement>) {
+        var relocated = false
+        for (old in saved) {
+            if (place(old.kind, BlockVec(old.x, old.y, old.z), old.facing, save = false)) continue
+            val heights = if (old.kind.isJar) listOf(old.y + 2, old.y + 1, old.y, 41).distinct()
+                else listOf(old.y, 41, 42, 43).distinct()
+            val faces = if (old.kind == ColonyPlaceable.STAR_CHART)
+                (listOf(old.facing) + listOf(BlockFace.SOUTH, BlockFace.NORTH, BlockFace.EAST, BlockFace.WEST)).distinct()
+                else listOf(old.facing)
+            var found = false
+            search@ for (radius in 0..16) for (dx in -radius..radius) for (dz in -radius..radius) {
+                if (abs(dx) + abs(dz) != radius) continue
+                for (y in heights) for (face in faces) {
+                    if (place(old.kind, BlockVec(old.x + dx, y, old.z + dz), face, save = false)) {
+                        found = true
+                        break@search
+                    }
+                }
+            }
+            require(found) { "No room to restore colony placement: $old" }
+            relocated = true
+        }
+        if (relocated) persist(placements.values)
     }
 
     fun dispose() {
@@ -273,11 +324,7 @@ internal class FirstMagicColony private constructor(
                 CompletableFuture.allOf(*(-2..2).flatMap { x -> (-2..2).map { z -> instance.loadChunk(x, z) } }.toTypedArray()).join()
                 return FirstMagicColony(instance, persist).also { colony ->
                     colony.build()
-                    saved.forEach { placement ->
-                        require(colony.place(placement.kind, BlockVec(placement.x, placement.y, placement.z), placement.facing, save = false)) {
-                            "Saved colony placement is obstructed: $placement"
-                        }
-                    }
+                    colony.restore(saved)
                     colony.update(state)
                 }
             } catch (failure: Throwable) {

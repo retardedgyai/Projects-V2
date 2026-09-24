@@ -449,12 +449,15 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         val x = clicked.blockX() + when (face) { BlockFace.EAST -> 1; BlockFace.WEST -> -1; else -> 0 }
         val y = clicked.blockY() + when (face) { BlockFace.TOP -> 1; BlockFace.BOTTOM -> -1; else -> 0 }
         val z = clicked.blockZ() + when (face) { BlockFace.SOUTH -> 1; BlockFace.NORTH -> -1; else -> 0 }
-        if (kind != ColonyPlaceable.STAR_CHART && kotlin.math.abs(player.position.x() - x - .5) < .7 &&
-            kotlin.math.abs(player.position.z() - z - .5) < .7 && y <= player.position.y() + 1.8 && y + 1 > player.position.y()) {
+        val facing = if (kind == ColonyPlaceable.STAR_CHART) face else BlockFace.fromYaw(player.position.yaw())
+        val width = if (facing == BlockFace.EAST || facing == BlockFace.WEST) kind.depth else kind.width
+        val depth = if (facing == BlockFace.EAST || facing == BlockFace.WEST) kind.width else kind.depth
+        if (player.position.x() + .3 > x && player.position.x() - .3 < x + width &&
+            player.position.z() + .3 > z && player.position.z() - .3 < z + depth &&
+            player.position.y() + 1.8 > y && player.position.y() < y + kind.height) {
             player.sendMessage(CoreLoopItems.text("自分と重なる場所には置けない", NamedTextColor.RED))
             return
         }
-        val facing = if (kind == ColonyPlaceable.STAR_CHART) face else BlockFace.fromYaw(player.position.yaw())
         try {
             if (!colony.place(kind, BlockVec(x, y, z), facing)) {
                 player.sendMessage(CoreLoopItems.text("ここには置けない。床と空きスペースを確かめよう", NamedTextColor.RED))

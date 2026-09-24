@@ -8,15 +8,18 @@ import java.nio.file.StandardCopyOption.ATOMIC_MOVE
 import java.nio.file.StandardCopyOption.REPLACE_EXISTING
 import java.util.UUID
 
-internal enum class ColonyPlaceable(val label: String, val model: String, val fixture: ColonyFixture?) {
-    DESK("研究机", "research_desk_dormant", ColonyFixture.DESK),
-    DISTILLER("粗末な蒸留器", "crude_distiller", ColonyFixture.DISTILLER),
-    SHELF("Jar棚", "jar_shelf", ColonyFixture.JARS),
-    JAR_EMBER("Ember Jar", "jar_ember_empty", ColonyFixture.JARS),
-    JAR_TIDE("Tide Jar", "jar_tide_empty", ColonyFixture.JARS),
-    JAR_GALE("Gale Jar", "jar_gale_empty", ColonyFixture.JARS),
-    JAR_STONE("Stone Jar", "jar_stone_empty", ColonyFixture.JARS),
-    STAR_CHART("古い星図", "star_chart", ColonyFixture.CHART);
+internal enum class ColonyPlaceable(
+    val label: String, val model: String, val fixture: ColonyFixture?,
+    val width: Int, val depth: Int, val height: Int, val visualHeight: Double, val visualDepth: Double = depth.toDouble(),
+) {
+    DESK("研究机", "research_desk_dormant", ColonyFixture.DESK, 2, 2, 2, 1.65),
+    DISTILLER("粗末な蒸留器", "crude_distiller", ColonyFixture.DISTILLER, 2, 2, 3, 2.35),
+    SHELF("Jar棚", "jar_shelf", ColonyFixture.JARS, 3, 1, 2, 2.0),
+    JAR_EMBER("Ember Jar", "jar_ember_empty", ColonyFixture.JARS, 1, 1, 1, 1.0),
+    JAR_TIDE("Tide Jar", "jar_tide_empty", ColonyFixture.JARS, 1, 1, 1, 1.0),
+    JAR_GALE("Gale Jar", "jar_gale_empty", ColonyFixture.JARS, 1, 1, 1, 1.0),
+    JAR_STONE("Stone Jar", "jar_stone_empty", ColonyFixture.JARS, 1, 1, 1, 1.0),
+    STAR_CHART("古い星図", "star_chart", ColonyFixture.CHART, 2, 1, 2, 2.0, .22);
 
     val isJar get() = name.startsWith("JAR_")
     val aspect get() = if (isJar) FirstAspect.valueOf(name.removePrefix("JAR_")) else null
