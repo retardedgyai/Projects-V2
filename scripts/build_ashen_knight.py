@@ -277,9 +277,33 @@ def build(out=ROOT / "model-lab" / "models"):
                     [x0, hem, depth], [x1, top, depth + .14], "cloth",
                     [5 + panel * 3, 0, lean], [(x0 + x1) / 2, top, depth],
                     "ragged_hip", face_uv={"north": rag_uv, "south": rag_uv})
+    def paint_sternum_cloth(px, py):
+        # The exposed chest below the neck wrap must read as scorched cloth,
+        # not the flat two-tone face of a torso cuboid.
+        left = 3 + py // 15 + authoring.noise(py // 5, 0, 5153) % 2
+        right = 60 - py // 18 - authoring.noise(py // 6, 0, 5167) % 3
+        top = 3 + round(abs(px - 31.5) * .17)
+        hem = 46 - authoring.noise(px // 4, 0, 5171) % 6
+        if px < left or px > right or py < top or py > hem:
+            return (0, 0, 0, 0)
+        wear = authoring.noise(px // 3, py // 3, 5189)
+        if px > 43 and 24 < py < 37 and wear % 9 < 2:
+            return (0, 0, 0, 0)
+        crease = abs(py - (12 + .37 * px + 2 * math.sin(px * .12)))
+        if crease < 1.5 or (py + px * 2) % 29 < 2:
+            color = (34, 49, 61)
+        elif wear % 5 == 0:
+            color = (11, 22, 32)
+        else:
+            color = (19, 33, 47)
+        if px - left < 2 or right - px < 2 or py > hem - 2:
+            color = (10, 21, 31)
+        return (*color, 255)
+    sternum_uv = m.patch(64, 48, paint_sternum_cloth, "burned_sternum_cloth")
     add_rotated(m, chest, "upper_tunic_sternum",
                 [-2.4, 19.1, -2.05], [2.4, 22.05, 1.02], "void",
-                [-8, 0, -3], [0, 20.45, -.5], "worn_tunic")
+                [-8, 0, -3], [0, 20.45, -.5], "worn_tunic",
+                {"north": sternum_uv})
     add_rotated(m, chest, "upper_tunic_abdomen",
                 [-2.05, 16.95, -1.72], [2.05, 19.53, .95], "void",
                 [-3, 0, 4], [0, 18.2, -.47], "worn_tunic")
@@ -289,12 +313,35 @@ def build(out=ROOT / "model-lab" / "models"):
     add_rotated(m, chest, "upper_tunic_right_rib",
                 [2.12, 17.35, -1.78], [3.72, 21.65, .82], "void",
                 [-6, 0, 7], [2.92, 19.5, -.45], "worn_tunic")
+    def paint_back_tunic(px, py, seed):
+        grain = authoring.noise(px // 3, py // 3, 5251 + seed)
+        fold = math.sin(px * .11 + py * .06 + seed * 1.9)
+        seam = abs(px - (18 + py * .32 + seed * 12)) < 1.4
+        if seam and grain % 7 != 0:
+            color = (37, 48, 56)
+        elif fold > .58:
+            color = (25, 39, 52)
+        elif fold < -.6:
+            color = (10, 21, 32)
+        else:
+            color = (18, 30, 42)
+        if py > 34 and grain % 27 == 0:
+            color = (8, 17, 27)
+        return (*color, 255)
+    back_shoulder_uv = m.patch(64, 48,
+                               lambda px, py: paint_back_tunic(px, py, 0),
+                               "burned_back_shoulders")
+    back_waist_uv = m.patch(64, 48,
+                            lambda px, py: paint_back_tunic(px, py, 1),
+                            "burned_back_waist")
     add_rotated(m, chest, "upper_tunic_back_shoulders",
                 [-3.05, 19.45, .4], [3.05, 21.8, 2.02], "void",
-                [7, 0, 2], [0, 20.6, 1.2], "worn_tunic")
+                [7, 0, 2], [0, 20.6, 1.2], "worn_tunic",
+                {"south": back_shoulder_uv})
     add_rotated(m, chest, "upper_tunic_back_waist",
                 [-2.45, 17.55, .5], [2.45, 19.85, 1.55], "void",
-                [2, 0, -3], [0, 18.6, 1.15], "worn_tunic")
+                [2, 0, -3], [0, 18.6, 1.15], "worn_tunic",
+                {"south": back_waist_uv})
     # The lower torso narrows toward the belt. A single full-depth cuboid
     # exposed a long, ruler-straight side between the scarf and the tassets.
     add_rotated(m, chest, "waist_mail_tunic_upper",
@@ -1681,16 +1728,16 @@ def build(out=ROOT / "model-lab" / "models"):
 
     m.anim("idle", 2.0, {
         "root": [(0, [0, 0, 0], "position"), (1, [0, .28, 0], "position"), (2, [0, 0, 0], "position")],
-        "torso": [(0, [16, 0, -3]), (1, [18, 0, -3]), (2, [16, 0, -3])],
-        "head": [(0, [-10, -5, 0]), (1, [-12, -2, 0]), (2, [-10, -5, 0])],
+        "torso": [(0, [28, 0, -3]), (1, [30, 0, -3]), (2, [28, 0, -3])],
+        "head": [(0, [-16, -5, 0]), (1, [-18, -2, 0]), (2, [-16, -5, 0])],
         "plume": [(0, [0, 0, -3]), (1, [2, 0, 5]), (2, [0, 0, -3])],
-        "left_leg": [(0, [-10, 0, 12]), (1, [-10, 0, 12]), (2, [-10, 0, 12])],
-        "right_leg": [(0, [12, 0, -12]), (1, [12, 0, -12]), (2, [12, 0, -12])],
+        "left_leg": [(0, [-10, 0, 0]), (1, [-10, 0, 0]), (2, [-10, 0, 0])],
+        "right_leg": [(0, [12, 0, 0]), (1, [12, 0, 0]), (2, [12, 0, 0])],
         "left_knee": [(0, [20, 0, 0]), (1, [20, 0, 0]), (2, [20, 0, 0])],
         "right_knee": [(0, [-17, 0, 0]), (1, [-17, 0, 0]), (2, [-17, 0, 0])],
         "right_arm": [(0, [4, 0, -16]), (1, [4, 0, -16]), (2, [4, 0, -16])],
         "right_elbow": [(0, [0, 0, 5]), (1, [0, 0, 5]), (2, [0, 0, 5])],
-        "sword": [(0, [-15, 0, 30]), (1, [-15, 0, 30]), (2, [-15, 0, 30])],
+        "sword": [(0, [-30, 0, 30]), (1, [-30, 0, 30]), (2, [-30, 0, 30])],
         "cape_left": [(0, [0, 0, -5]), (1, [-6, 0, -10]), (2, [0, 0, -5])],
         "cape_right": [(0, [0, 0, 4]), (1, [-4, 0, 8]), (2, [0, 0, 4])],
         "cape_center": [(0, [-2, 0, -2]), (1, [-7, 0, 3]), (2, [-2, 0, -2])],

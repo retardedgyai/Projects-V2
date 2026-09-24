@@ -36,6 +36,9 @@ class AshenPoseTest(unittest.TestCase):
                                                    "torn_shoulder_mantle"))}
         cls.shoulder_bridge = [element for element in elements.values()
                                if element["name"].startswith("scarf_left_shoulder_bridge_")]
+        cls.boots = {side: {ident: element for ident, element in elements.items()
+                            if element["name"].startswith(side + "_boot_")}
+                     for side in ("left", "right")}
 
     @classmethod
     def tip_y(cls, name, seconds):
@@ -82,6 +85,28 @@ class AshenPoseTest(unittest.TestCase):
                 below = pixels[int(ground_rows[0]) + 1:]
                 with self.subTest(view=view, seconds=seconds):
                     self.assertFalse(np.any(np.any(below != background, axis=2)))
+
+    def test_idle_feet_remain_near_floor(self):
+        for seconds in np.linspace(0, 2, 9):
+            world = preview.transforms(self.data["outliner"][0],
+                                       self.animations["idle"], float(seconds),
+                                       np.eye(4), {})
+            for side, elements in self.boots.items():
+                lowest = float("inf")
+                for ident, element in elements.items():
+                    lo, hi = element["from"], element["to"]
+                    corners = np.array([[x, y, z] for x in (lo[0], hi[0])
+                                        for y in (lo[1], hi[1])
+                                        for z in (lo[2], hi[2])])
+                    pivot = np.array(element["origin"])
+                    corners = (preview.rot(element.get("rotation", [0, 0, 0]))
+                               @ (corners - pivot).T).T + pivot
+                    transform = world[ident]
+                    corners = (transform[:3, :3] @ corners.T).T + transform[:3, 3]
+                    lowest = min(lowest, float(corners[:, 1].min()))
+                with self.subTest(side=side, seconds=seconds):
+                    self.assertGreaterEqual(lowest, -0.25)
+                    self.assertLessEqual(lowest, 0.6)
 
     def test_long_cloak_does_not_pass_through_ground(self):
         for name, animation in self.animations.items():
