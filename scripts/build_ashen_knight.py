@@ -939,17 +939,35 @@ def build(out=ROOT / "model-lab" / "models"):
     # behind it. The mane supplies the rear silhouette.
     def paint_burned_hood(px, py):
         grain = authoring.noise(px // 3, py // 3, 5621)
-        crease = (px * 2 + py) % 19 < 2
-        if crease:
-            return (28, 36, 44, 255)
-        return ((14, 23, 33, 255) if grain % 5 == 0
-                else (19, 28, 38, 255))
+        fold = math.sin(px * .11 + py * .043 + math.sin(py * .13) * .7)
+        if fold < -.65:
+            return (13, 17, 21, 255)
+        return ((26, 30, 33, 255) if grain % 11 == 0
+                else (20, 24, 28, 255))
     hood_uv = m.patch(32, 32, paint_burned_hood, "burned_hood_shared")
     hood_faces = {face: hood_uv for face in
                   ("north", "south", "east", "west", "up", "down")}
+    def paint_skull_side(px, py):
+        u = px / 63
+        crest = 8 + round(10 * abs(u - .46) + 2 * math.sin(u * 8))
+        jawline = 57 - round(10 * abs(u - .58) + 3 * math.sin(u * 10))
+        if py < crest or py > jawline:
+            return (0, 0, 0, 0)
+        grain = authoring.noise(px // 4, py // 4, 5651)
+        fold = math.sin(px * .09 + py * .055 + math.sin(px * .14))
+        shade = (13, 17, 21) if fold < -.35 else (20, 24, 28)
+        if grain % 17 == 0:
+            shade = (29, 32, 34)
+        if py < crest + 3 or py > jawline - 3:
+            shade = (11, 15, 18)
+        return (*shade, 255)
+
+    skull_side_uv = m.patch(64, 64, paint_skull_side, "hood_skull_ragged_side")
+    skull_faces = dict(hood_faces)
+    skull_faces.update({"east": skull_side_uv, "west": skull_side_uv})
     add_rotated(m, helm, "hood_skull_core",
                 [-.76, 24.08, -.84], [.76, 25.99, .51], "void",
-                [-8, 0, 0], [0, 25.0, -.1], "burned_hood", hood_faces)
+                [-8, 0, 0], [0, 25.0, -.1], "burned_hood", skull_faces)
     add_rotated(m, helm, "hood_brow_overhang",
                 [-.99, 25.53, -2.04], [.99, 26.1, -.63], "void",
                 [13, 0, 0], [0, 25.84, -1.3], "burned_hood", hood_faces)
@@ -959,6 +977,30 @@ def build(out=ROOT / "model-lab" / "models"):
     add_rotated(m, helm, "hood_muzzle_base",
                 [-.65, 22.52, -2.46], [.65, 23.62, -.62], "void",
                 [-9, 0, 0], [0, 23.0, -1.5], "burned_hood", hood_faces)
+    def paint_hood_cheek(px, py):
+        u = px / 63
+        top = 4 + round(5 * math.sin(math.pi * u))
+        hem = 59 - round(12 * abs(u - .53))
+        if px < 2 or px > 61 or py < top or py > hem:
+            return (0, 0, 0, 0)
+        grain = authoring.noise(px // 3, py // 3, 5639)
+        fold = math.sin(px * .12 + py * .07)
+        color = (10, 15, 20) if fold < -.35 else (20, 24, 28)
+        if grain % 37 == 0:
+            color = (32, 35, 37)
+        if py > hem - 3:
+            color = (8, 12, 16)
+        return (*color, 255)
+
+    cheek_uv = m.patch(64, 64, paint_hood_cheek, "hood_recessed_cheek")
+    hood_clear = m.patch(1, 1, lambda _x, _y: (0, 0, 0, 0),
+                         "open_hood_cheek_edge")
+    add_rotated(m, helm, "hood_recessed_cheek",
+                [-.79, 23.55, -2.17], [.79, 25.67, -.45], "void",
+                [-5, 0, 0], [0, 24.6, -1.3], "burned_hood",
+                {"east": cheek_uv, "west": cheek_uv,
+                 "north": hood_clear, "south": hood_clear,
+                 "up": hood_clear, "down": hood_clear})
     add(m, helm, "snout_dark_tip", [-.45, 21.15, -5.75], [.45, 21.85, -5.1], "void")
 
     # A cutout engraved faceplate supplies a distinct long-muzzled silhouette
@@ -1012,15 +1054,16 @@ def build(out=ROOT / "model-lab" / "models"):
             return (0, 0, 0, 0)
         u = (px - 2) / 43
         snout = max(0, (u - .75) / .25)
-        top = 15 + round(13 * u + 14 * snout)
-        bottom = 47 + round(9 * u)
+        top = 21 + round(12 * u + 12 * snout)
+        cheek_hollow = 3 * max(0, 1 - abs(u - .54) / .3)
+        bottom = 43 + round(8 * u - cheek_hollow)
         if py < top or py > bottom:
             return (0, 0, 0, 0)
         eye = 23 < px < 35 and top + 3 < py < top + 7
         if eye:
             return (8, 14, 19, 255)
         if py <= top + 2:
-            return (58, 66, 68, 255)
+            return (52, 61, 64, 255)
         if py >= bottom - 2:
             return (18, 25, 31, 255)
         if abs(py - (31 + 10 * u)) < 1.2 and px > 18:
