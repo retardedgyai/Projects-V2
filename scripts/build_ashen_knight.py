@@ -1722,11 +1722,13 @@ def build(out=ROOT / "model-lab" / "models"):
     center_tail_bone = m.bone("cape_center_tail", [-.8, 7.8, 4.1], cape_center_tail)
     center_mid_bone = m.bone("cape_center_mid", [-.5, 11.2, 3.9], cape_center_mid + [center_tail_bone])
     middle_cape_bone = m.bone("cape_center", [0, 14.7, 3], cape_center + [center_mid_bone])
-    left_cape_bone["rotation"] = [18, 0, 2]
+    # The idle hunch pitches the cloth with the torso; keep its waist-tied
+    # panels falling behind the legs rather than projecting as one side slab.
+    left_cape_bone["rotation"] = [32, 0, 2]
     left_mid_bone["rotation"] = [-5, -6, 0]
     left_tail_bone["rotation"] = [-6, 8, 0]
     right_cape_bone["rotation"] = [18, 0, 3]
-    middle_cape_bone["rotation"] = [20, 0, 0]
+    middle_cape_bone["rotation"] = [32, 0, 0]
     center_mid_bone["rotation"] = [-4, 7, 1]
     center_tail_bone["rotation"] = [-6, -5, 0]
     left_edge_bone = m.bone("cape_left_edge", [-6, 20, 2.7], cape_left_edge)
