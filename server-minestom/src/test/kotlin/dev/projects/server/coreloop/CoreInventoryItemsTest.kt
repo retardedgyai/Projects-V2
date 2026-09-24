@@ -25,9 +25,10 @@ class CoreInventoryItemsTest {
         val wood = CoreMaterial(CoreResource.WOOD, 1)
         val dust = CoreMaterial(CoreResource.AFFIX_DUST)
         val maps = listOf(CoreOwnedMap(UUID.randomUUID(), 11L, 1), CoreOwnedMap(UUID.randomUUID(), 22L, 1))
-        val account = CoreAccount(player.uuid, balances = mapOf(wood to 7L, dust to 90L), maps = maps,
+        val account = CoreAccount(player.uuid, balances = mapOf(wood to 7L, dust to 90L), maps = maps, silver = 5L,
             fragments = mapOf(CoreActivityKind.RIFT to 2L))
         CoreLoopItems.refresh(player, account, initial = true)
+        assertEquals(0, CoreLoopItems.unrepresentedCount(player, account))
         val woodItem = (0 until 36).map(player.inventory::getItemStack).firstOrNull { CoreLoopItems.resourceId(it) == wood }
         val dustItem = (0 until 36).map(player.inventory::getItemStack).firstOrNull { CoreLoopItems.resourceId(it) == dust }
         assertEquals(7, assertNotNull(woodItem).amount())
@@ -37,6 +38,8 @@ class CoreInventoryItemsTest {
             .mapNotNull(CoreLoopItems::mapId).toSet())
         assertEquals(2L, (0 until 36).map(player.inventory::getItemStack)
             .first { CoreLoopItems.fragmentId(it) == CoreActivityKind.RIFT }.getTag(CoreLoopItems.resourceQuantityTag))
+        assertEquals(5L, (0 until 36).map(player.inventory::getItemStack)
+            .first(CoreLoopItems::isSilver).getTag(CoreLoopItems.resourceQuantityTag))
         CoreLoopItems.refresh(player, account.copy(balances = mapOf(wood to 6L, dust to 90L)))
         assertEquals(6, (0 until 36).map(player.inventory::getItemStack)
             .first { CoreLoopItems.resourceId(it) == wood }.amount())

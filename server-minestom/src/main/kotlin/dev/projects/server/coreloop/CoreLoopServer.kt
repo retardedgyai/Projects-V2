@@ -240,7 +240,22 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
                     }
                 }
                 CoreLoopItems.refresh(player, a, initial = true, packed = packed(player), combatSheet = combatSheet(player) ?: CoreCombatSheet.from(a))
+                // Prioritize the colony's unique equipment and saved anomalies before filling
+                // the remaining backpack slots with the older core economy's item balances.
+                for (slot in 16..35) player.inventory.setItemStack(slot, ItemStack.AIR)
                 firstMagic.snapshot(player.uuid)?.let { FirstMagicInventory.restore(player, it, packed(player)) }
+                runCatching { colonyLayouts.load(player.uuid) }.onSuccess { saved ->
+                    FirstMagicColonyItems.issueMissing(player, ColonyPlaceable.entries.filter { kind ->
+                        saved.none { it.kind == kind }
+                    }, packed(player))
+                }.onFailure { failure ->
+                    System.err.println("COLONY_LAYOUT_LOAD_FAILURE player=${player.uuid}: $failure")
+                    player.sendMessage(CoreLoopItems.text("コロニー設備の所持品を読み込めませんでした", NamedTextColor.RED))
+                }
+                CoreLoopItems.refresh(player, a, packed = packed(player), combatSheet = combatSheet(player) ?: CoreCombatSheet.from(a))
+                CoreLoopItems.unrepresentedCount(player, a).takeIf { it > 0 }?.let { missing ->
+                    player.sendMessage(CoreLoopItems.text("所持品が満杯です。従来の保存品 $missing 種類は消えていません。空きを作ると所持品に表示されます", NamedTextColor.YELLOW))
+                }
                 actors[player.uuid]?.reset()
                 player.setHeldItemSlot(0)
                 player.sendMessage(CoreLoopItems.text("開拓港へようこそ。正面の地図台から遠征へ出発できます。", NamedTextColor.GOLD))
@@ -250,6 +265,8 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
                 uiPack?.offer(player) { loadedPlayer, _ ->
                     CoreCombatPresentation.pack(loadedPlayer, packed(loadedPlayer))
                     refresh(loadedPlayer)
+                    FirstMagicInventory.reskin(loadedPlayer, packed(loadedPlayer))
+                    FirstMagicColonyItems.reskin(loadedPlayer, packed(loadedPlayer))
                     menus.refreshTheme(loadedPlayer)
                     colonies[loadedPlayer.uuid]?.takeIf { it.instance === loadedPlayer.instance }
                         ?.showModels(loadedPlayer, packed(loadedPlayer))
@@ -304,7 +321,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
             }
         }
         events.addListener(ItemDropEvent::class.java) { event ->
-            if (combatLab.contains(event.player) || FirstMagicColonyItems.kind(event.itemStack) != null || FirstMagicInventory.kind(event.itemStack) != null || CoreLoopItems.resourceId(event.itemStack) != null || CoreLoopItems.fragmentId(event.itemStack) != null || event.itemStack.getTag(CoreLoopItems.actionTag) != null || event.itemStack.getTag(QUEST_GATHERING_TOOL_TAG) != null || CoreLoopItems.mapId(event.itemStack) != null) event.isCancelled = true
+            if (combatLab.contains(event.player) || FirstMagicColonyItems.kind(event.itemStack) != null || FirstMagicInventory.kind(event.itemStack) != null || CoreLoopItems.resourceId(event.itemStack) != null || CoreLoopItems.fragmentId(event.itemStack) != null || CoreLoopItems.isSilver(event.itemStack) || event.itemStack.getTag(CoreLoopItems.actionTag) != null || event.itemStack.getTag(QUEST_GATHERING_TOOL_TAG) != null || CoreLoopItems.mapId(event.itemStack) != null) event.isCancelled = true
         }
         events.addListener(PlayerBlockInteractEvent::class.java) { event ->
             if (event.hand != PlayerHand.MAIN) return@addListener

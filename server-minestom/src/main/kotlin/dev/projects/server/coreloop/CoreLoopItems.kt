@@ -23,6 +23,7 @@ internal object CoreLoopItems {
     val resourceTag: Tag<String> = Tag.String("projects_core_resource")
     val resourceQuantityTag: Tag<Long> = Tag.Long("projects_core_resource_quantity")
     val fragmentTag: Tag<String> = Tag.String("projects_core_fragment")
+    val silverTag: Tag<Boolean> = Tag.Boolean("projects_core_silver")
     val colors = listOf(NamedTextColor.WHITE, NamedTextColor.GREEN, NamedTextColor.AQUA, NamedTextColor.LIGHT_PURPLE)
 
     fun text(value: String, color: NamedTextColor = NamedTextColor.GRAY): Component =
@@ -70,6 +71,16 @@ internal object CoreLoopItems {
     fun canCarry(player: Player, material: CoreMaterial): Boolean =
         (0 until 36).any { resourceId(player.inventory.getItemStack(it)) == material } ||
             (16..35).any { player.inventory.getItemStack(it).isAir }
+
+    fun unrepresentedCount(player: Player, account: CoreAccount): Int {
+        val stacks = (0 until 36).map(player.inventory::getItemStack)
+        return account.balances.count { (material, count) -> count > 0 && stacks.none { resourceId(it) == material } } +
+            account.currencies.count { (currency, count) -> count > 0 && stacks.none { currencyId(it) == currency } } +
+            account.fragments.count { (kind, count) -> count > 0 && stacks.none { fragmentId(it) == kind } } +
+            account.maps.count { map -> stacks.none { mapId(it) == map.id } } +
+            account.affixStones.count { stone -> stacks.none { stoneId(it) == stone.id } } +
+            (if (account.silver > 0 && stacks.none(::isSilver)) 1 else 0)
+    }
 
     fun weapon(tier: Int): ItemStack = icon(listOf(Material.STONE_SWORD, Material.IRON_SWORD, Material.DIAMOND_SWORD, Material.NETHERITE_SWORD)[tier - 1],
         "T$tier 開拓者の大剣", "攻撃力 ${(12 * CoreLoopCatalog.weaponDamage(tier)).roundToInt()}",
@@ -186,6 +197,12 @@ internal object CoreLoopItems {
         CoreActivityKind.entries.firstOrNull { it.name == id }
     }
 
+    fun silver(count: Long): ItemStack = icon(Material.IRON_NUGGET, "銀貨",
+        if (count <= 64) "所持 $count 枚" else "銀貨束：$count 枚分", "港の市場で使用")
+        .withTag(silverTag, true).withTag(resourceQuantityTag, count).withAmount(count.coerceIn(1, 64).toInt())
+
+    fun isSilver(item: ItemStack): Boolean = item.getTag(silverTag) == true
+
     fun map(data: CoreOwnedMap): ItemStack = icon(Material.FILLED_MAP, "T${data.tier} Lv${data.level} 未踏の地図",
         *listOf("右クリック：この地図で出発", "石板をつかんで重ねるとMODを付与", "付与MOD ${data.modifiers.size}/3")
             .plus(data.modifiers.map { modifierName(it) }).toTypedArray(), color = colors[data.tier - 1])
@@ -215,7 +232,7 @@ internal object CoreLoopItems {
         // These are account projections, not transferable stacks. Remove moved/cursor copies before
         // rebuilding so spending the last orb cannot leave a stale apparent balance elsewhere.
         fun projection(item: ItemStack) = currencyId(item) != null || stoneId(item) != null || resourceId(item) != null ||
-            fragmentId(item) != null || mapId(item) != null
+            fragmentId(item) != null || mapId(item) != null || isSilver(item)
         for (slot in 0 until 36) if (projection(player.inventory.getItemStack(slot))) player.inventory.setItemStack(slot, ItemStack.AIR)
         if (projection(player.itemInOffHand)) player.setItemInOffHand(ItemStack.AIR)
         if (projection(player.inventory.cursorItem)) player.inventory.cursorItem = ItemStack.AIR
@@ -275,6 +292,8 @@ internal object CoreLoopItems {
             val slot = (16..35).firstOrNull { player.inventory.getItemStack(it).isAir } ?: return@forEach
             player.inventory.setItemStack(slot, fragment(kind, count))
         }
+        if (account.silver > 0) (16..35).firstOrNull { player.inventory.getItemStack(it).isAir }
+            ?.let { player.inventory.setItemStack(it, silver(account.silver)) }
         val selectedMap = account.maps.firstOrNull { it.id == selectedMapId } ?: account.maps.firstOrNull()
         player.inventory.setItemStack(7, selectedMap?.let(::map) ?: ItemStack.AIR)
         account.maps.filter { it.id != selectedMap?.id }.forEach { ownedMap ->

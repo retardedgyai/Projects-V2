@@ -91,4 +91,15 @@ internal object FirstMagicInventory {
             }
         }
     }
+
+    fun reskin(player: Player, packed: Boolean) {
+        for (slot in 0 until 36) {
+            val previous = player.inventory.getItemStack(slot)
+            kind(previous)?.let { player.inventory.setItemStack(slot, item(it, packed, previous.amount())) }
+        }
+        val offhand = player.itemInOffHand
+        kind(offhand)?.let { player.setItemInOffHand(item(it, packed, offhand.amount())) }
+        val cursor = player.inventory.cursorItem
+        kind(cursor)?.let { player.inventory.cursorItem = item(it, packed, cursor.amount()) }
+    }
 }

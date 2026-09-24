@@ -50,6 +50,22 @@ class FirstMagicInventoryTest {
         FirstMagicInventory.restore(player, state, packed = true)
         assertEquals(3, FirstMagicInventory.count(player, AnomalousMaterial.EMBER_MOSS))
         assertEquals(0, FirstMagicInventory.count(player, AnomalousMaterial.MOONBELL))
+        FirstMagicInventory.reskin(player, packed = false)
+        FirstMagicInventory.reskin(player, packed = true)
+        assertEquals(3, FirstMagicInventory.count(player, AnomalousMaterial.EMBER_MOSS))
+        FirstMagicColonyItems.issueMissing(player, listOf(ColonyPlaceable.DESK), packed = true)
+        assertEquals(1, (0 until 36).count {
+            FirstMagicColonyItems.kind(player.inventory.getItemStack(it)) == ColonyPlaceable.DESK
+        })
+        FirstMagicColonyItems.issueMissing(player, listOf(ColonyPlaceable.DESK), packed = true)
+        assertEquals(1, (0 until 36).count {
+            FirstMagicColonyItems.kind(player.inventory.getItemStack(it)) == ColonyPlaceable.DESK
+        }, "Reconnect and re-enter must not duplicate the physical desk item")
+        FirstMagicColonyItems.reskin(player, packed = false)
+        FirstMagicColonyItems.reskin(player, packed = true)
+        assertEquals(1, (0 until 36).count {
+            FirstMagicColonyItems.kind(player.inventory.getItemStack(it)) == ColonyPlaceable.DESK
+        })
     }
 
     private class MemoryConnection : PlayerConnection() {

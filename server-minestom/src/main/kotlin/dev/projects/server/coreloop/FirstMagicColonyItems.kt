@@ -35,7 +35,11 @@ internal object FirstMagicColonyItems {
     }
 
     fun issue(player: Player, colony: FirstMagicColony, packed: Boolean) {
-        colony.missingItems().forEach { missing ->
+        issueMissing(player, colony.missingItems(), packed)
+    }
+
+    fun issueMissing(player: Player, missingItems: List<ColonyPlaceable>, packed: Boolean) {
+        missingItems.forEach { missing ->
             if ((0 until 36).any { kind(player.inventory.getItemStack(it)) == missing } ||
                 kind(player.itemInOffHand) == missing || kind(player.inventory.cursorItem) == missing) return@forEach
             if (!give(player, missing, packed))
@@ -51,6 +55,17 @@ internal object FirstMagicColonyItems {
             ?: return false
         player.inventory.setItemStack(slot, item(placeable, packed))
         return true
+    }
+
+    fun reskin(player: Player, packed: Boolean) {
+        for (slot in 0 until 36) {
+            val previous = player.inventory.getItemStack(slot)
+            kind(previous)?.let { player.inventory.setItemStack(slot, item(it, packed).withAmount(previous.amount())) }
+        }
+        val offhand = player.itemInOffHand
+        kind(offhand)?.let { player.setItemInOffHand(item(it, packed).withAmount(offhand.amount())) }
+        val cursor = player.inventory.cursorItem
+        kind(cursor)?.let { player.inventory.cursorItem = item(it, packed).withAmount(cursor.amount()) }
     }
 
     fun consumeMainHand(player: Player, placeable: ColonyPlaceable): Boolean {
