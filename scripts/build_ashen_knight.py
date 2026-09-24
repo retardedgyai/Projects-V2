@@ -200,8 +200,35 @@ def build(out=ROOT / "model-lab" / "models"):
     add_rotated(m, hips, "skirt_underlayer_right", [-.18, 9.05, -1.2],
                 [2.23, 10.83, 1.72], "void", [7, 0, 6], [1.1, 10.0, 0],
                 "worn_tunic")
-    add(m, hips, "broken_tasset_left", [-3.8, 9.3, -2.1], [-1.65, 12.1, -.95], "armor")
-    add(m, hips, "broken_tasset_right", [1.85, 10.3, -2.0], [3.4, 12.2, -.9], "armor")
+    open_waist_uv = m.patch(1, 1, lambda _x, _y: (0, 0, 0, 0),
+                            "open_waist_edge")
+    def paint_tasset(px, py, seed):
+        left = 3 + py // (14 if seed == 0 else 11)
+        right = 29 - py // (18 if seed == 0 else 13)
+        hem = 43 - authoring.noise(px // 4, seed, 989) % 7
+        if px < left or px > right or py > hem:
+            return (0, 0, 0, 0)
+        if seed == 0 and py > 21 and px > right - 5 and (px + py) % 7 < 3:
+            return (0, 0, 0, 0)
+        if seed == 1 and py > 16 and px < left + 4:
+            return (0, 0, 0, 0)
+        grain = authoring.noise(px // 3, py // 3, 997 + seed)
+        if px - left < 2 or right - px < 2 or py < 3:
+            return (71, 78, 78, 255)
+        if abs(px - (11 + py * .2 + seed * 8)) < .8 and py > 13:
+            return (15, 22, 27, 255)
+        color = (33, 41, 45) if grain % 6 else (46, 53, 55)
+        return (*color, 255)
+    for seed, (name, lo, hi) in enumerate((
+            ("broken_tasset_left", [-3.8, 9.3, -2.1], [-1.65, 12.1, -1.98]),
+            ("broken_tasset_right", [1.85, 10.3, -2.0], [3.4, 12.2, -1.88]))):
+        tasset_uv = m.patch(32, 48,
+                            lambda px, py, s=seed: paint_tasset(px, py, s),
+                            f"broken_tasset_face_{seed}")
+        m.cube(name, lo, hi, "armor", hips,
+               face_uv={"north": tasset_uv, "south": tasset_uv,
+                        "east": open_waist_uv, "west": open_waist_uv,
+                        "up": open_waist_uv, "down": open_waist_uv})
     add(m, hips, "belt_buckle", [-.42, 12.26, -2.19], [.35, 12.91, -1.96], "guard")
 
     def paint_torn_tabard(px, py):
@@ -220,7 +247,9 @@ def build(out=ROOT / "model-lab" / "models"):
 
     tabard_uv = m.patch(36, 80, paint_torn_tabard, "torn_tabard")
     m.cube("front_torn_tabard", [-1.75, 4.7, -2.38], [1.75, 11.5, -2.31],
-           "cloth", hips, face_uv={"north": tabard_uv, "south": tabard_uv})
+           "cloth", hips, face_uv={"north": tabard_uv, "south": tabard_uv,
+                                    "east": open_waist_uv, "west": open_waist_uv,
+                                    "up": open_waist_uv, "down": open_waist_uv})
     # Torn hip panels partially cover the rigid thigh silhouette. Different
     # hems and angles keep them from reading as a symmetrical armored skirt.
     for panel, (x0, x1, top, hem, depth, lean) in enumerate((
@@ -765,12 +794,16 @@ def build(out=ROOT / "model-lab" / "models"):
 
     bridge_edge_uv = m.patch(16, 80, paint_bridge_edge,
                              "shoulder_to_cape_edge")
+    open_bridge_uv = m.patch(1, 1, lambda _x, _y: (0, 0, 0, 0),
+                             "open_shoulder_bridge")
     for facet, depth in enumerate((2.15, 2.86, 2.36)):
         xlo = -6.25 + facet * .9
         uvlo = bridge_uv[0] + facet * 16
         uvhi = uvlo + 16
         face_uv = {"north": [uvlo, bridge_uv[1], uvhi, bridge_uv[3]],
-                   "south": [uvlo, bridge_uv[1], uvhi, bridge_uv[3]]}
+                   "south": [uvlo, bridge_uv[1], uvhi, bridge_uv[3]],
+                   "east": open_bridge_uv, "west": open_bridge_uv,
+                   "up": open_bridge_uv, "down": open_bridge_uv}
         if facet == 0:
             face_uv["west"] = bridge_edge_uv
         if facet == 2:
@@ -1505,26 +1538,38 @@ def build(out=ROOT / "model-lab" / "models"):
                     u = (facet + .5) / 3
                     center_x = row_center + (u - .5) * row_width
                     center_y = (row_top + row_bottom) / 2
-                    billow = 1.2 * math.sin(math.pi * max(0, min(1, v))) if strip == 0 else 0
-                    # A curved cross-section gives the hanging cloth a
-                    # visible front-to-back span from the side. The root and
-                    # hem stay closer to the body; the middle catches wind.
-                    cross_section = .9 + 2.4 * math.sin(math.pi * max(0, min(1, v)))
-                    z = base_z + cross_section * fold_depth(u, v) + billow
+                    def cloth_z(across, down):
+                        # Keep a curved cross-section, then tilt each facet
+                        # along that curve so neighboring rows meet at their
+                        # edges instead of forming separated horizontal slabs.
+                        billow = (1.2 * math.sin(math.pi * max(0, min(1, down)))
+                                  if strip == 0 else 0)
+                        cross_section = (.9 + 2.4 * math.sin(
+                            math.pi * max(0, min(1, down))))
+                        return base_z + cross_section * fold_depth(across, down) + billow
+                    z = cloth_z(u, v)
+                    v_top = (cape_top - row_top) / (cape_top - hem)
+                    v_bottom = (cape_top - row_bottom) / (cape_top - hem)
+                    pitch = math.degrees(math.atan2(
+                        cloth_z(u, v_top) - cloth_z(u, v_bottom),
+                        row_top - row_bottom))
+                    yaw_fold = -math.degrees(math.atan2(
+                        cloth_z((facet + 1) / 3, v) - cloth_z(facet / 3, v),
+                        row_width / 3))
                     face_uv = {"north": [uv[0] + round(facet * 48 / 3), ty0,
                                          uv[0] + round((facet + 1) * 48 / 3), ty1],
                                "south": [uv[0] + round(facet * 48 / 3), ty0,
                                          uv[0] + round((facet + 1) * 48 / 3), ty1],
                                "east": edge_uv, "west": edge_uv,
-                               "down": open_hem_uv}
+                               "up": open_hem_uv, "down": open_hem_uv}
                     half_depth = ((.58, .44, .29)[segment] if strip == 0
                                   else (.43, .33, .22)[segment]) * (1 - .10 * row)
                     add_rotated(m, buckets[segment], f"cape_strip_{strip}_{segment}_{row}_{facet}",
                                 [center_x - row_width / 6 - .06, row_bottom - .08, z - half_depth],
                                 [center_x + row_width / 6 + .06, row_top + .08, z + half_depth],
                                 "cloth",
-                                [(-6, 8, -3)[segment] + strip % 3 * 2,
-                                 yaw + ((-5, 8, 18) if strip == 0 else (-4, 3, 8))[segment], 0],
+                                [max(-28, min(28, pitch)),
+                                 yaw + max(-24, min(24, yaw_fold)), 0],
                                 [center_x, center_y, z],
                                 f"ragged_cape_{strip}_{segment}", face_uv)
 
