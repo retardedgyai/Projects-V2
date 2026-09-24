@@ -1,0 +1,266 @@
+{
+  "source": "ProjectS_UI_Polish05_Workbench.html",
+  "source_sha256": "e778157b01dbec1a9d2af96c061467a35b48d75ece64007d6ba889272d8d246a",
+  "images": {
+    "greatsword_hero": {
+      "path": "assets/images/greatsword_hero.png",
+      "sha256": "01be1767aa556834701bbfcad7b2cfb39394d476bc3e05d077e99995c94b97c1",
+      "bytes": 1723,
+      "width": 15,
+      "height": 80,
+      "mode": "RGBA"
+    },
+    "sword_t2_hero": {
+      "path": "assets/images/sword_t2_hero.png",
+      "sha256": "be0aaad63599a1c806e7b099b65b78a0dc2647400d068b98fb1a5d66c0246d01",
+      "bytes": 1319,
+      "width": 19,
+      "height": 92,
+      "mode": "RGBA"
+    },
+    "greatsword_thumb": {
+      "path": "assets/images/greatsword_thumb.png",
+      "sha256": "c559596a40dfad6d1f4e3789b6858ce78cddbd2645ae4cf9c5b6780795a746b6",
+      "bytes": 691,
+      "width": 48,
+      "height": 48,
+      "mode": "RGBA"
+    },
+    "sword_t2_thumb": {
+      "path": "assets/images/sword_t2_thumb.png",
+      "sha256": "0c9a522973d5d30a7c23dbe925d6c209d2f9bc56e63b1dabd567ab241f093809",
+      "bytes": 581,
+      "width": 48,
+      "height": 48,
+      "mode": "RGBA"
+    },
+    "hammer": {
+      "path": "assets/images/hammer.png",
+      "sha256": "126398205351ce0e0cc01548086feab6346de81ab50a0e955038a2d400473659",
+      "bytes": 2209,
+      "width": 24,
+      "height": 30,
+      "mode": "RGBA"
+    },
+    "bag": {
+      "path": "assets/images/bag.png",
+      "sha256": "bb5ea456ef61fe9b08913cbad073e9e00cf7680afdc2b51fec8fee57f896234c",
+      "bytes": 2011,
+      "width": 25,
+      "height": 27,
+      "mode": "RGBA"
+    },
+    "book_ui": {
+      "path": "assets/images/book_ui.png",
+      "sha256": "4dc071f01d69344b3b1120579bec0b4b6f2c5621391616b39fe09b3f8ae30f19",
+      "bytes": 1660,
+      "width": 24,
+      "height": 25,
+      "mode": "RGBA"
+    },
+    "flask": {
+      "path": "assets/images/flask.png",
+      "sha256": "57e322f8e1b4f531a119205c11cade52f1ccc50d6d90a82c63861364ed36c1c9",
+      "bytes": 1740,
+      "width": 22,
+      "height": 29,
+      "mode": "RGBA"
+    },
+    "coin_ore": {
+      "path": "assets/images/coin_ore.png",
+      "sha256": "8119618ce1b4f2a942ddd1baa0acdd657817152f9a344e91bc3efded82ab6c22",
+      "bytes": 1551,
+      "width": 21,
+      "height": 23,
+      "mode": "RGBA"
+    },
+    "wood_ui": {
+      "path": "assets/images/wood_ui.png",
+      "sha256": "0112f0b4dbb2698a62edaff4b622be259fbde6bdf43955b5feaa8a6652942481",
+      "bytes": 1726,
+      "width": 23,
+      "height": 25,
+      "mode": "RGBA"
+    },
+    "purple_crystal": {
+      "path": "assets/images/purple_crystal.png",
+      "sha256": "204b0613e4c12d452dc1fa95eb25fa907c45562986bb471766cad7dc2292f840",
+      "bytes": 1417,
+      "width": 19,
+      "height": 22,
+      "mode": "RGBA"
+    },
+    "ore_ui": {
+      "path": "assets/images/ore_ui.png",
+      "sha256": "088a7f29fe5326b98fb0f8be97b7a50e47c4f610a2688ddd75bc7ec62da508fb",
+      "bytes": 1760,
+      "width": 23,
+      "height": 25,
+      "mode": "RGBA"
+    },
+    "metal_ui": {
+      "path": "assets/images/metal_ui.png",
+      "sha256": "219fff6edf81ee28bf2a8ba0f6b814281e3e9a7879ce571a367f4036be6e0fd3",
+      "bytes": 1372,
+      "width": 19,
+      "height": 21,
+      "mode": "RGBA"
+    },
+    "green_crystal": {
+      "path": "assets/images/green_crystal.png",
+      "sha256": "9d60433d10175297ffd4660d443efa77b6cbc6ee44422401b6d038ff90a84117",
+      "bytes": 1300,
+      "width": 18,
+      "height": 21,
+      "mode": "RGBA"
+    },
+    "potion_ui": {
+      "path": "assets/images/potion_ui.png",
+      "sha256": "eb677fa97ef9a5a71461b31a2cf8a82600f43a1cf0ae73fb8d0638dab5865a79",
+      "bytes": 1461,
+      "width": 17,
+      "height": 27,
+      "mode": "RGBA"
+    },
+    "potion_smallui": {
+      "path": "assets/images/potion_smallui.png",
+      "sha256": "4691abd6c23e146424146a56f6129f81531f8b0f1ab13f3a33c12b7c7373590f",
+      "bytes": 964,
+      "width": 13,
+      "height": 20,
+      "mode": "RGBA"
+    },
+    "helm_ui": {
+      "path": "assets/images/helm_ui.png",
+      "sha256": "22852ad913317f0094c40837191b7d41e9a86db7e1991574af1c5b4454c14e8d",
+      "bytes": 1341,
+      "width": 18,
+      "height": 21,
+      "mode": "RGBA"
+    },
+    "armor_ui": {
+      "path": "assets/images/armor_ui.png",
+      "sha256": "c95759feff03cd7b4d6cdcee49fa317d65cc17c0d8b0d539862ead6c337b5ae5",
+      "bytes": 1402,
+      "width": 19,
+      "height": 21,
+      "mode": "RGBA"
+    },
+    "boots_ui": {
+      "path": "assets/images/boots_ui.png",
+      "sha256": "8f28ef107a30e7e51ddf9c80b86982efb1d05a90c69aab7b0448e8a596ff073f",
+      "bytes": 1281,
+      "width": 18,
+      "height": 20,
+      "mode": "RGBA"
+    },
+    "shard_ui": {
+      "path": "assets/images/shard_ui.png",
+      "sha256": "f076f21ea9316c8d50a588e2698a54c902e9d85de7cfcf35b51fdfcbc79cfc14",
+      "bytes": 1349,
+      "width": 19,
+      "height": 21,
+      "mode": "RGBA"
+    },
+    "surface": {
+      "path": "assets/images/surface.png",
+      "sha256": "e0941ceb4c812cf0eca8a114148592488f01bfa6abfc02f6e04ca0175e02dd16",
+      "bytes": 96,
+      "width": 16,
+      "height": 16,
+      "mode": "RGBA"
+    },
+    "forge_environment": {
+      "path": "assets/images/forge_environment.png",
+      "sha256": "d792408cbc40e7f7af85aa299049c34215362696defea29933cee317397ca0da",
+      "bytes": 41192,
+      "width": 133,
+      "height": 137,
+      "mode": "RGBA"
+    },
+    "harbor_banner": {
+      "path": "assets/images/harbor_banner.png",
+      "sha256": "cee2b1d90cfbb65db0108edcdf1c998d37bf9b490a6d76851d308ceb98cbb54b",
+      "bytes": 122435,
+      "width": 655,
+      "height": 75,
+      "mode": "RGBA"
+    },
+    "world": {
+      "path": "assets/images/world.png",
+      "sha256": "22312ba44c3094dfa8cb9619c1eb95ea368bc160a9f30c748b5642a000a7094a",
+      "bytes": 39284,
+      "width": 810,
+      "height": 265,
+      "mode": "RGB"
+    },
+    "firebolt": {
+      "path": "assets/images/firebolt.png",
+      "sha256": "d944938f0843742f441c16de8dd4152e596ab9d60ffffd3333380e1c6f9ff3d6",
+      "bytes": 1551,
+      "width": 32,
+      "height": 32,
+      "mode": "RGBA"
+    },
+    "dash": {
+      "path": "assets/images/dash.png",
+      "sha256": "d2506ca33765fe6e6e55d762cd269ffbf3454cf9c61e1c07ff86c846cf9d47d7",
+      "bytes": 2037,
+      "width": 32,
+      "height": 32,
+      "mode": "RGBA"
+    }
+  },
+  "audio": {
+    "click": {
+      "path": "assets/audio/click.ogg",
+      "sha256": "f69421ba05229236c7a4efbc9a5e18c4aeb0621feb95471241ef0063c21b865a",
+      "bytes": 7046
+    },
+    "anvil": {
+      "path": "assets/audio/anvil.ogg",
+      "sha256": "9420a45f2beace33d66a0e959e8e4e15c3edd3540acd807cb41d52e89858f79c",
+      "bytes": 7402
+    },
+    "orb": {
+      "path": "assets/audio/orb.ogg",
+      "sha256": "5998bf8ee2eecc2779ef896f04a540f9d48d4e96cc9227aae4646f4d9b817749",
+      "bytes": 7139
+    },
+    "charge": {
+      "path": "assets/audio/charge.ogg",
+      "sha256": "3627573f935b60d25d8ae98311c7228f8a017d4da3afa40f6c374aa7834ce06d",
+      "bytes": 10352
+    },
+    "resonance": {
+      "path": "assets/audio/resonance.ogg",
+      "sha256": "b354b9b79a6faee312e68769caf0a3ee6e59255bdd16637dd146f999723ba4ae",
+      "bytes": 27936
+    },
+    "dissipate": {
+      "path": "assets/audio/dissipate.ogg",
+      "sha256": "a09bfe3b87ddc289eb6f1ab5ae04481b7541d622ed08d4349b0ffd4f15b87caf",
+      "bytes": 17558
+    },
+    "enchant_original": {
+      "path": "assets/audio/enchant_original.ogg",
+      "sha256": "fbcb2da6d22826a48b2e0e4214f34bd469b485c13f7e7682f4f91f2a26b84789",
+      "bytes": 14984
+    },
+    "enchant_plus": {
+      "path": "assets/audio/enchant_plus.ogg",
+      "sha256": "38f7bb21cfb18f6ef459b12cdba813ceb90acc80245824cda15a1d63d10a79e3",
+      "bytes": 29452
+    },
+    "enchant_radiant": {
+      "path": "assets/audio/enchant_radiant.ogg",
+      "sha256": "eea5b06edc1a19a71de2dfe20084373701e63ae772e3408cd8b042a43d76b564",
+      "bytes": 32975
+    },
+    "enchant_charge": {
+      "path": "assets/audio/enchant_charge.ogg",
+      "sha256": "0d3e1fedc352fdb6587b88d211f9d33f22370d3498452b34a996fb62dd666aa9",
+      "bytes": 8452
+    }
+  }
+}

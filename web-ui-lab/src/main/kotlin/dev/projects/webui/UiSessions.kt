@@ -1,6 +1,9 @@
 package dev.projects.webui
 
 import net.kyori.adventure.text.Component
+import net.kyori.adventure.key.Key
+import net.kyori.adventure.sound.Sound
+import net.kyori.adventure.sound.SoundStop
 import net.minestom.server.coordinate.Pos
 import net.minestom.server.coordinate.Vec
 import net.minestom.server.entity.Entity
@@ -27,12 +30,16 @@ import java.util.concurrent.atomic.AtomicInteger
 class UiSessions(
     events: EventNode<Event>, private val path: Path,
     private val packReady: (Player) -> Boolean = { true },
+    private val polishScene: Polish05Scene? = null,
 ) : AutoCloseable {
     private data class Input(val due: Long, val generation: Int, val yaw: Float?=null, val pitch: Float?=null, val action: String?=null)
-    private class Session(val player: Player, val saved: Pos, var document: UiDocument, val camera: Entity, val renderer: UiRenderer) {
+    private data class Voice(val cue:String,val until:Long)
+    private class Session(val player: Player, val saved: Pos, var document: UiDocument, val camera: Entity, val renderer: UiRenderer,
+                          sceneBuilder: Polish05Scene?) {
         val demo=ForgeDemo()
+        val polish=sceneBuilder?.let(::Polish05Flow)
         val pointer=UiPointer()
-        var scene=document.layout(demo.values(),demo.flags())
+        var scene=polish?.scene()?:document.layout(demo.values(),demo.flags())
         val pending=mutableMapOf<Int,Long>()
         val queue=ArrayDeque<Input>()
         var active=false
@@ -42,6 +49,8 @@ class UiSessions(
         var lastSlot=player.heldSlot.toInt()
         var lastResponse=System.nanoTime()
         var recenter=false
+        val voices=ArrayDeque<Voice>()
+        var lastClickSound=0L
     }
     private data class Retired(val pending: MutableSet<Int>,val expires: Long)
     private val retired=mutableMapOf<UUID,Retired>()
@@ -78,7 +87,7 @@ class UiSessions(
                 setText(Component.empty());setBackgroundColor(0);setUseDefaultBackground(false)
             }
         }
-        val s=Session(player,player.position,document,camera,UiRenderer(player,origin))
+        val s=Session(player,player.position,document,camera,UiRenderer(player,origin),polishScene)
         sessions[player.uuid]=s
         camera.setInstance(player.instance!!,origin).whenComplete { _,error ->
             if(error!=null || sessions[player.uuid]!==s) {
@@ -109,6 +118,7 @@ class UiSessions(
             player.teleport(s.saved)
         }
         s.queue.clear();s.pending.clear();s.renderer.close();s.camera.remove()
+        if(s.polish!=null) POLISH_SOUNDS.forEach { player.stopSound(SoundStop.named(Key.key("projects_ui_polish05:ui.$it"))) }
     }
     private fun sample(s: Session, reset: Boolean=false) {
         if(s.pending.size>=8) return
@@ -194,6 +204,17 @@ class UiSessions(
             close(s.player);s.player.sendMessage(Component.text("UIの応答が途切れたため終了しました。/ui で再度開けます。"));return
         }
         if(s.active) sample(s)
+        if(s.polish?.takeStrike()==true) sound(s,"refine_strike")
+        val receipt=s.polish?.tick()
+        if(receipt!=null) {
+            sound(s,when {
+                receipt.kind==dev.projects.webui.polish05.Polish05PreviewModel.Kind.REFINE -> "refine_success"
+                receipt.success -> "enhance_success"
+                else -> "enhance_fail"
+            })
+            s.scene=s.polish.scene()
+            s.renderer.render(s.scene,s.hover,s.pointer)
+        }
         drain(s,now)
         if(sessions[s.player.uuid]===s) paintPointer(s)
         retired.entries.removeIf { now>it.value.expires }
@@ -206,13 +227,33 @@ class UiSessions(
             if(input.action!=null) {
                 var action=input.action
                 if(action=="click") {
-                    if(now-s.lastClick<220_000_000L) continue
+                    if(now-s.lastClick<if(s.polish!=null)70_000_000L else 220_000_000L) continue
                     s.lastClick=now
                     val hit=s.scene.hit(s.pointer.x,s.pointer.y)
                     if(hit==null || !hit.enabled) continue
                     action=hit.action!!
                 }
                 if(action=="close") { close(s.player);return }
+                if(s.polish!=null) {
+                    val oldMuted=s.polish.muted
+                    if(!s.polish.action(action)) continue
+                    if(action=="sound" && !oldMuted && s.polish.muted) {
+                        POLISH_SOUNDS.forEach { s.player.stopSound(SoundStop.named(Key.key("projects_ui_polish05:ui.$it"))) }
+                    } else if(action=="confirm" && s.polish.operation!=null) {
+                        if(s.polish.view=="forge") sound(s,"enhance_prepare")
+                    } else if(action!="sound") {
+                        sound(s,when {
+                            action.startsWith("select:") || action.startsWith("bag:") -> "select"
+                            action=="cancel" || action.startsWith("view:") -> "back"
+                            else -> "click"
+                        })
+                    }
+                    s.generation++
+                    s.scene=s.polish.scene()
+                    s.hover=s.scene.hit(s.pointer.x,s.pointer.y)?.id
+                    s.renderer.render(s.scene,s.hover,s.pointer)
+                    continue
+                }
                 if(action.startsWith("page:") && s.demo.tab!="catalog") continue
                 if(action=="reload") {
                     try {
@@ -235,6 +276,33 @@ class UiSessions(
         val hover=s.scene.hit(s.pointer.x,s.pointer.y)?.id
         if(hover!=s.hover) { s.renderer.hover(s.scene,s.hover,hover);s.hover=hover }
         s.renderer.cursor(s.pointer)
+    }
+    private fun sound(s:Session,cue:String) {
+        if(s.polish?.muted!=false)return
+        val now=System.nanoTime()
+        s.voices.removeIf { it.until<=now }
+        if(s.voices.size>=4) {
+            if(cue in setOf("click","select","back","equip"))return
+            val oldest=s.voices.removeFirst()
+            s.player.stopSound(SoundStop.named(Key.key("projects_ui_polish05:ui.${oldest.cue}")))
+        }
+        if(cue in setOf("click","select","back","equip") && now-s.lastClickSound<70_000_000L)return
+        if(cue in setOf("click","select","back","equip"))s.lastClickSound=now
+        val durationMs=when(cue) {
+            "enhance_success" -> 2250L
+            "enhance_success_radiant" -> 2650L
+            "enhance_fail" -> 1480L
+            "enhance_prepare" -> 650L
+            "refine_success" -> 390L
+            "refine_strike" -> 270L
+            else -> 130L
+        }
+        s.voices.addLast(Voice(cue,now+durationMs*1_000_000L))
+        s.player.playSound(Sound.sound(Key.key("projects_ui_polish05:ui.$cue"),Sound.Source.MASTER,0.35f,1f))
+    }
+    private companion object {
+        val POLISH_SOUNDS=listOf("click","select","back","equip","enhance_prepare","enhance_success",
+            "enhance_success_radiant","enhance_fail","refine_strike","refine_success")
     }
     override fun close() { sessions.values.toList().forEach { close(it.player) } }
 }

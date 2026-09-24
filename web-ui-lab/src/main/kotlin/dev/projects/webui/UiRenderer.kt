@@ -1,6 +1,7 @@
 package dev.projects.webui
 
 import net.kyori.adventure.text.Component
+import net.kyori.adventure.key.Key
 import net.kyori.adventure.text.format.TextColor
 import net.kyori.adventure.text.format.TextDecoration
 import net.minestom.server.coordinate.Pos
@@ -73,8 +74,11 @@ class UiRenderer(private val player: Player, private val origin: Pos) : AutoClos
     }
     private fun background(node: UiNode,hover: String?) {
         val color=node.background?:return
-        val rgb=if(!node.enabled) 0x35383c else if(node.action!=null && node.id==hover) 0x866744 else color.removePrefix("#").toInt(16)
-        panel(node.id+":bg",node.box,rgb or (0xff shl 24),node.depth*0.005)
+        val argb=if(!node.enabled) 0xff35383c.toInt()
+            else if(node.action!=null && node.id==hover) 0xff866744.toInt()
+            else if(color.length==9) color.removePrefix("#").toLong(16).toInt()
+            else color.removePrefix("#").toInt(16) or (0xff shl 24)
+        panel(node.id+":bg",node.box,argb,node.depth*0.005)
     }
     fun render(scene: UiScene,hover: String?,pointer: UiPointer) {
         wanted=mutableSetOf()
@@ -83,7 +87,7 @@ class UiRenderer(private val player: Player, private val origin: Pos) : AutoClos
             val b=node.box
             val z=node.depth*0.005
             val id=node.id+if(node.item!=null) ":item" else ":text"
-            if(node.item==null && node.text.isEmpty()) return@forEach
+            if(node.item==null && node.sprite==null && node.text.isEmpty()) return@forEach
             wanted+=id
             if(content[id]==(node to zoom)) return@forEach
             if(node.item!=null) {
@@ -93,6 +97,19 @@ class UiRenderer(private val player: Player, private val origin: Pos) : AutoClos
                     val size=minOf(b.w,b.h)*geometry.unit(z+0.05)*0.8
                     m.setScale(Vec(size,size,size))
                     m.setTranslation(geometry.point(b.x+b.w/2,b.y+b.h/2,z+0.05))
+                }
+            } else if(node.sprite!=null) {
+                val sprite=node.sprite
+                entity(id,EntityType.TEXT_DISPLAY).editEntityMeta(TextDisplayMeta::class.java) { m ->
+                    m.setText(Component.text(sprite.char).font(Key.key(sprite.font)))
+                    m.setLineWidth(4000);m.setUseDefaultBackground(false);m.setBackgroundColor(0)
+                    m.setShadow(false);m.setTextOpacity((-1).toByte())
+                    val factor=b.h/sprite.height
+                    val scale=factor*geometry.unit(z+0.025)/0.025
+                    m.setScale(Vec(scale,scale,scale))
+                    // Vanilla text display centres the line and offsets its baseline. Bitmap
+                    // providers use their declared ascent instead of the normal 8-pixel glyph.
+                    m.setTranslation(geometry.point(b.x+b.w/2-factor,b.y+(sprite.height+1)*factor,z+0.025))
                 }
             } else {
                 entity(id,EntityType.TEXT_DISPLAY).editEntityMeta(TextDisplayMeta::class.java) { m ->

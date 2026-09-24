@@ -1,0 +1,1 @@
+28 isolated model / coordinate checks passed. Native Minecraft adapter NOT tested.

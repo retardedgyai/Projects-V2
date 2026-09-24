@@ -1,0 +1,220 @@
+{
+  "providers": [
+    {
+      "type": "bitmap",
+      "file": "projects_ui_polish05:raw/armor_ui.png",
+      "ascent": 21,
+      "height": 21,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_ui_polish05:raw/bag.png",
+      "ascent": 27,
+      "height": 27,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_ui_polish05:raw/book_ui.png",
+      "ascent": 25,
+      "height": 25,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_ui_polish05:raw/boots_ui.png",
+      "ascent": 20,
+      "height": 20,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_ui_polish05:raw/coin_ore.png",
+      "ascent": 23,
+      "height": 23,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_ui_polish05:raw/dash.png",
+      "ascent": 32,
+      "height": 32,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_ui_polish05:raw/firebolt.png",
+      "ascent": 32,
+      "height": 32,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_ui_polish05:raw/flask.png",
+      "ascent": 29,
+      "height": 29,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_ui_polish05:raw/forge_environment.png",
+      "ascent": 137,
+      "height": 137,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_ui_polish05:raw/greatsword_hero.png",
+      "ascent": 80,
+      "height": 80,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_ui_polish05:raw/greatsword_thumb.png",
+      "ascent": 48,
+      "height": 48,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_ui_polish05:raw/green_crystal.png",
+      "ascent": 21,
+      "height": 21,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_ui_polish05:raw/hammer.png",
+      "ascent": 30,
+      "height": 30,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_ui_polish05:raw/helm_ui.png",
+      "ascent": 21,
+      "height": 21,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_ui_polish05:raw/metal_ui.png",
+      "ascent": 21,
+      "height": 21,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_ui_polish05:raw/ore_ui.png",
+      "ascent": 25,
+      "height": 25,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_ui_polish05:raw/potion_smallui.png",
+      "ascent": 20,
+      "height": 20,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_ui_polish05:raw/potion_ui.png",
+      "ascent": 27,
+      "height": 27,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_ui_polish05:raw/purple_crystal.png",
+      "ascent": 22,
+      "height": 22,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_ui_polish05:raw/shard_ui.png",
+      "ascent": 21,
+      "height": 21,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_ui_polish05:raw/surface.png",
+      "ascent": 16,
+      "height": 16,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_ui_polish05:raw/sword_t2_hero.png",
+      "ascent": 92,
+      "height": 92,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_ui_polish05:raw/sword_t2_thumb.png",
+      "ascent": 48,
+      "height": 48,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_ui_polish05:raw/wood_ui.png",
+      "ascent": 25,
+      "height": 25,
+      "chars": [
+        ""
+      ]
+    }
+  ]
+}

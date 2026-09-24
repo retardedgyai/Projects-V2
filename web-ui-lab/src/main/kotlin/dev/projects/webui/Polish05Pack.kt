@@ -83,8 +83,8 @@ class Polish05Pack private constructor(
                     }
                 }
             }
-            require("pack.mcmeta" in entries && entries.any { it.startsWith("assets/projects/") }) {
-                "Polish05 pack needs pack.mcmeta and namespaced ProjectS assets"
+            require("pack.mcmeta" in entries && entries.any { it.startsWith("assets/projects_ui_polish05/") }) {
+                "Polish05 pack needs pack.mcmeta and its private asset namespace"
             }
             val hash = MessageDigest.getInstance("SHA-1").digest(bytes).joinToString("") { "%02x".format(it) }
             val urlPath = "/polish05-$hash.zip"

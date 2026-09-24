@@ -36,7 +36,10 @@ fun main(args: Array<String>) {
     }
     val events=MinecraftServer.getGlobalEventHandler()
     val pack=System.getProperty("projects.ui.pack")?.let { Polish05Pack.start(Path.of(it),System.getProperty("projects.ui.packPort","18091").toInt()) }
-    val sessions=UiSessions(events,source) { player -> pack?.ready(player) ?: true }
+    val polishScene=System.getProperty("projects.ui.polish05Kit")?.let {
+        Polish05Scene(Path.of(it),Path.of(System.getProperty("projects.ui.sprites")))
+    }
+    val sessions=UiSessions(events,source,{ player -> pack?.ready(player) ?: true },polishScene)
     val port=System.getProperty("projects.ui.port","25570").toInt()
     val previewPort=System.getProperty("projects.ui.previewPort","18090").toInt()
     require(port in 1024..65535 && port !in setOf(25565,25566) && previewPort!=port)

@@ -12,11 +12,13 @@ data class Box(val x: Double, val y: Double, val w: Double, val h: Double) {
 data class UiNode(
     val id: String, val box: Box, val text: String, val style: Map<String, String>,
     val action: String?, val item: String?, val enabled: Boolean, val depth: Int,
+    val sprite: UiSprite? = null,
 ) {
     val fontSize get() = style["font-size"]?.removeSuffix("px")?.toDouble() ?: 14.0
     val color get() = style["color"] ?: "#eee8df"
     val background get() = style["background-color"]
 }
+data class UiSprite(val char: String, val font: String, val width: Int, val height: Int)
 data class UiScene(val width: Double, val height: Double, val nodes: List<UiNode>) {
     fun hit(x: Double, y: Double): UiNode? = nodes.lastOrNull { it.action != null && it.box.contains(x, y) }
 }
