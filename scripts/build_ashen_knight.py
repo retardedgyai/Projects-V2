@@ -8,6 +8,7 @@ atlas packing, and animation serialization. Run from any directory:
 from pathlib import Path
 import math
 import sys
+from PIL import Image
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -1012,67 +1013,15 @@ def build(out=ROOT / "model-lab" / "models"):
                 {"east": cheek_uv, "west": cheek_uv,
                  "north": hood_clear, "south": hood_clear,
                  "up": hood_clear, "down": hood_clear})
-    # A cutout engraved faceplate supplies a distinct long-muzzled silhouette
-    # without reproducing another game's texture or sculpt. The existing helm
-    # cubes retain the depth from the side and above.
-    def paint_faceplate(px, py):
-        # The damaged face is pulled to one side. A perfectly mirrored silver
-        # outline and paired bright muzzle rails looked like a robot visor.
-        center = 24 - .5 * math.sin(py * .09)
-        distance = abs(px - center)
-        if py < 7:
-            width = 2 + py // 2
-        elif py < 19:
-            width = 7 + (py - 7) // 2
-        elif py < 33:
-            width = 14 - max(0, py - 28) // 3
-        elif py < 52:
-            width = 12 - (py - 33) // 3
-        else:
-            width = max(1, 6 - (py - 52) // 2)
-        if px > center and py > 32:
-            width -= 1
-        if distance > width:
-            return (0, 0, 0, 0)
-        if px < center - 8 and 35 < py < 49 and (px + py) % 4 != 0:
-            return (0, 0, 0, 0)
-        eye_line = (28 if px < center else 30) - distance * .32
-        if px < center and distance > 7 and py > eye_line - 2 and (px + py) % 6 < 2:
-            return (0, 0, 0, 0)
-        if 4 <= distance <= 12 and abs(py - eye_line) < (1.2 if px < center else 1.5):
-            return (5, 10, 17, 255)
-        if 4 <= distance <= 12 and abs(py - (eye_line - 2.2)) < 1 and px > center:
-            return (52, 60, 63, 255)
-        snout_ridge = 6 - (py - 37) * .18
-        if 37 <= py <= 59 and abs(distance - snout_ridge) < .85:
-            if px < center and 43 < py < 52:
-                return (23, 31, 36, 255)
-            return (49, 56, 59, 255) if px > center else (37, 45, 48, 255)
-        if 36 <= py <= 60 and distance <= 1:
-            return (20, 27, 31, 255)
-        if py >= 59 and distance < 3:
-            return (17, 23, 27, 255)
-        if abs(distance - width) <= 1 and py % 7 != 0 and (px > center or py < 23):
-            return (48, 55, 58, 255)
-        if px > center + 7 and 17 < py < 45 and (px + py * 2) % 8 < 2:
-            return (0, 0, 0, 0)
-        scratch = (px * 3 + py * 5) % 47
-        if scratch == 0:
-            return (58, 65, 66, 255)
-        contour = distance / max(1, width)
-        if py < 24:
-            if contour > .68:
-                return (27, 35, 39, 255)
-            if abs(px - (center - 2 + py * .08)) < 1.2:
-                return (42, 49, 52, 255)
-        if 30 < py < 44 and contour > .56:
-            return (29, 37, 41, 255)
-        grain = authoring.noise(px // 3, py // 3, 5981)
-        if grain % 17 == 0:
-            return (42, 49, 51, 255)
-        return (32, 39, 42, 255)
-
-    faceplate_uv = m.patch(48, 64, paint_faceplate, "ashen_faceplate")
+    # Painted iron keeps the asymmetric cutout while adding broad, readable
+    # wear. The faceplate remains an original design; the hood supplies depth.
+    painted_faceplate = Image.open(ROOT / "model-lab" / "references" /
+                                   "ashen_faceplate_painted_v1.png").convert("RGBA")
+    if painted_faceplate.size != (48, 64):
+        raise ValueError("ashen_faceplate_painted_v1.png must be 48x64")
+    faceplate_uv = m.patch(48, 64,
+                           lambda px, py: painted_faceplate.getpixel((px, py)),
+                           "ashen_faceplate_painted_v1")
     def paint_visor_profile(px, py):
         # The brow rises from the hood and falls into a long, narrow muzzle.
         # An oval profile made this face read as a featureless helmet bowl.
