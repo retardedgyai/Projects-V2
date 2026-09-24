@@ -14,7 +14,7 @@ import net.minestom.server.instance.LightingChunk
 import net.minestom.server.instance.Weather
 import net.minestom.server.instance.block.Block
 
-internal enum class HarborFacilityKind { EXPEDITIONS, WORKSHOP, STORAGE, SUPPLIES, MASTERY }
+internal enum class HarborFacilityKind { EXPEDITIONS, WORKSHOP, STORAGE, SUPPLIES, MASTERY, COLONY }
 
 internal data class HarborFacility(
     val kind: HarborFacilityKind,
@@ -47,6 +47,7 @@ internal object HarborScene {
             facility(HarborFacilityKind.STORAGE, "素材倉庫", -15, 10, listOf(-16 to 10, -14 to 10)),
             facility(HarborFacilityKind.SUPPLIES, "交易市場", 16, 9, listOf(15 to 9, 17 to 9)),
             facility(HarborFacilityKind.MASTERY, "熟練の手引き", 16, -9, listOf(15 to -9, 17 to -9)),
+            facility(HarborFacilityKind.COLONY, "自分のコロニー", 6, 15, listOf(5 to 15, 7 to 15)),
         )
         val labels = facilities.map { facility ->
             Entity(EntityType.TEXT_DISPLAY).apply {
@@ -86,6 +87,13 @@ internal object HarborScene {
         }
 
         fun furnishings() {
+            // The harbor's seaward threshold leads to the player's private prototype colony.
+            box(4, 8, 40, 40, 14, 17, Block.SPRUCE_PLANKS)
+            for (x in listOf(4, 8)) box(x, x, 41, 44, 16, 16, Block.STRIPPED_SPRUCE_LOG)
+            box(4, 8, 44, 44, 16, 16, Block.CUT_COPPER)
+            put(6, 41, 15, Block.LECTERN.withProperty("facing", "north"))
+            put(5, 41, 15, Block.BARREL)
+            put(7, 41, 15, Block.BARREL)
             put(0, 41, -15, Block.CARTOGRAPHY_TABLE)
             put(-1, 41, -15, Block.CARTOGRAPHY_TABLE)
             put(1, 41, -15, Block.CARTOGRAPHY_TABLE)

@@ -40,9 +40,9 @@ class HarborSceneTest {
             assertEquals(41.0, spawn.y())
             assertTrue(instance.getBlock(spawn.blockX(), 40, spawn.blockZ()).isSolid)
             assertEquals(Block.AIR, instance.getBlock(spawn))
-            assertEquals(5, scene.facilities.size)
+            assertEquals(6, scene.facilities.size)
             assertEquals(HarborFacilityKind.entries.toSet(), scene.facilities.map { it.kind }.toSet())
-            assertEquals(5, scene.labels.size)
+            assertEquals(6, scene.labels.size)
             assertEquals(493,scene.scenery.size, "Unexpected growth in static harbor geometry")
             // Natural chalk continues from the town's spurs into the separately generated headlands.
             assertEquals(Block.CALCITE,instance.getBlock(48,45,-3))

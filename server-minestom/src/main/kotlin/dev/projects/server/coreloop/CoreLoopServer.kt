@@ -29,6 +29,8 @@ import net.minestom.server.event.player.*
 import net.minestom.server.instance.InstanceContainer
 import net.minestom.server.inventory.click.Click
 import net.minestom.server.item.ItemStack
+import net.minestom.server.network.packet.server.play.ParticlePacket
+import net.minestom.server.particle.Particle
 import net.minestom.server.sound.SoundEvent
 import net.minestom.server.command.builder.Command
 import java.nio.file.Path
@@ -58,6 +60,9 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
     private val mapBuilder = Executors.newSingleThreadExecutor { r -> Thread(r, "projects-core-map-builder").apply { isDaemon = true } }
     private val preparedMaps = CoreMapPreparation(mapBuilder)
     private val ledger = CoreAccountService(CoreAccountRepository(Path.of("config", "projects", "core-loop")))
+    private val firstMagic = FirstMagicService(Path.of("config", "projects", "first-magic"), io)
+    private val colonies = ConcurrentHashMap<UUID, FirstMagicColony>()
+    private val magicBusy = ConcurrentHashMap.newKeySet<UUID>()
     private val accounts = ConcurrentHashMap<UUID, CoreAccount>()
     private val connections = ConcurrentHashMap<UUID, Player>()
     private val rewards = CoreRewardQueue(ledger, io,
@@ -72,6 +77,12 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
     private val potionReady = ConcurrentHashMap<UUID, Long>()
     private val lastUseAt = ConcurrentHashMap<UUID, Long>()
     private val menus = CoreLoopMenus(this)
+    private val magicMenus = FirstMagicWorkshop(
+        state = { firstMagic.snapshot(it.uuid) },
+        change = ::changeMagic,
+        inColony = { player -> colonies[player.uuid]?.instance === player.instance },
+        exit = ::leaveColony,
+    )
     private val uiPack = CoreUiPackServer.start()
     private val dungeons = CoreDungeonExpeditions(object : CoreDungeonHost {
         override fun account(player: Player) = this@CoreLoopGame.account(player)
@@ -118,6 +129,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         val discoveries = hashSetOf<Int>()
         var caches: CoreMapCaches? = null
         var adventures: AdventureRuntime? = null
+        var anomalies: FirstMagicField? = null
     }
 
     override fun account(player: Player): CoreAccount? = accounts[player.uuid]
@@ -149,6 +161,9 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
                 return@addListener
             }
             val loaded = CompletableFuture.supplyAsync({
+                runCatching { firstMagic.load(event.player.uuid) }.getOrElse { failure ->
+                    return@supplyAsync CoreAccountLoadResult.Invalid("魔術記録を読み込めません: ${failure.message}")
+                }
                 when (val opened = ledger.open(event.player.uuid)) {
                     is CoreAccountLoadResult.Invalid -> opened
                     is CoreAccountLoadResult.Ready -> {
@@ -169,6 +184,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
                 }
             }, io).join()
             if (loaded is CoreAccountLoadResult.Invalid) {
+                firstMagic.forget(event.player.uuid)
                 event.player.kick(CoreLoopItems.text("保存データを読み込めません。既存データは保持されています。${loaded.reason}", NamedTextColor.RED))
                 return@addListener
             }
@@ -208,6 +224,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
                 player.setHeldItemSlot(0)
                 player.sendMessage(CoreLoopItems.text("開拓港へようこそ。正面の地図台から遠征へ出発できます。", NamedTextColor.GOLD))
                 player.sendMessage(CoreLoopItems.text("ホットバー9番の「冒険の手帳」を右クリックすると、一周の流れを確認できます。"))
+                player.sendMessage(CoreLoopItems.text("海側の『自分のコロニー』から、小さな観測工房へ入れます。遠征路には未知の素材も眠っています。", NamedTextColor.AQUA))
                 a.maps.firstOrNull()?.let { preparedMaps.warm(player.uuid, it) }
                 uiPack?.offer(player) { loadedPlayer, _ ->
                     CoreCombatPresentation.pack(loadedPlayer, packed(loadedPlayer))
@@ -221,6 +238,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         events.addListener(PlayerDisconnectEvent::class.java) { event -> disconnect(event.player) }
         events.addListener(InventoryPreClickEvent::class.java) { event ->
             if (combatLab.click(event)) return@addListener
+            if (magicMenus.click(event)) return@addListener
             if (menus.click(event)) return@addListener
             val stoneId = CoreLoopItems.stoneId(event.player.inventory.cursorItem)
             val currency = CoreLoopItems.currencyId(event.player.inventory.cursorItem)
@@ -262,7 +280,15 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         events.addListener(PlayerBlockInteractEvent::class.java) { event ->
             if (event.hand != PlayerHand.MAIN) return@addListener
             if (sessions[event.player.uuid]?.returning == true) { event.isCancelled = true; return@addListener }
-            if (event.player.instance === hub) {
+            val colony = colonies[event.player.uuid]
+            if (colony != null && event.player.instance === colony.instance) {
+                colony.fixture(event.blockPosition)?.let { fixture ->
+                    if (event.player.position.distance(Pos(event.blockPosition.x(), event.blockPosition.y(), event.blockPosition.z())) <= 6.0) {
+                        event.isCancelled = true
+                        openColonyFixture(event.player, fixture)
+                    }
+                }
+            } else if (event.player.instance === hub) {
                 val point = event.blockPosition
                 harbor.facilities.firstOrNull { facility ->
                     facility.blockPositions.any { it.sameBlock(point) } && event.player.position.distance(facility.position) <= 6.0
@@ -306,12 +332,14 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         }
         events.addListener(PlayerTickEvent::class.java) { event ->
             val player = event.player
+            magicMenus.tick(player)
             questMaps.tick(player)
             combatLab.beforeTick(player)
             actor(player)?.tick()
             CoreArmamentPresentation.tick(player, packed(player))
             if (player.aliveTicks % 5 == 0L) updateHud(player)
             if (player.instance === hub && player.position.y() < 38) { player.teleport(harbor.spawn); actors[player.uuid]?.reset() }
+            colonies[player.uuid]?.let { colony -> if (player.instance === colony.instance && player.position.y() < 37) player.teleport(colony.spawn) }
             if (player.instance !== hub && player.position.y() < 15 && !isDeparting(player)) returnToHarbor(player)
         }
         events.addListener(InstanceTickEvent::class.java) { event ->
@@ -326,6 +354,9 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         })
         MinecraftServer.getCommandManager().register(Command("hub").apply {
             setDefaultExecutor { sender, _ -> (sender as? Player)?.let { returnToHarbor(it) } }
+        })
+        MinecraftServer.getCommandManager().register(Command("colony").apply {
+            setDefaultExecutor { sender, _ -> (sender as? Player)?.let(::enterColony) }
         })
         MinecraftServer.getCommandManager().register(Command("effects").apply {
             setDefaultExecutor { sender, _ -> (sender as? Player)?.let {
@@ -365,6 +396,98 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         HarborFacilityKind.STORAGE -> menus.storage(player)
         HarborFacilityKind.SUPPLIES -> menus.supplies(player)
         HarborFacilityKind.MASTERY -> menus.mastery(player)
+        HarborFacilityKind.COLONY -> enterColony(player)
+    }
+
+    private fun enterColony(player: Player) {
+        if (!requireHub(player) || !magicBusy.add(player.uuid)) return
+        val state = firstMagic.snapshot(player.uuid) ?: run { magicBusy.remove(player.uuid); return }
+        val colony = try { FirstMagicColony.create(state) } catch (failure: Exception) {
+            magicBusy.remove(player.uuid)
+            player.sendMessage(CoreLoopItems.text("コロニーを準備できませんでした: ${failure.message}", NamedTextColor.RED))
+            return
+        }
+        colonies[player.uuid] = colony
+        player.closeInventory()
+        player.setInstance(colony.instance, colony.spawn).whenComplete { _, failure ->
+            player.scheduler().scheduleNextTick {
+                magicBusy.remove(player.uuid)
+                if (failure != null || connections[player.uuid] !== player) {
+                    colonies.remove(player.uuid, colony)
+                    if (colony.instance.players.isEmpty()) colony.dispose()
+                    if (player.isOnline) player.sendMessage(CoreLoopItems.text("コロニーへ移動できませんでした", NamedTextColor.RED))
+                    return@scheduleNextTick
+                }
+                player.respawnPoint = colony.spawn
+                actors[player.uuid]?.reset()
+                player.showTitle(Title.title(CoreLoopItems.text("自分のコロニー", NamedTextColor.GOLD),
+                    CoreLoopItems.text("古い観測工房が庭の奥に眠っている", NamedTextColor.AQUA)))
+                if (state.hasMaterial && !state.reacted) changeMagic(player, FirstMagicAction.React) { magicMenus.desk(player) }
+                else player.sendMessage(CoreLoopItems.text(if (state.hasMaterial) "庭の研究机、蒸留器、Jar棚を調べよう" else "遠征で異質素材を拾い、この庭へ持ち帰ろう", NamedTextColor.AQUA))
+            }
+        }
+    }
+
+    private fun leaveColony(player: Player) {
+        val colony = colonies[player.uuid] ?: return
+        if (player.instance !== colony.instance || !magicBusy.add(player.uuid)) return
+        magicMenus.cancelBrew(player.uuid)
+        player.closeInventory()
+        player.setInstance(hub, harbor.spawn).whenComplete { _, failure ->
+            player.scheduler().scheduleNextTick {
+                magicBusy.remove(player.uuid)
+                if (failure != null) {
+                    if (player.isOnline) player.sendMessage(CoreLoopItems.text("港への帰還に失敗しました", NamedTextColor.RED))
+                    return@scheduleNextTick
+                }
+                player.respawnPoint = harbor.spawn
+                colonies.remove(player.uuid, colony)
+                if (colony.instance.players.isEmpty()) colony.dispose()
+                actors[player.uuid]?.reset()
+                refresh(player)
+                player.sendMessage(CoreLoopItems.text("港へ戻った。遠征路の未知をまた持ち帰ろう", NamedTextColor.GOLD))
+            }
+        }
+    }
+
+    private fun openColonyFixture(player: Player, fixture: ColonyFixture) = when (fixture) {
+        ColonyFixture.EXIT -> leaveColony(player)
+        ColonyFixture.DESK -> magicMenus.desk(player)
+        ColonyFixture.DISTILLER -> magicMenus.distiller(player)
+        ColonyFixture.JARS -> magicMenus.jars(player)
+        ColonyFixture.SEALED_DOOR -> player.sendMessage(CoreLoopItems.text(
+            if (firstMagic.snapshot(player.uuid)?.firstDistillation == true) "封印の向こうに大きな円形装置が見える。今のEssentiaではまだ共鳴が足りない"
+            else "共鳴が不足している。まず研究机とJarを満たそう", NamedTextColor.LIGHT_PURPLE))
+    }
+
+    private fun changeMagic(player: Player, action: FirstMagicAction, after: () -> Unit) {
+        if (colonies[player.uuid]?.instance !== player.instance || !magicBusy.add(player.uuid)) return
+        firstMagic.change(player.uuid, action).whenComplete { result, failure ->
+            player.scheduler().scheduleNextTick {
+                magicBusy.remove(player.uuid)
+                if (connections[player.uuid] !== player || colonies[player.uuid]?.instance !== player.instance) return@scheduleNextTick
+                if (failure != null || result == null) {
+                    player.sendMessage(CoreLoopItems.text("魔術記録を保存できませんでした。素材は消費されていません", NamedTextColor.RED))
+                    System.err.println("FIRST_MAGIC_SAVE_FAILURE player=${player.uuid}: $failure")
+                    return@scheduleNextTick
+                }
+                colonies[player.uuid]?.update(result.state)
+                player.sendMessage(CoreLoopItems.text(result.message, if (result.changed) NamedTextColor.AQUA else NamedTextColor.YELLOW))
+                if (result.changed) player.playSound(Sound.sound(SoundEvent.BLOCK_AMETHYST_BLOCK_CHIME, Sound.Source.PLAYER, 0.65f, 1.0f))
+                if (result.changed && action == FirstMagicAction.React) {
+                    player.showTitle(Title.title(CoreLoopItems.text("古い工房の目覚め", NamedTextColor.AQUA),
+                        CoreLoopItems.text("持ち帰った未知に、紙と石が応えた", NamedTextColor.GOLD)))
+                    player.instance.sendGroupedPacket(ParticlePacket(Particle.END_ROD, Pos(8.5, 43.0, 4.5), Vec(0.25, 0.35, 0.25), 0.005f, 7))
+                }
+                if (result.changed && action == FirstMagicAction.RestoreDesk)
+                    player.instance.sendGroupedPacket(ParticlePacket(Particle.END_ROD, Pos(8.5, 43.0, 4.5), Vec(0.15, 0.2, 0.15), 0.001f, 5))
+                if (result.changed && action is FirstMagicAction.Distill && result.state.firstDistillation) {
+                    player.showTitle(Title.title(CoreLoopItems.text("最初のEssentia", NamedTextColor.AQUA), CoreLoopItems.text("4つのJarが、次の魔術を待っている", NamedTextColor.GOLD)))
+                    player.instance.sendGroupedPacket(ParticlePacket(Particle.END_ROD, Pos(14.5, 44.0, 4.5), Vec(0.25, 0.5, 0.25), 0.002f, 6))
+                }
+                after()
+            }
+        }
     }
 
     override fun requireHub(player: Player): Boolean {
@@ -639,6 +762,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
             inventoryChanged = { refresh(player) })
         val session = Session(player, runId, runtime, combat, bar, loot)
         try {
+            session.anomalies = FirstMagicField(player, runtime) { material -> firstMagic.change(player.uuid, FirstMagicAction.Collect(material)) }
             session.caches = CoreMapCaches(player, runtime.instance,
             plan.contents.filter { it.kind == QuestMapContentKind.DISCOVERY }.map { pos(it.position) },
             guarded = { at -> combat.combatTargets().any { it.position.distance(at) < 12.0 } },
@@ -651,7 +775,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
                 canParticipate = { it === player && !session.returning && actors[it.uuid]?.defeated == false },
                 onReward = { reward -> awardActivity(session, reward) })
         } catch (failure: Exception) {
-            session.adventures?.dispose(); session.caches?.dispose(); combat.dispose(); loot.dispose()
+            session.adventures?.dispose(); session.caches?.dispose(); session.anomalies?.dispose(); combat.dispose(); loot.dispose()
             throw failure
         }
         sessions[player.uuid] = session
@@ -717,6 +841,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         if (session.returning) return
         session.adventures?.tick(System.currentTimeMillis())
         session.loot.tick()
+        session.anomalies?.tick()
         session.ticks++
         if (session.combat.bossDefeated && session.ticks % 100 == 0L) awardBoss(session)
         if (session.ticks % 20 != 0L) return
@@ -734,6 +859,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
     }
 
     override fun returnToHarbor(player: Player) {
+        if (colonies[player.uuid]?.instance === player.instance) { leaveColony(player); return }
         if (combatLab.leave(player)) return
         if (dungeons.returnToHarbor(player)) return
         val session = sessions[player.uuid] ?: return
@@ -741,7 +867,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         if (session.combat.bossDefeated && account(player)?.activeRun?.bossDefeated != true) { awardBoss(session); return }
         session.returning = true
         session.combat.stopActionsForReturn()
-        session.adventures?.failAll(); session.adventures?.dispose()
+        session.adventures?.failAll(); session.adventures?.dispose(); session.anomalies?.dispose()
         questMaps.cancelGathering(player)
         actors[player.uuid]?.resetActions()
         player.closeInventory()
@@ -842,6 +968,13 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
 
     private fun disconnect(player: Player) {
         if (!connections.remove(player.uuid, player)) return
+        magicMenus.forget(player.uuid)
+        magicBusy.remove(player.uuid)
+        colonies.remove(player.uuid)?.let { colony -> MinecraftServer.getSchedulerManager().scheduleNextTick {
+            if (player.instance === colony.instance) player.remove()
+            if (colony.instance.players.isEmpty()) colony.dispose()
+        } }
+        firstMagic.forget(player.uuid)
         CoreCombatPresentation.forget(player)
         combatLab.disconnect(player)
         dungeons.disconnect(player)
@@ -853,7 +986,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
                 rewards.submit(player.uuid, CoreAction.BossReward(session.runId))
             }
             session.returning = true
-            session.adventures?.failAll(); session.adventures?.dispose()
+        session.adventures?.failAll(); session.adventures?.dispose(); session.anomalies?.dispose()
             session.combat.dispose()
             session.loot.collectAll()
             session.loot.dispose(); session.caches?.dispose()
@@ -883,7 +1016,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         mapBuilder.shutdown()
         sessions.values.forEach { session ->
             session.returning = true
-            session.adventures?.failAll(); session.adventures?.dispose()
+            session.adventures?.failAll(); session.adventures?.dispose(); session.anomalies?.dispose()
             if (session.combat.bossDefeated) rewards.submit(session.owner.uuid, CoreAction.BossReward(session.runId))
             session.combat.dispose()
             session.loot.collectAll()
