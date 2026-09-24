@@ -22,7 +22,7 @@ import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 
-/** Real visible, proximity-collected loot. The display is never the ownership record. */
+/** Visible loot that the owner must deliberately right-click to claim. */
 internal class CoreWorldLoot(
     private val owner: Player,
     private val instance: InstanceContainer,
@@ -62,7 +62,7 @@ internal class CoreWorldLoot(
             setNoGravity(true); setHasPhysics(false)
             editEntityMeta(TextDisplayMeta::class.java) { meta ->
                 meta.setText(CoreLoopItems.text(summary, if (currencies.isEmpty()) NamedTextColor.GOLD else NamedTextColor.LIGHT_PURPLE)
-                    .append(Component.newline()).append(CoreLoopItems.text("近づいて回収", NamedTextColor.GRAY)))
+                    .append(Component.newline()).append(CoreLoopItems.text("右クリックで回収", NamedTextColor.GRAY)))
                 meta.setBillboardRenderConstraints(AbstractDisplayMeta.BillboardConstraints.CENTER)
                 meta.setScale(Vec(0.65, 0.65, 0.65)); meta.setShadow(true); meta.setBackgroundColor(0x880e1020.toInt())
                 meta.setViewRange(0.5f)
@@ -79,11 +79,17 @@ internal class CoreWorldLoot(
         if (disposed) return
         ticks++
         drops.values.forEach { drop ->
-            if (owner.isOnline && owner.instance === instance && owner.position.distanceSquared(drop.position) < 2.6 * 2.6) collect(drop)
             if (ticks % 16 == 0L && drop.currencies.isNotEmpty() && !drop.collecting.get()) {
                 instance.sendGroupedPacket(ParticlePacket(Particle.END_ROD, drop.position.add(0.0, 0.5, 0.0), Vec(0.05, 0.5, 0.05), 0.001f, 3))
             }
         }
+    }
+
+    fun interact(player: Player, target: Entity): Boolean {
+        val drop = drops.values.firstOrNull { target in it.entities } ?: return false
+        if (!disposed && player === owner && owner.isOnline && owner.instance === instance &&
+            owner.position.distanceSquared(drop.position) < 5.0 * 5.0) collect(drop)
+        return true
     }
 
     @Synchronized
@@ -111,8 +117,8 @@ internal class CoreWorldLoot(
         return future
     }
 
-    /** Stop combat producers first. Return/disconnect auto-recover visible, uncollected drops. */
-    fun collectAll(): CompletableFuture<Void> = CompletableFuture.allOf(*drops.values.map(::collect).toTypedArray())
+    /** Wait for already clicked rewards; never turn untouched displays into automatic rewards. */
+    fun collectAll(): CompletableFuture<Void> = CompletableFuture.allOf(*drops.values.mapNotNull { it.future }.toTypedArray())
     fun remainingCount(): Int = drops.size
     fun dispose() { disposed = true; drops.values.forEach { d -> d.entities.forEach { it.remove() } }; drops.clear(); seenSources.clear() }
 }

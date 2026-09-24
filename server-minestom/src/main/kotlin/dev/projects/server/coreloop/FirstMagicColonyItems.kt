@@ -9,10 +9,9 @@ import net.minestom.server.item.Material
 import net.minestom.server.item.component.BlockPredicates
 import net.minestom.server.tag.Tag
 
-/** Physical one-of-each build items. Their ownership follows the saved private-island layout. */
+/** One-of-each build items. Placement consumes a stack and recovery puts it back in inventory. */
 internal object FirstMagicColonyItems {
     val tag: Tag<String> = Tag.String("projects_first_magic_placeable")
-    private val kitSlots = listOf(5) + (16..35).toList()
 
     fun kind(item: ItemStack): ColonyPlaceable? = item.getTag(tag)?.let { name ->
         ColonyPlaceable.entries.firstOrNull { it.name == name }
@@ -36,19 +35,28 @@ internal object FirstMagicColonyItems {
     }
 
     fun issue(player: Player, colony: FirstMagicColony, packed: Boolean) {
-        for (slot in 0 until 36) if (kind(player.inventory.getItemStack(slot)) != null)
-            player.inventory.setItemStack(slot, ItemStack.AIR)
-        if (kind(player.itemInOffHand) != null) player.setItemInOffHand(ItemStack.AIR)
-        if (kind(player.inventory.cursorItem) != null) player.inventory.cursorItem = ItemStack.AIR
-        colony.missingItems().zip(kitSlots).forEach { (kind, slot) ->
-            player.inventory.setItemStack(slot, item(kind, packed))
+        colony.missingItems().forEach { missing ->
+            if ((0 until 36).any { kind(player.inventory.getItemStack(it)) == missing } ||
+                kind(player.itemInOffHand) == missing || kind(player.inventory.cursorItem) == missing) return@forEach
+            if (!give(player, missing, packed))
+                player.sendMessage(CoreLoopItems.text("インベントリに空きがないため${missing.label}を受け取れません", NamedTextColor.YELLOW))
         }
     }
 
-    fun clear(player: Player) {
-        for (slot in 0 until 36) if (kind(player.inventory.getItemStack(slot)) != null)
-            player.inventory.setItemStack(slot, ItemStack.AIR)
-        if (kind(player.itemInOffHand) != null) player.setItemInOffHand(ItemStack.AIR)
-        if (kind(player.inventory.cursorItem) != null) player.inventory.cursorItem = ItemStack.AIR
+    fun canReceive(player: Player): Boolean = (0 until 36).any { player.inventory.getItemStack(it).isAir }
+
+    fun give(player: Player, placeable: ColonyPlaceable, packed: Boolean): Boolean {
+        val slot = (16 until 36).firstOrNull { player.inventory.getItemStack(it).isAir }
+            ?: (0 until 16).firstOrNull { player.inventory.getItemStack(it).isAir }
+            ?: return false
+        player.inventory.setItemStack(slot, item(placeable, packed))
+        return true
+    }
+
+    fun consumeMainHand(player: Player, placeable: ColonyPlaceable): Boolean {
+        val held = player.itemInMainHand
+        if (kind(held) != placeable) return false
+        player.itemInMainHand = if (held.amount() == 1) ItemStack.AIR else held.withAmount(held.amount() - 1)
+        return true
     }
 }

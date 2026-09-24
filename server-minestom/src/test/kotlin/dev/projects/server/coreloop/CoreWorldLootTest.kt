@@ -28,6 +28,8 @@ class CoreWorldLootTest {
         assertEquals(2, h.displayCount())
         h.move(h.lootPosition)
         h.loot.tick()
+        assertTrue(h.requests.isEmpty(), "Walking near loot must not claim it")
+        h.click(h.lootPosition)
         assertEquals(1, h.requests.size)
         h.finish("enemy-1")
         assertEquals(0, h.loot.remainingCount())
@@ -40,16 +42,19 @@ class CoreWorldLootTest {
         assertEquals(1, h.inventoryUpdates)
     }
 
-    @Test fun `proximity checks the owner and range then submits once while persistence is pending`() = arena { h ->
+    @Test fun `click checks the owner and range then submits once while persistence is pending`() = arena { h ->
         h.loot.spawn("enemy-2", CoreLootKind.NORMAL, h.lootPosition)
         val visitor = h.visitor(h.lootPosition)
-        h.loot.tick()
+        h.click(h.lootPosition, visitor)
         assertTrue(h.requests.isEmpty(), "Nearby non-owner cannot collect the owner's drop")
-        h.move(h.lootPosition.add(0.0, 0.0, 3.0))
-        h.loot.tick()
+        h.move(h.lootPosition.add(0.0, 0.0, 6.0))
+        h.click(h.lootPosition)
         assertTrue(h.requests.isEmpty())
         h.move(h.lootPosition.add(0.0, 0.0, 2.4))
         repeat(20) { h.loot.tick() }
+        assertTrue(h.requests.isEmpty())
+        h.click(h.lootPosition)
+        h.click(h.lootPosition)
         assertEquals(listOf(CoreAction.AffixLoot(h.run.id, "enemy-2", CoreLootKind.NORMAL)), h.requests)
         assertEquals(2, h.displayCount(), "Pending writes retain a visible drop")
         h.finish("enemy-2")
@@ -57,51 +62,52 @@ class CoreWorldLootTest {
         assertTrue(visitor.isOnline)
     }
 
-    @Test fun `offline owner or owner in another instance does not proximity collect`() = arena { h ->
+    @Test fun `offline owner or owner in another instance cannot click loot`() = arena { h ->
         h.loot.spawn("offline", CoreLootKind.NORMAL, h.lootPosition)
         h.move(h.lootPosition)
         h.connection.connected = false
-        h.loot.tick()
+        h.click(h.lootPosition)
         assertTrue(h.requests.isEmpty())
         h.connection.connected = true
         val other = h.otherInstance()
         h.owner.setInstance(other, h.lootPosition).get(10, TimeUnit.SECONDS)
-        h.loot.tick()
+        h.click(h.lootPosition)
         assertTrue(h.requests.isEmpty())
         h.owner.setInstance(h.instance, h.lootPosition).get(10, TimeUnit.SECONDS)
-        h.loot.tick()
+        h.click(h.lootPosition)
         assertEquals(1, h.requests.size)
         h.finish("offline")
     }
 
-    @Test fun `return collectAll recovers distant drops and waits for every durable reward`() = arena { h ->
+    @Test fun `return waits for clicked rewards but leaves unclicked drops unclaimed`() = arena { h ->
         h.loot.spawn("far-one", CoreLootKind.NORMAL, h.lootPosition)
         h.loot.spawn("far-two", CoreLootKind.ELITE, h.lootPosition.add(7.0, 0.0, 0.0))
-        h.connection.connected = false
+        h.move(h.lootPosition)
+        h.click(h.lootPosition)
         val first = h.loot.collectAll()
         val second = h.loot.collectAll()
-        assertEquals(2, h.requests.size)
+        assertEquals(1, h.requests.size)
         assertFalse(first.isDone)
         assertFalse(second.isDone)
         h.finish("far-one")
-        assertFalse(first.isDone)
-        h.finish("far-two")
         first.get(3, TimeUnit.SECONDS); second.get(3, TimeUnit.SECONDS)
-        assertEquals(0, h.loot.remainingCount())
-        assertEquals(0, h.displayCount())
-        assertEquals(0, h.inventoryUpdates, "Disconnected owner is not sent gameplay updates")
+        assertEquals(1, h.loot.remainingCount())
+        assertEquals(2, h.displayCount())
+        assertEquals(1, h.inventoryUpdates)
     }
 
     @Test fun `failed persistence retains display and allows a single later retry`() = arena { h ->
         h.loot.spawn("retry", CoreLootKind.ELITE, h.lootPosition)
         h.move(h.lootPosition)
-        h.loot.tick()
+        h.click(h.lootPosition)
         h.pending.getValue("retry").complete(CoreTransactionResult(CoreTransactionStatus.SAVE_FAILED, null, "保存失敗"))
         h.flushScheduler()
         assertEquals(1, h.loot.remainingCount())
         assertEquals(2, h.displayCount())
         assertEquals(0, h.inventoryUpdates)
         repeat(5) { h.loot.tick() }
+        assertEquals(1, h.requests.size)
+        h.click(h.lootPosition)
         assertEquals(2, h.requests.size)
         h.finish("retry")
         assertEquals(0, h.displayCount())
@@ -112,7 +118,7 @@ class CoreWorldLootTest {
         h.loot.spawn("pending", CoreLootKind.NORMAL, h.lootPosition)
         h.loot.spawn("untouched", CoreLootKind.ELITE, h.lootPosition.add(12.0, 0.0, 0.0))
         h.move(h.lootPosition)
-        h.loot.tick()
+        h.click(h.lootPosition)
         assertEquals(4, h.displayCount())
         h.loot.dispose()
         h.loot.dispose()
@@ -171,6 +177,11 @@ class CoreWorldLootTest {
             prepare(it); otherInstances += it
         }
         fun move(pos: Pos) { owner.teleport(pos).get(10, TimeUnit.SECONDS) }
+        fun click(pos: Pos, player: Player = owner) {
+            val target = instance.entities.filter { it.entityType == EntityType.ITEM_DISPLAY }
+                .minByOrNull { it.position.distanceSquared(pos) } ?: error("No loot item display")
+            loot.interact(player, target)
+        }
         fun displayCount() = instance.entities.count { it.entityType == EntityType.ITEM_DISPLAY || it.entityType == EntityType.TEXT_DISPLAY }
         fun finish(source: String) {
             assertTrue(pending.getValue(source).complete(CoreTransactionResult(CoreTransactionStatus.COMMITTED, null, "回収済み")))

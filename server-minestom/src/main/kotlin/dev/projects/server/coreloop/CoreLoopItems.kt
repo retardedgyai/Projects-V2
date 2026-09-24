@@ -192,6 +192,20 @@ internal object CoreLoopItems {
         for (slot in 0 until 36) if (projection(player.inventory.getItemStack(slot))) player.inventory.setItemStack(slot, ItemStack.AIR)
         if (projection(player.itemInOffHand)) player.setItemInOffHand(ItemStack.AIR)
         if (projection(player.inventory.cursorItem)) player.inventory.cursorItem = ItemStack.AIR
+        // A player may move gathered materials into a hotbar slot. Never overwrite those
+        // real stacks while rebuilding the fixed combat controls.
+        for (slot in (0..8) + listOf(14, 15)) {
+            val held = player.inventory.getItemStack(slot)
+            if (held.isAir || held.getTag(actionTag) != null || gearSlot(held) != null || mapId(held) != null ||
+                held.getTag(QUEST_GATHERING_TOOL_TAG) != null) continue
+            val free = (16..35).firstOrNull { player.inventory.getItemStack(it).isAir }
+            if (free == null) {
+                player.sendMessage(text("所持品がいっぱいです。アイテムを移動してから操作してください", NamedTextColor.YELLOW))
+                return
+            }
+            player.inventory.setItemStack(free, held)
+            player.inventory.setItemStack(slot, ItemStack.AIR)
+        }
         player.inventory.setItemStack(0, gear(account, CoreGearSlot.WEAPON, packed))
         for (id in 0..4) {
             val available = CoreJourneyRules.skillUnlocked(account, id)
@@ -211,9 +225,12 @@ internal object CoreLoopItems {
             .withTag(actionTag, "tablet"))
         player.inventory.setItemStack(15, icon(Material.FLINT, "砥石（${account.amount(CoreResource.WHETSTONE)}）",
             "右クリック：直接攻撃の与ダメージ+20% / 3分", "AD・AP自体は変化しません").withTag(actionTag, "whetstone"))
-        // Only owned currencies are projected. Their exact quantity is always ledger-authoritative.
+        // Keep free inventory slots available for collected world items and placeable blocks.
         val owned = CoreCraftingCurrency.entries.filter { account.amount(it) > 0 }
-        for (slot in 16..35) player.inventory.setItemStack(slot, owned.getOrNull(slot - 16)?.let { currency(it, account.amount(it), packed) } ?: ItemStack.AIR)
+        owned.forEach { kind ->
+            val slot = (16..35).firstOrNull { player.inventory.getItemStack(it).isAir } ?: return@forEach
+            player.inventory.setItemStack(slot, currency(kind, account.amount(kind), packed))
+        }
         val existingMapId = mapId(player.inventory.getItemStack(7))
         player.inventory.setItemStack(7, account.maps.firstOrNull { it.id == existingMapId }?.let(::map) ?: ItemStack.AIR)
         val tier = account.armorTier

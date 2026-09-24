@@ -16,7 +16,7 @@ import net.minestom.server.item.ItemStack
 import net.minestom.server.item.Material
 import java.util.concurrent.CompletableFuture
 
-/** Distinct, unobstructing anomalies along the quest road. A pickup is saved before it vanishes. */
+/** Distinct, unobstructing anomalies along the quest road. Right-click to collect. */
 internal class FirstMagicField(
     private val player: Player,
     private val runtime: VerdantRoadQuestRuntime,
@@ -65,7 +65,7 @@ internal class FirstMagicField(
                 setNoGravity(true); setHasPhysics(false)
                 editEntityMeta(TextDisplayMeta::class.java) { meta ->
                     meta.setText(Component.text("?  ${material.label}", NamedTextColor.AQUA)
-                        .append(Component.newline()).append(Component.text("近づいて採取", NamedTextColor.GRAY)))
+                        .append(Component.newline()).append(Component.text("右クリックで採取", NamedTextColor.GRAY)))
                     meta.setBillboardRenderConstraints(AbstractDisplayMeta.BillboardConstraints.CENTER)
                     meta.setScale(Vec(0.6, 0.6, 0.6)); meta.setShadow(true)
                     meta.setBackgroundColor(0x780d171b); meta.setViewRange(0.5f)
@@ -76,24 +76,32 @@ internal class FirstMagicField(
         }
     }
 
-    fun tick() {
-        if (closed || player.instance !== runtime.instance || !player.isOnline) return
-        finds.firstOrNull { !it.pending && !it.claimed && player.position.distanceSquared(it.position) < 2.4 * 2.4 }?.let { find ->
-            find.pending = true
-            collect(find.material).whenComplete { change, failure ->
-                MinecraftServer.getSchedulerManager().scheduleNextTick {
-                    if (closed) return@scheduleNextTick
-                    if (failure == null && change?.changed == true) {
-                        find.claimed = true
-                        find.displays.forEach(Entity::remove)
-                        if (player.isOnline) player.sendMessage(CoreLoopItems.text(change.message, NamedTextColor.AQUA))
-                    } else {
-                        find.pending = false
-                        if (player.isOnline) player.sendMessage(CoreLoopItems.text(change?.message ?: "採取を保存できませんでした", NamedTextColor.RED))
-                    }
+    fun interact(target: Entity): Boolean {
+        val find = finds.firstOrNull { target in it.displays } ?: return false
+        if (closed || player.instance !== runtime.instance || !player.isOnline || find.claimed) return true
+        if (player.position.distanceSquared(find.position) > 5.0 * 5.0 || find.pending) return true
+        if (!FirstMagicInventory.canAdd(player, find.material)) {
+            player.sendMessage(CoreLoopItems.text("インベントリがいっぱいです。空きを作ってから採取してください", NamedTextColor.YELLOW))
+            return true
+        }
+        find.pending = true
+        collect(find.material).whenComplete { change, failure ->
+            MinecraftServer.getSchedulerManager().scheduleNextTick {
+                if (closed) return@scheduleNextTick
+                if (failure == null && change?.changed == true) {
+                    if (!FirstMagicInventory.add(player, find.material, packed(player))) {
+                        // Keep the saved find available for recovery after reconnect.
+                        player.sendMessage(CoreLoopItems.text("所持品に空きがなくなりました。再接続すると素材を復元できます", NamedTextColor.RED))
+                    } else player.sendMessage(CoreLoopItems.text("${find.material.label}を採取し、インベントリに入れた", NamedTextColor.AQUA))
+                    find.claimed = true
+                    find.displays.forEach(Entity::remove)
+                } else {
+                    find.pending = false
+                    if (player.isOnline) player.sendMessage(CoreLoopItems.text(change?.message ?: "採取を保存できませんでした", NamedTextColor.RED))
                 }
             }
         }
+        return true
     }
 
     fun dispose() { closed = true; finds.forEach { it.displays.forEach(Entity::remove) } }
