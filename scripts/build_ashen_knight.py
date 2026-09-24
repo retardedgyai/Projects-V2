@@ -658,16 +658,16 @@ def build(out=ROOT / "model-lab" / "models"):
 
     back_cowl_folds = (
         (-3.3, 3.1, 21.55, 23.9, 2.8, 0),
-        (-4.02, 3.86, 20.35, 23.02, 3.02, 1),
-        (-4.45, 4.08, 19.25, 22.2, 3.2, 2),
+        (-4.02, 2.94, 20.35, 23.02, 3.02, 1),
+        (-4.45, 1.54, 19.25, 22.2, 3.2, 2),
     )
     for left, right, low, high, depth, layer in back_cowl_folds:
         def paint_back_wrap(px, py, seed=layer):
             u = px / 95
             arc = max(0, math.sin(math.pi * u)) ** 1.2
-            top = 2 + round((12 + seed * 2) * arc)
+            top = 2 + round((12 + seed * 2) * arc + (0, 5, 12)[seed] * u)
             top += authoring.noise(px // 6, seed, 3511) % 3
-            hem = top + 22 - authoring.noise(px // 7, seed, 3517) % 5
+            hem = top + 22 - seed * 2 - authoring.noise(px // 7, seed, 3517) % 6
             if px < 2 or px > 93 or py < top or py > hem:
                 return (0, 0, 0, 0)
             v = (py - top) / max(1, hem - top)
@@ -1604,7 +1604,7 @@ def build(out=ROOT / "model-lab" / "models"):
 
     m.anim("idle", 2.0, {
         "root": [(0, [0, 0, 0], "position"), (1, [0, .28, 0], "position"), (2, [0, 0, 0], "position")],
-        "torso": [(0, [0, 0, -3]), (1, [0, 0, -3]), (2, [0, 0, -3])],
+        "torso": [(0, [16, 0, -3]), (1, [18, 0, -3]), (2, [16, 0, -3])],
         "head": [(0, [-10, -5, 0]), (1, [-12, -2, 0]), (2, [-10, -5, 0])],
         "plume": [(0, [0, 0, -3]), (1, [2, 0, 5]), (2, [0, 0, -3])],
         "left_leg": [(0, [-10, 0, 12]), (1, [-10, 0, 12]), (2, [-10, 0, 12])],
@@ -1613,7 +1613,7 @@ def build(out=ROOT / "model-lab" / "models"):
         "right_knee": [(0, [-17, 0, 0]), (1, [-17, 0, 0]), (2, [-17, 0, 0])],
         "right_arm": [(0, [4, 0, -16]), (1, [4, 0, -16]), (2, [4, 0, -16])],
         "right_elbow": [(0, [0, 0, 5]), (1, [0, 0, 5]), (2, [0, 0, 5])],
-        "sword": [(0, [6, 0, 30]), (1, [6, 0, 30]), (2, [6, 0, 30])],
+        "sword": [(0, [-15, 0, 30]), (1, [-15, 0, 30]), (2, [-15, 0, 30])],
         "cape_left": [(0, [0, 0, -5]), (1, [-6, 0, -10]), (2, [0, 0, -5])],
         "cape_right": [(0, [0, 0, 4]), (1, [-4, 0, 8]), (2, [0, 0, 4])],
         "cape_center": [(0, [-2, 0, -2]), (1, [-7, 0, 3]), (2, [-2, 0, -2])],
