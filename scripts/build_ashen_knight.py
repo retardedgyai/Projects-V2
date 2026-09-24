@@ -666,9 +666,8 @@ def build(out=ROOT / "model-lab" / "models"):
     # six-facet sheet made the chest look like blue armor plates. Paint each
     # drooping fold continuously so its silhouette and shading read as cloth.
     front_cowl_folds = (
-        (-3.45, 3.0, 20.85, 23.65, -3.83, 0),
-        (-4.12, 2.68, 19.67, 22.75, -4.02, 1),
-        (-4.38, .82, 18.55, 21.85, -4.2, 2),
+        (-3.65, 3.0, 20.5, 23.7, -3.83, 0),
+        (-4.38, 2.3, 18.35, 22.15, -4.2, 2),
     )
     for left, right, low, high, depth, layer in front_cowl_folds:
         def paint_draped_fold(px, py, seed=layer):
@@ -676,19 +675,20 @@ def build(out=ROOT / "model-lab" / "models"):
             arc = max(0, math.sin(math.pi * u)) ** 1.2
             # Each fold has a different pull toward the wounded shoulder;
             # identical centred sags turned the wrap into stacked plating.
-            pull = (0, 7, 15)[seed] * u
+            pull = (0, 7, 8)[seed] * u
             top = 3 + round((12 + seed * 2) * arc + pull)
             top += authoring.noise(px // 6, seed, 3451) % 3
-            hem = top + 22 - seed * 3 - authoring.noise(px // 7, seed, 3457) % 7
+            hem = top + 29 - seed * 2 - authoring.noise(px // 7, seed, 3457) % 7
             if py < top or py > hem or px < 2 or px > 93:
                 return (0, 0, 0, 0)
             v = (py - top) / max(1, hem - top)
             grain = authoring.noise(px // 3, py // 3, 3467 + seed) % 13
-            ridge = .34 + .09 * math.sin(px * .067 + seed * 1.3)
+            ridge = (.34 + .09 * math.sin(px * .067 + seed * 1.3)
+                     + .05 * math.sin(px * .19 + seed * 2.1))
             if v < .12 or v > .87:
                 color = (11, 25, 41)
-            elif abs(v - ridge) < .13:
-                color = (34, 53, 73) if grain > 2 else (29, 47, 66)
+            elif abs(v - ridge) < .13 and grain > 2:
+                color = (32, 51, 71) if grain > 6 else (26, 45, 64)
             elif v > .65:
                 color = (16, 33, 52)
             else:
@@ -703,6 +703,9 @@ def build(out=ROOT / "model-lab" / "models"):
                [right, high, depth + .35], "cloth", scarf,
                face_uv={"north": fold_uv, "south": fold_uv,
                         "west": cowl_edge_uv, "east": cowl_edge_uv})
+        m.elements[-1]["rotation"] = [0, 0, -11 if layer == 2 else 0]
+        m.elements[-1]["origin"] = [(left + right) / 2,
+                                     (low + high) / 2, depth]
 
     def paint_side_wrap(px, py):
         u = px / 95
