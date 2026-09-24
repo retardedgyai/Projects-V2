@@ -409,6 +409,11 @@ def build(out=ROOT / "model-lab" / "models"):
     m.cube("torn_waist_mail", [-2.7, 13.45, -1.94], [2.7, 17.05, -1.87],
            "mail", chest, face_uv={"north": waist_mail_uv,
                                    "south": waist_mail_uv})
+    m.cube("torn_back_waist_mail", [-2.48, 13.6, 1.78],
+           [2.48, 17.15, 1.86], "mail", chest,
+           face_uv={"south": waist_mail_uv, "north": open_waist_uv,
+                    "east": open_waist_uv, "west": open_waist_uv,
+                    "up": open_waist_uv, "down": open_waist_uv})
     add_rotated(m, chest, "fractured_left_breastplate", [-3.0, 17.75, -2.78],
                 [-.65, 20.1, -2.1], "armor", [0, 0, -7],
                 [-1.8, 19.0, -2.5], "battered_scale")
@@ -661,6 +666,8 @@ def build(out=ROOT / "model-lab" / "models"):
         return (*color, 255)
 
     cowl_edge_uv = m.patch(12, 48, paint_cowl_edge, "cowl_fabric_edge")
+    cowl_open_uv = m.patch(1, 1, lambda _x, _y: (0, 0, 0, 0),
+                            "open_back_cowl_front")
 
     # The reference cowl has broad nested folds around the neck. A diagonal
     # six-facet sheet made the chest look like blue armor plates. Paint each
@@ -764,7 +771,7 @@ def build(out=ROOT / "model-lab" / "models"):
                           f"back_draped_cowl_{layer}")
         m.cube(f"back_draped_cowl_{layer}", [left, low, depth - .22],
                [right, high, depth + .5], "cloth", scarf,
-               face_uv={"south": back_uv, "north": back_uv,
+               face_uv={"south": back_uv, "north": cowl_open_uv,
                         "east": cowl_edge_uv, "west": cowl_edge_uv})
 
     def paint_shoulder_cowl(px, py):
@@ -785,26 +792,13 @@ def build(out=ROOT / "model-lab" / "models"):
     m.cube("scarf_right_torn_face", [2.65, 19.75, -2.24],
            [4.55, 22.65, -2.17], "cloth", scarf,
            face_uv={"north": shoulder_cowl_uv, "south": shoulder_cowl_uv})
-    def paint_back_cowl(px, py):
-        side = abs(px - 47.5) / 48
-        top = 2 + round(8 * side ** 1.4)
-        hem = 44 - round(16 * side) - authoring.noise(px // 7, 0, 3659) % 4
-        if py < top or py > hem:
-            return (0, 0, 0, 0)
-        fold = math.sin(px * .072 + py * .045)
-        color = (12, 26, 44) if fold < -.35 else (36, 58, 80) if fold > .7 else (22, 41, 64)
-        if py - top < 2 or hem - py < 3:
-            color = (9, 21, 37)
-        return (*color, 255)
-
-    back_cowl_uv = m.patch(96, 48, paint_back_cowl, "back_cowl_fold")
-    m.cube("scarf_back_left", [-4.8, 19.3, 2.38], [.85, 22.6, 2.68],
-           "cloth", scarf, face_uv={"south": back_cowl_uv, "north": back_cowl_uv,
-                                    "east": cowl_edge_uv, "west": cowl_edge_uv})
-    m.cube("scarf_back_right_end", [3.2, 20.35, 2.25], [4.9, 22.25, 3.18],
-           "void", cape_right, face_uv={"south": shoulder_cowl_uv,
-                                        "north": shoulder_cowl_uv,
-                                        "east": cowl_edge_uv, "west": cowl_edge_uv})
+    # The two old solid cowl end caps appeared as blue rectangular shoulder
+    # blocks from the front. The nested back folds already carry this shape.
+    m.cube("scarf_right_rear_shred", [3.16, 17.7, 2.64],
+           [4.46, 21.5, 2.72], "cloth", cape_right,
+           face_uv={"south": shoulder_cowl_uv, "north": cowl_open_uv,
+                    "east": cowl_open_uv, "west": cowl_open_uv,
+                    "up": cowl_open_uv, "down": cowl_open_uv})
     def paint_shoulder_bridge(px, py):
         taper = py / 79
         left = 3 + round(8 * taper) + authoring.noise(py // 6, 0, 3731) % 3
@@ -933,22 +927,25 @@ def build(out=ROOT / "model-lab" / "models"):
 
     faceplate_uv = m.patch(48, 64, paint_faceplate, "ashen_faceplate")
     def paint_visor_profile(px, py):
-        # The side is a compact, worn helmet bowl. An extended diagonal strip
-        # became two crossing blade-like projections in profile.
-        u = (px - 23.5) / 21
-        if abs(u) >= 1:
+        # The brow rises from the hood and falls into a long, narrow muzzle.
+        # An oval profile made this face read as a featureless helmet bowl.
+        if px < 2 or px > 45:
             return (0, 0, 0, 0)
-        half_height = 14 * math.sqrt(1 - u * u)
-        center = 32 + 4 * u
-        if abs(py - center) > half_height:
+        u = (px - 2) / 43
+        snout = max(0, (u - .75) / .25)
+        top = 15 + round(13 * u + 14 * snout)
+        bottom = 47 + round(9 * u)
+        if py < top or py > bottom:
             return (0, 0, 0, 0)
-        eye = 27 < px < 37 and center - 10 < py < center - 6
+        eye = 23 < px < 35 and top + 3 < py < top + 7
         if eye:
             return (8, 14, 19, 255)
-        distance = abs(py - center) / max(1, half_height)
-        if distance > .88:
-            return ((48, 56, 61, 255) if py < center
-                    else (28, 35, 40, 255))
+        if py <= top + 2:
+            return (58, 66, 68, 255)
+        if py >= bottom - 2:
+            return (18, 25, 31, 255)
+        if abs(py - (31 + 10 * u)) < 1.2 and px > 18:
+            return (49, 56, 58, 255)
         if authoring.noise(px // 3, py // 3, 5933) % 39 == 0:
             return (57, 64, 66, 255)
         return (23, 32, 39, 255)
@@ -1691,6 +1688,11 @@ def build(out=ROOT / "model-lab" / "models"):
             if element["name"] == "engraved_wolf_visor":
                 for key in ("from", "to", "origin"):
                     element[key][1] = 25.4 + (element[key][1] - 25.4) * .78
+                # Give the mask a projecting muzzle in profile. The old
+                # shallow slab disappeared edge-on and read as a flat blade.
+                element["from"][2] -= 1.25
+            elif element["name"] == "snout_dark_tip":
+                element["from"][2] -= .9
         elif element["uuid"] in plume_ids:
             for key in ("from", "to", "origin"):
                 element[key][1] -= .7
@@ -1750,7 +1752,7 @@ def build(out=ROOT / "model-lab" / "models"):
 
     m.anim("idle", 2.0, {
         "root": [(0, [0, 0, 0], "position"), (1, [0, .28, 0], "position"), (2, [0, 0, 0], "position")],
-        "torso": [(0, [28, 0, -3]), (1, [30, 0, -3]), (2, [28, 0, -3])],
+        "torso": [(0, [14, 0, -3]), (1, [16, 0, -3]), (2, [14, 0, -3])],
         "head": [(0, [-16, -5, 0]), (1, [-18, -2, 0]), (2, [-16, -5, 0])],
         "plume": [(0, [0, 0, -3]), (1, [2, 0, 5]), (2, [0, 0, -3])],
         "left_leg": [(0, [-10, 0, 0]), (1, [-10, 0, 0]), (2, [-10, 0, 0])],
@@ -1759,7 +1761,7 @@ def build(out=ROOT / "model-lab" / "models"):
         "right_knee": [(0, [-17, 0, 0]), (1, [-17, 0, 0]), (2, [-17, 0, 0])],
         "right_arm": [(0, [4, 0, -16]), (1, [4, 0, -16]), (2, [4, 0, -16])],
         "right_elbow": [(0, [0, 0, 5]), (1, [0, 0, 5]), (2, [0, 0, 5])],
-        "sword": [(0, [-30, 0, 30]), (1, [-30, 0, 30]), (2, [-30, 0, 30])],
+        "sword": [(0, [-10, 0, 30]), (1, [-10, 0, 30]), (2, [-10, 0, 30])],
         "cape_left": [(0, [0, 0, -5]), (1, [-6, 0, -10]), (2, [0, 0, -5])],
         "cape_right": [(0, [0, 0, 4]), (1, [-4, 0, 8]), (2, [0, 0, 4])],
         "cape_center": [(0, [-2, 0, -2]), (1, [-7, 0, 3]), (2, [-2, 0, -2])],
