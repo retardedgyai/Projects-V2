@@ -800,12 +800,6 @@ def build(out=ROOT / "model-lab" / "models"):
                 [-.65, 22.52, -2.46], [.65, 23.62, -.62], "void",
                 [-9, 0, 0], [0, 23.0, -1.5], "burned_hood", hood_faces)
     add(m, helm, "snout_dark_tip", [-.45, 21.15, -5.75], [.45, 21.85, -5.1], "void")
-    add_rotated(m, helm, "left_cheek_armor", [-2.25, 23.05, -2.85],
-                [-1.59, 24.78, -1.05], "armor", [0, -8, -9],
-                [-1.9, 24.0, -1.9], "battered_scale")
-    add_rotated(m, helm, "right_broken_cheek", [1.93, 23.48, -2.65],
-                [2.52, 24.4, -1.2], "armor", [0, 6, 12],
-                [2.18, 23.95, -1.9], "battered_scale")
 
     # A cutout engraved faceplate supplies a distinct long-muzzled silhouette
     # without reproducing another game's texture or sculpt. The existing helm
@@ -825,10 +819,7 @@ def build(out=ROOT / "model-lab" / "models"):
             width = max(1, 6 - (py - 52) // 2)
         if px > center and py > 32:
             width -= 1
-        ear = 5 <= py < 19 and 14 <= distance <= 19 - abs(py - 11) // 3
-        if px > center and py > 13:
-            ear = False
-        if distance > width and not ear:
+        if distance > width:
             return (0, 0, 0, 0)
         if px < center - 8 and 38 < py < 47 and (px + py) % 4 != 0:
             return (0, 0, 0, 0)
@@ -941,8 +932,14 @@ def build(out=ROOT / "model-lab" / "models"):
         shin = left_shin if side == "left" else right_shin
         add(m, thigh, f"{side}_thigh_mail", [x - 1.63, 6.6, -1.55], [x + 1.63, 11.2, 1.55], "mail")
         add(m, thigh, f"{side}_cloth_undertunic", [x - 1.58, 8.0, -1.71], [x + 1.58, 10.7, 1.6], "void")
-        add(m, shin, f"{side}_shin_underlayer", [x - 1.24, 1.7, -1.36],
-            [x + 1.24, 7.1, 1.28], "void")
+        add_rotated(m, shin, f"{side}_shin_upper_underlayer",
+                    [x - 1.16, 4.2, -1.28], [x + 1.16, 7.1, 1.2],
+                    "void", [0, 0, -3 if side == "left" else 4],
+                    [x, 4.3, 0], "worn_leather")
+        add_rotated(m, shin, f"{side}_shin_lower_underlayer",
+                    [x - .94, 1.7, -1.16], [x + .94, 4.35, 1.07],
+                    "void", [0, 0, 3 if side == "left" else -4],
+                    [x, 4.25, 0], "worn_leather")
         # A narrow leather ankle sits in a wider, low heel.  The old single
         # heel/vamp/toe cuboids read as a pair of mechanical rectangular feet.
         heel_width = .95 if side == "left" else .88
@@ -1128,13 +1125,13 @@ def build(out=ROOT / "model-lab" / "models"):
     m.cube("torn_wounded_arm_mail", [-6.22, 15.65, -1.21],
            [-3.5, 20.95, -1.13], "mail", left_arm,
            face_uv={"north": wounded_mail_uv, "south": wounded_mail_uv})
-    add_rotated(m, left_arm, "wounded_upper_forearm", [-6.18, 12.8, -1.02],
-                [-4.05, 16.35, 1.12], "skin", [0, 0, 5],
-                [-5.1, 14.5, 0], "scarred_skin")
-    add_rotated(m, left_arm, "wounded_tapered_forearm", [-5.91, 10.0, -.93],
-                [-4.28, 13.45, .98], "skin", [0, 0, -4],
-                [-5.1, 11.9, 0], "scarred_skin")
-    add(m, left_arm, "left_palm", [-5.85, 8.8, -1.05], [-4.35, 10.55, .91], "skin")
+    add_rotated(m, left_arm, "wounded_upper_forearm", [-6.02, 12.8, -.89],
+                [-4.21, 16.35, .94], "mail", [0, 0, 5],
+                [-5.1, 14.5, 0], "torn_mail")
+    add_rotated(m, left_arm, "wounded_tapered_forearm", [-5.78, 10.0, -.83],
+                [-4.4, 13.45, .84], "mail", [0, 0, -4],
+                [-5.1, 11.9, 0], "torn_mail")
+    add(m, left_arm, "left_palm", [-5.72, 8.8, -.91], [-4.48, 10.55, .78], "boot")
     for finger, (x0, x1, low, high, tilt) in enumerate((
             (-5.92, -5.56, 7.7, 9.1, -8),
             (-5.51, -5.14, 7.45, 9.0, -2),
@@ -1142,8 +1139,8 @@ def build(out=ROOT / "model-lab" / "models"):
             (-4.68, -4.37, 8.0, 9.1, 13),
     )):
         add_rotated(m, left_arm, f"loose_finger_{finger}",
-                    [x0, low, -.82], [x1, high, .44], "skin",
-                    [0, 0, tilt], [(x0 + x1) / 2, high, -.2], "scarred_skin")
+                    [x0, low, -.72], [x1, high, .34], "boot",
+                    [0, 0, tilt], [(x0 + x1) / 2, high, -.2], "worn_vamp")
     add(m, left_arm, "left_arm_tear", [-6.5, 11.2, 1.1], [-4.9, 16.2, 1.8], "void")
     add(m, left_arm, "left_mail_shoulder", [-6.15, 17.2, -1], [-3.55, 20.2, 1.5], "sleeve")
     def paint_wounded_wrap(px, py, seed):
@@ -1586,7 +1583,7 @@ def build(out=ROOT / "model-lab" / "models"):
         if element["uuid"] in right_arm_ids:
             for key in ("from", "to", "origin"):
                 x, y, z = element[key]
-                element[key] = [4.8 + (x - 4.8) * .82, y, z * .86]
+                element[key] = [4.8 + (x - 4.8) * .72, y, z * .76]
 
     plume_bone = m.bone("plume", [0, 26.5, 1], plume)
     head_bone = m.bone("head", [0, 22, 0], helm + [plume_bone])
