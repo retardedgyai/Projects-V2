@@ -440,10 +440,14 @@ def build(out=ROOT / "model-lab" / "models"):
     def paint_chest_mail(px, py):
         side = abs(px - 63.5) / 64
         top = 4 + round(10 * side ** 1.6)
-        taper = max(0, py - 32) * .19
-        left = 4 + round(taper)
-        right = 123 - round(taper)
-        hem = 91 - authoring.noise(px // 6, 0, 7451) % 6
+        # Expose the pulled-in waist rather than covering the whole front with
+        # a rectangular sheet of links. The damaged lower edge is asymmetric.
+        taper = max(0, py - 26) * .48
+        left = 4 + round(taper * .88)
+        right = 123 - round(taper * 1.12)
+        hem = 90 - authoring.noise(px // 6, 0, 7451) % 10
+        if px > 86:
+            hem -= round((px - 86) * .32)
         if py < top or py > hem or px < left or px > right:
             return (0, 0, 0, 0)
         tear_center = 62 + .14 * max(0, py - 43)
@@ -755,9 +759,9 @@ def build(out=ROOT / "model-lab" / "models"):
             # Each fold has a different pull toward the wounded shoulder;
             # identical centred sags turned the wrap into stacked plating.
             pull = (0, 7, 8)[seed] * u
-            top = 3 + round((12 + seed * 2) * arc + pull)
+            top = 3 + round((21 + seed * 2) * arc + pull)
             top += authoring.noise(px // 6, seed, 3451) % 3
-            hem = top + 29 - seed * 2 - authoring.noise(px // 7, seed, 3457) % 7
+            hem = top + 25 - seed * 2 - authoring.noise(px // 7, seed, 3457) % 7
             if seed == 2:
                 hem -= round(16 * max(0, (u - .42) / .58))
             if py < top or py > hem or px < 2 or px > 93:
@@ -784,7 +788,7 @@ def build(out=ROOT / "model-lab" / "models"):
                 color = tuple(min(255, channel + 3) for channel in color)
             return (*color, 255)
 
-        fold_uv = m.patch(96, 48, paint_draped_fold,
+        fold_uv = m.patch(96, 64, paint_draped_fold,
                           f"front_draped_cowl_{layer}")
         m.cube(f"front_draped_cowl_{layer}", [left, low, depth - .5],
                [right, high, depth + .35], "cloth", scarf,
@@ -1940,7 +1944,7 @@ def build(out=ROOT / "model-lab" / "models"):
                 element[key] = [x, 22 + (y - 22) * .95, z]
             if element["name"] == "engraved_wolf_visor":
                 for key in ("from", "to", "origin"):
-                    element[key][0] *= .70
+                    element[key][0] *= .95
             if element["name"] in ("snout_left_ridge", "snout_right_ridge", "snout_dark_tip",
                                    "engraved_wolf_visor"):
                 for key in ("from", "to", "origin"):
