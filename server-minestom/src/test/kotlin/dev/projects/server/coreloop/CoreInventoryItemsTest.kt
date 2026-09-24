@@ -40,9 +40,12 @@ class CoreInventoryItemsTest {
             .first { CoreLoopItems.fragmentId(it) == CoreActivityKind.RIFT }.getTag(CoreLoopItems.resourceQuantityTag))
         assertEquals(5L, (0 until 36).map(player.inventory::getItemStack)
             .first(CoreLoopItems::isSilver).getTag(CoreLoopItems.resourceQuantityTag))
+        val woodSlot = (16..35).first { CoreLoopItems.resourceId(player.inventory.getItemStack(it)) == wood }
+        player.inventory.setItemStack(35, player.inventory.getItemStack(woodSlot))
+        player.inventory.setItemStack(woodSlot, net.minestom.server.item.ItemStack.AIR)
         CoreLoopItems.refresh(player, account.copy(balances = mapOf(wood to 6L, dust to 90L)))
-        assertEquals(6, (0 until 36).map(player.inventory::getItemStack)
-            .first { CoreLoopItems.resourceId(it) == wood }.amount())
+        assertEquals(wood, CoreLoopItems.resourceId(player.inventory.getItemStack(35)))
+        assertEquals(6, player.inventory.getItemStack(35).amount())
     }
 
     private class MemoryConnection : PlayerConnection() {

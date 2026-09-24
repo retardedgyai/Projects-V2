@@ -229,13 +229,27 @@ internal object CoreLoopItems {
         combatSheet: CoreCombatSheet = CoreCombatSheet.from(account)) {
         val selectedMapId = mapId(player.inventory.getItemStack(7))
         if (initial) player.inventory.clear()
-        // These are account projections, not transferable stacks. Remove moved/cursor copies before
-        // rebuilding so spending the last orb cannot leave a stale apparent balance elsewhere.
-        fun projection(item: ItemStack) = currencyId(item) != null || stoneId(item) != null || resourceId(item) != null ||
-            fragmentId(item) != null || mapId(item) != null || isSilver(item)
+        // The account save persists owned stacks. Rebuild their quantities while retaining the
+        // player's chosen backpack slots and clearing stale cursor/offhand copies after spending.
+        fun ownedKey(item: ItemStack): String? = currencyId(item)?.let { "currency:$it" }
+            ?: stoneId(item)?.let { "stone:$it" }
+            ?: resourceId(item)?.let { "resource:${it.resource}:${it.tier}" }
+            ?: fragmentId(item)?.let { "fragment:$it" }
+            ?: mapId(item)?.let { "map:$it" }
+            ?: if (isSilver(item)) "silver" else null
+        val preferredSlots = (16..35).mapNotNull { slot ->
+            ownedKey(player.inventory.getItemStack(slot))?.let { it to slot }
+        }.toMap()
+        fun projection(item: ItemStack) = ownedKey(item) != null
         for (slot in 0 until 36) if (projection(player.inventory.getItemStack(slot))) player.inventory.setItemStack(slot, ItemStack.AIR)
         if (projection(player.itemInOffHand)) player.setItemInOffHand(ItemStack.AIR)
         if (projection(player.inventory.cursorItem)) player.inventory.cursorItem = ItemStack.AIR
+        fun placeOwned(key: String, item: ItemStack) {
+            val preferred = preferredSlots[key]?.takeIf { player.inventory.getItemStack(it).isAir }
+            val slot = preferred ?: (16..35).firstOrNull { player.inventory.getItemStack(it).isAir && it !in preferredSlots.values }
+                ?: (16..35).firstOrNull { player.inventory.getItemStack(it).isAir } ?: return
+            player.inventory.setItemStack(slot, item)
+        }
         // A player may move gathered materials into a hotbar slot. Never overwrite those
         // real stacks while rebuilding the fixed combat controls.
         for (slot in (0..8) + listOf(14, 15)) {
@@ -279,30 +293,24 @@ internal object CoreLoopItems {
         // Keep free inventory slots available for collected world items and placeable blocks.
         val owned = CoreCraftingCurrency.entries.filter { account.amount(it) > 0 }
         owned.forEach { kind ->
-            val slot = (16..35).firstOrNull { player.inventory.getItemStack(it).isAir } ?: return@forEach
-            player.inventory.setItemStack(slot, currency(kind, account.amount(kind), packed))
+            placeOwned("currency:$kind", currency(kind, account.amount(kind), packed))
         }
         account.balances.entries.filter { it.value > 0 && it.key.resource !in setOf(
             CoreResource.POTION, CoreResource.GATHERING_TABLET, CoreResource.WHETSTONE) }
             .sortedWith(compareBy({ it.key.tier }, { it.key.resource.ordinal })).forEach { (material, count) ->
-                val slot = (16..35).firstOrNull { player.inventory.getItemStack(it).isAir } ?: return@forEach
-                player.inventory.setItemStack(slot, carriedResource(material, count))
+                placeOwned("resource:${material.resource}:${material.tier}", carriedResource(material, count))
             }
         account.fragments.entries.filter { it.value > 0 }.forEach { (kind, count) ->
-            val slot = (16..35).firstOrNull { player.inventory.getItemStack(it).isAir } ?: return@forEach
-            player.inventory.setItemStack(slot, fragment(kind, count))
+            placeOwned("fragment:$kind", fragment(kind, count))
         }
-        if (account.silver > 0) (16..35).firstOrNull { player.inventory.getItemStack(it).isAir }
-            ?.let { player.inventory.setItemStack(it, silver(account.silver)) }
+        if (account.silver > 0) placeOwned("silver", silver(account.silver))
         val selectedMap = account.maps.firstOrNull { it.id == selectedMapId } ?: account.maps.firstOrNull()
         player.inventory.setItemStack(7, selectedMap?.let(::map) ?: ItemStack.AIR)
         account.maps.filter { it.id != selectedMap?.id }.forEach { ownedMap ->
-            val slot = (16..35).firstOrNull { player.inventory.getItemStack(it).isAir } ?: return@forEach
-            player.inventory.setItemStack(slot, map(ownedMap))
+            placeOwned("map:${ownedMap.id}", map(ownedMap))
         }
         account.affixStones.forEach { ownedStone ->
-            val slot = (16..35).firstOrNull { player.inventory.getItemStack(it).isAir } ?: return@forEach
-            player.inventory.setItemStack(slot, stone(ownedStone, packed))
+            placeOwned("stone:${ownedStone.id}", stone(ownedStone, packed))
         }
         val tier = account.armorTier
         val armor = listOf(
