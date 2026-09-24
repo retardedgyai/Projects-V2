@@ -8,7 +8,7 @@ atlas packing, and animation serialization. Run from any directory:
 from pathlib import Path
 import math
 import sys
-from PIL import Image
+from PIL import Image, ImageEnhance
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -446,44 +446,19 @@ def build(out=ROOT / "model-lab" / "models"):
     add_rotated(m, chest, "waist_mail_tunic_upper",
                 [-2.12, 15.8, -1.48], [2.12, 18.4, 1.45], "void",
                 [-6, 0, -2], [0, 17.1, 0], "worn_tunic")
-    def paint_chest_mail(px, py):
-        side = abs(px - 63.5) / 64
-        top = 4 + round(10 * side ** 1.6)
-        # Expose the pulled-in waist rather than covering the whole front with
-        # a rectangular sheet of links. The damaged lower edge is asymmetric.
-        taper = max(0, py - 26) * .48
-        left = 4 + round(taper * .88)
-        right = 123 - round(taper * 1.12)
-        hem = 90 - authoring.noise(px // 6, 0, 7451) % 10
-        if px > 86:
-            hem -= round((px - 86) * .32)
-        if py < top or py > hem or px < left or px > right:
-            return (0, 0, 0, 0)
-        tear_center = 62 + .14 * max(0, py - 43)
-        tear_half = max(0, py - 43) * .18
-        tear_jag = authoring.noise(py // 4, 0, 7461) % 5 - 2
-        if py > 43 and abs(px - tear_center) < tear_half + tear_jag:
-            return (0, 0, 0, 0)
-        if py > 58 and px < 12 + (py - 58) * .18:
-            return (0, 0, 0, 0)
-        # Broken rings drift from row to row instead of forming a keypad grid.
-        row = py // 4
-        phase = authoring.noise(px // 13, row, 7471) % 3 - 1
-        tx = (px + (row % 2) * 3 + phase) % 6
-        ty = py % 4
-        wear = authoring.noise(px // 3, py // 3, 7477)
-        missing = wear % 7 < 3 or (py > 48 and px > 79 and wear % 5 == 0)
-        base = (20, 27, 31)
-        ring = (ty == 0 and tx in (2, 3)) or (ty == 1 and tx in (1, 4))
-        if ring and not missing:
-            base = (38, 47, 51) if wear % 6 else (47, 55, 57)
-        elif ty == 3 and tx in (2, 3) and not missing:
-            base = (12, 19, 23)
-        if abs(px - 61) < 17 and 43 < py < 66 and wear % 4 == 0:
-            base = (13, 19, 23)
-        return (*base, 255)
-
-    chest_mail_uv = m.patch(128, 96, paint_chest_mail, "worn_chest_mail")
+    # A hand-painted, damaged garment reads more naturally at combat distance
+    # than individually repeated procedural links. Keep the original crop and
+    # reduction deterministic so the atlas can be rebuilt from repository art.
+    chest_source = Image.open(ROOT / "model-lab" / "references" /
+                              "ashen_chest_mail_source_v1.png").convert("RGBA")
+    if chest_source.size != (1199, 1312):
+        raise ValueError("ashen_chest_mail_source_v1.png must be 1199x1312")
+    chest_paint = chest_source.crop((200, 350, 1000, 950)).resize(
+        (128, 96), Image.Resampling.LANCZOS)
+    chest_paint = ImageEnhance.Brightness(chest_paint).enhance(.74)
+    chest_mail_uv = m.patch(128, 96,
+                            lambda px, py: chest_paint.getpixel((px, py)),
+                            "worn_chest_mail_painted_v1")
     m.cube("worn_chest_mail", [-3.63, 16.5, -2.24], [3.63, 21.9, -2.17],
            "mail", chest, face_uv={"north": chest_mail_uv})
     def paint_torn_waist_mail(px, py):
@@ -515,20 +490,20 @@ def build(out=ROOT / "model-lab" / "models"):
         return (*color, 255)
 
     waist_mail_uv = m.patch(96, 64, paint_torn_waist_mail, "torn_waist_mail")
+    front_waist_paint = chest_source.crop((250, 760, 880, 1180)).resize(
+        (96, 64), Image.Resampling.LANCZOS)
+    front_waist_paint = ImageEnhance.Brightness(front_waist_paint).enhance(.74)
+    front_waist_uv = m.patch(96, 64,
+                              lambda px, py: front_waist_paint.getpixel((px, py)),
+                              "torn_front_waist_painted_v1")
     m.cube("torn_waist_mail", [-2.36, 13.45, -1.94], [2.36, 17.05, -1.87],
-           "mail", chest, face_uv={"north": waist_mail_uv,
+           "mail", chest, face_uv={"north": front_waist_uv,
                                    "south": waist_mail_uv})
     m.cube("torn_back_waist_mail", [-2.18, 13.6, 1.78],
            [2.18, 17.15, 1.86], "mail", chest,
            face_uv={"south": waist_mail_uv, "north": open_waist_uv,
                     "east": open_waist_uv, "west": open_waist_uv,
                     "up": open_waist_uv, "down": open_waist_uv})
-    add_rotated(m, chest, "fractured_left_breastplate", [-3.0, 17.75, -2.78],
-                [-.65, 20.1, -2.1], "armor", [0, 0, -7],
-                [-1.8, 19.0, -2.5], "battered_scale")
-    add(m, chest, "right_chest_scrap", [1.25, 17.3, -2.48],
-        [2.55, 19.0, -1.92], "armor", "battered_scale")
-    add(m, chest, "mail_under_left", [-4.25, 15.8, -1.8], [-3.55, 20.8, 1.5], "mail")
     add_rotated(m, chest, "right_rib_tunic_upper",
                 [3.44, 17.85, -1.45], [4.12, 20.6, 1.28], "void",
                 [6, 0, -5], [3.8, 19.2, 0], "worn_tunic")
