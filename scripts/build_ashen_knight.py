@@ -207,12 +207,12 @@ def build(out=ROOT / "model-lab" / "models"):
     belt_faces = {"north": belt_uv, "south": belt_uv,
                   "east": belt_edge_uv, "west": belt_edge_uv,
                   "up": belt_edge_uv, "down": belt_edge_uv}
-    add_rotated(m, hips, "belt_left", [-3.5, 12.35, -2.04],
+    add_rotated(m, hips, "belt_left", [-3.1, 12.35, -2.04],
                 [-.08, 12.88, -1.63], "leather", [0, 0, -3],
-                [-1.75, 12.62, -1.83], "scuffed_leather", belt_faces)
+                [-1.55, 12.62, -1.83], "scuffed_leather", belt_faces)
     add_rotated(m, hips, "belt_right", [-.12, 12.28, -2.04],
-                [3.4, 12.82, -1.63], "leather", [0, 0, 2],
-                [1.65, 12.55, -1.83], "scuffed_leather", belt_faces)
+                [3.0, 12.82, -1.63], "leather", [0, 0, 2],
+                [1.45, 12.55, -1.83], "scuffed_leather", belt_faces)
     add_rotated(m, hips, "skirt_underlayer_root", [-2.55, 10.25, -1.43],
                 [2.55, 12.4, 1.72], "void", [3, 0, 2], [0, 11.2, 0],
                 "worn_tunic")
@@ -236,21 +236,23 @@ def build(out=ROOT / "model-lab" / "models"):
             return (0, 0, 0, 0)
         grain = authoring.noise(px // 3, py // 3, 997 + seed)
         if px - left < 2 or right - px < 2 or py < 3:
-            return (71, 78, 78, 255)
+            return (46, 54, 55, 255)
         if abs(px - (11 + py * .2 + seed * 8)) < .8 and py > 13:
             return (15, 22, 27, 255)
-        color = (33, 41, 45) if grain % 6 else (46, 53, 55)
+        color = (26, 34, 39) if grain % 6 else (40, 48, 50)
         return (*color, 255)
-    for seed, (name, lo, hi) in enumerate((
-            ("broken_tasset_left", [-3.8, 9.3, -2.1], [-1.65, 12.1, -1.98]),
-            ("broken_tasset_right", [1.85, 10.3, -2.0], [3.4, 12.2, -1.88]))):
+    for seed, (name, lo, hi, tilt) in enumerate((
+            ("broken_tasset_left", [-3.24, 9.92, -2.1], [-1.72, 12.1, -1.98], -13),
+            ("broken_tasset_right", [1.78, 10.48, -2.0], [2.96, 12.16, -1.88], 12))):
         tasset_uv = m.patch(32, 48,
                             lambda px, py, s=seed: paint_tasset(px, py, s),
                             f"broken_tasset_face_{seed}")
-        m.cube(name, lo, hi, "armor", hips,
-               face_uv={"north": tasset_uv, "south": tasset_uv,
-                        "east": open_waist_uv, "west": open_waist_uv,
-                        "up": open_waist_uv, "down": open_waist_uv})
+        add_rotated(m, hips, name, lo, hi, "armor", [0, 0, tilt],
+                    [(lo[0] + hi[0]) / 2, (lo[1] + hi[1]) / 2, lo[2]],
+                    "battered_scale",
+                    {"north": tasset_uv, "south": tasset_uv,
+                     "east": open_waist_uv, "west": open_waist_uv,
+                     "up": open_waist_uv, "down": open_waist_uv})
     add(m, hips, "belt_buckle", [-.42, 12.26, -2.19], [.35, 12.91, -1.96], "guard")
 
     def paint_torn_tabard(px, py):
@@ -392,7 +394,7 @@ def build(out=ROOT / "model-lab" / "models"):
                  "east": sternum_side_uv, "west": sternum_side_uv,
                  "up": open_waist_uv, "down": open_waist_uv})
     add_rotated(m, chest, "upper_tunic_abdomen",
-                [-2.05, 16.95, -1.72], [2.05, 19.53, .95], "void",
+                [-1.78, 16.95, -1.62], [1.78, 19.53, .91], "void",
                 [-3, 0, 4], [0, 18.2, -.47], "worn_tunic",
                 {"south": back_core_uv,
                  "east": abdomen_side_uv, "west": abdomen_side_uv,
@@ -425,15 +427,15 @@ def build(out=ROOT / "model-lab" / "models"):
     rib_faces = {"east": rib_uv, "west": rib_uv,
                  "up": open_waist_uv, "down": open_waist_uv}
     add_rotated(m, chest, "upper_tunic_left_rib",
-                [-3.8, 17.5, -1.82], [-2.12, 21.8, .85], "void",
-                [-6, 0, -8], [-3.0, 19.65, -.45], "worn_tunic", rib_faces)
+                [-3.62, 17.5, -1.82], [-1.94, 21.8, .85], "void",
+                [-6, 0, -8], [-2.82, 19.65, -.45], "worn_tunic", rib_faces)
     add_rotated(m, chest, "upper_tunic_right_rib",
-                [2.12, 17.35, -1.78], [3.72, 21.65, .82], "void",
-                [-6, 0, 7], [2.92, 19.5, -.45], "worn_tunic", rib_faces)
+                [1.94, 17.35, -1.78], [3.54, 21.65, .82], "void",
+                [-6, 0, 7], [2.74, 19.5, -.45], "worn_tunic", rib_faces)
     # The lower torso narrows toward the belt. A single full-depth cuboid
     # exposed a long, ruler-straight side between the scarf and the tassets.
     add_rotated(m, chest, "waist_mail_tunic_upper",
-                [-2.48, 15.8, -1.48], [2.48, 18.4, 1.45], "void",
+                [-2.12, 15.8, -1.48], [2.12, 18.4, 1.45], "void",
                 [-6, 0, -2], [0, 17.1, 0], "worn_tunic")
     def paint_chest_mail(px, py):
         side = abs(px - 63.5) / 64
@@ -500,11 +502,11 @@ def build(out=ROOT / "model-lab" / "models"):
         return (*color, 255)
 
     waist_mail_uv = m.patch(96, 64, paint_torn_waist_mail, "torn_waist_mail")
-    m.cube("torn_waist_mail", [-2.7, 13.45, -1.94], [2.7, 17.05, -1.87],
+    m.cube("torn_waist_mail", [-2.36, 13.45, -1.94], [2.36, 17.05, -1.87],
            "mail", chest, face_uv={"north": waist_mail_uv,
                                    "south": waist_mail_uv})
-    m.cube("torn_back_waist_mail", [-2.48, 13.6, 1.78],
-           [2.48, 17.15, 1.86], "mail", chest,
+    m.cube("torn_back_waist_mail", [-2.18, 13.6, 1.78],
+           [2.18, 17.15, 1.86], "mail", chest,
            face_uv={"south": waist_mail_uv, "north": open_waist_uv,
                     "east": open_waist_uv, "west": open_waist_uv,
                     "up": open_waist_uv, "down": open_waist_uv})
@@ -564,8 +566,8 @@ def build(out=ROOT / "model-lab" / "models"):
                      "north": mail_edge_uv, "south": mail_edge_uv,
                      "up": mail_edge_uv, "down": mail_edge_uv})
 
-    add_rotated(m, chest, "left_pauldron_dark_mount", [-5.54, 19.9, -1.62],
-                [-3.72, 21.38, .86], "sleeve", [0, -8, -12],
+    add_rotated(m, chest, "left_pauldron_dark_mount", [-5.38, 20.0, -1.25],
+                [-3.88, 21.22, .64], "sleeve", [0, -8, -12],
                 [-4.55, 20.55, -.3], "worn_sleeve")
     add_rotated(m, chest, "left_pauldron_broken_hem", [-5.35, 19.38, -.45],
                 [-4.02, 20.22, 1.02], "armor", [0, -6, -9],
@@ -1397,7 +1399,37 @@ def build(out=ROOT / "model-lab" / "models"):
 
     add(m, right_thigh, "right_thigh_leather_wear", [2.9, 8.1, -1.87], [3.45, 10.9, -1.65], "leather")
 
-    add(m, left_arm, "bound_upper_arm", [-6, 15.8, -.8], [-3.7, 21, 1.3], "sleeve")
+    def paint_burned_sleeve_side(px, py):
+        top = 4 + round(abs(px - 23) * .13)
+        left = 3 + py // 16 + authoring.noise(py // 5, 0, 2339) % 3
+        right = 45 - py // 12 - authoring.noise(py // 6, 0, 2341) % 4
+        hem = 60 - authoring.noise(px // 4, 0, 2347) % 12
+        if px < left or px > right or py < top or py > hem:
+            return (0, 0, 0, 0)
+        if 25 < py < 52 and abs(px - (12 + py * .35)) < 2 + (py - 25) // 15:
+            return (0, 0, 0, 0)
+        grain = authoring.noise(px // 3, py // 3, 2351)
+        fold = math.sin(px * .16 + py * .09)
+        if fold < -.35:
+            color = (11, 18, 23)
+        elif fold > .65:
+            color = (27, 34, 37)
+        else:
+            color = (18, 25, 29)
+        if py > hem - 3 or px - left < 2 or right - px < 2:
+            color = (8, 14, 19)
+        elif grain % 29 == 0:
+            color = (37, 44, 45)
+        return (*color, 255)
+
+    burned_sleeve_uv = m.patch(48, 64, paint_burned_sleeve_side,
+                               "burned_wounded_sleeve_profile")
+    add_rotated(m, left_arm, "bound_upper_arm",
+                [-5.73, 16.04, -.72], [-4.04, 20.68, .72],
+                "sleeve", [0, 0, -7], [-4.85, 18.35, 0],
+                "worn_sleeve",
+                {"east": burned_sleeve_uv, "west": burned_sleeve_uv,
+                  "south": burned_sleeve_uv})
     def paint_wounded_mail(px, py):
         left = 3 + round(py * .09) + authoring.noise(py // 6, 0, 2363) % 4
         right = 38 - round(py * .14) - authoring.noise(py // 5, 0, 2371) % 5
@@ -1447,7 +1479,6 @@ def build(out=ROOT / "model-lab" / "models"):
         add_rotated(m, left_arm, f"loose_finger_{finger}",
                     [x0, low, -.63], [x1, high, .3], "skin",
                     [0, 0, tilt], [(x0 + x1) / 2, high, -.2], "scarred_flesh")
-    add(m, left_arm, "left_mail_shoulder", [-6.15, 17.2, -1], [-3.55, 20.2, 1.5], "sleeve")
     def paint_wounded_wrap(px, py, seed):
         top = 2 + authoring.noise(px // 5, seed, 2301) % 3
         hem = 25 - authoring.noise(px // 6, seed, 2311) % 5
