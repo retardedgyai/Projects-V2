@@ -976,12 +976,6 @@ def build(out=ROOT / "model-lab" / "models"):
     add_rotated(m, helm, "hood_brow_overhang",
                 [-.99, 25.53, -2.04], [.99, 26.1, -.63], "void",
                 [13, 0, 0], [0, 25.84, -1.3], "burned_hood", hood_faces)
-    add_rotated(m, helm, "hood_lower_jaw",
-                [-.6, 22.91, -1.64], [.6, 23.77, -.67], "void",
-                [-15, 0, 0], [0, 23.3, -1.15], "burned_hood", hood_faces)
-    add_rotated(m, helm, "hood_muzzle_base",
-                [-.48, 22.65, -1.91], [.48, 23.31, -.72], "void",
-                [-13, 0, 0], [0, 22.95, -1.25], "burned_hood", hood_faces)
     def paint_hood_cheek(px, py):
         u = px / 63
         top = 9 + round(11 * math.sin(math.pi * u))
@@ -1001,13 +995,11 @@ def build(out=ROOT / "model-lab" / "models"):
     hood_clear = m.patch(1, 1, lambda _x, _y: (0, 0, 0, 0),
                          "open_hood_cheek_edge")
     add_rotated(m, helm, "hood_recessed_cheek",
-                [-.71, 23.74, -1.88], [.71, 25.53, -.47], "void",
+                [-.71, 23.74, -2.46], [.71, 25.53, -.47], "void",
                 [-10, 0, 0], [0, 24.6, -1.15], "burned_hood",
                 {"east": cheek_uv, "west": cheek_uv,
                  "north": hood_clear, "south": hood_clear,
                  "up": hood_clear, "down": hood_clear})
-    add(m, helm, "snout_dark_tip", [-.28, 21.47, -5.74], [.28, 21.73, -5.49], "void")
-
     # A cutout engraved faceplate supplies a distinct long-muzzled silhouette
     # without reproducing another game's texture or sculpt. The existing helm
     # cubes retain the depth from the side and above.
@@ -1076,16 +1068,18 @@ def build(out=ROOT / "model-lab" / "models"):
             return (0, 0, 0, 0)
         u = (px - 2) / 43
         snout = max(0, (u - .75) / .25)
-        top = 23 + round(13 * u + 12 * snout)
+        top = 19 + round(10 * u + 5 * snout)
         cheek_hollow = 3 * max(0, 1 - abs(u - .54) / .3)
-        bottom = 42 + round(6 * u - cheek_hollow)
+        bottom = 43 + round(4 * u - cheek_hollow)
         if py < top or py > bottom:
             return (0, 0, 0, 0)
         eye = 23 < px < 35 and top + 3 < py < top + 7
         if eye:
             return (8, 14, 19, 255)
         if py <= top + 2:
-            return (42, 49, 51, 255)
+            wear = authoring.noise(px // 3, 0, 5941)
+            return ((42, 49, 51, 255) if wear % 7 < 3
+                    else (24, 32, 36, 255))
         if py >= bottom - 2:
             return (18, 25, 31, 255)
         if abs(py - (31 + 10 * u)) < 1.2 and px > 18:
@@ -1130,7 +1124,7 @@ def build(out=ROOT / "model-lab" / "models"):
         ((.5, 25.5, 1.7), (-.4, 24.5, 4.1), (-2.1, 19.7, 6.9), .65),
         ((.9, 26.5, 1.7), (1.2, 26.2, 5.5), (1.7, 22.5, 8.8), .62),
         ((.1, 26.3, 1.8), (.5, 25.1, 6.0), (2.5, 20.8, 9.5), .55),
-        ((-.8, 26.0, 1.9), (-.3, 24.2, 5.6), (.5, 18.7, 8.6), .5),
+        ((-.8, 26.0, 1.9), (.5, 24.2, 5.6), (2.6, 20.0, 8.6), .5),
     )
     for strand, (start, control, tip, root_width) in enumerate(mane_paths):
         control = (control[0], control[1], start[2] + (control[2] - start[2]) * .9)
