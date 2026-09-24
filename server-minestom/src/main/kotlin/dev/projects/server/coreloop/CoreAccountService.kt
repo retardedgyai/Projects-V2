@@ -467,7 +467,7 @@ class CoreAccountService(private val repository: CoreAccountRepository,
                 paid = recipe(paid, CoreRecipe("購入", emptyMap(), mapOf(requireNotNull(offer.material) to offer.quantity))).first
                 credited
             }
-            val message = "銀貨${offer.price}枚で購入しました。${if (offer.gearId != null) "装備庫" else "素材倉庫"}へ保管しました"
+            val message = "銀貨${offer.price}枚で購入しました。${if (offer.gearId != null) "装備庫" else "インベントリ"}で確認できます"
             val revision = buyer.revision + 1
             Triple(paid.copy(revision = revision, receipts = retainedReceipts(buyer) + (operation.requestId to CoreReceipt(fingerprint, revision, message))),
                 sold.copy(revision = seller.revision + 1), message)

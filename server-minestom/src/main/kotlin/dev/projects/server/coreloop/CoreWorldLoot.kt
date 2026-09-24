@@ -12,6 +12,7 @@ import net.minestom.server.entity.Player
 import net.minestom.server.entity.metadata.display.AbstractDisplayMeta
 import net.minestom.server.entity.metadata.display.ItemDisplayMeta
 import net.minestom.server.entity.metadata.display.TextDisplayMeta
+import net.minestom.server.entity.metadata.other.InteractionMeta
 import net.minestom.server.instance.InstanceContainer
 import net.minestom.server.item.ItemStack
 import net.minestom.server.item.Material
@@ -69,7 +70,14 @@ internal class CoreWorldLoot(
             }
             setInstance(this@CoreWorldLoot.instance, position.add(0.0, 0.75, 0.0))
         }
-        val drop = Drop(source, kind, position, currencies, listOf(item, label))
+        val hitbox = Entity(EntityType.INTERACTION).apply {
+            setNoGravity(true); setHasPhysics(false)
+            editEntityMeta(InteractionMeta::class.java) { meta ->
+                meta.setWidth(1.2f); meta.setHeight(1.1f); meta.setResponse(true)
+            }
+            setInstance(this@CoreWorldLoot.instance, position)
+        }
+        val drop = Drop(source, kind, position, currencies, listOf(item, label, hitbox))
         if (drops.putIfAbsent(source, drop) != null) drop.entities.forEach { it.remove() }
         else owner.playSound(Sound.sound(if (currencies.isEmpty()) SoundEvent.ENTITY_ITEM_PICKUP else SoundEvent.BLOCK_AMETHYST_BLOCK_CHIME,
             Sound.Source.PLAYER, 0.65f, if (kind == CoreLootKind.BOSS) 0.8f else 1.2f), position.x(), position.y(), position.z())
@@ -88,8 +96,20 @@ internal class CoreWorldLoot(
     fun interact(player: Player, target: Entity): Boolean {
         val drop = drops.values.firstOrNull { target in it.entities } ?: return false
         if (!disposed && player === owner && owner.isOnline && owner.instance === instance &&
-            owner.position.distanceSquared(drop.position) < 5.0 * 5.0) collect(drop)
+            owner.position.distanceSquared(drop.position) < 5.0 * 5.0) {
+            if (!hasInventoryRoom(drop)) owner.sendMessage(CoreLoopItems.text("インベントリがいっぱいです。空きを作ってから回収してください", NamedTextColor.YELLOW))
+            else collect(drop)
+        }
         return true
+    }
+
+    private fun hasInventoryRoom(drop: Drop): Boolean {
+        val heldResources = (0 until 36).mapNotNull { CoreLoopItems.resourceId(owner.inventory.getItemStack(it)) }.toSet()
+        val heldCurrencies = (0 until 36).mapNotNull { CoreLoopItems.currencyId(owner.inventory.getItemStack(it)) }.toSet()
+        val outputs = setOf(CoreMaterial(CoreResource.AFFIX_DUST), CoreMaterial(CoreResource.COMBAT_TOKEN, run.map.tier))
+        val currencyOutputs = drop.currencies.keys + CoreCraftingCurrency.TRANSMUTATION
+        val required = outputs.count { it !in heldResources } + currencyOutputs.count { it !in heldCurrencies }
+        return required <= (16..35).count { owner.inventory.getItemStack(it).isAir }
     }
 
     @Synchronized

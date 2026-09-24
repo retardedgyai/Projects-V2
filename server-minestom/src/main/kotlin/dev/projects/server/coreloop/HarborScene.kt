@@ -44,7 +44,7 @@ internal object HarborScene {
         val facilities = listOf(
             facility(HarborFacilityKind.EXPEDITIONS, "遠征受付", 0, -15, listOf(-1 to -15, 1 to -15)),
             facility(HarborFacilityKind.WORKSHOP, "鍛冶工房", -16, -6, listOf(-18 to -6, -14 to -6)),
-            facility(HarborFacilityKind.STORAGE, "素材倉庫", -15, 10, listOf(-16 to 10, -14 to 10)),
+            facility(HarborFacilityKind.STORAGE, "所持品目録", -15, 10, listOf(-16 to 10, -14 to 10)),
             facility(HarborFacilityKind.SUPPLIES, "交易市場", 16, 9, listOf(15 to 9, 17 to 9)),
             facility(HarborFacilityKind.MASTERY, "熟練の手引き", 16, -9, listOf(15 to -9, 17 to -9)),
             facility(HarborFacilityKind.COLONY, "自分のコロニー", 6, 15, listOf(5 to 15, 7 to 15)),

@@ -117,8 +117,17 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
             val run = accounts[player.uuid]?.activeRun
             val session = sessions[player.uuid]
             if (run == null || session == null || session.returning || session.runId != run.id) CompletableFuture.completedFuture(false)
+            else if (!CoreLoopItems.canCarry(player, CoreMaterial(disciplineResource(node.discipline), run.map.tier))) {
+                player.sendMessage(CoreLoopItems.text("インベントリがいっぱいです。空きを作ってから採取してください", NamedTextColor.YELLOW))
+                CompletableFuture.completedFuture(false)
+            }
             else rewards.submit(player.uuid, CoreAction.Gather(run.id, node.id.toString(), disciplineResource(node.discipline), count))
-                .thenApply { it.successful }
+                .thenApply { result ->
+                    if (result.successful) MinecraftServer.getSchedulerManager().scheduleNextTick {
+                        if (connections[player.uuid] === player && player.isOnline) refresh(player)
+                    }
+                    result.successful
+                }
         }, respawnResources = false, technicalMessages = false)
 
     private val combatLab = CoreCombatLab(mapBuilder,
@@ -295,7 +304,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
             }
         }
         events.addListener(ItemDropEvent::class.java) { event ->
-            if (combatLab.contains(event.player) || FirstMagicColonyItems.kind(event.itemStack) != null || FirstMagicInventory.kind(event.itemStack) != null || event.itemStack.getTag(CoreLoopItems.actionTag) != null || event.itemStack.getTag(QUEST_GATHERING_TOOL_TAG) != null || CoreLoopItems.mapId(event.itemStack) != null) event.isCancelled = true
+            if (combatLab.contains(event.player) || FirstMagicColonyItems.kind(event.itemStack) != null || FirstMagicInventory.kind(event.itemStack) != null || CoreLoopItems.resourceId(event.itemStack) != null || CoreLoopItems.fragmentId(event.itemStack) != null || event.itemStack.getTag(CoreLoopItems.actionTag) != null || event.itemStack.getTag(QUEST_GATHERING_TOOL_TAG) != null || CoreLoopItems.mapId(event.itemStack) != null) event.isCancelled = true
         }
         events.addListener(PlayerBlockInteractEvent::class.java) { event ->
             if (event.hand != PlayerHand.MAIN) return@addListener

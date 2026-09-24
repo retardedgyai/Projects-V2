@@ -12,6 +12,7 @@ import net.minestom.server.entity.Player
 import net.minestom.server.entity.metadata.display.AbstractDisplayMeta
 import net.minestom.server.entity.metadata.display.ItemDisplayMeta
 import net.minestom.server.entity.metadata.display.TextDisplayMeta
+import net.minestom.server.entity.metadata.other.InteractionMeta
 import net.minestom.server.item.ItemStack
 import net.minestom.server.item.Material
 import java.util.concurrent.CompletableFuture
@@ -72,7 +73,14 @@ internal class FirstMagicField(
                 }
                 setInstance(runtime.instance, position.add(0.0, 0.95, 0.0))
             }
-            Find(material, position, listOf(icon, label))
+            val hitbox = Entity(EntityType.INTERACTION).apply {
+                setNoGravity(true); setHasPhysics(false)
+                editEntityMeta(InteractionMeta::class.java) { meta ->
+                    meta.setWidth(1.15f); meta.setHeight(1.35f); meta.setResponse(true)
+                }
+                setInstance(runtime.instance, position.sub(0.0, 0.55, 0.0))
+            }
+            Find(material, position, listOf(icon, label, hitbox))
         }
     }
 

@@ -20,6 +20,9 @@ internal object CoreLoopItems {
     val gearTag: Tag<String> = Tag.String("projects_core_gear")
     val stoneTag: Tag<String> = Tag.String("projects_core_stone")
     val currencyTag: Tag<String> = Tag.String("projects_core_currency")
+    val resourceTag: Tag<String> = Tag.String("projects_core_resource")
+    val resourceQuantityTag: Tag<Long> = Tag.Long("projects_core_resource_quantity")
+    val fragmentTag: Tag<String> = Tag.String("projects_core_fragment")
     val colors = listOf(NamedTextColor.WHITE, NamedTextColor.GREEN, NamedTextColor.AQUA, NamedTextColor.LIGHT_PURPLE)
 
     fun text(value: String, color: NamedTextColor = NamedTextColor.GRAY): Component =
@@ -48,8 +51,25 @@ internal object CoreLoopItems {
     }
 
     fun resource(material: CoreMaterial, count: Long): ItemStack = icon(resourceMaterial(material.resource), material.displayName,
-        "倉庫：$count 個", if (material.resource.raw) "採取、または市場で購入して入手" else if (material.resource in CoreLoopCatalog.refined.values) "採取素材を精製、または市場で購入" else "遠征や工房で入手 / 自動保管", color = colors[material.tier - 1])
+        "所持：$count 個", if (material.resource.raw) "採取、または市場で購入して入手" else if (material.resource in CoreLoopCatalog.refined.values) "採取素材を精製、または市場で購入" else "遠征や工房で入手", color = colors[material.tier - 1])
         .withAmount(count.coerceIn(1, 64).toInt())
+
+    fun carriedResource(material: CoreMaterial, count: Long): ItemStack = icon(resourceMaterial(material.resource), material.displayName,
+        if (count <= 64) "インベントリ所持 $count 個" else "素材束：$count 個分",
+        "探索・製造で得た実物の素材", color = colors[material.tier - 1])
+        .withTag(resourceTag, "${material.resource.name}:${material.tier}")
+        .withTag(resourceQuantityTag, count)
+        .withAmount(count.coerceIn(1, 64).toInt())
+
+    fun resourceId(item: ItemStack): CoreMaterial? = item.getTag(resourceTag)?.split(':')?.takeIf { it.size == 2 }?.let { parts ->
+        val resource = CoreResource.entries.firstOrNull { it.name == parts[0] } ?: return@let null
+        val tier = parts[1].toIntOrNull()?.takeIf { it in 1..4 } ?: return@let null
+        CoreMaterial(resource, tier)
+    }
+
+    fun canCarry(player: Player, material: CoreMaterial): Boolean =
+        (0 until 36).any { resourceId(player.inventory.getItemStack(it)) == material } ||
+            (16..35).any { player.inventory.getItemStack(it).isAir }
 
     fun weapon(tier: Int): ItemStack = icon(listOf(Material.STONE_SWORD, Material.IRON_SWORD, Material.DIAMOND_SWORD, Material.NETHERITE_SWORD)[tier - 1],
         "T$tier 開拓者の大剣", "攻撃力 ${(12 * CoreLoopCatalog.weaponDamage(tier)).roundToInt()}",
@@ -147,7 +167,7 @@ internal object CoreLoopItems {
     fun currency(currency: CoreCraftingCurrency, count: Long, packed: Boolean, quantityLabel: String = "所持"): ItemStack {
         val exclusive = CoreActivityKind.entries.firstOrNull { it.currency == currency }
         return CoreUiTooltip.apply(ItemStack.of(currencyMaterial(currency)).withTag(actionTag, "currency")
-            .withTag(currencyTag, currency.name).withAmount(count.coerceIn(1, 64).toInt()),
+            .withTag(currencyTag, currency.name).withTag(resourceQuantityTag, count).withAmount(count.coerceIn(1, 64).toInt()),
             CoreTooltipModel(currency.displayName, if (exclusive == null) CoreUiRarity.RARE else CoreUiRarity.EPIC,
                 tier = 1, itemLevel = 1, typeLabel = if (currency == CoreCraftingCurrency.ASTRAL) "星環の深殿・踏破専用報酬" else if (exclusive == null) "装備加工用の通貨" else "${exclusive.displayName}の専用報酬",
                 stats = listOf(CoreTooltipStat(quantityLabel, "$count 個", CoreUiIcon.MOD)),
@@ -159,7 +179,12 @@ internal object CoreLoopItems {
             CoreActivityKind.RIFT -> "入手：マップ内の裂け目を最後まで追う"
             CoreActivityKind.RITUAL -> "入手：儀式の波を倒し、報酬を確定する"
             CoreActivityKind.TRIAL -> "入手：通常マップのボスを討伐する"
-        }, "手帳 → 境界の試練から出発", color = NamedTextColor.LIGHT_PURPLE).withAmount(count.coerceIn(1, 64).toInt())
+        }, "手帳 → 境界の試練から出発", color = NamedTextColor.LIGHT_PURPLE)
+        .withTag(fragmentTag, kind.name).withTag(resourceQuantityTag, count).withAmount(count.coerceIn(1, 64).toInt())
+
+    fun fragmentId(item: ItemStack): CoreActivityKind? = item.getTag(fragmentTag)?.let { id ->
+        CoreActivityKind.entries.firstOrNull { it.name == id }
+    }
 
     fun map(data: CoreOwnedMap): ItemStack = icon(Material.FILLED_MAP, "T${data.tier} Lv${data.level} 未踏の地図",
         *listOf("右クリック：この地図で出発", "石板をつかんで重ねるとMODを付与", "付与MOD ${data.modifiers.size}/3")
@@ -185,10 +210,12 @@ internal object CoreLoopItems {
 
     fun refresh(player: Player, account: CoreAccount, initial: Boolean = false, packed: Boolean = false,
         combatSheet: CoreCombatSheet = CoreCombatSheet.from(account)) {
+        val selectedMapId = mapId(player.inventory.getItemStack(7))
         if (initial) player.inventory.clear()
         // These are account projections, not transferable stacks. Remove moved/cursor copies before
         // rebuilding so spending the last orb cannot leave a stale apparent balance elsewhere.
-        fun projection(item: ItemStack) = currencyId(item) != null || stoneId(item) != null
+        fun projection(item: ItemStack) = currencyId(item) != null || stoneId(item) != null || resourceId(item) != null ||
+            fragmentId(item) != null || mapId(item) != null
         for (slot in 0 until 36) if (projection(player.inventory.getItemStack(slot))) player.inventory.setItemStack(slot, ItemStack.AIR)
         if (projection(player.itemInOffHand)) player.setItemInOffHand(ItemStack.AIR)
         if (projection(player.inventory.cursorItem)) player.inventory.cursorItem = ItemStack.AIR
@@ -214,25 +241,50 @@ internal object CoreLoopItems {
                 .withTag(actionTag, "skill:$id")
             player.inventory.setItemStack(id + 1, item)
         }
-        player.inventory.setItemStack(6, icon(Material.HONEY_BOTTLE, "回復薬（倉庫 ${account.amount(CoreResource.POTION)}）",
-            "右クリック：最大HPの45% + 回復力100%", "与回復・被回復MODが適用 / 再使用10秒").withTag(actionTag, "potion"))
-        player.inventory.setItemStack(8, icon(Material.NETHER_STAR, "ProjectS — 冒険の手帳", "右クリック：地図・刻印工房・倉庫", "港の施設からも同じ操作ができます").withTag(actionTag, "journal"))
+        val potions = account.amount(CoreResource.POTION)
+        player.inventory.setItemStack(6, if (potions == 0L) ItemStack.AIR else icon(Material.HONEY_BOTTLE, "回復薬",
+            "所持 $potions 個", "右クリック：最大HPの45% + 回復力100%", "与回復・被回復MODが適用 / 再使用10秒").withTag(actionTag, "potion")
+            .withTag(resourceTag, "POTION:1").withTag(resourceQuantityTag, potions).withAmount(potions.coerceAtMost(16).toInt()))
+        player.inventory.setItemStack(8, icon(Material.NETHER_STAR, "ProjectS — 冒険の手帳", "右クリック：地図・刻印工房・所持品", "港の施設からも同じ操作ができます").withTag(actionTag, "journal"))
         if (initial) {
             QuestGatheringDiscipline.entries.forEachIndexed { i, discipline -> player.inventory.setItemStack(9 + i, discipline.toolItem()) }
         }
-        player.inventory.setItemStack(14, icon(Material.AMETHYST_SHARD, "採取の石板（${account.amount(CoreResource.GATHERING_TABLET)}）",
-            "つかんで地図に重ねるとMODを付与", "地図台でも同じ操作ができます", color = NamedTextColor.LIGHT_PURPLE)
-            .withTag(actionTag, "tablet"))
-        player.inventory.setItemStack(15, icon(Material.FLINT, "砥石（${account.amount(CoreResource.WHETSTONE)}）",
-            "右クリック：直接攻撃の与ダメージ+20% / 3分", "AD・AP自体は変化しません").withTag(actionTag, "whetstone"))
+        val tablets = account.amount(CoreResource.GATHERING_TABLET)
+        player.inventory.setItemStack(14, if (tablets == 0L) ItemStack.AIR else icon(Material.AMETHYST_SHARD, "採取の石板",
+            "所持 $tablets 個", "つかんで地図に重ねるとMODを付与", "地図台でも同じ操作ができます", color = NamedTextColor.LIGHT_PURPLE)
+            .withTag(actionTag, "tablet").withTag(resourceTag, "GATHERING_TABLET:1")
+            .withTag(resourceQuantityTag, tablets).withAmount(tablets.coerceAtMost(64).toInt()))
+        val whetstones = account.amount(CoreResource.WHETSTONE)
+        player.inventory.setItemStack(15, if (whetstones == 0L) ItemStack.AIR else icon(Material.FLINT, "砥石",
+            "所持 $whetstones 個", "右クリック：直接攻撃の与ダメージ+20% / 3分", "AD・AP自体は変化しません")
+            .withTag(actionTag, "whetstone").withTag(resourceTag, "WHETSTONE:1")
+            .withTag(resourceQuantityTag, whetstones).withAmount(whetstones.coerceAtMost(64).toInt()))
         // Keep free inventory slots available for collected world items and placeable blocks.
         val owned = CoreCraftingCurrency.entries.filter { account.amount(it) > 0 }
         owned.forEach { kind ->
             val slot = (16..35).firstOrNull { player.inventory.getItemStack(it).isAir } ?: return@forEach
             player.inventory.setItemStack(slot, currency(kind, account.amount(kind), packed))
         }
-        val existingMapId = mapId(player.inventory.getItemStack(7))
-        player.inventory.setItemStack(7, account.maps.firstOrNull { it.id == existingMapId }?.let(::map) ?: ItemStack.AIR)
+        account.balances.entries.filter { it.value > 0 && it.key.resource !in setOf(
+            CoreResource.POTION, CoreResource.GATHERING_TABLET, CoreResource.WHETSTONE) }
+            .sortedWith(compareBy({ it.key.tier }, { it.key.resource.ordinal })).forEach { (material, count) ->
+                val slot = (16..35).firstOrNull { player.inventory.getItemStack(it).isAir } ?: return@forEach
+                player.inventory.setItemStack(slot, carriedResource(material, count))
+            }
+        account.fragments.entries.filter { it.value > 0 }.forEach { (kind, count) ->
+            val slot = (16..35).firstOrNull { player.inventory.getItemStack(it).isAir } ?: return@forEach
+            player.inventory.setItemStack(slot, fragment(kind, count))
+        }
+        val selectedMap = account.maps.firstOrNull { it.id == selectedMapId } ?: account.maps.firstOrNull()
+        player.inventory.setItemStack(7, selectedMap?.let(::map) ?: ItemStack.AIR)
+        account.maps.filter { it.id != selectedMap?.id }.forEach { ownedMap ->
+            val slot = (16..35).firstOrNull { player.inventory.getItemStack(it).isAir } ?: return@forEach
+            player.inventory.setItemStack(slot, map(ownedMap))
+        }
+        account.affixStones.forEach { ownedStone ->
+            val slot = (16..35).firstOrNull { player.inventory.getItemStack(it).isAir } ?: return@forEach
+            player.inventory.setItemStack(slot, stone(ownedStone, packed))
+        }
         val tier = account.armorTier
         val armor = listOf(
             listOf(Material.LEATHER_HELMET, Material.LEATHER_CHESTPLATE, Material.LEATHER_LEGGINGS, Material.LEATHER_BOOTS),

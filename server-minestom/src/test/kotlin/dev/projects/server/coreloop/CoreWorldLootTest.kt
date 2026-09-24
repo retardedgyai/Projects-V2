@@ -178,7 +178,7 @@ class CoreWorldLootTest {
         }
         fun move(pos: Pos) { owner.teleport(pos).get(10, TimeUnit.SECONDS) }
         fun click(pos: Pos, player: Player = owner) {
-            val target = instance.entities.filter { it.entityType == EntityType.ITEM_DISPLAY }
+            val target = instance.entities.filter { it.entityType == EntityType.INTERACTION }
                 .minByOrNull { it.position.distanceSquared(pos) } ?: error("No loot item display")
             loot.interact(player, target)
         }

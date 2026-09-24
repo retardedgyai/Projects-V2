@@ -2107,7 +2107,7 @@ internal class VerdantRoadQuestService(
                 MinecraftServer.getSchedulerManager().scheduleNextTick {
                     if (failure != null || saved != true) {
                         if (activeByPlayer[player.uuid] === runtime) runtime.restoreGatheringNode(node)
-                        if (player.isOnline) player.sendMessage(Component.text("素材を保存できませんでした。もう一度採取してください。", NamedTextColor.RED))
+                        if (player.isOnline) player.sendMessage(Component.text("素材を受け取れませんでした。インベントリに空きを作って再度採取してください。", NamedTextColor.RED))
                     } else {
                         val current = gatheringMastery(player.uuid)
                         val updated = current.addExperience(node.discipline, node.quality.masteryExperience)
@@ -2119,7 +2119,7 @@ internal class VerdantRoadQuestService(
                             gatheringMasteries.remove(player.uuid, updated)
                             return@scheduleNextTick
                         }
-                        player.sendMessage(Component.text("T${node.tier} ${node.discipline.commonResourceName} +$amount → 素材倉庫", NamedTextColor.GREEN))
+                        player.sendMessage(Component.text("T${node.tier} ${node.discipline.commonResourceName} +$amount → インベントリ", NamedTextColor.GREEN))
                         if (updated.level(node.discipline) > current.level(node.discipline)) {
                             player.sendMessage(Component.text("${node.discipline.displayName}マスタリー Lv ${updated.level(node.discipline)}", NamedTextColor.GOLD))
                         }
