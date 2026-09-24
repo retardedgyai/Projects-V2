@@ -1026,7 +1026,9 @@ def build(out=ROOT / "model-lab" / "models"):
     # without reproducing another game's texture or sculpt. The existing helm
     # cubes retain the depth from the side and above.
     def paint_faceplate(px, py):
-        center = 24
+        # The damaged face is pulled to one side. A perfectly mirrored silver
+        # outline and paired bright muzzle rails looked like a robot visor.
+        center = 24 - .5 * math.sin(py * .09)
         distance = abs(px - center)
         if py < 7:
             width = 2 + py // 2
@@ -1042,28 +1044,43 @@ def build(out=ROOT / "model-lab" / "models"):
             width -= 1
         if distance > width:
             return (0, 0, 0, 0)
-        if px < center - 8 and 38 < py < 47 and (px + py) % 4 != 0:
+        if px < center - 8 and 35 < py < 49 and (px + py) % 4 != 0:
             return (0, 0, 0, 0)
         eye_line = (28 if px < center else 30) - distance * .32
+        if px < center and distance > 7 and py > eye_line - 2 and (px + py) % 6 < 2:
+            return (0, 0, 0, 0)
         if 4 <= distance <= 12 and abs(py - eye_line) < (1.2 if px < center else 1.5):
             return (5, 10, 17, 255)
-        if 4 <= distance <= 12 and abs(py - (eye_line - 2.2)) < 1:
-            return (82, 91, 95, 255)
+        if 4 <= distance <= 12 and abs(py - (eye_line - 2.2)) < 1 and px > center:
+            return (72, 81, 85, 255)
         snout_ridge = 6 - (py - 37) * .18
         if 37 <= py <= 59 and abs(distance - snout_ridge) < .85:
-            return (73, 81, 84, 255)
+            if px < center and 43 < py < 52:
+                return (23, 31, 36, 255)
+            return (64, 72, 75, 255) if px > center else (49, 57, 60, 255)
         if 36 <= py <= 60 and distance <= 1:
             return (20, 27, 31, 255)
         if py >= 59 and distance < 3:
             return (17, 23, 27, 255)
-        if abs(distance - width) <= 1 and py % 7 != 0:
-            return (72, 81, 85, 255)
+        if abs(distance - width) <= 1 and py % 7 != 0 and (px > center or py < 23):
+            return (62, 70, 73, 255)
         if px > center + 7 and 17 < py < 45 and (px + py * 2) % 8 < 2:
             return (0, 0, 0, 0)
         scratch = (px * 3 + py * 5) % 47
         if scratch == 0:
-            return (101, 109, 110, 255)
-        return (42, 49, 53, 255)
+            return (75, 83, 84, 255)
+        contour = distance / max(1, width)
+        if py < 24:
+            if contour > .68:
+                return (33, 42, 46, 255)
+            if abs(px - (center - 2 + py * .08)) < 1.2:
+                return (53, 61, 64, 255)
+        if 30 < py < 44 and contour > .56:
+            return (29, 37, 41, 255)
+        grain = authoring.noise(px // 3, py // 3, 5981)
+        if grain % 17 == 0:
+            return (53, 60, 62, 255)
+        return (44, 52, 55, 255)
 
     faceplate_uv = m.patch(48, 64, paint_faceplate, "ashen_faceplate")
     def paint_visor_profile(px, py):
@@ -1398,24 +1415,31 @@ def build(out=ROOT / "model-lab" / "models"):
 
     add(m, left_arm, "bound_upper_arm", [-6, 15.8, -.8], [-3.7, 21, 1.3], "sleeve")
     def paint_wounded_mail(px, py):
-        left = 3 + round(py * .07) + authoring.noise(py // 6, 0, 2363) % 3
-        right = 38 - round(py * .1) - authoring.noise(py // 5, 0, 2371) % 4
+        left = 3 + round(py * .09) + authoring.noise(py // 6, 0, 2363) % 4
+        right = 38 - round(py * .14) - authoring.noise(py // 5, 0, 2371) % 5
         hem = 63 - authoring.noise(px // 3, 0, 2381) % 12
         if px < left or px > right or py > hem:
             return (0, 0, 0, 0)
-        if py > 43 and px > 22 and (px + py * 2) % 19 < 4:
+        if (22 < py < 49 and px > right - 4 - round(3 * math.sin(py * .17))
+                and authoring.noise(px // 2, py // 3, 2379) % 4 < 3):
+            return (0, 0, 0, 0)
+        if py > 39 and px > 22 and (px + py * 2) % 19 < 5:
             return (0, 0, 0, 0)
         row = py // 6
-        tx = (px + (row % 2) * 4) % 8
+        tx = (px + (row % 2) * 4 + authoring.noise(row // 2, 0, 2383) % 3) % 8
         grain = authoring.noise(px // 3, py // 3, 2387)
         ring = ((py % 6 == 1 and tx in (2, 3, 4)) or
                 (py % 6 in (2, 3) and tx in (1, 5)))
-        if ring and grain % 7 != 0:
-            color = (59, 66, 66) if grain % 5 else (72, 76, 73)
+        worn_patch = (16 < px < 31 and 19 < py < 45 and
+                      authoring.noise(px // 5, py // 5, 2385) % 6 < 4)
+        if ring and grain % 11 > (7 if worn_patch else 4):
+            color = (41, 49, 51) if grain % 5 else (55, 61, 60)
         elif py % 6 == 4 and tx in (2, 3, 4):
             color = (10, 17, 22)
         else:
-            color = (22, 30, 36)
+            color = (19, 27, 33)
+        if px - left < 2 or right - px < 2 or py > hem - 3:
+            color = (12, 20, 26)
         return (*color, 255)
 
     wounded_mail_uv = m.patch(40, 64, paint_wounded_mail,
@@ -1788,22 +1812,22 @@ def build(out=ROOT / "model-lab" / "models"):
             base_z = depth + (.22, .55, .88)[segment]
             segment_width = width * ((.9, 1.0, .9)[segment] if strip == 0
                                      else (.88, 1.0, .9)[segment])
-            for row in range(2):
-                row_top = top - (top - bottom) * row / 2
-                row_bottom = top - (top - bottom) * (row + 1) / 2
-                row_width = segment_width * (1 - row * .08)
+            for row in range(3):
+                row_top = top - (top - bottom) * row / 3
+                row_bottom = top - (top - bottom) * (row + 1) / 3
+                row_width = segment_width * (1 - row * .055)
                 row_center = (x + row * (-.15, -.04, .14)[strip]
                               + .13 * math.sin((segment * 2 + row) * 1.5 + strip))
                 v = (cape_top - (row_top + row_bottom) / 2) / (cape_top - hem)
                 ty0 = uv[1] + round((cape_top - row_top) / (cape_top - hem) * 192)
                 ty1 = uv[1] + round((cape_top - row_bottom) / (cape_top - hem) * 192)
-                for facet in range(3):
-                    edge_seed = strip * 150 + segment * 15 + row * 3 + facet
+                for facet in range(4):
+                    edge_seed = strip * 200 + segment * 48 + row * 8 + facet
                     edge_uv = m.patch(8, 32,
                                       lambda px, py, seed=edge_seed:
                                       paint_cloak_edge(px, py, seed),
                                       f"ashen_cloak_edge_{edge_seed}")
-                    u = (facet + .5) / 3
+                    u = (facet + .5) / 4
                     center_x = row_center + (u - .5) * row_width
                     center_y = (row_top + row_bottom) / 2
                     def cloth_z(across, down):
@@ -1822,19 +1846,19 @@ def build(out=ROOT / "model-lab" / "models"):
                         cloth_z(u, v_top) - cloth_z(u, v_bottom),
                         row_top - row_bottom))
                     yaw_fold = -math.degrees(math.atan2(
-                        cloth_z((facet + 1) / 3, v) - cloth_z(facet / 3, v),
-                        row_width / 3))
-                    face_uv = {"north": [uv[0] + round(facet * 48 / 3), ty0,
-                                         uv[0] + round((facet + 1) * 48 / 3), ty1],
-                               "south": [uv[0] + round(facet * 48 / 3), ty0,
-                                         uv[0] + round((facet + 1) * 48 / 3), ty1],
+                        cloth_z((facet + 1) / 4, v) - cloth_z(facet / 4, v),
+                        row_width / 4))
+                    face_uv = {"north": [uv[0] + round(facet * 48 / 4), ty0,
+                                         uv[0] + round((facet + 1) * 48 / 4), ty1],
+                               "south": [uv[0] + round(facet * 48 / 4), ty0,
+                                         uv[0] + round((facet + 1) * 48 / 4), ty1],
                                "east": edge_uv, "west": edge_uv,
                                "up": open_hem_uv, "down": open_hem_uv}
                     half_depth = ((.58, .44, .29)[segment] if strip == 0
                                   else (.43, .33, .22)[segment]) * (1 - .10 * row)
                     add_rotated(m, buckets[segment], f"cape_strip_{strip}_{segment}_{row}_{facet}",
-                                [center_x - row_width / 6 - .06, row_bottom - .08, z - half_depth],
-                                [center_x + row_width / 6 + .06, row_top + .08, z + half_depth],
+                                [center_x - row_width / 8 - .04, row_bottom - .05, z - half_depth],
+                                [center_x + row_width / 8 + .04, row_top + .05, z + half_depth],
                                 "cloth",
                                 [max(-28, min(28, pitch)),
                                  yaw + max(-24, min(24, yaw_fold)), 0],
