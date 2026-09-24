@@ -815,13 +815,18 @@ def build(out=ROOT / "model-lab" / "models"):
 
     # The mask is the face; only a narrow, dark head and a short mount sit
     # behind it. The mane supplies the rear silhouette.
-    hood_uv = m.patch(16, 16,
-                      lambda px, py: (13, 22, 32, 255) if (px * 3 + py * 5) % 17
-                      else (22, 32, 42, 255), "burned_hood_shared")
+    def paint_burned_hood(px, py):
+        grain = authoring.noise(px // 3, py // 3, 5621)
+        crease = (px * 2 + py) % 19 < 2
+        if crease:
+            return (28, 36, 44, 255)
+        return ((14, 23, 33, 255) if grain % 5 == 0
+                else (19, 28, 38, 255))
+    hood_uv = m.patch(32, 32, paint_burned_hood, "burned_hood_shared")
     hood_faces = {face: hood_uv for face in
                   ("north", "south", "east", "west", "up", "down")}
     add_rotated(m, helm, "hood_skull_core",
-                [-.78, 23.82, -1.02], [.78, 26.18, .8], "void",
+                [-.76, 24.08, -.84], [.76, 25.99, .51], "void",
                 [-8, 0, 0], [0, 25.0, -.1], "burned_hood", hood_faces)
     add_rotated(m, helm, "hood_brow_overhang",
                 [-.99, 25.53, -2.04], [.99, 26.1, -.63], "void",
@@ -879,33 +884,33 @@ def build(out=ROOT / "model-lab" / "models"):
 
     faceplate_uv = m.patch(48, 64, paint_faceplate, "ashen_faceplate")
     def paint_visor_profile(px, py):
-        # A full-height rectangle on each side made the mask look like a pair
-        # of machine housings. Follow the brow down toward a thin muzzle.
-        forward = 1 - px / 47
-        top = round(17 + 23 * forward ** 1.25)
-        bottom = round(42 + 17 * forward ** .75)
-        if py < top or py > bottom:
+        # The side is a compact, worn helmet bowl. An extended diagonal strip
+        # became two crossing blade-like projections in profile.
+        u = (px - 23.5) / 21
+        if abs(u) >= 1:
             return (0, 0, 0, 0)
-        if px < 9 and py < top + 3:
+        half_height = 14 * math.sqrt(1 - u * u)
+        center = 32 + 4 * u
+        if abs(py - center) > half_height:
             return (0, 0, 0, 0)
-        if px > 35 and py > bottom - 3:
-            return (0, 0, 0, 0)
-        eye = 24 < px < 35 and top + 3 < py < top + 7
+        eye = 27 < px < 37 and center - 10 < py < center - 6
         if eye:
             return (8, 14, 19, 255)
-        if py < top + 2 or py > bottom - 2:
-            return (54, 62, 66, 255)
-        if px < 12 and py > bottom - 8:
-            return (57, 64, 68, 255)
+        distance = abs(py - center) / max(1, half_height)
+        if distance > .88:
+            return ((48, 56, 61, 255) if py < center
+                    else (28, 35, 40, 255))
         if authoring.noise(px // 3, py // 3, 5933) % 39 == 0:
-            return (85, 92, 94, 255)
-        return (31, 38, 42, 255)
+            return (57, 64, 66, 255)
+        return (23, 32, 39, 255)
 
     visor_profile_uv = m.patch(48, 64, paint_visor_profile, "wolf_visor_profile")
     visor_back_uv = m.patch(1, 1, lambda _x, _y: (0, 0, 0, 0), "wolf_visor_back")
-    m.cube("engraved_wolf_visor", [-2.45, 21.05, -5.7], [2.45, 27.5, -4.75],
+    m.cube("engraved_wolf_visor", [-2.45, 21.05, -5.7], [2.45, 27.5, -4.15],
            "edge", helm, face_uv={"north": faceplate_uv, "south": visor_back_uv,
-                                  "east": visor_profile_uv, "west": visor_profile_uv,
+                                  "east": visor_profile_uv,
+                                  "west": [visor_profile_uv[2], visor_profile_uv[1],
+                                           visor_profile_uv[0], visor_profile_uv[3]],
                                   "up": visor_back_uv, "down": visor_back_uv})
     # Wind-torn locks start inside the hood and follow different curved paths.
     # Each short segment is aligned to its path so the mane has depth from all
@@ -1610,12 +1615,15 @@ def build(out=ROOT / "model-lab" / "models"):
                 element[key] = [x * .82, 22 + (y - 22) * .83, z]
             if element["name"] == "engraved_wolf_visor":
                 for key in ("from", "to", "origin"):
-                    element[key][0] *= .94
+                    element[key][0] *= .70
             if element["name"] in ("snout_left_ridge", "snout_right_ridge", "snout_dark_tip",
                                    "engraved_wolf_visor"):
                 for key in ("from", "to", "origin"):
                     element[key][1] += 1.55
                     element[key][2] += 3.15
+            if element["name"] == "engraved_wolf_visor":
+                for key in ("from", "to", "origin"):
+                    element[key][1] = 25.4 + (element[key][1] - 25.4) * .78
         elif element["uuid"] in plume_ids:
             for key in ("from", "to", "origin"):
                 element[key][1] -= .7
