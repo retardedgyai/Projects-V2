@@ -418,18 +418,24 @@ def build(out=ROOT / "model-lab" / "models"):
         hem = 91 - authoring.noise(px // 6, 0, 7451) % 6
         if py < top or py > hem or px < left or px > right:
             return (0, 0, 0, 0)
-        if py > 58 and 78 < px < 100 and (px + py * 2) % 41 < 5:
+        tear_center = 62 + .14 * max(0, py - 43)
+        tear_half = max(0, py - 43) * .18
+        tear_jag = authoring.noise(py // 4, 0, 7461) % 5 - 2
+        if py > 43 and abs(px - tear_center) < tear_half + tear_jag:
             return (0, 0, 0, 0)
-        # Smaller, partly buried links break the old regular keypad grid.
+        if py > 58 and px < 12 + (py - 58) * .18:
+            return (0, 0, 0, 0)
+        # Broken rings drift from row to row instead of forming a keypad grid.
         row = py // 4
-        tx = (px + (row % 2) * 3) % 6
+        phase = authoring.noise(px // 13, row, 7471) % 3 - 1
+        tx = (px + (row % 2) * 3 + phase) % 6
         ty = py % 4
         wear = authoring.noise(px // 3, py // 3, 7477)
-        missing = wear % 11 < 3 or (py > 48 and px > 79 and wear % 5 == 0)
+        missing = wear % 7 < 3 or (py > 48 and px > 79 and wear % 5 == 0)
         base = (20, 27, 31)
         ring = (ty == 0 and tx in (2, 3)) or (ty == 1 and tx in (1, 4))
         if ring and not missing:
-            base = (43, 52, 56) if wear % 6 else (51, 59, 62)
+            base = (38, 47, 51) if wear % 6 else (47, 55, 57)
         elif ty == 3 and tx in (2, 3) and not missing:
             base = (12, 19, 23)
         if abs(px - 61) < 17 and 43 < py < 66 and wear % 4 == 0:
@@ -1124,6 +1130,31 @@ def build(out=ROOT / "model-lab" / "models"):
 
     torn_mail_open = m.patch(1, 1, lambda _x, _y: (0, 0, 0, 0),
                              "open_torn_thigh_mail_edge")
+    def paint_calf_leather(px, py, seed, lower):
+        # The calf is wrapped in scorched leather under the surviving plate.
+        # An unpainted cuboid side was a featureless black vertical box.
+        u, v = px / 63, py / 79
+        taper = (6 if lower else 3) * v
+        left = 2 + round(taper + 2 * math.sin(v * 5 + seed))
+        right = 61 - round(taper + 2 * math.sin(v * 4 + seed * 2))
+        if px < left or px > right:
+            return (0, 0, 0, 0)
+        crease = math.sin(px * .16 + py * .035 + seed * 1.7)
+        grain = authoring.noise(px // 3, py // 3, 1763 + seed * 7 + lower)
+        if crease < -.52:
+            color = (11, 19, 25)
+        elif crease > .7:
+            color = (34, 41, 43)
+        else:
+            color = (21, 29, 34)
+        if 19 < py < 66 and abs(px - (25 + py * .2 + seed * 7)) < 2:
+            color = (8, 16, 22)
+        if grain % 29 == 0:
+            color = (47, 49, 46)
+        if px - left < 3 or right - px < 3:
+            color = (9, 17, 23)
+        return (*color, 255)
+
     for side, x in (("left", -2.1), ("right", 2.1)):
         thigh = left_thigh if side == "left" else right_thigh
         shin = left_shin if side == "left" else right_shin
@@ -1146,14 +1177,22 @@ def build(out=ROOT / "model-lab" / "models"):
                face_uv={"north": thigh_mail_uv, "south": thigh_mail_uv,
                         "east": torn_mail_open, "west": torn_mail_open,
                         "up": torn_mail_open, "down": torn_mail_open})
+        upper_calf_uv = m.patch(64, 80,
+                                lambda px, py, s=seed: paint_calf_leather(px, py, s, False),
+                                f"worn_{side}_upper_calf_leather")
+        lower_calf_uv = m.patch(64, 80,
+                                lambda px, py, s=seed: paint_calf_leather(px, py, s, True),
+                                f"worn_{side}_lower_calf_leather")
         add_rotated(m, shin, f"{side}_shin_upper_underlayer",
                     [x - 1.16, 4.2, -1.28], [x + 1.16, 7.1, 1.2],
                     "void", [0, 0, -3 if side == "left" else 4],
-                    [x, 4.3, 0], "worn_leather")
+                    [x, 4.3, 0], "worn_leather",
+                    {"east": upper_calf_uv, "west": upper_calf_uv})
         add_rotated(m, shin, f"{side}_shin_lower_underlayer",
                     [x - .94, 1.7, -1.16], [x + .94, 4.35, 1.07],
                     "void", [0, 0, 3 if side == "left" else -4],
-                    [x, 4.25, 0], "worn_leather")
+                    [x, 4.25, 0], "worn_leather",
+                    {"east": lower_calf_uv, "west": lower_calf_uv})
         # A narrow leather ankle sits in a wider, low heel.  The old single
         # heel/vamp/toe cuboids read as a pair of mechanical rectangular feet.
         heel_width = .95 if side == "left" else .88
@@ -1180,10 +1219,8 @@ def build(out=ROOT / "model-lab" / "models"):
                         "armor", [-8, 0, 14], [x, .5, -2.8], "worn_toe")
         if side == "left":
             add(m, thigh, "left_broken_knee_plate", [x - 1.4, 6.0, -1.95], [x + .8, 7.4, -.98], "armor")
-            add(m, shin, "left_greave_rim", [x - 1.48, 2.35, -1.72], [x - 1.1, 6.7, -1.39], "ash")
         else:
             add(m, thigh, "right_knee_cloth", [x - 1.45, 6.2, -1.9], [x + 1.15, 7.65, -.95], "void")
-            add(m, shin, "right_greave_chip", [x + .72, 3.2, -1.65], [x + 1.22, 5.1, -1.35], "edge")
 
     def paint_side_greave(px, py, seed, upper):
         left = 3 + round(py * (.16 if upper else .12))
