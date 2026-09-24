@@ -733,9 +733,9 @@ def build(out=ROOT / "model-lab" / "models"):
         if px < 1 or px > 10 or py < 2 or py > 45 - authoring.noise(px, 0, 3317) % 4:
             return (0, 0, 0, 0)
         wear = authoring.noise(px // 2, py // 4, 3323)
-        color = (10, 23, 38) if wear % 5 else (18, 35, 53)
+        color = (11, 20, 30) if wear % 5 else (19, 30, 42)
         if wear % 71 == 0:
-            color = (29, 47, 64)
+            color = (29, 40, 51)
         return (*color, 255)
 
     cowl_edge_uv = m.patch(12, 48, paint_cowl_edge, "cowl_fabric_edge")
@@ -760,7 +760,7 @@ def build(out=ROOT / "model-lab" / "models"):
             top += authoring.noise(px // 6, seed, 3451) % 3
             hem = top + 29 - seed * 2 - authoring.noise(px // 7, seed, 3457) % 7
             if seed == 2:
-                hem -= round(8 * max(0, (u - .5) * 2))
+                hem -= round(16 * max(0, (u - .42) / .58))
             if py < top or py > hem or px < 2 or px > 93:
                 return (0, 0, 0, 0)
             v = (py - top) / max(1, hem - top)
@@ -768,13 +768,13 @@ def build(out=ROOT / "model-lab" / "models"):
             ridge = (.34 + .09 * math.sin(px * .067 + seed * 1.3)
                      + .05 * math.sin(px * .19 + seed * 2.1))
             if v < .12 or v > .87:
-                color = (11, 25, 41)
+                color = (12, 22, 32)
             elif abs(v - ridge) < .13 and grain > 2:
-                color = (32, 51, 71) if grain > 6 else (26, 45, 64)
+                color = (29, 43, 57) if grain > 6 else (24, 38, 53)
             elif v > .65:
-                color = (16, 33, 52)
+                color = (16, 29, 43)
             else:
-                color = (24, 43, 65)
+                color = (23, 37, 54)
             if grain == 0:
                 color = tuple(min(255, channel + 5) for channel in color)
             return (*color, 255)
@@ -804,13 +804,13 @@ def build(out=ROOT / "model-lab" / "models"):
         grain = authoring.noise(px // 3, py // 3, 3503) % 11
         ridge = .31 + .08 * math.sin(px * .077)
         if v < .12 or v > .9:
-            color = (10, 24, 39)
+            color = (11, 20, 30)
         elif abs(v - ridge) < .12:
-            color = (30, 48, 66) if grain else (25, 41, 59)
+            color = (27, 40, 53) if grain else (23, 35, 48)
         elif v > .67:
-            color = (14, 30, 48)
+            color = (15, 26, 39)
         else:
-            color = (21, 40, 60)
+            color = (20, 34, 49)
         return (*color, 255)
 
     side_wrap_uv = m.patch(96, 48, paint_side_wrap, "wrapped_cowl_sides")
@@ -837,13 +837,13 @@ def build(out=ROOT / "model-lab" / "models"):
             grain = authoring.noise(px // 3, py // 3, 3527 + seed) % 13
             ridge = .33 + .08 * math.sin(px * .067 + seed)
             if v < .12 or v > .9:
-                color = (10, 23, 37)
+                color = (11, 20, 30)
             elif abs(v - ridge) < .12:
-                color = (31, 49, 67) if grain > 2 else (25, 42, 59)
+                color = (28, 41, 54) if grain > 2 else (23, 35, 48)
             elif v > .67:
-                color = (15, 30, 46)
+                color = (15, 26, 38)
             else:
-                color = (22, 39, 57)
+                color = (21, 34, 48)
             return (*color, 255)
 
         back_uv = m.patch(96, 48, paint_back_wrap,
