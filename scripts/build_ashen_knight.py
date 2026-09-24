@@ -1100,16 +1100,14 @@ def build(out=ROOT / "model-lab" / "models"):
     # Each short segment is aligned to its path so the mane has depth from all
     # angles without long, rectangular planes behind the head.
     def paint_mane(px, py, seed):
-        fiber = (px * 3 + py // 3 + seed * 5) % 13
-        wear = authoring.noise(px // 2, py // 4, 6721 + seed)
-        if fiber in (0, 1) and wear % 5 != 0:
+        fiber = (px + py // 11 + seed * 3) % 16
+        wear = authoring.noise(px // 4, py // 7, 6721 + seed)
+        if fiber in (2, 3) and wear % 13 != 0:
             tone = (34, 38, 40)
-        elif fiber == 2:
-            tone = (25, 29, 32)
-        elif wear % 7 == 0:
-            tone = (12, 17, 22)
+        elif fiber in (5, 6) or wear % 17 == 0:
+            tone = (10, 15, 20)
         else:
-            tone = (19, 23, 27)
+            tone = (18, 22, 26)
         return (*tone, 255)
 
     mane_paths = (
@@ -1129,12 +1127,6 @@ def build(out=ROOT / "model-lab" / "models"):
     for strand, (start, control, tip, root_width) in enumerate(mane_paths):
         control = (control[0], control[1], start[2] + (control[2] - start[2]) * .9)
         tip = (tip[0], tip[1], start[2] + (tip[2] - start[2]) * .82)
-        mane_uv = m.patch(16, 32,
-                          lambda px, py, s=strand: paint_mane(px, py, s),
-                          f"wind_torn_mane_{strand}")
-        mane_faces = {side: mane_uv if side in ("north", "south", "east", "west")
-                      else visor_back_uv for side in
-                      ("north", "south", "east", "west", "up", "down")}
         def point(u):
             a, b, c = (1 - u) ** 2, 2 * (1 - u) * u, u ** 2
             base = tuple(a * start[i] + b * control[i] + c * tip[i]
@@ -1145,6 +1137,13 @@ def build(out=ROOT / "model-lab" / "models"):
                     base[2] + .20 * wave)
 
         for section in range(8):
+            mane_uv = m.patch(16, 32,
+                              lambda px, py, s=strand, offset=section * 32:
+                              paint_mane(px, py + offset, s),
+                              f"wind_torn_mane_{strand}_{section}")
+            mane_faces = {side: mane_uv if side in ("north", "south", "east", "west")
+                          else visor_back_uv for side in
+                          ("north", "south", "east", "west", "up", "down")}
             u0, u1 = section / 8, (section + 1) / 8
             ax, ay, az = point(u0)
             bx, by, bz = point(u1)
