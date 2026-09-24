@@ -27,7 +27,7 @@ PALETTE = {
     "eye": ("0a101a", "121d29", "2d4857"),
     "mail": ("14191c", "2e3538", "596165"),
     "leather": ("16191b", "2c2c2c", "504b45"),
-    "boot": ("0c1118", "1c252c", "30383b"),
+    "boot": ("101315", "262421", "423b33"),
     "sleeve": ("0a1016", "121920", "1c252b"),
     "skin": ("231c1d", "44302c", "66473d"),
     "bandage": ("302826", "67554d", "91786a"),
@@ -1262,21 +1262,21 @@ def build(out=ROOT / "model-lab" / "models"):
                     {"east": lower_calf_uv, "west": lower_calf_uv})
         # A narrow leather ankle sits in a wider, low heel.  The old single
         # heel/vamp/toe cuboids read as a pair of mechanical rectangular feet.
-        heel_width = .95 if side == "left" else .88
+        heel_width = 1.01 if side == "left" else .95
         add(m, shin, f"{side}_boot_heel", [x - heel_width, -.15, -.67],
             [x + heel_width, .69, 1.16], "boot")
         add_rotated(m, shin, f"{side}_boot_ankle",
-                    [x - .82, .50, -.72], [x + .82, 1.97, .98],
+                    [x - .78, .50, -.72], [x + .78, 2.31, .98],
                     "boot", [0, 0, -5 if side == "left" else 4],
                     [x, .76, .1], "worn_vamp")
         add_rotated(m, shin, f"{side}_boot_instep",
-                    [x - .92, .12, -1.79], [x + .92, 1.03, -.34],
+                    [x - 1.06, .12, -1.79], [x + 1.06, 1.03, -.34],
                     "boot", [-11, 0, 0], [x, .52, -1.05], "worn_vamp")
         add_rotated(m, shin, f"{side}_boot_vamp",
-                    [x - .84, .07, -2.67], [x + .84, .67, -1.32],
+                    [x - 1.02, .07, -2.67], [x + 1.02, .67, -1.32],
                     "boot", [-8, 0, -4 if side == "left" else 3],
                     [x, .36, -1.85], "worn_vamp")
-        toe_width = .81 if side == "left" else .75
+        toe_width = .93 if side == "left" else .87
         add_rotated(m, shin, f"{side}_toe_cap", [x - toe_width, .08, -3.03],
                     [x + toe_width, .52, -2.46], "boot", [0, 0, -3],
                     [x, .28, -2.67], "worn_vamp")
