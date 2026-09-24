@@ -1670,15 +1670,16 @@ def build(out=ROOT / "model-lab" / "models"):
     m.cube("ragged_back_mail", [-3.65, 8.35, 2.35], [3.65, 13.15, 2.43],
            "mail", hips, face_uv={"south": back_mail_uv})
 
-    # The head should read as a narrow animal mask embedded in hair, rather
-    # than a full-width box above the shoulders. Keep the muzzle's depth.
+    # Keep the hood large enough to read between the collar and mane. Narrow
+    # the faceplate separately so the muzzle stays animal-like without making
+    # the entire head disappear at combat distance.
     helm_ids = set(helm)
     plume_ids = set(plume)
     for element in m.elements:
         if element["uuid"] in helm_ids:
             for key in ("from", "to", "origin"):
                 x, y, z = element[key]
-                element[key] = [x * .82, 22 + (y - 22) * .83, z]
+                element[key] = [x, 22 + (y - 22) * .95, z]
             if element["name"] == "engraved_wolf_visor":
                 for key in ("from", "to", "origin"):
                     element[key][0] *= .70
