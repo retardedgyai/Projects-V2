@@ -135,7 +135,7 @@ class KnightModel(authoring.Model):
                 tone = 2 if coarse % 17 == 0 else 0 if coarse % 7 == 0 else 1
                 if (x * 2 + y * 3 + seed) % 47 < 2:
                     tone = 0
-                if side in ("north", "south") and height > 14:
+                if side in ("north", "south") and height >= 12:
                     wound = x - (width * .38 + 1.9 * math.sin(y / 5 + seed))
                     if abs(wound) < 1.2 and height * .17 < y < height * .84:
                         tone = 0
@@ -801,8 +801,8 @@ def build(out=ROOT / "model-lab" / "models"):
                     "up": cowl_open_uv, "down": cowl_open_uv})
     def paint_shoulder_bridge(px, py):
         taper = py / 79
-        left = 3 + round(8 * taper) + authoring.noise(py // 6, 0, 3731) % 3
-        right = 45 - round(11 * taper) - authoring.noise(py // 7, 0, 3737) % 3
+        left = 3 + round(22 * taper) + authoring.noise(py // 6, 0, 3731) % 3
+        right = 45 - round(19 * taper) - authoring.noise(py // 7, 0, 3737) % 3
         hem = 73 - authoring.noise(px // 4, 0, 3749) % 10
         top = 3 + round(px * .25) + authoring.noise(px // 6, 0, 3757) % 3
         if py < top or py > hem or px < left or px > right:
@@ -853,7 +853,7 @@ def build(out=ROOT / "model-lab" / "models"):
             face_uv["east"] = bridge_edge_uv
         m.cube(f"scarf_left_shoulder_bridge_{facet}",
                [xlo - .02, 14.65, depth],
-               [xlo + .92, 21.15, depth + (1.38, 1.02, 1.21)[facet]],
+               [xlo + .92, 21.15, depth + (.25, .18, .24)[facet]],
                "cloth", cape_left_edge, face_uv=face_uv)
 
     # The mask is the face; only a narrow, dark head and a short mount sit
@@ -1226,13 +1226,13 @@ def build(out=ROOT / "model-lab" / "models"):
     m.cube("torn_wounded_arm_mail", [-6.22, 15.65, -1.21],
            [-3.5, 20.95, -1.13], "mail", left_arm,
            face_uv={"north": wounded_mail_uv, "south": wounded_mail_uv})
-    add_rotated(m, left_arm, "wounded_upper_forearm", [-6.02, 12.8, -.89],
-                [-4.21, 16.35, .94], "mail", [0, 0, 5],
-                [-5.1, 14.5, 0], "torn_mail")
-    add_rotated(m, left_arm, "wounded_tapered_forearm", [-5.78, 10.0, -.83],
-                [-4.4, 13.45, .84], "mail", [0, 0, -4],
-                [-5.1, 11.9, 0], "torn_mail")
-    add(m, left_arm, "left_palm", [-5.72, 8.8, -.91], [-4.48, 10.55, .78], "boot")
+    add_rotated(m, left_arm, "wounded_upper_forearm", [-5.93, 12.8, -.72],
+                [-4.32, 16.35, .72], "skin", [0, 0, 5],
+                [-5.1, 14.5, 0], "scarred_flesh")
+    add_rotated(m, left_arm, "wounded_tapered_forearm", [-5.75, 10.0, -.66],
+                [-4.42, 13.45, .60], "skin", [0, 0, -4],
+                [-5.1, 11.9, 0], "scarred_flesh")
+    add(m, left_arm, "left_palm", [-5.72, 8.8, -.74], [-4.48, 10.55, .63], "skin")
     for finger, (x0, x1, low, high, tilt) in enumerate((
             (-5.92, -5.56, 7.7, 9.1, -8),
             (-5.51, -5.14, 7.45, 9.0, -2),
@@ -1240,9 +1240,8 @@ def build(out=ROOT / "model-lab" / "models"):
             (-4.68, -4.37, 8.0, 9.1, 13),
     )):
         add_rotated(m, left_arm, f"loose_finger_{finger}",
-                    [x0, low, -.72], [x1, high, .34], "boot",
-                    [0, 0, tilt], [(x0 + x1) / 2, high, -.2], "worn_vamp")
-    add(m, left_arm, "left_arm_tear", [-6.5, 11.2, 1.1], [-4.9, 16.2, 1.8], "void")
+                    [x0, low, -.63], [x1, high, .3], "skin",
+                    [0, 0, tilt], [(x0 + x1) / 2, high, -.2], "scarred_flesh")
     add(m, left_arm, "left_mail_shoulder", [-6.15, 17.2, -1], [-3.55, 20.2, 1.5], "sleeve")
     def paint_wounded_wrap(px, py, seed):
         top = 2 + authoring.noise(px // 5, seed, 2301) % 3
@@ -1258,21 +1257,20 @@ def build(out=ROOT / "model-lab" / "models"):
         stain = ((px - (15 + seed * 17)) ** 2 / 100
                  + (py - (15 - seed * 2)) ** 2 / 32) < 1
         if stain and grain % 4 != 0:
-            color = (87, 48, 44)
+            color = (89, 43, 39)
         elif crease:
-            color = (78, 69, 63)
+            color = (91, 82, 74)
         elif py <= top + 2 or py >= hem - 2:
-            color = (83, 75, 68)
+            color = (104, 95, 85)
         else:
-            color = (139, 123, 103) if grain % 5 else (111, 98, 84)
+            color = (134, 120, 105) if grain % 5 else (110, 98, 88)
         return (*color, 255)
 
-    # Uneven narrow bindings expose the wounded arm between strips. Broad,
-    # evenly spaced hoops made its silhouette read like a machine cylinder.
+    # Flat, torn cloth across the visible face reads as a wounded arm. Full
+    # cuboid hoops gave the forearm a repeated mechanical collar silhouette.
     for wrap, (lo, hi, tilt, pivot) in enumerate((
-            ((-6.27, 14.61, -1.59), (-3.96, 15.19, 1.26), -17, (-5.1, 14.9, 0)),
-            ((-6.16, 12.76, -1.57), (-4.04, 13.32, 1.23), 13, (-5.1, 13.0, 0)),
-            ((-6.01, 10.6, -1.47), (-4.17, 11.08, 1.13), -12, (-5.1, 10.85, 0)),
+            ((-6.04, 14.54, -.87), (-4.16, 15.22, -.78), -19, (-5.1, 14.9, -.82)),
+            ((-5.88, 10.55, -.84), (-4.26, 11.17, -.75), -12, (-5.1, 10.85, -.8)),
     )):
         wrap_uv = m.patch(64, 28,
                           lambda px, py, seed=wrap: paint_wounded_wrap(px, py, seed),
@@ -1894,6 +1892,20 @@ def build(out=ROOT / "model-lab" / "models"):
         "head": [(0, [0, 0, 0]), (1.6, [-24, 0, 0])],
         "cape_left": [(0, [0, 0, -5]), (1.6, [-36, 0, -34])],
     })
+
+    # Keep dark apertures but lift the midtones that disappear under the
+    # default Blockbench light. The original texture read as one black mass
+    # at the size players will usually see this boss.
+    def lift(channel):
+        if channel >= 160:
+            return channel
+        t = channel / 160
+        return min(255, round(channel + 48 * math.sqrt(t) * (1 - t)))
+
+    for row in m.pixels:
+        for x, (red, green, blue, alpha) in enumerate(row):
+            if alpha:
+                row[x] = (lift(red), lift(green), lift(blue), alpha)
 
     m.write(out, root)
     build_warning(out)

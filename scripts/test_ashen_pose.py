@@ -140,7 +140,7 @@ class AshenPoseTest(unittest.TestCase):
                 with self.subTest(element=element["name"], side=side):
                     self.assertGreater(self.atlas[y, x, 3], 0)
 
-    def test_shoulder_to_cape_connection_has_visible_depth(self):
+    def test_shoulder_to_cape_connection_has_thin_visible_edge(self):
         self.assertEqual(len(self.shoulder_bridge), 3)
         for element, side in ((self.shoulder_bridge[0], "west"),
                               (self.shoulder_bridge[-1], "east")):
@@ -148,7 +148,9 @@ class AshenPoseTest(unittest.TestCase):
             x, y = (uv[0] + uv[2]) // 2, (uv[1] + uv[3]) // 2
             with self.subTest(side=side):
                 self.assertGreater(self.atlas[y, x, 3], 0)
-                self.assertGreater(element["to"][2] - element["from"][2], 1)
+                depth = element["to"][2] - element["from"][2]
+                self.assertGreater(depth, .15)
+                self.assertLess(depth, .4)
 
 
 if __name__ == "__main__":
