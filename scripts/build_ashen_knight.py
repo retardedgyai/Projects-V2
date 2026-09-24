@@ -542,23 +542,25 @@ def build(out=ROOT / "model-lab" / "models"):
         half_width = 22 + round(7 * shoulder) if py < 25 else 29 - round((py - 25) * .2)
         if py > 53:
             half_width -= round((py - 53) * .5)
-        left = 31 - half_width
-        right = 32 + half_width
+        left = 31 - half_width + authoring.noise(py // 5, 0, 3991) % 3
+        right = 32 + half_width - authoring.noise(py // 6, 0, 3997) % 4
         top = 3 + round(abs(px - 31.5) * .15)
         hem = 73 - authoring.noise(px // 5, 0, 4001) % 6
         if py < top or py > hem or px < left or px > right:
             return (0, 0, 0, 0)
-        if 44 < py < 55 and px > right - 5 and (px + py) % 3 != 0:
+        if 34 < py < 59 and px > right - max(0, 9 - abs(py - 46) // 2):
+            return (0, 0, 0, 0)
+        if 19 < py < 43 and px < left + max(0, 6 - abs(py - 31) // 3):
             return (0, 0, 0, 0)
         scar = abs(px - (19 + py * .46))
         if scar < 1.5 and 18 < py < 62:
-            return (87, 92, 82, 255)
+            return (88, 95, 97, 255)
         if abs(px - 31.5) < 3 and py < 65:
-            return (56, 64, 60, 255)
+            return (59, 67, 70, 255)
         if py - top < 2 or px - left < 2 or right - px < 2:
-            return (65, 72, 65, 255)
+            return (68, 77, 81, 255)
         grain = authoring.noise(px // 3, py // 3, 4019)
-        color = (34, 40, 39) if grain % 9 else (46, 52, 47)
+        color = (35, 43, 47) if grain % 9 else (45, 53, 56)
         return (*color, 255)
 
     backplate_uv = m.patch(64, 80, paint_worn_backplate, "worn_backplate")
@@ -654,9 +656,9 @@ def build(out=ROOT / "model-lab" / "models"):
                face_uv={"east": side_wrap_uv, "west": side_wrap_uv})
 
     back_cowl_folds = (
-        (-3.3, 3.1, 21.55, 23.9, 2.8, 0),
-        (-4.02, 2.94, 20.35, 23.02, 3.02, 1),
-        (-4.45, 1.54, 19.25, 22.2, 3.2, 2),
+        (-3.3, 3.1, 20.95, 23.3, 2.8, 0),
+        (-4.02, 2.94, 19.75, 22.42, 3.02, 1),
+        (-4.45, 1.54, 18.65, 21.6, 3.2, 2),
     )
     for left, right, low, high, depth, layer in back_cowl_folds:
         def paint_back_wrap(px, py, seed=layer):
