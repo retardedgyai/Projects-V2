@@ -335,13 +335,42 @@ def build(out=ROOT / "model-lab" / "models"):
             color = (10, 21, 31)
         return (*color, 255)
     sternum_uv = m.patch(64, 48, paint_sternum_cloth, "burned_sternum_cloth")
+    def paint_tunic_core_side(px, py, seed):
+        u, v = px / 63, py / 63
+        left = 4 + round(v * (8 if seed else 5))
+        right = 59 - round(v * (10 if seed else 6))
+        crown = 3 + round(5 * abs(u - .45))
+        hem = 59 - authoring.noise(px // 5, seed, 5267) % 7
+        if px < left or px > right or py < crown or py > hem:
+            return (0, 0, 0, 0)
+        if seed and py > 34 and abs(px - (19 + py * .34)) < (py - 32) * .12:
+            return (0, 0, 0, 0)
+        grain = authoring.noise(px // 3, py // 4, 5279 + seed)
+        fold = math.sin(px * .15 + py * .035 + seed * 1.4)
+        color = (9, 18, 26) if fold < -.5 else (26, 36, 44) if fold > .6 else (17, 28, 37)
+        if px - left < 2 or right - px < 2 or py > hem - 2:
+            color = (8, 16, 23)
+        if grain % 67 == 0:
+            color = (36, 43, 46)
+        return (*color, 255)
+
+    sternum_side_uv = m.patch(64, 64,
+                              lambda px, py: paint_tunic_core_side(px, py, 0),
+                              "burned_sternum_side")
+    abdomen_side_uv = m.patch(64, 64,
+                              lambda px, py: paint_tunic_core_side(px, py, 1),
+                              "burned_abdomen_side")
     add_rotated(m, chest, "upper_tunic_sternum",
                 [-2.4, 19.1, -2.05], [2.4, 22.05, 1.02], "void",
                 [-8, 0, -3], [0, 20.45, -.5], "worn_tunic",
-                {"north": sternum_uv})
+                {"north": sternum_uv,
+                 "east": sternum_side_uv, "west": sternum_side_uv,
+                 "up": open_waist_uv, "down": open_waist_uv})
     add_rotated(m, chest, "upper_tunic_abdomen",
                 [-2.05, 16.95, -1.72], [2.05, 19.53, .95], "void",
-                [-3, 0, 4], [0, 18.2, -.47], "worn_tunic")
+                [-3, 0, 4], [0, 18.2, -.47], "worn_tunic",
+                {"east": abdomen_side_uv, "west": abdomen_side_uv,
+                 "up": open_waist_uv, "down": open_waist_uv})
     def paint_torn_rib(px, py):
         # A solid east/west face made the torso a ruler-straight dark box in
         # profile. Leave the underlying tunic visible through a frayed side.
@@ -496,13 +525,16 @@ def build(out=ROOT / "model-lab" / "models"):
                 [-4, 0, 6], [3.5, 16.8, 0], "worn_tunic")
 
     def paint_side_mail(px, py):
-        top = 3 + round(abs(px - 29) * .13)
-        hem = 87 - authoring.noise(px // 4, 0, 2411) % 13
-        front = 3 + py // 15
-        rear = 61 - py // 17
+        top = 4 + round(abs(px - 27) * .19)
+        hem = 32 - authoring.noise(px // 4, 0, 2411) % 8
+        hem -= max(0, abs(px - 29) - 13) // 5
+        front = 5 + py // 8 + authoring.noise(py // 4, 0, 2413) % 3
+        rear = 58 - py // 9 - authoring.noise(py // 5, 0, 2417) % 4
         if py < top or py > hem or px < front or px > rear:
             return (0, 0, 0, 0)
-        if py > 56 and 16 < px < 30 and (px + py * 2) % 25 < 5:
+        if py > 19 and 17 < px < 30 and abs(px - (18 + py * .35)) < 2.8:
+            return (0, 0, 0, 0)
+        if py > 16 and px > 44 and authoring.noise(px // 4, py // 4, 2420) % 5 < 2:
             return (0, 0, 0, 0)
         row = py // 6
         tx = (px + 4 * (row % 2) + authoring.noise(row, 0, 2421) % 3) % 8
@@ -690,43 +722,33 @@ def build(out=ROOT / "model-lab" / "models"):
                 "leather", [0, 0, -48], [0, 15.9, -2.7],
                 "scuffed_leather", harness_faces)
 
-    def paint_worn_backplate(px, py):
-        shoulder = min(1, max(0, (py - 4) / 14))
-        half_width = 22 + round(7 * shoulder) if py < 25 else 29 - round((py - 25) * .2)
-        if py > 53:
-            half_width -= round((py - 53) * .5)
-        left = 31 - half_width + authoring.noise(py // 5, 0, 3991) % 3
-        right = 32 + half_width - authoring.noise(py // 6, 0, 3997) % 4
-        top = 3 + round(abs(px - 31.5) * .15)
-        hem = 73 - authoring.noise(px // 5, 0, 4001) % 6
-        if py < top or py > hem or px < left or px > right:
-            return (0, 0, 0, 0)
-        if 34 < py < 59 and px > right - max(0, 9 - abs(py - 46) // 2):
-            return (0, 0, 0, 0)
-        if 19 < py < 43 and px < left + max(0, 6 - abs(py - 31) // 3):
-            return (0, 0, 0, 0)
-        fracture = abs(px - (19 + py * .42 + 2.2 * math.sin(py * .17)))
-        fracture_width = 1.8 + max(0, py - 29) * .11
-        if 17 < py < 70 and fracture < fracture_width:
-            return (0, 0, 0, 0)
-        if py > 51 and px > 47 - (py - 51) * .59:
-            return (0, 0, 0, 0)
-        if 17 < py < 70 and fracture < fracture_width + 1.4:
-            return (56, 64, 66, 255)
-        if abs(px - 31.5) < 2 and py < 32:
-            return (52, 61, 65, 255)
-        if py - top < 2 or px - left < 2 or right - px < 2:
-            return (68, 77, 81, 255)
-        grain = authoring.noise(px // 3, py // 3, 4019)
-        color = (35, 43, 47) if grain % 9 else (45, 53, 56)
-        return (*color, 255)
-
-    backplate_uv = m.patch(64, 80, paint_worn_backplate, "worn_backplate")
-    m.cube("worn_backplate", [-2.3, 15.1, 2.24], [2.3, 22.3, 2.32],
-           "armor", chest, face_uv={"south": backplate_uv})
     add_rotated(m, chest, "back_leather_binding", [-.35, 15.7, 2.48],
                 [.35, 21.4, 2.74], "leather", [0, 0, 27],
                 [0, 18.6, 2.6], "scuffed_leather")
+    def paint_torn_back_strap(px, py):
+        left = 2 + authoring.noise(py // 6, 0, 4031) % 2
+        right = 13 - authoring.noise(py // 5, 0, 4037) % 2
+        if py < 2 or py > 77 or px < left or px > right:
+            return (0, 0, 0, 0)
+        if 31 < py < 45 and px > right - 3 and (py + px) % 5 < 3:
+            return (0, 0, 0, 0)
+        grain = authoring.noise(px // 2, py // 3, 4049)
+        if py % 11 in (3, 4) and px in (5, 9) and grain % 4:
+            color = (79, 70, 55)
+        elif px <= left + 1 or px >= right - 1:
+            color = (22, 23, 23)
+        else:
+            color = (45, 40, 33) if grain % 7 else (56, 48, 38)
+        return (*color, 255)
+
+    back_strap_uv = m.patch(16, 80, paint_torn_back_strap,
+                             "torn_cross_back_strap")
+    add_rotated(m, chest, "back_torn_cross_strap",
+                [-.29, 17.65, 2.62], [.29, 21.15, 2.72], "leather",
+                [0, 0, -34], [0, 19.35, 2.62], "scuffed_leather",
+                {"south": back_strap_uv, "north": back_strap_uv,
+                 "east": open_pauldron_edge, "west": open_pauldron_edge,
+                 "up": open_pauldron_edge, "down": open_pauldron_edge})
 
     # The blue wrapping crosses the chest and continues onto the back. Keep
     # the folds exposed; a solid neck-filling box made them read as machinery.
