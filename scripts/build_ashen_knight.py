@@ -27,7 +27,7 @@ PALETTE = {
     "eye": ("0a101a", "121d29", "2d4857"),
     "mail": ("14191c", "2e3538", "596165"),
     "leather": ("16191b", "2c2c2c", "504b45"),
-    "boot": ("10151a", "272d31", "41484a"),
+    "boot": ("0c1118", "1c252c", "30383b"),
     "sleeve": ("0a1016", "121920", "1c252b"),
     "skin": ("231c1d", "44302c", "66473d"),
     "bandage": ("302826", "67554d", "91786a"),
@@ -360,16 +360,38 @@ def build(out=ROOT / "model-lab" / "models"):
     abdomen_side_uv = m.patch(64, 64,
                               lambda px, py: paint_tunic_core_side(px, py, 1),
                               "burned_abdomen_side")
+    def paint_back_core_mail(px, py):
+        # The back of the chest core was an uninterrupted blue rectangle after
+        # the outer backplate was removed. Expose a ragged, dark mail lining.
+        left = 5 + py // 11 + authoring.noise(py // 6, 0, 5287) % 3
+        right = 59 - py // 10 - authoring.noise(py // 7, 0, 5297) % 3
+        top = 3 + round(abs(px - 29) * .12)
+        hem = 44 - authoring.noise(px // 4, 0, 5303) % 9
+        if px < left or px > right or py < top or py > hem:
+            return (0, 0, 0, 0)
+        if py > 25 and px > 38 and authoring.noise(px // 4, py // 3, 5309) % 7 < 2:
+            return (0, 0, 0, 0)
+        grain = authoring.noise(px // 3, py // 3, 5317)
+        row = py // 4
+        link = (px + 3 * (row % 2)) % 7
+        ring = (py % 4 == 1 and link in (2, 3)) or (py % 4 == 2 and link in (1, 4))
+        color = (36, 43, 46) if ring and grain % 5 else (16, 23, 29)
+        if px - left < 2 or right - px < 2 or py > hem - 2:
+            color = (10, 17, 23)
+        return (*color, 255)
+
+    back_core_uv = m.patch(64, 48, paint_back_core_mail, "torn_back_core_mail")
     add_rotated(m, chest, "upper_tunic_sternum",
                 [-2.4, 19.1, -2.05], [2.4, 22.05, 1.02], "void",
                 [-8, 0, -3], [0, 20.45, -.5], "worn_tunic",
-                {"north": sternum_uv,
+                {"north": sternum_uv, "south": back_core_uv,
                  "east": sternum_side_uv, "west": sternum_side_uv,
                  "up": open_waist_uv, "down": open_waist_uv})
     add_rotated(m, chest, "upper_tunic_abdomen",
                 [-2.05, 16.95, -1.72], [2.05, 19.53, .95], "void",
                 [-3, 0, 4], [0, 18.2, -.47], "worn_tunic",
-                {"east": abdomen_side_uv, "west": abdomen_side_uv,
+                {"south": back_core_uv,
+                 "east": abdomen_side_uv, "west": abdomen_side_uv,
                  "up": open_waist_uv, "down": open_waist_uv})
     def paint_torn_rib(px, py):
         # A solid east/west face made the torso a ruler-straight dark box in
@@ -404,35 +426,6 @@ def build(out=ROOT / "model-lab" / "models"):
     add_rotated(m, chest, "upper_tunic_right_rib",
                 [2.12, 17.35, -1.78], [3.72, 21.65, .82], "void",
                 [-6, 0, 7], [2.92, 19.5, -.45], "worn_tunic", rib_faces)
-    def paint_back_tunic(px, py, seed):
-        grain = authoring.noise(px // 3, py // 3, 5251 + seed)
-        fold = math.sin(px * .11 + py * .06 + seed * 1.9)
-        seam = abs(px - (18 + py * .32 + seed * 12)) < 1.4
-        if seam and grain % 7 != 0:
-            color = (37, 48, 56)
-        elif fold > .58:
-            color = (25, 39, 52)
-        elif fold < -.6:
-            color = (10, 21, 32)
-        else:
-            color = (18, 30, 42)
-        if py > 34 and grain % 27 == 0:
-            color = (8, 17, 27)
-        return (*color, 255)
-    back_shoulder_uv = m.patch(64, 48,
-                               lambda px, py: paint_back_tunic(px, py, 0),
-                               "burned_back_shoulders")
-    back_waist_uv = m.patch(64, 48,
-                            lambda px, py: paint_back_tunic(px, py, 1),
-                            "burned_back_waist")
-    add_rotated(m, chest, "upper_tunic_back_shoulders",
-                [-3.05, 19.45, .4], [3.05, 21.8, 2.02], "void",
-                [7, 0, 2], [0, 20.6, 1.2], "worn_tunic",
-                {"south": back_shoulder_uv})
-    add_rotated(m, chest, "upper_tunic_back_waist",
-                [-2.45, 17.55, .5], [2.45, 19.85, 1.55], "void",
-                [2, 0, -3], [0, 18.6, 1.15], "worn_tunic",
-                {"south": back_waist_uv})
     # The lower torso narrows toward the belt. A single full-depth cuboid
     # exposed a long, ruler-straight side between the scarf and the tassets.
     add_rotated(m, chest, "waist_mail_tunic_upper",
@@ -1278,24 +1271,16 @@ def build(out=ROOT / "model-lab" / "models"):
                     "boot", [0, 0, -5 if side == "left" else 4],
                     [x, .76, .1], "worn_vamp")
         add_rotated(m, shin, f"{side}_boot_instep",
-                    [x - 1.02, .12, -1.79], [x + 1.02, 1.12, -.34],
+                    [x - .92, .12, -1.79], [x + .92, 1.03, -.34],
                     "boot", [-11, 0, 0], [x, .52, -1.05], "worn_vamp")
         add_rotated(m, shin, f"{side}_boot_vamp",
-                    [x - .90, .07, -2.67], [x + .90, .75, -1.32],
+                    [x - .84, .07, -2.67], [x + .84, .67, -1.32],
                     "boot", [-8, 0, -4 if side == "left" else 3],
                     [x, .36, -1.85], "worn_vamp")
         toe_width = .81 if side == "left" else .75
         add_rotated(m, shin, f"{side}_toe_cap", [x - toe_width, .08, -3.03],
                     [x + toe_width, .52, -2.46], "boot", [0, 0, -3],
                     [x, .28, -2.67], "worn_vamp")
-        if side == "left":
-            add_rotated(m, shin, "left_worn_toe_shard",
-                        [x - .58, .42, -3.12], [x + .34, .63, -2.55],
-                        "armor", [-8, 0, 14], [x, .5, -2.8], "worn_toe")
-        if side == "left":
-            add(m, thigh, "left_broken_knee_plate", [x - 1.4, 6.0, -1.95], [x + .8, 7.4, -.98], "armor")
-        else:
-            add(m, thigh, "right_knee_cloth", [x - 1.45, 6.2, -1.9], [x + 1.15, 7.65, -.95], "void")
 
     def paint_side_greave(px, py, seed, upper):
         left = 3 + round(py * (.16 if upper else .12))
@@ -1339,37 +1324,34 @@ def build(out=ROOT / "model-lab" / "models"):
                             "up": side_greave_clear, "down": side_greave_clear})
 
     def paint_greave_face(px, py, seed):
-        # The surviving plate narrows over the calf and ends in an uneven,
-        # broken point. A uniform rectangular shin made the legs look robotic.
-        taper = round(py * (.12 if seed == 0 else .055))
-        left = 2 + taper + (2 if seed == 0 and 17 < py < 38 else 0)
-        right = 29 - taper
-        if seed == 1 and 9 < py < 24:
-            right -= round((24 - py) * .36)
-        if seed == 1:
-            # The sword-side leg has a torn partial plate, exposing mail and
-            # leather instead of repeating the other leg's full greave.
-            left += 7 + round(4 * math.sin(py * .085))
-            if py > 39:
-                right -= round((py - 39) * .36)
-        if seed == 0 and 33 < py < 52:
-            left += round((py - 33) * .3)
-        top = 2 + abs(px - (15 + seed * 2)) // 6
-        hem = (58 - authoring.noise(px // 3, seed, 1083) % 5
-               - max(0, abs(px - 15) - 5) // 2)
+        # Narrow, broken steel over a leather calf. The previous face filled
+        # nearly the whole shin on both legs, making identical metal columns.
+        taper = round(py * (.12 if seed == 0 else .08))
+        left = (5 if seed == 0 else 12) + taper
+        right = (24 if seed == 0 else 27) - taper
+        left += authoring.noise(py // 6, seed, 1901) % 3
+        right -= authoring.noise(py // 7, seed, 1907) % 3
+        if seed == 0 and 19 < py < 41:
+            left += round((py - 19) * .18)
+        if seed == 1 and py > 20:
+            right -= round((py - 20) * .16)
+        top = (5 if seed == 0 else 14) + abs(px - (15 + seed * 4)) // 5
+        hem = ((52 if seed == 0 else 43)
+               - authoring.noise(px // 3, seed, 1083) % 7
+               - max(0, abs(px - 15) - 4) // 2)
         if px < left or px > right or py < top or py > hem:
             return (0, 0, 0, 0)
-        if seed == 0 and 25 < py < 48 and abs(px - (left + 1 + (py - 25) * .22)) < 1.3:
+        if seed == 0 and 24 < py < 47 and abs(px - (left + 1 + (py - 24) * .18)) < 1.3:
             return (0, 0, 0, 0)
         nick = abs(px - (13 + py * .17 + seed * 5))
-        if 26 < py < 50 and nick < 1.1:
+        if 26 < py < 44 and nick < 1.1:
             return (18, 24, 29, 255)
         if px - left < 2 or right - px < 2 or py - top < 2:
-            return (67, 76, 79, 255)
+            return (48, 56, 58, 255)
         if (px * 7 + py * 11 + seed * 17) % 83 < 2:
-            return (92, 98, 98, 255)
+            return (67, 73, 73, 255)
         grain = authoring.noise(px // 3, py // 4, 1179 + seed)
-        return ((37, 44, 48, 255) if grain % 5 else (26, 34, 39, 255))
+        return ((32, 40, 44, 255) if grain % 5 else (22, 30, 35, 255))
 
     for side, x, seed, shin in (("left", -2.1, 0, left_shin),
                                 ("right", 2.1, 1, right_shin)):
@@ -1412,22 +1394,6 @@ def build(out=ROOT / "model-lab" / "models"):
                         "east": rear_greave_clear, "west": rear_greave_clear,
                         "up": rear_greave_clear, "down": rear_greave_clear})
 
-    def paint_battered_thigh(px, py):
-        left = 3 + py // 15
-        right = 26 - py // 12
-        if py < 3 or py > 47 or px < left or px > right:
-            return (0, 0, 0, 0)
-        if py > 35 and (px + py * 3) % 13 < 3:
-            return (0, 0, 0, 0)
-        if px - left < 2 or right - px < 2 or py < 6:
-            return (92, 103, 104, 255)
-        if (px + py * 2) % 37 == 0:
-            return (65, 75, 78, 255)
-        return (39, 48, 54, 255)
-
-    thigh_uv = m.patch(32, 52, paint_battered_thigh, "battered_thigh")
-    m.cube("left_outer_thigh_plate", [-3.85, 6.55, -1.9], [-.65, 11.7, -1.83],
-           "armor", left_thigh, face_uv={"north": thigh_uv, "south": thigh_uv})
     add(m, right_thigh, "right_thigh_leather_wear", [2.9, 8.1, -1.87], [3.45, 10.9, -1.65], "leather")
 
     add(m, left_arm, "bound_upper_arm", [-6, 15.8, -.8], [-3.7, 21, 1.3], "sleeve")
