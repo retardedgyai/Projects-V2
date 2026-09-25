@@ -11,6 +11,13 @@ import java.util.Locale
 
 /** Draws live values over the approved art; hitboxes use the same 1440x920 coordinate map. */
 class Polish05Scene(private val kit: Path, spriteMap: Path) {
+    private companion object {
+        const val MODAL_MASK_DEPTH=20
+        const val MODAL_BORDER_DEPTH=21
+        const val MODAL_PANEL_DEPTH=22
+        const val MODAL_CONTENT_DEPTH=23
+        const val MODAL_ACTION_DEPTH=24
+    }
     private val screen = Polish05ScreenSpace(800.0, 480.0)
     private val sprites = JsonParser.parseString(Files.readString(spriteMap)).asJsonObject.entrySet().associate { (name, value) ->
         val v = value.asJsonObject
@@ -88,14 +95,14 @@ class Polish05Scene(private val kit: Path, spriteMap: Path) {
         hit(nodes,"bag-sound",1088,24,94,35,"sound")
         if(compare) {
             nodes.removeIf { it.action!=null }
-            put(nodes,"bag-modal-mask",0,0,1440,920,bg="#bb0d1418",depth=11)
-            put(nodes,"bag-modal-panel",363,181,714,561,bg="#202827",depth=12)
-            put(nodes,"bag-modal-title",399,217,639,44,"装備中と比較",size=24.0,depth=13)
-            put(nodes,"bag-modal-selected",400,285,292,159,"選択中  ${gear.name} +${gear.level}\n物理攻撃 ${gear.power}",size=17.0,depth=13)
+            put(nodes,"bag-modal-mask",0,0,1440,920,bg="#bb0d1418",depth=MODAL_MASK_DEPTH)
+            put(nodes,"bag-modal-panel",363,181,714,561,bg="#202827",depth=MODAL_PANEL_DEPTH)
+            put(nodes,"bag-modal-title",399,217,639,44,"装備中と比較",size=24.0,depth=MODAL_CONTENT_DEPTH)
+            put(nodes,"bag-modal-selected",400,285,292,159,"選択中  ${gear.name} +${gear.level}\n物理攻撃 ${gear.power}",size=17.0,depth=MODAL_CONTENT_DEPTH)
             val equipped=snap.gears.single { it.id==snap.equipped }
-            put(nodes,"bag-modal-equipped",735,285,292,159,"装備中  ${equipped.name} +${equipped.level}\n物理攻撃 ${equipped.power}",size=17.0,depth=13)
-            put(nodes,"bag-modal-cancel",383,677,325,44,"閉じる",size=16.0,bg="#283230",action="cancel",depth=13,align="center")
-            put(nodes,"bag-modal-forge",718,677,340,44,"選択中の装備を工房へ",size=16.0,bg="#d6bb7f",color="#211f19",action="bag:forge",depth=13,align="center")
+            put(nodes,"bag-modal-equipped",735,285,292,159,"装備中  ${equipped.name} +${equipped.level}\n物理攻撃 ${equipped.power}",size=17.0,depth=MODAL_CONTENT_DEPTH)
+            put(nodes,"bag-modal-cancel",383,677,325,44,"閉じる",size=16.0,bg="#283230",action="cancel",depth=MODAL_ACTION_DEPTH,align="center")
+            put(nodes,"bag-modal-forge",718,677,340,44,"選択中の装備を工房へ",size=16.0,bg="#d6bb7f",color="#211f19",action="bag:forge",depth=MODAL_ACTION_DEPTH,align="center")
         }
         return UiScene(800.0,480.0,nodes)
     }
@@ -158,12 +165,12 @@ class Polish05Scene(private val kit: Path, spriteMap: Path) {
         hit(nodes,"refine-sound",1088,24,94,35,"sound")
         if(modal) {
             nodes.removeIf { it.action!=null }
-            put(nodes,"refine-modal-mask",0,0,1440,920,bg="#bb0d1418",depth=11)
-            put(nodes,"refine-modal-panel",470,246,500,428,bg="#202827",depth=12)
-            put(nodes,"refine-modal-title",509,274,424,46,"${count}個 精錬しますか？",size=23.0,depth=13)
-            put(nodes,"refine-modal-details",509,356,424,166,"${if(ore)"陽鉱の原石" else "虚晶の原石"} ${unit*count}個\n銀貨 ${number(fee*count)}\n作成 ${count}個",size=16.0,depth=13)
-            put(nodes,"refine-modal-cancel",509,615,199,44,"やめる",size=15.0,bg="#283230",action="cancel",depth=13,align="center")
-            put(nodes,"refine-modal-confirm",718,615,213,44,"精錬する",size=17.0,bg="#d4b879",color="#211f19",action="confirm",depth=13,align="center")
+            put(nodes,"refine-modal-mask",0,0,1440,920,bg="#bb0d1418",depth=MODAL_MASK_DEPTH)
+            put(nodes,"refine-modal-panel",470,246,500,428,bg="#202827",depth=MODAL_PANEL_DEPTH)
+            put(nodes,"refine-modal-title",509,274,424,46,"${count}個 精錬しますか？",size=23.0,depth=MODAL_CONTENT_DEPTH)
+            put(nodes,"refine-modal-details",509,356,424,166,"${if(ore)"陽鉱の原石" else "虚晶の原石"} ${unit*count}個\n銀貨 ${number(fee*count)}\n作成 ${count}個",size=16.0,depth=MODAL_CONTENT_DEPTH)
+            put(nodes,"refine-modal-cancel",509,615,199,44,"やめる",size=15.0,bg="#283230",action="cancel",depth=MODAL_ACTION_DEPTH,align="center")
+            put(nodes,"refine-modal-confirm",718,615,213,44,"精錬する",size=17.0,bg="#d4b879",color="#211f19",action="confirm",depth=MODAL_ACTION_DEPTH,align="center")
         }
         return UiScene(800.0,480.0,nodes)
     }
@@ -227,7 +234,9 @@ class Polish05Scene(private val kit: Path, spriteMap: Path) {
         node("replenish-caption",258,497,66,16,"原石から精錬",size=10.0,color="#858b82")
         for((index,recipe) in listOf(Polish05PreviewModel.Recipe.ORE,Polish05PreviewModel.Recipe.CRYSTAL).withIndex()) {
             val y=523+index*57
-            node("replenish-bg-$index",95,y,229,57,sprite="replenish_row/0_0",depth=2)
+            // The approved row bitmap already contains fixed labels and counts. Use its
+            // dark plate color here so the live material values are drawn only once.
+            node("replenish-bg-$index",95,y,229,57,bg="#1c2223",depth=2)
             val raw=if(index==0)Material.RAW_ORE else Material.RAW_CRYSTAL
             val replenish=model.replenishment(recipe)
             val cap=replenish.capacity
@@ -251,7 +260,9 @@ class Polish05Scene(private val kit: Path, spriteMap: Path) {
         val hero=if(selected.id=="ember")"sword_t2_hero" else "greatsword_hero"
         val weaponHeight=if(selected.id=="ember")276 else 240
         val weaponWidth=if(selected.id=="ember")57 else 45
-        node("hero-weapon",681.0-weaponWidth/2.0,if(selected.id=="ember")365 else 383,weaponWidth,weaponHeight,
+        // The weapon sits completely behind the confirmation panel. Do not keep a
+        // translucent bitmap display there while the modal is open.
+        if(!modal) node("hero-weapon",681.0-weaponWidth/2.0,if(selected.id=="ember")365 else 383,weaponWidth,weaponHeight,
             sprite=hero,depth=4)
         line("hero-meta-rule",378,678,605)
         node("hero-meta",544,688,275,21,"武器 Tier ${selected.tier}   │   品質 上質   │   耐久 100 / 100",size=12.0,color="#b8b4a8",align="center")
@@ -303,18 +314,25 @@ class Polish05Scene(private val kit: Path, spriteMap: Path) {
         node("catalyst-check",1031,670,15,15,if(snapshot.catalyst)"☑" else "□",size=15.0,color="#cbb783")
         node("catalyst-text",1052,663,190,35,"触媒を使う  ·  所持 ${snapshot.materials.getValue(Material.CATALYST)}個",size=12.0,color="#b9bdac")
         node("catalyst-info",1243,672,93,19,"成功率を100%に",size=10.0,color="#c9b986")
-        if(canEnhance) sprites.keys.filter { it.startsWith("enhance_button/") }.forEach { key ->
-            val offset=key.substringAfter('/').split('_')
-            val sprite=sprites.getValue(key)
-            node("$key",1019+offset[0].toInt(),710+offset[1].toInt(),sprite.width,sprite.height,sprite=key,depth=2)
-        } else node("enhance-disabled",1019,710,326,51,bg="#44443e")
-        node("enhance-label",1063,720,238,29,when {
+        val enhanceLabel=when {
             snapshot.busy -> "鍛造中…"
             selected.level>=30 -> "最大強化"
             !canEnhance -> "素材が足りません"
             snapshot.history.isEmpty() -> "強化する"
             else -> "続けて強化する"
-        },size=18.0,color=if(canEnhance)"#211f19" else "#aeb1a6",align="center")
+        }
+        if(canEnhance && enhanceLabel=="強化する") {
+            // This original button bitmap already says 強化する and includes Enter.
+            sprites.keys.filter { it.startsWith("enhance_button/") }.forEach { key ->
+                val offset=key.substringAfter('/').split('_')
+                val sprite=sprites.getValue(key)
+                node(key,1019+offset[0].toInt(),710+offset[1].toInt(),sprite.width,sprite.height,sprite=key,depth=2)
+            }
+        } else {
+            node("enhance-dynamic-bg",1019,710,326,51,bg=if(canEnhance)"#d4b879" else "#44443e")
+            node("enhance-label",1063,720,238,29,enhanceLabel,size=18.0,
+                color=if(canEnhance)"#211f19" else "#aeb1a6",align="center")
+        }
         node("action-note",1020,768,324,16,note,size=10.0,color="#9fa699",align="center")
         node("footer-help",96,796,356,20,"左クリック 選択  │  Shift 閉じる",size=10.0,color="#aeb3a1")
         node("footer-state",1238,796,107,19,"素材と装備庫は連動",size=10.0,color="#9fac9b",align="right")
@@ -342,32 +360,32 @@ class Polish05Scene(private val kit: Path, spriteMap: Path) {
                 action=action,depth=5)
         }
         if(modal) {
-            node("modal-mask",0,0,1440,920,bg="#bb0d1418",depth=6)
-            node("modal-border",470,176,500,568,bg="#ad9562",depth=7)
-            node("modal-panel",474,180,492,560,bg="#202826",depth=8)
-            node("modal-title",509,211,379,43,"この装備を強化しますか？",size=24.0,color="#ebdfc4",depth=9)
-            node("modal-close",908,188,45,51,"×",size=25.0,bg="#202827",action="cancel",depth=9,align="center")
-            node("modal-rule-top",509,260,422,1,bg="#39413c",depth=9)
-            node("modal-icon",525,293,60,66,sprite=if(selected.id=="ember")"sword_t2_thumb" else "greatsword_thumb",depth=9)
-            node("modal-gear-name",610,288,286,25,selected.name,size=16.0,depth=9)
-            node("modal-level",610,321,265,41,"+${selected.level}  →  +$next",size=30.0,color="#e6c886",depth=9)
-            node("modal-rule-gear",509,376,422,1,bg="#39413c",depth=9)
-            node("modal-attack-label",510,396,130,25,"成功時の物理攻撃",size=13.0,color="#abb5aa",depth=9)
-            node("modal-attack-value",777,395,152,27,"${selected.power} → ${selected.power+selected.step}",size=18.0,color="#eddaad",depth=9,align="right")
-            node("modal-rule-attack",509,432,422,1,bg="#39413c",depth=9)
-            node("modal-ore-name",510,451,160,21,"陽鉱の塊",size=12.0,color="#b7c0b1",depth=9)
-            node("modal-ore-amount",760,451,169,21,"${cost.materials.getValue(Material.ORE)}個  残り ${ore-cost.materials.getValue(Material.ORE)}",size=12.0,depth=9,align="right")
-            node("modal-crystal-name",510,482,160,21,"虚晶の欠片",size=12.0,color="#b7c0b1",depth=9)
-            node("modal-crystal-amount",760,482,169,21,"${cost.materials.getValue(Material.CRYSTAL)}個  残り ${crystal-cost.materials.getValue(Material.CRYSTAL)}",size=12.0,depth=9,align="right")
-            node("modal-silver-name",510,513,160,21,"銀貨",size=12.0,color="#b7c0b1",depth=9)
-            node("modal-silver-amount",760,513,169,21,"${number(cost.silver)} 銀貨  残り ${number(snapshot.silver-cost.silver)}",size=12.0,depth=9,align="right")
-            node("modal-risk-bg",509,550,422,67,bg="#2c2b25",depth=9)
-            node("modal-risk-accent",509,550,2,67,bg="#bd9c64",depth=10)
+            node("modal-mask",0,0,1440,920,bg="#bb0d1418",depth=MODAL_MASK_DEPTH)
+            node("modal-border",470,176,500,568,bg="#ad9562",depth=MODAL_BORDER_DEPTH)
+            node("modal-panel",474,180,492,560,bg="#202826",depth=MODAL_PANEL_DEPTH)
+            node("modal-title",509,211,379,43,"この装備を強化しますか？",size=24.0,color="#ebdfc4",depth=MODAL_CONTENT_DEPTH)
+            node("modal-close",908,188,45,51,"×",size=25.0,bg="#202827",action="cancel",depth=MODAL_ACTION_DEPTH,align="center")
+            node("modal-rule-top",509,260,422,1,bg="#39413c",depth=MODAL_CONTENT_DEPTH)
+            node("modal-icon",525,293,60,66,sprite=if(selected.id=="ember")"sword_t2_thumb" else "greatsword_thumb",depth=MODAL_CONTENT_DEPTH)
+            node("modal-gear-name",610,288,286,25,selected.name,size=16.0,depth=MODAL_CONTENT_DEPTH)
+            node("modal-level",610,321,265,41,"+${selected.level}  →  +$next",size=30.0,color="#e6c886",depth=MODAL_CONTENT_DEPTH)
+            node("modal-rule-gear",509,376,422,1,bg="#39413c",depth=MODAL_CONTENT_DEPTH)
+            node("modal-attack-label",510,396,130,25,"成功時の物理攻撃",size=13.0,color="#abb5aa",depth=MODAL_CONTENT_DEPTH)
+            node("modal-attack-value",777,395,152,27,"${selected.power} → ${selected.power+selected.step}",size=18.0,color="#eddaad",depth=MODAL_CONTENT_DEPTH,align="right")
+            node("modal-rule-attack",509,432,422,1,bg="#39413c",depth=MODAL_CONTENT_DEPTH)
+            node("modal-ore-name",510,451,160,21,"陽鉱の塊",size=12.0,color="#b7c0b1",depth=MODAL_CONTENT_DEPTH)
+            node("modal-ore-amount",760,451,169,21,"${cost.materials.getValue(Material.ORE)}個  残り ${ore-cost.materials.getValue(Material.ORE)}",size=12.0,depth=MODAL_CONTENT_DEPTH,align="right")
+            node("modal-crystal-name",510,482,160,21,"虚晶の欠片",size=12.0,color="#b7c0b1",depth=MODAL_CONTENT_DEPTH)
+            node("modal-crystal-amount",760,482,169,21,"${cost.materials.getValue(Material.CRYSTAL)}個  残り ${crystal-cost.materials.getValue(Material.CRYSTAL)}",size=12.0,depth=MODAL_CONTENT_DEPTH,align="right")
+            node("modal-silver-name",510,513,160,21,"銀貨",size=12.0,color="#b7c0b1",depth=MODAL_CONTENT_DEPTH)
+            node("modal-silver-amount",760,513,169,21,"${number(cost.silver)} 銀貨  残り ${number(snapshot.silver-cost.silver)}",size=12.0,depth=MODAL_CONTENT_DEPTH,align="right")
+            node("modal-risk-bg",509,550,422,67,bg="#2c2b25",depth=MODAL_CONTENT_DEPTH)
+            node("modal-risk-accent",509,550,2,67,bg="#bd9c64",depth=MODAL_ACTION_DEPTH)
             node("modal-risk",523,566,397,42,if(snapshot.catalyst)"成功率100%。触媒を1個消費します。" else "成功率80%。失敗時も強化段階は維持します。素材と銀貨は消費します。",
-                size=12.0,color="#d3bf9e",depth=10)
-            node("modal-local-note",509,628,420,19,"ローカル表示テスト：成功例を再生",size=10.0,color="#aeb5a4",depth=9)
-            node("modal-cancel",509,668,199,44,"やめる",size=15.0,bg="#26302e",action="cancel",depth=10,align="center")
-            node("modal-confirm",718,668,213,44,"強化する",size=17.0,color="#211f19",bg="#d7bb7c",action="confirm",depth=10,align="center")
+                size=12.0,color="#d3bf9e",depth=MODAL_ACTION_DEPTH)
+            node("modal-local-note",509,628,420,19,"ローカル表示テスト：成功例を再生",size=10.0,color="#aeb5a4",depth=MODAL_CONTENT_DEPTH)
+            node("modal-cancel",509,668,199,44,"やめる",size=15.0,bg="#26302e",action="cancel",depth=MODAL_ACTION_DEPTH,align="center")
+            node("modal-confirm",718,668,213,44,"強化する",size=17.0,color="#211f19",bg="#d7bb7c",action="confirm",depth=MODAL_ACTION_DEPTH,align="center")
         }
         return UiScene(800.0,480.0,list)
     }

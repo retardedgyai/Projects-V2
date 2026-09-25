@@ -25,6 +25,10 @@ class Polish05FlowTest {
         assertEquals("enhance",flow.scene().hit(button.box.x+button.box.w/2,button.box.y+button.box.h/2)?.action)
         assertTrue(nodes.any { it.sprite?.font=="projects_ui_polish05:plates" })
         assertTrue(nodes.any { it.sprite?.font=="projects_ui_polish05:sprites" })
+        // These approved bitmaps have baked-in labels. Live text must not be drawn on top.
+        assertFalse(nodes.any { it.id.startsWith("replenish-bg-") && it.sprite!=null })
+        assertTrue(nodes.any { it.id.startsWith("enhance_button/") })
+        assertFalse(nodes.any { it.id=="enhance-label" })
     }
 
     @Test fun selectCompareConfirmConsumeRefineAndReturnToSameGear() {
@@ -43,6 +47,9 @@ class Polish05FlowTest {
         assertTrue(flow.action("enhance"))
         assertTrue(flow.modal)
         assertFalse(flow.scene().nodes.any { it.action=="select:ash" })
+        assertFalse(flow.scene().nodes.any { it.id=="hero-weapon" })
+        assertTrue(flow.scene().nodes.single { it.id=="modal-panel" }.depth >
+            scene.forge(flow.model).nodes.single { it.id=="hero-weapon" }.depth+5)
         assertTrue(flow.action("confirm"))
         val op=assertNotNull(flow.operation)
         assertEquals(36,flow.model.snapshot().materials.getValue(Material.ORE))
@@ -50,6 +57,8 @@ class Polish05FlowTest {
         assertEquals(null,flow.tick(op.finishAtMs-1))
         assertTrue(assertNotNull(flow.tick(op.finishAtMs)).success)
         assertEquals(7,flow.model.snapshot().gears.single { it.id=="ember" }.level)
+        assertTrue(flow.scene().nodes.any { it.id=="enhance-label" && it.text=="続けて強化する" })
+        assertFalse(flow.scene().nodes.any { it.id.startsWith("enhance_button/") })
         assertTrue(flow.action("refine:ore"))
         assertEquals("refine",flow.view)
         assertEquals("ember",flow.model.snapshot().selected)
