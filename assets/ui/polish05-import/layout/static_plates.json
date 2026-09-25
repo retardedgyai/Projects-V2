@@ -1,0 +1,366 @@
+{
+  "forge_environment_plate": {
+    "width": 628,
+    "height": 382,
+    "tiles": [
+      {
+        "file": "projects_ui_polish05:plates/forge_environment_plate_0_0.png",
+        "x": 0,
+        "y": 0,
+        "w": 256,
+        "h": 256
+      },
+      {
+        "file": "projects_ui_polish05:plates/forge_environment_plate_256_0.png",
+        "x": 256,
+        "y": 0,
+        "w": 256,
+        "h": 256
+      },
+      {
+        "file": "projects_ui_polish05:plates/forge_environment_plate_512_0.png",
+        "x": 512,
+        "y": 0,
+        "w": 116,
+        "h": 256
+      },
+      {
+        "file": "projects_ui_polish05:plates/forge_environment_plate_0_256.png",
+        "x": 0,
+        "y": 256,
+        "w": 256,
+        "h": 126
+      },
+      {
+        "file": "projects_ui_polish05:plates/forge_environment_plate_256_256.png",
+        "x": 256,
+        "y": 256,
+        "w": 256,
+        "h": 126
+      },
+      {
+        "file": "projects_ui_polish05:plates/forge_environment_plate_512_256.png",
+        "x": 512,
+        "y": 256,
+        "w": 116,
+        "h": 126
+      }
+    ],
+    "purpose": "static environment backing; render weapon and state separately"
+  },
+  "forge_environment_with_glow": {
+    "width": 628,
+    "height": 382,
+    "tiles": [
+      {
+        "file": "projects_ui_polish05:plates/forge_environment_with_glow_0_0.png",
+        "x": 0,
+        "y": 0,
+        "w": 256,
+        "h": 256
+      },
+      {
+        "file": "projects_ui_polish05:plates/forge_environment_with_glow_256_0.png",
+        "x": 256,
+        "y": 0,
+        "w": 256,
+        "h": 256
+      },
+      {
+        "file": "projects_ui_polish05:plates/forge_environment_with_glow_512_0.png",
+        "x": 512,
+        "y": 0,
+        "w": 116,
+        "h": 256
+      },
+      {
+        "file": "projects_ui_polish05:plates/forge_environment_with_glow_0_256.png",
+        "x": 0,
+        "y": 256,
+        "w": 256,
+        "h": 126
+      },
+      {
+        "file": "projects_ui_polish05:plates/forge_environment_with_glow_256_256.png",
+        "x": 256,
+        "y": 256,
+        "w": 256,
+        "h": 126
+      },
+      {
+        "file": "projects_ui_polish05:plates/forge_environment_with_glow_512_256.png",
+        "x": 512,
+        "y": 256,
+        "w": 116,
+        "h": 126
+      }
+    ],
+    "purpose": "static environment backing; render weapon and state separately"
+  },
+  "forge_initial_reference_plate": {
+    "width": 1308,
+    "height": 697,
+    "tiles": [
+      {
+        "file": "projects_ui_polish05:plates/forge_initial_reference_plate_0_0.png",
+        "x": 0,
+        "y": 0,
+        "w": 256,
+        "h": 256
+      },
+      {
+        "file": "projects_ui_polish05:plates/forge_initial_reference_plate_256_0.png",
+        "x": 256,
+        "y": 0,
+        "w": 256,
+        "h": 256
+      },
+      {
+        "file": "projects_ui_polish05:plates/forge_initial_reference_plate_512_0.png",
+        "x": 512,
+        "y": 0,
+        "w": 256,
+        "h": 256
+      },
+      {
+        "file": "projects_ui_polish05:plates/forge_initial_reference_plate_768_0.png",
+        "x": 768,
+        "y": 0,
+        "w": 256,
+        "h": 256
+      },
+      {
+        "file": "projects_ui_polish05:plates/forge_initial_reference_plate_1024_0.png",
+        "x": 1024,
+        "y": 0,
+        "w": 256,
+        "h": 256
+      },
+      {
+        "file": "projects_ui_polish05:plates/forge_initial_reference_plate_1280_0.png",
+        "x": 1280,
+        "y": 0,
+        "w": 28,
+        "h": 256
+      },
+      {
+        "file": "projects_ui_polish05:plates/forge_initial_reference_plate_0_256.png",
+        "x": 0,
+        "y": 256,
+        "w": 256,
+        "h": 256
+      },
+      {
+        "file": "projects_ui_polish05:plates/forge_initial_reference_plate_256_256.png",
+        "x": 256,
+        "y": 256,
+        "w": 256,
+        "h": 256
+      },
+      {
+        "file": "projects_ui_polish05:plates/forge_initial_reference_plate_512_256.png",
+        "x": 512,
+        "y": 256,
+        "w": 256,
+        "h": 256
+      },
+      {
+        "file": "projects_ui_polish05:plates/forge_initial_reference_plate_768_256.png",
+        "x": 768,
+        "y": 256,
+        "w": 256,
+        "h": 256
+      },
+      {
+        "file": "projects_ui_polish05:plates/forge_initial_reference_plate_1024_256.png",
+        "x": 1024,
+        "y": 256,
+        "w": 256,
+        "h": 256
+      },
+      {
+        "file": "projects_ui_polish05:plates/forge_initial_reference_plate_1280_256.png",
+        "x": 1280,
+        "y": 256,
+        "w": 28,
+        "h": 256
+      },
+      {
+        "file": "projects_ui_polish05:plates/forge_initial_reference_plate_0_512.png",
+        "x": 0,
+        "y": 512,
+        "w": 256,
+        "h": 185
+      },
+      {
+        "file": "projects_ui_polish05:plates/forge_initial_reference_plate_256_512.png",
+        "x": 256,
+        "y": 512,
+        "w": 256,
+        "h": 185
+      },
+      {
+        "file": "projects_ui_polish05:plates/forge_initial_reference_plate_512_512.png",
+        "x": 512,
+        "y": 512,
+        "w": 256,
+        "h": 185
+      },
+      {
+        "file": "projects_ui_polish05:plates/forge_initial_reference_plate_768_512.png",
+        "x": 768,
+        "y": 512,
+        "w": 256,
+        "h": 185
+      },
+      {
+        "file": "projects_ui_polish05:plates/forge_initial_reference_plate_1024_512.png",
+        "x": 1024,
+        "y": 512,
+        "w": 256,
+        "h": 185
+      },
+      {
+        "file": "projects_ui_polish05:plates/forge_initial_reference_plate_1280_512.png",
+        "x": 1280,
+        "y": 512,
+        "w": 28,
+        "h": 185
+      }
+    ],
+    "purpose": "visual calibration only; full reference plate is NOT a completed interactive implementation"
+  },
+  "window_chrome": {
+    "width": 1308,
+    "height": 697,
+    "tiles": [
+      {
+        "file": "projects_ui_polish05:plates/window_chrome_0_0.png",
+        "x": 0,
+        "y": 0,
+        "w": 256,
+        "h": 256
+      },
+      {
+        "file": "projects_ui_polish05:plates/window_chrome_256_0.png",
+        "x": 256,
+        "y": 0,
+        "w": 256,
+        "h": 256
+      },
+      {
+        "file": "projects_ui_polish05:plates/window_chrome_512_0.png",
+        "x": 512,
+        "y": 0,
+        "w": 256,
+        "h": 256
+      },
+      {
+        "file": "projects_ui_polish05:plates/window_chrome_768_0.png",
+        "x": 768,
+        "y": 0,
+        "w": 256,
+        "h": 256
+      },
+      {
+        "file": "projects_ui_polish05:plates/window_chrome_1024_0.png",
+        "x": 1024,
+        "y": 0,
+        "w": 256,
+        "h": 256
+      },
+      {
+        "file": "projects_ui_polish05:plates/window_chrome_1280_0.png",
+        "x": 1280,
+        "y": 0,
+        "w": 28,
+        "h": 256
+      },
+      {
+        "file": "projects_ui_polish05:plates/window_chrome_0_256.png",
+        "x": 0,
+        "y": 256,
+        "w": 256,
+        "h": 256
+      },
+      {
+        "file": "projects_ui_polish05:plates/window_chrome_256_256.png",
+        "x": 256,
+        "y": 256,
+        "w": 256,
+        "h": 256
+      },
+      {
+        "file": "projects_ui_polish05:plates/window_chrome_512_256.png",
+        "x": 512,
+        "y": 256,
+        "w": 256,
+        "h": 256
+      },
+      {
+        "file": "projects_ui_polish05:plates/window_chrome_768_256.png",
+        "x": 768,
+        "y": 256,
+        "w": 256,
+        "h": 256
+      },
+      {
+        "file": "projects_ui_polish05:plates/window_chrome_1024_256.png",
+        "x": 1024,
+        "y": 256,
+        "w": 256,
+        "h": 256
+      },
+      {
+        "file": "projects_ui_polish05:plates/window_chrome_1280_256.png",
+        "x": 1280,
+        "y": 256,
+        "w": 28,
+        "h": 256
+      },
+      {
+        "file": "projects_ui_polish05:plates/window_chrome_0_512.png",
+        "x": 0,
+        "y": 512,
+        "w": 256,
+        "h": 185
+      },
+      {
+        "file": "projects_ui_polish05:plates/window_chrome_256_512.png",
+        "x": 256,
+        "y": 512,
+        "w": 256,
+        "h": 185
+      },
+      {
+        "file": "projects_ui_polish05:plates/window_chrome_512_512.png",
+        "x": 512,
+        "y": 512,
+        "w": 256,
+        "h": 185
+      },
+      {
+        "file": "projects_ui_polish05:plates/window_chrome_768_512.png",
+        "x": 768,
+        "y": 512,
+        "w": 256,
+        "h": 185
+      },
+      {
+        "file": "projects_ui_polish05:plates/window_chrome_1024_512.png",
+        "x": 1024,
+        "y": 512,
+        "w": 256,
+        "h": 185
+      },
+      {
+        "file": "projects_ui_polish05:plates/window_chrome_1280_512.png",
+        "x": 1280,
+        "y": 512,
+        "w": 28,
+        "h": 185
+      }
+    ],
+    "purpose": "static environment backing; render weapon and state separately"
+  }
+}

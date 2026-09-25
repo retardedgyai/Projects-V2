@@ -1,0 +1,2 @@
+# Preserve the approved kit byte-for-byte, including the HTML checked by verify_import.py.
+* -text whitespace=cr-at-eol

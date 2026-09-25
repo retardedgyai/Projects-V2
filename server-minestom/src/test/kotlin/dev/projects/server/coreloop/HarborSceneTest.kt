@@ -42,6 +42,9 @@ class HarborSceneTest {
             assertEquals(Block.AIR, instance.getBlock(spawn))
             assertEquals(5, scene.facilities.size)
             assertEquals(HarborFacilityKind.entries.toSet(), scene.facilities.map { it.kind }.toSet())
+            assertEquals(EntityType.VILLAGER, scene.smith.entityType)
+            assertTrue(scene.smith.position.distance(scene.facilities.single { it.kind == HarborFacilityKind.WORKSHOP }.position) < 5.0)
+            assertTrue(instance.getBlock(scene.smith.position).isAir, "Smith NPC is embedded in workshop scenery")
             assertEquals(5, scene.labels.size)
             assertEquals(493,scene.scenery.size, "Unexpected growth in static harbor geometry")
             // Natural chalk continues from the town's spurs into the separately generated headlands.

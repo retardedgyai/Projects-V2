@@ -1,0 +1,16 @@
+{
+  "approvalSource": "User-approved ProjectS_UI_Polish05_Workbench.html in this conversation",
+  "sourceSha256": "e778157b01dbec1a9d2af96c061467a35b48d75ece64007d6ba889272d8d246a",
+  "repository": "retardedgyai/Projects-V2",
+  "inspectedMain": "f534f8465657c8e4e4e08a80aa7a1f659b207598",
+  "inspectedBranch": "play/gyai/web-ui-lab",
+  "labFiles": {
+    "web-ui-lab/README.md": "28ef2717a5c819600dc010c16990926f4d3e0d2a",
+    "web-ui-lab/src/main/kotlin/dev/projects/webui/UiRenderer.kt": "86282b361939d0a7bb2c2ba6fe54664016051b07",
+    "web-ui-lab/src/main/kotlin/dev/projects/webui/UiGeometry.kt": "3c9a8d3f3e85ab959df271d504897f882eff2044"
+  },
+  "nativeClientRun": false,
+  "githubWritten": false,
+  "localUserWorktreeModified": false,
+  "status": "IMPORT_KIT_READY_NATIVE_INTEGRATION_PENDING"
+}

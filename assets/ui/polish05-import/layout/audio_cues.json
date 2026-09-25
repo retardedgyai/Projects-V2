@@ -1,0 +1,116 @@
+{
+  "masterVolume": 0.35,
+  "doNotApplyCueGainTwice": true,
+  "hoverSound": false,
+  "clickDebounceMs": 70,
+  "maxVoices": 4,
+  "enhanceResultAtMs": 720,
+  "refineStrikeAtMs": 185,
+  "refineResultAtMs": 900,
+  "stopOnCloseOrDisconnect": true,
+  "browserLimiterNotReproduced": true,
+  "cues": {
+    "click": {
+      "source": "click",
+      "offset": 0.045,
+      "duration": 0.115,
+      "rate": 1.0,
+      "gain": 0.58,
+      "fade": 0.018,
+      "event": "projects_ui_polish05:ui.click",
+      "export_seconds": 0.115,
+      "gain_baked": true
+    },
+    "select": {
+      "source": "click",
+      "offset": 0.045,
+      "duration": 0.115,
+      "rate": 1.05,
+      "gain": 0.5,
+      "fade": 0.018,
+      "event": "projects_ui_polish05:ui.select",
+      "export_seconds": 0.10952380952380952,
+      "gain_baked": true
+    },
+    "back": {
+      "source": "click",
+      "offset": 0.045,
+      "duration": 0.115,
+      "rate": 0.92,
+      "gain": 0.42,
+      "fade": 0.018,
+      "event": "projects_ui_polish05:ui.back",
+      "export_seconds": 0.125,
+      "gain_baked": true
+    },
+    "equip": {
+      "source": "click",
+      "offset": 0.045,
+      "duration": 0.115,
+      "rate": 0.95,
+      "gain": 0.58,
+      "fade": 0.018,
+      "event": "projects_ui_polish05:ui.equip",
+      "export_seconds": 0.12105263157894738,
+      "gain_baked": true
+    },
+    "enhance_prepare": {
+      "source": "enchant_charge",
+      "rate": 1.0,
+      "gain": 0.4,
+      "fade": 0.065,
+      "event": "projects_ui_polish05:ui.enhance_prepare",
+      "export_seconds": 0.65,
+      "gain_baked": true
+    },
+    "enhance_success": {
+      "source": "enchant_plus",
+      "rate": 1.0,
+      "gain": 0.72,
+      "fade": 0.1,
+      "event": "projects_ui_polish05:ui.enhance_success",
+      "export_seconds": 2.25,
+      "gain_baked": true
+    },
+    "enhance_success_radiant": {
+      "source": "enchant_radiant",
+      "rate": 1.0,
+      "gain": 0.72,
+      "fade": 0.1,
+      "event": "projects_ui_polish05:ui.enhance_success_radiant",
+      "export_seconds": 2.65,
+      "gain_baked": true
+    },
+    "enhance_fail": {
+      "source": "dissipate",
+      "rate": 1.0,
+      "gain": 0.46,
+      "fade": 0.12,
+      "event": "projects_ui_polish05:ui.enhance_fail",
+      "export_seconds": 1.48,
+      "gain_baked": true
+    },
+    "refine_strike": {
+      "source": "anvil",
+      "offset": 0.0,
+      "duration": 0.285,
+      "rate": 1.06,
+      "gain": 0.32,
+      "fade": 0.075,
+      "event": "projects_ui_polish05:ui.refine_strike",
+      "export_seconds": 0.2688679245283018,
+      "gain_baked": true
+    },
+    "refine_success": {
+      "source": "orb",
+      "offset": 0.0,
+      "duration": 0.46,
+      "rate": 1.18,
+      "gain": 0.38,
+      "fade": 0.1,
+      "event": "projects_ui_polish05:ui.refine_success",
+      "export_seconds": 0.3898305084745763,
+      "gain_baked": true
+    }
+  }
+}

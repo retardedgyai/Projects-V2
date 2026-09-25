@@ -1,0 +1,242 @@
+{
+  "armor_ui": {
+    "char": "",
+    "codepoint": "0xe900",
+    "font": "projects_ui_polish05:sprites",
+    "width": 19,
+    "height": 21,
+    "ascent": 21,
+    "expectedAdvance": 20,
+    "source": "projects_ui_polish05:raw/armor_ui.png"
+  },
+  "bag": {
+    "char": "",
+    "codepoint": "0xe901",
+    "font": "projects_ui_polish05:sprites",
+    "width": 25,
+    "height": 27,
+    "ascent": 27,
+    "expectedAdvance": 26,
+    "source": "projects_ui_polish05:raw/bag.png"
+  },
+  "book_ui": {
+    "char": "",
+    "codepoint": "0xe902",
+    "font": "projects_ui_polish05:sprites",
+    "width": 24,
+    "height": 25,
+    "ascent": 25,
+    "expectedAdvance": 25,
+    "source": "projects_ui_polish05:raw/book_ui.png"
+  },
+  "boots_ui": {
+    "char": "",
+    "codepoint": "0xe903",
+    "font": "projects_ui_polish05:sprites",
+    "width": 18,
+    "height": 20,
+    "ascent": 20,
+    "expectedAdvance": 19,
+    "source": "projects_ui_polish05:raw/boots_ui.png"
+  },
+  "coin_ore": {
+    "char": "",
+    "codepoint": "0xe904",
+    "font": "projects_ui_polish05:sprites",
+    "width": 21,
+    "height": 23,
+    "ascent": 23,
+    "expectedAdvance": 22,
+    "source": "projects_ui_polish05:raw/coin_ore.png"
+  },
+  "dash": {
+    "char": "",
+    "codepoint": "0xe905",
+    "font": "projects_ui_polish05:sprites",
+    "width": 32,
+    "height": 32,
+    "ascent": 32,
+    "expectedAdvance": 33,
+    "source": "projects_ui_polish05:raw/dash.png"
+  },
+  "firebolt": {
+    "char": "",
+    "codepoint": "0xe906",
+    "font": "projects_ui_polish05:sprites",
+    "width": 32,
+    "height": 32,
+    "ascent": 32,
+    "expectedAdvance": 33,
+    "source": "projects_ui_polish05:raw/firebolt.png"
+  },
+  "flask": {
+    "char": "",
+    "codepoint": "0xe907",
+    "font": "projects_ui_polish05:sprites",
+    "width": 22,
+    "height": 29,
+    "ascent": 29,
+    "expectedAdvance": 23,
+    "source": "projects_ui_polish05:raw/flask.png"
+  },
+  "forge_environment": {
+    "char": "",
+    "codepoint": "0xe908",
+    "font": "projects_ui_polish05:sprites",
+    "width": 133,
+    "height": 137,
+    "ascent": 137,
+    "expectedAdvance": 134,
+    "source": "projects_ui_polish05:raw/forge_environment.png"
+  },
+  "greatsword_hero": {
+    "char": "",
+    "codepoint": "0xe909",
+    "font": "projects_ui_polish05:sprites",
+    "width": 15,
+    "height": 80,
+    "ascent": 80,
+    "expectedAdvance": 16,
+    "source": "projects_ui_polish05:raw/greatsword_hero.png"
+  },
+  "greatsword_thumb": {
+    "char": "",
+    "codepoint": "0xe90a",
+    "font": "projects_ui_polish05:sprites",
+    "width": 48,
+    "height": 48,
+    "ascent": 48,
+    "expectedAdvance": 36,
+    "source": "projects_ui_polish05:raw/greatsword_thumb.png"
+  },
+  "green_crystal": {
+    "char": "",
+    "codepoint": "0xe90b",
+    "font": "projects_ui_polish05:sprites",
+    "width": 18,
+    "height": 21,
+    "ascent": 21,
+    "expectedAdvance": 19,
+    "source": "projects_ui_polish05:raw/green_crystal.png"
+  },
+  "hammer": {
+    "char": "",
+    "codepoint": "0xe90c",
+    "font": "projects_ui_polish05:sprites",
+    "width": 24,
+    "height": 30,
+    "ascent": 30,
+    "expectedAdvance": 25,
+    "source": "projects_ui_polish05:raw/hammer.png"
+  },
+  "helm_ui": {
+    "char": "",
+    "codepoint": "0xe90d",
+    "font": "projects_ui_polish05:sprites",
+    "width": 18,
+    "height": 21,
+    "ascent": 21,
+    "expectedAdvance": 19,
+    "source": "projects_ui_polish05:raw/helm_ui.png"
+  },
+  "metal_ui": {
+    "char": "",
+    "codepoint": "0xe90e",
+    "font": "projects_ui_polish05:sprites",
+    "width": 19,
+    "height": 21,
+    "ascent": 21,
+    "expectedAdvance": 20,
+    "source": "projects_ui_polish05:raw/metal_ui.png"
+  },
+  "ore_ui": {
+    "char": "",
+    "codepoint": "0xe90f",
+    "font": "projects_ui_polish05:sprites",
+    "width": 23,
+    "height": 25,
+    "ascent": 25,
+    "expectedAdvance": 24,
+    "source": "projects_ui_polish05:raw/ore_ui.png"
+  },
+  "potion_smallui": {
+    "char": "",
+    "codepoint": "0xe910",
+    "font": "projects_ui_polish05:sprites",
+    "width": 13,
+    "height": 20,
+    "ascent": 20,
+    "expectedAdvance": 14,
+    "source": "projects_ui_polish05:raw/potion_smallui.png"
+  },
+  "potion_ui": {
+    "char": "",
+    "codepoint": "0xe911",
+    "font": "projects_ui_polish05:sprites",
+    "width": 17,
+    "height": 27,
+    "ascent": 27,
+    "expectedAdvance": 18,
+    "source": "projects_ui_polish05:raw/potion_ui.png"
+  },
+  "purple_crystal": {
+    "char": "",
+    "codepoint": "0xe912",
+    "font": "projects_ui_polish05:sprites",
+    "width": 19,
+    "height": 22,
+    "ascent": 22,
+    "expectedAdvance": 20,
+    "source": "projects_ui_polish05:raw/purple_crystal.png"
+  },
+  "shard_ui": {
+    "char": "",
+    "codepoint": "0xe913",
+    "font": "projects_ui_polish05:sprites",
+    "width": 19,
+    "height": 21,
+    "ascent": 21,
+    "expectedAdvance": 20,
+    "source": "projects_ui_polish05:raw/shard_ui.png"
+  },
+  "surface": {
+    "char": "",
+    "codepoint": "0xe914",
+    "font": "projects_ui_polish05:sprites",
+    "width": 16,
+    "height": 16,
+    "ascent": 16,
+    "expectedAdvance": 17,
+    "source": "projects_ui_polish05:raw/surface.png"
+  },
+  "sword_t2_hero": {
+    "char": "",
+    "codepoint": "0xe915",
+    "font": "projects_ui_polish05:sprites",
+    "width": 19,
+    "height": 92,
+    "ascent": 92,
+    "expectedAdvance": 20,
+    "source": "projects_ui_polish05:raw/sword_t2_hero.png"
+  },
+  "sword_t2_thumb": {
+    "char": "",
+    "codepoint": "0xe916",
+    "font": "projects_ui_polish05:sprites",
+    "width": 48,
+    "height": 48,
+    "ascent": 48,
+    "expectedAdvance": 37,
+    "source": "projects_ui_polish05:raw/sword_t2_thumb.png"
+  },
+  "wood_ui": {
+    "char": "",
+    "codepoint": "0xe917",
+    "font": "projects_ui_polish05:sprites",
+    "width": 23,
+    "height": 25,
+    "ascent": 25,
+    "expectedAdvance": 24,
+    "source": "projects_ui_polish05:raw/wood_ui.png"
+  }
+}

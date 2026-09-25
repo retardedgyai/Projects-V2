@@ -1,0 +1,64 @@
+{
+  "window_header": {
+    "selector": ".window-head",
+    "bounds": {
+      "x": 78,
+      "y": 150,
+      "width": 1284,
+      "height": 64
+    },
+    "alpha_note": "Rendered component crop; do not overlay opaque backing on unrelated layers."
+  },
+  "window_footer": {
+    "selector": ".window-foot",
+    "bounds": {
+      "x": 79,
+      "y": 789,
+      "width": 1282,
+      "height": 36
+    },
+    "alpha_note": "Rendered component crop; do not overlay opaque backing on unrelated layers."
+  },
+  "replenish_row": {
+    "selector": ".prep-recipe",
+    "bounds": {
+      "x": 95,
+      "y": 523,
+      "width": 229,
+      "height": 57
+    },
+    "alpha_note": "Rendered component crop; do not overlay opaque backing on unrelated layers."
+  },
+  "enhance_button": {
+    "selector": "#enhance-btn",
+    "bounds": {
+      "x": 1019,
+      "y": 710,
+      "width": 326,
+      "height": 51
+    },
+    "alpha_note": "Rendered component crop; do not overlay opaque backing on unrelated layers."
+  },
+  "weapon_glow_isolated": {
+    "selector": "#weapon-glow",
+    "bounds": {
+      "x": 620.5,
+      "y": 333,
+      "width": 121,
+      "height": 340
+    },
+    "padding": 32,
+    "alpha_note": "isolated transparent RGBA; raw sharp weapon is a separate layer"
+  },
+  "backlight_isolated": {
+    "selector": ".backlight",
+    "bounds": {
+      "x": 539,
+      "y": 328,
+      "width": 284,
+      "height": 354
+    },
+    "padding": 32,
+    "alpha_note": "isolated transparent RGBA; raw sharp weapon is a separate layer"
+  }
+}

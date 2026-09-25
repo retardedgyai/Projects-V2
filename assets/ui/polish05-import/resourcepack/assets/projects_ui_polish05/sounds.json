@@ -1,0 +1,82 @@
+{
+  "ui.click": {
+    "sounds": [
+      {
+        "name": "projects_ui_polish05:ui/click",
+        "stream": false
+      }
+    ]
+  },
+  "ui.select": {
+    "sounds": [
+      {
+        "name": "projects_ui_polish05:ui/select",
+        "stream": false
+      }
+    ]
+  },
+  "ui.back": {
+    "sounds": [
+      {
+        "name": "projects_ui_polish05:ui/back",
+        "stream": false
+      }
+    ]
+  },
+  "ui.equip": {
+    "sounds": [
+      {
+        "name": "projects_ui_polish05:ui/equip",
+        "stream": false
+      }
+    ]
+  },
+  "ui.enhance_prepare": {
+    "sounds": [
+      {
+        "name": "projects_ui_polish05:ui/enhance_prepare",
+        "stream": false
+      }
+    ]
+  },
+  "ui.enhance_success": {
+    "sounds": [
+      {
+        "name": "projects_ui_polish05:ui/enhance_success",
+        "stream": false
+      }
+    ]
+  },
+  "ui.enhance_success_radiant": {
+    "sounds": [
+      {
+        "name": "projects_ui_polish05:ui/enhance_success_radiant",
+        "stream": false
+      }
+    ]
+  },
+  "ui.enhance_fail": {
+    "sounds": [
+      {
+        "name": "projects_ui_polish05:ui/enhance_fail",
+        "stream": false
+      }
+    ]
+  },
+  "ui.refine_strike": {
+    "sounds": [
+      {
+        "name": "projects_ui_polish05:ui/refine_strike",
+        "stream": false
+      }
+    ]
+  },
+  "ui.refine_success": {
+    "sounds": [
+      {
+        "name": "projects_ui_polish05:ui/refine_success",
+        "stream": false
+      }
+    ]
+  }
+}

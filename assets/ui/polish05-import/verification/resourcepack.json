@@ -1,0 +1,10 @@
+{
+  "pack_sha1": "43337d3e68affcb04b6764307f6f9a4b3d59dd14",
+  "pack_sha256": "31e6f54ab2c2030498b6742c09752ad881fe53e58c79f997f56858fb4850a83d",
+  "format": 88,
+  "formatSource": "Projects-V2 f534f846 server-minestom/src/main/resources/core-ui-pack/pack.mcmeta",
+  "spriteCount": 24,
+  "soundCount": 10,
+  "noMinecraftOverrides": true,
+  "nativeLoadingTested": false
+}

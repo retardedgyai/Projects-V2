@@ -1,0 +1,944 @@
+{
+  "window_chrome/0_0": {
+    "char": "",
+    "width": 256,
+    "height": 256,
+    "font": "projects_ui_polish05:plates"
+  },
+  "window_chrome/256_0": {
+    "char": "",
+    "width": 256,
+    "height": 256,
+    "font": "projects_ui_polish05:plates"
+  },
+  "window_chrome/512_0": {
+    "char": "",
+    "width": 256,
+    "height": 256,
+    "font": "projects_ui_polish05:plates"
+  },
+  "window_chrome/768_0": {
+    "char": "",
+    "width": 256,
+    "height": 256,
+    "font": "projects_ui_polish05:plates"
+  },
+  "window_chrome/1024_0": {
+    "char": "",
+    "width": 256,
+    "height": 256,
+    "font": "projects_ui_polish05:plates"
+  },
+  "window_chrome/1280_0": {
+    "char": "",
+    "width": 28,
+    "height": 256,
+    "font": "projects_ui_polish05:plates"
+  },
+  "window_chrome/0_256": {
+    "char": "",
+    "width": 256,
+    "height": 256,
+    "font": "projects_ui_polish05:plates"
+  },
+  "window_chrome/256_256": {
+    "char": "",
+    "width": 256,
+    "height": 256,
+    "font": "projects_ui_polish05:plates"
+  },
+  "window_chrome/512_256": {
+    "char": "",
+    "width": 256,
+    "height": 256,
+    "font": "projects_ui_polish05:plates"
+  },
+  "window_chrome/768_256": {
+    "char": "",
+    "width": 256,
+    "height": 256,
+    "font": "projects_ui_polish05:plates"
+  },
+  "window_chrome/1024_256": {
+    "char": "",
+    "width": 256,
+    "height": 256,
+    "font": "projects_ui_polish05:plates"
+  },
+  "window_chrome/1280_256": {
+    "char": "",
+    "width": 28,
+    "height": 256,
+    "font": "projects_ui_polish05:plates"
+  },
+  "window_chrome/0_512": {
+    "char": "",
+    "width": 256,
+    "height": 185,
+    "font": "projects_ui_polish05:plates"
+  },
+  "window_chrome/256_512": {
+    "char": "",
+    "width": 256,
+    "height": 185,
+    "font": "projects_ui_polish05:plates"
+  },
+  "window_chrome/512_512": {
+    "char": "",
+    "width": 256,
+    "height": 185,
+    "font": "projects_ui_polish05:plates"
+  },
+  "window_chrome/768_512": {
+    "char": "",
+    "width": 256,
+    "height": 185,
+    "font": "projects_ui_polish05:plates"
+  },
+  "window_chrome/1024_512": {
+    "char": "",
+    "width": 256,
+    "height": 185,
+    "font": "projects_ui_polish05:plates"
+  },
+  "window_chrome/1280_512": {
+    "char": "",
+    "width": 28,
+    "height": 185,
+    "font": "projects_ui_polish05:plates"
+  },
+  "forge_environment_with_glow/0_0": {
+    "char": "",
+    "width": 256,
+    "height": 256,
+    "font": "projects_ui_polish05:plates"
+  },
+  "forge_environment_with_glow/256_0": {
+    "char": "",
+    "width": 256,
+    "height": 256,
+    "font": "projects_ui_polish05:plates"
+  },
+  "forge_environment_with_glow/512_0": {
+    "char": "",
+    "width": 116,
+    "height": 256,
+    "font": "projects_ui_polish05:plates"
+  },
+  "forge_environment_with_glow/0_256": {
+    "char": "",
+    "width": 256,
+    "height": 126,
+    "font": "projects_ui_polish05:plates"
+  },
+  "forge_environment_with_glow/256_256": {
+    "char": "",
+    "width": 256,
+    "height": 126,
+    "font": "projects_ui_polish05:plates"
+  },
+  "forge_environment_with_glow/512_256": {
+    "char": "",
+    "width": 116,
+    "height": 126,
+    "font": "projects_ui_polish05:plates"
+  },
+  "forge_environment_plate/0_0": {
+    "char": "",
+    "width": 256,
+    "height": 256,
+    "font": "projects_ui_polish05:plates"
+  },
+  "forge_environment_plate/256_0": {
+    "char": "",
+    "width": 256,
+    "height": 256,
+    "font": "projects_ui_polish05:plates"
+  },
+  "forge_environment_plate/512_0": {
+    "char": "",
+    "width": 116,
+    "height": 256,
+    "font": "projects_ui_polish05:plates"
+  },
+  "forge_environment_plate/0_256": {
+    "char": "",
+    "width": 256,
+    "height": 126,
+    "font": "projects_ui_polish05:plates"
+  },
+  "forge_environment_plate/256_256": {
+    "char": "",
+    "width": 256,
+    "height": 126,
+    "font": "projects_ui_polish05:plates"
+  },
+  "forge_environment_plate/512_256": {
+    "char": "",
+    "width": 116,
+    "height": 126,
+    "font": "projects_ui_polish05:plates"
+  },
+  "enhance_button/0_0": {
+    "char": "",
+    "width": 118,
+    "height": 60,
+    "font": "projects_ui_polish05:plates"
+  },
+  "enhance_button/118_0": {
+    "char": "",
+    "width": 117,
+    "height": 60,
+    "font": "projects_ui_polish05:plates"
+  },
+  "enhance_button/235_0": {
+    "char": "",
+    "width": 148,
+    "height": 60,
+    "font": "projects_ui_polish05:plates"
+  },
+  "replenish_row/0_0": {
+    "char": "",
+    "width": 229,
+    "height": 57,
+    "font": "projects_ui_polish05:plates"
+  },
+  "forge_environment_striking/0_0": {
+    "char": "",
+    "width": 256,
+    "height": 256,
+    "font": "projects_ui_polish05:plates"
+  },
+  "forge_environment_striking/256_0": {
+    "char": "",
+    "width": 256,
+    "height": 256,
+    "font": "projects_ui_polish05:plates"
+  },
+  "forge_environment_striking/512_0": {
+    "char": "",
+    "width": 116,
+    "height": 256,
+    "font": "projects_ui_polish05:plates"
+  },
+  "forge_environment_striking/0_256": {
+    "char": "",
+    "width": 256,
+    "height": 126,
+    "font": "projects_ui_polish05:plates"
+  },
+  "forge_environment_striking/256_256": {
+    "char": "",
+    "width": 256,
+    "height": 126,
+    "font": "projects_ui_polish05:plates"
+  },
+  "forge_environment_striking/512_256": {
+    "char": "",
+    "width": 116,
+    "height": 126,
+    "font": "projects_ui_polish05:plates"
+  },
+  "forge_environment_result_warm/0_0": {
+    "char": "",
+    "width": 256,
+    "height": 256,
+    "font": "projects_ui_polish05:plates"
+  },
+  "forge_environment_result_warm/256_0": {
+    "char": "",
+    "width": 256,
+    "height": 256,
+    "font": "projects_ui_polish05:plates"
+  },
+  "forge_environment_result_warm/512_0": {
+    "char": "",
+    "width": 116,
+    "height": 256,
+    "font": "projects_ui_polish05:plates"
+  },
+  "forge_environment_result_warm/0_256": {
+    "char": "",
+    "width": 256,
+    "height": 126,
+    "font": "projects_ui_polish05:plates"
+  },
+  "forge_environment_result_warm/256_256": {
+    "char": "",
+    "width": 256,
+    "height": 126,
+    "font": "projects_ui_polish05:plates"
+  },
+  "forge_environment_result_warm/512_256": {
+    "char": "",
+    "width": 116,
+    "height": 126,
+    "font": "projects_ui_polish05:plates"
+  },
+  "current_level_0": {
+    "char": "",
+    "width": 106,
+    "height": 94,
+    "font": "projects_ui_polish05:plates"
+  },
+  "current_level_1": {
+    "char": "",
+    "width": 96,
+    "height": 94,
+    "font": "projects_ui_polish05:plates"
+  },
+  "current_level_2": {
+    "char": "",
+    "width": 102,
+    "height": 94,
+    "font": "projects_ui_polish05:plates"
+  },
+  "current_level_3": {
+    "char": "",
+    "width": 102,
+    "height": 94,
+    "font": "projects_ui_polish05:plates"
+  },
+  "current_level_4": {
+    "char": "",
+    "width": 103,
+    "height": 94,
+    "font": "projects_ui_polish05:plates"
+  },
+  "current_level_5": {
+    "char": "",
+    "width": 101,
+    "height": 94,
+    "font": "projects_ui_polish05:plates"
+  },
+  "current_level_6": {
+    "char": "",
+    "width": 103,
+    "height": 94,
+    "font": "projects_ui_polish05:plates"
+  },
+  "current_level_7": {
+    "char": "",
+    "width": 100,
+    "height": 94,
+    "font": "projects_ui_polish05:plates"
+  },
+  "current_level_8": {
+    "char": "",
+    "width": 105,
+    "height": 94,
+    "font": "projects_ui_polish05:plates"
+  },
+  "current_level_9": {
+    "char": "",
+    "width": 103,
+    "height": 94,
+    "font": "projects_ui_polish05:plates"
+  },
+  "current_level_10": {
+    "char": "",
+    "width": 125,
+    "height": 94,
+    "font": "projects_ui_polish05:plates"
+  },
+  "current_level_11": {
+    "char": "",
+    "width": 116,
+    "height": 94,
+    "font": "projects_ui_polish05:plates"
+  },
+  "current_level_12": {
+    "char": "",
+    "width": 122,
+    "height": 94,
+    "font": "projects_ui_polish05:plates"
+  },
+  "current_level_13": {
+    "char": "",
+    "width": 122,
+    "height": 94,
+    "font": "projects_ui_polish05:plates"
+  },
+  "current_level_14": {
+    "char": "",
+    "width": 122,
+    "height": 94,
+    "font": "projects_ui_polish05:plates"
+  },
+  "current_level_15": {
+    "char": "",
+    "width": 121,
+    "height": 94,
+    "font": "projects_ui_polish05:plates"
+  },
+  "current_level_16": {
+    "char": "",
+    "width": 122,
+    "height": 94,
+    "font": "projects_ui_polish05:plates"
+  },
+  "current_level_17": {
+    "char": "",
+    "width": 120,
+    "height": 94,
+    "font": "projects_ui_polish05:plates"
+  },
+  "current_level_18": {
+    "char": "",
+    "width": 125,
+    "height": 94,
+    "font": "projects_ui_polish05:plates"
+  },
+  "current_level_19": {
+    "char": "",
+    "width": 122,
+    "height": 94,
+    "font": "projects_ui_polish05:plates"
+  },
+  "current_level_20": {
+    "char": "",
+    "width": 130,
+    "height": 94,
+    "font": "projects_ui_polish05:plates"
+  },
+  "current_level_21": {
+    "char": "",
+    "width": 122,
+    "height": 94,
+    "font": "projects_ui_polish05:plates"
+  },
+  "current_level_22": {
+    "char": "",
+    "width": 128,
+    "height": 94,
+    "font": "projects_ui_polish05:plates"
+  },
+  "current_level_23": {
+    "char": "",
+    "width": 128,
+    "height": 94,
+    "font": "projects_ui_polish05:plates"
+  },
+  "current_level_24": {
+    "char": "",
+    "width": 128,
+    "height": 94,
+    "font": "projects_ui_polish05:plates"
+  },
+  "current_level_25": {
+    "char": "",
+    "width": 127,
+    "height": 94,
+    "font": "projects_ui_polish05:plates"
+  },
+  "current_level_26": {
+    "char": "",
+    "width": 128,
+    "height": 94,
+    "font": "projects_ui_polish05:plates"
+  },
+  "current_level_27": {
+    "char": "",
+    "width": 126,
+    "height": 94,
+    "font": "projects_ui_polish05:plates"
+  },
+  "current_level_28": {
+    "char": "",
+    "width": 130,
+    "height": 94,
+    "font": "projects_ui_polish05:plates"
+  },
+  "current_level_29": {
+    "char": "",
+    "width": 128,
+    "height": 94,
+    "font": "projects_ui_polish05:plates"
+  },
+  "current_level_30": {
+    "char": "",
+    "width": 130,
+    "height": 94,
+    "font": "projects_ui_polish05:plates"
+  },
+  "next_level_0": {
+    "char": "",
+    "width": 106,
+    "height": 94,
+    "font": "projects_ui_polish05:plates"
+  },
+  "next_level_1": {
+    "char": "",
+    "width": 96,
+    "height": 94,
+    "font": "projects_ui_polish05:plates"
+  },
+  "next_level_2": {
+    "char": "",
+    "width": 102,
+    "height": 94,
+    "font": "projects_ui_polish05:plates"
+  },
+  "next_level_3": {
+    "char": "",
+    "width": 102,
+    "height": 94,
+    "font": "projects_ui_polish05:plates"
+  },
+  "next_level_4": {
+    "char": "",
+    "width": 103,
+    "height": 94,
+    "font": "projects_ui_polish05:plates"
+  },
+  "next_level_5": {
+    "char": "",
+    "width": 101,
+    "height": 94,
+    "font": "projects_ui_polish05:plates"
+  },
+  "next_level_6": {
+    "char": "",
+    "width": 103,
+    "height": 94,
+    "font": "projects_ui_polish05:plates"
+  },
+  "next_level_7": {
+    "char": "",
+    "width": 100,
+    "height": 94,
+    "font": "projects_ui_polish05:plates"
+  },
+  "next_level_8": {
+    "char": "",
+    "width": 105,
+    "height": 94,
+    "font": "projects_ui_polish05:plates"
+  },
+  "next_level_9": {
+    "char": "",
+    "width": 103,
+    "height": 94,
+    "font": "projects_ui_polish05:plates"
+  },
+  "next_level_10": {
+    "char": "",
+    "width": 125,
+    "height": 94,
+    "font": "projects_ui_polish05:plates"
+  },
+  "next_level_11": {
+    "char": "",
+    "width": 116,
+    "height": 94,
+    "font": "projects_ui_polish05:plates"
+  },
+  "next_level_12": {
+    "char": "",
+    "width": 122,
+    "height": 94,
+    "font": "projects_ui_polish05:plates"
+  },
+  "next_level_13": {
+    "char": "",
+    "width": 122,
+    "height": 94,
+    "font": "projects_ui_polish05:plates"
+  },
+  "next_level_14": {
+    "char": "",
+    "width": 122,
+    "height": 94,
+    "font": "projects_ui_polish05:plates"
+  },
+  "next_level_15": {
+    "char": "",
+    "width": 121,
+    "height": 94,
+    "font": "projects_ui_polish05:plates"
+  },
+  "next_level_16": {
+    "char": "",
+    "width": 122,
+    "height": 94,
+    "font": "projects_ui_polish05:plates"
+  },
+  "next_level_17": {
+    "char": "",
+    "width": 120,
+    "height": 94,
+    "font": "projects_ui_polish05:plates"
+  },
+  "next_level_18": {
+    "char": "",
+    "width": 125,
+    "height": 94,
+    "font": "projects_ui_polish05:plates"
+  },
+  "next_level_19": {
+    "char": "",
+    "width": 122,
+    "height": 94,
+    "font": "projects_ui_polish05:plates"
+  },
+  "next_level_20": {
+    "char": "",
+    "width": 130,
+    "height": 94,
+    "font": "projects_ui_polish05:plates"
+  },
+  "next_level_21": {
+    "char": "",
+    "width": 122,
+    "height": 94,
+    "font": "projects_ui_polish05:plates"
+  },
+  "next_level_22": {
+    "char": "",
+    "width": 128,
+    "height": 94,
+    "font": "projects_ui_polish05:plates"
+  },
+  "next_level_23": {
+    "char": "",
+    "width": 128,
+    "height": 94,
+    "font": "projects_ui_polish05:plates"
+  },
+  "next_level_24": {
+    "char": "",
+    "width": 128,
+    "height": 94,
+    "font": "projects_ui_polish05:plates"
+  },
+  "next_level_25": {
+    "char": "",
+    "width": 127,
+    "height": 94,
+    "font": "projects_ui_polish05:plates"
+  },
+  "next_level_26": {
+    "char": "",
+    "width": 128,
+    "height": 94,
+    "font": "projects_ui_polish05:plates"
+  },
+  "next_level_27": {
+    "char": "",
+    "width": 126,
+    "height": 94,
+    "font": "projects_ui_polish05:plates"
+  },
+  "next_level_28": {
+    "char": "",
+    "width": 130,
+    "height": 94,
+    "font": "projects_ui_polish05:plates"
+  },
+  "next_level_29": {
+    "char": "",
+    "width": 128,
+    "height": 94,
+    "font": "projects_ui_polish05:plates"
+  },
+  "next_level_30": {
+    "char": "",
+    "width": 130,
+    "height": 94,
+    "font": "projects_ui_polish05:plates"
+  },
+  "next_level_max": {
+    "char": "",
+    "width": 154,
+    "height": 94,
+    "font": "projects_ui_polish05:plates"
+  },
+  "gear_selected": {
+    "char": "",
+    "width": 229,
+    "height": 82,
+    "font": "projects_ui_polish05:plates"
+  },
+  "gear_unselected": {
+    "char": "",
+    "width": 229,
+    "height": 82,
+    "font": "projects_ui_polish05:plates"
+  },
+  "tab_active_forge": {
+    "char": "",
+    "width": 130,
+    "height": 71,
+    "font": "projects_ui_polish05:plates"
+  },
+  "tab_active_refine": {
+    "char": "",
+    "width": 130,
+    "height": 71,
+    "font": "projects_ui_polish05:plates"
+  },
+  "tab_active_bag": {
+    "char": "",
+    "width": 138,
+    "height": 71,
+    "font": "projects_ui_polish05:plates"
+  },
+  "tab_label_forge_smooth": {
+    "char": "",
+    "width": 78,
+    "height": 35,
+    "font": "projects_ui_polish05:plates"
+  },
+  "catalyst_off": {
+    "char": "",
+    "width": 326,
+    "height": 45,
+    "font": "projects_ui_polish05:plates"
+  },
+  "catalyst_on": {
+    "char": "",
+    "width": 326,
+    "height": 45,
+    "font": "projects_ui_polish05:plates"
+  },
+  "bag_slot_selected": {
+    "char": "",
+    "width": 102,
+    "height": 83,
+    "font": "projects_ui_polish05:plates"
+  },
+  "bag_slot_regular": {
+    "char": "",
+    "width": 102,
+    "height": 83,
+    "font": "projects_ui_polish05:plates"
+  },
+  "bag_slot_empty": {
+    "char": "",
+    "width": 102,
+    "height": 83,
+    "font": "projects_ui_polish05:plates"
+  },
+  "recipe_selected": {
+    "char": "",
+    "width": 238,
+    "height": 78,
+    "font": "projects_ui_polish05:plates"
+  },
+  "recipe_regular": {
+    "char": "",
+    "width": 238,
+    "height": 78,
+    "font": "projects_ui_polish05:plates"
+  },
+  "result_level_halo/0_0": {
+    "char": "",
+    "width": 256,
+    "height": 78,
+    "font": "projects_ui_polish05:plates"
+  },
+  "result_level_halo/256_0": {
+    "char": "",
+    "width": 70,
+    "height": 78,
+    "font": "projects_ui_polish05:plates"
+  },
+  "catalyst_off_halo/0_0": {
+    "char": "",
+    "width": 256,
+    "height": 62,
+    "font": "projects_ui_polish05:plates"
+  },
+  "catalyst_off_halo/256_0": {
+    "char": "",
+    "width": 80,
+    "height": 62,
+    "font": "projects_ui_polish05:plates"
+  },
+  "catalyst_on_halo/0_0": {
+    "char": "",
+    "width": 256,
+    "height": 62,
+    "font": "projects_ui_polish05:plates"
+  },
+  "catalyst_on_halo/256_0": {
+    "char": "",
+    "width": 80,
+    "height": 62,
+    "font": "projects_ui_polish05:plates"
+  },
+  "cost_ready_halo/0_0": {
+    "char": "",
+    "width": 256,
+    "height": 52,
+    "font": "projects_ui_polish05:plates"
+  },
+  "cost_ready_halo/256_0": {
+    "char": "",
+    "width": 70,
+    "height": 52,
+    "font": "projects_ui_polish05:plates"
+  },
+  "cost_missing_halo/0_0": {
+    "char": "",
+    "width": 256,
+    "height": 52,
+    "font": "projects_ui_polish05:plates"
+  },
+  "cost_missing_halo/256_0": {
+    "char": "",
+    "width": 70,
+    "height": 52,
+    "font": "projects_ui_polish05:plates"
+  },
+  "project_sigil": {
+    "char": "",
+    "width": 23,
+    "height": 30,
+    "font": "projects_ui_polish05:plates"
+  },
+  "armor_ui": {
+    "char": "",
+    "width": 19,
+    "height": 21,
+    "font": "projects_ui_polish05:sprites"
+  },
+  "bag": {
+    "char": "",
+    "width": 25,
+    "height": 27,
+    "font": "projects_ui_polish05:sprites"
+  },
+  "book_ui": {
+    "char": "",
+    "width": 24,
+    "height": 25,
+    "font": "projects_ui_polish05:sprites"
+  },
+  "boots_ui": {
+    "char": "",
+    "width": 18,
+    "height": 20,
+    "font": "projects_ui_polish05:sprites"
+  },
+  "coin_ore": {
+    "char": "",
+    "width": 21,
+    "height": 23,
+    "font": "projects_ui_polish05:sprites"
+  },
+  "dash": {
+    "char": "",
+    "width": 32,
+    "height": 32,
+    "font": "projects_ui_polish05:sprites"
+  },
+  "firebolt": {
+    "char": "",
+    "width": 32,
+    "height": 32,
+    "font": "projects_ui_polish05:sprites"
+  },
+  "flask": {
+    "char": "",
+    "width": 22,
+    "height": 29,
+    "font": "projects_ui_polish05:sprites"
+  },
+  "forge_environment": {
+    "char": "",
+    "width": 133,
+    "height": 137,
+    "font": "projects_ui_polish05:sprites"
+  },
+  "greatsword_hero": {
+    "char": "",
+    "width": 15,
+    "height": 80,
+    "font": "projects_ui_polish05:sprites"
+  },
+  "greatsword_thumb": {
+    "char": "",
+    "width": 48,
+    "height": 48,
+    "font": "projects_ui_polish05:sprites"
+  },
+  "green_crystal": {
+    "char": "",
+    "width": 18,
+    "height": 21,
+    "font": "projects_ui_polish05:sprites"
+  },
+  "hammer": {
+    "char": "",
+    "width": 24,
+    "height": 30,
+    "font": "projects_ui_polish05:sprites"
+  },
+  "helm_ui": {
+    "char": "",
+    "width": 18,
+    "height": 21,
+    "font": "projects_ui_polish05:sprites"
+  },
+  "metal_ui": {
+    "char": "",
+    "width": 19,
+    "height": 21,
+    "font": "projects_ui_polish05:sprites"
+  },
+  "ore_ui": {
+    "char": "",
+    "width": 23,
+    "height": 25,
+    "font": "projects_ui_polish05:sprites"
+  },
+  "potion_smallui": {
+    "char": "",
+    "width": 13,
+    "height": 20,
+    "font": "projects_ui_polish05:sprites"
+  },
+  "potion_ui": {
+    "char": "",
+    "width": 17,
+    "height": 27,
+    "font": "projects_ui_polish05:sprites"
+  },
+  "purple_crystal": {
+    "char": "",
+    "width": 19,
+    "height": 22,
+    "font": "projects_ui_polish05:sprites"
+  },
+  "shard_ui": {
+    "char": "",
+    "width": 19,
+    "height": 21,
+    "font": "projects_ui_polish05:sprites"
+  },
+  "surface": {
+    "char": "",
+    "width": 16,
+    "height": 16,
+    "font": "projects_ui_polish05:sprites"
+  },
+  "sword_t2_hero": {
+    "char": "",
+    "width": 19,
+    "height": 92,
+    "font": "projects_ui_polish05:sprites"
+  },
+  "sword_t2_thumb": {
+    "char": "",
+    "width": 48,
+    "height": 48,
+    "font": "projects_ui_polish05:sprites"
+  },
+  "wood_ui": {
+    "char": "",
+    "width": 23,
+    "height": 25,
+    "font": "projects_ui_polish05:sprites"
+  }
+}
