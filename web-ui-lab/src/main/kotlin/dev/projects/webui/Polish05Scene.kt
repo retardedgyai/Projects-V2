@@ -232,7 +232,7 @@ class Polish05Scene(private val kit: Path, spriteMap: Path) {
         node("workshop-text",134,174,150,22,"鍛冶師の仕事場",size=13.0,color="#bbb6a8")
         node("tab-forge",343,150,130,71,sprite="tab_active_forge",depth=2)
         node("tab-icon-forge",374,165,24,30,sprite="hammer",depth=4)
-        node("tab-label-forge",407,171,66,30,"強化",size=18.0,color="#e3d0a5",depth=4)
+        node("tab-label-forge",407,171,66,30,sprite="tab_label_forge_smooth",depth=4)
         node("wallet-icon",1170,172,22,23,sprite="coin_ore")
         node("wallet",1198,171,87,24,number(snapshot.silver),size=18.0,color="#d9caa8")
         node("wallet-unit",1284,175,35,16,"銀貨",size=11.0,color="#b4aa94")
@@ -301,10 +301,12 @@ class Polish05Scene(private val kit: Path, spriteMap: Path) {
         node("before-caption",1078,271,62,16,"現在",size=10.0,color="#999d94",depth=3)
         node("after-caption",1251,271,62,16,"強化後",size=10.0,color="#999d94",depth=3)
         halo("result-level-halo","result_level_halo",1019,263)
-        node("before-level",1071,288,67,48,"+${selected.level}",size=39.0,depth=3)
+        val currentSprite="current_level_${selected.level}"
+        node("before-level",1093.7-sprites.getValue(currentSprite).width/2.0,273,
+            sprites.getValue(currentSprite).width,80,sprite=currentSprite,depth=3)
         node("level-arrow",1167,290,64,41,"→",size=31.0,color="#aca690",align="center",depth=3)
-        // Original Georgia numerals include a 15px golden text shadow. Keep that
-        // CSS-rendered blur as a transparent glyph while the chosen level stays live.
+        // Both values use the approved Georgia outlines. The next level retains
+        // its original golden text shadow; the selected number stays dynamic.
         val nextSprite=if(maxed)"next_level_max" else "next_level_$next"
         node("after-level",if(maxed)1199 else 1230,273,sprites.getValue(nextSprite).width,80,sprite=nextSprite,depth=3)
         line("result-level-rule",1019,341,326,depth=3)

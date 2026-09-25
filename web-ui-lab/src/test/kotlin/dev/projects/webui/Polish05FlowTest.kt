@@ -32,11 +32,15 @@ class Polish05FlowTest {
         assertFalse(nodes.any { it.id.startsWith("replenish-bg-") && it.sprite!=null })
         assertTrue(nodes.any { it.id.startsWith("enhance_button/") })
         assertFalse(nodes.any { it.id=="enhance-label" })
+        assertTrue(nodes.single { it.id=="tab-label-forge" }.sprite!=null)
         // The CSS-rendered Georgia glyph has transparent padding for its blur.
         val nextLevel=nodes.single { it.id=="after-level" }
+        val currentLevel=nodes.single { it.id=="before-level" }
+        assertTrue(currentLevel.sprite!=null && currentLevel.text.isEmpty())
         assertTrue(nextLevel.sprite!=null && nextLevel.text.isEmpty())
         assertEquals(screen.forward(1230.0,273.0).x,nextLevel.box.x,0.0001)
         assertTrue(Files.exists(repo.resolve("web-ui-lab/ui/polish05-effects/next_level_7.png")))
+        assertTrue(Files.exists(repo.resolve("web-ui-lab/ui/polish05-effects/current_level_6.png")))
     }
 
     @Test fun approvedLightPhasesAndEmbersRemainSeparateFromClickableScene() {

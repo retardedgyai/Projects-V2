@@ -92,7 +92,8 @@ def main() -> None:
             register(f"{name}/{tile['x']}_{tile['y']}", rel, tile["w"], tile["h"])
 
     for name in ("enhance_button", "replenish_row"):
-        image = Image.open(KIT / "assets/layers" / f"{name}.png").convert("RGBA")
+        source = EFFECTS / "enhance_button_smooth.png" if name == "enhance_button" else KIT / "assets/layers" / f"{name}.png"
+        image = Image.open(source).convert("RGBA")
         for y in range(0, image.height, 256):
             for x in range(0, image.width, 256):
                 tile = image.crop((x, y, min(x + 256, image.width), min(y + 256, image.height)))
@@ -116,7 +117,8 @@ def main() -> None:
                 dest.parent.mkdir(parents=True, exist_ok=True)
                 tile.save(dest)
                 register(f"{name}/{x}_{y}", f"plates/{name}_{x}_{y}.png", tile.width, tile.height)
-    for name in ([f"next_level_{level}" for level in range(31)] + ["next_level_max"]):
+    for name in ([f"current_level_{level}" for level in range(31)] +
+                 [f"next_level_{level}" for level in range(31)] + ["next_level_max"]):
         image = Image.open(EFFECTS / f"{name}.png").convert("RGBA")
         rel = f"textures/effects/{name}.png"
         dest = PACK / "assets" / NAMESPACE / rel
@@ -124,6 +126,7 @@ def main() -> None:
         image.save(dest)
         register(name, f"effects/{name}.png", image.width, image.height)
     for name in ("gear_selected", "gear_unselected", "tab_active_forge", "tab_active_refine", "tab_active_bag",
+                 "tab_label_forge_smooth",
                  "catalyst_off", "catalyst_on", "bag_slot_selected", "bag_slot_regular", "bag_slot_empty",
                  "recipe_selected", "recipe_regular"):
         image = Image.open(EFFECTS / f"{name}.png").convert("RGBA")

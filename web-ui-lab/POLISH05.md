@@ -18,6 +18,8 @@ python scripts/build_polish05_lab_pack.py
 
 `web-ui-lab/ui/polish05-effects/` には承認済みHTMLから切り出した通常以外のGlowと、Georgiaの黄色いぼかし付き強化後数値を同梱しています。元HTMLや原画は編集していません。再生成する場合はChromeとPlaywrightを用意して `node scripts/export_polish05_effects.cjs` を実行し、その後パックを再ビルドします。右の結果・触媒の金色、必要素材の充足時の緑と不足時の赤い光は `python scripts/build_polish05_soft_glows.py` で再生成します。承認済み装備選択行の左端から右へ薄くなる勾配を色替えして用います。Vanillaのbitmap TextDisplayの表示上限に合わせ、画像を256px以下へ分割して配信します。日本語と英数字はNoto Sans/Serif JPの許諾済みsubsetから32px bitmap atlasを生成し、Polish05専用フォントとして配信します。通常のパックビルドにはfontToolsは不要です。subsetを作り直す場合だけ `scripts/build_polish05_fonts.py` とfontToolsが必要です。
 
+右側の現在値と強化後のGeorgia数値、上部の「強化」、金色の「強化する」ボタンは `python scripts/export_polish05_typography.py` で承認済みHTMLから3倍で描画し、Lanczos縮小した画像です。書き出し時のみPython Playwright、Pillow、ローカルChromeが必要です。パックビルドにはPillowだけを使います。現在値はレベル0〜30の画像を選んで表示し、強化後の元CSSの黄色い光も保ちます。
+
 装備の選択行、アクティブタブ、触媒の枠は、元HTMLのCSSをChromeで描画した文字なしのplateです。`node scripts/export_polish05_selection.cjs` で再生成できます。ラボはplateの上へ装備名・数値を動的に描き、選択状態に合わせてplateを切り替えます。確認ボタンのhoverも元HTMLと同じ明るい金色にします。現画面は鍛冶師NPCから開く想定の工房のみです。装備庫・精錬への導線は表示せず、左欄には所持素材数のみ表示します。NPC接続は今後の本編連携事項です。
 
 `polish05Smoke` はネイティブの表示体、bitmap font、private viewer、カメラ復帰と破棄をパケット単位で確認します。Minecraftの画素や音の聞こえ方までは判定しません。

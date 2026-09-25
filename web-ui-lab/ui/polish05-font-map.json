@@ -269,332 +269,524 @@
     "height": 126,
     "font": "projects_ui_polish05:plates"
   },
-  "next_level_0": {
+  "current_level_0": {
     "char": "",
     "width": 90,
     "height": 80,
     "font": "projects_ui_polish05:plates"
   },
-  "next_level_1": {
+  "current_level_1": {
     "char": "",
     "width": 82,
     "height": 80,
     "font": "projects_ui_polish05:plates"
   },
-  "next_level_2": {
+  "current_level_2": {
     "char": "",
     "width": 87,
     "height": 80,
     "font": "projects_ui_polish05:plates"
   },
-  "next_level_3": {
+  "current_level_3": {
     "char": "",
     "width": 87,
     "height": 80,
     "font": "projects_ui_polish05:plates"
   },
-  "next_level_4": {
+  "current_level_4": {
     "char": "",
     "width": 88,
     "height": 80,
     "font": "projects_ui_polish05:plates"
   },
-  "next_level_5": {
+  "current_level_5": {
     "char": "",
     "width": 86,
     "height": 80,
     "font": "projects_ui_polish05:plates"
   },
-  "next_level_6": {
+  "current_level_6": {
     "char": "",
     "width": 88,
     "height": 80,
     "font": "projects_ui_polish05:plates"
   },
-  "next_level_7": {
+  "current_level_7": {
     "char": "",
     "width": 85,
     "height": 80,
     "font": "projects_ui_polish05:plates"
   },
-  "next_level_8": {
+  "current_level_8": {
     "char": "",
     "width": 89,
     "height": 80,
     "font": "projects_ui_polish05:plates"
   },
-  "next_level_9": {
+  "current_level_9": {
     "char": "",
     "width": 88,
     "height": 80,
     "font": "projects_ui_polish05:plates"
   },
-  "next_level_10": {
+  "current_level_10": {
     "char": "",
     "width": 106,
     "height": 80,
     "font": "projects_ui_polish05:plates"
   },
-  "next_level_11": {
+  "current_level_11": {
     "char": "",
     "width": 99,
     "height": 80,
     "font": "projects_ui_polish05:plates"
   },
-  "next_level_12": {
+  "current_level_12": {
     "char": "",
     "width": 104,
     "height": 80,
     "font": "projects_ui_polish05:plates"
   },
-  "next_level_13": {
+  "current_level_13": {
     "char": "",
     "width": 104,
     "height": 80,
     "font": "projects_ui_polish05:plates"
   },
-  "next_level_14": {
+  "current_level_14": {
     "char": "",
     "width": 104,
     "height": 80,
     "font": "projects_ui_polish05:plates"
   },
-  "next_level_15": {
+  "current_level_15": {
     "char": "",
     "width": 103,
     "height": 80,
     "font": "projects_ui_polish05:plates"
   },
-  "next_level_16": {
+  "current_level_16": {
     "char": "",
     "width": 104,
     "height": 80,
     "font": "projects_ui_polish05:plates"
   },
-  "next_level_17": {
+  "current_level_17": {
     "char": "",
     "width": 102,
     "height": 80,
     "font": "projects_ui_polish05:plates"
   },
-  "next_level_18": {
+  "current_level_18": {
     "char": "",
     "width": 106,
     "height": 80,
     "font": "projects_ui_polish05:plates"
   },
-  "next_level_19": {
+  "current_level_19": {
     "char": "",
     "width": 104,
     "height": 80,
     "font": "projects_ui_polish05:plates"
   },
-  "next_level_20": {
+  "current_level_20": {
     "char": "",
     "width": 111,
     "height": 80,
     "font": "projects_ui_polish05:plates"
   },
-  "next_level_21": {
+  "current_level_21": {
     "char": "",
     "width": 104,
     "height": 80,
     "font": "projects_ui_polish05:plates"
   },
-  "next_level_22": {
+  "current_level_22": {
     "char": "",
     "width": 109,
     "height": 80,
     "font": "projects_ui_polish05:plates"
   },
-  "next_level_23": {
+  "current_level_23": {
     "char": "",
     "width": 109,
     "height": 80,
     "font": "projects_ui_polish05:plates"
   },
-  "next_level_24": {
+  "current_level_24": {
     "char": "",
     "width": 109,
     "height": 80,
     "font": "projects_ui_polish05:plates"
   },
-  "next_level_25": {
+  "current_level_25": {
     "char": "",
     "width": 108,
     "height": 80,
     "font": "projects_ui_polish05:plates"
   },
-  "next_level_26": {
+  "current_level_26": {
     "char": "",
     "width": 109,
     "height": 80,
     "font": "projects_ui_polish05:plates"
   },
-  "next_level_27": {
+  "current_level_27": {
     "char": "",
     "width": 107,
     "height": 80,
     "font": "projects_ui_polish05:plates"
   },
-  "next_level_28": {
+  "current_level_28": {
     "char": "",
     "width": 111,
     "height": 80,
     "font": "projects_ui_polish05:plates"
   },
-  "next_level_29": {
+  "current_level_29": {
     "char": "",
     "width": 109,
     "height": 80,
     "font": "projects_ui_polish05:plates"
   },
-  "next_level_30": {
+  "current_level_30": {
     "char": "",
     "width": 111,
     "height": 80,
     "font": "projects_ui_polish05:plates"
   },
-  "next_level_max": {
+  "next_level_0": {
     "char": "",
+    "width": 90,
+    "height": 80,
+    "font": "projects_ui_polish05:plates"
+  },
+  "next_level_1": {
+    "char": "",
+    "width": 82,
+    "height": 80,
+    "font": "projects_ui_polish05:plates"
+  },
+  "next_level_2": {
+    "char": "",
+    "width": 87,
+    "height": 80,
+    "font": "projects_ui_polish05:plates"
+  },
+  "next_level_3": {
+    "char": "",
+    "width": 87,
+    "height": 80,
+    "font": "projects_ui_polish05:plates"
+  },
+  "next_level_4": {
+    "char": "",
+    "width": 88,
+    "height": 80,
+    "font": "projects_ui_polish05:plates"
+  },
+  "next_level_5": {
+    "char": "",
+    "width": 86,
+    "height": 80,
+    "font": "projects_ui_polish05:plates"
+  },
+  "next_level_6": {
+    "char": "",
+    "width": 88,
+    "height": 80,
+    "font": "projects_ui_polish05:plates"
+  },
+  "next_level_7": {
+    "char": "",
+    "width": 85,
+    "height": 80,
+    "font": "projects_ui_polish05:plates"
+  },
+  "next_level_8": {
+    "char": "",
+    "width": 89,
+    "height": 80,
+    "font": "projects_ui_polish05:plates"
+  },
+  "next_level_9": {
+    "char": "",
+    "width": 88,
+    "height": 80,
+    "font": "projects_ui_polish05:plates"
+  },
+  "next_level_10": {
+    "char": "",
+    "width": 106,
+    "height": 80,
+    "font": "projects_ui_polish05:plates"
+  },
+  "next_level_11": {
+    "char": "",
+    "width": 99,
+    "height": 80,
+    "font": "projects_ui_polish05:plates"
+  },
+  "next_level_12": {
+    "char": "",
+    "width": 104,
+    "height": 80,
+    "font": "projects_ui_polish05:plates"
+  },
+  "next_level_13": {
+    "char": "",
+    "width": 104,
+    "height": 80,
+    "font": "projects_ui_polish05:plates"
+  },
+  "next_level_14": {
+    "char": "",
+    "width": 104,
+    "height": 80,
+    "font": "projects_ui_polish05:plates"
+  },
+  "next_level_15": {
+    "char": "",
+    "width": 103,
+    "height": 80,
+    "font": "projects_ui_polish05:plates"
+  },
+  "next_level_16": {
+    "char": "",
+    "width": 104,
+    "height": 80,
+    "font": "projects_ui_polish05:plates"
+  },
+  "next_level_17": {
+    "char": "",
+    "width": 102,
+    "height": 80,
+    "font": "projects_ui_polish05:plates"
+  },
+  "next_level_18": {
+    "char": "",
+    "width": 106,
+    "height": 80,
+    "font": "projects_ui_polish05:plates"
+  },
+  "next_level_19": {
+    "char": "",
+    "width": 104,
+    "height": 80,
+    "font": "projects_ui_polish05:plates"
+  },
+  "next_level_20": {
+    "char": "",
+    "width": 111,
+    "height": 80,
+    "font": "projects_ui_polish05:plates"
+  },
+  "next_level_21": {
+    "char": "",
+    "width": 104,
+    "height": 80,
+    "font": "projects_ui_polish05:plates"
+  },
+  "next_level_22": {
+    "char": "",
+    "width": 109,
+    "height": 80,
+    "font": "projects_ui_polish05:plates"
+  },
+  "next_level_23": {
+    "char": "",
+    "width": 109,
+    "height": 80,
+    "font": "projects_ui_polish05:plates"
+  },
+  "next_level_24": {
+    "char": "",
+    "width": 109,
+    "height": 80,
+    "font": "projects_ui_polish05:plates"
+  },
+  "next_level_25": {
+    "char": "",
+    "width": 108,
+    "height": 80,
+    "font": "projects_ui_polish05:plates"
+  },
+  "next_level_26": {
+    "char": "",
+    "width": 109,
+    "height": 80,
+    "font": "projects_ui_polish05:plates"
+  },
+  "next_level_27": {
+    "char": "",
+    "width": 107,
+    "height": 80,
+    "font": "projects_ui_polish05:plates"
+  },
+  "next_level_28": {
+    "char": "",
+    "width": 111,
+    "height": 80,
+    "font": "projects_ui_polish05:plates"
+  },
+  "next_level_29": {
+    "char": "",
+    "width": 109,
+    "height": 80,
+    "font": "projects_ui_polish05:plates"
+  },
+  "next_level_30": {
+    "char": "",
+    "width": 111,
+    "height": 80,
+    "font": "projects_ui_polish05:plates"
+  },
+  "next_level_max": {
+    "char": "",
     "width": 131,
     "height": 80,
     "font": "projects_ui_polish05:plates"
   },
   "gear_selected": {
-    "char": "",
+    "char": "",
     "width": 229,
     "height": 82,
     "font": "projects_ui_polish05:plates"
   },
   "gear_unselected": {
-    "char": "",
+    "char": "",
     "width": 229,
     "height": 82,
     "font": "projects_ui_polish05:plates"
   },
   "tab_active_forge": {
-    "char": "",
+    "char": "",
     "width": 130,
     "height": 71,
     "font": "projects_ui_polish05:plates"
   },
   "tab_active_refine": {
-    "char": "",
+    "char": "",
     "width": 130,
     "height": 71,
     "font": "projects_ui_polish05:plates"
   },
   "tab_active_bag": {
-    "char": "",
+    "char": "",
     "width": 138,
     "height": 71,
     "font": "projects_ui_polish05:plates"
   },
+  "tab_label_forge_smooth": {
+    "char": "",
+    "width": 66,
+    "height": 30,
+    "font": "projects_ui_polish05:plates"
+  },
   "catalyst_off": {
-    "char": "",
+    "char": "",
     "width": 326,
     "height": 45,
     "font": "projects_ui_polish05:plates"
   },
   "catalyst_on": {
-    "char": "",
+    "char": "",
     "width": 326,
     "height": 45,
     "font": "projects_ui_polish05:plates"
   },
   "bag_slot_selected": {
-    "char": "",
+    "char": "",
     "width": 102,
     "height": 83,
     "font": "projects_ui_polish05:plates"
   },
   "bag_slot_regular": {
-    "char": "",
+    "char": "",
     "width": 102,
     "height": 83,
     "font": "projects_ui_polish05:plates"
   },
   "bag_slot_empty": {
-    "char": "",
+    "char": "",
     "width": 102,
     "height": 83,
     "font": "projects_ui_polish05:plates"
   },
   "recipe_selected": {
-    "char": "",
+    "char": "",
     "width": 238,
     "height": 78,
     "font": "projects_ui_polish05:plates"
   },
   "recipe_regular": {
-    "char": "",
+    "char": "",
     "width": 238,
     "height": 78,
     "font": "projects_ui_polish05:plates"
   },
   "result_level_halo/0_0": {
-    "char": "",
+    "char": "",
     "width": 256,
     "height": 78,
     "font": "projects_ui_polish05:plates"
   },
   "result_level_halo/256_0": {
-    "char": "",
+    "char": "",
     "width": 70,
     "height": 78,
     "font": "projects_ui_polish05:plates"
   },
   "catalyst_off_halo/0_0": {
-    "char": "",
+    "char": "",
     "width": 256,
     "height": 62,
     "font": "projects_ui_polish05:plates"
   },
   "catalyst_off_halo/256_0": {
-    "char": "",
+    "char": "",
     "width": 80,
     "height": 62,
     "font": "projects_ui_polish05:plates"
   },
   "catalyst_on_halo/0_0": {
-    "char": "",
+    "char": "",
     "width": 256,
     "height": 62,
     "font": "projects_ui_polish05:plates"
   },
   "catalyst_on_halo/256_0": {
-    "char": "",
+    "char": "",
     "width": 80,
     "height": 62,
     "font": "projects_ui_polish05:plates"
   },
   "cost_ready_halo/0_0": {
-    "char": "",
+    "char": "",
     "width": 256,
     "height": 52,
     "font": "projects_ui_polish05:plates"
   },
   "cost_ready_halo/256_0": {
-    "char": "",
+    "char": "",
     "width": 70,
     "height": 52,
     "font": "projects_ui_polish05:plates"
   },
   "cost_missing_halo/0_0": {
-    "char": "",
+    "char": "",
     "width": 256,
     "height": 52,
     "font": "projects_ui_polish05:plates"
   },
   "cost_missing_halo/256_0": {
-    "char": "",
+    "char": "",
     "width": 70,
     "height": 52,
     "font": "projects_ui_polish05:plates"
   },
   "project_sigil": {
-    "char": "",
+    "char": "",
     "width": 23,
     "height": 30,
     "font": "projects_ui_polish05:plates"
