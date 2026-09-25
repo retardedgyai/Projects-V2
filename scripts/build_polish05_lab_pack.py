@@ -173,12 +173,13 @@ def main() -> None:
         sprites[name] = {"char": sprite["char"], "width": sprite["width"],
                          "height": sprite["height"], "font": sprite["font"]}
 
-    # The forge and storage use the same ProjectS 16 px material pixels.
+    # The forge and storage use the same ProjectS material pixels. The bitmap
+    # font draws 32px source artwork at the existing 16px UI footprint.
     for name in ("wood", "ore", "stone", "hide", "fiber", "board", "ingot",
                  "cut_stone", "leather", "cloth", "affix_dust"):
         source = ROOT / "server-minestom/src/main/resources/core-ui-pack/assets/projects/textures/item/forge_materials" / f"{name}.png"
         image = Image.open(source).convert("RGBA")
-        assert image.size == (16, 16), (name, image.size)
+        assert image.size == (32, 32), (name, image.size)
         rel = f"textures/forge_materials/{name}.png"
         destination = PACK / "assets" / NAMESPACE / rel
         destination.parent.mkdir(parents=True, exist_ok=True)

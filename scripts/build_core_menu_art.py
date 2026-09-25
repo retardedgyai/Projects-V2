@@ -1,7 +1,7 @@
 """Compile pixel-relic sheets and forge materials into menu and item sprites.
 
 The deterministic compiler slices 4x4 sheets for general menu symbols and uses
-the dedicated 16 px material paintings for the forge and inventory. It never
+the dedicated 32 px material paintings for the forge and inventory. It never
 downloads assets or changes a vanilla texture or gameplay item model.
 """
 from pathlib import Path
@@ -15,7 +15,7 @@ from build_polish05_material_art import main as build_materials
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "assets/core-ui/pixel-relic"
 ASSETS = ROOT / "server-minestom/src/main/resources/core-ui-pack/assets/projects"
-MATERIAL_ICONS = ROOT / "assets/core-ui/forge-v4/compiled"
+MATERIAL_ICONS = ROOT / "assets/core-ui/forge-v5/compiled"
 ART_BASE = 0xE700
 ART_CELL = 32
 ART_YS = [18, 28, 30, 36, 42, 48, 54, 56, 70, 72, 84, 90, 98, 108, 112, 126, 140, 154, 168, 182, 196]
@@ -87,7 +87,7 @@ def build_art():
             (ASSETS / f"font/core_menu_art_{size}_{y}.json").write_text(
                 json.dumps(font, separators=(",", ":")) + "\n", encoding="utf-8")
     (ASSETS / "menu/art.tsv").write_text("# name\tordinal\tadvance16\tadvance32\tadvance48\n" + "".join(metrics), encoding="utf-8")
-    # Give storage projections and the forge exactly the same low-resolution
+    # Give storage projections and the forge exactly the same source
     # original artwork. Their models are scoped to ProjectS items only.
     subjects = {"wood": "WOOD", "ore": "ORE", "stone": "STONE", "hide": "HIDE",
                 "fiber": "FIBER", "board": "PLANK", "ingot": "INGOT",
@@ -112,10 +112,10 @@ def build_art():
         "cell": ART_CELL, "columns": 8, "sizes": ART_SIZES, "ys": ART_YS, "art": metadata,
         "sources": {**{name: hashlib.sha256((SOURCE / f"source/{name}.png").read_bytes()).hexdigest()
                     for name in sheets},
-                    **{f"forge_v4_{name}": hashlib.sha256(
+                    **{f"forge_v5_{name}": hashlib.sha256(
                         (MATERIAL_ICONS / f"{name}.png").read_bytes()).hexdigest()
                         for name in subjects}},
-        "build": "ProjectS material source at 16px; atlas uses nearest-neighbor 32px; binary-alpha inventory sprites",
+        "build": "ProjectS material source at 32px; atlas uses nearest-neighbor 32px; binary-alpha inventory sprites",
     }, indent=2) + "\n", encoding="utf-8")
     atlas.resize((1024, 512), Image.Resampling.NEAREST).save(SOURCE / "atlas-preview.png", optimize=True)
     pack = ASSETS.parents[1]

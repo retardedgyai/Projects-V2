@@ -21,11 +21,15 @@ as a redesign. The current candidate redraws all 11 material subjects in a
 shared gold, umber, ash, and violet palette, using the approved HTML's material
 art as style references. Raw and processed states have distinct silhouettes.
 The generated high-resolution work files are archived on the D drive under
-`material-art-v4-source-ai`; the final transparent 16×16 sprites are committed
-at [`forge-v4/source`](../../assets/core-ui/forge-v4/source). The same exact 11
+`material-art-v4-source-ai`; the rejected transparent 16×16 sprites remain
+at [`forge-v4/source`](../../assets/core-ui/forge-v4/source). The current
+32×32 visual candidate is at [`forge-v5/source`](../../assets/core-ui/forge-v5/source).
+It keeps the smith glyphs at the existing 16 px display size while providing
+more texture detail at source resolution. This candidate still needs the
+Creator's judgment in Minecraft. The same exact 11
 sprites feed the smith, storage item models, and core menu glyphs. The approved
 sword, layout, glow, and sound stay as they were. A nearest-neighbor
-[preview](../../assets/core-ui/forge-v4/preview.png) shows each icon at
+[preview](../../assets/core-ui/forge-v5/preview.png) shows each icon at
 inspection size. Live account values are unchanged.
 
 ## Cursor diagnosis

@@ -1,4 +1,4 @@
-"""Check that storage, forge, and core menu share the same 16 px art."""
+"""Check that storage, forge, and core menu share the same material art."""
 import json
 import zipfile
 from pathlib import Path
@@ -10,7 +10,7 @@ CORE = ROOT / "server-minestom/src/main/resources/core-ui-pack/assets/projects"
 POLISH = ROOT / "server-minestom/src/main/resources/polish05"
 NAMES = ("wood", "ore", "stone", "hide", "fiber", "board", "ingot",
          "cut_stone", "leather", "cloth", "affix_dust")
-SOURCE = ROOT / "assets/core-ui/forge-v4/source"
+SOURCE = ROOT / "assets/core-ui/forge-v5/source"
 
 
 def main():
@@ -20,7 +20,7 @@ def main():
             core = CORE / f"textures/item/forge_materials/{name}.png"
             assert core.read_bytes() == (SOURCE / f"{name}.png").read_bytes(), name
             with Image.open(core) as image:
-                assert image.size == (16, 16), name
+                assert image.size == (32, 32), name
                 assert image.getchannel("A").getbbox() is not None, name
                 assert set(image.getchannel("A").tobytes()) <= {0, 255}, name
             entry = mapping[f"forge_material_{name}"]
@@ -36,7 +36,7 @@ def main():
         assert (CORE / f"textures/item/forge_materials/{raw}.png").read_bytes() != (
             CORE / f"textures/item/forge_materials/{refined}.png").read_bytes()
     assert (ROOT / "web-ui-lab/build/polish05/polish05-lab.zip").read_bytes() == (POLISH / "pack.zip").read_bytes()
-    print("FORGE_MATERIAL_PACK_PASS 11 shared 16px sprites, 5 distinct raw/refined pairs, model/font/zip match")
+    print("FORGE_MATERIAL_PACK_PASS 11 shared 32px sprites displayed at 16px, 5 distinct raw/refined pairs, model/font/zip match")
 
 
 if __name__ == "__main__":

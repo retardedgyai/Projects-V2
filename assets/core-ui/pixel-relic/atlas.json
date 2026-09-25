@@ -190,9 +190,9 @@
       "source": "materials",
       "source_cell": 6,
       "advances": {
-        "16": 16,
-        "32": 31,
-        "48": 46
+        "16": 17,
+        "32": 32,
+        "48": 48
       }
     },
     {
@@ -212,9 +212,9 @@
       "source": "materials",
       "source_cell": 8,
       "advances": {
-        "16": 16,
-        "32": 31,
-        "48": 46
+        "16": 17,
+        "32": 32,
+        "48": 48
       }
     },
     {
@@ -223,9 +223,9 @@
       "source": "materials",
       "source_cell": 9,
       "advances": {
-        "16": 16,
-        "32": 31,
-        "48": 46
+        "16": 17,
+        "32": 32,
+        "48": 48
       }
     },
     {
@@ -234,9 +234,9 @@
       "source": "materials",
       "source_cell": 10,
       "advances": {
-        "16": 16,
-        "32": 31,
-        "48": 46
+        "16": 17,
+        "32": 32,
+        "48": 48
       }
     },
     {
@@ -245,9 +245,9 @@
       "source": "materials",
       "source_cell": 11,
       "advances": {
-        "16": 16,
-        "32": 31,
-        "48": 46
+        "16": 17,
+        "32": 32,
+        "48": 48
       }
     },
     {
@@ -256,9 +256,9 @@
       "source": "materials",
       "source_cell": 12,
       "advances": {
-        "16": 16,
-        "32": 31,
-        "48": 46
+        "16": 17,
+        "32": 32,
+        "48": 48
       }
     },
     {
@@ -268,8 +268,8 @@
       "source_cell": 13,
       "advances": {
         "16": 16,
-        "32": 31,
-        "48": 46
+        "32": 30,
+        "48": 45
       }
     },
     {
@@ -278,9 +278,9 @@
       "source": "materials",
       "source_cell": 14,
       "advances": {
-        "16": 16,
-        "32": 31,
-        "48": 46
+        "16": 17,
+        "32": 32,
+        "48": 48
       }
     },
     {
@@ -289,9 +289,9 @@
       "source": "materials",
       "source_cell": 15,
       "advances": {
-        "16": 16,
-        "32": 31,
-        "48": 46
+        "16": 17,
+        "32": 32,
+        "48": 48
       }
     },
     {
@@ -377,26 +377,26 @@
       "source": "dust",
       "source_cell": 0,
       "advances": {
-        "16": 16,
-        "32": 31,
-        "48": 46
+        "16": 17,
+        "32": 32,
+        "48": 48
       }
     }
   ],
   "sources": {
     "materials": "646c707be8181d0d1091211bb43a71ba619b2657495b0c110d3f70801bf0d98b",
     "symbols": "591a2d87829f84fb8567319ecac283801d4d997db0a3f66eb3e0d549ea5e3a61",
-    "forge_v4_wood": "90eb9dc4478b40f976bb12f395a6320ee263463aa1bcdbff1115e5158bb31f5f",
-    "forge_v4_ore": "03481529258ef270c9d47f96bee663df909cc9ce9d003897af2b6133153684ae",
-    "forge_v4_stone": "77e2759bfd1eeb42f21fef8044c09c76d2677e99af457eb5c078467ede9f1324",
-    "forge_v4_hide": "734225f36da2f9562d6b79bd6c7792b06c504bb685fe42d3c6b3300f8b23e161",
-    "forge_v4_fiber": "cfc0cc61615a854e9fcd0a510b939158e5f9bf4f15176c17f5952d94652d9fc3",
-    "forge_v4_board": "87ff3118459027a44368881dcfd1b6bc6a9d25ed97c0e0f294df00ce2a3b5339",
-    "forge_v4_ingot": "7c3a417276d2c77cc038c6e3109266ca03a5e83d4865f66fa8f3314387c74ebc",
-    "forge_v4_cut_stone": "175993bbbe1574c459d9276e89b61cfb2c09b54016e811b3701de0815366c6cf",
-    "forge_v4_leather": "2bba8f5215a5742e7615ab83a643deb136107d2829f53d637ed2dfbe5a16ea1a",
-    "forge_v4_cloth": "37af2dfccbae44de64d608c4f694c3f63522dd9378a14cf3b938dd5934f13739",
-    "forge_v4_affix_dust": "eb1382390bc2c43d5a3a210ba226e6d24237672c392a0e8ff2ade1207d704d06"
+    "forge_v5_wood": "f6ed2930179ccef95a3b8cd604fdb86c41e8c1888a1498941412df6ce7227b9c",
+    "forge_v5_ore": "d51cc5557b2e74732fc81d579017eb3ae91b6dc6e037cee962859773d0302386",
+    "forge_v5_stone": "c74c9bf3542a94ff8a67782a418fdb294ca901b91e3dee906d5b38889481fbdd",
+    "forge_v5_hide": "1eb3240c51dbe536ab18cb6d92dac5dc7d96d6c35f14f822e380ebc42cf2ab56",
+    "forge_v5_fiber": "3c5e3e3dc75899a4994950f321680bd8fae4fee287a5130d4a819edad597a190",
+    "forge_v5_board": "5486ce4bef4ddb03f99be40875002787ea44772444911c8fbdfbad5517d0f382",
+    "forge_v5_ingot": "86664951b52521864b7cc00c8475beb4308971ab3cd5b8429635eacee8b270f5",
+    "forge_v5_cut_stone": "9a34f631d8d1655e4df6f68b7e1c0e07ea4702be872872ae0855b9ada83c455b",
+    "forge_v5_leather": "845469dfd33f2148c7cfbbce50738bf3b3fbc9f3a54b0d15eaa6b25e68e8c943",
+    "forge_v5_cloth": "623b6c53d2450999f338c91d185364d9f9ffa28fdb710e4829a208b020238f37",
+    "forge_v5_affix_dust": "9248b39c2891d0db377bc36ed239a69977d61bb5416f1dcbf89174ec3bb94a59"
   },
-  "build": "ProjectS material source at 16px; atlas uses nearest-neighbor 32px; binary-alpha inventory sprites"
+  "build": "ProjectS material source at 32px; atlas uses nearest-neighbor 32px; binary-alpha inventory sprites"
 }
