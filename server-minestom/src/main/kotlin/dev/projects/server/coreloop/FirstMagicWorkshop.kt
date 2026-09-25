@@ -351,7 +351,10 @@ internal class FirstMagicWorkshop(
         show(player, Page.JOURNAL, "魔導記録帳・第一頁", progress, items, actions) { journal(player) }
     }
 
-    private fun researchIcon(aspectId: String, known: Boolean, ink: Int? = null): ItemStack {
+    private fun researchModel(player: Player, item: ItemStack, aspectId: String? = null): ItemStack =
+        if (packed(player)) item.withItemModel("projects:first_magic/research_${aspectId ?: "empty"}") else item
+
+    private fun researchIcon(player: Player, aspectId: String, known: Boolean, ink: Int? = null): ItemStack {
         val aspect = AspectCatalog.byId.getValue(aspectId)
         val material = when (aspectId) {
             "aer" -> Material.FEATHER
@@ -362,10 +365,10 @@ internal class FirstMagicWorkshop(
             "perditio" -> Material.ECHO_SHARD
             else -> Material.AMETHYST_SHARD
         }
-        return CoreLoopItems.icon(if (known) material else Material.GRAY_DYE,
+        return researchModel(player, CoreLoopItems.icon(if (known) material else Material.GRAY_DYE,
             if (known) aspect.name else "未発見のAspect",
             if (known) "構成: ${aspect.components.joinToString(" + ").ifEmpty { "基礎" }}" else "素材を分析して発見",
-            if (ink != null) "研究インク $ink" else "固定された手がかり")
+            if (ink != null) "研究インク $ink" else "固定された手がかり"), if (known) aspectId else null)
     }
 
     fun researchList(player: Player, page: Int = 0) {
@@ -402,10 +405,11 @@ internal class FirstMagicWorkshop(
         val slots = listOf(10, 12, 14, 16, 28, 30, 32, 34)
         AspectCatalog.compound.drop(page * 8).take(8).forEachIndexed { index, aspect ->
             val ready = aspect.components.all { it in progress.discoveredResearchAspects && progress.ink(it) > 0 }
-            items[slots[index]] = CoreLoopItems.icon(if (ready) Material.AMETHYST_SHARD else Material.GRAY_DYE,
+            items[slots[index]] = researchModel(player, CoreLoopItems.icon(if (ready) Material.AMETHYST_SHARD else Material.GRAY_DYE,
                 if (aspect.id in progress.discoveredResearchAspects) aspect.name else "未知の組み合わせ",
                 aspect.components.joinToString(" + ") { AspectCatalog.byId.getValue(it).name },
-                "インク ${progress.ink(aspect.id)} / ${if (ready) "クリックで合成" else "材料が不足"}")
+                "インク ${progress.ink(aspect.id)} / ${if (ready) "クリックで合成" else "材料が不足"}"),
+                aspect.id.takeIf { it in progress.discoveredResearchAspects })
             actions[slots[index]] = { change(player, FirstMagicAction.Combine(aspect.components[0], aspect.components[1])) { combineList(player, page) } }
         }
         items[36] = CoreLoopItems.icon(Material.ARROW, "前の頁")
@@ -428,17 +432,18 @@ internal class FirstMagicWorkshop(
         for (slot in ResearchBoard.cells.keys) {
             val anchor = research.anchors[slot]
             val aspect = anchor ?: placed[slot]
-            items[slot] = if (aspect == null) CoreLoopItems.icon(Material.LIGHT_GRAY_STAINED_GLASS_PANE,
-                "空の六角", "クリックしてAspectを選ぶ") else {
+            items[slot] = if (aspect == null) researchModel(player, CoreLoopItems.icon(Material.LIGHT_GRAY_STAINED_GLASS_PANE,
+                "空の六角", "クリックしてAspectを選ぶ")) else {
                 val links = ResearchBoard.neighbors(slot).count { next ->
                     occupied[next]?.let { AspectCatalog.linked(aspect, it) } == true
                 }
-                CoreLoopItems.icon(Material.AMETHYST_SHARD, AspectCatalog.byId.getValue(aspect).name,
-                    "有効な接続 $links", "クリックで外し、インクを戻す")
+                researchModel(player, CoreLoopItems.icon(Material.AMETHYST_SHARD, AspectCatalog.byId.getValue(aspect).name,
+                    "有効な接続 $links", "クリックで外し、インクを戻す"), aspect)
             }
             if (anchor != null) {
-                items[slot] = CoreLoopItems.icon(if (slot in connected) Material.GLOWSTONE_DUST else Material.QUARTZ,
-                    "◆ ${AspectCatalog.byId.getValue(anchor).name}", "固定された手がかり", if (slot in connected) "起点と接続中" else "まだ起点とつながっていない")
+                items[slot] = researchModel(player, CoreLoopItems.icon(if (slot in connected) Material.GLOWSTONE_DUST else Material.QUARTZ,
+                    "◆ ${AspectCatalog.byId.getValue(anchor).name}", "固定された手がかり", if (slot in connected) "起点と接続中" else "まだ起点とつながっていない"), anchor)
+                    .withGlowing(slot in connected)
             } else if (aspect == null && researchId !in progress.unlockedResearch) {
                 actions[slot] = { chooseResearchInk(player, researchId, slot) }
             } else if (aspect != null && researchId !in progress.unlockedResearch) {
@@ -463,7 +468,7 @@ internal class FirstMagicWorkshop(
         val slots = listOf(10, 12, 14, 16, 28, 30, 32, 34)
         AspectCatalog.all.drop(page * 8).take(8).forEachIndexed { index, aspect ->
             val known = aspect.id in progress.discoveredResearchAspects
-            items[slots[index]] = researchIcon(aspect.id, known, progress.ink(aspect.id))
+            items[slots[index]] = researchIcon(player, aspect.id, known, progress.ink(aspect.id))
                 .withAmount(1)
             if (known && progress.ink(aspect.id) > 0) actions[slots[index]] = {
                 change(player, FirstMagicAction.Place(researchId, slot, aspect.id)) { researchBoard(player, researchId) }

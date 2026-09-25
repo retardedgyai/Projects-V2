@@ -3,12 +3,29 @@ package dev.projects.server.coreloop
 import dev.projects.server.coreloop.ui.CoreMenuCanvas
 import java.nio.file.Files
 import java.util.UUID
+import javax.imageio.ImageIO
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class AspectResearchTest {
+    @Test fun everyAspectHasAPackedHexToken() {
+        val loader = javaClass.classLoader
+        val index = loader.getResourceAsStream("core-ui-pack/index.txt")!!.bufferedReader().use { it.readLines().toSet() }
+        for (id in AspectCatalog.all.map { it.id } + "empty") {
+            val base = "assets/projects"
+            val image = "$base/textures/item/first_magic/research_$id.png"
+            val model = "$base/models/first_magic/research_$id.json"
+            val item = "$base/items/first_magic/research_$id.json"
+            assertTrue(setOf(image, model, item).all(index::contains), id)
+            val bitmap = ImageIO.read(loader.getResourceAsStream("core-ui-pack/$image")!!)
+            assertEquals(16, bitmap.width)
+            assertEquals(16, bitmap.height)
+            AspectCatalog.byId[id]?.let { assertEquals(it.color, bitmap.getRGB(14, 3) and 0xFFFFFF, id) }
+        }
+    }
+
     @Test fun researchCanvasHasTheJapaneseGlyphsItNeeds() {
         val labels = "研究の星図六角盤空の六角クリックしてAspectを選ぶ研究インク手がかり接続中まだ起点とつながっていない" +
             "解明済み研究一覧へ前の頁次の頁未知の組み合わせ材料が不足Aspectの合成性質発見基礎複合構成" +
