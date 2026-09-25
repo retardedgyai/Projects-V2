@@ -90,7 +90,7 @@ internal class FirstMagicWorkshop(
             CoreLoopItems.icon(if (index < 9 || index >= 45 || index % 9 == 0 || index % 9 == 8)
                 Material.BROWN_STAINED_GLASS_PANE else Material.GRAY_STAINED_GLASS_PANE, " ")
         }
-    private enum class Page { DESK, DISTILLER, JARS, JOURNAL }
+    private enum class Page { DESK, DISTILLER, JARS, JOURNAL, RESEARCH, COMBINE }
     private fun show(player: Player, page: Page, title: String, progress: FirstMagicState,
                      items: Array<ItemStack>, actions: Map<Int, () -> Unit>, redraw: () -> Unit) {
         if (!inColony(player)) return
@@ -101,6 +101,8 @@ internal class FirstMagicWorkshop(
                 Page.DISTILLER -> CoreMenuCanvas.Background.FIRST_MAGIC_DISTILLER
                 Page.JARS -> CoreMenuCanvas.Background.FIRST_MAGIC_JARS
                 Page.JOURNAL -> CoreMenuCanvas.Background.FIRST_MAGIC_JOURNAL
+                Page.RESEARCH -> CoreMenuCanvas.Background.FIRST_MAGIC_JOURNAL
+                Page.COMBINE -> CoreMenuCanvas.Background.FIRST_MAGIC_DESK
             })
             val known = progress.knownAspects.size
             val collected = AnomalousMaterial.entries.count { progress.count(it) > 0 }
@@ -172,6 +174,39 @@ internal class FirstMagicWorkshop(
                         CoreMenuCanvas.Line("四性質は入口にすぎない"),
                     ))
                 }
+                Page.RESEARCH -> {
+                    canvas.left("研究の手順", listOf(
+                        CoreMenuCanvas.Line("素材を分析し性質を発見"),
+                        CoreMenuCanvas.Line("二性質を合成して新発見"),
+                        CoreMenuCanvas.Line("六角盤の空欄に記す"),
+                        CoreMenuCanvas.Line("となりの性質をつなぐ"),
+                        CoreMenuCanvas.Line("固定点が全てつながれば解明"),
+                        CoreMenuCanvas.Line(""),
+                        CoreMenuCanvas.Line("解明 ${progress.unlockedResearch.size} / ${ResearchCatalog.all.size}"),
+                    ))
+                    canvas.right("研究インク", listOf(
+                        CoreMenuCanvas.Line("所持した性質を一つ消費"),
+                        CoreMenuCanvas.Line("外せばインクは戻る"),
+                        CoreMenuCanvas.Line("合成で複合性質を4得る"),
+                        CoreMenuCanvas.Line(""),
+                        CoreMenuCanvas.Line("発見 ${progress.discoveredResearchAspects.size} / ${AspectCatalog.all.size}"),
+                    ))
+                }
+                Page.COMBINE -> {
+                    canvas.left("性質の合成", listOf(
+                        CoreMenuCanvas.Line("発見済みの二性質を使う"),
+                        CoreMenuCanvas.Line("各インクを一つ消費"),
+                        CoreMenuCanvas.Line("新しい性質のインクを4得る"),
+                        CoreMenuCanvas.Line(""),
+                        CoreMenuCanvas.Line("素材分析で基礎性質を補充"),
+                    ))
+                    canvas.right("構成の結び", listOf(
+                        CoreMenuCanvas.Line("複合性質とその材料は"),
+                        CoreMenuCanvas.Line("研究盤で接続できる"),
+                        CoreMenuCanvas.Line(""),
+                        CoreMenuCanvas.Line("火 + 風 → 光"),
+                    ))
+                }
             }
             canvas.render()
         } else CoreLoopItems.text(title, NamedTextColor.GOLD)
@@ -208,6 +243,8 @@ internal class FirstMagicWorkshop(
         }
         items[40] = magicIcon(player, "journal", Material.WRITABLE_BOOK, "魔導記録帳", "判明した性質：${progress.knownAspects.joinToString { it.name }.ifEmpty { "なし" }}", "クリックで記録を読む")
         actions[40] = { journal(player) }
+        items[41] = magicIcon(player, "journal", Material.ENCHANTED_BOOK, "研究の星図", "六角盤で研究を解明する")
+        actions[41] = { researchList(player) }
         items[49] = magicIcon(player, "distiller", Material.BREWING_STAND, "蒸留器へ", "分析済み素材からEssentiaを抽出")
         actions[49] = { distiller(player) }
         show(player, Page.DESK, "観測工房・研究机", progress, items, actions) { desk(player) }
@@ -299,7 +336,7 @@ internal class FirstMagicWorkshop(
         val progress = state(player) ?: return
         val items = frame(player)
         val actions = mutableMapOf<Int, () -> Unit>()
-        items[4] = magicIcon(player, "journal", Material.WRITABLE_BOOK, "魔導記録帳 第一頁", "発見した性質 ${progress.knownAspects.size} / 4")
+        items[4] = magicIcon(player, "journal", Material.WRITABLE_BOOK, "魔導記録帳 第一頁", "Essentia ${progress.knownAspects.size} / 4", "研究Aspect ${progress.discoveredResearchAspects.size} / ${AspectCatalog.all.size}")
         AnomalousMaterial.entries.forEachIndexed { index, material ->
             items[materialSlots[index]] = magicIcon(player, if (material in progress.studied) materialArt(material) else "journal", if (material in progress.studied) materialIcon(material) else Material.PAPER,
                 if (material in progress.studied) material.label else "未分析の頁",
@@ -307,8 +344,137 @@ internal class FirstMagicWorkshop(
         }
         items[40] = magicIcon(player, "sealed", Material.AMETHYST_SHARD, if (progress.firstDistillation) "最初の蒸留を記録" else "まだ白紙の余白",
             if (progress.firstDistillation) "封印区画にはさらに大きな装置が眠る" else "Jarが満たされる日を待つ")
+        items[41] = magicIcon(player, "journal", Material.ENCHANTED_BOOK, "研究の星図", "研究 ${progress.unlockedResearch.size} / ${ResearchCatalog.all.size}", "クリックで六角盤を開く")
+        actions[41] = { researchList(player) }
         items[49] = magicIcon(player, "desk", Material.LECTERN, "研究机へ")
         actions[49] = { desk(player) }
         show(player, Page.JOURNAL, "魔導記録帳・第一頁", progress, items, actions) { journal(player) }
+    }
+
+    private fun researchIcon(aspectId: String, known: Boolean, ink: Int? = null): ItemStack {
+        val aspect = AspectCatalog.byId.getValue(aspectId)
+        val material = when (aspectId) {
+            "aer" -> Material.FEATHER
+            "aqua" -> Material.PRISMARINE_CRYSTALS
+            "ignis" -> Material.BLAZE_POWDER
+            "terra" -> Material.CLAY_BALL
+            "ordo" -> Material.QUARTZ
+            "perditio" -> Material.ECHO_SHARD
+            else -> Material.AMETHYST_SHARD
+        }
+        return CoreLoopItems.icon(if (known) material else Material.GRAY_DYE,
+            if (known) aspect.name else "未発見のAspect",
+            if (known) "構成: ${aspect.components.joinToString(" + ").ifEmpty { "基礎" }}" else "素材を分析して発見",
+            if (ink != null) "研究インク $ink" else "固定された手がかり")
+    }
+
+    fun researchList(player: Player, page: Int = 0) {
+        val progress = state(player) ?: return
+        if (!progress.deskRestored) { desk(player); return }
+        val items = frame(player)
+        val actions = mutableMapOf<Int, () -> Unit>()
+        items[4] = magicIcon(player, "journal", Material.ENCHANTED_BOOK, "研究の星図", "解明 ${progress.unlockedResearch.size} / ${ResearchCatalog.all.size}")
+        val subjects = ResearchCatalog.all.drop(page * 5).take(5)
+        val slots = listOf(10, 12, 14, 28, 30)
+        subjects.forEachIndexed { index, research ->
+            val unlocked = research.id in progress.unlockedResearch
+            items[slots[index]] = CoreLoopItems.icon(if (unlocked) Material.ENCHANTED_BOOK else Material.BOOK,
+                "${if (unlocked) "✦" else "◇"} ${research.title}", research.description,
+                if (unlocked) "解明済み / クリックで盤面を見る" else "クリックで研究を開く")
+            actions[slots[index]] = { researchBoard(player, research.id) }
+        }
+        items[36] = CoreLoopItems.icon(Material.ARROW, "前の頁")
+        if (page > 0) actions[36] = { researchList(player, page - 1) }
+        items[44] = CoreLoopItems.icon(Material.ARROW, "次の頁")
+        if ((page + 1) * 5 < ResearchCatalog.all.size) actions[44] = { researchList(player, page + 1) }
+        items[40] = magicIcon(player, "desk", Material.LECTERN, "Aspectを合成", "新しい性質を発見する")
+        actions[40] = { combineList(player) }
+        items[49] = magicIcon(player, "journal", Material.WRITABLE_BOOK, "記録帳へ")
+        actions[49] = { journal(player) }
+        show(player, Page.RESEARCH, "研究の星図 ${page + 1}/2", progress, items, actions) { researchList(player, page) }
+    }
+
+    private fun combineList(player: Player, page: Int = 0) {
+        val progress = state(player) ?: return
+        val items = frame(player)
+        val actions = mutableMapOf<Int, () -> Unit>()
+        items[4] = magicIcon(player, "desk", Material.LECTERN, "Aspectの合成", "基礎から複合性質を発見する")
+        val slots = listOf(10, 12, 14, 16, 28, 30, 32, 34)
+        AspectCatalog.compound.drop(page * 8).take(8).forEachIndexed { index, aspect ->
+            val ready = aspect.components.all { it in progress.discoveredResearchAspects && progress.ink(it) > 0 }
+            items[slots[index]] = CoreLoopItems.icon(if (ready) Material.AMETHYST_SHARD else Material.GRAY_DYE,
+                if (aspect.id in progress.discoveredResearchAspects) aspect.name else "未知の組み合わせ",
+                aspect.components.joinToString(" + ") { AspectCatalog.byId.getValue(it).name },
+                "インク ${progress.ink(aspect.id)} / ${if (ready) "クリックで合成" else "材料が不足"}")
+            actions[slots[index]] = { change(player, FirstMagicAction.Combine(aspect.components[0], aspect.components[1])) { combineList(player, page) } }
+        }
+        items[36] = CoreLoopItems.icon(Material.ARROW, "前の頁")
+        if (page > 0) actions[36] = { combineList(player, page - 1) }
+        items[44] = CoreLoopItems.icon(Material.ARROW, "次の頁")
+        if ((page + 1) * 8 < AspectCatalog.compound.size) actions[44] = { combineList(player, page + 1) }
+        items[49] = magicIcon(player, "journal", Material.WRITABLE_BOOK, "研究一覧へ")
+        actions[49] = { researchList(player) }
+        show(player, Page.COMBINE, "Aspect合成 ${page + 1}/2", progress, items, actions) { combineList(player, page) }
+    }
+
+    private fun researchBoard(player: Player, researchId: String) {
+        val progress = state(player) ?: return
+        val research = ResearchCatalog.byId[researchId] ?: return
+        val placed = progress.researchPlacements[researchId].orEmpty()
+        val occupied = research.anchors + placed
+        val connected = ResearchBoard.connectedAnchors(research, placed)
+        val items = frame(player)
+        val actions = mutableMapOf<Int, () -> Unit>()
+        for (slot in ResearchBoard.cells.keys) {
+            val anchor = research.anchors[slot]
+            val aspect = anchor ?: placed[slot]
+            items[slot] = if (aspect == null) CoreLoopItems.icon(Material.LIGHT_GRAY_STAINED_GLASS_PANE,
+                "空の六角", "クリックしてAspectを選ぶ") else {
+                val links = ResearchBoard.neighbors(slot).count { next ->
+                    occupied[next]?.let { AspectCatalog.linked(aspect, it) } == true
+                }
+                CoreLoopItems.icon(Material.AMETHYST_SHARD, AspectCatalog.byId.getValue(aspect).name,
+                    "有効な接続 $links", "クリックで外し、インクを戻す")
+            }
+            if (anchor != null) {
+                items[slot] = CoreLoopItems.icon(if (slot in connected) Material.GLOWSTONE_DUST else Material.QUARTZ,
+                    "◆ ${AspectCatalog.byId.getValue(anchor).name}", "固定された手がかり", if (slot in connected) "起点と接続中" else "まだ起点とつながっていない")
+            } else if (aspect == null && researchId !in progress.unlockedResearch) {
+                actions[slot] = { chooseResearchInk(player, researchId, slot) }
+            } else if (aspect != null && researchId !in progress.unlockedResearch) {
+                actions[slot] = { change(player, FirstMagicAction.Remove(researchId, slot)) { researchBoard(player, researchId) } }
+            }
+        }
+        items[45] = CoreLoopItems.icon(Material.ARROW, "研究一覧へ")
+        actions[45] = { researchList(player) }
+        items[49] = CoreLoopItems.icon(if (researchId in progress.unlockedResearch) Material.ENCHANTED_BOOK else Material.WRITABLE_BOOK,
+            research.title, research.description,
+            if (researchId in progress.unlockedResearch) "研究解明済み" else "手がかり ${connected.size} / ${research.anchors.size} 接続")
+        items[51] = CoreLoopItems.icon(Material.AMETHYST_SHARD, "Aspect合成へ")
+        actions[51] = { combineList(player) }
+        show(player, Page.RESEARCH, "研究盤・${research.title}", progress, items, actions) { researchBoard(player, researchId) }
+    }
+
+    private fun chooseResearchInk(player: Player, researchId: String, slot: Int, page: Int = 0) {
+        val progress = state(player) ?: return
+        val items = frame(player)
+        val actions = mutableMapOf<Int, () -> Unit>()
+        items[4] = CoreLoopItems.icon(Material.WRITABLE_BOOK, "六角 $slot に記すAspect", "所持インクを一つ使う")
+        val slots = listOf(10, 12, 14, 16, 28, 30, 32, 34)
+        AspectCatalog.all.drop(page * 8).take(8).forEachIndexed { index, aspect ->
+            val known = aspect.id in progress.discoveredResearchAspects
+            items[slots[index]] = researchIcon(aspect.id, known, progress.ink(aspect.id))
+                .withAmount(1)
+            if (known && progress.ink(aspect.id) > 0) actions[slots[index]] = {
+                change(player, FirstMagicAction.Place(researchId, slot, aspect.id)) { researchBoard(player, researchId) }
+            }
+        }
+        items[36] = CoreLoopItems.icon(Material.ARROW, "前の頁")
+        if (page > 0) actions[36] = { chooseResearchInk(player, researchId, slot, page - 1) }
+        items[44] = CoreLoopItems.icon(Material.ARROW, "次の頁")
+        if ((page + 1) * 8 < AspectCatalog.all.size) actions[44] = { chooseResearchInk(player, researchId, slot, page + 1) }
+        items[49] = CoreLoopItems.icon(Material.BOOK, "盤面へ戻る")
+        actions[49] = { researchBoard(player, researchId) }
+        show(player, Page.RESEARCH, "研究インク ${page + 1}/2", progress, items, actions) { chooseResearchInk(player, researchId, slot, page) }
     }
 }
