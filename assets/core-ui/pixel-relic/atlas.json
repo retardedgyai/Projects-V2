@@ -202,8 +202,8 @@
       "source_cell": 7,
       "advances": {
         "16": 16,
-        "32": 30,
-        "48": 45
+        "32": 31,
+        "48": 46
       }
     },
     {
@@ -235,8 +235,8 @@
       "source_cell": 10,
       "advances": {
         "16": 16,
-        "32": 30,
-        "48": 45
+        "32": 31,
+        "48": 46
       }
     },
     {
@@ -279,8 +279,8 @@
       "source_cell": 14,
       "advances": {
         "16": 16,
-        "32": 30,
-        "48": 45
+        "32": 31,
+        "48": 46
       }
     },
     {
@@ -377,9 +377,9 @@
       "source": "dust",
       "source_cell": 0,
       "advances": {
-        "16": 15,
-        "32": 29,
-        "48": 43
+        "16": 16,
+        "32": 31,
+        "48": 46
       }
     }
   ],
@@ -388,5 +388,5 @@
     "symbols": "591a2d87829f84fb8567319ecac283801d4d997db0a3f66eb3e0d549ea5e3a61",
     "affix_dust": "a92446b7b09f486b3d50ce67dd8bc33c04b7d8a77a093a50c5b9aa884c88be89"
   },
-  "build": "4x4 cell slicing; nearest-neighbor 32px; binary alpha; 24-color palette per sprite"
+  "build": "ProjectS material source at 16px; atlas uses nearest-neighbor 32px; 12-color binary-alpha inventory sprites"
 }

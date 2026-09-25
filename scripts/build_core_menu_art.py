@@ -10,10 +10,12 @@ import json
 import math
 
 from PIL import Image
+from build_polish05_material_art import main as build_materials
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "assets/core-ui/pixel-relic"
 ASSETS = ROOT / "server-minestom/src/main/resources/core-ui-pack/assets/projects"
+MATERIAL_ICONS = ROOT / "assets/core-ui/forge-v3-existing/compiled"
 ART_BASE = 0xE700
 ART_CELL = 32
 ART_YS = [18, 28, 30, 36, 42, 48, 54, 56, 70, 72, 84, 90, 98, 108, 112, 126, 140, 154, 168, 182, 196]
@@ -40,17 +42,15 @@ ART = [
 
 
 def build_art():
+    build_materials()
     sheets = {name: Image.open(SOURCE / f"source/{name}.png").convert("RGBA")
               for name in ("materials", "symbols")}
     atlas = Image.new("RGBA", (ART_CELL * 8, ART_CELL * 4))
     metadata, metrics = [], []
     for ordinal, (name, source, index) in enumerate(ART):
-        if source == "dust":
-            master = Image.open(SOURCE / "source/affix_dust.png").convert("RGBA")
-            master = master.crop(master.getchannel("A").getbbox())
-            master.thumbnail((28, 28), Image.Resampling.NEAREST)
-            original = Image.new("RGBA", (32, 32))
-            original.alpha_composite(master, ((32-master.width)//2, (32-master.height)//2))
+        material_key = {"PLANK": "board", "CUT_STONE": "cut_stone", "DUST": "affix_dust"}.get(name, name.lower())
+        if material_key in {"wood", "ore", "stone", "hide", "fiber", "board", "ingot", "cut_stone", "leather", "cloth", "affix_dust"}:
+            original = Image.open(MATERIAL_ICONS / f"{material_key}.png").convert("RGBA")
         elif source == "skills":
             master = Image.open(ROOT / f"assets/core-ui/skills/{('pierce','star_thread')[index]}.png").convert("RGBA")
             master = master.crop(master.getchannel('A').getbbox())
@@ -99,7 +99,7 @@ def build_art():
                            (ordinal % 8 + 1) * ART_CELL, (ordinal // 8 + 1) * ART_CELL))
         texture = ASSETS / f"textures/item/forge_materials/{key}.png"
         texture.parent.mkdir(parents=True, exist_ok=True)
-        cell.save(texture, optimize=True)
+        Image.open(MATERIAL_ICONS / f"{key}.png").save(texture, optimize=True)
         item = ASSETS / f"items/forge_materials/{key}.json"
         item.parent.mkdir(parents=True, exist_ok=True)
         item.write_text(json.dumps({"model": {"type": "minecraft:model",
@@ -113,7 +113,7 @@ def build_art():
         "sources": {**{name: hashlib.sha256((SOURCE / f"source/{name}.png").read_bytes()).hexdigest()
                     for name in sheets}, "affix_dust": hashlib.sha256(
                         (SOURCE / "source/affix_dust.png").read_bytes()).hexdigest()},
-        "build": "4x4 cell slicing; nearest-neighbor 32px; binary alpha; 24-color palette per sprite",
+        "build": "ProjectS material source at 16px; atlas uses nearest-neighbor 32px; 12-color binary-alpha inventory sprites",
     }, indent=2) + "\n", encoding="utf-8")
     atlas.resize((1024, 512), Image.Resampling.NEAREST).save(SOURCE / "atlas-preview.png", optimize=True)
     pack = ASSETS.parents[1]

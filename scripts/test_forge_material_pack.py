@@ -1,4 +1,4 @@
-"""Check that the storage items and Polish05 display share the same 32 px art."""
+"""Check that storage, forge, and core menu share the same 16 px art."""
 import json
 import zipfile
 from pathlib import Path
@@ -18,11 +18,11 @@ def main():
         for name in NAMES:
             core = CORE / f"textures/item/forge_materials/{name}.png"
             with Image.open(core) as image:
-                assert image.size == (32, 32), name
+                assert image.size == (16, 16), name
                 assert image.getchannel("A").getbbox() is not None, name
                 assert set(image.getchannel("A").tobytes()) <= {0, 255}, name
             entry = mapping[f"forge_material_{name}"]
-            assert entry["width"] == entry["height"] == 32, name
+            assert entry["width"] == entry["height"] == 16, name
             assert core.read_bytes() == pack.read(
                 f"assets/projects_ui_polish05/textures/forge_materials/{name}.png"), name
             item = json.loads((CORE / f"items/forge_materials/{name}.json").read_text())
@@ -34,7 +34,7 @@ def main():
         assert (CORE / f"textures/item/forge_materials/{raw}.png").read_bytes() != (
             CORE / f"textures/item/forge_materials/{refined}.png").read_bytes()
     assert (ROOT / "web-ui-lab/build/polish05/polish05-lab.zip").read_bytes() == (POLISH / "pack.zip").read_bytes()
-    print("FORGE_MATERIAL_PACK_PASS 11 shared 32px sprites, 5 distinct raw/refined pairs, model/font/zip match")
+    print("FORGE_MATERIAL_PACK_PASS 11 shared 16px sprites, 5 distinct raw/refined pairs, model/font/zip match")
 
 
 if __name__ == "__main__":

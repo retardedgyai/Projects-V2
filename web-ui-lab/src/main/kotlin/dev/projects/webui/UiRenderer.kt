@@ -15,7 +15,7 @@ import net.minestom.server.entity.metadata.display.TextDisplayMeta
 import net.minestom.server.item.ItemStack
 import net.minestom.server.item.Material
 
-/** Retained fixed screen; cursor transforms interpolate between client input ticks. */
+/** Retained fixed screen; the cursor tip follows input immediately. */
 class UiRenderer(private val player: Player, private val origin: Pos) : AutoCloseable {
     private data class Panel(val box: Box, val color: Int, val depth: Double, val zoom: Double)
     private val entities=mutableMapOf<String,Entity>()
@@ -146,12 +146,11 @@ class UiRenderer(private val player: Player, private val origin: Pos) : AutoClos
         scene.nodes.filter { it.id==previous || it.id==next }.forEach { background(it,next) }
     }
     fun cursor(pointer: UiPointer) {
-        // A hard entity teleport for each 20 Hz input packet visibly steps in
-        // Vanilla. Move the TextDisplay transform over one tick instead. The
-        // logical position remains immediate for hit tests and clicks.
+        // Keep the bright hit-test tip on the newest input packet. A one-tick
+        // shadow fills the gap between packets without delaying the actual tip.
         panel("cursor-shadow",Box(pointer.x-1.0,pointer.y-1.0,5.0,15.0),0xff14171b.toInt(),0.4,1)
-        panel("cursor-v",Box(pointer.x,pointer.y,2.0,12.0),0xffffdf9f.toInt(),0.41,1)
-        panel("cursor-h",Box(pointer.x,pointer.y,10.0,2.0),0xffffdf9f.toInt(),0.42,1)
+        panel("cursor-v",Box(pointer.x,pointer.y,2.0,12.0),0xffffdf9f.toInt(),0.41)
+        panel("cursor-h",Box(pointer.x,pointer.y,10.0,2.0),0xffffdf9f.toInt(),0.42)
         spawnReady()
     }
     override fun close() {

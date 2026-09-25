@@ -80,7 +80,7 @@ fun main(args: Array<String>) {
                 (e.entityMeta as? TextDisplayMeta)?.takeIf { it.transformationInterpolationDuration==1 }
                     ?.let { e.entityId to it.translation }
             }.toMap()
-            check(originalCursor.size==3)
+            check(originalCursor.size==1) { "Only the cursor shadow should interpolate" }
             rotate(10f,1f)
             originalCursor.forEach { (id,at) ->
                 val moved=(instance.entities.single { it.entityId==id }.entityMeta as TextDisplayMeta).translation
@@ -127,7 +127,7 @@ fun main(args: Array<String>) {
         check(packets.filterIsInstance<CameraPacket>().last().cameraId()==first.entityId)
         check(packets.filterIsInstance<ChangeGameStatePacket>().last().value()==first.gameMode.ordinal.toFloat())
         check(instance.entities.all { it===first || it===second })
-        println("UI_SMOKE_PASS 60 TPS; 5 cycles; immediate rotation/click; idle updates=0; cursor move=3 one-tick transforms, no teleports; hover metadata<=2; private entities; restored mode/camera/slot; transfer-safe close; zero leaks")
+        println("UI_SMOKE_PASS 60 TPS; 5 cycles; immediate rotation/click; idle updates=0; cursor tip immediate, shadow one-tick transform, no teleports; hover metadata<=2; private entities; restored mode/camera/slot; transfer-safe close; zero leaks")
     } finally {
         sessions.close();first.remove();second.remove();MinecraftServer.stopCleanly()
     }
