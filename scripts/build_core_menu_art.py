@@ -35,6 +35,7 @@ ART = [
     ("POTION", "symbols", 0), ("TABLET", "symbols", 1),
     ("ORB", "symbols", 2), ("BOSS", "symbols", 3), ("SHARD", "symbols", 4),
     ("ARROW", "skills", 0), ("ARCANE", "skills", 1),
+    ("DUST", "dust", 0),
 ]
 
 
@@ -44,7 +45,13 @@ def build_art():
     atlas = Image.new("RGBA", (ART_CELL * 8, ART_CELL * 4))
     metadata, metrics = [], []
     for ordinal, (name, source, index) in enumerate(ART):
-        if source == "skills":
+        if source == "dust":
+            master = Image.open(SOURCE / "source/affix_dust.png").convert("RGBA")
+            master = master.crop(master.getchannel("A").getbbox())
+            master.thumbnail((28, 28), Image.Resampling.NEAREST)
+            original = Image.new("RGBA", (32, 32))
+            original.alpha_composite(master, ((32-master.width)//2, (32-master.height)//2))
+        elif source == "skills":
             master = Image.open(ROOT / f"assets/core-ui/skills/{('pierce','star_thread')[index]}.png").convert("RGBA")
             master = master.crop(master.getchannel('A').getbbox())
             master.thumbnail((28,28), Image.Resampling.NEAREST)
@@ -80,13 +87,39 @@ def build_art():
             (ASSETS / f"font/core_menu_art_{size}_{y}.json").write_text(
                 json.dumps(font, separators=(",", ":")) + "\n", encoding="utf-8")
     (ASSETS / "menu/art.tsv").write_text("# name\tordinal\tadvance16\tadvance32\tadvance48\n" + "".join(metrics), encoding="utf-8")
+    # Give storage projections and the forge exactly the same low-resolution
+    # original artwork. Their models are scoped to ProjectS items only.
+    subjects = {"wood": "WOOD", "ore": "ORE", "stone": "STONE", "hide": "HIDE",
+                "fiber": "FIBER", "board": "PLANK", "ingot": "INGOT",
+                "cut_stone": "CUT_STONE", "leather": "LEATHER", "cloth": "CLOTH",
+                "affix_dust": "DUST"}
+    for key, art_name in subjects.items():
+        ordinal = next(index for index, art in enumerate(ART) if art[0] == art_name)
+        cell = atlas.crop((ordinal % 8 * ART_CELL, ordinal // 8 * ART_CELL,
+                           (ordinal % 8 + 1) * ART_CELL, (ordinal // 8 + 1) * ART_CELL))
+        texture = ASSETS / f"textures/item/forge_materials/{key}.png"
+        texture.parent.mkdir(parents=True, exist_ok=True)
+        cell.save(texture, optimize=True)
+        item = ASSETS / f"items/forge_materials/{key}.json"
+        item.parent.mkdir(parents=True, exist_ok=True)
+        item.write_text(json.dumps({"model": {"type": "minecraft:model",
+            "model": f"projects:item/forge_materials/{key}"}}, separators=(",", ":")) + "\n", encoding="utf-8")
+        model = ASSETS / f"models/item/forge_materials/{key}.json"
+        model.parent.mkdir(parents=True, exist_ok=True)
+        model.write_text(json.dumps({"parent": "minecraft:item/generated",
+            "textures": {"layer0": f"projects:item/forge_materials/{key}"}}, separators=(",", ":")) + "\n", encoding="utf-8")
     (SOURCE / "atlas.json").write_text(json.dumps({
         "cell": ART_CELL, "columns": 8, "sizes": ART_SIZES, "ys": ART_YS, "art": metadata,
-        "sources": {name: hashlib.sha256((SOURCE / f"source/{name}.png").read_bytes()).hexdigest()
-                    for name in sheets},
+        "sources": {**{name: hashlib.sha256((SOURCE / f"source/{name}.png").read_bytes()).hexdigest()
+                    for name in sheets}, "affix_dust": hashlib.sha256(
+                        (SOURCE / "source/affix_dust.png").read_bytes()).hexdigest()},
         "build": "4x4 cell slicing; nearest-neighbor 32px; binary alpha; 24-color palette per sprite",
     }, indent=2) + "\n", encoding="utf-8")
     atlas.resize((1024, 512), Image.Resampling.NEAREST).save(SOURCE / "atlas-preview.png", optimize=True)
+    pack = ASSETS.parents[1]
+    paths = sorted(path.relative_to(pack).as_posix() for path in pack.rglob("*")
+                   if path.is_file() and path.name != "index.txt")
+    (pack / "index.txt").write_text("\n".join(paths) + "\n", encoding="utf-8")
     print(f"Built {len(ART)} original pixel-relic icons; {len(ART_SIZES) * len(ART_YS)} positioned fonts")
 
 

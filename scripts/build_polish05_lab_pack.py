@@ -173,6 +173,19 @@ def main() -> None:
         sprites[name] = {"char": sprite["char"], "width": sprite["width"],
                          "height": sprite["height"], "font": sprite["font"]}
 
+    # The core material atlas is the single source for storage items and forge
+    # labels; 32 px is enough detail to keep each subject readable in Vanilla.
+    for name in ("wood", "ore", "stone", "hide", "fiber", "board", "ingot",
+                 "cut_stone", "leather", "cloth", "affix_dust"):
+        source = ROOT / "server-minestom/src/main/resources/core-ui-pack/assets/projects/textures/item/forge_materials" / f"{name}.png"
+        image = Image.open(source).convert("RGBA")
+        assert image.size == (32, 32), (name, image.size)
+        rel = f"textures/forge_materials/{name}.png"
+        destination = PACK / "assets" / NAMESPACE / rel
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        image.save(destination, optimize=True)
+        register(f"forge_material_{name}", f"forge_materials/{name}.png", 32, 32)
+
     font = PACK / "assets" / NAMESPACE / "font/plates.json"
     font.parent.mkdir(parents=True, exist_ok=True)
     font.write_text(json.dumps({"providers": providers}, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
