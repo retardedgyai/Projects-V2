@@ -277,7 +277,9 @@ class Polish05Scene(private val kit: Path, spriteMap: Path) {
         node("effect-name",422,729,380,23,if(selected.id=="ember")"熾火の刻印" else "残り火の刻印",size=13.0,color="#cbbb9f")
         node("effect-text",422,751,500,20,if(selected.id=="ember")"火炎ダメージ +12% ／ 通常攻撃の範囲 +8%" else "火炎ダメージ +8% ／ 攻撃速度 +6%",size=11.0,color="#9aa095")
         node("effect-detail",942,741,42,22,"詳細 ›",size=11.0,color="#b9b4a0")
-        val next=selected.level+1
+        val maxed=selected.level>=30
+        val next=if(maxed)selected.level else selected.level+1
+        val powerGain=if(maxed)0 else selected.step
         node("result-title",1019,237,180,22,if(snapshot.history.firstOrNull()?.success==true)"次の強化" else "強化の結果",size=15.0)
         node("result-caption",1275,241,70,15,"成功したとき",size=10.0,color="#9c9e92")
         line("result-top",1019,263,326)
@@ -287,11 +289,11 @@ class Polish05Scene(private val kit: Path, spriteMap: Path) {
         node("level-arrow",1167,290,64,41,"→",size=31.0,color="#aca690",align="center")
         // Original Georgia numerals include a 15px golden text shadow. Keep that
         // CSS-rendered blur as a transparent glyph while the chosen level stays live.
-        val nextSprite="next_level_${next.coerceIn(0,31)}"
-        node("after-level",1230,273,sprites.getValue(nextSprite).width,80,sprite=nextSprite,depth=3)
+        val nextSprite=if(maxed)"next_level_max" else "next_level_$next"
+        node("after-level",if(maxed)1199 else 1230,273,sprites.getValue(nextSprite).width,80,sprite=nextSprite,depth=3)
         line("result-level-rule",1019,341,326)
         node("attack-label",1028,360,90,20,"物理攻撃",size=12.0,color="#a5aa9f")
-        node("attack-value",1190,355,149,28,"${selected.power}  →  ${selected.power+selected.step}  +${selected.step}",size=20.0,color="#dfd3b7",align="right")
+        node("attack-value",1190,355,149,28,"${selected.power}  →  ${selected.power+powerGain}  +$powerGain",size=20.0,color="#dfd3b7",align="right")
         line("result-attack-rule",1019,392,326)
         node("chance-label",1028,406,85,22,"成功率",size=14.0)
         node("chance-value",1276,402,67,26,if(snapshot.catalyst)"100.0%" else "80.0%",size=20.0,color="#d5bf89",align="right")

@@ -455,9 +455,9 @@
     "height": 80,
     "font": "projects_ui_polish05:plates"
   },
-  "next_level_31": {
+  "next_level_max": {
     "char": "",
-    "width": 104,
+    "width": 131,
     "height": 80,
     "font": "projects_ui_polish05:plates"
   },

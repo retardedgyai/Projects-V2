@@ -12,6 +12,7 @@ async function main() {
   const source = path.join(root, 'assets/ui/polish05-import/reference/ProjectS_UI_Polish05_Workbench.html');
   const out = path.join(root, 'web-ui-lab/ui/polish05-effects');
   fs.mkdirSync(out, { recursive: true });
+  fs.rmSync(path.join(out, 'next_level_31.png'), { force: true });
   const browser = await chromium.launch({ channel: 'chrome', headless: true });
   try {
     const page = await browser.newPage({ viewport: { width: 1440, height: 920 }, deviceScaleFactor: 1 });
@@ -36,11 +37,11 @@ async function main() {
         color:#eccb85;text-shadow:0 0 15px #d4a44426;white-space:nowrap"></span>
       </body></html>`);
     const level = page.locator('#level');
-    for (let n = 0; n <= 31; n++) {
-      await level.evaluate((element, text) => { element.textContent = text; }, `+${n}`);
+    for (const [name, text] of [...Array.from({ length: 31 }, (_, n) => [`next_level_${n}`, `+${n}`]), ['next_level_max', 'MAX']]) {
+      await level.evaluate((element, value) => { element.textContent = value; }, text);
       const width = Math.ceil(await level.evaluate(element => element.getBoundingClientRect().width)) + 40;
       await page.setViewportSize({ width, height: 80 });
-      await page.screenshot({ path: path.join(out, `next_level_${n}.png`), omitBackground: true });
+      await page.screenshot({ path: path.join(out, `${name}.png`), omitBackground: true });
     }
     fs.writeFileSync(path.join(out, 'SOURCE.md'),
       'Generated from the approved Polish05 HTML by scripts/export_polish05_effects.cjs.\n' +

@@ -66,8 +66,7 @@ def main() -> None:
                 dest.parent.mkdir(parents=True, exist_ok=True)
                 tile.save(dest)
                 register(f"{name}/{x}_{y}", f"plates/{name}_{x}_{y}.png", tile.width, tile.height)
-    for level in range(32):
-        name = f"next_level_{level}"
+    for name in ([f"next_level_{level}" for level in range(31)] + ["next_level_max"]):
         image = Image.open(EFFECTS / f"{name}.png").convert("RGBA")
         rel = f"textures/effects/{name}.png"
         dest = PACK / "assets" / NAMESPACE / rel
