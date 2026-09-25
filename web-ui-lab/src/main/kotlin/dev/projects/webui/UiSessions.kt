@@ -28,20 +28,22 @@ import java.util.concurrent.atomic.AtomicInteger
 
 /** Only installed in the separate UI lab server. Never intercepts normal ProjectS gameplay packets. */
 class UiSessions(
-    events: EventNode<Event>, private val path: Path,
+    events: EventNode<Event>, private val path: Path?,
     private val packReady: (Player) -> Boolean = { true },
     private val polishScene: Polish05Scene? = null,
+    private val flowFactory: ((Player) -> ForgeUiFlow)? = null,
+    private val cameraOrigin: (Player) -> Pos = { it.position.add(0.0,it.eyeHeight+4.0,0.0).withView(0f,0f) },
 ) : AutoCloseable {
     private data class Input(val due: Long, val generation: Int, val yaw: Float?=null, val pitch: Float?=null, val action: String?=null)
     private data class Voice(val cue:String,val until:Long)
-    private class Session(val player: Player, val saved: Pos, var document: UiDocument, val camera: Entity, val renderer: UiRenderer,
-                          sceneBuilder: Polish05Scene?) {
+    private class Session(val player: Player, val saved: Pos, var document: UiDocument?, val camera: Entity, val renderer: UiRenderer,
+                          sceneBuilder: Polish05Scene?, factory: ((Player) -> ForgeUiFlow)?) {
         val demo=ForgeDemo()
-        val polish=sceneBuilder?.let(::Polish05Flow)
+        val polish: ForgeUiFlow?=factory?.invoke(player) ?: sceneBuilder?.let(::Polish05Flow)
         val effects=if(polish!=null)Polish05Effects() else null
         var light=ForgeLightPhase.IDLE
         val pointer=UiPointer()
-        var scene=polish?.scene()?:document.layout(demo.values(),demo.flags())
+        var scene=polish?.scene()?:requireNotNull(document).layout(demo.values(),demo.flags())
         val pending=mutableMapOf<Int,Long>()
         val queue=ArrayDeque<Input>()
         var active=false
@@ -74,22 +76,22 @@ class UiSessions(
     fun open(player: Player) {
         if(sessions.containsKey(player.uuid)) return
         if(!packReady(player)) {
-            player.sendMessage(Component.text("Polish05素材の読込完了後に /ui で開いてください。"))
+            player.sendMessage(Component.text("工房UIの素材を読み込んでから、もう一度話しかけてください。"))
             return
         }
-        val document=UiDocument.parse(Files.readString(path))
+        val document=if(flowFactory==null) UiDocument.parse(Files.readString(requireNotNull(path))) else null
         // Compile and validate before changing the camera or creating any entity.
-        val initial=ForgeDemo(); document.layout(initial.values(),initial.flags())
+        if(document!=null) { val initial=ForgeDemo(); document.layout(initial.values(),initial.flags()) }
         // This isolated lab is a flat world: lift the presentation plane clear of its floor.
         // Eye-level placement lets the lower buttons intersect blocks at larger UI scales.
-        val origin=player.position.add(0.0,player.eyeHeight+4.0,0.0).withView(0f,0f)
+        val origin=cameraOrigin(player)
         val camera=Entity(EntityType.TEXT_DISPLAY).apply {
             setHasPhysics(false);setNoGravity(true);setAutoViewable(false)
             (entityMeta as TextDisplayMeta).apply {
                 setText(Component.empty());setBackgroundColor(0);setUseDefaultBackground(false)
             }
         }
-        val s=Session(player,player.position,document,camera,UiRenderer(player,origin),polishScene)
+        val s=Session(player,player.position,document,camera,UiRenderer(player,origin),polishScene,flowFactory)
         // At Vanilla 26.2's presentation FOV, 1.0 crops the approved 1440×920
         // stage on a 1920×1080 client. 0.8 matches the HTML's 1080px-fit scale.
         if(s.polish!=null)s.renderer.zoom=0.8
@@ -203,19 +205,20 @@ class UiSessions(
         if(kotlin.math.abs(pitch)>70 && s.pending.isEmpty()) sample(s,true)
     }
     private fun tick(s: Session) {
-        if(s.player.instance!==s.camera.instance || s.camera.isRemoved) { close(s.player);return }
+        if(s.player.instance!==s.camera.instance || s.camera.isRemoved) { close(s.player,false);return }
+        if(s.polish!=null && !packReady(s.player)) { close(s.player);return }
         val now=System.nanoTime()
         if(now-s.lastResponse>5_000_000_000L) {
             close(s.player);s.player.sendMessage(Component.text("UIの応答が途切れたため終了しました。/ui で再度開けます。"));return
         }
         if(s.active) sample(s)
         if(s.polish?.takeStrike()==true) sound(s,"refine_strike")
-        val receipt=s.polish?.tick()
+        val receipt=s.polish?.tick(System.currentTimeMillis())
         if(receipt!=null) {
-            if(receipt.kind==dev.projects.webui.polish05.Polish05PreviewModel.Kind.ENHANCE)
+            if(!receipt.refined)
                 s.effects?.finish(receipt.success)
             sound(s,when {
-                receipt.kind==dev.projects.webui.polish05.Polish05PreviewModel.Kind.REFINE -> "refine_success"
+                receipt.refined -> "refine_success"
                 receipt.success -> "enhance_success"
                 else -> "enhance_fail"
             })
@@ -228,7 +231,7 @@ class UiSessions(
             if(s.polish!=null && s.effects!=null) {
                 if(s.polish.view=="forge") {
                     val phase=s.effects.phase()
-                    if(phase!=s.light) {
+                    if(phase!=s.light || flowFactory!=null) {
                         s.light=phase
                         s.scene=s.polish.scene(phase)
                     }
@@ -259,7 +262,7 @@ class UiSessions(
                     if(!s.polish.action(action)) continue
                     if(action=="sound" && !oldMuted && s.polish.muted) {
                         POLISH_SOUNDS.forEach { s.player.stopSound(SoundStop.named(Key.key("projects_ui_polish05:ui.$it"))) }
-                    } else if(action=="confirm" && s.polish.operation!=null) {
+                    } else if(action=="confirm" && s.polish.operationActive) {
                         if(s.polish.view=="forge") {
                             s.effects?.beginStrike()
                             sound(s,"enhance_prepare")
@@ -281,7 +284,7 @@ class UiSessions(
                 if(action.startsWith("page:") && s.demo.tab!="catalog") continue
                 if(action=="reload") {
                     try {
-                        val candidate=UiDocument.parse(Files.readString(path))
+                        val candidate=UiDocument.parse(Files.readString(requireNotNull(path)))
                         candidate.layout(s.demo.values(),s.demo.flags())
                         s.document=candidate
                     } catch(e: Exception) {
@@ -289,7 +292,7 @@ class UiSessions(
                     }
                 } else if(!s.demo.action(action)) continue
                 s.generation++
-                s.scene=s.document.layout(s.demo.values(),s.demo.flags())
+                s.scene=requireNotNull(s.document).layout(s.demo.values(),s.demo.flags())
                 s.renderer.zoom=s.demo.zoom
                 s.hover=s.scene.hit(s.pointer.x,s.pointer.y)?.id
                 s.renderer.render(s.scene,s.hover,s.pointer)

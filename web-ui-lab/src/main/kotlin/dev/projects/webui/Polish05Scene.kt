@@ -12,7 +12,9 @@ import java.util.Locale
 /** Draws live values over the approved art; hitboxes use the same 1440x920 coordinate map. */
 enum class ForgeLightPhase { IDLE, STRIKING, RESULT_WARM }
 
-class Polish05Scene(private val kit: Path, spriteMap: Path) {
+class Polish05Scene private constructor(approvedJson: String, spriteJson: String) {
+    constructor(kit: Path, spriteMap: Path) : this(Files.readString(kit.resolve("layout/forge_initial.json")), Files.readString(spriteMap))
+    constructor(approvedJson: ByteArray, spriteJson: ByteArray) : this(approvedJson.toString(Charsets.UTF_8), spriteJson.toString(Charsets.UTF_8))
     private companion object {
         const val TYPOGRAPHY_SCALE=1.175
         const val MODAL_MASK_DEPTH=20
@@ -22,12 +24,13 @@ class Polish05Scene(private val kit: Path, spriteMap: Path) {
         const val MODAL_ACTION_DEPTH=24
     }
     private val screen = Polish05ScreenSpace(800.0, 480.0)
-    private val sprites = JsonParser.parseString(Files.readString(spriteMap)).asJsonObject.entrySet().associate { (name, value) ->
+    private val sprites = JsonParser.parseString(spriteJson).asJsonObject.entrySet().associate { (name, value) ->
         val v = value.asJsonObject
         name to UiSprite(v.get("char").asString, v.get("font").asString,
             v.get("width").asInt, v.get("height").asInt)
     }
-    private val approved = JsonParser.parseString(Files.readString(kit.resolve("layout/forge_initial.json"))).asJsonObject
+    private val approved = JsonParser.parseString(approvedJson).asJsonObject
+    private val productionTemplate = Polish05PreviewModel()
     private val format = NumberFormat.getIntegerInstance(Locale.US)
     private fun number(n: Number) = format.format(n)
     private fun rect(x: Number,y: Number,w: Number,h: Number): Box {
@@ -428,5 +431,156 @@ class Polish05Scene(private val kit: Path, spriteMap: Path) {
             node("modal-confirm",718,668,213,44,"強化する",size=17.0,color="#211f19",bg="#d7bb7c",action="confirm",depth=MODAL_ACTION_DEPTH,align="center")
         }
         return UiScene(800.0,480.0,list)
+    }
+
+    /** Reuses the approved art and geometry while replacing every fixture value with live server data. */
+    fun forge(state: ForgeUiState, light: ForgeLightPhase = ForgeLightPhase.IDLE): UiScene {
+        require(state.gears.size == 2 && state.materials.size >= 3)
+        val selected = state.gears.single { it.id == state.selected }
+        val ready = !state.busy && state.blockedReason == null
+        val base = forge(productionTemplate, state.note, state.modal, state.muted, light)
+        val lines = state.materials
+        val first = lines[0]
+        val second = lines[1]
+        val third = lines[2]
+        val groups = listOf(first, second, third)
+        val supplemental = lines.drop(3)
+        fun value(n: Long) = number(n)
+        fun sprite(name: String) = sprites.getValue(name)
+        val nodes = base.nodes.mapNotNull { node ->
+            val id = node.id
+            var replacement = node
+            fun write(content: String, color: String? = null) {
+                replacement = replacement.copy(text = content,
+                    style = if (color == null) replacement.style else replacement.style + ("color" to color))
+            }
+            when {
+                id == "wallet" -> write(value(state.silver))
+                id == "gear-plate-0" || id == "gear-plate-1" -> {
+                    val active = state.gears[id.last().digitToInt()].id == state.selected
+                    replacement = replacement.copy(sprite=sprite(if(active) "gear_selected" else "gear_unselected"))
+                }
+                id == "gear-icon-0" || id == "gear-icon-1" -> {
+                    val index = id.last().digitToInt()
+                    replacement = replacement.copy(sprite = sprite(if(state.gears[index].id == "weapon") "sword_t2_thumb" else "helm_ui"))
+                }
+                id.startsWith("gear-name-") -> {
+                    val gear = state.gears[id.last().digitToInt()]
+                    write("${gear.name} +${gear.level}")
+                }
+                id.startsWith("gear-stat-") -> {
+                    val gear = state.gears[id.last().digitToInt()]
+                    write("T${gear.tier}   ${if(gear.id == "weapon") "物理攻撃" else "最大HP"} ${gear.power}")
+                }
+                id.startsWith("gear-status-") -> {
+                    val gear = state.gears[id.last().digitToInt()]
+                    write(if(gear.broken) "装備中  ·  破損" else "装備中  ·  強化 +${gear.level}")
+                }
+                id == "replenish-icon-0" || id == "replenish-icon-1" ->
+                    replacement = replacement.copy(sprite = sprite(lines[id.last().digitToInt()].icon))
+                id == "replenish-name-0" || id == "replenish-name-1" -> write(lines[id.last().digitToInt()].name)
+                id == "replenish-count-0" || id == "replenish-count-1" -> {
+                    val material = lines[id.last().digitToInt()]
+                    write("所持 ${value(material.owned)}個  ·  必要 ${value(material.required)}個")
+                }
+                id == "can-enhance" -> write(if(ready) "▪ 素材が揃っています" else "▪ ${state.blockedReason ?: "鍛造中"}",
+                    if(ready) "#a4cba4" else "#e1a29a")
+                id == "history-heading" -> write(if(supplemental.isEmpty()) "この装備の鍛造記録" else "追加で必要な素材")
+                id == "history-value" -> write(if(supplemental.isEmpty()) state.history ?: "鍛造後、ここに結果が残ります。" else
+                    supplemental.joinToString("  ") { "${it.name} ${value(it.owned)}/${value(it.required)}" })
+                id == "rarity" -> write("T${selected.tier} 装備  ·  ${if(selected.id == "weapon") "武器" else "防具"}")
+                id == "hero-name" -> write("${selected.name}  +${selected.level}")
+                id == "hero-weapon" -> replacement = replacement.copy(sprite = sprite(if(selected.id == "weapon") "sword_t2_hero" else "armor_ui"),
+                    box = if(selected.id == "weapon") replacement.box else rect(645,407,72,94))
+                id == "hero-meta" -> write("${if(selected.id == "weapon") "武器" else "防具"} Tier ${selected.tier}   │   強化 +${selected.level}${if(selected.broken) "   │   破損中" else ""}")
+                id == "effect-icon" -> replacement = replacement.copy(sprite=sprite("hammer"))
+                id == "effect-name" -> write(if(selected.id == "weapon") "装備中の武器" else "装備中の防具")
+                id == "effect-text" -> write("本編の装備性能と強化状態を表示しています。")
+                id == "effect-detail" -> write("")
+                id == "result-title" -> write(if(state.history == null) "強化の結果" else "次の強化")
+                id == "before-level" -> {
+                    val s = sprite("current_level_${selected.level}")
+                    replacement = replacement.copy(sprite=s,box=rect(1093.7-s.width/(2*TYPOGRAPHY_SCALE),273,
+                        s.width/TYPOGRAPHY_SCALE,s.height/TYPOGRAPHY_SCALE))
+                }
+                id == "after-level" -> {
+                    val name = if(selected.level >= 30) "next_level_max" else "next_level_${selected.level+1}"
+                    val s = sprite(name)
+                    replacement = replacement.copy(sprite=s,box=rect(if(selected.level >= 30) 1199 else 1230,273,
+                        s.width/TYPOGRAPHY_SCALE,s.height/TYPOGRAPHY_SCALE))
+                }
+                id == "attack-label" -> write(if(selected.id == "weapon") "物理攻撃" else "最大HP")
+                id == "attack-value" -> write("${selected.power} → ${selected.nextPower}  +${selected.nextPower-selected.power}")
+                id == "chance-value" -> write("${"%.1f".format(Locale.US,state.chance)}%")
+                id == "chance-fill" -> replacement = replacement.copy(box=rect(1028,431,309*state.chance/100.0,4))
+                id == "failure-note" -> write(if(state.breakOnFailure > 0)
+                    "失敗時：段階維持・破損率 ${"%.1f".format(Locale.US,state.breakOnFailure)}%・素材消費"
+                    else "失敗時：強化段階を維持・素材は消費")
+                id.startsWith("cost-icon-") -> replacement = replacement.copy(sprite=sprite(groups[id.last().digitToInt()].icon))
+                id.startsWith("cost-name-") -> write(groups[id.last().digitToInt()].name)
+                id.startsWith("cost-after-") -> {
+                    val material = groups[id.last().digitToInt()]
+                    write(if(material.owned >= material.required) "所持 ${value(material.owned)} → 残り ${value(material.owned-material.required)}"
+                        else "所持 ${value(material.owned)} · あと${value(material.required-material.owned)}個不足")
+                }
+                id.startsWith("cost-amount-") -> {
+                    val material=groups[id.last().digitToInt()]
+                    write("${value(material.required)} 個",if(material.owned >= material.required) "#c5d8bd" else "#eca69b")
+                }
+                id == "silver-icon" -> replacement = replacement.copy(sprite=sprite(third.icon))
+                id == "silver-name" -> write(third.name)
+                id == "silver-after" -> write(if(third.owned >= third.required) "所持 ${value(third.owned)} → 残り ${value(third.owned-third.required)}"
+                    else "所持 ${value(third.owned)} · あと${value(third.required-third.owned)}個不足")
+                id == "silver-amount" -> write("${value(third.required)} 個",if(third.owned >= third.required) "#c5d8bd" else "#eca69b")
+                id == "catalyst-check" -> write(if(state.focused) "✓" else "□")
+                id.startsWith("catalyst-halo-") -> {
+                    val offset=id.substringAfterLast('-')
+                    replacement=replacement.copy(sprite=sprite("${if(state.focused) "catalyst_on_halo" else "catalyst_off_halo"}/${offset}_0"))
+                }
+                id == "catalyst-text" -> write("触媒を使う  ·  追加素材を確認")
+                id == "catalyst-info" -> write("成功率 +15pt")
+                id == "action-note" -> write(state.note)
+                id == "modal-icon" -> replacement = replacement.copy(sprite=sprite(if(selected.id == "weapon") "sword_t2_thumb" else "helm_ui"))
+                id == "modal-gear-name" -> write(selected.name)
+                id == "modal-level" -> write("+${selected.level}  →  +${(selected.level+1).coerceAtMost(30)}")
+                id == "modal-attack-label" -> write(if(selected.id == "weapon") "成功時の物理攻撃" else "成功時の最大HP")
+                id == "modal-attack-value" -> write("${selected.power} → ${selected.nextPower}")
+                id == "modal-ore-name" -> write(first.name)
+                id == "modal-ore-amount" -> write("${value(first.required)}個  残り ${value(first.owned-first.required)}")
+                id == "modal-crystal-name" -> write(second.name)
+                id == "modal-crystal-amount" -> write("${value(second.required)}個  残り ${value(second.owned-second.required)}")
+                id == "modal-silver-name" -> write(third.name)
+                id == "modal-silver-amount" -> write("${value(third.required)}個  残り ${value(third.owned-third.required)}")
+                id == "modal-risk" -> write("成功率 ${"%.1f".format(Locale.US,state.chance)}%。失敗時破損率 ${"%.1f".format(Locale.US,state.breakOnFailure)}%。" +
+                    if(supplemental.isEmpty()) "素材は毎回消費します。" else "\n追加：${supplemental.joinToString("・") { "${it.name}×${it.required}" }}")
+                id == "modal-local-note" -> write("銀貨消費なし。素材を消費し、強化は取り消せません。")
+                id.startsWith("enhance_button/") && !ready -> return@mapNotNull null
+                id == "enhance-dynamic-bg" -> replacement = replacement.copy(style=replacement.style + ("background-color" to if(ready) "#d4b879" else "#44443e"))
+                id == "enhance-label" -> write(if(ready) "強化する" else state.blockedReason ?: "鍛造中…")
+                id.startsWith("hit-") && node.action == "enhance" && !ready -> return@mapNotNull null
+                id.startsWith("hit-") && node.action == "catalyst" && selected.level >= 30 -> return@mapNotNull null
+            }
+            replacement
+        }.toMutableList()
+        if(!ready) {
+            nodes += UiNode("live-enhance-bg",rect(1019,710,326,51),"",mapOf("background-color" to "#44443e"),null,null,true,2)
+            nodes += UiNode("live-enhance-label",rect(1034,719,295,31),state.blockedReason ?: "鍛造中…",
+                mapOf("color" to "#e1ada4","font-size" to "15px","text-align" to "center",
+                    "font-family" to "projects_ui_polish05:sans"),null,null,true,4)
+        }
+        // The third cost row replaces the HTML's silver cost; live silver is informational only.
+        for(index in 0..2) {
+            val material = groups[index]
+            if(material.owned >= material.required) continue
+            val y = 494 + index*52
+            nodes.removeIf { it.id == "cost-halo-$index-0" || it.id == "cost-halo-$index-256" ||
+                (index == 2 && it.id.startsWith("cost-halo-silver-")) }
+            for(offset in listOf(0,256)) {
+                val s=sprite("cost_missing_halo/${offset}_0")
+                nodes += UiNode("live-cost-halo-$index-$offset",rect(1019+offset,y,s.width,s.height),"",
+                    emptyMap(),null,null,true,2,s)
+            }
+        }
+        return UiScene(base.width,base.height,nodes)
     }
 }

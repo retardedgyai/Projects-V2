@@ -6,6 +6,9 @@ import dev.projects.server.mob.QuestMobRarity
 import dev.projects.server.coreloop.ui.*
 import dev.projects.server.coreloop.adventure.*
 import dev.projects.server.questmap.*
+import dev.projects.webui.Polish05Pack
+import dev.projects.webui.Polish05Scene
+import dev.projects.webui.UiSessions
 import net.kyori.adventure.bossbar.BossBar
 import net.kyori.adventure.sound.Sound
 import net.kyori.adventure.text.Component
@@ -73,6 +76,25 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
     private val lastUseAt = ConcurrentHashMap<UUID, Long>()
     private val menus = CoreLoopMenus(this)
     private val uiPack = CoreUiPackServer.start()
+    private val polishPack = runCatching {
+        Polish05Pack.start(requireNotNull(javaClass.classLoader.getResourceAsStream("polish05/pack.zip")).use { it.readBytes() },
+            System.getProperty("projects.polish05.packPort", "18092").toInt())
+    }.onFailure { System.err.println("POLISH05_PACK_DISABLED: ${it.message}") }.getOrNull()
+    private val polishScene = runCatching {
+        val loader = javaClass.classLoader
+        Polish05Scene(requireNotNull(loader.getResourceAsStream("polish05/forge_initial.json")).use { it.readBytes() },
+            requireNotNull(loader.getResourceAsStream("polish05/font-map.json")).use { it.readBytes() })
+    }.onFailure { System.err.println("POLISH05_SCENE_DISABLED: ${it.message}") }.getOrNull()
+    private val polishSessions = if(polishPack != null && polishScene != null) UiSessions(MinecraftServer.getGlobalEventHandler(), null,
+        { player -> polishPack.ready(player) }, null,
+        { player -> CorePolish05ForgeFlow(polishScene,
+            { account(player) }, { requireHub(player) && connections[player.uuid] === player },
+            { gear, mode, revision, done ->
+                if(busy.contains(player.uuid)) done(false)
+                else mutate(player, CoreAction.EnhanceEquipment(gear, mode), revision, { done(false) }, { done(true) })
+            }) },
+        { Pos(0.0,100.0,0.0,0f,0f) })
+    else null
     private val dungeons = CoreDungeonExpeditions(object : CoreDungeonHost {
         override fun account(player: Player) = this@CoreLoopGame.account(player)
         override fun player(id: UUID) = connections[id]
@@ -214,6 +236,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
                     refresh(loadedPlayer)
                     menus.refreshTheme(loadedPlayer)
                 }
+                polishPack?.offer(player)
                 if (!a.journey.chosen) player.scheduler().scheduleNextTick { if (connections[player.uuid] === player) menus.career(player) }
             }
             println("Player connected: ${player.username} uuid=${player.uuid} firstSpawn=${event.isFirstSpawn} coreLoop=true")
@@ -274,6 +297,16 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         }
         events.addListener(PlayerEntityInteractEvent::class.java) { event ->
             if (sessions[event.player.uuid]?.returning == true) return@addListener
+            if(event.hand == PlayerHand.MAIN && event.target === harbor.smith &&
+                event.player.instance === hub && event.player.position.distance(harbor.smith.position) <= 5.0) {
+                if(!requireHub(event.player)) return@addListener
+                if(polishSessions != null && polishPack?.ready(event.player) == true) polishSessions.open(event.player)
+                else {
+                    event.player.sendMessage(CoreLoopItems.text("工房UI素材の読込前は通常の工房を開きます。", NamedTextColor.YELLOW))
+                    menus.workshop(event.player)
+                }
+                return@addListener
+            }
             if (event.hand == PlayerHand.MAIN && dungeons.interact(event.player, event.target, System.currentTimeMillis())) return@addListener
             if (event.hand == PlayerHand.MAIN && sessions[event.player.uuid]?.adventures?.interact(event.player, event.target) == true) return@addListener
             if (event.hand == PlayerHand.MAIN && sessions[event.player.uuid]?.caches?.interact(event.player, event.target) == true) return@addListener
@@ -847,6 +880,8 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         dungeons.disconnect(player)
         preparedMaps.forget(player.uuid)
         uiPack?.forget(player)
+        polishPack?.forget(player)
+        polishSessions?.close(player,false)
         departing.remove(player.uuid)
         sessions.remove(player.uuid)?.let { session ->
             if (session.combat.bossDefeated && accounts[player.uuid]?.activeRun?.bossDefeated != true) {
@@ -894,6 +929,8 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         } catch (failure: Exception) {
             System.err.println("CORE_SHUTDOWN_PENDING_REWARDS: $failure")
         } finally {
+            polishSessions?.close()
+            polishPack?.close()
             uiPack?.close()
             io.shutdown()
             io.awaitTermination(5, TimeUnit.SECONDS)

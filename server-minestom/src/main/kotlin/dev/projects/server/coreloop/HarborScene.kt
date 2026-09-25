@@ -26,7 +26,7 @@ internal data class HarborFacility(
 
 /** A small, reusable social hub. Call once during startup, before players enter the instance. */
 internal object HarborScene {
-    data class Result(val spawn: Pos, val facilities: List<HarborFacility>, val labels: List<Entity>, val scenery: List<Entity>)
+    data class Result(val spawn: Pos, val facilities: List<HarborFacility>, val labels: List<Entity>, val scenery: List<Entity>, val smith: Entity)
 
     fun build(instance: InstanceContainer): Result {
         instance.setTime(6000)
@@ -65,7 +65,14 @@ internal object HarborScene {
                 setInstance(instance, facility.position.add(0.0, 1.65, 0.0)).join()
             }
         }
-        return Result(Pos(0.5, 41.0, 7.5, 180f, 0f), facilities, labels, scenery)
+        val smith = Entity(EntityType.VILLAGER).apply {
+            setHasPhysics(false)
+            setNoGravity(true)
+            customName = Component.text("鍛冶師  │  話しかける", NamedTextColor.GOLD)
+            isCustomNameVisible = true
+            setInstance(instance, Pos(-16.5,41.0,-4.5,180f,0f)).join()
+        }
+        return Result(Pos(0.5, 41.0, 7.5, 180f, 0f), facilities, labels, scenery, smith)
     }
 
     private fun facility(

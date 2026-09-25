@@ -3,27 +3,28 @@ package dev.projects.webui
 import dev.projects.webui.polish05.Polish05PreviewModel
 
 /** One player's isolated Polish05 fixture. No gameplay account, save, currency or production odds. */
-class Polish05Flow(private val presentation: Polish05Scene) {
+class Polish05Flow(private val presentation: Polish05Scene) : ForgeUiFlow {
     val model=Polish05PreviewModel()
-    var view="forge"; private set
+    override var view="forge"; private set
     var modal=false; private set
     var compare=false; private set
     var bagSelected="ember"; private set
     var recipe=Polish05PreviewModel.Recipe.ORE; private set
     var batch=1; private set
     var returnToForge=false; private set
-    var muted=false; private set
+    override var muted=false; private set
+    override val operationActive: Boolean get() = operation != null
     private var startedAtMs=0L
     private var strikePlayed=false
     var note="消費内容を確かめてから、鍛造を始めます。"; private set
     var quote: Polish05PreviewModel.Quote?=null; private set
     var operation: Polish05PreviewModel.Operation?=null; private set
-    fun scene(light:ForgeLightPhase=ForgeLightPhase.IDLE)=when(view) {
+    override fun scene(light:ForgeLightPhase)=when(view) {
         "bag" -> presentation.inventory(model,bagSelected,compare,muted)
         "refine" -> presentation.refine(model,recipe,batch,modal,note,returnToForge,muted)
         else -> presentation.forge(model,note,modal,muted,light)
     }
-    fun action(action:String): Boolean {
+    override fun action(action:String): Boolean {
         if(operation!=null)return false
         if(modal || compare) return when(action) {
             "cancel" -> { model.cancelQuote();quote=null;modal=false;compare=false;true }
@@ -78,13 +79,13 @@ class Polish05Flow(private val presentation: Polish05Scene) {
         else -> false
         }
     }
-    fun takeStrike(nowMs:Long=System.currentTimeMillis()): Boolean {
+    override fun takeStrike(nowMs:Long): Boolean {
         val op=operation ?: return false
         if(view!="refine" || strikePlayed || nowMs-startedAtMs<185 || nowMs>=op.finishAtMs)return false
         strikePlayed=true
         return true
     }
-    fun tick(nowMs:Long=System.currentTimeMillis()): Polish05PreviewModel.Receipt? {
+    override fun tick(nowMs:Long): ForgeUiReceipt? {
         val op=operation ?: return null
         val receipt=model.finish(op.id,nowMs) ?: return null
         operation=null
@@ -93,6 +94,6 @@ class Polish05Flow(private val presentation: Polish05Scene) {
             receipt.success -> "強化成功。素材と銀貨を消費し、次の強化を表示しています。"
             else -> "強化失敗。段階は維持し、素材と銀貨を消費しました。"
         }
-        return receipt
+        return ForgeUiReceipt(receipt.success, receipt.kind==Polish05PreviewModel.Kind.REFINE)
     }
 }

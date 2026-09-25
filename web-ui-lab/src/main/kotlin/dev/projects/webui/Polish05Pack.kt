@@ -18,7 +18,7 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
 import java.util.zip.ZipInputStream
 
-/** Serves the approved art only to this isolated UI process. Nothing is installed in the game client. */
+/** Serves the approved private-namespace art as an optional Vanilla resource pack. */
 class Polish05Pack private constructor(
     private val http: HttpServer,
     private val executor: java.util.concurrent.ExecutorService,
@@ -32,7 +32,7 @@ class Polish05Pack private constructor(
         when (event.status) {
             ResourcePackStatus.SUCCESSFULLY_LOADED -> {
                 offer.loaded = true
-                event.player.sendMessage(net.kyori.adventure.text.Component.text("Polish05の素材を読み込みました。コンパスか /ui で開けます。"))
+                event.player.sendMessage(net.kyori.adventure.text.Component.text("Polish05の工房素材を読み込みました。"))
                 println("POLISH05_PACK_LOADED ${event.player.username}")
             }
             ResourcePackStatus.DECLINED, ResourcePackStatus.FAILED_DOWNLOAD,
@@ -55,7 +55,7 @@ class Polish05Pack private constructor(
         val request = ResourcePackRequest.resourcePackRequest()
             .packs(ResourcePackInfo.resourcePackInfo(id, info.uri(), info.hash()))
             .required(false).replace(false)
-            .prompt(net.kyori.adventure.text.Component.text("Polish05 UI素材を適用します。承認後に /ui で開いてください。"))
+            .prompt(net.kyori.adventure.text.Component.text("Polish05の工房UI素材を適用します。"))
             .build()
         player.sendResourcePacks(request)
     }
@@ -70,9 +70,10 @@ class Polish05Pack private constructor(
     }
 
     companion object {
-        fun start(path: Path, port: Int): Polish05Pack {
+        fun start(path: Path, port: Int): Polish05Pack = start(Files.readAllBytes(path), port)
+
+        fun start(bytes: ByteArray, port: Int): Polish05Pack {
             require(port in 1024..65535 && port !in setOf(25565, 25566, 25570, 18090))
-            val bytes = Files.readAllBytes(path)
             require(bytes.isNotEmpty() && bytes.size <= 32_000_000) { "Invalid Polish05 resource pack size" }
             val entries = mutableSetOf<String>()
             ZipInputStream(bytes.inputStream()).use { zip ->
