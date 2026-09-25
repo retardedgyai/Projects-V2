@@ -17,6 +17,7 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.zip.ZipEntry
+import java.util.zip.ZipInputStream
 import java.util.zip.ZipOutputStream
 
 /** Optional local HTTP distribution; a pack rejection must never block login or game actions. */
@@ -25,7 +26,7 @@ class CoreUiPackServer private constructor(
     private val executor: java.util.concurrent.ExecutorService,
     private val info: ResourcePackInfo,
 ) : AutoCloseable {
-    private class Offer(val player: Player, val callback: (Player, Boolean) -> Unit) {
+    private class Offer(val player: Player, val announce: Boolean, val callback: (Player, Boolean) -> Unit) {
         val state = CoreUiPackOfferState()
     }
     private val offers = ConcurrentHashMap<UUID, Offer>()
@@ -39,7 +40,7 @@ class CoreUiPackServer private constructor(
     fun enabled(player: Player): Boolean = !closed.get() && offers[player.uuid]?.let { it.player === player && it.state.loaded } == true
 
     @Synchronized
-    fun offer(player: Player, onChanged: (Player, Boolean) -> Unit = { _, _ -> }) {
+    fun offer(player: Player, announce: Boolean = true, onChanged: (Player, Boolean) -> Unit = { _, _ -> }) {
         if (closed.get() || !player.isOnline) return
         // Minestom removes request callbacks at the first terminal status. Its event stream also
         // contains later DISCARDED/FAILED_RELOAD, so own this listener for the service's lifetime.
@@ -47,7 +48,7 @@ class CoreUiPackServer private constructor(
             MinecraftServer.getGlobalEventHandler().addListener(statusListener)
             listenerRegistered = true
         }
-        val offer = Offer(player, onChanged)
+        val offer = Offer(player, announce, onChanged)
         val previous = offers.put(player.uuid, offer)
         val wasLoaded = previous?.state?.loaded == true
         previous?.state?.invalidate()
@@ -74,7 +75,7 @@ class CoreUiPackServer private constructor(
         if (closed.get()) return
         val offer = offers[player.uuid]?.takeIf { it.player === player } ?: return
         val change = offer.state.accept(packId, status) ?: return
-        publish(offer, change)
+        publish(offer, change, announce = offer.announce)
         println("CORE_UI_PACK player=${player.username} status=$status customGlyphs=${change.loaded}")
     }
 
@@ -159,12 +160,37 @@ class CoreUiPackServer private constructor(
             require(paths.all(CoreUiPackPolicy::allowedPath)) {
                 "Only scoped heart/food overrides and the combat atlas addition are allowed; never global fonts"
             }
+            val polishBytes = requireNotNull(loader.getResourceAsStream("polish05/pack.zip")) {
+                "Missing Polish05 private-namespace pack"
+            }.use { it.readBytes() }
             val output = ByteArrayOutputStream()
             ZipOutputStream(output).use { zip ->
                 paths.sorted().forEach { path ->
                     val data = requireNotNull(loader.getResourceAsStream("core-ui-pack/$path")) { "Missing UI asset $path" }.use { it.readBytes() }
                     zip.putNextEntry(ZipEntry(path).apply { time = 0L }); zip.write(data); zip.closeEntry()
                 }
+                // Send one pack on login. Two simultaneous resource-pack requests made the
+                // Vanilla client reload twice and could leave the forge unavailable until rejoin.
+                val seen = paths.toMutableSet()
+                var privateAssets = 0
+                ZipInputStream(polishBytes.inputStream()).use { source ->
+                    while (true) {
+                        val entry = source.nextEntry ?: break
+                        val path = entry.name
+                        if (!entry.isDirectory && path != "pack.mcmeta") {
+                            require(path.startsWith("assets/projects_ui_polish05/") || path == "LICENSES/Noto-OFL.txt") {
+                                "Polish05 pack must only add private assets: $path"
+                            }
+                            require(CoreUiPackPolicy.allowedPath(path) && seen.add(path)) { "Duplicate or unsafe Polish05 asset: $path" }
+                            zip.putNextEntry(ZipEntry(path).apply { time = 0L })
+                            source.copyTo(zip)
+                            zip.closeEntry()
+                            if (path.startsWith("assets/projects_ui_polish05/")) privateAssets++
+                        }
+                        source.closeEntry()
+                    }
+                }
+                require(privateAssets > 0) { "Polish05 assets missing from combined pack" }
             }
             return output.toByteArray()
         }
