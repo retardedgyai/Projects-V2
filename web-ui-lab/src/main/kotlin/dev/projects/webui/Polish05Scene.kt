@@ -14,7 +14,7 @@ enum class ForgeLightPhase { IDLE, STRIKING, RESULT_WARM }
 
 class Polish05Scene(private val kit: Path, spriteMap: Path) {
     private companion object {
-        const val TYPOGRAPHY_SCALE=2.0
+        const val TYPOGRAPHY_SCALE=1.175
         const val MODAL_MASK_DEPTH=20
         const val MODAL_BORDER_DEPTH=21
         const val MODAL_PANEL_DEPTH=22

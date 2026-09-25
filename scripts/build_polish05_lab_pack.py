@@ -94,9 +94,8 @@ def main() -> None:
     for name in ("enhance_button", "replenish_row"):
         source = EFFECTS / "enhance_button_smooth.png" if name == "enhance_button" else KIT / "assets/layers" / f"{name}.png"
         image = Image.open(source).convert("RGBA")
-        # Split the 2x button at 100/200 CSS px, outside the centre label.
-        # A 256px split would cut through the first Japanese glyph.
-        cuts = [0, 200, 400, image.width] if name == "enhance_button" else \
+        # Split the button at 100/200 CSS px, outside the centre label and Enter.
+        cuts = [0, round(100 * 1.175), round(200 * 1.175), image.width] if name == "enhance_button" else \
             list(range(0, image.width, 256)) + [image.width]
         for y in range(0, image.height, 256):
             for x, right in zip(cuts, cuts[1:]):

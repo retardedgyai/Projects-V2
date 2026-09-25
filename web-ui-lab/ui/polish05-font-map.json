@@ -181,20 +181,20 @@
   },
   "enhance_button/0_0": {
     "char": "",
-    "width": 200,
-    "height": 102,
+    "width": 118,
+    "height": 60,
     "font": "projects_ui_polish05:plates"
   },
-  "enhance_button/200_0": {
+  "enhance_button/118_0": {
     "char": "",
-    "width": 200,
-    "height": 102,
+    "width": 117,
+    "height": 60,
     "font": "projects_ui_polish05:plates"
   },
-  "enhance_button/400_0": {
+  "enhance_button/235_0": {
     "char": "",
-    "width": 252,
-    "height": 102,
+    "width": 148,
+    "height": 60,
     "font": "projects_ui_polish05:plates"
   },
   "replenish_row/0_0": {
@@ -277,380 +277,380 @@
   },
   "current_level_0": {
     "char": "",
-    "width": 180,
-    "height": 160,
+    "width": 106,
+    "height": 94,
     "font": "projects_ui_polish05:plates"
   },
   "current_level_1": {
     "char": "",
-    "width": 164,
-    "height": 160,
+    "width": 96,
+    "height": 94,
     "font": "projects_ui_polish05:plates"
   },
   "current_level_2": {
     "char": "",
-    "width": 174,
-    "height": 160,
+    "width": 102,
+    "height": 94,
     "font": "projects_ui_polish05:plates"
   },
   "current_level_3": {
     "char": "",
-    "width": 174,
-    "height": 160,
+    "width": 102,
+    "height": 94,
     "font": "projects_ui_polish05:plates"
   },
   "current_level_4": {
     "char": "",
-    "width": 176,
-    "height": 160,
+    "width": 103,
+    "height": 94,
     "font": "projects_ui_polish05:plates"
   },
   "current_level_5": {
     "char": "",
-    "width": 172,
-    "height": 160,
+    "width": 101,
+    "height": 94,
     "font": "projects_ui_polish05:plates"
   },
   "current_level_6": {
     "char": "",
-    "width": 176,
-    "height": 160,
+    "width": 103,
+    "height": 94,
     "font": "projects_ui_polish05:plates"
   },
   "current_level_7": {
     "char": "",
-    "width": 170,
-    "height": 160,
+    "width": 100,
+    "height": 94,
     "font": "projects_ui_polish05:plates"
   },
   "current_level_8": {
     "char": "",
-    "width": 178,
-    "height": 160,
+    "width": 105,
+    "height": 94,
     "font": "projects_ui_polish05:plates"
   },
   "current_level_9": {
     "char": "",
-    "width": 176,
-    "height": 160,
+    "width": 103,
+    "height": 94,
     "font": "projects_ui_polish05:plates"
   },
   "current_level_10": {
     "char": "",
-    "width": 212,
-    "height": 160,
+    "width": 125,
+    "height": 94,
     "font": "projects_ui_polish05:plates"
   },
   "current_level_11": {
     "char": "",
-    "width": 198,
-    "height": 160,
+    "width": 116,
+    "height": 94,
     "font": "projects_ui_polish05:plates"
   },
   "current_level_12": {
     "char": "",
-    "width": 208,
-    "height": 160,
+    "width": 122,
+    "height": 94,
     "font": "projects_ui_polish05:plates"
   },
   "current_level_13": {
     "char": "",
-    "width": 208,
-    "height": 160,
+    "width": 122,
+    "height": 94,
     "font": "projects_ui_polish05:plates"
   },
   "current_level_14": {
     "char": "",
-    "width": 208,
-    "height": 160,
+    "width": 122,
+    "height": 94,
     "font": "projects_ui_polish05:plates"
   },
   "current_level_15": {
     "char": "",
-    "width": 206,
-    "height": 160,
+    "width": 121,
+    "height": 94,
     "font": "projects_ui_polish05:plates"
   },
   "current_level_16": {
     "char": "",
-    "width": 208,
-    "height": 160,
+    "width": 122,
+    "height": 94,
     "font": "projects_ui_polish05:plates"
   },
   "current_level_17": {
     "char": "",
-    "width": 204,
-    "height": 160,
+    "width": 120,
+    "height": 94,
     "font": "projects_ui_polish05:plates"
   },
   "current_level_18": {
     "char": "",
-    "width": 212,
-    "height": 160,
+    "width": 125,
+    "height": 94,
     "font": "projects_ui_polish05:plates"
   },
   "current_level_19": {
     "char": "",
-    "width": 208,
-    "height": 160,
+    "width": 122,
+    "height": 94,
     "font": "projects_ui_polish05:plates"
   },
   "current_level_20": {
     "char": "",
-    "width": 222,
-    "height": 160,
+    "width": 130,
+    "height": 94,
     "font": "projects_ui_polish05:plates"
   },
   "current_level_21": {
     "char": "",
-    "width": 208,
-    "height": 160,
+    "width": 122,
+    "height": 94,
     "font": "projects_ui_polish05:plates"
   },
   "current_level_22": {
     "char": "",
-    "width": 218,
-    "height": 160,
+    "width": 128,
+    "height": 94,
     "font": "projects_ui_polish05:plates"
   },
   "current_level_23": {
     "char": "",
-    "width": 218,
-    "height": 160,
+    "width": 128,
+    "height": 94,
     "font": "projects_ui_polish05:plates"
   },
   "current_level_24": {
     "char": "",
-    "width": 218,
-    "height": 160,
+    "width": 128,
+    "height": 94,
     "font": "projects_ui_polish05:plates"
   },
   "current_level_25": {
     "char": "",
-    "width": 216,
-    "height": 160,
+    "width": 127,
+    "height": 94,
     "font": "projects_ui_polish05:plates"
   },
   "current_level_26": {
     "char": "",
-    "width": 218,
-    "height": 160,
+    "width": 128,
+    "height": 94,
     "font": "projects_ui_polish05:plates"
   },
   "current_level_27": {
     "char": "",
-    "width": 214,
-    "height": 160,
+    "width": 126,
+    "height": 94,
     "font": "projects_ui_polish05:plates"
   },
   "current_level_28": {
     "char": "",
-    "width": 222,
-    "height": 160,
+    "width": 130,
+    "height": 94,
     "font": "projects_ui_polish05:plates"
   },
   "current_level_29": {
     "char": "",
-    "width": 218,
-    "height": 160,
+    "width": 128,
+    "height": 94,
     "font": "projects_ui_polish05:plates"
   },
   "current_level_30": {
     "char": "",
-    "width": 222,
-    "height": 160,
+    "width": 130,
+    "height": 94,
     "font": "projects_ui_polish05:plates"
   },
   "next_level_0": {
     "char": "",
-    "width": 180,
-    "height": 160,
+    "width": 106,
+    "height": 94,
     "font": "projects_ui_polish05:plates"
   },
   "next_level_1": {
     "char": "",
-    "width": 164,
-    "height": 160,
+    "width": 96,
+    "height": 94,
     "font": "projects_ui_polish05:plates"
   },
   "next_level_2": {
     "char": "",
-    "width": 174,
-    "height": 160,
+    "width": 102,
+    "height": 94,
     "font": "projects_ui_polish05:plates"
   },
   "next_level_3": {
     "char": "",
-    "width": 174,
-    "height": 160,
+    "width": 102,
+    "height": 94,
     "font": "projects_ui_polish05:plates"
   },
   "next_level_4": {
     "char": "",
-    "width": 176,
-    "height": 160,
+    "width": 103,
+    "height": 94,
     "font": "projects_ui_polish05:plates"
   },
   "next_level_5": {
     "char": "",
-    "width": 172,
-    "height": 160,
+    "width": 101,
+    "height": 94,
     "font": "projects_ui_polish05:plates"
   },
   "next_level_6": {
     "char": "",
-    "width": 176,
-    "height": 160,
+    "width": 103,
+    "height": 94,
     "font": "projects_ui_polish05:plates"
   },
   "next_level_7": {
     "char": "",
-    "width": 170,
-    "height": 160,
+    "width": 100,
+    "height": 94,
     "font": "projects_ui_polish05:plates"
   },
   "next_level_8": {
     "char": "",
-    "width": 178,
-    "height": 160,
+    "width": 105,
+    "height": 94,
     "font": "projects_ui_polish05:plates"
   },
   "next_level_9": {
     "char": "",
-    "width": 176,
-    "height": 160,
+    "width": 103,
+    "height": 94,
     "font": "projects_ui_polish05:plates"
   },
   "next_level_10": {
     "char": "",
-    "width": 212,
-    "height": 160,
+    "width": 125,
+    "height": 94,
     "font": "projects_ui_polish05:plates"
   },
   "next_level_11": {
     "char": "",
-    "width": 198,
-    "height": 160,
+    "width": 116,
+    "height": 94,
     "font": "projects_ui_polish05:plates"
   },
   "next_level_12": {
     "char": "",
-    "width": 208,
-    "height": 160,
+    "width": 122,
+    "height": 94,
     "font": "projects_ui_polish05:plates"
   },
   "next_level_13": {
     "char": "",
-    "width": 208,
-    "height": 160,
+    "width": 122,
+    "height": 94,
     "font": "projects_ui_polish05:plates"
   },
   "next_level_14": {
     "char": "",
-    "width": 208,
-    "height": 160,
+    "width": 122,
+    "height": 94,
     "font": "projects_ui_polish05:plates"
   },
   "next_level_15": {
     "char": "",
-    "width": 206,
-    "height": 160,
+    "width": 121,
+    "height": 94,
     "font": "projects_ui_polish05:plates"
   },
   "next_level_16": {
     "char": "",
-    "width": 208,
-    "height": 160,
+    "width": 122,
+    "height": 94,
     "font": "projects_ui_polish05:plates"
   },
   "next_level_17": {
     "char": "",
-    "width": 204,
-    "height": 160,
+    "width": 120,
+    "height": 94,
     "font": "projects_ui_polish05:plates"
   },
   "next_level_18": {
     "char": "",
-    "width": 212,
-    "height": 160,
+    "width": 125,
+    "height": 94,
     "font": "projects_ui_polish05:plates"
   },
   "next_level_19": {
     "char": "",
-    "width": 208,
-    "height": 160,
+    "width": 122,
+    "height": 94,
     "font": "projects_ui_polish05:plates"
   },
   "next_level_20": {
     "char": "",
-    "width": 222,
-    "height": 160,
+    "width": 130,
+    "height": 94,
     "font": "projects_ui_polish05:plates"
   },
   "next_level_21": {
     "char": "",
-    "width": 208,
-    "height": 160,
+    "width": 122,
+    "height": 94,
     "font": "projects_ui_polish05:plates"
   },
   "next_level_22": {
     "char": "",
-    "width": 218,
-    "height": 160,
+    "width": 128,
+    "height": 94,
     "font": "projects_ui_polish05:plates"
   },
   "next_level_23": {
     "char": "",
-    "width": 218,
-    "height": 160,
+    "width": 128,
+    "height": 94,
     "font": "projects_ui_polish05:plates"
   },
   "next_level_24": {
     "char": "",
-    "width": 218,
-    "height": 160,
+    "width": 128,
+    "height": 94,
     "font": "projects_ui_polish05:plates"
   },
   "next_level_25": {
     "char": "",
-    "width": 216,
-    "height": 160,
+    "width": 127,
+    "height": 94,
     "font": "projects_ui_polish05:plates"
   },
   "next_level_26": {
     "char": "",
-    "width": 218,
-    "height": 160,
+    "width": 128,
+    "height": 94,
     "font": "projects_ui_polish05:plates"
   },
   "next_level_27": {
     "char": "",
-    "width": 214,
-    "height": 160,
+    "width": 126,
+    "height": 94,
     "font": "projects_ui_polish05:plates"
   },
   "next_level_28": {
     "char": "",
-    "width": 222,
-    "height": 160,
+    "width": 130,
+    "height": 94,
     "font": "projects_ui_polish05:plates"
   },
   "next_level_29": {
     "char": "",
-    "width": 218,
-    "height": 160,
+    "width": 128,
+    "height": 94,
     "font": "projects_ui_polish05:plates"
   },
   "next_level_30": {
     "char": "",
-    "width": 222,
-    "height": 160,
+    "width": 130,
+    "height": 94,
     "font": "projects_ui_polish05:plates"
   },
   "next_level_max": {
     "char": "",
-    "width": 256,
-    "height": 160,
+    "width": 154,
+    "height": 94,
     "font": "projects_ui_polish05:plates"
   },
   "gear_selected": {
@@ -685,8 +685,8 @@
   },
   "tab_label_forge_smooth": {
     "char": "",
-    "width": 132,
-    "height": 60,
+    "width": 78,
+    "height": 35,
     "font": "projects_ui_polish05:plates"
   },
   "catalyst_off": {

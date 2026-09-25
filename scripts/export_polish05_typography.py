@@ -17,6 +17,7 @@ from playwright.sync_api import sync_playwright
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "assets/ui/polish05-import/reference/ProjectS_UI_Polish05_Workbench.html"
 OUT = ROOT / "web-ui-lab/ui/polish05-effects"
+RASTER_SCALE = 1.175  # Matches the direct Vanilla client's 1920x1080 forge projection.
 
 
 def save_smooth(raw: bytes, size: tuple[int, int], destination: Path) -> None:
@@ -24,9 +25,10 @@ def save_smooth(raw: bytes, size: tuple[int, int], destination: Path) -> None:
     # Chrome rounds fractional element bounds outwards at high DPI.
     assert abs(image.width - size[0] * 3) <= 3 and abs(image.height - size[1] * 3) <= 3, \
         (destination.name, image.size, size)
-    # Keep two texture pixels per approved CSS pixel. Vanilla then downsamples
-    # the glyph at display time instead of magnifying a 1x bitmap edge.
-    image = image.resize((size[0] * 2, size[1] * 2), Image.Resampling.LANCZOS)
+    # Keep approximately one texture pixel per displayed screen pixel. The
+    # direct client projects one approved CSS pixel to about 1.17 screen px.
+    image = image.resize((round(size[0] * RASTER_SCALE), round(size[1] * RASTER_SCALE)),
+                         Image.Resampling.LANCZOS)
     if destination.name == "next_level_max.png" and image.width > 256:
         # The final six pixels are empty shadow padding. Vanilla bitmap
         # providers reject a glyph wider than 256px.
