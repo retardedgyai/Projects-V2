@@ -26,7 +26,7 @@ import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
 
-/** Only installed in the separate UI lab server. Never intercepts normal ProjectS gameplay packets. */
+/** Captures packets only while a player is viewing a display UI, in the lab or at the harbor smith. */
 class UiSessions(
     events: EventNode<Event>, private val path: Path?,
     private val packReady: (Player) -> Boolean = { true },
@@ -57,7 +57,7 @@ class UiSessions(
         var lastClickSound=0L
     }
     private data class Retired(val pending: MutableSet<Int>,val expires: Long)
-    private val retired=mutableMapOf<UUID,Retired>()
+    private val retired=ConcurrentHashMap<UUID,Retired>()
     private val sessions=ConcurrentHashMap<UUID,Session>()
     private val ids=AtomicInteger(-10_000)
     val sessionCount get() = sessions.size
@@ -113,7 +113,7 @@ class UiSessions(
             }
         }
     }
-    fun close(player: Player, restore: Boolean=true) {
+    fun close(player: Player, restore: Boolean=true, teleportBack: Boolean=true) {
         val s=sessions.remove(player.uuid)?:return
         // Replies to already sent sample packets may arrive after the menu has closed.
         val old=retired[player.uuid]
@@ -122,7 +122,7 @@ class UiSessions(
             player.sendPacket(CameraPacket(player.entityId))
             player.sendPacket(ChangeGameStatePacket(ChangeGameStatePacket.Reason.CHANGE_GAMEMODE,player.gameMode.ordinal.toFloat()))
             player.setHeldItemSlot(player.heldSlot)
-            player.teleport(s.saved)
+            if(teleportBack) player.teleport(s.saved)
         }
         s.queue.clear();s.pending.clear();s.renderer.close();s.camera.remove()
         if(s.polish!=null) POLISH_SOUNDS.forEach { player.stopSound(SoundStop.named(Key.key("projects_ui_polish05:ui.$it"))) }
@@ -205,7 +205,7 @@ class UiSessions(
         if(kotlin.math.abs(pitch)>70 && s.pending.isEmpty()) sample(s,true)
     }
     private fun tick(s: Session) {
-        if(s.player.instance!==s.camera.instance || s.camera.isRemoved) { close(s.player,false);return }
+        if(s.player.instance!==s.camera.instance || s.camera.isRemoved) { close(s.player,teleportBack=false);return }
         if(s.polish!=null && !packReady(s.player)) { close(s.player);return }
         val now=System.nanoTime()
         if(now-s.lastResponse>5_000_000_000L) {

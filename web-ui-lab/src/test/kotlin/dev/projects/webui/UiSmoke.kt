@@ -109,8 +109,16 @@ fun main(args: Array<String>) {
             // Minestom itself gates movement until the authoritative restore teleport is acknowledged.
             check(first.lastSentTeleportId!=first.lastReceivedTeleportId)
         }
+        // A transfer close restores the camera/mode without issuing a return teleport.
+        sessions.open(first)
+        val teleportsBefore=packets.filterIsInstance<PlayerPositionAndLookPacket>().size
+        sessions.close(first,teleportBack=false)
+        check(sessions.sessionCount==0)
+        check(packets.filterIsInstance<PlayerPositionAndLookPacket>().size==teleportsBefore)
+        check(packets.filterIsInstance<CameraPacket>().last().cameraId()==first.entityId)
+        check(packets.filterIsInstance<ChangeGameStatePacket>().last().value()==first.gameMode.ordinal.toFloat())
         check(instance.entities.all { it===first || it===second })
-        println("UI_SMOKE_PASS 60 TPS; 5 cycles; immediate rotation/click; idle updates=0; cursor move=3 position packets, no transform interpolation; hover metadata<=2; private entities; restored mode/camera/slot; zero leaks")
+        println("UI_SMOKE_PASS 60 TPS; 5 cycles; immediate rotation/click; idle updates=0; cursor move=3 position packets, no transform interpolation; hover metadata<=2; private entities; restored mode/camera/slot; transfer-safe close; zero leaks")
     } finally {
         sessions.close();first.remove();second.remove();MinecraftServer.stopCleanly()
     }

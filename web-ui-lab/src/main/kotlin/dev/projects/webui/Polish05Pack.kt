@@ -24,7 +24,7 @@ class Polish05Pack private constructor(
     private val executor: java.util.concurrent.ExecutorService,
     private val info: ResourcePackInfo,
 ) : AutoCloseable {
-    private data class Offer(val player: Player, val id: UUID, var loaded: Boolean = false)
+    private data class Offer(val player: Player, val id: UUID, @Volatile var loaded: Boolean = false)
     private val offers = ConcurrentHashMap<UUID, Offer>()
     private val listener = EventListener.of(PlayerResourcePackStatusEvent::class.java) { event ->
         val offer = offers[event.player.uuid] ?: return@of
