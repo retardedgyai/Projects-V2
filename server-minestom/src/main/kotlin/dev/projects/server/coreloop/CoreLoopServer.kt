@@ -436,7 +436,17 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
             setDefaultExecutor { sender, _ -> (sender as? Player)?.let { returnToHarbor(it) } }
         })
         MinecraftServer.getCommandManager().register(Command("colony").apply {
-            setDefaultExecutor { sender, _ -> (sender as? Player)?.let(::enterColony) }
+            setDefaultExecutor { sender, _ -> (sender as? Player)?.let { enterColony(it) } }
+        })
+        MinecraftServer.getCommandManager().register(Command("researchtest").apply {
+            setDefaultExecutor { sender, _ -> (sender as? Player)?.let { player ->
+                val colony = colonies[player.uuid]?.takeIf { it.instance === player.instance }
+                when {
+                    colony != null -> prepareResearchTest(player, colony)
+                    player.instance === hub -> enterColony(player, researchTest = true)
+                    else -> player.sendMessage(CoreLoopItems.text("先に /hub で港へ戻ってから /researchtest を使ってください", NamedTextColor.YELLOW))
+                }
+            } }
         })
         MinecraftServer.getCommandManager().register(Command("effects").apply {
             setDefaultExecutor { sender, _ -> (sender as? Player)?.let {
@@ -563,7 +573,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         }
     }
 
-    private fun enterColony(player: Player) {
+    private fun enterColony(player: Player, researchTest: Boolean = false) {
         if (!requireHub(player) || !magicBusy.add(player.uuid)) return
         val state = firstMagic.snapshot(player.uuid) ?: run { magicBusy.remove(player.uuid); return }
         val colony = try {
@@ -587,6 +597,10 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
                 player.respawnPoint = colony.spawn
                 actors[player.uuid]?.reset()
                 colony.showModels(player, packed(player))
+                if (researchTest) {
+                    prepareResearchTest(player, colony)
+                    return@scheduleNextTick
+                }
                 FirstMagicColonyItems.issue(player, colony, packed(player))
                 player.showTitle(Title.title(CoreLoopItems.text("自分のコロニー", NamedTextColor.GOLD),
                     CoreLoopItems.text("古い観測工房が庭の奥に眠っている", NamedTextColor.AQUA)))
@@ -594,6 +608,44 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
                     player.sendMessage(CoreLoopItems.text("持ち帰った素材に古い区画が反応した。研究机を手に持って、庭へ置こう", NamedTextColor.AQUA))
                 }
                 else player.sendMessage(CoreLoopItems.text(if (state.hasMaterial) "手持ちの設備を庭へ置き、研究机から未知を調べよう" else "設備を手に持って右クリックで配置。遠征で異質素材を拾い、この庭へ持ち帰ろう", NamedTextColor.AQUA))
+            }
+        }
+    }
+
+    private fun prepareResearchTest(player: Player, colony: FirstMagicColony) {
+        if (!magicBusy.add(player.uuid)) return
+        val missing = AnomalousMaterial.entries.filter { FirstMagicInventory.count(player, it) == 0 }
+        val freeSlots = (0 until 36).count { player.inventory.getItemStack(it).isAir }
+        if (missing.size > freeSlots) {
+            magicBusy.remove(player.uuid)
+            player.sendMessage(CoreLoopItems.text("素材用にインベントリを${missing.size - freeSlots}枠空けて、/researchtest をもう一度使ってください", NamedTextColor.YELLOW))
+            return
+        }
+        firstMagic.change(player.uuid, FirstMagicAction.PrepareResearchTest).whenComplete { result, failure ->
+            player.scheduler().scheduleNextTick {
+                magicBusy.remove(player.uuid)
+                if (connections[player.uuid] !== player || colonies[player.uuid] !== colony || player.instance !== colony.instance) return@scheduleNextTick
+                if (failure != null || result == null) {
+                    player.sendMessage(CoreLoopItems.text("研究テストの準備を保存できませんでした", NamedTextColor.RED))
+                    System.err.println("RESEARCH_TEST_PREPARE_FAILURE player=${player.uuid}: $failure")
+                    return@scheduleNextTick
+                }
+                val notIssued = missing.filterNot { FirstMagicInventory.add(player, it, packed(player)) }
+                if (notIssued.isNotEmpty()) {
+                    player.sendMessage(CoreLoopItems.text("素材を収納できませんでした。空きを作って /researchtest を再実行してください", NamedTextColor.YELLOW))
+                    return@scheduleNextTick
+                }
+                val deskWasPlaced = colony.has(ColonyPlaceable.DESK)
+                val deskSpots = listOf(BlockVec(8, 41, 4), BlockVec(2, 41, 2), BlockVec(-2, 41, 2)) +
+                    (-4..6).flatMap { z -> (-7..9).map { x -> BlockVec(x, 41, z) } }
+                val deskReady = deskWasPlaced || runCatching { deskSpots.any { colony.place(ColonyPlaceable.DESK, it, BlockFace.SOUTH) } }
+                    .onFailure { System.err.println("RESEARCH_TEST_DESK_FAILURE player=${player.uuid}: $it") }.getOrDefault(false)
+                if (deskReady && !deskWasPlaced) FirstMagicColonyItems.removeOne(player, ColonyPlaceable.DESK)
+                colony.update(result.state)
+                FirstMagicColonyItems.issue(player, colony, packed(player))
+                player.sendMessage(CoreLoopItems.text("/researchtest：6素材を用意し、研究を始められます。インクは再実行で補充できます", NamedTextColor.AQUA))
+                if (deskReady) magicMenus.desk(player)
+                else player.sendMessage(CoreLoopItems.text("研究机の自動設置場所がありません。手持ちの研究机を庭に置いてください", NamedTextColor.YELLOW))
             }
         }
     }

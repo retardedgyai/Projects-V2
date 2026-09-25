@@ -26,4 +26,6 @@ Playground branch: `play/gyai/aspect-research-slice` (from `play/gyai/colony-fir
 
 ## Manual Smoke
 
-JDK 25で `./gradlew :server-minestom:run` を起動し、バニラ Minecraft 26.2 クライアントで接続する。サーバー配布リソースパックの読み込み後、研究机から盤面に入り、合成、誤配置、取り消し、解明、再接続後の保存状態を確認する。最終的な見た目と手触りはCreatorがゲーム内で判定する。
+JDK 25で `./gradlew :server-minestom:run` を起動し、バニラ Minecraft 26.2 クライアントで接続する。港またはコロニーで `/researchtest` を入力すると、コロニーへ移動し、研究机と6素材を用意して研究机画面を開く。インクが足りなくなったら同じコマンドで補充できる。遠征中なら `/hub` で港へ戻ってから入力する。
+
+サーバー配布リソースパックの読み込み後、素材分析、Aspect合成、六角盤の誤配置と取り消し、解明、再接続後の保存状態を確認する。最終的な見た目と手触りはCreatorがゲーム内で判定する。

@@ -57,6 +57,17 @@ internal object FirstMagicColonyItems {
         return true
     }
 
+    fun removeOne(player: Player, placeable: ColonyPlaceable): Boolean {
+        for (slot in 0 until 36) {
+            val item = player.inventory.getItemStack(slot)
+            if (kind(item) == placeable) {
+                player.inventory.setItemStack(slot, if (item.amount() == 1) ItemStack.AIR else item.withAmount(item.amount() - 1))
+                return true
+            }
+        }
+        return false
+    }
+
     fun reskin(player: Player, packed: Boolean) {
         for (slot in 0 until 36) {
             val previous = player.inventory.getItemStack(slot)

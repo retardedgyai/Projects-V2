@@ -45,6 +45,7 @@ internal data class FirstMagicState(
 }
 
 internal sealed interface FirstMagicAction {
+    data object PrepareResearchTest : FirstMagicAction
     data class Collect(val material: AnomalousMaterial) : FirstMagicAction
     data object React : FirstMagicAction
     data object RestoreDesk : FirstMagicAction
@@ -62,6 +63,15 @@ internal object FirstMagicRules {
     const val MATERIAL_CAPACITY = 64
 
     fun apply(before: FirstMagicState, action: FirstMagicAction): FirstMagicChange = when (action) {
+        FirstMagicAction.PrepareResearchTest -> {
+            val next = before.copy(
+                materialCounts = before.materialCounts + AnomalousMaterial.entries.associateWith { maxOf(before.count(it), 1) },
+                reacted = true,
+                deskRestored = true,
+                researchInk = before.researchInk + before.discoveredResearchAspects.associateWith { maxOf(before.ink(it), 16) },
+            )
+            FirstMagicChange(next, "研究テスト用の素材と研究インクを補充した", next != before)
+        }
         is FirstMagicAction.Collect -> {
             val count = before.count(action.material)
             if (count >= MATERIAL_CAPACITY) FirstMagicChange(before, "素材袋がいっぱいです", false)

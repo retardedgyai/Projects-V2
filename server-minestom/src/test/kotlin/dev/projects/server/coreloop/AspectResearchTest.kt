@@ -10,6 +10,21 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class AspectResearchTest {
+    @Test fun researchTestPreparationCanBeRepeatedWithoutResettingProgress() {
+        val first = FirstMagicRules.apply(FirstMagicState(), FirstMagicAction.PrepareResearchTest)
+        assertTrue(first.changed)
+        assertTrue(first.state.deskRestored)
+        assertEquals(AnomalousMaterial.entries.toSet(), first.state.materialCounts.keys)
+        assertTrue(AnomalousMaterial.entries.all { first.state.count(it) == 1 })
+        val analyzed = FirstMagicRules.apply(first.state, FirstMagicAction.Analyze(AnomalousMaterial.MOONBELL)).state
+        val spent = analyzed.copy(researchInk = analyzed.researchInk + ("aer" to 0), unlockedResearch = setOf("lamp"))
+        val replenished = FirstMagicRules.apply(spent, FirstMagicAction.PrepareResearchTest).state
+        assertEquals(16, replenished.ink("aer"))
+        assertEquals(setOf("lamp"), replenished.unlockedResearch)
+        assertEquals(analyzed.studied, replenished.studied)
+        assertFalse(FirstMagicRules.apply(replenished, FirstMagicAction.PrepareResearchTest).changed)
+    }
+
     @Test fun everyAspectHasAPackedHexToken() {
         val loader = javaClass.classLoader
         val index = loader.getResourceAsStream("core-ui-pack/index.txt")!!.bufferedReader().use { it.readLines().toSet() }
