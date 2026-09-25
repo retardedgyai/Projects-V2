@@ -14,14 +14,19 @@ identity. Both rejected concepts remain in Git history or the D drive archive.
 The creator's [X reference list](https://x.com/i/lists/2097375828187496504)
 is recorded in [the earlier reference review](slash-reference-finish-2026-09-09.md).
 The list and linked posts currently reject direct unauthenticated access; do
-not claim this pass directly inspected those posts. The final candidate uses
-ProjectS's own pixel-relic source painting, compiled to 16×16 opaque-or-clear
-pixels with a 12-color limit. This preserves the warm forge palette and paired
-raw/refined material subjects while matching Minecraft's inventory pixel
-density. The same 11 sprite pixels feed the smith, storage item models, and
-core menu glyphs. The approved sword, layout, glow, and sound stay as they
-were. A nearest-neighbor [preview](../../assets/core-ui/forge-v3-existing/preview.png)
-shows every icon at inspection size. Live account values are unchanged.
+not claim this pass directly inspected those posts. The first 16 px candidate
+downsampled ProjectS's existing relic sheet. The user's screenshot confirmed
+that pack loaded, but the result looked too close to the old sprites to register
+as a redesign. The current candidate redraws all 11 material subjects in a
+shared gold, umber, ash, and violet palette, using the approved HTML's material
+art as style references. Raw and processed states have distinct silhouettes.
+The generated high-resolution work files are archived on the D drive under
+`material-art-v4-source-ai`; the final transparent 16×16 sprites are committed
+at [`forge-v4/source`](../../assets/core-ui/forge-v4/source). The same exact 11
+sprites feed the smith, storage item models, and core menu glyphs. The approved
+sword, layout, glow, and sound stay as they were. A nearest-neighbor
+[preview](../../assets/core-ui/forge-v4/preview.png) shows each icon at
+inspection size. Live account values are unchanged.
 
 ## Cursor diagnosis
 

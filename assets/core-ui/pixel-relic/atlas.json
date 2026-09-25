@@ -386,7 +386,17 @@
   "sources": {
     "materials": "646c707be8181d0d1091211bb43a71ba619b2657495b0c110d3f70801bf0d98b",
     "symbols": "591a2d87829f84fb8567319ecac283801d4d997db0a3f66eb3e0d549ea5e3a61",
-    "affix_dust": "a92446b7b09f486b3d50ce67dd8bc33c04b7d8a77a093a50c5b9aa884c88be89"
+    "forge_v4_wood": "90eb9dc4478b40f976bb12f395a6320ee263463aa1bcdbff1115e5158bb31f5f",
+    "forge_v4_ore": "03481529258ef270c9d47f96bee663df909cc9ce9d003897af2b6133153684ae",
+    "forge_v4_stone": "77e2759bfd1eeb42f21fef8044c09c76d2677e99af457eb5c078467ede9f1324",
+    "forge_v4_hide": "734225f36da2f9562d6b79bd6c7792b06c504bb685fe42d3c6b3300f8b23e161",
+    "forge_v4_fiber": "cfc0cc61615a854e9fcd0a510b939158e5f9bf4f15176c17f5952d94652d9fc3",
+    "forge_v4_board": "87ff3118459027a44368881dcfd1b6bc6a9d25ed97c0e0f294df00ce2a3b5339",
+    "forge_v4_ingot": "7c3a417276d2c77cc038c6e3109266ca03a5e83d4865f66fa8f3314387c74ebc",
+    "forge_v4_cut_stone": "175993bbbe1574c459d9276e89b61cfb2c09b54016e811b3701de0815366c6cf",
+    "forge_v4_leather": "2bba8f5215a5742e7615ab83a643deb136107d2829f53d637ed2dfbe5a16ea1a",
+    "forge_v4_cloth": "37af2dfccbae44de64d608c4f694c3f63522dd9378a14cf3b938dd5934f13739",
+    "forge_v4_affix_dust": "eb1382390bc2c43d5a3a210ba226e6d24237672c392a0e8ff2ade1207d704d06"
   },
-  "build": "ProjectS material source at 16px; atlas uses nearest-neighbor 32px; 12-color binary-alpha inventory sprites"
+  "build": "ProjectS material source at 16px; atlas uses nearest-neighbor 32px; binary-alpha inventory sprites"
 }

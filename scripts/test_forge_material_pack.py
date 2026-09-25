@@ -10,6 +10,7 @@ CORE = ROOT / "server-minestom/src/main/resources/core-ui-pack/assets/projects"
 POLISH = ROOT / "server-minestom/src/main/resources/polish05"
 NAMES = ("wood", "ore", "stone", "hide", "fiber", "board", "ingot",
          "cut_stone", "leather", "cloth", "affix_dust")
+SOURCE = ROOT / "assets/core-ui/forge-v4/source"
 
 
 def main():
@@ -17,6 +18,7 @@ def main():
     with zipfile.ZipFile(POLISH / "pack.zip") as pack:
         for name in NAMES:
             core = CORE / f"textures/item/forge_materials/{name}.png"
+            assert core.read_bytes() == (SOURCE / f"{name}.png").read_bytes(), name
             with Image.open(core) as image:
                 assert image.size == (16, 16), name
                 assert image.getchannel("A").getbbox() is not None, name
