@@ -90,6 +90,9 @@ class UiSessions(
             }
         }
         val s=Session(player,player.position,document,camera,UiRenderer(player,origin),polishScene)
+        // At Vanilla 26.2's presentation FOV, 1.0 crops the approved 1440×920
+        // stage on a 1920×1080 client. 0.8 matches the HTML's 1080px-fit scale.
+        if(s.polish!=null)s.renderer.zoom=0.8
         sessions[player.uuid]=s
         camera.setInstance(player.instance!!,origin).whenComplete { _,error ->
             if(error!=null || sessions[player.uuid]!==s) {

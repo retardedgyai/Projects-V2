@@ -35,14 +35,15 @@ class Polish05Scene(private val kit: Path, spriteMap: Path) {
     }
     private fun put(nodes: MutableList<UiNode>, id:String,x:Number,y:Number,w:Number,h:Number,text:String="",
                     color:String="#e7e0cd",size:Double=16.0,bg:String?=null,action:String?=null,
-                    sprite:String?=null,depth:Int=7,align:String="left") {
-        val style=mutableMapOf("color" to color,"font-size" to "${size*screen.scale}px","text-align" to align)
+                    sprite:String?=null,depth:Int=7,align:String="left",family:String="sans") {
+        val style=mutableMapOf("color" to color,"font-size" to "${size*screen.scale}px","text-align" to align,
+            "font-family" to "projects_ui_polish05:$family")
         if(bg!=null)style["background-color"]=bg
         nodes+=UiNode(id,rect(x,y,w,h),text,style,action,null,true,depth,sprite?.let(sprites::getValue))
     }
     private fun shell(model: Polish05PreviewModel, muted:Boolean): MutableList<UiNode> = forge(model,muted=muted).nodes.filter { n ->
-        n.id in setOf("page","brand","eyebrow","heading","sound-box","sound-label","wallet-icon","wallet","wallet-unit","close","footer-help","footer-state") ||
-            n.id.startsWith("tile-window_chrome/") || n.id.startsWith("tab-")
+        n.id in setOf("viewport-backdrop","page","brand","eyebrow","heading","sound-box","sound-label","wallet-icon","wallet","wallet-unit","close","footer-help","footer-state","workshop-icon","workshop-text") ||
+            n.id.startsWith("tile-window_chrome/") || (n.id.startsWith("tab-") && n.id!="tab-forge")
     }.toMutableList()
     private fun hit(nodes:MutableList<UiNode>,id:String,x:Number,y:Number,w:Number,h:Number,action:String) =
         put(nodes,id,x,y,w,h,action=action,depth=10)
@@ -52,8 +53,7 @@ class Polish05Scene(private val kit: Path, spriteMap: Path) {
         val gear=snap.gears.firstOrNull { it.id==bagSelected } ?: snap.gears.first()
         val nodes=shell(model,muted)
         put(nodes,"inventory-body",79,214,1282,575,bg="#171d1e",depth=5)
-        put(nodes,"inventory-tab",607,150,138,63,bg="#37342d",depth=6)
-        put(nodes,"inventory-tab-text",631,169,110,31,"▣  装備庫",size=18.0,depth=7)
+        put(nodes,"inventory-tab",607,150,138,63,bg="#37342d",depth=2)
         put(nodes,"inventory-heading",99,239,234,27,"旅の持ち物   14 / 32",size=19.0)
         put(nodes,"inventory-filter",713,236,251,30,"すべて     武器     素材     その他",size=12.0,color="#b4b9ac")
         val items=listOf(
@@ -80,7 +80,7 @@ class Polish05Scene(private val kit: Path, spriteMap: Path) {
         put(nodes,"bag-instruction",99,654,600,24,"クリックで選択 · 武器は比較してから工房へ",size=12.0,color="#a4aa9e")
         put(nodes,"bag-detail-bg",991,235,350,548,bg="#202829")
         put(nodes,"bag-rarity",1015,256,270,18,"${if(gear.tier==2)"希少" else "魔法"}装備  ·  大剣  ·  T${gear.tier}",size=11.0,color="#b7a9c7")
-        put(nodes,"bag-name",1015,283,300,33,"${gear.name} +${gear.level}",size=22.0)
+        put(nodes,"bag-name",1015,283,300,33,"${gear.name} +${gear.level}",size=22.0,family="serif")
         put(nodes,"bag-weapon",1143,325,if(gear.id=="ember")32 else 28,if(gear.id=="ember")95 else 83,
             sprite=if(gear.id=="ember")"sword_t2_hero" else "greatsword_hero",depth=8)
         put(nodes,"bag-power",1015,431,270,49,"${gear.power}  物理攻撃",size=28.0)
@@ -122,8 +122,7 @@ class Polish05Scene(private val kit: Path, spriteMap: Path) {
         val fee=if(ore)80 else 60
         val nodes=shell(model,muted)
         put(nodes,"refine-body",79,214,1282,575,bg="#171d1e",depth=5)
-        put(nodes,"refine-tab",475,150,130,63,bg="#37342d",depth=6)
-        put(nodes,"refine-tab-text",505,169,92,31,"♧  精錬",size=18.0,depth=7)
+        put(nodes,"refine-tab",475,150,130,63,bg="#37342d",depth=2)
         put(nodes,"refine-left-title",99,238,210,25,"精錬できる素材     02",size=16.0)
         for(index in 0..1) {
             val y=281+index*82
@@ -136,7 +135,7 @@ class Polish05Scene(private val kit: Path, spriteMap: Path) {
         put(nodes,"refine-left-note",99,463,239,49,"作った素材は素材袋に入ります。\n強化画面に戻って、そのまま使用できます。",size=12.0,color="#a4aa9d")
         put(nodes,"refine-selected-gear",99,535,239,67,"${snap.gears.single { it.id==snap.selected }.name}の強化準備\n不足 ${replenishment.missing}個",size=12.0,color="#c2bb9d")
         if(returnToForge)put(nodes,"return-forge",99,605,238,35,"装備の強化に戻る  ›",size=12.0,action="view:forge",color="#d3bc86")
-        put(nodes,"refine-title",555,258,250,40,if(ore)"陽鉱の精製" else "虚晶の研磨",size=27.0,align="center")
+        put(nodes,"refine-title",555,258,250,40,if(ore)"陽鉱の精製" else "虚晶の研磨",size=27.0,align="center",family="serif")
         put(nodes,"refine-subtitle",530,307,300,22,"砕き、熔かし、不純物を取り除く。",size=12.0,color="#a8a18c",align="center")
         // The approved forge art is reused in the refinery stage, with the original material icon.
         sprites.keys.filter { it.startsWith("forge_environment_plate/") }.forEach { key ->
@@ -187,9 +186,10 @@ class Polish05Scene(private val kit: Path, spriteMap: Path) {
         val canEnhance=model.possibleEnhancements()>0 && !snapshot.busy
         val list=mutableListOf<UiNode>()
         fun node(id:String,x:Number,y:Number,w:Number,h:Number,text:String="",color:String="#e7e0cd",size:Double=16.0,
-                 bg:String?=null,action:String?=null,sprite:String?=null,depth:Int=2,align:String="left") {
+                 bg:String?=null,action:String?=null,sprite:String?=null,depth:Int=2,align:String="left",family:String="sans") {
             val b=rect(x,y,w,h)
-            val style=mutableMapOf("color" to color,"font-size" to "${size*screen.scale}px","text-align" to align)
+            val style=mutableMapOf("color" to color,"font-size" to "${size*screen.scale}px","text-align" to align,
+                "font-family" to "projects_ui_polish05:$family")
             if(bg!=null) style["background-color"]=bg
             list+=UiNode(id,b,text,style,action,null,true,depth,sprite?.let { sprites.getValue(it) })
         }
@@ -201,17 +201,23 @@ class Polish05Scene(private val kit: Path, spriteMap: Path) {
                 node("tile-$key",x+offset[0].toDouble(),y+offset[1].toDouble(),sprite.width,sprite.height,sprite=key,depth=1)
             }
         }
+        node("viewport-backdrop",-200,-150,1840,1220,bg="#14191e",depth=-1)
         node("page",0,0,1440,920,bg="#14191e",depth=0)
         node("brand",75,29,260,30,"⚔  ProjectS  |  帰還港",size=22.0,color="#e6d9b7")
         node("eyebrow",635,67,180,18,"T H E  E M B E R  F O R G E",size=10.0,color="#aa9e86",align="center")
-        node("heading",525,92,390,40,"熾 火 の 工 房",size=29.0,color="#eee0bd",align="center")
+        node("heading",525,92,390,40,"熾 火 の 工 房",size=29.0,color="#eee0bd",align="center",family="serif")
         node("sound-box",1088,24,94,35,bg="#1c2225")
         node("sound-label",1101,33,79,20,if(muted)"SE OFF" else "SE ON",size=12.0,color="#aeb6aa")
         tilePlate("window_chrome",66.0,140.0)
+        node("workshop-icon",99,165,24,30,sprite="hammer",depth=3)
+        node("workshop-text",134,174,150,22,"鍛冶師の仕事場",size=13.0,color="#bbb6a8")
         node("tab-forge",343,150,130,63,bg="#37342d",depth=2)
-        node("tab-label-forge",364,171,105,30,"⚒  強化",size=18.0,color="#e3d0a5")
-        node("tab-label-refine",502,171,90,30,"♧  精錬",size=18.0,color="#b9b3a5")
-        node("tab-label-bag",634,171,100,30,"▣  装備庫",size=18.0,color="#b9b3a5")
+        node("tab-icon-forge",374,165,24,30,sprite="hammer",depth=4)
+        node("tab-label-forge",407,171,66,30,"強化",size=18.0,color="#e3d0a5",depth=4)
+        node("tab-icon-refine",507,171,21,23,sprite="coin_ore",depth=4)
+        node("tab-label-refine",540,171,63,30,"精錬",size=18.0,color="#b9b3a5",depth=4)
+        node("tab-icon-bag",635,169,25,27,sprite="bag",depth=4)
+        node("tab-label-bag",668,171,77,30,"装備庫",size=18.0,color="#b9b3a5",depth=4)
         node("wallet-icon",1170,172,22,23,sprite="coin_ore")
         node("wallet",1198,171,87,24,number(snapshot.silver),size=18.0,color="#d9caa8")
         node("wallet-unit",1284,175,35,16,"銀貨",size=11.0,color="#b4aa94")
@@ -257,7 +263,7 @@ class Polish05Scene(private val kit: Path, spriteMap: Path) {
             if(it.success) "強化成功  +${it.beforeLevel} → +${it.afterLevel}" else "強化失敗・段階維持  +${it.beforeLevel}"
         } ?: "鍛造後、ここに結果が残ります。",size=10.0,color="#aeb7aa")
         node("rarity",565,234,230,18,if(selected.tier==2)"希少装備  ·  大剣" else "魔法装備  ·  大剣",size=10.0,color="#bba8c7",align="center")
-        node("hero-name",517,260,328,37,"${selected.name}  +${selected.level}",size=27.0,color="#ebdfc9",align="center")
+        node("hero-name",517,260,328,37,"${selected.name}  +${selected.level}",size=27.0,color="#ebdfc9",align="center",family="serif")
         tilePlate(when(light) {
             ForgeLightPhase.IDLE -> "forge_environment_with_glow"
             ForgeLightPhase.STRIKING -> "forge_environment_striking"
@@ -374,7 +380,7 @@ class Polish05Scene(private val kit: Path, spriteMap: Path) {
             node("modal-mask",0,0,1440,920,bg="#bb0d1418",depth=MODAL_MASK_DEPTH)
             node("modal-border",470,176,500,568,bg="#ad9562",depth=MODAL_BORDER_DEPTH)
             node("modal-panel",474,180,492,560,bg="#202826",depth=MODAL_PANEL_DEPTH)
-            node("modal-title",509,211,379,43,"この装備を強化しますか？",size=24.0,color="#ebdfc4",depth=MODAL_CONTENT_DEPTH)
+            node("modal-title",509,211,379,43,"この装備を強化しますか？",size=24.0,color="#ebdfc4",depth=MODAL_CONTENT_DEPTH,family="serif")
             node("modal-close",908,188,45,51,"×",size=25.0,bg="#202827",action="cancel",depth=MODAL_ACTION_DEPTH,align="center")
             node("modal-rule-top",509,260,422,1,bg="#39413c",depth=MODAL_CONTENT_DEPTH)
             node("modal-icon",525,293,60,66,sprite=if(selected.id=="ember")"sword_t2_thumb" else "greatsword_thumb",depth=MODAL_CONTENT_DEPTH)

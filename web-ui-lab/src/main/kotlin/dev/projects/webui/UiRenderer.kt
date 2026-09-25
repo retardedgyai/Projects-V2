@@ -113,19 +113,24 @@ class UiRenderer(private val player: Player, private val origin: Pos) : AutoClos
                 }
             } else {
                 entity(id,EntityType.TEXT_DISPLAY).editEntityMeta(TextDisplayMeta::class.java) { m ->
-                    var text=Component.text(node.text,TextColor.fromHexString(if(node.enabled) node.color else "#91969b"))
+                    val family=node.style["font-family"]?.takeIf { it in setOf("projects_ui_polish05:sans","projects_ui_polish05:serif") }
+                    var text:Component=Component.text(node.text,TextColor.fromHexString(if(node.enabled) node.color else "#91969b"))
+                    if(family!=null)text=text.font(Key.key(family))
                     val bold=node.style["font-weight"]=="bold"
                     if(bold) text=text.decorate(TextDecoration.BOLD)
                     m.setText(text); m.setLineWidth(4000); m.setUseDefaultBackground(false); m.setBackgroundColor(0)
                     m.setShadow(false); m.setTextOpacity((-1).toByte())
-                    val pixel=node.fontSize/8.0
+                    val pixel=node.fontSize/(if(family!=null)Polish05FontMetrics.SIZE else 8.0)
                     val scale=pixel*geometry.unit(z+0.025)/0.025
                     m.setScale(Vec(scale,scale,scale))
-                    val advance=UiGeometry.textAdvance(node.text,bold)*pixel
+                    val advance=(if(family!=null)Polish05FontMetrics.advance(node.text,family.substringAfter(':'))
+                        else UiGeometry.textAdvance(node.text,bold))*pixel
                     val align=node.style["text-align"]?:if(node.action!=null) "center" else "left"
                     val center=when(align){"center"->b.x+b.w/2;"right"->b.x+b.w-advance/2;else->b.x+advance/2}
-                    // Vanilla translates text by (1-width/2,-9) before its .025 pixel transform.
-                    m.setTranslation(geometry.point(center-pixel,b.y+(b.h-node.fontSize)/2+9*pixel,z+0.025))
+                    // The raster Noto atlas has 32px ascent; the default glyph has 8px.
+                    // Compensate for the client's baseline offset at the rendered scale.
+                    val ascent=if(family!=null) 33.0 else 9.0
+                    m.setTranslation(geometry.point(center-pixel,b.y+(b.h-node.fontSize)/2+ascent*pixel,z+0.025))
                 }
             }
             content[id]=node to zoom

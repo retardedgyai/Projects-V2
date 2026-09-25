@@ -7,7 +7,7 @@ import sys
 import zipfile
 from pathlib import Path
 
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFont
 
 ROOT = Path(__file__).resolve().parents[1]
 KIT = ROOT / "assets/ui/polish05-import"
@@ -15,6 +15,7 @@ OUT = ROOT / "web-ui-lab/build/polish05"
 PACK = OUT / "pack"
 MAP = ROOT / "web-ui-lab/ui/polish05-font-map.json"
 EFFECTS = ROOT / "web-ui-lab/ui/polish05-effects"
+FONTS = ROOT / "web-ui-lab/ui/polish05-fonts"
 NAMESPACE = "projects_ui_polish05"
 
 
@@ -22,6 +23,38 @@ def main() -> None:
     if PACK.exists():
         shutil.rmtree(PACK)
     shutil.copytree(KIT / "resourcepack", PACK)
+    # Vanilla 26.2 does not load the old TTF provider in this pack format. Rasterize
+    # the source Noto outlines into bitmap glyphs so Japanese stays crisp and colored
+    # by TextDisplay while preserving the HTML's font shapes.
+    metrics = json.loads((ROOT / "web-ui-lab/src/main/resources/polish05-font-metrics.json").read_text(encoding="utf-8"))
+    for family in ("sans", "serif"):
+        font_dir = PACK / "assets" / NAMESPACE / "font"
+        texture_dir = PACK / "assets" / NAMESPACE / "textures" / "font"
+        texture_dir.mkdir(parents=True, exist_ok=True)
+        font = ImageFont.truetype(FONTS / f"{family}.ttf", 32)
+        glyphs = [chr(int(cp)) for cp in sorted(metrics[family], key=int) if int(cp) != 32]
+        providers = [{"type": "space", "advances": {" ": 10}}]
+        for page, start in enumerate(range(0, len(glyphs), 256)):
+            chars = glyphs[start:start + 256]
+            image = Image.new("RGBA", (640, 640), (0, 0, 0, 0))
+            draw = ImageDraw.Draw(image)
+            for index, char in enumerate(chars):
+                draw.text(((index % 16) * 40, (index // 16) * 40 - 4), char,
+                          font=font, fill=(255, 255, 255, 255))
+            name = f"{family}-{page}.png"
+            image.save(texture_dir / name, optimize=True)
+            # Bitmap providers divide the whole texture by the declared grid.
+            # Pad the final page too, or its glyphs become 200px-tall cells.
+            rows = ["".join(chars[row:row + 16]).ljust(16, "\0")
+                    for row in range(0, 256, 16)]
+            providers.append({"type": "bitmap", "file": f"{NAMESPACE}:font/{name}",
+                              "ascent": 32, "height": 40, "chars": rows})
+        providers.append({"type": "reference", "id": "minecraft:default"})
+        (font_dir / f"{family}.json").write_text(json.dumps({"providers": providers},
+            ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+    license_dir = PACK / "LICENSES"
+    license_dir.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(FONTS / "OFL.txt", license_dir / "Noto-OFL.txt")
     providers = []
     sprites = {}
     codepoint = 0xE980
