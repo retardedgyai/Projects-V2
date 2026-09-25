@@ -80,6 +80,7 @@ class Polish05FlowTest {
         assertEquals(selected.char,changed.single { it.id=="gear-plate-1" }.sprite?.char)
         assertTrue(flow.action("catalyst"))
         assertNotEquals(catalystOff?.char,flow.scene().nodes.single { it.id=="catalyst-halo-0" }.sprite?.char)
+        assertEquals("✓",flow.scene().nodes.single { it.id=="catalyst-check" }.text)
         assertTrue(flow.action("view:bag"))
         assertTrue(flow.scene().nodes.any { it.id=="inventory-tab" && it.sprite!=null })
         assertTrue(flow.action("view:refine"))

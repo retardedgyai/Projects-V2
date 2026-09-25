@@ -7,7 +7,7 @@ import sys
 import zipfile
 from pathlib import Path
 
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 ROOT = Path(__file__).resolve().parents[1]
 KIT = ROOT / "assets/ui/polish05-import"
@@ -37,10 +37,27 @@ def main() -> None:
         for page, start in enumerate(range(0, len(glyphs), 256)):
             chars = glyphs[start:start + 256]
             image = Image.new("RGBA", (640, 640), (0, 0, 0, 0))
-            draw = ImageDraw.Draw(image)
             for index, char in enumerate(chars):
-                draw.text(((index % 16) * 40, (index // 16) * 40 - 4), char,
-                          font=font, fill=(255, 255, 255, 255))
+                # Draw into an isolated cell. A negative left bearing on the next
+                # glyph (notably j after i, or Y after X) otherwise spills into
+                # this cell and Vanilla assigns the previous glyph a 40px advance.
+                cell = Image.new("RGBA", (40, 40), (0, 0, 0, 0))
+                ImageDraw.Draw(cell).text((0, -4), char, font=font,
+                    fill=(255, 255, 255, 255))
+                if family == "sans":
+                    alpha = cell.getchannel("A")
+                    # One full-pixel stroke becomes blocky at Minecraft scale.
+                    # A small alpha fringe keeps the approved Noto outline.
+                    alpha = Image.blend(alpha, alpha.filter(ImageFilter.MaxFilter(3)), 0.22)
+                    cell.putalpha(alpha)
+                image.paste(cell, ((index % 16) * 40, (index // 16) * 40))
+            if family == "sans":
+                for char in ("X", "i"):
+                    if char in chars:
+                        index = chars.index(char)
+                        cell = image.crop(((index % 16) * 40, (index // 16) * 40,
+                                           (index % 16 + 1) * 40, (index // 16 + 1) * 40))
+                        assert cell.getbbox()[2] < 30, f"font cell bleed: {char}"
             name = f"{family}-{page}.png"
             image.save(texture_dir / name, optimize=True)
             # Bitmap providers divide the whole texture by the declared grid.
@@ -127,6 +144,21 @@ def main() -> None:
             dest.parent.mkdir(parents=True, exist_ok=True)
             tile.save(dest)
             register(f"{name}/{x}_0", f"effects/{name}_{x}_0.png", tile.width, tile.height)
+
+    # Exact 23x30 path coordinates of the approved HTML's project-sigil SVG.
+    sigil = Image.new("RGBA", (23, 30), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(sigil)
+    gold = (198, 175, 127, 255)
+    draw.polygon([(10,0),(13,0),(13,12),(18,12),(18,15),(13,15),
+                  (13,25),(16,25),(16,27),(13,27),(13,30),(10,30),
+                  (10,27),(7,27),(7,25),(10,25),(10,15),(5,15),
+                  (5,12),(10,12)], fill=gold)
+    draw.line([(3,5),(3,19),(11.5,27),(20,19),(20,5)], fill=gold, width=1)
+    rel = "textures/effects/project_sigil.png"
+    dest = PACK / "assets" / NAMESPACE / rel
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    sigil.save(dest)
+    register("project_sigil", "effects/project_sigil.png", 23, 30)
 
     # The kit's source font already contains the sharp icons and both original swords.
     raw = json.loads((KIT / "layout/sprite_glyphs.json").read_text(encoding="utf-8"))

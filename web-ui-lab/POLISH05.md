@@ -22,6 +22,8 @@ python scripts/build_polish05_lab_pack.py
 
 `polish05Smoke` はネイティブの表示体、bitmap font、private viewer、カメラ復帰と破棄をパケット単位で確認します。Minecraftの画素や音の聞こえ方までは判定しません。
 
+フォントatlasは各文字を40×40pxの独立セルに描いてから配置します。隣の文字がセルにはみ出すとVanillaが前の文字へ余分な幅を付けるためです。Sansには薄いalphaの縁を加え、小さい日本語を読みやすくしています。元HTMLの剣章はSVGの座標で23×30pxのspriteにし、フォント未収録の記号に依存しません。
+
 ## 起動と手動操作
 
 ```powershell

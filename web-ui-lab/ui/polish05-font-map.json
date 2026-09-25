@@ -593,6 +593,12 @@
     "height": 52,
     "font": "projects_ui_polish05:plates"
   },
+  "project_sigil": {
+    "char": "",
+    "width": 23,
+    "height": 30,
+    "font": "projects_ui_polish05:plates"
+  },
   "armor_ui": {
     "char": "",
     "width": 19,

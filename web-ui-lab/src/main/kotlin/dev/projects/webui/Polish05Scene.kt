@@ -220,7 +220,9 @@ class Polish05Scene(private val kit: Path, spriteMap: Path) {
         }
         node("viewport-backdrop",-200,-150,1840,1220,bg="#14191e",depth=-1)
         node("page",0,0,1440,920,bg="#14191e",depth=0)
-        node("brand",75,29,260,30,"⚔  ProjectS  |  帰還港",size=22.0,color="#e6d9b7")
+        node("brand-sigil",75,29,23,30,sprite="project_sigil",depth=3)
+        node("brand-project",107,29,120,30,"ProjectS",size=22.0,color="#e6d9b7",family="serif")
+        node("brand-port",227,35,98,18,"│ 帰還港",size=11.0,color="#a7a699")
         node("eyebrow",635,67,180,18,"T H E  E M B E R  F O R G E",size=10.0,color="#aa9e86",align="center")
         node("heading",525,92,390,40,"熾 火 の 工 房",size=29.0,color="#eee0bd",align="center",family="serif")
         node("sound-box",1088,24,94,35,bg="#1c2225")
@@ -343,7 +345,9 @@ class Polish05Scene(private val kit: Path, spriteMap: Path) {
         node("silver-amount",1238,silverY+16,101,28,"${number(cost.silver)} 銀貨",size=18.0,
             color=if(enoughSilver)"#c5d8bd" else "#eca69b",align="right",depth=3)
         halo("catalyst-halo",if(snapshot.catalyst)"catalyst_on_halo" else "catalyst_off_halo",1014,652)
-        node("catalyst-check",1031,670,15,15,if(snapshot.catalyst)"☑" else "□",size=15.0,color="#cbb783",depth=3)
+        node("catalyst-check",1031,670,15,15,if(snapshot.catalyst)"✓" else "□",size=15.0,
+            color=if(snapshot.catalyst)"#171b1c" else "#cbb783",
+            bg=if(snapshot.catalyst)"#a88e58" else null,depth=3)
         node("catalyst-text",1052,663,190,35,"触媒を使う  ·  所持 ${snapshot.materials.getValue(Material.CATALYST)}個",size=12.0,color="#b9bdac",depth=3)
         node("catalyst-info",1243,672,93,19,"成功率を100%に",size=10.0,color="#c9b986",depth=3)
         val enhanceLabel=when {
