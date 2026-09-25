@@ -74,10 +74,11 @@ class UiRenderer(private val player: Player, private val origin: Pos) : AutoClos
     }
     private fun background(node: UiNode,hover: String?) {
         val color=node.background?:return
+        val displayColor=if(node.action!=null && node.id==hover)
+            node.style["hover-background-color"]?:"#866744" else color
         val argb=if(!node.enabled) 0xff35383c.toInt()
-            else if(node.action!=null && node.id==hover) 0xff866744.toInt()
-            else if(color.length==9) color.removePrefix("#").toLong(16).toInt()
-            else color.removePrefix("#").toInt(16) or (0xff shl 24)
+            else if(displayColor.length==9) displayColor.removePrefix("#").toLong(16).toInt()
+            else displayColor.removePrefix("#").toInt(16) or (0xff shl 24)
         panel(node.id+":bg",node.box,argb,node.depth*0.005)
     }
     fun render(scene: UiScene,hover: String?,pointer: UiPointer) {

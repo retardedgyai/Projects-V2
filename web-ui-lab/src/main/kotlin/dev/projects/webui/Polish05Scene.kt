@@ -39,6 +39,8 @@ class Polish05Scene(private val kit: Path, spriteMap: Path) {
         val style=mutableMapOf("color" to color,"font-size" to "${size*screen.scale}px","text-align" to align,
             "font-family" to "projects_ui_polish05:$family")
         if(bg!=null)style["background-color"]=bg
+        if(bg!=null && action!=null && bg in setOf("#d4b879","#d6bb7f","#d7bb7c"))
+            style["hover-background-color"]="#f1d59b"
         nodes+=UiNode(id,rect(x,y,w,h),text,style,action,null,true,depth,sprite?.let(sprites::getValue))
     }
     private fun shell(model: Polish05PreviewModel, muted:Boolean): MutableList<UiNode> = forge(model,muted=muted).nodes.filter { n ->
@@ -53,7 +55,7 @@ class Polish05Scene(private val kit: Path, spriteMap: Path) {
         val gear=snap.gears.firstOrNull { it.id==bagSelected } ?: snap.gears.first()
         val nodes=shell(model,muted)
         put(nodes,"inventory-body",79,214,1282,575,bg="#171d1e",depth=5)
-        put(nodes,"inventory-tab",607,150,138,63,bg="#37342d",depth=2)
+        put(nodes,"inventory-tab",607,150,138,71,sprite="tab_active_bag",depth=2)
         put(nodes,"inventory-heading",99,239,234,27,"旅の持ち物   14 / 32",size=19.0)
         put(nodes,"inventory-filter",713,236,251,30,"すべて     武器     素材     その他",size=12.0,color="#b4b9ac")
         val items=listOf(
@@ -68,7 +70,12 @@ class Polish05Scene(private val kit: Path, spriteMap: Path) {
         repeat(32) { index ->
             val x=99+(index%8)*109.125
             val y=283+(index/8)*91
-            put(nodes,"slot-$index",x,y,101,83,bg=if(index<items.size && items[index].first==bagSelected)"#302d29" else "#1b2223")
+            val slotPlate=when {
+                index>=items.size -> "bag_slot_empty"
+                items[index].first==bagSelected -> "bag_slot_selected"
+                else -> "bag_slot_regular"
+            }
+            put(nodes,"slot-$index",x,y,101,83,sprite=slotPlate)
             if(index<items.size) {
                 val (id,icon,count)=items[index]
                 val size=if(id=="ember" || id=="ash")48 else 42
@@ -122,11 +129,12 @@ class Polish05Scene(private val kit: Path, spriteMap: Path) {
         val fee=if(ore)80 else 60
         val nodes=shell(model,muted)
         put(nodes,"refine-body",79,214,1282,575,bg="#171d1e",depth=5)
-        put(nodes,"refine-tab",475,150,130,63,bg="#37342d",depth=2)
+        put(nodes,"refine-tab",475,150,130,71,sprite="tab_active_refine",depth=2)
         put(nodes,"refine-left-title",99,238,210,25,"精錬できる素材     02",size=16.0)
         for(index in 0..1) {
             val y=281+index*82
-            put(nodes,"recipe-card-$index",99,y,238,74,bg=if((index==0)==ore)"#383327" else "#202829")
+            put(nodes,"recipe-card-$index",99,y,238,78,
+                sprite=if((index==0)==ore)"recipe_selected" else "recipe_regular",depth=6)
             put(nodes,"recipe-icon-$index",111,y+18,34,36,sprite=if(index==0)"coin_ore" else "purple_crystal",depth=8)
             put(nodes,"recipe-name-$index",160,y+16,164,21,if(index==0)"陽鉱の精製" else "虚晶の研磨",size=15.0)
             put(nodes,"recipe-caption-$index",160,y+39,164,18,if(index==0)"原石から、強化の素材へ" else "不純物を取り除く",size=11.0,color="#a4aa9f")
@@ -191,6 +199,8 @@ class Polish05Scene(private val kit: Path, spriteMap: Path) {
             val style=mutableMapOf("color" to color,"font-size" to "${size*screen.scale}px","text-align" to align,
                 "font-family" to "projects_ui_polish05:$family")
             if(bg!=null) style["background-color"]=bg
+            if(bg!=null && action!=null && bg in setOf("#d4b879","#d6bb7f","#d7bb7c"))
+                style["hover-background-color"]="#f1d59b"
             list+=UiNode(id,b,text,style,action,null,true,depth,sprite?.let { sprites.getValue(it) })
         }
         fun line(id:String,x:Number,y:Number,w:Number,color:String="#3a3c36")=node(id,x,y,w,1,bg=color,depth=2)
@@ -211,7 +221,7 @@ class Polish05Scene(private val kit: Path, spriteMap: Path) {
         tilePlate("window_chrome",66.0,140.0)
         node("workshop-icon",99,165,24,30,sprite="hammer",depth=3)
         node("workshop-text",134,174,150,22,"鍛冶師の仕事場",size=13.0,color="#bbb6a8")
-        node("tab-forge",343,150,130,63,bg="#37342d",depth=2)
+        node("tab-forge",343,150,130,71,sprite="tab_active_forge",depth=2)
         node("tab-icon-forge",374,165,24,30,sprite="hammer",depth=4)
         node("tab-label-forge",407,171,66,30,"強化",size=18.0,color="#e3d0a5",depth=4)
         node("tab-icon-refine",507,171,21,23,sprite="coin_ore",depth=4)
@@ -228,13 +238,12 @@ class Polish05Scene(private val kit: Path, spriteMap: Path) {
         snapshot.gears.forEachIndexed { index, gear ->
             val y=277+index*82
             val active=gear.id==snapshot.selected
-            if(active) node("gear-selected-$index",95,y,229,82,bg="#2b2c28",depth=2)
-            if(active) node("gear-accent-$index",95,y,2,82,bg="#d3b978",depth=3)
+            node("gear-plate-$index",95,y,229,82,
+                sprite=if(active)"gear_selected" else "gear_unselected",depth=1)
             node("gear-icon-$index",111,y+16,48,48,sprite=if(gear.id=="ember")"sword_t2_thumb" else "greatsword_thumb",depth=3)
             node("gear-name-$index",167,y+10,150,23,"${gear.name} +${gear.level}",size=14.0)
             node("gear-stat-$index",167,y+35,157,18,"T${gear.tier}   物理攻撃 ${gear.power}",size=11.0,color="#b4b9af")
             node("gear-status-$index",167,y+59,150,16,if(gear.id==snapshot.equipped)"装備中  ·  魔法" else "所持品  ·  希少",size=10.0,color="#929a93")
-            line("gear-rule-$index",95,y+81,229)
         }
         node("compare-label",95,448,112,18,"装備中と比較",size=10.0,color="#929a93")
         node("compare-link",262,448,62,18,"比較を見る ›",size=10.0,color="#c5b792")
@@ -327,7 +336,7 @@ class Polish05Scene(private val kit: Path, spriteMap: Path) {
         node("silver-after",1067,silverY+29,186,16,if(snapshot.silver>=cost.silver)
             "所持 ${number(snapshot.silver)} → 残り ${number(snapshot.silver-cost.silver)}" else "銀貨が不足しています",size=10.0,color="#a2a99d")
         node("silver-amount",1238,silverY+16,101,28,"${number(cost.silver)} 銀貨",size=18.0,align="right")
-        node("catalyst-box",1019,657,326,44,bg="#1b2222")
+        node("catalyst-box",1019,661,326,44,sprite=if(snapshot.catalyst)"catalyst_on" else "catalyst_off",depth=1)
         node("catalyst-check",1031,670,15,15,if(snapshot.catalyst)"☑" else "□",size=15.0,color="#cbb783")
         node("catalyst-text",1052,663,190,35,"触媒を使う  ·  所持 ${snapshot.materials.getValue(Material.CATALYST)}個",size=12.0,color="#b9bdac")
         node("catalyst-info",1243,672,93,19,"成功率を100%に",size=10.0,color="#c9b986")

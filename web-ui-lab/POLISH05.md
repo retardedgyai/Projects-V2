@@ -17,6 +17,8 @@ python scripts/build_polish05_lab_pack.py
 
 `web-ui-lab/ui/polish05-effects/` には承認済みHTMLから切り出した通常以外のGlowと、Georgiaの黄色いぼかし付き強化後数値を同梱しています。元HTMLや原画は編集していません。再生成する場合はChromeとPlaywrightを用意して `node scripts/export_polish05_effects.cjs` を実行し、その後パックを再ビルドします。日本語と英数字はNoto Sans/Serif JPの許諾済みsubsetから32px bitmap atlasを生成し、Polish05専用フォントとして配信します。通常のパックビルドにはfontToolsは不要です。subsetを作り直す場合だけ `scripts/build_polish05_fonts.py` とfontToolsが必要です。
 
+装備の選択行、アクティブタブ、装備庫の枠、精錬レシピ、触媒の金色のにじみと縁は、元HTMLのCSSをChromeで描画した文字なしのplateです。`node scripts/export_polish05_selection.cjs` で再生成できます。ラボはplateの上へ装備名・数値を動的に描き、選択状態に合わせてplateを切り替えます。確認ボタンのhoverも元HTMLと同じ明るい金色にします。
+
 `polish05Smoke` はネイティブの表示体、bitmap font、private viewer、カメラ復帰と破棄をパケット単位で確認します。Minecraftの画素や音の聞こえ方までは判定しません。
 
 ## 起動と手動操作

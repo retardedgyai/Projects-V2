@@ -8,6 +8,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
+import kotlin.test.assertNotEquals
 import kotlin.test.assertTrue
 
 class Polish05FlowTest {
@@ -60,6 +61,28 @@ class Polish05FlowTest {
         assertEquals(ForgeLightPhase.IDLE,effects.phase(2_821))
         effects.clear()
         assertFalse(effects.frame(base,3_000).nodes.any { it.id.startsWith("ember-") && it.id in embers.map(UiNode::id) })
+    }
+
+    @Test fun approvedWarmPlatesFollowSelectionAndCatalystState() {
+        val flow=Polish05Flow(scene)
+        val initial=flow.scene().nodes
+        val selected=initial.single { it.id=="gear-plate-0" }.sprite
+        val unselected=initial.single { it.id=="gear-plate-1" }.sprite
+        assertNotNull(selected)
+        assertNotNull(unselected)
+        assertNotEquals(selected.char,unselected.char)
+        assertTrue(initial.any { it.id=="tab-forge" && it.sprite!=null })
+        val catalystOff=initial.single { it.id=="catalyst-box" }.sprite
+        assertTrue(flow.action("select:ash"))
+        val changed=flow.scene().nodes
+        assertEquals(unselected.char,changed.single { it.id=="gear-plate-0" }.sprite?.char)
+        assertEquals(selected.char,changed.single { it.id=="gear-plate-1" }.sprite?.char)
+        assertTrue(flow.action("catalyst"))
+        assertNotEquals(catalystOff?.char,flow.scene().nodes.single { it.id=="catalyst-box" }.sprite?.char)
+        assertTrue(flow.action("view:bag"))
+        assertTrue(flow.scene().nodes.any { it.id=="inventory-tab" && it.sprite!=null })
+        assertTrue(flow.action("view:refine"))
+        assertTrue(flow.scene().nodes.any { it.id=="refine-tab" && it.sprite!=null })
     }
 
     @Test fun selectCompareConfirmConsumeRefineAndReturnToSameGear() {

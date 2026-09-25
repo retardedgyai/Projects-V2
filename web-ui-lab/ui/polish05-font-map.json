@@ -461,6 +461,78 @@
     "height": 80,
     "font": "projects_ui_polish05:plates"
   },
+  "gear_selected": {
+    "char": "",
+    "width": 229,
+    "height": 82,
+    "font": "projects_ui_polish05:plates"
+  },
+  "gear_unselected": {
+    "char": "",
+    "width": 229,
+    "height": 82,
+    "font": "projects_ui_polish05:plates"
+  },
+  "tab_active_forge": {
+    "char": "",
+    "width": 130,
+    "height": 71,
+    "font": "projects_ui_polish05:plates"
+  },
+  "tab_active_refine": {
+    "char": "",
+    "width": 130,
+    "height": 71,
+    "font": "projects_ui_polish05:plates"
+  },
+  "tab_active_bag": {
+    "char": "",
+    "width": 138,
+    "height": 71,
+    "font": "projects_ui_polish05:plates"
+  },
+  "catalyst_off": {
+    "char": "",
+    "width": 326,
+    "height": 45,
+    "font": "projects_ui_polish05:plates"
+  },
+  "catalyst_on": {
+    "char": "",
+    "width": 326,
+    "height": 45,
+    "font": "projects_ui_polish05:plates"
+  },
+  "bag_slot_selected": {
+    "char": "",
+    "width": 102,
+    "height": 83,
+    "font": "projects_ui_polish05:plates"
+  },
+  "bag_slot_regular": {
+    "char": "",
+    "width": 102,
+    "height": 83,
+    "font": "projects_ui_polish05:plates"
+  },
+  "bag_slot_empty": {
+    "char": "",
+    "width": 102,
+    "height": 83,
+    "font": "projects_ui_polish05:plates"
+  },
+  "recipe_selected": {
+    "char": "",
+    "width": 238,
+    "height": 78,
+    "font": "projects_ui_polish05:plates"
+  },
+  "recipe_regular": {
+    "char": "",
+    "width": 238,
+    "height": 78,
+    "font": "projects_ui_polish05:plates"
+  },
   "armor_ui": {
     "char": "",
     "width": 19,

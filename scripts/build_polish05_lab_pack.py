@@ -106,6 +106,15 @@ def main() -> None:
         dest.parent.mkdir(parents=True, exist_ok=True)
         image.save(dest)
         register(name, f"effects/{name}.png", image.width, image.height)
+    for name in ("gear_selected", "gear_unselected", "tab_active_forge", "tab_active_refine", "tab_active_bag",
+                 "catalyst_off", "catalyst_on", "bag_slot_selected", "bag_slot_regular", "bag_slot_empty",
+                 "recipe_selected", "recipe_regular"):
+        image = Image.open(EFFECTS / f"{name}.png").convert("RGBA")
+        rel = f"textures/effects/{name}.png"
+        dest = PACK / "assets" / NAMESPACE / rel
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        image.save(dest)
+        register(name, f"effects/{name}.png", image.width, image.height)
 
     # The kit's source font already contains the sharp icons and both original swords.
     raw = json.loads((KIT / "layout/sprite_glyphs.json").read_text(encoding="utf-8"))
