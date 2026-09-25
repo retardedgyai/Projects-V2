@@ -20,8 +20,10 @@ Playground branch: `play/gyai/aspect-research-slice` (from `play/gyai/colony-fir
 - `FirstMagicWorkshop.kt`: 既存の日本語リソースパック画面に六角Aspect印と接続数の表示を加え、パック拒否時も通常インベントリで操作できる。
 - `scripts/build_research_aspect_icons.py`: 既存の素材絵に小さな六角フレームを重ねるリソースパック定義を生成する。受け入れ済みの絵は描き直さない。
 
+研究の入力、接続判定、Aspect発見、解明、保存はすべてサーバー側で処理する。クライアントModは不要。見た目にはサーバー配布のバニラ用リソースパックを使い、未適用時も通常のインベントリ表示で操作できる。
+
 この段階の研究解除は記録帳の進捗であり、作成可能アイテムの解放にはまだ接続していない。Essentia / Jar / Tube / Infusion は後続で研究IDを条件として参照できる。
 
 ## Manual Smoke
 
-JDK 25で `./gradlew :server-minestom:run` と `./gradlew :client-fabric:runClient` を起動し、研究机から盤面に入り、合成、誤配置、取り消し、解明、再接続後の保存状態を確認する。最終的な見た目と手触りはCreatorがゲーム内で判定する。
+JDK 25で `./gradlew :server-minestom:run` を起動し、バニラ Minecraft 26.2 クライアントで接続する。サーバー配布リソースパックの読み込み後、研究机から盤面に入り、合成、誤配置、取り消し、解明、再接続後の保存状態を確認する。最終的な見た目と手触りはCreatorがゲーム内で判定する。
