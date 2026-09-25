@@ -487,7 +487,8 @@ class Polish05Scene private constructor(approvedJson: String, spriteJson: String
                     if(ready) "#a4cba4" else "#e1a29a")
                 id == "history-heading" -> write(if(supplemental.isEmpty()) "この装備の鍛造記録" else "追加で必要な素材")
                 id == "history-value" -> write(if(supplemental.isEmpty()) state.history ?: "鍛造後、ここに結果が残ります。" else
-                    supplemental.joinToString("  ") { "${it.name} ${value(it.owned)}/${value(it.required)}" })
+                    supplemental.joinToString("  ") { "${it.name} ${value(it.owned)}/${value(it.required)}" },
+                    if(supplemental.any { it.owned < it.required }) "#eca69b" else null)
                 id == "rarity" -> write("T${selected.tier} 装備  ·  ${if(selected.id == "weapon") "武器" else "防具"}")
                 id == "hero-name" -> write("${selected.name}  +${selected.level}")
                 id == "hero-weapon" -> replacement = replacement.copy(sprite = sprite(if(selected.id == "weapon") "sword_t2_hero" else "armor_ui"),
@@ -537,7 +538,7 @@ class Polish05Scene private constructor(approvedJson: String, spriteJson: String
                     val offset=id.substringAfterLast('-')
                     replacement=replacement.copy(sprite=sprite("${if(state.focused) "catalyst_on_halo" else "catalyst_off_halo"}/${offset}_0"))
                 }
-                id == "catalyst-text" -> write("触媒を使う  ·  追加素材を確認")
+                id == "catalyst-text" -> write("触媒を使う  ·  刻印粉 ${value(state.catalystOwned)}個")
                 id == "catalyst-info" -> write("成功率 +15pt")
                 id == "action-note" -> write(state.note)
                 id == "modal-icon" -> replacement = replacement.copy(sprite=sprite(if(selected.id == "weapon") "sword_t2_thumb" else "helm_ui"))
