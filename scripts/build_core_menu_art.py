@@ -15,7 +15,7 @@ from build_polish05_material_art import main as build_materials
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "assets/core-ui/pixel-relic"
 ASSETS = ROOT / "server-minestom/src/main/resources/core-ui-pack/assets/projects"
-MATERIAL_ICONS = ROOT / "assets/core-ui/forge-v5/compiled"
+MATERIAL_ICONS = ROOT / "assets/core-ui/forge-v6/compiled"
 ART_BASE = 0xE700
 ART_CELL = 32
 ART_YS = [18, 28, 30, 36, 42, 48, 54, 56, 70, 72, 84, 90, 98, 108, 112, 126, 140, 154, 168, 182, 196]
@@ -112,7 +112,7 @@ def build_art():
         "cell": ART_CELL, "columns": 8, "sizes": ART_SIZES, "ys": ART_YS, "art": metadata,
         "sources": {**{name: hashlib.sha256((SOURCE / f"source/{name}.png").read_bytes()).hexdigest()
                     for name in sheets},
-                    **{f"forge_v5_{name}": hashlib.sha256(
+                    **{f"forge_v6_{name}": hashlib.sha256(
                         (MATERIAL_ICONS / f"{name}.png").read_bytes()).hexdigest()
                         for name in subjects}},
         "build": "ProjectS material source at 32px; atlas uses nearest-neighbor 32px; binary-alpha inventory sprites",

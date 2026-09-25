@@ -10,7 +10,7 @@ CORE = ROOT / "server-minestom/src/main/resources/core-ui-pack/assets/projects"
 POLISH = ROOT / "server-minestom/src/main/resources/polish05"
 NAMES = ("wood", "ore", "stone", "hide", "fiber", "board", "ingot",
          "cut_stone", "leather", "cloth", "affix_dust")
-SOURCE = ROOT / "assets/core-ui/forge-v5/source"
+SOURCE = ROOT / "assets/core-ui/forge-v6/source"
 
 
 def main():

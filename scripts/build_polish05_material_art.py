@@ -3,7 +3,7 @@ from pathlib import Path
 from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[1]
-BASE = ROOT / "assets/core-ui/forge-v5"
+BASE = ROOT / "assets/core-ui/forge-v6"
 SOURCE = BASE / "source"
 COMPILED = BASE / "compiled"
 ORDER = ("wood", "board", "ore", "ingot", "stone", "cut_stone",
