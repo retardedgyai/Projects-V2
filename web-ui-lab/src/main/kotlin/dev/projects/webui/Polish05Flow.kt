@@ -18,10 +18,10 @@ class Polish05Flow(private val presentation: Polish05Scene) {
     var note="消費内容を確かめてから、鍛造を始めます。"; private set
     var quote: Polish05PreviewModel.Quote?=null; private set
     var operation: Polish05PreviewModel.Operation?=null; private set
-    fun scene()=when(view) {
+    fun scene(light:ForgeLightPhase=ForgeLightPhase.IDLE)=when(view) {
         "bag" -> presentation.inventory(model,bagSelected,compare,muted)
         "refine" -> presentation.refine(model,recipe,batch,modal,note,returnToForge,muted)
-        else -> presentation.forge(model,note,modal,muted)
+        else -> presentation.forge(model,note,modal,muted,light)
     }
     fun action(action:String): Boolean {
         if(operation!=null)return false

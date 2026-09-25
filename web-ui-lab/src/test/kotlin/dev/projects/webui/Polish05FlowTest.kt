@@ -2,6 +2,7 @@ package dev.projects.webui
 
 import dev.projects.webui.polish05.Polish05PreviewModel.Material
 import dev.projects.webui.polish05.Polish05ScreenSpace
+import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -29,6 +30,36 @@ class Polish05FlowTest {
         assertFalse(nodes.any { it.id.startsWith("replenish-bg-") && it.sprite!=null })
         assertTrue(nodes.any { it.id.startsWith("enhance_button/") })
         assertFalse(nodes.any { it.id=="enhance-label" })
+        // The CSS-rendered Georgia glyph has transparent padding for its blur.
+        val nextLevel=nodes.single { it.id=="after-level" }
+        assertTrue(nextLevel.sprite!=null && nextLevel.text.isEmpty())
+        assertEquals(screen.forward(1230.0,273.0).x,nextLevel.box.x,0.0001)
+        assertTrue(Files.exists(repo.resolve("web-ui-lab/ui/polish05-effects/next_level_7.png")))
+    }
+
+    @Test fun approvedLightPhasesAndEmbersRemainSeparateFromClickableScene() {
+        val flow=Polish05Flow(scene)
+        assertTrue(flow.scene(ForgeLightPhase.STRIKING).nodes.any {
+            it.id.startsWith("tile-forge_environment_striking/") })
+        assertTrue(flow.scene(ForgeLightPhase.RESULT_WARM).nodes.any {
+            it.id.startsWith("tile-forge_environment_result_warm/") })
+        val effects=Polish05Effects()
+        effects.beginStrike(1_000)
+        assertEquals(ForgeLightPhase.STRIKING,effects.phase(1_100))
+        val base=flow.scene()
+        val frame=effects.frame(base,1_000)
+        val embers=frame.nodes.filter { it.id.startsWith("ember-") }
+        assertTrue(embers.size>=30)
+        assertTrue(embers.all { it.action==null && it.background?.length==9 && it.depth<20 })
+        assertEquals(base.hit(0.0,0.0),frame.hit(0.0,0.0))
+        val movingSword=effects.frame(base,1_270).nodes.single { it.id=="hero-weapon" }
+        assertEquals(base.nodes.single { it.id=="hero-weapon" }.box.y+2*Polish05ScreenSpace(800.0,480.0).scale,
+            movingSword.box.y,0.0001)
+        effects.finish(true,1_720)
+        assertEquals(ForgeLightPhase.RESULT_WARM,effects.phase(1_800))
+        assertEquals(ForgeLightPhase.IDLE,effects.phase(2_821))
+        effects.clear()
+        assertFalse(effects.frame(base,3_000).nodes.any { it.id.startsWith("ember-") && it.id in embers.map(UiNode::id) })
     }
 
     @Test fun selectCompareConfirmConsumeRefineAndReturnToSameGear() {

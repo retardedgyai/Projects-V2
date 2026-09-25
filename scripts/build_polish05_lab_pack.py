@@ -14,6 +14,7 @@ KIT = ROOT / "assets/ui/polish05-import"
 OUT = ROOT / "web-ui-lab/build/polish05"
 PACK = OUT / "pack"
 MAP = ROOT / "web-ui-lab/ui/polish05-font-map.json"
+EFFECTS = ROOT / "web-ui-lab/ui/polish05-effects"
 NAMESPACE = "projects_ui_polish05"
 
 
@@ -50,6 +51,29 @@ def main() -> None:
                 dest.parent.mkdir(parents=True, exist_ok=True)
                 tile.save(dest)
                 register(f"{name}/{x}_{y}", f"plates/{name}_{x}_{y}.png", tile.width, tile.height)
+
+    # Browser-exported CSS light phases and Georgia numerals keep soft alpha in
+    # opaque environment tiles / dedicated glyphs instead of relying on low-alpha
+    # TextDisplay sprites, which differ visibly from the approved HTML in Vanilla.
+    for name in ("forge_environment_striking", "forge_environment_result_warm"):
+        image = Image.open(EFFECTS / f"{name}.png").convert("RGBA")
+        assert image.size == (628, 382), (name, image.size)
+        for y in range(0, image.height, 256):
+            for x in range(0, image.width, 256):
+                tile = image.crop((x, y, min(x + 256, image.width), min(y + 256, image.height)))
+                rel = f"textures/plates/{name}_{x}_{y}.png"
+                dest = PACK / "assets" / NAMESPACE / rel
+                dest.parent.mkdir(parents=True, exist_ok=True)
+                tile.save(dest)
+                register(f"{name}/{x}_{y}", f"plates/{name}_{x}_{y}.png", tile.width, tile.height)
+    for level in range(32):
+        name = f"next_level_{level}"
+        image = Image.open(EFFECTS / f"{name}.png").convert("RGBA")
+        rel = f"textures/effects/{name}.png"
+        dest = PACK / "assets" / NAMESPACE / rel
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        image.save(dest)
+        register(name, f"effects/{name}.png", image.width, image.height)
 
     # The kit's source font already contains the sharp icons and both original swords.
     raw = json.loads((KIT / "layout/sprite_glyphs.json").read_text(encoding="utf-8"))

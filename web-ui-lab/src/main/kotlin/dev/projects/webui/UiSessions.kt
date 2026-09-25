@@ -38,6 +38,8 @@ class UiSessions(
                           sceneBuilder: Polish05Scene?) {
         val demo=ForgeDemo()
         val polish=sceneBuilder?.let(::Polish05Flow)
+        val effects=if(polish!=null)Polish05Effects() else null
+        var light=ForgeLightPhase.IDLE
         val pointer=UiPointer()
         var scene=polish?.scene()?:document.layout(demo.values(),demo.flags())
         val pending=mutableMapOf<Int,Long>()
@@ -207,16 +209,31 @@ class UiSessions(
         if(s.polish?.takeStrike()==true) sound(s,"refine_strike")
         val receipt=s.polish?.tick()
         if(receipt!=null) {
+            if(receipt.kind==dev.projects.webui.polish05.Polish05PreviewModel.Kind.ENHANCE)
+                s.effects?.finish(receipt.success)
             sound(s,when {
                 receipt.kind==dev.projects.webui.polish05.Polish05PreviewModel.Kind.REFINE -> "refine_success"
                 receipt.success -> "enhance_success"
                 else -> "enhance_fail"
             })
-            s.scene=s.polish.scene()
+            s.light=s.effects?.phase()?:ForgeLightPhase.IDLE
+            s.scene=s.polish.scene(s.light)
             s.renderer.render(s.scene,s.hover,s.pointer)
         }
         drain(s,now)
-        if(sessions[s.player.uuid]===s) paintPointer(s)
+        if(sessions[s.player.uuid]===s) {
+            if(s.polish!=null && s.effects!=null) {
+                if(s.polish.view=="forge") {
+                    val phase=s.effects.phase()
+                    if(phase!=s.light) {
+                        s.light=phase
+                        s.scene=s.polish.scene(phase)
+                    }
+                    s.renderer.render(s.effects.frame(s.scene),s.hover,s.pointer)
+                } else s.effects.clear()
+            }
+            paintPointer(s)
+        }
         retired.entries.removeIf { now>it.value.expires }
     }
     private fun drain(s: Session,now: Long) {
@@ -240,7 +257,10 @@ class UiSessions(
                     if(action=="sound" && !oldMuted && s.polish.muted) {
                         POLISH_SOUNDS.forEach { s.player.stopSound(SoundStop.named(Key.key("projects_ui_polish05:ui.$it"))) }
                     } else if(action=="confirm" && s.polish.operation!=null) {
-                        if(s.polish.view=="forge") sound(s,"enhance_prepare")
+                        if(s.polish.view=="forge") {
+                            s.effects?.beginStrike()
+                            sound(s,"enhance_prepare")
+                        }
                     } else if(action!="sound") {
                         sound(s,when {
                             action.startsWith("select:") || action.startsWith("bag:") -> "select"
@@ -249,7 +269,8 @@ class UiSessions(
                         })
                     }
                     s.generation++
-                    s.scene=s.polish.scene()
+                    s.light=s.effects?.phase()?:ForgeLightPhase.IDLE
+                    s.scene=s.polish.scene(s.light)
                     s.hover=s.scene.hit(s.pointer.x,s.pointer.y)?.id
                     s.renderer.render(s.scene,s.hover,s.pointer)
                     continue

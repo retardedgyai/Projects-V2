@@ -10,6 +10,8 @@ import java.text.NumberFormat
 import java.util.Locale
 
 /** Draws live values over the approved art; hitboxes use the same 1440x920 coordinate map. */
+enum class ForgeLightPhase { IDLE, STRIKING, RESULT_WARM }
+
 class Polish05Scene(private val kit: Path, spriteMap: Path) {
     private companion object {
         const val MODAL_MASK_DEPTH=20
@@ -176,7 +178,7 @@ class Polish05Scene(private val kit: Path, spriteMap: Path) {
     }
 
     fun forge(model: Polish05PreviewModel, note: String = "消費内容を確かめてから、鍛造を始めます。", modal: Boolean = false,
-              muted:Boolean=false): UiScene {
+              muted:Boolean=false, light:ForgeLightPhase=ForgeLightPhase.IDLE): UiScene {
         val snapshot=model.snapshot()
         val selected=snapshot.gears.single { it.id==snapshot.selected }
         val cost=model.enhancementCost()
@@ -256,7 +258,11 @@ class Polish05Scene(private val kit: Path, spriteMap: Path) {
         } ?: "鍛造後、ここに結果が残ります。",size=10.0,color="#aeb7aa")
         node("rarity",565,234,230,18,if(selected.tier==2)"希少装備  ·  大剣" else "魔法装備  ·  大剣",size=10.0,color="#bba8c7",align="center")
         node("hero-name",517,260,328,37,"${selected.name}  +${selected.level}",size=27.0,color="#ebdfc9",align="center")
-        tilePlate("forge_environment_with_glow",367.0,296.0)
+        tilePlate(when(light) {
+            ForgeLightPhase.IDLE -> "forge_environment_with_glow"
+            ForgeLightPhase.STRIKING -> "forge_environment_striking"
+            ForgeLightPhase.RESULT_WARM -> "forge_environment_result_warm"
+        },367.0,296.0)
         val hero=if(selected.id=="ember")"sword_t2_hero" else "greatsword_hero"
         val weaponHeight=if(selected.id=="ember")276 else 240
         val weaponWidth=if(selected.id=="ember")57 else 45
@@ -279,7 +285,10 @@ class Polish05Scene(private val kit: Path, spriteMap: Path) {
         node("after-caption",1251,271,62,16,"強化後",size=10.0,color="#999d94")
         node("before-level",1071,288,67,48,"+${selected.level}",size=39.0)
         node("level-arrow",1167,290,64,41,"→",size=31.0,color="#aca690",align="center")
-        node("after-level",1247,288,79,48,"+$next",size=39.0,color="#ebcc8b")
+        // Original Georgia numerals include a 15px golden text shadow. Keep that
+        // CSS-rendered blur as a transparent glyph while the chosen level stays live.
+        val nextSprite="next_level_${next.coerceIn(0,31)}"
+        node("after-level",1230,273,sprites.getValue(nextSprite).width,80,sprite=nextSprite,depth=3)
         line("result-level-rule",1019,341,326)
         node("attack-label",1028,360,90,20,"物理攻撃",size=12.0,color="#a5aa9f")
         node("attack-value",1190,355,149,28,"${selected.power}  →  ${selected.power+selected.step}  +${selected.step}",size=20.0,color="#dfd3b7",align="right")

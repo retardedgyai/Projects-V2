@@ -197,6 +197,270 @@
     "height": 57,
     "font": "projects_ui_polish05:plates"
   },
+  "forge_environment_striking/0_0": {
+    "char": "",
+    "width": 256,
+    "height": 256,
+    "font": "projects_ui_polish05:plates"
+  },
+  "forge_environment_striking/256_0": {
+    "char": "",
+    "width": 256,
+    "height": 256,
+    "font": "projects_ui_polish05:plates"
+  },
+  "forge_environment_striking/512_0": {
+    "char": "",
+    "width": 116,
+    "height": 256,
+    "font": "projects_ui_polish05:plates"
+  },
+  "forge_environment_striking/0_256": {
+    "char": "",
+    "width": 256,
+    "height": 126,
+    "font": "projects_ui_polish05:plates"
+  },
+  "forge_environment_striking/256_256": {
+    "char": "",
+    "width": 256,
+    "height": 126,
+    "font": "projects_ui_polish05:plates"
+  },
+  "forge_environment_striking/512_256": {
+    "char": "",
+    "width": 116,
+    "height": 126,
+    "font": "projects_ui_polish05:plates"
+  },
+  "forge_environment_result_warm/0_0": {
+    "char": "",
+    "width": 256,
+    "height": 256,
+    "font": "projects_ui_polish05:plates"
+  },
+  "forge_environment_result_warm/256_0": {
+    "char": "",
+    "width": 256,
+    "height": 256,
+    "font": "projects_ui_polish05:plates"
+  },
+  "forge_environment_result_warm/512_0": {
+    "char": "",
+    "width": 116,
+    "height": 256,
+    "font": "projects_ui_polish05:plates"
+  },
+  "forge_environment_result_warm/0_256": {
+    "char": "",
+    "width": 256,
+    "height": 126,
+    "font": "projects_ui_polish05:plates"
+  },
+  "forge_environment_result_warm/256_256": {
+    "char": "",
+    "width": 256,
+    "height": 126,
+    "font": "projects_ui_polish05:plates"
+  },
+  "forge_environment_result_warm/512_256": {
+    "char": "",
+    "width": 116,
+    "height": 126,
+    "font": "projects_ui_polish05:plates"
+  },
+  "next_level_0": {
+    "char": "",
+    "width": 90,
+    "height": 80,
+    "font": "projects_ui_polish05:plates"
+  },
+  "next_level_1": {
+    "char": "",
+    "width": 82,
+    "height": 80,
+    "font": "projects_ui_polish05:plates"
+  },
+  "next_level_2": {
+    "char": "",
+    "width": 87,
+    "height": 80,
+    "font": "projects_ui_polish05:plates"
+  },
+  "next_level_3": {
+    "char": "",
+    "width": 87,
+    "height": 80,
+    "font": "projects_ui_polish05:plates"
+  },
+  "next_level_4": {
+    "char": "",
+    "width": 88,
+    "height": 80,
+    "font": "projects_ui_polish05:plates"
+  },
+  "next_level_5": {
+    "char": "",
+    "width": 86,
+    "height": 80,
+    "font": "projects_ui_polish05:plates"
+  },
+  "next_level_6": {
+    "char": "",
+    "width": 88,
+    "height": 80,
+    "font": "projects_ui_polish05:plates"
+  },
+  "next_level_7": {
+    "char": "",
+    "width": 85,
+    "height": 80,
+    "font": "projects_ui_polish05:plates"
+  },
+  "next_level_8": {
+    "char": "",
+    "width": 89,
+    "height": 80,
+    "font": "projects_ui_polish05:plates"
+  },
+  "next_level_9": {
+    "char": "",
+    "width": 88,
+    "height": 80,
+    "font": "projects_ui_polish05:plates"
+  },
+  "next_level_10": {
+    "char": "",
+    "width": 106,
+    "height": 80,
+    "font": "projects_ui_polish05:plates"
+  },
+  "next_level_11": {
+    "char": "",
+    "width": 99,
+    "height": 80,
+    "font": "projects_ui_polish05:plates"
+  },
+  "next_level_12": {
+    "char": "",
+    "width": 104,
+    "height": 80,
+    "font": "projects_ui_polish05:plates"
+  },
+  "next_level_13": {
+    "char": "",
+    "width": 104,
+    "height": 80,
+    "font": "projects_ui_polish05:plates"
+  },
+  "next_level_14": {
+    "char": "",
+    "width": 104,
+    "height": 80,
+    "font": "projects_ui_polish05:plates"
+  },
+  "next_level_15": {
+    "char": "",
+    "width": 103,
+    "height": 80,
+    "font": "projects_ui_polish05:plates"
+  },
+  "next_level_16": {
+    "char": "",
+    "width": 104,
+    "height": 80,
+    "font": "projects_ui_polish05:plates"
+  },
+  "next_level_17": {
+    "char": "",
+    "width": 102,
+    "height": 80,
+    "font": "projects_ui_polish05:plates"
+  },
+  "next_level_18": {
+    "char": "",
+    "width": 106,
+    "height": 80,
+    "font": "projects_ui_polish05:plates"
+  },
+  "next_level_19": {
+    "char": "",
+    "width": 104,
+    "height": 80,
+    "font": "projects_ui_polish05:plates"
+  },
+  "next_level_20": {
+    "char": "",
+    "width": 111,
+    "height": 80,
+    "font": "projects_ui_polish05:plates"
+  },
+  "next_level_21": {
+    "char": "",
+    "width": 104,
+    "height": 80,
+    "font": "projects_ui_polish05:plates"
+  },
+  "next_level_22": {
+    "char": "",
+    "width": 109,
+    "height": 80,
+    "font": "projects_ui_polish05:plates"
+  },
+  "next_level_23": {
+    "char": "",
+    "width": 109,
+    "height": 80,
+    "font": "projects_ui_polish05:plates"
+  },
+  "next_level_24": {
+    "char": "",
+    "width": 109,
+    "height": 80,
+    "font": "projects_ui_polish05:plates"
+  },
+  "next_level_25": {
+    "char": "",
+    "width": 108,
+    "height": 80,
+    "font": "projects_ui_polish05:plates"
+  },
+  "next_level_26": {
+    "char": "",
+    "width": 109,
+    "height": 80,
+    "font": "projects_ui_polish05:plates"
+  },
+  "next_level_27": {
+    "char": "",
+    "width": 107,
+    "height": 80,
+    "font": "projects_ui_polish05:plates"
+  },
+  "next_level_28": {
+    "char": "",
+    "width": 111,
+    "height": 80,
+    "font": "projects_ui_polish05:plates"
+  },
+  "next_level_29": {
+    "char": "",
+    "width": 109,
+    "height": 80,
+    "font": "projects_ui_polish05:plates"
+  },
+  "next_level_30": {
+    "char": "",
+    "width": 111,
+    "height": 80,
+    "font": "projects_ui_polish05:plates"
+  },
+  "next_level_31": {
+    "char": "",
+    "width": 104,
+    "height": 80,
+    "font": "projects_ui_polish05:plates"
+  },
   "armor_ui": {
     "char": "",
     "width": 19,
