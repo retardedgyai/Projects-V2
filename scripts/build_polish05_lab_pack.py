@@ -94,9 +94,13 @@ def main() -> None:
     for name in ("enhance_button", "replenish_row"):
         source = EFFECTS / "enhance_button_smooth.png" if name == "enhance_button" else KIT / "assets/layers" / f"{name}.png"
         image = Image.open(source).convert("RGBA")
+        # Split the 2x button at 100/200 CSS px, outside the centre label.
+        # A 256px split would cut through the first Japanese glyph.
+        cuts = [0, 200, 400, image.width] if name == "enhance_button" else \
+            list(range(0, image.width, 256)) + [image.width]
         for y in range(0, image.height, 256):
-            for x in range(0, image.width, 256):
-                tile = image.crop((x, y, min(x + 256, image.width), min(y + 256, image.height)))
+            for x, right in zip(cuts, cuts[1:]):
+                tile = image.crop((x, y, right, min(y + 256, image.height)))
                 rel = f"textures/plates/{name}_{x}_{y}.png"
                 dest = PACK / "assets" / NAMESPACE / rel
                 dest.parent.mkdir(parents=True, exist_ok=True)
@@ -120,6 +124,7 @@ def main() -> None:
     for name in ([f"current_level_{level}" for level in range(31)] +
                  [f"next_level_{level}" for level in range(31)] + ["next_level_max"]):
         image = Image.open(EFFECTS / f"{name}.png").convert("RGBA")
+        assert image.width <= 256 and image.height <= 256, (name, image.size)
         rel = f"textures/effects/{name}.png"
         dest = PACK / "assets" / NAMESPACE / rel
         dest.parent.mkdir(parents=True, exist_ok=True)

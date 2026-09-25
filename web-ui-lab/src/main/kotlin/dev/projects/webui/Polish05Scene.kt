@@ -14,6 +14,7 @@ enum class ForgeLightPhase { IDLE, STRIKING, RESULT_WARM }
 
 class Polish05Scene(private val kit: Path, spriteMap: Path) {
     private companion object {
+        const val TYPOGRAPHY_SCALE=2.0
         const val MODAL_MASK_DEPTH=20
         const val MODAL_BORDER_DEPTH=21
         const val MODAL_PANEL_DEPTH=22
@@ -302,13 +303,16 @@ class Polish05Scene(private val kit: Path, spriteMap: Path) {
         node("after-caption",1251,271,62,16,"強化後",size=10.0,color="#999d94",depth=3)
         halo("result-level-halo","result_level_halo",1019,263)
         val currentSprite="current_level_${selected.level}"
-        node("before-level",1093.7-sprites.getValue(currentSprite).width/2.0,273,
-            sprites.getValue(currentSprite).width,80,sprite=currentSprite,depth=3)
+        node("before-level",1093.7-sprites.getValue(currentSprite).width/(2*TYPOGRAPHY_SCALE),273,
+            sprites.getValue(currentSprite).width/TYPOGRAPHY_SCALE,
+            sprites.getValue(currentSprite).height/TYPOGRAPHY_SCALE,sprite=currentSprite,depth=3)
         node("level-arrow",1167,290,64,41,"→",size=31.0,color="#aca690",align="center",depth=3)
         // Both values use the approved Georgia outlines. The next level retains
         // its original golden text shadow; the selected number stays dynamic.
         val nextSprite=if(maxed)"next_level_max" else "next_level_$next"
-        node("after-level",if(maxed)1199 else 1230,273,sprites.getValue(nextSprite).width,80,sprite=nextSprite,depth=3)
+        node("after-level",if(maxed)1199 else 1230,273,
+            sprites.getValue(nextSprite).width/TYPOGRAPHY_SCALE,
+            sprites.getValue(nextSprite).height/TYPOGRAPHY_SCALE,sprite=nextSprite,depth=3)
         line("result-level-rule",1019,341,326,depth=3)
         node("attack-label",1028,360,90,20,"物理攻撃",size=12.0,color="#a5aa9f")
         node("attack-value",1190,355,149,28,"${selected.power}  →  ${selected.power+powerGain}  +$powerGain",size=20.0,color="#dfd3b7",align="right")
@@ -364,7 +368,8 @@ class Polish05Scene(private val kit: Path, spriteMap: Path) {
             sprites.keys.filter { it.startsWith("enhance_button/") }.forEach { key ->
                 val offset=key.substringAfter('/').split('_')
                 val sprite=sprites.getValue(key)
-                node(key,1019+offset[0].toInt(),710+offset[1].toInt(),sprite.width,sprite.height,sprite=key,depth=2)
+                node(key,1019+offset[0].toInt()/TYPOGRAPHY_SCALE,710+offset[1].toInt()/TYPOGRAPHY_SCALE,
+                    sprite.width/TYPOGRAPHY_SCALE,sprite.height/TYPOGRAPHY_SCALE,sprite=key,depth=2)
             }
         } else {
             node("enhance-dynamic-bg",1019,710,326,51,bg=if(canEnhance)"#d4b879" else "#44443e")

@@ -24,7 +24,15 @@ def save_smooth(raw: bytes, size: tuple[int, int], destination: Path) -> None:
     # Chrome rounds fractional element bounds outwards at high DPI.
     assert abs(image.width - size[0] * 3) <= 3 and abs(image.height - size[1] * 3) <= 3, \
         (destination.name, image.size, size)
-    image.resize(size, Image.Resampling.LANCZOS).save(destination, optimize=True)
+    # Keep two texture pixels per approved CSS pixel. Vanilla then downsamples
+    # the glyph at display time instead of magnifying a 1x bitmap edge.
+    image = image.resize((size[0] * 2, size[1] * 2), Image.Resampling.LANCZOS)
+    if destination.name == "next_level_max.png" and image.width > 256:
+        # The final six pixels are empty shadow padding. Vanilla bitmap
+        # providers reject a glyph wider than 256px.
+        assert image.getbbox()[2] <= 256
+        image = image.crop((0, 0, 256, image.height))
+    image.save(destination, optimize=True)
 
 
 def main() -> None:

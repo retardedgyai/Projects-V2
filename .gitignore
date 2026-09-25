@@ -9,6 +9,8 @@ server-minestom/run/
 *.iml
 __pycache__/
 *.pyc
+hs_err_pid*.log
+replay_pid*.log
 
 # Local PixelLab requests, raw candidates, and previews.
 /.projects-local/

@@ -31,6 +31,8 @@ class Polish05FlowTest {
         // These approved bitmaps have baked-in labels. Live text must not be drawn on top.
         assertFalse(nodes.any { it.id.startsWith("replenish-bg-") && it.sprite!=null })
         assertTrue(nodes.any { it.id.startsWith("enhance_button/") })
+        val buttonTiles=nodes.filter { it.id.startsWith("enhance_button/") }
+        assertEquals(326*screen.scale,buttonTiles.sumOf { it.box.w },0.0001)
         assertFalse(nodes.any { it.id=="enhance-label" })
         assertTrue(nodes.single { it.id=="tab-label-forge" }.sprite!=null)
         // The CSS-rendered Georgia glyph has transparent padding for its blur.
