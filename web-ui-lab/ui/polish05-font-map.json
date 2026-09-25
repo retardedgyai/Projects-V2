@@ -533,6 +533,66 @@
     "height": 78,
     "font": "projects_ui_polish05:plates"
   },
+  "result_level_halo/0_0": {
+    "char": "",
+    "width": 256,
+    "height": 78,
+    "font": "projects_ui_polish05:plates"
+  },
+  "result_level_halo/256_0": {
+    "char": "",
+    "width": 70,
+    "height": 78,
+    "font": "projects_ui_polish05:plates"
+  },
+  "catalyst_off_halo/0_0": {
+    "char": "",
+    "width": 256,
+    "height": 62,
+    "font": "projects_ui_polish05:plates"
+  },
+  "catalyst_off_halo/256_0": {
+    "char": "",
+    "width": 80,
+    "height": 62,
+    "font": "projects_ui_polish05:plates"
+  },
+  "catalyst_on_halo/0_0": {
+    "char": "",
+    "width": 256,
+    "height": 62,
+    "font": "projects_ui_polish05:plates"
+  },
+  "catalyst_on_halo/256_0": {
+    "char": "",
+    "width": 80,
+    "height": 62,
+    "font": "projects_ui_polish05:plates"
+  },
+  "cost_ready_halo/0_0": {
+    "char": "",
+    "width": 256,
+    "height": 52,
+    "font": "projects_ui_polish05:plates"
+  },
+  "cost_ready_halo/256_0": {
+    "char": "",
+    "width": 70,
+    "height": 52,
+    "font": "projects_ui_polish05:plates"
+  },
+  "cost_missing_halo/0_0": {
+    "char": "",
+    "width": 256,
+    "height": 52,
+    "font": "projects_ui_polish05:plates"
+  },
+  "cost_missing_halo/256_0": {
+    "char": "",
+    "width": 70,
+    "height": 52,
+    "font": "projects_ui_polish05:plates"
+  },
   "armor_ui": {
     "char": "",
     "width": 19,

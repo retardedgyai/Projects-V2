@@ -203,12 +203,19 @@ class Polish05Scene(private val kit: Path, spriteMap: Path) {
                 style["hover-background-color"]="#f1d59b"
             list+=UiNode(id,b,text,style,action,null,true,depth,sprite?.let { sprites.getValue(it) })
         }
-        fun line(id:String,x:Number,y:Number,w:Number,color:String="#3a3c36")=node(id,x,y,w,1,bg=color,depth=2)
+        fun line(id:String,x:Number,y:Number,w:Number,color:String="#3a3c36",depth:Int=2)=node(id,x,y,w,1,bg=color,depth=depth)
         fun tilePlate(name:String,x:Double,y:Double) {
             sprites.keys.filter { it.startsWith("$name/") }.forEach { key ->
                 val offset=key.substringAfter('/').split('_')
                 val sprite=sprites.getValue(key)
                 node("tile-$key",x+offset[0].toDouble(),y+offset[1].toDouble(),sprite.width,sprite.height,sprite=key,depth=1)
+            }
+        }
+        fun halo(id:String,name:String,x:Int,y:Int) {
+            for(offset in listOf(0,256)) {
+                val key="$name/${offset}_0"
+                val sprite=sprites.getValue(key)
+                node("$id-$offset",x+offset,y,sprite.width,sprite.height,sprite=key,depth=2)
             }
         }
         node("viewport-backdrop",-200,-150,1840,1220,bg="#14191e",depth=-1)
@@ -224,16 +231,11 @@ class Polish05Scene(private val kit: Path, spriteMap: Path) {
         node("tab-forge",343,150,130,71,sprite="tab_active_forge",depth=2)
         node("tab-icon-forge",374,165,24,30,sprite="hammer",depth=4)
         node("tab-label-forge",407,171,66,30,"強化",size=18.0,color="#e3d0a5",depth=4)
-        node("tab-icon-refine",507,171,21,23,sprite="coin_ore",depth=4)
-        node("tab-label-refine",540,171,63,30,"精錬",size=18.0,color="#b9b3a5",depth=4)
-        node("tab-icon-bag",635,169,25,27,sprite="bag",depth=4)
-        node("tab-label-bag",668,171,77,30,"装備庫",size=18.0,color="#b9b3a5",depth=4)
         node("wallet-icon",1170,172,22,23,sprite="coin_ore")
         node("wallet",1198,171,87,24,number(snapshot.silver),size=18.0,color="#d9caa8")
         node("wallet-unit",1284,175,35,16,"銀貨",size=11.0,color="#b4aa94")
         node("close",1311,166,30,30,"×",size=25.0,bg="#171c1d",align="center")
         node("left-heading",95,235,180,22,"強化する装備",size=14.0)
-        node("left-bag-link",282,237,43,19,"装備庫 ›",size=10.0,color="#aba492")
         line("left-rule",95,276,229)
         snapshot.gears.forEachIndexed { index, gear ->
             val y=277+index*82
@@ -245,25 +247,21 @@ class Polish05Scene(private val kit: Path, spriteMap: Path) {
             node("gear-stat-$index",167,y+35,157,18,"T${gear.tier}   物理攻撃 ${gear.power}",size=11.0,color="#b4b9af")
             node("gear-status-$index",167,y+59,150,16,if(gear.id==snapshot.equipped)"装備中  ·  魔法" else "所持品  ·  希少",size=10.0,color="#929a93")
         }
-        node("compare-label",95,448,112,18,"装備中と比較",size=10.0,color="#929a93")
-        node("compare-link",262,448,62,18,"比較を見る ›",size=10.0,color="#c5b792")
-        node("replenish-heading",95,496,127,20,"素材の補充",size=13.0)
-        node("replenish-caption",258,497,66,16,"原石から精錬",size=10.0,color="#858b82")
-        for((index,recipe) in listOf(Polish05PreviewModel.Recipe.ORE,Polish05PreviewModel.Recipe.CRYSTAL).withIndex()) {
+        node("replenish-heading",95,496,127,20,"所持素材",size=13.0)
+        node("replenish-caption",258,497,66,16,"強化に使用",size=10.0,color="#858b82")
+        for(index in 0..1) {
             val y=523+index*57
             // The approved row bitmap already contains fixed labels and counts. Use its
             // dark plate color here so the live material values are drawn only once.
             node("replenish-bg-$index",95,y,229,57,bg="#1c2223",depth=2)
             val raw=if(index==0)Material.RAW_ORE else Material.RAW_CRYSTAL
-            val replenish=model.replenishment(recipe)
-            val cap=replenish.capacity
+            val owned=if(index==0)snapshot.materials.getValue(Material.ORE) else snapshot.materials.getValue(Material.CRYSTAL)
             node("replenish-icon-$index",102,y+15,if(index==0)21 else 19,if(index==0)23 else 22,
                 sprite=if(index==0)"coin_ore" else "purple_crystal",depth=3)
             node("replenish-name-$index",139,y+8,130,20,if(index==0)"陽鉱の塊" else "虚晶の欠片",size=13.0)
             node("replenish-count-$index",139,y+30,144,17,
-                "${if(replenish.missing>0)"あと${replenish.missing}個  ·  " else ""}原石 ${snapshot.materials.getValue(raw)} → 最大 ${cap}個",
+                "所持 ${owned}個  ·  原石 ${snapshot.materials.getValue(raw)}個",
                 size=10.0,color="#a4aba0")
-            node("replenish-action-$index",290,y+17,37,20,if(index==0)"精錬 ›" else "研磨 ›",size=10.0,color="#c6b48a")
         }
         node("can-enhance",95,651,226,21,"▪ 手持ちで あと${model.possibleEnhancements()}回 強化可能",size=10.0,color="#9ca891")
         line("history-line",95,702,229)
@@ -297,16 +295,17 @@ class Polish05Scene(private val kit: Path, spriteMap: Path) {
         val powerGain=if(maxed)0 else selected.step
         node("result-title",1019,237,180,22,if(snapshot.history.firstOrNull()?.success==true)"次の強化" else "強化の結果",size=15.0)
         node("result-caption",1275,241,70,15,"成功したとき",size=10.0,color="#9c9e92")
-        line("result-top",1019,263,326)
-        node("before-caption",1078,271,62,16,"現在",size=10.0,color="#999d94")
-        node("after-caption",1251,271,62,16,"強化後",size=10.0,color="#999d94")
-        node("before-level",1071,288,67,48,"+${selected.level}",size=39.0)
-        node("level-arrow",1167,290,64,41,"→",size=31.0,color="#aca690",align="center")
+        line("result-top",1019,263,326,depth=3)
+        node("before-caption",1078,271,62,16,"現在",size=10.0,color="#999d94",depth=3)
+        node("after-caption",1251,271,62,16,"強化後",size=10.0,color="#999d94",depth=3)
+        halo("result-level-halo","result_level_halo",1019,263)
+        node("before-level",1071,288,67,48,"+${selected.level}",size=39.0,depth=3)
+        node("level-arrow",1167,290,64,41,"→",size=31.0,color="#aca690",align="center",depth=3)
         // Original Georgia numerals include a 15px golden text shadow. Keep that
         // CSS-rendered blur as a transparent glyph while the chosen level stays live.
         val nextSprite=if(maxed)"next_level_max" else "next_level_$next"
         node("after-level",if(maxed)1199 else 1230,273,sprites.getValue(nextSprite).width,80,sprite=nextSprite,depth=3)
-        line("result-level-rule",1019,341,326)
+        line("result-level-rule",1019,341,326,depth=3)
         node("attack-label",1028,360,90,20,"物理攻撃",size=12.0,color="#a5aa9f")
         node("attack-value",1190,355,149,28,"${selected.power}  →  ${selected.power+powerGain}  +$powerGain",size=20.0,color="#dfd3b7",align="right")
         line("result-attack-rule",1019,392,326)
@@ -321,25 +320,32 @@ class Polish05Scene(private val kit: Path, spriteMap: Path) {
             Triple("虚晶の欠片",Material.CRYSTAL,cost.materials.getValue(Material.CRYSTAL)))
         costs.forEachIndexed { index,(name,material,amount) ->
             val y=494+index*52
-            line("cost-line-$index",1019,y,326)
-            node("cost-icon-$index",1028,y+10,24,26,sprite=if(index==0)"coin_ore" else "purple_crystal",depth=3)
-            node("cost-name-$index",1067,y+9,150,20,name,size=13.0)
             val have=snapshot.materials.getValue(material)
+            val enough=have>=amount
+            halo("cost-halo-$index",if(enough)"cost_ready_halo" else "cost_missing_halo",1019,y)
+            line("cost-line-$index",1019,y,326,depth=3)
+            node("cost-icon-$index",1028,y+10,24,26,sprite=if(index==0)"coin_ore" else "purple_crystal",depth=4)
+            node("cost-name-$index",1067,y+9,150,20,name,size=13.0,depth=3)
             node("cost-after-$index",1067,y+28,190,16,if(have>=amount)"所持 $have → 残り ${have-amount}" else "所持 $have  ·  あと${amount-have}個不足",
-                size=10.0,color=if(have>=amount)"#a2a99d" else "#d5a29a")
-            node("cost-amount-$index",1273,y+16,65,28,"${amount} 個",size=20.0,align="right")
+                size=10.0,color=if(have>=amount)"#a2a99d" else "#d5a29a",depth=3)
+            node("cost-amount-$index",1273,y+16,65,28,"${amount} 個",size=20.0,
+                color=if(enough)"#c5d8bd" else "#eca69b",align="right",depth=3)
         }
         val silverY=598
-        line("cost-line-silver",1019,silverY,326)
-        node("silver-icon",1031,silverY+16,22,23,sprite="coin_ore",depth=3)
-        node("silver-name",1067,silverY+10,90,19,"銀貨",size=13.0)
+        val enoughSilver=snapshot.silver>=cost.silver
+        halo("cost-halo-silver",if(enoughSilver)"cost_ready_halo" else "cost_missing_halo",1019,silverY)
+        line("cost-line-silver",1019,silverY,326,depth=3)
+        node("silver-icon",1031,silverY+16,22,23,sprite="coin_ore",depth=4)
+        node("silver-name",1067,silverY+10,90,19,"銀貨",size=13.0,depth=3)
         node("silver-after",1067,silverY+29,186,16,if(snapshot.silver>=cost.silver)
-            "所持 ${number(snapshot.silver)} → 残り ${number(snapshot.silver-cost.silver)}" else "銀貨が不足しています",size=10.0,color="#a2a99d")
-        node("silver-amount",1238,silverY+16,101,28,"${number(cost.silver)} 銀貨",size=18.0,align="right")
-        node("catalyst-box",1019,661,326,44,sprite=if(snapshot.catalyst)"catalyst_on" else "catalyst_off",depth=1)
-        node("catalyst-check",1031,670,15,15,if(snapshot.catalyst)"☑" else "□",size=15.0,color="#cbb783")
-        node("catalyst-text",1052,663,190,35,"触媒を使う  ·  所持 ${snapshot.materials.getValue(Material.CATALYST)}個",size=12.0,color="#b9bdac")
-        node("catalyst-info",1243,672,93,19,"成功率を100%に",size=10.0,color="#c9b986")
+            "所持 ${number(snapshot.silver)} → 残り ${number(snapshot.silver-cost.silver)}" else "銀貨が不足しています",size=10.0,
+            color=if(enoughSilver)"#a2a99d" else "#d5a29a",depth=3)
+        node("silver-amount",1238,silverY+16,101,28,"${number(cost.silver)} 銀貨",size=18.0,
+            color=if(enoughSilver)"#c5d8bd" else "#eca69b",align="right",depth=3)
+        halo("catalyst-halo",if(snapshot.catalyst)"catalyst_on_halo" else "catalyst_off_halo",1014,652)
+        node("catalyst-check",1031,670,15,15,if(snapshot.catalyst)"☑" else "□",size=15.0,color="#cbb783",depth=3)
+        node("catalyst-text",1052,663,190,35,"触媒を使う  ·  所持 ${snapshot.materials.getValue(Material.CATALYST)}個",size=12.0,color="#b9bdac",depth=3)
+        node("catalyst-info",1243,672,93,19,"成功率を100%に",size=10.0,color="#c9b986",depth=3)
         val enhanceLabel=when {
             snapshot.busy -> "鍛造中…"
             selected.level>=30 -> "最大強化"
@@ -361,7 +367,7 @@ class Polish05Scene(private val kit: Path, spriteMap: Path) {
         }
         node("action-note",1020,768,324,16,note,size=10.0,color="#9fa699",align="center")
         node("footer-help",96,796,356,20,"左クリック 選択  │  Shift 閉じる",size=10.0,color="#aeb3a1")
-        node("footer-state",1238,796,107,19,"素材と装備庫は連動",size=10.0,color="#9fac9b",align="right")
+        node("footer-state",1238,796,107,19,"所持素材を表示中",size=10.0,color="#9fac9b",align="right")
 
         // Interaction bounds are read from the approved browser export, then transformed once.
         // Visuals and hit testing therefore use the same letterboxed space.
@@ -372,11 +378,8 @@ class Polish05Scene(private val kit: Path, spriteMap: Path) {
             val selector=c.get("selector")?.takeUnless { it.isJsonNull }?.asString
             val action=when {
                 dataset.has("gear") -> "select:${dataset.get("gear").asString}"
-                dataset.has("prepareMaterial") -> "refine:${dataset.get("prepareMaterial").asString}"
-                dataset.has("view") -> "view:${dataset.get("view").asString}"
                 selector=="#enhance-btn" && canEnhance -> "enhance"
                 selector=="#catalyst-btn" -> "catalyst"
-                selector=="#workbench-compare" -> "compare"
                 selector=="#close-window" -> "close"
                 selector=="#sound-btn" -> "sound"
                 else -> null

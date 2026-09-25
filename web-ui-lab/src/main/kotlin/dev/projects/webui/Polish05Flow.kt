@@ -72,7 +72,7 @@ class Polish05Flow(private val presentation: Polish05Scene) {
         action=="catalyst" && view=="forge" -> model.useCatalyst(!model.snapshot().catalyst).also { if(it)note="触媒の使用を切り替えました。" }
         action=="enhance" && view=="forge" -> {
             quote=model.quoteEnhancement();modal=quote!=null
-            if(!modal)note="素材か銀貨が不足しています。左の素材補充から精錬できます。"
+            if(!modal)note="素材か銀貨が不足しています。"
             true
         }
         else -> false

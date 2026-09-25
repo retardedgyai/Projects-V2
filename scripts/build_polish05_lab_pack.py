@@ -115,6 +115,18 @@ def main() -> None:
         dest.parent.mkdir(parents=True, exist_ok=True)
         image.save(dest)
         register(name, f"effects/{name}.png", image.width, image.height)
+    # Vanilla bitmap providers silently show a missing-glyph square for these
+    # >256px plates. Split them exactly like the approved chrome tiles.
+    for name in ("result_level_halo", "catalyst_off_halo", "catalyst_on_halo",
+                 "cost_ready_halo", "cost_missing_halo"):
+        image = Image.open(EFFECTS / f"{name}.png").convert("RGBA")
+        for x in range(0, image.width, 256):
+            tile = image.crop((x, 0, min(x + 256, image.width), image.height))
+            rel = f"textures/effects/{name}_{x}_0.png"
+            dest = PACK / "assets" / NAMESPACE / rel
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            tile.save(dest)
+            register(f"{name}/{x}_0", f"effects/{name}_{x}_0.png", tile.width, tile.height)
 
     # The kit's source font already contains the sharp icons and both original swords.
     raw = json.loads((KIT / "layout/sprite_glyphs.json").read_text(encoding="utf-8"))

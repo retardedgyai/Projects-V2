@@ -1,6 +1,7 @@
 package dev.projects.webui
 
 import dev.projects.webui.polish05.Polish05PreviewModel.Material
+import dev.projects.webui.polish05.Polish05PreviewModel
 import dev.projects.webui.polish05.Polish05ScreenSpace
 import java.nio.file.Files
 import java.nio.file.Path
@@ -72,17 +73,45 @@ class Polish05FlowTest {
         assertNotNull(unselected)
         assertNotEquals(selected.char,unselected.char)
         assertTrue(initial.any { it.id=="tab-forge" && it.sprite!=null })
-        val catalystOff=initial.single { it.id=="catalyst-box" }.sprite
+        val catalystOff=initial.single { it.id=="catalyst-halo-0" }.sprite
         assertTrue(flow.action("select:ash"))
         val changed=flow.scene().nodes
         assertEquals(unselected.char,changed.single { it.id=="gear-plate-0" }.sprite?.char)
         assertEquals(selected.char,changed.single { it.id=="gear-plate-1" }.sprite?.char)
         assertTrue(flow.action("catalyst"))
-        assertNotEquals(catalystOff?.char,flow.scene().nodes.single { it.id=="catalyst-box" }.sprite?.char)
+        assertNotEquals(catalystOff?.char,flow.scene().nodes.single { it.id=="catalyst-halo-0" }.sprite?.char)
         assertTrue(flow.action("view:bag"))
         assertTrue(flow.scene().nodes.any { it.id=="inventory-tab" && it.sprite!=null })
         assertTrue(flow.action("view:refine"))
         assertTrue(flow.scene().nodes.any { it.id=="refine-tab" && it.sprite!=null })
+    }
+
+    @Test fun forgeOnlyScreenKeepsLiveMaterialStatusAndDistinctShortageLight() {
+        val model=Polish05PreviewModel()
+        val initial=scene.forge(model).nodes
+        assertTrue(initial.any { it.id=="result-level-halo-0" && it.sprite!=null })
+        assertTrue(initial.any { it.id=="catalyst-halo-0" && it.sprite!=null })
+        val chromeDepth=initial.first { it.id.startsWith("tile-window_chrome/") }.depth
+        assertTrue(initial.single { it.id=="result-level-halo-0" }.depth>chromeDepth)
+        assertTrue(initial.single { it.id=="before-level" }.depth>initial.single { it.id=="result-level-halo-0" }.depth)
+        assertTrue(initial.single { it.id=="cost-name-0" }.depth>initial.single { it.id=="cost-halo-0-0" }.depth)
+        assertTrue(initial.mapNotNull { it.sprite }.all { it.width<=256 && it.height<=256 })
+        assertTrue(initial.any { it.id=="replenish-count-0" && it.text.contains("所持 60個") })
+        assertFalse(initial.any { it.action=="compare" || it.action?.startsWith("view:")==true ||
+            it.action?.startsWith("refine:")==true })
+        assertFalse(initial.any { it.id.startsWith("tab-label-bag") || it.id.startsWith("tab-label-refine") })
+        val ready=initial.single { it.id=="cost-halo-0-0" }.sprite?.char
+        assertNotNull(ready)
+        repeat(2) {
+            val quote=assertNotNull(model.quoteEnhancement())
+            val operation=assertNotNull(model.begin(quote.id,0L,reducedMotion=true))
+            assertNotNull(model.finish(operation.id,operation.finishAtMs))
+        }
+        val depleted=scene.forge(model).nodes
+        assertNotEquals(ready,depleted.single { it.id=="cost-halo-0-0" }.sprite?.char)
+        assertEquals(ready,depleted.single { it.id=="cost-halo-1-0" }.sprite?.char)
+        assertTrue(depleted.single { it.id=="cost-after-0" }.text.contains("不足"))
+        assertFalse(depleted.any { it.action=="enhance" })
     }
 
     @Test fun selectCompareConfirmConsumeRefineAndReturnToSameGear() {
