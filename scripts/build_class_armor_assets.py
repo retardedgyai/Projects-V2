@@ -43,28 +43,25 @@ def armor_model(job,tier,slot):
     gui_scale=({'starweaver':.78,'mage':.82,'healer':.9}.get(job,.95) if slot=='helmet' else 1)
     if slot=='helmet': elements=project_helmet_elements(job,tier)
     elif slot=='chestplate' and job=='warrior':
-        # Long articulated sleeves hang away from the breastplate. The item
-        # silhouette is led by the entire arm, not square shoulder caps.
+        # Painted cutouts articulate the sleeves while the raised shoulders
+        # make the inventory silhouette readable at native pixel density.
         elements=[box('cuirass',[3.25,1.6,5.25],[12.75,14.2,10.75],base),
-                  box('left sleeve',[-.5,4.0,5.1],[4.4,14.5,10.9],secondary,-30,'z'),
-                  box('right sleeve',[11.6,4.0,5.1],[16.5,14.5,10.9],secondary,30,'z'),
-                  box('left shoulder plate',[-.4,11.8,4.65],[4.45,14.55,11.1],base,-30,'z'),
-                  box('right shoulder plate',[11.55,11.8,4.65],[16.4,14.55,11.1],base,30,'z'),
-                  box('forged backplate',[6.45,6.8,4.65],[9.55,10.55,5.3],'iron'),
-                  box('bronze socket',[6.9,7.25,4.4],[9.1,10.1,4.8],'bronze'),
-                  box('ember mark',[7.45,8.05,4.05],[8.55,9.25,4.45],'ember',45)]
+                  box('left sleeve',[-.5,4.0,5.1],[4.4,14.5,10.9],secondary,-22.5,'z'),
+                  box('right sleeve',[11.6,4.0,5.1],[16.5,14.5,10.9],secondary,22.5,'z'),
+                  box('left shoulder plate',[-.4,11.8,4.65],[4.45,14.55,11.1],base,-22.5,'z'),
+                  box('right shoulder plate',[11.55,11.8,4.65],[16.4,14.55,11.1],base,22.5,'z')]
     elif slot=='chestplate':
         elements=[box('cuirass',[3.8,1.6,5.4],[12.2,15,10.6],base),
                   box('left sleeve',[.2,1.8,5.3],[4,15.4,10.7],secondary),
                   box('right sleeve',[12,1.8,5.3],[15.8,15.4,10.7],secondary)]
     elif slot=='leggings' and job=='warrior':
-        elements=[box('left thigh guard',[3.4,6.8,5],[7.3,14.2,10],base),
-                  box('right thigh guard',[8.7,6.8,5],[12.6,14.2,10],base),
-                  box('joined leather waist',[3.5,12.3,5.2],[12.5,14.8,10.1],'leather'),
-                  box('small forge buckle',[7.2,12.7,4.65],[8.8,14.1,5.25],'bronze')]
+        elements=[box('left thigh guard',[3.4,2.2,5],[7.3,14.2,10],base),
+                  box('right thigh guard',[8.7,2.2,5],[12.6,14.2,10],base),
+                  box('joined leather waist',[3.5,11.7,5.2],[12.5,14.9,10.1],'leather'),
+                  box('small forge buckle',[7.1,12.5,4.65],[8.9,14.4,5.25],'bronze')]
     elif slot=='boots' and job=='warrior':
-        elements=[box('left high boot',[2.7,1.8,5.1],[7.5,7.6,10.5],base),
-                  box('right high boot',[8.5,1.8,4.8],[13.3,7.6,10.2],base),
+        elements=[box('left high boot',[2.7,.25,5.1],[7.5,13.75,10.5],base),
+                  box('right high boot',[8.5,.25,4.8],[13.3,13.75,10.2],base),
                   box('left projecting toe',[2.3,0.5,2.7],[7.8,2.9,7.5],base),
                   box('right projecting toe',[8.1,0.5,2.4],[13.6,2.9,7.2],base),
                   box('left ankle clasp',[3.0,6.45,4.65],[7.25,7.25,5.35],'bronze'),
@@ -77,12 +74,14 @@ def armor_model(job,tier,slot):
     # pasted on otherwise generic material cubes made the item look flat.
     worn='inner' if slot=='leggings' else 'outer'
     for element in (() if slot=='helmet' else elements):
-        if element['name'] in ('joined leather waist','small forge buckle',
-                               'forged backplate','bronze socket') or element['name'].endswith('ankle clasp'):
+        if element['name']=='joined leather waist':
+            def belt_uv(x,y,w,h): return [x/8,y/4,(x+w)/8,(y+h)/4]
+            element['faces']={face:{'uv':belt_uv(*rect),'texture':'#helm'} for face,rect in {
+                'north':(64,0,9,3),'south':(82,0,9,3),
+                'west':(75,0,5,3),'east':(75,0,5,3),
+                'up':(94,0,9,5),'down':(105,0,9,5)}.items()}
             continue
-        if element['name']=='ember mark':
-            element['faces']={face:{'uv':[4.4,8.4,5.6,11.4],
-                                    'texture':'#helm'} for face in element['faces']}
+        if element['name']=='small forge buckle' or element['name'].endswith('ankle clasp'):
             continue
         if element['name'].endswith('shoulder plate'):
             element['faces']={
@@ -100,7 +99,7 @@ def armor_model(job,tier,slot):
                 'south':{'uv':[3,13,4,16],'texture':'#outer'},
                 'east':{'uv':[2,13,3,16],'texture':'#outer'},
                 'west':{'uv':[0,13,1,16],'texture':'#outer'},
-                'up':{'uv':[1,8,2,10],'texture':'#outer'},
+                'up':{'uv':[1,13,2,15],'texture':'#outer'},
                 'down':{'uv':[2,8,3,10],'texture':'#outer'},
             }
             continue

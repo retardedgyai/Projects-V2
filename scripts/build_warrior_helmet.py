@@ -10,6 +10,7 @@ COLORS={
     'a':'#1e2b3a', 'b':'#35485d', 'c':'#627f93',
     'd':'#8eabb2', 'e':'#b4c9c4', 'f':'#5c382d',
     'g':'#b88955', 'h':'#f0d78a', 'r':'#a94732', 'R':'#e07c45',
+    'q':'#643833', 't':'#925445',
 }
 
 FRONT=(
@@ -107,14 +108,13 @@ def forge_texture(image,tier=1):
     paint(16,16,('ghg','hrh','gRg','grg','grg','grg','fgf','fff'))
     paint(20,16,('h','g','r','r','r','g','f','f'))
     paint(48,16,('aaaaaa','aaaaaa','abbbaa','abbbaa','aaaaaa','aaaaaa'))
-    # The chest ember and leg plates share this item atlas. Keep their own
-    # opaque patches separate from the low-resolution helmet face UVs.
+    paint(64,0,('fffffffff','fqttffttf','fggghgggf'))
+    paint(75,0,('fffff','fqttf','fgggf'))
+    paint(82,0,('fffffffff','fqqtttqqf','fgggggggf'))
+    paint(94,0,('fffffffff','fqqqqqqqf','fftttttff','ffgggggff','fffffffff'))
+    paint(105,0,('fffffffff',)*5)
+    # The thigh plates retain separate painted steel patches.
     d=ImageDraw.Draw(image)
-    d.rectangle((32,32,47,47),fill=COLORS['f'])
-    d.polygon([(39,33),(46,40),(39,47),(33,40)],fill=COLORS['g'])
-    d.polygon([(39,35),(44,40),(39,45),(35,40)],fill=COLORS['r'])
-    d.polygon([(39,36),(42,39),(39,43),(37,40)],fill=COLORS['R'])
-    d.point((38,38),fill=COLORS['h'])
     d.rectangle((0,48,15,63),fill=COLORS['b'])
     d.polygon([(1,48),(10,48),(15,52),(11,55),(0,52)],fill=COLORS['c'])
     d.line([(1,49),(9,49),(13,52)],fill=COLORS['d'],width=1)

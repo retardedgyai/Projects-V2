@@ -43,7 +43,9 @@ def verify():
                     assert image.getpixel((44,24))[3]==0,'Warrior arm cutout must remain transparent'
                     assert image.getpixel((20,28))[3]==0,'Warrior waist cutout must remain transparent'
                     assert image.getpixel((4,20))[3]==0,'Worn boots must reveal the thigh armor'
-                    assert item_image.getpixel((4,20))[3]==255,'Inventory boots need a complete cuff'
+                    assert item_image.getpixel((4,20))[3]==0,'Inventory boots use the same open upper silhouette'
+                    assert item_image.getpixel((4,16))[3]==0,'No boot top cap may float above the cuff'
+                    assert item_image.getpixel((4,26))[3]==255,'The projecting toe needs an opaque top'
                 if not inner: surfaces.add(image.tobytes())
             for slot in SLOTS:
                 name=f'{stem}_{slot}'
@@ -68,11 +70,14 @@ def verify():
                     required={
                         'helmet':{'forged shell','recessed face shadow',
                                   'warm wraparound brow','raised ember ridge'},
-                        'chestplate':{'left shoulder plate','right shoulder plate','bronze socket','ember mark'},
+                        'chestplate':{'left shoulder plate','right shoulder plate'},
                         'leggings':{'left thigh guard','right thigh guard','joined leather waist','small forge buckle'},
                         'boots':{'left projecting toe','right projecting toe','left ankle clasp','right ankle clasp'},
                     }[slot]
                     assert required<=names, f'Missing raised detail on {name}'
+                    if slot=='chestplate':
+                        assert not names&{'forged backplate','bronze socket','ember mark'}, \
+                            'No floating ornament may cover the breastplate'
                 assert model['textures']['outer']==f'projects:item/{stem}_outer'
                 assert model['textures']['inner']==f'projects:item/{stem}_inner'
                 assert model['textures']['helm']==f'projects:item/armor/helmet_faces/{job}_t{tier}'
