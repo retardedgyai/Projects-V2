@@ -63,10 +63,6 @@ fun main(args: Array<String>) {
             check(sync.teleportId()<0)
             val ack=PlayerPacketEvent(first,ClientTeleportConfirmPacket(sync.teleportId()))
             events.call(ack);check(ack.isCancelled)
-            val probesBefore=packets.filterIsInstance<PlayerPositionAndLookPacket>().size
-            Thread.sleep(120)
-            val probesAfter=packets.filterIsInstance<PlayerPositionAndLookPacket>().size
-            check(probesAfter-probesBefore>=3) { "Pointer probes still depend on world ticks" }
             fun rotate(yaw: Float,pitch: Float) {
                 val e=PlayerPacketEvent(first,ClientPlayerPositionAndRotationPacket(Pos(0.0,1.0,0.0,yaw,pitch),false,false))
                 events.call(e);check(e.isCancelled)
@@ -131,7 +127,7 @@ fun main(args: Array<String>) {
         check(packets.filterIsInstance<CameraPacket>().last().cameraId()==first.entityId)
         check(packets.filterIsInstance<ChangeGameStatePacket>().last().value()==first.gameMode.ordinal.toFloat())
         check(instance.entities.all { it===first || it===second })
-        println("UI_SMOKE_PASS 60 Hz pointer sampling independent of world ticks; 5 cycles; immediate rotation/click; idle updates=0; cursor tip immediate, shadow one-tick transform, no teleports; hover metadata<=2; private entities; restored mode/camera/slot; transfer-safe close; zero leaks")
+        println("UI_SMOKE_PASS 60 TPS; 5 cycles; immediate rotation/click; idle updates=0; cursor tip immediate, shadow one-tick transform, no teleports; hover metadata<=2; private entities; restored mode/camera/slot; transfer-safe close; zero leaks")
     } finally {
         sessions.close();first.remove();second.remove();MinecraftServer.stopCleanly()
     }

@@ -24,8 +24,6 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.Executors
-import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 
 /** Captures packets only while a player is viewing a display UI, in the lab or at the harbor smith. */
@@ -46,16 +44,15 @@ class UiSessions(
         var light=ForgeLightPhase.IDLE
         val pointer=UiPointer()
         var scene=polish?.scene()?:requireNotNull(document).layout(demo.values(),demo.flags())
-        val pending=ConcurrentHashMap<Int,Long>()
+        val pending=mutableMapOf<Int,Long>()
         val queue=ArrayDeque<Input>()
-        @Volatile var active=false
+        var active=false
         var generation=0
         var hover: String?=null
         var lastClick=0L
         var lastSlot=player.heldSlot.toInt()
         var lastResponse=System.nanoTime()
         var recenter=false
-        @Volatile var probeError: Exception?=null
         val voices=ArrayDeque<Voice>()
         var lastClickSound=0L
     }
@@ -63,25 +60,9 @@ class UiSessions(
     private val retired=ConcurrentHashMap<UUID,Retired>()
     private val sessions=ConcurrentHashMap<UUID,Session>()
     private val ids=AtomicInteger(-10_000)
-    private val sampler=Executors.newSingleThreadScheduledExecutor { task ->
-        Thread(task,"polish05-pointer-probe").apply { isDaemon=true }
-    }
     val sessionCount get() = sessions.size
     val entityCount get() = sessions.values.sumOf { it.renderer.size+1 }
     init {
-        // A production server ticks at 20 Hz. Probe the external-camera mouse
-        // between ticks so the visible pointer can receive fresh input at 60 Hz.
-        sampler.scheduleAtFixedRate({
-            sessions.values.forEach { s ->
-                try {
-                    synchronized(s) {
-                        if(s.active && s.probeError==null && sessions[s.player.uuid]===s) sample(s)
-                    }
-                } catch(ex: Exception) {
-                    s.probeError=ex
-                }
-            }
-        },0,16_666_667,TimeUnit.NANOSECONDS)
         events.addListener(PlayerPacketEvent::class.java,::packet)
         events.addListener(PlayerDisconnectEvent::class.java) { close(it.player,false);retired.remove(it.player.uuid) }
         events.addListener(InstanceTickEvent::class.java) { e -> sessions.values.filter { it.player.instance===e.instance }.forEach { s ->
@@ -133,9 +114,7 @@ class UiSessions(
         }
     }
     fun close(player: Player, restore: Boolean=true, teleportBack: Boolean=true) {
-        val s=sessions[player.uuid]?:return
-        synchronized(s) {
-            if(!sessions.remove(player.uuid,s)) return
+        val s=sessions.remove(player.uuid)?:return
         // Replies to already sent sample packets may arrive after the menu has closed.
         val old=retired[player.uuid]
         retired[player.uuid]=Retired(((old?.pending?:emptySet())+s.pending.keys).toList().takeLast(64).toMutableSet(),System.nanoTime()+5_000_000_000L)
@@ -147,10 +126,9 @@ class UiSessions(
         }
         s.queue.clear();s.pending.clear();s.renderer.close();s.camera.remove()
         if(s.polish!=null) POLISH_SOUNDS.forEach { player.stopSound(SoundStop.named(Key.key("projects_ui_polish05:ui.$it"))) }
-        }
     }
     private fun sample(s: Session, reset: Boolean=false) {
-        if(s.pending.size>=12) return
+        if(s.pending.size>=8) return
         val id=ids.getAndDecrement()
         s.pending[id]=System.nanoTime()
         if(reset) { s.pointer.reset();s.recenter=true }
@@ -226,17 +204,13 @@ class UiSessions(
         enqueue(s,yaw,pitch)
     }
     private fun tick(s: Session) {
-        if(s.probeError!=null) {
-            close(s.player)
-            s.player.sendMessage(Component.text("UIの入力を更新できなかったため終了しました。もう一度開いてください。"))
-            return
-        }
         if(s.player.instance!==s.camera.instance || s.camera.isRemoved) { close(s.player,teleportBack=false);return }
         if(s.polish!=null && !packReady(s.player)) { close(s.player);return }
         val now=System.nanoTime()
         if(now-s.lastResponse>5_000_000_000L) {
             close(s.player);s.player.sendMessage(Component.text("UIの応答が途切れたため終了しました。/ui で再度開けます。"));return
         }
+        if(s.active) sample(s)
         if(s.polish?.takeStrike()==true) sound(s,"refine_strike")
         val receipt=s.polish?.tick(System.currentTimeMillis())
         if(receipt!=null) {
@@ -356,8 +330,5 @@ class UiSessions(
         val POLISH_SOUNDS=listOf("click","select","back","equip","enhance_prepare","enhance_success",
             "enhance_success_radiant","enhance_fail","refine_strike","refine_success")
     }
-    override fun close() {
-        sampler.shutdownNow()
-        sessions.values.toList().forEach { close(it.player) }
-    }
+    override fun close() { sessions.values.toList().forEach { close(it.player) } }
 }
