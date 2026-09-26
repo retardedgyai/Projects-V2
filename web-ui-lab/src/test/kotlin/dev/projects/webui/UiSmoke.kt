@@ -174,6 +174,23 @@ fun main(args: Array<String>) {
         val afterDelayed=(instance.entities.single { it.entityId==cursorId }.entityMeta as TextDisplayMeta).translation
         check(afterDelayed.x()>beforeDelayed.x()) { "Lab delay froze the visible cursor" }
         sessions.close(first)
+        // A UI scale change must refresh packet transforms even with a stationary mouse.
+        sessions.open(first)
+        val zoomSync=packets.filterIsInstance<PlayerPositionAndLookPacket>().last()
+        check(sessions.consumeImmediateUiPacket(first,ClientTeleportConfirmPacket(zoomSync.teleportId())))
+        first.addPacketToQueue(ClientPlayerPositionAndRotationPacket(Pos(0.0,1.0,0.0,0f,0f),false,false))
+        val zoomButton=UiDocument.parse(java.nio.file.Files.readString(Path.of(args.single())))
+            .layout(ForgeDemo().values(),ForgeDemo().flags()).nodes.single { it.action=="zoom" }.box
+        first.addPacketToQueue(ClientPlayerPositionAndRotationPacket(Pos(0.0,1.0,0.0,
+            ((zoomButton.x+zoomButton.w/2-400)/8).toFloat(),((zoomButton.y+zoomButton.h/2-240)/8).toFloat()),false,false))
+        val zoomCursor=instance.entities.first { (it.entityMeta as? TextDisplayMeta)?.transformationInterpolationDuration==1 }.entityId
+        val beforeZoom=checkNotNull(cursorTranslation(zoomCursor))
+        val zoomClick=ClientSpectatorActionPacket(null)
+        check(!sessions.consumeImmediateUiPacket(first,zoomClick))
+        events.call(PlayerPacketEvent(first,zoomClick))
+        val afterZoom=checkNotNull(cursorTranslation(zoomCursor))
+        check(afterZoom!=beforeZoom) { "Lab zoom left the packet cursor at its old transform" }
+        sessions.close(first)
         // A transfer close restores the camera/mode without issuing a return teleport.
         sessions.open(first)
         val directSync=packets.filterIsInstance<PlayerPositionAndLookPacket>().last()

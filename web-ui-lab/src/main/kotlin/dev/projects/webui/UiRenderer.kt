@@ -29,7 +29,7 @@ class UiRenderer(private val player: Player, private val origin: Pos) : AutoClos
     private val unspawned=mutableListOf<Pair<String,Entity>>()
     private var closed=false
     private var packetCursor=false
-    private var lastPacketPointer: Pair<Double,Double>?=null
+    private var lastPacketTransform: Triple<Double,Double,Double>?=null
     private val cursorIds=setOf("cursor-shadow","cursor-v","cursor-h","cursor-tip")
     private val spawnedCursorIds=ConcurrentHashMap.newKeySet<String>()
     @Volatile private var cursorReady=false
@@ -167,7 +167,7 @@ class UiRenderer(private val player: Player, private val origin: Pos) : AutoClos
             wanted+=cursorIds
             // A probe may arrive before the four spawn packets. Send the latest
             // position once the client actually has the cursor entities.
-            if(cursorReady && lastPacketPointer==null) cursorPacket(pointer)
+            if(cursorReady && lastPacketTransform!=Triple(pointer.x,pointer.y,zoom)) cursorPacket(pointer)
             return
         }
         // The exact 2px hit point reacts on the newest input packet. Vanilla
@@ -183,9 +183,9 @@ class UiRenderer(private val player: Player, private val origin: Pos) : AutoClos
     fun cursorPacket(pointer: UiPointer) {
         packetCursor=true
         if(!cursorReady) return
-        val at=pointer.x to pointer.y
-        if(lastPacketPointer==at) return
-        lastPacketPointer=at
+        val at=Triple(pointer.x,pointer.y,zoom)
+        if(lastPacketTransform==at) return
+        lastPacketTransform=at
         val positions=listOf(
             Triple("cursor-shadow",Box(pointer.x-1.0,pointer.y-1.0,5.0,15.0),0.4),
             Triple("cursor-v",Box(pointer.x,pointer.y,2.0,12.0),0.41),
@@ -205,7 +205,7 @@ class UiRenderer(private val player: Player, private val origin: Pos) : AutoClos
     /** The lab's artificial latency mode applies queued input on the instance thread. */
     fun entityCursor() {
         packetCursor=false
-        lastPacketPointer=null
+        lastPacketTransform=null
     }
     override fun close() {
         closed=true; entities.values.forEach(Entity::remove); entities.clear()
