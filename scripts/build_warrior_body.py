@@ -7,15 +7,15 @@ from PIL import Image
 
 
 COLORS = (
-    '152638',  # deep unlit seam
-    '304a62',  # blue-steel shadow
-    '546f7e',  # blue-steel body
-    '849faa',  # lit plate
-    'b9cbd0',  # cold highlight
-    '4e332d',  # smoke leather
-    '9b704c',  # forged copper
-    'c8a269',  # brass rim
-    'd36f45',  # ember clasp
+    '111821',  # deep unlit seam
+    '20374b',  # blue-steel shadow
+    '456c80',  # blue-steel body
+    '91b6c2',  # lit plate
+    'd5e1dc',  # cold highlight
+    '3f2922',  # smoke leather
+    '9c653b',  # forged copper
+    'e1b86e',  # brass rim
+    'df623d',  # ember clasp
 )
 
 # 8 x 12 torso. Wide collar, convex breastplate, then a separate copper waist.

@@ -1,6 +1,6 @@
 """ProjectS forge-warrior helmet: independently modelled silhouette and plates.
 
-This model follows the approved ProjectS concept: a tall blue crown, ruby
+This model follows the approved ProjectS concept: a compact blue crown, ruby
 mount, uninterrupted dark eye aperture, and two separated jaw guards. It does
 not use any geometry, UV mapping, or pixels from the user's reference pack.
 """
@@ -34,26 +34,17 @@ def forge_elements():
                 'uv':[uc-du/2,vc-dv/2,uc+du/2,vc+dv/2],
                 'texture':'#helm'}
         elements.append(part)
-    add('rear crown wall',[3.7,9.5,7.5],[12.3,12.7,12.2],'rear')
-    add('left crown plate',[3.9,10.4,3.9],[7.5,12.9,11.7],'cap')
-    add('right crown plate',[8.5,10.4,3.9],[12.1,12.9,11.7],'cap')
-    add('crown spine',[7.1,12.1,4.4],[8.9,14.7,11.8],'crest')
-    add('rising rear fin',[6.9,13.4,9.5],[9.1,15.0,12.2],'crest',-22.5,'x')
-    add('forged upper face shell',[3.7,10.2,3.0],[12.3,12.3,4.1],'cap')
+    add('unified forged crown',[3.5,9.5,3.5],[12.5,13.2,12.2],'cap')
     add('recessed eye slit',[4.85,6.75,2.75],[11.15,9.0,3.35],'black')
     add('continuous copper brow',[2.9,9.0,2.9],[13.1,10.35,4.1],'bronze')
-    add('brow lower shade',[3.8,8.6,3.0],[12.2,9.05,4.1],'shadow')
     add('ruby mount',[6.7,10.35,2.5],[9.3,12.5,3.4],'silver',45)
     add('ruby inset',[7.25,10.8,2.15],[8.75,12.0,2.65],'ruby',45)
     add('ruby glint',[7.55,11.45,1.95],[7.95,11.85,2.3],'gold')
     add('lower continuous faceplate',[4.8,3.35,2.65],[11.2,6.55,3.95],'lower')
     add('left cheek guard',[2.9,3.2,3.5],[5.25,8.65,9.4],'jaw')
     add('right cheek guard',[10.75,3.2,3.5],[13.1,8.65,9.4],'jaw')
-    add('recessed mouth seam',[5.8,3.45,2.48],[10.2,3.85,3.1],'shadow')
     add('left forged lip',[2.8,3.15,3.25],[5.25,3.75,9.4],'light')
     add('right forged lip',[10.75,3.15,3.25],[13.2,3.75,9.4],'light')
-    add('left temple stud',[2.6,7.8,6.8],[3.1,8.4,7.5],'gold')
-    add('right temple stud',[12.9,7.8,6.8],[13.4,8.4,7.5],'gold')
     return elements
 
 
@@ -65,21 +56,25 @@ def forge_texture(image):
     d.polygon([(112,32),(124,32),(127,35),(127,38),(113,36)],fill='#ae8555')
     d.line([(112,33),(123,33)],fill='#d0ad76')
     d.polygon([(112,42),(127,40),(127,47),(112,47)],fill='#4a392f')
-    d.rectangle((0,48,15,63),fill='#294b6d')
-    d.polygon([(0,48),(10,48),(15,52),(15,55),(5,53),(0,51)],fill='#476f94')
-    d.line([(1,49),(9,49),(13,52)],fill='#8db3c7')
-    d.polygon([(9,55),(15,54),(15,63),(5,63)],fill='#1b344f')
-    d.line([(1,57),(11,57)],fill='#345c7f')
-    d.rectangle((16,48,31,63),fill='#315879')
-    d.polygon([(16,48),(29,48),(31,51),(27,54),(16,53)],fill='#6893af')
-    d.line([(17,49),(27,49),(30,51)],fill='#bed5db')
-    d.polygon([(25,54),(31,52),(31,63),(19,63)],fill='#203d5d')
-    d.line([(18,58),(25,56),(29,56)],fill='#456e8d')
-    d.rectangle((32,48,47,63),fill='#1e3a59')
-    d.polygon([(32,49),(44,48),(47,51),(47,55),(35,53)],fill='#3f6788')
-    d.line([(33,50),(42,49)],fill='#6e9db4')
-    d.polygon([(38,57),(47,54),(47,63),(32,63)],fill='#142c48')
-    d.line([(33,60),(43,60)],fill='#567d9a')
+    d.rectangle((0,48,15,63),fill='#3b5d71')
+    d.polygon([(0,48),(10,48),(15,52),(15,55),(5,53),(0,51)],fill='#597f9c')
+    d.line([(1,49),(9,49),(13,52)],fill='#a0c2ce')
+    d.line([(2,52),(10,52)],fill='#a9c9cc')
+    d.line([(3,53),(12,53)],fill='#7298a9')
+    d.polygon([(9,55),(15,54),(15,63),(5,63)],fill='#274257')
+    d.line([(1,57),(11,57)],fill='#52778d')
+    d.rectangle((16,48,31,63),fill='#416b84')
+    d.polygon([(16,48),(29,48),(31,51),(27,54),(16,53)],fill='#7fa5b5')
+    d.line([(17,49),(27,49),(30,51)],fill='#d0dedb')
+    d.polygon([(25,54),(31,52),(31,63),(19,63)],fill='#2c4c63')
+    d.line([(18,58),(25,56),(29,56)],fill='#658da0')
+    d.line([(18,54),(24,54)],fill='#b3cbd0')
+    d.rectangle((32,48,47,63),fill='#304c65')
+    d.polygon([(32,49),(44,48),(47,51),(47,55),(35,53)],fill='#577b95')
+    d.line([(33,50),(42,49)],fill='#91b9c2')
+    d.line([(35,54),(42,54)],fill='#a7c6ca')
+    d.polygon([(38,57),(47,54),(47,63),(32,63)],fill='#1f3a52')
+    d.line([(33,60),(43,60)],fill='#779bb0')
     d.rectangle((48,48,63,63),fill='#172d48')
     d.rectangle((49,49,61,52),fill='#305575')
     d.line([(49,49),(58,49)],fill='#6e9db4')
