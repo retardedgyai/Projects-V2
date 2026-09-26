@@ -1,1 +1,1 @@
-{"model":{"type":"minecraft:model","model":"projects:item/armor/assassin_t1_boots"}}
+{"model":{"type":"minecraft:select","property":"minecraft:display_context","cases":[{"when":["gui"],"model":{"type":"minecraft:model","model":"projects:item/armor/icons/assassin_t1_boots"}}],"fallback":{"type":"minecraft:model","model":"projects:item/armor/assassin_t1_boots"}}}

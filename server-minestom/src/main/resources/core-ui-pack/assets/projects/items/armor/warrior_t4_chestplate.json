@@ -1,1 +1,1 @@
-{"model":{"type":"minecraft:model","model":"projects:item/armor/warrior_t4_chestplate"}}
+{"model":{"type":"minecraft:select","property":"minecraft:display_context","cases":[{"when":["gui"],"model":{"type":"minecraft:model","model":"projects:item/armor/icons/warrior_t4_chestplate"}}],"fallback":{"type":"minecraft:model","model":"projects:item/armor/warrior_t4_chestplate"}}}

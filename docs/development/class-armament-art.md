@@ -7,6 +7,10 @@
 `play/gyai/armor-art-refresh` は防具の作画試作で、評価対象は7職×T1〜4の装着テクスチャとUI模型。性能、保存、装備部位の独立性は変更しない。
 ユーザーの最初の試作への主な指摘は「全体の色や雰囲気」。そのため彩度だけを上げるのではなく、職ごとの発光色を面として読めるようにし、暗い地色・金属の縁・明瞭な陰影を合わせる。
 実装データからのプレビューは `scripts/preview_class_armor.py` と `scripts/preview_armor_items.py`。どちらもMinecraft実機画像ではないため、採用判定には実機での手動確認を残す。
+最初の実機確認では胴・脚・足のアイコンが紫黒の欠けたテクスチャになった。装着用 `entity/equipment` 画像をitem modelに直接参照してもitem atlasへ入らないため、同じ64×32原稿を `textures/item/armor` にも書き出す。`verify_class_armor_assets.py` は両方の画像と索引を照合する。
+その後、ユーザー提供の `Telos_ResourcePacks_5.zip`（内包する `production_telos137.zip`）と `isles.zip` の防具を参照した。参考画像は検討用の無視対象 `.tools/armor-review/references` にのみ展開し、配布パックには含めない。参考にしたのは面ごとの段階的な陰影、革と金属の切り替え、腕と脚の一部を見せる透過配置で、ドットや模様は描き直した。
+装着面は標準の64×32 UV内で職ごとに胸・膝・袖の配置を変更。工房の小さい絵は独立した16×16原稿を `textures/item/armor/icons` に生成し、`minecraft:display_context` の `gui` のみ専用の2Dアイコンに切り替える。頭への装着と他の表示には3Dモデルを残す。
+プレビュー画像は `.tools/armor-review/t1-worn.png` と `t1-icons.png`。まだ実機の装着姿とUI内サイズはCreatorによる手動確認が必要で、構造検証だけでアート品質を承認済みとはしない。
 
 ## 最優先の制作基準（2026-09-08 更新）
 

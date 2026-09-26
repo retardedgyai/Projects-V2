@@ -1,1 +1,1 @@
-{"model":{"type":"minecraft:model","model":"projects:item/armor/mage_t1_helmet"}}
+{"model":{"type":"minecraft:select","property":"minecraft:display_context","cases":[{"when":["gui"],"model":{"type":"minecraft:model","model":"projects:item/armor/icons/mage_t1_helmet"}}],"fallback":{"type":"minecraft:model","model":"projects:item/armor/mage_t1_helmet"}}}

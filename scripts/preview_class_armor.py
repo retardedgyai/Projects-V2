@@ -60,6 +60,7 @@ def main():
             sheet.paste(image,(i*width,(tier-1)*height+30))
     sheet.save(OUT/'all-sets.png')
     sheet.crop((0,0,width*7,height+30)).save(OUT/'t1-worn.png')
+    sheet.crop((0,30,width,height+30)).save(OUT/'warrior-t1-worn.png')
     print(OUT/'all-sets.png')
 
 

@@ -18,8 +18,8 @@ def icon(job, tier, slot, size=96):
     model = json.loads((ASSETS / f'models/item/{key}_{slot}.json').read_text())
     textures = {
         'atlas': np.array(Image.open(ASSETS / 'textures/item/weapons/materials.png').convert('RGBA')),
-        'outer': np.array(Image.open(ASSETS / f'textures/entity/equipment/humanoid/{key}.png').convert('RGBA')),
-        'inner': np.array(Image.open(ASSETS / f'textures/entity/equipment/humanoid_leggings/{key}.png').convert('RGBA')),
+        'outer': np.array(Image.open(ASSETS / f'textures/item/{key}_outer.png').convert('RGBA')),
+        'inner': np.array(Image.open(ASSETS / f'textures/item/{key}_inner.png').convert('RGBA')),
     }
     yaw, pitch = math.radians(-25), math.radians(15)
     # One 16-unit model fills one item square, then the exported GUI transform
@@ -42,7 +42,8 @@ def main():
     OUT.mkdir(parents=True, exist_ok=True)
     tile, gutter = 96, 22
     for tier, rendered_size, filename in ((1, 96, 't1-items.png'), (1, 24, 't1-items-ui-scale.png'),
-                                          (4, 24, 't4-items-ui-scale.png')):
+                                          (4, 24, 't4-items-ui-scale.png'),
+                                          (1, 0, 't1-icons.png'), (4, 0, 't4-icons.png')):
         sheet = Image.new('RGB', ((tile + gutter) * len(SLOTS), (tile + 20) * len(JOBS) + 30), '#171b20')
         draw = ImageDraw.Draw(sheet)
         for col, slot in enumerate(SLOTS):
@@ -50,6 +51,12 @@ def main():
         for row, job in enumerate(JOBS):
             for col, slot in enumerate(SLOTS):
                 x, y = col * (tile + gutter), row * (tile + 20) + 30
+                if rendered_size == 0:
+                    item = Image.open(ASSETS / f'textures/item/armor/icons/{job}_t{tier}_{slot}.png').convert('RGBA')
+                    item = item.resize((tile, tile), Image.Resampling.NEAREST)
+                    sheet.paste(item, (x, y), item)
+                    draw.text((x + 6, y + tile), job, font=FONT, fill='#b6b2a8')
+                    continue
                 item = icon(job, tier, slot, rendered_size)
                 if rendered_size != tile:
                     item = item.resize((tile, tile), Image.Resampling.NEAREST)
