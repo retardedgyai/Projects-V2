@@ -2,7 +2,8 @@
 import json
 import math
 from PIL import Image
-from build_class_armor_assets import ASSETS,JOBS,SLOTS,armor_model,armor_texture,icon_texture,helmet_face_texture
+from build_class_armor_assets import ASSETS,JOBS,SLOTS,armor_model,armor_texture,icon_texture
+from build_project_helmets import helmet_texture as project_helmet_texture
 from verify_core_weapon_assets import point
 import numpy as np
 
@@ -18,7 +19,9 @@ def verify():
             equipment=read(f'equipment/{stem}.json')
             face_relative=f'textures/item/armor/helmet_faces/{job}_t{tier}.png'
             assert 'assets/projects/'+face_relative in index
-            assert Image.open(ASSETS/face_relative).convert('RGBA').tobytes()==helmet_face_texture(job,tier).tobytes()
+            helmet_image=Image.open(ASSETS/face_relative).convert('RGBA')
+            assert helmet_image.size==(128,64)
+            assert helmet_image.tobytes()==project_helmet_texture(job,tier).tobytes()
             for layer,inner in (('humanoid',False),('humanoid_leggings',True)):
                 assert equipment['layers'][layer]==[{'texture':f'projects:{stem}'}]
                 relative=f'textures/entity/equipment/{layer}/{stem}.png'

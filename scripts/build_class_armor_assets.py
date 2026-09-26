@@ -9,6 +9,7 @@ import json
 from PIL import Image, ImageDraw
 from class_armament_geometry import ASSETS, box, beam, gem
 from build_bold_class_armor import ART as CLASS_ART, armor_texture as class_armor_texture
+from build_project_helmets import helmet_texture as project_helmet_texture, helmet_elements as project_helmet_elements
 
 JOBS=('warrior','mage','ranger','assassin','templar','healer','starweaver')
 SLOTS=('helmet','chestplate','leggings','boots')
@@ -232,7 +233,7 @@ def helmet(job,tier):
 def armor_model(job,tier,slot):
     base,secondary,trim,glow=KITS[job]
     gui_scale=({'starweaver':.78,'mage':.82,'healer':.9}.get(job,.95) if slot=='helmet' else 1)
-    if slot=='helmet': elements=helmet(job,tier)
+    if slot=='helmet': elements=project_helmet_elements(job,tier)
     elif slot=='chestplate':
         elements=[box('cuirass',[4,3,5.5],[12,15,10.5],base),box('left shoulder',[.5,11.5,5],[4,16,11],secondary),box('right shoulder',[12,11.5,5],[15.5,16,11],secondary),box('belt',[3.8,4,5.2],[12.2,5.2,10.8],trim)]
         gem(elements,'chest badge',8,11.4,5.3,1.2,glow)
@@ -265,6 +266,9 @@ def armor_model(job,tier,slot):
 
 def icon_texture(job,tier,slot):
     """Small original icon silhouettes; the wearable model remains three dimensional."""
+    if slot=='helmet':
+        return project_helmet_texture(job,tier).crop((0,0,32,32)).resize(
+            (16,16),Image.Resampling.NEAREST)
     colors=palette(job)
     image=Image.new('RGBA',(16,16),(0,0,0,0))
     draw=ImageDraw.Draw(image)
@@ -417,7 +421,7 @@ def build():
             files={f'equipment/{key}.json':{'layers':{layer:[{'texture':f'projects:{key}'}] for layer in ('humanoid','humanoid_leggings')}}}
             face_path=ASSETS/f'textures/item/armor/helmet_faces/{job}_t{tier}.png'
             face_path.parent.mkdir(parents=True,exist_ok=True)
-            helmet_face_texture(job,tier).save(face_path)
+            project_helmet_texture(job,tier).save(face_path)
             for layer,inner in (('humanoid',False),('humanoid_leggings',True)):
                 surface=armor_texture(job,tier,inner)
                 path=ASSETS/f'textures/entity/equipment/{layer}/{key}.png'
