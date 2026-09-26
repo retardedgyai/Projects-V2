@@ -1006,5 +1006,17 @@
     "width": 16,
     "height": 16,
     "font": "projects_ui_polish05:plates"
+  },
+  "gear_selected_compact": {
+    "char": "",
+    "width": 229,
+    "height": 41,
+    "font": "projects_ui_polish05:plates"
+  },
+  "gear_unselected_compact": {
+    "char": "",
+    "width": 229,
+    "height": 41,
+    "font": "projects_ui_polish05:plates"
   }
 }

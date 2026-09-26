@@ -34,7 +34,7 @@ object CoreEnhancementCatalog {
     const val CATALYST_BONUS_PERCENT = 15.0
 
     fun state(account: CoreAccount, gear: CoreGearSlot): CoreEnhancementState =
-        if (gear == CoreGearSlot.WEAPON) account.weaponEnhancement else account.armorEnhancement
+        if (gear == CoreGearSlot.WEAPON) account.weaponEnhancement else account.armor(gear).enhancement
 
     fun masteryRank(xp: Long): Int { require(xp in 0..MAX_SMITHING_XP); return (xp / XP_PER_RANK).toInt() }
     fun masteryProgress(xp: Long): Int { require(xp in 0..MAX_SMITHING_XP); return if (xp == MAX_SMITHING_XP) XP_PER_RANK.toInt() else (xp % XP_PER_RANK).toInt() }
@@ -123,12 +123,11 @@ object CoreEnhancementCatalog {
         val success = random.nextDouble() * 100.0 < quote.successChancePercent
         val broken = !success && random.nextDouble() * 100.0 < quote.breakOnFailurePercent
         val next = if (success) CoreEnhancementState(quote.targetLevel) else CoreEnhancementState(quote.currentLevel, quote.failures + 1)
-        val updated = gainMastery(account.copy(
+        val updated = account.copy(
             weaponEnhancement = if (gear == CoreGearSlot.WEAPON) next else account.weaponEnhancement,
-            armorEnhancement = if (gear == CoreGearSlot.ARMOR) next else account.armorEnhancement,
             weaponBroken = if (gear == CoreGearSlot.WEAPON) broken else account.weaponBroken,
-            armorBroken = if (gear == CoreGearSlot.ARMOR) broken else account.armorBroken,
-        ), 1)
+        ).let { if (gear == CoreGearSlot.WEAPON) it else it.withArmor(gear,
+            account.armor(gear).copy(enhancement = next, broken = broken)) }.let { gainMastery(it, 1) }
         val message = if (success) "強化成功！ ${gear.displayName}が +${next.level} になりました（鍛冶経験 +1）"
             else if (broken) "強化失敗で破損しました。装備庫で同Tier・同系統・+0の装備1個を使い修理できます。+${next.level}・MOD・天井 ${next.failures}/${quote.pityThreshold} は維持"
             else "強化失敗。破損はありません。+${next.level}・MODは維持。天井 ${next.failures}/${quote.pityThreshold}（鍛冶経験 +1）"

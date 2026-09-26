@@ -1,7 +1,9 @@
 """Compose unchanged accepted glyphs into padded HUD cells. No repainting or resampling."""
 import json
+from pathlib import Path
 from PIL import Image
-from build_approved_dash_v3 import PACK
+
+PACK = Path(__file__).resolve().parents[1] / 'server-minestom/src/main/resources/core-ui-pack'
 
 TEXT = '反撃の好機防御秒0123456789'
 

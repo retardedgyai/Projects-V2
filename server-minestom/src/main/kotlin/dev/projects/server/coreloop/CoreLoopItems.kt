@@ -75,8 +75,17 @@ internal object CoreLoopItems {
         val sheet = CoreCombatSheet.from(account)
         val enhancement = CoreEnhancementCatalog.state(account, slot)
         val identity = CoreEconomy.identity(account, slot)
-        val base = if (slot == CoreGearSlot.WEAPON) CoreWeaponPresentation.skin(weapon(tier), tier, packed) else icon(material ?: Material.IRON_CHESTPLATE, "開拓者の防具")
-            .withTag(actionTag, "armor").withTag(gearTag, CoreGearSlot.ARMOR.name)
+        val base = if (slot == CoreGearSlot.WEAPON) CoreWeaponPresentation.skin(weapon(tier), tier, packed) else {
+            val defaultMaterial = when (slot) {
+                CoreGearSlot.HEAD -> Material.IRON_HELMET
+                CoreGearSlot.CHEST, CoreGearSlot.ARMOR -> Material.IRON_CHESTPLATE
+                CoreGearSlot.LEGS -> Material.IRON_LEGGINGS
+                CoreGearSlot.FEET -> Material.IRON_BOOTS
+                CoreGearSlot.WEAPON -> error("防具部位ではありません")
+            }
+            icon(material ?: defaultMaterial, "開拓者の${slot.displayName}")
+                .withTag(actionTag, "armor").withTag(gearTag, slot.name)
+        }
         val rows = if (slot == CoreGearSlot.WEAPON) buildList {
             add(CoreTooltipStat("物理攻撃 AD", CoreCombatMath.number(sheet.ad), CoreUiIcon.ATTACK))
             add(CoreTooltipStat("魔法攻撃 AP", CoreCombatMath.number(sheet.ap), CoreUiIcon.MAGIC))
@@ -94,15 +103,15 @@ internal object CoreLoopItems {
             val model = when(identity.base) { CoreWeaponBase.LONGBOW -> "minecraft:bow"; CoreWeaponBase.DAGGERS -> "minecraft:iron_sword";
                 CoreWeaponBase.MACE -> "minecraft:mace"; CoreWeaponBase.TOME -> "minecraft:enchanted_book"; else -> "minecraft:blaze_rod" }
             base.withItemModel(model)
-        } else if (slot == CoreGearSlot.ARMOR) CoreArmorPresentation.skin(base, account.journey.job, tier, packed) else base
-        return CoreUiTooltip.apply(shown, CoreTooltipModel("${if (CoreEconomy.broken(account, slot)) "【破損】" else ""}T$tier ${if (slot == CoreGearSlot.WEAPON) identity.base.displayName else "開拓者の防具"}${if (enhancement.level > 0) " +${enhancement.level}" else ""}",
+        } else CoreArmorPresentation.skin(base, account.journey.job, tier, packed)
+        return CoreUiTooltip.apply(shown, CoreTooltipModel("${if (CoreEconomy.broken(account, slot)) "【破損】" else ""}T$tier ${if (slot == CoreGearSlot.WEAPON) identity.base.displayName else "開拓者の${slot.displayName}"}${if (enhancement.level > 0) " +${enhancement.level}" else ""}",
             rarity = when (CoreAffixCatalog.rarity(account, slot)) {
                 CoreGearRarity.NORMAL -> CoreUiRarity.COMMON
                 CoreGearRarity.MAGIC -> CoreUiRarity.UNCOMMON
                 CoreGearRarity.RARE -> CoreUiRarity.RARE
             }, tier = tier, itemLevel = CoreJourneyRules.itemLevel(identity, tier),
             rarityLabel = CoreAffixCatalog.rarity(account, slot).displayName,
-            typeLabel = (if (slot == CoreGearSlot.WEAPON) identity.base.displayName else "防具セット") + " · 強化 +${enhancement.level}/30",
+            typeLabel = (if (slot == CoreGearSlot.WEAPON) identity.base.displayName else "防具・${slot.displayName}") + " · 強化 +${enhancement.level}/30",
             stats = rows, affixes = account.equippedAffixes.filter { it.gear == slot }.sortedBy { it.index }.map { affixModel(it.stone) },
             modCapacity = CoreAffixCatalog.capacity(account, slot),
             footer = listOf(if (slot == CoreGearSlot.WEAPON) identity.base.detail else "装備Lv鍛錬で同Tier内の基礎性能が成長", "製造品質 +${CoreEconomy.identity(account, slot).quality}%（基礎性能）", if (CoreEconomy.broken(account, slot)) "破損中：この装備の性能・MODは無効" else "未破損 / 遠征・戦闘では壊れません",
@@ -226,15 +235,15 @@ internal object CoreLoopItems {
         for (slot in 16..35) player.inventory.setItemStack(slot, owned.getOrNull(slot - 16)?.let { currency(it, account.amount(it), packed) } ?: ItemStack.AIR)
         val existingMapId = mapId(player.inventory.getItemStack(7))
         player.inventory.setItemStack(7, account.maps.firstOrNull { it.id == existingMapId }?.let(::map) ?: ItemStack.AIR)
-        val tier = account.armorTier
-        val armor = listOf(
+        val armorByTier = listOf(
             listOf(Material.LEATHER_HELMET, Material.LEATHER_CHESTPLATE, Material.LEATHER_LEGGINGS, Material.LEATHER_BOOTS),
             listOf(Material.CHAINMAIL_HELMET, Material.CHAINMAIL_CHESTPLATE, Material.CHAINMAIL_LEGGINGS, Material.CHAINMAIL_BOOTS),
             listOf(Material.IRON_HELMET, Material.IRON_CHESTPLATE, Material.IRON_LEGGINGS, Material.IRON_BOOTS),
             listOf(Material.DIAMOND_HELMET, Material.DIAMOND_CHESTPLATE, Material.DIAMOND_LEGGINGS, Material.DIAMOND_BOOTS),
-        )[tier - 1]
+        )
         listOf(EquipmentSlot.HELMET, EquipmentSlot.CHESTPLATE, EquipmentSlot.LEGGINGS, EquipmentSlot.BOOTS).forEachIndexed { index, slot ->
-            player.setEquipment(slot, gear(account, CoreGearSlot.ARMOR, packed, armor[index]))
+            val gearSlot = CoreGearSlot.armorSlots[index]
+            player.setEquipment(slot, gear(account, gearSlot, packed, armorByTier[account.armor(gearSlot).tier - 1][index]))
         }
         for (slot in 1..15) {
             val item = player.inventory.getItemStack(slot)

@@ -92,7 +92,9 @@ class UiRenderer(private val player: Player, private val origin: Pos) : AutoClos
             if(content[id]==(node to zoom)) return@forEach
             if(node.item!=null) {
                 entity(id,EntityType.ITEM_DISPLAY).editEntityMeta(ItemDisplayMeta::class.java) { m ->
-                    m.setItemStack(ItemStack.of(requireNotNull(Material.fromKey(node.item))))
+                    val parts = node.item.split('|', limit=2)
+                    val base = ItemStack.of(requireNotNull(Material.fromKey(parts[0])))
+                    m.setItemStack(if(parts.size==2) base.withItemModel(parts[1]) else base)
                     m.setDisplayContext(ItemDisplayMeta.DisplayContext.GUI)
                     val size=minOf(b.w,b.h)*geometry.unit(z+0.05)*0.8
                     m.setScale(Vec(size,size,size))

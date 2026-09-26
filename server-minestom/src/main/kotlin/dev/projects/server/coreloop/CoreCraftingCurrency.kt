@@ -130,12 +130,11 @@ object CoreCraftingCatalog {
                 installed.copy(stone = installed.stone.copy(value = value.toDouble()))
             }
         }
-        return account.copy(
-            equippedAffixes = account.equippedAffixes.filterNot { it.gear == gear } + next,
-            weaponRarity = if (gear == CoreGearSlot.WEAPON) rarity else account.weaponRarity,
-            armorRarity = if (gear == CoreGearSlot.ARMOR) rarity else account.armorRarity,
-            currencies = account.currencies + (currency to account.amount(currency) - 1), legacyLayouts = legacy,
-        )
+        val withoutOld = account.copy(equippedAffixes = account.equippedAffixes.filterNot { it.gear == gear })
+        val prepared = if (gear == CoreGearSlot.WEAPON) withoutOld.copy(weaponRarity = rarity)
+            else withoutOld.withArmor(gear, account.armor(gear).copy(rarity = rarity))
+        return prepared.copy(equippedAffixes = prepared.equippedAffixes + next,
+            currencies = account.currencies + (currency to account.amount(currency) - 1), legacyLayouts = legacy)
     }
 
     /** Deterministic preview contains only unrolled currency, never known-effect stones. */
@@ -161,7 +160,7 @@ object CoreCraftingCatalog {
             equipped.groupingBy { CoreAffixCatalog.definition(it.stone)?.group }.eachCount().values.all { it <= rarity.groupCapacity }
 
     internal fun legacyLayouts(equipped: List<CoreEquippedAffix>, weapon: CoreGearRarity, armor: CoreGearRarity): Set<CoreGearSlot> =
-        CoreGearSlot.entries.filter { !validLayout(equipped.filter { installed -> installed.gear == it }, if (it == CoreGearSlot.WEAPON) weapon else armor) }.toSet()
+        CoreGearSlot.equipSlots.filter { !validLayout(equipped.filter { installed -> installed.gear == it }, if (it == CoreGearSlot.WEAPON) weapon else armor) }.toSet()
 
     internal fun legacySeed(playerId: UUID): Long = derived("projects/legacy-craft-seed/$playerId").leastSignificantBits
     private fun derived(text: String): UUID = UUID.nameUUIDFromBytes(text.toByteArray(UTF_8))

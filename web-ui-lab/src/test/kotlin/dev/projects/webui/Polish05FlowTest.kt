@@ -121,6 +121,23 @@ class Polish05FlowTest {
         assertFalse(depleted.any { it.action=="enhance" })
     }
 
+    @Test fun fiveGearSelectionPlateFillsItsCompactRow() {
+        val gears=listOf("weapon", "head", "chest", "legs", "feet").map { id ->
+            ForgeUiGear(id,"T1 $id",1,0,100,101)
+        }
+        val materials=(1..3).map { ForgeUiMaterial("素材$it",2,1,"forge_material_ingot") }
+        val state=ForgeUiState(gears,"weapon",0,100.0,0.0,false,materials,0,
+            null,null,"",false,false,false)
+        val nodes=scene.forge(state).nodes
+        val scale=Polish05ScreenSpace(800.0,480.0).scale
+        val plates=(0..4).map { index -> nodes.single { it.id=="live-gear-plate-$index" } }
+        plates.forEach { plate ->
+            assertEquals(plate.box.w,plate.sprite!!.width*scale,0.0001)
+            assertEquals(plate.box.h,plate.sprite!!.height*scale,0.0001)
+        }
+        assertNotEquals(plates[0].sprite?.char,plates[1].sprite?.char)
+    }
+
     @Test fun selectCompareConfirmConsumeRefineAndReturnToSameGear() {
         val flow=Polish05Flow(scene)
         assertTrue(flow.action("select:ash"))

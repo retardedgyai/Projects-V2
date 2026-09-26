@@ -136,7 +136,7 @@ class CoreClassBuildTest {
     @Test fun `v8 load is readonly and first committed class edit preserves exact v8 bytes`() {
         val dir=Files.createTempDirectory("class-v8-");val id=UUID.randomUUID()
         val original=CoreAccount(id,silver=12345,weaponEnhancement=CoreEnhancementState(23,2))
-        val old=checksum(CoreAccountCodec.encode(original).substringBefore("checksum\t").lineSequence()
+        val old=checksum(armorV10Body(original).lineSequence()
             .filterNot { it.startsWith("class-build\t") || it.startsWith("class-loadout\t") }.joinToString("\n").replaceFirst("\t10\t","\t8\t"))
         val file=dir.resolve("$id.account");Files.writeString(file,old)
         val service=CoreAccountService(CoreAccountRepository(dir));assertIs<CoreAccountLoadResult.Ready>(service.open(id))
@@ -179,7 +179,7 @@ class CoreClassBuildTest {
     @Test fun `v9 tree is refunded with skills gear and exact backup preserved`() {
         val dir=Files.createTempDirectory("class-v9-");val id=UUID.randomUUID()
         val a=CoreAccount(id,silver=54321,journey=CoreJourney(build=CoreClassBuild(first=4)))
-        val old=checksum(CoreAccountCodec.encode(a).substringBefore("checksum\t").replaceFirst("\t10\t","\t9\t")
+        val old=checksum(armorV10Body(a).replaceFirst("\t10\t","\t9\t")
             .replace("class-build\t4\t1\t2\t3\t0\t0\n","class-build\t4\t1\t2\t3\t0\t7\n"))
         val path=dir.resolve("$id.account");Files.writeString(path,old)
         val service=CoreAccountService(CoreAccountRepository(dir));val loaded=assertIs<CoreAccountLoadResult.Ready>(service.open(id))

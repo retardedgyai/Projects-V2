@@ -212,6 +212,7 @@ class CoreAccountRepository(
             bytes.toString(UTF_8).startsWith("PROJECTS_CORE_LOOP\t7\t") -> 7
             bytes.toString(UTF_8).startsWith("PROJECTS_CORE_LOOP\t8\t") -> 8
             bytes.toString(UTF_8).startsWith("PROJECTS_CORE_LOOP\t9\t") -> 9
+            bytes.toString(UTF_8).startsWith("PROJECTS_CORE_LOOP\t10\t") -> 10
             else -> return
         }
         val backup = directory.resolve("$playerId.account.v$version.bak")
@@ -233,13 +234,16 @@ class CoreAccountRepository(
 internal object CoreAccountCodec {
     fun encode(account: CoreAccount): String {
         val body = buildString {
-            append("PROJECTS_CORE_LOOP\t10\t${account.playerId}\t${account.revision}\n")
+            append("PROJECTS_CORE_LOOP\t11\t${account.playerId}\t${account.revision}\n")
             append("gear\t${account.weaponTier}\t${account.armorTier}\t${account.unlockedMapTier}\n")
             append("crafting\t${account.weaponRarity}\t${account.armorRarity}\t${account.craftingSeed}\n")
             append("enhancement\t${account.weaponEnhancement.level}\t${account.weaponEnhancement.failures}\t${account.armorEnhancement.level}\t${account.armorEnhancement.failures}\t${account.smithingXp}\n")
             append("economy\t${account.silver}\t${account.deliveryDay}\t${account.deliveries}\t${account.weaponBroken}\t${account.armorBroken}\n")
             append("identity\tWEAPON\t${identityFields(account.weaponIdentity)}\n")
             append("identity\tARMOR\t${identityFields(account.armorIdentity)}\n")
+            account.armorParts.forEach { (slot, piece) ->
+                append("armor-part\t$slot\t${identityFields(piece.identity)}\t${piece.tier}\t${piece.rarity}\t${piece.enhancement.level}\t${piece.enhancement.failures}\t${piece.broken}\n")
+            }
             account.storedGear.forEach { item ->
                 append("stored-gear\t${identityFields(item.identity)}\t${item.slot}\t${item.tier}\t${item.rarity}\t${item.enhancement.level}\t${item.enhancement.failures}\t${item.legacy}\t${item.broken}\n")
                 item.affixes.forEach { append("stored-affix\t${item.identity.id}\t${it.index}\t${affixFields(it.stone)}\n") }
@@ -249,13 +253,13 @@ internal object CoreAccountCodec {
             account.buyOrders.forEach { append("buy-order\t${it.id}\t${it.unitPrice}\t${it.remaining}\t${it.tier}\t${it.resource ?: ""}\t${it.slot ?: ""}\t${it.family ?: ""}\n") }
             account.dungeonRecords.toSortedMap().forEach { (tier, rank) -> append("dungeon-record\t$tier\t$rank\n") }
             account.activeRun?.dungeon?.let { append("dungeon-run\t${it.ascension}\t${it.stages}\t${it.roomsPerFloor}\t${it.rewardedStage}\n") }
-            (account.storedGear.map { it.identity } + account.weaponIdentity + account.armorIdentity).forEach { append("gear-quality\t${it.id}\t${it.quality}\n") }
+            (account.storedGear.map { it.identity } + account.weaponIdentity + account.armorIdentity + account.armorParts.values.map { it.identity }).forEach { append("gear-quality\t${it.id}\t${it.quality}\n") }
             account.journey.let { append("journey\t${it.job}\t${it.chosen}\t${it.xp}\t${it.lessons}\t${it.legacy}\n") }
             account.journey.build.let { append("class-build\t${it.first}\t${it.second}\t${it.third}\t${it.fourth}\t${it.ultimate}\t${it.nodes}\n") }
             account.journey.savedBuilds.entries.sortedBy { it.key.ordinal }.forEach { (job, b) ->
                 append("class-loadout\t$job\t${b.first}\t${b.second}\t${b.third}\t${b.fourth}\t${b.ultimate}\t${b.nodes}\n")
             }
-            (account.storedGear.map { it.identity } + account.weaponIdentity + account.armorIdentity).forEach { append("gear-base\t${it.id}\t${it.base}\t${it.itemLevel}\n") }
+            (account.storedGear.map { it.identity } + account.weaponIdentity + account.armorIdentity + account.armorParts.values.map { it.identity }).forEach { append("gear-base\t${it.id}\t${it.base}\t${it.itemLevel}\n") }
             (account.maps + listOfNotNull(account.activeRun?.map)).forEach { append("map-level\t${it.id}\t${it.level}\n") }
             account.offers.forEach { append("offer\t${it.id}\t${it.price}\t${it.material?.resource ?: ""}\t${it.material?.tier ?: 1}\t${it.quantity}\t${it.gearId ?: ""}\n") }
             account.currencies.entries.sortedBy { it.key.ordinal }.forEach { (key, amount) -> append("currency\t$key\t$amount\n") }
@@ -282,7 +286,7 @@ internal object CoreAccountCodec {
         require(text.substring(checksumAt) == "checksum\t${digest(body)}\n") { "保存データの検証に失敗しました" }
         val rows = body.trimEnd('\n').split('\n').map { it.split('\t') }
         val header = rows.first()
-        require(header.size == 4 && header[0] == "PROJECTS_CORE_LOOP" && header[1] in setOf("1", "2", "3", "4", "5", "6", "7", "8", "9", "10")) { "未対応の保存形式です" }
+        require(header.size == 4 && header[0] == "PROJECTS_CORE_LOOP" && header[1] in (1..11).map(Int::toString)) { "未対応の保存形式です" }
         val version = header[1].toInt()
         require(UUID.fromString(header[2]) == playerId) { "保存データのプレイヤーが一致しません" }
         val gear = rows.getOrNull(1) ?: error("装備データがありません")
@@ -301,6 +305,7 @@ internal object CoreAccountCodec {
         var enhancement: List<String>? = null
         var economy: List<String>? = null
         val identities = mutableMapOf<CoreGearSlot, CoreGearIdentity>()
+        val armorRows = linkedMapOf<CoreGearSlot, List<String>>()
         val gearRows = linkedMapOf<UUID, List<String>>()
         val storedAffixes = mutableMapOf<UUID, MutableList<Pair<Int, CoreAffixStone>>>()
         val offers = mutableListOf<CoreMarketOffer>()
@@ -343,6 +348,10 @@ internal object CoreAccountCodec {
             "dungeon-run" -> { require(version >= 7 && row.size == 5 && dungeon == null); dungeon = CoreDungeonEntry(row[1].toInt(), row[2].toInt(), row[3].toInt(), row[4].toInt()) }
             "economy" -> { require(version >= 5 && economy == null && row.size == 6); economy = row }
             "identity" -> { require(version >= 5 && row.size == 5); require(identities.put(CoreGearSlot.valueOf(row[1]), readIdentity(row.drop(2))) == null) }
+            "armor-part" -> { require(version >= 11 && row.size == 10)
+                val slot = CoreGearSlot.valueOf(row[1]); require(slot in setOf(CoreGearSlot.HEAD, CoreGearSlot.LEGS, CoreGearSlot.FEET))
+                require(armorRows.put(slot, row) == null)
+            }
             "stored-gear" -> { require(version >= 5 && row.size == 11 && gearRows.size < CoreEconomy.MAX_GEAR); require(gearRows.put(UUID.fromString(row[1]), row) == null) }
             "stored-affix" -> {
                 require(version >= 5 && row.size == 8)
@@ -383,7 +392,7 @@ internal object CoreAccountCodec {
             "source" -> { require(row.size == 2 && sources.size < CoreLoopCatalog.MAX_SOURCES && sources.add(unbase64(row[1]))) }
             "affix" -> { require(version >= 2 && stones.size < CoreAffixCatalog.MAX_STONES); stones += readAffix(row.drop(1)) }
             "equipped-affix" -> {
-                require(version >= 2 && row.size == 8 && equipped.size < if (version >= 3) 12 else 8)
+                require(version >= 2 && row.size == 8 && equipped.size < if (version >= 11) 30 else if (version >= 3) 12 else 8)
                 equipped += CoreEquippedAffix(CoreGearSlot.valueOf(row[1]), row[2].toInt(), readAffix(row.drop(3)))
             }
             else -> error("未知の保存項目: ${row[0].take(32)}")
@@ -393,16 +402,24 @@ internal object CoreAccountCodec {
         if (version < 3) {
             // Preserve the old validity boundary; migration must not legitimize an invalid v2 slot.
             require(equipped.all { it.index < if (it.gear == CoreGearSlot.WEAPON) weaponTier else armorTier })
-            return CoreAccount(playerId, header[3].toLong(), balances, weaponTier, armorTier, gear[3].toInt(), maps, active, receipts, sources, stones, equipped,
-                craftingSeed = CoreCraftingCatalog.legacySeed(playerId))
+            val armorRarity = CoreCraftingCatalog.inferRarity(equipped, CoreGearSlot.ARMOR)
+            val migratedAffixes = equipped.map { if (it.gear == CoreGearSlot.ARMOR) it.copy(gear = CoreGearSlot.CHEST) else it }
+            return CoreAccount(playerId, header[3].toLong(), balances, weaponTier, armorTier, gear[3].toInt(), maps, active, receipts, sources, stones, migratedAffixes,
+                armorRarity = armorRarity,
+                craftingSeed = CoreCraftingCatalog.legacySeed(playerId),
+                armorParts = CoreGearSlot.armorSlots.filterNot { it == CoreGearSlot.CHEST }.associateWith { slot ->
+                    CoreArmorPiece(CoreGearIdentity.legacy(playerId, slot), armorTier, armorRarity)
+                })
         }
         val craft = requireNotNull(crafting) { "装備クラフトの保存項目がありません" }
         val enhanced = if (version >= 4) requireNotNull(enhancement) { "装備強化の保存項目がありません" } else null
         if (version >= 5) require(economy != null && identities.size == 2)
+        if (version >= 11) require(armorRows.keys == setOf(CoreGearSlot.HEAD, CoreGearSlot.LEGS, CoreGearSlot.FEET))
         require(storedAffixes.keys.all { it in gearRows })
         if (version >= 7) {
             require(survey != null && (dungeon == null || active != null))
-            require(qualities.keys == (identities.values.map { it.id } + gearRows.keys).toSet())
+            val armorIds = armorRows.values.map { UUID.fromString(it[2]) }
+            require(qualities.keys == (identities.values.map { it.id } + gearRows.keys + armorIds).toSet())
             identities.replaceAll { _, id -> id.copy(quality = qualities.getValue(id.id)) }
         }
         active = active?.copy(dungeon = dungeon)
@@ -430,19 +447,63 @@ internal object CoreAccountCodec {
             CoreStoredGear(readIdentity(r.subList(1, 4)).copy(quality = qualities[id] ?: 0, base = bases[id]?.first ?: CoreWeaponBase.STANDARD, itemLevel = bases[id]?.second ?: 0), slot, r[5].toInt(), CoreGearRarity.valueOf(r[6]),
                 CoreEnhancementState(r[7].toInt(), r[8].toInt()), storedAffixes[id].orEmpty().map { CoreEquippedAffix(slot, it.first, it.second) }, r[9].toBooleanStrict(), readBroken(r[10], version))
         }
-        return CoreAccount(playerId, header[3].toLong(), balances, weaponTier, armorTier, gear[3].toInt(), maps, active, receipts, sources, stones, equipped,
-            CoreGearRarity.valueOf(craft[1]), CoreGearRarity.valueOf(craft[2]), currencies, fragments, legacy, craft[3].toLong(),
+        val migratedStored = if (version >= 11) stored else stored.flatMap { item ->
+            if (item.slot != CoreGearSlot.ARMOR) listOf(item) else CoreGearSlot.armorSlots.map { slot ->
+                val identity = if (slot == CoreGearSlot.CHEST) item.identity else item.identity.copy(id = UUID.nameUUIDFromBytes(
+                    "armor-v11/${item.identity.id}/$slot".toByteArray(Charsets.UTF_8)))
+                CoreStoredGear(identity, slot, item.tier, item.rarity, item.enhancement,
+                    if (slot == CoreGearSlot.CHEST) item.affixes.map { it.copy(gear = slot) } else emptyList(), item.legacy, item.broken)
+            }
+        }
+        val migratedAffixes = if (version >= 11) equipped else equipped.map {
+            if (it.gear == CoreGearSlot.ARMOR) it.copy(gear = CoreGearSlot.CHEST) else it
+        }
+        val migratedLegacy = if (version >= 11) legacy else legacy.mapTo(linkedSetOf()) {
+            if (it == CoreGearSlot.ARMOR) CoreGearSlot.CHEST else it
+        }
+        // A v10 order bought a whole set, so never reinterpret it as a chest order. Refund
+        // escrow where the silver cap permits; keep any remainder cancellable after spending.
+        val oldSilver = economy?.get(1)?.toLong() ?: 0L
+        var refundRoom = CoreEconomy.MAX_SILVER - oldSilver
+        var returnedSilver = 0L
+        val migratedOrders = buyOrders.filter { order ->
+            if (version >= 11 || order.slot != CoreGearSlot.ARMOR || order.escrow > refundRoom) true
+            else {
+                refundRoom -= order.escrow
+                returnedSilver += order.escrow
+                false
+            }
+        }
+        val parts = if (version >= 11) armorRows.mapValues { (_, row) ->
+            val id = readIdentity(row.subList(2, 5))
+            CoreArmorPiece(id.copy(quality = qualities.getValue(id.id), base = bases.getValue(id.id).first,
+                itemLevel = bases.getValue(id.id).second), row[5].toInt(), CoreGearRarity.valueOf(row[6]),
+                CoreEnhancementState(row[7].toInt(), row[8].toInt()), row[9].toBooleanStrict())
+        } else CoreGearSlot.armorSlots.filterNot { it == CoreGearSlot.CHEST }.associateWith { slot ->
+            val old = identities[CoreGearSlot.ARMOR] ?: CoreGearIdentity.legacy(playerId, CoreGearSlot.ARMOR)
+            val migratedId = if (old.id == CoreGearIdentity.legacy(playerId, CoreGearSlot.ARMOR).id)
+                CoreGearIdentity.legacy(playerId, slot).id
+            else UUID.nameUUIDFromBytes("armor-v11/${old.id}/$slot".toByteArray(Charsets.UTF_8))
+            CoreArmorPiece(old.copy(id = migratedId), armorTier,
+                CoreGearRarity.valueOf(craft[2]), enhanced?.let { CoreEnhancementState(it[3].toInt(), it[4].toInt()) }
+                    ?: CoreEnhancementState(), economy?.get(5)?.let { readBroken(it, version) } ?: false)
+        }
+        return CoreAccount(playerId, header[3].toLong(), balances, weaponTier, armorTier, gear[3].toInt(), maps, active, receipts, sources, stones, migratedAffixes,
+            CoreGearRarity.valueOf(craft[1]), CoreGearRarity.valueOf(craft[2]), currencies, fragments, migratedLegacy, craft[3].toLong(),
             enhanced?.let { CoreEnhancementState(it[1].toInt(), it[2].toInt()) } ?: CoreEnhancementState(),
             enhanced?.let { CoreEnhancementState(it[3].toInt(), it[4].toInt()) } ?: CoreEnhancementState(),
             enhanced?.get(5)?.toLong() ?: 0L,
-            silver = economy?.get(1)?.toLong() ?: 0,
+            silver = Math.addExact(oldSilver, returnedSilver),
             weaponIdentity = identities[CoreGearSlot.WEAPON] ?: CoreGearIdentity.legacy(playerId, CoreGearSlot.WEAPON),
             armorIdentity = identities[CoreGearSlot.ARMOR] ?: CoreGearIdentity.legacy(playerId, CoreGearSlot.ARMOR),
-            storedGear = stored, offers = offers, deliveryDay = economy?.get(2)?.toLong() ?: 0, deliveries = economy?.get(3)?.toInt() ?: 0,
+            storedGear = migratedStored, offers = if (version >= 11) offers else offers.filter { offer ->
+                offer.gearId == null || stored.none { it.identity.id == offer.gearId && it.slot == CoreGearSlot.ARMOR }
+            },
+            deliveryDay = economy?.get(2)?.toLong() ?: 0, deliveries = economy?.get(3)?.toInt() ?: 0,
             weaponBroken = economy?.get(4)?.let { readBroken(it, version) } ?: false,
             armorBroken = economy?.get(5)?.let { readBroken(it, version) } ?: false,
-            professions = professions, surveyPoints = survey ?: 0, buyOrders = buyOrders, dungeonRecords = records,
-            journey = journey ?: CoreJourney(xp = CoreJourneyRules.threshold(CoreJourneyRules.floor(gear[3].toInt()))))
+            professions = professions, surveyPoints = survey ?: 0, buyOrders = migratedOrders, dungeonRecords = records,
+            journey = journey ?: CoreJourney(xp = CoreJourneyRules.threshold(CoreJourneyRules.floor(gear[3].toInt()))), armorParts = parts)
     }
 
     /** Retired v5 wear is validated but never reinterpreted as enhancement damage. */

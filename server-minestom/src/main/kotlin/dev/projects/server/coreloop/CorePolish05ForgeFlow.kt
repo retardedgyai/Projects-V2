@@ -34,20 +34,30 @@ internal class CorePolish05ForgeFlow(
 
     private fun project(a: CoreAccount): ForgeUiState {
         val q = quote(a)
-        val gear = CoreGearSlot.entries.map { slot ->
+        val gear = CoreGearSlot.equipSlots.map { slot ->
             val level = CoreEnhancementCatalog.state(a, slot).level
             val next = a.copy(
                 weaponEnhancement = if(slot == CoreGearSlot.WEAPON && level < 30) CoreEnhancementState(level+1) else a.weaponEnhancement,
-                armorEnhancement = if(slot == CoreGearSlot.ARMOR && level < 30) CoreEnhancementState(level+1) else a.armorEnhancement,
-            )
+            ).let { if (slot == CoreGearSlot.WEAPON || level >= 30) it else it.withArmor(slot,
+                a.armor(slot).copy(enhancement = CoreEnhancementState(level+1))) }
             ForgeUiGear(
-                if(slot == CoreGearSlot.WEAPON) "weapon" else "armor",
-                "T${if(slot == CoreGearSlot.WEAPON) a.weaponTier else a.armorTier} ${slot.displayName}",
-                if(slot == CoreGearSlot.WEAPON) a.weaponTier else a.armorTier,
+                slot.name.lowercase(),
+                "T${CoreAffixCatalog.gearTier(a,slot)} ${slot.displayName}",
+                CoreAffixCatalog.gearTier(a,slot),
                 level,
                 if(slot == CoreGearSlot.WEAPON) CoreWeaponPresentation.damage(a) else CoreWeaponPresentation.health(a),
                 if(slot == CoreGearSlot.WEAPON) CoreWeaponPresentation.damage(next) else CoreWeaponPresentation.health(next),
                 CoreEconomy.broken(a, slot),
+                if(slot == CoreGearSlot.WEAPON) null else {
+                    val part = when(slot) {
+                        CoreGearSlot.HEAD -> "helmet"
+                        CoreGearSlot.CHEST -> "chestplate"
+                        CoreGearSlot.LEGS -> "leggings"
+                        CoreGearSlot.FEET -> "boots"
+                        else -> error("防具部位ではありません")
+                    }
+                    "minecraft:leather_$part|projects:armor/${a.journey.job.name.lowercase()}_t${CoreAffixCatalog.gearTier(a,slot)}_$part"
+                },
             )
         }
         val cost = q.recipe.costs.map { (material, required) ->
@@ -68,7 +78,7 @@ internal class CorePolish05ForgeFlow(
         }.toMutableList()
         while(cost.size < 3) cost += ForgeUiMaterial("消費なし",0,0,"forge_material_affix_dust")
         val materialBlock = cost.firstOrNull { it.owned < it.required }?.let { "${it.name}が不足しています" }
-        return ForgeUiState(gear,if(selected == CoreGearSlot.WEAPON) "weapon" else "armor",a.silver,
+        return ForgeUiState(gear,selected.name.lowercase(),a.silver,
             q.successChancePercent,q.breakOnFailurePercent,focused,cost,
             a.amount(CoreResource.AFFIX_DUST),q.blockedReason ?: materialBlock,history,note,modal,muted,operationActive)
     }
@@ -107,8 +117,12 @@ internal class CorePolish05ForgeFlow(
         }
         val a=account() ?: return false
         return when(action) {
-            "select:ember", "select:ash" -> {
-                selected=if(action=="select:ember") CoreGearSlot.WEAPON else CoreGearSlot.ARMOR
+            "select:weapon", "select:head", "select:chest", "select:legs", "select:feet", "select:ember", "select:ash" -> {
+                selected=when(action) {
+                    "select:ember", "select:weapon" -> CoreGearSlot.WEAPON
+                    "select:ash", "select:chest" -> CoreGearSlot.CHEST
+                    else -> CoreGearSlot.valueOf(action.substringAfter(':').uppercase())
+                }
                 focused=false;note="装備を選択しました。";true
             }
             "catalyst" -> {

@@ -186,6 +186,16 @@ def main() -> None:
         image.save(destination, optimize=True)
         register(f"forge_material_{name}", f"forge_materials/{name}.png", 16, 16)
 
+    # Append compact production plates after established glyphs so their IDs
+    # remain stable for clients that already cached an earlier Polish05 pack.
+    for name in ("gear_selected_compact", "gear_unselected_compact"):
+        image = Image.open(EFFECTS / f"{name}.png").convert("RGBA")
+        rel = f"textures/effects/{name}.png"
+        destination = PACK / "assets" / NAMESPACE / rel
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        image.save(destination)
+        register(name, f"effects/{name}.png", image.width, image.height)
+
     font = PACK / "assets" / NAMESPACE / "font/plates.json"
     font.parent.mkdir(parents=True, exist_ok=True)
     font.write_text(json.dumps({"providers": providers}, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
