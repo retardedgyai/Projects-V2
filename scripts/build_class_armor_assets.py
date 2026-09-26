@@ -235,22 +235,31 @@ def armor_model(job,tier,slot):
     gui_scale=({'starweaver':.78,'mage':.82,'healer':.9}.get(job,.95) if slot=='helmet' else 1)
     if slot=='helmet': elements=project_helmet_elements(job,tier)
     elif slot=='chestplate':
-        elements=[box('cuirass',[4,3,5.5],[12,15,10.5],base),box('left shoulder',[.5,11.5,5],[4,16,11],secondary),box('right shoulder',[12,11.5,5],[15.5,16,11],secondary),box('belt',[3.8,4,5.2],[12.2,5.2,10.8],trim)]
-        gem(elements,'chest badge',8,11.4,5.3,1.2,glow)
+        elements=[box('cuirass',[3.8,1.6,5.4],[12.2,15,10.6],base),
+                  box('left sleeve',[.2,1.8,5.3],[4,15.4,10.7],secondary),
+                  box('right sleeve',[12,1.8,5.3],[15.8,15.4,10.7],secondary)]
     else:
         elements=[]
         for x in (3.5,9):
             elements.append(box(slot+' left/right',[x,3,5],[x+3.5,14 if slot=='leggings' else 9,10],base))
-            elements.append(box('trim band',[x-.15,10.5 if slot=='leggings' else 7.5,4.8],[x+3.65,11.5 if slot=='leggings' else 8.5,10.2],trim))
-            if slot=='boots': elements.append(box('projecting toe',[x,3,3.7],[x+3.5,5,10],secondary))
-    # Paint the item model with the same motif as the equipped armor. The old
-    # model sampled only flat material tiles, so its small GUI icon lost the
-    # class motif and appeared like an unrelated dark cube.
+    # Native armor UVs cover every visible face. A single small front crop
+    # pasted on otherwise generic material cubes made the item look flat.
     worn='inner' if slot=='leggings' else 'outer'
-    front_uv=[5,10,7,16] if slot=='chestplate' else [1,10,2,16]
     for element in elements:
-        if element['name'] in ('cuirass',slot+' left/right'):
-            element['faces']['north']={'uv':front_uv,'texture':'#'+worn}
+        origin,width,depth=((40,16),4,4) if element['name'].endswith('sleeve') else (
+            ((16,16),8,4) if slot=='chestplate' else ((0,16),4,4))
+        u,v=origin
+        coords={
+            'west':(u,v+depth,depth,12),
+            'north':(u+depth,v+depth,width,12),
+            'east':(u+depth+width,v+depth,depth,12),
+            'south':(u+2*depth+width,v+depth,width,12),
+            'up':(u+depth,v,width,depth),
+            'down':(u+depth+width,v,width,depth),
+        }
+        element['faces']={face:{'uv':[x/4,y/2,(x+w)/4,(y+h)/2],
+                                'texture':'#'+worn}
+                          for face,(x,y,w,h) in coords.items()}
     return {'credit':'ProjectS original class armor / native pixel source','gui_light':'front','ambientocclusion':False,
         'textures':{'atlas':'projects:item/weapons/materials','particle':'projects:item/weapons/materials',
             # Item models use the block/item atlas. Equipment-layer PNGs under

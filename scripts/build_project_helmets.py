@@ -9,7 +9,7 @@ from class_armament_geometry import box
 PALETTES = {
     'warrior': ('13243a','264564','3f6e96','76a5c3','bed7df','de532e','ffba65'),
     'ranger': ('1a2b24','304732','537049','8e9c5c','d1b474','9d683e','f0c678'),
-    'mage': ('1c1930','332954','594477','9773af','c7b4d1','a84bc9','efb6fa'),
+    'mage': ('1c1930','332954','594477','a4a9bc','d8d7db','a84bc9','efb6fa'),
     'assassin': ('171822','302b3c','59415a','886284','b6a0ae','9b4767','de9bb0'),
     'templar': ('38464c','657377','a9b9b4','e0dfc9','fff0d4','b68b4f','f6ce80'),
     'healer': ('354950','71847e','b4c0ac','e5e6d0','f9f1df','7fb9a5','d5f1d3'),
@@ -65,6 +65,10 @@ def front_paint(job, tier):
         d.polygon([(3,14),(29,14),(28,17),(24,18),(8,18),(4,17)],fill=light)
         d.line([(4,14),(27,14)],fill=edge,width=1)
         d.polygon([(6,17),(26,17),(24,19),(8,19)],fill=ink)
+        d.polygon([(2,18),(4,17),(5,25),(7,30),(6,31),(3,26)],fill=edge)
+        d.polygon([(30,18),(28,17),(27,25),(25,30),(26,31),(29,26)],fill=edge)
+        d.line([(5,20),(6,25)],fill=light,width=1)
+        d.line([(27,20),(26,25)],fill=light,width=1)
         for x,flip in ((3,False),(29,True)):
             points=[(3,18),(9,20),(12,27),(10,31),(7,30),(3,25),(2,21)]
             if flip: points=[(32-a,b) for a,b in points]
@@ -87,6 +91,7 @@ def front_paint(job, tier):
         d.polygon([(11,2),(19,2),(24,8),(25,14),(7,14),(8,8)],fill=body)
         d.line([(11,2),(19,2),(23,7)],fill=light,width=1)
         d.polygon([(5,14),(27,14),(28,19),(23,22),(9,22),(4,19)],fill=light)
+        d.line([(5,15),(10,18),(16,16),(22,18),(27,15)],fill=edge,width=2)
         d.polygon([(9,20),(23,20),(22,30),(10,30)],fill=ink)
         d.polygon([(4,20),(10,22),(12,31),(3,31)],fill=body)
         d.polygon([(28,20),(22,22),(20,31),(29,31)],fill=body)
