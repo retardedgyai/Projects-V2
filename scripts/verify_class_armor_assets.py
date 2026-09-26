@@ -2,7 +2,7 @@
 import json
 import math
 from PIL import Image
-from build_class_armor_assets import ASSETS,JOBS,SLOTS,armor_model,armor_texture,icon_texture
+from build_class_armor_assets import ASSETS,JOBS,SLOTS,armor_model,armor_texture,icon_texture,helmet_face_texture
 from verify_core_weapon_assets import point
 import numpy as np
 
@@ -16,12 +16,16 @@ def verify():
         for tier in range(1,5):
             stem=f'armor/{job}_t{tier}'
             equipment=read(f'equipment/{stem}.json')
+            face_relative=f'textures/item/armor/helmet_faces/{job}_t{tier}.png'
+            assert 'assets/projects/'+face_relative in index
+            assert Image.open(ASSETS/face_relative).convert('RGBA').tobytes()==helmet_face_texture(job,tier).tobytes()
             for layer,inner in (('humanoid',False),('humanoid_leggings',True)):
                 assert equipment['layers'][layer]==[{'texture':f'projects:{stem}'}]
                 relative=f'textures/entity/equipment/{layer}/{stem}.png'
                 assert 'assets/projects/'+relative in index
                 image=Image.open(ASSETS/relative).convert('RGBA')
-                assert image.size==(64,32) and image.tobytes()==armor_texture(job,tier,inner).tobytes()
+                expected_size=(64,32)
+                assert image.size==expected_size and image.tobytes()==armor_texture(job,tier,inner).tobytes()
                 item_relative=f'textures/item/{stem}_{"inner" if inner else "outer"}.png'
                 assert 'assets/projects/'+item_relative in index
                 assert Image.open(ASSETS/item_relative).convert('RGBA').tobytes()==image.tobytes()
@@ -45,6 +49,7 @@ def verify():
                 model=read(f'models/item/{name}.json'); assert model==armor_model(job,tier,slot)
                 assert model['textures']['outer']==f'projects:item/{stem}_outer'
                 assert model['textures']['inner']==f'projects:item/{stem}_inner'
+                assert model['textures']['helm']==f'projects:item/armor/helmet_faces/{job}_t{tier}'
                 assert len(model['elements'])<=48
                 for e in model['elements']:
                     assert all(-16<=a<b<=32 for a,b in zip(e['from'],e['to']))

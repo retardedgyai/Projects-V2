@@ -33,6 +33,7 @@ def worn(job,tier):
         'atlas':np.array(Image.open(ASSETS/'textures/item/weapons/materials.png').convert('RGBA')),
         'outer':np.array(Image.open(ASSETS/f'textures/entity/equipment/humanoid/armor/{job}_t{tier}.png').convert('RGBA')),
         'inner':np.array(Image.open(ASSETS/f'textures/entity/equipment/humanoid_leggings/armor/{job}_t{tier}.png').convert('RGBA')),
+        'helm':np.array(Image.open(ASSETS/f'textures/item/armor/helmet_faces/{job}_t{tier}.png').convert('RGBA')),
         'skin':np.full((32,64,4),[145,131,116,255],dtype=np.uint8),
     }
     elements.append(cube('neutral head',[4,24,4],[12,32,12],'skin',(0,0),(8,8,8)))
