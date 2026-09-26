@@ -8,12 +8,16 @@ import net.minestom.server.coordinate.Pos
 import net.minestom.server.coordinate.Vec
 import net.minestom.server.entity.Entity
 import net.minestom.server.entity.EntityType
+import net.minestom.server.entity.Metadata
+import net.minestom.server.entity.MetadataDef
 import net.minestom.server.entity.Player
 import net.minestom.server.entity.metadata.display.AbstractDisplayMeta
 import net.minestom.server.entity.metadata.display.ItemDisplayMeta
 import net.minestom.server.entity.metadata.display.TextDisplayMeta
 import net.minestom.server.item.ItemStack
 import net.minestom.server.item.Material
+import net.minestom.server.network.packet.server.play.EntityMetaDataPacket
+import java.util.concurrent.ConcurrentHashMap
 
 /** Retained fixed screen; the cursor tip follows input immediately. */
 class UiRenderer(private val player: Player, private val origin: Pos) : AutoCloseable {
@@ -24,6 +28,11 @@ class UiRenderer(private val player: Player, private val origin: Pos) : AutoClos
     private var wanted=mutableSetOf<String>()
     private val unspawned=mutableListOf<Pair<String,Entity>>()
     private var closed=false
+    private var packetCursor=false
+    private var lastPacketTransform: Triple<Double,Double,Double>?=null
+    private val cursorIds=setOf("cursor-shadow","cursor-v","cursor-h","cursor-tip")
+    private val spawnedCursorIds=ConcurrentHashMap.newKeySet<String>()
+    @Volatile private var cursorReady=false
     var zoom=1.0
     val size get()=entities.size
     private val geometry get()=UiGeometry(zoom)
@@ -47,7 +56,13 @@ class UiRenderer(private val player: Player, private val origin: Pos) : AutoClos
         pending.forEach { (id,e) ->
             // First packet contains complete transforms, never a flash at identity scale.
             e.setInstance(player.instance!!,origin.add(0.0,0.0,UiGeometry.DISTANCE).withView(180f,0f)).thenRun {
-                if(closed || e.isRemoved || entities[id]!==e) e.remove() else e.addViewer(player)
+                if(closed || e.isRemoved || entities[id]!==e) e.remove() else {
+                    e.addViewer(player)
+                    if(id in cursorIds) {
+                        spawnedCursorIds+=id
+                        cursorReady=spawnedCursorIds.containsAll(cursorIds)
+                    }
+                }
             }
         }
     }
@@ -148,15 +163,53 @@ class UiRenderer(private val player: Player, private val origin: Pos) : AutoClos
         scene.nodes.filter { it.id==previous || it.id==next }.forEach { background(it,next) }
     }
     fun cursor(pointer: UiPointer) {
-        // Keep the bright hit-test tip on the newest input packet. A one-tick
-        // shadow fills the gap between packets without delaying the actual tip.
+        if(packetCursor) {
+            wanted+=cursorIds
+            // A probe may arrive before the four spawn packets. Send the latest
+            // position once the client actually has the cursor entities.
+            if(cursorReady && lastPacketTransform!=Triple(pointer.x,pointer.y,zoom)) cursorPacket(pointer)
+            return
+        }
+        // The exact 2px hit point reacts on the newest input packet. Vanilla
+        // interpolates the larger body between metadata updates so motion is
+        // continuous without shifting the position used for clicks.
         panel("cursor-shadow",Box(pointer.x-1.0,pointer.y-1.0,5.0,15.0),0xff14171b.toInt(),0.4,1)
-        panel("cursor-v",Box(pointer.x,pointer.y,2.0,12.0),0xffffdf9f.toInt(),0.41)
-        panel("cursor-h",Box(pointer.x,pointer.y,10.0,2.0),0xffffdf9f.toInt(),0.42)
+        panel("cursor-v",Box(pointer.x,pointer.y,2.0,12.0),0xffffdf9f.toInt(),0.41,1)
+        panel("cursor-h",Box(pointer.x,pointer.y,10.0,2.0),0xffffdf9f.toInt(),0.42,1)
+        panel("cursor-tip",Box(pointer.x,pointer.y,2.0,2.0),0xffffedbc.toInt(),0.43)
         spawnReady()
+    }
+    /** Send only cursor transforms from the socket path. Entity state stays on the instance thread. */
+    fun cursorPacket(pointer: UiPointer) {
+        packetCursor=true
+        if(!cursorReady) return
+        val at=Triple(pointer.x,pointer.y,zoom)
+        if(lastPacketTransform==at) return
+        lastPacketTransform=at
+        val positions=listOf(
+            Triple("cursor-shadow",Box(pointer.x-1.0,pointer.y-1.0,5.0,15.0),0.4),
+            Triple("cursor-v",Box(pointer.x,pointer.y,2.0,12.0),0.41),
+            Triple("cursor-h",Box(pointer.x,pointer.y,10.0,2.0),0.42),
+            Triple("cursor-tip",Box(pointer.x,pointer.y,2.0,2.0),0.43),
+        )
+        positions.forEach { (key,box,depth) ->
+            val id=entities[key]?.entityId?:return@forEach
+            val transform=geometry.panel(box,depth)
+            player.sendPacket(EntityMetaDataPacket(id,mapOf(
+                MetadataDef.Display.TRANSLATION.index() to Metadata.Vector3(transform.translation),
+                MetadataDef.Display.SCALE.index() to Metadata.Vector3(transform.scale),
+                MetadataDef.Display.INTERPOLATION_DELAY.index() to Metadata.VarInt(0),
+            )))
+        }
+    }
+    /** The lab's artificial latency mode applies queued input on the instance thread. */
+    fun entityCursor() {
+        packetCursor=false
+        lastPacketTransform=null
     }
     override fun close() {
         closed=true; entities.values.forEach(Entity::remove); entities.clear()
+        cursorReady=false;spawnedCursorIds.clear()
         panels.clear(); content.clear(); unspawned.clear()
     }
 }

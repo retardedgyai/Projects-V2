@@ -8,6 +8,7 @@ import dev.projects.server.coreloop.adventure.*
 import dev.projects.server.questmap.*
 import dev.projects.webui.Polish05Scene
 import dev.projects.webui.UiSessions
+import dev.projects.webui.UiInputPlayer
 import net.kyori.adventure.bossbar.BossBar
 import net.kyori.adventure.sound.Sound
 import net.kyori.adventure.text.Component
@@ -20,6 +21,7 @@ import net.minestom.server.coordinate.Vec
 import net.minestom.server.entity.GameMode
 import net.minestom.server.entity.Player
 import net.minestom.server.entity.PlayerHand
+import net.minestom.server.network.packet.client.ClientPacket
 import net.minestom.server.entity.attribute.Attribute
 import net.minestom.server.event.entity.EntityAttackEvent
 import net.minestom.server.event.entity.EntityDamageEvent
@@ -47,6 +49,9 @@ object CoreLoopServer {
         val hub = MinecraftServer.getInstanceManager().createInstanceContainer()
         val harbor = HarborScene.build(hub)
         val game = CoreLoopGame(hub, harbor)
+        MinecraftServer.getConnectionManager().setPlayerProvider { connection, profile ->
+            UiInputPlayer(connection,profile,game::consumeImmediateUiPacket)
+        }
         game.register()
         Runtime.getRuntime().addShutdownHook(Thread({ game.close() }, "projects-core-save-drain"))
         val port = System.getProperty("projects.port", "25565").toInt()
@@ -56,6 +61,8 @@ object CoreLoopServer {
 }
 
 internal class CoreLoopGame(private val hub: InstanceContainer, private val harbor: HarborScene.Result) : CoreMenuHost {
+    internal fun consumeImmediateUiPacket(player: Player, packet: ClientPacket): Boolean =
+        polishSessions?.consumeImmediateUiPacket(player,packet) == true
     private val io = Executors.newSingleThreadScheduledExecutor { r -> Thread(r, "projects-core-ledger").apply { isDaemon = true } }
     private val mapBuilder = Executors.newSingleThreadExecutor { r -> Thread(r, "projects-core-map-builder").apply { isDaemon = true } }
     private val preparedMaps = CoreMapPreparation(mapBuilder)

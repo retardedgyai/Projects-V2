@@ -40,6 +40,9 @@ fun main(args: Array<String>) {
         Polish05Scene(Path.of(it),Path.of(System.getProperty("projects.ui.sprites")))
     }
     val sessions=UiSessions(events,source,{ player -> pack?.ready(player) ?: true },polishScene)
+    MinecraftServer.getConnectionManager().setPlayerProvider { connection,profile ->
+        UiInputPlayer(connection,profile,sessions::consumeImmediateUiPacket)
+    }
     val port=System.getProperty("projects.ui.port","25570").toInt()
     val previewPort=System.getProperty("projects.ui.previewPort","18090").toInt()
     require(port in 1024..65535 && port !in setOf(25565,25566) && previewPort!=port)
