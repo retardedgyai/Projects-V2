@@ -64,8 +64,8 @@ def verify():
                 if job=='warrior':
                     names={element['name'] for element in model['elements']}
                     required={
-                        'helmet':{'painted forged shell','projecting warm brow',
-                                  'central furnace clasp','left sculpted cheek','right sculpted cheek'},
+                        'helmet':{'forged shell','recessed face shadow',
+                                  'warm wraparound brow','raised ember ridge'},
                         'chestplate':{'left shoulder plate','right shoulder plate','bronze socket','ember mark'},
                         'leggings':{'left raised knee plate','right raised knee plate','left shin guard','right shin guard'},
                         'boots':{'left projecting toe','right projecting toe','left ankle clasp','right ankle clasp'},
@@ -80,7 +80,13 @@ def verify():
                     for corner in range(8):
                         p=point([e['to'][j] if corner&(1<<j) else e['from'][j] for j in range(3)],e.get('rotation'))
                         assert all(math.isfinite(n) and -16<=n<=32 for n in p)
-                    for face in e['faces'].values(): assert all(0<=v<=16 for v in face['uv'])
+                    for face in e['faces'].values():
+                        assert all(0<=v<=16 for v in face['uv'])
+                        if job=='warrior' and slot!='helmet' and face['texture']=='#helm':
+                            u0,v0,u1,v1=face['uv']
+                            patch=np.array(helmet_image.crop((math.floor(u0*8),math.floor(v0*4),
+                                math.ceil(u1*8),math.ceil(v1*4))))
+                            assert np.all(patch[:,:,3]==255), f'Blank shared armor paint: {name}'
                 if slot=='helmet':
                     assert model['display']['head']['scale']==[1.6]*3
                     assert model['display']['head']['translation']==[0,0,0]
