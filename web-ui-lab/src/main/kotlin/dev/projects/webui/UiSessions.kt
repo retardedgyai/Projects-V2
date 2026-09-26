@@ -17,12 +17,14 @@ import net.minestom.server.event.instance.InstanceTickEvent
 import net.minestom.server.event.player.PlayerDisconnectEvent
 import net.minestom.server.event.player.PlayerPacketEvent
 import net.minestom.server.network.packet.client.play.*
+import net.minestom.server.network.packet.client.ClientPacket
 import net.minestom.server.network.packet.server.play.CameraPacket
 import net.minestom.server.network.packet.server.play.ChangeGameStatePacket
 import net.minestom.server.network.packet.server.play.PlayerPositionAndLookPacket
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.UUID
+import java.util.IdentityHashMap
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
@@ -36,7 +38,8 @@ class UiSessions(
     private val flowFactory: ((Player) -> ForgeUiFlow)? = null,
     private val cameraOrigin: (Player) -> Pos = { it.position.add(0.0,it.eyeHeight+4.0,0.0).withView(0f,0f) },
 ) : AutoCloseable {
-    private data class Input(val due: Long, val generation: Int, val yaw: Float?=null, val pitch: Float?=null, val action: String?=null)
+    private data class Input(val due: Long, val generation: Int, val yaw: Float?=null, val pitch: Float?=null,
+                             val action: String?=null, val clickAt: Pair<Double,Double>?=null)
     private data class Voice(val cue:String,val until:Long)
     private class Session(val player: Player, val saved: Pos, var document: UiDocument?, val camera: Entity, val renderer: UiRenderer,
                           sceneBuilder: Polish05Scene?, factory: ((Player) -> ForgeUiFlow)?) {
@@ -48,6 +51,7 @@ class UiSessions(
         var scene=polish?.scene()?:requireNotNull(document).layout(demo.values(),demo.flags())
         val pending=ConcurrentHashMap<Int,Long>()
         val queue=ArrayDeque<Input>()
+        val clickAt=IdentityHashMap<ClientPacket,Pair<Double,Double>>()
         @Volatile var active=false
         var generation=0
         var hover: String?=null
@@ -145,7 +149,7 @@ class UiSessions(
             player.setHeldItemSlot(player.heldSlot)
             if(teleportBack) player.teleport(s.saved)
         }
-        s.queue.clear();s.pending.clear();s.renderer.close();s.camera.remove()
+        s.queue.clear();s.clickAt.clear();s.pending.clear();s.renderer.close();s.camera.remove()
         if(s.polish!=null) POLISH_SOUNDS.forEach { player.stopSound(SoundStop.named(Key.key("projects_ui_polish05:ui.$it"))) }
         }
     }
@@ -158,10 +162,11 @@ class UiSessions(
         val flags=RelativeFlags.COORD or RelativeFlags.DELTA_COORD or if(reset) 0 else RelativeFlags.VIEW
         s.player.sendPacket(PlayerPositionAndLookPacket(id,Vec.ZERO,Vec.ZERO,0f,0f,flags))
     }
-    private fun enqueue(s: Session, yaw: Float?=null, pitch: Float?=null, action: String?=null) {
+    private fun enqueue(s: Session, yaw: Float?=null, pitch: Float?=null, action: String?=null,
+                        clickAt: Pair<Double,Double>?=null) {
         if(!s.active || s.recenter) return
         if(s.queue.size>=64) return
-        s.queue.addLast(Input(System.nanoTime()+s.demo.delayMs*1_000_000L,s.generation,yaw,pitch,action))
+        s.queue.addLast(Input(System.nanoTime()+s.demo.delayMs*1_000_000L,s.generation,yaw,pitch,action,clickAt))
         // PlayerPacketEvent is already dispatched by Minestom on the player's tick thread.
         // Do not wait for a second InstanceTickEvent when no artificial latency was requested.
         if(s.demo.delayMs==0) { drain(s,System.nanoTime()); if(sessions[s.player.uuid]===s) paintPointer(s) }
@@ -194,13 +199,15 @@ class UiSessions(
             is ClientUseItemPacket -> {
                 event.isCancelled=true
                 if(packet.hand()==net.minestom.server.entity.PlayerHand.MAIN) {
-                    rotation(s,packet.yaw(),packet.pitch());enqueue(s,action="click")
+                    val captured=s.clickAt.remove(packet)
+                    if(captured==null) rotation(s,packet.yaw(),packet.pitch())
+                    enqueue(s,action="click",clickAt=captured)
                 }
             }
             // 26.2 spectator rendering sends this for LEFT click, including clicks on empty space.
-            is ClientSpectatorActionPacket -> { event.isCancelled=true;enqueue(s,action="click") }
-            is ClientPlayerBlockPlacementPacket, is ClientInteractEntityPacket -> { event.isCancelled=true; enqueue(s,action="click") }
-            is ClientAnimationPacket, is ClientAttackPacket -> { event.isCancelled=true;enqueue(s,action="click") }
+            is ClientSpectatorActionPacket -> { event.isCancelled=true;enqueue(s,action="click",clickAt=s.clickAt.remove(packet)) }
+            is ClientPlayerBlockPlacementPacket, is ClientInteractEntityPacket -> { event.isCancelled=true; enqueue(s,action="click",clickAt=s.clickAt.remove(packet)) }
+            is ClientAnimationPacket, is ClientAttackPacket -> { event.isCancelled=true;enqueue(s,action="click",clickAt=s.clickAt.remove(packet)) }
             is ClientHeldItemChangePacket -> {
                 event.isCancelled=true
                 val slot=packet.slot().toInt()
@@ -221,7 +228,7 @@ class UiSessions(
     }
     /** Preserve the probe's confirm/rotation order on Minestom's socket thread.
      * Other packets remain on the normal 20 Hz gameplay path. */
-    fun consumeImmediateUiPacket(player: Player, packet: net.minestom.server.network.packet.client.ClientPacket): Boolean {
+    fun consumeImmediateUiPacket(player: Player, packet: ClientPacket): Boolean {
         val s=sessions[player.uuid]?:return false
         synchronized(s) {
             if(sessions[player.uuid]!==s) return false
@@ -232,6 +239,18 @@ class UiSessions(
                 }
                 is ClientPlayerRotationPacket -> rotation(s,packet.yaw(),packet.pitch())
                 is ClientPlayerPositionAndRotationPacket -> rotation(s,packet.position().yaw(),packet.position().pitch())
+                is ClientUseItemPacket -> {
+                    if(packet.hand()==net.minestom.server.entity.PlayerHand.MAIN) {
+                        rotation(s,packet.yaw(),packet.pitch())
+                        s.clickAt[packet]=s.pointer.x to s.pointer.y
+                    }
+                    return false
+                }
+                is ClientSpectatorActionPacket, is ClientPlayerBlockPlacementPacket,
+                is ClientInteractEntityPacket, is ClientAnimationPacket, is ClientAttackPacket -> {
+                    s.clickAt[packet]=s.pointer.x to s.pointer.y
+                    return false
+                }
                 else -> return false
             }
             return true
@@ -299,7 +318,8 @@ class UiSessions(
                 if(action=="click") {
                     if(now-s.lastClick<if(s.polish!=null)70_000_000L else 220_000_000L) continue
                     s.lastClick=now
-                    val hit=s.scene.hit(s.pointer.x,s.pointer.y)
+                    val at=input.clickAt
+                    val hit=s.scene.hit(at?.first?:s.pointer.x,at?.second?:s.pointer.y)
                     if(hit==null || !hit.enabled) continue
                     action=hit.action!!
                 }

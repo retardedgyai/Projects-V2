@@ -102,7 +102,14 @@ fun main(args: Array<String>) {
                 val meta=instance.entities.single { it.entityId==id }.entityMeta as TextDisplayMeta
                 check(meta.posRotInterpolationDuration==0 && meta.transformationInterpolationDuration==1)
             }
-            events.call(PlayerPacketEvent(first,ClientSpectatorActionPacket(null)))
+            val click=ClientSpectatorActionPacket(null)
+            check(!sessions.consumeImmediateUiPacket(first,click)) // queued for the normal tick
+            val buttonYaw=((button.x+button.w/2-400)/8).toFloat()
+            val buttonPitch=((button.y+button.h/2-240)/8).toFloat()
+            check(sessions.consumeImmediateUiPacket(first,ClientPlayerPositionAndRotationPacket(
+                Pos(0.0,1.0,0.0,buttonYaw+40f,buttonPitch),false,false)))
+            // Later movement must not change which control the earlier click hits.
+            events.call(PlayerPacketEvent(first,click))
             check(instance.entities.mapNotNull { (it.entityMeta as? TextDisplayMeta)?.text as? net.kyori.adventure.text.TextComponent }
                 .any { it.content()=="旅人の大剣 +4" }) { "Packet-driven forge did not execute" }
             val scroll=PlayerPacketEvent(first,ClientHeldItemChangePacket(1))
