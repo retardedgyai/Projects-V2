@@ -325,6 +325,7 @@ class CoreAffixTest {
         val migrated = CoreAccountCodec.decode(body + "checksum\t$checksum\n", player)
         assertEquals(listOf(affix.copy(gear = CoreGearSlot.CHEST)), migrated.equippedAffixes)
         assertEquals(CoreGearRarity.MAGIC, migrated.armor(CoreGearSlot.CHEST).rarity)
+        assertTrue(CoreGearSlot.armorSlots.all { migrated.armor(it).rarity == CoreGearRarity.MAGIC })
         assertEquals(migrated.equippedAffixes,
             CoreAccountCodec.decode(CoreAccountCodec.encode(migrated), player).equippedAffixes)
     }

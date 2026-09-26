@@ -406,7 +406,10 @@ internal object CoreAccountCodec {
             val migratedAffixes = equipped.map { if (it.gear == CoreGearSlot.ARMOR) it.copy(gear = CoreGearSlot.CHEST) else it }
             return CoreAccount(playerId, header[3].toLong(), balances, weaponTier, armorTier, gear[3].toInt(), maps, active, receipts, sources, stones, migratedAffixes,
                 armorRarity = armorRarity,
-                craftingSeed = CoreCraftingCatalog.legacySeed(playerId))
+                craftingSeed = CoreCraftingCatalog.legacySeed(playerId),
+                armorParts = CoreGearSlot.armorSlots.filterNot { it == CoreGearSlot.CHEST }.associateWith { slot ->
+                    CoreArmorPiece(CoreGearIdentity.legacy(playerId, slot), armorTier, armorRarity)
+                })
         }
         val craft = requireNotNull(crafting) { "装備クラフトの保存項目がありません" }
         val enhanced = if (version >= 4) requireNotNull(enhancement) { "装備強化の保存項目がありません" } else null
