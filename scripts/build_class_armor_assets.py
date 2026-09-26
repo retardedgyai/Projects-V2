@@ -14,28 +14,53 @@ SLOTS=('helmet','chestplate','leggings','boots')
 # Base / secondary surface / trim / light. Four levels per shared material.
 KITS={
     'warrior':('iron','steel','bronze','ember'),
-    'mage':('navy','cloth','bronze','ice'),
-    'ranger':('green','leather','bronze','moss'),
+    'mage':('navy','violet','bronze','ice'),
+    'ranger':('green','moss','bronze','light'),
     'assassin':('violet','cloth','steel','venom'),
     'templar':('steel','ivory','bronze','ice'),
     'healer':('ivory','cloth','bronze','light'),
-    'starweaver':('navy','cloth','bronze','ice'),
+    'starweaver':('navy','steel','bronze','ice'),
 }
 FRONTS={
-    'warrior':('TTBBBBTT','TBBSSBBT','BBSSSSBB','BSSDDSSB','SSDDDDSS','SSDDGDSS','BSSDDSSB','BBSSSSBB','LLLLLLLL','LTTLLTTL','DDLLLLDD','DDLLLLDD'),
-    'mage':('TTDDDDTT','BTSDDSTB','BBTDDTBB','BBTGGTBB','BBTDDTBB','BBTDDTBB','BBTDDTBB','BBTDDTBB','TTTTTTTT','BBTLLTBB','BBTLLTBB','BBTLLTBB'),
-    'ranger':('SSTBBBTT','SSTBBBBB','SBBTBBSS','BBBBTBSS','BBBBBTBB','SBBBBBTB','SSBBBBBT','SSBBBBBB','LLTTLLLL','LLTTLLLL','SBBBBBBB','SSBBBBSS'),
-    'assassin':('BBSDDSBB','BSLDDLSB','BSLDDLSB','BBSLLSBB','BBSSSSBB','BBGGSSBB','BBGGSSBB','SSSSSSSS','TTLLTTLL','LLLLLLLL','DBSSSSBD','DBSSSSBD'),
-    'templar':('TTSSSSTT','TSSBB SST'.replace(' ',''),'SSBBBBSS','SBBT TBBS'.replace(' ',''),'BBTTTTBB','BBTGG TBB'.replace(' ',''),'BBTGG TBB'.replace(' ',''),'BBTTTTBB','TTTTTTTT','BBTTTTBB','BBTBBTBB','BBTBBTBB'),
-    'healer':('TTSSSSTT','TBBSSBBT','BTBSSBTB','BTBSSBTB','BTBGGBT B'.replace(' ',''),'BTBGGBT B'.replace(' ',''),'BTBSSBTB','BTBSSBTB','TTTTTTTT','BTSSSSTB','BTSSSSTB','BTSSSSTB'),
-    'starweaver':('TTBBB BTT'.replace(' ',''),'BTBBBBTB','BBTBBTBB','BBBGGBBB','BBTBBTBB','BTBBBBTB','BBBBGGBB','BBGTBBBB','TTTTTTTT','BTBBBBTB','BBTBBTBB','BBBT TBBB'.replace(' ','')),
+    # Large stepped highlights and dark inset panels stay readable at worn
+    # scale. Each job keeps its own chest motif instead of a shared flat tile.
+    'warrior':('DDHHHHDD','DHSSSSHD','HSSBBSSH','SSBBBBSS','SBBDDBBS','SBBGGBBS','SSBGGBSS','HSSBBSSH','DDTTTTDD','DLTTTTLD','DDDLLDDD','DDDLLDDD'),
+    'mage':('DDTTTTDD','DBTBBTBD','BBTDDTBB','BBTGGTBB','BBTGGTBB','BBTDDTBB','BBTDDTBB','BBTDDTBB','DDTTTTDD','DBTLLTBD','DBTLLTBD','DDTTTTDD'),
+    'ranger':('DSSBBHDD','DSSTBBBD','SBBTBBSS','BBBTBBSS','BBBBTBBD','SBBGGTBD','SSBBBBTD','DSSBBBBD','DDTTLLDD','DLTTLLLD','DSBBBBBD','DDSSSSDD'),
+    'assassin':('DDHSSHDD','DSSDDSSD','DSLD DLSD'.replace(' ',''),'DBSL LSBD'.replace(' ',''),'DBSSSSBD','DBGGSSBD','DBGGSSBD','DSSSSSSD','DDTTTTDD','DLLLL LLD'.replace(' ',''),'DBSSSSBD','DDHHHHDD'),
+    'templar':('DDHHHHDD','DHSSSSHD','HSSBBSSH','SSBT TBSS'.replace(' ',''),'SBTTTTBS','SBTGGTBS','SBTGGTBS','SSBT TBSS'.replace(' ',''),'DDTTTTDD','DBTTTTBD','DBTBBTBD','DDHHHHDD'),
+    'healer':('DDTTTTDD','DTSSSSTD','TBSBBSBT','TBSBBSBT','TBSGGSBT','TBSGGSBT','TBSBBSBT','TBSBBSBT','DDTTTTDD','DTSSSSTD','DTSSSSTD','DDTTTTDD'),
+    'starweaver':('DDTTTTDD','DTBBBBTD','BBTBBTBB','BBBGGBBB','BBTBBTBB','BTBBBBTB','BBBGGBBB','DBGT TGBD'.replace(' ',''),'DDTTTTDD','DTBBBBTD','DBTBBTBD','DDTTTTDD'),
+}
+
+# Four-pixel limb panels must make the knee and shoe readable independently
+# from the torso. Keep one motif per job rather than recoloring one template.
+LEGS={
+    'warrior':('THHT','HSSH','HBBH','SBBS','SBBS','HBBH','TTTT','SGGS','SSSS','SBBS','HSSH','DDDD'),
+    'mage':('TBBT','TBBT','TBBT','TBBT','TBBT','TBBT','TTTT','BSSB','BSSB','BSSB','TTTT','DDDD'),
+    'ranger':('TBBD','TBBB','BTBB','BBTB','BBBT','BBBT','BTTB','BLLB','BSSB','BSSB','TBBT','DDDD'),
+    'assassin':('SHHS','SBBS','SBBS','SLLS','SLLS','SLLS','TTTT','BGGB','BSSB','BSSB','SHHS','DDDD'),
+    'templar':('THHT','HSSH','HBBH','SBBS','SBBS','HBBH','TTTT','SGGS','SSSS','SBBS','HSSH','DDDD'),
+    'healer':('TBBT','TBBT','TBBT','TBBT','TBBT','TBBT','TTTT','BSSB','BSSB','BSSB','TTTT','DDDD'),
+    'starweaver':('TBBT','TBBT','TBBT','TBBT','TBBT','TBBT','TTTT','BGGB','BSSB','BGGB','TTTT','DDDD'),
+}
+BOOTS={
+    'warrior':('....',)*6+('TTTT','HSSH','SBBS','HSSH','HHHH','DDDD'),
+    'mage':('....',)*6+('TTTT','BSSB','BSSB','BSSB','TTTT','DDDD'),
+    'ranger':('....',)*6+('TBBT','BLLB','BSSB','BSSB','TTTT','DDDD'),
+    'assassin':('....',)*6+('SHHS','SLLS','SLLS','SHHS','TTTT','DDDD'),
+    'templar':('....',)*6+('TTTT','HSSH','SGGS','HSSH','HHHH','DDDD'),
+    'healer':('....',)*6+('TTTT','BSSB','BSSB','BSSB','TTTT','DDDD'),
+    'starweaver':('....',)*6+('TTTT','BGGB','BSSB','BGGB','TTTT','DDDD'),
 }
 
 
 def palette(job):
     base,secondary,trim,glow=KITS[job]
-    return {c:tuple(bytes.fromhex(MATERIALS[m][shade]))+(255,) for c,m,shade in (
-        ('B',base,2),('S',secondary,2),('D',base,0),('L','leather',1),('T',trim,2),('G',glow,2),('H',base,3))}
+    colors={c:tuple(bytes.fromhex(MATERIALS[m][shade]))+(255,) for c,m,shade in (
+        ('B',base,2),('S',secondary,3),('D',base,0),('L','leather',1),('T',trim,3),('G',glow,3),('H',base,3))}
+    colors['L']=(86,64,41,255)  # Warm hide belt, not the violet weapon-handle tile.
+    return colors
 
 
 def put_face(image,uv,size,pattern,colors):
@@ -65,22 +90,20 @@ def armor_texture(job,tier,inner=False):
     if inner:
         body=tuple('L'*8 if y==8 else 'B'*8 for y in range(12))
         unwrap(image,(16,16),8,12,4,body,colors,side_char='D')
-        leg=('BBBB','BBBB','BSSB','BSSB','BSSB','BBBB','BT TB'.replace(' ',''),'BT TB'.replace(' ',''),'BBBB','BBBB','BBBB','BBBB')
-        # Distinct knee plates for armored classes, soft panels for cloth users.
-        if job in ('warrior','templar'): leg=('BBBB','BSSB','BSSB','BBBB','TTTT','SGGS','SSSS','BBBB','BBBB','BBBB','BBBB','BBBB')
-        unwrap(image,(0,16),4,12,4,leg,colors,side_char='B')
+        unwrap(image,(0,16),4,12,4,LEGS[job],colors,side_char='D')
         return image
     back=tuple('TBBBBBBT' if y<8 else 'LLLLLLLL' if y==8 else 'BSSSSSSB' for y in range(12))
     if job in ('mage','healer','starweaver'): back=('TTTTTTTT',)+tuple('TBBBBBBT' for _ in range(10))+('TTTTTTTT',)
-    unwrap(image,(16,16),8,12,4,tuple(front),colors,side_char='B',back=back)
+    unwrap(image,(16,16),8,12,4,tuple(front),colors,side_char='D',back=back)
     arm=('TTTT','HSSH','BSSB','BSSB','BBBB','BBBB','BBBB','BBBB','LLLL','TLLT','SSSS','DDDD')
     if job in ('ranger','assassin'): arm=('TTTT','BSSB','BSSB','BBBB','....','....','....','....','LLLL','TLLT','BSSB','DDDD')
     if job in ('mage','healer','starweaver'): arm=('TTTT','BBBB','BSSB','BSSB','BSSB','BSSB','BSSB','BSSB','TTTT','BT TB'.replace(' ',''),'BBBB','TTTT')
-    unwrap(image,(40,16),4,12,4,arm,colors,side_char='B')
+    arm=list(arm)
+    arm[3]='BGGB'
+    unwrap(image,(40,16),4,12,4,arm,colors,side_char='D')
     # Feet render on the outer layer; the upper leg stays transparent so the
     # independently animated leggings are visible, rather than painted over.
-    boot=('....',)*6+('TTTT','BSSB','BSSB','BSSB','HHHH','DDDD')
-    unwrap(image,(0,16),4,12,4,boot,colors,side_char='B',back=('....',)*6+('LLLL',)*5+('DDDD',))
+    unwrap(image,(0,16),4,12,4,BOOTS[job],colors,side_char='D',back=('....',)*6+('LLLL',)*5+('DDDD',))
     for x in range(16):
         for y in range(16,26): image.putpixel((x,y),(0,0,0,0))
     return image
@@ -146,7 +169,7 @@ def helmet(job,tier):
         # A low open coronet and a broken halo leave the skin's face visible.
         for s in (-1,1):
             e.append(box('astral temple point',[8+s*4.3-.4,10,4],[8+s*4.3+.4,14,5.2],trim,-s*22.5))
-        ring=[(8+x,16+y,9) for x,y in ((-4,-2),(-2,-4),(2,-4),(4,-2),(4,2),(2,4),(-2,4),(-4,2))]
+        ring=[(8+x,15+y,9) for x,y in ((-4,-2),(-2,-3),(2,-3),(4,-2),(4,2),(2,3),(-2,3),(-4,2))]
         for i,p in enumerate(ring):
             if i==4: continue
             beam(e,'broken coronet halo',p,ring[(i+1)%8],.55,.55,trim)
@@ -158,6 +181,7 @@ def helmet(job,tier):
 
 def armor_model(job,tier,slot):
     base,secondary,trim,glow=KITS[job]
+    gui_scale=({'starweaver':.78,'mage':.82,'healer':.9}.get(job,.95) if slot=='helmet' else 1)
     if slot=='helmet': elements=helmet(job,tier)
     elif slot=='chestplate':
         elements=[box('cuirass',[4,3,5.5],[12,15,10.5],base),box('left shoulder',[.5,11.5,5],[4,16,11],secondary),box('right shoulder',[12,11.5,5],[15.5,16,11],secondary),box('belt',[3.8,4,5.2],[12.2,5.2,10.8],trim)]
@@ -168,10 +192,20 @@ def armor_model(job,tier,slot):
             elements.append(box(slot+' left/right',[x,3,5],[x+3.5,14 if slot=='leggings' else 9,10],base))
             elements.append(box('trim band',[x-.15,10.5 if slot=='leggings' else 7.5,4.8],[x+3.65,11.5 if slot=='leggings' else 8.5,10.2],trim))
             if slot=='boots': elements.append(box('projecting toe',[x,3,3.7],[x+3.5,5,10],secondary))
+    # Paint the item model with the same motif as the equipped armor. The old
+    # model sampled only flat material tiles, so its small GUI icon lost the
+    # class motif and appeared like an unrelated dark cube.
+    worn='inner' if slot=='leggings' else 'outer'
+    front_uv=[5,10,7,16] if slot=='chestplate' else [1,10,2,16]
+    for element in elements:
+        if element['name'] in ('cuirass',slot+' left/right'):
+            element['faces']['north']={'uv':front_uv,'texture':'#'+worn}
     return {'credit':'ProjectS original class armor / native pixel source','gui_light':'front','ambientocclusion':False,
-        'textures':{'atlas':'projects:item/weapons/materials','particle':'projects:item/weapons/materials'},'elements':elements,
+        'textures':{'atlas':'projects:item/weapons/materials','particle':'projects:item/weapons/materials',
+            'outer':f'projects:entity/equipment/humanoid/armor/{job}_t{tier}',
+            'inner':f'projects:entity/equipment/humanoid_leggings/armor/{job}_t{tier}'},'elements':elements,
         'display':{'head':{'rotation':[0,0,0],'translation':[0,0,0],'scale':[1.6,1.6,1.6]},
-            'gui':{'rotation':[15,-25,0],'translation':[0,-1,0],'scale':[.65,.65,.65]},
+            'gui':{'rotation':[15,-25,0],'translation':[0,-1,0],'scale':[gui_scale]*3},
             'ground':{'rotation':[0,0,0],'translation':[0,3,0],'scale':[.5,.5,.5]},
             'fixed':{'rotation':[0,180,0],'translation':[0,0,0],'scale':[.65,.65,.65]}}}
 

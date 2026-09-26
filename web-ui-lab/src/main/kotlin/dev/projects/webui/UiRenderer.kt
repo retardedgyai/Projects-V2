@@ -111,6 +111,7 @@ class UiRenderer(private val player: Player, private val origin: Pos) : AutoClos
                     val base = ItemStack.of(requireNotNull(Material.fromKey(parts[0])))
                     m.setItemStack(if(parts.size==2) base.withItemModel(parts[1]) else base)
                     m.setDisplayContext(ItemDisplayMeta.DisplayContext.GUI)
+                    m.setBrightness(15,15)
                     val size=minOf(b.w,b.h)*geometry.unit(z+0.05)*0.8
                     m.setScale(Vec(size,size,size))
                     m.setTranslation(geometry.point(b.x+b.w/2,b.y+b.h/2,z+0.05))
