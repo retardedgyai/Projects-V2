@@ -10,7 +10,7 @@ import numpy as np
 
 
 def verify():
-    index=set((ASSETS.parents[1]/'index.txt').read_text().splitlines()); surfaces=set(); count=0
+    index=set((ASSETS.parents[1]/'index.txt').read_text().splitlines()); surfaces=set(); warrior_faces=set(); count=0
     def read(relative):
         assert 'assets/projects/'+relative in index,relative
         return json.loads((ASSETS/relative).read_text())
@@ -23,6 +23,7 @@ def verify():
             helmet_image=Image.open(ASSETS/face_relative).convert('RGBA')
             assert helmet_image.size==(128,64)
             assert helmet_image.tobytes()==project_helmet_texture(job,tier).tobytes()
+            if job=='warrior': warrior_faces.add(helmet_image.tobytes())
             for layer,inner in (('humanoid',False),('humanoid_leggings',True)):
                 assert equipment['layers'][layer]==[{'texture':f'projects:{stem}'}]
                 relative=f'textures/entity/equipment/{layer}/{stem}.png'
@@ -63,7 +64,8 @@ def verify():
                 if job=='warrior':
                     names={element['name'] for element in model['elements']}
                     required={
-                        'helmet':{'ruby mount','ruby inset','left cheek guard','right cheek guard'},
+                        'helmet':{'painted forged shell','projecting warm brow',
+                                  'central furnace clasp','left sculpted cheek','right sculpted cheek'},
                         'chestplate':{'left shoulder plate','right shoulder plate','bronze socket','ember mark'},
                         'leggings':{'left raised knee plate','right raised knee plate','left shin guard','right shin guard'},
                         'boots':{'left projecting toe','right projecting toe','left ankle clasp','right ankle clasp'},
@@ -86,6 +88,7 @@ def verify():
                                for face in element['faces'].values()),'Helmet paint must not be replaced by body UVs'
                 count+=1
     assert len(surfaces)==28,'Every class/tier must have its own painted surface'
+    assert len(warrior_faces)==4,'Forge rank marks must distinguish all warrior helmet tiers'
     print(f'PASS: 28 worn sets, 56 equipment textures and item textures, {count} 3D models and UI icons, head transform, finite geometry, index and class variation.')
 
 

@@ -213,7 +213,7 @@ def helmet_texture(job,tier):
         d.line([(x+15,35),(x+15,47)],fill=ink,width=1)
     if job=='warrior':
         from build_warrior_helmet import forge_texture
-        forge_texture(image)
+        forge_texture(image,tier)
     return image
 
 
