@@ -93,6 +93,8 @@ class CoreUiTest {
         }
         assertTrue("pack.mcmeta" in paths)
         assertTrue("assets/projects/font/core_icons.json" in paths)
+        assertTrue("assets/projects_ui_polish05/font/plates.json" in paths)
+        assertTrue("assets/projects_ui_polish05/textures/forge_materials/ingot.png" in paths)
         assertEquals(CoreUiPackPolicy.vanillaOverrides + CoreUiPackPolicy.vanillaAdditions,
             paths.filter { it.startsWith("assets/minecraft/") }.toSet())
         assertFalse(paths.any { it.startsWith("assets/minecraft/font/") })

@@ -21,6 +21,9 @@ SOURCES = [
     ROOT / "web-ui-lab/src/main/kotlin/dev/projects/webui/Polish05Scene.kt",
     ROOT / "web-ui-lab/src/main/kotlin/dev/projects/webui/Polish05Flow.kt",
     ROOT / "assets/ui/polish05-import/native/src/main/kotlin/dev/projects/webui/polish05/Polish05PreviewModel.kt",
+    ROOT / "server-minestom/src/main/kotlin/dev/projects/server/coreloop/CoreAccount.kt",
+    ROOT / "server-minestom/src/main/kotlin/dev/projects/server/coreloop/CorePolish05ForgeFlow.kt",
+    ROOT / "server-minestom/src/main/kotlin/dev/projects/server/coreloop/CoreEnhancementCatalog.kt",
 ]
 
 

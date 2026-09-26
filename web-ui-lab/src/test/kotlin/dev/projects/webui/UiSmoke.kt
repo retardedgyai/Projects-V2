@@ -76,17 +76,26 @@ fun main(args: Array<String>) {
             val demo=ForgeDemo()
             val button=UiDocument.parse(java.nio.file.Files.readString(Path.of(args.single())))
                 .layout(demo.values(),demo.flags()).nodes.single { it.id=="forge-button" }.box
+            val originalCursor=instance.entities.mapNotNull { e ->
+                (e.entityMeta as? TextDisplayMeta)?.takeIf { it.transformationInterpolationDuration==1 }
+                    ?.let { e.entityId to it.translation }
+            }.toMap()
+            check(originalCursor.size==1) { "Only the cursor shadow should interpolate" }
+            rotate(10f,1f)
+            originalCursor.forEach { (id,at) ->
+                val moved=(instance.entities.single { it.entityId==id }.entityMeta as TextDisplayMeta).translation
+                check(moved.x()>at.x() && moved.y()<at.y()) { "Cursor does not follow yaw/pitch in screen directions" }
+            }
+            val beforeButtonMetadata=packets.filterIsInstance<EntityMetaDataPacket>().size
             rotate(((button.x+button.w/2-400)/8).toFloat(),((button.y+button.h/2-240)/8).toFloat())
             // No tick between movement and click: zero-delay input must update immediately.
-            val moveUpdates=packets.filterIsInstance<EntityMetaDataPacket>().size-idleMetadata
-            check(moveUpdates in 0..2) { "Pointer movement metadata count=$moveUpdates (expected hover only)" }
+            val moveUpdates=packets.filterIsInstance<EntityMetaDataPacket>().size-beforeButtonMetadata
+            check(moveUpdates in 3..5) { "Pointer movement metadata count=$moveUpdates (expected 3 cursor transforms and at most 2 hover panels)" }
             val cursorMoves=packets.filterIsInstance<EntityPositionSyncPacket>().drop(idlePositions)
-            check(cursorMoves.size==3) { "Expected immediate position updates for all cursor parts, got ${cursorMoves.size}" }
-            cursorMoves.forEach { packet ->
-                val e=instance.entities.single { it.entityId==packet.entityId() }
-                val meta=e.entityMeta as TextDisplayMeta
-                check(meta.posRotInterpolationDuration==0 && meta.transformationInterpolationDuration==0)
-                check(e.position==packet.position()) { "Server/client cursor anchors diverged" }
+            check(cursorMoves.isEmpty()) { "Cursor still jumps via entity teleports" }
+            originalCursor.keys.forEach { id ->
+                val meta=instance.entities.single { it.entityId==id }.entityMeta as TextDisplayMeta
+                check(meta.posRotInterpolationDuration==0 && meta.transformationInterpolationDuration==1)
             }
             events.call(PlayerPacketEvent(first,ClientSpectatorActionPacket(null)))
             check(instance.entities.mapNotNull { (it.entityMeta as? TextDisplayMeta)?.text as? net.kyori.adventure.text.TextComponent }
@@ -118,7 +127,7 @@ fun main(args: Array<String>) {
         check(packets.filterIsInstance<CameraPacket>().last().cameraId()==first.entityId)
         check(packets.filterIsInstance<ChangeGameStatePacket>().last().value()==first.gameMode.ordinal.toFloat())
         check(instance.entities.all { it===first || it===second })
-        println("UI_SMOKE_PASS 60 TPS; 5 cycles; immediate rotation/click; idle updates=0; cursor move=3 position packets, no transform interpolation; hover metadata<=2; private entities; restored mode/camera/slot; transfer-safe close; zero leaks")
+        println("UI_SMOKE_PASS 60 TPS; 5 cycles; immediate rotation/click; idle updates=0; cursor tip immediate, shadow one-tick transform, no teleports; hover metadata<=2; private entities; restored mode/camera/slot; transfer-safe close; zero leaks")
     } finally {
         sessions.close();first.remove();second.remove();MinecraftServer.stopCleanly()
     }

@@ -190,9 +190,9 @@
       "source": "materials",
       "source_cell": 6,
       "advances": {
-        "16": 16,
-        "32": 31,
-        "48": 46
+        "16": 17,
+        "32": 32,
+        "48": 48
       }
     },
     {
@@ -202,8 +202,8 @@
       "source_cell": 7,
       "advances": {
         "16": 16,
-        "32": 30,
-        "48": 45
+        "32": 31,
+        "48": 46
       }
     },
     {
@@ -212,9 +212,9 @@
       "source": "materials",
       "source_cell": 8,
       "advances": {
-        "16": 16,
-        "32": 31,
-        "48": 46
+        "16": 17,
+        "32": 32,
+        "48": 48
       }
     },
     {
@@ -223,9 +223,9 @@
       "source": "materials",
       "source_cell": 9,
       "advances": {
-        "16": 16,
-        "32": 31,
-        "48": 46
+        "16": 17,
+        "32": 32,
+        "48": 48
       }
     },
     {
@@ -234,9 +234,9 @@
       "source": "materials",
       "source_cell": 10,
       "advances": {
-        "16": 16,
-        "32": 30,
-        "48": 45
+        "16": 17,
+        "32": 32,
+        "48": 48
       }
     },
     {
@@ -245,9 +245,9 @@
       "source": "materials",
       "source_cell": 11,
       "advances": {
-        "16": 16,
-        "32": 31,
-        "48": 46
+        "16": 17,
+        "32": 32,
+        "48": 48
       }
     },
     {
@@ -256,9 +256,9 @@
       "source": "materials",
       "source_cell": 12,
       "advances": {
-        "16": 16,
-        "32": 31,
-        "48": 46
+        "16": 17,
+        "32": 32,
+        "48": 48
       }
     },
     {
@@ -268,8 +268,8 @@
       "source_cell": 13,
       "advances": {
         "16": 16,
-        "32": 31,
-        "48": 46
+        "32": 30,
+        "48": 45
       }
     },
     {
@@ -278,9 +278,9 @@
       "source": "materials",
       "source_cell": 14,
       "advances": {
-        "16": 16,
-        "32": 30,
-        "48": 45
+        "16": 17,
+        "32": 32,
+        "48": 48
       }
     },
     {
@@ -289,9 +289,9 @@
       "source": "materials",
       "source_cell": 15,
       "advances": {
-        "16": 16,
-        "32": 31,
-        "48": 46
+        "16": 17,
+        "32": 32,
+        "48": 48
       }
     },
     {
@@ -370,11 +370,33 @@
         "32": 31,
         "48": 46
       }
+    },
+    {
+      "name": "DUST",
+      "ordinal": 31,
+      "source": "dust",
+      "source_cell": 0,
+      "advances": {
+        "16": 17,
+        "32": 32,
+        "48": 48
+      }
     }
   ],
   "sources": {
     "materials": "646c707be8181d0d1091211bb43a71ba619b2657495b0c110d3f70801bf0d98b",
-    "symbols": "591a2d87829f84fb8567319ecac283801d4d997db0a3f66eb3e0d549ea5e3a61"
+    "symbols": "591a2d87829f84fb8567319ecac283801d4d997db0a3f66eb3e0d549ea5e3a61",
+    "forge_v6_wood": "f6ed2930179ccef95a3b8cd604fdb86c41e8c1888a1498941412df6ce7227b9c",
+    "forge_v6_ore": "d51cc5557b2e74732fc81d579017eb3ae91b6dc6e037cee962859773d0302386",
+    "forge_v6_stone": "c74c9bf3542a94ff8a67782a418fdb294ca901b91e3dee906d5b38889481fbdd",
+    "forge_v6_hide": "4510786d7b58cd105b3d8f7982bf91a6db59bee0cab3c0ac887f316dc11fc452",
+    "forge_v6_fiber": "3c5e3e3dc75899a4994950f321680bd8fae4fee287a5130d4a819edad597a190",
+    "forge_v6_board": "5486ce4bef4ddb03f99be40875002787ea44772444911c8fbdfbad5517d0f382",
+    "forge_v6_ingot": "86664951b52521864b7cc00c8475beb4308971ab3cd5b8429635eacee8b270f5",
+    "forge_v6_cut_stone": "9a34f631d8d1655e4df6f68b7e1c0e07ea4702be872872ae0855b9ada83c455b",
+    "forge_v6_leather": "d3dfb86e4d19b4d2c9c5f424ffdd01090fd84196cec40991bada3730772ecfc5",
+    "forge_v6_cloth": "623b6c53d2450999f338c91d185364d9f9ffa28fdb710e4829a208b020238f37",
+    "forge_v6_affix_dust": "9248b39c2891d0db377bc36ed239a69977d61bb5416f1dcbf89174ec3bb94a59"
   },
-  "build": "4x4 cell slicing; nearest-neighbor 32px; binary alpha; 24-color palette per sprite"
+  "build": "ProjectS material source at 32px; atlas uses nearest-neighbor 32px; binary-alpha inventory sprites"
 }

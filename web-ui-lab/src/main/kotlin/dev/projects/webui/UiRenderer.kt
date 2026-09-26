@@ -15,7 +15,7 @@ import net.minestom.server.entity.metadata.display.TextDisplayMeta
 import net.minestom.server.item.ItemStack
 import net.minestom.server.item.Material
 
-/** Retained fixed screen; only the cursor uses immediate position updates. */
+/** Retained fixed screen; the cursor tip follows input immediately. */
 class UiRenderer(private val player: Player, private val origin: Pos) : AutoCloseable {
     private data class Panel(val box: Box, val color: Int, val depth: Double, val zoom: Double)
     private val entities=mutableMapOf<String,Entity>()
@@ -23,7 +23,6 @@ class UiRenderer(private val player: Player, private val origin: Pos) : AutoClos
     private val content=mutableMapOf<String,Pair<UiNode,Double>>()
     private var wanted=mutableSetOf<String>()
     private val unspawned=mutableListOf<Pair<String,Entity>>()
-    private val cursorAnchors=mutableMapOf<String,Pos>()
     private var closed=false
     var zoom=1.0
     val size get()=entities.size
@@ -47,12 +46,12 @@ class UiRenderer(private val player: Player, private val origin: Pos) : AutoClos
         val pending=unspawned.toList(); unspawned.clear()
         pending.forEach { (id,e) ->
             // First packet contains complete transforms, never a flash at identity scale.
-            e.setInstance(player.instance!!,cursorAnchors[id]?:origin.add(0.0,0.0,UiGeometry.DISTANCE).withView(180f,0f)).thenRun {
+            e.setInstance(player.instance!!,origin.add(0.0,0.0,UiGeometry.DISTANCE).withView(180f,0f)).thenRun {
                 if(closed || e.isRemoved || entities[id]!==e) e.remove() else e.addViewer(player)
             }
         }
     }
-    private fun panel(id: String,b: Box,color: Int,depth: Double) {
+    private fun panel(id: String,b: Box,color: Int,depth: Double,smoothTicks: Int=0) {
         wanted+=id
         val next=Panel(b,color,depth,zoom)
         val previous=panels[id]
@@ -65,7 +64,7 @@ class UiRenderer(private val player: Player, private val origin: Pos) : AutoClos
             m.setBackgroundColor(color)
             if(previous==null || previous.box!=b || previous.depth!=depth || previous.zoom!=zoom) {
                 val transform=geometry.panel(b,depth)
-                m.setTransformationInterpolationDuration(0)
+                m.setTransformationInterpolationDuration(smoothTicks)
                 m.setScale(transform.scale); m.setTranslation(transform.translation)
                 m.setTransformationInterpolationStartDelta(0)
             }
@@ -147,24 +146,15 @@ class UiRenderer(private val player: Player, private val origin: Pos) : AutoClos
         scene.nodes.filter { it.id==previous || it.id==next }.forEach { background(it,next) }
     }
     fun cursor(pointer: UiPointer) {
-        // Display transformation metadata is consumed on client entity ticks, then interpolated.
-        // A zero-duration position sync is applied by vanilla's packet handler immediately instead.
-        // Keep the cursor's shape static; move only its entity anchor. No prediction/overshoot.
-        fun part(id: String,box: Box,color: Int,depth: Double) {
-            panel(id,box,color,depth)
-            val u=geometry.unit(depth)
-            val anchor=origin.add((400-pointer.x)*u,(240-pointer.y)*u,UiGeometry.DISTANCE).withView(180f,0f)
-            cursorAnchors[id]=anchor
-            val e=entities.getValue(id)
-            if(e.instance!=null && e.position!=anchor) e.teleport(anchor)
-        }
-        part("cursor-shadow",Box(399.0,239.0,5.0,15.0),0xff14171b.toInt(),0.4)
-        part("cursor-v",Box(400.0,240.0,2.0,12.0),0xffffdf9f.toInt(),0.41)
-        part("cursor-h",Box(400.0,240.0,10.0,2.0),0xffffdf9f.toInt(),0.42)
+        // Keep the bright hit-test tip on the newest input packet. A one-tick
+        // shadow fills the gap between packets without delaying the actual tip.
+        panel("cursor-shadow",Box(pointer.x-1.0,pointer.y-1.0,5.0,15.0),0xff14171b.toInt(),0.4,1)
+        panel("cursor-v",Box(pointer.x,pointer.y,2.0,12.0),0xffffdf9f.toInt(),0.41)
+        panel("cursor-h",Box(pointer.x,pointer.y,10.0,2.0),0xffffdf9f.toInt(),0.42)
         spawnReady()
     }
     override fun close() {
         closed=true; entities.values.forEach(Entity::remove); entities.clear()
-        panels.clear(); content.clear(); unspawned.clear(); cursorAnchors.clear()
+        panels.clear(); content.clear(); unspawned.clear()
     }
 }

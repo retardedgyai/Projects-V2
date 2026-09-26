@@ -52,16 +52,21 @@ internal class CorePolish05ForgeFlow(
         }
         val cost = q.recipe.costs.map { (material, required) ->
             ForgeUiMaterial(material.displayName, a.amount(material), required, when(material.resource) {
-                CoreResource.INGOT -> "metal_ui"
-                CoreResource.BOARD -> "wood_ui"
-                CoreResource.STONE_BLOCK -> "ore_ui"
-                CoreResource.LEATHER -> "helm_ui"
-                CoreResource.CLOTH -> "shard_ui"
-                CoreResource.AFFIX_DUST -> "purple_crystal"
-                else -> "coin_ore"
+                CoreResource.WOOD -> "forge_material_wood"
+                CoreResource.ORE -> "forge_material_ore"
+                CoreResource.STONE -> "forge_material_stone"
+                CoreResource.HIDE -> "forge_material_hide"
+                CoreResource.FIBER -> "forge_material_fiber"
+                CoreResource.INGOT -> "forge_material_ingot"
+                CoreResource.BOARD -> "forge_material_board"
+                CoreResource.STONE_BLOCK -> "forge_material_cut_stone"
+                CoreResource.LEATHER -> "forge_material_leather"
+                CoreResource.CLOTH -> "forge_material_cloth"
+                CoreResource.AFFIX_DUST -> "forge_material_affix_dust"
+                else -> "forge_material_affix_dust"
             })
         }.toMutableList()
-        while(cost.size < 3) cost += ForgeUiMaterial("消費なし",0,0,"coin_ore")
+        while(cost.size < 3) cost += ForgeUiMaterial("消費なし",0,0,"forge_material_affix_dust")
         val materialBlock = cost.firstOrNull { it.owned < it.required }?.let { "${it.name}が不足しています" }
         return ForgeUiState(gear,if(selected == CoreGearSlot.WEAPON) "weapon" else "armor",a.silver,
             q.successChancePercent,q.breakOnFailurePercent,focused,cost,

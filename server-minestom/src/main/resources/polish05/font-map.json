@@ -940,5 +940,71 @@
     "width": 23,
     "height": 25,
     "font": "projects_ui_polish05:sprites"
+  },
+  "forge_material_wood": {
+    "char": "",
+    "width": 16,
+    "height": 16,
+    "font": "projects_ui_polish05:plates"
+  },
+  "forge_material_ore": {
+    "char": "",
+    "width": 16,
+    "height": 16,
+    "font": "projects_ui_polish05:plates"
+  },
+  "forge_material_stone": {
+    "char": "",
+    "width": 16,
+    "height": 16,
+    "font": "projects_ui_polish05:plates"
+  },
+  "forge_material_hide": {
+    "char": "",
+    "width": 16,
+    "height": 16,
+    "font": "projects_ui_polish05:plates"
+  },
+  "forge_material_fiber": {
+    "char": "",
+    "width": 16,
+    "height": 16,
+    "font": "projects_ui_polish05:plates"
+  },
+  "forge_material_board": {
+    "char": "",
+    "width": 16,
+    "height": 16,
+    "font": "projects_ui_polish05:plates"
+  },
+  "forge_material_ingot": {
+    "char": "",
+    "width": 16,
+    "height": 16,
+    "font": "projects_ui_polish05:plates"
+  },
+  "forge_material_cut_stone": {
+    "char": "",
+    "width": 16,
+    "height": 16,
+    "font": "projects_ui_polish05:plates"
+  },
+  "forge_material_leather": {
+    "char": "",
+    "width": 16,
+    "height": 16,
+    "font": "projects_ui_polish05:plates"
+  },
+  "forge_material_cloth": {
+    "char": "",
+    "width": 16,
+    "height": 16,
+    "font": "projects_ui_polish05:plates"
+  },
+  "forge_material_affix_dust": {
+    "char": "",
+    "width": 16,
+    "height": 16,
+    "font": "projects_ui_polish05:plates"
   }
 }

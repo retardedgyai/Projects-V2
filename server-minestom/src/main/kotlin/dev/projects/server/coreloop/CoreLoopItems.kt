@@ -47,9 +47,19 @@ internal object CoreLoopItems {
         CoreResource.AFFIX_DUST -> Material.GLOWSTONE_DUST
     }
 
-    fun resource(material: CoreMaterial, count: Long): ItemStack = icon(resourceMaterial(material.resource), material.displayName,
+    fun resource(material: CoreMaterial, count: Long, packed: Boolean = false): ItemStack = icon(resourceMaterial(material.resource), material.displayName,
         "倉庫：$count 個", if (material.resource.raw) "採取、または市場で購入して入手" else if (material.resource in CoreLoopCatalog.refined.values) "採取素材を精製、または市場で購入" else "遠征や工房で入手 / 自動保管", color = colors[material.tier - 1])
-        .withAmount(count.coerceIn(1, 64).toInt())
+        .withAmount(count.coerceIn(1, 64).toInt()).let { stack ->
+            val icon = when(material.resource) {
+                CoreResource.WOOD -> "wood"; CoreResource.ORE -> "ore"; CoreResource.STONE -> "stone"
+                CoreResource.HIDE -> "hide"; CoreResource.FIBER -> "fiber"
+                CoreResource.BOARD -> "board"; CoreResource.INGOT -> "ingot"
+                CoreResource.STONE_BLOCK -> "cut_stone"; CoreResource.LEATHER -> "leather"
+                CoreResource.CLOTH -> "cloth"; CoreResource.AFFIX_DUST -> "affix_dust"
+                else -> null
+            }
+            if(packed && icon != null) stack.withItemModel("projects:forge_materials/$icon") else stack
+        }
 
     fun weapon(tier: Int): ItemStack = icon(listOf(Material.STONE_SWORD, Material.IRON_SWORD, Material.DIAMOND_SWORD, Material.NETHERITE_SWORD)[tier - 1],
         "T$tier 開拓者の大剣", "攻撃力 ${(12 * CoreLoopCatalog.weaponDamage(tier)).roundToInt()}",

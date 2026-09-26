@@ -6,7 +6,7 @@ The smith villager stands beside the smithing table in the harbor workshop at ap
 
 The screen shows the live equipped weapon and armor, enhancement level, account silver balance, production recipe materials, success chance and break chance. Confirming runs `CoreAction.EnhanceEquipment` against the existing account revision and ledger. The server rolls and saves the outcome. The screen does not run the laboratory `Polish05PreviewModel` transactions. Silver is shown for context; the production enhancement recipe does not charge silver. Armor uses the original approved panel and an armor icon in place of the sword art.
 
-The server offers the ordinary ProjectS core pack and a second optional Polish05 pack from its own jar. The Polish05 assets use the `projects_ui_polish05` namespace. If the second pack is unavailable or rejected, the NPC opens the existing workshop UI. No client mod is needed.
+The server offers one optional ProjectS pack containing both core assets and Polish05's private `projects_ui_polish05` namespace during the connection's configuration phase. Minestom waits for the pack response before the first world spawn, so the forge can open on that connection. If the pack is rejected or unavailable, the NPC opens the existing workshop UI. No client mod is needed.
 
 ## Build and test
 
@@ -26,10 +26,10 @@ $smoke = Join-Path (Resolve-Path .).Path 'polish05-smoke'
 New-Item -ItemType Directory -Force $smoke | Out-Null
 Push-Location $smoke
 try {
-  java -Xmx1G -Dprojects.port=25620 -Dprojects.ui.port=25621 -Dprojects.polish05.packPort=18620 -cp "$install/lib/*" dev.projects.server.ProjectSServerKt
+  java -Xmx1G -Dprojects.port=25620 -Dprojects.ui.port=25621 -cp "$install/lib/*" dev.projects.server.ProjectSServerKt
 } finally { Pop-Location }
 ```
 
 Connect Minecraft Vanilla 26.2 to `127.0.0.1:25620`. Accept the optional packs. Walk west from the arrival point to the workshop, then right click the named smith. Test selection, the before/after display, cost color for available and missing materials, confirmation/cancel, Shift close, and reopening. A fresh save may lack enhancement materials; gathering or the existing workshop and market provide them.
 
-The pack ports default to core `25566` and Polish05 `18092` for the normal server. They are separately configurable with `projects.ui.port` and `projects.polish05.packPort` for parallel smoke instances.
+The combined pack port defaults to `25566`. Use `projects.ui.port` for a parallel smoke instance.

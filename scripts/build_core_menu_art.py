@@ -1,8 +1,8 @@
-"""Compile original pixel-relic source sheets into slot-sized, namespaced menu sprites.
+"""Compile pixel-relic sheets and forge materials into menu and item sprites.
 
-The source artwork is produced with the built-in image generator; this deterministic
-asset compiler only slices the agreed 4x4 sheets and prepares Minecraft-sized cells.
-It never downloads assets and never changes a vanilla texture or gameplay item model.
+The deterministic compiler slices 4x4 sheets for general menu symbols and uses
+the dedicated 32 px material paintings for the forge and inventory. It never
+downloads assets or changes a vanilla texture or gameplay item model.
 """
 from pathlib import Path
 import hashlib
@@ -10,10 +10,12 @@ import json
 import math
 
 from PIL import Image
+from build_polish05_material_art import main as build_materials
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "assets/core-ui/pixel-relic"
 ASSETS = ROOT / "server-minestom/src/main/resources/core-ui-pack/assets/projects"
+MATERIAL_ICONS = ROOT / "assets/core-ui/forge-v6/compiled"
 ART_BASE = 0xE700
 ART_CELL = 32
 ART_YS = [18, 28, 30, 36, 42, 48, 54, 56, 70, 72, 84, 90, 98, 108, 112, 126, 140, 154, 168, 182, 196]
@@ -35,16 +37,21 @@ ART = [
     ("POTION", "symbols", 0), ("TABLET", "symbols", 1),
     ("ORB", "symbols", 2), ("BOSS", "symbols", 3), ("SHARD", "symbols", 4),
     ("ARROW", "skills", 0), ("ARCANE", "skills", 1),
+    ("DUST", "dust", 0),
 ]
 
 
 def build_art():
+    build_materials()
     sheets = {name: Image.open(SOURCE / f"source/{name}.png").convert("RGBA")
               for name in ("materials", "symbols")}
     atlas = Image.new("RGBA", (ART_CELL * 8, ART_CELL * 4))
     metadata, metrics = [], []
     for ordinal, (name, source, index) in enumerate(ART):
-        if source == "skills":
+        material_key = {"PLANK": "board", "CUT_STONE": "cut_stone", "DUST": "affix_dust"}.get(name, name.lower())
+        if material_key in {"wood", "ore", "stone", "hide", "fiber", "board", "ingot", "cut_stone", "leather", "cloth", "affix_dust"}:
+            original = Image.open(MATERIAL_ICONS / f"{material_key}.png").convert("RGBA")
+        elif source == "skills":
             master = Image.open(ROOT / f"assets/core-ui/skills/{('pierce','star_thread')[index]}.png").convert("RGBA")
             master = master.crop(master.getchannel('A').getbbox())
             master.thumbnail((28,28), Image.Resampling.NEAREST)
@@ -80,13 +87,41 @@ def build_art():
             (ASSETS / f"font/core_menu_art_{size}_{y}.json").write_text(
                 json.dumps(font, separators=(",", ":")) + "\n", encoding="utf-8")
     (ASSETS / "menu/art.tsv").write_text("# name\tordinal\tadvance16\tadvance32\tadvance48\n" + "".join(metrics), encoding="utf-8")
+    # Give storage projections and the forge exactly the same source
+    # original artwork. Their models are scoped to ProjectS items only.
+    subjects = {"wood": "WOOD", "ore": "ORE", "stone": "STONE", "hide": "HIDE",
+                "fiber": "FIBER", "board": "PLANK", "ingot": "INGOT",
+                "cut_stone": "CUT_STONE", "leather": "LEATHER", "cloth": "CLOTH",
+                "affix_dust": "DUST"}
+    for key, art_name in subjects.items():
+        ordinal = next(index for index, art in enumerate(ART) if art[0] == art_name)
+        cell = atlas.crop((ordinal % 8 * ART_CELL, ordinal // 8 * ART_CELL,
+                           (ordinal % 8 + 1) * ART_CELL, (ordinal // 8 + 1) * ART_CELL))
+        texture = ASSETS / f"textures/item/forge_materials/{key}.png"
+        texture.parent.mkdir(parents=True, exist_ok=True)
+        Image.open(MATERIAL_ICONS / f"{key}.png").save(texture, optimize=True)
+        item = ASSETS / f"items/forge_materials/{key}.json"
+        item.parent.mkdir(parents=True, exist_ok=True)
+        item.write_text(json.dumps({"model": {"type": "minecraft:model",
+            "model": f"projects:item/forge_materials/{key}"}}, separators=(",", ":")) + "\n", encoding="utf-8")
+        model = ASSETS / f"models/item/forge_materials/{key}.json"
+        model.parent.mkdir(parents=True, exist_ok=True)
+        model.write_text(json.dumps({"parent": "minecraft:item/generated",
+            "textures": {"layer0": f"projects:item/forge_materials/{key}"}}, separators=(",", ":")) + "\n", encoding="utf-8")
     (SOURCE / "atlas.json").write_text(json.dumps({
         "cell": ART_CELL, "columns": 8, "sizes": ART_SIZES, "ys": ART_YS, "art": metadata,
-        "sources": {name: hashlib.sha256((SOURCE / f"source/{name}.png").read_bytes()).hexdigest()
+        "sources": {**{name: hashlib.sha256((SOURCE / f"source/{name}.png").read_bytes()).hexdigest()
                     for name in sheets},
-        "build": "4x4 cell slicing; nearest-neighbor 32px; binary alpha; 24-color palette per sprite",
+                    **{f"forge_v6_{name}": hashlib.sha256(
+                        (MATERIAL_ICONS / f"{name}.png").read_bytes()).hexdigest()
+                        for name in subjects}},
+        "build": "ProjectS material source at 32px; atlas uses nearest-neighbor 32px; binary-alpha inventory sprites",
     }, indent=2) + "\n", encoding="utf-8")
     atlas.resize((1024, 512), Image.Resampling.NEAREST).save(SOURCE / "atlas-preview.png", optimize=True)
+    pack = ASSETS.parents[1]
+    paths = sorted(path.relative_to(pack).as_posix() for path in pack.rglob("*")
+                   if path.is_file() and path.name != "index.txt")
+    (pack / "index.txt").write_text("\n".join(paths) + "\n", encoding="utf-8")
     print(f"Built {len(ART)} original pixel-relic icons; {len(ART_SIZES) * len(ART_YS)} positioned fonts")
 
 

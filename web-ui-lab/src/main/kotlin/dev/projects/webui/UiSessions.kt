@@ -202,7 +202,6 @@ class UiSessions(
             return
         }
         enqueue(s,yaw,pitch)
-        if(kotlin.math.abs(pitch)>70 && s.pending.isEmpty()) sample(s,true)
     }
     private fun tick(s: Session) {
         if(s.player.instance!==s.camera.instance || s.camera.isRemoved) { close(s.player,teleportBack=false);return }

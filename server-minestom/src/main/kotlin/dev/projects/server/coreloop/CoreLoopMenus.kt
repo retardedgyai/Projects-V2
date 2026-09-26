@@ -101,7 +101,7 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
         CoreResource.GATHERING_TABLET -> CoreMenuArt.TABLET
         CoreResource.BOSS_SIGIL -> CoreMenuArt.BOSS
         CoreResource.COMBAT_TOKEN -> CoreMenuArt.ORB
-        CoreResource.AFFIX_DUST -> CoreMenuArt.SHARD
+        CoreResource.AFFIX_DUST -> CoreMenuArt.DUST
     }
     private fun gearArt(gear: CoreGearSlot) = if (gear == CoreGearSlot.WEAPON) CoreMenuArt.WEAPON else CoreMenuArt.ARMOR
     /** A single piece on the anvil, not another rectangular menu card. */
@@ -817,7 +817,7 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
                     is CoreStorageView.Entry.Material -> if (entry.material.resource.raw) "精製画面へ" else "工房へ"
                 }
                 val original = when (entry) {
-                    is CoreStorageView.Entry.Material -> CoreLoopItems.resource(entry.material, entry.count)
+                    is CoreStorageView.Entry.Material -> CoreLoopItems.resource(entry.material, entry.count, v.packed)
                     is CoreStorageView.Entry.Currency -> CoreLoopItems.currency(entry.currency, entry.count, v.packed)
                     is CoreStorageView.Entry.Fragment -> CoreLoopItems.fragment(entry.kind, entry.count)
                 }

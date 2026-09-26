@@ -6,7 +6,6 @@ import dev.projects.server.mob.QuestMobRarity
 import dev.projects.server.coreloop.ui.*
 import dev.projects.server.coreloop.adventure.*
 import dev.projects.server.questmap.*
-import dev.projects.webui.Polish05Pack
 import dev.projects.webui.Polish05Scene
 import dev.projects.webui.UiSessions
 import net.kyori.adventure.bossbar.BossBar
@@ -76,17 +75,13 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
     private val lastUseAt = ConcurrentHashMap<UUID, Long>()
     private val menus = CoreLoopMenus(this)
     private val uiPack = CoreUiPackServer.start()
-    private val polishPack = runCatching {
-        Polish05Pack.start(requireNotNull(javaClass.classLoader.getResourceAsStream("polish05/pack.zip")).use { it.readBytes() },
-            System.getProperty("projects.polish05.packPort", "18092").toInt())
-    }.onFailure { System.err.println("POLISH05_PACK_DISABLED: ${it.message}") }.getOrNull()
     private val polishScene = runCatching {
         val loader = javaClass.classLoader
         Polish05Scene(requireNotNull(loader.getResourceAsStream("polish05/forge_initial.json")).use { it.readBytes() },
             requireNotNull(loader.getResourceAsStream("polish05/font-map.json")).use { it.readBytes() })
     }.onFailure { System.err.println("POLISH05_SCENE_DISABLED: ${it.message}") }.getOrNull()
-    private val polishSessions = if(polishPack != null && polishScene != null) UiSessions(MinecraftServer.getGlobalEventHandler(), null,
-        { player -> polishPack.ready(player) }, null,
+    private val polishSessions = if(uiPack != null && polishScene != null) UiSessions(MinecraftServer.getGlobalEventHandler(), null,
+        { player -> uiPack.enabled(player) }, null,
         { player -> CorePolish05ForgeFlow(polishScene,
             { account(player) }, { requireHub(player) && connections[player.uuid] === player },
             { gear, mode, revision, done ->
@@ -194,6 +189,9 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
                 event.player.kick(CoreLoopItems.text("保存データを読み込めません。既存データは保持されています。${loaded.reason}", NamedTextColor.RED))
                 return@addListener
             }
+            // Minestom waits for in-flight packs before finishing configuration.
+            // Offer here so the first world spawn already has the UI textures.
+            uiPack?.offer(event.player, announce = false)
             event.spawningInstance = hub
             event.player.respawnPoint = harbor.spawn
         }
@@ -226,17 +224,13 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
                     }
                 }
                 CoreLoopItems.refresh(player, a, initial = true, packed = packed(player), combatSheet = combatSheet(player) ?: CoreCombatSheet.from(a))
+                CoreCombatPresentation.pack(player, packed(player))
+                menus.refreshTheme(player)
                 actors[player.uuid]?.reset()
                 player.setHeldItemSlot(0)
                 player.sendMessage(CoreLoopItems.text("開拓港へようこそ。正面の地図台から遠征へ出発できます。", NamedTextColor.GOLD))
                 player.sendMessage(CoreLoopItems.text("ホットバー9番の「冒険の手帳」を右クリックすると、一周の流れを確認できます。"))
                 a.maps.firstOrNull()?.let { preparedMaps.warm(player.uuid, it) }
-                uiPack?.offer(player) { loadedPlayer, _ ->
-                    CoreCombatPresentation.pack(loadedPlayer, packed(loadedPlayer))
-                    refresh(loadedPlayer)
-                    menus.refreshTheme(loadedPlayer)
-                }
-                polishPack?.offer(player)
                 if (!a.journey.chosen) player.scheduler().scheduleNextTick { if (connections[player.uuid] === player) menus.career(player) }
             }
             println("Player connected: ${player.username} uuid=${player.uuid} firstSpawn=${event.isFirstSpawn} coreLoop=true")
@@ -300,7 +294,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
             if(event.hand == PlayerHand.MAIN && event.target === harbor.smith &&
                 event.player.instance === hub && event.player.position.distance(harbor.smith.position) <= 5.0) {
                 if(!requireHub(event.player)) return@addListener
-                if(polishSessions != null && polishPack?.ready(event.player) == true) polishSessions.open(event.player)
+                if(polishSessions != null && uiPack?.enabled(event.player) == true) polishSessions.open(event.player)
                 else {
                     event.player.sendMessage(CoreLoopItems.text("工房UI素材の読込前は通常の工房を開きます。", NamedTextColor.YELLOW))
                     menus.workshop(event.player)
@@ -880,7 +874,6 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         dungeons.disconnect(player)
         preparedMaps.forget(player.uuid)
         uiPack?.forget(player)
-        polishPack?.forget(player)
         polishSessions?.close(player,false)
         departing.remove(player.uuid)
         sessions.remove(player.uuid)?.let { session ->
@@ -930,7 +923,6 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
             System.err.println("CORE_SHUTDOWN_PENDING_REWARDS: $failure")
         } finally {
             polishSessions?.close()
-            polishPack?.close()
             uiPack?.close()
             io.shutdown()
             io.awaitTermination(5, TimeUnit.SECONDS)
