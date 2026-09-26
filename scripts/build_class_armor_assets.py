@@ -46,10 +46,10 @@ def armor_model(job,tier,slot):
         # Long articulated sleeves hang away from the breastplate. The item
         # silhouette is led by the entire arm, not square shoulder caps.
         elements=[box('cuirass',[3.25,1.6,5.25],[12.75,14.2,10.75],base),
-                  box('left sleeve',[-.5,4.0,5.1],[4.4,14.5,10.9],secondary,-17,'z'),
-                  box('right sleeve',[11.6,4.0,5.1],[16.5,14.5,10.9],secondary,17,'z'),
-                  box('left shoulder plate',[-.4,11.8,4.65],[4.45,14.55,11.1],base,-17,'z'),
-                  box('right shoulder plate',[11.55,11.8,4.65],[16.4,14.55,11.1],base,17,'z'),
+                  box('left sleeve',[-.5,4.0,5.1],[4.4,14.5,10.9],secondary,-30,'z'),
+                  box('right sleeve',[11.6,4.0,5.1],[16.5,14.5,10.9],secondary,30,'z'),
+                  box('left shoulder plate',[-.4,11.8,4.65],[4.45,14.55,11.1],base,-30,'z'),
+                  box('right shoulder plate',[11.55,11.8,4.65],[16.4,14.55,11.1],base,30,'z'),
                   box('forged backplate',[6.45,6.8,4.65],[9.55,10.55,5.3],'iron'),
                   box('bronze socket',[6.9,7.25,4.4],[9.1,10.1,4.8],'bronze'),
                   box('ember mark',[7.45,8.05,4.05],[8.55,9.25,4.45],'ember',45)]

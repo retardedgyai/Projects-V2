@@ -9,7 +9,7 @@ from class_armament_geometry import box
 COLORS={
     'a':'#1e2b3a', 'b':'#35485d', 'c':'#627f93',
     'd':'#8eabb2', 'e':'#b4c9c4', 'f':'#5c382d',
-    'g':'#aa7952', 'h':'#ddc17a', 'r':'#a94732', 'R':'#e07c45',
+    'g':'#b88955', 'h':'#f0d78a', 'r':'#a94732', 'R':'#e07c45',
 }
 
 FRONT=(
@@ -20,10 +20,10 @@ FRONT=(
     'gghh  hhgg',
     'gbb    bbg',
     ' bb    bb ',
-    ' cc    cc ',
-    'dccbbbbccd',
-    'bccddddccb',
-    'abbccccbba',
+    '          ',
+    'ddd    ddd',
+    'bcd    dcb',
+    ' bccccccb ',
 )
 SIDE=(
     ' bccccccb ',
@@ -103,7 +103,7 @@ def forge_texture(image,tier=1):
         'abbccccbba','bccddddccb','bcccddccbb','bccccccbbb',
         'bcccccbbba','bccccccbbb','bcddddccbb','bccddddccb',
         'bbccccccbb','abbbbbbbba'))
-    paint(0,16,('gghhh  hhhgg','ffggg  gggff'))
+    paint(0,16,('gghhhhhhhhgg','ffggggggggff'))
     paint(16,16,('ghg','hrh','gRg','grg','grg','grg','fgf','fff'))
     paint(20,16,('h','g','r','r','r','g','f','f'))
     paint(48,16,('aaaaaa','aaaaaa','abbbaa','abbbaa','aaaaaa','aaaaaa'))
