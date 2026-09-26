@@ -55,7 +55,8 @@ def verify():
                 icon_relative=f'textures/item/armor/icons/{job}_t{tier}_{slot}.png'
                 assert 'assets/projects/'+icon_relative in index
                 icon=Image.open(ASSETS/icon_relative).convert('RGBA')
-                assert icon.size==(16,16) and icon.tobytes()==icon_texture(job,tier,slot).tobytes()
+                assert icon.size==((32,32) if job=='warrior' else (16,16))
+                assert icon.tobytes()==icon_texture(job,tier,slot).tobytes()
                 assert set(np.array(icon)[:,:,3].flat)=={0,255}
                 model=read(f'models/item/{name}.json'); assert model==armor_model(job,tier,slot)
                 assert model['textures']['outer']==f'projects:item/{stem}_outer'

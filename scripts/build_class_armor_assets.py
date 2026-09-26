@@ -6,6 +6,7 @@ Head equipment has no equipment asset_id: CustomHeadLayer renders its item model
 No skin replacement, global armor override, following display entity or client mod.
 """
 import json
+from pathlib import Path
 from PIL import Image, ImageDraw
 from class_armament_geometry import ASSETS, box
 from build_bold_class_armor import ART as CLASS_ART, armor_texture as class_armor_texture
@@ -44,22 +45,23 @@ def armor_model(job,tier,slot):
     elif slot=='chestplate' and job=='warrior':
         # Long articulated sleeves hang away from the breastplate. The item
         # silhouette is led by the entire arm, not square shoulder caps.
-        elements=[box('cuirass',[3.8,1.6,5.4],[12.2,14.2,10.6],base),
-                  box('left sleeve',[.2,6.0,5.3],[4,14.5,10.7],secondary,-22.5,'z'),
-                  box('right sleeve',[12,6.0,5.3],[15.8,14.5,10.7],secondary,22.5,'z'),
-                  box('forge heart panel',[5.6,5.0,4.75],[10.4,11.75,5.3],base)]
+        elements=[box('cuirass',[3.25,1.6,5.25],[12.75,14.2,10.75],base),
+                  box('left sleeve',[-1.0,2.0,5.1],[4.5,14.5,10.9],secondary,-22.5,'z'),
+                  box('right sleeve',[11.5,2.0,5.1],[17.0,14.5,10.9],secondary,22.5,'z')]
     elif slot=='chestplate':
         elements=[box('cuirass',[3.8,1.6,5.4],[12.2,15,10.6],base),
                   box('left sleeve',[.2,1.8,5.3],[4,15.4,10.7],secondary),
                   box('right sleeve',[12,1.8,5.3],[15.8,15.4,10.7],secondary)]
     elif slot=='leggings' and job=='warrior':
         elements=[box('left thigh guard',[3.4,7.3,5],[7,14.2,10],base),
-                  box('right thigh guard',[9,7.3,5],[12.6,14.2,10],base)]
+                  box('right thigh guard',[9,7.3,5],[12.6,14.2,10],base),
+                  box('joined leather waist',[3.5,12.3,5.2],[12.5,14.8,10.1],'leather'),
+                  box('small forge buckle',[7.2,12.7,4.65],[8.8,14.1,5.25],'bronze')]
     elif slot=='boots' and job=='warrior':
-        elements=[box('left high boot',[3.4,7.0,5],[7,14.2,10],base),
-                  box('right high boot',[9,7.0,5],[12.6,14.2,10],base),
-                  box('left projecting toe',[3.1,5.8,3.0],[7.3,8.5,7.3],base),
-                  box('right projecting toe',[8.7,5.8,3.0],[12.9,8.5,7.3],base)]
+        elements=[box('left high boot',[2.7,8.0,5.1],[7.5,13.8,10.5],base),
+                  box('right high boot',[8.5,8.0,4.8],[13.3,13.8,10.2],base),
+                  box('left projecting toe',[2.3,6.7,2.7],[7.8,9.1,7.5],base),
+                  box('right projecting toe',[8.1,6.7,2.4],[13.6,9.1,7.2],base)]
     else:
         elements=[]
         for x in (3.5,9):
@@ -68,6 +70,7 @@ def armor_model(job,tier,slot):
     # pasted on otherwise generic material cubes made the item look flat.
     worn='inner' if slot=='leggings' else 'outer'
     for element in (() if slot=='helmet' else elements):
+        if element['name'] in ('joined leather waist','small forge buckle'): continue
         if element['name'].endswith('toe'):
             element['faces']={
                 'north':{'uv':[1,13,2,16],'texture':'#outer'},
@@ -77,9 +80,6 @@ def armor_model(job,tier,slot):
                 'up':{'uv':[1,8,2,10],'texture':'#outer'},
                 'down':{'uv':[2,8,3,10],'texture':'#outer'},
             }
-            continue
-        if element['name']=='forge heart panel':
-            element['faces']['north']={'uv':[5,0,7,6],'texture':'#outer'}
             continue
         origin,width,depth=((40,16),4,4) if element['name'].endswith('sleeve') else (
             ((16,16),8,4) if slot=='chestplate' else ((0,16),4,4))
@@ -110,6 +110,15 @@ def armor_model(job,tier,slot):
 
 def icon_texture(job,tier,slot):
     """Small original icon silhouettes; the wearable model remains three dimensional."""
+    if job=='warrior':
+        path=Path(__file__).resolve().parent/'art/forge_warrior'/f'{slot}.png'
+        image=Image.open(path).convert('RGBA')
+        if tier>1:
+            draw=ImageDraw.Draw(image)
+            for i in range(tier-1):
+                x=29-i*3
+                draw.rectangle((x,2,x+1,3),fill='#edc97f')
+        return image
     if slot=='helmet':
         return project_helmet_texture(job,tier).crop((0,0,32,32)).resize(
             (16,16),Image.Resampling.NEAREST)
