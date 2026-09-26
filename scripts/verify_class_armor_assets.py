@@ -42,6 +42,8 @@ def verify():
                 if job=='warrior' and not inner:
                     assert image.getpixel((44,24))[3]==0,'Warrior arm cutout must remain transparent'
                     assert image.getpixel((20,28))[3]==0,'Warrior waist cutout must remain transparent'
+                    assert image.getpixel((4,20))[3]==0,'Worn boots must reveal the thigh armor'
+                    assert item_image.getpixel((4,20))[3]==255,'Inventory boots need a complete cuff'
                 if not inner: surfaces.add(image.tobytes())
             for slot in SLOTS:
                 name=f'{stem}_{slot}'
@@ -67,7 +69,7 @@ def verify():
                         'helmet':{'forged shell','recessed face shadow',
                                   'warm wraparound brow','raised ember ridge'},
                         'chestplate':{'left shoulder plate','right shoulder plate','bronze socket','ember mark'},
-                        'leggings':{'left raised knee plate','right raised knee plate','left shin guard','right shin guard'},
+                        'leggings':{'left thigh guard','right thigh guard','joined leather waist','small forge buckle'},
                         'boots':{'left projecting toe','right projecting toe','left ankle clasp','right ankle clasp'},
                     }[slot]
                     assert required<=names, f'Missing raised detail on {name}'

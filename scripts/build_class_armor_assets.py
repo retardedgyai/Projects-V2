@@ -46,10 +46,10 @@ def armor_model(job,tier,slot):
         # Long articulated sleeves hang away from the breastplate. The item
         # silhouette is led by the entire arm, not square shoulder caps.
         elements=[box('cuirass',[3.25,1.6,5.25],[12.75,14.2,10.75],base),
-                  box('left sleeve',[-1.0,2.0,5.1],[4.5,14.5,10.9],secondary,-22.5,'z'),
-                  box('right sleeve',[11.5,2.0,5.1],[17.0,14.5,10.9],secondary,22.5,'z'),
-                  box('left shoulder plate',[-.9,11.8,4.65],[4.45,14.55,11.1],base,-22.5,'z'),
-                  box('right shoulder plate',[11.55,11.8,4.65],[16.9,14.55,11.1],base,22.5,'z'),
+                  box('left sleeve',[-.5,4.0,5.1],[4.4,14.5,10.9],secondary,-17,'z'),
+                  box('right sleeve',[11.6,4.0,5.1],[16.5,14.5,10.9],secondary,17,'z'),
+                  box('left shoulder plate',[-.4,11.8,4.65],[4.45,14.55,11.1],base,-17,'z'),
+                  box('right shoulder plate',[11.55,11.8,4.65],[16.4,14.55,11.1],base,17,'z'),
                   box('forged backplate',[6.45,6.8,4.65],[9.55,10.55,5.3],'iron'),
                   box('bronze socket',[6.9,7.25,4.4],[9.1,10.1,4.8],'bronze'),
                   box('ember mark',[7.45,8.05,4.05],[8.55,9.25,4.45],'ember',45)]
@@ -58,12 +58,8 @@ def armor_model(job,tier,slot):
                   box('left sleeve',[.2,1.8,5.3],[4,15.4,10.7],secondary),
                   box('right sleeve',[12,1.8,5.3],[15.8,15.4,10.7],secondary)]
     elif slot=='leggings' and job=='warrior':
-        elements=[box('left thigh guard',[3.4,7.3,5],[7,14.2,10],base),
-                  box('right thigh guard',[9,7.3,5],[12.6,14.2,10],base),
-                  box('left shin guard',[3.55,2.8,5.35],[6.85,7.5,9.5],base),
-                  box('right shin guard',[9.15,2.8,5.35],[12.45,7.5,9.5],base),
-                  box('left raised knee plate',[3.2,6.55,4.55],[7.15,8.65,5.45],'iron'),
-                  box('right raised knee plate',[8.85,6.55,4.55],[12.8,8.65,5.45],'iron'),
+        elements=[box('left thigh guard',[3.4,6.8,5],[7.3,14.2,10],base),
+                  box('right thigh guard',[8.7,6.8,5],[12.6,14.2,10],base),
                   box('joined leather waist',[3.5,12.3,5.2],[12.5,14.8,10.1],'leather'),
                   box('small forge buckle',[7.2,12.7,4.65],[8.8,14.1,5.25],'bronze')]
     elif slot=='boots' and job=='warrior':

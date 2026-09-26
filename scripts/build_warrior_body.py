@@ -8,13 +8,13 @@ from PIL import Image
 
 COLORS = (
     '111821',  # deep unlit seam
-    '20374b',  # blue-steel shadow
-    '456c80',  # blue-steel body
-    '91b6c2',  # lit plate
-    'd5e1dc',  # cold highlight
-    '3f2922',  # smoke leather
-    '9c653b',  # forged copper
-    'e1b86e',  # brass rim
+    '35485d',  # blue-steel shadow
+    '627f93',  # blue-steel body
+    '8eabb2',  # lit plate
+    'b4c9c4',  # cold highlight
+    '5c382d',  # smoke leather
+    'aa7952',  # forged copper
+    'ddc17a',  # brass rim
     'df623d',  # ember clasp
 )
 
@@ -88,22 +88,26 @@ LEG_RIGHT = (
     '5665','6776','1111','1111','1221','1221',
     '1221','....','....','....','....','....',
 )
-BOOT_FRONT = (
-    '1661','2772','1221','2332','3442','2332',
+ITEM_BOOT_FRONT = (
+    '5665','6776','6556','2332','3442','2332',
     '1221','1221','1221','2332','3442','1111',
 )
-BOOT_BACK = (
-    '1661','2772','1221','2221','2321','2221',
+ITEM_BOOT_BACK = (
+    '5665','6776','6556','2221','2321','2221',
     '1221','1221','1221','2221','2321','1111',
 )
-BOOT_LEFT = (
-    '1661','2772','1221','2331','3431','2331',
+ITEM_BOOT_LEFT = (
+    '5665','6776','6556','2331','3431','2331',
     '1221','1221','1221','2331','3431','1111',
 )
-BOOT_RIGHT = (
-    '1661','2772','1111','1221','2321','1221',
+ITEM_BOOT_RIGHT = (
+    '5665','6776','6556','1221','2321','1221',
     '1221','1221','1221','1221','2321','1111',
 )
+BOOT_FRONT = ('....',) * 6 + ('5665','6776','1221','2332','3442','1111')
+BOOT_BACK = ('....',) * 6 + ('5665','6776','1221','2221','2321','1111')
+BOOT_LEFT = ('....',) * 6 + ('5665','6776','1221','2331','3431','1111')
+BOOT_RIGHT = ('....',) * 6 + ('5665','6776','1221','1221','2321','1111')
 ITEM_FRONT = (
     '..1221..','.1233321','12344321','13433321',
     '13332211','12383211','12233211','12222211',
@@ -168,6 +172,8 @@ def item_texture(tier, inner=False):
         _cube(image,(16,16),8,4,TORSO_LEFT,ITEM_FRONT,TORSO_RIGHT,ITEM_BACK)
         _cube(image,(40,16),4,4,ITEM_ARM_SIDE,ITEM_ARM_FRONT,
               ITEM_ARM_SIDE,ITEM_ARM_BACK)
+        _cube(image,(0,16),4,4,ITEM_BOOT_LEFT,ITEM_BOOT_FRONT,
+              ITEM_BOOT_RIGHT,ITEM_BOOT_BACK)
         for i in range(tier-1):
             image.putpixel((24+i,21),tuple(bytes.fromhex(COLORS[8]))+(255,))
     return image
