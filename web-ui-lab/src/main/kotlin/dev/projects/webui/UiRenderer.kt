@@ -28,6 +28,7 @@ class UiRenderer(private val player: Player, private val origin: Pos) : AutoClos
     private val unspawned=mutableListOf<Pair<String,Entity>>()
     private var closed=false
     private var packetCursor=false
+    private var lastPacketPointer: Pair<Double,Double>?=null
     var zoom=1.0
     val size get()=entities.size
     private val geometry get()=UiGeometry(zoom)
@@ -168,6 +169,9 @@ class UiRenderer(private val player: Player, private val origin: Pos) : AutoClos
     /** Send only cursor transforms from the socket path. Entity state stays on the instance thread. */
     fun cursorPacket(pointer: UiPointer) {
         packetCursor=true
+        val at=pointer.x to pointer.y
+        if(lastPacketPointer==at) return
+        lastPacketPointer=at
         val positions=listOf(
             Triple("cursor-shadow",Box(pointer.x-1.0,pointer.y-1.0,5.0,15.0),0.4),
             Triple("cursor-v",Box(pointer.x,pointer.y,2.0,12.0),0.41),
@@ -183,6 +187,11 @@ class UiRenderer(private val player: Player, private val origin: Pos) : AutoClos
                 MetadataDef.Display.INTERPOLATION_DELAY.index() to Metadata.VarInt(0),
             )))
         }
+    }
+    /** The lab's artificial latency mode applies queued input on the instance thread. */
+    fun entityCursor() {
+        packetCursor=false
+        lastPacketPointer=null
     }
     override fun close() {
         closed=true; entities.values.forEach(Entity::remove); entities.clear()

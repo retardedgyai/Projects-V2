@@ -102,6 +102,11 @@ fun main(args: Array<String>) {
                     "Socket input mutated entity state"
                 }
             }
+            val idlePacketCount=packets.filterIsInstance<EntityMetaDataPacket>().size
+            repeat(10) { first.addPacketToQueue(ClientPlayerPositionAndRotationPacket(Pos(0.0,1.0,0.0,10f,1f),false,false)) }
+            check(packets.filterIsInstance<EntityMetaDataPacket>().size==idlePacketCount) {
+                "Idle probe replies still send cursor metadata"
+            }
             val beforeButtonMetadata=packets.filterIsInstance<EntityMetaDataPacket>().size
             check(sessions.consumeImmediateUiPacket(first,ClientPlayerPositionAndRotationPacket(Pos(0.0,1.0,0.0,
                 ((button.x+button.w/2-400)/8).toFloat(),((button.y+button.h/2-240)/8).toFloat()),false,false)))
@@ -146,6 +151,29 @@ fun main(args: Array<String>) {
             // Minestom itself gates movement until the authoritative restore teleport is acknowledged.
             check(first.lastSentTeleportId!=first.lastReceivedTeleportId)
         }
+        // Switching to the lab's artificial delay must restore instance-thread cursor updates.
+        sessions.open(first)
+        val delaySync=packets.filterIsInstance<PlayerPositionAndLookPacket>().last()
+        check(sessions.consumeImmediateUiPacket(first,ClientTeleportConfirmPacket(delaySync.teleportId())))
+        first.addPacketToQueue(ClientPlayerPositionAndRotationPacket(Pos(0.0,1.0,0.0,0f,0f),false,false))
+        val delayButton=UiDocument.parse(java.nio.file.Files.readString(Path.of(args.single())))
+            .layout(ForgeDemo().values(),ForgeDemo().flags()).nodes.single { it.action=="delay" }.box
+        val delayYaw=((delayButton.x+delayButton.w/2-400)/8).toFloat()
+        val delayPitch=((delayButton.y+delayButton.h/2-240)/8).toFloat()
+        first.addPacketToQueue(ClientPlayerPositionAndRotationPacket(Pos(0.0,1.0,0.0,delayYaw,delayPitch),false,false))
+        val delayClick=ClientSpectatorActionPacket(null)
+        check(!sessions.consumeImmediateUiPacket(first,delayClick))
+        events.call(PlayerPacketEvent(first,delayClick))
+        val cursorId=instance.entities.first { (it.entityMeta as? TextDisplayMeta)?.transformationInterpolationDuration==1 }.entityId
+        val beforeDelayed=(instance.entities.single { it.entityId==cursorId }.entityMeta as TextDisplayMeta).translation
+        val delayedMove=ClientPlayerPositionAndRotationPacket(Pos(0.0,1.0,0.0,delayYaw+1f,delayPitch),false,false)
+        check(!sessions.consumeImmediateUiPacket(first,delayedMove))
+        events.call(PlayerPacketEvent(first,delayedMove))
+        Thread.sleep(65)
+        events.call(InstanceTickEvent(instance,0,50))
+        val afterDelayed=(instance.entities.single { it.entityId==cursorId }.entityMeta as TextDisplayMeta).translation
+        check(afterDelayed.x()>beforeDelayed.x()) { "Lab delay froze the visible cursor" }
+        sessions.close(first)
         // A transfer close restores the camera/mode without issuing a return teleport.
         sessions.open(first)
         val directSync=packets.filterIsInstance<PlayerPositionAndLookPacket>().last()

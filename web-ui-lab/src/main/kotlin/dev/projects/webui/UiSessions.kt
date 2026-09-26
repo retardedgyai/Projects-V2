@@ -363,6 +363,7 @@ class UiSessions(
                         s.player.sendMessage(Component.text("再読込できません。前の画面を維持します：${e.message?.take(160)}"));continue
                     }
                 } else if(!s.demo.action(action)) continue
+                if(action=="delay" && s.demo.delayMs>0) s.renderer.entityCursor()
                 s.generation++
                 s.scene=requireNotNull(s.document).layout(s.demo.values(),s.demo.flags())
                 s.renderer.zoom=s.demo.zoom
