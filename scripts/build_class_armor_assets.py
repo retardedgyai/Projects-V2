@@ -116,8 +116,8 @@ def icon_texture(job,tier,slot):
         if tier>1:
             draw=ImageDraw.Draw(image)
             for i in range(tier-1):
-                x=29-i*3
-                draw.rectangle((x,2,x+1,3),fill='#edc97f')
+                x=61-i*4
+                draw.rectangle((x,3,x+1,4),fill='#edc97f')
         return image
     if slot=='helmet':
         return project_helmet_texture(job,tier).crop((0,0,32,32)).resize(
