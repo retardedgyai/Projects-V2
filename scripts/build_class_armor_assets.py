@@ -58,10 +58,10 @@ def armor_model(job,tier,slot):
                   box('joined leather waist',[3.5,12.3,5.2],[12.5,14.8,10.1],'leather'),
                   box('small forge buckle',[7.2,12.7,4.65],[8.8,14.1,5.25],'bronze')]
     elif slot=='boots' and job=='warrior':
-        elements=[box('left high boot',[2.7,8.0,5.1],[7.5,13.8,10.5],base),
-                  box('right high boot',[8.5,8.0,4.8],[13.3,13.8,10.2],base),
-                  box('left projecting toe',[2.3,6.7,2.7],[7.8,9.1,7.5],base),
-                  box('right projecting toe',[8.1,6.7,2.4],[13.6,9.1,7.2],base)]
+        elements=[box('left high boot',[2.7,1.8,5.1],[7.5,7.6,10.5],base),
+                  box('right high boot',[8.5,1.8,4.8],[13.3,7.6,10.2],base),
+                  box('left projecting toe',[2.3,0.5,2.7],[7.8,2.9,7.5],base),
+                  box('right projecting toe',[8.1,0.5,2.4],[13.6,2.9,7.2],base)]
     else:
         elements=[]
         for x in (3.5,9):
