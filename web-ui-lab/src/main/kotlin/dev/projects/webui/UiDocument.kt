@@ -9,10 +9,12 @@ import org.xml.sax.InputSource
 data class Box(val x: Double, val y: Double, val w: Double, val h: Double) {
     fun contains(px: Double, py: Double) = px >= x && py >= y && px < x + w && py < y + h
 }
+enum class UiItemPose { GUI, FIXED }
 data class UiNode(
     val id: String, val box: Box, val text: String, val style: Map<String, String>,
     val action: String?, val item: String?, val enabled: Boolean, val depth: Int,
     val sprite: UiSprite? = null,
+    val itemPose: UiItemPose = UiItemPose.GUI,
 ) {
     val fontSize get() = style["font-size"]?.removeSuffix("px")?.toDouble() ?: 14.0
     val color get() = style["color"] ?: "#eee8df"

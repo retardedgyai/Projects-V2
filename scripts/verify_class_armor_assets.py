@@ -59,6 +59,16 @@ def verify():
                 assert icon.tobytes()==icon_texture(job,tier,slot).tobytes()
                 assert set(np.array(icon)[:,:,3].flat)=={0,255}
                 model=read(f'models/item/{name}.json'); assert model==armor_model(job,tier,slot)
+                assert model['display']['fixed']==model['display']['gui'], 'Forge hero must face forward at item scale'
+                if job=='warrior':
+                    names={element['name'] for element in model['elements']}
+                    required={
+                        'helmet':{'ruby mount','ruby inset','left cheek guard','right cheek guard'},
+                        'chestplate':{'left shoulder plate','right shoulder plate','bronze socket','ember mark'},
+                        'leggings':{'left raised knee plate','right raised knee plate','left shin guard','right shin guard'},
+                        'boots':{'left projecting toe','right projecting toe','left ankle clasp','right ankle clasp'},
+                    }[slot]
+                    assert required<=names, f'Missing raised detail on {name}'
                 assert model['textures']['outer']==f'projects:item/{stem}_outer'
                 assert model['textures']['inner']==f'projects:item/{stem}_inner'
                 assert model['textures']['helm']==f'projects:item/armor/helmet_faces/{job}_t{tier}'

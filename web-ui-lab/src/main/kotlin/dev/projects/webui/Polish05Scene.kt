@@ -499,6 +499,7 @@ class Polish05Scene private constructor(approvedJson: String, spriteJson: String
                 id == "rarity" -> write("T${selected.tier} 装備  ·  ${if(selected.id == "weapon") "武器" else "防具"}")
                 id == "hero-name" -> write("${selected.name}  +${selected.level}")
                 id == "hero-weapon" -> replacement = replacement.copy(item=selected.iconItem,
+                    itemPose=if(selected.id == "weapon") UiItemPose.GUI else UiItemPose.FIXED,
                     sprite = if(selected.iconItem != null) null else sprite(if(selected.id == "weapon") "sword_t2_hero" else gearIcon(selected.id)),
                     box = if(selected.id == "weapon") replacement.box else rect(621,369,120,164))
                 id == "hero-meta" -> write("${if(selected.id == "weapon") "武器" else "防具"} Tier ${selected.tier}   │   強化 +${selected.level}${if(selected.broken) "   │   破損中" else ""}")

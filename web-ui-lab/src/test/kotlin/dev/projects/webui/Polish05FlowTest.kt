@@ -123,7 +123,8 @@ class Polish05FlowTest {
 
     @Test fun fiveGearSelectionPlateFillsItsCompactRow() {
         val gears=listOf("weapon", "head", "chest", "legs", "feet").map { id ->
-            ForgeUiGear(id,"T1 $id",1,0,100,101)
+            ForgeUiGear(id,"T1 $id",1,0,100,101,iconItem=if(id=="weapon") null
+                else "minecraft:leather_helmet|projects:armor/warrior_t1_helmet")
         }
         val materials=(1..3).map { ForgeUiMaterial("素材$it",2,1,"forge_material_ingot") }
         val state=ForgeUiState(gears,"weapon",0,100.0,0.0,false,materials,0,
@@ -132,10 +133,18 @@ class Polish05FlowTest {
         val scale=Polish05ScreenSpace(800.0,480.0).scale
         val plates=(0..4).map { index -> nodes.single { it.id=="live-gear-plate-$index" } }
         plates.forEach { plate ->
-            assertEquals(plate.box.w,plate.sprite!!.width*scale,0.0001)
-            assertEquals(plate.box.h,plate.sprite!!.height*scale,0.0001)
+            val sprite=assertNotNull(plate.sprite)
+            assertEquals(plate.box.w,sprite.width*scale,0.0001)
+            assertEquals(plate.box.h,sprite.height*scale,0.0001)
         }
         assertNotEquals(plates[0].sprite?.char,plates[1].sprite?.char)
+        assertEquals(UiItemPose.GUI,nodes.single { it.id=="hero-weapon" }.itemPose)
+        val armorNodes=scene.forge(state.copy(selected="head")).nodes
+        assertEquals(UiItemPose.FIXED,armorNodes.single { it.id=="hero-weapon" }.itemPose)
+        assertEquals(UiItemPose.GUI,armorNodes.single { it.id=="live-gear-icon-1" }.itemPose)
+        val confirmation=scene.forge(state.copy(selected="head",modal=true)).nodes
+        assertFalse(confirmation.any { it.id=="hero-weapon" })
+        assertEquals(UiItemPose.GUI,confirmation.single { it.id=="modal-icon" }.itemPose)
     }
 
     @Test fun selectCompareConfirmConsumeRefineAndReturnToSameGear() {

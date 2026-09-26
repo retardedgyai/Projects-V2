@@ -60,6 +60,10 @@ def armor_model(job,tier,slot):
     elif slot=='leggings' and job=='warrior':
         elements=[box('left thigh guard',[3.4,7.3,5],[7,14.2,10],base),
                   box('right thigh guard',[9,7.3,5],[12.6,14.2,10],base),
+                  box('left shin guard',[3.55,2.8,5.35],[6.85,7.5,9.5],base),
+                  box('right shin guard',[9.15,2.8,5.35],[12.45,7.5,9.5],base),
+                  box('left raised knee plate',[3.2,6.55,4.55],[7.15,8.65,5.45],'iron'),
+                  box('right raised knee plate',[8.85,6.55,4.55],[12.8,8.65,5.45],'iron'),
                   box('joined leather waist',[3.5,12.3,5.2],[12.5,14.8,10.1],'leather'),
                   box('small forge buckle',[7.2,12.7,4.65],[8.8,14.1,5.25],'bronze')]
     elif slot=='boots' and job=='warrior':
@@ -104,6 +108,14 @@ def armor_model(job,tier,slot):
                 'down':{'uv':[2,8,3,10],'texture':'#outer'},
             }
             continue
+        if element['name'].endswith('knee plate'):
+            element['faces']={face:{'uv':[2,12,4,16],'texture':'#helm'}
+                              for face in element['faces']}
+            continue
+        if element['name'].endswith('shin guard'):
+            element['faces']={face:{'uv':[0,12,2,16],'texture':'#helm'}
+                              for face in element['faces']}
+            continue
         origin,width,depth=((40,16),4,4) if element['name'].endswith('sleeve') else (
             ((16,16),8,4) if slot=='chestplate' else ((0,16),4,4))
         u,v=origin
@@ -128,7 +140,7 @@ def armor_model(job,tier,slot):
         'display':{'head':{'rotation':[0,0,0],'translation':[0,0,0],'scale':[1.6,1.6,1.6]},
             'gui':{'rotation':[15,-25,0],'translation':[0,-1,0],'scale':[gui_scale]*3},
             'ground':{'rotation':[0,0,0],'translation':[0,3,0],'scale':[.5,.5,.5]},
-            'fixed':{'rotation':[0,180,0],'translation':[0,0,0],'scale':[.65,.65,.65]}}}
+            'fixed':{'rotation':[15,-25,0],'translation':[0,-1,0],'scale':[gui_scale]*3}}}
 
 
 def icon_texture(job,tier,slot):
