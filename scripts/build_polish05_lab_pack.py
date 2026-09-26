@@ -129,7 +129,8 @@ def main() -> None:
         dest.parent.mkdir(parents=True, exist_ok=True)
         image.save(dest)
         register(name, f"effects/{name}.png", image.width, image.height)
-    for name in ("gear_selected", "gear_unselected", "tab_active_forge", "tab_active_refine", "tab_active_bag",
+    for name in ("gear_selected", "gear_unselected", "gear_selected_compact", "gear_unselected_compact",
+                 "tab_active_forge", "tab_active_refine", "tab_active_bag",
                  "tab_label_forge_smooth",
                  "catalyst_off", "catalyst_on", "bag_slot_selected", "bag_slot_regular", "bag_slot_empty",
                  "recipe_selected", "recipe_regular"):

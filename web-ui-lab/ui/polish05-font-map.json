@@ -665,134 +665,146 @@
     "height": 82,
     "font": "projects_ui_polish05:plates"
   },
-  "tab_active_forge": {
+  "gear_selected_compact": {
     "char": "",
+    "width": 229,
+    "height": 41,
+    "font": "projects_ui_polish05:plates"
+  },
+  "gear_unselected_compact": {
+    "char": "",
+    "width": 229,
+    "height": 41,
+    "font": "projects_ui_polish05:plates"
+  },
+  "tab_active_forge": {
+    "char": "",
     "width": 130,
     "height": 71,
     "font": "projects_ui_polish05:plates"
   },
   "tab_active_refine": {
-    "char": "",
+    "char": "",
     "width": 130,
     "height": 71,
     "font": "projects_ui_polish05:plates"
   },
   "tab_active_bag": {
-    "char": "",
+    "char": "",
     "width": 138,
     "height": 71,
     "font": "projects_ui_polish05:plates"
   },
   "tab_label_forge_smooth": {
-    "char": "",
+    "char": "",
     "width": 78,
     "height": 35,
     "font": "projects_ui_polish05:plates"
   },
   "catalyst_off": {
-    "char": "",
+    "char": "",
     "width": 326,
     "height": 45,
     "font": "projects_ui_polish05:plates"
   },
   "catalyst_on": {
-    "char": "",
+    "char": "",
     "width": 326,
     "height": 45,
     "font": "projects_ui_polish05:plates"
   },
   "bag_slot_selected": {
-    "char": "",
-    "width": 102,
-    "height": 83,
-    "font": "projects_ui_polish05:plates"
-  },
-  "bag_slot_regular": {
-    "char": "",
-    "width": 102,
-    "height": 83,
-    "font": "projects_ui_polish05:plates"
-  },
-  "bag_slot_empty": {
     "char": "",
     "width": 102,
     "height": 83,
     "font": "projects_ui_polish05:plates"
   },
-  "recipe_selected": {
+  "bag_slot_regular": {
     "char": "",
+    "width": 102,
+    "height": 83,
+    "font": "projects_ui_polish05:plates"
+  },
+  "bag_slot_empty": {
+    "char": "",
+    "width": 102,
+    "height": 83,
+    "font": "projects_ui_polish05:plates"
+  },
+  "recipe_selected": {
+    "char": "",
     "width": 238,
     "height": 78,
     "font": "projects_ui_polish05:plates"
   },
   "recipe_regular": {
-    "char": "",
+    "char": "",
     "width": 238,
     "height": 78,
     "font": "projects_ui_polish05:plates"
   },
   "result_level_halo/0_0": {
-    "char": "",
+    "char": "",
     "width": 256,
     "height": 78,
     "font": "projects_ui_polish05:plates"
   },
   "result_level_halo/256_0": {
-    "char": "",
+    "char": "",
     "width": 70,
     "height": 78,
     "font": "projects_ui_polish05:plates"
   },
   "catalyst_off_halo/0_0": {
-    "char": "",
-    "width": 256,
-    "height": 62,
-    "font": "projects_ui_polish05:plates"
-  },
-  "catalyst_off_halo/256_0": {
-    "char": "",
-    "width": 80,
-    "height": 62,
-    "font": "projects_ui_polish05:plates"
-  },
-  "catalyst_on_halo/0_0": {
     "char": "",
     "width": 256,
     "height": 62,
     "font": "projects_ui_polish05:plates"
   },
-  "catalyst_on_halo/256_0": {
+  "catalyst_off_halo/256_0": {
     "char": "",
     "width": 80,
     "height": 62,
     "font": "projects_ui_polish05:plates"
   },
-  "cost_ready_halo/0_0": {
+  "catalyst_on_halo/0_0": {
     "char": "",
     "width": 256,
-    "height": 52,
+    "height": 62,
     "font": "projects_ui_polish05:plates"
   },
-  "cost_ready_halo/256_0": {
+  "catalyst_on_halo/256_0": {
     "char": "",
-    "width": 70,
-    "height": 52,
+    "width": 80,
+    "height": 62,
     "font": "projects_ui_polish05:plates"
   },
-  "cost_missing_halo/0_0": {
+  "cost_ready_halo/0_0": {
     "char": "",
     "width": 256,
     "height": 52,
     "font": "projects_ui_polish05:plates"
   },
-  "cost_missing_halo/256_0": {
+  "cost_ready_halo/256_0": {
     "char": "",
     "width": 70,
     "height": 52,
     "font": "projects_ui_polish05:plates"
   },
-  "project_sigil": {
+  "cost_missing_halo/0_0": {
     "char": "",
+    "width": 256,
+    "height": 52,
+    "font": "projects_ui_polish05:plates"
+  },
+  "cost_missing_halo/256_0": {
+    "char": "",
+    "width": 70,
+    "height": 52,
+    "font": "projects_ui_polish05:plates"
+  },
+  "project_sigil": {
+    "char": "",
     "width": 23,
     "height": 30,
     "font": "projects_ui_polish05:plates"
@@ -942,67 +954,67 @@
     "font": "projects_ui_polish05:sprites"
   },
   "forge_material_wood": {
-    "char": "",
-    "width": 16,
-    "height": 16,
-    "font": "projects_ui_polish05:plates"
-  },
-  "forge_material_ore": {
-    "char": "",
-    "width": 16,
-    "height": 16,
-    "font": "projects_ui_polish05:plates"
-  },
-  "forge_material_stone": {
     "char": "",
     "width": 16,
     "height": 16,
     "font": "projects_ui_polish05:plates"
   },
-  "forge_material_hide": {
+  "forge_material_ore": {
     "char": "",
     "width": 16,
     "height": 16,
     "font": "projects_ui_polish05:plates"
   },
-  "forge_material_fiber": {
+  "forge_material_stone": {
     "char": "",
     "width": 16,
     "height": 16,
     "font": "projects_ui_polish05:plates"
   },
-  "forge_material_board": {
+  "forge_material_hide": {
     "char": "",
     "width": 16,
     "height": 16,
     "font": "projects_ui_polish05:plates"
   },
-  "forge_material_ingot": {
+  "forge_material_fiber": {
     "char": "",
     "width": 16,
     "height": 16,
     "font": "projects_ui_polish05:plates"
   },
-  "forge_material_cut_stone": {
+  "forge_material_board": {
     "char": "",
     "width": 16,
     "height": 16,
     "font": "projects_ui_polish05:plates"
   },
-  "forge_material_leather": {
+  "forge_material_ingot": {
     "char": "",
     "width": 16,
     "height": 16,
     "font": "projects_ui_polish05:plates"
   },
-  "forge_material_cloth": {
+  "forge_material_cut_stone": {
     "char": "",
     "width": 16,
     "height": 16,
     "font": "projects_ui_polish05:plates"
   },
-  "forge_material_affix_dust": {
+  "forge_material_leather": {
     "char": "",
+    "width": 16,
+    "height": 16,
+    "font": "projects_ui_polish05:plates"
+  },
+  "forge_material_cloth": {
+    "char": "",
+    "width": 16,
+    "height": 16,
+    "font": "projects_ui_polish05:plates"
+  },
+  "forge_material_affix_dust": {
+    "char": "",
     "width": 16,
     "height": 16,
     "font": "projects_ui_polish05:plates"

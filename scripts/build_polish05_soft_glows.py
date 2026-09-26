@@ -68,6 +68,12 @@ def save(name: str, image: Image.Image) -> None:
 
 def main() -> None:
     OUT.mkdir(parents=True, exist_ok=True)
+    # The production forge fits five equipment parts into 41px rows. Keep the
+    # approved 229px left-to-right falloff at its native width so TextDisplay
+    # does not shrink and center the 82px source plate inside each row.
+    for state in ("selected", "unselected"):
+        plate = Image.open(OUT / f"gear_{state}.png").convert("RGBA")
+        save(f"gear_{state}_compact", plate.resize((229, 41), Image.Resampling.BILINEAR))
     save("result_level_halo", result_level_plate())
     save("cost_ready_halo", selection_light(326, 52, "ready"))
     save("cost_missing_halo", selection_light(326, 52, "missing"))

@@ -577,7 +577,7 @@ class Polish05Scene private constructor(approvedJson: String, spriteJson: String
                 val y = 280 + index * 42
                 val active = gear.id == state.selected
                 put(nodes,"live-gear-plate-$index",95,y,229,41,
-                    sprite=if(active) "gear_selected" else "gear_unselected",depth=1)
+                    sprite=if(active) "gear_selected_compact" else "gear_unselected_compact",depth=1)
                 put(nodes,"live-gear-icon-$index",105,y+5,32,32,
                     sprite=if(gear.iconItem == null) gearIcon(gear.id) else null,item=gear.iconItem,depth=3)
                 put(nodes,"live-gear-name-$index",145,y+3,165,19,"${gear.name} +${gear.level}",size=12.5)
