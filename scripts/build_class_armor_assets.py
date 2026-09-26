@@ -47,7 +47,12 @@ def armor_model(job,tier,slot):
         # silhouette is led by the entire arm, not square shoulder caps.
         elements=[box('cuirass',[3.25,1.6,5.25],[12.75,14.2,10.75],base),
                   box('left sleeve',[-1.0,2.0,5.1],[4.5,14.5,10.9],secondary,-22.5,'z'),
-                  box('right sleeve',[11.5,2.0,5.1],[17.0,14.5,10.9],secondary,22.5,'z')]
+                  box('right sleeve',[11.5,2.0,5.1],[17.0,14.5,10.9],secondary,22.5,'z'),
+                  box('left shoulder plate',[-.9,11.8,4.65],[4.45,14.55,11.1],base,-22.5,'z'),
+                  box('right shoulder plate',[11.55,11.8,4.65],[16.9,14.55,11.1],base,22.5,'z'),
+                  box('forged backplate',[6.45,6.8,4.65],[9.55,10.55,5.3],'iron'),
+                  box('bronze socket',[6.9,7.25,4.4],[9.1,10.1,4.8],'bronze'),
+                  box('ember mark',[7.45,8.05,4.05],[8.55,9.25,4.45],'ember',45)]
     elif slot=='chestplate':
         elements=[box('cuirass',[3.8,1.6,5.4],[12.2,15,10.6],base),
                   box('left sleeve',[.2,1.8,5.3],[4,15.4,10.7],secondary),
@@ -61,7 +66,9 @@ def armor_model(job,tier,slot):
         elements=[box('left high boot',[2.7,1.8,5.1],[7.5,7.6,10.5],base),
                   box('right high boot',[8.5,1.8,4.8],[13.3,7.6,10.2],base),
                   box('left projecting toe',[2.3,0.5,2.7],[7.8,2.9,7.5],base),
-                  box('right projecting toe',[8.1,0.5,2.4],[13.6,2.9,7.2],base)]
+                  box('right projecting toe',[8.1,0.5,2.4],[13.6,2.9,7.2],base),
+                  box('left ankle clasp',[3.0,6.45,4.65],[7.25,7.25,5.35],'bronze'),
+                  box('right ankle clasp',[8.75,6.45,4.35],[13.0,7.25,5.05],'bronze')]
     else:
         elements=[]
         for x in (3.5,9):
@@ -70,7 +77,23 @@ def armor_model(job,tier,slot):
     # pasted on otherwise generic material cubes made the item look flat.
     worn='inner' if slot=='leggings' else 'outer'
     for element in (() if slot=='helmet' else elements):
-        if element['name'] in ('joined leather waist','small forge buckle'): continue
+        if element['name'] in ('joined leather waist','small forge buckle',
+                               'forged backplate','bronze socket') or element['name'].endswith('ankle clasp'):
+            continue
+        if element['name']=='ember mark':
+            element['faces']={face:{'uv':[4.4,8.4,5.6,11.4],
+                                    'texture':'#helm'} for face in element['faces']}
+            continue
+        if element['name'].endswith('shoulder plate'):
+            element['faces']={
+                'north':{'uv':[11,10,12,12],'texture':'#outer'},
+                'south':{'uv':[15,10,16,12],'texture':'#outer'},
+                'west':{'uv':[10,10,11,12],'texture':'#outer'},
+                'east':{'uv':[12,10,13,12],'texture':'#outer'},
+                'up':{'uv':[11,8,12,10],'texture':'#outer'},
+                'down':{'uv':[12,8,13,10],'texture':'#outer'},
+            }
+            continue
         if element['name'].endswith('toe'):
             element['faces']={
                 'north':{'uv':[1,13,2,16],'texture':'#outer'},
