@@ -120,6 +120,9 @@ fun main(args: Array<String>) {
             events.call(PlayerPacketEvent(first,click))
             check(instance.entities.mapNotNull { (it.entityMeta as? TextDisplayMeta)?.text as? net.kyori.adventure.text.TextComponent }
                 .any { it.content()=="旅人の大剣 +4" }) { "Packet-driven forge did not execute" }
+            check(originalCursor.keys.all { id -> instance.entities.any { it.entityId==id } }) {
+                "A scene change removed the packet-driven cursor"
+            }
             val scroll=PlayerPacketEvent(first,ClientHeldItemChangePacket(1))
             events.call(scroll);check(scroll.isCancelled);check(first.heldSlot.toInt()==0)
             check(sessions.entityCount in 20..180)

@@ -152,7 +152,10 @@ class UiRenderer(private val player: Player, private val origin: Pos) : AutoClos
         scene.nodes.filter { it.id==previous || it.id==next }.forEach { background(it,next) }
     }
     fun cursor(pointer: UiPointer) {
-        if(packetCursor) return
+        if(packetCursor) {
+            wanted+=listOf("cursor-shadow","cursor-v","cursor-h","cursor-tip")
+            return
+        }
         // The exact 2px hit point reacts on the newest input packet. Vanilla
         // interpolates the larger body between metadata updates so motion is
         // continuous without shifting the position used for clicks.
