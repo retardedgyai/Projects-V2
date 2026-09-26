@@ -19,22 +19,17 @@ class CoreStoredGear(
 ) {
     val affixes = java.util.Collections.unmodifiableList(affixes.toList())
     init { require(tier in 1..4 && affixes.size <= 6 && affixes.all { it.gear == slot }) }
-    fun project(a: CoreAccount): CoreAccount = a.copy(
-        storedGear = a.storedGear.filterNot { it.identity.id == identity.id },
-        offers = a.offers.filterNot { it.gearId == identity.id },
-        weaponBroken = if (slot == CoreGearSlot.WEAPON) broken else a.weaponBroken,
-        armorBroken = if (slot == CoreGearSlot.ARMOR) broken else a.armorBroken,
-        weaponTier = if (slot == CoreGearSlot.WEAPON) tier else a.weaponTier,
-        armorTier = if (slot == CoreGearSlot.ARMOR) tier else a.armorTier,
-        weaponRarity = if (slot == CoreGearSlot.WEAPON) rarity else a.weaponRarity,
-        armorRarity = if (slot == CoreGearSlot.ARMOR) rarity else a.armorRarity,
-        weaponEnhancement = if (slot == CoreGearSlot.WEAPON) enhancement else a.weaponEnhancement,
-        armorEnhancement = if (slot == CoreGearSlot.ARMOR) enhancement else a.armorEnhancement,
-        equippedAffixes = a.equippedAffixes.filterNot { it.gear == slot } + affixes,
-        legacyLayouts = (a.legacyLayouts - slot) + if (legacy) setOf(slot) else emptySet(),
-        weaponIdentity = if (slot == CoreGearSlot.WEAPON) identity else a.weaponIdentity,
-        armorIdentity = if (slot == CoreGearSlot.ARMOR) identity else a.armorIdentity,
-    )
+    fun project(a: CoreAccount): CoreAccount {
+        val stripped = a.copy(equippedAffixes = a.equippedAffixes.filterNot { it.gear == slot },
+            storedGear = a.storedGear.filterNot { it.identity.id == identity.id },
+            offers = a.offers.filterNot { it.gearId == identity.id })
+        val equipped = if (slot == CoreGearSlot.WEAPON) stripped.copy(
+            weaponBroken = broken, weaponTier = tier, weaponRarity = rarity,
+            weaponEnhancement = enhancement, weaponIdentity = identity)
+        else stripped.withArmor(slot, CoreArmorPiece(identity, tier, rarity, enhancement, broken))
+        return equipped.copy(equippedAffixes = equipped.equippedAffixes + affixes,
+            legacyLayouts = (a.legacyLayouts - slot) + if (legacy) setOf(slot) else emptySet())
+    }
     val displayName get() = (if (broken) "【破損】" else "") + "T$tier Lv${CoreJourneyRules.itemLevel(identity, tier)} ${if (slot == CoreGearSlot.WEAPON) identity.base.displayName else slot.displayName} +${enhancement.level}"
 }
 
@@ -52,12 +47,12 @@ data class CoreMarketEntry(val seller: UUID, val offer: CoreMarketOffer, val gea
 
 object CoreEconomy {
     const val MAX_SILVER = 1_000_000_000L
-    const val MAX_GEAR = 108
+    const val MAX_GEAR = 432 // v10 armor sets expand into four individually owned pieces.
     const val MAX_OFFERS = 24
     const val DAILY_DELIVERIES = 3
     fun tradeable(resource: CoreResource) = resource.raw || resource in CoreLoopCatalog.refined.values
-    fun identity(a: CoreAccount, slot: CoreGearSlot) = if (slot == CoreGearSlot.WEAPON) a.weaponIdentity else a.armorIdentity
-    fun broken(a: CoreAccount, slot: CoreGearSlot) = if (slot == CoreGearSlot.WEAPON) a.weaponBroken else a.armorBroken
+    fun identity(a: CoreAccount, slot: CoreGearSlot) = if (slot == CoreGearSlot.WEAPON) a.weaponIdentity else a.armor(slot).identity
+    fun broken(a: CoreAccount, slot: CoreGearSlot) = if (slot == CoreGearSlot.WEAPON) a.weaponBroken else a.armor(slot).broken
     // Base variants share their family's repair supply, not equipment from unrelated classes.
     fun repairCompatible(a: CoreAccount, slot: CoreGearSlot, item: CoreStoredGear) = item.slot == slot &&
         item.tier == CoreAffixCatalog.gearTier(a, slot) && !item.identity.bound && item.enhancement.level == 0 &&

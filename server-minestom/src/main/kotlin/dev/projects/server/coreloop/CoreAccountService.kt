@@ -119,21 +119,23 @@ class CoreAccountService(private val repository: CoreAccountRepository,
             account.copy(journey = account.journey.learn(action.lesson)) to "戦闘の基本を習得しました"
         }
         is CoreAction.TemperEquipment -> {
-            requireHub(account); require(!CoreEconomy.broken(account, action.slot)) { "先に修理してください" }
-            val id = CoreEconomy.identity(account, action.slot)
-            val tier = CoreAffixCatalog.gearTier(account, action.slot)
+            val slot = CoreGearSlot.equipped(action.slot)
+            requireHub(account); require(!CoreEconomy.broken(account, slot)) { "先に修理してください" }
+            val id = CoreEconomy.identity(account, slot)
+            val tier = CoreAffixCatalog.gearTier(account, slot)
             val nextLevel = CoreJourneyRules.itemLevel(id, tier) + 1
             require(account.journey.legacy || nextLevel <= account.journey.level + 2) { "冒険レベルを上げるとさらに鍛錬できます" }
-            val paid = recipe(account, CoreJourneyRules.temper(account, action.slot)).first
+            val paid = recipe(account, CoreJourneyRules.temper(account, slot)).first
             val next = id.copy(itemLevel = nextLevel)
-            paid.copy(weaponIdentity = if (action.slot == CoreGearSlot.WEAPON) next else paid.weaponIdentity,
-                armorIdentity = if (action.slot == CoreGearSlot.ARMOR) next else paid.armorIdentity) to "装備Lv$nextLevel。MOD・品質・強化は維持しています"
+            paid.copy(weaponIdentity = if (slot == CoreGearSlot.WEAPON) next else paid.weaponIdentity)
+                .let { if (slot == CoreGearSlot.WEAPON) it else it.withArmor(slot, it.armor(slot).copy(identity = next)) } to
+                "装備Lv$nextLevel。MOD・品質・強化は維持しています"
         }
         is CoreAction.BuyOffer, is CoreAction.FillBuyOrder -> error("市場の取引処理を使用してください")
         is CoreAction.PlaceBuyOrder -> {
             requireHub(account)
             require(account.buyOrders.size < CoreEconomy.MAX_OFFERS) { "注文の上限です" }
-            val order = CoreBuyOrder(derived(requestId, "buy-order"), action.unitPrice, action.quantity, action.tier, action.resource, action.slot,
+            val order = CoreBuyOrder(derived(requestId, "buy-order"), action.unitPrice, action.quantity, action.tier, action.resource, action.slot?.let(CoreGearSlot::equipped),
                 if (action.slot == CoreGearSlot.WEAPON) account.weaponIdentity.base.family else null)
             require(account.silver >= order.escrow) { "預ける銀貨が足りません" }
             account.copy(silver = account.silver - order.escrow, buyOrders = account.buyOrders + order) to "購入注文を掲示しました。代金は預託済みです"
@@ -181,20 +183,21 @@ class CoreAccountService(private val repository: CoreAccountRepository,
         }
         is CoreAction.Manufacture -> {
             requireHub(account)
+            val slot = CoreGearSlot.equipped(action.slot)
             require(action.count in 1..16 && account.storedGear.size + action.count <= CoreEconomy.MAX_GEAR) { "装備庫の空きが足りません" }
-            require(action.slot == CoreGearSlot.WEAPON || action.base == CoreWeaponBase.STANDARD)
-            val paid = recipe(account, CoreProfessions.manufacture(action.slot, action.tier, action.count, action.base)).first
+            require(slot == CoreGearSlot.WEAPON || action.base == CoreWeaponBase.STANDARD)
+            val paid = recipe(account, CoreProfessions.manufacture(slot, action.tier, action.count, action.base)).first
             val random = kotlin.random.Random(account.craftingSeed xor requestId.leastSignificantBits xor account.revision)
             val items = (0 until action.count).map { index ->
-                CoreStoredGear(CoreGearIdentity(derived(requestId, "equipment:$index"), account.playerId, quality = CoreProfessions.quality(account, action.slot, random), base = action.base),
-                    action.slot, action.tier, CoreGearRarity.NORMAL, CoreEnhancementState())
+                CoreStoredGear(CoreGearIdentity(derived(requestId, "equipment:$index"), account.playerId, quality = CoreProfessions.quality(account, slot, random), base = action.base),
+                    slot, action.tier, CoreGearRarity.NORMAL, CoreEnhancementState())
             }
-            val profession = CoreProfession.crafting(action.slot)
+            val profession = CoreProfession.crafting(slot)
             val p = CoreProfessions.progress(account, profession)
             val next = paid.copy(storedGear = paid.storedGear + items, journey = paid.journey.learn(4), professions = paid.professions +
                 (profession to p.copy(xp = (p.xp + action.count.toLong() * action.tier * CoreMmoTuning.balance.craftXp).coerceAtMost(1_000_000_000))))
             CoreEnhancementCatalog.gainMastery(next, 5L * action.count) to
-                "T${action.tier} ${action.slot.displayName}を${action.count}個制作。製造品質は装備庫で確認できます"
+                "T${action.tier} ${slot.displayName}を${action.count}個制作。製造品質は装備庫で確認できます"
         }
         is CoreAction.Equip -> {
             requireHub(account)
@@ -225,12 +228,13 @@ class CoreAccountService(private val repository: CoreAccountRepository,
         }
         is CoreAction.Repair -> {
             requireHub(account)
-            require(CoreEconomy.broken(account, action.slot)) { "この装備は破損していません" }
+            val slot = CoreGearSlot.equipped(action.slot)
+            require(CoreEconomy.broken(account, slot)) { "この装備は破損していません" }
             val input = stored(account, action.input)
-            require(CoreEconomy.repairInput(account, action.slot, input)) { "同Tier・同系統・+0・未破損の装備が1個必要です（初期装備・出品中は不可）" }
+            require(CoreEconomy.repairInput(account, slot, input)) { "同Tier・同系統・+0・未破損の装備が1個必要です（初期装備・出品中は不可）" }
             account.copy(storedGear = account.storedGear.filterNot { it.identity.id == input.identity.id },
-                weaponBroken = if (action.slot == CoreGearSlot.WEAPON) false else account.weaponBroken,
-                armorBroken = if (action.slot == CoreGearSlot.ARMOR) false else account.armorBroken) to
+                weaponBroken = if (slot == CoreGearSlot.WEAPON) false else account.weaponBroken)
+                .let { if (slot == CoreGearSlot.WEAPON) it else it.withArmor(slot, it.armor(slot).copy(broken = false)) } to
                 "修理材料の装備1個を消費して修理しました。対象のMOD・強化値・天井・識別番号は維持しています"
         }
         is CoreAction.ListGear -> {
@@ -296,15 +300,16 @@ class CoreAccountService(private val repository: CoreAccountRepository,
             error("旧刻印石の直接付与・抽出・再抽選は終了しました。保管庫でオーブへ交換できます")
         is CoreAction.CraftEquipment -> {
             requireHub(account)
-            CoreCraftingCatalog.craft(account, action.gear, action.currency, requestId).copy(journey = account.journey.learn(5)) to
+            CoreCraftingCatalog.craft(account, CoreGearSlot.equipped(action.gear), action.currency, requestId).copy(journey = account.journey.learn(5)) to
                 "${action.gear.displayName}に${action.currency.displayName}を使用しました。結果を確認してください"
         }
         is CoreAction.EnhanceEquipment -> {
             requireHub(account)
-            val quote = CoreEnhancementCatalog.quote(account, action.gear, action.mode)
+            val slot = CoreGearSlot.equipped(action.gear)
+            val quote = CoreEnhancementCatalog.quote(account, slot, action.mode)
             require(quote.blockedReason == null) { quote.blockedReason ?: "強化できません" }
             val paid = recipe(account, quote.recipe).first
-            CoreEnhancementCatalog.resolve(paid, action.gear, quote, requestId, action.mode)
+            CoreEnhancementCatalog.resolve(paid, slot, quote, requestId, action.mode)
         }
         is CoreAction.ConvertLegacyStone -> {
             requireHub(account)
@@ -361,12 +366,16 @@ class CoreAccountService(private val repository: CoreAccountRepository,
             val upgraded = recipe(account, CoreLoopCatalog.weaponUpgrade(account.weaponTier))
             CoreEnhancementCatalog.gainMastery(upgraded.first.copy(weaponTier = account.weaponTier + 1, weaponIdentity = account.weaponIdentity.copy(itemLevel = 0)), 5) to upgraded.second
         }
-        CoreAction.UpgradeArmor -> {
+        CoreAction.UpgradeArmor, is CoreAction.UpgradeArmorPart -> {
             requireHub(account)
-            require(!account.armorBroken) { "先に防具を修理してください" }
-            require(account.armorTier < 4) { "防具は最高Tierです" }
-            val upgraded = recipe(account, CoreLoopCatalog.armorUpgrade(account.armorTier))
-            CoreEnhancementCatalog.gainMastery(upgraded.first.copy(armorTier = account.armorTier + 1, armorIdentity = account.armorIdentity.copy(itemLevel = 0)), 5) to upgraded.second
+            val slot = if (action is CoreAction.UpgradeArmorPart) action.slot else CoreGearSlot.CHEST
+            require(slot in CoreGearSlot.armorSlots) { "防具部位を選んでください" }
+            val piece = account.armor(slot)
+            require(!piece.broken) { "先に防具を修理してください" }
+            require(piece.tier < 4) { "防具は最高Tierです" }
+            val upgraded = recipe(account, CoreLoopCatalog.armorUpgrade(piece.tier))
+            CoreEnhancementCatalog.gainMastery(upgraded.first.withArmor(slot,
+                piece.copy(tier = piece.tier + 1, identity = piece.identity.copy(itemLevel = 0))), 5) to upgraded.second
         }
         is CoreAction.Exchange -> error("戦利品券と採取素材の交換は終了しました。採取または市場で入手してください")
         is CoreAction.Craft -> {

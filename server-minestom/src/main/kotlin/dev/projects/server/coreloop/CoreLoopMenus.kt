@@ -162,8 +162,9 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
         view(player, if (run == null) "開拓港 / 手帳" else "遠征 / 手帳", { journal(player) }) { v ->
             help(v, player) { journal(player) }
             tile(v, 0, 8, "${a.journey.job.displayName} Lv${a.journey.level} / 成長と職業", CoreLoopItems.icon(Material.EXPERIENCE_BOTTLE, CoreJourneyRules.next(a))) { career(player) }
-            v.canvas.left("旅の装備", equipment(a, CoreGearSlot.WEAPON) + lines("", "防具 T${a.armorTier} +${a.armorEnhancement.level}",
-                "HP ${CoreWeaponPresentation.health(a)}"), hero = CoreMenuArt.WEAPON)
+            v.canvas.left("旅の装備", equipment(a, CoreGearSlot.WEAPON) +
+                CoreGearSlot.armorSlots.flatMap { slot -> lines("${slot.displayName} T${a.armor(slot).tier} +${a.armor(slot).enhancement.level}") } +
+                lines("HP ${CoreWeaponPresentation.health(a)}"), hero = CoreMenuArt.WEAPON)
             if (run == null) {
                 v.canvas.right("次の遠征", listOf(emphasis("T1〜${a.unlockedMapTier}")) + lines("挑戦できる地域", "", "地図 ${a.maps.size}枚", "道の先に待つボス", "寄り道で見つかる素材"), hero = CoreMenuArt.EXPEDITION)
                 card(v, 9, 3, 3, "遠征", CoreMenuArt.EXPEDITION, CoreLoopItems.icon(Material.CARTOGRAPHY_TABLE, "地図台から遠征", "地図を選ぶ → 調整 → 出発", "T1の地図は無料で何度でも入手できます"), Tone.PRIMARY) { expeditions(player) }
@@ -454,7 +455,7 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
             v.canvas.left("${slot.displayName} Lv$level", lines("同Tier内で最大+9段階", "MODと強化はそのまま", "基礎性能を少しずつ向上", "冒険Lv+2まで鍛錬可能"), hero = gearArt(slot))
             quote.getOrNull()?.let { costPanel(v, a, it) } ?: v.canvas.right("このTierは完成", lines("次のTierでも好きな型を", "制作・購入できます"))
             card(v, 9, 3, 2, "武器", CoreMenuArt.WEAPON) { temper(player, CoreGearSlot.WEAPON) }
-            card(v, 12, 3, 2, "防具", CoreMenuArt.ARMOR) { temper(player, CoreGearSlot.ARMOR) }
+            card(v, 12, 3, 2, "防具", CoreMenuArt.ARMOR) { armorPartMenu(player) { temper(player, it) } }
             val ready = a.activeRun == null && !CoreEconomy.broken(a, slot) && quote.getOrNull()?.canAfford(a) == true && (a.journey.legacy || level + 1 <= a.journey.level + 2)
             card(v, 15, 3, 2, if (ready) "Lvを上げる" else "鍛錬不可", CoreMenuArt.FORGE, tone = if (ready) Tone.PRIMARY else Tone.DISABLED) {
                 mutate(v, player, CoreAction.TemperEquipment(slot), a.revision) { temper(player, slot) }
@@ -465,6 +466,24 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
 
     fun workshop(player: Player, tier: Int = game.account(player)?.weaponTier ?: 1) {
         forge(player, (selections[player.uuid] ?: CoreForgeLayout.Selection()).copy(tier = tier.coerceIn(1, 4)))
+    }
+
+    private fun armorPartMenu(player: Player, select: (CoreGearSlot) -> Unit) {
+        val a = game.account(player) ?: return
+        view(player, "防具の部位を選ぶ", { armorPartMenu(player, select) }, nativeChest = true) { v ->
+            CoreGearSlot.armorSlots.forEachIndexed { index, slot ->
+                val piece = a.armor(slot)
+                val material = listOf(Material.IRON_HELMET, Material.IRON_CHESTPLATE,
+                    Material.IRON_LEGGINGS, Material.IRON_BOOTS)[index]
+                v.items[19 + index * 2] = CoreLoopItems.icon(material,
+                    "${slot.displayName} T${piece.tier} +${piece.enhancement.level}",
+                    "${piece.rarity.displayName} / 品質 ${piece.identity.quality}%",
+                    if (piece.broken) "破損中" else "未破損", "クリックでこの部位を選択")
+                v.actions[19 + index * 2] = { select(slot) }
+            }
+            v.items[45] = CoreLoopItems.icon(Material.ARROW, "戻る")
+            v.actions[45] = { workshop(player) }
+        }
     }
 
     private fun forge(player: Player, requested: CoreForgeLayout.Selection) {
@@ -480,13 +499,18 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
                 }
             }
             help(v, player) { forge(player, s) }
-            if (s.tab != CoreForgeLayout.Tab.REFINE) CoreGearSlot.entries.forEach { gear ->
-                card(v, if (gear == CoreGearSlot.WEAPON) 9 else 12, 3, 1, gear.displayName, gearArt(gear),
-                    CoreLoopItems.icon(if (gear == CoreGearSlot.WEAPON) Material.IRON_SWORD else Material.IRON_CHESTPLATE,
-                        "対象を${gear.displayName}に変更", *equipment(a, gear).map { it.text }.toTypedArray()),
-                    if (s.gear == gear) Tone.SELECTED else Tone.NEUTRAL) {
-                    if (gear == CoreGearSlot.WEAPON && s.gear == gear && s.tab == CoreForgeLayout.Tab.CRAFT) weaponBases(player, s)
-                    else forge(player, s.copy(gear = gear, recipe = 0, currency = null))
+            if (s.tab != CoreForgeLayout.Tab.REFINE) {
+                card(v, 9, 3, 1, "武器", CoreMenuArt.WEAPON,
+                    CoreLoopItems.icon(Material.IRON_SWORD, "武器を選択", *equipment(a, CoreGearSlot.WEAPON).map { it.text }.toTypedArray()),
+                    if (s.gear == CoreGearSlot.WEAPON) Tone.SELECTED else Tone.NEUTRAL) {
+                    if (s.gear == CoreGearSlot.WEAPON && s.tab == CoreForgeLayout.Tab.CRAFT) weaponBases(player, s)
+                    else forge(player, s.copy(gear = CoreGearSlot.WEAPON, recipe = 0, currency = null))
+                }
+                card(v, 12, 3, 1, if (s.gear == CoreGearSlot.WEAPON) "防具" else s.gear.displayName, CoreMenuArt.ARMOR,
+                    CoreLoopItems.icon(Material.IRON_CHESTPLATE, "頭・胴・脚・足から対象を選ぶ"),
+                    if (s.gear in CoreGearSlot.armorSlots) Tone.SELECTED else Tone.NEUTRAL) {
+                    if (s.gear == CoreGearSlot.WEAPON) forge(player, s.copy(gear = CoreGearSlot.CHEST, recipe = 0, currency = null))
+                    else armorPartMenu(player) { forge(player, s.copy(gear = it, recipe = 0, currency = null)) }
                 }
             }
             back(v, player, if (journey(player).isEmpty) "手帳" else "元へ", compact = s.tab == CoreForgeLayout.Tab.ENHANCE) {
@@ -551,7 +575,7 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
         val maximum = quote.currentLevel == CoreEnhancementCatalog.MAX_LEVEL
         val mode = CoreForgeLayout.enhancementMode(a, s)
         val next = if (s.gear == CoreGearSlot.WEAPON) a.copy(weaponEnhancement = CoreEnhancementState(quote.targetLevel))
-            else a.copy(armorEnhancement = CoreEnhancementState(quote.targetLevel))
+            else a.withArmor(s.gear, a.armor(s.gear).copy(enhancement = CoreEnhancementState(quote.targetLevel)))
         val changes = if (s.gear == CoreGearSlot.WEAPON) listOf(
             Line("攻撃力", CoreUiComponents.MUTED),
             emphasis(if (maximum) "${CoreWeaponPresentation.damage(a)}" else "${CoreWeaponPresentation.damage(a)} → ${CoreWeaponPresentation.damage(next)}"),
@@ -661,7 +685,7 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
         val (recipe, action) = entry.build(count)
         val summary = CoreForgeSummary.recipe(a, recipe)
         val output = if (!isEquipment && entry.batches) recipe.outputs.flatMap { (key, amount) -> lines("${resourceName(key.resource)} ×$amount", "所持 ${a.amount(key)}") }
-            else lines("T${s.tier} ${s.gear.displayName} ×$count") + paragraph(if (s.gear == CoreGearSlot.WEAPON) s.base.displayName else "防具セット") + lines("新品を装備庫へ保管", "製造品質を個別抽選", "今の装備は変更なし")
+            else lines("T${s.tier} ${s.gear.displayName} ×$count") + paragraph(if (s.gear == CoreGearSlot.WEAPON) s.base.displayName else "防具・${s.gear.displayName}") + lines("新品を装備庫へ保管", "製造品質を個別抽選", "今の装備は変更なし")
         v.canvas.left("完成するもの", output + lines("今回 $count 回", "制作可能 $maximum 回") +
             (summary.blockedReason?.let { paragraph(it, CoreUiComponents.RED) } ?: lines("制作できます")),
             hero = recipe.outputs.keys.firstOrNull()?.let { materialArt(it.resource) } ?: gearArt(s.gear))
@@ -870,15 +894,15 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
         val last = (a.storedGear.size - 1).coerceAtLeast(0) / 36
         val current = page.coerceIn(0, last)
         view(player, "装備庫 / 銀貨${a.silver}", { equipmentStock(player, current) }, nativeChest = true) { v ->
-            CoreGearSlot.entries.forEachIndexed { index, slot ->
-                v.items[index] = CoreLoopItems.gear(a, slot, v.packed)
-                v.actions[index] = { gearMods(player, slot) }
-                val broken = CoreEconomy.broken(a, slot)
-                v.items[3 + index * 2] = CoreLoopItems.icon(if (broken) Material.ANVIL else Material.IRON_INGOT,
-                    "${slot.displayName}：${if (broken) "破損中 / 修理が必要" else "未破損"}", "遠征・戦闘では壊れません / +15以降の強化失敗で破損",
-                    "同Tier・同系統・+0・未破損を1個消費して修理", "MOD・強化値は失いません / クリックで修理へ")
-                v.actions[3 + index * 2] = { repairMenu(player, slot) }
+            CoreGearSlot.equipSlots.forEachIndexed { index, slot ->
+                val cell = listOf(0, 1, 2, 4, 5)[index]
+                v.items[cell] = CoreLoopItems.gear(a, slot, v.packed)
+                v.actions[cell] = { gearMods(player, slot) }
             }
+            v.items[3] = CoreLoopItems.icon(Material.ANVIL, "武器の修理")
+            v.actions[3] = { repairMenu(player, CoreGearSlot.WEAPON) }
+            v.items[6] = CoreLoopItems.icon(Material.ANVIL, "装備の修理", "部位を選んで修理できます")
+            v.actions[6] = { armorPartMenu(player) { repairMenu(player, it) } }
             v.items[8] = CoreLoopItems.icon(Material.ANVIL, "新しく制作する", "採取 → 精製 → 武器・防具を制作", "完成品は自動装備せず、この装備庫へ保管")
             v.actions[8] = { forge(player, CoreForgeLayout.Selection(tab = CoreForgeLayout.Tab.CRAFT)) }
             a.storedGear.drop(current * 36).take(36).forEachIndexed { index, item ->
@@ -1133,7 +1157,7 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
                     "経験値 ${progress.xp}", if (refine) "原料還元 ${level * CoreMmoTuning.balance.refineReturnMaxPercent / 100}%（端数は保持）" else "Lvが上がると製造品質の下限・抽選回数が向上",
                     "購入した素材でも経験値を獲得できます", "クリック：工房へ")
                 v.actions[27 + i] = { forge(player, CoreForgeLayout.Selection(tab = if (refine) CoreForgeLayout.Tab.REFINE else CoreForgeLayout.Tab.CRAFT,
-                    recipe = if (refine) i else 0, gear = if (p == CoreProfession.ARMORSMITH) CoreGearSlot.ARMOR else CoreGearSlot.WEAPON)) }
+                    recipe = if (refine) i else 0, gear = if (p == CoreProfession.ARMORSMITH) CoreGearSlot.CHEST else CoreGearSlot.WEAPON)) }
             }
             v.items[45] = CoreLoopItems.icon(Material.ARROW, "手帳へ"); v.actions[45] = { journal(player) }
         }
@@ -1191,7 +1215,7 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
                 v.items[10 + i] = CoreLoopItems.icon(CoreLoopItems.resourceMaterial(r), r.displayName)
                 v.actions[10 + i] = { orderQuote(player, tier, r) }
             }
-            CoreGearSlot.entries.forEachIndexed { i, s -> v.items[30 + i] = CoreLoopItems.icon(if (s == CoreGearSlot.WEAPON) Material.IRON_SWORD else Material.IRON_CHESTPLATE, "T$tier ${s.displayName} +0")
+            CoreGearSlot.equipSlots.forEachIndexed { i, s -> v.items[30 + i] = CoreLoopItems.icon(if (s == CoreGearSlot.WEAPON) Material.IRON_SWORD else Material.IRON_CHESTPLATE, "T$tier ${s.displayName} +0")
                 v.actions[30 + i] = { orderQuote(player, tier, slot = s) } }
             v.items[45] = CoreLoopItems.icon(Material.ARROW, "注文一覧へ"); v.actions[45] = { orders(player, tier) }
         }
@@ -1307,8 +1331,9 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
         val mods = a.equippedAffixes.filter { it.gear == gear }.sortedBy { it.index }
         val chosen = mods.getOrNull(selected)
         view(player, "装備 / MOD詳細", { gearMods(player, gear, selected) }) { v ->
-            CoreGearSlot.entries.forEachIndexed { index, g -> card(v, index * 3, 3, 1, g.displayName, gearArt(g),
-                CoreLoopItems.icon(Material.IRON_SWORD, "${g.displayName}を確認"), if (g == gear) Tone.SELECTED else Tone.NEUTRAL) { gearMods(player, g) } }
+            CoreGearSlot.equipSlots.forEachIndexed { index, g -> tile(v, index, 1, if(g == CoreGearSlot.WEAPON) "剣" else g.displayName,
+                CoreLoopItems.icon(if(g == CoreGearSlot.WEAPON) Material.IRON_SWORD else Material.IRON_CHESTPLATE,
+                    "${g.displayName}を確認"), if (g == gear) Tone.SELECTED else Tone.NEUTRAL) { gearMods(player, g) } }
             help(v, player) { gearMods(player, gear, selected) }
             v.canvas.left("現在の装備", equipment(a, gear) + lines("アイテムLv ${1 + (CoreAffixCatalog.gearTier(a, gear) - 1) * 15}", "内部Tier T${CoreAffixCatalog.gearTier(a, gear)}", "下の装備に全情報"), hero = gearArt(gear))
             v.canvas.right("選択したMOD", chosen?.let {
@@ -1322,6 +1347,7 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
                     if (index == selected) Tone.SELECTED else Tone.NEUTRAL) { gearMods(player, gear, index) }
             }
             v.items[40] = CoreLoopItems.gear(a, gear, v.packed)
+            tile(v, 48, 3, "修理", CoreLoopItems.icon(Material.ANVIL, "${gear.displayName}を修理する")) { repairMenu(player, gear) }
             back(v, player) { if (a.activeRun == null) forge(player, (selections[player.uuid] ?: CoreForgeLayout.Selection()).copy(gear = gear)) else journal(player) }
             tile(v, 51, 3, "加工へ", CoreLoopItems.icon(Material.ENCHANTING_TABLE, "この装備のMODを加工する", "港で使用できます"),
                 if (a.activeRun == null) Tone.PRIMARY else Tone.DISABLED) { affixes(player, selected = gear) }

@@ -217,6 +217,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
                     weaponLevelPower = { accounts[player.uuid]?.let { CoreJourneyRules.power(it.weaponIdentity, it.weaponTier) } ?: 1.0 },
                     armorLevelPower = { accounts[player.uuid]?.let { CoreJourneyRules.power(it.armorIdentity, it.armorTier) } ?: 1.0 },
                     allies = { actors.values.toList() },
+                    gearSource = { accounts[player.uuid]?.let(CoreCombatGear::from) },
                     onLesson = { bit -> if (accounts[player.uuid]?.journey?.knows(bit) == false) transact(player.uuid, CoreAction.LearnCombat(bit)) }) {
                     if (!dungeons.defeated(player)) {
                         player.showTitle(Title.title(CoreLoopItems.text("力尽きた…", NamedTextColor.RED), CoreLoopItems.text("獲得素材を持って港へ戻ります")))
@@ -377,7 +378,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
             action == "journal" -> menus.journal(player)
             action == "affix" -> CoreLoopItems.stoneId(item)?.let { menus.stoneDetail(player, it) }
             action == "currency" -> menus.affixes(player)
-            action == "armor" -> menus.gearMods(player, CoreGearSlot.ARMOR)
+            action == "armor" -> menus.gearMods(player, CoreGearSlot.equipped(CoreLoopItems.gearSlot(item) ?: CoreGearSlot.CHEST))
             action == "weapon" -> actor(player)?.skill(0)
             action?.startsWith("skill:") == true -> action.substringAfter(':').toIntOrNull()?.let { actor(player)?.skill(it) }
             action == "potion" -> consume(player, CoreResource.POTION)
@@ -842,7 +843,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         val session = sessions[player.uuid]
         val message = combatLab.summary(player) ?: if (isDeparting(player)) "遠征先を準備中…"
         else if (dungeons.run(player) != null) dungeons.run(player)!!.objective()
-        else if (session == null) "開拓港  T${a.weaponTier} / T${a.armorTier}  手帳 [9]"
+        else if (session == null) "開拓港  武器T${a.weaponTier} / 防具T${CoreGearSlot.armorSlots.minOf { a.armor(it).tier }}  手帳 [9]"
         else if (a.activeRun?.bossDefeated == true) "討伐達成・手帳 [9] で帰還"
         else if (session.arena != null) "${session.arena.displayName} — ${session.combat.bossName()}"
         else "道の先のボスへ  戦利品 ${session.loot.remainingCount()}"
@@ -863,7 +864,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         a.currencies.values.any { it > 0 } && a.equippedAffixes.isEmpty() -> listOf("刻印工房でオーブを使い、MODを抽選", "変成でマジック / 錬金でレア装備へ")
         a.fragments.values.any { it >= 3 } -> listOf("欠片が集まった！境界の試練に挑戦", "専用ボスから特別な加工オーブを狙おう")
         a.weaponTier < a.unlockedMapTier -> listOf("工房で装備を作り、装備庫から装備しよう", "足りない素材は採取、または市場で購入")
-        a.weaponTier == 4 && a.armorTier == 4 -> listOf("T4装備完成！石板で地図を調整", "密集地域や高Tierの資源を狙って周回しよう")
+        a.weaponTier == 4 && CoreGearSlot.armorSlots.all { a.armor(it).tier == 4 } -> listOf("T4装備完成！石板で地図を調整", "密集地域や高Tierの資源を狙って周回しよう")
         else -> listOf("地図台で地図を選び、遠征へ", "ボス討伐で次Tierの地図を解放")
     }
 

@@ -84,17 +84,19 @@ class CoreBreakRepairTest {
     }
 
     @Test fun `same tier family plus0 donor may have MODs and rarity and repair changes only target break flag`() {
-        for (tier in 1..4) for (slot in CoreGearSlot.entries) {
+        for (tier in 1..4) for (slot in CoreGearSlot.equipSlots) {
             val input = donor(slot, tier, mods = true)
-            val initial = CoreCraftingCatalog.craft(rich(tier), slot, CoreCraftingCurrency.ALCHEMY, UUID.randomUUID())
+            val built = CoreCraftingCatalog.craft(rich(tier), slot, CoreCraftingCurrency.ALCHEMY, UUID.randomUUID())
                 .copy(weaponBroken = true, armorBroken = true, storedGear = listOf(input),
                     weaponEnhancement = CoreEnhancementState(20, 7), armorEnhancement = CoreEnhancementState(20, 8))
+            val initial = if (slot == weapon) built else built.withArmor(slot, built.armor(slot).copy(broken = true))
             assertTrue(input.affixes.isNotEmpty())
             assertTrue(CoreEconomy.repairInput(initial, slot, input))
             val f = Fixture(initial)
             val op = f.op(CoreAction.Repair(slot, input.identity.id))
             assertEquals(CoreTransactionStatus.COMMITTED, f.service.transact(f.id, op).status)
-            val expected = initial.copy(storedGear = emptyList(), weaponBroken = slot != weapon, armorBroken = slot == weapon)
+            val expected = initial.copy(storedGear = emptyList()).let { if (slot == weapon) it.copy(weaponBroken = false)
+                else it.withArmor(slot, it.armor(slot).copy(broken = false)) }
             assertEquals(CoreAccountCodec.encode(expected), CoreAccountCodec.encode(f.a.copy(revision = initial.revision, receipts = initial.receipts)))
             assertFalse(CoreEconomy.broken(f.a, slot))
             f.service.forget(f.id); f.service.open(f.id)
@@ -176,7 +178,7 @@ class CoreBreakRepairTest {
     private fun checksum(body: String) = body + "checksum\t" + MessageDigest.getInstance("SHA-256")
         .digest(body.toByteArray(UTF_8)).joinToString("") { "%02x".format(it) } + "\n"
     private fun v5(a: CoreAccount, wear: String = "0"): String {
-        val body = CoreAccountCodec.encode(a).substringBefore("checksum\t").lineSequence().filterNot(::coreExpansionRow).map { row ->
+        val body = armorV10Body(a).lineSequence().filterNot(::coreExpansionRow).map { row ->
             val parts = row.split('\t').toMutableList()
             when (parts[0]) {
                 "PROJECTS_CORE_LOOP" -> parts[1] = "5"
@@ -203,7 +205,7 @@ class CoreBreakRepairTest {
             assertFalse(Files.exists(backup)); assertEquals(old, Files.readString(file))
             assertTrue(service.transact(original.playerId, CoreOperation(UUID.randomUUID(), loaded.revision, CoreAction.ClaimMap(1, 8))).successful)
             assertEquals(old, Files.readString(backup))
-            assertTrue(Files.readString(file).startsWith("PROJECTS_CORE_LOOP\t10\t"))
+            assertTrue(Files.readString(file).startsWith("PROJECTS_CORE_LOOP\t11\t"))
         }
         assertFailsWith<IllegalArgumentException> { CoreAccountCodec.decode(v5(original, "-1"), original.playerId) }
         assertFailsWith<IllegalArgumentException> { CoreAccountCodec.decode(v5(original, "101"), original.playerId) }

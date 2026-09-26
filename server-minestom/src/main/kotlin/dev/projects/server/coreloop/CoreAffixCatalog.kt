@@ -6,7 +6,16 @@ import java.util.Random
 import java.util.UUID
 import kotlin.math.roundToInt
 
-enum class CoreGearSlot(val displayName: String) { WEAPON("武器"), ARMOR("防具") }
+enum class CoreGearSlot(val displayName: String) {
+    WEAPON("武器"), ARMOR("防具"), HEAD("頭"), CHEST("胴"), LEGS("脚"), FEET("足");
+
+    companion object {
+        /** ARMOR is retained only to decode pre-v11 saves and old requests. */
+        val armorSlots = listOf(HEAD, CHEST, LEGS, FEET)
+        val equipSlots = listOf(WEAPON) + armorSlots
+        fun equipped(slot: CoreGearSlot) = if (slot == ARMOR) CHEST else slot
+    }
+}
 enum class CoreLootKind { NORMAL, ELITE, BOSS }
 enum class CoreAffixGroup(val displayName: String) { PREFIX("接頭"), SUFFIX("接尾") }
 enum class CoreAffixCategory(val displayName: String) { OFFENSE("攻撃"), RESOURCE("スキル・資源"), DEFENSE("防御"), UTILITY("機動") }
@@ -105,9 +114,9 @@ object CoreAffixCatalog {
         CoreAffixDefinition("projects:focus", "集中の刻印石", CoreAffixStat.COOLDOWN_REDUCTION, CoreAffixCategory.RESOURCE, 3, 5, 2),
         CoreAffixDefinition("projects:vitality", "生命の刻印石", CoreAffixStat.HEALTH, CoreAffixCategory.DEFENSE, 8, 15, 8),
         CoreAffixDefinition("projects:guard", "守護の刻印石", CoreAffixStat.MITIGATION, CoreAffixCategory.DEFENSE, 2, 3, 1,
-            setOf(CoreGearSlot.ARMOR)),
+            (CoreGearSlot.armorSlots + CoreGearSlot.ARMOR).toSet()),
         CoreAffixDefinition("projects:stride", "軽歩の刻印石", CoreAffixStat.MOVE_SPEED, CoreAffixCategory.UTILITY, 2, 3, 1,
-            setOf(CoreGearSlot.ARMOR)),
+            (CoreGearSlot.armorSlots + CoreGearSlot.ARMOR).toSet()),
         CoreAffixDefinition("projects:precision", "会心の刻印石", CoreAffixStat.CRIT_CHANCE_INCREASED, CoreAffixCategory.OFFENSE, 10, 20, 10),
         CoreAffixDefinition("projects:ferocity", "痛撃の刻印石", CoreAffixStat.CRIT_MULTIPLIER, CoreAffixCategory.OFFENSE, 8, 15, 5),
         CoreAffixDefinition("projects:onslaught", "連撃の刻印石", CoreAffixStat.NORMAL_DAMAGE, CoreAffixCategory.OFFENSE, 8, 14, 5),
@@ -152,9 +161,9 @@ object CoreAffixCatalog {
 
     fun definition(stone: CoreAffixStone): CoreAffixDefinition? = byId[stone.modId]?.takeIf { stone.definitionRevision == 1 }
     fun valid(stone: CoreAffixStone): Boolean = definition(stone)?.range(stone.tier)?.let { stone.value in it.first.toDouble()..it.last.toDouble() } == true
-    fun gearTier(account: CoreAccount, gear: CoreGearSlot): Int = if (gear == CoreGearSlot.WEAPON) account.weaponTier else account.armorTier
+    fun gearTier(account: CoreAccount, gear: CoreGearSlot): Int = if (gear == CoreGearSlot.WEAPON) account.weaponTier else account.armor(gear).tier
     fun capacity(account: CoreAccount, gear: CoreGearSlot): Int = rarity(account, gear).capacity
-    fun rarity(account: CoreAccount, gear: CoreGearSlot): CoreGearRarity = if (gear == CoreGearSlot.WEAPON) account.weaponRarity else account.armorRarity
+    fun rarity(account: CoreAccount, gear: CoreGearSlot): CoreGearRarity = if (gear == CoreGearSlot.WEAPON) account.weaponRarity else account.armor(gear).rarity
     fun qualityPercent(stone: CoreAffixStone): Int {
         val range = definition(stone)?.range(stone.tier) ?: return 0
         return ((stone.value - range.first) / (range.last - range.first).coerceAtLeast(1) * 100).roundToInt().coerceIn(0, 100)

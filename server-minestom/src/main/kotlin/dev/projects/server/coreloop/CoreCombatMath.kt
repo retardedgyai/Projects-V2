@@ -25,14 +25,22 @@ data class CoreCombatGear(
     val weaponQuality: Int = 0, val armorQuality: Int = 0,
     val weaponLevelPower: Double = 1.0, val armorLevelPower: Double = 1.0,
     val weaponBroken: Boolean = false, val armorBroken: Boolean = false,
+    val armorPieces: List<CoreArmorCombatPiece> = emptyList(),
 ) {
     companion object {
         fun from(a: CoreAccount) = CoreCombatGear(a.weaponTier, a.armorTier, a.weaponIdentity.base,
             a.weaponEnhancement.level, a.armorEnhancement.level, a.weaponIdentity.quality, a.armorIdentity.quality,
             CoreJourneyRules.power(a.weaponIdentity, a.weaponTier), CoreJourneyRules.power(a.armorIdentity, a.armorTier),
-            a.weaponBroken, a.armorBroken)
+            a.weaponBroken, a.armorBroken, CoreGearSlot.armorSlots.map { slot ->
+                val piece = a.armor(slot)
+                CoreArmorCombatPiece(slot, piece.tier, piece.enhancement.level, piece.identity.quality,
+                    CoreJourneyRules.power(piece.identity, piece.tier), piece.broken)
+            })
     }
 }
+
+data class CoreArmorCombatPiece(val slot: CoreGearSlot, val tier: Int, val enhancement: Int,
+    val quality: Int, val levelPower: Double, val broken: Boolean)
 
 data class CoreCombatSheet(val ad: Double, val ap: Double, val ar: Double, val mr: Double,
     val health: Double, val mana: Double, val attackSpeed: Double, val healingPower: Double,
@@ -49,10 +57,27 @@ data class CoreCombatSheet(val ad: Double, val ap: Double, val ar: Double, val m
                 g.weaponLevelPower * (1 + g.weaponQuality.coerceIn(0, 30) / 100.0) * (1 + .04 * g.weaponEnhancement.coerceIn(0, 30))
             // A staff grants its own AP. It does not turn AD, or AD affixes, into AP.
             val spellWeapon = if (g.base == CoreWeaponBase.STAFF || g.base == CoreWeaponBase.TOME) weapon else 0.0
-            val armorHp = if (g.armorBroken) 100.0 else (100 + (g.armorTier - 1) * 30) * g.armorLevelPower *
-                (1 + g.armorQuality.coerceIn(0, 30) / 100.0) * (1 + .02 * g.armorEnhancement.coerceIn(0, 30))
+            val weights = mapOf(CoreGearSlot.HEAD to .15, CoreGearSlot.CHEST to .40,
+                CoreGearSlot.LEGS to .30, CoreGearSlot.FEET to .15)
+            val sameArmor = g.armorPieces.isNotEmpty() && g.armorPieces.map { it.copy(slot = CoreGearSlot.HEAD) }.distinct().size == 1
+            val armorHp = if (g.armorPieces.isEmpty()) {
+                if (g.armorBroken) 100.0 else (100 + (g.armorTier - 1) * 30) * g.armorLevelPower *
+                    (1 + g.armorQuality.coerceIn(0, 30) / 100.0) * (1 + .02 * g.armorEnhancement.coerceIn(0, 30))
+            } else if (sameArmor) {
+                val p = g.armorPieces.first()
+                if (p.broken) 100.0 else (100 + (p.tier - 1) * 30) * p.levelPower *
+                    (1 + p.quality.coerceIn(0, 30) / 100.0) * (1 + .02 * p.enhancement.coerceIn(0, 30))
+            } else g.armorPieces.sumOf { p -> weights.getValue(p.slot) * if (p.broken) 100.0 else
+                (100 + (p.tier - 1) * 30) * p.levelPower * (1 + p.quality.coerceIn(0, 30) / 100.0) *
+                    (1 + .02 * p.enhancement.coerceIn(0, 30)) }
             // Preserve the old unmodified tier protection, expressed as real AR/MR instead of a second reduction layer.
-            val defense = if (g.armorBroken) 0.0 else 300.0 * (1 / (1 - .1 * (g.armorTier.coerceIn(1, 4) - 1)) - 1)
+            val defense = if (g.armorPieces.isEmpty()) {
+                if (g.armorBroken) 0.0 else 300.0 * (1 / (1 - .1 * (g.armorTier.coerceIn(1, 4) - 1)) - 1)
+            } else if (sameArmor) {
+                val p = g.armorPieces.first()
+                if (p.broken) 0.0 else 300.0 * (1 / (1 - .1 * (p.tier.coerceIn(1, 4) - 1)) - 1)
+            } else g.armorPieces.sumOf { p -> if (p.broken) 0.0 else weights.getValue(p.slot) *
+                300.0 * (1 / (1 - .1 * (p.tier.coerceIn(1, 4) - 1)) - 1) }
             return CoreCombatSheet(
                 if (g.weaponBroken) 0.0 else CoreCombatMath.power(weapon, b(CoreAffixStat.AD_FLAT), b(CoreAffixStat.AD_PERCENT)),
                 if (g.weaponBroken) 0.0 else CoreCombatMath.power(spellWeapon, b(CoreAffixStat.AP_FLAT), b(CoreAffixStat.AP_PERCENT)),

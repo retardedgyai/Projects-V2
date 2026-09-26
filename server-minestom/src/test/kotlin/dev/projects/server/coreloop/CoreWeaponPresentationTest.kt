@@ -40,6 +40,9 @@ class CoreWeaponPresentationTest {
         for (tier in 1..4) for (level in 0..30) {
             account = account.copy(weaponTier = tier, armorTier = tier,
                 weaponEnhancement = CoreEnhancementState(level), armorEnhancement = CoreEnhancementState(level))
+            account = CoreGearSlot.armorSlots.fold(account) { a, slot ->
+                a.withArmor(slot, a.armor(slot).copy(tier = tier, enhancement = CoreEnhancementState(level)))
+            }
             assertEquals(actor.attackDamage.roundToInt(), CoreWeaponPresentation.damage(account))
             assertEquals((actor.attackSpeed - 1) * 100, CoreWeaponPresentation.attackSpeedPercent(account), 0.000001)
             assertEquals(actor.maxHealth, CoreWeaponPresentation.health(account))
@@ -53,7 +56,9 @@ class CoreWeaponPresentationTest {
             equippedAffixes = listOf(
                 CoreEquippedAffix(CoreGearSlot.WEAPON, 0, CoreAffixStone(UUID.randomUUID(), "projects:force", 4, 22.0)),
                 CoreEquippedAffix(CoreGearSlot.ARMOR, 0, CoreAffixStone(UUID.randomUUID(), "projects:vitality", 4, 39.0))))
-        var a = original.copy(weaponBroken = true, armorBroken = true)
+        var a = CoreGearSlot.armorSlots.fold(original.copy(weaponBroken = true)) { current, slot ->
+            current.withArmor(slot, current.armor(slot).copy(broken = true))
+        }
         val actor = CorePlayerCombat(p, { a.weaponTier }, { a.armorTier }, { null },
             statSource = { CoreAffixCatalog.stats(a) }, weaponEnhancement = { a.weaponEnhancement.level },
             armorEnhancement = { a.armorEnhancement.level }, weaponBroken = { a.weaponBroken }, armorBroken = { a.armorBroken }) {}

@@ -44,4 +44,24 @@ class CorePolish05ForgeFlowTest {
         assertTrue(flow.action("enhance"))
         assertFalse(flow.scene().nodes.any { it.id=="modal-confirm" })
     }
+
+    @Test fun fourArmorRowsSelectAndConfirmTheirOwnSlot() {
+        val id = UUID.randomUUID()
+        val empty = CoreAccount(id)
+        val costs = CoreEnhancementCatalog.quote(empty, CoreGearSlot.HEAD).recipe.costs
+        val current = empty.copy(balances = costs.mapValues { it.value + 5 })
+        var dispatched: CoreGearSlot? = null
+        val flow = CorePolish05ForgeFlow(scene(), { current }, { true }) { slot, _, _, done ->
+            dispatched = slot
+            done(true)
+        }
+        val initial = flow.scene()
+        assertEquals(5, initial.nodes.count { it.id.startsWith("live-gear-hit-") })
+        assertTrue(flow.action("select:head"))
+        assertTrue(flow.scene().nodes.single { it.id == "hero-name" }.text.contains("頭"))
+        assertTrue(flow.action("enhance"))
+        assertTrue(flow.scene().nodes.any { it.id == "modal-confirm" })
+        assertTrue(flow.action("confirm"))
+        assertEquals(CoreGearSlot.HEAD, dispatched)
+    }
 }

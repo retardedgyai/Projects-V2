@@ -32,19 +32,19 @@ class CoreEconomyTest {
     @Test fun `manufacture T1 through T4 creates distinct empty gear without replacing current equipment`() {
         val f = Fixture(); val id = f.create()
         val before = f.a(id)
-        for (tier in 1..4) for (slot in CoreGearSlot.entries) {
+        for (tier in 1..4) for (slot in CoreGearSlot.equipSlots) {
             val item = f.craft(id, slot, tier)
             assertEquals(tier, item.tier); assertEquals(id, item.identity.crafter)
             assertFalse(item.identity.bound); assertTrue(item.affixes.isEmpty())
         }
-        assertEquals(8, f.a(id).storedGear.map { it.identity.id }.distinct().size)
+        assertEquals(20, f.a(id).storedGear.map { it.identity.id }.distinct().size)
         assertEquals(before.weaponIdentity, f.a(id).weaponIdentity)
         assertEquals(1, f.a(id).weaponTier)
         assertEquals(96, f.a(id).amount(CoreResource.INGOT, 4))
         val item = f.a(id).storedGear.last()
         val equipped = f.commit(id, CoreAction.Equip(item.identity.id))
-        assertEquals(item.identity, equipped.armorIdentity)
-        assertTrue(equipped.storedGear.any { it.identity == before.armorIdentity })
+        assertEquals(item.identity, equipped.armor(item.slot).identity)
+        assertTrue(equipped.storedGear.any { it.identity == before.armor(item.slot).identity })
         f.service.forget(id); f.service.open(id)
         assertEquals(CoreAccountCodec.encode(equipped), CoreAccountCodec.encode(f.a(id)))
     }
@@ -145,7 +145,7 @@ class CoreEconomyTest {
         val a = CoreCraftingCatalog.craft(CoreAccount(id, revision = 7, weaponTier = 4,
             weaponEnhancement = CoreEnhancementState(23, 1), currencies = mapOf(CoreCraftingCurrency.ALCHEMY to 1L)),
             CoreGearSlot.WEAPON, CoreCraftingCurrency.ALCHEMY, UUID.randomUUID())
-        val body = CoreAccountCodec.encode(a).substringBefore("checksum\t").lineSequence().filterNot(::coreExpansionRow)
+        val body = armorV10Body(a).lineSequence().filterNot(::coreExpansionRow)
             .filterNot { it.startsWith("identity\t") || it.startsWith("economy\t") }.joinToString("\n")
             .replaceFirst("PROJECTS_CORE_LOOP\t10\t", "PROJECTS_CORE_LOOP\t4\t")
         val checksum = java.security.MessageDigest.getInstance("SHA-256").digest(body.toByteArray()).joinToString("") { "%02x".format(it) }
@@ -160,7 +160,7 @@ class CoreEconomyTest {
         assertEquals(old, Files.readString(file)) // read does not migrate the account
         assertTrue(service.transact(id, CoreOperation(UUID.randomUUID(), 7, CoreAction.ClaimMap(1, 9))).successful)
         assertEquals(old, Files.readString(dir.resolve("$id.account.v4.bak")))
-        assertTrue(Files.readString(file).startsWith("PROJECTS_CORE_LOOP\t10\t"))
+        assertTrue(Files.readString(file).startsWith("PROJECTS_CORE_LOOP\t11\t"))
     }
 
     @Test fun `inventory capacity and failing ordinary save never spend inputs`() {

@@ -38,6 +38,7 @@ internal class CorePlayerCombat(
     private val armorLevelPower: () -> Double = { 1.0 },
     private val onLesson: (Int) -> Unit = {},
     private val allies: () -> List<CorePlayerCombat> = { emptyList() },
+    private val gearSource: () -> CoreCombatGear? = { null },
     private val onDefeated: () -> Unit,
 ) {
     private val normal = GreatswordCombo()
@@ -85,7 +86,7 @@ internal class CorePlayerCombat(
     val mana: Int get() = manaValue.toInt()
     var health = 100.0
         private set
-    val sheet: CoreCombatSheet get() = CoreCombatSheet.from(CoreCombatGear(weaponTier(), armorTier(), weaponBase(),
+    val sheet: CoreCombatSheet get() = CoreCombatSheet.from(gearSource() ?: CoreCombatGear(weaponTier(), armorTier(), weaponBase(),
         weaponEnhancement(), armorEnhancement(), weaponQuality(), armorQuality(), weaponLevelPower(), armorLevelPower(),
         weaponBroken(), armorBroken()), statSource()).specialize(journey())
     val maxMana: Int get() = sheet.mana.toInt().coerceAtLeast(1)

@@ -37,17 +37,18 @@ class CoreAccountTest {
         f.service.forget(f.player); f.service.open(f.player)
         for (tier in 1..4) {
             val run = f.start(tier)
-            for (raw in CoreLoopCatalog.refined.keys) f.commit(CoreAction.Gather(run, "node-$raw", raw, 16))
+            for (raw in CoreLoopCatalog.refined.keys) f.commit(CoreAction.Gather(run, "node-$raw", raw, 64))
             f.commit(CoreAction.BossReward(run))
             f.commit(CoreAction.FinishRun(run))
             assertEquals(CoreTransactionStatus.REJECTED, f.perform(CoreAction.Exchange(CoreResource.ORE, tier)).status)
-            for (raw in CoreLoopCatalog.refined.keys) f.commit(CoreAction.Refine(raw, tier, 8))
-            for (slot in CoreGearSlot.entries) {
+            for (raw in CoreLoopCatalog.refined.keys) f.commit(CoreAction.Refine(raw, tier, 32))
+            for (slot in CoreGearSlot.equipSlots) {
                 val item = f.commit(CoreAction.Manufacture(slot, tier)).storedGear.last()
                 f.commit(CoreAction.Equip(item.identity.id))
             }
             assertEquals(tier, f.account.weaponTier)
             assertEquals(tier, f.account.armorTier)
+            assertTrue(CoreGearSlot.armorSlots.all { f.account.armor(it).tier == tier })
             f.service.forget(f.player)
             assertIs<CoreAccountLoadResult.Ready>(f.service.open(f.player))
             assertEquals(tier, f.account.weaponTier)

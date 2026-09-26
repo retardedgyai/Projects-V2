@@ -41,6 +41,12 @@ data class CoreActiveRun(val id: UUID, val map: CoreOwnedMap, val bossDefeated: 
 }
 data class CoreReceipt(val fingerprint: String, val revision: Long, val message: String)
 
+data class CoreArmorPiece(val identity: CoreGearIdentity, val tier: Int = 1,
+    val rarity: CoreGearRarity = CoreGearRarity.NORMAL,
+    val enhancement: CoreEnhancementState = CoreEnhancementState(), val broken: Boolean = false) {
+    init { require(tier in 1..4) }
+}
+
 /** One immutable, independently persisted aggregate; inventories are projections of this ledger. */
 class CoreAccount(
     val playerId: UUID,
@@ -78,7 +84,22 @@ class CoreAccount(
     buyOrders: List<CoreBuyOrder> = emptyList(),
     dungeonRecords: Map<Int, Int> = emptyMap(),
     val journey: CoreJourney = CoreJourney(),
+    armorParts: Map<CoreGearSlot, CoreArmorPiece> = CoreGearSlot.armorSlots.filterNot { it == CoreGearSlot.CHEST }
+        .associateWith { slot -> CoreArmorPiece(CoreGearIdentity.legacy(playerId, slot).copy(quality = armorIdentity.quality),
+            armorTier, CoreCraftingCatalog.inferRarity(equippedAffixes, slot), armorEnhancement, armorBroken) },
 ) {
+    /** CHEST owns the v10 armor fields so older callers and fixtures remain readable. */
+    val armorParts = Collections.unmodifiableMap(armorParts.toMap())
+    fun armor(slot: CoreGearSlot): CoreArmorPiece = when (CoreGearSlot.equipped(slot)) {
+        CoreGearSlot.CHEST -> CoreArmorPiece(armorIdentity, armorTier, armorRarity, armorEnhancement, armorBroken)
+        else -> requireNotNull(armorParts[slot]) { "防具部位ではありません: $slot" }
+    }
+    fun withArmor(slot: CoreGearSlot, piece: CoreArmorPiece): CoreAccount = when (CoreGearSlot.equipped(slot)) {
+        CoreGearSlot.CHEST -> copy(armorIdentity = piece.identity, armorTier = piece.tier,
+            armorRarity = piece.rarity, armorEnhancement = piece.enhancement, armorBroken = piece.broken)
+        CoreGearSlot.HEAD, CoreGearSlot.LEGS, CoreGearSlot.FEET -> copy(armorParts = armorParts + (slot to piece))
+        else -> error("防具部位ではありません: $slot")
+    }
     val professions = Collections.unmodifiableMap(professions.toMap())
     val buyOrders = Collections.unmodifiableList(buyOrders.toList())
     val dungeonRecords = Collections.unmodifiableMap(dungeonRecords.toMap())
@@ -101,9 +122,11 @@ class CoreAccount(
         require(smithingXp in 0..CoreEnhancementCatalog.MAX_SMITHING_XP)
         require(silver in 0..CoreEconomy.MAX_SILVER && deliveries in 0..CoreEconomy.DAILY_DELIVERIES && deliveryDay >= 0)
         require(storedGear.size <= CoreEconomy.MAX_GEAR && offers.size <= CoreEconomy.MAX_OFFERS)
-        val identities = storedGear.map { it.identity.id } + weaponIdentity.id + armorIdentity.id
+        require(armorParts.keys == setOf(CoreGearSlot.HEAD, CoreGearSlot.LEGS, CoreGearSlot.FEET))
+        val identities = storedGear.map { it.identity.id } + weaponIdentity.id + armorIdentity.id + armorParts.values.map { it.identity.id }
         require(identities.distinct().size == identities.size)
-        (storedGear.map { it.identity to it.tier } + listOf(weaponIdentity to weaponTier, armorIdentity to armorTier)).forEach { (id, tier) ->
+        (storedGear.map { it.identity to it.tier } + listOf(weaponIdentity to weaponTier, armorIdentity to armorTier) +
+            armorParts.values.map { it.identity to it.tier }).forEach { (id, tier) ->
             require(id.itemLevel == 0 || id.itemLevel in CoreJourneyRules.floor(tier)..CoreJourneyRules.ceiling(tier))
         }
         require(offers.map { it.id }.distinct().size == offers.size)
@@ -122,7 +145,7 @@ class CoreAccount(
         require(receipts.size <= CoreLoopCatalog.MAX_RECEIPTS && claimedSources.size <= CoreLoopCatalog.MAX_SOURCES)
         require(receipts.values.all { it.revision in 1..revision && it.fingerprint.matches(Regex("[0-9a-f]{64}")) && it.message.length <= 256 })
         require(claimedSources.all { it.length in 1..192 && '\n' !in it && '\t' !in it && '\r' !in it })
-        require(affixStones.size <= CoreAffixCatalog.MAX_STONES && equippedAffixes.size <= 12)
+        require(affixStones.size <= CoreAffixCatalog.MAX_STONES && equippedAffixes.size <= 30)
         require(currencies.values.all { it in 0..CoreLoopCatalog.MAX_BALANCE } && fragments.values.all { it in 0..CoreLoopCatalog.MAX_BALANCE })
         val allStones = affixStones + equippedAffixes.map { it.stone } + storedGear.flatMap { it.affixes.map { affix -> affix.stone } }
         require(allStones.map { it.id }.distinct().size == allStones.size) { "MODの識別番号が重複しています" }
@@ -132,7 +155,7 @@ class CoreAccount(
         // Known malformed rolls are corrupt data; unknown definitions are retained with effects disabled.
         require(allStones.all { CoreAffixCatalog.definition(it) == null || CoreAffixCatalog.valid(it) })
         require(equippedAffixes.all { CoreAffixCatalog.definition(it.stone)?.allowedGear?.contains(it.gear) != false })
-        CoreGearSlot.entries.forEach { gear ->
+        CoreGearSlot.equipSlots.forEach { gear ->
             require(gear in legacyLayouts || CoreCraftingCatalog.validLayout(equippedAffixes.filter { it.gear == gear }, CoreAffixCatalog.rarity(this, gear)))
         }
     }
@@ -171,9 +194,10 @@ class CoreAccount(
         buyOrders: List<CoreBuyOrder> = this.buyOrders,
         dungeonRecords: Map<Int, Int> = this.dungeonRecords,
         journey: CoreJourney = this.journey,
+        armorParts: Map<CoreGearSlot, CoreArmorPiece> = this.armorParts,
     ) = CoreAccount(playerId, revision, balances, weaponTier, armorTier, unlockedMapTier, maps, activeRun, receipts, claimedSources, affixStones, equippedAffixes,
         weaponRarity, armorRarity, currencies, fragments, legacyLayouts, craftingSeed, weaponEnhancement, armorEnhancement, smithingXp,
-        silver, weaponIdentity, armorIdentity, storedGear, offers, deliveryDay, deliveries, weaponBroken, armorBroken, professions, surveyPoints, buyOrders, dungeonRecords, journey)
+        silver, weaponIdentity, armorIdentity, storedGear, offers, deliveryDay, deliveries, weaponBroken, armorBroken, professions, surveyPoints, buyOrders, dungeonRecords, journey, armorParts)
 }
 
 data class CoreOperation(val requestId: UUID, val expectedRevision: Long, val action: CoreAction)
@@ -218,6 +242,7 @@ sealed interface CoreAction {
     data class Refine(val resource: CoreResource, val tier: Int, val batches: Int = 1) : CoreAction
     data object UpgradeWeapon : CoreAction
     data object UpgradeArmor : CoreAction
+    data class UpgradeArmorPart(val slot: CoreGearSlot) : CoreAction
     data class Exchange(val resource: CoreResource, val tier: Int, val batches: Int = 1) : CoreAction
     data class Craft(val resource: CoreResource, val batches: Int = 1, val tier: Int = 1) : CoreAction
     data class ClaimMap(val tier: Int, val seed: Long, val level: Int? = null) : CoreAction

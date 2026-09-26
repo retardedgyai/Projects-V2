@@ -261,7 +261,7 @@ class CoreLoopMenusTest {
             weaponEnhancement = CoreEnhancementState(if (maximum) 30 else 6), armorEnhancement = CoreEnhancementState(if (maximum) 30 else 6),
             smithingXp = if (maximum) 200 else 0, craftingSeed = 0xC0DEL,
             affixStones = if (wealthy) listOf(CoreAffixStone(id("legacy"), "projects:force", tier, CoreAffixCatalog.definitions.first().range(tier).first.toDouble())) else emptyList())
-        if (fullMods) for (gear in CoreGearSlot.entries) {
+        if (fullMods) for (gear in CoreGearSlot.equipSlots) {
             result = CoreCraftingCatalog.craft(result, gear, CoreCraftingCurrency.ALCHEMY, id("$gear/alchemy"))
             while (result.equippedAffixes.count { it.gear == gear } < 6)
                 result = CoreCraftingCatalog.craft(result, gear, CoreCraftingCurrency.EXALTED, id("$gear/exalted/${result.equippedAffixes.size}"))
@@ -307,7 +307,7 @@ class CoreLoopMenusTest {
             for (page in 0..8) check("storage$page") { f.menus.storage(f.player, tier, page) }
             check("workshop") { f.menus.workshop(f.player, tier) }
             for (tab in CoreForgeLayout.Tab.entries) check("forge ${tab.name}") { f.menus.workshop(f.player, tier); f.click(tab.slot) }
-            for (gear in CoreGearSlot.entries) {
+            for (gear in CoreGearSlot.equipSlots) {
                 check("gear ${gear.name}") { f.menus.gearMods(f.player, gear) }
                 for (currency in CoreCraftingCurrency.entries) check("orb ${gear.name}/${currency.name}") { f.menus.confirmCraft(f.player, gear, currency) }
             }
@@ -546,10 +546,10 @@ class CoreLoopMenusTest {
     }
 
     @Test fun `the complete anvil subject opens equipment detail without spending or showing repeated item models`() {
-        for (packed in listOf(false, true)) for (gear in CoreGearSlot.entries) for (slot in CoreLoopMenus.ENHANCE_FOCUS_SLOTS) {
+        for (packed in listOf(false, true)) for (gear in listOf(CoreGearSlot.WEAPON, CoreGearSlot.CHEST)) for (slot in CoreLoopMenus.ENHANCE_FOCUS_SLOTS) {
             val f = fixture(account(tier = 3, fullMods = true), packed)
             f.menus.workshop(f.player, 3)
-            if (gear == CoreGearSlot.ARMOR) f.click(CoreForgeLayout.ARMOR)
+            if (gear == CoreGearSlot.CHEST) f.click(CoreForgeLayout.ARMOR)
             val snapshot = f.snapshot()
             val focus = assertNotNull(snapshot.focus)
             assertEquals(CoreLoopMenus.ENHANCE_FOCUS_SLOTS, focus.reservedSlots)
@@ -573,10 +573,10 @@ class CoreLoopMenusTest {
     }
 
     @Test fun `every catalyst and standard control keeps preview and dispatched enhancement mode in sync`() {
-        for (gear in CoreGearSlot.entries) for (offset in 0..2) for (focused in listOf(false, true)) {
+        for (gear in listOf(CoreGearSlot.WEAPON, CoreGearSlot.CHEST)) for (offset in 0..2) for (focused in listOf(false, true)) {
             val f = fixture(account(tier = 3))
             f.menus.workshop(f.player, 3)
-            if (gear == CoreGearSlot.ARMOR) f.click(CoreForgeLayout.ARMOR)
+            if (gear == CoreGearSlot.CHEST) f.click(CoreForgeLayout.ARMOR)
             f.click(CoreLoopMenus.ENHANCE_CATALYST + offset)
             if (!focused) f.click(CoreLoopMenus.ENHANCE_STANDARD + offset)
             val mode = if (focused) CoreEnhancementMode.FOCUSED else CoreEnhancementMode.STANDARD
@@ -673,7 +673,7 @@ class CoreLoopMenusTest {
         assertEquals(original, f.title())
         assertTrue(f.host.requests.isEmpty())
         f.click(CoreForgeLayout.EXECUTE)
-        assertEquals(CoreAction.EnhanceEquipment(CoreGearSlot.ARMOR), f.host.requests.single().action)
+        assertEquals(CoreAction.EnhanceEquipment(CoreGearSlot.CHEST), f.host.requests.single().action)
     }
 
     @Test fun `completion and rejection cannot reopen closed menus or replace a newer screen`() {
@@ -710,7 +710,7 @@ class CoreLoopMenusTest {
         f.menus.journal(f.player)
         f.menus.gearMods(f.player, CoreGearSlot.WEAPON)
         f.click(3)
-        assertTrue(f.title().contains("防具"))
+        assertTrue(f.snapshot().leftPanel!!.lines.any { it.text.contains("脚") })
         f.click(CoreForgeLayout.EXECUTE)
         assertTrue(f.host.requests.isEmpty())
     }
