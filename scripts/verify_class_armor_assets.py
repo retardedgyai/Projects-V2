@@ -4,6 +4,7 @@ import math
 from PIL import Image
 from build_class_armor_assets import ASSETS,JOBS,SLOTS,armor_model,armor_texture,icon_texture
 from build_project_helmets import helmet_texture as project_helmet_texture
+from build_warrior_body import item_texture as warrior_item_texture
 from verify_core_weapon_assets import point
 import numpy as np
 
@@ -31,8 +32,15 @@ def verify():
                 assert image.size==expected_size and image.tobytes()==armor_texture(job,tier,inner).tobytes()
                 item_relative=f'textures/item/{stem}_{"inner" if inner else "outer"}.png'
                 assert 'assets/projects/'+item_relative in index
-                assert Image.open(ASSETS/item_relative).convert('RGBA').tobytes()==image.tobytes()
+                item_image=Image.open(ASSETS/item_relative).convert('RGBA')
+                expected_item=warrior_item_texture(tier,inner) if job=='warrior' else image
+                assert item_image.tobytes()==expected_item.tobytes()
+                if job=='warrior' and not inner:
+                    assert item_image.tobytes()!=image.tobytes(),'3D item and worn cutouts need separate art'
                 assert set(np.array(image)[:,:,3].flat)<={0,255}
+                if job=='warrior' and not inner:
+                    assert image.getpixel((44,24))[3]==0,'Warrior arm cutout must remain transparent'
+                    assert image.getpixel((20,28))[3]==0,'Warrior waist cutout must remain transparent'
                 if not inner: surfaces.add(image.tobytes())
             for slot in SLOTS:
                 name=f'{stem}_{slot}'
@@ -67,7 +75,7 @@ def verify():
                                for face in element['faces'].values()),'Helmet paint must not be replaced by body UVs'
                 count+=1
     assert len(surfaces)==28,'Every class/tier must have its own painted surface'
-    print(f'PASS: 28 worn sets, 56 equipment textures and item-atlas copies, {count} 3D models and UI icons, head transform, finite geometry, index and class variation.')
+    print(f'PASS: 28 worn sets, 56 equipment textures and item textures, {count} 3D models and UI icons, head transform, finite geometry, index and class variation.')
 
 
 if __name__=='__main__': verify()

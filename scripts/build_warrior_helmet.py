@@ -14,6 +14,7 @@ TILES={
     'black':[12,8,14,12], 'cap':[0,12,2,16],
     'jaw':[2,12,4,16], 'lower':[4,12,6,16],
     'rear':[6,12,8,16], 'crest':[8,12,10,16],
+    'bronze':[14,8,16,12],
 }
 
 
@@ -39,13 +40,14 @@ def forge_elements():
     add('crown spine',[7.1,12.1,4.4],[8.9,14.7,11.8],'crest')
     add('rising rear fin',[6.9,13.4,9.5],[9.1,16.0,12.2],'crest',-22.5,'x')
     add('recessed face void',[4.85,3.5,2.75],[11.15,9.1,3.35],'black')
-    add('continuous silver brow',[2.9,9.0,2.9],[13.1,10.35,4.1],'silver')
+    add('continuous copper brow',[2.9,9.0,2.9],[13.1,10.35,4.1],'bronze')
     add('brow lower shade',[3.8,8.6,3.0],[12.2,9.05,4.1],'shadow')
     add('ruby mount',[6.7,10.35,2.5],[9.3,12.5,3.4],'silver',45)
     add('ruby inset',[7.25,10.8,2.15],[8.75,12.0,2.65],'ruby',45)
     add('ruby glint',[7.55,11.45,1.95],[7.95,11.85,2.3],'gold')
     add('left cheek guard',[2.9,3.2,3.5],[5.25,8.65,9.4],'jaw')
     add('right cheek guard',[10.75,3.2,3.5],[13.1,8.65,9.4],'jaw')
+    add('lower forged faceplate',[5.2,3.15,2.55],[10.8,6.35,4.0],'lower')
     add('left forged lip',[2.8,3.15,3.25],[5.25,3.75,9.4],'light')
     add('right forged lip',[10.75,3.15,3.25],[13.2,3.75,9.4],'light')
     add('left temple stud',[2.6,7.8,6.8],[3.1,8.4,7.5],'gold')
@@ -57,6 +59,10 @@ def forge_texture(image):
     """Paint material-specific planes instead of repeating one noise tile."""
     d=ImageDraw.Draw(image)
     d.rectangle((96,32,111,47),fill='#101722')
+    d.rectangle((112,32,127,47),fill='#76553b')
+    d.polygon([(112,32),(124,32),(127,35),(127,38),(113,36)],fill='#ae8555')
+    d.line([(112,33),(123,33)],fill='#d0ad76')
+    d.polygon([(112,42),(127,40),(127,47),(112,47)],fill='#4a392f')
     d.rectangle((0,48,15,63),fill='#294b6d')
     d.polygon([(0,48),(10,48),(15,52),(15,55),(5,53),(0,51)],fill='#476f94')
     d.line([(1,49),(9,49),(13,52)],fill='#8db3c7')
