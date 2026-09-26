@@ -8,6 +8,7 @@ import net.minestom.server.event.player.PlayerPacketEvent
 import net.minestom.server.event.instance.InstanceTickEvent
 import net.minestom.server.entity.metadata.display.TextDisplayMeta
 import net.minestom.server.entity.PlayerHand
+import net.minestom.server.entity.MetadataDef
 import net.minestom.server.network.ConnectionState
 import net.minestom.server.network.packet.client.play.ClientInputPacket
 import net.minestom.server.network.packet.client.play.ClientTeleportConfirmPacket
@@ -39,6 +40,9 @@ fun main(args: Array<String>) {
     instance.viewDistance(2)
     for(x in -3..3) for(z in -3..3) instance.loadChunk(x,z).get(10,TimeUnit.SECONDS)
     val packets=CopyOnWriteArrayList<SendablePacket>()
+    fun cursorTranslation(id: Int)=packets.filterIsInstance<EntityMetaDataPacket>().lastOrNull {
+        it.entityId()==id && it.entries().containsKey(MetadataDef.Display.TRANSLATION.index())
+    }?.entries()?.get(MetadataDef.Display.TRANSLATION.index())?.value() as? net.minestom.server.coordinate.Point
     fun player(name: String): Player {
         val connection=object: PlayerConnection() {
             override fun sendPacket(packet: SendablePacket) { packets+=SendablePacket.extractServerPacket(ConnectionState.PLAY,packet) }
@@ -88,11 +92,15 @@ fun main(args: Array<String>) {
             check(originalCursor.size==3) { "The cursor body and shadow should interpolate; the hit point stays immediate" }
             check(sessions.consumeImmediateUiPacket(first,ClientPlayerPositionAndRotationPacket(Pos(0.0,1.0,0.0,10f,1f),false,false)))
             originalCursor.forEach { (id,at) ->
-                val moved=(instance.entities.single { it.entityId==id }.entityMeta as TextDisplayMeta).translation
-                check(moved.x()>at.x() && moved.y()<at.y()) { "Cursor does not follow yaw/pitch in screen directions" }
+                val moved=checkNotNull(cursorTranslation(id))
+                check(moved.x()>at.x() && moved.y()<at.y()) { "Cursor packet does not follow yaw/pitch in screen directions" }
+                check((instance.entities.single { it.entityId==id }.entityMeta as TextDisplayMeta).translation==at) {
+                    "Socket input mutated entity state"
+                }
             }
             val beforeButtonMetadata=packets.filterIsInstance<EntityMetaDataPacket>().size
-            rotate(((button.x+button.w/2-400)/8).toFloat(),((button.y+button.h/2-240)/8).toFloat())
+            check(sessions.consumeImmediateUiPacket(first,ClientPlayerPositionAndRotationPacket(Pos(0.0,1.0,0.0,
+                ((button.x+button.w/2-400)/8).toFloat(),((button.y+button.h/2-240)/8).toFloat()),false,false)))
             // No tick between movement and click: zero-delay input must update immediately.
             val moveUpdates=packets.filterIsInstance<EntityMetaDataPacket>().size-beforeButtonMetadata
             check(moveUpdates in 4..6) { "Pointer movement metadata count=$moveUpdates (expected 4 cursor transforms and at most 2 hover panels)" }
@@ -145,8 +153,9 @@ fun main(args: Array<String>) {
         }
         check(sessions.consumeImmediateUiPacket(first,ClientPlayerPositionAndRotationPacket(Pos(0.0,1.0,0.0,18f,9f),false,false)))
         beforeBaseline.forEach { (id,at) ->
-            val moved=(instance.entities.single { it.entityId==id }.entityMeta as TextDisplayMeta).translation
+            val moved=checkNotNull(cursorTranslation(id))
             check(moved.x()>at.x() && moved.y()<at.y()) { "Nonzero first angle left the cursor frozen" }
+            check((instance.entities.single { it.entityId==id }.entityMeta as TextDisplayMeta).translation==at)
         }
         sessions.close(first,teleportBack=false)
         check(sessions.sessionCount==0)

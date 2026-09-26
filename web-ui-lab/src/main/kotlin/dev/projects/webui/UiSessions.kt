@@ -232,16 +232,18 @@ class UiSessions(
         val s=sessions[player.uuid]?:return false
         synchronized(s) {
             if(sessions[player.uuid]!==s) return false
+            // Lab latency mode keeps rotations and clicks together on the normal ordered path.
+            if(s.demo.delayMs!=0) return false
             when(packet) {
                 is ClientTeleportConfirmPacket -> {
                     if(packet.teleportId()>=0) return false
                     if(s.pending.remove(packet.teleportId())!=null) { s.active=true;s.lastResponse=System.nanoTime() }
                 }
-                is ClientPlayerRotationPacket -> rotation(s,packet.yaw(),packet.pitch())
-                is ClientPlayerPositionAndRotationPacket -> rotation(s,packet.position().yaw(),packet.position().pitch())
+                is ClientPlayerRotationPacket -> rotation(s,packet.yaw(),packet.pitch(),true)
+                is ClientPlayerPositionAndRotationPacket -> rotation(s,packet.position().yaw(),packet.position().pitch(),true)
                 is ClientUseItemPacket -> {
                     if(packet.hand()==net.minestom.server.entity.PlayerHand.MAIN) {
-                        rotation(s,packet.yaw(),packet.pitch())
+                        rotation(s,packet.yaw(),packet.pitch(),true)
                         s.clickAt[packet]=s.pointer.x to s.pointer.y
                     }
                     return false
@@ -256,7 +258,7 @@ class UiSessions(
             return true
         }
     }
-    private fun rotation(s: Session,yaw: Float,pitch: Float) {
+    private fun rotation(s: Session,yaw: Float,pitch: Float,immediate: Boolean=false) {
         if(!s.active || !yaw.isFinite() || !pitch.isFinite()) return
         if(s.recenter) {
             // The first reply establishes the new camera baseline, regardless
@@ -264,7 +266,10 @@ class UiSessions(
             s.pointer.reset();s.pointer.move(yaw,pitch,s.scene.width,s.scene.height);s.recenter=false
             return
         }
-        enqueue(s,yaw,pitch)
+        if(immediate) {
+            s.pointer.move(yaw,pitch,s.scene.width,s.scene.height)
+            s.renderer.cursorPacket(s.pointer)
+        } else enqueue(s,yaw,pitch)
     }
     private fun tick(s: Session) {
         if(s.probeError!=null) {
