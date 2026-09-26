@@ -4,7 +4,6 @@ The concept sheet is a visual target only. Every atlas pixel and cuboid here is
 drawn for ProjectS; no source-pack texture or model data is imported.
 """
 from PIL import Image, ImageDraw
-from class_armament_geometry import box
 
 PALETTES = {
     'warrior': ('13243a','264564','3f6e96','76a5c3','bed7df','de532e','ffba65'),
@@ -212,57 +211,15 @@ def helmet_texture(job,tier):
         d.rectangle((x,32,x+15,47),fill=color)
         d.line([(x,32),(x+11,32)],fill=edge if i<3 else light,width=1)
         d.line([(x+15,35),(x+15,47)],fill=ink,width=1)
+    if job=='warrior':
+        from build_warrior_helmet import forge_texture
+        forge_texture(image)
     return image
 
 
 def helmet_elements(job,tier):
-    shell=box('painted class shell',[3.2,3,3.2],[12.8,12.4,12.8],'iron')
-    shell['faces']={face:{'uv':uv,'texture':'#helm'} for face,uv in {
-        'north':[0,0,4,8],'south':[4,0,8,8],
-        'west':[8,0,12,8],'east':[12,0,16,8],
-        'up':[1,8.5,2,9.5]}.items()}
-    elements=[shell]
-    swatch={'body':[.5,8.5,1.5,9.5], 'light':[2.5,8.5,3.5,9.5],
-            'accent':[4.5,8.5,5.5,9.5], 'shadow':[6.5,8.5,7.5,9.5],
-            'hot':[8.5,8.5,9.5,9.5], 'edge':[10.5,8.5,11.5,9.5]}
-    def piece(name,lo,hi,paint,angle=0,axis='z'):
-        part=box(name,lo,hi,'iron',angle,axis)
-        part['faces']={face:{'uv':swatch[paint], 'texture':'#helm'}
-                       for face in part['faces']}
-        elements.append(part)
     if job=='warrior':
-        piece('flowing crown ridge',[7.3,11.6,3.4],[8.7,13.4,11.6],'light')
-        piece('rear ember pennant',[7.3,12.1,11.7],[8.7,15.0,12.5],'accent',-22.5,'x')
-        piece('ruby socket',[7.0,10.4,2.6],[9.0,12.0,3.3],'shadow')
-        piece('ruby facet',[7.45,10.65,2.35],[8.55,11.55,2.65],'accent')
-        piece('visor edge',[3.1,8.75,2.6],[12.9,9.4,3.35],'edge')
-    elif job=='ranger':
-        piece('swept leaf visor',[2.3,10.3,2.7],[13.2,11.1,4.3],'accent',-22.5)
-        piece('visor lit edge',[4.2,11.0,2.5],[11.9,11.3,3.2],'hot')
-        piece('rear leafy crest',[5.1,12.2,8.5],[6.5,15.5,10.5],'body',-22.5)
-    elif job=='mage':
-        piece('hood crown',[5.1,12.0,4.6],[11,15.1,11.6],'shadow',22.5)
-        piece('amulet socket',[6.7,8.6,2.5],[9.3,11.3,3.1],'edge',45)
-        piece('amethyst cut',[7.35,9.2,2.2],[8.65,10.7,2.6],'accent',45)
-        piece('hood face hem',[3.5,7.7,2.7],[12.5,8.4,4.1],'light')
-    elif job=='assassin':
-        piece('low cowl brow',[2.6,10.5,2.5],[13.4,11.4,4.3],'shadow')
-        piece('oblique steel slit',[4.2,8.2,2.5],[11.8,8.7,3.2],'light',-22.5)
-        piece('wrapped lower mask',[4.5,5.1,2.7],[11.5,7.8,3.8],'body')
-    elif job=='templar':
-        piece('shield crown ridge',[7.3,11.4,3.4],[8.7,14.2,11.4],'light')
-        piece('oath visor',[2.7,8.8,2.6],[13.3,9.8,4.2],'accent')
-        piece('central oath fitting',[7.4,8.0,2.3],[8.6,11.8,3.0],'hot')
-        piece('left jaw shield',[2.8,3.6,3.4],[4.1,8.1,6.8],'body')
-        piece('right jaw shield',[11.9,3.6,3.4],[13.2,8.1,6.8],'body')
-    elif job=='healer':
-        piece('left split mitre',[5.1,11.8,5.0],[7.0,15.3,10.4],'light',-22.5)
-        piece('right split mitre',[9.0,11.8,5.0],[10.9,15.3,10.4],'light',22.5)
-        piece('gentle sun visor',[3.6,8.9,2.7],[12.4,9.7,4.0],'accent')
-        piece('prayer seal',[7.4,10.2,2.5],[8.6,11.7,3.0],'hot')
-    else:
-        piece('left celestial prong',[4.1,11.5,4.0],[5.2,15.2,6.3],'light',-22.5)
-        piece('right celestial prong',[10.8,11.5,4.0],[11.9,15.2,6.3],'light',22.5)
-        piece('star visor',[3.0,8.8,2.6],[13.0,9.7,4.0],'light')
-        piece('forehead star socket',[7.2,10.3,2.5],[8.8,12.0,3.1],'accent',45)
-    return elements
+        from build_warrior_helmet import forge_elements
+        return forge_elements()
+    from build_other_helmets import other_helmet_elements
+    return other_helmet_elements(job,tier)

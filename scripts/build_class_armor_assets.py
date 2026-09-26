@@ -7,7 +7,7 @@ No skin replacement, global armor override, following display entity or client m
 """
 import json
 from PIL import Image, ImageDraw
-from class_armament_geometry import ASSETS, box, beam, gem
+from class_armament_geometry import ASSETS, box
 from build_bold_class_armor import ART as CLASS_ART, armor_texture as class_armor_texture
 from build_project_helmets import helmet_texture as project_helmet_texture, helmet_elements as project_helmet_elements
 
@@ -35,201 +35,6 @@ def armor_texture(job,tier,inner=False):
     return class_armor_texture(job,tier,inner)
 
 
-def helmet_face_texture(job,tier):
-    """Painted front face for the worn head model, with real alpha cutouts."""
-    colors=tuple('#'+c for c in CLASS_ART[job]['colors'])
-    image=Image.new('RGBA',(32,32),(0,0,0,0))
-    draw=ImageDraw.Draw(image)
-    def polygon(points,c): draw.polygon(points,fill=colors[c])
-    def rectangle(box,c): draw.rectangle(box,fill=colors[c])
-    def line(points,c,width=1): draw.line(points,fill=colors[c],width=width)
-    if job=='warrior':
-        polygon([(2,1),(13,1),(15,4),(14,14),(11,15),(10,12),
-                 (5,12),(4,15),(1,14),(0,4)],1)
-        polygon([(3,2),(12,2),(14,4),(13,7),(2,7),(1,4)],2)
-        polygon([(3,2),(8,2),(10,4),(8,5),(2,5)],3)
-        line([(2,6),(13,6)],7,2)
-        rectangle((4,8,11,9),0)
-        rectangle((5,8,6,8),4); rectangle((9,8,10,8),4)
-        polygon([(2,10),(5,10),(6,13),(3,14),(1,13)],2)
-        polygon([(10,10),(13,10),(14,13),(12,14),(9,13)],2)
-        rectangle((7,7,8,14),7)
-        line([(7,8),(7,13)],6)
-    elif job=='mage':
-        polygon([(3,1),(11,1),(14,4),(14,13),(12,15),(3,15),(1,12),(1,5)],1)
-        polygon([(4,2),(10,2),(13,5),(11,9),(3,9),(2,5)],2)
-        line([(2,5),(13,5)],7,2)
-        polygon([(7,3),(10,6),(7,9),(4,6)],8)
-        rectangle((7,4,7,6),4)
-        polygon([(4,10),(11,10),(12,14),(3,14)],5)
-        line([(4,13),(11,13)],6)
-    elif job=='ranger':
-        polygon([(3,1),(12,1),(15,5),(13,14),(10,15),(6,13),(3,15),(1,12),(0,5)],1)
-        polygon([(3,2),(11,2),(13,5),(12,8),(2,8),(1,5)],2)
-        line([(2,5),(7,3),(12,5)],3,2)
-        polygon([(2,9),(5,9),(6,14),(3,14),(1,12)],2)
-        polygon([(10,9),(13,9),(14,12),(12,14),(9,14)],2)
-        line([(11,1),(13,4),(13,10)],7,2)
-        rectangle((12,6,13,7),8)
-    elif job=='assassin':
-        polygon([(2,1),(13,1),(15,5),(14,14),(11,15),(9,13),
-                 (6,13),(4,15),(1,14),(0,5)],1)
-        polygon([(2,3),(7,2),(11,3),(14,6),(12,8),(3,8),(1,6)],2)
-        line([(1,7),(5,8),(10,8),(14,7)],3)
-        rectangle((4,9,11,10),0)
-        rectangle((5,9,6,9),8); rectangle((9,9,10,9),8)
-        polygon([(3,11),(12,11),(10,14),(5,14)],5)
-        line([(5,12),(10,12)],6)
-    elif job=='templar':
-        polygon([(2,1),(13,1),(15,4),(14,14),(11,15),(9,13),
-                 (6,13),(4,15),(1,14),(0,4)],1)
-        polygon([(3,2),(12,2),(14,5),(12,10),(3,10),(1,5)],2)
-        polygon([(4,3),(11,3),(12,5),(11,7),(4,7),(3,5)],4)
-        line([(2,7),(13,7)],7,2)
-        rectangle((4,9,11,9),0)
-        rectangle((7,4,8,14),7)
-        rectangle((7,10,8,11),4)
-        line([(3,12),(6,14)],3); line([(12,12),(9,14)],3)
-    elif job=='healer':
-        polygon([(2,1),(13,1),(15,5),(14,13),(11,15),(9,12),
-                 (6,12),(4,15),(1,13),(0,5)],1)
-        polygon([(3,2),(12,2),(14,5),(12,8),(3,8),(1,5)],3)
-        polygon([(3,2),(8,2),(9,5),(6,7),(2,6)],4)
-        line([(2,7),(13,7)],7)
-        rectangle((7,3,8,9),6)
-        rectangle((5,5,10,6),6)
-        polygon([(2,10),(5,10),(6,14),(3,14)],2)
-        polygon([(10,10),(13,10),(12,14),(9,14)],2)
-    else:
-        polygon([(2,2),(13,2),(15,5),(14,14),(11,15),(9,12),
-                 (6,12),(4,15),(1,14),(0,5)],1)
-        polygon([(3,3),(12,3),(14,6),(12,9),(3,9),(1,6)],2)
-        line([(2,6),(13,6)],7,2)
-        polygon([(7,2),(10,6),(7,10),(4,6)],8)
-        rectangle((7,4,7,7),4)
-        rectangle((3,11,4,11),8); rectangle((11,11,12,11),8)
-        polygon([(3,12),(6,13),(9,13),(12,12),(11,15),(4,15)],5)
-    if tier>1: rectangle((12,2,12,2),8)
-    # The other quadrants paint actual side and crown surfaces of the model.
-    # A 2D front badge alone leaves the head looking like an untextured box.
-    rectangle((16,0,31,15),1)
-    polygon([(17,1),(29,1),(31,4),(30,12),(27,14),(19,14),(16,11)],2)
-    polygon([(18,2),(27,2),(29,4),(25,6),(18,5)],3)
-    line([(17,7),(29,7)],7,2)
-    line([(18,12),(28,12)],0)
-    rectangle((0,16,15,31),1)
-    polygon([(2,18),(12,18),(14,21),(13,27),(10,30),(3,29),(1,25)],2)
-    polygon([(3,19),(11,19),(12,22),(8,24),(2,22)],3)
-    line([(3,27),(12,27)],7)
-    rectangle((16,16,31,31),1)
-    polygon([(18,18),(29,18),(30,22),(28,29),(18,29),(17,22)],2)
-    line([(18,24),(29,24)],7,2)
-    return image
-
-
-def helmet(job,tier):
-    base,secondary,trim,glow=KITS[job]; e=[]
-    if job=='warrior': base,secondary=secondary,base
-    # At head transform scale=1.6, the vanilla 0.625 layer scale cancels.
-    # y=3.5..12.5 maps to head-local y=+0.5..-8.5: a hollow shell around skin.
-    for name,lo,hi in (
-        ('crown cap',[3.5,11.7,3.5],[12.5,12.5,12.5]),
-        ('left temple',[3.5,4.5,3.5],[4.3,11.7,12.5]),
-        ('right temple',[11.7,4.5,3.5],[12.5,11.7,12.5]),
-        ('rear neck plate',[4.3,3.5,11.7],[11.7,11.7,12.5])):
-        e.append(box(name,lo,hi,base))
-    e.append(box('brow band',[3.45,10.3,3.1],[12.55,11.5,3.7],trim))
-    if job=='warrior':
-        e.append(box('forged brow',[4.1,10.2,2.75],[11.9,11.1,3.7],base))
-        e.append(box('forehead bevel',[5,11.1,2.6],[11,11.5,3.1],secondary))
-        e.append(box('raised brow ridge',[5,11.35,2.35],[11,12.1,3.2],trim))
-        for s in (-1,1):
-            x=8+s*5
-            e.append(box('swept cheek plate',[x-.8,4.5,3.5],[x+.8,9,7],base,-s*22.5))
-            e.append(box('cheek bevel',[x-.7,5,3.2],[x+.7,7.2,3.8],secondary,-s*22.5))
-            for i in range(tier):
-                e.append(box('crested temple wing',[x-.5,10+i*.8,6+i],[x+.5,12+i*.8,9+i],base,-s*22.5))
-        e.append(box('central nasal',[7.6,7.6,2.7],[8.4,11,3.5],base))
-        e.append(box('nasal gold face',[7.75,6.7,2.15],[8.25,11.5,2.7],trim))
-    elif job=='mage':
-        e.append(box('wide angular brim',[2.7,11.7,2.7],[13.3,12.4,13.3],trim))
-        e.append(box('high cloth crown',[4.5,12.2,4.5],[11.5,15.2,11.5],base))
-        e.append(box('offset folded crown',[5.3,14.7,5.8],[10.5,17.5,10.5],base,22.5))
-        for i in range(tier): e.append(box('crown frost pin',[6+i,12.8,4.1],[6.5+i,14,4.6],glow))
-        for side in (-1,1):
-            x=8+side*5.3
-            e.append(box('folded hood cheek',[x-.8,4.1,2.9],[x+.8,9.1,7],base,-side*22.5))
-            e.append(box('hood cheek embroidery',[x-.65,7.1,2.5],[x+.65,8,3.1],trim,-side*22.5))
-        gem(e,'mage focus',8,10.6,2.35,2.3,glow)
-        e.append(box('amulet below face',[7.3,3.3,2.45],[8.7,4.8,3.2],trim,45))
-    elif job=='ranger':
-        e.append(box('hood peaked lip',[4.3,10.8,1.7],[11.7,11.8,4.1],secondary))
-        e.append(box('hood brow shade',[5.2,10.1,2.6],[10.8,10.8,3.5],base))
-        for side in (-1,1):
-            x=8+side*5.1
-            e.append(box('swept leaf wing',[x-.9,9.5,3.4],
-                         [x+.9,16,6.3],trim,-side*22.5))
-            e.append(box('wing green enamel',[x-.6,10.3,3.05],
-                         [x+.6,14.8,3.55],secondary,-side*22.5))
-        gem(e,'forehead leafstone',8,10.2,2.2,2.2,glow)
-    elif job=='assassin':
-        e.append(box('lower face veil',[4.2,4.2,2.7],[11.8,7.2,3.7],secondary))
-        e.append(box('hood overhang',[3.6,10.7,2.3],[12.4,12,4],base))
-        for s in (-1,1):
-            x=8+s*4.8
-            e.append(box('cowl blade rim',[x-.4,6,2.5],[x+.4,11,3.5],trim,-s*22.5))
-            e.append(box('raised cowl horn',[x-.7,11.5,5.8],[x+.7,16,8.8],base,-s*22.5))
-            e.append(box('horn cutting edge',[x-.5,12.2,5.3],[x+.5,15.3,5.9],secondary,-s*22.5))
-        for i in range(tier): e.append(box('veil stitched rune',[5.3+i*1.5,5.2,2.4],[5.8+i*1.5,6,2.8],glow))
-    elif job=='templar':
-        e.append(box('armored visor',[4.2,5.3,2.7],[11.8,8.6,3.7],secondary))
-        e.append(box('visor nasal',[7.5,8.5,2.5],[8.5,11,3.5],trim))
-        for s in (-1,1):
-            x=8+s*5.2
-            e.append(box('bastion temple tower',[x-.65,8.2,6],[x+.65,13.7,9.7],base))
-            e.append(box('temple bright bevel',[x-.45,9,5.65],[x+.45,13.3,6.1],secondary))
-        for i in range(tier):
-            e.append(box('crown crenellation',[4.7+i*1.7,12.5,6],[5.7+i*1.7,14.1,9],trim))
-        e.append(box('projecting oath brow',[4.8,11.1,2.1],[11.2,12,4.5],trim))
-        e.append(box('temple shield nose',[7.5,6.7,1.9],[8.5,11,3.2],secondary))
-        gem(e,'oath brow',8,11,3,1,glow)
-    elif job=='healer':
-        # Open face and a split mitre rather than another fighter helmet.
-        e.append(box('ivory mitre left',[4.5,12,5],[7.8,16.5,10.5],base,-22.5))
-        e.append(box('ivory mitre right',[8.2,12,5],[11.5,16.5,10.5],base,22.5))
-        e.append(box('plum central mitre',[7.5,11.6,4.8],[8.5,16,5.3],secondary))
-        for side in (-1,1):
-            x=8+side*5.6
-            e.append(box('healing sun wing',[x-.75,10.7,5.6],
-                         [x+.75,14.7,8.5],trim,-side*22.5))
-        for i in range(tier):
-            e.append(box('mitre golden stitch',[6.3,12.2+i*.8,4.5],[9.7,12.5+i*.8,5],trim))
-        gem(e,'prayer focus',8,11,3,1,glow)
-    else:
-        # A low open coronet and a broken halo leave the skin's face visible.
-        for s in (-1,1):
-            e.append(box('astral temple point',[8+s*4.3-.4,10,4],[8+s*4.3+.4,14,5.2],trim,-s*22.5))
-        ring=[(8+x,15+y,9) for x,y in ((-4,-2),(-2,-3),(2,-3),(4,-2),(4,2),(2,3),(-2,3),(-4,2))]
-        for i,p in enumerate(ring):
-            if i==4: continue
-            beam(e,'broken coronet halo',p,ring[(i+1)%8],.55,.55,trim)
-        for side in (-1,1):
-            x=8+side*5.4
-            e.append(box('star arc shoulder',[x-.55,11.6,6.5],
-                         [x+.55,16,9.5],secondary,-side*22.5))
-        for i in range(tier):
-            x=5+i*2; e.append(box('fixed coronet star',[x-.25,14.5,3],[x+.25,15.5,3.5],glow))
-        gem(e,'star forehead',8,11,3,1.1,glow)
-    for element in e:
-        if element['name'] in ('crown cap','left temple','right temple','rear neck plate'):
-            element['faces']={name:{'uv':([0,8,8,16] if name=='up' else [8,0,16,8]),
-                                    'texture':'#helm'} for name in element['faces']}
-    faceplate=box('painted face plate',[4,4,2.9],[12,12,3],base)
-    faceplate['faces']={'north':{'uv':[0,0,8,8],'texture':'#helm'}}
-    e.append(faceplate)
-    return e
-
-
 def armor_model(job,tier,slot):
     base,secondary,trim,glow=KITS[job]
     gui_scale=({'starweaver':.78,'mage':.82,'healer':.9}.get(job,.95) if slot=='helmet' else 1)
@@ -245,7 +50,7 @@ def armor_model(job,tier,slot):
     # Native armor UVs cover every visible face. A single small front crop
     # pasted on otherwise generic material cubes made the item look flat.
     worn='inner' if slot=='leggings' else 'outer'
-    for element in elements:
+    for element in (() if slot=='helmet' else elements):
         origin,width,depth=((40,16),4,4) if element['name'].endswith('sleeve') else (
             ((16,16),8,4) if slot=='chestplate' else ((0,16),4,4))
         u,v=origin

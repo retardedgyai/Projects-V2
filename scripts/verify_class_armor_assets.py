@@ -63,6 +63,8 @@ def verify():
                 if slot=='helmet':
                     assert model['display']['head']['scale']==[1.6]*3
                     assert model['display']['head']['translation']==[0,0,0]
+                    assert all(face['texture']=='#helm' for element in model['elements']
+                               for face in element['faces'].values()),'Helmet paint must not be replaced by body UVs'
                 count+=1
     assert len(surfaces)==28,'Every class/tier must have its own painted surface'
     print(f'PASS: 28 worn sets, 56 equipment textures and item-atlas copies, {count} 3D models and UI icons, head transform, finite geometry, index and class variation.')
