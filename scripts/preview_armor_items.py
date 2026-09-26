@@ -20,6 +20,7 @@ def icon(job, tier, slot, size=96):
         'atlas': np.array(Image.open(ASSETS / 'textures/item/weapons/materials.png').convert('RGBA')),
         'outer': np.array(Image.open(ASSETS / f'textures/item/{key}_outer.png').convert('RGBA')),
         'inner': np.array(Image.open(ASSETS / f'textures/item/{key}_inner.png').convert('RGBA')),
+        'helm': np.array(Image.open(ASSETS / f'textures/item/armor/helmet_faces/{job}_t{tier}.png').convert('RGBA')),
     }
     yaw, pitch = math.radians(-25), math.radians(15)
     # One 16-unit model fills one item square, then the exported GUI transform

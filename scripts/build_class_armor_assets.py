@@ -9,6 +9,7 @@ import json
 from PIL import Image, ImageDraw
 from class_armament_geometry import ASSETS, box
 from build_bold_class_armor import ART as CLASS_ART, armor_texture as class_armor_texture
+from build_warrior_body import armor_texture as warrior_armor_texture
 from build_project_helmets import helmet_texture as project_helmet_texture, helmet_elements as project_helmet_elements
 
 JOBS=('warrior','mage','ranger','assassin','templar','healer','starweaver')
@@ -32,6 +33,7 @@ def palette(job):
 
 
 def armor_texture(job,tier,inner=False):
+    if job=='warrior': return warrior_armor_texture(tier,inner)
     return class_armor_texture(job,tier,inner)
 
 
@@ -39,6 +41,15 @@ def armor_model(job,tier,slot):
     base,secondary,trim,glow=KITS[job]
     gui_scale=({'starweaver':.78,'mage':.82,'healer':.9}.get(job,.95) if slot=='helmet' else 1)
     if slot=='helmet': elements=project_helmet_elements(job,tier)
+    elif slot=='chestplate' and job=='warrior':
+        # ProjectS's forge cuirass has separately hung shoulder armor. Keeping
+        # the sleeves full length preserves the native worn silhouette while
+        # the item model reads as a shaped piece rather than three flat bars.
+        elements=[box('cuirass',[3.8,1.6,5.4],[12.2,14.2,10.6],base),
+                  box('left sleeve',[.2,1.8,5.3],[4,14.5,10.7],secondary),
+                  box('right sleeve',[12,1.8,5.3],[15.8,14.5,10.7],secondary),
+                  box('left pauldron',[-.2,10.6,4.8],[4.4,15.7,11.2],secondary,22.5,'z'),
+                  box('right pauldron',[11.6,10.6,4.8],[16.2,15.7,11.2],secondary,-22.5,'z')]
     elif slot=='chestplate':
         elements=[box('cuirass',[3.8,1.6,5.4],[12.2,15,10.6],base),
                   box('left sleeve',[.2,1.8,5.3],[4,15.4,10.7],secondary),
@@ -51,6 +62,14 @@ def armor_model(job,tier,slot):
     # pasted on otherwise generic material cubes made the item look flat.
     worn='inner' if slot=='leggings' else 'outer'
     for element in (() if slot=='helmet' else elements):
+        if element['name'].endswith('pauldron'):
+            cap={'west':(40,20,44,25),'north':(44,20,48,25),
+                 'east':(48,20,52,25),'south':(52,20,56,25),
+                 'up':(44,16,48,20),'down':(48,16,52,20)}
+            element['faces']={face:{'uv':[x/4,y/2,x2/4,y2/2],
+                                    'texture':'#outer'}
+                              for face,(x,y,x2,y2) in cap.items()}
+            continue
         origin,width,depth=((40,16),4,4) if element['name'].endswith('sleeve') else (
             ((16,16),8,4) if slot=='chestplate' else ((0,16),4,4))
         u,v=origin
@@ -116,8 +135,11 @@ def icon_texture(job,tier,slot):
             line([(5,6),(7,5),(9,6)],'P')
             line([(4,4),(6,6)],'L')
             rectangle((5,5,5,5),'U')
-            line([(4,12),(11,12)],'L')
-            rectangle((7,12,8,12),'T')
+            line([(4,4),(11,4)],'T')
+            rectangle((7,8,8,9),'D')
+            rectangle((8,8,8,9),'E')
+            line([(4,12),(11,12)],'T')
+            rectangle((7,12,8,12),'U')
             line([(5,13),(10,13)],'d')
         elif slot=='leggings':
             polygon([(3,2),(12,2),(13,5),(12,14),(10,15),(8,15),(8,9),
