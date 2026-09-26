@@ -48,6 +48,16 @@ internal class CorePolish05ForgeFlow(
                 if(slot == CoreGearSlot.WEAPON) CoreWeaponPresentation.damage(a) else CoreWeaponPresentation.health(a),
                 if(slot == CoreGearSlot.WEAPON) CoreWeaponPresentation.damage(next) else CoreWeaponPresentation.health(next),
                 CoreEconomy.broken(a, slot),
+                if(slot == CoreGearSlot.WEAPON) null else {
+                    val part = when(slot) {
+                        CoreGearSlot.HEAD -> "helmet"
+                        CoreGearSlot.CHEST -> "chestplate"
+                        CoreGearSlot.LEGS -> "leggings"
+                        CoreGearSlot.FEET -> "boots"
+                        else -> error("防具部位ではありません")
+                    }
+                    "minecraft:leather_$part|projects:armor/${a.journey.job.name.lowercase()}_t${CoreAffixCatalog.gearTier(a,slot)}_$part"
+                },
             )
         }
         val cost = q.recipe.costs.map { (material, required) ->

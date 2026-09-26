@@ -315,6 +315,20 @@ class CoreAffixTest {
         assertEquals(CoreTransactionStatus.REPLAYED, service.transact(player, operation).status)
     }
 
+    @Test fun `v2 armor affix becomes visible chest affix after migration`() {
+        val player = UUID.randomUUID()
+        val affix = CoreEquippedAffix(CoreGearSlot.ARMOR, 0, stone("projects:guard", 2))
+        val original = CoreAccount(player, armorTier = 2, equippedAffixes = listOf(affix))
+        val body = legacyBody(original, 2)
+        val checksum = MessageDigest.getInstance("SHA-256").digest(body.toByteArray(UTF_8))
+            .joinToString("") { "%02x".format(it) }
+        val migrated = CoreAccountCodec.decode(body + "checksum\t$checksum\n", player)
+        assertEquals(listOf(affix.copy(gear = CoreGearSlot.CHEST)), migrated.equippedAffixes)
+        assertEquals(CoreGearRarity.MAGIC, migrated.armor(CoreGearSlot.CHEST).rarity)
+        assertEquals(migrated.equippedAffixes,
+            CoreAccountCodec.decode(CoreAccountCodec.encode(migrated), player).equippedAffixes)
+    }
+
     private fun legacyBody(account: CoreAccount, version: Int): String =
         armorV10Body(account).lineSequence().filterNot(::coreExpansionRow)
             .filterNot { it.startsWith("crafting\t") || it.startsWith("currency\t") || it.startsWith("fragment\t") || it.startsWith("legacy-layout\t") || it.startsWith("enhancement\t") || it.startsWith("economy\t") || it.startsWith("identity\t") }

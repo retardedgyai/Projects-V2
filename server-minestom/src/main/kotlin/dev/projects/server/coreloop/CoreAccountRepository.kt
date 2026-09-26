@@ -402,7 +402,10 @@ internal object CoreAccountCodec {
         if (version < 3) {
             // Preserve the old validity boundary; migration must not legitimize an invalid v2 slot.
             require(equipped.all { it.index < if (it.gear == CoreGearSlot.WEAPON) weaponTier else armorTier })
-            return CoreAccount(playerId, header[3].toLong(), balances, weaponTier, armorTier, gear[3].toInt(), maps, active, receipts, sources, stones, equipped,
+            val armorRarity = CoreCraftingCatalog.inferRarity(equipped, CoreGearSlot.ARMOR)
+            val migratedAffixes = equipped.map { if (it.gear == CoreGearSlot.ARMOR) it.copy(gear = CoreGearSlot.CHEST) else it }
+            return CoreAccount(playerId, header[3].toLong(), balances, weaponTier, armorTier, gear[3].toInt(), maps, active, receipts, sources, stones, migratedAffixes,
+                armorRarity = armorRarity,
                 craftingSeed = CoreCraftingCatalog.legacySeed(playerId))
         }
         val craft = requireNotNull(crafting) { "装備クラフトの保存項目がありません" }
@@ -455,11 +458,19 @@ internal object CoreAccountCodec {
         val migratedLegacy = if (version >= 11) legacy else legacy.mapTo(linkedSetOf()) {
             if (it == CoreGearSlot.ARMOR) CoreGearSlot.CHEST else it
         }
-        // A v10 order bought a whole set. Cancel it and return its funded escrow rather than
-        // silently changing that bargain into a single chest piece.
-        val retiredArmorOrders = if (version >= 11) emptyList() else buyOrders.filter { it.slot == CoreGearSlot.ARMOR }
-        val migratedOrders = buyOrders - retiredArmorOrders.toSet()
-        val returnedSilver = retiredArmorOrders.sumOf { it.escrow }
+        // A v10 order bought a whole set, so never reinterpret it as a chest order. Refund
+        // escrow where the silver cap permits; keep any remainder cancellable after spending.
+        val oldSilver = economy?.get(1)?.toLong() ?: 0L
+        var refundRoom = CoreEconomy.MAX_SILVER - oldSilver
+        var returnedSilver = 0L
+        val migratedOrders = buyOrders.filter { order ->
+            if (version >= 11 || order.slot != CoreGearSlot.ARMOR || order.escrow > refundRoom) true
+            else {
+                refundRoom -= order.escrow
+                returnedSilver += order.escrow
+                false
+            }
+        }
         val parts = if (version >= 11) armorRows.mapValues { (_, row) ->
             val id = readIdentity(row.subList(2, 5))
             CoreArmorPiece(id.copy(quality = qualities.getValue(id.id), base = bases.getValue(id.id).first,
@@ -479,7 +490,7 @@ internal object CoreAccountCodec {
             enhanced?.let { CoreEnhancementState(it[1].toInt(), it[2].toInt()) } ?: CoreEnhancementState(),
             enhanced?.let { CoreEnhancementState(it[3].toInt(), it[4].toInt()) } ?: CoreEnhancementState(),
             enhanced?.get(5)?.toLong() ?: 0L,
-            silver = Math.addExact(economy?.get(1)?.toLong() ?: 0, returnedSilver),
+            silver = Math.addExact(oldSilver, returnedSilver),
             weaponIdentity = identities[CoreGearSlot.WEAPON] ?: CoreGearIdentity.legacy(playerId, CoreGearSlot.WEAPON),
             armorIdentity = identities[CoreGearSlot.ARMOR] ?: CoreGearIdentity.legacy(playerId, CoreGearSlot.ARMOR),
             storedGear = migratedStored, offers = if (version >= 11) offers else offers.filter { offer ->

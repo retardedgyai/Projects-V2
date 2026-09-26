@@ -57,10 +57,17 @@ class CorePolish05ForgeFlowTest {
         }
         val initial = flow.scene()
         assertEquals(5, initial.nodes.count { it.id.startsWith("live-gear-hit-") })
+        val armorIcons = (1..4).map { initial.nodes.single { node -> node.id == "live-gear-icon-$it" }.item }
+        assertEquals(4, armorIcons.distinct().size)
+        for (part in listOf("helmet", "chestplate", "leggings", "boots")) {
+            assertNotNull(javaClass.classLoader.getResource("core-ui-pack/assets/projects/items/armor/warrior_t1_$part.json"))
+        }
         assertTrue(flow.action("select:head"))
         assertTrue(flow.scene().nodes.single { it.id == "hero-name" }.text.contains("頭"))
+        assertEquals(armorIcons.first(), flow.scene().nodes.single { it.id == "hero-weapon" }.item)
         assertTrue(flow.action("enhance"))
         assertTrue(flow.scene().nodes.any { it.id == "modal-confirm" })
+        assertEquals(armorIcons.first(), flow.scene().nodes.single { it.id == "modal-icon" }.item)
         assertTrue(flow.action("confirm"))
         assertEquals(CoreGearSlot.HEAD, dispatched)
     }

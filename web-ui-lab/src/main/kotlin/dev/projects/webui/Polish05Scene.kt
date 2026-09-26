@@ -39,13 +39,13 @@ class Polish05Scene private constructor(approvedJson: String, spriteJson: String
     }
     private fun put(nodes: MutableList<UiNode>, id:String,x:Number,y:Number,w:Number,h:Number,text:String="",
                     color:String="#e7e0cd",size:Double=16.0,bg:String?=null,action:String?=null,
-                    sprite:String?=null,depth:Int=7,align:String="left",family:String="sans") {
+                    sprite:String?=null,depth:Int=7,align:String="left",family:String="sans",item:String?=null) {
         val style=mutableMapOf("color" to color,"font-size" to "${size*screen.scale}px","text-align" to align,
             "font-family" to "projects_ui_polish05:$family")
         if(bg!=null)style["background-color"]=bg
         if(bg!=null && action!=null && bg in setOf("#d4b879","#d6bb7f","#d7bb7c"))
             style["hover-background-color"]="#f1d59b"
-        nodes+=UiNode(id,rect(x,y,w,h),text,style,action,null,true,depth,sprite?.let(sprites::getValue))
+        nodes+=UiNode(id,rect(x,y,w,h),text,style,action,item,true,depth,sprite?.let(sprites::getValue))
     }
     private fun shell(model: Polish05PreviewModel, muted:Boolean): MutableList<UiNode> = forge(model,muted=muted).nodes.filter { n ->
         n.id in setOf("viewport-backdrop","page","brand","eyebrow","heading","sound-box","sound-label","wallet-icon","wallet","wallet-unit","close","footer-help","footer-state","workshop-icon","workshop-text") ||
@@ -498,7 +498,8 @@ class Polish05Scene private constructor(approvedJson: String, spriteJson: String
                     if(supplemental.any { it.owned < it.required }) "#eca69b" else null)
                 id == "rarity" -> write("T${selected.tier} 装備  ·  ${if(selected.id == "weapon") "武器" else "防具"}")
                 id == "hero-name" -> write("${selected.name}  +${selected.level}")
-                id == "hero-weapon" -> replacement = replacement.copy(sprite = sprite(if(selected.id == "weapon") "sword_t2_hero" else gearIcon(selected.id)),
+                id == "hero-weapon" -> replacement = replacement.copy(item=selected.iconItem,
+                    sprite = if(selected.iconItem != null) null else sprite(if(selected.id == "weapon") "sword_t2_hero" else gearIcon(selected.id)),
                     box = if(selected.id == "weapon") replacement.box else rect(645,407,72,94))
                 id == "hero-meta" -> write("${if(selected.id == "weapon") "武器" else "防具"} Tier ${selected.tier}   │   強化 +${selected.level}${if(selected.broken) "   │   破損中" else ""}")
                 id == "effect-icon" -> replacement = replacement.copy(sprite=sprite("hammer"))
@@ -548,7 +549,8 @@ class Polish05Scene private constructor(approvedJson: String, spriteJson: String
                 id == "catalyst-text" -> write("触媒を使う  ·  刻印粉 ${value(state.catalystOwned)}個")
                 id == "catalyst-info" -> write("成功率 +15pt")
                 id == "action-note" -> write(state.note)
-                id == "modal-icon" -> replacement = replacement.copy(sprite=sprite(gearIcon(selected.id)))
+                id == "modal-icon" -> replacement = replacement.copy(item=selected.iconItem,
+                    sprite=if(selected.iconItem != null) null else sprite(gearIcon(selected.id)))
                 id == "modal-gear-name" -> write(selected.name)
                 id == "modal-level" -> write("+${selected.level}  →  +${(selected.level+1).coerceAtMost(30)}")
                 id == "modal-attack-label" -> write(if(selected.id == "weapon") "成功時の物理攻撃" else "成功時の最大HP")
@@ -576,7 +578,8 @@ class Polish05Scene private constructor(approvedJson: String, spriteJson: String
                 val active = gear.id == state.selected
                 put(nodes,"live-gear-plate-$index",95,y,229,41,
                     sprite=if(active) "gear_selected" else "gear_unselected",depth=1)
-                put(nodes,"live-gear-icon-$index",105,y+5,32,32,sprite=gearIcon(gear.id),depth=3)
+                put(nodes,"live-gear-icon-$index",105,y+5,32,32,
+                    sprite=if(gear.iconItem == null) gearIcon(gear.id) else null,item=gear.iconItem,depth=3)
                 put(nodes,"live-gear-name-$index",145,y+3,165,19,"${gear.name} +${gear.level}",size=12.5)
                 put(nodes,"live-gear-stat-$index",145,y+23,168,15,
                     "${if(gear.id == "weapon") "物理攻撃" else "最大HP"} ${gear.power}${if(gear.broken) "  破損" else ""}",

@@ -134,4 +134,29 @@ class CoreArmorSlotsTest {
         assertTrue(Files.readAllBytes(directory.resolve("$id.account.v10.bak")).contentEquals(oldBytes))
         assertTrue(Files.readString(source).startsWith("PROJECTS_CORE_LOOP\t11\t"))
     }
+
+    @Test fun cappedV10SilverKeepsOldSetOrderCancellableWithoutBlockingLoad() {
+        val player = UUID.randomUUID()
+        val order = CoreBuyOrder(UUID.randomUUID(), 10, 2, 2, slot = CoreGearSlot.ARMOR)
+        val original = CoreAccount(player, silver = CoreEconomy.MAX_SILVER, buyOrders = listOf(order))
+        val body = armorV10Body(original)
+        val checksum = MessageDigest.getInstance("SHA-256").digest(body.toByteArray(UTF_8))
+            .joinToString("") { "%02x".format(it) }
+        val migrated = CoreAccountCodec.decode(body + "checksum\t$checksum\n", player)
+        assertEquals(CoreEconomy.MAX_SILVER, migrated.silver)
+        assertEquals(listOf(order), migrated.buyOrders)
+        val reopened = CoreAccountCodec.decode(CoreAccountCodec.encode(migrated), player)
+        assertEquals(listOf(order), reopened.buyOrders)
+
+        val directory = Files.createTempDirectory("armor-capped-refund-")
+        val repository = CoreAccountRepository(directory)
+        assertEquals(CoreRepositorySave.Saved, repository.commit(0,
+            reopened.copy(revision = 1, silver = reopened.silver - order.escrow)))
+        val service = CoreAccountService(repository)
+        assertTrue(service.open(player) is CoreAccountLoadResult.Ready)
+        val result = service.transact(player, CoreOperation(UUID.randomUUID(), 1, CoreAction.CancelBuyOrder(order.id)))
+        assertEquals(CoreTransactionStatus.COMMITTED, result.status, result.message)
+        assertEquals(CoreEconomy.MAX_SILVER, result.account!!.silver)
+        assertTrue(result.account!!.buyOrders.isEmpty())
+    }
 }
