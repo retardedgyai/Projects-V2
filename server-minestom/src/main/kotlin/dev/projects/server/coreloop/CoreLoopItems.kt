@@ -75,8 +75,17 @@ internal object CoreLoopItems {
         val sheet = CoreCombatSheet.from(account)
         val enhancement = CoreEnhancementCatalog.state(account, slot)
         val identity = CoreEconomy.identity(account, slot)
-        val base = if (slot == CoreGearSlot.WEAPON) CoreWeaponPresentation.skin(weapon(tier), tier, packed) else icon(material ?: Material.IRON_CHESTPLATE, "開拓者の${slot.displayName}")
-            .withTag(actionTag, "armor").withTag(gearTag, slot.name)
+        val base = if (slot == CoreGearSlot.WEAPON) CoreWeaponPresentation.skin(weapon(tier), tier, packed) else {
+            val defaultMaterial = when (slot) {
+                CoreGearSlot.HEAD -> Material.IRON_HELMET
+                CoreGearSlot.CHEST, CoreGearSlot.ARMOR -> Material.IRON_CHESTPLATE
+                CoreGearSlot.LEGS -> Material.IRON_LEGGINGS
+                CoreGearSlot.FEET -> Material.IRON_BOOTS
+                CoreGearSlot.WEAPON -> error("防具部位ではありません")
+            }
+            icon(material ?: defaultMaterial, "開拓者の${slot.displayName}")
+                .withTag(actionTag, "armor").withTag(gearTag, slot.name)
+        }
         val rows = if (slot == CoreGearSlot.WEAPON) buildList {
             add(CoreTooltipStat("物理攻撃 AD", CoreCombatMath.number(sheet.ad), CoreUiIcon.ATTACK))
             add(CoreTooltipStat("魔法攻撃 AP", CoreCombatMath.number(sheet.ap), CoreUiIcon.MAGIC))

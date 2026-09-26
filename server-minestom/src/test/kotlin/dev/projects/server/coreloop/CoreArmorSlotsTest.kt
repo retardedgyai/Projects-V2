@@ -4,6 +4,9 @@ import java.nio.charset.StandardCharsets.UTF_8
 import java.nio.file.Files
 import java.security.MessageDigest
 import java.util.UUID
+import net.minestom.server.Auth
+import net.minestom.server.MinecraftServer
+import net.minestom.server.item.Material
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -11,6 +14,15 @@ import kotlin.test.assertNotEquals
 import kotlin.test.assertTrue
 
 class CoreArmorSlotsTest {
+    @Test fun defaultMenuIconMaterialMatchesEachArmorPart() {
+        MinecraftServer.init(Auth.Offline())
+        val account = CoreAccount(UUID.randomUUID())
+        val expected = listOf(Material.IRON_HELMET, Material.IRON_CHESTPLATE,
+            Material.IRON_LEGGINGS, Material.IRON_BOOTS)
+        assertEquals(expected, CoreGearSlot.armorSlots.map { slot ->
+            CoreLoopItems.gear(account, slot, packed = true).material()
+        })
+    }
     @Test fun eachPartKeepsItsOwnTierQualityEnhancementAndCombatContribution() {
         val id = UUID.randomUUID()
         val original = CoreAccount(id, armorTier = 2, armorEnhancement = CoreEnhancementState(6),
