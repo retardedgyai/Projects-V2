@@ -8,6 +8,7 @@ import dev.projects.server.coreloop.adventure.*
 import dev.projects.server.questmap.*
 import dev.projects.webui.Polish05Scene
 import dev.projects.webui.UiSessions
+import dev.projects.webui.UiInputPlayer
 import net.kyori.adventure.bossbar.BossBar
 import net.kyori.adventure.sound.Sound
 import net.kyori.adventure.text.Component
@@ -20,8 +21,6 @@ import net.minestom.server.coordinate.Vec
 import net.minestom.server.entity.GameMode
 import net.minestom.server.entity.Player
 import net.minestom.server.entity.PlayerHand
-import net.minestom.server.network.player.GameProfile
-import net.minestom.server.network.player.PlayerConnection
 import net.minestom.server.network.packet.client.ClientPacket
 import net.minestom.server.entity.attribute.Attribute
 import net.minestom.server.event.entity.EntityAttackEvent
@@ -51,23 +50,13 @@ object CoreLoopServer {
         val harbor = HarborScene.build(hub)
         val game = CoreLoopGame(hub, harbor)
         MinecraftServer.getConnectionManager().setPlayerProvider { connection, profile ->
-            CoreUiInputPlayer(connection,profile,game::consumeImmediateUiPacket)
+            UiInputPlayer(connection,profile,game::consumeImmediateUiPacket)
         }
         game.register()
         Runtime.getRuntime().addShutdownHook(Thread({ game.close() }, "projects-core-save-drain"))
         val port = System.getProperty("projects.port", "25565").toInt()
         server.start("127.0.0.1", port)
         println("PROJECTS_CORE_READY address=127.0.0.1:$port branch=astra-core-loop vanilla=26.2 save=config/projects/core-loop")
-    }
-}
-
-/** Leave ordinary gameplay packets on Minestom's normal tick path. */
-internal class CoreUiInputPlayer(
-    connection: PlayerConnection, profile: GameProfile,
-    private val uiRotation: (Player, ClientPacket) -> Boolean,
-) : Player(connection,profile) {
-    override fun addPacketToQueue(packet: ClientPacket) {
-        if(!uiRotation(this,packet)) super.addPacketToQueue(packet)
     }
 }
 

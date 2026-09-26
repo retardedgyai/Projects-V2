@@ -40,6 +40,7 @@ fun main(args: Array<String>) {
     instance.viewDistance(2)
     for(x in -3..3) for(z in -3..3) instance.loadChunk(x,z).get(10,TimeUnit.SECONDS)
     val packets=CopyOnWriteArrayList<SendablePacket>()
+    var inputHandler: (Player,net.minestom.server.network.packet.client.ClientPacket) -> Boolean = { _,_ -> false }
     fun cursorTranslation(id: Int)=packets.filterIsInstance<EntityMetaDataPacket>().lastOrNull {
         it.entityId()==id && it.entries().containsKey(MetadataDef.Display.TRANSLATION.index())
     }?.entries()?.get(MetadataDef.Display.TRANSLATION.index())?.value() as? net.minestom.server.coordinate.Point
@@ -49,13 +50,16 @@ fun main(args: Array<String>) {
             override fun getRemoteAddress(): SocketAddress=InetSocketAddress("127.0.0.1",0)
         }
         connection.setClientState(ConnectionState.PLAY);connection.setServerState(ConnectionState.PLAY)
-        return Player(connection,GameProfile(UUID.randomUUID(),name)).also {
+        return UiInputPlayer(connection,GameProfile(UUID.randomUUID(),name)) { player,packet ->
+            inputHandler(player,packet)
+        }.also {
             connection.player=it;it.setInstance(instance,Pos(0.0,1.0,0.0)).get(10,TimeUnit.SECONDS)
         }
     }
     val first=player("UiFirst");val second=player("UiSecond")
     val events=MinecraftServer.getGlobalEventHandler()
     val sessions=UiSessions(events,Path.of(args.single()))
+    inputHandler=sessions::consumeImmediateUiPacket
     try {
         repeat(5) {
             sessions.open(first);sessions.open(first)
@@ -90,7 +94,7 @@ fun main(args: Array<String>) {
                     ?.let { e.entityId to it.translation }
             }.toMap()
             check(originalCursor.size==3) { "The cursor body and shadow should interpolate; the hit point stays immediate" }
-            check(sessions.consumeImmediateUiPacket(first,ClientPlayerPositionAndRotationPacket(Pos(0.0,1.0,0.0,10f,1f),false,false)))
+            first.addPacketToQueue(ClientPlayerPositionAndRotationPacket(Pos(0.0,1.0,0.0,10f,1f),false,false))
             originalCursor.forEach { (id,at) ->
                 val moved=checkNotNull(cursorTranslation(id))
                 check(moved.x()>at.x() && moved.y()<at.y()) { "Cursor packet does not follow yaw/pitch in screen directions" }
