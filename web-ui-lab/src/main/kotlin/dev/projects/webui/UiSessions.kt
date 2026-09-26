@@ -70,7 +70,7 @@ class UiSessions(
     val entityCount get() = sessions.values.sumOf { it.renderer.size+1 }
     init {
         // A production server ticks at 20 Hz. Probe the external-camera mouse
-        // between ticks so the visible pointer can receive fresh input at 60 Hz.
+        // between ticks so the pointer can receive denser input without delaying hits.
         sampler.scheduleAtFixedRate({
             sessions.values.forEach { s ->
                 try {
@@ -85,7 +85,7 @@ class UiSessions(
         events.addListener(PlayerPacketEvent::class.java,::packet)
         events.addListener(PlayerDisconnectEvent::class.java) { close(it.player,false);retired.remove(it.player.uuid) }
         events.addListener(InstanceTickEvent::class.java) { e -> sessions.values.filter { it.player.instance===e.instance }.forEach { s ->
-            try { tick(s) } catch(ex: Exception) {
+            try { synchronized(s) { if(sessions[s.player.uuid]===s) tick(s) } } catch(ex: Exception) {
                 close(s.player)
                 s.player.sendMessage(Component.text("UIを安全に終了しました：${ex.message?.take(160)}"))
                 ex.printStackTrace()
@@ -178,6 +178,8 @@ class UiSessions(
             }
         }
         val s=sessions[event.player.uuid]?:return
+        synchronized(s) {
+        if(sessions[event.player.uuid]!==s) return
         when(val packet=event.packet) {
             is ClientTeleportConfirmPacket -> if(packet.teleportId()<0) {
                 event.isCancelled=true
@@ -215,11 +217,31 @@ class UiSessions(
             is ClientClickWindowPacket, is ClientPlayerAbilitiesPacket -> event.isCancelled=true
             else -> Unit
         }
+        }
+    }
+    /** Preserve the probe's confirm/rotation order on Minestom's socket thread.
+     * Other packets remain on the normal 20 Hz gameplay path. */
+    fun consumeImmediateUiPacket(player: Player, packet: net.minestom.server.network.packet.client.ClientPacket): Boolean {
+        val s=sessions[player.uuid]?:return false
+        synchronized(s) {
+            if(sessions[player.uuid]!==s) return false
+            when(packet) {
+                is ClientTeleportConfirmPacket -> {
+                    if(packet.teleportId()>=0) return false
+                    if(s.pending.remove(packet.teleportId())!=null) { s.active=true;s.lastResponse=System.nanoTime() }
+                }
+                is ClientPlayerRotationPacket -> rotation(s,packet.yaw(),packet.pitch())
+                is ClientPlayerPositionAndRotationPacket -> rotation(s,packet.position().yaw(),packet.position().pitch())
+                else -> return false
+            }
+            return true
+        }
     }
     private fun rotation(s: Session,yaw: Float,pitch: Float) {
         if(!s.active || !yaw.isFinite() || !pitch.isFinite()) return
         if(s.recenter) {
-            if(kotlin.math.abs(yaw)>0.1 || kotlin.math.abs(pitch)>0.1) return
+            // The first reply establishes the new camera baseline, regardless
+            // of its absolute angle. Waiting for exactly 0 can freeze input.
             s.pointer.reset();s.pointer.move(yaw,pitch,s.scene.width,s.scene.height);s.recenter=false
             return
         }

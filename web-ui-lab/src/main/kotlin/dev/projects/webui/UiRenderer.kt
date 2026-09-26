@@ -148,11 +148,13 @@ class UiRenderer(private val player: Player, private val origin: Pos) : AutoClos
         scene.nodes.filter { it.id==previous || it.id==next }.forEach { background(it,next) }
     }
     fun cursor(pointer: UiPointer) {
-        // Keep the bright hit-test tip on the newest input packet. A one-tick
-        // shadow fills the gap between packets without delaying the actual tip.
+        // The exact 2px hit point reacts on the newest input packet. Vanilla
+        // interpolates the larger body between metadata updates so motion is
+        // continuous without shifting the position used for clicks.
         panel("cursor-shadow",Box(pointer.x-1.0,pointer.y-1.0,5.0,15.0),0xff14171b.toInt(),0.4,1)
-        panel("cursor-v",Box(pointer.x,pointer.y,2.0,12.0),0xffffdf9f.toInt(),0.41)
-        panel("cursor-h",Box(pointer.x,pointer.y,10.0,2.0),0xffffdf9f.toInt(),0.42)
+        panel("cursor-v",Box(pointer.x,pointer.y,2.0,12.0),0xffffdf9f.toInt(),0.41,1)
+        panel("cursor-h",Box(pointer.x,pointer.y,10.0,2.0),0xffffdf9f.toInt(),0.42,1)
+        panel("cursor-tip",Box(pointer.x,pointer.y,2.0,2.0),0xffffedbc.toInt(),0.43)
         spawnReady()
     }
     override fun close() {

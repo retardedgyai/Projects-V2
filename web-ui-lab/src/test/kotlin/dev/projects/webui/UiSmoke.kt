@@ -72,6 +72,7 @@ fun main(args: Array<String>) {
                 events.call(e);check(e.isCancelled)
             }
             rotate(0f,0f)
+            check(!sessions.consumeImmediateUiPacket(second,ClientPlayerPositionAndRotationPacket(Pos(0.0,1.0,0.0,0f,0f),false,false)))
             val idleMetadata=packets.filterIsInstance<EntityMetaDataPacket>().size
             val idlePositions=packets.filterIsInstance<EntityPositionSyncPacket>().size
             repeat(20) { events.call(InstanceTickEvent(instance,0,50)) }
@@ -84,8 +85,8 @@ fun main(args: Array<String>) {
                 (e.entityMeta as? TextDisplayMeta)?.takeIf { it.transformationInterpolationDuration==1 }
                     ?.let { e.entityId to it.translation }
             }.toMap()
-            check(originalCursor.size==1) { "Only the cursor shadow should interpolate" }
-            rotate(10f,1f)
+            check(originalCursor.size==3) { "The cursor body and shadow should interpolate; the hit point stays immediate" }
+            check(sessions.consumeImmediateUiPacket(first,ClientPlayerPositionAndRotationPacket(Pos(0.0,1.0,0.0,10f,1f),false,false)))
             originalCursor.forEach { (id,at) ->
                 val moved=(instance.entities.single { it.entityId==id }.entityMeta as TextDisplayMeta).translation
                 check(moved.x()>at.x() && moved.y()<at.y()) { "Cursor does not follow yaw/pitch in screen directions" }
@@ -94,7 +95,7 @@ fun main(args: Array<String>) {
             rotate(((button.x+button.w/2-400)/8).toFloat(),((button.y+button.h/2-240)/8).toFloat())
             // No tick between movement and click: zero-delay input must update immediately.
             val moveUpdates=packets.filterIsInstance<EntityMetaDataPacket>().size-beforeButtonMetadata
-            check(moveUpdates in 3..5) { "Pointer movement metadata count=$moveUpdates (expected 3 cursor transforms and at most 2 hover panels)" }
+            check(moveUpdates in 4..6) { "Pointer movement metadata count=$moveUpdates (expected 4 cursor transforms and at most 2 hover panels)" }
             val cursorMoves=packets.filterIsInstance<EntityPositionSyncPacket>().drop(idlePositions)
             check(cursorMoves.isEmpty()) { "Cursor still jumps via entity teleports" }
             originalCursor.keys.forEach { id ->
@@ -112,6 +113,7 @@ fun main(args: Array<String>) {
             val outstanding=packets.filterIsInstance<PlayerPositionAndLookPacket>().last()
             events.call(exit)
             check(exit.isCancelled);check(sessions.sessionCount==0);check(sessions.entityCount==0)
+            check(!sessions.consumeImmediateUiPacket(first,ClientPlayerPositionAndRotationPacket(Pos(0.0,1.0,0.0,11f,1f),false,false)))
             check(packets.filterIsInstance<CameraPacket>().last().cameraId()==first.entityId)
             check(packets.filterIsInstance<HeldItemChangePacket>().last().slot().toInt()==0)
             check(packets.filterIsInstance<ChangeGameStatePacket>().last().value()==first.gameMode.ordinal.toFloat())
@@ -124,14 +126,30 @@ fun main(args: Array<String>) {
         }
         // A transfer close restores the camera/mode without issuing a return teleport.
         sessions.open(first)
-        val teleportsBefore=packets.filterIsInstance<PlayerPositionAndLookPacket>().size
+        val directSync=packets.filterIsInstance<PlayerPositionAndLookPacket>().last()
+        check(sessions.consumeImmediateUiPacket(first,ClientTeleportConfirmPacket(directSync.teleportId())))
+        val beforeBaseline=instance.entities.mapNotNull { e ->
+            (e.entityMeta as? TextDisplayMeta)?.takeIf { it.transformationInterpolationDuration==1 }
+                ?.let { e.entityId to it.translation }
+        }.toMap()
+        check(sessions.consumeImmediateUiPacket(first,ClientPlayerPositionAndRotationPacket(Pos(0.0,1.0,0.0,17f,8f),false,false)))
+        beforeBaseline.forEach { (id,at) ->
+            check((instance.entities.single { it.entityId==id }.entityMeta as TextDisplayMeta).translation==at)
+        }
+        check(sessions.consumeImmediateUiPacket(first,ClientPlayerPositionAndRotationPacket(Pos(0.0,1.0,0.0,18f,9f),false,false)))
+        beforeBaseline.forEach { (id,at) ->
+            val moved=(instance.entities.single { it.entityId==id }.entityMeta as TextDisplayMeta).translation
+            check(moved.x()>at.x() && moved.y()<at.y()) { "Nonzero first angle left the cursor frozen" }
+        }
         sessions.close(first,teleportBack=false)
         check(sessions.sessionCount==0)
-        check(packets.filterIsInstance<PlayerPositionAndLookPacket>().size==teleportsBefore)
+        val probesAfterClose=packets.filterIsInstance<PlayerPositionAndLookPacket>().size
+        Thread.sleep(40)
+        check(packets.filterIsInstance<PlayerPositionAndLookPacket>().size==probesAfterClose)
         check(packets.filterIsInstance<CameraPacket>().last().cameraId()==first.entityId)
         check(packets.filterIsInstance<ChangeGameStatePacket>().last().value()==first.gameMode.ordinal.toFloat())
         check(instance.entities.all { it===first || it===second })
-        println("UI_SMOKE_PASS 60 Hz pointer sampling independent of world ticks; 5 cycles; immediate rotation/click; idle updates=0; cursor tip immediate, shadow one-tick transform, no teleports; hover metadata<=2; private entities; restored mode/camera/slot; transfer-safe close; zero leaks")
+        println("UI_SMOKE_PASS pointer sampling independent of world ticks; 5 cycles; immediate rotation/click; idle updates=0; cursor tip immediate, body one-tick transform, no teleports; hover metadata<=2; private entities; restored mode/camera/slot; zero leaks")
     } finally {
         sessions.close();first.remove();second.remove();MinecraftServer.stopCleanly()
     }

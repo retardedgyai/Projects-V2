@@ -20,6 +20,9 @@ import net.minestom.server.coordinate.Vec
 import net.minestom.server.entity.GameMode
 import net.minestom.server.entity.Player
 import net.minestom.server.entity.PlayerHand
+import net.minestom.server.network.player.GameProfile
+import net.minestom.server.network.player.PlayerConnection
+import net.minestom.server.network.packet.client.ClientPacket
 import net.minestom.server.entity.attribute.Attribute
 import net.minestom.server.event.entity.EntityAttackEvent
 import net.minestom.server.event.entity.EntityDamageEvent
@@ -47,6 +50,9 @@ object CoreLoopServer {
         val hub = MinecraftServer.getInstanceManager().createInstanceContainer()
         val harbor = HarborScene.build(hub)
         val game = CoreLoopGame(hub, harbor)
+        MinecraftServer.getConnectionManager().setPlayerProvider { connection, profile ->
+            CoreUiInputPlayer(connection,profile,game::consumeImmediateUiPacket)
+        }
         game.register()
         Runtime.getRuntime().addShutdownHook(Thread({ game.close() }, "projects-core-save-drain"))
         val port = System.getProperty("projects.port", "25565").toInt()
@@ -55,7 +61,19 @@ object CoreLoopServer {
     }
 }
 
+/** Leave ordinary gameplay packets on Minestom's normal tick path. */
+internal class CoreUiInputPlayer(
+    connection: PlayerConnection, profile: GameProfile,
+    private val uiRotation: (Player, ClientPacket) -> Boolean,
+) : Player(connection,profile) {
+    override fun addPacketToQueue(packet: ClientPacket) {
+        if(!uiRotation(this,packet)) super.addPacketToQueue(packet)
+    }
+}
+
 internal class CoreLoopGame(private val hub: InstanceContainer, private val harbor: HarborScene.Result) : CoreMenuHost {
+    internal fun consumeImmediateUiPacket(player: Player, packet: ClientPacket): Boolean =
+        polishSessions?.consumeImmediateUiPacket(player,packet) == true
     private val io = Executors.newSingleThreadScheduledExecutor { r -> Thread(r, "projects-core-ledger").apply { isDaemon = true } }
     private val mapBuilder = Executors.newSingleThreadExecutor { r -> Thread(r, "projects-core-map-builder").apply { isDaemon = true } }
     private val preparedMaps = CoreMapPreparation(mapBuilder)
