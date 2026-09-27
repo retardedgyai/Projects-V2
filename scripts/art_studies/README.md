@@ -10,7 +10,14 @@ This is an art direction change, not a gameplay/stat or class-lock change.
 python scripts/art_studies/plate_guard_study.py --reference-pack <path-to-isles.zip>
 ```
 
-The original plate candidate is saved to `.tools/armor-review/plate-guard`:
+The refined plate candidate is saved to `.tools/armor-review/plate-guard-polished`.
+The positively received initial preview is preserved locally in both
+`plate-guard` and `plate-guard-approved`, and its source is commit `e29ea5b1`.
+The refinement keeps its palette, chest painting, limb shapes, and material
+language. Pass `--compare-to .tools/armor-review/plate-guard-approved` to produce
+`plate-before-after.png` from both versions' actual models and textures.
+
+Outputs:
 
 - `plate-overview.png`: assembled art mockup, front/rear and small display,
   plus four independent item models.

@@ -21,7 +21,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from preview_class_armaments import render_model
 
 ROOT = Path(__file__).resolve().parents[2]
-OUT = ROOT / '.tools/armor-review/plate-guard'
+OUT = ROOT / '.tools/armor-review/plate-guard-polished'
 PALETTE = {
     '.': '00000000',
     '0': '202632ff',  # occlusion, slit, gaps
@@ -55,9 +55,11 @@ SURFACES = {
  'crown_top': (
     '.23333332.', '2344444321', '3445554432', '3445544432', '3444444432',
     '2334444332', '2333333321', '2233333221', '1222222211', '.11111111.'),
- 'visor_front': ('2345544321', '1234433221', '1203303211', '.01222110.'),
+ 'visor_front': ('2345544321', '1234433221', '1230330211', '.01222110.'),
  'visor_side': ('3321', '3221', '2211', '.110'),
  'gorget': ('2GGgggG2', '23444321', '12333211'),
+ 'collar_side': ('3443','2332','1221'),
+ 'neck_top': ('2334443321','2333333221','1222222211'),
  'breast_front': (
     '..100001..', '.23GGgg32.', '2444433321', '3454443321',
     '3344433321', '2333333321', '2333333221', '1233332211',
@@ -81,7 +83,7 @@ SURFACES = {
  'belt_back': ('LLLLLLLLLL','llllllllll','llllllllll'),
  'belt_side': ('LLLLL','lllll','lllll'),
  'tasset': ('344432','233321','233321','122211','344432','233321','011110'),
- 'tasset_side': ('321','432','321','321','221','Ggb','b00'),
+ 'tasset_side': ('432','321','321','211','432','321','100'),
  'thigh': ('rstrr','ststr','rsstr','rsstr','rrsrr','rrrrr'),
  'knee': ('23432','34543','23432','01110'),
  'greave': ('12221','23421','23531','23431','23421','23321','12221'),
@@ -137,18 +139,32 @@ def build_parts(atlas):
     def box(name, lo, hi, *args, **kw):
         return cube(atlas, name, lo, hi, *args, **kw)
     head = [
-        box('sallet shell', [3,23,3], [13,33,13], 'crown_front',
+        box('lower sallet shell', [3,23,3], [13,30,13], 'crown_front',
+            'crown_side', 'crown_back', 'crown_top'),
+        box('inset crown', [3.45,30,3.45], [12.55,33,12.55], 'crown_front',
             'crown_side', 'crown_back', 'crown_top'),
         box('recessed visor darkness', [3.8,26,3.8], [12.2,29,4.2], 'dark','dark','dark','dark'),
         box('visor upper lip', [3,28,2.6], [13,28.55,3.5], 'brow','steel',top='brow'),
         box('lower face plate', [3.5,23,2.65], [12.5,27,4.2], 'visor_front',
-            'visor_side', top='steel'),
-        box('neck guard', [3.5,22.5,7.5], [12.5,24.5,13.5], 'steel', 'steel','steel','crown_top'),
+            'visor_side', top='dark',
+            rotation={'axis':'x','angle':-22.5,'origin':[8,27,2.65]}),
+        box('neck guard', [3.5,22.5,10.5], [12.5,24.5,13.5], 'steel', 'steel','steel','neck_top'),
     ]
+    # Keep the existing painted rows on their original heights. Splitting the
+    # crown changes the silhouette, not the texture into two stretched repeats.
+    for face in ('north','south','east','west'):
+        lower_uv = head[0]['faces'][face]['uv'].copy()
+        upper_uv = head[1]['faces'][face]['uv'].copy()
+        lower_uv[1] += 3/8
+        upper_uv[3] = upper_uv[1] + 3/8
+        head[0]['faces'][face]['uv'] = lower_uv
+        head[1]['faces'][face]['uv'] = upper_uv
     chest = [
         box('shaped cuirass', [3,11.8,5], [13,23.8,10.5], 'breast_front',
             'breast_side','breast_back','breast_top'),
         box('raised collar front', [4,21.8,4.55], [12,24.1,5.3], 'gorget'),
+        box('left collar return', [4,22,5.3], [4.7,24.1,8.8], 'collar_side','collar_side',top='steel'),
+        box('right collar return', [11.3,22,5.3], [12,24.1,8.8], 'collar_side','collar_side',top='steel'),
     ]
     for left in (True, False):
         x = 0 if left else 12
@@ -215,7 +231,7 @@ def render_full(m, texture, yaw=-25, size=(350,560), scale=14):
     return render_model(m,texture,size=size,scale=scale,projector=project)
 
 
-def export(out, reference_pack=None):
+def export(out, reference_pack=None, compare_to=None):
     out.mkdir(parents=True,exist_ok=True)
     atlas = Atlas()
     parts = build_parts(atlas)
@@ -228,6 +244,8 @@ def export(out, reference_pack=None):
         for e in m['elements']:
             assert all(-16<=v<=32 for key in ('from','to') for v in e[key]), e['name']
             assert all(a<b for a,b in zip(e['from'],e['to'])),e['name']
+            if 'rotation' in e:
+                assert e['rotation']['angle'] in (-45,-22.5,0,22.5,45),e['name']
             for f in e['faces'].values():
                 assert all(0<=v<=16 for v in f['uv'])
         (out/f'plate_guard_{slot}.json').write_text(json.dumps(m,indent=2))
@@ -268,6 +286,24 @@ def export(out, reference_pack=None):
     d.text((20,12),'面ごとの描画陰影あり',font=small,fill='white')
     d.text((370,12),'描画陰影なし / テクスチャだけ',font=small,fill='white')
     paint.save(out/'painted-volume.png')
+    if compare_to:
+        before=json.loads((compare_to/'assembled-preview.json').read_text())
+        before_head=json.loads((compare_to/'plate_guard_helmet.json').read_text())
+        before_texture={'plate':np.array(Image.open(compare_to/'plate_guard.png').convert('RGBA'))}
+        pair=Image.new('RGB',(1120,880),'#1b1e23')
+        d=ImageDraw.Draw(pair)
+        d.text((24,15),'ProjectS / プレート仕上げ比較',font=font,fill='#e7e0cf')
+        for col,(m,t,label) in enumerate(((before,before_texture,'前の版'),(full,texture,'仕上げ版'))):
+            pair.paste(render_full(m,t,size=(360,535),scale=13.4),(col*370,75))
+            d.text((col*370+24,55),label,font=font,fill='#e7e0cf')
+        for row,(m,t,label) in enumerate(((before_head,before_texture,'兜 / 前'),(items['helmet'],texture,'兜 / 仕上げ'))):
+            pair.paste(render_model(m,t,size=(360,245),scale=16),(750,row*275+58))
+            d.text((774,row*275+40),label,font=small,fill='#bec6ca')
+        for col,(m,t,label) in enumerate(((before,before_texture,'小表示 / 前'),(full,texture,'小表示 / 仕上げ'))):
+            pair.paste(render_full(m,t,size=(170,215),scale=5.4),(col*370+90,630))
+            d.text((col*370+24,630),label,font=small,fill='#bec6ca')
+        d.text((774,665),'・頭頂部を少し絞る\n・顎の板を内側へ傾ける\n・襟の側面を接続\n・腰の板の側面色を修正',font=small,fill='#c7cacc',spacing=12)
+        pair.save(out/'plate-before-after.png')
     if reference_pack:
         comparison=Image.new('RGB',(1200,680),'#1b1e23')
         d=ImageDraw.Draw(comparison)
@@ -291,5 +327,6 @@ if __name__ == '__main__':
     parser=argparse.ArgumentParser()
     parser.add_argument('--output',type=Path,default=OUT)
     parser.add_argument('--reference-pack',type=Path)
+    parser.add_argument('--compare-to',type=Path,help='Earlier exported plate study directory')
     args=parser.parse_args()
-    export(args.output,args.reference_pack)
+    export(args.output,args.reference_pack,args.compare_to)

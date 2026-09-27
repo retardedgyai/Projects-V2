@@ -56,6 +56,35 @@ is a texture-readability check, not a physically accurate lighting simulation.
 
 ## Current assessment and limits
 
+The creator responded positively to the initial plate set ("上手！") and then
+requested the proposed continuation. Treat that version as the visual baseline;
+the follow-up is a small finish pass, not a new design direction.
+
+### Follow-up finish pass
+
+- Preserved the initial actual model/atlas/preview at `plate-guard-approved`
+  before making changes; committed source remains available at `e29ea5b1`.
+- Inset the top three units of the helmet by 0.45 units on each side. Its UVs
+  sample the corresponding original rows rather than stretching the whole
+  helmet texture onto each of the two new shell sections.
+- Tilted the lower face plate inward by 22.5 degrees around its upper edge,
+  preserving the eye opening. Its upper surface is dark beneath the brow.
+  Rebalanced the two breathing slots so they sit either side of the center.
+- Added the collar's two side returns so the front band has a connected shape
+  in standalone chest views. No chest ornament was added.
+- Removed an obsolete gold strip on the thigh plate side which no longer
+  matched the front after the original plate review. Replaced the stretched
+  crown artwork on the neck guard top with a shallow plate-specific surface.
+- Rechecked front, left/right obliques, side, back, small size and unlit painting.
+  The before/after board uses exported model data under identical cameras.
+- Compared exported surface islands by name: only `visor_front` and
+  `tasset_side` changed among existing paintings; all other old surfaces and
+  the palette are identical. Existing torso/arm/leg/boot geometry is identical;
+  the collar returns are additions. Native cuboid, UV and rotation checks pass.
+
+The follow-up is still a preview candidate; the creator has praised the baseline,
+not yet evaluated these later changes.
+
 The set reads as plate at small size, the visor opens, and materials have
 different highlight structures. The result is a restrained original candidate.
 It is not yet evidence of matching Isles' final quality: the helmet silhouette
