@@ -27,7 +27,7 @@ def rotated(v, r):
     return p@matrix.T+o
 
 
-def render_model(model,textures,yaw=-25,size=(W,H),scale=9.2,projector=None):
+def render_model(model,textures,yaw=-25,size=(W,H),scale=9.2,projector=None,transparent=False):
     width,height=size
     pixels=np.full((height,width,3),[27,30,35],dtype=np.uint8); depth=np.full((height,width),np.inf)
     yaw,pitch=math.radians(yaw),math.radians(8)
@@ -64,6 +64,10 @@ def render_model(model,textures,yaw=-25,size=(W,H),scale=9.2,projector=None):
                 xs,ys=xs[mask],ys[mask]; coords=coords[:,mask]
                 shade={'up':1,'down':.5,'north':.85,'south':.85,'east':.65,'west':.65}[name] if e.get('shade',True) else 1
                 pixels[ys,xs]=(atlas[coords[1],coords[0],:3]*shade).astype(np.uint8); depth[ys,xs]=z[mask]
+    if transparent:
+        # Native model coverage, not a color key: dark armor pixels remain
+        # opaque even when they happen to match the preview background.
+        return Image.fromarray(np.dstack((pixels,np.where(np.isfinite(depth),255,0).astype(np.uint8))))
     return Image.fromarray(pixels)
 
 

@@ -34,6 +34,15 @@ See [PLATE_REVIEW.md](PLATE_REVIEW.md) for decisions, revisions, and limitations
 No pack generation, game startup, gameplay changes, or replacement of the live
 armor is performed by either art study. Generated reference images stay ignored.
 
+### UI integration
+
+The creator subsequently requested UI implementation. `../plate_armor_ui.py`
+now imports this exact plate geometry/painting into `../build_class_armor_assets.py`.
+The main asset build ships the warrior T1–T4 GUI icons and workshop FIXED models.
+The native worn models/layers remain on their original fallback route.
+Run `python scripts/preview_plate_ui.py` to inspect the shipped assets and their
+actual item-context selection. See `docs/development/plate-armor-ui.md`.
+
 ## Earlier forge helm study — paused
 
 Preview-only original ProjectS model and manually authored pixel texture. These

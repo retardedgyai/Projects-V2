@@ -95,7 +95,9 @@ The assembled image is an art mockup made from the exported cubes, not a
 Minecraft screenshot. Worn body layers, player fit, animated joint clearance,
 equipment/item parity and in-game mipmapping remain unverified. The 3D shoulder
 and body details in this preview do not claim to work with the current native
-equipment layer pipeline. All four parts remain preview-only.
+equipment layer pipeline. Following the creator's later UI implementation
+request, all four pieces are shipped as warrior GUI/FIXED art. The assembled
+worn appearance remains a preview; equipped body layers are not converted.
 
 ## Validation / reproducibility
 

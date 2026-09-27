@@ -6,6 +6,7 @@ from build_class_armor_assets import ASSETS,JOBS,SLOTS,armor_model,armor_texture
 from build_project_helmets import helmet_texture as project_helmet_texture
 from build_warrior_body import item_texture as warrior_item_texture
 from verify_core_weapon_assets import point
+from plate_armor_ui import ui_model as plate_ui_model, source as plate_source
 import numpy as np
 
 
@@ -52,8 +53,28 @@ def verify():
                 selection=read(f'items/{name}.json')['model']
                 assert selection['type']=='minecraft:select'
                 assert selection['property']=='minecraft:display_context'
-                assert selection['cases']==[{'when':['gui'],'model':{'type':'minecraft:model',
+                cases=[{'when':['gui'],'model':{'type':'minecraft:model',
                     'model':f'projects:item/armor/icons/{job}_t{tier}_{slot}'}}]
+                if job=='warrior':
+                    ui_path=f'item/armor/ui/{job}_t{tier}_{slot}'
+                    cases.append({'when':['fixed'],'model':{'type':'minecraft:model','model':f'projects:{ui_path}'}})
+                    ui=read(f'models/{ui_path}.json')
+                    assert ui==plate_ui_model(slot)
+                    assert ui['display']['fixed']==ui['display']['gui']
+                    assert ui['textures']['plate']=='projects:item/armor/ui/plate_guard'
+                    atlas_path='textures/item/armor/ui/plate_guard.png'
+                    assert 'assets/projects/'+atlas_path in index
+                    atlas=Image.open(ASSETS/atlas_path).convert('RGBA')
+                    assert atlas.tobytes()==plate_source()[0].tobytes()
+                    for e in ui['elements']:
+                        assert all(-16<=a<b<=32 for a,b in zip(e['from'],e['to']))
+                        for corner in range(8):
+                            p=point([e['to'][j] if corner&(1<<j) else e['from'][j] for j in range(3)],e.get('rotation'))
+                            assert all(math.isfinite(n) and -16<=n<=32 for n in p)
+                        for face in e['faces'].values():
+                            assert face['texture']=='#plate'
+                            assert all(0<=v<=16 for v in face['uv'])
+                assert selection['cases']==cases
                 assert selection['fallback']=={'type':'minecraft:model','model':f'projects:item/{name}'}
                 icon_model=read(f'models/item/armor/icons/{job}_t{tier}_{slot}.json')
                 assert icon_model['parent']=='minecraft:item/generated'
@@ -63,6 +84,11 @@ def verify():
                 assert icon.size==((64,64) if job=='warrior' else (16,16))
                 assert icon.tobytes()==icon_texture(job,tier,slot).tobytes()
                 assert set(np.array(icon)[:,:,3].flat)=={0,255}
+                if job=='warrior':
+                    alpha=np.array(icon)[:,:,3]
+                    assert not alpha[0,:].any() and not alpha[-1,:].any()
+                    assert not alpha[:,0].any() and not alpha[:,-1].any(), 'UI armor must not clip'
+                    assert np.count_nonzero(alpha)>400,'Empty or undersized plate icon'
                 model=read(f'models/item/{name}.json'); assert model==armor_model(job,tier,slot)
                 assert model['display']['fixed']==model['display']['gui'], 'Forge hero must face forward at item scale'
                 if job=='warrior':

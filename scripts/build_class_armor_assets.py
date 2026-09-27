@@ -12,6 +12,7 @@ from class_armament_geometry import ASSETS, box
 from build_bold_class_armor import ART as CLASS_ART, armor_texture as class_armor_texture
 from build_warrior_body import armor_texture as warrior_armor_texture, item_texture as warrior_item_texture
 from build_project_helmets import helmet_texture as project_helmet_texture, helmet_elements as project_helmet_elements
+from plate_armor_ui import icon as plate_icon, source as plate_source, ui_model as plate_ui_model
 
 JOBS=('warrior','mage','ranger','assassin','templar','healer','starweaver')
 SLOTS=('helmet','chestplate','leggings','boots')
@@ -141,14 +142,7 @@ def armor_model(job,tier,slot):
 def icon_texture(job,tier,slot):
     """Small original icon silhouettes; the wearable model remains three dimensional."""
     if job=='warrior':
-        path=Path(__file__).resolve().parent/'art/forge_warrior'/f'{slot}.png'
-        image=Image.open(path).convert('RGBA')
-        if tier>1:
-            draw=ImageDraw.Draw(image)
-            for i in range(tier-1):
-                x=61-i*4
-                draw.rectangle((x,3,x+1,4),fill='#edc97f')
-        return image
+        return plate_icon(slot).copy()
     if slot=='helmet':
         return project_helmet_texture(job,tier).crop((0,0,32,32)).resize(
             (16,16),Image.Resampling.NEAREST)
@@ -301,6 +295,9 @@ def icon_texture(job,tier,slot):
 
 
 def build():
+    plate_path=ASSETS/'textures/item/armor/ui/plate_guard.png'
+    plate_path.parent.mkdir(parents=True,exist_ok=True)
+    plate_source()[0].save(plate_path)
     for job in JOBS:
         for tier in range(1,5):
             key=f'armor/{job}_t{tier}'
@@ -328,6 +325,11 @@ def build():
                     'cases':[{'when':['gui'],'model':{'type':'minecraft:model',
                         'model':f'projects:item/armor/icons/{job}_t{tier}_{slot}'}}],
                     'fallback':{'type':'minecraft:model','model':f'projects:item/{name}'}}}
+                if job=='warrior':
+                    ui_name=f'item/armor/ui/{job}_t{tier}_{slot}'
+                    files[f'models/{ui_name}.json']=plate_ui_model(slot)
+                    files[f'items/{name}.json']['model']['cases'].append({
+                        'when':['fixed'],'model':{'type':'minecraft:model','model':f'projects:{ui_name}'}})
                 files[f'models/item/{name}.json']=armor_model(job,tier,slot)
             for relative,data in files.items():
                 path=ASSETS/relative; path.parent.mkdir(parents=True,exist_ok=True)
@@ -335,7 +337,7 @@ def build():
     pack=ASSETS.parents[1]
     paths=sorted(str(p.relative_to(pack)).replace('\\','/') for p in pack.rglob('*') if p.is_file() and p.name!='index.txt')
     (pack/'index.txt').write_text('\n'.join(paths)+'\n',encoding='utf-8')
-    print('Built 28 class armor sets: 56 equipment textures, 56 item textures, 112 UI icons, 28 equipment definitions, 112 wearable and UI models/items.')
+    print('Built 28 class armor sets: 112 wearable models/items, 112 UI icons, and 16 plate FIXED-display models with one shared atlas.')
 
 
 if __name__=='__main__': build()
