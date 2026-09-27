@@ -15,6 +15,7 @@ data class UiNode(
     val action: String?, val item: String?, val enabled: Boolean, val depth: Int,
     val sprite: UiSprite? = null,
     val itemPose: UiItemPose = UiItemPose.GUI,
+    val itemYaw: Double = 0.0, val itemPitch: Double = 0.0,
 ) {
     val fontSize get() = style["font-size"]?.removeSuffix("px")?.toDouble() ?: 14.0
     val color get() = style["color"] ?: "#eee8df"

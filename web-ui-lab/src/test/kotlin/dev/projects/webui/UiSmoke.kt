@@ -217,7 +217,49 @@ fun main(args: Array<String>) {
         check(packets.filterIsInstance<CameraPacket>().last().cameraId()==first.entityId)
         check(packets.filterIsInstance<ChangeGameStatePacket>().last().value()==first.gameMode.ordinal.toFloat())
         check(instance.entities.all { it===first || it===second })
-        println("UI_SMOKE_PASS pointer sampling independent of world ticks; 5 cycles; immediate rotation/click; idle updates=0; cursor tip immediate, body one-tick transform, no teleports; hover metadata<=2; private entities; restored mode/camera/slot; zero leaks")
+        // Preview start/stop consumes clicks without leaking a stopping click to enhance.
+        var actions=0
+        val previewScene=UiScene(800.0,480.0,listOf(
+            UiNode("hero-weapon",Box(300.0,150.0,200.0,200.0),"",emptyMap(),null,"minecraft:iron_sword",true,4,itemPose=UiItemPose.FIXED),
+            UiNode("preview-hit",Box(300.0,150.0,200.0,200.0),"",emptyMap(),"preview:toggle",null,true,10),
+            UiNode("enhance",Box(550.0,150.0,100.0,200.0),"",emptyMap(),"enhance",null,true,10)))
+        val previewFlow=object:ForgeUiFlow {
+            override val muted=true
+            override val view="forge"
+            override val operationActive=false
+            override fun scene(light:ForgeLightPhase)=previewScene
+            override fun action(action:String):Boolean { actions++;return true }
+        }
+        UiSessions(events,null,flowFactory={previewFlow}).use { previews ->
+            previews.open(first)
+            previews.consumeImmediateUiPacket(first,ClientTeleportConfirmPacket(packets.filterIsInstance<PlayerPositionAndLookPacket>().last().teleportId()))
+            fun move(x:Double,y:Double) {
+                previews.consumeImmediateUiPacket(first,ClientPlayerPositionAndRotationPacket(
+                    Pos(0.0,1.0,0.0,((x-400)/8).toFloat(),((y-240)/8).toFloat()),false,false))
+            }
+            fun click() {
+                Thread.sleep(80)
+                val click=ClientSpectatorActionPacket(null)
+                previews.consumeImmediateUiPacket(first,click)
+                events.call(PlayerPacketEvent(first,click))
+            }
+            move(400.0,240.0);click()
+            val mesh=instance.entities.mapNotNull { it.entityMeta as? net.minestom.server.entity.metadata.display.ItemDisplayMeta }.single()
+            val initial=mesh.rightRotation.copyOf()
+            move(440.0,250.0)
+            check(mesh.rightRotation.contentEquals(initial)) { "Socket path mutated preview entity" }
+            events.call(InstanceTickEvent(instance,0,50))
+            check(!mesh.rightRotation.contentEquals(initial)) { "Preview did not rotate" }
+            check(mesh.transformationInterpolationDuration==1)
+            move(600.0,240.0);click()
+            check(actions==0) { "Stopping preview activated enhance" }
+            val stopped=mesh.rightRotation.copyOf()
+            move(610.0,250.0);events.call(InstanceTickEvent(instance,0,50))
+            check(mesh.rightRotation.contentEquals(stopped)) { "Stopped preview kept rotating" }
+            click();check(actions==1) { "Controls did not resume after preview stopped" }
+        }
+        check(instance.entities.all { it===first || it===second })
+        println("UI_SMOKE_PASS existing cursor/latency checks; preview rotation/stop/no click-through; private entities; zero leaks")
     } finally {
         sessions.close();first.remove();second.remove();MinecraftServer.stopCleanly()
     }

@@ -48,6 +48,7 @@ class UiSessions(
         val effects=if(polish!=null)Polish05Effects() else null
         var light=ForgeLightPhase.IDLE
         val pointer=UiPointer()
+        val preview=ForgePreview()
         var scene=polish?.scene()?:requireNotNull(document).layout(demo.values(),demo.flags())
         val pending=ConcurrentHashMap<Int,Long>()
         val queue=ArrayDeque<Input>()
@@ -127,7 +128,7 @@ class UiSessions(
             else {
                 try {
                     camera.addViewer(player)
-                    s.renderer.render(s.scene,null,s.pointer)
+                    render(s)
                     // Only the client's presentation changes. The authoritative player stays Adventure.
                     player.sendPacket(ChangeGameStatePacket(ChangeGameStatePacket.Reason.CHANGE_GAMEMODE,3f))
                     player.sendPacket(CameraPacket(camera.entityId))
@@ -295,7 +296,7 @@ class UiSessions(
             })
             s.light=s.effects?.phase()?:ForgeLightPhase.IDLE
             s.scene=s.polish.scene(s.light)
-            s.renderer.render(s.scene,s.hover,s.pointer)
+            render(s)
         }
         drain(s,now)
         if(sessions[s.player.uuid]===s) {
@@ -306,7 +307,7 @@ class UiSessions(
                         s.light=phase
                         s.scene=s.polish.scene(phase)
                     }
-                    s.renderer.render(s.effects.frame(s.scene),s.hover,s.pointer)
+                    render(s,s.effects.frame(s.scene))
                 } else s.effects.clear()
             }
             paintPointer(s)
@@ -324,14 +325,25 @@ class UiSessions(
                     if(now-s.lastClick<if(s.polish!=null)70_000_000L else 220_000_000L) continue
                     s.lastClick=now
                     val at=input.clickAt
+                    s.preview.sync(s.scene)
+                    val x=at?.first?:s.pointer.x
+                    val y=at?.second?:s.pointer.y
+                    // A stopping click is consumed even when over another control.
+                    if(s.preview.rotating) {
+                        s.preview.toggle(x,y);render(s);continue
+                    }
                     val hit=s.scene.hit(at?.first?:s.pointer.x,at?.second?:s.pointer.y)
                     if(hit==null || !hit.enabled) continue
                     action=hit.action!!
+                    if(action=="preview:toggle") {
+                        s.preview.toggle(x,y);render(s);continue
+                    }
                 }
                 if(action=="close") { close(s.player);return }
                 if(s.polish!=null) {
                     val oldMuted=s.polish.muted
                     if(!s.polish.action(action)) continue
+                    if(action.startsWith("select:")) s.preview.reset()
                     if(action=="sound" && !oldMuted && s.polish.muted) {
                         POLISH_SOUNDS.forEach { s.player.stopSound(SoundStop.named(Key.key("projects_ui_polish05:ui.$it"))) }
                     } else if(action=="confirm" && s.polish.operationActive) {
@@ -350,7 +362,7 @@ class UiSessions(
                     s.light=s.effects?.phase()?:ForgeLightPhase.IDLE
                     s.scene=s.polish.scene(s.light)
                     s.hover=s.scene.hit(s.pointer.x,s.pointer.y)?.id
-                    s.renderer.render(s.scene,s.hover,s.pointer)
+                    render(s)
                     continue
                 }
                 if(action.startsWith("page:") && s.demo.tab!="catalog") continue
@@ -376,6 +388,11 @@ class UiSessions(
         val hover=s.scene.hit(s.pointer.x,s.pointer.y)?.id
         if(hover!=s.hover) { s.renderer.hover(s.scene,s.hover,hover);s.hover=hover }
         s.renderer.cursor(s.pointer)
+    }
+    private fun render(s: Session,scene: UiScene=s.scene) {
+        s.preview.sync(s.scene)
+        s.preview.move(s.pointer.x,s.pointer.y)
+        s.renderer.render(s.preview.decorate(scene),s.hover,s.pointer)
     }
     private fun sound(s:Session,cue:String) {
         if(s.polish?.muted!=false)return

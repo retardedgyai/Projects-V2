@@ -41,6 +41,8 @@ def ui_model(slot):
     presentation={'rotation':[15,-25,0],
                   'translation':[float(offset[0]),float(offset[1]),0], 'scale':[float(scale)]*3}
     result['display']={'gui':deepcopy(presentation),'fixed':deepcopy(presentation)}
+    # The turntable must rotate around the mesh centre on all three axes.
+    result['display']['fixed']['translation'][2]=float(offset[2])
     return result
 
 

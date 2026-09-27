@@ -26,6 +26,9 @@ class CorePolish05ForgeFlowTest {
             done(true)
         }
         val display=flow.scene()
+        val hero=display.nodes.single { it.id=="hero-weapon" }
+        assertEquals("minecraft:iron_sword|projects:weapons/greatsword_t1",hero.item)
+        assertTrue(display.nodes.any { it.action=="preview:toggle" })
         fun text(id:String)=display.nodes.single { it.id==id }.text
         assertEquals("123",text("wallet"))
         assertEquals(recipe.costs.keys.first().displayName,text("cost-name-0"))
@@ -33,6 +36,7 @@ class CorePolish05ForgeFlowTest {
         assertFalse(display.nodes.any { it.text.contains("12,480") || it.text.contains("陽鉱の塊") })
         assertTrue(flow.action("enhance"))
         assertTrue(flow.scene().nodes.any { it.id=="modal-confirm" })
+        assertFalse(flow.scene().nodes.any { it.action=="preview:toggle" || it.id=="preview-hint" })
         assertTrue(flow.action("confirm"))
         assertEquals(Triple(CoreGearSlot.WEAPON,CoreEnhancementMode.STANDARD,current.revision),request)
         assertNotNull(flow.tick())

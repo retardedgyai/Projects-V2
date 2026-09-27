@@ -60,7 +60,9 @@ def verify():
                     cases.append({'when':['fixed'],'model':{'type':'minecraft:model','model':f'projects:{ui_path}'}})
                     ui=read(f'models/{ui_path}.json')
                     assert ui==plate_ui_model(slot)
-                    assert ui['display']['fixed']==ui['display']['gui']
+                    assert ui['display']['fixed']['rotation']==ui['display']['gui']['rotation']
+                    assert ui['display']['fixed']['scale']==ui['display']['gui']['scale']
+                    assert ui['display']['fixed']['translation'][:2]==ui['display']['gui']['translation'][:2]
                     assert ui['textures']['plate']=='projects:item/armor/ui/plate_guard'
                     atlas_path='textures/item/armor/ui/plate_guard.png'
                     assert 'assets/projects/'+atlas_path in index

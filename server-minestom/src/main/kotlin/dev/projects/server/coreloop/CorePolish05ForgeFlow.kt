@@ -58,6 +58,9 @@ internal class CorePolish05ForgeFlow(
                     }
                     "minecraft:leather_$part|projects:armor/${a.journey.job.name.lowercase()}_t${CoreAffixCatalog.gearTier(a,slot)}_$part"
                 },
+                previewItem = if(slot == CoreGearSlot.WEAPON)
+                    "minecraft:iron_sword|${CoreArmamentPresentation.model(a.weaponIdentity.base,a.journey.job,CoreAffixCatalog.gearTier(a,slot))}"
+                else null,
             )
         }
         val cost = q.recipe.costs.map { (material, required) ->

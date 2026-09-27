@@ -498,10 +498,10 @@ class Polish05Scene private constructor(approvedJson: String, spriteJson: String
                     if(supplemental.any { it.owned < it.required }) "#eca69b" else null)
                 id == "rarity" -> write("T${selected.tier} 装備  ·  ${if(selected.id == "weapon") "武器" else "防具"}")
                 id == "hero-name" -> write("${selected.name}  +${selected.level}")
-                id == "hero-weapon" -> replacement = replacement.copy(item=selected.iconItem,
-                    itemPose=if(selected.id == "weapon") UiItemPose.GUI else UiItemPose.FIXED,
-                    sprite = if(selected.iconItem != null) null else sprite(if(selected.id == "weapon") "sword_t2_hero" else gearIcon(selected.id)),
-                    box = if(selected.id == "weapon") replacement.box else rect(621,369,120,164))
+                id == "hero-weapon" -> replacement = replacement.copy(item=selected.previewItem ?: selected.iconItem,
+                    itemPose=if(selected.id=="weapon" && selected.previewItem==null) UiItemPose.GUI else UiItemPose.FIXED,
+                    sprite = if(selected.previewItem != null || selected.iconItem != null) null else sprite(if(selected.id == "weapon") "sword_t2_hero" else gearIcon(selected.id)),
+                    box = if(selected.id == "weapon" && selected.previewItem==null) replacement.box else rect(551,353,260,260))
                 id == "hero-meta" -> write("${if(selected.id == "weapon") "武器" else "防具"} Tier ${selected.tier}   │   強化 +${selected.level}${if(selected.broken) "   │   破損中" else ""}")
                 id == "effect-icon" -> replacement = replacement.copy(sprite=sprite("hammer"))
                 id == "effect-name" -> write(if(selected.id == "weapon") "装備中の武器" else "装備中の防具")
@@ -606,6 +606,10 @@ class Polish05Scene private constructor(approvedJson: String, spriteJson: String
                 nodes += UiNode("live-cost-halo-$index-$offset",rect(1019+offset,y,s.width,s.height),"",
                     emptyMap(),null,null,true,2,s)
             }
+        }
+        if(!state.modal && !state.busy && nodes.any { it.id=="hero-weapon" && it.item!=null }) {
+            hit(nodes,"preview-hit",477,325,408,300,"preview:toggle")
+            put(nodes,"preview-hint",477,641,408,20,"クリックで回転",size=11.0,color="#b8b4a8",align="center")
         }
         return UiScene(base.width,base.height,nodes)
     }

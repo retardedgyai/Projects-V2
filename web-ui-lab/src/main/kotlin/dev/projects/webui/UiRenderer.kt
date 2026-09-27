@@ -115,9 +115,16 @@ class UiRenderer(private val player: Player, private val origin: Pos) : AutoClos
                         UiItemPose.FIXED -> ItemDisplayMeta.DisplayContext.FIXED
                     })
                     m.setBrightness(15,15)
-                    val size=minOf(b.w,b.h)*geometry.unit(z+0.05)*0.8
-                    m.setScale(Vec(size,size,size))
-                    m.setTranslation(geometry.point(b.x+b.w/2,b.y+b.h/2,z+0.05))
+                    val preview=node.id=="hero-weapon"
+                    val depth=if(preview) .18 else z+.05
+                    val size=minOf(b.w,b.h)*geometry.unit(depth)*0.8
+                    // Rotate the mesh before compressing only its depth: all faces stay
+                    // ahead of the backdrop and behind the cursor, at every preview angle.
+                    m.setScale(Vec(size,size,if(preview)size*.08 else size))
+                    m.setRightRotation(previewQuaternion(node.itemYaw,node.itemPitch))
+                    m.setTransformationInterpolationDuration(if(preview)1 else 0)
+                    m.setTransformationInterpolationStartDelta(0)
+                    m.setTranslation(geometry.point(b.x+b.w/2,b.y+b.h/2,depth))
                 }
             } else if(node.sprite!=null) {
                 val sprite=node.sprite
