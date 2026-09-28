@@ -29,7 +29,9 @@ class UiRenderer(private val player: Player, private val origin: Pos) : AutoClos
     private val unspawned=mutableListOf<Pair<String,Entity>>()
     private var closed=false
     private var packetCursor=false
-    private var lastPacketTransform: Triple<Double,Double,Double>?=null
+    private var lastTipTransform: Triple<Double,Double,Double>?=null
+    private var lastBodyTransform: Triple<Double,Double,Double>?=null
+    private var lastBodyPacketNs=0L
     private val cursorIds=setOf("cursor-shadow","cursor-v","cursor-h","cursor-tip")
     private val spawnedCursorIds=ConcurrentHashMap.newKeySet<String>()
     @Volatile private var cursorReady=false
@@ -178,7 +180,7 @@ class UiRenderer(private val player: Player, private val origin: Pos) : AutoClos
             wanted+=cursorIds
             // A probe may arrive before the four spawn packets. Send the latest
             // position once the client actually has the cursor entities.
-            if(cursorReady && lastPacketTransform!=Triple(pointer.x,pointer.y,zoom)) cursorPacket(pointer)
+            if(cursorReady) cursorPacket(pointer)
             return
         }
         // The exact 2px hit point reacts on the newest input packet. Vanilla
@@ -195,16 +197,8 @@ class UiRenderer(private val player: Player, private val origin: Pos) : AutoClos
         packetCursor=true
         if(!cursorReady) return
         val at=Triple(pointer.x,pointer.y,zoom)
-        if(lastPacketTransform==at) return
-        lastPacketTransform=at
-        val positions=listOf(
-            Triple("cursor-shadow",Box(pointer.x-1.0,pointer.y-1.0,5.0,15.0),0.4),
-            Triple("cursor-v",Box(pointer.x,pointer.y,2.0,12.0),0.41),
-            Triple("cursor-h",Box(pointer.x,pointer.y,10.0,2.0),0.42),
-            Triple("cursor-tip",Box(pointer.x,pointer.y,2.0,2.0),0.43),
-        )
-        positions.forEach { (key,box,depth) ->
-            val id=entities[key]?.entityId?:return@forEach
+        fun send(key:String,box:Box,depth:Double) {
+            val id=entities[key]?.entityId?:return
             val transform=geometry.panel(box,depth)
             player.sendPacket(EntityMetaDataPacket(id,mapOf(
                 MetadataDef.Display.TRANSLATION.index() to Metadata.Vector3(transform.translation),
@@ -212,11 +206,28 @@ class UiRenderer(private val player: Player, private val origin: Pos) : AutoClos
                 MetadataDef.Display.INTERPOLATION_DELAY.index() to Metadata.VarInt(0),
             )))
         }
+        if(lastTipTransform!=at) {
+            send("cursor-tip",Box(pointer.x,pointer.y,2.0,2.0),0.43)
+            lastTipTransform=at
+        }
+        // Body updates no faster than the client's display interpolation can use.
+        // The exact hit point still reacts to every new probe. A later idle probe
+        // flushes the final body position after the pointer stops.
+        val now=System.nanoTime()
+        if(lastBodyTransform!=at && (lastBodyTransform==null || now-lastBodyPacketNs>=25_000_000L)) {
+            send("cursor-shadow",Box(pointer.x-1.0,pointer.y-1.0,5.0,15.0),0.4)
+            send("cursor-v",Box(pointer.x,pointer.y,2.0,12.0),0.41)
+            send("cursor-h",Box(pointer.x,pointer.y,10.0,2.0),0.42)
+            lastBodyTransform=at
+            lastBodyPacketNs=now
+        }
     }
     /** The lab's artificial latency mode applies queued input on the instance thread. */
     fun entityCursor() {
         packetCursor=false
-        lastPacketTransform=null
+        lastTipTransform=null
+        lastBodyTransform=null
+        lastBodyPacketNs=0L
     }
     override fun close() {
         closed=true; entities.values.forEach(Entity::remove); entities.clear()

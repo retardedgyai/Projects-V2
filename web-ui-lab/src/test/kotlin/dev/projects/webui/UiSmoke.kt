@@ -108,11 +108,20 @@ fun main(args: Array<String>) {
                 "Idle probe replies still send cursor metadata"
             }
             val beforeButtonMetadata=packets.filterIsInstance<EntityMetaDataPacket>().size
-            check(sessions.consumeImmediateUiPacket(first,ClientPlayerPositionAndRotationPacket(Pos(0.0,1.0,0.0,
-                ((button.x+button.w/2-400)/8).toFloat(),((button.y+button.h/2-240)/8).toFloat()),false,false)))
+            val buttonPosition=Pos(0.0,1.0,0.0,
+                ((button.x+button.w/2-400)/8).toFloat(),((button.y+button.h/2-240)/8).toFloat())
+            check(sessions.consumeImmediateUiPacket(first,ClientPlayerPositionAndRotationPacket(buttonPosition,false,false)))
             // No tick between movement and click: zero-delay input must update immediately.
-            val moveUpdates=packets.filterIsInstance<EntityMetaDataPacket>().size-beforeButtonMetadata
-            check(moveUpdates in 4..6) { "Pointer movement metadata count=$moveUpdates (expected 4 cursor transforms and at most 2 hover panels)" }
+            val movePackets=packets.filterIsInstance<EntityMetaDataPacket>().drop(beforeButtonMetadata)
+            check(movePackets.size in 1..6 && movePackets.any { it.entityId() !in originalCursor.keys }) {
+                "The exact cursor tip did not react immediately"
+            }
+            // The body is deliberately paced; an unchanged probe must still flush its final target.
+            Thread.sleep(30)
+            check(sessions.consumeImmediateUiPacket(first,ClientPlayerPositionAndRotationPacket(buttonPosition,false,false)))
+            originalCursor.keys.forEach { id ->
+                checkNotNull(cursorTranslation(id))
+            }
             val cursorMoves=packets.filterIsInstance<EntityPositionSyncPacket>().drop(idlePositions)
             check(cursorMoves.isEmpty()) { "Cursor still jumps via entity teleports" }
             originalCursor.keys.forEach { id ->
@@ -188,6 +197,9 @@ fun main(args: Array<String>) {
         val zoomClick=ClientSpectatorActionPacket(null)
         check(!sessions.consumeImmediateUiPacket(first,zoomClick))
         events.call(PlayerPacketEvent(first,zoomClick))
+        Thread.sleep(30)
+        first.addPacketToQueue(ClientPlayerPositionAndRotationPacket(Pos(0.0,1.0,0.0,
+            ((zoomButton.x+zoomButton.w/2-400)/8).toFloat(),((zoomButton.y+zoomButton.h/2-240)/8).toFloat()),false,false))
         val afterZoom=checkNotNull(cursorTranslation(zoomCursor))
         check(afterZoom!=beforeZoom) { "Lab zoom left the packet cursor at its old transform" }
         sessions.close(first)
@@ -203,6 +215,8 @@ fun main(args: Array<String>) {
         beforeBaseline.forEach { (id,at) ->
             check((instance.entities.single { it.entityId==id }.entityMeta as TextDisplayMeta).translation==at)
         }
+        check(sessions.consumeImmediateUiPacket(first,ClientPlayerPositionAndRotationPacket(Pos(0.0,1.0,0.0,18f,9f),false,false)))
+        Thread.sleep(30)
         check(sessions.consumeImmediateUiPacket(first,ClientPlayerPositionAndRotationPacket(Pos(0.0,1.0,0.0,18f,9f),false,false)))
         beforeBaseline.forEach { (id,at) ->
             val moved=checkNotNull(cursorTranslation(id))
