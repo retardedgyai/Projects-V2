@@ -86,7 +86,7 @@ class UiSessions(
                     s.probeError=ex
                 }
             }
-        },0,16_666_667,TimeUnit.NANOSECONDS)
+        },0,8_333_333,TimeUnit.NANOSECONDS)
         events.addListener(PlayerPacketEvent::class.java,::packet)
         events.addListener(PlayerDisconnectEvent::class.java) { close(it.player,false);retired.remove(it.player.uuid) }
         events.addListener(InstanceTickEvent::class.java) { e -> sessions.values.filter { it.player.instance===e.instance }.forEach { s ->
@@ -155,7 +155,7 @@ class UiSessions(
         }
     }
     private fun sample(s: Session, reset: Boolean=false) {
-        if(s.pending.size>=12) return
+        if(s.pending.size>=24) return
         val id=ids.getAndDecrement()
         s.pending[id]=System.nanoTime()
         if(reset) { s.pointer.reset();s.recenter=true }
