@@ -214,7 +214,7 @@ class UiRenderer(private val player: Player, private val origin: Pos) : AutoClos
         // The exact hit point still reacts to every new probe. A later idle probe
         // flushes the final body position after the pointer stops.
         val now=System.nanoTime()
-        if(lastBodyTransform!=at && (lastBodyTransform==null || now-lastBodyPacketNs>=25_000_000L)) {
+        if(lastBodyTransform!=at && (lastBodyTransform==null || now-lastBodyPacketNs>=16_666_667L)) {
             send("cursor-shadow",Box(pointer.x-1.0,pointer.y-1.0,5.0,15.0),0.4)
             send("cursor-v",Box(pointer.x,pointer.y,2.0,12.0),0.41)
             send("cursor-h",Box(pointer.x,pointer.y,10.0,2.0),0.42)
