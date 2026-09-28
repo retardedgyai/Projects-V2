@@ -36,8 +36,9 @@ internal class ForgePreview {
 
     fun decorate(scene: UiScene): UiScene = scene.copy(nodes=scene.nodes.map {
         when(it.id) {
-            "hero-weapon" -> it.copy(itemYaw=yaw,itemPitch=pitch)
-            "preview-hint" -> it.copy(text=if(rotating) "マウスで回転・クリックで固定" else "クリックで回転")
+            "hero-weapon" -> if(it.previewIdleBox!=null && !rotating && yaw==0.0 && pitch==0.0)
+                it.copy(box=it.previewIdleBox,item=null)
+            else it.copy(itemYaw=yaw,itemPitch=pitch)
             else -> it
         }
     })

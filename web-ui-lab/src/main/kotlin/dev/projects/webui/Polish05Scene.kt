@@ -500,7 +500,8 @@ class Polish05Scene private constructor(approvedJson: String, spriteJson: String
                 id == "hero-name" -> write("${selected.name}  +${selected.level}")
                 id == "hero-weapon" -> replacement = replacement.copy(item=selected.previewItem ?: selected.iconItem,
                     itemPose=if(selected.id=="weapon" && selected.previewItem==null) UiItemPose.GUI else UiItemPose.FIXED,
-                    sprite = if(selected.previewItem != null || selected.iconItem != null) null else sprite(if(selected.id == "weapon") "sword_t2_hero" else gearIcon(selected.id)),
+                    sprite = if(selected.id == "weapon") sprite("sword_t2_hero") else if(selected.previewItem != null || selected.iconItem != null) null else sprite(gearIcon(selected.id)),
+                    previewIdleBox=if(selected.id=="weapon" && selected.previewItem!=null) replacement.box else null,
                     box = if(selected.id == "weapon" && selected.previewItem==null) replacement.box else rect(551,353,260,260))
                 id == "hero-meta" -> write("${if(selected.id == "weapon") "武器" else "防具"} Tier ${selected.tier}   │   強化 +${selected.level}${if(selected.broken) "   │   破損中" else ""}")
                 id == "effect-icon" -> replacement = replacement.copy(sprite=sprite("hammer"))
@@ -609,7 +610,6 @@ class Polish05Scene private constructor(approvedJson: String, spriteJson: String
         }
         if(!state.modal && !state.busy && nodes.any { it.id=="hero-weapon" && it.item!=null }) {
             hit(nodes,"preview-hit",477,325,408,300,"preview:toggle")
-            put(nodes,"preview-hint",477,641,408,20,"クリックで回転",size=11.0,color="#b8b4a8",align="center")
         }
         return UiScene(base.width,base.height,nodes)
     }

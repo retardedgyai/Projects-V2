@@ -33,4 +33,22 @@ class ForgePreviewTest {
         }
         assertContentEquals(floatArrayOf(0f,0f,0f,1f),previewQuaternion(0.0,0.0))
     }
+
+    @Test fun costlyWeaponMeshIsAbsentUntilPreviewStarts() {
+        val original=UiNode("hero-weapon",Box(300.0,140.0,200.0,240.0),"",emptyMap(),null,
+            "minecraft:iron_sword|projects:weapons/greatsword_t1",true,4,
+            sprite=UiSprite("✦","projects_ui_polish05:sprites",57,276),
+            itemPose=UiItemPose.FIXED,previewIdleBox=Box(380.0,140.0,40.0,240.0))
+        val scene=UiScene(800.0,480.0,listOf(original,
+            UiNode("preview-hit",Box(300.0,140.0,200.0,240.0),"",emptyMap(),
+                "preview:toggle",null,true,10)))
+        val p=ForgePreview();p.sync(scene)
+        val idle=p.decorate(scene).nodes.first()
+        assertNull(idle.item);assertNotNull(idle.sprite)
+        assertEquals(original.previewIdleBox,idle.box)
+        p.toggle(400.0,240.0)
+        assertEquals(original.item,p.decorate(scene).nodes.first().item)
+        p.move(430.0,240.0);p.toggle(430.0,240.0)
+        assertEquals(original.item,p.decorate(scene).nodes.first().item)
+    }
 }
