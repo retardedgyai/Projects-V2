@@ -43,7 +43,8 @@ def boxes(name,at=(0,0,0),scale=(1,1,1),centered=True,yaw=0):
         transform=display@np.diag(scale)@matrix
         pivot=np.zeros(3) if centered else np.array([.5,0,.5])*np.array(scale)
         offset=np.array(at)+pivot-display@pivot+display@(np.array(scale)*(origin-matrix@origin-(.5 if centered else 0)))
-        result.append((lo,hi,e['faces'],m['textures'],transform,offset))
+        faces={name:{**face,'_light_emission':e.get('light_emission',0),'_shade':e.get('shade',True)} for name,face in e['faces'].items()}
+        result.append((lo,hi,faces,m['textures'],transform,offset))
     return result
 
 normals={'north':(0,0,-1),'south':(0,0,1),'west':(-1,0,0),'east':(1,0,0),'up':(0,1,0),'down':(0,-1,0)}
@@ -52,7 +53,7 @@ def corners(lo,hi,face):
     return np.array({'north':[(X,Y,z),(X,y,z),(x,y,z),(x,Y,z)],'south':[(x,Y,Z),(x,y,Z),(X,y,Z),(X,Y,Z)],
       'west':[(x,Y,z),(x,y,z),(x,y,Z),(x,Y,Z)],'east':[(X,Y,Z),(X,y,Z),(X,y,z),(X,Y,z)],
       'up':[(x,Y,z),(x,Y,Z),(X,Y,Z),(X,Y,z)],'down':[(x,y,Z),(x,y,z),(X,y,z),(X,y,Z)]}[face])
-def render(parts,size,yaw,elevation,with_depth=False,frame_bounds=None):
+def render(parts,size,yaw,elevation,with_depth=False,frame_bounds=None,ambient=1,background='#242922'):
     a,e=math.radians(yaw),math.radians(elevation)
     cam=np.array([math.sin(a)*math.cos(e),math.sin(e),-math.cos(a)*math.cos(e)])
     right=np.array([math.cos(a),0,math.sin(a)]);up=np.cross(right,cam)
@@ -70,7 +71,8 @@ def render(parts,size,yaw,elevation,with_depth=False,frame_bounds=None):
             v=corners(lo,hi,face)@matrix.T+offset;uv=f.get('uv',[0,0,16,16]);name=f['texture']
             while isinstance(name,str) and name.startswith('#'):name=refs[name[1:]]
             if isinstance(name,dict): name=name['sprite']
-            tex=texture(name);shade=.62+.38*max(0,np.dot(n,light))
+            tex=texture(name)
+            shade=(.62+.38*max(0,np.dot(n,light)) if f.get('_shade',True) else 1)*max(ambient,f.get('_light_emission',0)/15)
             if np.all(tex==tex[0,0]):
                 rgba=tex[0,0]
                 if rgba[3]:
@@ -92,7 +94,7 @@ def render(parts,size,yaw,elevation,with_depth=False,frame_bounds=None):
     points=np.concatenate([p for _,p,_ in poly]) if frame_bounds is None else np.stack([(bounds-center)@right,(bounds-center)@up],axis=1)
     low=points.min(0);high=points.max(0)
     factor=min((size[0]-50)/(high[0]-low[0]),(size[1]-50)/(high[1]-low[1]));mid=(low+high)*.5
-    image=Image.new('RGB',size,'#242922');draw=ImageDraw.Draw(image,'RGBA')
+    image=Image.new('RGB',size,background);draw=ImageDraw.Draw(image,'RGBA')
     depth=Image.new('F',size,-100000.0);depthdraw=ImageDraw.Draw(depth)
     for d,p,c in sorted(poly,key=lambda x:x[0]):
         p=(p-mid)*[factor,-factor]+[size[0]/2,size[1]/2]
