@@ -1,0 +1,128 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "frame": "chest",
+      "changedPixels": 0,
+      "rgbaSha256": "4ac6953dff20a2925a2c73d3e2b3c7f6f8e04f46550c5f96d3b534fac1a95795"
+    },
+    {
+      "frame": "head",
+      "changedPixels": 0,
+      "rgbaSha256": "ad6473b0ffeea12f715e08e490f80e0ca3b573f11c467c52f62f56b192491bfe"
+    },
+    {
+      "frame": "legs",
+      "changedPixels": 0,
+      "rgbaSha256": "b9685fb8ec57a6fce05bce80826cdf32be10566590ec88298f33de668f5efc93"
+    },
+    {
+      "frame": "feet",
+      "changedPixels": 0,
+      "rgbaSha256": "d56a4626fcd88a6a830f978365e15ee254304d27873c099a2938f252963e336d"
+    },
+    {
+      "frame": "weapon",
+      "changedPixels": 0,
+      "rgbaSha256": "76c59997e7d6578eb635bca32370f613bd34814b329ebb964548cdccfd353f2a"
+    },
+    {
+      "frame": "chest-focused",
+      "changedPixels": 0,
+      "rgbaSha256": "1b8bca7d9e131f315af03e8787851a580ecece8cf8a4a6cd34ef4092932012d2"
+    },
+    {
+      "frame": "head-focused",
+      "changedPixels": 0,
+      "rgbaSha256": "4b4d51e89041ced0d7d5012f716eeae45dd45e9288bdf2591357aa7c45c4c065"
+    },
+    {
+      "frame": "legs-focused",
+      "changedPixels": 0,
+      "rgbaSha256": "449a3e4100e0f65c57372f4a6ef47f041884a73fc3674c09f1849b0835d34b1a"
+    },
+    {
+      "frame": "feet-focused",
+      "changedPixels": 0,
+      "rgbaSha256": "93a945bc897d91309fde49966a4b5c70bc02b604c2ad7f5e3d1d7f311d6a27f5"
+    },
+    {
+      "frame": "weapon-focused",
+      "changedPixels": 0,
+      "rgbaSha256": "82859abe2aec94acfe851359360b6d75ab4f7f8e91e43ce8642e53686a861b0b"
+    },
+    {
+      "frame": "shortage",
+      "changedPixels": 0,
+      "rgbaSha256": "199462d2331f2c99a8648bd02d8bfed30dd132ab8a911480ef4db96f2e41ac3b"
+    },
+    {
+      "frame": "risk",
+      "changedPixels": 0,
+      "rgbaSha256": "4d2edb12971d22abecd7327030610cbf99a40d4e32bfe7440f8eb8c158bde2f6"
+    },
+    {
+      "frame": "maximum",
+      "changedPixels": 0,
+      "rgbaSha256": "8847bf22ddb63749940b8943f5ae1cf1a4ebc1313533e0922d57ac308303480d"
+    },
+    {
+      "frame": "confirm-chest",
+      "changedPixels": 0,
+      "rgbaSha256": "8e04d40a1b939c3872aff461e6327b31ef21621fc19aa0cb593cc6649a30ab9f"
+    },
+    {
+      "frame": "confirm-head",
+      "changedPixels": 0,
+      "rgbaSha256": "0518c588cc76b268cb9247c42d9a4124a3a0a913b581deb3227ee33e51264b7d"
+    },
+    {
+      "frame": "confirm-legs",
+      "changedPixels": 0,
+      "rgbaSha256": "2604caa736f4fb98bf62b4eaeb1fa9c4feb344f7f9021cd72ad406fdc9037def"
+    },
+    {
+      "frame": "confirm-feet",
+      "changedPixels": 0,
+      "rgbaSha256": "2d6ccebb3796b15367bf34d6f5b1534c300e1d37e4500ecef8b2a3ad361916dd"
+    },
+    {
+      "frame": "confirm-weapon",
+      "changedPixels": 0,
+      "rgbaSha256": "ec42a60b123a9d6e5d2abfcdc8dffead29adb43f1ac52d4b6b8b17865055ef24"
+    },
+    {
+      "frame": "confirm-chest-focused",
+      "changedPixels": 0,
+      "rgbaSha256": "5768c2342104c88f5dda9043cdbef606ffaa31895dedd5ef14d5630dc1e39a09"
+    },
+    {
+      "frame": "confirm-head-focused",
+      "changedPixels": 0,
+      "rgbaSha256": "9a079a6584731aec7ff2d79409756873b98e3465114306065d3429380ed8c745"
+    },
+    {
+      "frame": "confirm-legs-focused",
+      "changedPixels": 0,
+      "rgbaSha256": "5d59f187b73b0ad2847a7adaddcb47bf58fadabdc03c73a30ba90c3ab08aa5f0"
+    },
+    {
+      "frame": "confirm-feet-focused",
+      "changedPixels": 0,
+      "rgbaSha256": "dc312d5f5badc841ab3e23605fab70f0801097182fc86ae18ae3e1b5f83b36f6"
+    },
+    {
+      "frame": "confirm-weapon-focused",
+      "changedPixels": 0,
+      "rgbaSha256": "890191f371851ee167316ac4c7c73834c29fc243ad34f12d7279eae038254bcd"
+    },
+    {
+      "frame": "confirm-risk",
+      "changedPixels": 0,
+      "rgbaSha256": "1a9c5ffc86a784090175132e834575ec91800901d9325f1ad120ad65e588334b"
+    }
+  ],
+  "uniqueGlyphs": 421,
+  "checksActualPackFiles": true,
+  "nativeVisualTested": false
+}

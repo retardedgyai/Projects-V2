@@ -2,6 +2,9 @@
 
 [HTMLを開く](index.html) / [レビュー](../../../docs/development/polish05-design-review.md)
 
+[ゲーム用の共有素材プレビュー](shared-preview/index.html) /
+[素材共有の方式と確認範囲](../../../docs/development/polish05-shared-preview.md)
+
 `index.html` と `art/` を一緒に保存してブラウザで開ける。
 外部サービスやMinecraftへの接続はない。上の状態切替は比較用の見本設定。
 

@@ -1,0 +1,3793 @@
+{
+  "providers": [
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/ad5f3dab8fe1206629c1c225.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰀀"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/ac10763b80b755a9314b6c7a.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰀁"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/9749d81d2a059b8eb2d67845.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰀂"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/c3d114cb65b2da02c73f6f02.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰀃"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/c71644ba52e563a9a1fddc16.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰀄"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/33be07c30e1e1e6d3fc2df95.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰀅"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/01572b50816890bc837d39f3.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰀆"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/8b5add647c89437777daf163.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰀇"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/b913be126092ff4cf295652d.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰀈"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/2e7092c00b330fb22f72f999.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰀉"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/d183c113592dc21e8e27f751.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰀊"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/afc2c7181e3f33220358aa54.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰀋"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/a7574b1f13d6e107d3e2f686.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰀌"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/8e4f3056cf936088daf43dd8.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰀍"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/e7a86a28b50d7fe1cd3e9d19.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰀎"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/f956a1feb779b30719fc0c99.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰀏"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/3e1156840c586ea1af3fae37.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰀐"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/de0fde2b561f5e20acc665e4.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰀑"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/e952da0d5cdaebca17603298.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰀒"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/46004f2cc7f27002b84a914d.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰀓"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/24330d7c1e1088421ba19093.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰀔"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/f49068354a6b41b19074876e.png",
+      "height": 164,
+      "ascent": 164,
+      "chars": [
+        "󰀕"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/f162f9a9c933cd17a0257568.png",
+      "height": 164,
+      "ascent": 164,
+      "chars": [
+        "󰀖"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/2be1a9d9c0f2f39f93c29da7.png",
+      "height": 164,
+      "ascent": 164,
+      "chars": [
+        "󰀗"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/6a9d01b77bac8f55a9671858.png",
+      "height": 164,
+      "ascent": 164,
+      "chars": [
+        "󰀘"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/82caef1528fa538682ebaedc.png",
+      "height": 164,
+      "ascent": 164,
+      "chars": [
+        "󰀙"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/86de528789c7e5558b1851fd.png",
+      "height": 164,
+      "ascent": 164,
+      "chars": [
+        "󰀚"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/46bf63bdc2a311dd295d36a6.png",
+      "height": 164,
+      "ascent": 164,
+      "chars": [
+        "󰀛"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/527fea9c5b35fc16c5b328c8.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰀜"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/b133245418f3113e541a9195.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰀝"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/c4abcac4bf5102742f99718a.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰀞"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/cf6b739345093056576ee0f8.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰀟"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/eacff18543057cebd3b277b4.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰀠"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/93bb26fd86e9b7ece1ea152c.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰀡"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/850e29b9f8ccf8fff054d5b9.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰀢"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/9083f77c9b70854e463cdaf6.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰀣"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/424046d3d19c224bde24e37c.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰀤"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/7167f1c344a4deee7d3b276e.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰀥"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/d2a7c903e3470471436caf9c.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰀦"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/77ef6dfdde875a01aa5e8cd6.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰀧"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/496505541bd6b2bb842d9424.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰀨"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/4f727f739e49e5aa4e2539de.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰀩"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/05ab4c45618bb6cd92531913.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰀪"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/5c54ccaaa8fdf4144b94539e.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰀫"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/1d71bc98d39cd55f7202788b.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰀬"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/61f71de5bc3d9214bca0498d.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰀭"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/12e0ac4ba39aad8a039e06ed.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰀮"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/f4d399edef00339def49bb5a.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰀯"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/0f7a13bf79ab552ce09d7604.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰀰"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/524b8d02242a5d418577476a.png",
+      "height": 164,
+      "ascent": 164,
+      "chars": [
+        "󰀱"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/214ea655e37525238e4b87ac.png",
+      "height": 164,
+      "ascent": 164,
+      "chars": [
+        "󰀲"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/7d65445689a91b66c22062dd.png",
+      "height": 164,
+      "ascent": 164,
+      "chars": [
+        "󰀳"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/da726026a6ca44e0922e7a0f.png",
+      "height": 164,
+      "ascent": 164,
+      "chars": [
+        "󰀴"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/ac18d025239d6919271779b4.png",
+      "height": 164,
+      "ascent": 164,
+      "chars": [
+        "󰀵"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/a48e9928d6f079754dfb1f0a.png",
+      "height": 164,
+      "ascent": 164,
+      "chars": [
+        "󰀶"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/55628cffbd6d56c23b15c215.png",
+      "height": 164,
+      "ascent": 164,
+      "chars": [
+        "󰀷"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/f25e3cb232103f779632c075.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰀸"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/fad42ec2f21ad2e6edf67641.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰀹"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/a26fa83772b67874087d3e97.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰀺"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/7c4fc53245a49f517e70fec3.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰀻"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/1f81c53103858ef8da237607.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰀼"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/b702dfbd000db5171f5f1ab0.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰀽"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/349fa373c595f77db905aa5b.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰀾"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/e7b6c8d57461971c9bdbff19.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰀿"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/71a20ece194b5731a9d33870.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰁀"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/5e79d1744d3e3846840dda63.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰁁"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/ffb38b1e4065006d4fdb554e.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰁂"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/ec1a94f646870b9a20a4079b.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰁃"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/a41ea8972044a73e6af88e49.png",
+      "height": 164,
+      "ascent": 164,
+      "chars": [
+        "󰁄"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/f61ffd632bfd11cf672a5a44.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰁅"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/44866238fa20efe1d288d02a.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰁆"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/2c69574287feb2d663a06ef5.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰁇"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/27ee12bfcdbf2be954134223.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰁈"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/c6ccbba10ea968d714b693b4.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰁉"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/042c7f108f1191aedb2608e5.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰁊"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/7fe07083e8b0f02e5acd96e8.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰁋"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/e86bf227079739323f232c88.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰁌"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/bde522bb06ae8d644f77ab70.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰁍"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/ac3b10eacd6c8a2d80d04b1b.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰁎"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/0ea91cee37a8810fb1b397ae.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰁏"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/47b087c88cbc78349e7bce05.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰁐"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/7b2bd5cec1fe0f8cf8d2a1e6.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰁑"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/f8c457992ecc6ca6786fa3ab.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰁒"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/fed4a31b0f89dfa1e327ec91.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰁓"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/b672c5a75dbe6fdf31c81280.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰁔"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/2ca1c87ddcdef8549de57168.png",
+      "height": 164,
+      "ascent": 164,
+      "chars": [
+        "󰁕"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/889a760c68eebe1c9904e24d.png",
+      "height": 164,
+      "ascent": 164,
+      "chars": [
+        "󰁖"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/a412185ba92ae94f81b7b2a7.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰁗"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/cf4e2699baa82c4e7249d370.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰁘"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/049b0da94f6b7d86ff36471d.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰁙"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/9ea71faa14634a8b7fe8a8d7.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰁚"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/b64ce9cd1f090f647d3f8104.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰁛"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/677ad3e3850384f6b46bc4d7.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰁜"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/efd0b52b1a081b0b4d91b1be.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰁝"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/d322d9f121573ecef0a42ab7.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰁞"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/4e3925faa2f9682811ea5e0a.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰁟"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/8d0f08f24d51ce2b09fd2d68.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰁠"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/0e58104d4a9783c8bb725adf.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰁡"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/5911528cce3196fa0b3cc423.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰁢"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/f8b05448f5f10ec0e8215deb.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰁣"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/c050524e57bd3efb407501ac.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰁤"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/c32a34cfeb90661115a78945.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰁥"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/40c6d666739bb6997a344f25.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰁦"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/6a7636e2246e7b9c963ec76e.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰁧"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/56e0d716171dfe6f9d9829b5.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰁨"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/24eeac981029f92c4a761712.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰁩"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/329b283fb3d7eb91276582df.png",
+      "height": 164,
+      "ascent": 164,
+      "chars": [
+        "󰁪"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/3d541d654988c95d3881c6ac.png",
+      "height": 164,
+      "ascent": 164,
+      "chars": [
+        "󰁫"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/028230fe11fbe40c2e00d646.png",
+      "height": 164,
+      "ascent": 164,
+      "chars": [
+        "󰁬"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/8c8a2693d046ee2b908ce48e.png",
+      "height": 164,
+      "ascent": 164,
+      "chars": [
+        "󰁭"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/921923543de206161a1d5a12.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰁮"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/2cfa626b3ea1a78aa106afbb.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰁯"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/358238c6547d93abe6759c19.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰁰"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/cec420f3d43d1a24c91685e4.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰁱"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/245e5b984e771e5b21a726d0.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰁲"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/f0fc337f85eb51830372b056.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰁳"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/e50ab8ced4582d2bf6064066.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰁴"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/b07a3883207b1311a94b4ca3.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰁵"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/b53342d3ad2e3858a1162346.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰁶"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/e0bb3c83674fd46cdfb1bed4.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰁷"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/ac48ab507cca8aaab66ea294.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰁸"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/051d0a14c7ee6f51c4593d2d.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰁹"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/473edfe9b46352bead983d00.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰁺"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/b555fa819e515bdcfa213adb.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰁻"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/2bc0d1fa08fa68cb079e6e6d.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰁼"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/1038c6b2f4e75905e2582aeb.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰁽"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/b480ebcdc67348d446e7b540.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰁾"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/341413dfc3bc2a44e873dea7.png",
+      "height": 164,
+      "ascent": 164,
+      "chars": [
+        "󰁿"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/a85556cbab70073db862145c.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰂀"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/896a27981cb6397dd592a443.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰂁"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/70a8a81b82a1552d92e1f6f6.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰂂"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/b84a4a8d3627bf55ee087d81.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰂃"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/e94c40c35cc75ab666c5f04f.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰂄"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/746af815fc137cf042bbdc85.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰂅"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/694241111341b32f905f600a.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰂆"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/9549573a726a1ffeb1db4036.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰂇"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/a9d8911a048d92d75ddf03e3.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰂈"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/5724e6670e07136e5f0cb2d6.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰂉"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/342e50e5be6b6645b484cf0a.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰂊"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/250c49367809acf6273af27d.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰂋"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/ae709e3ff59de77cf38202c9.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰂌"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/6d67bd2a813233f56307ddbf.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰂍"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/1196b638ef83f0aa05b98857.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰂎"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/632e36c4cf6ce21833f119b8.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰂏"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/1c70ba4aa6f87b824a60c7a5.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰂐"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/6d4b37946fff20c820309473.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰂑"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/5f3beab17787b310042ae7f4.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰂒"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/4c47aa259950534024d46636.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰂓"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/defd8b1ad5375852fc87269b.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰂔"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/c36b4bdb78a76c563a31b36f.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰂕"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/c9acb6188947a43465f3f50e.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰂖"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/e66096fbbdc734e09ea4cb9f.png",
+      "height": 164,
+      "ascent": 164,
+      "chars": [
+        "󰂗"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/3be824c03e01eb6675f08c8f.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰂘"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/f8f2a7c201f9835aac0c0ef8.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰂙"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/d1891b2768275b91317d7262.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰂚"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/8263db59567a1f1e40fff199.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰂛"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/2619aa9c3bc233f056e6bb30.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰂜"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/7fc5c06fc2f279b6267d882f.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰂝"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/1094b4c2ee3effb8000ecbd4.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰂞"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/23baf2f5ced71acd8935ae6f.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰂟"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/ffe9aa78e68938885f7bb35a.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰂠"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/5173675a08425ca7f4646a55.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰂡"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/0a2cd588d6e397ed523a10ed.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰂢"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/25d1425a5a2159cd11a4e767.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰂣"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/e9dddf35cf485dc63780b198.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰂤"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/84e2303f254054fd64bde03d.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰂥"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/a6fcd61d15d60b6785eec830.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰂦"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/6c011e79ec852d58f26ae9fd.png",
+      "height": 164,
+      "ascent": 164,
+      "chars": [
+        "󰂧"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/aebe2587d7e5d0209be17420.png",
+      "height": 164,
+      "ascent": 164,
+      "chars": [
+        "󰂨"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/c91b3374e659164a9d8a5b12.png",
+      "height": 164,
+      "ascent": 164,
+      "chars": [
+        "󰂩"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/10f9f4db4e0fa7570fdf0527.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰂪"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/d4fc28941df560fc31f36db8.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰂫"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/22ab4ca0d0111fb5ed886c48.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰂬"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/d87b5c31cdc50445574b61b1.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰂭"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/f4243f81e4a0ec255e3d4178.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰂮"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/500fc96307a4a50ef5dc7f53.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰂯"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/fc2497e09e8b45ba801fe60d.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰂰"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/df0a165bd22810acde0dccdc.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰂱"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/209a7846dec5f82fb21c3263.png",
+      "height": 164,
+      "ascent": 164,
+      "chars": [
+        "󰂲"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/b48cb24dfc7c62aab0564964.png",
+      "height": 164,
+      "ascent": 164,
+      "chars": [
+        "󰂳"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/8bb5ab0beb0373a2296bca8e.png",
+      "height": 164,
+      "ascent": 164,
+      "chars": [
+        "󰂴"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/36bef8a969439d111cabca3d.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰂵"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/de39d1ba6ec11b68b921c7e2.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰂶"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/eabf310058bad8e0e8ec7fd0.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰂷"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/26bcdcb4b06011030ebe585f.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰂸"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/69e1d6b6f8ae4a8f61196e54.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰂹"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/91b6bbf9a675cb8704077ccd.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰂺"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/a819ad9840e026363689c7c5.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰂻"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/01afe8a31739927055d1fbf5.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰂼"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/2184ed56e52d5dcddde17b1f.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰂽"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/20a71d4aabc2211fe4af3277.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰂾"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/821fd70da942105d5261350e.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰂿"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/6093dc559c40ebeacee00615.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰃀"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/d7c002becaf88b0048a2848e.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰃁"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/50ede7d1cff96a79c5916162.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰃂"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/d4cbc452bfce114b46fd230b.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰃃"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/9ad055408ca417201f91fe09.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰃄"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/ba00ada77afbf0b925afa4cc.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰃅"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/77a4cd72bb763509c63f38e8.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰃆"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/179bf8b8f88ce4d865bf545d.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰃇"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/470a9a02ae1c72d4833483c6.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰃈"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/76105ce5bb54cefd740b6026.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰃉"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/c64b2e3d80b7ef4e0cf6c37a.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰃊"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/437b01f7aff2383aee8e9ec7.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰃋"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/10a1871d3c0835afe060138e.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰃌"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/cd2d58211c315d956b629e7d.png",
+      "height": 164,
+      "ascent": 164,
+      "chars": [
+        "󰃍"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/8ed13a8f27cad9ae8c7633c7.png",
+      "height": 164,
+      "ascent": 164,
+      "chars": [
+        "󰃎"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/267a116f271184e64944bc7b.png",
+      "height": 164,
+      "ascent": 164,
+      "chars": [
+        "󰃏"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/74b1b28c0f9a6227c3d01132.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰃐"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/e9b7b9ac2553c4b3bd8bf709.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰃑"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/d37c74cd407fc5f564b3b237.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰃒"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/d33896df902791a2f6ed6a4e.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰃓"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/841369e7be66d4fa27227cb7.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰃔"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/04ecc4139e9685555ab7d432.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰃕"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/c1c058c1a89f02baf7307d0b.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰃖"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/17d705218012f0ee00b3ff44.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰃗"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/df2ca183f3bb8d157dc6d426.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰃘"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/9c682f1ee189628813ebabd7.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰃙"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/e44b0622c85255749d4d8982.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰃚"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/65e6d6c7b30bfe07e8c6a44b.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰃛"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/9d0b24839ab6f80cc7203f1f.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰃜"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/82b11183693299d02afb5072.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰃝"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/9b32cca593fac9ed7eab4538.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰃞"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/d15f2f857623b5cd73ee1670.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰃟"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/836addc58a36212b84dc9eac.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰃠"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/839dfa0ee2d4259f61bbf36a.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰃡"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/41d85e627d60cb0f239cc927.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰃢"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/37a5e6acdbe8b5b4b5cc9448.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰃣"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/defa17433e863aaa81431d75.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰃤"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/66432df86f1ea4a9cd4eadb5.png",
+      "height": 164,
+      "ascent": 164,
+      "chars": [
+        "󰃥"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/0e210474042bb8c5e91f1c64.png",
+      "height": 164,
+      "ascent": 164,
+      "chars": [
+        "󰃦"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/9587c4e75f8677d9dab9a48c.png",
+      "height": 164,
+      "ascent": 164,
+      "chars": [
+        "󰃧"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/54c1b377283ae27ae56e8f20.png",
+      "height": 164,
+      "ascent": 164,
+      "chars": [
+        "󰃨"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/c68b4d9588252b26d202a0b1.png",
+      "height": 164,
+      "ascent": 164,
+      "chars": [
+        "󰃩"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/1b9153d086e114aa0188a718.png",
+      "height": 164,
+      "ascent": 164,
+      "chars": [
+        "󰃪"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/5da783b9706fa08372007851.png",
+      "height": 164,
+      "ascent": 164,
+      "chars": [
+        "󰃫"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/ca407448f8c7e57171e2d5e7.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰃬"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/99a43409041aebe8e5ca9b07.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰃭"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/7c69c4cf7722fa794fa571a6.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰃮"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/dbde336011ca9b8e62bb2cf3.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰃯"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/fc597a737a06fc0b5dd0b4fb.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰃰"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/cc5ea75a34cddc3052a42003.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰃱"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/9f5e2cc64a09bbfa84f0495b.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰃲"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/beb8a0a66d655064f7e2883c.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰃳"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/9097fe814bc8a89eecb6423f.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰃴"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/ab335c89e9a2a94e3d5af0f9.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰃵"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/09cd2e2c11bf024576eef194.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰃶"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/ffb44b9cff8ddfc8042c3a33.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰃷"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/02c372f05323afcaff26997d.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰃸"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/05f78bbc03bc5dd737df3099.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰃹"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/c1d53fb3dbe2ac1eeb56ce8c.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰃺"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/2d26507cd86fe30a3ad0a1aa.png",
+      "height": 164,
+      "ascent": 164,
+      "chars": [
+        "󰃻"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/86f87baaeee6f1f1c9dbce9b.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰃼"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/d70008f84d62b2339817e18b.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰃽"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/dc486ba20e21c4bdb496f12c.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰃾"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/2a228121992fcc3304fc6218.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰃿"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/d03912149aafdc1208862b5b.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰄀"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/2d77ea8677726b899a1b302c.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰄁"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/94a54e2f54e2aec1bfa8d9ca.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰄂"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/48a0809548f57cb446f5488e.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰄃"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/df78a3d9eed03a0c338a590c.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰄄"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/08669f28d10582b17be4c5a6.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰄅"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/563d97cccb8b5362d013b77e.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰄆"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/0920014551882f53d19c465c.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰄇"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/6793580125b4bd832c2cf1cd.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰄈"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/bddff044c3daea7036e1e39b.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰄉"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/72cb148a9729256d6d0783fa.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰄊"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/38fb0f9131b8d991a60ac1cd.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰄋"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/1e8b9de8e43b25cbf60b506c.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰄌"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/bca303b83eecb79a500db068.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰄍"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/eeb3dded702e51364054d5bd.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰄎"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/09564e2ea8eeefccaafcef23.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰄏"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/78a2c9b0f7989e4d2250da96.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰄐"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/b18e3689d3711058b9868c3c.png",
+      "height": 164,
+      "ascent": 164,
+      "chars": [
+        "󰄑"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/dd5c1dcf31085365acd021c7.png",
+      "height": 164,
+      "ascent": 164,
+      "chars": [
+        "󰄒"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/c2f5cf131e8b0a7755cd280e.png",
+      "height": 164,
+      "ascent": 164,
+      "chars": [
+        "󰄓"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/d034e1482773fbd45bc28fa1.png",
+      "height": 164,
+      "ascent": 164,
+      "chars": [
+        "󰄔"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/825091dde54d808049e1c50c.png",
+      "height": 164,
+      "ascent": 164,
+      "chars": [
+        "󰄕"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/69cd3053296984276797a907.png",
+      "height": 164,
+      "ascent": 164,
+      "chars": [
+        "󰄖"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/bed8584dfc9805d985155c8f.png",
+      "height": 164,
+      "ascent": 164,
+      "chars": [
+        "󰄗"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/b27302c3ee565762032b4647.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰄘"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/5da94d20a459e07f89177e31.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰄙"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/a8490d4a34a87affa4680871.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰄚"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/2f1b2d48435f65878bdf8c6b.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰄛"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/7fa52a92baf1f18fea1ea656.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰄜"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/fb9ce669b5adef03a9d9cf56.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰄝"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/6bfb8164bb1bfcbc378c4143.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰄞"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/b6f5e9faa2e535a2567718bd.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰄟"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/bf21362afc136088044619f3.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰄠"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/b57c5ddee1aca1e2f2f6249a.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰄡"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/81db4baad75f2c2b1d429c1c.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰄢"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/6b21b21b8c32f16d96a703ed.png",
+      "height": 164,
+      "ascent": 164,
+      "chars": [
+        "󰄣"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/d0822c2688678d6b400e20e1.png",
+      "height": 164,
+      "ascent": 164,
+      "chars": [
+        "󰄤"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/6fde567c95174a19eecba921.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰄥"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/11c2fb93c78e1136bfc04f9f.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰄦"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/7d086daba34076ea40f75956.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰄧"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/b80a75d85ddb8dcf90027345.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰄨"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/620e785fc7da1e318a5fc504.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰄩"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/24d33795a651a11b5096d542.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰄪"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/c846c0b616b60b2747d718c6.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰄫"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/97a0f75341e9d635f3ecefce.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰄬"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/e1632237b094ccc1e0fc3f2e.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰄭"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/0d4dcdbec99d61360ea5e74d.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰄮"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/8d3f0d062b6862b90c7b62e6.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰄯"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/06a0a3730fdbe22d6f3ee2ce.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰄰"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/b7fa049f2726b61a609e2425.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰄱"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/4f728dbe7a77fff965fe665a.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰄲"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/e978c92d16676523b9550c46.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰄳"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/57d6b3a364de70ad9a46c467.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰄴"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/2b3dba658f1d64d04a900f2d.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰄵"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/eb1368b87c02ee1cb823add2.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰄶"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/a3fc28038180af6088efcede.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰄷"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/343179bfbd904c8c3a0058cb.png",
+      "height": 164,
+      "ascent": 164,
+      "chars": [
+        "󰄸"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/71d32622a1bd90a486aef25b.png",
+      "height": 164,
+      "ascent": 164,
+      "chars": [
+        "󰄹"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/2de30b0977ab7002e3f734cf.png",
+      "height": 164,
+      "ascent": 164,
+      "chars": [
+        "󰄺"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/f63235b60869d45be9a17c5d.png",
+      "height": 164,
+      "ascent": 164,
+      "chars": [
+        "󰄻"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/eeafd612b80b87b8cfe7cb8b.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰄼"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/89b945d695dcf082feb9bd99.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰄽"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/390323f8a49da2e0babb5967.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰄾"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/db7fb677947c982cfb1313a0.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰄿"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/620a2343c91d9d2e05e7599d.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰅀"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/8fddfc2d44531583d06e9edd.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰅁"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/b433de708965969042c3369d.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰅂"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/1442f252031d54208d12675f.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰅃"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/6916c1fb74f32ee7ece0940f.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰅄"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/954f3fb15996d2cfb8161079.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰅅"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/39d2f9a31d25947a71830fe9.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰅆"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/f005026b6a70c6fcda0d1f6c.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰅇"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/772c83d378a288f8670764a0.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰅈"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/69511ce0630a9ebc50fbff14.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰅉"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/39323035f200d3ebe09ede3d.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰅊"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/3387fae3c2e573750ff6b01f.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰅋"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/a7c23b49fda8039b67344906.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰅌"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/783698f907599705b964ce0b.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰅍"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/26a07d506ff25cdbd32e6fa5.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰅎"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/2912b757ee4e941062f659c1.png",
+      "height": 164,
+      "ascent": 164,
+      "chars": [
+        "󰅏"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/801dcb253faa4afaee5a5c33.png",
+      "height": 164,
+      "ascent": 164,
+      "chars": [
+        "󰅐"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/b1ba0fc93b2c7c18d3fafc0c.png",
+      "height": 164,
+      "ascent": 164,
+      "chars": [
+        "󰅑"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/d7134d78c6fecce30a62d23f.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰅒"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/0c7765e90e2553ef3d750887.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰅓"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/0f04cb0187970c15a6e4680e.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰅔"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/84f141b444ee3b28ec440d56.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰅕"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/c6064aa5c71fe33370e08a2b.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰅖"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/d96fe64d5815c5ea521aa963.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰅗"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/df7824bb6d63f283d63d178b.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰅘"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/17ef1f4a84471a49f875086f.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰅙"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/aba4b6a5175ab7733ccad137.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰅚"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/ceaf522aa11f55fa54b74b9b.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰅛"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/5095a0fca64ab4392e8b5254.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰅜"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/ecac1877b8b7052386f2834c.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰅝"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/cc35e42fdbcc5da4c20deabd.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰅞"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/6b6b6f11646eb1788263240c.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰅟"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/5216b14c6ae20b0b33cc3ff4.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰅠"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/4df0a1c218084981a5b7023e.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰅡"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/36b75076b2c851c8efa871e6.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰅢"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/ed33b3ab60de6d530262972f.png",
+      "height": 164,
+      "ascent": 164,
+      "chars": [
+        "󰅣"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/ee1a009206ca7767ab67de27.png",
+      "height": 164,
+      "ascent": 164,
+      "chars": [
+        "󰅤"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/b3a8de12dbeb3f833d75a6b0.png",
+      "height": 164,
+      "ascent": 164,
+      "chars": [
+        "󰅥"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/7943427f09347a1b1e5fa28c.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰅦"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/1870e0c5f66489155f302a95.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰅧"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/d96c37b01d9c9f7ce082585f.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰅨"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/0800781e0d190617e3137e6d.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰅩"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/b02d1afc22c4c84ffbc74ac1.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰅪"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/5a0b79c2350367b85d338188.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰅫"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/ed76ea3fa6917f43ae9dda37.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰅬"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/504dfb9059a6d97d0c51a6bf.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰅭"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/9824aaf36c0464b7d313d8ba.png",
+      "height": 164,
+      "ascent": 164,
+      "chars": [
+        "󰅮"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/57d7f911349e98cccda71f59.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰅯"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/5927e48028afea18bbbae69e.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰅰"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/f40d55fa32b96834d5d0b87d.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰅱"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/9470265f7db3c971a8e2c585.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰅲"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/92d6b05024d2b46abb033ffd.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰅳"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/72fdf76cee012e6d60f61b00.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰅴"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/729a60c6712c54de123171cc.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰅵"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/999db489a1cfc815d2358378.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰅶"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/83b1bd4e5e880d772855050e.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰅷"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/33f79c73c33fdea18fc34bb9.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰅸"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/52ac6c11ac26c3afa3e73886.png",
+      "height": 164,
+      "ascent": 164,
+      "chars": [
+        "󰅹"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/1a0ee66d058165e10fa37d75.png",
+      "height": 164,
+      "ascent": 164,
+      "chars": [
+        "󰅺"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/81d12c8280d652a2f5c6b9da.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰅻"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/b722b436c05d3ad820c32fa3.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰅼"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/68d0dd4553af312ef8f33e7c.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰅽"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/4ce87a3b1f5479e80ce687e7.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰅾"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/0f589a83cd22e69150faa5fb.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰅿"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/41034c1760cf7ac16aec47d3.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰆀"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/84da20a47733eb8af4cd6d95.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰆁"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/b1fcce4db46b987b092aa49e.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰆂"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/2de4c2341f7f6fc8f5538e1c.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰆃"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/2807e5aabd09666317d5554c.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰆄"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/c76a258b4359a8e52b55a040.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰆅"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/706a92252e57377b7c2a6eac.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰆆"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/9d8095d9acacfeb6a1b1f381.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰆇"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/66ee66b34013104eef5e272e.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰆈"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/a467f368128c28ea6145d9d4.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰆉"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/52668ad3111d4eeac82b1d2e.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰆊"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/c41031b163259a553f33990c.png",
+      "height": 164,
+      "ascent": 164,
+      "chars": [
+        "󰆋"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/7c628159848f3778e5ba218d.png",
+      "height": 164,
+      "ascent": 164,
+      "chars": [
+        "󰆌"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/cc9b214d97a16c518555e802.png",
+      "height": 164,
+      "ascent": 164,
+      "chars": [
+        "󰆍"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/da885f79ba70fdc932f179f6.png",
+      "height": 164,
+      "ascent": 164,
+      "chars": [
+        "󰆎"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/64d9bf4d3e70bf6dcd7b2b17.png",
+      "height": 164,
+      "ascent": 164,
+      "chars": [
+        "󰆏"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/33e4178a5187fc6f1b5dcc91.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰆐"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/d4eae7267be346c97b1f5981.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰆑"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/d8d8365cfadea53b8ce41320.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰆒"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/f9718fdbfe4b9fc0ca37bb1e.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰆓"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/f18fbf13def9672cc0ddfec1.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰆔"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/7ded6a14731b213862e87e95.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰆕"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/187b58874f89531de99d4f0e.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰆖"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/a522bb1620e6cd871ef57e7b.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰆗"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/0f5ab3053ce86930ada2622d.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰆘"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/fe13bb5c7d6d130739b2aed0.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰆙"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/5608825770790479842c7144.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰆚"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/6878ae53eefdba1a689e2a20.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰆛"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/e2e583dddcda3403cd5fead7.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰆜"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/8a08d05e420e3e013022d650.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰆝"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/50efe5c5d86aed1b56ba9236.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰆞"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/399b207610b8e15f3a1359a5.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰆟"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/e9621da52bf2e51c22af2ff7.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰆠"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/effaa5a05d3c223e4bd7cddb.png",
+      "height": 256,
+      "ascent": 256,
+      "chars": [
+        "󰆡"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/eef94550c74d7a21e2e5e225.png",
+      "height": 164,
+      "ascent": 164,
+      "chars": [
+        "󰆢"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/5ce1bef5b34423f99ce76bc1.png",
+      "height": 164,
+      "ascent": 164,
+      "chars": [
+        "󰆣"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "projects_forge_calibration:tiles/b5a9f7d284b016b75b760ba4.png",
+      "height": 164,
+      "ascent": 164,
+      "chars": [
+        "󰆤"
+      ]
+    }
+  ]
+}

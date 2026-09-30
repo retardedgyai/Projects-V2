@@ -39,7 +39,12 @@ fun main(args: Array<String>) {
     val polishScene=System.getProperty("projects.ui.polish05Kit")?.let {
         Polish05Scene(Path.of(it),Path.of(System.getProperty("projects.ui.sprites")))
     }
-    val sessions=UiSessions(events,source,{ player -> pack?.ready(player) ?: true },polishScene)
+    val calibration=System.getProperty("projects.ui.rasterManifest")?.let { ForgeRasterCalibration(Path.of(it)) }
+    require(calibration==null || polishScene==null) { "Choose raster calibration or live Polish05, not both" }
+    val calibrationFactory:((Player)->ForgeUiFlow)?=calibration?.let { fixture ->
+        { _:Player -> ForgeRasterCalibrationFlow(fixture,System.getProperty("projects.ui.rasterFrame","chest")) }
+    }
+    val sessions=UiSessions(events,source,{ player -> pack?.ready(player) ?: true },polishScene,calibrationFactory)
     MinecraftServer.getConnectionManager().setPlayerProvider { connection,profile ->
         UiInputPlayer(connection,profile,sessions::consumeImmediateUiPacket)
     }

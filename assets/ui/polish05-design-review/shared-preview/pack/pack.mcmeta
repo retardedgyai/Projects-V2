@@ -1,0 +1,13 @@
+{
+  "pack": {
+    "description": "ProjectS forge / raster calibration fixtures (not live account UI)",
+    "min_format": [
+      88,
+      0
+    ],
+    "max_format": [
+      88,
+      0
+    ]
+  }
+}
