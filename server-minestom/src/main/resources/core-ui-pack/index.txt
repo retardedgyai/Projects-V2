@@ -13810,3 +13810,17 @@ assets/projects/textures/item/weapons/pixel_material_greatsword_embers.png.mcmet
 assets/projects/textures/item/weapons/pixel_material_greatsword_jewel.png
 assets/projects/textures/item/weapons/pixel_material_greatsword_jewel.png.mcmeta
 pack.mcmeta
+assets/projects/textures/infusion/stone.png
+assets/projects/textures/infusion/brass.png
+assets/projects/textures/infusion/glass.png
+assets/projects/textures/infusion/seal.png
+assets/projects/models/infusion/pedestal.json
+assets/projects/items/infusion/pedestal.json
+assets/projects/models/infusion/matrix.json
+assets/projects/items/infusion/matrix.json
+assets/projects/models/infusion/jar_ember.json
+assets/projects/items/infusion/jar_ember.json
+assets/projects/models/infusion/jar_tide.json
+assets/projects/items/infusion/jar_tide.json
+assets/projects/models/infusion/jar_gale.json
+assets/projects/items/infusion/jar_gale.json

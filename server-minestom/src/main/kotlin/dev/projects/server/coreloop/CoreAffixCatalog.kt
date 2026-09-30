@@ -157,7 +157,10 @@ object CoreAffixCatalog {
         CoreAffixDefinition("projects:preventive-prayer", "予防の刻印石", CoreAffixStat.HEAL_CONVERSION, CoreAffixCategory.DEFENSE, 1, 4, 1, weight=3),
         CoreAffixDefinition("projects:orbit", "公転の刻印石", CoreAffixStat.STAR_ORBIT, CoreAffixCategory.OFFENSE, 1, 4, 1, weight=3),
     ))
-    private val byId = definitions.associateBy { it.id }
+    // Kept outside the normal loot/currency candidate list. Same budget; no additional firepower.
+    private val ritualOnly = CoreAffixDefinition("projects:glacial-attunement", "霜転の調律（試作）",
+        CoreAffixStat.ICE, CoreAffixCategory.OFFENSE, 2, 4, 2, setOf(CoreGearSlot.WEAPON), weight = 0)
+    private val byId = definitions.associateBy { it.id } + (ritualOnly.id to ritualOnly)
 
     fun definition(stone: CoreAffixStone): CoreAffixDefinition? = byId[stone.modId]?.takeIf { stone.definitionRevision == 1 }
     fun valid(stone: CoreAffixStone): Boolean = definition(stone)?.range(stone.tier)?.let { stone.value in it.first.toDouble()..it.last.toDouble() } == true

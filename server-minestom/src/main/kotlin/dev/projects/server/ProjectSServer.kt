@@ -163,6 +163,10 @@ internal data class SkillCooldowns(
 )
 
 fun main() {
+    if (java.lang.Boolean.getBoolean("projects.worldInfusion")) {
+        dev.projects.server.coreloop.WorldInfusionServer.start()
+        return
+    }
     if (!java.lang.Boolean.getBoolean("projects.legacyCombat")) {
         dev.projects.server.coreloop.CoreLoopServer.start()
         return
