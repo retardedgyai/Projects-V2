@@ -26,13 +26,24 @@ def texture(name):
         im=Image.open(io.BytesIO(data(name,'textures'))).convert('RGBA')
         textures[name]=np.array(im.crop((0,0,im.width,im.width)))
     return textures[name]
-def boxes(name,at=(0,0,0),scale=(1,1,1),centered=True):
+def boxes(name,at=(0,0,0),scale=(1,1,1),centered=True,yaw=0):
     m=model(name);result=[]
     for e in m['elements']:
         lo=np.array(e['from'],float)/16;hi=np.array(e['to'],float)/16
-        if centered:lo-=.5;hi-=.5
-        lo=lo*np.array(scale)+at;hi=hi*np.array(scale)+at
-        result.append((lo,hi,e['faces'],m['textures']))
+        # Minecraft element rotations, rescale and display yaw applied to actual face vertices.
+        matrix=np.eye(3);origin=np.zeros(3)
+        if 'rotation' in e:
+            r=e['rotation'];angle=math.radians(r['angle']);c,s=math.cos(angle),math.sin(angle)
+            axis={'x':0,'y':1,'z':2}[r['axis']];origin=np.array(r['origin'],float)/16
+            matrix=[np.array([[1,0,0],[0,c,-s],[0,s,c]]),np.array([[c,0,s],[0,1,0],[-s,0,c]]),np.array([[c,-s,0],[s,c,0],[0,0,1]])][axis]
+            if r.get('rescale'):
+                stretch=np.eye(3);stretch[[i for i in range(3) if i!=axis],[i for i in range(3) if i!=axis]]=1/abs(c)
+                matrix=matrix@stretch
+        a=math.radians(yaw);display=np.array([[math.cos(a),0,math.sin(a)],[0,1,0],[-math.sin(a),0,math.cos(a)]])
+        transform=display@np.diag(scale)@matrix
+        pivot=np.zeros(3) if centered else np.array([.5,0,.5])*np.array(scale)
+        offset=np.array(at)+pivot-display@pivot+display@(np.array(scale)*(origin-matrix@origin-(.5 if centered else 0)))
+        result.append((lo,hi,e['faces'],m['textures'],transform,offset))
     return result
 
 normals={'north':(0,0,-1),'south':(0,0,1),'west':(-1,0,0),'east':(1,0,0),'up':(0,1,0),'down':(0,-1,0)}
@@ -45,13 +56,16 @@ def render(parts,size,yaw,elevation,with_depth=False):
     a,e=math.radians(yaw),math.radians(elevation)
     cam=np.array([math.sin(a)*math.cos(e),math.sin(e),-math.cos(a)*math.cos(e)])
     right=np.array([math.cos(a),0,math.sin(a)]);up=np.cross(right,cam)
-    allpts=np.concatenate([np.array([lo,hi]) for lo,hi,_,_ in parts]);center=(allpts.min(0)+allpts.max(0))*.5
+    def unpack(p):
+        return (*p,np.eye(3),np.zeros(3)) if len(p)==4 else p
+    parts=[unpack(p) for p in parts]
+    allpts=np.concatenate([np.array([[x,y,z] for x in [lo[0],hi[0]] for y in [lo[1],hi[1]] for z in [lo[2],hi[2]]])@matrix.T+offset for lo,hi,_,_,matrix,offset in parts]);center=(allpts.min(0)+allpts.max(0))*.5
     poly=[];light=np.array([-.35,.85,-.4]);light/=np.linalg.norm(light)
-    for lo,hi,faces,refs in parts:
+    for lo,hi,faces,refs,matrix,offset in parts:
         for face,f in faces.items():
-            n=np.array(normals[face]);
+            n=np.linalg.inv(matrix).T@np.array(normals[face]);n=n/np.linalg.norm(n)
             if np.dot(n,cam)<=0:continue
-            v=corners(lo,hi,face);uv=f.get('uv',[0,0,16,16]);name=f['texture']
+            v=corners(lo,hi,face)@matrix.T+offset;uv=f.get('uv',[0,0,16,16]);name=f['texture']
             while isinstance(name,str) and name.startswith('#'):name=refs[name[1:]]
             if isinstance(name,dict): name=name['sprite']
             tex=texture(name);shade=.62+.38*max(0,np.dot(n,light))

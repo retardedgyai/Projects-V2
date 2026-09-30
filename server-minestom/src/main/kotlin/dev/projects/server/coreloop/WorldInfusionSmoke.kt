@@ -36,7 +36,7 @@ internal object WorldInfusionSmoke {
                 val rgb=(channel(16) shl 16) or (channel(8) shl 8) or channel(0)
                 val end=(1.0-u).coerceAtMost(.22)/.22
                 val size=((.7+.65*envelope+.18*sin(seed+u*9))*end).coerceAtLeast(.12).toFloat()
-                add(Sample("${t.started}:$tuft:$lobe",p,rgb,size,u))
+                add(Sample("${t.started}:${t.from.x()}:${t.from.z()}:${t.rgb}:$tuft:$lobe",p,rgb,size,u))
             }
         }
     }

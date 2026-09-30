@@ -7,6 +7,12 @@ import java.util.UUID
 import kotlin.test.*
 
 class WorldInfusionSmokeTest {
+    @Test fun `simultaneous different Jar releases have unique display keys`() {
+        val a=WorldInfusionSmoke.Transfer(Vec(-3.0,1.0,0.0),Vec(0.0,3.0,0.0),0xff8844,0)
+        val b=WorldInfusionSmoke.Transfer(Vec(3.0,1.0,0.0),a.to,0x88cccc,0)
+        val frame=WorldInfusionSmoke.frame(listOf(a,b),8)
+        assertEquals(frame.size,frame.map { it.key }.distinct().size)
+    }
     @Test fun `smoke has bounded packets finite points varied size and ends at focus`() {
         val t=WorldInfusionSmoke.Transfer(Vec(-3.5,41.95,-2.5),Vec(.5,44.3,.5),InfusionAspect.EMBER.rgb,0)
         val samples=(0L..53L).flatMap { WorldInfusionSmoke.sample(t,it) }

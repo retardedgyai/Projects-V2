@@ -131,3 +131,15 @@ TC6静止画の弧状・太さが変わる流れを参考にしたProjectS独自
 - [Minecraft公式のCustom Model Data色tint](https://www.minecraft.net/en-us/article/minecraft-java-edition-1-21-4)：標準resourcepackの色指定。26.2のcached native assetsで半透明texture参照の形式も確認。
 
 参考画像のバイトはソース/成果ZIPに含めない。
+
+## 浮遊刻印石の材質付き初稿と霧の安全性（最新）
+
+本人の追加要望でA/Bの単純な皿・冠を仕上げる方針を止め、`assets/model-lab/infusion-v3` に1方向の専用一式を作成。厚い傾いた刻印石、内側へ傾く支柱、凹みのある中央台、細い首の材料皿、同じ材質のJar。バニラ構成ブロックは画像の一式に含まない。旧モデルとA/Bは保護。
+
+[TC6の実スクリーンショット](https://github.com/xiaoschannel/Minecraft-Guides-Thaumcraft6/blob/master/pages/05.auromancy/23.advanced-foci-basic-infusion/focus%20infusion%20process.jpg)をこの段階で取得して目視した。厚い斜めの核、刻印面、対象品のための余白を参照。ルール根拠ではなく形の参考とし、写真・元モデル・decompileコードを成果へコピーしない。
+
+5種のnative JSONモデル、48cuboids（回転12）、6種の手描き16px材質を検証。オフラインrendererはelement rotationと表示yawも処理する。正面・斜めの単体と一式、材質の原寸／拡大PNGを出力。**まだ旧ゲーム構造への接続前のモデル初稿**。当たり判定、専用配置、支柱の向き、アイテム高さ、Jar口と核の霧受取点は採用時にまとめて合わせる。
+
+霧は別に全private worlds共有の装飾Entity上限192を追加。closeの冪等化、world移動・disconnect・instance unload・Matrix外部除去のcleanupを追加。正常完走、取消、不足、保存、共有lease上限を実Minestom仮接続で検証。
+
+最新結果：**60 tests / 0 failures**、`compileKotlin` / `installDist`成功。霧ピーク45、プレイヤー込みsceneピーク63、生成126／除去126。位置API2520、metadata2646。詳細・複数祭壇の算出・packetとAPIの区別は `world-infusion-smoke-lifecycle.md`。新しいserver/clientを起動しておらず、実client FPS・最終画質は未測定。

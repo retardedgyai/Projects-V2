@@ -12,6 +12,9 @@ import net.minestom.server.coordinate.Vec
 import net.minestom.server.entity.*
 import net.minestom.server.entity.metadata.display.*
 import net.minestom.server.event.instance.InstanceTickEvent
+import net.minestom.server.event.instance.InstanceUnregisterEvent
+import net.minestom.server.event.Event
+import net.minestom.server.event.EventNode
 import net.minestom.server.event.player.*
 import net.minestom.server.event.item.ItemDropEvent
 import net.minestom.server.instance.InstanceContainer
@@ -34,11 +37,24 @@ import kotlin.math.sin
 internal object WorldInfusionServer {
     private val token=Tag.String("projects_world_infusion_item")
     private val games=ConcurrentHashMap<UUID,WorldInfusionGame>()
+    internal fun track(game:WorldInfusionGame) { check(games.putIfAbsent(game.player.uuid,game)==null) }
+    private fun retire(game:WorldInfusionGame) {
+        game.close()
+        val manager=MinecraftServer.getInstanceManager()
+        if(manager.getInstance(game.instance.uuid)===game.instance && game.instance.players.none { it.isOnline })manager.unregisterInstance(game.instance)
+    }
+    internal fun installCleanupEvents():EventNode<Event> = EventNode.all("world-infusion-cleanup").also { node->
+        node.addListener(PlayerDisconnectEvent::class.java) { e->games[e.player.uuid]?.let(::retire) }
+        node.addListener(PlayerSpawnEvent::class.java) { e->games[e.player.uuid]?.let { if(e.player.instance!==it.instance)retire(it) } }
+        node.addListener(InstanceUnregisterEvent::class.java) { e->games.values.toList().filter { it.instance===e.instance }.forEach { it.close() } }
+        MinecraftServer.getGlobalEventHandler().addChild(node)
+    }
     fun start() {
         val server=MinecraftServer.init(Auth.Offline())
         val repository=WorldInfusionRepository(Path.of(System.getProperty("projects.infusion.save","config/projects/world-infusion-lab")))
         val pack=CoreUiPackServer.start()
         val events=MinecraftServer.getGlobalEventHandler()
+        installCleanupEvents()
         events.addListener(AsyncPlayerConfigurationEvent::class.java) { e->
             try {
                 require(games[e.player.uuid]==null) { "既に接続されています" }
@@ -49,12 +65,13 @@ internal object WorldInfusionServer {
                 instance.setTime(6000);instance.defaultClock()?.pause()
                 (-1..1).flatMap { x->(-1..1).map { z->instance.loadChunk(x,z) } }.forEach { it.join() }
                 val game=WorldInfusionGame(e.player,instance,repository,saved)
-                games[e.player.uuid]=game
+                track(game)
                 e.spawningInstance=instance;e.player.respawnPoint=Pos(.5,41.0,-7.5,0f,0f)
             } catch(f:Exception) { e.player.kick(Component.text("試作保存データは保護されました：${f.message?.take(100)}")) }
         }
         events.addListener(PlayerSpawnEvent::class.java) { e->
             val game=games[e.player.uuid] ?: return@addListener
+            if(e.player.instance!==game.instance) { retire(game);return@addListener }
             e.player.gameMode=GameMode.ADVENTURE
             game.rebuild();game.inventory()
             e.player.sendMessage(Component.text("ワールド祭壇試作：祭壇キットを床へ右クリック → 外側台座とJarを設置。装備と素材を手に持って台座へ。",NamedTextColor.GOLD))
@@ -74,11 +91,8 @@ internal object WorldInfusionServer {
         events.addListener(ItemDropEvent::class.java) { it.isCancelled=true }
         events.addListener(PlayerSwapItemEvent::class.java) { it.isCancelled=true }
         events.addListener(InstanceTickEvent::class.java) { e->games.values.filter { it.instance===e.instance }.forEach { it.tick() } }
-        events.addListener(PlayerDisconnectEvent::class.java) { e->
-            pack?.forget(e.player)
-            games.remove(e.player.uuid)?.let { game->game.close();MinecraftServer.getInstanceManager().unregisterInstance(game.instance) }
-        }
-        Runtime.getRuntime().addShutdownHook(Thread({ games.values.forEach { it.close() };pack?.close() },"world-infusion-close"))
+        events.addListener(PlayerDisconnectEvent::class.java) { e->pack?.forget(e.player) }
+        Runtime.getRuntime().addShutdownHook(Thread({ games.values.toList().forEach { it.close() };pack?.close() },"world-infusion-close"))
         val port=System.getProperty("projects.port","25585").toInt()
         server.start("127.0.0.1",port)
         println("PROJECTS_WORLD_INFUSION_READY address=127.0.0.1:$port save=${System.getProperty("projects.infusion.save","config/projects/world-infusion-lab")} dedicatedMaterials=false researchGate=false")
@@ -95,7 +109,18 @@ internal object WorldInfusionServer {
         private data class Trail(val from:Vec,val to:Vec,val rgb:Int,val started:Long)
         private val trails=mutableListOf<Trail>()
         private val smoke=mutableListOf<WorldInfusionSmoke.Transfer>()
-        private val smokeDisplays=mutableMapOf<String,Entity>()
+        private data class SmokeDisplay(val entity:Entity,val lease:WorldInfusionSmokeBudget.Lease)
+        private val smokeDisplays=ConcurrentHashMap<String,SmokeDisplay>()
+        @Volatile private var closed=false
+        internal val isClosed get()=closed
+        internal fun smokeEntityIds()=smokeDisplays.values.map { it.entity.entityId }.toSet()
+        internal data class SmokeStats(var born:Long=0,var removed:Long=0,var moves:Long=0,var metadata:Long=0,var peak:Int=0)
+        internal val smokeStats=SmokeStats()
+        private fun dropSmoke(key:String,display:SmokeDisplay) {
+            if(smokeDisplays.remove(key,display)) {
+                try { display.entity.remove() } finally { display.lease.release();smokeStats.removed++ }
+            }
+        }
         private fun at(c:InfusionCell,y:Double=0.0)=Pos(c.x+.5,c.y+y,c.z+.5)
         private fun block(x:Int,y:Int,z:Int,b:Block) {
             val key=Triple(x,y,z);blockKeys+=key
@@ -144,6 +169,7 @@ internal object WorldInfusionServer {
             player.sendActionBar(Component.text(f.message?.take(160) ?: "操作できません",NamedTextColor.RED));false
         }
         fun interact(point:Point,face:net.minestom.server.instance.block.BlockFace) {
+            if(closed)return
             if(ticks-lastClick<3 || player.position.distance(point)>6)return
             lastClick=ticks
             val hand=player.itemInMainHand
@@ -212,6 +238,7 @@ internal object WorldInfusionServer {
             }
         }
         fun rebuild() {
+            if(closed)return
             // Reuse physical entities through the ritual, update only liquid/items; no rebuild flicker per unit.
             visibleKeys.clear();blockKeys.clear()
             state.matrix?.let { c->
@@ -238,8 +265,14 @@ internal object WorldInfusionServer {
             blocks.entries.removeIf { (c,_)->if(c !in blockKeys) { instance.setBlock(c.first,c.second,c.third,Block.AIR);true } else false }
         }
         fun tick() {
+            if(closed)return
             ticks++
-            if(!player.isOnline || player.instance!==instance)return
+            if(!player.isOnline || player.instance!==instance) { retire(this);return }
+            if(MinecraftServer.getInstanceManager().getInstance(instance.uuid)!==instance) { close();return }
+            state.matrix?.let { c->
+                // Player breaking is disabled; external removal/unload must not leave a floating effect.
+                if(instance.getBlock(c.x,44,c.z).isAir) { close();return }
+            }
             if(ticks%18==0L) {
                 val (next,pulse)=WorldInfusionRules.tick(state)
                 if(next!==state && mutate { next }) {
@@ -261,27 +294,39 @@ internal object WorldInfusionServer {
             if(ticks%2==0L) {
                 val frame=WorldInfusionSmoke.frame(smoke,ticks)
                 val active=if(packed)frame.map { it.key }.toSet() else emptySet()
-                smokeDisplays.entries.removeIf { (key,e)->if(key !in active) { e.remove();true } else false }
+                smokeDisplays.entries.forEach { (key,e)->if(key !in active)dropSmoke(key,e) }
                 frame.forEach { mote->
                     if(packed) {
-                        val e=smokeDisplays.getOrPut(mote.key) { Entity(EntityType.ITEM_DISPLAY).apply {
-                            setNoGravity(true);setHasPhysics(false);setInstance(this@WorldInfusionGame.instance,Pos(mote.position.x(),mote.position.y(),mote.position.z()))
-                        } }
-                        e.teleport(Pos(mote.position.x(),mote.position.y(),mote.position.z()))
+                        val old=smokeDisplays[mote.key]
+                        val d=old ?: WorldInfusionSmokeBudget.acquire()?.let { lease->
+                            val e=Entity(EntityType.ITEM_DISPLAY);e.setNoGravity(true);e.setHasPhysics(false)
+                            val display=SmokeDisplay(e,lease);smokeDisplays[mote.key]=display;smokeStats.born++
+                            e.editEntityMeta(ItemDisplayMeta::class.java) { m->
+                                m.setDisplayContext(ItemDisplayMeta.DisplayContext.NONE)
+                                m.setBillboardRenderConstraints(AbstractDisplayMeta.BillboardConstraints.CENTER)
+                                m.setPosRotInterpolationDuration(2);m.setTransformationInterpolationDuration(2)
+                                m.setBrightness(12,12);m.setShadowRadius(0f);m.setViewRange(2f)
+                            }
+                            display
+                        } ?: return@forEach
+                        val e=d.entity
                         e.editEntityMeta(ItemDisplayMeta::class.java) { m->
                             m.setItemStack(ItemStack.of(Material.PAPER).withItemModel("projects:infusion/smoke")
                                 .with(DataComponents.CUSTOM_MODEL_DATA,CustomModelData(emptyList(),emptyList(),emptyList(),
                                     listOf(net.kyori.adventure.text.format.TextColor.color(mote.rgb)))))
-                            m.setDisplayContext(ItemDisplayMeta.DisplayContext.NONE)
-                            m.setBillboardRenderConstraints(AbstractDisplayMeta.BillboardConstraints.CENTER)
                             val size=.26*mote.scale;m.setScale(Vec(size,size,size))
-                            m.setPosRotInterpolationDuration(2);m.setTransformationInterpolationDuration(2)
-                            m.setTransformationInterpolationStartDelta(0);m.setBrightness(12,12)
-                            m.setShadowRadius(0f);m.setViewRange(2f)
+                            m.setTransformationInterpolationStartDelta(0)
                         }
+                        smokeStats.metadata++
+                        val pos=Pos(mote.position.x(),mote.position.y(),mote.position.z())
+                        try {
+                            if(old==null)e.setInstance(instance,pos).whenComplete { _,failure->if(failure!=null || closed)dropSmoke(mote.key,d) }
+                            else { smokeStats.moves++;e.teleport(pos).whenComplete { _,failure->if(failure!=null)dropSmoke(mote.key,d) } }
+                        } catch(_:Exception) { dropSmoke(mote.key,d) }
                     } else player.sendPacket(ParticlePacket(Particle.DUST.withColor(net.kyori.adventure.text.format.TextColor.color(mote.rgb)).withScale(mote.scale),
                         false,false,mote.position,Vec.ZERO,0f,1))
                 }
+                smokeStats.peak=maxOf(smokeStats.peak,smokeDisplays.size)
             }
             trails.forEach { t->
                 val u=(ticks-t.started)/18.0
@@ -303,6 +348,11 @@ internal object WorldInfusionServer {
                 player.sendActionBar(Component.text(message,NamedTextColor.GOLD))
             }
         }
-        fun close() { displays.values.forEach { it.remove() };displays.clear();trails.clear();smoke.clear();smokeDisplays.values.forEach { it.remove() };smokeDisplays.clear() }
+        fun close() {
+            if(closed)return
+            closed=true;games.remove(player.uuid,this)
+            displays.values.forEach { it.remove() };displays.clear();trails.clear();smoke.clear()
+            smokeDisplays.entries.forEach { (key,e)->dropSmoke(key,e) }
+        }
     }
 }
