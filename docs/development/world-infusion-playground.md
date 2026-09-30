@@ -143,3 +143,11 @@ TC6静止画の弧状・太さが変わる流れを参考にしたProjectS独自
 霧は別に全private worlds共有の装飾Entity上限192を追加。closeの冪等化、world移動・disconnect・instance unload・Matrix外部除去のcleanupを追加。正常完走、取消、不足、保存、共有lease上限を実Minestom仮接続で検証。
 
 最新結果：**60 tests / 0 failures**、`compileKotlin` / `installDist`成功。霧ピーク45、プレイヤー込みsceneピーク63、生成126／除去126。位置API2520、metadata2646。詳細・複数祭壇の算出・packetとAPIの区別は `world-infusion-smoke-lifecycle.md`。新しいserver/clientを起動しておらず、実client FPS・最終画質は未測定。
+
+## 本人の核／支柱フィードバックへの形状改訂
+
+`assets/model-lab/infusion-v4` に `core` / `support` だけを追加。本人の「核をもっと大きく禍々しく」「支柱を鋭く、グネグネしない」へ、裂けた大きい石核と一方向に傾く尖った石刃を制作した。核のworld軸boundsは旧形に対し幅1.68倍・高さ2.18倍・奥行1.18倍。亀裂は描いた線ではなく、石片の間にある深い実空隙。
+
+中央台・材料台・Jarはv3を直接使用し、旧v3全17ファイルと6材質PNGをSHA-256／byte比較で保護。前後全景と核／支柱拡大は同カメラ・同照明・同縮尺。変更後単独全景も出力。Nativeモデル2種・30cuboids、共通の支柱傾斜、実亀裂、同縮尺を `scripts/verify-infusion-stone-revision.py` で確認した。
+
+今回の改訂ではruntime／研究／Jar／霧／経済／保存のソースを変更していない。直前の60件・buildの検証結果は維持し、変更のないKotlin buildを繰り返さない。改訂モデルもまだゲームへ接続する前の比較案で、ゲームクライアントは起動していない。旧モデルと旧画像は保護。詳細はv4 README。

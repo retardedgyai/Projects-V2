@@ -52,14 +52,16 @@ def corners(lo,hi,face):
     return np.array({'north':[(X,Y,z),(X,y,z),(x,y,z),(x,Y,z)],'south':[(x,Y,Z),(x,y,Z),(X,y,Z),(X,Y,Z)],
       'west':[(x,Y,z),(x,y,z),(x,y,Z),(x,Y,Z)],'east':[(X,Y,Z),(X,y,Z),(X,y,z),(X,Y,z)],
       'up':[(x,Y,z),(x,Y,Z),(X,Y,Z),(X,Y,z)],'down':[(x,y,Z),(x,y,z),(X,y,z),(X,y,Z)]}[face])
-def render(parts,size,yaw,elevation,with_depth=False):
+def render(parts,size,yaw,elevation,with_depth=False,frame_bounds=None):
     a,e=math.radians(yaw),math.radians(elevation)
     cam=np.array([math.sin(a)*math.cos(e),math.sin(e),-math.cos(a)*math.cos(e)])
     right=np.array([math.cos(a),0,math.sin(a)]);up=np.cross(right,cam)
     def unpack(p):
         return (*p,np.eye(3),np.zeros(3)) if len(p)==4 else p
     parts=[unpack(p) for p in parts]
-    allpts=np.concatenate([np.array([[x,y,z] for x in [lo[0],hi[0]] for y in [lo[1],hi[1]] for z in [lo[2],hi[2]]])@matrix.T+offset for lo,hi,_,_,matrix,offset in parts]);center=(allpts.min(0)+allpts.max(0))*.5
+    allpts=np.concatenate([np.array([[x,y,z] for x in [lo[0],hi[0]] for y in [lo[1],hi[1]] for z in [lo[2],hi[2]]])@matrix.T+offset for lo,hi,_,_,matrix,offset in parts])
+    bounds=allpts if frame_bounds is None else np.array([[x,y,z] for x in [frame_bounds[0][0],frame_bounds[1][0]] for y in [frame_bounds[0][1],frame_bounds[1][1]] for z in [frame_bounds[0][2],frame_bounds[1][2]]])
+    center=(bounds.min(0)+bounds.max(0))*.5
     poly=[];light=np.array([-.35,.85,-.4]);light/=np.linalg.norm(light)
     for lo,hi,faces,refs,matrix,offset in parts:
         for face,f in faces.items():
@@ -87,7 +89,8 @@ def render(parts,size,yaw,elevation,with_depth=False):
                     projected=np.stack([(q-center)@right,(q-center)@up],axis=1)
                     c=tuple(int(rgba[k]*shade) for k in range(3))+(alpha,)
                     poly.append((float((q.mean(0)-center)@cam),projected,c))
-    points=np.concatenate([p for _,p,_ in poly]);low=points.min(0);high=points.max(0)
+    points=np.concatenate([p for _,p,_ in poly]) if frame_bounds is None else np.stack([(bounds-center)@right,(bounds-center)@up],axis=1)
+    low=points.min(0);high=points.max(0)
     factor=min((size[0]-50)/(high[0]-low[0]),(size[1]-50)/(high[1]-low[1]));mid=(low+high)*.5
     image=Image.new('RGB',size,'#242922');draw=ImageDraw.Draw(image,'RGBA')
     depth=Image.new('F',size,-100000.0);depthdraw=ImageDraw.Draw(depth)
