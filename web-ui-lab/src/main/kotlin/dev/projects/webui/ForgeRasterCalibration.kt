@@ -26,7 +26,7 @@ class ForgeRasterCalibration(manifest: String) {
     val frameIds: Set<String> get() = frames.keys
 
     init {
-        require(root.get("schema").asInt == 1 && root.get("kind").asString == "forge-raster-calibration")
+        require(root.get("schema").asInt == 2 && root.get("kind").asString == "forge-raster-calibration")
         require(!root.get("nativeEngineCapture").asBoolean)
         require(width == 800.0 && height == 480.0 && frames.isNotEmpty())
         require(sprites.values.all { it.width in 1..256 && it.height in 1..256 })
@@ -38,6 +38,8 @@ class ForgeRasterCalibration(manifest: String) {
         val frame = requireNotNull(frames[frameId]) { "Unknown forge calibration frame: $frameId" }
         val sourceWidth = frame.get("width").asDouble
         val sourceHeight = frame.get("height").asDouble
+        val rasterScale = frame.get("rasterScale").asDouble
+        require(rasterScale == 2.0)
         val scale = minOf(width / sourceWidth, height / sourceHeight)
         val left = (width - sourceWidth * scale) / 2
         val top = (height - sourceHeight * scale) / 2
@@ -46,8 +48,8 @@ class ForgeRasterCalibration(manifest: String) {
             val tile = element.asJsonObject
             val sprite = sprites.getValue(tile.get("sprite").asString)
             require(sprite.width == tile.get("w").asInt && sprite.height == tile.get("h").asInt)
-            UiNode("calibration-tile-$index", box(tile.get("x").asDouble, tile.get("y").asDouble,
-                sprite.width.toDouble(), sprite.height.toDouble()), "", emptyMap(), null, null, true, 1, sprite)
+            UiNode("calibration-tile-$index", box(tile.get("x").asDouble / rasterScale, tile.get("y").asDouble / rasterScale,
+                sprite.width / rasterScale, sprite.height / rasterScale), "", emptyMap(), null, null, true, 1, sprite)
         }.toMutableList()
         frame.getAsJsonArray("hits").forEachIndexed { index, element ->
             val hit = element.asJsonObject

@@ -8,7 +8,10 @@ const {pathToFileURL}=require('node:url');
   const output=path.resolve(__dirname,'../../../.tools/forge-shared-capture');
   fs.mkdirSync(output,{recursive:true});
   const browser=await chromium.launch({headless:true,channel:'msedge'});
-  const page=await browser.newPage({viewport:{width:1920,height:1080},reducedMotion:'reduce',deviceScaleFactor:1});
+  // Keep CSS layout/hits logical. Text and composited light need dense source pixels,
+  // while the original HTML still uses nearest-neighbour sampling on pixel-art images.
+  const rasterScale=2;
+  const page=await browser.newPage({viewport:{width:1920,height:1080},reducedMotion:'reduce',deviceScaleFactor:rasterScale});
   const errors=[];page.on('pageerror',e=>errors.push(e.message));
   await page.goto(pathToFileURL(path.join(__dirname,'index.html')).href);
   // Fixed calibration bounds. Live HTML is responsive; the game proof uses this one layout.
@@ -52,7 +55,7 @@ const {pathToFileURL}=require('node:url');
       const action=selector.startsWith('[data-id')?'select:'+await locator.getAttribute('data-id'):selector.slice(1);
       hits.push({action,x:b.x-clip.x,y:b.y-clip.y,w:b.width,h:b.height});
     }
-    frames.push({...d,width:clip.width,height:clip.height,hits});
+    frames.push({...d,width:clip.width,height:clip.height,rasterScale,hits});
   }
   await browser.close();
   if(errors.length)throw Error(errors.join('\n'));

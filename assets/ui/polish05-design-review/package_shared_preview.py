@@ -23,6 +23,7 @@ def main():
     sprites={};providers=[];frames=[];checks=[]
     for frame in captures['frames']:
         image=Image.open(CAP/(frame['id']+'.png')).convert('RGBA')
+        assert image.size==(frame['width']*frame['rasterScale'],frame['height']*frame['rasterScale'])
         assert image.getchannel('A').getextrema()==(255,255), 'Flatten glow/text against backing before glyph transport'
         tiles=[];rebuilt=Image.new('RGBA',image.size)
         for y in range(0,image.height,256):
@@ -46,7 +47,7 @@ def main():
             image.save(OUT/'reference.png')
     (font/'plates.json').write_text(json.dumps({'providers':providers},ensure_ascii=False,indent=2)+'\n',encoding='utf8')
     (OUT/'pack/pack.mcmeta').write_text(json.dumps({'pack':{'description':'ProjectS forge / raster calibration fixtures (not live account UI)','min_format':[88,0],'max_format':[88,0]}},indent=2)+'\n',encoding='utf8')
-    manifest={'schema':1,'kind':'forge-raster-calibration','nativeEngineCapture':False,'referenceViewport':captures['referenceViewport'],'sceneWidth':800,'sceneHeight':480,'opacity':'fully opaque backing; CSS glow and fixed text are already composited','sprites':sprites,'frames':frames}
+    manifest={'schema':2,'kind':'forge-raster-calibration','nativeEngineCapture':False,'referenceViewport':captures['referenceViewport'],'sceneWidth':800,'sceneHeight':480,'opacity':'fully opaque backing; CSS glow and fixed text are already composited','tileCoordinates':'physical raster pixels; hits and frame bounds are logical CSS pixels','sprites':sprites,'frames':frames}
     (OUT/'manifest.json').write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+'\n',encoding='utf8')
     (OUT/'verification.json').write_text(json.dumps({'passed':True,'checks':checks,'uniqueGlyphs':len(sprites),'checksActualPackFiles':True,'nativeVisualTested':False},indent=2)+'\n',encoding='utf8')
     # Only obsolete generated PNGs inside this exact output directory are removed.

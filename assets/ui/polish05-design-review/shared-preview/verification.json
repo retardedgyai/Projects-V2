@@ -4,125 +4,125 @@
     {
       "frame": "chest",
       "changedPixels": 0,
-      "rgbaSha256": "4ac6953dff20a2925a2c73d3e2b3c7f6f8e04f46550c5f96d3b534fac1a95795"
+      "rgbaSha256": "1bb0b895484e79012849ad49f406f6155ef35396ec76e0fd9fc26b49a94f4e8c"
     },
     {
       "frame": "head",
       "changedPixels": 0,
-      "rgbaSha256": "ad6473b0ffeea12f715e08e490f80e0ca3b573f11c467c52f62f56b192491bfe"
+      "rgbaSha256": "fea4c07e9b7e0e4f6238fdd664b5ee567ece49e0d90487ace70a4d1d2c63243d"
     },
     {
       "frame": "legs",
       "changedPixels": 0,
-      "rgbaSha256": "b9685fb8ec57a6fce05bce80826cdf32be10566590ec88298f33de668f5efc93"
+      "rgbaSha256": "f6839159cfb1d140543bad9e2a868cfdab90e5aa34ed240b261c3aa8d3566999"
     },
     {
       "frame": "feet",
       "changedPixels": 0,
-      "rgbaSha256": "d56a4626fcd88a6a830f978365e15ee254304d27873c099a2938f252963e336d"
+      "rgbaSha256": "9507b9539d8b18b648be18dbe345e5510754c29ae96c23a90d6de0e7748a2ffc"
     },
     {
       "frame": "weapon",
       "changedPixels": 0,
-      "rgbaSha256": "76c59997e7d6578eb635bca32370f613bd34814b329ebb964548cdccfd353f2a"
+      "rgbaSha256": "a25387ea9d563413f023dc4dd5dda2f70d5215a904a1655b4c98d2b9a90aa697"
     },
     {
       "frame": "chest-focused",
       "changedPixels": 0,
-      "rgbaSha256": "1b8bca7d9e131f315af03e8787851a580ecece8cf8a4a6cd34ef4092932012d2"
+      "rgbaSha256": "b90cc0ccdfa9b1eee4440c783931eece3fbc6dda9b236359ded7a3e9c9479f4a"
     },
     {
       "frame": "head-focused",
       "changedPixels": 0,
-      "rgbaSha256": "4b4d51e89041ced0d7d5012f716eeae45dd45e9288bdf2591357aa7c45c4c065"
+      "rgbaSha256": "cae0263d00fa88fca502ebe2479e627f3bacb9355d8309e25f2953b786538cff"
     },
     {
       "frame": "legs-focused",
       "changedPixels": 0,
-      "rgbaSha256": "449a3e4100e0f65c57372f4a6ef47f041884a73fc3674c09f1849b0835d34b1a"
+      "rgbaSha256": "6ba10f9be9815b8c5e4d9833e6daaac3d52844f2d4d81886468ce76530dc46a1"
     },
     {
       "frame": "feet-focused",
       "changedPixels": 0,
-      "rgbaSha256": "93a945bc897d91309fde49966a4b5c70bc02b604c2ad7f5e3d1d7f311d6a27f5"
+      "rgbaSha256": "84374f434036a79057def18643f651e083083185d5397a67827c213653369691"
     },
     {
       "frame": "weapon-focused",
       "changedPixels": 0,
-      "rgbaSha256": "82859abe2aec94acfe851359360b6d75ab4f7f8e91e43ce8642e53686a861b0b"
+      "rgbaSha256": "7e09cb91436aebd75985ec3b8b401a21dcdc997bf63b90ea9c97ec379b76ff92"
     },
     {
       "frame": "shortage",
       "changedPixels": 0,
-      "rgbaSha256": "199462d2331f2c99a8648bd02d8bfed30dd132ab8a911480ef4db96f2e41ac3b"
+      "rgbaSha256": "81f9b93500e47f0000d4ed8d3c38e497c5842aa8b262866af8d19fcec83ce91b"
     },
     {
       "frame": "risk",
       "changedPixels": 0,
-      "rgbaSha256": "4d2edb12971d22abecd7327030610cbf99a40d4e32bfe7440f8eb8c158bde2f6"
+      "rgbaSha256": "44ab7ef6bf17cb329809820db03a0f7bff17f1aa1ef26d0e6083aeaec78428c1"
     },
     {
       "frame": "maximum",
       "changedPixels": 0,
-      "rgbaSha256": "8847bf22ddb63749940b8943f5ae1cf1a4ebc1313533e0922d57ac308303480d"
+      "rgbaSha256": "ff799ea891eb2955fbe687e422e551e0b9a2868ec5861a6488e46c765c39f0a5"
     },
     {
       "frame": "confirm-chest",
       "changedPixels": 0,
-      "rgbaSha256": "8e04d40a1b939c3872aff461e6327b31ef21621fc19aa0cb593cc6649a30ab9f"
+      "rgbaSha256": "58ef091d5259a8ae831189551d07105bfd6ef6c34970fcc15c3159ae29f3d983"
     },
     {
       "frame": "confirm-head",
       "changedPixels": 0,
-      "rgbaSha256": "0518c588cc76b268cb9247c42d9a4124a3a0a913b581deb3227ee33e51264b7d"
+      "rgbaSha256": "062b342771019c19e021011d4ba3162976c24294f74040963978ca95f896356f"
     },
     {
       "frame": "confirm-legs",
       "changedPixels": 0,
-      "rgbaSha256": "2604caa736f4fb98bf62b4eaeb1fa9c4feb344f7f9021cd72ad406fdc9037def"
+      "rgbaSha256": "a3481c39fa21cf1b89ed7b81811c8b7623409132bc0f49825a0307ab1a5e954f"
     },
     {
       "frame": "confirm-feet",
       "changedPixels": 0,
-      "rgbaSha256": "2d6ccebb3796b15367bf34d6f5b1534c300e1d37e4500ecef8b2a3ad361916dd"
+      "rgbaSha256": "f788a5cb6f789f3e7a1bcafee3f9fe43618335834b976273bc80acee2104523c"
     },
     {
       "frame": "confirm-weapon",
       "changedPixels": 0,
-      "rgbaSha256": "ec42a60b123a9d6e5d2abfcdc8dffead29adb43f1ac52d4b6b8b17865055ef24"
+      "rgbaSha256": "c87678483386efbeb9955b761f29043f0828668aedfcc08c0fc8121173e492d7"
     },
     {
       "frame": "confirm-chest-focused",
       "changedPixels": 0,
-      "rgbaSha256": "5768c2342104c88f5dda9043cdbef606ffaa31895dedd5ef14d5630dc1e39a09"
+      "rgbaSha256": "9d3634d2bb85e716f7812aab3ec7863e5c8edf8899dc937118ab73f158af4414"
     },
     {
       "frame": "confirm-head-focused",
       "changedPixels": 0,
-      "rgbaSha256": "9a079a6584731aec7ff2d79409756873b98e3465114306065d3429380ed8c745"
+      "rgbaSha256": "bc3386ae702e6fc66dde6b4a692ef42830a60c4ee1658933c9ef2fa8ddb35190"
     },
     {
       "frame": "confirm-legs-focused",
       "changedPixels": 0,
-      "rgbaSha256": "5d59f187b73b0ad2847a7adaddcb47bf58fadabdc03c73a30ba90c3ab08aa5f0"
+      "rgbaSha256": "efcd899fe519e27fe1d05a02e20ece016e47173969949e0bf7e5973b9fab0611"
     },
     {
       "frame": "confirm-feet-focused",
       "changedPixels": 0,
-      "rgbaSha256": "dc312d5f5badc841ab3e23605fab70f0801097182fc86ae18ae3e1b5f83b36f6"
+      "rgbaSha256": "3f1c277427b828785220fa91b1bbafa8cc419b617f5560b6b0d2f70e9fc2a31e"
     },
     {
       "frame": "confirm-weapon-focused",
       "changedPixels": 0,
-      "rgbaSha256": "890191f371851ee167316ac4c7c73834c29fc243ad34f12d7279eae038254bcd"
+      "rgbaSha256": "cff59186b09263f56099d1960f85ab3aba3087a13027235a67d62688d7e8566c"
     },
     {
       "frame": "confirm-risk",
       "changedPixels": 0,
-      "rgbaSha256": "1a9c5ffc86a784090175132e834575ec91800901d9325f1ad120ad65e588334b"
+      "rgbaSha256": "22e0ee2de59c60764545ddf5e17ad2d4ebaadeb38e970bdb7c15f70819f99ef2"
     }
   ],
-  "uniqueGlyphs": 421,
+  "uniqueGlyphs": 1067,
   "checksActualPackFiles": true,
   "nativeVisualTested": false
 }

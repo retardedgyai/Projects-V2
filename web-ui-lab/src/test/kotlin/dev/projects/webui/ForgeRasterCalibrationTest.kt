@@ -22,9 +22,9 @@ class ForgeRasterCalibrationTest {
             val f = frame.asJsonObject
             val scene = sceneBuilder.scene(f.get("id").asString)
             val sprites = scene.nodes.filter { it.sprite != null }
-            val scale = 800.0 / f.get("width").asDouble
+            val scale = 800.0 / f.get("width").asDouble / f.get("rasterScale").asDouble
             assertEquals(f.getAsJsonArray("tiles").size(), sprites.size)
-            assertTrue(sprites.size <= 40, "Retained glyph count must stay bounded")
+            assertEquals(112, sprites.size, "2x raster uses bounded 256px glyphs without reducing source pixels")
             for (node in sprites) {
                 val glyph = requireNotNull(node.sprite)
                 val provider = providers.getValue(glyph.char)
