@@ -57,25 +57,22 @@ class CoreCraftingCurrencyTest {
         assertEquals(123456789L, f.account.craftingSeed)
     }
 
-    @Test fun `astral currency replaces exactly one random mod while preserving quality enhancement and identity`() {
-        repeat(120) { seed ->
-            val f = Fixture(initial(1 + seed % 4).copy(craftingSeed = seed.toLong(),
-                weaponIdentity = initial().weaponIdentity.copy(quality = 17),
-                weaponEnhancement = CoreEnhancementState(12)))
-            f.craft(CoreCraftingCurrency.ALCHEMY)
-            val before = f.account
-            val operation = CoreOperation(UUID.randomUUID(), before.revision, CoreAction.CraftEquipment(weapon, CoreCraftingCurrency.ASTRAL))
-            assertTrue(f.service.transact(f.player, operation).successful)
-            val after = f.account
-            assertEquals(before.equippedAffixes.size, after.equippedAffixes.size)
-            assertEquals(before.equippedAffixes.size - 1, after.equippedAffixes.count { it in before.equippedAffixes })
-            assertEquals(before.weaponIdentity, after.weaponIdentity)
-            assertEquals(before.weaponEnhancement, after.weaponEnhancement)
-            assertEquals(before.weaponRarity, after.weaponRarity)
-            assertEquals(99, after.amount(CoreCraftingCurrency.ASTRAL))
-            assertLayout(after, weapon)
-            assertEquals(CoreTransactionStatus.REPLAYED, f.service.transact(f.player, operation).status)
-            assertEquals(after, f.account)
+    @Test fun `retired astral requests cannot spend alter equipment or create receipts and old balances reload`() {
+        for (tier in 1..4) for (gear in CoreGearSlot.equipSlots) {
+            val f = Fixture(initial(tier).copy(weaponEnhancement = CoreEnhancementState(12)))
+            f.craft(CoreCraftingCurrency.ALCHEMY, gear)
+            val before = CoreAccountCodec.encode(f.account)
+            val operation = CoreOperation(UUID.randomUUID(), f.account.revision, CoreAction.CraftEquipment(gear, CoreCraftingCurrency.ASTRAL))
+            repeat(2) {
+                val result = f.service.transact(f.player, operation)
+                assertEquals(CoreTransactionStatus.REJECTED, result.status)
+                assertEquals(CoreCraftingCurrency.ASTRAL_RETIRED_MESSAGE, result.message)
+                assertEquals(before, CoreAccountCodec.encode(f.account))
+            }
+            assertFailsWith<IllegalArgumentException> { CoreCraftingCatalog.craft(f.account, gear, CoreCraftingCurrency.ASTRAL, operation.requestId) }
+            f.service.forget(f.player); f.service.open(f.player)
+            assertEquals(before, CoreAccountCodec.encode(f.account))
+            assertEquals(100, f.account.amount(CoreCraftingCurrency.ASTRAL))
         }
     }
 

@@ -168,9 +168,9 @@ internal object CoreLoopItems {
         return CoreUiTooltip.apply(ItemStack.of(currencyMaterial(currency)).withTag(actionTag, "currency")
             .withTag(currencyTag, currency.name).withAmount(count.coerceIn(1, 64).toInt()),
             CoreTooltipModel(currency.displayName, if (exclusive == null) CoreUiRarity.RARE else CoreUiRarity.EPIC,
-                tier = 1, itemLevel = 1, typeLabel = if (currency == CoreCraftingCurrency.ASTRAL) "星環の深殿・踏破専用報酬" else if (exclusive == null) "装備加工用の通貨" else "${exclusive.displayName}の専用報酬",
+                tier = 1, itemLevel = 1, typeLabel = if (currency == CoreCraftingCurrency.ASTRAL) "旧通貨・残高保管のみ" else if (exclusive == null) "装備加工用の通貨" else "${exclusive.displayName}の専用報酬",
                 stats = listOf(CoreTooltipStat(quantityLabel, "$count 個", CoreUiIcon.MOD)),
-                footer = listOf(CoreCraftingCatalog.description(currency), "消費と加工は確認画面で確定", "港で装備に重ねる / 右クリックで刻印工房")), packed)
+                footer = if (currency == CoreCraftingCurrency.ASTRAL) listOf(CoreCraftingCatalog.description(currency)) else listOf(CoreCraftingCatalog.description(currency), "消費と加工は確認画面で確定", "港で装備に重ねる / 右クリックで刻印工房")), packed)
     }
 
     fun fragment(kind: CoreActivityKind, count: Long): ItemStack = icon(Material.ECHO_SHARD, "${kind.displayName}の欠片",
@@ -231,7 +231,7 @@ internal object CoreLoopItems {
         player.inventory.setItemStack(15, icon(Material.FLINT, "砥石（${account.amount(CoreResource.WHETSTONE)}）",
             "右クリック：直接攻撃の与ダメージ+20% / 3分", "AD・AP自体は変化しません").withTag(actionTag, "whetstone"))
         // Only owned currencies are projected. Their exact quantity is always ledger-authoritative.
-        val owned = CoreCraftingCurrency.entries.filter { account.amount(it) > 0 }
+        val owned = CoreCraftingCurrency.available.filter { account.amount(it) > 0 }
         for (slot in 16..35) player.inventory.setItemStack(slot, owned.getOrNull(slot - 16)?.let { currency(it, account.amount(it), packed) } ?: ItemStack.AIR)
         val existingMapId = mapId(player.inventory.getItemStack(7))
         player.inventory.setItemStack(7, account.maps.firstOrNull { it.id == existingMapId }?.let(::map) ?: ItemStack.AIR)

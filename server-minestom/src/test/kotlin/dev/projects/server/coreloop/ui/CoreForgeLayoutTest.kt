@@ -54,8 +54,16 @@ class CoreForgeLayoutTest {
 
     @Test fun `all currencies have exactly one purpose besides all`() {
         CoreCraftingCurrency.entries.forEach { currency ->
-            assertEquals(2, CoreForgeLayout.Purpose.entries.count { it.accepts(currency) })
+            assertEquals(if (currency == CoreCraftingCurrency.ASTRAL) 0 else 2, CoreForgeLayout.Purpose.entries.count { it.accepts(currency) })
         }
+    }
+
+    @Test fun `legacy selections lose only retired currency when reopened`() {
+        val old = CoreForgeLayout.Selection(tab = CoreForgeLayout.Tab.MODS, gear = CoreGearSlot.FEET,
+            tier = 4, purpose = CoreForgeLayout.Purpose.REROLL, currency = CoreCraftingCurrency.ASTRAL)
+        assertEquals(old.copy(currency = null), CoreForgeLayout.normalize(old))
+        val available = old.copy(currency = CoreCraftingCurrency.CHAOS)
+        assertEquals(available, CoreForgeLayout.normalize(available))
     }
 
     @Test fun `main MOD list omits zero owned and currently inapplicable currencies`() {

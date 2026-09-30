@@ -26,13 +26,21 @@ class CoreStorageViewTest {
         assertTrue(result.all { it.count > 0 })
     }
 
+    @Test fun `old astral balance round trips but is absent from playable storage`() {
+        val old = CoreAccount(UUID.randomUUID(), balances = emptyMap(), currencies = mapOf(CoreCraftingCurrency.ASTRAL to 123L))
+        val loaded = CoreAccountCodec.decode(CoreAccountCodec.encode(old), old.playerId)
+        assertEquals(123, loaded.amount(CoreCraftingCurrency.ASTRAL))
+        for (tier in 1..4) assertTrue(CoreStorageView.entries(loaded, tier).isEmpty())
+        assertEquals(CoreAccountCodec.encode(old), CoreAccountCodec.encode(loaded))
+    }
+
     @Test fun `all owned categories survive page splitting without duplication`() {
         val account = CoreAccount(UUID.randomUUID(), balances = CoreResource.entries.associate { CoreMaterial(it) to 1L },
             currencies = CoreCraftingCurrency.entries.associateWith { 2L }, fragments = CoreActivityKind.entries.associateWith { 3L })
         val entries = CoreStorageView.entries(account, 1)
         val pages = entries.chunked(21)
-        assertEquals(32, entries.size)
-        assertEquals(listOf(21, 11), pages.map { it.size })
+        assertEquals(31, entries.size)
+        assertEquals(listOf(21, 10), pages.map { it.size })
         assertEquals(entries, pages.flatten())
         assertEquals(entries.size, entries.distinct().size)
         assertFailsWith<IllegalArgumentException> { CoreStorageView.entries(account, 0) }
