@@ -12,7 +12,7 @@ HTMLの祭壇は過去の比較・取引検証記録として保護する。今�
 メニューを開いてクラフトせず、中心装備と周囲素材を手に持ち、実物の台座を右クリックする。
 
 中心台座の頭上にMatrix、四隅に支柱、外側に副素材台座。Matrixを筆記杖でクリックすると起動音と世界粒子が出る。
-設置された近くのJarの実残量が減り、そのJarからMatrixへ色のついた湾曲粒子が流れる。
+設置された近くのJarの実残量が減り、そのJarからMatrixへ元素色の霧が流れる。
 元素を全量吸収 → 副素材を一つずつ吸収 → 中心の同じ装備の0枠のみ変性 → 空手の右クリックで回収。
 不足情報はActionBarの補助だけ。祭壇の位置・工程の主表現はワールド実物。
 
@@ -100,3 +100,34 @@ resourcepack追加は `assets/projects/{items,models,textures}/infusion` と `in
 ローカルport25585で26.2/protocol776のstatus応答、port25586でpack HTTP/CRC、5モデルと4枚16px textureを確認。
 512MB heap上限、自分の起動server PID36792はスモーク後に専用停止手順で停止済み。RAM約307MB。
 GUIクライアントの実画面・pack適用後の描画・実プレイの手触りは未確認。実Minecraftスクリーンショットはまだ無い。
+
+## 霧の独立プレビューと造形比較（追加）
+
+初稿の祭壇・台座は本人から不採用の評価。旧モデルとゲーム動作は保護し、旧モデルは煙の比較用にだけ仮置きする。
+`assets/model-lab/infusion-v2` のA/Bは独自の灰色モデル形状案で、runtime / pack index / 構造判定には未接続。詳細材質・完成アートではない。
+Aは幅広く凹んだ受け鉢、穴のある二分割冠、細首と受け皿の周辺台座。Bは低い盤、中心受け口へ向かう溝、低い供物トレーと稼働時に上がる焦点断片。
+灰色の中央品/素材マーカーは位置を示す仮モデル。実アイテムの見た目や完成品デザインを示さない。
+新造形を採用する際には現在の四支柱のブロック・構造占有/当たり判定・対象品高さ・起動ヒット・Jar煙の到着点をまとめて変更する。形だけ差し替えて不整合にしない。
+
+煙は `WorldInfusionSmoke` の成功消費イベントからのみ発生し、六房×三ローブの斑を曲線に沿って送る。元素色・太さ・横揺れを同じKotlin計算で生成。
+packありでは専用の手描き/コード編集16px半透明PNGを、標準 `ItemDisplay` のcamera-facing billboard / 色component / 2tick補間で描画する。
+標準Dustは粗い粒に見えたため、pack未適用時のfallbackにだけ残す。既存Particle Frameworkや新規クライアントmodは変更/追加しない。
+同時表示は最大64。2tick更新。消費停止/取消しは新しい房の放出だけを止め、既に出た房は焦点へ移動して縮み、Entityを削除する。
+実消費が保存できない時、reservoirの再利用、単なるActionBar表示から煙を発生させない。描画は資源transactionを変更しない。
+
+独立GIFは実 `WorldInfusionRules` の火3/潮2消費から得た座標と色、同じPNG/scaleを使う。開始後に風Jarを撤去し、tick90で不足停止するfixture。供給する火と潮の二瓶だけを映す。
+8.6秒/10fps/約5MB。標準クライアント録画ではなく、透過ソート・照明・時間補間はPythonの仮描画。実クライアントでの最終透過品質や負荷は未確認。
+TC6静止画の弧状・太さが変わる流れを参考にしたProjectS独自案。TC6/7の速度・方向・消失挙動を忠実再現したと断定しない。decompileコードは使用しない。
+
+追試結果：**54 tests / 0 failures**、`compileKotlin` / `installDist`成功。新3件は煙の有界性・停止と残りの到達・実資源消費からのpreview trace。
+実Minestomの既存runtime testにも、色つき煙ItemDisplayの生成と終了後の消去を追加し成功。今回サーバーやGUIクライアントを再起動していない。
+以前のローカルhandshake/pack HTTP smokeは初稿段階の結果で、新しい半透明材質の実クライアント検証とは別。
+
+参考：
+
+- [Botania公式Runic Altarモデル](https://github.com/VazkiiMods/Botania/blob/1.20.x/Xplat/src/main/resources/assets/botania/models/block/runic_altar.json)：広い天板・細首・足の比率。モデル形状をコピーせず役割の読みやすさを参照。
+- [Botania実画像](https://user-images.githubusercontent.com/9543430/113498185-a1015d00-94d8-11eb-9d89-cd9f31520714.png)、[Ars実画像](https://i.mcmod.cn/editor/upload/20230226/1677341693_316522_RHFq.webp)をローカルで目視。Arsは受け皿の上に素材が見え、中央機構と外周台座の役割が形で異なる。
+- [TC画像](https://ftbwiki.org/images/thumb/0/0c/Infusion_5.png/500px-Infusion_5.png)：親調査で目視済み。こちらの取得ファイルは欠損し再取得も418だったため、こちらで完全な画像を見たとはしない。
+- [Minecraft公式のCustom Model Data色tint](https://www.minecraft.net/en-us/article/minecraft-java-edition-1-21-4)：標準resourcepackの色指定。26.2のcached native assetsで半透明texture参照の形式も確認。
+
+参考画像のバイトはソース/成果ZIPに含めない。

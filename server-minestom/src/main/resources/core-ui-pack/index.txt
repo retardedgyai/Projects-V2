@@ -13824,3 +13824,6 @@ assets/projects/models/infusion/jar_tide.json
 assets/projects/items/infusion/jar_tide.json
 assets/projects/models/infusion/jar_gale.json
 assets/projects/items/infusion/jar_gale.json
+assets/projects/textures/infusion/smoke.png
+assets/projects/models/infusion/smoke.json
+assets/projects/items/infusion/smoke.json

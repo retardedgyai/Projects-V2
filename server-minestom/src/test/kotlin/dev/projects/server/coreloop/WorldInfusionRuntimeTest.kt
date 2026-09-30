@@ -5,6 +5,8 @@ import net.minestom.server.MinecraftServer
 import net.minestom.server.coordinate.Pos
 import net.minestom.server.entity.GameMode
 import net.minestom.server.entity.Player
+import net.minestom.server.entity.metadata.display.ItemDisplayMeta
+import net.minestom.server.component.DataComponents
 import net.minestom.server.instance.block.Block
 import net.minestom.server.instance.block.BlockFace
 import net.minestom.server.item.ItemStack
@@ -70,7 +72,11 @@ class WorldInfusionRuntimeTest {
             click(center,44,"cast")
             assertEquals(InfusionPhase.ESSENTIA,game.state.phase)
             assertEquals(4,game.state.pedestals.count { it.item!=null })
-            repeat(240) { game.tick() }
+            game.packed=true;game.rebuild()
+            repeat(20) { game.tick() }
+            assertTrue(map.entities.any { (it.entityMeta as? ItemDisplayMeta)?.itemStack?.get(DataComponents.CUSTOM_MODEL_DATA)?.colors()?.isNotEmpty()==true },"Packed smoke must use real tinted billboard entities")
+            repeat(220) { game.tick() }
+            assertFalse(map.entities.any { (it.entityMeta as? ItemDisplayMeta)?.itemStack?.get(DataComponents.ITEM_MODEL)=="projects:infusion/smoke" },"Expired smoke must leave no display entities")
             assertEquals(InfusionPhase.COMPLETE,game.state.phase)
             assertEquals(5,game.state.jars.sumOf { it.amount })
             assertTrue(packets.any { it is ParticlePacket })

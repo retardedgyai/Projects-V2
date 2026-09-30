@@ -19,6 +19,8 @@ import net.minestom.server.instance.LightingChunk
 import net.minestom.server.instance.block.Block
 import net.minestom.server.item.ItemStack
 import net.minestom.server.item.Material
+import net.minestom.server.item.component.CustomModelData
+import net.minestom.server.component.DataComponents
 import net.minestom.server.network.packet.server.play.ParticlePacket
 import net.minestom.server.particle.Particle
 import net.minestom.server.sound.SoundEvent
@@ -92,6 +94,8 @@ internal object WorldInfusionServer {
         private val blockKeys=mutableSetOf<Triple<Int,Int,Int>>()
         private data class Trail(val from:Vec,val to:Vec,val rgb:Int,val started:Long)
         private val trails=mutableListOf<Trail>()
+        private val smoke=mutableListOf<WorldInfusionSmoke.Transfer>()
+        private val smokeDisplays=mutableMapOf<String,Entity>()
         private fun at(c:InfusionCell,y:Double=0.0)=Pos(c.x+.5,c.y+y,c.z+.5)
         private fun block(x:Int,y:Int,z:Int,b:Block) {
             val key=Triple(x,y,z);blockKeys+=key
@@ -128,6 +132,9 @@ internal object WorldInfusionServer {
             val next=change(state)
             if(next===state)return false
             state=repository.save(state.account.revision,next)
+            if(state.paused || state.phase!=InfusionPhase.ESSENTIA) {
+                for(i in smoke.indices)smoke[i]=smoke[i].copy(releaseUntil=minOf(smoke[i].releaseUntil,ticks))
+            }
             rebuild();inventory();true
         } catch(f:Exception) {
             if(f !is IllegalArgumentException) {
@@ -240,12 +247,42 @@ internal object WorldInfusionServer {
                     pulse?.let { v->
                         val source=v.jar?.let { id->state.jars.single { it.id==id }.cell?.let { Vec(it.x+.5,41.55,it.z+.5) } }
                             ?: v.ingredient?.let { Vec(it.x+.5,42.15,it.z+.5) } ?: Vec(c.x+.5,42.0,c.z+.5)
-                        trails+=Trail(source,target,v.aspect?.rgb ?: 0xe1cfab,ticks)
+                        if(v.jar!=null && v.aspect!=null) {
+                            // Only a durably committed real Jar drain releases smoke. No smoke for reservoir reuse.
+                            val mouth=source.add(0.0,.4,0.0)
+                            smoke+=WorldInfusionSmoke.Transfer(mouth,target,v.aspect.rgb,ticks)
+                        } else trails+=Trail(source,target,v.aspect?.rgb ?: 0xe1cfab,ticks)
                         if(v.completed)player.playSound(Sound.sound(SoundEvent.BLOCK_AMETHYST_BLOCK_CHIME,Sound.Source.BLOCK,.7f,1.3f))
                     }
                 }
             }
             trails.removeIf { ticks-it.started>18 }
+            smoke.removeIf { WorldInfusionSmoke.expired(it,ticks) }
+            if(ticks%2==0L) {
+                val frame=WorldInfusionSmoke.frame(smoke,ticks)
+                val active=if(packed)frame.map { it.key }.toSet() else emptySet()
+                smokeDisplays.entries.removeIf { (key,e)->if(key !in active) { e.remove();true } else false }
+                frame.forEach { mote->
+                    if(packed) {
+                        val e=smokeDisplays.getOrPut(mote.key) { Entity(EntityType.ITEM_DISPLAY).apply {
+                            setNoGravity(true);setHasPhysics(false);setInstance(this@WorldInfusionGame.instance,Pos(mote.position.x(),mote.position.y(),mote.position.z()))
+                        } }
+                        e.teleport(Pos(mote.position.x(),mote.position.y(),mote.position.z()))
+                        e.editEntityMeta(ItemDisplayMeta::class.java) { m->
+                            m.setItemStack(ItemStack.of(Material.PAPER).withItemModel("projects:infusion/smoke")
+                                .with(DataComponents.CUSTOM_MODEL_DATA,CustomModelData(emptyList(),emptyList(),emptyList(),
+                                    listOf(net.kyori.adventure.text.format.TextColor.color(mote.rgb)))))
+                            m.setDisplayContext(ItemDisplayMeta.DisplayContext.NONE)
+                            m.setBillboardRenderConstraints(AbstractDisplayMeta.BillboardConstraints.CENTER)
+                            val size=.26*mote.scale;m.setScale(Vec(size,size,size))
+                            m.setPosRotInterpolationDuration(2);m.setTransformationInterpolationDuration(2)
+                            m.setTransformationInterpolationStartDelta(0);m.setBrightness(12,12)
+                            m.setShadowRadius(0f);m.setViewRange(2f)
+                        }
+                    } else player.sendPacket(ParticlePacket(Particle.DUST.withColor(net.kyori.adventure.text.format.TextColor.color(mote.rgb)).withScale(mote.scale),
+                        false,false,mote.position,Vec.ZERO,0f,1))
+                }
+            }
             trails.forEach { t->
                 val u=(ticks-t.started)/18.0
                 for(i in 0..4) {
@@ -266,6 +303,6 @@ internal object WorldInfusionServer {
                 player.sendActionBar(Component.text(message,NamedTextColor.GOLD))
             }
         }
-        fun close() { displays.values.forEach { it.remove() };displays.clear();trails.clear() }
+        fun close() { displays.values.forEach { it.remove() };displays.clear();trails.clear();smoke.clear();smokeDisplays.values.forEach { it.remove() };smokeDisplays.clear() }
     }
 }
