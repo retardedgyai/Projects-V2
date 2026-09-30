@@ -4,67 +4,67 @@
     {
       "frame": "chest",
       "changedPixels": 0,
-      "rgbaSha256": "1bb0b895484e79012849ad49f406f6155ef35396ec76e0fd9fc26b49a94f4e8c"
+      "rgbaSha256": "16e1d5b1a83746ee9a01b47d289ef7b332f74084c3d67203b68b86694f246269"
     },
     {
       "frame": "head",
       "changedPixels": 0,
-      "rgbaSha256": "fea4c07e9b7e0e4f6238fdd664b5ee567ece49e0d90487ace70a4d1d2c63243d"
+      "rgbaSha256": "c895bfb95576ba2458b2e8d621e13a38f2483e554aefc0c21976bd33a9562c81"
     },
     {
       "frame": "legs",
       "changedPixels": 0,
-      "rgbaSha256": "f6839159cfb1d140543bad9e2a868cfdab90e5aa34ed240b261c3aa8d3566999"
+      "rgbaSha256": "a0fa33cbc1b4b1f3afa5aadf47cc88483af995afcdce0f60b94fc5ae6551da2e"
     },
     {
       "frame": "feet",
       "changedPixels": 0,
-      "rgbaSha256": "9507b9539d8b18b648be18dbe345e5510754c29ae96c23a90d6de0e7748a2ffc"
+      "rgbaSha256": "245bf3b42a1433def22872a6291f0694cdf5af56ca1c914e502994e6a87cd50e"
     },
     {
       "frame": "weapon",
       "changedPixels": 0,
-      "rgbaSha256": "a25387ea9d563413f023dc4dd5dda2f70d5215a904a1655b4c98d2b9a90aa697"
+      "rgbaSha256": "4c3b969755e8646ae59ab52fddedbfb4d62a1c32a59183c19c85b6cd1572c206"
     },
     {
       "frame": "chest-focused",
       "changedPixels": 0,
-      "rgbaSha256": "b90cc0ccdfa9b1eee4440c783931eece3fbc6dda9b236359ded7a3e9c9479f4a"
+      "rgbaSha256": "f805e59d3c9e2c72c88b6bdaba1df9415ddf13ee27a875d8be39081cbf5b04e9"
     },
     {
       "frame": "head-focused",
       "changedPixels": 0,
-      "rgbaSha256": "cae0263d00fa88fca502ebe2479e627f3bacb9355d8309e25f2953b786538cff"
+      "rgbaSha256": "de4374ce4a03a5d406a393624363001f66edaa82d61f593bf1f7445f34a47e67"
     },
     {
       "frame": "legs-focused",
       "changedPixels": 0,
-      "rgbaSha256": "6ba10f9be9815b8c5e4d9833e6daaac3d52844f2d4d81886468ce76530dc46a1"
+      "rgbaSha256": "19585fea601a7ac88d5fcf4ab4bcd8427a8ac16a21a62a8d1d9c214aaf279cf6"
     },
     {
       "frame": "feet-focused",
       "changedPixels": 0,
-      "rgbaSha256": "84374f434036a79057def18643f651e083083185d5397a67827c213653369691"
+      "rgbaSha256": "9bcd1db1103beae4f4fb16b4846f2302f94cb7097668f28bacb4428ef59757b2"
     },
     {
       "frame": "weapon-focused",
       "changedPixels": 0,
-      "rgbaSha256": "7e09cb91436aebd75985ec3b8b401a21dcdc997bf63b90ea9c97ec379b76ff92"
+      "rgbaSha256": "7c6ec7f40ec296c284fce266e08ae6b281dfcd7300e39735fd9394785923b4ff"
     },
     {
       "frame": "shortage",
       "changedPixels": 0,
-      "rgbaSha256": "81f9b93500e47f0000d4ed8d3c38e497c5842aa8b262866af8d19fcec83ce91b"
+      "rgbaSha256": "ef5abd5ea742f8c907a33effb92d17ef6a30c74e0307158d9cc765b9e1123bff"
     },
     {
       "frame": "risk",
       "changedPixels": 0,
-      "rgbaSha256": "44ab7ef6bf17cb329809820db03a0f7bff17f1aa1ef26d0e6083aeaec78428c1"
+      "rgbaSha256": "62884a33224d04dc5e6cb52310860541e0e79adc48f0a12ac821b264e2e67b92"
     },
     {
       "frame": "maximum",
       "changedPixels": 0,
-      "rgbaSha256": "ff799ea891eb2955fbe687e422e551e0b9a2868ec5861a6488e46c765c39f0a5"
+      "rgbaSha256": "d43a87bbf92d9445981586ce921bb02fb47275570830005bcedb370a36794ee0"
     },
     {
       "frame": "confirm-chest",
@@ -99,12 +99,12 @@
     {
       "frame": "confirm-head-focused",
       "changedPixels": 0,
-      "rgbaSha256": "bc3386ae702e6fc66dde6b4a692ef42830a60c4ee1658933c9ef2fa8ddb35190"
+      "rgbaSha256": "b7f8bc4d762c0303a3705ee634e75d9c465d53eaa27d9034bfa807e4aeb175b0"
     },
     {
       "frame": "confirm-legs-focused",
       "changedPixels": 0,
-      "rgbaSha256": "efcd899fe519e27fe1d05a02e20ece016e47173969949e0bf7e5973b9fab0611"
+      "rgbaSha256": "269c4cd376f95b78532eb173c9dc91f839dc547cb29a67e709d441fecafecb9d"
     },
     {
       "frame": "confirm-feet-focused",
@@ -114,7 +114,7 @@
     {
       "frame": "confirm-weapon-focused",
       "changedPixels": 0,
-      "rgbaSha256": "cff59186b09263f56099d1960f85ab3aba3087a13027235a67d62688d7e8566c"
+      "rgbaSha256": "93d4959b31c9c36703fef0711934e120e06ef7dd25d378e97e2966a08023d3d4"
     },
     {
       "frame": "confirm-risk",
@@ -122,7 +122,7 @@
       "rgbaSha256": "22e0ee2de59c60764545ddf5e17ad2d4ebaadeb38e970bdb7c15f70819f99ef2"
     }
   ],
-  "uniqueGlyphs": 1067,
+  "uniqueGlyphs": 1567,
   "checksActualPackFiles": true,
   "nativeVisualTested": false
 }

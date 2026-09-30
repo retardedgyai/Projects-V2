@@ -4,30 +4,56 @@
 *{box-sizing:border-box}body{margin:0;background:#0a1114;color:#e6e4d8;font:14px/1.7 "Yu Gothic UI",Meiryo,sans-serif}button,select{font:inherit;color:inherit;background:#182320;border:1px solid #767d604d;padding:7px 12px;cursor:pointer}button:focus-visible,select:focus-visible{outline:2px solid #e6c383;outline-offset:3px}button[aria-pressed=true]{border-color:#c2a16b;color:#e8cb96;background:#b99a551c}button:disabled{opacity:.45;cursor:default}header{max-width:1720px;margin:auto;padding:22px 20px 18px;display:flex;align-items:center;justify-content:space-between;gap:20px}h1{font:24px "Yu Mincho",Georgia,serif;letter-spacing:.1em;margin:0;color:#e0cda6}header small{display:block;color:#a4b49f;margin-top:6px}.controls{display:flex;align-items:center;gap:9px;flex-wrap:wrap;font-size:12px}.controls a{color:#c9b17c;text-decoration:none}.viewer{margin:0 auto;max-width:1740px;padding:0 20px}.stage{position:relative;background:#071015;box-shadow:0 22px 70px #0006;overflow:hidden;min-height:150px}.stage canvas{display:block;width:100%;height:auto;image-rendering:auto;cursor:default}.stage.original-size{overflow:auto}.stage.original-size canvas{max-width:none}.stage canvas.clickable{cursor:pointer}.raster-cursor{position:absolute;width:13px;height:17px;pointer-events:none;display:none;z-index:2;filter:drop-shadow(1px 1px 0 #0b1319)}.raster-cursor:before{content:"";position:absolute;top:0;left:0;width:2px;height:13px;background:#ffdf9f}.raster-cursor:after{content:"";position:absolute;top:0;left:0;width:10px;height:2px;background:#ffedbc}.status{max-width:1700px;margin:12px auto;display:flex;justify-content:space-between;gap:16px;color:#afc6a4;font-size:12px}.status span:last-child{color:#bda879}.notes{max-width:1700px;margin:23px auto 30px;border-top:1px solid #66745635;padding:17px 0;color:#a6b5a5;font-size:12px;display:grid;grid-template-columns:1fr 1fr;gap:28px}.notes strong{display:block;color:#d7c6a3;font-size:13px;margin-bottom:4px}.notes p{margin:0}.notes a{color:#d8ba7b}.load-error{padding:40px;color:#ecb3a2}@media(max-width:800px){header{align-items:flex-start;flex-direction:column}.viewer{padding:0 10px}.notes{display:block}.notes>div+div{margin-top:17px}.status{display:block}}
 </style></head><body>
 <header><div><h1>ゲーム用の共有素材プレビュー</h1><small>リソースパックに入ったPNGを、そのまま組み立てています。</small></div><div class="controls"><label for="frame">状態</label><select id="frame"></select><button id="raster" aria-pressed="true">共通PNG</button><button id="reference" aria-pressed="false">元HTMLとの比較</button><button id="native" aria-pressed="false">ゲームの配置</button><button id="size" aria-pressed="false">原寸で見る</button><a href="../index.html">デザイン案へ ↗</a></div></header>
-<main class="viewer"><div class="stage" id="stage"><canvas id="screen" aria-label="共有リソースパックの工房表示"></canvas><span class="raster-cursor" id="cursor" aria-hidden="true"></span></div><div class="status"><span id="status">パックを読み込んでいます…</span><span id="dimensions"></span></div><section class="notes"><div><strong>一致しているもの</strong><p>光、ぼかし、色、固定文字、画像は同じPNGです。高精細な素材を共有し、表示サイズに合わせて描画します。装備行・触媒・確認ボタンを押すと、用意した状態へ切り替わります。強化操作は表示切替のみです。</p></div><div><strong>実機で確認するもの</strong><p>これはMinecraftの描画エンジンを動かした映像ではありません。ゲーム内の投影・画像の補間、3D装備、アニメーション、入力の体感は実機での確認が必要です。今回は装備も静止画像として含めています。<a href="../../../../docs/development/polish05-shared-preview.md">方式と確認範囲</a></p></div></section></main>
+<main class="viewer"><div class="stage" id="stage"><canvas id="screen" aria-label="共有リソースパックの工房表示"></canvas><span class="raster-cursor" id="cursor" aria-hidden="true"></span></div><div class="status"><span id="status">パックを読み込んでいます…</span><span id="dimensions"></span></div><section class="notes"><div><strong>一致しているもの</strong><p>光、ぼかし、色、固定文字、画像は同じPNGです。高精細な素材を共有し、表示サイズに合わせて描画します。装備行・触媒・確認ボタンを押すと、用意した状態へ切り替わります。強化操作は表示切替のみです。</p></div><div><strong>実機で確認するもの</strong><p>これはMinecraftの描画エンジンを動かした映像ではありません。ゲーム内の投影・画像の補間、3D装備、アニメーション、入力の体感は実機での確認が必要です。装備の浮遊・金色の粒子・光の明滅は、ゲームと同じ時間定義で動かしています。確認画面では停止します。<a href="../../../../docs/development/polish05-shared-preview.md">方式と確認範囲</a></p></div></section></main>
 <script>
 const $=id=>document.getElementById(id),canvas=$('screen'),ctx=canvas.getContext('2d');
 let manifest,images={},active='chest',mode='raster',focused=false,requestVersion=0,originalSize=false;
 let published=null;
-function loadImage(src){return new Promise((resolve,reject)=>{const i=new Image();i.onload=()=>resolve(i);i.onerror=()=>reject(Error('画像を読み込めません: '+src));i.src=src})}
+let motionEnabled=!matchMedia('(prefers-reduced-motion: reduce)').matches;
+const motionButton=document.createElement('button');motionButton.id='motion';document.querySelector('.controls').append(motionButton);
+function motionLabel(){motionButton.textContent=motionEnabled?'動きを止める':'動きを再開';motionButton.setAttribute('aria-pressed',String(motionEnabled))}
+motionButton.onclick=()=>{motionEnabled=!motionEnabled;motionLabel();present()};motionLabel();
+const imageQueue=[];let imagesLoading=0;
+function loadImage(src){return new Promise((resolve,reject)=>{imageQueue.push({src,resolve,reject});loadQueuedImages()})}
+function loadQueuedImages(){while(imagesLoading<4&&imageQueue.length){
+  const job=imageQueue.shift(),image=new Image();imagesLoading++;
+  const finish=()=>{imagesLoading--;loadQueuedImages()};
+  image.onload=()=>{job.resolve(image);finish()};image.onerror=()=>{job.reject(Error('画像を読み込めません: '+job.src));finish()};image.src=job.src;
+}}
 function current(){return manifest.frames.find(f=>f.id===active)}
 function nativeBox(frame,box){const s=Math.min(800/frame.width,480/frame.height);return{x:(800-frame.width*s)/2+box.x*s,y:(480-frame.height*s)/2+box.y*s,w:box.w*s,h:box.h*s}}
 function logicalSize(frame,renderingMode){return renderingMode==='native'?{w:800,h:480}:{w:frame.width,h:frame.height}}
-function present(){
+function present(nowMs=Date.now()){
   if(!published)return;
-  const {frame,renderingMode,source}=published;
+  const {frame,renderingMode,source,hero,glows}=published;
   const logical=logicalSize(frame,renderingMode);
   // 800x480 describes positions, never the resolution of the displayed image.
   const cssWidth=originalSize?frame.width:$('stage').clientWidth;
   const cssHeight=cssWidth*logical.h/logical.w,dpr=window.devicePixelRatio||1;
   canvas.style.width=cssWidth+'px';canvas.style.height=cssHeight+'px';
-  canvas.width=Math.round(cssWidth*dpr);canvas.height=Math.round(cssHeight*dpr);
+  const bufferWidth=Math.round(cssWidth*dpr),bufferHeight=Math.round(cssHeight*dpr);
+  if(canvas.width!==bufferWidth||canvas.height!==bufferHeight){canvas.width=bufferWidth;canvas.height=bufferHeight}
   ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';
   ctx.fillStyle='#0a1114';ctx.fillRect(0,0,canvas.width,canvas.height);
   ctx.setTransform(canvas.width/logical.w,0,0,canvas.height/logical.h,0,0);
   const b=renderingMode==='native'?nativeBox(frame,{x:0,y:0,w:frame.width,h:frame.height}):{x:0,y:0,w:frame.width,h:frame.height};
   // Resample once, after assembling the entire dense source. Avoid tile-edge seams.
-  ctx.drawImage(source,b.x,b.y,b.w,b.h);ctx.resetTransform();
+  ctx.drawImage(source,b.x,b.y,b.w,b.h);
+  if(frame.dynamic){
+    const d=frame.dynamic,m=manifest.motion,t=motionEnabled?nowMs:0;
+    const transform=box=>renderingMode==='native'?nativeBox(frame,box):box;
+    const breathing=(1-Math.cos(2*Math.PI*(t%m.glowPeriodMs)/m.glowPeriodMs))/2;
+    const glow=transform(d.glow);ctx.drawImage(glows[Math.round(breathing*(glows.length-1))],glow.x,glow.y,glow.w,glow.h);
+    const floatY=motionEnabled?-m.floatAmplitude*Math.cos(2*Math.PI*(t%m.floatPeriodMs)/m.floatPeriodMs):0;
+    const item=transform({...d.hero,y:d.hero.y+floatY});ctx.drawImage(hero,item.x,item.y,item.w,item.h);
+    if(motionEnabled)m.motes.forEach(mote=>{
+      const p=((t+mote.delay)%m.motePeriodMs)/m.motePeriodMs;
+      const alpha=p<.2?.55*p/.2:p<.8?.55-(p-.2)*.5:.25*(1-p)/.2;
+      const point=transform({x:d.stage.x+d.stage.w*mote.x+m.moteDriftX*p,y:d.stage.y+d.stage.h*mote.y+m.moteDriftY*p,w:m.moteSize,h:m.moteSize});
+      ctx.fillStyle=`rgba(237,205,131,${alpha})`;ctx.fillRect(point.x,point.y,point.w,point.h);
+    });
+  }
+  ctx.resetTransform();
   canvas.dataset.frame=frame.id;canvas.dataset.mode=renderingMode;
   canvas.dataset.logicalWidth=logical.w;canvas.dataset.logicalHeight=logical.h;
   canvas.dataset.sourceWidth=source.width;canvas.dataset.sourceHeight=source.height;
@@ -55,9 +81,22 @@ async function draw(){
     frame.tiles.forEach((t,i)=>paint.drawImage(loaded[i],t.x,t.y));
     message=renderingMode==='native'?'ゲームと同じ配置座標を、高精細な素材で表示。MinecraftのGPU描画ではありません。':'実際のパック画像を高精細なまま再合成。表示サイズに合わせて描画しています。';
   }
+  let hero=null,glows=null;
+  if(frame.dynamic){
+    const layer=frame.dynamic.hero;hero=document.createElement('canvas');hero.width=layer.w*frame.rasterScale;hero.height=layer.h*frame.rasterScale;
+    const hctx=hero.getContext('2d');
+    const loadSprite=id=>{images[id]??=loadImage(manifest.sprites[id].path);return images[id]};
+    const layers=await Promise.all(layer.tiles.map(t=>loadSprite(t.sprite)));
+    layer.tiles.forEach((tile,i)=>hctx.drawImage(layers[i],tile.x,tile.y));
+    glows=await Promise.all(frame.dynamic.glow.frames.map(async light=>{
+      const image=document.createElement('canvas');image.width=frame.dynamic.glow.w*frame.rasterScale;image.height=frame.dynamic.glow.h*frame.rasterScale;
+      const paint=image.getContext('2d'),tiles=await Promise.all(light.tiles.map(t=>loadSprite(t.sprite)));
+      light.tiles.forEach((tile,i)=>paint.drawImage(tiles[i],tile.x,tile.y));return image;
+    }));
+  }
   if(token!==requestVersion)return;
   // Publish completed pixels and hit mapping atomically.
-  published={frame,renderingMode,source};present();canvas.style.pointerEvents='auto';
+  published={frame,renderingMode,source,hero,glows};present();canvas.style.pointerEvents='auto';
   $('status').textContent=message;
 }
 function point(e){const r=canvas.getBoundingClientRect();return{x:(e.clientX-r.left)*Number(canvas.dataset.logicalWidth)/r.width,y:(e.clientY-r.top)*Number(canvas.dataset.logicalHeight)/r.height}}
@@ -70,6 +109,7 @@ function action(a){const f=current();if(a.startsWith('select:')){active=a.slice(
 canvas.addEventListener('pointermove',e=>{canvas.classList.toggle('clickable',!!hit(point(e)))});canvas.addEventListener('pointerleave',()=>{canvas.classList.remove('clickable')});canvas.addEventListener('click',e=>{const h=hit(point(e));if(h)action(h.action)});
 $('frame').addEventListener('change',()=>{active=$('frame').value;focused=!!current().focused;draw()});for(const m of ['raster','reference','native'])$(m).addEventListener('click',()=>{mode=m;draw()});
 $('size').addEventListener('click',()=>{originalSize=!originalSize;$('size').setAttribute('aria-pressed',String(originalSize));$('size').textContent=originalSize?'画面に合わせる':'原寸で見る';$('stage').classList.toggle('original-size',originalSize);present()});
-new ResizeObserver(()=>present()).observe($('stage'));window.addEventListener('resize',present);
-fetch('manifest.json',{cache:'no-store'}).then(r=>{if(!r.ok)throw Error('manifestを読み込めません');return r.json()}).then(m=>{if(m.schema!==2)throw Error('新しい高精細パックを再生成してください');manifest=m;$('frame').innerHTML=m.frames.map(f=>`<option value="${f.id}">${f.label}</option>`).join('');draw()}).catch(e=>{$('stage').innerHTML='<p class="load-error">'+e.message+'</p>'});
+new ResizeObserver(()=>present()).observe($('stage'));window.addEventListener('resize',()=>present());
+function animate(){if(motionEnabled&&published?.frame.dynamic&&!document.hidden)present();requestAnimationFrame(animate)}requestAnimationFrame(animate);
+fetch('manifest.json',{cache:'no-store'}).then(r=>{if(!r.ok)throw Error('manifestを読み込めません');return r.json()}).then(m=>{if(m.schema!==3)throw Error('新しい高精細パックを再生成してください');manifest=m;$('frame').innerHTML=m.frames.map(f=>`<option value="${f.id}">${f.label}</option>`).join('');draw()}).catch(e=>{$('stage').innerHTML='<p class="load-error">'+e.message+'</p>'});
 </script></body></html>

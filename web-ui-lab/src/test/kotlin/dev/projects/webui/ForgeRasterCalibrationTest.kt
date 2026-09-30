@@ -21,7 +21,7 @@ class ForgeRasterCalibrationTest {
         for (frame in manifest.getAsJsonArray("frames")) {
             val f = frame.asJsonObject
             val scene = sceneBuilder.scene(f.get("id").asString)
-            val sprites = scene.nodes.filter { it.sprite != null }
+            val sprites = scene.nodes.filter { it.id.startsWith("calibration-tile-") }
             val scale = 800.0 / f.get("width").asDouble / f.get("rasterScale").asDouble
             assertEquals(f.getAsJsonArray("tiles").size(), sprites.size)
             assertEquals(112, sprites.size, "2x raster uses bounded 256px glyphs without reducing source pixels")
@@ -38,6 +38,28 @@ class ForgeRasterCalibrationTest {
                 assertTrue(Files.isRegularFile(output.resolve("pack/assets/projects_forge_calibration/textures/$file")))
             }
         }
+    }
+
+    @Test fun `motion preserves fixed pixels and hits while drifting hero and motes inside the stage`() {
+        val builder = ForgeRasterCalibration(output.resolve("manifest.json"))
+        val first = builder.scene("weapon", 0L)
+        val later = builder.scene("weapon", 1400L)
+        assertEquals(first.nodes.filter { it.id.startsWith("calibration-tile-") || it.action != null },
+            later.nodes.filter { it.id.startsWith("calibration-tile-") || it.action != null })
+        val hero = first.nodes.first { it.id.startsWith("calibration-hero-") }
+        val moved = later.nodes.single { it.id == hero.id }
+        assertEquals(hero.box.y + 3 * 800.0 / 1700, moved.box.y, 1e-8)
+        assertEquals(hero.sprite, moved.sprite)
+        assertEquals(5, first.nodes.count { it.id.startsWith("calibration-mote-") })
+        assertTrue(first.nodes.filter { it.id.startsWith("calibration-glow-") }.map { it.sprite } !=
+            later.nodes.filter { it.id.startsWith("calibration-glow-") }.map { it.sprite })
+        assertEquals(first.nodes.filter { it.id.startsWith("calibration-glow-") }.map { it.box },
+            later.nodes.filter { it.id.startsWith("calibration-glow-") }.map { it.box }, "Light must breathe without growing")
+        // All periods wrap exactly. No accumulating random motion or advancing hits.
+        assertEquals(first, builder.scene("weapon", 672000L))
+        assertTrue(builder.scene("confirm-weapon", 1400L).nodes.none {
+            it.id.startsWith("calibration-hero-") || it.id.startsWith("calibration-mote-") || it.id.startsWith("calibration-glow-")
+        })
     }
 
     @Test fun `hit locations share the tile coordinate transform and unknown frames fail`() {

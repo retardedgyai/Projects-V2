@@ -308,7 +308,14 @@ class UiSessions(
                         s.scene=s.polish.scene(phase)
                     }
                     render(s,s.effects.frame(s.scene))
-                } else s.effects.clear()
+                } else {
+                    s.effects.clear()
+                    val calibration = s.polish as? ForgeRasterCalibrationFlow
+                    if (calibration != null) {
+                        s.scene = calibration.animatedScene(System.currentTimeMillis())
+                        render(s)
+                    }
+                }
             }
             paintPointer(s)
         }

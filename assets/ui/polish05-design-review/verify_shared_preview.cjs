@@ -10,6 +10,16 @@ const fs=require('node:fs');
     const base=process.env.FORGE_PREVIEW_URL||'http://127.0.0.1:8155/assets/ui/polish05-design-review/shared-preview/';
     await page.goto(base);
     await page.waitForFunction(()=>document.getElementById('status').textContent.startsWith('実際のパック画像'));
+    const motionCheck=await page.evaluate(()=>{
+      present(0);const a=ctx.getImageData(0,0,canvas.width,canvas.height).data.slice();
+      present(1400);const b=ctx.getImageData(0,0,canvas.width,canvas.height).data;
+      let changed=0;for(let i=0;i<a.length;i+=4)if(a[i]!==b[i]||a[i+1]!==b[i+1]||a[i+2]!==b[i+2]||a[i+3]!==b[i+3])changed++;
+      return{changed,heroTiles:published.frame.dynamic.hero.tiles.length,motes:manifest.motion.motes.length};
+    });
+    assert.ok(motionCheck.changed>1000,'Hero/light/motes must animate instead of republishing the same backing');
+    assert.ok(motionCheck.heroTiles>0);assert.equal(motionCheck.motes,5);
+    await page.locator('#motion').click();
+    assert.equal(await page.evaluate(()=>motionEnabled),false);
     const pixels=await page.evaluate(async()=>{
       const screen=document.getElementById('screen');
       const im=await loadImage('reference.png');
@@ -64,6 +74,7 @@ const fs=require('node:fs');
       display.on('pageerror',e=>errors.push(e.message));
       await display.goto(base);
       await display.waitForFunction(()=>document.querySelector('#screen').dataset.frame==='chest');
+      await display.locator('#motion').click();
       for(const width of [1920,1304,900,390]){
         await display.setViewportSize({width,height:1080});
         for(const m of ['raster','native']){
@@ -104,7 +115,7 @@ const fs=require('node:fs');
       await display.close();
     }
     assert.deepEqual(errors,[]);
-    fs.writeFileSync(path.join(out,'verification.json'),JSON.stringify({passed:true,...pixels,frameCount:24,browserPixelComparison:true,resolutionChecks,engineCapture:false},null,2));
+    fs.writeFileSync(path.join(out,'verification.json'),JSON.stringify({passed:true,...pixels,motionCheck,frameCount:24,browserPixelComparison:true,resolutionChecks,engineCapture:false},null,2));
     console.log('PASS: dense pack source pixel diff=0; displayed reference diff=0 at DPR 1/2; density/resizing gates in both modes at 4 widths; 24 frames; hit mapping, modal, original-size view, no overflow/errors.');
   }finally{await browser.close()}
 })().catch(e=>{console.error(e);process.exitCode=1});

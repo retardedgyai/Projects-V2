@@ -33,6 +33,14 @@ const {pathToFileURL}=require('node:url');
   ];
   const definitions=[...bases,...bases.filter(d=>!d.scenario||d.scenario==='high').map(d=>({...d,id:'confirm-'+d.id,modal:true,label:d.label+'・確認'}))];
   const frames=[];
+  const layerFiles=new Set();
+  async function exportLayer(file,box,html){
+    if(layerFiles.has(file))return;
+    const style=await page.addStyleTag({content:'html,body{background:transparent!important}body:before,body:after,html:before,html:after{display:none!important}body>*{visibility:hidden!important}#export-layer{visibility:visible!important}'});
+    await page.evaluate(({box,html})=>{const layer=document.createElement('div');layer.id='export-layer';layer.style.cssText=`position:absolute;left:${box.x+scrollX}px;top:${box.y+scrollY}px;width:${box.width}px;height:${box.height}px`;layer.innerHTML=html;document.body.append(layer)}, {box,html});
+    await page.screenshot({path:path.join(output,file),clip:box,omitBackground:true});
+    await page.locator('#export-layer').evaluate(e=>e.remove());await style.evaluate(e=>e.remove());layerFiles.add(file);
+  }
   for(const d of definitions){
     await page.evaluate(()=>document.getElementById('confirmation').close());
     await page.locator('#reset').click();
@@ -45,8 +53,21 @@ const {pathToFileURL}=require('node:url');
     if(d.modal){await page.locator('#enhance').click();await page.evaluate(()=>document.activeElement?.blur())}
     const outer=await page.locator('#forge').boundingBox();
     const clip={x:Math.round(outer.x),y:Math.round(outer.y),width:Math.round(outer.width),height:Math.round(outer.height)};
+    let dynamic;
+    if(!d.modal){
+      const hero=await page.locator('#hero').boundingBox(),stage=await page.locator('.item-stage').boundingBox();
+      const part=await page.evaluate(()=>gear().id),file=part+'-hero.png';
+      const pad=48,box={x:Math.floor(hero.x-pad),y:Math.floor(hero.y-pad),width:Math.ceil(hero.width+pad*2),height:Math.ceil(hero.height+pad*2)};
+      const image=await page.locator('#hero').evaluate(e=>({src:e.src,filter:getComputedStyle(e).filter}));
+      await exportLayer(file,box,`<img src="${image.src}" style="position:absolute;left:${hero.x-box.x}px;top:${hero.y-box.y}px;width:${hero.width}px;height:${hero.height}px;image-rendering:pixelated;filter:${image.filter}">`);
+      dynamic={hero:{file,x:box.x-clip.x,y:box.y-clip.y,w:box.width,h:box.height},stage:{x:stage.x-clip.x,y:stage.y-clip.y,w:stage.width,h:stage.height},glow:{x:stage.x-clip.x+stage.width*.04,y:stage.y-clip.y+stage.height*.07,w:stage.width*.92,h:stage.height*.81}};
+      const glow=dynamic.glow,gradient=await page.locator('.item-stage').evaluate(e=>getComputedStyle(e,':after').backgroundImage);
+      await exportLayer('glow.png',{x:clip.x+glow.x,y:clip.y+glow.y,width:glow.w,height:glow.h},`<div style="width:100%;height:100%;background-image:${gradient}"></div>`);
+    }
+    const still=await page.addStyleTag({content: d.modal?'/* confirmation stays still */': '#hero{visibility:hidden!important}.item-stage:after{display:none!important}'});
     // Crop only the forge, excluding the browser-only comparison controls.
     await page.screenshot({path:path.join(output,d.id+'.png'),clip});
+    await still.evaluate(e=>e.remove());
     const ids=d.modal?['#cancel','#confirm']:['[data-id="weapon"]','[data-id="head"]','[data-id="chest"]','[data-id="legs"]','[data-id="feet"]','#catalyst','#enhance'];
     const hits=[];
     for(const selector of ids){
@@ -55,10 +76,11 @@ const {pathToFileURL}=require('node:url');
       const action=selector.startsWith('[data-id')?'select:'+await locator.getAttribute('data-id'):selector.slice(1);
       hits.push({action,x:b.x-clip.x,y:b.y-clip.y,w:b.width,h:b.height});
     }
-    frames.push({...d,width:clip.width,height:clip.height,rasterScale,hits});
+    frames.push({...d,width:clip.width,height:clip.height,rasterScale,hits,dynamic});
   }
   await browser.close();
   if(errors.length)throw Error(errors.join('\n'));
-  fs.writeFileSync(path.join(output,'captures.json'),JSON.stringify({source:'index.html',referenceViewport:[1920,1080],frames},null,2));
+  const motion={floatPeriodMs:5600,floatAmplitude:3,glowPeriodMs:6400,motePeriodMs:6000,moteSize:2,moteDriftX:9,moteDriftY:-75,motes:[{x:.35,y:.58,delay:1000},{x:.64,y:.78,delay:4000},{x:.70,y:.50,delay:2000},{x:.27,y:.70,delay:5000},{x:.53,y:.82,delay:3000}]};
+  fs.writeFileSync(path.join(output,'captures.json'),JSON.stringify({source:'index.html',referenceViewport:[1920,1080],motion,frames},null,2));
   console.log('Captured '+frames.length+' calibration fixtures:',output);
 })().catch(e=>{console.error(e);process.exitCode=1});

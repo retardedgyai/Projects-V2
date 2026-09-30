@@ -1,163 +1,158 @@
-# Polish05の光を共有する実装用プレビュー
+# Polish05共有素材・Minecraft実描画プレビュー
 
 2026-09-30 / `play/gyai/polish05-design-review`
 
-## 何ができるか
+## 変更内容と今回の範囲
 
-**光の形・色・勾配・静止時の見た目を、同じ画像でゲームとブラウザへ渡せる。**
-HTMLのCSSをMinecraft向けに手で描き直す工程を減らせる。
-今回の [共有素材プレビュー](../../assets/ui/polish05-design-review/shared-preview/index.html) は、
-実際のリソースパックPNGをCanvasで読み込んで合成する。
-工房本体の光・文字にHTML/CSSの描画を使っていない。
+元HTMLの暗い金色の雰囲気を保持し、武器・防具の浮遊、漂う金色の5粒子、
+中央の光の緩やかな明滅を復元した。確認画面では背景の動きを止める。
+文字・固定背景は3400×1864の2倍密度を維持する。
 
-ただし、これは**Minecraftの最終描画と完全一致したという検証ではない**。
-ブラウザに同じ画像を表示することと、MinecraftのGPU・フォント表示・3D描画を
-ここでそのまま動かすことは別である。
+今回の対象はデザイン案と独立した表示ラボ。24種類の固定状態を切り替える。
+本編の口座・素材消費・強化抽選には接続していない。
+既存のカーソル入力・先読み・補間設定は変更していない。
 
-| 対象 | 今回の状態 | 実機の確認 |
+| 表示 | 描画元 | 確認できること |
 |---|---|---|
-| 金色の光、選択行の勾配、素材の緑・赤の光 | 背景と合成済みの同じRGBA画像を共有 | 拡大率、タイル境界、色の見え方 |
-| 固定文字・数字 | 見本値も画像へ焼き込み、同じ画素を共有 | 実際の文字表示倍率 |
-| 任意のプレイヤーの値 | この試作は24通りの固定状態 | 本編対応にはlive値と表示を分離する必要あり |
-| 装備プレビュー | 今回は装備も静止画像へ含めた | 本編のItemDisplayの回転・材質・照明とは別 |
-| 漂う粒子・鍛造アニメーション | 今回の校正画像では停止 | 同じ時間・位置の定義を別の動的レイヤーへ渡す |
-| カーソル | ブラウザの通常カーソル | Vanillaの入力・通信・補間は実機で判断 |
-| ワールドをリアルタイムにぼかす | 対象外。HTMLの既存背景画像を使用 | 現行方式はCSSのbackdrop-filterを実行しない |
+| 元HTML | ブラウザのCSS | デザイン、回転、デモの状態遷移 |
+| 共有素材プレビュー | 出荷するパックPNGをCanvasで組み立て | 画像、時間定義、配置、表示密度、固定状態のクリック |
+| Minecraft実描画プレビュー | 専用Vanillaクライアントのウィンドウ画像、またはF2のPNG | Minecraft本体が実際に描いた結果 |
 
-## なぜ光を背景と一緒にするか
+共有素材プレビュー自体はMinecraftのGPUをブラウザで実行していない。
+実描画プレビューはMinecraftを別ウィンドウで動かし、その画面をここへ渡す。
+ゲーム操作はMinecraft側で行う。入力の最終feel判定はCreatorが行う。
 
-現行 `UiRenderer` は、PNGをbitmap fontのglyphとしてTextDisplayへ描く。
-HTMLの透明レイヤーを別々に渡すと、文字描画の透明度・重なり順・サンプリングの影響を
-追加で受ける。暗い背景と光を先に合成し、完全に不透明な画像へすれば、
-「柔らかい光をどう合成したか」は画像のRGBに確定する。
+## 動く部分の処理
 
-今回のPNGは全画素のalpha=255を検証した。
-PNGは256×256以下のタイルに切り、同じ内容のタイルを共有。
-元HTMLを2倍密度（3400×1864）で描画し、各タイルは加工・減色・低解像度化をせずパックへ入れた。
-装備と素材は元HTMLのピクセルアート用の表示設定を保ち、文字と光は高精細な画像へ合成する。
-端のタイルは実際の幅・高さを使う。
+1. HTMLから固定背景と透明な装備画像を分けて書き出す。
+2. 光は、元CSSの勾配を固定の工房背景へ合成した12段階の画像にする。
+3. schema 3のmanifestに配置と周期を保存する。
+4. ブラウザと `ForgeRasterCalibration` が同じ周期から動く位置・光の段階を計算する。
+5. `UiSessions` は校正flowにだけ動的更新を加える。
+   `UiRenderer` は同じIDの表示を保持し、変わった部分だけ更新する。
 
-**注意:** 背景も焼き込まれるので、同じ光を別の背景へそのまま移す素材ではない。
-背景が動く領域、3D装備、粒子は本編対応時に別レイヤーへ分ける。
+| 動き | 定義 |
+|---|---|
+| 装備の浮遊 | 5.6秒周期、上下3 CSS px |
+| 光の明滅 | 6.4秒周期、元の86〜100%の強さ、位置・大きさは一定 |
+| 粒子 | 5粒、6秒周期、右へ9px・上へ75px、薄く現れて消える |
+| 確認画面 | 動的レイヤーを停止、固定の確認画像を表示 |
 
-## 追加したもの
+ブラウザには「動きを止める」を用意した。動きの軽減設定も尊重する。
+この停止時には装備を中央の静止位置で表示し、粒子を隠す。
+HTMLの回転中は浮遊を止める。校正ラボは装備の固定角度画像であり、3D回転は含まない。
 
-### ブラウザ
+### 透明な光で丸い輪郭が出た問題
 
-- `shared-preview/index.html`: パックの画像を読み、座標に沿ってCanvasへ合成。
-- `manifest.json`: 24状態、1067種類のglyph、各タイルの座標とクリック領域。
-- 「共通PNG」: 2倍密度の校正画像を再合成し、表示サイズと画面の密度に合わせて描画。
-- 「元HTMLとの比較」: 胴・通常の元画像へ切り替える。
-- 「ゲームの配置」: Minecraftの `UiScene` と同じ座標へ配置する近似表示。
-  GPUや画面投影の再現ではなく、論理座標・余白の確認用。
-- 「原寸で見る」: 1700px幅で文字を縮めず表示。小さい画面ではプレビュー内を横にスクロールする。
-- 部位・触媒・確認のクリックは事前に作った状態への切替。素材の消費や抽選は行わない。
+最初の動的試作では光を透明PNGとしてTextDisplayへ重ねた。
+Minecraft 26.2本体の `assets/minecraft/shaders/core/text.fsh` は
+`color.a < 0.1` の画素をdiscardする。
+そのため薄い周辺が切れ、明滅に合わせて丸い境界が目立つ。
 
-校正には工房の高さを固定し、focus ringと粒子を除いた。
-24状態は武器・4部位の通常/触媒、素材不足、高段階、最大強化と、強化可能な状態の確認画面。
-ブラウザ外の比較用設定やマストヘッドはパックへ含めていない。
+修正版は、光を背景と合成してalpha=255にした段階画像を使う。
+光の段階が変わっても全タイルの位置・寸法は同じ。
+文字、装備、光の画像を低解像度化する工程は入れない。
 
-### Minecraft側の独立試作
+装備だけは透明glyphへ分割する。Minecraftのbitmap providerが
+非ゼロalphaから文字幅を決めるため、透明タイル右下にalpha=1の幅保持画素を置く。
+これはMinecraftのtext shaderでは描かれない。
+静的背景の「変更画素0」と、この幅保持画素のある装備画像を混同しない。
 
-- `ForgeRasterCalibration`: manifestを読んで、既存 `UiRenderer` が受け取る `UiScene` を作る。
-  画像とクリック領域に同じ座標変換を使う。
-- `ForgeRasterCalibrationFlow`: 校正画像を選ぶ表示専用のflow。経済・保存・強化callbackを持たない。
-- `WebUiLab`: JVM property `projects.ui.rasterManifest` で独立試作を選べる。
-  live Polish05と同時には指定しない。
-- packのnamespaceは `projects_forge_calibration`。本編パックへ上書きしていない。
+## ファイルと入口
 
-独立ラボを使うときは、既存の起動方法のJVM optionsへ以下を渡す。
-Gradle自体への `-D` ではなく、起動するJavaアプリへ渡す必要がある。
+| ファイル / Class | 役割 |
+|---|---|
+| `assets/ui/polish05-design-review/index.html` | 元のデザイン案とCSSの動き |
+| `build_shared_preview.cjs` | 背景、装備、元CSSの光を分離して書き出す |
+| `package_shared_preview.py` | 密度を維持してPNG・font・manifest・ZIPを生成 |
+| `shared-preview/index.html` | 同じパック画像で動くブラウザ表示 |
+| **`ForgeRasterCalibration`** | 最重要。manifestからMinecraftの配置と動的レイヤーを作る |
+| `UiSessions` | 校正flowの時間更新。既存カーソル処理は維持 |
+| `NativeEnginePreview` | 元PNGを無加工で配信するローカル専用サーバー |
+| `capture_native_window.py` | 選択されたMinecraftウィンドウだけを取得 |
+| `start_native_preview.ps1` | 専用クライアント・表示ラボ・配信の起動と停止 |
 
-```text
--Dprojects.ui.rasterManifest=<absolute path>/shared-preview/manifest.json
--Dprojects.ui.rasterFrame=chest
--Dprojects.ui.pack=<absolute path>/shared-preview/Forge_Calibration_26_2.zip
-```
-
-`rasterFrame` は `risk` や `confirm-weapon-focused` などmanifestのIDを指定できる。
-ラボの `/ui` を開くと既存のTextDisplay方式で112タイルを表示する。
-この経路の最終GPU表示はまだCreatorの実機確認をしていない。
-UIラボへのhook追加は任意指定時だけで、今回サーバーやMinecraftを起動していない。
+生成画像と大きな作業データはDドライブのrepoおよび `.tools/` に保存。
+ZIPと個人のクライアント引数・ログ・セッションファイルはGitへ含めない。
 
 ## 検証
 
-1. `build_shared_preview.cjs` でEdgeを使い、デザイン案の24状態を校正画像へ出力。
-2. `package_shared_preview.py` でglyphとresource packを生成。
-3. **出荷するパック画像を読み戻し**、元画像とのRGBAバイトを比較した。
-   24状態すべて変更画素0。
-4. ブラウザがパックを読み込んで組み立てた3400×1864の元画像も比較した。胴・通常の変更画素0。
-5. `verify_shared_preview.cjs` で状態選択、部位/触媒、確認/キャンセル、座標モード、
-   原寸表示、小幅画面、ブラウザエラーを確認して成功。
-   390/900/1304/1920px幅・DPR 1/2・通常/ゲーム配置の16条件で、
-   Canvasの描画画素数が実際の表示サイズ×DPRを満たすことを確認。
-   1304px幅のDPR 1/2では、表示後のパック合成と高精細な元画像も変更画素0。
-6. `ForgeRasterCalibrationTest` 3件が成功。実際のpackのfont providersと
-   `UiScene` のglyph・サイズの一致、hit座標、表示専用flowを確認。
+- 24状態すべて、**出荷する固定背景のパックPNGを読み戻して**元の背景とRGBAを比較。変更画素0。
+- ブラウザ合成元も固定背景の比較で変更画素0。
+- 動作中は異なる時刻で画素が変わることを確認。
+- 390/900/1304/1920px幅、DPR 1/2、通常/ゲーム配置で表示密度を確認。
+- 停止時の共有PNGと比較元の表示結果がDPR 1/2で一致。
+- 状態切替、確認/キャンセル、クリック座標、原寸表示、横溢れ、ページエラーを確認。
+- `ForgeRasterCalibrationTest`: 背景とhitの不変性、浮遊、5粒子、周期の巻き戻り、
+  光の固定寸法、確認画面の停止、font providers、24状態を確認。
+- `NativeEnginePreviewTest`: HTTPで受け取るPNGが元バイトと一致し、更新・F2分離・
+  不完全なファイル・範囲外リクエストを処理することを確認。
+- Kotlin targeted test 5件 / installDist 成功。
+- Minecraft 26.2の修正版を直接起動して確認。実描画PNGを無加工で配信できた。
+  1.4秒差の画像で中央は235,926画素変化、右の固定表示は変更画素0。
+  光の輪郭が切れた丸になる問題が解消したことを実描画で確認。
+  検証記録は `.tools/shared-forge-preview/native-motion-verification.json`。
 
-Kotlin compile/testは成功。GPUレンダリング、Minecraftによるパック読み込み、
-ライブ口座表示、アニメーション、入力の体感はこの結果に含めない。
-色や影の完全一致を判断するときは、校正表示を実機で撮影して比較する必要がある。
+これらは全Minecraft表示の画素一致を証明しない。
+Minecraftのパック読み込み・透明な装備の境界・実描画負荷は実機画像でも確認する。
+最終的な動きの好みとゲーム操作はCreatorの確認が必要。
 
-## ぼやける表示の修正（2026-09-30）
+## 実描画プレビューの使い方
 
-初版の「変更画素0」は**合成元のバイト一致**だけを示していた。
-実際の表示での読みやすさや描画解像度を確認するには不十分だった。
-実際に開かれていた画面は1249px幅、DPR 1。1700pxの1倍画像を縮小し、
-画面全体へ `image-rendering: pixelated` がかかっていた。
-文字にもピクセルアート用の拡縮が適用され、輪郭が崩れていた。
-またゲーム配置では、一度800×480の画像へ落としてから拡大する問題があった。
+専用Vanillaクライアントを `127.0.0.1:25623` へ直接起動する。
+resource packは専用gameDirへ最初から適用する。既存クライアントの設定・セーブは変更しない。
+ウィンドウ表示にして、ブラウザへ切り替えた時の全画面最小化を避ける。
 
-修正後の流れ:
+```powershell
+.\gradlew.bat :web-ui-lab:installDist --offline
+.\assets\ui\polish05-design-review\start_native_preview.ps1
+# 開いたMinecraftの正確なタイトルを確認して指定する。
+.\assets\ui\polish05-design-review\start_native_preview.ps1 -CaptureOnly -WindowTitle '<実際のMinecraftウィンドウタイトル>'
+# このセッションの引数を持つプロセスだけを停止する。
+.\assets\ui\polish05-design-review\start_native_preview.ps1 -StopSession
+```
 
-1. 元HTMLを2倍密度の3400×1864へ書き出す。配置とクリック領域は1700×932の論理座標。
-2. 元画像を256px以下のタイルで保存。manifest schema 2の `rasterScale: 2` で密度を明記。
-3. ブラウザでは元の全画素を組み立て、全体を一度だけ高品質で拡縮する。
-   文字と光を含む合成画像にはnearest-neighbourを使わない。
-4. Canvasは表示サイズ×DPRの画素数で描く。
-   800×480はゲーム配置とhit判定の座標にだけ使い、画像の画素数には使わない。
-5. Kotlin側はタイルの物理画素座標を `rasterScale` で割って配置する。
-   bitmap glyphには高精細な元タイルを渡す。hitは論理座標のまま。
+配信ページは `http://127.0.0.1:18100/`。
+ウィンドウの画像を最大10回/秒で取得し、PNGを拡大加工せず配信する。
+これは60fps動画配信ではなく、カーソルの反応を測るための画面でもない。
+原寸は表示密度を考慮した元画素の表示。「画面に合わせる」は縮小表示になる。
+F2モードは専用client/screenshotsの原PNGをそのまま配信する。
 
-これによりブラウザでの低解像度化を修正した。
-狭い画面に全体を収めれば文字自体は小さくなるため、原寸表示も用意した。
-元の装備・素材の低解像度ピクセルアートや意図的な背景のぼかしは変えていない。
+PNG読取中にWindowsが置換を拒んだ場合、前の完全な画像を保持して次のフレームで再試行。
+取得を止めた時や最小化で描画が止まった時は、最終画像と取得時刻が残る。
+デスクトップ全体や他アプリは取得しない。配信先は127.0.0.1だけ。
 
-独立ラボの表示数は28から112タイルへ増え、ZIPは約13.5MB。
-Minecraftのサンプリング結果と112個のTextDisplayによる実機負荷は未確認。
-本編のUI・カーソル操作はこの修正では変更していない。
+## 壊れた時に最初に見る場所
 
-### 主に見るファイル
+- 光の輪郭が丸く切れる: 最新ZIPが適用されているか、光のパックPNGがalpha=255か。
+- 動かない: manifest schema 3のdynamicレイヤー、校正flowのtick、確認画面かどうか。
+- 文字がぼやける: `shared-preview/index.html` の表示サイズ×DPRとCanvasの実画素数。
+- 実描画プレビューが止まる: `.tools/native-engine-preview/capture.err.log` と取得時刻。
+- glyphが欠ける: manifest → tile URL → pack/font/plates.json → 適用ZIPの順。
 
-- `shared-preview/index.html`: `present()` が表示解像度を決める。文字がぼやけたら、表示サイズ・DPR・Canvas画素数を最初に確認。
-- `build_shared_preview.cjs` / `package_shared_preview.py`: 高精細素材とpackを生成。
-- `ForgeRasterCalibration.kt`: packの物理画素座標を論理配置へ変換。
-- `verify_shared_preview.cjs`: 合成元の一致に加え、表示密度・縮小後の一致とクリック位置を確認。
+## 本編への反映と残る懸念
 
-## 本編へ反映するなら
+現段階はPlaygroundの表示ラボ。本編へは、任意の装備名・所持数・強化性能を
+live値のレイヤーへ分け、実際のItemDisplayと同じ配置に接続する必要がある。
+固定口座の画像をそのまま本編へ採用しない。
+動く装備の透明glyphにはMinecraft固有のサンプリングがあり、HTMLと同じ画素とは限らない。
+生成パックは1567 glyph、ZIP約26.6MBでDドライブに保存。
+光は35タイル、固定背景は112タイル。段階が変わる時だけ光の内容を更新するが、
+本編の負荷・最終feel gateは別途行う。
 
-1. 光・背景・固定枠を今回と同じ素材として切り出す。
-2. 任意の所持数や装備名・性能を、サーバーのlive値から表示する。
-   今回のように口座全体を画像へ焼き込む方式は使わない。
-3. 実際のItemDisplayと動く粒子を同じ配置定義へ接続する。
-4. 実機F2と画像を比較し、倍率・glyphの位置・透明度を合わせる。
-
-ここまで進めれば「HTMLとゲームで素材と配置を共有し、実機画像で差を測る」工程を作れる。
-VanillaクライアントでHTMLの実行・3D描画エンジンまで同じにしたとは扱わない。
-
-## 保存・再生成
-
-保存先はDドライブの `assets/ui/polish05-design-review/shared-preview/`。
-パックZIPは生成物のためGitへ含めず、ローカルに保存している。
+## 再生成
 
 ```text
 node assets/ui/polish05-design-review/build_shared_preview.cjs
 python assets/ui/polish05-design-review/package_shared_preview.py
 node assets/ui/polish05-design-review/verify_shared_preview.cjs
-gradlew :web-ui-lab:test --tests '*ForgeRasterCalibrationTest' --offline
+gradlew :web-ui-lab:test --tests '*ForgeRasterCalibrationTest' --tests '*NativeEnginePreviewTest' --offline
 ```
 
-browser検証は既定で127.0.0.1:8155のrepo用HTTPサーバーを使う。
-別のURLなら `FORGE_PREVIEW_URL` で変更。
-検証画像は `.tools/shared-forge-preview/`、元の校正画像は `.tools/forge-shared-capture/`。
-表示が壊れたときはmanifest→tileのURL→packのfont providerの順で確認する。
+browser検証は127.0.0.1:8155のrepo HTTPサーバーを使う。
+検証画像は `.tools/shared-forge-preview/`、書き出し元は `.tools/forge-shared-capture/`。
+
+## 公開先
+
+Task branch: `play/gyai/polish05-design-review`。
+完了checkpointのcommit SHAは最終回答に記載する。本編へのmergeは今回の範囲に含めない。
