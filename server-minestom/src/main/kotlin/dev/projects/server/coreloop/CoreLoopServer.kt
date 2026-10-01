@@ -356,6 +356,24 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         MinecraftServer.getCommandManager().register(Command("projects").apply {
             setDefaultExecutor { sender, _ -> (sender as? Player)?.let { if (combatLab.contains(it)) combatLab.menu(it) else menus.journal(it) } }
         })
+        MinecraftServer.getCommandManager().register(Command("treepreview").apply {
+            setDefaultExecutor { sender, _ -> (sender as? Player)?.let { player ->
+                val a = account(player) ?: return@let
+                if (!requireHub(player)) return@let
+                if (a.journey.job != CoreClass.WARRIOR) {
+                    player.sendMessage(Component.text("この表示プレビューは戦士の構成で試せます。"))
+                    return@let
+                }
+                if (polishSessions == null || uiPack?.enabled(player) != true) {
+                    player.sendMessage(Component.text("UI素材の読み込み後にプレビューを開けます。"))
+                    return@let
+                }
+                val spriteJson = requireNotNull(javaClass.classLoader.getResourceAsStream("polish05/font-map.json"))
+                    .bufferedReader(Charsets.UTF_8).use { it.readText() }
+                player.closeInventory()
+                polishSessions.open(player, CoreTreePreviewFlow(CoreTreePreview(a), spriteJson))
+            } }
+        })
         MinecraftServer.getCommandManager().register(Command("skilltest").apply {
             setDefaultExecutor { sender, _ -> (sender as? Player)?.let { combatLab.enter(it, account(it)?.journey?.job ?: CoreClass.WARRIOR) } }
         })

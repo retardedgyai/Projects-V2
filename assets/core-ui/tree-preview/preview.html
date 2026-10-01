@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="ja"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ProjectS 成長樹・実データプレビュー</title>
+<style>
+@font-face{font-family:ps-sans;src:url('/asset/sans.ttf')}@font-face{font-family:ps-serif;src:url('/asset/serif.ttf')}
+*{box-sizing:border-box}body{margin:0;background:#101619;color:#c5c6b3;font-family:ps-sans,sans-serif}
+#surface{width:100vw;height:calc(100vh - 48px);overflow:hidden;position:relative}#stage{position:absolute;width:800px;height:480px;transform-origin:0 0}
+.n{position:absolute;display:flex;align-items:center;white-space:nowrap;margin:0;padding:0;font-weight:400}
+.n img{width:80%;height:80%;object-fit:contain;image-rendering:pixelated;pointer-events:none;margin:auto}
+.n.sprite img{width:100%;height:100%;image-rendering:auto}.n button{all:unset;position:absolute;inset:0;cursor:pointer}
+.n.action:hover{filter:brightness(1.23)}.n.disabled{opacity:.55}.n button:disabled{cursor:default}
+#caption{height:48px;padding:8px 24px;display:flex;justify-content:space-between;align-items:center;font-size:12px;color:#949c91;border-top:1px solid #343d34}
+#closed{display:none;position:fixed;inset:0;place-content:center;text-align:center;background:#101619;font-size:20px;gap:20px}
+#closed button{border:1px solid #9c8855;background:#252d29;padding:12px 30px;color:#ddd1a9;cursor:pointer}
+</style>
+<div id="surface"><div id="stage"></div></div><div id="caption"><span>比較キャラクター / Lv12・T2装備</span><span>実データの表示プレビュー・保存なし</span></div>
+<div id="closed"><div>プレビューを閉じました</div><button id="reopen">もう一度見る</button></div>
+<script>
+const stage=document.querySelector('#stage'), surface=document.querySelector('#surface');let sprites={},busy=false;
+function fit(){const s=Math.min(surface.clientWidth/800,surface.clientHeight/480);stage.style.transform=`translate(${(surface.clientWidth-800*s)/2}px,${(surface.clientHeight-480*s)/2}px) scale(${s})`;}addEventListener('resize',fit);fit();
+function draw(data){stage.replaceChildren();for(const n of data.scene.nodes){const d=document.createElement('div');d.className='n'+(n.action?' action':'')+(!n.enabled?' disabled':'');d.style.cssText=`left:${n.box.x}px;top:${n.box.y}px;width:${n.box.w}px;height:${n.box.h}px;font-size:${n.fontSize||parseFloat(n.style['font-size'])}px;color:${n.style.color||'#dbd8c6'};background:${n.style['background-color']||'transparent'};font-family:${n.style['font-family']?.endsWith('serif')?'ps-serif':'ps-sans'};justify-content:${n.style['text-align']==='center'?'center':n.style['text-align']==='right'?'flex-end':'flex-start'};z-index:${n.depth};`;
+if(n.item){const i=document.createElement('img');i.src='/asset/icon/'+n.item.split('/').pop();d.append(i);}else if(n.sprite){d.classList.add('sprite');const key=Object.keys(sprites).find(k=>sprites[k].char===n.sprite.char);const i=document.createElement('img');i.src='/asset/sprite/'+key;d.append(i);}else d.textContent=n.text;
+if(n.action){const b=document.createElement('button');b.ariaLabel=n.text||data.snapshot.nodes.find(x=>'node:'+x.id===n.action)?.name||n.action;b.disabled=!n.enabled;b.onclick=()=>act(n.action);d.append(b);}stage.append(d);}}
+async function act(action){if(busy)return;busy=true;try{const r=await fetch('/action',{method:'POST',body:action});if(!r.ok)throw Error('操作を更新できません');const data=await r.json();if(data.closed){document.querySelector('#closed').style.display='grid';await fetch('/action',{method:'POST',body:'trial:reset'});}else draw(data);}finally{busy=false;}}
+document.querySelector('#reopen').onclick=async()=>{document.querySelector('#closed').style.display='none';draw(await(await fetch('/state')).json());};
+addEventListener('keydown',e=>{if(e.key==='Escape')act('close');});
+Promise.all([fetch('/sprites').then(r=>r.json()),fetch('/state').then(r=>r.json())]).then(([s,d])=>{sprites=s;draw(d);}).catch(()=>{document.querySelector('#caption').textContent='操作プレビューは、この作業のローカルURLから開けます。';});
+</script></html>

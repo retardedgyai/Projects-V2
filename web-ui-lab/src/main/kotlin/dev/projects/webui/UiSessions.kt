@@ -96,15 +96,17 @@ class UiSessions(
             }
         } }
     }
-    fun open(player: Player) {
+    fun open(player: Player, flow: ForgeUiFlow? = null) {
         if(sessions.containsKey(player.uuid)) return
         if(!packReady(player)) {
             player.sendMessage(Component.text("工房UIの素材を読み込んでから、もう一度話しかけてください。"))
             return
         }
-        val document=if(flowFactory==null) UiDocument.parse(Files.readString(requireNotNull(path))) else null
+        val factory = if (flow != null) ({ _: Player -> flow }) else flowFactory
+        val document=if(factory==null) UiDocument.parse(Files.readString(requireNotNull(path))) else null
         // Compile and validate before changing the camera or creating any entity.
         if(document!=null) { val initial=ForgeDemo(); document.layout(initial.values(),initial.flags()) }
+        flow?.scene(ForgeLightPhase.IDLE)
         // This isolated lab is a flat world: lift the presentation plane clear of its floor.
         // Eye-level placement lets the lower buttons intersect blocks at larger UI scales.
         val origin=cameraOrigin(player)
@@ -114,7 +116,7 @@ class UiSessions(
                 setText(Component.empty());setBackgroundColor(0);setUseDefaultBackground(false)
             }
         }
-        val s=Session(player,player.position,document,camera,UiRenderer(player,origin),polishScene,flowFactory)
+        val s=Session(player,player.position,document,camera,UiRenderer(player,origin),polishScene,factory)
         // At Vanilla 26.2's presentation FOV, 1.0 crops the approved 1440×920
         // stage on a 1920×1080 client. 0.8 matches the HTML's 1080px-fit scale.
         if(s.polish!=null)s.renderer.zoom=0.8

@@ -24,6 +24,12 @@ SOURCES = [
     ROOT / "server-minestom/src/main/kotlin/dev/projects/server/coreloop/CoreAccount.kt",
     ROOT / "server-minestom/src/main/kotlin/dev/projects/server/coreloop/CorePolish05ForgeFlow.kt",
     ROOT / "server-minestom/src/main/kotlin/dev/projects/server/coreloop/CoreEnhancementCatalog.kt",
+    ROOT / "server-minestom/src/main/kotlin/dev/projects/server/coreloop/CoreClassBuild.kt",
+    ROOT / "server-minestom/src/main/kotlin/dev/projects/server/coreloop/CoreSkillCatalog.kt",
+    ROOT / "server-minestom/src/main/kotlin/dev/projects/server/coreloop/CoreTreePreview.kt",
+    ROOT / "server-minestom/src/main/kotlin/dev/projects/server/coreloop/CoreTreePreviewFlow.kt",
+    ROOT / "server-minestom/src/main/kotlin/dev/projects/server/coreloop/CoreTreePreviewWeb.kt",
+    ROOT / "scripts/render_tree_preview.py",
 ]
 
 

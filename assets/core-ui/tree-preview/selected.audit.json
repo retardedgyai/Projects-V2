@@ -1,0 +1,14 @@
+{
+  "source": ".tools/tree-preview/export/selected.json",
+  "nodes": 158,
+  "warnings": [],
+  "snapshot": {
+    "job": "戦士",
+    "level": 12,
+    "budget": 5,
+    "spent": 1,
+    "originalSpent": 1,
+    "selected": "warrior:9",
+    "changed": false
+  }
+}
