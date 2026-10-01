@@ -100,7 +100,10 @@ internal object WorldInfusionServer {
 
     internal class WorldInfusionGame(val player:Player,val instance:InstanceContainer,val repository:WorldInfusionRepository,var state:WorldInfusionState,
         val confluenceEnabled:Boolean=java.lang.Boolean.getBoolean("projects.infusion.concurrent"),
-        var demoEnergySupply:Double=System.getProperty("projects.infusion.energy","0").toDouble().coerceIn(0.0,1.0)) {
+        var demoEnergySupply:Double=System.getProperty("projects.infusion.energy","0").toDouble().coerceIn(0.0,1.0),
+        val energyEnabled:Boolean=java.lang.Boolean.getBoolean("projects.infusion.energyBudgeted"),
+        var demoPowerPerSecond:Int=System.getProperty("projects.infusion.powerPerSecond","0").toInt()) {
+        init { require(state.energy==null || energyEnabled);if(energyEnabled && state.phase in setOf(InfusionPhase.ESSENTIA,InfusionPhase.INGREDIENTS))require(state.energy!=null);WorldInfusionEnergy.Supply(demoPowerPerSecond) }
         var packed=false
         private var ticks=0L
         private var lastClick=-10L
@@ -123,7 +126,8 @@ internal object WorldInfusionServer {
         private val confluenceClock=WorldInfusionConfluence.Clock()
         private var coreDisplay:Entity?=null
         private var lastCorePose:WorldInfusionAnimation.Pose?=null
-        internal val animationPose get()=if(confluenceEnabled)confluenceTrack.pose else animation.pose
+        private var pedestalSeal:SmokeDisplay?=null
+        internal val animationPose get()=if(confluenceEnabled || energyEnabled)confluenceTrack.pose else animation.pose
         private fun dropSmoke(key:String,display:SmokeDisplay) {
             if(smokeDisplays.remove(key,display)) {
                 try { display.entity.remove() } finally { display.lease.release();smokeStats.removed++ }
@@ -161,14 +165,14 @@ internal object WorldInfusionServer {
                     Component.text("品質${g.identity.quality} / T${g.tier} Lv${g.identity.itemLevel} +${g.enhancement.level}"))+
                     g.affixes.map { Component.text("枠${it.index} ${it.stone.modId} ${it.stone.value}") })
         }
-        private fun mutate(change:(WorldInfusionState)->WorldInfusionState):Boolean = try {
+        private fun mutate(refresh:Boolean=true,change:(WorldInfusionState)->WorldInfusionState):Boolean = try {
             val next=change(state)
             if(next===state)return false
             state=repository.save(state.account.revision,next)
             if(state.paused || state.phase!=InfusionPhase.ESSENTIA) {
                 for(i in smoke.indices)smoke[i]=smoke[i].copy(releaseUntil=minOf(smoke[i].releaseUntil,ticks))
             }
-            rebuild();inventory();true
+            if(refresh) { rebuild();inventory() };true
         } catch(f:Exception) {
             if(f !is IllegalArgumentException) {
                 System.err.println("WORLD_INFUSION_OPERATION_FAILED player=${player.uuid} revision=${state.account.revision}")
@@ -191,7 +195,7 @@ internal object WorldInfusionServer {
             if(matrixHit) {
                 when {
                     id=="cast" && player.isSneaking->mutate { WorldInfusionRules.cancel(it) }
-                    id=="cast"->{ if(mutate { WorldInfusionRules.start(it) }) {
+                    id=="cast"->{ if(mutate { if(energyEnabled)WorldInfusionEnergy.start(it) else WorldInfusionRules.start(it) }) {
                         player.playSound(Sound.sound(SoundEvent.BLOCK_AMETHYST_BLOCK_CHIME,Sound.Source.BLOCK,.6f,.8f))
                         trails+=Trail(Vec(matrix!!.x+.5,44.0,matrix.z+.5),Vec(matrix.x+.5,42.1,matrix.z+.5),0xe2cf91,ticks)
                     } }
@@ -285,13 +289,16 @@ internal object WorldInfusionServer {
                 if(instance.getBlock(c.x,44,c.z).isAir) { close();return }
             }
             var completed=false
-            val drive=WorldInfusionConfluence.Drive(demoEnergySupply)
-            val advance=if(confluenceEnabled)confluenceClock.due(state,ticks,drive,smoke)
+            val power=WorldInfusionEnergy.Supply(demoPowerPerSecond)
+            val drive=if(energyEnabled)power.drive else WorldInfusionConfluence.Drive(demoEnergySupply)
+            if(energyEnabled && power.perSecond==0)for(i in smoke.indices)smoke[i]=smoke[i].copy(releaseUntil=minOf(smoke[i].releaseUntil,ticks))
+            val advance=if(energyEnabled)ticks%WorldInfusionEnergy.STEP_TICKS==0L && WorldInfusionAnimation.mayAdvance(state,smoke,ticks)
+                else if(confluenceEnabled)confluenceClock.due(state,ticks,drive,smoke)
                 else ticks%18==0L && WorldInfusionAnimation.mayAdvance(state,smoke,ticks)
             if(advance) {
-                val (next,pulses)=if(confluenceEnabled)WorldInfusionConfluence.tick(state) else WorldInfusionRules.tick(state).let { it.first to listOfNotNull(it.second) }
-                if(next!==state && mutate { next }) {
-                    if(confluenceEnabled)confluenceClock.accepted(state,ticks)
+                val (next,pulses)=if(energyEnabled)WorldInfusionEnergy.advance(state,power) else if(confluenceEnabled)WorldInfusionConfluence.tick(state) else WorldInfusionRules.tick(state).let { it.first to listOfNotNull(it.second) }
+                if(next!==state && mutate(refresh=!energyEnabled || pulses.isNotEmpty()) { next }) {
+                    if(confluenceEnabled && !energyEnabled)confluenceClock.accepted(state,ticks)
                     val c=state.matrix!!;val target=animationPose.inlet(Vec(c.x+.5,c.y+3.4,c.z+.5))
                     pulses.forEach { v->
                         val source=v.jar?.let { id->state.jars.single { it.id==id }.cell?.let { Vec(it.x+.5,41.55,it.z+.5) } }
@@ -299,14 +306,16 @@ internal object WorldInfusionServer {
                         if(v.jar!=null && v.aspect!=null) {
                             // Only a durably committed real Jar drain releases smoke. No smoke for reservoir reuse.
                             val mouth=source.add(0.0,.4,0.0)
-                            smoke+=if(confluenceEnabled)WorldInfusionSmoke.Transfer(mouth,target,v.aspect.rgb,ticks,travelTicks=drive.travelTicks,tuftStep=drive.tuftStep)
+                            smoke+=if(energyEnabled)WorldInfusionSmoke.Transfer(mouth,target,v.aspect.rgb,ticks,travelTicks=power.flightTicks,tuftStep=power.tuftStep)
+                                else if(confluenceEnabled)WorldInfusionSmoke.Transfer(mouth,target,v.aspect.rgb,ticks,travelTicks=drive.travelTicks,tuftStep=drive.tuftStep)
                                 else WorldInfusionSmoke.Transfer(mouth,target,v.aspect.rgb,ticks)
                         } else trails+=Trail(source,target,v.aspect?.rgb ?: 0xe1cfab,ticks)
                         if(v.completed) { completed=true;player.playSound(Sound.sound(SoundEvent.BLOCK_AMETHYST_BLOCK_CHIME,Sound.Source.BLOCK,.7f,1.3f)) }
                     }
                 }
             }
-            val pose=if(confluenceEnabled)confluenceTrack.step(state,ticks,drive,completed) else animation.step(state,ticks,completed)
+            val visualState=if(energyEnabled && power.perSecond==0 && state.phase in setOf(InfusionPhase.ESSENTIA,InfusionPhase.INGREDIENTS))state.copy(paused=true) else state
+            val pose=if(confluenceEnabled || energyEnabled)confluenceTrack.step(visualState,ticks,drive,completed,if(energyEnabled)power.perSecond/18.0*4.5 else null) else animation.step(state,ticks,completed)
             val intake=state.matrix?.let { pose.inlet(Vec(it.x+.5,it.y+3.4,it.z+.5)) }
             if(ticks%2==0L && packed && (lastCorePose?.yaw!=pose.yaw || lastCorePose?.neutralTint!=pose.neutralTint)) {
                 coreDisplay?.editEntityMeta(ItemDisplayMeta::class.java) { m->
@@ -320,8 +329,9 @@ internal object WorldInfusionServer {
             trails.removeIf { ticks-it.started>18 }
             smoke.removeIf { WorldInfusionSmoke.expired(it,ticks) }
             if(ticks%2==0L) {
-                val finish=if(confluenceEnabled && state.matrix!=null)state.matrix!!.let {
-                    confluenceTrack.finishSamples(state,ticks,confluenceClock,drive,Vec(it.x+.5,it.y+3.4,it.z+.5),Vec(it.x+.5,it.y+1.15,it.z+.5))
+                val finish=if((confluenceEnabled || energyEnabled) && state.matrix!=null)state.matrix!!.let {
+                    confluenceTrack.finishSamples(state,ticks,confluenceClock,drive,Vec(it.x+.5,it.y+3.4,it.z+.5),Vec(it.x+.5,it.y+1.15,it.z+.5),
+                        channelOverride=if(power.perSecond>0)WorldInfusionEnergy.channel(state) else null,useChannelOverride=energyEnabled,pedestal=energyEnabled)
                 } else emptyList()
                 val frame=(WorldInfusionSmoke.frame(smoke,ticks,intake)+finish).take(WorldInfusionSmoke.MAX_SAMPLES)
                 val active=if(packed)frame.map { it.key }.toSet() else emptySet()
@@ -357,7 +367,8 @@ internal object WorldInfusionServer {
                     } else player.sendPacket(ParticlePacket(Particle.DUST.withColor(net.kyori.adventure.text.format.TextColor.color(mote.rgb)).withScale(mote.scale),
                         false,false,mote.position,Vec.ZERO,0f,1))
                 }
-                smokeStats.peak=maxOf(smokeStats.peak,smokeDisplays.size)
+                updatePedestalSeal()
+                smokeStats.peak=maxOf(smokeStats.peak,smokeDisplays.size+if(pedestalSeal==null)0 else 1)
             }
             trails.forEach { t->
                 val u=(ticks-t.started)/18.0
@@ -376,12 +387,33 @@ internal object WorldInfusionServer {
                     state.phase==InfusionPhase.COMPLETE->"霜転の調律 完了 — 中心台座へ空手で右クリックして回収"
                     else->WorldInfusionRules.missing(state) ?: "準備完了：頭上のMatrixへ筆記杖で右クリック"
                 }
-                player.sendActionBar(Component.text(message,NamedTextColor.GOLD))
+                val meter=if(energyEnabled)state.energy?.let { "E ${it.receivedMilli/1000.0}/${it.requiredMilli/1000.0} 残り${it.remainingMilli/1000.0} / P=${power.perSecond}E/s（仮） / " } ?: "E=120 / P=${power.perSecond}E/s（仮） / " else ""
+                player.sendActionBar(Component.text(meter+message,NamedTextColor.GOLD))
+            }
+        }
+        private fun clearPedestalSeal() {
+            val old=pedestalSeal ?: return;pedestalSeal=null
+            try { old.entity.remove() } finally { old.lease.release();smokeStats.removed++ }
+        }
+        private fun updatePedestalSeal() {
+            val c=state.matrix;val glow=if(energyEnabled)confluenceTrack.pedestalGlow(state,ticks) else 0.0
+            if(c==null || glow<=.02) { clearPedestalSeal();return }
+            val d=pedestalSeal ?: WorldInfusionSmokeBudget.acquire()?.let { lease->
+                SmokeDisplay(Entity(EntityType.ITEM_DISPLAY).apply { setNoGravity(true);setHasPhysics(false) },lease).also {
+                    pedestalSeal=it;smokeStats.born++
+                    it.entity.setInstance(instance,at(c,.5)).whenComplete { _,f->if(f!=null || closed)clearPedestalSeal() }
+                }
+            } ?: return
+            d.entity.editEntityMeta(ItemDisplayMeta::class.java) { m->
+                val tone=(glow*255).toInt().coerceIn(0,255);val rgb=(tone shl 16) or (tone shl 8) or tone
+                m.setItemStack(ItemStack.of(Material.PAPER).withItemModel("projects:infusion-energy/pedestal_seal")
+                    .with(DataComponents.CUSTOM_MODEL_DATA,CustomModelData(emptyList(),emptyList(),emptyList(),listOf(net.kyori.adventure.text.format.TextColor.color(rgb)))))
+                m.setDisplayContext(ItemDisplayMeta.DisplayContext.NONE);m.setViewRange(2f);m.setShadowRadius(0f)
             }
         }
         fun close() {
             if(closed)return
-            closed=true;games.remove(player.uuid,this)
+            closed=true;games.remove(player.uuid,this);clearPedestalSeal()
             displays.values.forEach { it.remove() };displays.clear();trails.clear();smoke.clear()
             smokeDisplays.entries.forEach { (key,e)->dropSmoke(key,e) }
         }

@@ -4,12 +4,14 @@ param(
     [int]$PackPort = 25586,
     [int]$MaxMemoryMb = 512,
     [switch]$ConcurrentInjection,
+    [switch]$BudgetedEnergy,
+    [ValidateRange(0,18)][int]$PowerPerSecond = 0,
     [ValidateRange(0.0,1.0)][double]$AuxiliarySupply = 0,
     [switch]$Stop
 )
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
-$runDirectory = Join-Path $projectRoot $(if ($ConcurrentInjection) { 'server-minestom/run/world-infusion-confluence' } else { 'server-minestom/run/world-infusion' })
+$runDirectory = Join-Path $projectRoot $(if ($BudgetedEnergy) { 'server-minestom/run/world-infusion-energy' } elseif ($ConcurrentInjection) { 'server-minestom/run/world-infusion-confluence' } else { 'server-minestom/run/world-infusion' })
 $recordPath = Join-Path $runDirectory 'owned-process.json'
 if ($Stop) {
     if (-not (Test-Path -LiteralPath $recordPath)) { Write-Output 'No owned infusion server record'; return }
@@ -45,7 +47,10 @@ $stderr = Join-Path $runDirectory "$stamp.error.log"
 $arguments = @("-Xmx${MaxMemoryMb}m", '-XX:ActiveProcessorCount=2', '-Dfile.encoding=UTF-8',
     '-Dprojects.worldInfusion=true', "-Dprojects.port=$Port", "-Dprojects.ui.port=$PackPort",
     '-cp', "`"$libraries\*`"", 'dev.projects.server.ProjectSServerKt')
-if ($ConcurrentInjection) {
+if ($BudgetedEnergy) {
+    $arguments = @('-Dprojects.infusion.energyBudgeted=true', "-Dprojects.infusion.powerPerSecond=$PowerPerSecond") + $arguments
+}
+if ($ConcurrentInjection -and -not $BudgetedEnergy) {
     $supplyText = $AuxiliarySupply.ToString([System.Globalization.CultureInfo]::InvariantCulture)
     $arguments = @('-Dprojects.infusion.concurrent=true', "-Dprojects.infusion.energy=$supplyText") + $arguments
 }

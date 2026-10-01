@@ -68,11 +68,11 @@ internal object WorldInfusionConfluence {
     class Track {
         var pose=WorldInfusionAnimation.Pose(0.0,0.0,WorldInfusionAnimation.IDLE_GLOW);private set
         private var completedAt:Long?=null
-        fun step(s:WorldInfusionState,tick:Long,drive:Drive,completed:Boolean=false):WorldInfusionAnimation.Pose {
+        fun step(s:WorldInfusionState,tick:Long,drive:Drive,completed:Boolean=false,speedOverride:Double?=null):WorldInfusionAnimation.Pose {
             if(completed)completedAt=tick
             val active=!s.paused && s.phase in setOf(InfusionPhase.ESSENTIA,InfusionPhase.INGREDIENTS)
             if(active)completedAt=null
-            val target=if(active)drive.rotationSpeed else 0.0
+            val target=if(active)(speedOverride ?: drive.rotationSpeed) else 0.0
             val speed=if(pose.speed<target)(pose.speed+.18).coerceAtMost(target) else (pose.speed-.09).coerceAtLeast(target)
             val age=completedAt?.let { tick-it };val charge=s.supplied.values.sum().toDouble()/WorldInfusionRules.cost.values.sum()
             val glow=when {
@@ -84,8 +84,13 @@ internal object WorldInfusionConfluence {
             pose=WorldInfusionAnimation.Pose(pose.yaw+speed,speed,glow);return pose
         }
         /** Small transparent violet knots/weapon sparks; never a whiteout or new item mesh. */
-        fun finishSamples(s:WorldInfusionState,tick:Long,clock:Clock,drive:Drive,pivot:Vec,weapon:Vec):List<WorldInfusionSmoke.Sample> = buildList {
-            val channel=clock.channel(s,tick,drive)
+        fun pedestalGlow(s:WorldInfusionState,tick:Long):Double {
+            val age=completedAt?.let { tick-it } ?: return 0.0
+            return if(s.phase==InfusionPhase.COMPLETE && s.gearPlace==InfusionGearPlace.OUTPUT && age in 0..30)sin(PI*age/30) else 0.0
+        }
+        fun finishSamples(s:WorldInfusionState,tick:Long,clock:Clock,drive:Drive,pivot:Vec,weapon:Vec,
+            channelOverride:Double?=null,useChannelOverride:Boolean=false,pedestal:Boolean=false):List<WorldInfusionSmoke.Sample> = buildList {
+            val channel=if(useChannelOverride)channelOverride else clock.channel(s,tick,drive)
             if(channel!=null)for(i in 0..5) {
                 val u=(channel*1.35-i*.08).coerceIn(0.0,1.0)
                 if(u==0.0 || u==1.0)continue
@@ -94,10 +99,16 @@ internal object WorldInfusionConfluence {
                 add(WorldInfusionSmoke.Sample("convergence:$i",p,0xac70dd,(.45+.24*sin(PI*u)).toFloat(),u))
             }
             val age=completedAt?.let { tick-it }
-            if(age!=null && age in 0..18 && s.phase==InfusionPhase.COMPLETE && s.gearPlace==InfusionGearPlace.OUTPUT)for(i in 0..7) {
-                val u=age/18.0;val a=i*PI/4+u*.5;val radius=.12+.22*u
+            val sparkAge=age?.let { if(pedestal)it-10 else it }
+            if(sparkAge!=null && sparkAge in 0..18 && s.phase==InfusionPhase.COMPLETE && s.gearPlace==InfusionGearPlace.OUTPUT)for(i in 0..7) {
+                val u=sparkAge/18.0;val a=i*PI/4+u*.5;val radius=.12+.22*u
                 val p=weapon.add(cos(a)*radius,.05+sin(u*PI)*.1,sin(a)*radius)
                 add(WorldInfusionSmoke.Sample("weapon-success:$i",p,if(i%2==0)0xad78dc else 0xd3b4dc,(.52*(1-u)+.12).toFloat(),u))
+            }
+            if(pedestal && age!=null && age in 0..26 && s.phase==InfusionPhase.COMPLETE && s.gearPlace==InfusionGearPlace.OUTPUT)for(i in 0..4) {
+                val a=age-i*2;if(a !in 0..18)continue
+                val u=a/18.0;val p=weapon.add(sin(i*1.8+u*3)*.08,-.36*(1-u),cos(i*1.8+u*3)*.08)
+                add(WorldInfusionSmoke.Sample("pedestal-rise:$i",p,0xb282db,(.72-.3*u).toFloat(),u))
             }
         }
     }

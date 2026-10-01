@@ -22,7 +22,8 @@ internal data class WorldInfusionState(val account: CoreAccount, val matrix: Inf
     val gearPlace: InfusionGearPlace = InfusionGearPlace.INVENTORY,
     val phase: InfusionPhase = InfusionPhase.READY,
     val supplied: Map<InfusionAspect, Int> = emptyMap(), val reservoir: Map<InfusionAspect, Int> = emptyMap(),
-    val consumed: Map<CoreResource, Int> = emptyMap(), val paused: Boolean = false) {
+    val consumed: Map<CoreResource, Int> = emptyMap(), val paused: Boolean = false,
+    val energy: InfusionEnergyLedger? = null) {
     val gear get() = account.storedGear.single()
     init {
         require(account.storedGear.size == 1 && account.offers.isEmpty() && account.activeRun == null)
@@ -42,6 +43,8 @@ internal data class WorldInfusionState(val account: CoreAccount, val matrix: Inf
         require(phase !in setOf(InfusionPhase.INGREDIENTS, InfusionPhase.COMPLETE) || supplied == WorldInfusionRules.cost)
         require(phase != InfusionPhase.READY || (supplied.isEmpty() && consumed.isEmpty() && !paused))
         require(phase != InfusionPhase.COMPLETE || consumed == WorldInfusionRules.ingredients)
+        require(energy==null || phase!=InfusionPhase.COMPLETE || energy.receivedMilli==energy.requiredMilli)
+        if(energy!=null)WorldInfusionEnergy.validate(this)
     }
     companion object {
         fun fresh(owner: UUID): WorldInfusionState {

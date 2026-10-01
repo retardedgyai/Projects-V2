@@ -14,7 +14,7 @@ import java.util.UUID
 internal object WorldInfusionCodec {
     fun encode(s: WorldInfusionState): String {
         val body=buildString {
-            append("PROJECTS_WORLD_INFUSION\t1\t${s.account.playerId}\n")
+            append("PROJECTS_WORLD_INFUSION\t${if(s.energy==null)1 else 2}\t${s.account.playerId}\n")
             append("account\t${Base64.getEncoder().encodeToString(CoreAccountCodec.encode(s.account).toByteArray(Charsets.UTF_8))}\n")
             append("ritual\t${s.gearPlace}\t${s.phase}\t${s.paused}\n")
             s.matrix?.let { append("matrix\t${cell(it)}\n") }
@@ -23,6 +23,7 @@ internal object WorldInfusionCodec {
             s.supplied.toSortedMap().forEach { (a,n)->append("supplied\t$a\t$n\n") }
             s.reservoir.toSortedMap().forEach { (a,n)->append("reservoir\t$a\t$n\n") }
             s.consumed.toSortedMap().forEach { (a,n)->append("consumed\t$a\t$n\n") }
+            s.energy?.let { append("energy\t${it.recipeId}\t${it.requiredMilli}\t${it.receivedMilli}\n") }
         }
         return body+"sha256\t${hash(body)}\n"
     }
@@ -34,9 +35,12 @@ internal object WorldInfusionCodec {
         val lines=text.dropLast(1).split('\n');val checksum=lines.last().split('\t')
         val body=lines.dropLast(1).joinToString("\n",postfix="\n")
         require(checksum.size==2 && checksum[0]=="sha256" && checksum[1]==hash(body)) { "祭壇保存データの整合性を確認できません" }
-        require(lines[0]=="PROJECTS_WORLD_INFUSION\t1\t$owner")
+        val version=when(lines[0]) { "PROJECTS_WORLD_INFUSION\t1\t$owner"->1;"PROJECTS_WORLD_INFUSION\t2\t$owner"->2;else->error("Unsupported isolated infusion envelope") }
         val rows=lines.drop(1).dropLast(1).map { it.split('\t') }
-        require(rows.all { it[0] in setOf("account","ritual","matrix","pedestal","jar","supplied","reservoir","consumed") })
+        require(rows.all { it[0] in setOf("account","ritual","matrix","pedestal","jar","supplied","reservoir","consumed","energy") })
+        val energyRows=rows.filter { it[0]=="energy" }
+        require(energyRows.size==if(version==2)1 else 0)
+        val energy=energyRows.singleOrNull()?.let { require(it.size==4);InfusionEnergyLedger(it[1],it[2].toLong(),it[3].toLong()) }
         val a=rows.single { it[0]=="account" };require(a.size==2)
         val account=CoreAccountCodec.decode(String(Base64.getDecoder().decode(a[1]),Charsets.UTF_8),owner)
         val r=rows.single { it[0]=="ritual" };require(r.size==4)
@@ -50,7 +54,7 @@ internal object WorldInfusionCodec {
             rows.filter { it[0]=="pedestal" }.map { require(it.size==3);InfusionPedestal(cell(it[1]),if(it[2]=="-")null else CoreResource.valueOf(it[2])) },
             rows.filter { it[0]=="jar" }.map { require(it.size==6);InfusionJar(UUID.fromString(it[1]),InfusionAspect.valueOf(it[2]),it[3].toInt(),it[4].toInt(),if(it[5]=="-")null else cell(it[5])) },
             InfusionGearPlace.valueOf(r[1]),InfusionPhase.valueOf(r[2]),aspects("supplied"),aspects("reservoir"),
-            consumed.associate { CoreResource.valueOf(it[1]) to it[2].toInt() },r[3].toBooleanStrict())
+            consumed.associate { CoreResource.valueOf(it[1]) to it[2].toInt() },r[3].toBooleanStrict(),energy)
     }
 }
 
