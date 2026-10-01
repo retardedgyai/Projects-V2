@@ -875,6 +875,102 @@ class CorePlayerCombatTest {
         assertEquals(0,h.actor.cooldownRemaining(2))
     }
 
+    @Test fun `garden deploy frees input and owns its context while firebolt earns a separate element gain`() = arena(bossDistance=7.0) { h ->
+        h.mageGarden();h.actor.skill(1);h.actor.skill(1)
+        assertEquals(80,h.actor.mana)
+        h.ticks(6);assertEquals(1,h.actor.activeGardens);assertEquals(15.0,h.actor.resource)
+        val planted=h.combat.bossHealth()
+        h.actor.skill(0);assertTrue(h.actor.cooldownRemaining(0)>0)
+        h.ticks(5);assertTrue(h.combat.bossHealth()<planted);assertEquals(45.0,h.actor.resource)
+        h.ticks(28);assertEquals(45.0,h.actor.resource,"Further garden hits must not overwrite fire's resource context")
+    }
+    @Test fun `garden welcomes a late enemy after old channel end and never refunds reentry hit budget`() = arena(bossDistance=7.0) { h ->
+        h.mageGarden();val mob=h.combat.entities().single();val original=mob.position
+        h.actor.skill(1);mob.teleport(original.add(8.0,0.0,0.0)).join();h.ticks(46)
+        assertEquals(300.0,h.combat.bossHealth());assertEquals(0.0,h.actor.resource)
+        mob.teleport(original).join();h.ticks(4)
+        val one=300.0-h.combat.bossHealth();assertTrue(one>0);assertEquals(15.0,h.actor.resource)
+        repeat(3) { mob.teleport(original.add(8.0,0.0,0.0)).join();h.ticks(8);mob.teleport(original).join();h.ticks(12) }
+        assertEquals(300.0-one*4,h.combat.bossHealth(),.00001)
+        h.ticks(100);assertEquals(0,h.actor.activeGardens);assertEquals(300.0-one*4,h.combat.bossHealth(),.00001)
+    }
+    @Test fun `dodge after formation preserves garden including cancelling another cast`() = arena(bossDistance=7.0) { h ->
+        h.mageGarden();h.actor.skill(1);h.ticks(6);val first=h.combat.bossHealth()
+        h.actor.skill(0);h.actor.dodge();h.ticks(20)
+        assertEquals(1,h.actor.activeGardens);assertTrue(h.combat.bossHealth()<first);assertEquals(15.0,h.actor.resource)
+    }
+    @Test fun `dodge during formation spends once but prevents delayed garden and all hits`() = arena(bossDistance=7.0) { h ->
+        h.mageGarden();h.actor.skill(1);h.ticks(3);h.actor.dodge();h.ticks(140)
+        assertEquals(0,h.actor.activeGardens);assertEquals(300.0,h.combat.bossHealth());assertEquals(0.0,h.actor.resource)
+        assertTrue(h.actor.cooldownRemaining(1)>0)
+    }
+    @Test fun `training cooldown refill cannot place overlapping gardens or pay again`() = arena(bossDistance=7.0) { h ->
+        h.mageGarden();h.actor.skill(1);h.ticks(6);h.actor.refillTraining()
+        repeat(30) { h.actor.skill(1) }
+        assertEquals(h.actor.maxMana,h.actor.mana);assertEquals(1,h.actor.activeGardens)
+        h.ticks(121);h.actor.skill(1);assertEquals(h.actor.maxMana-20,h.actor.mana);h.ticks(6);assertEquals(1,h.actor.activeGardens)
+    }
+    @Test fun `garden ends on reset encounter leave defeat and class change`() {
+        for(reason in 0..3) arena(bossDistance=7.0) { h ->
+            h.mageGarden();h.actor.skill(1);h.ticks(6);val first=h.combat.bossHealth()
+            when(reason) { 0->h.actor.resetActions();1->h.activeEncounter=null;2->h.actor.hurt(10000.0);3->h.journey=CoreJourney() }
+            h.ticks(30);assertEquals(0,h.actor.activeGardens);assertEquals(first,h.combat.bossHealth())
+        }
+    }
+    @Test fun `garden clears immediately on player disconnect`() = arena(bossDistance=7.0) { h ->
+        h.mageGarden();h.actor.skill(1);h.ticks(6);val first=h.combat.bossHealth()
+        h.player.remove();h.ticks(30);assertEquals(0,h.actor.activeGardens);assertEquals(first,h.combat.bossHealth())
+    }
+    @Test fun `garden rejects unsupported ground without cost and never damages across a wall or raised floor`() = arena(bossDistance=7.0) { h ->
+        h.mageGarden();val mob=h.combat.entities().single();val original=mob.position
+        for(x in 7..9) for(z in 14..16) for(y in 36..39) h.instance.setBlock(x,y,z,Block.AIR)
+        h.actor.skill(1);assertEquals(100,h.actor.mana);assertEquals(0,h.actor.cooldownRemaining(1))
+        for(x in 7..9) for(z in 14..16) for(y in 36..39) h.instance.setBlock(x,y,z,Block.STONE)
+        h.actor.skill(1);h.ticks(6);val first=h.combat.bossHealth()
+        mob.teleport(original.add(2.0,0.0,0.0)).join()
+        for(z in 12..18) for(y in 40..42) h.instance.setBlock(9,y,z,Block.STONE)
+        h.ticks(30);assertEquals(first,h.combat.bossHealth())
+        mob.teleport(original.add(0.0,1.0,0.0)).join();h.ticks(30);assertEquals(first,h.combat.bossHealth())
+    }
+    @Test fun `garden slows boss by ten percent only and exit cannot erase another stronger slow`() = arena(bossDistance=7.0) { h ->
+        h.mageGarden();val mob=h.combat.entities().single();val start=System.currentTimeMillis()
+        h.combat.tick(start);val speed=mob.getAttribute(Attribute.MOVEMENT_SPEED).baseValue
+        h.actor.skill(1);h.ticks(6);assertEquals(speed*.9,mob.getAttribute(Attribute.MOVEMENT_SPEED).baseValue,.00001)
+        h.combat.applySlow(mob.uuid,.6,3000);assertEquals(speed*.7,mob.getAttribute(Attribute.MOVEMENT_SPEED).baseValue,.00001)
+        mob.teleport(mob.position.add(8.0,0.0,0.0)).join();h.ticks(12);h.combat.tick(start+400)
+        assertEquals(speed*.7,mob.getAttribute(Attribute.MOVEMENT_SPEED).baseValue,.00001)
+        h.combat.tick(start+3100);assertEquals(speed,mob.getAttribute(Attribute.MOVEMENT_SPEED).baseValue,.00001)
+    }
+    @Test fun `enemy death callback can reset garden without stale later hits or effects`() = arena(bossDistance=7.0) { h ->
+        h.mageGarden();val id=h.combat.entities().single().uuid
+        h.combat.applyDamage(id,h.player,299.0);h.afterKill={h.actor.resetActions()}
+        h.actor.skill(1);h.ticks(6);assertEquals(0,h.actor.activeGardens);h.ticks(130);assertEquals(0.0,h.combat.bossHealth())
+    }
+    @Test fun `two mages own separate gardens gains and four hit budgets with strongest slow only`() = arena(bossDistance=7.0) { h ->
+        h.mageGarden();val ally=h.addAlly(h.player.position,CoreClass.MAGE)
+        h.actor.skill(1);ally.skill(1);h.ticks(6);repeat(6) { ally.tick() }
+        assertEquals(1,h.actor.activeGardens);assertEquals(1,ally.activeGardens)
+        assertEquals(15.0,h.actor.resource);assertEquals(15.0,ally.resource)
+        val one=(300.0-h.combat.bossHealth())/2
+        repeat(80) { h.actor.tick();ally.tick() }
+        assertEquals(300.0-one*8,h.combat.bossHealth(),.00001)
+        assertEquals(15.0,h.actor.resource);assertEquals(15.0,ally.resource)
+    }
+    @Test fun `instance transfer clears garden even when encounter reference was not changed yet`() = arena(bossDistance=7.0) { h ->
+        h.mageGarden();h.actor.skill(1);h.ticks(6);val first=h.combat.bossHealth()
+        val map=MinecraftServer.getInstanceManager().createInstanceContainer()
+        map.viewDistance(2)
+        map.setGenerator { it.modifier().fillHeight(0,40,Block.STONE) }
+        for(x in -3..3) for(z in -3..3) map.loadChunk(x,z).get(10,TimeUnit.SECONDS)
+        try {
+            h.player.setInstance(map,Pos(8.5,40.0,8.5)).get(10,TimeUnit.SECONDS)
+            assertTrue(h.player.instance === map)
+            h.ticks(30);assertEquals(0,h.actor.activeGardens);assertEquals(first,h.combat.bossHealth())
+        } finally {
+            if(h.player.instance !== h.instance) h.player.setInstance(h.instance,Pos(8.5,40.0,8.5)).get(10,TimeUnit.SECONDS)
+            MinecraftServer.getInstanceManager().unregisterInstance(map)
+        }
+    }
     private class Harness(bossDistance: Double, armorTier: Int, stats: CoreAffixStats, roll: Double,
         weaponEnhancement: Int, armorEnhancement: Int) : AutoCloseable {
         val instance = MinecraftServer.getInstanceManager().createInstanceContainer()
@@ -889,12 +985,16 @@ class CorePlayerCombatTest {
         var deaths = 0
         val incomingHits = mutableListOf<Double>()
         var afterKill: () -> Unit = {}
+        fun mageGarden() {
+            journey=CoreJourney(job=CoreClass.MAGE,build=CoreClassBuild(second=5));base=CoreWeaponBase.STAFF;actor.reset()
+        }
         val otherActors = mutableListOf<CorePlayerCombat>()
-        fun addAlly(at:Pos):CorePlayerCombat {
+        fun addAlly(at:Pos,job:CoreClass=CoreClass.WARRIOR):CorePlayerCombat {
             val c=MemoryConnection();c.setClientState(ConnectionState.PLAY);c.setServerState(ConnectionState.PLAY)
             val p=Player(c,GameProfile(UUID.randomUUID(),"AllyTest"));c.player=p;p.gameMode=GameMode.ADVENTURE
             p.setInstance(instance,at).get(10,TimeUnit.SECONDS)
-            return CorePlayerCombat(p,{1},{1},{activeEncounter}) {}.also { it.reset();otherActors+=it }
+            val allyJourney=if(job==CoreClass.MAGE) CoreJourney(job=job,build=CoreClassBuild(second=5)) else CoreJourney()
+            return CorePlayerCombat(p,{1},{1},{activeEncounter},criticalRoll={1.0},journey={allyJourney},weaponBase={if(job==CoreClass.MAGE)CoreWeaponBase.STAFF else CoreWeaponBase.STANDARD}) {}.also { it.reset();otherActors+=it }
         }
 
         init {

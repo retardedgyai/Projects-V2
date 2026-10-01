@@ -332,19 +332,18 @@ class CoreSkillChoreographyTest {
             }
         }
     }
-    @Test fun `ice garden grows anchored volume in waves without circling pillars`() {
+    @Test fun `ice garden holds supported pixel plates without circling pillars or wave restarts`() {
         val parts=CoreSkillChoreography.parts(effect(CoreClass.MAGE,"mage_garden"))
-        assertEquals(8,parts.size)
-        assertEquals(setOf(0,2,4,6),parts.map { it.delayTicks }.toSet())
+        assertEquals(21,parts.size)
+        assertEquals(setOf(0),parts.map { it.delayTicks }.toSet())
         for(p in parts) {
-            assertEquals(CoreMeshMotion.EMERGE,p.motion)
-            assertTrue(p.ground && !p.followOwner && !p.erode)
+            assertTrue(CoreIceGardenChoreography.owns(p) && !p.followOwner)
             val first=CoreSkillChoreography.pose(p,p.delayTicks.toDouble())
             val grown=CoreSkillChoreography.pose(p,p.delayTicks+8.0)
             val last=CoreSkillChoreography.pose(p,(p.delayTicks+p.durationTicks-1).toDouble())
             assertEquals(first.offset,grown.offset)
-            assertTrue(grown.scale.z()>first.scale.z()*10)
-            assertTrue(last.scale.z()<grown.scale.z()*.1)
+            assertEquals(first.scale,grown.scale)
+            assertTrue(last.model.endsWith("_8"))
         }
         val model=javaClass.getResourceAsStream("/core-ui-pack/assets/projects/models/combat_vfx/ice_growth_ice.json")!!
             .bufferedReader().use { JsonParser.parseReader(it).asJsonObject }
@@ -412,12 +411,13 @@ class CoreSkillChoreographyTest {
             val e=effect(job,s.icon,phase)
             if(phase==CoreSkillVisualPhase.PULSE) {
                 if(s.icon=="war_banner") assertEquals(60,e.durationTicks)
+                else if(s.icon=="mage_garden") assertEquals(130,e.durationTicks)
                 else assertTrue(e.durationTicks in 18..40,s.icon)
             }
             val parts=CoreSkillChoreography.parts(e)
             if(job==CoreClass.WARRIOR && phase==CoreSkillVisualPhase.CONTACT && s.icon in setOf("war_cry","war_banner"))
                 assertTrue(parts.isEmpty(),"Support grants must not imply an enemy hit")
-            else assertTrue(parts.size in 1..16,"${s.icon}: ${parts.size}")
+            else assertTrue(parts.size in 1..if(s.icon=="mage_garden")21 else 16,"${s.icon}: ${parts.size}")
             for(p in parts) for(tick in 0..p.delayTicks+p.durationTicks) {
                 val pose=CoreSkillChoreography.pose(p,tick.toDouble())
                 if(p.shape.startsWith("flow:") || p.shape.startsWith("warrior_trace:")) assertTrue(pose.scale.x()>=0 && pose.scale.y()>0 && pose.scale.z()>=0)
