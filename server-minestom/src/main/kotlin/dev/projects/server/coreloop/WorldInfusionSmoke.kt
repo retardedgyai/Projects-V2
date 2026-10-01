@@ -8,9 +8,12 @@ internal object WorldInfusionSmoke {
     const val EMISSION_TICKS = 12
     const val TRAVEL_TICKS = 42
     const val MAX_SAMPLES = 64
-    data class Transfer(val from: Vec, val to: Vec, val rgb: Int, val started: Long, val releaseUntil:Long=Long.MAX_VALUE)
+    data class Transfer(val from: Vec, val to: Vec, val rgb: Int, val started: Long, val releaseUntil:Long=Long.MAX_VALUE,
+        val travelTicks:Int=TRAVEL_TICKS,val tuftStep:Int=2) {
+        init { require(travelTicks>0 && tuftStep>0) }
+    }
     data class Sample(val key:String,val position: Vec, val rgb: Int, val scale: Float, val progress: Double)
-    fun expired(t: Transfer, tick: Long) = tick >= t.started + EMISSION_TICKS + TRAVEL_TICKS
+    fun expired(t: Transfer, tick: Long) = tick >= t.started + 6*t.tuftStep + t.travelTicks
 
     /** Each confirmed unit releases six tufts; stopping consumption creates no further Transfers. */
     fun sample(t: Transfer, tick: Long, movingFocus:Vec?=null): List<Sample> = buildList {
@@ -18,10 +21,10 @@ internal object WorldInfusionSmoke {
         val horizontal=hypot(delta.x(),delta.z()).coerceAtLeast(.001)
         val side=Vec(-delta.z()/horizontal,0.0,delta.x()/horizontal)
         for(tuft in 0 until 6) {
-            if(t.started+tuft*2>=t.releaseUntil)continue
-            val age=tick-t.started-tuft*2
-            if(age < 0 || age >= TRAVEL_TICKS)continue
-            val u=age.toDouble()/TRAVEL_TICKS
+            if(t.started+tuft*t.tuftStep>=t.releaseUntil)continue
+            val age=tick-t.started-tuft*t.tuftStep
+            if(age < 0 || age >= t.travelTicks)continue
+            val u=age.toDouble()/t.travelTicks
             val seed=t.started*.37+tuft*1.79+t.from.x()*.41
             val envelope=sin(PI*u).coerceAtLeast(0.0)
             val bend=sin(PI*u)*.95

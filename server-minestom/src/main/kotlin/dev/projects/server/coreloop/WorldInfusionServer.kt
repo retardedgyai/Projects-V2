@@ -98,7 +98,9 @@ internal object WorldInfusionServer {
         println("PROJECTS_WORLD_INFUSION_READY address=127.0.0.1:$port save=${System.getProperty("projects.infusion.save","config/projects/world-infusion-lab")} dedicatedMaterials=false researchGate=false")
     }
 
-    internal class WorldInfusionGame(val player:Player,val instance:InstanceContainer,val repository:WorldInfusionRepository,var state:WorldInfusionState) {
+    internal class WorldInfusionGame(val player:Player,val instance:InstanceContainer,val repository:WorldInfusionRepository,var state:WorldInfusionState,
+        val confluenceEnabled:Boolean=java.lang.Boolean.getBoolean("projects.infusion.concurrent"),
+        var demoEnergySupply:Double=System.getProperty("projects.infusion.energy","0").toDouble().coerceIn(0.0,1.0)) {
         var packed=false
         private var ticks=0L
         private var lastClick=-10L
@@ -117,9 +119,11 @@ internal object WorldInfusionServer {
         internal data class SmokeStats(var born:Long=0,var removed:Long=0,var moves:Long=0,var metadata:Long=0,var peak:Int=0)
         internal val smokeStats=SmokeStats()
         private val animation=WorldInfusionAnimation.Track()
+        private val confluenceTrack=WorldInfusionConfluence.Track()
+        private val confluenceClock=WorldInfusionConfluence.Clock()
         private var coreDisplay:Entity?=null
         private var lastCorePose:WorldInfusionAnimation.Pose?=null
-        internal val animationPose get()=animation.pose
+        internal val animationPose get()=if(confluenceEnabled)confluenceTrack.pose else animation.pose
         private fun dropSmoke(key:String,display:SmokeDisplay) {
             if(smokeDisplays.remove(key,display)) {
                 try { display.entity.remove() } finally { display.lease.release();smokeStats.removed++ }
@@ -281,23 +285,28 @@ internal object WorldInfusionServer {
                 if(instance.getBlock(c.x,44,c.z).isAir) { close();return }
             }
             var completed=false
-            if(ticks%18==0L && WorldInfusionAnimation.mayAdvance(state,smoke,ticks)) {
-                val (next,pulse)=WorldInfusionRules.tick(state)
+            val drive=WorldInfusionConfluence.Drive(demoEnergySupply)
+            val advance=if(confluenceEnabled)confluenceClock.due(state,ticks,drive,smoke)
+                else ticks%18==0L && WorldInfusionAnimation.mayAdvance(state,smoke,ticks)
+            if(advance) {
+                val (next,pulses)=if(confluenceEnabled)WorldInfusionConfluence.tick(state) else WorldInfusionRules.tick(state).let { it.first to listOfNotNull(it.second) }
                 if(next!==state && mutate { next }) {
-                    val c=state.matrix!!;val target=animation.pose.inlet(Vec(c.x+.5,c.y+3.4,c.z+.5))
-                    pulse?.let { v->
+                    if(confluenceEnabled)confluenceClock.accepted(state,ticks)
+                    val c=state.matrix!!;val target=animationPose.inlet(Vec(c.x+.5,c.y+3.4,c.z+.5))
+                    pulses.forEach { v->
                         val source=v.jar?.let { id->state.jars.single { it.id==id }.cell?.let { Vec(it.x+.5,41.55,it.z+.5) } }
                             ?: v.ingredient?.let { Vec(it.x+.5,42.15,it.z+.5) } ?: Vec(c.x+.5,42.0,c.z+.5)
                         if(v.jar!=null && v.aspect!=null) {
                             // Only a durably committed real Jar drain releases smoke. No smoke for reservoir reuse.
                             val mouth=source.add(0.0,.4,0.0)
-                            smoke+=WorldInfusionSmoke.Transfer(mouth,target,v.aspect.rgb,ticks)
+                            smoke+=if(confluenceEnabled)WorldInfusionSmoke.Transfer(mouth,target,v.aspect.rgb,ticks,travelTicks=drive.travelTicks,tuftStep=drive.tuftStep)
+                                else WorldInfusionSmoke.Transfer(mouth,target,v.aspect.rgb,ticks)
                         } else trails+=Trail(source,target,v.aspect?.rgb ?: 0xe1cfab,ticks)
                         if(v.completed) { completed=true;player.playSound(Sound.sound(SoundEvent.BLOCK_AMETHYST_BLOCK_CHIME,Sound.Source.BLOCK,.7f,1.3f)) }
                     }
                 }
             }
-            val pose=animation.step(state,ticks,completed)
+            val pose=if(confluenceEnabled)confluenceTrack.step(state,ticks,drive,completed) else animation.step(state,ticks,completed)
             val intake=state.matrix?.let { pose.inlet(Vec(it.x+.5,it.y+3.4,it.z+.5)) }
             if(ticks%2==0L && packed && (lastCorePose?.yaw!=pose.yaw || lastCorePose?.neutralTint!=pose.neutralTint)) {
                 coreDisplay?.editEntityMeta(ItemDisplayMeta::class.java) { m->
@@ -311,7 +320,10 @@ internal object WorldInfusionServer {
             trails.removeIf { ticks-it.started>18 }
             smoke.removeIf { WorldInfusionSmoke.expired(it,ticks) }
             if(ticks%2==0L) {
-                val frame=WorldInfusionSmoke.frame(smoke,ticks,intake)
+                val finish=if(confluenceEnabled && state.matrix!=null)state.matrix!!.let {
+                    confluenceTrack.finishSamples(state,ticks,confluenceClock,drive,Vec(it.x+.5,it.y+3.4,it.z+.5),Vec(it.x+.5,it.y+1.15,it.z+.5))
+                } else emptyList()
+                val frame=(WorldInfusionSmoke.frame(smoke,ticks,intake)+finish).take(WorldInfusionSmoke.MAX_SAMPLES)
                 val active=if(packed)frame.map { it.key }.toSet() else emptySet()
                 smokeDisplays.entries.forEach { (key,e)->if(key !in active)dropSmoke(key,e) }
                 frame.forEach { mote->
