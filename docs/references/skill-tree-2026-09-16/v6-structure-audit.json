@@ -1,0 +1,499 @@
+{
+  "schema": "projects.skill-tree-reference-audit.v1",
+  "historical_only": true,
+  "production_budget_unfixed": true,
+  "duplicate_node_ids": 0,
+  "duplicate_edges": 0,
+  "unknown_edge_endpoints": [],
+  "nodes": 664,
+  "edges": 716,
+  "clusters": 47,
+  "patterns": {
+    "oval": 8,
+    "fork": 8,
+    "wheel": 14,
+    "arc": 10,
+    "double": 7
+  },
+  "themes": {
+    "magic": 2,
+    "ice": 2,
+    "haste": 3,
+    "bleed": 3,
+    "armor": 2,
+    "area": 3,
+    "fire": 2,
+    "lightning": 2,
+    "mobility": 2,
+    "parry": 3,
+    "mana": 2,
+    "leech": 1,
+    "resource": 3,
+    "penetration": 2,
+    "weakpoint": 2,
+    "life": 2,
+    "resist": 2,
+    "crit": 2,
+    "speed": 2,
+    "ward": 2,
+    "healing": 2,
+    "force": 1
+  },
+  "opening_lanes": [
+    {
+      "origin": "warrior",
+      "primary": "physical",
+      "nodes": [
+        "opening_warrior_0_1",
+        "opening_warrior_0_2",
+        "opening_warrior_0_3"
+      ],
+      "first_three_same_primary": true
+    },
+    {
+      "origin": "warrior",
+      "primary": "hp",
+      "nodes": [
+        "opening_warrior_1_1",
+        "opening_warrior_1_2",
+        "opening_warrior_1_3"
+      ],
+      "first_three_same_primary": true
+    },
+    {
+      "origin": "warrior",
+      "primary": "attackSpeed",
+      "nodes": [
+        "opening_warrior_2_1",
+        "opening_warrior_2_2",
+        "opening_warrior_2_3"
+      ],
+      "first_three_same_primary": true
+    },
+    {
+      "origin": "templar",
+      "primary": "physical",
+      "nodes": [
+        "opening_templar_0_1",
+        "opening_templar_0_2",
+        "opening_templar_0_3"
+      ],
+      "first_three_same_primary": true
+    },
+    {
+      "origin": "templar",
+      "primary": "armor",
+      "nodes": [
+        "opening_templar_1_1",
+        "opening_templar_1_2",
+        "opening_templar_1_3"
+      ],
+      "first_three_same_primary": true
+    },
+    {
+      "origin": "templar",
+      "primary": "barrier",
+      "nodes": [
+        "opening_templar_2_1",
+        "opening_templar_2_2",
+        "opening_templar_2_3"
+      ],
+      "first_three_same_primary": true
+    },
+    {
+      "origin": "mage",
+      "primary": "magic",
+      "nodes": [
+        "opening_mage_0_1",
+        "opening_mage_0_2",
+        "opening_mage_0_3"
+      ],
+      "first_three_same_primary": true
+    },
+    {
+      "origin": "mage",
+      "primary": "efficiency",
+      "nodes": [
+        "opening_mage_1_1",
+        "opening_mage_1_2",
+        "opening_mage_1_3"
+      ],
+      "first_three_same_primary": true
+    },
+    {
+      "origin": "mage",
+      "primary": "barrier",
+      "nodes": [
+        "opening_mage_2_1",
+        "opening_mage_2_2",
+        "opening_mage_2_3"
+      ],
+      "first_three_same_primary": true
+    },
+    {
+      "origin": "healer",
+      "primary": "magic",
+      "nodes": [
+        "opening_healer_0_1",
+        "opening_healer_0_2",
+        "opening_healer_0_3"
+      ],
+      "first_three_same_primary": true
+    },
+    {
+      "origin": "healer",
+      "primary": "healing",
+      "nodes": [
+        "opening_healer_1_1",
+        "opening_healer_1_2",
+        "opening_healer_1_3"
+      ],
+      "first_three_same_primary": true
+    },
+    {
+      "origin": "healer",
+      "primary": "hp",
+      "nodes": [
+        "opening_healer_2_1",
+        "opening_healer_2_2",
+        "opening_healer_2_3"
+      ],
+      "first_three_same_primary": true
+    },
+    {
+      "origin": "ranger",
+      "primary": "damage",
+      "nodes": [
+        "opening_ranger_0_1",
+        "opening_ranger_0_2",
+        "opening_ranger_0_3"
+      ],
+      "first_three_same_primary": true
+    },
+    {
+      "origin": "ranger",
+      "primary": "attackSpeed",
+      "nodes": [
+        "opening_ranger_1_1",
+        "opening_ranger_1_2",
+        "opening_ranger_1_3"
+      ],
+      "first_three_same_primary": true
+    },
+    {
+      "origin": "ranger",
+      "primary": "crit",
+      "nodes": [
+        "opening_ranger_2_1",
+        "opening_ranger_2_2",
+        "opening_ranger_2_3"
+      ],
+      "first_three_same_primary": true
+    },
+    {
+      "origin": "assassin",
+      "primary": "damage",
+      "nodes": [
+        "opening_assassin_0_1",
+        "opening_assassin_0_2",
+        "opening_assassin_0_3"
+      ],
+      "first_three_same_primary": true
+    },
+    {
+      "origin": "assassin",
+      "primary": "attackSpeed",
+      "nodes": [
+        "opening_assassin_1_1",
+        "opening_assassin_1_2",
+        "opening_assassin_1_3"
+      ],
+      "first_three_same_primary": true
+    },
+    {
+      "origin": "assassin",
+      "primary": "move",
+      "nodes": [
+        "opening_assassin_2_1",
+        "opening_assassin_2_2",
+        "opening_assassin_2_3"
+      ],
+      "first_three_same_primary": true
+    }
+  ],
+  "origin_costs": [
+    {
+      "origin": "warrior",
+      "reachable_path_nodes": 638,
+      "notable_count": 74,
+      "notables_within_old_44": 51,
+      "notable_max_cost": 63,
+      "keystones": [
+        {
+          "id": "g8n4",
+          "name": "守りの循環",
+          "cost": 37,
+          "within_old_44": true
+        },
+        {
+          "id": "g13n3",
+          "name": "血の代価",
+          "cost": 25,
+          "within_old_44": true
+        },
+        {
+          "id": "g18n1",
+          "name": "深い裂傷",
+          "cost": 23,
+          "within_old_44": true
+        },
+        {
+          "id": "g37n0",
+          "name": "静かな刃",
+          "cost": 28,
+          "within_old_44": true
+        },
+        {
+          "id": "g41n0",
+          "name": "不動の核",
+          "cost": 41,
+          "within_old_44": true
+        },
+        {
+          "id": "g43n0",
+          "name": "余波の契約",
+          "cost": 62,
+          "within_old_44": false
+        }
+      ]
+    },
+    {
+      "origin": "templar",
+      "reachable_path_nodes": 638,
+      "notable_count": 74,
+      "notables_within_old_44": 74,
+      "notable_max_cost": 44,
+      "keystones": [
+        {
+          "id": "g8n4",
+          "name": "守りの循環",
+          "cost": 26,
+          "within_old_44": true
+        },
+        {
+          "id": "g13n3",
+          "name": "血の代価",
+          "cost": 34,
+          "within_old_44": true
+        },
+        {
+          "id": "g18n1",
+          "name": "深い裂傷",
+          "cost": 40,
+          "within_old_44": true
+        },
+        {
+          "id": "g37n0",
+          "name": "静かな刃",
+          "cost": 31,
+          "within_old_44": true
+        },
+        {
+          "id": "g41n0",
+          "name": "不動の核",
+          "cost": 39,
+          "within_old_44": true
+        },
+        {
+          "id": "g43n0",
+          "name": "余波の契約",
+          "cost": 37,
+          "within_old_44": true
+        }
+      ]
+    },
+    {
+      "origin": "mage",
+      "reachable_path_nodes": 638,
+      "notable_count": 74,
+      "notables_within_old_44": 73,
+      "notable_max_cost": 46,
+      "keystones": [
+        {
+          "id": "g8n4",
+          "name": "守りの循環",
+          "cost": 28,
+          "within_old_44": true
+        },
+        {
+          "id": "g13n3",
+          "name": "血の代価",
+          "cost": 36,
+          "within_old_44": true
+        },
+        {
+          "id": "g18n1",
+          "name": "深い裂傷",
+          "cost": 42,
+          "within_old_44": true
+        },
+        {
+          "id": "g37n0",
+          "name": "静かな刃",
+          "cost": 33,
+          "within_old_44": true
+        },
+        {
+          "id": "g41n0",
+          "name": "不動の核",
+          "cost": 36,
+          "within_old_44": true
+        },
+        {
+          "id": "g43n0",
+          "name": "余波の契約",
+          "cost": 34,
+          "within_old_44": true
+        }
+      ]
+    },
+    {
+      "origin": "healer",
+      "reachable_path_nodes": 638,
+      "notable_count": 74,
+      "notables_within_old_44": 72,
+      "notable_max_cost": 49,
+      "keystones": [
+        {
+          "id": "g8n4",
+          "name": "守りの循環",
+          "cost": 31,
+          "within_old_44": true
+        },
+        {
+          "id": "g13n3",
+          "name": "血の代価",
+          "cost": 39,
+          "within_old_44": true
+        },
+        {
+          "id": "g18n1",
+          "name": "深い裂傷",
+          "cost": 38,
+          "within_old_44": true
+        },
+        {
+          "id": "g37n0",
+          "name": "静かな刃",
+          "cost": 36,
+          "within_old_44": true
+        },
+        {
+          "id": "g41n0",
+          "name": "不動の核",
+          "cost": 32,
+          "within_old_44": true
+        },
+        {
+          "id": "g43n0",
+          "name": "余波の契約",
+          "cost": 33,
+          "within_old_44": true
+        }
+      ]
+    },
+    {
+      "origin": "ranger",
+      "reachable_path_nodes": 638,
+      "notable_count": 74,
+      "notables_within_old_44": 71,
+      "notable_max_cost": 50,
+      "keystones": [
+        {
+          "id": "g8n4",
+          "name": "守りの循環",
+          "cost": 36,
+          "within_old_44": true
+        },
+        {
+          "id": "g13n3",
+          "name": "血の代価",
+          "cost": 44,
+          "within_old_44": true
+        },
+        {
+          "id": "g18n1",
+          "name": "深い裂傷",
+          "cost": 33,
+          "within_old_44": true
+        },
+        {
+          "id": "g37n0",
+          "name": "静かな刃",
+          "cost": 41,
+          "within_old_44": true
+        },
+        {
+          "id": "g41n0",
+          "name": "不動の核",
+          "cost": 27,
+          "within_old_44": true
+        },
+        {
+          "id": "g43n0",
+          "name": "余波の契約",
+          "cost": 33,
+          "within_old_44": true
+        }
+      ]
+    },
+    {
+      "origin": "assassin",
+      "reachable_path_nodes": 638,
+      "notable_count": 74,
+      "notables_within_old_44": 68,
+      "notable_max_cost": 49,
+      "keystones": [
+        {
+          "id": "g8n4",
+          "name": "守りの循環",
+          "cost": 45,
+          "within_old_44": false
+        },
+        {
+          "id": "g13n3",
+          "name": "血の代価",
+          "cost": 35,
+          "within_old_44": true
+        },
+        {
+          "id": "g18n1",
+          "name": "深い裂傷",
+          "cost": 23,
+          "within_old_44": true
+        },
+        {
+          "id": "g37n0",
+          "name": "静かな刃",
+          "cost": 47,
+          "within_old_44": false
+        },
+        {
+          "id": "g41n0",
+          "name": "不動の核",
+          "cost": 27,
+          "within_old_44": true
+        },
+        {
+          "id": "g43n0",
+          "name": "余波の契約",
+          "cost": 35,
+          "within_old_44": true
+        }
+      ]
+    }
+  ],
+  "missing_keystone_descriptions": [],
+  "runtime_applied": false,
+  "parent_user_evidence": "9/16 20:21 UTC: fixed profession route rejected; route value emphasized (parent-reported; no independent transcript access)"
+}
