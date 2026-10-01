@@ -142,6 +142,7 @@ internal class GreatswordVfx(private val player: Player) {
         ParticleBudget(MAX_PARTICLES_PER_VIEWER_TICK))
     private val frame = RecordingParticleSink()
     private val elementalFrame = mutableListOf<ParticleSpawn>()
+    private val gardenBoundaryFrame = mutableListOf<ParticleSpawn>()
     private var instance: Instance? = null
     private var contactHold = 0
     private var holdAfterFrame = 0
@@ -154,6 +155,16 @@ internal class GreatswordVfx(private val player: Player) {
         instance = player.instance
         if (elementalFrame.size < 48) elementalFrame += ParticleSpawn(particle, position, count.coerceIn(0, 16), spread, speed,
             ParticleCategory.OWN_ACTIVE, importance = ParticleImportance.COMBAT_FEEDBACK)
+    }
+    fun gardenBoundary(cells: List<net.minestom.server.coordinate.Pos>, size: Double) {
+        val map=player.instance ?: return
+        if(map.players.none { !CoreCombatPresentation.packed(it) }) return
+        if(instance !== map) cancel()
+        instance=map;gardenBoundaryFrame.clear()
+        val edge=size/2-.03
+        for(cell in cells.take(21)) for(x in listOf(-edge,edge)) for(z in listOf(-edge,edge))
+            gardenBoundaryFrame+=ParticleSpawn(dustTransition(0x9ee5ed,0x496ca5,.6f),cell.add(x,.08,z),
+                category=ParticleCategory.OWN_ACTIVE,importance=ParticleImportance.COMBAT_FEEDBACK)
     }
 
     fun normalContact(origin: Point, direction: Vec) {
@@ -237,8 +248,10 @@ internal class GreatswordVfx(private val player: Player) {
                 if (accepted > 0) delegate.spawn(spawn.copy(count = accepted))
             }
             val stride = CoreCombatPresentation.detail(viewer).particleStride
-            manager.dispatchAll(ParticleViewer(viewer.position, viewer), frame.spawns.filterIndexed { i, _ -> i % stride == 0 }.map { it.copy(category = category) }, bounded)
+            val visibleFrame=frame.spawns + if(CoreCombatPresentation.packed(viewer)) emptyList() else gardenBoundaryFrame
+            manager.dispatchAll(ParticleViewer(viewer.position, viewer), visibleFrame.filterIndexed { i, _ -> i % stride == 0 }.map { it.copy(category = category) }, bounded)
         }
+        gardenBoundaryFrame.clear()
     }
 
     fun startSound(step: Int) {
@@ -255,10 +268,11 @@ internal class GreatswordVfx(private val player: Player) {
         sound(SoundEvent.ENTITY_PLAYER_ATTACK_STRONG, .65f, if (heavy) .55f else .85f)
         sound(SoundEvent.ITEM_TRIDENT_HIT, .45f, if (heavy) .65f else 1.0f)
     }
-    fun cancel() {
+    fun clearGarden() { meshes.clearGarden();gardenBoundaryFrame.clear() }
+    fun cancel(preserveGarden: Boolean = false) {
         CoreArmamentPresentation.cancel(player)
-        scheduler.cancelAll(); combatScheduler.cancelAll(); meshes.cancel(); frame.clear(); elementalFrame.clear(); manager.resetCounters()
-        contactHold = 0; holdAfterFrame = 0; contactSoundThisTick = false; instance = null
+        scheduler.cancelAll(); combatScheduler.cancelAll(); meshes.cancel(preserveGarden); frame.clear(); elementalFrame.clear(); gardenBoundaryFrame.clear(); manager.resetCounters()
+        contactHold = 0; holdAfterFrame = 0; contactSoundThisTick = false; instance = if(preserveGarden) player.instance else null
     }
     private fun sound(event: SoundEvent, volume: Float, pitch: Float) = player.playSound(Sound.sound(event, Sound.Source.PLAYER, volume, pitch))
 

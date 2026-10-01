@@ -30,10 +30,11 @@ internal object CoreSkillChoreography {
     fun duration(e: CoreSkillEffect) = when(e.phase) {
         CoreSkillVisualPhase.PREPARE -> e.prepareDuration
         CoreSkillVisualPhase.CONTACT -> 14
-        CoreSkillVisualPhase.PULSE -> duration.getValue(e.sceneId)
+        CoreSkillVisualPhase.PULSE -> if(e.sceneId=="mage_garden") e.skill.duration+10 else duration.getValue(e.sceneId)
     }
     private fun ease(t: Double)=1-(1-t.coerceIn(0.0,1.0)).pow(3)
     fun pose(p: CoreCombatMeshPart, age: Double): CoreMeshPose {
+        CoreIceGardenChoreography.pose(p,age)?.let { return it }
         CoreWarriorFlourish.pose(p,age)?.let { return it }
         CoreApprovedNormalV3.pose(p,age)?.let { return it }
         CoreApprovedDashV3.pose(p,age)?.let { return it }
@@ -130,6 +131,7 @@ internal object CoreSkillChoreography {
     }
 
     fun parts(e: CoreSkillEffect): List<CoreCombatMeshPart> {
+        if(e.sceneId=="mage_garden") return CoreIceGardenChoreography.parts(e)
         val raw=CoreCombatMeshArt.parts(e)
         if(raw.isEmpty()) return raw
         CoreApprovedNormalV3.parts(e)?.let { return it }
@@ -166,7 +168,6 @@ internal object CoreSkillChoreography {
                     motion=CoreMeshMotion.RADIATE,travel=Vec(.5,.55,.1),spin=.7,secondary=true,erode=true))
         }
         if(e.sceneId=="star_cloud") return nebulaField(e,life)
-        if(e.sceneId=="mage_garden") return iceGarden(e,life)
         if(s.kind==CoreSceneKind.PULL) return chainPull(e,life)
         if(e.sceneId=="mage_ward") return arcaneWard(e,life)
         if(e.sceneId in setOf("heal_ring","heal_wind","heal_ult","heal_shield")) return healingPhrase(e,life)
@@ -270,20 +271,6 @@ internal object CoreSkillChoreography {
                 Vec(.25,.25,.25),pitch=-PI/2,spin=.7,travel=Vec(0.0,.4,0.0),
                 delayTicks=4+i*2,durationTicks=life-4-i*2,startSize=.5,endSize=.2,
                 motion=CoreMeshMotion.ORBIT,secondary=true,erode=true)
-        }
-    }
-
-    private fun iceGarden(e: CoreSkillEffect,life: Int): List<CoreCombatMeshPart> {
-        val r=min(e.radius,CoreSkillScenes.get(e.sceneId).reach)
-        return (0 until 8).map { i ->
-            val a=i*PI/4+e.pulse*.2
-            val radius=r*if(i%2==0) .58 else .3
-            val height=if(i%2==0) 1.35 else .8
-            val delay=(i%4)*2
-            CoreCombatMeshPart("ice_growth","ice",Vec(sin(a)*radius,.12,cos(a)*radius),
-                Vec(.8,.8,height),yaw=a,pitch=-PI/2,ground=true,
-                startSize=.02,endSize=1.0,durationTicks=life-delay,delayTicks=delay,
-                motion=CoreMeshMotion.EMERGE,secondary=i%2!=0)
         }
     }
 

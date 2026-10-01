@@ -57,6 +57,10 @@ internal class CorePlayerCombat(
     private var previousPosition: Pos? = null
     private var moveHasteUntil = -1L
     private var pending: PendingSkill? = null
+    private data class PlantedGarden(val field: CoreIceGarden, val action: PendingSkill,
+        val encounter: QuestEncounterCombat, val instance: net.minestom.server.instance.Instance)
+    private var garden: PlantedGarden? = null
+    internal val activeGardens get() = if(garden == null) 0 else 1
     private var queuedSkill: Int? = null
     private var queuedDodge = false
     private var warriorQueued: Int? = null
@@ -101,7 +105,8 @@ internal class CorePlayerCombat(
     private val damageLabels = mutableListOf<Pair<Entity, Long>>()
 
     private data class PendingSkill(val id: Int, val definition: CoreSkillDefinition, val origin: Pos, val direction: Vec, val startup: Int,
-        var elapsed: Int = 0, var gained: Boolean = false, val empowered: Double = 0.0, val counter: Boolean = false)
+        var elapsed: Int = 0, var gained: Boolean = false, val empowered: Double = 0.0, val counter: Boolean = false,
+        val boost: Double = 1.0, val gardenCells: List<Pos>? = null)
 
     fun attack() {
         if (weaponBroken()) { notice("武器が破損しています。装備庫で修理してください"); return }
@@ -147,6 +152,18 @@ internal class CorePlayerCombat(
         if (!classState.canCast(definition, journey().build)) { notice("${classId.resourceName}が足りません（必要 ${definition.spend} / 現在 ${resource.toInt()}）"); return }
         val cost = definition.mana
         if (mana < cost) { notice("マナが足りません（必要 $cost）"); return }
+        val gardenCells = if(definition.icon == "mage_garden") {
+            if(garden != null) { notice("氷の庭は一つまで。今の庭が解けるまで待ってください"); return }
+            val cellSize = CoreIceGarden.cellSize(definition.radius)
+            val ground = gardenSurface(aimedGround(definition, encounter()!!),cellSize)
+            if(ground == null || !clearLine(player.position, ground)) { notice("氷の庭を置ける床を狙ってください"); return }
+            val cells = CoreIceGarden.offsets.mapNotNull { (x,z) ->
+                val cell = gardenSurface(ground.add(x*cellSize,0.0,z*cellSize),cellSize)
+                cell?.takeIf { abs(it.y()-ground.y()) <= .55 && clearLine(ground,it) }
+            }
+            if(cells.isEmpty()) { notice("氷の庭を置ける床を狙ってください"); return }
+            cells
+        } else null
         if (classId == CoreClass.WARRIOR) {
             val guard = definition.icon == "war_guard"
             val action = pending
@@ -182,12 +199,12 @@ internal class CorePlayerCombat(
         val startup = castDefinition.startupTicks(sheet)
         pending = PendingSkill(id, castDefinition, if(definition.motion == CoreSkillMotion.FIELD) aimedGround(definition, encounter()!!) else player.position,
             if (definition.motion == CoreSkillMotion.RAY) player.position.direction() else flatFacing(), startup,
-            empowered = spentFrom, counter = counter)
+            empowered = spentFrom, counter = counter, boost = skillBoost, gardenCells = gardenCells)
         lastCombat = tickNumber
         player.setHeldItemSlot(0)
         player.swingMainHand()
         if (startup > 1) vfx.playSkill(CoreSkillEffect(classId, castDefinition, pending!!.origin, pending!!.direction,
-            CoreSkillVisualPhase.PREPARE, prepareTicks = startup - 1))
+            CoreSkillVisualPhase.PREPARE, prepareTicks = startup - 1, gardenCells = gardenCells))
     }
 
     fun dodge() {
@@ -197,7 +214,7 @@ internal class CorePlayerCombat(
             if (normal.isAttacking) normal.endRecovery()
             classState.guardUntil = -1; classState.perfectUntil = -1
         }
-        if (pending != null) { pending = null; vfx.cancel(); queuedSkill = null }
+        if (pending != null) { pending = null; vfx.cancel(preserveGarden = garden != null); queuedSkill = null }
         if (normal.isAttacking) { normal.clearBuffer(); queuedDodge = true; return }
         val input = player.inputs()
         val forward = (if (input.forward()) 1.0 else 0.0) - (if (input.backward()) 1.0 else 0.0)
@@ -220,6 +237,7 @@ internal class CorePlayerCombat(
         previousPosition = player.position
         damageLabels.removeAll { (entity, expiry) -> if (tickNumber >= expiry) { entity.remove(); true } else false }
         if (defeated) return
+        if(player.isRemoved) { resetActions(); return }
         if (tickNumber % 20 == 0L) {
             manaValue = (manaValue + CoreCombatMath.manaRegeneration(statSource(), tickNumber - lastCombat > 100)).coerceAtMost(maxMana.toDouble())
             player.getAttribute(Attribute.MOVEMENT_SPEED).baseValue = 0.1 * (1.0 + statSource().moveSpeedPercent.coerceIn(0.0, 25.0) / 100.0 + if (tickNumber < moveHasteUntil) .2 else 0.0)
@@ -251,6 +269,20 @@ internal class CorePlayerCombat(
         normal.tick()?.let { swing -> if (!releaseNormal(enemies, swing)) return }
         pending?.let { action ->
             action.elapsed++
+            if(action.definition.icon == "mage_garden") {
+                if(action.elapsed >= action.startup) {
+                    val cellSize = CoreIceGarden.cellSize(action.definition.radius)
+                    val cells = action.gardenCells.orEmpty().filter { cell -> gardenSurface(cell,cellSize) == cell }
+                    if(cells.isNotEmpty()) {
+                        val field = CoreIceGarden(cells,tickNumber,action.definition.duration,cellSize)
+                        garden = PlantedGarden(field,action,enemies,player.instance)
+                        vfx.playSkill(CoreSkillEffect(CoreClass.MAGE,action.definition,action.origin,action.direction,gardenCells=cells))
+                        notice("氷の庭：6秒。敵を誘い、他の術を重ねる")
+                    }
+                    pending = null
+                }
+                return@let
+            }
             val pulse = action.elapsed - action.startup
             if (pulse >= 0 && pulse % 8 == 0 && pulse / 8 < action.definition.pulses) {
                 executeSkill(enemies, action)
@@ -264,6 +296,8 @@ internal class CorePlayerCombat(
                 else action.startup + action.definition.pulses * 8 + 3
             if (action.elapsed >= finish) pending = null
         }
+        tickGarden(enemies)
+        if (!actionsValid(enemies, epoch)) return
         drainWarriorInput()
         if (!normal.isAttacking && pending == null) {
             if (queuedDodge) { normal.clearBuffer(); queuedDodge = false; dodge() }
@@ -440,12 +474,13 @@ internal class CorePlayerCombat(
         }
     }
 
-    private fun hit(enemies: QuestEncounterCombat, id: UUID, multiplier: Double, skill: Boolean, heavy: Boolean = false, piercing: Boolean = false) {
+    private fun hit(enemies: QuestEncounterCombat, id: UUID, multiplier: Double, skill: Boolean, heavy: Boolean = false, piercing: Boolean = false,
+        skillAction: PendingSkill? = pending, contact: Boolean = true) {
         val epoch = actionEpoch
         val stats = sheet.mods
         val build = journey().build
         val position = enemies.positionOf(id) ?: return
-        val definition = if (skill) pending?.definition ?: return else null
+        val definition = if (skill) skillAction?.definition ?: return else null
         val formula = definition?.formula ?: CoreSkillCatalog.basicFormula
         val type = definition?.type ?: CoreSkillCatalog.basicType(classId)
         val tags = definition?.tags ?: CoreSkillCatalog.basicTags(classId)
@@ -470,7 +505,7 @@ internal class CorePlayerCombat(
             if (classId == CoreClass.ASSASSIN && build.keystone == 0 && info != null && info.health / info.maximumHealth <= .35) classMultiplier *= 1.4
         }
         val damage = CoreCombatMath.outgoing(baseDamage, type, tags, stats, critical) *
-            (if (skill) skillBoost else 1.0) * classMultiplier * (if (tickNumber < whetstoneUntil) 1.2 else 1.0) * (if (weak) 1.25 else 1.0)
+            (if (skill) skillAction!!.boost else 1.0) * classMultiplier * (if (tickNumber < whetstoneUntil) 1.2 else 1.0) * (if (weak) 1.25 else 1.0)
         val applied = enemies.applyCalculatedDamage(id, player, damage, type, stats,
             projectile = !classId.melee || definition?.motion == CoreSkillMotion.RAY || definition?.motion == CoreSkillMotion.FIELD || (definition?.radius ?: 0.0) > 7.0) ?: return
         val lesson = if (skill) 1 else 0
@@ -484,7 +519,7 @@ internal class CorePlayerCombat(
                 classState.gain(4.0, classId, build); lastConduitGain = tickNumber
             }
         }
-        else pending?.takeUnless { it.gained }?.let { action ->
+        else skillAction?.takeUnless { it.gained }?.let { action ->
             action.gained = true; classState.skillHit(classId, action.definition, build)
             if (classId == CoreClass.STARWEAVER && action.empowered >= 3 && action.definition.icon == "star_ring") manaValue = min(maxMana.toDouble(), manaValue + 12)
         }
@@ -493,9 +528,15 @@ internal class CorePlayerCombat(
         if (definition != null) when (definition.status) {
             CoreSkillStatus.MARK -> classState.mark(id, tickNumber)
             CoreSkillStatus.SLOW -> {
+                // Garden slow is refreshed by actual occupancy, never a three-second tail on exit.
+                if(definition.icon == "mage_garden") {
+                    if(classId == CoreClass.MAGE && build.keystone == 2 && !enemies.isBoss(id))
+                        receiveShield((8 + abilityPower * .3) * shieldScale, 80)
+                } else {
                 val slow = if (classId == CoreClass.MAGE && build.keystone == 2) .6 else .4
                 enemies.applySlow(id, slow, if (classId == CoreClass.RANGER && build.keystone == 2) 4500 else 3000)
                 if (classId == CoreClass.MAGE && build.keystone == 2) receiveShield((8 + abilityPower * .3) * shieldScale, 80)
+                }
             }
             CoreSkillStatus.EXPOSE -> enemies.expose(id)
             CoreSkillStatus.POISON -> {
@@ -512,8 +553,8 @@ internal class CorePlayerCombat(
         val stolen = CoreCombatMath.lifeSteal(applied, stats, piercing || CoreAttackTag.AREA in tags || classId.melee)
         if (stolen > 0) heal(stolen)
         if (definition != null) {
-            if (visualContactsThisTick++ < 3) vfx.playSkill(CoreSkillEffect(classId, definition, position,
-                pending!!.direction, CoreSkillVisualPhase.CONTACT, pulse = (pending!!.elapsed - pending!!.startup) / 8))
+            if (contact && visualContactsThisTick++ < 3) vfx.playSkill(CoreSkillEffect(classId, definition, position,
+                skillAction!!.direction, CoreSkillVisualPhase.CONTACT, pulse = (skillAction.elapsed - skillAction.startup) / 8))
             if (burns.containsKey(DotKey(id, true))) vfx.status(CorePoisonEffect(position, tickNumber, false))
         } else if (classId.melee) {
             vfx.impactSound(heavy)
@@ -688,6 +729,7 @@ internal class CorePlayerCombat(
     fun revive(fraction: Double) { require(fraction in .1..1.0); reset(); health = maxHealth * fraction; syncVanillaHealth() }
     fun resetActions() {
         actionEpoch++
+        garden = null
         normal.reset(); pending = null; shot = null; lastConduitGain = -1; castCharges = 0; skillBoost = 1.0; queuedSkill = null; queuedDodge = false; burns.clear()
         normalEmpowerment = 1.0
         warriorQueued = null; warriorQueueUntil = -1; warriorNextNormalAt = -1
@@ -718,6 +760,43 @@ internal class CorePlayerCombat(
 
     private fun flatFacing(): Vec = Vec(player.position.direction().x(), 0.0, player.position.direction().z()).let {
         if (it.lengthSquared() < 0.001) Vec(0.0, 0.0, 1.0) else it.normalize()
+    }
+    /** A plate must have four supported corners, headroom, and the same level as its centre. */
+    private fun gardenSurface(at: Pos, size: Double = CoreIceGarden.CELL): Pos? {
+        val instance = player.instance ?: return null
+        val base = floor(at.y()).toInt()
+        val surface = (base+1 downTo base-3).firstOrNull { y ->
+            listOf(-size/2+.04,0.0,size/2-.04).all { x -> listOf(-size/2+.04,0.0,size/2-.04).all { z ->
+                instance.getBlock(Pos(at.x()+x,y.toDouble(),at.z()+z)).isSolid &&
+                    !instance.getBlock(Pos(at.x()+x,y+1.0,at.z()+z)).isSolid &&
+                    !instance.getBlock(Pos(at.x()+x,y+2.0,at.z()+z)).isSolid
+            } }
+        } ?: return null
+        return Pos(at.x(),surface+1.0,at.z())
+    }
+    private fun tickGarden(enemies: QuestEncounterCombat) {
+        val planted = garden ?: return
+        val field = planted.field
+        if(planted.encounter !== enemies || planted.instance !== player.instance || classId != CoreClass.MAGE ||
+            player.position.distance(planted.action.origin) > 24) {
+            garden = null; vfx.clearGarden(); return
+        }
+        if(!field.active(tickNumber)) {
+            garden = null; sound(SoundEvent.BLOCK_GLASS_BREAK,.3f,1.6f); return
+        }
+        if(tickNumber == field.endsAt-20) sound(SoundEvent.BLOCK_AMETHYST_BLOCK_CHIME,.35f,.65f)
+        if((tickNumber-field.openedAt) % 10 == 0L) vfx.gardenBoundary(field.cells,field.cellSize)
+        if((tickNumber-field.openedAt) % CoreIceGarden.CHECK_INTERVAL != 0L) return
+        val epoch = actionEpoch
+        for(target in enemies.combatTargets()) {
+            val feet = enemies.positionOf(target.id) ?: continue
+            if(!field.contains(feet) || gardenSurface(feet) == null || !clearLine(planted.action.origin,feet)) continue
+            // QuestEncounterCombat halves boss slow: .20 here yields only 10% and never an interrupt.
+            val slow = if(enemies.isBoss(target.id)) .2 else if(journey().build.keystone == 2) .5 else .4
+            enemies.applySlow(target.id,slow,CoreIceGarden.SLOW_MILLIS)
+            if(field.claimHit(target.id,tickNumber)) hit(enemies,target.id,1.0,skill=true,skillAction=planted.action,contact=field.firstHit(target.id))
+            if(!actionsValid(enemies,epoch)) return
+        }
     }
     private fun actionsValid(enemies: QuestEncounterCombat, epoch: Long): Boolean =
         epoch == actionEpoch && !defeated && encounter() === enemies && player.instance != null

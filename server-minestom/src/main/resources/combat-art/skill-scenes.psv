@@ -17,7 +17,7 @@ frost_nova|霜の波紋|NOVA|ice|ice_wave|ice_spike|cast_spark|ice_shatter|3.6|1
 meteor|流星雨|RAIN|fire|meteor_rock|fire_crater|cast_spark|fire_burst|0.9|1.0|1.0|狙った地点の上空から岩塊が落下。各判定に一組の着弾痕
 mage_blink|閃光歩|TELEPORT|lightning|lightning_gate|electric_shard|cast_spark|electric_spark|1.0|1.0|1.0|出発点で縮む裂け目と到着点で開く裂け目。斬撃は使わない
 mage_mark|雷の刻印|RAY|lightning|lightning_fork|electric_thread|cast_spark|lightning_seal|0.8|0.7|0.7|細い分岐雷と命中した敵の雷印。空振りに印を出さない
-mage_garden|氷の庭|FIELD|ice|snowflake|ice_spike|cast_spark|ice_shatter|3.0|1.0|1.0|地面の雪結晶と低い氷柱。攻撃判定の各波に合わせて更新
+mage_garden|氷の庭|FIELD|ice|snowflake|ice_spike|cast_spark|ice_shatter|3.65|1.0|1.0|支えのある床板が一度だけ展開し6秒残る。敵の初回接触に氷片、終了前は結晶が縮み床の亀裂が開く
 mage_burst|術式起爆|NOVA|lightning|lightning_burst|electric_shard|lightning_seal|electric_spark|3.6|1.0|1.0|中心の術式が破裂し四方向へ雷片。一本の光線にしない
 mage_ward|魔力障壁|SHIELD|lightning|arcane_shield|shield_arch|cast_spark|light_spark|1.0|1.0|1.0|本人の胴を守る魔力板。radiusゼロでも巨大な地面輪を作らない
 mage_ult|天火の大術式|RAIN|fire|meteor_crown|fire_crater|fire_seal|fire_burst|1.4|1.0|1.0|大術式の中心へ火冠を落とし放射状の火口。各爆発と同期

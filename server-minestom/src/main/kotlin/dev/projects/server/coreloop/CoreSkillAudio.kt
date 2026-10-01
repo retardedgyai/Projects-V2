@@ -81,6 +81,14 @@ internal object CoreSkillAudio {
         }
         fun cue(event: SoundEvent, volume: Float, pitch: Float) =
             player.playSound(Sound.sound(event, Sound.Source.PLAYER, volume * detail, pitch))
+        if(effect.sceneId=="mage_garden") {
+            when(effect.phase) {
+                CoreSkillVisualPhase.PREPARE -> cue(SoundEvent.BLOCK_AMETHYST_BLOCK_RESONATE,.45f,1.6f)
+                CoreSkillVisualPhase.PULSE -> { cue(SoundEvent.BLOCK_GLASS_PLACE,.75f,.7f); cue(SoundEvent.BLOCK_SNOW_PLACE,.55f,.65f) }
+                CoreSkillVisualPhase.CONTACT -> cue(SoundEvent.BLOCK_GLASS_BREAK,.5f,1.5f)
+            }
+            return
+        }
         val astral = effect.job == CoreClass.STARWEAVER
         val scene = CoreSkillScenes.get(effect.sceneId)
         if(effect.job==CoreClass.WARRIOR && (effect.sceneId in CoreWarriorBladeChoreography.sceneIds ||

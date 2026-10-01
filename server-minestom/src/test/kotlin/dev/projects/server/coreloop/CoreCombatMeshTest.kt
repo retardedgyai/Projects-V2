@@ -537,6 +537,61 @@ class CoreCombatMeshTest {
         }
     }
 
+    @Test fun `garden footprint reaches owner and observer even at minimal and survives cast cancel`() = player { owner ->
+        val viewer=connect(owner.instance,owner.position.add(1.0,0.0,0.0),"GardenViewer")
+        val meshes=CoreCombatMeshes(owner)
+        try {
+            listOf(owner,viewer).forEach { CoreCombatPresentation.pack(it,true);CoreCombatPresentation.cycle(it);CoreCombatPresentation.cycle(it) }
+            val skill=CoreSkillCatalog.skills(CoreClass.MAGE).first { it.icon=="mage_garden" }
+            meshes.play(CoreSkillEffect(CoreClass.MAGE,skill,owner.position,Vec(0.0,0.0,1.0)))
+            meshes.tick();assertEquals(21,meshes.size)
+            val plates=owner.instance.entities.filter { it.entityType==net.minestom.server.entity.EntityType.ITEM_DISPLAY }
+            assertEquals(21,plates.size);assertTrue(plates.all { owner in it.viewers && viewer in it.viewers })
+            meshes.cancel(preserveGarden=true);assertEquals(21,meshes.size)
+            repeat(100) { meshes.tick() };assertEquals(21,meshes.size)
+            repeat(30) { meshes.tick() };assertEquals(0,meshes.size)
+        } finally { meshes.cancel();listOf(owner,viewer).forEach(CoreCombatPresentation::forget);viewer.remove() }
+    }
+    @Test fun `accepting the resource pack after planting reveals the already active field`() = player { owner ->
+        val meshes=CoreCombatMeshes(owner)
+        try {
+            val skill=CoreSkillCatalog.skills(CoreClass.MAGE).first { it.icon=="mage_garden" }
+            meshes.play(CoreSkillEffect(CoreClass.MAGE,skill,owner.position,Vec(0.0,0.0,1.0)))
+            repeat(25) { meshes.tick() }
+            val plates=owner.instance.entities.filter { it.entityType==net.minestom.server.entity.EntityType.ITEM_DISPLAY }
+            assertEquals(21,plates.size);assertTrue(plates.none { owner in it.viewers })
+            CoreCombatPresentation.pack(owner,true);meshes.tick()
+            assertTrue(plates.all { owner in it.viewers },"A persistent hazard must become visible when the pack finishes loading")
+        } finally { meshes.cancel();CoreCombatPresentation.forget(owner) }
+    }
+    @Test fun `garden holds static plates without per tick transformation packets`() {
+        val packets=mutableListOf<SendablePacket>()
+        player(packets) { owner ->
+            val meshes=CoreCombatMeshes(owner);CoreCombatPresentation.pack(owner,true)
+            try {
+                val skill=CoreSkillCatalog.skills(CoreClass.MAGE).first { it.icon=="mage_garden" }
+                meshes.play(CoreSkillEffect(CoreClass.MAGE,skill,owner.position,Vec(0.0,0.0,1.0)))
+                repeat(8) { meshes.tick() };packets.clear()
+                repeat(60) { meshes.tick() }
+                assertTrue(packets.none { it.javaClass.simpleName=="EntityMetaDataPacket" },"A held plate has no changing transform or material")
+            } finally { meshes.cancel();CoreCombatPresentation.forget(owner) }
+        }
+    }
+    @Test fun `unpacked observer gets bounded garden footprint even after another cast is cancelled`() = player { owner ->
+        val packets=mutableListOf<SendablePacket>()
+        val viewer=connect(owner.instance,owner.position.add(1.0,0.0,0.0),"GardenViewer",packets)
+        val vfx=GreatswordVfx(owner);CoreCombatPresentation.pack(owner,true)
+        val cells=CoreIceGarden.offsets.map { (x,z)->owner.position.add(x*1.25,0.0,z*1.25) }
+        try {
+            val skill=CoreSkillCatalog.skills(CoreClass.MAGE).first { it.icon=="mage_garden" }
+            vfx.playSkill(CoreSkillEffect(CoreClass.MAGE,skill,owner.position,Vec(0.0,0.0,1.0),gardenCells=cells))
+            packets.clear();vfx.gardenBoundary(cells,1.25);vfx.tick()
+            assertTrue(packets.any { it.javaClass.simpleName=="ParticlePacket" })
+            assertTrue(packets.count { it.javaClass.simpleName=="ParticlePacket" }<=84)
+            vfx.cancel(preserveGarden=true);packets.clear();vfx.gardenBoundary(cells,1.25);vfx.tick()
+            assertTrue(packets.any { it.javaClass.simpleName=="ParticlePacket" })
+        } finally { vfx.cancel();CoreCombatPresentation.forget(owner);viewer.remove() }
+    }
     private fun connect(map: net.minestom.server.instance.Instance,at: Pos,name: String,packets:MutableList<SendablePacket>?=null): Player {
         val connection=object : PlayerConnection() {
             override fun sendPacket(packet: SendablePacket) { packets?.add(packet) }
