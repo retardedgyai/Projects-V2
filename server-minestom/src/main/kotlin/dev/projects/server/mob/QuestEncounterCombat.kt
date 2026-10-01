@@ -83,6 +83,8 @@ class QuestEncounterCombat(
     private val encounterLevel: Int = (tier - 1) * 10 + 1,
     private val typedDamagePlayer: ((Player, Double, CoreDamageType) -> Unit)? = null,
 ) {
+    private data class SlowKey(val source: UUID?, val strength: Double)
+    private data class Slow(val strength: Double, val until: Long)
     private class Mob(
         val entity: EntityCreature,
         val home: Pos,
@@ -100,6 +102,7 @@ class QuestEncounterCombat(
         var returningSince = 0L
         var slowPercent = 0.0
         var slowedUntil = 0L
+        val slows = mutableMapOf<SlowKey, Slow>()
         var challengeStage = 0
         var exposedUntil = 0L
         var tauntedUntil = 0L
@@ -220,18 +223,25 @@ class QuestEncounterCombat(
             it.entity.position, it.life.health, it.life.maximumHealth)
     }
 
-    /** Percent is a fraction: .25 means 25%. Bosses resist half the reduction; strongest duration wins. */
-    fun applySlow(targetId: UUID, percent: Double, durationMillis: Long): Boolean {
+    /** Each contribution keeps its own expiry. Bosses resist half; active strengths never add. */
+    fun applySlow(targetId: UUID, percent: Double, durationMillis: Long, source: UUID? = null): Boolean {
         if (disposed || !percent.isFinite() || percent <= 0.0 || durationMillis <= 0L) return false
         val mob = mobs[targetId] ?: return false
         if (mob.guardianIds.any(::isAlive)) return false
         if (!mob.life.isAlive || mob.life.phase == QuestMobPhase.RETURNING) return false
         val now = if (lastTickAt == Long.MIN_VALUE) System.currentTimeMillis() else lastTickAt
         val effective = percent.coerceAtMost(0.65) * if (mob.boss) 0.5 else 1.0
-        mob.slowPercent = maxOf(if (now < mob.slowedUntil) mob.slowPercent else 0.0, effective)
-        mob.slowedUntil = maxOf(mob.slowedUntil, now + durationMillis.coerceAtMost(30_000L))
+        // Legacy calls of equal strength refresh one contribution; different strengths cannot borrow its expiry.
+        val key = SlowKey(source, if (source == null) effective else 0.0)
+        val until = now + durationMillis.coerceAtMost(30_000L)
+        mob.slows[key] = Slow(effective, if (source == null) maxOf(mob.slows[key]?.until ?: 0L, until) else until)
         updateMovementSpeed(mob, now)
         return true
+    }
+
+    fun clearSlowSource(source: UUID) {
+        val now = if (lastTickAt == Long.MIN_VALUE) System.currentTimeMillis() else lastTickAt
+        for (mob in mobs.values) if (mob.slows.keys.removeAll { it.source == source }) updateMovementSpeed(mob, now)
     }
 
     fun combatTargets(): List<CombatTarget> = if (disposed) emptyList() else mobs.values
@@ -261,7 +271,16 @@ class QuestEncounterCombat(
 
     /** AR/MR is applied exactly once, before guard, boss phase gates and overkill checks. */
     fun applyCalculatedDamage(targetId: UUID, attacker: Player, amount: Double, type: CoreDamageType,
-        stats: CoreAffixStats, projectile: Boolean = false, effect: Boolean = false): Double? {
+        stats: CoreAffixStats, projectile: Boolean = false, effect: Boolean = false): Double? =
+        calculatedDamage(targetId, attacker, amount, type, stats, projectile, effect, null)
+
+    /** A server-sampled field validates source-to-target LOS, independently of the caster's current cover. */
+    fun applyCalculatedFieldDamage(targetId: UUID, attacker: Player, origin: Pos, amount: Double,
+        type: CoreDamageType, stats: CoreAffixStats): Double? =
+        calculatedDamage(targetId, attacker, amount, type, stats, true, false, origin)
+
+    private fun calculatedDamage(targetId: UUID, attacker: Player, amount: Double, type: CoreDamageType,
+        stats: CoreAffixStats, projectile: Boolean, effect: Boolean, fieldOrigin: Pos?): Double? {
         if (!amount.isFinite() || amount <= 0) return null
         val mob = mobs[targetId] ?: return null
         val defense = (tier - 1) * 30.0 + (encounterLevel - ((tier - 1) * 10 + 1)) * 2.0
@@ -270,19 +289,27 @@ class QuestEncounterCombat(
         val now = if (lastTickAt == Long.MIN_VALUE) System.currentTimeMillis() else lastTickAt
         return damage(targetId, attacker, CoreCombatMath.mitigate(amount, type,
             defense * (if (armored) 1.5 else 1.0), defense * (if (caster) 1.5 else 1.0), stats,
-            defenseReduction = if (now < mob.exposedUntil) 20.0 else 0.0), effect, projectile)
+            defenseReduction = if (now < mob.exposedUntil) 20.0 else 0.0), effect, projectile, fieldOrigin)
     }
 
-    private fun damage(targetId: UUID, attacker: Player, amount: Double, effect: Boolean, projectile: Boolean = false): Double? {
+    private fun damage(targetId: UUID, attacker: Player, amount: Double, effect: Boolean, projectile: Boolean = false,
+        fieldOrigin: Pos? = null): Double? {
         val now = if(lastTickAt == Long.MIN_VALUE) System.currentTimeMillis() else lastTickAt
         if (disposed || attacker.instance !== instance || !canTarget(attacker)) return null
         val mob = mobs[targetId] ?: return null
         if ((mob.boss && bossSealed) || mob.guardianIds.any(::isAlive)) return null
+        val source = fieldOrigin ?: attacker.position
+        if (fieldOrigin != null) {
+            if (!listOf(source.x(),source.y(),source.z()).all(Double::isFinite) || attacker.position.distanceSquared(source) > 24.0*24.0) return null
+            val start = source.add(0.0,1.0,0.0); val end = mob.entity.position.add(0.0,1.0,0.0)
+            val steps = ceil(start.distance(end)*4).toInt().coerceAtLeast(1)
+            if ((1 until steps).any { instance.getBlock(start.add(end.sub(start).mul(it.toDouble()/steps))).isSolid }) return null
+        }
         val range = if (effect || projectile) 24.0 else 8.0
-        if (!isSpawned(mob) || attacker.position.distanceSquared(mob.entity.position) > range * range) return null
-        if (!effect && !mob.entity.hasLineOfSight(attacker)) return null
+        if (!isSpawned(mob) || source.distanceSquared(mob.entity.position) > range * range) return null
+        if (fieldOrigin == null && !effect && !mob.entity.hasLineOfSight(attacker)) return null
         val guarded = !effect && guarding(mob) &&
-            normalizeHorizontal(attacker.position.sub(mob.entity.position)).dot(normalizeHorizontal(mob.entity.position.direction())) >= 0.5
+            normalizeHorizontal(source.sub(mob.entity.position)).dot(normalizeHorizontal(mob.entity.position.direction())) >= 0.5
         val healthBefore = mob.life.health
         val mitigated = amount * if (guarded) mob.definition.frontalDamageMultiplier else 1.0
         val gated = if (mob.boss) minOf(mitigated, (mob.life.health - mob.life.maximumHealth * bossGateFraction).coerceAtLeast(0.0)) else mitigated
@@ -491,6 +518,7 @@ class QuestEncounterCombat(
         mob.abilities.cancel()
         telegraphs.clear(mob.entity.uuid)
         castingPose(mob, false)
+        mob.slows.clear()
         mob.slowedUntil = 0L
         mob.slowPercent = 0.0
         updateMovementSpeed(mob, now)
@@ -549,7 +577,9 @@ class QuestEncounterCombat(
     }
 
     private fun updateMovementSpeed(mob: Mob, now: Long) {
-        if (now >= mob.slowedUntil) mob.slowPercent = 0.0
+        mob.slows.values.removeAll { now >= it.until }
+        mob.slowPercent = mob.slows.values.maxOfOrNull { it.strength } ?: 0.0
+        mob.slowedUntil = mob.slows.values.maxOfOrNull { it.until } ?: 0L
         val speed = mob.definition.movementSpeed * (1.0 - mob.slowPercent)
         if (mob.entity.getAttribute(Attribute.MOVEMENT_SPEED).baseValue != speed) {
             mob.entity.getAttribute(Attribute.MOVEMENT_SPEED).baseValue = speed

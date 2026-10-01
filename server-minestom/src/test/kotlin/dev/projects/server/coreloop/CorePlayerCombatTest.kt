@@ -4,6 +4,7 @@ import dev.projects.server.mob.QuestEncounterCombat
 import net.minestom.server.Auth
 import net.minestom.server.MinecraftServer
 import net.minestom.server.coordinate.Pos
+import net.minestom.server.coordinate.Vec
 import net.minestom.server.component.DataComponents
 import net.minestom.server.entity.GameMode
 import net.minestom.server.entity.Player
@@ -956,6 +957,73 @@ class CorePlayerCombatTest {
         assertEquals(300.0-one*8,h.combat.bossHealth(),.00001)
         assertEquals(15.0,h.actor.resource);assertEquals(15.0,ally.resource)
     }
+    @Test fun `planted garden keeps damaging from its origin while caster takes cover and returns`() = arena(bossDistance=7.0) { h ->
+        h.mageGarden();h.actor.skill(1);h.ticks(6)
+        val one=300.0-h.combat.bossHealth();val start=h.player.position
+        for(z in 9..15) for(y in 40..43) h.instance.setBlock(10,y,z,Block.STONE)
+        h.player.teleport(start.add(5.0,0.0,0.0)).join()
+        h.ticks(60)
+        assertEquals(300.0-one*4,h.combat.bossHealth(),.00001,"Caster cover cannot reject a source-validated field hit")
+        h.player.teleport(start).join();h.ticks(30)
+        assertEquals(300.0-one*4,h.combat.bossHealth(),.00001);assertEquals(15.0,h.actor.resource)
+    }
+    @Test fun `supported visible plate works at its edge beside a hole without centring a new support sample on enemy`() = arena(bossDistance=7.0) { h ->
+        h.mageGarden();val mob=h.combat.entities().single();val start=mob.position
+        for(x in 12..14) for(z in 11..19) for(y in 36..39) h.instance.setBlock(x,y,z,Block.AIR)
+        h.actor.skill(1);mob.teleport(start.add(3.1,0.0,0.0)).join();h.ticks(6)
+        assertTrue(h.combat.bossHealth()<300.0,"Feet x=11.6 lie on the supported plate centred at x=11")
+        val first=h.combat.bossHealth()
+        mob.teleport(start.add(3.6,0.0,0.0)).join();h.ticks(30)
+        assertEquals(first,h.combat.bossHealth(),.00001)
+        mob.teleport(start.add(3.1,0.0,0.0)).join();h.ticks(4)
+        assertTrue(h.combat.bossHealth()<first)
+    }
+    @Test fun `sealed boss damage rejections never spend garden hit budget before the seal opens`() = arena(bossDistance=7.0) { h ->
+        h.mageGarden();h.actor.skill(1);h.combat.sealBoss(true);h.ticks(46)
+        assertEquals(300.0,h.combat.bossHealth());assertEquals(0.0,h.actor.resource)
+        h.combat.sealBoss(false);h.ticks(4)
+        val one=300.0-h.combat.bossHealth();assertTrue(one>0)
+        h.ticks(60);assertEquals(300.0-one*4,h.combat.bossHealth(),.00001);assertEquals(15.0,h.actor.resource)
+    }
+    @Test fun `occupied garden refresh cannot extend another stronger slow through its expiry`() = arena(bossDistance=7.0) { h ->
+        h.mageGarden();val mob=h.combat.entities().single();val start=System.currentTimeMillis()
+        h.combat.tick(start);val base=mob.getAttribute(Attribute.MOVEMENT_SPEED).baseValue
+        h.combat.applySlow(mob.uuid,.6,1000)
+        h.actor.skill(1);h.ticks(6)
+        h.combat.tick(start+900);h.ticks(4)
+        h.combat.tick(start+1001);h.ticks(4)
+        assertEquals(base*.9,mob.getAttribute(Attribute.MOVEMENT_SPEED).baseValue,.00001)
+        h.combat.applySlow(mob.uuid,.15,2000)
+        mob.teleport(mob.position.add(8.0,0.0,0.0)).join();h.ticks(4)
+        h.combat.tick(start+1400)
+        assertEquals(base*.925,mob.getAttribute(Attribute.MOVEMENT_SPEED).baseValue,.00001,"Only the independent ice MOD remains after garden exit")
+    }
+    @Test fun `full display budget never creates an invisible active garden and refunds its cost`() = arena(bossDistance=7.0) { h ->
+        h.mageGarden();CoreCombatPresentation.pack(h.player,true)
+        val fillers=List(8) { CoreCombatMeshes(h.player) }
+        val skill=CoreSkillCatalog.skills(CoreClass.WARRIOR).first()
+        try {
+            for(mesh in fillers) repeat(48) { mesh.play(CoreSkillEffect(CoreClass.WARRIOR,skill,h.player.position,Vec(0.0,0.0,1.0))) }
+            assertEquals(384,fillers.sumOf { it.size })
+            h.actor.skill(1);h.ticks(6)
+            assertEquals(0,h.actor.activeGardens);assertEquals(300.0,h.combat.bossHealth());assertEquals(0.0,h.actor.resource)
+            assertEquals(100,h.actor.mana);assertEquals(0,h.actor.cooldownRemaining(1))
+            fillers.first().cancel();h.actor.skill(1);h.ticks(6)
+            assertEquals(1,h.actor.activeGardens);assertTrue(h.combat.bossHealth()<300.0)
+        } finally { fillers.forEach { it.cancel() };CoreCombatPresentation.forget(h.player) }
+    }
+    @Test fun `unpacked garden preparation is visible every tick before the first accepted hit`() = arena(bossDistance=7.0) { h ->
+        h.mageGarden();val packets=(h.player.playerConnection as MemoryConnection).packets
+        h.actor.skill(1)
+        repeat(5) {
+            packets.clear();h.ticks(1)
+            assertEquals(300.0,h.combat.bossHealth());assertEquals(0,h.actor.activeGardens)
+            assertTrue(packets.any { it.javaClass.simpleName=="ParticlePacket" })
+        }
+        packets.clear();h.ticks(1)
+        assertEquals(1,h.actor.activeGardens);assertTrue(h.combat.bossHealth()<300.0)
+        assertTrue(packets.any { it.javaClass.simpleName=="ParticlePacket" })
+    }
     @Test fun `instance transfer clears garden even when encounter reference was not changed yet`() = arena(bossDistance=7.0) { h ->
         h.mageGarden();h.actor.skill(1);h.ticks(6);val first=h.combat.bossHealth()
         val map=MinecraftServer.getInstanceManager().createInstanceContainer()
@@ -1021,7 +1089,7 @@ class CorePlayerCombatTest {
             actor.reset()
         }
 
-        fun ticks(count: Int) = repeat(count) { actor.tick() }
+        fun ticks(count: Int) = repeat(count) { instance.worldAge++;actor.tick() }
 
         override fun close() {
             actor.resetActions();otherActors.forEach { it.resetActions();it.player.remove() }
@@ -1032,7 +1100,8 @@ class CorePlayerCombatTest {
     }
 
     private class MemoryConnection : PlayerConnection() {
-        override fun sendPacket(packet: SendablePacket) = Unit
+        val packets=mutableListOf<SendablePacket>()
+        override fun sendPacket(packet: SendablePacket) { packets+=packet }
         override fun getRemoteAddress(): SocketAddress = InetSocketAddress("127.0.0.1", 0)
     }
 }

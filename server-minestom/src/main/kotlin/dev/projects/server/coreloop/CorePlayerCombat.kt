@@ -275,9 +275,14 @@ internal class CorePlayerCombat(
                     val cells = action.gardenCells.orEmpty().filter { cell -> gardenSurface(cell,cellSize) == cell }
                     if(cells.isNotEmpty()) {
                         val field = CoreIceGarden(cells,tickNumber,action.definition.duration,cellSize)
-                        garden = PlantedGarden(field,action,enemies,player.instance)
-                        vfx.playSkill(CoreSkillEffect(CoreClass.MAGE,action.definition,action.origin,action.direction,gardenCells=cells))
-                        notice("氷の庭：6秒。敵を誘い、他の術を重ねる")
+                        if (vfx.playSkill(CoreSkillEffect(CoreClass.MAGE,action.definition,action.origin,action.direction,gardenCells=cells))) {
+                            garden = PlantedGarden(field,action,enemies,player.instance)
+                            notice("氷の庭：6秒。敵を誘い、他の術を重ねる")
+                        } else {
+                            manaValue = min(maxMana.toDouble(), manaValue + action.definition.mana)
+                            readyAt[action.id] = tickNumber
+                            notice("氷の庭を展開できませんでした。マナと再使用を戻します")
+                        }
                     }
                     pending = null
                 }
@@ -475,7 +480,7 @@ internal class CorePlayerCombat(
     }
 
     private fun hit(enemies: QuestEncounterCombat, id: UUID, multiplier: Double, skill: Boolean, heavy: Boolean = false, piercing: Boolean = false,
-        skillAction: PendingSkill? = pending, contact: Boolean = true) {
+        skillAction: PendingSkill? = pending, contact: Boolean = true, fieldOrigin: Pos? = null, accepted: (() -> Unit)? = null) {
         val epoch = actionEpoch
         val stats = sheet.mods
         val build = journey().build
@@ -506,8 +511,10 @@ internal class CorePlayerCombat(
         }
         val damage = CoreCombatMath.outgoing(baseDamage, type, tags, stats, critical) *
             (if (skill) skillAction!!.boost else 1.0) * classMultiplier * (if (tickNumber < whetstoneUntil) 1.2 else 1.0) * (if (weak) 1.25 else 1.0)
-        val applied = enemies.applyCalculatedDamage(id, player, damage, type, stats,
-            projectile = !classId.melee || definition?.motion == CoreSkillMotion.RAY || definition?.motion == CoreSkillMotion.FIELD || (definition?.radius ?: 0.0) > 7.0) ?: return
+        val applied = (if (fieldOrigin != null) enemies.applyCalculatedFieldDamage(id, player, fieldOrigin, damage, type, stats)
+            else enemies.applyCalculatedDamage(id, player, damage, type, stats,
+                projectile = !classId.melee || definition?.motion == CoreSkillMotion.RAY || definition?.motion == CoreSkillMotion.FIELD || (definition?.radius ?: 0.0) > 7.0)) ?: return
+        accepted?.invoke()
         val lesson = if (skill) 1 else 0
         if (!journey().knows(lesson) && tickNumber - (lessonAttempts[lesson] ?: -100L) >= 20) {
             lessonAttempts[lesson] = tickNumber; onLesson(lesson)
@@ -729,6 +736,7 @@ internal class CorePlayerCombat(
     fun revive(fraction: Double) { require(fraction in .1..1.0); reset(); health = maxHealth * fraction; syncVanillaHealth() }
     fun resetActions() {
         actionEpoch++
+        garden?.let { it.encounter.clearSlowSource(it.field.slowSource) }
         garden = null
         normal.reset(); pending = null; shot = null; lastConduitGain = -1; castCharges = 0; skillBoost = 1.0; queuedSkill = null; queuedDodge = false; burns.clear()
         normalEmpowerment = 1.0
@@ -779,22 +787,26 @@ internal class CorePlayerCombat(
         val field = planted.field
         if(planted.encounter !== enemies || planted.instance !== player.instance || classId != CoreClass.MAGE ||
             player.position.distance(planted.action.origin) > 24) {
+            enemies.clearSlowSource(field.slowSource); planted.encounter.clearSlowSource(field.slowSource)
             garden = null; vfx.clearGarden(); return
         }
         if(!field.active(tickNumber)) {
+            enemies.clearSlowSource(field.slowSource)
             garden = null; sound(SoundEvent.BLOCK_GLASS_BREAK,.3f,1.6f); return
         }
         if(tickNumber == field.endsAt-20) sound(SoundEvent.BLOCK_AMETHYST_BLOCK_CHIME,.35f,.65f)
         if((tickNumber-field.openedAt) % 10 == 0L) vfx.gardenBoundary(field.cells,field.cellSize)
         if((tickNumber-field.openedAt) % CoreIceGarden.CHECK_INTERVAL != 0L) return
         val epoch = actionEpoch
+        val supported = field.cells.filter { gardenSurface(it,field.cellSize) == it }.toSet()
         for(target in enemies.combatTargets()) {
             val feet = enemies.positionOf(target.id) ?: continue
-            if(!field.contains(feet) || gardenSurface(feet) == null || !clearLine(planted.action.origin,feet)) continue
+            if(field.cellAt(feet,supported) == null || !clearLine(planted.action.origin,feet)) continue
             // QuestEncounterCombat halves boss slow: .20 here yields only 10% and never an interrupt.
             val slow = if(enemies.isBoss(target.id)) .2 else if(journey().build.keystone == 2) .5 else .4
-            enemies.applySlow(target.id,slow,CoreIceGarden.SLOW_MILLIS)
-            if(field.claimHit(target.id,tickNumber)) hit(enemies,target.id,1.0,skill=true,skillAction=planted.action,contact=field.firstHit(target.id))
+            enemies.applySlow(target.id,slow,CoreIceGarden.SLOW_MILLIS,field.slowSource)
+            if(field.canHit(target.id,tickNumber)) hit(enemies,target.id,1.0,skill=true,skillAction=planted.action,
+                contact=field.hitCount(target.id)==0,fieldOrigin=planted.action.origin,accepted={ field.claimHit(target.id,tickNumber) })
             if(!actionsValid(enemies,epoch)) return
         }
     }
