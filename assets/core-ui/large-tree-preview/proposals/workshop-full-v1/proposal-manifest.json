@@ -1,0 +1,11 @@
+{
+  "schema": "projects.passive-workshop-full.v1",
+  "sourceCommit": "c97ea4a3",
+  "sameEmbeddedProgressionGraph": true,
+  "sourceGraphSha256": "b04169fcdb5f9f020d8f4e0e36d1a035e0b9fee359e118aa811195fdaced56d7",
+  "displayProjectionOnly": true,
+  "scope": "All 645 nodes, 952 edges, 47 groups, existing pan/zoom and progression preview. Five mirrored starts.",
+  "nativeMinecraft": false,
+  "activeSkillsObtained": false,
+  "originalsChanged": false
+}

@@ -1,0 +1,84 @@
+{
+  "sourceNodes": 645,
+  "displayNodes": 645,
+  "sourceEdges": 952,
+  "displayEdges": 952,
+  "groups": 47,
+  "roots": {
+    "mage": [
+      0,
+      -400
+    ],
+    "tank": [
+      -346.41,
+      -200
+    ],
+    "ranger": [
+      346.41,
+      -200
+    ],
+    "warrior": [
+      -346.41,
+      200
+    ],
+    "assassin": [
+      346.41,
+      200
+    ]
+  },
+  "fixedOpeningNodes": 50,
+  "relaxationIterations": 420,
+  "maxEndpointDistance": 574.333,
+  "endpointDistanceOver600": 0,
+  "worldNodeOverlaps": [],
+  "routedCorrections": 57,
+  "localGridDetours": 0,
+  "unresolvedEdgeNodeCollisions": [],
+  "nonVertexCrossingsMarkedWithGaps": 79,
+  "sourceGraphChanged": false,
+  "progressionChanged": false,
+  "maxRoutedLength": 596.151,
+  "routedLengthOver600": 0,
+  "longestRoutedEdges": [
+    {
+      "a": "r18_26_1",
+      "b": "r18_26_2",
+      "length": 596.151
+    },
+    {
+      "a": "g21n5",
+      "b": "g21n6",
+      "length": 595.629
+    },
+    {
+      "a": "g21n0",
+      "b": "join_assassin_2",
+      "length": 591.128
+    },
+    {
+      "a": "g21n0",
+      "b": "g21n3",
+      "length": 587.348
+    },
+    {
+      "a": "g21n6",
+      "b": "g21n7",
+      "length": 582.73
+    },
+    {
+      "a": "g18n5",
+      "b": "g18n7",
+      "length": 574.333
+    },
+    {
+      "a": "r18_26_2",
+      "b": "g26n1",
+      "length": 574.311
+    },
+    {
+      "a": "g26n3",
+      "b": "r26_28_1",
+      "length": 574.279
+    }
+  ]
+}
