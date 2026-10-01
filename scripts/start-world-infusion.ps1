@@ -5,11 +5,13 @@ param(
     [int]$MaxMemoryMb = 512,
     [switch]$ConcurrentInjection,
     [switch]$BudgetedEnergy,
+    [switch]$ChargedCore,
     [ValidateRange(0,18)][int]$PowerPerSecond = 0,
     [ValidateRange(0.0,1.0)][double]$AuxiliarySupply = 0,
     [switch]$Stop
 )
 $ErrorActionPreference = 'Stop'
+if ($ChargedCore -and -not $BudgetedEnergy) { throw '-ChargedCore requires -BudgetedEnergy' }
 $projectRoot = Split-Path -Parent $PSScriptRoot
 $runDirectory = Join-Path $projectRoot $(if ($BudgetedEnergy) { 'server-minestom/run/world-infusion-energy' } elseif ($ConcurrentInjection) { 'server-minestom/run/world-infusion-confluence' } else { 'server-minestom/run/world-infusion' })
 $recordPath = Join-Path $runDirectory 'owned-process.json'
@@ -50,6 +52,7 @@ $arguments = @("-Xmx${MaxMemoryMb}m", '-XX:ActiveProcessorCount=2', '-Dfile.enco
 if ($BudgetedEnergy) {
     $arguments = @('-Dprojects.infusion.energyBudgeted=true', "-Dprojects.infusion.powerPerSecond=$PowerPerSecond") + $arguments
 }
+if ($ChargedCore) { $arguments = @('-Dprojects.infusion.chargedCore=true') + $arguments }
 if ($ConcurrentInjection -and -not $BudgetedEnergy) {
     $supplyText = $AuxiliarySupply.ToString([System.Globalization.CultureInfo]::InvariantCulture)
     $arguments = @('-Dprojects.infusion.concurrent=true', "-Dprojects.infusion.energy=$supplyText") + $arguments

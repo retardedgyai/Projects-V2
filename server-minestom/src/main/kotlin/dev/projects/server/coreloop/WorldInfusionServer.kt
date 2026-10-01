@@ -102,7 +102,8 @@ internal object WorldInfusionServer {
         val confluenceEnabled:Boolean=java.lang.Boolean.getBoolean("projects.infusion.concurrent"),
         var demoEnergySupply:Double=System.getProperty("projects.infusion.energy","0").toDouble().coerceIn(0.0,1.0),
         val energyEnabled:Boolean=java.lang.Boolean.getBoolean("projects.infusion.energyBudgeted"),
-        var demoPowerPerSecond:Int=System.getProperty("projects.infusion.powerPerSecond","0").toInt()) {
+        var demoPowerPerSecond:Int=System.getProperty("projects.infusion.powerPerSecond","0").toInt(),
+        val chargedCoreEnabled:Boolean=java.lang.Boolean.getBoolean("projects.infusion.chargedCore")) {
         init { require(state.energy==null || energyEnabled);if(energyEnabled && state.phase in setOf(InfusionPhase.ESSENTIA,InfusionPhase.INGREDIENTS))require(state.energy!=null);WorldInfusionEnergy.Supply(demoPowerPerSecond) }
         var packed=false
         private var ticks=0L
@@ -119,6 +120,7 @@ internal object WorldInfusionServer {
         @Volatile private var closed=false
         internal val isClosed get()=closed
         internal fun smokeEntityIds()=smokeDisplays.values.map { it.entity.entityId }.toSet()
+        internal fun smokeKeys()=smokeDisplays.keys.toSet()
         internal data class SmokeStats(var born:Long=0,var removed:Long=0,var moves:Long=0,var metadata:Long=0,var peak:Int=0)
         internal val smokeStats=SmokeStats()
         private val animation=WorldInfusionAnimation.Track()
@@ -315,7 +317,7 @@ internal object WorldInfusionServer {
                 }
             }
             val visualState=if(energyEnabled && power.perSecond==0 && state.phase in setOf(InfusionPhase.ESSENTIA,InfusionPhase.INGREDIENTS))state.copy(paused=true) else state
-            val pose=if(confluenceEnabled || energyEnabled)confluenceTrack.step(visualState,ticks,drive,completed,if(energyEnabled)power.perSecond/18.0*4.5 else null) else animation.step(state,ticks,completed)
+            val pose=if(confluenceEnabled || energyEnabled)confluenceTrack.step(visualState,ticks,drive,completed,if(energyEnabled)power.perSecond/18.0*4.5 else null,chargedCoreEnabled && energyEnabled) else animation.step(state,ticks,completed)
             val intake=state.matrix?.let { pose.inlet(Vec(it.x+.5,it.y+3.4,it.z+.5)) }
             if(ticks%2==0L && packed && (lastCorePose?.yaw!=pose.yaw || lastCorePose?.neutralTint!=pose.neutralTint)) {
                 coreDisplay?.editEntityMeta(ItemDisplayMeta::class.java) { m->
@@ -331,9 +333,15 @@ internal object WorldInfusionServer {
             if(ticks%2==0L) {
                 val finish=if((confluenceEnabled || energyEnabled) && state.matrix!=null)state.matrix!!.let {
                     confluenceTrack.finishSamples(state,ticks,confluenceClock,drive,Vec(it.x+.5,it.y+3.4,it.z+.5),Vec(it.x+.5,it.y+1.15,it.z+.5),
-                        channelOverride=if(power.perSecond>0)WorldInfusionEnergy.channel(state) else null,useChannelOverride=energyEnabled,pedestal=energyEnabled)
+                        channelOverride=if(power.perSecond>0 && !chargedCoreEnabled)WorldInfusionEnergy.channel(state) else null,useChannelOverride=energyEnabled,pedestal=energyEnabled)
                 } else emptyList()
-                val frame=(WorldInfusionSmoke.frame(smoke,ticks,intake)+finish).take(WorldInfusionSmoke.MAX_SAMPLES)
+                val charge=if(chargedCoreEnabled && energyEnabled && state.matrix!=null)state.matrix!!.let {
+                    WorldInfusionCharge.samples(state,ticks,pose,Vec(it.x+.5,it.y+3.4,it.z+.5),Vec(it.x+.5,it.y+1.15,it.z+.5),
+                        WorldInfusionEnergy.channel(state),power.perSecond>0)
+                } else emptyList()
+                val jarFrame=WorldInfusionSmoke.frame(smoke,ticks,intake)
+                val frame=if(chargedCoreEnabled && energyEnabled)WorldInfusionCharge.frame(charge,finish,jarFrame)
+                    else (jarFrame+finish).take(WorldInfusionSmoke.MAX_SAMPLES)
                 val active=if(packed)frame.map { it.key }.toSet() else emptySet()
                 smokeDisplays.entries.forEach { (key,e)->if(key !in active)dropSmoke(key,e) }
                 frame.forEach { mote->
