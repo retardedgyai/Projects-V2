@@ -42,6 +42,7 @@
   "allocationReset": true,
   "dragWheelPinch": true,
   "hiddenPanelNodeInputBlocked": true,
+  "mobileToolbarWithinHeader": true,
   "search": true,
   "classButtons": 5,
   "externalRequests": 0,
