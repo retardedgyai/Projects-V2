@@ -1,0 +1,160 @@
+{
+  "schema": "projects.large-tree-fixed-ui-verification.v1",
+  "status": "PASS",
+  "views": [
+    {
+      "name": "desktop",
+      "width": 1920,
+      "height": 1180,
+      "panels": [
+        {
+          "selector": ".map-info",
+          "visible": true,
+          "bg": "rgb(32, 37, 29)",
+          "pointerEvents": "auto",
+          "rect": {
+            "left": 12,
+            "top": 82,
+            "right": 327.265625,
+            "bottom": 213.96875
+          },
+          "probeChangedPixels": 0
+        },
+        {
+          "selector": ".filterbar",
+          "visible": true,
+          "bg": "rgb(32, 37, 29)",
+          "pointerEvents": "auto",
+          "rect": {
+            "left": 1229.015625,
+            "top": 88,
+            "right": 1533,
+            "bottom": 130
+          },
+          "probeChangedPixels": 0
+        },
+        {
+          "selector": ".minimap",
+          "visible": true,
+          "bg": "rgb(32, 39, 29)",
+          "pointerEvents": "auto",
+          "rect": {
+            "left": 17,
+            "top": 987.703125,
+            "right": 193,
+            "bottom": 1131
+          },
+          "probeChangedPixels": 0
+        },
+        {
+          "selector": ".mapnav",
+          "visible": true,
+          "bg": "rgb(32, 39, 29)",
+          "pointerEvents": "auto",
+          "rect": {
+            "left": 1243.78125,
+            "top": 1082,
+            "right": 1533,
+            "bottom": 1131
+          },
+          "probeChangedPixels": 0
+        },
+        {
+          "selector": ".sidebar",
+          "visible": true,
+          "bg": "rgb(36, 43, 34)",
+          "pointerEvents": "auto",
+          "rect": {
+            "left": 1550,
+            "top": 70,
+            "right": 1920,
+            "bottom": 1148
+          },
+          "probeChangedPixels": 0
+        }
+      ],
+      "hiddenNodes": [
+        "g7n4",
+        "join_templar_0",
+        "link_templar_0_3"
+      ],
+      "leftRightWheelBlocked": true
+    },
+    {
+      "name": "mobile",
+      "width": 390,
+      "height": 844,
+      "panels": [
+        {
+          "selector": ".map-info",
+          "visible": true,
+          "bg": "rgb(32, 37, 29)",
+          "pointerEvents": "auto",
+          "rect": {
+            "left": 12,
+            "top": 184,
+            "right": 296.546875,
+            "bottom": 272
+          },
+          "probeChangedPixels": 0
+        },
+        {
+          "selector": ".filterbar",
+          "visible": false,
+          "bg": "rgb(32, 37, 29)",
+          "pointerEvents": "auto",
+          "rect": {
+            "left": 0,
+            "top": 0,
+            "right": 0,
+            "bottom": 0
+          }
+        },
+        {
+          "selector": ".minimap",
+          "visible": false,
+          "bg": "rgb(32, 39, 29)",
+          "pointerEvents": "auto",
+          "rect": {
+            "left": 0,
+            "top": 0,
+            "right": 0,
+            "bottom": 0
+          }
+        },
+        {
+          "selector": ".mapnav",
+          "visible": true,
+          "bg": "rgb(32, 39, 29)",
+          "pointerEvents": "auto",
+          "rect": {
+            "left": 104,
+            "top": 684,
+            "right": 381,
+            "bottom": 740
+          },
+          "probeChangedPixels": 0
+        },
+        {
+          "selector": ".sidebar",
+          "visible": true,
+          "bg": "rgb(36, 43, 34)",
+          "pointerEvents": "auto",
+          "rect": {
+            "left": 0,
+            "top": 752,
+            "right": 390,
+            "bottom": 2313.84375
+          },
+          "probeChangedPixels": 0
+        }
+      ],
+      "hiddenNodes": [
+        "g7n4"
+      ],
+      "leftRightWheelBlocked": true
+    }
+  ],
+  "method": "Paint the whole main canvas magenta; require identical composed pixels inside each visible fixed panel. Real pointer events over covered nodes must not select/refund/zoom.",
+  "graphSHA256": "b04169fcdb5f9f020d8f4e0e36d1a035e0b9fee359e118aa811195fdaced56d7"
+}

@@ -27,5 +27,11 @@ result={'schema':'projects.large-tree-overlap-review-evidence.v1','referenceComm
  'maxRoutedLength':round(max(lengths),3),'routedLengthsOver600':0,'lineAudit':after['lineAudit'],'coordinates':coordinates,'views':views,
  'scope':'Standalone display review. Native Minecraft integration, combat balance and save migration remain unimplemented.',
  'fileSHA256':{p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in [OUT/'graph.json',OUT/'layout-plan.json',OUT/'line-audit.json',OUT/'preview-labels.js',OUT/'ProjectS_LargeTree_Route_Preview.html',*sorted(OUT.glob('ProjectS_Overlap_*.png'))]}}
+if (OUT/'fixed-ui-verification.json').exists():
+ fixed=json.loads((OUT/'fixed-ui-verification.json').read_text(encoding='utf-8'));assert fixed['status']=='PASS'
+ fixed_reference=json.loads(subprocess.check_output(git+['show','7bbd730d:assets/core-ui/large-tree-preview/graph.json'],cwd=ROOT).decode())
+ assert after==fixed_reference,'fixed UI correction changed graph data'
+ result['fixedUI']=fixed;result['fixedUIReferenceCommit']='7bbd730d';result['fixedUIChangedGraphData']=False
+ result['fileSHA256'].update({p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in (OUT/'fixed-ui-verification.json',OUT/'preview.css')})
 (OUT/'ProjectS_Overlap_Review_Evidence.json').write_text(json.dumps(result,ensure_ascii=False,indent=2),encoding='utf-8')
 print(json.dumps({k:result[k] for k in ('status','changedCoordinatesOver0_1','maxCoordinateMove','maxRoutedLength','routedLengthsOver600')}))

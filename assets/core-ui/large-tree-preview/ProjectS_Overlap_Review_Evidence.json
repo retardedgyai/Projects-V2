@@ -8137,7 +8137,7 @@
           "z": 0.3269144765576167
         },
         "arranged": false,
-        "drawMs": 19.400000035762787
+        "drawMs": 25
       },
       {
         "phase": "Before",
@@ -8508,7 +8508,7 @@
           "z": 0.35082165237559587
         },
         "arranged": false,
-        "drawMs": 11.899999976158142
+        "drawMs": 14.100000023841858
       },
       {
         "phase": "Before",
@@ -8907,7 +8907,7 @@
           "z": 0.35082165237559587
         },
         "arranged": false,
-        "drawMs": 11.5
+        "drawMs": 12.699999988079071
       },
       {
         "phase": "Before",
@@ -9329,7 +9329,7 @@
           "z": 0.3262943600729197
         },
         "arranged": false,
-        "drawMs": 7.199999988079071
+        "drawMs": 7.300000011920929
       },
       {
         "phase": "Before",
@@ -9660,7 +9660,7 @@
           "z": 0.25437881798642575
         },
         "arranged": false,
-        "drawMs": 12
+        "drawMs": 7.300000011920929
       },
       {
         "phase": "BeforeOverview",
@@ -11445,7 +11445,7 @@
           "z": 0.1050643535581849
         },
         "arranged": false,
-        "drawMs": 26
+        "drawMs": 18.700000047683716
       },
       {
         "phase": "After",
@@ -11774,7 +11774,7 @@
           "z": 0.3269144765576167
         },
         "arranged": true,
-        "drawMs": 24.899999976158142
+        "drawMs": 25.69999998807907
       },
       {
         "phase": "After",
@@ -12126,7 +12126,7 @@
           "z": 0.35082165237559587
         },
         "arranged": true,
-        "drawMs": 15.699999988079071
+        "drawMs": 14.899999976158142
       },
       {
         "phase": "After",
@@ -12506,7 +12506,7 @@
           "z": 0.35082165237559587
         },
         "arranged": true,
-        "drawMs": 16
+        "drawMs": 14
       },
       {
         "phase": "After",
@@ -12662,6 +12662,13 @@
             "edge": [
               "g34n9",
               "g34n5"
+            ]
+          },
+          {
+            "text": "弱点",
+            "edge": [
+              "g48n7",
+              "g48n8"
             ]
           },
           {
@@ -12881,15 +12888,15 @@
           },
           {
             "box": {
-              "left": 1361.4962917201512,
-              "right": 1381.4962917201512,
-              "top": 1006.1695291971648,
-              "bottom": 1016.1695291971648
+              "left": 1377.4962917201512,
+              "right": 1397.4962917201512,
+              "top": 990.1695291971648,
+              "bottom": 1000.1695291971648
             },
             "owner": null,
             "text": "弱点",
-            "dx": 0,
-            "dy": -32
+            "dx": 16,
+            "dy": -48
           }
         ],
         "cam": {
@@ -12898,7 +12905,7 @@
           "z": 0.3262943600729197
         },
         "arranged": true,
-        "drawMs": 11.400000035762787
+        "drawMs": 12.699999988079071
       },
       {
         "phase": "After",
@@ -13074,15 +13081,15 @@
           },
           {
             "box": {
-              "left": 134.50935832188804,
-              "top": 128.10749697412228,
-              "right": 154.50935832188804,
-              "bottom": 138.10749697412228
+              "left": 142.50935832188804,
+              "right": 162.50935832188804,
+              "top": 152.10749697412228,
+              "bottom": 162.10749697412228
             },
             "owner": null,
             "text": "範囲",
-            "dx": 0,
-            "dy": 0
+            "dx": 8,
+            "dy": 24
           },
           {
             "box": {
@@ -13163,7 +13170,7 @@
           "z": 0.25437881798642575
         },
         "arranged": true,
-        "drawMs": 10
+        "drawMs": 14.900000035762787
       },
       {
         "phase": "Close",
@@ -13444,14 +13451,14 @@
           },
           {
             "box": {
-              "left": 321.9980068625781,
-              "right": 341.9980068625781,
+              "left": 337.9980068625781,
+              "right": 357.9980068625781,
               "top": 8.069091966717735,
               "bottom": 18.069091966717735
             },
             "owner": null,
             "text": "範囲",
-            "dx": 96,
+            "dx": 112,
             "dy": 16
           }
         ],
@@ -13461,7 +13468,7 @@
           "z": 0.55
         },
         "arranged": true,
-        "drawMs": 8.100000023841858
+        "drawMs": 10.699999988079071
       },
       {
         "phase": "Close",
@@ -13568,13 +13575,6 @@
             "edge": [
               "origin_ranger",
               "opening_ranger_1_1"
-            ]
-          },
-          {
-            "text": "アサシン",
-            "edge": [
-              "origin_assassin",
-              "opening_assassin_0_1"
             ]
           },
           {
@@ -13758,14 +13758,14 @@
           },
           {
             "box": {
-              "left": 1191.5719113066796,
+              "left": 1183.5719113066796,
+              "right": 1236.3718990996483,
               "top": 1041.65,
-              "right": 1244.3718990996483,
               "bottom": 1053.65
             },
             "owner": "origin_assassin",
             "text": "アサシン",
-            "dx": 0,
+            "dx": -8,
             "dy": 0
           },
           {
@@ -13787,7 +13787,7 @@
           "z": 0.55
         },
         "arranged": true,
-        "drawMs": 6
+        "drawMs": 14.699999988079071
       },
       {
         "phase": "Close",
@@ -14091,7 +14091,7 @@
           "z": 0.55
         },
         "arranged": true,
-        "drawMs": 7.5
+        "drawMs": 8.5
       },
       {
         "phase": "Close",
@@ -14270,14 +14270,14 @@
           },
           {
             "box": {
-              "left": 320.2280993744728,
-              "right": 359.82809021919934,
+              "left": 336.2280993744728,
+              "right": 375.82809021919934,
               "top": 90.14999999999995,
               "bottom": 102.14999999999995
             },
             "owner": "origin_mage",
             "text": "メイジ",
-            "dx": 8,
+            "dx": 24,
             "dy": 0
           },
           {
@@ -14443,7 +14443,7 @@
           "z": 0.55
         },
         "arranged": true,
-        "drawMs": 8
+        "drawMs": 7.399999976158142
       },
       {
         "phase": "Close",
@@ -14747,7 +14747,7 @@
           "z": 0.55
         },
         "arranged": true,
-        "drawMs": 7
+        "drawMs": 6.400000035762787
       },
       {
         "phase": "Overview",
@@ -15497,7 +15497,7 @@
           "z": 0.1050643535581849
         },
         "arranged": true,
-        "drawMs": 25.30000001192093
+        "drawMs": 39.89999997615814
       }
     ]
   },
@@ -15506,201 +15506,188 @@
     "graph.json": "b04169fcdb5f9f020d8f4e0e36d1a035e0b9fee359e118aa811195fdaced56d7",
     "layout-plan.json": "47889566655fab60b115fc46b12db8dc84b427e4d815b1fa8527e75203434d35",
     "line-audit.json": "b1d3cad8be1b82552af357c3b1940357feb36b9d19910ab9512bc5a86b8cb7e3",
-    "preview-labels.js": "c53794100753996b11b6bfeff731ca6a769b6e1c5f0c2b3a776a91f9b90b665d",
-    "ProjectS_LargeTree_Route_Preview.html": "0f43eb93ec82b379699305caf73f333e2d4d1a0230c48e68db9117c04b82dc63",
-    "ProjectS_Overlap_Assassin_After.png": "97ab6dcc2bb16d6dc7e21bba93a543d4427a528a3984c01e3499989fe7db05f5",
+    "preview-labels.js": "ae9bc8ac1e6c9dd6558e0d9cd6698ae8e47a36b409ab91341af3bf042d641b58",
+    "ProjectS_LargeTree_Route_Preview.html": "0a0ac04833be69fbd05d22c33c65ec067fbded05776233699891a3e9f28ef6a7",
+    "ProjectS_Overlap_Assassin_After.png": "47f1fd12018d8ddc0c18c41ace3c78b1caf221c851a941b212975d210dda7cbf",
     "ProjectS_Overlap_Assassin_Before.png": "0c9f17108ffed80f92528279ae93f834d98e068916c368a7792709a1f7dbd52a",
-    "ProjectS_Overlap_Assassin_Close.png": "68037c21b85e6d9ec2cd4ad4f566945a6f2eb3c66c49553ca0b0f867849d20f7",
-    "ProjectS_Overlap_Mage_After.png": "9aefa4a51c18a872fe7f0b669a3b1108ac0a8576d3f6c8ce01c3f1e196d44b63",
+    "ProjectS_Overlap_Assassin_Close.png": "35ac6800b9bafb506da22db34388477f4bcf0a9c189991e2dbead699434196a6",
+    "ProjectS_Overlap_Mage_After.png": "de41ddfbbf65f2ebcfa4bc98fc285081a389c62cd15f5cbf7585714b12f88d8c",
     "ProjectS_Overlap_Mage_Before.png": "9d6b0e6fb8ca51c236433b777175c7b8532626567f50fcaa949b0a2dbfc96ea2",
-    "ProjectS_Overlap_Mage_Close.png": "09eddd495866e5b21e841ebf2b67b42b2e29e3e97feabdfb924de89adf486cae",
-    "ProjectS_Overlap_Overview.png": "885626e8ff7e53ed221177610ed93cbbcaf4fbb55d82cd1603088cfaa9d325a1",
+    "ProjectS_Overlap_Mage_Close.png": "c93ff861466eff26c9266c29cc4a730124105182247d609dea22110ba8d6cf18",
+    "ProjectS_Overlap_Overview.png": "c2d18e68f6efb160975ea615ae070d47afe8dca8ce4a2aef85079f157d36766d",
     "ProjectS_Overlap_Overview_Before.png": "ebdcb41aeb48e45aa4a240e7a78316ec5d99f9fc8f85d8beffb7f4cd90df939a",
-    "ProjectS_Overlap_Ranger_After.png": "67655f7c65489638a3646a03d9092741c7733f9e4155591878156b68853136ee",
+    "ProjectS_Overlap_Ranger_After.png": "a328d5f4e62efacfdb5e37b439a3976da608b2ef3faae0d66676355e4f564751",
     "ProjectS_Overlap_Ranger_Before.png": "9a5816d82360117d993ddb7b0b99188b294fbe9471a1a4d64387ec996828b3d1",
-    "ProjectS_Overlap_Ranger_Close.png": "8f1533ec38c1060770237adf20ec1a4eab2706b3d31d4ec8b9d746507e333060",
-    "ProjectS_Overlap_Tank_After.png": "1b86d1c3f8b2ad9731fad0aed50c65691e20ecdd58358c4459107dcc6333850c",
+    "ProjectS_Overlap_Ranger_Close.png": "78ac8bf97b62d03bb8a576df24a4207c6cf97cfb3f2470da74df69761c79acb6",
+    "ProjectS_Overlap_Tank_After.png": "e18ad9f1cf9a7615765c779bed323a76d1f2441f71f606f01de74bdcd32ec335",
     "ProjectS_Overlap_Tank_Before.png": "7ae30acbefffaf83643c22f54eaed60d02df9325c39e6c74fdf79513213f0b18",
-    "ProjectS_Overlap_Tank_Close.png": "3d99508b3b4ba47b016af353f423b9a0a482659d7838c2dbd68072ca4089ae70",
-    "ProjectS_Overlap_Warrior_After.png": "208a39376f2495f0a3d781cc59eab0fadd63672189621b2b923f6a6fbfb4aea7",
+    "ProjectS_Overlap_Tank_Close.png": "b61566e3d01f92aaf9eee4f2c973d17d83f6b6502f227ad3e1a731e3e0997b8f",
+    "ProjectS_Overlap_Warrior_After.png": "993bec75ec2e015fc1f4a923982ab283097670065e810e0910bd052604a8dca0",
     "ProjectS_Overlap_Warrior_Before.png": "8924501921174364ed7964030557d113556c13a2e5d26f64a94c3145055b0a3e",
-    "ProjectS_Overlap_Warrior_Close.png": "cce9053fde6b30a524e2fef523d40fd911daf02f96bbde5dc7b231feec0e04a6"
+    "ProjectS_Overlap_Warrior_Close.png": "58789aba38a1e8570074e7a357cb24614c519ebfc21fdf572c229b7e2c3aa2c8",
+    "fixed-ui-verification.json": "adb0674e09fc798324ea043bbdeb6743c15ec25c8280f4781b89cafd54c4fed0",
+    "preview.css": "bf5deeeb51d5aec996e3d47109e6e299a37aa276aa932e222a948045bffa89a0"
   },
-  "deliveredLibraryFiles": [
-    {
-      "file": "ProjectS_LargeTree_Route_Preview.html",
-      "library_file_id": "libfile_4da9bc287be48191aec0465d2f14762e",
-      "version": 3
-    },
-    {
-      "file": "ProjectS_LargeTree_Graph_v1.json",
-      "library_file_id": "libfile_33796070ac748191b891a91164d76713",
-      "version": 3
-    },
-    {
-      "file": "ProjectS_LargeTree_Audit_v1.json",
-      "library_file_id": "libfile_896b100d4e2c8191b895e91462d4a283",
-      "version": 3
-    },
-    {
-      "file": "ProjectS_Overlap_Warrior_Before.png",
-      "library_file_id": "libfile_578235dcb18c8191925521fff796b710",
-      "version": 0
-    },
-    {
-      "file": "ProjectS_Overlap_Warrior_After.png",
-      "library_file_id": "libfile_2d5af8667fc0819194a509e02481d28a",
-      "version": 0
-    },
-    {
-      "file": "ProjectS_Overlap_Warrior_Close.png",
-      "library_file_id": "libfile_542529ff3c3481919e15fd2a477fb5c5",
-      "version": 0
-    },
-    {
-      "file": "ProjectS_Overlap_Tank_Before.png",
-      "library_file_id": "libfile_4b60635be2488191bb10a9eae04cea2f",
-      "version": 0
-    },
-    {
-      "file": "ProjectS_Overlap_Tank_After.png",
-      "library_file_id": "libfile_8393d4e1c314819198a333a18c9132a1",
-      "version": 0
-    },
-    {
-      "file": "ProjectS_Overlap_Tank_Close.png",
-      "library_file_id": "libfile_6d84e2a93e1081919d69b1e6f5213033",
-      "version": 0
-    },
-    {
-      "file": "ProjectS_Overlap_Mage_Before.png",
-      "library_file_id": "libfile_2525a90462408191a1d35627dba153a1",
-      "version": 0
-    },
-    {
-      "file": "ProjectS_Overlap_Mage_After.png",
-      "library_file_id": "libfile_38d1b3ab1d748191a0da4d9947ff62be",
-      "version": 0
-    },
-    {
-      "file": "ProjectS_Overlap_Mage_Close.png",
-      "library_file_id": "libfile_f955661bbb84819184026124fdbeeda7",
-      "version": 0
-    },
-    {
-      "file": "ProjectS_Overlap_Ranger_Before.png",
-      "library_file_id": "libfile_6f6bffa77c348191af39c97f01e53516",
-      "version": 0
-    },
-    {
-      "file": "ProjectS_Overlap_Ranger_After.png",
-      "library_file_id": "libfile_9211e94c2b3c8191a941b6673a1e387b",
-      "version": 0
-    },
-    {
-      "file": "ProjectS_Overlap_Ranger_Close.png",
-      "library_file_id": "libfile_977c18f901008191ab58e0475fd8465f",
-      "version": 0
-    },
-    {
-      "file": "ProjectS_Overlap_Assassin_Before.png",
-      "library_file_id": "libfile_b6f202e181b081919e78da9ad9d2963b",
-      "version": 0
-    },
-    {
-      "file": "ProjectS_Overlap_Assassin_After.png",
-      "library_file_id": "libfile_7f81a61f5f288191855a4e1e07e32a10",
-      "version": 0
-    },
-    {
-      "file": "ProjectS_Overlap_Assassin_Close.png",
-      "library_file_id": "libfile_f6bab1bd2ebc81918f5aa944997cdc1f",
-      "version": 0
-    },
-    {
-      "file": "ProjectS_Overlap_Overview_Before.png",
-      "library_file_id": "libfile_a610ab743018819197696d50d14cda1b",
-      "version": 0
-    },
-    {
-      "file": "ProjectS_Overlap_Overview.png",
-      "library_file_id": "libfile_78117b8ea06081918e21aee11092e9df",
-      "version": 0
-    }
-  ],
-  "browserVerification": {
+  "fixedUI": {
+    "schema": "projects.large-tree-fixed-ui-verification.v1",
     "status": "PASS",
-    "costComparisons": 75,
-    "allocationExamples": 40,
-    "equalSpendAndUsableExamples": 40,
-    "deadTollRegressions": 3,
-    "hypotheticalInputTests": 4,
-    "alternatives": [
+    "views": [
       {
-        "cost": 3,
-        "path": [
-          "origin_warrior",
-          "opening_warrior_0_1",
-          "opening_warrior_0_2",
-          "opening_warrior_2_3"
+        "name": "desktop",
+        "width": 1920,
+        "height": 1180,
+        "panels": [
+          {
+            "selector": ".map-info",
+            "visible": true,
+            "bg": "rgb(32, 37, 29)",
+            "pointerEvents": "auto",
+            "rect": {
+              "left": 12,
+              "top": 82,
+              "right": 327.265625,
+              "bottom": 213.96875
+            },
+            "probeChangedPixels": 0
+          },
+          {
+            "selector": ".filterbar",
+            "visible": true,
+            "bg": "rgb(32, 37, 29)",
+            "pointerEvents": "auto",
+            "rect": {
+              "left": 1229.015625,
+              "top": 88,
+              "right": 1533,
+              "bottom": 130
+            },
+            "probeChangedPixels": 0
+          },
+          {
+            "selector": ".minimap",
+            "visible": true,
+            "bg": "rgb(32, 39, 29)",
+            "pointerEvents": "auto",
+            "rect": {
+              "left": 17,
+              "top": 987.703125,
+              "right": 193,
+              "bottom": 1131
+            },
+            "probeChangedPixels": 0
+          },
+          {
+            "selector": ".mapnav",
+            "visible": true,
+            "bg": "rgb(32, 39, 29)",
+            "pointerEvents": "auto",
+            "rect": {
+              "left": 1243.78125,
+              "top": 1082,
+              "right": 1533,
+              "bottom": 1131
+            },
+            "probeChangedPixels": 0
+          },
+          {
+            "selector": ".sidebar",
+            "visible": true,
+            "bg": "rgb(36, 43, 34)",
+            "pointerEvents": "auto",
+            "rect": {
+              "left": 1550,
+              "top": 70,
+              "right": 1920,
+              "bottom": 1148
+            },
+            "probeChangedPixels": 0
+          }
         ],
-        "stats": {
-          "physical": 12,
-          "attackSpeed": 5,
-          "resource": 4
-        }
+        "hiddenNodes": [
+          "g7n4",
+          "join_templar_0",
+          "link_templar_0_3"
+        ],
+        "leftRightWheelBlocked": true
       },
       {
-        "cost": 3,
-        "path": [
-          "origin_warrior",
-          "opening_warrior_1_1",
-          "opening_warrior_1_2",
-          "opening_warrior_2_3"
+        "name": "mobile",
+        "width": 390,
+        "height": 844,
+        "panels": [
+          {
+            "selector": ".map-info",
+            "visible": true,
+            "bg": "rgb(32, 37, 29)",
+            "pointerEvents": "auto",
+            "rect": {
+              "left": 12,
+              "top": 184,
+              "right": 296.546875,
+              "bottom": 272
+            },
+            "probeChangedPixels": 0
+          },
+          {
+            "selector": ".filterbar",
+            "visible": false,
+            "bg": "rgb(32, 37, 29)",
+            "pointerEvents": "auto",
+            "rect": {
+              "left": 0,
+              "top": 0,
+              "right": 0,
+              "bottom": 0
+            }
+          },
+          {
+            "selector": ".minimap",
+            "visible": false,
+            "bg": "rgb(32, 39, 29)",
+            "pointerEvents": "auto",
+            "rect": {
+              "left": 0,
+              "top": 0,
+              "right": 0,
+              "bottom": 0
+            }
+          },
+          {
+            "selector": ".mapnav",
+            "visible": true,
+            "bg": "rgb(32, 39, 29)",
+            "pointerEvents": "auto",
+            "rect": {
+              "left": 104,
+              "top": 684,
+              "right": 381,
+              "bottom": 740
+            },
+            "probeChangedPixels": 0
+          },
+          {
+            "selector": ".sidebar",
+            "visible": true,
+            "bg": "rgb(36, 43, 34)",
+            "pointerEvents": "auto",
+            "rect": {
+              "left": 0,
+              "top": 752,
+              "right": 390,
+              "bottom": 2313.84375
+            },
+            "probeChangedPixels": 0
+          }
         ],
-        "stats": {
-          "hp": 8,
-          "attackSpeed": 5,
-          "resource": 4
-        }
+        "hiddenNodes": [
+          "g7n4"
+        ],
+        "leftRightWheelBlocked": true
       }
     ],
-    "refund": {
-      "removed": true,
-      "retained": true,
-      "blocked": false
-    },
-    "traps": {
-      "cross": false,
-      "bleed": false,
-      "burn": false,
-      "chain": false,
-      "selfShieldIsAlly": false,
-      "foreign": [
-        "氷の減速源（氷SLOW技能または氷追加MOD）（現在の入力なし）",
-        "選択職ではこの武器を装備できない"
-      ],
-      "ally": true,
-      "poisonReferenceGate": false
-    },
-    "checks": [
-      "5 roots / 47 clusters / 15 keys",
-      "same goal different rewards",
-      "alternate route retains connection",
-      "orphan refund refusal",
-      "weighted budget",
-      "trial exclusion",
-      "keyless mode",
-      "per-stat usable/unsupported",
-      "source-valid route filtering",
-      "equal-spend source-valid comparisons",
-      "4 hypothetical positive input tests",
-      "search",
-      "drag/wheel/pinch",
-      "mobile viewport"
-    ],
-    "externalRequests": 0,
-    "jsExceptions": 0,
-    "scope": "Standalone Windows Chrome desktop and mobile viewport; not iOS Safari or native Minecraft; combat balance unverified"
-  }
+    "method": "Paint the whole main canvas magenta; require identical composed pixels inside each visible fixed panel. Real pointer events over covered nodes must not select/refund/zoom.",
+    "graphSHA256": "b04169fcdb5f9f020d8f4e0e36d1a035e0b9fee359e118aa811195fdaced56d7"
+  },
+  "fixedUIReferenceCommit": "7bbd730d",
+  "fixedUIChangedGraphData": false
 }
