@@ -1,10 +1,28 @@
 # 共通スキルツリー・大盤面の経路比較（2026-10-01）
 
+## v3配置：長い線を実際に短くする
+
+v2 `3681aca4` と隣接・費用・恩恵・入力条件を同一にした位置だけの変更。645ノード・47地域・952辺・5起点・15 Keyを保つ。地域内の点をまとめ、戦士の3つの接続先の入口を近づけ、分岐・側道・合流を局所へ寄せた。起点の9点は分岐幅と元の向きを保つ。全体の幅は11,467→11,101、高さ9,489→8,826で、大盤面全体の一様縮小ではない。
+
+| 配置指標 | v2 | v3配置 |
+| --- | ---: | ---: |
+| 両端の直線距離 >600 | 74辺 | 0辺 |
+| 両端の直線距離 >1000 | 9辺 | 0辺 |
+| 最大両端距離 | 1212.133 | 583.105 |
+| routing後の非接続交差gap | 92 | 64 |
+| 未解決の線と点の衝突 | 0 | 0 |
+
+距離はノードの実位置で計測し、折れ線で長距離を隠した値ではない。交差による新しい隣接はない。`layout-plan.json` のcontract SHA-256は `823d7b6af80244a2dcb20922a683941a8d851523fdc585085767fb7f571141b9`。全ノードの位置以外、全辺のrouting以外、地域の幾何以外、および編成・road選択・費用方針の完全一致を検証した。
+
+5起点それぞれの、入力が成立する最初の2地域とその経路を、同じ1920×1180のChrome画面で前後比較する。両地域が入る自動framingのため拡大率は前後で違う。地域ID・入口点・費用は一致し、Warriorは範囲6pt／回復8pt。40同額投資例・240入力条件・75 Key到達費用は同じgraphに対する証拠で、強さや楽しさの証明ではない。64ptは仮の比較初期値。
+
+配置の拡大比較は独立レビュー用。交差は64件残り、地域ごとの恩恵の重複、職業の育成体験、iOS実機、本体統合と保存移行は未検証／未実施。HTMLを実ゲーム完成として扱わない。
+
 ## v2：独立レビューによる修正
 
 本人の「長すぎる一本道を作らないで」を、起点の先と全graphへ反映した。47クラスタ・645点・5起点・15末端Keyを保持し、新しい点は増やしていない。辺は736→952。Warriorの31接続点は分岐・合流・横断と地域入口へ再配分し、そのうち19点を物理・速度・資源・HP・装甲・範囲・移動のSmall投資へ変えた。残る長い区間も別経路へ再接続する。
 
-全Keyを除いたgraphで、次数2の中間点が連続する区間は最大11→2点。次の分岐・合流まで最大3辺/3ptを比較上限とする案。追加接続は既存の別経路へ戻るcycleで、袋小路の小枝を足したものではない。全体と入力を持つ経路の双方を監査する。主な構造上の地域初到達は戦士6 / Tank7 / Mage7 / Ranger6 / Assassin8pt。費用差は戦闘バランスの証明ではない。
+全Keyを除いたgraphで、次数2の中間点が連続する区間は最大11→2点。ただし終端報酬への枝も次数に数える値。寄り道を除いた継続graphでは全体最大3点、使える入力のgraphでは最大4点となり、次の継続先まで3pt以内とは断定しない。終端Notableの意味ある寄り道と、別の経路へ続く選択を別に記録する。追加接続は既存の別経路へ戻るcycleで、袋小路の小枝を足したものではない。主な構造上の地域初到達は戦士6 / Tank7 / Mage7 / Ranger6 / Assassin8pt。費用差は戦闘バランスの証明ではない。
 
 | 連続する次数2中間点 | v1区間数 | v2区間数 |
 | --- | ---: | ---: |
@@ -31,9 +49,9 @@
 
 経路候補は最大2例の費用サンプルで、網羅・reward/source Pareto・最良選択肢を求めたものではない。構造最短では全15候補へ44pt以内に個別到達するが、未対応の入力や交換条件を満たす保証ではない。64ptは比較の初期値に留め、48/64/80ptを同支出で見比べる。実戦強さ、77 Notableの重複するstat vector、地域/職業の個性、Keyの係数・penaltyは未検証/未採用。
 
-最新の根拠は `audit.json`、`line-audit.json`、`browser-verification.json`、`ProjectS_LongRoutes_Before.png`、`ProjectS_LongRoutes_After.png`、`ProjectS_PerStat_Inputs.png`。v1の説明PDFは初回時点の記録として保持し、v2の判断根拠にはしない。本体統合・本番保存/移行・Creatorの実ゲーム確認は保留。
+入力・支出の根拠は `audit.json`、`browser-verification.json`。配置の最新版は `layout-plan.json`、`layout-audit.json`、`line-audit.json`、`layout-capture-verification.json`、`ProjectS_Layout_*_Before.png` / `ProjectS_Layout_*_After.png`。旧 `ProjectS_LongRoutes_*` / `ProjectS_LargeTree_*` PNGと `ProjectS_PerStat_Inputs.png` はv2時点の記録として保持する。v1の説明PDFも初回時点の記録で、最新配置の判断根拠にはしない。本体統合・本番保存/移行・Creatorの実ゲーム確認は保留。
 
-再生成は `build-large-tree-data.py` → `audit-large-tree.py` → `route-large-tree-lines.py` → `build-large-tree-preview.py`。`correct_large_tree.py` / `large_tree_rules.py` / `large_tree_topology.py` が修正方針を保持する。
+再生成は `build-large-tree-data.py` → `audit-large-tree.py` → `layout-large-tree.py` → `route-large-tree-lines.py` → `build-large-tree-preview.py`。`correct_large_tree.py` / `large_tree_rules.py` / `large_tree_topology.py` が修正方針を保持する。配置は `layout-plan.json` の位置データを適用し、グラフ・費用・恩恵・入力のSHA-256一致を必須にする。
 
 ## v1記録（209ab693、以下は初回時点）
 

@@ -1,7 +1,7 @@
 from pathlib import Path
 import json,heapq,collections
 from large_tree_rules import node_input,profile_key,FLAG_KINDS
-from large_tree_topology import chain_report,adjacency,old_route
+from large_tree_topology import chain_report,continuation_report,adjacency,old_route
 ROOT=Path(__file__).resolve().parents[1];OUT=ROOT/'assets/core-ui/large-tree-preview'
 d=json.loads((OUT/'graph.json').read_text(encoding='utf-8'));by={n['id']:n for n in d['nodes']};adj={i:[] for i in by}
 for e in d['edges']:adj[e['a']].append(e['b']);adj[e['b']].append(e['a'])
@@ -100,7 +100,9 @@ for p in d['profiles']:
   reached=route(root,{root},exclude_keys=True,allowed=usable)
   assert set(reached)==usable,('dead mandatory toll',p['id'],loss,sorted(usable-set(reached)))
   cr=chain_report(d,usable);assert cr['maxDegree2Interiors']<=2,('source valid long chain',p['id'],loss,cr)
-  source_checks.append({'profile':p['id'],'loss':list(loss),'usableNodes':len(usable),'unreachableUsableNodes':0,'maxDegree2Interiors':cr['maxDegree2Interiors']})
+  continuing=continuation_report(d,usable)
+  source_checks.append({'profile':p['id'],'loss':list(loss),'usableNodes':len(usable),'unreachableUsableNodes':0,'maxDegree2Interiors':cr['maxDegree2Interiors'],
+   'continuingMaxDegree2Interiors':continuing['maxDegree2Interiors'],'terminalRewardBranches':continuing['terminalRewardBranches']})
 assert chain_report(d)['maxDegree2Interiors']<=2
 input_tests=[]
 war=next(p for p in d['profiles'] if p['id']=='warrior:basic:plain:standard')
@@ -115,6 +117,11 @@ for root,target,forbidden in [('origin_warrior','key_04',{'g33n2','g33n4'}),('or
  allowed={i for i,n in by.items() if node_input(d,n,p,by=by)['present']}|{root}
  found=route(root,{root},target,allowed=allowed);assert found and not(set(found[1])&forbidden),(target,found)
  input_tests.append({'regressionTarget':target,'profile':p['id'],'cost':found[0],'path':found[1],'forbiddenAvoided':sorted(forbidden)})
-report={'schema':'projects.large-tree-audit.v2','budgets':budgets,'matrix':matrix,'startRouteEvidence':braid_evidence,'clusterPortals':portals,'multiEntryClusters':47,'nonKeystoneMajorConnectivity':True,'rootDegree':2,'notableCount':sum(n['type']=='notable' for n in d['nodes']),'keysCount':15,'groupsCount':47,'examples':examples,'sourceChecks':source_checks,'inputTests':input_tests,'chainReview':d['chainReview'],'firstClusterEntrances':entrances,'baselineFlagCounts':{f:sum(f in p['flags'] for p in d['profiles']) for f in FLAG_KINDS},'balanceVerified':False,'combatEffectsApplied':False,'notes':['全Keyを除いて主要地域を接続。費用は構造上の最短値で、戦闘バランスの証明ではない。','全体と使える入力の経路で、次の分岐/合流まで最大3辺/3ptを比較上限にする案。','使える恩恵を一つも持たない点を除いても、使える目標へ到達可能。','全48/64/80比較例は同じ支出かつ入力を持つ仮投資。係数・実戦強さ・Pareto最適性は未検証。']}
+d['chainReview'].pop('proposedMaxDecisionSteps',None)
+d['chainReview']['continuing']=continuation_report(d)
+d['chainReview']['sourceContinuingMaxDegree2Interiors']=max(c['continuingMaxDegree2Interiors'] for c in source_checks)
+d['chainReview']['after']['definition']=chain_report(d)['definition']
+d['chainReview']['before']['definition']=chain_report(d)['definition']
+report={'schema':'projects.large-tree-audit.v2','budgets':budgets,'matrix':matrix,'startRouteEvidence':braid_evidence,'clusterPortals':portals,'multiEntryClusters':47,'nonKeystoneMajorConnectivity':True,'rootDegree':2,'notableCount':sum(n['type']=='notable' for n in d['nodes']),'keysCount':15,'groupsCount':47,'examples':examples,'sourceChecks':source_checks,'inputTests':input_tests,'chainReview':d['chainReview'],'firstClusterEntrances':entrances,'baselineFlagCounts':{f:sum(f in p['flags'] for p in d['profiles']) for f in FLAG_KINDS},'balanceVerified':False,'combatEffectsApplied':False,'notes':['全Keyを除いて主要地域を接続。費用は構造上の最短値で、戦闘バランスの証明ではない。','終端報酬を含む枝の次数と、別経路へ続く道の次数を区別する。次の継続先まで3pt以内とは断定しない。','使える恩恵を一つも持たない点を除いても、使える目標へ到達可能。','全48/64/80比較例は同じ支出かつ入力を持つ仮投資。64は画面初期値。係数・実戦強さ・Pareto最適性は未検証。']}
 d['budgetAudit']=report;(OUT/'graph.json').write_text(json.dumps(d,ensure_ascii=False,indent=2),encoding='utf-8');(OUT/'audit.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8')
 print(json.dumps({'status':'PASS','budgets':budgets,'braids':len(braid_evidence),'nonKeyConnected':True,'keyTourExamples':[{'origin':e['origin'],'budget':e['budget'],'keys':e['keys'],'spent':e['spent']} for e in examples if e['mode']=='keys' and e['budget']==64]},ensure_ascii=False))

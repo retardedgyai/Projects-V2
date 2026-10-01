@@ -1,0 +1,326 @@
+{
+  "status": "PASS",
+  "scope": "Same 1920x1180 Chrome viewport, automatic framing of each root and first two source-valid regions; not iOS or native Minecraft.",
+  "frames": [
+    {
+      "phase": "Before",
+      "file": "ProjectS_Layout_Warrior_Before.png",
+      "origin": "warrior",
+      "regions": [
+        {
+          "id": "g7",
+          "name": "範囲",
+          "point": "g7n2",
+          "cost": 6
+        },
+        {
+          "id": "g38",
+          "name": "回復",
+          "point": "g38n1",
+          "cost": 8
+        }
+      ],
+      "selected": "g38n1",
+      "cost": 8,
+      "cam": {
+        "x": -1709.136,
+        "y": -115.5675,
+        "z": 0.2730287759224441
+      },
+      "worldBounds": {
+        "minX": -3918.272,
+        "maxX": 500,
+        "minY": -1137.905,
+        "maxY": 906.77
+      }
+    },
+    {
+      "phase": "Before",
+      "file": "ProjectS_Layout_Tank_Before.png",
+      "origin": "tank",
+      "regions": [
+        {
+          "id": "g7",
+          "name": "範囲",
+          "point": "g7n0",
+          "cost": 7
+        },
+        {
+          "id": "g42",
+          "name": "範囲",
+          "point": "g42n3",
+          "cost": 10
+        }
+      ],
+      "selected": "g42n3",
+      "cost": 10,
+      "cam": {
+        "x": -145.04349999999988,
+        "y": -299.67449999999997,
+        "z": 0.28024210227312213
+      },
+      "worldBounds": {
+        "minX": -2295.258,
+        "maxX": 2005.171,
+        "minY": -1568.454,
+        "maxY": 969.105
+      }
+    },
+    {
+      "phase": "Before",
+      "file": "ProjectS_Layout_Mage_Before.png",
+      "origin": "mage",
+      "regions": [
+        {
+          "id": "g42",
+          "name": "範囲",
+          "point": "g42n3",
+          "cost": 7
+        },
+        {
+          "id": "g7",
+          "name": "範囲",
+          "point": "g7n0",
+          "cost": 8
+        }
+      ],
+      "selected": "g7n0",
+      "cost": 8,
+      "cam": {
+        "x": -145.04349999999988,
+        "y": -269.26599999999996,
+        "z": 0.28024210227312213
+      },
+      "worldBounds": {
+        "minX": -2295.258,
+        "maxX": 2005.171,
+        "minY": -1507.637,
+        "maxY": 969.105
+      }
+    },
+    {
+      "phase": "Before",
+      "file": "ProjectS_Layout_Ranger_Before.png",
+      "origin": "ranger",
+      "regions": [
+        {
+          "id": "g42",
+          "name": "範囲",
+          "point": "g42n2",
+          "cost": 6
+        },
+        {
+          "id": "g34",
+          "name": "範囲",
+          "point": "g34n4",
+          "cost": 8
+        }
+      ],
+      "selected": "g34n4",
+      "cost": 8,
+      "cam": {
+        "x": 898.818,
+        "y": 293.8615,
+        "z": 0.23710735894760987
+      },
+      "worldBounds": {
+        "minX": -500,
+        "maxX": 2297.636,
+        "minY": -1372.183,
+        "maxY": 1959.906
+      }
+    },
+    {
+      "phase": "Before",
+      "file": "ProjectS_Layout_Assassin_Before.png",
+      "origin": "assassin",
+      "regions": [
+        {
+          "id": "g40",
+          "name": "資源循環",
+          "point": "g40n4",
+          "cost": 8
+        },
+        {
+          "id": "g34",
+          "name": "範囲",
+          "point": "g34n4",
+          "cost": 10
+        }
+      ],
+      "selected": "g34n4",
+      "cost": 10,
+      "cam": {
+        "x": 898.818,
+        "y": 1093.348,
+        "z": 0.24740819004773665
+      },
+      "worldBounds": {
+        "minX": -500,
+        "maxX": 2297.636,
+        "minY": -500,
+        "maxY": 2686.696
+      }
+    },
+    {
+      "phase": "After",
+      "file": "ProjectS_Layout_Warrior_After.png",
+      "origin": "warrior",
+      "regions": [
+        {
+          "id": "g7",
+          "name": "範囲",
+          "point": "g7n2",
+          "cost": 6
+        },
+        {
+          "id": "g38",
+          "name": "回復",
+          "point": "g38n1",
+          "cost": 8
+        }
+      ],
+      "selected": "g38n1",
+      "cost": 8,
+      "cam": {
+        "x": -1331.815,
+        "y": 29.507000000000005,
+        "z": 0.3269144765576167
+      },
+      "worldBounds": {
+        "minX": -3163.63,
+        "maxX": 500,
+        "minY": -752.803,
+        "maxY": 811.817
+      }
+    },
+    {
+      "phase": "After",
+      "file": "ProjectS_Layout_Tank_After.png",
+      "origin": "tank",
+      "regions": [
+        {
+          "id": "g7",
+          "name": "範囲",
+          "point": "g7n0",
+          "cost": 7
+        },
+        {
+          "id": "g42",
+          "name": "範囲",
+          "point": "g42n3",
+          "cost": 10
+        }
+      ],
+      "selected": "g42n3",
+      "cost": 10,
+      "cam": {
+        "x": -214.33500000000004,
+        "y": -506.60699999999997,
+        "z": 0.35082165237559587
+      },
+      "worldBounds": {
+        "minX": -1915.867,
+        "maxX": 1487.197,
+        "minY": -1513.214,
+        "maxY": 500
+      }
+    },
+    {
+      "phase": "After",
+      "file": "ProjectS_Layout_Mage_After.png",
+      "origin": "mage",
+      "regions": [
+        {
+          "id": "g42",
+          "name": "範囲",
+          "point": "g42n3",
+          "cost": 7
+        },
+        {
+          "id": "g7",
+          "name": "範囲",
+          "point": "g7n0",
+          "cost": 8
+        }
+      ],
+      "selected": "g7n0",
+      "cost": 8,
+      "cam": {
+        "x": -214.33500000000004,
+        "y": -383.68949999999995,
+        "z": 0.35082165237559587
+      },
+      "worldBounds": {
+        "minX": -1915.867,
+        "maxX": 1487.197,
+        "minY": -1267.379,
+        "maxY": 500
+      }
+    },
+    {
+      "phase": "After",
+      "file": "ProjectS_Layout_Ranger_After.png",
+      "origin": "ranger",
+      "regions": [
+        {
+          "id": "g42",
+          "name": "範囲",
+          "point": "g42n2",
+          "cost": 6
+        },
+        {
+          "id": "g34",
+          "name": "範囲",
+          "point": "g34n4",
+          "cost": 8
+        }
+      ],
+      "selected": "g34n4",
+      "cost": 8,
+      "cam": {
+        "x": 693.143,
+        "y": 451.39700000000005,
+        "z": 0.3262943600729197
+      },
+      "worldBounds": {
+        "minX": -500,
+        "maxX": 1886.286,
+        "minY": -737.396,
+        "maxY": 1640.19
+      }
+    },
+    {
+      "phase": "After",
+      "file": "ProjectS_Layout_Assassin_After.png",
+      "origin": "assassin",
+      "regions": [
+        {
+          "id": "g40",
+          "name": "資源循環",
+          "point": "g40n4",
+          "cost": 8
+        },
+        {
+          "id": "g34",
+          "name": "範囲",
+          "point": "g34n4",
+          "cost": 10
+        }
+      ],
+      "selected": "g34n4",
+      "cost": 10,
+      "cam": {
+        "x": 693.143,
+        "y": 1047.494,
+        "z": 0.25437881798642575
+      },
+      "worldBounds": {
+        "minX": -500,
+        "maxX": 1886.286,
+        "minY": -500,
+        "maxY": 2594.988
+      }
+    }
+  ]
+}

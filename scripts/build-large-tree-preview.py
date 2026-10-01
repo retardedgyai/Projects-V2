@@ -34,7 +34,7 @@ change("const n=by.get(selected),owned=learned.has(n.id),p=plans[planIndex];", "
 html=html.replace('ProjectS — パッシブツリー v6','ProjectS — 大成長樹・経路比較').replace('BUILD EXPLORER · v06','LARGE TREE · 設計比較').replace('最初の1ポイントから、欲しい力を。','同じ目標へ、違う力を拾って進む。').replace('44pt / ブラウザ試作','共通効果は実戦未反映').replace('YOUR BUILD','仮ノード補正').replace('ROUTE COMPARISON','経路と途中の能力').replace('Notable','Notable')
 options=''.join('<option value="'+o['id']+'">'+o['name']+'</option>' for o in data['origins'])
 html=re.sub(r'(<select id="originSelect"[^>]*>).*?</select>',r'\g<1>'+options+'</select>',html,flags=re.S)
-html=html.replace('<div class="count">','<label class="budgetcontrol">比較予算<select id="budget"><option>44</option><option>48</option><option selected>64</option><option>80</option></select>pt</label><div class="count">',1)
+html=html.replace('<div class="count">','<label class="budgetcontrol">仮の比較予算<select id="budget"><option>44</option><option>48</option><option selected>64</option><option>80</option></select>pt</label><div class="count">',1)
 html=html.replace('<span id="remaining">','<span id="remaining">')
 html=html.replace('<canvas id="tree"', '<canvas id="tree"',1).replace('<div class="filterbar">','<div class="preview-legend"><span><i class="small-dot"></i>Small / 1pt</span><span><i class="notable-dot"></i>Notable / 1pt</span><span><i class="key-dot"></i>Keystone案 / 3pt</span></div><div class="filterbar">',1)
 html=html.replace('<div id="nodeStatus" class="status"></div>', '<div id="nodeStatus" class="status"></div><p id="nodeProvenance" class="diff-flag"></p><div id="nodeCondition"></div>')

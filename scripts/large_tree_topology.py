@@ -25,7 +25,31 @@ def chain_report(d,active=None):
  paths=chains(d,active);hist=collections.Counter(len(p)-2 for p in paths)
  return {'maxDegree2Interiors':max(hist,default=0),'histogram':dict(sorted(hist.items())),
   'longChains':[{'interiors':len(p)-2,'path':p} for p in paths if len(p)>4],
-  'definition':'Keyを除くgraph。分岐点または端から次の分岐点または端までの、次数2の中間ノード数。最大2個なら次選択まで最大3辺/3pt。'}
+  'definition':'Keyを除くgraph。次数2の連続中間ノード数。終端報酬への枝も次数へ含むため、別地域へ続く道の選択間隔を保証しない。'}
+
+def continuation_report(d,active=None):
+ """Measure continuing routes separately from optional terminal rewards."""
+ by,original=adjacency(d,active);adj={i:set(ns) for i,ns in original.items()}
+ queue=collections.deque(i for i,ns in adj.items() if len(ns)<2)
+ while queue:
+  i=queue.popleft()
+  if i not in adj:continue
+  for j in adj.pop(i):
+   adj[j].discard(i)
+   if len(adj[j])<2:queue.append(j)
+ core=set(adj);trimmed=set(by)-core;seen=set();branches=[]
+ for begin in sorted(trimmed):
+  if begin in seen:continue
+  members={begin};seen.add(begin);stack=[begin]
+  while stack:
+   for j in original[stack.pop()]:
+    if j in trimmed and j not in seen:seen.add(j);members.add(j);stack.append(j)
+  branches.append({'nodes':sorted(members),'continuingEntrances':sorted({j for i in members for j in original[i] if j in core}),
+   'terminalNotables':[i for i in sorted(members) if by[i]['type']=='notable']})
+ report=chain_report(d,core)
+ report.update(deadEndNodesRemoved=len(trimmed),terminalRewardBranches=branches,
+  definition='Keyと、葉から繰り返し取り除いた終端報酬の枝を除く継続graph。次数2の連続中間点。報酬の寄り道と別経路へ続く選択を区別する読み取り指標。実プレイの楽しさや支出上限の証明ではない。')
+ return report
 
 def old_route(adj,a,b):
  prev={a:None};q=collections.deque([a])
