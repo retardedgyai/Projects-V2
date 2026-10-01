@@ -12,7 +12,10 @@ internal object WorldInfusionSmoke {
         val travelTicks:Int=TRAVEL_TICKS,val tuftStep:Int=2) {
         init { require(travelTicks>0 && tuftStep>0) }
     }
-    data class Sample(val key:String,val position: Vec, val rgb: Int, val scale: Float, val progress: Double)
+    enum class Facing { CENTER, VERTICAL, HORIZONTAL }
+    data class Sample(val key:String,val position: Vec, val rgb: Int, val scale: Float, val progress: Double,
+        val model:String="infusion/smoke",val width:Float=.26f,val height:Float=width,
+        val facing:Facing=Facing.CENTER,val brightness:Int=12)
     fun expired(t: Transfer, tick: Long) = tick >= t.started + 6*t.tuftStep + t.travelTicks
 
     /** Each confirmed unit releases six tufts; stopping consumption creates no further Transfers. */

@@ -103,8 +103,10 @@ internal object WorldInfusionServer {
         var demoEnergySupply:Double=System.getProperty("projects.infusion.energy","0").toDouble().coerceIn(0.0,1.0),
         val energyEnabled:Boolean=java.lang.Boolean.getBoolean("projects.infusion.energyBudgeted"),
         var demoPowerPerSecond:Int=System.getProperty("projects.infusion.powerPerSecond","0").toInt(),
-        val chargedCoreEnabled:Boolean=java.lang.Boolean.getBoolean("projects.infusion.chargedCore")) {
+        val chargedCoreEnabled:Boolean=java.lang.Boolean.getBoolean("projects.infusion.chargedCore"),
+        val boldCoreEnabled:Boolean=java.lang.Boolean.getBoolean("projects.infusion.boldCore")) {
         init { require(state.energy==null || energyEnabled);if(energyEnabled && state.phase in setOf(InfusionPhase.ESSENTIA,InfusionPhase.INGREDIENTS))require(state.energy!=null);WorldInfusionEnergy.Supply(demoPowerPerSecond) }
+        init { require(!boldCoreEnabled || chargedCoreEnabled && energyEnabled) }
         var packed=false
         private var ticks=0L
         private var lastClick=-10L
@@ -126,6 +128,7 @@ internal object WorldInfusionServer {
         private val animation=WorldInfusionAnimation.Track()
         private val confluenceTrack=WorldInfusionConfluence.Track()
         private val confluenceClock=WorldInfusionConfluence.Clock()
+        private val radianceTrack=WorldInfusionRadiance.Track()
         private var coreDisplay:Entity?=null
         private var lastCorePose:WorldInfusionAnimation.Pose?=null
         private var pedestalSeal:SmokeDisplay?=null
@@ -317,7 +320,8 @@ internal object WorldInfusionServer {
                 }
             }
             val visualState=if(energyEnabled && power.perSecond==0 && state.phase in setOf(InfusionPhase.ESSENTIA,InfusionPhase.INGREDIENTS))state.copy(paused=true) else state
-            val pose=if(confluenceEnabled || energyEnabled)confluenceTrack.step(visualState,ticks,drive,completed,if(energyEnabled)power.perSecond/18.0*4.5 else null,chargedCoreEnabled && energyEnabled) else animation.step(state,ticks,completed)
+            val pose=if(confluenceEnabled || energyEnabled)confluenceTrack.step(visualState,ticks,drive,completed,if(energyEnabled)power.perSecond/18.0*4.5 else null,chargedCoreEnabled && energyEnabled,boldCoreEnabled) else animation.step(state,ticks,completed)
+            if(boldCoreEnabled)radianceTrack.accepted(state,ticks,completed)
             val intake=state.matrix?.let { pose.inlet(Vec(it.x+.5,it.y+3.4,it.z+.5)) }
             if(ticks%2==0L && packed && (lastCorePose?.yaw!=pose.yaw || lastCorePose?.neutralTint!=pose.neutralTint)) {
                 coreDisplay?.editEntityMeta(ItemDisplayMeta::class.java) { m->
@@ -336,8 +340,8 @@ internal object WorldInfusionServer {
                         channelOverride=if(power.perSecond>0 && !chargedCoreEnabled)WorldInfusionEnergy.channel(state) else null,useChannelOverride=energyEnabled,pedestal=energyEnabled)
                 } else emptyList()
                 val charge=if(chargedCoreEnabled && energyEnabled && state.matrix!=null)state.matrix!!.let {
-                    WorldInfusionCharge.samples(state,ticks,pose,Vec(it.x+.5,it.y+3.4,it.z+.5),Vec(it.x+.5,it.y+1.15,it.z+.5),
-                        WorldInfusionEnergy.channel(state),power.perSecond>0)
+                    if(boldCoreEnabled)radianceTrack.samples(state,ticks,pose,Vec(it.x+.5,it.y+3.4,it.z+.5),Vec(it.x+.5,it.y+1.15,it.z+.5),WorldInfusionEnergy.channel(state),power.perSecond>0)
+                    else WorldInfusionCharge.samples(state,ticks,pose,Vec(it.x+.5,it.y+3.4,it.z+.5),Vec(it.x+.5,it.y+1.15,it.z+.5),WorldInfusionEnergy.channel(state),power.perSecond>0)
                 } else emptyList()
                 val jarFrame=WorldInfusionSmoke.frame(smoke,ticks,intake)
                 val frame=if(chargedCoreEnabled && energyEnabled)WorldInfusionCharge.frame(charge,finish,jarFrame)
@@ -352,18 +356,22 @@ internal object WorldInfusionServer {
                             val display=SmokeDisplay(e,lease);smokeDisplays[mote.key]=display;smokeStats.born++
                             e.editEntityMeta(ItemDisplayMeta::class.java) { m->
                                 m.setDisplayContext(ItemDisplayMeta.DisplayContext.NONE)
-                                m.setBillboardRenderConstraints(AbstractDisplayMeta.BillboardConstraints.CENTER)
+                                m.setBillboardRenderConstraints(when(mote.facing) {
+                                    WorldInfusionSmoke.Facing.CENTER->AbstractDisplayMeta.BillboardConstraints.CENTER
+                                    WorldInfusionSmoke.Facing.VERTICAL->AbstractDisplayMeta.BillboardConstraints.VERTICAL
+                                    WorldInfusionSmoke.Facing.HORIZONTAL->AbstractDisplayMeta.BillboardConstraints.FIXED
+                                })
                                 m.setPosRotInterpolationDuration(2);m.setTransformationInterpolationDuration(2)
-                                m.setBrightness(12,12);m.setShadowRadius(0f);m.setViewRange(2f)
+                                m.setBrightness(mote.brightness,mote.brightness);m.setShadowRadius(0f);m.setViewRange(2f)
                             }
                             display
                         } ?: return@forEach
                         val e=d.entity
                         e.editEntityMeta(ItemDisplayMeta::class.java) { m->
-                            m.setItemStack(ItemStack.of(Material.PAPER).withItemModel("projects:infusion/smoke")
+                            m.setItemStack(ItemStack.of(Material.PAPER).withItemModel("projects:${mote.model}")
                                 .with(DataComponents.CUSTOM_MODEL_DATA,CustomModelData(emptyList(),emptyList(),emptyList(),
                                     listOf(net.kyori.adventure.text.format.TextColor.color(mote.rgb)))))
-                            val size=.26*mote.scale;m.setScale(Vec(size,size,size))
+                            m.setScale(Vec((mote.width*mote.scale).toDouble(),(mote.height*mote.scale).toDouble(),(mote.width*mote.scale).toDouble()))
                             m.setTransformationInterpolationStartDelta(0)
                         }
                         smokeStats.metadata++

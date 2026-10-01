@@ -68,7 +68,7 @@ internal object WorldInfusionConfluence {
     class Track {
         var pose=WorldInfusionAnimation.Pose(0.0,0.0,WorldInfusionAnimation.IDLE_GLOW);private set
         private var completedAt:Long?=null
-        fun step(s:WorldInfusionState,tick:Long,drive:Drive,completed:Boolean=false,speedOverride:Double?=null,chargedCore:Boolean=false):WorldInfusionAnimation.Pose {
+        fun step(s:WorldInfusionState,tick:Long,drive:Drive,completed:Boolean=false,speedOverride:Double?=null,chargedCore:Boolean=false,boldCore:Boolean=false):WorldInfusionAnimation.Pose {
             if(completed)completedAt=tick
             val active=!s.paused && s.phase in setOf(InfusionPhase.ESSENTIA,InfusionPhase.INGREDIENTS)
             if(active)completedAt=null
@@ -78,7 +78,7 @@ internal object WorldInfusionConfluence {
             val glow=when {
                 age!=null && age in 0..14 -> .75+.25*sin(PI*age/14)
                 age!=null && age in 15..70 -> .22+(.75-.22)*(70-age)/56
-                chargedCore && s.phase in setOf(InfusionPhase.ESSENTIA,InfusionPhase.INGREDIENTS) -> WorldInfusionCharge.fill(s).glow(tick,active)
+                chargedCore && s.phase in setOf(InfusionPhase.ESSENTIA,InfusionPhase.INGREDIENTS) -> if(boldCore)WorldInfusionRadiance.glow(s,tick,active) else WorldInfusionCharge.fill(s).glow(tick,active)
                 active -> (.28+.22*drive.supply+.25*charge+.025*sin(tick*PI/24)).coerceIn(.22,.80)
                 else -> (pose.glow-.025).coerceAtLeast(.22)
             }

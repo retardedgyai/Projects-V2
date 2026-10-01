@@ -1,0 +1,39 @@
+{
+  "credit": "ProjectS original local ritual radiance sprite; no shader or native model repaint",
+  "ambientocclusion": false,
+  "textures": {
+    "fx": {
+      "sprite": "projects:infusion-radiance/wave",
+      "force_translucent": true
+    },
+    "particle": "projects:infusion-radiance/wave"
+  },
+  "elements": [
+    {
+      "from": [
+        0,
+        8,
+        0
+      ],
+      "to": [
+        16,
+        8,
+        16
+      ],
+      "light_emission": 15,
+      "shade": false,
+      "faces": {
+        "up": {
+          "texture": "#fx",
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "tintindex": 0
+        }
+      }
+    }
+  ]
+}
