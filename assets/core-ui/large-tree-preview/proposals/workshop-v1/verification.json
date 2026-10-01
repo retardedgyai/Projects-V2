@@ -1,0 +1,242 @@
+{
+  "status": "PASS",
+  "scope": "Five symmetric medallions and selected 10-node opening; not the full 645-node layout.",
+  "sameEmbeddedGraph": true,
+  "sourceNodes": 645,
+  "sourceEdges": 952,
+  "starts": {
+    "count": 5,
+    "connectionsShown": 0,
+    "mirrorAxis": 460,
+    "central": "mage",
+    "pairs": [
+      [
+        "tank",
+        "assassin"
+      ],
+      [
+        "warrior",
+        "ranger"
+      ]
+    ]
+  },
+  "origins": [
+    {
+      "origin": "warrior",
+      "nodes": 10,
+      "actualEdges": 13,
+      "plans": [
+        {
+          "cost": 3,
+          "path": [
+            "origin_warrior",
+            "opening_warrior_0_1",
+            "opening_warrior_0_2",
+            "opening_warrior_2_3"
+          ],
+          "stats": {
+            "physical": 12,
+            "attackSpeed": 5,
+            "resource": 4
+          }
+        },
+        {
+          "cost": 3,
+          "path": [
+            "origin_warrior",
+            "opening_warrior_1_1",
+            "opening_warrior_1_2",
+            "opening_warrior_2_3"
+          ],
+          "stats": {
+            "hp": 8,
+            "attackSpeed": 5,
+            "resource": 4
+          }
+        }
+      ],
+      "allocationReset": true,
+      "edgeNodeCollisions": [],
+      "labelNodeCollisions": [],
+      "bounds": {
+        "noteBottom": 863.4237670898438,
+        "sideBottom": 917.5624084472656,
+        "allocateBottom": 798.7265625,
+        "canvasTop": 335.6666564941406
+      }
+    },
+    {
+      "origin": "tank",
+      "nodes": 10,
+      "actualEdges": 16,
+      "plans": [
+        {
+          "cost": 3,
+          "path": [
+            "origin_templar",
+            "opening_templar_0_1",
+            "opening_templar_0_2",
+            "opening_templar_2_3"
+          ],
+          "stats": {
+            "physical": 12,
+            "barrier": 14,
+            "resist": 6
+          }
+        },
+        {
+          "cost": 3,
+          "path": [
+            "origin_templar",
+            "opening_templar_1_1",
+            "opening_templar_1_2",
+            "opening_templar_2_3"
+          ],
+          "stats": {
+            "armor": 16,
+            "barrier": 14,
+            "resist": 6
+          }
+        }
+      ],
+      "allocationReset": true,
+      "edgeNodeCollisions": [],
+      "labelNodeCollisions": [],
+      "bounds": {
+        "noteBottom": 863.4237670898438,
+        "sideBottom": 917.5624084472656,
+        "allocateBottom": 798.7265625,
+        "canvasTop": 335.6666564941406
+      }
+    },
+    {
+      "origin": "mage",
+      "nodes": 10,
+      "actualEdges": 17,
+      "plans": [
+        {
+          "cost": 3,
+          "path": [
+            "origin_mage",
+            "opening_mage_0_1",
+            "opening_mage_0_2",
+            "opening_mage_2_3"
+          ],
+          "stats": {
+            "magic": 12,
+            "resist": 6
+          }
+        },
+        {
+          "cost": 3,
+          "path": [
+            "origin_mage",
+            "opening_mage_1_1",
+            "opening_mage_1_2",
+            "opening_mage_2_3"
+          ],
+          "stats": {
+            "efficiency": 6,
+            "resist": 6
+          }
+        }
+      ],
+      "allocationReset": true,
+      "edgeNodeCollisions": [],
+      "labelNodeCollisions": [],
+      "bounds": {
+        "noteBottom": 863.4237670898438,
+        "sideBottom": 917.5624084472656,
+        "allocateBottom": 798.7265625,
+        "canvasTop": 335.6666564941406
+      }
+    },
+    {
+      "origin": "assassin",
+      "nodes": 10,
+      "actualEdges": 13,
+      "plans": [
+        {
+          "cost": 3,
+          "path": [
+            "origin_assassin",
+            "opening_assassin_0_1",
+            "opening_assassin_0_2",
+            "opening_assassin_2_3"
+          ],
+          "stats": {
+            "damage": 12,
+            "move": 4,
+            "hp": 4
+          }
+        },
+        {
+          "cost": 3,
+          "path": [
+            "origin_assassin",
+            "opening_assassin_1_1",
+            "opening_assassin_1_2",
+            "opening_assassin_2_3"
+          ],
+          "stats": {
+            "attackSpeed": 6,
+            "move": 4,
+            "hp": 4
+          }
+        }
+      ],
+      "allocationReset": true,
+      "edgeNodeCollisions": [],
+      "labelNodeCollisions": [],
+      "bounds": {
+        "noteBottom": 863.4237670898438,
+        "sideBottom": 917.5624084472656,
+        "allocateBottom": 798.7265625,
+        "canvasTop": 335.6666564941406
+      }
+    },
+    {
+      "origin": "ranger",
+      "nodes": 10,
+      "actualEdges": 17,
+      "plans": [
+        {
+          "cost": 3,
+          "path": [
+            "origin_ranger",
+            "opening_ranger_0_1",
+            "opening_ranger_0_2",
+            "opening_ranger_2_3"
+          ],
+          "stats": {
+            "damage": 12,
+            "crit": 16
+          }
+        },
+        {
+          "cost": 3,
+          "path": [
+            "origin_ranger",
+            "opening_ranger_1_1",
+            "opening_ranger_1_2",
+            "opening_ranger_2_3"
+          ],
+          "stats": {
+            "attackSpeed": 6,
+            "crit": 16
+          }
+        }
+      ],
+      "allocationReset": true,
+      "edgeNodeCollisions": [],
+      "labelNodeCollisions": [],
+      "bounds": {
+        "noteBottom": 863.4237670898438,
+        "sideBottom": 917.5624084472656,
+        "allocateBottom": 798.7265625,
+        "canvasTop": 335.6666564941406
+      }
+    }
+  ],
+  "nativeIntegration": false
+}

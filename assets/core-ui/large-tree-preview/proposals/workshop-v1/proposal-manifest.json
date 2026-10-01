@@ -1,0 +1,14 @@
+{
+  "schema": "projects.passive-workshop-ui-proposal.v1",
+  "sourceCommit": "341037fa",
+  "graphSha256": "b04169fcdb5f9f020d8f4e0e36d1a035e0b9fee359e118aa811195fdaced56d7",
+  "sameFullGraph": true,
+  "nodes": 645,
+  "edges": 952,
+  "sourceReference": "assets/ui/polish05-import/reference/screens/forge_initial.png",
+  "displayScope": "Five symmetric start medallions; selected origin first-3pt braid with 10 nodes and all existing local edges. Full 47-region layout is not redesigned here.",
+  "approvedOriginalsChanged": false,
+  "activeSkillsObtained": false,
+  "sixthOriginAdded": false,
+  "nativeMinecraft": false
+}
