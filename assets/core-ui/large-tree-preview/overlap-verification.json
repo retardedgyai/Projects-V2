@@ -1,0 +1,7706 @@
+{
+  "schema": "projects.large-tree-overlap-verification.v1",
+  "status": "PASS",
+  "referenceCommit": "e04a69a3",
+  "viewport": {
+    "width": 1920,
+    "height": 1180
+  },
+  "scope": "Five identical root cameras; five 55% close views; overview. Caption backgrounds conceal only strokes beneath their text rectangles. Geometric line crossings remain marked by gaps.",
+  "frames": [
+    {
+      "phase": "Before",
+      "origin": "warrior",
+      "captions": 22,
+      "blocks": 18,
+      "labelPairs": [],
+      "labelNodes": [
+        {
+          "text": "回復",
+          "node": "g38n6"
+        }
+      ],
+      "labelLines": [
+        {
+          "text": "戦士",
+          "edge": [
+            "origin_warrior",
+            "opening_warrior_0_1"
+          ]
+        },
+        {
+          "text": "物理ダメージ +6%",
+          "edge": [
+            "opening_warrior_0_1",
+            "opening_warrior_0_2"
+          ]
+        },
+        {
+          "text": "物理ダメージ +6%",
+          "edge": [
+            "opening_warrior_0_2",
+            "opening_warrior_0_3"
+          ]
+        },
+        {
+          "text": "鍛えた一撃 / 起点から3pt",
+          "edge": [
+            "opening_warrior_0_3",
+            "link_warrior_0_1"
+          ]
+        },
+        {
+          "text": "最大HP +4%",
+          "edge": [
+            "opening_warrior_1_1",
+            "opening_warrior_2_1"
+          ]
+        },
+        {
+          "text": "最大HP +4%",
+          "edge": [
+            "opening_warrior_1_2",
+            "opening_warrior_2_3"
+          ]
+        },
+        {
+          "text": "戦うための体力 / 起点から3pt",
+          "edge": [
+            "opening_warrior_2_2",
+            "opening_warrior_1_3"
+          ]
+        },
+        {
+          "text": "攻撃速度 +3%",
+          "edge": [
+            "opening_warrior_2_1",
+            "opening_warrior_2_2"
+          ]
+        },
+        {
+          "text": "攻撃速度 +3%",
+          "edge": [
+            "opening_warrior_2_2",
+            "opening_warrior_0_3"
+          ]
+        },
+        {
+          "text": "レンジャー",
+          "edge": [
+            "origin_ranger",
+            "opening_ranger_1_1"
+          ]
+        },
+        {
+          "text": "アサシン",
+          "edge": [
+            "origin_assassin",
+            "opening_assassin_0_1"
+          ]
+        },
+        {
+          "text": "アサシン",
+          "edge": [
+            "origin_assassin",
+            "opening_assassin_1_1"
+          ]
+        },
+        {
+          "text": "回復",
+          "edge": [
+            "g38n1",
+            "g38n4"
+          ]
+        }
+      ],
+      "captionBackplateIntersections": [],
+      "nodePairs": [],
+      "unplaced": [],
+      "boxes": [
+        {
+          "box": {
+            "left": 1157.1861810501955,
+            "top": 540.2377478992476,
+            "right": 1263.593026142969,
+            "bottom": 567.9681559146675
+          },
+          "owner": "medallion",
+          "text": "戦士 / PROJECTS / CLASS START",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 1087.1431597722583,
+            "top": 615.1593799609271,
+            "right": 1107.1431597722583,
+            "bottom": 626.1593799609271
+          },
+          "owner": "origin_warrior",
+          "text": "戦士",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 1027.791131315412,
+            "top": 678.6605555453849,
+            "right": 1110.3410885908027,
+            "bottom": 688.6605555453849
+          },
+          "owner": "opening_warrior_0_1",
+          "text": "物理ダメージ +6%",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 983.4860468799411,
+            "top": 745.7636748325544,
+            "right": 1066.0360041553317,
+            "bottom": 755.7636748325544
+          },
+          "owner": "opening_warrior_0_2",
+          "text": "物理ダメージ +6%",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 909.4034812493801,
+            "top": 812.5558984525176,
+            "right": 964.7034537835598,
+            "bottom": 840.5558984525176
+          },
+          "owner": "opening_warrior_0_3",
+          "text": "鍛えた一撃 / 起点から3pt",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 995.2181119215645,
+            "top": 599.3877179538815,
+            "right": 1051.3780545485176,
+            "bottom": 609.3877179538815
+          },
+          "owner": "opening_warrior_1_1",
+          "text": "最大HP +4%",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 914.9524350647556,
+            "top": 604.2057835093876,
+            "right": 971.1123776917087,
+            "bottom": 614.2057835093876
+          },
+          "owner": "opening_warrior_1_2",
+          "text": "最大HP +4%",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 808.8828416975492,
+            "top": 651.1797977314751,
+            "right": 878.8828416975492,
+            "bottom": 679.1797977314751
+          },
+          "owner": "opening_warrior_1_3",
+          "text": "戦うための体力 / 起点から3pt",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 972.4399467081148,
+            "top": 663.5427224914545,
+            "right": 1034.9899039835054,
+            "bottom": 673.5427224914545
+          },
+          "owner": "opening_warrior_2_1",
+          "text": "攻撃速度 +3%",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 910.1542391474983,
+            "top": 699.5033149127923,
+            "right": 972.7041964228889,
+            "bottom": 709.5033149127923
+          },
+          "owner": "opening_warrior_2_2",
+          "text": "攻撃速度 +3%",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 837.8188658421448,
+            "top": 744.944427154301,
+            "right": 897.8188658421448,
+            "bottom": 772.944427154301
+          },
+          "owner": "opening_warrior_2_3",
+          "text": "軽やかな連撃 / 起点から3pt",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 1062.1431597722583,
+            "top": 484.3935893378805,
+            "right": 1132.1431597722583,
+            "bottom": 495.3935893378805
+          },
+          "owner": "origin_templar",
+          "text": "タンク〈仮称〉",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 1195.3896035965822,
+            "top": 419.0106940263572,
+            "right": 1225.3896035965822,
+            "bottom": 429.0106940263572
+          },
+          "owner": "origin_mage",
+          "text": "メイジ",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 1298.6360474209064,
+            "top": 615.1593799609271,
+            "right": 1348.6360474209064,
+            "bottom": 626.1593799609271
+          },
+          "owner": "origin_ranger",
+          "text": "レンジャー",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 1190.3896035965822,
+            "top": 681.5422752724505,
+            "right": 1230.3896035965822,
+            "bottom": 690.5422752724505
+          },
+          "owner": "origin_assassin",
+          "text": "アサシン",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 617.6159206042425,
+            "top": 352.684693602676,
+            "right": 637.6159206042425,
+            "bottom": 362.684693602676
+          },
+          "owner": null,
+          "text": "範囲",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 79.9772903410286,
+            "top": 925.7341147896981,
+            "right": 119.9772903410286,
+            "bottom": 935.7341147896981
+          },
+          "owner": null,
+          "text": "物理火力",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 204.9277721641289,
+            "top": 604.9166816395192,
+            "right": 224.9277721641289,
+            "bottom": 614.9166816395192
+          },
+          "owner": null,
+          "text": "回復",
+          "dx": 0,
+          "dy": 0
+        }
+      ],
+      "cam": {
+        "x": -1331.815,
+        "y": 29.507000000000005,
+        "z": 0.3269144765576167
+      },
+      "arranged": false,
+      "drawMs": 19.400000035762787
+    },
+    {
+      "phase": "Before",
+      "origin": "tank",
+      "captions": 21,
+      "blocks": 17,
+      "labelPairs": [],
+      "labelNodes": [
+        {
+          "text": "範囲",
+          "node": "join_healer_1"
+        }
+      ],
+      "labelLines": [
+        {
+          "text": "戦士",
+          "edge": [
+            "origin_warrior",
+            "opening_warrior_0_1"
+          ]
+        },
+        {
+          "text": "堅実な打撃 / 起点から3pt",
+          "edge": [
+            "opening_templar_0_3",
+            "link_templar_0_1"
+          ]
+        },
+        {
+          "text": "物理防御 +8%",
+          "edge": [
+            "origin_templar",
+            "opening_templar_1_1"
+          ]
+        },
+        {
+          "text": "物理防御 +8%",
+          "edge": [
+            "opening_templar_0_1",
+            "opening_templar_1_1"
+          ]
+        },
+        {
+          "text": "物理防御 +8%",
+          "edge": [
+            "opening_templar_1_1",
+            "opening_templar_1_2"
+          ]
+        },
+        {
+          "text": "揺るがぬ装甲 / 起点から3pt",
+          "edge": [
+            "opening_templar_1_2",
+            "opening_templar_1_3"
+          ]
+        },
+        {
+          "text": "揺るがぬ装甲 / 起点から3pt",
+          "edge": [
+            "opening_templar_2_2",
+            "opening_templar_1_3"
+          ]
+        },
+        {
+          "text": "揺るがぬ装甲 / 起点から3pt",
+          "edge": [
+            "opening_templar_0_3",
+            "opening_templar_1_3"
+          ]
+        },
+        {
+          "text": "付与する障壁量 +6%",
+          "edge": [
+            "opening_templar_0_1",
+            "opening_templar_2_1"
+          ]
+        },
+        {
+          "text": "付与する障壁量 +6%",
+          "edge": [
+            "opening_templar_0_1",
+            "opening_templar_1_1"
+          ]
+        },
+        {
+          "text": "付与する障壁量 +6%",
+          "edge": [
+            "opening_templar_2_1",
+            "opening_templar_2_2"
+          ]
+        },
+        {
+          "text": "付与する障壁量 +6%",
+          "edge": [
+            "opening_templar_0_2",
+            "opening_templar_2_3"
+          ]
+        },
+        {
+          "text": "付与する障壁量 +6%",
+          "edge": [
+            "opening_templar_2_2",
+            "opening_templar_0_3"
+          ]
+        },
+        {
+          "text": "守護の厚み / 起点から3pt",
+          "edge": [
+            "opening_templar_0_2",
+            "opening_templar_2_3"
+          ]
+        },
+        {
+          "text": "守護の厚み / 起点から3pt",
+          "edge": [
+            "opening_templar_0_3",
+            "opening_templar_1_3"
+          ]
+        },
+        {
+          "text": "レンジャー",
+          "edge": [
+            "origin_ranger",
+            "opening_ranger_1_1"
+          ]
+        },
+        {
+          "text": "アサシン",
+          "edge": [
+            "origin_assassin",
+            "opening_assassin_0_1"
+          ]
+        },
+        {
+          "text": "アサシン",
+          "edge": [
+            "origin_assassin",
+            "opening_assassin_1_1"
+          ]
+        },
+        {
+          "text": "範囲",
+          "edge": [
+            "join_healer_1",
+            "g42n3"
+          ]
+        },
+        {
+          "text": "範囲",
+          "edge": [
+            "join_healer_2",
+            "join_healer_1"
+          ]
+        }
+      ],
+      "captionBackplateIntersections": [],
+      "nodePairs": [],
+      "unplaced": [],
+      "boxes": [
+        {
+          "box": {
+            "left": 796.9899363155366,
+            "top": 729.2862205113352,
+            "right": 903.3967814083101,
+            "bottom": 758.0207299111102
+          },
+          "owner": "medallion",
+          "text": "タンク〈仮称〉 / PROJECTS / CLASS START",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 718.6652302624932,
+            "top": 808.2242581104352,
+            "right": 738.6652302624932,
+            "bottom": 819.2242581104352
+          },
+          "owner": "origin_warrior",
+          "text": "戦士",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 693.6652302624932,
+            "top": 667.8955971601969,
+            "right": 763.6652302624932,
+            "bottom": 678.8955971601969
+          },
+          "owner": "origin_templar",
+          "text": "タンク〈仮称〉",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 608.1449026779364,
+            "top": 672.892700776635,
+            "right": 690.6948599533271,
+            "bottom": 682.892700776635
+          },
+          "owner": "opening_templar_0_1",
+          "text": "物理ダメージ +6%",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 522.0094164784182,
+            "top": 667.7222912639235,
+            "right": 604.5593737538088,
+            "bottom": 677.7222912639235
+          },
+          "owner": "opening_templar_0_2",
+          "text": "物理ダメージ +6%",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 429.2340607216816,
+            "top": 623.6278685984871,
+            "right": 484.5340332558613,
+            "bottom": 651.6278685984871
+          },
+          "owner": "opening_templar_0_3",
+          "text": "堅実な打撃 / 起点から3pt",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 667.2599340105198,
+            "top": 587.8226599353815,
+            "right": 729.8098912859105,
+            "bottom": 597.8226599353815
+          },
+          "owner": "opening_templar_1_1",
+          "text": "物理防御 +8%",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 619.7148295723172,
+            "top": 515.8123059254619,
+            "right": 682.2647868477078,
+            "bottom": 525.8123059254619
+          },
+          "owner": "opening_templar_1_2",
+          "text": "物理防御 +8%",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 526.8682179158162,
+            "top": 450.45037304971225,
+            "right": 586.8682179158162,
+            "bottom": 478.45037304971225
+          },
+          "owner": "opening_templar_1_3",
+          "text": "揺るがぬ装甲 / 起点から3pt",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 582.1296332356811,
+            "top": 604.0460564278385,
+            "right": 674.6795905110718,
+            "bottom": 614.0460564278385
+          },
+          "owner": "opening_templar_2_1",
+          "text": "付与する障壁量 +6%",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 515.2889870951683,
+            "top": 565.455674666523,
+            "right": 607.8389443705589,
+            "bottom": 575.455674666523
+          },
+          "owner": "opening_templar_2_2",
+          "text": "付与する障壁量 +6%",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 454.92052046531796,
+            "top": 523.0062547290759,
+            "right": 510.22049299949765,
+            "bottom": 551.0062547290759
+          },
+          "owner": "opening_templar_2_3",
+          "text": "守護の厚み / 起点から3pt",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 835.1933588619233,
+            "top": 597.7312666850777,
+            "right": 865.1933588619233,
+            "bottom": 607.7312666850777
+          },
+          "owner": "origin_mage",
+          "text": "メイジ",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 946.7214874613535,
+            "top": 808.2242581104352,
+            "right": 996.7214874613535,
+            "bottom": 819.2242581104352
+          },
+          "owner": "origin_ranger",
+          "text": "レンジャー",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 830.1933588619233,
+            "top": 879.3885885855544,
+            "right": 870.1933588619233,
+            "bottom": 888.3885885855544
+          },
+          "owner": "origin_assassin",
+          "text": "アサシン",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 214.80157878163277,
+            "top": 527.7980678988646,
+            "right": 234.80157878163277,
+            "bottom": 537.7980678988646
+          },
+          "owner": null,
+          "text": "範囲",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 1296.5044070917615,
+            "top": 544.7785813698547,
+            "right": 1316.5044070917615,
+            "bottom": 554.7785813698547
+          },
+          "owner": null,
+          "text": "範囲",
+          "dx": 0,
+          "dy": 0
+        }
+      ],
+      "cam": {
+        "x": -214.33500000000004,
+        "y": -506.60699999999997,
+        "z": 0.35082165237559587
+      },
+      "arranged": false,
+      "drawMs": 11.899999976158142
+    },
+    {
+      "phase": "Before",
+      "origin": "mage",
+      "captions": 21,
+      "blocks": 17,
+      "labelPairs": [],
+      "labelNodes": [
+        {
+          "text": "範囲",
+          "node": "join_healer_1"
+        }
+      ],
+      "labelLines": [
+        {
+          "text": "戦士",
+          "edge": [
+            "origin_warrior",
+            "opening_warrior_0_1"
+          ]
+        },
+        {
+          "text": "魔法ダメージ +6%",
+          "edge": [
+            "origin_mage",
+            "opening_mage_0_1"
+          ]
+        },
+        {
+          "text": "魔法ダメージ +6%",
+          "edge": [
+            "opening_mage_0_1",
+            "opening_mage_0_2"
+          ]
+        },
+        {
+          "text": "魔法ダメージ +6%",
+          "edge": [
+            "opening_mage_0_3",
+            "opening_mage_0_1"
+          ]
+        },
+        {
+          "text": "研ぎ澄ます魔力 / 起点から3pt",
+          "edge": [
+            "opening_mage_0_2",
+            "opening_mage_0_3"
+          ]
+        },
+        {
+          "text": "研ぎ澄ます魔力 / 起点から3pt",
+          "edge": [
+            "opening_mage_2_2",
+            "opening_mage_0_3"
+          ]
+        },
+        {
+          "text": "研ぎ澄ます魔力 / 起点から3pt",
+          "edge": [
+            "opening_mage_0_3",
+            "opening_mage_0_1"
+          ]
+        },
+        {
+          "text": "技能のMP消費 +3% 減少",
+          "edge": [
+            "origin_mage",
+            "opening_mage_1_1"
+          ]
+        },
+        {
+          "text": "技能のMP消費 +3% 減少",
+          "edge": [
+            "opening_mage_1_1",
+            "opening_mage_1_2"
+          ]
+        },
+        {
+          "text": "無理のない詠唱 / 起点から3pt",
+          "edge": [
+            "opening_mage_1_2",
+            "opening_mage_1_3"
+          ]
+        },
+        {
+          "text": "無理のない詠唱 / 起点から3pt",
+          "edge": [
+            "opening_mage_2_2",
+            "opening_mage_1_3"
+          ]
+        },
+        {
+          "text": "付与する障壁量 +6%",
+          "edge": [
+            "opening_mage_0_1",
+            "opening_mage_2_1"
+          ]
+        },
+        {
+          "text": "付与する障壁量 +6%",
+          "edge": [
+            "opening_mage_1_1",
+            "opening_mage_2_1"
+          ]
+        },
+        {
+          "text": "付与する障壁量 +6%",
+          "edge": [
+            "opening_mage_2_1",
+            "opening_mage_2_2"
+          ]
+        },
+        {
+          "text": "付与する障壁量 +6%",
+          "edge": [
+            "opening_mage_2_3",
+            "opening_mage_2_1"
+          ]
+        },
+        {
+          "text": "身を守る術 / 起点から3pt",
+          "edge": [
+            "opening_mage_0_2",
+            "opening_mage_2_3"
+          ]
+        },
+        {
+          "text": "身を守る術 / 起点から3pt",
+          "edge": [
+            "opening_mage_1_2",
+            "opening_mage_2_3"
+          ]
+        },
+        {
+          "text": "身を守る術 / 起点から3pt",
+          "edge": [
+            "opening_mage_2_3",
+            "opening_mage_2_1"
+          ]
+        },
+        {
+          "text": "身を守る術 / 起点から3pt",
+          "edge": [
+            "opening_mage_2_3",
+            "opening_mage_2_2"
+          ]
+        },
+        {
+          "text": "レンジャー",
+          "edge": [
+            "origin_ranger",
+            "opening_ranger_1_1"
+          ]
+        },
+        {
+          "text": "アサシン",
+          "edge": [
+            "origin_assassin",
+            "opening_assassin_0_1"
+          ]
+        },
+        {
+          "text": "アサシン",
+          "edge": [
+            "origin_assassin",
+            "opening_assassin_1_1"
+          ]
+        },
+        {
+          "text": "範囲",
+          "edge": [
+            "join_healer_1",
+            "g42n3"
+          ]
+        },
+        {
+          "text": "範囲",
+          "edge": [
+            "join_healer_2",
+            "join_healer_1"
+          ]
+        }
+      ],
+      "captionBackplateIntersections": [],
+      "nodePairs": [],
+      "unplaced": [],
+      "boxes": [
+        {
+          "box": {
+            "left": 796.9899363155366,
+            "top": 687.1641000554579,
+            "right": 903.3967814083101,
+            "bottom": 714.8986094552329
+          },
+          "owner": "medallion",
+          "text": "メイジ / PROJECTS / CLASS START",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 718.6652302624932,
+            "top": 765.102137654558,
+            "right": 738.6652302624932,
+            "bottom": 776.102137654558
+          },
+          "owner": "origin_warrior",
+          "text": "戦士",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 693.6652302624932,
+            "top": 624.7734767043196,
+            "right": 763.6652302624932,
+            "bottom": 635.7734767043196
+          },
+          "owner": "origin_templar",
+          "text": "タンク〈仮称〉",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 835.1933588619233,
+            "top": 554.6091462292004,
+            "right": 865.1933588619233,
+            "bottom": 564.6091462292004
+          },
+          "owner": "origin_mage",
+          "text": "メイジ",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 759.8033488916446,
+            "top": 485.4972807112081,
+            "right": 842.3533061670353,
+            "bottom": 495.4972807112081
+          },
+          "owner": "opening_mage_0_1",
+          "text": "魔法ダメージ +6%",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 721.212967130329,
+            "top": 408.31651718857694,
+            "right": 803.7629244057197,
+            "bottom": 418.31651718857694
+          },
+          "owner": "opening_mage_0_2",
+          "text": "魔法ダメージ +6%",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 715.2091879348785,
+            "top": 295.7027667760107,
+            "right": 785.2091879348785,
+            "bottom": 323.7027667760107
+          },
+          "owner": "opening_mage_0_3",
+          "text": "研ぎ澄ます魔力 / 起点から3pt",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 844.6884255948974,
+            "top": 485.4972807112081,
+            "right": 953.9283547941161,
+            "bottom": 495.4972807112081
+          },
+          "owner": "opening_mage_1_1",
+          "text": "技能のMP消費 +3% 減少",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 883.278807356213,
+            "top": 408.31651718857694,
+            "right": 992.5187365554317,
+            "bottom": 418.31651718857694
+          },
+          "owner": "opening_mage_1_2",
+          "text": "技能のMP消費 +3% 減少",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 915.1775297889682,
+            "top": 295.7027667760107,
+            "right": 985.1775297889682,
+            "bottom": 323.7027667760107
+          },
+          "owner": "opening_mage_1_3",
+          "text": "無理のない詠唱 / 起点から3pt",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 803.918380224228,
+            "top": 432.8740328548687,
+            "right": 896.4683374996187,
+            "bottom": 442.8740328548687
+          },
+          "owner": "opening_mage_2_1",
+          "text": "付与する障壁量 +6%",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 803.918380224228,
+            "top": 355.6932693322376,
+            "right": 896.4683374996187,
+            "bottom": 365.6932693322376
+          },
+          "owner": "opening_mage_2_2",
+          "text": "付与する障壁量 +6%",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 822.5433725948335,
+            "top": 267.6370345859631,
+            "right": 877.8433451290132,
+            "bottom": 295.6370345859631
+          },
+          "owner": "opening_mage_2_3",
+          "text": "身を守る術 / 起点から3pt",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 946.7214874613535,
+            "top": 765.102137654558,
+            "right": 996.7214874613535,
+            "bottom": 776.102137654558
+          },
+          "owner": "origin_ranger",
+          "text": "レンジャー",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 830.1933588619233,
+            "top": 836.266468129677,
+            "right": 870.1933588619233,
+            "bottom": 845.266468129677
+          },
+          "owner": "origin_assassin",
+          "text": "アサシン",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 214.80157878163277,
+            "top": 484.67594744298725,
+            "right": 234.80157878163277,
+            "bottom": 494.67594744298725
+          },
+          "owner": null,
+          "text": "範囲",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 1296.5044070917615,
+            "top": 501.65646091397736,
+            "right": 1316.5044070917615,
+            "bottom": 511.65646091397736
+          },
+          "owner": null,
+          "text": "範囲",
+          "dx": 0,
+          "dy": 0
+        }
+      ],
+      "cam": {
+        "x": -214.33500000000004,
+        "y": -383.68949999999995,
+        "z": 0.35082165237559587
+      },
+      "arranged": false,
+      "drawMs": 11.5
+    },
+    {
+      "phase": "Before",
+      "origin": "ranger",
+      "captions": 22,
+      "blocks": 18,
+      "labelPairs": [],
+      "labelNodes": [
+        {
+          "text": "狙いを定める / 起点から3pt",
+          "node": "link_ranger_2_2"
+        },
+        {
+          "text": "範囲",
+          "node": "join_healer_1"
+        }
+      ],
+      "labelLines": [
+        {
+          "text": "戦士",
+          "edge": [
+            "origin_warrior",
+            "opening_warrior_0_1"
+          ]
+        },
+        {
+          "text": "レンジャー",
+          "edge": [
+            "origin_ranger",
+            "opening_ranger_1_1"
+          ]
+        },
+        {
+          "text": "与ダメージ +6%",
+          "edge": [
+            "opening_ranger_0_1",
+            "opening_ranger_2_1"
+          ]
+        },
+        {
+          "text": "与ダメージ +6%",
+          "edge": [
+            "opening_ranger_0_1",
+            "opening_ranger_1_1"
+          ]
+        },
+        {
+          "text": "与ダメージ +6%",
+          "edge": [
+            "opening_ranger_0_2",
+            "opening_ranger_0_3"
+          ]
+        },
+        {
+          "text": "与ダメージ +6%",
+          "edge": [
+            "opening_ranger_0_2",
+            "opening_ranger_2_3"
+          ]
+        },
+        {
+          "text": "与ダメージ +6%",
+          "edge": [
+            "opening_ranger_0_1",
+            "opening_ranger_0_3"
+          ]
+        },
+        {
+          "text": "与ダメージ +6%",
+          "edge": [
+            "opening_ranger_1_2",
+            "opening_ranger_0_2"
+          ]
+        },
+        {
+          "text": "確かな射撃 / 起点から3pt",
+          "edge": [
+            "link_ranger_1_2",
+            "join_ranger_1"
+          ]
+        },
+        {
+          "text": "確かな射撃 / 起点から3pt",
+          "edge": [
+            "opening_ranger_0_3",
+            "opening_ranger_1_3"
+          ]
+        },
+        {
+          "text": "攻撃速度 +3%",
+          "edge": [
+            "opening_ranger_1_1",
+            "opening_ranger_1_2"
+          ]
+        },
+        {
+          "text": "攻撃速度 +3%",
+          "edge": [
+            "opening_ranger_1_2",
+            "opening_ranger_1_3"
+          ]
+        },
+        {
+          "text": "攻撃速度 +3%",
+          "edge": [
+            "link_ranger_2_1",
+            "opening_ranger_1_2"
+          ]
+        },
+        {
+          "text": "会心率 +8%（相対）",
+          "edge": [
+            "opening_ranger_2_1",
+            "opening_ranger_2_2"
+          ]
+        },
+        {
+          "text": "会心率 +8%（相対）",
+          "edge": [
+            "opening_ranger_1_2",
+            "opening_ranger_0_2"
+          ]
+        },
+        {
+          "text": "会心率 +8%（相対）",
+          "edge": [
+            "opening_ranger_2_2",
+            "opening_ranger_1_3"
+          ]
+        },
+        {
+          "text": "狙いを定める / 起点から3pt",
+          "edge": [
+            "link_ranger_1_1",
+            "link_ranger_1_2"
+          ]
+        },
+        {
+          "text": "狙いを定める / 起点から3pt",
+          "edge": [
+            "opening_ranger_2_3",
+            "link_ranger_2_1"
+          ]
+        },
+        {
+          "text": "狙いを定める / 起点から3pt",
+          "edge": [
+            "link_ranger_2_1",
+            "link_ranger_2_2"
+          ]
+        },
+        {
+          "text": "アサシン",
+          "edge": [
+            "origin_assassin",
+            "opening_assassin_0_1"
+          ]
+        },
+        {
+          "text": "アサシン",
+          "edge": [
+            "origin_assassin",
+            "opening_assassin_1_1"
+          ]
+        },
+        {
+          "text": "範囲",
+          "edge": [
+            "g34n9",
+            "g34n5"
+          ]
+        },
+        {
+          "text": "範囲",
+          "edge": [
+            "join_healer_1",
+            "g42n3"
+          ]
+        },
+        {
+          "text": "範囲",
+          "edge": [
+            "join_healer_2",
+            "join_healer_1"
+          ]
+        },
+        {
+          "text": "弱点",
+          "edge": [
+            "g48n9",
+            "g48n5"
+          ]
+        }
+      ],
+      "captionBackplateIntersections": [],
+      "nodePairs": [],
+      "unplaced": [],
+      "boxes": [
+        {
+          "box": {
+            "left": 495.62792582958946,
+            "top": 403.5523099512687,
+            "right": 602.0347709223629,
+            "bottom": 430.2566730743313
+          },
+          "owner": "medallion",
+          "text": "レンジャー / PROJECTS / CLASS START",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 425.7997191031161,
+            "top": 477.36976244351916,
+            "right": 445.7997191031161,
+            "bottom": 488.36976244351916
+          },
+          "owner": "origin_warrior",
+          "text": "戦士",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 400.7997191031161,
+            "top": 346.8520184143513,
+            "right": 470.7997191031161,
+            "bottom": 357.8520184143513
+          },
+          "owner": "origin_templar",
+          "text": "タンク〈仮称〉",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 533.8313483759762,
+            "top": 281.59314639976736,
+            "right": 563.8313483759762,
+            "bottom": 291.59314639976736
+          },
+          "owner": "origin_mage",
+          "text": "メイジ",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 636.8629776488364,
+            "top": 477.36976244351916,
+            "right": 686.8629776488364,
+            "bottom": 488.36976244351916
+          },
+          "owner": "origin_ranger",
+          "text": "レンジャー",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 699.2930005362125,
+            "top": 461.6280173361612,
+            "right": 771.8429578116031,
+            "bottom": 471.6280173361612
+          },
+          "owner": "opening_ranger_0_1",
+          "text": "与ダメージ +6%",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 779.4064232931161,
+            "top": 466.4369436149159,
+            "right": 851.9563805685067,
+            "bottom": 476.4369436149159
+          },
+          "owner": "opening_ranger_0_2",
+          "text": "与ダメージ +6%",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 886.9929058358773,
+            "top": 513.3218539194336,
+            "right": 942.292878370057,
+            "bottom": 541.3218539194336
+          },
+          "owner": "opening_ranger_0_3",
+          "text": "確かな射撃 / 起点から3pt",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 658.6117901260037,
+            "top": 540.7504841215234,
+            "right": 721.1617474013943,
+            "bottom": 550.7504841215234
+          },
+          "owner": "opening_ranger_1_1",
+          "text": "攻撃速度 +3%",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 702.8328332748862,
+            "top": 607.726317058811,
+            "right": 765.3827905502768,
+            "bottom": 617.726317058811
+          },
+          "owner": "opening_ranger_1_2",
+          "text": "攻撃速度 +3%",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 791.648999482185,
+            "top": 674.3918440596693,
+            "right": 851.648999482185,
+            "bottom": 702.3918440596693
+          },
+          "owner": "opening_ranger_1_3",
+          "text": "淀みない速射 / 起点から3pt",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 708.8390115876606,
+            "top": 525.6613277343113,
+            "right": 801.3889688630512,
+            "bottom": 535.6613277343113
+          },
+          "owner": "opening_ranger_2_1",
+          "text": "会心率 +8%（相対）",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 771.0065708349136,
+            "top": 561.5537073423325,
+            "right": 863.5565281103043,
+            "bottom": 571.5537073423325
+          },
+          "owner": "opening_ranger_2_2",
+          "text": "会心率 +8%（相対）",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 860.7522716471481,
+            "top": 606.9086233924683,
+            "right": 920.7522716471481,
+            "bottom": 634.9086233924683
+          },
+          "owner": "opening_ranger_2_3",
+          "text": "狙いを定める / 起点から3pt",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 528.8313483759762,
+            "top": 543.6286344581031,
+            "right": 568.8313483759762,
+            "bottom": 552.6286344581031
+          },
+          "owner": "origin_assassin",
+          "text": "アサシン",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 1106.1967870967992,
+            "top": 810.0525759521056,
+            "right": 1126.1967870967992,
+            "bottom": 820.0525759521056
+          },
+          "owner": null,
+          "text": "範囲",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 963.2399345283274,
+            "top": 231.15405172474942,
+            "right": 983.2399345283274,
+            "bottom": 241.15405172474942
+          },
+          "owner": null,
+          "text": "範囲",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 1360.8849599580074,
+            "top": 1038.7527497393191,
+            "right": 1380.8849599580074,
+            "bottom": 1048.7527497393191
+          },
+          "owner": null,
+          "text": "弱点",
+          "dx": 0,
+          "dy": 0
+        }
+      ],
+      "cam": {
+        "x": 693.143,
+        "y": 451.39700000000005,
+        "z": 0.3262943600729197
+      },
+      "arranged": false,
+      "drawMs": 7.199999988079071
+    },
+    {
+      "phase": "Before",
+      "origin": "assassin",
+      "captions": 16,
+      "blocks": 15,
+      "labelPairs": [],
+      "labelNodes": [
+        {
+          "text": "範囲",
+          "node": "join_healer_1"
+        },
+        {
+          "text": "装甲",
+          "node": "g6n9"
+        },
+        {
+          "text": "資源循環",
+          "node": "g39n5"
+        },
+        {
+          "text": "資源循環",
+          "node": "g40n4"
+        }
+      ],
+      "labelLines": [
+        {
+          "text": "戦士",
+          "edge": [
+            "origin_warrior",
+            "opening_warrior_0_1"
+          ]
+        },
+        {
+          "text": "レンジャー",
+          "edge": [
+            "origin_ranger",
+            "opening_ranger_1_1"
+          ]
+        },
+        {
+          "text": "アサシン",
+          "edge": [
+            "origin_assassin",
+            "opening_assassin_0_1"
+          ]
+        },
+        {
+          "text": "アサシン",
+          "edge": [
+            "origin_assassin",
+            "opening_assassin_1_1"
+          ]
+        },
+        {
+          "text": "範囲",
+          "edge": [
+            "join_healer_1",
+            "g42n3"
+          ]
+        },
+        {
+          "text": "装甲",
+          "edge": [
+            "g6n9",
+            "g6n5"
+          ]
+        },
+        {
+          "text": "機動",
+          "edge": [
+            "g10hub",
+            "g10n5"
+          ]
+        },
+        {
+          "text": "範囲",
+          "edge": [
+            "g34n9",
+            "g34n5"
+          ]
+        },
+        {
+          "text": "資源循環",
+          "edge": [
+            "g39n4",
+            "g39n5"
+          ]
+        },
+        {
+          "text": "資源循環",
+          "edge": [
+            "g39n5",
+            "g39n6"
+          ]
+        },
+        {
+          "text": "資源循環",
+          "edge": [
+            "g40n4",
+            "g40n5"
+          ]
+        },
+        {
+          "text": "資源循環",
+          "edge": [
+            "g40n0",
+            "g40n4"
+          ]
+        },
+        {
+          "text": "資源循環",
+          "edge": [
+            "link_assassin_1_4",
+            "g40n4"
+          ]
+        },
+        {
+          "text": "弱点",
+          "edge": [
+            "g48n9",
+            "g48n5"
+          ]
+        },
+        {
+          "text": "弱点",
+          "edge": [
+            "g48n9",
+            "g48n5"
+          ]
+        },
+        {
+          "text": "弱点",
+          "edge": [
+            "g48n6",
+            "g48n9"
+          ]
+        }
+      ],
+      "captionBackplateIntersections": [],
+      "nodePairs": [],
+      "unplaced": [],
+      "boxes": [
+        {
+          "box": {
+            "left": 545.4756804180481,
+            "top": 279.3462316911768,
+            "right": 651.8825255108216,
+            "bottom": 303.03014204660667
+          },
+          "owner": "medallion",
+          "text": "アサシン / PROJECTS / CLASS START",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 500.5597366257571,
+            "top": 341.08187311289635,
+            "right": 520.5597366257571,
+            "bottom": 352.08187311289635
+          },
+          "owner": "origin_warrior",
+          "text": "戦士",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 475.5597366257571,
+            "top": 239.33034591832597,
+            "right": 545.5597366257571,
+            "bottom": 250.33034591832597
+          },
+          "owner": "origin_templar",
+          "text": "タンク〈仮称〉",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 583.6791029644348,
+            "top": 188.45458232104085,
+            "right": 613.6791029644348,
+            "bottom": 198.45458232104085
+          },
+          "owner": "origin_mage",
+          "text": "メイジ",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 661.7984693031126,
+            "top": 341.08187311289635,
+            "right": 711.7984693031126,
+            "bottom": 352.08187311289635
+          },
+          "owner": "origin_ranger",
+          "text": "レンジャー",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 578.6791029644348,
+            "top": 392.9576367101814,
+            "right": 618.6791029644348,
+            "bottom": 401.9576367101814
+          },
+          "owner": "origin_assassin",
+          "text": "アサシン",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 919.5476918808918,
+            "top": 140.4639026318991,
+            "right": 939.5476918808918,
+            "bottom": 150.4639026318991
+          },
+          "owner": "g42n6",
+          "text": "範囲",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 1227.343973618336,
+            "top": 978.5187023730964,
+            "right": 1247.343973618336,
+            "bottom": 988.5187023730964
+          },
+          "owner": null,
+          "text": "裂傷",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 34.85709635176761,
+            "top": 709.2562047366761,
+            "right": 54.85709635176761,
+            "bottom": 719.2562047366761
+          },
+          "owner": null,
+          "text": "装甲",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 135.2110210544554,
+            "top": 128.15142728636795,
+            "right": 155.2110210544554,
+            "bottom": 138.15142728636795
+          },
+          "owner": null,
+          "text": "範囲",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 1433.8606679963182,
+            "top": 357.2138858883658,
+            "right": 1453.8606679963182,
+            "bottom": 367.2138858883658
+          },
+          "owner": null,
+          "text": "機動",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 1030.9967379854604,
+            "top": 591.772721742753,
+            "right": 1050.9967379854604,
+            "bottom": 601.772721742753
+          },
+          "owner": null,
+          "text": "範囲",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 940.3841281442512,
+            "top": 1040.5550186360135,
+            "right": 980.3841281442512,
+            "bottom": 1050.5550186360135
+          },
+          "owner": null,
+          "text": "資源循環",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 660.0008313394703,
+            "top": 872.1652927752729,
+            "right": 700.0008313394703,
+            "bottom": 882.1652927752729
+          },
+          "owner": null,
+          "text": "資源循環",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 1229.5514306043524,
+            "top": 770.067191399784,
+            "right": 1249.5514306043524,
+            "bottom": 780.067191399784
+          },
+          "owner": null,
+          "text": "弱点",
+          "dx": 0,
+          "dy": 0
+        }
+      ],
+      "cam": {
+        "x": 693.143,
+        "y": 1047.494,
+        "z": 0.25437881798642575
+      },
+      "arranged": false,
+      "drawMs": 12
+    },
+    {
+      "phase": "BeforeOverview",
+      "captions": 52,
+      "blocks": 52,
+      "labelPairs": [],
+      "labelNodes": [
+        {
+          "text": "術式",
+          "node": "g2n6"
+        },
+        {
+          "text": "術式",
+          "node": "r2_46_1"
+        },
+        {
+          "text": "氷属性",
+          "node": "g3n4"
+        },
+        {
+          "text": "氷属性",
+          "node": "g3n5"
+        },
+        {
+          "text": "技の回転",
+          "node": "g4n5"
+        },
+        {
+          "text": "技の回転",
+          "node": "g4n6"
+        },
+        {
+          "text": "裂傷",
+          "node": "g5n4"
+        },
+        {
+          "text": "装甲",
+          "node": "g6n7"
+        },
+        {
+          "text": "装甲",
+          "node": "g6n8"
+        },
+        {
+          "text": "範囲",
+          "node": "g7n6"
+        },
+        {
+          "text": "範囲",
+          "node": "g7n7"
+        },
+        {
+          "text": "火属性",
+          "node": "g8n4"
+        },
+        {
+          "text": "雷属性",
+          "node": "key_15"
+        },
+        {
+          "text": "機動",
+          "node": "g10n5"
+        },
+        {
+          "text": "受け流し",
+          "node": "r11_40_1"
+        },
+        {
+          "text": "吸収",
+          "node": "g13n6"
+        },
+        {
+          "text": "吸収",
+          "node": "g13n7"
+        },
+        {
+          "text": "資源循環",
+          "node": "g14n4"
+        },
+        {
+          "text": "資源循環",
+          "node": "g14n5"
+        },
+        {
+          "text": "貫通",
+          "node": "g16n6"
+        },
+        {
+          "text": "貫通",
+          "node": "g16n7"
+        },
+        {
+          "text": "弱点",
+          "node": "g17n5"
+        },
+        {
+          "text": "生命",
+          "node": "g18n5"
+        },
+        {
+          "text": "魔力",
+          "node": "g20n6"
+        },
+        {
+          "text": "魔力",
+          "node": "key_02"
+        },
+        {
+          "text": "裂傷",
+          "node": "g21n5"
+        },
+        {
+          "text": "魔法防御",
+          "node": "g23n6"
+        },
+        {
+          "text": "魔法防御",
+          "node": "g23n7"
+        },
+        {
+          "text": "会心",
+          "node": "g25n4"
+        },
+        {
+          "text": "会心",
+          "node": "g25n5"
+        },
+        {
+          "text": "会心",
+          "node": "g25n6"
+        },
+        {
+          "text": "氷属性",
+          "node": "g27n6"
+        },
+        {
+          "text": "氷属性",
+          "node": "g27n7"
+        },
+        {
+          "text": "氷属性",
+          "node": "r27_52_1"
+        },
+        {
+          "text": "受け流し",
+          "node": "g28n6"
+        },
+        {
+          "text": "攻撃速度",
+          "node": "g30n5"
+        },
+        {
+          "text": "攻撃速度",
+          "node": "g30n6"
+        },
+        {
+          "text": "障壁",
+          "node": "g31n6"
+        },
+        {
+          "text": "会心",
+          "node": "g32n5"
+        },
+        {
+          "text": "会心",
+          "node": "g32n6"
+        },
+        {
+          "text": "回復",
+          "node": "g33n4"
+        },
+        {
+          "text": "範囲",
+          "node": "g34n6"
+        },
+        {
+          "text": "範囲",
+          "node": "g34n7"
+        },
+        {
+          "text": "範囲",
+          "node": "g34n8"
+        },
+        {
+          "text": "物理火力",
+          "node": "g35n5"
+        },
+        {
+          "text": "物理火力",
+          "node": "g35n6"
+        },
+        {
+          "text": "貫通",
+          "node": "g37n6"
+        },
+        {
+          "text": "貫通",
+          "node": "g37n7"
+        },
+        {
+          "text": "回復",
+          "node": "g38n5"
+        },
+        {
+          "text": "資源循環",
+          "node": "g39n6"
+        },
+        {
+          "text": "資源循環",
+          "node": "link_assassin_1_4"
+        },
+        {
+          "text": "攻撃速度",
+          "node": "g41n6"
+        },
+        {
+          "text": "攻撃速度",
+          "node": "g41n7"
+        },
+        {
+          "text": "攻撃速度",
+          "node": "g41n8"
+        },
+        {
+          "text": "範囲",
+          "node": "g42n4"
+        },
+        {
+          "text": "範囲",
+          "node": "g42n6"
+        },
+        {
+          "text": "雷属性",
+          "node": "g43n3"
+        },
+        {
+          "text": "雷属性",
+          "node": "g43n4"
+        },
+        {
+          "text": "機動",
+          "node": "g44n5"
+        },
+        {
+          "text": "機動",
+          "node": "g44n6"
+        },
+        {
+          "text": "生命",
+          "node": "g45n4"
+        },
+        {
+          "text": "生命",
+          "node": "g45n5"
+        },
+        {
+          "text": "魔法防御",
+          "node": "g46n6"
+        },
+        {
+          "text": "火属性",
+          "node": "g47n4"
+        },
+        {
+          "text": "火属性",
+          "node": "g47n5"
+        },
+        {
+          "text": "弱点",
+          "node": "g48n7"
+        },
+        {
+          "text": "弱点",
+          "node": "g48n8"
+        },
+        {
+          "text": "装甲",
+          "node": "g49n5"
+        },
+        {
+          "text": "障壁",
+          "node": "g51n7"
+        },
+        {
+          "text": "技の回転",
+          "node": "g52n4"
+        },
+        {
+          "text": "技の回転",
+          "node": "g52n5"
+        },
+        {
+          "text": "戦士",
+          "node": "opening_warrior_0_1"
+        },
+        {
+          "text": "レンジャー",
+          "node": "opening_ranger_1_1"
+        },
+        {
+          "text": "アサシン",
+          "node": "opening_assassin_0_1"
+        },
+        {
+          "text": "アサシン",
+          "node": "opening_assassin_1_1"
+        }
+      ],
+      "labelLines": [
+        {
+          "text": "術式",
+          "edge": [
+            "g2n6",
+            "r2_46_1"
+          ]
+        },
+        {
+          "text": "術式",
+          "edge": [
+            "g2n7",
+            "r2_46_1"
+          ]
+        },
+        {
+          "text": "術式",
+          "edge": [
+            "r2_51_1",
+            "r2_46_1"
+          ]
+        },
+        {
+          "text": "氷属性",
+          "edge": [
+            "g3n4",
+            "g3n5"
+          ]
+        },
+        {
+          "text": "技の回転",
+          "edge": [
+            "g4n4",
+            "g4n5"
+          ]
+        },
+        {
+          "text": "技の回転",
+          "edge": [
+            "g4n5",
+            "g4n6"
+          ]
+        },
+        {
+          "text": "技の回転",
+          "edge": [
+            "r3_4_2",
+            "g4n6"
+          ]
+        },
+        {
+          "text": "裂傷",
+          "edge": [
+            "g5n4",
+            "r5_48_1"
+          ]
+        },
+        {
+          "text": "装甲",
+          "edge": [
+            "g6n6",
+            "g6n7"
+          ]
+        },
+        {
+          "text": "装甲",
+          "edge": [
+            "g6n7",
+            "g6n8"
+          ]
+        },
+        {
+          "text": "範囲",
+          "edge": [
+            "g7n5",
+            "g7n6"
+          ]
+        },
+        {
+          "text": "範囲",
+          "edge": [
+            "g7n6",
+            "g7n7"
+          ]
+        },
+        {
+          "text": "機動",
+          "edge": [
+            "g10n5",
+            "g10n6"
+          ]
+        },
+        {
+          "text": "機動",
+          "edge": [
+            "g10n5",
+            "r10_14_1"
+          ]
+        },
+        {
+          "text": "受け流し",
+          "edge": [
+            "g11n5",
+            "r11_40_1"
+          ]
+        },
+        {
+          "text": "受け流し",
+          "edge": [
+            "g11n4",
+            "r11_40_1"
+          ]
+        },
+        {
+          "text": "受け流し",
+          "edge": [
+            "r11_40_1",
+            "g11n7"
+          ]
+        },
+        {
+          "text": "吸収",
+          "edge": [
+            "g13n6",
+            "g13n7"
+          ]
+        },
+        {
+          "text": "吸収",
+          "edge": [
+            "g13n7",
+            "g13n8"
+          ]
+        },
+        {
+          "text": "吸収",
+          "edge": [
+            "g13n7",
+            "r13_35_1"
+          ]
+        },
+        {
+          "text": "資源循環",
+          "edge": [
+            "g14n3",
+            "g14n4"
+          ]
+        },
+        {
+          "text": "資源循環",
+          "edge": [
+            "g14n4",
+            "g14n5"
+          ]
+        },
+        {
+          "text": "資源循環",
+          "edge": [
+            "g14n5",
+            "g14n6"
+          ]
+        },
+        {
+          "text": "資源循環",
+          "edge": [
+            "g14n6",
+            "r14_27_1"
+          ]
+        },
+        {
+          "text": "資源循環",
+          "edge": [
+            "g14n4",
+            "r14_27_1"
+          ]
+        },
+        {
+          "text": "貫通",
+          "edge": [
+            "g16n5",
+            "g16n6"
+          ]
+        },
+        {
+          "text": "貫通",
+          "edge": [
+            "g16n6",
+            "g16n7"
+          ]
+        },
+        {
+          "text": "弱点",
+          "edge": [
+            "g17n5",
+            "r17_44_1"
+          ]
+        },
+        {
+          "text": "弱点",
+          "edge": [
+            "g17n4",
+            "r17_44_1"
+          ]
+        },
+        {
+          "text": "生命",
+          "edge": [
+            "g18n4",
+            "g18n5"
+          ]
+        },
+        {
+          "text": "生命",
+          "edge": [
+            "g18n5",
+            "g18n6"
+          ]
+        },
+        {
+          "text": "生命",
+          "edge": [
+            "r6_18_1",
+            "g18n5"
+          ]
+        },
+        {
+          "text": "生命",
+          "edge": [
+            "g18n5",
+            "g18n7"
+          ]
+        },
+        {
+          "text": "技の回転",
+          "edge": [
+            "r9_19_2",
+            "g19n5"
+          ]
+        },
+        {
+          "text": "魔力",
+          "edge": [
+            "g20n6",
+            "key_02"
+          ]
+        },
+        {
+          "text": "魔法防御",
+          "edge": [
+            "g23n5",
+            "g23n6"
+          ]
+        },
+        {
+          "text": "魔法防御",
+          "edge": [
+            "g23n6",
+            "g23n7"
+          ]
+        },
+        {
+          "text": "魔法防御",
+          "edge": [
+            "g23n7",
+            "g23n8"
+          ]
+        },
+        {
+          "text": "魔法防御",
+          "edge": [
+            "g23n6",
+            "g23n8"
+          ]
+        },
+        {
+          "text": "氷属性",
+          "edge": [
+            "g27n6",
+            "g27n7"
+          ]
+        },
+        {
+          "text": "氷属性",
+          "edge": [
+            "g27n7",
+            "g27n8"
+          ]
+        },
+        {
+          "text": "氷属性",
+          "edge": [
+            "r19_27_1",
+            "g27n6"
+          ]
+        },
+        {
+          "text": "氷属性",
+          "edge": [
+            "g27n8",
+            "r27_52_1"
+          ]
+        },
+        {
+          "text": "氷属性",
+          "edge": [
+            "r27_52_1",
+            "r19_27_1"
+          ]
+        },
+        {
+          "text": "氷属性",
+          "edge": [
+            "g27n5",
+            "g27n7"
+          ]
+        },
+        {
+          "text": "氷属性",
+          "edge": [
+            "g27n5",
+            "r19_27_1"
+          ]
+        },
+        {
+          "text": "氷属性",
+          "edge": [
+            "g27n5",
+            "r19_27_1"
+          ]
+        },
+        {
+          "text": "受け流し",
+          "edge": [
+            "g28n6",
+            "r28_39_1"
+          ]
+        },
+        {
+          "text": "受け流し",
+          "edge": [
+            "g28n5",
+            "r28_39_1"
+          ]
+        },
+        {
+          "text": "攻撃速度",
+          "edge": [
+            "g30n5",
+            "r30_36_1"
+          ]
+        },
+        {
+          "text": "会心",
+          "edge": [
+            "g32n5",
+            "g32n6"
+          ]
+        },
+        {
+          "text": "会心",
+          "edge": [
+            "g32n6",
+            "g32n7"
+          ]
+        },
+        {
+          "text": "会心",
+          "edge": [
+            "r15_32_2",
+            "g32n6"
+          ]
+        },
+        {
+          "text": "範囲",
+          "edge": [
+            "g34n5",
+            "g34n6"
+          ]
+        },
+        {
+          "text": "範囲",
+          "edge": [
+            "g34n6",
+            "g34n7"
+          ]
+        },
+        {
+          "text": "範囲",
+          "edge": [
+            "g34n7",
+            "g34n8"
+          ]
+        },
+        {
+          "text": "物理火力",
+          "edge": [
+            "g35n4",
+            "g35n5"
+          ]
+        },
+        {
+          "text": "物理火力",
+          "edge": [
+            "g35n5",
+            "g35n6"
+          ]
+        },
+        {
+          "text": "物理火力",
+          "edge": [
+            "g35n6",
+            "g35n7"
+          ]
+        },
+        {
+          "text": "物理火力",
+          "edge": [
+            "g35n6",
+            "r35_38_1"
+          ]
+        },
+        {
+          "text": "貫通",
+          "edge": [
+            "g37n6",
+            "g37n7"
+          ]
+        },
+        {
+          "text": "回復",
+          "edge": [
+            "r29_38_2",
+            "r16_38_2"
+          ]
+        },
+        {
+          "text": "資源循環",
+          "edge": [
+            "link_assassin_1_3",
+            "link_assassin_1_4"
+          ]
+        },
+        {
+          "text": "資源循環",
+          "edge": [
+            "link_assassin_1_4",
+            "link_assassin_1_5"
+          ]
+        },
+        {
+          "text": "資源循環",
+          "edge": [
+            "link_assassin_1_4",
+            "g40n4"
+          ]
+        },
+        {
+          "text": "攻撃速度",
+          "edge": [
+            "g41n6",
+            "g41n7"
+          ]
+        },
+        {
+          "text": "攻撃速度",
+          "edge": [
+            "g41n7",
+            "g41n8"
+          ]
+        },
+        {
+          "text": "攻撃速度",
+          "edge": [
+            "r5_41_1",
+            "g41n6"
+          ]
+        },
+        {
+          "text": "攻撃速度",
+          "edge": [
+            "g5n1",
+            "g41n7"
+          ]
+        },
+        {
+          "text": "範囲",
+          "edge": [
+            "g42n4",
+            "g42n5"
+          ]
+        },
+        {
+          "text": "範囲",
+          "edge": [
+            "g42n5",
+            "g42n6"
+          ]
+        },
+        {
+          "text": "雷属性",
+          "edge": [
+            "g43n3",
+            "g43n4"
+          ]
+        },
+        {
+          "text": "雷属性",
+          "edge": [
+            "r3_43_1",
+            "g43n3"
+          ]
+        },
+        {
+          "text": "機動",
+          "edge": [
+            "g44n4",
+            "g44n5"
+          ]
+        },
+        {
+          "text": "機動",
+          "edge": [
+            "g44n5",
+            "g44n6"
+          ]
+        },
+        {
+          "text": "機動",
+          "edge": [
+            "g44n6",
+            "g44n7"
+          ]
+        },
+        {
+          "text": "機動",
+          "edge": [
+            "r25_44_2",
+            "g44n6"
+          ]
+        },
+        {
+          "text": "機動",
+          "edge": [
+            "r25_44_1",
+            "g44n5"
+          ]
+        },
+        {
+          "text": "火属性",
+          "edge": [
+            "g47n4",
+            "g47n5"
+          ]
+        },
+        {
+          "text": "火属性",
+          "edge": [
+            "r8_47_1",
+            "g47n5"
+          ]
+        },
+        {
+          "text": "火属性",
+          "edge": [
+            "g47n3",
+            "g47n5"
+          ]
+        },
+        {
+          "text": "弱点",
+          "edge": [
+            "g48n6",
+            "g48n7"
+          ]
+        },
+        {
+          "text": "弱点",
+          "edge": [
+            "g48n7",
+            "g48n8"
+          ]
+        },
+        {
+          "text": "弱点",
+          "edge": [
+            "g48n6",
+            "g48n8"
+          ]
+        },
+        {
+          "text": "裂傷",
+          "edge": [
+            "g50n1",
+            "g39n1"
+          ]
+        },
+        {
+          "text": "障壁",
+          "edge": [
+            "r31_51_1",
+            "g51n7"
+          ]
+        },
+        {
+          "text": "技の回転",
+          "edge": [
+            "g52n4",
+            "g52n5"
+          ]
+        },
+        {
+          "text": "技の回転",
+          "edge": [
+            "r9_52_1",
+            "g52n4"
+          ]
+        },
+        {
+          "text": "戦士",
+          "edge": [
+            "origin_warrior",
+            "opening_warrior_0_1"
+          ]
+        },
+        {
+          "text": "レンジャー",
+          "edge": [
+            "origin_ranger",
+            "opening_ranger_1_1"
+          ]
+        },
+        {
+          "text": "レンジャー",
+          "edge": [
+            "opening_ranger_1_1",
+            "opening_ranger_2_1"
+          ]
+        },
+        {
+          "text": "レンジャー",
+          "edge": [
+            "opening_ranger_0_1",
+            "opening_ranger_1_1"
+          ]
+        },
+        {
+          "text": "アサシン",
+          "edge": [
+            "origin_assassin",
+            "opening_assassin_0_1"
+          ]
+        },
+        {
+          "text": "アサシン",
+          "edge": [
+            "origin_assassin",
+            "opening_assassin_1_1"
+          ]
+        },
+        {
+          "text": "アサシン",
+          "edge": [
+            "opening_assassin_0_1",
+            "opening_assassin_0_2"
+          ]
+        },
+        {
+          "text": "アサシン",
+          "edge": [
+            "opening_assassin_0_1",
+            "opening_assassin_2_1"
+          ]
+        },
+        {
+          "text": "アサシン",
+          "edge": [
+            "opening_assassin_1_1",
+            "opening_assassin_1_2"
+          ]
+        },
+        {
+          "text": "アサシン",
+          "edge": [
+            "opening_assassin_1_1",
+            "opening_assassin_2_1"
+          ]
+        }
+      ],
+      "captionBackplateIntersections": [],
+      "nodePairs": [
+        [
+          "g2n0",
+          "g2n7"
+        ],
+        [
+          "g2n1",
+          "g2n4"
+        ],
+        [
+          "g3n0",
+          "g3n1"
+        ],
+        [
+          "g7n1",
+          "link_templar_0_3"
+        ],
+        [
+          "g7n5",
+          "join_templar_0"
+        ],
+        [
+          "g10n2",
+          "key_10"
+        ],
+        [
+          "g10n3",
+          "key_10"
+        ],
+        [
+          "g12n2",
+          "r12_46_1"
+        ],
+        [
+          "g13n0",
+          "g13n9"
+        ],
+        [
+          "g14n4",
+          "g14n5"
+        ],
+        [
+          "g16n4",
+          "key_07"
+        ],
+        [
+          "g16n5",
+          "key_07"
+        ],
+        [
+          "g16n8",
+          "key_07"
+        ],
+        [
+          "g17n1",
+          "g17n2"
+        ],
+        [
+          "g19n0",
+          "key_09"
+        ],
+        [
+          "g20n6",
+          "key_02"
+        ],
+        [
+          "g24n2",
+          "g24n3"
+        ],
+        [
+          "g27n0",
+          "g27n9"
+        ],
+        [
+          "g27n6",
+          "key_13"
+        ],
+        [
+          "g31n2",
+          "g31n3"
+        ],
+        [
+          "g32n0",
+          "r32_44_2"
+        ],
+        [
+          "g34n0",
+          "key_06"
+        ],
+        [
+          "g34n1",
+          "key_06"
+        ],
+        [
+          "g34n3",
+          "key_06"
+        ],
+        [
+          "g35n1",
+          "key_08"
+        ],
+        [
+          "g38n4",
+          "g38n6"
+        ],
+        [
+          "g42n4",
+          "g42n6"
+        ],
+        [
+          "g47n1",
+          "g47n2"
+        ],
+        [
+          "g47n2",
+          "key_14"
+        ],
+        [
+          "g48n4",
+          "g48n5"
+        ],
+        [
+          "g48n9",
+          "r36_48_2"
+        ],
+        [
+          "g51n3",
+          "g51n4"
+        ],
+        [
+          "g51n4",
+          "g51n5"
+        ],
+        [
+          "g51n5",
+          "key_01"
+        ],
+        [
+          "r23_47_1",
+          "key_14"
+        ],
+        [
+          "link_warrior_0_2",
+          "link_warrior_0_8"
+        ],
+        [
+          "link_warrior_0_4",
+          "link_warrior_0_6"
+        ],
+        [
+          "opening_mage_2_3",
+          "link_mage_2_1"
+        ]
+      ],
+      "unplaced": [],
+      "boxes": [
+        {
+          "box": {
+            "left": 598.0344189064767,
+            "top": 231.36361702615142,
+            "right": 618.0344189064767,
+            "bottom": 241.36361702615142
+          },
+          "owner": null,
+          "text": "術式",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 1190.1387392833878,
+            "top": 272.3622157439715,
+            "right": 1220.1387392833878,
+            "bottom": 282.3622157439715
+          },
+          "owner": null,
+          "text": "氷属性",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 1121.1353511234279,
+            "top": 359.0546442986117,
+            "right": 1161.1353511234279,
+            "bottom": 369.0546442986117
+          },
+          "owner": null,
+          "text": "技の回転",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 1044.5629716883304,
+            "top": 847.4760644250239,
+            "right": 1064.5629716883304,
+            "bottom": 857.4760644250239
+          },
+          "owner": null,
+          "text": "裂傷",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 552.0382250196978,
+            "top": 736.2644058617609,
+            "right": 572.0382250196978,
+            "bottom": 746.2644058617609
+          },
+          "owner": null,
+          "text": "装甲",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 593.4867241886707,
+            "top": 496.254650821357,
+            "right": 613.4867241886707,
+            "bottom": 506.254650821357
+          },
+          "owner": null,
+          "text": "範囲",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 410.8938365200848,
+            "top": 225.42689408867454,
+            "right": 440.8938365200848,
+            "bottom": 235.42689408867454
+          },
+          "owner": null,
+          "text": "火属性",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 997.631338741302,
+            "top": 152.68162447439101,
+            "right": 1027.631338741302,
+            "bottom": 162.68162447439101
+          },
+          "owner": null,
+          "text": "雷属性",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 1129.8591577683908,
+            "top": 590.8627606001816,
+            "right": 1149.8591577683908,
+            "bottom": 600.8627606001816
+          },
+          "owner": null,
+          "text": "機動",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 754.3796869235483,
+            "top": 875.4886638298563,
+            "right": 794.3796869235483,
+            "bottom": 885.4886638298563
+          },
+          "owner": null,
+          "text": "受け流し",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 756.6830007079806,
+            "top": 147.09675365374972,
+            "right": 776.6830007079806,
+            "bottom": 157.09675365374972
+          },
+          "owner": null,
+          "text": "魔力",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 344.3066737643475,
+            "top": 785.2791963715149,
+            "right": 364.3066737643475,
+            "bottom": 795.2791963715149
+          },
+          "owner": null,
+          "text": "吸収",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 1015.030729134575,
+            "top": 405.8367672048625,
+            "right": 1055.030729134575,
+            "bottom": 415.8367672048625
+          },
+          "owner": null,
+          "text": "資源循環",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 356.39349763282354,
+            "top": 431.4234832182131,
+            "right": 376.39349763282354,
+            "bottom": 441.4234832182131
+          },
+          "owner": null,
+          "text": "貫通",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 1271.6045356938084,
+            "top": 744.1950556934099,
+            "right": 1291.6045356938084,
+            "bottom": 754.1950556934099
+          },
+          "owner": null,
+          "text": "弱点",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 517.8434233599866,
+            "top": 908.6168728755249,
+            "right": 537.8434233599866,
+            "bottom": 918.6168728755249
+          },
+          "owner": null,
+          "text": "生命",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 907.9856385940394,
+            "top": 215.92597262582672,
+            "right": 947.9856385940394,
+            "bottom": 225.92597262582672
+          },
+          "owner": null,
+          "text": "技の回転",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 831.75812425784,
+            "top": 79.89879658234804,
+            "right": 851.75812425784,
+            "bottom": 89.89879658234804
+          },
+          "owner": null,
+          "text": "魔力",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 629.1709913598797,
+            "top": 875.790671314159,
+            "right": 649.1709913598797,
+            "bottom": 885.790671314159
+          },
+          "owner": null,
+          "text": "裂傷",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 283.64780024610593,
+            "top": 364.82042280303597,
+            "right": 323.64780024610593,
+            "bottom": 374.82042280303597
+          },
+          "owner": null,
+          "text": "魔法防御",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 754.2293015288943,
+            "top": 274.41611437655746,
+            "right": 774.2293015288943,
+            "bottom": 284.41611437655746
+          },
+          "owner": null,
+          "text": "術式",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 1324.4669130138097,
+            "top": 493.58801024307206,
+            "right": 1344.4669130138097,
+            "bottom": 503.58801024307206
+          },
+          "owner": null,
+          "text": "会心",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 679.8463909902064,
+            "top": 941.736886901616,
+            "right": 719.8463909902064,
+            "bottom": 951.736886901616
+          },
+          "owner": null,
+          "text": "受け流し",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 1017.4460113282685,
+            "top": 296.374709280588,
+            "right": 1047.4460113282685,
+            "bottom": 306.374709280588
+          },
+          "owner": null,
+          "text": "氷属性",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 833.8213267942447,
+            "top": 957.6372867699793,
+            "right": 873.8213267942447,
+            "bottom": 967.6372867699793
+          },
+          "owner": null,
+          "text": "受け流し",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 1171.543625729253,
+            "top": 801.404084617517,
+            "right": 1211.543625729253,
+            "bottom": 811.404084617517
+          },
+          "owner": null,
+          "text": "攻撃速度",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 528.1355909537137,
+            "top": 150.55336836024293,
+            "right": 548.1355909537137,
+            "bottom": 160.55336836024293
+          },
+          "owner": null,
+          "text": "障壁",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 1218.7327078946173,
+            "top": 596.4393661036976,
+            "right": 1238.7327078946173,
+            "bottom": 606.4393661036976
+          },
+          "owner": null,
+          "text": "会心",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 290.8523996862517,
+            "top": 643.141393746504,
+            "right": 310.8523996862517,
+            "bottom": 653.141393746504
+          },
+          "owner": null,
+          "text": "回復",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 963.4670080070877,
+            "top": 687.7410017032464,
+            "right": 983.4670080070877,
+            "bottom": 697.7410017032464
+          },
+          "owner": null,
+          "text": "範囲",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 413.91328655853727,
+            "top": 680.4222888772856,
+            "right": 453.91328655853727,
+            "bottom": 690.4222888772856
+          },
+          "owner": null,
+          "text": "物理火力",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 216.92271159714574,
+            "top": 538.5337654396719,
+            "right": 236.92271159714574,
+            "bottom": 548.5337654396719
+          },
+          "owner": null,
+          "text": "貫通",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 460.8562760251337,
+            "top": 577.3174139294208,
+            "right": 480.8562760251337,
+            "bottom": 587.3174139294208
+          },
+          "owner": null,
+          "text": "回復",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 920.1721298853693,
+            "top": 873.0985023185842,
+            "right": 960.1721298853693,
+            "bottom": 883.0985023185842
+          },
+          "owner": null,
+          "text": "資源循環",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 804.3673232568592,
+            "top": 803.5496388029799,
+            "right": 844.3673232568592,
+            "bottom": 813.5496388029799
+          },
+          "owner": null,
+          "text": "資源循環",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 1037.88819894198,
+            "top": 938.8932098549926,
+            "right": 1077.88819894198,
+            "bottom": 948.8932098549926
+          },
+          "owner": null,
+          "text": "攻撃速度",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 917.4359662861623,
+            "top": 501.3399887953244,
+            "right": 937.4359662861623,
+            "bottom": 511.3399887953244
+          },
+          "owner": null,
+          "text": "範囲",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 1240.4368155563534,
+            "top": 356.8684941224702,
+            "right": 1270.4368155563534,
+            "bottom": 366.8684941224702
+          },
+          "owner": null,
+          "text": "雷属性",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 1292.9681418613923,
+            "top": 630.4844092707472,
+            "right": 1312.9681418613923,
+            "bottom": 640.4844092707472
+          },
+          "owner": null,
+          "text": "機動",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 264.3100577120684,
+            "top": 727.4766422789684,
+            "right": 284.3100577120684,
+            "bottom": 737.4766422789684
+          },
+          "owner": null,
+          "text": "生命",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 636.1738840223056,
+            "top": 143.37482266286258,
+            "right": 676.1738840223056,
+            "bottom": 153.37482266286258
+          },
+          "owner": null,
+          "text": "魔法防御",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 356.5338281655925,
+            "top": 317.3239254562783,
+            "right": 386.5338281655925,
+            "bottom": 327.3239254562783
+          },
+          "owner": null,
+          "text": "火属性",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 1045.474702637783,
+            "top": 761.3807542022731,
+            "right": 1065.474702637783,
+            "bottom": 771.3807542022731
+          },
+          "owner": null,
+          "text": "弱点",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 395.96420731079365,
+            "top": 892.7397199546136,
+            "right": 415.96420731079365,
+            "bottom": 902.7397199546136
+          },
+          "owner": null,
+          "text": "装甲",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 944.7108957316184,
+            "top": 949.5058179932992,
+            "right": 964.7108957316184,
+            "bottom": 959.5058179932992
+          },
+          "owner": null,
+          "text": "裂傷",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 487.17881318211806,
+            "top": 248.43376015362168,
+            "right": 507.17881318211806,
+            "bottom": 258.4337601536217
+          },
+          "owner": null,
+          "text": "障壁",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 1081.896257815666,
+            "top": 242.89651938212967,
+            "right": 1121.896257815666,
+            "bottom": 252.89651938212967
+          },
+          "owner": null,
+          "text": "技の回転",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 745.3842200126362,
+            "top": 607.2734683942895,
+            "right": 763.3842200126362,
+            "bottom": 616.2734683942895
+          },
+          "owner": null,
+          "text": "戦士",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 740.8842200126362,
+            "top": 565.2477269710155,
+            "right": 767.8842200126362,
+            "bottom": 574.2477269710155
+          },
+          "owner": null,
+          "text": "タンク",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 777.279562728727,
+            "top": 544.2348562593785,
+            "right": 804.279562728727,
+            "bottom": 553.2348562593785
+          },
+          "owner": null,
+          "text": "メイジ",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 804.6749054448178,
+            "top": 607.2734683942895,
+            "right": 849.6749054448178,
+            "bottom": 616.2734683942895
+          },
+          "owner": null,
+          "text": "レンジャー",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 772.779562728727,
+            "top": 629.2863391059265,
+            "right": 808.779562728727,
+            "bottom": 637.2863391059265
+          },
+          "owner": null,
+          "text": "アサシン",
+          "dx": 0,
+          "dy": 0
+        }
+      ],
+      "cam": {
+        "x": -150.18949999999995,
+        "y": -345.12750000000005,
+        "z": 0.1050643535581849
+      },
+      "arranged": false,
+      "drawMs": 26
+    },
+    {
+      "phase": "After",
+      "origin": "warrior",
+      "captions": 22,
+      "blocks": 18,
+      "labelPairs": [],
+      "labelNodes": [],
+      "labelLines": [],
+      "captionBackplateIntersections": [
+        {
+          "text": "戦士",
+          "edge": [
+            "origin_warrior",
+            "opening_warrior_0_1"
+          ]
+        },
+        {
+          "text": "物理ダメージ +6%",
+          "edge": [
+            "opening_warrior_0_1",
+            "opening_warrior_0_2"
+          ]
+        },
+        {
+          "text": "物理ダメージ +6%",
+          "edge": [
+            "opening_warrior_0_2",
+            "opening_warrior_0_3"
+          ]
+        },
+        {
+          "text": "鍛えた一撃 / 起点から3pt",
+          "edge": [
+            "opening_warrior_0_3",
+            "link_warrior_0_1"
+          ]
+        },
+        {
+          "text": "最大HP +4%",
+          "edge": [
+            "opening_warrior_1_1",
+            "opening_warrior_2_1"
+          ]
+        },
+        {
+          "text": "最大HP +4%",
+          "edge": [
+            "opening_warrior_1_2",
+            "opening_warrior_2_3"
+          ]
+        },
+        {
+          "text": "戦うための体力 / 起点から3pt",
+          "edge": [
+            "opening_warrior_2_2",
+            "opening_warrior_1_3"
+          ]
+        },
+        {
+          "text": "攻撃速度 +3%",
+          "edge": [
+            "opening_warrior_2_1",
+            "opening_warrior_2_2"
+          ]
+        },
+        {
+          "text": "攻撃速度 +3%",
+          "edge": [
+            "opening_warrior_2_2",
+            "opening_warrior_0_3"
+          ]
+        },
+        {
+          "text": "レンジャー",
+          "edge": [
+            "origin_ranger",
+            "opening_ranger_1_1"
+          ]
+        },
+        {
+          "text": "アサシン",
+          "edge": [
+            "origin_assassin",
+            "opening_assassin_0_1"
+          ]
+        },
+        {
+          "text": "アサシン",
+          "edge": [
+            "origin_assassin",
+            "opening_assassin_1_1"
+          ]
+        },
+        {
+          "text": "回復",
+          "edge": [
+            "g38n1",
+            "g38n4"
+          ]
+        }
+      ],
+      "nodePairs": [],
+      "unplaced": [],
+      "boxes": [
+        {
+          "box": {
+            "left": 1157.1861810501955,
+            "top": 540.2377478992476,
+            "right": 1263.593026142969,
+            "bottom": 567.9681559146675
+          },
+          "owner": "medallion",
+          "text": "戦士 / PROJECTS / CLASS START",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 1087.1431597722583,
+            "top": 615.1593799609271,
+            "right": 1107.1431597722583,
+            "bottom": 626.1593799609271
+          },
+          "owner": "origin_warrior",
+          "text": "戦士",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 1027.791131315412,
+            "top": 678.6605555453849,
+            "right": 1110.3410885908027,
+            "bottom": 688.6605555453849
+          },
+          "owner": "opening_warrior_0_1",
+          "text": "物理ダメージ +6%",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 983.4860468799411,
+            "top": 745.7636748325544,
+            "right": 1066.0360041553317,
+            "bottom": 755.7636748325544
+          },
+          "owner": "opening_warrior_0_2",
+          "text": "物理ダメージ +6%",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 909.4034812493801,
+            "top": 812.5558984525176,
+            "right": 964.7034537835598,
+            "bottom": 840.5558984525176
+          },
+          "owner": "opening_warrior_0_3",
+          "text": "鍛えた一撃 / 起点から3pt",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 995.2181119215645,
+            "top": 599.3877179538815,
+            "right": 1051.3780545485176,
+            "bottom": 609.3877179538815
+          },
+          "owner": "opening_warrior_1_1",
+          "text": "最大HP +4%",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 914.9524350647556,
+            "top": 604.2057835093876,
+            "right": 971.1123776917087,
+            "bottom": 614.2057835093876
+          },
+          "owner": "opening_warrior_1_2",
+          "text": "最大HP +4%",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 808.8828416975492,
+            "top": 651.1797977314751,
+            "right": 878.8828416975492,
+            "bottom": 679.1797977314751
+          },
+          "owner": "opening_warrior_1_3",
+          "text": "戦うための体力 / 起点から3pt",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 972.4399467081148,
+            "top": 663.5427224914545,
+            "right": 1034.9899039835054,
+            "bottom": 673.5427224914545
+          },
+          "owner": "opening_warrior_2_1",
+          "text": "攻撃速度 +3%",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 910.1542391474983,
+            "top": 699.5033149127923,
+            "right": 972.7041964228889,
+            "bottom": 709.5033149127923
+          },
+          "owner": "opening_warrior_2_2",
+          "text": "攻撃速度 +3%",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 837.8188658421448,
+            "top": 744.944427154301,
+            "right": 897.8188658421448,
+            "bottom": 772.944427154301
+          },
+          "owner": "opening_warrior_2_3",
+          "text": "軽やかな連撃 / 起点から3pt",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 1062.1431597722583,
+            "top": 484.3935893378805,
+            "right": 1132.1431597722583,
+            "bottom": 495.3935893378805
+          },
+          "owner": "origin_templar",
+          "text": "タンク〈仮称〉",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 1195.3896035965822,
+            "top": 419.0106940263572,
+            "right": 1225.3896035965822,
+            "bottom": 429.0106940263572
+          },
+          "owner": "origin_mage",
+          "text": "メイジ",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 1298.6360474209064,
+            "top": 615.1593799609271,
+            "right": 1348.6360474209064,
+            "bottom": 626.1593799609271
+          },
+          "owner": "origin_ranger",
+          "text": "レンジャー",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 1190.3896035965822,
+            "top": 681.5422752724505,
+            "right": 1230.3896035965822,
+            "bottom": 690.5422752724505
+          },
+          "owner": "origin_assassin",
+          "text": "アサシン",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 616.7141800161189,
+            "top": 352.62823664157185,
+            "right": 636.7141800161189,
+            "bottom": 362.62823664157185
+          },
+          "owner": null,
+          "text": "範囲",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 79.97729034102838,
+            "right": 119.97729034102838,
+            "top": 901.7341147896981,
+            "bottom": 911.7341147896981
+          },
+          "owner": null,
+          "text": "物理火力",
+          "dx": 0,
+          "dy": -24
+        },
+        {
+          "box": {
+            "left": 204.92778949584556,
+            "top": 604.9166613270636,
+            "right": 224.92778949584556,
+            "bottom": 614.9166613270636
+          },
+          "owner": null,
+          "text": "回復",
+          "dx": 0,
+          "dy": 0
+        }
+      ],
+      "cam": {
+        "x": -1331.815,
+        "y": 29.507000000000005,
+        "z": 0.3269144765576167
+      },
+      "arranged": true,
+      "drawMs": 24.899999976158142
+    },
+    {
+      "phase": "After",
+      "origin": "tank",
+      "captions": 21,
+      "blocks": 17,
+      "labelPairs": [],
+      "labelNodes": [],
+      "labelLines": [],
+      "captionBackplateIntersections": [
+        {
+          "text": "戦士",
+          "edge": [
+            "origin_warrior",
+            "opening_warrior_0_1"
+          ]
+        },
+        {
+          "text": "堅実な打撃 / 起点から3pt",
+          "edge": [
+            "opening_templar_0_3",
+            "link_templar_0_1"
+          ]
+        },
+        {
+          "text": "物理防御 +8%",
+          "edge": [
+            "origin_templar",
+            "opening_templar_1_1"
+          ]
+        },
+        {
+          "text": "物理防御 +8%",
+          "edge": [
+            "opening_templar_0_1",
+            "opening_templar_1_1"
+          ]
+        },
+        {
+          "text": "物理防御 +8%",
+          "edge": [
+            "opening_templar_1_1",
+            "opening_templar_1_2"
+          ]
+        },
+        {
+          "text": "揺るがぬ装甲 / 起点から3pt",
+          "edge": [
+            "opening_templar_1_2",
+            "opening_templar_1_3"
+          ]
+        },
+        {
+          "text": "揺るがぬ装甲 / 起点から3pt",
+          "edge": [
+            "opening_templar_2_2",
+            "opening_templar_1_3"
+          ]
+        },
+        {
+          "text": "揺るがぬ装甲 / 起点から3pt",
+          "edge": [
+            "opening_templar_0_3",
+            "opening_templar_1_3"
+          ]
+        },
+        {
+          "text": "付与する障壁量 +6%",
+          "edge": [
+            "opening_templar_0_1",
+            "opening_templar_2_1"
+          ]
+        },
+        {
+          "text": "付与する障壁量 +6%",
+          "edge": [
+            "opening_templar_0_1",
+            "opening_templar_1_1"
+          ]
+        },
+        {
+          "text": "付与する障壁量 +6%",
+          "edge": [
+            "opening_templar_2_1",
+            "opening_templar_2_2"
+          ]
+        },
+        {
+          "text": "付与する障壁量 +6%",
+          "edge": [
+            "opening_templar_0_2",
+            "opening_templar_2_3"
+          ]
+        },
+        {
+          "text": "付与する障壁量 +6%",
+          "edge": [
+            "opening_templar_2_2",
+            "opening_templar_0_3"
+          ]
+        },
+        {
+          "text": "守護の厚み / 起点から3pt",
+          "edge": [
+            "opening_templar_0_2",
+            "opening_templar_2_3"
+          ]
+        },
+        {
+          "text": "守護の厚み / 起点から3pt",
+          "edge": [
+            "opening_templar_0_3",
+            "opening_templar_1_3"
+          ]
+        },
+        {
+          "text": "レンジャー",
+          "edge": [
+            "origin_ranger",
+            "opening_ranger_1_1"
+          ]
+        },
+        {
+          "text": "アサシン",
+          "edge": [
+            "origin_assassin",
+            "opening_assassin_0_1"
+          ]
+        },
+        {
+          "text": "アサシン",
+          "edge": [
+            "origin_assassin",
+            "opening_assassin_1_1"
+          ]
+        }
+      ],
+      "nodePairs": [],
+      "unplaced": [],
+      "boxes": [
+        {
+          "box": {
+            "left": 796.9899363155366,
+            "top": 729.2862205113352,
+            "right": 903.3967814083101,
+            "bottom": 758.0207299111102
+          },
+          "owner": "medallion",
+          "text": "タンク〈仮称〉 / PROJECTS / CLASS START",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 718.6652302624932,
+            "top": 808.2242581104352,
+            "right": 738.6652302624932,
+            "bottom": 819.2242581104352
+          },
+          "owner": "origin_warrior",
+          "text": "戦士",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 693.6652302624932,
+            "top": 667.8955971601969,
+            "right": 763.6652302624932,
+            "bottom": 678.8955971601969
+          },
+          "owner": "origin_templar",
+          "text": "タンク〈仮称〉",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 600.1449026779364,
+            "right": 682.6948599533271,
+            "top": 672.892700776635,
+            "bottom": 682.892700776635
+          },
+          "owner": "opening_templar_0_1",
+          "text": "物理ダメージ +6%",
+          "dx": -8,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 506.0094164784182,
+            "right": 588.5593737538088,
+            "top": 667.7222912639235,
+            "bottom": 677.7222912639235
+          },
+          "owner": "opening_templar_0_2",
+          "text": "物理ダメージ +6%",
+          "dx": -16,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 429.2340607216816,
+            "top": 623.6278685984871,
+            "right": 484.5340332558613,
+            "bottom": 651.6278685984871
+          },
+          "owner": "opening_templar_0_3",
+          "text": "堅実な打撃 / 起点から3pt",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 667.2599340105198,
+            "top": 587.8226599353815,
+            "right": 729.8098912859105,
+            "bottom": 597.8226599353815
+          },
+          "owner": "opening_templar_1_1",
+          "text": "物理防御 +8%",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 619.7148295723172,
+            "top": 515.8123059254619,
+            "right": 682.2647868477078,
+            "bottom": 525.8123059254619
+          },
+          "owner": "opening_templar_1_2",
+          "text": "物理防御 +8%",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 526.8682179158162,
+            "top": 450.45037304971225,
+            "right": 586.8682179158162,
+            "bottom": 478.45037304971225
+          },
+          "owner": "opening_templar_1_3",
+          "text": "揺るがぬ装甲 / 起点から3pt",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 582.1296332356811,
+            "top": 604.0460564278385,
+            "right": 674.6795905110718,
+            "bottom": 614.0460564278385
+          },
+          "owner": "opening_templar_2_1",
+          "text": "付与する障壁量 +6%",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 515.2889870951683,
+            "top": 565.455674666523,
+            "right": 607.8389443705589,
+            "bottom": 575.455674666523
+          },
+          "owner": "opening_templar_2_2",
+          "text": "付与する障壁量 +6%",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 454.92052046531796,
+            "top": 523.0062547290759,
+            "right": 510.22049299949765,
+            "bottom": 551.0062547290759
+          },
+          "owner": "opening_templar_2_3",
+          "text": "守護の厚み / 起点から3pt",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 835.1933588619233,
+            "top": 597.7312666850777,
+            "right": 865.1933588619233,
+            "bottom": 607.7312666850777
+          },
+          "owner": "origin_mage",
+          "text": "メイジ",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 946.7214874613535,
+            "top": 808.2242581104352,
+            "right": 996.7214874613535,
+            "bottom": 819.2242581104352
+          },
+          "owner": "origin_ranger",
+          "text": "レンジャー",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 830.1933588619233,
+            "top": 879.3885885855544,
+            "right": 870.1933588619233,
+            "bottom": 888.3885885855544
+          },
+          "owner": "origin_assassin",
+          "text": "アサシン",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 213.8338941245603,
+            "top": 527.7374822539851,
+            "right": 233.8338941245603,
+            "bottom": 537.7374822539851
+          },
+          "owner": null,
+          "text": "範囲",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 1313.1147836218297,
+            "right": 1333.1147836218297,
+            "top": 544.6135841395051,
+            "bottom": 554.6135841395051
+          },
+          "owner": null,
+          "text": "範囲",
+          "dx": 16,
+          "dy": 0
+        }
+      ],
+      "cam": {
+        "x": -214.33500000000004,
+        "y": -506.60699999999997,
+        "z": 0.35082165237559587
+      },
+      "arranged": true,
+      "drawMs": 15.699999988079071
+    },
+    {
+      "phase": "After",
+      "origin": "mage",
+      "captions": 21,
+      "blocks": 17,
+      "labelPairs": [],
+      "labelNodes": [],
+      "labelLines": [],
+      "captionBackplateIntersections": [
+        {
+          "text": "戦士",
+          "edge": [
+            "origin_warrior",
+            "opening_warrior_0_1"
+          ]
+        },
+        {
+          "text": "魔法ダメージ +6%",
+          "edge": [
+            "origin_mage",
+            "opening_mage_0_1"
+          ]
+        },
+        {
+          "text": "魔法ダメージ +6%",
+          "edge": [
+            "opening_mage_0_1",
+            "opening_mage_0_2"
+          ]
+        },
+        {
+          "text": "魔法ダメージ +6%",
+          "edge": [
+            "opening_mage_0_3",
+            "opening_mage_0_1"
+          ]
+        },
+        {
+          "text": "研ぎ澄ます魔力 / 起点から3pt",
+          "edge": [
+            "opening_mage_0_2",
+            "opening_mage_0_3"
+          ]
+        },
+        {
+          "text": "研ぎ澄ます魔力 / 起点から3pt",
+          "edge": [
+            "opening_mage_2_2",
+            "opening_mage_0_3"
+          ]
+        },
+        {
+          "text": "研ぎ澄ます魔力 / 起点から3pt",
+          "edge": [
+            "opening_mage_0_3",
+            "opening_mage_0_1"
+          ]
+        },
+        {
+          "text": "技能のMP消費 +3% 減少",
+          "edge": [
+            "origin_mage",
+            "opening_mage_1_1"
+          ]
+        },
+        {
+          "text": "技能のMP消費 +3% 減少",
+          "edge": [
+            "opening_mage_1_1",
+            "opening_mage_1_2"
+          ]
+        },
+        {
+          "text": "無理のない詠唱 / 起点から3pt",
+          "edge": [
+            "opening_mage_1_2",
+            "opening_mage_1_3"
+          ]
+        },
+        {
+          "text": "無理のない詠唱 / 起点から3pt",
+          "edge": [
+            "opening_mage_2_2",
+            "opening_mage_1_3"
+          ]
+        },
+        {
+          "text": "付与する障壁量 +6%",
+          "edge": [
+            "opening_mage_0_1",
+            "opening_mage_2_1"
+          ]
+        },
+        {
+          "text": "付与する障壁量 +6%",
+          "edge": [
+            "opening_mage_1_1",
+            "opening_mage_2_1"
+          ]
+        },
+        {
+          "text": "付与する障壁量 +6%",
+          "edge": [
+            "opening_mage_2_1",
+            "opening_mage_2_2"
+          ]
+        },
+        {
+          "text": "付与する障壁量 +6%",
+          "edge": [
+            "opening_mage_2_3",
+            "opening_mage_2_1"
+          ]
+        },
+        {
+          "text": "身を守る術 / 起点から3pt",
+          "edge": [
+            "opening_mage_0_2",
+            "opening_mage_2_3"
+          ]
+        },
+        {
+          "text": "身を守る術 / 起点から3pt",
+          "edge": [
+            "opening_mage_1_2",
+            "opening_mage_2_3"
+          ]
+        },
+        {
+          "text": "身を守る術 / 起点から3pt",
+          "edge": [
+            "opening_mage_2_3",
+            "opening_mage_2_1"
+          ]
+        },
+        {
+          "text": "身を守る術 / 起点から3pt",
+          "edge": [
+            "opening_mage_2_3",
+            "opening_mage_2_2"
+          ]
+        },
+        {
+          "text": "レンジャー",
+          "edge": [
+            "origin_ranger",
+            "opening_ranger_1_1"
+          ]
+        },
+        {
+          "text": "アサシン",
+          "edge": [
+            "origin_assassin",
+            "opening_assassin_0_1"
+          ]
+        },
+        {
+          "text": "アサシン",
+          "edge": [
+            "origin_assassin",
+            "opening_assassin_1_1"
+          ]
+        }
+      ],
+      "nodePairs": [],
+      "unplaced": [],
+      "boxes": [
+        {
+          "box": {
+            "left": 796.9899363155366,
+            "top": 687.1641000554579,
+            "right": 903.3967814083101,
+            "bottom": 714.8986094552329
+          },
+          "owner": "medallion",
+          "text": "メイジ / PROJECTS / CLASS START",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 718.6652302624932,
+            "top": 765.102137654558,
+            "right": 738.6652302624932,
+            "bottom": 776.102137654558
+          },
+          "owner": "origin_warrior",
+          "text": "戦士",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 693.6652302624932,
+            "top": 624.7734767043196,
+            "right": 763.6652302624932,
+            "bottom": 635.7734767043196
+          },
+          "owner": "origin_templar",
+          "text": "タンク〈仮称〉",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 835.1933588619233,
+            "top": 554.6091462292004,
+            "right": 865.1933588619233,
+            "bottom": 564.6091462292004
+          },
+          "owner": "origin_mage",
+          "text": "メイジ",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 759.8033488916446,
+            "top": 485.4972807112081,
+            "right": 842.3533061670353,
+            "bottom": 495.4972807112081
+          },
+          "owner": "opening_mage_0_1",
+          "text": "魔法ダメージ +6%",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 721.212967130329,
+            "top": 408.31651718857694,
+            "right": 803.7629244057197,
+            "bottom": 418.31651718857694
+          },
+          "owner": "opening_mage_0_2",
+          "text": "魔法ダメージ +6%",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 715.2091879348785,
+            "top": 295.7027667760107,
+            "right": 785.2091879348785,
+            "bottom": 323.7027667760107
+          },
+          "owner": "opening_mage_0_3",
+          "text": "研ぎ澄ます魔力 / 起点から3pt",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 852.6884255948974,
+            "right": 961.9283547941161,
+            "top": 485.4972807112081,
+            "bottom": 495.4972807112081
+          },
+          "owner": "opening_mage_1_1",
+          "text": "技能のMP消費 +3% 減少",
+          "dx": 8,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 883.278807356213,
+            "top": 408.31651718857694,
+            "right": 992.5187365554317,
+            "bottom": 418.31651718857694
+          },
+          "owner": "opening_mage_1_2",
+          "text": "技能のMP消費 +3% 減少",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 915.1775297889682,
+            "top": 295.7027667760107,
+            "right": 985.1775297889682,
+            "bottom": 323.7027667760107
+          },
+          "owner": "opening_mage_1_3",
+          "text": "無理のない詠唱 / 起点から3pt",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 803.918380224228,
+            "top": 432.8740328548687,
+            "right": 896.4683374996187,
+            "bottom": 442.8740328548687
+          },
+          "owner": "opening_mage_2_1",
+          "text": "付与する障壁量 +6%",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 803.918380224228,
+            "top": 355.6932693322376,
+            "right": 896.4683374996187,
+            "bottom": 365.6932693322376
+          },
+          "owner": "opening_mage_2_2",
+          "text": "付与する障壁量 +6%",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 822.5433725948335,
+            "top": 267.6370345859631,
+            "right": 877.8433451290132,
+            "bottom": 295.6370345859631
+          },
+          "owner": "opening_mage_2_3",
+          "text": "身を守る術 / 起点から3pt",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 946.7214874613535,
+            "top": 765.102137654558,
+            "right": 996.7214874613535,
+            "bottom": 776.102137654558
+          },
+          "owner": "origin_ranger",
+          "text": "レンジャー",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 830.1933588619233,
+            "top": 836.266468129677,
+            "right": 870.1933588619233,
+            "bottom": 845.266468129677
+          },
+          "owner": "origin_assassin",
+          "text": "アサシン",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 213.8338941245603,
+            "top": 484.6153617981078,
+            "right": 233.8338941245603,
+            "bottom": 494.6153617981078
+          },
+          "owner": null,
+          "text": "範囲",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 1313.1147836218297,
+            "right": 1333.1147836218297,
+            "top": 501.4914636836276,
+            "bottom": 511.4914636836276
+          },
+          "owner": null,
+          "text": "範囲",
+          "dx": 16,
+          "dy": 0
+        }
+      ],
+      "cam": {
+        "x": -214.33500000000004,
+        "y": -383.68949999999995,
+        "z": 0.35082165237559587
+      },
+      "arranged": true,
+      "drawMs": 16
+    },
+    {
+      "phase": "After",
+      "origin": "ranger",
+      "captions": 22,
+      "blocks": 18,
+      "labelPairs": [],
+      "labelNodes": [],
+      "labelLines": [],
+      "captionBackplateIntersections": [
+        {
+          "text": "戦士",
+          "edge": [
+            "origin_warrior",
+            "opening_warrior_0_1"
+          ]
+        },
+        {
+          "text": "レンジャー",
+          "edge": [
+            "origin_ranger",
+            "opening_ranger_1_1"
+          ]
+        },
+        {
+          "text": "与ダメージ +6%",
+          "edge": [
+            "opening_ranger_0_1",
+            "opening_ranger_2_1"
+          ]
+        },
+        {
+          "text": "与ダメージ +6%",
+          "edge": [
+            "opening_ranger_0_1",
+            "opening_ranger_1_1"
+          ]
+        },
+        {
+          "text": "与ダメージ +6%",
+          "edge": [
+            "opening_ranger_0_2",
+            "opening_ranger_0_3"
+          ]
+        },
+        {
+          "text": "与ダメージ +6%",
+          "edge": [
+            "opening_ranger_0_2",
+            "opening_ranger_2_3"
+          ]
+        },
+        {
+          "text": "与ダメージ +6%",
+          "edge": [
+            "opening_ranger_0_1",
+            "opening_ranger_0_3"
+          ]
+        },
+        {
+          "text": "与ダメージ +6%",
+          "edge": [
+            "opening_ranger_1_2",
+            "opening_ranger_0_2"
+          ]
+        },
+        {
+          "text": "確かな射撃 / 起点から3pt",
+          "edge": [
+            "link_ranger_1_2",
+            "join_ranger_1"
+          ]
+        },
+        {
+          "text": "確かな射撃 / 起点から3pt",
+          "edge": [
+            "opening_ranger_0_3",
+            "opening_ranger_1_3"
+          ]
+        },
+        {
+          "text": "攻撃速度 +3%",
+          "edge": [
+            "opening_ranger_1_1",
+            "opening_ranger_1_2"
+          ]
+        },
+        {
+          "text": "攻撃速度 +3%",
+          "edge": [
+            "opening_ranger_1_2",
+            "opening_ranger_1_3"
+          ]
+        },
+        {
+          "text": "攻撃速度 +3%",
+          "edge": [
+            "link_ranger_2_1",
+            "opening_ranger_1_2"
+          ]
+        },
+        {
+          "text": "会心率 +8%（相対）",
+          "edge": [
+            "opening_ranger_2_1",
+            "opening_ranger_2_2"
+          ]
+        },
+        {
+          "text": "会心率 +8%（相対）",
+          "edge": [
+            "opening_ranger_1_2",
+            "opening_ranger_0_2"
+          ]
+        },
+        {
+          "text": "会心率 +8%（相対）",
+          "edge": [
+            "opening_ranger_2_2",
+            "opening_ranger_1_3"
+          ]
+        },
+        {
+          "text": "狙いを定める / 起点から3pt",
+          "edge": [
+            "opening_ranger_2_3",
+            "link_ranger_2_1"
+          ]
+        },
+        {
+          "text": "狙いを定める / 起点から3pt",
+          "edge": [
+            "link_ranger_2_1",
+            "link_ranger_2_2"
+          ]
+        },
+        {
+          "text": "アサシン",
+          "edge": [
+            "origin_assassin",
+            "opening_assassin_0_1"
+          ]
+        },
+        {
+          "text": "アサシン",
+          "edge": [
+            "origin_assassin",
+            "opening_assassin_1_1"
+          ]
+        },
+        {
+          "text": "範囲",
+          "edge": [
+            "g34n9",
+            "g34n5"
+          ]
+        },
+        {
+          "text": "弱点",
+          "edge": [
+            "g48n6",
+            "g48n8"
+          ]
+        }
+      ],
+      "nodePairs": [],
+      "unplaced": [],
+      "boxes": [
+        {
+          "box": {
+            "left": 495.62792582958946,
+            "top": 403.5523099512687,
+            "right": 602.0347709223629,
+            "bottom": 430.2566730743313
+          },
+          "owner": "medallion",
+          "text": "レンジャー / PROJECTS / CLASS START",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 425.7997191031161,
+            "top": 477.36976244351916,
+            "right": 445.7997191031161,
+            "bottom": 488.36976244351916
+          },
+          "owner": "origin_warrior",
+          "text": "戦士",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 400.7997191031161,
+            "top": 346.8520184143513,
+            "right": 470.7997191031161,
+            "bottom": 357.8520184143513
+          },
+          "owner": "origin_templar",
+          "text": "タンク〈仮称〉",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 533.8313483759762,
+            "top": 281.59314639976736,
+            "right": 563.8313483759762,
+            "bottom": 291.59314639976736
+          },
+          "owner": "origin_mage",
+          "text": "メイジ",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 636.8629776488364,
+            "top": 477.36976244351916,
+            "right": 686.8629776488364,
+            "bottom": 488.36976244351916
+          },
+          "owner": "origin_ranger",
+          "text": "レンジャー",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 699.2930005362125,
+            "top": 461.6280173361612,
+            "right": 771.8429578116031,
+            "bottom": 471.6280173361612
+          },
+          "owner": "opening_ranger_0_1",
+          "text": "与ダメージ +6%",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 779.4064232931161,
+            "top": 466.4369436149159,
+            "right": 851.9563805685067,
+            "bottom": 476.4369436149159
+          },
+          "owner": "opening_ranger_0_2",
+          "text": "与ダメージ +6%",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 886.9929058358773,
+            "top": 513.3218539194336,
+            "right": 942.292878370057,
+            "bottom": 541.3218539194336
+          },
+          "owner": "opening_ranger_0_3",
+          "text": "確かな射撃 / 起点から3pt",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 658.6117901260037,
+            "top": 540.7504841215234,
+            "right": 721.1617474013943,
+            "bottom": 550.7504841215234
+          },
+          "owner": "opening_ranger_1_1",
+          "text": "攻撃速度 +3%",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 702.8328332748862,
+            "top": 607.726317058811,
+            "right": 765.3827905502768,
+            "bottom": 617.726317058811
+          },
+          "owner": "opening_ranger_1_2",
+          "text": "攻撃速度 +3%",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 791.648999482185,
+            "top": 674.3918440596693,
+            "right": 851.648999482185,
+            "bottom": 702.3918440596693
+          },
+          "owner": "opening_ranger_1_3",
+          "text": "淀みない速射 / 起点から3pt",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 708.8390115876606,
+            "top": 525.6613277343113,
+            "right": 801.3889688630512,
+            "bottom": 535.6613277343113
+          },
+          "owner": "opening_ranger_2_1",
+          "text": "会心率 +8%（相対）",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 771.0065708349136,
+            "top": 561.5537073423325,
+            "right": 863.5565281103043,
+            "bottom": 571.5537073423325
+          },
+          "owner": "opening_ranger_2_2",
+          "text": "会心率 +8%（相対）",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 852.7522716471481,
+            "right": 912.7522716471481,
+            "top": 606.9086233924683,
+            "bottom": 634.9086233924683
+          },
+          "owner": "opening_ranger_2_3",
+          "text": "狙いを定める / 起点から3pt",
+          "dx": -8,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 528.8313483759762,
+            "top": 543.6286344581031,
+            "right": 568.8313483759762,
+            "bottom": 552.6286344581031
+          },
+          "owner": "origin_assassin",
+          "text": "アサシン",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 1106.1967870967992,
+            "top": 810.0525759521058,
+            "right": 1126.1967870967992,
+            "bottom": 820.0525759521058
+          },
+          "owner": null,
+          "text": "範囲",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 979.8076372853651,
+            "right": 999.8076372853651,
+            "top": 231.00059008597594,
+            "bottom": 241.00059008597594
+          },
+          "owner": null,
+          "text": "範囲",
+          "dx": 16,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 1361.4962917201512,
+            "right": 1381.4962917201512,
+            "top": 1006.1695291971648,
+            "bottom": 1016.1695291971648
+          },
+          "owner": null,
+          "text": "弱点",
+          "dx": 0,
+          "dy": -32
+        }
+      ],
+      "cam": {
+        "x": 693.143,
+        "y": 451.39700000000005,
+        "z": 0.3262943600729197
+      },
+      "arranged": true,
+      "drawMs": 11.400000035762787
+    },
+    {
+      "phase": "After",
+      "origin": "assassin",
+      "captions": 16,
+      "blocks": 15,
+      "labelPairs": [],
+      "labelNodes": [],
+      "labelLines": [],
+      "captionBackplateIntersections": [
+        {
+          "text": "戦士",
+          "edge": [
+            "origin_warrior",
+            "opening_warrior_0_1"
+          ]
+        },
+        {
+          "text": "レンジャー",
+          "edge": [
+            "origin_ranger",
+            "opening_ranger_1_1"
+          ]
+        },
+        {
+          "text": "アサシン",
+          "edge": [
+            "origin_assassin",
+            "opening_assassin_0_1"
+          ]
+        },
+        {
+          "text": "アサシン",
+          "edge": [
+            "origin_assassin",
+            "opening_assassin_1_1"
+          ]
+        },
+        {
+          "text": "装甲",
+          "edge": [
+            "g6n9",
+            "g6n5"
+          ]
+        },
+        {
+          "text": "機動",
+          "edge": [
+            "g10hub",
+            "g10n5"
+          ]
+        },
+        {
+          "text": "範囲",
+          "edge": [
+            "g34n9",
+            "g34n5"
+          ]
+        },
+        {
+          "text": "資源循環",
+          "edge": [
+            "link_assassin_1_4",
+            "g40n4"
+          ]
+        },
+        {
+          "text": "弱点",
+          "edge": [
+            "g48n6",
+            "g48n9"
+          ]
+        }
+      ],
+      "nodePairs": [],
+      "unplaced": [],
+      "boxes": [
+        {
+          "box": {
+            "left": 545.4756804180481,
+            "top": 279.3462316911768,
+            "right": 651.8825255108216,
+            "bottom": 303.03014204660667
+          },
+          "owner": "medallion",
+          "text": "アサシン / PROJECTS / CLASS START",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 500.5597366257571,
+            "top": 341.08187311289635,
+            "right": 520.5597366257571,
+            "bottom": 352.08187311289635
+          },
+          "owner": "origin_warrior",
+          "text": "戦士",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 475.5597366257571,
+            "top": 239.33034591832597,
+            "right": 545.5597366257571,
+            "bottom": 250.33034591832597
+          },
+          "owner": "origin_templar",
+          "text": "タンク〈仮称〉",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 583.6791029644348,
+            "top": 188.45458232104085,
+            "right": 613.6791029644348,
+            "bottom": 198.45458232104085
+          },
+          "owner": "origin_mage",
+          "text": "メイジ",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 661.7984693031126,
+            "top": 341.08187311289635,
+            "right": 711.7984693031126,
+            "bottom": 352.08187311289635
+          },
+          "owner": "origin_ranger",
+          "text": "レンジャー",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 578.6791029644348,
+            "top": 392.9576367101814,
+            "right": 618.6791029644348,
+            "bottom": 401.9576367101814
+          },
+          "owner": "origin_assassin",
+          "text": "アサシン",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 1227.343973618336,
+            "top": 978.5187023730964,
+            "right": 1247.343973618336,
+            "bottom": 988.5187023730964
+          },
+          "owner": null,
+          "text": "裂傷",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 26.857089242725237,
+            "right": 46.85708924272524,
+            "top": 709.2562051841666,
+            "bottom": 719.2562051841666
+          },
+          "owner": null,
+          "text": "装甲",
+          "dx": -8,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 134.50935832188804,
+            "top": 128.10749697412228,
+            "right": 154.50935832188804,
+            "bottom": 138.10749697412228
+          },
+          "owner": null,
+          "text": "範囲",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 1433.8606679963182,
+            "top": 357.2138858883658,
+            "right": 1453.8606679963182,
+            "bottom": 367.2138858883658
+          },
+          "owner": null,
+          "text": "機動",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 1030.9967379854604,
+            "top": 591.7727217427531,
+            "right": 1050.9967379854604,
+            "bottom": 601.7727217427531
+          },
+          "owner": null,
+          "text": "範囲",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 940.3841281442512,
+            "right": 980.3841281442512,
+            "top": 1056.5550186360135,
+            "bottom": 1066.5550186360135
+          },
+          "owner": null,
+          "text": "資源循環",
+          "dx": 0,
+          "dy": 16
+        },
+        {
+          "box": {
+            "left": 660.0008313394703,
+            "right": 700.0008313394703,
+            "top": 856.1652927752727,
+            "bottom": 866.1652927752727
+          },
+          "owner": null,
+          "text": "資源循環",
+          "dx": 0,
+          "dy": -16
+        },
+        {
+          "box": {
+            "left": 935.9902724889986,
+            "right": 955.9902724889986,
+            "top": 140.3442640630047,
+            "bottom": 150.3442640630047
+          },
+          "owner": null,
+          "text": "範囲",
+          "dx": 16,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 1230.0280243493899,
+            "top": 769.612513139009,
+            "right": 1250.0280243493899,
+            "bottom": 779.612513139009
+          },
+          "owner": null,
+          "text": "弱点",
+          "dx": 0,
+          "dy": 0
+        }
+      ],
+      "cam": {
+        "x": 693.143,
+        "y": 1047.494,
+        "z": 0.25437881798642575
+      },
+      "arranged": true,
+      "drawMs": 10
+    },
+    {
+      "phase": "Close",
+      "origin": "warrior",
+      "captions": 20,
+      "blocks": 16,
+      "labelPairs": [],
+      "labelNodes": [],
+      "labelLines": [],
+      "captionBackplateIntersections": [
+        {
+          "text": "戦士",
+          "edge": [
+            "origin_warrior",
+            "opening_warrior_0_1"
+          ]
+        },
+        {
+          "text": "物理ダメージ +6%",
+          "edge": [
+            "opening_warrior_0_1",
+            "opening_warrior_0_2"
+          ]
+        },
+        {
+          "text": "物理ダメージ +6%",
+          "edge": [
+            "opening_warrior_0_2",
+            "opening_warrior_0_3"
+          ]
+        },
+        {
+          "text": "鍛えた一撃 / 起点から3pt",
+          "edge": [
+            "opening_warrior_0_3",
+            "link_warrior_0_1"
+          ]
+        },
+        {
+          "text": "最大HP +4%",
+          "edge": [
+            "opening_warrior_1_1",
+            "opening_warrior_2_1"
+          ]
+        },
+        {
+          "text": "最大HP +4%",
+          "edge": [
+            "opening_warrior_1_2",
+            "opening_warrior_2_3"
+          ]
+        },
+        {
+          "text": "戦うための体力 / 起点から3pt",
+          "edge": [
+            "opening_warrior_2_2",
+            "opening_warrior_1_3"
+          ]
+        },
+        {
+          "text": "攻撃速度 +3%",
+          "edge": [
+            "opening_warrior_2_1",
+            "opening_warrior_2_2"
+          ]
+        },
+        {
+          "text": "攻撃速度 +3%",
+          "edge": [
+            "opening_warrior_2_2",
+            "opening_warrior_0_3"
+          ]
+        },
+        {
+          "text": "レンジャー",
+          "edge": [
+            "origin_ranger",
+            "opening_ranger_1_1"
+          ]
+        },
+        {
+          "text": "アサシン",
+          "edge": [
+            "origin_assassin",
+            "opening_assassin_0_1"
+          ]
+        },
+        {
+          "text": "アサシン",
+          "edge": [
+            "origin_assassin",
+            "opening_assassin_1_1"
+          ]
+        }
+      ],
+      "nodePairs": [],
+      "unplaced": [],
+      "boxes": [
+        {
+          "box": {
+            "left": 1162.6994824126366,
+            "top": 305.75,
+            "right": 1273.2443279936913,
+            "bottom": 346.85
+          },
+          "owner": "medallion",
+          "text": "戦士 / PROJECTS / CLASS START",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 1014.2464082549218,
+            "top": 419.15,
+            "right": 1040.6464021514062,
+            "bottom": 433.15
+          },
+          "owner": "origin_warrior",
+          "text": "戦士",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 925.7266840117577,
+            "top": 525.9842,
+            "right": 1034.6926263945702,
+            "bottom": 538.9842
+          },
+          "owner": "opening_warrior_0_1",
+          "text": "物理ダメージ +6%",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 851.1879340117576,
+            "top": 638.8783,
+            "right": 960.1538763945701,
+            "bottom": 651.8783
+          },
+          "owner": "opening_warrior_0_2",
+          "text": "物理ダメージ +6%",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 725.1119628325584,
+            "top": 751.24935,
+            "right": 791.1119475737694,
+            "bottom": 782.24935
+          },
+          "owner": "opening_warrior_0_3",
+          "text": "鍛えた一撃 / 起点から3pt",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 866.1440881865624,
+            "top": 393.61580000000004,
+            "right": 940.2752222197655,
+            "bottom": 405.61580000000004
+          },
+          "owner": "opening_warrior_1_1",
+          "text": "最大HP +4%",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 731.1053381865623,
+            "top": 401.7217,
+            "right": 805.2364722197655,
+            "bottom": 413.7217
+          },
+          "owner": "opening_warrior_1_2",
+          "text": "最大HP +4%",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 555.1619658843163,
+            "top": 480.75065,
+            "right": 647.5619445220116,
+            "bottom": 510.75065
+          },
+          "owner": "opening_warrior_1_3",
+          "text": "戦うための体力 / 起点から3pt",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 828.9800309599998,
+            "top": 501.54999999999995,
+            "right": 911.5459794463279,
+            "bottom": 513.55
+          },
+          "owner": "opening_warrior_2_1",
+          "text": "攻撃速度 +3%",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 724.1907309599998,
+            "top": 562.05,
+            "right": 806.7566794463279,
+            "bottom": 574.05
+          },
+          "owner": "opening_warrior_2_2",
+          "text": "攻撃速度 +3%",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 602.0318643584372,
+            "top": 638.5,
+            "right": 681.2318460478904,
+            "bottom": 668.5
+          },
+          "owner": "opening_warrior_2_3",
+          "text": "軽やかな連撃 / 起点から3pt",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 981.2464158843163,
+            "top": 199.14999999999995,
+            "right": 1073.6463945220116,
+            "bottom": 213.14999999999995
+          },
+          "owner": "origin_templar",
+          "text": "タンク〈仮称〉",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 1198.1719097808007,
+            "top": 90.14999999999995,
+            "right": 1237.7719006255272,
+            "bottom": 102.14999999999995
+          },
+          "owner": "origin_mage",
+          "text": "メイジ",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 1375.4974128325584,
+            "top": 420.15,
+            "right": 1441.4973975737694,
+            "bottom": 433.15
+          },
+          "owner": "origin_ranger",
+          "text": "レンジャー",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 1191.5719113066796,
+            "top": 530.15,
+            "right": 1244.3718990996483,
+            "bottom": 542.15
+          },
+          "owner": "origin_assassin",
+          "text": "アサシン",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 321.9980068625781,
+            "right": 341.9980068625781,
+            "top": 8.069091966717735,
+            "bottom": 18.069091966717735
+          },
+          "owner": null,
+          "text": "範囲",
+          "dx": 96,
+          "dy": 16
+        }
+      ],
+      "cam": {
+        "x": -805.4034640057525,
+        "y": 464.99999999999994,
+        "z": 0.55
+      },
+      "arranged": true,
+      "drawMs": 8.100000023841858
+    },
+    {
+      "phase": "Close",
+      "origin": "tank",
+      "captions": 20,
+      "blocks": 16,
+      "labelPairs": [],
+      "labelNodes": [],
+      "labelLines": [],
+      "captionBackplateIntersections": [
+        {
+          "text": "戦士",
+          "edge": [
+            "origin_warrior",
+            "opening_warrior_0_1"
+          ]
+        },
+        {
+          "text": "堅実な打撃 / 起点から3pt",
+          "edge": [
+            "opening_templar_0_3",
+            "link_templar_0_1"
+          ]
+        },
+        {
+          "text": "物理防御 +8%",
+          "edge": [
+            "origin_templar",
+            "opening_templar_1_1"
+          ]
+        },
+        {
+          "text": "物理防御 +8%",
+          "edge": [
+            "opening_templar_0_1",
+            "opening_templar_1_1"
+          ]
+        },
+        {
+          "text": "物理防御 +8%",
+          "edge": [
+            "opening_templar_1_1",
+            "opening_templar_1_2"
+          ]
+        },
+        {
+          "text": "揺るがぬ装甲 / 起点から3pt",
+          "edge": [
+            "opening_templar_1_2",
+            "opening_templar_1_3"
+          ]
+        },
+        {
+          "text": "揺るがぬ装甲 / 起点から3pt",
+          "edge": [
+            "opening_templar_2_2",
+            "opening_templar_1_3"
+          ]
+        },
+        {
+          "text": "揺るがぬ装甲 / 起点から3pt",
+          "edge": [
+            "opening_templar_0_3",
+            "opening_templar_1_3"
+          ]
+        },
+        {
+          "text": "付与する障壁量 +6%",
+          "edge": [
+            "opening_templar_0_1",
+            "opening_templar_2_1"
+          ]
+        },
+        {
+          "text": "付与する障壁量 +6%",
+          "edge": [
+            "opening_templar_2_1",
+            "opening_templar_2_2"
+          ]
+        },
+        {
+          "text": "付与する障壁量 +6%",
+          "edge": [
+            "opening_templar_2_2",
+            "opening_templar_0_3"
+          ]
+        },
+        {
+          "text": "守護の厚み / 起点から3pt",
+          "edge": [
+            "opening_templar_0_2",
+            "opening_templar_2_3"
+          ]
+        },
+        {
+          "text": "守護の厚み / 起点から3pt",
+          "edge": [
+            "opening_templar_0_3",
+            "opening_templar_1_3"
+          ]
+        },
+        {
+          "text": "レンジャー",
+          "edge": [
+            "origin_ranger",
+            "opening_ranger_1_1"
+          ]
+        },
+        {
+          "text": "アサシン",
+          "edge": [
+            "origin_assassin",
+            "opening_assassin_0_1"
+          ]
+        },
+        {
+          "text": "アサシン",
+          "edge": [
+            "origin_assassin",
+            "opening_assassin_1_1"
+          ]
+        }
+      ],
+      "nodePairs": [],
+      "unplaced": [],
+      "boxes": [
+        {
+          "box": {
+            "left": 1154.4469265654686,
+            "top": 817.25,
+            "right": 1281.4968838408593,
+            "bottom": 858.35
+          },
+          "owner": "medallion",
+          "text": "タンク〈仮称〉 / PROJECTS / CLASS START",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 1014.2464082549218,
+            "top": 930.65,
+            "right": 1040.6464021514062,
+            "bottom": 944.65
+          },
+          "owner": "origin_warrior",
+          "text": "戦士",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 981.2464158843163,
+            "top": 710.65,
+            "right": 1073.6463945220116,
+            "bottom": 724.65
+          },
+          "owner": "origin_templar",
+          "text": "タンク〈仮称〉",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 848.7266840117577,
+            "top": 718.4842,
+            "right": 957.6926263945702,
+            "bottom": 731.4842
+          },
+          "owner": "opening_templar_0_1",
+          "text": "物理ダメージ +6%",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 713.6879340117576,
+            "top": 710.3783000000001,
+            "right": 822.6538763945701,
+            "bottom": 723.3783000000001
+          },
+          "owner": "opening_templar_0_2",
+          "text": "物理ダメージ +6%",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 568.3619628325584,
+            "top": 642.24935,
+            "right": 634.3619475737694,
+            "bottom": 672.24935
+          },
+          "owner": "opening_templar_0_3",
+          "text": "堅実な打撃 / 起点から3pt",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 938.9266809599999,
+            "top": 586.1157999999999,
+            "right": 1021.492629446328,
+            "bottom": 598.1157999999999
+          },
+          "owner": "opening_templar_1_1",
+          "text": "物理防御 +8%",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 864.3879309599998,
+            "top": 473.22170000000006,
+            "right": 946.953879446328,
+            "bottom": 485.22170000000006
+          },
+          "owner": "opening_templar_1_2",
+          "text": "物理防御 +8%",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 718.5119643584374,
+            "top": 369.75065,
+            "right": 797.7119460478905,
+            "bottom": 400.75065
+          },
+          "owner": "opening_templar_1_3",
+          "text": "揺るがぬ装甲 / 起点から3pt",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 809.1800355376365,
+            "top": 610.55,
+            "right": 931.3459748686912,
+            "bottom": 623.55
+          },
+          "owner": "opening_templar_2_1",
+          "text": "付与する障壁量 +6%",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 704.3907355376365,
+            "top": 550.05,
+            "right": 826.5566748686912,
+            "bottom": 563.05
+          },
+          "owner": "opening_templar_2_2",
+          "text": "付与する障壁量 +6%",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 608.6318628325583,
+            "top": 484.5,
+            "right": 674.6318475737693,
+            "bottom": 514.5
+          },
+          "owner": "opening_templar_2_3",
+          "text": "守護の厚み / 起点から3pt",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 1198.1719097808007,
+            "top": 601.65,
+            "right": 1237.7719006255272,
+            "bottom": 613.65
+          },
+          "owner": "origin_mage",
+          "text": "メイジ",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 1375.4974128325584,
+            "top": 931.65,
+            "right": 1441.4973975737694,
+            "bottom": 944.65
+          },
+          "owner": "origin_ranger",
+          "text": "レンジャー",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 1191.5719113066796,
+            "top": 1041.65,
+            "right": 1244.3718990996483,
+            "bottom": 1053.65
+          },
+          "owner": "origin_assassin",
+          "text": "アサシン",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 225.9980068625781,
+            "top": 503.5690919667178,
+            "right": 245.9980068625781,
+            "bottom": 513.5690919667178
+          },
+          "owner": null,
+          "text": "範囲",
+          "dx": 0,
+          "dy": 0
+        }
+      ],
+      "cam": {
+        "x": -805.4034640057525,
+        "y": -465.00000000000006,
+        "z": 0.55
+      },
+      "arranged": true,
+      "drawMs": 6
+    },
+    {
+      "phase": "Close",
+      "origin": "mage",
+      "captions": 17,
+      "blocks": 13,
+      "labelPairs": [],
+      "labelNodes": [],
+      "labelLines": [],
+      "captionBackplateIntersections": [
+        {
+          "text": "魔法ダメージ +6%",
+          "edge": [
+            "origin_mage",
+            "opening_mage_0_1"
+          ]
+        },
+        {
+          "text": "魔法ダメージ +6%",
+          "edge": [
+            "opening_mage_0_1",
+            "opening_mage_0_2"
+          ]
+        },
+        {
+          "text": "魔法ダメージ +6%",
+          "edge": [
+            "opening_mage_0_3",
+            "opening_mage_0_1"
+          ]
+        },
+        {
+          "text": "研ぎ澄ます魔力 / 起点から3pt",
+          "edge": [
+            "opening_mage_0_2",
+            "opening_mage_0_3"
+          ]
+        },
+        {
+          "text": "研ぎ澄ます魔力 / 起点から3pt",
+          "edge": [
+            "opening_mage_2_2",
+            "opening_mage_0_3"
+          ]
+        },
+        {
+          "text": "研ぎ澄ます魔力 / 起点から3pt",
+          "edge": [
+            "opening_mage_0_3",
+            "opening_mage_0_1"
+          ]
+        },
+        {
+          "text": "技能のMP消費 +3% 減少",
+          "edge": [
+            "origin_mage",
+            "opening_mage_1_1"
+          ]
+        },
+        {
+          "text": "技能のMP消費 +3% 減少",
+          "edge": [
+            "opening_mage_1_1",
+            "opening_mage_1_2"
+          ]
+        },
+        {
+          "text": "無理のない詠唱 / 起点から3pt",
+          "edge": [
+            "opening_mage_1_2",
+            "opening_mage_1_3"
+          ]
+        },
+        {
+          "text": "無理のない詠唱 / 起点から3pt",
+          "edge": [
+            "opening_mage_2_2",
+            "opening_mage_1_3"
+          ]
+        },
+        {
+          "text": "付与する障壁量 +6%",
+          "edge": [
+            "opening_mage_0_1",
+            "opening_mage_2_1"
+          ]
+        },
+        {
+          "text": "付与する障壁量 +6%",
+          "edge": [
+            "opening_mage_1_1",
+            "opening_mage_2_1"
+          ]
+        },
+        {
+          "text": "付与する障壁量 +6%",
+          "edge": [
+            "opening_mage_2_1",
+            "opening_mage_2_2"
+          ]
+        },
+        {
+          "text": "付与する障壁量 +6%",
+          "edge": [
+            "opening_mage_2_3",
+            "opening_mage_2_1"
+          ]
+        },
+        {
+          "text": "身を守る術 / 起点から3pt",
+          "edge": [
+            "opening_mage_0_2",
+            "opening_mage_2_3"
+          ]
+        },
+        {
+          "text": "身を守る術 / 起点から3pt",
+          "edge": [
+            "opening_mage_1_2",
+            "opening_mage_2_3"
+          ]
+        },
+        {
+          "text": "身を守る術 / 起点から3pt",
+          "edge": [
+            "opening_mage_2_3",
+            "opening_mage_2_1"
+          ]
+        },
+        {
+          "text": "身を守る術 / 起点から3pt",
+          "edge": [
+            "opening_mage_2_3",
+            "opening_mage_2_2"
+          ]
+        }
+      ],
+      "nodePairs": [],
+      "unplaced": [],
+      "boxes": [
+        {
+          "box": {
+            "left": 719.7275772094727,
+            "right": 830.2724227905273,
+            "top": 1026,
+            "bottom": 1066.1
+          },
+          "owner": "medallion",
+          "text": "メイジ / PROJECTS / CLASS START",
+          "dx": 0,
+          "dy": -48
+        },
+        {
+          "box": {
+            "left": 538.2745106811524,
+            "top": 966.4,
+            "right": 630.6744893188477,
+            "bottom": 980.4
+          },
+          "owner": "origin_templar",
+          "text": "タンク〈仮称〉",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 755.2000045776367,
+            "top": 857.4,
+            "right": 794.7999954223633,
+            "bottom": 869.4
+          },
+          "owner": "origin_mage",
+          "text": "メイジ",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 643.5170288085938,
+            "top": 748.05,
+            "right": 752.4829711914062,
+            "bottom": 761.05
+          },
+          "owner": "opening_mage_0_1",
+          "text": "魔法ダメージ +6%",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 583.0170288085938,
+            "top": 627.05,
+            "right": 691.9829711914062,
+            "bottom": 640.05
+          },
+          "owner": "opening_mage_0_2",
+          "text": "魔法ダメージ +6%",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 572.0500106811523,
+            "top": 451.5,
+            "right": 664.4499893188477,
+            "bottom": 481.5
+          },
+          "owner": "opening_mage_0_3",
+          "text": "研ぎ澄ます魔力 / 起点から3pt",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 779.9016418457031,
+            "top": 749.05,
+            "right": 924.0983581542969,
+            "bottom": 761.05
+          },
+          "owner": "opening_mage_1_1",
+          "text": "技能のMP消費 +3% 減少",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 840.4016418457031,
+            "top": 628.05,
+            "right": 984.5983581542969,
+            "bottom": 640.05
+          },
+          "owner": "opening_mage_1_2",
+          "text": "技能のMP消費 +3% 減少",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 885.5500106811525,
+            "top": 451.5,
+            "right": 977.9499893188478,
+            "bottom": 481.5
+          },
+          "owner": "opening_mage_1_3",
+          "text": "無理のない詠唱 / 起点から3pt",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 713.9170303344727,
+            "top": 665.55,
+            "right": 836.0829696655273,
+            "bottom": 678.55
+          },
+          "owner": "opening_mage_2_1",
+          "text": "付与する障壁量 +6%",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 713.9170303344727,
+            "top": 544.55,
+            "right": 836.0829696655273,
+            "bottom": 557.55
+          },
+          "owner": "opening_mage_2_2",
+          "text": "付与する障壁量 +6%",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 742.0000076293945,
+            "top": 406.5,
+            "right": 807.9999923706055,
+            "bottom": 437.5
+          },
+          "owner": "opening_mage_2_3",
+          "text": "身を守る術 / 起点から3pt",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 1497.337722931922,
+            "right": 1517.337722931922,
+            "top": 785.7765696457141,
+            "bottom": 795.7765696457141
+          },
+          "owner": null,
+          "text": "範囲",
+          "dx": 16,
+          "dy": 0
+        }
+      ],
+      "cam": {
+        "x": -9.735942053221457e-14,
+        "y": -930,
+        "z": 0.55
+      },
+      "arranged": true,
+      "drawMs": 7.5
+    },
+    {
+      "phase": "Close",
+      "origin": "ranger",
+      "captions": 21,
+      "blocks": 17,
+      "labelPairs": [],
+      "labelNodes": [],
+      "labelLines": [],
+      "captionBackplateIntersections": [
+        {
+          "text": "戦士",
+          "edge": [
+            "origin_warrior",
+            "opening_warrior_0_1"
+          ]
+        },
+        {
+          "text": "レンジャー",
+          "edge": [
+            "origin_ranger",
+            "opening_ranger_1_1"
+          ]
+        },
+        {
+          "text": "与ダメージ +6%",
+          "edge": [
+            "opening_ranger_0_1",
+            "opening_ranger_2_1"
+          ]
+        },
+        {
+          "text": "与ダメージ +6%",
+          "edge": [
+            "opening_ranger_0_1",
+            "opening_ranger_1_1"
+          ]
+        },
+        {
+          "text": "与ダメージ +6%",
+          "edge": [
+            "opening_ranger_0_2",
+            "opening_ranger_0_3"
+          ]
+        },
+        {
+          "text": "与ダメージ +6%",
+          "edge": [
+            "opening_ranger_0_2",
+            "opening_ranger_2_3"
+          ]
+        },
+        {
+          "text": "与ダメージ +6%",
+          "edge": [
+            "opening_ranger_0_1",
+            "opening_ranger_0_3"
+          ]
+        },
+        {
+          "text": "与ダメージ +6%",
+          "edge": [
+            "opening_ranger_1_2",
+            "opening_ranger_0_2"
+          ]
+        },
+        {
+          "text": "確かな射撃 / 起点から3pt",
+          "edge": [
+            "opening_ranger_0_3",
+            "opening_ranger_1_3"
+          ]
+        },
+        {
+          "text": "攻撃速度 +3%",
+          "edge": [
+            "opening_ranger_1_1",
+            "opening_ranger_1_2"
+          ]
+        },
+        {
+          "text": "攻撃速度 +3%",
+          "edge": [
+            "opening_ranger_1_2",
+            "opening_ranger_1_3"
+          ]
+        },
+        {
+          "text": "攻撃速度 +3%",
+          "edge": [
+            "link_ranger_2_1",
+            "opening_ranger_1_2"
+          ]
+        },
+        {
+          "text": "会心率 +8%（相対）",
+          "edge": [
+            "opening_ranger_2_1",
+            "opening_ranger_2_2"
+          ]
+        },
+        {
+          "text": "会心率 +8%（相対）",
+          "edge": [
+            "opening_ranger_1_2",
+            "opening_ranger_0_2"
+          ]
+        },
+        {
+          "text": "会心率 +8%（相対）",
+          "edge": [
+            "opening_ranger_2_2",
+            "opening_ranger_1_3"
+          ]
+        },
+        {
+          "text": "狙いを定める / 起点から3pt",
+          "edge": [
+            "opening_ranger_2_3",
+            "link_ranger_2_1"
+          ]
+        },
+        {
+          "text": "アサシン",
+          "edge": [
+            "origin_assassin",
+            "opening_assassin_0_1"
+          ]
+        },
+        {
+          "text": "アサシン",
+          "edge": [
+            "origin_assassin",
+            "opening_assassin_1_1"
+          ]
+        }
+      ],
+      "nodePairs": [],
+      "unplaced": [],
+      "boxes": [
+        {
+          "box": {
+            "left": 276.7556720063087,
+            "top": 306.75,
+            "right": 387.3005175873634,
+            "bottom": 346.85
+          },
+          "owner": "medallion",
+          "text": "レンジャー / PROJECTS / CLASS START",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 128.3025978485938,
+            "top": 419.15,
+            "right": 154.70259174507817,
+            "bottom": 433.15
+          },
+          "owner": "origin_warrior",
+          "text": "戦士",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 95.30260547798832,
+            "top": 199.14999999999995,
+            "right": 187.70258411568363,
+            "bottom": 213.14999999999995
+          },
+          "owner": "origin_templar",
+          "text": "タンク〈仮称〉",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 320.2280993744728,
+            "right": 359.82809021919934,
+            "top": 90.14999999999995,
+            "bottom": 102.14999999999995
+          },
+          "owner": "origin_mage",
+          "text": "メイジ",
+          "dx": 8,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 489.55360242623067,
+            "top": 420.15,
+            "right": 555.5535871674416,
+            "bottom": 433.15
+          },
+          "owner": "origin_ranger",
+          "text": "レンジャー",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 598.9073720795509,
+            "top": 392.61580000000004,
+            "right": 694.6733175141212,
+            "bottom": 405.61580000000004
+          },
+          "owner": "opening_ranger_0_1",
+          "text": "与ダメージ +6%",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 733.946122079551,
+            "top": 400.7217,
+            "right": 829.7120675141213,
+            "bottom": 413.7217
+          },
+          "owner": "opening_ranger_0_2",
+          "text": "与ダメージ +6%",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 915.6380524262306,
+            "top": 480.75065,
+            "right": 981.6380371674416,
+            "bottom": 510.75065
+          },
+          "owner": "opening_ranger_0_3",
+          "text": "確かな射撃 / 起点から3pt",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 528.507370553672,
+            "top": 526.9842,
+            "right": 611.0733190400001,
+            "bottom": 538.9842
+          },
+          "owner": "opening_ranger_1_1",
+          "text": "攻撃速度 +3%",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 603.046120553672,
+            "top": 639.8783,
+            "right": 685.6120690400002,
+            "bottom": 651.8783
+          },
+          "owner": "opening_ranger_1_2",
+          "text": "攻撃速度 +3%",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 752.2880539521095,
+            "top": 752.24935,
+            "right": 831.4880356415626,
+            "bottom": 782.24935
+          },
+          "owner": "opening_ranger_1_3",
+          "text": "淀みない速射 / 起点から3pt",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 618.6540251313088,
+            "top": 500.54999999999995,
+            "right": 740.8199644623635,
+            "bottom": 514.55
+          },
+          "owner": "opening_ranger_2_1",
+          "text": "会心率 +8%（相対）",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 723.4433251313088,
+            "top": 561.05,
+            "right": 845.6092644623635,
+            "bottom": 575.05
+          },
+          "owner": "opening_ranger_2_2",
+          "text": "会心率 +8%（相対）",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 868.7681539521096,
+            "top": 638.5,
+            "right": 947.9681356415628,
+            "bottom": 668.5
+          },
+          "owner": "opening_ranger_2_3",
+          "text": "狙いを定める / 起点から3pt",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 305.6281009003517,
+            "top": 530.15,
+            "right": 358.42808869332043,
+            "bottom": 542.15
+          },
+          "owner": "origin_assassin",
+          "text": "アサシン",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 1278.376194796836,
+            "top": 994.5734500000003,
+            "right": 1298.376194796836,
+            "bottom": 1004.5734500000003
+          },
+          "owner": null,
+          "text": "範囲",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 1054.365817728758,
+            "right": 1074.365817728758,
+            "top": 18.52656964571412,
+            "bottom": 28.52656964571412
+          },
+          "owner": null,
+          "text": "範囲",
+          "dx": 16,
+          "dy": 0
+        }
+      ],
+      "cam": {
+        "x": 805.4034640057525,
+        "y": 464.99999999999994,
+        "z": 0.55
+      },
+      "arranged": true,
+      "drawMs": 8
+    },
+    {
+      "phase": "Close",
+      "origin": "assassin",
+      "captions": 17,
+      "blocks": 13,
+      "labelPairs": [],
+      "labelNodes": [],
+      "labelLines": [],
+      "captionBackplateIntersections": [
+        {
+          "text": "戦士",
+          "edge": [
+            "origin_warrior",
+            "opening_warrior_0_1"
+          ]
+        },
+        {
+          "text": "レンジャー",
+          "edge": [
+            "origin_ranger",
+            "opening_ranger_1_1"
+          ]
+        },
+        {
+          "text": "アサシン",
+          "edge": [
+            "origin_assassin",
+            "opening_assassin_0_1"
+          ]
+        },
+        {
+          "text": "アサシン",
+          "edge": [
+            "origin_assassin",
+            "opening_assassin_1_1"
+          ]
+        },
+        {
+          "text": "与ダメージ +6%",
+          "edge": [
+            "opening_assassin_0_1",
+            "opening_assassin_0_2"
+          ]
+        },
+        {
+          "text": "与ダメージ +6%",
+          "edge": [
+            "opening_assassin_0_1",
+            "opening_assassin_2_1"
+          ]
+        },
+        {
+          "text": "与ダメージ +6%",
+          "edge": [
+            "opening_assassin_0_2",
+            "opening_assassin_0_3"
+          ]
+        },
+        {
+          "text": "与ダメージ +6%",
+          "edge": [
+            "opening_assassin_0_2",
+            "opening_assassin_2_3"
+          ]
+        },
+        {
+          "text": "鋭い刃 / 起点から3pt",
+          "edge": [
+            "opening_assassin_0_3",
+            "link_assassin_0_1"
+          ]
+        },
+        {
+          "text": "攻撃速度 +3%",
+          "edge": [
+            "opening_assassin_1_1",
+            "opening_assassin_1_2"
+          ]
+        },
+        {
+          "text": "攻撃速度 +3%",
+          "edge": [
+            "opening_assassin_1_1",
+            "opening_assassin_2_1"
+          ]
+        },
+        {
+          "text": "攻撃速度 +3%",
+          "edge": [
+            "opening_assassin_1_2",
+            "opening_assassin_1_3"
+          ]
+        },
+        {
+          "text": "攻撃速度 +3%",
+          "edge": [
+            "opening_assassin_1_2",
+            "opening_assassin_2_3"
+          ]
+        },
+        {
+          "text": "素早い刃 / 起点から3pt",
+          "edge": [
+            "opening_assassin_1_3",
+            "link_assassin_1_1"
+          ]
+        },
+        {
+          "text": "移動速度 +2%",
+          "edge": [
+            "opening_assassin_2_1",
+            "opening_assassin_2_2"
+          ]
+        },
+        {
+          "text": "移動速度 +2%",
+          "edge": [
+            "opening_assassin_2_2",
+            "opening_assassin_0_3"
+          ]
+        },
+        {
+          "text": "移動速度 +2%",
+          "edge": [
+            "opening_assassin_2_2",
+            "opening_assassin_1_3"
+          ]
+        },
+        {
+          "text": "間合いを選ぶ / 起点から3pt",
+          "edge": [
+            "opening_assassin_2_3",
+            "link_assassin_2_1"
+          ]
+        }
+      ],
+      "nodePairs": [],
+      "unplaced": [],
+      "boxes": [
+        {
+          "box": {
+            "left": 719.7275772094727,
+            "top": 50.99999999999994,
+            "right": 830.2724227905273,
+            "bottom": 91.09999999999995
+          },
+          "owner": "medallion",
+          "text": "アサシン / PROJECTS / CLASS START",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 571.2745030517577,
+            "top": 163.39999999999995,
+            "right": 597.6744969482421,
+            "bottom": 177.39999999999995
+          },
+          "owner": "origin_warrior",
+          "text": "戦士",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 932.5255076293945,
+            "top": 164.39999999999995,
+            "right": 998.5254923706054,
+            "bottom": 177.39999999999995
+          },
+          "owner": "origin_ranger",
+          "text": "レンジャー",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 748.6000061035156,
+            "top": 274.4,
+            "right": 801.3999938964844,
+            "bottom": 286.4
+          },
+          "owner": "origin_assassin",
+          "text": "アサシン",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 804.1170272827148,
+            "top": 363.05,
+            "right": 899.8829727172852,
+            "bottom": 376.05
+          },
+          "owner": "opening_assassin_0_1",
+          "text": "与ダメージ +6%",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 864.6170272827148,
+            "top": 484.05,
+            "right": 960.3829727172852,
+            "bottom": 497.05
+          },
+          "owner": "opening_assassin_0_2",
+          "text": "与ダメージ +6%",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 904.1000137329102,
+            "top": 671.5,
+            "right": 959.3999862670898,
+            "bottom": 701.5
+          },
+          "owner": "opening_assassin_0_3",
+          "text": "鋭い刃 / 起点から3pt",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 656.7170257568359,
+            "top": 364.05,
+            "right": 739.2829742431641,
+            "bottom": 376.05
+          },
+          "owner": "opening_assassin_1_1",
+          "text": "攻撃速度 +3%",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 596.2170257568359,
+            "top": 485.05,
+            "right": 678.7829742431641,
+            "bottom": 497.05
+          },
+          "owner": "opening_assassin_1_2",
+          "text": "攻撃速度 +3%",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 590.6000137329102,
+            "top": 671.5,
+            "right": 645.8999862670898,
+            "bottom": 701.5
+          },
+          "owner": "opening_assassin_1_3",
+          "text": "素早い刃 / 起点から3pt",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 733.7170257568359,
+            "top": 446.55,
+            "right": 816.2829742431641,
+            "bottom": 459.55
+          },
+          "owner": "opening_assassin_2_1",
+          "text": "移動速度 +2%",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 733.7170257568359,
+            "top": 567.55,
+            "right": 816.2829742431641,
+            "bottom": 580.55
+          },
+          "owner": "opening_assassin_2_2",
+          "text": "移動速度 +2%",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 735.4000091552734,
+            "top": 715.5,
+            "right": 814.5999908447266,
+            "bottom": 745.5
+          },
+          "owner": "opening_assassin_2_3",
+          "text": "間合いを選ぶ / 起点から3pt",
+          "dx": 0,
+          "dy": 0
+        }
+      ],
+      "cam": {
+        "x": 3.245314017740486e-14,
+        "y": 930,
+        "z": 0.55
+      },
+      "arranged": true,
+      "drawMs": 7
+    },
+    {
+      "phase": "Overview",
+      "captions": 52,
+      "blocks": 52,
+      "labelPairs": [],
+      "labelNodes": [],
+      "labelLines": [],
+      "captionBackplateIntersections": [
+        {
+          "text": "術式",
+          "edge": [
+            "r2_51_1",
+            "r2_46_1"
+          ]
+        },
+        {
+          "text": "裂傷",
+          "edge": [
+            "g5n3",
+            "r5_48_1"
+          ]
+        },
+        {
+          "text": "裂傷",
+          "edge": [
+            "g5n4",
+            "r5_48_1"
+          ]
+        },
+        {
+          "text": "受け流し",
+          "edge": [
+            "g11n4",
+            "r11_40_1"
+          ]
+        },
+        {
+          "text": "資源循環",
+          "edge": [
+            "g14n6",
+            "r14_27_1"
+          ]
+        },
+        {
+          "text": "資源循環",
+          "edge": [
+            "g14n4",
+            "r14_27_1"
+          ]
+        },
+        {
+          "text": "技の回転",
+          "edge": [
+            "r9_19_2",
+            "g19n5"
+          ]
+        },
+        {
+          "text": "氷属性",
+          "edge": [
+            "r27_52_1",
+            "r19_27_1"
+          ]
+        },
+        {
+          "text": "攻撃速度",
+          "edge": [
+            "g30n5",
+            "r30_36_1"
+          ]
+        },
+        {
+          "text": "会心",
+          "edge": [
+            "r15_32_2",
+            "g32n6"
+          ]
+        },
+        {
+          "text": "回復",
+          "edge": [
+            "r29_38_2",
+            "r16_38_2"
+          ]
+        },
+        {
+          "text": "資源循環",
+          "edge": [
+            "link_assassin_0_3",
+            "link_assassin_0_4"
+          ]
+        },
+        {
+          "text": "攻撃速度",
+          "edge": [
+            "g5n1",
+            "g41n7"
+          ]
+        },
+        {
+          "text": "機動",
+          "edge": [
+            "r25_44_1",
+            "g44n5"
+          ]
+        },
+        {
+          "text": "裂傷",
+          "edge": [
+            "g50n1",
+            "g39n1"
+          ]
+        }
+      ],
+      "nodePairs": [],
+      "unplaced": [],
+      "boxes": [
+        {
+          "box": {
+            "left": 582.0344215993925,
+            "right": 602.0344215993925,
+            "top": 231.36361842509194,
+            "bottom": 241.36361842509194
+          },
+          "owner": null,
+          "text": "術式",
+          "dx": -16,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 1198.1387429509753,
+            "right": 1228.1387429509753,
+            "top": 264.36221132884856,
+            "bottom": 274.36221132884856
+          },
+          "owner": null,
+          "text": "氷属性",
+          "dx": 8,
+          "dy": -8
+        },
+        {
+          "box": {
+            "left": 1121.1353511234279,
+            "right": 1161.1353511234279,
+            "top": 343.0546442986117,
+            "bottom": 353.0546442986117
+          },
+          "owner": null,
+          "text": "技の回転",
+          "dx": 0,
+          "dy": -16
+        },
+        {
+          "box": {
+            "left": 1036.5629716883304,
+            "right": 1056.5629716883304,
+            "top": 847.4760644250239,
+            "bottom": 857.4760644250239
+          },
+          "owner": null,
+          "text": "裂傷",
+          "dx": -8,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 552.0382220834983,
+            "right": 572.0382220834983,
+            "top": 720.2644060465849,
+            "bottom": 730.2644060465849
+          },
+          "owner": null,
+          "text": "装甲",
+          "dx": 0,
+          "dy": -16
+        },
+        {
+          "box": {
+            "left": 577.1969212011553,
+            "right": 597.1969212011553,
+            "top": 480.23650658319195,
+            "bottom": 490.23650658319195
+          },
+          "owner": null,
+          "text": "範囲",
+          "dx": -16,
+          "dy": -16
+        },
+        {
+          "box": {
+            "left": 402.8938365200848,
+            "right": 432.8938365200848,
+            "top": 225.42689408867454,
+            "bottom": 235.42689408867454
+          },
+          "owner": null,
+          "text": "火属性",
+          "dx": -8,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 989.631338741302,
+            "right": 1019.631338741302,
+            "top": 152.68162447439101,
+            "bottom": 162.68162447439101
+          },
+          "owner": null,
+          "text": "雷属性",
+          "dx": -8,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 1145.8591577683908,
+            "right": 1165.8591577683908,
+            "top": 590.8627606001816,
+            "bottom": 600.8627606001816
+          },
+          "owner": null,
+          "text": "機動",
+          "dx": 16,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 738.3796869235483,
+            "right": 778.3796869235483,
+            "top": 875.4886638298561,
+            "bottom": 885.4886638298561
+          },
+          "owner": null,
+          "text": "受け流し",
+          "dx": -16,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 757.0288864699792,
+            "top": 147.45949003529398,
+            "right": 777.0288864699792,
+            "bottom": 157.45949003529398
+          },
+          "owner": null,
+          "text": "魔力",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 344.3066737643475,
+            "right": 364.3066737643475,
+            "top": 769.2791963715149,
+            "bottom": 779.2791963715149
+          },
+          "owner": null,
+          "text": "吸収",
+          "dx": 0,
+          "dy": -16
+        },
+        {
+          "box": {
+            "left": 1015.030729134575,
+            "right": 1055.030729134575,
+            "top": 389.8367672048625,
+            "bottom": 399.8367672048625
+          },
+          "owner": null,
+          "text": "資源循環",
+          "dx": 0,
+          "dy": -16
+        },
+        {
+          "box": {
+            "left": 340.39349763282354,
+            "right": 360.39349763282354,
+            "top": 423.42348321821305,
+            "bottom": 433.42348321821305
+          },
+          "owner": null,
+          "text": "貫通",
+          "dx": -16,
+          "dy": -8
+        },
+        {
+          "box": {
+            "left": 1279.6045356938084,
+            "right": 1299.6045356938084,
+            "top": 736.1950556934099,
+            "bottom": 746.1950556934099
+          },
+          "owner": null,
+          "text": "弱点",
+          "dx": 8,
+          "dy": -8
+        },
+        {
+          "box": {
+            "left": 501.84342335998656,
+            "right": 521.8434233599866,
+            "top": 908.6168728755249,
+            "bottom": 918.6168728755249
+          },
+          "owner": null,
+          "text": "生命",
+          "dx": -16,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 907.9856385940394,
+            "top": 215.92597262582672,
+            "right": 947.9856385940394,
+            "bottom": 225.92597262582672
+          },
+          "owner": null,
+          "text": "技の回転",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 855.75812425784,
+            "right": 875.75812425784,
+            "top": 79.89879658234804,
+            "bottom": 89.89879658234804
+          },
+          "owner": null,
+          "text": "魔力",
+          "dx": 24,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 637.1709913598797,
+            "right": 657.1709913598797,
+            "top": 875.790671314159,
+            "bottom": 885.790671314159
+          },
+          "owner": null,
+          "text": "裂傷",
+          "dx": 8,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 283.64780024610593,
+            "right": 323.64780024610593,
+            "top": 348.82042280303597,
+            "bottom": 358.82042280303597
+          },
+          "owner": null,
+          "text": "魔法防御",
+          "dx": 0,
+          "dy": -16
+        },
+        {
+          "box": {
+            "left": 754.2293015288943,
+            "top": 274.4161143765574,
+            "right": 774.2293015288943,
+            "bottom": 284.4161143765574
+          },
+          "owner": null,
+          "text": "術式",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 1324.4669078477273,
+            "right": 1344.4669078477273,
+            "top": 485.5880124636967,
+            "bottom": 495.5880124636967
+          },
+          "owner": null,
+          "text": "会心",
+          "dx": 0,
+          "dy": -8
+        },
+        {
+          "box": {
+            "left": 679.8463909902064,
+            "top": 941.736886901616,
+            "right": 719.8463909902064,
+            "bottom": 951.736886901616
+          },
+          "owner": null,
+          "text": "受け流し",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 1017.4460099309492,
+            "right": 1047.4460099309492,
+            "top": 288.37470873370427,
+            "bottom": 298.37470873370427
+          },
+          "owner": null,
+          "text": "氷属性",
+          "dx": 0,
+          "dy": -8
+        },
+        {
+          "box": {
+            "left": 833.8213267942447,
+            "right": 873.8213267942447,
+            "top": 949.6372867699793,
+            "bottom": 959.6372867699793
+          },
+          "owner": null,
+          "text": "受け流し",
+          "dx": 0,
+          "dy": -8
+        },
+        {
+          "box": {
+            "left": 1171.543625729253,
+            "right": 1211.543625729253,
+            "top": 793.404084617517,
+            "bottom": 803.404084617517
+          },
+          "owner": null,
+          "text": "攻撃速度",
+          "dx": 0,
+          "dy": -8
+        },
+        {
+          "box": {
+            "left": 520.1355960182216,
+            "right": 540.1355960182216,
+            "top": 150.553370885814,
+            "bottom": 160.553370885814
+          },
+          "owner": null,
+          "text": "障壁",
+          "dx": -8,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 1218.825909925168,
+            "right": 1238.825909925168,
+            "top": 579.9612896648763,
+            "bottom": 589.9612896648763
+          },
+          "owner": null,
+          "text": "会心",
+          "dx": 0,
+          "dy": -16
+        },
+        {
+          "box": {
+            "left": 298.8523996862517,
+            "right": 318.8523996862517,
+            "top": 643.141393746504,
+            "bottom": 653.141393746504
+          },
+          "owner": null,
+          "text": "回復",
+          "dx": 8,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 939.4670080070877,
+            "right": 959.4670080070877,
+            "top": 687.7410017032464,
+            "bottom": 697.7410017032464
+          },
+          "owner": null,
+          "text": "範囲",
+          "dx": -24,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 413.9132865585372,
+            "right": 453.9132865585372,
+            "top": 664.4222888772856,
+            "bottom": 674.4222888772856
+          },
+          "owner": null,
+          "text": "物理火力",
+          "dx": 0,
+          "dy": -16
+        },
+        {
+          "box": {
+            "left": 216.92271159714574,
+            "right": 236.92271159714574,
+            "top": 530.5337654396719,
+            "bottom": 540.5337654396719
+          },
+          "owner": null,
+          "text": "貫通",
+          "dx": 0,
+          "dy": -8
+        },
+        {
+          "box": {
+            "left": 460.85628159523145,
+            "right": 480.85628159523145,
+            "top": 569.3174074013679,
+            "bottom": 579.3174074013679
+          },
+          "owner": null,
+          "text": "回復",
+          "dx": 0,
+          "dy": -8
+        },
+        {
+          "box": {
+            "left": 920.1721298853693,
+            "right": 960.1721298853693,
+            "top": 865.0985023185842,
+            "bottom": 875.0985023185842
+          },
+          "owner": null,
+          "text": "資源循環",
+          "dx": 0,
+          "dy": -8
+        },
+        {
+          "box": {
+            "left": 804.3673232568592,
+            "right": 844.3673232568592,
+            "top": 787.5496388029799,
+            "bottom": 797.5496388029799
+          },
+          "owner": null,
+          "text": "資源循環",
+          "dx": 0,
+          "dy": -16
+        },
+        {
+          "box": {
+            "left": 1053.88819894198,
+            "right": 1093.88819894198,
+            "top": 922.8932098549926,
+            "bottom": 932.8932098549926
+          },
+          "owner": null,
+          "text": "攻撃速度",
+          "dx": 16,
+          "dy": -16
+        },
+        {
+          "box": {
+            "left": 917.6187623454261,
+            "right": 937.6187623454261,
+            "top": 493.29057529068984,
+            "bottom": 503.29057529068984
+          },
+          "owner": null,
+          "text": "範囲",
+          "dx": 0,
+          "dy": -8
+        },
+        {
+          "box": {
+            "left": 1240.4368155563534,
+            "right": 1270.4368155563534,
+            "top": 348.8684941224702,
+            "bottom": 358.8684941224702
+          },
+          "owner": null,
+          "text": "雷属性",
+          "dx": 0,
+          "dy": -8
+        },
+        {
+          "box": {
+            "left": 1292.9681418613923,
+            "right": 1312.9681418613923,
+            "top": 614.4844092707472,
+            "bottom": 624.4844092707472
+          },
+          "owner": null,
+          "text": "機動",
+          "dx": 0,
+          "dy": -16
+        },
+        {
+          "box": {
+            "left": 264.3100577120684,
+            "right": 284.3100577120684,
+            "top": 719.4766422789684,
+            "bottom": 729.4766422789684
+          },
+          "owner": null,
+          "text": "生命",
+          "dx": 0,
+          "dy": -8
+        },
+        {
+          "box": {
+            "left": 636.1738840223056,
+            "right": 676.1738840223056,
+            "top": 135.37482266286258,
+            "bottom": 145.37482266286258
+          },
+          "owner": null,
+          "text": "魔法防御",
+          "dx": 0,
+          "dy": -8
+        },
+        {
+          "box": {
+            "left": 357.3884976328887,
+            "right": 387.3884976328887,
+            "top": 309.4803129608466,
+            "bottom": 319.4803129608466
+          },
+          "owner": null,
+          "text": "火属性",
+          "dx": 0,
+          "dy": -8
+        },
+        {
+          "box": {
+            "left": 1045.6715469117228,
+            "right": 1065.6715469117228,
+            "top": 745.192961531785,
+            "bottom": 755.192961531785
+          },
+          "owner": null,
+          "text": "弱点",
+          "dx": 0,
+          "dy": -16
+        },
+        {
+          "box": {
+            "left": 395.9642073107937,
+            "right": 415.9642073107937,
+            "top": 884.7397199546136,
+            "bottom": 894.7397199546136
+          },
+          "owner": null,
+          "text": "装甲",
+          "dx": 0,
+          "dy": -8
+        },
+        {
+          "box": {
+            "left": 944.7108957316184,
+            "top": 949.5058179932993,
+            "right": 964.7108957316184,
+            "bottom": 959.5058179932993
+          },
+          "owner": null,
+          "text": "裂傷",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 479.4730311439553,
+            "right": 499.4730311439553,
+            "top": 248.5952657245117,
+            "bottom": 258.5952657245117
+          },
+          "owner": null,
+          "text": "障壁",
+          "dx": -8,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 1081.896257815666,
+            "right": 1121.896257815666,
+            "top": 226.89651938212967,
+            "bottom": 236.89651938212967
+          },
+          "owner": null,
+          "text": "技の回転",
+          "dx": 0,
+          "dy": -16
+        },
+        {
+          "box": {
+            "left": 753.3842200126362,
+            "right": 771.3842200126362,
+            "top": 607.2734683942895,
+            "bottom": 616.2734683942895
+          },
+          "owner": null,
+          "text": "戦士",
+          "dx": 8,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 740.8842200126362,
+            "top": 565.2477269710155,
+            "right": 767.8842200126362,
+            "bottom": 574.2477269710155
+          },
+          "owner": null,
+          "text": "タンク",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 777.279562728727,
+            "top": 544.2348562593785,
+            "right": 804.279562728727,
+            "bottom": 553.2348562593785
+          },
+          "owner": null,
+          "text": "メイジ",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "box": {
+            "left": 804.6749054448178,
+            "right": 849.6749054448178,
+            "top": 575.2734683942895,
+            "bottom": 584.2734683942895
+          },
+          "owner": null,
+          "text": "レンジャー",
+          "dx": 0,
+          "dy": -32
+        },
+        {
+          "box": {
+            "left": 772.779562728727,
+            "right": 808.779562728727,
+            "top": 589.2863391059265,
+            "bottom": 597.2863391059265
+          },
+          "owner": null,
+          "text": "アサシン",
+          "dx": 0,
+          "dy": -40
+        }
+      ],
+      "cam": {
+        "x": -150.18949999999995,
+        "y": -345.12750000000005,
+        "z": 0.1050643535581849
+      },
+      "arranged": true,
+      "drawMs": 25.30000001192093
+    }
+  ]
+}

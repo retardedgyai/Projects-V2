@@ -1,20 +1,10 @@
 {
   "schema": "projects.large-tree-layout-audit.v1",
-  "referenceCommit": "3681aca4",
-  "layoutVersion": "positions-v3",
+  "referenceCommit": "e04a69a3",
+  "layoutVersion": "positions-v4-overlap",
   "contractSha256": "823d7b6af80244a2dcb20922a683941a8d851523fdc585085767fb7f571141b9",
   "nodesEdgesCostsEffectsInputsUnchanged": true,
   "before": {
-    "nodes": 645,
-    "clusters": 47,
-    "edges": 952,
-    "endpointDistanceOver600": 74,
-    "endpointDistanceOver1000": 9,
-    "maxEndpointDistance": 1212.133,
-    "worldWidth": 11467.088,
-    "worldHeight": 9488.948
-  },
-  "after": {
     "nodes": 645,
     "clusters": 47,
     "edges": 952,
@@ -24,7 +14,17 @@
     "worldWidth": 11101.229,
     "worldHeight": 8825.935
   },
-  "beforeCrossingGaps": 92,
+  "after": {
+    "nodes": 645,
+    "clusters": 47,
+    "edges": 952,
+    "endpointDistanceOver600": 0,
+    "endpointDistanceOver1000": 0,
+    "maxEndpointDistance": 583.105,
+    "worldWidth": 11137.007,
+    "worldHeight": 8877.257
+  },
+  "beforeCrossingGaps": 64,
   "method": "ノードと地域の実位置を再配置。隣接・費用・効果・入力・47地域は同一。長い線の折れ線化だけで短く見せていない。",
   "visualGate": "拡大前後と線routing後の交差を確認する。距離値だけでは合格にしない。",
   "nativeMinecraft": false,

@@ -1,5 +1,17 @@
 # 共通スキルツリー・大盤面の経路比較（2026-10-01）
 
+## v4：14:01の重なり指摘への修正
+
+基準は本人が確認した v3 `e04a69a3`（Library graph version 2）。ノードの識別子・接続・費用・効果・入力条件・育成計算は完全に同一。45個の起点付近ノードは動かさず、全体表示で接近していた周辺188点を最大78.716 world単位だけ離した。盤面幅は11,101.229→11,137.007、高さ8,825.935→8,877.257。最大線長583.105と600超0本を保った。
+
+文字はCanvasの実フォント寸法で矩形を取り、ノード・他の文字・操作UIを避けて近くへ配置する。5職の比較カメラで最大移動は32px以内。全ラベル数は前後同一。文字枠の2px背景が直下の線を隠すため、文字を線が横切らない。これは線そのものの交差解消とは別であり、非接続の線交差は64→67箇所をgap表示している。接続を削除していない。
+
+1920×1180の同一倍率・同一worldカメラの5職Before/After、各職55%拡大、全体図で、文字同士・文字/ノード・ノード同士の衝突0、配置失敗0。文字背景の直下を通る線の件数も証跡に残す。線/ノードの未解決衝突0。目視済み。75 Key費用、40配分例、3無効通路回帰、4仮入力、drag/wheel/pinch、mobile viewport、外部通信0・JS例外0の回帰検証も通過。
+
+最新画像は `ProjectS_Overlap_*`、計測は `overlap-verification.json`、完全な座標差分・不変条件・画像SHAは `ProjectS_Overlap_Review_Evidence.json`。`ProjectS_Layout_*` は指摘前のv3記録として保持する。v3の証跡JSONは履歴資料で、v4評価は新しいOverlap証跡を使う。本体統合・実戦効果・保存移行・実機iOSは未実装/未確認のまま。main/merge/push/installなし。
+
+再検証：`node scripts/verify-large-tree-overlaps.cjs --git <git.exe>`（専用Chrome CDP 18126）、`python scripts/review-large-tree-overlaps.py --git <git.exe>`。レイアウト再生成は既存手順の `layout-plan.json` を使う。
+
 ## v3配置：長い線を実際に短くする
 
 v2 `3681aca4` と隣接・費用・恩恵・入力条件を同一にした位置だけの変更。645ノード・47地域・952辺・5起点・15 Keyを保つ。地域内の点をまとめ、戦士の3つの接続先の入口を近づけ、分岐・側道・合流を局所へ寄せた。起点の9点は分岐幅と元の向きを保つ。全体の幅は11,467→11,101、高さ9,489→8,826で、大盤面全体の一様縮小ではない。
@@ -17,6 +29,10 @@ v2 `3681aca4` と隣接・費用・恩恵・入力条件を同一にした位置
 5起点それぞれの、入力が成立する最初の2地域とその経路を、同じ1920×1180のChrome画面で前後比較する。両地域が入る自動framingのため拡大率は前後で違う。地域ID・入口点・費用は一致し、Warriorは範囲6pt／回復8pt。40同額投資例・240入力条件・75 Key到達費用は同じgraphに対する証拠で、強さや楽しさの証明ではない。64ptは仮の比較初期値。
 
 配置の拡大比較は独立レビュー用。交差は64件残り、地域ごとの恩恵の重複、職業の育成体験、iOS実機、本体統合と保存移行は未検証／未実施。HTMLを実ゲーム完成として扱わない。
+
+独立画像レビューは「明確に改善、途中の大盤面として合理的」。倍率差を取り除く追加比較として `ProjectS_Layout_Warrior_SameScale_Before.png` / `ProjectS_Layout_Warrior_SameScale_After.png` を用意する。同じ1920×1180・同じworldカメラ位置・27%倍率・8pt目標で、`layout-same-scale-verification.json` に記録する。全体図は `ProjectS_Layout_Overview.png`。戦士の左下から中央下の斜線群の密集は残り、本回は追加の大規模配置修正を行わない。
+
+`ProjectS_Layout_Review_Evidence.json` は645点の前後座標、952辺の前後距離・折れ線長・routing座標・交差gap、47地域の前後中心、隣接・費用・恩恵・入力の一致判定、HTML/graph/auditの整合、各ファイルのSHA-256をまとめた読み取り資料。元graphはgit `3681aca4` とLibrary graph version 1、最新配置は `e04a69a3`。`review-large-tree-layout.py --git <git.exe>` で再検証できる。
 
 ## v2：独立レビューによる修正
 

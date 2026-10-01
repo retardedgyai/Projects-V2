@@ -1,7 +1,7 @@
 {
   "schema": "projects.large-tree-line-audit.v1",
-  "routedCorrections": 27,
+  "routedCorrections": 23,
   "unresolvedEdgeNodeCollisions": [],
-  "nonVertexCrossingsMarkedWithGaps": 64,
+  "nonVertexCrossingsMarkedWithGaps": 67,
   "crossingsCreateAdjacency": false
 }

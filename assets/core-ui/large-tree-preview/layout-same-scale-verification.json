@@ -1,0 +1,41 @@
+{
+  "status": "PASS",
+  "sameViewport": [
+    1920,
+    1180
+  ],
+  "sameCamera": {
+    "x": -1709.136,
+    "y": -115.5675,
+    "z": 0.27
+  },
+  "source": "3681aca4 before / e04a69a3 after",
+  "frames": [
+    {
+      "phase": "Before",
+      "file": "ProjectS_Layout_Warrior_SameScale_Before.png",
+      "cam": {
+        "x": -1709.136,
+        "y": -115.5675,
+        "z": 0.27
+      },
+      "cost": 8,
+      "nodes": 645,
+      "edges": 952,
+      "selected": "g38n1"
+    },
+    {
+      "phase": "After",
+      "file": "ProjectS_Layout_Warrior_SameScale_After.png",
+      "cam": {
+        "x": -1709.136,
+        "y": -115.5675,
+        "z": 0.27
+      },
+      "cost": 8,
+      "nodes": 645,
+      "edges": 952,
+      "selected": "g38n1"
+    }
+  ]
+}

@@ -23,12 +23,12 @@ def geometry_metrics(d):
   'worldHeight':round(max(n['y'] for n in by.values())-min(n['y'] for n in by.values()),3)}
 
 def main():
- parser=argparse.ArgumentParser();parser.add_argument('--capture-plan',type=Path);parser.add_argument('--reference',type=Path);args=parser.parse_args()
+ parser=argparse.ArgumentParser();parser.add_argument('--capture-plan',type=Path);parser.add_argument('--reference',type=Path);parser.add_argument('--reference-commit',default='3681aca4');parser.add_argument('--layout-version',default='positions-v3');args=parser.parse_args()
  plan_path=OUT/'layout-plan.json'
  if args.capture_plan:
   candidate=json.loads(args.capture_plan.read_text(encoding='utf-8'));reference=json.loads(args.reference.read_text(encoding='utf-8'))
   assert contract(candidate)==contract(reference),'layout changed the graph/input/reward contract'
-  plan={'schema':'projects.large-tree-layout-plan.v1','referenceCommit':'3681aca4','contractSha256':fingerprint(reference),
+  plan={'schema':'projects.large-tree-layout-plan.v1','referenceCommit':args.reference_commit,'layoutVersion':args.layout_version,'contractSha256':fingerprint(reference),
    'referenceMetrics':geometry_metrics(reference),'referenceCrossingGaps':reference['lineAudit']['nonVertexCrossingsMarkedWithGaps'],
    'positionPolicy':'47の地域を保ち、領域内の点をまとめる。戦士の3接続先と近い分岐・合流を配置し、橋の両端を実際に近づける。折れ線による距離の隠蔽はしない。',
    'nodes':[[n['id'],n['x'],n['y']] for n in candidate['nodes']],
@@ -44,7 +44,7 @@ def main():
  d['bounds']={'minX':min(n['x'] for n in by.values())-130,'maxX':max(n['x'] for n in by.values())+130,
   'minY':min(n['y'] for n in by.values())-130,'maxY':max(n['y'] for n in by.values())+130}
  assert contract(d)==before and fingerprint(d)==plan['contractSha256']
- audit={'schema':'projects.large-tree-layout-audit.v1','referenceCommit':plan['referenceCommit'],'layoutVersion':'positions-v3',
+ audit={'schema':'projects.large-tree-layout-audit.v1','referenceCommit':plan['referenceCommit'],'layoutVersion':plan.get('layoutVersion','positions-v3'),
   'contractSha256':plan['contractSha256'],'nodesEdgesCostsEffectsInputsUnchanged':True,
   'before':plan['referenceMetrics'],'after':geometry_metrics(d),'beforeCrossingGaps':plan['referenceCrossingGaps'],
   'method':'ノードと地域の実位置を再配置。隣接・費用・効果・入力・47地域は同一。長い線の折れ線化だけで短く見せていない。',
