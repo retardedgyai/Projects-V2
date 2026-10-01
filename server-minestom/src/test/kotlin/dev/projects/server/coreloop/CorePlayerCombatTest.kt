@@ -1039,6 +1039,88 @@ class CorePlayerCombatTest {
             MinecraftServer.getInstanceManager().unregisterInstance(map)
         }
     }
+    @Test fun `bloom first contact follows accepted damage and never repeats on later hits or reentry`() = arena(bossDistance=7.0) { h ->
+        h.mageGarden();CoreCombatPresentation.pack(h.player,true)
+        val mob=h.combat.entities().single();val original=mob.position
+        fun contacts()=h.instance.entities.count { e ->
+            (e.entityMeta as? net.minestom.server.entity.metadata.display.ItemDisplayMeta)?.itemStack
+                ?.get(net.minestom.server.component.DataComponents.ITEM_MODEL)?.startsWith("projects:combat_vfx/garden_bloom/contact_")==true }
+        try {
+            h.actor.skill(1);h.combat.sealBoss(true);h.ticks(26)
+            assertEquals(0,contacts());assertEquals(300.0,h.combat.bossHealth())
+            h.combat.sealBoss(false);h.ticks(4);assertTrue(h.combat.bossHealth()<300);assertEquals(1,contacts())
+            h.ticks(10);assertEquals(0,contacts())
+            mob.teleport(original.add(0.0,0.0,4.0)).join();h.ticks(8);mob.teleport(original).join();h.ticks(24)
+            assertEquals(0,contacts());assertTrue(h.combat.bossHealth()<300)
+        } finally { CoreCombatPresentation.forget(h.player) }
+    }
+
+    @Test fun `export garden bloom from real combat input damage lifecycle and viewer packets`() {
+        val scenes=mutableListOf<Map<String,Any>>()
+        for(reason in listOf("natural","cancel_prepare","clear_reset","sealed_then_accept")) arena(bossDistance=7.0) { h ->
+            h.mageGarden();CoreCombatPresentation.pack(h.player,true)
+            val viewer=h.addAlly(Pos(9.5,40.0,14.5)).player
+            val ownerPackets=(h.player.playerConnection as MemoryConnection).packets
+            val viewerPackets=(viewer.playerConnection as MemoryConnection).packets
+            val mob=h.combat.entities().single();val centre=mob.position
+            val seenContact=mutableSetOf<Int>();val seenGarden=mutableSetOf<Int>()
+            val frames=mutableListOf<Map<String,Any>>();val events=mutableListOf<Map<String,Any>>()
+            fun xyz(v:net.minestom.server.coordinate.Point)=listOf(v.x(),v.y(),v.z())
+            var previousHealth=h.combat.bossHealth()
+            fun snapshot(tick:Int) {
+                val parts=h.instance.entities.mapNotNull { entity ->
+                    val meta=entity.entityMeta as? net.minestom.server.entity.metadata.display.ItemDisplayMeta ?: return@mapNotNull null
+                    val model=meta.itemStack.get(net.minestom.server.component.DataComponents.ITEM_MODEL) ?: return@mapNotNull null
+                    if(!model.startsWith("projects:combat_vfx/garden")) return@mapNotNull null
+                    seenGarden+=entity.entityId
+                    if(model.contains("/contact_") && seenContact.add(entity.entityId)) events+=mapOf("tick" to tick,"event" to "first_contact","origin" to xyz(entity.position.sub(centre)))
+                    mapOf<String,Any>("model" to model.removePrefix("projects:"),"offset" to xyz(entity.position.sub(centre).add(meta.translation)),
+                        "scale" to xyz(meta.scale),"quaternion" to meta.leftRotation.toList(),"yaw" to 0.0,"pitch" to 0.0,"roll" to 0.0)
+                }
+                val health=h.combat.bossHealth()
+                if(health<previousHealth) events+=mapOf("tick" to tick,"event" to "accepted_damage","amount" to previousHealth-health)
+                previousHealth=health
+                val particles=viewerPackets.filterIsInstance<net.minestom.server.network.packet.server.play.ParticlePacket>().map { p ->
+                    val dust=p.particle() as? net.minestom.server.particle.Particle.DustColorTransition
+                    val rgb=dust?.color()
+                    mapOf<String,Any>("position" to xyz(Pos(p.x(),p.y(),p.z()).sub(centre)),"kind" to p.particle().key().asString(),
+                        "color" to if(rgb==null) 0xe0eeee else (rgb.red() shl 16)+(rgb.green() shl 8)+rgb.blue(),"count" to p.particleCount())
+                }
+                val metadata=ownerPackets.map { SendablePacket.extractServerPacket(ConnectionState.PLAY,it) }
+                    .filterIsInstance<net.minestom.server.network.packet.server.play.EntityMetaDataPacket>().filter { it.entityId() in seenGarden }
+                frames+=mapOf("tick" to tick,"parts" to parts,"particles" to particles,"enemy" to xyz(mob.position.sub(centre)),
+                    "health" to health,"resource" to h.actor.resource,"activeGardens" to h.actor.activeGardens,
+                    "metadataPackets" to metadata.size,"metadataBodyBytes" to metadata.sumOf { net.minestom.server.network.NetworkBuffer.makeArray(net.minestom.server.network.packet.server.play.EntityMetaDataPacket.SERIALIZER,it).size })
+            }
+            try {
+                h.actor.skill(1);events+=mapOf("tick" to 0,"event" to "input_garden")
+                mob.teleport(centre.add(0.0,0.0,4.0)).join()
+                if(reason=="sealed_then_accept") h.combat.sealBoss(true)
+                snapshot(0)
+                for(tick in 1..140) {
+                    ownerPackets.clear();viewerPackets.clear()
+                    when {
+                        reason=="cancel_prepare" && tick==3 -> { h.actor.dodge();events+=mapOf("tick" to tick,"event" to "cancel_prepare") }
+                        reason=="clear_reset" && tick==54 -> { h.actor.resetActions();events+=mapOf("tick" to tick,"event" to "reset_actions") }
+                        reason=="natural" && tick==20 -> { h.actor.skill(0);events+=mapOf("tick" to tick,"event" to "input_firebolt") }
+                        reason=="natural" && tick==22 -> { h.actor.dodge();events+=mapOf("tick" to tick,"event" to "cancel_fire_preserve_garden") }
+                        reason=="sealed_then_accept" && tick==60 -> { h.combat.sealBoss(false);events+=mapOf("tick" to tick,"event" to "unseal") }
+                    }
+                    if(tick==44) mob.teleport(centre).join()
+                    h.ticks(1);snapshot(tick)
+                }
+                assertEquals(if(reason=="cancel_prepare") 0 else 1,seenContact.size)
+                assertTrue(frames.all { (it["parts"] as List<*>).size<=22 })
+                assertEquals(0,h.actor.activeGardens)
+                if(reason=="natural") assertEquals(4,events.count { it["event"]=="accepted_damage" })
+                scenes+=mapOf("id" to reason,"events" to events,"frames" to frames,"input" to "real CorePlayerCombat / QuestEncounterCombat / GreatswordVfx / ItemDisplayMeta")
+            } finally { CoreCombatPresentation.forget(h.player);CoreCombatPresentation.forget(viewer) }
+        }
+        val cwd=java.nio.file.Path.of(System.getProperty("user.dir"));val root=if(cwd.fileName.toString()=="server-minestom")cwd.parent else cwd
+        java.nio.file.Files.createDirectories(root.resolve(".tools"))
+        java.nio.file.Files.writeString(root.resolve(".tools/ice-garden-bloom-events.json"),com.google.gson.Gson().toJson(mapOf("fps" to 20,"scenes" to scenes)))
+    }
+
     private class Harness(bossDistance: Double, armorTier: Int, stats: CoreAffixStats, roll: Double,
         weaponEnhancement: Int, armorEnhancement: Int) : AutoCloseable {
         val instance = MinecraftServer.getInstanceManager().createInstanceContainer()

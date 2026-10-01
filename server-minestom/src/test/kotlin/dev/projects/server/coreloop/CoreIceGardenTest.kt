@@ -53,11 +53,35 @@ class CoreIceGardenTest {
             val held=CoreSkillChoreography.pose(p,8.0)
             assertTrue(held.visible)
             for(t in listOf(16.0,24.0,40.0,80.0)) assertEquals(held,CoreSkillChoreography.pose(p,t))
-            assertTrue(CoreSkillChoreography.pose(p,100.0).model.endsWith("_3"))
-            assertTrue(CoreSkillChoreography.pose(p,120.0).model.endsWith("_4"))
+            val warning=CoreSkillChoreography.pose(p,100.0)
+            assertTrue(warning.visible);assertEquals(held.offset,warning.offset);assertEquals(held.scale,warning.scale)
+            val ending=CoreSkillChoreography.pose(p,120.0)
+            assertTrue(ending.model.startsWith("combat_vfx/garden_bloom/collapse_"))
             assertFalse(CoreSkillChoreography.pose(p,130.0).visible)
         }
         assertEquals(130,effect.durationTicks)
+    }
+    @Test fun `bloom phase references resolve and bounded model changes leave hold static`() {
+        val skill=CoreSkillCatalog.skills(CoreClass.MAGE).first { it.icon=="mage_garden" }
+        val parts=CoreSkillChoreography.parts(CoreSkillEffect(CoreClass.MAGE,skill,Pos.ZERO,Vec(0.0,0.0,1.0)))
+        var changes=0
+        val modelNames=mutableSetOf<String>()
+        for(p in parts) {
+            val frames=(0 until 130).map { CoreSkillChoreography.pose(p,it.toDouble()) }
+            changes+=frames.zipWithNext().count { (a,b)->a.model!=b.model }
+            assertEquals(1,frames.subList(8,100).map { it.model }.toSet().size)
+            assertTrue(frames.take(120).all { it.model.contains("/tile_") })
+            assertTrue(frames.drop(120).all { it.model.contains("/collapse_") })
+            for(pose in frames) {
+                modelNames+=pose.model
+                assertNotNull(javaClass.getResource("/core-ui-pack/assets/projects/items/${pose.model}.json"),pose.model)
+                assertNotNull(javaClass.getResource("/core-ui-pack/assets/projects/models/${pose.model}.json"),pose.model)
+            }
+        }
+        assertEquals(51,changes,"All field state changes, excluding initial spawn; no held per-tick transforms")
+        assertEquals(44,modelNames.size)
+        val contact=CoreSkillChoreography.parts(CoreSkillEffect(CoreClass.MAGE,skill,Pos.ZERO,Vec(0.0,0.0,1.0),CoreSkillVisualPhase.CONTACT)).single()
+        assertEquals(3,(0 until 10).map { CoreSkillChoreography.pose(contact,it.toDouble()).model }.toSet().size)
     }
     @Test fun `radius choices widen both the native plates and server footprint with the same factor`() {
         val skill=CoreSkillCatalog.skills(CoreClass.MAGE).first { it.icon=="mage_garden" }.copy(radius=5.15)

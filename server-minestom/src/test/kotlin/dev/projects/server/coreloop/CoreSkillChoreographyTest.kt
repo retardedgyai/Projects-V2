@@ -343,7 +343,7 @@ class CoreSkillChoreographyTest {
             val last=CoreSkillChoreography.pose(p,(p.delayTicks+p.durationTicks-1).toDouble())
             assertEquals(first.offset,grown.offset)
             assertEquals(first.scale,grown.scale)
-            assertTrue(last.model.endsWith("_8"))
+            assertEquals("combat_vfx/garden_bloom/collapse_2",last.model)
         }
         val model=javaClass.getResourceAsStream("/core-ui-pack/assets/projects/models/combat_vfx/ice_growth_ice.json")!!
             .bufferedReader().use { JsonParser.parseReader(it).asJsonObject }
