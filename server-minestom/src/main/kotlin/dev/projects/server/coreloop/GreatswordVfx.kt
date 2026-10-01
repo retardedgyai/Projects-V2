@@ -146,6 +146,10 @@ internal class GreatswordVfx(private val player: Player) {
     private data class GardenPreparation(val effect: CoreSkillEffect,val native: Boolean,var age: Int=0)
     private var gardenPreparation: GardenPreparation? = null
     private var gardenBoundaryForPacked = false
+    private data class GardenCue(val effect: CoreSkillEffect,var age: Int=0)
+    private var gardenFieldCue: GardenCue? = null
+    private val gardenContacts=mutableListOf<GardenCue>()
+    private val gardenCueFrame=mutableListOf<ParticleSpawn>()
     private var instance: Instance? = null
     private var contactHold = 0
     private var holdAfterFrame = 0
@@ -165,8 +169,10 @@ internal class GreatswordVfx(private val player: Player) {
         if(instance !== map) cancel()
         instance=map;gardenBoundaryFrame.clear()
         val edge=size/2-.03
+        val cue=gardenFieldCue
+        val ink=if(cue==null) 0x9ee5ed else CoreIceGardenChoreography.boundaryInk(cue.age,cue.effect.skill.duration)
         for(cell in cells.take(21)) for(x in listOf(-edge,edge)) for(z in listOf(-edge,edge))
-            gardenBoundaryFrame+=ParticleSpawn(dustTransition(0x9ee5ed,0x496ca5,.6f),cell.add(x,.08,z),
+            gardenBoundaryFrame+=ParticleSpawn(dustTransition(ink,0x496ca5,.6f),cell.add(x,.08,z),
                 category=ParticleCategory.OWN_ACTIVE,importance=ParticleImportance.COMBAT_FEEDBACK)
     }
 
@@ -217,7 +223,13 @@ internal class GreatswordVfx(private val player: Player) {
             if (effect is CoreSkillEffect) effect.solidCompanion = CoreCombatPresentation.packed(player)
             if(effect is CoreSkillEffect) {
                 if(!meshes.play(effect)) return false
-                if(effect.sceneId=="mage_garden" && effect.phase==CoreSkillVisualPhase.PULSE) gardenPreparation=null
+                if(effect.sceneId=="mage_garden") {
+                    // Keep unpacked observers on the same accepted-event clock as the native models.
+                    effect.solidCompanion=true
+                    if(effect.phase==CoreSkillVisualPhase.PULSE) {
+                        gardenPreparation=null;gardenFieldCue=GardenCue(effect)
+                    } else if(effect.phase==CoreSkillVisualPhase.CONTACT && gardenContacts.size<MAX_EFFECTS) gardenContacts+=GardenCue(effect)
+                }
             }
             combatScheduler.start(effect, frame)
             if (effect is CoreSkillEffect) {
@@ -251,6 +263,30 @@ internal class GreatswordVfx(private val player: Player) {
                 gardenBoundaryForPacked=!preparation.native
             } else gardenPreparation=null
         }
+        gardenFieldCue?.let { cue ->
+            val life=cue.effect.skill.duration
+            if(cue.age==life || cue.age==life+3) {
+                val size=CoreIceGarden.cellSize(cue.effect.skill.radius)
+                val cells=cue.effect.gardenCells.orEmpty()
+                for(cell in cells) {
+                    val x=kotlin.math.round((cell.x()-cue.effect.origin.x())/size).toInt()
+                    val z=kotlin.math.round((cell.z()-cue.effect.origin.z())/size).toInt()
+                    if(CoreIceGardenChoreography.crown(x,z)) gardenCueFrame+=ParticleSpawn(
+                        dustTransition(0x78868c,0x333e49,.5f),cell.add(0.0,.2,0.0),
+                        category=ParticleCategory.OWN_ACTIVE,importance=ParticleImportance.COMBAT_FEEDBACK)
+                }
+            }
+            if(++cue.age>=life+10) gardenFieldCue=null
+        }
+        gardenContacts.removeAll { cue ->
+            when(cue.age) {
+                0,3 -> gardenCueFrame+=ParticleSpawn(Particle.SNOWFLAKE,cue.effect.origin.add(0.0,.3,0.0),4,Vec(.2,.2,.2),
+                    category=ParticleCategory.OWN_ACTIVE,importance=ParticleImportance.COMBAT_FEEDBACK)
+                7 -> gardenCueFrame+=ParticleSpawn(dustTransition(0x78868c,0x333e49,.5f),cue.effect.origin.add(0.0,.15,0.0),2,Vec(.15,.05,.15),
+                    category=ParticleCategory.OWN_ACTIVE,importance=ParticleImportance.COMBAT_FEEDBACK)
+            }
+            ++cue.age>=10
+        }
         contactSoundThisTick = false
         frame.spawns += elementalFrame
         elementalFrame.clear()
@@ -276,9 +312,17 @@ internal class GreatswordVfx(private val player: Player) {
                     manager.dispatchAll(target,gardenBoundaryFrame.map { it.copy(category=category) },bounded)
                 } finally { manager.quality=quality }
             }
+            if(!CoreCombatPresentation.packed(viewer)) {
+                val quality=manager.quality
+                try {
+                    manager.quality=quality.copy(minimumCount=1)
+                    manager.dispatchAll(target,gardenCueFrame.map { it.copy(category=category) },bounded)
+                } finally { manager.quality=quality }
+            }
             manager.dispatchAll(target,frame.spawns.filterIndexed { i, _ -> i % stride == 0 }.map { it.copy(category = category) }, bounded)
         }
         gardenBoundaryFrame.clear()
+        gardenCueFrame.clear()
         gardenBoundaryForPacked=false
     }
 
@@ -296,11 +340,14 @@ internal class GreatswordVfx(private val player: Player) {
         sound(SoundEvent.ENTITY_PLAYER_ATTACK_STRONG, .65f, if (heavy) .55f else .85f)
         sound(SoundEvent.ITEM_TRIDENT_HIT, .45f, if (heavy) .65f else 1.0f)
     }
-    fun clearGarden() { meshes.clearGarden();gardenBoundaryFrame.clear();gardenPreparation=null;gardenBoundaryForPacked=false }
+    fun clearGarden() { meshes.clearGarden();gardenBoundaryFrame.clear();gardenPreparation=null;gardenBoundaryForPacked=false
+        gardenFieldCue=null;gardenContacts.clear();gardenCueFrame.clear() }
     fun cancel(preserveGarden: Boolean = false) {
         CoreArmamentPresentation.cancel(player)
         scheduler.cancelAll(); combatScheduler.cancelAll(); meshes.cancel(preserveGarden); frame.clear(); elementalFrame.clear(); gardenBoundaryFrame.clear(); manager.resetCounters()
         gardenPreparation=null;gardenBoundaryForPacked=false
+        if(!preserveGarden) gardenFieldCue=null
+        gardenContacts.clear();gardenCueFrame.clear()
         contactHold = 0; holdAfterFrame = 0; contactSoundThisTick = false; instance = if(preserveGarden) player.instance else null
     }
     private fun sound(event: SoundEvent, volume: Float, pitch: Float) = player.playSound(Sound.sound(event, Sound.Source.PLAYER, volume, pitch))

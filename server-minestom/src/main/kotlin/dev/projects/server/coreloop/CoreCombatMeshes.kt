@@ -141,7 +141,7 @@ internal class CoreCombatMeshes(private val owner: Player) {
             // Let the final zero-width target finish. Restarting its interpolation
             // during drain ticks or removing at the authored endpoint cuts off the fade.
             // Planted plates are static: send only opening/warning/breakup phase changes.
-            val staticGarden=gardenBoundary(p)
+            val staticGarden=gardenBoundary(p) || p.shape=="ice_garden:contact"
             if(v.age<p.delayTicks+p.durationTicks && (!staticGarden || v.model!=pose.model)) v.entity.editEntityMeta(ItemDisplayMeta::class.java) { meta ->
                 if(traced(p)) {
                     val now=System.nanoTime()

@@ -200,18 +200,23 @@ def actor_at(t):
 FACES=(('north',(3,2,0,1)),('south',(6,7,5,4)),('down',(4,5,1,0)),
        ('up',(2,3,7,6)),('west',(2,6,4,0)),('east',(7,3,1,5)))
 
-def render(parts,pack,t,side=False):
+def render(parts,pack,t,side=False,actor_position=None):
     image=Image.new('RGBA',(W,H),'#1b252e');d=ImageDraw.Draw(image)
     for n in range(-4,6):
         d.line([project(n,0,-3,side)[:2],project(n,0,5,side)[:2]],fill='#2b3741')
         d.line([project(-4,0,n,side)[:2],project(4,0,n,side)[:2]],fill='#2b3741')
     # Same 1.8m wireframe reference and contact trajectory on both sides; not an enemy model.
-    actor=actor_at(t);faces=[]
+    actor=actor_position if actor_position is not None else actor_at(t);faces=[]
     for p in parts:
         ppack=CURRENT if p['model'].startswith('combat_vfx/garden/') else pack
         model=native_model(str(ppack),p['model'])
         def transform(v):
             x,y,z=[(v[i]-8)/16*p['scale'][i] for i in range(3)]
+            if 'quaternion' in p:
+                qx,qy,qz,qw=p['quaternion']
+                tx,ty,tz=2*(qy*z-qz*y),2*(qz*x-qx*z),2*(qx*y-qy*x)
+                x,y,z=x+qw*tx+qy*tz-qz*ty,y+qw*ty+qz*tx-qx*tz,z+qw*tz+qx*ty-qy*tx
+                return [x+p['offset'][0],y+p['offset'][1],z+p['offset'][2]]
             a,b,c=p['pitch'],p['roll'],p['yaw']
             y,z=y*math.cos(a)-z*math.sin(a),y*math.sin(a)+z*math.cos(a)
             x,y=x*math.cos(b)-y*math.sin(b),x*math.sin(b)+y*math.cos(b)
