@@ -1,0 +1,69 @@
+{
+  "status": "PASS",
+  "costComparisons": 75,
+  "allocationExamples": 40,
+  "alternatives": [
+    {
+      "cost": 3,
+      "path": [
+        "origin_warrior",
+        "opening_warrior_0_1",
+        "opening_warrior_0_2",
+        "opening_warrior_2_3"
+      ],
+      "stats": {
+        "physical": 12,
+        "attackSpeed": 5,
+        "resource": 4
+      }
+    },
+    {
+      "cost": 3,
+      "path": [
+        "origin_warrior",
+        "opening_warrior_1_1",
+        "opening_warrior_1_2",
+        "opening_warrior_2_3"
+      ],
+      "stats": {
+        "hp": 8,
+        "attackSpeed": 5,
+        "resource": 4
+      }
+    }
+  ],
+  "refund": {
+    "removed": true,
+    "retained": true,
+    "blocked": false
+  },
+  "traps": {
+    "cross": false,
+    "bleed": false,
+    "burn": false,
+    "chain": false,
+    "selfShieldIsAlly": false,
+    "foreign": [
+      "選択職ではこの武器を装備できない"
+    ],
+    "ally": true,
+    "poisonReferenceGate": false
+  },
+  "checks": [
+    "5 roots / 47 clusters / 15 keys",
+    "same goal different rewards",
+    "alternate route retains connection",
+    "orphan refund refusal",
+    "weighted budget",
+    "trial exclusion",
+    "keyless mode",
+    "foreign weapon/AP/skill/resource warnings",
+    "acquired inactive warnings",
+    "search",
+    "drag/wheel/pinch",
+    "mobile viewport"
+  ],
+  "externalRequests": 0,
+  "jsExceptions": 0,
+  "scope": "Standalone Windows Chrome desktop and mobile viewport; not iOS Safari or native Minecraft; combat balance unverified"
+}

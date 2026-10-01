@@ -1,0 +1,4401 @@
+{
+  "schema": "projects.current-capability-reference.v1",
+  "base": "7341fe25",
+  "runtimeReference": "9f3bd0fa",
+  "status": "Read-only Kotlin-exported fixture inputs; previous 40-node layout withdrawn",
+  "nodes": [
+    {
+      "id": "k:01",
+      "name": "異系統の武器",
+      "kind": "keystone",
+      "x": 1360.0,
+      "y": 1040.0,
+      "icon": "war_ult",
+      "description": "標準適性外の武器1系統と、対応する技能の組を使用",
+      "tradeoff": "主系統の効率を落とす案。全武器一括許可ではない",
+      "origin": "proposed",
+      "requirements": [
+        "CROSS_WEAPON_SKILL"
+      ],
+      "references": [
+        "新提案 / 9/19 D08"
+      ],
+      "risks": [
+        "装備許可だけでは技能・AP・固有資源は移らない",
+        "現行CoreWeaponBase.usableの制限は解除しない"
+      ],
+      "conflicts": [],
+      "referenceJobs": [],
+      "legacyIndex": -1,
+      "cost": 1,
+      "runtimeApplied": false
+    },
+    {
+      "id": "k:02",
+      "name": "単発集中",
+      "kind": "keystone",
+      "x": 1400.0,
+      "y": 540.0,
+      "icon": "slam",
+      "description": "複数回の技能を一撃へ集約",
+      "tradeoff": "命中機会・手数を失う",
+      "origin": "proposed",
+      "requirements": [
+        "MULTI"
+      ],
+      "references": [
+        "新提案"
+      ],
+      "risks": [
+        "総威力・会心・付与・命中資源の処理順を要定義",
+        "試行では03と併用不可。採用済み制約ではない"
+      ],
+      "conflicts": [
+        "k:03"
+      ],
+      "referenceJobs": [],
+      "legacyIndex": -1,
+      "cost": 1,
+      "runtimeApplied": false
+    },
+    {
+      "id": "k:03",
+      "name": "重ね撃ち",
+      "kind": "keystone",
+      "x": 1060.0,
+      "y": 610.0,
+      "icon": "whirl",
+      "description": "主力の追加発動",
+      "tradeoff": "1回の威力を下げる",
+      "origin": "proposed",
+      "requirements": [
+        "DAMAGE",
+        "SIGNATURE"
+      ],
+      "references": [
+        "CoreClassTrees:10 / CoreSkillCatalog.modify"
+      ],
+      "risks": [
+        "Mage残響・Ranger追矢等のMODと重複",
+        "現行は発動8回上限。共通版の合算未決"
+      ],
+      "conflicts": [
+        "k:02"
+      ],
+      "referenceJobs": [],
+      "legacyIndex": -1,
+      "cost": 1,
+      "runtimeApplied": false
+    },
+    {
+      "id": "k:08",
+      "name": "守りの分配",
+      "kind": "keystone",
+      "x": 2140.0,
+      "y": 1300.0,
+      "icon": "temp_sanctuary",
+      "description": "仲間への障壁を強める",
+      "tradeoff": "自分の攻撃を下げる",
+      "origin": "proposed",
+      "requirements": [
+        "ALLY_SHIELD"
+      ],
+      "references": [
+        "Templar守護聖人 / CorePlayerCombat"
+      ],
+      "risks": [
+        "自己障壁だけでは仲間への効果を使えない",
+        "障壁量・変換・受け手倍率とHP75%上限の順序"
+      ],
+      "conflicts": [],
+      "referenceJobs": [
+        "TEMPLAR"
+      ],
+      "legacyIndex": -1,
+      "cost": 1,
+      "runtimeApplied": false
+    },
+    {
+      "id": "k:10",
+      "name": "機会の返還",
+      "kind": "keystone",
+      "x": 860.0,
+      "y": 800.0,
+      "icon": "ass_escape",
+      "description": "印等の条件を消費すると回避が戻る",
+      "tradeoff": "条件なしの攻撃効率を下げる",
+      "origin": "proposed",
+      "requirements": [
+        "MARK",
+        "MARK_CONSUMER"
+      ],
+      "references": [
+        "Assassin影渡り / CorePlayerCombat.consumeMark"
+      ],
+      "risks": [
+        "印の供給と消費は別。武器だけで機会は供給されない",
+        "回避と印の再生成で無限循環させない"
+      ],
+      "conflicts": [],
+      "referenceJobs": [
+        "ASSASSIN"
+      ],
+      "legacyIndex": -1,
+      "cost": 1,
+      "runtimeApplied": false
+    },
+    {
+      "id": "k:11",
+      "name": "継続の毒刃",
+      "kind": "keystone",
+      "x": 460.0,
+      "y": 1120.0,
+      "icon": "ass_poison",
+      "description": "印のある敵への通常攻撃で継続ダメージ",
+      "tradeoff": "初撃バーストを下げる",
+      "origin": "proposed",
+      "requirements": [
+        "MARK",
+        "DAMAGE"
+      ],
+      "references": [
+        "Assassin毒刃 / CorePlayerCombat"
+      ],
+      "risks": [
+        "ASS_VENOM・毒技能と同一DotKey。上書きと再付与を要整理",
+        "弓通常攻撃でも使える共通版は未実装"
+      ],
+      "conflicts": [],
+      "referenceJobs": [
+        "ASSASSIN"
+      ],
+      "legacyIndex": -1,
+      "cost": 1,
+      "runtimeApplied": false
+    },
+    {
+      "id": "k:13",
+      "name": "氷の攻撃機会",
+      "kind": "keystone",
+      "x": 2070.0,
+      "y": 1650.0,
+      "icon": "frost_nova",
+      "description": "既に使える氷で重撃等の攻撃機会を作る",
+      "tradeoff": "即時火力を下げる",
+      "origin": "proposed",
+      "requirements": [
+        "ICE"
+      ],
+      "references": [
+        "9/19 D07 / 現行氷減速を参照"
+      ],
+      "risks": [
+        "現行は減速。凍結やボス停止を実装済みと扱わない",
+        "氷の入手や魔術加工を必須にしない"
+      ],
+      "conflicts": [],
+      "referenceJobs": [],
+      "legacyIndex": -1,
+      "cost": 1,
+      "runtimeApplied": false
+    },
+    {
+      "id": "k:14",
+      "name": "残火の持続",
+      "kind": "keystone",
+      "x": 1390.0,
+      "y": 1640.0,
+      "icon": "firebolt",
+      "description": "既に使える炎で攻撃の間を補う",
+      "tradeoff": "一撃効率を下げる",
+      "origin": "proposed",
+      "requirements": [
+        "BURN"
+      ],
+      "references": [
+        "9/19 D07 / 現行fireFlat燃焼を参照"
+      ],
+      "risks": [
+        "炎属性の技能名だけでは現行燃焼を起動しない",
+        "燃焼延長・上書き・再帰・ヒット資源の規則は未定"
+      ],
+      "conflicts": [],
+      "referenceJobs": [],
+      "legacyIndex": -1,
+      "cost": 1,
+      "runtimeApplied": false
+    },
+    {
+      "id": "k:15",
+      "name": "雷の収束",
+      "kind": "keystone",
+      "x": 1410.0,
+      "y": 1320.0,
+      "icon": "mage_mark",
+      "description": "雷の集団処理を単体向けに寄せる",
+      "tradeoff": "連鎖対象を減らす",
+      "origin": "proposed",
+      "requirements": [
+        "CHAIN"
+      ],
+      "references": [
+        "過去未採用例 / 現行lightningFlat連鎖を参照"
+      ],
+      "risks": [
+        "雷技能のelement=3だけでは連鎖しない",
+        "連鎖damageの再発動・単体変換・MODとの担当は未定"
+      ],
+      "conflicts": [],
+      "referenceJobs": [],
+      "legacyIndex": -1,
+      "cost": 1,
+      "runtimeApplied": false
+    }
+  ],
+  "requirements": {
+    "CROSS_WEAPON_SKILL": "越境先の武器・対応技能・係数・固有資源の接続（現行未実装）",
+    "DAMAGE": "攻撃できる技能・通常攻撃",
+    "RESOURCE": "自分の固有資源の獲得",
+    "SPEND": "自分の固有資源を消費する編成技能",
+    "OPENER": "現行の候補0を編成",
+    "SIGNATURE": "現行の主力候補を編成",
+    "FOURTH_CANDIDATE": "現行の候補3を編成（職によって防御技）",
+    "SHIELD": "障壁を発生させる技能",
+    "ALLY_SHIELD": "仲間に届く障壁技能",
+    "DEFENSE": "防御姿勢・障壁を発生させる技能",
+    "HEAL": "HEAL型の回復技能（現行5起点には供給なし）",
+    "MARK": "印を付ける編成技能",
+    "MARK_CONSUMER": "印を消費できる編成技能と職業判定",
+    "PULL": "敵を集めるPULL型技能",
+    "MULTI": "複数回発動する編成技能",
+    "ICE": "氷の減速源（氷SLOW技能または氷追加MOD）",
+    "BURN": "燃焼源（現行は炎追加MOD。炎技能の名前だけでは不可）",
+    "CHAIN": "連鎖源（現行は雷追加MOD。雷技能の名前だけでは不可）"
+  },
+  "profiles": [
+    {
+      "id": "warrior:basic:plain:standard",
+      "start": "warrior",
+      "job": "ウォーリアー",
+      "kit": "basic",
+      "element": "plain",
+      "weaponMode": "standard",
+      "weapon": "開拓の大剣",
+      "weaponUsable": true,
+      "resource": "闘気",
+      "level": 40,
+      "equippedSkills": [
+        "踏み込み斬り",
+        "叩きつけ",
+        "薙ぎ払い",
+        "破城突き",
+        "天断"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "SIGNATURE",
+        "MULTI"
+      ],
+      "warnings": [
+        "受け流しを外した比較編成。基本Warriorの技能統合やCD改善は未実装"
+      ]
+    },
+    {
+      "id": "warrior:basic:plain:foreign",
+      "start": "warrior",
+      "job": "ウォーリアー",
+      "kit": "basic",
+      "element": "plain",
+      "weaponMode": "foreign",
+      "weapon": "灯火の杖",
+      "weaponUsable": false,
+      "resource": "闘気",
+      "level": 40,
+      "equippedSkills": [
+        "踏み込み斬り",
+        "叩きつけ",
+        "薙ぎ払い",
+        "破城突き",
+        "天断"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "SIGNATURE",
+        "MULTI"
+      ],
+      "warnings": [
+        "現行ではこの武器を装備不可。01取得を試しても解除しない",
+        "受け流しを外した比較編成。基本Warriorの技能統合やCD改善は未実装"
+      ]
+    },
+    {
+      "id": "warrior:basic:ice:standard",
+      "start": "warrior",
+      "job": "ウォーリアー",
+      "kit": "basic",
+      "element": "ice",
+      "weaponMode": "standard",
+      "weapon": "開拓の大剣",
+      "weaponUsable": true,
+      "resource": "闘気",
+      "level": 40,
+      "equippedSkills": [
+        "踏み込み斬り",
+        "叩きつけ",
+        "薙ぎ払い",
+        "破城突き",
+        "天断"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "SIGNATURE",
+        "MULTI",
+        "ICE"
+      ],
+      "warnings": [
+        "受け流しを外した比較編成。基本Warriorの技能統合やCD改善は未実装",
+        "比較用に既存の属性追加MODを持つ条件だけを仮定。魔術加工の必須化ではない"
+      ]
+    },
+    {
+      "id": "warrior:basic:ice:foreign",
+      "start": "warrior",
+      "job": "ウォーリアー",
+      "kit": "basic",
+      "element": "ice",
+      "weaponMode": "foreign",
+      "weapon": "灯火の杖",
+      "weaponUsable": false,
+      "resource": "闘気",
+      "level": 40,
+      "equippedSkills": [
+        "踏み込み斬り",
+        "叩きつけ",
+        "薙ぎ払い",
+        "破城突き",
+        "天断"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "SIGNATURE",
+        "MULTI",
+        "ICE"
+      ],
+      "warnings": [
+        "現行ではこの武器を装備不可。01取得を試しても解除しない",
+        "受け流しを外した比較編成。基本Warriorの技能統合やCD改善は未実装",
+        "比較用に既存の属性追加MODを持つ条件だけを仮定。魔術加工の必須化ではない"
+      ]
+    },
+    {
+      "id": "warrior:basic:fire:standard",
+      "start": "warrior",
+      "job": "ウォーリアー",
+      "kit": "basic",
+      "element": "fire",
+      "weaponMode": "standard",
+      "weapon": "開拓の大剣",
+      "weaponUsable": true,
+      "resource": "闘気",
+      "level": 40,
+      "equippedSkills": [
+        "踏み込み斬り",
+        "叩きつけ",
+        "薙ぎ払い",
+        "破城突き",
+        "天断"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "SIGNATURE",
+        "MULTI",
+        "BURN"
+      ],
+      "warnings": [
+        "受け流しを外した比較編成。基本Warriorの技能統合やCD改善は未実装",
+        "比較用に既存の属性追加MODを持つ条件だけを仮定。魔術加工の必須化ではない"
+      ]
+    },
+    {
+      "id": "warrior:basic:fire:foreign",
+      "start": "warrior",
+      "job": "ウォーリアー",
+      "kit": "basic",
+      "element": "fire",
+      "weaponMode": "foreign",
+      "weapon": "灯火の杖",
+      "weaponUsable": false,
+      "resource": "闘気",
+      "level": 40,
+      "equippedSkills": [
+        "踏み込み斬り",
+        "叩きつけ",
+        "薙ぎ払い",
+        "破城突き",
+        "天断"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "SIGNATURE",
+        "MULTI",
+        "BURN"
+      ],
+      "warnings": [
+        "現行ではこの武器を装備不可。01取得を試しても解除しない",
+        "受け流しを外した比較編成。基本Warriorの技能統合やCD改善は未実装",
+        "比較用に既存の属性追加MODを持つ条件だけを仮定。魔術加工の必須化ではない"
+      ]
+    },
+    {
+      "id": "warrior:basic:lightning:standard",
+      "start": "warrior",
+      "job": "ウォーリアー",
+      "kit": "basic",
+      "element": "lightning",
+      "weaponMode": "standard",
+      "weapon": "開拓の大剣",
+      "weaponUsable": true,
+      "resource": "闘気",
+      "level": 40,
+      "equippedSkills": [
+        "踏み込み斬り",
+        "叩きつけ",
+        "薙ぎ払い",
+        "破城突き",
+        "天断"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "SIGNATURE",
+        "MULTI",
+        "CHAIN"
+      ],
+      "warnings": [
+        "受け流しを外した比較編成。基本Warriorの技能統合やCD改善は未実装",
+        "比較用に既存の属性追加MODを持つ条件だけを仮定。魔術加工の必須化ではない"
+      ]
+    },
+    {
+      "id": "warrior:basic:lightning:foreign",
+      "start": "warrior",
+      "job": "ウォーリアー",
+      "kit": "basic",
+      "element": "lightning",
+      "weaponMode": "foreign",
+      "weapon": "灯火の杖",
+      "weaponUsable": false,
+      "resource": "闘気",
+      "level": 40,
+      "equippedSkills": [
+        "踏み込み斬り",
+        "叩きつけ",
+        "薙ぎ払い",
+        "破城突き",
+        "天断"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "SIGNATURE",
+        "MULTI",
+        "CHAIN"
+      ],
+      "warnings": [
+        "現行ではこの武器を装備不可。01取得を試しても解除しない",
+        "受け流しを外した比較編成。基本Warriorの技能統合やCD改善は未実装",
+        "比較用に既存の属性追加MODを持つ条件だけを仮定。魔術加工の必須化ではない"
+      ]
+    },
+    {
+      "id": "warrior:support:plain:standard",
+      "start": "warrior",
+      "job": "ウォーリアー",
+      "kit": "support",
+      "element": "plain",
+      "weaponMode": "standard",
+      "weapon": "開拓の大剣",
+      "weaponUsable": true,
+      "resource": "闘気",
+      "level": 40,
+      "equippedSkills": [
+        "踏み込み斬り",
+        "叩きつけ",
+        "薙ぎ払い",
+        "雄叫び",
+        "天断"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "SIGNATURE",
+        "SHIELD",
+        "ALLY_SHIELD",
+        "DEFENSE",
+        "MULTI"
+      ],
+      "warnings": []
+    },
+    {
+      "id": "warrior:support:plain:foreign",
+      "start": "warrior",
+      "job": "ウォーリアー",
+      "kit": "support",
+      "element": "plain",
+      "weaponMode": "foreign",
+      "weapon": "灯火の杖",
+      "weaponUsable": false,
+      "resource": "闘気",
+      "level": 40,
+      "equippedSkills": [
+        "踏み込み斬り",
+        "叩きつけ",
+        "薙ぎ払い",
+        "雄叫び",
+        "天断"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "SIGNATURE",
+        "SHIELD",
+        "ALLY_SHIELD",
+        "DEFENSE",
+        "MULTI"
+      ],
+      "warnings": [
+        "現行ではこの武器を装備不可。01取得を試しても解除しない"
+      ]
+    },
+    {
+      "id": "warrior:support:ice:standard",
+      "start": "warrior",
+      "job": "ウォーリアー",
+      "kit": "support",
+      "element": "ice",
+      "weaponMode": "standard",
+      "weapon": "開拓の大剣",
+      "weaponUsable": true,
+      "resource": "闘気",
+      "level": 40,
+      "equippedSkills": [
+        "踏み込み斬り",
+        "叩きつけ",
+        "薙ぎ払い",
+        "雄叫び",
+        "天断"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "SIGNATURE",
+        "SHIELD",
+        "ALLY_SHIELD",
+        "DEFENSE",
+        "MULTI",
+        "ICE"
+      ],
+      "warnings": [
+        "比較用に既存の属性追加MODを持つ条件だけを仮定。魔術加工の必須化ではない"
+      ]
+    },
+    {
+      "id": "warrior:support:ice:foreign",
+      "start": "warrior",
+      "job": "ウォーリアー",
+      "kit": "support",
+      "element": "ice",
+      "weaponMode": "foreign",
+      "weapon": "灯火の杖",
+      "weaponUsable": false,
+      "resource": "闘気",
+      "level": 40,
+      "equippedSkills": [
+        "踏み込み斬り",
+        "叩きつけ",
+        "薙ぎ払い",
+        "雄叫び",
+        "天断"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "SIGNATURE",
+        "SHIELD",
+        "ALLY_SHIELD",
+        "DEFENSE",
+        "MULTI",
+        "ICE"
+      ],
+      "warnings": [
+        "現行ではこの武器を装備不可。01取得を試しても解除しない",
+        "比較用に既存の属性追加MODを持つ条件だけを仮定。魔術加工の必須化ではない"
+      ]
+    },
+    {
+      "id": "warrior:support:fire:standard",
+      "start": "warrior",
+      "job": "ウォーリアー",
+      "kit": "support",
+      "element": "fire",
+      "weaponMode": "standard",
+      "weapon": "開拓の大剣",
+      "weaponUsable": true,
+      "resource": "闘気",
+      "level": 40,
+      "equippedSkills": [
+        "踏み込み斬り",
+        "叩きつけ",
+        "薙ぎ払い",
+        "雄叫び",
+        "天断"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "SIGNATURE",
+        "SHIELD",
+        "ALLY_SHIELD",
+        "DEFENSE",
+        "MULTI",
+        "BURN"
+      ],
+      "warnings": [
+        "比較用に既存の属性追加MODを持つ条件だけを仮定。魔術加工の必須化ではない"
+      ]
+    },
+    {
+      "id": "warrior:support:fire:foreign",
+      "start": "warrior",
+      "job": "ウォーリアー",
+      "kit": "support",
+      "element": "fire",
+      "weaponMode": "foreign",
+      "weapon": "灯火の杖",
+      "weaponUsable": false,
+      "resource": "闘気",
+      "level": 40,
+      "equippedSkills": [
+        "踏み込み斬り",
+        "叩きつけ",
+        "薙ぎ払い",
+        "雄叫び",
+        "天断"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "SIGNATURE",
+        "SHIELD",
+        "ALLY_SHIELD",
+        "DEFENSE",
+        "MULTI",
+        "BURN"
+      ],
+      "warnings": [
+        "現行ではこの武器を装備不可。01取得を試しても解除しない",
+        "比較用に既存の属性追加MODを持つ条件だけを仮定。魔術加工の必須化ではない"
+      ]
+    },
+    {
+      "id": "warrior:support:lightning:standard",
+      "start": "warrior",
+      "job": "ウォーリアー",
+      "kit": "support",
+      "element": "lightning",
+      "weaponMode": "standard",
+      "weapon": "開拓の大剣",
+      "weaponUsable": true,
+      "resource": "闘気",
+      "level": 40,
+      "equippedSkills": [
+        "踏み込み斬り",
+        "叩きつけ",
+        "薙ぎ払い",
+        "雄叫び",
+        "天断"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "SIGNATURE",
+        "SHIELD",
+        "ALLY_SHIELD",
+        "DEFENSE",
+        "MULTI",
+        "CHAIN"
+      ],
+      "warnings": [
+        "比較用に既存の属性追加MODを持つ条件だけを仮定。魔術加工の必須化ではない"
+      ]
+    },
+    {
+      "id": "warrior:support:lightning:foreign",
+      "start": "warrior",
+      "job": "ウォーリアー",
+      "kit": "support",
+      "element": "lightning",
+      "weaponMode": "foreign",
+      "weapon": "灯火の杖",
+      "weaponUsable": false,
+      "resource": "闘気",
+      "level": 40,
+      "equippedSkills": [
+        "踏み込み斬り",
+        "叩きつけ",
+        "薙ぎ払い",
+        "雄叫び",
+        "天断"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "SIGNATURE",
+        "SHIELD",
+        "ALLY_SHIELD",
+        "DEFENSE",
+        "MULTI",
+        "CHAIN"
+      ],
+      "warnings": [
+        "現行ではこの武器を装備不可。01取得を試しても解除しない",
+        "比較用に既存の属性追加MODを持つ条件だけを仮定。魔術加工の必須化ではない"
+      ]
+    },
+    {
+      "id": "warrior:mark:plain:standard",
+      "start": "warrior",
+      "job": "ウォーリアー",
+      "kit": "mark",
+      "element": "plain",
+      "weaponMode": "standard",
+      "weapon": "開拓の大剣",
+      "weaponUsable": true,
+      "resource": "闘気",
+      "level": 40,
+      "equippedSkills": [
+        "踏み込み斬り",
+        "叩きつけ",
+        "薙ぎ払い",
+        "破城突き",
+        "天断"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "SIGNATURE",
+        "MULTI"
+      ],
+      "warnings": [
+        "この職には指定した編成技能の候補がない"
+      ]
+    },
+    {
+      "id": "warrior:mark:plain:foreign",
+      "start": "warrior",
+      "job": "ウォーリアー",
+      "kit": "mark",
+      "element": "plain",
+      "weaponMode": "foreign",
+      "weapon": "灯火の杖",
+      "weaponUsable": false,
+      "resource": "闘気",
+      "level": 40,
+      "equippedSkills": [
+        "踏み込み斬り",
+        "叩きつけ",
+        "薙ぎ払い",
+        "破城突き",
+        "天断"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "SIGNATURE",
+        "MULTI"
+      ],
+      "warnings": [
+        "現行ではこの武器を装備不可。01取得を試しても解除しない",
+        "この職には指定した編成技能の候補がない"
+      ]
+    },
+    {
+      "id": "warrior:mark:ice:standard",
+      "start": "warrior",
+      "job": "ウォーリアー",
+      "kit": "mark",
+      "element": "ice",
+      "weaponMode": "standard",
+      "weapon": "開拓の大剣",
+      "weaponUsable": true,
+      "resource": "闘気",
+      "level": 40,
+      "equippedSkills": [
+        "踏み込み斬り",
+        "叩きつけ",
+        "薙ぎ払い",
+        "破城突き",
+        "天断"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "SIGNATURE",
+        "MULTI",
+        "ICE"
+      ],
+      "warnings": [
+        "この職には指定した編成技能の候補がない",
+        "比較用に既存の属性追加MODを持つ条件だけを仮定。魔術加工の必須化ではない"
+      ]
+    },
+    {
+      "id": "warrior:mark:ice:foreign",
+      "start": "warrior",
+      "job": "ウォーリアー",
+      "kit": "mark",
+      "element": "ice",
+      "weaponMode": "foreign",
+      "weapon": "灯火の杖",
+      "weaponUsable": false,
+      "resource": "闘気",
+      "level": 40,
+      "equippedSkills": [
+        "踏み込み斬り",
+        "叩きつけ",
+        "薙ぎ払い",
+        "破城突き",
+        "天断"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "SIGNATURE",
+        "MULTI",
+        "ICE"
+      ],
+      "warnings": [
+        "現行ではこの武器を装備不可。01取得を試しても解除しない",
+        "この職には指定した編成技能の候補がない",
+        "比較用に既存の属性追加MODを持つ条件だけを仮定。魔術加工の必須化ではない"
+      ]
+    },
+    {
+      "id": "warrior:mark:fire:standard",
+      "start": "warrior",
+      "job": "ウォーリアー",
+      "kit": "mark",
+      "element": "fire",
+      "weaponMode": "standard",
+      "weapon": "開拓の大剣",
+      "weaponUsable": true,
+      "resource": "闘気",
+      "level": 40,
+      "equippedSkills": [
+        "踏み込み斬り",
+        "叩きつけ",
+        "薙ぎ払い",
+        "破城突き",
+        "天断"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "SIGNATURE",
+        "MULTI",
+        "BURN"
+      ],
+      "warnings": [
+        "この職には指定した編成技能の候補がない",
+        "比較用に既存の属性追加MODを持つ条件だけを仮定。魔術加工の必須化ではない"
+      ]
+    },
+    {
+      "id": "warrior:mark:fire:foreign",
+      "start": "warrior",
+      "job": "ウォーリアー",
+      "kit": "mark",
+      "element": "fire",
+      "weaponMode": "foreign",
+      "weapon": "灯火の杖",
+      "weaponUsable": false,
+      "resource": "闘気",
+      "level": 40,
+      "equippedSkills": [
+        "踏み込み斬り",
+        "叩きつけ",
+        "薙ぎ払い",
+        "破城突き",
+        "天断"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "SIGNATURE",
+        "MULTI",
+        "BURN"
+      ],
+      "warnings": [
+        "現行ではこの武器を装備不可。01取得を試しても解除しない",
+        "この職には指定した編成技能の候補がない",
+        "比較用に既存の属性追加MODを持つ条件だけを仮定。魔術加工の必須化ではない"
+      ]
+    },
+    {
+      "id": "warrior:mark:lightning:standard",
+      "start": "warrior",
+      "job": "ウォーリアー",
+      "kit": "mark",
+      "element": "lightning",
+      "weaponMode": "standard",
+      "weapon": "開拓の大剣",
+      "weaponUsable": true,
+      "resource": "闘気",
+      "level": 40,
+      "equippedSkills": [
+        "踏み込み斬り",
+        "叩きつけ",
+        "薙ぎ払い",
+        "破城突き",
+        "天断"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "SIGNATURE",
+        "MULTI",
+        "CHAIN"
+      ],
+      "warnings": [
+        "この職には指定した編成技能の候補がない",
+        "比較用に既存の属性追加MODを持つ条件だけを仮定。魔術加工の必須化ではない"
+      ]
+    },
+    {
+      "id": "warrior:mark:lightning:foreign",
+      "start": "warrior",
+      "job": "ウォーリアー",
+      "kit": "mark",
+      "element": "lightning",
+      "weaponMode": "foreign",
+      "weapon": "灯火の杖",
+      "weaponUsable": false,
+      "resource": "闘気",
+      "level": 40,
+      "equippedSkills": [
+        "踏み込み斬り",
+        "叩きつけ",
+        "薙ぎ払い",
+        "破城突き",
+        "天断"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "SIGNATURE",
+        "MULTI",
+        "CHAIN"
+      ],
+      "warnings": [
+        "現行ではこの武器を装備不可。01取得を試しても解除しない",
+        "この職には指定した編成技能の候補がない",
+        "比較用に既存の属性追加MODを持つ条件だけを仮定。魔術加工の必須化ではない"
+      ]
+    },
+    {
+      "id": "tank:basic:plain:standard",
+      "start": "tank",
+      "job": "タンク〈仮称〉",
+      "kit": "basic",
+      "element": "plain",
+      "weaponMode": "standard",
+      "weapon": "誓いの戦槌",
+      "weaponUsable": true,
+      "resource": "決意",
+      "level": 40,
+      "equippedSkills": [
+        "裁きの槌",
+        "集束",
+        "護りの誓い",
+        "守護の構え",
+        "空間圧縮"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "FOURTH_CANDIDATE",
+        "SHIELD",
+        "ALLY_SHIELD",
+        "DEFENSE",
+        "MARK",
+        "MARK_CONSUMER",
+        "PULL",
+        "MULTI"
+      ],
+      "warnings": []
+    },
+    {
+      "id": "tank:basic:plain:foreign",
+      "start": "tank",
+      "job": "タンク〈仮称〉",
+      "kit": "basic",
+      "element": "plain",
+      "weaponMode": "foreign",
+      "weapon": "開拓の大剣",
+      "weaponUsable": false,
+      "resource": "決意",
+      "level": 40,
+      "equippedSkills": [
+        "裁きの槌",
+        "集束",
+        "護りの誓い",
+        "守護の構え",
+        "空間圧縮"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "FOURTH_CANDIDATE",
+        "SHIELD",
+        "ALLY_SHIELD",
+        "DEFENSE",
+        "MARK",
+        "MARK_CONSUMER",
+        "PULL",
+        "MULTI"
+      ],
+      "warnings": [
+        "現行ではこの武器を装備不可。01取得を試しても解除しない"
+      ]
+    },
+    {
+      "id": "tank:basic:ice:standard",
+      "start": "tank",
+      "job": "タンク〈仮称〉",
+      "kit": "basic",
+      "element": "ice",
+      "weaponMode": "standard",
+      "weapon": "誓いの戦槌",
+      "weaponUsable": true,
+      "resource": "決意",
+      "level": 40,
+      "equippedSkills": [
+        "裁きの槌",
+        "集束",
+        "護りの誓い",
+        "守護の構え",
+        "空間圧縮"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "FOURTH_CANDIDATE",
+        "SHIELD",
+        "ALLY_SHIELD",
+        "DEFENSE",
+        "MARK",
+        "MARK_CONSUMER",
+        "PULL",
+        "MULTI",
+        "ICE"
+      ],
+      "warnings": [
+        "比較用に既存の属性追加MODを持つ条件だけを仮定。魔術加工の必須化ではない"
+      ]
+    },
+    {
+      "id": "tank:basic:ice:foreign",
+      "start": "tank",
+      "job": "タンク〈仮称〉",
+      "kit": "basic",
+      "element": "ice",
+      "weaponMode": "foreign",
+      "weapon": "開拓の大剣",
+      "weaponUsable": false,
+      "resource": "決意",
+      "level": 40,
+      "equippedSkills": [
+        "裁きの槌",
+        "集束",
+        "護りの誓い",
+        "守護の構え",
+        "空間圧縮"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "FOURTH_CANDIDATE",
+        "SHIELD",
+        "ALLY_SHIELD",
+        "DEFENSE",
+        "MARK",
+        "MARK_CONSUMER",
+        "PULL",
+        "MULTI",
+        "ICE"
+      ],
+      "warnings": [
+        "現行ではこの武器を装備不可。01取得を試しても解除しない",
+        "比較用に既存の属性追加MODを持つ条件だけを仮定。魔術加工の必須化ではない"
+      ]
+    },
+    {
+      "id": "tank:basic:fire:standard",
+      "start": "tank",
+      "job": "タンク〈仮称〉",
+      "kit": "basic",
+      "element": "fire",
+      "weaponMode": "standard",
+      "weapon": "誓いの戦槌",
+      "weaponUsable": true,
+      "resource": "決意",
+      "level": 40,
+      "equippedSkills": [
+        "裁きの槌",
+        "集束",
+        "護りの誓い",
+        "守護の構え",
+        "空間圧縮"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "FOURTH_CANDIDATE",
+        "SHIELD",
+        "ALLY_SHIELD",
+        "DEFENSE",
+        "MARK",
+        "MARK_CONSUMER",
+        "PULL",
+        "MULTI",
+        "BURN"
+      ],
+      "warnings": [
+        "比較用に既存の属性追加MODを持つ条件だけを仮定。魔術加工の必須化ではない"
+      ]
+    },
+    {
+      "id": "tank:basic:fire:foreign",
+      "start": "tank",
+      "job": "タンク〈仮称〉",
+      "kit": "basic",
+      "element": "fire",
+      "weaponMode": "foreign",
+      "weapon": "開拓の大剣",
+      "weaponUsable": false,
+      "resource": "決意",
+      "level": 40,
+      "equippedSkills": [
+        "裁きの槌",
+        "集束",
+        "護りの誓い",
+        "守護の構え",
+        "空間圧縮"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "FOURTH_CANDIDATE",
+        "SHIELD",
+        "ALLY_SHIELD",
+        "DEFENSE",
+        "MARK",
+        "MARK_CONSUMER",
+        "PULL",
+        "MULTI",
+        "BURN"
+      ],
+      "warnings": [
+        "現行ではこの武器を装備不可。01取得を試しても解除しない",
+        "比較用に既存の属性追加MODを持つ条件だけを仮定。魔術加工の必須化ではない"
+      ]
+    },
+    {
+      "id": "tank:basic:lightning:standard",
+      "start": "tank",
+      "job": "タンク〈仮称〉",
+      "kit": "basic",
+      "element": "lightning",
+      "weaponMode": "standard",
+      "weapon": "誓いの戦槌",
+      "weaponUsable": true,
+      "resource": "決意",
+      "level": 40,
+      "equippedSkills": [
+        "裁きの槌",
+        "集束",
+        "護りの誓い",
+        "守護の構え",
+        "空間圧縮"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "FOURTH_CANDIDATE",
+        "SHIELD",
+        "ALLY_SHIELD",
+        "DEFENSE",
+        "MARK",
+        "MARK_CONSUMER",
+        "PULL",
+        "MULTI",
+        "CHAIN"
+      ],
+      "warnings": [
+        "比較用に既存の属性追加MODを持つ条件だけを仮定。魔術加工の必須化ではない"
+      ]
+    },
+    {
+      "id": "tank:basic:lightning:foreign",
+      "start": "tank",
+      "job": "タンク〈仮称〉",
+      "kit": "basic",
+      "element": "lightning",
+      "weaponMode": "foreign",
+      "weapon": "開拓の大剣",
+      "weaponUsable": false,
+      "resource": "決意",
+      "level": 40,
+      "equippedSkills": [
+        "裁きの槌",
+        "集束",
+        "護りの誓い",
+        "守護の構え",
+        "空間圧縮"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "FOURTH_CANDIDATE",
+        "SHIELD",
+        "ALLY_SHIELD",
+        "DEFENSE",
+        "MARK",
+        "MARK_CONSUMER",
+        "PULL",
+        "MULTI",
+        "CHAIN"
+      ],
+      "warnings": [
+        "現行ではこの武器を装備不可。01取得を試しても解除しない",
+        "比較用に既存の属性追加MODを持つ条件だけを仮定。魔術加工の必須化ではない"
+      ]
+    },
+    {
+      "id": "tank:support:plain:standard",
+      "start": "tank",
+      "job": "タンク〈仮称〉",
+      "kit": "support",
+      "element": "plain",
+      "weaponMode": "standard",
+      "weapon": "誓いの戦槌",
+      "weaponUsable": true,
+      "resource": "決意",
+      "level": 40,
+      "equippedSkills": [
+        "裁きの槌",
+        "集束",
+        "守護の構え",
+        "護りの誓い",
+        "空間圧縮"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "FOURTH_CANDIDATE",
+        "SHIELD",
+        "ALLY_SHIELD",
+        "DEFENSE",
+        "MARK",
+        "MARK_CONSUMER",
+        "PULL",
+        "MULTI"
+      ],
+      "warnings": []
+    },
+    {
+      "id": "tank:support:plain:foreign",
+      "start": "tank",
+      "job": "タンク〈仮称〉",
+      "kit": "support",
+      "element": "plain",
+      "weaponMode": "foreign",
+      "weapon": "開拓の大剣",
+      "weaponUsable": false,
+      "resource": "決意",
+      "level": 40,
+      "equippedSkills": [
+        "裁きの槌",
+        "集束",
+        "守護の構え",
+        "護りの誓い",
+        "空間圧縮"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "FOURTH_CANDIDATE",
+        "SHIELD",
+        "ALLY_SHIELD",
+        "DEFENSE",
+        "MARK",
+        "MARK_CONSUMER",
+        "PULL",
+        "MULTI"
+      ],
+      "warnings": [
+        "現行ではこの武器を装備不可。01取得を試しても解除しない"
+      ]
+    },
+    {
+      "id": "tank:support:ice:standard",
+      "start": "tank",
+      "job": "タンク〈仮称〉",
+      "kit": "support",
+      "element": "ice",
+      "weaponMode": "standard",
+      "weapon": "誓いの戦槌",
+      "weaponUsable": true,
+      "resource": "決意",
+      "level": 40,
+      "equippedSkills": [
+        "裁きの槌",
+        "集束",
+        "守護の構え",
+        "護りの誓い",
+        "空間圧縮"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "FOURTH_CANDIDATE",
+        "SHIELD",
+        "ALLY_SHIELD",
+        "DEFENSE",
+        "MARK",
+        "MARK_CONSUMER",
+        "PULL",
+        "MULTI",
+        "ICE"
+      ],
+      "warnings": [
+        "比較用に既存の属性追加MODを持つ条件だけを仮定。魔術加工の必須化ではない"
+      ]
+    },
+    {
+      "id": "tank:support:ice:foreign",
+      "start": "tank",
+      "job": "タンク〈仮称〉",
+      "kit": "support",
+      "element": "ice",
+      "weaponMode": "foreign",
+      "weapon": "開拓の大剣",
+      "weaponUsable": false,
+      "resource": "決意",
+      "level": 40,
+      "equippedSkills": [
+        "裁きの槌",
+        "集束",
+        "守護の構え",
+        "護りの誓い",
+        "空間圧縮"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "FOURTH_CANDIDATE",
+        "SHIELD",
+        "ALLY_SHIELD",
+        "DEFENSE",
+        "MARK",
+        "MARK_CONSUMER",
+        "PULL",
+        "MULTI",
+        "ICE"
+      ],
+      "warnings": [
+        "現行ではこの武器を装備不可。01取得を試しても解除しない",
+        "比較用に既存の属性追加MODを持つ条件だけを仮定。魔術加工の必須化ではない"
+      ]
+    },
+    {
+      "id": "tank:support:fire:standard",
+      "start": "tank",
+      "job": "タンク〈仮称〉",
+      "kit": "support",
+      "element": "fire",
+      "weaponMode": "standard",
+      "weapon": "誓いの戦槌",
+      "weaponUsable": true,
+      "resource": "決意",
+      "level": 40,
+      "equippedSkills": [
+        "裁きの槌",
+        "集束",
+        "守護の構え",
+        "護りの誓い",
+        "空間圧縮"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "FOURTH_CANDIDATE",
+        "SHIELD",
+        "ALLY_SHIELD",
+        "DEFENSE",
+        "MARK",
+        "MARK_CONSUMER",
+        "PULL",
+        "MULTI",
+        "BURN"
+      ],
+      "warnings": [
+        "比較用に既存の属性追加MODを持つ条件だけを仮定。魔術加工の必須化ではない"
+      ]
+    },
+    {
+      "id": "tank:support:fire:foreign",
+      "start": "tank",
+      "job": "タンク〈仮称〉",
+      "kit": "support",
+      "element": "fire",
+      "weaponMode": "foreign",
+      "weapon": "開拓の大剣",
+      "weaponUsable": false,
+      "resource": "決意",
+      "level": 40,
+      "equippedSkills": [
+        "裁きの槌",
+        "集束",
+        "守護の構え",
+        "護りの誓い",
+        "空間圧縮"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "FOURTH_CANDIDATE",
+        "SHIELD",
+        "ALLY_SHIELD",
+        "DEFENSE",
+        "MARK",
+        "MARK_CONSUMER",
+        "PULL",
+        "MULTI",
+        "BURN"
+      ],
+      "warnings": [
+        "現行ではこの武器を装備不可。01取得を試しても解除しない",
+        "比較用に既存の属性追加MODを持つ条件だけを仮定。魔術加工の必須化ではない"
+      ]
+    },
+    {
+      "id": "tank:support:lightning:standard",
+      "start": "tank",
+      "job": "タンク〈仮称〉",
+      "kit": "support",
+      "element": "lightning",
+      "weaponMode": "standard",
+      "weapon": "誓いの戦槌",
+      "weaponUsable": true,
+      "resource": "決意",
+      "level": 40,
+      "equippedSkills": [
+        "裁きの槌",
+        "集束",
+        "守護の構え",
+        "護りの誓い",
+        "空間圧縮"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "FOURTH_CANDIDATE",
+        "SHIELD",
+        "ALLY_SHIELD",
+        "DEFENSE",
+        "MARK",
+        "MARK_CONSUMER",
+        "PULL",
+        "MULTI",
+        "CHAIN"
+      ],
+      "warnings": [
+        "比較用に既存の属性追加MODを持つ条件だけを仮定。魔術加工の必須化ではない"
+      ]
+    },
+    {
+      "id": "tank:support:lightning:foreign",
+      "start": "tank",
+      "job": "タンク〈仮称〉",
+      "kit": "support",
+      "element": "lightning",
+      "weaponMode": "foreign",
+      "weapon": "開拓の大剣",
+      "weaponUsable": false,
+      "resource": "決意",
+      "level": 40,
+      "equippedSkills": [
+        "裁きの槌",
+        "集束",
+        "守護の構え",
+        "護りの誓い",
+        "空間圧縮"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "FOURTH_CANDIDATE",
+        "SHIELD",
+        "ALLY_SHIELD",
+        "DEFENSE",
+        "MARK",
+        "MARK_CONSUMER",
+        "PULL",
+        "MULTI",
+        "CHAIN"
+      ],
+      "warnings": [
+        "現行ではこの武器を装備不可。01取得を試しても解除しない",
+        "比較用に既存の属性追加MODを持つ条件だけを仮定。魔術加工の必須化ではない"
+      ]
+    },
+    {
+      "id": "tank:mark:plain:standard",
+      "start": "tank",
+      "job": "タンク〈仮称〉",
+      "kit": "mark",
+      "element": "plain",
+      "weaponMode": "standard",
+      "weapon": "誓いの戦槌",
+      "weaponUsable": true,
+      "resource": "決意",
+      "level": 40,
+      "equippedSkills": [
+        "守護の構え",
+        "集束",
+        "護りの誓い",
+        "裁きの槌",
+        "空間圧縮"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "FOURTH_CANDIDATE",
+        "SHIELD",
+        "ALLY_SHIELD",
+        "DEFENSE",
+        "MARK",
+        "MARK_CONSUMER",
+        "PULL",
+        "MULTI"
+      ],
+      "warnings": []
+    },
+    {
+      "id": "tank:mark:plain:foreign",
+      "start": "tank",
+      "job": "タンク〈仮称〉",
+      "kit": "mark",
+      "element": "plain",
+      "weaponMode": "foreign",
+      "weapon": "開拓の大剣",
+      "weaponUsable": false,
+      "resource": "決意",
+      "level": 40,
+      "equippedSkills": [
+        "守護の構え",
+        "集束",
+        "護りの誓い",
+        "裁きの槌",
+        "空間圧縮"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "FOURTH_CANDIDATE",
+        "SHIELD",
+        "ALLY_SHIELD",
+        "DEFENSE",
+        "MARK",
+        "MARK_CONSUMER",
+        "PULL",
+        "MULTI"
+      ],
+      "warnings": [
+        "現行ではこの武器を装備不可。01取得を試しても解除しない"
+      ]
+    },
+    {
+      "id": "tank:mark:ice:standard",
+      "start": "tank",
+      "job": "タンク〈仮称〉",
+      "kit": "mark",
+      "element": "ice",
+      "weaponMode": "standard",
+      "weapon": "誓いの戦槌",
+      "weaponUsable": true,
+      "resource": "決意",
+      "level": 40,
+      "equippedSkills": [
+        "守護の構え",
+        "集束",
+        "護りの誓い",
+        "裁きの槌",
+        "空間圧縮"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "FOURTH_CANDIDATE",
+        "SHIELD",
+        "ALLY_SHIELD",
+        "DEFENSE",
+        "MARK",
+        "MARK_CONSUMER",
+        "PULL",
+        "MULTI",
+        "ICE"
+      ],
+      "warnings": [
+        "比較用に既存の属性追加MODを持つ条件だけを仮定。魔術加工の必須化ではない"
+      ]
+    },
+    {
+      "id": "tank:mark:ice:foreign",
+      "start": "tank",
+      "job": "タンク〈仮称〉",
+      "kit": "mark",
+      "element": "ice",
+      "weaponMode": "foreign",
+      "weapon": "開拓の大剣",
+      "weaponUsable": false,
+      "resource": "決意",
+      "level": 40,
+      "equippedSkills": [
+        "守護の構え",
+        "集束",
+        "護りの誓い",
+        "裁きの槌",
+        "空間圧縮"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "FOURTH_CANDIDATE",
+        "SHIELD",
+        "ALLY_SHIELD",
+        "DEFENSE",
+        "MARK",
+        "MARK_CONSUMER",
+        "PULL",
+        "MULTI",
+        "ICE"
+      ],
+      "warnings": [
+        "現行ではこの武器を装備不可。01取得を試しても解除しない",
+        "比較用に既存の属性追加MODを持つ条件だけを仮定。魔術加工の必須化ではない"
+      ]
+    },
+    {
+      "id": "tank:mark:fire:standard",
+      "start": "tank",
+      "job": "タンク〈仮称〉",
+      "kit": "mark",
+      "element": "fire",
+      "weaponMode": "standard",
+      "weapon": "誓いの戦槌",
+      "weaponUsable": true,
+      "resource": "決意",
+      "level": 40,
+      "equippedSkills": [
+        "守護の構え",
+        "集束",
+        "護りの誓い",
+        "裁きの槌",
+        "空間圧縮"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "FOURTH_CANDIDATE",
+        "SHIELD",
+        "ALLY_SHIELD",
+        "DEFENSE",
+        "MARK",
+        "MARK_CONSUMER",
+        "PULL",
+        "MULTI",
+        "BURN"
+      ],
+      "warnings": [
+        "比較用に既存の属性追加MODを持つ条件だけを仮定。魔術加工の必須化ではない"
+      ]
+    },
+    {
+      "id": "tank:mark:fire:foreign",
+      "start": "tank",
+      "job": "タンク〈仮称〉",
+      "kit": "mark",
+      "element": "fire",
+      "weaponMode": "foreign",
+      "weapon": "開拓の大剣",
+      "weaponUsable": false,
+      "resource": "決意",
+      "level": 40,
+      "equippedSkills": [
+        "守護の構え",
+        "集束",
+        "護りの誓い",
+        "裁きの槌",
+        "空間圧縮"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "FOURTH_CANDIDATE",
+        "SHIELD",
+        "ALLY_SHIELD",
+        "DEFENSE",
+        "MARK",
+        "MARK_CONSUMER",
+        "PULL",
+        "MULTI",
+        "BURN"
+      ],
+      "warnings": [
+        "現行ではこの武器を装備不可。01取得を試しても解除しない",
+        "比較用に既存の属性追加MODを持つ条件だけを仮定。魔術加工の必須化ではない"
+      ]
+    },
+    {
+      "id": "tank:mark:lightning:standard",
+      "start": "tank",
+      "job": "タンク〈仮称〉",
+      "kit": "mark",
+      "element": "lightning",
+      "weaponMode": "standard",
+      "weapon": "誓いの戦槌",
+      "weaponUsable": true,
+      "resource": "決意",
+      "level": 40,
+      "equippedSkills": [
+        "守護の構え",
+        "集束",
+        "護りの誓い",
+        "裁きの槌",
+        "空間圧縮"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "FOURTH_CANDIDATE",
+        "SHIELD",
+        "ALLY_SHIELD",
+        "DEFENSE",
+        "MARK",
+        "MARK_CONSUMER",
+        "PULL",
+        "MULTI",
+        "CHAIN"
+      ],
+      "warnings": [
+        "比較用に既存の属性追加MODを持つ条件だけを仮定。魔術加工の必須化ではない"
+      ]
+    },
+    {
+      "id": "tank:mark:lightning:foreign",
+      "start": "tank",
+      "job": "タンク〈仮称〉",
+      "kit": "mark",
+      "element": "lightning",
+      "weaponMode": "foreign",
+      "weapon": "開拓の大剣",
+      "weaponUsable": false,
+      "resource": "決意",
+      "level": 40,
+      "equippedSkills": [
+        "守護の構え",
+        "集束",
+        "護りの誓い",
+        "裁きの槌",
+        "空間圧縮"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "FOURTH_CANDIDATE",
+        "SHIELD",
+        "ALLY_SHIELD",
+        "DEFENSE",
+        "MARK",
+        "MARK_CONSUMER",
+        "PULL",
+        "MULTI",
+        "CHAIN"
+      ],
+      "warnings": [
+        "現行ではこの武器を装備不可。01取得を試しても解除しない",
+        "比較用に既存の属性追加MODを持つ条件だけを仮定。魔術加工の必須化ではない"
+      ]
+    },
+    {
+      "id": "mage:basic:plain:standard",
+      "start": "mage",
+      "job": "メイジ",
+      "kit": "basic",
+      "element": "plain",
+      "weaponMode": "standard",
+      "weapon": "灯火の杖",
+      "weaponUsable": true,
+      "resource": "術式",
+      "level": 40,
+      "equippedSkills": [
+        "火炎弾",
+        "霜の波紋",
+        "流星雨",
+        "閃光歩",
+        "天火の大術式"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "SIGNATURE",
+        "FOURTH_CANDIDATE",
+        "MARK_CONSUMER",
+        "MULTI",
+        "ICE"
+      ],
+      "warnings": []
+    },
+    {
+      "id": "mage:basic:plain:foreign",
+      "start": "mage",
+      "job": "メイジ",
+      "kit": "basic",
+      "element": "plain",
+      "weaponMode": "foreign",
+      "weapon": "開拓の大剣",
+      "weaponUsable": false,
+      "resource": "術式",
+      "level": 40,
+      "equippedSkills": [
+        "火炎弾",
+        "霜の波紋",
+        "流星雨",
+        "閃光歩",
+        "天火の大術式"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "SIGNATURE",
+        "FOURTH_CANDIDATE",
+        "MARK_CONSUMER",
+        "MULTI",
+        "ICE"
+      ],
+      "warnings": [
+        "現行ではこの武器を装備不可。01取得を試しても解除しない",
+        "装備APが0。ADをAPへ自動変換しない"
+      ]
+    },
+    {
+      "id": "mage:basic:ice:standard",
+      "start": "mage",
+      "job": "メイジ",
+      "kit": "basic",
+      "element": "ice",
+      "weaponMode": "standard",
+      "weapon": "灯火の杖",
+      "weaponUsable": true,
+      "resource": "術式",
+      "level": 40,
+      "equippedSkills": [
+        "火炎弾",
+        "霜の波紋",
+        "流星雨",
+        "閃光歩",
+        "天火の大術式"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "SIGNATURE",
+        "FOURTH_CANDIDATE",
+        "MARK_CONSUMER",
+        "MULTI",
+        "ICE"
+      ],
+      "warnings": [
+        "比較用に既存の属性追加MODを持つ条件だけを仮定。魔術加工の必須化ではない"
+      ]
+    },
+    {
+      "id": "mage:basic:ice:foreign",
+      "start": "mage",
+      "job": "メイジ",
+      "kit": "basic",
+      "element": "ice",
+      "weaponMode": "foreign",
+      "weapon": "開拓の大剣",
+      "weaponUsable": false,
+      "resource": "術式",
+      "level": 40,
+      "equippedSkills": [
+        "火炎弾",
+        "霜の波紋",
+        "流星雨",
+        "閃光歩",
+        "天火の大術式"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "SIGNATURE",
+        "FOURTH_CANDIDATE",
+        "MARK_CONSUMER",
+        "MULTI",
+        "ICE"
+      ],
+      "warnings": [
+        "現行ではこの武器を装備不可。01取得を試しても解除しない",
+        "装備APが0。ADをAPへ自動変換しない",
+        "比較用に既存の属性追加MODを持つ条件だけを仮定。魔術加工の必須化ではない"
+      ]
+    },
+    {
+      "id": "mage:basic:fire:standard",
+      "start": "mage",
+      "job": "メイジ",
+      "kit": "basic",
+      "element": "fire",
+      "weaponMode": "standard",
+      "weapon": "灯火の杖",
+      "weaponUsable": true,
+      "resource": "術式",
+      "level": 40,
+      "equippedSkills": [
+        "火炎弾",
+        "霜の波紋",
+        "流星雨",
+        "閃光歩",
+        "天火の大術式"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "SIGNATURE",
+        "FOURTH_CANDIDATE",
+        "MARK_CONSUMER",
+        "MULTI",
+        "ICE",
+        "BURN"
+      ],
+      "warnings": [
+        "比較用に既存の属性追加MODを持つ条件だけを仮定。魔術加工の必須化ではない"
+      ]
+    },
+    {
+      "id": "mage:basic:fire:foreign",
+      "start": "mage",
+      "job": "メイジ",
+      "kit": "basic",
+      "element": "fire",
+      "weaponMode": "foreign",
+      "weapon": "開拓の大剣",
+      "weaponUsable": false,
+      "resource": "術式",
+      "level": 40,
+      "equippedSkills": [
+        "火炎弾",
+        "霜の波紋",
+        "流星雨",
+        "閃光歩",
+        "天火の大術式"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "SIGNATURE",
+        "FOURTH_CANDIDATE",
+        "MARK_CONSUMER",
+        "MULTI",
+        "ICE",
+        "BURN"
+      ],
+      "warnings": [
+        "現行ではこの武器を装備不可。01取得を試しても解除しない",
+        "装備APが0。ADをAPへ自動変換しない",
+        "比較用に既存の属性追加MODを持つ条件だけを仮定。魔術加工の必須化ではない"
+      ]
+    },
+    {
+      "id": "mage:basic:lightning:standard",
+      "start": "mage",
+      "job": "メイジ",
+      "kit": "basic",
+      "element": "lightning",
+      "weaponMode": "standard",
+      "weapon": "灯火の杖",
+      "weaponUsable": true,
+      "resource": "術式",
+      "level": 40,
+      "equippedSkills": [
+        "火炎弾",
+        "霜の波紋",
+        "流星雨",
+        "閃光歩",
+        "天火の大術式"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "SIGNATURE",
+        "FOURTH_CANDIDATE",
+        "MARK_CONSUMER",
+        "MULTI",
+        "ICE",
+        "CHAIN"
+      ],
+      "warnings": [
+        "比較用に既存の属性追加MODを持つ条件だけを仮定。魔術加工の必須化ではない"
+      ]
+    },
+    {
+      "id": "mage:basic:lightning:foreign",
+      "start": "mage",
+      "job": "メイジ",
+      "kit": "basic",
+      "element": "lightning",
+      "weaponMode": "foreign",
+      "weapon": "開拓の大剣",
+      "weaponUsable": false,
+      "resource": "術式",
+      "level": 40,
+      "equippedSkills": [
+        "火炎弾",
+        "霜の波紋",
+        "流星雨",
+        "閃光歩",
+        "天火の大術式"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "SIGNATURE",
+        "FOURTH_CANDIDATE",
+        "MARK_CONSUMER",
+        "MULTI",
+        "ICE",
+        "CHAIN"
+      ],
+      "warnings": [
+        "現行ではこの武器を装備不可。01取得を試しても解除しない",
+        "装備APが0。ADをAPへ自動変換しない",
+        "比較用に既存の属性追加MODを持つ条件だけを仮定。魔術加工の必須化ではない"
+      ]
+    },
+    {
+      "id": "mage:support:plain:standard",
+      "start": "mage",
+      "job": "メイジ",
+      "kit": "support",
+      "element": "plain",
+      "weaponMode": "standard",
+      "weapon": "灯火の杖",
+      "weaponUsable": true,
+      "resource": "術式",
+      "level": 40,
+      "equippedSkills": [
+        "火炎弾",
+        "霜の波紋",
+        "流星雨",
+        "魔力障壁",
+        "天火の大術式"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "SIGNATURE",
+        "SHIELD",
+        "DEFENSE",
+        "MARK_CONSUMER",
+        "MULTI",
+        "ICE"
+      ],
+      "warnings": []
+    },
+    {
+      "id": "mage:support:plain:foreign",
+      "start": "mage",
+      "job": "メイジ",
+      "kit": "support",
+      "element": "plain",
+      "weaponMode": "foreign",
+      "weapon": "開拓の大剣",
+      "weaponUsable": false,
+      "resource": "術式",
+      "level": 40,
+      "equippedSkills": [
+        "火炎弾",
+        "霜の波紋",
+        "流星雨",
+        "魔力障壁",
+        "天火の大術式"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "SIGNATURE",
+        "SHIELD",
+        "DEFENSE",
+        "MARK_CONSUMER",
+        "MULTI",
+        "ICE"
+      ],
+      "warnings": [
+        "現行ではこの武器を装備不可。01取得を試しても解除しない",
+        "装備APが0。ADをAPへ自動変換しない"
+      ]
+    },
+    {
+      "id": "mage:support:ice:standard",
+      "start": "mage",
+      "job": "メイジ",
+      "kit": "support",
+      "element": "ice",
+      "weaponMode": "standard",
+      "weapon": "灯火の杖",
+      "weaponUsable": true,
+      "resource": "術式",
+      "level": 40,
+      "equippedSkills": [
+        "火炎弾",
+        "霜の波紋",
+        "流星雨",
+        "魔力障壁",
+        "天火の大術式"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "SIGNATURE",
+        "SHIELD",
+        "DEFENSE",
+        "MARK_CONSUMER",
+        "MULTI",
+        "ICE"
+      ],
+      "warnings": [
+        "比較用に既存の属性追加MODを持つ条件だけを仮定。魔術加工の必須化ではない"
+      ]
+    },
+    {
+      "id": "mage:support:ice:foreign",
+      "start": "mage",
+      "job": "メイジ",
+      "kit": "support",
+      "element": "ice",
+      "weaponMode": "foreign",
+      "weapon": "開拓の大剣",
+      "weaponUsable": false,
+      "resource": "術式",
+      "level": 40,
+      "equippedSkills": [
+        "火炎弾",
+        "霜の波紋",
+        "流星雨",
+        "魔力障壁",
+        "天火の大術式"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "SIGNATURE",
+        "SHIELD",
+        "DEFENSE",
+        "MARK_CONSUMER",
+        "MULTI",
+        "ICE"
+      ],
+      "warnings": [
+        "現行ではこの武器を装備不可。01取得を試しても解除しない",
+        "装備APが0。ADをAPへ自動変換しない",
+        "比較用に既存の属性追加MODを持つ条件だけを仮定。魔術加工の必須化ではない"
+      ]
+    },
+    {
+      "id": "mage:support:fire:standard",
+      "start": "mage",
+      "job": "メイジ",
+      "kit": "support",
+      "element": "fire",
+      "weaponMode": "standard",
+      "weapon": "灯火の杖",
+      "weaponUsable": true,
+      "resource": "術式",
+      "level": 40,
+      "equippedSkills": [
+        "火炎弾",
+        "霜の波紋",
+        "流星雨",
+        "魔力障壁",
+        "天火の大術式"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "SIGNATURE",
+        "SHIELD",
+        "DEFENSE",
+        "MARK_CONSUMER",
+        "MULTI",
+        "ICE",
+        "BURN"
+      ],
+      "warnings": [
+        "比較用に既存の属性追加MODを持つ条件だけを仮定。魔術加工の必須化ではない"
+      ]
+    },
+    {
+      "id": "mage:support:fire:foreign",
+      "start": "mage",
+      "job": "メイジ",
+      "kit": "support",
+      "element": "fire",
+      "weaponMode": "foreign",
+      "weapon": "開拓の大剣",
+      "weaponUsable": false,
+      "resource": "術式",
+      "level": 40,
+      "equippedSkills": [
+        "火炎弾",
+        "霜の波紋",
+        "流星雨",
+        "魔力障壁",
+        "天火の大術式"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "SIGNATURE",
+        "SHIELD",
+        "DEFENSE",
+        "MARK_CONSUMER",
+        "MULTI",
+        "ICE",
+        "BURN"
+      ],
+      "warnings": [
+        "現行ではこの武器を装備不可。01取得を試しても解除しない",
+        "装備APが0。ADをAPへ自動変換しない",
+        "比較用に既存の属性追加MODを持つ条件だけを仮定。魔術加工の必須化ではない"
+      ]
+    },
+    {
+      "id": "mage:support:lightning:standard",
+      "start": "mage",
+      "job": "メイジ",
+      "kit": "support",
+      "element": "lightning",
+      "weaponMode": "standard",
+      "weapon": "灯火の杖",
+      "weaponUsable": true,
+      "resource": "術式",
+      "level": 40,
+      "equippedSkills": [
+        "火炎弾",
+        "霜の波紋",
+        "流星雨",
+        "魔力障壁",
+        "天火の大術式"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "SIGNATURE",
+        "SHIELD",
+        "DEFENSE",
+        "MARK_CONSUMER",
+        "MULTI",
+        "ICE",
+        "CHAIN"
+      ],
+      "warnings": [
+        "比較用に既存の属性追加MODを持つ条件だけを仮定。魔術加工の必須化ではない"
+      ]
+    },
+    {
+      "id": "mage:support:lightning:foreign",
+      "start": "mage",
+      "job": "メイジ",
+      "kit": "support",
+      "element": "lightning",
+      "weaponMode": "foreign",
+      "weapon": "開拓の大剣",
+      "weaponUsable": false,
+      "resource": "術式",
+      "level": 40,
+      "equippedSkills": [
+        "火炎弾",
+        "霜の波紋",
+        "流星雨",
+        "魔力障壁",
+        "天火の大術式"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "SIGNATURE",
+        "SHIELD",
+        "DEFENSE",
+        "MARK_CONSUMER",
+        "MULTI",
+        "ICE",
+        "CHAIN"
+      ],
+      "warnings": [
+        "現行ではこの武器を装備不可。01取得を試しても解除しない",
+        "装備APが0。ADをAPへ自動変換しない",
+        "比較用に既存の属性追加MODを持つ条件だけを仮定。魔術加工の必須化ではない"
+      ]
+    },
+    {
+      "id": "mage:mark:plain:standard",
+      "start": "mage",
+      "job": "メイジ",
+      "kit": "mark",
+      "element": "plain",
+      "weaponMode": "standard",
+      "weapon": "灯火の杖",
+      "weaponUsable": true,
+      "resource": "術式",
+      "level": 40,
+      "equippedSkills": [
+        "火炎弾",
+        "霜の波紋",
+        "流星雨",
+        "雷の刻印",
+        "天火の大術式"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "SIGNATURE",
+        "MARK",
+        "MARK_CONSUMER",
+        "MULTI",
+        "ICE"
+      ],
+      "warnings": []
+    },
+    {
+      "id": "mage:mark:plain:foreign",
+      "start": "mage",
+      "job": "メイジ",
+      "kit": "mark",
+      "element": "plain",
+      "weaponMode": "foreign",
+      "weapon": "開拓の大剣",
+      "weaponUsable": false,
+      "resource": "術式",
+      "level": 40,
+      "equippedSkills": [
+        "火炎弾",
+        "霜の波紋",
+        "流星雨",
+        "雷の刻印",
+        "天火の大術式"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "SIGNATURE",
+        "MARK",
+        "MARK_CONSUMER",
+        "MULTI",
+        "ICE"
+      ],
+      "warnings": [
+        "現行ではこの武器を装備不可。01取得を試しても解除しない",
+        "装備APが0。ADをAPへ自動変換しない"
+      ]
+    },
+    {
+      "id": "mage:mark:ice:standard",
+      "start": "mage",
+      "job": "メイジ",
+      "kit": "mark",
+      "element": "ice",
+      "weaponMode": "standard",
+      "weapon": "灯火の杖",
+      "weaponUsable": true,
+      "resource": "術式",
+      "level": 40,
+      "equippedSkills": [
+        "火炎弾",
+        "霜の波紋",
+        "流星雨",
+        "雷の刻印",
+        "天火の大術式"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "SIGNATURE",
+        "MARK",
+        "MARK_CONSUMER",
+        "MULTI",
+        "ICE"
+      ],
+      "warnings": [
+        "比較用に既存の属性追加MODを持つ条件だけを仮定。魔術加工の必須化ではない"
+      ]
+    },
+    {
+      "id": "mage:mark:ice:foreign",
+      "start": "mage",
+      "job": "メイジ",
+      "kit": "mark",
+      "element": "ice",
+      "weaponMode": "foreign",
+      "weapon": "開拓の大剣",
+      "weaponUsable": false,
+      "resource": "術式",
+      "level": 40,
+      "equippedSkills": [
+        "火炎弾",
+        "霜の波紋",
+        "流星雨",
+        "雷の刻印",
+        "天火の大術式"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "SIGNATURE",
+        "MARK",
+        "MARK_CONSUMER",
+        "MULTI",
+        "ICE"
+      ],
+      "warnings": [
+        "現行ではこの武器を装備不可。01取得を試しても解除しない",
+        "装備APが0。ADをAPへ自動変換しない",
+        "比較用に既存の属性追加MODを持つ条件だけを仮定。魔術加工の必須化ではない"
+      ]
+    },
+    {
+      "id": "mage:mark:fire:standard",
+      "start": "mage",
+      "job": "メイジ",
+      "kit": "mark",
+      "element": "fire",
+      "weaponMode": "standard",
+      "weapon": "灯火の杖",
+      "weaponUsable": true,
+      "resource": "術式",
+      "level": 40,
+      "equippedSkills": [
+        "火炎弾",
+        "霜の波紋",
+        "流星雨",
+        "雷の刻印",
+        "天火の大術式"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "SIGNATURE",
+        "MARK",
+        "MARK_CONSUMER",
+        "MULTI",
+        "ICE",
+        "BURN"
+      ],
+      "warnings": [
+        "比較用に既存の属性追加MODを持つ条件だけを仮定。魔術加工の必須化ではない"
+      ]
+    },
+    {
+      "id": "mage:mark:fire:foreign",
+      "start": "mage",
+      "job": "メイジ",
+      "kit": "mark",
+      "element": "fire",
+      "weaponMode": "foreign",
+      "weapon": "開拓の大剣",
+      "weaponUsable": false,
+      "resource": "術式",
+      "level": 40,
+      "equippedSkills": [
+        "火炎弾",
+        "霜の波紋",
+        "流星雨",
+        "雷の刻印",
+        "天火の大術式"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "SIGNATURE",
+        "MARK",
+        "MARK_CONSUMER",
+        "MULTI",
+        "ICE",
+        "BURN"
+      ],
+      "warnings": [
+        "現行ではこの武器を装備不可。01取得を試しても解除しない",
+        "装備APが0。ADをAPへ自動変換しない",
+        "比較用に既存の属性追加MODを持つ条件だけを仮定。魔術加工の必須化ではない"
+      ]
+    },
+    {
+      "id": "mage:mark:lightning:standard",
+      "start": "mage",
+      "job": "メイジ",
+      "kit": "mark",
+      "element": "lightning",
+      "weaponMode": "standard",
+      "weapon": "灯火の杖",
+      "weaponUsable": true,
+      "resource": "術式",
+      "level": 40,
+      "equippedSkills": [
+        "火炎弾",
+        "霜の波紋",
+        "流星雨",
+        "雷の刻印",
+        "天火の大術式"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "SIGNATURE",
+        "MARK",
+        "MARK_CONSUMER",
+        "MULTI",
+        "ICE",
+        "CHAIN"
+      ],
+      "warnings": [
+        "比較用に既存の属性追加MODを持つ条件だけを仮定。魔術加工の必須化ではない"
+      ]
+    },
+    {
+      "id": "mage:mark:lightning:foreign",
+      "start": "mage",
+      "job": "メイジ",
+      "kit": "mark",
+      "element": "lightning",
+      "weaponMode": "foreign",
+      "weapon": "開拓の大剣",
+      "weaponUsable": false,
+      "resource": "術式",
+      "level": 40,
+      "equippedSkills": [
+        "火炎弾",
+        "霜の波紋",
+        "流星雨",
+        "雷の刻印",
+        "天火の大術式"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "SIGNATURE",
+        "MARK",
+        "MARK_CONSUMER",
+        "MULTI",
+        "ICE",
+        "CHAIN"
+      ],
+      "warnings": [
+        "現行ではこの武器を装備不可。01取得を試しても解除しない",
+        "装備APが0。ADをAPへ自動変換しない",
+        "比較用に既存の属性追加MODを持つ条件だけを仮定。魔術加工の必須化ではない"
+      ]
+    },
+    {
+      "id": "ranger:basic:plain:standard",
+      "start": "ranger",
+      "job": "レンジャー",
+      "kit": "basic",
+      "element": "plain",
+      "weaponMode": "standard",
+      "weapon": "潮風の長弓",
+      "weaponUsable": true,
+      "resource": "集中",
+      "level": 40,
+      "equippedSkills": [
+        "狙い射ち",
+        "霜矢の扇",
+        "矢の嵐",
+        "後退射撃",
+        "終の一矢"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "SIGNATURE",
+        "FOURTH_CANDIDATE",
+        "MARK_CONSUMER",
+        "MULTI",
+        "ICE"
+      ],
+      "warnings": []
+    },
+    {
+      "id": "ranger:basic:plain:foreign",
+      "start": "ranger",
+      "job": "レンジャー",
+      "kit": "basic",
+      "element": "plain",
+      "weaponMode": "foreign",
+      "weapon": "開拓の大剣",
+      "weaponUsable": false,
+      "resource": "集中",
+      "level": 40,
+      "equippedSkills": [
+        "狙い射ち",
+        "霜矢の扇",
+        "矢の嵐",
+        "後退射撃",
+        "終の一矢"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "SIGNATURE",
+        "FOURTH_CANDIDATE",
+        "MARK_CONSUMER",
+        "MULTI",
+        "ICE"
+      ],
+      "warnings": [
+        "現行ではこの武器を装備不可。01取得を試しても解除しない"
+      ]
+    },
+    {
+      "id": "ranger:basic:ice:standard",
+      "start": "ranger",
+      "job": "レンジャー",
+      "kit": "basic",
+      "element": "ice",
+      "weaponMode": "standard",
+      "weapon": "潮風の長弓",
+      "weaponUsable": true,
+      "resource": "集中",
+      "level": 40,
+      "equippedSkills": [
+        "狙い射ち",
+        "霜矢の扇",
+        "矢の嵐",
+        "後退射撃",
+        "終の一矢"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "SIGNATURE",
+        "FOURTH_CANDIDATE",
+        "MARK_CONSUMER",
+        "MULTI",
+        "ICE"
+      ],
+      "warnings": [
+        "比較用に既存の属性追加MODを持つ条件だけを仮定。魔術加工の必須化ではない"
+      ]
+    },
+    {
+      "id": "ranger:basic:ice:foreign",
+      "start": "ranger",
+      "job": "レンジャー",
+      "kit": "basic",
+      "element": "ice",
+      "weaponMode": "foreign",
+      "weapon": "開拓の大剣",
+      "weaponUsable": false,
+      "resource": "集中",
+      "level": 40,
+      "equippedSkills": [
+        "狙い射ち",
+        "霜矢の扇",
+        "矢の嵐",
+        "後退射撃",
+        "終の一矢"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "SIGNATURE",
+        "FOURTH_CANDIDATE",
+        "MARK_CONSUMER",
+        "MULTI",
+        "ICE"
+      ],
+      "warnings": [
+        "現行ではこの武器を装備不可。01取得を試しても解除しない",
+        "比較用に既存の属性追加MODを持つ条件だけを仮定。魔術加工の必須化ではない"
+      ]
+    },
+    {
+      "id": "ranger:basic:fire:standard",
+      "start": "ranger",
+      "job": "レンジャー",
+      "kit": "basic",
+      "element": "fire",
+      "weaponMode": "standard",
+      "weapon": "潮風の長弓",
+      "weaponUsable": true,
+      "resource": "集中",
+      "level": 40,
+      "equippedSkills": [
+        "狙い射ち",
+        "霜矢の扇",
+        "矢の嵐",
+        "後退射撃",
+        "終の一矢"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "SIGNATURE",
+        "FOURTH_CANDIDATE",
+        "MARK_CONSUMER",
+        "MULTI",
+        "ICE",
+        "BURN"
+      ],
+      "warnings": [
+        "比較用に既存の属性追加MODを持つ条件だけを仮定。魔術加工の必須化ではない"
+      ]
+    },
+    {
+      "id": "ranger:basic:fire:foreign",
+      "start": "ranger",
+      "job": "レンジャー",
+      "kit": "basic",
+      "element": "fire",
+      "weaponMode": "foreign",
+      "weapon": "開拓の大剣",
+      "weaponUsable": false,
+      "resource": "集中",
+      "level": 40,
+      "equippedSkills": [
+        "狙い射ち",
+        "霜矢の扇",
+        "矢の嵐",
+        "後退射撃",
+        "終の一矢"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "SIGNATURE",
+        "FOURTH_CANDIDATE",
+        "MARK_CONSUMER",
+        "MULTI",
+        "ICE",
+        "BURN"
+      ],
+      "warnings": [
+        "現行ではこの武器を装備不可。01取得を試しても解除しない",
+        "比較用に既存の属性追加MODを持つ条件だけを仮定。魔術加工の必須化ではない"
+      ]
+    },
+    {
+      "id": "ranger:basic:lightning:standard",
+      "start": "ranger",
+      "job": "レンジャー",
+      "kit": "basic",
+      "element": "lightning",
+      "weaponMode": "standard",
+      "weapon": "潮風の長弓",
+      "weaponUsable": true,
+      "resource": "集中",
+      "level": 40,
+      "equippedSkills": [
+        "狙い射ち",
+        "霜矢の扇",
+        "矢の嵐",
+        "後退射撃",
+        "終の一矢"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "SIGNATURE",
+        "FOURTH_CANDIDATE",
+        "MARK_CONSUMER",
+        "MULTI",
+        "ICE",
+        "CHAIN"
+      ],
+      "warnings": [
+        "比較用に既存の属性追加MODを持つ条件だけを仮定。魔術加工の必須化ではない"
+      ]
+    },
+    {
+      "id": "ranger:basic:lightning:foreign",
+      "start": "ranger",
+      "job": "レンジャー",
+      "kit": "basic",
+      "element": "lightning",
+      "weaponMode": "foreign",
+      "weapon": "開拓の大剣",
+      "weaponUsable": false,
+      "resource": "集中",
+      "level": 40,
+      "equippedSkills": [
+        "狙い射ち",
+        "霜矢の扇",
+        "矢の嵐",
+        "後退射撃",
+        "終の一矢"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "SIGNATURE",
+        "FOURTH_CANDIDATE",
+        "MARK_CONSUMER",
+        "MULTI",
+        "ICE",
+        "CHAIN"
+      ],
+      "warnings": [
+        "現行ではこの武器を装備不可。01取得を試しても解除しない",
+        "比較用に既存の属性追加MODを持つ条件だけを仮定。魔術加工の必須化ではない"
+      ]
+    },
+    {
+      "id": "ranger:support:plain:standard",
+      "start": "ranger",
+      "job": "レンジャー",
+      "kit": "support",
+      "element": "plain",
+      "weaponMode": "standard",
+      "weapon": "潮風の長弓",
+      "weaponUsable": true,
+      "resource": "集中",
+      "level": 40,
+      "equippedSkills": [
+        "狙い射ち",
+        "霜矢の扇",
+        "矢の嵐",
+        "後退射撃",
+        "終の一矢"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "SIGNATURE",
+        "FOURTH_CANDIDATE",
+        "MARK_CONSUMER",
+        "MULTI",
+        "ICE"
+      ],
+      "warnings": [
+        "この職には指定した編成技能の候補がない"
+      ]
+    },
+    {
+      "id": "ranger:support:plain:foreign",
+      "start": "ranger",
+      "job": "レンジャー",
+      "kit": "support",
+      "element": "plain",
+      "weaponMode": "foreign",
+      "weapon": "開拓の大剣",
+      "weaponUsable": false,
+      "resource": "集中",
+      "level": 40,
+      "equippedSkills": [
+        "狙い射ち",
+        "霜矢の扇",
+        "矢の嵐",
+        "後退射撃",
+        "終の一矢"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "SIGNATURE",
+        "FOURTH_CANDIDATE",
+        "MARK_CONSUMER",
+        "MULTI",
+        "ICE"
+      ],
+      "warnings": [
+        "現行ではこの武器を装備不可。01取得を試しても解除しない",
+        "この職には指定した編成技能の候補がない"
+      ]
+    },
+    {
+      "id": "ranger:support:ice:standard",
+      "start": "ranger",
+      "job": "レンジャー",
+      "kit": "support",
+      "element": "ice",
+      "weaponMode": "standard",
+      "weapon": "潮風の長弓",
+      "weaponUsable": true,
+      "resource": "集中",
+      "level": 40,
+      "equippedSkills": [
+        "狙い射ち",
+        "霜矢の扇",
+        "矢の嵐",
+        "後退射撃",
+        "終の一矢"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "SIGNATURE",
+        "FOURTH_CANDIDATE",
+        "MARK_CONSUMER",
+        "MULTI",
+        "ICE"
+      ],
+      "warnings": [
+        "この職には指定した編成技能の候補がない",
+        "比較用に既存の属性追加MODを持つ条件だけを仮定。魔術加工の必須化ではない"
+      ]
+    },
+    {
+      "id": "ranger:support:ice:foreign",
+      "start": "ranger",
+      "job": "レンジャー",
+      "kit": "support",
+      "element": "ice",
+      "weaponMode": "foreign",
+      "weapon": "開拓の大剣",
+      "weaponUsable": false,
+      "resource": "集中",
+      "level": 40,
+      "equippedSkills": [
+        "狙い射ち",
+        "霜矢の扇",
+        "矢の嵐",
+        "後退射撃",
+        "終の一矢"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "SIGNATURE",
+        "FOURTH_CANDIDATE",
+        "MARK_CONSUMER",
+        "MULTI",
+        "ICE"
+      ],
+      "warnings": [
+        "現行ではこの武器を装備不可。01取得を試しても解除しない",
+        "この職には指定した編成技能の候補がない",
+        "比較用に既存の属性追加MODを持つ条件だけを仮定。魔術加工の必須化ではない"
+      ]
+    },
+    {
+      "id": "ranger:support:fire:standard",
+      "start": "ranger",
+      "job": "レンジャー",
+      "kit": "support",
+      "element": "fire",
+      "weaponMode": "standard",
+      "weapon": "潮風の長弓",
+      "weaponUsable": true,
+      "resource": "集中",
+      "level": 40,
+      "equippedSkills": [
+        "狙い射ち",
+        "霜矢の扇",
+        "矢の嵐",
+        "後退射撃",
+        "終の一矢"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "SIGNATURE",
+        "FOURTH_CANDIDATE",
+        "MARK_CONSUMER",
+        "MULTI",
+        "ICE",
+        "BURN"
+      ],
+      "warnings": [
+        "この職には指定した編成技能の候補がない",
+        "比較用に既存の属性追加MODを持つ条件だけを仮定。魔術加工の必須化ではない"
+      ]
+    },
+    {
+      "id": "ranger:support:fire:foreign",
+      "start": "ranger",
+      "job": "レンジャー",
+      "kit": "support",
+      "element": "fire",
+      "weaponMode": "foreign",
+      "weapon": "開拓の大剣",
+      "weaponUsable": false,
+      "resource": "集中",
+      "level": 40,
+      "equippedSkills": [
+        "狙い射ち",
+        "霜矢の扇",
+        "矢の嵐",
+        "後退射撃",
+        "終の一矢"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "SIGNATURE",
+        "FOURTH_CANDIDATE",
+        "MARK_CONSUMER",
+        "MULTI",
+        "ICE",
+        "BURN"
+      ],
+      "warnings": [
+        "現行ではこの武器を装備不可。01取得を試しても解除しない",
+        "この職には指定した編成技能の候補がない",
+        "比較用に既存の属性追加MODを持つ条件だけを仮定。魔術加工の必須化ではない"
+      ]
+    },
+    {
+      "id": "ranger:support:lightning:standard",
+      "start": "ranger",
+      "job": "レンジャー",
+      "kit": "support",
+      "element": "lightning",
+      "weaponMode": "standard",
+      "weapon": "潮風の長弓",
+      "weaponUsable": true,
+      "resource": "集中",
+      "level": 40,
+      "equippedSkills": [
+        "狙い射ち",
+        "霜矢の扇",
+        "矢の嵐",
+        "後退射撃",
+        "終の一矢"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "SIGNATURE",
+        "FOURTH_CANDIDATE",
+        "MARK_CONSUMER",
+        "MULTI",
+        "ICE",
+        "CHAIN"
+      ],
+      "warnings": [
+        "この職には指定した編成技能の候補がない",
+        "比較用に既存の属性追加MODを持つ条件だけを仮定。魔術加工の必須化ではない"
+      ]
+    },
+    {
+      "id": "ranger:support:lightning:foreign",
+      "start": "ranger",
+      "job": "レンジャー",
+      "kit": "support",
+      "element": "lightning",
+      "weaponMode": "foreign",
+      "weapon": "開拓の大剣",
+      "weaponUsable": false,
+      "resource": "集中",
+      "level": 40,
+      "equippedSkills": [
+        "狙い射ち",
+        "霜矢の扇",
+        "矢の嵐",
+        "後退射撃",
+        "終の一矢"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "SIGNATURE",
+        "FOURTH_CANDIDATE",
+        "MARK_CONSUMER",
+        "MULTI",
+        "ICE",
+        "CHAIN"
+      ],
+      "warnings": [
+        "現行ではこの武器を装備不可。01取得を試しても解除しない",
+        "この職には指定した編成技能の候補がない",
+        "比較用に既存の属性追加MODを持つ条件だけを仮定。魔術加工の必須化ではない"
+      ]
+    },
+    {
+      "id": "ranger:mark:plain:standard",
+      "start": "ranger",
+      "job": "レンジャー",
+      "kit": "mark",
+      "element": "plain",
+      "weaponMode": "standard",
+      "weapon": "潮風の長弓",
+      "weaponUsable": true,
+      "resource": "集中",
+      "level": 40,
+      "equippedSkills": [
+        "狙い射ち",
+        "霜矢の扇",
+        "矢の嵐",
+        "獲物の印",
+        "終の一矢"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "SIGNATURE",
+        "MARK",
+        "MARK_CONSUMER",
+        "MULTI",
+        "ICE"
+      ],
+      "warnings": []
+    },
+    {
+      "id": "ranger:mark:plain:foreign",
+      "start": "ranger",
+      "job": "レンジャー",
+      "kit": "mark",
+      "element": "plain",
+      "weaponMode": "foreign",
+      "weapon": "開拓の大剣",
+      "weaponUsable": false,
+      "resource": "集中",
+      "level": 40,
+      "equippedSkills": [
+        "狙い射ち",
+        "霜矢の扇",
+        "矢の嵐",
+        "獲物の印",
+        "終の一矢"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "SIGNATURE",
+        "MARK",
+        "MARK_CONSUMER",
+        "MULTI",
+        "ICE"
+      ],
+      "warnings": [
+        "現行ではこの武器を装備不可。01取得を試しても解除しない"
+      ]
+    },
+    {
+      "id": "ranger:mark:ice:standard",
+      "start": "ranger",
+      "job": "レンジャー",
+      "kit": "mark",
+      "element": "ice",
+      "weaponMode": "standard",
+      "weapon": "潮風の長弓",
+      "weaponUsable": true,
+      "resource": "集中",
+      "level": 40,
+      "equippedSkills": [
+        "狙い射ち",
+        "霜矢の扇",
+        "矢の嵐",
+        "獲物の印",
+        "終の一矢"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "SIGNATURE",
+        "MARK",
+        "MARK_CONSUMER",
+        "MULTI",
+        "ICE"
+      ],
+      "warnings": [
+        "比較用に既存の属性追加MODを持つ条件だけを仮定。魔術加工の必須化ではない"
+      ]
+    },
+    {
+      "id": "ranger:mark:ice:foreign",
+      "start": "ranger",
+      "job": "レンジャー",
+      "kit": "mark",
+      "element": "ice",
+      "weaponMode": "foreign",
+      "weapon": "開拓の大剣",
+      "weaponUsable": false,
+      "resource": "集中",
+      "level": 40,
+      "equippedSkills": [
+        "狙い射ち",
+        "霜矢の扇",
+        "矢の嵐",
+        "獲物の印",
+        "終の一矢"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "SIGNATURE",
+        "MARK",
+        "MARK_CONSUMER",
+        "MULTI",
+        "ICE"
+      ],
+      "warnings": [
+        "現行ではこの武器を装備不可。01取得を試しても解除しない",
+        "比較用に既存の属性追加MODを持つ条件だけを仮定。魔術加工の必須化ではない"
+      ]
+    },
+    {
+      "id": "ranger:mark:fire:standard",
+      "start": "ranger",
+      "job": "レンジャー",
+      "kit": "mark",
+      "element": "fire",
+      "weaponMode": "standard",
+      "weapon": "潮風の長弓",
+      "weaponUsable": true,
+      "resource": "集中",
+      "level": 40,
+      "equippedSkills": [
+        "狙い射ち",
+        "霜矢の扇",
+        "矢の嵐",
+        "獲物の印",
+        "終の一矢"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "SIGNATURE",
+        "MARK",
+        "MARK_CONSUMER",
+        "MULTI",
+        "ICE",
+        "BURN"
+      ],
+      "warnings": [
+        "比較用に既存の属性追加MODを持つ条件だけを仮定。魔術加工の必須化ではない"
+      ]
+    },
+    {
+      "id": "ranger:mark:fire:foreign",
+      "start": "ranger",
+      "job": "レンジャー",
+      "kit": "mark",
+      "element": "fire",
+      "weaponMode": "foreign",
+      "weapon": "開拓の大剣",
+      "weaponUsable": false,
+      "resource": "集中",
+      "level": 40,
+      "equippedSkills": [
+        "狙い射ち",
+        "霜矢の扇",
+        "矢の嵐",
+        "獲物の印",
+        "終の一矢"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "SIGNATURE",
+        "MARK",
+        "MARK_CONSUMER",
+        "MULTI",
+        "ICE",
+        "BURN"
+      ],
+      "warnings": [
+        "現行ではこの武器を装備不可。01取得を試しても解除しない",
+        "比較用に既存の属性追加MODを持つ条件だけを仮定。魔術加工の必須化ではない"
+      ]
+    },
+    {
+      "id": "ranger:mark:lightning:standard",
+      "start": "ranger",
+      "job": "レンジャー",
+      "kit": "mark",
+      "element": "lightning",
+      "weaponMode": "standard",
+      "weapon": "潮風の長弓",
+      "weaponUsable": true,
+      "resource": "集中",
+      "level": 40,
+      "equippedSkills": [
+        "狙い射ち",
+        "霜矢の扇",
+        "矢の嵐",
+        "獲物の印",
+        "終の一矢"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "SIGNATURE",
+        "MARK",
+        "MARK_CONSUMER",
+        "MULTI",
+        "ICE",
+        "CHAIN"
+      ],
+      "warnings": [
+        "比較用に既存の属性追加MODを持つ条件だけを仮定。魔術加工の必須化ではない"
+      ]
+    },
+    {
+      "id": "ranger:mark:lightning:foreign",
+      "start": "ranger",
+      "job": "レンジャー",
+      "kit": "mark",
+      "element": "lightning",
+      "weaponMode": "foreign",
+      "weapon": "開拓の大剣",
+      "weaponUsable": false,
+      "resource": "集中",
+      "level": 40,
+      "equippedSkills": [
+        "狙い射ち",
+        "霜矢の扇",
+        "矢の嵐",
+        "獲物の印",
+        "終の一矢"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "SIGNATURE",
+        "MARK",
+        "MARK_CONSUMER",
+        "MULTI",
+        "ICE",
+        "CHAIN"
+      ],
+      "warnings": [
+        "現行ではこの武器を装備不可。01取得を試しても解除しない",
+        "比較用に既存の属性追加MODを持つ条件だけを仮定。魔術加工の必須化ではない"
+      ]
+    },
+    {
+      "id": "assassin:basic:plain:standard",
+      "start": "assassin",
+      "job": "アサシン",
+      "kit": "basic",
+      "element": "plain",
+      "weaponMode": "standard",
+      "weapon": "影縫い短剣",
+      "weaponUsable": true,
+      "resource": "機会",
+      "level": 40,
+      "equippedSkills": [
+        "影刺し",
+        "断命",
+        "刃の輪",
+        "影抜け",
+        "無明連刃"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "SIGNATURE",
+        "FOURTH_CANDIDATE",
+        "MARK",
+        "MARK_CONSUMER",
+        "MULTI"
+      ],
+      "warnings": []
+    },
+    {
+      "id": "assassin:basic:plain:foreign",
+      "start": "assassin",
+      "job": "アサシン",
+      "kit": "basic",
+      "element": "plain",
+      "weaponMode": "foreign",
+      "weapon": "開拓の大剣",
+      "weaponUsable": false,
+      "resource": "機会",
+      "level": 40,
+      "equippedSkills": [
+        "影刺し",
+        "断命",
+        "刃の輪",
+        "影抜け",
+        "無明連刃"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "SIGNATURE",
+        "FOURTH_CANDIDATE",
+        "MARK",
+        "MARK_CONSUMER",
+        "MULTI"
+      ],
+      "warnings": [
+        "現行ではこの武器を装備不可。01取得を試しても解除しない"
+      ]
+    },
+    {
+      "id": "assassin:basic:ice:standard",
+      "start": "assassin",
+      "job": "アサシン",
+      "kit": "basic",
+      "element": "ice",
+      "weaponMode": "standard",
+      "weapon": "影縫い短剣",
+      "weaponUsable": true,
+      "resource": "機会",
+      "level": 40,
+      "equippedSkills": [
+        "影刺し",
+        "断命",
+        "刃の輪",
+        "影抜け",
+        "無明連刃"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "SIGNATURE",
+        "FOURTH_CANDIDATE",
+        "MARK",
+        "MARK_CONSUMER",
+        "MULTI",
+        "ICE"
+      ],
+      "warnings": [
+        "比較用に既存の属性追加MODを持つ条件だけを仮定。魔術加工の必須化ではない"
+      ]
+    },
+    {
+      "id": "assassin:basic:ice:foreign",
+      "start": "assassin",
+      "job": "アサシン",
+      "kit": "basic",
+      "element": "ice",
+      "weaponMode": "foreign",
+      "weapon": "開拓の大剣",
+      "weaponUsable": false,
+      "resource": "機会",
+      "level": 40,
+      "equippedSkills": [
+        "影刺し",
+        "断命",
+        "刃の輪",
+        "影抜け",
+        "無明連刃"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "SIGNATURE",
+        "FOURTH_CANDIDATE",
+        "MARK",
+        "MARK_CONSUMER",
+        "MULTI",
+        "ICE"
+      ],
+      "warnings": [
+        "現行ではこの武器を装備不可。01取得を試しても解除しない",
+        "比較用に既存の属性追加MODを持つ条件だけを仮定。魔術加工の必須化ではない"
+      ]
+    },
+    {
+      "id": "assassin:basic:fire:standard",
+      "start": "assassin",
+      "job": "アサシン",
+      "kit": "basic",
+      "element": "fire",
+      "weaponMode": "standard",
+      "weapon": "影縫い短剣",
+      "weaponUsable": true,
+      "resource": "機会",
+      "level": 40,
+      "equippedSkills": [
+        "影刺し",
+        "断命",
+        "刃の輪",
+        "影抜け",
+        "無明連刃"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "SIGNATURE",
+        "FOURTH_CANDIDATE",
+        "MARK",
+        "MARK_CONSUMER",
+        "MULTI",
+        "BURN"
+      ],
+      "warnings": [
+        "比較用に既存の属性追加MODを持つ条件だけを仮定。魔術加工の必須化ではない"
+      ]
+    },
+    {
+      "id": "assassin:basic:fire:foreign",
+      "start": "assassin",
+      "job": "アサシン",
+      "kit": "basic",
+      "element": "fire",
+      "weaponMode": "foreign",
+      "weapon": "開拓の大剣",
+      "weaponUsable": false,
+      "resource": "機会",
+      "level": 40,
+      "equippedSkills": [
+        "影刺し",
+        "断命",
+        "刃の輪",
+        "影抜け",
+        "無明連刃"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "SIGNATURE",
+        "FOURTH_CANDIDATE",
+        "MARK",
+        "MARK_CONSUMER",
+        "MULTI",
+        "BURN"
+      ],
+      "warnings": [
+        "現行ではこの武器を装備不可。01取得を試しても解除しない",
+        "比較用に既存の属性追加MODを持つ条件だけを仮定。魔術加工の必須化ではない"
+      ]
+    },
+    {
+      "id": "assassin:basic:lightning:standard",
+      "start": "assassin",
+      "job": "アサシン",
+      "kit": "basic",
+      "element": "lightning",
+      "weaponMode": "standard",
+      "weapon": "影縫い短剣",
+      "weaponUsable": true,
+      "resource": "機会",
+      "level": 40,
+      "equippedSkills": [
+        "影刺し",
+        "断命",
+        "刃の輪",
+        "影抜け",
+        "無明連刃"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "SIGNATURE",
+        "FOURTH_CANDIDATE",
+        "MARK",
+        "MARK_CONSUMER",
+        "MULTI",
+        "CHAIN"
+      ],
+      "warnings": [
+        "比較用に既存の属性追加MODを持つ条件だけを仮定。魔術加工の必須化ではない"
+      ]
+    },
+    {
+      "id": "assassin:basic:lightning:foreign",
+      "start": "assassin",
+      "job": "アサシン",
+      "kit": "basic",
+      "element": "lightning",
+      "weaponMode": "foreign",
+      "weapon": "開拓の大剣",
+      "weaponUsable": false,
+      "resource": "機会",
+      "level": 40,
+      "equippedSkills": [
+        "影刺し",
+        "断命",
+        "刃の輪",
+        "影抜け",
+        "無明連刃"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "SIGNATURE",
+        "FOURTH_CANDIDATE",
+        "MARK",
+        "MARK_CONSUMER",
+        "MULTI",
+        "CHAIN"
+      ],
+      "warnings": [
+        "現行ではこの武器を装備不可。01取得を試しても解除しない",
+        "比較用に既存の属性追加MODを持つ条件だけを仮定。魔術加工の必須化ではない"
+      ]
+    },
+    {
+      "id": "assassin:support:plain:standard",
+      "start": "assassin",
+      "job": "アサシン",
+      "kit": "support",
+      "element": "plain",
+      "weaponMode": "standard",
+      "weapon": "影縫い短剣",
+      "weaponUsable": true,
+      "resource": "機会",
+      "level": 40,
+      "equippedSkills": [
+        "影刺し",
+        "断命",
+        "刃の輪",
+        "残像",
+        "無明連刃"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "SIGNATURE",
+        "DEFENSE",
+        "MARK",
+        "MARK_CONSUMER",
+        "MULTI"
+      ],
+      "warnings": []
+    },
+    {
+      "id": "assassin:support:plain:foreign",
+      "start": "assassin",
+      "job": "アサシン",
+      "kit": "support",
+      "element": "plain",
+      "weaponMode": "foreign",
+      "weapon": "開拓の大剣",
+      "weaponUsable": false,
+      "resource": "機会",
+      "level": 40,
+      "equippedSkills": [
+        "影刺し",
+        "断命",
+        "刃の輪",
+        "残像",
+        "無明連刃"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "SIGNATURE",
+        "DEFENSE",
+        "MARK",
+        "MARK_CONSUMER",
+        "MULTI"
+      ],
+      "warnings": [
+        "現行ではこの武器を装備不可。01取得を試しても解除しない"
+      ]
+    },
+    {
+      "id": "assassin:support:ice:standard",
+      "start": "assassin",
+      "job": "アサシン",
+      "kit": "support",
+      "element": "ice",
+      "weaponMode": "standard",
+      "weapon": "影縫い短剣",
+      "weaponUsable": true,
+      "resource": "機会",
+      "level": 40,
+      "equippedSkills": [
+        "影刺し",
+        "断命",
+        "刃の輪",
+        "残像",
+        "無明連刃"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "SIGNATURE",
+        "DEFENSE",
+        "MARK",
+        "MARK_CONSUMER",
+        "MULTI",
+        "ICE"
+      ],
+      "warnings": [
+        "比較用に既存の属性追加MODを持つ条件だけを仮定。魔術加工の必須化ではない"
+      ]
+    },
+    {
+      "id": "assassin:support:ice:foreign",
+      "start": "assassin",
+      "job": "アサシン",
+      "kit": "support",
+      "element": "ice",
+      "weaponMode": "foreign",
+      "weapon": "開拓の大剣",
+      "weaponUsable": false,
+      "resource": "機会",
+      "level": 40,
+      "equippedSkills": [
+        "影刺し",
+        "断命",
+        "刃の輪",
+        "残像",
+        "無明連刃"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "SIGNATURE",
+        "DEFENSE",
+        "MARK",
+        "MARK_CONSUMER",
+        "MULTI",
+        "ICE"
+      ],
+      "warnings": [
+        "現行ではこの武器を装備不可。01取得を試しても解除しない",
+        "比較用に既存の属性追加MODを持つ条件だけを仮定。魔術加工の必須化ではない"
+      ]
+    },
+    {
+      "id": "assassin:support:fire:standard",
+      "start": "assassin",
+      "job": "アサシン",
+      "kit": "support",
+      "element": "fire",
+      "weaponMode": "standard",
+      "weapon": "影縫い短剣",
+      "weaponUsable": true,
+      "resource": "機会",
+      "level": 40,
+      "equippedSkills": [
+        "影刺し",
+        "断命",
+        "刃の輪",
+        "残像",
+        "無明連刃"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "SIGNATURE",
+        "DEFENSE",
+        "MARK",
+        "MARK_CONSUMER",
+        "MULTI",
+        "BURN"
+      ],
+      "warnings": [
+        "比較用に既存の属性追加MODを持つ条件だけを仮定。魔術加工の必須化ではない"
+      ]
+    },
+    {
+      "id": "assassin:support:fire:foreign",
+      "start": "assassin",
+      "job": "アサシン",
+      "kit": "support",
+      "element": "fire",
+      "weaponMode": "foreign",
+      "weapon": "開拓の大剣",
+      "weaponUsable": false,
+      "resource": "機会",
+      "level": 40,
+      "equippedSkills": [
+        "影刺し",
+        "断命",
+        "刃の輪",
+        "残像",
+        "無明連刃"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "SIGNATURE",
+        "DEFENSE",
+        "MARK",
+        "MARK_CONSUMER",
+        "MULTI",
+        "BURN"
+      ],
+      "warnings": [
+        "現行ではこの武器を装備不可。01取得を試しても解除しない",
+        "比較用に既存の属性追加MODを持つ条件だけを仮定。魔術加工の必須化ではない"
+      ]
+    },
+    {
+      "id": "assassin:support:lightning:standard",
+      "start": "assassin",
+      "job": "アサシン",
+      "kit": "support",
+      "element": "lightning",
+      "weaponMode": "standard",
+      "weapon": "影縫い短剣",
+      "weaponUsable": true,
+      "resource": "機会",
+      "level": 40,
+      "equippedSkills": [
+        "影刺し",
+        "断命",
+        "刃の輪",
+        "残像",
+        "無明連刃"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "SIGNATURE",
+        "DEFENSE",
+        "MARK",
+        "MARK_CONSUMER",
+        "MULTI",
+        "CHAIN"
+      ],
+      "warnings": [
+        "比較用に既存の属性追加MODを持つ条件だけを仮定。魔術加工の必須化ではない"
+      ]
+    },
+    {
+      "id": "assassin:support:lightning:foreign",
+      "start": "assassin",
+      "job": "アサシン",
+      "kit": "support",
+      "element": "lightning",
+      "weaponMode": "foreign",
+      "weapon": "開拓の大剣",
+      "weaponUsable": false,
+      "resource": "機会",
+      "level": 40,
+      "equippedSkills": [
+        "影刺し",
+        "断命",
+        "刃の輪",
+        "残像",
+        "無明連刃"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "SIGNATURE",
+        "DEFENSE",
+        "MARK",
+        "MARK_CONSUMER",
+        "MULTI",
+        "CHAIN"
+      ],
+      "warnings": [
+        "現行ではこの武器を装備不可。01取得を試しても解除しない",
+        "比較用に既存の属性追加MODを持つ条件だけを仮定。魔術加工の必須化ではない"
+      ]
+    },
+    {
+      "id": "assassin:mark:plain:standard",
+      "start": "assassin",
+      "job": "アサシン",
+      "kit": "mark",
+      "element": "plain",
+      "weaponMode": "standard",
+      "weapon": "影縫い短剣",
+      "weaponUsable": true,
+      "resource": "機会",
+      "level": 40,
+      "equippedSkills": [
+        "影抜け",
+        "断命",
+        "刃の輪",
+        "影刺し",
+        "無明連刃"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "SIGNATURE",
+        "FOURTH_CANDIDATE",
+        "MARK",
+        "MARK_CONSUMER",
+        "MULTI"
+      ],
+      "warnings": []
+    },
+    {
+      "id": "assassin:mark:plain:foreign",
+      "start": "assassin",
+      "job": "アサシン",
+      "kit": "mark",
+      "element": "plain",
+      "weaponMode": "foreign",
+      "weapon": "開拓の大剣",
+      "weaponUsable": false,
+      "resource": "機会",
+      "level": 40,
+      "equippedSkills": [
+        "影抜け",
+        "断命",
+        "刃の輪",
+        "影刺し",
+        "無明連刃"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "SIGNATURE",
+        "FOURTH_CANDIDATE",
+        "MARK",
+        "MARK_CONSUMER",
+        "MULTI"
+      ],
+      "warnings": [
+        "現行ではこの武器を装備不可。01取得を試しても解除しない"
+      ]
+    },
+    {
+      "id": "assassin:mark:ice:standard",
+      "start": "assassin",
+      "job": "アサシン",
+      "kit": "mark",
+      "element": "ice",
+      "weaponMode": "standard",
+      "weapon": "影縫い短剣",
+      "weaponUsable": true,
+      "resource": "機会",
+      "level": 40,
+      "equippedSkills": [
+        "影抜け",
+        "断命",
+        "刃の輪",
+        "影刺し",
+        "無明連刃"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "SIGNATURE",
+        "FOURTH_CANDIDATE",
+        "MARK",
+        "MARK_CONSUMER",
+        "MULTI",
+        "ICE"
+      ],
+      "warnings": [
+        "比較用に既存の属性追加MODを持つ条件だけを仮定。魔術加工の必須化ではない"
+      ]
+    },
+    {
+      "id": "assassin:mark:ice:foreign",
+      "start": "assassin",
+      "job": "アサシン",
+      "kit": "mark",
+      "element": "ice",
+      "weaponMode": "foreign",
+      "weapon": "開拓の大剣",
+      "weaponUsable": false,
+      "resource": "機会",
+      "level": 40,
+      "equippedSkills": [
+        "影抜け",
+        "断命",
+        "刃の輪",
+        "影刺し",
+        "無明連刃"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "SIGNATURE",
+        "FOURTH_CANDIDATE",
+        "MARK",
+        "MARK_CONSUMER",
+        "MULTI",
+        "ICE"
+      ],
+      "warnings": [
+        "現行ではこの武器を装備不可。01取得を試しても解除しない",
+        "比較用に既存の属性追加MODを持つ条件だけを仮定。魔術加工の必須化ではない"
+      ]
+    },
+    {
+      "id": "assassin:mark:fire:standard",
+      "start": "assassin",
+      "job": "アサシン",
+      "kit": "mark",
+      "element": "fire",
+      "weaponMode": "standard",
+      "weapon": "影縫い短剣",
+      "weaponUsable": true,
+      "resource": "機会",
+      "level": 40,
+      "equippedSkills": [
+        "影抜け",
+        "断命",
+        "刃の輪",
+        "影刺し",
+        "無明連刃"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "SIGNATURE",
+        "FOURTH_CANDIDATE",
+        "MARK",
+        "MARK_CONSUMER",
+        "MULTI",
+        "BURN"
+      ],
+      "warnings": [
+        "比較用に既存の属性追加MODを持つ条件だけを仮定。魔術加工の必須化ではない"
+      ]
+    },
+    {
+      "id": "assassin:mark:fire:foreign",
+      "start": "assassin",
+      "job": "アサシン",
+      "kit": "mark",
+      "element": "fire",
+      "weaponMode": "foreign",
+      "weapon": "開拓の大剣",
+      "weaponUsable": false,
+      "resource": "機会",
+      "level": 40,
+      "equippedSkills": [
+        "影抜け",
+        "断命",
+        "刃の輪",
+        "影刺し",
+        "無明連刃"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "SIGNATURE",
+        "FOURTH_CANDIDATE",
+        "MARK",
+        "MARK_CONSUMER",
+        "MULTI",
+        "BURN"
+      ],
+      "warnings": [
+        "現行ではこの武器を装備不可。01取得を試しても解除しない",
+        "比較用に既存の属性追加MODを持つ条件だけを仮定。魔術加工の必須化ではない"
+      ]
+    },
+    {
+      "id": "assassin:mark:lightning:standard",
+      "start": "assassin",
+      "job": "アサシン",
+      "kit": "mark",
+      "element": "lightning",
+      "weaponMode": "standard",
+      "weapon": "影縫い短剣",
+      "weaponUsable": true,
+      "resource": "機会",
+      "level": 40,
+      "equippedSkills": [
+        "影抜け",
+        "断命",
+        "刃の輪",
+        "影刺し",
+        "無明連刃"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "SIGNATURE",
+        "FOURTH_CANDIDATE",
+        "MARK",
+        "MARK_CONSUMER",
+        "MULTI",
+        "CHAIN"
+      ],
+      "warnings": [
+        "比較用に既存の属性追加MODを持つ条件だけを仮定。魔術加工の必須化ではない"
+      ]
+    },
+    {
+      "id": "assassin:mark:lightning:foreign",
+      "start": "assassin",
+      "job": "アサシン",
+      "kit": "mark",
+      "element": "lightning",
+      "weaponMode": "foreign",
+      "weapon": "開拓の大剣",
+      "weaponUsable": false,
+      "resource": "機会",
+      "level": 40,
+      "equippedSkills": [
+        "影抜け",
+        "断命",
+        "刃の輪",
+        "影刺し",
+        "無明連刃"
+      ],
+      "flags": [
+        "DAMAGE",
+        "RESOURCE",
+        "SPEND",
+        "OPENER",
+        "SIGNATURE",
+        "FOURTH_CANDIDATE",
+        "MARK",
+        "MARK_CONSUMER",
+        "MULTI",
+        "CHAIN"
+      ],
+      "warnings": [
+        "現行ではこの武器を装備不可。01取得を試しても解除しない",
+        "比較用に既存の属性追加MODを持つ条件だけを仮定。魔術加工の必須化ではない"
+      ]
+    }
+  ]
+}

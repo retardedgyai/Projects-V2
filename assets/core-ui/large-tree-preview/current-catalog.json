@@ -1,0 +1,2933 @@
+{
+  "base": "7341fe25",
+  "runtimeReference": "9f3bd0fa",
+  "runtimeApplied": false,
+  "profiles": [
+    {
+      "start": "warrior",
+      "kit": "basic",
+      "resource": "闘気",
+      "job": "WARRIOR",
+      "meleeClass": true,
+      "skills": [
+        {
+          "name": "踏み込み斬り",
+          "icon": "dash",
+          "mana": 12,
+          "spend": 0,
+          "gain": 15,
+          "motion": "LUNGE",
+          "status": "NONE",
+          "tags": [
+            "SKILL",
+            "MELEE",
+            "AREA"
+          ],
+          "pulses": 1,
+          "ad": 1.2,
+          "ap": 0.0,
+          "radius": 4.5,
+          "element": 0
+        },
+        {
+          "name": "叩きつけ",
+          "icon": "slam",
+          "mana": 20,
+          "spend": 0,
+          "gain": 0,
+          "motion": "CONE",
+          "status": "EXPOSE",
+          "tags": [
+            "SKILL",
+            "MELEE",
+            "AREA"
+          ],
+          "pulses": 1,
+          "ad": 2.2,
+          "ap": 0.0,
+          "radius": 4.5,
+          "element": 0
+        },
+        {
+          "name": "薙ぎ払い",
+          "icon": "whirl",
+          "mana": 12,
+          "spend": 0,
+          "gain": 15,
+          "motion": "CONE",
+          "status": "NONE",
+          "tags": [
+            "SKILL",
+            "MELEE",
+            "AREA"
+          ],
+          "pulses": 1,
+          "ad": 1.4,
+          "ap": 0.0,
+          "radius": 4.2,
+          "element": 0
+        },
+        {
+          "name": "破城突き",
+          "icon": "war_breach",
+          "mana": 18,
+          "spend": 0,
+          "gain": 15,
+          "motion": "LUNGE",
+          "status": "EXPOSE",
+          "tags": [
+            "SKILL",
+            "MELEE",
+            "AREA"
+          ],
+          "pulses": 1,
+          "ad": 1.5,
+          "ap": 0.0,
+          "radius": 4.5,
+          "element": 0
+        },
+        {
+          "name": "天断",
+          "icon": "war_ult",
+          "mana": 30,
+          "spend": 80,
+          "gain": 0,
+          "motion": "CONE",
+          "status": "NONE",
+          "tags": [
+            "SKILL",
+            "MELEE",
+            "AREA"
+          ],
+          "pulses": 3,
+          "ad": 2.4,
+          "ap": 0.0,
+          "radius": 7.0,
+          "element": 0
+        }
+      ],
+      "nodes": [
+        {
+          "index": 0,
+          "name": "鍛えた一撃",
+          "description": "直接ダメージ+8%"
+        },
+        {
+          "index": 1,
+          "name": "力の制御",
+          "description": "固有資源の消費-15%"
+        },
+        {
+          "index": 2,
+          "name": "狂戦士",
+          "description": "闘気60以上：威力+20%、被ダメージ+10% / 大成技能は全体で一つ"
+        },
+        {
+          "index": 3,
+          "name": "巧みな準備",
+          "description": "固有資源の獲得+20%"
+        },
+        {
+          "index": 4,
+          "name": "身のこなし",
+          "description": "回避の再使用時間-20%"
+        },
+        {
+          "index": 5,
+          "name": "剣聖",
+          "description": "受け流し成功後、叩きつけ・返し刃の反撃威力+60% / 大成技能は全体で一つ"
+        },
+        {
+          "index": 6,
+          "name": "生存の心得",
+          "description": "最大HP+10%"
+        },
+        {
+          "index": 7,
+          "name": "備えの技",
+          "description": "シールド量+20%"
+        },
+        {
+          "index": 8,
+          "name": "旗手",
+          "description": "防御技で周囲の仲間にも小さな障壁 / 大成技能は全体で一つ"
+        },
+        {
+          "index": 9,
+          "name": "広域化",
+          "description": "薙ぎ払い：範囲+30%、威力-10%"
+        },
+        {
+          "index": 10,
+          "name": "重ね撃ち",
+          "description": "薙ぎ払い：追加発動1回、各回の威力75%"
+        },
+        {
+          "index": 11,
+          "name": "高速始動",
+          "description": "踏み込み斬り：発生時間-30%、獲得資源+25%"
+        },
+        {
+          "index": 12,
+          "name": "軽やかな構え",
+          "description": "受け流し：再使用時間-25%"
+        },
+        {
+          "index": 13,
+          "name": "始動の備え",
+          "description": "踏み込み斬り：マナ消費-40%、獲得資源+25%"
+        },
+        {
+          "index": 14,
+          "name": "技の循環",
+          "description": "薙ぎ払い：再使用時間-20%、威力-10%"
+        },
+        {
+          "index": 15,
+          "name": "広い備え",
+          "description": "返し刃：範囲+1.5m、マナ消費-40%"
+        },
+        {
+          "index": 16,
+          "name": "大技への備え",
+          "description": "奥義：固有資源の消費-20%"
+        },
+        {
+          "index": 17,
+          "name": "巡り来る奥義",
+          "description": "奥義：再使用時間-15%、威力-10%"
+        }
+      ]
+    },
+    {
+      "start": "warrior",
+      "kit": "support",
+      "resource": "闘気",
+      "job": "WARRIOR",
+      "meleeClass": true,
+      "skills": [
+        {
+          "name": "踏み込み斬り",
+          "icon": "dash",
+          "mana": 12,
+          "spend": 0,
+          "gain": 15,
+          "motion": "LUNGE",
+          "status": "NONE",
+          "tags": [
+            "SKILL",
+            "MELEE",
+            "AREA"
+          ],
+          "pulses": 1,
+          "ad": 1.2,
+          "ap": 0.0,
+          "radius": 4.5,
+          "element": 0
+        },
+        {
+          "name": "叩きつけ",
+          "icon": "slam",
+          "mana": 20,
+          "spend": 0,
+          "gain": 0,
+          "motion": "CONE",
+          "status": "EXPOSE",
+          "tags": [
+            "SKILL",
+            "MELEE",
+            "AREA"
+          ],
+          "pulses": 1,
+          "ad": 2.2,
+          "ap": 0.0,
+          "radius": 4.5,
+          "element": 0
+        },
+        {
+          "name": "薙ぎ払い",
+          "icon": "whirl",
+          "mana": 12,
+          "spend": 0,
+          "gain": 15,
+          "motion": "CONE",
+          "status": "NONE",
+          "tags": [
+            "SKILL",
+            "MELEE",
+            "AREA"
+          ],
+          "pulses": 1,
+          "ad": 1.4,
+          "ap": 0.0,
+          "radius": 4.2,
+          "element": 0
+        },
+        {
+          "name": "雄叫び",
+          "icon": "war_cry",
+          "mana": 18,
+          "spend": 0,
+          "gain": 0,
+          "motion": "SHIELD",
+          "status": "NONE",
+          "tags": [
+            "SKILL",
+            "MELEE",
+            "AREA"
+          ],
+          "pulses": 1,
+          "ad": 0.5,
+          "ap": 0.0,
+          "radius": 7.0,
+          "element": 0
+        },
+        {
+          "name": "天断",
+          "icon": "war_ult",
+          "mana": 30,
+          "spend": 80,
+          "gain": 0,
+          "motion": "CONE",
+          "status": "NONE",
+          "tags": [
+            "SKILL",
+            "MELEE",
+            "AREA"
+          ],
+          "pulses": 3,
+          "ad": 2.4,
+          "ap": 0.0,
+          "radius": 7.0,
+          "element": 0
+        }
+      ],
+      "nodes": [
+        {
+          "index": 0,
+          "name": "鍛えた一撃",
+          "description": "直接ダメージ+8%"
+        },
+        {
+          "index": 1,
+          "name": "力の制御",
+          "description": "固有資源の消費-15%"
+        },
+        {
+          "index": 2,
+          "name": "狂戦士",
+          "description": "闘気60以上：威力+20%、被ダメージ+10% / 大成技能は全体で一つ"
+        },
+        {
+          "index": 3,
+          "name": "巧みな準備",
+          "description": "固有資源の獲得+20%"
+        },
+        {
+          "index": 4,
+          "name": "身のこなし",
+          "description": "回避の再使用時間-20%"
+        },
+        {
+          "index": 5,
+          "name": "剣聖",
+          "description": "受け流し成功後、叩きつけ・返し刃の反撃威力+60% / 大成技能は全体で一つ"
+        },
+        {
+          "index": 6,
+          "name": "生存の心得",
+          "description": "最大HP+10%"
+        },
+        {
+          "index": 7,
+          "name": "備えの技",
+          "description": "シールド量+20%"
+        },
+        {
+          "index": 8,
+          "name": "旗手",
+          "description": "防御技で周囲の仲間にも小さな障壁 / 大成技能は全体で一つ"
+        },
+        {
+          "index": 9,
+          "name": "広域化",
+          "description": "薙ぎ払い：範囲+30%、威力-10%"
+        },
+        {
+          "index": 10,
+          "name": "重ね撃ち",
+          "description": "薙ぎ払い：追加発動1回、各回の威力75%"
+        },
+        {
+          "index": 11,
+          "name": "高速始動",
+          "description": "踏み込み斬り：発生時間-30%、獲得資源+25%"
+        },
+        {
+          "index": 12,
+          "name": "軽やかな構え",
+          "description": "受け流し：再使用時間-25%"
+        },
+        {
+          "index": 13,
+          "name": "始動の備え",
+          "description": "踏み込み斬り：マナ消費-40%、獲得資源+25%"
+        },
+        {
+          "index": 14,
+          "name": "技の循環",
+          "description": "薙ぎ払い：再使用時間-20%、威力-10%"
+        },
+        {
+          "index": 15,
+          "name": "広い備え",
+          "description": "返し刃：範囲+1.5m、マナ消費-40%"
+        },
+        {
+          "index": 16,
+          "name": "大技への備え",
+          "description": "奥義：固有資源の消費-20%"
+        },
+        {
+          "index": 17,
+          "name": "巡り来る奥義",
+          "description": "奥義：再使用時間-15%、威力-10%"
+        }
+      ]
+    },
+    {
+      "start": "warrior",
+      "kit": "mark",
+      "resource": "闘気",
+      "job": "WARRIOR",
+      "meleeClass": true,
+      "skills": [
+        {
+          "name": "踏み込み斬り",
+          "icon": "dash",
+          "mana": 12,
+          "spend": 0,
+          "gain": 15,
+          "motion": "LUNGE",
+          "status": "NONE",
+          "tags": [
+            "SKILL",
+            "MELEE",
+            "AREA"
+          ],
+          "pulses": 1,
+          "ad": 1.2,
+          "ap": 0.0,
+          "radius": 4.5,
+          "element": 0
+        },
+        {
+          "name": "叩きつけ",
+          "icon": "slam",
+          "mana": 20,
+          "spend": 0,
+          "gain": 0,
+          "motion": "CONE",
+          "status": "EXPOSE",
+          "tags": [
+            "SKILL",
+            "MELEE",
+            "AREA"
+          ],
+          "pulses": 1,
+          "ad": 2.2,
+          "ap": 0.0,
+          "radius": 4.5,
+          "element": 0
+        },
+        {
+          "name": "薙ぎ払い",
+          "icon": "whirl",
+          "mana": 12,
+          "spend": 0,
+          "gain": 15,
+          "motion": "CONE",
+          "status": "NONE",
+          "tags": [
+            "SKILL",
+            "MELEE",
+            "AREA"
+          ],
+          "pulses": 1,
+          "ad": 1.4,
+          "ap": 0.0,
+          "radius": 4.2,
+          "element": 0
+        },
+        {
+          "name": "破城突き",
+          "icon": "war_breach",
+          "mana": 18,
+          "spend": 0,
+          "gain": 15,
+          "motion": "LUNGE",
+          "status": "EXPOSE",
+          "tags": [
+            "SKILL",
+            "MELEE",
+            "AREA"
+          ],
+          "pulses": 1,
+          "ad": 1.5,
+          "ap": 0.0,
+          "radius": 4.5,
+          "element": 0
+        },
+        {
+          "name": "天断",
+          "icon": "war_ult",
+          "mana": 30,
+          "spend": 80,
+          "gain": 0,
+          "motion": "CONE",
+          "status": "NONE",
+          "tags": [
+            "SKILL",
+            "MELEE",
+            "AREA"
+          ],
+          "pulses": 3,
+          "ad": 2.4,
+          "ap": 0.0,
+          "radius": 7.0,
+          "element": 0
+        }
+      ],
+      "nodes": [
+        {
+          "index": 0,
+          "name": "鍛えた一撃",
+          "description": "直接ダメージ+8%"
+        },
+        {
+          "index": 1,
+          "name": "力の制御",
+          "description": "固有資源の消費-15%"
+        },
+        {
+          "index": 2,
+          "name": "狂戦士",
+          "description": "闘気60以上：威力+20%、被ダメージ+10% / 大成技能は全体で一つ"
+        },
+        {
+          "index": 3,
+          "name": "巧みな準備",
+          "description": "固有資源の獲得+20%"
+        },
+        {
+          "index": 4,
+          "name": "身のこなし",
+          "description": "回避の再使用時間-20%"
+        },
+        {
+          "index": 5,
+          "name": "剣聖",
+          "description": "受け流し成功後、叩きつけ・返し刃の反撃威力+60% / 大成技能は全体で一つ"
+        },
+        {
+          "index": 6,
+          "name": "生存の心得",
+          "description": "最大HP+10%"
+        },
+        {
+          "index": 7,
+          "name": "備えの技",
+          "description": "シールド量+20%"
+        },
+        {
+          "index": 8,
+          "name": "旗手",
+          "description": "防御技で周囲の仲間にも小さな障壁 / 大成技能は全体で一つ"
+        },
+        {
+          "index": 9,
+          "name": "広域化",
+          "description": "薙ぎ払い：範囲+30%、威力-10%"
+        },
+        {
+          "index": 10,
+          "name": "重ね撃ち",
+          "description": "薙ぎ払い：追加発動1回、各回の威力75%"
+        },
+        {
+          "index": 11,
+          "name": "高速始動",
+          "description": "踏み込み斬り：発生時間-30%、獲得資源+25%"
+        },
+        {
+          "index": 12,
+          "name": "軽やかな構え",
+          "description": "受け流し：再使用時間-25%"
+        },
+        {
+          "index": 13,
+          "name": "始動の備え",
+          "description": "踏み込み斬り：マナ消費-40%、獲得資源+25%"
+        },
+        {
+          "index": 14,
+          "name": "技の循環",
+          "description": "薙ぎ払い：再使用時間-20%、威力-10%"
+        },
+        {
+          "index": 15,
+          "name": "広い備え",
+          "description": "返し刃：範囲+1.5m、マナ消費-40%"
+        },
+        {
+          "index": 16,
+          "name": "大技への備え",
+          "description": "奥義：固有資源の消費-20%"
+        },
+        {
+          "index": 17,
+          "name": "巡り来る奥義",
+          "description": "奥義：再使用時間-15%、威力-10%"
+        }
+      ]
+    },
+    {
+      "start": "tank",
+      "kit": "basic",
+      "resource": "決意",
+      "job": "TEMPLAR",
+      "meleeClass": true,
+      "skills": [
+        {
+          "name": "裁きの槌",
+          "icon": "temp_mace",
+          "mana": 12,
+          "spend": 0,
+          "gain": 15,
+          "motion": "CONE",
+          "status": "MARK",
+          "tags": [
+            "SKILL",
+            "MELEE",
+            "AREA"
+          ],
+          "pulses": 1,
+          "ad": 1.0,
+          "ap": 0.0,
+          "radius": 4.5,
+          "element": 0
+        },
+        {
+          "name": "集束",
+          "icon": "temp_pull",
+          "mana": 18,
+          "spend": 0,
+          "gain": 20,
+          "motion": "PULL",
+          "status": "NONE",
+          "tags": [
+            "SKILL",
+            "MELEE",
+            "AREA"
+          ],
+          "pulses": 1,
+          "ad": 0.6,
+          "ap": 0.0,
+          "radius": 6.0,
+          "element": 0
+        },
+        {
+          "name": "護りの誓い",
+          "icon": "temp_ward",
+          "mana": 18,
+          "spend": 0,
+          "gain": 0,
+          "motion": "SHIELD",
+          "status": "NONE",
+          "tags": [
+            "SKILL",
+            "MELEE",
+            "AREA"
+          ],
+          "pulses": 1,
+          "ad": 0.7,
+          "ap": 0.0,
+          "radius": 7.0,
+          "element": 0
+        },
+        {
+          "name": "守護の構え",
+          "icon": "temp_guard",
+          "mana": 8,
+          "spend": 0,
+          "gain": 0,
+          "motion": "GUARD",
+          "status": "NONE",
+          "tags": [
+            "SKILL",
+            "MELEE",
+            "AREA"
+          ],
+          "pulses": 1,
+          "ad": 0.0,
+          "ap": 0.0,
+          "radius": 4.5,
+          "element": 0
+        },
+        {
+          "name": "空間圧縮",
+          "icon": "temp_ult",
+          "mana": 30,
+          "spend": 80,
+          "gain": 0,
+          "motion": "PULL",
+          "status": "NONE",
+          "tags": [
+            "SKILL",
+            "MELEE",
+            "AREA"
+          ],
+          "pulses": 3,
+          "ad": 1.4,
+          "ap": 0.0,
+          "radius": 9.0,
+          "element": 0
+        }
+      ],
+      "nodes": [
+        {
+          "index": 0,
+          "name": "鍛えた一撃",
+          "description": "直接ダメージ+8%"
+        },
+        {
+          "index": 1,
+          "name": "力の制御",
+          "description": "固有資源の消費-15%"
+        },
+        {
+          "index": 2,
+          "name": "断罪者",
+          "description": "障壁を得る技で次の攻撃を強化。威力+35% / 大成技能は全体で一つ"
+        },
+        {
+          "index": 3,
+          "name": "巧みな準備",
+          "description": "固有資源の獲得+20%"
+        },
+        {
+          "index": 4,
+          "name": "身のこなし",
+          "description": "回避の再使用時間-20%"
+        },
+        {
+          "index": 5,
+          "name": "重力の主",
+          "description": "吸引が広がる。ボスには防御低下を付与 / 大成技能は全体で一つ"
+        },
+        {
+          "index": 6,
+          "name": "生存の心得",
+          "description": "最大HP+10%"
+        },
+        {
+          "index": 7,
+          "name": "備えの技",
+          "description": "シールド量+20%"
+        },
+        {
+          "index": 8,
+          "name": "守護聖人",
+          "description": "味方への障壁+40%、自分への威力-10% / 大成技能は全体で一つ"
+        },
+        {
+          "index": 9,
+          "name": "広域化",
+          "description": "破魔槌：範囲+30%、威力-10%"
+        },
+        {
+          "index": 10,
+          "name": "重ね撃ち",
+          "description": "破魔槌：追加発動1回、各回の威力75%"
+        },
+        {
+          "index": 11,
+          "name": "高速始動",
+          "description": "裁きの槌：発生時間-30%、獲得資源+25%"
+        },
+        {
+          "index": 12,
+          "name": "軽やかな構え",
+          "description": "守護の構え：再使用時間-25%"
+        },
+        {
+          "index": 13,
+          "name": "始動の備え",
+          "description": "裁きの槌：マナ消費-40%、獲得資源+25%"
+        },
+        {
+          "index": 14,
+          "name": "技の循環",
+          "description": "破魔槌：再使用時間-20%、威力-10%"
+        },
+        {
+          "index": 15,
+          "name": "広い備え",
+          "description": "封鎖線：範囲+1.5m、マナ消費-40%"
+        },
+        {
+          "index": 16,
+          "name": "大技への備え",
+          "description": "奥義：固有資源の消費-20%"
+        },
+        {
+          "index": 17,
+          "name": "巡り来る奥義",
+          "description": "奥義：再使用時間-15%、威力-10%"
+        }
+      ]
+    },
+    {
+      "start": "tank",
+      "kit": "support",
+      "resource": "決意",
+      "job": "TEMPLAR",
+      "meleeClass": true,
+      "skills": [
+        {
+          "name": "裁きの槌",
+          "icon": "temp_mace",
+          "mana": 12,
+          "spend": 0,
+          "gain": 15,
+          "motion": "CONE",
+          "status": "MARK",
+          "tags": [
+            "SKILL",
+            "MELEE",
+            "AREA"
+          ],
+          "pulses": 1,
+          "ad": 1.0,
+          "ap": 0.0,
+          "radius": 4.5,
+          "element": 0
+        },
+        {
+          "name": "集束",
+          "icon": "temp_pull",
+          "mana": 18,
+          "spend": 0,
+          "gain": 20,
+          "motion": "PULL",
+          "status": "NONE",
+          "tags": [
+            "SKILL",
+            "MELEE",
+            "AREA"
+          ],
+          "pulses": 1,
+          "ad": 0.6,
+          "ap": 0.0,
+          "radius": 6.0,
+          "element": 0
+        },
+        {
+          "name": "守護の構え",
+          "icon": "temp_guard",
+          "mana": 8,
+          "spend": 0,
+          "gain": 0,
+          "motion": "GUARD",
+          "status": "NONE",
+          "tags": [
+            "SKILL",
+            "MELEE",
+            "AREA"
+          ],
+          "pulses": 1,
+          "ad": 0.0,
+          "ap": 0.0,
+          "radius": 4.5,
+          "element": 0
+        },
+        {
+          "name": "護りの誓い",
+          "icon": "temp_ward",
+          "mana": 18,
+          "spend": 0,
+          "gain": 0,
+          "motion": "SHIELD",
+          "status": "NONE",
+          "tags": [
+            "SKILL",
+            "MELEE",
+            "AREA"
+          ],
+          "pulses": 1,
+          "ad": 0.7,
+          "ap": 0.0,
+          "radius": 7.0,
+          "element": 0
+        },
+        {
+          "name": "空間圧縮",
+          "icon": "temp_ult",
+          "mana": 30,
+          "spend": 80,
+          "gain": 0,
+          "motion": "PULL",
+          "status": "NONE",
+          "tags": [
+            "SKILL",
+            "MELEE",
+            "AREA"
+          ],
+          "pulses": 3,
+          "ad": 1.4,
+          "ap": 0.0,
+          "radius": 9.0,
+          "element": 0
+        }
+      ],
+      "nodes": [
+        {
+          "index": 0,
+          "name": "鍛えた一撃",
+          "description": "直接ダメージ+8%"
+        },
+        {
+          "index": 1,
+          "name": "力の制御",
+          "description": "固有資源の消費-15%"
+        },
+        {
+          "index": 2,
+          "name": "断罪者",
+          "description": "障壁を得る技で次の攻撃を強化。威力+35% / 大成技能は全体で一つ"
+        },
+        {
+          "index": 3,
+          "name": "巧みな準備",
+          "description": "固有資源の獲得+20%"
+        },
+        {
+          "index": 4,
+          "name": "身のこなし",
+          "description": "回避の再使用時間-20%"
+        },
+        {
+          "index": 5,
+          "name": "重力の主",
+          "description": "吸引が広がる。ボスには防御低下を付与 / 大成技能は全体で一つ"
+        },
+        {
+          "index": 6,
+          "name": "生存の心得",
+          "description": "最大HP+10%"
+        },
+        {
+          "index": 7,
+          "name": "備えの技",
+          "description": "シールド量+20%"
+        },
+        {
+          "index": 8,
+          "name": "守護聖人",
+          "description": "味方への障壁+40%、自分への威力-10% / 大成技能は全体で一つ"
+        },
+        {
+          "index": 9,
+          "name": "広域化",
+          "description": "破魔槌：範囲+30%、威力-10%"
+        },
+        {
+          "index": 10,
+          "name": "重ね撃ち",
+          "description": "破魔槌：追加発動1回、各回の威力75%"
+        },
+        {
+          "index": 11,
+          "name": "高速始動",
+          "description": "裁きの槌：発生時間-30%、獲得資源+25%"
+        },
+        {
+          "index": 12,
+          "name": "軽やかな構え",
+          "description": "守護の構え：再使用時間-25%"
+        },
+        {
+          "index": 13,
+          "name": "始動の備え",
+          "description": "裁きの槌：マナ消費-40%、獲得資源+25%"
+        },
+        {
+          "index": 14,
+          "name": "技の循環",
+          "description": "破魔槌：再使用時間-20%、威力-10%"
+        },
+        {
+          "index": 15,
+          "name": "広い備え",
+          "description": "封鎖線：範囲+1.5m、マナ消費-40%"
+        },
+        {
+          "index": 16,
+          "name": "大技への備え",
+          "description": "奥義：固有資源の消費-20%"
+        },
+        {
+          "index": 17,
+          "name": "巡り来る奥義",
+          "description": "奥義：再使用時間-15%、威力-10%"
+        }
+      ]
+    },
+    {
+      "start": "tank",
+      "kit": "mark",
+      "resource": "決意",
+      "job": "TEMPLAR",
+      "meleeClass": true,
+      "skills": [
+        {
+          "name": "守護の構え",
+          "icon": "temp_guard",
+          "mana": 8,
+          "spend": 0,
+          "gain": 0,
+          "motion": "GUARD",
+          "status": "NONE",
+          "tags": [
+            "SKILL",
+            "MELEE",
+            "AREA"
+          ],
+          "pulses": 1,
+          "ad": 0.0,
+          "ap": 0.0,
+          "radius": 4.5,
+          "element": 0
+        },
+        {
+          "name": "集束",
+          "icon": "temp_pull",
+          "mana": 18,
+          "spend": 0,
+          "gain": 20,
+          "motion": "PULL",
+          "status": "NONE",
+          "tags": [
+            "SKILL",
+            "MELEE",
+            "AREA"
+          ],
+          "pulses": 1,
+          "ad": 0.6,
+          "ap": 0.0,
+          "radius": 6.0,
+          "element": 0
+        },
+        {
+          "name": "護りの誓い",
+          "icon": "temp_ward",
+          "mana": 18,
+          "spend": 0,
+          "gain": 0,
+          "motion": "SHIELD",
+          "status": "NONE",
+          "tags": [
+            "SKILL",
+            "MELEE",
+            "AREA"
+          ],
+          "pulses": 1,
+          "ad": 0.7,
+          "ap": 0.0,
+          "radius": 7.0,
+          "element": 0
+        },
+        {
+          "name": "裁きの槌",
+          "icon": "temp_mace",
+          "mana": 12,
+          "spend": 0,
+          "gain": 15,
+          "motion": "CONE",
+          "status": "MARK",
+          "tags": [
+            "SKILL",
+            "MELEE",
+            "AREA"
+          ],
+          "pulses": 1,
+          "ad": 1.0,
+          "ap": 0.0,
+          "radius": 4.5,
+          "element": 0
+        },
+        {
+          "name": "空間圧縮",
+          "icon": "temp_ult",
+          "mana": 30,
+          "spend": 80,
+          "gain": 0,
+          "motion": "PULL",
+          "status": "NONE",
+          "tags": [
+            "SKILL",
+            "MELEE",
+            "AREA"
+          ],
+          "pulses": 3,
+          "ad": 1.4,
+          "ap": 0.0,
+          "radius": 9.0,
+          "element": 0
+        }
+      ],
+      "nodes": [
+        {
+          "index": 0,
+          "name": "鍛えた一撃",
+          "description": "直接ダメージ+8%"
+        },
+        {
+          "index": 1,
+          "name": "力の制御",
+          "description": "固有資源の消費-15%"
+        },
+        {
+          "index": 2,
+          "name": "断罪者",
+          "description": "障壁を得る技で次の攻撃を強化。威力+35% / 大成技能は全体で一つ"
+        },
+        {
+          "index": 3,
+          "name": "巧みな準備",
+          "description": "固有資源の獲得+20%"
+        },
+        {
+          "index": 4,
+          "name": "身のこなし",
+          "description": "回避の再使用時間-20%"
+        },
+        {
+          "index": 5,
+          "name": "重力の主",
+          "description": "吸引が広がる。ボスには防御低下を付与 / 大成技能は全体で一つ"
+        },
+        {
+          "index": 6,
+          "name": "生存の心得",
+          "description": "最大HP+10%"
+        },
+        {
+          "index": 7,
+          "name": "備えの技",
+          "description": "シールド量+20%"
+        },
+        {
+          "index": 8,
+          "name": "守護聖人",
+          "description": "味方への障壁+40%、自分への威力-10% / 大成技能は全体で一つ"
+        },
+        {
+          "index": 9,
+          "name": "広域化",
+          "description": "破魔槌：範囲+30%、威力-10%"
+        },
+        {
+          "index": 10,
+          "name": "重ね撃ち",
+          "description": "破魔槌：追加発動1回、各回の威力75%"
+        },
+        {
+          "index": 11,
+          "name": "高速始動",
+          "description": "裁きの槌：発生時間-30%、獲得資源+25%"
+        },
+        {
+          "index": 12,
+          "name": "軽やかな構え",
+          "description": "守護の構え：再使用時間-25%"
+        },
+        {
+          "index": 13,
+          "name": "始動の備え",
+          "description": "裁きの槌：マナ消費-40%、獲得資源+25%"
+        },
+        {
+          "index": 14,
+          "name": "技の循環",
+          "description": "破魔槌：再使用時間-20%、威力-10%"
+        },
+        {
+          "index": 15,
+          "name": "広い備え",
+          "description": "封鎖線：範囲+1.5m、マナ消費-40%"
+        },
+        {
+          "index": 16,
+          "name": "大技への備え",
+          "description": "奥義：固有資源の消費-20%"
+        },
+        {
+          "index": 17,
+          "name": "巡り来る奥義",
+          "description": "奥義：再使用時間-15%、威力-10%"
+        }
+      ]
+    },
+    {
+      "start": "mage",
+      "kit": "basic",
+      "resource": "術式",
+      "job": "MAGE",
+      "meleeClass": false,
+      "skills": [
+        {
+          "name": "火炎弾",
+          "icon": "firebolt",
+          "mana": 12,
+          "spend": 0,
+          "gain": 15,
+          "motion": "RAY",
+          "status": "NONE",
+          "tags": [
+            "SKILL",
+            "PROJECTILE"
+          ],
+          "pulses": 1,
+          "ad": 0.0,
+          "ap": 1.4,
+          "radius": 4.5,
+          "element": 1
+        },
+        {
+          "name": "霜の波紋",
+          "icon": "frost_nova",
+          "mana": 12,
+          "spend": 0,
+          "gain": 15,
+          "motion": "NOVA",
+          "status": "SLOW",
+          "tags": [
+            "SKILL",
+            "AREA"
+          ],
+          "pulses": 1,
+          "ad": 0.0,
+          "ap": 1.0,
+          "radius": 4.5,
+          "element": 2
+        },
+        {
+          "name": "流星雨",
+          "icon": "meteor",
+          "mana": 25,
+          "spend": 60,
+          "gain": 0,
+          "motion": "FIELD",
+          "status": "NONE",
+          "tags": [
+            "SKILL",
+            "AREA"
+          ],
+          "pulses": 3,
+          "ad": 0.0,
+          "ap": 1.3,
+          "radius": 4.5,
+          "element": 1
+        },
+        {
+          "name": "閃光歩",
+          "icon": "mage_blink",
+          "mana": 15,
+          "spend": 0,
+          "gain": 0,
+          "motion": "EVADE",
+          "status": "SLOW",
+          "tags": [
+            "SKILL",
+            "AREA"
+          ],
+          "pulses": 1,
+          "ad": 0.0,
+          "ap": 0.0,
+          "radius": 4.5,
+          "element": 3
+        },
+        {
+          "name": "天火の大術式",
+          "icon": "mage_ult",
+          "mana": 35,
+          "spend": 80,
+          "gain": 0,
+          "motion": "FIELD",
+          "status": "NONE",
+          "tags": [
+            "SKILL",
+            "AREA"
+          ],
+          "pulses": 4,
+          "ad": 0.0,
+          "ap": 2.0,
+          "radius": 7.0,
+          "element": 1
+        }
+      ],
+      "nodes": [
+        {
+          "index": 0,
+          "name": "鍛えた一撃",
+          "description": "直接ダメージ+8%"
+        },
+        {
+          "index": 1,
+          "name": "力の制御",
+          "description": "固有資源の消費-15%"
+        },
+        {
+          "index": 2,
+          "name": "連鎖術式",
+          "description": "起爆技が1回増えるが、1回の威力-15% / 大成技能は全体で一つ"
+        },
+        {
+          "index": 3,
+          "name": "巧みな準備",
+          "description": "固有資源の獲得+20%"
+        },
+        {
+          "index": 4,
+          "name": "身のこなし",
+          "description": "回避の再使用時間-20%"
+        },
+        {
+          "index": 5,
+          "name": "対位法",
+          "description": "違う属性の技を当てると術式をさらに15獲得 / 大成技能は全体で一つ"
+        },
+        {
+          "index": 6,
+          "name": "生存の心得",
+          "description": "最大HP+10%"
+        },
+        {
+          "index": 7,
+          "name": "備えの技",
+          "description": "シールド量+20%"
+        },
+        {
+          "index": 8,
+          "name": "氷の賢者",
+          "description": "氷術の減速を強化し、命中時に自分へ障壁 / 大成技能は全体で一つ"
+        },
+        {
+          "index": 9,
+          "name": "広域化",
+          "description": "流星雨：範囲+30%、威力-10%"
+        },
+        {
+          "index": 10,
+          "name": "重ね撃ち",
+          "description": "流星雨：追加発動1回、各回の威力75%"
+        },
+        {
+          "index": 11,
+          "name": "高速始動",
+          "description": "火炎弾：発生時間-30%、獲得資源+25%"
+        },
+        {
+          "index": 12,
+          "name": "軽やかな構え",
+          "description": "閃光歩：再使用時間-25%"
+        },
+        {
+          "index": 13,
+          "name": "始動の備え",
+          "description": "火炎弾：マナ消費-40%、獲得資源+25%"
+        },
+        {
+          "index": 14,
+          "name": "技の循環",
+          "description": "流星雨：再使用時間-20%、威力-10%"
+        },
+        {
+          "index": 15,
+          "name": "広い備え",
+          "description": "氷の庭：範囲+1.5m、マナ消費-40%"
+        },
+        {
+          "index": 16,
+          "name": "大技への備え",
+          "description": "奥義：固有資源の消費-20%"
+        },
+        {
+          "index": 17,
+          "name": "巡り来る奥義",
+          "description": "奥義：再使用時間-15%、威力-10%"
+        }
+      ]
+    },
+    {
+      "start": "mage",
+      "kit": "support",
+      "resource": "術式",
+      "job": "MAGE",
+      "meleeClass": false,
+      "skills": [
+        {
+          "name": "火炎弾",
+          "icon": "firebolt",
+          "mana": 12,
+          "spend": 0,
+          "gain": 15,
+          "motion": "RAY",
+          "status": "NONE",
+          "tags": [
+            "SKILL",
+            "PROJECTILE"
+          ],
+          "pulses": 1,
+          "ad": 0.0,
+          "ap": 1.4,
+          "radius": 4.5,
+          "element": 1
+        },
+        {
+          "name": "霜の波紋",
+          "icon": "frost_nova",
+          "mana": 12,
+          "spend": 0,
+          "gain": 15,
+          "motion": "NOVA",
+          "status": "SLOW",
+          "tags": [
+            "SKILL",
+            "AREA"
+          ],
+          "pulses": 1,
+          "ad": 0.0,
+          "ap": 1.0,
+          "radius": 4.5,
+          "element": 2
+        },
+        {
+          "name": "流星雨",
+          "icon": "meteor",
+          "mana": 25,
+          "spend": 60,
+          "gain": 0,
+          "motion": "FIELD",
+          "status": "NONE",
+          "tags": [
+            "SKILL",
+            "AREA"
+          ],
+          "pulses": 3,
+          "ad": 0.0,
+          "ap": 1.3,
+          "radius": 4.5,
+          "element": 1
+        },
+        {
+          "name": "魔力障壁",
+          "icon": "mage_ward",
+          "mana": 25,
+          "spend": 0,
+          "gain": 0,
+          "motion": "SHIELD",
+          "status": "NONE",
+          "tags": [
+            "SKILL",
+            "AREA"
+          ],
+          "pulses": 1,
+          "ad": 0.0,
+          "ap": 1.2,
+          "radius": 0.0,
+          "element": 3
+        },
+        {
+          "name": "天火の大術式",
+          "icon": "mage_ult",
+          "mana": 35,
+          "spend": 80,
+          "gain": 0,
+          "motion": "FIELD",
+          "status": "NONE",
+          "tags": [
+            "SKILL",
+            "AREA"
+          ],
+          "pulses": 4,
+          "ad": 0.0,
+          "ap": 2.0,
+          "radius": 7.0,
+          "element": 1
+        }
+      ],
+      "nodes": [
+        {
+          "index": 0,
+          "name": "鍛えた一撃",
+          "description": "直接ダメージ+8%"
+        },
+        {
+          "index": 1,
+          "name": "力の制御",
+          "description": "固有資源の消費-15%"
+        },
+        {
+          "index": 2,
+          "name": "連鎖術式",
+          "description": "起爆技が1回増えるが、1回の威力-15% / 大成技能は全体で一つ"
+        },
+        {
+          "index": 3,
+          "name": "巧みな準備",
+          "description": "固有資源の獲得+20%"
+        },
+        {
+          "index": 4,
+          "name": "身のこなし",
+          "description": "回避の再使用時間-20%"
+        },
+        {
+          "index": 5,
+          "name": "対位法",
+          "description": "違う属性の技を当てると術式をさらに15獲得 / 大成技能は全体で一つ"
+        },
+        {
+          "index": 6,
+          "name": "生存の心得",
+          "description": "最大HP+10%"
+        },
+        {
+          "index": 7,
+          "name": "備えの技",
+          "description": "シールド量+20%"
+        },
+        {
+          "index": 8,
+          "name": "氷の賢者",
+          "description": "氷術の減速を強化し、命中時に自分へ障壁 / 大成技能は全体で一つ"
+        },
+        {
+          "index": 9,
+          "name": "広域化",
+          "description": "流星雨：範囲+30%、威力-10%"
+        },
+        {
+          "index": 10,
+          "name": "重ね撃ち",
+          "description": "流星雨：追加発動1回、各回の威力75%"
+        },
+        {
+          "index": 11,
+          "name": "高速始動",
+          "description": "火炎弾：発生時間-30%、獲得資源+25%"
+        },
+        {
+          "index": 12,
+          "name": "軽やかな構え",
+          "description": "閃光歩：再使用時間-25%"
+        },
+        {
+          "index": 13,
+          "name": "始動の備え",
+          "description": "火炎弾：マナ消費-40%、獲得資源+25%"
+        },
+        {
+          "index": 14,
+          "name": "技の循環",
+          "description": "流星雨：再使用時間-20%、威力-10%"
+        },
+        {
+          "index": 15,
+          "name": "広い備え",
+          "description": "氷の庭：範囲+1.5m、マナ消費-40%"
+        },
+        {
+          "index": 16,
+          "name": "大技への備え",
+          "description": "奥義：固有資源の消費-20%"
+        },
+        {
+          "index": 17,
+          "name": "巡り来る奥義",
+          "description": "奥義：再使用時間-15%、威力-10%"
+        }
+      ]
+    },
+    {
+      "start": "mage",
+      "kit": "mark",
+      "resource": "術式",
+      "job": "MAGE",
+      "meleeClass": false,
+      "skills": [
+        {
+          "name": "火炎弾",
+          "icon": "firebolt",
+          "mana": 12,
+          "spend": 0,
+          "gain": 15,
+          "motion": "RAY",
+          "status": "NONE",
+          "tags": [
+            "SKILL",
+            "PROJECTILE"
+          ],
+          "pulses": 1,
+          "ad": 0.0,
+          "ap": 1.4,
+          "radius": 4.5,
+          "element": 1
+        },
+        {
+          "name": "霜の波紋",
+          "icon": "frost_nova",
+          "mana": 12,
+          "spend": 0,
+          "gain": 15,
+          "motion": "NOVA",
+          "status": "SLOW",
+          "tags": [
+            "SKILL",
+            "AREA"
+          ],
+          "pulses": 1,
+          "ad": 0.0,
+          "ap": 1.0,
+          "radius": 4.5,
+          "element": 2
+        },
+        {
+          "name": "流星雨",
+          "icon": "meteor",
+          "mana": 25,
+          "spend": 60,
+          "gain": 0,
+          "motion": "FIELD",
+          "status": "NONE",
+          "tags": [
+            "SKILL",
+            "AREA"
+          ],
+          "pulses": 3,
+          "ad": 0.0,
+          "ap": 1.3,
+          "radius": 4.5,
+          "element": 1
+        },
+        {
+          "name": "雷の刻印",
+          "icon": "mage_mark",
+          "mana": 12,
+          "spend": 0,
+          "gain": 15,
+          "motion": "RAY",
+          "status": "MARK",
+          "tags": [
+            "SKILL",
+            "PROJECTILE"
+          ],
+          "pulses": 1,
+          "ad": 0.0,
+          "ap": 1.1,
+          "radius": 4.5,
+          "element": 3
+        },
+        {
+          "name": "天火の大術式",
+          "icon": "mage_ult",
+          "mana": 35,
+          "spend": 80,
+          "gain": 0,
+          "motion": "FIELD",
+          "status": "NONE",
+          "tags": [
+            "SKILL",
+            "AREA"
+          ],
+          "pulses": 4,
+          "ad": 0.0,
+          "ap": 2.0,
+          "radius": 7.0,
+          "element": 1
+        }
+      ],
+      "nodes": [
+        {
+          "index": 0,
+          "name": "鍛えた一撃",
+          "description": "直接ダメージ+8%"
+        },
+        {
+          "index": 1,
+          "name": "力の制御",
+          "description": "固有資源の消費-15%"
+        },
+        {
+          "index": 2,
+          "name": "連鎖術式",
+          "description": "起爆技が1回増えるが、1回の威力-15% / 大成技能は全体で一つ"
+        },
+        {
+          "index": 3,
+          "name": "巧みな準備",
+          "description": "固有資源の獲得+20%"
+        },
+        {
+          "index": 4,
+          "name": "身のこなし",
+          "description": "回避の再使用時間-20%"
+        },
+        {
+          "index": 5,
+          "name": "対位法",
+          "description": "違う属性の技を当てると術式をさらに15獲得 / 大成技能は全体で一つ"
+        },
+        {
+          "index": 6,
+          "name": "生存の心得",
+          "description": "最大HP+10%"
+        },
+        {
+          "index": 7,
+          "name": "備えの技",
+          "description": "シールド量+20%"
+        },
+        {
+          "index": 8,
+          "name": "氷の賢者",
+          "description": "氷術の減速を強化し、命中時に自分へ障壁 / 大成技能は全体で一つ"
+        },
+        {
+          "index": 9,
+          "name": "広域化",
+          "description": "流星雨：範囲+30%、威力-10%"
+        },
+        {
+          "index": 10,
+          "name": "重ね撃ち",
+          "description": "流星雨：追加発動1回、各回の威力75%"
+        },
+        {
+          "index": 11,
+          "name": "高速始動",
+          "description": "火炎弾：発生時間-30%、獲得資源+25%"
+        },
+        {
+          "index": 12,
+          "name": "軽やかな構え",
+          "description": "閃光歩：再使用時間-25%"
+        },
+        {
+          "index": 13,
+          "name": "始動の備え",
+          "description": "火炎弾：マナ消費-40%、獲得資源+25%"
+        },
+        {
+          "index": 14,
+          "name": "技の循環",
+          "description": "流星雨：再使用時間-20%、威力-10%"
+        },
+        {
+          "index": 15,
+          "name": "広い備え",
+          "description": "氷の庭：範囲+1.5m、マナ消費-40%"
+        },
+        {
+          "index": 16,
+          "name": "大技への備え",
+          "description": "奥義：固有資源の消費-20%"
+        },
+        {
+          "index": 17,
+          "name": "巡り来る奥義",
+          "description": "奥義：再使用時間-15%、威力-10%"
+        }
+      ]
+    },
+    {
+      "start": "ranger",
+      "kit": "basic",
+      "resource": "集中",
+      "job": "RANGER",
+      "meleeClass": false,
+      "skills": [
+        {
+          "name": "狙い射ち",
+          "icon": "pierce",
+          "mana": 12,
+          "spend": 0,
+          "gain": 15,
+          "motion": "RAY",
+          "status": "NONE",
+          "tags": [
+            "SKILL",
+            "PROJECTILE"
+          ],
+          "pulses": 1,
+          "ad": 1.7,
+          "ap": 0.0,
+          "radius": 0.5,
+          "element": 0
+        },
+        {
+          "name": "霜矢の扇",
+          "icon": "frost_fan",
+          "mana": 12,
+          "spend": 0,
+          "gain": 15,
+          "motion": "CONE",
+          "status": "SLOW",
+          "tags": [
+            "SKILL",
+            "PROJECTILE",
+            "AREA"
+          ],
+          "pulses": 1,
+          "ad": 1.0,
+          "ap": 0.0,
+          "radius": 6.5,
+          "element": 2
+        },
+        {
+          "name": "矢の嵐",
+          "icon": "arrow_rain",
+          "mana": 22,
+          "spend": 40,
+          "gain": 0,
+          "motion": "FIELD",
+          "status": "NONE",
+          "tags": [
+            "SKILL",
+            "PROJECTILE",
+            "AREA"
+          ],
+          "pulses": 4,
+          "ad": 1.0,
+          "ap": 0.0,
+          "radius": 4.5,
+          "element": 0
+        },
+        {
+          "name": "後退射撃",
+          "icon": "hunt_retreat",
+          "mana": 12,
+          "spend": 0,
+          "gain": 15,
+          "motion": "EVADE",
+          "status": "NONE",
+          "tags": [
+            "SKILL",
+            "PROJECTILE",
+            "AREA"
+          ],
+          "pulses": 1,
+          "ad": 0.8,
+          "ap": 0.0,
+          "radius": 4.5,
+          "element": 0
+        },
+        {
+          "name": "終の一矢",
+          "icon": "hunt_ult",
+          "mana": 30,
+          "spend": 80,
+          "gain": 0,
+          "motion": "RAY",
+          "status": "NONE",
+          "tags": [
+            "SKILL",
+            "PROJECTILE"
+          ],
+          "pulses": 1,
+          "ad": 8.0,
+          "ap": 0.0,
+          "radius": 4.5,
+          "element": 0
+        }
+      ],
+      "nodes": [
+        {
+          "index": 0,
+          "name": "鍛えた一撃",
+          "description": "直接ダメージ+8%"
+        },
+        {
+          "index": 1,
+          "name": "力の制御",
+          "description": "固有資源の消費-15%"
+        },
+        {
+          "index": 2,
+          "name": "狙撃手",
+          "description": "2秒静止すると威力+25%。動くと解除 / 大成技能は全体で一つ"
+        },
+        {
+          "index": 3,
+          "name": "巧みな準備",
+          "description": "固有資源の獲得+20%"
+        },
+        {
+          "index": 4,
+          "name": "身のこなし",
+          "description": "回避の再使用時間-20%"
+        },
+        {
+          "index": 5,
+          "name": "遊撃手",
+          "description": "回避後3秒、通常射撃が二連射（各65%） / 大成技能は全体で一つ"
+        },
+        {
+          "index": 6,
+          "name": "生存の心得",
+          "description": "最大HP+10%"
+        },
+        {
+          "index": 7,
+          "name": "備えの技",
+          "description": "シールド量+20%"
+        },
+        {
+          "index": 8,
+          "name": "罠師",
+          "description": "罠と設置技が1回増え、減速時間も延長 / 大成技能は全体で一つ"
+        },
+        {
+          "index": 9,
+          "name": "広域化",
+          "description": "矢の嵐：範囲+30%、威力-10%"
+        },
+        {
+          "index": 10,
+          "name": "重ね撃ち",
+          "description": "矢の嵐：追加発動1回、各回の威力75%"
+        },
+        {
+          "index": 11,
+          "name": "高速始動",
+          "description": "狙い射ち：発生時間-30%、獲得資源+25%"
+        },
+        {
+          "index": 12,
+          "name": "軽やかな構え",
+          "description": "後退射撃：再使用時間-25%"
+        },
+        {
+          "index": 13,
+          "name": "始動の備え",
+          "description": "狙い射ち：マナ消費-40%、獲得資源+25%"
+        },
+        {
+          "index": 14,
+          "name": "技の循環",
+          "description": "矢の嵐：再使用時間-20%、威力-10%"
+        },
+        {
+          "index": 15,
+          "name": "広い備え",
+          "description": "狩猟罠：範囲+1.5m、マナ消費-40%"
+        },
+        {
+          "index": 16,
+          "name": "大技への備え",
+          "description": "奥義：固有資源の消費-20%"
+        },
+        {
+          "index": 17,
+          "name": "巡り来る奥義",
+          "description": "奥義：再使用時間-15%、威力-10%"
+        }
+      ]
+    },
+    {
+      "start": "ranger",
+      "kit": "support",
+      "resource": "集中",
+      "job": "RANGER",
+      "meleeClass": false,
+      "skills": [
+        {
+          "name": "狙い射ち",
+          "icon": "pierce",
+          "mana": 12,
+          "spend": 0,
+          "gain": 15,
+          "motion": "RAY",
+          "status": "NONE",
+          "tags": [
+            "SKILL",
+            "PROJECTILE"
+          ],
+          "pulses": 1,
+          "ad": 1.7,
+          "ap": 0.0,
+          "radius": 0.5,
+          "element": 0
+        },
+        {
+          "name": "霜矢の扇",
+          "icon": "frost_fan",
+          "mana": 12,
+          "spend": 0,
+          "gain": 15,
+          "motion": "CONE",
+          "status": "SLOW",
+          "tags": [
+            "SKILL",
+            "PROJECTILE",
+            "AREA"
+          ],
+          "pulses": 1,
+          "ad": 1.0,
+          "ap": 0.0,
+          "radius": 6.5,
+          "element": 2
+        },
+        {
+          "name": "矢の嵐",
+          "icon": "arrow_rain",
+          "mana": 22,
+          "spend": 40,
+          "gain": 0,
+          "motion": "FIELD",
+          "status": "NONE",
+          "tags": [
+            "SKILL",
+            "PROJECTILE",
+            "AREA"
+          ],
+          "pulses": 4,
+          "ad": 1.0,
+          "ap": 0.0,
+          "radius": 4.5,
+          "element": 0
+        },
+        {
+          "name": "後退射撃",
+          "icon": "hunt_retreat",
+          "mana": 12,
+          "spend": 0,
+          "gain": 15,
+          "motion": "EVADE",
+          "status": "NONE",
+          "tags": [
+            "SKILL",
+            "PROJECTILE",
+            "AREA"
+          ],
+          "pulses": 1,
+          "ad": 0.8,
+          "ap": 0.0,
+          "radius": 4.5,
+          "element": 0
+        },
+        {
+          "name": "終の一矢",
+          "icon": "hunt_ult",
+          "mana": 30,
+          "spend": 80,
+          "gain": 0,
+          "motion": "RAY",
+          "status": "NONE",
+          "tags": [
+            "SKILL",
+            "PROJECTILE"
+          ],
+          "pulses": 1,
+          "ad": 8.0,
+          "ap": 0.0,
+          "radius": 4.5,
+          "element": 0
+        }
+      ],
+      "nodes": [
+        {
+          "index": 0,
+          "name": "鍛えた一撃",
+          "description": "直接ダメージ+8%"
+        },
+        {
+          "index": 1,
+          "name": "力の制御",
+          "description": "固有資源の消費-15%"
+        },
+        {
+          "index": 2,
+          "name": "狙撃手",
+          "description": "2秒静止すると威力+25%。動くと解除 / 大成技能は全体で一つ"
+        },
+        {
+          "index": 3,
+          "name": "巧みな準備",
+          "description": "固有資源の獲得+20%"
+        },
+        {
+          "index": 4,
+          "name": "身のこなし",
+          "description": "回避の再使用時間-20%"
+        },
+        {
+          "index": 5,
+          "name": "遊撃手",
+          "description": "回避後3秒、通常射撃が二連射（各65%） / 大成技能は全体で一つ"
+        },
+        {
+          "index": 6,
+          "name": "生存の心得",
+          "description": "最大HP+10%"
+        },
+        {
+          "index": 7,
+          "name": "備えの技",
+          "description": "シールド量+20%"
+        },
+        {
+          "index": 8,
+          "name": "罠師",
+          "description": "罠と設置技が1回増え、減速時間も延長 / 大成技能は全体で一つ"
+        },
+        {
+          "index": 9,
+          "name": "広域化",
+          "description": "矢の嵐：範囲+30%、威力-10%"
+        },
+        {
+          "index": 10,
+          "name": "重ね撃ち",
+          "description": "矢の嵐：追加発動1回、各回の威力75%"
+        },
+        {
+          "index": 11,
+          "name": "高速始動",
+          "description": "狙い射ち：発生時間-30%、獲得資源+25%"
+        },
+        {
+          "index": 12,
+          "name": "軽やかな構え",
+          "description": "後退射撃：再使用時間-25%"
+        },
+        {
+          "index": 13,
+          "name": "始動の備え",
+          "description": "狙い射ち：マナ消費-40%、獲得資源+25%"
+        },
+        {
+          "index": 14,
+          "name": "技の循環",
+          "description": "矢の嵐：再使用時間-20%、威力-10%"
+        },
+        {
+          "index": 15,
+          "name": "広い備え",
+          "description": "狩猟罠：範囲+1.5m、マナ消費-40%"
+        },
+        {
+          "index": 16,
+          "name": "大技への備え",
+          "description": "奥義：固有資源の消費-20%"
+        },
+        {
+          "index": 17,
+          "name": "巡り来る奥義",
+          "description": "奥義：再使用時間-15%、威力-10%"
+        }
+      ]
+    },
+    {
+      "start": "ranger",
+      "kit": "mark",
+      "resource": "集中",
+      "job": "RANGER",
+      "meleeClass": false,
+      "skills": [
+        {
+          "name": "狙い射ち",
+          "icon": "pierce",
+          "mana": 12,
+          "spend": 0,
+          "gain": 15,
+          "motion": "RAY",
+          "status": "NONE",
+          "tags": [
+            "SKILL",
+            "PROJECTILE"
+          ],
+          "pulses": 1,
+          "ad": 1.7,
+          "ap": 0.0,
+          "radius": 0.5,
+          "element": 0
+        },
+        {
+          "name": "霜矢の扇",
+          "icon": "frost_fan",
+          "mana": 12,
+          "spend": 0,
+          "gain": 15,
+          "motion": "CONE",
+          "status": "SLOW",
+          "tags": [
+            "SKILL",
+            "PROJECTILE",
+            "AREA"
+          ],
+          "pulses": 1,
+          "ad": 1.0,
+          "ap": 0.0,
+          "radius": 6.5,
+          "element": 2
+        },
+        {
+          "name": "矢の嵐",
+          "icon": "arrow_rain",
+          "mana": 22,
+          "spend": 40,
+          "gain": 0,
+          "motion": "FIELD",
+          "status": "NONE",
+          "tags": [
+            "SKILL",
+            "PROJECTILE",
+            "AREA"
+          ],
+          "pulses": 4,
+          "ad": 1.0,
+          "ap": 0.0,
+          "radius": 4.5,
+          "element": 0
+        },
+        {
+          "name": "獲物の印",
+          "icon": "hunt_mark",
+          "mana": 8,
+          "spend": 0,
+          "gain": 25,
+          "motion": "RAY",
+          "status": "MARK",
+          "tags": [
+            "SKILL",
+            "PROJECTILE"
+          ],
+          "pulses": 1,
+          "ad": 0.6,
+          "ap": 0.0,
+          "radius": 4.5,
+          "element": 0
+        },
+        {
+          "name": "終の一矢",
+          "icon": "hunt_ult",
+          "mana": 30,
+          "spend": 80,
+          "gain": 0,
+          "motion": "RAY",
+          "status": "NONE",
+          "tags": [
+            "SKILL",
+            "PROJECTILE"
+          ],
+          "pulses": 1,
+          "ad": 8.0,
+          "ap": 0.0,
+          "radius": 4.5,
+          "element": 0
+        }
+      ],
+      "nodes": [
+        {
+          "index": 0,
+          "name": "鍛えた一撃",
+          "description": "直接ダメージ+8%"
+        },
+        {
+          "index": 1,
+          "name": "力の制御",
+          "description": "固有資源の消費-15%"
+        },
+        {
+          "index": 2,
+          "name": "狙撃手",
+          "description": "2秒静止すると威力+25%。動くと解除 / 大成技能は全体で一つ"
+        },
+        {
+          "index": 3,
+          "name": "巧みな準備",
+          "description": "固有資源の獲得+20%"
+        },
+        {
+          "index": 4,
+          "name": "身のこなし",
+          "description": "回避の再使用時間-20%"
+        },
+        {
+          "index": 5,
+          "name": "遊撃手",
+          "description": "回避後3秒、通常射撃が二連射（各65%） / 大成技能は全体で一つ"
+        },
+        {
+          "index": 6,
+          "name": "生存の心得",
+          "description": "最大HP+10%"
+        },
+        {
+          "index": 7,
+          "name": "備えの技",
+          "description": "シールド量+20%"
+        },
+        {
+          "index": 8,
+          "name": "罠師",
+          "description": "罠と設置技が1回増え、減速時間も延長 / 大成技能は全体で一つ"
+        },
+        {
+          "index": 9,
+          "name": "広域化",
+          "description": "矢の嵐：範囲+30%、威力-10%"
+        },
+        {
+          "index": 10,
+          "name": "重ね撃ち",
+          "description": "矢の嵐：追加発動1回、各回の威力75%"
+        },
+        {
+          "index": 11,
+          "name": "高速始動",
+          "description": "狙い射ち：発生時間-30%、獲得資源+25%"
+        },
+        {
+          "index": 12,
+          "name": "軽やかな構え",
+          "description": "後退射撃：再使用時間-25%"
+        },
+        {
+          "index": 13,
+          "name": "始動の備え",
+          "description": "狙い射ち：マナ消費-40%、獲得資源+25%"
+        },
+        {
+          "index": 14,
+          "name": "技の循環",
+          "description": "矢の嵐：再使用時間-20%、威力-10%"
+        },
+        {
+          "index": 15,
+          "name": "広い備え",
+          "description": "狩猟罠：範囲+1.5m、マナ消費-40%"
+        },
+        {
+          "index": 16,
+          "name": "大技への備え",
+          "description": "奥義：固有資源の消費-20%"
+        },
+        {
+          "index": 17,
+          "name": "巡り来る奥義",
+          "description": "奥義：再使用時間-15%、威力-10%"
+        }
+      ]
+    },
+    {
+      "start": "assassin",
+      "kit": "basic",
+      "resource": "機会",
+      "job": "ASSASSIN",
+      "meleeClass": true,
+      "skills": [
+        {
+          "name": "影刺し",
+          "icon": "ass_stab",
+          "mana": 12,
+          "spend": 0,
+          "gain": 15,
+          "motion": "LUNGE",
+          "status": "MARK",
+          "tags": [
+            "SKILL",
+            "MELEE",
+            "AREA"
+          ],
+          "pulses": 1,
+          "ad": 1.0,
+          "ap": 0.0,
+          "radius": 3.0,
+          "element": 0
+        },
+        {
+          "name": "断命",
+          "icon": "ass_execute",
+          "mana": 16,
+          "spend": 30,
+          "gain": 0,
+          "motion": "CONE",
+          "status": "NONE",
+          "tags": [
+            "SKILL",
+            "MELEE",
+            "AREA"
+          ],
+          "pulses": 1,
+          "ad": 2.8,
+          "ap": 0.0,
+          "radius": 3.2,
+          "element": 0
+        },
+        {
+          "name": "刃の輪",
+          "icon": "ass_fan",
+          "mana": 12,
+          "spend": 0,
+          "gain": 15,
+          "motion": "SPIN",
+          "status": "MARK",
+          "tags": [
+            "SKILL",
+            "MELEE",
+            "AREA"
+          ],
+          "pulses": 2,
+          "ad": 0.65,
+          "ap": 0.0,
+          "radius": 3.5,
+          "element": 0
+        },
+        {
+          "name": "影抜け",
+          "icon": "ass_escape",
+          "mana": 10,
+          "spend": 0,
+          "gain": 0,
+          "motion": "EVADE",
+          "status": "SLOW",
+          "tags": [
+            "SKILL",
+            "MELEE",
+            "AREA"
+          ],
+          "pulses": 1,
+          "ad": 0.0,
+          "ap": 0.0,
+          "radius": 4.5,
+          "element": 0
+        },
+        {
+          "name": "無明連刃",
+          "icon": "ass_ult",
+          "mana": 25,
+          "spend": 80,
+          "gain": 0,
+          "motion": "SPIN",
+          "status": "NONE",
+          "tags": [
+            "SKILL",
+            "MELEE",
+            "AREA"
+          ],
+          "pulses": 5,
+          "ad": 1.4,
+          "ap": 0.0,
+          "radius": 4.0,
+          "element": 0
+        }
+      ],
+      "nodes": [
+        {
+          "index": 0,
+          "name": "鍛えた一撃",
+          "description": "直接ダメージ+8%"
+        },
+        {
+          "index": 1,
+          "name": "力の制御",
+          "description": "固有資源の消費-15%"
+        },
+        {
+          "index": 2,
+          "name": "処刑人",
+          "description": "印を消費する技はHP35%以下の敵へ威力+40% / 大成技能は全体で一つ"
+        },
+        {
+          "index": 3,
+          "name": "巧みな準備",
+          "description": "固有資源の獲得+20%"
+        },
+        {
+          "index": 4,
+          "name": "身のこなし",
+          "description": "回避の再使用時間-20%"
+        },
+        {
+          "index": 5,
+          "name": "影渡り",
+          "description": "印を消費すると回避が再使用可能 / 大成技能は全体で一つ"
+        },
+        {
+          "index": 6,
+          "name": "生存の心得",
+          "description": "最大HP+10%"
+        },
+        {
+          "index": 7,
+          "name": "備えの技",
+          "description": "シールド量+20%"
+        },
+        {
+          "index": 8,
+          "name": "毒刃",
+          "description": "印のある敵への通常攻撃が3秒の毒を付与 / 大成技能は全体で一つ"
+        },
+        {
+          "index": 9,
+          "name": "広域化",
+          "description": "刃の輪：範囲+30%、威力-10%"
+        },
+        {
+          "index": 10,
+          "name": "重ね撃ち",
+          "description": "刃の輪：追加発動1回、各回の威力75%"
+        },
+        {
+          "index": 11,
+          "name": "高速始動",
+          "description": "影刺し：発生時間-30%、獲得資源+25%"
+        },
+        {
+          "index": 12,
+          "name": "軽やかな構え",
+          "description": "影抜け：再使用時間-25%"
+        },
+        {
+          "index": 13,
+          "name": "始動の備え",
+          "description": "影刺し：マナ消費-40%、獲得資源+25%"
+        },
+        {
+          "index": 14,
+          "name": "技の循環",
+          "description": "刃の輪：再使用時間-20%、威力-10%"
+        },
+        {
+          "index": 15,
+          "name": "広い備え",
+          "description": "追影：範囲+1.5m、マナ消費-40%"
+        },
+        {
+          "index": 16,
+          "name": "大技への備え",
+          "description": "奥義：固有資源の消費-20%"
+        },
+        {
+          "index": 17,
+          "name": "巡り来る奥義",
+          "description": "奥義：再使用時間-15%、威力-10%"
+        }
+      ]
+    },
+    {
+      "start": "assassin",
+      "kit": "support",
+      "resource": "機会",
+      "job": "ASSASSIN",
+      "meleeClass": true,
+      "skills": [
+        {
+          "name": "影刺し",
+          "icon": "ass_stab",
+          "mana": 12,
+          "spend": 0,
+          "gain": 15,
+          "motion": "LUNGE",
+          "status": "MARK",
+          "tags": [
+            "SKILL",
+            "MELEE",
+            "AREA"
+          ],
+          "pulses": 1,
+          "ad": 1.0,
+          "ap": 0.0,
+          "radius": 3.0,
+          "element": 0
+        },
+        {
+          "name": "断命",
+          "icon": "ass_execute",
+          "mana": 16,
+          "spend": 30,
+          "gain": 0,
+          "motion": "CONE",
+          "status": "NONE",
+          "tags": [
+            "SKILL",
+            "MELEE",
+            "AREA"
+          ],
+          "pulses": 1,
+          "ad": 2.8,
+          "ap": 0.0,
+          "radius": 3.2,
+          "element": 0
+        },
+        {
+          "name": "刃の輪",
+          "icon": "ass_fan",
+          "mana": 12,
+          "spend": 0,
+          "gain": 15,
+          "motion": "SPIN",
+          "status": "MARK",
+          "tags": [
+            "SKILL",
+            "MELEE",
+            "AREA"
+          ],
+          "pulses": 2,
+          "ad": 0.65,
+          "ap": 0.0,
+          "radius": 3.5,
+          "element": 0
+        },
+        {
+          "name": "残像",
+          "icon": "ass_guard",
+          "mana": 12,
+          "spend": 0,
+          "gain": 0,
+          "motion": "GUARD",
+          "status": "NONE",
+          "tags": [
+            "SKILL",
+            "MELEE",
+            "AREA"
+          ],
+          "pulses": 1,
+          "ad": 0.0,
+          "ap": 0.0,
+          "radius": 4.5,
+          "element": 0
+        },
+        {
+          "name": "無明連刃",
+          "icon": "ass_ult",
+          "mana": 25,
+          "spend": 80,
+          "gain": 0,
+          "motion": "SPIN",
+          "status": "NONE",
+          "tags": [
+            "SKILL",
+            "MELEE",
+            "AREA"
+          ],
+          "pulses": 5,
+          "ad": 1.4,
+          "ap": 0.0,
+          "radius": 4.0,
+          "element": 0
+        }
+      ],
+      "nodes": [
+        {
+          "index": 0,
+          "name": "鍛えた一撃",
+          "description": "直接ダメージ+8%"
+        },
+        {
+          "index": 1,
+          "name": "力の制御",
+          "description": "固有資源の消費-15%"
+        },
+        {
+          "index": 2,
+          "name": "処刑人",
+          "description": "印を消費する技はHP35%以下の敵へ威力+40% / 大成技能は全体で一つ"
+        },
+        {
+          "index": 3,
+          "name": "巧みな準備",
+          "description": "固有資源の獲得+20%"
+        },
+        {
+          "index": 4,
+          "name": "身のこなし",
+          "description": "回避の再使用時間-20%"
+        },
+        {
+          "index": 5,
+          "name": "影渡り",
+          "description": "印を消費すると回避が再使用可能 / 大成技能は全体で一つ"
+        },
+        {
+          "index": 6,
+          "name": "生存の心得",
+          "description": "最大HP+10%"
+        },
+        {
+          "index": 7,
+          "name": "備えの技",
+          "description": "シールド量+20%"
+        },
+        {
+          "index": 8,
+          "name": "毒刃",
+          "description": "印のある敵への通常攻撃が3秒の毒を付与 / 大成技能は全体で一つ"
+        },
+        {
+          "index": 9,
+          "name": "広域化",
+          "description": "刃の輪：範囲+30%、威力-10%"
+        },
+        {
+          "index": 10,
+          "name": "重ね撃ち",
+          "description": "刃の輪：追加発動1回、各回の威力75%"
+        },
+        {
+          "index": 11,
+          "name": "高速始動",
+          "description": "影刺し：発生時間-30%、獲得資源+25%"
+        },
+        {
+          "index": 12,
+          "name": "軽やかな構え",
+          "description": "影抜け：再使用時間-25%"
+        },
+        {
+          "index": 13,
+          "name": "始動の備え",
+          "description": "影刺し：マナ消費-40%、獲得資源+25%"
+        },
+        {
+          "index": 14,
+          "name": "技の循環",
+          "description": "刃の輪：再使用時間-20%、威力-10%"
+        },
+        {
+          "index": 15,
+          "name": "広い備え",
+          "description": "追影：範囲+1.5m、マナ消費-40%"
+        },
+        {
+          "index": 16,
+          "name": "大技への備え",
+          "description": "奥義：固有資源の消費-20%"
+        },
+        {
+          "index": 17,
+          "name": "巡り来る奥義",
+          "description": "奥義：再使用時間-15%、威力-10%"
+        }
+      ]
+    },
+    {
+      "start": "assassin",
+      "kit": "mark",
+      "resource": "機会",
+      "job": "ASSASSIN",
+      "meleeClass": true,
+      "skills": [
+        {
+          "name": "影抜け",
+          "icon": "ass_escape",
+          "mana": 10,
+          "spend": 0,
+          "gain": 0,
+          "motion": "EVADE",
+          "status": "SLOW",
+          "tags": [
+            "SKILL",
+            "MELEE",
+            "AREA"
+          ],
+          "pulses": 1,
+          "ad": 0.0,
+          "ap": 0.0,
+          "radius": 4.5,
+          "element": 0
+        },
+        {
+          "name": "断命",
+          "icon": "ass_execute",
+          "mana": 16,
+          "spend": 30,
+          "gain": 0,
+          "motion": "CONE",
+          "status": "NONE",
+          "tags": [
+            "SKILL",
+            "MELEE",
+            "AREA"
+          ],
+          "pulses": 1,
+          "ad": 2.8,
+          "ap": 0.0,
+          "radius": 3.2,
+          "element": 0
+        },
+        {
+          "name": "刃の輪",
+          "icon": "ass_fan",
+          "mana": 12,
+          "spend": 0,
+          "gain": 15,
+          "motion": "SPIN",
+          "status": "MARK",
+          "tags": [
+            "SKILL",
+            "MELEE",
+            "AREA"
+          ],
+          "pulses": 2,
+          "ad": 0.65,
+          "ap": 0.0,
+          "radius": 3.5,
+          "element": 0
+        },
+        {
+          "name": "影刺し",
+          "icon": "ass_stab",
+          "mana": 12,
+          "spend": 0,
+          "gain": 15,
+          "motion": "LUNGE",
+          "status": "MARK",
+          "tags": [
+            "SKILL",
+            "MELEE",
+            "AREA"
+          ],
+          "pulses": 1,
+          "ad": 1.0,
+          "ap": 0.0,
+          "radius": 3.0,
+          "element": 0
+        },
+        {
+          "name": "無明連刃",
+          "icon": "ass_ult",
+          "mana": 25,
+          "spend": 80,
+          "gain": 0,
+          "motion": "SPIN",
+          "status": "NONE",
+          "tags": [
+            "SKILL",
+            "MELEE",
+            "AREA"
+          ],
+          "pulses": 5,
+          "ad": 1.4,
+          "ap": 0.0,
+          "radius": 4.0,
+          "element": 0
+        }
+      ],
+      "nodes": [
+        {
+          "index": 0,
+          "name": "鍛えた一撃",
+          "description": "直接ダメージ+8%"
+        },
+        {
+          "index": 1,
+          "name": "力の制御",
+          "description": "固有資源の消費-15%"
+        },
+        {
+          "index": 2,
+          "name": "処刑人",
+          "description": "印を消費する技はHP35%以下の敵へ威力+40% / 大成技能は全体で一つ"
+        },
+        {
+          "index": 3,
+          "name": "巧みな準備",
+          "description": "固有資源の獲得+20%"
+        },
+        {
+          "index": 4,
+          "name": "身のこなし",
+          "description": "回避の再使用時間-20%"
+        },
+        {
+          "index": 5,
+          "name": "影渡り",
+          "description": "印を消費すると回避が再使用可能 / 大成技能は全体で一つ"
+        },
+        {
+          "index": 6,
+          "name": "生存の心得",
+          "description": "最大HP+10%"
+        },
+        {
+          "index": 7,
+          "name": "備えの技",
+          "description": "シールド量+20%"
+        },
+        {
+          "index": 8,
+          "name": "毒刃",
+          "description": "印のある敵への通常攻撃が3秒の毒を付与 / 大成技能は全体で一つ"
+        },
+        {
+          "index": 9,
+          "name": "広域化",
+          "description": "刃の輪：範囲+30%、威力-10%"
+        },
+        {
+          "index": 10,
+          "name": "重ね撃ち",
+          "description": "刃の輪：追加発動1回、各回の威力75%"
+        },
+        {
+          "index": 11,
+          "name": "高速始動",
+          "description": "影刺し：発生時間-30%、獲得資源+25%"
+        },
+        {
+          "index": 12,
+          "name": "軽やかな構え",
+          "description": "影抜け：再使用時間-25%"
+        },
+        {
+          "index": 13,
+          "name": "始動の備え",
+          "description": "影刺し：マナ消費-40%、獲得資源+25%"
+        },
+        {
+          "index": 14,
+          "name": "技の循環",
+          "description": "刃の輪：再使用時間-20%、威力-10%"
+        },
+        {
+          "index": 15,
+          "name": "広い備え",
+          "description": "追影：範囲+1.5m、マナ消費-40%"
+        },
+        {
+          "index": 16,
+          "name": "大技への備え",
+          "description": "奥義：固有資源の消費-20%"
+        },
+        {
+          "index": 17,
+          "name": "巡り来る奥義",
+          "description": "奥義：再使用時間-15%、威力-10%"
+        }
+      ]
+    }
+  ],
+  "statusEnum": [
+    "NONE",
+    "SLOW",
+    "MARK",
+    "EXPOSE",
+    "POISON"
+  ],
+  "siphonSource": "CoreAffixCatalog.projects:siphon / CoreCombatMath.lifeSteal"
+}
