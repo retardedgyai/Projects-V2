@@ -15,7 +15,11 @@ $compiler=@($compilerModules | ForEach-Object { Get-ChildItem -LiteralPath (Join
 $libs=@(Get-ChildItem -LiteralPath $LibraryDirectory -Filter '*.jar' | Where-Object { $_.Name -notlike 'server-minestom-*' -and $_.Name -notlike 'web-ui-lab-*' } | ForEach-Object FullName)
 if($compiler.Count -lt 2 -or $libs.Count -lt 10) { throw '既存のKotlin compilerと本編依存jarが必要です。ダウンロードやinstallは行いません。' }
 function Compile-Source([string]$name,[string[]]$sources,[string]$cp,[string]$friends='') {
-    $classes=Join-Path $out $name
+    if($name -notin @('web','server','checks')) { throw 'Unexpected class output directory' }
+    $classes=[System.IO.Path]::GetFullPath((Join-Path $out $name))
+    $boundary=[System.IO.Path]::GetFullPath($out)+[System.IO.Path]::DirectorySeparatorChar
+    if(!$classes.StartsWith($boundary,[System.StringComparison]::OrdinalIgnoreCase)) { throw 'Class output is outside the preview workspace' }
+    if(Test-Path -LiteralPath $classes) { Remove-Item -LiteralPath $classes -Recurse -Force }
     New-Item -ItemType Directory -Force -Path $classes | Out-Null
     $arguments=@('-no-stdlib','-no-reflect','-jvm-target','25','-classpath',$cp,'-d',$classes)
     if($friends){$arguments+=('-Xfriend-paths='+$friends)}

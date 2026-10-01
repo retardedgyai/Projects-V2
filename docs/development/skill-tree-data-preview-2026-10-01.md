@@ -28,6 +28,9 @@
 既にcompileした本体を変更せずchecksだけ修正した場合のみ、`-ChecksOnly`で本体compileを省ける。
 compiler／依存jarがない環境では停止し、download・installはしない。
 
+主要な計算は`CoreTreePreview`に置く。account snapshot→既存catalogと装備計算→試し構成→比較DTO→`CoreTreePreviewFlow`の`UiScene`→`UiSessions`の順で動く。
+表示や比較が壊れた時は`CoreTreePreview.kt`／`CoreTreePreviewFlow.kt`、入力・終了時は`UiSessions.kt`、ブラウザ起動時は`.tools/tree-preview/preview.stderr.log`を最初に見る。
+
 パン、ホイールズーム、ドラッグは今回未実装。18ノードを一画面へ配置する。
 取得・返還後の孤立処理や排他は既存`CoreClassBuild.toggle`を使用する。
 条件付き大成効果は、現在の敵・資源・姿勢を捏造したダメージ値にせず、説明に条件を残す。
@@ -81,6 +84,7 @@ compiler／依存jarがない環境では停止し、download・installはしな
 
 ## 検証記録
 
+- baseは`7341fe25dd0a067e7b5f7f0b3ca674cd85056004`（PR149の星層廃止後）。隔離branchは`play/gyai/skill-tree-data-preview`。mainへ変更・merge・pushは行っていない。
 - web-ui-lab／Polish05 native／server-minestomのKotlin main全ソースと、本sliceのchecksをJava25・既存依存jarでcompile済み。
 - 既存catalogとの範囲／基準値の比較、source accountの不変、ポイント上限、前提、排他、孤立返還、別経路で接続が残るmergeを検証済み。
 - native sessionへ実際のteleport confirm・yaw/pitch・spectator action packetを入力し、選択→試し取得→閉じるを検証済み。カメラ／mode復帰、session終了、UI entityの残留なし。ゲームサーバーのlistenは開始していない。
