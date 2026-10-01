@@ -6,6 +6,41 @@ import java.util.UUID
 import kotlin.test.*
 
 class CoreJourneyTest {
+    @Test fun `completed T4 careers guide every eligible class to playable expeditions and forge`() {
+        for (job in CoreClass.entries) for (level in listOf(1, 19, 20, 40)) {
+            if (job == CoreClass.MAGE && level >= 20) continue // Ascension guidance takes priority.
+            val a = CoreAccount(UUID.randomUUID(), unlockedMapTier = 4,
+                journey = CoreJourney(job = job, chosen = true, lessons = 63,
+                    xp = CoreJourneyRules.threshold(level), legacy = false))
+            val next = CoreJourneyRules.next(a)
+            assertTrue("T4遠征" in next, "$job Lv$level: $next")
+            assertTrue("工房" in next, "$job Lv$level: $next")
+            assertFalse("深殿" in next || "星環" in next, "$job Lv$level: $next")
+        }
+    }
+
+    @Test fun `T4 endgame guidance still yields to class choice and each incomplete tutorial lesson`() {
+        val complete = CoreAccount(UUID.randomUUID(), unlockedMapTier = 4,
+            journey = CoreJourney.fresh().copy(chosen = true, lessons = 63))
+        val choose = complete.copy(journey = complete.journey.copy(chosen = false))
+        assertTrue("最初の職業" in CoreJourneyRules.next(choose))
+        for (lesson in 0..5) {
+            val unfinished = complete.copy(journey = complete.journey.copy(lessons = 63 xor (1 shl lesson)))
+            val next = CoreJourneyRules.next(unfinished)
+            assertFalse("T4遠征" in next, "Lesson $lesson must be taught first: $next")
+            assertFalse("深殿" in next || "星環" in next)
+        }
+    }
+
+    @Test fun `next Tier and Mage ascension remain ahead of T4 equipment guidance`() {
+        val a = CoreAccount(UUID.randomUUID(), unlockedMapTier = 4,
+            journey = CoreJourney(job = CoreClass.WARRIOR, chosen = true, lessons = 63, legacy = false))
+        for (tier in 1..3) assertTrue("次のTier" in CoreJourneyRules.next(a.copy(unlockedMapTier = tier)))
+        val mage = a.copy(journey = a.journey.copy(job = CoreClass.MAGE, xp = CoreJourneyRules.threshold(20)))
+        assertTrue("星織り師" in CoreJourneyRules.next(mage))
+        assertTrue("転職条件" in CoreJourneyRules.next(mage))
+    }
+
     @Test fun `first class through six real tutorial actions can create equip and roll a chosen weapon`() {
         val f = Fixture(); f.act(CoreAction.ChooseClass(CoreClass.MAGE)); f.act(CoreAction.ClaimMap(1,18)); val run=f.start()
         f.act(CoreAction.LearnCombat(0)); f.act(CoreAction.LearnCombat(1))
@@ -81,7 +116,7 @@ class CoreJourneyTest {
             assertEquals(listOf(3,5,7,9,10,11)[index], f.a.maps.last().level)
         }
     }
-    @Test fun `T1 through T4 capstones and dungeon checkpoints are a connected durable campaign`() {
+    @Test fun `T1 through T4 campaign remains durable while retired dungeon departure stays unavailable`() {
         val f = Fixture(); f.act(CoreAction.ChooseClass(CoreClass.WARRIOR)); f.act(CoreAction.ClaimMap(1, 43))
         repeat(24) {
             val run = f.start()
@@ -91,11 +126,9 @@ class CoreJourneyTest {
         }
         assertEquals(4, f.a.unlockedMapTier); assertEquals(40, f.a.maps.last().level)
         assertTrue(f.a.journey.level > 1); assertTrue((0..3).all(f.a.journey::knows))
-        val run = UUID.randomUUID(); f.act(CoreAction.StartDungeon(run, 4, 0, 91))
-        val dungeon = f.a.activeRun!!.dungeon!!
-        for (stage in 1..dungeon.stages) f.act(CoreAction.DungeonReward(run, stage, stage % dungeon.roomsPerFloor == 0))
-        assertEquals(0, f.a.dungeonRecords[4]); assertTrue(f.a.amount(CoreCraftingCurrency.DIVINE) > 0)
-        f.act(CoreAction.FinishRun(run)); f.act(CoreAction.StartDungeon(UUID.randomUUID(), 4, 1, 92))
+        val before = CoreAccountCodec.encode(f.a)
+        assertEquals(CoreTransactionStatus.REJECTED, f.send(CoreAction.StartDungeon(UUID.randomUUID(), 4, 0, 91)).status)
+        f.reload(); assertEquals(before, CoreAccountCodec.encode(f.a))
     }
     @Test fun `repeat loot cannot duplicate character XP even through legacy callback`() {
         val f = Fixture(); f.act(CoreAction.ClaimMap(1, 11)); val run = f.start()

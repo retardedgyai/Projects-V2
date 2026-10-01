@@ -117,10 +117,20 @@ class CoreMmoExpansionTest {
         assertTrue(unlocked.claimedSources.all { it.startsWith("run/") })
     }
 
-    @Test fun `dungeon rewards follow checkpoints and clear unlocks next ascension without double ordinary boss payout`() {
+    @Test fun `legacy dungeon rewards follow checkpoints without issuing astral or allowing a new departure`() {
         val f = Fixture(); val id = f.create(); val run = UUID.randomUUID()
         assertEquals(CoreTransactionStatus.REJECTED, f.send(id, CoreAction.StartDungeon(run, 1, 1, 9)).status)
-        var a = f.commit(id, CoreAction.StartDungeon(run, 1, 0, 9))
+        val before = f.a(id)
+        assertEquals(CoreTransactionStatus.REJECTED, f.send(id, CoreAction.StartDungeon(run, 1, 0, 9)).status)
+        assertEquals(before, f.a(id))
+        // Load a pre-retirement checkpoint instead of using the retired entry operation.
+        val legacy = before.copy(revision = before.revision + 1,
+            currencies = mapOf(CoreCraftingCurrency.ASTRAL to 7L),
+            activeRun = CoreActiveRun(run, CoreOwnedMap(UUID.randomUUID(), 9, 1),
+                dungeon = CoreDungeonEntry(0, CoreMmoTuning.balance.dungeonStages, CoreMmoTuning.balance.dungeonRoomsPerFloor)))
+        assertEquals(CoreRepositorySave.Saved, f.repo.commit(before.revision, legacy))
+        f.service.forget(id); f.service.open(id)
+        var a = f.a(id)
         val d = a.activeRun!!.dungeon!!
         assertEquals(CoreTransactionStatus.REJECTED, f.send(id, CoreAction.DungeonReward(run, 2, false)).status)
         assertEquals(CoreTransactionStatus.REJECTED, f.send(id, CoreAction.BossReward(run)).status)
@@ -130,7 +140,10 @@ class CoreMmoExpansionTest {
         }
         assertTrue(a.activeRun!!.bossDefeated); assertEquals(0, a.dungeonRecords[1]); assertTrue(a.amount(CoreCraftingCurrency.DIVINE) > 0)
         assertEquals(CoreTransactionStatus.REJECTED, f.send(id, CoreAction.AbortRun(run)).status)
-        f.commit(id, CoreAction.FinishRun(run)); f.commit(id, CoreAction.StartDungeon(UUID.randomUUID(), 1, 1, 4))
+        assertEquals(7, a.amount(CoreCraftingCurrency.ASTRAL))
+        f.commit(id, CoreAction.FinishRun(run)); f.service.forget(id); f.service.open(id)
+        assertNull(f.a(id).activeRun); assertEquals(7, f.a(id).amount(CoreCraftingCurrency.ASTRAL))
+        assertEquals(CoreTransactionStatus.REJECTED, f.send(id, CoreAction.StartDungeon(UUID.randomUUID(), 1, 1, 4)).status)
     }
 
     @Test fun `v6 upgrade preserves exact backup equipment and enhancement`() {

@@ -90,7 +90,7 @@ object CoreJourneyRules {
         !a.journey.knows(5) -> "刻印工房でオーブを使い、MODを付けよう"
         a.journey.job == CoreClass.MAGE && a.journey.level >= 20 -> "職業の手帳で星織り師への転職条件を確認しよう"
         a.unlockedMapTier < 4 -> "ボスを討伐、または採取実績を積んで次のTierへ"
-        else -> "深殿の深度を進め、武器の型・MOD・製造品質を追求しよう"
+        else -> "T4遠征と工房で、装備のMOD・強化・製造品質を追求しよう"
     }
     fun temper(a: CoreAccount, slot: CoreGearSlot): CoreRecipe {
         val tier = CoreAffixCatalog.gearTier(a, slot)

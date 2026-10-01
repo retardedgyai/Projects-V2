@@ -80,21 +80,13 @@ class CoreLoopMenusTest {
 
     @BeforeTest fun initializeMinestom() { MinecraftServer.init(Auth.Offline()) }
 
-    @Test fun `dungeon menus gate departure routes and return uses party-safe text in both pack modes`() {
+    @Test fun `retired dungeon entry redirects to journal while legacy run routes and return remain safe in both pack modes`() {
         for (packed in listOf(false, true)) {
             val f = fixture(account(), packed)
-            f.menus.dungeons(f.player); assertTrue(auditSnapshot(f.snapshot()).isEmpty(), auditSnapshot(f.snapshot()).toString())
-            f.click(9); assertEquals(DungeonLobbyAction.Solo(1, 0), f.host.lobbyActions.single())
-            f.host.lobbyActions.clear()
-            f.host.current = f.host.current.copy(weaponBroken = true)
-            f.menus.dungeons(f.player); f.click(9); f.click(12); assertTrue(f.host.lobbyActions.isEmpty())
-            f.host.current = f.host.current.copy(weaponBroken = false)
-            val party = DungeonParty(UUID.randomUUID(), f.player.uuid, 1, 0, listOf(f.player.uuid, UUID.randomUUID()))
-            f.host.partySnapshots = listOf(party)
-            f.menus.dungeons(f.player); f.click(41); assertTrue(f.host.lobbyActions.isEmpty())
-            f.click(39); assertEquals(DungeonLobbyAction.Ready, f.host.lobbyActions.single())
-            f.host.partySnapshots = listOf(party.copy(ready = party.members.toSet()))
-            f.menus.dungeons(f.player); f.click(41); assertEquals(DungeonLobbyAction.Start, f.host.lobbyActions.last())
+            f.menus.dungeons(f.player)
+            assertFalse(f.title().contains("星環"))
+            assertTrue(f.host.lobbyActions.isEmpty())
+            assertTrue(f.snapshot().cards.none { it.label == "深殿" })
             val plan = DungeonPlan.generate(1, 1, 0)
             f.host.dungeonState = DungeonRunView(UUID.randomUUID(), f.player.uuid, plan.choices(1).first(),
                 plan.stages, 0, DungeonRunPhase.CHOOSING, "加護を選ぶ", 2, plan.choices(2),
@@ -108,6 +100,30 @@ class CoreLoopMenusTest {
             assertTrue(f.snapshot().leftPanel!!.lines.any { it.text == "仲間の探索は継続" })
             assertEquals(0, f.host.returns)
             f.click(51); assertEquals(1, f.host.returns)
+        }
+    }
+
+    @Test fun `old astral confirmation cannot retain a selection or emit a crafting request`() {
+        for (packed in listOf(false, true)) {
+            val f = fixture(account().copy(currencies = mapOf(CoreCraftingCurrency.ASTRAL to 9L)), packed)
+            f.menus.confirmCraft(f.player, CoreGearSlot.WEAPON, CoreCraftingCurrency.ASTRAL)
+            f.click(CoreForgeLayout.EXECUTE)
+            assertTrue(f.host.requests.isEmpty())
+            assertFalse(f.snapshot().rightPanel!!.lines.any { "星環" in it.text })
+            f.click(15) // All-orb encyclopedia.
+            assertTrue(f.snapshot().cards.none { "星環" in it.label })
+            f.click(51) // Second page.
+            assertTrue(f.snapshot().buttons.any { it.label == "2 / 2" })
+            assertTrue(f.snapshot().cards.none { "星環" in it.label })
+            assertTrue(f.host.requests.isEmpty())
+            assertEquals(9, f.host.current.amount(CoreCraftingCurrency.ASTRAL))
+            CoreLoopItems.refresh(f.player, f.host.current, packed = packed)
+            assertTrue((16..35).all { f.player.inventory.getItemStack(it).isAir })
+            val oldStack = CoreLoopItems.currency(CoreCraftingCurrency.ASTRAL, 9, packed)
+            assertEquals(CoreCraftingCurrency.ASTRAL, CoreLoopItems.currencyId(oldStack))
+            val lore = oldStack.get(DataComponents.LORE)!!.joinToString("\n") { decode(it) }
+            assertTrue("旧通貨・残高保管のみ" in lore)
+            assertFalse("港で装備に重ねる" in lore)
         }
     }
 

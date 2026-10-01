@@ -220,7 +220,7 @@ internal class DungeonRun(val id: UUID, val world: DungeonWorld, participants: L
             members.values.forEach { p -> if (p.gameMode == GameMode.SPECTATOR) { p.gameMode = GameMode.ADVENTURE; p.teleport(room.spawn); host.revive(p, .5) } }
             phase = if (room.stage == world.plan.stages) DungeonRunPhase.COMPLETE else DungeonRunPhase.CHOOSING
             markers += DungeonMarker(instance, room.altar, if (phase == DungeonRunPhase.COMPLETE) "踏破・右クリックで帰還" else "加護と次の道・右クリック", Block.ENCHANTING_TABLE)
-            announce(if (phase == DungeonRunPhase.COMPLETE) "星環の深殿を踏破！報酬と次の深度を保存しました" else "突破！自分の加護を選ぼう。全員が選んだらリーダーが次の道を決定")
+            announce(if (phase == DungeonRunPhase.COMPLETE) "旧深殿を踏破。報酬と踏破記録を保存しました" else "突破！自分の加護を選ぼう。全員が選んだらリーダーが次の道を決定")
             members.values.forEach { it.hideBossBar(bar); host.showRunMenu(it) }
         } }
     }

@@ -153,16 +153,7 @@ class CoreAccountService(private val repository: CoreAccountRepository,
             paid.copy(unlockedMapTier = maxOf(account.unlockedMapTier, action.tier),
                 maps = account.maps + CoreOwnedMap(derived(requestId, "survey-map"), action.seed, action.tier)) to "採取実績でT${action.tier}の地図を用意しました。討伐は不要です"
         }
-        is CoreAction.StartDungeon -> {
-            requireHub(account)
-            val b = CoreMmoTuning.balance
-            require(action.tier in 1..account.unlockedMapTier) { "そのTierは未解放です" }
-            require(action.ascension in 0..minOf(b.dungeonMaxAscension, (account.dungeonRecords[action.tier] ?: -1) + 1)) { "先に一つ前の深度を踏破してください" }
-            require(account.claimedSources.none { it.startsWith("run/${action.runId}/") }) { "その遠征番号は使用済みです" }
-            val map = CoreOwnedMap(derived(requestId, "dungeon"), action.seed, action.tier)
-            addSource(account, source("run", action.runId, "started")).copy(activeRun = CoreActiveRun(action.runId, map,
-                dungeon = CoreDungeonEntry(action.ascension, b.dungeonStages, b.dungeonRoomsPerFloor))) to "星環の深殿を準備しています"
-        }
+        is CoreAction.StartDungeon -> error(CoreDungeonEntry.RETIRED_MESSAGE)
         is CoreAction.DungeonReward -> {
             val run = requireRun(account, action.runId)
             val d = requireNotNull(run.dungeon) { "深殿の遠征ではありません" }
@@ -176,10 +167,10 @@ class CoreAccountService(private val repository: CoreAccountRepository,
                 CoreCraftingCurrency.EXALTED to 1L) else mapOf((if (action.treasury) CoreCraftingCurrency.CHAOS else CoreCraftingCurrency.ALTERATION) to 1L)
             updated = grantCurrencies(updated, orbs)
             val complete = action.stage == d.stages
-            if (complete) updated = grantCurrencies(updated, mapOf(CoreCraftingCurrency.DIVINE to (1L + d.ascension / 5), CoreCraftingCurrency.ASTRAL to (1L + d.ascension / 10)))
+            if (complete) updated = grantCurrencies(updated, mapOf(CoreCraftingCurrency.DIVINE to (1L + d.ascension / 5)))
             updated.copy(journey = updated.journey.gain(CoreJourneyRules.reward(run.map.tier, action.boss)).learn(2), activeRun = run.copy(dungeon = d.copy(rewardedStage = action.stage), bossDefeated = complete),
                 dungeonRecords = if (complete) account.dungeonRecords + (run.map.tier to maxOf(account.dungeonRecords[run.map.tier] ?: -1, d.ascension)) else account.dungeonRecords) to
-                if (complete) "深殿踏破！次の深度を解放。神聖のオーブを獲得しました" else "第${action.stage}の間を突破。報酬は保管済みです"
+                if (complete) "旧深殿を踏破。神聖のオーブを獲得しました" else "第${action.stage}の間を突破。報酬は保管済みです"
         }
         is CoreAction.Manufacture -> {
             requireHub(account)

@@ -47,6 +47,10 @@ internal class CoreDungeonExpeditions(private val host: CoreDungeonHost, private
     fun stats(player: Player, base: CoreAffixStats) = run(player)?.stats(player.uuid, base) ?: base
 
     fun lobby(player: Player, action: DungeonLobbyAction) {
+        if (action != DungeonLobbyAction.Leave) {
+            player.sendMessage(CoreLoopItems.text(CoreDungeonEntry.RETIRED_MESSAGE))
+            return
+        }
         if (closed || !host.eligible(player) || pending.containsKey(player.uuid) || runs.containsKey(player.uuid)) return
         runCatching {
             when (action) {

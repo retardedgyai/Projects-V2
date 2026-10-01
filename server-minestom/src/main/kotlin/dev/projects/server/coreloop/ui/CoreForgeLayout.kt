@@ -9,12 +9,12 @@ internal object CoreForgeLayout {
     }
     enum class Purpose(val label: String) {
         ALL("すべて"), PROMOTE("レアリティ昇格"), ADD("MODを追加"), REROLL("MODを引き直す"), TUNE("数値・初期化");
-        fun accepts(currency: CoreCraftingCurrency): Boolean = this == ALL || this == when (currency) {
+        fun accepts(currency: CoreCraftingCurrency): Boolean = currency != CoreCraftingCurrency.ASTRAL && (this == ALL || this == when (currency) {
             CoreCraftingCurrency.TRANSMUTATION, CoreCraftingCurrency.ALCHEMY, CoreCraftingCurrency.REGAL -> PROMOTE
             CoreCraftingCurrency.AUGMENTATION, CoreCraftingCurrency.EXALTED, CoreCraftingCurrency.TRIAL -> ADD
             CoreCraftingCurrency.ALTERATION, CoreCraftingCurrency.CHAOS, CoreCraftingCurrency.RIFT, CoreCraftingCurrency.ASTRAL -> REROLL
             CoreCraftingCurrency.DIVINE, CoreCraftingCurrency.RITUAL, CoreCraftingCurrency.SCOURING -> TUNE
-        }
+        })
     }
     enum class Quantity { ONE, FIVE, MAX }
     data class Selection(
@@ -28,6 +28,11 @@ internal object CoreForgeLayout {
         val focused: Boolean = false,
         val base: CoreWeaponBase = CoreWeaponBase.STANDARD,
     )
+    fun normalize(selection: Selection): Selection = selection.copy(
+        tier = selection.tier.coerceIn(1, 4),
+        currency = selection.currency?.takeIf { it in CoreCraftingCurrency.available },
+    )
+
     // Each visual button owns every slot under its painted label, not just the icon.
     const val TAB_SPAN = 2
     const val GEAR_SPAN = 3
@@ -61,7 +66,7 @@ internal object CoreForgeLayout {
         Quantity.MAX -> maximum.coerceIn(1, 64)
     }
     fun usableCurrencies(account: CoreAccount, selection: Selection): List<CoreCraftingCurrency> =
-        CoreCraftingCurrency.entries.filter { selection.purpose.accepts(it) && CoreCraftingCatalog.canUse(account, selection.gear, it) == null }
+        CoreCraftingCurrency.available.filter { selection.purpose.accepts(it) && CoreCraftingCatalog.canUse(account, selection.gear, it) == null }
 
     fun enhancementMode(account: CoreAccount, selection: Selection): CoreEnhancementMode {
         val standard = CoreEnhancementCatalog.quote(account, selection.gear)

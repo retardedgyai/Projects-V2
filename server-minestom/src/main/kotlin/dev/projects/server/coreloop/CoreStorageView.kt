@@ -16,7 +16,7 @@ internal object CoreStorageView {
                 val key = CoreMaterial(resource, if (resource in globalResources) 1 else tier)
                 account.amount(key).takeIf { it > 0 }?.let { add(Entry.Material(key, it)) }
             }
-            CoreCraftingCurrency.entries.forEach { currency ->
+            CoreCraftingCurrency.available.forEach { currency ->
                 account.amount(currency).takeIf { it > 0 }?.let { add(Entry.Currency(currency, it)) }
             }
             CoreActivityKind.entries.forEach { kind ->
