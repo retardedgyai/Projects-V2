@@ -13,8 +13,8 @@ internal object WorldInfusionSmoke {
     fun expired(t: Transfer, tick: Long) = tick >= t.started + EMISSION_TICKS + TRAVEL_TICKS
 
     /** Each confirmed unit releases six tufts; stopping consumption creates no further Transfers. */
-    fun sample(t: Transfer, tick: Long): List<Sample> = buildList {
-        val delta=t.to.sub(t.from)
+    fun sample(t: Transfer, tick: Long, movingFocus:Vec?=null): List<Sample> = buildList {
+        val delta=(movingFocus ?: t.to).sub(t.from)
         val horizontal=hypot(delta.x(),delta.z()).coerceAtLeast(.001)
         val side=Vec(-delta.z()/horizontal,0.0,delta.x()/horizontal)
         for(tuft in 0 until 6) {
@@ -40,6 +40,6 @@ internal object WorldInfusionSmoke {
             }
         }
     }
-    fun frame(transfers: List<Transfer>,tick:Long):List<Sample> = transfers.asSequence()
-        .filterNot { expired(it,tick) }.flatMap { sample(it,tick).asSequence() }.take(MAX_SAMPLES).toList()
+    fun frame(transfers: List<Transfer>,tick:Long,movingFocus:Vec?=null):List<Sample> = transfers.asSequence()
+        .filterNot { expired(it,tick) }.flatMap { sample(it,tick,movingFocus).asSequence() }.take(MAX_SAMPLES).toList()
 }

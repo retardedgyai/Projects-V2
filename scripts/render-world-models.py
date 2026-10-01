@@ -53,7 +53,7 @@ def corners(lo,hi,face):
     return np.array({'north':[(X,Y,z),(X,y,z),(x,y,z),(x,Y,z)],'south':[(x,Y,Z),(x,y,Z),(X,y,Z),(X,Y,Z)],
       'west':[(x,Y,z),(x,y,z),(x,y,Z),(x,Y,Z)],'east':[(X,Y,Z),(X,y,Z),(X,y,z),(X,Y,z)],
       'up':[(x,Y,z),(x,Y,Z),(X,Y,Z),(X,Y,z)],'down':[(x,y,Z),(x,y,z),(X,y,z),(X,y,Z)]}[face])
-def render(parts,size,yaw,elevation,with_depth=False,frame_bounds=None,ambient=1,background='#242922'):
+def render(parts,size,yaw,elevation,with_depth=False,frame_bounds=None,ambient=1,background='#242922',item_tint=(1,1,1)):
     a,e=math.radians(yaw),math.radians(elevation)
     cam=np.array([math.sin(a)*math.cos(e),math.sin(e),-math.cos(a)*math.cos(e)])
     right=np.array([math.cos(a),0,math.sin(a)]);up=np.cross(right,cam)
@@ -72,6 +72,8 @@ def render(parts,size,yaw,elevation,with_depth=False,frame_bounds=None,ambient=1
             while isinstance(name,str) and name.startswith('#'):name=refs[name[1:]]
             if isinstance(name,dict): name=name['sprite']
             tex=texture(name)
+            if f.get('tintindex')==0:
+                tex=tex.copy();tex[:,:,:3]=(tex[:,:,:3]*np.array(item_tint)[None,None,:]).astype('uint8')
             shade=(.62+.38*max(0,np.dot(n,light)) if f.get('_shade',True) else 1)*max(ambient,f.get('_light_emission',0)/15)
             if np.all(tex==tex[0,0]):
                 rgba=tex[0,0]

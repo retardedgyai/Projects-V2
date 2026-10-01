@@ -74,8 +74,14 @@ class WorldInfusionRuntimeTest {
             assertEquals(4,game.state.pedestals.count { it.item!=null })
             game.packed=true;game.rebuild()
             repeat(20) { game.tick() }
+            val core=map.entities.single { (it.entityMeta as? ItemDisplayMeta)?.itemStack?.get(DataComponents.ITEM_MODEL)=="projects:infusion-v7/core_ritual" }
+            val coreMeta=core.entityMeta as ItemDisplayMeta
+            assertTrue(coreMeta.leftRotation[1]!=0f,"Committed ritual must rotate the actual whole-core ItemDisplay")
+            assertTrue(coreMeta.itemStack.get(DataComponents.CUSTOM_MODEL_DATA)!!.colors().isNotEmpty(),"Core light must receive the shared event tint")
+            assertEquals(4,map.entities.count { (it.entityMeta as? ItemDisplayMeta)?.itemStack?.get(DataComponents.ITEM_MODEL)=="projects:infusion-v4/support" })
+            assertEquals(Block.BARRIER,map.getBlock(-1,43,-1),"Packed supports use dedicated models with invisible hitboxes")
             assertTrue(map.entities.any { (it.entityMeta as? ItemDisplayMeta)?.itemStack?.get(DataComponents.CUSTOM_MODEL_DATA)?.colors()?.isNotEmpty()==true },"Packed smoke must use real tinted billboard entities")
-            repeat(220) { game.tick() }
+            repeat(280) { game.tick() } // Includes the bounded flight-arrival wait before offering absorption.
             assertFalse(map.entities.any { (it.entityMeta as? ItemDisplayMeta)?.itemStack?.get(DataComponents.ITEM_MODEL)=="projects:infusion/smoke" },"Expired smoke must leave no display entities")
             assertEquals(InfusionPhase.COMPLETE,game.state.phase)
             assertEquals(5,game.state.jars.sumOf { it.amount })

@@ -116,6 +116,10 @@ internal object WorldInfusionServer {
         internal fun smokeEntityIds()=smokeDisplays.values.map { it.entity.entityId }.toSet()
         internal data class SmokeStats(var born:Long=0,var removed:Long=0,var moves:Long=0,var metadata:Long=0,var peak:Int=0)
         internal val smokeStats=SmokeStats()
+        private val animation=WorldInfusionAnimation.Track()
+        private var coreDisplay:Entity?=null
+        private var lastCorePose:WorldInfusionAnimation.Pose?=null
+        internal val animationPose get()=animation.pose
         private fun dropSmoke(key:String,display:SmokeDisplay) {
             if(smokeDisplays.remove(key,display)) {
                 try { display.entity.remove() } finally { display.lease.release();smokeStats.removed++ }
@@ -129,19 +133,19 @@ internal object WorldInfusionServer {
         private fun item(material:Material,name:String,id:String)=ItemStack.of(material).withCustomName(Component.text(name,NamedTextColor.GOLD))
             .withTag(token,id)
         private fun model(model:String,material:Material,name:String,id:String)=item(material,name,id).let {
-            if(packed) it.withItemModel("projects:infusion/$model") else it
+            if(packed) it.withItemModel("projects:$model") else it
         }
         fun inventory() {
             // Server ledger projections, like CoreLoopItems: tags alone never confer ownership.
             player.inventory.clear();player.inventory.cursorItem=ItemStack.AIR;player.setItemInOffHand(ItemStack.AIR)
             val items=mutableListOf<ItemStack>()
             items+=item(Material.BLAZE_ROD,"筆記杖：Matrixを右クリックで起動","cast")
-            if(state.matrix==null)items+=model("matrix",Material.LODESTONE,"祭壇キット（試作）","matrix")
-            if(state.pedestals.size<4)items+=model("pedestal",Material.CHISELED_STONE_BRICKS,"外側台座","pedestal").withAmount(4-state.pedestals.size)
-            state.jars.filter { it.cell==null }.forEach { j->items+=model("jar_${j.aspect.name.lowercase()}",Material.GLASS_BOTTLE,"${j.aspect.label} Jar ${j.amount}/${j.capacity}","jar:${j.id}") }
+            if(state.matrix==null)items+=model("infusion-v7/core_ritual",Material.LODESTONE,"祭壇キット（試作）","matrix")
+            if(state.pedestals.size<4)items+=model("infusion-v6/offering",Material.CHISELED_STONE_BRICKS,"外側台座","pedestal").withAmount(4-state.pedestals.size)
+            state.jars.filter { it.cell==null }.forEach { j->items+=model("infusion-v3/jar",Material.GLASS_BOTTLE,"${j.aspect.label} Jar ${j.amount}/${j.capacity}","jar:${j.id}") }
             if(state.gearPlace==InfusionGearPlace.INVENTORY)items+=gearItem()
             WorldInfusionRules.ingredients.keys.forEach { r->val n=state.account.amount(r,2);if(n>0)items+=
-                CoreLoopItems.resource(CoreMaterial(r,2),n).withTag(token,"material:${r.name}") }
+                CoreLoopItems.resource(CoreMaterial(r,2),n,packed).withTag(token,"material:${r.name}") }
             items.forEachIndexed { i,v->player.inventory.setItemStack(i,v) }
         }
         private fun gearItem():ItemStack {
@@ -215,7 +219,7 @@ internal object WorldInfusionServer {
                 id?.startsWith("jar:")==true->mutate { WorldInfusionRules.placeJar(it,UUID.fromString(id.substringAfter(':')),cell) }
             }
         }
-        private fun display(stack:ItemStack,pos:Pos,scale:Vec=Vec(1.0,1.0,1.0)) {
+        private fun display(stack:ItemStack,pos:Pos,scale:Vec=Vec(1.0,1.0,1.0)):Entity {
             val key="item:${pos.x()},${pos.y()},${pos.z()}";visibleKeys+=key
             val entity=displays.getOrPut(key) { Entity(EntityType.ITEM_DISPLAY).apply {
                 setNoGravity(true);setHasPhysics(false);setInstance(this@WorldInfusionGame.instance,pos)
@@ -223,6 +227,7 @@ internal object WorldInfusionServer {
             entity.editEntityMeta(ItemDisplayMeta::class.java) { m->
                 m.setItemStack(stack);m.setDisplayContext(ItemDisplayMeta.DisplayContext.NONE);m.setScale(scale);m.setViewRange(2f)
             }
+            return entity
         }
         private fun liquid(j:InfusionJar) {
             if(j.amount==0)return
@@ -240,25 +245,27 @@ internal object WorldInfusionServer {
         fun rebuild() {
             if(closed)return
             // Reuse physical entities through the ritual, update only liquid/items; no rebuild flicker per unit.
-            visibleKeys.clear();blockKeys.clear()
+            visibleKeys.clear();blockKeys.clear();coreDisplay=null;lastCorePose=null
             state.matrix?.let { c->
                 block(c.x,41,c.z,if(packed)Block.BARRIER else Block.CHISELED_STONE_BRICKS)
-                display(model("pedestal",Material.CHISELED_STONE_BRICKS,"中心台座","visual"),at(c,.5))
+                display(model("infusion-v6/center",Material.CHISELED_STONE_BRICKS,"中心台座","visual"),at(c,.5))
                 for(x in listOf(-1,1))for(z in listOf(-1,1)) {
-                    for(y in 41..43)block(c.x+x,y,c.z+z,if(y==43)Block.CUT_COPPER else Block.POLISHED_DEEPSLATE_WALL)
+                    for(y in 41..43)block(c.x+x,y,c.z+z,if(packed)Block.BARRIER else if(y==43)Block.CUT_COPPER else Block.POLISHED_DEEPSLATE_WALL)
+                    if(packed)display(model("infusion-v4/support",Material.PAPER,"Support","visual"),at(c.copy(x=c.x+x,z=c.z+z),.5)
+                        .withYaw(when { x<0&&z<0->135f;x>0&&z<0->45f;x<0->-135f;else->-45f }))
                 }
                 block(c.x,44,c.z,if(packed)Block.BARRIER else Block.LODESTONE)
-                display(model("matrix",Material.LODESTONE,"Matrix","visual"),at(c,3.5))
+                coreDisplay=display(model("infusion-v7/core_ritual",Material.LODESTONE,"Matrix","visual"),at(c,3.4))
                 if(state.gearPlace!=InfusionGearPlace.INVENTORY)display(gearItem(),at(c,1.15),Vec(.65,.65,.65))
             }
             state.pedestals.forEach { p->
                 block(p.cell.x,41,p.cell.z,if(packed)Block.BARRIER else Block.CHISELED_STONE_BRICKS)
-                if(packed)display(model("pedestal",Material.CHISELED_STONE_BRICKS,"外側台座","visual"),at(p.cell,.5))
-                p.item?.let { display(CoreLoopItems.resource(CoreMaterial(it,2),1),at(p.cell,1.12),Vec(.55,.55,.55)) }
+                if(packed)display(model("infusion-v6/offering",Material.CHISELED_STONE_BRICKS,"外側台座","visual"),at(p.cell,.5))
+                p.item?.let { display(CoreLoopItems.resource(CoreMaterial(it,2),1,packed),at(p.cell,1.12),Vec(.55,.55,.55)) }
             }
             state.jars.filter { it.cell!=null }.forEach { j->val c=j.cell!!
                 block(c.x,41,c.z,if(packed)Block.BARRIER else Block.GLASS)
-                if(packed)display(model("jar_${j.aspect.name.lowercase()}",Material.GLASS_BOTTLE,"Jar","visual"),at(c,.5))
+                if(packed)display(model("infusion-v3/jar",Material.GLASS_BOTTLE,"Jar","visual"),at(c,.5))
                 liquid(j)
             }
             displays.entries.removeIf { (key,e)->if(key !in visibleKeys) { e.remove();true } else false }
@@ -273,10 +280,11 @@ internal object WorldInfusionServer {
                 // Player breaking is disabled; external removal/unload must not leave a floating effect.
                 if(instance.getBlock(c.x,44,c.z).isAir) { close();return }
             }
-            if(ticks%18==0L) {
+            var completed=false
+            if(ticks%18==0L && WorldInfusionAnimation.mayAdvance(state,smoke,ticks)) {
                 val (next,pulse)=WorldInfusionRules.tick(state)
                 if(next!==state && mutate { next }) {
-                    val c=state.matrix!!;val target=Vec(c.x+.5,44.3,c.z+.5)
+                    val c=state.matrix!!;val target=animation.pose.inlet(Vec(c.x+.5,c.y+3.4,c.z+.5))
                     pulse?.let { v->
                         val source=v.jar?.let { id->state.jars.single { it.id==id }.cell?.let { Vec(it.x+.5,41.55,it.z+.5) } }
                             ?: v.ingredient?.let { Vec(it.x+.5,42.15,it.z+.5) } ?: Vec(c.x+.5,42.0,c.z+.5)
@@ -285,14 +293,25 @@ internal object WorldInfusionServer {
                             val mouth=source.add(0.0,.4,0.0)
                             smoke+=WorldInfusionSmoke.Transfer(mouth,target,v.aspect.rgb,ticks)
                         } else trails+=Trail(source,target,v.aspect?.rgb ?: 0xe1cfab,ticks)
-                        if(v.completed)player.playSound(Sound.sound(SoundEvent.BLOCK_AMETHYST_BLOCK_CHIME,Sound.Source.BLOCK,.7f,1.3f))
+                        if(v.completed) { completed=true;player.playSound(Sound.sound(SoundEvent.BLOCK_AMETHYST_BLOCK_CHIME,Sound.Source.BLOCK,.7f,1.3f)) }
                     }
                 }
+            }
+            val pose=animation.step(state,ticks,completed)
+            val intake=state.matrix?.let { pose.inlet(Vec(it.x+.5,it.y+3.4,it.z+.5)) }
+            if(ticks%2==0L && packed && (lastCorePose?.yaw!=pose.yaw || lastCorePose?.neutralTint!=pose.neutralTint)) {
+                coreDisplay?.editEntityMeta(ItemDisplayMeta::class.java) { m->
+                    m.setLeftRotation(pose.rotation());m.setTransformationInterpolationDuration(2);m.setTransformationInterpolationStartDelta(0)
+                    m.setItemStack(ItemStack.of(Material.PAPER).withItemModel("projects:infusion-v7/core_ritual")
+                        .with(DataComponents.CUSTOM_MODEL_DATA,CustomModelData(emptyList(),emptyList(),emptyList(),
+                            listOf(net.kyori.adventure.text.format.TextColor.color(pose.neutralTint)))))
+                }
+                lastCorePose=pose
             }
             trails.removeIf { ticks-it.started>18 }
             smoke.removeIf { WorldInfusionSmoke.expired(it,ticks) }
             if(ticks%2==0L) {
-                val frame=WorldInfusionSmoke.frame(smoke,ticks)
+                val frame=WorldInfusionSmoke.frame(smoke,ticks,intake)
                 val active=if(packed)frame.map { it.key }.toSet() else emptySet()
                 smokeDisplays.entries.forEach { (key,e)->if(key !in active)dropSmoke(key,e) }
                 frame.forEach { mote->
