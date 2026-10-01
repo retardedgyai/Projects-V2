@@ -1,6 +1,7 @@
 """Adapt the recovered v6 geometry, without adopting its numbers or touching saves."""
 from pathlib import Path
 import json,copy,math,collections,heapq
+from correct_large_tree import correct
 ROOT=Path(__file__).resolve().parents[1]
 OUT=ROOT/'assets/core-ui/large-tree-preview';OUT.mkdir(parents=True,exist_ok=True)
 original=json.loads((ROOT/'docs/references/skill-tree-2026-09-16/v6-graph-original.json').read_text(encoding='utf-8'))
@@ -97,15 +98,16 @@ for p in prior['profiles']:
  # Hitting a weak point is conditional; loadout presence does not guarantee it.
  p['flags']=sorted(flags);p['skills']=skills;p.pop('inputs',None);profiles.append(p)
 d['profiles']=profiles;d['requirements']=requirements;d['currentCatalog']=catalog
+correct(d)
 d['startBraids']=braids
 d['choices']={}
 d['sources']=[{'title':'PoE1 公式パッシブツリーの構造参照','url':'https://www.pathofexile.com/passive-skill-tree'},{'title':'GGG 公式グラフデータ（親側で構造を検証したrevision）','url':'https://github.com/grindinggear/skilltree-export/blob/8bd138b32ea2631455cac5935bfab089f826094f/data.json'}]
 d['originalRemoved']=removed;d['originalKeystones']=oldkeys
 d['status']='5起点・15候補の比較用差分。全ノードの新共通効果は未適用。係数・費用・総ptは未採用。'
-d['pointPolicy']={'candidates':[48,64,80],'default':64,'small':1,'notable':1,'road':1,'keystone':3,'productionAdopted':False,'reason':'まず64ptを比較基準。旧44ptの遠方不足を調べ、1個3ptのKeystoneとNotableへの投資を比較する。強さの最適性は実戦未検証。'}
+d['pointPolicy']={'candidates':[48,64,80],'default':64,'small':1,'notable':1,'road':1,'keystone':3,'productionAdopted':False,'reason':'48/64/80ptを同支出で比較する設定。64は画面初期値であり最適予算ではない。途中の能力と交換条件を比較し、強さ・係数・本番獲得点は未採用。'}
 d['bounds']={'minX':min(n['x'] for n in d['nodes'])-130,'maxX':max(n['x'] for n in d['nodes'])+130,'minY':min(n['y'] for n in d['nodes'])-130,'maxY':max(n['y'] for n in d['nodes'])+130}
 d['qa']={'nodes':len(d['nodes']),'edges':len(d['edges']),'groups':len(d['groups']),'nodeTypes':dict(collections.Counter(n['type'] for n in d['nodes']))}
-d['schema']='projects.large-tree-diff.v1';d['sourceBase']='7341fe25';d['runtimeApplied']=False
+d['schema']='projects.large-tree-diff.v2';d['sourceBase']='7341fe25';d['runtimeApplied']=False
 d['sourcePolicy']='v6原本を保持。6起点・44pt・664点・専攻は本番へ未採用。15候補は旧6+比較用9で、名称・効果は未採用。'
 (OUT/'graph.json').write_text(json.dumps(d,ensure_ascii=False,indent=2),encoding='utf-8')
 print(json.dumps(d['qa'],ensure_ascii=False))

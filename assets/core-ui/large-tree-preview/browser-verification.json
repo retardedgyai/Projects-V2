@@ -2,6 +2,9 @@
   "status": "PASS",
   "costComparisons": 75,
   "allocationExamples": 40,
+  "equalSpendAndUsableExamples": 40,
+  "deadTollRegressions": 3,
+  "hypotheticalInputTests": 4,
   "alternatives": [
     {
       "cost": 3,
@@ -44,6 +47,7 @@
     "chain": false,
     "selfShieldIsAlly": false,
     "foreign": [
+      "氷の減速源（氷SLOW技能または氷追加MOD）（現在の入力なし）",
       "選択職ではこの武器を装備できない"
     ],
     "ally": true,
@@ -57,8 +61,10 @@
     "weighted budget",
     "trial exclusion",
     "keyless mode",
-    "foreign weapon/AP/skill/resource warnings",
-    "acquired inactive warnings",
+    "per-stat usable/unsupported",
+    "source-valid route filtering",
+    "equal-spend source-valid comparisons",
+    "4 hypothetical positive input tests",
     "search",
     "drag/wheel/pinch",
     "mobile viewport"

@@ -46,12 +46,13 @@ route_block=re.search(r'<div class="block" id="routeBlock">.*?<div class="block"
 if not route_block:raise ValueError('Route comparison block not found')
 route_content=route_block.group().removesuffix('<div class="block"><div class="minihead">')
 html=html.replace(route_content,'',1).replace(fixture,route_content+fixture,1)
+html=html.replace('<div id="profileWarning" class="profile-warning"></div>','<div id="profileWarning" class="profile-warning"></div><details class="kind-help"><summary>仮入力テスト（実装済みにはしない）</summary><label>条件<select id="assumption"><option value="none">仮条件なし</option>'+''.join('<option value="'+a['id']+'">'+a['label']+'</option>' for a in data['assumptions'])+'</select></label><p>現在の120編成にない入力を、対応処理が合法に成立した仮定で検証する。現行技能・装備の能力追加ではない。</p></details>')
 html=html.replace('<div class="block"><div class="overline">HOW TO EXPLORE</div>', '<div class="block"><details><summary>現行職別18点の実装参照</summary><p class="kind-help">現行効果の説明。共通盤面の取得へ適用する処理は未実装。</p><div id="legacyNodes" class="legacy-list"></div></details></div><div class="block"><div class="overline">HOW TO EXPLORE</div>')
 html=html.replace('数値は試作用の静的合算。装備・敵・条件付き効果を含む実戦DPSではありません。キーストーンは別欄のルール案です。','旧v6の仮値を足した計画表。新共通効果・交換条件は実戦へ未適用。火力の順位は判定しません。')
 html=re.sub(r'(<dialog id="reviewDialog">).*?</dialog>',r'\g<1><h2>大盤面と経路の差分</h2><p>47クラスタの広がりを保持し、起点近くは3直線から分岐・合流・横断へ変更。Smallは途中の投資、Notableはまとまった中核、Keystoneは交換条件のあるルール案。</p><div id="diag"></div><div id="budgetEvidence"></div><p>5基本職・β15 Keystoneの方針だけが基準。旧664点・44pt・6起点は未採用。今回の645点・比較予算・効果・配置も本番確定ではありません。</p><p>既存HTMLからの操作資料。Minecraft内の共通大盤面、panzoom、実戦効果、保存移行は未実装。魔術加工や防具の職業制限を必須にしません。</p><div id="sourceLinks"></div><button class="primary" data-close="reviewDialog">ツリーへ戻る</button></dialog>',html,flags=re.S)
 html=html.replace('このファイルで開いたビルドは、ブラウザが許可する場合に自動保存されます。別の環境へ持ち出すには下のコードをコピーしてください。v1〜v5とはデータ互換がありません。','この比較内だけの配分コードです。自動保存・実ゲーム保存はありません。同じ比較予算に合わせて読み込んでください。旧v6とは互換がありません。')
 html=html.replace('</style></head>',(OUT/'preview.css').read_text(encoding='utf-8')+'\n__FONT_CSS__\n</style></head>')
-html+='<script id="treeData" type="application/json">__GRAPH_JSON__</script><script>const ART=__ART_JSON__;</script><script>'+source+'</script><script>'+(OUT/'preview-extra.js').read_text(encoding='utf-8')+'</script></body></html>'
+html+='<script id="treeData" type="application/json">__GRAPH_JSON__</script><script>const ART=__ART_JSON__;</script><script>'+source+'</script><script>'+(OUT/'preview-extra.js').read_text(encoding='utf-8')+'</script><script>'+(OUT/'preview-inputs.js').read_text(encoding='utf-8')+'</script></body></html>'
 # Change only diagnostic historical messages; the original file remains untouched.
 html=html.replace('44ポイント','比較予算').replace('v6のビルドコードではありません。旧版は開始エリアが異なります。','この大盤面プレビューの配分コードではありません。')
 html=html.translate({8629:'次',8630:'戻',8631:'進',8981:'探'})
