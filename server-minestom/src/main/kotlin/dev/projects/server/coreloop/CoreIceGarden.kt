@@ -8,19 +8,26 @@ import kotlin.math.abs
 internal class CoreIceGarden(val cells: List<Pos>, val openedAt: Long, val duration: Int, val cellSize: Double = CELL) {
     private data class Visit(var hits: Int = 0, var nextHit: Long = 0)
     private val visits = mutableMapOf<UUID, Visit>()
+    val slowSource: UUID = UUID.randomUUID()
     val endsAt get() = openedAt + duration
-    fun contains(feet: Pos) = cells.any {
+    fun cellAt(feet: Pos, supported: Collection<Pos> = cells) = supported.firstOrNull {
         abs(feet.x() - it.x()) <= cellSize / 2 && abs(feet.z() - it.z()) <= cellSize / 2 && abs(feet.y() - it.y()) <= .55
     }
+    fun contains(feet: Pos) = cellAt(feet) != null
     fun active(now: Long) = now >= openedAt && now < endsAt
     fun firstHit(id: UUID) = visits[id]?.hits == 1
-    fun claimHit(id: UUID, now: Long): Boolean {
+    fun hitCount(id: UUID) = visits[id]?.hits ?: 0
+    fun canHit(id: UUID, now: Long): Boolean {
         if (!active(now)) return false
+        val visit = visits[id] ?: return visits.size < TARGET_LIMIT
+        return visit.hits < HITS && now >= visit.nextHit
+    }
+    fun claimHit(id: UUID, now: Long): Boolean {
+        if (!canHit(id, now)) return false
         val visit = visits[id] ?: run {
             if (visits.size >= TARGET_LIMIT) return false
             Visit().also { visits[id] = it }
         }
-        if (visit.hits >= HITS || now < visit.nextHit) return false
         visit.hits++; visit.nextHit = now + HIT_INTERVAL
         return true
     }

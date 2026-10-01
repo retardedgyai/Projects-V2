@@ -30,6 +30,20 @@ class CoreIceGardenTest {
         val field=CoreIceGarden(listOf(Pos.ZERO),0,120)
         assertEquals(128,(0..511).count { field.claimHit(UUID.randomUUID(),0) })
     }
+    @Test fun `rejected damage attempts do not consume hit budget or cadence`() {
+        val field=CoreIceGarden(listOf(Pos.ZERO),0,120);val id=UUID.randomUUID()
+        repeat(80) { assertTrue(field.canHit(id,0)) }
+        assertEquals(0,field.hitCount(id))
+        assertTrue(field.claimHit(id,10));assertFalse(field.canHit(id,29));assertTrue(field.canHit(id,30))
+        for(t in listOf(30L,50L,70L)) assertTrue(field.claimHit(id,t))
+        assertEquals(4,field.hitCount(id));assertFalse(field.canHit(id,100))
+    }
+    @Test fun `a shared edge selects its still supported plate when the neighbour loses support`() {
+        val left=Pos.ZERO;val right=Pos(1.25,0.0,0.0)
+        val field=CoreIceGarden(listOf(left,right),0,120)
+        assertEquals(right,field.cellAt(Pos(.625,0.0,0.0),setOf(right)))
+        assertNull(field.cellAt(Pos(.6,0.0,0.0),setOf(right)))
+    }
     @Test fun `opening is immediate and held field has no restart at former eight tick waves`() {
         val skill=CoreSkillCatalog.skills(CoreClass.MAGE).first { it.icon=="mage_garden" }
         val effect=CoreSkillEffect(CoreClass.MAGE,skill,Pos.ZERO,Vec(0.0,0.0,1.0))
