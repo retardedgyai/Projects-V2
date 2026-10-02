@@ -1,0 +1,1024 @@
+{
+  "status": "PASS",
+  "scope": "153-node, thirteen-region local study; full 645-node layout incomplete",
+  "source645EmbeddedExactly": true,
+  "effectsCostsRequirementsUnchanged": true,
+  "examplesChecked": 5,
+  "presetStatsComparedToIndependentPython": true,
+  "saveRestorePassed": true,
+  "missingLifestealBlocksKey": true,
+  "mouseAllocateRefundDragWheel": true,
+  "mobilePinch": true,
+  "frames": [
+    {
+      "name": "ProjectS_Goal_Study_V2_Overview",
+      "audit": {
+        "minGlyphGap": 5.115034894551616,
+        "minClickGap": 5.115034894551616,
+        "nearest": {
+          "node": "g35n6",
+          "edge": [
+            "g35n1",
+            "r3_4_2"
+          ]
+        },
+        "labelLines": [],
+        "captions": 19,
+        "zoom": 0.19788135593220338,
+        "spent": 0,
+        "usable": true,
+        "connected": true,
+        "minNodePairPaintGap": 5.511960324525412
+      },
+      "cam": {
+        "x": 235,
+        "y": 820,
+        "z": 0.19788135593220338
+      },
+      "state": {
+        "version": "projects-large-tree-diff-v2",
+        "study": "goal-study-v2",
+        "origin": "warrior",
+        "budget": 48,
+        "roadChoice": "hp",
+        "siphon": true,
+        "learned": [
+          "origin_warrior"
+        ]
+      },
+      "rect": {
+        "x": 0,
+        "y": 76,
+        "w": 1595,
+        "h": 1124
+      }
+    },
+    {
+      "name": "ProjectS_Goal_Study_V2_direct",
+      "audit": {
+        "minGlyphGap": 5.115034894551616,
+        "minClickGap": 5.115034894551616,
+        "nearest": {
+          "node": "g35n6",
+          "edge": [
+            "g35n1",
+            "r3_4_2"
+          ]
+        },
+        "labelLines": [],
+        "captions": 19,
+        "zoom": 0.19788135593220338,
+        "spent": 29,
+        "usable": true,
+        "connected": true,
+        "minNodePairPaintGap": 5.511960324525412
+      },
+      "cam": {
+        "x": 235,
+        "y": 820,
+        "z": 0.19788135593220338
+      },
+      "state": {
+        "version": "projects-large-tree-diff-v2",
+        "study": "goal-study-v2",
+        "origin": "warrior",
+        "budget": 48,
+        "roadChoice": "hp",
+        "siphon": true,
+        "learned": [
+          "g49n0",
+          "g49n1",
+          "g49n2",
+          "g49n3",
+          "g49n4",
+          "g49n5",
+          "g51n0",
+          "g51n1",
+          "g51n2",
+          "g51n3",
+          "g51n4",
+          "j1",
+          "j15",
+          "j22",
+          "key_01",
+          "key_05",
+          "opening_warrior_1_1",
+          "opening_warrior_1_2",
+          "opening_warrior_1_3",
+          "origin_warrior",
+          "r1_29_3",
+          "r1_29_4",
+          "r1_29_5",
+          "r1_29_6",
+          "r1_47_1",
+          "r1_47_2"
+        ]
+      },
+      "rect": {
+        "x": 0,
+        "y": 76,
+        "w": 1595,
+        "h": 1124
+      }
+    },
+    {
+      "name": "ProjectS_Goal_Study_V2_growth",
+      "audit": {
+        "minGlyphGap": 5.115034894551616,
+        "minClickGap": 5.115034894551616,
+        "nearest": {
+          "node": "g35n6",
+          "edge": [
+            "g35n1",
+            "r3_4_2"
+          ]
+        },
+        "labelLines": [],
+        "captions": 19,
+        "zoom": 0.19788135593220338,
+        "spent": 42,
+        "usable": true,
+        "connected": true,
+        "minNodePairPaintGap": 5.511960324525412
+      },
+      "cam": {
+        "x": 235,
+        "y": 820,
+        "z": 0.19788135593220338
+      },
+      "state": {
+        "version": "projects-large-tree-diff-v2",
+        "study": "goal-study-v2",
+        "origin": "warrior",
+        "budget": 48,
+        "roadChoice": "hp",
+        "siphon": true,
+        "learned": [
+          "g13n0",
+          "g13n3",
+          "g13n7",
+          "g13n8",
+          "g13n9",
+          "g23n0",
+          "g23n1",
+          "g23n6",
+          "g23n7",
+          "g23n8",
+          "g45n0",
+          "g45n1",
+          "g45n2",
+          "g45n3",
+          "g49n1",
+          "g49n2",
+          "g49n3",
+          "g49n4",
+          "g51n4",
+          "g51n5",
+          "g51n6",
+          "g51n7",
+          "g51n8",
+          "j15",
+          "j22",
+          "j29",
+          "j36",
+          "key_01",
+          "key_05",
+          "opening_warrior_2_1",
+          "opening_warrior_2_2",
+          "opening_warrior_2_3",
+          "origin_warrior",
+          "r1_22_1",
+          "r1_22_4",
+          "r1_29_1",
+          "r1_29_2",
+          "r1_29_3",
+          "r1_29_4"
+        ]
+      },
+      "rect": {
+        "x": 0,
+        "y": 76,
+        "w": 1595,
+        "h": 1124
+      }
+    },
+    {
+      "name": "ProjectS_Goal_Study_V2_weapon",
+      "audit": {
+        "minGlyphGap": 5.115034894551616,
+        "minClickGap": 5.115034894551616,
+        "nearest": {
+          "node": "g35n6",
+          "edge": [
+            "g35n1",
+            "r3_4_2"
+          ]
+        },
+        "labelLines": [],
+        "captions": 19,
+        "zoom": 0.19788135593220338,
+        "spent": 24,
+        "usable": true,
+        "connected": true,
+        "minNodePairPaintGap": 5.511960324525412
+      },
+      "cam": {
+        "x": 235,
+        "y": 820,
+        "z": 0.19788135593220338
+      },
+      "state": {
+        "version": "projects-large-tree-diff-v2",
+        "study": "goal-study-v2",
+        "origin": "warrior",
+        "budget": 48,
+        "roadChoice": "hp",
+        "siphon": true,
+        "learned": [
+          "g14n4",
+          "g14n5",
+          "g14n6",
+          "g14n7",
+          "g30n0",
+          "g30n1",
+          "g30n2",
+          "g30n3",
+          "g30n4",
+          "g35n0",
+          "g35n1",
+          "g35n2",
+          "g35n3",
+          "g35n4",
+          "g49n0",
+          "g49n6",
+          "g49n7",
+          "j1",
+          "opening_warrior_1_1",
+          "opening_warrior_1_2",
+          "opening_warrior_1_3",
+          "origin_warrior",
+          "r1_51_1",
+          "r2_22_1",
+          "r2_51_1"
+        ]
+      },
+      "rect": {
+        "x": 0,
+        "y": 76,
+        "w": 1595,
+        "h": 1124
+      }
+    },
+    {
+      "name": "ProjectS_Goal_Study_V2_area",
+      "audit": {
+        "minGlyphGap": 5.115034894551616,
+        "minClickGap": 5.115034894551616,
+        "nearest": {
+          "node": "g35n6",
+          "edge": [
+            "g35n1",
+            "r3_4_2"
+          ]
+        },
+        "labelLines": [],
+        "captions": 19,
+        "zoom": 0.19788135593220338,
+        "spent": 24,
+        "usable": true,
+        "connected": true,
+        "minNodePairPaintGap": 5.511960324525412
+      },
+      "cam": {
+        "x": 235,
+        "y": 820,
+        "z": 0.19788135593220338
+      },
+      "state": {
+        "version": "projects-large-tree-diff-v2",
+        "study": "goal-study-v2",
+        "origin": "warrior",
+        "budget": 48,
+        "roadChoice": "hp",
+        "siphon": true,
+        "learned": [
+          "g34n0",
+          "g34n1",
+          "g34n2",
+          "g34n3",
+          "g34n8",
+          "g35n0",
+          "g35n1",
+          "g35n2",
+          "g49n0",
+          "g49n6",
+          "g49n7",
+          "j1",
+          "key_06",
+          "opening_warrior_1_1",
+          "opening_warrior_1_2",
+          "opening_warrior_1_3",
+          "origin_warrior",
+          "r1_51_1",
+          "r3_4_1",
+          "r3_4_2",
+          "r3_52_1",
+          "r4_15_1",
+          "r4_15_2"
+        ]
+      },
+      "rect": {
+        "x": 0,
+        "y": 76,
+        "w": 1595,
+        "h": 1124
+      }
+    },
+    {
+      "name": "ProjectS_Goal_Study_V2_single",
+      "audit": {
+        "minGlyphGap": 5.115034894551616,
+        "minClickGap": 5.115034894551616,
+        "nearest": {
+          "node": "g35n6",
+          "edge": [
+            "g35n1",
+            "r3_4_2"
+          ]
+        },
+        "labelLines": [],
+        "captions": 19,
+        "zoom": 0.19788135593220338,
+        "spent": 16,
+        "usable": true,
+        "connected": true,
+        "minNodePairPaintGap": 5.511960324525412
+      },
+      "cam": {
+        "x": 235,
+        "y": 820,
+        "z": 0.19788135593220338
+      },
+      "state": {
+        "version": "projects-large-tree-diff-v2",
+        "study": "goal-study-v2",
+        "origin": "warrior",
+        "budget": 48,
+        "roadChoice": "hp",
+        "siphon": true,
+        "learned": [
+          "g35n0",
+          "g35n1",
+          "g35n2",
+          "g49n0",
+          "g49n6",
+          "g49n7",
+          "j1",
+          "key_08",
+          "opening_warrior_1_1",
+          "opening_warrior_1_2",
+          "opening_warrior_1_3",
+          "origin_warrior",
+          "r1_51_1",
+          "r3_4_1",
+          "r3_4_2"
+        ]
+      },
+      "rect": {
+        "x": 0,
+        "y": 76,
+        "w": 1595,
+        "h": 1124
+      }
+    },
+    {
+      "name": "ProjectS_Goal_Study_V2_Bleed_Unavailable",
+      "audit": {
+        "minGlyphGap": 31.034932608655765,
+        "minClickGap": 31.034932608655765,
+        "nearest": {
+          "node": "g35n6",
+          "edge": [
+            "g35n1",
+            "r3_4_2"
+          ]
+        },
+        "labelLines": [],
+        "captions": 3,
+        "zoom": 0.65,
+        "spent": 0,
+        "usable": true,
+        "connected": true,
+        "minNodePairPaintGap": 39.49484661171721
+      },
+      "cam": {
+        "x": 350,
+        "y": 2675,
+        "z": 0.65
+      },
+      "state": {
+        "version": "projects-large-tree-diff-v2",
+        "study": "goal-study-v2",
+        "origin": "warrior",
+        "budget": 48,
+        "roadChoice": "damage",
+        "siphon": true,
+        "learned": [
+          "origin_warrior"
+        ]
+      },
+      "rect": {
+        "x": 0,
+        "y": 76,
+        "w": 1595,
+        "h": 1124
+      }
+    },
+    {
+      "name": "ProjectS_Goal_Study_V2_Aim",
+      "audit": {
+        "minGlyphGap": 5.115034894551616,
+        "minClickGap": 5.115034894551616,
+        "nearest": {
+          "node": "g35n6",
+          "edge": [
+            "g35n1",
+            "r3_4_2"
+          ]
+        },
+        "labelLines": [],
+        "captions": 19,
+        "zoom": 0.19788135593220338,
+        "spent": 0,
+        "usable": true,
+        "connected": true,
+        "minNodePairPaintGap": 5.511960324525412
+      },
+      "cam": {
+        "x": 235,
+        "y": 820,
+        "z": 0.19788135593220338
+      },
+      "state": {
+        "version": "projects-large-tree-diff-v2",
+        "study": "goal-study-v2",
+        "origin": "warrior",
+        "budget": 48,
+        "roadChoice": "damage",
+        "siphon": true,
+        "learned": [
+          "origin_warrior"
+        ]
+      },
+      "rect": {
+        "x": 0,
+        "y": 76,
+        "w": 1595,
+        "h": 1124
+      }
+    },
+    {
+      "name": "ProjectS_Goal_Study_V2_Mobile",
+      "audit": {
+        "minGlyphGap": 4.487134147145545,
+        "minClickGap": 4.487134147145545,
+        "nearest": {
+          "node": "g35n6",
+          "edge": [
+            "g35n1",
+            "r3_4_2"
+          ]
+        },
+        "labelLines": [],
+        "captions": 3,
+        "zoom": 0.19,
+        "spent": 0,
+        "usable": true,
+        "connected": true,
+        "minNodePairPaintGap": 4.364417579265965
+      },
+      "cam": {
+        "x": 235,
+        "y": 820,
+        "z": 0.19
+      },
+      "state": {
+        "version": "projects-large-tree-diff-v2",
+        "study": "goal-study-v2",
+        "origin": "warrior",
+        "budget": 48,
+        "roadChoice": "damage",
+        "siphon": true,
+        "learned": [
+          "origin_warrior"
+        ]
+      },
+      "rect": {
+        "x": 0,
+        "y": 62,
+        "w": 430,
+        "h": 615.109375
+      }
+    }
+  ],
+  "audits": [
+    {
+      "group": "g49",
+      "minGlyphGap": 31.034932608655765,
+      "minClickGap": 31.034932608655765,
+      "nearest": {
+        "node": "g35n6",
+        "edge": [
+          "g35n1",
+          "r3_4_2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 5,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true,
+      "minNodePairPaintGap": 39.49484661171721
+    },
+    {
+      "group": "g45",
+      "minGlyphGap": 31.034932608655765,
+      "minClickGap": 31.034932608655765,
+      "nearest": {
+        "node": "g35n6",
+        "edge": [
+          "g35n1",
+          "r3_4_2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 5,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true,
+      "minNodePairPaintGap": 39.49484661171721
+    },
+    {
+      "group": "g38",
+      "minGlyphGap": 31.034932608655765,
+      "minClickGap": 31.034932608655765,
+      "nearest": {
+        "node": "g35n6",
+        "edge": [
+          "g35n1",
+          "r3_4_2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 2,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true,
+      "minNodePairPaintGap": 39.49484661171721
+    },
+    {
+      "group": "g23",
+      "minGlyphGap": 31.034932608655765,
+      "minClickGap": 31.034932608655765,
+      "nearest": {
+        "node": "g35n6",
+        "edge": [
+          "g35n1",
+          "r3_4_2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 4,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true,
+      "minNodePairPaintGap": 39.49484661171721
+    },
+    {
+      "group": "g13",
+      "minGlyphGap": 31.034932608655765,
+      "minClickGap": 31.034932608655765,
+      "nearest": {
+        "node": "g35n6",
+        "edge": [
+          "g35n1",
+          "r3_4_2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 4,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true,
+      "minNodePairPaintGap": 39.49484661171721
+    },
+    {
+      "group": "g51",
+      "minGlyphGap": 31.034932608655765,
+      "minClickGap": 31.034932608655765,
+      "nearest": {
+        "node": "g35n6",
+        "edge": [
+          "g35n1",
+          "r3_4_2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 4,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true,
+      "minNodePairPaintGap": 39.49484661171721
+    },
+    {
+      "group": "g35",
+      "minGlyphGap": 31.034932608655765,
+      "minClickGap": 31.034932608655765,
+      "nearest": {
+        "node": "g35n6",
+        "edge": [
+          "g35n1",
+          "r3_4_2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 5,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true,
+      "minNodePairPaintGap": 39.49484661171721
+    },
+    {
+      "group": "g30",
+      "minGlyphGap": 31.034932608655765,
+      "minClickGap": 31.034932608655765,
+      "nearest": {
+        "node": "g35n6",
+        "edge": [
+          "g35n1",
+          "r3_4_2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 2,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true,
+      "minNodePairPaintGap": 39.49484661171721
+    },
+    {
+      "group": "g14",
+      "minGlyphGap": 31.034932608655765,
+      "minClickGap": 31.034932608655765,
+      "nearest": {
+        "node": "g35n6",
+        "edge": [
+          "g35n1",
+          "r3_4_2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 4,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true,
+      "minNodePairPaintGap": 39.49484661171721
+    },
+    {
+      "group": "g34",
+      "minGlyphGap": 31.034932608655765,
+      "minClickGap": 31.034932608655765,
+      "nearest": {
+        "node": "g35n6",
+        "edge": [
+          "g35n1",
+          "r3_4_2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 4,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true,
+      "minNodePairPaintGap": 39.49484661171721
+    },
+    {
+      "group": "g21",
+      "minGlyphGap": 31.034932608655765,
+      "minClickGap": 31.034932608655765,
+      "nearest": {
+        "node": "g35n6",
+        "edge": [
+          "g35n1",
+          "r3_4_2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 2,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true,
+      "minNodePairPaintGap": 39.49484661171721
+    },
+    {
+      "group": "g5",
+      "minGlyphGap": 31.034932608655765,
+      "minClickGap": 31.034932608655765,
+      "nearest": {
+        "node": "g35n6",
+        "edge": [
+          "g35n1",
+          "r3_4_2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 3,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true,
+      "minNodePairPaintGap": 39.49484661171721
+    },
+    {
+      "group": "g50",
+      "minGlyphGap": 31.034932608655765,
+      "minClickGap": 31.034932608655765,
+      "nearest": {
+        "node": "g35n6",
+        "edge": [
+          "g35n1",
+          "r3_4_2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 3,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true,
+      "minNodePairPaintGap": 39.49484661171721
+    },
+    {
+      "mobile": "g49",
+      "minGlyphGap": 11.891569517420285,
+      "minClickGap": 11.891569517420285,
+      "nearest": {
+        "node": "g35n6",
+        "edge": [
+          "g35n1",
+          "r3_4_2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 3,
+      "zoom": 0.30612244897959184,
+      "spent": 0,
+      "usable": true,
+      "connected": true,
+      "minNodePairPaintGap": 15.267431685267088
+    },
+    {
+      "mobile": "g45",
+      "minGlyphGap": 12.429724344286244,
+      "minClickGap": 12.429724344286244,
+      "nearest": {
+        "node": "g35n6",
+        "edge": [
+          "g35n1",
+          "r3_4_2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 3,
+      "zoom": 0.3157894736842105,
+      "spent": 0,
+      "usable": true,
+      "connected": true,
+      "minNodePairPaintGap": 15.948508475328165
+    },
+    {
+      "mobile": "g38",
+      "minGlyphGap": 15.990174844394828,
+      "minClickGap": 15.990174844394828,
+      "nearest": {
+        "node": "g35n6",
+        "edge": [
+          "g35n1",
+          "r3_4_2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.379746835443038,
+      "spent": 0,
+      "usable": true,
+      "connected": true,
+      "minNodePairPaintGap": 20.45453550830601
+    },
+    {
+      "mobile": "g23",
+      "minGlyphGap": 8.652262914935477,
+      "minClickGap": 8.652262914935477,
+      "nearest": {
+        "node": "g35n6",
+        "edge": [
+          "g35n1",
+          "r3_4_2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 3,
+      "zoom": 0.24793388429752067,
+      "spent": 0,
+      "usable": true,
+      "connected": true,
+      "minNodePairPaintGap": 11.134779381455996
+    },
+    {
+      "mobile": "g13",
+      "minGlyphGap": 14.046250720772269,
+      "minClickGap": 14.046250720772269,
+      "nearest": {
+        "node": "g35n6",
+        "edge": [
+          "g35n1",
+          "r3_4_2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 2,
+      "zoom": 0.3448275862068966,
+      "spent": 0,
+      "usable": true,
+      "connected": true,
+      "minNodePairPaintGap": 17.99434833512847
+    },
+    {
+      "mobile": "g51",
+      "minGlyphGap": 16.26120272701523,
+      "minClickGap": 16.26120272701523,
+      "nearest": {
+        "node": "g35n6",
+        "edge": [
+          "g35n1",
+          "r3_4_2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.38461538461538464,
+      "spent": 0,
+      "usable": true,
+      "connected": true,
+      "minNodePairPaintGap": 20.79754237379718
+    },
+    {
+      "mobile": "g35",
+      "minGlyphGap": 13.40637569674657,
+      "minClickGap": 13.40637569674657,
+      "nearest": {
+        "node": "g35n6",
+        "edge": [
+          "g35n1",
+          "r3_4_2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 2,
+      "zoom": 0.3333333333333333,
+      "spent": 0,
+      "usable": true,
+      "connected": true,
+      "minNodePairPaintGap": 17.1845367239575
+    },
+    {
+      "mobile": "g30",
+      "minGlyphGap": 10.755464882925603,
+      "minClickGap": 10.755464882925603,
+      "nearest": {
+        "node": "g35n6",
+        "edge": [
+          "g35n1",
+          "r3_4_2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 2,
+      "zoom": 0.2857142857142857,
+      "spent": 0,
+      "usable": true,
+      "connected": true,
+      "minNodePairPaintGap": 13.829602906249338
+    },
+    {
+      "mobile": "g14",
+      "minGlyphGap": 5.499147383156677,
+      "minClickGap": 5.499147383156677,
+      "nearest": {
+        "node": "g35n6",
+        "edge": [
+          "g35n1",
+          "r3_4_2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 3,
+      "zoom": 0.20270270270270271,
+      "spent": 0,
+      "usable": true,
+      "connected": true,
+      "minNodePairPaintGap": 6.2139590105966755
+    },
+    {
+      "mobile": "g34",
+      "minGlyphGap": 8.53912961235402,
+      "minClickGap": 8.53912961235402,
+      "nearest": {
+        "node": "g35n6",
+        "edge": [
+          "g35n1",
+          "r3_4_2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 3,
+      "zoom": 0.2459016393442623,
+      "spent": 0,
+      "usable": true,
+      "connected": true,
+      "minNodePairPaintGap": 10.959084468493256
+    },
+    {
+      "mobile": "g21",
+      "minGlyphGap": 10.31364641395547,
+      "minClickGap": 10.31364641395547,
+      "nearest": {
+        "node": "g35n6",
+        "edge": [
+          "g35n1",
+          "r3_4_2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 2,
+      "zoom": 0.2777777777777778,
+      "spent": 0,
+      "usable": true,
+      "connected": true,
+      "minNodePairPaintGap": 13.270447269964603
+    },
+    {
+      "mobile": "g5",
+      "minGlyphGap": 14.269462938455698,
+      "minClickGap": 14.269462938455698,
+      "nearest": {
+        "node": "g35n6",
+        "edge": [
+          "g35n1",
+          "r3_4_2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.3488372093023256,
+      "spent": 0,
+      "usable": true,
+      "connected": true,
+      "minNodePairPaintGap": 18.276840757630012
+    },
+    {
+      "mobile": "g50",
+      "minGlyphGap": 14.269462938455709,
+      "minClickGap": 14.269462938455709,
+      "nearest": {
+        "node": "g35n6",
+        "edge": [
+          "g35n1",
+          "r3_4_2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 2,
+      "zoom": 0.3488372093023256,
+      "spent": 0,
+      "usable": true,
+      "connected": true,
+      "minNodePairPaintGap": 18.276840757629955
+    }
+  ],
+  "minimumGlyphGap": 4.487134147145545,
+  "labelLineOverlaps": 0,
+  "externalRequests": [],
+  "errors": []
+}

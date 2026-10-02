@@ -1,0 +1,19 @@
+{
+  "status": "STRUCTURE_STUDY",
+  "adopted": false,
+  "source645Sha256": "b04169fcdb5f9f020d8f4e0e36d1a035e0b9fee359e118aa811195fdaced56d7",
+  "source645EmbeddedVerbatim": true,
+  "displayedNodes": 153,
+  "displayedGroups": 13,
+  "connections": 173,
+  "full645LayoutCompleted": false,
+  "effectsCostsRequirementsUnchanged": true,
+  "v4CompressionCancelled": true,
+  "previousFilesChanged": false,
+  "runtimeApplied": false,
+  "sourceReference": "https://github.com/grindinggear/skilltree-export",
+  "currentBleedInputAvailable": false,
+  "currentMeleeAndMultiAvailable": true,
+  "retainedV1Commit": "e051c29a",
+  "nextStep": "異なるKeyの目標と既存の補完恩恵から残る34領域を設計する。出血源は別の実装範囲。"
+}
