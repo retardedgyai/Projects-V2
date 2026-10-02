@@ -1,0 +1,16 @@
+{
+  "status": "STRUCTURE_STUDY",
+  "adopted": false,
+  "source645Sha256": "b04169fcdb5f9f020d8f4e0e36d1a035e0b9fee359e118aa811195fdaced56d7",
+  "source645EmbeddedVerbatim": true,
+  "displayedNodes": 109,
+  "displayedGroups": 9,
+  "connections": 121,
+  "full645LayoutCompleted": false,
+  "effectsCostsRequirementsUnchanged": true,
+  "v4CompressionCancelled": true,
+  "previousFilesChanged": false,
+  "runtimeApplied": false,
+  "sourceReference": "https://github.com/grindinggear/skilltree-export",
+  "nextStep": "この目標圏の接続を基準に、残る領域の異なる目標・接続を設計する。全体へ機械的複製しない。"
+}

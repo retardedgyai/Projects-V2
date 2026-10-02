@@ -1,0 +1,7472 @@
+{
+  "nodes": [
+    {
+      "id": "origin_warrior",
+      "x": -1300,
+      "y": 700,
+      "type": "start",
+      "name": "戦士の起点",
+      "stats": {},
+      "icon": "sword",
+      "group": null,
+      "origin": "warrior",
+      "cost": 0,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:origin_warrior",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {}
+    },
+    {
+      "id": "opening_warrior_0_1",
+      "x": -1120,
+      "y": 500,
+      "type": "small",
+      "name": "一撃の基礎 I",
+      "stats": {
+        "physical": 6
+      },
+      "icon": "sword",
+      "group": null,
+      "opening": true,
+      "origin": "warrior",
+      "primary": "physical",
+      "depth": 1,
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "diff_proposal",
+      "sourceRef": "v6:opening_warrior_0_1",
+      "requirements": [],
+      "desc": "起点近くで分岐・合流・横断する比較案。同じ目標へ進んでも途中の能力を選べる。",
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {
+        "physical": [
+          "DAMAGE"
+        ]
+      }
+    },
+    {
+      "id": "opening_warrior_0_2",
+      "x": -940,
+      "y": 470,
+      "type": "small",
+      "name": "一撃の基礎 II",
+      "stats": {
+        "physical": 6
+      },
+      "icon": "sword",
+      "group": null,
+      "opening": true,
+      "origin": "warrior",
+      "primary": "physical",
+      "depth": 2,
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "diff_proposal",
+      "sourceRef": "v6:opening_warrior_0_2",
+      "requirements": [],
+      "desc": "起点近くで分岐・合流・横断する比較案。同じ目標へ進んでも途中の能力を選べる。",
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {
+        "physical": [
+          "DAMAGE"
+        ]
+      }
+    },
+    {
+      "id": "opening_warrior_0_3",
+      "x": -750,
+      "y": 520,
+      "type": "notable",
+      "name": "鍛えた一撃",
+      "stats": {
+        "physical": 12,
+        "attackSpeed": 2
+      },
+      "icon": "sword",
+      "group": null,
+      "opening": true,
+      "origin": "warrior",
+      "primary": "physical",
+      "depth": 3,
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "diff_proposal",
+      "sourceRef": "v6:opening_warrior_0_3",
+      "requirements": [],
+      "desc": "起点近くで分岐・合流・横断する比較案。同じ目標へ進んでも途中の能力を選べる。",
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {
+        "physical": [
+          "DAMAGE"
+        ],
+        "attackSpeed": [
+          "DAMAGE"
+        ]
+      }
+    },
+    {
+      "id": "opening_warrior_1_1",
+      "x": -1130,
+      "y": 875,
+      "type": "small",
+      "name": "生命の基礎 I",
+      "stats": {
+        "hp": 4
+      },
+      "icon": "heart",
+      "group": null,
+      "opening": true,
+      "origin": "warrior",
+      "primary": "hp",
+      "depth": 1,
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "diff_proposal",
+      "sourceRef": "v6:opening_warrior_1_1",
+      "requirements": [],
+      "desc": "起点近くで分岐・合流・横断する比較案。同じ目標へ進んでも途中の能力を選べる。",
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {
+        "hp": []
+      }
+    },
+    {
+      "id": "opening_warrior_1_2",
+      "x": -980,
+      "y": 830,
+      "type": "small",
+      "name": "生命の基礎 II",
+      "stats": {
+        "hp": 4
+      },
+      "icon": "heart",
+      "group": null,
+      "opening": true,
+      "origin": "warrior",
+      "primary": "hp",
+      "depth": 2,
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "diff_proposal",
+      "sourceRef": "v6:opening_warrior_1_2",
+      "requirements": [],
+      "desc": "起点近くで分岐・合流・横断する比較案。同じ目標へ進んでも途中の能力を選べる。",
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {
+        "hp": []
+      }
+    },
+    {
+      "id": "opening_warrior_1_3",
+      "x": -780,
+      "y": 810,
+      "type": "notable",
+      "name": "戦うための体力",
+      "stats": {
+        "hp": 8,
+        "armor": 8
+      },
+      "icon": "heart",
+      "group": null,
+      "opening": true,
+      "origin": "warrior",
+      "primary": "hp",
+      "depth": 3,
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "diff_proposal",
+      "sourceRef": "v6:opening_warrior_1_3",
+      "requirements": [],
+      "desc": "起点近くで分岐・合流・横断する比較案。同じ目標へ進んでも途中の能力を選べる。",
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {
+        "hp": [],
+        "armor": []
+      }
+    },
+    {
+      "id": "opening_warrior_2_1",
+      "x": -1330,
+      "y": 430,
+      "type": "small",
+      "name": "手数の基礎 I",
+      "stats": {
+        "attackSpeed": 3
+      },
+      "icon": "speed",
+      "group": null,
+      "opening": true,
+      "origin": "warrior",
+      "primary": "attackSpeed",
+      "depth": 1,
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "diff_proposal",
+      "sourceRef": "v6:opening_warrior_2_1",
+      "requirements": [],
+      "desc": "起点近くで分岐・合流・横断する比較案。同じ目標へ進んでも途中の能力を選べる。",
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {
+        "attackSpeed": [
+          "DAMAGE"
+        ]
+      }
+    },
+    {
+      "id": "opening_warrior_2_2",
+      "x": -1360,
+      "y": 220,
+      "type": "small",
+      "name": "手数の基礎 II",
+      "stats": {
+        "attackSpeed": 3
+      },
+      "icon": "speed",
+      "group": null,
+      "opening": true,
+      "origin": "warrior",
+      "primary": "attackSpeed",
+      "depth": 2,
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "diff_proposal",
+      "sourceRef": "v6:opening_warrior_2_2",
+      "requirements": [],
+      "desc": "起点近くで分岐・合流・横断する比較案。同じ目標へ進んでも途中の能力を選べる。",
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {
+        "attackSpeed": [
+          "DAMAGE"
+        ]
+      }
+    },
+    {
+      "id": "opening_warrior_2_3",
+      "x": -1240,
+      "y": 80,
+      "type": "notable",
+      "name": "軽やかな連撃",
+      "stats": {
+        "attackSpeed": 5,
+        "resource": 4
+      },
+      "icon": "speed",
+      "group": null,
+      "opening": true,
+      "origin": "warrior",
+      "primary": "attackSpeed",
+      "depth": 3,
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "diff_proposal",
+      "sourceRef": "v6:opening_warrior_2_3",
+      "requirements": [],
+      "desc": "起点近くで分岐・合流・横断する比較案。同じ目標へ進んでも途中の能力を選べる。",
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {
+        "attackSpeed": [
+          "DAMAGE"
+        ],
+        "resource": [
+          "RESOURCE"
+        ]
+      }
+    },
+    {
+      "id": "g49n0",
+      "x": -420,
+      "y": 680,
+      "type": "small",
+      "name": "装甲の研鑽",
+      "stats": {
+        "armor": 7
+      },
+      "group": "g49",
+      "theme": "armor",
+      "icon": "shield",
+      "desc": "",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:g49n0",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {
+        "armor": []
+      }
+    },
+    {
+      "id": "g49n1",
+      "x": -400,
+      "y": 480,
+      "type": "small",
+      "name": "装甲の研鑽",
+      "stats": {
+        "armor": 7
+      },
+      "group": "g49",
+      "theme": "armor",
+      "icon": "shield",
+      "desc": "",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:g49n1",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {
+        "armor": []
+      }
+    },
+    {
+      "id": "g49n2",
+      "x": 100,
+      "y": 400,
+      "type": "notable",
+      "name": "鋼の重なり",
+      "stats": {
+        "armor": 16,
+        "hp": 4
+      },
+      "group": "g49",
+      "theme": "armor",
+      "icon": "shield",
+      "desc": "",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:g49n2",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {
+        "armor": [],
+        "hp": []
+      }
+    },
+    {
+      "id": "g49n3",
+      "x": -230,
+      "y": 360,
+      "type": "small",
+      "name": "装甲の研鑽",
+      "stats": {
+        "armor": 7
+      },
+      "group": "g49",
+      "theme": "armor",
+      "icon": "shield",
+      "desc": "",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:g49n3",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {
+        "armor": []
+      }
+    },
+    {
+      "id": "g49n4",
+      "x": -50,
+      "y": 330,
+      "type": "small",
+      "name": "装甲の研鑽",
+      "stats": {
+        "armor": 7
+      },
+      "group": "g49",
+      "theme": "armor",
+      "icon": "shield",
+      "desc": "",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:g49n4",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {
+        "armor": []
+      }
+    },
+    {
+      "id": "g49n5",
+      "x": 180,
+      "y": 570,
+      "type": "small",
+      "name": "装甲の応用",
+      "stats": {
+        "hp": 3
+      },
+      "group": "g49",
+      "theme": "armor",
+      "icon": "heart",
+      "desc": "",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:g49n5",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {
+        "hp": []
+      }
+    },
+    {
+      "id": "g49n6",
+      "x": 100,
+      "y": 740,
+      "type": "small",
+      "name": "装甲の研鑽",
+      "stats": {
+        "armor": 7
+      },
+      "group": "g49",
+      "theme": "armor",
+      "icon": "shield",
+      "desc": "",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:g49n6",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {
+        "armor": []
+      }
+    },
+    {
+      "id": "g49n7",
+      "x": -150,
+      "y": 800,
+      "type": "small",
+      "name": "装甲の研鑽",
+      "stats": {
+        "armor": 7
+      },
+      "group": "g49",
+      "theme": "armor",
+      "icon": "shield",
+      "desc": "",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:g49n7",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {
+        "armor": []
+      }
+    },
+    {
+      "id": "j1",
+      "x": -620,
+      "y": 830,
+      "type": "road",
+      "name": "選べる基礎",
+      "stats": {},
+      "group": null,
+      "icon": "crystal",
+      "theme": "travel-choice",
+      "desc": "1ポイントごとに、与ダメージ・最大HP・固有資源の獲得から1つ選択。専門クラスタより小さいが、用途のない固定能力を強制しない。",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:j1",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {}
+    },
+    {
+      "name": "不動の核",
+      "description": "回避スキルを使用できなくなる。受けるヒットダメージを25%乗算で減らす。",
+      "tradeoff": "位置取りを失う代償を持つ。継続ダメージには軽減を適用しない。",
+      "rule": "noDodge",
+      "icon": "war_guard",
+      "requirements": [
+        "DODGE"
+      ],
+      "groupAnchor": "g49",
+      "sourceState": "historical_keystone_proposal",
+      "sourceRef": "v6:g41n0",
+      "risks": [
+        "旧係数・制約とも未採用。共通の実戦効果は未実装"
+      ],
+      "conflicts": [],
+      "referenceJobs": [],
+      "id": "key_05",
+      "x": 350,
+      "y": -40,
+      "type": "keystone",
+      "stats": {},
+      "cost": 3,
+      "runtimeApplied": false,
+      "anchor": "g49n2",
+      "group": "g49",
+      "theme": "armor",
+      "effectState": "unimplemented_proposal"
+    },
+    {
+      "id": "j15",
+      "x": 270,
+      "y": 220,
+      "type": "road",
+      "name": "選べる基礎",
+      "stats": {},
+      "group": null,
+      "icon": "crystal",
+      "theme": "travel-choice",
+      "desc": "1ポイントごとに、与ダメージ・最大HP・固有資源の獲得から1つ選択。専門クラスタより小さいが、用途のない固定能力を強制しない。",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:j15",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {}
+    },
+    {
+      "id": "j22",
+      "x": 390,
+      "y": 100,
+      "type": "road",
+      "name": "選べる基礎",
+      "stats": {},
+      "group": null,
+      "icon": "crystal",
+      "theme": "travel-choice",
+      "desc": "1ポイントごとに、与ダメージ・最大HP・固有資源の獲得から1つ選択。専門クラスタより小さいが、用途のない固定能力を強制しない。",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:j22",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {}
+    },
+    {
+      "id": "g45n0",
+      "x": -670,
+      "y": 20,
+      "type": "small",
+      "name": "生命の応用",
+      "stats": {
+        "regen": 8
+      },
+      "group": "g45",
+      "theme": "life",
+      "icon": "leaf",
+      "desc": "",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:g45n0",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {
+        "regen": []
+      }
+    },
+    {
+      "id": "g45n1",
+      "x": -660,
+      "y": -210,
+      "type": "small",
+      "name": "生命の研鑽",
+      "stats": {
+        "hp": 4
+      },
+      "group": "g45",
+      "theme": "life",
+      "icon": "heart",
+      "desc": "",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:g45n1",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {
+        "hp": []
+      }
+    },
+    {
+      "id": "g45n2",
+      "x": -260,
+      "y": -330,
+      "type": "notable",
+      "name": "太い生命線",
+      "stats": {
+        "hp": 8,
+        "regen": 10
+      },
+      "group": "g45",
+      "theme": "life",
+      "icon": "heart",
+      "desc": "",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:g45n2",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {
+        "hp": [],
+        "regen": []
+      }
+    },
+    {
+      "id": "g45n3",
+      "x": -440,
+      "y": -350,
+      "type": "small",
+      "name": "生命の応用",
+      "stats": {
+        "regen": 8
+      },
+      "group": "g45",
+      "theme": "life",
+      "icon": "leaf",
+      "desc": "",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:g45n3",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {
+        "regen": []
+      }
+    },
+    {
+      "id": "g45n4",
+      "x": -100,
+      "y": -160,
+      "type": "small",
+      "name": "生命の研鑽",
+      "stats": {
+        "hp": 4
+      },
+      "group": "g45",
+      "theme": "life",
+      "icon": "heart",
+      "desc": "",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:g45n4",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {
+        "hp": []
+      }
+    },
+    {
+      "id": "g45n5",
+      "x": -260,
+      "y": 20,
+      "type": "small",
+      "name": "生命の研鑽",
+      "stats": {
+        "hp": 4
+      },
+      "group": "g45",
+      "theme": "life",
+      "icon": "heart",
+      "desc": "",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:g45n5",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {
+        "hp": []
+      }
+    },
+    {
+      "id": "g45n6",
+      "x": -510,
+      "y": -30,
+      "type": "small",
+      "name": "生命の応用",
+      "stats": {
+        "regen": 8
+      },
+      "group": "g45",
+      "theme": "life",
+      "icon": "leaf",
+      "desc": "",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:g45n6",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {
+        "regen": []
+      }
+    },
+    {
+      "id": "j29",
+      "x": -550,
+      "y": 260,
+      "type": "road",
+      "name": "選べる基礎",
+      "stats": {},
+      "group": null,
+      "icon": "crystal",
+      "theme": "travel-choice",
+      "desc": "1ポイントごとに、与ダメージ・最大HP・固有資源の獲得から1つ選択。専門クラスタより小さいが、用途のない固定能力を強制しない。",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:j29",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {}
+    },
+    {
+      "id": "j36",
+      "x": -1040,
+      "y": -30,
+      "type": "road",
+      "name": "選べる基礎",
+      "stats": {},
+      "group": null,
+      "icon": "crystal",
+      "theme": "travel-choice",
+      "desc": "1ポイントごとに、与ダメージ・最大HP・固有資源の獲得から1つ選択。専門クラスタより小さいが、用途のない固定能力を強制しない。",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:j36",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {}
+    },
+    {
+      "id": "r1_22_1",
+      "x": -860,
+      "y": -40,
+      "type": "road",
+      "name": "選べる基礎",
+      "stats": {},
+      "icon": "crystal",
+      "group": null,
+      "theme": "travel-choice",
+      "desc": "1ポイントごとに、与ダメージ・最大HP・固有資源の獲得から1つ選択。専門クラスタより小さいが、用途のない固定能力を強制しない。",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:r1_22_1",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {}
+    },
+    {
+      "id": "g38n0",
+      "x": -1180,
+      "y": -420,
+      "type": "small",
+      "name": "回復の研鑽",
+      "stats": {
+        "healing": 6
+      },
+      "group": "g38",
+      "theme": "healing",
+      "icon": "leaf",
+      "desc": "",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:g38n0",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {
+        "healing": [
+          "HEAL"
+        ]
+      }
+    },
+    {
+      "id": "g38n1",
+      "x": -1530,
+      "y": -850,
+      "type": "notable",
+      "name": "生命の還流",
+      "stats": {
+        "healing": 14,
+        "regen": 12
+      },
+      "group": "g38",
+      "theme": "healing",
+      "icon": "leaf",
+      "desc": "",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:g38n1",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {
+        "healing": [
+          "HEAL"
+        ],
+        "regen": []
+      }
+    },
+    {
+      "id": "g38n2",
+      "x": -1320,
+      "y": -480,
+      "type": "small",
+      "name": "回復の研鑽",
+      "stats": {
+        "healing": 6
+      },
+      "group": "g38",
+      "theme": "healing",
+      "icon": "leaf",
+      "desc": "",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:g38n2",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {
+        "healing": [
+          "HEAL"
+        ]
+      }
+    },
+    {
+      "id": "g38n3",
+      "x": -1460,
+      "y": -570,
+      "type": "small",
+      "name": "回復の研鑽",
+      "stats": {
+        "healing": 6
+      },
+      "group": "g38",
+      "theme": "healing",
+      "icon": "leaf",
+      "desc": "",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:g38n3",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {
+        "healing": [
+          "HEAL"
+        ]
+      }
+    },
+    {
+      "id": "g38n4",
+      "x": -1350,
+      "y": -750,
+      "type": "small",
+      "name": "回復の応用",
+      "stats": {
+        "regen": 8
+      },
+      "group": "g38",
+      "theme": "healing",
+      "icon": "leaf",
+      "desc": "",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:g38n4",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {
+        "regen": []
+      }
+    },
+    {
+      "id": "g38n5",
+      "x": -1210,
+      "y": -750,
+      "type": "small",
+      "name": "回復の研鑽",
+      "stats": {
+        "healing": 6
+      },
+      "group": "g38",
+      "theme": "healing",
+      "icon": "leaf",
+      "desc": "",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:g38n5",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {
+        "healing": [
+          "HEAL"
+        ]
+      }
+    },
+    {
+      "id": "g38n6",
+      "x": -1120,
+      "y": -590,
+      "type": "small",
+      "name": "回復の研鑽",
+      "stats": {
+        "healing": 6
+      },
+      "group": "g38",
+      "theme": "healing",
+      "icon": "leaf",
+      "desc": "",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:g38n6",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {
+        "healing": [
+          "HEAL"
+        ]
+      }
+    },
+    {
+      "id": "r1_22_2",
+      "x": -850,
+      "y": -350,
+      "type": "road",
+      "name": "選べる基礎",
+      "stats": {},
+      "icon": "crystal",
+      "group": null,
+      "theme": "travel-choice",
+      "desc": "1ポイントごとに、与ダメージ・最大HP・固有資源の獲得から1つ選択。専門クラスタより小さいが、用途のない固定能力を強制しない。",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:r1_22_2",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {}
+    },
+    {
+      "id": "r1_22_3",
+      "x": -1000,
+      "y": -350,
+      "type": "road",
+      "name": "選べる基礎",
+      "stats": {},
+      "icon": "crystal",
+      "group": null,
+      "theme": "travel-choice",
+      "desc": "1ポイントごとに、与ダメージ・最大HP・固有資源の獲得から1つ選択。専門クラスタより小さいが、用途のない固定能力を強制しない。",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:r1_22_3",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {}
+    },
+    {
+      "id": "g23n0",
+      "x": -330,
+      "y": -620,
+      "type": "small",
+      "name": "魔法防御の研鑽",
+      "stats": {
+        "resist": 7
+      },
+      "group": "g23",
+      "theme": "resist",
+      "icon": "ward",
+      "desc": "",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:g23n0",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {
+        "resist": []
+      }
+    },
+    {
+      "id": "g23n1",
+      "x": -440,
+      "y": -850,
+      "type": "notable",
+      "name": "異質への耐性",
+      "stats": {
+        "resist": 16,
+        "mana": 6
+      },
+      "group": "g23",
+      "theme": "resist",
+      "icon": "ward",
+      "desc": "",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:g23n1",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {
+        "resist": [],
+        "mana": [
+          "MP_CONSUMER"
+        ]
+      }
+    },
+    {
+      "id": "g23n2",
+      "x": -180,
+      "y": -740,
+      "type": "small",
+      "name": "魔法防御の研鑽",
+      "stats": {
+        "resist": 7
+      },
+      "group": "g23",
+      "theme": "resist",
+      "icon": "ward",
+      "desc": "",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:g23n2",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {
+        "resist": []
+      }
+    },
+    {
+      "id": "g23n3",
+      "x": 20,
+      "y": -760,
+      "type": "small",
+      "name": "魔法防御の研鑽",
+      "stats": {
+        "resist": 7
+      },
+      "group": "g23",
+      "theme": "resist",
+      "icon": "ward",
+      "desc": "",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:g23n3",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {
+        "resist": []
+      }
+    },
+    {
+      "id": "g23n4",
+      "x": 210,
+      "y": -890,
+      "type": "small",
+      "name": "魔法防御の応用",
+      "stats": {
+        "mana": 4
+      },
+      "group": "g23",
+      "theme": "resist",
+      "icon": "crystal",
+      "desc": "",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:g23n4",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {
+        "mana": [
+          "MP_CONSUMER"
+        ]
+      }
+    },
+    {
+      "id": "g23n5",
+      "x": 390,
+      "y": -920,
+      "type": "notable",
+      "name": "意志の鎧",
+      "stats": {
+        "mana": 4,
+        "resist": 11.55
+      },
+      "group": "g23",
+      "theme": "resist",
+      "icon": "crystal",
+      "desc": "",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:g23n5",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {
+        "mana": [
+          "MP_CONSUMER"
+        ],
+        "resist": []
+      }
+    },
+    {
+      "id": "g23n6",
+      "x": 360,
+      "y": -720,
+      "type": "small",
+      "name": "魔法防御の研鑽",
+      "stats": {
+        "resist": 7
+      },
+      "group": "g23",
+      "theme": "resist",
+      "icon": "ward",
+      "desc": "",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:g23n6",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {
+        "resist": []
+      }
+    },
+    {
+      "id": "g23n7",
+      "x": 190,
+      "y": -610,
+      "type": "small",
+      "name": "魔法防御の応用",
+      "stats": {
+        "mana": 4
+      },
+      "group": "g23",
+      "theme": "resist",
+      "icon": "crystal",
+      "desc": "",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:g23n7",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {
+        "mana": [
+          "MP_CONSUMER"
+        ]
+      }
+    },
+    {
+      "id": "g23n8",
+      "x": 30,
+      "y": -600,
+      "type": "small",
+      "name": "魔法防御の研鑽",
+      "stats": {
+        "resist": 7
+      },
+      "group": "g23",
+      "theme": "resist",
+      "icon": "ward",
+      "desc": "",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:g23n8",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {
+        "resist": []
+      }
+    },
+    {
+      "id": "r1_22_4",
+      "x": -290,
+      "y": -480,
+      "type": "road",
+      "name": "選べる基礎",
+      "stats": {},
+      "icon": "crystal",
+      "group": null,
+      "theme": "travel-choice",
+      "desc": "1ポイントごとに、与ダメージ・最大HP・固有資源の獲得から1つ選択。専門クラスタより小さいが、用途のない固定能力を強制しない。",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:r1_22_4",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {}
+    },
+    {
+      "id": "g13n0",
+      "x": 590,
+      "y": -510,
+      "type": "small",
+      "name": "吸収の研鑽",
+      "stats": {
+        "leech": 0.25
+      },
+      "group": "g13",
+      "theme": "leech",
+      "icon": "fang",
+      "desc": "",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:g13n0",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {
+        "leech": [
+          "LIFESTEAL"
+        ]
+      }
+    },
+    {
+      "id": "g13n1",
+      "x": 600,
+      "y": -300,
+      "type": "small",
+      "name": "吸収の研鑽",
+      "stats": {
+        "leech": 0.25
+      },
+      "group": "g13",
+      "theme": "leech",
+      "icon": "fang",
+      "desc": "",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:g13n1",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {
+        "leech": [
+          "LIFESTEAL"
+        ]
+      }
+    },
+    {
+      "id": "g13n2",
+      "x": 780,
+      "y": -220,
+      "type": "small",
+      "name": "吸収の応用",
+      "stats": {
+        "hp": 3
+      },
+      "group": "g13",
+      "theme": "leech",
+      "icon": "heart",
+      "desc": "",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:g13n2",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {
+        "hp": []
+      }
+    },
+    {
+      "id": "g13n3",
+      "x": 780,
+      "y": -550,
+      "type": "notable",
+      "name": "傷口からの回帰〈比較〉",
+      "stats": {
+        "hp": 3,
+        "leech": 0.41
+      },
+      "group": "g13",
+      "theme": "leech",
+      "icon": "fang",
+      "desc": "旧Keystone位置を、同分野のまとまった能力へ差し替える案。係数は旧v6の比較値。",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "diff_proposal",
+      "sourceRef": "v6:g13n9 / old-slot:g13n3",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {
+        "hp": [],
+        "leech": [
+          "LIFESTEAL"
+        ]
+      }
+    },
+    {
+      "id": "g13n4",
+      "x": 960,
+      "y": -270,
+      "type": "small",
+      "name": "吸収の研鑽",
+      "stats": {
+        "leech": 0.25
+      },
+      "group": "g13",
+      "theme": "leech",
+      "icon": "fang",
+      "desc": "",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:g13n4",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {
+        "leech": [
+          "LIFESTEAL"
+        ]
+      }
+    },
+    {
+      "id": "g13n5",
+      "x": 1060,
+      "y": -420,
+      "type": "small",
+      "name": "吸収の応用",
+      "stats": {
+        "hp": 3
+      },
+      "group": "g13",
+      "theme": "leech",
+      "icon": "heart",
+      "desc": "",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:g13n5",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {
+        "hp": []
+      }
+    },
+    {
+      "id": "g13n6",
+      "x": 1080,
+      "y": -600,
+      "type": "small",
+      "name": "吸収の研鑽",
+      "stats": {
+        "leech": 0.25
+      },
+      "group": "g13",
+      "theme": "leech",
+      "icon": "fang",
+      "desc": "",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:g13n6",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {
+        "leech": [
+          "LIFESTEAL"
+        ]
+      }
+    },
+    {
+      "id": "g13n7",
+      "x": 1030,
+      "y": -790,
+      "type": "small",
+      "name": "吸収の研鑽",
+      "stats": {
+        "leech": 0.25
+      },
+      "group": "g13",
+      "theme": "leech",
+      "icon": "fang",
+      "desc": "",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:g13n7",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {
+        "leech": [
+          "LIFESTEAL"
+        ]
+      }
+    },
+    {
+      "id": "g13n8",
+      "x": 850,
+      "y": -890,
+      "type": "small",
+      "name": "吸収の応用",
+      "stats": {
+        "hp": 3
+      },
+      "group": "g13",
+      "theme": "leech",
+      "icon": "heart",
+      "desc": "",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:g13n8",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {
+        "hp": []
+      }
+    },
+    {
+      "id": "g13n9",
+      "x": 740,
+      "y": -790,
+      "type": "notable",
+      "name": "傷口からの回帰",
+      "stats": {
+        "hp": 3,
+        "leech": 0.41
+      },
+      "group": "g13",
+      "theme": "leech",
+      "icon": "heart",
+      "desc": "",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:g13n9",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {
+        "hp": [],
+        "leech": [
+          "LIFESTEAL"
+        ]
+      }
+    },
+    {
+      "id": "r1_29_1",
+      "x": 480,
+      "y": -650,
+      "type": "road",
+      "name": "選べる基礎",
+      "stats": {},
+      "icon": "crystal",
+      "group": null,
+      "theme": "travel-choice",
+      "desc": "1ポイントごとに、与ダメージ・最大HP・固有資源の獲得から1つ選択。専門クラスタより小さいが、用途のない固定能力を強制しない。",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:r1_29_1",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {}
+    },
+    {
+      "id": "g51n0",
+      "x": 1370,
+      "y": -420,
+      "type": "small",
+      "name": "障壁の応用",
+      "stats": {
+        "resist": 5
+      },
+      "group": "g51",
+      "theme": "ward",
+      "icon": "ward",
+      "desc": "",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:g51n0",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {
+        "resist": []
+      }
+    },
+    {
+      "id": "g51n1",
+      "x": 1520,
+      "y": -770,
+      "type": "notable",
+      "name": "重なる結界",
+      "stats": {
+        "resist": 5,
+        "barrier": 9.9
+      },
+      "group": "g51",
+      "theme": "ward",
+      "icon": "ward",
+      "desc": "",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:g51n1",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {
+        "resist": [],
+        "barrier": [
+          "SHIELD"
+        ]
+      }
+    },
+    {
+      "id": "g51n2",
+      "x": 1500,
+      "y": -570,
+      "type": "small",
+      "name": "障壁の研鑽",
+      "stats": {
+        "barrier": 6
+      },
+      "group": "g51",
+      "theme": "ward",
+      "icon": "ward",
+      "desc": "",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:g51n2",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {
+        "barrier": [
+          "SHIELD"
+        ]
+      }
+    },
+    {
+      "id": "g51n3",
+      "x": 1630,
+      "y": -590,
+      "type": "small",
+      "name": "障壁の応用",
+      "stats": {
+        "resist": 5
+      },
+      "group": "g51",
+      "theme": "ward",
+      "icon": "ward",
+      "desc": "",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:g51n3",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {
+        "resist": []
+      }
+    },
+    {
+      "id": "g51n4",
+      "x": 1720,
+      "y": -920,
+      "type": "notable",
+      "name": "薄層の護り",
+      "stats": {
+        "barrier": 14,
+        "resist": 8
+      },
+      "group": "g51",
+      "theme": "ward",
+      "icon": "ward",
+      "desc": "",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:g51n4",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {
+        "barrier": [
+          "SHIELD"
+        ],
+        "resist": []
+      }
+    },
+    {
+      "id": "g51n5",
+      "x": 1630,
+      "y": -1080,
+      "type": "small",
+      "name": "障壁の研鑽",
+      "stats": {
+        "barrier": 6
+      },
+      "group": "g51",
+      "theme": "ward",
+      "icon": "ward",
+      "desc": "",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:g51n5",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {
+        "barrier": [
+          "SHIELD"
+        ]
+      }
+    },
+    {
+      "id": "g51n6",
+      "x": 1420,
+      "y": -1100,
+      "type": "small",
+      "name": "障壁の応用",
+      "stats": {
+        "resist": 5
+      },
+      "group": "g51",
+      "theme": "ward",
+      "icon": "ward",
+      "desc": "",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:g51n6",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {
+        "resist": []
+      }
+    },
+    {
+      "id": "g51n7",
+      "x": 1320,
+      "y": -920,
+      "type": "small",
+      "name": "障壁の研鑽",
+      "stats": {
+        "barrier": 6
+      },
+      "group": "g51",
+      "theme": "ward",
+      "icon": "ward",
+      "desc": "",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:g51n7",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {
+        "barrier": [
+          "SHIELD"
+        ]
+      }
+    },
+    {
+      "id": "g51n8",
+      "x": 1350,
+      "y": -700,
+      "type": "small",
+      "name": "障壁の研鑽",
+      "stats": {
+        "barrier": 6
+      },
+      "group": "g51",
+      "theme": "ward",
+      "icon": "ward",
+      "desc": "",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:g51n8",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {
+        "barrier": [
+          "SHIELD"
+        ]
+      }
+    },
+    {
+      "id": "r1_29_2",
+      "x": 1190,
+      "y": -730,
+      "type": "road",
+      "name": "選べる基礎",
+      "stats": {},
+      "icon": "crystal",
+      "group": null,
+      "theme": "travel-choice",
+      "desc": "1ポイントごとに、与ダメージ・最大HP・固有資源の獲得から1つ選択。専門クラスタより小さいが、用途のない固定能力を強制しない。",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:r1_29_2",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {}
+    },
+    {
+      "name": "守りの循環",
+      "description": "HP吸収の回復先を障壁へ変更する。最大HPを15%乗算で減らす。",
+      "tradeoff": "吸収によるHP回復を失う。吸収がなければ障壁も得られない。",
+      "rule": "barrierLeech",
+      "icon": "heal_shield",
+      "requirements": [
+        "LIFESTEAL"
+      ],
+      "groupAnchor": "g51",
+      "sourceState": "historical_keystone_proposal",
+      "sourceRef": "v6:g8n4",
+      "risks": [
+        "旧係数・制約とも未採用。共通の実戦効果は未実装"
+      ],
+      "conflicts": [],
+      "referenceJobs": [],
+      "id": "key_01",
+      "x": 1720,
+      "y": -1370,
+      "type": "keystone",
+      "stats": {},
+      "cost": 3,
+      "runtimeApplied": false,
+      "anchor": "g51n4",
+      "group": "g51",
+      "theme": "ward",
+      "effectState": "unimplemented_proposal"
+    },
+    {
+      "id": "r1_29_3",
+      "x": 1870,
+      "y": -1050,
+      "type": "road",
+      "name": "選べる基礎",
+      "stats": {},
+      "icon": "crystal",
+      "group": null,
+      "theme": "travel-choice",
+      "desc": "1ポイントごとに、与ダメージ・最大HP・固有資源の獲得から1つ選択。専門クラスタより小さいが、用途のない固定能力を強制しない。",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:r1_29_3",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {}
+    },
+    {
+      "id": "r1_29_4",
+      "x": 1890,
+      "y": -1240,
+      "type": "road",
+      "name": "選べる基礎",
+      "stats": {},
+      "icon": "crystal",
+      "group": null,
+      "theme": "travel-choice",
+      "desc": "1ポイントごとに、与ダメージ・最大HP・固有資源の獲得から1つ選択。専門クラスタより小さいが、用途のない固定能力を強制しない。",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:r1_29_4",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {}
+    },
+    {
+      "id": "r1_29_5",
+      "x": 500,
+      "y": 530,
+      "type": "road",
+      "name": "選べる基礎",
+      "stats": {},
+      "icon": "crystal",
+      "group": null,
+      "theme": "travel-choice",
+      "desc": "1ポイントごとに、与ダメージ・最大HP・固有資源の獲得から1つ選択。専門クラスタより小さいが、用途のない固定能力を強制しない。",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:r1_29_5",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {}
+    },
+    {
+      "id": "r1_29_6",
+      "x": 770,
+      "y": 450,
+      "type": "road",
+      "name": "選べる基礎",
+      "stats": {},
+      "icon": "crystal",
+      "group": null,
+      "theme": "travel-choice",
+      "desc": "1ポイントごとに、与ダメージ・最大HP・固有資源の獲得から1つ選択。専門クラスタより小さいが、用途のない固定能力を強制しない。",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:r1_29_6",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {}
+    },
+    {
+      "id": "r1_47_1",
+      "x": 1060,
+      "y": 230,
+      "type": "road",
+      "name": "選べる基礎",
+      "stats": {},
+      "icon": "crystal",
+      "group": null,
+      "theme": "travel-choice",
+      "desc": "1ポイントごとに、与ダメージ・最大HP・固有資源の獲得から1つ選択。専門クラスタより小さいが、用途のない固定能力を強制しない。",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:r1_47_1",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {}
+    },
+    {
+      "id": "r1_47_2",
+      "x": 1340,
+      "y": -70,
+      "type": "road",
+      "name": "選べる基礎",
+      "stats": {},
+      "icon": "crystal",
+      "group": null,
+      "theme": "travel-choice",
+      "desc": "1ポイントごとに、与ダメージ・最大HP・固有資源の獲得から1つ選択。専門クラスタより小さいが、用途のない固定能力を強制しない。",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:r1_47_2",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {}
+    },
+    {
+      "id": "g35n0",
+      "x": 580,
+      "y": 920,
+      "type": "small",
+      "name": "物理火力の研鑽",
+      "stats": {
+        "physical": 5
+      },
+      "group": "g35",
+      "theme": "force",
+      "icon": "sword",
+      "desc": "",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:g35n0",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {
+        "physical": [
+          "DAMAGE"
+        ]
+      }
+    },
+    {
+      "id": "g35n1",
+      "x": 910,
+      "y": 840,
+      "type": "notable",
+      "name": "刃に込める力",
+      "stats": {
+        "physical": 12,
+        "armor": 8
+      },
+      "group": "g35",
+      "theme": "force",
+      "icon": "sword",
+      "desc": "",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:g35n1",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {
+        "physical": [
+          "DAMAGE"
+        ],
+        "armor": []
+      }
+    },
+    {
+      "id": "g35n2",
+      "x": 720,
+      "y": 830,
+      "type": "small",
+      "name": "物理火力の研鑽",
+      "stats": {
+        "physical": 5
+      },
+      "group": "g35",
+      "theme": "force",
+      "icon": "sword",
+      "desc": "",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:g35n2",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {
+        "physical": [
+          "DAMAGE"
+        ]
+      }
+    },
+    {
+      "id": "g35n3",
+      "x": 820,
+      "y": 1060,
+      "type": "small",
+      "name": "物理火力の研鑽",
+      "stats": {
+        "physical": 5
+      },
+      "group": "g35",
+      "theme": "force",
+      "icon": "sword",
+      "desc": "",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:g35n3",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {
+        "physical": [
+          "DAMAGE"
+        ]
+      }
+    },
+    {
+      "id": "g35n4",
+      "x": 1020,
+      "y": 1040,
+      "type": "small",
+      "name": "物理火力の応用",
+      "stats": {
+        "armor": 5
+      },
+      "group": "g35",
+      "theme": "force",
+      "icon": "shield",
+      "desc": "",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:g35n4",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {
+        "armor": []
+      }
+    },
+    {
+      "id": "g35n5",
+      "x": 1100,
+      "y": 910,
+      "type": "small",
+      "name": "物理火力の研鑽",
+      "stats": {
+        "physical": 5
+      },
+      "group": "g35",
+      "theme": "force",
+      "icon": "sword",
+      "desc": "",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:g35n5",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {
+        "physical": [
+          "DAMAGE"
+        ]
+      }
+    },
+    {
+      "id": "g35n6",
+      "x": 1040,
+      "y": 720,
+      "type": "small",
+      "name": "物理火力の研鑽",
+      "stats": {
+        "physical": 5
+      },
+      "group": "g35",
+      "theme": "force",
+      "icon": "sword",
+      "desc": "",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:g35n6",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {
+        "physical": [
+          "DAMAGE"
+        ]
+      }
+    },
+    {
+      "id": "g35n7",
+      "x": 770,
+      "y": 710,
+      "type": "small",
+      "name": "物理火力の応用",
+      "stats": {
+        "armor": 5
+      },
+      "group": "g35",
+      "theme": "force",
+      "icon": "shield",
+      "desc": "",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:g35n7",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {
+        "armor": []
+      }
+    },
+    {
+      "id": "r1_51_1",
+      "x": 330,
+      "y": 890,
+      "type": "road",
+      "name": "選べる基礎",
+      "stats": {},
+      "icon": "crystal",
+      "group": null,
+      "theme": "travel-choice",
+      "desc": "1ポイントごとに、与ダメージ・最大HP・固有資源の獲得から1つ選択。専門クラスタより小さいが、用途のない固定能力を強制しない。",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:r1_51_1",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {}
+    },
+    {
+      "id": "r1_51_2",
+      "x": -650,
+      "y": 640,
+      "type": "road",
+      "name": "選べる基礎",
+      "stats": {},
+      "icon": "crystal",
+      "group": null,
+      "theme": "travel-choice",
+      "desc": "1ポイントごとに、与ダメージ・最大HP・固有資源の獲得から1つ選択。専門クラスタより小さいが、用途のない固定能力を強制しない。",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:r1_51_2",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {}
+    },
+    {
+      "id": "g30n0",
+      "x": -1140,
+      "y": 1130,
+      "type": "small",
+      "name": "攻撃速度の応用",
+      "stats": {
+        "resource": 4
+      },
+      "group": "g30",
+      "theme": "speed",
+      "icon": "crystal",
+      "desc": "",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:g30n0",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {
+        "resource": [
+          "RESOURCE"
+        ]
+      }
+    },
+    {
+      "id": "g30n1",
+      "x": -1060,
+      "y": 1410,
+      "type": "notable",
+      "name": "流れる連撃",
+      "stats": {
+        "attackSpeed": 7,
+        "resource": 5
+      },
+      "group": "g30",
+      "theme": "speed",
+      "icon": "speed",
+      "desc": "",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:g30n1",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {
+        "attackSpeed": [
+          "DAMAGE"
+        ],
+        "resource": [
+          "RESOURCE"
+        ]
+      }
+    },
+    {
+      "id": "g30n2",
+      "x": -1260,
+      "y": 1280,
+      "type": "small",
+      "name": "攻撃速度の研鑽",
+      "stats": {
+        "attackSpeed": 3
+      },
+      "group": "g30",
+      "theme": "speed",
+      "icon": "speed",
+      "desc": "",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:g30n2",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {
+        "attackSpeed": [
+          "DAMAGE"
+        ]
+      }
+    },
+    {
+      "id": "g30n3",
+      "x": -1230,
+      "y": 1460,
+      "type": "small",
+      "name": "攻撃速度の応用",
+      "stats": {
+        "resource": 4
+      },
+      "group": "g30",
+      "theme": "speed",
+      "icon": "crystal",
+      "desc": "",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:g30n3",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {
+        "resource": [
+          "RESOURCE"
+        ]
+      }
+    },
+    {
+      "id": "g30n4",
+      "x": -830,
+      "y": 1500,
+      "type": "notable",
+      "name": "刻む律動",
+      "stats": {
+        "resource": 4,
+        "attackSpeed": 4.95
+      },
+      "group": "g30",
+      "theme": "speed",
+      "icon": "crystal",
+      "desc": "",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:g30n4",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {
+        "resource": [
+          "RESOURCE"
+        ],
+        "attackSpeed": [
+          "DAMAGE"
+        ]
+      }
+    },
+    {
+      "id": "g30n5",
+      "x": -660,
+      "y": 1450,
+      "type": "small",
+      "name": "攻撃速度の研鑽",
+      "stats": {
+        "attackSpeed": 3
+      },
+      "group": "g30",
+      "theme": "speed",
+      "icon": "speed",
+      "desc": "",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:g30n5",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {
+        "attackSpeed": [
+          "DAMAGE"
+        ]
+      }
+    },
+    {
+      "id": "g30n6",
+      "x": -590,
+      "y": 1260,
+      "type": "small",
+      "name": "攻撃速度の応用",
+      "stats": {
+        "resource": 4
+      },
+      "group": "g30",
+      "theme": "speed",
+      "icon": "crystal",
+      "desc": "",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:g30n6",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {
+        "resource": [
+          "RESOURCE"
+        ]
+      }
+    },
+    {
+      "id": "g30n7",
+      "x": -820,
+      "y": 1200,
+      "type": "small",
+      "name": "攻撃速度の研鑽",
+      "stats": {
+        "attackSpeed": 3
+      },
+      "group": "g30",
+      "theme": "speed",
+      "icon": "speed",
+      "desc": "",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:g30n7",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {
+        "attackSpeed": [
+          "DAMAGE"
+        ]
+      }
+    },
+    {
+      "id": "r2_22_1",
+      "x": -970,
+      "y": 1040,
+      "type": "road",
+      "name": "選べる基礎",
+      "stats": {},
+      "icon": "crystal",
+      "group": null,
+      "theme": "travel-choice",
+      "desc": "1ポイントごとに、与ダメージ・最大HP・固有資源の獲得から1つ選択。専門クラスタより小さいが、用途のない固定能力を強制しない。",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:r2_22_1",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {}
+    },
+    {
+      "id": "g14n0",
+      "x": 20,
+      "y": 1190,
+      "type": "small",
+      "name": "資源循環の研鑽",
+      "stats": {
+        "resource": 5
+      },
+      "group": "g14",
+      "theme": "resource",
+      "icon": "crystal",
+      "desc": "",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:g14n0",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {
+        "resource": [
+          "RESOURCE"
+        ]
+      }
+    },
+    {
+      "id": "g14n1",
+      "x": 170,
+      "y": 1320,
+      "type": "small",
+      "name": "資源循環の応用",
+      "stats": {
+        "efficiency": 3
+      },
+      "group": "g14",
+      "theme": "resource",
+      "icon": "crystal",
+      "desc": "",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:g14n1",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {
+        "efficiency": [
+          "MP_CONSUMER"
+        ]
+      }
+    },
+    {
+      "id": "g14n2",
+      "x": 330,
+      "y": 1450,
+      "type": "small",
+      "name": "資源循環の研鑽",
+      "stats": {
+        "resource": 5
+      },
+      "group": "g14",
+      "theme": "resource",
+      "icon": "crystal",
+      "desc": "",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:g14n2",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {
+        "resource": [
+          "RESOURCE"
+        ]
+      }
+    },
+    {
+      "id": "g14n3",
+      "x": 520,
+      "y": 1500,
+      "type": "small",
+      "name": "資源循環の研鑽",
+      "stats": {
+        "resource": 5
+      },
+      "group": "g14",
+      "theme": "resource",
+      "icon": "crystal",
+      "desc": "",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:g14n3",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {
+        "resource": [
+          "RESOURCE"
+        ]
+      }
+    },
+    {
+      "id": "g14n4",
+      "x": 680,
+      "y": 1340,
+      "type": "notable",
+      "name": "蓄積する衝動",
+      "stats": {
+        "resource": 12,
+        "efficiency": 5
+      },
+      "group": "g14",
+      "theme": "resource",
+      "icon": "crystal",
+      "desc": "",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:g14n4",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {
+        "resource": [
+          "RESOURCE"
+        ],
+        "efficiency": [
+          "MP_CONSUMER"
+        ]
+      }
+    },
+    {
+      "id": "g14n5",
+      "x": 860,
+      "y": 1410,
+      "type": "small",
+      "name": "資源循環の研鑽",
+      "stats": {
+        "resource": 5
+      },
+      "group": "g14",
+      "theme": "resource",
+      "icon": "crystal",
+      "desc": "",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:g14n5",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {
+        "resource": [
+          "RESOURCE"
+        ]
+      }
+    },
+    {
+      "id": "g14n6",
+      "x": 1020,
+      "y": 1300,
+      "type": "small",
+      "name": "資源循環の研鑽",
+      "stats": {
+        "resource": 5
+      },
+      "group": "g14",
+      "theme": "resource",
+      "icon": "crystal",
+      "desc": "",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:g14n6",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {
+        "resource": [
+          "RESOURCE"
+        ]
+      }
+    },
+    {
+      "id": "g14n7",
+      "x": 1120,
+      "y": 1140,
+      "type": "small",
+      "name": "資源循環の応用",
+      "stats": {
+        "efficiency": 3
+      },
+      "group": "g14",
+      "theme": "resource",
+      "icon": "crystal",
+      "desc": "",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:g14n7",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {
+        "efficiency": [
+          "MP_CONSUMER"
+        ]
+      }
+    },
+    {
+      "id": "r2_22_2",
+      "x": -360,
+      "y": 1190,
+      "type": "road",
+      "name": "選べる基礎",
+      "stats": {},
+      "icon": "crystal",
+      "group": null,
+      "theme": "travel-choice",
+      "desc": "1ポイントごとに、与ダメージ・最大HP・固有資源の獲得から1つ選択。専門クラスタより小さいが、用途のない固定能力を強制しない。",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:r2_22_2",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {}
+    },
+    {
+      "id": "r2_46_1",
+      "x": -170,
+      "y": 1170,
+      "type": "road",
+      "name": "選べる基礎",
+      "stats": {},
+      "icon": "crystal",
+      "group": null,
+      "theme": "travel-choice",
+      "desc": "1ポイントごとに、与ダメージ・最大HP・固有資源の獲得から1つ選択。専門クラスタより小さいが、用途のない固定能力を強制しない。",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:r2_46_1",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {}
+    },
+    {
+      "id": "r2_51_1",
+      "x": 1130,
+      "y": 1030,
+      "type": "road",
+      "name": "選べる基礎",
+      "stats": {},
+      "icon": "crystal",
+      "group": null,
+      "theme": "travel-choice",
+      "desc": "1ポイントごとに、与ダメージ・最大HP・固有資源の獲得から1つ選択。専門クラスタより小さいが、用途のない固定能力を強制しない。",
+      "cost": 1,
+      "runtimeApplied": false,
+      "sourceState": "historical_proposal",
+      "sourceRef": "v6:r2_51_1",
+      "requirements": [],
+      "effectState": "unimplemented_proposal",
+      "inputPolicy": "any_usable_benefit",
+      "benefitInputs": {}
+    }
+  ],
+  "edges": [
+    {
+      "a": "origin_warrior",
+      "b": "opening_warrior_0_1",
+      "road": false,
+      "proposalKind": "opening",
+      "points": [
+        [
+          -1300,
+          700
+        ],
+        [
+          -1120,
+          500
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "opening_warrior_0_1",
+      "b": "opening_warrior_0_2",
+      "road": false,
+      "proposalKind": "opening",
+      "points": [
+        [
+          -1120,
+          500
+        ],
+        [
+          -940,
+          470
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "opening_warrior_0_2",
+      "b": "opening_warrior_0_3",
+      "road": false,
+      "proposalKind": "opening",
+      "points": [
+        [
+          -940,
+          470
+        ],
+        [
+          -750,
+          520
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "origin_warrior",
+      "b": "opening_warrior_1_1",
+      "road": false,
+      "proposalKind": "opening",
+      "points": [
+        [
+          -1300,
+          700
+        ],
+        [
+          -1130,
+          875
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "opening_warrior_1_1",
+      "b": "opening_warrior_1_2",
+      "road": false,
+      "proposalKind": "opening",
+      "points": [
+        [
+          -1130,
+          875
+        ],
+        [
+          -980,
+          830
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "opening_warrior_1_2",
+      "b": "opening_warrior_1_3",
+      "road": false,
+      "proposalKind": "opening",
+      "points": [
+        [
+          -980,
+          830
+        ],
+        [
+          -780,
+          810
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "origin_warrior",
+      "b": "opening_warrior_2_1",
+      "road": false,
+      "proposalKind": "opening",
+      "points": [
+        [
+          -1300,
+          700
+        ],
+        [
+          -1330,
+          430
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "opening_warrior_2_1",
+      "b": "opening_warrior_2_2",
+      "road": false,
+      "proposalKind": "opening",
+      "points": [
+        [
+          -1330,
+          430
+        ],
+        [
+          -1360,
+          220
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "opening_warrior_2_2",
+      "b": "opening_warrior_2_3",
+      "road": false,
+      "proposalKind": "opening",
+      "points": [
+        [
+          -1360,
+          220
+        ],
+        [
+          -1240,
+          80
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "g49n0",
+      "b": "g49n1",
+      "road": false,
+      "proposalKind": "growth",
+      "points": [
+        [
+          -420,
+          680
+        ],
+        [
+          -400,
+          480
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "g49n1",
+      "b": "g49n3",
+      "road": false,
+      "proposalKind": "growth",
+      "points": [
+        [
+          -400,
+          480
+        ],
+        [
+          -230,
+          360
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "g49n3",
+      "b": "g49n4",
+      "road": false,
+      "proposalKind": "growth",
+      "points": [
+        [
+          -230,
+          360
+        ],
+        [
+          -50,
+          330
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "g49n4",
+      "b": "g49n2",
+      "road": false,
+      "proposalKind": "growth",
+      "points": [
+        [
+          -50,
+          330
+        ],
+        [
+          100,
+          400
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "g49n2",
+      "b": "g49n5",
+      "road": false,
+      "proposalKind": "growth",
+      "points": [
+        [
+          100,
+          400
+        ],
+        [
+          180,
+          570
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "g49n5",
+      "b": "g49n6",
+      "road": false,
+      "proposalKind": "growth",
+      "points": [
+        [
+          180,
+          570
+        ],
+        [
+          100,
+          740
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "g49n6",
+      "b": "g49n7",
+      "road": false,
+      "proposalKind": "growth",
+      "points": [
+        [
+          100,
+          740
+        ],
+        [
+          -150,
+          800
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "g49n7",
+      "b": "g49n0",
+      "road": false,
+      "proposalKind": "growth",
+      "points": [
+        [
+          -150,
+          800
+        ],
+        [
+          -420,
+          680
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "opening_warrior_1_3",
+      "b": "j1",
+      "road": true,
+      "proposalKind": "travel",
+      "points": [
+        [
+          -780,
+          810
+        ],
+        [
+          -620,
+          830
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "j1",
+      "b": "g49n0",
+      "road": true,
+      "proposalKind": "travel",
+      "points": [
+        [
+          -620,
+          830
+        ],
+        [
+          -420,
+          680
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "g49n2",
+      "b": "j15",
+      "road": true,
+      "proposalKind": "optional-keystone",
+      "points": [
+        [
+          100,
+          400
+        ],
+        [
+          270,
+          220
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "j15",
+      "b": "j22",
+      "road": true,
+      "proposalKind": "optional-keystone",
+      "points": [
+        [
+          270,
+          220
+        ],
+        [
+          390,
+          100
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "j22",
+      "b": "key_05",
+      "road": true,
+      "proposalKind": "optional-keystone",
+      "points": [
+        [
+          390,
+          100
+        ],
+        [
+          350,
+          -40
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "g45n0",
+      "b": "g45n1",
+      "road": false,
+      "proposalKind": "growth",
+      "points": [
+        [
+          -670,
+          20
+        ],
+        [
+          -660,
+          -210
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "g45n1",
+      "b": "g45n3",
+      "road": false,
+      "proposalKind": "growth",
+      "points": [
+        [
+          -660,
+          -210
+        ],
+        [
+          -440,
+          -350
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "g45n3",
+      "b": "g45n2",
+      "road": false,
+      "proposalKind": "growth",
+      "points": [
+        [
+          -440,
+          -350
+        ],
+        [
+          -260,
+          -330
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "g45n0",
+      "b": "g45n6",
+      "road": false,
+      "proposalKind": "growth",
+      "points": [
+        [
+          -670,
+          20
+        ],
+        [
+          -510,
+          -30
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "g45n6",
+      "b": "g45n5",
+      "road": false,
+      "proposalKind": "growth",
+      "points": [
+        [
+          -510,
+          -30
+        ],
+        [
+          -260,
+          20
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "g45n5",
+      "b": "g45n4",
+      "road": false,
+      "proposalKind": "growth",
+      "points": [
+        [
+          -260,
+          20
+        ],
+        [
+          -100,
+          -160
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "g45n4",
+      "b": "g45n2",
+      "road": false,
+      "proposalKind": "growth",
+      "points": [
+        [
+          -100,
+          -160
+        ],
+        [
+          -260,
+          -330
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "g49n1",
+      "b": "j29",
+      "road": true,
+      "proposalKind": "travel",
+      "points": [
+        [
+          -400,
+          480
+        ],
+        [
+          -550,
+          260
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "j29",
+      "b": "g45n0",
+      "road": true,
+      "proposalKind": "travel",
+      "points": [
+        [
+          -550,
+          260
+        ],
+        [
+          -670,
+          20
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "opening_warrior_2_3",
+      "b": "j36",
+      "road": true,
+      "proposalKind": "travel",
+      "points": [
+        [
+          -1240,
+          80
+        ],
+        [
+          -1040,
+          -30
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "j36",
+      "b": "r1_22_1",
+      "road": true,
+      "proposalKind": "travel",
+      "points": [
+        [
+          -1040,
+          -30
+        ],
+        [
+          -860,
+          -40
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "r1_22_1",
+      "b": "g45n0",
+      "road": true,
+      "proposalKind": "travel",
+      "points": [
+        [
+          -860,
+          -40
+        ],
+        [
+          -670,
+          20
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "g38n0",
+      "b": "g38n2",
+      "road": false,
+      "proposalKind": "growth",
+      "points": [
+        [
+          -1180,
+          -420
+        ],
+        [
+          -1320,
+          -480
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "g38n2",
+      "b": "g38n3",
+      "road": false,
+      "proposalKind": "growth",
+      "points": [
+        [
+          -1320,
+          -480
+        ],
+        [
+          -1460,
+          -570
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "g38n3",
+      "b": "g38n1",
+      "road": false,
+      "proposalKind": "growth",
+      "points": [
+        [
+          -1460,
+          -570
+        ],
+        [
+          -1530,
+          -850
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "g38n1",
+      "b": "g38n4",
+      "road": false,
+      "proposalKind": "growth",
+      "points": [
+        [
+          -1530,
+          -850
+        ],
+        [
+          -1350,
+          -750
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "g38n4",
+      "b": "g38n5",
+      "road": false,
+      "proposalKind": "growth",
+      "points": [
+        [
+          -1350,
+          -750
+        ],
+        [
+          -1210,
+          -750
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "g38n5",
+      "b": "g38n6",
+      "road": false,
+      "proposalKind": "growth",
+      "points": [
+        [
+          -1210,
+          -750
+        ],
+        [
+          -1120,
+          -590
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "g38n6",
+      "b": "g38n0",
+      "road": false,
+      "proposalKind": "growth",
+      "points": [
+        [
+          -1120,
+          -590
+        ],
+        [
+          -1180,
+          -420
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "g45n1",
+      "b": "r1_22_2",
+      "road": true,
+      "proposalKind": "travel",
+      "points": [
+        [
+          -660,
+          -210
+        ],
+        [
+          -850,
+          -350
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "r1_22_2",
+      "b": "r1_22_3",
+      "road": true,
+      "proposalKind": "travel",
+      "points": [
+        [
+          -850,
+          -350
+        ],
+        [
+          -1000,
+          -350
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "r1_22_3",
+      "b": "g38n0",
+      "road": true,
+      "proposalKind": "travel",
+      "points": [
+        [
+          -1000,
+          -350
+        ],
+        [
+          -1180,
+          -420
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "g23n0",
+      "b": "g23n1",
+      "road": false,
+      "proposalKind": "growth",
+      "points": [
+        [
+          -330,
+          -620
+        ],
+        [
+          -440,
+          -850
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "g23n0",
+      "b": "g23n2",
+      "road": false,
+      "proposalKind": "growth",
+      "points": [
+        [
+          -330,
+          -620
+        ],
+        [
+          -180,
+          -740
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "g23n2",
+      "b": "g23n3",
+      "road": false,
+      "proposalKind": "growth",
+      "points": [
+        [
+          -180,
+          -740
+        ],
+        [
+          20,
+          -760
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "g23n3",
+      "b": "g23n4",
+      "road": false,
+      "proposalKind": "growth",
+      "points": [
+        [
+          20,
+          -760
+        ],
+        [
+          210,
+          -890
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "g23n4",
+      "b": "g23n5",
+      "road": false,
+      "proposalKind": "growth",
+      "points": [
+        [
+          210,
+          -890
+        ],
+        [
+          390,
+          -920
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "g23n5",
+      "b": "g23n6",
+      "road": false,
+      "proposalKind": "growth",
+      "points": [
+        [
+          390,
+          -920
+        ],
+        [
+          360,
+          -720
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "g23n6",
+      "b": "g23n7",
+      "road": false,
+      "proposalKind": "growth",
+      "points": [
+        [
+          360,
+          -720
+        ],
+        [
+          190,
+          -610
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "g23n7",
+      "b": "g23n8",
+      "road": false,
+      "proposalKind": "growth",
+      "points": [
+        [
+          190,
+          -610
+        ],
+        [
+          30,
+          -600
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "g23n8",
+      "b": "g23n0",
+      "road": false,
+      "proposalKind": "growth",
+      "points": [
+        [
+          30,
+          -600
+        ],
+        [
+          -330,
+          -620
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "g23n3",
+      "b": "g23n8",
+      "road": false,
+      "proposalKind": "growth",
+      "points": [
+        [
+          20,
+          -760
+        ],
+        [
+          30,
+          -600
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "g45n2",
+      "b": "r1_22_4",
+      "road": true,
+      "proposalKind": "travel",
+      "points": [
+        [
+          -260,
+          -330
+        ],
+        [
+          -290,
+          -480
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "r1_22_4",
+      "b": "g23n0",
+      "road": true,
+      "proposalKind": "travel",
+      "points": [
+        [
+          -290,
+          -480
+        ],
+        [
+          -330,
+          -620
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "g13n0",
+      "b": "g13n1",
+      "road": false,
+      "proposalKind": "growth",
+      "points": [
+        [
+          590,
+          -510
+        ],
+        [
+          600,
+          -300
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "g13n1",
+      "b": "g13n2",
+      "road": false,
+      "proposalKind": "growth",
+      "points": [
+        [
+          600,
+          -300
+        ],
+        [
+          780,
+          -220
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "g13n2",
+      "b": "g13n4",
+      "road": false,
+      "proposalKind": "growth",
+      "points": [
+        [
+          780,
+          -220
+        ],
+        [
+          960,
+          -270
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "g13n4",
+      "b": "g13n5",
+      "road": false,
+      "proposalKind": "growth",
+      "points": [
+        [
+          960,
+          -270
+        ],
+        [
+          1060,
+          -420
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "g13n5",
+      "b": "g13n6",
+      "road": false,
+      "proposalKind": "growth",
+      "points": [
+        [
+          1060,
+          -420
+        ],
+        [
+          1080,
+          -600
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "g13n6",
+      "b": "g13n7",
+      "road": false,
+      "proposalKind": "growth",
+      "points": [
+        [
+          1080,
+          -600
+        ],
+        [
+          1030,
+          -790
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "g13n7",
+      "b": "g13n8",
+      "road": false,
+      "proposalKind": "growth",
+      "points": [
+        [
+          1030,
+          -790
+        ],
+        [
+          850,
+          -890
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "g13n8",
+      "b": "g13n9",
+      "road": false,
+      "proposalKind": "growth",
+      "points": [
+        [
+          850,
+          -890
+        ],
+        [
+          740,
+          -790
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "g13n9",
+      "b": "g13n3",
+      "road": false,
+      "proposalKind": "growth",
+      "points": [
+        [
+          740,
+          -790
+        ],
+        [
+          780,
+          -550
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "g13n3",
+      "b": "g13n0",
+      "road": false,
+      "proposalKind": "growth",
+      "points": [
+        [
+          780,
+          -550
+        ],
+        [
+          590,
+          -510
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "g23n6",
+      "b": "r1_29_1",
+      "road": true,
+      "proposalKind": "travel",
+      "points": [
+        [
+          360,
+          -720
+        ],
+        [
+          480,
+          -650
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "r1_29_1",
+      "b": "g13n0",
+      "road": true,
+      "proposalKind": "travel",
+      "points": [
+        [
+          480,
+          -650
+        ],
+        [
+          590,
+          -510
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "g51n0",
+      "b": "g51n2",
+      "road": false,
+      "proposalKind": "growth",
+      "points": [
+        [
+          1370,
+          -420
+        ],
+        [
+          1500,
+          -570
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "g51n2",
+      "b": "g51n3",
+      "road": false,
+      "proposalKind": "growth",
+      "points": [
+        [
+          1500,
+          -570
+        ],
+        [
+          1630,
+          -590
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "g51n3",
+      "b": "g51n1",
+      "road": false,
+      "proposalKind": "growth",
+      "points": [
+        [
+          1630,
+          -590
+        ],
+        [
+          1520,
+          -770
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "g51n1",
+      "b": "g51n4",
+      "road": false,
+      "proposalKind": "growth",
+      "points": [
+        [
+          1520,
+          -770
+        ],
+        [
+          1720,
+          -920
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "g51n4",
+      "b": "g51n5",
+      "road": false,
+      "proposalKind": "growth",
+      "points": [
+        [
+          1720,
+          -920
+        ],
+        [
+          1630,
+          -1080
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "g51n5",
+      "b": "g51n6",
+      "road": false,
+      "proposalKind": "growth",
+      "points": [
+        [
+          1630,
+          -1080
+        ],
+        [
+          1420,
+          -1100
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "g51n6",
+      "b": "g51n7",
+      "road": false,
+      "proposalKind": "growth",
+      "points": [
+        [
+          1420,
+          -1100
+        ],
+        [
+          1320,
+          -920
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "g51n7",
+      "b": "g51n8",
+      "road": false,
+      "proposalKind": "growth",
+      "points": [
+        [
+          1320,
+          -920
+        ],
+        [
+          1350,
+          -700
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "g51n8",
+      "b": "g51n0",
+      "road": false,
+      "proposalKind": "growth",
+      "points": [
+        [
+          1350,
+          -700
+        ],
+        [
+          1370,
+          -420
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "g13n7",
+      "b": "r1_29_2",
+      "road": true,
+      "proposalKind": "travel",
+      "points": [
+        [
+          1030,
+          -790
+        ],
+        [
+          1190,
+          -730
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "r1_29_2",
+      "b": "g51n8",
+      "road": true,
+      "proposalKind": "travel",
+      "points": [
+        [
+          1190,
+          -730
+        ],
+        [
+          1350,
+          -700
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "g51n4",
+      "b": "r1_29_3",
+      "road": true,
+      "proposalKind": "optional-keystone",
+      "points": [
+        [
+          1720,
+          -920
+        ],
+        [
+          1870,
+          -1050
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "r1_29_3",
+      "b": "r1_29_4",
+      "road": true,
+      "proposalKind": "optional-keystone",
+      "points": [
+        [
+          1870,
+          -1050
+        ],
+        [
+          1890,
+          -1240
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "r1_29_4",
+      "b": "key_01",
+      "road": true,
+      "proposalKind": "optional-keystone",
+      "points": [
+        [
+          1890,
+          -1240
+        ],
+        [
+          1720,
+          -1370
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "g49n5",
+      "b": "r1_29_5",
+      "road": true,
+      "proposalKind": "direct-route",
+      "points": [
+        [
+          180,
+          570
+        ],
+        [
+          500,
+          530
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "r1_29_5",
+      "b": "r1_29_6",
+      "road": true,
+      "proposalKind": "direct-route",
+      "points": [
+        [
+          500,
+          530
+        ],
+        [
+          770,
+          450
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "r1_29_6",
+      "b": "r1_47_1",
+      "road": true,
+      "proposalKind": "direct-route",
+      "points": [
+        [
+          770,
+          450
+        ],
+        [
+          1060,
+          230
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "r1_47_1",
+      "b": "r1_47_2",
+      "road": true,
+      "proposalKind": "direct-route",
+      "points": [
+        [
+          1060,
+          230
+        ],
+        [
+          1340,
+          -70
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "r1_47_2",
+      "b": "g51n0",
+      "road": true,
+      "proposalKind": "direct-route",
+      "points": [
+        [
+          1340,
+          -70
+        ],
+        [
+          1370,
+          -420
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "g35n0",
+      "b": "g35n2",
+      "road": false,
+      "proposalKind": "growth",
+      "points": [
+        [
+          580,
+          920
+        ],
+        [
+          720,
+          830
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "g35n2",
+      "b": "g35n1",
+      "road": false,
+      "proposalKind": "growth",
+      "points": [
+        [
+          720,
+          830
+        ],
+        [
+          910,
+          840
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "g35n1",
+      "b": "g35n6",
+      "road": false,
+      "proposalKind": "growth",
+      "points": [
+        [
+          910,
+          840
+        ],
+        [
+          1040,
+          720
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "g35n6",
+      "b": "g35n7",
+      "road": false,
+      "proposalKind": "growth",
+      "points": [
+        [
+          1040,
+          720
+        ],
+        [
+          770,
+          710
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "g35n0",
+      "b": "g35n3",
+      "road": false,
+      "proposalKind": "growth",
+      "points": [
+        [
+          580,
+          920
+        ],
+        [
+          820,
+          1060
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "g35n3",
+      "b": "g35n4",
+      "road": false,
+      "proposalKind": "growth",
+      "points": [
+        [
+          820,
+          1060
+        ],
+        [
+          1020,
+          1040
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "g35n4",
+      "b": "g35n5",
+      "road": false,
+      "proposalKind": "growth",
+      "points": [
+        [
+          1020,
+          1040
+        ],
+        [
+          1100,
+          910
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "g35n5",
+      "b": "g35n1",
+      "road": false,
+      "proposalKind": "growth",
+      "points": [
+        [
+          1100,
+          910
+        ],
+        [
+          910,
+          840
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "g49n6",
+      "b": "r1_51_1",
+      "road": true,
+      "proposalKind": "travel",
+      "points": [
+        [
+          100,
+          740
+        ],
+        [
+          330,
+          890
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "r1_51_1",
+      "b": "g35n0",
+      "road": true,
+      "proposalKind": "travel",
+      "points": [
+        [
+          330,
+          890
+        ],
+        [
+          580,
+          920
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "opening_warrior_0_3",
+      "b": "r1_51_2",
+      "road": true,
+      "proposalKind": "travel",
+      "points": [
+        [
+          -750,
+          520
+        ],
+        [
+          -650,
+          640
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "r1_51_2",
+      "b": "g49n0",
+      "road": true,
+      "proposalKind": "travel",
+      "points": [
+        [
+          -650,
+          640
+        ],
+        [
+          -420,
+          680
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "g30n0",
+      "b": "g30n2",
+      "road": false,
+      "proposalKind": "growth",
+      "points": [
+        [
+          -1140,
+          1130
+        ],
+        [
+          -1260,
+          1280
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "g30n2",
+      "b": "g30n3",
+      "road": false,
+      "proposalKind": "growth",
+      "points": [
+        [
+          -1260,
+          1280
+        ],
+        [
+          -1230,
+          1460
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "g30n3",
+      "b": "g30n1",
+      "road": false,
+      "proposalKind": "growth",
+      "points": [
+        [
+          -1230,
+          1460
+        ],
+        [
+          -1060,
+          1410
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "g30n1",
+      "b": "g30n4",
+      "road": false,
+      "proposalKind": "growth",
+      "points": [
+        [
+          -1060,
+          1410
+        ],
+        [
+          -830,
+          1500
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "g30n4",
+      "b": "g30n5",
+      "road": false,
+      "proposalKind": "growth",
+      "points": [
+        [
+          -830,
+          1500
+        ],
+        [
+          -660,
+          1450
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "g30n5",
+      "b": "g30n6",
+      "road": false,
+      "proposalKind": "growth",
+      "points": [
+        [
+          -660,
+          1450
+        ],
+        [
+          -590,
+          1260
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "g30n6",
+      "b": "g30n7",
+      "road": false,
+      "proposalKind": "growth",
+      "points": [
+        [
+          -590,
+          1260
+        ],
+        [
+          -820,
+          1200
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "g30n7",
+      "b": "g30n0",
+      "road": false,
+      "proposalKind": "growth",
+      "points": [
+        [
+          -820,
+          1200
+        ],
+        [
+          -1140,
+          1130
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "opening_warrior_1_3",
+      "b": "r2_22_1",
+      "road": true,
+      "proposalKind": "travel",
+      "points": [
+        [
+          -780,
+          810
+        ],
+        [
+          -970,
+          1040
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "r2_22_1",
+      "b": "g30n0",
+      "road": true,
+      "proposalKind": "travel",
+      "points": [
+        [
+          -970,
+          1040
+        ],
+        [
+          -1140,
+          1130
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "g14n0",
+      "b": "g14n1",
+      "road": false,
+      "proposalKind": "growth",
+      "points": [
+        [
+          20,
+          1190
+        ],
+        [
+          170,
+          1320
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "g14n1",
+      "b": "g14n2",
+      "road": false,
+      "proposalKind": "growth",
+      "points": [
+        [
+          170,
+          1320
+        ],
+        [
+          330,
+          1450
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "g14n2",
+      "b": "g14n3",
+      "road": false,
+      "proposalKind": "growth",
+      "points": [
+        [
+          330,
+          1450
+        ],
+        [
+          520,
+          1500
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "g14n3",
+      "b": "g14n4",
+      "road": false,
+      "proposalKind": "growth",
+      "points": [
+        [
+          520,
+          1500
+        ],
+        [
+          680,
+          1340
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "g14n4",
+      "b": "g14n5",
+      "road": false,
+      "proposalKind": "growth",
+      "points": [
+        [
+          680,
+          1340
+        ],
+        [
+          860,
+          1410
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "g14n5",
+      "b": "g14n6",
+      "road": false,
+      "proposalKind": "growth",
+      "points": [
+        [
+          860,
+          1410
+        ],
+        [
+          1020,
+          1300
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "g14n6",
+      "b": "g14n7",
+      "road": false,
+      "proposalKind": "growth",
+      "points": [
+        [
+          1020,
+          1300
+        ],
+        [
+          1120,
+          1140
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "g30n6",
+      "b": "r2_22_2",
+      "road": true,
+      "proposalKind": "travel",
+      "points": [
+        [
+          -590,
+          1260
+        ],
+        [
+          -360,
+          1190
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "r2_22_2",
+      "b": "r2_46_1",
+      "road": true,
+      "proposalKind": "travel",
+      "points": [
+        [
+          -360,
+          1190
+        ],
+        [
+          -170,
+          1170
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "r2_46_1",
+      "b": "g14n0",
+      "road": true,
+      "proposalKind": "travel",
+      "points": [
+        [
+          -170,
+          1170
+        ],
+        [
+          20,
+          1190
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "g14n7",
+      "b": "r2_51_1",
+      "road": true,
+      "proposalKind": "travel",
+      "points": [
+        [
+          1120,
+          1140
+        ],
+        [
+          1130,
+          1030
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "r2_51_1",
+      "b": "g35n4",
+      "road": true,
+      "proposalKind": "travel",
+      "points": [
+        [
+          1130,
+          1030
+        ],
+        [
+          1020,
+          1040
+        ]
+      ],
+      "crossingGaps": []
+    }
+  ],
+  "groups": [
+    {
+      "id": "g49",
+      "x": -108.75,
+      "y": 545.0,
+      "rx": 136.17522365868624,
+      "ry": 140.61572008233904,
+      "rot": 2.2165681500327987,
+      "name": "装甲",
+      "theme": "armor",
+      "pattern": "wheel",
+      "nodes": [
+        "g49n0",
+        "g49n1",
+        "g49n2",
+        "g49n3",
+        "g49n4",
+        "g49n5",
+        "g49n6",
+        "g49n7"
+      ],
+      "notables": [
+        "g49n2"
+      ],
+      "entrances": [
+        "g49n0",
+        "g49n4"
+      ],
+      "outline": [
+        [
+          -3739.868,
+          3461.472
+        ],
+        [
+          -3756.388,
+          3446.7
+        ],
+        [
+          -3771.875,
+          3430.758
+        ],
+        [
+          -3786.187,
+          3413.792
+        ],
+        [
+          -3799.194,
+          3395.959
+        ],
+        [
+          -3810.775,
+          3377.424
+        ],
+        [
+          -3820.828,
+          3358.363
+        ],
+        [
+          -3829.263,
+          3338.953
+        ],
+        [
+          -3836.005,
+          3319.38
+        ],
+        [
+          -3840.997,
+          3299.831
+        ],
+        [
+          -3844.195,
+          3280.495
+        ],
+        [
+          -3845.573,
+          3261.559
+        ],
+        [
+          -3845.122,
+          3243.21
+        ],
+        [
+          -3842.85,
+          3225.628
+        ],
+        [
+          -3838.778,
+          3208.99
+        ],
+        [
+          -3832.946,
+          3193.461
+        ],
+        [
+          -3825.408,
+          3179.201
+        ],
+        [
+          -3816.233,
+          3166.355
+        ],
+        [
+          -3805.506,
+          3155.055
+        ],
+        [
+          -3793.323,
+          3145.42
+        ],
+        [
+          -3779.795,
+          3137.551
+        ],
+        [
+          -3765.043,
+          3131.533
+        ],
+        [
+          -3749.202,
+          3127.429
+        ],
+        [
+          -3732.414,
+          3125.285
+        ],
+        [
+          -3714.832,
+          3125.126
+        ],
+        [
+          -3696.616,
+          3126.956
+        ],
+        [
+          -3677.935,
+          3130.755
+        ],
+        [
+          -3658.961,
+          3136.486
+        ],
+        [
+          -3639.872,
+          3144.087
+        ],
+        [
+          -3620.849,
+          3153.481
+        ],
+        [
+          -3602.072,
+          3164.568
+        ],
+        [
+          -3583.725,
+          3177.23
+        ],
+        [
+          -3565.987,
+          3191.336
+        ],
+        [
+          -3549.035,
+          3206.738
+        ],
+        [
+          -3533.037,
+          3223.278
+        ],
+        [
+          -3518.158,
+          3240.785
+        ],
+        [
+          -3504.551,
+          3259.081
+        ],
+        [
+          -3492.357,
+          3277.984
+        ],
+        [
+          -3481.704,
+          3297.304
+        ],
+        [
+          -3472.705,
+          3316.853
+        ],
+        [
+          -3465.457,
+          3336.441
+        ],
+        [
+          -3460.037,
+          3355.88
+        ],
+        [
+          -3456.504,
+          3374.986
+        ],
+        [
+          -3454.896,
+          3393.58
+        ],
+        [
+          -3455.233,
+          3411.492
+        ],
+        [
+          -3457.51,
+          3428.554
+        ],
+        [
+          -3461.705,
+          3444.613
+        ],
+        [
+          -3467.774,
+          3459.522
+        ],
+        [
+          -3475.651,
+          3473.15
+        ],
+        [
+          -3485.256,
+          3485.371
+        ],
+        [
+          -3496.489,
+          3496.08
+        ],
+        [
+          -3509.234,
+          3505.177
+        ],
+        [
+          -3523.357,
+          3512.585
+        ],
+        [
+          -3538.715,
+          3518.235
+        ],
+        [
+          -3555.151,
+          3522.078
+        ],
+        [
+          -3572.501,
+          3524.078
+        ],
+        [
+          -3590.589,
+          3524.215
+        ],
+        [
+          -3609.235,
+          3522.49
+        ],
+        [
+          -3628.255,
+          3518.915
+        ],
+        [
+          -3647.464,
+          3513.521
+        ],
+        [
+          -3666.674,
+          3506.355
+        ],
+        [
+          -3685.698,
+          3497.481
+        ],
+        [
+          -3704.356,
+          3486.977
+        ],
+        [
+          -3722.47,
+          3474.938
+        ],
+        [
+          -3739.868,
+          3461.472
+        ]
+      ],
+      "labelX": -3662.6633333333325,
+      "labelY": 3005.851888888889,
+      "role": "装甲を拾って不動へ / 生命側と武器側の二入口"
+    },
+    {
+      "id": "g45",
+      "x": -414.2857142857143,
+      "y": -148.57142857142858,
+      "rx": 170.13257285570157,
+      "ry": 171.86861951749444,
+      "rot": 2.356194490192345,
+      "name": "生命",
+      "theme": "life",
+      "pattern": "fork",
+      "nodes": [
+        "g45n0",
+        "g45n1",
+        "g45n2",
+        "g45n3",
+        "g45n4",
+        "g45n5",
+        "g45n6"
+      ],
+      "notables": [
+        "g45n2"
+      ],
+      "entrances": [
+        "g45n0",
+        "g45n5"
+      ],
+      "outline": [
+        [
+          -5051.176,
+          1968.169
+        ],
+        [
+          -5066.737,
+          1947.668
+        ],
+        [
+          -5080.864,
+          1925.781
+        ],
+        [
+          -5093.421,
+          1902.711
+        ],
+        [
+          -5104.289,
+          1878.67
+        ],
+        [
+          -5113.368,
+          1853.881
+        ],
+        [
+          -5120.573,
+          1828.572
+        ],
+        [
+          -5125.839,
+          1802.98
+        ],
+        [
+          -5129.121,
+          1777.341
+        ],
+        [
+          -5130.392,
+          1751.895
+        ],
+        [
+          -5129.645,
+          1726.883
+        ],
+        [
+          -5126.895,
+          1702.54
+        ],
+        [
+          -5122.173,
+          1679.099
+        ],
+        [
+          -5115.53,
+          1656.784
+        ],
+        [
+          -5107.035,
+          1635.811
+        ],
+        [
+          -5096.774,
+          1616.386
+        ],
+        [
+          -5084.85,
+          1598.7
+        ],
+        [
+          -5071.381,
+          1582.929
+        ],
+        [
+          -5056.498,
+          1569.234
+        ],
+        [
+          -5040.344,
+          1557.755
+        ],
+        [
+          -5023.075,
+          1548.615
+        ],
+        [
+          -5004.855,
+          1541.912
+        ],
+        [
+          -4985.856,
+          1537.721
+        ],
+        [
+          -4966.258,
+          1536.095
+        ],
+        [
+          -4946.242,
+          1537.061
+        ],
+        [
+          -4925.997,
+          1540.617
+        ],
+        [
+          -4905.709,
+          1546.737
+        ],
+        [
+          -4885.567,
+          1555.371
+        ],
+        [
+          -4865.756,
+          1566.436
+        ],
+        [
+          -4846.46,
+          1579.83
+        ],
+        [
+          -4827.858,
+          1595.42
+        ],
+        [
+          -4810.122,
+          1613.053
+        ],
+        [
+          -4793.421,
+          1632.552
+        ],
+        [
+          -4777.909,
+          1653.721
+        ],
+        [
+          -4763.735,
+          1676.345
+        ],
+        [
+          -4751.036,
+          1700.193
+        ],
+        [
+          -4739.936,
+          1725.022
+        ],
+        [
+          -4730.546,
+          1750.581
+        ],
+        [
+          -4722.961,
+          1776.609
+        ],
+        [
+          -4717.26,
+          1802.844
+        ],
+        [
+          -4713.509,
+          1829.022
+        ],
+        [
+          -4711.749,
+          1854.884
+        ],
+        [
+          -4712.007,
+          1880.173
+        ],
+        [
+          -4714.29,
+          1904.643
+        ],
+        [
+          -4718.582,
+          1928.058
+        ],
+        [
+          -4724.849,
+          1950.194
+        ],
+        [
+          -4733.037,
+          1970.841
+        ],
+        [
+          -4743.07,
+          1989.809
+        ],
+        [
+          -4754.855,
+          2006.924
+        ],
+        [
+          -4768.279,
+          2022.03
+        ],
+        [
+          -4783.214,
+          2034.992
+        ],
+        [
+          -4799.51,
+          2045.698
+        ],
+        [
+          -4817.009,
+          2054.055
+        ],
+        [
+          -4835.539,
+          2059.996
+        ],
+        [
+          -4854.913,
+          2063.472
+        ],
+        [
+          -4874.94,
+          2064.458
+        ],
+        [
+          -4895.42,
+          2062.954
+        ],
+        [
+          -4916.151,
+          2058.98
+        ],
+        [
+          -4936.923,
+          2052.577
+        ],
+        [
+          -4957.533,
+          2043.811
+        ],
+        [
+          -4977.774,
+          2032.765
+        ],
+        [
+          -4997.449,
+          2019.545
+        ],
+        [
+          -5016.362,
+          2004.274
+        ],
+        [
+          -5034.329,
+          1987.096
+        ],
+        [
+          -5051.176,
+          1968.169
+        ]
+      ],
+      "labelX": -4915.744374999999,
+      "labelY": 1432.881875,
+      "role": "生命の二経路 / 上でHPを積むか下から目標へ"
+    },
+    {
+      "id": "g38",
+      "x": -1310.0,
+      "y": -630.0,
+      "rx": 156.7192583800873,
+      "ry": 158.31843448600657,
+      "rot": 0.24434609527920614,
+      "name": "回復",
+      "theme": "healing",
+      "pattern": "fork",
+      "nodes": [
+        "g38n0",
+        "g38n1",
+        "g38n2",
+        "g38n3",
+        "g38n4",
+        "g38n5",
+        "g38n6"
+      ],
+      "notables": [
+        "g38n1"
+      ],
+      "entrances": [
+        "g38n0",
+        "g38n2",
+        "g38n4"
+      ],
+      "outline": [
+        [
+          -2884.66,
+          434.967
+        ],
+        [
+          -2888.352,
+          464.302
+        ],
+        [
+          -2893.667,
+          492.33
+        ],
+        [
+          -2900.578,
+          518.762
+        ],
+        [
+          -2909.047,
+          543.334
+        ],
+        [
+          -2919.014,
+          565.812
+        ],
+        [
+          -2930.408,
+          585.988
+        ],
+        [
+          -2943.135,
+          603.688
+        ],
+        [
+          -2957.09,
+          618.768
+        ],
+        [
+          -2972.148,
+          631.113
+        ],
+        [
+          -2988.17,
+          640.64
+        ],
+        [
+          -3005.003,
+          647.294
+        ],
+        [
+          -3022.482,
+          651.046
+        ],
+        [
+          -3040.433,
+          651.898
+        ],
+        [
+          -3058.674,
+          649.872
+        ],
+        [
+          -3077.019,
+          645.02
+        ],
+        [
+          -3095.275,
+          637.411
+        ],
+        [
+          -3113.255,
+          627.141
+        ],
+        [
+          -3130.769,
+          614.323
+        ],
+        [
+          -3147.635,
+          599.09
+        ],
+        [
+          -3163.675,
+          581.592
+        ],
+        [
+          -3178.721,
+          561.998
+        ],
+        [
+          -3192.615,
+          540.491
+        ],
+        [
+          -3205.212,
+          517.267
+        ],
+        [
+          -3216.384,
+          492.534
+        ],
+        [
+          -3226.011,
+          466.514
+        ],
+        [
+          -3233.998,
+          439.434
+        ],
+        [
+          -3240.263,
+          411.534
+        ],
+        [
+          -3244.743,
+          383.056
+        ],
+        [
+          -3247.396,
+          354.249
+        ],
+        [
+          -3248.196,
+          325.363
+        ],
+        [
+          -3247.14,
+          296.65
+        ],
+        [
+          -3244.245,
+          268.362
+        ],
+        [
+          -3239.544,
+          240.749
+        ],
+        [
+          -3233.092,
+          214.055
+        ],
+        [
+          -3224.962,
+          188.519
+        ],
+        [
+          -3215.243,
+          164.374
+        ],
+        [
+          -3204.04,
+          141.842
+        ],
+        [
+          -3191.476,
+          121.134
+        ],
+        [
+          -3177.684,
+          102.45
+        ],
+        [
+          -3162.811,
+          85.975
+        ],
+        [
+          -3147.014,
+          71.877
+        ],
+        [
+          -3130.457,
+          60.307
+        ],
+        [
+          -3113.311,
+          51.398
+        ],
+        [
+          -3095.752,
+          45.261
+        ],
+        [
+          -3077.956,
+          41.986
+        ],
+        [
+          -3060.099,
+          41.635
+        ],
+        [
+          -3042.355,
+          44.249
+        ],
+        [
+          -3024.892,
+          49.84
+        ],
+        [
+          -3007.873,
+          58.389
+        ],
+        [
+          -2991.451,
+          69.849
+        ],
+        [
+          -2975.77,
+          84.14
+        ],
+        [
+          -2960.965,
+          101.149
+        ],
+        [
+          -2947.156,
+          120.733
+        ],
+        [
+          -2934.454,
+          142.711
+        ],
+        [
+          -2922.955,
+          166.873
+        ],
+        [
+          -2912.749,
+          192.976
+        ],
+        [
+          -2903.909,
+          220.749
+        ],
+        [
+          -2896.502,
+          249.895
+        ],
+        [
+          -2890.583,
+          280.097
+        ],
+        [
+          -2886.199,
+          311.019
+        ],
+        [
+          -2883.39,
+          342.316
+        ],
+        [
+          -2882.185,
+          373.639
+        ],
+        [
+          -2882.604,
+          404.636
+        ],
+        [
+          -2884.66,
+          434.967
+        ]
+      ],
+      "labelX": -3045.0221250000004,
+      "labelY": 3.6698749999999905,
+      "role": "回復は寄り道 / 生命経路に戻る小さな輪"
+    },
+    {
+      "id": "g23",
+      "x": 27.77777777777778,
+      "y": -745.5555555555555,
+      "rx": 192.9108986638594,
+      "ry": 126.54247022445823,
+      "rot": 1.5533430342749532,
+      "name": "魔法防御",
+      "theme": "resist",
+      "pattern": "oval",
+      "nodes": [
+        "g23n0",
+        "g23n1",
+        "g23n2",
+        "g23n3",
+        "g23n4",
+        "g23n5",
+        "g23n6",
+        "g23n7",
+        "g23n8"
+      ],
+      "notables": [
+        "g23n1",
+        "g23n5"
+      ],
+      "entrances": [
+        "g23n3",
+        "g23n8"
+      ],
+      "outline": [
+        [
+          -4692.373,
+          -1396.612
+        ],
+        [
+          -4707.162,
+          -1396.14
+        ],
+        [
+          -4721.604,
+          -1398.644
+        ],
+        [
+          -4735.564,
+          -1404.086
+        ],
+        [
+          -4748.912,
+          -1412.404
+        ],
+        [
+          -4761.52,
+          -1423.506
+        ],
+        [
+          -4773.264,
+          -1437.274
+        ],
+        [
+          -4784.032,
+          -1453.561
+        ],
+        [
+          -4793.715,
+          -1472.203
+        ],
+        [
+          -4802.218,
+          -1493.01
+        ],
+        [
+          -4809.452,
+          -1515.772
+        ],
+        [
+          -4815.343,
+          -1540.268
+        ],
+        [
+          -4819.827,
+          -1566.254
+        ],
+        [
+          -4822.856,
+          -1593.479
+        ],
+        [
+          -4824.393,
+          -1621.681
+        ],
+        [
+          -4824.417,
+          -1650.59
+        ],
+        [
+          -4822.923,
+          -1679.93
+        ],
+        [
+          -4819.918,
+          -1709.424
+        ],
+        [
+          -4815.428,
+          -1738.795
+        ],
+        [
+          -4809.492,
+          -1767.769
+        ],
+        [
+          -4802.164,
+          -1796.075
+        ],
+        [
+          -4793.512,
+          -1823.45
+        ],
+        [
+          -4783.619,
+          -1849.642
+        ],
+        [
+          -4772.579,
+          -1874.408
+        ],
+        [
+          -4760.502,
+          -1897.519
+        ],
+        [
+          -4747.504,
+          -1918.764
+        ],
+        [
+          -4733.715,
+          -1937.947
+        ],
+        [
+          -4719.271,
+          -1954.89
+        ],
+        [
+          -4704.316,
+          -1969.436
+        ],
+        [
+          -4689.0,
+          -1981.45
+        ],
+        [
+          -4673.476,
+          -1990.819
+        ],
+        [
+          -4657.901,
+          -1997.453
+        ],
+        [
+          -4642.431,
+          -2001.288
+        ],
+        [
+          -4627.221,
+          -2002.282
+        ],
+        [
+          -4612.423,
+          -2000.42
+        ],
+        [
+          -4598.188,
+          -1995.714
+        ],
+        [
+          -4584.656,
+          -1988.198
+        ],
+        [
+          -4571.962,
+          -1977.934
+        ],
+        [
+          -4560.23,
+          -1965.01
+        ],
+        [
+          -4549.577,
+          -1949.536
+        ],
+        [
+          -4540.103,
+          -1931.649
+        ],
+        [
+          -4531.898,
+          -1911.511
+        ],
+        [
+          -4525.038,
+          -1889.302
+        ],
+        [
+          -4519.585,
+          -1865.226
+        ],
+        [
+          -4515.586,
+          -1839.507
+        ],
+        [
+          -4513.07,
+          -1812.387
+        ],
+        [
+          -4512.053,
+          -1784.125
+        ],
+        [
+          -4512.538,
+          -1754.991
+        ],
+        [
+          -4514.51,
+          -1725.269
+        ],
+        [
+          -4517.941,
+          -1695.251
+        ],
+        [
+          -4522.791,
+          -1665.236
+        ],
+        [
+          -4529.007,
+          -1635.521
+        ],
+        [
+          -4536.523,
+          -1606.406
+        ],
+        [
+          -4545.262,
+          -1578.185
+        ],
+        [
+          -4555.14,
+          -1551.145
+        ],
+        [
+          -4566.062,
+          -1525.56
+        ],
+        [
+          -4577.925,
+          -1501.691
+        ],
+        [
+          -4590.618,
+          -1479.779
+        ],
+        [
+          -4604.027,
+          -1460.045
+        ],
+        [
+          -4618.029,
+          -1442.688
+        ],
+        [
+          -4632.497,
+          -1427.881
+        ],
+        [
+          -4647.3,
+          -1415.768
+        ],
+        [
+          -4662.305,
+          -1406.466
+        ],
+        [
+          -4677.375,
+          -1400.062
+        ],
+        [
+          -4692.373,
+          -1396.612
+        ]
+      ],
+      "labelX": -4636.508444444445,
+      "labelY": -2018.8713333333333,
+      "role": "生命から耐性へ / 二つのNotableを独立して拾う"
+    },
+    {
+      "id": "g13",
+      "x": 847.0,
+      "y": -534.0,
+      "rx": 188.34008611698994,
+      "ry": 149.17201511035927,
+      "rot": 0.33161255787892263,
+      "name": "吸収",
+      "theme": "leech",
+      "pattern": "double",
+      "nodes": [
+        "g13n0",
+        "g13n1",
+        "g13n2",
+        "g13n3",
+        "g13n4",
+        "g13n5",
+        "g13n6",
+        "g13n7",
+        "g13n8",
+        "g13n9"
+      ],
+      "notables": [
+        "g13n9",
+        "g13n3"
+      ],
+      "entrances": [
+        "g13n1",
+        "g13n5",
+        "g13n7"
+      ],
+      "outline": [
+        [
+          -3925.998,
+          2431.254
+        ],
+        [
+          -3930.176,
+          2450.523
+        ],
+        [
+          -3936.723,
+          2468.26
+        ],
+        [
+          -3945.575,
+          2484.309
+        ],
+        [
+          -3956.645,
+          2498.527
+        ],
+        [
+          -3969.822,
+          2510.791
+        ],
+        [
+          -3984.971,
+          2520.996
+        ],
+        [
+          -4001.937,
+          2529.058
+        ],
+        [
+          -4020.549,
+          2534.913
+        ],
+        [
+          -4040.613,
+          2538.514
+        ],
+        [
+          -4061.926,
+          2539.837
+        ],
+        [
+          -4084.27,
+          2538.877
+        ],
+        [
+          -4107.42,
+          2535.648
+        ],
+        [
+          -4131.142,
+          2530.185
+        ],
+        [
+          -4155.198,
+          2522.543
+        ],
+        [
+          -4179.349,
+          2512.791
+        ],
+        [
+          -4203.357,
+          2501.024
+        ],
+        [
+          -4226.984,
+          2487.349
+        ],
+        [
+          -4250.003,
+          2471.89
+        ],
+        [
+          -4272.188,
+          2454.788
+        ],
+        [
+          -4293.33,
+          2436.2
+        ],
+        [
+          -4313.226,
+          2416.292
+        ],
+        [
+          -4331.689,
+          2395.248
+        ],
+        [
+          -4348.549,
+          2373.258
+        ],
+        [
+          -4363.648,
+          2350.523
+        ],
+        [
+          -4376.85,
+          2327.251
+        ],
+        [
+          -4388.038,
+          2303.657
+        ],
+        [
+          -4397.112,
+          2279.959
+        ],
+        [
+          -4403.995,
+          2256.377
+        ],
+        [
+          -4408.63,
+          2233.133
+        ],
+        [
+          -4410.981,
+          2210.446
+        ],
+        [
+          -4411.036,
+          2188.531
+        ],
+        [
+          -4408.799,
+          2167.601
+        ],
+        [
+          -4404.301,
+          2147.858
+        ],
+        [
+          -4397.59,
+          2129.497
+        ],
+        [
+          -4388.733,
+          2112.7
+        ],
+        [
+          -4377.818,
+          2097.639
+        ],
+        [
+          -4364.95,
+          2084.468
+        ],
+        [
+          -4350.251,
+          2073.325
+        ],
+        [
+          -4333.858,
+          2064.331
+        ],
+        [
+          -4315.923,
+          2057.586
+        ],
+        [
+          -4296.612,
+          2053.168
+        ],
+        [
+          -4276.099,
+          2051.136
+        ],
+        [
+          -4254.574,
+          2051.518
+        ],
+        [
+          -4232.23,
+          2054.324
+        ],
+        [
+          -4209.271,
+          2059.536
+        ],
+        [
+          -4185.905,
+          2067.11
+        ],
+        [
+          -4162.345,
+          2076.976
+        ],
+        [
+          -4138.808,
+          2089.04
+        ],
+        [
+          -4115.509,
+          2103.183
+        ],
+        [
+          -4092.666,
+          2119.262
+        ],
+        [
+          -4070.495,
+          2137.114
+        ],
+        [
+          -4049.205,
+          2156.552
+        ],
+        [
+          -4029.006,
+          2177.375
+        ],
+        [
+          -4010.092,
+          2199.369
+        ],
+        [
+          -3992.655,
+          2222.301
+        ],
+        [
+          -3976.872,
+          2245.937
+        ],
+        [
+          -3962.907,
+          2270.032
+        ],
+        [
+          -3950.909,
+          2294.339
+        ],
+        [
+          -3941.006,
+          2318.613
+        ],
+        [
+          -3933.309,
+          2342.612
+        ],
+        [
+          -3927.907,
+          2366.098
+        ],
+        [
+          -3924.865,
+          2388.843
+        ],
+        [
+          -3924.223,
+          2410.63
+        ],
+        [
+          -3925.998,
+          2431.254
+        ]
+      ],
+      "labelX": -4154.3385,
+      "labelY": 1983.0452,
+      "role": "吸収を積む長い回り道 / 障壁Keyとの組み合わせ"
+    },
+    {
+      "id": "g51",
+      "x": 1495.5555555555557,
+      "y": -785.5555555555555,
+      "rx": 173.1475195561801,
+      "ry": 113.57841879143925,
+      "rot": 0.5759586531581288,
+      "name": "障壁",
+      "theme": "ward",
+      "pattern": "oval",
+      "nodes": [
+        "g51n0",
+        "g51n1",
+        "g51n2",
+        "g51n3",
+        "g51n4",
+        "g51n5",
+        "g51n6",
+        "g51n7",
+        "g51n8"
+      ],
+      "notables": [
+        "g51n4",
+        "g51n1"
+      ],
+      "entrances": [
+        "g51n0",
+        "g51n2",
+        "g51n6",
+        "g51n7"
+      ],
+      "outline": [
+        [
+          -2551.221,
+          -2722.574
+        ],
+        [
+          -2564.761,
+          -2706.454
+        ],
+        [
+          -2579.921,
+          -2691.328
+        ],
+        [
+          -2596.536,
+          -2677.36
+        ],
+        [
+          -2614.427,
+          -2664.703
+        ],
+        [
+          -2633.406,
+          -2653.5
+        ],
+        [
+          -2653.276,
+          -2643.879
+        ],
+        [
+          -2673.839,
+          -2635.948
+        ],
+        [
+          -2694.894,
+          -2629.802
+        ],
+        [
+          -2716.235,
+          -2625.512
+        ],
+        [
+          -2737.664,
+          -2623.127
+        ],
+        [
+          -2758.981,
+          -2622.677
+        ],
+        [
+          -2779.992,
+          -2624.166
+        ],
+        [
+          -2800.509,
+          -2627.578
+        ],
+        [
+          -2820.348,
+          -2632.873
+        ],
+        [
+          -2839.334,
+          -2639.99
+        ],
+        [
+          -2857.303,
+          -2648.849
+        ],
+        [
+          -2874.096,
+          -2659.351
+        ],
+        [
+          -2889.566,
+          -2671.378
+        ],
+        [
+          -2903.579,
+          -2684.8
+        ],
+        [
+          -2916.011,
+          -2699.472
+        ],
+        [
+          -2926.753,
+          -2715.238
+        ],
+        [
+          -2935.708,
+          -2731.931
+        ],
+        [
+          -2942.795,
+          -2749.38
+        ],
+        [
+          -2947.947,
+          -2767.407
+        ],
+        [
+          -2951.116,
+          -2785.83
+        ],
+        [
+          -2952.269,
+          -2804.466
+        ],
+        [
+          -2951.389,
+          -2823.134
+        ],
+        [
+          -2948.478,
+          -2841.652
+        ],
+        [
+          -2943.558,
+          -2859.845
+        ],
+        [
+          -2936.664,
+          -2877.54
+        ],
+        [
+          -2927.852,
+          -2894.574
+        ],
+        [
+          -2917.194,
+          -2910.79
+        ],
+        [
+          -2904.783,
+          -2926.042
+        ],
+        [
+          -2890.723,
+          -2940.192
+        ],
+        [
+          -2875.139,
+          -2953.117
+        ],
+        [
+          -2858.168,
+          -2964.702
+        ],
+        [
+          -2839.962,
+          -2974.849
+        ],
+        [
+          -2820.688,
+          -2983.472
+        ],
+        [
+          -2800.521,
+          -2990.498
+        ],
+        [
+          -2779.652,
+          -2995.872
+        ],
+        [
+          -2758.274,
+          -2999.55
+        ],
+        [
+          -2736.593,
+          -3001.506
+        ],
+        [
+          -2714.818,
+          -3001.727
+        ],
+        [
+          -2693.161,
+          -3000.216
+        ],
+        [
+          -2671.836,
+          -2996.988
+        ],
+        [
+          -2651.057,
+          -2992.077
+        ],
+        [
+          -2631.035,
+          -2985.526
+        ],
+        [
+          -2611.973,
+          -2977.395
+        ],
+        [
+          -2594.072,
+          -2967.754
+        ],
+        [
+          -2577.519,
+          -2956.689
+        ],
+        [
+          -2562.489,
+          -2944.293
+        ],
+        [
+          -2549.144,
+          -2930.673
+        ],
+        [
+          -2537.629,
+          -2915.947
+        ],
+        [
+          -2528.07,
+          -2900.24
+        ],
+        [
+          -2520.571,
+          -2883.687
+        ],
+        [
+          -2515.216,
+          -2866.434
+        ],
+        [
+          -2512.062,
+          -2848.63
+        ],
+        [
+          -2511.144,
+          -2830.437
+        ],
+        [
+          -2512.469,
+          -2812.016
+        ],
+        [
+          -2516.018,
+          -2793.539
+        ],
+        [
+          -2521.748,
+          -2775.179
+        ],
+        [
+          -2529.59,
+          -2757.113
+        ],
+        [
+          -2539.452,
+          -2739.519
+        ],
+        [
+          -2551.221,
+          -2722.574
+        ]
+      ],
+      "labelX": -2791.6845404882047,
+      "labelY": -3125.0995938456726,
+      "role": "守りの循環へ / 吸収側と短い通路側から入る"
+    },
+    {
+      "id": "g35",
+      "x": 870.0,
+      "y": 878.75,
+      "rx": 124.26455694054376,
+      "ry": 128.31666205817018,
+      "rot": 1.1344640137963142,
+      "name": "物理火力",
+      "theme": "force",
+      "pattern": "wheel",
+      "nodes": [
+        "g35n0",
+        "g35n1",
+        "g35n2",
+        "g35n3",
+        "g35n4",
+        "g35n5",
+        "g35n6",
+        "g35n7"
+      ],
+      "notables": [
+        "g35n1"
+      ],
+      "entrances": [
+        "g35n0",
+        "g35n2",
+        "g35n4",
+        "g35n6"
+      ],
+      "outline": [
+        [
+          -3307.922,
+          1463.297
+        ],
+        [
+          -3321.595,
+          1468.498
+        ],
+        [
+          -3336.023,
+          1471.749
+        ],
+        [
+          -3351.057,
+          1473.033
+        ],
+        [
+          -3366.545,
+          1472.347
+        ],
+        [
+          -3382.328,
+          1469.707
+        ],
+        [
+          -3398.245,
+          1465.144
+        ],
+        [
+          -3414.135,
+          1458.706
+        ],
+        [
+          -3429.838,
+          1450.456
+        ],
+        [
+          -3445.195,
+          1440.473
+        ],
+        [
+          -3460.055,
+          1428.847
+        ],
+        [
+          -3474.269,
+          1415.687
+        ],
+        [
+          -3487.697,
+          1401.111
+        ],
+        [
+          -3500.209,
+          1385.25
+        ],
+        [
+          -3511.684,
+          1368.247
+        ],
+        [
+          -3522.014,
+          1350.253
+        ],
+        [
+          -3531.099,
+          1331.429
+        ],
+        [
+          -3538.857,
+          1311.946
+        ],
+        [
+          -3545.218,
+          1291.977
+        ],
+        [
+          -3550.123,
+          1271.704
+        ],
+        [
+          -3553.534,
+          1251.31
+        ],
+        [
+          -3555.424,
+          1230.982
+        ],
+        [
+          -3555.781,
+          1210.907
+        ],
+        [
+          -3554.61,
+          1191.271
+        ],
+        [
+          -3551.927,
+          1172.259
+        ],
+        [
+          -3547.768,
+          1154.051
+        ],
+        [
+          -3542.177,
+          1136.822
+        ],
+        [
+          -3535.216,
+          1120.741
+        ],
+        [
+          -3526.956,
+          1105.966
+        ],
+        [
+          -3517.482,
+          1092.648
+        ],
+        [
+          -3506.886,
+          1080.922
+        ],
+        [
+          -3495.275,
+          1070.914
+        ],
+        [
+          -3482.758,
+          1062.734
+        ],
+        [
+          -3469.457,
+          1056.474
+        ],
+        [
+          -3455.496,
+          1052.212
+        ],
+        [
+          -3441.005,
+          1050.001
+        ],
+        [
+          -3426.117,
+          1049.881
+        ],
+        [
+          -3410.967,
+          1051.866
+        ],
+        [
+          -3395.693,
+          1055.951
+        ],
+        [
+          -3380.433,
+          1062.106
+        ],
+        [
+          -3365.323,
+          1070.281
+        ],
+        [
+          -3350.497,
+          1080.399
+        ],
+        [
+          -3336.088,
+          1092.367
+        ],
+        [
+          -3322.226,
+          1106.062
+        ],
+        [
+          -3309.036,
+          1121.348
+        ],
+        [
+          -3296.639,
+          1138.066
+        ],
+        [
+          -3285.151,
+          1156.04
+        ],
+        [
+          -3274.681,
+          1175.081
+        ],
+        [
+          -3265.332,
+          1194.986
+        ],
+        [
+          -3257.197,
+          1215.544
+        ],
+        [
+          -3250.362,
+          1236.538
+        ],
+        [
+          -3244.901,
+          1257.746
+        ],
+        [
+          -3240.879,
+          1278.95
+        ],
+        [
+          -3238.343,
+          1299.93
+        ],
+        [
+          -3237.334,
+          1320.474
+        ],
+        [
+          -3237.871,
+          1340.38
+        ],
+        [
+          -3239.96,
+          1359.452
+        ],
+        [
+          -3243.593,
+          1377.51
+        ],
+        [
+          -3248.741,
+          1394.383
+        ],
+        [
+          -3255.363,
+          1409.92
+        ],
+        [
+          -3263.397,
+          1423.982
+        ],
+        [
+          -3272.767,
+          1436.447
+        ],
+        [
+          -3283.384,
+          1447.21
+        ],
+        [
+          -3295.142,
+          1456.183
+        ],
+        [
+          -3307.922,
+          1463.297
+        ]
+      ],
+      "labelX": -3396.644666666667,
+      "labelY": 985.0196666666666,
+      "role": "一撃を伸ばす短い目標 / 防御の通路から離れる選択"
+    },
+    {
+      "id": "g30",
+      "x": -948.75,
+      "y": 1336.25,
+      "rx": 218,
+      "ry": 143,
+      "rot": 0.5235987755982988,
+      "name": "攻撃速度",
+      "theme": "speed",
+      "pattern": "oval",
+      "nodes": [
+        "g30n0",
+        "g30n1",
+        "g30n2",
+        "g30n3",
+        "g30n4",
+        "g30n5",
+        "g30n6",
+        "g30n7"
+      ],
+      "notables": [
+        "g30n1",
+        "g30n4"
+      ],
+      "entrances": [
+        "g30n3",
+        "g30n5",
+        "g30n7"
+      ],
+      "outline": [
+        [
+          4050.868,
+          2609.923
+        ],
+        [
+          4037.627,
+          2629.075
+        ],
+        [
+          4022.315,
+          2646.892
+        ],
+        [
+          4005.072,
+          2663.215
+        ],
+        [
+          3986.056,
+          2677.897
+        ],
+        [
+          3965.444,
+          2690.808
+        ],
+        [
+          3943.429,
+          2701.834
+        ],
+        [
+          3920.218,
+          2710.88
+        ],
+        [
+          3896.033,
+          2717.866
+        ],
+        [
+          3871.106,
+          2722.732
+        ],
+        [
+          3845.679,
+          2725.437
+        ],
+        [
+          3819.999,
+          2725.959
+        ],
+        [
+          3794.319,
+          2724.293
+        ],
+        [
+          3768.893,
+          2720.454
+        ],
+        [
+          3743.973,
+          2714.476
+        ],
+        [
+          3719.81,
+          2706.411
+        ],
+        [
+          3696.646,
+          2696.33
+        ],
+        [
+          3674.717,
+          2684.319
+        ],
+        [
+          3654.245,
+          2670.483
+        ],
+        [
+          3635.438,
+          2654.943
+        ],
+        [
+          3618.489,
+          2637.834
+        ],
+        [
+          3603.57,
+          2619.307
+        ],
+        [
+          3590.833,
+          2599.527
+        ],
+        [
+          3580.407,
+          2578.67
+        ],
+        [
+          3572.395,
+          2556.926
+        ],
+        [
+          3566.876,
+          2534.493
+        ],
+        [
+          3563.9,
+          2511.58
+        ],
+        [
+          3563.491,
+          2488.401
+        ],
+        [
+          3565.645,
+          2465.18
+        ],
+        [
+          3570.333,
+          2442.139
+        ],
+        [
+          3577.495,
+          2419.508
+        ],
+        [
+          3587.051,
+          2397.511
+        ],
+        [
+          3598.894,
+          2376.372
+        ],
+        [
+          3612.896,
+          2356.309
+        ],
+        [
+          3628.908,
+          2337.531
+        ],
+        [
+          3646.765,
+          2320.234
+        ],
+        [
+          3666.284,
+          2304.603
+        ],
+        [
+          3687.27,
+          2290.806
+        ],
+        [
+          3709.514,
+          2278.989
+        ],
+        [
+          3732.802,
+          2269.281
+        ],
+        [
+          3756.909,
+          2261.784
+        ],
+        [
+          3781.606,
+          2256.579
+        ],
+        [
+          3806.662,
+          2253.72
+        ],
+        [
+          3831.843,
+          2253.234
+        ],
+        [
+          3856.916,
+          2255.124
+        ],
+        [
+          3881.651,
+          2259.365
+        ],
+        [
+          3905.821,
+          2265.907
+        ],
+        [
+          3929.204,
+          2274.678
+        ],
+        [
+          3951.586,
+          2285.579
+        ],
+        [
+          3972.764,
+          2298.493
+        ],
+        [
+          3992.541,
+          2313.28
+        ],
+        [
+          4010.737,
+          2329.783
+        ],
+        [
+          4027.182,
+          2347.832
+        ],
+        [
+          4041.723,
+          2367.239
+        ],
+        [
+          4054.223,
+          2387.806
+        ],
+        [
+          4064.563,
+          2409.327
+        ],
+        [
+          4072.643,
+          2431.586
+        ],
+        [
+          4078.384,
+          2454.366
+        ],
+        [
+          4081.725,
+          2477.444
+        ],
+        [
+          4082.63,
+          2500.597
+        ],
+        [
+          4081.083,
+          2523.605
+        ],
+        [
+          4077.092,
+          2546.25
+        ],
+        [
+          4070.687,
+          2568.319
+        ],
+        [
+          4061.92,
+          2589.609
+        ],
+        [
+          4050.868,
+          2609.923
+        ]
+      ],
+      "labelX": 3814.4627499999997,
+      "labelY": 2136.5215,
+      "role": "手数を先に育てる / 二段のNotableと資源への横道"
+    },
+    {
+      "id": "g14",
+      "x": 590.0,
+      "y": 1331.25,
+      "rx": 111.44079892551294,
+      "ry": 115.0747380209101,
+      "rot": 1.0821041362364843,
+      "name": "資源循環",
+      "theme": "resource",
+      "pattern": "wheel",
+      "nodes": [
+        "g14n0",
+        "g14n1",
+        "g14n2",
+        "g14n3",
+        "g14n4",
+        "g14n5",
+        "g14n6",
+        "g14n7"
+      ],
+      "notables": [
+        "g14n4"
+      ],
+      "entrances": [
+        "g14n0",
+        "g14n2",
+        "g14n6"
+      ],
+      "outline": [
+        [
+          2482.318,
+          -1028.958
+        ],
+        [
+          2470.915,
+          -1022.196
+        ],
+        [
+          2458.513,
+          -1017.985
+        ],
+        [
+          2445.202,
+          -1016.44
+        ],
+        [
+          2431.071,
+          -1017.652
+        ],
+        [
+          2416.205,
+          -1021.683
+        ],
+        [
+          2400.693,
+          -1028.56
+        ],
+        [
+          2384.619,
+          -1038.268
+        ],
+        [
+          2368.072,
+          -1050.749
+        ],
+        [
+          2351.141,
+          -1065.898
+        ],
+        [
+          2333.927,
+          -1083.557
+        ],
+        [
+          2316.538,
+          -1103.516
+        ],
+        [
+          2299.102,
+          -1125.519
+        ],
+        [
+          2281.763,
+          -1149.263
+        ],
+        [
+          2264.689,
+          -1174.408
+        ],
+        [
+          2248.069,
+          -1200.59
+        ],
+        [
+          2232.112,
+          -1227.431
+        ],
+        [
+          2217.042,
+          -1254.553
+        ],
+        [
+          2203.09,
+          -1281.592
+        ],
+        [
+          2190.487,
+          -1308.202
+        ],
+        [
+          2179.45,
+          -1334.075
+        ],
+        [
+          2170.176,
+          -1358.936
+        ],
+        [
+          2162.834,
+          -1382.547
+        ],
+        [
+          2157.556,
+          -1404.71
+        ],
+        [
+          2154.434,
+          -1425.262
+        ],
+        [
+          2153.522,
+          -1444.07
+        ],
+        [
+          2154.831,
+          -1461.029
+        ],
+        [
+          2158.331,
+          -1476.056
+        ],
+        [
+          2163.962,
+          -1489.089
+        ],
+        [
+          2171.628,
+          -1500.078
+        ],
+        [
+          2181.208,
+          -1508.991
+        ],
+        [
+          2192.558,
+          -1515.803
+        ],
+        [
+          2205.514,
+          -1520.505
+        ],
+        [
+          2219.899,
+          -1523.093
+        ],
+        [
+          2235.525,
+          -1523.577
+        ],
+        [
+          2252.195,
+          -1521.975
+        ],
+        [
+          2269.71,
+          -1518.317
+        ],
+        [
+          2287.865,
+          -1512.64
+        ],
+        [
+          2306.458,
+          -1504.996
+        ],
+        [
+          2325.289,
+          -1495.448
+        ],
+        [
+          2344.161,
+          -1484.066
+        ],
+        [
+          2362.884,
+          -1470.939
+        ],
+        [
+          2381.275,
+          -1456.161
+        ],
+        [
+          2399.158,
+          -1439.841
+        ],
+        [
+          2416.369,
+          -1422.099
+        ],
+        [
+          2432.755,
+          -1403.066
+        ],
+        [
+          2448.174,
+          -1382.885
+        ],
+        [
+          2462.496,
+          -1361.706
+        ],
+        [
+          2475.605,
+          -1339.692
+        ],
+        [
+          2487.401,
+          -1317.012
+        ],
+        [
+          2497.796,
+          -1293.845
+        ],
+        [
+          2506.718,
+          -1270.378
+        ],
+        [
+          2514.11,
+          -1246.8
+        ],
+        [
+          2519.93,
+          -1223.311
+        ],
+        [
+          2524.151,
+          -1200.111
+        ],
+        [
+          2526.761,
+          -1177.404
+        ],
+        [
+          2527.764,
+          -1155.398
+        ],
+        [
+          2527.174,
+          -1134.3
+        ],
+        [
+          2525.021,
+          -1114.316
+        ],
+        [
+          2521.347,
+          -1095.651
+        ],
+        [
+          2516.205,
+          -1078.507
+        ],
+        [
+          2509.656,
+          -1063.081
+        ],
+        [
+          2501.773,
+          -1049.562
+        ],
+        [
+          2492.632,
+          -1038.132
+        ],
+        [
+          2482.318,
+          -1028.958
+        ]
+      ],
+      "labelX": 2324.77675,
+      "labelY": -1628.47875,
+      "role": "資源を拾う長い横断 / 手数と一撃をつなぐ道"
+    }
+  ],
+  "origins": [
+    {
+      "id": "warrior",
+      "name": "戦士",
+      "root": "origin_warrior",
+      "angle": 150,
+      "icon": "sword",
+      "lanes": [
+        {
+          "stat": "physical",
+          "nodes": [
+            "opening_warrior_0_1",
+            "opening_warrior_0_2",
+            "opening_warrior_0_3"
+          ],
+          "name": "物理ダメージ"
+        },
+        {
+          "stat": "hp",
+          "nodes": [
+            "opening_warrior_1_1",
+            "opening_warrior_1_2",
+            "opening_warrior_1_3"
+          ],
+          "name": "最大HP"
+        },
+        {
+          "stat": "attackSpeed",
+          "nodes": [
+            "opening_warrior_2_1",
+            "opening_warrior_2_2",
+            "opening_warrior_2_3"
+          ],
+          "name": "攻撃速度"
+        }
+      ]
+    }
+  ],
+  "bounds": {
+    "minX": -1700,
+    "maxX": 2060,
+    "minY": -1540,
+    "maxY": 1670
+  },
+  "source645Retained": true,
+  "fullTreeLayoutComplete": false,
+  "runtimeApplied": false,
+  "directRoute": [
+    "g49n5",
+    "r1_29_5",
+    "r1_29_6",
+    "r1_47_1",
+    "r1_47_2",
+    "g51n0"
+  ],
+  "scope": "戦士の不動・吸収障壁・武器育成を比べる局所構造試作。全47領域の新配置は未完成。"
+}
