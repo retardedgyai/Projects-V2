@@ -1,0 +1,1268 @@
+{
+  "stage": "whole-645-shared-entrances",
+  "nodes": 645,
+  "regions": 47,
+  "edges": 776,
+  "unplaced": [],
+  "corridors": [
+    {
+      "from": "@tank:2",
+      "to": "g31",
+      "a": "opening_templar_2_3",
+      "b": "g31n5",
+      "why": "職業の開始恩恵から共有領域へ",
+      "path": [
+        "opening_templar_2_3",
+        "g31n5"
+      ]
+    },
+    {
+      "from": "@ranger:2",
+      "to": "g32",
+      "a": "opening_ranger_2_3",
+      "b": "g32n6",
+      "why": "職業の開始恩恵から共有領域へ",
+      "path": [
+        "opening_ranger_2_3",
+        "g32n6"
+      ]
+    },
+    {
+      "from": "@mage:0",
+      "to": "g2",
+      "a": "opening_mage_0_3",
+      "b": "g2n4",
+      "why": "職業の開始恩恵から共有領域へ",
+      "path": [
+        "opening_mage_0_3",
+        "g2n4"
+      ]
+    },
+    {
+      "from": "@assassin:2",
+      "to": "g17",
+      "a": "opening_assassin_2_3",
+      "b": "g17n1",
+      "why": "職業の開始恩恵から共有領域へ",
+      "path": [
+        "opening_assassin_2_3",
+        "link_assassin_1_3",
+        "g17n1"
+      ]
+    },
+    {
+      "from": "@assassin:0",
+      "to": "g42",
+      "a": "opening_assassin_0_3",
+      "b": "g42n7",
+      "why": "職業の開始恩恵から共有領域へ",
+      "path": [
+        "opening_assassin_0_3",
+        "link_assassin_0_2",
+        "g42n7"
+      ]
+    },
+    {
+      "from": "@ranger:1",
+      "to": "g52",
+      "a": "opening_ranger_1_3",
+      "b": "g52n4",
+      "why": "職業の開始恩恵から共有領域へ",
+      "path": [
+        "opening_ranger_1_3",
+        "join_assassin_0",
+        "g52n4"
+      ]
+    },
+    {
+      "from": "g20",
+      "to": "g2",
+      "a": "g20n8",
+      "b": "g2n1",
+      "why": "異なる恩恵を拾って隣の目標へ",
+      "path": [
+        "g20n8",
+        "link_ranger_2_3",
+        "g2n1"
+      ]
+    },
+    {
+      "from": "@mage:1",
+      "to": "g12",
+      "a": "opening_mage_1_3",
+      "b": "g12n2",
+      "why": "職業の開始恩恵から共有領域へ",
+      "path": [
+        "opening_mage_1_3",
+        "join_healer_1",
+        "g12n2"
+      ]
+    },
+    {
+      "from": "g24",
+      "to": "g8",
+      "a": "g24n6",
+      "b": "r10_14_1",
+      "why": "異なる恩恵を拾って隣の目標へ",
+      "path": [
+        "g24n6",
+        "join_healer_0",
+        "r10_14_1"
+      ]
+    },
+    {
+      "from": "@tank:1",
+      "to": "g6",
+      "a": "opening_templar_1_3",
+      "b": "g6n8",
+      "why": "職業の開始恩恵から共有領域へ",
+      "path": [
+        "opening_templar_1_3",
+        "link_mage_0_1",
+        "link_assassin_1_4",
+        "g6n8"
+      ]
+    },
+    {
+      "from": "g40",
+      "to": "g31",
+      "a": "g40n5",
+      "b": "g31n2",
+      "why": "異なる恩恵を拾って隣の目標へ",
+      "path": [
+        "g40n5",
+        "join_templar_0",
+        "join_assassin_1",
+        "g31n2"
+      ]
+    },
+    {
+      "from": "@tank:0",
+      "to": "g18",
+      "a": "opening_templar_0_3",
+      "b": "g18n3",
+      "why": "職業の開始恩恵から共有領域へ",
+      "path": [
+        "opening_templar_0_3",
+        "link_warrior_1_6",
+        "g18n3"
+      ]
+    },
+    {
+      "from": "g12",
+      "to": "g46",
+      "a": "g12n0",
+      "b": "g46n6",
+      "why": "異なる恩恵を拾って隣の目標へ",
+      "path": [
+        "g12n0",
+        "link_warrior_0_7",
+        "link_ranger_2_4",
+        "g46n6"
+      ]
+    },
+    {
+      "from": "@assassin:1",
+      "to": "g41",
+      "a": "opening_assassin_1_3",
+      "b": "g41n2",
+      "why": "職業の開始恩恵から共有領域へ",
+      "path": [
+        "opening_assassin_1_3",
+        "link_warrior_0_1",
+        "link_ranger_2_2",
+        "g41n2"
+      ]
+    },
+    {
+      "from": "g4",
+      "to": "g52",
+      "a": "g4n7",
+      "b": "g52n0",
+      "why": "異なる恩恵を拾って隣の目標へ",
+      "path": [
+        "g4n7",
+        "link_assassin_1_2",
+        "r39_40_2",
+        "g52n0"
+      ]
+    },
+    {
+      "from": "g6",
+      "to": "g18",
+      "a": "g6n9",
+      "b": "g18n3",
+      "why": "異なる恩恵を拾って隣の目標へ",
+      "path": [
+        "g6n9",
+        "link_assassin_0_4",
+        "r34_40_1",
+        "g18n3"
+      ]
+    },
+    {
+      "from": "g46",
+      "to": "g33",
+      "a": "g46n7",
+      "b": "g33n0",
+      "why": "異なる恩恵を拾って隣の目標へ",
+      "path": [
+        "g46n7",
+        "r33_37_2",
+        "link_ranger_1_1",
+        "g33n0"
+      ]
+    },
+    {
+      "from": "g7",
+      "to": "g34",
+      "a": "g7n0",
+      "b": "g34n9",
+      "why": "異なる恩恵を拾って隣の目標へ",
+      "path": [
+        "g7n0",
+        "r33_35_1",
+        "join_ranger_1",
+        "g34n9"
+      ]
+    },
+    {
+      "from": "g41",
+      "to": "g7",
+      "a": "g41n1",
+      "b": "g7n5",
+      "why": "異なる恩恵を拾って隣の目標へ",
+      "path": [
+        "g41n1",
+        "r32_44_2",
+        "link_ranger_0_2",
+        "g7n5"
+      ]
+    },
+    {
+      "from": "g28",
+      "to": "g40",
+      "a": "g28n2",
+      "b": "g40n3",
+      "why": "異なる恩恵を拾って隣の目標へ",
+      "path": [
+        "g28n2",
+        "r10_14_2",
+        "join_warrior_0",
+        "g40n3"
+      ]
+    },
+    {
+      "from": "g11",
+      "to": "g16",
+      "a": "g11n7",
+      "b": "g16n1",
+      "why": "異なる恩恵を拾って隣の目標へ",
+      "path": [
+        "g11n7",
+        "r32_44_1",
+        "link_ranger_0_1",
+        "g16n1"
+      ]
+    },
+    {
+      "from": "g16",
+      "to": "g44",
+      "a": "g16n4",
+      "b": "g44n7",
+      "why": "異なる恩恵を拾って隣の目標へ",
+      "path": [
+        "g16n4",
+        "r31_51_1",
+        "join_ranger_0",
+        "g44n7"
+      ]
+    },
+    {
+      "from": "g6",
+      "to": "g11",
+      "a": "g6n1",
+      "b": "g11n4",
+      "why": "異なる恩恵を拾って隣の目標へ",
+      "path": [
+        "g6n1",
+        "r31_46_1",
+        "join_healer_2",
+        "g11n4"
+      ]
+    },
+    {
+      "from": "g39",
+      "to": "g32",
+      "a": "g39n7",
+      "b": "g32n2",
+      "why": "異なる恩恵を拾って隣の目標へ",
+      "path": [
+        "g39n7",
+        "r30_36_2",
+        "link_mage_2_1",
+        "g32n2"
+      ]
+    },
+    {
+      "from": "g52",
+      "to": "g41",
+      "a": "g52n4",
+      "b": "g41n8",
+      "why": "異なる恩恵を拾って隣の目標へ",
+      "path": [
+        "g52n4",
+        "r30_36_1",
+        "join_mage_2",
+        "g41n8"
+      ]
+    },
+    {
+      "from": "g17",
+      "to": "g10",
+      "a": "g17n4",
+      "b": "g10n6",
+      "why": "異なる恩恵を拾って隣の目標へ",
+      "path": [
+        "g17n4",
+        "r26_28_2",
+        "join_mage_0",
+        "g10n6"
+      ]
+    },
+    {
+      "from": "g20",
+      "to": "g12",
+      "a": "g20n1",
+      "b": "g12n1",
+      "why": "異なる恩恵を拾って隣の目標へ",
+      "path": [
+        "g20n1",
+        "r26_28_1",
+        "link_templar_2_1",
+        "g12n1"
+      ]
+    },
+    {
+      "from": "g41",
+      "to": "g42",
+      "a": "g41n2",
+      "b": "g42n4",
+      "why": "異なる恩恵を拾って隣の目標へ",
+      "path": [
+        "g41n2",
+        "r25_44_2",
+        "join_templar_2",
+        "g42n4"
+      ]
+    },
+    {
+      "from": "g3",
+      "to": "g4",
+      "a": "r9_20_3",
+      "b": "g4n4",
+      "why": "異なる恩恵を拾って隣の目標へ",
+      "path": [
+        "r9_20_3",
+        "r24_42_4",
+        "link_templar_1_2",
+        "g4n4"
+      ]
+    },
+    {
+      "from": "g2",
+      "to": "g47",
+      "a": "g2n3",
+      "b": "r9_52_1",
+      "why": "異なる恩恵を拾って隣の目標へ",
+      "path": [
+        "g2n3",
+        "r23_37_2",
+        "link_templar_0_3",
+        "r9_52_1"
+      ]
+    },
+    {
+      "from": "g27",
+      "to": "g51",
+      "a": "r9_20_2",
+      "b": "g51n4",
+      "why": "異なる恩恵を拾って隣の目標へ",
+      "path": [
+        "r9_20_2",
+        "join_warrior_1",
+        "r10_14_3",
+        "g51n4"
+      ]
+    },
+    {
+      "from": "g31",
+      "to": "g46",
+      "a": "g31n4",
+      "b": "g46n2",
+      "why": "異なる恩恵を拾って隣の目標へ",
+      "path": [
+        "g31n4",
+        "r21_26_1",
+        "link_warrior_2_10",
+        "g46n2"
+      ]
+    },
+    {
+      "from": "g32",
+      "to": "g10",
+      "a": "g32n6",
+      "b": "g10n3",
+      "why": "異なる恩恵を拾って隣の目標へ",
+      "path": [
+        "g32n6",
+        "r18_49_1",
+        "join_warrior_2",
+        "g10n3"
+      ]
+    },
+    {
+      "from": "@ranger:0",
+      "to": "g39",
+      "a": "opening_ranger_0_3",
+      "b": "g39n0",
+      "why": "職業の開始恩恵から共有領域へ",
+      "path": [
+        "opening_ranger_0_3",
+        "r18_26_1",
+        "link_warrior_1_10",
+        "g39n0"
+      ]
+    },
+    {
+      "from": "g10",
+      "to": "g52",
+      "a": "g10n1",
+      "b": "g52n4",
+      "why": "異なる恩恵を拾って隣の目標へ",
+      "path": [
+        "g10n1",
+        "r10_32_1",
+        "link_warrior_1_7",
+        "g52n4"
+      ]
+    },
+    {
+      "from": "g6",
+      "to": "g28",
+      "a": "g6n0",
+      "b": "g28n5",
+      "why": "異なる恩恵を拾って隣の目標へ",
+      "path": [
+        "g6n0",
+        "r16_38_2",
+        "link_warrior_0_6",
+        "g28n5"
+      ]
+    },
+    {
+      "from": "g9",
+      "to": "g47",
+      "a": "g9n6",
+      "b": "r9_52_1",
+      "why": "異なる恩恵を拾って隣の目標へ",
+      "path": [
+        "g9n6",
+        "r16_47_1",
+        "link_warrior_0_10",
+        "r9_52_1"
+      ]
+    },
+    {
+      "from": "g44",
+      "to": "g26",
+      "a": "g44n6",
+      "b": "g26n3",
+      "why": "異なる恩恵を拾って隣の目標へ",
+      "path": [
+        "g44n6",
+        "r16_37_3",
+        "r41_50_1",
+        "g26n3"
+      ]
+    },
+    {
+      "from": "g33",
+      "to": "g51",
+      "a": "g33n3",
+      "b": "g51n6",
+      "why": "異なる恩恵を拾って隣の目標へ",
+      "path": [
+        "g33n3",
+        "r16_37_2",
+        "r39_40_3",
+        "g51n6"
+      ]
+    },
+    {
+      "from": "g12",
+      "to": "g27",
+      "a": "g12n3",
+      "b": "r9_20_2",
+      "why": "異なる恩恵を拾って隣の目標へ",
+      "path": [
+        "g12n3",
+        "r15_43_2",
+        "r35_38_1",
+        "r9_20_2"
+      ]
+    },
+    {
+      "from": "g19",
+      "to": "g20",
+      "a": "g19n0",
+      "b": "g20n2",
+      "why": "異なる恩恵を拾って隣の目標へ",
+      "path": [
+        "g19n0",
+        "r15_43_1",
+        "r34_42_1",
+        "g20n2"
+      ]
+    },
+    {
+      "from": "g2",
+      "to": "g24",
+      "a": "g2n4",
+      "b": "g24n3",
+      "why": "異なる恩恵を拾って隣の目標へ",
+      "path": [
+        "g2n4",
+        "r10_36_1",
+        "r39_40_1",
+        "g24n3"
+      ]
+    },
+    {
+      "from": "g24",
+      "to": "g3",
+      "a": "g24n0",
+      "b": "r9_20_3",
+      "why": "異なる恩恵を拾って隣の目標へ",
+      "path": [
+        "g24n0",
+        "r14_42_1",
+        "r27_52_1",
+        "r9_20_3"
+      ]
+    },
+    {
+      "from": "g47",
+      "to": "g8",
+      "a": "r9_52_1",
+      "b": "r10_14_1",
+      "why": "異なる恩恵を拾って隣の目標へ",
+      "path": [
+        "r9_52_1",
+        "r13_49_1",
+        "r24_42_3",
+        "r10_14_1"
+      ]
+    },
+    {
+      "from": "g18",
+      "to": "g45",
+      "a": "g18n5",
+      "b": "g45n1",
+      "why": "異なる恩恵を拾って隣の目標へ",
+      "path": [
+        "g18n5",
+        "link_warrior_2_8",
+        "g45n1"
+      ]
+    },
+    {
+      "from": "g40",
+      "to": "g19",
+      "a": "g40n5",
+      "b": "g19n2",
+      "why": "異なる恩恵を拾って隣の目標へ",
+      "path": [
+        "g40n5",
+        "r13_45_1",
+        "r23_47_1",
+        "g19n2"
+      ]
+    },
+    {
+      "from": "g43",
+      "to": "g9",
+      "a": "g43n0",
+      "b": "g9n0",
+      "why": "異なる恩恵を拾って隣の目標へ",
+      "path": [
+        "g43n0",
+        "r13_35_1",
+        "r22_24_2",
+        "g9n0"
+      ]
+    },
+    {
+      "from": "g19",
+      "to": "g43",
+      "a": "g19n0",
+      "b": "g43n2",
+      "why": "異なる恩恵を拾って隣の目標へ",
+      "path": [
+        "g19n0",
+        "r12_20_1",
+        "r19_27_1",
+        "g43n2"
+      ]
+    },
+    {
+      "from": "g39",
+      "to": "g24",
+      "a": "g39n1",
+      "b": "g24n6",
+      "why": "異なる恩恵を拾って隣の目標へ",
+      "path": [
+        "g39n1",
+        "r12_46_1",
+        "r22_24_1",
+        "g24n6"
+      ]
+    },
+    {
+      "from": "g27",
+      "to": "g3",
+      "a": "r9_20_2",
+      "b": "r9_20_3",
+      "why": "異なる恩恵を拾って隣の目標へ",
+      "path": [
+        "r9_20_2",
+        "r10_36_2",
+        "r24_42_2",
+        "r9_20_3"
+      ]
+    },
+    {
+      "from": "g52",
+      "to": "g39",
+      "a": "g52n2",
+      "b": "g39n0",
+      "why": "異なる恩恵を拾って隣の目標へ",
+      "path": [
+        "g52n2",
+        "r12_19_1",
+        "r17_30_1",
+        "g39n0"
+      ]
+    },
+    {
+      "from": "g46",
+      "to": "g23",
+      "a": "g46n1",
+      "b": "g23n5",
+      "why": "異なる恩恵を拾って隣の目標へ",
+      "path": [
+        "g46n1",
+        "r11_40_1",
+        "r16_38_1",
+        "g23n5"
+      ]
+    },
+    {
+      "from": "@mage:2",
+      "to": "g27:shield-entry",
+      "a": "opening_mage_2_3",
+      "b": "g27n4",
+      "why": "所有する障壁の開始恩恵から氷・障壁の目標へ",
+      "path": [
+        "opening_mage_2_3",
+        "link_warrior_2_7",
+        "link_assassin_0_3",
+        "g27n4"
+      ]
+    },
+    {
+      "from": "g44",
+      "to": "g37",
+      "a": "g44n6",
+      "b": "g37n6",
+      "why": "補完する恩恵を拾う別の経路",
+      "path": [
+        "g44n6",
+        "r22_24_3",
+        "link_templar_0_2",
+        "g37n6"
+      ]
+    },
+    {
+      "from": "g11",
+      "to": "g28",
+      "a": "g11n4",
+      "b": "g28n5",
+      "why": "補完する恩恵を拾う別の経路",
+      "path": [
+        "g11n4",
+        "r23_37_1",
+        "r11_21_1",
+        "g28n5"
+      ]
+    },
+    {
+      "from": "g18",
+      "to": "g16",
+      "a": "g18n2",
+      "b": "g16n8",
+      "why": "補完する恩恵を拾う別の経路",
+      "path": [
+        "g18n2",
+        "r23_37_3",
+        "join_templar_1",
+        "g16n8"
+      ]
+    },
+    {
+      "from": "g46",
+      "to": "g20",
+      "a": "g46n5",
+      "b": "g20n0",
+      "why": "補完する恩恵を拾う別の経路",
+      "path": [
+        "g46n5",
+        "r15_32_2",
+        "r33_45_1",
+        "g20n0"
+      ]
+    },
+    {
+      "from": "g33",
+      "to": "g12",
+      "a": "g33n3",
+      "b": "g12n3",
+      "why": "補完する恩恵を拾う別の経路",
+      "path": [
+        "g33n3",
+        "r19_24_1",
+        "link_warrior_2_1",
+        "g12n3"
+      ]
+    },
+    {
+      "from": "g33",
+      "to": "g13",
+      "a": "g33n0",
+      "b": "g13n8",
+      "why": "補完する恩恵を拾う別の経路",
+      "path": [
+        "g33n0",
+        "r14_27_1",
+        "r25_44_1",
+        "g13n8"
+      ]
+    },
+    {
+      "from": "g27",
+      "to": "g4",
+      "a": "r9_20_2",
+      "b": "g4n3",
+      "why": "補完する恩恵を拾う別の経路",
+      "path": [
+        "r9_20_2",
+        "r12_19_2",
+        "r18_26_2",
+        "g4n3"
+      ]
+    },
+    {
+      "from": "g2",
+      "to": "g12",
+      "a": "g2n1",
+      "b": "g12n1",
+      "why": "補完する恩恵を拾う別の経路",
+      "path": [
+        "g2n1",
+        "r15_25_1",
+        "r28_39_1",
+        "g12n1"
+      ]
+    },
+    {
+      "from": "g43",
+      "to": "g20",
+      "a": "g43n0",
+      "b": "g20n3",
+      "why": "補完する恩恵を拾う別の経路",
+      "path": [
+        "g43n0",
+        "r15_43_3",
+        "r36_48_1",
+        "g20n3"
+      ]
+    },
+    {
+      "from": "g8",
+      "to": "g39",
+      "a": "r10_14_1",
+      "b": "g39n2",
+      "why": "補完する恩恵を拾う別の経路",
+      "path": [
+        "r10_14_1",
+        "r11_28_1",
+        "r29_38_2",
+        "g39n2"
+      ]
+    },
+    {
+      "from": "g41",
+      "to": "g10",
+      "a": "g41n5",
+      "b": "g10n0",
+      "why": "補完する恩恵を拾う別の経路",
+      "path": [
+        "g41n5",
+        "join_mage_1",
+        "link_assassin_1_5",
+        "g10n0"
+      ]
+    },
+    {
+      "from": "g45",
+      "to": "g49",
+      "a": "g45n5",
+      "b": "g49n3",
+      "why": "同じ恩恵の別目標へ回る短い接続",
+      "path": [
+        "g45n5",
+        "link_assassin_0_1",
+        "g49n3"
+      ]
+    },
+    {
+      "from": "g5",
+      "to": "g21",
+      "a": "g5n1",
+      "b": "g21n6",
+      "why": "同じ恩恵の別目標へ回る短い接続",
+      "path": [
+        "g5n1",
+        "link_ranger_1_2",
+        "g21n6"
+      ]
+    },
+    {
+      "from": "g35",
+      "to": "g49",
+      "a": "g35n0",
+      "b": "g49n5",
+      "why": "同じ恩恵の別目標へ回る短い接続",
+      "path": [
+        "g35n0",
+        "link_templar_0_1",
+        "link_assassin_1_1",
+        "g49n5"
+      ]
+    },
+    {
+      "from": "g25",
+      "to": "g48",
+      "a": "g25n7",
+      "b": "g48n0",
+      "why": "同じ恩恵の別目標へ回る短い接続",
+      "path": [
+        "g25n7",
+        "g48n0"
+      ]
+    },
+    {
+      "from": "g14",
+      "to": "g30",
+      "a": "g14n0",
+      "b": "g30n5",
+      "why": "同じ恩恵の別目標へ回る短い接続",
+      "path": [
+        "g14n0",
+        "r34_48_1",
+        "join_ranger_2",
+        "g30n5"
+      ]
+    },
+    {
+      "from": "g5",
+      "to": "g50",
+      "a": "g5n0",
+      "b": "g50n1",
+      "why": "同じ恩恵の別目標へ回る短い接続",
+      "path": [
+        "g5n0",
+        "link_ranger_2_1",
+        "r11_28_2",
+        "g50n1"
+      ]
+    },
+    {
+      "from": "g18",
+      "to": "g38",
+      "a": "g18n4",
+      "b": "g38n1",
+      "why": "同じ恩恵の別目標へ回る短い接続",
+      "path": [
+        "g18n4",
+        "r28_50_1",
+        "link_mage_1_1",
+        "g38n1"
+      ]
+    },
+    {
+      "from": "g13",
+      "to": "g45",
+      "a": "g13n2",
+      "b": "g45n4",
+      "why": "同じ恩恵の別目標へ回る短い接続",
+      "path": [
+        "g13n2",
+        "r24_42_1",
+        "link_templar_1_1",
+        "g45n4"
+      ]
+    },
+    {
+      "from": "g13",
+      "to": "g49",
+      "a": "g13n2",
+      "b": "g49n5",
+      "why": "同じ恩恵の別目標へ回る短い接続",
+      "path": [
+        "g13n2",
+        "r19_24_2",
+        "link_warrior_2_6",
+        "g49n5"
+      ]
+    },
+    {
+      "from": "g26",
+      "to": "g30",
+      "a": "g26n1",
+      "b": "g30n2",
+      "why": "同じ恩恵の別目標へ回る短い接続",
+      "path": [
+        "g26n1",
+        "r17_44_1",
+        "link_warrior_1_1",
+        "g30n2"
+      ]
+    },
+    {
+      "from": "g24",
+      "to": "g47",
+      "a": "g24n3",
+      "b": "r9_52_1",
+      "why": "同じ恩恵の別目標へ回る短い接続",
+      "path": [
+        "g24n3",
+        "r16_37_1",
+        "r36_48_2",
+        "r9_52_1"
+      ]
+    },
+    {
+      "from": "g7",
+      "to": "g42",
+      "a": "g7n5",
+      "b": "g42n4",
+      "why": "同じ恩恵の別目標へ回る短い接続",
+      "path": [
+        "g7n5",
+        "r15_32_1",
+        "r33_37_1",
+        "g42n4"
+      ]
+    },
+    {
+      "from": "g34",
+      "to": "g50",
+      "a": "g34n1",
+      "b": "g50n1",
+      "why": "同じ恩恵の別目標へ回る短い接続",
+      "path": [
+        "g34n1",
+        "r15_25_2",
+        "r29_38_1",
+        "g50n1"
+      ]
+    }
+  ],
+  "inputRepairs": [
+    {
+      "why": "HPを使うために吸収入力を強制しない",
+      "path": [
+        "g13n3",
+        "join_assassin_2",
+        "g13n5"
+      ]
+    },
+    {
+      "why": "会心の混合Notableへ、弱点入力を通過させない",
+      "path": [
+        "g17n4",
+        "link_assassin_2_1",
+        "g17n0"
+      ]
+    },
+    {
+      "why": "二つの混合目標へ、氷だけでも回れる道",
+      "path": [
+        "g27n1",
+        "g27n4"
+      ]
+    },
+    {
+      "why": "障壁側の小さな目標へ、氷専用点を避ける",
+      "path": [
+        "g27n4",
+        "g27n6"
+      ]
+    },
+    {
+      "why": "氷だけの入力から混合Notableへ届く",
+      "path": [
+        "g3n2",
+        "g3n5"
+      ]
+    },
+    {
+      "why": "氷の下側の腕へ、障壁入力を避ける",
+      "path": [
+        "g27n1",
+        "g27n8"
+      ]
+    },
+    {
+      "why": "障壁だけの入力から混合Notableへ届く",
+      "path": [
+        "g3n3",
+        "g3n5"
+      ]
+    },
+    {
+      "why": "炎だけの入力から目標へ、APを自動供給しない",
+      "path": [
+        "g47n0",
+        "g47n2"
+      ]
+    },
+    {
+      "why": "氷の入口を一般の分岐から別に開く",
+      "path": [
+        "r9_20_2",
+        "link_assassin_2_5",
+        "g27n2"
+      ]
+    },
+    {
+      "why": "氷の小さな目標に障壁を通過させない",
+      "path": [
+        "r9_20_3",
+        "link_assassin_2_6",
+        "g3n1"
+      ]
+    },
+    {
+      "why": "開始の混合耐性を使うために障壁や氷を必須にしない",
+      "path": [
+        "opening_mage_2_3",
+        "link_assassin_2_7",
+        "g12n3"
+      ]
+    },
+    {
+      "why": "一般の通路を吸収・障壁の入力だけで閉じない",
+      "path": [
+        "r1_29_2",
+        "link_assassin_2_8",
+        "g13n8"
+      ]
+    }
+  ],
+  "neutralGatewayRepairs": [
+    {
+      "road": "link_assassin_2_2",
+      "boundary": [
+        "g27n0",
+        "g27n1"
+      ],
+      "sharedEntry": "link_assassin_2_5",
+      "why": "一般の通路は氷・障壁の入力がなくても入口から取得できる"
+    },
+    {
+      "road": "link_assassin_2_3",
+      "boundary": [
+        "g27n4",
+        "g27n5"
+      ],
+      "sharedEntry": "link_assassin_0_3",
+      "why": "一般の通路は氷・障壁の入力がなくても入口から取得できる"
+    },
+    {
+      "road": "link_assassin_2_4",
+      "boundary": [
+        "g3n1",
+        "g3n2"
+      ],
+      "sharedEntry": "r27_52_1",
+      "why": "一般の通路は氷・障壁の入力がなくても入口から取得できる"
+    }
+  ],
+  "firstPassConnectionsResolved": [
+    {
+      "from": "g42",
+      "to": "g17",
+      "reason": "no clear corridor in first pass",
+      "finalStatus": "connected-through-shared-goals",
+      "finalPath": [
+        "g42n7",
+        "link_assassin_0_2",
+        "opening_assassin_0_3",
+        "opening_assassin_0_2",
+        "opening_assassin_0_1",
+        "origin_assassin",
+        "opening_assassin_2_1",
+        "opening_assassin_2_2",
+        "opening_assassin_2_3",
+        "link_assassin_1_3",
+        "g17n1"
+      ]
+    },
+    {
+      "from": "g44",
+      "to": "g25",
+      "reason": "no clear corridor in first pass",
+      "finalStatus": "connected-through-shared-goals",
+      "finalPath": [
+        "g44n6",
+        "r22_24_3",
+        "link_templar_0_2",
+        "g37n6",
+        "g37n0",
+        "g37n1",
+        "g37n2",
+        "link_warrior_2_2",
+        "r7_42_1",
+        "r8_47_1",
+        "g25n1"
+      ]
+    },
+    {
+      "from": "g16",
+      "to": "g37",
+      "reason": "no clear corridor in first pass",
+      "finalStatus": "connected-through-shared-goals",
+      "finalPath": [
+        "g16n4",
+        "r31_51_1",
+        "join_ranger_0",
+        "g44n7",
+        "g44n2",
+        "g44n3",
+        "g44n6",
+        "r22_24_3",
+        "link_templar_0_2",
+        "g37n6"
+      ]
+    },
+    {
+      "from": "g4",
+      "to": "g35",
+      "reason": "no clear corridor in first pass",
+      "finalStatus": "connected-through-shared-goals",
+      "finalPath": [
+        "g4n3",
+        "r18_26_2",
+        "r12_19_2",
+        "r9_20_2",
+        "join_warrior_1",
+        "r10_14_3",
+        "g51n4",
+        "g51n1",
+        "g51n3",
+        "g51n2",
+        "g51n0",
+        "link_warrior_2_9",
+        "r1_47_2",
+        "link_warrior_1_9",
+        "r1_47_1",
+        "link_warrior_1_8",
+        "r1_29_6",
+        "r1_29_5",
+        "link_warrior_0_8",
+        "g49n5",
+        "g49n6",
+        "r1_51_1",
+        "g35n0"
+      ]
+    },
+    {
+      "from": "g42",
+      "to": "g5",
+      "reason": "no clear corridor in first pass",
+      "finalStatus": "connected-through-shared-goals",
+      "finalPath": [
+        "g42n4",
+        "r33_37_1",
+        "r15_32_1",
+        "g7n5",
+        "g7n4",
+        "g7n3",
+        "g7n0",
+        "r33_35_1",
+        "join_ranger_1",
+        "g34n9",
+        "g34n8",
+        "link_warrior_0_9",
+        "g34n2",
+        "g34n3",
+        "g34n1",
+        "r15_25_2",
+        "r29_38_1",
+        "g50n1",
+        "r5_39_1",
+        "g5n0"
+      ]
+    },
+    {
+      "from": "g17",
+      "to": "g50",
+      "reason": "no clear corridor in first pass",
+      "finalStatus": "connected-through-shared-goals",
+      "finalPath": [
+        "g17n4",
+        "r26_28_2",
+        "join_mage_0",
+        "g10n6",
+        "g10n0",
+        "link_assassin_1_5",
+        "join_mage_1",
+        "g41n5",
+        "g41n4",
+        "g41n3",
+        "g41n2",
+        "g41n1",
+        "r32_44_2",
+        "link_ranger_0_2",
+        "g7n5",
+        "g7n4",
+        "g7n3",
+        "g7n0",
+        "r33_35_1",
+        "join_ranger_1",
+        "g34n9",
+        "g34n8",
+        "link_warrior_0_9",
+        "g34n2",
+        "g34n3",
+        "g34n1",
+        "r15_25_2",
+        "r29_38_1",
+        "g50n1"
+      ]
+    }
+  ],
+  "remainingLayoutBlockers": []
+}

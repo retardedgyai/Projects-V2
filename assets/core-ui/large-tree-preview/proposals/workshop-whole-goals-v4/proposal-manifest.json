@@ -1,0 +1,18 @@
+{
+  "status": "COMPLETE_LAYOUT_PROPOSAL",
+  "adopted": false,
+  "source645Sha256": "b04169fcdb5f9f020d8f4e0e36d1a035e0b9fee359e118aa811195fdaced56d7",
+  "source645EmbeddedVerbatim": true,
+  "displayedNodes": 645,
+  "displayedGroups": 47,
+  "origins": 5,
+  "keystones": 15,
+  "connections": 776,
+  "full645LayoutCompleted": true,
+  "effectsCostsRequirementsUnchanged": true,
+  "runtimeApplied": false,
+  "earlierFilesChanged": false,
+  "sourceWeaponProfiles": 60,
+  "inputReachabilityCases": 120,
+  "saveScope": "preview-only"
+}

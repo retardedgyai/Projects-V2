@@ -1,0 +1,99 @@
+{
+  "status": "PASS",
+  "nodes": 645,
+  "regions": 47,
+  "types": {
+    "start": 5,
+    "small": 351,
+    "notable": 77,
+    "road": 197,
+    "keystone": 15
+  },
+  "edges": 776,
+  "connectedNodes": 645,
+  "keyLeaves": 15,
+  "uniqueRegionCoordinateShapes": 47,
+  "leftOfBoundsCenter": 333,
+  "rightOfBoundsCenter": 312,
+  "balanceIsNotMirrorSymmetry": true,
+  "maxDegreeTwoRoadRun": 2,
+  "roadRunsHistogram": {
+    "1": 40,
+    "2": 72
+  },
+  "longestRoadRuns": [
+    [
+      "link_assassin_1_2",
+      "r39_40_2"
+    ],
+    [
+      "r14_27_1",
+      "r25_44_1"
+    ],
+    [
+      "j15",
+      "j22"
+    ],
+    [
+      "link_ranger_2_2",
+      "link_warrior_0_1"
+    ],
+    [
+      "r1_29_5",
+      "r1_29_6"
+    ],
+    [
+      "link_ranger_0_1",
+      "r32_44_1"
+    ],
+    [
+      "r16_37_3",
+      "r41_50_1"
+    ],
+    [
+      "link_warrior_2_10",
+      "r21_26_1"
+    ]
+  ],
+  "warriorToAssassinWithoutKeys": [
+    "origin_warrior",
+    "opening_warrior_0_1",
+    "opening_warrior_0_2",
+    "opening_warrior_0_3",
+    "r1_51_2",
+    "g49n0",
+    "g49n7",
+    "g49n6",
+    "r1_51_1",
+    "g35n0",
+    "g35n2",
+    "g35n1",
+    "r3_4_2",
+    "r3_4_1",
+    "r3_52_1",
+    "g34n0",
+    "g34n1",
+    "g34n3",
+    "g34n2",
+    "link_warrior_0_9",
+    "g34n8",
+    "g34n9",
+    "join_ranger_1",
+    "r33_35_1",
+    "g7n0",
+    "g7n3",
+    "g7n4",
+    "g7n5",
+    "link_ranger_0_2",
+    "r32_44_2",
+    "g41n1",
+    "g41n2",
+    "link_ranger_2_2",
+    "link_warrior_0_1",
+    "opening_assassin_1_3",
+    "opening_assassin_1_2",
+    "opening_assassin_1_1",
+    "origin_assassin"
+  ],
+  "effectsCostsRequirementsUnchanged": true
+}
