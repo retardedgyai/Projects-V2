@@ -1,0 +1,7869 @@
+{
+  "runtimeApplied": false,
+  "combatBalanceVerdict": "not_assessed",
+  "sameLoadout": {
+    "id": "warrior:support:plain:standard",
+    "weapon": "開拓の大剣",
+    "resource": "闘気",
+    "equippedSkills": [
+      "踏み込み斬り",
+      "叩きつけ",
+      "薙ぎ払い",
+      "雄叫び",
+      "天断"
+    ],
+    "flags": [
+      "ALLY_SHIELD",
+      "DAMAGE",
+      "DEFENSE",
+      "DODGE",
+      "MELEE",
+      "MP_CONSUMER",
+      "MULTI",
+      "OPENER",
+      "RESOURCE",
+      "SHIELD",
+      "SIGNATURE",
+      "SPEND"
+    ]
+  },
+  "siphonAssumedOwned": true,
+  "siphonSource": "CoreAffixCatalog.projects:siphon / CoreCombatMath.lifeSteal",
+  "selectionMethod": "目的分野のNotableを増分費用順で選び、残りを使える隣接恩恵へ割り当てる具体例。最適DPS・実戦生存の探索ではない。",
+  "hp15PercentKeyPenaltyIncludedInStats": false,
+  "dodgeLossNotConvertedIntoNumericPower": true,
+  "builds": [
+    {
+      "version": "original",
+      "budget": 48,
+      "strategy": "weapon",
+      "label": "武器特化",
+      "spent": 48,
+      "remaining": 0,
+      "stats": {
+        "damage": 40,
+        "physical": 66,
+        "penetration": 18.94,
+        "armor": 21,
+        "hp": 16,
+        "attackSpeed": 9,
+        "aoe": 26,
+        "resource": 4
+      },
+      "notables": [
+        {
+          "id": "g16n2",
+          "name": "深く届く一撃"
+        },
+        {
+          "id": "g16n8",
+          "name": "鎧を割る刃"
+        },
+        {
+          "id": "g35n1",
+          "name": "刃に込める力"
+        },
+        {
+          "id": "g37n0",
+          "name": "深く届く一撃〈比較〉"
+        },
+        {
+          "id": "g37n4",
+          "name": "鎧を割る刃"
+        },
+        {
+          "id": "g42n0",
+          "name": "広がる間合い"
+        },
+        {
+          "id": "g7n2",
+          "name": "届く圏域"
+        },
+        {
+          "id": "opening_warrior_1_3",
+          "name": "戦うための体力"
+        },
+        {
+          "id": "opening_warrior_2_3",
+          "name": "軽やかな連撃"
+        }
+      ],
+      "counts": {
+        "road": 20,
+        "notable": 9,
+        "small": 19,
+        "start": 1
+      },
+      "keys": [],
+      "tradeoffs": [],
+      "keyDescriptions": [],
+      "checkpoints": [
+        {
+          "target": "g35n1",
+          "cost": 10,
+          "added": [
+            "g35n0",
+            "g35n1",
+            "join_warrior_1",
+            "link_warrior_1_1",
+            "link_warrior_1_2",
+            "link_warrior_1_4",
+            "opening_warrior_1_1",
+            "opening_warrior_1_2",
+            "opening_warrior_1_3",
+            "r6_35_2"
+          ]
+        },
+        {
+          "target": "g16n2",
+          "cost": 9,
+          "added": [
+            "g16n1",
+            "g16n2",
+            "g35n6",
+            "g35n7",
+            "join_warrior_2",
+            "r16_38_1",
+            "r16_38_2",
+            "r29_38_2",
+            "r35_38_1"
+          ]
+        },
+        {
+          "target": "g16n8",
+          "cost": 2,
+          "added": [
+            "g16n0",
+            "g16n8"
+          ]
+        },
+        {
+          "target": "g37n0",
+          "cost": 6,
+          "added": [
+            "g16n3",
+            "g37n0",
+            "g37n8",
+            "r16_37_1",
+            "r16_37_2",
+            "r16_37_3"
+          ]
+        },
+        {
+          "target": "g37n4",
+          "cost": 2,
+          "added": [
+            "g37n3",
+            "g37n4"
+          ]
+        },
+        {
+          "target": "g7n2",
+          "cost": 3,
+          "added": [
+            "g7n2",
+            "link_warrior_2_2",
+            "link_warrior_2_4"
+          ]
+        },
+        {
+          "target": "g42n0",
+          "cost": 15,
+          "added": [
+            "g42n0",
+            "g42n5",
+            "g42n6",
+            "g42n7",
+            "g7n0",
+            "g7n1",
+            "join_mage_0",
+            "join_mage_1",
+            "join_mage_2",
+            "join_templar_0",
+            "join_templar_1",
+            "join_templar_2",
+            "r24_42_3",
+            "r24_42_4",
+            "r7_42_1"
+          ]
+        },
+        {
+          "target": "opening_warrior_2_3",
+          "cost": 1,
+          "added": [
+            "opening_warrior_2_3"
+          ]
+        }
+      ],
+      "buildCode": {
+        "version": "projects-large-tree-diff-v2",
+        "budget": 48,
+        "origin": "warrior",
+        "learned": [
+          "g16n0",
+          "g16n1",
+          "g16n2",
+          "g16n3",
+          "g16n8",
+          "g35n0",
+          "g35n1",
+          "g35n6",
+          "g35n7",
+          "g37n0",
+          "g37n3",
+          "g37n4",
+          "g37n8",
+          "g42n0",
+          "g42n5",
+          "g42n6",
+          "g42n7",
+          "g7n0",
+          "g7n1",
+          "g7n2",
+          "join_mage_0",
+          "join_mage_1",
+          "join_mage_2",
+          "join_templar_0",
+          "join_templar_1",
+          "join_templar_2",
+          "join_warrior_1",
+          "join_warrior_2",
+          "link_warrior_1_1",
+          "link_warrior_1_2",
+          "link_warrior_1_4",
+          "link_warrior_2_2",
+          "link_warrior_2_4",
+          "opening_warrior_1_1",
+          "opening_warrior_1_2",
+          "opening_warrior_1_3",
+          "opening_warrior_2_3",
+          "origin_warrior",
+          "r16_37_1",
+          "r16_37_2",
+          "r16_37_3",
+          "r16_38_1",
+          "r16_38_2",
+          "r24_42_3",
+          "r24_42_4",
+          "r29_38_2",
+          "r35_38_1",
+          "r6_35_2",
+          "r7_42_1"
+        ],
+        "mastery": {},
+        "travel": {
+          "r24_42_3": "damage",
+          "r16_37_3": "damage",
+          "r16_38_2": "damage",
+          "join_templar_1": "damage",
+          "link_warrior_1_1": "damage",
+          "r6_35_2": "damage",
+          "join_mage_1": "damage",
+          "join_warrior_1": "damage",
+          "join_mage_0": "damage",
+          "join_warrior_2": "damage",
+          "join_templar_0": "damage",
+          "join_templar_2": "damage",
+          "r16_38_1": "damage",
+          "r29_38_2": "damage",
+          "r35_38_1": "damage",
+          "r16_37_2": "damage",
+          "r24_42_4": "damage",
+          "join_mage_2": "damage",
+          "r16_37_1": "damage",
+          "r7_42_1": "damage"
+        },
+        "defaultTravel": "damage"
+      }
+    },
+    {
+      "version": "original",
+      "budget": 48,
+      "strategy": "survival",
+      "label": "生存特化",
+      "spent": 48,
+      "remaining": 0,
+      "stats": {
+        "hp": 94,
+        "physical": 34,
+        "penetration": 5.47,
+        "leech": 0.82,
+        "resist": 34.55,
+        "mana": 10,
+        "regen": 32,
+        "armor": 85.55,
+        "attackSpeed": 4
+      },
+      "notables": [
+        {
+          "id": "g13n3",
+          "name": "傷口からの回帰〈比較〉"
+        },
+        {
+          "id": "g13n9",
+          "name": "傷口からの回帰"
+        },
+        {
+          "id": "g18n1",
+          "name": "太い生命線〈比較〉"
+        },
+        {
+          "id": "g23n1",
+          "name": "異質への耐性"
+        },
+        {
+          "id": "g23n5",
+          "name": "意志の鎧"
+        },
+        {
+          "id": "g33n1",
+          "name": "息を整える"
+        },
+        {
+          "id": "g37n0",
+          "name": "深く届く一撃〈比較〉"
+        },
+        {
+          "id": "g45n2",
+          "name": "太い生命線"
+        },
+        {
+          "id": "g49n2",
+          "name": "鋼の重なり"
+        },
+        {
+          "id": "g6n0",
+          "name": "鎧の内側"
+        },
+        {
+          "id": "g6n4",
+          "name": "鋼の重なり"
+        },
+        {
+          "id": "opening_warrior_0_3",
+          "name": "鍛えた一撃"
+        }
+      ],
+      "counts": {
+        "road": 12,
+        "small": 24,
+        "notable": 12,
+        "start": 1
+      },
+      "keys": [],
+      "tradeoffs": [],
+      "keyDescriptions": [],
+      "checkpoints": [
+        {
+          "target": "g6n0",
+          "cost": 8,
+          "added": [
+            "g6n0",
+            "join_warrior_0",
+            "link_warrior_0_1",
+            "link_warrior_0_2",
+            "link_warrior_0_4",
+            "opening_warrior_0_1",
+            "opening_warrior_0_2",
+            "opening_warrior_0_3"
+          ]
+        },
+        {
+          "target": "g6n4",
+          "cost": 1,
+          "added": [
+            "g6n4"
+          ]
+        },
+        {
+          "target": "g18n1",
+          "cost": 6,
+          "added": [
+            "g18n1",
+            "g18n5",
+            "g18n7",
+            "g6n1",
+            "g6n2",
+            "r6_18_1"
+          ]
+        },
+        {
+          "target": "g49n2",
+          "cost": 5,
+          "added": [
+            "g18n4",
+            "g49n0",
+            "g49n1",
+            "g49n2",
+            "r18_49_1"
+          ]
+        },
+        {
+          "target": "g45n2",
+          "cost": 10,
+          "added": [
+            "g13n2",
+            "g13n3",
+            "g13n5",
+            "g45hub",
+            "g45n1",
+            "g45n2",
+            "g49n3",
+            "g49n4",
+            "r13_45_1",
+            "r13_49_1"
+          ]
+        },
+        {
+          "target": "g23n5",
+          "cost": 13,
+          "added": [
+            "g23n3",
+            "g23n5",
+            "g37n0",
+            "g37n1",
+            "g37n7",
+            "g37n8",
+            "g45n5",
+            "r23_37_1",
+            "r23_37_2",
+            "r23_37_3",
+            "r33_37_1",
+            "r33_37_2",
+            "r33_45_1"
+          ]
+        },
+        {
+          "target": "g23n1",
+          "cost": 1,
+          "added": [
+            "g23n1"
+          ]
+        },
+        {
+          "target": "g13n9",
+          "cost": 1,
+          "added": [
+            "g13n9"
+          ]
+        },
+        {
+          "target": "g33n1",
+          "cost": 1,
+          "added": [
+            "g33n1"
+          ]
+        },
+        {
+          "target": "g13n8",
+          "cost": 1,
+          "added": [
+            "g13n8"
+          ]
+        },
+        {
+          "target": "g18n2",
+          "cost": 1,
+          "added": [
+            "g18n2"
+          ]
+        }
+      ],
+      "buildCode": {
+        "version": "projects-large-tree-diff-v2",
+        "budget": 48,
+        "origin": "warrior",
+        "learned": [
+          "g13n2",
+          "g13n3",
+          "g13n5",
+          "g13n8",
+          "g13n9",
+          "g18n1",
+          "g18n2",
+          "g18n4",
+          "g18n5",
+          "g18n7",
+          "g23n1",
+          "g23n3",
+          "g23n5",
+          "g33n1",
+          "g37n0",
+          "g37n1",
+          "g37n7",
+          "g37n8",
+          "g45hub",
+          "g45n1",
+          "g45n2",
+          "g45n5",
+          "g49n0",
+          "g49n1",
+          "g49n2",
+          "g49n3",
+          "g49n4",
+          "g6n0",
+          "g6n1",
+          "g6n2",
+          "g6n4",
+          "join_warrior_0",
+          "link_warrior_0_1",
+          "link_warrior_0_2",
+          "link_warrior_0_4",
+          "opening_warrior_0_1",
+          "opening_warrior_0_2",
+          "opening_warrior_0_3",
+          "origin_warrior",
+          "r13_45_1",
+          "r13_49_1",
+          "r18_49_1",
+          "r23_37_1",
+          "r23_37_2",
+          "r23_37_3",
+          "r33_37_1",
+          "r33_37_2",
+          "r33_45_1",
+          "r6_18_1"
+        ],
+        "mastery": {},
+        "travel": {
+          "r13_45_1": "hp",
+          "r23_37_3": "hp",
+          "r33_37_2": "hp",
+          "join_warrior_0": "hp",
+          "r33_45_1": "hp",
+          "link_warrior_0_1": "hp",
+          "r23_37_2": "hp",
+          "r18_49_1": "hp",
+          "r33_37_1": "hp",
+          "r13_49_1": "hp",
+          "r6_18_1": "hp",
+          "r23_37_1": "hp"
+        },
+        "defaultTravel": "hp"
+      }
+    },
+    {
+      "version": "original",
+      "budget": 48,
+      "strategy": "two_key",
+      "label": "2Key混合",
+      "spent": 48,
+      "remaining": 0,
+      "stats": {
+        "hp": 52,
+        "leech": 0.82,
+        "resist": 23,
+        "aoe": 16,
+        "physical": 38,
+        "armor": 85.55,
+        "barrier": 23.9,
+        "attackSpeed": 9,
+        "resource": 4
+      },
+      "notables": [
+        {
+          "id": "g13n3",
+          "name": "傷口からの回帰〈比較〉"
+        },
+        {
+          "id": "g13n9",
+          "name": "傷口からの回帰"
+        },
+        {
+          "id": "g49n2",
+          "name": "鋼の重なり"
+        },
+        {
+          "id": "g51n1",
+          "name": "重なる結界"
+        },
+        {
+          "id": "g51n4",
+          "name": "薄層の護り"
+        },
+        {
+          "id": "g6n0",
+          "name": "鎧の内側"
+        },
+        {
+          "id": "g6n4",
+          "name": "鋼の重なり"
+        },
+        {
+          "id": "g7n2",
+          "name": "届く圏域"
+        },
+        {
+          "id": "opening_warrior_0_3",
+          "name": "鍛えた一撃"
+        },
+        {
+          "id": "opening_warrior_2_3",
+          "name": "軽やかな連撃"
+        }
+      ],
+      "counts": {
+        "small": 20,
+        "road": 12,
+        "notable": 10,
+        "keystone": 2,
+        "start": 1
+      },
+      "keys": [
+        "key_01",
+        "key_05"
+      ],
+      "tradeoffs": [
+        "吸収によるHP回復を失う。吸収がなければ障壁も得られない。",
+        "位置取りを失う代償を持つ。継続ダメージには軽減を適用しない。"
+      ],
+      "keyDescriptions": [
+        "HP吸収の回復先を障壁へ変更する。最大HPを15%乗算で減らす。",
+        "回避スキルを使用できなくなる。受けるヒットダメージを25%乗算で減らす。"
+      ],
+      "checkpoints": [
+        {
+          "target": [
+            "key_01",
+            "key_05"
+          ],
+          "cost": 40,
+          "added": [
+            "g18n4",
+            "g18n5",
+            "g49n0",
+            "g49n1",
+            "g49n2",
+            "g51n0",
+            "g51n4",
+            "g51n6",
+            "g6n0",
+            "g6n1",
+            "g6n2",
+            "g7n2",
+            "g7n3",
+            "g7n4",
+            "g7n5",
+            "g7n6",
+            "j22",
+            "join_warrior_0",
+            "key_01",
+            "key_05",
+            "link_warrior_0_1",
+            "link_warrior_0_2",
+            "link_warrior_0_4",
+            "link_warrior_2_1",
+            "link_warrior_2_2",
+            "opening_warrior_0_1",
+            "opening_warrior_0_2",
+            "opening_warrior_0_3",
+            "opening_warrior_2_3",
+            "r18_49_1",
+            "r2_22_1",
+            "r2_22_2",
+            "r2_51_1",
+            "r6_18_1",
+            "r7_22_1",
+            "r7_22_2"
+          ]
+        },
+        {
+          "target": "g13n3",
+          "cost": 5,
+          "added": [
+            "g13n2",
+            "g13n3",
+            "g49n3",
+            "g49n4",
+            "r13_49_1"
+          ]
+        },
+        {
+          "target": "g13n9",
+          "cost": 1,
+          "added": [
+            "g13n9"
+          ]
+        },
+        {
+          "target": "g6n4",
+          "cost": 1,
+          "added": [
+            "g6n4"
+          ]
+        },
+        {
+          "target": "g51n1",
+          "cost": 1,
+          "added": [
+            "g51n1"
+          ]
+        }
+      ],
+      "buildCode": {
+        "version": "projects-large-tree-diff-v2",
+        "budget": 48,
+        "origin": "warrior",
+        "learned": [
+          "g13n2",
+          "g13n3",
+          "g13n9",
+          "g18n4",
+          "g18n5",
+          "g49n0",
+          "g49n1",
+          "g49n2",
+          "g49n3",
+          "g49n4",
+          "g51n0",
+          "g51n1",
+          "g51n4",
+          "g51n6",
+          "g6n0",
+          "g6n1",
+          "g6n2",
+          "g6n4",
+          "g7n2",
+          "g7n3",
+          "g7n4",
+          "g7n5",
+          "g7n6",
+          "j22",
+          "join_warrior_0",
+          "key_01",
+          "key_05",
+          "link_warrior_0_1",
+          "link_warrior_0_2",
+          "link_warrior_0_4",
+          "link_warrior_2_1",
+          "link_warrior_2_2",
+          "opening_warrior_0_1",
+          "opening_warrior_0_2",
+          "opening_warrior_0_3",
+          "opening_warrior_2_3",
+          "origin_warrior",
+          "r13_49_1",
+          "r18_49_1",
+          "r2_22_1",
+          "r2_22_2",
+          "r2_51_1",
+          "r6_18_1",
+          "r7_22_1",
+          "r7_22_2"
+        ],
+        "mastery": {},
+        "travel": {
+          "join_warrior_0": "hp",
+          "r2_51_1": "hp",
+          "link_warrior_0_1": "hp",
+          "r7_22_2": "hp",
+          "r7_22_1": "hp",
+          "r18_49_1": "hp",
+          "link_warrior_2_1": "hp",
+          "r2_22_2": "hp",
+          "r2_22_1": "hp",
+          "r13_49_1": "hp",
+          "r6_18_1": "hp",
+          "j22": "hp"
+        },
+        "defaultTravel": "hp"
+      }
+    },
+    {
+      "version": "original",
+      "budget": 64,
+      "strategy": "weapon",
+      "label": "武器特化",
+      "spent": 64,
+      "remaining": 0,
+      "stats": {
+        "physical": 57,
+        "damage": 48,
+        "resource": 48,
+        "efficiency": 8,
+        "attackSpeed": 35.9,
+        "penetration": 18.94,
+        "armor": 46.55,
+        "hp": 33
+      },
+      "notables": [
+        {
+          "id": "g16n2",
+          "name": "深く届く一撃"
+        },
+        {
+          "id": "g16n8",
+          "name": "鎧を割る刃"
+        },
+        {
+          "id": "g26n3",
+          "name": "返しの余地"
+        },
+        {
+          "id": "g30n1",
+          "name": "流れる連撃"
+        },
+        {
+          "id": "g30n4",
+          "name": "刻む律動"
+        },
+        {
+          "id": "g35n1",
+          "name": "刃に込める力"
+        },
+        {
+          "id": "g37n0",
+          "name": "深く届く一撃〈比較〉"
+        },
+        {
+          "id": "g37n4",
+          "name": "鎧を割る刃"
+        },
+        {
+          "id": "g39n6",
+          "name": "力の還流"
+        },
+        {
+          "id": "g41n0",
+          "name": "流れる連撃〈比較〉"
+        },
+        {
+          "id": "g41n3",
+          "name": "流れる連撃"
+        },
+        {
+          "id": "g50n1",
+          "name": "鮮血の線"
+        },
+        {
+          "id": "g6n4",
+          "name": "鋼の重なり"
+        },
+        {
+          "id": "opening_warrior_1_3",
+          "name": "戦うための体力"
+        }
+      ],
+      "counts": {
+        "notable": 14,
+        "road": 24,
+        "small": 26,
+        "start": 1
+      },
+      "keys": [],
+      "tradeoffs": [],
+      "keyDescriptions": [],
+      "checkpoints": [
+        {
+          "target": "g35n1",
+          "cost": 10,
+          "added": [
+            "g35n0",
+            "g35n1",
+            "join_warrior_1",
+            "link_warrior_1_1",
+            "link_warrior_1_2",
+            "link_warrior_1_4",
+            "opening_warrior_1_1",
+            "opening_warrior_1_2",
+            "opening_warrior_1_3",
+            "r6_35_2"
+          ]
+        },
+        {
+          "target": "g16n2",
+          "cost": 9,
+          "added": [
+            "g16n1",
+            "g16n2",
+            "g35n6",
+            "g35n7",
+            "join_warrior_2",
+            "r16_38_1",
+            "r16_38_2",
+            "r29_38_2",
+            "r35_38_1"
+          ]
+        },
+        {
+          "target": "g16n8",
+          "cost": 2,
+          "added": [
+            "g16n0",
+            "g16n8"
+          ]
+        },
+        {
+          "target": "g37n0",
+          "cost": 6,
+          "added": [
+            "g16n3",
+            "g37n0",
+            "g37n8",
+            "r16_37_1",
+            "r16_37_2",
+            "r16_37_3"
+          ]
+        },
+        {
+          "target": "g37n4",
+          "cost": 2,
+          "added": [
+            "g37n3",
+            "g37n4"
+          ]
+        },
+        {
+          "target": "g41n0",
+          "cost": 22,
+          "added": [
+            "g18n5",
+            "g18n7",
+            "g26n1",
+            "g26n3",
+            "g28n5",
+            "g41n0",
+            "g41n4",
+            "g50n1",
+            "g6n2",
+            "g6n3",
+            "g6n4",
+            "g6n5",
+            "g6n6",
+            "r18_26_1",
+            "r18_26_2",
+            "r26_28_1",
+            "r26_28_2",
+            "r28_39_1",
+            "r28_50_1",
+            "r41_50_1",
+            "r6_18_1",
+            "r6_35_1"
+          ]
+        },
+        {
+          "target": "g41n3",
+          "cost": 1,
+          "added": [
+            "g41n3"
+          ]
+        },
+        {
+          "target": "g30n4",
+          "cost": 9,
+          "added": [
+            "g30n3",
+            "g30n4",
+            "g39n0",
+            "g39n1",
+            "g5n4",
+            "r5_30_1",
+            "r5_30_2",
+            "r5_39_1",
+            "r5_48_1"
+          ]
+        },
+        {
+          "target": "g30n1",
+          "cost": 1,
+          "added": [
+            "g30n1"
+          ]
+        },
+        {
+          "target": "g39n6",
+          "cost": 2,
+          "added": [
+            "g39n6",
+            "g39n7"
+          ]
+        }
+      ],
+      "buildCode": {
+        "version": "projects-large-tree-diff-v2",
+        "budget": 64,
+        "origin": "warrior",
+        "learned": [
+          "g16n0",
+          "g16n1",
+          "g16n2",
+          "g16n3",
+          "g16n8",
+          "g18n5",
+          "g18n7",
+          "g26n1",
+          "g26n3",
+          "g28n5",
+          "g30n1",
+          "g30n3",
+          "g30n4",
+          "g35n0",
+          "g35n1",
+          "g35n6",
+          "g35n7",
+          "g37n0",
+          "g37n3",
+          "g37n4",
+          "g37n8",
+          "g39n0",
+          "g39n1",
+          "g39n6",
+          "g39n7",
+          "g41n0",
+          "g41n3",
+          "g41n4",
+          "g50n1",
+          "g5n4",
+          "g6n2",
+          "g6n3",
+          "g6n4",
+          "g6n5",
+          "g6n6",
+          "join_warrior_1",
+          "join_warrior_2",
+          "link_warrior_1_1",
+          "link_warrior_1_2",
+          "link_warrior_1_4",
+          "opening_warrior_1_1",
+          "opening_warrior_1_2",
+          "opening_warrior_1_3",
+          "origin_warrior",
+          "r16_37_1",
+          "r16_37_2",
+          "r16_37_3",
+          "r16_38_1",
+          "r16_38_2",
+          "r18_26_1",
+          "r18_26_2",
+          "r26_28_1",
+          "r26_28_2",
+          "r28_39_1",
+          "r28_50_1",
+          "r29_38_2",
+          "r35_38_1",
+          "r41_50_1",
+          "r5_30_1",
+          "r5_30_2",
+          "r5_39_1",
+          "r5_48_1",
+          "r6_18_1",
+          "r6_35_1",
+          "r6_35_2"
+        ],
+        "mastery": {},
+        "travel": {
+          "r16_37_3": "damage",
+          "r5_48_1": "damage",
+          "r16_38_2": "damage",
+          "r6_18_1": "damage",
+          "link_warrior_1_1": "damage",
+          "r6_35_2": "damage",
+          "r5_30_2": "damage",
+          "r18_26_1": "damage",
+          "r18_26_2": "damage",
+          "r5_39_1": "damage",
+          "join_warrior_1": "damage",
+          "r5_30_1": "damage",
+          "join_warrior_2": "damage",
+          "r26_28_2": "damage",
+          "r16_38_1": "damage",
+          "r29_38_2": "damage",
+          "r35_38_1": "damage",
+          "r28_39_1": "damage",
+          "r16_37_2": "damage",
+          "r26_28_1": "damage",
+          "r28_50_1": "damage",
+          "r6_35_1": "damage",
+          "r16_37_1": "damage",
+          "r41_50_1": "damage"
+        },
+        "defaultTravel": "damage"
+      }
+    },
+    {
+      "version": "original",
+      "budget": 64,
+      "strategy": "survival",
+      "label": "生存特化",
+      "spent": 64,
+      "remaining": 0,
+      "stats": {
+        "hp": 101,
+        "physical": 34,
+        "penetration": 5.47,
+        "resist": 112.55,
+        "leech": 0.82,
+        "barrier": 37.9,
+        "mana": 16,
+        "regen": 32,
+        "armor": 85.55,
+        "attackSpeed": 4
+      },
+      "notables": [
+        {
+          "id": "g13n3",
+          "name": "傷口からの回帰〈比較〉"
+        },
+        {
+          "id": "g13n9",
+          "name": "傷口からの回帰"
+        },
+        {
+          "id": "g18n1",
+          "name": "太い生命線〈比較〉"
+        },
+        {
+          "id": "g23n1",
+          "name": "異質への耐性"
+        },
+        {
+          "id": "g23n5",
+          "name": "意志の鎧"
+        },
+        {
+          "id": "g31n4",
+          "name": "重なる結界"
+        },
+        {
+          "id": "g33n1",
+          "name": "息を整える"
+        },
+        {
+          "id": "g37n0",
+          "name": "深く届く一撃〈比較〉"
+        },
+        {
+          "id": "g45n2",
+          "name": "太い生命線"
+        },
+        {
+          "id": "g46n6",
+          "name": "揺るがない心"
+        },
+        {
+          "id": "g49n2",
+          "name": "鋼の重なり"
+        },
+        {
+          "id": "g51n1",
+          "name": "重なる結界"
+        },
+        {
+          "id": "g51n4",
+          "name": "薄層の護り"
+        },
+        {
+          "id": "g6n0",
+          "name": "鎧の内側"
+        },
+        {
+          "id": "g6n4",
+          "name": "鋼の重なり"
+        },
+        {
+          "id": "opening_warrior_0_3",
+          "name": "鍛えた一撃"
+        }
+      ],
+      "counts": {
+        "road": 19,
+        "small": 29,
+        "notable": 16,
+        "start": 1
+      },
+      "keys": [],
+      "tradeoffs": [],
+      "keyDescriptions": [],
+      "checkpoints": [
+        {
+          "target": "g6n0",
+          "cost": 8,
+          "added": [
+            "g6n0",
+            "join_warrior_0",
+            "link_warrior_0_1",
+            "link_warrior_0_2",
+            "link_warrior_0_4",
+            "opening_warrior_0_1",
+            "opening_warrior_0_2",
+            "opening_warrior_0_3"
+          ]
+        },
+        {
+          "target": "g6n4",
+          "cost": 1,
+          "added": [
+            "g6n4"
+          ]
+        },
+        {
+          "target": "g18n1",
+          "cost": 6,
+          "added": [
+            "g18n1",
+            "g18n5",
+            "g18n7",
+            "g6n1",
+            "g6n2",
+            "r6_18_1"
+          ]
+        },
+        {
+          "target": "g49n2",
+          "cost": 5,
+          "added": [
+            "g18n4",
+            "g49n0",
+            "g49n1",
+            "g49n2",
+            "r18_49_1"
+          ]
+        },
+        {
+          "target": "g45n2",
+          "cost": 10,
+          "added": [
+            "g13n2",
+            "g13n3",
+            "g13n5",
+            "g45hub",
+            "g45n1",
+            "g45n2",
+            "g49n3",
+            "g49n4",
+            "r13_45_1",
+            "r13_49_1"
+          ]
+        },
+        {
+          "target": "g23n5",
+          "cost": 13,
+          "added": [
+            "g23n3",
+            "g23n5",
+            "g37n0",
+            "g37n1",
+            "g37n7",
+            "g37n8",
+            "g45n5",
+            "r23_37_1",
+            "r23_37_2",
+            "r23_37_3",
+            "r33_37_1",
+            "r33_37_2",
+            "r33_45_1"
+          ]
+        },
+        {
+          "target": "g23n1",
+          "cost": 1,
+          "added": [
+            "g23n1"
+          ]
+        },
+        {
+          "target": "g51n4",
+          "cost": 9,
+          "added": [
+            "g23n0",
+            "g23n8",
+            "g51n4",
+            "g51n6",
+            "r16_47_1",
+            "r1_47_2",
+            "r23_47_1",
+            "r8_47_1",
+            "r8_51_1"
+          ]
+        },
+        {
+          "target": "g51n1",
+          "cost": 2,
+          "added": [
+            "g51n0",
+            "g51n1"
+          ]
+        },
+        {
+          "target": "g31n4",
+          "cost": 4,
+          "added": [
+            "g31n2",
+            "g31n4",
+            "g31n5",
+            "r31_51_1"
+          ]
+        },
+        {
+          "target": "g46n6",
+          "cost": 3,
+          "added": [
+            "g46n4",
+            "g46n6",
+            "r31_46_1"
+          ]
+        },
+        {
+          "target": "g13n9",
+          "cost": 1,
+          "added": [
+            "g13n9"
+          ]
+        },
+        {
+          "target": "g33n1",
+          "cost": 1,
+          "added": [
+            "g33n1"
+          ]
+        }
+      ],
+      "buildCode": {
+        "version": "projects-large-tree-diff-v2",
+        "budget": 64,
+        "origin": "warrior",
+        "learned": [
+          "g13n2",
+          "g13n3",
+          "g13n5",
+          "g13n9",
+          "g18n1",
+          "g18n4",
+          "g18n5",
+          "g18n7",
+          "g23n0",
+          "g23n1",
+          "g23n3",
+          "g23n5",
+          "g23n8",
+          "g31n2",
+          "g31n4",
+          "g31n5",
+          "g33n1",
+          "g37n0",
+          "g37n1",
+          "g37n7",
+          "g37n8",
+          "g45hub",
+          "g45n1",
+          "g45n2",
+          "g45n5",
+          "g46n4",
+          "g46n6",
+          "g49n0",
+          "g49n1",
+          "g49n2",
+          "g49n3",
+          "g49n4",
+          "g51n0",
+          "g51n1",
+          "g51n4",
+          "g51n6",
+          "g6n0",
+          "g6n1",
+          "g6n2",
+          "g6n4",
+          "join_warrior_0",
+          "link_warrior_0_1",
+          "link_warrior_0_2",
+          "link_warrior_0_4",
+          "opening_warrior_0_1",
+          "opening_warrior_0_2",
+          "opening_warrior_0_3",
+          "origin_warrior",
+          "r13_45_1",
+          "r13_49_1",
+          "r16_47_1",
+          "r18_49_1",
+          "r1_47_2",
+          "r23_37_1",
+          "r23_37_2",
+          "r23_37_3",
+          "r23_47_1",
+          "r31_46_1",
+          "r31_51_1",
+          "r33_37_1",
+          "r33_37_2",
+          "r33_45_1",
+          "r6_18_1",
+          "r8_47_1",
+          "r8_51_1"
+        ],
+        "mastery": {},
+        "travel": {
+          "r13_45_1": "hp",
+          "r23_37_3": "hp",
+          "r33_37_2": "hp",
+          "join_warrior_0": "hp",
+          "r8_51_1": "hp",
+          "r33_45_1": "hp",
+          "link_warrior_0_1": "hp",
+          "r1_47_2": "hp",
+          "r31_51_1": "hp",
+          "r23_47_1": "hp",
+          "r16_47_1": "hp",
+          "r23_37_2": "hp",
+          "r18_49_1": "hp",
+          "r33_37_1": "hp",
+          "r8_47_1": "hp",
+          "r13_49_1": "hp",
+          "r31_46_1": "hp",
+          "r6_18_1": "hp",
+          "r23_37_1": "hp"
+        },
+        "defaultTravel": "hp"
+      }
+    },
+    {
+      "version": "original",
+      "budget": 64,
+      "strategy": "two_key",
+      "label": "2Key混合",
+      "spent": 64,
+      "remaining": 0,
+      "stats": {
+        "hp": 108,
+        "leech": 0.82,
+        "resist": 23,
+        "aoe": 16,
+        "physical": 55,
+        "armor": 93.55,
+        "regen": 20,
+        "barrier": 23.9,
+        "attackSpeed": 9,
+        "resource": 4
+      },
+      "notables": [
+        {
+          "id": "g13n3",
+          "name": "傷口からの回帰〈比較〉"
+        },
+        {
+          "id": "g13n9",
+          "name": "傷口からの回帰"
+        },
+        {
+          "id": "g18n1",
+          "name": "太い生命線〈比較〉"
+        },
+        {
+          "id": "g35n1",
+          "name": "刃に込める力"
+        },
+        {
+          "id": "g45n2",
+          "name": "太い生命線"
+        },
+        {
+          "id": "g49n2",
+          "name": "鋼の重なり"
+        },
+        {
+          "id": "g51n1",
+          "name": "重なる結界"
+        },
+        {
+          "id": "g51n4",
+          "name": "薄層の護り"
+        },
+        {
+          "id": "g6n0",
+          "name": "鎧の内側"
+        },
+        {
+          "id": "g6n4",
+          "name": "鋼の重なり"
+        },
+        {
+          "id": "g7n2",
+          "name": "届く圏域"
+        },
+        {
+          "id": "opening_warrior_0_3",
+          "name": "鍛えた一撃"
+        },
+        {
+          "id": "opening_warrior_2_3",
+          "name": "軽やかな連撃"
+        }
+      ],
+      "counts": {
+        "road": 14,
+        "small": 31,
+        "notable": 13,
+        "keystone": 2,
+        "start": 1
+      },
+      "keys": [
+        "key_01",
+        "key_05"
+      ],
+      "tradeoffs": [
+        "吸収によるHP回復を失う。吸収がなければ障壁も得られない。",
+        "位置取りを失う代償を持つ。継続ダメージには軽減を適用しない。"
+      ],
+      "keyDescriptions": [
+        "HP吸収の回復先を障壁へ変更する。最大HPを15%乗算で減らす。",
+        "回避スキルを使用できなくなる。受けるヒットダメージを25%乗算で減らす。"
+      ],
+      "checkpoints": [
+        {
+          "target": [
+            "key_01",
+            "key_05"
+          ],
+          "cost": 40,
+          "added": [
+            "g18n4",
+            "g18n5",
+            "g49n0",
+            "g49n1",
+            "g49n2",
+            "g51n0",
+            "g51n4",
+            "g51n6",
+            "g6n0",
+            "g6n1",
+            "g6n2",
+            "g7n2",
+            "g7n3",
+            "g7n4",
+            "g7n5",
+            "g7n6",
+            "j22",
+            "join_warrior_0",
+            "key_01",
+            "key_05",
+            "link_warrior_0_1",
+            "link_warrior_0_2",
+            "link_warrior_0_4",
+            "link_warrior_2_1",
+            "link_warrior_2_2",
+            "opening_warrior_0_1",
+            "opening_warrior_0_2",
+            "opening_warrior_0_3",
+            "opening_warrior_2_3",
+            "r18_49_1",
+            "r2_22_1",
+            "r2_22_2",
+            "r2_51_1",
+            "r6_18_1",
+            "r7_22_1",
+            "r7_22_2"
+          ]
+        },
+        {
+          "target": "g13n3",
+          "cost": 5,
+          "added": [
+            "g13n2",
+            "g13n3",
+            "g49n3",
+            "g49n4",
+            "r13_49_1"
+          ]
+        },
+        {
+          "target": "g13n9",
+          "cost": 1,
+          "added": [
+            "g13n9"
+          ]
+        },
+        {
+          "target": "g6n4",
+          "cost": 1,
+          "added": [
+            "g6n4"
+          ]
+        },
+        {
+          "target": "g18n1",
+          "cost": 2,
+          "added": [
+            "g18n1",
+            "g18n2"
+          ]
+        },
+        {
+          "target": "g45n2",
+          "cost": 5,
+          "added": [
+            "g13n5",
+            "g45hub",
+            "g45n1",
+            "g45n2",
+            "r13_45_1"
+          ]
+        },
+        {
+          "target": "g35n1",
+          "cost": 4,
+          "added": [
+            "g13n8",
+            "g35n1",
+            "g35n2",
+            "r13_35_1"
+          ]
+        },
+        {
+          "target": "g51n1",
+          "cost": 1,
+          "added": [
+            "g51n1"
+          ]
+        },
+        {
+          "target": "g18n7",
+          "cost": 1,
+          "added": [
+            "g18n7"
+          ]
+        },
+        {
+          "target": "g45n5",
+          "cost": 1,
+          "added": [
+            "g45n5"
+          ]
+        },
+        {
+          "target": "g45n4",
+          "cost": 1,
+          "added": [
+            "g45n4"
+          ]
+        },
+        {
+          "target": "g49n5",
+          "cost": 1,
+          "added": [
+            "g49n5"
+          ]
+        },
+        {
+          "target": "g6n3",
+          "cost": 1,
+          "added": [
+            "g6n3"
+          ]
+        }
+      ],
+      "buildCode": {
+        "version": "projects-large-tree-diff-v2",
+        "budget": 64,
+        "origin": "warrior",
+        "learned": [
+          "g13n2",
+          "g13n3",
+          "g13n5",
+          "g13n8",
+          "g13n9",
+          "g18n1",
+          "g18n2",
+          "g18n4",
+          "g18n5",
+          "g18n7",
+          "g35n1",
+          "g35n2",
+          "g45hub",
+          "g45n1",
+          "g45n2",
+          "g45n4",
+          "g45n5",
+          "g49n0",
+          "g49n1",
+          "g49n2",
+          "g49n3",
+          "g49n4",
+          "g49n5",
+          "g51n0",
+          "g51n1",
+          "g51n4",
+          "g51n6",
+          "g6n0",
+          "g6n1",
+          "g6n2",
+          "g6n3",
+          "g6n4",
+          "g7n2",
+          "g7n3",
+          "g7n4",
+          "g7n5",
+          "g7n6",
+          "j22",
+          "join_warrior_0",
+          "key_01",
+          "key_05",
+          "link_warrior_0_1",
+          "link_warrior_0_2",
+          "link_warrior_0_4",
+          "link_warrior_2_1",
+          "link_warrior_2_2",
+          "opening_warrior_0_1",
+          "opening_warrior_0_2",
+          "opening_warrior_0_3",
+          "opening_warrior_2_3",
+          "origin_warrior",
+          "r13_35_1",
+          "r13_45_1",
+          "r13_49_1",
+          "r18_49_1",
+          "r2_22_1",
+          "r2_22_2",
+          "r2_51_1",
+          "r6_18_1",
+          "r7_22_1",
+          "r7_22_2"
+        ],
+        "mastery": {},
+        "travel": {
+          "r13_45_1": "hp",
+          "join_warrior_0": "hp",
+          "r2_51_1": "hp",
+          "link_warrior_0_1": "hp",
+          "r13_35_1": "hp",
+          "r7_22_2": "hp",
+          "r7_22_1": "hp",
+          "r18_49_1": "hp",
+          "link_warrior_2_1": "hp",
+          "r2_22_2": "hp",
+          "r2_22_1": "hp",
+          "r13_49_1": "hp",
+          "r6_18_1": "hp",
+          "j22": "hp"
+        },
+        "defaultTravel": "hp"
+      }
+    },
+    {
+      "version": "original",
+      "budget": 80,
+      "strategy": "weapon",
+      "label": "武器特化",
+      "spent": 80,
+      "remaining": 0,
+      "stats": {
+        "physical": 57,
+        "damage": 58,
+        "resource": 52,
+        "efficiency": 8,
+        "penetration": 18.94,
+        "armor": 46.55,
+        "attackSpeed": 42.9,
+        "hp": 33,
+        "move": 5.47,
+        "critMulti": 25,
+        "crit": 80
+      },
+      "notables": [
+        {
+          "id": "g16n2",
+          "name": "深く届く一撃"
+        },
+        {
+          "id": "g16n8",
+          "name": "鎧を割る刃"
+        },
+        {
+          "id": "g25n6",
+          "name": "一点への集中"
+        },
+        {
+          "id": "g26n3",
+          "name": "返しの余地"
+        },
+        {
+          "id": "g30n1",
+          "name": "流れる連撃"
+        },
+        {
+          "id": "g30n4",
+          "name": "刻む律動"
+        },
+        {
+          "id": "g32n2",
+          "name": "隙を捉える眼"
+        },
+        {
+          "id": "g35n1",
+          "name": "刃に込める力"
+        },
+        {
+          "id": "g37n0",
+          "name": "深く届く一撃〈比較〉"
+        },
+        {
+          "id": "g37n4",
+          "name": "鎧を割る刃"
+        },
+        {
+          "id": "g39n6",
+          "name": "力の還流"
+        },
+        {
+          "id": "g41n0",
+          "name": "流れる連撃〈比較〉"
+        },
+        {
+          "id": "g41n3",
+          "name": "流れる連撃"
+        },
+        {
+          "id": "g44n3",
+          "name": "軽い足取り"
+        },
+        {
+          "id": "g50n1",
+          "name": "鮮血の線"
+        },
+        {
+          "id": "g6n4",
+          "name": "鋼の重なり"
+        },
+        {
+          "id": "opening_warrior_1_3",
+          "name": "戦うための体力"
+        }
+      ],
+      "counts": {
+        "notable": 17,
+        "road": 29,
+        "small": 34,
+        "start": 1
+      },
+      "keys": [],
+      "tradeoffs": [],
+      "keyDescriptions": [],
+      "checkpoints": [
+        {
+          "target": "g35n1",
+          "cost": 10,
+          "added": [
+            "g35n0",
+            "g35n1",
+            "join_warrior_1",
+            "link_warrior_1_1",
+            "link_warrior_1_2",
+            "link_warrior_1_4",
+            "opening_warrior_1_1",
+            "opening_warrior_1_2",
+            "opening_warrior_1_3",
+            "r6_35_2"
+          ]
+        },
+        {
+          "target": "g16n2",
+          "cost": 9,
+          "added": [
+            "g16n1",
+            "g16n2",
+            "g35n6",
+            "g35n7",
+            "join_warrior_2",
+            "r16_38_1",
+            "r16_38_2",
+            "r29_38_2",
+            "r35_38_1"
+          ]
+        },
+        {
+          "target": "g16n8",
+          "cost": 2,
+          "added": [
+            "g16n0",
+            "g16n8"
+          ]
+        },
+        {
+          "target": "g37n0",
+          "cost": 6,
+          "added": [
+            "g16n3",
+            "g37n0",
+            "g37n8",
+            "r16_37_1",
+            "r16_37_2",
+            "r16_37_3"
+          ]
+        },
+        {
+          "target": "g37n4",
+          "cost": 2,
+          "added": [
+            "g37n3",
+            "g37n4"
+          ]
+        },
+        {
+          "target": "g41n0",
+          "cost": 22,
+          "added": [
+            "g18n5",
+            "g18n7",
+            "g26n1",
+            "g26n3",
+            "g28n5",
+            "g41n0",
+            "g41n4",
+            "g50n1",
+            "g6n2",
+            "g6n3",
+            "g6n4",
+            "g6n5",
+            "g6n6",
+            "r18_26_1",
+            "r18_26_2",
+            "r26_28_1",
+            "r26_28_2",
+            "r28_39_1",
+            "r28_50_1",
+            "r41_50_1",
+            "r6_18_1",
+            "r6_35_1"
+          ]
+        },
+        {
+          "target": "g41n3",
+          "cost": 1,
+          "added": [
+            "g41n3"
+          ]
+        },
+        {
+          "target": "g30n4",
+          "cost": 9,
+          "added": [
+            "g30n3",
+            "g30n4",
+            "g39n0",
+            "g39n1",
+            "g5n4",
+            "r5_30_1",
+            "r5_30_2",
+            "r5_39_1",
+            "r5_48_1"
+          ]
+        },
+        {
+          "target": "g30n1",
+          "cost": 1,
+          "added": [
+            "g30n1"
+          ]
+        },
+        {
+          "target": "g32n2",
+          "cost": 10,
+          "added": [
+            "g30n0",
+            "g30n7",
+            "g32n2",
+            "g44n2",
+            "g44n3",
+            "g44n4",
+            "r17_30_1",
+            "r17_44_1",
+            "r32_44_1",
+            "r32_44_2"
+          ]
+        },
+        {
+          "target": "g25n6",
+          "cost": 6,
+          "added": [
+            "g25n0",
+            "g25n1",
+            "g25n5",
+            "g25n6",
+            "g44n5",
+            "r25_44_1"
+          ]
+        },
+        {
+          "target": "g39n6",
+          "cost": 2,
+          "added": [
+            "g39n6",
+            "g39n7"
+          ]
+        }
+      ],
+      "buildCode": {
+        "version": "projects-large-tree-diff-v2",
+        "budget": 80,
+        "origin": "warrior",
+        "learned": [
+          "g16n0",
+          "g16n1",
+          "g16n2",
+          "g16n3",
+          "g16n8",
+          "g18n5",
+          "g18n7",
+          "g25n0",
+          "g25n1",
+          "g25n5",
+          "g25n6",
+          "g26n1",
+          "g26n3",
+          "g28n5",
+          "g30n0",
+          "g30n1",
+          "g30n3",
+          "g30n4",
+          "g30n7",
+          "g32n2",
+          "g35n0",
+          "g35n1",
+          "g35n6",
+          "g35n7",
+          "g37n0",
+          "g37n3",
+          "g37n4",
+          "g37n8",
+          "g39n0",
+          "g39n1",
+          "g39n6",
+          "g39n7",
+          "g41n0",
+          "g41n3",
+          "g41n4",
+          "g44n2",
+          "g44n3",
+          "g44n4",
+          "g44n5",
+          "g50n1",
+          "g5n4",
+          "g6n2",
+          "g6n3",
+          "g6n4",
+          "g6n5",
+          "g6n6",
+          "join_warrior_1",
+          "join_warrior_2",
+          "link_warrior_1_1",
+          "link_warrior_1_2",
+          "link_warrior_1_4",
+          "opening_warrior_1_1",
+          "opening_warrior_1_2",
+          "opening_warrior_1_3",
+          "origin_warrior",
+          "r16_37_1",
+          "r16_37_2",
+          "r16_37_3",
+          "r16_38_1",
+          "r16_38_2",
+          "r17_30_1",
+          "r17_44_1",
+          "r18_26_1",
+          "r18_26_2",
+          "r25_44_1",
+          "r26_28_1",
+          "r26_28_2",
+          "r28_39_1",
+          "r28_50_1",
+          "r29_38_2",
+          "r32_44_1",
+          "r32_44_2",
+          "r35_38_1",
+          "r41_50_1",
+          "r5_30_1",
+          "r5_30_2",
+          "r5_39_1",
+          "r5_48_1",
+          "r6_18_1",
+          "r6_35_1",
+          "r6_35_2"
+        ],
+        "mastery": {},
+        "travel": {
+          "r16_37_3": "damage",
+          "r16_38_2": "damage",
+          "r6_35_2": "damage",
+          "r18_26_1": "damage",
+          "r18_26_2": "damage",
+          "r5_39_1": "damage",
+          "r16_37_1": "damage",
+          "r29_38_2": "damage",
+          "r35_38_1": "damage",
+          "r28_39_1": "damage",
+          "r16_37_2": "damage",
+          "r26_28_1": "damage",
+          "r25_44_1": "damage",
+          "r5_48_1": "damage",
+          "link_warrior_1_1": "damage",
+          "r5_30_2": "damage",
+          "join_warrior_1": "damage",
+          "r17_30_1": "damage",
+          "r5_30_1": "damage",
+          "join_warrior_2": "damage",
+          "r26_28_2": "damage",
+          "r32_44_1": "damage",
+          "r17_44_1": "damage",
+          "r16_38_1": "damage",
+          "r32_44_2": "damage",
+          "r28_50_1": "damage",
+          "r6_35_1": "damage",
+          "r6_18_1": "damage",
+          "r41_50_1": "damage"
+        },
+        "defaultTravel": "damage"
+      }
+    },
+    {
+      "version": "original",
+      "budget": 80,
+      "strategy": "survival",
+      "label": "生存特化",
+      "spent": 80,
+      "remaining": 0,
+      "stats": {
+        "hp": 142,
+        "physical": 36,
+        "penetration": 5.47,
+        "attackSpeed": 11,
+        "resist": 112.55,
+        "mana": 16,
+        "armor": 93.55,
+        "barrier": 37.9,
+        "regen": 44,
+        "leech": 0.82,
+        "resource": 4
+      },
+      "notables": [
+        {
+          "id": "g13n3",
+          "name": "傷口からの回帰〈比較〉"
+        },
+        {
+          "id": "g13n9",
+          "name": "傷口からの回帰"
+        },
+        {
+          "id": "g18n1",
+          "name": "太い生命線〈比較〉"
+        },
+        {
+          "id": "g23n1",
+          "name": "異質への耐性"
+        },
+        {
+          "id": "g23n5",
+          "name": "意志の鎧"
+        },
+        {
+          "id": "g31n4",
+          "name": "重なる結界"
+        },
+        {
+          "id": "g33n1",
+          "name": "息を整える"
+        },
+        {
+          "id": "g37n0",
+          "name": "深く届く一撃〈比較〉"
+        },
+        {
+          "id": "g38n1",
+          "name": "生命の還流"
+        },
+        {
+          "id": "g45n2",
+          "name": "太い生命線"
+        },
+        {
+          "id": "g46n6",
+          "name": "揺るがない心"
+        },
+        {
+          "id": "g49n2",
+          "name": "鋼の重なり"
+        },
+        {
+          "id": "g51n1",
+          "name": "重なる結界"
+        },
+        {
+          "id": "g51n4",
+          "name": "薄層の護り"
+        },
+        {
+          "id": "g6n0",
+          "name": "鎧の内側"
+        },
+        {
+          "id": "g6n4",
+          "name": "鋼の重なり"
+        },
+        {
+          "id": "opening_warrior_0_3",
+          "name": "鍛えた一撃"
+        },
+        {
+          "id": "opening_warrior_1_3",
+          "name": "戦うための体力"
+        },
+        {
+          "id": "opening_warrior_2_3",
+          "name": "軽やかな連撃"
+        }
+      ],
+      "counts": {
+        "road": 21,
+        "notable": 19,
+        "small": 40,
+        "start": 1
+      },
+      "keys": [],
+      "tradeoffs": [],
+      "keyDescriptions": [],
+      "checkpoints": [
+        {
+          "target": "g6n0",
+          "cost": 8,
+          "added": [
+            "g6n0",
+            "join_warrior_0",
+            "link_warrior_0_1",
+            "link_warrior_0_2",
+            "link_warrior_0_4",
+            "opening_warrior_0_1",
+            "opening_warrior_0_2",
+            "opening_warrior_0_3"
+          ]
+        },
+        {
+          "target": "g6n4",
+          "cost": 1,
+          "added": [
+            "g6n4"
+          ]
+        },
+        {
+          "target": "g18n1",
+          "cost": 6,
+          "added": [
+            "g18n1",
+            "g18n5",
+            "g18n7",
+            "g6n1",
+            "g6n2",
+            "r6_18_1"
+          ]
+        },
+        {
+          "target": "g49n2",
+          "cost": 5,
+          "added": [
+            "g18n4",
+            "g49n0",
+            "g49n1",
+            "g49n2",
+            "r18_49_1"
+          ]
+        },
+        {
+          "target": "g45n2",
+          "cost": 10,
+          "added": [
+            "g13n2",
+            "g13n3",
+            "g13n5",
+            "g45hub",
+            "g45n1",
+            "g45n2",
+            "g49n3",
+            "g49n4",
+            "r13_45_1",
+            "r13_49_1"
+          ]
+        },
+        {
+          "target": "g23n5",
+          "cost": 13,
+          "added": [
+            "g23n3",
+            "g23n5",
+            "g37n0",
+            "g37n1",
+            "g37n7",
+            "g37n8",
+            "g45n5",
+            "r23_37_1",
+            "r23_37_2",
+            "r23_37_3",
+            "r33_37_1",
+            "r33_37_2",
+            "r33_45_1"
+          ]
+        },
+        {
+          "target": "g23n1",
+          "cost": 1,
+          "added": [
+            "g23n1"
+          ]
+        },
+        {
+          "target": "g51n4",
+          "cost": 9,
+          "added": [
+            "g23n0",
+            "g23n8",
+            "g51n4",
+            "g51n6",
+            "r16_47_1",
+            "r1_47_2",
+            "r23_47_1",
+            "r8_47_1",
+            "r8_51_1"
+          ]
+        },
+        {
+          "target": "g51n1",
+          "cost": 2,
+          "added": [
+            "g51n0",
+            "g51n1"
+          ]
+        },
+        {
+          "target": "g31n4",
+          "cost": 4,
+          "added": [
+            "g31n2",
+            "g31n4",
+            "g31n5",
+            "r31_51_1"
+          ]
+        },
+        {
+          "target": "g46n6",
+          "cost": 3,
+          "added": [
+            "g46n4",
+            "g46n6",
+            "r31_46_1"
+          ]
+        },
+        {
+          "target": "g13n9",
+          "cost": 1,
+          "added": [
+            "g13n9"
+          ]
+        },
+        {
+          "target": "g33n1",
+          "cost": 1,
+          "added": [
+            "g33n1"
+          ]
+        },
+        {
+          "target": "g38n1",
+          "cost": 6,
+          "added": [
+            "g38n1",
+            "join_warrior_2",
+            "link_warrior_2_1",
+            "link_warrior_2_2",
+            "link_warrior_2_4",
+            "opening_warrior_2_3"
+          ]
+        },
+        {
+          "target": "g13n8",
+          "cost": 1,
+          "added": [
+            "g13n8"
+          ]
+        },
+        {
+          "target": "g18n2",
+          "cost": 1,
+          "added": [
+            "g18n2"
+          ]
+        },
+        {
+          "target": "g45n4",
+          "cost": 1,
+          "added": [
+            "g45n4"
+          ]
+        },
+        {
+          "target": "g49n5",
+          "cost": 1,
+          "added": [
+            "g49n5"
+          ]
+        },
+        {
+          "target": "g6n3",
+          "cost": 1,
+          "added": [
+            "g6n3"
+          ]
+        },
+        {
+          "target": "link_warrior_0_3",
+          "cost": 1,
+          "added": [
+            "link_warrior_0_3"
+          ]
+        },
+        {
+          "target": "link_warrior_2_3",
+          "cost": 1,
+          "added": [
+            "link_warrior_2_3"
+          ]
+        },
+        {
+          "target": "opening_warrior_1_1",
+          "cost": 1,
+          "added": [
+            "opening_warrior_1_1"
+          ]
+        },
+        {
+          "target": "opening_warrior_1_2",
+          "cost": 1,
+          "added": [
+            "opening_warrior_1_2"
+          ]
+        },
+        {
+          "target": "opening_warrior_1_3",
+          "cost": 1,
+          "added": [
+            "opening_warrior_1_3"
+          ]
+        }
+      ],
+      "buildCode": {
+        "version": "projects-large-tree-diff-v2",
+        "budget": 80,
+        "origin": "warrior",
+        "learned": [
+          "g13n2",
+          "g13n3",
+          "g13n5",
+          "g13n8",
+          "g13n9",
+          "g18n1",
+          "g18n2",
+          "g18n4",
+          "g18n5",
+          "g18n7",
+          "g23n0",
+          "g23n1",
+          "g23n3",
+          "g23n5",
+          "g23n8",
+          "g31n2",
+          "g31n4",
+          "g31n5",
+          "g33n1",
+          "g37n0",
+          "g37n1",
+          "g37n7",
+          "g37n8",
+          "g38n1",
+          "g45hub",
+          "g45n1",
+          "g45n2",
+          "g45n4",
+          "g45n5",
+          "g46n4",
+          "g46n6",
+          "g49n0",
+          "g49n1",
+          "g49n2",
+          "g49n3",
+          "g49n4",
+          "g49n5",
+          "g51n0",
+          "g51n1",
+          "g51n4",
+          "g51n6",
+          "g6n0",
+          "g6n1",
+          "g6n2",
+          "g6n3",
+          "g6n4",
+          "join_warrior_0",
+          "join_warrior_2",
+          "link_warrior_0_1",
+          "link_warrior_0_2",
+          "link_warrior_0_3",
+          "link_warrior_0_4",
+          "link_warrior_2_1",
+          "link_warrior_2_2",
+          "link_warrior_2_3",
+          "link_warrior_2_4",
+          "opening_warrior_0_1",
+          "opening_warrior_0_2",
+          "opening_warrior_0_3",
+          "opening_warrior_1_1",
+          "opening_warrior_1_2",
+          "opening_warrior_1_3",
+          "opening_warrior_2_3",
+          "origin_warrior",
+          "r13_45_1",
+          "r13_49_1",
+          "r16_47_1",
+          "r18_49_1",
+          "r1_47_2",
+          "r23_37_1",
+          "r23_37_2",
+          "r23_37_3",
+          "r23_47_1",
+          "r31_46_1",
+          "r31_51_1",
+          "r33_37_1",
+          "r33_37_2",
+          "r33_45_1",
+          "r6_18_1",
+          "r8_47_1",
+          "r8_51_1"
+        ],
+        "mastery": {},
+        "travel": {
+          "r23_37_3": "hp",
+          "join_warrior_0": "hp",
+          "link_warrior_0_1": "hp",
+          "r33_45_1": "hp",
+          "r16_47_1": "hp",
+          "link_warrior_2_1": "hp",
+          "r31_46_1": "hp",
+          "r23_47_1": "hp",
+          "r18_49_1": "hp",
+          "r33_37_1": "hp",
+          "r8_47_1": "hp",
+          "r13_49_1": "hp",
+          "r23_37_1": "hp",
+          "r13_45_1": "hp",
+          "r33_37_2": "hp",
+          "r8_51_1": "hp",
+          "r6_18_1": "hp",
+          "r1_47_2": "hp",
+          "r31_51_1": "hp",
+          "join_warrior_2": "hp",
+          "r23_37_2": "hp"
+        },
+        "defaultTravel": "hp"
+      }
+    },
+    {
+      "version": "original",
+      "budget": 80,
+      "strategy": "two_key",
+      "label": "2Key混合",
+      "spent": 80,
+      "remaining": 0,
+      "stats": {
+        "hp": 108,
+        "resource": 42,
+        "efficiency": 5,
+        "aoe": 16,
+        "haste": 58,
+        "physical": 55,
+        "regen": 20,
+        "leech": 0.82,
+        "armor": 93.55,
+        "attackSpeed": 9,
+        "barrier": 14,
+        "resist": 18
+      },
+      "notables": [
+        {
+          "id": "g13n3",
+          "name": "傷口からの回帰〈比較〉"
+        },
+        {
+          "id": "g13n9",
+          "name": "傷口からの回帰"
+        },
+        {
+          "id": "g14n4",
+          "name": "蓄積する衝動"
+        },
+        {
+          "id": "g18n1",
+          "name": "太い生命線〈比較〉"
+        },
+        {
+          "id": "g19n0",
+          "name": "戦技の律動"
+        },
+        {
+          "id": "g35n1",
+          "name": "刃に込める力"
+        },
+        {
+          "id": "g45n2",
+          "name": "太い生命線"
+        },
+        {
+          "id": "g49n2",
+          "name": "鋼の重なり"
+        },
+        {
+          "id": "g4n2",
+          "name": "戦技の律動"
+        },
+        {
+          "id": "g51n4",
+          "name": "薄層の護り"
+        },
+        {
+          "id": "g52n0",
+          "name": "戦技の律動"
+        },
+        {
+          "id": "g6n0",
+          "name": "鎧の内側"
+        },
+        {
+          "id": "g6n4",
+          "name": "鋼の重なり"
+        },
+        {
+          "id": "g7n2",
+          "name": "届く圏域"
+        },
+        {
+          "id": "opening_warrior_0_3",
+          "name": "鍛えた一撃"
+        },
+        {
+          "id": "opening_warrior_2_3",
+          "name": "軽やかな連撃"
+        }
+      ],
+      "counts": {
+        "road": 23,
+        "notable": 16,
+        "small": 35,
+        "keystone": 2,
+        "start": 1
+      },
+      "keys": [
+        "key_01",
+        "key_05"
+      ],
+      "tradeoffs": [
+        "吸収によるHP回復を失う。吸収がなければ障壁も得られない。",
+        "位置取りを失う代償を持つ。継続ダメージには軽減を適用しない。"
+      ],
+      "keyDescriptions": [
+        "HP吸収の回復先を障壁へ変更する。最大HPを15%乗算で減らす。",
+        "回避スキルを使用できなくなる。受けるヒットダメージを25%乗算で減らす。"
+      ],
+      "checkpoints": [
+        {
+          "target": [
+            "key_01",
+            "key_05"
+          ],
+          "cost": 40,
+          "added": [
+            "g18n4",
+            "g18n5",
+            "g49n0",
+            "g49n1",
+            "g49n2",
+            "g51n0",
+            "g51n4",
+            "g51n6",
+            "g6n0",
+            "g6n1",
+            "g6n2",
+            "g7n2",
+            "g7n3",
+            "g7n4",
+            "g7n5",
+            "g7n6",
+            "j22",
+            "join_warrior_0",
+            "key_01",
+            "key_05",
+            "link_warrior_0_1",
+            "link_warrior_0_2",
+            "link_warrior_0_4",
+            "link_warrior_2_1",
+            "link_warrior_2_2",
+            "opening_warrior_0_1",
+            "opening_warrior_0_2",
+            "opening_warrior_0_3",
+            "opening_warrior_2_3",
+            "r18_49_1",
+            "r2_22_1",
+            "r2_22_2",
+            "r2_51_1",
+            "r6_18_1",
+            "r7_22_1",
+            "r7_22_2"
+          ]
+        },
+        {
+          "target": "g13n3",
+          "cost": 5,
+          "added": [
+            "g13n2",
+            "g13n3",
+            "g49n3",
+            "g49n4",
+            "r13_49_1"
+          ]
+        },
+        {
+          "target": "g13n9",
+          "cost": 1,
+          "added": [
+            "g13n9"
+          ]
+        },
+        {
+          "target": "g6n4",
+          "cost": 1,
+          "added": [
+            "g6n4"
+          ]
+        },
+        {
+          "target": "g18n1",
+          "cost": 2,
+          "added": [
+            "g18n1",
+            "g18n2"
+          ]
+        },
+        {
+          "target": "g45n2",
+          "cost": 5,
+          "added": [
+            "g13n5",
+            "g45hub",
+            "g45n1",
+            "g45n2",
+            "r13_45_1"
+          ]
+        },
+        {
+          "target": "g35n1",
+          "cost": 4,
+          "added": [
+            "g13n8",
+            "g35n1",
+            "g35n2",
+            "r13_35_1"
+          ]
+        },
+        {
+          "target": "g19n0",
+          "cost": 9,
+          "added": [
+            "g19n0",
+            "g19n1",
+            "g19n2",
+            "g19n3",
+            "r19_24_1",
+            "r19_24_2",
+            "r22_24_2",
+            "r22_24_3",
+            "r24_42_1"
+          ]
+        },
+        {
+          "target": "g14n4",
+          "cost": 5,
+          "added": [
+            "g14n4",
+            "r14_27_1",
+            "r19_27_1",
+            "r27_52_1",
+            "r4_27_1"
+          ]
+        },
+        {
+          "target": "g4n2",
+          "cost": 3,
+          "added": [
+            "g4n2",
+            "g4n3",
+            "g4n4"
+          ]
+        },
+        {
+          "target": "g52n0",
+          "cost": 5,
+          "added": [
+            "g52hub",
+            "g52n0",
+            "g52n1",
+            "g52n2",
+            "g52n3"
+          ]
+        }
+      ],
+      "buildCode": {
+        "version": "projects-large-tree-diff-v2",
+        "budget": 80,
+        "origin": "warrior",
+        "learned": [
+          "g13n2",
+          "g13n3",
+          "g13n5",
+          "g13n8",
+          "g13n9",
+          "g14n4",
+          "g18n1",
+          "g18n2",
+          "g18n4",
+          "g18n5",
+          "g19n0",
+          "g19n1",
+          "g19n2",
+          "g19n3",
+          "g35n1",
+          "g35n2",
+          "g45hub",
+          "g45n1",
+          "g45n2",
+          "g49n0",
+          "g49n1",
+          "g49n2",
+          "g49n3",
+          "g49n4",
+          "g4n2",
+          "g4n3",
+          "g4n4",
+          "g51n0",
+          "g51n4",
+          "g51n6",
+          "g52hub",
+          "g52n0",
+          "g52n1",
+          "g52n2",
+          "g52n3",
+          "g6n0",
+          "g6n1",
+          "g6n2",
+          "g6n4",
+          "g7n2",
+          "g7n3",
+          "g7n4",
+          "g7n5",
+          "g7n6",
+          "j22",
+          "join_warrior_0",
+          "key_01",
+          "key_05",
+          "link_warrior_0_1",
+          "link_warrior_0_2",
+          "link_warrior_0_4",
+          "link_warrior_2_1",
+          "link_warrior_2_2",
+          "opening_warrior_0_1",
+          "opening_warrior_0_2",
+          "opening_warrior_0_3",
+          "opening_warrior_2_3",
+          "origin_warrior",
+          "r13_35_1",
+          "r13_45_1",
+          "r13_49_1",
+          "r14_27_1",
+          "r18_49_1",
+          "r19_24_1",
+          "r19_24_2",
+          "r19_27_1",
+          "r22_24_2",
+          "r22_24_3",
+          "r24_42_1",
+          "r27_52_1",
+          "r2_22_1",
+          "r2_22_2",
+          "r2_51_1",
+          "r4_27_1",
+          "r6_18_1",
+          "r7_22_1",
+          "r7_22_2"
+        ],
+        "mastery": {},
+        "travel": {
+          "r14_27_1": "hp",
+          "join_warrior_0": "hp",
+          "r2_51_1": "hp",
+          "link_warrior_0_1": "hp",
+          "r13_35_1": "hp",
+          "r18_49_1": "hp",
+          "r2_22_1": "hp",
+          "r19_24_2": "hp",
+          "r13_49_1": "hp",
+          "r24_42_1": "hp",
+          "r27_52_1": "hp",
+          "r13_45_1": "hp",
+          "r19_27_1": "hp",
+          "r7_22_2": "hp",
+          "r7_22_1": "hp",
+          "link_warrior_2_1": "hp",
+          "r2_22_2": "hp",
+          "r4_27_1": "hp",
+          "r22_24_2": "hp",
+          "r22_24_3": "hp",
+          "r6_18_1": "hp",
+          "r19_24_1": "hp",
+          "j22": "hp"
+        },
+        "defaultTravel": "hp"
+      }
+    },
+    {
+      "version": "previous",
+      "budget": 48,
+      "strategy": "weapon",
+      "label": "武器特化",
+      "spent": 48,
+      "remaining": 0,
+      "stats": {
+        "damage": 34,
+        "resource": 16,
+        "physical": 83,
+        "penetration": 21.94,
+        "attackSpeed": 16,
+        "armor": 13,
+        "hp": 4,
+        "aoe": 3
+      },
+      "notables": [
+        {
+          "id": "g16n2",
+          "name": "深く届く一撃"
+        },
+        {
+          "id": "g16n8",
+          "name": "鎧を割る刃"
+        },
+        {
+          "id": "g30n1",
+          "name": "流れる連撃"
+        },
+        {
+          "id": "g35n1",
+          "name": "刃に込める力"
+        },
+        {
+          "id": "g37n0",
+          "name": "深く届く一撃〈比較〉"
+        },
+        {
+          "id": "g37n4",
+          "name": "鎧を割る刃"
+        },
+        {
+          "id": "opening_warrior_0_3",
+          "name": "鍛えた一撃"
+        }
+      ],
+      "counts": {
+        "road": 17,
+        "small": 24,
+        "notable": 7,
+        "start": 1
+      },
+      "keys": [],
+      "tradeoffs": [],
+      "keyDescriptions": [],
+      "checkpoints": [
+        {
+          "target": "g35n1",
+          "cost": 17,
+          "added": [
+            "g35n0",
+            "g35n1",
+            "g35n2",
+            "g35n3",
+            "g35n4",
+            "join_templar_1",
+            "link_assassin_0_2",
+            "link_mage_0_1",
+            "link_templar_0_2",
+            "link_templar_1_2",
+            "link_warrior_0_2",
+            "link_warrior_0_4",
+            "link_warrior_2_5",
+            "opening_warrior_0_1",
+            "opening_warrior_0_2",
+            "opening_warrior_0_3",
+            "r3_52_1"
+          ]
+        },
+        {
+          "target": "g16n8",
+          "cost": 7,
+          "added": [
+            "g16n0",
+            "g16n5",
+            "g16n6",
+            "g16n8",
+            "g45hub",
+            "join_templar_0",
+            "r1_51_2"
+          ]
+        },
+        {
+          "target": "g16n2",
+          "cost": 2,
+          "added": [
+            "g16n2",
+            "g16n7"
+          ]
+        },
+        {
+          "target": "g37n4",
+          "cost": 14,
+          "added": [
+            "g37n1",
+            "g37n4",
+            "g37n6",
+            "g37n7",
+            "join_healer_0",
+            "join_mage_1",
+            "join_mage_2",
+            "link_assassin_2_6",
+            "link_assassin_2_7",
+            "link_templar_0_1",
+            "link_warrior_1_9",
+            "link_warrior_2_2",
+            "link_warrior_2_4",
+            "r2_22_1"
+          ]
+        },
+        {
+          "target": "g37n0",
+          "cost": 2,
+          "added": [
+            "g37n0",
+            "g37n8"
+          ]
+        },
+        {
+          "target": "g30n1",
+          "cost": 6,
+          "added": [
+            "g30n0",
+            "g30n1",
+            "g30n2",
+            "g30n3",
+            "link_assassin_0_4",
+            "r4_27_1"
+          ]
+        }
+      ],
+      "buildCode": {
+        "version": "projects-large-tree-diff-v2",
+        "budget": 48,
+        "origin": "warrior",
+        "learned": [
+          "g16n0",
+          "g16n2",
+          "g16n5",
+          "g16n6",
+          "g16n7",
+          "g16n8",
+          "g30n0",
+          "g30n1",
+          "g30n2",
+          "g30n3",
+          "g35n0",
+          "g35n1",
+          "g35n2",
+          "g35n3",
+          "g35n4",
+          "g37n0",
+          "g37n1",
+          "g37n4",
+          "g37n6",
+          "g37n7",
+          "g37n8",
+          "g45hub",
+          "join_healer_0",
+          "join_mage_1",
+          "join_mage_2",
+          "join_templar_0",
+          "join_templar_1",
+          "link_assassin_0_2",
+          "link_assassin_0_4",
+          "link_assassin_2_6",
+          "link_assassin_2_7",
+          "link_mage_0_1",
+          "link_templar_0_1",
+          "link_templar_0_2",
+          "link_templar_1_2",
+          "link_warrior_0_2",
+          "link_warrior_0_4",
+          "link_warrior_1_9",
+          "link_warrior_2_2",
+          "link_warrior_2_4",
+          "link_warrior_2_5",
+          "opening_warrior_0_1",
+          "opening_warrior_0_2",
+          "opening_warrior_0_3",
+          "origin_warrior",
+          "r1_51_2",
+          "r2_22_1",
+          "r3_52_1",
+          "r4_27_1"
+        ],
+        "mastery": {},
+        "travel": {
+          "r3_52_1": "damage",
+          "join_templar_1": "damage",
+          "link_assassin_2_6": "damage",
+          "join_mage_1": "damage",
+          "link_templar_0_2": "damage",
+          "join_healer_0": "damage",
+          "link_mage_0_1": "damage",
+          "link_templar_0_1": "damage",
+          "join_templar_0": "damage",
+          "link_assassin_0_4": "damage",
+          "r4_27_1": "damage",
+          "r2_22_1": "damage",
+          "link_assassin_2_7": "damage",
+          "link_assassin_0_2": "damage",
+          "join_mage_2": "damage",
+          "r1_51_2": "damage",
+          "link_templar_1_2": "damage"
+        },
+        "defaultTravel": "damage"
+      }
+    },
+    {
+      "version": "previous",
+      "budget": 48,
+      "strategy": "survival",
+      "label": "生存特化",
+      "spent": 48,
+      "remaining": 0,
+      "stats": {
+        "barrier": 32,
+        "hp": 73,
+        "regen": 52,
+        "physical": 26,
+        "resist": 61.55,
+        "mana": 14,
+        "armor": 48.55,
+        "resource": 3,
+        "attackSpeed": 4
+      },
+      "notables": [
+        {
+          "id": "g18n1",
+          "name": "太い生命線〈比較〉"
+        },
+        {
+          "id": "g23n1",
+          "name": "異質への耐性"
+        },
+        {
+          "id": "g23n5",
+          "name": "意志の鎧"
+        },
+        {
+          "id": "g31n4",
+          "name": "重なる結界"
+        },
+        {
+          "id": "g45n2",
+          "name": "太い生命線"
+        },
+        {
+          "id": "g6n0",
+          "name": "鎧の内側"
+        },
+        {
+          "id": "g6n4",
+          "name": "鋼の重なり"
+        },
+        {
+          "id": "opening_warrior_0_3",
+          "name": "鍛えた一撃"
+        }
+      ],
+      "counts": {
+        "small": 26,
+        "road": 14,
+        "notable": 8,
+        "start": 1
+      },
+      "keys": [],
+      "tradeoffs": [],
+      "keyDescriptions": [],
+      "checkpoints": [
+        {
+          "target": "g18n1",
+          "cost": 13,
+          "added": [
+            "g18n0",
+            "g18n1",
+            "g18n2",
+            "g18n3",
+            "g18n4",
+            "link_assassin_2_1",
+            "link_mage_0_1",
+            "link_templar_1_2",
+            "link_warrior_2_5",
+            "opening_warrior_0_1",
+            "opening_warrior_0_2",
+            "opening_warrior_0_3",
+            "r7_22_2"
+          ]
+        },
+        {
+          "target": "g45n2",
+          "cost": 8,
+          "added": [
+            "g45n0",
+            "g45n2",
+            "g45n5",
+            "g45n6",
+            "join_templar_1",
+            "link_assassin_1_3",
+            "link_warrior_0_4",
+            "r5_41_1"
+          ]
+        },
+        {
+          "target": "g6n0",
+          "cost": 8,
+          "added": [
+            "g6n0",
+            "g6n1",
+            "g6n2",
+            "g6n3",
+            "g6n5",
+            "link_templar_0_2",
+            "link_warrior_0_2",
+            "r4_15_2"
+          ]
+        },
+        {
+          "target": "g6n4",
+          "cost": 2,
+          "added": [
+            "g6n4",
+            "g6n9"
+          ]
+        },
+        {
+          "target": "g31n4",
+          "cost": 9,
+          "added": [
+            "g31hub",
+            "g31n0",
+            "g31n4",
+            "g31n5",
+            "g31n6",
+            "g45hub",
+            "join_templar_0",
+            "link_warrior_2_7",
+            "r1_29_2"
+          ]
+        },
+        {
+          "target": "g23n5",
+          "cost": 6,
+          "added": [
+            "g23n0",
+            "g23n5",
+            "g23n6",
+            "g23n7",
+            "join_ranger_1",
+            "r1_22_4"
+          ]
+        },
+        {
+          "target": "g23n1",
+          "cost": 2,
+          "added": [
+            "g23n1",
+            "g23n8"
+          ]
+        }
+      ],
+      "buildCode": {
+        "version": "projects-large-tree-diff-v2",
+        "budget": 48,
+        "origin": "warrior",
+        "learned": [
+          "g18n0",
+          "g18n1",
+          "g18n2",
+          "g18n3",
+          "g18n4",
+          "g23n0",
+          "g23n1",
+          "g23n5",
+          "g23n6",
+          "g23n7",
+          "g23n8",
+          "g31hub",
+          "g31n0",
+          "g31n4",
+          "g31n5",
+          "g31n6",
+          "g45hub",
+          "g45n0",
+          "g45n2",
+          "g45n5",
+          "g45n6",
+          "g6n0",
+          "g6n1",
+          "g6n2",
+          "g6n3",
+          "g6n4",
+          "g6n5",
+          "g6n9",
+          "join_ranger_1",
+          "join_templar_0",
+          "join_templar_1",
+          "link_assassin_1_3",
+          "link_assassin_2_1",
+          "link_mage_0_1",
+          "link_templar_0_2",
+          "link_templar_1_2",
+          "link_warrior_0_2",
+          "link_warrior_0_4",
+          "link_warrior_2_5",
+          "link_warrior_2_7",
+          "opening_warrior_0_1",
+          "opening_warrior_0_2",
+          "opening_warrior_0_3",
+          "origin_warrior",
+          "r1_22_4",
+          "r1_29_2",
+          "r4_15_2",
+          "r5_41_1",
+          "r7_22_2"
+        ],
+        "mastery": {},
+        "travel": {
+          "join_templar_1": "hp",
+          "join_ranger_1": "hp",
+          "link_assassin_2_1": "hp",
+          "link_templar_0_2": "hp",
+          "link_mage_0_1": "hp",
+          "r7_22_2": "hp",
+          "r1_29_2": "hp",
+          "join_templar_0": "hp",
+          "r4_15_2": "hp",
+          "link_assassin_1_3": "hp",
+          "r1_22_4": "hp",
+          "link_warrior_2_7": "hp",
+          "link_templar_1_2": "hp",
+          "r5_41_1": "hp"
+        },
+        "defaultTravel": "hp"
+      }
+    },
+    {
+      "version": "previous",
+      "budget": 48,
+      "strategy": "two_key",
+      "label": "2Key混合",
+      "status": "unavailable",
+      "reason": "Required input blocks the connection path",
+      "usablePairCost": null,
+      "structuralPairCost": 43,
+      "structuralInactiveNodes": [
+        {
+          "id": "g24hub",
+          "name": "術式の基点",
+          "stats": {
+            "magic": 5
+          }
+        }
+      ]
+    },
+    {
+      "version": "previous",
+      "budget": 64,
+      "strategy": "weapon",
+      "label": "武器特化",
+      "spent": 64,
+      "remaining": 0,
+      "stats": {
+        "damage": 66,
+        "resource": 37,
+        "attackSpeed": 44.9,
+        "physical": 83,
+        "penetration": 21.94,
+        "armor": 13,
+        "hp": 10,
+        "move": 2,
+        "haste": 4,
+        "aoe": 3
+      },
+      "notables": [
+        {
+          "id": "g16n2",
+          "name": "深く届く一撃"
+        },
+        {
+          "id": "g16n8",
+          "name": "鎧を割る刃"
+        },
+        {
+          "id": "g30n1",
+          "name": "流れる連撃"
+        },
+        {
+          "id": "g30n4",
+          "name": "刻む律動"
+        },
+        {
+          "id": "g35n1",
+          "name": "刃に込める力"
+        },
+        {
+          "id": "g37n0",
+          "name": "深く届く一撃〈比較〉"
+        },
+        {
+          "id": "g37n4",
+          "name": "鎧を割る刃"
+        },
+        {
+          "id": "g41n0",
+          "name": "流れる連撃〈比較〉"
+        },
+        {
+          "id": "g41n3",
+          "name": "流れる連撃"
+        },
+        {
+          "id": "opening_assassin_0_3",
+          "name": "鋭い刃"
+        },
+        {
+          "id": "opening_ranger_0_3",
+          "name": "確かな射撃"
+        },
+        {
+          "id": "opening_warrior_0_3",
+          "name": "鍛えた一撃"
+        }
+      ],
+      "counts": {
+        "road": 20,
+        "small": 32,
+        "notable": 12,
+        "start": 1
+      },
+      "keys": [],
+      "tradeoffs": [],
+      "keyDescriptions": [],
+      "checkpoints": [
+        {
+          "target": "g35n1",
+          "cost": 17,
+          "added": [
+            "g35n0",
+            "g35n1",
+            "g35n2",
+            "g35n3",
+            "g35n4",
+            "join_templar_1",
+            "link_assassin_0_2",
+            "link_mage_0_1",
+            "link_templar_0_2",
+            "link_templar_1_2",
+            "link_warrior_0_2",
+            "link_warrior_0_4",
+            "link_warrior_2_5",
+            "opening_warrior_0_1",
+            "opening_warrior_0_2",
+            "opening_warrior_0_3",
+            "r3_52_1"
+          ]
+        },
+        {
+          "target": "g16n8",
+          "cost": 7,
+          "added": [
+            "g16n0",
+            "g16n5",
+            "g16n6",
+            "g16n8",
+            "g45hub",
+            "join_templar_0",
+            "r1_51_2"
+          ]
+        },
+        {
+          "target": "g16n2",
+          "cost": 2,
+          "added": [
+            "g16n2",
+            "g16n7"
+          ]
+        },
+        {
+          "target": "g37n4",
+          "cost": 14,
+          "added": [
+            "g37n1",
+            "g37n4",
+            "g37n6",
+            "g37n7",
+            "join_healer_0",
+            "join_mage_1",
+            "join_mage_2",
+            "link_assassin_2_6",
+            "link_assassin_2_7",
+            "link_templar_0_1",
+            "link_warrior_1_9",
+            "link_warrior_2_2",
+            "link_warrior_2_4",
+            "r2_22_1"
+          ]
+        },
+        {
+          "target": "g37n0",
+          "cost": 2,
+          "added": [
+            "g37n0",
+            "g37n8"
+          ]
+        },
+        {
+          "target": "g30n1",
+          "cost": 6,
+          "added": [
+            "g30n0",
+            "g30n1",
+            "g30n2",
+            "g30n3",
+            "link_assassin_0_4",
+            "r4_27_1"
+          ]
+        },
+        {
+          "target": "g30n4",
+          "cost": 2,
+          "added": [
+            "g30n4",
+            "g30n7"
+          ]
+        },
+        {
+          "target": "g41n0",
+          "cost": 10,
+          "added": [
+            "g41n0",
+            "g41n1",
+            "g41n2",
+            "g41n4",
+            "g41n5",
+            "g52hub",
+            "link_templar_0_3",
+            "link_templar_1_1",
+            "link_warrior_0_3",
+            "r6_35_1"
+          ]
+        },
+        {
+          "target": "g41n3",
+          "cost": 2,
+          "added": [
+            "g41n3",
+            "g41n9"
+          ]
+        },
+        {
+          "target": "opening_assassin_0_3",
+          "cost": 1,
+          "added": [
+            "opening_assassin_0_3"
+          ]
+        },
+        {
+          "target": "opening_ranger_0_3",
+          "cost": 1,
+          "added": [
+            "opening_ranger_0_3"
+          ]
+        }
+      ],
+      "buildCode": {
+        "version": "projects-large-tree-diff-v2",
+        "budget": 64,
+        "origin": "warrior",
+        "learned": [
+          "g16n0",
+          "g16n2",
+          "g16n5",
+          "g16n6",
+          "g16n7",
+          "g16n8",
+          "g30n0",
+          "g30n1",
+          "g30n2",
+          "g30n3",
+          "g30n4",
+          "g30n7",
+          "g35n0",
+          "g35n1",
+          "g35n2",
+          "g35n3",
+          "g35n4",
+          "g37n0",
+          "g37n1",
+          "g37n4",
+          "g37n6",
+          "g37n7",
+          "g37n8",
+          "g41n0",
+          "g41n1",
+          "g41n2",
+          "g41n3",
+          "g41n4",
+          "g41n5",
+          "g41n9",
+          "g45hub",
+          "g52hub",
+          "join_healer_0",
+          "join_mage_1",
+          "join_mage_2",
+          "join_templar_0",
+          "join_templar_1",
+          "link_assassin_0_2",
+          "link_assassin_0_4",
+          "link_assassin_2_6",
+          "link_assassin_2_7",
+          "link_mage_0_1",
+          "link_templar_0_1",
+          "link_templar_0_2",
+          "link_templar_0_3",
+          "link_templar_1_1",
+          "link_templar_1_2",
+          "link_warrior_0_2",
+          "link_warrior_0_3",
+          "link_warrior_0_4",
+          "link_warrior_1_9",
+          "link_warrior_2_2",
+          "link_warrior_2_4",
+          "link_warrior_2_5",
+          "opening_assassin_0_3",
+          "opening_ranger_0_3",
+          "opening_warrior_0_1",
+          "opening_warrior_0_2",
+          "opening_warrior_0_3",
+          "origin_warrior",
+          "r1_51_2",
+          "r2_22_1",
+          "r3_52_1",
+          "r4_27_1",
+          "r6_35_1"
+        ],
+        "mastery": {},
+        "travel": {
+          "r3_52_1": "damage",
+          "join_templar_1": "damage",
+          "link_assassin_2_6": "damage",
+          "join_mage_1": "damage",
+          "link_templar_0_2": "damage",
+          "join_healer_0": "damage",
+          "link_mage_0_1": "damage",
+          "link_templar_0_1": "damage",
+          "join_templar_0": "damage",
+          "link_templar_0_3": "damage",
+          "link_assassin_0_4": "damage",
+          "r4_27_1": "damage",
+          "r2_22_1": "damage",
+          "link_assassin_2_7": "damage",
+          "link_templar_1_1": "damage",
+          "link_assassin_0_2": "damage",
+          "join_mage_2": "damage",
+          "r6_35_1": "damage",
+          "r1_51_2": "damage",
+          "link_templar_1_2": "damage"
+        },
+        "defaultTravel": "damage"
+      }
+    },
+    {
+      "version": "previous",
+      "budget": 64,
+      "strategy": "survival",
+      "label": "生存特化",
+      "spent": 64,
+      "remaining": 0,
+      "stats": {
+        "leech": 1.57,
+        "mana": 24,
+        "barrier": 32,
+        "hp": 99,
+        "regen": 52,
+        "physical": 26,
+        "resist": 98.55,
+        "armor": 56.55,
+        "resource": 3,
+        "attackSpeed": 4
+      },
+      "notables": [
+        {
+          "id": "g13n3",
+          "name": "傷口からの回帰〈比較〉"
+        },
+        {
+          "id": "g13n9",
+          "name": "傷口からの回帰"
+        },
+        {
+          "id": "g18n1",
+          "name": "太い生命線〈比較〉"
+        },
+        {
+          "id": "g23n1",
+          "name": "異質への耐性"
+        },
+        {
+          "id": "g23n5",
+          "name": "意志の鎧"
+        },
+        {
+          "id": "g31n4",
+          "name": "重なる結界"
+        },
+        {
+          "id": "g45n2",
+          "name": "太い生命線"
+        },
+        {
+          "id": "g46n6",
+          "name": "揺るがない心"
+        },
+        {
+          "id": "g6n0",
+          "name": "鎧の内側"
+        },
+        {
+          "id": "g6n4",
+          "name": "鋼の重なり"
+        },
+        {
+          "id": "opening_warrior_0_3",
+          "name": "鍛えた一撃"
+        },
+        {
+          "id": "opening_warrior_1_3",
+          "name": "戦うための体力"
+        }
+      ],
+      "counts": {
+        "small": 35,
+        "road": 17,
+        "notable": 12,
+        "start": 1
+      },
+      "keys": [],
+      "tradeoffs": [],
+      "keyDescriptions": [],
+      "checkpoints": [
+        {
+          "target": "g18n1",
+          "cost": 13,
+          "added": [
+            "g18n0",
+            "g18n1",
+            "g18n2",
+            "g18n3",
+            "g18n4",
+            "link_assassin_2_1",
+            "link_mage_0_1",
+            "link_templar_1_2",
+            "link_warrior_2_5",
+            "opening_warrior_0_1",
+            "opening_warrior_0_2",
+            "opening_warrior_0_3",
+            "r7_22_2"
+          ]
+        },
+        {
+          "target": "g45n2",
+          "cost": 8,
+          "added": [
+            "g45n0",
+            "g45n2",
+            "g45n5",
+            "g45n6",
+            "join_templar_1",
+            "link_assassin_1_3",
+            "link_warrior_0_4",
+            "r5_41_1"
+          ]
+        },
+        {
+          "target": "g6n0",
+          "cost": 8,
+          "added": [
+            "g6n0",
+            "g6n1",
+            "g6n2",
+            "g6n3",
+            "g6n5",
+            "link_templar_0_2",
+            "link_warrior_0_2",
+            "r4_15_2"
+          ]
+        },
+        {
+          "target": "g6n4",
+          "cost": 2,
+          "added": [
+            "g6n4",
+            "g6n9"
+          ]
+        },
+        {
+          "target": "g31n4",
+          "cost": 9,
+          "added": [
+            "g31hub",
+            "g31n0",
+            "g31n4",
+            "g31n5",
+            "g31n6",
+            "g45hub",
+            "join_templar_0",
+            "link_warrior_2_7",
+            "r1_29_2"
+          ]
+        },
+        {
+          "target": "g23n5",
+          "cost": 6,
+          "added": [
+            "g23n0",
+            "g23n5",
+            "g23n6",
+            "g23n7",
+            "join_ranger_1",
+            "r1_22_4"
+          ]
+        },
+        {
+          "target": "g23n1",
+          "cost": 2,
+          "added": [
+            "g23n1",
+            "g23n8"
+          ]
+        },
+        {
+          "target": "g46n6",
+          "cost": 7,
+          "added": [
+            "g46n0",
+            "g46n1",
+            "g46n2",
+            "g46n3",
+            "g46n6",
+            "link_ranger_1_2",
+            "r1_29_4"
+          ]
+        },
+        {
+          "target": "g13n3",
+          "cost": 6,
+          "added": [
+            "g13n0",
+            "g13n1",
+            "g13n2",
+            "g13n3",
+            "g13n4",
+            "r6_18_1"
+          ]
+        },
+        {
+          "target": "g13n9",
+          "cost": 2,
+          "added": [
+            "g13n8",
+            "g13n9"
+          ]
+        },
+        {
+          "target": "opening_warrior_1_3",
+          "cost": 1,
+          "added": [
+            "opening_warrior_1_3"
+          ]
+        }
+      ],
+      "buildCode": {
+        "version": "projects-large-tree-diff-v2",
+        "budget": 64,
+        "origin": "warrior",
+        "learned": [
+          "g13n0",
+          "g13n1",
+          "g13n2",
+          "g13n3",
+          "g13n4",
+          "g13n8",
+          "g13n9",
+          "g18n0",
+          "g18n1",
+          "g18n2",
+          "g18n3",
+          "g18n4",
+          "g23n0",
+          "g23n1",
+          "g23n5",
+          "g23n6",
+          "g23n7",
+          "g23n8",
+          "g31hub",
+          "g31n0",
+          "g31n4",
+          "g31n5",
+          "g31n6",
+          "g45hub",
+          "g45n0",
+          "g45n2",
+          "g45n5",
+          "g45n6",
+          "g46n0",
+          "g46n1",
+          "g46n2",
+          "g46n3",
+          "g46n6",
+          "g6n0",
+          "g6n1",
+          "g6n2",
+          "g6n3",
+          "g6n4",
+          "g6n5",
+          "g6n9",
+          "join_ranger_1",
+          "join_templar_0",
+          "join_templar_1",
+          "link_assassin_1_3",
+          "link_assassin_2_1",
+          "link_mage_0_1",
+          "link_ranger_1_2",
+          "link_templar_0_2",
+          "link_templar_1_2",
+          "link_warrior_0_2",
+          "link_warrior_0_4",
+          "link_warrior_2_5",
+          "link_warrior_2_7",
+          "opening_warrior_0_1",
+          "opening_warrior_0_2",
+          "opening_warrior_0_3",
+          "opening_warrior_1_3",
+          "origin_warrior",
+          "r1_22_4",
+          "r1_29_2",
+          "r1_29_4",
+          "r4_15_2",
+          "r5_41_1",
+          "r6_18_1",
+          "r7_22_2"
+        ],
+        "mastery": {},
+        "travel": {
+          "join_templar_1": "hp",
+          "join_ranger_1": "hp",
+          "link_assassin_2_1": "hp",
+          "link_templar_0_2": "hp",
+          "link_mage_0_1": "hp",
+          "r7_22_2": "hp",
+          "r1_29_2": "hp",
+          "join_templar_0": "hp",
+          "r4_15_2": "hp",
+          "link_assassin_1_3": "hp",
+          "r1_22_4": "hp",
+          "link_ranger_1_2": "hp",
+          "link_warrior_2_7": "hp",
+          "r1_29_4": "hp",
+          "r6_18_1": "hp",
+          "link_templar_1_2": "hp",
+          "r5_41_1": "hp"
+        },
+        "defaultTravel": "hp"
+      }
+    },
+    {
+      "version": "previous",
+      "budget": 64,
+      "strategy": "two_key",
+      "label": "2Key混合",
+      "status": "unavailable",
+      "reason": "Required input blocks the connection path",
+      "usablePairCost": null,
+      "structuralPairCost": 43,
+      "structuralInactiveNodes": [
+        {
+          "id": "g24hub",
+          "name": "術式の基点",
+          "stats": {
+            "magic": 5
+          }
+        }
+      ]
+    },
+    {
+      "version": "previous",
+      "budget": 80,
+      "strategy": "weapon",
+      "label": "武器特化",
+      "spent": 80,
+      "remaining": 0,
+      "stats": {
+        "critMulti": 35,
+        "physical": 89,
+        "penetration": 21.94,
+        "damage": 46,
+        "resource": 37,
+        "attackSpeed": 44.9,
+        "armor": 13,
+        "hp": 6,
+        "aoe": 22,
+        "haste": 4,
+        "crit": 116
+      },
+      "notables": [
+        {
+          "id": "g16n2",
+          "name": "深く届く一撃"
+        },
+        {
+          "id": "g16n8",
+          "name": "鎧を割る刃"
+        },
+        {
+          "id": "g25n6",
+          "name": "一点への集中"
+        },
+        {
+          "id": "g30n1",
+          "name": "流れる連撃"
+        },
+        {
+          "id": "g30n4",
+          "name": "刻む律動"
+        },
+        {
+          "id": "g32n2",
+          "name": "隙を捉える眼"
+        },
+        {
+          "id": "g34n2",
+          "name": "届く圏域"
+        },
+        {
+          "id": "g35n1",
+          "name": "刃に込める力"
+        },
+        {
+          "id": "g37n0",
+          "name": "深く届く一撃〈比較〉"
+        },
+        {
+          "id": "g37n4",
+          "name": "鎧を割る刃"
+        },
+        {
+          "id": "g41n0",
+          "name": "流れる連撃〈比較〉"
+        },
+        {
+          "id": "g41n3",
+          "name": "流れる連撃"
+        },
+        {
+          "id": "opening_warrior_0_3",
+          "name": "鍛えた一撃"
+        }
+      ],
+      "counts": {
+        "small": 44,
+        "notable": 13,
+        "road": 23,
+        "start": 1
+      },
+      "keys": [],
+      "tradeoffs": [],
+      "keyDescriptions": [],
+      "checkpoints": [
+        {
+          "target": "g35n1",
+          "cost": 17,
+          "added": [
+            "g35n0",
+            "g35n1",
+            "g35n2",
+            "g35n3",
+            "g35n4",
+            "join_templar_1",
+            "link_assassin_0_2",
+            "link_mage_0_1",
+            "link_templar_0_2",
+            "link_templar_1_2",
+            "link_warrior_0_2",
+            "link_warrior_0_4",
+            "link_warrior_2_5",
+            "opening_warrior_0_1",
+            "opening_warrior_0_2",
+            "opening_warrior_0_3",
+            "r3_52_1"
+          ]
+        },
+        {
+          "target": "g16n8",
+          "cost": 7,
+          "added": [
+            "g16n0",
+            "g16n5",
+            "g16n6",
+            "g16n8",
+            "g45hub",
+            "join_templar_0",
+            "r1_51_2"
+          ]
+        },
+        {
+          "target": "g16n2",
+          "cost": 2,
+          "added": [
+            "g16n2",
+            "g16n7"
+          ]
+        },
+        {
+          "target": "g37n4",
+          "cost": 14,
+          "added": [
+            "g37n1",
+            "g37n4",
+            "g37n6",
+            "g37n7",
+            "join_healer_0",
+            "join_mage_1",
+            "join_mage_2",
+            "link_assassin_2_6",
+            "link_assassin_2_7",
+            "link_templar_0_1",
+            "link_warrior_1_9",
+            "link_warrior_2_2",
+            "link_warrior_2_4",
+            "r2_22_1"
+          ]
+        },
+        {
+          "target": "g37n0",
+          "cost": 2,
+          "added": [
+            "g37n0",
+            "g37n8"
+          ]
+        },
+        {
+          "target": "g30n1",
+          "cost": 6,
+          "added": [
+            "g30n0",
+            "g30n1",
+            "g30n2",
+            "g30n3",
+            "link_assassin_0_4",
+            "r4_27_1"
+          ]
+        },
+        {
+          "target": "g30n4",
+          "cost": 2,
+          "added": [
+            "g30n4",
+            "g30n7"
+          ]
+        },
+        {
+          "target": "g41n0",
+          "cost": 10,
+          "added": [
+            "g41n0",
+            "g41n1",
+            "g41n2",
+            "g41n4",
+            "g41n5",
+            "g52hub",
+            "link_templar_0_3",
+            "link_templar_1_1",
+            "link_warrior_0_3",
+            "r6_35_1"
+          ]
+        },
+        {
+          "target": "g41n3",
+          "cost": 2,
+          "added": [
+            "g41n3",
+            "g41n9"
+          ]
+        },
+        {
+          "target": "g25n6",
+          "cost": 6,
+          "added": [
+            "g25n0",
+            "g25n1",
+            "g25n2",
+            "g25n3",
+            "g25n6",
+            "r2_51_1"
+          ]
+        },
+        {
+          "target": "g32n2",
+          "cost": 6,
+          "added": [
+            "g32n0",
+            "g32n1",
+            "g32n2",
+            "g32n3",
+            "g32n4",
+            "r3_4_1"
+          ]
+        },
+        {
+          "target": "g34n2",
+          "cost": 6,
+          "added": [
+            "g34n0",
+            "g34n1",
+            "g34n2",
+            "g34n3",
+            "g34n4",
+            "r4_15_3"
+          ]
+        }
+      ],
+      "buildCode": {
+        "version": "projects-large-tree-diff-v2",
+        "budget": 80,
+        "origin": "warrior",
+        "learned": [
+          "g16n0",
+          "g16n2",
+          "g16n5",
+          "g16n6",
+          "g16n7",
+          "g16n8",
+          "g25n0",
+          "g25n1",
+          "g25n2",
+          "g25n3",
+          "g25n6",
+          "g30n0",
+          "g30n1",
+          "g30n2",
+          "g30n3",
+          "g30n4",
+          "g30n7",
+          "g32n0",
+          "g32n1",
+          "g32n2",
+          "g32n3",
+          "g32n4",
+          "g34n0",
+          "g34n1",
+          "g34n2",
+          "g34n3",
+          "g34n4",
+          "g35n0",
+          "g35n1",
+          "g35n2",
+          "g35n3",
+          "g35n4",
+          "g37n0",
+          "g37n1",
+          "g37n4",
+          "g37n6",
+          "g37n7",
+          "g37n8",
+          "g41n0",
+          "g41n1",
+          "g41n2",
+          "g41n3",
+          "g41n4",
+          "g41n5",
+          "g41n9",
+          "g45hub",
+          "g52hub",
+          "join_healer_0",
+          "join_mage_1",
+          "join_mage_2",
+          "join_templar_0",
+          "join_templar_1",
+          "link_assassin_0_2",
+          "link_assassin_0_4",
+          "link_assassin_2_6",
+          "link_assassin_2_7",
+          "link_mage_0_1",
+          "link_templar_0_1",
+          "link_templar_0_2",
+          "link_templar_0_3",
+          "link_templar_1_1",
+          "link_templar_1_2",
+          "link_warrior_0_2",
+          "link_warrior_0_3",
+          "link_warrior_0_4",
+          "link_warrior_1_9",
+          "link_warrior_2_2",
+          "link_warrior_2_4",
+          "link_warrior_2_5",
+          "opening_warrior_0_1",
+          "opening_warrior_0_2",
+          "opening_warrior_0_3",
+          "origin_warrior",
+          "r1_51_2",
+          "r2_22_1",
+          "r2_51_1",
+          "r3_4_1",
+          "r3_52_1",
+          "r4_15_3",
+          "r4_27_1",
+          "r6_35_1"
+        ],
+        "mastery": {},
+        "travel": {
+          "join_templar_1": "damage",
+          "r2_51_1": "damage",
+          "link_templar_0_2": "damage",
+          "link_mage_0_1": "damage",
+          "join_templar_0": "damage",
+          "link_assassin_0_4": "damage",
+          "r2_22_1": "damage",
+          "r3_4_1": "damage",
+          "link_assassin_2_7": "damage",
+          "link_templar_1_1": "damage",
+          "link_assassin_0_2": "damage",
+          "r1_51_2": "damage",
+          "link_templar_1_2": "damage",
+          "link_templar_0_3": "damage",
+          "r3_52_1": "damage",
+          "link_assassin_2_6": "damage",
+          "join_mage_1": "damage",
+          "join_healer_0": "damage",
+          "link_templar_0_1": "damage",
+          "r4_15_3": "damage",
+          "r4_27_1": "damage",
+          "join_mage_2": "damage",
+          "r6_35_1": "damage"
+        },
+        "defaultTravel": "damage"
+      }
+    },
+    {
+      "version": "previous",
+      "budget": 80,
+      "strategy": "survival",
+      "label": "生存特化",
+      "spent": 80,
+      "remaining": 0,
+      "stats": {
+        "regen": 52,
+        "hp": 113,
+        "leech": 1.57,
+        "attackSpeed": 16,
+        "move": 7.97,
+        "resist": 98.55,
+        "mana": 24,
+        "physical": 26,
+        "armor": 59.55,
+        "aoe": 3,
+        "resource": 6,
+        "barrier": 32
+      },
+      "notables": [
+        {
+          "id": "g13n3",
+          "name": "傷口からの回帰〈比較〉"
+        },
+        {
+          "id": "g13n9",
+          "name": "傷口からの回帰"
+        },
+        {
+          "id": "g18n1",
+          "name": "太い生命線〈比較〉"
+        },
+        {
+          "id": "g23n1",
+          "name": "異質への耐性"
+        },
+        {
+          "id": "g23n5",
+          "name": "意志の鎧"
+        },
+        {
+          "id": "g31n4",
+          "name": "重なる結界"
+        },
+        {
+          "id": "g44n0",
+          "name": "退路を残す"
+        },
+        {
+          "id": "g44n3",
+          "name": "軽い足取り"
+        },
+        {
+          "id": "g45n2",
+          "name": "太い生命線"
+        },
+        {
+          "id": "g46n6",
+          "name": "揺るがない心"
+        },
+        {
+          "id": "g6n0",
+          "name": "鎧の内側"
+        },
+        {
+          "id": "g6n4",
+          "name": "鋼の重なり"
+        },
+        {
+          "id": "opening_warrior_0_3",
+          "name": "鍛えた一撃"
+        },
+        {
+          "id": "opening_warrior_1_3",
+          "name": "戦うための体力"
+        }
+      ],
+      "counts": {
+        "small": 43,
+        "road": 23,
+        "notable": 14,
+        "start": 1
+      },
+      "keys": [],
+      "tradeoffs": [],
+      "keyDescriptions": [],
+      "checkpoints": [
+        {
+          "target": "g18n1",
+          "cost": 13,
+          "added": [
+            "g18n0",
+            "g18n1",
+            "g18n2",
+            "g18n3",
+            "g18n4",
+            "link_assassin_2_1",
+            "link_mage_0_1",
+            "link_templar_1_2",
+            "link_warrior_2_5",
+            "opening_warrior_0_1",
+            "opening_warrior_0_2",
+            "opening_warrior_0_3",
+            "r7_22_2"
+          ]
+        },
+        {
+          "target": "g45n2",
+          "cost": 8,
+          "added": [
+            "g45n0",
+            "g45n2",
+            "g45n5",
+            "g45n6",
+            "join_templar_1",
+            "link_assassin_1_3",
+            "link_warrior_0_4",
+            "r5_41_1"
+          ]
+        },
+        {
+          "target": "g6n0",
+          "cost": 8,
+          "added": [
+            "g6n0",
+            "g6n1",
+            "g6n2",
+            "g6n3",
+            "g6n5",
+            "link_templar_0_2",
+            "link_warrior_0_2",
+            "r4_15_2"
+          ]
+        },
+        {
+          "target": "g6n4",
+          "cost": 2,
+          "added": [
+            "g6n4",
+            "g6n9"
+          ]
+        },
+        {
+          "target": "g31n4",
+          "cost": 9,
+          "added": [
+            "g31hub",
+            "g31n0",
+            "g31n4",
+            "g31n5",
+            "g31n6",
+            "g45hub",
+            "join_templar_0",
+            "link_warrior_2_7",
+            "r1_29_2"
+          ]
+        },
+        {
+          "target": "g23n5",
+          "cost": 6,
+          "added": [
+            "g23n0",
+            "g23n5",
+            "g23n6",
+            "g23n7",
+            "join_ranger_1",
+            "r1_22_4"
+          ]
+        },
+        {
+          "target": "g23n1",
+          "cost": 2,
+          "added": [
+            "g23n1",
+            "g23n8"
+          ]
+        },
+        {
+          "target": "g46n6",
+          "cost": 7,
+          "added": [
+            "g46n0",
+            "g46n1",
+            "g46n2",
+            "g46n3",
+            "g46n6",
+            "link_ranger_1_2",
+            "r1_29_4"
+          ]
+        },
+        {
+          "target": "g13n3",
+          "cost": 6,
+          "added": [
+            "g13n0",
+            "g13n1",
+            "g13n2",
+            "g13n3",
+            "g13n4",
+            "r6_18_1"
+          ]
+        },
+        {
+          "target": "g13n9",
+          "cost": 2,
+          "added": [
+            "g13n8",
+            "g13n9"
+          ]
+        },
+        {
+          "target": "g44n0",
+          "cost": 14,
+          "added": [
+            "g44n0",
+            "g44n1",
+            "g44n2",
+            "g44n4",
+            "join_assassin_1",
+            "join_mage_0",
+            "join_templar_2",
+            "link_templar_0_3",
+            "link_templar_1_1",
+            "link_warrior_0_3",
+            "link_warrior_0_5",
+            "link_warrior_0_8",
+            "link_warrior_0_9",
+            "r5_30_1"
+          ]
+        },
+        {
+          "target": "g44n3",
+          "cost": 2,
+          "added": [
+            "g44n3",
+            "g44n7"
+          ]
+        },
+        {
+          "target": "opening_warrior_1_3",
+          "cost": 1,
+          "added": [
+            "opening_warrior_1_3"
+          ]
+        }
+      ],
+      "buildCode": {
+        "version": "projects-large-tree-diff-v2",
+        "budget": 80,
+        "origin": "warrior",
+        "learned": [
+          "g13n0",
+          "g13n1",
+          "g13n2",
+          "g13n3",
+          "g13n4",
+          "g13n8",
+          "g13n9",
+          "g18n0",
+          "g18n1",
+          "g18n2",
+          "g18n3",
+          "g18n4",
+          "g23n0",
+          "g23n1",
+          "g23n5",
+          "g23n6",
+          "g23n7",
+          "g23n8",
+          "g31hub",
+          "g31n0",
+          "g31n4",
+          "g31n5",
+          "g31n6",
+          "g44n0",
+          "g44n1",
+          "g44n2",
+          "g44n3",
+          "g44n4",
+          "g44n7",
+          "g45hub",
+          "g45n0",
+          "g45n2",
+          "g45n5",
+          "g45n6",
+          "g46n0",
+          "g46n1",
+          "g46n2",
+          "g46n3",
+          "g46n6",
+          "g6n0",
+          "g6n1",
+          "g6n2",
+          "g6n3",
+          "g6n4",
+          "g6n5",
+          "g6n9",
+          "join_assassin_1",
+          "join_mage_0",
+          "join_ranger_1",
+          "join_templar_0",
+          "join_templar_1",
+          "join_templar_2",
+          "link_assassin_1_3",
+          "link_assassin_2_1",
+          "link_mage_0_1",
+          "link_ranger_1_2",
+          "link_templar_0_2",
+          "link_templar_0_3",
+          "link_templar_1_1",
+          "link_templar_1_2",
+          "link_warrior_0_2",
+          "link_warrior_0_3",
+          "link_warrior_0_4",
+          "link_warrior_0_5",
+          "link_warrior_0_8",
+          "link_warrior_0_9",
+          "link_warrior_2_5",
+          "link_warrior_2_7",
+          "opening_warrior_0_1",
+          "opening_warrior_0_2",
+          "opening_warrior_0_3",
+          "opening_warrior_1_3",
+          "origin_warrior",
+          "r1_22_4",
+          "r1_29_2",
+          "r1_29_4",
+          "r4_15_2",
+          "r5_30_1",
+          "r5_41_1",
+          "r6_18_1",
+          "r7_22_2"
+        ],
+        "mastery": {},
+        "travel": {
+          "join_templar_1": "hp",
+          "link_assassin_2_1": "hp",
+          "link_templar_0_2": "hp",
+          "link_mage_0_1": "hp",
+          "join_mage_0": "hp",
+          "join_templar_0": "hp",
+          "r4_15_2": "hp",
+          "join_templar_2": "hp",
+          "link_templar_1_1": "hp",
+          "r1_29_4": "hp",
+          "link_templar_1_2": "hp",
+          "link_templar_0_3": "hp",
+          "join_assassin_1": "hp",
+          "join_ranger_1": "hp",
+          "r7_22_2": "hp",
+          "r1_29_2": "hp",
+          "r5_30_1": "hp",
+          "link_assassin_1_3": "hp",
+          "link_ranger_1_2": "hp",
+          "link_warrior_2_7": "hp",
+          "r6_18_1": "hp",
+          "r5_41_1": "hp",
+          "r1_22_4": "hp"
+        },
+        "defaultTravel": "hp"
+      }
+    },
+    {
+      "version": "previous",
+      "budget": 80,
+      "strategy": "two_key",
+      "label": "2Key混合",
+      "status": "unavailable",
+      "reason": "Required input blocks the connection path",
+      "usablePairCost": null,
+      "structuralPairCost": 43,
+      "structuralInactiveNodes": [
+        {
+          "id": "g24hub",
+          "name": "術式の基点",
+          "stats": {
+            "magic": 5
+          }
+        }
+      ]
+    },
+    {
+      "version": "proposal",
+      "budget": 48,
+      "strategy": "weapon",
+      "label": "武器特化",
+      "spent": 48,
+      "remaining": 0,
+      "stats": {
+        "damage": 32,
+        "resource": 20,
+        "physical": 83,
+        "penetration": 21.94,
+        "attackSpeed": 23.95,
+        "armor": 13,
+        "hp": 2
+      },
+      "notables": [
+        {
+          "id": "g16n2",
+          "name": "深く届く一撃"
+        },
+        {
+          "id": "g16n8",
+          "name": "鎧を割る刃"
+        },
+        {
+          "id": "g30n1",
+          "name": "流れる連撃"
+        },
+        {
+          "id": "g30n4",
+          "name": "刻む律動"
+        },
+        {
+          "id": "g35n1",
+          "name": "刃に込める力"
+        },
+        {
+          "id": "g37n0",
+          "name": "深く届く一撃〈比較〉"
+        },
+        {
+          "id": "g37n4",
+          "name": "鎧を割る刃"
+        },
+        {
+          "id": "opening_warrior_0_3",
+          "name": "鍛えた一撃"
+        }
+      ],
+      "counts": {
+        "road": 16,
+        "small": 24,
+        "notable": 8,
+        "start": 1
+      },
+      "keys": [],
+      "tradeoffs": [],
+      "keyDescriptions": [],
+      "checkpoints": [
+        {
+          "target": "g35n1",
+          "cost": 16,
+          "added": [
+            "g35n0",
+            "g35n1",
+            "g35n2",
+            "g35n3",
+            "g35n4",
+            "join_templar_1",
+            "link_assassin_0_4",
+            "link_mage_0_1",
+            "link_templar_0_2",
+            "link_templar_1_2",
+            "link_warrior_0_2",
+            "link_warrior_0_4",
+            "opening_warrior_0_1",
+            "opening_warrior_0_2",
+            "opening_warrior_0_3",
+            "r3_52_1"
+          ]
+        },
+        {
+          "target": "g16n8",
+          "cost": 7,
+          "added": [
+            "g16n0",
+            "g16n5",
+            "g16n6",
+            "g16n8",
+            "join_templar_0",
+            "r1_51_2",
+            "r5_41_1"
+          ]
+        },
+        {
+          "target": "g16n2",
+          "cost": 2,
+          "added": [
+            "g16n2",
+            "g16n7"
+          ]
+        },
+        {
+          "target": "g37n4",
+          "cost": 13,
+          "added": [
+            "g37n1",
+            "g37n4",
+            "g37n6",
+            "g37n7",
+            "join_mage_2",
+            "link_mage_1_1",
+            "link_mage_2_1",
+            "link_templar_0_1",
+            "link_warrior_1_2",
+            "link_warrior_1_3",
+            "link_warrior_1_4",
+            "link_warrior_1_5",
+            "r2_22_1"
+          ]
+        },
+        {
+          "target": "g37n0",
+          "cost": 2,
+          "added": [
+            "g37n0",
+            "g37n8"
+          ]
+        },
+        {
+          "target": "g30n1",
+          "cost": 6,
+          "added": [
+            "g30n0",
+            "g30n1",
+            "g30n2",
+            "g30n3",
+            "link_assassin_1_1",
+            "r4_27_1"
+          ]
+        },
+        {
+          "target": "g30n4",
+          "cost": 2,
+          "added": [
+            "g30n4",
+            "g30n7"
+          ]
+        }
+      ],
+      "buildCode": {
+        "version": "projects-large-tree-diff-v2",
+        "budget": 48,
+        "origin": "warrior",
+        "learned": [
+          "g16n0",
+          "g16n2",
+          "g16n5",
+          "g16n6",
+          "g16n7",
+          "g16n8",
+          "g30n0",
+          "g30n1",
+          "g30n2",
+          "g30n3",
+          "g30n4",
+          "g30n7",
+          "g35n0",
+          "g35n1",
+          "g35n2",
+          "g35n3",
+          "g35n4",
+          "g37n0",
+          "g37n1",
+          "g37n4",
+          "g37n6",
+          "g37n7",
+          "g37n8",
+          "join_mage_2",
+          "join_templar_0",
+          "join_templar_1",
+          "link_assassin_0_4",
+          "link_assassin_1_1",
+          "link_mage_0_1",
+          "link_mage_1_1",
+          "link_mage_2_1",
+          "link_templar_0_1",
+          "link_templar_0_2",
+          "link_templar_1_2",
+          "link_warrior_0_2",
+          "link_warrior_0_4",
+          "link_warrior_1_2",
+          "link_warrior_1_3",
+          "link_warrior_1_4",
+          "link_warrior_1_5",
+          "opening_warrior_0_1",
+          "opening_warrior_0_2",
+          "opening_warrior_0_3",
+          "origin_warrior",
+          "r1_51_2",
+          "r2_22_1",
+          "r3_52_1",
+          "r4_27_1",
+          "r5_41_1"
+        ],
+        "mastery": {},
+        "travel": {
+          "r3_52_1": "damage",
+          "join_templar_1": "damage",
+          "link_mage_1_1": "damage",
+          "link_templar_0_2": "damage",
+          "link_mage_0_1": "damage",
+          "link_mage_2_1": "damage",
+          "link_templar_0_1": "damage",
+          "join_templar_0": "damage",
+          "link_assassin_0_4": "damage",
+          "link_assassin_1_1": "damage",
+          "r2_22_1": "damage",
+          "r4_27_1": "damage",
+          "join_mage_2": "damage",
+          "r1_51_2": "damage",
+          "link_templar_1_2": "damage",
+          "r5_41_1": "damage"
+        },
+        "defaultTravel": "damage"
+      }
+    },
+    {
+      "version": "proposal",
+      "budget": 48,
+      "strategy": "survival",
+      "label": "生存特化",
+      "spent": 48,
+      "remaining": 0,
+      "stats": {
+        "hp": 91,
+        "regen": 52,
+        "physical": 28,
+        "armor": 92.55,
+        "move": 4,
+        "attackSpeed": 4,
+        "damage": 14,
+        "aoe": 3
+      },
+      "notables": [
+        {
+          "id": "g18n1",
+          "name": "太い生命線〈比較〉"
+        },
+        {
+          "id": "g45n2",
+          "name": "太い生命線"
+        },
+        {
+          "id": "g49n2",
+          "name": "鋼の重なり"
+        },
+        {
+          "id": "g6n0",
+          "name": "鎧の内側"
+        },
+        {
+          "id": "g6n4",
+          "name": "鋼の重なり"
+        },
+        {
+          "id": "opening_assassin_0_3",
+          "name": "鋭い刃"
+        },
+        {
+          "id": "opening_assassin_2_3",
+          "name": "間合いを選ぶ"
+        },
+        {
+          "id": "opening_warrior_0_3",
+          "name": "鍛えた一撃"
+        }
+      ],
+      "counts": {
+        "small": 23,
+        "road": 17,
+        "notable": 8,
+        "start": 1
+      },
+      "keys": [],
+      "tradeoffs": [],
+      "keyDescriptions": [],
+      "checkpoints": [
+        {
+          "target": "g18n1",
+          "cost": 11,
+          "added": [
+            "g18n0",
+            "g18n1",
+            "g18n2",
+            "g18n3",
+            "g18n4",
+            "link_mage_0_1",
+            "link_templar_1_2",
+            "opening_warrior_0_1",
+            "opening_warrior_0_2",
+            "opening_warrior_0_3",
+            "r7_22_2"
+          ]
+        },
+        {
+          "target": "g45n2",
+          "cost": 8,
+          "added": [
+            "g45hub",
+            "g45n0",
+            "g45n2",
+            "g45n5",
+            "g45n6",
+            "join_templar_1",
+            "link_assassin_1_5",
+            "link_warrior_0_4"
+          ]
+        },
+        {
+          "target": "g6n0",
+          "cost": 8,
+          "added": [
+            "g6n0",
+            "g6n1",
+            "g6n2",
+            "g6n3",
+            "g6n5",
+            "link_templar_0_2",
+            "link_warrior_0_2",
+            "r4_15_2"
+          ]
+        },
+        {
+          "target": "g6n4",
+          "cost": 2,
+          "added": [
+            "g6n4",
+            "g6n9"
+          ]
+        },
+        {
+          "target": "g49n2",
+          "cost": 17,
+          "added": [
+            "g49n0",
+            "g49n1",
+            "g49n2",
+            "g49n3",
+            "g49n4",
+            "join_healer_0",
+            "join_mage_1",
+            "join_mage_2",
+            "link_assassin_2_6",
+            "link_assassin_2_7",
+            "link_ranger_1_1",
+            "link_templar_0_1",
+            "link_warrior_1_9",
+            "link_warrior_2_10",
+            "link_warrior_2_2",
+            "r1_29_5",
+            "r1_47_2"
+          ]
+        },
+        {
+          "target": "opening_assassin_0_3",
+          "cost": 1,
+          "added": [
+            "opening_assassin_0_3"
+          ]
+        },
+        {
+          "target": "opening_assassin_2_3",
+          "cost": 1,
+          "added": [
+            "opening_assassin_2_3"
+          ]
+        }
+      ],
+      "buildCode": {
+        "version": "projects-large-tree-diff-v2",
+        "budget": 48,
+        "origin": "warrior",
+        "learned": [
+          "g18n0",
+          "g18n1",
+          "g18n2",
+          "g18n3",
+          "g18n4",
+          "g45hub",
+          "g45n0",
+          "g45n2",
+          "g45n5",
+          "g45n6",
+          "g49n0",
+          "g49n1",
+          "g49n2",
+          "g49n3",
+          "g49n4",
+          "g6n0",
+          "g6n1",
+          "g6n2",
+          "g6n3",
+          "g6n4",
+          "g6n5",
+          "g6n9",
+          "join_healer_0",
+          "join_mage_1",
+          "join_mage_2",
+          "join_templar_1",
+          "link_assassin_1_5",
+          "link_assassin_2_6",
+          "link_assassin_2_7",
+          "link_mage_0_1",
+          "link_ranger_1_1",
+          "link_templar_0_1",
+          "link_templar_0_2",
+          "link_templar_1_2",
+          "link_warrior_0_2",
+          "link_warrior_0_4",
+          "link_warrior_1_9",
+          "link_warrior_2_10",
+          "link_warrior_2_2",
+          "opening_assassin_0_3",
+          "opening_assassin_2_3",
+          "opening_warrior_0_1",
+          "opening_warrior_0_2",
+          "opening_warrior_0_3",
+          "origin_warrior",
+          "r1_29_5",
+          "r1_47_2",
+          "r4_15_2",
+          "r7_22_2"
+        ],
+        "mastery": {},
+        "travel": {
+          "join_templar_1": "hp",
+          "link_assassin_2_6": "hp",
+          "join_mage_1": "hp",
+          "r1_47_2": "hp",
+          "link_warrior_2_10": "hp",
+          "link_templar_0_2": "hp",
+          "join_healer_0": "hp",
+          "link_mage_0_1": "hp",
+          "r7_22_2": "hp",
+          "link_templar_0_1": "hp",
+          "r4_15_2": "hp",
+          "link_assassin_1_5": "hp",
+          "link_assassin_2_7": "hp",
+          "r1_29_5": "hp",
+          "link_ranger_1_1": "hp",
+          "join_mage_2": "hp",
+          "link_templar_1_2": "hp"
+        },
+        "defaultTravel": "hp"
+      }
+    },
+    {
+      "version": "proposal",
+      "budget": 48,
+      "strategy": "two_key",
+      "label": "2Key混合",
+      "spent": 48,
+      "remaining": 0,
+      "stats": {
+        "resource": 10,
+        "hp": 50,
+        "resist": 15,
+        "damage": 14,
+        "haste": 22,
+        "armor": 44,
+        "barrier": 21.9,
+        "physical": 26,
+        "attackSpeed": 2,
+        "aoe": 3
+      },
+      "notables": [
+        {
+          "id": "g49n2",
+          "name": "鋼の重なり"
+        },
+        {
+          "id": "g51n1",
+          "name": "重なる結界"
+        },
+        {
+          "id": "g52n0",
+          "name": "戦技の律動"
+        },
+        {
+          "id": "opening_assassin_0_3",
+          "name": "鋭い刃"
+        },
+        {
+          "id": "opening_warrior_0_3",
+          "name": "鍛えた一撃"
+        }
+      ],
+      "counts": {
+        "small": 16,
+        "road": 21,
+        "notable": 5,
+        "keystone": 2,
+        "start": 1
+      },
+      "keys": [
+        "key_01",
+        "key_05"
+      ],
+      "tradeoffs": [
+        "吸収によるHP回復を失う。吸収がなければ障壁も得られない。",
+        "位置取りを失う代償を持つ。継続ダメージには軽減を適用しない。"
+      ],
+      "keyDescriptions": [
+        "HP吸収の回復先を障壁へ変更する。最大HPを15%乗算で減らす。",
+        "回避スキルを使用できなくなる。受けるヒットダメージを25%乗算で減らす。"
+      ],
+      "checkpoints": [
+        {
+          "target": [
+            "key_01",
+            "key_05"
+          ],
+          "cost": 42,
+          "added": [
+            "g49n0",
+            "g49n1",
+            "g49n2",
+            "g49n3",
+            "g49n4",
+            "g51n0",
+            "g51n1",
+            "g51n2",
+            "g51n3",
+            "g51n5",
+            "join_healer_0",
+            "join_mage_1",
+            "join_mage_2",
+            "key_01",
+            "key_05",
+            "link_assassin_2_6",
+            "link_assassin_2_7",
+            "link_mage_0_1",
+            "link_ranger_0_2",
+            "link_ranger_1_1",
+            "link_templar_0_1",
+            "link_warrior_1_9",
+            "link_warrior_2_10",
+            "link_warrior_2_2",
+            "opening_warrior_0_1",
+            "opening_warrior_0_2",
+            "opening_warrior_0_3",
+            "r10_14_1",
+            "r10_14_3",
+            "r15_32_1",
+            "r15_43_1",
+            "r15_43_3",
+            "r16_37_2",
+            "r1_29_1",
+            "r1_29_5",
+            "r1_47_2",
+            "r9_20_1",
+            "r9_20_3"
+          ]
+        },
+        {
+          "target": "g52n0",
+          "cost": 5,
+          "added": [
+            "g52hub",
+            "g52n0",
+            "g52n1",
+            "g52n5",
+            "g52n6"
+          ]
+        },
+        {
+          "target": "opening_assassin_0_3",
+          "cost": 1,
+          "added": [
+            "opening_assassin_0_3"
+          ]
+        }
+      ],
+      "buildCode": {
+        "version": "projects-large-tree-diff-v2",
+        "budget": 48,
+        "origin": "warrior",
+        "learned": [
+          "g49n0",
+          "g49n1",
+          "g49n2",
+          "g49n3",
+          "g49n4",
+          "g51n0",
+          "g51n1",
+          "g51n2",
+          "g51n3",
+          "g51n5",
+          "g52hub",
+          "g52n0",
+          "g52n1",
+          "g52n5",
+          "g52n6",
+          "join_healer_0",
+          "join_mage_1",
+          "join_mage_2",
+          "key_01",
+          "key_05",
+          "link_assassin_2_6",
+          "link_assassin_2_7",
+          "link_mage_0_1",
+          "link_ranger_0_2",
+          "link_ranger_1_1",
+          "link_templar_0_1",
+          "link_warrior_1_9",
+          "link_warrior_2_10",
+          "link_warrior_2_2",
+          "opening_assassin_0_3",
+          "opening_warrior_0_1",
+          "opening_warrior_0_2",
+          "opening_warrior_0_3",
+          "origin_warrior",
+          "r10_14_1",
+          "r10_14_3",
+          "r15_32_1",
+          "r15_43_1",
+          "r15_43_3",
+          "r16_37_2",
+          "r1_29_1",
+          "r1_29_5",
+          "r1_47_2",
+          "r9_20_1",
+          "r9_20_3"
+        ],
+        "mastery": {},
+        "travel": {
+          "link_assassin_2_6": "hp",
+          "join_mage_1": "hp",
+          "r1_47_2": "hp",
+          "link_warrior_2_10": "hp",
+          "r9_20_3": "hp",
+          "r10_14_1": "hp",
+          "join_healer_0": "hp",
+          "link_mage_0_1": "hp",
+          "r15_32_1": "hp",
+          "link_templar_0_1": "hp",
+          "r9_20_1": "hp",
+          "r1_29_1": "hp",
+          "r15_43_3": "hp",
+          "r15_43_1": "hp",
+          "r10_14_3": "hp",
+          "link_assassin_2_7": "hp",
+          "r1_29_5": "hp",
+          "link_ranger_0_2": "hp",
+          "link_ranger_1_1": "hp",
+          "r16_37_2": "hp",
+          "join_mage_2": "hp"
+        },
+        "defaultTravel": "hp"
+      }
+    },
+    {
+      "version": "proposal",
+      "budget": 64,
+      "strategy": "weapon",
+      "label": "武器特化",
+      "spent": 64,
+      "remaining": 0,
+      "stats": {
+        "damage": 56,
+        "resource": 41,
+        "attackSpeed": 54.9,
+        "physical": 95,
+        "penetration": 21.94,
+        "hp": 8,
+        "armor": 13,
+        "move": 2
+      },
+      "notables": [
+        {
+          "id": "g16n2",
+          "name": "深く届く一撃"
+        },
+        {
+          "id": "g16n8",
+          "name": "鎧を割る刃"
+        },
+        {
+          "id": "g30n1",
+          "name": "流れる連撃"
+        },
+        {
+          "id": "g30n4",
+          "name": "刻む律動"
+        },
+        {
+          "id": "g35n1",
+          "name": "刃に込める力"
+        },
+        {
+          "id": "g37n0",
+          "name": "深く届く一撃〈比較〉"
+        },
+        {
+          "id": "g37n4",
+          "name": "鎧を割る刃"
+        },
+        {
+          "id": "g41n0",
+          "name": "流れる連撃〈比較〉"
+        },
+        {
+          "id": "g41n3",
+          "name": "流れる連撃"
+        },
+        {
+          "id": "opening_ranger_0_3",
+          "name": "確かな射撃"
+        },
+        {
+          "id": "opening_ranger_1_3",
+          "name": "淀みない速射"
+        },
+        {
+          "id": "opening_templar_0_3",
+          "name": "堅実な打撃"
+        },
+        {
+          "id": "opening_warrior_0_3",
+          "name": "鍛えた一撃"
+        },
+        {
+          "id": "opening_warrior_2_3",
+          "name": "軽やかな連撃"
+        }
+      ],
+      "counts": {
+        "road": 20,
+        "small": 30,
+        "notable": 14,
+        "start": 1
+      },
+      "keys": [],
+      "tradeoffs": [],
+      "keyDescriptions": [],
+      "checkpoints": [
+        {
+          "target": "g35n1",
+          "cost": 16,
+          "added": [
+            "g35n0",
+            "g35n1",
+            "g35n2",
+            "g35n3",
+            "g35n4",
+            "join_templar_1",
+            "link_assassin_0_4",
+            "link_mage_0_1",
+            "link_templar_0_2",
+            "link_templar_1_2",
+            "link_warrior_0_2",
+            "link_warrior_0_4",
+            "opening_warrior_0_1",
+            "opening_warrior_0_2",
+            "opening_warrior_0_3",
+            "r3_52_1"
+          ]
+        },
+        {
+          "target": "g16n8",
+          "cost": 7,
+          "added": [
+            "g16n0",
+            "g16n5",
+            "g16n6",
+            "g16n8",
+            "join_templar_0",
+            "r1_51_2",
+            "r5_41_1"
+          ]
+        },
+        {
+          "target": "g16n2",
+          "cost": 2,
+          "added": [
+            "g16n2",
+            "g16n7"
+          ]
+        },
+        {
+          "target": "g37n4",
+          "cost": 13,
+          "added": [
+            "g37n1",
+            "g37n4",
+            "g37n6",
+            "g37n7",
+            "join_mage_2",
+            "link_mage_1_1",
+            "link_mage_2_1",
+            "link_templar_0_1",
+            "link_warrior_1_2",
+            "link_warrior_1_3",
+            "link_warrior_1_4",
+            "link_warrior_1_5",
+            "r2_22_1"
+          ]
+        },
+        {
+          "target": "g37n0",
+          "cost": 2,
+          "added": [
+            "g37n0",
+            "g37n8"
+          ]
+        },
+        {
+          "target": "g30n1",
+          "cost": 6,
+          "added": [
+            "g30n0",
+            "g30n1",
+            "g30n2",
+            "g30n3",
+            "link_assassin_1_1",
+            "r4_27_1"
+          ]
+        },
+        {
+          "target": "g30n4",
+          "cost": 2,
+          "added": [
+            "g30n4",
+            "g30n7"
+          ]
+        },
+        {
+          "target": "g41n0",
+          "cost": 10,
+          "added": [
+            "g41n0",
+            "g41n1",
+            "g41n2",
+            "g41n4",
+            "g41n5",
+            "link_templar_0_3",
+            "link_templar_1_1",
+            "link_warrior_0_3",
+            "r1_29_3",
+            "r6_35_1"
+          ]
+        },
+        {
+          "target": "g41n3",
+          "cost": 2,
+          "added": [
+            "g41n3",
+            "g41n9"
+          ]
+        },
+        {
+          "target": "opening_templar_0_3",
+          "cost": 1,
+          "added": [
+            "opening_templar_0_3"
+          ]
+        },
+        {
+          "target": "opening_ranger_0_3",
+          "cost": 1,
+          "added": [
+            "opening_ranger_0_3"
+          ]
+        },
+        {
+          "target": "opening_ranger_1_3",
+          "cost": 1,
+          "added": [
+            "opening_ranger_1_3"
+          ]
+        },
+        {
+          "target": "opening_warrior_2_3",
+          "cost": 1,
+          "added": [
+            "opening_warrior_2_3"
+          ]
+        }
+      ],
+      "buildCode": {
+        "version": "projects-large-tree-diff-v2",
+        "budget": 64,
+        "origin": "warrior",
+        "learned": [
+          "g16n0",
+          "g16n2",
+          "g16n5",
+          "g16n6",
+          "g16n7",
+          "g16n8",
+          "g30n0",
+          "g30n1",
+          "g30n2",
+          "g30n3",
+          "g30n4",
+          "g30n7",
+          "g35n0",
+          "g35n1",
+          "g35n2",
+          "g35n3",
+          "g35n4",
+          "g37n0",
+          "g37n1",
+          "g37n4",
+          "g37n6",
+          "g37n7",
+          "g37n8",
+          "g41n0",
+          "g41n1",
+          "g41n2",
+          "g41n3",
+          "g41n4",
+          "g41n5",
+          "g41n9",
+          "join_mage_2",
+          "join_templar_0",
+          "join_templar_1",
+          "link_assassin_0_4",
+          "link_assassin_1_1",
+          "link_mage_0_1",
+          "link_mage_1_1",
+          "link_mage_2_1",
+          "link_templar_0_1",
+          "link_templar_0_2",
+          "link_templar_0_3",
+          "link_templar_1_1",
+          "link_templar_1_2",
+          "link_warrior_0_2",
+          "link_warrior_0_3",
+          "link_warrior_0_4",
+          "link_warrior_1_2",
+          "link_warrior_1_3",
+          "link_warrior_1_4",
+          "link_warrior_1_5",
+          "opening_ranger_0_3",
+          "opening_ranger_1_3",
+          "opening_templar_0_3",
+          "opening_warrior_0_1",
+          "opening_warrior_0_2",
+          "opening_warrior_0_3",
+          "opening_warrior_2_3",
+          "origin_warrior",
+          "r1_29_3",
+          "r1_51_2",
+          "r2_22_1",
+          "r3_52_1",
+          "r4_27_1",
+          "r5_41_1",
+          "r6_35_1"
+        ],
+        "mastery": {},
+        "travel": {
+          "r3_52_1": "damage",
+          "join_templar_1": "damage",
+          "link_mage_1_1": "damage",
+          "link_templar_0_2": "damage",
+          "link_mage_0_1": "damage",
+          "link_mage_2_1": "damage",
+          "link_templar_0_1": "damage",
+          "join_templar_0": "damage",
+          "link_templar_0_3": "damage",
+          "r1_29_3": "damage",
+          "link_assassin_0_4": "damage",
+          "link_assassin_1_1": "damage",
+          "r2_22_1": "damage",
+          "r4_27_1": "damage",
+          "link_templar_1_1": "damage",
+          "join_mage_2": "damage",
+          "r6_35_1": "damage",
+          "r1_51_2": "damage",
+          "link_templar_1_2": "damage",
+          "r5_41_1": "damage"
+        },
+        "defaultTravel": "damage"
+      }
+    },
+    {
+      "version": "proposal",
+      "budget": 64,
+      "strategy": "survival",
+      "label": "生存特化",
+      "spent": 64,
+      "remaining": 0,
+      "stats": {
+        "barrier": 67.9,
+        "hp": 99,
+        "regen": 52,
+        "resist": 36,
+        "physical": 28,
+        "armor": 92.55,
+        "attackSpeed": 4,
+        "damage": 14,
+        "aoe": 3
+      },
+      "notables": [
+        {
+          "id": "g18n1",
+          "name": "太い生命線〈比較〉"
+        },
+        {
+          "id": "g31n4",
+          "name": "重なる結界"
+        },
+        {
+          "id": "g45n2",
+          "name": "太い生命線"
+        },
+        {
+          "id": "g49n2",
+          "name": "鋼の重なり"
+        },
+        {
+          "id": "g51n1",
+          "name": "重なる結界"
+        },
+        {
+          "id": "g51n4",
+          "name": "薄層の護り"
+        },
+        {
+          "id": "g6n0",
+          "name": "鎧の内側"
+        },
+        {
+          "id": "g6n4",
+          "name": "鋼の重なり"
+        },
+        {
+          "id": "opening_assassin_0_3",
+          "name": "鋭い刃"
+        },
+        {
+          "id": "opening_warrior_0_3",
+          "name": "鍛えた一撃"
+        }
+      ],
+      "counts": {
+        "small": 31,
+        "road": 23,
+        "notable": 10,
+        "start": 1
+      },
+      "keys": [],
+      "tradeoffs": [],
+      "keyDescriptions": [],
+      "checkpoints": [
+        {
+          "target": "g18n1",
+          "cost": 11,
+          "added": [
+            "g18n0",
+            "g18n1",
+            "g18n2",
+            "g18n3",
+            "g18n4",
+            "link_mage_0_1",
+            "link_templar_1_2",
+            "opening_warrior_0_1",
+            "opening_warrior_0_2",
+            "opening_warrior_0_3",
+            "r7_22_2"
+          ]
+        },
+        {
+          "target": "g45n2",
+          "cost": 8,
+          "added": [
+            "g45hub",
+            "g45n0",
+            "g45n2",
+            "g45n5",
+            "g45n6",
+            "join_templar_1",
+            "link_assassin_1_5",
+            "link_warrior_0_4"
+          ]
+        },
+        {
+          "target": "g6n0",
+          "cost": 8,
+          "added": [
+            "g6n0",
+            "g6n1",
+            "g6n2",
+            "g6n3",
+            "g6n5",
+            "link_templar_0_2",
+            "link_warrior_0_2",
+            "r4_15_2"
+          ]
+        },
+        {
+          "target": "g6n4",
+          "cost": 2,
+          "added": [
+            "g6n4",
+            "g6n9"
+          ]
+        },
+        {
+          "target": "g49n2",
+          "cost": 17,
+          "added": [
+            "g49n0",
+            "g49n1",
+            "g49n2",
+            "g49n3",
+            "g49n4",
+            "join_healer_0",
+            "join_mage_1",
+            "join_mage_2",
+            "link_assassin_2_6",
+            "link_assassin_2_7",
+            "link_ranger_1_1",
+            "link_templar_0_1",
+            "link_warrior_1_9",
+            "link_warrior_2_10",
+            "link_warrior_2_2",
+            "r1_29_5",
+            "r1_47_2"
+          ]
+        },
+        {
+          "target": "g51n4",
+          "cost": 6,
+          "added": [
+            "g51n0",
+            "g51n4",
+            "g51n6",
+            "g51n7",
+            "link_ranger_0_2",
+            "r1_29_1"
+          ]
+        },
+        {
+          "target": "g51n1",
+          "cost": 2,
+          "added": [
+            "g51n1",
+            "g51n8"
+          ]
+        },
+        {
+          "target": "g31n4",
+          "cost": 9,
+          "added": [
+            "g31hub",
+            "g31n0",
+            "g31n4",
+            "g31n5",
+            "g31n6",
+            "join_templar_0",
+            "link_warrior_2_7",
+            "r1_29_2",
+            "r5_41_1"
+          ]
+        },
+        {
+          "target": "opening_assassin_0_3",
+          "cost": 1,
+          "added": [
+            "opening_assassin_0_3"
+          ]
+        }
+      ],
+      "buildCode": {
+        "version": "projects-large-tree-diff-v2",
+        "budget": 64,
+        "origin": "warrior",
+        "learned": [
+          "g18n0",
+          "g18n1",
+          "g18n2",
+          "g18n3",
+          "g18n4",
+          "g31hub",
+          "g31n0",
+          "g31n4",
+          "g31n5",
+          "g31n6",
+          "g45hub",
+          "g45n0",
+          "g45n2",
+          "g45n5",
+          "g45n6",
+          "g49n0",
+          "g49n1",
+          "g49n2",
+          "g49n3",
+          "g49n4",
+          "g51n0",
+          "g51n1",
+          "g51n4",
+          "g51n6",
+          "g51n7",
+          "g51n8",
+          "g6n0",
+          "g6n1",
+          "g6n2",
+          "g6n3",
+          "g6n4",
+          "g6n5",
+          "g6n9",
+          "join_healer_0",
+          "join_mage_1",
+          "join_mage_2",
+          "join_templar_0",
+          "join_templar_1",
+          "link_assassin_1_5",
+          "link_assassin_2_6",
+          "link_assassin_2_7",
+          "link_mage_0_1",
+          "link_ranger_0_2",
+          "link_ranger_1_1",
+          "link_templar_0_1",
+          "link_templar_0_2",
+          "link_templar_1_2",
+          "link_warrior_0_2",
+          "link_warrior_0_4",
+          "link_warrior_1_9",
+          "link_warrior_2_10",
+          "link_warrior_2_2",
+          "link_warrior_2_7",
+          "opening_assassin_0_3",
+          "opening_warrior_0_1",
+          "opening_warrior_0_2",
+          "opening_warrior_0_3",
+          "origin_warrior",
+          "r1_29_1",
+          "r1_29_2",
+          "r1_29_5",
+          "r1_47_2",
+          "r4_15_2",
+          "r5_41_1",
+          "r7_22_2"
+        ],
+        "mastery": {},
+        "travel": {
+          "join_templar_1": "hp",
+          "link_assassin_2_6": "hp",
+          "join_mage_1": "hp",
+          "r1_47_2": "hp",
+          "link_warrior_2_10": "hp",
+          "link_templar_0_2": "hp",
+          "join_healer_0": "hp",
+          "link_mage_0_1": "hp",
+          "r7_22_2": "hp",
+          "r1_29_2": "hp",
+          "link_templar_0_1": "hp",
+          "r1_29_1": "hp",
+          "join_templar_0": "hp",
+          "r4_15_2": "hp",
+          "link_assassin_1_5": "hp",
+          "link_assassin_2_7": "hp",
+          "r1_29_5": "hp",
+          "link_ranger_0_2": "hp",
+          "link_ranger_1_1": "hp",
+          "link_warrior_2_7": "hp",
+          "join_mage_2": "hp",
+          "link_templar_1_2": "hp",
+          "r5_41_1": "hp"
+        },
+        "defaultTravel": "hp"
+      }
+    },
+    {
+      "version": "proposal",
+      "budget": 64,
+      "strategy": "two_key",
+      "label": "2Key混合",
+      "spent": 64,
+      "remaining": 0,
+      "stats": {
+        "leech": 1.57,
+        "hp": 82,
+        "resource": 10,
+        "resist": 15,
+        "haste": 22,
+        "armor": 44,
+        "regen": 26,
+        "barrier": 21.9,
+        "physical": 26,
+        "attackSpeed": 4,
+        "aoe": 3
+      },
+      "notables": [
+        {
+          "id": "g13n3",
+          "name": "傷口からの回帰〈比較〉"
+        },
+        {
+          "id": "g13n9",
+          "name": "傷口からの回帰"
+        },
+        {
+          "id": "g18n1",
+          "name": "太い生命線〈比較〉"
+        },
+        {
+          "id": "g49n2",
+          "name": "鋼の重なり"
+        },
+        {
+          "id": "g51n1",
+          "name": "重なる結界"
+        },
+        {
+          "id": "g52n0",
+          "name": "戦技の律動"
+        },
+        {
+          "id": "opening_warrior_0_3",
+          "name": "鍛えた一撃"
+        }
+      ],
+      "counts": {
+        "small": 26,
+        "road": 25,
+        "notable": 7,
+        "keystone": 2,
+        "start": 1
+      },
+      "keys": [
+        "key_01",
+        "key_05"
+      ],
+      "tradeoffs": [
+        "吸収によるHP回復を失う。吸収がなければ障壁も得られない。",
+        "位置取りを失う代償を持つ。継続ダメージには軽減を適用しない。"
+      ],
+      "keyDescriptions": [
+        "HP吸収の回復先を障壁へ変更する。最大HPを15%乗算で減らす。",
+        "回避スキルを使用できなくなる。受けるヒットダメージを25%乗算で減らす。"
+      ],
+      "checkpoints": [
+        {
+          "target": [
+            "key_01",
+            "key_05"
+          ],
+          "cost": 42,
+          "added": [
+            "g49n0",
+            "g49n1",
+            "g49n2",
+            "g49n3",
+            "g49n4",
+            "g51n0",
+            "g51n1",
+            "g51n2",
+            "g51n3",
+            "g51n5",
+            "join_healer_0",
+            "join_mage_1",
+            "join_mage_2",
+            "key_01",
+            "key_05",
+            "link_assassin_2_6",
+            "link_assassin_2_7",
+            "link_mage_0_1",
+            "link_ranger_0_2",
+            "link_ranger_1_1",
+            "link_templar_0_1",
+            "link_warrior_1_9",
+            "link_warrior_2_10",
+            "link_warrior_2_2",
+            "opening_warrior_0_1",
+            "opening_warrior_0_2",
+            "opening_warrior_0_3",
+            "r10_14_1",
+            "r10_14_3",
+            "r15_32_1",
+            "r15_43_1",
+            "r15_43_3",
+            "r16_37_2",
+            "r1_29_1",
+            "r1_29_5",
+            "r1_47_2",
+            "r9_20_1",
+            "r9_20_3"
+          ]
+        },
+        {
+          "target": "g13n3",
+          "cost": 9,
+          "added": [
+            "g13n0",
+            "g13n1",
+            "g13n2",
+            "g13n3",
+            "g13n4",
+            "join_templar_1",
+            "link_templar_1_2",
+            "link_warrior_0_4",
+            "r6_18_1"
+          ]
+        },
+        {
+          "target": "g13n9",
+          "cost": 2,
+          "added": [
+            "g13n8",
+            "g13n9"
+          ]
+        },
+        {
+          "target": "g18n1",
+          "cost": 6,
+          "added": [
+            "g18n0",
+            "g18n1",
+            "g18n2",
+            "g18n3",
+            "g18n4",
+            "r7_22_2"
+          ]
+        },
+        {
+          "target": "g52n0",
+          "cost": 5,
+          "added": [
+            "g52hub",
+            "g52n0",
+            "g52n1",
+            "g52n5",
+            "g52n6"
+          ]
+        }
+      ],
+      "buildCode": {
+        "version": "projects-large-tree-diff-v2",
+        "budget": 64,
+        "origin": "warrior",
+        "learned": [
+          "g13n0",
+          "g13n1",
+          "g13n2",
+          "g13n3",
+          "g13n4",
+          "g13n8",
+          "g13n9",
+          "g18n0",
+          "g18n1",
+          "g18n2",
+          "g18n3",
+          "g18n4",
+          "g49n0",
+          "g49n1",
+          "g49n2",
+          "g49n3",
+          "g49n4",
+          "g51n0",
+          "g51n1",
+          "g51n2",
+          "g51n3",
+          "g51n5",
+          "g52hub",
+          "g52n0",
+          "g52n1",
+          "g52n5",
+          "g52n6",
+          "join_healer_0",
+          "join_mage_1",
+          "join_mage_2",
+          "join_templar_1",
+          "key_01",
+          "key_05",
+          "link_assassin_2_6",
+          "link_assassin_2_7",
+          "link_mage_0_1",
+          "link_ranger_0_2",
+          "link_ranger_1_1",
+          "link_templar_0_1",
+          "link_templar_1_2",
+          "link_warrior_0_4",
+          "link_warrior_1_9",
+          "link_warrior_2_10",
+          "link_warrior_2_2",
+          "opening_warrior_0_1",
+          "opening_warrior_0_2",
+          "opening_warrior_0_3",
+          "origin_warrior",
+          "r10_14_1",
+          "r10_14_3",
+          "r15_32_1",
+          "r15_43_1",
+          "r15_43_3",
+          "r16_37_2",
+          "r1_29_1",
+          "r1_29_5",
+          "r1_47_2",
+          "r6_18_1",
+          "r7_22_2",
+          "r9_20_1",
+          "r9_20_3"
+        ],
+        "mastery": {},
+        "travel": {
+          "join_templar_1": "hp",
+          "link_assassin_2_6": "hp",
+          "join_mage_1": "hp",
+          "r1_47_2": "hp",
+          "link_warrior_2_10": "hp",
+          "r9_20_3": "hp",
+          "r10_14_1": "hp",
+          "join_healer_0": "hp",
+          "link_mage_0_1": "hp",
+          "r7_22_2": "hp",
+          "r15_32_1": "hp",
+          "link_templar_0_1": "hp",
+          "r9_20_1": "hp",
+          "r1_29_1": "hp",
+          "r15_43_3": "hp",
+          "r15_43_1": "hp",
+          "r10_14_3": "hp",
+          "link_assassin_2_7": "hp",
+          "r1_29_5": "hp",
+          "link_ranger_0_2": "hp",
+          "link_ranger_1_1": "hp",
+          "r16_37_2": "hp",
+          "join_mage_2": "hp",
+          "r6_18_1": "hp",
+          "link_templar_1_2": "hp"
+        },
+        "defaultTravel": "hp"
+      }
+    },
+    {
+      "version": "proposal",
+      "budget": 80,
+      "strategy": "weapon",
+      "label": "武器特化",
+      "spent": 80,
+      "remaining": 0,
+      "stats": {
+        "critMulti": 35,
+        "physical": 89,
+        "penetration": 21.94,
+        "damage": 50,
+        "resource": 37,
+        "attackSpeed": 44.9,
+        "armor": 13,
+        "hp": 4,
+        "aoe": 19,
+        "crit": 116
+      },
+      "notables": [
+        {
+          "id": "g16n2",
+          "name": "深く届く一撃"
+        },
+        {
+          "id": "g16n8",
+          "name": "鎧を割る刃"
+        },
+        {
+          "id": "g25n6",
+          "name": "一点への集中"
+        },
+        {
+          "id": "g30n1",
+          "name": "流れる連撃"
+        },
+        {
+          "id": "g30n4",
+          "name": "刻む律動"
+        },
+        {
+          "id": "g32n2",
+          "name": "隙を捉える眼"
+        },
+        {
+          "id": "g34n2",
+          "name": "届く圏域"
+        },
+        {
+          "id": "g35n1",
+          "name": "刃に込める力"
+        },
+        {
+          "id": "g37n0",
+          "name": "深く届く一撃〈比較〉"
+        },
+        {
+          "id": "g37n4",
+          "name": "鎧を割る刃"
+        },
+        {
+          "id": "g41n0",
+          "name": "流れる連撃〈比較〉"
+        },
+        {
+          "id": "g41n3",
+          "name": "流れる連撃"
+        },
+        {
+          "id": "opening_warrior_0_3",
+          "name": "鍛えた一撃"
+        }
+      ],
+      "counts": {
+        "small": 42,
+        "notable": 13,
+        "road": 25,
+        "start": 1
+      },
+      "keys": [],
+      "tradeoffs": [],
+      "keyDescriptions": [],
+      "checkpoints": [
+        {
+          "target": "g35n1",
+          "cost": 16,
+          "added": [
+            "g35n0",
+            "g35n1",
+            "g35n2",
+            "g35n3",
+            "g35n4",
+            "join_templar_1",
+            "link_assassin_0_4",
+            "link_mage_0_1",
+            "link_templar_0_2",
+            "link_templar_1_2",
+            "link_warrior_0_2",
+            "link_warrior_0_4",
+            "opening_warrior_0_1",
+            "opening_warrior_0_2",
+            "opening_warrior_0_3",
+            "r3_52_1"
+          ]
+        },
+        {
+          "target": "g16n8",
+          "cost": 7,
+          "added": [
+            "g16n0",
+            "g16n5",
+            "g16n6",
+            "g16n8",
+            "join_templar_0",
+            "r1_51_2",
+            "r5_41_1"
+          ]
+        },
+        {
+          "target": "g16n2",
+          "cost": 2,
+          "added": [
+            "g16n2",
+            "g16n7"
+          ]
+        },
+        {
+          "target": "g37n4",
+          "cost": 13,
+          "added": [
+            "g37n1",
+            "g37n4",
+            "g37n6",
+            "g37n7",
+            "join_mage_2",
+            "link_mage_1_1",
+            "link_mage_2_1",
+            "link_templar_0_1",
+            "link_warrior_1_2",
+            "link_warrior_1_3",
+            "link_warrior_1_4",
+            "link_warrior_1_5",
+            "r2_22_1"
+          ]
+        },
+        {
+          "target": "g37n0",
+          "cost": 2,
+          "added": [
+            "g37n0",
+            "g37n8"
+          ]
+        },
+        {
+          "target": "g30n1",
+          "cost": 6,
+          "added": [
+            "g30n0",
+            "g30n1",
+            "g30n2",
+            "g30n3",
+            "link_assassin_1_1",
+            "r4_27_1"
+          ]
+        },
+        {
+          "target": "g30n4",
+          "cost": 2,
+          "added": [
+            "g30n4",
+            "g30n7"
+          ]
+        },
+        {
+          "target": "g41n0",
+          "cost": 10,
+          "added": [
+            "g41n0",
+            "g41n1",
+            "g41n2",
+            "g41n4",
+            "g41n5",
+            "link_templar_0_3",
+            "link_templar_1_1",
+            "link_warrior_0_3",
+            "r1_29_3",
+            "r6_35_1"
+          ]
+        },
+        {
+          "target": "g41n3",
+          "cost": 2,
+          "added": [
+            "g41n3",
+            "g41n9"
+          ]
+        },
+        {
+          "target": "g25n6",
+          "cost": 7,
+          "added": [
+            "g25n0",
+            "g25n1",
+            "g25n2",
+            "g25n3",
+            "g25n6",
+            "join_assassin_0",
+            "r2_51_1"
+          ]
+        },
+        {
+          "target": "g32n2",
+          "cost": 7,
+          "added": [
+            "g32n0",
+            "g32n1",
+            "g32n2",
+            "g32n3",
+            "g32n4",
+            "link_assassin_0_1",
+            "r3_4_1"
+          ]
+        },
+        {
+          "target": "g34n2",
+          "cost": 6,
+          "added": [
+            "g34n0",
+            "g34n1",
+            "g34n2",
+            "g34n3",
+            "g34n4",
+            "r4_15_3"
+          ]
+        }
+      ],
+      "buildCode": {
+        "version": "projects-large-tree-diff-v2",
+        "budget": 80,
+        "origin": "warrior",
+        "learned": [
+          "g16n0",
+          "g16n2",
+          "g16n5",
+          "g16n6",
+          "g16n7",
+          "g16n8",
+          "g25n0",
+          "g25n1",
+          "g25n2",
+          "g25n3",
+          "g25n6",
+          "g30n0",
+          "g30n1",
+          "g30n2",
+          "g30n3",
+          "g30n4",
+          "g30n7",
+          "g32n0",
+          "g32n1",
+          "g32n2",
+          "g32n3",
+          "g32n4",
+          "g34n0",
+          "g34n1",
+          "g34n2",
+          "g34n3",
+          "g34n4",
+          "g35n0",
+          "g35n1",
+          "g35n2",
+          "g35n3",
+          "g35n4",
+          "g37n0",
+          "g37n1",
+          "g37n4",
+          "g37n6",
+          "g37n7",
+          "g37n8",
+          "g41n0",
+          "g41n1",
+          "g41n2",
+          "g41n3",
+          "g41n4",
+          "g41n5",
+          "g41n9",
+          "join_assassin_0",
+          "join_mage_2",
+          "join_templar_0",
+          "join_templar_1",
+          "link_assassin_0_1",
+          "link_assassin_0_4",
+          "link_assassin_1_1",
+          "link_mage_0_1",
+          "link_mage_1_1",
+          "link_mage_2_1",
+          "link_templar_0_1",
+          "link_templar_0_2",
+          "link_templar_0_3",
+          "link_templar_1_1",
+          "link_templar_1_2",
+          "link_warrior_0_2",
+          "link_warrior_0_3",
+          "link_warrior_0_4",
+          "link_warrior_1_2",
+          "link_warrior_1_3",
+          "link_warrior_1_4",
+          "link_warrior_1_5",
+          "opening_warrior_0_1",
+          "opening_warrior_0_2",
+          "opening_warrior_0_3",
+          "origin_warrior",
+          "r1_29_3",
+          "r1_51_2",
+          "r2_22_1",
+          "r2_51_1",
+          "r3_4_1",
+          "r3_52_1",
+          "r4_15_3",
+          "r4_27_1",
+          "r5_41_1",
+          "r6_35_1"
+        ],
+        "mastery": {},
+        "travel": {
+          "join_templar_1": "damage",
+          "r2_51_1": "damage",
+          "link_templar_0_2": "damage",
+          "link_mage_0_1": "damage",
+          "join_templar_0": "damage",
+          "link_assassin_0_4": "damage",
+          "link_assassin_1_1": "damage",
+          "r2_22_1": "damage",
+          "r3_4_1": "damage",
+          "link_templar_1_1": "damage",
+          "r1_51_2": "damage",
+          "link_templar_1_2": "damage",
+          "link_templar_0_3": "damage",
+          "r3_52_1": "damage",
+          "link_mage_1_1": "damage",
+          "link_mage_2_1": "damage",
+          "join_assassin_0": "damage",
+          "link_templar_0_1": "damage",
+          "r4_15_3": "damage",
+          "r1_29_3": "damage",
+          "r4_27_1": "damage",
+          "link_assassin_0_1": "damage",
+          "join_mage_2": "damage",
+          "r6_35_1": "damage",
+          "r5_41_1": "damage"
+        },
+        "defaultTravel": "damage"
+      }
+    },
+    {
+      "version": "proposal",
+      "budget": 80,
+      "strategy": "survival",
+      "label": "生存特化",
+      "spent": 80,
+      "remaining": 0,
+      "stats": {
+        "barrier": 67.9,
+        "regen": 52,
+        "hp": 111,
+        "resist": 121.55,
+        "mana": 24,
+        "physical": 28,
+        "armor": 92.55,
+        "attackSpeed": 4,
+        "damage": 14,
+        "move": 4,
+        "aoe": 3
+      },
+      "notables": [
+        {
+          "id": "g18n1",
+          "name": "太い生命線〈比較〉"
+        },
+        {
+          "id": "g23n1",
+          "name": "異質への耐性"
+        },
+        {
+          "id": "g23n5",
+          "name": "意志の鎧"
+        },
+        {
+          "id": "g31n4",
+          "name": "重なる結界"
+        },
+        {
+          "id": "g45n2",
+          "name": "太い生命線"
+        },
+        {
+          "id": "g46n6",
+          "name": "揺るがない心"
+        },
+        {
+          "id": "g49n2",
+          "name": "鋼の重なり"
+        },
+        {
+          "id": "g51n1",
+          "name": "重なる結界"
+        },
+        {
+          "id": "g51n4",
+          "name": "薄層の護り"
+        },
+        {
+          "id": "g6n0",
+          "name": "鎧の内側"
+        },
+        {
+          "id": "g6n4",
+          "name": "鋼の重なり"
+        },
+        {
+          "id": "opening_assassin_0_3",
+          "name": "鋭い刃"
+        },
+        {
+          "id": "opening_assassin_2_3",
+          "name": "間合いを選ぶ"
+        },
+        {
+          "id": "opening_warrior_0_3",
+          "name": "鍛えた一撃"
+        }
+      ],
+      "counts": {
+        "small": 39,
+        "road": 27,
+        "notable": 14,
+        "start": 1
+      },
+      "keys": [],
+      "tradeoffs": [],
+      "keyDescriptions": [],
+      "checkpoints": [
+        {
+          "target": "g18n1",
+          "cost": 11,
+          "added": [
+            "g18n0",
+            "g18n1",
+            "g18n2",
+            "g18n3",
+            "g18n4",
+            "link_mage_0_1",
+            "link_templar_1_2",
+            "opening_warrior_0_1",
+            "opening_warrior_0_2",
+            "opening_warrior_0_3",
+            "r7_22_2"
+          ]
+        },
+        {
+          "target": "g45n2",
+          "cost": 8,
+          "added": [
+            "g45hub",
+            "g45n0",
+            "g45n2",
+            "g45n5",
+            "g45n6",
+            "join_templar_1",
+            "link_assassin_1_5",
+            "link_warrior_0_4"
+          ]
+        },
+        {
+          "target": "g6n0",
+          "cost": 8,
+          "added": [
+            "g6n0",
+            "g6n1",
+            "g6n2",
+            "g6n3",
+            "g6n5",
+            "link_templar_0_2",
+            "link_warrior_0_2",
+            "r4_15_2"
+          ]
+        },
+        {
+          "target": "g6n4",
+          "cost": 2,
+          "added": [
+            "g6n4",
+            "g6n9"
+          ]
+        },
+        {
+          "target": "g49n2",
+          "cost": 17,
+          "added": [
+            "g49n0",
+            "g49n1",
+            "g49n2",
+            "g49n3",
+            "g49n4",
+            "join_healer_0",
+            "join_mage_1",
+            "join_mage_2",
+            "link_assassin_2_6",
+            "link_assassin_2_7",
+            "link_ranger_1_1",
+            "link_templar_0_1",
+            "link_warrior_1_9",
+            "link_warrior_2_10",
+            "link_warrior_2_2",
+            "r1_29_5",
+            "r1_47_2"
+          ]
+        },
+        {
+          "target": "g51n4",
+          "cost": 6,
+          "added": [
+            "g51n0",
+            "g51n4",
+            "g51n6",
+            "g51n7",
+            "link_ranger_0_2",
+            "r1_29_1"
+          ]
+        },
+        {
+          "target": "g51n1",
+          "cost": 2,
+          "added": [
+            "g51n1",
+            "g51n8"
+          ]
+        },
+        {
+          "target": "g31n4",
+          "cost": 9,
+          "added": [
+            "g31hub",
+            "g31n0",
+            "g31n4",
+            "g31n5",
+            "g31n6",
+            "join_templar_0",
+            "link_warrior_2_7",
+            "r1_29_2",
+            "r5_41_1"
+          ]
+        },
+        {
+          "target": "g23n5",
+          "cost": 6,
+          "added": [
+            "g23n0",
+            "g23n5",
+            "g23n6",
+            "g23n7",
+            "link_ranger_0_1",
+            "r1_22_4"
+          ]
+        },
+        {
+          "target": "g23n1",
+          "cost": 2,
+          "added": [
+            "g23n1",
+            "g23n8"
+          ]
+        },
+        {
+          "target": "g46n6",
+          "cost": 7,
+          "added": [
+            "g46n0",
+            "g46n1",
+            "g46n2",
+            "g46n3",
+            "g46n6",
+            "join_ranger_1",
+            "r1_29_4"
+          ]
+        },
+        {
+          "target": "opening_assassin_0_3",
+          "cost": 1,
+          "added": [
+            "opening_assassin_0_3"
+          ]
+        },
+        {
+          "target": "opening_assassin_2_3",
+          "cost": 1,
+          "added": [
+            "opening_assassin_2_3"
+          ]
+        }
+      ],
+      "buildCode": {
+        "version": "projects-large-tree-diff-v2",
+        "budget": 80,
+        "origin": "warrior",
+        "learned": [
+          "g18n0",
+          "g18n1",
+          "g18n2",
+          "g18n3",
+          "g18n4",
+          "g23n0",
+          "g23n1",
+          "g23n5",
+          "g23n6",
+          "g23n7",
+          "g23n8",
+          "g31hub",
+          "g31n0",
+          "g31n4",
+          "g31n5",
+          "g31n6",
+          "g45hub",
+          "g45n0",
+          "g45n2",
+          "g45n5",
+          "g45n6",
+          "g46n0",
+          "g46n1",
+          "g46n2",
+          "g46n3",
+          "g46n6",
+          "g49n0",
+          "g49n1",
+          "g49n2",
+          "g49n3",
+          "g49n4",
+          "g51n0",
+          "g51n1",
+          "g51n4",
+          "g51n6",
+          "g51n7",
+          "g51n8",
+          "g6n0",
+          "g6n1",
+          "g6n2",
+          "g6n3",
+          "g6n4",
+          "g6n5",
+          "g6n9",
+          "join_healer_0",
+          "join_mage_1",
+          "join_mage_2",
+          "join_ranger_1",
+          "join_templar_0",
+          "join_templar_1",
+          "link_assassin_1_5",
+          "link_assassin_2_6",
+          "link_assassin_2_7",
+          "link_mage_0_1",
+          "link_ranger_0_1",
+          "link_ranger_0_2",
+          "link_ranger_1_1",
+          "link_templar_0_1",
+          "link_templar_0_2",
+          "link_templar_1_2",
+          "link_warrior_0_2",
+          "link_warrior_0_4",
+          "link_warrior_1_9",
+          "link_warrior_2_10",
+          "link_warrior_2_2",
+          "link_warrior_2_7",
+          "opening_assassin_0_3",
+          "opening_assassin_2_3",
+          "opening_warrior_0_1",
+          "opening_warrior_0_2",
+          "opening_warrior_0_3",
+          "origin_warrior",
+          "r1_22_4",
+          "r1_29_1",
+          "r1_29_2",
+          "r1_29_4",
+          "r1_29_5",
+          "r1_47_2",
+          "r4_15_2",
+          "r5_41_1",
+          "r7_22_2"
+        ],
+        "mastery": {},
+        "travel": {
+          "join_templar_1": "hp",
+          "link_warrior_2_10": "hp",
+          "link_templar_0_2": "hp",
+          "link_mage_0_1": "hp",
+          "join_templar_0": "hp",
+          "r4_15_2": "hp",
+          "link_assassin_2_7": "hp",
+          "r1_29_5": "hp",
+          "link_ranger_0_1": "hp",
+          "r1_29_4": "hp",
+          "link_templar_1_2": "hp",
+          "join_ranger_1": "hp",
+          "link_assassin_2_6": "hp",
+          "join_mage_1": "hp",
+          "r1_47_2": "hp",
+          "join_healer_0": "hp",
+          "r7_22_2": "hp",
+          "r1_29_2": "hp",
+          "link_templar_0_1": "hp",
+          "r1_29_1": "hp",
+          "link_assassin_1_5": "hp",
+          "r1_22_4": "hp",
+          "link_ranger_0_2": "hp",
+          "link_ranger_1_1": "hp",
+          "link_warrior_2_7": "hp",
+          "join_mage_2": "hp",
+          "r5_41_1": "hp"
+        },
+        "defaultTravel": "hp"
+      }
+    },
+    {
+      "version": "proposal",
+      "budget": 80,
+      "strategy": "two_key",
+      "label": "2Key混合",
+      "spent": 80,
+      "remaining": 0,
+      "stats": {
+        "regen": 52,
+        "hp": 117,
+        "resource": 10,
+        "leech": 1.57,
+        "haste": 22,
+        "resist": 15,
+        "physical": 28,
+        "armor": 92.55,
+        "barrier": 21.9,
+        "attackSpeed": 4,
+        "aoe": 3
+      },
+      "notables": [
+        {
+          "id": "g13n3",
+          "name": "傷口からの回帰〈比較〉"
+        },
+        {
+          "id": "g13n9",
+          "name": "傷口からの回帰"
+        },
+        {
+          "id": "g18n1",
+          "name": "太い生命線〈比較〉"
+        },
+        {
+          "id": "g45n2",
+          "name": "太い生命線"
+        },
+        {
+          "id": "g49n2",
+          "name": "鋼の重なり"
+        },
+        {
+          "id": "g51n1",
+          "name": "重なる結界"
+        },
+        {
+          "id": "g52n0",
+          "name": "戦技の律動"
+        },
+        {
+          "id": "g6n0",
+          "name": "鎧の内側"
+        },
+        {
+          "id": "g6n4",
+          "name": "鋼の重なり"
+        },
+        {
+          "id": "opening_warrior_0_3",
+          "name": "鍛えた一撃"
+        }
+      ],
+      "counts": {
+        "small": 36,
+        "road": 28,
+        "notable": 10,
+        "keystone": 2,
+        "start": 1
+      },
+      "keys": [
+        "key_01",
+        "key_05"
+      ],
+      "tradeoffs": [
+        "吸収によるHP回復を失う。吸収がなければ障壁も得られない。",
+        "位置取りを失う代償を持つ。継続ダメージには軽減を適用しない。"
+      ],
+      "keyDescriptions": [
+        "HP吸収の回復先を障壁へ変更する。最大HPを15%乗算で減らす。",
+        "回避スキルを使用できなくなる。受けるヒットダメージを25%乗算で減らす。"
+      ],
+      "checkpoints": [
+        {
+          "target": [
+            "key_01",
+            "key_05"
+          ],
+          "cost": 42,
+          "added": [
+            "g49n0",
+            "g49n1",
+            "g49n2",
+            "g49n3",
+            "g49n4",
+            "g51n0",
+            "g51n1",
+            "g51n2",
+            "g51n3",
+            "g51n5",
+            "join_healer_0",
+            "join_mage_1",
+            "join_mage_2",
+            "key_01",
+            "key_05",
+            "link_assassin_2_6",
+            "link_assassin_2_7",
+            "link_mage_0_1",
+            "link_ranger_0_2",
+            "link_ranger_1_1",
+            "link_templar_0_1",
+            "link_warrior_1_9",
+            "link_warrior_2_10",
+            "link_warrior_2_2",
+            "opening_warrior_0_1",
+            "opening_warrior_0_2",
+            "opening_warrior_0_3",
+            "r10_14_1",
+            "r10_14_3",
+            "r15_32_1",
+            "r15_43_1",
+            "r15_43_3",
+            "r16_37_2",
+            "r1_29_1",
+            "r1_29_5",
+            "r1_47_2",
+            "r9_20_1",
+            "r9_20_3"
+          ]
+        },
+        {
+          "target": "g13n3",
+          "cost": 9,
+          "added": [
+            "g13n0",
+            "g13n1",
+            "g13n2",
+            "g13n3",
+            "g13n4",
+            "join_templar_1",
+            "link_templar_1_2",
+            "link_warrior_0_4",
+            "r6_18_1"
+          ]
+        },
+        {
+          "target": "g13n9",
+          "cost": 2,
+          "added": [
+            "g13n8",
+            "g13n9"
+          ]
+        },
+        {
+          "target": "g18n1",
+          "cost": 6,
+          "added": [
+            "g18n0",
+            "g18n1",
+            "g18n2",
+            "g18n3",
+            "g18n4",
+            "r7_22_2"
+          ]
+        },
+        {
+          "target": "g45n2",
+          "cost": 6,
+          "added": [
+            "g45hub",
+            "g45n0",
+            "g45n2",
+            "g45n5",
+            "g45n6",
+            "link_assassin_1_5"
+          ]
+        },
+        {
+          "target": "g6n0",
+          "cost": 8,
+          "added": [
+            "g6n0",
+            "g6n1",
+            "g6n2",
+            "g6n3",
+            "g6n5",
+            "link_templar_0_2",
+            "link_warrior_0_2",
+            "r4_15_2"
+          ]
+        },
+        {
+          "target": "g6n4",
+          "cost": 2,
+          "added": [
+            "g6n4",
+            "g6n9"
+          ]
+        },
+        {
+          "target": "g52n0",
+          "cost": 5,
+          "added": [
+            "g52hub",
+            "g52n0",
+            "g52n1",
+            "g52n5",
+            "g52n6"
+          ]
+        }
+      ],
+      "buildCode": {
+        "version": "projects-large-tree-diff-v2",
+        "budget": 80,
+        "origin": "warrior",
+        "learned": [
+          "g13n0",
+          "g13n1",
+          "g13n2",
+          "g13n3",
+          "g13n4",
+          "g13n8",
+          "g13n9",
+          "g18n0",
+          "g18n1",
+          "g18n2",
+          "g18n3",
+          "g18n4",
+          "g45hub",
+          "g45n0",
+          "g45n2",
+          "g45n5",
+          "g45n6",
+          "g49n0",
+          "g49n1",
+          "g49n2",
+          "g49n3",
+          "g49n4",
+          "g51n0",
+          "g51n1",
+          "g51n2",
+          "g51n3",
+          "g51n5",
+          "g52hub",
+          "g52n0",
+          "g52n1",
+          "g52n5",
+          "g52n6",
+          "g6n0",
+          "g6n1",
+          "g6n2",
+          "g6n3",
+          "g6n4",
+          "g6n5",
+          "g6n9",
+          "join_healer_0",
+          "join_mage_1",
+          "join_mage_2",
+          "join_templar_1",
+          "key_01",
+          "key_05",
+          "link_assassin_1_5",
+          "link_assassin_2_6",
+          "link_assassin_2_7",
+          "link_mage_0_1",
+          "link_ranger_0_2",
+          "link_ranger_1_1",
+          "link_templar_0_1",
+          "link_templar_0_2",
+          "link_templar_1_2",
+          "link_warrior_0_2",
+          "link_warrior_0_4",
+          "link_warrior_1_9",
+          "link_warrior_2_10",
+          "link_warrior_2_2",
+          "opening_warrior_0_1",
+          "opening_warrior_0_2",
+          "opening_warrior_0_3",
+          "origin_warrior",
+          "r10_14_1",
+          "r10_14_3",
+          "r15_32_1",
+          "r15_43_1",
+          "r15_43_3",
+          "r16_37_2",
+          "r1_29_1",
+          "r1_29_5",
+          "r1_47_2",
+          "r4_15_2",
+          "r6_18_1",
+          "r7_22_2",
+          "r9_20_1",
+          "r9_20_3"
+        ],
+        "mastery": {},
+        "travel": {
+          "join_templar_1": "hp",
+          "link_warrior_2_10": "hp",
+          "link_templar_0_2": "hp",
+          "r10_14_1": "hp",
+          "link_mage_0_1": "hp",
+          "r9_20_1": "hp",
+          "r4_15_2": "hp",
+          "r15_43_3": "hp",
+          "link_assassin_2_7": "hp",
+          "r1_29_5": "hp",
+          "r16_37_2": "hp",
+          "link_templar_1_2": "hp",
+          "link_assassin_2_6": "hp",
+          "join_mage_1": "hp",
+          "r1_47_2": "hp",
+          "r9_20_3": "hp",
+          "join_healer_0": "hp",
+          "r7_22_2": "hp",
+          "r15_32_1": "hp",
+          "link_templar_0_1": "hp",
+          "r1_29_1": "hp",
+          "r15_43_1": "hp",
+          "r10_14_3": "hp",
+          "link_assassin_1_5": "hp",
+          "link_ranger_0_2": "hp",
+          "link_ranger_1_1": "hp",
+          "join_mage_2": "hp",
+          "r6_18_1": "hp"
+        },
+        "defaultTravel": "hp"
+      }
+    }
+  ],
+  "outliers": [
+    {
+      "origin": "ranger",
+      "keys": [
+        "key_01",
+        "key_05"
+      ],
+      "versions": [
+        {
+          "version": "original",
+          "cost": 51,
+          "counts": {
+            "road": 22,
+            "small": 19,
+            "keystone": 2,
+            "notable": 4,
+            "start": 1
+          },
+          "beforeRuleLossStats": {
+            "hp": 60,
+            "efficiency": 3,
+            "resource": 5,
+            "aoe": 22,
+            "resist": 18,
+            "attackSpeed": 16,
+            "armor": 30,
+            "physical": 10
+          },
+          "afterRuleLossStats": {
+            "hp": 60,
+            "efficiency": 3,
+            "resource": 5,
+            "aoe": 22,
+            "resist": 18,
+            "attackSpeed": 16,
+            "armor": 30,
+            "physical": 10
+          },
+          "completelyInactiveAfterKeys": [],
+          "notables": [
+            {
+              "id": "g26n3",
+              "name": "返しの余地"
+            },
+            {
+              "id": "g42n0",
+              "name": "広がる間合い"
+            },
+            {
+              "id": "g49n2",
+              "name": "鋼の重なり"
+            },
+            {
+              "id": "g51n4",
+              "name": "薄層の護り"
+            }
+          ],
+          "tree": [
+            "g18n4",
+            "g18n5",
+            "g18n7",
+            "g26n1",
+            "g26n3",
+            "g28n5",
+            "g34n4",
+            "g39n2",
+            "g39n3",
+            "g42n0",
+            "g42n1",
+            "g42n2",
+            "g42n5",
+            "g42n6",
+            "g42n7",
+            "g49n0",
+            "g49n1",
+            "g49n2",
+            "g51n0",
+            "g51n4",
+            "g51n6",
+            "join_assassin_0",
+            "join_ranger_2",
+            "key_01",
+            "key_05",
+            "link_ranger_2_1",
+            "link_ranger_2_2",
+            "link_ranger_2_3",
+            "link_ranger_2_4",
+            "opening_ranger_1_1",
+            "opening_ranger_1_2",
+            "origin_ranger",
+            "r18_26_1",
+            "r18_26_2",
+            "r18_49_1",
+            "r22_24_2",
+            "r22_24_3",
+            "r24_42_1",
+            "r24_42_2",
+            "r24_42_3",
+            "r24_42_4",
+            "r26_28_1",
+            "r26_28_2",
+            "r28_39_1",
+            "r2_22_1",
+            "r2_51_1",
+            "r34_40_1",
+            "r39_40_2"
+          ]
+        },
+        {
+          "version": "previous",
+          "cost": 36,
+          "counts": {
+            "small": 12,
+            "road": 15,
+            "keystone": 2,
+            "notable": 3,
+            "start": 1
+          },
+          "beforeRuleLossStats": {
+            "damage": 24,
+            "resist": 15,
+            "hp": 34,
+            "attackSpeed": 2,
+            "armor": 44,
+            "move": 2
+          },
+          "afterRuleLossStats": {
+            "damage": 24,
+            "resist": 15,
+            "hp": 34,
+            "attackSpeed": 2,
+            "armor": 44,
+            "move": 2
+          },
+          "completelyInactiveAfterKeys": [
+            "g38hub",
+            "g51n2",
+            "g51n5"
+          ],
+          "notables": [
+            {
+              "id": "g49n2",
+              "name": "鋼の重なり"
+            },
+            {
+              "id": "g51n1",
+              "name": "重なる結界"
+            },
+            {
+              "id": "opening_ranger_0_3",
+              "name": "確かな射撃"
+            }
+          ],
+          "tree": [
+            "g38hub",
+            "g49n0",
+            "g49n1",
+            "g49n2",
+            "g49n3",
+            "g49n4",
+            "g51n0",
+            "g51n1",
+            "g51n2",
+            "g51n3",
+            "g51n5",
+            "join_mage_2",
+            "join_ranger_2",
+            "key_01",
+            "key_05",
+            "link_ranger_1_1",
+            "link_templar_0_1",
+            "link_warrior_2_10",
+            "link_warrior_2_4",
+            "opening_ranger_0_1",
+            "opening_ranger_0_2",
+            "opening_ranger_0_3",
+            "origin_ranger",
+            "r10_14_1",
+            "r10_14_3",
+            "r15_32_1",
+            "r15_43_1",
+            "r15_43_3",
+            "r16_37_2",
+            "r1_29_1",
+            "r1_29_5",
+            "r9_20_1",
+            "r9_20_3"
+          ]
+        },
+        {
+          "version": "proposal",
+          "cost": 35,
+          "counts": {
+            "small": 10,
+            "road": 16,
+            "keystone": 2,
+            "notable": 3,
+            "start": 1
+          },
+          "beforeRuleLossStats": {
+            "damage": 24,
+            "resist": 15,
+            "hp": 36,
+            "armor": 44,
+            "move": 2
+          },
+          "afterRuleLossStats": {
+            "damage": 24,
+            "resist": 15,
+            "hp": 36,
+            "armor": 44,
+            "move": 2
+          },
+          "completelyInactiveAfterKeys": [
+            "g51n2",
+            "g51n5"
+          ],
+          "notables": [
+            {
+              "id": "g49n2",
+              "name": "鋼の重なり"
+            },
+            {
+              "id": "g51n1",
+              "name": "重なる結界"
+            },
+            {
+              "id": "opening_ranger_0_3",
+              "name": "確かな射撃"
+            }
+          ],
+          "tree": [
+            "g49n0",
+            "g49n1",
+            "g49n2",
+            "g49n3",
+            "g49n4",
+            "g51n0",
+            "g51n1",
+            "g51n2",
+            "g51n3",
+            "g51n5",
+            "join_mage_2",
+            "key_01",
+            "key_05",
+            "link_ranger_0_2",
+            "link_ranger_1_1",
+            "link_templar_0_1",
+            "link_warrior_2_10",
+            "opening_ranger_0_1",
+            "opening_ranger_0_2",
+            "opening_ranger_0_3",
+            "origin_ranger",
+            "r10_14_1",
+            "r10_14_3",
+            "r15_32_1",
+            "r15_43_1",
+            "r15_43_3",
+            "r16_37_2",
+            "r1_29_1",
+            "r1_29_5",
+            "r1_47_2",
+            "r9_20_1",
+            "r9_20_3"
+          ]
+        }
+      ]
+    },
+    {
+      "origin": "mage",
+      "keys": [
+        "key_02",
+        "key_09"
+      ],
+      "versions": [
+        {
+          "version": "original",
+          "cost": 26,
+          "counts": {
+            "road": 10,
+            "keystone": 2,
+            "small": 7,
+            "notable": 3,
+            "start": 1
+          },
+          "beforeRuleLossStats": {
+            "hp": 20,
+            "mana": 20,
+            "haste": 14,
+            "resource": 14,
+            "magic": 12,
+            "resist": 6,
+            "efficiency": 8
+          },
+          "afterRuleLossStats": {
+            "hp": 20,
+            "haste": 14,
+            "resource": 14,
+            "magic": 12,
+            "resist": 6
+          },
+          "completelyInactiveAfterKeys": [
+            "g20n0",
+            "g20n7",
+            "g20n6"
+          ],
+          "notables": [
+            {
+              "id": "g19n0",
+              "name": "戦技の律動"
+            },
+            {
+              "id": "g20n6",
+              "name": "蓄える器"
+            },
+            {
+              "id": "opening_mage_2_3",
+              "name": "身を守る術"
+            }
+          ],
+          "tree": [
+            "g19n0",
+            "g19n2",
+            "g19n3",
+            "g19n5",
+            "g20n0",
+            "g20n6",
+            "g20n7",
+            "join_mage_2",
+            "key_02",
+            "key_09",
+            "link_mage_2_1",
+            "opening_mage_0_1",
+            "opening_mage_0_2",
+            "opening_mage_2_3",
+            "origin_mage",
+            "r19_24_1",
+            "r19_24_2",
+            "r24_42_1",
+            "r24_42_2",
+            "r24_42_3",
+            "r9_19_2",
+            "r9_20_2",
+            "r9_20_3"
+          ]
+        },
+        {
+          "version": "previous",
+          "cost": 37,
+          "counts": {
+            "keystone": 2,
+            "road": 14,
+            "small": 14,
+            "notable": 3,
+            "start": 1
+          },
+          "beforeRuleLossStats": {
+            "hp": 30,
+            "armor": 3,
+            "mana": 35.9,
+            "haste": 18,
+            "resource": 13,
+            "magic": 26,
+            "efficiency": 6,
+            "physical": 2,
+            "aoe": 3
+          },
+          "afterRuleLossStats": {
+            "hp": 30,
+            "armor": 3,
+            "haste": 18,
+            "resource": 13,
+            "magic": 26,
+            "physical": 2,
+            "aoe": 3
+          },
+          "completelyInactiveAfterKeys": [
+            "g20n0",
+            "g20n3",
+            "g20n1",
+            "g20n4",
+            "g20n2"
+          ],
+          "notables": [
+            {
+              "id": "g19n0",
+              "name": "戦技の律動"
+            },
+            {
+              "id": "g20n1",
+              "name": "深い魔力槽"
+            },
+            {
+              "id": "opening_mage_0_3",
+              "name": "研ぎ澄ます魔力"
+            }
+          ],
+          "tree": [
+            "g19n0",
+            "g19n1",
+            "g19n2",
+            "g19n3",
+            "g20n0",
+            "g20n1",
+            "g20n2",
+            "g20n3",
+            "g20n4",
+            "join_mage_1",
+            "join_mage_2",
+            "join_templar_2",
+            "key_02",
+            "key_09",
+            "link_assassin_2_4",
+            "link_mage_2_1",
+            "link_templar_2_1",
+            "link_warrior_1_3",
+            "link_warrior_1_5",
+            "link_warrior_1_9",
+            "link_warrior_2_2",
+            "link_warrior_2_8",
+            "opening_mage_0_1",
+            "opening_mage_0_2",
+            "opening_mage_0_3",
+            "origin_mage",
+            "r10_36_2",
+            "r11_28_1",
+            "r11_40_1",
+            "r23_37_1",
+            "r23_37_3",
+            "r24_42_1",
+            "r7_42_1",
+            "r8_47_1"
+          ]
+        },
+        {
+          "version": "proposal",
+          "cost": 36,
+          "counts": {
+            "keystone": 2,
+            "road": 14,
+            "small": 13,
+            "notable": 3,
+            "start": 1
+          },
+          "beforeRuleLossStats": {
+            "hp": 30,
+            "mana": 35.9,
+            "haste": 18,
+            "resource": 13,
+            "magic": 26,
+            "efficiency": 6,
+            "physical": 2,
+            "aoe": 3
+          },
+          "afterRuleLossStats": {
+            "hp": 30,
+            "haste": 18,
+            "resource": 13,
+            "magic": 26,
+            "physical": 2,
+            "aoe": 3
+          },
+          "completelyInactiveAfterKeys": [
+            "g20n0",
+            "g20n3",
+            "g20n1",
+            "g20n4",
+            "g20n2"
+          ],
+          "notables": [
+            {
+              "id": "g19n0",
+              "name": "戦技の律動"
+            },
+            {
+              "id": "g20n1",
+              "name": "深い魔力槽"
+            },
+            {
+              "id": "opening_mage_0_3",
+              "name": "研ぎ澄ます魔力"
+            }
+          ],
+          "tree": [
+            "g19n0",
+            "g19n1",
+            "g19n2",
+            "g19n3",
+            "g20n0",
+            "g20n1",
+            "g20n2",
+            "g20n3",
+            "g20n4",
+            "join_mage_1",
+            "join_mage_2",
+            "join_templar_2",
+            "key_02",
+            "key_09",
+            "link_assassin_2_4",
+            "link_mage_2_1",
+            "link_templar_2_1",
+            "link_warrior_1_3",
+            "link_warrior_1_5",
+            "link_warrior_1_9",
+            "link_warrior_2_2",
+            "opening_mage_0_1",
+            "opening_mage_0_2",
+            "opening_mage_0_3",
+            "origin_mage",
+            "r10_36_2",
+            "r11_28_1",
+            "r11_40_1",
+            "r23_37_1",
+            "r23_37_3",
+            "r24_42_1",
+            "r7_42_1",
+            "r8_47_1"
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "sourceCommit": "eeb913aa",
+  "referenceLibraryId": "libfile_207828053bd48191bfabd38b31e47244",
+  "adopted": false,
+  "originalsChanged": false,
+  "same645NodeEffects": true,
+  "connectionsChanged": true,
+  "nativeMinecraft": false,
+  "activeSkillsObtained": false,
+  "sourceSha256": "b04169fcdb5f9f020d8f4e0e36d1a035e0b9fee359e118aa811195fdaced56d7",
+  "previousProposalRetained": true,
+  "nonVertexCrossings": 0,
+  "crossingGapsUsed": false,
+  "previewStageOnly": true
+}

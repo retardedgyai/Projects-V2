@@ -1,0 +1,309 @@
+{
+  "status": "PASS",
+  "validImports": 24,
+  "unavailableExamples": [
+    {
+      "version": "previous",
+      "budget": 48,
+      "strategy": "two_key"
+    },
+    {
+      "version": "previous",
+      "budget": 64,
+      "strategy": "two_key"
+    },
+    {
+      "version": "previous",
+      "budget": 80,
+      "strategy": "two_key"
+    }
+  ],
+  "checked": [
+    {
+      "version": "original",
+      "budget": 48,
+      "strategy": "weapon",
+      "spent": 48,
+      "inactiveNodes": []
+    },
+    {
+      "version": "original",
+      "budget": 48,
+      "strategy": "survival",
+      "spent": 48,
+      "inactiveNodes": []
+    },
+    {
+      "version": "original",
+      "budget": 48,
+      "strategy": "two_key",
+      "spent": 48,
+      "inactiveNodes": []
+    },
+    {
+      "version": "original",
+      "budget": 64,
+      "strategy": "weapon",
+      "spent": 64,
+      "inactiveNodes": []
+    },
+    {
+      "version": "original",
+      "budget": 64,
+      "strategy": "survival",
+      "spent": 64,
+      "inactiveNodes": []
+    },
+    {
+      "version": "original",
+      "budget": 64,
+      "strategy": "two_key",
+      "spent": 64,
+      "inactiveNodes": []
+    },
+    {
+      "version": "original",
+      "budget": 80,
+      "strategy": "weapon",
+      "spent": 80,
+      "inactiveNodes": []
+    },
+    {
+      "version": "original",
+      "budget": 80,
+      "strategy": "survival",
+      "spent": 80,
+      "inactiveNodes": []
+    },
+    {
+      "version": "original",
+      "budget": 80,
+      "strategy": "two_key",
+      "spent": 80,
+      "inactiveNodes": []
+    },
+    {
+      "version": "previous",
+      "budget": 48,
+      "strategy": "weapon",
+      "spent": 48,
+      "inactiveNodes": []
+    },
+    {
+      "version": "previous",
+      "budget": 48,
+      "strategy": "survival",
+      "spent": 48,
+      "inactiveNodes": []
+    },
+    {
+      "version": "previous",
+      "budget": 64,
+      "strategy": "weapon",
+      "spent": 64,
+      "inactiveNodes": []
+    },
+    {
+      "version": "previous",
+      "budget": 64,
+      "strategy": "survival",
+      "spent": 64,
+      "inactiveNodes": []
+    },
+    {
+      "version": "previous",
+      "budget": 80,
+      "strategy": "weapon",
+      "spent": 80,
+      "inactiveNodes": []
+    },
+    {
+      "version": "previous",
+      "budget": 80,
+      "strategy": "survival",
+      "spent": 80,
+      "inactiveNodes": []
+    },
+    {
+      "version": "proposal",
+      "budget": 48,
+      "strategy": "weapon",
+      "spent": 48,
+      "inactiveNodes": []
+    },
+    {
+      "version": "proposal",
+      "budget": 48,
+      "strategy": "survival",
+      "spent": 48,
+      "inactiveNodes": []
+    },
+    {
+      "version": "proposal",
+      "budget": 48,
+      "strategy": "two_key",
+      "spent": 48,
+      "inactiveNodes": []
+    },
+    {
+      "version": "proposal",
+      "budget": 64,
+      "strategy": "weapon",
+      "spent": 64,
+      "inactiveNodes": []
+    },
+    {
+      "version": "proposal",
+      "budget": 64,
+      "strategy": "survival",
+      "spent": 64,
+      "inactiveNodes": []
+    },
+    {
+      "version": "proposal",
+      "budget": 64,
+      "strategy": "two_key",
+      "spent": 64,
+      "inactiveNodes": []
+    },
+    {
+      "version": "proposal",
+      "budget": 80,
+      "strategy": "weapon",
+      "spent": 80,
+      "inactiveNodes": []
+    },
+    {
+      "version": "proposal",
+      "budget": 80,
+      "strategy": "survival",
+      "spent": 80,
+      "inactiveNodes": []
+    },
+    {
+      "version": "proposal",
+      "budget": 80,
+      "strategy": "two_key",
+      "spent": 80,
+      "inactiveNodes": []
+    }
+  ],
+  "actualExampleButtonCases": [
+    {
+      "budget": 48,
+      "strategy": "weapon",
+      "spent": 48,
+      "minimumGlyphGap": 3.1673860250865733,
+      "minimumHitGap": 2.1673860250865733,
+      "labelFaults": 0,
+      "inactive": [],
+      "keyInputPresent": true,
+      "magicFlagPresent": false
+    },
+    {
+      "budget": 48,
+      "strategy": "survival",
+      "spent": 48,
+      "minimumGlyphGap": 3.1673860250865733,
+      "minimumHitGap": 2.1673860250865733,
+      "labelFaults": 0,
+      "inactive": [],
+      "keyInputPresent": true,
+      "magicFlagPresent": false
+    },
+    {
+      "budget": 48,
+      "strategy": "two_key",
+      "spent": 48,
+      "minimumGlyphGap": 3.1673860250865733,
+      "minimumHitGap": 2.1673860250865733,
+      "labelFaults": 0,
+      "inactive": [],
+      "keyInputPresent": true,
+      "magicFlagPresent": false
+    },
+    {
+      "budget": 64,
+      "strategy": "weapon",
+      "spent": 64,
+      "minimumGlyphGap": 3.1673860250865733,
+      "minimumHitGap": 2.1673860250865733,
+      "labelFaults": 0,
+      "inactive": [],
+      "keyInputPresent": true,
+      "magicFlagPresent": false
+    },
+    {
+      "budget": 64,
+      "strategy": "survival",
+      "spent": 64,
+      "minimumGlyphGap": 3.1673860250865733,
+      "minimumHitGap": 2.1673860250865733,
+      "labelFaults": 0,
+      "inactive": [],
+      "keyInputPresent": true,
+      "magicFlagPresent": false
+    },
+    {
+      "budget": 64,
+      "strategy": "two_key",
+      "spent": 64,
+      "minimumGlyphGap": 3.1673860250865733,
+      "minimumHitGap": 2.1673860250865733,
+      "labelFaults": 0,
+      "inactive": [],
+      "keyInputPresent": true,
+      "magicFlagPresent": false
+    },
+    {
+      "budget": 80,
+      "strategy": "weapon",
+      "spent": 80,
+      "minimumGlyphGap": 3.1673860250865733,
+      "minimumHitGap": 2.1673860250865733,
+      "labelFaults": 0,
+      "inactive": [],
+      "keyInputPresent": true,
+      "magicFlagPresent": false
+    },
+    {
+      "budget": 80,
+      "strategy": "survival",
+      "spent": 80,
+      "minimumGlyphGap": 3.1673860250865733,
+      "minimumHitGap": 2.1673860250865733,
+      "labelFaults": 0,
+      "inactive": [],
+      "keyInputPresent": true,
+      "magicFlagPresent": false
+    },
+    {
+      "budget": 80,
+      "strategy": "two_key",
+      "spent": 80,
+      "minimumGlyphGap": 3.1673860250865733,
+      "minimumHitGap": 2.1673860250865733,
+      "labelFaults": 0,
+      "inactive": [],
+      "keyInputPresent": true,
+      "magicFlagPresent": false
+    }
+  ],
+  "staleSummaryClearedAfterReset": true,
+  "g24hubEffective": {
+    "present": false,
+    "missing": [
+      "魔法ダメージ：現在の入力なし"
+    ],
+    "gate": true,
+    "usable": {},
+    "unsupported": {
+      "magic": {
+        "value": 5,
+        "flags": [
+          "AP"
+        ]
+      }
+    }
+  }
+}

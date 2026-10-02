@@ -1,0 +1,310 @@
+{
+  "status": "PASS",
+  "currentUsableLoadoutsChecked": 60,
+  "commonNodes": 44,
+  "specialistNodesInCommonTravel": [],
+  "ordinaryTravelChoice": "hp",
+  "otherStartsCannotBeTransit": true,
+  "keyPassageUsed": false,
+  "eightSpecialistsKeptInMatchingRegions": [
+    {
+      "node": "g3hub",
+      "group": "g3",
+      "commonRoadPreserved": true,
+      "exchangedRoad": "j29",
+      "entry": "g3n0"
+    },
+    {
+      "node": "g10hub",
+      "group": "g10",
+      "commonRoadPreserved": true,
+      "exchangedRoad": "r1_51_1",
+      "entry": "g10n0"
+    },
+    {
+      "node": "g17hub",
+      "group": "g17",
+      "commonRoadPreserved": true,
+      "exchangedRoad": "r5_48_1",
+      "entry": "g17n1"
+    },
+    {
+      "node": "g24hub",
+      "group": "g24",
+      "commonRoadPreserved": true,
+      "exchangedRoad": "j22",
+      "entry": "g24n0"
+    },
+    {
+      "node": "g31hub",
+      "group": "g31",
+      "commonRoadPreserved": true,
+      "exchangedRoad": "r1_29_2",
+      "entry": "g31n0"
+    },
+    {
+      "node": "g38hub",
+      "group": "g38",
+      "commonRoadPreserved": true,
+      "exchangedRoad": "r1_47_2",
+      "entry": "g38n0"
+    },
+    {
+      "node": "g45hub",
+      "group": "g45",
+      "commonRoadPreserved": true,
+      "exchangedRoad": "r5_41_1",
+      "entry": "g45n0"
+    },
+    {
+      "node": "g52hub",
+      "group": "g52",
+      "commonRoadPreserved": true,
+      "exchangedRoad": "r1_29_3",
+      "entry": "g52n1"
+    }
+  ],
+  "checks": [
+    {
+      "profile": "warrior:basic:plain:standard",
+      "missingCommonNodes": []
+    },
+    {
+      "profile": "warrior:basic:ice:standard",
+      "missingCommonNodes": []
+    },
+    {
+      "profile": "warrior:basic:fire:standard",
+      "missingCommonNodes": []
+    },
+    {
+      "profile": "warrior:basic:lightning:standard",
+      "missingCommonNodes": []
+    },
+    {
+      "profile": "warrior:support:plain:standard",
+      "missingCommonNodes": []
+    },
+    {
+      "profile": "warrior:support:ice:standard",
+      "missingCommonNodes": []
+    },
+    {
+      "profile": "warrior:support:fire:standard",
+      "missingCommonNodes": []
+    },
+    {
+      "profile": "warrior:support:lightning:standard",
+      "missingCommonNodes": []
+    },
+    {
+      "profile": "warrior:mark:plain:standard",
+      "missingCommonNodes": []
+    },
+    {
+      "profile": "warrior:mark:ice:standard",
+      "missingCommonNodes": []
+    },
+    {
+      "profile": "warrior:mark:fire:standard",
+      "missingCommonNodes": []
+    },
+    {
+      "profile": "warrior:mark:lightning:standard",
+      "missingCommonNodes": []
+    },
+    {
+      "profile": "tank:basic:plain:standard",
+      "missingCommonNodes": []
+    },
+    {
+      "profile": "tank:basic:ice:standard",
+      "missingCommonNodes": []
+    },
+    {
+      "profile": "tank:basic:fire:standard",
+      "missingCommonNodes": []
+    },
+    {
+      "profile": "tank:basic:lightning:standard",
+      "missingCommonNodes": []
+    },
+    {
+      "profile": "tank:support:plain:standard",
+      "missingCommonNodes": []
+    },
+    {
+      "profile": "tank:support:ice:standard",
+      "missingCommonNodes": []
+    },
+    {
+      "profile": "tank:support:fire:standard",
+      "missingCommonNodes": []
+    },
+    {
+      "profile": "tank:support:lightning:standard",
+      "missingCommonNodes": []
+    },
+    {
+      "profile": "tank:mark:plain:standard",
+      "missingCommonNodes": []
+    },
+    {
+      "profile": "tank:mark:ice:standard",
+      "missingCommonNodes": []
+    },
+    {
+      "profile": "tank:mark:fire:standard",
+      "missingCommonNodes": []
+    },
+    {
+      "profile": "tank:mark:lightning:standard",
+      "missingCommonNodes": []
+    },
+    {
+      "profile": "mage:basic:plain:standard",
+      "missingCommonNodes": []
+    },
+    {
+      "profile": "mage:basic:ice:standard",
+      "missingCommonNodes": []
+    },
+    {
+      "profile": "mage:basic:fire:standard",
+      "missingCommonNodes": []
+    },
+    {
+      "profile": "mage:basic:lightning:standard",
+      "missingCommonNodes": []
+    },
+    {
+      "profile": "mage:support:plain:standard",
+      "missingCommonNodes": []
+    },
+    {
+      "profile": "mage:support:ice:standard",
+      "missingCommonNodes": []
+    },
+    {
+      "profile": "mage:support:fire:standard",
+      "missingCommonNodes": []
+    },
+    {
+      "profile": "mage:support:lightning:standard",
+      "missingCommonNodes": []
+    },
+    {
+      "profile": "mage:mark:plain:standard",
+      "missingCommonNodes": []
+    },
+    {
+      "profile": "mage:mark:ice:standard",
+      "missingCommonNodes": []
+    },
+    {
+      "profile": "mage:mark:fire:standard",
+      "missingCommonNodes": []
+    },
+    {
+      "profile": "mage:mark:lightning:standard",
+      "missingCommonNodes": []
+    },
+    {
+      "profile": "ranger:basic:plain:standard",
+      "missingCommonNodes": []
+    },
+    {
+      "profile": "ranger:basic:ice:standard",
+      "missingCommonNodes": []
+    },
+    {
+      "profile": "ranger:basic:fire:standard",
+      "missingCommonNodes": []
+    },
+    {
+      "profile": "ranger:basic:lightning:standard",
+      "missingCommonNodes": []
+    },
+    {
+      "profile": "ranger:support:plain:standard",
+      "missingCommonNodes": []
+    },
+    {
+      "profile": "ranger:support:ice:standard",
+      "missingCommonNodes": []
+    },
+    {
+      "profile": "ranger:support:fire:standard",
+      "missingCommonNodes": []
+    },
+    {
+      "profile": "ranger:support:lightning:standard",
+      "missingCommonNodes": []
+    },
+    {
+      "profile": "ranger:mark:plain:standard",
+      "missingCommonNodes": []
+    },
+    {
+      "profile": "ranger:mark:ice:standard",
+      "missingCommonNodes": []
+    },
+    {
+      "profile": "ranger:mark:fire:standard",
+      "missingCommonNodes": []
+    },
+    {
+      "profile": "ranger:mark:lightning:standard",
+      "missingCommonNodes": []
+    },
+    {
+      "profile": "assassin:basic:plain:standard",
+      "missingCommonNodes": []
+    },
+    {
+      "profile": "assassin:basic:ice:standard",
+      "missingCommonNodes": []
+    },
+    {
+      "profile": "assassin:basic:fire:standard",
+      "missingCommonNodes": []
+    },
+    {
+      "profile": "assassin:basic:lightning:standard",
+      "missingCommonNodes": []
+    },
+    {
+      "profile": "assassin:support:plain:standard",
+      "missingCommonNodes": []
+    },
+    {
+      "profile": "assassin:support:ice:standard",
+      "missingCommonNodes": []
+    },
+    {
+      "profile": "assassin:support:fire:standard",
+      "missingCommonNodes": []
+    },
+    {
+      "profile": "assassin:support:lightning:standard",
+      "missingCommonNodes": []
+    },
+    {
+      "profile": "assassin:mark:plain:standard",
+      "missingCommonNodes": []
+    },
+    {
+      "profile": "assassin:mark:ice:standard",
+      "missingCommonNodes": []
+    },
+    {
+      "profile": "assassin:mark:fire:standard",
+      "missingCommonNodes": []
+    },
+    {
+      "profile": "assassin:mark:lightning:standard",
+      "missingCommonNodes": []
+    }
+  ],
+  "runtimeApplied": false
+}
