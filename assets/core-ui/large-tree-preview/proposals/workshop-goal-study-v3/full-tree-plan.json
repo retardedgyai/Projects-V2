@@ -1,0 +1,2350 @@
+{
+  "status": "WHOLE_LAYOUT_PLAN",
+  "fullNodeLayoutComplete": false,
+  "detailedNodeCount": 197,
+  "detailedRegionCount": 17,
+  "reservedRegionCount": 30,
+  "sourceNodeCount": 645,
+  "regions": [
+    {
+      "id": "g2",
+      "name": "術式",
+      "x": 3880,
+      "y": -4310,
+      "state": "reserved",
+      "sourceNodeIds": [
+        "g2n0",
+        "g2n1",
+        "g2n2",
+        "g2n3",
+        "g2n4",
+        "g2n5",
+        "g2n6",
+        "g2n7"
+      ],
+      "purpose": "二つの術式Notableを魔力と障壁から拾う",
+      "notables": [
+        "g2n0",
+        "g2n3"
+      ]
+    },
+    {
+      "id": "g3",
+      "name": "氷属性",
+      "x": 4320,
+      "y": -1370,
+      "state": "reserved",
+      "sourceNodeIds": [
+        "g3n0",
+        "g3n1",
+        "g3n2",
+        "g3n3",
+        "g3n4",
+        "g3n5",
+        "g3n6"
+      ],
+      "purpose": "小さな氷・障壁目標、技能回転へ戻る",
+      "notables": [
+        "g3n5"
+      ]
+    },
+    {
+      "id": "g4",
+      "name": "技の回転",
+      "x": 3570,
+      "y": -260,
+      "state": "reserved",
+      "sourceNodeIds": [
+        "g4n0",
+        "g4n1",
+        "g4n2",
+        "g4n3",
+        "g4n4",
+        "g4n5",
+        "g4n6",
+        "g4n7"
+      ],
+      "purpose": "技能回転を物理・術式の間へ",
+      "notables": [
+        "g4n2"
+      ]
+    },
+    {
+      "id": "g5",
+      "name": "裂傷",
+      "x": -375.0,
+      "y": 2128.3333333333335,
+      "state": "detailed",
+      "sourceNodeIds": [
+        "g5n0",
+        "g5n1",
+        "g5n2",
+        "g5n3",
+        "g5n4",
+        "g5n5"
+      ],
+      "purpose": "裂傷の短い目標 / 現在は混合Notableの物理恩恵だけ使える",
+      "notables": [
+        "g5n0"
+      ]
+    },
+    {
+      "id": "g6",
+      "name": "装甲",
+      "x": -2240,
+      "y": -2900,
+      "state": "reserved",
+      "sourceNodeIds": [
+        "g6n0",
+        "g6n1",
+        "g6n2",
+        "g6n3",
+        "g6n4",
+        "g6n5",
+        "g6n6",
+        "g6n7",
+        "g6n8",
+        "g6n9"
+      ],
+      "purpose": "装甲を積み、生命と受け流しへ回る",
+      "notables": [
+        "g6n0",
+        "g6n4"
+      ]
+    },
+    {
+      "id": "g7",
+      "name": "範囲",
+      "x": 3370,
+      "y": 1620,
+      "state": "reserved",
+      "sourceNodeIds": [
+        "g7n0",
+        "g7n1",
+        "g7n2",
+        "g7n3",
+        "g7n4",
+        "g7n5",
+        "g7n6",
+        "g7n7"
+      ],
+      "purpose": "小さな範囲・物理目標、強制Keyなし",
+      "notables": [
+        "g7n2"
+      ]
+    },
+    {
+      "id": "g8",
+      "name": "火属性",
+      "x": 5910,
+      "y": -2790,
+      "state": "reserved",
+      "sourceNodeIds": [
+        "g8n0",
+        "g8n1",
+        "g8n2",
+        "g8n3",
+        "g8n4"
+      ],
+      "purpose": "短い炎目標、魔術加工は必須にしない",
+      "notables": [
+        "g8n4"
+      ]
+    },
+    {
+      "id": "g9",
+      "name": "雷属性",
+      "x": 4610,
+      "y": -5710,
+      "state": "reserved",
+      "sourceNodeIds": [
+        "g9n0",
+        "g9n1",
+        "g9n2",
+        "g9n3",
+        "g9n4",
+        "g9n5",
+        "g9n6",
+        "g9n7"
+      ],
+      "purpose": "二つの雷Notableと単体収束Key15",
+      "notables": [
+        "g9n2",
+        "g9n7"
+      ]
+    },
+    {
+      "id": "g10",
+      "name": "機動",
+      "x": 6250,
+      "y": 1610,
+      "state": "reserved",
+      "sourceNodeIds": [
+        "g10n0",
+        "g10n1",
+        "g10n2",
+        "g10n3",
+        "g10n4",
+        "g10n5",
+        "g10n6"
+      ],
+      "purpose": "機動と機会返還Key10、印供給と消費を区別",
+      "notables": [
+        "g10n3"
+      ]
+    },
+    {
+      "id": "g11",
+      "name": "受け流し",
+      "x": -3820,
+      "y": -2810,
+      "state": "reserved",
+      "sourceNodeIds": [
+        "g11n0",
+        "g11n1",
+        "g11n2",
+        "g11n3",
+        "g11n4",
+        "g11n5",
+        "g11n6",
+        "g11n7"
+      ],
+      "purpose": "受け流しと攻撃速度の二入口",
+      "notables": [
+        "g11n7"
+      ]
+    },
+    {
+      "id": "g12",
+      "name": "魔力",
+      "x": 2300,
+      "y": -3280,
+      "state": "reserved",
+      "sourceNodeIds": [
+        "g12n0",
+        "g12n1",
+        "g12n2",
+        "g12n3"
+      ],
+      "purpose": "小さな魔力・効率目標、術式を通過条件にしない",
+      "notables": [
+        "g12n2"
+      ]
+    },
+    {
+      "id": "g13",
+      "name": "吸収",
+      "x": 847.0,
+      "y": -534.0,
+      "state": "detailed",
+      "sourceNodeIds": [
+        "g13n0",
+        "g13n1",
+        "g13n2",
+        "g13n3",
+        "g13n4",
+        "g13n5",
+        "g13n6",
+        "g13n7",
+        "g13n8",
+        "g13n9"
+      ],
+      "purpose": "吸収を積む長い回り道 / 障壁Keyとの組み合わせ",
+      "notables": [
+        "g13n3",
+        "g13n9"
+      ]
+    },
+    {
+      "id": "g14",
+      "name": "資源循環",
+      "x": 590.0,
+      "y": 1331.25,
+      "state": "detailed",
+      "sourceNodeIds": [
+        "g14n0",
+        "g14n1",
+        "g14n2",
+        "g14n3",
+        "g14n4",
+        "g14n5",
+        "g14n6",
+        "g14n7"
+      ],
+      "purpose": "資源を拾う長い横断 / 手数と一撃をつなぐ道",
+      "notables": [
+        "g14n4"
+      ]
+    },
+    {
+      "id": "g16",
+      "name": "貫通",
+      "x": -3160,
+      "y": -1840,
+      "state": "reserved",
+      "sourceNodeIds": [
+        "g16n0",
+        "g16n1",
+        "g16n2",
+        "g16n3",
+        "g16n4",
+        "g16n5",
+        "g16n6",
+        "g16n7",
+        "g16n8"
+      ],
+      "purpose": "貫通への投資、異系統武器Key07は任意",
+      "notables": [
+        "g16n2",
+        "g16n8"
+      ]
+    },
+    {
+      "id": "g17",
+      "name": "弱点",
+      "x": 6390,
+      "y": 3010,
+      "state": "reserved",
+      "sourceNodeIds": [
+        "g17n0",
+        "g17n1",
+        "g17n2",
+        "g17n3",
+        "g17n4",
+        "g17n5",
+        "g17n6"
+      ],
+      "purpose": "弱点と継続の毒刃Key12、印が別途必要",
+      "notables": [
+        "g17n0"
+      ]
+    },
+    {
+      "id": "g18",
+      "name": "生命",
+      "x": -1240,
+      "y": -1870,
+      "state": "reserved",
+      "sourceNodeIds": [
+        "g18n0",
+        "g18n1",
+        "g18n2",
+        "g18n3",
+        "g18n4",
+        "g18n5",
+        "g18n6",
+        "g18n7"
+      ],
+      "purpose": "生命・再生から両側の防御へ",
+      "notables": [
+        "g18n1"
+      ]
+    },
+    {
+      "id": "g19",
+      "name": "技の回転",
+      "x": 730,
+      "y": -5220,
+      "state": "reserved",
+      "sourceNodeIds": [
+        "g19n0",
+        "g19n1",
+        "g19n2",
+        "g19n3",
+        "g19n4",
+        "g19n5"
+      ],
+      "purpose": "重ね撃ちKey09を資源と魔力から比較",
+      "notables": [
+        "g19n0"
+      ]
+    },
+    {
+      "id": "g20",
+      "name": "魔力",
+      "x": 2540,
+      "y": -4550,
+      "state": "reserved",
+      "sourceNodeIds": [
+        "g20n0",
+        "g20n1",
+        "g20n2",
+        "g20n3",
+        "g20n4",
+        "g20n5",
+        "g20n6",
+        "g20n7",
+        "g20n8",
+        "g20n9"
+      ],
+      "purpose": "MP運用と血の代価Key02、自然再生との交換",
+      "notables": [
+        "g20n1",
+        "g20n6"
+      ]
+    },
+    {
+      "id": "g21",
+      "name": "裂傷",
+      "x": -1213.75,
+      "y": 2168.75,
+      "state": "detailed",
+      "sourceNodeIds": [
+        "g21n0",
+        "g21n1",
+        "g21n2",
+        "g21n3",
+        "g21n4",
+        "g21n5",
+        "g21n6",
+        "g21n7"
+      ],
+      "purpose": "裂傷の予定領域 / 物理を拾う入口と出血専用の回り道",
+      "notables": [
+        "g21n3"
+      ]
+    },
+    {
+      "id": "g23",
+      "name": "魔法防御",
+      "x": 27.77777777777778,
+      "y": -745.5555555555555,
+      "state": "detailed",
+      "sourceNodeIds": [
+        "g23n0",
+        "g23n1",
+        "g23n2",
+        "g23n3",
+        "g23n4",
+        "g23n5",
+        "g23n6",
+        "g23n7",
+        "g23n8"
+      ],
+      "purpose": "生命から耐性へ / 二つのNotableを独立して拾う",
+      "notables": [
+        "g23n1",
+        "g23n5"
+      ]
+    },
+    {
+      "id": "g24",
+      "name": "術式",
+      "x": 4590,
+      "y": -2860,
+      "state": "reserved",
+      "sourceNodeIds": [
+        "g24n0",
+        "g24n1",
+        "g24n2",
+        "g24n3",
+        "g24n4",
+        "g24n5",
+        "g24n6"
+      ],
+      "purpose": "もう一つの術式目標、雷と資源の別入口",
+      "notables": [
+        "g24n4"
+      ]
+    },
+    {
+      "id": "g25",
+      "name": "会心",
+      "x": -2535.0,
+      "y": 1981.25,
+      "state": "detailed",
+      "sourceNodeIds": [
+        "g25n0",
+        "g25n1",
+        "g25n2",
+        "g25n3",
+        "g25n4",
+        "g25n5",
+        "g25n6",
+        "g25n7"
+      ],
+      "purpose": "会心へ投資 / 短い倍率の腕と、確率を積んで回る長い腕",
+      "notables": [
+        "g25n6"
+      ]
+    },
+    {
+      "id": "g26",
+      "name": "受け流し",
+      "x": -2245.0,
+      "y": 652.5,
+      "state": "detailed",
+      "sourceNodeIds": [
+        "g26n0",
+        "g26n1",
+        "g26n2",
+        "g26n3"
+      ],
+      "purpose": "受け流しの小さな角 / 手数は入口、受け流し入力の枝は任意",
+      "notables": [
+        "g26n3"
+      ]
+    },
+    {
+      "id": "g27",
+      "name": "氷属性",
+      "x": 2860,
+      "y": -1980,
+      "state": "reserved",
+      "sourceNodeIds": [
+        "g27n0",
+        "g27n1",
+        "g27n2",
+        "g27n3",
+        "g27n4",
+        "g27n5",
+        "g27n6",
+        "g27n7",
+        "g27n8",
+        "g27n9"
+      ],
+      "purpose": "氷の機会Key13、一般障壁から任意に分岐",
+      "notables": [
+        "g27n1",
+        "g27n4"
+      ]
+    },
+    {
+      "id": "g28",
+      "name": "受け流し",
+      "x": -2680,
+      "y": -4300,
+      "state": "reserved",
+      "sourceNodeIds": [
+        "g28n0",
+        "g28n1",
+        "g28n2",
+        "g28n3",
+        "g28n4",
+        "g28n5",
+        "g28n6",
+        "g28n7"
+      ],
+      "purpose": "大きな受け流しの投資、資源側へ戻る",
+      "notables": [
+        "g28n2"
+      ]
+    },
+    {
+      "id": "g30",
+      "name": "攻撃速度",
+      "x": -948.75,
+      "y": 1336.25,
+      "state": "detailed",
+      "sourceNodeIds": [
+        "g30n0",
+        "g30n1",
+        "g30n2",
+        "g30n3",
+        "g30n4",
+        "g30n5",
+        "g30n6",
+        "g30n7"
+      ],
+      "purpose": "手数を先に育てる / 二段のNotableと資源への横道",
+      "notables": [
+        "g30n1",
+        "g30n4"
+      ]
+    },
+    {
+      "id": "g31",
+      "name": "障壁",
+      "x": -310,
+      "y": -3920,
+      "state": "reserved",
+      "sourceNodeIds": [
+        "g31n0",
+        "g31n1",
+        "g31n2",
+        "g31n3",
+        "g31n4",
+        "g31n5",
+        "g31n6"
+      ],
+      "purpose": "仲間への障壁を伸ばす任意のKey11",
+      "notables": [
+        "g31n4"
+      ]
+    },
+    {
+      "id": "g32",
+      "name": "会心",
+      "x": 6500,
+      "y": 130,
+      "state": "reserved",
+      "sourceNodeIds": [
+        "g32n0",
+        "g32n1",
+        "g32n2",
+        "g32n3",
+        "g32n4",
+        "g32n5",
+        "g32n6",
+        "g32n7"
+      ],
+      "purpose": "会心倍率をレンジャーと機動から育てる",
+      "notables": [
+        "g32n2"
+      ]
+    },
+    {
+      "id": "g33",
+      "name": "回復",
+      "x": 1580,
+      "y": -2380,
+      "state": "reserved",
+      "sourceNodeIds": [
+        "g33n0",
+        "g33n1",
+        "g33n2",
+        "g33n3",
+        "g33n4"
+      ],
+      "purpose": "回復入力の枝と一般再生の入口を分離",
+      "notables": [
+        "g33n1"
+      ]
+    },
+    {
+      "id": "g34",
+      "name": "範囲",
+      "x": 1765.0,
+      "y": 1587.0,
+      "state": "detailed",
+      "sourceNodeIds": [
+        "g34n0",
+        "g34n1",
+        "g34n2",
+        "g34n3",
+        "g34n4",
+        "g34n5",
+        "g34n6",
+        "g34n7",
+        "g34n8",
+        "g34n9"
+      ],
+      "purpose": "範囲の二目標 / 近接の広さと一撃を交換する任意のKey",
+      "notables": [
+        "g34n2",
+        "g34n8"
+      ]
+    },
+    {
+      "id": "g35",
+      "name": "物理火力",
+      "x": 870.0,
+      "y": 878.75,
+      "state": "detailed",
+      "sourceNodeIds": [
+        "g35n0",
+        "g35n1",
+        "g35n2",
+        "g35n3",
+        "g35n4",
+        "g35n5",
+        "g35n6",
+        "g35n7"
+      ],
+      "purpose": "一撃を伸ばす短い目標 / 防御の通路から離れる選択",
+      "notables": [
+        "g35n1"
+      ]
+    },
+    {
+      "id": "g37",
+      "name": "貫通",
+      "x": -2964.4444444444443,
+      "y": 881.1111111111111,
+      "state": "detailed",
+      "sourceNodeIds": [
+        "g37n0",
+        "g37n1",
+        "g37n2",
+        "g37n3",
+        "g37n4",
+        "g37n5",
+        "g37n6",
+        "g37n7",
+        "g37n8"
+      ],
+      "purpose": "貫通と一撃 / 上で貫通を拾うか、下の物理恩恵を回るか",
+      "notables": [
+        "g37n0",
+        "g37n4"
+      ]
+    },
+    {
+      "id": "g38",
+      "name": "回復",
+      "x": -1310.0,
+      "y": -630.0,
+      "state": "detailed",
+      "sourceNodeIds": [
+        "g38n0",
+        "g38n1",
+        "g38n2",
+        "g38n3",
+        "g38n4",
+        "g38n5",
+        "g38n6"
+      ],
+      "purpose": "回復と再生を別入口へ / 回復入力がない職業も再生へ投資できる",
+      "notables": [
+        "g38n1"
+      ]
+    },
+    {
+      "id": "g39",
+      "name": "資源循環",
+      "x": 6580,
+      "y": -1190,
+      "state": "reserved",
+      "sourceNodeIds": [
+        "g39n0",
+        "g39n1",
+        "g39n2",
+        "g39n3",
+        "g39n4",
+        "g39n5",
+        "g39n6",
+        "g39n7"
+      ],
+      "purpose": "資源・効率から会心と術式へ回る",
+      "notables": [
+        "g39n6"
+      ]
+    },
+    {
+      "id": "g40",
+      "name": "資源循環",
+      "x": -1310,
+      "y": -4420,
+      "state": "reserved",
+      "sourceNodeIds": [
+        "g40n0",
+        "g40n1",
+        "g40n2",
+        "g40n3",
+        "g40n4",
+        "g40n5"
+      ],
+      "purpose": "資源運用をタンクと魔力側へ渡す",
+      "notables": [
+        "g40n0"
+      ]
+    },
+    {
+      "id": "g41",
+      "name": "攻撃速度",
+      "x": 5050,
+      "y": 2020,
+      "state": "reserved",
+      "sourceNodeIds": [
+        "g41n0",
+        "g41n1",
+        "g41n2",
+        "g41n3",
+        "g41n4",
+        "g41n5",
+        "g41n6",
+        "g41n7",
+        "g41n8",
+        "g41n9"
+      ],
+      "purpose": "手数二目標、範囲と資源への迂回",
+      "notables": [
+        "g41n0",
+        "g41n3"
+      ]
+    },
+    {
+      "id": "g42",
+      "name": "範囲",
+      "x": 4250,
+      "y": 3380,
+      "state": "reserved",
+      "sourceNodeIds": [
+        "g42n0",
+        "g42n1",
+        "g42n2",
+        "g42n3",
+        "g42n4",
+        "g42n5",
+        "g42n6",
+        "g42n7"
+      ],
+      "purpose": "別の範囲目標、手数と弱点を回る",
+      "notables": [
+        "g42n0"
+      ]
+    },
+    {
+      "id": "g43",
+      "name": "雷属性",
+      "x": 2580,
+      "y": -6200,
+      "state": "reserved",
+      "sourceNodeIds": [
+        "g43n0",
+        "g43n1",
+        "g43n2",
+        "g43n3",
+        "g43n4"
+      ],
+      "purpose": "小さな雷と回転の寄り道",
+      "notables": [
+        "g43n0"
+      ]
+    },
+    {
+      "id": "g44",
+      "name": "機動",
+      "x": -3580,
+      "y": -570,
+      "state": "reserved",
+      "sourceNodeIds": [
+        "g44n0",
+        "g44n1",
+        "g44n2",
+        "g44n3",
+        "g44n4",
+        "g44n5",
+        "g44n6",
+        "g44n7"
+      ],
+      "purpose": "機動と手数を会心・装甲から選ぶ",
+      "notables": [
+        "g44n0",
+        "g44n3"
+      ]
+    },
+    {
+      "id": "g45",
+      "name": "生命",
+      "x": -414.2857142857143,
+      "y": -148.57142857142858,
+      "state": "detailed",
+      "sourceNodeIds": [
+        "g45n0",
+        "g45n1",
+        "g45n2",
+        "g45n3",
+        "g45n4",
+        "g45n5",
+        "g45n6"
+      ],
+      "purpose": "生命の二経路 / 上でHPを積むか下から目標へ",
+      "notables": [
+        "g45n2"
+      ]
+    },
+    {
+      "id": "g46",
+      "name": "魔法防御",
+      "x": 940,
+      "y": -3230,
+      "state": "reserved",
+      "sourceNodeIds": [
+        "g46n0",
+        "g46n1",
+        "g46n2",
+        "g46n3",
+        "g46n4",
+        "g46n5",
+        "g46n6",
+        "g46n7"
+      ],
+      "purpose": "魔法防御と魔力を両側から拾う",
+      "notables": [
+        "g46n6"
+      ]
+    },
+    {
+      "id": "g47",
+      "name": "火属性",
+      "x": 5470,
+      "y": -4440,
+      "state": "reserved",
+      "sourceNodeIds": [
+        "g47n0",
+        "g47n1",
+        "g47n2",
+        "g47n3",
+        "g47n4",
+        "g47n5"
+      ],
+      "purpose": "炎の持続Key14、燃焼入力不足は保持",
+      "notables": [
+        "g47n2"
+      ]
+    },
+    {
+      "id": "g48",
+      "name": "弱点",
+      "x": -1917.0,
+      "y": 3266.0,
+      "state": "detailed",
+      "sourceNodeIds": [
+        "g48n0",
+        "g48n1",
+        "g48n2",
+        "g48n3",
+        "g48n4",
+        "g48n5",
+        "g48n6",
+        "g48n7",
+        "g48n8",
+        "g48n9"
+      ],
+      "purpose": "弱点と会心の二目標 / 弱点入力の枝と一般の会心の道を分ける",
+      "notables": [
+        "g48n4",
+        "g48n8"
+      ]
+    },
+    {
+      "id": "g49",
+      "name": "装甲",
+      "x": -108.75,
+      "y": 545.0,
+      "state": "detailed",
+      "sourceNodeIds": [
+        "g49n0",
+        "g49n1",
+        "g49n2",
+        "g49n3",
+        "g49n4",
+        "g49n5",
+        "g49n6",
+        "g49n7"
+      ],
+      "purpose": "装甲を拾って不動へ / 生命側と武器側の二入口",
+      "notables": [
+        "g49n2"
+      ]
+    },
+    {
+      "id": "g50",
+      "name": "裂傷",
+      "x": 350.0,
+      "y": 2696.6666666666665,
+      "state": "detailed",
+      "sourceNodeIds": [
+        "g50n0",
+        "g50n1",
+        "g50n2"
+      ],
+      "purpose": "深い裂傷へ / 出血入力が実装されるまでKeyは取得不可",
+      "notables": [
+        "g50n1"
+      ]
+    },
+    {
+      "id": "g51",
+      "name": "障壁",
+      "x": 1495.5555555555557,
+      "y": -785.5555555555555,
+      "state": "detailed",
+      "sourceNodeIds": [
+        "g51n0",
+        "g51n1",
+        "g51n2",
+        "g51n3",
+        "g51n4",
+        "g51n5",
+        "g51n6",
+        "g51n7",
+        "g51n8"
+      ],
+      "purpose": "守りの循環へ / 吸収側と短い通路側から入る",
+      "notables": [
+        "g51n1",
+        "g51n4"
+      ]
+    },
+    {
+      "id": "g52",
+      "name": "技の回転",
+      "x": 4800,
+      "y": 730,
+      "state": "reserved",
+      "sourceNodeIds": [
+        "g52n0",
+        "g52n1",
+        "g52n2",
+        "g52n3",
+        "g52n4",
+        "g52n5",
+        "g52n6"
+      ],
+      "purpose": "回転を手数・機動へつなぐ",
+      "notables": [
+        "g52n0"
+      ]
+    }
+  ],
+  "origins": [
+    {
+      "id": "warrior",
+      "name": "戦士",
+      "root": "origin_warrior",
+      "angle": 150,
+      "icon": "sword",
+      "lanes": [
+        {
+          "stat": "physical",
+          "nodes": [
+            "opening_warrior_0_1",
+            "opening_warrior_0_2",
+            "opening_warrior_0_3"
+          ],
+          "name": "物理ダメージ"
+        },
+        {
+          "stat": "hp",
+          "nodes": [
+            "opening_warrior_1_1",
+            "opening_warrior_1_2",
+            "opening_warrior_1_3"
+          ],
+          "name": "最大HP"
+        },
+        {
+          "stat": "attackSpeed",
+          "nodes": [
+            "opening_warrior_2_1",
+            "opening_warrior_2_2",
+            "opening_warrior_2_3"
+          ],
+          "name": "攻撃速度"
+        }
+      ],
+      "x": -1300,
+      "y": 700,
+      "neighbors": [
+        "g49",
+        "g30",
+        "g45"
+      ],
+      "sourceOpeningIds": [
+        "opening_warrior_0_1",
+        "opening_warrior_0_2",
+        "opening_warrior_0_3",
+        "opening_warrior_1_1",
+        "opening_warrior_1_2",
+        "opening_warrior_1_3",
+        "opening_warrior_2_1",
+        "opening_warrior_2_2",
+        "opening_warrior_2_3"
+      ]
+    },
+    {
+      "id": "tank",
+      "name": "タンク〈仮称〉",
+      "root": "origin_templar",
+      "angle": 210,
+      "icon": "shield",
+      "lanes": [
+        {
+          "stat": "physical",
+          "nodes": [
+            "opening_templar_0_1",
+            "opening_templar_0_2",
+            "opening_templar_0_3"
+          ],
+          "name": "物理ダメージ"
+        },
+        {
+          "stat": "armor",
+          "nodes": [
+            "opening_templar_1_1",
+            "opening_templar_1_2",
+            "opening_templar_1_3"
+          ],
+          "name": "物理防御"
+        },
+        {
+          "stat": "barrier",
+          "nodes": [
+            "opening_templar_2_1",
+            "opening_templar_2_2",
+            "opening_templar_2_3"
+          ],
+          "name": "付与する障壁量"
+        }
+      ],
+      "x": -900,
+      "y": -3110,
+      "neighbors": [
+        "g6",
+        "g18",
+        "g31",
+        "g40"
+      ],
+      "sourceOpeningIds": [
+        "opening_templar_0_1",
+        "opening_templar_0_2",
+        "opening_templar_0_3",
+        "opening_templar_1_1",
+        "opening_templar_1_2",
+        "opening_templar_1_3",
+        "opening_templar_2_1",
+        "opening_templar_2_2",
+        "opening_templar_2_3"
+      ]
+    },
+    {
+      "id": "mage",
+      "name": "メイジ",
+      "root": "origin_mage",
+      "angle": 270,
+      "icon": "star",
+      "lanes": [
+        {
+          "stat": "magic",
+          "nodes": [
+            "opening_mage_0_1",
+            "opening_mage_0_2",
+            "opening_mage_0_3"
+          ],
+          "name": "魔法ダメージ"
+        },
+        {
+          "stat": "efficiency",
+          "nodes": [
+            "opening_mage_1_1",
+            "opening_mage_1_2",
+            "opening_mage_1_3"
+          ],
+          "name": "技能のMP消費"
+        },
+        {
+          "stat": "barrier",
+          "nodes": [
+            "opening_mage_2_1",
+            "opening_mage_2_2",
+            "opening_mage_2_3"
+          ],
+          "name": "付与する障壁量"
+        }
+      ],
+      "x": 3400,
+      "y": -3260,
+      "neighbors": [
+        "g12",
+        "g20",
+        "g2",
+        "g24"
+      ],
+      "sourceOpeningIds": [
+        "opening_mage_0_1",
+        "opening_mage_0_2",
+        "opening_mage_0_3",
+        "opening_mage_1_1",
+        "opening_mage_1_2",
+        "opening_mage_1_3",
+        "opening_mage_2_1",
+        "opening_mage_2_2",
+        "opening_mage_2_3"
+      ]
+    },
+    {
+      "id": "ranger",
+      "name": "レンジャー",
+      "root": "origin_ranger",
+      "angle": 30,
+      "icon": "target",
+      "lanes": [
+        {
+          "stat": "damage",
+          "nodes": [
+            "opening_ranger_0_1",
+            "opening_ranger_0_2",
+            "opening_ranger_0_3"
+          ],
+          "name": "与ダメージ"
+        },
+        {
+          "stat": "attackSpeed",
+          "nodes": [
+            "opening_ranger_1_1",
+            "opening_ranger_1_2",
+            "opening_ranger_1_3"
+          ],
+          "name": "攻撃速度"
+        },
+        {
+          "stat": "crit",
+          "nodes": [
+            "opening_ranger_2_1",
+            "opening_ranger_2_2",
+            "opening_ranger_2_3"
+          ],
+          "name": "会心率"
+        }
+      ],
+      "x": 5740,
+      "y": 560,
+      "neighbors": [
+        "g32",
+        "g39",
+        "g41",
+        "g52"
+      ],
+      "sourceOpeningIds": [
+        "opening_ranger_0_1",
+        "opening_ranger_0_2",
+        "opening_ranger_0_3",
+        "opening_ranger_1_1",
+        "opening_ranger_1_2",
+        "opening_ranger_1_3",
+        "opening_ranger_2_1",
+        "opening_ranger_2_2",
+        "opening_ranger_2_3"
+      ]
+    },
+    {
+      "id": "assassin",
+      "name": "アサシン",
+      "root": "origin_assassin",
+      "angle": 90,
+      "icon": "fang",
+      "lanes": [
+        {
+          "stat": "damage",
+          "nodes": [
+            "opening_assassin_0_1",
+            "opening_assassin_0_2",
+            "opening_assassin_0_3"
+          ],
+          "name": "与ダメージ"
+        },
+        {
+          "stat": "attackSpeed",
+          "nodes": [
+            "opening_assassin_1_1",
+            "opening_assassin_1_2",
+            "opening_assassin_1_3"
+          ],
+          "name": "攻撃速度"
+        },
+        {
+          "stat": "move",
+          "nodes": [
+            "opening_assassin_2_1",
+            "opening_assassin_2_2",
+            "opening_assassin_2_3"
+          ],
+          "name": "移動速度"
+        }
+      ],
+      "x": 3710,
+      "y": 4560,
+      "neighbors": [
+        "g42",
+        "g17",
+        "g50",
+        "g5"
+      ],
+      "sourceOpeningIds": [
+        "opening_assassin_0_1",
+        "opening_assassin_0_2",
+        "opening_assassin_0_3",
+        "opening_assassin_1_1",
+        "opening_assassin_1_2",
+        "opening_assassin_1_3",
+        "opening_assassin_2_1",
+        "opening_assassin_2_2",
+        "opening_assassin_2_3"
+      ]
+    }
+  ],
+  "plannedNeighborPairs": [
+    [
+      "g6",
+      "g18"
+    ],
+    [
+      "g18",
+      "g45"
+    ],
+    [
+      "g6",
+      "g11"
+    ],
+    [
+      "g11",
+      "g16"
+    ],
+    [
+      "g16",
+      "g37"
+    ],
+    [
+      "g16",
+      "g44"
+    ],
+    [
+      "g44",
+      "g26"
+    ],
+    [
+      "g44",
+      "g25"
+    ],
+    [
+      "g6",
+      "g28"
+    ],
+    [
+      "g28",
+      "g40"
+    ],
+    [
+      "g40",
+      "g31"
+    ],
+    [
+      "g31",
+      "g46"
+    ],
+    [
+      "g46",
+      "g33"
+    ],
+    [
+      "g33",
+      "g51"
+    ],
+    [
+      "g46",
+      "g23"
+    ],
+    [
+      "g40",
+      "g19"
+    ],
+    [
+      "g19",
+      "g20"
+    ],
+    [
+      "g19",
+      "g43"
+    ],
+    [
+      "g43",
+      "g9"
+    ],
+    [
+      "g9",
+      "g47"
+    ],
+    [
+      "g47",
+      "g8"
+    ],
+    [
+      "g20",
+      "g2"
+    ],
+    [
+      "g2",
+      "g47"
+    ],
+    [
+      "g20",
+      "g12"
+    ],
+    [
+      "g12",
+      "g46"
+    ],
+    [
+      "g12",
+      "g27"
+    ],
+    [
+      "g27",
+      "g51"
+    ],
+    [
+      "g27",
+      "g3"
+    ],
+    [
+      "g2",
+      "g24"
+    ],
+    [
+      "g24",
+      "g3"
+    ],
+    [
+      "g24",
+      "g8"
+    ],
+    [
+      "g3",
+      "g4"
+    ],
+    [
+      "g4",
+      "g35"
+    ],
+    [
+      "g4",
+      "g52"
+    ],
+    [
+      "g52",
+      "g39"
+    ],
+    [
+      "g39",
+      "g24"
+    ],
+    [
+      "g39",
+      "g32"
+    ],
+    [
+      "g32",
+      "g10"
+    ],
+    [
+      "g10",
+      "g52"
+    ],
+    [
+      "g52",
+      "g41"
+    ],
+    [
+      "g41",
+      "g7"
+    ],
+    [
+      "g7",
+      "g34"
+    ],
+    [
+      "g41",
+      "g42"
+    ],
+    [
+      "g42",
+      "g17"
+    ],
+    [
+      "g17",
+      "g10"
+    ],
+    [
+      "g42",
+      "g5"
+    ],
+    [
+      "g17",
+      "g50"
+    ]
+  ],
+  "nonRegionSourceNodeIds": [
+    "g10hub",
+    "g17hub",
+    "g24hub",
+    "g31hub",
+    "g38hub",
+    "g3hub",
+    "g45hub",
+    "g52hub",
+    "j1",
+    "j15",
+    "j22",
+    "j29",
+    "j36",
+    "join_assassin_0",
+    "join_assassin_1",
+    "join_assassin_2",
+    "join_healer_0",
+    "join_healer_1",
+    "join_healer_2",
+    "join_mage_0",
+    "join_mage_1",
+    "join_mage_2",
+    "join_ranger_0",
+    "join_ranger_1",
+    "join_ranger_2",
+    "join_templar_0",
+    "join_templar_1",
+    "join_templar_2",
+    "join_warrior_0",
+    "join_warrior_1",
+    "join_warrior_2",
+    "key_01",
+    "key_02",
+    "key_03",
+    "key_04",
+    "key_05",
+    "key_06",
+    "key_07",
+    "key_08",
+    "key_09",
+    "key_10",
+    "key_11",
+    "key_12",
+    "key_13",
+    "key_14",
+    "key_15",
+    "link_assassin_0_1",
+    "link_assassin_0_2",
+    "link_assassin_0_3",
+    "link_assassin_0_4",
+    "link_assassin_1_1",
+    "link_assassin_1_2",
+    "link_assassin_1_3",
+    "link_assassin_1_4",
+    "link_assassin_1_5",
+    "link_assassin_2_1",
+    "link_assassin_2_2",
+    "link_assassin_2_3",
+    "link_assassin_2_4",
+    "link_assassin_2_5",
+    "link_assassin_2_6",
+    "link_assassin_2_7",
+    "link_assassin_2_8",
+    "link_mage_0_1",
+    "link_mage_1_1",
+    "link_mage_2_1",
+    "link_ranger_0_1",
+    "link_ranger_0_2",
+    "link_ranger_1_1",
+    "link_ranger_1_2",
+    "link_ranger_2_1",
+    "link_ranger_2_2",
+    "link_ranger_2_3",
+    "link_ranger_2_4",
+    "link_templar_0_1",
+    "link_templar_0_2",
+    "link_templar_0_3",
+    "link_templar_1_1",
+    "link_templar_1_2",
+    "link_templar_2_1",
+    "link_warrior_0_1",
+    "link_warrior_0_10",
+    "link_warrior_0_2",
+    "link_warrior_0_3",
+    "link_warrior_0_4",
+    "link_warrior_0_5",
+    "link_warrior_0_6",
+    "link_warrior_0_7",
+    "link_warrior_0_8",
+    "link_warrior_0_9",
+    "link_warrior_1_1",
+    "link_warrior_1_10",
+    "link_warrior_1_11",
+    "link_warrior_1_2",
+    "link_warrior_1_3",
+    "link_warrior_1_4",
+    "link_warrior_1_5",
+    "link_warrior_1_6",
+    "link_warrior_1_7",
+    "link_warrior_1_8",
+    "link_warrior_1_9",
+    "link_warrior_2_1",
+    "link_warrior_2_10",
+    "link_warrior_2_2",
+    "link_warrior_2_3",
+    "link_warrior_2_4",
+    "link_warrior_2_5",
+    "link_warrior_2_6",
+    "link_warrior_2_7",
+    "link_warrior_2_8",
+    "link_warrior_2_9",
+    "opening_assassin_0_1",
+    "opening_assassin_0_2",
+    "opening_assassin_0_3",
+    "opening_assassin_1_1",
+    "opening_assassin_1_2",
+    "opening_assassin_1_3",
+    "opening_assassin_2_1",
+    "opening_assassin_2_2",
+    "opening_assassin_2_3",
+    "opening_mage_0_1",
+    "opening_mage_0_2",
+    "opening_mage_0_3",
+    "opening_mage_1_1",
+    "opening_mage_1_2",
+    "opening_mage_1_3",
+    "opening_mage_2_1",
+    "opening_mage_2_2",
+    "opening_mage_2_3",
+    "opening_ranger_0_1",
+    "opening_ranger_0_2",
+    "opening_ranger_0_3",
+    "opening_ranger_1_1",
+    "opening_ranger_1_2",
+    "opening_ranger_1_3",
+    "opening_ranger_2_1",
+    "opening_ranger_2_2",
+    "opening_ranger_2_3",
+    "opening_templar_0_1",
+    "opening_templar_0_2",
+    "opening_templar_0_3",
+    "opening_templar_1_1",
+    "opening_templar_1_2",
+    "opening_templar_1_3",
+    "opening_templar_2_1",
+    "opening_templar_2_2",
+    "opening_templar_2_3",
+    "opening_warrior_0_1",
+    "opening_warrior_0_2",
+    "opening_warrior_0_3",
+    "opening_warrior_1_1",
+    "opening_warrior_1_2",
+    "opening_warrior_1_3",
+    "opening_warrior_2_1",
+    "opening_warrior_2_2",
+    "opening_warrior_2_3",
+    "origin_assassin",
+    "origin_mage",
+    "origin_ranger",
+    "origin_templar",
+    "origin_warrior",
+    "r10_14_1",
+    "r10_14_2",
+    "r10_14_3",
+    "r10_32_1",
+    "r10_36_1",
+    "r10_36_2",
+    "r11_21_1",
+    "r11_28_1",
+    "r11_28_2",
+    "r11_40_1",
+    "r12_19_1",
+    "r12_19_2",
+    "r12_20_1",
+    "r12_46_1",
+    "r13_35_1",
+    "r13_45_1",
+    "r13_49_1",
+    "r14_27_1",
+    "r14_42_1",
+    "r15_25_1",
+    "r15_25_2",
+    "r15_32_1",
+    "r15_32_2",
+    "r15_43_1",
+    "r15_43_2",
+    "r15_43_3",
+    "r16_37_1",
+    "r16_37_2",
+    "r16_37_3",
+    "r16_38_1",
+    "r16_38_2",
+    "r16_47_1",
+    "r17_30_1",
+    "r17_44_1",
+    "r18_26_1",
+    "r18_26_2",
+    "r18_49_1",
+    "r19_24_1",
+    "r19_24_2",
+    "r19_27_1",
+    "r1_22_1",
+    "r1_22_2",
+    "r1_22_3",
+    "r1_22_4",
+    "r1_29_1",
+    "r1_29_2",
+    "r1_29_3",
+    "r1_29_4",
+    "r1_29_5",
+    "r1_29_6",
+    "r1_47_1",
+    "r1_47_2",
+    "r1_51_1",
+    "r1_51_2",
+    "r21_26_1",
+    "r22_24_1",
+    "r22_24_2",
+    "r22_24_3",
+    "r23_37_1",
+    "r23_37_2",
+    "r23_37_3",
+    "r23_47_1",
+    "r24_42_1",
+    "r24_42_2",
+    "r24_42_3",
+    "r24_42_4",
+    "r25_44_1",
+    "r25_44_2",
+    "r26_28_1",
+    "r26_28_2",
+    "r27_52_1",
+    "r28_39_1",
+    "r28_50_1",
+    "r29_38_1",
+    "r29_38_2",
+    "r2_22_1",
+    "r2_22_2",
+    "r2_46_1",
+    "r2_51_1",
+    "r30_36_1",
+    "r30_36_2",
+    "r31_46_1",
+    "r31_51_1",
+    "r32_44_1",
+    "r32_44_2",
+    "r33_35_1",
+    "r33_37_1",
+    "r33_37_2",
+    "r33_45_1",
+    "r34_40_1",
+    "r34_42_1",
+    "r34_48_1",
+    "r35_38_1",
+    "r36_48_1",
+    "r36_48_2",
+    "r39_40_1",
+    "r39_40_2",
+    "r39_40_3",
+    "r3_43_1",
+    "r3_4_1",
+    "r3_4_2",
+    "r3_52_1",
+    "r41_50_1",
+    "r4_15_1",
+    "r4_15_2",
+    "r4_15_3",
+    "r4_27_1",
+    "r5_30_1",
+    "r5_30_2",
+    "r5_39_1",
+    "r5_41_1",
+    "r5_48_1",
+    "r6_18_1",
+    "r6_35_1",
+    "r6_35_2",
+    "r7_22_1",
+    "r7_22_2",
+    "r7_29_1",
+    "r7_29_2",
+    "r7_42_1",
+    "r8_47_1",
+    "r8_51_1",
+    "r9_19_1",
+    "r9_19_2",
+    "r9_20_1",
+    "r9_20_2",
+    "r9_20_3",
+    "r9_52_1"
+  ],
+  "undetailedNodeIds": [
+    "g10hub",
+    "g10n0",
+    "g10n1",
+    "g10n2",
+    "g10n3",
+    "g10n4",
+    "g10n5",
+    "g10n6",
+    "g11n0",
+    "g11n1",
+    "g11n2",
+    "g11n3",
+    "g11n4",
+    "g11n5",
+    "g11n6",
+    "g11n7",
+    "g12n0",
+    "g12n1",
+    "g12n2",
+    "g12n3",
+    "g16n0",
+    "g16n1",
+    "g16n2",
+    "g16n3",
+    "g16n4",
+    "g16n5",
+    "g16n6",
+    "g16n7",
+    "g16n8",
+    "g17hub",
+    "g17n0",
+    "g17n1",
+    "g17n2",
+    "g17n3",
+    "g17n4",
+    "g17n5",
+    "g17n6",
+    "g18n0",
+    "g18n1",
+    "g18n2",
+    "g18n3",
+    "g18n4",
+    "g18n5",
+    "g18n6",
+    "g18n7",
+    "g19n0",
+    "g19n1",
+    "g19n2",
+    "g19n3",
+    "g19n4",
+    "g19n5",
+    "g20n0",
+    "g20n1",
+    "g20n2",
+    "g20n3",
+    "g20n4",
+    "g20n5",
+    "g20n6",
+    "g20n7",
+    "g20n8",
+    "g20n9",
+    "g24hub",
+    "g24n0",
+    "g24n1",
+    "g24n2",
+    "g24n3",
+    "g24n4",
+    "g24n5",
+    "g24n6",
+    "g27n0",
+    "g27n1",
+    "g27n2",
+    "g27n3",
+    "g27n4",
+    "g27n5",
+    "g27n6",
+    "g27n7",
+    "g27n8",
+    "g27n9",
+    "g28n0",
+    "g28n1",
+    "g28n2",
+    "g28n3",
+    "g28n4",
+    "g28n5",
+    "g28n6",
+    "g28n7",
+    "g2n0",
+    "g2n1",
+    "g2n2",
+    "g2n3",
+    "g2n4",
+    "g2n5",
+    "g2n6",
+    "g2n7",
+    "g31hub",
+    "g31n0",
+    "g31n1",
+    "g31n2",
+    "g31n3",
+    "g31n4",
+    "g31n5",
+    "g31n6",
+    "g32n0",
+    "g32n1",
+    "g32n2",
+    "g32n3",
+    "g32n4",
+    "g32n5",
+    "g32n6",
+    "g32n7",
+    "g33n0",
+    "g33n1",
+    "g33n2",
+    "g33n3",
+    "g33n4",
+    "g38hub",
+    "g39n0",
+    "g39n1",
+    "g39n2",
+    "g39n3",
+    "g39n4",
+    "g39n5",
+    "g39n6",
+    "g39n7",
+    "g3hub",
+    "g3n0",
+    "g3n1",
+    "g3n2",
+    "g3n3",
+    "g3n4",
+    "g3n5",
+    "g3n6",
+    "g40n0",
+    "g40n1",
+    "g40n2",
+    "g40n3",
+    "g40n4",
+    "g40n5",
+    "g41n0",
+    "g41n1",
+    "g41n2",
+    "g41n3",
+    "g41n4",
+    "g41n5",
+    "g41n6",
+    "g41n7",
+    "g41n8",
+    "g41n9",
+    "g42n0",
+    "g42n1",
+    "g42n2",
+    "g42n3",
+    "g42n4",
+    "g42n5",
+    "g42n6",
+    "g42n7",
+    "g43n0",
+    "g43n1",
+    "g43n2",
+    "g43n3",
+    "g43n4",
+    "g44n0",
+    "g44n1",
+    "g44n2",
+    "g44n3",
+    "g44n4",
+    "g44n5",
+    "g44n6",
+    "g44n7",
+    "g45hub",
+    "g46n0",
+    "g46n1",
+    "g46n2",
+    "g46n3",
+    "g46n4",
+    "g46n5",
+    "g46n6",
+    "g46n7",
+    "g47n0",
+    "g47n1",
+    "g47n2",
+    "g47n3",
+    "g47n4",
+    "g47n5",
+    "g4n0",
+    "g4n1",
+    "g4n2",
+    "g4n3",
+    "g4n4",
+    "g4n5",
+    "g4n6",
+    "g4n7",
+    "g52hub",
+    "g52n0",
+    "g52n1",
+    "g52n2",
+    "g52n3",
+    "g52n4",
+    "g52n5",
+    "g52n6",
+    "g6n0",
+    "g6n1",
+    "g6n2",
+    "g6n3",
+    "g6n4",
+    "g6n5",
+    "g6n6",
+    "g6n7",
+    "g6n8",
+    "g6n9",
+    "g7n0",
+    "g7n1",
+    "g7n2",
+    "g7n3",
+    "g7n4",
+    "g7n5",
+    "g7n6",
+    "g7n7",
+    "g8n0",
+    "g8n1",
+    "g8n2",
+    "g8n3",
+    "g8n4",
+    "g9n0",
+    "g9n1",
+    "g9n2",
+    "g9n3",
+    "g9n4",
+    "g9n5",
+    "g9n6",
+    "g9n7",
+    "join_assassin_0",
+    "join_assassin_1",
+    "join_assassin_2",
+    "join_healer_0",
+    "join_healer_1",
+    "join_healer_2",
+    "join_mage_0",
+    "join_mage_1",
+    "join_mage_2",
+    "join_ranger_0",
+    "join_ranger_1",
+    "join_ranger_2",
+    "join_templar_0",
+    "join_templar_1",
+    "join_templar_2",
+    "join_warrior_0",
+    "join_warrior_1",
+    "join_warrior_2",
+    "key_02",
+    "key_07",
+    "key_09",
+    "key_10",
+    "key_11",
+    "key_12",
+    "key_13",
+    "key_14",
+    "key_15",
+    "link_assassin_0_1",
+    "link_assassin_0_2",
+    "link_assassin_0_3",
+    "link_assassin_0_4",
+    "link_assassin_1_1",
+    "link_assassin_1_2",
+    "link_assassin_1_3",
+    "link_assassin_1_4",
+    "link_assassin_1_5",
+    "link_assassin_2_1",
+    "link_assassin_2_2",
+    "link_assassin_2_3",
+    "link_assassin_2_4",
+    "link_assassin_2_5",
+    "link_assassin_2_6",
+    "link_assassin_2_7",
+    "link_assassin_2_8",
+    "link_mage_0_1",
+    "link_mage_1_1",
+    "link_mage_2_1",
+    "link_ranger_0_1",
+    "link_ranger_0_2",
+    "link_ranger_1_1",
+    "link_ranger_1_2",
+    "link_ranger_2_1",
+    "link_ranger_2_2",
+    "link_ranger_2_3",
+    "link_ranger_2_4",
+    "link_templar_0_1",
+    "link_templar_0_2",
+    "link_templar_0_3",
+    "link_templar_1_1",
+    "link_templar_1_2",
+    "link_templar_2_1",
+    "link_warrior_0_1",
+    "link_warrior_0_10",
+    "link_warrior_0_2",
+    "link_warrior_0_3",
+    "link_warrior_0_4",
+    "link_warrior_0_5",
+    "link_warrior_0_6",
+    "link_warrior_0_7",
+    "link_warrior_0_8",
+    "link_warrior_0_9",
+    "link_warrior_1_1",
+    "link_warrior_1_10",
+    "link_warrior_1_11",
+    "link_warrior_1_2",
+    "link_warrior_1_3",
+    "link_warrior_1_4",
+    "link_warrior_1_5",
+    "link_warrior_1_6",
+    "link_warrior_1_7",
+    "link_warrior_1_8",
+    "link_warrior_1_9",
+    "link_warrior_2_1",
+    "link_warrior_2_10",
+    "link_warrior_2_2",
+    "link_warrior_2_3",
+    "link_warrior_2_4",
+    "link_warrior_2_5",
+    "link_warrior_2_6",
+    "link_warrior_2_7",
+    "link_warrior_2_8",
+    "link_warrior_2_9",
+    "opening_assassin_0_1",
+    "opening_assassin_0_2",
+    "opening_assassin_0_3",
+    "opening_assassin_1_1",
+    "opening_assassin_1_2",
+    "opening_assassin_1_3",
+    "opening_assassin_2_1",
+    "opening_assassin_2_2",
+    "opening_assassin_2_3",
+    "opening_mage_0_1",
+    "opening_mage_0_2",
+    "opening_mage_0_3",
+    "opening_mage_1_1",
+    "opening_mage_1_2",
+    "opening_mage_1_3",
+    "opening_mage_2_1",
+    "opening_mage_2_2",
+    "opening_mage_2_3",
+    "opening_ranger_0_1",
+    "opening_ranger_0_2",
+    "opening_ranger_0_3",
+    "opening_ranger_1_1",
+    "opening_ranger_1_2",
+    "opening_ranger_1_3",
+    "opening_ranger_2_1",
+    "opening_ranger_2_2",
+    "opening_ranger_2_3",
+    "opening_templar_0_1",
+    "opening_templar_0_2",
+    "opening_templar_0_3",
+    "opening_templar_1_1",
+    "opening_templar_1_2",
+    "opening_templar_1_3",
+    "opening_templar_2_1",
+    "opening_templar_2_2",
+    "opening_templar_2_3",
+    "origin_assassin",
+    "origin_mage",
+    "origin_ranger",
+    "origin_templar",
+    "r10_14_1",
+    "r10_14_2",
+    "r10_14_3",
+    "r10_32_1",
+    "r10_36_1",
+    "r10_36_2",
+    "r11_21_1",
+    "r11_28_1",
+    "r11_28_2",
+    "r11_40_1",
+    "r12_19_1",
+    "r12_19_2",
+    "r12_20_1",
+    "r12_46_1",
+    "r13_35_1",
+    "r13_45_1",
+    "r13_49_1",
+    "r14_27_1",
+    "r14_42_1",
+    "r15_25_1",
+    "r15_25_2",
+    "r15_32_1",
+    "r15_32_2",
+    "r15_43_1",
+    "r15_43_2",
+    "r15_43_3",
+    "r16_37_1",
+    "r16_37_2",
+    "r16_37_3",
+    "r16_38_1",
+    "r16_38_2",
+    "r16_47_1",
+    "r17_30_1",
+    "r17_44_1",
+    "r18_26_1",
+    "r18_26_2",
+    "r18_49_1",
+    "r19_24_1",
+    "r19_24_2",
+    "r19_27_1",
+    "r21_26_1",
+    "r22_24_1",
+    "r22_24_2",
+    "r22_24_3",
+    "r23_37_1",
+    "r23_37_2",
+    "r23_37_3",
+    "r23_47_1",
+    "r24_42_1",
+    "r24_42_2",
+    "r24_42_3",
+    "r24_42_4",
+    "r25_44_1",
+    "r25_44_2",
+    "r26_28_1",
+    "r26_28_2",
+    "r27_52_1",
+    "r28_39_1",
+    "r28_50_1",
+    "r29_38_1",
+    "r29_38_2",
+    "r30_36_1",
+    "r30_36_2",
+    "r31_46_1",
+    "r31_51_1",
+    "r32_44_1",
+    "r32_44_2",
+    "r33_35_1",
+    "r33_37_1",
+    "r33_37_2",
+    "r33_45_1",
+    "r34_40_1",
+    "r34_42_1",
+    "r34_48_1",
+    "r35_38_1",
+    "r36_48_1",
+    "r36_48_2",
+    "r39_40_1",
+    "r39_40_2",
+    "r39_40_3",
+    "r41_50_1",
+    "r9_20_2",
+    "r9_20_3",
+    "r9_52_1"
+  ],
+  "sourceIdsCoveredExactlyOnce": true,
+  "rules": [
+    "職業は入口であり、領域は所持入力に応じて全職共用",
+    "同じセルや同半径への複製を行わない",
+    "Keyは任意の終点で、通常育成の必須通過点にしない",
+    "領域間で長い中立一本道を作らず、道中の目標か別経路を置く",
+    "通路は元の197点から重複なく選び、実際の分岐と距離が決まってから使う"
+  ],
+  "routingStatus": "予約領域間の辺は意味関係のみ。詳細座標・交差検証は未完。",
+  "keyGoals": [
+    {
+      "id": "key_01",
+      "name": "守りの循環",
+      "group": "g51",
+      "requirements": [
+        "LIFESTEAL"
+      ],
+      "state": "detailed"
+    },
+    {
+      "id": "key_02",
+      "name": "血の代価",
+      "group": "g20",
+      "requirements": [
+        "MP_CONSUMER"
+      ],
+      "state": "reserved"
+    },
+    {
+      "id": "key_03",
+      "name": "深い裂傷",
+      "group": "g50",
+      "requirements": [
+        "BLEED_SOURCE"
+      ],
+      "state": "detailed"
+    },
+    {
+      "id": "key_04",
+      "name": "静かな刃",
+      "group": "g37",
+      "requirements": [
+        "DAMAGE"
+      ],
+      "state": "detailed"
+    },
+    {
+      "id": "key_05",
+      "name": "不動の核",
+      "group": "g49",
+      "requirements": [
+        "DODGE"
+      ],
+      "state": "detailed"
+    },
+    {
+      "id": "key_06",
+      "name": "余波の契約",
+      "group": "g34",
+      "requirements": [
+        "MELEE"
+      ],
+      "state": "detailed"
+    },
+    {
+      "id": "key_07",
+      "name": "異系統の武器",
+      "group": "g16",
+      "requirements": [
+        "CROSS_WEAPON_SKILL"
+      ],
+      "state": "reserved"
+    },
+    {
+      "id": "key_08",
+      "name": "単発集中",
+      "group": "g35",
+      "requirements": [
+        "MULTI"
+      ],
+      "state": "detailed"
+    },
+    {
+      "id": "key_09",
+      "name": "重ね撃ち",
+      "group": "g19",
+      "requirements": [
+        "DAMAGE",
+        "SIGNATURE"
+      ],
+      "state": "reserved"
+    },
+    {
+      "id": "key_10",
+      "name": "機会の返還",
+      "group": "g10",
+      "requirements": [
+        "MARK",
+        "MARK_CONSUMER"
+      ],
+      "state": "reserved"
+    },
+    {
+      "id": "key_11",
+      "name": "守りの分配",
+      "group": "g31",
+      "requirements": [
+        "ALLY_SHIELD"
+      ],
+      "state": "reserved"
+    },
+    {
+      "id": "key_12",
+      "name": "継続の毒刃",
+      "group": "g17",
+      "requirements": [
+        "MARK",
+        "DAMAGE"
+      ],
+      "state": "reserved"
+    },
+    {
+      "id": "key_13",
+      "name": "氷の攻撃機会",
+      "group": "g27",
+      "requirements": [
+        "ICE"
+      ],
+      "state": "reserved"
+    },
+    {
+      "id": "key_14",
+      "name": "残火の持続",
+      "group": "g47",
+      "requirements": [
+        "BURN"
+      ],
+      "state": "reserved"
+    },
+    {
+      "id": "key_15",
+      "name": "雷の収束",
+      "group": "g9",
+      "requirements": [
+        "CHAIN"
+      ],
+      "state": "reserved"
+    }
+  ],
+  "all47NeighborhoodsConnectedSemantically": true,
+  "all5OriginsHaveSharedNeighborhoodEntries": true
+}

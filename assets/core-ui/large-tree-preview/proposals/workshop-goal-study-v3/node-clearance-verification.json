@@ -1,0 +1,18 @@
+{
+  "status": "PASS",
+  "minimumNodeWirePaintGap": [
+    4.487134147145532,
+    "g35n6",
+    "g35n1",
+    "r3_4_2"
+  ],
+  "minimumNodePairPaintGap": [
+    4.3644175792659725,
+    "key_05",
+    "j22"
+  ],
+  "minimumZoom": 0.19,
+  "newRoads": 12,
+  "maximumNewNeutralDegree2Chain": 2,
+  "key04OptionalLeaf": true
+}

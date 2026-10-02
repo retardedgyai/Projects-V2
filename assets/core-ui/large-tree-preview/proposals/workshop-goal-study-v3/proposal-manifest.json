@@ -1,0 +1,35 @@
+{
+  "status": "STRUCTURE_STUDY",
+  "adopted": false,
+  "source645Sha256": "b04169fcdb5f9f020d8f4e0e36d1a035e0b9fee359e118aa811195fdaced56d7",
+  "source645EmbeddedVerbatim": true,
+  "displayedNodes": 197,
+  "displayedGroups": 17,
+  "connections": 225,
+  "newGroups": [
+    "g26",
+    "g37",
+    "g25",
+    "g48"
+  ],
+  "newRoads": [
+    "r6_35_1",
+    "r6_35_2",
+    "r7_22_1",
+    "r7_22_2",
+    "r7_29_1",
+    "r7_29_2",
+    "r7_42_1",
+    "r8_47_1",
+    "r8_51_1",
+    "r9_19_1",
+    "r9_19_2",
+    "r9_20_1"
+  ],
+  "full645LayoutCompleted": false,
+  "effectsCostsRequirementsUnchanged": true,
+  "previousFilesChanged": false,
+  "runtimeApplied": false,
+  "retainedV2Commit": "7cee655d",
+  "nextStep": "全47領域の配置計画に沿って他職業の入口と血の代価・魔力・障壁圏を詳細接続する。"
+}

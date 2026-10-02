@@ -1,0 +1,19 @@
+{
+  "status": "PASS",
+  "nonVertexCrossings": [],
+  "wireOverlaps": [],
+  "selfCrossingsIncluded": true,
+  "sharedEndEdgesChecked": true,
+  "minimumUnrelatedWireCenterGap": 79.66912709023964,
+  "minimumWirePaintGapAtMinimum19Percent": 12.937134147145532,
+  "nearest": {
+    "edges": [
+      90,
+      121
+    ],
+    "segments": [
+      0,
+      0
+    ]
+  }
+}

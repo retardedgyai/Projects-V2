@@ -1,0 +1,644 @@
+[
+  {
+    "id": "direct",
+    "label": "Keyに先に届く",
+    "targets": [
+      "key_05",
+      "key_01"
+    ],
+    "paths": [
+      {
+        "target": "key_05",
+        "nodes": [
+          "origin_warrior",
+          "opening_warrior_1_1",
+          "opening_warrior_1_2",
+          "opening_warrior_1_3",
+          "j1",
+          "g49n0",
+          "g49n1",
+          "g49n3",
+          "g49n4",
+          "g49n2",
+          "j15",
+          "j22",
+          "key_05"
+        ]
+      },
+      {
+        "target": "key_01",
+        "nodes": [
+          "g49n2",
+          "g49n5",
+          "r1_29_5",
+          "r1_29_6",
+          "r1_47_1",
+          "r1_47_2",
+          "g51n0",
+          "g51n2",
+          "g51n3",
+          "g51n1",
+          "g51n4",
+          "r1_29_3",
+          "r1_29_4",
+          "key_01"
+        ]
+      }
+    ],
+    "learned": [
+      "g49n0",
+      "g49n1",
+      "g49n2",
+      "g49n3",
+      "g49n4",
+      "g49n5",
+      "g51n0",
+      "g51n1",
+      "g51n2",
+      "g51n3",
+      "g51n4",
+      "j1",
+      "j15",
+      "j22",
+      "key_01",
+      "key_05",
+      "opening_warrior_1_1",
+      "opening_warrior_1_2",
+      "opening_warrior_1_3",
+      "origin_warrior",
+      "r1_29_3",
+      "r1_29_4",
+      "r1_29_5",
+      "r1_29_6",
+      "r1_47_1",
+      "r1_47_2"
+    ],
+    "spent": 29,
+    "stats": {
+      "armor": 52,
+      "hp": 41,
+      "resist": 23,
+      "barrier": 29.9
+    },
+    "keys": [
+      "key_01",
+      "key_05"
+    ],
+    "budget": 48,
+    "remaining": 19
+  },
+  {
+    "id": "growth",
+    "label": "生命・吸収を拾って届く",
+    "targets": [
+      "g45n2",
+      "g23n1",
+      "g13n3",
+      "g13n9",
+      "key_01",
+      "key_05"
+    ],
+    "paths": [
+      {
+        "target": "g45n2",
+        "nodes": [
+          "origin_warrior",
+          "opening_warrior_2_1",
+          "opening_warrior_2_2",
+          "opening_warrior_2_3",
+          "j36",
+          "r1_22_1",
+          "g45n0",
+          "g45n1",
+          "g45n3",
+          "g45n2"
+        ]
+      },
+      {
+        "target": "g23n1",
+        "nodes": [
+          "g45n2",
+          "r1_22_4",
+          "g23n0",
+          "g23n1"
+        ]
+      },
+      {
+        "target": "g13n3",
+        "nodes": [
+          "g23n0",
+          "g23n8",
+          "g23n7",
+          "g23n6",
+          "r1_29_1",
+          "g13n0",
+          "g13n3"
+        ]
+      },
+      {
+        "target": "g13n9",
+        "nodes": [
+          "g13n3",
+          "g13n9"
+        ]
+      },
+      {
+        "target": "key_01",
+        "nodes": [
+          "g13n9",
+          "g13n8",
+          "g13n7",
+          "r1_29_2",
+          "g51n8",
+          "g51n7",
+          "g51n6",
+          "g51n5",
+          "g51n4",
+          "r1_29_3",
+          "r1_29_4",
+          "key_01"
+        ]
+      },
+      {
+        "target": "key_05",
+        "nodes": [
+          "g45n0",
+          "j29",
+          "g49n1",
+          "g49n3",
+          "g49n4",
+          "g49n2",
+          "j15",
+          "j22",
+          "key_05"
+        ]
+      }
+    ],
+    "learned": [
+      "g13n0",
+      "g13n3",
+      "g13n7",
+      "g13n8",
+      "g13n9",
+      "g23n0",
+      "g23n1",
+      "g23n6",
+      "g23n7",
+      "g23n8",
+      "g45n0",
+      "g45n1",
+      "g45n2",
+      "g45n3",
+      "g49n1",
+      "g49n2",
+      "g49n3",
+      "g49n4",
+      "g51n4",
+      "g51n5",
+      "g51n6",
+      "g51n7",
+      "g51n8",
+      "j15",
+      "j22",
+      "j29",
+      "j36",
+      "key_01",
+      "key_05",
+      "opening_warrior_2_1",
+      "opening_warrior_2_2",
+      "opening_warrior_2_3",
+      "origin_warrior",
+      "r1_22_1",
+      "r1_22_4",
+      "r1_29_1",
+      "r1_29_2",
+      "r1_29_3",
+      "r1_29_4"
+    ],
+    "spent": 42,
+    "stats": {
+      "leech": 1.32,
+      "hp": 45,
+      "resist": 50,
+      "mana": 10,
+      "regen": 26,
+      "armor": 37,
+      "barrier": 32,
+      "attackSpeed": 11,
+      "resource": 4
+    },
+    "keys": [
+      "key_01",
+      "key_05"
+    ],
+    "budget": 48,
+    "remaining": 6
+  },
+  {
+    "id": "weapon",
+    "label": "一撃と手数を育てる",
+    "targets": [
+      "g35n1",
+      "g30n1",
+      "g30n4",
+      "g14n4"
+    ],
+    "paths": [
+      {
+        "target": "g35n1",
+        "nodes": [
+          "origin_warrior",
+          "opening_warrior_1_1",
+          "opening_warrior_1_2",
+          "opening_warrior_1_3",
+          "j1",
+          "g49n0",
+          "g49n7",
+          "g49n6",
+          "r1_51_1",
+          "g35n0",
+          "g35n2",
+          "g35n1"
+        ]
+      },
+      {
+        "target": "g30n1",
+        "nodes": [
+          "opening_warrior_1_3",
+          "r2_22_1",
+          "g30n0",
+          "g30n2",
+          "g30n3",
+          "g30n1"
+        ]
+      },
+      {
+        "target": "g30n4",
+        "nodes": [
+          "g30n1",
+          "g30n4"
+        ]
+      },
+      {
+        "target": "g14n4",
+        "nodes": [
+          "g35n0",
+          "g35n3",
+          "g35n4",
+          "r2_51_1",
+          "g14n7",
+          "g14n6",
+          "g14n5",
+          "g14n4"
+        ]
+      }
+    ],
+    "learned": [
+      "g14n4",
+      "g14n5",
+      "g14n6",
+      "g14n7",
+      "g30n0",
+      "g30n1",
+      "g30n2",
+      "g30n3",
+      "g30n4",
+      "g35n0",
+      "g35n1",
+      "g35n2",
+      "g35n3",
+      "g35n4",
+      "g49n0",
+      "g49n6",
+      "g49n7",
+      "j1",
+      "opening_warrior_1_1",
+      "opening_warrior_1_2",
+      "opening_warrior_1_3",
+      "origin_warrior",
+      "r1_51_1",
+      "r2_22_1",
+      "r2_51_1"
+    ],
+    "spent": 24,
+    "stats": {
+      "resource": 39,
+      "efficiency": 8,
+      "attackSpeed": 14.95,
+      "physical": 27,
+      "armor": 42,
+      "hp": 24
+    },
+    "keys": [],
+    "budget": 48,
+    "remaining": 24
+  },
+  {
+    "id": "area",
+    "label": "近接の広さへ投資",
+    "targets": [
+      "g34n2",
+      "g34n8",
+      "key_06"
+    ],
+    "paths": [
+      {
+        "target": "g34n2",
+        "nodes": [
+          "origin_warrior",
+          "opening_warrior_1_1",
+          "opening_warrior_1_2",
+          "opening_warrior_1_3",
+          "j1",
+          "g49n0",
+          "g49n7",
+          "g49n6",
+          "r1_51_1",
+          "g35n0",
+          "g35n2",
+          "g35n1",
+          "r3_4_2",
+          "r3_4_1",
+          "r3_52_1",
+          "g34n0",
+          "g34n1",
+          "g34n3",
+          "g34n2"
+        ]
+      },
+      {
+        "target": "g34n8",
+        "nodes": [
+          "g34n2",
+          "g34n8"
+        ]
+      },
+      {
+        "target": "key_06",
+        "nodes": [
+          "g34n2",
+          "r4_15_1",
+          "r4_15_2",
+          "key_06"
+        ]
+      }
+    ],
+    "learned": [
+      "g34n0",
+      "g34n1",
+      "g34n2",
+      "g34n3",
+      "g34n8",
+      "g35n0",
+      "g35n1",
+      "g35n2",
+      "g49n0",
+      "g49n6",
+      "g49n7",
+      "j1",
+      "key_06",
+      "opening_warrior_1_1",
+      "opening_warrior_1_2",
+      "opening_warrior_1_3",
+      "origin_warrior",
+      "r1_51_1",
+      "r3_4_1",
+      "r3_4_2",
+      "r3_52_1",
+      "r4_15_1",
+      "r4_15_2"
+    ],
+    "spent": 24,
+    "stats": {
+      "aoe": 20.95,
+      "physical": 32,
+      "armor": 37,
+      "hp": 30
+    },
+    "keys": [
+      "key_06"
+    ],
+    "budget": 48,
+    "remaining": 24
+  },
+  {
+    "id": "single",
+    "label": "連撃を一撃へ集約",
+    "targets": [
+      "g35n1",
+      "key_08"
+    ],
+    "paths": [
+      {
+        "target": "g35n1",
+        "nodes": [
+          "origin_warrior",
+          "opening_warrior_1_1",
+          "opening_warrior_1_2",
+          "opening_warrior_1_3",
+          "j1",
+          "g49n0",
+          "g49n7",
+          "g49n6",
+          "r1_51_1",
+          "g35n0",
+          "g35n2",
+          "g35n1"
+        ]
+      },
+      {
+        "target": "key_08",
+        "nodes": [
+          "g35n1",
+          "r3_4_2",
+          "r3_4_1",
+          "key_08"
+        ]
+      }
+    ],
+    "learned": [
+      "g35n0",
+      "g35n1",
+      "g35n2",
+      "g49n0",
+      "g49n6",
+      "g49n7",
+      "j1",
+      "key_08",
+      "opening_warrior_1_1",
+      "opening_warrior_1_2",
+      "opening_warrior_1_3",
+      "origin_warrior",
+      "r1_51_1",
+      "r3_4_1",
+      "r3_4_2"
+    ],
+    "spent": 16,
+    "stats": {
+      "physical": 22,
+      "armor": 37,
+      "hp": 24
+    },
+    "keys": [
+      "key_08"
+    ],
+    "budget": 48,
+    "remaining": 32
+  },
+  {
+    "id": "critical",
+    "label": "会心と弱点へ投資",
+    "targets": [
+      "g25n6",
+      "g48n4",
+      "g48n8"
+    ],
+    "paths": [
+      {
+        "target": "g25n6",
+        "nodes": [
+          "origin_warrior",
+          "opening_warrior_1_1",
+          "opening_warrior_1_2",
+          "opening_warrior_1_3",
+          "r2_22_1",
+          "g30n0",
+          "g30n2",
+          "r7_29_1",
+          "r7_29_2",
+          "g25n0",
+          "g25n1",
+          "g25n2",
+          "g25n6"
+        ]
+      },
+      {
+        "target": "g48n4",
+        "nodes": [
+          "g25n6",
+          "g25n7",
+          "r8_51_1",
+          "g48n0",
+          "g48n3",
+          "g48n4"
+        ]
+      },
+      {
+        "target": "g48n8",
+        "nodes": [
+          "g48n4",
+          "g48n6",
+          "g48n9",
+          "g48n8"
+        ]
+      }
+    ],
+    "learned": [
+      "g25n0",
+      "g25n1",
+      "g25n2",
+      "g25n6",
+      "g25n7",
+      "g30n0",
+      "g30n2",
+      "g48n0",
+      "g48n3",
+      "g48n4",
+      "g48n6",
+      "g48n8",
+      "g48n9",
+      "opening_warrior_1_1",
+      "opening_warrior_1_2",
+      "opening_warrior_1_3",
+      "origin_warrior",
+      "r2_22_1",
+      "r7_29_1",
+      "r7_29_2",
+      "r8_51_1"
+    ],
+    "spent": 20,
+    "stats": {
+      "crit": 129,
+      "critMulti": 15,
+      "resource": 4,
+      "attackSpeed": 3,
+      "hp": 24,
+      "armor": 8
+    },
+    "keys": [],
+    "budget": 48,
+    "remaining": 28
+  },
+  {
+    "id": "quiet",
+    "label": "会心を捨てて一撃へ",
+    "targets": [
+      "g37n0",
+      "g37n4",
+      "key_04"
+    ],
+    "paths": [
+      {
+        "target": "g37n0",
+        "nodes": [
+          "origin_warrior",
+          "opening_warrior_2_1",
+          "opening_warrior_2_2",
+          "r6_35_1",
+          "r6_35_2",
+          "g26n1",
+          "g26n3",
+          "r7_22_1",
+          "g37n1",
+          "g37n0"
+        ]
+      },
+      {
+        "target": "g37n4",
+        "nodes": [
+          "g37n0",
+          "g37n6",
+          "g37n7",
+          "g37n4"
+        ]
+      },
+      {
+        "target": "key_04",
+        "nodes": [
+          "g37n4",
+          "r7_22_2",
+          "key_04"
+        ]
+      }
+    ],
+    "learned": [
+      "g26n1",
+      "g26n3",
+      "g37n0",
+      "g37n1",
+      "g37n4",
+      "g37n6",
+      "g37n7",
+      "key_04",
+      "opening_warrior_2_1",
+      "opening_warrior_2_2",
+      "origin_warrior",
+      "r6_35_1",
+      "r6_35_2",
+      "r7_22_1",
+      "r7_22_2"
+    ],
+    "spent": 16,
+    "stats": {
+      "attackSpeed": 13,
+      "physical": 10,
+      "penetration": 10.97,
+      "hp": 8
+    },
+    "keys": [
+      "key_04"
+    ],
+    "budget": 48,
+    "remaining": 32
+  }
+]
