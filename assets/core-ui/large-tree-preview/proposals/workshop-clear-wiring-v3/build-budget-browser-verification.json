@@ -1,0 +1,167 @@
+{
+  "status": "PASS",
+  "validImports": 24,
+  "unavailableExamples": 3,
+  "checked": [
+    {
+      "version": "original",
+      "budget": 48,
+      "strategy": "weapon",
+      "spent": 48
+    },
+    {
+      "version": "original",
+      "budget": 48,
+      "strategy": "survival",
+      "spent": 48
+    },
+    {
+      "version": "original",
+      "budget": 48,
+      "strategy": "two_key",
+      "spent": 48
+    },
+    {
+      "version": "original",
+      "budget": 64,
+      "strategy": "weapon",
+      "spent": 64
+    },
+    {
+      "version": "original",
+      "budget": 64,
+      "strategy": "survival",
+      "spent": 64
+    },
+    {
+      "version": "original",
+      "budget": 64,
+      "strategy": "two_key",
+      "spent": 64
+    },
+    {
+      "version": "original",
+      "budget": 80,
+      "strategy": "weapon",
+      "spent": 80
+    },
+    {
+      "version": "original",
+      "budget": 80,
+      "strategy": "survival",
+      "spent": 80
+    },
+    {
+      "version": "original",
+      "budget": 80,
+      "strategy": "two_key",
+      "spent": 80
+    },
+    {
+      "version": "previous",
+      "budget": 48,
+      "strategy": "weapon",
+      "spent": 48
+    },
+    {
+      "version": "previous",
+      "budget": 48,
+      "strategy": "survival",
+      "spent": 48
+    },
+    {
+      "version": "previous",
+      "budget": 48,
+      "strategy": "two_key",
+      "spent": 48
+    },
+    {
+      "version": "previous",
+      "budget": 64,
+      "strategy": "weapon",
+      "spent": 64
+    },
+    {
+      "version": "previous",
+      "budget": 64,
+      "strategy": "survival",
+      "spent": 64
+    },
+    {
+      "version": "previous",
+      "budget": 64,
+      "strategy": "two_key",
+      "spent": 64
+    },
+    {
+      "version": "previous",
+      "budget": 80,
+      "strategy": "weapon",
+      "spent": 80
+    },
+    {
+      "version": "previous",
+      "budget": 80,
+      "strategy": "survival",
+      "spent": 80
+    },
+    {
+      "version": "previous",
+      "budget": 80,
+      "strategy": "two_key",
+      "spent": 80
+    },
+    {
+      "version": "proposal",
+      "budget": 48,
+      "strategy": "weapon",
+      "spent": 48
+    },
+    {
+      "version": "proposal",
+      "budget": 48,
+      "strategy": "survival",
+      "spent": 48
+    },
+    {
+      "version": "proposal",
+      "budget": 64,
+      "strategy": "weapon",
+      "spent": 64
+    },
+    {
+      "version": "proposal",
+      "budget": 64,
+      "strategy": "survival",
+      "spent": 64
+    },
+    {
+      "version": "proposal",
+      "budget": 80,
+      "strategy": "weapon",
+      "spent": 80
+    },
+    {
+      "version": "proposal",
+      "budget": 80,
+      "strategy": "survival",
+      "spent": 80
+    }
+  ],
+  "g24hubEffective": {
+    "present": false,
+    "missing": [
+      "魔法ダメージ：現在の入力なし"
+    ],
+    "gate": true,
+    "usable": {},
+    "unsupported": {
+      "magic": {
+        "value": 5,
+        "flags": [
+          "AP"
+        ]
+      }
+    }
+  }
+}

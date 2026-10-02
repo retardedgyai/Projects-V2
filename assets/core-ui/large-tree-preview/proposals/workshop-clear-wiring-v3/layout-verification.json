@@ -1,0 +1,24 @@
+{
+  "nodes": 645,
+  "regions": 47,
+  "connections": 708,
+  "all645CoordinatesMirrored": true,
+  "mirrorMaxDeviation": 0.0,
+  "nodeOverlaps": [],
+  "edgeNodeCollisions": [],
+  "collinearWireOverlaps": [],
+  "detours": 10,
+  "nonVertexCrossingsMarkedWithGaps": 0,
+  "maxRoutedLength": 720.93,
+  "medianRoutedLength": 180.0,
+  "bounds": {
+    "minX": -4647.097,
+    "maxX": 4647.097,
+    "minY": -4140.0,
+    "maxY": 4170.0
+  },
+  "shortenedDetourOrbits": 0,
+  "maxBeforeDetourImprovement": 720.93,
+  "clearanceIncludesSelectionHalo": true,
+  "relaxationIterations": 0
+}
