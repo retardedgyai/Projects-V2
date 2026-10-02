@@ -1,0 +1,931 @@
+{
+  "structuralOnly": true,
+  "inputRequirementsStillEnforcedByUI": true,
+  "otherStartsCannotBeTransit": true,
+  "allNonKeyNodesReachableWithoutKeys": true,
+  "singleKeyCosts": [
+    {
+      "origin": "warrior",
+      "key": "key_01",
+      "original": 22,
+      "proposal": 24,
+      "delta": 2,
+      "previous": 21,
+      "deltaFromPrevious": 3
+    },
+    {
+      "origin": "warrior",
+      "key": "key_02",
+      "original": 29,
+      "proposal": 22,
+      "delta": -7,
+      "previous": 21,
+      "deltaFromPrevious": 1
+    },
+    {
+      "origin": "warrior",
+      "key": "key_03",
+      "original": 26,
+      "proposal": 18,
+      "delta": -8,
+      "previous": 15,
+      "deltaFromPrevious": 3
+    },
+    {
+      "origin": "warrior",
+      "key": "key_04",
+      "original": 22,
+      "proposal": 23,
+      "delta": 1,
+      "previous": 22,
+      "deltaFromPrevious": 1
+    },
+    {
+      "origin": "warrior",
+      "key": "key_05",
+      "original": 20,
+      "proposal": 26,
+      "delta": 6,
+      "previous": 22,
+      "deltaFromPrevious": 4
+    },
+    {
+      "origin": "warrior",
+      "key": "key_06",
+      "original": 29,
+      "proposal": 23,
+      "delta": -6,
+      "previous": 19,
+      "deltaFromPrevious": 4
+    },
+    {
+      "origin": "warrior",
+      "key": "key_07",
+      "original": 16,
+      "proposal": 18,
+      "delta": 2,
+      "previous": 20,
+      "deltaFromPrevious": -2
+    },
+    {
+      "origin": "warrior",
+      "key": "key_08",
+      "original": 13,
+      "proposal": 16,
+      "delta": 3,
+      "previous": 13,
+      "deltaFromPrevious": 3
+    },
+    {
+      "origin": "warrior",
+      "key": "key_09",
+      "original": 26,
+      "proposal": 24,
+      "delta": -2,
+      "previous": 19,
+      "deltaFromPrevious": 5
+    },
+    {
+      "origin": "warrior",
+      "key": "key_10",
+      "original": 32,
+      "proposal": 21,
+      "delta": -11,
+      "previous": 18,
+      "deltaFromPrevious": 3
+    },
+    {
+      "origin": "warrior",
+      "key": "key_11",
+      "original": 24,
+      "proposal": 21,
+      "delta": -3,
+      "previous": 17,
+      "deltaFromPrevious": 4
+    },
+    {
+      "origin": "warrior",
+      "key": "key_12",
+      "original": 40,
+      "proposal": 27,
+      "delta": -13,
+      "previous": 18,
+      "deltaFromPrevious": 9
+    },
+    {
+      "origin": "warrior",
+      "key": "key_13",
+      "original": 28,
+      "proposal": 28,
+      "delta": 0,
+      "previous": 24,
+      "deltaFromPrevious": 4
+    },
+    {
+      "origin": "warrior",
+      "key": "key_14",
+      "original": 20,
+      "proposal": 26,
+      "delta": 6,
+      "previous": 16,
+      "deltaFromPrevious": 10
+    },
+    {
+      "origin": "warrior",
+      "key": "key_15",
+      "original": 30,
+      "proposal": 20,
+      "delta": -10,
+      "previous": 18,
+      "deltaFromPrevious": 2
+    },
+    {
+      "origin": "tank",
+      "key": "key_01",
+      "original": 21,
+      "proposal": 23,
+      "delta": 2,
+      "previous": 20,
+      "deltaFromPrevious": 3
+    },
+    {
+      "origin": "tank",
+      "key": "key_02",
+      "original": 23,
+      "proposal": 18,
+      "delta": -5,
+      "previous": 18,
+      "deltaFromPrevious": 0
+    },
+    {
+      "origin": "tank",
+      "key": "key_03",
+      "original": 29,
+      "proposal": 24,
+      "delta": -5,
+      "previous": 18,
+      "deltaFromPrevious": 6
+    },
+    {
+      "origin": "tank",
+      "key": "key_04",
+      "original": 26,
+      "proposal": 23,
+      "delta": -3,
+      "previous": 22,
+      "deltaFromPrevious": 1
+    },
+    {
+      "origin": "tank",
+      "key": "key_05",
+      "original": 28,
+      "proposal": 25,
+      "delta": -3,
+      "previous": 21,
+      "deltaFromPrevious": 4
+    },
+    {
+      "origin": "tank",
+      "key": "key_06",
+      "original": 22,
+      "proposal": 23,
+      "delta": 1,
+      "previous": 19,
+      "deltaFromPrevious": 4
+    },
+    {
+      "origin": "tank",
+      "key": "key_07",
+      "original": 20,
+      "proposal": 22,
+      "delta": 2,
+      "previous": 18,
+      "deltaFromPrevious": 4
+    },
+    {
+      "origin": "tank",
+      "key": "key_08",
+      "original": 19,
+      "proposal": 22,
+      "delta": 3,
+      "previous": 17,
+      "deltaFromPrevious": 5
+    },
+    {
+      "origin": "tank",
+      "key": "key_09",
+      "original": 20,
+      "proposal": 25,
+      "delta": 5,
+      "previous": 20,
+      "deltaFromPrevious": 5
+    },
+    {
+      "origin": "tank",
+      "key": "key_10",
+      "original": 25,
+      "proposal": 21,
+      "delta": -4,
+      "previous": 18,
+      "deltaFromPrevious": 3
+    },
+    {
+      "origin": "tank",
+      "key": "key_11",
+      "original": 23,
+      "proposal": 17,
+      "delta": -6,
+      "previous": 13,
+      "deltaFromPrevious": 4
+    },
+    {
+      "origin": "tank",
+      "key": "key_12",
+      "original": 35,
+      "proposal": 27,
+      "delta": -8,
+      "previous": 19,
+      "deltaFromPrevious": 8
+    },
+    {
+      "origin": "tank",
+      "key": "key_13",
+      "original": 22,
+      "proposal": 28,
+      "delta": 6,
+      "previous": 24,
+      "deltaFromPrevious": 4
+    },
+    {
+      "origin": "tank",
+      "key": "key_14",
+      "original": 22,
+      "proposal": 26,
+      "delta": 4,
+      "previous": 17,
+      "deltaFromPrevious": 9
+    },
+    {
+      "origin": "tank",
+      "key": "key_15",
+      "original": 24,
+      "proposal": 20,
+      "delta": -4,
+      "previous": 17,
+      "deltaFromPrevious": 3
+    },
+    {
+      "origin": "mage",
+      "key": "key_01",
+      "original": 18,
+      "proposal": 20,
+      "delta": 2,
+      "previous": 16,
+      "deltaFromPrevious": 4
+    },
+    {
+      "origin": "mage",
+      "key": "key_02",
+      "original": 20,
+      "proposal": 17,
+      "delta": -3,
+      "previous": 14,
+      "deltaFromPrevious": 3
+    },
+    {
+      "origin": "mage",
+      "key": "key_03",
+      "original": 26,
+      "proposal": 27,
+      "delta": 1,
+      "previous": 21,
+      "deltaFromPrevious": 6
+    },
+    {
+      "origin": "mage",
+      "key": "key_04",
+      "original": 29,
+      "proposal": 24,
+      "delta": -5,
+      "previous": 22,
+      "deltaFromPrevious": 2
+    },
+    {
+      "origin": "mage",
+      "key": "key_05",
+      "original": 31,
+      "proposal": 22,
+      "delta": -9,
+      "previous": 19,
+      "deltaFromPrevious": 3
+    },
+    {
+      "origin": "mage",
+      "key": "key_06",
+      "original": 19,
+      "proposal": 26,
+      "delta": 7,
+      "previous": 21,
+      "deltaFromPrevious": 5
+    },
+    {
+      "origin": "mage",
+      "key": "key_07",
+      "original": 23,
+      "proposal": 24,
+      "delta": 1,
+      "previous": 22,
+      "deltaFromPrevious": 2
+    },
+    {
+      "origin": "mage",
+      "key": "key_08",
+      "original": 22,
+      "proposal": 25,
+      "delta": 3,
+      "previous": 21,
+      "deltaFromPrevious": 4
+    },
+    {
+      "origin": "mage",
+      "key": "key_09",
+      "original": 17,
+      "proposal": 28,
+      "delta": 11,
+      "previous": 23,
+      "deltaFromPrevious": 5
+    },
+    {
+      "origin": "mage",
+      "key": "key_10",
+      "original": 22,
+      "proposal": 23,
+      "delta": 1,
+      "previous": 18,
+      "deltaFromPrevious": 5
+    },
+    {
+      "origin": "mage",
+      "key": "key_11",
+      "original": 20,
+      "proposal": 19,
+      "delta": -1,
+      "previous": 15,
+      "deltaFromPrevious": 4
+    },
+    {
+      "origin": "mage",
+      "key": "key_12",
+      "original": 32,
+      "proposal": 28,
+      "delta": -4,
+      "previous": 22,
+      "deltaFromPrevious": 6
+    },
+    {
+      "origin": "mage",
+      "key": "key_13",
+      "original": 19,
+      "proposal": 29,
+      "delta": 10,
+      "previous": 26,
+      "deltaFromPrevious": 3
+    },
+    {
+      "origin": "mage",
+      "key": "key_14",
+      "original": 22,
+      "proposal": 27,
+      "delta": 5,
+      "previous": 20,
+      "deltaFromPrevious": 7
+    },
+    {
+      "origin": "mage",
+      "key": "key_15",
+      "original": 21,
+      "proposal": 15,
+      "delta": -6,
+      "previous": 13,
+      "deltaFromPrevious": 2
+    },
+    {
+      "origin": "ranger",
+      "key": "key_01",
+      "original": 23,
+      "proposal": 18,
+      "delta": -5,
+      "previous": 16,
+      "deltaFromPrevious": 2
+    },
+    {
+      "origin": "ranger",
+      "key": "key_02",
+      "original": 25,
+      "proposal": 18,
+      "delta": -7,
+      "previous": 18,
+      "deltaFromPrevious": 0
+    },
+    {
+      "origin": "ranger",
+      "key": "key_03",
+      "original": 18,
+      "proposal": 24,
+      "delta": 6,
+      "previous": 18,
+      "deltaFromPrevious": 6
+    },
+    {
+      "origin": "ranger",
+      "key": "key_04",
+      "original": 36,
+      "proposal": 22,
+      "delta": -14,
+      "previous": 18,
+      "deltaFromPrevious": 4
+    },
+    {
+      "origin": "ranger",
+      "key": "key_05",
+      "original": 31,
+      "proposal": 20,
+      "delta": -11,
+      "previous": 17,
+      "deltaFromPrevious": 3
+    },
+    {
+      "origin": "ranger",
+      "key": "key_06",
+      "original": 12,
+      "proposal": 23,
+      "delta": 11,
+      "previous": 17,
+      "deltaFromPrevious": 6
+    },
+    {
+      "origin": "ranger",
+      "key": "key_07",
+      "original": 29,
+      "proposal": 23,
+      "delta": -6,
+      "previous": 22,
+      "deltaFromPrevious": 1
+    },
+    {
+      "origin": "ranger",
+      "key": "key_08",
+      "original": 30,
+      "proposal": 22,
+      "delta": -8,
+      "previous": 18,
+      "deltaFromPrevious": 4
+    },
+    {
+      "origin": "ranger",
+      "key": "key_09",
+      "original": 22,
+      "proposal": 25,
+      "delta": 3,
+      "previous": 19,
+      "deltaFromPrevious": 6
+    },
+    {
+      "origin": "ranger",
+      "key": "key_10",
+      "original": 21,
+      "proposal": 21,
+      "delta": 0,
+      "previous": 14,
+      "deltaFromPrevious": 7
+    },
+    {
+      "origin": "ranger",
+      "key": "key_11",
+      "original": 25,
+      "proposal": 22,
+      "delta": -3,
+      "previous": 17,
+      "deltaFromPrevious": 5
+    },
+    {
+      "origin": "ranger",
+      "key": "key_12",
+      "original": 24,
+      "proposal": 26,
+      "delta": 2,
+      "previous": 18,
+      "deltaFromPrevious": 8
+    },
+    {
+      "origin": "ranger",
+      "key": "key_13",
+      "original": 19,
+      "proposal": 27,
+      "delta": 8,
+      "previous": 22,
+      "deltaFromPrevious": 5
+    },
+    {
+      "origin": "ranger",
+      "key": "key_14",
+      "original": 27,
+      "proposal": 25,
+      "delta": -2,
+      "previous": 17,
+      "deltaFromPrevious": 8
+    },
+    {
+      "origin": "ranger",
+      "key": "key_15",
+      "original": 26,
+      "proposal": 15,
+      "delta": -11,
+      "previous": 15,
+      "deltaFromPrevious": 0
+    },
+    {
+      "origin": "assassin",
+      "key": "key_01",
+      "original": 33,
+      "proposal": 24,
+      "delta": -9,
+      "previous": 20,
+      "deltaFromPrevious": 4
+    },
+    {
+      "origin": "assassin",
+      "key": "key_02",
+      "original": 35,
+      "proposal": 22,
+      "delta": -13,
+      "previous": 21,
+      "deltaFromPrevious": 1
+    },
+    {
+      "origin": "assassin",
+      "key": "key_03",
+      "original": 16,
+      "proposal": 18,
+      "delta": 2,
+      "previous": 15,
+      "deltaFromPrevious": 3
+    },
+    {
+      "origin": "assassin",
+      "key": "key_04",
+      "original": 44,
+      "proposal": 18,
+      "delta": -26,
+      "previous": 20,
+      "deltaFromPrevious": -2
+    },
+    {
+      "origin": "assassin",
+      "key": "key_05",
+      "original": 27,
+      "proposal": 24,
+      "delta": -3,
+      "previous": 21,
+      "deltaFromPrevious": 3
+    },
+    {
+      "origin": "assassin",
+      "key": "key_06",
+      "original": 15,
+      "proposal": 17,
+      "delta": 2,
+      "previous": 15,
+      "deltaFromPrevious": 2
+    },
+    {
+      "origin": "assassin",
+      "key": "key_07",
+      "original": 39,
+      "proposal": 23,
+      "delta": -16,
+      "previous": 22,
+      "deltaFromPrevious": 1
+    },
+    {
+      "origin": "assassin",
+      "key": "key_08",
+      "original": 33,
+      "proposal": 22,
+      "delta": -11,
+      "previous": 17,
+      "deltaFromPrevious": 5
+    },
+    {
+      "origin": "assassin",
+      "key": "key_09",
+      "original": 30,
+      "proposal": 19,
+      "delta": -11,
+      "previous": 15,
+      "deltaFromPrevious": 4
+    },
+    {
+      "origin": "assassin",
+      "key": "key_10",
+      "original": 23,
+      "proposal": 18,
+      "delta": -5,
+      "previous": 16,
+      "deltaFromPrevious": 2
+    },
+    {
+      "origin": "assassin",
+      "key": "key_11",
+      "original": 35,
+      "proposal": 23,
+      "delta": -12,
+      "previous": 18,
+      "deltaFromPrevious": 5
+    },
+    {
+      "origin": "assassin",
+      "key": "key_12",
+      "original": 26,
+      "proposal": 22,
+      "delta": -4,
+      "previous": 14,
+      "deltaFromPrevious": 8
+    },
+    {
+      "origin": "assassin",
+      "key": "key_13",
+      "original": 27,
+      "proposal": 23,
+      "delta": -4,
+      "previous": 20,
+      "deltaFromPrevious": 3
+    },
+    {
+      "origin": "assassin",
+      "key": "key_14",
+      "original": 37,
+      "proposal": 21,
+      "delta": -16,
+      "previous": 14,
+      "deltaFromPrevious": 7
+    },
+    {
+      "origin": "assassin",
+      "key": "key_15",
+      "original": 35,
+      "proposal": 20,
+      "delta": -15,
+      "previous": 18,
+      "deltaFromPrevious": 2
+    }
+  ],
+  "twoKeyExactSteinerCosts": [
+    {
+      "origin": "warrior",
+      "keys": [
+        "key_01",
+        "key_05"
+      ],
+      "original": 40,
+      "proposal": 38,
+      "delta": -2,
+      "previous": 32,
+      "deltaFromPrevious": 6
+    },
+    {
+      "origin": "warrior",
+      "keys": [
+        "key_02",
+        "key_09"
+      ],
+      "original": 35,
+      "proposal": 41,
+      "delta": 6,
+      "previous": 36,
+      "deltaFromPrevious": 5
+    },
+    {
+      "origin": "warrior",
+      "keys": [
+        "key_13",
+        "key_15"
+      ],
+      "original": 37,
+      "proposal": 42,
+      "delta": 5,
+      "previous": 37,
+      "deltaFromPrevious": 5
+    },
+    {
+      "origin": "warrior",
+      "keys": [
+        "key_14",
+        "key_15"
+      ],
+      "original": 40,
+      "proposal": 40,
+      "delta": 0,
+      "previous": 30,
+      "deltaFromPrevious": 10
+    },
+    {
+      "origin": "tank",
+      "keys": [
+        "key_01",
+        "key_05"
+      ],
+      "original": 43,
+      "proposal": 37,
+      "delta": -6,
+      "previous": 31,
+      "deltaFromPrevious": 6
+    },
+    {
+      "origin": "tank",
+      "keys": [
+        "key_02",
+        "key_09"
+      ],
+      "original": 29,
+      "proposal": 40,
+      "delta": 11,
+      "previous": 35,
+      "deltaFromPrevious": 5
+    },
+    {
+      "origin": "tank",
+      "keys": [
+        "key_13",
+        "key_15"
+      ],
+      "original": 31,
+      "proposal": 42,
+      "delta": 11,
+      "previous": 37,
+      "deltaFromPrevious": 5
+    },
+    {
+      "origin": "tank",
+      "keys": [
+        "key_14",
+        "key_15"
+      ],
+      "original": 38,
+      "proposal": 40,
+      "delta": 2,
+      "previous": 30,
+      "deltaFromPrevious": 10
+    },
+    {
+      "origin": "mage",
+      "keys": [
+        "key_01",
+        "key_05"
+      ],
+      "original": 45,
+      "proposal": 34,
+      "delta": -11,
+      "previous": 27,
+      "deltaFromPrevious": 7
+    },
+    {
+      "origin": "mage",
+      "keys": [
+        "key_02",
+        "key_09"
+      ],
+      "original": 26,
+      "proposal": 41,
+      "delta": 15,
+      "previous": 35,
+      "deltaFromPrevious": 6
+    },
+    {
+      "origin": "mage",
+      "keys": [
+        "key_13",
+        "key_15"
+      ],
+      "original": 28,
+      "proposal": 39,
+      "delta": 11,
+      "previous": 35,
+      "deltaFromPrevious": 4
+    },
+    {
+      "origin": "mage",
+      "keys": [
+        "key_14",
+        "key_15"
+      ],
+      "original": 35,
+      "proposal": 37,
+      "delta": 2,
+      "previous": 29,
+      "deltaFromPrevious": 8
+    },
+    {
+      "origin": "ranger",
+      "keys": [
+        "key_01",
+        "key_05"
+      ],
+      "original": 51,
+      "proposal": 32,
+      "delta": -19,
+      "previous": 27,
+      "deltaFromPrevious": 5
+    },
+    {
+      "origin": "ranger",
+      "keys": [
+        "key_02",
+        "key_09"
+      ],
+      "original": 31,
+      "proposal": 40,
+      "delta": 9,
+      "previous": 35,
+      "deltaFromPrevious": 5
+    },
+    {
+      "origin": "ranger",
+      "keys": [
+        "key_13",
+        "key_15"
+      ],
+      "original": 32,
+      "proposal": 38,
+      "delta": 6,
+      "previous": 35,
+      "deltaFromPrevious": 3
+    },
+    {
+      "origin": "ranger",
+      "keys": [
+        "key_14",
+        "key_15"
+      ],
+      "original": 40,
+      "proposal": 36,
+      "delta": -4,
+      "previous": 29,
+      "deltaFromPrevious": 7
+    },
+    {
+      "origin": "assassin",
+      "keys": [
+        "key_01",
+        "key_05"
+      ],
+      "original": 54,
+      "proposal": 37,
+      "delta": -17,
+      "previous": 31,
+      "deltaFromPrevious": 6
+    },
+    {
+      "origin": "assassin",
+      "keys": [
+        "key_02",
+        "key_09"
+      ],
+      "original": 40,
+      "proposal": 39,
+      "delta": -1,
+      "previous": 35,
+      "deltaFromPrevious": 4
+    },
+    {
+      "origin": "assassin",
+      "keys": [
+        "key_13",
+        "key_15"
+      ],
+      "original": 40,
+      "proposal": 41,
+      "delta": 1,
+      "previous": 37,
+      "deltaFromPrevious": 4
+    },
+    {
+      "origin": "assassin",
+      "keys": [
+        "key_14",
+        "key_15"
+      ],
+      "original": 50,
+      "proposal": 39,
+      "delta": -11,
+      "previous": 29,
+      "deltaFromPrevious": 10
+    }
+  ],
+  "oldWorldArea": 95986781,
+  "newWorldArea": 32985578,
+  "areaRatio": 0.344,
+  "warning": "取得費用の低下は強化採用を意味しない。複数Keyを取る予算は再検討が必要。効果・係数・本番ポイントは未採用。",
+  "previousWorldArea": 32225182,
+  "areaRatioToPrevious": 1.024
+}
