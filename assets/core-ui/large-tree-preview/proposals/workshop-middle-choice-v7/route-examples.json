@@ -1,0 +1,1710 @@
+[
+  {
+    "id": "critical",
+    "label": "会心へ投資",
+    "profileId": "warrior:support:plain:standard",
+    "siphon": true,
+    "targets": [
+      "g25n6",
+      "g48n4",
+      "g48n8"
+    ],
+    "note": "会心と倍率を積む。弱点入力は供給されないため、混合点の会心側が有効。",
+    "budget": 48,
+    "learned": [
+      "g13n0",
+      "g13n3",
+      "g13n8",
+      "g13n9",
+      "g18n1",
+      "g18n4",
+      "g18n5",
+      "g25n0",
+      "g25n1",
+      "g25n2",
+      "g25n6",
+      "g25n7",
+      "g30n2",
+      "g45hub",
+      "g45n1",
+      "g45n2",
+      "g45n4",
+      "g48n0",
+      "g48n3",
+      "g48n4",
+      "g48n6",
+      "g48n8",
+      "g48n9",
+      "link_templar_1_1",
+      "link_warrior_0_4",
+      "link_warrior_1_1",
+      "link_warrior_1_4",
+      "link_warrior_2_8",
+      "opening_warrior_0_1",
+      "opening_warrior_0_2",
+      "opening_warrior_0_3",
+      "origin_warrior",
+      "r17_44_1",
+      "r1_22_1",
+      "r1_29_1",
+      "r1_29_4",
+      "r24_42_1",
+      "r28_50_1",
+      "r7_29_1",
+      "r7_29_2",
+      "v7g04_entry",
+      "v7road_r6_1",
+      "v7road_r6_2",
+      "v7road_r6_3",
+      "v7road_r6_4",
+      "v7road_r6_5"
+    ],
+    "paths": [
+      {
+        "target": "g25n6",
+        "nodes": [
+          "origin_warrior",
+          "opening_warrior_0_1",
+          "opening_warrior_0_2",
+          "opening_warrior_0_3",
+          "g13n8",
+          "g13n9",
+          "g13n3",
+          "g13n0",
+          "r1_29_1",
+          "r24_42_1",
+          "link_templar_1_1",
+          "g45n4",
+          "g45n2",
+          "g45hub",
+          "g45n1",
+          "r1_29_4",
+          "link_warrior_2_8",
+          "r1_22_1",
+          "g18n5",
+          "g18n1",
+          "g18n4",
+          "r28_50_1",
+          "v7road_r6_1",
+          "v7road_r6_2",
+          "v7road_r6_3",
+          "v7road_r6_4",
+          "v7road_r6_5",
+          "v7g04_entry",
+          "r17_44_1",
+          "link_warrior_1_1",
+          "g30n2",
+          "link_warrior_0_4",
+          "r7_29_1",
+          "link_warrior_1_4",
+          "r7_29_2",
+          "g25n0",
+          "g25n1",
+          "g25n2",
+          "g25n6"
+        ]
+      },
+      {
+        "target": "g48n4",
+        "nodes": [
+          "g25n6",
+          "g25n7",
+          "g48n0",
+          "g48n3",
+          "g48n4"
+        ]
+      },
+      {
+        "target": "g48n8",
+        "nodes": [
+          "g48n4",
+          "g48n6",
+          "g48n9",
+          "g48n8"
+        ]
+      }
+    ],
+    "spent": 45,
+    "stats": {
+      "crit": 129,
+      "hp": 77,
+      "physical": 24,
+      "attackSpeed": 9,
+      "regen": 20,
+      "leech": 1.0699999999999998,
+      "critMulti": 15,
+      "armor": 3
+    },
+    "keys": [],
+    "remaining": 3
+  },
+  {
+    "id": "quiet",
+    "label": "貫通から静かな刃",
+    "profileId": "warrior:support:plain:standard",
+    "siphon": true,
+    "targets": [
+      "g37n0",
+      "g37n4",
+      "key_04"
+    ],
+    "note": "会心を失う代わりに直接ヒットを伸ばす原案。武器の一撃を育てる分岐。",
+    "budget": 48,
+    "learned": [
+      "g13n0",
+      "g13n3",
+      "g13n8",
+      "g13n9",
+      "g18n1",
+      "g18n4",
+      "g18n5",
+      "g26n1",
+      "g26n3",
+      "g37n0",
+      "g37n1",
+      "g37n4",
+      "g37n6",
+      "g37n7",
+      "g45hub",
+      "g45n1",
+      "g45n2",
+      "g45n4",
+      "key_04",
+      "link_templar_1_1",
+      "link_warrior_0_2",
+      "link_warrior_2_8",
+      "opening_warrior_0_1",
+      "opening_warrior_0_2",
+      "opening_warrior_0_3",
+      "origin_warrior",
+      "r17_44_1",
+      "r1_22_1",
+      "r1_29_1",
+      "r1_29_4",
+      "r24_42_1",
+      "r28_50_1",
+      "r7_22_1",
+      "r7_22_2",
+      "v7g04_entry",
+      "v7road_r6_1",
+      "v7road_r6_2",
+      "v7road_r6_3",
+      "v7road_r6_4",
+      "v7road_r6_5"
+    ],
+    "paths": [
+      {
+        "target": "g37n0",
+        "nodes": [
+          "origin_warrior",
+          "opening_warrior_0_1",
+          "opening_warrior_0_2",
+          "opening_warrior_0_3",
+          "g13n8",
+          "g13n9",
+          "g13n3",
+          "g13n0",
+          "r1_29_1",
+          "r24_42_1",
+          "link_templar_1_1",
+          "g45n4",
+          "g45n2",
+          "g45hub",
+          "g45n1",
+          "r1_29_4",
+          "link_warrior_2_8",
+          "r1_22_1",
+          "g18n5",
+          "g18n1",
+          "g18n4",
+          "r28_50_1",
+          "v7road_r6_1",
+          "v7road_r6_2",
+          "v7road_r6_3",
+          "v7road_r6_4",
+          "v7road_r6_5",
+          "v7g04_entry",
+          "r17_44_1",
+          "g26n1",
+          "g26n3",
+          "link_warrior_0_2",
+          "r7_22_1",
+          "g37n1",
+          "g37n0"
+        ]
+      },
+      {
+        "target": "g37n4",
+        "nodes": [
+          "g37n0",
+          "g37n6",
+          "g37n7",
+          "g37n4"
+        ]
+      },
+      {
+        "target": "key_04",
+        "nodes": [
+          "g37n4",
+          "r7_22_2",
+          "key_04"
+        ]
+      }
+    ],
+    "spent": 41,
+    "stats": {
+      "physical": 36,
+      "hp": 75,
+      "penetration": 10.97,
+      "attackSpeed": 9,
+      "regen": 20,
+      "leech": 1.0699999999999998,
+      "armor": 3
+    },
+    "keys": [
+      "key_04"
+    ],
+    "remaining": 7
+  },
+  {
+    "id": "tank-life",
+    "label": "生命と装甲",
+    "profileId": "tank:support:plain:standard",
+    "siphon": false,
+    "targets": [
+      "g6n0",
+      "g6n4",
+      "g18n1"
+    ],
+    "note": "装甲を短く拾うか、HPの目標まで回るか。回復入力のない点ではHP側だけを育てる。",
+    "budget": 48,
+    "learned": [
+      "g18n1",
+      "g18n3",
+      "g18n5",
+      "g18n6",
+      "g45hub",
+      "g45n1",
+      "g45n2",
+      "g45n4",
+      "g6n0",
+      "g6n4",
+      "g6n6",
+      "g6n7",
+      "g6n8",
+      "g6n9",
+      "link_assassin_0_2",
+      "link_assassin_0_4",
+      "link_assassin_1_3",
+      "link_ranger_2_2",
+      "link_templar_1_1",
+      "link_warrior_2_7",
+      "link_warrior_2_8",
+      "opening_templar_0_1",
+      "opening_templar_0_2",
+      "opening_templar_0_3",
+      "origin_templar",
+      "r1_22_1",
+      "r1_29_1",
+      "r1_29_4",
+      "r24_42_1",
+      "r34_40_1",
+      "v7road_r4_1",
+      "v7road_r4_2"
+    ],
+    "paths": [
+      {
+        "target": "g6n0",
+        "nodes": [
+          "origin_templar",
+          "opening_templar_0_1",
+          "opening_templar_0_2",
+          "opening_templar_0_3",
+          "link_assassin_1_3",
+          "link_assassin_0_2",
+          "link_warrior_2_7",
+          "link_ranger_2_2",
+          "v7road_r4_1",
+          "v7road_r4_2",
+          "r1_29_1",
+          "r24_42_1",
+          "link_templar_1_1",
+          "g45n4",
+          "g45n2",
+          "g45hub",
+          "g45n1",
+          "r1_29_4",
+          "link_warrior_2_8",
+          "r1_22_1",
+          "g18n5",
+          "g18n1",
+          "g18n6",
+          "g18n3",
+          "r34_40_1",
+          "link_assassin_0_4",
+          "g6n9",
+          "g6n4",
+          "g6n8",
+          "g6n7",
+          "g6n6",
+          "g6n0"
+        ]
+      },
+      {
+        "target": "g6n4",
+        "nodes": [
+          "g6n4"
+        ]
+      },
+      {
+        "target": "g18n1",
+        "nodes": [
+          "g18n1"
+        ]
+      }
+    ],
+    "spent": 31,
+    "stats": {
+      "hp": 75,
+      "regen": 36,
+      "armor": 44.55,
+      "physical": 24
+    },
+    "keys": [],
+    "remaining": 17
+  },
+  {
+    "id": "tank-shield",
+    "label": "障壁と仲間",
+    "profileId": "tank:support:plain:standard",
+    "siphon": false,
+    "targets": [
+      "g31n4",
+      "key_11"
+    ],
+    "note": "手持ちの仲間向け障壁を育てる原案。障壁源を新しく与える点ではない。",
+    "budget": 48,
+    "learned": [
+      "g31n4",
+      "g33n0",
+      "g46n0",
+      "g46n1",
+      "g46n2",
+      "g46n7",
+      "key_11",
+      "link_assassin_0_2",
+      "link_assassin_1_3",
+      "link_ranger_1_1",
+      "link_warrior_2_10",
+      "link_warrior_2_7",
+      "opening_templar_0_1",
+      "opening_templar_0_2",
+      "opening_templar_0_3",
+      "origin_templar",
+      "r21_26_1",
+      "r25_44_1",
+      "r33_37_2",
+      "r6_35_1"
+    ],
+    "paths": [
+      {
+        "target": "g31n4",
+        "nodes": [
+          "origin_templar",
+          "opening_templar_0_1",
+          "opening_templar_0_2",
+          "opening_templar_0_3",
+          "link_assassin_1_3",
+          "link_assassin_0_2",
+          "link_warrior_2_7",
+          "r6_35_1",
+          "r25_44_1",
+          "g33n0",
+          "link_ranger_1_1",
+          "r33_37_2",
+          "g46n7",
+          "g46n1",
+          "g46n0",
+          "g46n2",
+          "link_warrior_2_10",
+          "r21_26_1",
+          "g31n4"
+        ]
+      },
+      {
+        "target": "key_11",
+        "nodes": [
+          "g31n4",
+          "key_11"
+        ]
+      }
+    ],
+    "spent": 21,
+    "stats": {
+      "hp": 22,
+      "physical": 24,
+      "resist": 29,
+      "barrier": 14,
+      "mana": 4,
+      "regen": 8
+    },
+    "keys": [
+      "key_11"
+    ],
+    "remaining": 27
+  },
+  {
+    "id": "mage-mp",
+    "label": "MPへ投資",
+    "profileId": "mage:support:plain:standard",
+    "siphon": false,
+    "targets": [
+      "g12n2",
+      "g20n6"
+    ],
+    "note": "MPの器と効率へ投資。同じ編成の技能に対するHP消費への転換も比較できる。",
+    "budget": 48,
+    "learned": [
+      "g12n1",
+      "g12n2",
+      "g12n3",
+      "g20n1",
+      "g20n4",
+      "g20n5",
+      "g20n6",
+      "g33n3",
+      "link_templar_2_1",
+      "link_warrior_2_1",
+      "opening_mage_1_1",
+      "opening_mage_1_2",
+      "opening_mage_1_3",
+      "origin_mage",
+      "r14_27_1",
+      "r18_26_1",
+      "r19_24_1",
+      "r26_28_1"
+    ],
+    "paths": [
+      {
+        "target": "g12n2",
+        "nodes": [
+          "origin_mage",
+          "opening_mage_1_1",
+          "opening_mage_1_2",
+          "opening_mage_1_3",
+          "r18_26_1",
+          "r14_27_1",
+          "g33n3",
+          "r19_24_1",
+          "link_warrior_2_1",
+          "g12n3",
+          "g12n2"
+        ]
+      },
+      {
+        "target": "g20n6",
+        "nodes": [
+          "g12n2",
+          "g12n1",
+          "link_templar_2_1",
+          "r26_28_1",
+          "g20n1",
+          "g20n4",
+          "g20n5",
+          "g20n6"
+        ]
+      }
+    ],
+    "spent": 17,
+    "stats": {
+      "efficiency": 32,
+      "hp": 12,
+      "mana": 59.9,
+      "regen": 8
+    },
+    "keys": [],
+    "remaining": 31
+  },
+  {
+    "id": "mage-blood",
+    "label": "MPから血の代価",
+    "profileId": "mage:support:plain:standard",
+    "siphon": false,
+    "targets": [
+      "g12n2",
+      "g20n6",
+      "key_02"
+    ],
+    "note": "MP消費を同量のHPに置換する原案。取得済みのMP・効率・再生は無効化し、点数と接続は保持。",
+    "budget": 48,
+    "learned": [
+      "g12n1",
+      "g12n2",
+      "g12n3",
+      "g20n1",
+      "g20n4",
+      "g20n5",
+      "g20n6",
+      "g33n3",
+      "key_02",
+      "link_templar_2_1",
+      "link_warrior_2_1",
+      "opening_mage_1_1",
+      "opening_mage_1_2",
+      "opening_mage_1_3",
+      "origin_mage",
+      "r14_27_1",
+      "r18_26_1",
+      "r19_24_1",
+      "r26_28_1"
+    ],
+    "paths": [
+      {
+        "target": "g12n2",
+        "nodes": [
+          "origin_mage",
+          "opening_mage_1_1",
+          "opening_mage_1_2",
+          "opening_mage_1_3",
+          "r18_26_1",
+          "r14_27_1",
+          "g33n3",
+          "r19_24_1",
+          "link_warrior_2_1",
+          "g12n3",
+          "g12n2"
+        ]
+      },
+      {
+        "target": "g20n6",
+        "nodes": [
+          "g12n2",
+          "g12n1",
+          "link_templar_2_1",
+          "r26_28_1",
+          "g20n1",
+          "g20n4",
+          "g20n5",
+          "g20n6"
+        ]
+      },
+      {
+        "target": "key_02",
+        "nodes": [
+          "g20n6",
+          "key_02"
+        ]
+      }
+    ],
+    "spent": 20,
+    "stats": {
+      "hp": 12
+    },
+    "keys": [
+      "key_02"
+    ],
+    "remaining": 28
+  },
+  {
+    "id": "mage-ice",
+    "label": "氷と障壁",
+    "profileId": "mage:support:plain:standard",
+    "siphon": false,
+    "targets": [
+      "g27n4",
+      "g3n5",
+      "key_13"
+    ],
+    "note": "既に使える氷と障壁を育てる。技能名だけで凍結を供給する扱いにはしない。",
+    "budget": 48,
+    "learned": [
+      "g27n1",
+      "g27n2",
+      "g27n4",
+      "g3n2",
+      "g3n5",
+      "g51n4",
+      "g51n5",
+      "g51n6",
+      "join_warrior_1",
+      "key_13",
+      "link_assassin_1_4",
+      "link_assassin_2_3",
+      "link_assassin_2_4",
+      "link_assassin_2_5",
+      "link_assassin_2_8",
+      "opening_mage_1_1",
+      "opening_mage_1_2",
+      "opening_mage_1_3",
+      "origin_mage",
+      "r10_14_3",
+      "r14_42_1",
+      "r18_26_1",
+      "r27_52_1",
+      "r9_20_2"
+    ],
+    "paths": [
+      {
+        "target": "g27n4",
+        "nodes": [
+          "origin_mage",
+          "opening_mage_1_1",
+          "opening_mage_1_2",
+          "opening_mage_1_3",
+          "r18_26_1",
+          "link_assassin_1_4",
+          "link_assassin_2_8",
+          "g51n6",
+          "g51n5",
+          "g51n4",
+          "r10_14_3",
+          "join_warrior_1",
+          "r9_20_2",
+          "link_assassin_2_5",
+          "g27n2",
+          "g27n1",
+          "g27n4"
+        ]
+      },
+      {
+        "target": "g3n5",
+        "nodes": [
+          "g27n4",
+          "link_assassin_2_3",
+          "r14_42_1",
+          "r27_52_1",
+          "link_assassin_2_4",
+          "g3n2",
+          "g3n5"
+        ]
+      },
+      {
+        "target": "key_13",
+        "nodes": [
+          "g27n4",
+          "key_13"
+        ]
+      }
+    ],
+    "spent": 25,
+    "stats": {
+      "hp": 22,
+      "resist": 13,
+      "ice": 59.55,
+      "barrier": 41,
+      "efficiency": 13,
+      "mana": 10
+    },
+    "keys": [
+      "key_13"
+    ],
+    "remaining": 23
+  },
+  {
+    "id": "ranger",
+    "label": "会心と資源",
+    "profileId": "ranger:mark:plain:standard",
+    "siphon": false,
+    "targets": [
+      "g32n2",
+      "g39n6",
+      "key_10"
+    ],
+    "note": "印を利用する機会の返還へ。印を外した編成ではこのKeyを選べない。",
+    "budget": 48,
+    "learned": [
+      "g10n3",
+      "g12n0",
+      "g12n1",
+      "g12n3",
+      "g24n3",
+      "g24n4",
+      "g24n6",
+      "g2n0",
+      "g2n1",
+      "g2n4",
+      "g32n0",
+      "g32n1",
+      "g32n2",
+      "g32n6",
+      "g33n3",
+      "g39n0",
+      "g39n1",
+      "g39n6",
+      "g39n7",
+      "g51n6",
+      "join_warrior_2",
+      "key_10",
+      "link_assassin_1_4",
+      "link_assassin_2_8",
+      "link_mage_2_1",
+      "link_warrior_2_1",
+      "opening_ranger_1_1",
+      "opening_ranger_1_2",
+      "opening_ranger_1_3",
+      "origin_ranger",
+      "r10_36_1",
+      "r12_46_1",
+      "r14_27_1",
+      "r15_25_1",
+      "r18_26_1",
+      "r18_49_1",
+      "r19_24_1",
+      "r22_24_1",
+      "r28_39_1",
+      "r30_36_2",
+      "r39_40_1"
+    ],
+    "paths": [
+      {
+        "target": "g32n2",
+        "nodes": [
+          "origin_ranger",
+          "opening_ranger_1_1",
+          "opening_ranger_1_2",
+          "opening_ranger_1_3",
+          "g51n6",
+          "link_assassin_2_8",
+          "link_assassin_1_4",
+          "r18_26_1",
+          "r14_27_1",
+          "g33n3",
+          "r19_24_1",
+          "link_warrior_2_1",
+          "g12n3",
+          "g12n0",
+          "g12n1",
+          "r28_39_1",
+          "r15_25_1",
+          "g2n1",
+          "g2n0",
+          "g2n4",
+          "r10_36_1",
+          "r39_40_1",
+          "g24n3",
+          "g24n4",
+          "g24n6",
+          "r22_24_1",
+          "r12_46_1",
+          "g39n1",
+          "g39n0",
+          "g39n7",
+          "r30_36_2",
+          "link_mage_2_1",
+          "g32n2"
+        ]
+      },
+      {
+        "target": "g39n6",
+        "nodes": [
+          "g39n7",
+          "g39n6"
+        ]
+      },
+      {
+        "target": "key_10",
+        "nodes": [
+          "g32n2",
+          "g32n1",
+          "g32n0",
+          "g32n6",
+          "r18_49_1",
+          "join_warrior_2",
+          "g10n3",
+          "key_10"
+        ]
+      }
+    ],
+    "spent": 42,
+    "stats": {
+      "attackSpeed": 15,
+      "efficiency": 14,
+      "hp": 32,
+      "mana": 34,
+      "resource": 22,
+      "critMulti": 15,
+      "regen": 8,
+      "crit": 52,
+      "damage": 4,
+      "move": 4,
+      "resist": 5
+    },
+    "keys": [
+      "key_10"
+    ],
+    "remaining": 6
+  },
+  {
+    "id": "assassin",
+    "label": "手数と範囲",
+    "profileId": "assassin:mark:plain:standard",
+    "siphon": false,
+    "targets": [
+      "g41n3",
+      "g42n0",
+      "g17n0"
+    ],
+    "note": "手数から範囲と会心へ。毒のKeyは選択肢として残し、取得を強制しない。",
+    "budget": 64,
+    "learned": [
+      "g10n0",
+      "g10n1",
+      "g10n6",
+      "g12n3",
+      "g17n0",
+      "g17n4",
+      "g33n3",
+      "g41n0",
+      "g41n2",
+      "g41n3",
+      "g41n8",
+      "g41n9",
+      "g42n0",
+      "g42n4",
+      "g42n5",
+      "g4n0",
+      "g4n1",
+      "g4n2",
+      "g4n3",
+      "g4n6",
+      "g4n7",
+      "g51n6",
+      "g52n0",
+      "g52n4",
+      "j1",
+      "j36",
+      "join_mage_0",
+      "join_mage_2",
+      "join_templar_2",
+      "link_assassin_1_2",
+      "link_assassin_1_4",
+      "link_assassin_2_1",
+      "link_assassin_2_8",
+      "link_warrior_1_7",
+      "link_warrior_2_1",
+      "opening_assassin_0_1",
+      "opening_assassin_0_2",
+      "opening_assassin_0_3",
+      "opening_ranger_1_3",
+      "origin_assassin",
+      "r10_32_1",
+      "r12_19_2",
+      "r14_27_1",
+      "r15_43_2",
+      "r18_26_1",
+      "r18_26_2",
+      "r19_24_1",
+      "r25_44_2",
+      "r26_28_2",
+      "r30_36_1",
+      "r35_38_1",
+      "r39_40_2",
+      "r9_20_2",
+      "v7road_east"
+    ],
+    "paths": [
+      {
+        "target": "g41n3",
+        "nodes": [
+          "origin_assassin",
+          "opening_assassin_0_1",
+          "opening_assassin_0_2",
+          "opening_assassin_0_3",
+          "j36",
+          "j1",
+          "opening_ranger_1_3",
+          "g51n6",
+          "link_assassin_2_8",
+          "link_assassin_1_4",
+          "r18_26_1",
+          "r14_27_1",
+          "g33n3",
+          "r19_24_1",
+          "link_warrior_2_1",
+          "g12n3",
+          "r15_43_2",
+          "r35_38_1",
+          "r9_20_2",
+          "v7road_east",
+          "r12_19_2",
+          "r18_26_2",
+          "g4n3",
+          "g4n0",
+          "g4n1",
+          "g4n2",
+          "g4n6",
+          "g4n7",
+          "link_assassin_1_2",
+          "r39_40_2",
+          "g52n0",
+          "g52n4",
+          "r30_36_1",
+          "join_mage_2",
+          "g41n8",
+          "g41n0",
+          "g41n9",
+          "g41n3"
+        ]
+      },
+      {
+        "target": "g42n0",
+        "nodes": [
+          "g41n3",
+          "g41n2",
+          "r25_44_2",
+          "join_templar_2",
+          "g42n4",
+          "g42n5",
+          "g42n0"
+        ]
+      },
+      {
+        "target": "g17n0",
+        "nodes": [
+          "g52n4",
+          "link_warrior_1_7",
+          "r10_32_1",
+          "g10n1",
+          "g10n0",
+          "g10n6",
+          "join_mage_0",
+          "r26_28_2",
+          "g17n4",
+          "link_assassin_2_1",
+          "g17n0"
+        ]
+      }
+    ],
+    "spent": 53,
+    "stats": {
+      "hp": 54,
+      "haste": 44,
+      "aoe": 13,
+      "damage": 30,
+      "attackSpeed": 25.95,
+      "efficiency": 3,
+      "regen": 8,
+      "physical": 6,
+      "resource": 21,
+      "crit": 25,
+      "move": 4.5,
+      "resist": 5
+    },
+    "keys": [],
+    "remaining": 11
+  },
+  {
+    "id": "lightning",
+    "label": "既存の雷を単体へ",
+    "profileId": "mage:support:lightning:standard",
+    "siphon": false,
+    "targets": [
+      "g9n7",
+      "key_15"
+    ],
+    "note": "所有する雷MODの連鎖入力を使う原案。無属性の編成には連鎖を付与しない。",
+    "budget": 48,
+    "learned": [
+      "g12n0",
+      "g12n1",
+      "g12n3",
+      "g20n1",
+      "g20n3",
+      "g20n4",
+      "g33n3",
+      "g43n0",
+      "g9n0",
+      "g9n7",
+      "key_15",
+      "link_templar_2_1",
+      "link_warrior_2_1",
+      "opening_mage_1_1",
+      "opening_mage_1_2",
+      "opening_mage_1_3",
+      "origin_mage",
+      "r13_35_1",
+      "r14_27_1",
+      "r15_43_3",
+      "r18_26_1",
+      "r19_24_1",
+      "r22_24_2",
+      "r26_28_1",
+      "r36_48_1"
+    ],
+    "paths": [
+      {
+        "target": "g9n7",
+        "nodes": [
+          "origin_mage",
+          "opening_mage_1_1",
+          "opening_mage_1_2",
+          "opening_mage_1_3",
+          "r18_26_1",
+          "r14_27_1",
+          "g33n3",
+          "r19_24_1",
+          "link_warrior_2_1",
+          "g12n3",
+          "g12n0",
+          "g12n1",
+          "link_templar_2_1",
+          "r26_28_1",
+          "g20n1",
+          "g20n4",
+          "g20n3",
+          "r36_48_1",
+          "r15_43_3",
+          "g43n0",
+          "r13_35_1",
+          "r22_24_2",
+          "g9n0",
+          "g9n7"
+        ]
+      },
+      {
+        "target": "key_15",
+        "nodes": [
+          "g9n7",
+          "key_15"
+        ]
+      }
+    ],
+    "spent": 26,
+    "stats": {
+      "efficiency": 25,
+      "haste": 11,
+      "lightning": 28.55,
+      "hp": 20,
+      "mana": 31.9,
+      "regen": 8
+    },
+    "keys": [
+      "key_15"
+    ],
+    "remaining": 22
+  },
+  {
+    "id": "v7g07-a",
+    "label": "消費・MP容量側",
+    "profileId": "mage:support:plain:standard",
+    "siphon": false,
+    "targets": [
+      "v7g07n0",
+      "v7g07n2",
+      "v7g07n4"
+    ],
+    "note": "同じ入口と同じ目標へ同費用で進む。途中の恩恵が異なる二経路を比較。",
+    "budget": 48,
+    "learned": [
+      "opening_mage_1_1",
+      "opening_mage_1_2",
+      "opening_mage_1_3",
+      "origin_mage",
+      "r14_27_1",
+      "r18_26_1",
+      "v7g07_entry",
+      "v7g07n0",
+      "v7g07n2",
+      "v7g07n4"
+    ],
+    "paths": [
+      {
+        "target": "v7g07n0",
+        "nodes": [
+          "origin_mage",
+          "opening_mage_1_1",
+          "opening_mage_1_2",
+          "opening_mage_1_3",
+          "r18_26_1",
+          "r14_27_1",
+          "v7g07_entry",
+          "v7g07n0"
+        ]
+      },
+      {
+        "target": "v7g07n2",
+        "nodes": [
+          "v7g07n0",
+          "v7g07n2"
+        ]
+      },
+      {
+        "target": "v7g07n4",
+        "nodes": [
+          "v7g07n2",
+          "v7g07n4"
+        ]
+      }
+    ],
+    "spent": 9,
+    "stats": {
+      "efficiency": 16,
+      "hp": 6,
+      "mana": 26
+    },
+    "keys": [],
+    "remaining": 39
+  },
+  {
+    "id": "v7g07-b",
+    "label": "消費・消費効率側",
+    "profileId": "mage:support:plain:standard",
+    "siphon": false,
+    "targets": [
+      "v7g07n1",
+      "v7g07n3",
+      "v7g07n4"
+    ],
+    "note": "同じ入口と同じ目標へ同費用で進む。途中の恩恵が異なる二経路を比較。",
+    "budget": 48,
+    "learned": [
+      "opening_mage_1_1",
+      "opening_mage_1_2",
+      "opening_mage_1_3",
+      "origin_mage",
+      "r14_27_1",
+      "r18_26_1",
+      "v7g07_entry",
+      "v7g07n1",
+      "v7g07n3",
+      "v7g07n4"
+    ],
+    "paths": [
+      {
+        "target": "v7g07n1",
+        "nodes": [
+          "origin_mage",
+          "opening_mage_1_1",
+          "opening_mage_1_2",
+          "opening_mage_1_3",
+          "r18_26_1",
+          "r14_27_1",
+          "v7g07_entry",
+          "v7g07n1"
+        ]
+      },
+      {
+        "target": "v7g07n3",
+        "nodes": [
+          "v7g07n1",
+          "v7g07n3"
+        ]
+      },
+      {
+        "target": "v7g07n4",
+        "nodes": [
+          "v7g07n3",
+          "v7g07n4"
+        ]
+      }
+    ],
+    "spent": 9,
+    "stats": {
+      "efficiency": 20,
+      "hp": 6,
+      "mana": 18
+    },
+    "keys": [],
+    "remaining": 39
+  },
+  {
+    "id": "v7g04-a",
+    "label": "一撃・物理側",
+    "profileId": "warrior:support:plain:standard",
+    "siphon": false,
+    "targets": [
+      "v7g04n0",
+      "v7g04n2",
+      "v7g04n4"
+    ],
+    "note": "同じ入口と同じ目標へ同費用で進む。途中の恩恵が異なる二経路を比較。",
+    "budget": 48,
+    "learned": [
+      "g18n1",
+      "g18n4",
+      "g18n5",
+      "g45hub",
+      "g45n1",
+      "g45n2",
+      "g45n4",
+      "link_assassin_0_2",
+      "link_ranger_2_2",
+      "link_templar_1_1",
+      "link_warrior_2_7",
+      "link_warrior_2_8",
+      "opening_warrior_1_1",
+      "opening_warrior_1_2",
+      "opening_warrior_1_3",
+      "origin_warrior",
+      "r1_22_1",
+      "r1_29_1",
+      "r1_29_4",
+      "r24_42_1",
+      "r28_50_1",
+      "v7g04_entry",
+      "v7g04n0",
+      "v7g04n2",
+      "v7g04n4",
+      "v7road_r4_1",
+      "v7road_r4_2",
+      "v7road_r6_1",
+      "v7road_r6_2",
+      "v7road_r6_3",
+      "v7road_r6_4",
+      "v7road_r6_5"
+    ],
+    "paths": [
+      {
+        "target": "v7g04n0",
+        "nodes": [
+          "origin_warrior",
+          "opening_warrior_1_1",
+          "opening_warrior_1_2",
+          "opening_warrior_1_3",
+          "link_assassin_0_2",
+          "link_warrior_2_7",
+          "link_ranger_2_2",
+          "v7road_r4_1",
+          "v7road_r4_2",
+          "r1_29_1",
+          "r24_42_1",
+          "link_templar_1_1",
+          "g45n4",
+          "g45n2",
+          "g45hub",
+          "g45n1",
+          "r1_29_4",
+          "link_warrior_2_8",
+          "r1_22_1",
+          "g18n5",
+          "g18n1",
+          "g18n4",
+          "r28_50_1",
+          "v7road_r6_1",
+          "v7road_r6_2",
+          "v7road_r6_3",
+          "v7road_r6_4",
+          "v7road_r6_5",
+          "v7g04_entry",
+          "v7g04n0"
+        ]
+      },
+      {
+        "target": "v7g04n2",
+        "nodes": [
+          "v7g04n0",
+          "v7g04n2"
+        ]
+      },
+      {
+        "target": "v7g04n4",
+        "nodes": [
+          "v7g04n2",
+          "v7g04n4"
+        ]
+      }
+    ],
+    "spent": 31,
+    "stats": {
+      "hp": 86,
+      "regen": 20,
+      "physical": 13,
+      "armor": 11,
+      "crit": 10
+    },
+    "keys": [],
+    "remaining": 17
+  },
+  {
+    "id": "v7g04-b",
+    "label": "一撃・会心側",
+    "profileId": "warrior:support:plain:standard",
+    "siphon": false,
+    "targets": [
+      "v7g04n1",
+      "v7g04n3",
+      "v7g04n4"
+    ],
+    "note": "同じ入口と同じ目標へ同費用で進む。途中の恩恵が異なる二経路を比較。",
+    "budget": 48,
+    "learned": [
+      "g18n1",
+      "g18n4",
+      "g18n5",
+      "g45hub",
+      "g45n1",
+      "g45n2",
+      "g45n4",
+      "link_assassin_0_2",
+      "link_ranger_2_2",
+      "link_templar_1_1",
+      "link_warrior_2_7",
+      "link_warrior_2_8",
+      "opening_warrior_1_1",
+      "opening_warrior_1_2",
+      "opening_warrior_1_3",
+      "origin_warrior",
+      "r1_22_1",
+      "r1_29_1",
+      "r1_29_4",
+      "r24_42_1",
+      "r28_50_1",
+      "v7g04_entry",
+      "v7g04n1",
+      "v7g04n3",
+      "v7g04n4",
+      "v7road_r4_1",
+      "v7road_r4_2",
+      "v7road_r6_1",
+      "v7road_r6_2",
+      "v7road_r6_3",
+      "v7road_r6_4",
+      "v7road_r6_5"
+    ],
+    "paths": [
+      {
+        "target": "v7g04n1",
+        "nodes": [
+          "origin_warrior",
+          "opening_warrior_1_1",
+          "opening_warrior_1_2",
+          "opening_warrior_1_3",
+          "link_assassin_0_2",
+          "link_warrior_2_7",
+          "link_ranger_2_2",
+          "v7road_r4_1",
+          "v7road_r4_2",
+          "r1_29_1",
+          "r24_42_1",
+          "link_templar_1_1",
+          "g45n4",
+          "g45n2",
+          "g45hub",
+          "g45n1",
+          "r1_29_4",
+          "link_warrior_2_8",
+          "r1_22_1",
+          "g18n5",
+          "g18n1",
+          "g18n4",
+          "r28_50_1",
+          "v7road_r6_1",
+          "v7road_r6_2",
+          "v7road_r6_3",
+          "v7road_r6_4",
+          "v7road_r6_5",
+          "v7g04_entry",
+          "v7g04n1"
+        ]
+      },
+      {
+        "target": "v7g04n3",
+        "nodes": [
+          "v7g04n1",
+          "v7g04n3"
+        ]
+      },
+      {
+        "target": "v7g04n4",
+        "nodes": [
+          "v7g04n3",
+          "v7g04n4"
+        ]
+      }
+    ],
+    "spent": 31,
+    "stats": {
+      "crit": 22,
+      "hp": 86,
+      "regen": 20,
+      "armor": 11,
+      "physical": 7
+    },
+    "keys": [],
+    "remaining": 17
+  },
+  {
+    "id": "legacy-critical",
+    "label": "会心・資源も拾う経路",
+    "profileId": "warrior:support:plain:standard",
+    "siphon": true,
+    "targets": [
+      "g25n6",
+      "g48n4",
+      "g48n8"
+    ],
+    "note": "同じ会心目標へ、資源運用・攻撃速度・物理も拾う経路。短い経路と途中の恩恵を比較。",
+    "budget": 48,
+    "legacyRoute": "critical",
+    "learned": [
+      "g13n0",
+      "g13n1",
+      "g13n2",
+      "g13n3",
+      "g13n8",
+      "g13n9",
+      "g14n0",
+      "g14n1",
+      "g14n2",
+      "g14n3",
+      "g14n4",
+      "g14n5",
+      "g14n6",
+      "g14n7",
+      "g25n0",
+      "g25n1",
+      "g25n2",
+      "g25n6",
+      "g25n7",
+      "g30n0",
+      "g30n2",
+      "g30n6",
+      "g30n7",
+      "g35n0",
+      "g35n3",
+      "g35n4",
+      "g48n0",
+      "g48n3",
+      "g48n4",
+      "g48n6",
+      "g48n8",
+      "g48n9",
+      "g49n5",
+      "link_assassin_1_1",
+      "link_templar_0_1",
+      "link_warrior_0_4",
+      "link_warrior_1_4",
+      "link_warrior_2_6",
+      "opening_warrior_0_1",
+      "opening_warrior_0_2",
+      "opening_warrior_0_3",
+      "origin_warrior",
+      "r19_24_2",
+      "r2_22_2",
+      "r2_46_1",
+      "r2_51_1",
+      "r7_29_1",
+      "r7_29_2"
+    ],
+    "paths": [
+      {
+        "target": "g25n6",
+        "nodes": [
+          "origin_warrior",
+          "opening_warrior_0_1",
+          "opening_warrior_0_2",
+          "opening_warrior_0_3",
+          "g13n8",
+          "g13n9",
+          "g13n3",
+          "g13n0",
+          "g13n1",
+          "g13n2",
+          "r19_24_2",
+          "link_warrior_2_6",
+          "g49n5",
+          "link_assassin_1_1",
+          "link_templar_0_1",
+          "g35n0",
+          "g35n3",
+          "g35n4",
+          "r2_51_1",
+          "g14n7",
+          "g14n6",
+          "g14n5",
+          "g14n4",
+          "g14n3",
+          "g14n2",
+          "g14n1",
+          "g14n0",
+          "r2_46_1",
+          "r2_22_2",
+          "g30n6",
+          "g30n7",
+          "g30n0",
+          "g30n2",
+          "link_warrior_0_4",
+          "r7_29_1",
+          "link_warrior_1_4",
+          "r7_29_2",
+          "g25n0",
+          "g25n1",
+          "g25n2",
+          "g25n6"
+        ]
+      },
+      {
+        "target": "g48n4",
+        "nodes": [
+          "g25n6",
+          "g25n7",
+          "g48n0",
+          "g48n3",
+          "g48n4"
+        ]
+      },
+      {
+        "target": "g48n8",
+        "nodes": [
+          "g48n4",
+          "g48n6",
+          "g48n9",
+          "g48n8"
+        ]
+      }
+    ],
+    "spent": 47,
+    "stats": {
+      "attackSpeed": 12,
+      "crit": 129,
+      "physical": 34,
+      "hp": 33,
+      "leech": 1.3199999999999998,
+      "efficiency": 11,
+      "resource": 45,
+      "critMulti": 15,
+      "armor": 5
+    },
+    "keys": [],
+    "remaining": 1
+  },
+  {
+    "id": "legacy-tank-life",
+    "label": "生命・多方面の備えを拾う経路",
+    "profileId": "tank:support:plain:standard",
+    "siphon": false,
+    "targets": [
+      "g6n0",
+      "g6n4",
+      "g18n1"
+    ],
+    "note": "同じ生命・装甲目標へ、魔法防御・障壁・受け流し・資源運用も拾う経路。",
+    "budget": 48,
+    "legacyRoute": "tank-life",
+    "learned": [
+      "g18n1",
+      "g18n3",
+      "g18n6",
+      "g28n2",
+      "g28n5",
+      "g31n2",
+      "g31n4",
+      "g31n5",
+      "g33n0",
+      "g40n0",
+      "g40n3",
+      "g40n4",
+      "g40n5",
+      "g46n0",
+      "g46n1",
+      "g46n2",
+      "g46n7",
+      "g6n0",
+      "g6n4",
+      "g6n6",
+      "g6n7",
+      "g6n8",
+      "g6n9",
+      "join_assassin_1",
+      "join_templar_0",
+      "join_warrior_0",
+      "link_assassin_0_2",
+      "link_assassin_0_4",
+      "link_assassin_1_3",
+      "link_ranger_1_1",
+      "link_warrior_0_6",
+      "link_warrior_2_10",
+      "link_warrior_2_7",
+      "opening_templar_0_1",
+      "opening_templar_0_2",
+      "opening_templar_0_3",
+      "origin_templar",
+      "r10_14_2",
+      "r16_38_2",
+      "r21_26_1",
+      "r25_44_1",
+      "r33_37_2",
+      "r34_40_1",
+      "r6_35_1"
+    ],
+    "paths": [
+      {
+        "target": "g6n0",
+        "nodes": [
+          "origin_templar",
+          "opening_templar_0_1",
+          "opening_templar_0_2",
+          "opening_templar_0_3",
+          "link_assassin_1_3",
+          "link_assassin_0_2",
+          "link_warrior_2_7",
+          "r6_35_1",
+          "r25_44_1",
+          "g33n0",
+          "link_ranger_1_1",
+          "r33_37_2",
+          "g46n7",
+          "g46n1",
+          "g46n0",
+          "g46n2",
+          "link_warrior_2_10",
+          "r21_26_1",
+          "g31n4",
+          "g31n5",
+          "g31n2",
+          "join_assassin_1",
+          "join_templar_0",
+          "g40n5",
+          "g40n0",
+          "g40n4",
+          "g40n3",
+          "join_warrior_0",
+          "r10_14_2",
+          "g28n2",
+          "g28n5",
+          "link_warrior_0_6",
+          "r16_38_2",
+          "g6n0"
+        ]
+      },
+      {
+        "target": "g6n4",
+        "nodes": [
+          "g6n0",
+          "g6n6",
+          "g6n7",
+          "g6n8",
+          "g6n4"
+        ]
+      },
+      {
+        "target": "g18n1",
+        "nodes": [
+          "g6n4",
+          "g6n9",
+          "link_assassin_0_4",
+          "r34_40_1",
+          "g18n3",
+          "g18n6",
+          "g18n1"
+        ]
+      }
+    ],
+    "spent": 43,
+    "stats": {
+      "parry": 45,
+      "attackSpeed": 7,
+      "hp": 59,
+      "resource": 22,
+      "regen": 34,
+      "armor": 41.55,
+      "physical": 24,
+      "efficiency": 8,
+      "resist": 39,
+      "barrier": 14,
+      "mana": 4
+    },
+    "keys": [],
+    "remaining": 5
+  }
+]

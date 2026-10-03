@@ -1,0 +1,4 @@
+# Reproducible raw browser frames stay local; the two review composites are kept.
+ProjectS_Middle_V7_*.png
+!ProjectS_Middle_V7_Before_After.png
+!ProjectS_Middle_V7_Overview_And_Choices.png

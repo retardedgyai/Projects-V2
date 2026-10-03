@@ -1,0 +1,571 @@
+{
+  "status": "PASS",
+  "viewport": [
+    1920,
+    1200
+  ],
+  "sameCameras": true,
+  "normalZoom": 0.2,
+  "frames": [
+    {
+      "name": "ProjectS_Middle_V7_Before_Whole",
+      "cam": {
+        "x": 1230,
+        "y": -1245,
+        "z": 0.0667397060226203
+      },
+      "profile": "warrior:support:plain:standard",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 1.481263497824609,
+        "minClickGap": 1.61474290986985,
+        "minNodePairPaintGap": 3.1208315033014755,
+        "nearest": {
+          "node": "key_05",
+          "edge": [
+            "g13n2",
+            "r24_42_1"
+          ]
+        },
+        "labelLines": [],
+        "captions": 14,
+        "zoom": 0.0667397060226203,
+        "spent": 0,
+        "usable": true,
+        "connected": true
+      },
+      "rect": {
+        "x": 0,
+        "y": 76,
+        "width": 1570,
+        "height": 1124,
+        "scale": 1
+      }
+    },
+    {
+      "name": "ProjectS_Middle_V7_Before_West",
+      "cam": {
+        "x": -1600,
+        "y": -1800,
+        "z": 0.2
+      },
+      "profile": "warrior:support:plain:standard",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 6.6389958296336005,
+        "minClickGap": 7.038995829633601,
+        "minNodePairPaintGap": 8.139873057491947,
+        "nearest": {
+          "node": "g45n3",
+          "edge": [
+            "g45hub",
+            "g45n2"
+          ]
+        },
+        "labelLines": [],
+        "captions": 13,
+        "zoom": 0.2,
+        "spent": 0,
+        "usable": true,
+        "connected": true
+      },
+      "rect": {
+        "x": 0,
+        "y": 76,
+        "width": 1570,
+        "height": 1124,
+        "scale": 1
+      }
+    },
+    {
+      "name": "ProjectS_Middle_V7_Before_North",
+      "cam": {
+        "x": 1000,
+        "y": -4050,
+        "z": 0.2
+      },
+      "profile": "warrior:support:plain:standard",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 6.638995829633579,
+        "minClickGap": 7.0389958296335795,
+        "minNodePairPaintGap": 8.139873057491933,
+        "nearest": {
+          "node": "g45n3",
+          "edge": [
+            "g45hub",
+            "g45n2"
+          ]
+        },
+        "labelLines": [],
+        "captions": 12,
+        "zoom": 0.2,
+        "spent": 0,
+        "usable": true,
+        "connected": true
+      },
+      "rect": {
+        "x": 0,
+        "y": 76,
+        "width": 1570,
+        "height": 1124,
+        "scale": 1
+      }
+    },
+    {
+      "name": "ProjectS_Middle_V7_Before_East",
+      "cam": {
+        "x": 4300,
+        "y": -1900,
+        "z": 0.2
+      },
+      "profile": "warrior:support:plain:standard",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 6.638995829633563,
+        "minClickGap": 7.0389958296335635,
+        "minNodePairPaintGap": 8.139873057491933,
+        "nearest": {
+          "node": "g45n3",
+          "edge": [
+            "g45hub",
+            "g45n2"
+          ]
+        },
+        "labelLines": [],
+        "captions": 11,
+        "zoom": 0.2,
+        "spent": 0,
+        "usable": true,
+        "connected": true
+      },
+      "rect": {
+        "x": 0,
+        "y": 76,
+        "width": 1570,
+        "height": 1124,
+        "scale": 1
+      }
+    },
+    {
+      "name": "ProjectS_Middle_V7_Before_Southeast",
+      "cam": {
+        "x": 3800,
+        "y": 1500,
+        "z": 0.2
+      },
+      "profile": "warrior:support:plain:standard",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 6.638995829633583,
+        "minClickGap": 7.038995829633583,
+        "minNodePairPaintGap": 8.139873057491918,
+        "nearest": {
+          "node": "g45n3",
+          "edge": [
+            "g45hub",
+            "g45n2"
+          ]
+        },
+        "labelLines": [],
+        "captions": 11,
+        "zoom": 0.2,
+        "spent": 0,
+        "usable": true,
+        "connected": true
+      },
+      "rect": {
+        "x": 0,
+        "y": 76,
+        "width": 1570,
+        "height": 1124,
+        "scale": 1
+      }
+    },
+    {
+      "name": "ProjectS_Middle_V7_Before_Southwest",
+      "cam": {
+        "x": -650,
+        "y": 1450,
+        "z": 0.2
+      },
+      "profile": "warrior:support:plain:standard",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 6.638995829633579,
+        "minClickGap": 7.0389958296335795,
+        "minNodePairPaintGap": 8.139873057491947,
+        "nearest": {
+          "node": "g45n3",
+          "edge": [
+            "g45hub",
+            "g45n2"
+          ]
+        },
+        "labelLines": [],
+        "captions": 19,
+        "zoom": 0.2,
+        "spent": 0,
+        "usable": true,
+        "connected": true
+      },
+      "rect": {
+        "x": 0,
+        "y": 76,
+        "width": 1570,
+        "height": 1124,
+        "scale": 1
+      }
+    },
+    {
+      "name": "ProjectS_Middle_V7_After_Whole",
+      "cam": {
+        "x": 1230,
+        "y": -1245,
+        "z": 0.0667397060226203
+      },
+      "profile": "warrior:support:plain:standard",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 0.9999999999999822,
+        "minClickGap": 1.133479412045223,
+        "minNodePairPaintGap": 2.9427985643011865,
+        "nearest": {
+          "node": "key_05",
+          "edge": [
+            "r24_42_1",
+            "r19_24_2"
+          ]
+        },
+        "labelLines": [],
+        "captions": 13,
+        "zoom": 0.0667397060226203,
+        "spent": 0,
+        "usable": true,
+        "connected": true
+      },
+      "rect": {
+        "x": 0,
+        "y": 76,
+        "width": 1570,
+        "height": 1124,
+        "scale": 1
+      }
+    },
+    {
+      "name": "ProjectS_Middle_V7_After_West",
+      "cam": {
+        "x": -1600,
+        "y": -1800,
+        "z": 0.2
+      },
+      "profile": "warrior:support:plain:standard",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 1.829808232510171,
+        "minClickGap": 2.229808232510171,
+        "minNodePairPaintGap": 7.151883605855731,
+        "nearest": {
+          "node": "key_05",
+          "edge": [
+            "r24_42_1",
+            "r19_24_2"
+          ]
+        },
+        "labelLines": [],
+        "captions": 19,
+        "zoom": 0.2,
+        "spent": 0,
+        "usable": true,
+        "connected": true
+      },
+      "rect": {
+        "x": 0,
+        "y": 76,
+        "width": 1570,
+        "height": 1124,
+        "scale": 1
+      }
+    },
+    {
+      "name": "ProjectS_Middle_V7_After_North",
+      "cam": {
+        "x": 1000,
+        "y": -4050,
+        "z": 0.2
+      },
+      "profile": "warrior:support:plain:standard",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 1.8298082325105245,
+        "minClickGap": 2.2298082325105244,
+        "minNodePairPaintGap": 7.151883605855674,
+        "nearest": {
+          "node": "key_05",
+          "edge": [
+            "r24_42_1",
+            "r19_24_2"
+          ]
+        },
+        "labelLines": [],
+        "captions": 20,
+        "zoom": 0.2,
+        "spent": 0,
+        "usable": true,
+        "connected": true
+      },
+      "rect": {
+        "x": 0,
+        "y": 76,
+        "width": 1570,
+        "height": 1124,
+        "scale": 1
+      }
+    },
+    {
+      "name": "ProjectS_Middle_V7_After_East",
+      "cam": {
+        "x": 4300,
+        "y": -1900,
+        "z": 0.2
+      },
+      "profile": "warrior:support:plain:standard",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 1.829808232510187,
+        "minClickGap": 2.229808232510187,
+        "minNodePairPaintGap": 7.151883605855731,
+        "nearest": {
+          "node": "key_05",
+          "edge": [
+            "r24_42_1",
+            "r19_24_2"
+          ]
+        },
+        "labelLines": [],
+        "captions": 15,
+        "zoom": 0.2,
+        "spent": 0,
+        "usable": true,
+        "connected": true
+      },
+      "rect": {
+        "x": 0,
+        "y": 76,
+        "width": 1570,
+        "height": 1124,
+        "scale": 1
+      }
+    },
+    {
+      "name": "ProjectS_Middle_V7_After_Southeast",
+      "cam": {
+        "x": 3800,
+        "y": 1500,
+        "z": 0.2
+      },
+      "profile": "warrior:support:plain:standard",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 1.8298082325104517,
+        "minClickGap": 2.2298082325104516,
+        "minNodePairPaintGap": 7.151883605855731,
+        "nearest": {
+          "node": "key_05",
+          "edge": [
+            "r24_42_1",
+            "r19_24_2"
+          ]
+        },
+        "labelLines": [],
+        "captions": 14,
+        "zoom": 0.2,
+        "spent": 0,
+        "usable": true,
+        "connected": true
+      },
+      "rect": {
+        "x": 0,
+        "y": 76,
+        "width": 1570,
+        "height": 1124,
+        "scale": 1
+      }
+    },
+    {
+      "name": "ProjectS_Middle_V7_After_Southwest",
+      "cam": {
+        "x": -650,
+        "y": 1450,
+        "z": 0.2
+      },
+      "profile": "warrior:support:plain:standard",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 1.8298082325104517,
+        "minClickGap": 2.2298082325104516,
+        "minNodePairPaintGap": 7.151883605855731,
+        "nearest": {
+          "node": "key_05",
+          "edge": [
+            "r24_42_1",
+            "r19_24_2"
+          ]
+        },
+        "labelLines": [],
+        "captions": 21,
+        "zoom": 0.2,
+        "spent": 0,
+        "usable": true,
+        "connected": true
+      },
+      "rect": {
+        "x": 0,
+        "y": 76,
+        "width": 1570,
+        "height": 1124,
+        "scale": 1
+      }
+    },
+    {
+      "name": "ProjectS_Middle_V7_Region_v7g01",
+      "cam": {
+        "x": -1658.67813,
+        "y": -4005.2973250000005,
+        "z": 0.55
+      },
+      "profile": "tank:support:plain:standard",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 6.950722639403947,
+        "minClickGap": 8.900722639403947,
+        "minNodePairPaintGap": 20.967679916103144,
+        "nearest": {
+          "node": "key_05",
+          "edge": [
+            "r24_42_1",
+            "r19_24_2"
+          ]
+        },
+        "labelLines": [],
+        "captions": 2,
+        "zoom": 0.55,
+        "spent": 0,
+        "usable": true,
+        "connected": true
+      },
+      "rect": {
+        "x": 0,
+        "y": 76,
+        "width": 1570,
+        "height": 1124,
+        "scale": 1
+      }
+    },
+    {
+      "name": "ProjectS_Middle_V7_Region_v7g07",
+      "cam": {
+        "x": 3253.18002,
+        "y": -2801.0530449999997,
+        "z": 0.55
+      },
+      "profile": "mage:support:plain:standard",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 6.950722639403891,
+        "minClickGap": 8.90072263940389,
+        "minNodePairPaintGap": 20.967679916103144,
+        "nearest": {
+          "node": "key_05",
+          "edge": [
+            "r24_42_1",
+            "r19_24_2"
+          ]
+        },
+        "labelLines": [],
+        "captions": 2,
+        "zoom": 0.55,
+        "spent": 0,
+        "usable": true,
+        "connected": true
+      },
+      "rect": {
+        "x": 0,
+        "y": 76,
+        "width": 1570,
+        "height": 1124,
+        "scale": 1
+      }
+    },
+    {
+      "name": "ProjectS_Middle_V7_Region_v7g10",
+      "cam": {
+        "x": 4713.64234,
+        "y": 1756.04698,
+        "z": 0.55
+      },
+      "profile": "assassin:mark:plain:standard",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 6.950722639403784,
+        "minClickGap": 8.900722639403783,
+        "minNodePairPaintGap": 20.967679916103144,
+        "nearest": {
+          "node": "key_05",
+          "edge": [
+            "r24_42_1",
+            "r19_24_2"
+          ]
+        },
+        "labelLines": [],
+        "captions": 2,
+        "zoom": 0.55,
+        "spent": 0,
+        "usable": true,
+        "connected": true
+      },
+      "rect": {
+        "x": 0,
+        "y": 76,
+        "width": 1570,
+        "height": 1124,
+        "scale": 1
+      }
+    },
+    {
+      "name": "ProjectS_Middle_V7_Region_v7g12",
+      "cam": {
+        "x": 4517.32851,
+        "y": -4545.93591,
+        "z": 0.55
+      },
+      "profile": "mage:support:plain:standard",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 6.950722639403336,
+        "minClickGap": 8.900722639403336,
+        "minNodePairPaintGap": 20.967679916103144,
+        "nearest": {
+          "node": "key_05",
+          "edge": [
+            "r24_42_1",
+            "r19_24_2"
+          ]
+        },
+        "labelLines": [],
+        "captions": 3,
+        "zoom": 0.55,
+        "spent": 0,
+        "usable": true,
+        "connected": true
+      },
+      "rect": {
+        "x": 0,
+        "y": 76,
+        "width": 1570,
+        "height": 1124,
+        "scale": 1
+      }
+    }
+  ]
+}
