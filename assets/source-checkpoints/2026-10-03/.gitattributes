@@ -1,0 +1,2 @@
+# Frozen snapshots must retain the original archive bytes on every platform.
+** -text
