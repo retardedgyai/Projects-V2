@@ -12,7 +12,9 @@ ProjectSでは、新しい機能・基盤・ゲームシステムを作る時に
 
 新しい領域へ入る時のデフォルト順序は以下。
 
-`Idea → Research → Deep Repository Audit → Player/Operator Evidence → Harvest → ProjectS Design → Issue → Implementation → Sol Review → Manual Smoke → Compare Back`
+`Idea → Research → 必要なRepository Audit / Player Evidence → Harvest → ProjectS Design → 必要なIssue → Implementation → Sol Review → 必要なManual Smoke → Compare Back`
+
+PlaygroundのIssueはAGENTSどおり任意。制作物ではAgentが複数の類似実参照を選び、代表試作から同条件比較・反証・修正へ進む。書式を埋めるために調査や全工程を一律に増やさない。
 
 `Idea → すぐ実装` は原則として行わない。
 
@@ -205,11 +207,7 @@ ChatGPT/Solの役割:
 - Issue化
 - Review
 
-Luna/OpenCodeの役割:
-- 決定済みDesignの実装
-- tests
-- build
-- implementation report
+上記の役割分担は初期運用例であり、現在のAgentを決定済みDesignの実装だけへ制限しない。許可済み範囲でAgent自身が実参照の選定、分析、設計、制作、比較、反証、修正を担当する。モデル・推論設定は現在のCreator指定を維持し、この文書から変更しない。
 
 ## 成功状態
 
