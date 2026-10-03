@@ -1,0 +1,2400 @@
+{
+  "status": "PASS",
+  "actualFrames": [
+    {
+      "name": "West",
+      "file": ".tools/middle-band-review-20261003/after-West.png",
+      "cam": {
+        "x": -1600,
+        "y": -1800,
+        "z": 0.2
+      },
+      "rect": {
+        "x": 0,
+        "y": 76,
+        "width": 1570,
+        "height": 1124,
+        "scale": 1
+      },
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 6.6389958296336005,
+        "minClickGap": 7.038995829633601,
+        "minNodePairPaintGap": 8.139873057491947,
+        "nearest": {
+          "node": "g45n3",
+          "edge": [
+            "g45hub",
+            "g45n2"
+          ]
+        },
+        "labelLines": [],
+        "captions": 13,
+        "zoom": 0.2,
+        "spent": 0,
+        "usable": true,
+        "connected": true
+      },
+      "smallNodes": [
+        {
+          "id": "opening_warrior_0_1",
+          "radius": 6
+        },
+        {
+          "id": "opening_warrior_0_2",
+          "radius": 6
+        },
+        {
+          "id": "opening_warrior_1_1",
+          "radius": 6
+        },
+        {
+          "id": "opening_warrior_1_2",
+          "radius": 6
+        },
+        {
+          "id": "opening_warrior_2_1",
+          "radius": 6
+        },
+        {
+          "id": "opening_warrior_2_2",
+          "radius": 6
+        },
+        {
+          "id": "g45n1",
+          "radius": 6
+        },
+        {
+          "id": "g45n3",
+          "radius": 6
+        },
+        {
+          "id": "g45n4",
+          "radius": 6
+        },
+        {
+          "id": "g45n6",
+          "radius": 6
+        },
+        {
+          "id": "g38n0",
+          "radius": 6
+        },
+        {
+          "id": "g38n2",
+          "radius": 6
+        },
+        {
+          "id": "g38n3",
+          "radius": 6
+        },
+        {
+          "id": "g38n4",
+          "radius": 6
+        },
+        {
+          "id": "g38n5",
+          "radius": 6
+        },
+        {
+          "id": "g38n6",
+          "radius": 6
+        },
+        {
+          "id": "g23n0",
+          "radius": 6
+        },
+        {
+          "id": "g23n2",
+          "radius": 6
+        },
+        {
+          "id": "g23n3",
+          "radius": 6
+        },
+        {
+          "id": "g23n4",
+          "radius": 6
+        },
+        {
+          "id": "g23n6",
+          "radius": 6
+        },
+        {
+          "id": "g23n7",
+          "radius": 6
+        },
+        {
+          "id": "g23n8",
+          "radius": 6
+        },
+        {
+          "id": "g13n0",
+          "radius": 6
+        },
+        {
+          "id": "g13n7",
+          "radius": 6
+        },
+        {
+          "id": "g13n8",
+          "radius": 6
+        },
+        {
+          "id": "g51n7",
+          "radius": 6
+        },
+        {
+          "id": "g6n1",
+          "radius": 6
+        },
+        {
+          "id": "g6n2",
+          "radius": 6
+        },
+        {
+          "id": "g6n3",
+          "radius": 6
+        },
+        {
+          "id": "g6n5",
+          "radius": 6
+        },
+        {
+          "id": "g6n6",
+          "radius": 6
+        },
+        {
+          "id": "g6n7",
+          "radius": 6
+        },
+        {
+          "id": "g6n8",
+          "radius": 6
+        },
+        {
+          "id": "g6n9",
+          "radius": 6
+        },
+        {
+          "id": "g18n0",
+          "radius": 6
+        },
+        {
+          "id": "g18n2",
+          "radius": 6
+        },
+        {
+          "id": "g18n3",
+          "radius": 6
+        },
+        {
+          "id": "g18n4",
+          "radius": 6
+        },
+        {
+          "id": "g18n5",
+          "radius": 6
+        },
+        {
+          "id": "g18n6",
+          "radius": 6
+        },
+        {
+          "id": "g18n7",
+          "radius": 6
+        },
+        {
+          "id": "g33n0",
+          "radius": 6
+        },
+        {
+          "id": "g33n2",
+          "radius": 6
+        },
+        {
+          "id": "g11n4",
+          "radius": 6
+        },
+        {
+          "id": "g11n5",
+          "radius": 6
+        },
+        {
+          "id": "g11n6",
+          "radius": 6
+        },
+        {
+          "id": "g16n0",
+          "radius": 6
+        },
+        {
+          "id": "g16n1",
+          "radius": 6
+        },
+        {
+          "id": "g16n3",
+          "radius": 6
+        },
+        {
+          "id": "g16n4",
+          "radius": 6
+        },
+        {
+          "id": "g16n5",
+          "radius": 6
+        },
+        {
+          "id": "g16n6",
+          "radius": 6
+        },
+        {
+          "id": "g16n7",
+          "radius": 6
+        },
+        {
+          "id": "g44n2",
+          "radius": 6
+        },
+        {
+          "id": "g44n4",
+          "radius": 6
+        },
+        {
+          "id": "g44n6",
+          "radius": 6
+        },
+        {
+          "id": "g44n7",
+          "radius": 6
+        },
+        {
+          "id": "opening_templar_0_1",
+          "radius": 6
+        },
+        {
+          "id": "opening_templar_0_2",
+          "radius": 6
+        },
+        {
+          "id": "opening_templar_1_1",
+          "radius": 6
+        },
+        {
+          "id": "opening_templar_1_2",
+          "radius": 6
+        },
+        {
+          "id": "opening_templar_2_1",
+          "radius": 6
+        },
+        {
+          "id": "opening_templar_2_2",
+          "radius": 6
+        },
+        {
+          "id": "opening_mage_0_1",
+          "radius": 6
+        },
+        {
+          "id": "opening_mage_0_2",
+          "radius": 6
+        },
+        {
+          "id": "opening_mage_1_1",
+          "radius": 6
+        },
+        {
+          "id": "opening_mage_1_2",
+          "radius": 6
+        },
+        {
+          "id": "opening_mage_2_1",
+          "radius": 6
+        },
+        {
+          "id": "opening_mage_2_2",
+          "radius": 6
+        },
+        {
+          "id": "opening_ranger_0_1",
+          "radius": 6
+        },
+        {
+          "id": "opening_ranger_1_1",
+          "radius": 6
+        },
+        {
+          "id": "opening_assassin_0_1",
+          "radius": 6
+        },
+        {
+          "id": "opening_assassin_0_2",
+          "radius": 6
+        },
+        {
+          "id": "opening_assassin_1_1",
+          "radius": 6
+        },
+        {
+          "id": "opening_assassin_1_2",
+          "radius": 6
+        },
+        {
+          "id": "opening_assassin_2_1",
+          "radius": 6
+        },
+        {
+          "id": "opening_assassin_2_2",
+          "radius": 6
+        },
+        {
+          "id": "g38hub",
+          "radius": 6
+        },
+        {
+          "id": "g45hub",
+          "radius": 6
+        },
+        {
+          "id": "link_warrior_0_3",
+          "radius": 6
+        },
+        {
+          "id": "link_warrior_1_3",
+          "radius": 6
+        },
+        {
+          "id": "link_warrior_1_11",
+          "radius": 6
+        },
+        {
+          "id": "link_warrior_2_3",
+          "radius": 6
+        },
+        {
+          "id": "link_warrior_2_8",
+          "radius": 6
+        }
+      ],
+      "smallNodeRadiusRange": [
+        6,
+        6
+      ]
+    },
+    {
+      "name": "Southwest",
+      "file": ".tools/middle-band-review-20261003/after-Southwest.png",
+      "cam": {
+        "x": -650,
+        "y": 1450,
+        "z": 0.2
+      },
+      "rect": {
+        "x": 0,
+        "y": 76,
+        "width": 1570,
+        "height": 1124,
+        "scale": 1
+      },
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 6.638995829633579,
+        "minClickGap": 7.0389958296335795,
+        "minNodePairPaintGap": 8.139873057491947,
+        "nearest": {
+          "node": "g45n3",
+          "edge": [
+            "g45hub",
+            "g45n2"
+          ]
+        },
+        "labelLines": [],
+        "captions": 19,
+        "zoom": 0.2,
+        "spent": 0,
+        "usable": true,
+        "connected": true
+      },
+      "smallNodes": [
+        {
+          "id": "opening_warrior_0_1",
+          "radius": 6
+        },
+        {
+          "id": "opening_warrior_0_2",
+          "radius": 6
+        },
+        {
+          "id": "opening_warrior_1_1",
+          "radius": 6
+        },
+        {
+          "id": "opening_warrior_1_2",
+          "radius": 6
+        },
+        {
+          "id": "opening_warrior_2_1",
+          "radius": 6
+        },
+        {
+          "id": "opening_warrior_2_2",
+          "radius": 6
+        },
+        {
+          "id": "g49n0",
+          "radius": 6
+        },
+        {
+          "id": "g49n1",
+          "radius": 6
+        },
+        {
+          "id": "g49n3",
+          "radius": 6
+        },
+        {
+          "id": "g49n4",
+          "radius": 6
+        },
+        {
+          "id": "g49n5",
+          "radius": 6
+        },
+        {
+          "id": "g49n6",
+          "radius": 6
+        },
+        {
+          "id": "g49n7",
+          "radius": 6
+        },
+        {
+          "id": "g45n0",
+          "radius": 6
+        },
+        {
+          "id": "g45n1",
+          "radius": 6
+        },
+        {
+          "id": "g45n3",
+          "radius": 6
+        },
+        {
+          "id": "g45n4",
+          "radius": 6
+        },
+        {
+          "id": "g45n5",
+          "radius": 6
+        },
+        {
+          "id": "g45n6",
+          "radius": 6
+        },
+        {
+          "id": "g38n0",
+          "radius": 6
+        },
+        {
+          "id": "g38n2",
+          "radius": 6
+        },
+        {
+          "id": "g38n3",
+          "radius": 6
+        },
+        {
+          "id": "g38n4",
+          "radius": 6
+        },
+        {
+          "id": "g38n5",
+          "radius": 6
+        },
+        {
+          "id": "g38n6",
+          "radius": 6
+        },
+        {
+          "id": "g23n0",
+          "radius": 6
+        },
+        {
+          "id": "g23n2",
+          "radius": 6
+        },
+        {
+          "id": "g23n3",
+          "radius": 6
+        },
+        {
+          "id": "g23n4",
+          "radius": 6
+        },
+        {
+          "id": "g23n6",
+          "radius": 6
+        },
+        {
+          "id": "g23n7",
+          "radius": 6
+        },
+        {
+          "id": "g23n8",
+          "radius": 6
+        },
+        {
+          "id": "g13n0",
+          "radius": 6
+        },
+        {
+          "id": "g13n1",
+          "radius": 6
+        },
+        {
+          "id": "g13n2",
+          "radius": 6
+        },
+        {
+          "id": "g13n4",
+          "radius": 6
+        },
+        {
+          "id": "g13n5",
+          "radius": 6
+        },
+        {
+          "id": "g13n6",
+          "radius": 6
+        },
+        {
+          "id": "g13n7",
+          "radius": 6
+        },
+        {
+          "id": "g13n8",
+          "radius": 6
+        },
+        {
+          "id": "g51n0",
+          "radius": 6
+        },
+        {
+          "id": "g51n2",
+          "radius": 6
+        },
+        {
+          "id": "g51n3",
+          "radius": 6
+        },
+        {
+          "id": "g51n6",
+          "radius": 6
+        },
+        {
+          "id": "g51n7",
+          "radius": 6
+        },
+        {
+          "id": "g51n8",
+          "radius": 6
+        },
+        {
+          "id": "g35n0",
+          "radius": 6
+        },
+        {
+          "id": "g35n2",
+          "radius": 6
+        },
+        {
+          "id": "g35n3",
+          "radius": 6
+        },
+        {
+          "id": "g35n4",
+          "radius": 6
+        },
+        {
+          "id": "g35n5",
+          "radius": 6
+        },
+        {
+          "id": "g35n6",
+          "radius": 6
+        },
+        {
+          "id": "g35n7",
+          "radius": 6
+        },
+        {
+          "id": "g30n0",
+          "radius": 6
+        },
+        {
+          "id": "g30n2",
+          "radius": 6
+        },
+        {
+          "id": "g30n3",
+          "radius": 6
+        },
+        {
+          "id": "g30n5",
+          "radius": 6
+        },
+        {
+          "id": "g30n6",
+          "radius": 6
+        },
+        {
+          "id": "g30n7",
+          "radius": 6
+        },
+        {
+          "id": "g14n0",
+          "radius": 6
+        },
+        {
+          "id": "g14n1",
+          "radius": 6
+        },
+        {
+          "id": "g14n2",
+          "radius": 6
+        },
+        {
+          "id": "g14n3",
+          "radius": 6
+        },
+        {
+          "id": "g14n5",
+          "radius": 6
+        },
+        {
+          "id": "g14n6",
+          "radius": 6
+        },
+        {
+          "id": "g14n7",
+          "radius": 6
+        },
+        {
+          "id": "g34n0",
+          "radius": 6
+        },
+        {
+          "id": "g34n1",
+          "radius": 6
+        },
+        {
+          "id": "g34n3",
+          "radius": 6
+        },
+        {
+          "id": "g34n4",
+          "radius": 6
+        },
+        {
+          "id": "g34n5",
+          "radius": 6
+        },
+        {
+          "id": "g34n6",
+          "radius": 6
+        },
+        {
+          "id": "g34n7",
+          "radius": 6
+        },
+        {
+          "id": "g34n9",
+          "radius": 6
+        },
+        {
+          "id": "g21n0",
+          "radius": 6
+        },
+        {
+          "id": "g21n1",
+          "radius": 6
+        },
+        {
+          "id": "g21n2",
+          "radius": 6
+        },
+        {
+          "id": "g21n4",
+          "radius": 6
+        },
+        {
+          "id": "g21n5",
+          "radius": 6
+        },
+        {
+          "id": "g21n6",
+          "radius": 6
+        },
+        {
+          "id": "g21n7",
+          "radius": 6
+        },
+        {
+          "id": "g5n1",
+          "radius": 6
+        },
+        {
+          "id": "g5n2",
+          "radius": 6
+        },
+        {
+          "id": "g5n3",
+          "radius": 6
+        },
+        {
+          "id": "g5n4",
+          "radius": 6
+        },
+        {
+          "id": "g5n5",
+          "radius": 6
+        },
+        {
+          "id": "g26n0",
+          "radius": 6
+        },
+        {
+          "id": "g26n1",
+          "radius": 6
+        },
+        {
+          "id": "g26n2",
+          "radius": 6
+        },
+        {
+          "id": "g37n1",
+          "radius": 6
+        },
+        {
+          "id": "g37n2",
+          "radius": 6
+        },
+        {
+          "id": "g37n3",
+          "radius": 6
+        },
+        {
+          "id": "g25n0",
+          "radius": 6
+        },
+        {
+          "id": "g25n1",
+          "radius": 6
+        },
+        {
+          "id": "g25n2",
+          "radius": 6
+        },
+        {
+          "id": "g25n3",
+          "radius": 6
+        },
+        {
+          "id": "g25n4",
+          "radius": 6
+        },
+        {
+          "id": "g25n5",
+          "radius": 6
+        },
+        {
+          "id": "g25n7",
+          "radius": 6
+        },
+        {
+          "id": "g48n0",
+          "radius": 6
+        },
+        {
+          "id": "opening_ranger_0_1",
+          "radius": 6
+        },
+        {
+          "id": "opening_ranger_0_2",
+          "radius": 6
+        },
+        {
+          "id": "opening_ranger_1_1",
+          "radius": 6
+        },
+        {
+          "id": "opening_ranger_1_2",
+          "radius": 6
+        },
+        {
+          "id": "opening_ranger_2_1",
+          "radius": 6
+        },
+        {
+          "id": "opening_ranger_2_2",
+          "radius": 6
+        },
+        {
+          "id": "opening_assassin_0_1",
+          "radius": 6
+        },
+        {
+          "id": "opening_assassin_0_2",
+          "radius": 6
+        },
+        {
+          "id": "opening_assassin_1_1",
+          "radius": 6
+        },
+        {
+          "id": "opening_assassin_1_2",
+          "radius": 6
+        },
+        {
+          "id": "opening_assassin_2_1",
+          "radius": 6
+        },
+        {
+          "id": "opening_assassin_2_2",
+          "radius": 6
+        },
+        {
+          "id": "g38hub",
+          "radius": 6
+        },
+        {
+          "id": "g45hub",
+          "radius": 6
+        },
+        {
+          "id": "link_warrior_0_2",
+          "radius": 6
+        },
+        {
+          "id": "link_warrior_0_3",
+          "radius": 6
+        },
+        {
+          "id": "link_warrior_0_4",
+          "radius": 6
+        },
+        {
+          "id": "link_warrior_0_5",
+          "radius": 6
+        },
+        {
+          "id": "link_warrior_0_8",
+          "radius": 6
+        },
+        {
+          "id": "link_warrior_0_9",
+          "radius": 6
+        },
+        {
+          "id": "link_warrior_1_2",
+          "radius": 6
+        },
+        {
+          "id": "link_warrior_1_3",
+          "radius": 6
+        },
+        {
+          "id": "link_warrior_1_4",
+          "radius": 6
+        },
+        {
+          "id": "link_warrior_1_5",
+          "radius": 6
+        },
+        {
+          "id": "link_warrior_1_8",
+          "radius": 6
+        },
+        {
+          "id": "link_warrior_1_9",
+          "radius": 6
+        },
+        {
+          "id": "link_warrior_2_2",
+          "radius": 6
+        },
+        {
+          "id": "link_warrior_2_3",
+          "radius": 6
+        },
+        {
+          "id": "link_warrior_2_4",
+          "radius": 6
+        },
+        {
+          "id": "link_warrior_2_5",
+          "radius": 6
+        },
+        {
+          "id": "link_warrior_2_8",
+          "radius": 6
+        },
+        {
+          "id": "link_warrior_2_9",
+          "radius": 6
+        }
+      ],
+      "smallNodeRadiusRange": [
+        6,
+        6
+      ]
+    },
+    {
+      "name": "Whole",
+      "file": ".tools/middle-band-review-20261003/after-Whole.png",
+      "cam": {
+        "x": 1230,
+        "y": -1245,
+        "z": 0.0667397060226203
+      },
+      "rect": {
+        "x": 0,
+        "y": 76,
+        "width": 1570,
+        "height": 1124,
+        "scale": 1
+      },
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 1.481263497824609,
+        "minClickGap": 1.61474290986985,
+        "minNodePairPaintGap": 3.1208315033014755,
+        "nearest": {
+          "node": "key_05",
+          "edge": [
+            "g13n2",
+            "r24_42_1"
+          ]
+        },
+        "labelLines": [],
+        "captions": 14,
+        "zoom": 0.0667397060226203,
+        "spent": 0,
+        "usable": true,
+        "connected": true
+      },
+      "smallNodes": [
+        {
+          "id": "opening_warrior_0_1",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "opening_warrior_0_2",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "opening_warrior_1_1",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "opening_warrior_1_2",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "opening_warrior_2_1",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "opening_warrior_2_2",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g49n0",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g49n1",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g49n3",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g49n4",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g49n5",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g49n6",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g49n7",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g45n0",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g45n1",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g45n3",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g45n4",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g45n5",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g45n6",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g38n0",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g38n2",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g38n3",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g38n4",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g38n5",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g38n6",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g23n0",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g23n2",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g23n3",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g23n4",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g23n6",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g23n7",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g23n8",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g13n0",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g13n1",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g13n2",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g13n4",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g13n5",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g13n6",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g13n7",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g13n8",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g51n0",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g51n2",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g51n3",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g51n5",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g51n6",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g51n7",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g51n8",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g35n0",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g35n2",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g35n3",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g35n4",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g35n5",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g35n6",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g35n7",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g30n0",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g30n2",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g30n3",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g30n5",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g30n6",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g30n7",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g14n0",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g14n1",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g14n2",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g14n3",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g14n5",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g14n6",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g14n7",
+          "radius": 1.5976233519693857
+        },
+        {
+          "id": "g34n0",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g34n1",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g34n3",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g34n4",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g34n5",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g34n6",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g34n7",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g34n9",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g21n0",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g21n1",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g21n2",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g21n4",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g21n5",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g21n6",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g21n7",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g5n1",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g5n2",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g5n3",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g5n4",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g5n5",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g50n0",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g50n2",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g26n0",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g26n1",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g26n2",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g37n1",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g37n2",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g37n3",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g37n5",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g37n6",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g37n7",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g37n8",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g25n0",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g25n1",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g25n2",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g25n3",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g25n4",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g25n5",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g25n7",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g48n0",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g48n1",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g48n2",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g48n3",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g48n5",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g48n6",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g48n7",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g48n9",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g6n1",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g6n2",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g6n3",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g6n5",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g6n6",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g6n7",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g6n8",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g6n9",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g18n0",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g18n2",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g18n3",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g18n4",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g18n5",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g18n6",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g18n7",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g31n0",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g31n1",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g31n2",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g31n3",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g31n5",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g31n6",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g46n0",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g46n1",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g46n2",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g46n3",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g46n4",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g46n5",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g46n7",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g33n0",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g33n2",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g33n3",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g33n4",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g40n1",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g40n2",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g40n3",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g40n4",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g40n5",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g20n0",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g20n2",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g20n3",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g20n4",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g20n5",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g20n7",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g20n8",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g20n9",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g12n0",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g12n1",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g12n3",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g19n1",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g19n2",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g19n3",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g19n4",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g19n5",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g28n0",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g28n1",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g28n3",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g28n4",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g28n5",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g28n6",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g28n7",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g11n0",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g11n1",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g11n2",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g11n3",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g11n4",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g11n5",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g11n6",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g16n0",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g16n1",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g16n3",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g16n4",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g16n5",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g16n6",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g16n7",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g44n1",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g44n2",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g44n4",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g44n5",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g44n6",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g44n7",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g2n1",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g2n2",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g2n4",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g2n5",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g2n6",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g2n7",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g24n0",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g24n1",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g24n2",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g24n3",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g24n5",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g24n6",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g27n0",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g27n2",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g27n3",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g27n5",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g27n6",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g27n7",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g27n8",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g27n9",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g3n0",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g3n1",
+          "radius": 1.8368568596282415
+        },
+        {
+          "id": "g3n2",
+          "radius": 1.8339570270245868
+        },
+        {
+          "id": "g3n3",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g3n4",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g3n6",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g47n0",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g47n1",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g47n3",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g47n4",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g47n5",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g8n0",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g8n1",
+          "radius": 1.6493425803230783
+        },
+        {
+          "id": "g8n2",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g8n3",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g9n0",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g9n1",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g9n3",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g9n4",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g9n5",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g9n6",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g43n1",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g43n2",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g43n3",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g43n4",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g4n0",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g4n1",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g4n3",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g4n4",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g4n5",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g4n6",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g4n7",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g52n1",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g52n2",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g52n3",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g52n4",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g52n5",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g52n6",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g39n0",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g39n1",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g39n2",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g39n3",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g39n4",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g39n5",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g39n7",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g32n0",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g32n1",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g32n3",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g32n4",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g32n5",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g32n6",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g32n7",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g41n1",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g41n2",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g41n4",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g41n5",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g41n6",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g41n7",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g41n8",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g41n9",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g7n0",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g7n1",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g7n3",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g7n4",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g7n5",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g7n6",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g7n7",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g42n1",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g42n2",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g42n3",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g42n4",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g42n5",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g42n6",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g42n7",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g17n1",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g17n2",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g17n3",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g17n4",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g17n5",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g17n6",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g10n0",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g10n1",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g10n2",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g10n4",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g10n5",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g10n6",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "opening_templar_0_1",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "opening_templar_0_2",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "opening_templar_1_1",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "opening_templar_1_2",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "opening_templar_2_1",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "opening_templar_2_2",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "opening_mage_0_1",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "opening_mage_0_2",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "opening_mage_1_1",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "opening_mage_1_2",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "opening_mage_2_1",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "opening_mage_2_2",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "opening_ranger_0_1",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "opening_ranger_0_2",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "opening_ranger_1_1",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "opening_ranger_1_2",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "opening_ranger_2_1",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "opening_ranger_2_2",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "opening_assassin_0_1",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "opening_assassin_0_2",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "opening_assassin_1_1",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "opening_assassin_1_2",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "opening_assassin_2_1",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "opening_assassin_2_2",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g3hub",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g10hub",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g17hub",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g24hub",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g31hub",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g38hub",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g45hub",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "g52hub",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "link_warrior_0_2",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "link_warrior_0_3",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "link_warrior_0_4",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "link_warrior_0_5",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "link_warrior_0_8",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "link_warrior_0_9",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "link_warrior_1_2",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "link_warrior_1_3",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "link_warrior_1_4",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "link_warrior_1_5",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "link_warrior_1_8",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "link_warrior_1_9",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "link_warrior_1_11",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "link_warrior_2_2",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "link_warrior_2_3",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "link_warrior_2_4",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "link_warrior_2_5",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "link_warrior_2_8",
+          "radius": 2.0021911806786092
+        },
+        {
+          "id": "link_warrior_2_9",
+          "radius": 2.0021911806786092
+        }
+      ],
+      "smallNodeRadiusRange": [
+        1.5976233519693857,
+        2.0021911806786092
+      ]
+    }
+  ]
+}

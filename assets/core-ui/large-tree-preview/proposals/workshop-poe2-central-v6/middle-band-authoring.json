@@ -1,0 +1,580 @@
+{
+  "status": "VERIFIED_LAYOUT_PROPOSAL",
+  "scope": "west / southwest middle travel only",
+  "central60Exact": true,
+  "all47RegionalNodeCoordinatesExact": true,
+  "all47InternalRegionEdgesExact": true,
+  "sourceFieldsExact": true,
+  "oneTravelAttachmentChanged": {
+    "before": [
+      "g23n5",
+      "r2_22_1"
+    ],
+    "after": [
+      "r2_22_1",
+      "g18n5"
+    ],
+    "purpose": "Open the western circular return into a northwest life-region attachment; retain every regional and central edge."
+  },
+  "directCorridors": [
+    {
+      "edge": [
+        "g49n2",
+        "j15"
+      ],
+      "action": "clear-direct-corridor",
+      "beforeSegments": 10
+    },
+    {
+      "edge": [
+        "j15",
+        "j22"
+      ],
+      "action": "clear-direct-corridor",
+      "beforeSegments": 7
+    },
+    {
+      "edge": [
+        "j22",
+        "key_05"
+      ],
+      "action": "clear-direct-corridor",
+      "beforeSegments": 6
+    },
+    {
+      "edge": [
+        "j29",
+        "g45n0"
+      ],
+      "action": "clear-direct-corridor",
+      "beforeSegments": 11
+    },
+    {
+      "edge": [
+        "g45n1",
+        "r1_22_2"
+      ],
+      "action": "clear-direct-corridor",
+      "beforeSegments": 10
+    },
+    {
+      "edge": [
+        "r1_22_2",
+        "r1_22_3"
+      ],
+      "action": "clear-direct-corridor",
+      "beforeSegments": 6
+    },
+    {
+      "edge": [
+        "g45n2",
+        "r1_22_4"
+      ],
+      "action": "clear-direct-corridor",
+      "beforeSegments": 7
+    },
+    {
+      "edge": [
+        "r1_22_4",
+        "g23n0"
+      ],
+      "action": "clear-direct-corridor",
+      "beforeSegments": 6
+    },
+    {
+      "edge": [
+        "g23n6",
+        "r1_29_1"
+      ],
+      "action": "clear-direct-corridor",
+      "beforeSegments": 6
+    },
+    {
+      "edge": [
+        "r1_29_1",
+        "g13n0"
+      ],
+      "action": "clear-direct-corridor",
+      "beforeSegments": 8
+    },
+    {
+      "edge": [
+        "g13n7",
+        "r1_29_2"
+      ],
+      "action": "clear-direct-corridor",
+      "beforeSegments": 7
+    },
+    {
+      "edge": [
+        "r1_29_2",
+        "g51n8"
+      ],
+      "action": "clear-direct-corridor",
+      "beforeSegments": 7
+    },
+    {
+      "edge": [
+        "r1_29_5",
+        "r1_29_6"
+      ],
+      "action": "clear-direct-corridor",
+      "beforeSegments": 12
+    },
+    {
+      "edge": [
+        "g49n6",
+        "r1_51_1"
+      ],
+      "action": "clear-direct-corridor",
+      "beforeSegments": 11
+    },
+    {
+      "edge": [
+        "r1_51_1",
+        "g35n0"
+      ],
+      "action": "clear-direct-corridor",
+      "beforeSegments": 11
+    },
+    {
+      "edge": [
+        "g35n1",
+        "r3_4_2"
+      ],
+      "action": "clear-direct-corridor",
+      "beforeSegments": 15
+    },
+    {
+      "edge": [
+        "g45hub",
+        "g45n2"
+      ],
+      "action": "clear-direct-corridor",
+      "beforeSegments": 17
+    },
+    {
+      "edge": [
+        "g45hub",
+        "g45n1"
+      ],
+      "action": "clear-direct-corridor",
+      "beforeSegments": 13
+    },
+    {
+      "edge": [
+        "g45n1",
+        "link_warrior_0_3"
+      ],
+      "action": "clear-direct-corridor",
+      "beforeSegments": 6
+    },
+    {
+      "edge": [
+        "link_warrior_0_3",
+        "r5_41_1"
+      ],
+      "action": "clear-direct-corridor",
+      "beforeSegments": 8
+    },
+    {
+      "edge": [
+        "g49n5",
+        "link_warrior_0_8"
+      ],
+      "action": "clear-direct-corridor",
+      "beforeSegments": 6
+    },
+    {
+      "edge": [
+        "link_warrior_0_8",
+        "r1_29_5"
+      ],
+      "action": "clear-direct-corridor",
+      "beforeSegments": 8
+    },
+    {
+      "edge": [
+        "r1_29_6",
+        "link_warrior_1_8"
+      ],
+      "action": "clear-direct-corridor",
+      "beforeSegments": 7
+    },
+    {
+      "edge": [
+        "link_warrior_1_8",
+        "r1_47_1"
+      ],
+      "action": "clear-direct-corridor",
+      "beforeSegments": 9
+    },
+    {
+      "edge": [
+        "r1_47_1",
+        "link_warrior_1_9"
+      ],
+      "action": "clear-direct-corridor",
+      "beforeSegments": 6
+    },
+    {
+      "edge": [
+        "link_warrior_1_9",
+        "r1_47_2"
+      ],
+      "action": "clear-direct-corridor",
+      "beforeSegments": 11
+    },
+    {
+      "edge": [
+        "g23n8",
+        "link_warrior_2_3"
+      ],
+      "action": "clear-direct-corridor",
+      "beforeSegments": 7
+    },
+    {
+      "edge": [
+        "link_warrior_2_3",
+        "g23n0"
+      ],
+      "action": "clear-direct-corridor",
+      "beforeSegments": 9
+    },
+    {
+      "edge": [
+        "r1_47_2",
+        "link_warrior_2_9"
+      ],
+      "action": "clear-direct-corridor",
+      "beforeSegments": 7
+    },
+    {
+      "edge": [
+        "link_warrior_2_9",
+        "g51n0"
+      ],
+      "action": "clear-direct-corridor",
+      "beforeSegments": 9
+    },
+    {
+      "edge": [
+        "g13n2",
+        "r19_24_2"
+      ],
+      "action": "clear-direct-corridor",
+      "beforeSegments": 18
+    },
+    {
+      "edge": [
+        "g13n2",
+        "r24_42_1"
+      ],
+      "action": "clear-direct-corridor",
+      "beforeSegments": 16
+    },
+    {
+      "edge": [
+        "r19_24_2",
+        "link_warrior_2_6"
+      ],
+      "action": "clear-direct-corridor",
+      "beforeSegments": 10
+    },
+    {
+      "edge": [
+        "link_warrior_2_6",
+        "g49n5"
+      ],
+      "action": "clear-direct-corridor",
+      "beforeSegments": 13
+    },
+    {
+      "edge": [
+        "g35n0",
+        "link_templar_0_1"
+      ],
+      "action": "clear-direct-corridor",
+      "beforeSegments": 10
+    },
+    {
+      "edge": [
+        "r24_42_1",
+        "link_templar_1_1"
+      ],
+      "action": "clear-direct-corridor",
+      "beforeSegments": 9
+    },
+    {
+      "edge": [
+        "link_templar_1_1",
+        "g45n4"
+      ],
+      "action": "clear-direct-corridor",
+      "beforeSegments": 12
+    },
+    {
+      "edge": [
+        "g45n5",
+        "link_assassin_0_1"
+      ],
+      "action": "clear-direct-corridor",
+      "beforeSegments": 6
+    },
+    {
+      "edge": [
+        "link_assassin_0_1",
+        "g49n3"
+      ],
+      "action": "clear-direct-corridor",
+      "beforeSegments": 8
+    },
+    {
+      "edge": [
+        "link_templar_0_1",
+        "link_assassin_1_1"
+      ],
+      "action": "clear-direct-corridor",
+      "beforeSegments": 6
+    },
+    {
+      "edge": [
+        "link_assassin_1_1",
+        "g49n5"
+      ],
+      "action": "clear-direct-corridor",
+      "beforeSegments": 7
+    },
+    {
+      "edge": [
+        "g13n3",
+        "join_assassin_2"
+      ],
+      "action": "clear-direct-corridor",
+      "beforeSegments": 7
+    },
+    {
+      "edge": [
+        "join_assassin_2",
+        "g13n5"
+      ],
+      "action": "clear-direct-corridor",
+      "beforeSegments": 7
+    },
+    {
+      "edge": [
+        "g23n5",
+        "r2_22_1"
+      ],
+      "action": "clear-direct-corridor",
+      "beforeSegments": 23
+    },
+    {
+      "edge": [
+        "link_ranger_2_2",
+        "link_warrior_2_7"
+      ],
+      "action": "clear-direct-corridor",
+      "beforeSegments": 7
+    },
+    {
+      "edge": [
+        "g18n5",
+        "r1_22_1"
+      ],
+      "action": "clear-direct-corridor",
+      "beforeSegments": 23
+    },
+    {
+      "edge": [
+        "r1_22_1",
+        "link_warrior_2_8"
+      ],
+      "action": "clear-direct-corridor",
+      "beforeSegments": 21
+    },
+    {
+      "edge": [
+        "g13n8",
+        "r6_35_2"
+      ],
+      "action": "clear-direct-corridor",
+      "beforeSegments": 12
+    },
+    {
+      "edge": [
+        "r6_35_2",
+        "r1_29_2"
+      ],
+      "action": "clear-direct-corridor",
+      "beforeSegments": 15
+    },
+    {
+      "edge": [
+        "g13n8",
+        "r16_37_2"
+      ],
+      "action": "clear-direct-corridor",
+      "beforeSegments": 9
+    },
+    {
+      "edge": [
+        "r16_37_2",
+        "link_ranger_2_2"
+      ],
+      "action": "clear-direct-corridor",
+      "beforeSegments": 5
+    },
+    {
+      "edge": [
+        "link_warrior_2_8",
+        "r1_29_4"
+      ],
+      "action": "clear-direct-corridor",
+      "beforeSegments": 10
+    },
+    {
+      "edge": [
+        "r1_29_4",
+        "g45n1"
+      ],
+      "action": "clear-direct-corridor",
+      "beforeSegments": 14
+    }
+  ],
+  "offsetRoadJunctions": [
+    {
+      "node": "r2_22_1",
+      "from": [
+        -1264.29289,
+        -1937.47483
+      ],
+      "to": [
+        -1590.0,
+        -1595.0
+      ],
+      "targetScale": 1
+    },
+    {
+      "node": "r1_29_1",
+      "from": [
+        -930.13798,
+        468.70947
+      ],
+      "to": [
+        -1170.0,
+        725.0
+      ],
+      "targetScale": 1
+    },
+    {
+      "node": "r6_35_2",
+      "from": [
+        375.70743,
+        673.0555
+      ],
+      "to": [
+        528.9268575,
+        472.013875
+      ],
+      "targetScale": 0.75
+    },
+    {
+      "node": "r1_29_2",
+      "from": [
+        1050.61397,
+        1064.59509
+      ],
+      "to": [
+        1350.0,
+        1345.0
+      ],
+      "targetScale": 1
+    },
+    {
+      "node": "r1_29_5",
+      "from": [
+        -184.64203,
+        2194.71178
+      ],
+      "to": [
+        -140.0,
+        1965.0
+      ],
+      "targetScale": 1
+    },
+    {
+      "node": "r1_29_6",
+      "from": [
+        298.55705,
+        2187.1648
+      ],
+      "to": [
+        400.0,
+        2255.0
+      ],
+      "targetScale": 1
+    },
+    {
+      "node": "r1_47_1",
+      "from": [
+        853.90668,
+        2018.16262
+      ],
+      "to": [
+        922.93001,
+        1977.371965
+      ],
+      "targetScale": 0.25
+    },
+    {
+      "node": "r1_47_2",
+      "from": [
+        1507.77703,
+        1722.16374
+      ],
+      "to": [
+        1650.0,
+        1895.0
+      ],
+      "targetScale": 1
+    },
+    {
+      "node": "r16_37_2",
+      "from": [
+        -660.00419,
+        -219.46875
+      ],
+      "to": [
+        -900.0,
+        -115.0
+      ],
+      "targetScale": 1
+    },
+    {
+      "node": "r19_24_2",
+      "from": [
+        -306.91946,
+        1717.47737
+      ],
+      "to": [
+        -470.0,
+        1555.0
+      ],
+      "targetScale": 1
+    },
+    {
+      "node": "r24_42_1",
+      "from": [
+        -712.78244,
+        1219.35996
+      ],
+      "to": [
+        -851.39122,
+        1292.17998
+      ],
+      "targetScale": 0.5
+    }
+  ],
+  "blockedTargetsRetained": []
+}

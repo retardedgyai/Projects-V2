@@ -16,7 +16,11 @@
   "uniqueRegionShapes": 47,
   "centralSharedChoices": 10,
   "maxDegreeTwoRoadRun": 2,
-  "leftPoints": 332,
-  "rightPoints": 313,
-  "outerEmbeddingPreservedThroughCurvedPaths": true
+  "leftPoints": 331,
+  "rightPoints": 314,
+  "outerEmbeddingPreservedThroughCurvedPaths": false,
+  "untouchedOuterEmbeddingRetained": true,
+  "westSouthwestTravelCorridorsAdjusted": true,
+  "central60AndAll47InternalRegionsExact": true,
+  "oneWesternTravelAttachmentChanged": true
 }

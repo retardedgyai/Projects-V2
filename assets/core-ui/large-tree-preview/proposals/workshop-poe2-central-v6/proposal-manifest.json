@@ -1,5 +1,5 @@
 {
-  "status": "COMPLETE_LAYOUT_PROPOSAL",
+  "status": "VERIFIED_SAVED_LAYOUT_PROPOSAL",
   "adopted": false,
   "source645Sha256": "b04169fcdb5f9f020d8f4e0e36d1a035e0b9fee359e118aa811195fdaced56d7",
   "source645EmbeddedVerbatim": true,
@@ -15,11 +15,14 @@
   "sourceWeaponProfiles": 60,
   "inputReachabilityCases": 120,
   "saveScope": "preview-only",
-  "finalVisualReview": "PASS_BY_AGENT_CREATOR_ADOPTION_PENDING",
-  "referenceComparisonProduced": true,
-  "wholeAndSameZoomRegionComparisonProduced": true,
-  "finalMobileCenterPersonallyViewed": true,
-  "resumedSmoke": "PASS",
-  "libraryDeliverables": 4,
-  "creatorManualSmoke": false
+  "middleBandLimitedRevision": true,
+  "central60AndAll47InternalRegionsExact": true,
+  "westTravelAttachmentChanged": 1,
+  "offsetRoadNodes": 11,
+  "actualPolylineSegments": 8258,
+  "browserInputCases": 120,
+  "browserFocusViews": 94,
+  "browserFrames": 22,
+  "comparisonsCapturedFromActualBrowser": true,
+  "ownQaBrowserClosed": true
 }

@@ -1,0 +1,65 @@
+{
+  "status": "ACTUAL_BROWSER_SAME_CAMERAS",
+  "viewport": [
+    1920,
+    1200
+  ],
+  "profile": "warrior:support:plain:standard",
+  "overlayHiddenForComparison": true,
+  "items": [
+    {
+      "file": "ProjectS_PoE2_V6_Middle_before_Whole.png",
+      "camera": {
+        "x": 1230,
+        "y": -1245,
+        "z": 0.0667397060226203
+      },
+      "beforeOrAfter": "before"
+    },
+    {
+      "file": "ProjectS_PoE2_V6_Middle_after_Whole.png",
+      "camera": {
+        "x": 1230,
+        "y": -1245,
+        "z": 0.0667397060226203
+      },
+      "beforeOrAfter": "after"
+    },
+    {
+      "file": "ProjectS_PoE2_V6_Middle_before_West.png",
+      "camera": {
+        "x": -1600,
+        "y": -1800,
+        "z": 0.2
+      },
+      "beforeOrAfter": "before"
+    },
+    {
+      "file": "ProjectS_PoE2_V6_Middle_after_West.png",
+      "camera": {
+        "x": -1600,
+        "y": -1800,
+        "z": 0.2
+      },
+      "beforeOrAfter": "after"
+    },
+    {
+      "file": "ProjectS_PoE2_V6_Middle_before_Southwest.png",
+      "camera": {
+        "x": -650,
+        "y": 1450,
+        "z": 0.2
+      },
+      "beforeOrAfter": "before"
+    },
+    {
+      "file": "ProjectS_PoE2_V6_Middle_after_Southwest.png",
+      "camera": {
+        "x": -650,
+        "y": 1450,
+        "z": 0.2
+      },
+      "beforeOrAfter": "after"
+    }
+  ]
+}

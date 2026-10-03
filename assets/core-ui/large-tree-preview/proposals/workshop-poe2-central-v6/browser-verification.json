@@ -8,15 +8,11 @@
       "name": "ProjectS_PoE2_V6_Overview",
       "audit": {
         "centralLabelIntrusions": [],
-        "minGlyphGap": 1.558989892846707,
-        "minClickGap": 1.692469304891948,
-        "minNodePairPaintGap": 3.1208315033014755,
+        "minGlyphGap": 1.4812634978246482,
+        "minClickGap": 1.614742909869889,
+        "minNodePairPaintGap": 3.120831503301519,
         "nearest": {
-          "node": "key_15",
-          "edge": [
-            "g9n6",
-            "r16_47_1"
-          ]
+          "node": "key_05"
         },
         "labelLines": [],
         "captions": 14,
@@ -53,15 +49,11 @@
       "name": "ProjectS_PoE2_V6_Center",
       "audit": {
         "centralLabelIntrusions": [],
-        "minGlyphGap": 9.38498628528147,
-        "minClickGap": 9.892993762559575,
-        "minNodePairPaintGap": 11.861813375085768,
+        "minGlyphGap": 8.627412360246637,
+        "minClickGap": 9.135419837524744,
+        "minNodePairPaintGap": 10.337790943251287,
         "nearest": {
-          "node": "g45n3",
-          "edge": [
-            "g45hub",
-            "g45n2"
-          ]
+          "node": "g45n3"
         },
         "labelLines": [],
         "captions": 8,
@@ -98,15 +90,11 @@
       "name": "ProjectS_PoE2_V6_critical",
       "audit": {
         "centralLabelIntrusions": [],
-        "minGlyphGap": 4.9708171000123516,
-        "minClickGap": 5.257021017047062,
-        "minNodePairPaintGap": 6.682770634152847,
+        "minGlyphGap": 4.544011128671014,
+        "minClickGap": 4.8302150457057245,
+        "minNodePairPaintGap": 5.824158883048758,
         "nearest": {
-          "node": "g45n3",
-          "edge": [
-            "g45hub",
-            "g45n2"
-          ]
+          "node": "g45n3"
         },
         "labelLines": [],
         "captions": 26,
@@ -190,27 +178,23 @@
       "name": "ProjectS_PoE2_V6_quiet",
       "audit": {
         "centralLabelIntrusions": [],
-        "minGlyphGap": 7.96405896408181,
-        "minClickGap": 8.40066756074135,
-        "minNodePairPaintGap": 10.194672171524793,
+        "minGlyphGap": 4.343527957103554,
+        "minClickGap": 4.6196833992623585,
+        "minNodePairPaintGap": 5.619675608270564,
         "nearest": {
-          "node": "g45n3",
-          "edge": [
-            "g45hub",
-            "g45n2"
-          ]
+          "node": "key_05"
         },
         "labelLines": [],
-        "captions": 13,
-        "zoom": 0.21830429832976997,
-        "spent": 43,
+        "captions": 23,
+        "zoom": 0.13807772107940228,
+        "spent": 39,
         "usable": true,
         "connected": true
       },
       "cam": {
-        "x": -2503.26663,
-        "y": -239.44454000000007,
-        "z": 0.21830429832976997
+        "x": -1860.3414350000003,
+        "y": -1495.6895950000003,
+        "z": 0.13807772107940228
       },
       "state": {
         "version": "projects-large-tree-diff-v2",
@@ -221,12 +205,6 @@
         "roadChoice": "hp",
         "siphon": true,
         "learned": [
-          "g13n0",
-          "g13n1",
-          "g13n2",
-          "g13n3",
-          "g13n8",
-          "g13n9",
           "g16n4",
           "g16n5",
           "g16n8",
@@ -234,6 +212,7 @@
           "g18n2",
           "g18n4",
           "g18n5",
+          "g33n0",
           "g37n0",
           "g37n4",
           "g37n6",
@@ -242,26 +221,27 @@
           "g44n3",
           "g44n6",
           "g44n7",
-          "g45hub",
-          "g45n1",
-          "g45n2",
-          "g45n4",
+          "g46n1",
+          "g46n7",
           "join_ranger_0",
           "join_templar_1",
           "key_04",
+          "link_assassin_0_2",
+          "link_ranger_1_1",
           "link_templar_0_2",
-          "link_templar_1_1",
-          "link_warrior_2_8",
-          "opening_warrior_0_1",
-          "opening_warrior_0_2",
-          "opening_warrior_0_3",
+          "link_warrior_2_7",
+          "opening_warrior_1_1",
+          "opening_warrior_1_2",
+          "opening_warrior_1_3",
           "origin_warrior",
-          "r1_22_1",
-          "r1_29_4",
+          "r11_40_1",
           "r22_24_3",
           "r23_37_3",
-          "r24_42_1",
+          "r25_44_1",
+          "r2_22_1",
           "r31_51_1",
+          "r33_37_2",
+          "r6_35_1",
           "r7_22_2"
         ]
       },
@@ -276,27 +256,23 @@
       "name": "ProjectS_PoE2_V6_tank-life",
       "audit": {
         "centralLabelIntrusions": [],
-        "minGlyphGap": 7.104229867770612,
-        "minClickGap": 7.497633696611301,
-        "minNodePairPaintGap": 9.18585455425833,
+        "minGlyphGap": 8.107461846306236,
+        "minClickGap": 8.587226476848988,
+        "minNodePairPaintGap": 9.763057975231243,
         "nearest": {
-          "node": "g45n3",
-          "edge": [
-            "g45hub",
-            "g45n2"
-          ]
+          "node": "g45n3"
         },
         "labelLines": [],
-        "captions": 12,
-        "zoom": 0.19670191442034382,
-        "spent": 43,
+        "captions": 5,
+        "zoom": 0.23988231527137469,
+        "spent": 27,
         "usable": true,
         "connected": true
       },
       "cam": {
         "x": -1301.6335750000003,
-        "y": -3796.983705,
-        "z": 0.19670191442034382
+        "y": -3155.7340050000003,
+        "z": 0.23988231527137469
       },
       "state": {
         "version": "projects-large-tree-diff-v2",
@@ -309,20 +285,10 @@
         "learned": [
           "g18n1",
           "g18n3",
+          "g18n5",
           "g18n6",
-          "g28n2",
-          "g28n5",
-          "g31n2",
-          "g31n4",
-          "g31n5",
           "g33n0",
-          "g40n0",
-          "g40n3",
-          "g40n4",
-          "g40n5",
-          "g46n0",
           "g46n1",
-          "g46n2",
           "g46n7",
           "g6n0",
           "g6n4",
@@ -330,24 +296,18 @@
           "g6n7",
           "g6n8",
           "g6n9",
-          "join_assassin_1",
-          "join_templar_0",
-          "join_warrior_0",
           "link_assassin_0_2",
           "link_assassin_0_4",
           "link_assassin_1_3",
           "link_ranger_1_1",
-          "link_warrior_0_6",
-          "link_warrior_2_10",
           "link_warrior_2_7",
           "opening_templar_0_1",
           "opening_templar_0_2",
           "opening_templar_0_3",
           "origin_templar",
-          "r10_14_2",
-          "r16_38_2",
-          "r21_26_1",
+          "r11_40_1",
           "r25_44_1",
+          "r2_22_1",
           "r33_37_2",
           "r34_40_1",
           "r6_35_1"
@@ -364,15 +324,11 @@
       "name": "ProjectS_PoE2_V6_tank-shield",
       "audit": {
         "centralLabelIntrusions": [],
-        "minGlyphGap": 7.77836977892605,
-        "minClickGap": 8.205647849129173,
-        "minNodePairPaintGap": 9.976807339868062,
+        "minGlyphGap": 7.141184817674177,
+        "minClickGap": 7.568462887877299,
+        "minNodePairPaintGap": 8.694973129258857,
         "nearest": {
-          "node": "g45n3",
-          "edge": [
-            "g45hub",
-            "g45n2"
-          ]
+          "node": "g45n3"
         },
         "labelLines": [],
         "captions": 10,
@@ -428,15 +384,11 @@
       "name": "ProjectS_PoE2_V6_mage-mp",
       "audit": {
         "centralLabelIntrusions": [],
-        "minGlyphGap": 7.2491061818409435,
-        "minClickGap": 7.649789768413376,
-        "minNodePairPaintGap": 9.355834587017828,
+        "minGlyphGap": 6.651580651305065,
+        "minClickGap": 7.052264237877499,
+        "minNodePairPaintGap": 8.153783827300487,
         "nearest": {
-          "node": "g45n3",
-          "edge": [
-            "g45hub",
-            "g45n2"
-          ]
+          "node": "g45n3"
         },
         "labelLines": [],
         "captions": 13,
@@ -490,15 +442,11 @@
       "name": "ProjectS_PoE2_V6_mage-blood",
       "audit": {
         "centralLabelIntrusions": [],
-        "minGlyphGap": 6.435756556919094,
-        "minClickGap": 6.795570880226245,
-        "minNodePairPaintGap": 8.401550259890302,
+        "minGlyphGap": 5.899177940690698,
+        "minClickGap": 6.258992263997849,
+        "minNodePairPaintGap": 7.322107289968915,
         "nearest": {
-          "node": "g45n3",
-          "edge": [
-            "g45hub",
-            "g45n2"
-          ]
+          "node": "g45n3"
         },
         "labelLines": [],
         "captions": 19,
@@ -553,15 +501,11 @@
       "name": "ProjectS_PoE2_V6_mage-ice",
       "audit": {
         "centralLabelIntrusions": [],
-        "minGlyphGap": 8.229390439233418,
-        "minClickGap": 8.679331435119902,
-        "minNodePairPaintGap": 10.50597946235334,
+        "minGlyphGap": 7.5584090432230955,
+        "minClickGap": 8.00835003910958,
+        "minNodePairPaintGap": 9.156156474693693,
         "nearest": {
-          "node": "g45n3",
-          "edge": [
-            "g45hub",
-            "g45n2"
-          ]
+          "node": "g45n3"
         },
         "labelLines": [],
         "captions": 9,
@@ -621,18 +565,14 @@
       "name": "ProjectS_PoE2_V6_ranger",
       "audit": {
         "centralLabelIntrusions": [],
-        "minGlyphGap": 3.74148467620885,
-        "minClickGap": 3.9659169898278646,
-        "minNodePairPaintGap": 5.240423298002072,
+        "minGlyphGap": 2.0831270106961393,
+        "minClickGap": 2.3075593243151533,
+        "minNodePairPaintGap": 4.5671263571449865,
         "nearest": {
-          "node": "g45n3",
-          "edge": [
-            "g45hub",
-            "g45n2"
-          ]
+          "node": "key_05"
         },
         "labelLines": [],
-        "captions": 11,
+        "captions": 10,
         "zoom": 0.11221615680950714,
         "spent": 42,
         "usable": true,
@@ -706,15 +646,11 @@
       "name": "ProjectS_PoE2_V6_assassin",
       "audit": {
         "centralLabelIntrusions": [],
-        "minGlyphGap": 3.1622854251533186,
-        "minClickGap": 3.3550929541296477,
-        "minNodePairPaintGap": 4.501994612918936,
+        "minGlyphGap": 1.6951725691646384,
+        "minClickGap": 1.887980098140968,
+        "minNodePairPaintGap": 4.063485786018636,
         "nearest": {
-          "node": "g45n3",
-          "edge": [
-            "g45hub",
-            "g45n2"
-          ]
+          "node": "key_05"
         },
         "labelLines": [],
         "captions": 12,
@@ -803,15 +739,11 @@
       "name": "ProjectS_PoE2_V6_lightning",
       "audit": {
         "centralLabelIntrusions": [],
-        "minGlyphGap": 5.391115895707745,
-        "minClickGap": 5.698439023479177,
-        "minNodePairPaintGap": 7.175897502541445,
+        "minGlyphGap": 4.932815578146911,
+        "minClickGap": 5.240138705918343,
+        "minNodePairPaintGap": 6.253928119227065,
         "nearest": {
-          "node": "g45n3",
-          "edge": [
-            "g45hub",
-            "g45n2"
-          ]
+          "node": "g45n3"
         },
         "labelLines": [],
         "captions": 21,
@@ -872,27 +804,23 @@
       "name": "ProjectS_PoE2_V6_Pair_critical",
       "audit": {
         "centralLabelIntrusions": [],
-        "minGlyphGap": 4.0514785076231785,
-        "minClickGap": 4.291487418462486,
-        "minNodePairPaintGap": 5.604131899765133,
+        "minGlyphGap": 1.6558745470222411,
+        "minClickGap": 1.8377826894591416,
+        "minNodePairPaintGap": 3.890307301147531,
         "nearest": {
-          "node": "g45n3",
-          "edge": [
-            "g45hub",
-            "g45n2"
-          ]
+          "node": "key_05"
         },
         "labelLines": [],
-        "captions": 30,
-        "zoom": 0.12000445541965417,
+        "captions": 11,
+        "zoom": 0.09095407121845024,
         "spent": 47,
         "usable": true,
         "connected": true
       },
       "cam": {
-        "x": -2164.813475,
-        "y": 1531.62317,
-        "z": 0.12000445541965417
+        "x": -1860.3414350000003,
+        "y": 275.378115,
+        "z": 0.09095407121845024
       },
       "state": {
         "version": "projects-large-tree-diff-v2",
@@ -964,27 +892,23 @@
       "name": "ProjectS_PoE2_V6_Pair_quiet",
       "audit": {
         "centralLabelIntrusions": [],
-        "minGlyphGap": 4.0514785076231785,
-        "minClickGap": 4.291487418462486,
-        "minNodePairPaintGap": 5.604131899765133,
+        "minGlyphGap": 1.6558745470222411,
+        "minClickGap": 1.8377826894591416,
+        "minNodePairPaintGap": 3.890307301147531,
         "nearest": {
-          "node": "g45n3",
-          "edge": [
-            "g45hub",
-            "g45n2"
-          ]
+          "node": "key_05"
         },
         "labelLines": [],
-        "captions": 30,
-        "zoom": 0.12000445541965417,
-        "spent": 43,
+        "captions": 11,
+        "zoom": 0.09095407121845024,
+        "spent": 39,
         "usable": true,
         "connected": true
       },
       "cam": {
-        "x": -2164.813475,
-        "y": 1531.62317,
-        "z": 0.12000445541965417
+        "x": -1860.3414350000003,
+        "y": 275.378115,
+        "z": 0.09095407121845024
       },
       "state": {
         "version": "projects-large-tree-diff-v2",
@@ -995,12 +919,6 @@
         "roadChoice": "hp",
         "siphon": true,
         "learned": [
-          "g13n0",
-          "g13n1",
-          "g13n2",
-          "g13n3",
-          "g13n8",
-          "g13n9",
           "g16n4",
           "g16n5",
           "g16n8",
@@ -1008,6 +926,7 @@
           "g18n2",
           "g18n4",
           "g18n5",
+          "g33n0",
           "g37n0",
           "g37n4",
           "g37n6",
@@ -1016,26 +935,27 @@
           "g44n3",
           "g44n6",
           "g44n7",
-          "g45hub",
-          "g45n1",
-          "g45n2",
-          "g45n4",
+          "g46n1",
+          "g46n7",
           "join_ranger_0",
           "join_templar_1",
           "key_04",
+          "link_assassin_0_2",
+          "link_ranger_1_1",
           "link_templar_0_2",
-          "link_templar_1_1",
-          "link_warrior_2_8",
-          "opening_warrior_0_1",
-          "opening_warrior_0_2",
-          "opening_warrior_0_3",
+          "link_warrior_2_7",
+          "opening_warrior_1_1",
+          "opening_warrior_1_2",
+          "opening_warrior_1_3",
           "origin_warrior",
-          "r1_22_1",
-          "r1_29_4",
+          "r11_40_1",
           "r22_24_3",
           "r23_37_3",
-          "r24_42_1",
+          "r25_44_1",
+          "r2_22_1",
           "r31_51_1",
+          "r33_37_2",
+          "r6_35_1",
           "r7_22_2"
         ]
       },
@@ -1050,27 +970,23 @@
       "name": "ProjectS_PoE2_V6_Pair_tank-life",
       "audit": {
         "centralLabelIntrusions": [],
-        "minGlyphGap": 7.104229867770612,
-        "minClickGap": 7.497633696611301,
-        "minNodePairPaintGap": 9.18585455425833,
+        "minGlyphGap": 7.141184817674177,
+        "minClickGap": 7.568462887877299,
+        "minNodePairPaintGap": 8.694973129258857,
         "nearest": {
-          "node": "g45n3",
-          "edge": [
-            "g45hub",
-            "g45n2"
-          ]
+          "node": "g45n3"
         },
         "labelLines": [],
         "captions": 12,
-        "zoom": 0.19670191442034382,
-        "spent": 43,
+        "zoom": 0.21363903510156113,
+        "spent": 27,
         "usable": true,
         "connected": true
       },
       "cam": {
         "x": -1301.6335750000003,
-        "y": -3796.983705,
-        "z": 0.19670191442034382
+        "y": -3606.747845,
+        "z": 0.21363903510156113
       },
       "state": {
         "version": "projects-large-tree-diff-v2",
@@ -1083,20 +999,10 @@
         "learned": [
           "g18n1",
           "g18n3",
+          "g18n5",
           "g18n6",
-          "g28n2",
-          "g28n5",
-          "g31n2",
-          "g31n4",
-          "g31n5",
           "g33n0",
-          "g40n0",
-          "g40n3",
-          "g40n4",
-          "g40n5",
-          "g46n0",
           "g46n1",
-          "g46n2",
           "g46n7",
           "g6n0",
           "g6n4",
@@ -1104,24 +1010,18 @@
           "g6n7",
           "g6n8",
           "g6n9",
-          "join_assassin_1",
-          "join_templar_0",
-          "join_warrior_0",
           "link_assassin_0_2",
           "link_assassin_0_4",
           "link_assassin_1_3",
           "link_ranger_1_1",
-          "link_warrior_0_6",
-          "link_warrior_2_10",
           "link_warrior_2_7",
           "opening_templar_0_1",
           "opening_templar_0_2",
           "opening_templar_0_3",
           "origin_templar",
-          "r10_14_2",
-          "r16_38_2",
-          "r21_26_1",
+          "r11_40_1",
           "r25_44_1",
+          "r2_22_1",
           "r33_37_2",
           "r34_40_1",
           "r6_35_1"
@@ -1138,27 +1038,23 @@
       "name": "ProjectS_PoE2_V6_Pair_tank-shield",
       "audit": {
         "centralLabelIntrusions": [],
-        "minGlyphGap": 7.104229867770612,
-        "minClickGap": 7.497633696611301,
-        "minNodePairPaintGap": 9.18585455425833,
+        "minGlyphGap": 7.141184817674177,
+        "minClickGap": 7.568462887877299,
+        "minNodePairPaintGap": 8.694973129258857,
         "nearest": {
-          "node": "g45n3",
-          "edge": [
-            "g45hub",
-            "g45n2"
-          ]
+          "node": "g45n3"
         },
         "labelLines": [],
         "captions": 12,
-        "zoom": 0.19670191442034382,
+        "zoom": 0.21363903510156113,
         "spent": 21,
         "usable": true,
         "connected": true
       },
       "cam": {
         "x": -1301.6335750000003,
-        "y": -3796.983705,
-        "z": 0.19670191442034382
+        "y": -3606.747845,
+        "z": 0.21363903510156113
       },
       "state": {
         "version": "projects-large-tree-diff-v2",
@@ -1202,15 +1098,11 @@
       "name": "ProjectS_PoE2_V6_Pair_mage-mp",
       "audit": {
         "centralLabelIntrusions": [],
-        "minGlyphGap": 4.833230139323572,
-        "minClickGap": 5.112520574694357,
-        "minNodePairPaintGap": 6.521343031336955,
+        "minGlyphGap": 4.416734003317524,
+        "minClickGap": 4.696024438688309,
+        "minNodePairPaintGap": 5.683471725224629,
         "nearest": {
-          "node": "g45n3",
-          "edge": [
-            "g45hub",
-            "g45n2"
-          ]
+          "node": "g45n3"
         },
         "labelLines": [],
         "captions": 21,
@@ -1264,15 +1156,11 @@
       "name": "ProjectS_PoE2_V6_Pair_mage-ice",
       "audit": {
         "centralLabelIntrusions": [],
-        "minGlyphGap": 4.833230139323572,
-        "minClickGap": 5.112520574694357,
-        "minNodePairPaintGap": 6.521343031336955,
+        "minGlyphGap": 4.416734003317524,
+        "minClickGap": 4.696024438688309,
+        "minNodePairPaintGap": 5.683471725224629,
         "nearest": {
-          "node": "g45n3",
-          "edge": [
-            "g45hub",
-            "g45n2"
-          ]
+          "node": "g45n3"
         },
         "labelLines": [],
         "captions": 21,
@@ -1332,15 +1220,11 @@
       "name": "ProjectS_PoE2_V6_Full_Return",
       "audit": {
         "centralLabelIntrusions": [],
-        "minGlyphGap": 1.558989892846707,
-        "minClickGap": 1.692469304891948,
-        "minNodePairPaintGap": 3.1208315033014755,
+        "minGlyphGap": 1.4812634978246482,
+        "minClickGap": 1.614742909869889,
+        "minNodePairPaintGap": 3.120831503301519,
         "nearest": {
-          "node": "key_15",
-          "edge": [
-            "g9n6",
-            "r16_47_1"
-          ]
+          "node": "key_05"
         },
         "labelLines": [],
         "captions": 14,
@@ -1377,15 +1261,11 @@
       "name": "ProjectS_PoE2_V6_Mobile_Overview",
       "audit": {
         "centralLabelIntrusions": [],
-        "minGlyphGap": 0.9999999999999772,
-        "minClickGap": 1.0484496504617182,
-        "minNodePairPaintGap": 1.7002769717161235,
+        "minGlyphGap": 0.9999999999999999,
+        "minClickGap": 1.0484496504617407,
+        "minNodePairPaintGap": 1.7002769717161075,
         "nearest": {
-          "node": "g31n6",
-          "edge": [
-            "g31n4",
-            "key_11"
-          ]
+          "node": "g45n3"
         },
         "labelLines": [],
         "captions": 6,
@@ -1422,15 +1302,11 @@
       "name": "ProjectS_PoE2_V6_Mobile_Shield",
       "audit": {
         "centralLabelIntrusions": [],
-        "minGlyphGap": 2.9533245105963433,
-        "minClickGap": 3.133391495260037,
-        "minNodePairPaintGap": 4.20450694651058,
+        "minGlyphGap": 1.6492362047011,
+        "minClickGap": 1.8293031893647933,
+        "minNodePairPaintGap": 3.86105346081264,
         "nearest": {
-          "node": "g45n3",
-          "edge": [
-            "g45hub",
-            "g45n2"
-          ]
+          "node": "key_05"
         },
         "labelLines": [],
         "captions": 2,
@@ -1486,15 +1362,11 @@
       "name": "ProjectS_PoE2_V6_Mobile_Center",
       "audit": {
         "centralLabelIntrusions": [],
-        "minGlyphGap": 3.083354806689874,
-        "minClickGap": 3.2713498613128555,
-        "minNodePairPaintGap": 4.389624864037125,
+        "minGlyphGap": 1.677821067498609,
+        "minClickGap": 1.86581612212159,
+        "minNodePairPaintGap": 3.987021205743505,
         "nearest": {
-          "node": "g45n3",
-          "edge": [
-            "g45hub",
-            "g45n2"
-          ]
+          "node": "key_05"
         },
         "labelLines": [],
         "captions": 3,
@@ -1552,15 +1424,11 @@
       "size": "desktop",
       "group": "g49",
       "centralLabelIntrusions": [],
-      "minGlyphGap": 26.096631341502487,
-      "minClickGap": 28.94663134150249,
-      "minNodePairPaintGap": 32.25458743684875,
+      "minGlyphGap": 24.15798644630909,
+      "minClickGap": 27.00798644630909,
+      "minNodePairPaintGap": 28.35458743684878,
       "nearest": {
-        "node": "g45n3",
-        "edge": [
-          "g45hub",
-          "g45n2"
-        ]
+        "node": "g45n3"
       },
       "labelLines": [],
       "captions": 3,
@@ -1573,15 +1441,11 @@
       "size": "desktop",
       "group": "g45",
       "centralLabelIntrusions": [],
-      "minGlyphGap": 26.096631341502487,
-      "minClickGap": 28.94663134150249,
-      "minNodePairPaintGap": 32.25458743684891,
+      "minGlyphGap": 24.15798644630909,
+      "minClickGap": 27.00798644630909,
+      "minNodePairPaintGap": 28.35458743684878,
       "nearest": {
-        "node": "g45n3",
-        "edge": [
-          "g45hub",
-          "g45n2"
-        ]
+        "node": "g45n3"
       },
       "labelLines": [],
       "captions": 2,
@@ -1594,15 +1458,11 @@
       "size": "desktop",
       "group": "g38",
       "centralLabelIntrusions": [],
-      "minGlyphGap": 26.09663134150231,
-      "minClickGap": 28.94663134150231,
-      "minNodePairPaintGap": 32.25458743684875,
+      "minGlyphGap": 24.15798644630909,
+      "minClickGap": 27.00798644630909,
+      "minNodePairPaintGap": 28.35458743684878,
       "nearest": {
-        "node": "g45n3",
-        "edge": [
-          "g45hub",
-          "g45n2"
-        ]
+        "node": "g45n3"
       },
       "labelLines": [],
       "captions": 1,
@@ -1615,15 +1475,11 @@
       "size": "desktop",
       "group": "g23",
       "centralLabelIntrusions": [],
-      "minGlyphGap": 26.09663134150245,
-      "minClickGap": 28.946631341502453,
-      "minNodePairPaintGap": 32.254587436848354,
+      "minGlyphGap": 24.15798644630909,
+      "minClickGap": 27.00798644630909,
+      "minNodePairPaintGap": 28.35458743684878,
       "nearest": {
-        "node": "g45n3",
-        "edge": [
-          "g45hub",
-          "g45n2"
-        ]
+        "node": "g45n3"
       },
       "labelLines": [],
       "captions": 1,
@@ -1636,15 +1492,11 @@
       "size": "desktop",
       "group": "g13",
       "centralLabelIntrusions": [],
-      "minGlyphGap": 26.027513222241655,
-      "minClickGap": 28.862979890507305,
-      "minNodePairPaintGap": 32.1694877304142,
+      "minGlyphGap": 24.093684561129624,
+      "minClickGap": 26.929151229395274,
+      "minNodePairPaintGap": 28.27917661823698,
       "nearest": {
-        "node": "g45n3",
-        "edge": [
-          "g45hub",
-          "g45n2"
-        ]
+        "node": "g45n3"
       },
       "labelLines": [],
       "captions": 2,
@@ -1657,15 +1509,11 @@
       "size": "desktop",
       "group": "g51",
       "centralLabelIntrusions": [],
-      "minGlyphGap": 17.7172650235865,
-      "minClickGap": 18.805352058882495,
-      "minNodePairPaintGap": 21.937732444443302,
+      "minGlyphGap": 16.36250450015352,
+      "minClickGap": 17.450591535449515,
+      "minNodePairPaintGap": 19.212341087579507,
       "nearest": {
-        "node": "g45n3",
-        "edge": [
-          "g45hub",
-          "g45n2"
-        ]
+        "node": "g45n3"
       },
       "labelLines": [],
       "captions": 2,
@@ -1678,15 +1526,11 @@
       "size": "desktop",
       "group": "g35",
       "centralLabelIntrusions": [],
-      "minGlyphGap": 26.09663134150272,
-      "minClickGap": 28.946631341502723,
-      "minNodePairPaintGap": 32.25458743684881,
+      "minGlyphGap": 24.15798644630909,
+      "minClickGap": 27.00798644630909,
+      "minNodePairPaintGap": 28.35458743684878,
       "nearest": {
-        "node": "g45n3",
-        "edge": [
-          "g45hub",
-          "g45n2"
-        ]
+        "node": "g45n3"
       },
       "labelLines": [],
       "captions": 2,
@@ -1699,15 +1543,11 @@
       "size": "desktop",
       "group": "g30",
       "centralLabelIntrusions": [],
-      "minGlyphGap": 26.09663134150233,
-      "minClickGap": 28.946631341502332,
-      "minNodePairPaintGap": 32.254587436848865,
+      "minGlyphGap": 24.15798644630909,
+      "minClickGap": 27.00798644630909,
+      "minNodePairPaintGap": 28.35458743684878,
       "nearest": {
-        "node": "g45n3",
-        "edge": [
-          "g45hub",
-          "g45n2"
-        ]
+        "node": "g45n3"
       },
       "labelLines": [],
       "captions": 2,
@@ -1720,15 +1560,11 @@
       "size": "desktop",
       "group": "g14",
       "centralLabelIntrusions": [],
-      "minGlyphGap": 26.096631341502274,
-      "minClickGap": 28.946631341502275,
-      "minNodePairPaintGap": 32.25458743684878,
+      "minGlyphGap": 24.15798644630909,
+      "minClickGap": 27.00798644630909,
+      "minNodePairPaintGap": 28.35458743684878,
       "nearest": {
-        "node": "g45n3",
-        "edge": [
-          "g45hub",
-          "g45n2"
-        ]
+        "node": "g45n3"
       },
       "labelLines": [],
       "captions": 2,
@@ -1741,15 +1577,11 @@
       "size": "desktop",
       "group": "g34",
       "centralLabelIntrusions": [],
-      "minGlyphGap": 26.096631341502565,
-      "minClickGap": 28.946631341502567,
-      "minNodePairPaintGap": 32.254587436848766,
+      "minGlyphGap": 24.15798644630909,
+      "minClickGap": 27.00798644630909,
+      "minNodePairPaintGap": 28.35458743684878,
       "nearest": {
-        "node": "g45n3",
-        "edge": [
-          "g45hub",
-          "g45n2"
-        ]
+        "node": "g45n3"
       },
       "labelLines": [],
       "captions": 2,
@@ -1762,15 +1594,11 @@
       "size": "desktop",
       "group": "g21",
       "centralLabelIntrusions": [],
-      "minGlyphGap": 26.096631341502615,
-      "minClickGap": 28.946631341502616,
-      "minNodePairPaintGap": 32.254587436848865,
+      "minGlyphGap": 24.15798644630909,
+      "minClickGap": 27.00798644630909,
+      "minNodePairPaintGap": 28.35458743684878,
       "nearest": {
-        "node": "g45n3",
-        "edge": [
-          "g45hub",
-          "g45n2"
-        ]
+        "node": "g45n3"
       },
       "labelLines": [],
       "captions": 2,
@@ -1783,15 +1611,11 @@
       "size": "desktop",
       "group": "g5",
       "centralLabelIntrusions": [],
-      "minGlyphGap": 26.096631341502544,
-      "minClickGap": 28.946631341502545,
-      "minNodePairPaintGap": 32.25458743684881,
+      "minGlyphGap": 24.15798644630909,
+      "minClickGap": 27.00798644630909,
+      "minNodePairPaintGap": 28.35458743684878,
       "nearest": {
-        "node": "g45n3",
-        "edge": [
-          "g45hub",
-          "g45n2"
-        ]
+        "node": "g45n3"
       },
       "labelLines": [],
       "captions": 3,
@@ -1804,15 +1628,11 @@
       "size": "desktop",
       "group": "g50",
       "centralLabelIntrusions": [],
-      "minGlyphGap": 26.0966313415026,
-      "minClickGap": 28.946631341502602,
-      "minNodePairPaintGap": 32.254587436848865,
+      "minGlyphGap": 24.15798644630909,
+      "minClickGap": 27.00798644630909,
+      "minNodePairPaintGap": 28.35458743684878,
       "nearest": {
-        "node": "g45n3",
-        "edge": [
-          "g45hub",
-          "g45n2"
-        ]
+        "node": "g45n3"
       },
       "labelLines": [],
       "captions": 3,
@@ -1825,15 +1645,11 @@
       "size": "desktop",
       "group": "g26",
       "centralLabelIntrusions": [],
-      "minGlyphGap": 26.096631341502516,
-      "minClickGap": 28.946631341502517,
-      "minNodePairPaintGap": 32.25458743684875,
+      "minGlyphGap": 24.15798644630909,
+      "minClickGap": 27.00798644630909,
+      "minNodePairPaintGap": 28.35458743684878,
       "nearest": {
-        "node": "g45n3",
-        "edge": [
-          "g45hub",
-          "g45n2"
-        ]
+        "node": "g45n3"
       },
       "labelLines": [],
       "captions": 2,
@@ -1846,15 +1662,11 @@
       "size": "desktop",
       "group": "g37",
       "centralLabelIntrusions": [],
-      "minGlyphGap": 26.096631341502544,
-      "minClickGap": 28.946631341502545,
-      "minNodePairPaintGap": 32.25458743684881,
+      "minGlyphGap": 24.15798644630909,
+      "minClickGap": 27.00798644630909,
+      "minNodePairPaintGap": 28.35458743684878,
       "nearest": {
-        "node": "g45n3",
-        "edge": [
-          "g45hub",
-          "g45n2"
-        ]
+        "node": "g45n3"
       },
       "labelLines": [],
       "captions": 3,
@@ -1867,15 +1679,11 @@
       "size": "desktop",
       "group": "g25",
       "centralLabelIntrusions": [],
-      "minGlyphGap": 26.09663134150263,
-      "minClickGap": 28.94663134150263,
-      "minNodePairPaintGap": 32.25458743684875,
+      "minGlyphGap": 24.15798644630909,
+      "minClickGap": 27.00798644630909,
+      "minNodePairPaintGap": 28.35458743684878,
       "nearest": {
-        "node": "g45n3",
-        "edge": [
-          "g45hub",
-          "g45n2"
-        ]
+        "node": "g45n3"
       },
       "labelLines": [],
       "captions": 1,
@@ -1888,15 +1696,11 @@
       "size": "desktop",
       "group": "g48",
       "centralLabelIntrusions": [],
-      "minGlyphGap": 24.84919551928673,
-      "minClickGap": 27.436899629071384,
-      "minNodePairPaintGap": 30.71871777775349,
+      "minGlyphGap": 22.99747345975073,
+      "minClickGap": 25.585177569535382,
+      "minNodePairPaintGap": 26.99358170456368,
       "nearest": {
-        "node": "g45n3",
-        "edge": [
-          "g45hub",
-          "g45n2"
-        ]
+        "node": "g45n3"
       },
       "labelLines": [],
       "captions": 1,
@@ -1909,15 +1713,11 @@
       "size": "desktop",
       "group": "g6",
       "centralLabelIntrusions": [],
-      "minGlyphGap": 26.09663134150263,
-      "minClickGap": 28.94663134150263,
-      "minNodePairPaintGap": 32.254587436848354,
+      "minGlyphGap": 24.15798644630909,
+      "minClickGap": 27.00798644630909,
+      "minNodePairPaintGap": 28.35458743684878,
       "nearest": {
-        "node": "g45n3",
-        "edge": [
-          "g45hub",
-          "g45n2"
-        ]
+        "node": "g45n3"
       },
       "labelLines": [],
       "captions": 1,
@@ -1930,15 +1730,11 @@
       "size": "desktop",
       "group": "g18",
       "centralLabelIntrusions": [],
-      "minGlyphGap": 26.0966313415026,
-      "minClickGap": 28.946631341502602,
-      "minNodePairPaintGap": 32.25458743684875,
+      "minGlyphGap": 24.15798644630909,
+      "minClickGap": 27.00798644630909,
+      "minNodePairPaintGap": 28.35458743684878,
       "nearest": {
-        "node": "g45n3",
-        "edge": [
-          "g45hub",
-          "g45n2"
-        ]
+        "node": "g45n3"
       },
       "labelLines": [],
       "captions": 1,
@@ -1951,15 +1747,11 @@
       "size": "desktop",
       "group": "g31",
       "centralLabelIntrusions": [],
-      "minGlyphGap": 26.096631341502352,
-      "minClickGap": 28.946631341502354,
-      "minNodePairPaintGap": 32.25458743684925,
+      "minGlyphGap": 24.15798644630909,
+      "minClickGap": 27.00798644630909,
+      "minNodePairPaintGap": 28.35458743684878,
       "nearest": {
-        "node": "g45n3",
-        "edge": [
-          "g45hub",
-          "g45n2"
-        ]
+        "node": "g45n3"
       },
       "labelLines": [],
       "captions": 2,
@@ -1972,15 +1764,11 @@
       "size": "desktop",
       "group": "g46",
       "centralLabelIntrusions": [],
-      "minGlyphGap": 26.0966313415025,
-      "minClickGap": 28.946631341502503,
-      "minNodePairPaintGap": 32.25458743684922,
+      "minGlyphGap": 24.15798644630909,
+      "minClickGap": 27.00798644630909,
+      "minNodePairPaintGap": 28.35458743684878,
       "nearest": {
-        "node": "g45n3",
-        "edge": [
-          "g45hub",
-          "g45n2"
-        ]
+        "node": "g45n3"
       },
       "labelLines": [],
       "captions": 2,
@@ -1993,15 +1781,11 @@
       "size": "desktop",
       "group": "g33",
       "centralLabelIntrusions": [],
-      "minGlyphGap": 26.096631341502267,
-      "minClickGap": 28.94663134150227,
-      "minNodePairPaintGap": 32.254587436849235,
+      "minGlyphGap": 24.15798644630909,
+      "minClickGap": 27.00798644630909,
+      "minNodePairPaintGap": 28.35458743684878,
       "nearest": {
-        "node": "g45n3",
-        "edge": [
-          "g45hub",
-          "g45n2"
-        ]
+        "node": "g45n3"
       },
       "labelLines": [],
       "captions": 2,
@@ -2014,15 +1798,11 @@
       "size": "desktop",
       "group": "g40",
       "centralLabelIntrusions": [],
-      "minGlyphGap": 26.096631341502373,
-      "minClickGap": 28.946631341502375,
-      "minNodePairPaintGap": 32.25458743684831,
+      "minGlyphGap": 24.15798644630909,
+      "minClickGap": 27.00798644630909,
+      "minNodePairPaintGap": 28.35458743684878,
       "nearest": {
-        "node": "g45n3",
-        "edge": [
-          "g45hub",
-          "g45n2"
-        ]
+        "node": "g45n3"
       },
       "labelLines": [],
       "captions": 1,
@@ -2035,15 +1815,11 @@
       "size": "desktop",
       "group": "g20",
       "centralLabelIntrusions": [],
-      "minGlyphGap": 26.096631341503006,
-      "minClickGap": 28.946631341503007,
-      "minNodePairPaintGap": 32.254587436847416,
+      "minGlyphGap": 24.15798644630909,
+      "minClickGap": 27.00798644630909,
+      "minNodePairPaintGap": 28.35458743684878,
       "nearest": {
-        "node": "g45n3",
-        "edge": [
-          "g45hub",
-          "g45n2"
-        ]
+        "node": "g45n3"
       },
       "labelLines": [],
       "captions": 2,
@@ -2056,15 +1832,11 @@
       "size": "desktop",
       "group": "g12",
       "centralLabelIntrusions": [],
-      "minGlyphGap": 26.09663134150216,
-      "minClickGap": 28.94663134150216,
-      "minNodePairPaintGap": 32.25458743684834,
+      "minGlyphGap": 24.15798644630909,
+      "minClickGap": 27.00798644630909,
+      "minNodePairPaintGap": 28.35458743684878,
       "nearest": {
-        "node": "g45n3",
-        "edge": [
-          "g45hub",
-          "g45n2"
-        ]
+        "node": "g45n3"
       },
       "labelLines": [],
       "captions": 2,
@@ -2077,15 +1849,11 @@
       "size": "desktop",
       "group": "g19",
       "centralLabelIntrusions": [],
-      "minGlyphGap": 26.096631341503034,
-      "minClickGap": 28.946631341503036,
-      "minNodePairPaintGap": 32.254587436849235,
+      "minGlyphGap": 24.15798644630909,
+      "minClickGap": 27.00798644630909,
+      "minNodePairPaintGap": 28.35458743684878,
       "nearest": {
-        "node": "g45n3",
-        "edge": [
-          "g45hub",
-          "g45n2"
-        ]
+        "node": "g45n3"
       },
       "labelLines": [],
       "captions": 2,
@@ -2098,15 +1866,11 @@
       "size": "desktop",
       "group": "g28",
       "centralLabelIntrusions": [],
-      "minGlyphGap": 26.09663134150209,
-      "minClickGap": 28.94663134150209,
-      "minNodePairPaintGap": 32.25458743684936,
+      "minGlyphGap": 24.15798644630909,
+      "minClickGap": 27.00798644630909,
+      "minNodePairPaintGap": 28.35458743684878,
       "nearest": {
-        "node": "g45n3",
-        "edge": [
-          "g45hub",
-          "g45n2"
-        ]
+        "node": "g45n3"
       },
       "labelLines": [],
       "captions": 1,
@@ -2119,15 +1883,11 @@
       "size": "desktop",
       "group": "g11",
       "centralLabelIntrusions": [],
-      "minGlyphGap": 26.09663134150228,
-      "minClickGap": 28.946631341502282,
-      "minNodePairPaintGap": 32.25458743684925,
+      "minGlyphGap": 24.15798644630909,
+      "minClickGap": 27.00798644630909,
+      "minNodePairPaintGap": 28.35458743684878,
       "nearest": {
-        "node": "g45n3",
-        "edge": [
-          "g45hub",
-          "g45n2"
-        ]
+        "node": "g45n3"
       },
       "labelLines": [],
       "captions": 1,
@@ -2140,15 +1900,11 @@
       "size": "desktop",
       "group": "g16",
       "centralLabelIntrusions": [],
-      "minGlyphGap": 26.09663134150209,
-      "minClickGap": 28.94663134150209,
-      "minNodePairPaintGap": 32.254587436848695,
+      "minGlyphGap": 24.15798644630909,
+      "minClickGap": 27.00798644630909,
+      "minNodePairPaintGap": 28.35458743684878,
       "nearest": {
-        "node": "g45n3",
-        "edge": [
-          "g45hub",
-          "g45n2"
-        ]
+        "node": "g45n3"
       },
       "labelLines": [],
       "captions": 2,
@@ -2161,15 +1917,11 @@
       "size": "desktop",
       "group": "g44",
       "centralLabelIntrusions": [],
-      "minGlyphGap": 26.096631341502622,
-      "minClickGap": 28.946631341502624,
-      "minNodePairPaintGap": 32.25458743684925,
+      "minGlyphGap": 24.15798644630909,
+      "minClickGap": 27.00798644630909,
+      "minNodePairPaintGap": 28.35458743684878,
       "nearest": {
-        "node": "g45n3",
-        "edge": [
-          "g45hub",
-          "g45n2"
-        ]
+        "node": "g45n3"
       },
       "labelLines": [],
       "captions": 1,
@@ -2182,15 +1934,11 @@
       "size": "desktop",
       "group": "g2",
       "centralLabelIntrusions": [],
-      "minGlyphGap": 26.096631341502544,
-      "minClickGap": 28.946631341502545,
-      "minNodePairPaintGap": 32.25458743684925,
+      "minGlyphGap": 24.15798644630909,
+      "minClickGap": 27.00798644630909,
+      "minNodePairPaintGap": 28.35458743684878,
       "nearest": {
-        "node": "g45n3",
-        "edge": [
-          "g45hub",
-          "g45n2"
-        ]
+        "node": "g45n3"
       },
       "labelLines": [],
       "captions": 2,
@@ -2203,15 +1951,11 @@
       "size": "desktop",
       "group": "g24",
       "centralLabelIntrusions": [],
-      "minGlyphGap": 26.096631341501954,
-      "minClickGap": 28.946631341501956,
-      "minNodePairPaintGap": 32.25458743684831,
+      "minGlyphGap": 24.15798644630909,
+      "minClickGap": 27.00798644630909,
+      "minNodePairPaintGap": 28.35458743684878,
       "nearest": {
-        "node": "g45n3",
-        "edge": [
-          "g45hub",
-          "g45n2"
-        ]
+        "node": "g45n3"
       },
       "labelLines": [],
       "captions": 1,
@@ -2224,15 +1968,11 @@
       "size": "desktop",
       "group": "g27",
       "centralLabelIntrusions": [],
-      "minGlyphGap": 21.050413941650334,
-      "minClickGap": 22.839355679940926,
-      "minNodePairPaintGap": 26.041576667393112,
+      "minGlyphGap": 19.46339557339133,
+      "minClickGap": 21.25233731168192,
+      "minNodePairPaintGap": 22.84894884186605,
       "nearest": {
-        "node": "g45n3",
-        "edge": [
-          "g45hub",
-          "g45n2"
-        ]
+        "node": "g45n3"
       },
       "labelLines": [],
       "captions": 1,
@@ -2245,15 +1985,11 @@
       "size": "desktop",
       "group": "g3",
       "centralLabelIntrusions": [],
-      "minGlyphGap": 26.096631341502878,
-      "minClickGap": 28.94663134150288,
-      "minNodePairPaintGap": 32.25458743684875,
+      "minGlyphGap": 24.15798644630909,
+      "minClickGap": 27.00798644630909,
+      "minNodePairPaintGap": 28.35458743684878,
       "nearest": {
-        "node": "g45n3",
-        "edge": [
-          "g45hub",
-          "g45n2"
-        ]
+        "node": "g45n3"
       },
       "labelLines": [],
       "captions": 1,
@@ -2266,15 +2002,11 @@
       "size": "desktop",
       "group": "g47",
       "centralLabelIntrusions": [],
-      "minGlyphGap": 26.096631341502516,
-      "minClickGap": 28.946631341502517,
-      "minNodePairPaintGap": 32.25458743684746,
+      "minGlyphGap": 24.15798644630909,
+      "minClickGap": 27.00798644630909,
+      "minNodePairPaintGap": 28.35458743684878,
       "nearest": {
-        "node": "g45n3",
-        "edge": [
-          "g45hub",
-          "g45n2"
-        ]
+        "node": "g45n3"
       },
       "labelLines": [],
       "captions": 1,
@@ -2287,15 +2019,11 @@
       "size": "desktop",
       "group": "g8",
       "centralLabelIntrusions": [],
-      "minGlyphGap": 26.096631341502707,
-      "minClickGap": 28.94663134150271,
-      "minNodePairPaintGap": 32.254587436849135,
+      "minGlyphGap": 24.15798644630909,
+      "minClickGap": 27.00798644630909,
+      "minNodePairPaintGap": 28.35458743684878,
       "nearest": {
-        "node": "g45n3",
-        "edge": [
-          "g45hub",
-          "g45n2"
-        ]
+        "node": "g45n3"
       },
       "labelLines": [],
       "captions": 1,
@@ -2308,15 +2036,11 @@
       "size": "desktop",
       "group": "g9",
       "centralLabelIntrusions": [],
-      "minGlyphGap": 26.096631341502032,
-      "minClickGap": 28.946631341502034,
-      "minNodePairPaintGap": 32.2545874368501,
+      "minGlyphGap": 24.15798644630909,
+      "minClickGap": 27.00798644630909,
+      "minNodePairPaintGap": 28.35458743684878,
       "nearest": {
-        "node": "g45n3",
-        "edge": [
-          "g45hub",
-          "g45n2"
-        ]
+        "node": "g45n3"
       },
       "labelLines": [],
       "captions": 2,
@@ -2329,15 +2053,11 @@
       "size": "desktop",
       "group": "g43",
       "centralLabelIntrusions": [],
-      "minGlyphGap": 26.096631341502857,
-      "minClickGap": 28.946631341502858,
-      "minNodePairPaintGap": 32.254587436849235,
+      "minGlyphGap": 24.15798644630909,
+      "minClickGap": 27.00798644630909,
+      "minNodePairPaintGap": 28.35458743684878,
       "nearest": {
-        "node": "g45n3",
-        "edge": [
-          "g45hub",
-          "g45n2"
-        ]
+        "node": "g45n3"
       },
       "labelLines": [],
       "captions": 1,
@@ -2350,15 +2070,11 @@
       "size": "desktop",
       "group": "g4",
       "centralLabelIntrusions": [],
-      "minGlyphGap": 26.09663134150219,
-      "minClickGap": 28.94663134150219,
-      "minNodePairPaintGap": 32.25458743684875,
+      "minGlyphGap": 24.15798644630909,
+      "minClickGap": 27.00798644630909,
+      "minNodePairPaintGap": 28.35458743684878,
       "nearest": {
-        "node": "g45n3",
-        "edge": [
-          "g45hub",
-          "g45n2"
-        ]
+        "node": "g45n3"
       },
       "labelLines": [],
       "captions": 1,
@@ -2371,15 +2087,11 @@
       "size": "desktop",
       "group": "g52",
       "centralLabelIntrusions": [],
-      "minGlyphGap": 26.09663134150265,
-      "minClickGap": 28.946631341502652,
-      "minNodePairPaintGap": 32.25458743684875,
+      "minGlyphGap": 24.15798644630909,
+      "minClickGap": 27.00798644630909,
+      "minNodePairPaintGap": 28.35458743684878,
       "nearest": {
-        "node": "g45n3",
-        "edge": [
-          "g45hub",
-          "g45n2"
-        ]
+        "node": "g45n3"
       },
       "labelLines": [],
       "captions": 1,
@@ -2392,15 +2104,11 @@
       "size": "desktop",
       "group": "g39",
       "centralLabelIntrusions": [],
-      "minGlyphGap": 26.096631341502118,
-      "minClickGap": 28.94663134150212,
-      "minNodePairPaintGap": 32.25458743684881,
+      "minGlyphGap": 24.15798644630909,
+      "minClickGap": 27.00798644630909,
+      "minNodePairPaintGap": 28.35458743684878,
       "nearest": {
-        "node": "g45n3",
-        "edge": [
-          "g45hub",
-          "g45n2"
-        ]
+        "node": "g45n3"
       },
       "labelLines": [],
       "captions": 1,
@@ -2413,15 +2121,11 @@
       "size": "desktop",
       "group": "g32",
       "centralLabelIntrusions": [],
-      "minGlyphGap": 26.096631341502103,
-      "minClickGap": 28.946631341502105,
-      "minNodePairPaintGap": 32.25458743684881,
+      "minGlyphGap": 24.15798644630909,
+      "minClickGap": 27.00798644630909,
+      "minNodePairPaintGap": 28.35458743684878,
       "nearest": {
-        "node": "g45n3",
-        "edge": [
-          "g45hub",
-          "g45n2"
-        ]
+        "node": "g45n3"
       },
       "labelLines": [],
       "captions": 1,
@@ -2434,15 +2138,11 @@
       "size": "desktop",
       "group": "g41",
       "centralLabelIntrusions": [],
-      "minGlyphGap": 26.096631341502878,
-      "minClickGap": 28.94663134150288,
-      "minNodePairPaintGap": 32.25458743684875,
+      "minGlyphGap": 24.15798644630909,
+      "minClickGap": 27.00798644630909,
+      "minNodePairPaintGap": 28.35458743684878,
       "nearest": {
-        "node": "g45n3",
-        "edge": [
-          "g45hub",
-          "g45n2"
-        ]
+        "node": "g45n3"
       },
       "labelLines": [],
       "captions": 1,
@@ -2455,15 +2155,11 @@
       "size": "desktop",
       "group": "g7",
       "centralLabelIntrusions": [],
-      "minGlyphGap": 26.096631341502217,
-      "minClickGap": 28.94663134150222,
-      "minNodePairPaintGap": 32.25458743684881,
+      "minGlyphGap": 24.15798644630909,
+      "minClickGap": 27.00798644630909,
+      "minNodePairPaintGap": 28.35458743684878,
       "nearest": {
-        "node": "g45n3",
-        "edge": [
-          "g45hub",
-          "g45n2"
-        ]
+        "node": "g45n3"
       },
       "labelLines": [],
       "captions": 1,
@@ -2476,15 +2172,11 @@
       "size": "desktop",
       "group": "g42",
       "centralLabelIntrusions": [],
-      "minGlyphGap": 26.096631341502366,
-      "minClickGap": 28.946631341502368,
-      "minNodePairPaintGap": 32.25458743684875,
+      "minGlyphGap": 24.15798644630909,
+      "minClickGap": 27.00798644630909,
+      "minNodePairPaintGap": 28.35458743684878,
       "nearest": {
-        "node": "g45n3",
-        "edge": [
-          "g45hub",
-          "g45n2"
-        ]
+        "node": "g45n3"
       },
       "labelLines": [],
       "captions": 1,
@@ -2497,15 +2189,11 @@
       "size": "desktop",
       "group": "g17",
       "centralLabelIntrusions": [],
-      "minGlyphGap": 26.096631341502288,
-      "minClickGap": 28.94663134150229,
-      "minNodePairPaintGap": 32.25458743684881,
+      "minGlyphGap": 24.15798644630909,
+      "minClickGap": 27.00798644630909,
+      "minNodePairPaintGap": 28.35458743684878,
       "nearest": {
-        "node": "g45n3",
-        "edge": [
-          "g45hub",
-          "g45n2"
-        ]
+        "node": "g45n3"
       },
       "labelLines": [],
       "captions": 2,
@@ -2518,15 +2206,11 @@
       "size": "desktop",
       "group": "g10",
       "centralLabelIntrusions": [],
-      "minGlyphGap": 26.09663134150238,
-      "minClickGap": 28.946631341502382,
-      "minNodePairPaintGap": 32.25458743684892,
+      "minGlyphGap": 24.15798644630909,
+      "minClickGap": 27.00798644630909,
+      "minNodePairPaintGap": 28.35458743684878,
       "nearest": {
-        "node": "g45n3",
-        "edge": [
-          "g45hub",
-          "g45n2"
-        ]
+        "node": "g45n3"
       },
       "labelLines": [],
       "captions": 2,
@@ -2539,15 +2223,11 @@
       "size": "mobile",
       "group": "g49",
       "centralLabelIntrusions": [],
-      "minGlyphGap": 10.785095786922113,
-      "minClickGap": 11.36345608919634,
-      "minNodePairPaintGap": 13.504529511834848,
+      "minGlyphGap": 9.922607134932566,
+      "minClickGap": 10.500967437206793,
+      "minNodePairPaintGap": 11.769448605012203,
       "nearest": {
-        "node": "g45n3",
-        "edge": [
-          "g45hub",
-          "g45n2"
-        ]
+        "node": "g45n3"
       },
       "labelLines": [],
       "captions": 2,
@@ -2560,15 +2240,11 @@
       "size": "mobile",
       "group": "g45",
       "centralLabelIntrusions": [],
-      "minGlyphGap": 12.621993032634917,
-      "minClickGap": 13.286802570337997,
-      "minNodePairPaintGap": 15.6643246134579,
+      "minGlyphGap": 11.6222772193281,
+      "minClickGap": 12.28708675703118,
+      "minNodePairPaintGap": 13.653181839676355,
       "nearest": {
-        "node": "g45n3",
-        "edge": [
-          "g45hub",
-          "g45n2"
-        ]
+        "node": "g45n3"
       },
       "labelLines": [],
       "captions": 1,
@@ -2581,15 +2257,11 @@
       "size": "mobile",
       "group": "g38",
       "centralLabelIntrusions": [],
-      "minGlyphGap": 13.926343601359958,
-      "minClickGap": 14.560679445437225,
-      "minNodePairPaintGap": 17.270268925502734,
+      "minGlyphGap": 12.835739064075602,
+      "minClickGap": 13.470074908152869,
+      "minNodePairPaintGap": 15.076283989966292,
       "nearest": {
-        "node": "g45n3",
-        "edge": [
-          "g45hub",
-          "g45n2"
-        ]
+        "node": "g45n3"
       },
       "labelLines": [],
       "captions": 1,
@@ -2602,15 +2274,11 @@
       "size": "mobile",
       "group": "g23",
       "centralLabelIntrusions": [],
-      "minGlyphGap": 9.963980255701605,
-      "minClickGap": 10.501081072769955,
-      "minNodePairPaintGap": 12.541133626233835,
+      "minGlyphGap": 9.163020442460237,
+      "minClickGap": 9.700121259528586,
+      "minNodePairPaintGap": 10.929831175028871,
       "nearest": {
-        "node": "g45n3",
-        "edge": [
-          "g45hub",
-          "g45n2"
-        ]
+        "node": "g45n3"
       },
       "labelLines": [],
       "captions": 1,
@@ -2623,15 +2291,11 @@
       "size": "mobile",
       "group": "g13",
       "centralLabelIntrusions": [],
-      "minGlyphGap": 8.126781922659626,
-      "minClickGap": 8.571567036808878,
-      "minNodePairPaintGap": 10.385591260040126,
+      "minGlyphGap": 7.463489314195419,
+      "minClickGap": 7.90827442834467,
+      "minNodePairPaintGap": 9.05123591759239,
       "nearest": {
-        "node": "g45n3",
-        "edge": [
-          "g45hub",
-          "g45n2"
-        ]
+        "node": "g45n3"
       },
       "labelLines": [],
       "captions": 1,
@@ -2644,15 +2308,11 @@
       "size": "mobile",
       "group": "g51",
       "centralLabelIntrusions": [],
-      "minGlyphGap": 6.612468267292877,
-      "minClickGap": 6.981162016116482,
-      "minNodePairPaintGap": 8.608882027758227,
+      "minGlyphGap": 6.062648071872472,
+      "minClickGap": 6.431341820696076,
+      "minNodePairPaintGap": 7.502800781287391,
       "nearest": {
-        "node": "g45n3",
-        "edge": [
-          "g45hub",
-          "g45n2"
-        ]
+        "node": "g45n3"
       },
       "labelLines": [],
       "captions": 1,
@@ -2665,15 +2325,11 @@
       "size": "mobile",
       "group": "g35",
       "centralLabelIntrusions": [],
-      "minGlyphGap": 10.65433621104345,
-      "minClickGap": 11.22612609468429,
-      "minNodePairPaintGap": 13.351112321908763,
+      "minGlyphGap": 9.801645796394485,
+      "minClickGap": 10.373435680035325,
+      "minNodePairPaintGap": 11.635742670986266,
       "nearest": {
-        "node": "g45n3",
-        "edge": [
-          "g45hub",
-          "g45n2"
-        ]
+        "node": "g45n3"
       },
       "labelLines": [],
       "captions": 2,
@@ -2686,15 +2342,11 @@
       "size": "mobile",
       "group": "g30",
       "centralLabelIntrusions": [],
-      "minGlyphGap": 11.15771674802355,
-      "minClickGap": 11.754800541021565,
-      "minNodePairPaintGap": 13.941717078218186,
+      "minGlyphGap": 10.267306403947934,
+      "minClickGap": 10.86439019694595,
+      "minNodePairPaintGap": 12.150465699224085,
       "nearest": {
-        "node": "g45n3",
-        "edge": [
-          "g45hub",
-          "g45n2"
-        ]
+        "node": "g45n3"
       },
       "labelLines": [],
       "captions": 1,
@@ -2707,15 +2359,11 @@
       "size": "mobile",
       "group": "g14",
       "centralLabelIntrusions": [],
-      "minGlyphGap": 5.945565240297593,
-      "minClickGap": 6.280748387348547,
-      "minNodePairPaintGap": 7.826420111166415,
+      "minGlyphGap": 5.445718242616706,
+      "minClickGap": 5.78090138966766,
+      "minNodePairPaintGap": 6.820870670013553,
       "nearest": {
-        "node": "g45n3",
-        "edge": [
-          "g45hub",
-          "g45n2"
-        ]
+        "node": "g45n3"
       },
       "labelLines": [],
       "captions": 3,
@@ -2728,15 +2376,11 @@
       "size": "mobile",
       "group": "g34",
       "centralLabelIntrusions": [],
-      "minGlyphGap": 7.941706823394529,
-      "minClickGap": 8.377192267729036,
-      "minNodePairPaintGap": 10.168446921174475,
+      "minGlyphGap": 7.292282489863606,
+      "minClickGap": 7.727767934198113,
+      "minNodePairPaintGap": 8.861990588170926,
       "nearest": {
-        "node": "g45n3",
-        "edge": [
-          "g45hub",
-          "g45n2"
-        ]
+        "node": "g45n3"
       },
       "labelLines": [],
       "captions": 3,
@@ -2749,15 +2393,11 @@
       "size": "mobile",
       "group": "g21",
       "centralLabelIntrusions": [],
-      "minGlyphGap": 10.219105522064257,
-      "minClickGap": 10.769025895885463,
-      "minNodePairPaintGap": 12.840466208046408,
+      "minGlyphGap": 9.399028348624727,
+      "minClickGap": 9.948948722445932,
+      "minNodePairPaintGap": 11.19070508658281,
       "nearest": {
-        "node": "g45n3",
-        "edge": [
-          "g45hub",
-          "g45n2"
-        ]
+        "node": "g45n3"
       },
       "labelLines": [],
       "captions": 1,
@@ -2770,15 +2410,11 @@
       "size": "mobile",
       "group": "g5",
       "centralLabelIntrusions": [],
-      "minGlyphGap": 13.495259957441872,
-      "minClickGap": 14.139667258692421,
-      "minNodePairPaintGap": 16.73950952495096,
+      "minGlyphGap": 12.434693849443887,
+      "minClickGap": 13.079101150694436,
+      "minNodePairPaintGap": 14.605953332454245,
       "nearest": {
-        "node": "g45n3",
-        "edge": [
-          "g45hub",
-          "g45n2"
-        ]
+        "node": "g45n3"
       },
       "labelLines": [],
       "captions": 1,
@@ -2791,15 +2427,11 @@
       "size": "mobile",
       "group": "g50",
       "centralLabelIntrusions": [],
-      "minGlyphGap": 13.507199036213455,
-      "minClickGap": 14.151327403381877,
-      "minNodePairPaintGap": 16.754209174036042,
+      "minGlyphGap": 12.445800998777878,
+      "minClickGap": 13.0899293659463,
+      "minNodePairPaintGap": 14.618979377046589,
       "nearest": {
-        "node": "g45n3",
-        "edge": [
-          "g45hub",
-          "g45n2"
-        ]
+        "node": "g45n3"
       },
       "labelLines": [],
       "captions": 2,
@@ -2812,15 +2444,11 @@
       "size": "mobile",
       "group": "g26",
       "centralLabelIntrusions": [],
-      "minGlyphGap": 20.460813416034128,
-      "minClickGap": 22.12578100512699,
-      "minNodePairPaintGap": 25.31564789241821,
+      "minGlyphGap": 18.91487912495073,
+      "minClickGap": 20.57984671404359,
+      "minNodePairPaintGap": 22.205669499689737,
       "nearest": {
-        "node": "g45n3",
-        "edge": [
-          "g45hub",
-          "g45n2"
-        ]
+        "node": "g45n3"
       },
       "labelLines": [],
       "captions": 1,
@@ -2833,15 +2461,11 @@
       "size": "mobile",
       "group": "g37",
       "centralLabelIntrusions": [],
-      "minGlyphGap": 10.463979387992353,
-      "minClickGap": 11.026204205298571,
-      "minNodePairPaintGap": 13.127771058529056,
+      "minGlyphGap": 9.62555302489869,
+      "minClickGap": 10.187777842204907,
+      "minNodePairPaintGap": 11.4410966066105,
       "nearest": {
-        "node": "g45n3",
-        "edge": [
-          "g45hub",
-          "g45n2"
-        ]
+        "node": "g45n3"
       },
       "labelLines": [],
       "captions": 2,
@@ -2854,15 +2478,11 @@
       "size": "mobile",
       "group": "g25",
       "centralLabelIntrusions": [],
-      "minGlyphGap": 10.616456114428686,
-      "minClickGap": 11.186342595653606,
-      "minNodePairPaintGap": 13.306668479553782,
+      "minGlyphGap": 9.766604177762138,
+      "minClickGap": 10.336490658987058,
+      "minNodePairPaintGap": 11.597009035879012,
       "nearest": {
-        "node": "g45n3",
-        "edge": [
-          "g45hub",
-          "g45n2"
-        ]
+        "node": "g45n3"
       },
       "labelLines": [],
       "captions": 1,
@@ -2875,15 +2495,11 @@
       "size": "mobile",
       "group": "g48",
       "centralLabelIntrusions": [],
-      "minGlyphGap": 9.689174181289887,
-      "minClickGap": 10.212466518636974,
-      "minNodePairPaintGap": 12.2187100069501,
+      "minGlyphGap": 8.908806474757862,
+      "minClickGap": 9.432098812104948,
+      "minNodePairPaintGap": 10.648832994908815,
       "nearest": {
-        "node": "g45n3",
-        "edge": [
-          "g45hub",
-          "g45n2"
-        ]
+        "node": "g45n3"
       },
       "labelLines": [],
       "captions": 1,
@@ -2896,15 +2512,11 @@
       "size": "mobile",
       "group": "g6",
       "centralLabelIntrusions": [],
-      "minGlyphGap": 8.47280286010568,
-      "minClickGap": 8.93497486465787,
-      "minNodePairPaintGap": 10.791569633110248,
+      "minGlyphGap": 7.783581785239262,
+      "minClickGap": 8.245753789791452,
+      "minNodePairPaintGap": 9.405053619453508,
       "nearest": {
-        "node": "g45n3",
-        "edge": [
-          "g45hub",
-          "g45n2"
-        ]
+        "node": "g45n3"
       },
       "labelLines": [],
       "captions": 1,
@@ -2917,15 +2529,11 @@
       "size": "mobile",
       "group": "g18",
       "centralLabelIntrusions": [],
-      "minGlyphGap": 10.219779706480923,
-      "minClickGap": 10.769733956779813,
-      "minNodePairPaintGap": 12.841257213049495,
+      "minGlyphGap": 9.39965201422571,
+      "minClickGap": 9.949606264524602,
+      "minNodePairPaintGap": 11.191394462152786,
       "nearest": {
-        "node": "g45n3",
-        "edge": [
-          "g45hub",
-          "g45n2"
-        ]
+        "node": "g45n3"
       },
       "labelLines": [],
       "captions": 1,
@@ -2938,15 +2546,11 @@
       "size": "mobile",
       "group": "g31",
       "centralLabelIntrusions": [],
-      "minGlyphGap": 9.413360803742766,
-      "minClickGap": 9.922794046312314,
-      "minNodePairPaintGap": 11.895104542165035,
+      "minGlyphGap": 8.653660684397114,
+      "minClickGap": 9.163093926966662,
+      "minNodePairPaintGap": 10.366804814456513,
       "nearest": {
-        "node": "g45n3",
-        "edge": [
-          "g45hub",
-          "g45n2"
-        ]
+        "node": "g45n3"
       },
       "labelLines": [],
       "captions": 2,
@@ -2959,15 +2563,11 @@
       "size": "mobile",
       "group": "g46",
       "centralLabelIntrusions": [],
-      "minGlyphGap": 6.443061197484105,
-      "minClickGap": 6.803242565010816,
-      "minNodePairPaintGap": 8.41012062593335,
+      "minGlyphGap": 5.9059352209460405,
+      "minClickGap": 6.266116588472752,
+      "minNodePairPaintGap": 7.329576523353195,
       "nearest": {
-        "node": "g45n3",
-        "edge": [
-          "g45hub",
-          "g45n2"
-        ]
+        "node": "g45n3"
       },
       "labelLines": [],
       "captions": 2,
@@ -2980,15 +2580,11 @@
       "size": "mobile",
       "group": "g33",
       "centralLabelIntrusions": [],
-      "minGlyphGap": 9.987017081851343,
-      "minClickGap": 10.525275455379868,
-      "minNodePairPaintGap": 12.56816220222064,
+      "minGlyphGap": 9.184331044823509,
+      "minClickGap": 9.722589418352033,
+      "minNodePairPaintGap": 10.953387081635674,
       "nearest": {
-        "node": "g45n3",
-        "edge": [
-          "g45hub",
-          "g45n2"
-        ]
+        "node": "g45n3"
       },
       "labelLines": [],
       "captions": 1,
@@ -3001,15 +2597,11 @@
       "size": "mobile",
       "group": "g40",
       "centralLabelIntrusions": [],
-      "minGlyphGap": 10.02467190152238,
-      "minClickGap": 10.564822357731204,
-      "minNodePairPaintGap": 12.612341732342024,
+      "minGlyphGap": 9.219164267241132,
+      "minClickGap": 9.75931472344996,
+      "minNodePairPaintGap": 10.991890363715473,
       "nearest": {
-        "node": "g45n3",
-        "edge": [
-          "g45hub",
-          "g45n2"
-        ]
+        "node": "g45n3"
       },
       "labelLines": [],
       "captions": 1,
@@ -3022,15 +2614,11 @@
       "size": "mobile",
       "group": "g20",
       "centralLabelIntrusions": [],
-      "minGlyphGap": 7.515401897048003,
-      "minClickGap": 7.929466334066239,
-      "minNodePairPaintGap": 9.66827319843007,
+      "minGlyphGap": 6.897921968504671,
+      "minClickGap": 7.311986405522909,
+      "minNodePairPaintGap": 8.426079887375787,
       "nearest": {
-        "node": "g45n3",
-        "edge": [
-          "g45hub",
-          "g45n2"
-        ]
+        "node": "g45n3"
       },
       "labelLines": [],
       "captions": 2,
@@ -3043,15 +2631,11 @@
       "size": "mobile",
       "group": "g12",
       "centralLabelIntrusions": [],
-      "minGlyphGap": 12.565668293034255,
-      "minClickGap": 13.231793752161598,
-      "minNodePairPaintGap": 15.594976389631142,
+      "minGlyphGap": 11.569877255653308,
+      "minClickGap": 12.236002714780652,
+      "minNodePairPaintGap": 13.591729144395094,
       "nearest": {
-        "node": "g45n3",
-        "edge": [
-          "g45hub",
-          "g45n2"
-        ]
+        "node": "g45n3"
       },
       "labelLines": [],
       "captions": 1,
@@ -3064,15 +2648,11 @@
       "size": "mobile",
       "group": "g19",
       "centralLabelIntrusions": [],
-      "minGlyphGap": 10.96586363927391,
-      "minClickGap": 11.553307180442323,
-      "minNodePairPaintGap": 13.716620257391138,
+      "minGlyphGap": 10.089829468273374,
+      "minClickGap": 10.677273009441786,
+      "minNodePairPaintGap": 11.954289633885999,
       "nearest": {
-        "node": "g45n3",
-        "edge": [
-          "g45hub",
-          "g45n2"
-        ]
+        "node": "g45n3"
       },
       "labelLines": [],
       "captions": 1,
@@ -3085,15 +2665,11 @@
       "size": "mobile",
       "group": "g28",
       "centralLabelIntrusions": [],
-      "minGlyphGap": 10.224328127628509,
-      "minClickGap": 10.774510927392015,
-      "minNodePairPaintGap": 12.84659377051632,
+      "minGlyphGap": 9.403859607486462,
+      "minClickGap": 9.954042407249968,
+      "minNodePairPaintGap": 11.196045371226125,
       "nearest": {
-        "node": "g45n3",
-        "edge": [
-          "g45hub",
-          "g45n2"
-        ]
+        "node": "g45n3"
       },
       "labelLines": [],
       "captions": 1,
@@ -3106,15 +2682,11 @@
       "size": "mobile",
       "group": "g11",
       "centralLabelIntrusions": [],
-      "minGlyphGap": 10.01648106674462,
-      "minClickGap": 10.556219949169385,
-      "minNodePairPaintGap": 12.602731615099533,
+      "minGlyphGap": 9.211587198167644,
+      "minClickGap": 9.751326080592412,
+      "minNodePairPaintGap": 10.9835149678254,
       "nearest": {
-        "node": "g45n3",
-        "edge": [
-          "g45hub",
-          "g45n2"
-        ]
+        "node": "g45n3"
       },
       "labelLines": [],
       "captions": 1,
@@ -3127,15 +2699,11 @@
       "size": "mobile",
       "group": "g16",
       "centralLabelIntrusions": [],
-      "minGlyphGap": 10.126021216949942,
-      "minClickGap": 10.671264282446403,
-      "minNodePairPaintGap": 12.731252543036822,
+      "minGlyphGap": 9.31291915113138,
+      "minClickGap": 9.85816221662784,
+      "minNodePairPaintGap": 11.095523346547358,
       "nearest": {
-        "node": "g45n3",
-        "edge": [
-          "g45hub",
-          "g45n2"
-        ]
+        "node": "g45n3"
       },
       "labelLines": [],
       "captions": 2,
@@ -3148,15 +2716,11 @@
       "size": "mobile",
       "group": "g44",
       "centralLabelIntrusions": [],
-      "minGlyphGap": 10.38436869334527,
-      "minClickGap": 10.94259322548682,
-      "minNodePairPaintGap": 13.034365669449814,
+      "minGlyphGap": 9.551907816723858,
+      "minClickGap": 10.11013234886541,
+      "minNodePairPaintGap": 11.35969207302516,
       "nearest": {
-        "node": "g45n3",
-        "edge": [
-          "g45hub",
-          "g45n2"
-        ]
+        "node": "g45n3"
       },
       "labelLines": [],
       "captions": 1,
@@ -3169,15 +2733,11 @@
       "size": "mobile",
       "group": "g2",
       "centralLabelIntrusions": [],
-      "minGlyphGap": 8.567364350227468,
-      "minClickGap": 9.034287888826183,
-      "minNodePairPaintGap": 10.902516445166745,
+      "minGlyphGap": 7.871057477496699,
+      "minClickGap": 8.337981016095414,
+      "minNodePairPaintGap": 9.501745829371172,
       "nearest": {
-        "node": "g45n3",
-        "edge": [
-          "g45hub",
-          "g45n2"
-        ]
+        "node": "g45n3"
       },
       "labelLines": [],
       "captions": 2,
@@ -3190,15 +2750,11 @@
       "size": "mobile",
       "group": "g24",
       "centralLabelIntrusions": [],
-      "minGlyphGap": 10.086269999223639,
-      "minClickGap": 10.62951564204651,
-      "minNodePairPaintGap": 12.68461335750294,
+      "minGlyphGap": 9.276146620535568,
+      "minClickGap": 9.81939226335844,
+      "minNodePairPaintGap": 11.05487642903443,
       "nearest": {
-        "node": "g45n3",
-        "edge": [
-          "g45hub",
-          "g45n2"
-        ]
+        "node": "g45n3"
       },
       "labelLines": [],
       "captions": 1,
@@ -3211,15 +2767,11 @@
       "size": "mobile",
       "group": "g27",
       "centralLabelIntrusions": [],
-      "minGlyphGap": 8.200467853474027,
-      "minClickGap": 8.648955544735417,
-      "minNodePairPaintGap": 10.472045260572632,
+      "minGlyphGap": 7.531653720227165,
+      "minClickGap": 7.980141411488555,
+      "minNodePairPaintGap": 9.126582186788383,
       "nearest": {
-        "node": "g45n3",
-        "edge": [
-          "g45hub",
-          "g45n2"
-        ]
+        "node": "g45n3"
       },
       "labelLines": [],
       "captions": 1,
@@ -3232,15 +2784,11 @@
       "size": "mobile",
       "group": "g3",
       "centralLabelIntrusions": [],
-      "minGlyphGap": 12.28676390522363,
-      "minClickGap": 12.940580158768336,
-      "minNodePairPaintGap": 15.26640202758136,
+      "minGlyphGap": 11.311750411124638,
+      "minClickGap": 11.965566664669343,
+      "minNodePairPaintGap": 13.30495326694716,
       "nearest": {
-        "node": "g45n3",
-        "edge": [
-          "g45hub",
-          "g45n2"
-        ]
+        "node": "g45n3"
       },
       "labelLines": [],
       "captions": 1,
@@ -3253,15 +2801,11 @@
       "size": "mobile",
       "group": "g47",
       "centralLabelIntrusions": [],
-      "minGlyphGap": 10.229964427599487,
-      "minClickGap": 10.7804304406581,
-      "minNodePairPaintGap": 12.853206711077656,
+      "minGlyphGap": 9.40907356129662,
+      "minClickGap": 9.959539574355231,
+      "minNodePairPaintGap": 11.20180867190203,
       "nearest": {
-        "node": "g45n3",
-        "edge": [
-          "g45hub",
-          "g45n2"
-        ]
+        "node": "g45n3"
       },
       "labelLines": [],
       "captions": 1,
@@ -3274,15 +2818,11 @@
       "size": "mobile",
       "group": "g8",
       "centralLabelIntrusions": [],
-      "minGlyphGap": 14.481528048272923,
-      "minClickGap": 15.102893053722374,
-      "minNodePairPaintGap": 17.953823888434826,
+      "minGlyphGap": 13.352237587769475,
+      "minClickGap": 13.973602593218926,
+      "minNodePairPaintGap": 15.68201392113135,
       "nearest": {
-        "node": "g45n3",
-        "edge": [
-          "g45hub",
-          "g45n2"
-        ]
+        "node": "g45n3"
       },
       "labelLines": [],
       "captions": 1,
@@ -3295,15 +2835,11 @@
       "size": "mobile",
       "group": "g9",
       "centralLabelIntrusions": [],
-      "minGlyphGap": 10.659448257661426,
-      "minClickGap": 11.231495011868937,
-      "minNodePairPaintGap": 13.357110168121967,
+      "minGlyphGap": 9.806374780848822,
+      "minClickGap": 10.378421535056331,
+      "minNodePairPaintGap": 11.640969905498572,
       "nearest": {
-        "node": "g45n3",
-        "edge": [
-          "g45hub",
-          "g45n2"
-        ]
+        "node": "g45n3"
       },
       "labelLines": [],
       "captions": 2,
@@ -3316,15 +2852,11 @@
       "size": "mobile",
       "group": "g43",
       "centralLabelIntrusions": [],
-      "minGlyphGap": 13.57430206608973,
-      "minClickGap": 14.216862697388022,
-      "minNodePairPaintGap": 16.83682785933085,
+      "minGlyphGap": 12.508228208436263,
+      "minClickGap": 13.150788839734554,
+      "minNodePairPaintGap": 14.692191647120016,
       "nearest": {
-        "node": "g45n3",
-        "edge": [
-          "g45hub",
-          "g45n2"
-        ]
+        "node": "g45n3"
       },
       "labelLines": [],
       "captions": 1,
@@ -3337,15 +2869,11 @@
       "size": "mobile",
       "group": "g4",
       "centralLabelIntrusions": [],
-      "minGlyphGap": 10.583412687201411,
-      "minClickGap": 11.151638799397878,
-      "minNodePairPaintGap": 13.267899389667853,
+      "minGlyphGap": 9.736036801259194,
+      "minClickGap": 10.304262913455664,
+      "minNodePairPaintGap": 11.563221053078525,
       "nearest": {
-        "node": "g45n3",
-        "edge": [
-          "g45hub",
-          "g45n2"
-        ]
+        "node": "g45n3"
       },
       "labelLines": [],
       "captions": 1,
@@ -3358,15 +2886,11 @@
       "size": "mobile",
       "group": "g52",
       "centralLabelIntrusions": [],
-      "minGlyphGap": 11.021586260924238,
-      "minClickGap": 11.61182975727094,
-      "minNodePairPaintGap": 13.78199832222102,
+      "minGlyphGap": 10.14137661391359,
+      "minClickGap": 10.731620110260291,
+      "minNodePairPaintGap": 12.011267833180865,
       "nearest": {
-        "node": "g45n3",
-        "edge": [
-          "g45hub",
-          "g45n2"
-        ]
+        "node": "g45n3"
       },
       "labelLines": [],
       "captions": 1,
@@ -3379,15 +2903,11 @@
       "size": "mobile",
       "group": "g39",
       "centralLabelIntrusions": [],
-      "minGlyphGap": 10.646775791146512,
-      "minClickGap": 11.218185778145505,
-      "minNodePairPaintGap": 13.342241855884415,
+      "minGlyphGap": 9.794651903178904,
+      "minClickGap": 10.366061890177898,
+      "minNodePairPaintGap": 11.62801189488732,
       "nearest": {
-        "node": "g45n3",
-        "edge": [
-          "g45hub",
-          "g45n2"
-        ]
+        "node": "g45n3"
       },
       "labelLines": [],
       "captions": 1,
@@ -3400,15 +2920,11 @@
       "size": "mobile",
       "group": "g32",
       "centralLabelIntrusions": [],
-      "minGlyphGap": 12.042522689473994,
-      "minClickGap": 12.68406628899532,
-      "minNodePairPaintGap": 14.979839450939098,
+      "minGlyphGap": 11.08581097850789,
+      "minClickGap": 11.727354578029216,
+      "minNodePairPaintGap": 13.055208652375102,
       "nearest": {
-        "node": "g45n3",
-        "edge": [
-          "g45hub",
-          "g45n2"
-        ]
+        "node": "g45n3"
       },
       "labelLines": [],
       "captions": 1,
@@ -3421,15 +2937,11 @@
       "size": "mobile",
       "group": "g41",
       "centralLabelIntrusions": [],
-      "minGlyphGap": 8.228211679191208,
-      "minClickGap": 8.678093444639726,
-      "minNodePairPaintGap": 10.504596450423787,
+      "minGlyphGap": 7.557318611477683,
+      "minClickGap": 8.007200376926201,
+      "minNodePairPaintGap": 9.154951154078244,
       "nearest": {
-        "node": "g45n3",
-        "edge": [
-          "g45hub",
-          "g45n2"
-        ]
+        "node": "g45n3"
       },
       "labelLines": [],
       "captions": 1,
@@ -3442,15 +2954,11 @@
       "size": "mobile",
       "group": "g7",
       "centralLabelIntrusions": [],
-      "minGlyphGap": 9.500809730916169,
-      "minClickGap": 10.014637114845613,
-      "minNodePairPaintGap": 11.997706348410455,
+      "minGlyphGap": 8.734556781019894,
+      "minClickGap": 9.248384164949337,
+      "minNodePairPaintGap": 10.456224196622129,
       "nearest": {
-        "node": "g45n3",
-        "edge": [
-          "g45hub",
-          "g45n2"
-        ]
+        "node": "g45n3"
       },
       "labelLines": [],
       "captions": 1,
@@ -3463,15 +2971,11 @@
       "size": "mobile",
       "group": "g42",
       "centralLabelIntrusions": [],
-      "minGlyphGap": 9.776824831487497,
-      "minClickGap": 10.304521446390668,
-      "minNodePairPaintGap": 12.32154849015947,
+      "minGlyphGap": 8.989889178646754,
+      "minClickGap": 9.517585793549925,
+      "minNodePairPaintGap": 10.738458645450043,
       "nearest": {
-        "node": "g45n3",
-        "edge": [
-          "g45hub",
-          "g45n2"
-        ]
+        "node": "g45n3"
       },
       "labelLines": [],
       "captions": 1,
@@ -3484,15 +2988,11 @@
       "size": "mobile",
       "group": "g17",
       "centralLabelIntrusions": [],
-      "minGlyphGap": 11.35283168665523,
-      "minClickGap": 11.959719632196746,
-      "minNodePairPaintGap": 14.170640928699587,
+      "minGlyphGap": 10.447800750056535,
+      "minClickGap": 11.05468869559805,
+      "minNodePairPaintGap": 12.349977092075065,
       "nearest": {
-        "node": "g45n3",
-        "edge": [
-          "g45hub",
-          "g45n2"
-        ]
+        "node": "g45n3"
       },
       "labelLines": [],
       "captions": 2,
@@ -3505,15 +3005,11 @@
       "size": "mobile",
       "group": "g10",
       "centralLabelIntrusions": [],
-      "minGlyphGap": 11.965172659526985,
-      "minClickGap": 12.60282956796171,
-      "minNodePairPaintGap": 14.889086447532707,
+      "minGlyphGap": 11.014257036125894,
+      "minClickGap": 11.651913944560619,
+      "minNodePairPaintGap": 12.976115722228572,
       "nearest": {
-        "node": "g45n3",
-        "edge": [
-          "g45hub",
-          "g45n2"
-        ]
+        "node": "g45n3"
       },
       "labelLines": [],
       "captions": 1,
@@ -4250,766 +3746,8 @@
   "conflictsChecked": true,
   "foreignWeaponRejected": true,
   "realMouseAndTouch": true,
+  "clearanceCacheCrossCheckedAgainstExhaustive": true,
+  "middleBandRevision": true,
   "networkRequests": 0,
-  "runtimeErrors": [],
-  "finalDisplayReview": {
-    "status": "PASS",
-    "centralVoidRadius": 858,
-    "graphAndEffectsUnchanged": true,
-    "focusLabelReviews": [
-      {
-        "group": "g49",
-        "size": "desktop",
-        "bad": [],
-        "captions": 3,
-        "centralLabelIntrusions": [],
-        "labelLines": []
-      },
-      {
-        "group": "g45",
-        "size": "desktop",
-        "bad": [],
-        "captions": 2,
-        "centralLabelIntrusions": [],
-        "labelLines": []
-      },
-      {
-        "group": "g38",
-        "size": "desktop",
-        "bad": [],
-        "captions": 1,
-        "centralLabelIntrusions": [],
-        "labelLines": []
-      },
-      {
-        "group": "g23",
-        "size": "desktop",
-        "bad": [],
-        "captions": 1,
-        "centralLabelIntrusions": [],
-        "labelLines": []
-      },
-      {
-        "group": "g13",
-        "size": "desktop",
-        "bad": [],
-        "captions": 2,
-        "centralLabelIntrusions": [],
-        "labelLines": []
-      },
-      {
-        "group": "g51",
-        "size": "desktop",
-        "bad": [],
-        "captions": 2,
-        "centralLabelIntrusions": [],
-        "labelLines": []
-      },
-      {
-        "group": "g35",
-        "size": "desktop",
-        "bad": [],
-        "captions": 2,
-        "centralLabelIntrusions": [],
-        "labelLines": []
-      },
-      {
-        "group": "g30",
-        "size": "desktop",
-        "bad": [],
-        "captions": 2,
-        "centralLabelIntrusions": [],
-        "labelLines": []
-      },
-      {
-        "group": "g14",
-        "size": "desktop",
-        "bad": [],
-        "captions": 2,
-        "centralLabelIntrusions": [],
-        "labelLines": []
-      },
-      {
-        "group": "g34",
-        "size": "desktop",
-        "bad": [],
-        "captions": 2,
-        "centralLabelIntrusions": [],
-        "labelLines": []
-      },
-      {
-        "group": "g21",
-        "size": "desktop",
-        "bad": [],
-        "captions": 2,
-        "centralLabelIntrusions": [],
-        "labelLines": []
-      },
-      {
-        "group": "g5",
-        "size": "desktop",
-        "bad": [],
-        "captions": 3,
-        "centralLabelIntrusions": [],
-        "labelLines": []
-      },
-      {
-        "group": "g50",
-        "size": "desktop",
-        "bad": [],
-        "captions": 3,
-        "centralLabelIntrusions": [],
-        "labelLines": []
-      },
-      {
-        "group": "g26",
-        "size": "desktop",
-        "bad": [],
-        "captions": 2,
-        "centralLabelIntrusions": [],
-        "labelLines": []
-      },
-      {
-        "group": "g37",
-        "size": "desktop",
-        "bad": [],
-        "captions": 3,
-        "centralLabelIntrusions": [],
-        "labelLines": []
-      },
-      {
-        "group": "g25",
-        "size": "desktop",
-        "bad": [],
-        "captions": 1,
-        "centralLabelIntrusions": [],
-        "labelLines": []
-      },
-      {
-        "group": "g48",
-        "size": "desktop",
-        "bad": [],
-        "captions": 1,
-        "centralLabelIntrusions": [],
-        "labelLines": []
-      },
-      {
-        "group": "g6",
-        "size": "desktop",
-        "bad": [],
-        "captions": 1,
-        "centralLabelIntrusions": [],
-        "labelLines": []
-      },
-      {
-        "group": "g18",
-        "size": "desktop",
-        "bad": [],
-        "captions": 1,
-        "centralLabelIntrusions": [],
-        "labelLines": []
-      },
-      {
-        "group": "g31",
-        "size": "desktop",
-        "bad": [],
-        "captions": 2,
-        "centralLabelIntrusions": [],
-        "labelLines": []
-      },
-      {
-        "group": "g46",
-        "size": "desktop",
-        "bad": [],
-        "captions": 2,
-        "centralLabelIntrusions": [],
-        "labelLines": []
-      },
-      {
-        "group": "g33",
-        "size": "desktop",
-        "bad": [],
-        "captions": 2,
-        "centralLabelIntrusions": [],
-        "labelLines": []
-      },
-      {
-        "group": "g40",
-        "size": "desktop",
-        "bad": [],
-        "captions": 1,
-        "centralLabelIntrusions": [],
-        "labelLines": []
-      },
-      {
-        "group": "g20",
-        "size": "desktop",
-        "bad": [],
-        "captions": 2,
-        "centralLabelIntrusions": [],
-        "labelLines": []
-      },
-      {
-        "group": "g12",
-        "size": "desktop",
-        "bad": [],
-        "captions": 2,
-        "centralLabelIntrusions": [],
-        "labelLines": []
-      },
-      {
-        "group": "g19",
-        "size": "desktop",
-        "bad": [],
-        "captions": 2,
-        "centralLabelIntrusions": [],
-        "labelLines": []
-      },
-      {
-        "group": "g28",
-        "size": "desktop",
-        "bad": [],
-        "captions": 1,
-        "centralLabelIntrusions": [],
-        "labelLines": []
-      },
-      {
-        "group": "g11",
-        "size": "desktop",
-        "bad": [],
-        "captions": 1,
-        "centralLabelIntrusions": [],
-        "labelLines": []
-      },
-      {
-        "group": "g16",
-        "size": "desktop",
-        "bad": [],
-        "captions": 2,
-        "centralLabelIntrusions": [],
-        "labelLines": []
-      },
-      {
-        "group": "g44",
-        "size": "desktop",
-        "bad": [],
-        "captions": 1,
-        "centralLabelIntrusions": [],
-        "labelLines": []
-      },
-      {
-        "group": "g2",
-        "size": "desktop",
-        "bad": [],
-        "captions": 2,
-        "centralLabelIntrusions": [],
-        "labelLines": []
-      },
-      {
-        "group": "g24",
-        "size": "desktop",
-        "bad": [],
-        "captions": 1,
-        "centralLabelIntrusions": [],
-        "labelLines": []
-      },
-      {
-        "group": "g27",
-        "size": "desktop",
-        "bad": [],
-        "captions": 1,
-        "centralLabelIntrusions": [],
-        "labelLines": []
-      },
-      {
-        "group": "g3",
-        "size": "desktop",
-        "bad": [],
-        "captions": 1,
-        "centralLabelIntrusions": [],
-        "labelLines": []
-      },
-      {
-        "group": "g47",
-        "size": "desktop",
-        "bad": [],
-        "captions": 1,
-        "centralLabelIntrusions": [],
-        "labelLines": []
-      },
-      {
-        "group": "g8",
-        "size": "desktop",
-        "bad": [],
-        "captions": 1,
-        "centralLabelIntrusions": [],
-        "labelLines": []
-      },
-      {
-        "group": "g9",
-        "size": "desktop",
-        "bad": [],
-        "captions": 2,
-        "centralLabelIntrusions": [],
-        "labelLines": []
-      },
-      {
-        "group": "g43",
-        "size": "desktop",
-        "bad": [],
-        "captions": 1,
-        "centralLabelIntrusions": [],
-        "labelLines": []
-      },
-      {
-        "group": "g4",
-        "size": "desktop",
-        "bad": [],
-        "captions": 1,
-        "centralLabelIntrusions": [],
-        "labelLines": []
-      },
-      {
-        "group": "g52",
-        "size": "desktop",
-        "bad": [],
-        "captions": 1,
-        "centralLabelIntrusions": [],
-        "labelLines": []
-      },
-      {
-        "group": "g39",
-        "size": "desktop",
-        "bad": [],
-        "captions": 1,
-        "centralLabelIntrusions": [],
-        "labelLines": []
-      },
-      {
-        "group": "g32",
-        "size": "desktop",
-        "bad": [],
-        "captions": 1,
-        "centralLabelIntrusions": [],
-        "labelLines": []
-      },
-      {
-        "group": "g41",
-        "size": "desktop",
-        "bad": [],
-        "captions": 1,
-        "centralLabelIntrusions": [],
-        "labelLines": []
-      },
-      {
-        "group": "g7",
-        "size": "desktop",
-        "bad": [],
-        "captions": 1,
-        "centralLabelIntrusions": [],
-        "labelLines": []
-      },
-      {
-        "group": "g42",
-        "size": "desktop",
-        "bad": [],
-        "captions": 1,
-        "centralLabelIntrusions": [],
-        "labelLines": []
-      },
-      {
-        "group": "g17",
-        "size": "desktop",
-        "bad": [],
-        "captions": 2,
-        "centralLabelIntrusions": [],
-        "labelLines": []
-      },
-      {
-        "group": "g10",
-        "size": "desktop",
-        "bad": [],
-        "captions": 2,
-        "centralLabelIntrusions": [],
-        "labelLines": []
-      },
-      {
-        "group": "g49",
-        "size": "mobile",
-        "bad": [],
-        "captions": 2,
-        "centralLabelIntrusions": [],
-        "labelLines": []
-      },
-      {
-        "group": "g45",
-        "size": "mobile",
-        "bad": [],
-        "captions": 1,
-        "centralLabelIntrusions": [],
-        "labelLines": []
-      },
-      {
-        "group": "g38",
-        "size": "mobile",
-        "bad": [],
-        "captions": 1,
-        "centralLabelIntrusions": [],
-        "labelLines": []
-      },
-      {
-        "group": "g23",
-        "size": "mobile",
-        "bad": [],
-        "captions": 1,
-        "centralLabelIntrusions": [],
-        "labelLines": []
-      },
-      {
-        "group": "g13",
-        "size": "mobile",
-        "bad": [],
-        "captions": 1,
-        "centralLabelIntrusions": [],
-        "labelLines": []
-      },
-      {
-        "group": "g51",
-        "size": "mobile",
-        "bad": [],
-        "captions": 1,
-        "centralLabelIntrusions": [],
-        "labelLines": []
-      },
-      {
-        "group": "g35",
-        "size": "mobile",
-        "bad": [],
-        "captions": 2,
-        "centralLabelIntrusions": [],
-        "labelLines": []
-      },
-      {
-        "group": "g30",
-        "size": "mobile",
-        "bad": [],
-        "captions": 1,
-        "centralLabelIntrusions": [],
-        "labelLines": []
-      },
-      {
-        "group": "g14",
-        "size": "mobile",
-        "bad": [],
-        "captions": 3,
-        "centralLabelIntrusions": [],
-        "labelLines": []
-      },
-      {
-        "group": "g34",
-        "size": "mobile",
-        "bad": [],
-        "captions": 3,
-        "centralLabelIntrusions": [],
-        "labelLines": []
-      },
-      {
-        "group": "g21",
-        "size": "mobile",
-        "bad": [],
-        "captions": 1,
-        "centralLabelIntrusions": [],
-        "labelLines": []
-      },
-      {
-        "group": "g5",
-        "size": "mobile",
-        "bad": [],
-        "captions": 1,
-        "centralLabelIntrusions": [],
-        "labelLines": []
-      },
-      {
-        "group": "g50",
-        "size": "mobile",
-        "bad": [],
-        "captions": 2,
-        "centralLabelIntrusions": [],
-        "labelLines": []
-      },
-      {
-        "group": "g26",
-        "size": "mobile",
-        "bad": [],
-        "captions": 1,
-        "centralLabelIntrusions": [],
-        "labelLines": []
-      },
-      {
-        "group": "g37",
-        "size": "mobile",
-        "bad": [],
-        "captions": 2,
-        "centralLabelIntrusions": [],
-        "labelLines": []
-      },
-      {
-        "group": "g25",
-        "size": "mobile",
-        "bad": [],
-        "captions": 1,
-        "centralLabelIntrusions": [],
-        "labelLines": []
-      },
-      {
-        "group": "g48",
-        "size": "mobile",
-        "bad": [],
-        "captions": 1,
-        "centralLabelIntrusions": [],
-        "labelLines": []
-      },
-      {
-        "group": "g6",
-        "size": "mobile",
-        "bad": [],
-        "captions": 1,
-        "centralLabelIntrusions": [],
-        "labelLines": []
-      },
-      {
-        "group": "g18",
-        "size": "mobile",
-        "bad": [],
-        "captions": 1,
-        "centralLabelIntrusions": [],
-        "labelLines": []
-      },
-      {
-        "group": "g31",
-        "size": "mobile",
-        "bad": [],
-        "captions": 2,
-        "centralLabelIntrusions": [],
-        "labelLines": []
-      },
-      {
-        "group": "g46",
-        "size": "mobile",
-        "bad": [],
-        "captions": 2,
-        "centralLabelIntrusions": [],
-        "labelLines": []
-      },
-      {
-        "group": "g33",
-        "size": "mobile",
-        "bad": [],
-        "captions": 1,
-        "centralLabelIntrusions": [],
-        "labelLines": []
-      },
-      {
-        "group": "g40",
-        "size": "mobile",
-        "bad": [],
-        "captions": 1,
-        "centralLabelIntrusions": [],
-        "labelLines": []
-      },
-      {
-        "group": "g20",
-        "size": "mobile",
-        "bad": [],
-        "captions": 2,
-        "centralLabelIntrusions": [],
-        "labelLines": []
-      },
-      {
-        "group": "g12",
-        "size": "mobile",
-        "bad": [],
-        "captions": 1,
-        "centralLabelIntrusions": [],
-        "labelLines": []
-      },
-      {
-        "group": "g19",
-        "size": "mobile",
-        "bad": [],
-        "captions": 1,
-        "centralLabelIntrusions": [],
-        "labelLines": []
-      },
-      {
-        "group": "g28",
-        "size": "mobile",
-        "bad": [],
-        "captions": 1,
-        "centralLabelIntrusions": [],
-        "labelLines": []
-      },
-      {
-        "group": "g11",
-        "size": "mobile",
-        "bad": [],
-        "captions": 1,
-        "centralLabelIntrusions": [],
-        "labelLines": []
-      },
-      {
-        "group": "g16",
-        "size": "mobile",
-        "bad": [],
-        "captions": 2,
-        "centralLabelIntrusions": [],
-        "labelLines": []
-      },
-      {
-        "group": "g44",
-        "size": "mobile",
-        "bad": [],
-        "captions": 1,
-        "centralLabelIntrusions": [],
-        "labelLines": []
-      },
-      {
-        "group": "g2",
-        "size": "mobile",
-        "bad": [],
-        "captions": 2,
-        "centralLabelIntrusions": [],
-        "labelLines": []
-      },
-      {
-        "group": "g24",
-        "size": "mobile",
-        "bad": [],
-        "captions": 1,
-        "centralLabelIntrusions": [],
-        "labelLines": []
-      },
-      {
-        "group": "g27",
-        "size": "mobile",
-        "bad": [],
-        "captions": 1,
-        "centralLabelIntrusions": [],
-        "labelLines": []
-      },
-      {
-        "group": "g3",
-        "size": "mobile",
-        "bad": [],
-        "captions": 1,
-        "centralLabelIntrusions": [],
-        "labelLines": []
-      },
-      {
-        "group": "g47",
-        "size": "mobile",
-        "bad": [],
-        "captions": 1,
-        "centralLabelIntrusions": [],
-        "labelLines": []
-      },
-      {
-        "group": "g8",
-        "size": "mobile",
-        "bad": [],
-        "captions": 1,
-        "centralLabelIntrusions": [],
-        "labelLines": []
-      },
-      {
-        "group": "g9",
-        "size": "mobile",
-        "bad": [],
-        "captions": 2,
-        "centralLabelIntrusions": [],
-        "labelLines": []
-      },
-      {
-        "group": "g43",
-        "size": "mobile",
-        "bad": [],
-        "captions": 1,
-        "centralLabelIntrusions": [],
-        "labelLines": []
-      },
-      {
-        "group": "g4",
-        "size": "mobile",
-        "bad": [],
-        "captions": 1,
-        "centralLabelIntrusions": [],
-        "labelLines": []
-      },
-      {
-        "group": "g52",
-        "size": "mobile",
-        "bad": [],
-        "captions": 1,
-        "centralLabelIntrusions": [],
-        "labelLines": []
-      },
-      {
-        "group": "g39",
-        "size": "mobile",
-        "bad": [],
-        "captions": 1,
-        "centralLabelIntrusions": [],
-        "labelLines": []
-      },
-      {
-        "group": "g32",
-        "size": "mobile",
-        "bad": [],
-        "captions": 1,
-        "centralLabelIntrusions": [],
-        "labelLines": []
-      },
-      {
-        "group": "g41",
-        "size": "mobile",
-        "bad": [],
-        "captions": 1,
-        "centralLabelIntrusions": [],
-        "labelLines": []
-      },
-      {
-        "group": "g7",
-        "size": "mobile",
-        "bad": [],
-        "captions": 1,
-        "centralLabelIntrusions": [],
-        "labelLines": []
-      },
-      {
-        "group": "g42",
-        "size": "mobile",
-        "bad": [],
-        "captions": 1,
-        "centralLabelIntrusions": [],
-        "labelLines": []
-      },
-      {
-        "group": "g17",
-        "size": "mobile",
-        "bad": [],
-        "captions": 2,
-        "centralLabelIntrusions": [],
-        "labelLines": []
-      },
-      {
-        "group": "g10",
-        "size": "mobile",
-        "bad": [],
-        "captions": 1,
-        "centralLabelIntrusions": [],
-        "labelLines": []
-      }
-    ],
-    "refreshedFrames": 22
-  }
+  "runtimeErrors": []
 }

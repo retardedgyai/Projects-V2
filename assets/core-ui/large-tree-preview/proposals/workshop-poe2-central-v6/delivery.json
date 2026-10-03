@@ -2,26 +2,38 @@
   "status": "SAVED_TO_LIBRARY",
   "adopted": false,
   "runtimeApplied": false,
+  "sameV6IdentityPreserved": true,
+  "baselineCommit": "accefb73b3ba1c401d24ef199ae1a6375f0a3331",
   "items": [
     {
       "file_name": "ProjectS_PoE2_Central_V6_Reference_Comparison.png",
       "library_file_id": "libfile_9d6c323f354c81918c1ed123f10b99f0",
+      "current_version_number": 1,
       "url": "https://chatgpt.com/api/library/files/libfile_9d6c323f354c81918c1ed123f10b99f0/download"
     },
     {
       "file_name": "ProjectS_PoE2_Central_V6_Whole_And_Regions.png",
       "library_file_id": "libfile_1385f84844b48191b39da38c269a545b",
+      "current_version_number": 1,
       "url": "https://chatgpt.com/api/library/files/libfile_1385f84844b48191b39da38c269a545b/download"
     },
     {
       "file_name": "ProjectS_PoE2_Central_V6.html",
       "library_file_id": "libfile_4957d37ab2d88191abcc3c87da682ed2",
+      "current_version_number": 1,
       "url": "https://chatgpt.com/api/library/files/libfile_4957d37ab2d88191abcc3c87da682ed2/download"
     },
     {
       "file_name": "ProjectS_PoE2_V6_Mobile_Center.png",
       "library_file_id": "libfile_4321ec4253008191806de85c8b2a8d9c",
+      "current_version_number": 1,
       "url": "https://chatgpt.com/api/library/files/libfile_4321ec4253008191806de85c8b2a8d9c/download"
+    },
+    {
+      "file_name": "ProjectS_PoE2_V6_Middle_Band_Before_After.png",
+      "library_file_id": "libfile_431490986140819199d08b8d244e819a",
+      "current_version_number": 0,
+      "url": "https://chatgpt.com/api/library/files/libfile_431490986140819199d08b8d244e819a/download"
     }
   ]
 }

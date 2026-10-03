@@ -2,6 +2,16 @@
 
 中央の余白を囲む5起点を同じ半径・72度間隔に置き、各起点から短い2出口を出す。3つ目の育成選択は初手の先で分岐する。隣の開始部へ回る接続を持ち、外側は47領域の異なる形・大きさ・枝を保持した。採用前の配置・操作プレビューで、nativeゲームへは反映していない。
 
+## 2026-10-03 西・南西の中間帯の限定修正
+
+中央60点と中央に接する経路、47地域内の全点と内部経路は修正前V6と完全一致。西〜南西の53通過経路を交差検査の上で直線化し、11個の既存Roadをずらした。西の長い回り込み1接続は北西の生命地域へつなぎ替え、入れ子の環状帯を開いた。南西の2方向の出発角は約19.7度から34.3度へ広がった。通常点は表示を大きく・明るくし、経路や他の点への余白で上限を制限している。
+
+`ProjectS_PoE2_V6_Middle_Band_Before_After.png`は、修正前後の全体・西・南西を同一カメラ、1920×1200画面で実ブラウザから撮影した比較。西と南西の倍率は0.20。配置を描き直した比較図ではない。
+
+つなぎ替えにより、誘導例の必要ポイントは無会心が43→39pt、生命寄りタンクが43→27ptへ変わる。他の8例は同じ。各点の費用・効果・前提は変更していないが、この経路差は採用時の育成バランス判断に含める。
+
+実8258線分の交差・重複・点への近接は0。120入力条件、PC・スマホ94表示、22画面、実マウス・タッチ・保存復帰・払い戻しを再検証してPASS。表示余白の計算は実全線分との総当たりに一致することを確認し、同値のキャッシュをQAだけで利用して負荷を抑えた。保護範囲の一致は`middle-band-verification.json`、編集理由は`middle-band-authoring.json`、撮影条件は`middle-band-captures.json`を参照。
+
 ## 開くファイル
 
 | ファイル | 確認する内容 |
@@ -31,7 +41,7 @@ ProjectSの5職では、共通の中央領域を囲む72度間隔の配置へ適
 
 - 645点のID・効果・費用・条件は元データと一致（配置XYだけ変更）。47領域、5起点、15の末端Key、784接続。
 - 起点は半径900・72度間隔。中央の表示領域は半径858。中央内を通る配線なし。
-- 実ポリライン8760区間の交差・重なり・他の点への近接は0。47領域の形は異なる。連続する次数2のRoadは最大2点。
+- 実ポリライン8258区間の交差・重なり・他の点への近接は0。47領域の形は異なる。連続する次数2のRoadは最大2点。
 - 120入力条件で有効点と入力のあるKeyへ到達。別職の起点やKeyを通路に要求しない。
 - PC/スマホ22画像・94領域の表示、マウスとタッチ、保存復元、Keyの代償と払い戻し、競合、不適合武器の拒否を確認。
 - 最終の中央円とラベル変更後は94ラベル確認・22画像を更新してPASS。2026-10-03の短い再起動確認もPASS。
@@ -40,7 +50,7 @@ ProjectSの5職では、共通の中央領域を囲む72度間隔の配置へ適
 
 ## 実装・再現・調査の入口
 
-最重要ファイルは`candidate-graph.json`と`ProjectS_PoE2_Central_V6.html`。生成はrepoの`scripts/`で、`build-skill-tree-poe2-central-v6.py` → `complete-skill-tree-poe2-central-road-v6.py` → `repair-skill-tree-poe2-central-inputs-v6.py` → `finish-skill-tree-poe2-central-topology-v6.py` → `publish-skill-tree-poe2-central-v6.py`の順。
+最重要ファイルは`candidate-graph.json`と`ProjectS_PoE2_Central_V6.html`。生成はrepoの`scripts/`で、`build-skill-tree-poe2-central-v6.py` → `complete-skill-tree-poe2-central-road-v6.py` → `repair-skill-tree-poe2-central-inputs-v6.py` → `finish-skill-tree-poe2-central-topology-v6.py` → `repair-skill-tree-poe2-middle-v6.py` → `finish-skill-tree-poe2-central-topology-v6.py` → `publish-skill-tree-poe2-central-v6.py`の順。
 
 崩れたときは`geometry-verification.json`、到達や入力条件は`input-reachability-verification.json`、画面や操作は`browser-verification.json`と`resumed-smoke-verification.json`から見る。参照の実測・実操作記録は`reference-study.json`。Road移動・開始部の編集記録は`central-authoring.json`。
 
