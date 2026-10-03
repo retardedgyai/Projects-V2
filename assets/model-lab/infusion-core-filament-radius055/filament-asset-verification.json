@@ -1,0 +1,13 @@
+{
+  "scope": "offline emission-mask study only",
+  "source": "Original ImageGen sparse open filaments, not TC texture or copied frame",
+  "technicalConversion": "nearest 64px grid and emitted grayscale to alpha, no blur or opacity normalization",
+  "openCenter": true,
+  "strongestAlpha": 253,
+  "nonzeroPixels": 456,
+  "textureSha256": "43830f876f09fc559accb4300a8127c9e754114e26502dfde78009cfa173c06c",
+  "approvedWaveUnchanged": true,
+  "coreMaterialsGeometryUnchanged": true,
+  "rolePolicyDistance": 0.55,
+  "nativeNotApplied": true
+}

@@ -1,0 +1,42 @@
+{
+  "nativePackSha1": "b2a2784b5856770a13648798447f9b0c7c0e060a",
+  "roleTraceSha256": "2d6f8e5ce7524a87559012555e5326ace358e83d6f0e360b48a481b07c3df4ba",
+  "contextFrames": 3,
+  "samplesPerSideIdentical": true,
+  "coreGeometryUVSupportOrientationUnchanged": true,
+  "cameraDegrees": [
+    38,
+    26
+  ],
+  "coreYawAndTintMatchTraceExporter": true,
+  "coreNeutralTint": [
+    0.88,
+    0.94,
+    0.9
+  ],
+  "exactSourceFiles": {
+    "assets/projects/models/infusion-v6/center.json": "8633894ccaf3b30d11378c5bfb81b09d42b4da6843788903a35531604fea905c",
+    "assets/projects/textures/infusion-v3/basalt.png": "372817ac966e4380454864d99c599f7a6fba356847dff43fae5f224a3a368a05",
+    "assets/projects/textures/infusion-v6/limestone.png": "8e6653156fefad08caea006ce0ea3bf165e9159268d40f827036cd21c3dbaaef",
+    "assets/projects/textures/infusion-v3/brass.png": "80dafe577ffcf94f7d2ae6a42c7f137f49284ce3fd74e3b89af7f8ad39f2f891",
+    "assets/projects/textures/infusion-v6/well.png": "a2f2170613ffe8376a8b8e31df7523c88e994b642e7aa1dae82345f5cfd63197",
+    "assets/projects/textures/infusion-v3/carved.png": "0557c5d940d45d62d79aaa1d2ac1555f2e19bab615bfb3c5082abf819d85c99d",
+    "assets/projects/models/infusion-v4/support.json": "c624653176cba056cf3d5ca73cf5fbb6c16f5b1aa82b597ec70ad323b786962f",
+    "assets/projects/textures/infusion-v3/limestone.png": "d2c006261ace9254c43a6443a7f826de3f7305dbc1b8c2e4c77cde91dfbf9e2a",
+    "assets/projects/models/infusion-v6/offering.json": "296ec6a4d4f8460a8aaccf9bee17d87bbea5d2f52d92144ecbad2c9c345d0dec",
+    "assets/projects/models/infusion-v3/jar.json": "48a06f785eb388a1a48b173a143f0d8891559ad69b4f1de7acd0c1350dc11d20",
+    "assets/projects/textures/infusion-v3/glass.png": "5fe658a6d1e06017b3eeba62506e3b38cdb286fcc3e70427a6b2de9a901d0dde",
+    "assets/projects/models/infusion-v7/core_ritual.json": "8d8161b9e8a388985976ab085a5d0db96cf0121271b76e3d0a0997fedf52a353",
+    "assets/projects/textures/infusion-v5/sealed_carved.png": "6e0c3f88323f835e10b3f3f0af724a4f89d67216676beaa3485f13e8bb4d112c",
+    "assets/projects/textures/infusion-v5/seal_well.png": "dd6aaf94e70654089723248d52aaaab6d60b28c08afdb50502bc79787bb61cf8",
+    "assets/projects/textures/infusion-v7/seal_charged.png": "e40d008bca18a7f12db36d0f07315132374475696862d46a054c3210dd7f139d",
+    "assets/projects/textures/infusion-v7/leak_charged.png": "4d19c2a17d58c36a5e37cba538aa878ff73a7c5f2f639fdee125210cf923beed"
+  },
+  "outputBytes": 166707,
+  "limitations": [
+    "Offline directional light and alpha/depth approximation",
+    "Staged layout, not user world layout",
+    "Equipped item entity omitted",
+    "No human or native test in this run"
+  ]
+}
