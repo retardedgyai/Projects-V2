@@ -1,0 +1,15 @@
+{
+  "frames": 41,
+  "samples_all_non_model_fields_identical_to_prior": 546,
+  "samples_with_boundary_model_change": 27,
+  "policy_matches_native_radius": 0.55,
+  "jar_intake_sample_distance_range": [
+    0.31023027126696395,
+    0.32444598912388867
+  ],
+  "role_sprite_bytes_identical_to_approved_preview": true,
+  "only_offline_halo_and_wave_texture_selection_changed": true,
+  "native_server_client_save_pack_untouched_by_this_run": true,
+  "gif_bytes": 1127262,
+  "gif_sha256": "61bbfb477903727e9902f6fb471955689c4ccdbbf071ec37b1621b77afec785c"
+}

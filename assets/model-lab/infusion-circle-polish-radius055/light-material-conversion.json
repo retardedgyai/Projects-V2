@@ -1,0 +1,13 @@
+{
+  "conversion": "grayscale emitted intensity decoded to white RGB and alpha for native tint; no blur",
+  "source_grid": [
+    64,
+    64
+  ],
+  "original_halo_mean_emitted_coverage": 47.67830882352941,
+  "generated_mean_coverage_before_material_conversion": 41.59599977711397,
+  "alpha_gain_to_match_original_coverage": 1.1462234128042745,
+  "converted_mean_emitted_coverage": 46.61596679687499,
+  "main_contour_max_alpha": 255,
+  "transparent_center": true
+}

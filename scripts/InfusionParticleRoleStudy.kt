@@ -21,17 +21,17 @@ fun main(args:Array<String>) {
     val frames=mutableListOf<String>()
     var changes=0;var preservedLarge=0
     val roleCounts=mutableMapOf<String,Int>()
-    fun role(s:WorldInfusionSmoke.Sample):String=when {
+    fun role(s:WorldInfusionSmoke.Sample,inlet:Vec?):String=when {
         s.model!="infusion/smoke"->"protected-large-effect"
         s.key.startsWith("radiance:orbit:")->"protected-core-orbit"
         s.key.startsWith("radiance:flow:") || s.key.startsWith("convergence:")->"intake-mote"
         s.key.startsWith("weapon-success:")->"success-spark"
         s.key.startsWith("pedestal-rise:")->"protected-pedestal-rise"
-        else->if(s.progress>=.65)"intake-mote" else "jar-mist"
+        else->if(inlet!=null && s.position.distance(inlet)<=.55)"intake-mote" else "jar-mist"
     }
-    fun frame(scene:String,tick:Long,samples:List<WorldInfusionSmoke.Sample>) {
+    fun frame(scene:String,tick:Long,samples:List<WorldInfusionSmoke.Sample>,inlet:Vec?=null) {
         val entries=samples.map { original->
-            val r=role(original)
+            val r=role(original,inlet)
             roleCounts[r]=roleCounts.getOrDefault(r,0)+1
             val updated=if(r in setOf("jar-mist","intake-mote","success-spark"))
                 original.copy(model="infusion-role-study/$r") else original
@@ -42,7 +42,8 @@ fun main(args:Array<String>) {
             "{\"key\":\"${original.key}\",\"role\":\"$r\",\"fromModel\":\"${original.model}\",\"toModel\":\"${updated.model}\",\"position\":[${p.x()},${p.y()},${p.z()}],\"rgb\":${original.rgb},\"scale\":${original.scale},\"progress\":${original.progress},\"width\":${original.width},\"height\":${original.height},\"facing\":\"${original.facing}\",\"brightness\":${original.brightness}}"
         }
         check(samples.size==entries.size)
-        frames+="{\"scene\":\"$scene\",\"tick\":$tick,\"count\":${samples.size},\"samples\":[${entries.joinToString(",")}] }"
+        val inletJson=inlet?.let { "[${it.x()},${it.y()},${it.z()}]" } ?: "null"
+        frames+="{\"scene\":\"$scene\",\"tick\":$tick,\"count\":${samples.size},\"movingInlet\":$inletJson,\"samples\":[${entries.joinToString(",")}] }"
     }
     val jarRadiance=WorldInfusionRadiance.Track()
     val transfer=WorldInfusionSmoke.Transfer(Vec(-3.5,.95,2.5),pivot,InfusionAspect.TIDE.rgb,0,
@@ -50,7 +51,8 @@ fun main(args:Array<String>) {
     for(tick in 0L..24L step 2) {
         val pose=WorldInfusionAnimation.Pose(tick*4.5,4.5,.88)
         val charge=jarRadiance.samples(working,tick,pose,pivot,weapon,null,true)
-        frame("jar-emission-and-intake",tick,WorldInfusionCharge.frame(charge,emptyList(),WorldInfusionSmoke.frame(listOf(transfer),tick,pose.inlet(pivot))))
+        val inlet=pose.inlet(pivot)
+        frame("jar-emission-and-intake",tick,WorldInfusionCharge.frame(charge,emptyList(),WorldInfusionSmoke.frame(listOf(transfer),tick,inlet)),inlet)
     }
     val radiance=WorldInfusionRadiance.Track();val confluence=WorldInfusionConfluence.Track();val clock=WorldInfusionConfluence.Clock()
     for(tick in 0L..18L step 2) {
@@ -71,6 +73,6 @@ fun main(args:Array<String>) {
     check(changes>0 && preservedLarge>0)
     for(r in listOf("jar-mist","intake-mote","success-spark"))check(roleCounts.getValue(r)>0)
     val counts=roleCounts.entries.joinToString(",") { "\"${it.key}\":${it.value}" }
-    Files.writeString(target,"{\"scope\":\"offline role mapping, not wired into server\",\"jarIntakeProgressBoundaryProposal\":0.65,\"onlyModelReferencesChanged\":true,\"changedSamples\":$changes,\"preservedLargeEffectSamples\":$preservedLarge,\"roleCounts\":{$counts},\"frames\":[${frames.joinToString(",")}] }\n")
+    Files.writeString(target,"{\"scope\":\"offline role mapping aligned with isolated native candidate; not a game capture\",\"jarIntakeDistanceBoundary\":0.55,\"boundaryTarget\":\"moving pose.inlet(pivot)\",\"onlyModelReferencesChanged\":true,\"changedSamples\":$changes,\"preservedLargeEffectSamples\":$preservedLarge,\"roleCounts\":{$counts},\"frames\":[${frames.joinToString(",")}] }\n")
     println("ROLE_STUDY_EXPORT_PASS frames=${frames.size} changedModels=$changes protectedLarge=$preservedLarge sampleCountPositionScaleTintFacingBrightnessProgressUnchanged noServer noSave")
 }

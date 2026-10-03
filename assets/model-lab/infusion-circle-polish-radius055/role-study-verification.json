@@ -1,0 +1,51 @@
+{
+  "scope": "Offline preview aligned with isolated native role candidate; this run changes no server, client, pack or save",
+  "trace_sha256": "2d6f8e5ce7524a87559012555e5326ace358e83d6f0e360b48a481b07c3df4ba",
+  "samplers": "Installed WorldInfusionSmoke/Charge/Radiance/Confluence; deterministic staged fixture, no server or save",
+  "trace_frame_count": 41,
+  "role_counts": {
+    "protected-large-effect": 84,
+    "protected-core-orbit": 99,
+    "jar-mist": 117,
+    "intake-mote": 116,
+    "protected-pedestal-rise": 50,
+    "success-spark": 80
+  },
+  "only_model_reference_changes": true,
+  "geometry_uv_tint_definition_unchanged": true,
+  "large_effect_samples_preserved": 84,
+  "protected_radiance_texture_hashes": {
+    "halo": "9e76df59d628154b6d5f991c784f2e0fb09d67f9bd50165fa67589d63eff832c",
+    "column": "eb5354311b9c50daeb7e80ecc67ac4214cc4d77359907fdae6465b367994dfe6",
+    "wave": "d71d5917bccf8947dffe7e6479b0b2b65403e225ed98d836dc3e4f03429a5c01",
+    "burst": "762a128a1d47567618c76ba3f7e7dde93661b4632daa7aebc7eff49979e185a0"
+  },
+  "candidate_texture_hashes": {
+    "jar-mist": "73f4cf279dc55a9a320c2becb4ed59d2534143bdface12755c95ddaa9f5ce5ef",
+    "intake-mote": "f06dd2c0acdbb4868101ac97d9180195635c969650f84784713ff48839a14064",
+    "success-spark": "c825bdff58daacbd1bfb5487fbe612240f266d510e91632667aaacf652d3c090"
+  },
+  "reference_url": "https://jaguidesminecraft.com/wp-content/uploads/2026/07/Thaumcraft-6-Full-Tutorial-1.12.2_at_54-24.png.webp",
+  "personally_observed": "Small bright blue/cyan cores, irregular faint rims and varying apparent size/density on TC6 altar still",
+  "not_inferred": "Actual TC6 atlas, source/transfer/completion roles, trajectories, complete sequence, TC7 release or completion cycle",
+  "policy_proposal": "Jar particle distance <= .55 from moving pose.inlet(pivot) switches from jar-mist to intake-mote; radiance flow and convergence use intake-mote; weapon-success uses success-spark; orbits/pedestal-rise and all large core effects stay original",
+  "limits": [
+    "Boundary .55 is a proposed ProjectS choice, not evidence from TC6",
+    "Policy matches isolated native candidate; this preview is not an in-game recording",
+    "No scene occlusion/client lighting/interpolation; human feel remains unverified",
+    "Vanilla DUST ingredient trails unchanged and remain a distinct feedback candidate"
+  ],
+  "circle_texture_polish": {
+    "source": "ImageGen original grayscale circular design; nearest conversion to 64px",
+    "sprite_sha256": "788d81367c3ce6d5606554723a82c20b3cfbd7ae5db3369e010d94d5b6112edb",
+    "replaced_only_offline": [
+      "infusion-radiance/halo",
+      "infusion-radiance/wave"
+    ],
+    "column_and_burst_preserved": true,
+    "sample_fields_and_role_particles_identical_both_sides": true
+  },
+  "outputs": {
+    "current-vs-circle-polish-radius055.gif": 1127262
+  }
+}
