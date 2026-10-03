@@ -1,0 +1,9 @@
+{
+  "producerCandidateOnly": true,
+  "removedOnlyRuntimeKey": "radiance:flash",
+  "originalSourceSha256": "475349ed059bb7ae44b92e14e5c9e3a5587d9f8ce9b2ac47f9b860e54f24e3e9",
+  "candidateSourceSha256": "f1573a35f9304cf8a0567ca4a632a4f28daa7d28c685140f532d634ac31f374f",
+  "originalSourceUnchanged": true,
+  "nativeNotApplied": true,
+  "compileNotRunYet": true
+}

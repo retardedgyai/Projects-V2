@@ -1,0 +1,127 @@
+{
+  "removedOnlyKey": "radiance:flash",
+  "removedModel": "infusion-radiance/burst",
+  "actualPreviousGifIntervalSeconds": [
+    6.3,
+    6.7
+  ],
+  "completionAgeTicksInclusive": [
+    0,
+    8
+  ],
+  "removedSamples": [
+    {
+      "tick": 0,
+      "sample": {
+        "key": "radiance:flash",
+        "role": "protected-large-effect",
+        "fromModel": "infusion-radiance/burst",
+        "toModel": "infusion-radiance/burst",
+        "position": [
+          0.5,
+          1.15,
+          0.5
+        ],
+        "rgb": 14857727,
+        "scale": 1.0,
+        "progress": 0.0,
+        "width": 1.5,
+        "height": 1.5,
+        "facing": "CENTER",
+        "brightness": 15
+      }
+    },
+    {
+      "tick": 2,
+      "sample": {
+        "key": "radiance:flash",
+        "role": "protected-large-effect",
+        "fromModel": "infusion-radiance/burst",
+        "toModel": "infusion-radiance/burst",
+        "position": [
+          0.5,
+          1.15,
+          0.5
+        ],
+        "rgb": 14857727,
+        "scale": 1.0,
+        "progress": 0.25,
+        "width": 1.5,
+        "height": 1.5,
+        "facing": "CENTER",
+        "brightness": 15
+      }
+    },
+    {
+      "tick": 4,
+      "sample": {
+        "key": "radiance:flash",
+        "role": "protected-large-effect",
+        "fromModel": "infusion-radiance/burst",
+        "toModel": "infusion-radiance/burst",
+        "position": [
+          0.5,
+          1.15,
+          0.5
+        ],
+        "rgb": 14857727,
+        "scale": 1.0,
+        "progress": 0.5,
+        "width": 1.5,
+        "height": 1.5,
+        "facing": "CENTER",
+        "brightness": 15
+      }
+    },
+    {
+      "tick": 6,
+      "sample": {
+        "key": "radiance:flash",
+        "role": "protected-large-effect",
+        "fromModel": "infusion-radiance/burst",
+        "toModel": "infusion-radiance/burst",
+        "position": [
+          0.5,
+          1.15,
+          0.5
+        ],
+        "rgb": 14857727,
+        "scale": 1.0,
+        "progress": 0.75,
+        "width": 1.5,
+        "height": 1.5,
+        "facing": "CENTER",
+        "brightness": 15
+      }
+    },
+    {
+      "tick": 8,
+      "sample": {
+        "key": "radiance:flash",
+        "role": "protected-large-effect",
+        "fromModel": "infusion-radiance/burst",
+        "toModel": "infusion-radiance/burst",
+        "position": [
+          0.5,
+          1.15,
+          0.5
+        ],
+        "rgb": 14857727,
+        "scale": 1.0,
+        "progress": 1.0,
+        "width": 1.5,
+        "height": 1.5,
+        "facing": "CENTER",
+        "brightness": 15
+      }
+    }
+  ],
+  "allOtherSamplesUnchanged": true,
+  "approvedWaveSha256": "788d81367c3ce6d5606554723a82c20b3cfbd7ae5db3369e010d94d5b6112edb",
+  "frameCount": 18,
+  "durationMsPerFrame": 100,
+  "gifBytes": 727845,
+  "gifSha256": "af9d1c3aaf1e97b26eba0d438d63b1984d040662aa037b0b95a119cad632c41f",
+  "nativeNotApplied": true,
+  "transientArcAndIdleAssetsUnchanged": true
+}
