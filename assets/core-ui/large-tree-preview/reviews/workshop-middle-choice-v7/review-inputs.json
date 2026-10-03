@@ -1,0 +1,2411 @@
+{
+  "status": "REVIEW_READY_NO_REDESIGN_STARTED",
+  "candidateCommit": "5cc611a06c8f06e3146942b104817992d6f6d063",
+  "candidateFilesUnchanged": true,
+  "approvedScope": "Protect the approved central start and opening. Reassess all other choices after GGG primary-source philosophy research; do not assume V7 adoption.",
+  "artifacts": [
+    {
+      "path": "assets/core-ui/large-tree-preview/proposals/workshop-middle-choice-v7/candidate-graph.json",
+      "bytes": 1600823,
+      "sha256": "7801eadce2ecbe43148b218f768c48867c5a8dfe24e6db9612fada113a377e40"
+    },
+    {
+      "path": "assets/core-ui/large-tree-preview/proposals/workshop-middle-choice-v7/middle-choice-authoring.json",
+      "bytes": 20381,
+      "sha256": "a0f8dcb228cc0b8d360a985ff30475bd982ec6f0c1c965eb9f397d6c43bc6910"
+    },
+    {
+      "path": "assets/core-ui/large-tree-preview/proposals/workshop-middle-choice-v7/route-examples.json",
+      "bytes": 35973,
+      "sha256": "ca321cae630b22d63fa151d0167294fe349c605c0039995c182b41f4f26018ad"
+    },
+    {
+      "path": "assets/core-ui/large-tree-preview/proposals/workshop-middle-choice-v7/proposal-manifest.json",
+      "bytes": 829,
+      "sha256": "d33ca065c4c3c299729c8bdc522bb63b68860744b599d3858d97e6b0d47fdcad"
+    },
+    {
+      "path": "assets/core-ui/large-tree-preview/proposals/workshop-middle-choice-v7/allocation-verification.json",
+      "bytes": 218011,
+      "sha256": "be14b102d7646ec74bc5f06e39e41d3c09c0322de1f9242a3039018c8e473ec2"
+    },
+    {
+      "path": "assets/core-ui/large-tree-preview/proposals/workshop-middle-choice-v7/geometry-verification.json",
+      "bytes": 809,
+      "sha256": "ac6d96e90ae152171a9fa7acd5a9414536f58c2a1f5b49c781f5b340a0223467"
+    },
+    {
+      "path": "assets/core-ui/large-tree-preview/proposals/workshop-middle-choice-v7/browser-verification.json",
+      "bytes": 125343,
+      "sha256": "f39f3181e132e96fda0a7df5cf5043a3add37c3446b6bc90170a1d8c48696e3a"
+    },
+    {
+      "path": "assets/core-ui/large-tree-preview/proposals/workshop-middle-choice-v7/change-impact.json",
+      "bytes": 47824,
+      "sha256": "f6368e4cda015752a4aee8723f0fe6e3c401162d249d58a2debe5a4f794e6b45"
+    },
+    {
+      "path": "assets/core-ui/large-tree-preview/proposals/workshop-middle-choice-v7/ProjectS_Middle_Choices_V7.html",
+      "bytes": 2726208,
+      "sha256": "1c56e42490359a521d00c7ee2d300fd2ba6a93339a00c68424d617f5beccde09"
+    },
+    {
+      "path": "assets/core-ui/large-tree-preview/proposals/workshop-middle-choice-v7/ProjectS_Middle_V7_Before_After.png",
+      "bytes": 4645348,
+      "sha256": "d49f7076ffeebc82335e3d4ea8d891e51dd86b25d78ca14a7b417a86a38a72d0"
+    },
+    {
+      "path": "assets/core-ui/large-tree-preview/proposals/workshop-middle-choice-v7/ProjectS_Middle_V7_Overview_And_Choices.png",
+      "bytes": 2732369,
+      "sha256": "aba9ba87d9ced0f81860cf089cb5f90065a311e2ad11af03dee3e73e995a4e1f"
+    }
+  ],
+  "functionality": {
+    "preview": [
+      "Profile and owned MOD selection",
+      "Node effects/input conditions and route cost",
+      "Allocation/refund/reset",
+      "Curated build examples and comparisons",
+      "Mouse/touch exploration",
+      "Preview-only save/import rollback"
+    ],
+    "notGameImplemented": [
+      "Progression point grants",
+      "Authoritative game allocation/reset",
+      "Combat calculation",
+      "Native game skill-tree UI",
+      "Persistence and packets"
+    ],
+    "sourceOwnership": "AP / SHIELD / GUARD / LIFESTEAL and elemental sources come from the fixture or owned MOD; tree nodes do not grant sources.",
+    "roadBenefit": "One global UI choice: HP2 / damage2 / resource3 for all purchased Roads; not a per-junction saved choice."
+  },
+  "sourceStatInputs": {
+    "hp": [],
+    "armor": [],
+    "resist": [],
+    "move": [],
+    "regen": [],
+    "damage": [
+      "DAMAGE"
+    ],
+    "physical": [
+      "DAMAGE"
+    ],
+    "attackSpeed": [
+      "DAMAGE"
+    ],
+    "crit": [
+      "DAMAGE"
+    ],
+    "critMulti": [
+      "DAMAGE"
+    ],
+    "penetration": [
+      "DAMAGE"
+    ],
+    "aoe": [
+      "DAMAGE"
+    ],
+    "magic": [
+      "AP"
+    ],
+    "mana": [
+      "MP_CONSUMER"
+    ],
+    "efficiency": [
+      "MP_CONSUMER"
+    ],
+    "resource": [
+      "RESOURCE"
+    ],
+    "haste": [
+      "RESOURCE"
+    ],
+    "barrier": [
+      "SHIELD"
+    ],
+    "healing": [
+      "HEAL"
+    ],
+    "parry": [
+      "GUARD"
+    ],
+    "bleed": [
+      "BLEED_SOURCE"
+    ],
+    "leech": [
+      "LIFESTEAL"
+    ],
+    "fire": [
+      "FIRE_SOURCE"
+    ],
+    "ice": [
+      "ICE"
+    ],
+    "lightning": [
+      "LIGHTNING_SOURCE"
+    ],
+    "weakpoint": [
+      "WEAKPOINT"
+    ]
+  },
+  "localPortTopology": [
+    {
+      "group": "v7g02",
+      "registeredPorts": [
+        "v7g02n0",
+        "v7g02n1"
+      ],
+      "actualBoundaryEdges": [
+        {
+          "inside": "v7g02n0",
+          "outside": "v7g02_entry"
+        },
+        {
+          "inside": "v7g02n1",
+          "outside": "v7g02_entry"
+        }
+      ],
+      "distinctImmediateOutsideNodes": [
+        "v7g02_entry"
+      ],
+      "sharedOutsideJunction": "v7g02_entry",
+      "sharedJunctionTravelNeighbors": [
+        "join_warrior_0"
+      ],
+      "classification": "local-arm-choice-with-shared-outside-junction",
+      "interregionalRouteClaimFromTwoLocalPorts": false
+    },
+    {
+      "group": "v7g04",
+      "registeredPorts": [
+        "v7g04n0",
+        "v7g04n1"
+      ],
+      "actualBoundaryEdges": [
+        {
+          "inside": "v7g04n0",
+          "outside": "v7g04_entry"
+        },
+        {
+          "inside": "v7g04n1",
+          "outside": "v7g04_entry"
+        }
+      ],
+      "distinctImmediateOutsideNodes": [
+        "v7g04_entry"
+      ],
+      "sharedOutsideJunction": "v7g04_entry",
+      "sharedJunctionTravelNeighbors": [
+        "r17_44_1",
+        "v7road_r6_5"
+      ],
+      "classification": "local-arm-choice-with-shared-outside-junction",
+      "interregionalRouteClaimFromTwoLocalPorts": false
+    },
+    {
+      "group": "v7g07",
+      "registeredPorts": [
+        "v7g07n0",
+        "v7g07n1"
+      ],
+      "actualBoundaryEdges": [
+        {
+          "inside": "v7g07n0",
+          "outside": "v7g07_entry"
+        },
+        {
+          "inside": "v7g07n1",
+          "outside": "v7g07_entry"
+        }
+      ],
+      "distinctImmediateOutsideNodes": [
+        "v7g07_entry"
+      ],
+      "sharedOutsideJunction": "v7g07_entry",
+      "sharedJunctionTravelNeighbors": [
+        "r14_27_1"
+      ],
+      "classification": "local-arm-choice-with-shared-outside-junction",
+      "interregionalRouteClaimFromTwoLocalPorts": false
+    },
+    {
+      "group": "v7g10",
+      "registeredPorts": [
+        "v7g10n0",
+        "v7g10n1",
+        "v7g10n4"
+      ],
+      "actualBoundaryEdges": [
+        {
+          "inside": "v7g10n0",
+          "outside": "v7g10_entry"
+        },
+        {
+          "inside": "v7g10n1",
+          "outside": "v7g10_entry"
+        },
+        {
+          "inside": "v7g10n4",
+          "outside": "v7road_r14_1"
+        }
+      ],
+      "distinctImmediateOutsideNodes": [
+        "v7g10_entry",
+        "v7road_r14_1"
+      ],
+      "sharedOutsideJunction": "v7g10_entry",
+      "sharedJunctionTravelNeighbors": [
+        "v7road_r9_4"
+      ],
+      "classification": "local-arm-choice-plus-distinct-through-exit-and-neutral-bypass",
+      "interregionalRouteClaimFromTwoLocalPorts": false
+    },
+    {
+      "group": "v7g13",
+      "registeredPorts": [
+        "v7g13n0",
+        "v7g13n1"
+      ],
+      "actualBoundaryEdges": [
+        {
+          "inside": "v7g13n0",
+          "outside": "v7g13_entry"
+        },
+        {
+          "inside": "v7g13n1",
+          "outside": "v7g13_entry"
+        }
+      ],
+      "distinctImmediateOutsideNodes": [
+        "v7g13_entry"
+      ],
+      "sharedOutsideJunction": "v7g13_entry",
+      "sharedJunctionTravelNeighbors": [
+        "r14_42_1"
+      ],
+      "classification": "local-arm-choice-with-shared-outside-junction",
+      "interregionalRouteClaimFromTwoLocalPorts": false
+    }
+  ],
+  "mpSensitivity": [
+    {
+      "name": "canonical-mage",
+      "profile": "mage:support:plain:standard",
+      "flags": [
+        "AP",
+        "DAMAGE",
+        "DEFENSE",
+        "DODGE",
+        "FIRE_SOURCE",
+        "ICE",
+        "LIGHTNING_SOURCE",
+        "MARK_CONSUMER",
+        "MP_CONSUMER",
+        "MULTI",
+        "OPENER",
+        "RESOURCE",
+        "SHIELD",
+        "SIGNATURE",
+        "SPEND"
+      ],
+      "bannedStatPurchases": [],
+      "regionalResults": [
+        {
+          "group": "v7g07",
+          "eligible": [
+            "v7g07n0",
+            "v7g07n1",
+            "v7g07n2",
+            "v7g07n3",
+            "v7g07n4",
+            "v7g07n5"
+          ],
+          "reachable": [
+            "v7g07n0",
+            "v7g07n1",
+            "v7g07n2",
+            "v7g07n3",
+            "v7g07n4",
+            "v7g07n5"
+          ],
+          "notablesReached": [
+            "v7g07n4",
+            "v7g07n5"
+          ]
+        },
+        {
+          "group": "v7g12",
+          "eligible": [
+            "v7g12n0",
+            "v7g12n1",
+            "v7g12n2",
+            "v7g12n3",
+            "v7g12n4",
+            "v7g12n5",
+            "v7g12n6",
+            "v7g12n7"
+          ],
+          "reachable": [
+            "v7g12n0",
+            "v7g12n1",
+            "v7g12n2",
+            "v7g12n3",
+            "v7g12n4",
+            "v7g12n5",
+            "v7g12n6",
+            "v7g12n7"
+          ],
+          "notablesReached": [
+            "v7g12n3",
+            "v7g12n5",
+            "v7g12n7"
+          ]
+        },
+        {
+          "group": "v7g14",
+          "eligible": [
+            "v7g14n0",
+            "v7g14n1",
+            "v7g14n2",
+            "v7g14n3"
+          ],
+          "reachable": [
+            "v7g14n0",
+            "v7g14n1",
+            "v7g14n2",
+            "v7g14n3"
+          ],
+          "notablesReached": [
+            "v7g14n2",
+            "v7g14n3"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "synthetic-no-MP_CONSUMER",
+      "profile": "mage:support:plain:standard",
+      "flags": [
+        "AP",
+        "DAMAGE",
+        "DEFENSE",
+        "DODGE",
+        "FIRE_SOURCE",
+        "ICE",
+        "LIGHTNING_SOURCE",
+        "MARK_CONSUMER",
+        "MULTI",
+        "OPENER",
+        "RESOURCE",
+        "SHIELD",
+        "SIGNATURE",
+        "SPEND"
+      ],
+      "bannedStatPurchases": [],
+      "regionalResults": [
+        {
+          "group": "v7g07",
+          "eligible": [
+            "v7g07n5"
+          ],
+          "reachable": [],
+          "notablesReached": []
+        },
+        {
+          "group": "v7g12",
+          "eligible": [
+            "v7g12n2",
+            "v7g12n3",
+            "v7g12n6",
+            "v7g12n7"
+          ],
+          "reachable": [],
+          "notablesReached": []
+        },
+        {
+          "group": "v7g14",
+          "eligible": [
+            "v7g14n0",
+            "v7g14n1",
+            "v7g14n2"
+          ],
+          "reachable": [
+            "v7g14n0",
+            "v7g14n1",
+            "v7g14n2"
+          ],
+          "notablesReached": [
+            "v7g14n2"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "decline-all-mana-and-efficiency-purchases",
+      "profile": "mage:support:plain:standard",
+      "flags": [
+        "AP",
+        "DAMAGE",
+        "DEFENSE",
+        "DODGE",
+        "FIRE_SOURCE",
+        "ICE",
+        "LIGHTNING_SOURCE",
+        "MARK_CONSUMER",
+        "MP_CONSUMER",
+        "MULTI",
+        "OPENER",
+        "RESOURCE",
+        "SHIELD",
+        "SIGNATURE",
+        "SPEND"
+      ],
+      "bannedStatPurchases": [
+        "mana",
+        "efficiency"
+      ],
+      "regionalResults": [
+        {
+          "group": "v7g07",
+          "eligible": [
+            "v7g07n5"
+          ],
+          "reachable": [],
+          "notablesReached": []
+        },
+        {
+          "group": "v7g12",
+          "eligible": [
+            "v7g12n2",
+            "v7g12n3",
+            "v7g12n6",
+            "v7g12n7"
+          ],
+          "reachable": [],
+          "notablesReached": []
+        },
+        {
+          "group": "v7g14",
+          "eligible": [
+            "v7g14n0",
+            "v7g14n1",
+            "v7g14n2"
+          ],
+          "reachable": [],
+          "notablesReached": []
+        }
+      ]
+    }
+  ],
+  "mpCondition": "v7g12 has two mana-only common entrance points, both requiring MP_CONSUMER. Its magic / efficiency / barrier branches cannot be reached without this common MP investment. Excluding g12 and g33 for two builds is not proof of global avoidance of all MP purchases.",
+  "scopeOfOptOutClaims": {
+    "validatedGroups": [
+      "g13",
+      "g33",
+      "g12",
+      "g51"
+    ],
+    "combinedForTwoBuilds": [
+      {
+        "id": "ranger",
+        "avoidedRegions": [
+          "g33",
+          "g12"
+        ],
+        "minimumCost": 47,
+        "budget": 48
+      },
+      {
+        "id": "assassin",
+        "avoidedRegions": [
+          "g33",
+          "g12"
+        ],
+        "minimumCost": 53,
+        "budget": 64
+      }
+    ],
+    "notClaimed": "All ability/MP specializations can be globally avoided for every goal."
+  },
+  "buildExamples": [
+    {
+      "id": "critical",
+      "profileId": "warrior:support:plain:standard",
+      "targets": [
+        "g25n6",
+        "g48n4",
+        "g48n8"
+      ],
+      "cost": 45,
+      "budget": 48,
+      "siphon": true,
+      "stats": {
+        "crit": 129,
+        "hp": 77,
+        "physical": 24,
+        "attackSpeed": 9,
+        "regen": 20,
+        "leech": 1.0699999999999998,
+        "critMulti": 15,
+        "armor": 3
+      }
+    },
+    {
+      "id": "quiet",
+      "profileId": "warrior:support:plain:standard",
+      "targets": [
+        "g37n0",
+        "g37n4",
+        "key_04"
+      ],
+      "cost": 41,
+      "budget": 48,
+      "siphon": true,
+      "stats": {
+        "physical": 36,
+        "hp": 75,
+        "penetration": 10.97,
+        "attackSpeed": 9,
+        "regen": 20,
+        "leech": 1.0699999999999998,
+        "armor": 3
+      }
+    },
+    {
+      "id": "tank-life",
+      "profileId": "tank:support:plain:standard",
+      "targets": [
+        "g6n0",
+        "g6n4",
+        "g18n1"
+      ],
+      "cost": 31,
+      "budget": 48,
+      "siphon": false,
+      "stats": {
+        "hp": 75,
+        "regen": 36,
+        "armor": 44.55,
+        "physical": 24
+      }
+    },
+    {
+      "id": "tank-shield",
+      "profileId": "tank:support:plain:standard",
+      "targets": [
+        "g31n4",
+        "key_11"
+      ],
+      "cost": 21,
+      "budget": 48,
+      "siphon": false,
+      "stats": {
+        "hp": 22,
+        "physical": 24,
+        "resist": 29,
+        "barrier": 14,
+        "mana": 4,
+        "regen": 8
+      }
+    },
+    {
+      "id": "mage-mp",
+      "profileId": "mage:support:plain:standard",
+      "targets": [
+        "g12n2",
+        "g20n6"
+      ],
+      "cost": 17,
+      "budget": 48,
+      "siphon": false,
+      "stats": {
+        "efficiency": 32,
+        "hp": 12,
+        "mana": 59.9,
+        "regen": 8
+      }
+    },
+    {
+      "id": "mage-blood",
+      "profileId": "mage:support:plain:standard",
+      "targets": [
+        "g12n2",
+        "g20n6",
+        "key_02"
+      ],
+      "cost": 20,
+      "budget": 48,
+      "siphon": false,
+      "stats": {
+        "hp": 12
+      }
+    },
+    {
+      "id": "mage-ice",
+      "profileId": "mage:support:plain:standard",
+      "targets": [
+        "g27n4",
+        "g3n5",
+        "key_13"
+      ],
+      "cost": 25,
+      "budget": 48,
+      "siphon": false,
+      "stats": {
+        "hp": 22,
+        "resist": 13,
+        "ice": 59.55,
+        "barrier": 41,
+        "efficiency": 13,
+        "mana": 10
+      }
+    },
+    {
+      "id": "ranger",
+      "profileId": "ranger:mark:plain:standard",
+      "targets": [
+        "g32n2",
+        "g39n6",
+        "key_10"
+      ],
+      "cost": 42,
+      "budget": 48,
+      "siphon": false,
+      "stats": {
+        "attackSpeed": 15,
+        "efficiency": 14,
+        "hp": 32,
+        "mana": 34,
+        "resource": 22,
+        "critMulti": 15,
+        "regen": 8,
+        "crit": 52,
+        "damage": 4,
+        "move": 4,
+        "resist": 5
+      }
+    },
+    {
+      "id": "assassin",
+      "profileId": "assassin:mark:plain:standard",
+      "targets": [
+        "g41n3",
+        "g42n0",
+        "g17n0"
+      ],
+      "cost": 53,
+      "budget": 64,
+      "siphon": false,
+      "stats": {
+        "hp": 54,
+        "haste": 44,
+        "aoe": 13,
+        "damage": 30,
+        "attackSpeed": 25.95,
+        "efficiency": 3,
+        "regen": 8,
+        "physical": 6,
+        "resource": 21,
+        "crit": 25,
+        "move": 4.5,
+        "resist": 5
+      }
+    },
+    {
+      "id": "lightning",
+      "profileId": "mage:support:lightning:standard",
+      "targets": [
+        "g9n7",
+        "key_15"
+      ],
+      "cost": 26,
+      "budget": 48,
+      "siphon": false,
+      "stats": {
+        "efficiency": 25,
+        "haste": 11,
+        "lightning": 28.55,
+        "hp": 20,
+        "mana": 31.9,
+        "regen": 8
+      }
+    },
+    {
+      "id": "v7g07-a",
+      "profileId": "mage:support:plain:standard",
+      "targets": [
+        "v7g07n0",
+        "v7g07n2",
+        "v7g07n4"
+      ],
+      "cost": 9,
+      "budget": 48,
+      "siphon": false,
+      "stats": {
+        "efficiency": 16,
+        "hp": 6,
+        "mana": 26
+      }
+    },
+    {
+      "id": "v7g07-b",
+      "profileId": "mage:support:plain:standard",
+      "targets": [
+        "v7g07n1",
+        "v7g07n3",
+        "v7g07n4"
+      ],
+      "cost": 9,
+      "budget": 48,
+      "siphon": false,
+      "stats": {
+        "efficiency": 20,
+        "hp": 6,
+        "mana": 18
+      }
+    },
+    {
+      "id": "v7g04-a",
+      "profileId": "warrior:support:plain:standard",
+      "targets": [
+        "v7g04n0",
+        "v7g04n2",
+        "v7g04n4"
+      ],
+      "cost": 31,
+      "budget": 48,
+      "siphon": false,
+      "stats": {
+        "hp": 86,
+        "regen": 20,
+        "physical": 13,
+        "armor": 11,
+        "crit": 10
+      }
+    },
+    {
+      "id": "v7g04-b",
+      "profileId": "warrior:support:plain:standard",
+      "targets": [
+        "v7g04n1",
+        "v7g04n3",
+        "v7g04n4"
+      ],
+      "cost": 31,
+      "budget": 48,
+      "siphon": false,
+      "stats": {
+        "crit": 22,
+        "hp": 86,
+        "regen": 20,
+        "armor": 11,
+        "physical": 7
+      }
+    },
+    {
+      "id": "legacy-critical",
+      "profileId": "warrior:support:plain:standard",
+      "targets": [
+        "g25n6",
+        "g48n4",
+        "g48n8"
+      ],
+      "cost": 47,
+      "budget": 48,
+      "siphon": true,
+      "stats": {
+        "attackSpeed": 12,
+        "crit": 129,
+        "physical": 34,
+        "hp": 33,
+        "leech": 1.3199999999999998,
+        "efficiency": 11,
+        "resource": 45,
+        "critMulti": 15,
+        "armor": 5
+      }
+    },
+    {
+      "id": "legacy-tank-life",
+      "profileId": "tank:support:plain:standard",
+      "targets": [
+        "g6n0",
+        "g6n4",
+        "g18n1"
+      ],
+      "cost": 43,
+      "budget": 48,
+      "siphon": false,
+      "stats": {
+        "parry": 45,
+        "attackSpeed": 7,
+        "hp": 59,
+        "resource": 22,
+        "regen": 34,
+        "armor": 41.55,
+        "physical": 24,
+        "efficiency": 8,
+        "resist": 39,
+        "barrier": 14,
+        "mana": 4
+      }
+    }
+  ],
+  "originalCostChanges": [
+    {
+      "id": "critical",
+      "budget": 48,
+      "beforeSpent": 47,
+      "afterSpent": 45,
+      "delta": -2,
+      "beforeMinimum": 47,
+      "afterMinimum": 45,
+      "beforeStats": {
+        "hp": 33,
+        "critMulti": 15,
+        "crit": 129,
+        "leech": 1.3199999999999998,
+        "physical": 34,
+        "resource": 45,
+        "efficiency": 11,
+        "armor": 5,
+        "attackSpeed": 12
+      },
+      "afterStats": {
+        "crit": 129,
+        "hp": 77,
+        "physical": 24,
+        "attackSpeed": 9,
+        "regen": 20,
+        "leech": 1.0699999999999998,
+        "critMulti": 15,
+        "armor": 3
+      },
+      "newJunctionsPurchased": [
+        "v7g04_entry",
+        "v7road_r6_1",
+        "v7road_r6_2",
+        "v7road_r6_3",
+        "v7road_r6_4",
+        "v7road_r6_5"
+      ],
+      "newRegionNodesPurchased": [],
+      "removedOldPurchases": [
+        "g13n1",
+        "g13n2",
+        "g14n0",
+        "g14n1",
+        "g14n2",
+        "g14n3",
+        "g14n4",
+        "g14n5",
+        "g14n6",
+        "g14n7",
+        "g30n0",
+        "g30n6",
+        "g30n7",
+        "g35n0",
+        "g35n3",
+        "g35n4",
+        "g49n5",
+        "link_assassin_1_1",
+        "link_templar_0_1",
+        "link_warrior_2_6",
+        "r19_24_2",
+        "r2_22_2",
+        "r2_46_1",
+        "r2_51_1"
+      ],
+      "optOut": [
+        {
+          "region": "g13",
+          "beforeMinimum": 54,
+          "afterMinimum": 46,
+          "afterWithinBudget": true
+        },
+        {
+          "region": "g33",
+          "beforeMinimum": 47,
+          "afterMinimum": 45,
+          "afterWithinBudget": true
+        },
+        {
+          "region": "g12",
+          "beforeMinimum": 47,
+          "afterMinimum": 45,
+          "afterWithinBudget": true
+        },
+        {
+          "region": "g51",
+          "beforeMinimum": 47,
+          "afterMinimum": 45,
+          "afterWithinBudget": true
+        }
+      ]
+    },
+    {
+      "id": "quiet",
+      "budget": 48,
+      "beforeSpent": 43,
+      "afterSpent": 41,
+      "delta": -2,
+      "beforeMinimum": 43,
+      "afterMinimum": 41,
+      "beforeStats": {
+        "move": 5.470000000000001,
+        "hp": 74,
+        "leech": 1.3199999999999998,
+        "physical": 44,
+        "penetration": 14.97,
+        "regen": 20,
+        "attackSpeed": 6,
+        "armor": 3
+      },
+      "afterStats": {
+        "physical": 36,
+        "hp": 75,
+        "penetration": 10.97,
+        "attackSpeed": 9,
+        "regen": 20,
+        "leech": 1.0699999999999998,
+        "armor": 3
+      },
+      "newJunctionsPurchased": [
+        "v7g04_entry",
+        "v7road_r6_1",
+        "v7road_r6_2",
+        "v7road_r6_3",
+        "v7road_r6_4",
+        "v7road_r6_5"
+      ],
+      "newRegionNodesPurchased": [],
+      "removedOldPurchases": [
+        "g13n1",
+        "g13n2",
+        "g16n4",
+        "g16n5",
+        "g16n8",
+        "g18n2",
+        "g44n2",
+        "g44n3",
+        "g44n6",
+        "g44n7",
+        "join_ranger_0",
+        "join_templar_1",
+        "link_templar_0_2",
+        "r22_24_3",
+        "r23_37_3",
+        "r31_51_1"
+      ],
+      "optOut": [
+        {
+          "region": "g13",
+          "beforeMinimum": 51,
+          "afterMinimum": 42,
+          "afterWithinBudget": true
+        },
+        {
+          "region": "g33",
+          "beforeMinimum": 43,
+          "afterMinimum": 41,
+          "afterWithinBudget": true
+        },
+        {
+          "region": "g12",
+          "beforeMinimum": 43,
+          "afterMinimum": 41,
+          "afterWithinBudget": true
+        },
+        {
+          "region": "g51",
+          "beforeMinimum": 43,
+          "afterMinimum": 41,
+          "afterWithinBudget": true
+        }
+      ]
+    },
+    {
+      "id": "tank-life",
+      "budget": 48,
+      "beforeSpent": 43,
+      "afterSpent": 31,
+      "delta": -12,
+      "beforeMinimum": 39,
+      "afterMinimum": 31,
+      "beforeStats": {
+        "resist": 39,
+        "hp": 59,
+        "barrier": 14,
+        "regen": 34,
+        "efficiency": 8,
+        "parry": 45,
+        "attackSpeed": 7,
+        "physical": 24,
+        "armor": 41.55,
+        "mana": 4,
+        "resource": 22
+      },
+      "afterStats": {
+        "hp": 75,
+        "regen": 36,
+        "armor": 44.55,
+        "physical": 24
+      },
+      "newJunctionsPurchased": [
+        "v7road_r4_1",
+        "v7road_r4_2"
+      ],
+      "newRegionNodesPurchased": [],
+      "removedOldPurchases": [
+        "g28n2",
+        "g28n5",
+        "g31n2",
+        "g31n4",
+        "g31n5",
+        "g33n0",
+        "g40n0",
+        "g40n3",
+        "g40n4",
+        "g40n5",
+        "g46n0",
+        "g46n1",
+        "g46n2",
+        "g46n7",
+        "join_assassin_1",
+        "join_templar_0",
+        "join_warrior_0",
+        "link_ranger_1_1",
+        "link_warrior_0_6",
+        "link_warrior_2_10",
+        "r10_14_2",
+        "r16_38_2",
+        "r21_26_1",
+        "r25_44_1",
+        "r33_37_2",
+        "r6_35_1"
+      ],
+      "optOut": [
+        {
+          "region": "g13",
+          "beforeMinimum": 39,
+          "afterMinimum": 31,
+          "afterWithinBudget": true
+        },
+        {
+          "region": "g33",
+          "beforeMinimum": 44,
+          "afterMinimum": 31,
+          "afterWithinBudget": true
+        },
+        {
+          "region": "g12",
+          "beforeMinimum": 39,
+          "afterMinimum": 31,
+          "afterWithinBudget": true
+        },
+        {
+          "region": "g51",
+          "beforeMinimum": 39,
+          "afterMinimum": 31,
+          "afterWithinBudget": true
+        }
+      ]
+    },
+    {
+      "id": "tank-shield",
+      "budget": 48,
+      "beforeSpent": 21,
+      "afterSpent": 21,
+      "delta": 0,
+      "beforeMinimum": 21,
+      "afterMinimum": 21,
+      "beforeStats": {
+        "barrier": 14,
+        "resist": 29,
+        "hp": 22,
+        "physical": 24,
+        "mana": 4,
+        "regen": 8
+      },
+      "afterStats": {
+        "hp": 22,
+        "physical": 24,
+        "resist": 29,
+        "barrier": 14,
+        "mana": 4,
+        "regen": 8
+      },
+      "newJunctionsPurchased": [],
+      "newRegionNodesPurchased": [],
+      "removedOldPurchases": [],
+      "optOut": [
+        {
+          "region": "g13",
+          "beforeMinimum": 21,
+          "afterMinimum": 21,
+          "afterWithinBudget": true
+        },
+        {
+          "region": "g33",
+          "beforeMinimum": 34,
+          "afterMinimum": 23,
+          "afterWithinBudget": true
+        },
+        {
+          "region": "g12",
+          "beforeMinimum": 21,
+          "afterMinimum": 21,
+          "afterWithinBudget": true
+        },
+        {
+          "region": "g51",
+          "beforeMinimum": 21,
+          "afterMinimum": 21,
+          "afterWithinBudget": true
+        }
+      ]
+    },
+    {
+      "id": "mage-mp",
+      "budget": 48,
+      "beforeSpent": 17,
+      "afterSpent": 17,
+      "delta": 0,
+      "beforeMinimum": 17,
+      "afterMinimum": 17,
+      "beforeStats": {
+        "efficiency": 32,
+        "mana": 59.9,
+        "hp": 12,
+        "regen": 8
+      },
+      "afterStats": {
+        "efficiency": 32,
+        "hp": 12,
+        "mana": 59.9,
+        "regen": 8
+      },
+      "newJunctionsPurchased": [],
+      "newRegionNodesPurchased": [],
+      "removedOldPurchases": [],
+      "optOut": [
+        {
+          "region": "g13",
+          "beforeMinimum": 17,
+          "afterMinimum": 17,
+          "afterWithinBudget": true
+        },
+        {
+          "region": "g33",
+          "beforeMinimum": 23,
+          "afterMinimum": 18,
+          "afterWithinBudget": true
+        },
+        {
+          "region": "g51",
+          "beforeMinimum": 17,
+          "afterMinimum": 17,
+          "afterWithinBudget": true
+        }
+      ]
+    },
+    {
+      "id": "mage-blood",
+      "budget": 48,
+      "beforeSpent": 20,
+      "afterSpent": 20,
+      "delta": 0,
+      "beforeMinimum": 20,
+      "afterMinimum": 20,
+      "beforeStats": {
+        "hp": 12
+      },
+      "afterStats": {
+        "hp": 12
+      },
+      "newJunctionsPurchased": [],
+      "newRegionNodesPurchased": [],
+      "removedOldPurchases": [],
+      "optOut": [
+        {
+          "region": "g13",
+          "beforeMinimum": 20,
+          "afterMinimum": 20,
+          "afterWithinBudget": true
+        },
+        {
+          "region": "g33",
+          "beforeMinimum": 26,
+          "afterMinimum": 21,
+          "afterWithinBudget": true
+        },
+        {
+          "region": "g51",
+          "beforeMinimum": 20,
+          "afterMinimum": 20,
+          "afterWithinBudget": true
+        }
+      ]
+    },
+    {
+      "id": "mage-ice",
+      "budget": 48,
+      "beforeSpent": 25,
+      "afterSpent": 25,
+      "delta": 0,
+      "beforeMinimum": 25,
+      "afterMinimum": 25,
+      "beforeStats": {
+        "hp": 22,
+        "resist": 13,
+        "barrier": 41,
+        "ice": 59.55,
+        "efficiency": 13,
+        "mana": 10
+      },
+      "afterStats": {
+        "hp": 22,
+        "resist": 13,
+        "ice": 59.55,
+        "barrier": 41,
+        "efficiency": 13,
+        "mana": 10
+      },
+      "newJunctionsPurchased": [],
+      "newRegionNodesPurchased": [],
+      "removedOldPurchases": [],
+      "optOut": [
+        {
+          "region": "g13",
+          "beforeMinimum": 25,
+          "afterMinimum": 25,
+          "afterWithinBudget": true
+        },
+        {
+          "region": "g33",
+          "beforeMinimum": 25,
+          "afterMinimum": 25,
+          "afterWithinBudget": true
+        },
+        {
+          "region": "g12",
+          "beforeMinimum": 25,
+          "afterMinimum": 25,
+          "afterWithinBudget": true
+        },
+        {
+          "region": "g51",
+          "beforeMinimum": 25,
+          "afterMinimum": 25,
+          "afterWithinBudget": true
+        }
+      ]
+    },
+    {
+      "id": "ranger",
+      "budget": 48,
+      "beforeSpent": 42,
+      "afterSpent": 42,
+      "delta": 0,
+      "beforeMinimum": 42,
+      "afterMinimum": 42,
+      "beforeStats": {
+        "mana": 34,
+        "resource": 22,
+        "efficiency": 14,
+        "resist": 5,
+        "crit": 52,
+        "attackSpeed": 15,
+        "hp": 32,
+        "critMulti": 15,
+        "move": 4,
+        "damage": 4,
+        "regen": 8
+      },
+      "afterStats": {
+        "attackSpeed": 15,
+        "efficiency": 14,
+        "hp": 32,
+        "mana": 34,
+        "resource": 22,
+        "critMulti": 15,
+        "regen": 8,
+        "crit": 52,
+        "damage": 4,
+        "move": 4,
+        "resist": 5
+      },
+      "newJunctionsPurchased": [],
+      "newRegionNodesPurchased": [],
+      "removedOldPurchases": [],
+      "optOut": [
+        {
+          "region": "g13",
+          "beforeMinimum": 42,
+          "afterMinimum": 42,
+          "afterWithinBudget": true
+        },
+        {
+          "region": "g33",
+          "beforeMinimum": null,
+          "afterMinimum": 43,
+          "afterWithinBudget": true
+        },
+        {
+          "region": "g12",
+          "beforeMinimum": 49,
+          "afterMinimum": 46,
+          "afterWithinBudget": true
+        },
+        {
+          "region": "g51",
+          "beforeMinimum": 42,
+          "afterMinimum": 42,
+          "afterWithinBudget": true
+        }
+      ]
+    },
+    {
+      "id": "assassin",
+      "budget": 64,
+      "beforeSpent": 52,
+      "afterSpent": 53,
+      "delta": 1,
+      "beforeMinimum": 51,
+      "afterMinimum": 52,
+      "beforeStats": {
+        "damage": 30,
+        "hp": 52,
+        "resist": 5,
+        "haste": 44,
+        "resource": 21,
+        "attackSpeed": 25.95,
+        "regen": 8,
+        "aoe": 13,
+        "physical": 6,
+        "crit": 25,
+        "efficiency": 3,
+        "move": 4.5
+      },
+      "afterStats": {
+        "hp": 54,
+        "haste": 44,
+        "aoe": 13,
+        "damage": 30,
+        "attackSpeed": 25.95,
+        "efficiency": 3,
+        "regen": 8,
+        "physical": 6,
+        "resource": 21,
+        "crit": 25,
+        "move": 4.5,
+        "resist": 5
+      },
+      "newJunctionsPurchased": [
+        "v7road_east"
+      ],
+      "newRegionNodesPurchased": [],
+      "removedOldPurchases": [],
+      "optOut": [
+        {
+          "region": "g13",
+          "beforeMinimum": 51,
+          "afterMinimum": 52,
+          "afterWithinBudget": true
+        },
+        {
+          "region": "g33",
+          "beforeMinimum": null,
+          "afterMinimum": 53,
+          "afterWithinBudget": true
+        },
+        {
+          "region": "g12",
+          "beforeMinimum": 63,
+          "afterMinimum": 52,
+          "afterWithinBudget": true
+        },
+        {
+          "region": "g51",
+          "beforeMinimum": 53,
+          "afterMinimum": 54,
+          "afterWithinBudget": true
+        }
+      ]
+    },
+    {
+      "id": "lightning",
+      "budget": 48,
+      "beforeSpent": 26,
+      "afterSpent": 26,
+      "delta": 0,
+      "beforeMinimum": 26,
+      "afterMinimum": 26,
+      "beforeStats": {
+        "hp": 20,
+        "lightning": 28.55,
+        "haste": 11,
+        "mana": 31.9,
+        "efficiency": 25,
+        "regen": 8
+      },
+      "afterStats": {
+        "efficiency": 25,
+        "haste": 11,
+        "lightning": 28.55,
+        "hp": 20,
+        "mana": 31.9,
+        "regen": 8
+      },
+      "newJunctionsPurchased": [],
+      "newRegionNodesPurchased": [],
+      "removedOldPurchases": [],
+      "optOut": [
+        {
+          "region": "g13",
+          "beforeMinimum": 26,
+          "afterMinimum": 26,
+          "afterWithinBudget": true
+        },
+        {
+          "region": "g33",
+          "beforeMinimum": 31,
+          "afterMinimum": 27,
+          "afterWithinBudget": true
+        },
+        {
+          "region": "g12",
+          "beforeMinimum": 28,
+          "afterMinimum": 28,
+          "afterWithinBudget": true
+        },
+        {
+          "region": "g51",
+          "beforeMinimum": 26,
+          "afterMinimum": 26,
+          "afterWithinBudget": true
+        }
+      ]
+    }
+  ],
+  "sameCostLocalOptions": [
+    {
+      "group": "v7g02",
+      "profile": "warrior:support:plain:standard",
+      "arms": [
+        {
+          "nodes": [
+            "v7g02n0",
+            "v7g02n2",
+            "v7g02n4"
+          ],
+          "cost": 3,
+          "effectiveStats": {
+            "resource": 12,
+            "haste": 6
+          }
+        },
+        {
+          "nodes": [
+            "v7g02n1",
+            "v7g02n3",
+            "v7g02n4"
+          ],
+          "cost": 3,
+          "effectiveStats": {
+            "haste": 10,
+            "resource": 6
+          }
+        }
+      ]
+    },
+    {
+      "group": "v7g04",
+      "profile": "warrior:support:plain:standard",
+      "arms": [
+        {
+          "nodes": [
+            "v7g04n0",
+            "v7g04n2",
+            "v7g04n4"
+          ],
+          "cost": 3,
+          "effectiveStats": {
+            "physical": 13,
+            "crit": 10
+          }
+        },
+        {
+          "nodes": [
+            "v7g04n1",
+            "v7g04n3",
+            "v7g04n4"
+          ],
+          "cost": 3,
+          "effectiveStats": {
+            "crit": 22,
+            "physical": 7
+          }
+        }
+      ]
+    },
+    {
+      "group": "v7g07",
+      "profile": "mage:support:plain:standard",
+      "arms": [
+        {
+          "nodes": [
+            "v7g07n0",
+            "v7g07n2",
+            "v7g07n4"
+          ],
+          "cost": 3,
+          "effectiveStats": {
+            "mana": 16,
+            "efficiency": 3
+          }
+        },
+        {
+          "nodes": [
+            "v7g07n1",
+            "v7g07n3",
+            "v7g07n4"
+          ],
+          "cost": 3,
+          "effectiveStats": {
+            "efficiency": 7,
+            "mana": 8
+          }
+        }
+      ]
+    },
+    {
+      "group": "v7g10",
+      "profile": "assassin:mark:plain:standard",
+      "arms": [
+        {
+          "nodes": [
+            "v7g10n0",
+            "v7g10n2",
+            "v7g10n4"
+          ],
+          "cost": 3,
+          "effectiveStats": {
+            "aoe": 9,
+            "physical": 5
+          }
+        },
+        {
+          "nodes": [
+            "v7g10n1",
+            "v7g10n3",
+            "v7g10n4"
+          ],
+          "cost": 3,
+          "effectiveStats": {
+            "physical": 11,
+            "aoe": 5
+          }
+        }
+      ]
+    },
+    {
+      "group": "v7g13",
+      "profile": "ranger:mark:plain:standard",
+      "arms": [
+        {
+          "nodes": [
+            "v7g13n0",
+            "v7g13n2",
+            "v7g13n4"
+          ],
+          "cost": 3,
+          "effectiveStats": {
+            "resource": 12,
+            "attackSpeed": 4
+          }
+        },
+        {
+          "nodes": [
+            "v7g13n1",
+            "v7g13n3",
+            "v7g13n4"
+          ],
+          "cost": 3,
+          "effectiveStats": {
+            "attackSpeed": 8,
+            "resource": 6
+          }
+        }
+      ]
+    }
+  ],
+  "throughRegionActualAlternative": [
+    {
+      "route": "neutral",
+      "nodes": [
+        "v7road_r9_4",
+        "v7road_r13_1",
+        "v7road_r13_2",
+        "v7road_r13_3",
+        "v7road_r13_4",
+        "r33_35_1"
+      ],
+      "additionalCost": 5,
+      "effectiveStats": {
+        "hp": 10
+      }
+    },
+    {
+      "route": "area",
+      "nodes": [
+        "v7road_r9_4",
+        "v7g10_entry",
+        "v7g10n0",
+        "v7g10n2",
+        "v7g10n4",
+        "v7road_r14_1",
+        "v7road_r14_2",
+        "r33_35_1"
+      ],
+      "additionalCost": 7,
+      "effectiveStats": {
+        "hp": 8,
+        "aoe": 9,
+        "physical": 5
+      }
+    },
+    {
+      "route": "physical",
+      "nodes": [
+        "v7road_r9_4",
+        "v7g10_entry",
+        "v7g10n1",
+        "v7g10n3",
+        "v7g10n4",
+        "v7road_r14_1",
+        "v7road_r14_2",
+        "r33_35_1"
+      ],
+      "additionalCost": 7,
+      "effectiveStats": {
+        "hp": 8,
+        "physical": 11,
+        "aoe": 5
+      }
+    }
+  ],
+  "sampleConcentration": [
+    {
+      "version": "before",
+      "top": [
+        {
+          "id": "r18_26_1",
+          "uses": 6,
+          "group": null,
+          "type": "road"
+        },
+        {
+          "id": "g12n3",
+          "uses": 5,
+          "group": "g12",
+          "type": "small"
+        },
+        {
+          "id": "g33n3",
+          "uses": 5,
+          "group": "g33",
+          "type": "small"
+        },
+        {
+          "id": "link_warrior_2_1",
+          "uses": 5,
+          "group": null,
+          "type": "road"
+        },
+        {
+          "id": "r14_27_1",
+          "uses": 5,
+          "group": null,
+          "type": "road"
+        },
+        {
+          "id": "r19_24_1",
+          "uses": 5,
+          "group": null,
+          "type": "road"
+        },
+        {
+          "id": "g12n1",
+          "uses": 4,
+          "group": "g12",
+          "type": "small"
+        },
+        {
+          "id": "g20n1",
+          "uses": 3,
+          "group": "g20",
+          "type": "notable"
+        },
+        {
+          "id": "g20n4",
+          "uses": 3,
+          "group": "g20",
+          "type": "small"
+        },
+        {
+          "id": "link_templar_2_1",
+          "uses": 3,
+          "group": null,
+          "type": "road"
+        },
+        {
+          "id": "r26_28_1",
+          "uses": 3,
+          "group": null,
+          "type": "road"
+        },
+        {
+          "id": "g51n6",
+          "uses": 3,
+          "group": "g51",
+          "type": "small"
+        }
+      ]
+    },
+    {
+      "version": "after",
+      "top": [
+        {
+          "id": "r18_26_1",
+          "uses": 6,
+          "group": null,
+          "type": "road"
+        },
+        {
+          "id": "g12n3",
+          "uses": 5,
+          "group": "g12",
+          "type": "small"
+        },
+        {
+          "id": "g33n3",
+          "uses": 5,
+          "group": "g33",
+          "type": "small"
+        },
+        {
+          "id": "link_warrior_2_1",
+          "uses": 5,
+          "group": null,
+          "type": "road"
+        },
+        {
+          "id": "r14_27_1",
+          "uses": 5,
+          "group": null,
+          "type": "road"
+        },
+        {
+          "id": "r19_24_1",
+          "uses": 5,
+          "group": null,
+          "type": "road"
+        },
+        {
+          "id": "g12n1",
+          "uses": 4,
+          "group": "g12",
+          "type": "small"
+        },
+        {
+          "id": "g18n1",
+          "uses": 3,
+          "group": "g18",
+          "type": "notable"
+        },
+        {
+          "id": "g18n5",
+          "uses": 3,
+          "group": "g18",
+          "type": "small"
+        },
+        {
+          "id": "g45hub",
+          "uses": 3,
+          "group": "g45",
+          "type": "small"
+        },
+        {
+          "id": "g45n1",
+          "uses": 3,
+          "group": "g45",
+          "type": "small"
+        },
+        {
+          "id": "g45n2",
+          "uses": 3,
+          "group": "g45",
+          "type": "notable"
+        }
+      ]
+    }
+  ],
+  "roadDegreeCounts": {
+    "2": 193,
+    "4": 15,
+    "3": 31,
+    "6": 1,
+    "5": 3
+  },
+  "reviewScreens": [
+    {
+      "path": "Northwest.png",
+      "camera": {
+        "x": -1100,
+        "y": -4400,
+        "z": 0.2
+      }
+    },
+    {
+      "path": "OuterNorth.png",
+      "camera": {
+        "x": 900,
+        "y": -6500,
+        "z": 0.2
+      }
+    }
+  ],
+  "observedOpenIssues": [
+    "NW-to-north: two long sloping/parallel routes still dominate, with the new regions to one side.",
+    "Outer north: resource-to-haste and haste-to-lightning travel crosses large empty faces.",
+    "Most purchased Roads still have only two connections.",
+    "The most common nodes in the ten curated guide paths remain substantially unchanged.",
+    "Same-cost different-stat vectors are proven; their combat value/interesting decision is not proven.",
+    "Capacity/regen/armor local areas have overlapping purposes that need independent challenge.",
+    "The large life/armor cost reduction changes total investment substantially and requires gameplay justification."
+  ],
+  "longNorthernEdges": [
+    {
+      "a": "g2n4",
+      "b": "r10_36_1",
+      "length": 1014.42,
+      "aXY": [
+        5069.35696,
+        -5414.07273
+      ],
+      "bXY": [
+        5593.30891,
+        -4545.55535
+      ]
+    },
+    {
+      "a": "r11_21_1",
+      "b": "g28n5",
+      "length": 1277.28,
+      "aXY": [
+        -4494.53531,
+        -4200.6023
+      ],
+      "bXY": [
+        -3918.6819,
+        -5340.54242
+      ]
+    },
+    {
+      "a": "g46n1",
+      "b": "r11_40_1",
+      "length": 1384.15,
+      "aXY": [
+        140.66551,
+        -4644.12707
+      ],
+      "bXY": [
+        -576.29887,
+        -3460.88862
+      ]
+    },
+    {
+      "a": "g40n5",
+      "b": "r13_45_1",
+      "length": 1008.28,
+      "aXY": [
+        -1999.70661,
+        -5809.35706
+      ],
+      "bXY": [
+        -1120.93161,
+        -6303.42291
+      ]
+    }
+  ],
+  "untestedLocalSketch": "A possible reconfiguration of existing northern additions was considered; no candidate graph, point count, effect, or layout has been changed. Do not implement this sketch as the final policy before philosophy research and review.",
+  "researchBoundary": "Existing PoE2 viewer/data evidence supports structural observations only. Primary GGG philosophy research is owned by the parent and is pending.",
+  "remainingWork": [
+    "Receive parent primary-source philosophy findings.",
+    "Independently challenge substantive choice, travel tax, specialization/freedom, and complexity value.",
+    "Only then choose whether to retain, rework, or replace the outer candidate."
+  ],
+  "budgetExceptions": [
+    {
+      "id": "assassin",
+      "cost": 53,
+      "budget": 64,
+      "fits48": false,
+      "baselineAlreadyUsed64": true
+    }
+  ],
+  "keystoneDefinitions": [
+    {
+      "name": "不動の核",
+      "description": "回避スキルを使用できなくなる。受けるヒットダメージを25%乗算で減らす。",
+      "tradeoff": "位置取りを失う代償を持つ。継続ダメージには軽減を適用しない。",
+      "rule": "noDodge",
+      "icon": "war_guard",
+      "requirements": [
+        "DODGE"
+      ],
+      "groupAnchor": "g49",
+      "sourceState": "historical_keystone_proposal",
+      "sourceRef": "v6:g41n0",
+      "risks": [
+        "旧係数・制約とも未採用。共通の実戦効果は未実装"
+      ],
+      "conflicts": [],
+      "referenceJobs": [],
+      "id": "key_05",
+      "type": "keystone",
+      "stats": {},
+      "cost": 3,
+      "runtimeApplied": false,
+      "anchor": "g49n2",
+      "group": "g49",
+      "theme": "armor",
+      "effectState": "unimplemented_proposal"
+    },
+    {
+      "name": "守りの循環",
+      "description": "HP吸収の回復先を障壁へ変更する。最大HPを15%乗算で減らす。",
+      "tradeoff": "吸収によるHP回復を失う。吸収がなければ障壁も得られない。",
+      "rule": "barrierLeech",
+      "icon": "heal_shield",
+      "requirements": [
+        "LIFESTEAL"
+      ],
+      "groupAnchor": "g51",
+      "sourceState": "historical_keystone_proposal",
+      "sourceRef": "v6:g8n4",
+      "risks": [
+        "旧係数・制約とも未採用。共通の実戦効果は未実装"
+      ],
+      "conflicts": [],
+      "referenceJobs": [],
+      "id": "key_01",
+      "type": "keystone",
+      "stats": {},
+      "cost": 3,
+      "runtimeApplied": false,
+      "anchor": "g51n4",
+      "group": "g51",
+      "theme": "ward",
+      "effectState": "unimplemented_proposal"
+    },
+    {
+      "name": "単発集中",
+      "description": "複数回の技能を一撃へ集約",
+      "tradeoff": "命中機会・手数を失う",
+      "icon": "slam",
+      "requirements": [
+        "MULTI"
+      ],
+      "risks": [
+        "総威力・会心・付与・命中資源の処理順を要定義",
+        "試行では03と併用不可。採用済み制約ではない"
+      ],
+      "referenceJobs": [],
+      "conflicts": [
+        "key_09"
+      ],
+      "groupAnchor": "g35",
+      "sourceState": "new_keystone_proposal",
+      "sourceRef": "prior-draft:k:02",
+      "priorInputId": "k:02",
+      "id": "key_08",
+      "type": "keystone",
+      "stats": {},
+      "cost": 3,
+      "runtimeApplied": false,
+      "anchor": "g35n1",
+      "group": "g35",
+      "theme": "force",
+      "effectState": "unimplemented_proposal"
+    },
+    {
+      "name": "余波の契約",
+      "description": "近接技能の範囲半径を50%乗算で増やす。直接ヒットのダメージを25%乗算で減らす。",
+      "tradeoff": "範囲と一撃の交換。非近接技能の範囲は増やさない。",
+      "rule": "wideHits",
+      "icon": "whirl",
+      "requirements": [
+        "MELEE"
+      ],
+      "groupAnchor": "g34",
+      "sourceState": "historical_keystone_proposal",
+      "sourceRef": "v6:g43n0",
+      "risks": [
+        "旧係数・制約とも未採用。共通の実戦効果は未実装"
+      ],
+      "conflicts": [],
+      "referenceJobs": [],
+      "id": "key_06",
+      "type": "keystone",
+      "stats": {},
+      "cost": 3,
+      "runtimeApplied": false,
+      "anchor": "g34n2",
+      "group": "g34",
+      "theme": "area",
+      "effectState": "unimplemented_proposal"
+    },
+    {
+      "name": "深い裂傷",
+      "description": "直接ヒットのダメージを35%乗算で減らし、出血ダメージを80%乗算で増やす。",
+      "tradeoff": "出血を付与する技能・装備が別途必要。これ自体には出血付与がない。",
+      "rule": "bleedOnly",
+      "icon": "ass_poison",
+      "requirements": [
+        "BLEED_SOURCE"
+      ],
+      "groupAnchor": "g50",
+      "sourceState": "historical_keystone_proposal",
+      "sourceRef": "v6:g18n1",
+      "risks": [
+        "旧係数・制約とも未採用。共通の実戦効果は未実装"
+      ],
+      "conflicts": [],
+      "referenceJobs": [],
+      "id": "key_03",
+      "type": "keystone",
+      "stats": {},
+      "cost": 3,
+      "runtimeApplied": false,
+      "anchor": "g50n1",
+      "group": "g50",
+      "theme": "bleed",
+      "effectState": "unimplemented_proposal"
+    },
+    {
+      "name": "静かな刃",
+      "description": "会心が発生しなくなる。直接ヒットのダメージを22%乗算で増やす。",
+      "tradeoff": "会心への投資と両立しない。会心率・倍率は取得済みでも無効。",
+      "rule": "noCrit",
+      "icon": "war_breach",
+      "requirements": [
+        "DAMAGE"
+      ],
+      "groupAnchor": "g37",
+      "sourceState": "historical_keystone_proposal",
+      "sourceRef": "v6:g37n0",
+      "risks": [
+        "旧係数・制約とも未採用。共通の実戦効果は未実装"
+      ],
+      "conflicts": [],
+      "referenceJobs": [],
+      "id": "key_04",
+      "type": "keystone",
+      "stats": {},
+      "cost": 3,
+      "runtimeApplied": false,
+      "anchor": "g37n4",
+      "group": "g37",
+      "theme": "penetration",
+      "effectState": "unimplemented_proposal"
+    },
+    {
+      "name": "血の代価",
+      "description": "技能のMP消費を同量のHP消費に置き換える。HPの自然回復が働かなくなる。",
+      "tradeoff": "HP消費を補える吸収・回復手段が必要。MP不足の代替は無条件の強化ではない。",
+      "rule": "bloodCost",
+      "icon": "war_ult",
+      "requirements": [
+        "MP_CONSUMER"
+      ],
+      "groupAnchor": "g20",
+      "sourceState": "historical_keystone_proposal",
+      "sourceRef": "v6:g13n3",
+      "risks": [
+        "旧係数・制約とも未採用。共通の実戦効果は未実装"
+      ],
+      "conflicts": [],
+      "referenceJobs": [],
+      "id": "key_02",
+      "type": "keystone",
+      "stats": {},
+      "cost": 3,
+      "runtimeApplied": false,
+      "anchor": "g20n6",
+      "group": "g20",
+      "theme": "mana",
+      "effectState": "unimplemented_proposal"
+    },
+    {
+      "name": "異系統の武器",
+      "description": "標準適性外の武器1系統と、対応する技能の組を使用",
+      "tradeoff": "主系統の効率を落とす案。全武器一括許可ではない",
+      "icon": "war_ult",
+      "requirements": [
+        "CROSS_WEAPON_SKILL"
+      ],
+      "risks": [
+        "装備許可だけでは技能・AP・固有資源は移らない",
+        "現行CoreWeaponBase.usableの制限は解除しない"
+      ],
+      "referenceJobs": [],
+      "conflicts": [],
+      "groupAnchor": "g16",
+      "sourceState": "new_keystone_proposal",
+      "sourceRef": "prior-draft:k:01",
+      "priorInputId": "k:01",
+      "id": "key_07",
+      "type": "keystone",
+      "stats": {},
+      "cost": 3,
+      "runtimeApplied": false,
+      "anchor": "g16n8",
+      "group": "g16",
+      "theme": "penetration",
+      "effectState": "unimplemented_proposal"
+    },
+    {
+      "name": "重ね撃ち",
+      "description": "主力の追加発動",
+      "tradeoff": "1回の威力を下げる",
+      "icon": "whirl",
+      "requirements": [
+        "DAMAGE",
+        "SIGNATURE"
+      ],
+      "risks": [
+        "Mage残響・Ranger追矢等のMODと重複",
+        "現行は発動8回上限。共通版の合算未決"
+      ],
+      "referenceJobs": [],
+      "conflicts": [
+        "key_08"
+      ],
+      "groupAnchor": "g19",
+      "sourceState": "new_keystone_proposal",
+      "sourceRef": "prior-draft:k:03",
+      "priorInputId": "k:03",
+      "id": "key_09",
+      "type": "keystone",
+      "stats": {},
+      "cost": 3,
+      "runtimeApplied": false,
+      "anchor": "g19n0",
+      "group": "g19",
+      "theme": "haste",
+      "effectState": "unimplemented_proposal"
+    },
+    {
+      "name": "機会の返還",
+      "description": "印等の条件を消費すると回避が戻る",
+      "tradeoff": "条件なしの攻撃効率を下げる",
+      "icon": "ass_escape",
+      "requirements": [
+        "MARK",
+        "MARK_CONSUMER"
+      ],
+      "risks": [
+        "印の供給と消費は別。武器だけで機会は供給されない",
+        "回避と印の再生成で無限循環させない"
+      ],
+      "referenceJobs": [
+        "ASSASSIN"
+      ],
+      "conflicts": [],
+      "groupAnchor": "g10",
+      "sourceState": "new_keystone_proposal",
+      "sourceRef": "prior-draft:k:10",
+      "priorInputId": "k:10",
+      "id": "key_10",
+      "type": "keystone",
+      "stats": {},
+      "cost": 3,
+      "runtimeApplied": false,
+      "anchor": "g10n3",
+      "group": "g10",
+      "theme": "mobility",
+      "effectState": "unimplemented_proposal"
+    },
+    {
+      "name": "守りの分配",
+      "description": "仲間への障壁を強める",
+      "tradeoff": "自分の攻撃を下げる",
+      "icon": "temp_sanctuary",
+      "requirements": [
+        "ALLY_SHIELD"
+      ],
+      "risks": [
+        "自己障壁だけでは仲間への効果を使えない",
+        "障壁量・変換・受け手倍率とHP75%上限の順序"
+      ],
+      "referenceJobs": [
+        "TEMPLAR"
+      ],
+      "conflicts": [],
+      "groupAnchor": "g31",
+      "sourceState": "new_keystone_proposal",
+      "sourceRef": "prior-draft:k:08",
+      "priorInputId": "k:08",
+      "id": "key_11",
+      "type": "keystone",
+      "stats": {},
+      "cost": 3,
+      "runtimeApplied": false,
+      "anchor": "g31n4",
+      "group": "g31",
+      "theme": "ward",
+      "effectState": "unimplemented_proposal"
+    },
+    {
+      "name": "継続の毒刃",
+      "description": "印のある敵への通常攻撃で継続ダメージ",
+      "tradeoff": "初撃バーストを下げる",
+      "icon": "ass_poison",
+      "requirements": [
+        "MARK",
+        "DAMAGE"
+      ],
+      "risks": [
+        "ASS_VENOM・毒技能と同一DotKey。上書きと再付与を要整理",
+        "弓通常攻撃でも使える共通版は未実装"
+      ],
+      "referenceJobs": [
+        "ASSASSIN"
+      ],
+      "conflicts": [],
+      "groupAnchor": "g17",
+      "sourceState": "new_keystone_proposal",
+      "sourceRef": "prior-draft:k:11",
+      "priorInputId": "k:11",
+      "id": "key_12",
+      "type": "keystone",
+      "stats": {},
+      "cost": 3,
+      "runtimeApplied": false,
+      "anchor": "g17n0",
+      "group": "g17",
+      "theme": "weakpoint",
+      "effectState": "unimplemented_proposal"
+    },
+    {
+      "name": "氷の攻撃機会",
+      "description": "既に使える氷で重撃等の攻撃機会を作る",
+      "tradeoff": "即時火力を下げる",
+      "icon": "frost_nova",
+      "requirements": [
+        "ICE"
+      ],
+      "risks": [
+        "現行は減速。凍結やボス停止を実装済みと扱わない",
+        "氷の入手や魔術加工を必須にしない"
+      ],
+      "referenceJobs": [],
+      "conflicts": [],
+      "groupAnchor": "g27",
+      "sourceState": "new_keystone_proposal",
+      "sourceRef": "prior-draft:k:13",
+      "priorInputId": "k:13",
+      "id": "key_13",
+      "type": "keystone",
+      "stats": {},
+      "cost": 3,
+      "runtimeApplied": false,
+      "anchor": "g27n4",
+      "group": "g27",
+      "theme": "ice",
+      "effectState": "unimplemented_proposal"
+    },
+    {
+      "name": "残火の持続",
+      "description": "既に使える炎で攻撃の間を補う",
+      "tradeoff": "一撃効率を下げる",
+      "icon": "firebolt",
+      "requirements": [
+        "BURN"
+      ],
+      "risks": [
+        "炎属性の技能名だけでは現行燃焼を起動しない",
+        "燃焼延長・上書き・再帰・ヒット資源の規則は未定"
+      ],
+      "referenceJobs": [],
+      "conflicts": [],
+      "groupAnchor": "g47",
+      "sourceState": "new_keystone_proposal",
+      "sourceRef": "prior-draft:k:14",
+      "priorInputId": "k:14",
+      "id": "key_14",
+      "type": "keystone",
+      "stats": {},
+      "cost": 3,
+      "runtimeApplied": false,
+      "anchor": "g47n2",
+      "group": "g47",
+      "theme": "fire",
+      "effectState": "unimplemented_proposal"
+    },
+    {
+      "name": "雷の収束",
+      "description": "雷の集団処理を単体向けに寄せる",
+      "tradeoff": "連鎖対象を減らす",
+      "icon": "mage_mark",
+      "requirements": [
+        "CHAIN"
+      ],
+      "risks": [
+        "雷技能のelement=3だけでは連鎖しない",
+        "連鎖damageの再発動・単体変換・MODとの担当は未定"
+      ],
+      "referenceJobs": [],
+      "conflicts": [],
+      "groupAnchor": "g9",
+      "sourceState": "new_keystone_proposal",
+      "sourceRef": "prior-draft:k:15",
+      "priorInputId": "k:15",
+      "id": "key_15",
+      "type": "keystone",
+      "stats": {},
+      "cost": 3,
+      "runtimeApplied": false,
+      "anchor": "g9n7",
+      "group": "g9",
+      "theme": "lightning",
+      "effectState": "unimplemented_proposal"
+    }
+  ],
+  "keystoneImplementationBoundary": "Definitions and terminal topology are present. Some UI stat suppression / cost-label substitution is exercised; no equipment, Orb, authoritative combat or game runtime behavior is established by this preview.",
+  "parentResearchInput": {
+    "provenance": "Parent supplied the following primary-source synthesis; this packet does not independently reinterpret or merge their dates/game versions.",
+    "links": [
+      {
+        "url": "https://www.pathofexile.com/forum/view-thread/55152",
+        "topic": "Historical PoE1 dev diary: cross-class freedom and opportunity cost"
+      },
+      {
+        "url": "https://www.pathofexile.com/forum/view-thread/3186390",
+        "topic": "PoE1 3.16 official policy: long Life travel, Ranger exit cost, duplication and unwanted secondary stats"
+      },
+      {
+        "url": "https://www.pathofexile.com/forum/view-thread/348244",
+        "topic": "Mark_GGG keystone definition: major build/play impact; downside not mandatory"
+      },
+      {
+        "url": "https://www.pcgamesn.com/path-of-exile-2/early-access-interview",
+        "topic": "2024 Jonathan Rogers interview: cluster identity and separating unwanted minion/spell mixed stats"
+      }
+    ],
+    "pendingDecision": "The parent is independently reviewing V7. Candidate data remains unchanged until prioritized concrete findings arrive."
+  }
+}
