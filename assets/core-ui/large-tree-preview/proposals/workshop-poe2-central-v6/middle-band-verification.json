@@ -1,23 +1,26 @@
 {
   "status": "PASS",
   "baselineSha256": "b697ec1858fce7a9ff3b7a293219bbe8abb1b623f8c11bac801f00b7cd15390d",
-  "candidateSha256": "c74f8392e4a7684915b6f5d595baf69f7868fc76177b7163ad390f10376fe61a",
+  "candidateSha256": "08422d26e9499d4a3fd3eb5b0b048f253b70e512cf7b7ff8bc2709f3cbd2b2e4",
   "central60NodesAndIncidentEdgesExact": true,
   "all47RegionalNodesAndInternalEdgesExact": true,
   "all645NonGeometryFieldsExact": true,
-  "onlyOneSpecifiedTravelAttachmentChanged": [
-    {
-      "before": [
-        "g23n5",
-        "r2_22_1"
-      ],
-      "after": [
-        "r2_22_1",
-        "g18n5"
-      ]
-    }
-  ],
-  "changedTravelEdges": [
+  "all784LogicalEdgesExact": true,
+  "all10ExampleCostsAllocationsBenefitsAndPathsExact": true,
+  "exampleCosts": {
+    "critical": 47,
+    "quiet": 43,
+    "tank-life": 43,
+    "tank-shield": 21,
+    "mage-mp": 17,
+    "mage-blood": 20,
+    "mage-ice": 25,
+    "ranger": 42,
+    "assassin": 52,
+    "lightning": 26
+  },
+  "logicalConnectionsChanged": 0,
+  "changedRenderedTravelEdges": [
     [
       "g49n2",
       "j15"

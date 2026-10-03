@@ -1,0 +1,20 @@
+{
+  "status": "PASS",
+  "acceptedVisualCommit": "86bec6e5dbb6804773937e81ca3ab40795904994",
+  "oldLogicalBaselineCommit": "accefb73b3ba1c401d24ef199ae1a6375f0a3331",
+  "all645AcceptedVisualCoordinatesExact": true,
+  "all47AcceptedGroupDefinitionsExact": true,
+  "all783UnaffectedRenderedEdgesExact": true,
+  "acceptedFontsSpritesAndDisplayCodeExact": true,
+  "restoredOneLogicalConnection": {
+    "removed": [
+      "g18n5",
+      "r2_22_1"
+    ],
+    "restored": [
+      "g23n5",
+      "r2_22_1"
+    ]
+  },
+  "candidateSha256": "08422d26e9499d4a3fd3eb5b0b048f253b70e512cf7b7ff8bc2709f3cbd2b2e4"
+}

@@ -2,8 +2,8 @@
 
 All central nodes and regional node coordinates remain exact. Existing road
 junctions move to explicit offset targets when the full embedding stays clear.
-One long western return attaches to the northwest life region, opening the
-middle annular band. No effects, costs, input conditions, icons, or IDs change.
+Every original logical connection is retained. No effects, route costs, input
+conditions, icons, or source IDs change.
 Run after finish-skill-tree-poe2-central-topology-v6.py, before publication.
 """
 import json,copy,math
@@ -43,7 +43,6 @@ for id,target in targets.items():
   for ei,e,pts in incident:e['points']=pts
   blocked.append(id)
 assert all(n==by[n['id']] for n in baseline['nodes'] if n['id'] in fixed|regional)
-ei=next(i for i,e in enumerate(g['edges']) if {e['a'],e['b']}=={'r2_22_1','g23n5'});e=g['edges'][ei];old_edge=copy.deepcopy(e);e['a'],e['b']='r2_22_1','g18n5';e['points']=[[by[id]['x'],by[id]['y']] for id in ('r2_22_1','g18n5')]
-assert corridor_clear(np.array(e['points'][0]),np.array(e['points'][-1]),ei,80),'Northwest life attachment is blocked'
-report={'status':'AUTHORED_PENDING_GEOMETRY_AND_BROWSER_CHECK','scope':'west / southwest middle travel only','central60Exact':True,'all47RegionalNodeCoordinatesExact':True,'all47InternalRegionEdgesExact':True,'sourceFieldsExact':True,'oneTravelAttachmentChanged':{'before':[old_edge['a'],old_edge['b']],'after':[e['a'],e['b']],'purpose':'Open the western circular return into a northwest life-region attachment; retain every regional and central edge.'},'directCorridors':changes,'offsetRoadJunctions':accepted,'blockedTargetsRetained':blocked}
+assert [(e['a'],e['b']) for e in g['edges']]==[(e['a'],e['b']) for e in baseline['edges']]
+report={'status':'AUTHORED_PENDING_GEOMETRY_AND_BROWSER_CHECK','scope':'west / southwest middle coordinates and rendered travel paths only','central60Exact':True,'all47RegionalNodeCoordinatesExact':True,'all47InternalRegionEdgesExact':True,'sourceFieldsExact':True,'all784LogicalEdgesExact':True,'logicalConnectionsChanged':0,'directCorridors':changes,'offsetRoadJunctions':accepted,'blockedTargetsRetained':blocked}
 (OUT/'candidate-graph.json').write_text(json.dumps(g,ensure_ascii=False,indent=2),encoding='utf8');(OUT/'middle-band-authoring.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf8');print(json.dumps({'directCorridors':len(changes),'offsetJunctions':accepted,'blocked':blocked}))

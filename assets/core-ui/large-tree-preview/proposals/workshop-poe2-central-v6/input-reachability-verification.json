@@ -14,7 +14,7 @@
         {
           "id": "key_05",
           "inputAvailable": true,
-          "newPointCost": 30
+          "newPointCost": 32
         },
         {
           "id": "key_01",
@@ -24,12 +24,12 @@
         {
           "id": "key_08",
           "inputAvailable": true,
-          "newPointCost": 34
+          "newPointCost": 38
         },
         {
           "id": "key_06",
           "inputAvailable": true,
-          "newPointCost": 41
+          "newPointCost": 45
         },
         {
           "id": "key_03",
@@ -39,7 +39,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 38
+          "newPointCost": 50
         },
         {
           "id": "key_02",
@@ -123,7 +123,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 38
+          "newPointCost": 42
         },
         {
           "id": "key_02",
@@ -182,7 +182,7 @@
         {
           "id": "key_05",
           "inputAvailable": true,
-          "newPointCost": 30
+          "newPointCost": 32
         },
         {
           "id": "key_01",
@@ -192,12 +192,12 @@
         {
           "id": "key_08",
           "inputAvailable": true,
-          "newPointCost": 34
+          "newPointCost": 38
         },
         {
           "id": "key_06",
           "inputAvailable": true,
-          "newPointCost": 41
+          "newPointCost": 45
         },
         {
           "id": "key_03",
@@ -207,7 +207,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 38
+          "newPointCost": 50
         },
         {
           "id": "key_02",
@@ -291,7 +291,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 38
+          "newPointCost": 42
         },
         {
           "id": "key_02",
@@ -350,7 +350,7 @@
         {
           "id": "key_05",
           "inputAvailable": true,
-          "newPointCost": 30
+          "newPointCost": 32
         },
         {
           "id": "key_01",
@@ -360,12 +360,12 @@
         {
           "id": "key_08",
           "inputAvailable": true,
-          "newPointCost": 34
+          "newPointCost": 38
         },
         {
           "id": "key_06",
           "inputAvailable": true,
-          "newPointCost": 41
+          "newPointCost": 45
         },
         {
           "id": "key_03",
@@ -375,7 +375,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 38
+          "newPointCost": 50
         },
         {
           "id": "key_02",
@@ -459,7 +459,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 38
+          "newPointCost": 42
         },
         {
           "id": "key_02",
@@ -518,7 +518,7 @@
         {
           "id": "key_05",
           "inputAvailable": true,
-          "newPointCost": 30
+          "newPointCost": 32
         },
         {
           "id": "key_01",
@@ -528,12 +528,12 @@
         {
           "id": "key_08",
           "inputAvailable": true,
-          "newPointCost": 34
+          "newPointCost": 38
         },
         {
           "id": "key_06",
           "inputAvailable": true,
-          "newPointCost": 41
+          "newPointCost": 45
         },
         {
           "id": "key_03",
@@ -543,7 +543,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 38
+          "newPointCost": 50
         },
         {
           "id": "key_02",
@@ -627,7 +627,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 38
+          "newPointCost": 42
         },
         {
           "id": "key_02",
@@ -711,7 +711,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 38
+          "newPointCost": 50
         },
         {
           "id": "key_02",
@@ -795,7 +795,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 38
+          "newPointCost": 42
         },
         {
           "id": "key_02",
@@ -879,7 +879,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 38
+          "newPointCost": 50
         },
         {
           "id": "key_02",
@@ -963,7 +963,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 38
+          "newPointCost": 42
         },
         {
           "id": "key_02",
@@ -1047,7 +1047,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 38
+          "newPointCost": 50
         },
         {
           "id": "key_02",
@@ -1131,7 +1131,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 38
+          "newPointCost": 42
         },
         {
           "id": "key_02",
@@ -1215,7 +1215,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 38
+          "newPointCost": 50
         },
         {
           "id": "key_02",
@@ -1299,7 +1299,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 38
+          "newPointCost": 42
         },
         {
           "id": "key_02",
@@ -1358,7 +1358,7 @@
         {
           "id": "key_05",
           "inputAvailable": true,
-          "newPointCost": 30
+          "newPointCost": 32
         },
         {
           "id": "key_01",
@@ -1368,12 +1368,12 @@
         {
           "id": "key_08",
           "inputAvailable": true,
-          "newPointCost": 34
+          "newPointCost": 38
         },
         {
           "id": "key_06",
           "inputAvailable": true,
-          "newPointCost": 41
+          "newPointCost": 45
         },
         {
           "id": "key_03",
@@ -1383,7 +1383,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 38
+          "newPointCost": 50
         },
         {
           "id": "key_02",
@@ -1467,7 +1467,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 38
+          "newPointCost": 42
         },
         {
           "id": "key_02",
@@ -1526,7 +1526,7 @@
         {
           "id": "key_05",
           "inputAvailable": true,
-          "newPointCost": 30
+          "newPointCost": 32
         },
         {
           "id": "key_01",
@@ -1536,12 +1536,12 @@
         {
           "id": "key_08",
           "inputAvailable": true,
-          "newPointCost": 34
+          "newPointCost": 38
         },
         {
           "id": "key_06",
           "inputAvailable": true,
-          "newPointCost": 41
+          "newPointCost": 45
         },
         {
           "id": "key_03",
@@ -1551,7 +1551,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 38
+          "newPointCost": 50
         },
         {
           "id": "key_02",
@@ -1635,7 +1635,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 38
+          "newPointCost": 42
         },
         {
           "id": "key_02",
@@ -1694,7 +1694,7 @@
         {
           "id": "key_05",
           "inputAvailable": true,
-          "newPointCost": 30
+          "newPointCost": 32
         },
         {
           "id": "key_01",
@@ -1704,12 +1704,12 @@
         {
           "id": "key_08",
           "inputAvailable": true,
-          "newPointCost": 34
+          "newPointCost": 38
         },
         {
           "id": "key_06",
           "inputAvailable": true,
-          "newPointCost": 41
+          "newPointCost": 45
         },
         {
           "id": "key_03",
@@ -1719,7 +1719,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 38
+          "newPointCost": 50
         },
         {
           "id": "key_02",
@@ -1803,7 +1803,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 38
+          "newPointCost": 42
         },
         {
           "id": "key_02",
@@ -1862,7 +1862,7 @@
         {
           "id": "key_05",
           "inputAvailable": true,
-          "newPointCost": 30
+          "newPointCost": 32
         },
         {
           "id": "key_01",
@@ -1872,12 +1872,12 @@
         {
           "id": "key_08",
           "inputAvailable": true,
-          "newPointCost": 34
+          "newPointCost": 38
         },
         {
           "id": "key_06",
           "inputAvailable": true,
-          "newPointCost": 41
+          "newPointCost": 45
         },
         {
           "id": "key_03",
@@ -1887,7 +1887,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 38
+          "newPointCost": 50
         },
         {
           "id": "key_02",
@@ -1971,7 +1971,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 38
+          "newPointCost": 42
         },
         {
           "id": "key_02",
@@ -2055,7 +2055,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 39
+          "newPointCost": 51
         },
         {
           "id": "key_02",
@@ -2139,7 +2139,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 39
+          "newPointCost": 47
         },
         {
           "id": "key_02",
@@ -2223,7 +2223,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 39
+          "newPointCost": 51
         },
         {
           "id": "key_02",
@@ -2307,7 +2307,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 39
+          "newPointCost": 47
         },
         {
           "id": "key_02",
@@ -2391,7 +2391,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 39
+          "newPointCost": 51
         },
         {
           "id": "key_02",
@@ -2475,7 +2475,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 39
+          "newPointCost": 47
         },
         {
           "id": "key_02",
@@ -2559,7 +2559,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 39
+          "newPointCost": 51
         },
         {
           "id": "key_02",
@@ -2643,7 +2643,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 39
+          "newPointCost": 47
         },
         {
           "id": "key_02",
@@ -2727,7 +2727,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 39
+          "newPointCost": 51
         },
         {
           "id": "key_02",
@@ -2811,7 +2811,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 39
+          "newPointCost": 47
         },
         {
           "id": "key_02",
@@ -2895,7 +2895,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 39
+          "newPointCost": 51
         },
         {
           "id": "key_02",
@@ -2979,7 +2979,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 39
+          "newPointCost": 47
         },
         {
           "id": "key_02",
@@ -3063,7 +3063,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 39
+          "newPointCost": 51
         },
         {
           "id": "key_02",
@@ -3147,7 +3147,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 39
+          "newPointCost": 47
         },
         {
           "id": "key_02",
@@ -3231,7 +3231,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 39
+          "newPointCost": 51
         },
         {
           "id": "key_02",
@@ -3315,7 +3315,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 39
+          "newPointCost": 47
         },
         {
           "id": "key_02",
@@ -3399,7 +3399,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 39
+          "newPointCost": 51
         },
         {
           "id": "key_02",
@@ -3483,7 +3483,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 39
+          "newPointCost": 47
         },
         {
           "id": "key_02",
@@ -3567,7 +3567,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 39
+          "newPointCost": 51
         },
         {
           "id": "key_02",
@@ -3651,7 +3651,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 39
+          "newPointCost": 47
         },
         {
           "id": "key_02",
@@ -3735,7 +3735,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 39
+          "newPointCost": 51
         },
         {
           "id": "key_02",
@@ -3819,7 +3819,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 39
+          "newPointCost": 47
         },
         {
           "id": "key_02",
@@ -3903,7 +3903,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 39
+          "newPointCost": 51
         },
         {
           "id": "key_02",
@@ -3987,7 +3987,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 39
+          "newPointCost": 47
         },
         {
           "id": "key_02",
@@ -4046,7 +4046,7 @@
         {
           "id": "key_05",
           "inputAvailable": true,
-          "newPointCost": 30
+          "newPointCost": 32
         },
         {
           "id": "key_01",
@@ -4056,7 +4056,7 @@
         {
           "id": "key_08",
           "inputAvailable": true,
-          "newPointCost": 34
+          "newPointCost": 38
         },
         {
           "id": "key_06",
@@ -4071,7 +4071,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 38
+          "newPointCost": 50
         },
         {
           "id": "key_02",
@@ -4155,7 +4155,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 38
+          "newPointCost": 50
         },
         {
           "id": "key_02",
@@ -4214,7 +4214,7 @@
         {
           "id": "key_05",
           "inputAvailable": true,
-          "newPointCost": 30
+          "newPointCost": 32
         },
         {
           "id": "key_01",
@@ -4224,7 +4224,7 @@
         {
           "id": "key_08",
           "inputAvailable": true,
-          "newPointCost": 34
+          "newPointCost": 38
         },
         {
           "id": "key_06",
@@ -4239,7 +4239,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 38
+          "newPointCost": 50
         },
         {
           "id": "key_02",
@@ -4323,7 +4323,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 38
+          "newPointCost": 50
         },
         {
           "id": "key_02",
@@ -4382,7 +4382,7 @@
         {
           "id": "key_05",
           "inputAvailable": true,
-          "newPointCost": 30
+          "newPointCost": 32
         },
         {
           "id": "key_01",
@@ -4392,7 +4392,7 @@
         {
           "id": "key_08",
           "inputAvailable": true,
-          "newPointCost": 34
+          "newPointCost": 38
         },
         {
           "id": "key_06",
@@ -4407,7 +4407,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 38
+          "newPointCost": 50
         },
         {
           "id": "key_02",
@@ -4491,7 +4491,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 38
+          "newPointCost": 50
         },
         {
           "id": "key_02",
@@ -4550,7 +4550,7 @@
         {
           "id": "key_05",
           "inputAvailable": true,
-          "newPointCost": 30
+          "newPointCost": 32
         },
         {
           "id": "key_01",
@@ -4560,7 +4560,7 @@
         {
           "id": "key_08",
           "inputAvailable": true,
-          "newPointCost": 34
+          "newPointCost": 38
         },
         {
           "id": "key_06",
@@ -4575,7 +4575,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 38
+          "newPointCost": 50
         },
         {
           "id": "key_02",
@@ -4659,7 +4659,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 38
+          "newPointCost": 50
         },
         {
           "id": "key_02",
@@ -4743,7 +4743,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 38
+          "newPointCost": 50
         },
         {
           "id": "key_02",
@@ -4827,7 +4827,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 38
+          "newPointCost": 49
         },
         {
           "id": "key_02",
@@ -4911,7 +4911,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 38
+          "newPointCost": 50
         },
         {
           "id": "key_02",
@@ -4995,7 +4995,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 38
+          "newPointCost": 49
         },
         {
           "id": "key_02",
@@ -5079,7 +5079,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 38
+          "newPointCost": 50
         },
         {
           "id": "key_02",
@@ -5163,7 +5163,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 38
+          "newPointCost": 49
         },
         {
           "id": "key_02",
@@ -5247,7 +5247,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 38
+          "newPointCost": 50
         },
         {
           "id": "key_02",
@@ -5331,7 +5331,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 38
+          "newPointCost": 49
         },
         {
           "id": "key_02",
@@ -5390,7 +5390,7 @@
         {
           "id": "key_05",
           "inputAvailable": true,
-          "newPointCost": 30
+          "newPointCost": 32
         },
         {
           "id": "key_01",
@@ -5400,7 +5400,7 @@
         {
           "id": "key_08",
           "inputAvailable": true,
-          "newPointCost": 34
+          "newPointCost": 38
         },
         {
           "id": "key_06",
@@ -5415,7 +5415,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 38
+          "newPointCost": 50
         },
         {
           "id": "key_02",
@@ -5499,7 +5499,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 38
+          "newPointCost": 50
         },
         {
           "id": "key_02",
@@ -5558,7 +5558,7 @@
         {
           "id": "key_05",
           "inputAvailable": true,
-          "newPointCost": 30
+          "newPointCost": 32
         },
         {
           "id": "key_01",
@@ -5568,7 +5568,7 @@
         {
           "id": "key_08",
           "inputAvailable": true,
-          "newPointCost": 34
+          "newPointCost": 38
         },
         {
           "id": "key_06",
@@ -5583,7 +5583,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 38
+          "newPointCost": 50
         },
         {
           "id": "key_02",
@@ -5667,7 +5667,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 38
+          "newPointCost": 50
         },
         {
           "id": "key_02",
@@ -5726,7 +5726,7 @@
         {
           "id": "key_05",
           "inputAvailable": true,
-          "newPointCost": 30
+          "newPointCost": 32
         },
         {
           "id": "key_01",
@@ -5736,7 +5736,7 @@
         {
           "id": "key_08",
           "inputAvailable": true,
-          "newPointCost": 34
+          "newPointCost": 38
         },
         {
           "id": "key_06",
@@ -5751,7 +5751,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 38
+          "newPointCost": 50
         },
         {
           "id": "key_02",
@@ -5835,7 +5835,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 38
+          "newPointCost": 50
         },
         {
           "id": "key_02",
@@ -5894,7 +5894,7 @@
         {
           "id": "key_05",
           "inputAvailable": true,
-          "newPointCost": 30
+          "newPointCost": 32
         },
         {
           "id": "key_01",
@@ -5904,7 +5904,7 @@
         {
           "id": "key_08",
           "inputAvailable": true,
-          "newPointCost": 34
+          "newPointCost": 38
         },
         {
           "id": "key_06",
@@ -5919,7 +5919,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 38
+          "newPointCost": 50
         },
         {
           "id": "key_02",
@@ -6003,7 +6003,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 38
+          "newPointCost": 50
         },
         {
           "id": "key_02",
@@ -6062,7 +6062,7 @@
         {
           "id": "key_05",
           "inputAvailable": true,
-          "newPointCost": 33
+          "newPointCost": 35
         },
         {
           "id": "key_01",
@@ -6072,7 +6072,7 @@
         {
           "id": "key_08",
           "inputAvailable": true,
-          "newPointCost": 37
+          "newPointCost": 41
         },
         {
           "id": "key_06",
@@ -6087,7 +6087,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 41
+          "newPointCost": 53
         },
         {
           "id": "key_02",
@@ -6171,7 +6171,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 41
+          "newPointCost": 48
         },
         {
           "id": "key_02",
@@ -6230,7 +6230,7 @@
         {
           "id": "key_05",
           "inputAvailable": true,
-          "newPointCost": 33
+          "newPointCost": 35
         },
         {
           "id": "key_01",
@@ -6240,7 +6240,7 @@
         {
           "id": "key_08",
           "inputAvailable": true,
-          "newPointCost": 37
+          "newPointCost": 41
         },
         {
           "id": "key_06",
@@ -6255,7 +6255,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 41
+          "newPointCost": 53
         },
         {
           "id": "key_02",
@@ -6339,7 +6339,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 41
+          "newPointCost": 48
         },
         {
           "id": "key_02",
@@ -6398,7 +6398,7 @@
         {
           "id": "key_05",
           "inputAvailable": true,
-          "newPointCost": 33
+          "newPointCost": 35
         },
         {
           "id": "key_01",
@@ -6408,7 +6408,7 @@
         {
           "id": "key_08",
           "inputAvailable": true,
-          "newPointCost": 37
+          "newPointCost": 41
         },
         {
           "id": "key_06",
@@ -6423,7 +6423,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 41
+          "newPointCost": 53
         },
         {
           "id": "key_02",
@@ -6507,7 +6507,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 41
+          "newPointCost": 48
         },
         {
           "id": "key_02",
@@ -6566,7 +6566,7 @@
         {
           "id": "key_05",
           "inputAvailable": true,
-          "newPointCost": 33
+          "newPointCost": 35
         },
         {
           "id": "key_01",
@@ -6576,7 +6576,7 @@
         {
           "id": "key_08",
           "inputAvailable": true,
-          "newPointCost": 37
+          "newPointCost": 41
         },
         {
           "id": "key_06",
@@ -6591,7 +6591,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 41
+          "newPointCost": 53
         },
         {
           "id": "key_02",
@@ -6675,7 +6675,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 41
+          "newPointCost": 48
         },
         {
           "id": "key_02",
@@ -6734,7 +6734,7 @@
         {
           "id": "key_05",
           "inputAvailable": true,
-          "newPointCost": 33
+          "newPointCost": 35
         },
         {
           "id": "key_01",
@@ -6744,7 +6744,7 @@
         {
           "id": "key_08",
           "inputAvailable": true,
-          "newPointCost": 37
+          "newPointCost": 41
         },
         {
           "id": "key_06",
@@ -6759,7 +6759,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 41
+          "newPointCost": 53
         },
         {
           "id": "key_02",
@@ -6843,7 +6843,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 41
+          "newPointCost": 48
         },
         {
           "id": "key_02",
@@ -6902,7 +6902,7 @@
         {
           "id": "key_05",
           "inputAvailable": true,
-          "newPointCost": 33
+          "newPointCost": 35
         },
         {
           "id": "key_01",
@@ -6912,7 +6912,7 @@
         {
           "id": "key_08",
           "inputAvailable": true,
-          "newPointCost": 37
+          "newPointCost": 41
         },
         {
           "id": "key_06",
@@ -6927,7 +6927,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 41
+          "newPointCost": 53
         },
         {
           "id": "key_02",
@@ -7011,7 +7011,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 41
+          "newPointCost": 48
         },
         {
           "id": "key_02",
@@ -7070,7 +7070,7 @@
         {
           "id": "key_05",
           "inputAvailable": true,
-          "newPointCost": 33
+          "newPointCost": 35
         },
         {
           "id": "key_01",
@@ -7080,7 +7080,7 @@
         {
           "id": "key_08",
           "inputAvailable": true,
-          "newPointCost": 37
+          "newPointCost": 41
         },
         {
           "id": "key_06",
@@ -7095,7 +7095,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 41
+          "newPointCost": 53
         },
         {
           "id": "key_02",
@@ -7179,7 +7179,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 41
+          "newPointCost": 48
         },
         {
           "id": "key_02",
@@ -7238,7 +7238,7 @@
         {
           "id": "key_05",
           "inputAvailable": true,
-          "newPointCost": 33
+          "newPointCost": 35
         },
         {
           "id": "key_01",
@@ -7248,7 +7248,7 @@
         {
           "id": "key_08",
           "inputAvailable": true,
-          "newPointCost": 37
+          "newPointCost": 41
         },
         {
           "id": "key_06",
@@ -7263,7 +7263,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 41
+          "newPointCost": 53
         },
         {
           "id": "key_02",
@@ -7347,7 +7347,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 41
+          "newPointCost": 48
         },
         {
           "id": "key_02",
@@ -7406,7 +7406,7 @@
         {
           "id": "key_05",
           "inputAvailable": true,
-          "newPointCost": 33
+          "newPointCost": 35
         },
         {
           "id": "key_01",
@@ -7416,7 +7416,7 @@
         {
           "id": "key_08",
           "inputAvailable": true,
-          "newPointCost": 37
+          "newPointCost": 41
         },
         {
           "id": "key_06",
@@ -7431,7 +7431,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 41
+          "newPointCost": 53
         },
         {
           "id": "key_02",
@@ -7515,7 +7515,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 41
+          "newPointCost": 48
         },
         {
           "id": "key_02",
@@ -7574,7 +7574,7 @@
         {
           "id": "key_05",
           "inputAvailable": true,
-          "newPointCost": 33
+          "newPointCost": 35
         },
         {
           "id": "key_01",
@@ -7584,7 +7584,7 @@
         {
           "id": "key_08",
           "inputAvailable": true,
-          "newPointCost": 37
+          "newPointCost": 41
         },
         {
           "id": "key_06",
@@ -7599,7 +7599,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 41
+          "newPointCost": 53
         },
         {
           "id": "key_02",
@@ -7683,7 +7683,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 41
+          "newPointCost": 48
         },
         {
           "id": "key_02",
@@ -7742,7 +7742,7 @@
         {
           "id": "key_05",
           "inputAvailable": true,
-          "newPointCost": 33
+          "newPointCost": 35
         },
         {
           "id": "key_01",
@@ -7752,7 +7752,7 @@
         {
           "id": "key_08",
           "inputAvailable": true,
-          "newPointCost": 37
+          "newPointCost": 41
         },
         {
           "id": "key_06",
@@ -7767,7 +7767,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 41
+          "newPointCost": 53
         },
         {
           "id": "key_02",
@@ -7851,7 +7851,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 41
+          "newPointCost": 48
         },
         {
           "id": "key_02",
@@ -7910,7 +7910,7 @@
         {
           "id": "key_05",
           "inputAvailable": true,
-          "newPointCost": 33
+          "newPointCost": 35
         },
         {
           "id": "key_01",
@@ -7920,7 +7920,7 @@
         {
           "id": "key_08",
           "inputAvailable": true,
-          "newPointCost": 37
+          "newPointCost": 41
         },
         {
           "id": "key_06",
@@ -7935,7 +7935,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 41
+          "newPointCost": 53
         },
         {
           "id": "key_02",
@@ -8019,7 +8019,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 41
+          "newPointCost": 48
         },
         {
           "id": "key_02",
@@ -8078,7 +8078,7 @@
         {
           "id": "key_05",
           "inputAvailable": true,
-          "newPointCost": 35
+          "newPointCost": 37
         },
         {
           "id": "key_01",
@@ -8088,12 +8088,12 @@
         {
           "id": "key_08",
           "inputAvailable": true,
-          "newPointCost": 39
+          "newPointCost": 43
         },
         {
           "id": "key_06",
           "inputAvailable": true,
-          "newPointCost": 46
+          "newPointCost": 50
         },
         {
           "id": "key_03",
@@ -8103,7 +8103,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 43
+          "newPointCost": 55
         },
         {
           "id": "key_02",
@@ -8246,7 +8246,7 @@
         {
           "id": "key_05",
           "inputAvailable": true,
-          "newPointCost": 35
+          "newPointCost": 37
         },
         {
           "id": "key_01",
@@ -8256,12 +8256,12 @@
         {
           "id": "key_08",
           "inputAvailable": true,
-          "newPointCost": 39
+          "newPointCost": 43
         },
         {
           "id": "key_06",
           "inputAvailable": true,
-          "newPointCost": 46
+          "newPointCost": 50
         },
         {
           "id": "key_03",
@@ -8271,7 +8271,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 43
+          "newPointCost": 55
         },
         {
           "id": "key_02",
@@ -8414,7 +8414,7 @@
         {
           "id": "key_05",
           "inputAvailable": true,
-          "newPointCost": 35
+          "newPointCost": 37
         },
         {
           "id": "key_01",
@@ -8424,12 +8424,12 @@
         {
           "id": "key_08",
           "inputAvailable": true,
-          "newPointCost": 39
+          "newPointCost": 43
         },
         {
           "id": "key_06",
           "inputAvailable": true,
-          "newPointCost": 46
+          "newPointCost": 50
         },
         {
           "id": "key_03",
@@ -8439,7 +8439,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 43
+          "newPointCost": 55
         },
         {
           "id": "key_02",
@@ -8582,7 +8582,7 @@
         {
           "id": "key_05",
           "inputAvailable": true,
-          "newPointCost": 35
+          "newPointCost": 37
         },
         {
           "id": "key_01",
@@ -8592,12 +8592,12 @@
         {
           "id": "key_08",
           "inputAvailable": true,
-          "newPointCost": 39
+          "newPointCost": 43
         },
         {
           "id": "key_06",
           "inputAvailable": true,
-          "newPointCost": 46
+          "newPointCost": 50
         },
         {
           "id": "key_03",
@@ -8607,7 +8607,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 43
+          "newPointCost": 55
         },
         {
           "id": "key_02",
@@ -8750,7 +8750,7 @@
         {
           "id": "key_05",
           "inputAvailable": true,
-          "newPointCost": 35
+          "newPointCost": 37
         },
         {
           "id": "key_01",
@@ -8760,12 +8760,12 @@
         {
           "id": "key_08",
           "inputAvailable": true,
-          "newPointCost": 39
+          "newPointCost": 43
         },
         {
           "id": "key_06",
           "inputAvailable": true,
-          "newPointCost": 46
+          "newPointCost": 50
         },
         {
           "id": "key_03",
@@ -8775,7 +8775,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 43
+          "newPointCost": 55
         },
         {
           "id": "key_02",
@@ -8918,7 +8918,7 @@
         {
           "id": "key_05",
           "inputAvailable": true,
-          "newPointCost": 35
+          "newPointCost": 37
         },
         {
           "id": "key_01",
@@ -8928,12 +8928,12 @@
         {
           "id": "key_08",
           "inputAvailable": true,
-          "newPointCost": 39
+          "newPointCost": 43
         },
         {
           "id": "key_06",
           "inputAvailable": true,
-          "newPointCost": 46
+          "newPointCost": 50
         },
         {
           "id": "key_03",
@@ -8943,7 +8943,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 43
+          "newPointCost": 55
         },
         {
           "id": "key_02",
@@ -9086,7 +9086,7 @@
         {
           "id": "key_05",
           "inputAvailable": true,
-          "newPointCost": 35
+          "newPointCost": 37
         },
         {
           "id": "key_01",
@@ -9096,12 +9096,12 @@
         {
           "id": "key_08",
           "inputAvailable": true,
-          "newPointCost": 39
+          "newPointCost": 43
         },
         {
           "id": "key_06",
           "inputAvailable": true,
-          "newPointCost": 46
+          "newPointCost": 50
         },
         {
           "id": "key_03",
@@ -9111,7 +9111,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 43
+          "newPointCost": 55
         },
         {
           "id": "key_02",
@@ -9254,7 +9254,7 @@
         {
           "id": "key_05",
           "inputAvailable": true,
-          "newPointCost": 35
+          "newPointCost": 37
         },
         {
           "id": "key_01",
@@ -9264,12 +9264,12 @@
         {
           "id": "key_08",
           "inputAvailable": true,
-          "newPointCost": 39
+          "newPointCost": 43
         },
         {
           "id": "key_06",
           "inputAvailable": true,
-          "newPointCost": 46
+          "newPointCost": 50
         },
         {
           "id": "key_03",
@@ -9279,7 +9279,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 43
+          "newPointCost": 55
         },
         {
           "id": "key_02",
@@ -9422,7 +9422,7 @@
         {
           "id": "key_05",
           "inputAvailable": true,
-          "newPointCost": 35
+          "newPointCost": 37
         },
         {
           "id": "key_01",
@@ -9432,12 +9432,12 @@
         {
           "id": "key_08",
           "inputAvailable": true,
-          "newPointCost": 39
+          "newPointCost": 43
         },
         {
           "id": "key_06",
           "inputAvailable": true,
-          "newPointCost": 46
+          "newPointCost": 50
         },
         {
           "id": "key_03",
@@ -9447,7 +9447,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 43
+          "newPointCost": 55
         },
         {
           "id": "key_02",
@@ -9590,7 +9590,7 @@
         {
           "id": "key_05",
           "inputAvailable": true,
-          "newPointCost": 35
+          "newPointCost": 37
         },
         {
           "id": "key_01",
@@ -9600,12 +9600,12 @@
         {
           "id": "key_08",
           "inputAvailable": true,
-          "newPointCost": 39
+          "newPointCost": 43
         },
         {
           "id": "key_06",
           "inputAvailable": true,
-          "newPointCost": 46
+          "newPointCost": 50
         },
         {
           "id": "key_03",
@@ -9615,7 +9615,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 43
+          "newPointCost": 55
         },
         {
           "id": "key_02",
@@ -9758,7 +9758,7 @@
         {
           "id": "key_05",
           "inputAvailable": true,
-          "newPointCost": 35
+          "newPointCost": 37
         },
         {
           "id": "key_01",
@@ -9768,12 +9768,12 @@
         {
           "id": "key_08",
           "inputAvailable": true,
-          "newPointCost": 39
+          "newPointCost": 43
         },
         {
           "id": "key_06",
           "inputAvailable": true,
-          "newPointCost": 46
+          "newPointCost": 50
         },
         {
           "id": "key_03",
@@ -9783,7 +9783,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 43
+          "newPointCost": 55
         },
         {
           "id": "key_02",
@@ -9926,7 +9926,7 @@
         {
           "id": "key_05",
           "inputAvailable": true,
-          "newPointCost": 35
+          "newPointCost": 37
         },
         {
           "id": "key_01",
@@ -9936,12 +9936,12 @@
         {
           "id": "key_08",
           "inputAvailable": true,
-          "newPointCost": 39
+          "newPointCost": 43
         },
         {
           "id": "key_06",
           "inputAvailable": true,
-          "newPointCost": 46
+          "newPointCost": 50
         },
         {
           "id": "key_03",
@@ -9951,7 +9951,7 @@
         {
           "id": "key_04",
           "inputAvailable": true,
-          "newPointCost": 43
+          "newPointCost": 55
         },
         {
           "id": "key_02",

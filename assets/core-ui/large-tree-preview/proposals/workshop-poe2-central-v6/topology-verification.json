@@ -19,8 +19,6 @@
   "leftPoints": 331,
   "rightPoints": 314,
   "outerEmbeddingPreservedThroughCurvedPaths": false,
-  "untouchedOuterEmbeddingRetained": true,
   "westSouthwestTravelCorridorsAdjusted": true,
-  "central60AndAll47InternalRegionsExact": true,
-  "oneWesternTravelAttachmentChanged": true
+  "logicalConnectionsChanged": 0
 }

@@ -1,21 +1,12 @@
 {
   "status": "VERIFIED_LAYOUT_PROPOSAL",
-  "scope": "west / southwest middle travel only",
+  "scope": "west / southwest middle coordinates and rendered travel paths only",
   "central60Exact": true,
   "all47RegionalNodeCoordinatesExact": true,
   "all47InternalRegionEdgesExact": true,
   "sourceFieldsExact": true,
-  "oneTravelAttachmentChanged": {
-    "before": [
-      "g23n5",
-      "r2_22_1"
-    ],
-    "after": [
-      "r2_22_1",
-      "g18n5"
-    ],
-    "purpose": "Open the western circular return into a northwest life-region attachment; retain every regional and central edge."
-  },
+  "all784LogicalEdgesExact": true,
+  "logicalConnectionsChanged": 0,
   "directCorridors": [
     {
       "edge": [
