@@ -1,0 +1,31 @@
+{
+  "url": "https://www.bilibili.com/video/BV1Ss411A73D/?t=1210",
+  "version": "Thaumcraft 6 Beta19",
+  "observer": "Parent research worker; timed playback personally observed there, relayed to this worker",
+  "timecodesApproximate": true,
+  "observations": [
+    {
+      "seconds": 1213.92,
+      "state": "No arc visible"
+    },
+    {
+      "seconds": 1214.06,
+      "state": "Short bent pink-purple arc near lower left of core"
+    },
+    {
+      "seconds": 1214.22,
+      "state": "Arc bulges slightly outward, resembling a bent V"
+    },
+    {
+      "seconds": 1214.35,
+      "state": "Clear arc no longer visible"
+    }
+  ],
+  "notEstablished": [
+    "Smooth writhing: camera also moves",
+    "Exact root behind core/pillar",
+    "Fixed external endpoint connection",
+    "Flux versus essentia mechanic"
+  ],
+  "copiedReferenceMediaIncluded": false
+}

@@ -1,0 +1,1712 @@
+[
+  {
+    "frame": 0,
+    "scene": "idle",
+    "globalTick": 0,
+    "yaw": 0.0,
+    "originalSamples": 0,
+    "retainedNonHaloSamples": 0,
+    "oldHaloSamplesRemovedOnRight": 0,
+    "arcs": []
+  },
+  {
+    "frame": 1,
+    "scene": "idle",
+    "globalTick": 2,
+    "yaw": 0.3,
+    "originalSamples": 0,
+    "retainedNonHaloSamples": 0,
+    "oldHaloSamplesRemovedOnRight": 0,
+    "arcs": []
+  },
+  {
+    "frame": 2,
+    "scene": "idle",
+    "globalTick": 4,
+    "yaw": 0.6,
+    "originalSamples": 0,
+    "retainedNonHaloSamples": 0,
+    "oldHaloSamplesRemovedOnRight": 0,
+    "arcs": []
+  },
+  {
+    "frame": 3,
+    "scene": "idle",
+    "globalTick": 6,
+    "yaw": 0.8999999999999999,
+    "originalSamples": 0,
+    "retainedNonHaloSamples": 0,
+    "oldHaloSamplesRemovedOnRight": 0,
+    "arcs": [
+      {
+        "event": 0,
+        "ageTicks": 0,
+        "lifeTicks": 6,
+        "alpha": 0.72,
+        "points": [
+          [
+            -0.0934877695562889,
+            2.865289442718926,
+            -0.012695706359303283
+          ],
+          [
+            -0.38132812175437525,
+            2.8327935082621445,
+            -0.031963285563312405
+          ],
+          [
+            -0.21172210561912608,
+            3.055543419044114,
+            -0.1811379124829925
+          ],
+          [
+            -0.1278489414134144,
+            3.198561014681101,
+            -0.18747948475554355
+          ]
+        ],
+        "bulgeBlocks": 0.10141104721640332,
+        "rgb": [
+          231,
+          118,
+          219
+        ],
+        "lineWidthBlocks": 0.027
+      }
+    ]
+  },
+  {
+    "frame": 4,
+    "scene": "idle",
+    "globalTick": 8,
+    "yaw": 1.2,
+    "originalSamples": 0,
+    "retainedNonHaloSamples": 0,
+    "oldHaloSamplesRemovedOnRight": 0,
+    "arcs": [
+      {
+        "event": 0,
+        "ageTicks": 2,
+        "lifeTicks": 6,
+        "alpha": 0.96,
+        "points": [
+          [
+            -0.09616409034781004,
+            2.865289442718926,
+            -0.009581197957628573
+          ],
+          [
+            -0.4555248083250967,
+            2.803980942504845,
+            -0.1155869585096041
+          ],
+          [
+            -0.23017680481071578,
+            3.0497835916602063,
+            -0.22464207879388265
+          ],
+          [
+            -0.1314399527324952,
+            3.198561014681101,
+            -0.18418266660803162
+          ]
+        ],
+        "bulgeBlocks": 0.21454813220625094,
+        "rgb": [
+          231,
+          118,
+          219
+        ],
+        "lineWidthBlocks": 0.027
+      }
+    ]
+  },
+  {
+    "frame": 5,
+    "scene": "idle",
+    "globalTick": 10,
+    "yaw": 1.5,
+    "originalSamples": 0,
+    "retainedNonHaloSamples": 0,
+    "oldHaloSamplesRemovedOnRight": 0,
+    "arcs": [
+      {
+        "event": 0,
+        "ageTicks": 4,
+        "lifeTicks": 6,
+        "alpha": 0.3,
+        "points": [
+          [
+            -0.09882406699964419,
+            2.865289442718926,
+            -0.006452719129998674
+          ],
+          [
+            -0.45759759226241925,
+            2.8036559372881746,
+            -0.03716918917238898
+          ],
+          [
+            -0.25359171666976776,
+            3.0410206985720785,
+            -0.16230325151209135
+          ],
+          [
+            -0.13501365280630206,
+            3.198561014681101,
+            -0.1808670912471022
+          ]
+        ],
+        "bulgeBlocks": 0.17313708498984762,
+        "rgb": [
+          231,
+          118,
+          219
+        ],
+        "lineWidthBlocks": 0.027
+      }
+    ]
+  },
+  {
+    "frame": 6,
+    "scene": "idle",
+    "globalTick": 12,
+    "yaw": 1.7999999999999998,
+    "originalSamples": 0,
+    "retainedNonHaloSamples": 0,
+    "oldHaloSamplesRemovedOnRight": 0,
+    "arcs": []
+  },
+  {
+    "frame": 7,
+    "scene": "idle",
+    "globalTick": 14,
+    "yaw": 2.1,
+    "originalSamples": 0,
+    "retainedNonHaloSamples": 0,
+    "oldHaloSamplesRemovedOnRight": 0,
+    "arcs": []
+  },
+  {
+    "frame": 8,
+    "scene": "idle",
+    "globalTick": 16,
+    "yaw": 2.4,
+    "originalSamples": 0,
+    "retainedNonHaloSamples": 0,
+    "oldHaloSamplesRemovedOnRight": 0,
+    "arcs": []
+  },
+  {
+    "frame": 9,
+    "scene": "idle",
+    "globalTick": 18,
+    "yaw": 2.6999999999999997,
+    "originalSamples": 0,
+    "retainedNonHaloSamples": 0,
+    "oldHaloSamplesRemovedOnRight": 0,
+    "arcs": []
+  },
+  {
+    "frame": 10,
+    "scene": "idle",
+    "globalTick": 20,
+    "yaw": 3.0,
+    "originalSamples": 0,
+    "retainedNonHaloSamples": 0,
+    "oldHaloSamplesRemovedOnRight": 0,
+    "arcs": []
+  },
+  {
+    "frame": 11,
+    "scene": "idle",
+    "globalTick": 22,
+    "yaw": 3.3,
+    "originalSamples": 0,
+    "retainedNonHaloSamples": 0,
+    "oldHaloSamplesRemovedOnRight": 0,
+    "arcs": []
+  },
+  {
+    "frame": 12,
+    "scene": "idle",
+    "globalTick": 24,
+    "yaw": 3.5999999999999996,
+    "originalSamples": 0,
+    "retainedNonHaloSamples": 0,
+    "oldHaloSamplesRemovedOnRight": 0,
+    "arcs": [
+      {
+        "event": 1,
+        "ageTicks": 0,
+        "lifeTicks": 6,
+        "alpha": 0.72,
+        "points": [
+          [
+            0.8772970491513931,
+            3.367016887514919,
+            -0.3501082583956281
+          ],
+          [
+            0.8063687551120153,
+            3.4314143625957456,
+            -0.6241546705706431
+          ],
+          [
+            0.9384978693820429,
+            3.6321858600497667,
+            -0.4171051698430166
+          ],
+          [
+            0.9341760776780854,
+            3.7352587130026715,
+            -0.28715800759940535
+          ]
+        ],
+        "bulgeBlocks": 0.10141104721640332,
+        "rgb": [
+          231,
+          118,
+          219
+        ],
+        "lineWidthBlocks": 0.027
+      }
+    ]
+  },
+  {
+    "frame": 13,
+    "scene": "idle",
+    "globalTick": 26,
+    "yaw": 3.9,
+    "originalSamples": 0,
+    "retainedNonHaloSamples": 0,
+    "oldHaloSamplesRemovedOnRight": 0,
+    "arcs": [
+      {
+        "event": 1,
+        "ageTicks": 2,
+        "lifeTicks": 6,
+        "alpha": 0.96,
+        "points": [
+          [
+            0.8728407411630461,
+            3.367016887514919,
+            -0.35207211902501945
+          ],
+          [
+            0.8637687200182177,
+            3.4602246056048496,
+            -0.7199934405255131
+          ],
+          [
+            0.9728665508615435,
+            3.64910269659343,
+            -0.4451909399369629
+          ],
+          [
+            0.9300485952424365,
+            3.7352587130026715,
+            -0.28942054767139125
+          ]
+        ],
+        "bulgeBlocks": 0.21454813220625094,
+        "rgb": [
+          231,
+          118,
+          219
+        ],
+        "lineWidthBlocks": 0.027
+      }
+    ]
+  },
+  {
+    "frame": 14,
+    "scene": "idle",
+    "globalTick": 28,
+    "yaw": 4.2,
+    "originalSamples": 0,
+    "retainedNonHaloSamples": 0,
+    "oldHaloSamplesRemovedOnRight": 0,
+    "arcs": [
+      {
+        "event": 1,
+        "ageTicks": 4,
+        "lifeTicks": 6,
+        "alpha": 0.3,
+        "points": [
+          [
+            0.8683742115574409,
+            3.367016887514919,
+            -0.35401261966684683
+          ],
+          [
+            0.7914993361095096,
+            3.4325018488589434,
+            -0.7051003669831886
+          ],
+          [
+            0.9107294081464649,
+            3.6257332287514092,
+            -0.4559723186220265
+          ],
+          [
+            0.9259093228073116,
+            3.7352587130026715,
+            -0.2916614453802898
+          ]
+        ],
+        "bulgeBlocks": 0.17313708498984762,
+        "rgb": [
+          231,
+          118,
+          219
+        ],
+        "lineWidthBlocks": 0.027
+      }
+    ]
+  },
+  {
+    "frame": 15,
+    "scene": "idle",
+    "globalTick": 30,
+    "yaw": 4.5,
+    "originalSamples": 0,
+    "retainedNonHaloSamples": 0,
+    "oldHaloSamplesRemovedOnRight": 0,
+    "arcs": []
+  },
+  {
+    "frame": 16,
+    "scene": "idle",
+    "globalTick": 32,
+    "yaw": 4.8,
+    "originalSamples": 0,
+    "retainedNonHaloSamples": 0,
+    "oldHaloSamplesRemovedOnRight": 0,
+    "arcs": []
+  },
+  {
+    "frame": 17,
+    "scene": "idle",
+    "globalTick": 34,
+    "yaw": 5.1,
+    "originalSamples": 0,
+    "retainedNonHaloSamples": 0,
+    "oldHaloSamplesRemovedOnRight": 0,
+    "arcs": []
+  },
+  {
+    "frame": 18,
+    "scene": "idle",
+    "globalTick": 36,
+    "yaw": 5.3999999999999995,
+    "originalSamples": 0,
+    "retainedNonHaloSamples": 0,
+    "oldHaloSamplesRemovedOnRight": 0,
+    "arcs": []
+  },
+  {
+    "frame": 19,
+    "scene": "idle",
+    "globalTick": 38,
+    "yaw": 5.7,
+    "originalSamples": 0,
+    "retainedNonHaloSamples": 0,
+    "oldHaloSamplesRemovedOnRight": 0,
+    "arcs": []
+  },
+  {
+    "frame": 20,
+    "scene": "idle",
+    "globalTick": 40,
+    "yaw": 6.0,
+    "originalSamples": 0,
+    "retainedNonHaloSamples": 0,
+    "oldHaloSamplesRemovedOnRight": 0,
+    "arcs": []
+  },
+  {
+    "frame": 21,
+    "scene": "idle",
+    "globalTick": 42,
+    "yaw": 6.3,
+    "originalSamples": 0,
+    "retainedNonHaloSamples": 0,
+    "oldHaloSamplesRemovedOnRight": 0,
+    "arcs": [
+      {
+        "event": 2,
+        "ageTicks": 0,
+        "lifeTicks": 6,
+        "alpha": 0.72,
+        "points": [
+          [
+            1.3927521162041239,
+            3.4892638815321133,
+            0.7883584895002734
+          ],
+          [
+            1.6148445557521818,
+            3.6695446511033745,
+            0.7388298499418674
+          ],
+          [
+            1.384697427777729,
+            3.716634806907696,
+            0.9520236807407609
+          ],
+          [
+            1.2308782447110334,
+            3.7594961100335533,
+            0.9970961056766207
+          ]
+        ],
+        "bulgeBlocks": 0.10141104721640332,
+        "rgb": [
+          231,
+          118,
+          219
+        ],
+        "lineWidthBlocks": 0.027
+      }
+    ]
+  },
+  {
+    "frame": 22,
+    "scene": "idle",
+    "globalTick": 44,
+    "yaw": 6.6,
+    "originalSamples": 0,
+    "retainedNonHaloSamples": 0,
+    "oldHaloSamplesRemovedOnRight": 0,
+    "arcs": [
+      {
+        "event": 2,
+        "ageTicks": 2,
+        "lifeTicks": 6,
+        "alpha": 0.96,
+        "points": [
+          [
+            1.394249713200512,
+            3.4892638815321133,
+            0.7836801189625788
+          ],
+          [
+            1.7070804379438986,
+            3.703881720293317,
+            0.7982472063808315
+          ],
+          [
+            1.4133129826303912,
+            3.7254663836240676,
+            0.9888474917621863
+          ],
+          [
+            1.2334710032429563,
+            3.7594961100335533,
+            0.9932624395517206
+          ]
+        ],
+        "bulgeBlocks": 0.21454813220625094,
+        "rgb": [
+          231,
+          118,
+          219
+        ],
+        "lineWidthBlocks": 0.027
+      }
+    ]
+  },
+  {
+    "frame": 23,
+    "scene": "idle",
+    "globalTick": 46,
+    "yaw": 6.8999999999999995,
+    "originalSamples": 0,
+    "retainedNonHaloSamples": 0,
+    "oldHaloSamplesRemovedOnRight": 0,
+    "arcs": [
+      {
+        "event": 2,
+        "ageTicks": 4,
+        "lifeTicks": 6,
+        "alpha": 0.3,
+        "points": [
+          [
+            1.3957227938892856,
+            3.4892638815321133,
+            0.778993971191123
+          ],
+          [
+            1.6889975345994348,
+            3.699323469245405,
+            0.7213265711791295
+          ],
+          [
+            1.4199737576614306,
+            3.730243790757515,
+            0.9220480246735776
+          ],
+          [
+            1.2360436532968146,
+            3.7594961100335533,
+            0.9894152503878704
+          ]
+        ],
+        "bulgeBlocks": 0.17313708498984762,
+        "rgb": [
+          231,
+          118,
+          219
+        ],
+        "lineWidthBlocks": 0.027
+      }
+    ]
+  },
+  {
+    "frame": 24,
+    "scene": "idle",
+    "globalTick": 48,
+    "yaw": 7.199999999999999,
+    "originalSamples": 0,
+    "retainedNonHaloSamples": 0,
+    "oldHaloSamplesRemovedOnRight": 0,
+    "arcs": []
+  },
+  {
+    "frame": 25,
+    "scene": "idle",
+    "globalTick": 50,
+    "yaw": 7.5,
+    "originalSamples": 0,
+    "retainedNonHaloSamples": 0,
+    "oldHaloSamplesRemovedOnRight": 0,
+    "arcs": []
+  },
+  {
+    "frame": 26,
+    "scene": "idle",
+    "globalTick": 52,
+    "yaw": 7.8,
+    "originalSamples": 0,
+    "retainedNonHaloSamples": 0,
+    "oldHaloSamplesRemovedOnRight": 0,
+    "arcs": []
+  },
+  {
+    "frame": 27,
+    "scene": "idle",
+    "globalTick": 54,
+    "yaw": 8.1,
+    "originalSamples": 0,
+    "retainedNonHaloSamples": 0,
+    "oldHaloSamplesRemovedOnRight": 0,
+    "arcs": []
+  },
+  {
+    "frame": 28,
+    "scene": "idle",
+    "globalTick": 56,
+    "yaw": 8.4,
+    "originalSamples": 0,
+    "retainedNonHaloSamples": 0,
+    "oldHaloSamplesRemovedOnRight": 0,
+    "arcs": []
+  },
+  {
+    "frame": 29,
+    "scene": "idle",
+    "globalTick": 58,
+    "yaw": 8.7,
+    "originalSamples": 0,
+    "retainedNonHaloSamples": 0,
+    "oldHaloSamplesRemovedOnRight": 0,
+    "arcs": []
+  },
+  {
+    "frame": 30,
+    "scene": "idle",
+    "globalTick": 60,
+    "yaw": 9.0,
+    "originalSamples": 0,
+    "retainedNonHaloSamples": 0,
+    "oldHaloSamplesRemovedOnRight": 0,
+    "arcs": [
+      {
+        "event": 3,
+        "ageTicks": 0,
+        "lifeTicks": 6,
+        "alpha": 0.72,
+        "points": [
+          [
+            0.34233942980801013,
+            3.0957670831184614,
+            1.3599915562913902
+          ],
+          [
+            0.3782674729028307,
+            3.1791903332394407,
+            1.6357251791536553
+          ],
+          [
+            0.1214075230319201,
+            3.2371051048885793,
+            1.458791185369496
+          ],
+          [
+            0.03788663335485837,
+            3.3188081584379323,
+            1.340986992308236
+          ]
+        ],
+        "bulgeBlocks": 0.10141104721640332,
+        "rgb": [
+          231,
+          118,
+          219
+        ],
+        "lineWidthBlocks": 0.027
+      }
+    ]
+  },
+  {
+    "frame": 31,
+    "scene": "idle",
+    "globalTick": 62,
+    "yaw": 9.299999999999999,
+    "originalSamples": 0,
+    "retainedNonHaloSamples": 0,
+    "oldHaloSamplesRemovedOnRight": 0,
+    "arcs": [
+      {
+        "event": 3,
+        "ageTicks": 2,
+        "lifeTicks": 6,
+        "alpha": 0.96,
+        "points": [
+          [
+            0.34684447566416476,
+            3.0957670831184614,
+            1.3608052727830877
+          ],
+          [
+            0.3300761566097746,
+            3.1503800902303363,
+            1.736134890618055
+          ],
+          [
+            0.08985837279033326,
+            3.2201882683449163,
+            1.4901350554857342
+          ],
+          [
+            0.0422963453649694,
+            3.3188081584379323,
+            1.3433950731403976
+          ]
+        ],
+        "bulgeBlocks": 0.21454813220625094,
+        "rgb": [
+          231,
+          118,
+          219
+        ],
+        "lineWidthBlocks": 0.027
+      }
+    ]
+  },
+  {
+    "frame": 32,
+    "scene": "idle",
+    "globalTick": 64,
+    "yaw": 9.6,
+    "originalSamples": 0,
+    "retainedNonHaloSamples": 0,
+    "oldHaloSamplesRemovedOnRight": 0,
+    "arcs": [
+      {
+        "event": 3,
+        "ageTicks": 4,
+        "lifeTicks": 6,
+        "alpha": 0.3,
+        "points": [
+          [
+            0.3513537203563851,
+            3.0957670831184614,
+            1.3615953898633995
+          ],
+          [
+            0.4005558024703597,
+            3.178102846976243,
+            1.7141015742894772
+          ],
+          [
+            0.1527590399078147,
+            3.243557736186937,
+            1.4951692041948226
+          ],
+          [
+            0.04671860555197954,
+            3.3188081584379323,
+            1.3457800318705913
+          ]
+        ],
+        "bulgeBlocks": 0.17313708498984762,
+        "rgb": [
+          231,
+          118,
+          219
+        ],
+        "lineWidthBlocks": 0.027
+      }
+    ]
+  },
+  {
+    "frame": 33,
+    "scene": "idle",
+    "globalTick": 66,
+    "yaw": 9.9,
+    "originalSamples": 0,
+    "retainedNonHaloSamples": 0,
+    "oldHaloSamplesRemovedOnRight": 0,
+    "arcs": []
+  },
+  {
+    "frame": 34,
+    "scene": "idle",
+    "globalTick": 68,
+    "yaw": 10.2,
+    "originalSamples": 0,
+    "retainedNonHaloSamples": 0,
+    "oldHaloSamplesRemovedOnRight": 0,
+    "arcs": []
+  },
+  {
+    "frame": 35,
+    "scene": "idle",
+    "globalTick": 70,
+    "yaw": 10.5,
+    "originalSamples": 0,
+    "retainedNonHaloSamples": 0,
+    "oldHaloSamplesRemovedOnRight": 0,
+    "arcs": []
+  },
+  {
+    "frame": 36,
+    "scene": "idle",
+    "globalTick": 72,
+    "yaw": 10.799999999999999,
+    "originalSamples": 0,
+    "retainedNonHaloSamples": 0,
+    "oldHaloSamplesRemovedOnRight": 0,
+    "arcs": []
+  },
+  {
+    "frame": 37,
+    "scene": "idle",
+    "globalTick": 74,
+    "yaw": 11.1,
+    "originalSamples": 0,
+    "retainedNonHaloSamples": 0,
+    "oldHaloSamplesRemovedOnRight": 0,
+    "arcs": []
+  },
+  {
+    "frame": 38,
+    "scene": "idle",
+    "globalTick": 76,
+    "yaw": 11.4,
+    "originalSamples": 0,
+    "retainedNonHaloSamples": 0,
+    "oldHaloSamplesRemovedOnRight": 0,
+    "arcs": []
+  },
+  {
+    "frame": 39,
+    "scene": "idle",
+    "globalTick": 78,
+    "yaw": 11.7,
+    "originalSamples": 0,
+    "retainedNonHaloSamples": 0,
+    "oldHaloSamplesRemovedOnRight": 0,
+    "arcs": [
+      {
+        "event": 4,
+        "ageTicks": 0,
+        "lifeTicks": 6,
+        "alpha": 0.72,
+        "points": [
+          [
+            0.19111662608304653,
+            3.106614860754945,
+            -0.3336763289117902
+          ],
+          [
+            -0.05766733663529222,
+            3.1048643490952164,
+            -0.48328504965095664
+          ],
+          [
+            0.15327445098356296,
+            3.3417959797278454,
+            -0.4813466427801333
+          ],
+          [
+            0.2268762053634536,
+            3.4742041580706085,
+            -0.41367233499125156
+          ]
+        ],
+        "bulgeBlocks": 0.10141104721640332,
+        "rgb": [
+          231,
+          118,
+          219
+        ],
+        "lineWidthBlocks": 0.027
+      }
+    ]
+  },
+  {
+    "frame": 40,
+    "scene": "jar-emission-and-intake",
+    "globalTick": 80,
+    "yaw": 0.0,
+    "originalSamples": 7,
+    "retainedNonHaloSamples": 6,
+    "oldHaloSamplesRemovedOnRight": 1,
+    "arcs": []
+  },
+  {
+    "frame": 41,
+    "scene": "jar-emission-and-intake",
+    "globalTick": 82,
+    "yaw": 9.0,
+    "originalSamples": 13,
+    "retainedNonHaloSamples": 12,
+    "oldHaloSamplesRemovedOnRight": 1,
+    "arcs": []
+  },
+  {
+    "frame": 42,
+    "scene": "jar-emission-and-intake",
+    "globalTick": 84,
+    "yaw": 18.0,
+    "originalSamples": 19,
+    "retainedNonHaloSamples": 18,
+    "oldHaloSamplesRemovedOnRight": 1,
+    "arcs": [
+      {
+        "event": 7,
+        "ageTicks": 1,
+        "lifeTicks": 6,
+        "alpha": 0.98,
+        "points": [
+          [
+            0.6722279202946915,
+            3.3208229108893543,
+            -0.4231432890028125
+          ],
+          [
+            0.5700183139080324,
+            3.407333261434846,
+            -0.7370790955773925
+          ],
+          [
+            0.7452320988146067,
+            3.600564641327312,
+            -0.5235826690572005
+          ],
+          [
+            0.7429750803145128,
+            3.689064736377107,
+            -0.37631597527911675
+          ]
+        ],
+        "bulgeBlocks": 0.17313708498984762,
+        "rgb": [
+          231,
+          118,
+          219
+        ],
+        "lineWidthBlocks": 0.027
+      }
+    ]
+  },
+  {
+    "frame": 43,
+    "scene": "jar-emission-and-intake",
+    "globalTick": 86,
+    "yaw": 27.0,
+    "originalSamples": 22,
+    "retainedNonHaloSamples": 21,
+    "oldHaloSamplesRemovedOnRight": 1,
+    "arcs": [
+      {
+        "event": 7,
+        "ageTicks": 3,
+        "lifeTicks": 6,
+        "alpha": 0.65,
+        "points": [
+          [
+            0.5256960822293814,
+            3.3208229108893543,
+            -0.4387202458230173
+          ],
+          [
+            0.34457301535550855,
+            3.4035179343785518,
+            -0.7734744030597347
+          ],
+          [
+            0.5527387661927303,
+            3.5923960253671323,
+            -0.5635082838813905
+          ],
+          [
+            0.6028976330828146,
+            3.689064736377107,
+            -0.4035367481675485
+          ]
+        ],
+        "bulgeBlocks": 0.21454813220625094,
+        "rgb": [
+          231,
+          118,
+          219
+        ],
+        "lineWidthBlocks": 0.027
+      }
+    ]
+  },
+  {
+    "frame": 44,
+    "scene": "jar-emission-and-intake",
+    "globalTick": 88,
+    "yaw": 36.0,
+    "originalSamples": 22,
+    "retainedNonHaloSamples": 21,
+    "oldHaloSamplesRemovedOnRight": 1,
+    "arcs": [
+      {
+        "event": 7,
+        "ageTicks": 5,
+        "lifeTicks": 6,
+        "alpha": 0.06,
+        "points": [
+          [
+            0.3785315213391761,
+            3.3208229108893543,
+            -0.4311827947571787
+          ],
+          [
+            0.14374111799360723,
+            3.3747076913694474,
+            -0.6200080833300956
+          ],
+          [
+            0.3662440893205241,
+            3.575479188823469,
+            -0.515988727727233
+          ],
+          [
+            0.4602865046269522,
+            3.689064736377107,
+            -0.4085094476495489
+          ]
+        ],
+        "bulgeBlocks": 0.10141104721640337,
+        "rgb": [
+          231,
+          118,
+          219
+        ],
+        "lineWidthBlocks": 0.027
+      }
+    ]
+  },
+  {
+    "frame": 45,
+    "scene": "jar-emission-and-intake",
+    "globalTick": 90,
+    "yaw": 45.0,
+    "originalSamples": 22,
+    "retainedNonHaloSamples": 21,
+    "oldHaloSamplesRemovedOnRight": 1,
+    "arcs": []
+  },
+  {
+    "frame": 46,
+    "scene": "jar-emission-and-intake",
+    "globalTick": 92,
+    "yaw": 54.0,
+    "originalSamples": 22,
+    "retainedNonHaloSamples": 21,
+    "oldHaloSamplesRemovedOnRight": 1,
+    "arcs": []
+  },
+  {
+    "frame": 47,
+    "scene": "jar-emission-and-intake",
+    "globalTick": 94,
+    "yaw": 63.0,
+    "originalSamples": 19,
+    "retainedNonHaloSamples": 18,
+    "oldHaloSamplesRemovedOnRight": 1,
+    "arcs": [
+      {
+        "event": 8,
+        "ageTicks": 0,
+        "lifeTicks": 6,
+        "alpha": 0.72,
+        "points": [
+          [
+            1.218123332646937,
+            3.5585548464704595,
+            -0.06228039248117645
+          ],
+          [
+            1.2986607481222199,
+            3.738835616041721,
+            -0.27509924162165045
+          ],
+          [
+            1.3504936965475258,
+            3.785925771846043,
+            0.034307699902187794
+          ],
+          [
+            1.3037153197541884,
+            3.8287870749718995,
+            0.18761669518128055
+          ]
+        ],
+        "bulgeBlocks": 0.10141104721640332,
+        "rgb": [
+          231,
+          118,
+          219
+        ],
+        "lineWidthBlocks": 0.027
+      }
+    ]
+  },
+  {
+    "frame": 48,
+    "scene": "jar-emission-and-intake",
+    "globalTick": 96,
+    "yaw": 72.0,
+    "originalSamples": 13,
+    "retainedNonHaloSamples": 12,
+    "oldHaloSamplesRemovedOnRight": 1,
+    "arcs": [
+      {
+        "event": 8,
+        "ageTicks": 2,
+        "lifeTicks": 6,
+        "alpha": 0.96,
+        "points": [
+          [
+            1.1213220103642993,
+            3.5585548464704595,
+            -0.16769702717444723
+          ],
+          [
+            1.2647923541881922,
+            3.7731726852316636,
+            -0.44607001943910196
+          ],
+          [
+            1.3158032670133673,
+            3.794757348562414,
+            -0.09962280360158082
+          ],
+          [
+            1.2449527353020893,
+            3.8287870749718995,
+            0.06573387594358926
+          ]
+        ],
+        "bulgeBlocks": 0.21454813220625094,
+        "rgb": [
+          231,
+          118,
+          219
+        ],
+        "lineWidthBlocks": 0.027
+      }
+    ]
+  },
+  {
+    "frame": 49,
+    "scene": "jar-emission-and-intake",
+    "globalTick": 98,
+    "yaw": 81.0,
+    "originalSamples": 7,
+    "retainedNonHaloSamples": 6,
+    "oldHaloSamplesRemovedOnRight": 1,
+    "arcs": [
+      {
+        "event": 8,
+        "ageTicks": 4,
+        "lifeTicks": 6,
+        "alpha": 0.3,
+        "points": [
+          [
+            1.0092216781369627,
+            3.5585548464704595,
+            -0.2566727450992964
+          ],
+          [
+            1.034105876158308,
+            3.7686144341837515,
+            -0.5545256941388905
+          ],
+          [
+            1.1534464459570568,
+            3.799534755695862,
+            -0.24080492203251058
+          ],
+          [
+            1.1678469421504702,
+            3.8287870749718995,
+            -0.04545587007319751
+          ]
+        ],
+        "bulgeBlocks": 0.17313708498984762,
+        "rgb": [
+          231,
+          118,
+          219
+        ],
+        "lineWidthBlocks": 0.027
+      }
+    ]
+  },
+  {
+    "frame": 50,
+    "scene": "jar-emission-and-intake",
+    "globalTick": 100,
+    "yaw": 90.0,
+    "originalSamples": 4,
+    "retainedNonHaloSamples": 3,
+    "oldHaloSamplesRemovedOnRight": 1,
+    "arcs": []
+  },
+  {
+    "frame": 51,
+    "scene": "jar-emission-and-intake",
+    "globalTick": 102,
+    "yaw": 99.0,
+    "originalSamples": 4,
+    "retainedNonHaloSamples": 3,
+    "oldHaloSamplesRemovedOnRight": 1,
+    "arcs": []
+  },
+  {
+    "frame": 52,
+    "scene": "jar-emission-and-intake",
+    "globalTick": 104,
+    "yaw": 108.0,
+    "originalSamples": 4,
+    "retainedNonHaloSamples": 3,
+    "oldHaloSamplesRemovedOnRight": 1,
+    "arcs": []
+  },
+  {
+    "frame": 53,
+    "scene": "core-to-item-injection",
+    "globalTick": 106,
+    "yaw": 0.0,
+    "originalSamples": 18,
+    "retainedNonHaloSamples": 16,
+    "oldHaloSamplesRemovedOnRight": 2,
+    "arcs": [
+      {
+        "event": 9,
+        "ageTicks": 1,
+        "lifeTicks": 6,
+        "alpha": 0.98,
+        "points": [
+          [
+            0.22888234562048554,
+            3.049573106492897,
+            1.3247400862033516
+          ],
+          [
+            0.16784860924971473,
+            3.1108834811492114,
+            1.6548952861063324
+          ],
+          [
+            -0.03996693965958409,
+            3.1763383703599053,
+            1.3977040812736865
+          ],
+          [
+            -0.06884916289784959,
+            3.2726141818123677,
+            1.2583425895959448
+          ]
+        ],
+        "bulgeBlocks": 0.17313708498984762,
+        "rgb": [
+          231,
+          118,
+          219
+        ],
+        "lineWidthBlocks": 0.027
+      }
+    ]
+  },
+  {
+    "frame": 54,
+    "scene": "core-to-item-injection",
+    "globalTick": 108,
+    "yaw": 9.0,
+    "originalSamples": 19,
+    "retainedNonHaloSamples": 17,
+    "oldHaloSamplesRemovedOnRight": 2,
+    "arcs": [
+      {
+        "event": 9,
+        "ageTicks": 3,
+        "lifeTicks": 6,
+        "alpha": 0.65,
+        "points": [
+          [
+            0.3612380280223065,
+            3.049573106492897,
+            1.3569983123903007
+          ],
+          [
+            0.369576063214509,
+            3.114698808205506,
+            1.740916921207997
+          ],
+          [
+            0.1306496184803,
+            3.1845069863200854,
+            1.493662686552807
+          ],
+          [
+            0.05678523156915466,
+            3.2726141818123677,
+            1.3379937484071465
+          ]
+        ],
+        "bulgeBlocks": 0.21454813220625094,
+        "rgb": [
+          231,
+          118,
+          219
+        ],
+        "lineWidthBlocks": 0.027
+      }
+    ]
+  },
+  {
+    "frame": 55,
+    "scene": "core-to-item-injection",
+    "globalTick": 110,
+    "yaw": 18.0,
+    "originalSamples": 21,
+    "retainedNonHaloSamples": 19,
+    "oldHaloSamplesRemovedOnRight": 2,
+    "arcs": [
+      {
+        "event": 9,
+        "ageTicks": 5,
+        "lifeTicks": 6,
+        "alpha": 0.06,
+        "points": [
+          [
+            0.4970104906988002,
+            3.049573106492897,
+            1.3681543959118674
+          ],
+          [
+            0.6037266391027437,
+            3.1435090512146098,
+            1.6392130512510301
+          ],
+          [
+            0.32235048678433725,
+            3.201423822863749,
+            1.5046391573837994
+          ],
+          [
+            0.19333304458040995,
+            3.2726141818123677,
+            1.3970107199907629
+          ]
+        ],
+        "bulgeBlocks": 0.10141104721640337,
+        "rgb": [
+          231,
+          118,
+          219
+        ],
+        "lineWidthBlocks": 0.027
+      }
+    ]
+  },
+  {
+    "frame": 56,
+    "scene": "core-to-item-injection",
+    "globalTick": 112,
+    "yaw": 27.0,
+    "originalSamples": 22,
+    "retainedNonHaloSamples": 20,
+    "oldHaloSamplesRemovedOnRight": 2,
+    "arcs": []
+  },
+  {
+    "frame": 57,
+    "scene": "core-to-item-injection",
+    "globalTick": 114,
+    "yaw": 36.0,
+    "originalSamples": 22,
+    "retainedNonHaloSamples": 20,
+    "oldHaloSamplesRemovedOnRight": 2,
+    "arcs": []
+  },
+  {
+    "frame": 58,
+    "scene": "core-to-item-injection",
+    "globalTick": 116,
+    "yaw": 45.0,
+    "originalSamples": 22,
+    "retainedNonHaloSamples": 20,
+    "oldHaloSamplesRemovedOnRight": 2,
+    "arcs": [
+      {
+        "event": 10,
+        "ageTicks": 0,
+        "lifeTicks": 6,
+        "alpha": 0.72,
+        "points": [
+          [
+            -0.20234442261789132,
+            3.060420884129381,
+            -0.04073869482594816
+          ],
+          [
+            -0.49241849150556094,
+            3.0586703724696522,
+            -0.02919469266026864
+          ],
+          [
+            -0.31504756299089287,
+            3.2956020031022812,
+            -0.143386412600375
+          ],
+          [
+            -0.21637593570223623,
+            3.428010181445044,
+            -0.12723277057417948
+          ]
+        ],
+        "bulgeBlocks": 0.10141104721640332,
+        "rgb": [
+          231,
+          118,
+          219
+        ],
+        "lineWidthBlocks": 0.027
+      }
+    ]
+  },
+  {
+    "frame": 59,
+    "scene": "core-to-item-injection",
+    "globalTick": 118,
+    "yaw": 54.0,
+    "originalSamples": 22,
+    "retainedNonHaloSamples": 20,
+    "oldHaloSamplesRemovedOnRight": 2,
+    "arcs": [
+      {
+        "event": 10,
+        "ageTicks": 2,
+        "lifeTicks": 6,
+        "alpha": 0.96,
+        "points": [
+          [
+            -0.2782875657533649,
+            3.060420884129381,
+            0.07578956983799834
+          ],
+          [
+            -0.6577444013146152,
+            3.0586688564034397,
+            0.06372642602954004
+          ],
+          [
+            -0.43261765278350905,
+            3.3028842236444267,
+            -0.04928014802299541
+          ],
+          [
+            -0.3056769820965044,
+            3.428010181445044,
+            -0.00744460806602798
+          ]
+        ],
+        "bulgeBlocks": 0.21454813220625094,
+        "rgb": [
+          231,
+          118,
+          219
+        ],
+        "lineWidthBlocks": 0.027
+      }
+    ]
+  },
+  {
+    "frame": 60,
+    "scene": "core-to-item-injection",
+    "globalTick": 120,
+    "yaw": 63.0,
+    "originalSamples": 22,
+    "retainedNonHaloSamples": 20,
+    "oldHaloSamplesRemovedOnRight": 2,
+    "arcs": [
+      {
+        "event": 10,
+        "ageTicks": 4,
+        "lifeTicks": 6,
+        "alpha": 0.3,
+        "points": [
+          [
+            -0.335066686031649,
+            3.060420884129381,
+            0.20276330316623414
+          ],
+          [
+            -0.6821835395411673,
+            3.0403619799457373,
+            0.31487112325756245
+          ],
+          [
+            -0.5035948192523747,
+            3.2819113145535908,
+            0.1619693617587492
+          ],
+          [
+            -0.3751395873029536,
+            3.428010181445044,
+            0.12483852480480917
+          ]
+        ],
+        "bulgeBlocks": 0.17313708498984762,
+        "rgb": [
+          231,
+          118,
+          219
+        ],
+        "lineWidthBlocks": 0.027
+      }
+    ]
+  },
+  {
+    "frame": 61,
+    "scene": "core-to-item-injection",
+    "globalTick": 122,
+    "yaw": 72.0,
+    "originalSamples": 20,
+    "retainedNonHaloSamples": 18,
+    "oldHaloSamplesRemovedOnRight": 2,
+    "arcs": []
+  },
+  {
+    "frame": 62,
+    "scene": "core-to-item-injection",
+    "globalTick": 124,
+    "yaw": 81.0,
+    "originalSamples": 19,
+    "retainedNonHaloSamples": 17,
+    "oldHaloSamplesRemovedOnRight": 2,
+    "arcs": []
+  },
+  {
+    "frame": 63,
+    "scene": "completion",
+    "globalTick": 126,
+    "yaw": 0,
+    "originalSamples": 3,
+    "retainedNonHaloSamples": 3,
+    "oldHaloSamplesRemovedOnRight": 0,
+    "arcs": []
+  },
+  {
+    "frame": 64,
+    "scene": "completion",
+    "globalTick": 128,
+    "yaw": 0,
+    "originalSamples": 4,
+    "retainedNonHaloSamples": 4,
+    "oldHaloSamplesRemovedOnRight": 0,
+    "arcs": []
+  },
+  {
+    "frame": 65,
+    "scene": "completion",
+    "globalTick": 130,
+    "yaw": 0,
+    "originalSamples": 5,
+    "retainedNonHaloSamples": 5,
+    "oldHaloSamplesRemovedOnRight": 0,
+    "arcs": []
+  },
+  {
+    "frame": 66,
+    "scene": "completion",
+    "globalTick": 132,
+    "yaw": 0,
+    "originalSamples": 7,
+    "retainedNonHaloSamples": 7,
+    "oldHaloSamplesRemovedOnRight": 0,
+    "arcs": []
+  },
+  {
+    "frame": 67,
+    "scene": "completion",
+    "globalTick": 134,
+    "yaw": 0,
+    "originalSamples": 8,
+    "retainedNonHaloSamples": 8,
+    "oldHaloSamplesRemovedOnRight": 0,
+    "arcs": []
+  },
+  {
+    "frame": 68,
+    "scene": "completion",
+    "globalTick": 136,
+    "yaw": 0,
+    "originalSamples": 15,
+    "retainedNonHaloSamples": 15,
+    "oldHaloSamplesRemovedOnRight": 0,
+    "arcs": []
+  },
+  {
+    "frame": 69,
+    "scene": "completion",
+    "globalTick": 138,
+    "yaw": 0,
+    "originalSamples": 15,
+    "retainedNonHaloSamples": 15,
+    "oldHaloSamplesRemovedOnRight": 0,
+    "arcs": []
+  },
+  {
+    "frame": 70,
+    "scene": "completion",
+    "globalTick": 140,
+    "yaw": 0,
+    "originalSamples": 15,
+    "retainedNonHaloSamples": 15,
+    "oldHaloSamplesRemovedOnRight": 0,
+    "arcs": []
+  },
+  {
+    "frame": 71,
+    "scene": "completion",
+    "globalTick": 142,
+    "yaw": 0,
+    "originalSamples": 15,
+    "retainedNonHaloSamples": 15,
+    "oldHaloSamplesRemovedOnRight": 0,
+    "arcs": []
+  },
+  {
+    "frame": 72,
+    "scene": "completion",
+    "globalTick": 144,
+    "yaw": 0,
+    "originalSamples": 15,
+    "retainedNonHaloSamples": 15,
+    "oldHaloSamplesRemovedOnRight": 0,
+    "arcs": []
+  },
+  {
+    "frame": 73,
+    "scene": "completion",
+    "globalTick": 146,
+    "yaw": 0,
+    "originalSamples": 14,
+    "retainedNonHaloSamples": 14,
+    "oldHaloSamplesRemovedOnRight": 0,
+    "arcs": []
+  },
+  {
+    "frame": 74,
+    "scene": "completion",
+    "globalTick": 148,
+    "yaw": 0,
+    "originalSamples": 13,
+    "retainedNonHaloSamples": 13,
+    "oldHaloSamplesRemovedOnRight": 0,
+    "arcs": []
+  },
+  {
+    "frame": 75,
+    "scene": "completion",
+    "globalTick": 150,
+    "yaw": 0,
+    "originalSamples": 12,
+    "retainedNonHaloSamples": 12,
+    "oldHaloSamplesRemovedOnRight": 0,
+    "arcs": []
+  },
+  {
+    "frame": 76,
+    "scene": "completion",
+    "globalTick": 152,
+    "yaw": 0,
+    "originalSamples": 10,
+    "retainedNonHaloSamples": 10,
+    "oldHaloSamplesRemovedOnRight": 0,
+    "arcs": []
+  },
+  {
+    "frame": 77,
+    "scene": "completion",
+    "globalTick": 154,
+    "yaw": 0,
+    "originalSamples": 9,
+    "retainedNonHaloSamples": 9,
+    "oldHaloSamplesRemovedOnRight": 0,
+    "arcs": []
+  },
+  {
+    "frame": 78,
+    "scene": "completion",
+    "globalTick": 156,
+    "yaw": 0,
+    "originalSamples": 1,
+    "retainedNonHaloSamples": 1,
+    "oldHaloSamplesRemovedOnRight": 0,
+    "arcs": []
+  },
+  {
+    "frame": 79,
+    "scene": "completion",
+    "globalTick": 158,
+    "yaw": 0,
+    "originalSamples": 0,
+    "retainedNonHaloSamples": 0,
+    "oldHaloSamplesRemovedOnRight": 0,
+    "arcs": []
+  },
+  {
+    "frame": 80,
+    "scene": "completion",
+    "globalTick": 160,
+    "yaw": 0,
+    "originalSamples": 0,
+    "retainedNonHaloSamples": 0,
+    "oldHaloSamplesRemovedOnRight": 0,
+    "arcs": []
+  }
+]
