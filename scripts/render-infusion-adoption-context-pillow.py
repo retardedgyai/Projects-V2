@@ -140,44 +140,45 @@ def effects(image,depth,samples,polished):
                     value=dep+(h/2-((row-top+.5)/nh)*h)*math.sin(el)
                     dz.line((0,row,size[0]-1,row),fill=value)
         image.alpha_composite(clip_layer(layer,ld,depth))
-chosen=[('Jar transfer / 0.55 inlet boundary','jar-emission-and-intake',16,.88),('Core to equipment / hierarchy','core-to-item-injection',16,.94),('Completion / wave and flecks','completion',14,.9)]
-sheet=Image.new('RGB',(1200,1490),'#16191e');d=ImageDraw.Draw(sheet)
-font=ImageFont.truetype(r'C:\Windows\Fonts\meiryo.ttc',16);small=ImageFont.truetype(r'C:\Windows\Fonts\meiryo.ttc',12)
-d.text((18,8),'ADOPTION CONTEXT / frozen native cuboid models and UV pixels',font=font,fill='#e7dece')
-d.text((18,34),'Left: approved circles   |   Right: thin purple core filaments; lower circle unchanged' if args.core_filament else 'Left: approved roles + original circles   |   Right: approved roles + polished circles',font=small,fill='#bcc0c9')
-for row,(label,scene,tick,glow) in enumerate(chosen):
-    f=next(frame for frame in trace['frames'] if frame['scene']==scene and frame['tick']==tick)
-    image,depth=assembly(0 if scene=='completion' else tick*4.5,glow)
-    y0=64+row*470;d.text((18,y0),f'{label} / staged clip +{tick/20:.2f}s / {f["count"]} samples per side',font=font,fill='#d9d4c9')
-    for col,polished in enumerate((False,True)):
-        layer=image.copy();effects(layer,depth,f['samples'],polished);sheet.paste(layer.convert('RGB'),(600*col,y0+32))
-    print(f'CONTEXT_RENDER scene={scene} native models same samples',flush=True)
-d.text((18,1472),'Offline lighting/depth approximation; staged layout and no equipped-item entity; not Minecraft or the user save.',font=small,fill='#a3a8b0')
-target=out/('core-filament-context-radius055.png' if args.core_filament else 'adoption-context-radius055.png');sheet.save(target,optimize=True)
-report={'nativePackSha1':hashlib.sha1((snapshot/'adoption-pack.zip').read_bytes()).hexdigest(),'roleTraceSha256':hashlib.sha256((repo/'.tools/infusion-particle-role-study/role-trace-radius055.json').read_bytes()).hexdigest(),'contextFrames':3,'samplesPerSideIdentical':True,'coreGeometryUVSupportOrientationUnchanged':True,'cameraDegrees':[38,26],'coreYawAndTintMatchTraceExporter':True,'coreNeutralTint':[.88,.94,.9],'exactSourceFiles':provenance,'outputBytes':target.stat().st_size,'limitations':['Offline directional light and alpha/depth approximation','Staged layout, not user world layout','Equipped item entity omitted','No human or native test in this run']}
-(out/'context-verification.json').write_text(json.dumps(report,indent=2),encoding='utf-8')
-print('CONTEXT_PREVIEW_PASS '+json.dumps({k:v for k,v in report.items() if k!='exactSourceFiles'}))
-if args.animated:
-    images=[];cached={}
-    names={'jar-emission-and-intake':'Jar intake / distance 0.55','core-to-item-injection':'Core injection / same small motions','completion':'Completion / approved lower circle'}
-    for index,f in enumerate(trace['frames']):
-        scene=f['scene'];yaw=0 if scene=='completion' else f['tick']*4.5
-        glow=.88 if scene=='jar-emission-and-intake' else .94 if scene=='core-to-item-injection' else .9
-        key=(yaw,glow)
-        if key not in cached:cached[key]=assembly(yaw,glow)
-        image,depth=cached[key]
-        frame=Image.new('RGB',(1200,520),'#16191e');fd=ImageDraw.Draw(frame)
-        fd.text((18,8),names[scene]+f' / staged +{f["tick"]/20:.2f}s / {f["count"]} samples each side',font=font,fill='#e7dece')
-        fd.text((18,36),'APPROVED core circle',font=small,fill='#bbc0c9');fd.text((618,36),'PROPOSED thin core filaments / lower circle retained',font=small,fill='#bbc0c9')
+if __name__=='__main__':
+    chosen=[('Jar transfer / 0.55 inlet boundary','jar-emission-and-intake',16,.88),('Core to equipment / hierarchy','core-to-item-injection',16,.94),('Completion / wave and flecks','completion',14,.9)]
+    sheet=Image.new('RGB',(1200,1490),'#16191e');d=ImageDraw.Draw(sheet)
+    font=ImageFont.truetype(r'C:\Windows\Fonts\meiryo.ttc',16);small=ImageFont.truetype(r'C:\Windows\Fonts\meiryo.ttc',12)
+    d.text((18,8),'ADOPTION CONTEXT / frozen native cuboid models and UV pixels',font=font,fill='#e7dece')
+    d.text((18,34),'Left: approved circles   |   Right: thin purple core filaments; lower circle unchanged' if args.core_filament else 'Left: approved roles + original circles   |   Right: approved roles + polished circles',font=small,fill='#bcc0c9')
+    for row,(label,scene,tick,glow) in enumerate(chosen):
+        f=next(frame for frame in trace['frames'] if frame['scene']==scene and frame['tick']==tick)
+        image,depth=assembly(0 if scene=='completion' else tick*4.5,glow)
+        y0=64+row*470;d.text((18,y0),f'{label} / staged clip +{tick/20:.2f}s / {f["count"]} samples per side',font=font,fill='#d9d4c9')
         for col,polished in enumerate((False,True)):
-            layer=image.copy();effects(layer,depth,f['samples'],polished);frame.paste(layer.convert('RGB'),(600*col,64))
-        fd.text((18,498),'Offline native-model staged sampler clips. Lighting/depth approximated; no item entity or human/native test.',font=small,fill='#a3a8b0')
-        images.append(frame)
-        if index%10==0:print(f'FILAMENT_ANIMATION frame={index}',flush=True)
-    palette=sheet.quantize(colors=256)
-    indexed=[im.quantize(palette=palette,dither=Image.Dither.NONE) for im in images]
-    gif=out/'current-vs-core-filaments-radius055.gif'
-    indexed[0].save(gif,save_all=True,append_images=indexed[1:],duration=100,loop=0,disposal=2,optimize=True)
-    record={'frames':len(images),'gifBytes':gif.stat().st_size,'gifSha256':hashlib.sha256(gif.read_bytes()).hexdigest(),'replacementOnly':'right-side infusion-radiance/halo pixels','allTraceSampleFieldsIdentical':True,'approvedWaveBytes':hashlib.sha256(pack.read('assets/projects/textures/infusion-radiance/wave.png')).hexdigest(),'nativeNotApplied':True}
-    (out/'filament-animation-verification.json').write_text(json.dumps(record,indent=2),encoding='utf-8')
-    print('FILAMENT_PREVIEW_PASS '+json.dumps(record))
+            layer=image.copy();effects(layer,depth,f['samples'],polished);sheet.paste(layer.convert('RGB'),(600*col,y0+32))
+        print(f'CONTEXT_RENDER scene={scene} native models same samples',flush=True)
+    d.text((18,1472),'Offline lighting/depth approximation; staged layout and no equipped-item entity; not Minecraft or the user save.',font=small,fill='#a3a8b0')
+    target=out/('core-filament-context-radius055.png' if args.core_filament else 'adoption-context-radius055.png');sheet.save(target,optimize=True)
+    report={'nativePackSha1':hashlib.sha1((snapshot/'adoption-pack.zip').read_bytes()).hexdigest(),'roleTraceSha256':hashlib.sha256((repo/'.tools/infusion-particle-role-study/role-trace-radius055.json').read_bytes()).hexdigest(),'contextFrames':3,'samplesPerSideIdentical':True,'coreGeometryUVSupportOrientationUnchanged':True,'cameraDegrees':[38,26],'coreYawAndTintMatchTraceExporter':True,'coreNeutralTint':[.88,.94,.9],'exactSourceFiles':provenance,'outputBytes':target.stat().st_size,'limitations':['Offline directional light and alpha/depth approximation','Staged layout, not user world layout','Equipped item entity omitted','No human or native test in this run']}
+    (out/'context-verification.json').write_text(json.dumps(report,indent=2),encoding='utf-8')
+    print('CONTEXT_PREVIEW_PASS '+json.dumps({k:v for k,v in report.items() if k!='exactSourceFiles'}))
+    if args.animated:
+        images=[];cached={}
+        names={'jar-emission-and-intake':'Jar intake / distance 0.55','core-to-item-injection':'Core injection / same small motions','completion':'Completion / approved lower circle'}
+        for index,f in enumerate(trace['frames']):
+            scene=f['scene'];yaw=0 if scene=='completion' else f['tick']*4.5
+            glow=.88 if scene=='jar-emission-and-intake' else .94 if scene=='core-to-item-injection' else .9
+            key=(yaw,glow)
+            if key not in cached:cached[key]=assembly(yaw,glow)
+            image,depth=cached[key]
+            frame=Image.new('RGB',(1200,520),'#16191e');fd=ImageDraw.Draw(frame)
+            fd.text((18,8),names[scene]+f' / staged +{f["tick"]/20:.2f}s / {f["count"]} samples each side',font=font,fill='#e7dece')
+            fd.text((18,36),'APPROVED core circle',font=small,fill='#bbc0c9');fd.text((618,36),'PROPOSED thin core filaments / lower circle retained',font=small,fill='#bbc0c9')
+            for col,polished in enumerate((False,True)):
+                layer=image.copy();effects(layer,depth,f['samples'],polished);frame.paste(layer.convert('RGB'),(600*col,64))
+            fd.text((18,498),'Offline native-model staged sampler clips. Lighting/depth approximated; no item entity or human/native test.',font=small,fill='#a3a8b0')
+            images.append(frame)
+            if index%10==0:print(f'FILAMENT_ANIMATION frame={index}',flush=True)
+        palette=sheet.quantize(colors=256)
+        indexed=[im.quantize(palette=palette,dither=Image.Dither.NONE) for im in images]
+        gif=out/'current-vs-core-filaments-radius055.gif'
+        indexed[0].save(gif,save_all=True,append_images=indexed[1:],duration=100,loop=0,disposal=2,optimize=True)
+        record={'frames':len(images),'gifBytes':gif.stat().st_size,'gifSha256':hashlib.sha256(gif.read_bytes()).hexdigest(),'replacementOnly':'right-side infusion-radiance/halo pixels','allTraceSampleFieldsIdentical':True,'approvedWaveBytes':hashlib.sha256(pack.read('assets/projects/textures/infusion-radiance/wave.png')).hexdigest(),'nativeNotApplied':True}
+        (out/'filament-animation-verification.json').write_text(json.dumps(record,indent=2),encoding='utf-8')
+        print('FILAMENT_PREVIEW_PASS '+json.dumps(record))

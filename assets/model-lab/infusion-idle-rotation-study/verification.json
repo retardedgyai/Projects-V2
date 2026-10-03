@@ -1,0 +1,346 @@
+{
+  "scope": "Offline idle rotation only; no native test or adoption",
+  "idleDegreesPerSecond": 3.0,
+  "idleRevolutionSeconds": 120,
+  "existingRitualMaximumDegreesPerTick": 4.5,
+  "assumedServerTicksPerSecond": 20,
+  "ritualDegreesPerSecond": 90.0,
+  "frameCount": 60,
+  "durationMsPerFrame": 200,
+  "clipSeconds": 12.0,
+  "idleNeutralTint": 0.22,
+  "ritualIllustrativeNeutralTint": 0.88,
+  "nativeNotApplied": true,
+  "rejectedFilamentUsed": false,
+  "approvedPackSha1": "b2a2784b5856770a13648798447f9b0c7c0e060a",
+  "approvedCircleSha256": "788d81367c3ce6d5606554723a82c20b3cfbd7ae5db3369e010d94d5b6112edb",
+  "sourceHashes": {
+    "assets/projects/models/infusion-v6/center.json": "8633894ccaf3b30d11378c5bfb81b09d42b4da6843788903a35531604fea905c",
+    "assets/projects/textures/infusion-v3/basalt.png": "372817ac966e4380454864d99c599f7a6fba356847dff43fae5f224a3a368a05",
+    "assets/projects/textures/infusion-v6/limestone.png": "8e6653156fefad08caea006ce0ea3bf165e9159268d40f827036cd21c3dbaaef",
+    "assets/projects/textures/infusion-v3/brass.png": "80dafe577ffcf94f7d2ae6a42c7f137f49284ce3fd74e3b89af7f8ad39f2f891",
+    "assets/projects/textures/infusion-v6/well.png": "a2f2170613ffe8376a8b8e31df7523c88e994b642e7aa1dae82345f5cfd63197",
+    "assets/projects/textures/infusion-v3/carved.png": "0557c5d940d45d62d79aaa1d2ac1555f2e19bab615bfb3c5082abf819d85c99d",
+    "assets/projects/models/infusion-v4/support.json": "c624653176cba056cf3d5ca73cf5fbb6c16f5b1aa82b597ec70ad323b786962f",
+    "assets/projects/textures/infusion-v3/limestone.png": "d2c006261ace9254c43a6443a7f826de3f7305dbc1b8c2e4c77cde91dfbf9e2a",
+    "assets/projects/models/infusion-v6/offering.json": "296ec6a4d4f8460a8aaccf9bee17d87bbea5d2f52d92144ecbad2c9c345d0dec",
+    "assets/projects/models/infusion-v3/jar.json": "48a06f785eb388a1a48b173a143f0d8891559ad69b4f1de7acd0c1350dc11d20",
+    "assets/projects/textures/infusion-v3/glass.png": "5fe658a6d1e06017b3eeba62506e3b38cdb286fcc3e70427a6b2de9a901d0dde",
+    "assets/projects/models/infusion-v7/core_ritual.json": "8d8161b9e8a388985976ab085a5d0db96cf0121271b76e3d0a0997fedf52a353",
+    "assets/projects/textures/infusion-v5/sealed_carved.png": "6e0c3f88323f835e10b3f3f0af724a4f89d67216676beaa3485f13e8bb4d112c",
+    "assets/projects/textures/infusion-v5/seal_well.png": "dd6aaf94e70654089723248d52aaaab6d60b28c08afdb50502bc79787bb61cf8",
+    "assets/projects/textures/infusion-v7/seal_charged.png": "e40d008bca18a7f12db36d0f07315132374475696862d46a054c3210dd7f139d",
+    "assets/projects/textures/infusion-v7/leak_charged.png": "4d19c2a17d58c36a5e37cba538aa878ff73a7c5f2f639fdee125210cf923beed"
+  },
+  "frames": [
+    {
+      "seconds": 0.0,
+      "idleYaw": 0.0,
+      "ritualYaw": 0.0
+    },
+    {
+      "seconds": 0.2,
+      "idleYaw": 0.6000000000000001,
+      "ritualYaw": 18.0
+    },
+    {
+      "seconds": 0.4,
+      "idleYaw": 1.2000000000000002,
+      "ritualYaw": 36.0
+    },
+    {
+      "seconds": 0.6,
+      "idleYaw": 1.7999999999999998,
+      "ritualYaw": 54.0
+    },
+    {
+      "seconds": 0.8,
+      "idleYaw": 2.4000000000000004,
+      "ritualYaw": 72.0
+    },
+    {
+      "seconds": 1.0,
+      "idleYaw": 3.0,
+      "ritualYaw": 90.0
+    },
+    {
+      "seconds": 1.2,
+      "idleYaw": 3.5999999999999996,
+      "ritualYaw": 108.0
+    },
+    {
+      "seconds": 1.4,
+      "idleYaw": 4.199999999999999,
+      "ritualYaw": 125.99999999999999
+    },
+    {
+      "seconds": 1.6,
+      "idleYaw": 4.800000000000001,
+      "ritualYaw": 144.0
+    },
+    {
+      "seconds": 1.8,
+      "idleYaw": 5.4,
+      "ritualYaw": 162.0
+    },
+    {
+      "seconds": 2.0,
+      "idleYaw": 6.0,
+      "ritualYaw": 180.0
+    },
+    {
+      "seconds": 2.2,
+      "idleYaw": 6.6000000000000005,
+      "ritualYaw": 198.00000000000003
+    },
+    {
+      "seconds": 2.4,
+      "idleYaw": 7.199999999999999,
+      "ritualYaw": 216.0
+    },
+    {
+      "seconds": 2.6,
+      "idleYaw": 7.800000000000001,
+      "ritualYaw": 234.0
+    },
+    {
+      "seconds": 2.8,
+      "idleYaw": 8.399999999999999,
+      "ritualYaw": 251.99999999999997
+    },
+    {
+      "seconds": 3.0,
+      "idleYaw": 9.0,
+      "ritualYaw": 270.0
+    },
+    {
+      "seconds": 3.2,
+      "idleYaw": 9.600000000000001,
+      "ritualYaw": 288.0
+    },
+    {
+      "seconds": 3.4,
+      "idleYaw": 10.2,
+      "ritualYaw": 306.0
+    },
+    {
+      "seconds": 3.6,
+      "idleYaw": 10.8,
+      "ritualYaw": 324.0
+    },
+    {
+      "seconds": 3.8,
+      "idleYaw": 11.399999999999999,
+      "ritualYaw": 342.0
+    },
+    {
+      "seconds": 4.0,
+      "idleYaw": 12.0,
+      "ritualYaw": 360.0
+    },
+    {
+      "seconds": 4.2,
+      "idleYaw": 12.600000000000001,
+      "ritualYaw": 378.0
+    },
+    {
+      "seconds": 4.4,
+      "idleYaw": 13.200000000000001,
+      "ritualYaw": 396.00000000000006
+    },
+    {
+      "seconds": 4.6,
+      "idleYaw": 13.799999999999999,
+      "ritualYaw": 413.99999999999994
+    },
+    {
+      "seconds": 4.8,
+      "idleYaw": 14.399999999999999,
+      "ritualYaw": 432.0
+    },
+    {
+      "seconds": 5.0,
+      "idleYaw": 15.0,
+      "ritualYaw": 450.0
+    },
+    {
+      "seconds": 5.2,
+      "idleYaw": 15.600000000000001,
+      "ritualYaw": 468.0
+    },
+    {
+      "seconds": 5.4,
+      "idleYaw": 16.200000000000003,
+      "ritualYaw": 486.00000000000006
+    },
+    {
+      "seconds": 5.6,
+      "idleYaw": 16.799999999999997,
+      "ritualYaw": 503.99999999999994
+    },
+    {
+      "seconds": 5.8,
+      "idleYaw": 17.4,
+      "ritualYaw": 522.0
+    },
+    {
+      "seconds": 6.0,
+      "idleYaw": 18.0,
+      "ritualYaw": 540.0
+    },
+    {
+      "seconds": 6.2,
+      "idleYaw": 18.6,
+      "ritualYaw": 558.0
+    },
+    {
+      "seconds": 6.4,
+      "idleYaw": 19.200000000000003,
+      "ritualYaw": 576.0
+    },
+    {
+      "seconds": 6.6,
+      "idleYaw": 19.799999999999997,
+      "ritualYaw": 594.0
+    },
+    {
+      "seconds": 6.8,
+      "idleYaw": 20.4,
+      "ritualYaw": 612.0
+    },
+    {
+      "seconds": 7.0,
+      "idleYaw": 21.0,
+      "ritualYaw": 630.0
+    },
+    {
+      "seconds": 7.2,
+      "idleYaw": 21.6,
+      "ritualYaw": 648.0
+    },
+    {
+      "seconds": 7.4,
+      "idleYaw": 22.200000000000003,
+      "ritualYaw": 666.0
+    },
+    {
+      "seconds": 7.6,
+      "idleYaw": 22.799999999999997,
+      "ritualYaw": 684.0
+    },
+    {
+      "seconds": 7.8,
+      "idleYaw": 23.4,
+      "ritualYaw": 702.0
+    },
+    {
+      "seconds": 8.0,
+      "idleYaw": 24.0,
+      "ritualYaw": 720.0
+    },
+    {
+      "seconds": 8.2,
+      "idleYaw": 24.599999999999998,
+      "ritualYaw": 737.9999999999999
+    },
+    {
+      "seconds": 8.4,
+      "idleYaw": 25.200000000000003,
+      "ritualYaw": 756.0
+    },
+    {
+      "seconds": 8.6,
+      "idleYaw": 25.799999999999997,
+      "ritualYaw": 774.0
+    },
+    {
+      "seconds": 8.8,
+      "idleYaw": 26.400000000000002,
+      "ritualYaw": 792.0000000000001
+    },
+    {
+      "seconds": 9.0,
+      "idleYaw": 27.0,
+      "ritualYaw": 810.0
+    },
+    {
+      "seconds": 9.2,
+      "idleYaw": 27.599999999999998,
+      "ritualYaw": 827.9999999999999
+    },
+    {
+      "seconds": 9.4,
+      "idleYaw": 28.200000000000003,
+      "ritualYaw": 846.0
+    },
+    {
+      "seconds": 9.6,
+      "idleYaw": 28.799999999999997,
+      "ritualYaw": 864.0
+    },
+    {
+      "seconds": 9.8,
+      "idleYaw": 29.400000000000002,
+      "ritualYaw": 882.0000000000001
+    },
+    {
+      "seconds": 10.0,
+      "idleYaw": 30.0,
+      "ritualYaw": 900.0
+    },
+    {
+      "seconds": 10.2,
+      "idleYaw": 30.599999999999998,
+      "ritualYaw": 917.9999999999999
+    },
+    {
+      "seconds": 10.4,
+      "idleYaw": 31.200000000000003,
+      "ritualYaw": 936.0
+    },
+    {
+      "seconds": 10.6,
+      "idleYaw": 31.799999999999997,
+      "ritualYaw": 954.0
+    },
+    {
+      "seconds": 10.8,
+      "idleYaw": 32.400000000000006,
+      "ritualYaw": 972.0000000000001
+    },
+    {
+      "seconds": 11.0,
+      "idleYaw": 33.0,
+      "ritualYaw": 990.0
+    },
+    {
+      "seconds": 11.2,
+      "idleYaw": 33.599999999999994,
+      "ritualYaw": 1007.9999999999999
+    },
+    {
+      "seconds": 11.4,
+      "idleYaw": 34.2,
+      "ritualYaw": 1026.0
+    },
+    {
+      "seconds": 11.6,
+      "idleYaw": 34.8,
+      "ritualYaw": 1044.0
+    },
+    {
+      "seconds": 11.8,
+      "idleYaw": 35.400000000000006,
+      "ritualYaw": 1062.0
+    }
+  ],
+  "gifBytes": 2167537,
+  "gifSha256": "999528c4a5680e4cc7608886395d831d264dbfd76d8b3f014068a4a202226075",
+  "limitations": [
+    "Offline lighting and fixture layout",
+    "Ritual VFX omitted solely to compare rotation speed",
+    "Maximum steady-state ritual speed, not acceleration or a full ritual",
+    "12-second excerpt resets orientation when GIF loops",
+    "No proposed transition easing or save changes implemented"
+  ]
+}
