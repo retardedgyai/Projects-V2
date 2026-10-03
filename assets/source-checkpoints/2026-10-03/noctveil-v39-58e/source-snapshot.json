@@ -1,7 +1,7 @@
 {
   "Schema": 1,
   "Snapshot": "noctveil-v39-58e",
-  "Status": "SAVED_CANDIDATE_SOURCE_SNAPSHOT",
+  "Status": "HISTORICAL_REJECTED_CANDIDATE_SOURCE_SNAPSHOT",
   "CapturedUtc": "2026-10-03T14:43:36.2265879Z",
   "LibraryFileId": "libfile_c69671efead88191b8f9bc68b65b5691",
   "LibraryVersion": 0,
@@ -10,7 +10,7 @@
   "SourceZipBytes": 15303112,
   "OriginalUnchanged": true,
   "EntryBytesVerified": true,
-  "Notes": "Historical delivered v39 candidate, preserved as editable source. Latest v42 path/wing research is still in progress and is excluded. Open the bbmodel in Blockbench 5.2.1; animation downward_claw_lateral_rake_v39. See README for measured limits. Creator adoption and game integration are pending.",
+  "Notes": "Historical delivered v39 source model preserved unchanged. Current independent-entrypoint instructions explicitly record the old v39 art pass as withdrawn by the creator. This historical source is not accepted art; its archived source-time README is not current approval. Latest v42 path/wing research is ongoing and excluded from this frozen snapshot. Open the bbmodel in Blockbench 5.2.1; animation downward_claw_lateral_rake_v39. No game integration approval.",
   "Files": [
     {
       "Path": "ProjectS_Noctveil_v39_58e.bbmodel",
@@ -37,5 +37,10 @@
       "Bytes": 2665,
       "Sha256": "32f45a0421eccc545d11132589d9609d10854f5bb9a358e5e40fb61141496c6c"
     }
-  ]
+  ],
+  "CurrentStatusEvidence": {
+    "Path": "docs/development/independent-entrypoints/noctveil/AGENTS.md",
+    "Commit": "1623efb0b16e45e7f869a31d234b019db10a14e1",
+    "Scope": "Current status metadata only; frozen v39 source bytes unchanged"
+  }
 }

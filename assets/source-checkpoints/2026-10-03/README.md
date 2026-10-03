@@ -7,7 +7,7 @@ These are frozen source snapshots extracted from already saved Library ZIPs. The
 | dragon-moving-first-step | Authored reentry transition, editable models and runtime probe; native review pending | Further movement/native review |
 | dragon-itemdisplay-y180 | Latest saved ItemDisplay Y180 transform-compensation candidate, Library version2; integration manifest member hashes matched | Corrected candidate has not been checked in the actual client |
 | armor-cloth29 | Intermediate editable cloth29, textures, scripts and required older own source | Cloth30 geometry and painting revisions |
-| noctveil-v39-58e | Historical delivered v39 source model; creator adoption pending | v42 wing/path research |
+| noctveil-v39-58e | Historical delivered v39 source model; previous art pass withdrawn by the creator | v42 wing/path research |
 | ice-garden11 | Saved 11c prototype authoring code, model assets and textures; quality/feel pending | Contact12 art revision |
 | ice-garden12b | Frozen saved contact12b source and foundation dependencies; FIX-FIRST | Further limited contact revision; MatE quality and spell feel still unaccepted |
 | quality-review-framework | Saved v3 record-validator source, same Library ID at version2; 61 tests rerun passed; independent audit reported complete | Aesthetic quality and real production efficacy unproven |
@@ -21,6 +21,8 @@ The saved v3 source was independently rerun here with `node --test tests/check.t
 Ice Garden12b was added from the fixed saved `mage-ice-garden-12-contact-review.zip` identified by its owning task's push manifest and correlated Library receipt. The active authoring files were not copied. The original 11c folder is retained without modification. This is a FIX-FIRST contact-art checkpoint; it does not indicate MatE quality approval or acceptance of spell feel. Its GIFs, phase image and complete ZIP remain under their recorded Library IDs.
 
 The original dragon's latest saved display correction was added from Library source ZIP `libfile_f9e042b5099081918c5437d881588f8d` version2. The selected integration members match the supplied `INTEGRATION_SAVED_POINT_MANIFEST.json` hashes. The candidate compensates ItemDisplay Y180; bones, walk, claw, stop/reentry, UV and texture are reported unchanged. The saved comparison image remains `libfile_d0bdc3160b58819182710ca36db85646`. Corrected actual-client rendering is unverified. Existing first-step source remains preserved, and no running game or magic task was edited or launched. Pack ZIPs and full renderer output remain in Library.
+
+Current Noctveil acceptance status is recorded separately from historical source bytes: the deployed independent entrypoint explicitly says the former v39 art pass was withdrawn by the creator. Its old README and technical observations remain source-time records and do not constitute current art approval. Current entrypoint copies and rollout evidence are saved on `play/gyai/agent-instructions-20261003` at `1623efb0b16e45e7f869a31d234b019db10a14e1`; those short instructions are not duplicated from active non-Git authoring folders here.
 
 All selected ZIP members were verified byte-for-byte using SHA256. Original ZIP hashes were checked before and after extraction and were unchanged. Original workspaces and active task branches were not edited. Historical READMEs, test output and verification records inside the snapshots describe their source-time state; current snapshot status is authoritative for this archive.
 
