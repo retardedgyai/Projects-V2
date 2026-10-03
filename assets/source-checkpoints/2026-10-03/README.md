@@ -1,6 +1,6 @@
 # ProjectS saved source checkpoints — 2026-10-03
 
-These are frozen source snapshots extracted from already saved Library ZIPs. They preserve historical source bytes, not a statement that the designs are accepted or production ready. The `source-snapshot.json` in each folder records the Library file ID/version, original archive hash, extracted file hashes, reproduction entry points and remaining limitations. `index.json` lists all seven checkpoints.
+These are frozen source snapshots from already saved Library ZIPs or explicitly shared non-Git source checkpoints. They preserve historical source bytes, not a statement that the designs are accepted or production ready. The `source-snapshot.json` in each folder records its source identity, file hashes, reproduction entry points and remaining limitations. `index.json` lists all eight checkpoints.
 
 | Folder | Saved state | Ongoing work kept separate |
 |---|---|---|
@@ -11,6 +11,7 @@ These are frozen source snapshots extracted from already saved Library ZIPs. The
 | ice-garden11 | Saved 11c prototype authoring code, model assets and textures; quality/feel pending | Contact12 art revision |
 | ice-garden12b | Frozen saved contact12b source and foundation dependencies; FIX-FIRST | Further limited contact revision; MatE quality and spell feel still unaccepted |
 | quality-review-framework | Saved v3 record-validator source, same Library ID at version2; 61 tests rerun passed; independent audit reported complete | Aesthetic quality and real production efficacy unproven |
+| magic-local-fixes | Saved local classpath reproduction candidate; entry cleanup, item atlas, UV and ItemDisplay orientation; spawn-view and regression verified by owner | User play test/adoption and complete quality; no repository game integration |
 
 Archives, GIFs, video, renderer frames, browser profiles and private reference material are not duplicated here. The original complete review packages remain under their recorded Library identities. Some technical probes require the existing ProjectS baseline, Minecraft/JDK installation or parser output; consult the per-folder notes and Library package before replaying them. No test/build claim is added by this archival commit.
 
@@ -23,6 +24,8 @@ Ice Garden12b was added from the fixed saved `mage-ice-garden-12-contact-review.
 The original dragon's latest saved display correction was added from Library source ZIP `libfile_f9e042b5099081918c5437d881588f8d` version2. The selected integration members match the supplied `INTEGRATION_SAVED_POINT_MANIFEST.json` hashes. The candidate compensates ItemDisplay Y180; bones, walk, claw, stop/reentry, UV and texture are reported unchanged. The saved comparison image remains `libfile_d0bdc3160b58819182710ca36db85646`. Corrected actual-client rendering is unverified. Existing first-step source remains preserved, and no running game or magic task was edited or launched. Pack ZIPs and full renderer output remain in Library.
 
 Current Noctveil acceptance status is recorded separately from historical source bytes: the deployed independent entrypoint explicitly says the former v39 art pass was withdrawn by the creator. Its old README and technical observations remain source-time records and do not constitute current art approval. Current entrypoint copies and rollout evidence are saved on `play/gyai/agent-instructions-20261003` at `1623efb0b16e45e7f869a31d234b019db10a14e1`; those short instructions are not duplicated from active non-Git authoring folders here.
+
+The magic checkpoint copies the final saved patch, local override source, selected resource JSON/text, regression source and reproducibility records. Source-file SHA256 was checked before and after copying. Active server/client sessions and original source/Jar/world data were not modified. Actual rendering and regression are owner-verified within the spawn-view scope; adoption, ritual completion and full quality are not certified. No world saves, raw logs, client credentials, compiled classes or generated pack ZIPs are included.
 
 All selected ZIP members were verified byte-for-byte using SHA256. Original ZIP hashes were checked before and after extraction and were unchanged. Original workspaces and active task branches were not edited. Historical READMEs, test output and verification records inside the snapshots describe their source-time state; current snapshot status is authoritative for this archive.
 

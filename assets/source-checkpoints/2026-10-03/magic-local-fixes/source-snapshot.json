@@ -1,0 +1,138 @@
+{
+  "Schema": 1,
+  "Snapshot": "magic-local-fixes",
+  "Status": "LOCAL_REPRODUCTION_CANDIDATE_SPAWN_VIEW_REGRESSION_VERIFIED_ADOPTION_PENDING",
+  "CapturedUtc": "2026-10-03T15:17:33.7917945Z",
+  "SourceType": "Saved non-Git local classpath override source",
+  "BaselineRepository": "retardedgyai/Projects-V2",
+  "BaselineBranch": "play/gyai/world-infusion-altar-current",
+  "BaselineCommit": "b51a177fe55f2d7de3334fb5cf12ebcc77f4fb0a",
+  "OriginalUnchanged": true,
+  "EntryBytesVerified": true,
+  "OriginalSourceSha256": "c22a66f62f0ab1dd0f65b92d297049eb2ec703987e5144bf11fe09de439af691",
+  "SourceOwnerVerification": {
+    "VerifiedAtUtc": "2026-10-03T15:11:11.6437587Z",
+    "Regression": "SPAWN_REGRESSION_PASS pending100 online1200 supportsInward4 nativeItemY180Compensated centerCoreAuthoredAxes disconnectCleanup saveUnchanged packetQueue1000 packetPerTick50",
+    "VisualVerification": "Actual owned Minecraft window: normal stone/metal/glass/liquid textures, continuous core/support surfaces, supports lean toward altar center",
+    "Scope": "Spawn viewpoint; no gameplay input or ritual completion performed",
+    "UvFacesCorrected": 188,
+    "PackSha1": "a5c09be291cc6ceb7d64002645c88ece757ee1a2",
+    "MissingModelOrTextureReferences": 0,
+    "UnregisteredMagicTextures": 0,
+    "NativeItemY180Compensated": true,
+    "CreatorAdoption": false,
+    "WholeQualityCompletion": false
+  },
+  "Notes": "Reproduction candidate only: initial-entry cleanup lifecycle, item texture atlas registration, UV normalization and native ItemDisplay orientation. Owner verified actual spawned client view and regression; ritual completion/gameplay and creator adoption are not certified. The server/client were under user play test and were not stopped, restarted, reconfigured, or modified by the archive task. Original source/Jar and world saves were protected. Exact selected resource JSON/text overrides are stored under resource-overlay, without compiled classes or pack ZIPs. Scripts contain original local paths; copy to an isolated future reproduction workspace and adjust paths before running. Never run archived start/compile scripts against the current user play-test session. See README for scoped reproduction.",
+  "Excluded": [
+    "world save data and backups",
+    "raw logs/player UUIDs/username records",
+    "private client arguments/authentication",
+    "compiled classes",
+    "cache",
+    "large generated pack ZIP",
+    "native screenshots retained at original saved evidence path"
+  ],
+  "Files": [
+    {
+      "Path": "magic-local-fixes.patch",
+      "Bytes": 414283,
+      "Sha256": "35377240576c281e5ae071f7207516ec375304bb568e5fd86a216c91fac17a93"
+    },
+    {
+      "Path": "start-fixed-world-infusion.ps1",
+      "Bytes": 4828,
+      "Sha256": "9dea2c65f661378b64aadb4ed16da872bd380465f9794852b4fcab7ca8ff39ad"
+    },
+    {
+      "Path": "WorldInfusionServer.kt",
+      "Bytes": 33467,
+      "Sha256": "5dc96b4404b0927d9db7c1f678d2a34b2a0fcaff6d3d757e0d96cf47bdbe7bda"
+    },
+    {
+      "Path": "SpawnRegression.kt",
+      "Bytes": 4715,
+      "Sha256": "f7e1655bb67612ba6dd43380900c5e34294881a353ac1d09bb8a82ea790540dc"
+    },
+    {
+      "Path": "BundlePackCheck.java",
+      "Bytes": 651,
+      "Sha256": "6bb15718aac7e7cb86e61ddca65b99f6990496a9bba83d072da90ce30600354b"
+    },
+    {
+      "Path": "compile-fix.ps1",
+      "Bytes": 2735,
+      "Sha256": "70d0005dc90a929f58e63200db3f933f3ab12ac4cce75ae094b97b77718ca9ed"
+    },
+    {
+      "Path": "audit-pack.py",
+      "Bytes": 2578,
+      "Sha256": "8cfbfe977640213cfe1e93353bea30daae934ef9e70a3a8bdd28464be28559d0"
+    },
+    {
+      "Path": "fix-model-uv.py",
+      "Bytes": 2043,
+      "Sha256": "4b194e7bdbf3094fb39f027b4d212e874ef4026112f1efa726447f670ead3a57"
+    },
+    {
+      "Path": "write-final-patch.py",
+      "Bytes": 1120,
+      "Sha256": "2fe66186402e29afeb47b64c793c858be251fe6bbd7567e78683564273a430bd"
+    },
+    {
+      "Path": "final-verified-status.json",
+      "Bytes": 2118,
+      "Sha256": "4909cdd15686e92ff3f8a9e7bbe4aacc94f359c4a3d729be76877bb69b3dc7f2"
+    },
+    {
+      "Path": "original-source-sha256.json",
+      "Bytes": 266,
+      "Sha256": "71e84f37cebeab0854846dac297406cffad00d16e86012a6780c38d0ce007eaa"
+    },
+    {
+      "Path": "pack-index-fix.json",
+      "Bytes": 2304,
+      "Sha256": "f0346819b651b692ba971653a9b3dc43e2f13443492adf7218865d0fbeffdffb"
+    },
+    {
+      "Path": "pack-reference-audit.json",
+      "Bytes": 1957,
+      "Sha256": "b999cb55800bedadd9179e6278fdb809eda0faf0bbc7e43254a1c0eaed57afb0"
+    },
+    {
+      "Path": "uv-repair-audit.json",
+      "Bytes": 48787,
+      "Sha256": "88008bc366d6afb1ed4c19451e3e08f8f2e70491980113ca1f130bf6a5372aeb"
+    },
+    {
+      "Path": "resource-overlay/core-ui-pack/index.txt",
+      "Bytes": 867308,
+      "Sha256": "e32f97bbb7c22a5f8de30e63a4a9bd871c13acd8759f8c782a2b1e6a6fa5aa53"
+    },
+    {
+      "Path": "resource-overlay/core-ui-pack/assets/minecraft/atlases/items.json",
+      "Bytes": 1091,
+      "Sha256": "91f05c05ce16166ae89a4d9feb6991bc2a4c561b369c712d6e3b971b481406d8"
+    },
+    {
+      "Path": "resource-overlay/core-ui-pack/assets/projects/models/infusion-v4/support.json",
+      "Bytes": 10774,
+      "Sha256": "c624653176cba056cf3d5ca73cf5fbb6c16f5b1aa82b597ec70ad323b786962f"
+    },
+    {
+      "Path": "resource-overlay/core-ui-pack/assets/projects/models/infusion-v7/core_ritual.json",
+      "Bytes": 64149,
+      "Sha256": "8d8161b9e8a388985976ab085a5d0db96cf0121271b76e3d0a0997fedf52a353"
+    }
+  ],
+  "PatchReproductionCheck": {
+    "IsolatedApplyExit": 0,
+    "StrictCheckExit": 1,
+    "RequiredFlag": "--ignore-whitespace",
+    "FinalTextFilesMatched": 5,
+    "OriginalFilesUnchanged": 5,
+    "IsolatedCheckExit": 0,
+    "Evidence": "patch-reproduction-check.json",
+    "Scope": "Only separate exact copies; EOL-normalized text comparison; active game untouched"
+  }
+}

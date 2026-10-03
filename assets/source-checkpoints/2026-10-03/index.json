@@ -61,5 +61,15 @@
     "FileCount": 33,
     "Bytes": 33257458.0,
     "Manifest": "dragon-itemdisplay-y180/source-snapshot.json"
+  },
+  {
+    "Snapshot": "magic-local-fixes",
+    "Status": "LOCAL_REPRODUCTION_CANDIDATE_SPAWN_VIEW_REGRESSION_VERIFIED_ADOPTION_PENDING",
+    "SourceType": "Saved non-Git local classpath override source",
+    "LibraryFileId": null,
+    "LibraryVersion": null,
+    "FileCount": 18,
+    "Bytes": 1465174.0,
+    "Manifest": "magic-local-fixes/source-snapshot.json"
   }
 ]

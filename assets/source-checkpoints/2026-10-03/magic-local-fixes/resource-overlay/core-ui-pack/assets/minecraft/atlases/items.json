@@ -1,0 +1,49 @@
+{
+  "sources": [
+    {
+      "type": "minecraft:directory",
+      "source": "combat_vfx",
+      "prefix": "combat_vfx/"
+    },
+    {
+      "type": "minecraft:directory",
+      "source": "infusion",
+      "prefix": "infusion/"
+    },
+    {
+      "type": "minecraft:directory",
+      "source": "infusion-v3",
+      "prefix": "infusion-v3/"
+    },
+    {
+      "type": "minecraft:directory",
+      "source": "infusion-v4",
+      "prefix": "infusion-v4/"
+    },
+    {
+      "type": "minecraft:directory",
+      "source": "infusion-v5",
+      "prefix": "infusion-v5/"
+    },
+    {
+      "type": "minecraft:directory",
+      "source": "infusion-v6",
+      "prefix": "infusion-v6/"
+    },
+    {
+      "type": "minecraft:directory",
+      "source": "infusion-v7",
+      "prefix": "infusion-v7/"
+    },
+    {
+      "type": "minecraft:directory",
+      "source": "infusion-energy",
+      "prefix": "infusion-energy/"
+    },
+    {
+      "type": "minecraft:directory",
+      "source": "infusion-radiance",
+      "prefix": "infusion-radiance/"
+    }
+  ]
+}

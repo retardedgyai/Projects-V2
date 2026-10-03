@@ -1,0 +1,37 @@
+{
+  "VerifiedUtc": "2026-10-03T15:20:42.8191243Z",
+  "Scope": "Five exact original file copies in a separate non-Git check directory; no active worktree patch applied",
+  "StrictPatchCheckExitCode": 1,
+  "IgnoreWhitespacePatchCheckExitCode": 0,
+  "IsolatedApplyExitCode": 0,
+  "Reason": "Saved unified diff requires --ignore-whitespace for original context whitespace",
+  "AppliedFilesMatchSavedFinalText": true,
+  "Comparisons": [
+    {
+      "Path": "server-minestom/src/main/kotlin/dev/projects/server/coreloop/WorldInfusionServer.kt",
+      "MatchesFinalTextAfterEolNormalization": true,
+      "OriginalUnchanged": true
+    },
+    {
+      "Path": "server-minestom/src/main/resources/core-ui-pack/index.txt",
+      "MatchesFinalTextAfterEolNormalization": true,
+      "OriginalUnchanged": true
+    },
+    {
+      "Path": "server-minestom/src/main/resources/core-ui-pack/assets/minecraft/atlases/items.json",
+      "MatchesFinalTextAfterEolNormalization": true,
+      "OriginalUnchanged": true
+    },
+    {
+      "Path": "server-minestom/src/main/resources/core-ui-pack/assets/projects/models/infusion-v4/support.json",
+      "MatchesFinalTextAfterEolNormalization": true,
+      "OriginalUnchanged": true
+    },
+    {
+      "Path": "server-minestom/src/main/resources/core-ui-pack/assets/projects/models/infusion-v7/core_ritual.json",
+      "MatchesFinalTextAfterEolNormalization": true,
+      "OriginalUnchanged": true
+    }
+  ],
+  "ProcessChanges": false
+}

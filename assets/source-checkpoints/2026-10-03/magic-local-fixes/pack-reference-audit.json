@@ -1,0 +1,68 @@
+{
+  "sha1": "a5c09be291cc6ceb7d64002645c88ece757ee1a2",
+  "bytes": 15299179,
+  "entries": 14078,
+  "native_magic_definitions_checked": 32,
+  "missing_references": [],
+  "required_runtime_items": [
+    "assets/projects/items/infusion-v7/core_ritual.json",
+    "assets/projects/items/infusion-v6/center.json",
+    "assets/projects/items/infusion-v6/offering.json",
+    "assets/projects/items/infusion-v4/support.json",
+    "assets/projects/items/infusion-v3/jar.json",
+    "assets/projects/items/infusion-energy/pedestal_seal.json",
+    "assets/projects/items/infusion-radiance/halo.json",
+    "assets/projects/items/infusion-radiance/column.json",
+    "assets/projects/items/infusion-radiance/wave.json",
+    "assets/projects/items/infusion-radiance/burst.json"
+  ],
+  "png_signatures_valid": true,
+  "item_atlas_unregistered_textures": [],
+  "item_atlas_sources": [
+    {
+      "type": "minecraft:directory",
+      "source": "combat_vfx",
+      "prefix": "combat_vfx/"
+    },
+    {
+      "type": "minecraft:directory",
+      "source": "infusion",
+      "prefix": "infusion/"
+    },
+    {
+      "type": "minecraft:directory",
+      "source": "infusion-v3",
+      "prefix": "infusion-v3/"
+    },
+    {
+      "type": "minecraft:directory",
+      "source": "infusion-v4",
+      "prefix": "infusion-v4/"
+    },
+    {
+      "type": "minecraft:directory",
+      "source": "infusion-v5",
+      "prefix": "infusion-v5/"
+    },
+    {
+      "type": "minecraft:directory",
+      "source": "infusion-v6",
+      "prefix": "infusion-v6/"
+    },
+    {
+      "type": "minecraft:directory",
+      "source": "infusion-v7",
+      "prefix": "infusion-v7/"
+    },
+    {
+      "type": "minecraft:directory",
+      "source": "infusion-energy",
+      "prefix": "infusion-energy/"
+    },
+    {
+      "type": "minecraft:directory",
+      "source": "infusion-radiance",
+      "prefix": "infusion-radiance/"
+    }
+  ]
+}
