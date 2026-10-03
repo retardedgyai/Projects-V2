@@ -1,0 +1,10 @@
+{
+  "cloth-volume-29/model/model.json": "8dfae0c67f15e8fa449ba976361ab49dfc09f9b599782153eccdf70b48469322",
+  "cloth-volume-29/model/model.bbmodel": "80a6957f54b7243792d6509c5fa28b10a1bf776a83754149c260c9b8625fa6a2",
+  "cloth-volume-29/model/native.png": "b52a4ee4ba659495a32120ba8336a94caa6c6ea2a856472c6e318de4a1517ede",
+  "cloth-volume-29/model/new-cloth-boots.png": "2c9212562bcbfa23bee22514b230c5137ef1bc3ebb59b57f3d1fd5ef012e4e23",
+  "cloth-texture-25/baseline23/UV-provenance.json": "a9428e2bdc8e62b0a4ff2ef7f16d2822507e4994487a81b7fd6026af015a6599",
+  "cloth-layered-23/mesh_tools.py": "889a92617cd69b8828bafff0dbea3b581a13b33814f4b3558627173deb211ce4",
+  "cloth-layered-23/check_geometry.py": "75ca73e1e2683441ccc3eb31c1647f4c70490843015146d11f3baa98cd300530",
+  "cloth-layered-23/check23.py": "b6e2e14775a3cfb2f5cb538c2f82018aa6aa72b6ca9951ab40a63343a2136bec"
+}

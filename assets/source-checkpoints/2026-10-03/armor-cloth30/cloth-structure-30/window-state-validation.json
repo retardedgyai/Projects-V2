@@ -1,0 +1,7 @@
+{
+  "tested": true,
+  "error": "cdpSession.send: Protocol error (Browser.getWindowForTarget): 'Browser.getWindowForTarget' wasn't found",
+  "same_camera_normal_vs_minimized_changed_pixels": 0,
+  "same_pixels": true,
+  "headless_renderer_equivalence_claimed": false
+}

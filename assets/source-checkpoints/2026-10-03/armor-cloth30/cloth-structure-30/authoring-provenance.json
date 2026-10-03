@@ -1,0 +1,462 @@
+{
+  "status": "UPPER_BODY_NATIVE_PENDING",
+  "baseline29_preserved": true,
+  "approved_material_v1_primary": true,
+  "MatE_gallery_actual_static_armor_seen": true,
+  "MatE_geometry_pixels_copied": false,
+  "removed29_parts": [
+    "turned canvas crown edge",
+    "folded cloth brow band",
+    "folded cloth jaw wrap",
+    "left gathered cloth cheek fold",
+    "right gathered cloth cheek fold",
+    "left fitted short wrap body",
+    "right fitted short wrap body",
+    "fitted dark coat back",
+    "left short body side seam",
+    "right short body side seam",
+    "new continuous folded shoulder cloth"
+  ],
+  "new_parts": {
+    "returned hood face opening": {
+      "kind": "curved thin shell",
+      "thickness": 0.05,
+      "surface_vertices": 36,
+      "surface_triangles": 48,
+      "front_back_pair_max_error": 2.9698465908722937e-15,
+      "bounds": [
+        [
+          3.4,
+          27.05,
+          3.15
+        ],
+        [
+          12.6,
+          33.7,
+          3.63
+        ]
+      ]
+    },
+    "left sewn hood cheek gusset": {
+      "kind": "curved thin shell",
+      "thickness": 0.05,
+      "surface_vertices": 8,
+      "surface_triangles": 6,
+      "front_back_pair_max_error": 1.8041124150158794e-16,
+      "bounds": [
+        [
+          3.4,
+          26.9,
+          3.28
+        ],
+        [
+          3.4,
+          31.85,
+          8.85
+        ]
+      ]
+    },
+    "right sewn hood cheek gusset": {
+      "kind": "curved thin shell",
+      "thickness": 0.05,
+      "surface_vertices": 8,
+      "surface_triangles": 6,
+      "front_back_pair_max_error": 7.077671781985373e-16,
+      "bounds": [
+        [
+          12.6,
+          26.9,
+          3.28
+        ],
+        [
+          12.6,
+          31.85,
+          8.85
+        ]
+      ]
+    },
+    "left turned front cheek return": {
+      "kind": "curved thin shell",
+      "thickness": 0.04,
+      "surface_vertices": 4,
+      "surface_triangles": 2,
+      "front_back_pair_max_error": 3.469446951953614e-17,
+      "bounds": [
+        [
+          3.4,
+          27.0,
+          3.1
+        ],
+        [
+          4.4,
+          29.3,
+          3.1
+        ]
+      ]
+    },
+    "right turned front cheek return": {
+      "kind": "curved thin shell",
+      "thickness": 0.04,
+      "surface_vertices": 4,
+      "surface_triangles": 2,
+      "front_back_pair_max_error": 3.469446951953614e-17,
+      "bounds": [
+        [
+          11.6,
+          27.0,
+          3.1
+        ],
+        [
+          12.6,
+          29.3,
+          3.1
+        ]
+      ]
+    },
+    "folded hood to neck cowl": {
+      "kind": "curved thin shell",
+      "thickness": 0.055,
+      "surface_vertices": 40,
+      "surface_triangles": 60,
+      "front_back_pair_max_error": 7.840950111415168e-16,
+      "bounds": [
+        [
+          3.35,
+          22.85,
+          3.25
+        ],
+        [
+          12.65,
+          27.35,
+          12.7
+        ]
+      ]
+    },
+    "left longitudinal folded coat front": {
+      "kind": "curved thin shell",
+      "thickness": 0.06,
+      "surface_vertices": 20,
+      "surface_triangles": 24,
+      "front_back_pair_max_error": 4.85722573273506e-16,
+      "bounds": [
+        [
+          3.95,
+          14.3,
+          5.0
+        ],
+        [
+          7.9,
+          23.1,
+          5.58
+        ]
+      ]
+    },
+    "right overlapping coat front": {
+      "kind": "curved thin shell",
+      "thickness": 0.06,
+      "surface_vertices": 20,
+      "surface_triangles": 24,
+      "front_back_pair_max_error": 4.3021142204224816e-16,
+      "bounds": [
+        [
+          7.65,
+          14.3,
+          4.9
+        ],
+        [
+          12.05,
+          23.1,
+          5.58
+        ]
+      ]
+    },
+    "continuous shaped coat back": {
+      "kind": "curved thin shell",
+      "thickness": 0.06,
+      "surface_vertices": 20,
+      "surface_triangles": 24,
+      "front_back_pair_max_error": 8.396061623727746e-16,
+      "bounds": [
+        [
+          3.95,
+          14.3,
+          10.5
+        ],
+        [
+          12.05,
+          22.9,
+          11.02
+        ]
+      ]
+    },
+    "left continuous fitted coat side": {
+      "kind": "curved thin shell",
+      "thickness": 0.055,
+      "surface_vertices": 20,
+      "surface_triangles": 24,
+      "front_back_pair_max_error": 4.579669976578771e-16,
+      "bounds": [
+        [
+          3.9,
+          14.3,
+          5.45
+        ],
+        [
+          4.35,
+          23.1,
+          10.65
+        ]
+      ]
+    },
+    "right continuous fitted coat side": {
+      "kind": "curved thin shell",
+      "thickness": 0.055,
+      "surface_vertices": 20,
+      "surface_triangles": 24,
+      "front_back_pair_max_error": 8.743006318923108e-16,
+      "bounds": [
+        [
+          11.65,
+          14.3,
+          5.5
+        ],
+        [
+          12.1,
+          23.1,
+          10.65
+        ]
+      ]
+    },
+    "supported falling shoulder cloth": {
+      "kind": "curved thin shell",
+      "thickness": 0.055,
+      "surface_vertices": 52,
+      "surface_triangles": 78,
+      "front_back_pair_max_error": 1.9567680809018384e-15,
+      "bounds": [
+        [
+          -1.85,
+          18.85,
+          3.85
+        ],
+        [
+          17.85,
+          25.35,
+          12.65
+        ]
+      ]
+    }
+  },
+  "new_islands": [
+    {
+      "piece": "returned hood face opening",
+      "logical_size": [
+        26,
+        4
+      ],
+      "outer": [
+        4,
+        4
+      ],
+      "inner": [
+        36,
+        4
+      ],
+      "thickness": 0.05,
+      "folds_are_real_mesh": true
+    },
+    {
+      "piece": "left sewn hood cheek gusset",
+      "logical_size": [
+        6,
+        3
+      ],
+      "outer": [
+        76,
+        4
+      ],
+      "inner": [
+        88,
+        4
+      ],
+      "thickness": 0.05,
+      "folds_are_real_mesh": true
+    },
+    {
+      "piece": "right sewn hood cheek gusset",
+      "logical_size": [
+        6,
+        3
+      ],
+      "outer": [
+        108,
+        4
+      ],
+      "inner": [
+        120,
+        4
+      ],
+      "thickness": 0.05,
+      "folds_are_real_mesh": true
+    },
+    {
+      "piece": "left turned front cheek return",
+      "logical_size": [
+        1,
+        3
+      ],
+      "outer": [
+        140,
+        4
+      ],
+      "inner": [
+        147,
+        4
+      ],
+      "thickness": 0.04,
+      "folds_are_real_mesh": true
+    },
+    {
+      "piece": "right turned front cheek return",
+      "logical_size": [
+        1,
+        3
+      ],
+      "outer": [
+        162,
+        4
+      ],
+      "inner": [
+        169,
+        4
+      ],
+      "thickness": 0.04,
+      "folds_are_real_mesh": true
+    },
+    {
+      "piece": "folded hood to neck cowl",
+      "logical_size": [
+        40,
+        5
+      ],
+      "outer": [
+        184,
+        4
+      ],
+      "inner": [
+        230,
+        4
+      ],
+      "thickness": 0.055,
+      "folds_are_real_mesh": true
+    },
+    {
+      "piece": "left longitudinal folded coat front",
+      "logical_size": [
+        4,
+        9
+      ],
+      "outer": [
+        284,
+        4
+      ],
+      "inner": [
+        294,
+        4
+      ],
+      "thickness": 0.06,
+      "folds_are_real_mesh": true
+    },
+    {
+      "piece": "right overlapping coat front",
+      "logical_size": [
+        4,
+        9
+      ],
+      "outer": [
+        312,
+        4
+      ],
+      "inner": [
+        322,
+        4
+      ],
+      "thickness": 0.06,
+      "folds_are_real_mesh": true
+    },
+    {
+      "piece": "continuous shaped coat back",
+      "logical_size": [
+        8,
+        9
+      ],
+      "outer": [
+        340,
+        4
+      ],
+      "inner": [
+        354,
+        4
+      ],
+      "thickness": 0.06,
+      "folds_are_real_mesh": true
+    },
+    {
+      "piece": "left continuous fitted coat side",
+      "logical_size": [
+        6,
+        9
+      ],
+      "outer": [
+        376,
+        4
+      ],
+      "inner": [
+        388,
+        4
+      ],
+      "thickness": 0.055,
+      "folds_are_real_mesh": true
+    },
+    {
+      "piece": "right continuous fitted coat side",
+      "logical_size": [
+        6,
+        9
+      ],
+      "outer": [
+        408,
+        4
+      ],
+      "inner": [
+        420,
+        4
+      ],
+      "thickness": 0.055,
+      "folds_are_real_mesh": true
+    },
+    {
+      "piece": "supported falling shoulder cloth",
+      "logical_size": [
+        76,
+        12
+      ],
+      "outer": [
+        4,
+        22
+      ],
+      "inner": [
+        86,
+        22
+      ],
+      "thickness": 0.055,
+      "folds_are_real_mesh": true
+    }
+  ],
+  "retained_atlas_pixels_changed": 8640,
+  "body_hardware_belt_boots_preserved": true,
+  "vertices": 1916,
+  "triangles": 3636,
+  "meshes": 64,
+  "no_full_quality_or_wear_claim": true
+}

@@ -1,0 +1,1881 @@
+{
+  "pose": "standing",
+  "vertices": 1916,
+  "triangles": 3636,
+  "cloth_shells": 48,
+  "closed_shell_bad_edges": {
+    "close sloping cloth crown": 0,
+    "short folded nape cloth": 0,
+    "left shaped dark sleeve": 0,
+    "left sewn sleeve top": 0,
+    "left wrapped canvas forearm": 0,
+    "left forearm real turned edge": 0,
+    "left dark bound wrist cuff": 0,
+    "right shaped dark sleeve": 0,
+    "right sewn sleeve top": 0,
+    "right wrapped canvas forearm": 0,
+    "right forearm real turned edge": 0,
+    "right dark bound wrist cuff": 0,
+    "dark inner shirt front": 0,
+    "dark inner shirt back": 0,
+    "dark soft neck underlayer": 0,
+    "left sewn body to sleeve shoulder": 0,
+    "right sewn body to sleeve shoulder": 0,
+    "broad soft leather waist belt": 0,
+    "left short overlapping front cloth tab": 0,
+    "left short divided rear cloth tab": 0,
+    "left short hip cloth side fold": 0,
+    "left front canvas hem facing": 0,
+    "left rear canvas hem facing": 0,
+    "right short overlapping front cloth tab": 0,
+    "right short divided rear cloth tab": 0,
+    "right short hip cloth side fold": 0,
+    "right front canvas hem facing": 0,
+    "right rear canvas hem facing": 0,
+    "short hanging belt tie": 0,
+    "left real continuous joint wool leg garment": 0,
+    "right real continuous joint wool leg garment": 0,
+    "real wool waist and crotch yoke": 0,
+    "left soft folded boot top": 0,
+    "right soft folded boot top": 0,
+    "left new shaped leather boot": 0,
+    "right new shaped leather boot": 0,
+    "returned hood face opening": 0,
+    "left sewn hood cheek gusset": 0,
+    "right sewn hood cheek gusset": 0,
+    "left turned front cheek return": 0,
+    "right turned front cheek return": 0,
+    "folded hood to neck cowl": 0,
+    "left longitudinal folded coat front": 0,
+    "right overlapping coat front": 0,
+    "continuous shaped coat back": 0,
+    "left continuous fitted coat side": 0,
+    "right continuous fitted coat side": 0,
+    "supported falling shoulder cloth": 0
+  },
+  "degenerate_3D_UV_triangles": 0,
+  "minimum_triangle_area": 0.0016430417909327998,
+  "body_OBB_corner_max_errors": {
+    "avatar torso": 0.0,
+    "avatar head": 0.0,
+    "left avatar upper arm": 4.087271854302799e-09,
+    "left avatar forearm": 4.0872720763474035e-09,
+    "left visible hand": 4.441063516935628e-09,
+    "right avatar upper arm": 4.087271854302799e-09,
+    "right avatar forearm": 4.0872722983920085e-09,
+    "right visible hand": 4.441063961024838e-09,
+    "left avatar thigh": 4.194595337736473e-09,
+    "left avatar shin": 4.2414445289296054e-09,
+    "left avatar foot": 4.241444973018815e-09,
+    "right avatar thigh": 4.194595337736473e-09,
+    "right avatar shin": 4.2414445289296054e-09,
+    "right avatar foot": 4.241445084041118e-09
+  },
+  "true_body_pairs_above0_10": 0,
+  "permitted_contacts": 257,
+  "groups": {},
+  "all_hits": [
+    {
+      "piece": "left shaped dark sleeve",
+      "role": "surface",
+      "body": "avatar torso",
+      "depth": 0.035355,
+      "above0_10": false
+    },
+    {
+      "piece": "left shaped dark sleeve",
+      "role": "surface",
+      "body": "avatar torso",
+      "depth": 0.035355,
+      "above0_10": false
+    },
+    {
+      "piece": "left shaped dark sleeve",
+      "role": "inside",
+      "body": "avatar torso",
+      "depth": 0.001816,
+      "above0_10": false
+    },
+    {
+      "piece": "left shaped dark sleeve",
+      "role": "surface",
+      "body": "avatar torso",
+      "depth": 0.035355,
+      "above0_10": false
+    },
+    {
+      "piece": "left shaped dark sleeve",
+      "role": "thin cut",
+      "body": "avatar torso",
+      "depth": 0.0,
+      "above0_10": false
+    },
+    {
+      "piece": "left shaped dark sleeve",
+      "role": "thin cut",
+      "body": "avatar torso",
+      "depth": 0.0,
+      "above0_10": false
+    },
+    {
+      "piece": "left shaped dark sleeve",
+      "role": "thin cut",
+      "body": "avatar torso",
+      "depth": 0.0,
+      "above0_10": false
+    },
+    {
+      "piece": "left sewn sleeve top",
+      "role": "surface",
+      "body": "avatar torso",
+      "depth": 0.0,
+      "above0_10": false
+    },
+    {
+      "piece": "left sewn sleeve top",
+      "role": "inside",
+      "body": "avatar torso",
+      "depth": 0.039093,
+      "above0_10": false
+    },
+    {
+      "piece": "left sewn sleeve top",
+      "role": "thin cut",
+      "body": "avatar torso",
+      "depth": 0.039444,
+      "above0_10": false
+    },
+    {
+      "piece": "left sewn sleeve top",
+      "role": "thin cut",
+      "body": "avatar torso",
+      "depth": 0.039444,
+      "above0_10": false
+    },
+    {
+      "piece": "left sewn sleeve top",
+      "role": "surface",
+      "body": "avatar torso",
+      "depth": 0.0,
+      "above0_10": false
+    },
+    {
+      "piece": "left sewn sleeve top",
+      "role": "inside",
+      "body": "avatar torso",
+      "depth": 0.039093,
+      "above0_10": false
+    },
+    {
+      "piece": "left sewn sleeve top",
+      "role": "thin cut",
+      "body": "avatar torso",
+      "depth": 0.039444,
+      "above0_10": false
+    },
+    {
+      "piece": "left sewn sleeve top",
+      "role": "thin cut",
+      "body": "avatar torso",
+      "depth": 0.039444,
+      "above0_10": false
+    },
+    {
+      "piece": "right shaped dark sleeve",
+      "role": "surface",
+      "body": "avatar torso",
+      "depth": 0.035355,
+      "above0_10": false
+    },
+    {
+      "piece": "right shaped dark sleeve",
+      "role": "surface",
+      "body": "avatar torso",
+      "depth": 0.035355,
+      "above0_10": false
+    },
+    {
+      "piece": "right shaped dark sleeve",
+      "role": "inside",
+      "body": "avatar torso",
+      "depth": 0.001816,
+      "above0_10": false
+    },
+    {
+      "piece": "right shaped dark sleeve",
+      "role": "surface",
+      "body": "avatar torso",
+      "depth": 0.035355,
+      "above0_10": false
+    },
+    {
+      "piece": "right shaped dark sleeve",
+      "role": "thin cut",
+      "body": "avatar torso",
+      "depth": 0.0,
+      "above0_10": false
+    },
+    {
+      "piece": "right shaped dark sleeve",
+      "role": "thin cut",
+      "body": "avatar torso",
+      "depth": 0.0,
+      "above0_10": false
+    },
+    {
+      "piece": "right shaped dark sleeve",
+      "role": "thin cut",
+      "body": "avatar torso",
+      "depth": 0.0,
+      "above0_10": false
+    },
+    {
+      "piece": "right sewn sleeve top",
+      "role": "surface",
+      "body": "avatar torso",
+      "depth": 0.0,
+      "above0_10": false
+    },
+    {
+      "piece": "right sewn sleeve top",
+      "role": "inside",
+      "body": "avatar torso",
+      "depth": 0.016144,
+      "above0_10": false
+    },
+    {
+      "piece": "right sewn sleeve top",
+      "role": "thin cut",
+      "body": "avatar torso",
+      "depth": 0.028671,
+      "above0_10": false
+    },
+    {
+      "piece": "right sewn sleeve top",
+      "role": "thin cut",
+      "body": "avatar torso",
+      "depth": 0.028671,
+      "above0_10": false
+    },
+    {
+      "piece": "right sewn sleeve top",
+      "role": "surface",
+      "body": "avatar torso",
+      "depth": 0.0,
+      "above0_10": false
+    },
+    {
+      "piece": "right sewn sleeve top",
+      "role": "inside",
+      "body": "avatar torso",
+      "depth": 0.016144,
+      "above0_10": false
+    },
+    {
+      "piece": "right sewn sleeve top",
+      "role": "thin cut",
+      "body": "avatar torso",
+      "depth": 0.028671,
+      "above0_10": false
+    },
+    {
+      "piece": "right sewn sleeve top",
+      "role": "thin cut",
+      "body": "avatar torso",
+      "depth": 0.028671,
+      "above0_10": false
+    },
+    {
+      "piece": "left sewn body to sleeve shoulder",
+      "role": "inside",
+      "body": "avatar torso",
+      "depth": 0.025055,
+      "above0_10": false
+    },
+    {
+      "piece": "left sewn body to sleeve shoulder",
+      "role": "inside",
+      "body": "avatar torso",
+      "depth": 0.025055,
+      "above0_10": false
+    },
+    {
+      "piece": "left sewn body to sleeve shoulder",
+      "role": "inside",
+      "body": "avatar torso",
+      "depth": 0.011749,
+      "above0_10": false
+    },
+    {
+      "piece": "left sewn body to sleeve shoulder",
+      "role": "surface",
+      "body": "avatar torso",
+      "depth": 0.0,
+      "above0_10": false
+    },
+    {
+      "piece": "left sewn body to sleeve shoulder",
+      "role": "inside",
+      "body": "avatar torso",
+      "depth": 0.018143,
+      "above0_10": false
+    },
+    {
+      "piece": "left sewn body to sleeve shoulder",
+      "role": "surface",
+      "body": "avatar torso",
+      "depth": 0.0,
+      "above0_10": false
+    },
+    {
+      "piece": "left sewn body to sleeve shoulder",
+      "role": "inside",
+      "body": "avatar torso",
+      "depth": 0.018143,
+      "above0_10": false
+    },
+    {
+      "piece": "left sewn body to sleeve shoulder",
+      "role": "inside",
+      "body": "avatar torso",
+      "depth": 0.008362,
+      "above0_10": false
+    },
+    {
+      "piece": "left sewn body to sleeve shoulder",
+      "role": "surface",
+      "body": "avatar torso",
+      "depth": 0.0,
+      "above0_10": false
+    },
+    {
+      "piece": "left sewn body to sleeve shoulder",
+      "role": "inside",
+      "body": "avatar torso",
+      "depth": 0.018143,
+      "above0_10": false
+    },
+    {
+      "piece": "left sewn body to sleeve shoulder",
+      "role": "thin cut",
+      "body": "avatar torso",
+      "depth": 0.001266,
+      "above0_10": false
+    },
+    {
+      "piece": "left sewn body to sleeve shoulder",
+      "role": "thin cut",
+      "body": "avatar torso",
+      "depth": 0.01268,
+      "above0_10": false
+    },
+    {
+      "piece": "left sewn body to sleeve shoulder",
+      "role": "thin cut",
+      "body": "avatar torso",
+      "depth": 0.011749,
+      "above0_10": false
+    },
+    {
+      "piece": "left sewn body to sleeve shoulder",
+      "role": "thin cut",
+      "body": "avatar torso",
+      "depth": 0.025711,
+      "above0_10": false
+    },
+    {
+      "piece": "left sewn body to sleeve shoulder",
+      "role": "thin cut",
+      "body": "avatar torso",
+      "depth": 0.025711,
+      "above0_10": false
+    },
+    {
+      "piece": "left sewn body to sleeve shoulder",
+      "role": "thin cut",
+      "body": "avatar torso",
+      "depth": 0.025711,
+      "above0_10": false
+    },
+    {
+      "piece": "left sewn body to sleeve shoulder",
+      "role": "thin cut",
+      "body": "avatar torso",
+      "depth": 0.025711,
+      "above0_10": false
+    },
+    {
+      "piece": "right sewn body to sleeve shoulder",
+      "role": "inside",
+      "body": "avatar torso",
+      "depth": 0.024475,
+      "above0_10": false
+    },
+    {
+      "piece": "right sewn body to sleeve shoulder",
+      "role": "inside",
+      "body": "avatar torso",
+      "depth": 0.024475,
+      "above0_10": false
+    },
+    {
+      "piece": "right sewn body to sleeve shoulder",
+      "role": "inside",
+      "body": "avatar torso",
+      "depth": 0.013901,
+      "above0_10": false
+    },
+    {
+      "piece": "right sewn body to sleeve shoulder",
+      "role": "surface",
+      "body": "avatar torso",
+      "depth": 0.0,
+      "above0_10": false
+    },
+    {
+      "piece": "right sewn body to sleeve shoulder",
+      "role": "inside",
+      "body": "avatar torso",
+      "depth": 0.018143,
+      "above0_10": false
+    },
+    {
+      "piece": "right sewn body to sleeve shoulder",
+      "role": "surface",
+      "body": "avatar torso",
+      "depth": 0.0,
+      "above0_10": false
+    },
+    {
+      "piece": "right sewn body to sleeve shoulder",
+      "role": "inside",
+      "body": "avatar torso",
+      "depth": 0.018143,
+      "above0_10": false
+    },
+    {
+      "piece": "right sewn body to sleeve shoulder",
+      "role": "inside",
+      "body": "avatar torso",
+      "depth": 0.008347,
+      "above0_10": false
+    },
+    {
+      "piece": "right sewn body to sleeve shoulder",
+      "role": "surface",
+      "body": "avatar torso",
+      "depth": 0.0,
+      "above0_10": false
+    },
+    {
+      "piece": "right sewn body to sleeve shoulder",
+      "role": "inside",
+      "body": "avatar torso",
+      "depth": 0.018143,
+      "above0_10": false
+    },
+    {
+      "piece": "right sewn body to sleeve shoulder",
+      "role": "thin cut",
+      "body": "avatar torso",
+      "depth": 3.1e-05,
+      "above0_10": false
+    },
+    {
+      "piece": "right sewn body to sleeve shoulder",
+      "role": "thin cut",
+      "body": "avatar torso",
+      "depth": 0.011765,
+      "above0_10": false
+    },
+    {
+      "piece": "right sewn body to sleeve shoulder",
+      "role": "thin cut",
+      "body": "avatar torso",
+      "depth": 0.013901,
+      "above0_10": false
+    },
+    {
+      "piece": "right sewn body to sleeve shoulder",
+      "role": "thin cut",
+      "body": "avatar torso",
+      "depth": 0.025711,
+      "above0_10": false
+    },
+    {
+      "piece": "right sewn body to sleeve shoulder",
+      "role": "thin cut",
+      "body": "avatar torso",
+      "depth": 0.025711,
+      "above0_10": false
+    },
+    {
+      "piece": "right sewn body to sleeve shoulder",
+      "role": "thin cut",
+      "body": "avatar torso",
+      "depth": 0.025711,
+      "above0_10": false
+    },
+    {
+      "piece": "right sewn body to sleeve shoulder",
+      "role": "thin cut",
+      "body": "avatar torso",
+      "depth": 0.025711,
+      "above0_10": false
+    },
+    {
+      "piece": "left continuous fitted coat side",
+      "role": "inside",
+      "body": "avatar torso",
+      "depth": 0.014984,
+      "above0_10": false
+    },
+    {
+      "piece": "left continuous fitted coat side",
+      "role": "inside",
+      "body": "avatar torso",
+      "depth": 0.01149,
+      "above0_10": false
+    },
+    {
+      "piece": "left continuous fitted coat side",
+      "role": "inside",
+      "body": "avatar torso",
+      "depth": 0.014984,
+      "above0_10": false
+    },
+    {
+      "piece": "left continuous fitted coat side",
+      "role": "inside",
+      "body": "avatar torso",
+      "depth": 0.014984,
+      "above0_10": false
+    },
+    {
+      "piece": "left continuous fitted coat side",
+      "role": "inside",
+      "body": "avatar torso",
+      "depth": 0.014984,
+      "above0_10": false
+    },
+    {
+      "piece": "left continuous fitted coat side",
+      "role": "inside",
+      "body": "avatar torso",
+      "depth": 0.014984,
+      "above0_10": false
+    },
+    {
+      "piece": "left continuous fitted coat side",
+      "role": "inside",
+      "body": "avatar torso",
+      "depth": 0.006973,
+      "above0_10": false
+    },
+    {
+      "piece": "left continuous fitted coat side",
+      "role": "inside",
+      "body": "avatar torso",
+      "depth": 0.007675,
+      "above0_10": false
+    },
+    {
+      "piece": "left continuous fitted coat side",
+      "role": "thin cut",
+      "body": "avatar torso",
+      "depth": 0.008667,
+      "above0_10": false
+    },
+    {
+      "piece": "left continuous fitted coat side",
+      "role": "thin cut",
+      "body": "avatar torso",
+      "depth": 0.014984,
+      "above0_10": false
+    },
+    {
+      "piece": "left continuous fitted coat side",
+      "role": "thin cut",
+      "body": "avatar torso",
+      "depth": 0.014984,
+      "above0_10": false
+    },
+    {
+      "piece": "left continuous fitted coat side",
+      "role": "thin cut",
+      "body": "avatar torso",
+      "depth": 0.014984,
+      "above0_10": false
+    },
+    {
+      "piece": "left continuous fitted coat side",
+      "role": "thin cut",
+      "body": "avatar torso",
+      "depth": 0.014984,
+      "above0_10": false
+    },
+    {
+      "piece": "left continuous fitted coat side",
+      "role": "thin cut",
+      "body": "avatar torso",
+      "depth": 0.014984,
+      "above0_10": false
+    },
+    {
+      "piece": "left continuous fitted coat side",
+      "role": "thin cut",
+      "body": "avatar torso",
+      "depth": 0.007675,
+      "above0_10": false
+    },
+    {
+      "piece": "right continuous fitted coat side",
+      "role": "inside",
+      "body": "avatar torso",
+      "depth": 0.014984,
+      "above0_10": false
+    },
+    {
+      "piece": "right continuous fitted coat side",
+      "role": "inside",
+      "body": "avatar torso",
+      "depth": 0.014984,
+      "above0_10": false
+    },
+    {
+      "piece": "right continuous fitted coat side",
+      "role": "inside",
+      "body": "avatar torso",
+      "depth": 0.014984,
+      "above0_10": false
+    },
+    {
+      "piece": "right continuous fitted coat side",
+      "role": "inside",
+      "body": "avatar torso",
+      "depth": 0.014984,
+      "above0_10": false
+    },
+    {
+      "piece": "right continuous fitted coat side",
+      "role": "inside",
+      "body": "avatar torso",
+      "depth": 0.014984,
+      "above0_10": false
+    },
+    {
+      "piece": "right continuous fitted coat side",
+      "role": "inside",
+      "body": "avatar torso",
+      "depth": 0.009369,
+      "above0_10": false
+    },
+    {
+      "piece": "right continuous fitted coat side",
+      "role": "thin cut",
+      "body": "avatar torso",
+      "depth": 0.014984,
+      "above0_10": false
+    },
+    {
+      "piece": "right continuous fitted coat side",
+      "role": "thin cut",
+      "body": "avatar torso",
+      "depth": 0.014984,
+      "above0_10": false
+    },
+    {
+      "piece": "right continuous fitted coat side",
+      "role": "thin cut",
+      "body": "avatar torso",
+      "depth": 0.014984,
+      "above0_10": false
+    },
+    {
+      "piece": "right continuous fitted coat side",
+      "role": "thin cut",
+      "body": "avatar torso",
+      "depth": 0.014984,
+      "above0_10": false
+    },
+    {
+      "piece": "right continuous fitted coat side",
+      "role": "thin cut",
+      "body": "avatar torso",
+      "depth": 0.014984,
+      "above0_10": false
+    },
+    {
+      "piece": "right continuous fitted coat side",
+      "role": "thin cut",
+      "body": "avatar torso",
+      "depth": 0.004242,
+      "above0_10": false
+    },
+    {
+      "piece": "right continuous fitted coat side",
+      "role": "thin cut",
+      "body": "avatar torso",
+      "depth": 0.009369,
+      "above0_10": false
+    },
+    {
+      "piece": "left shaped dark sleeve",
+      "role": "surface",
+      "body": "avatar head",
+      "depth": 0.00705,
+      "above0_10": false
+    },
+    {
+      "piece": "left shaped dark sleeve",
+      "role": "surface",
+      "body": "avatar head",
+      "depth": 0.0,
+      "above0_10": false
+    },
+    {
+      "piece": "left shaped dark sleeve",
+      "role": "surface",
+      "body": "avatar head",
+      "depth": 0.0,
+      "above0_10": false
+    },
+    {
+      "piece": "left shaped dark sleeve",
+      "role": "surface",
+      "body": "avatar head",
+      "depth": 0.0,
+      "above0_10": false
+    },
+    {
+      "piece": "left shaped dark sleeve",
+      "role": "inside",
+      "body": "avatar head",
+      "depth": 0.002136,
+      "above0_10": false
+    },
+    {
+      "piece": "left shaped dark sleeve",
+      "role": "surface",
+      "body": "avatar head",
+      "depth": 0.0,
+      "above0_10": false
+    },
+    {
+      "piece": "left shaped dark sleeve",
+      "role": "surface",
+      "body": "avatar head",
+      "depth": 0.00705,
+      "above0_10": false
+    },
+    {
+      "piece": "left shaped dark sleeve",
+      "role": "inside",
+      "body": "avatar head",
+      "depth": 0.002014,
+      "above0_10": false
+    },
+    {
+      "piece": "left shaped dark sleeve",
+      "role": "surface",
+      "body": "avatar head",
+      "depth": 0.0,
+      "above0_10": false
+    },
+    {
+      "piece": "left shaped dark sleeve",
+      "role": "inside",
+      "body": "avatar head",
+      "depth": 0.000549,
+      "above0_10": false
+    },
+    {
+      "piece": "left shaped dark sleeve",
+      "role": "thin cut",
+      "body": "avatar head",
+      "depth": 0.00705,
+      "above0_10": false
+    },
+    {
+      "piece": "left shaped dark sleeve",
+      "role": "thin cut",
+      "body": "avatar head",
+      "depth": 0.00705,
+      "above0_10": false
+    },
+    {
+      "piece": "left shaped dark sleeve",
+      "role": "thin cut",
+      "body": "avatar head",
+      "depth": 0.003571,
+      "above0_10": false
+    },
+    {
+      "piece": "left shaped dark sleeve",
+      "role": "thin cut",
+      "body": "avatar head",
+      "depth": 0.004608,
+      "above0_10": false
+    },
+    {
+      "piece": "left shaped dark sleeve",
+      "role": "thin cut",
+      "body": "avatar head",
+      "depth": 0.004608,
+      "above0_10": false
+    },
+    {
+      "piece": "left shaped dark sleeve",
+      "role": "thin cut",
+      "body": "avatar head",
+      "depth": 0.004608,
+      "above0_10": false
+    },
+    {
+      "piece": "left shaped dark sleeve",
+      "role": "thin cut",
+      "body": "avatar head",
+      "depth": 0.00705,
+      "above0_10": false
+    },
+    {
+      "piece": "left shaped dark sleeve",
+      "role": "thin cut",
+      "body": "avatar head",
+      "depth": 0.002014,
+      "above0_10": false
+    },
+    {
+      "piece": "left sewn sleeve top",
+      "role": "surface",
+      "body": "avatar head",
+      "depth": 0.00705,
+      "above0_10": false
+    },
+    {
+      "piece": "left sewn sleeve top",
+      "role": "thin cut",
+      "body": "avatar head",
+      "depth": 0.00705,
+      "above0_10": false
+    },
+    {
+      "piece": "left sewn sleeve top",
+      "role": "thin cut",
+      "body": "avatar head",
+      "depth": 0.006836,
+      "above0_10": false
+    },
+    {
+      "piece": "left sewn sleeve top",
+      "role": "surface",
+      "body": "avatar head",
+      "depth": 0.005524,
+      "above0_10": false
+    },
+    {
+      "piece": "left sewn sleeve top",
+      "role": "thin cut",
+      "body": "avatar head",
+      "depth": 0.0,
+      "above0_10": false
+    },
+    {
+      "piece": "left sewn sleeve top",
+      "role": "thin cut",
+      "body": "avatar head",
+      "depth": 0.0,
+      "above0_10": false
+    },
+    {
+      "piece": "left sewn sleeve top",
+      "role": "surface",
+      "body": "avatar head",
+      "depth": 0.005524,
+      "above0_10": false
+    },
+    {
+      "piece": "left sewn sleeve top",
+      "role": "thin cut",
+      "body": "avatar head",
+      "depth": 0.0,
+      "above0_10": false
+    },
+    {
+      "piece": "left sewn sleeve top",
+      "role": "thin cut",
+      "body": "avatar head",
+      "depth": 0.0,
+      "above0_10": false
+    },
+    {
+      "piece": "left sewn sleeve top",
+      "role": "surface",
+      "body": "avatar head",
+      "depth": 0.00705,
+      "above0_10": false
+    },
+    {
+      "piece": "left sewn sleeve top",
+      "role": "thin cut",
+      "body": "avatar head",
+      "depth": 0.00705,
+      "above0_10": false
+    },
+    {
+      "piece": "right shaped dark sleeve",
+      "role": "surface",
+      "body": "avatar head",
+      "depth": 0.00705,
+      "above0_10": false
+    },
+    {
+      "piece": "right shaped dark sleeve",
+      "role": "inside",
+      "body": "avatar head",
+      "depth": 0.002014,
+      "above0_10": false
+    },
+    {
+      "piece": "right shaped dark sleeve",
+      "role": "surface",
+      "body": "avatar head",
+      "depth": 0.0,
+      "above0_10": false
+    },
+    {
+      "piece": "right shaped dark sleeve",
+      "role": "inside",
+      "body": "avatar head",
+      "depth": 0.000549,
+      "above0_10": false
+    },
+    {
+      "piece": "right shaped dark sleeve",
+      "role": "surface",
+      "body": "avatar head",
+      "depth": 0.00705,
+      "above0_10": false
+    },
+    {
+      "piece": "right shaped dark sleeve",
+      "role": "surface",
+      "body": "avatar head",
+      "depth": 0.0,
+      "above0_10": false
+    },
+    {
+      "piece": "right shaped dark sleeve",
+      "role": "surface",
+      "body": "avatar head",
+      "depth": 0.0,
+      "above0_10": false
+    },
+    {
+      "piece": "right shaped dark sleeve",
+      "role": "surface",
+      "body": "avatar head",
+      "depth": 0.0,
+      "above0_10": false
+    },
+    {
+      "piece": "right shaped dark sleeve",
+      "role": "inside",
+      "body": "avatar head",
+      "depth": 0.002136,
+      "above0_10": false
+    },
+    {
+      "piece": "right shaped dark sleeve",
+      "role": "surface",
+      "body": "avatar head",
+      "depth": 0.0,
+      "above0_10": false
+    },
+    {
+      "piece": "right shaped dark sleeve",
+      "role": "thin cut",
+      "body": "avatar head",
+      "depth": 0.00705,
+      "above0_10": false
+    },
+    {
+      "piece": "right shaped dark sleeve",
+      "role": "thin cut",
+      "body": "avatar head",
+      "depth": 0.002014,
+      "above0_10": false
+    },
+    {
+      "piece": "right shaped dark sleeve",
+      "role": "thin cut",
+      "body": "avatar head",
+      "depth": 0.00705,
+      "above0_10": false
+    },
+    {
+      "piece": "right shaped dark sleeve",
+      "role": "thin cut",
+      "body": "avatar head",
+      "depth": 0.00705,
+      "above0_10": false
+    },
+    {
+      "piece": "right shaped dark sleeve",
+      "role": "thin cut",
+      "body": "avatar head",
+      "depth": 0.003571,
+      "above0_10": false
+    },
+    {
+      "piece": "right shaped dark sleeve",
+      "role": "thin cut",
+      "body": "avatar head",
+      "depth": 0.004608,
+      "above0_10": false
+    },
+    {
+      "piece": "right shaped dark sleeve",
+      "role": "thin cut",
+      "body": "avatar head",
+      "depth": 0.004608,
+      "above0_10": false
+    },
+    {
+      "piece": "right shaped dark sleeve",
+      "role": "thin cut",
+      "body": "avatar head",
+      "depth": 0.004608,
+      "above0_10": false
+    },
+    {
+      "piece": "right sewn sleeve top",
+      "role": "surface",
+      "body": "avatar head",
+      "depth": 0.005524,
+      "above0_10": false
+    },
+    {
+      "piece": "right sewn sleeve top",
+      "role": "thin cut",
+      "body": "avatar head",
+      "depth": 0.0,
+      "above0_10": false
+    },
+    {
+      "piece": "right sewn sleeve top",
+      "role": "thin cut",
+      "body": "avatar head",
+      "depth": 0.0,
+      "above0_10": false
+    },
+    {
+      "piece": "right sewn sleeve top",
+      "role": "surface",
+      "body": "avatar head",
+      "depth": 0.00705,
+      "above0_10": false
+    },
+    {
+      "piece": "right sewn sleeve top",
+      "role": "thin cut",
+      "body": "avatar head",
+      "depth": 0.00705,
+      "above0_10": false
+    },
+    {
+      "piece": "right sewn sleeve top",
+      "role": "surface",
+      "body": "avatar head",
+      "depth": 0.00705,
+      "above0_10": false
+    },
+    {
+      "piece": "right sewn sleeve top",
+      "role": "thin cut",
+      "body": "avatar head",
+      "depth": 0.00705,
+      "above0_10": false
+    },
+    {
+      "piece": "right sewn sleeve top",
+      "role": "thin cut",
+      "body": "avatar head",
+      "depth": 0.006775,
+      "above0_10": false
+    },
+    {
+      "piece": "right sewn sleeve top",
+      "role": "surface",
+      "body": "avatar head",
+      "depth": 0.005524,
+      "above0_10": false
+    },
+    {
+      "piece": "right sewn sleeve top",
+      "role": "thin cut",
+      "body": "avatar head",
+      "depth": 0.0,
+      "above0_10": false
+    },
+    {
+      "piece": "right sewn sleeve top",
+      "role": "thin cut",
+      "body": "avatar head",
+      "depth": 0.0,
+      "above0_10": false
+    },
+    {
+      "piece": "left sewn body to sleeve shoulder",
+      "role": "surface",
+      "body": "avatar head",
+      "depth": 0.014282,
+      "above0_10": false
+    },
+    {
+      "piece": "left sewn body to sleeve shoulder",
+      "role": "surface",
+      "body": "avatar head",
+      "depth": 0.014282,
+      "above0_10": false
+    },
+    {
+      "piece": "left sewn body to sleeve shoulder",
+      "role": "surface",
+      "body": "avatar head",
+      "depth": 0.014282,
+      "above0_10": false
+    },
+    {
+      "piece": "left sewn body to sleeve shoulder",
+      "role": "inside",
+      "body": "avatar head",
+      "depth": 0.000366,
+      "above0_10": false
+    },
+    {
+      "piece": "left sewn body to sleeve shoulder",
+      "role": "surface",
+      "body": "avatar head",
+      "depth": 0.014282,
+      "above0_10": false
+    },
+    {
+      "piece": "left sewn body to sleeve shoulder",
+      "role": "thin cut",
+      "body": "avatar head",
+      "depth": 0.0,
+      "above0_10": false
+    },
+    {
+      "piece": "left sewn body to sleeve shoulder",
+      "role": "thin cut",
+      "body": "avatar head",
+      "depth": 0.0,
+      "above0_10": false
+    },
+    {
+      "piece": "left sewn body to sleeve shoulder",
+      "role": "thin cut",
+      "body": "avatar head",
+      "depth": 0.014282,
+      "above0_10": false
+    },
+    {
+      "piece": "left sewn body to sleeve shoulder",
+      "role": "thin cut",
+      "body": "avatar head",
+      "depth": 0.014282,
+      "above0_10": false
+    },
+    {
+      "piece": "left sewn body to sleeve shoulder",
+      "role": "thin cut",
+      "body": "avatar head",
+      "depth": 0.013702,
+      "above0_10": false
+    },
+    {
+      "piece": "left sewn body to sleeve shoulder",
+      "role": "thin cut",
+      "body": "avatar head",
+      "depth": 0.0,
+      "above0_10": false
+    },
+    {
+      "piece": "left sewn body to sleeve shoulder",
+      "role": "thin cut",
+      "body": "avatar head",
+      "depth": 0.0,
+      "above0_10": false
+    },
+    {
+      "piece": "right sewn body to sleeve shoulder",
+      "role": "surface",
+      "body": "avatar head",
+      "depth": 0.014282,
+      "above0_10": false
+    },
+    {
+      "piece": "right sewn body to sleeve shoulder",
+      "role": "surface",
+      "body": "avatar head",
+      "depth": 0.014282,
+      "above0_10": false
+    },
+    {
+      "piece": "right sewn body to sleeve shoulder",
+      "role": "surface",
+      "body": "avatar head",
+      "depth": 0.014282,
+      "above0_10": false
+    },
+    {
+      "piece": "right sewn body to sleeve shoulder",
+      "role": "inside",
+      "body": "avatar head",
+      "depth": 0.000427,
+      "above0_10": false
+    },
+    {
+      "piece": "right sewn body to sleeve shoulder",
+      "role": "surface",
+      "body": "avatar head",
+      "depth": 0.014282,
+      "above0_10": false
+    },
+    {
+      "piece": "right sewn body to sleeve shoulder",
+      "role": "thin cut",
+      "body": "avatar head",
+      "depth": 0.0,
+      "above0_10": false
+    },
+    {
+      "piece": "right sewn body to sleeve shoulder",
+      "role": "thin cut",
+      "body": "avatar head",
+      "depth": 0.0,
+      "above0_10": false
+    },
+    {
+      "piece": "right sewn body to sleeve shoulder",
+      "role": "thin cut",
+      "body": "avatar head",
+      "depth": 0.014282,
+      "above0_10": false
+    },
+    {
+      "piece": "right sewn body to sleeve shoulder",
+      "role": "thin cut",
+      "body": "avatar head",
+      "depth": 0.014282,
+      "above0_10": false
+    },
+    {
+      "piece": "right sewn body to sleeve shoulder",
+      "role": "thin cut",
+      "body": "avatar head",
+      "depth": 0.013763,
+      "above0_10": false
+    },
+    {
+      "piece": "right sewn body to sleeve shoulder",
+      "role": "thin cut",
+      "body": "avatar head",
+      "depth": 0.0,
+      "above0_10": false
+    },
+    {
+      "piece": "right sewn body to sleeve shoulder",
+      "role": "thin cut",
+      "body": "avatar head",
+      "depth": 0.0,
+      "above0_10": false
+    },
+    {
+      "piece": "folded hood to neck cowl",
+      "role": "inside",
+      "body": "avatar head",
+      "depth": 0.000854,
+      "above0_10": false
+    },
+    {
+      "piece": "folded hood to neck cowl",
+      "role": "surface",
+      "body": "avatar head",
+      "depth": 0.025787,
+      "above0_10": false
+    },
+    {
+      "piece": "folded hood to neck cowl",
+      "role": "inside",
+      "body": "avatar head",
+      "depth": 0.052307,
+      "above0_10": false
+    },
+    {
+      "piece": "supported falling shoulder cloth",
+      "role": "surface",
+      "body": "avatar head",
+      "depth": 0.084503,
+      "above0_10": false
+    },
+    {
+      "piece": "supported falling shoulder cloth",
+      "role": "inside",
+      "body": "avatar head",
+      "depth": 0.085602,
+      "above0_10": false
+    },
+    {
+      "piece": "supported falling shoulder cloth",
+      "role": "surface",
+      "body": "avatar head",
+      "depth": 0.047211,
+      "above0_10": false
+    },
+    {
+      "piece": "supported falling shoulder cloth",
+      "role": "inside",
+      "body": "avatar head",
+      "depth": 0.062622,
+      "above0_10": false
+    },
+    {
+      "piece": "supported falling shoulder cloth",
+      "role": "surface",
+      "body": "avatar head",
+      "depth": 0.036316,
+      "above0_10": false
+    },
+    {
+      "piece": "supported falling shoulder cloth",
+      "role": "inside",
+      "body": "avatar head",
+      "depth": 0.067413,
+      "above0_10": false
+    },
+    {
+      "piece": "supported falling shoulder cloth",
+      "role": "inside",
+      "body": "avatar head",
+      "depth": 0.003998,
+      "above0_10": false
+    },
+    {
+      "piece": "left shaped dark sleeve",
+      "role": "inside",
+      "body": "left avatar upper arm",
+      "depth": 0.04184,
+      "above0_10": false
+    },
+    {
+      "piece": "left shaped dark sleeve",
+      "role": "inside",
+      "body": "left avatar upper arm",
+      "depth": 0.035767,
+      "above0_10": false
+    },
+    {
+      "piece": "left shaped dark sleeve",
+      "role": "inside",
+      "body": "left avatar upper arm",
+      "depth": 0.038895,
+      "above0_10": false
+    },
+    {
+      "piece": "left shaped dark sleeve",
+      "role": "inside",
+      "body": "left avatar upper arm",
+      "depth": 0.04184,
+      "above0_10": false
+    },
+    {
+      "piece": "left shaped dark sleeve",
+      "role": "inside",
+      "body": "left avatar upper arm",
+      "depth": 0.026581,
+      "above0_10": false
+    },
+    {
+      "piece": "left shaped dark sleeve",
+      "role": "inside",
+      "body": "left avatar upper arm",
+      "depth": 0.026581,
+      "above0_10": false
+    },
+    {
+      "piece": "left shaped dark sleeve",
+      "role": "inside",
+      "body": "left avatar upper arm",
+      "depth": 0.026581,
+      "above0_10": false
+    },
+    {
+      "piece": "dark soft neck underlayer",
+      "role": "surface",
+      "body": "left avatar upper arm",
+      "depth": 0.071304,
+      "above0_10": false
+    },
+    {
+      "piece": "dark soft neck underlayer",
+      "role": "inside",
+      "body": "left avatar upper arm",
+      "depth": 0.030823,
+      "above0_10": false
+    },
+    {
+      "piece": "dark soft neck underlayer",
+      "role": "surface",
+      "body": "left avatar upper arm",
+      "depth": 0.058121,
+      "above0_10": false
+    },
+    {
+      "piece": "dark soft neck underlayer",
+      "role": "inside",
+      "body": "left avatar upper arm",
+      "depth": 0.018921,
+      "above0_10": false
+    },
+    {
+      "piece": "dark soft neck underlayer",
+      "role": "surface",
+      "body": "left avatar upper arm",
+      "depth": 0.071304,
+      "above0_10": false
+    },
+    {
+      "piece": "dark soft neck underlayer",
+      "role": "inside",
+      "body": "left avatar upper arm",
+      "depth": 0.044983,
+      "above0_10": false
+    },
+    {
+      "piece": "dark soft neck underlayer",
+      "role": "surface",
+      "body": "left avatar upper arm",
+      "depth": 0.071304,
+      "above0_10": false
+    },
+    {
+      "piece": "dark soft neck underlayer",
+      "role": "inside",
+      "body": "left avatar upper arm",
+      "depth": 0.027664,
+      "above0_10": false
+    },
+    {
+      "piece": "left sewn body to sleeve shoulder",
+      "role": "surface",
+      "body": "left avatar upper arm",
+      "depth": 0.0513,
+      "above0_10": false
+    },
+    {
+      "piece": "left sewn body to sleeve shoulder",
+      "role": "inside",
+      "body": "left avatar upper arm",
+      "depth": 0.0215,
+      "above0_10": false
+    },
+    {
+      "piece": "left sewn body to sleeve shoulder",
+      "role": "surface",
+      "body": "left avatar upper arm",
+      "depth": 0.011276,
+      "above0_10": false
+    },
+    {
+      "piece": "left sewn body to sleeve shoulder",
+      "role": "surface",
+      "body": "left avatar upper arm",
+      "depth": 0.0513,
+      "above0_10": false
+    },
+    {
+      "piece": "left sewn body to sleeve shoulder",
+      "role": "inside",
+      "body": "left avatar upper arm",
+      "depth": 0.012024,
+      "above0_10": false
+    },
+    {
+      "piece": "left sewn body to sleeve shoulder",
+      "role": "surface",
+      "body": "left avatar upper arm",
+      "depth": 0.0513,
+      "above0_10": false
+    },
+    {
+      "piece": "left sewn body to sleeve shoulder",
+      "role": "inside",
+      "body": "left avatar upper arm",
+      "depth": 0.0215,
+      "above0_10": false
+    },
+    {
+      "piece": "left sewn body to sleeve shoulder",
+      "role": "thin cut",
+      "body": "left avatar upper arm",
+      "depth": 0.013031,
+      "above0_10": false
+    },
+    {
+      "piece": "left sewn body to sleeve shoulder",
+      "role": "thin cut",
+      "body": "left avatar upper arm",
+      "depth": 0.013031,
+      "above0_10": false
+    },
+    {
+      "piece": "left sewn body to sleeve shoulder",
+      "role": "thin cut",
+      "body": "left avatar upper arm",
+      "depth": 0.013031,
+      "above0_10": false
+    },
+    {
+      "piece": "right shaped dark sleeve",
+      "role": "inside",
+      "body": "right avatar upper arm",
+      "depth": 0.04184,
+      "above0_10": false
+    },
+    {
+      "piece": "right shaped dark sleeve",
+      "role": "inside",
+      "body": "right avatar upper arm",
+      "depth": 0.035767,
+      "above0_10": false
+    },
+    {
+      "piece": "right shaped dark sleeve",
+      "role": "inside",
+      "body": "right avatar upper arm",
+      "depth": 0.038895,
+      "above0_10": false
+    },
+    {
+      "piece": "right shaped dark sleeve",
+      "role": "inside",
+      "body": "right avatar upper arm",
+      "depth": 0.04184,
+      "above0_10": false
+    },
+    {
+      "piece": "right shaped dark sleeve",
+      "role": "inside",
+      "body": "right avatar upper arm",
+      "depth": 0.026581,
+      "above0_10": false
+    },
+    {
+      "piece": "right shaped dark sleeve",
+      "role": "inside",
+      "body": "right avatar upper arm",
+      "depth": 0.026581,
+      "above0_10": false
+    },
+    {
+      "piece": "right shaped dark sleeve",
+      "role": "inside",
+      "body": "right avatar upper arm",
+      "depth": 0.026581,
+      "above0_10": false
+    },
+    {
+      "piece": "dark soft neck underlayer",
+      "role": "surface",
+      "body": "right avatar upper arm",
+      "depth": 0.071304,
+      "above0_10": false
+    },
+    {
+      "piece": "dark soft neck underlayer",
+      "role": "inside",
+      "body": "right avatar upper arm",
+      "depth": 0.031006,
+      "above0_10": false
+    },
+    {
+      "piece": "dark soft neck underlayer",
+      "role": "surface",
+      "body": "right avatar upper arm",
+      "depth": 0.066772,
+      "above0_10": false
+    },
+    {
+      "piece": "dark soft neck underlayer",
+      "role": "inside",
+      "body": "right avatar upper arm",
+      "depth": 0.028061,
+      "above0_10": false
+    },
+    {
+      "piece": "dark soft neck underlayer",
+      "role": "surface",
+      "body": "right avatar upper arm",
+      "depth": 0.071304,
+      "above0_10": false
+    },
+    {
+      "piece": "dark soft neck underlayer",
+      "role": "inside",
+      "body": "right avatar upper arm",
+      "depth": 0.044052,
+      "above0_10": false
+    },
+    {
+      "piece": "dark soft neck underlayer",
+      "role": "surface",
+      "body": "right avatar upper arm",
+      "depth": 0.071304,
+      "above0_10": false
+    },
+    {
+      "piece": "dark soft neck underlayer",
+      "role": "inside",
+      "body": "right avatar upper arm",
+      "depth": 0.027664,
+      "above0_10": false
+    },
+    {
+      "piece": "right sewn body to sleeve shoulder",
+      "role": "surface",
+      "body": "right avatar upper arm",
+      "depth": 0.0513,
+      "above0_10": false
+    },
+    {
+      "piece": "right sewn body to sleeve shoulder",
+      "role": "inside",
+      "body": "right avatar upper arm",
+      "depth": 0.02153,
+      "above0_10": false
+    },
+    {
+      "piece": "right sewn body to sleeve shoulder",
+      "role": "surface",
+      "body": "right avatar upper arm",
+      "depth": 0.013931,
+      "above0_10": false
+    },
+    {
+      "piece": "right sewn body to sleeve shoulder",
+      "role": "inside",
+      "body": "right avatar upper arm",
+      "depth": 9.2e-05,
+      "above0_10": false
+    },
+    {
+      "piece": "right sewn body to sleeve shoulder",
+      "role": "surface",
+      "body": "right avatar upper arm",
+      "depth": 0.0513,
+      "above0_10": false
+    },
+    {
+      "piece": "right sewn body to sleeve shoulder",
+      "role": "inside",
+      "body": "right avatar upper arm",
+      "depth": 0.011963,
+      "above0_10": false
+    },
+    {
+      "piece": "right sewn body to sleeve shoulder",
+      "role": "surface",
+      "body": "right avatar upper arm",
+      "depth": 0.0513,
+      "above0_10": false
+    },
+    {
+      "piece": "right sewn body to sleeve shoulder",
+      "role": "inside",
+      "body": "right avatar upper arm",
+      "depth": 0.02153,
+      "above0_10": false
+    },
+    {
+      "piece": "right sewn body to sleeve shoulder",
+      "role": "thin cut",
+      "body": "right avatar upper arm",
+      "depth": 0.013031,
+      "above0_10": false
+    },
+    {
+      "piece": "right sewn body to sleeve shoulder",
+      "role": "thin cut",
+      "body": "right avatar upper arm",
+      "depth": 0.013031,
+      "above0_10": false
+    },
+    {
+      "piece": "right sewn body to sleeve shoulder",
+      "role": "thin cut",
+      "body": "right avatar upper arm",
+      "depth": 0.013031,
+      "above0_10": false
+    },
+    {
+      "piece": "left real continuous joint wool leg garment",
+      "role": "surface",
+      "body": "left avatar thigh",
+      "depth": 0.0,
+      "above0_10": false
+    },
+    {
+      "piece": "left real continuous joint wool leg garment",
+      "role": "inside",
+      "body": "left avatar thigh",
+      "depth": 0.059967,
+      "above0_10": false
+    },
+    {
+      "piece": "left real continuous joint wool leg garment",
+      "role": "inside",
+      "body": "left avatar thigh",
+      "depth": 0.04689,
+      "above0_10": false
+    },
+    {
+      "piece": "left real continuous joint wool leg garment",
+      "role": "surface",
+      "body": "left avatar thigh",
+      "depth": 0.0,
+      "above0_10": false
+    },
+    {
+      "piece": "left real continuous joint wool leg garment",
+      "role": "inside",
+      "body": "left avatar thigh",
+      "depth": 0.059967,
+      "above0_10": false
+    },
+    {
+      "piece": "left real continuous joint wool leg garment",
+      "role": "surface",
+      "body": "left avatar thigh",
+      "depth": 0.0,
+      "above0_10": false
+    },
+    {
+      "piece": "left real continuous joint wool leg garment",
+      "role": "inside",
+      "body": "left avatar thigh",
+      "depth": 0.059967,
+      "above0_10": false
+    },
+    {
+      "piece": "left real continuous joint wool leg garment",
+      "role": "thin cut",
+      "body": "left avatar thigh",
+      "depth": 0.048706,
+      "above0_10": false
+    },
+    {
+      "piece": "left real continuous joint wool leg garment",
+      "role": "thin cut",
+      "body": "left avatar thigh",
+      "depth": 0.059967,
+      "above0_10": false
+    },
+    {
+      "piece": "left real continuous joint wool leg garment",
+      "role": "thin cut",
+      "body": "left avatar thigh",
+      "depth": 0.059967,
+      "above0_10": false
+    },
+    {
+      "piece": "left real continuous joint wool leg garment",
+      "role": "thin cut",
+      "body": "left avatar thigh",
+      "depth": 0.059967,
+      "above0_10": false
+    },
+    {
+      "piece": "right real continuous joint wool leg garment",
+      "role": "surface",
+      "body": "right avatar thigh",
+      "depth": 0.0,
+      "above0_10": false
+    },
+    {
+      "piece": "right real continuous joint wool leg garment",
+      "role": "inside",
+      "body": "right avatar thigh",
+      "depth": 0.059967,
+      "above0_10": false
+    },
+    {
+      "piece": "right real continuous joint wool leg garment",
+      "role": "inside",
+      "body": "right avatar thigh",
+      "depth": 0.04689,
+      "above0_10": false
+    },
+    {
+      "piece": "right real continuous joint wool leg garment",
+      "role": "surface",
+      "body": "right avatar thigh",
+      "depth": 0.0,
+      "above0_10": false
+    },
+    {
+      "piece": "right real continuous joint wool leg garment",
+      "role": "inside",
+      "body": "right avatar thigh",
+      "depth": 0.059967,
+      "above0_10": false
+    },
+    {
+      "piece": "right real continuous joint wool leg garment",
+      "role": "surface",
+      "body": "right avatar thigh",
+      "depth": 0.0,
+      "above0_10": false
+    },
+    {
+      "piece": "right real continuous joint wool leg garment",
+      "role": "inside",
+      "body": "right avatar thigh",
+      "depth": 0.059967,
+      "above0_10": false
+    },
+    {
+      "piece": "right real continuous joint wool leg garment",
+      "role": "thin cut",
+      "body": "right avatar thigh",
+      "depth": 0.048706,
+      "above0_10": false
+    },
+    {
+      "piece": "right real continuous joint wool leg garment",
+      "role": "thin cut",
+      "body": "right avatar thigh",
+      "depth": 0.059967,
+      "above0_10": false
+    },
+    {
+      "piece": "right real continuous joint wool leg garment",
+      "role": "thin cut",
+      "body": "right avatar thigh",
+      "depth": 0.059967,
+      "above0_10": false
+    },
+    {
+      "piece": "right real continuous joint wool leg garment",
+      "role": "thin cut",
+      "body": "right avatar thigh",
+      "depth": 0.059967,
+      "above0_10": false
+    }
+  ],
+  "actual_leg_equipment_included": true,
+  "aesthetic_pass_claimed": false,
+  "game_wear_complete": false
+}

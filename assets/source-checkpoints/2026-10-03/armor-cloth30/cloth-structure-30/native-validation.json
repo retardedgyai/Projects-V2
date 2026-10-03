@@ -1,0 +1,208 @@
+{
+  "actual_models_checked": [
+    {
+      "label": "baseline29",
+      "loaded_vertices_max_error": 0,
+      "faces_UV_checked": 3464,
+      "loaded_UV_exact": true,
+      "texture_checks": [
+        {
+          "texture": 0,
+          "loaded_and_resaved_visible_RGBA_and_alpha_exact": true,
+          "full_RGBA_exact": true,
+          "loaded_hidden_alpha0_RGB_normalized": 0,
+          "saved_hidden_alpha0_RGB_normalized": 0
+        },
+        {
+          "texture": 1,
+          "loaded_and_resaved_visible_RGBA_and_alpha_exact": true,
+          "full_RGBA_exact": true,
+          "loaded_hidden_alpha0_RGB_normalized": 0,
+          "saved_hidden_alpha0_RGB_normalized": 0
+        }
+      ],
+      "resaved_max_vertex_rounding": 5.00000000069889e-06,
+      "resaved_max_UV_rounding": 4.968944097072381e-06,
+      "nearest_filter": 1003,
+      "version": "5.2.1"
+    },
+    {
+      "label": "candidate30",
+      "loaded_vertices_max_error": 0,
+      "faces_UV_checked": 3636,
+      "loaded_UV_exact": true,
+      "texture_checks": [
+        {
+          "texture": 0,
+          "loaded_and_resaved_visible_RGBA_and_alpha_exact": true,
+          "full_RGBA_exact": true,
+          "loaded_hidden_alpha0_RGB_normalized": 0,
+          "saved_hidden_alpha0_RGB_normalized": 0
+        },
+        {
+          "texture": 1,
+          "loaded_and_resaved_visible_RGBA_and_alpha_exact": true,
+          "full_RGBA_exact": true,
+          "loaded_hidden_alpha0_RGB_normalized": 0,
+          "saved_hidden_alpha0_RGB_normalized": 0
+        },
+        {
+          "texture": 2,
+          "loaded_and_resaved_visible_RGBA_and_alpha_exact": true,
+          "full_RGBA_exact": true,
+          "loaded_hidden_alpha0_RGB_normalized": 0,
+          "saved_hidden_alpha0_RGB_normalized": 0
+        }
+      ],
+      "resaved_max_vertex_rounding": 5.00000000069889e-06,
+      "resaved_max_UV_rounding": 4.968944097072381e-06,
+      "nearest_filter": 1003,
+      "version": "5.2.1"
+    }
+  ],
+  "same_conditions": [
+    {
+      "view": "front",
+      "shading": true,
+      "two_models_same_camera_light_clip_DPR": true
+    },
+    {
+      "view": "oblique",
+      "shading": true,
+      "two_models_same_camera_light_clip_DPR": true
+    },
+    {
+      "view": "side",
+      "shading": true,
+      "two_models_same_camera_light_clip_DPR": true
+    },
+    {
+      "view": "back",
+      "shading": true,
+      "two_models_same_camera_light_clip_DPR": true
+    },
+    {
+      "view": "oblique",
+      "shading": false,
+      "two_models_same_camera_light_clip_DPR": true
+    },
+    {
+      "view": "full-front",
+      "shading": true,
+      "two_models_same_camera_light_clip_DPR": true
+    },
+    {
+      "view": "full-back",
+      "shading": true,
+      "two_models_same_camera_light_clip_DPR": true
+    },
+    {
+      "view": "full-oblique",
+      "shading": true,
+      "two_models_same_camera_light_clip_DPR": true
+    },
+    {
+      "view": "full-side",
+      "shading": true,
+      "two_models_same_camera_light_clip_DPR": true
+    }
+  ],
+  "native_shading_toggle_actual_changed_pixels": {
+    "baseline29": 285256,
+    "candidate30": 289699
+  },
+  "frames": 18,
+  "actual_64px_crops": [
+    {
+      "label": "baseline29",
+      "view": "front",
+      "actual_mesh_crop": [
+        93,
+        60,
+        523,
+        808
+      ],
+      "native64_size": [
+        37,
+        64
+      ],
+      "enlargement": 4,
+      "filter": "nearest"
+    },
+    {
+      "label": "baseline29",
+      "view": "oblique",
+      "actual_mesh_crop": [
+        96,
+        60,
+        520,
+        808
+      ],
+      "native64_size": [
+        36,
+        64
+      ],
+      "enlargement": 4,
+      "filter": "nearest"
+    },
+    {
+      "label": "candidate30",
+      "view": "front",
+      "actual_mesh_crop": [
+        93,
+        60,
+        523,
+        808
+      ],
+      "native64_size": [
+        37,
+        64
+      ],
+      "enlargement": 4,
+      "filter": "nearest"
+    },
+    {
+      "label": "candidate30",
+      "view": "oblique",
+      "actual_mesh_crop": [
+        96,
+        60,
+        520,
+        808
+      ],
+      "native64_size": [
+        36,
+        64
+      ],
+      "enlargement": 4,
+      "filter": "nearest"
+    }
+  ],
+  "window_probe": {
+    "tested": true,
+    "error": "cdpSession.send: Protocol error (Browser.getWindowForTarget): 'Browser.getWindowForTarget' wasn't found",
+    "same_camera_normal_vs_minimized_changed_pixels": 0,
+    "same_pixels": true,
+    "headless_renderer_equivalence_claimed": false
+  },
+  "own_minimized_window_validation": {
+    "own_window_minimize_requested": true,
+    "same_camera_light_clip": {
+      "camera": true,
+      "clip": true,
+      "shading": true,
+      "brightness": true
+    },
+    "pixels_changed": 0,
+    "RGBA_exact": true,
+    "tested_views": [
+      "candidate30 full-back"
+    ],
+    "method": "Windows minimizes own native Blockbench window; same Electron renderer still running",
+    "headless_equivalence_claimed": false
+  },
+  "standard_Blockbench_renderer": true,
+  "custom_renderer_or_painted_preview": false,
+  "aesthetic_acceptance_claimed": false,
+  "game_wear_complete": false
+}

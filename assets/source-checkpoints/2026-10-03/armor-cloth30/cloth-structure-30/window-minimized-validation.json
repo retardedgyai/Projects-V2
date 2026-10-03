@@ -1,0 +1,16 @@
+{
+  "own_window_minimize_requested": true,
+  "same_camera_light_clip": {
+    "camera": true,
+    "clip": true,
+    "shading": true,
+    "brightness": true
+  },
+  "pixels_changed": 0,
+  "RGBA_exact": true,
+  "tested_views": [
+    "candidate30 full-back"
+  ],
+  "method": "Windows minimizes own native Blockbench window; same Electron renderer still running",
+  "headless_equivalence_claimed": false
+}

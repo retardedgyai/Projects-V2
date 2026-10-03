@@ -1,0 +1,278 @@
+{
+  "method": "opaque front-culling parallel rays; front opening x4.4..11.6,y26.2..32.2 excluded",
+  "records": [
+    {
+      "view": "front",
+      "samples_outside_face_opening": 380,
+      "exposed_skin_samples": 2,
+      "exposure_surfaces": {
+        "front": 2,
+        "left": 0,
+        "right": 0,
+        "top": 0
+      },
+      "sample_exposures": [
+        {
+          "surface": "front",
+          "point": [
+            7.85,
+            26.1,
+            4.0
+          ]
+        },
+        {
+          "surface": "front",
+          "point": [
+            8.1,
+            26.1,
+            4.0
+          ]
+        }
+      ]
+    },
+    {
+      "view": "right-oblique",
+      "samples_outside_face_opening": 2428,
+      "exposed_skin_samples": 41,
+      "exposure_surfaces": {
+        "front": 28,
+        "left": 0,
+        "right": 0,
+        "top": 13
+      },
+      "sample_exposures": [
+        {
+          "surface": "front",
+          "point": [
+            7.35,
+            26.1,
+            4.0
+          ]
+        },
+        {
+          "surface": "front",
+          "point": [
+            7.6,
+            26.1,
+            4.0
+          ]
+        },
+        {
+          "surface": "front",
+          "point": [
+            7.85,
+            26.1,
+            4.0
+          ]
+        },
+        {
+          "surface": "front",
+          "point": [
+            8.1,
+            26.1,
+            4.0
+          ]
+        },
+        {
+          "surface": "front",
+          "point": [
+            4.35,
+            27.1,
+            4.0
+          ]
+        },
+        {
+          "surface": "front",
+          "point": [
+            4.35,
+            27.35,
+            4.0
+          ]
+        },
+        {
+          "surface": "front",
+          "point": [
+            4.35,
+            27.6,
+            4.0
+          ]
+        },
+        {
+          "surface": "front",
+          "point": [
+            4.35,
+            27.85,
+            4.0
+          ]
+        },
+        {
+          "surface": "front",
+          "point": [
+            4.35,
+            28.1,
+            4.0
+          ]
+        },
+        {
+          "surface": "front",
+          "point": [
+            4.35,
+            28.35,
+            4.0
+          ]
+        },
+        {
+          "surface": "front",
+          "point": [
+            4.35,
+            28.6,
+            4.0
+          ]
+        },
+        {
+          "surface": "front",
+          "point": [
+            4.35,
+            28.85,
+            4.0
+          ]
+        }
+      ]
+    },
+    {
+      "view": "left-oblique",
+      "samples_outside_face_opening": 2428,
+      "exposed_skin_samples": 53,
+      "exposure_surfaces": {
+        "front": 40,
+        "left": 0,
+        "right": 0,
+        "top": 13
+      },
+      "sample_exposures": [
+        {
+          "surface": "front",
+          "point": [
+            7.85,
+            26.1,
+            4.0
+          ]
+        },
+        {
+          "surface": "front",
+          "point": [
+            8.1,
+            26.1,
+            4.0
+          ]
+        },
+        {
+          "surface": "front",
+          "point": [
+            8.35,
+            26.1,
+            4.0
+          ]
+        },
+        {
+          "surface": "front",
+          "point": [
+            8.6,
+            26.1,
+            4.0
+          ]
+        },
+        {
+          "surface": "front",
+          "point": [
+            11.6,
+            27.1,
+            4.0
+          ]
+        },
+        {
+          "surface": "front",
+          "point": [
+            11.85,
+            27.1,
+            4.0
+          ]
+        },
+        {
+          "surface": "front",
+          "point": [
+            11.6,
+            27.35,
+            4.0
+          ]
+        },
+        {
+          "surface": "front",
+          "point": [
+            11.85,
+            27.35,
+            4.0
+          ]
+        },
+        {
+          "surface": "front",
+          "point": [
+            11.6,
+            27.6,
+            4.0
+          ]
+        },
+        {
+          "surface": "front",
+          "point": [
+            11.85,
+            27.6,
+            4.0
+          ]
+        },
+        {
+          "surface": "front",
+          "point": [
+            11.6,
+            27.85,
+            4.0
+          ]
+        },
+        {
+          "surface": "front",
+          "point": [
+            11.85,
+            27.85,
+            4.0
+          ]
+        }
+      ]
+    },
+    {
+      "view": "right-side",
+      "samples_outside_face_opening": 1404,
+      "exposed_skin_samples": 0,
+      "exposure_surfaces": {
+        "front": 0,
+        "left": 0,
+        "right": 0,
+        "top": 0
+      },
+      "sample_exposures": []
+    },
+    {
+      "view": "left-side",
+      "samples_outside_face_opening": 1404,
+      "exposed_skin_samples": 0,
+      "exposure_surfaces": {
+        "front": 0,
+        "left": 0,
+        "right": 0,
+        "top": 0
+      },
+      "sample_exposures": []
+    }
+  ],
+  "preview_renderer": false,
+  "aesthetic_or_motion_acceptance": false
+}

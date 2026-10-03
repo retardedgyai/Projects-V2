@@ -71,5 +71,14 @@
     "FileCount": 18,
     "Bytes": 1465174.0,
     "Manifest": "magic-local-fixes/source-snapshot.json"
+  },
+  {
+    "Snapshot": "armor-cloth30",
+    "Status": "EDITABLE_CLOTH30_SAVEPOINT_TECHNICAL_VERIFIED_QUALITY_PENDING",
+    "LibraryFileId": "libfile_a7eb7e2a4af88191a0d157315bdabe1b",
+    "LibraryVersion": 0,
+    "FileCount": 34,
+    "Bytes": 8177345.0,
+    "Manifest": "armor-cloth30/source-snapshot.json"
   }
 ]

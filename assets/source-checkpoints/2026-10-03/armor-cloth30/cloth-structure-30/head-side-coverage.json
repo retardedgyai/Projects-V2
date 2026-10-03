@@ -1,0 +1,170 @@
+{
+  "method": "front-culling opaque mesh rays from +/-X through y26.65..31.55, z4.25..11.65; deliberate facial opening z<4 excluded",
+  "records": [
+    {
+      "model": "29",
+      "head_side_grid_samples": 1900,
+      "visible_avatar_head_samples": 148,
+      "sample_exposures": [
+        {
+          "side": "left",
+          "y": 27.65,
+          "z": 4.25
+        },
+        {
+          "side": "left",
+          "y": 27.65,
+          "z": 4.45
+        },
+        {
+          "side": "left",
+          "y": 27.65,
+          "z": 4.65
+        },
+        {
+          "side": "left",
+          "y": 27.65,
+          "z": 4.85
+        },
+        {
+          "side": "left",
+          "y": 27.65,
+          "z": 5.05
+        },
+        {
+          "side": "left",
+          "y": 27.65,
+          "z": 5.25
+        },
+        {
+          "side": "left",
+          "y": 27.65,
+          "z": 5.45
+        },
+        {
+          "side": "left",
+          "y": 27.65,
+          "z": 5.65
+        },
+        {
+          "side": "left",
+          "y": 27.65,
+          "z": 5.85
+        },
+        {
+          "side": "left",
+          "y": 27.65,
+          "z": 6.05
+        },
+        {
+          "side": "left",
+          "y": 27.65,
+          "z": 6.25
+        },
+        {
+          "side": "left",
+          "y": 27.85,
+          "z": 4.25
+        },
+        {
+          "side": "left",
+          "y": 27.85,
+          "z": 4.45
+        },
+        {
+          "side": "left",
+          "y": 27.85,
+          "z": 4.65
+        },
+        {
+          "side": "left",
+          "y": 27.85,
+          "z": 4.85
+        },
+        {
+          "side": "left",
+          "y": 27.85,
+          "z": 5.05
+        },
+        {
+          "side": "left",
+          "y": 27.85,
+          "z": 5.25
+        },
+        {
+          "side": "left",
+          "y": 27.85,
+          "z": 5.45
+        },
+        {
+          "side": "left",
+          "y": 27.85,
+          "z": 5.65
+        },
+        {
+          "side": "left",
+          "y": 27.85,
+          "z": 5.85
+        },
+        {
+          "side": "left",
+          "y": 27.85,
+          "z": 6.05
+        },
+        {
+          "side": "left",
+          "y": 27.85,
+          "z": 6.25
+        },
+        {
+          "side": "left",
+          "y": 27.85,
+          "z": 6.45
+        },
+        {
+          "side": "left",
+          "y": 27.85,
+          "z": 6.65
+        },
+        {
+          "side": "left",
+          "y": 27.85,
+          "z": 6.85
+        },
+        {
+          "side": "left",
+          "y": 27.85,
+          "z": 7.05
+        },
+        {
+          "side": "left",
+          "y": 27.85,
+          "z": 7.25
+        },
+        {
+          "side": "left",
+          "y": 27.85,
+          "z": 7.45
+        },
+        {
+          "side": "left",
+          "y": 28.05,
+          "z": 4.25
+        },
+        {
+          "side": "left",
+          "y": 28.05,
+          "z": 4.45
+        }
+      ]
+    },
+    {
+      "model": "30",
+      "head_side_grid_samples": 1900,
+      "visible_avatar_head_samples": 0,
+      "sample_exposures": []
+    }
+  ],
+  "dynamic_motion_certified": false,
+  "aesthetic_pass_claimed": false
+}
