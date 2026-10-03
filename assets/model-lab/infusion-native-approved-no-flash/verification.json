@@ -1,0 +1,31 @@
+{
+  "serverPid": 26732,
+  "clientPid": 10560,
+  "address": "127.0.0.1:25585",
+  "packPort": 25586,
+  "packSha1": "0e691d6d4b3067a1dac08f1e1a71ee77bbc6989b",
+  "packBytes": 15320582,
+  "compilePassed": true,
+  "motionPhaseCueAuditPassed": true,
+  "spawnLifecycleRegressionPassed": true,
+  "nativePackLoaded": true,
+  "nativeRitualCompletedTick": 668,
+  "jarInletRoleTransitions": 63,
+  "jarRoleFlickers": 0,
+  "arcEntitiesMaximum": 6,
+  "captureFrames": 210,
+  "whiteCompletionFlashRemoved": true,
+  "newBuildupOrAudioNotApplied": true,
+  "manualFeelJudgment": "User only",
+  "originalSaveSha256": "1EC90A2613A42D2A0D21084023D23C1A93400B7FE4721510C79E54A8C3A73B83",
+  "originalSaveUnchanged": true,
+  "tintCorrection": "Custom model data tint bindings on 12 arc item definitions",
+  "sources": {
+    "NativeIntegratedFixtureMaker.kt": "57b56b1123dcd32ee51a8f55979da22de7932083c8e608c4c7164fec3042535b",
+    "WorldInfusionConfluence.kt": "82b4fc0a31a9db38e989b63972091dc7f2181ce30b14424ff5ac5d84f135b094",
+    "WorldInfusionCoreArcs.kt": "f1d4ed83df665107754b48cdad7e48e78961d61ea6f40a085d34338d74216589",
+    "WorldInfusionRadiance.kt": "45fb7d3143e7a1d0ccdd1a9ff573005baf9cedd7c16da29d349258b1af3deb86",
+    "WorldInfusionServer.kt": "c7d8a327ed5ca99973ff101081a8eb7a25207e146f7e28861cf551466172a343"
+  },
+  "limitation": "No native speaker recording. The later user camera position crops the core; automated QA captures show it."
+}
