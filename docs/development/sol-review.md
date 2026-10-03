@@ -4,7 +4,7 @@
 
 ## Review input
 
-最低限、次をCreatorから受け取ります。
+次を既存Task・repoからAgentが集めます。取得できずReviewに必須の情報だけCreatorへ確認します。
 
 - Repository
 - branch
@@ -25,6 +25,8 @@
 7. testsが変更範囲を実際にカバーしているか確認する。
 
 重点は、実際に壊れるbug、lifecycle / cleanup、server/client authority、protocol compatibility、concurrency/state、scope逸脱、regression、tests不足、不要なframeworkです。細かいstyle好みだけで`FIX-FIRST`にしません。Manual Visual / Feelの最終authorityは人間Creatorです。
+
+制作物のReviewではAGENTSの制作品質を適用し、実参照と同条件・通常表示で比較して、用途に対する最大の差と反証を示します。Test成功や前版比改善だけで美的PASSを出さず、反復失敗時は原因別に参照・解釈・実装・比較を見直します。コードのPASS、制作品質、実ゲーム、本人採用は区別します。Creatorの最終authorityはAgent自身の品質比較・修正を省く理由にはしません。
 
 ## Verdict
 
