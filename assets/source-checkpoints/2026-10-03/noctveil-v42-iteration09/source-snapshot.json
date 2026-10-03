@@ -1,0 +1,250 @@
+{
+  "Schema": 1,
+  "Snapshot": "noctveil-v42-iteration09",
+  "Status": "PARTIAL_QA_ITERATION09_SOURCE_SNAPSHOT_FULL_ART_GAME_PASS_PENDING",
+  "CapturedUtc": "2026-10-03T15:58:00.1831637Z",
+  "FixedSavepointAt": "2026-10-04T00:12:17.555698+09:00",
+  "SourceType": "Fixed hash-listed non-Git checkpoint",
+  "ModelSha256": "8809b24da17f3ef7b8e8aeb8d8ad52c0da842ba14335e2d4f907f678bcb25e98",
+  "OriginalUnchanged": true,
+  "EntryBytesVerified": true,
+  "FixedManifestMembersMatched": 22,
+  "SourceRoleCounts": {
+    "DeliveredReviewArtifacts": 8,
+    "OwnedAuthoringSources": 14,
+    "SuppliedHandoffRecords": 2
+  },
+  "SourceDependencies": "These editing scripts use the existing Noctveil authoring workspace (v32 protected input and v35/v40/v41 helper/topology files). Delivered bbmodel is self-contained with embedded textures; those scripts are not a standalone runtime or game integration.",
+  "RelatedLibrary": {
+    "CurrentGuiFreeReview": {
+      "library_file_id": "libfile_bda2900e6d188191adad3ebef78f337e",
+      "file_id": "file_00000000e7fc820682f04990f214d2f6",
+      "version": 0,
+      "name": "noctveil_v42_current_review.png",
+      "actual_candidate": "iteration_09_cloak_counterwing"
+    },
+    "NativeReview": {
+      "library_file_id": "libfile_383c9eed405881918399f8e6384edf7f",
+      "file_id": "file_00000000abd882099328fd9c5f798ccd",
+      "version": 1,
+      "name": "noctveil_v42_native_pose_review.png",
+      "actual_candidate": "iteration_07"
+    }
+  },
+  "OwnerReportedLimits": {
+    "at_utc": "2026-10-04T00:12:17.555698+09:00",
+    "stage": "Concept > real native model > partial static/path/motion QA > game not connected",
+    "current_model_sha256": "8809b24da17f3ef7b8e8aeb8d8ad52c0da842ba14335e2d4f907f678bcb25e98",
+    "native_review_candidate": "iteration_07",
+    "GUI_free_current_candidate": "iteration_09_cloak_counterwing",
+    "geometry_uv_textures_original3_clips_exact": true,
+    "closed_counterwing_source": "closed_idle_breath_v32 at0;16 existing left-wing bones only",
+    "midpoint_checks_prior_strike_path": {
+      "samples": 257,
+      "actual_key_midpoints": 128,
+      "head_and_crown_crossing_count": 0,
+      "selected_internal_crossing_count": 54,
+      "minimum_wing_y": 2.0855337470650905,
+      "minimum_all_mesh_y": 0.0021531177836443586,
+      "maximum_outer_shared_vertex_gap": 0.002243555404868461,
+      "first_hook_overlap": 1.75,
+      "first_non_hook_overlap": 2.203125,
+      "palm_or_radius_overlap": false
+    },
+    "residual_shared_seam_contacts": {
+      "observations": 54,
+      "adjacent_faces": [
+        15,
+        16
+      ],
+      "shared_edge": [
+        14,
+        12
+      ],
+      "maximum_distance_from_shared_edge": 0.0027949458914530833,
+      "interpretation": "Very small shared-edge contacts from key interpolation; segment length is not penetration depth. Not declared a full self-collision pass."
+    },
+    "current_timed_ground_minimum65_samples": 0.0024573603105019675,
+    "current_full_body_surface_samples": 17,
+    "current_new_wing_nonadjacent_crossing_pairs": [
+      [
+        "right_v24_mantle_panel_03",
+        "right_v24_mantle_panel_07"
+      ],
+      [
+        "right_v24_tension_panel_15_0",
+        "right_v24_tension_panel_16_2"
+      ]
+    ],
+    "full_body_self_collision_pass": false,
+    "continuous_time_solid_collision_proof": false,
+    "idle_return_or_state_transition_validated": false,
+    "final_timing_or_game_hitbox_calibrated": false,
+    "MatE_quality_reference_pixels_seen_in_this_worker": false,
+    "art_pass": false,
+    "game_connected": false,
+    "gui_capability": {
+      "editing": "GUI-free direct bbmodel JSON authoring; no geometry/UV/material changes",
+      "numeric_qa": "GUI-free bone/world vertices, contact brackets, ground, leg reach, shared edges, mesh surface crossings",
+      "ordinary_motion_preview": "Existing mesh_preview.py320x24025 frames,2.05s; GUI-free, no new renderer",
+      "proven_parity": {
+        "current_iteration_07_native_poses": 4,
+        "max_vertex_difference_units": 4.6048432255985435E-14,
+        "native_textures_errors": 0,
+        "scope": "Geometry/world transforms only, not image pixel/shading equivalence."
+      },
+      "native_qa_still_required": "Final Blockbench material/UV/backface/pose presentation and actual animation-player behavior where not yet verified. Keep to short necessary checks after the user playtest; no automatic frequent GUI launches.",
+      "not_verified": "Renderer image parity, actual Minecraft/ModelEngine behavior, final timing/idle-return/damage, MatE aesthetic equivalence",
+      "own_Blockbench_closed": true,
+      "native_short_motion_script_not_run_due_GUI_load_preference": true,
+      "Minecraft_window_or_input_touched": false
+    }
+  },
+  "Notes": "Latest frozen V42 iteration09_cloak_counterwing source and2.05-second GUI-free preview. Shapes/UV/material/pixel textures and existing3 motions are reported unchanged. Head/ground checks are sampled and qualified in the supplied limits; residual seam contacts and new nonadjacent wing crossings remain. Full-body self-collision, continuous-time solid collision, idle return/state transitions, calibrated game timing/hitboxes, aesthetic/MatE quality and game connection are not passed. Native review PNG belongs to earlier iteration07; it does not establish current iteration09 native image/material parity. Delivered bbmodel is self-contained with embedded textures. Authoring scripts require original v32/v35/v40/v41 helper/topology context and are not standalone game runtime. Only the fixed manifest22 matching files and supplied2 handoff records were copied; producer next revision, private reference originals, profiles, binaries, logs, ZIPs and large rendering output are excluded. No producer files, GUI sessions or game processes were modified.",
+  "Files": [
+    {
+      "Path": "outputs/v42_delivery_checkpoint/evidence/v42_stage_and_validation.json",
+      "Bytes": 3193,
+      "Sha256": "9c2d896d77b913668ec16d5cec1a15ccaf3429203440bd07ce58e7e0ef737b5a",
+      "Role": "current_review_artifact"
+    },
+    {
+      "Path": "outputs/v42_delivery_checkpoint/ProjectS_Noctveil_v42_current_review.png",
+      "Bytes": 92073,
+      "Sha256": "c8ce5664f00679225aee5ffb7247bda2713f6f7b4e46709a63b5583e4265d9b9",
+      "Role": "current_review_artifact"
+    },
+    {
+      "Path": "outputs/v42_delivery_checkpoint/ProjectS_Noctveil_v42_native_review.png",
+      "Bytes": 229136,
+      "Sha256": "15325789d53c11582c1314563c322b30d3aa26966fe8bf33062b4da3c884abe6",
+      "Role": "current_review_artifact"
+    },
+    {
+      "Path": "outputs/v42_delivery_checkpoint/ProjectS_Noctveil_v42_review.bbmodel",
+      "Bytes": 10156127,
+      "Sha256": "8809b24da17f3ef7b8e8aeb8d8ad52c0da842ba14335e2d4f907f678bcb25e98",
+      "Role": "current_review_artifact"
+    },
+    {
+      "Path": "outputs/v42_delivery_checkpoint/ProjectS_Noctveil_v42_sweep_preview.gif",
+      "Bytes": 185832,
+      "Sha256": "b39bf9dae065459199ff050de2bdd06f1e6d1cbcfa854d4651e08a2f5964ae4b",
+      "Role": "current_review_artifact"
+    },
+    {
+      "Path": "outputs/v42_delivery_checkpoint/README.txt",
+      "Bytes": 978,
+      "Sha256": "8b6e1cea9ef29d9358f117701568f520c368fd5757e071269596d2bdc78f0322",
+      "Role": "current_review_artifact"
+    },
+    {
+      "Path": "outputs/v42_delivery_checkpoint/textures/noctveil_anatomy.png",
+      "Bytes": 2349,
+      "Sha256": "de5eac338655cf13134c008dda2684a910bfe4723df362fe7a24874af410b8d6",
+      "Role": "current_review_artifact"
+    },
+    {
+      "Path": "outputs/v42_delivery_checkpoint/textures/noctveil_mantle.png",
+      "Bytes": 20897,
+      "Sha256": "67a120ad0d4741d1b666fc02a584392d5237d3a8aa07bcc78cf49ac2af96aa03",
+      "Role": "current_review_artifact"
+    },
+    {
+      "Path": "work/noctveil_v42_pose_tools.py",
+      "Bytes": 8541,
+      "Sha256": "aadc4f6d51759a4a0e533a45bfa20631476eb54648f8296099f1a489173402b0",
+      "Role": "authoring_source_archive"
+    },
+    {
+      "Path": "work/build_v42_clear_sweep.py",
+      "Bytes": 4951,
+      "Sha256": "a5085c10ac28d2b3b8064719053e4defc873315b742f749290c70e99e9a79af2",
+      "Role": "authoring_source_archive"
+    },
+    {
+      "Path": "work/build_v42_timed_review.py",
+      "Bytes": 2247,
+      "Sha256": "ffea71cf09a5e837c8f66119c07030e743301f04e9c6143f71761ee2e7c9cdb6",
+      "Role": "authoring_source_archive"
+    },
+    {
+      "Path": "work/build_v42_closed_counterwing.py",
+      "Bytes": 2796,
+      "Sha256": "b5b06ec25868e3c3ffc9be2717080393f55766b715493031489308c4228608b6",
+      "Role": "authoring_source_archive"
+    },
+    {
+      "Path": "work/render_v42_short_gui_free.py",
+      "Bytes": 3476,
+      "Sha256": "d82b29ad05e0b36fd584428b9d0a1b732e859341b559ceb3c0296e4d906529ae",
+      "Role": "authoring_source_archive"
+    },
+    {
+      "Path": "work/inspect_v42_self_collision.py",
+      "Bytes": 5996,
+      "Sha256": "40803b376edaf1e1a4df933924c0555b999fe63e7c30852d378237be4b6663e4",
+      "Role": "authoring_source_archive"
+    },
+    {
+      "Path": "work/inspect_v42_head_clear_body.py",
+      "Bytes": 2123,
+      "Sha256": "0bdeaa47e42c97020003c17fde3d7f5e3c509cbf9f03a16037919de59d3525e2",
+      "Role": "authoring_source_archive"
+    },
+    {
+      "Path": "work/verify_v42_clear_midpoints.py",
+      "Bytes": 3126,
+      "Sha256": "3b632c352e8b9637be5ff462cee1a21b6c56158789bcf9fbae0b7c68d928110a",
+      "Role": "authoring_source_archive"
+    },
+    {
+      "Path": "work/classify_v42_membrane_midpoint_contacts.py",
+      "Bytes": 2312,
+      "Sha256": "be9c7bd09701b33ed08881bf736c8e5b7245f73bbee26238799e4e04e673af17",
+      "Role": "authoring_source_archive"
+    },
+    {
+      "Path": "work/verify_native_v42.py",
+      "Bytes": 1608,
+      "Sha256": "eae0d8658df40fb099d2b166500b66a46aedebb23fe0ae350fac59dad41f4c12",
+      "Role": "authoring_source_archive"
+    },
+    {
+      "Path": "work/native_v42_arc_static.cjs",
+      "Bytes": 6946,
+      "Sha256": "554774c61929bd99aa2e9346509abdb882cfbef2c248c7139662b9b1260f804d",
+      "Role": "authoring_source_archive"
+    },
+    {
+      "Path": "work/compose_v42_native_review.py",
+      "Bytes": 2355,
+      "Sha256": "bd1e556083e58c136db456b304358c0e93d9d8f2afff45e96fa9dde98479e355",
+      "Role": "authoring_source_archive"
+    },
+    {
+      "Path": "work/refine_v42_contact_brackets.py",
+      "Bytes": 1992,
+      "Sha256": "8c2ed493d14a78287b0ab02793fc36f6e150464c2f10e76313174583398c6642",
+      "Role": "authoring_source_archive"
+    },
+    {
+      "Path": "work/save_v42_push_checkpoint.py",
+      "Bytes": 10388,
+      "Sha256": "726ac5b13f3a9a4839186521ae1559006be5e16543b04ee98cfad2e8a5de0732",
+      "Role": "authoring_source_archive"
+    },
+    {
+      "Path": "handoff/PARENT_HANDOFF_V42_PUSH_MANIFEST.json",
+      "Bytes": 12841,
+      "Sha256": "82131b6bb6685c62126b486e6416df9867c367d02ece0fcdd4175181e8721323",
+      "Role": "supplied_fixed_manifest"
+    },
+    {
+      "Path": "handoff/PARENT_HANDOFF_V42_GUI_AND_PUSH_CHECKPOINT.json",
+      "Bytes": 6371,
+      "Sha256": "d14e22ad047cfade0a80ea487d344600e798b443bc84d2e9cfbe63c2adee6eb0",
+      "Role": "supplied_limits_and_reproduction_metadata"
+    }
+  ]
+}

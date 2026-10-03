@@ -1,0 +1,247 @@
+{
+  "at_utc": "2026-10-04T00:12:17.555698+09:00",
+  "workspace": "C:\\Users\\xgaiz\\Documents\\Codex\\2026-10-02\\task-4",
+  "is_git_repository": false,
+  "repo": null,
+  "branch": null,
+  "commit": null,
+  "push_executor": "Delegated parent task01a1022f-884a-7190-92a6-e08bb1289093 owns commit/push; this worker never writes the existing repo or runs git push.",
+  "delivery_files": [
+    {
+      "local_path": "C:\\Users\\xgaiz\\Documents\\Codex\\2026-10-02\\task-4\\outputs\\v42_delivery_checkpoint\\evidence\\v42_stage_and_validation.json",
+      "workspace_relative_path": "outputs/v42_delivery_checkpoint/evidence/v42_stage_and_validation.json",
+      "bytes": 3193,
+      "sha256": "9c2d896d77b913668ec16d5cec1a15ccaf3429203440bd07ce58e7e0ef737b5a",
+      "role": "current_review_artifact"
+    },
+    {
+      "local_path": "C:\\Users\\xgaiz\\Documents\\Codex\\2026-10-02\\task-4\\outputs\\v42_delivery_checkpoint\\ProjectS_Noctveil_v42_current_review.png",
+      "workspace_relative_path": "outputs/v42_delivery_checkpoint/ProjectS_Noctveil_v42_current_review.png",
+      "bytes": 92073,
+      "sha256": "c8ce5664f00679225aee5ffb7247bda2713f6f7b4e46709a63b5583e4265d9b9",
+      "role": "current_review_artifact"
+    },
+    {
+      "local_path": "C:\\Users\\xgaiz\\Documents\\Codex\\2026-10-02\\task-4\\outputs\\v42_delivery_checkpoint\\ProjectS_Noctveil_v42_native_review.png",
+      "workspace_relative_path": "outputs/v42_delivery_checkpoint/ProjectS_Noctveil_v42_native_review.png",
+      "bytes": 229136,
+      "sha256": "15325789d53c11582c1314563c322b30d3aa26966fe8bf33062b4da3c884abe6",
+      "role": "current_review_artifact"
+    },
+    {
+      "local_path": "C:\\Users\\xgaiz\\Documents\\Codex\\2026-10-02\\task-4\\outputs\\v42_delivery_checkpoint\\ProjectS_Noctveil_v42_review.bbmodel",
+      "workspace_relative_path": "outputs/v42_delivery_checkpoint/ProjectS_Noctveil_v42_review.bbmodel",
+      "bytes": 10156127,
+      "sha256": "8809b24da17f3ef7b8e8aeb8d8ad52c0da842ba14335e2d4f907f678bcb25e98",
+      "role": "current_review_artifact"
+    },
+    {
+      "local_path": "C:\\Users\\xgaiz\\Documents\\Codex\\2026-10-02\\task-4\\outputs\\v42_delivery_checkpoint\\ProjectS_Noctveil_v42_sweep_preview.gif",
+      "workspace_relative_path": "outputs/v42_delivery_checkpoint/ProjectS_Noctveil_v42_sweep_preview.gif",
+      "bytes": 185832,
+      "sha256": "b39bf9dae065459199ff050de2bdd06f1e6d1cbcfa854d4651e08a2f5964ae4b",
+      "role": "current_review_artifact"
+    },
+    {
+      "local_path": "C:\\Users\\xgaiz\\Documents\\Codex\\2026-10-02\\task-4\\outputs\\v42_delivery_checkpoint\\README.txt",
+      "workspace_relative_path": "outputs/v42_delivery_checkpoint/README.txt",
+      "bytes": 978,
+      "sha256": "8b6e1cea9ef29d9358f117701568f520c368fd5757e071269596d2bdc78f0322",
+      "role": "current_review_artifact"
+    },
+    {
+      "local_path": "C:\\Users\\xgaiz\\Documents\\Codex\\2026-10-02\\task-4\\outputs\\v42_delivery_checkpoint\\textures\\noctveil_anatomy.png",
+      "workspace_relative_path": "outputs/v42_delivery_checkpoint/textures/noctveil_anatomy.png",
+      "bytes": 2349,
+      "sha256": "de5eac338655cf13134c008dda2684a910bfe4723df362fe7a24874af410b8d6",
+      "role": "current_review_artifact"
+    },
+    {
+      "local_path": "C:\\Users\\xgaiz\\Documents\\Codex\\2026-10-02\\task-4\\outputs\\v42_delivery_checkpoint\\textures\\noctveil_mantle.png",
+      "workspace_relative_path": "outputs/v42_delivery_checkpoint/textures/noctveil_mantle.png",
+      "bytes": 20897,
+      "sha256": "67a120ad0d4741d1b666fc02a584392d5237d3a8aa07bcc78cf49ac2af96aa03",
+      "role": "current_review_artifact"
+    }
+  ],
+  "owned_editing_sources": [
+    {
+      "local_path": "C:\\Users\\xgaiz\\Documents\\Codex\\2026-10-02\\task-4\\work\\noctveil_v42_pose_tools.py",
+      "workspace_relative_path": "work/noctveil_v42_pose_tools.py",
+      "bytes": 8541,
+      "sha256": "aadc4f6d51759a4a0e533a45bfa20631476eb54648f8296099f1a489173402b0",
+      "role": "authoring_source_archive"
+    },
+    {
+      "local_path": "C:\\Users\\xgaiz\\Documents\\Codex\\2026-10-02\\task-4\\work\\build_v42_clear_sweep.py",
+      "workspace_relative_path": "work/build_v42_clear_sweep.py",
+      "bytes": 4951,
+      "sha256": "a5085c10ac28d2b3b8064719053e4defc873315b742f749290c70e99e9a79af2",
+      "role": "authoring_source_archive"
+    },
+    {
+      "local_path": "C:\\Users\\xgaiz\\Documents\\Codex\\2026-10-02\\task-4\\work\\build_v42_timed_review.py",
+      "workspace_relative_path": "work/build_v42_timed_review.py",
+      "bytes": 2247,
+      "sha256": "ffea71cf09a5e837c8f66119c07030e743301f04e9c6143f71761ee2e7c9cdb6",
+      "role": "authoring_source_archive"
+    },
+    {
+      "local_path": "C:\\Users\\xgaiz\\Documents\\Codex\\2026-10-02\\task-4\\work\\build_v42_closed_counterwing.py",
+      "workspace_relative_path": "work/build_v42_closed_counterwing.py",
+      "bytes": 2796,
+      "sha256": "b5b06ec25868e3c3ffc9be2717080393f55766b715493031489308c4228608b6",
+      "role": "authoring_source_archive"
+    },
+    {
+      "local_path": "C:\\Users\\xgaiz\\Documents\\Codex\\2026-10-02\\task-4\\work\\render_v42_short_gui_free.py",
+      "workspace_relative_path": "work/render_v42_short_gui_free.py",
+      "bytes": 3476,
+      "sha256": "d82b29ad05e0b36fd584428b9d0a1b732e859341b559ceb3c0296e4d906529ae",
+      "role": "authoring_source_archive"
+    },
+    {
+      "local_path": "C:\\Users\\xgaiz\\Documents\\Codex\\2026-10-02\\task-4\\work\\inspect_v42_self_collision.py",
+      "workspace_relative_path": "work/inspect_v42_self_collision.py",
+      "bytes": 5996,
+      "sha256": "40803b376edaf1e1a4df933924c0555b999fe63e7c30852d378237be4b6663e4",
+      "role": "authoring_source_archive"
+    },
+    {
+      "local_path": "C:\\Users\\xgaiz\\Documents\\Codex\\2026-10-02\\task-4\\work\\inspect_v42_head_clear_body.py",
+      "workspace_relative_path": "work/inspect_v42_head_clear_body.py",
+      "bytes": 2123,
+      "sha256": "0bdeaa47e42c97020003c17fde3d7f5e3c509cbf9f03a16037919de59d3525e2",
+      "role": "authoring_source_archive"
+    },
+    {
+      "local_path": "C:\\Users\\xgaiz\\Documents\\Codex\\2026-10-02\\task-4\\work\\verify_v42_clear_midpoints.py",
+      "workspace_relative_path": "work/verify_v42_clear_midpoints.py",
+      "bytes": 3126,
+      "sha256": "3b632c352e8b9637be5ff462cee1a21b6c56158789bcf9fbae0b7c68d928110a",
+      "role": "authoring_source_archive"
+    },
+    {
+      "local_path": "C:\\Users\\xgaiz\\Documents\\Codex\\2026-10-02\\task-4\\work\\classify_v42_membrane_midpoint_contacts.py",
+      "workspace_relative_path": "work/classify_v42_membrane_midpoint_contacts.py",
+      "bytes": 2312,
+      "sha256": "be9c7bd09701b33ed08881bf736c8e5b7245f73bbee26238799e4e04e673af17",
+      "role": "authoring_source_archive"
+    },
+    {
+      "local_path": "C:\\Users\\xgaiz\\Documents\\Codex\\2026-10-02\\task-4\\work\\verify_native_v42.py",
+      "workspace_relative_path": "work/verify_native_v42.py",
+      "bytes": 1608,
+      "sha256": "eae0d8658df40fb099d2b166500b66a46aedebb23fe0ae350fac59dad41f4c12",
+      "role": "authoring_source_archive"
+    },
+    {
+      "local_path": "C:\\Users\\xgaiz\\Documents\\Codex\\2026-10-02\\task-4\\work\\native_v42_arc_static.cjs",
+      "workspace_relative_path": "work/native_v42_arc_static.cjs",
+      "bytes": 6946,
+      "sha256": "554774c61929bd99aa2e9346509abdb882cfbef2c248c7139662b9b1260f804d",
+      "role": "authoring_source_archive"
+    },
+    {
+      "local_path": "C:\\Users\\xgaiz\\Documents\\Codex\\2026-10-02\\task-4\\work\\compose_v42_native_review.py",
+      "workspace_relative_path": "work/compose_v42_native_review.py",
+      "bytes": 2355,
+      "sha256": "bd1e556083e58c136db456b304358c0e93d9d8f2afff45e96fa9dde98479e355",
+      "role": "authoring_source_archive"
+    },
+    {
+      "local_path": "C:\\Users\\xgaiz\\Documents\\Codex\\2026-10-02\\task-4\\work\\refine_v42_contact_brackets.py",
+      "workspace_relative_path": "work/refine_v42_contact_brackets.py",
+      "bytes": 1992,
+      "sha256": "8c2ed493d14a78287b0ab02793fc36f6e150464c2f10e76313174583398c6642",
+      "role": "authoring_source_archive"
+    },
+    {
+      "local_path": "C:\\Users\\xgaiz\\Documents\\Codex\\2026-10-02\\task-4\\work\\save_v42_push_checkpoint.py",
+      "workspace_relative_path": "work/save_v42_push_checkpoint.py",
+      "bytes": 10388,
+      "sha256": "726ac5b13f3a9a4839186521ae1559006be5e16543b04ee98cfad2e8a5de0732",
+      "role": "authoring_source_archive"
+    }
+  ],
+  "source_dependencies": "These editing scripts use the existing Noctveil authoring workspace (v32 protected input and v35/v40/v41 helper/topology files). Delivered bbmodel is self-contained with embedded textures; those scripts are not a standalone runtime or game integration.",
+  "exclude": [
+    "work/references/**: original reference images/GIF/MP4",
+    "work/blockbench-profile-*/** and browser profiles/cookies",
+    "Library helpers, raw transfer responses, Library identity receipts and signed URLs",
+    "all portable tools/runtime binaries and process logs",
+    "superseded trial models/large motion renders/ZIPs unless separately requested",
+    "all unmodified protected originals and unrelated other-task files"
+  ],
+  "originals_modified": false,
+  "main_merge_force_push_deploy_or_public_setting_changed": false,
+  "limits": {
+    "at_utc": "2026-10-04T00:12:17.555698+09:00",
+    "stage": "Concept > real native model > partial static/path/motion QA > game not connected",
+    "current_model_sha256": "8809b24da17f3ef7b8e8aeb8d8ad52c0da842ba14335e2d4f907f678bcb25e98",
+    "native_review_candidate": "iteration_07",
+    "GUI_free_current_candidate": "iteration_09_cloak_counterwing",
+    "geometry_uv_textures_original3_clips_exact": true,
+    "closed_counterwing_source": "closed_idle_breath_v32 at0;16 existing left-wing bones only",
+    "midpoint_checks_prior_strike_path": {
+      "samples": 257,
+      "actual_key_midpoints": 128,
+      "head_and_crown_crossing_count": 0,
+      "selected_internal_crossing_count": 54,
+      "minimum_wing_y": 2.0855337470650905,
+      "minimum_all_mesh_y": 0.0021531177836443586,
+      "maximum_outer_shared_vertex_gap": 0.002243555404868461,
+      "first_hook_overlap": 1.75,
+      "first_non_hook_overlap": 2.203125,
+      "palm_or_radius_overlap": false
+    },
+    "residual_shared_seam_contacts": {
+      "observations": 54,
+      "adjacent_faces": [
+        15,
+        16
+      ],
+      "shared_edge": [
+        14,
+        12
+      ],
+      "maximum_distance_from_shared_edge": 0.0027949458914530833,
+      "interpretation": "Very small shared-edge contacts from key interpolation; segment length is not penetration depth. Not declared a full self-collision pass."
+    },
+    "current_timed_ground_minimum65_samples": 0.0024573603105019675,
+    "current_full_body_surface_samples": 17,
+    "current_new_wing_nonadjacent_crossing_pairs": [
+      [
+        "right_v24_mantle_panel_03",
+        "right_v24_mantle_panel_07"
+      ],
+      [
+        "right_v24_tension_panel_15_0",
+        "right_v24_tension_panel_16_2"
+      ]
+    ],
+    "full_body_self_collision_pass": false,
+    "continuous_time_solid_collision_proof": false,
+    "idle_return_or_state_transition_validated": false,
+    "final_timing_or_game_hitbox_calibrated": false,
+    "MatE_quality_reference_pixels_seen_in_this_worker": false,
+    "art_pass": false,
+    "game_connected": false,
+    "gui_capability": {
+      "editing": "GUI-free direct bbmodel JSON authoring; no geometry/UV/material changes",
+      "numeric_qa": "GUI-free bone/world vertices, contact brackets, ground, leg reach, shared edges, mesh surface crossings",
+      "ordinary_motion_preview": "Existing mesh_preview.py320x24025 frames,2.05s; GUI-free, no new renderer",
+      "proven_parity": {
+        "current_iteration_07_native_poses": 4,
+        "max_vertex_difference_units": 4.6048432255985435E-14,
+        "native_textures_errors": 0,
+        "scope": "Geometry/world transforms only, not image pixel/shading equivalence."
+      },
+      "native_qa_still_required": "Final Blockbench material/UV/backface/pose presentation and actual animation-player behavior where not yet verified. Keep to short necessary checks after the user playtest; no automatic frequent GUI launches.",
+      "not_verified": "Renderer image parity, actual Minecraft/ModelEngine behavior, final timing/idle-return/damage, MatE aesthetic equivalence",
+      "own_Blockbench_closed": true,
+      "native_short_motion_script_not_run_due_GUI_load_preference": true,
+      "Minecraft_window_or_input_touched": false
+    }
+  }
+}

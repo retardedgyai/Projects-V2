@@ -1,6 +1,6 @@
 # ProjectS saved source checkpoints — 2026-10-03
 
-These are frozen source snapshots from already saved Library ZIPs or explicitly shared non-Git source checkpoints. They preserve historical source bytes, not a statement that the designs are accepted or production ready. The `source-snapshot.json` in each folder records its source identity, file hashes, reproduction entry points and remaining limitations. `index.json` lists all nine checkpoints.
+These are frozen source snapshots from already saved Library ZIPs or explicitly shared non-Git source checkpoints. They preserve historical source bytes, not a statement that the designs are accepted or production ready. The `source-snapshot.json` in each folder records its source identity, file hashes, reproduction entry points and remaining limitations. `index.json` lists all ten checkpoints.
 
 | Folder | Saved state | Ongoing work kept separate |
 |---|---|---|
@@ -8,13 +8,14 @@ These are frozen source snapshots from already saved Library ZIPs or explicitly 
 | dragon-itemdisplay-y180 | Latest saved ItemDisplay Y180 transform-compensation candidate, Library version2; integration manifest member hashes matched | Corrected candidate has not been checked in the actual client |
 | armor-cloth29 | Previous intermediate editable cloth29 and dependencies, retained unchanged | Latest saved armor source is cloth30 below |
 | armor-cloth30 | Latest frozen cloth30 source; owner reports18 native images, body/UV defects0 and8 regenerated outputs byte exact | Further hood/shoulder quality revision; MatE equivalence and game wear unconfirmed |
-| noctveil-v39-58e | Historical delivered v39 source model; previous art pass withdrawn by the creator | v42 wing/path research |
+| noctveil-v39-58e | Historical delivered v39 source model; previous art pass withdrawn by the creator | Latest frozen V42 source is listed below |
+| noctveil-v42-iteration09 | Fixed manifest model/source, own textures and small2.05s GUI-free preview; sampled head/ground checks qualified | Full-body/continuous collision, idle return, aesthetic and game tests unpassed; native PNG is earlier iteration07 |
 | ice-garden11 | Saved 11c prototype authoring code, model assets and textures; quality/feel pending | Contact12 art revision |
 | ice-garden12b | Frozen saved contact12b source and foundation dependencies; FIX-FIRST | Further limited contact revision; MatE quality and spell feel still unaccepted |
 | quality-review-framework | Saved v3 record-validator source, same Library ID at version2; 61 tests rerun passed; independent audit reported complete | Aesthetic quality and real production efficacy unproven |
 | magic-local-fixes | Saved local classpath reproduction candidate; entry cleanup, item atlas, UV and ItemDisplay orientation; spawn-view and regression verified by owner | User play test/adoption and complete quality; no repository game integration |
 
-Archives, GIFs, video, renderer frames, browser profiles and private reference material are not duplicated here. The original complete review packages remain under their recorded Library identities. Some technical probes require the existing ProjectS baseline, Minecraft/JDK installation or parser output; consult the per-folder notes and Library package before replaying them. No test/build claim is added by this archival commit.
+Large archives/video, full renderer frame sets, browser profiles and private reference material are not duplicated here. Explicitly shared small own review PNG/GIF artifacts can be retained when listed by a fixed savepoint manifest, such as Noctveil V42. The original complete review packages remain under their recorded Library identities. Some technical probes require the existing ProjectS baseline, Minecraft/JDK installation or parser output; consult the per-folder notes and Library package before replaying them. No test/build claim is added by this archival commit.
 
 Framework update: the frozen Library version0 (`ProjectS-review-minimal-source-v1.zip`) checkpoint was replaced by saved v3 (`ProjectS-review-minimal-source-v3.zip`, 39,321 bytes, 11 members), under the same Library ID `libfile_21deb3cfc62c81919f46a7544395d229` at Library version2. The former version0 remains in Git history at `f3931405ccb3aa75591c67de4d5388214137a877`; the current folder uses the stable name `quality-review-framework`. Only the saved ZIP was read; the original live authoring workspace was untouched.
 
@@ -29,6 +30,8 @@ Current Noctveil acceptance status is recorded separately from historical source
 The magic checkpoint copies the final saved patch, local override source, selected resource JSON/text, regression source and reproducibility records. Source-file SHA256 was checked before and after copying. Active server/client sessions and original source/Jar/world data were not modified. Actual rendering and regression are owner-verified within the spawn-view scope; adoption, ritual completion and full quality are not certified. No world saves, raw logs, client credentials, compiled classes or generated pack ZIPs are included.
 
 Armor cloth30 is the latest saved armor source, from `ProjectS_cloth30_structure_editable.zip`, Library `libfile_a7eb7e2a4af88191a0d157315bdabe1b` version0. All72 ZIP member hashes match the supplied savepoint manifest. Selected editable source, textures, own material reference and relative replay dependencies are preserved under a new isolated `armor-cloth30` folder, as required by that manifest. The previous `armor-cloth29` folder and approved/original source files are unchanged. Detailed native imagery and complete package remain in Library. MatE equivalence and full quality are not asserted; the owning task is proceeding with further limited revisions.
+
+Noctveil V42 iteration09 was added from its fixed22-file hash manifest, including the self-contained bbmodel, own pixel textures, review PNGs/small GIF and editing/QA sources. Both supplied handoff records are retained. Prior native PNG evidence is explicitly labeled iteration07. Full-body/continuous collision, idle return, aesthetics and game readiness remain unpassed; the original producer's subsequent revision was not copied or changed.
 
 All selected ZIP members were verified byte-for-byte using SHA256. Original ZIP hashes were checked before and after extraction and were unchanged. Original workspaces and active task branches were not edited. Historical READMEs, test output and verification records inside the snapshots describe their source-time state; current snapshot status is authoritative for this archive.
 

@@ -1,0 +1,118 @@
+{
+  "at_utc": "2026-10-04T00:12:17.555698+09:00",
+  "saved_model": "outputs\\v42_path_study\\iteration_09_cloak_counterwing\\projects_noctveil_v42_timed_sweep_review.bbmodel",
+  "model_sha256": "8809b24da17f3ef7b8e8aeb8d8ad52c0da842ba14335e2d4f907f678bcb25e98",
+  "delivery_dir": "C:\\Users\\xgaiz\\Documents\\Codex\\2026-10-02\\task-4\\outputs\\v42_delivery_checkpoint",
+  "push_manifest": "work/PARENT_HANDOFF_V42_PUSH_MANIFEST.json",
+  "native_png_library": {
+    "library_file_id": "libfile_383c9eed405881918399f8e6384edf7f",
+    "file_id": "file_00000000abd882099328fd9c5f798ccd",
+    "version": 1,
+    "name": "noctveil_v42_native_pose_review.png",
+    "actual_candidate": "iteration_07"
+  },
+  "current_gui_free_review_png": "outputs\\v42_path_study\\iteration_09_cloak_counterwing\\noctveil_v42_current_review.png",
+  "current_motion_gif": "outputs\\v42_path_study\\iteration_09_cloak_counterwing\\noctveil_v42_short_sweep_review.gif",
+  "gui_capability": {
+    "editing": "GUI-free direct bbmodel JSON authoring; no geometry/UV/material changes",
+    "numeric_qa": "GUI-free bone/world vertices, contact brackets, ground, leg reach, shared edges, mesh surface crossings",
+    "ordinary_motion_preview": "Existing mesh_preview.py320x24025 frames,2.05s; GUI-free, no new renderer",
+    "proven_parity": {
+      "current_iteration_07_native_poses": 4,
+      "max_vertex_difference_units": 4.6048432255985435E-14,
+      "native_textures_errors": 0,
+      "scope": "Geometry/world transforms only, not image pixel/shading equivalence."
+    },
+    "native_qa_still_required": "Final Blockbench material/UV/backface/pose presentation and actual animation-player behavior where not yet verified. Keep to short necessary checks after the user playtest; no automatic frequent GUI launches.",
+    "not_verified": "Renderer image parity, actual Minecraft/ModelEngine behavior, final timing/idle-return/damage, MatE aesthetic equivalence",
+    "own_Blockbench_closed": true,
+    "native_short_motion_script_not_run_due_GUI_load_preference": true,
+    "Minecraft_window_or_input_touched": false
+  },
+  "latest_limits": {
+    "at_utc": "2026-10-04T00:12:17.555698+09:00",
+    "stage": "Concept > real native model > partial static/path/motion QA > game not connected",
+    "current_model_sha256": "8809b24da17f3ef7b8e8aeb8d8ad52c0da842ba14335e2d4f907f678bcb25e98",
+    "native_review_candidate": "iteration_07",
+    "GUI_free_current_candidate": "iteration_09_cloak_counterwing",
+    "geometry_uv_textures_original3_clips_exact": true,
+    "closed_counterwing_source": "closed_idle_breath_v32 at0;16 existing left-wing bones only",
+    "midpoint_checks_prior_strike_path": {
+      "samples": 257,
+      "actual_key_midpoints": 128,
+      "head_and_crown_crossing_count": 0,
+      "selected_internal_crossing_count": 54,
+      "minimum_wing_y": 2.0855337470650905,
+      "minimum_all_mesh_y": 0.0021531177836443586,
+      "maximum_outer_shared_vertex_gap": 0.002243555404868461,
+      "first_hook_overlap": 1.75,
+      "first_non_hook_overlap": 2.203125,
+      "palm_or_radius_overlap": false
+    },
+    "residual_shared_seam_contacts": {
+      "observations": 54,
+      "adjacent_faces": [
+        15,
+        16
+      ],
+      "shared_edge": [
+        14,
+        12
+      ],
+      "maximum_distance_from_shared_edge": 0.0027949458914530833,
+      "interpretation": "Very small shared-edge contacts from key interpolation; segment length is not penetration depth. Not declared a full self-collision pass."
+    },
+    "current_timed_ground_minimum65_samples": 0.0024573603105019675,
+    "current_full_body_surface_samples": 17,
+    "current_new_wing_nonadjacent_crossing_pairs": [
+      [
+        "right_v24_mantle_panel_03",
+        "right_v24_mantle_panel_07"
+      ],
+      [
+        "right_v24_tension_panel_15_0",
+        "right_v24_tension_panel_16_2"
+      ]
+    ],
+    "full_body_self_collision_pass": false,
+    "continuous_time_solid_collision_proof": false,
+    "idle_return_or_state_transition_validated": false,
+    "final_timing_or_game_hitbox_calibrated": false,
+    "MatE_quality_reference_pixels_seen_in_this_worker": false,
+    "art_pass": false,
+    "game_connected": false,
+    "gui_capability": {
+      "editing": "GUI-free direct bbmodel JSON authoring; no geometry/UV/material changes",
+      "numeric_qa": "GUI-free bone/world vertices, contact brackets, ground, leg reach, shared edges, mesh surface crossings",
+      "ordinary_motion_preview": "Existing mesh_preview.py320x24025 frames,2.05s; GUI-free, no new renderer",
+      "proven_parity": {
+        "current_iteration_07_native_poses": 4,
+        "max_vertex_difference_units": 4.6048432255985435E-14,
+        "native_textures_errors": 0,
+        "scope": "Geometry/world transforms only, not image pixel/shading equivalence."
+      },
+      "native_qa_still_required": "Final Blockbench material/UV/backface/pose presentation and actual animation-player behavior where not yet verified. Keep to short necessary checks after the user playtest; no automatic frequent GUI launches.",
+      "not_verified": "Renderer image parity, actual Minecraft/ModelEngine behavior, final timing/idle-return/damage, MatE aesthetic equivalence",
+      "own_Blockbench_closed": true,
+      "native_short_motion_script_not_run_due_GUI_load_preference": true,
+      "Minecraft_window_or_input_touched": false
+    }
+  },
+  "next": "Continue GUI-free: improve arm/claw readability and anticipation/return path, resolve/characterize shared seam contacts, compare actual MatE pixels once legitimately supplied. Sparse native final QA only when necessary; no Minecraft input.",
+  "current_gui_free_review_png_library": {
+    "library_file_id": "libfile_bda2900e6d188191adad3ebef78f337e",
+    "file_id": "file_00000000e7fc820682f04990f214d2f6",
+    "version": 0,
+    "name": "noctveil_v42_current_review.png",
+    "actual_candidate": "iteration_09_cloak_counterwing"
+  },
+  "current_motion_gif_library": {
+    "library_file_id": "libfile_ae6b86115d4c8191aed35fedf3463f94",
+    "file_id": "file_0000000057108209a5adc2db2b35d492",
+    "version": 0,
+    "name": "noctveil_v42_short_sweep_review.gif",
+    "actual_candidate": "iteration_09_cloak_counterwing",
+    "duration_ms": 2050,
+    "frames": 25
+  }
+}

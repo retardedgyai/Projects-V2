@@ -1,0 +1,69 @@
+{
+  "at_utc": "2026-10-03T15:12:17.555698+00:00",
+  "stage": "Concept > real native model > partial static/path/motion QA > game not connected",
+  "current_model_sha256": "8809b24da17f3ef7b8e8aeb8d8ad52c0da842ba14335e2d4f907f678bcb25e98",
+  "native_review_candidate": "iteration_07",
+  "GUI_free_current_candidate": "iteration_09_cloak_counterwing",
+  "geometry_uv_textures_original3_clips_exact": true,
+  "closed_counterwing_source": "closed_idle_breath_v32 at0;16 existing left-wing bones only",
+  "midpoint_checks_prior_strike_path": {
+    "samples": 257,
+    "actual_key_midpoints": 128,
+    "head_and_crown_crossing_count": 0,
+    "selected_internal_crossing_count": 54,
+    "minimum_wing_y": 2.0855337470650905,
+    "minimum_all_mesh_y": 0.0021531177836443586,
+    "maximum_outer_shared_vertex_gap": 0.002243555404868461,
+    "first_hook_overlap": 1.75,
+    "first_non_hook_overlap": 2.203125,
+    "palm_or_radius_overlap": false
+  },
+  "residual_shared_seam_contacts": {
+    "observations": 54,
+    "adjacent_faces": [
+      15,
+      16
+    ],
+    "shared_edge": [
+      14,
+      12
+    ],
+    "maximum_distance_from_shared_edge": 0.0027949458914530833,
+    "interpretation": "Very small shared-edge contacts from key interpolation; segment length is not penetration depth. Not declared a full self-collision pass."
+  },
+  "current_timed_ground_minimum65_samples": 0.0024573603105019675,
+  "current_full_body_surface_samples": 17,
+  "current_new_wing_nonadjacent_crossing_pairs": [
+    [
+      "right_v24_mantle_panel_03",
+      "right_v24_mantle_panel_07"
+    ],
+    [
+      "right_v24_tension_panel_15_0",
+      "right_v24_tension_panel_16_2"
+    ]
+  ],
+  "full_body_self_collision_pass": false,
+  "continuous_time_solid_collision_proof": false,
+  "idle_return_or_state_transition_validated": false,
+  "final_timing_or_game_hitbox_calibrated": false,
+  "MatE_quality_reference_pixels_seen_in_this_worker": false,
+  "art_pass": false,
+  "game_connected": false,
+  "gui_capability": {
+    "editing": "GUI-free direct bbmodel JSON authoring; no geometry/UV/material changes",
+    "numeric_qa": "GUI-free bone/world vertices, contact brackets, ground, leg reach, shared edges, mesh surface crossings",
+    "ordinary_motion_preview": "Existing mesh_preview.py320x24025 frames,2.05s; GUI-free, no new renderer",
+    "proven_parity": {
+      "current_iteration_07_native_poses": 4,
+      "max_vertex_difference_units": 4.6048432255985435e-14,
+      "native_textures_errors": 0,
+      "scope": "Geometry/world transforms only, not image pixel/shading equivalence."
+    },
+    "native_qa_still_required": "Final Blockbench material/UV/backface/pose presentation and actual animation-player behavior where not yet verified. Keep to short necessary checks after the user playtest; no automatic frequent GUI launches.",
+    "not_verified": "Renderer image parity, actual Minecraft/ModelEngine behavior, final timing/idle-return/damage, MatE aesthetic equivalence",
+    "own_Blockbench_closed": true,
+    "native_short_motion_script_not_run_due_GUI_load_preference": true,
+    "Minecraft_window_or_input_touched": false
+  }
+}

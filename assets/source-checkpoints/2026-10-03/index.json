@@ -80,5 +80,15 @@
     "FileCount": 34,
     "Bytes": 8177345.0,
     "Manifest": "armor-cloth30/source-snapshot.json"
+  },
+  {
+    "Snapshot": "noctveil-v42-iteration09",
+    "Status": "PARTIAL_QA_ITERATION09_SOURCE_SNAPSHOT_FULL_ART_GAME_PASS_PENDING",
+    "SourceType": "Fixed hash-listed non-Git checkpoint",
+    "LibraryFileId": null,
+    "LibraryVersion": null,
+    "FileCount": 24,
+    "Bytes": 10768654.0,
+    "Manifest": "noctveil-v42-iteration09/source-snapshot.json"
   }
 ]
