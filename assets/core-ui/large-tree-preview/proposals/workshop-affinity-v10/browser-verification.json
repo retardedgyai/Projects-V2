@@ -1,0 +1,424 @@
+{
+  "status": "PASS",
+  "reviewedAt": "2026-10-03T23:26:20.307Z",
+  "candidateSha256": "72af8556bdd0f8e824b6201bd42a9bfbdd36309a3e041039fac6b5bf0c68d987",
+  "v9PayloadExact": true,
+  "approvedFontsExact": true,
+  "graphUnchanged": true,
+  "fixturesMatchBothModes": true,
+  "ordinaryTargetCostsVerified": 830,
+  "sameTargetAudit": {
+    "ids": [
+      "g10n3",
+      "g11n7",
+      "g12n2",
+      "g13n3",
+      "g13n9",
+      "g14n4",
+      "g16n2",
+      "g16n8",
+      "g17n0",
+      "g18n1",
+      "g19n0",
+      "g20n1",
+      "g20n6",
+      "g21n3",
+      "g23n1",
+      "g23n5",
+      "g24n4",
+      "g25n6",
+      "g26n3",
+      "g27n1",
+      "g27n4",
+      "g28n2",
+      "g2n0",
+      "g2n3",
+      "g30n1",
+      "g30n4",
+      "g31n4",
+      "g32n2",
+      "g33n1",
+      "g34n2",
+      "g34n8",
+      "g35n1",
+      "g37n0",
+      "g37n4",
+      "g38n1",
+      "g39n6",
+      "g3n5",
+      "g40n0",
+      "g41n0",
+      "g41n3",
+      "g42n0",
+      "g43n0",
+      "g44n0",
+      "g44n3",
+      "g45n2",
+      "g46n6",
+      "g48n4",
+      "g48n8",
+      "g49n2",
+      "g4n2",
+      "g50n1",
+      "g51n1",
+      "g51n4",
+      "g52n0",
+      "g5n0",
+      "g6n0",
+      "g6n4",
+      "g7n2",
+      "g9n2",
+      "g9n7",
+      "v7g01n3",
+      "v7g01n5",
+      "v7g01n7",
+      "v7g02n4",
+      "v7g02n5",
+      "v7g03n3",
+      "v7g03n5",
+      "v7g04n4",
+      "v7g04n5",
+      "v7g05n2",
+      "v7g05n3",
+      "v7g06n3",
+      "v7g06n5",
+      "v7g07n4",
+      "v7g07n5",
+      "v7g08n3",
+      "v7g08n5",
+      "v7g08n7",
+      "v7g09n3",
+      "v7g09n5",
+      "v7g09n7",
+      "v7g10n4",
+      "v7g10n5",
+      "v7g11n3",
+      "v7g11n5",
+      "v7g12n5",
+      "v7g12n7",
+      "v7g13n4",
+      "v7g13n5",
+      "v7g14n2",
+      "v7g14n3",
+      "v7g15n3"
+    ],
+    "idHash": "1c250da0",
+    "pairs": {
+      "warrior": {
+        "warrior": {
+          "a": 0,
+          "b": 0,
+          "tie": 92
+        },
+        "tank": {
+          "a": 54,
+          "b": 21,
+          "tie": 17
+        },
+        "mage": {
+          "a": 58,
+          "b": 27,
+          "tie": 7
+        },
+        "ranger": {
+          "a": 54,
+          "b": 19,
+          "tie": 19
+        },
+        "assassin": {
+          "a": 60,
+          "b": 30,
+          "tie": 2
+        }
+      },
+      "tank": {
+        "warrior": {
+          "a": 21,
+          "b": 54,
+          "tie": 17
+        },
+        "tank": {
+          "a": 0,
+          "b": 0,
+          "tie": 92
+        },
+        "mage": {
+          "a": 50,
+          "b": 41,
+          "tie": 1
+        },
+        "ranger": {
+          "a": 56,
+          "b": 32,
+          "tie": 4
+        },
+        "assassin": {
+          "a": 60,
+          "b": 32,
+          "tie": 0
+        }
+      },
+      "mage": {
+        "warrior": {
+          "a": 27,
+          "b": 58,
+          "tie": 7
+        },
+        "tank": {
+          "a": 41,
+          "b": 50,
+          "tie": 1
+        },
+        "mage": {
+          "a": 0,
+          "b": 0,
+          "tie": 92
+        },
+        "ranger": {
+          "a": 53,
+          "b": 31,
+          "tie": 8
+        },
+        "assassin": {
+          "a": 29,
+          "b": 47,
+          "tie": 16
+        }
+      },
+      "ranger": {
+        "warrior": {
+          "a": 19,
+          "b": 54,
+          "tie": 19
+        },
+        "tank": {
+          "a": 32,
+          "b": 56,
+          "tie": 4
+        },
+        "mage": {
+          "a": 31,
+          "b": 53,
+          "tie": 8
+        },
+        "ranger": {
+          "a": 0,
+          "b": 0,
+          "tie": 92
+        },
+        "assassin": {
+          "a": 32,
+          "b": 58,
+          "tie": 2
+        }
+      },
+      "assassin": {
+        "warrior": {
+          "a": 30,
+          "b": 60,
+          "tie": 2
+        },
+        "tank": {
+          "a": 32,
+          "b": 60,
+          "tie": 0
+        },
+        "mage": {
+          "a": 47,
+          "b": 29,
+          "tie": 16
+        },
+        "ranger": {
+          "a": 58,
+          "b": 32,
+          "tie": 2
+        },
+        "assassin": {
+          "a": 0,
+          "b": 0,
+          "tie": 92
+        }
+      }
+    }
+  },
+  "two12PointCases": [
+    {
+      "id": "warrior-direction-0-12",
+      "spent": 12,
+      "stats": {
+        "armor": 12,
+        "haste": 12,
+        "hp": 14,
+        "physical": 43,
+        "resource": 9
+      },
+      "paint": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 5.133373658177119,
+        "minClickGap": 6.975059478927493,
+        "minNodePairPaintGap": 7.0619340701300715,
+        "nearest": {
+          "node": "key_02",
+          "edge": [
+            "g12n0",
+            "g12n3"
+          ]
+        },
+        "labelLines": [],
+        "captions": 3,
+        "zoom": 0.537965091194486,
+        "spent": 12,
+        "usable": true,
+        "connected": true
+      }
+    },
+    {
+      "id": "tank-direction-0-12",
+      "spent": 12,
+      "stats": {
+        "armor": 45,
+        "hp": 38,
+        "regen": 4,
+        "resist": 8
+      },
+      "paint": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 5.546641250513998,
+        "minClickGap": 7.6800743486393,
+        "minNodePairPaintGap": 7.366952928826539,
+        "nearest": {
+          "node": "key_02",
+          "edge": [
+            "g12n0",
+            "g12n3"
+          ]
+        },
+        "labelLines": [],
+        "captions": 4,
+        "zoom": 0.5703814553472557,
+        "spent": 12,
+        "usable": true,
+        "connected": true
+      }
+    }
+  ],
+  "overlayDoesNotAllocate": true,
+  "v9CodesCompatible": true,
+  "keyAndStartExcluded": true,
+  "legacyArmorCosts": {
+    "warrior": 30,
+    "tank": 31
+  },
+  "mobileNoHorizontalOverflow": true,
+  "desktop1440NoHorizontalOverflow": true,
+  "opusReadOnlyInspection": {
+    "nodes": 850,
+    "edges": 1009,
+    "groups": 67,
+    "costs": {
+      "warrior": 12,
+      "tank": 9
+    },
+    "sprites": {
+      "resolved": 35,
+      "keys": [
+        "sword",
+        "heart",
+        "speed",
+        "shield",
+        "war_guard",
+        "leaf",
+        "ward",
+        "crystal",
+        "fang",
+        "heal_shield",
+        "slam",
+        "nova",
+        "whirl",
+        "drop",
+        "ass_poison",
+        "spear",
+        "war_breach",
+        "target",
+        "clock",
+        "boot",
+        "star",
+        "snow",
+        "flame",
+        "bolt",
+        "war_ult",
+        "ass_escape",
+        "temp_sanctuary",
+        "frost_nova",
+        "firebolt",
+        "mage_mark",
+        "start_warrior",
+        "start_tank",
+        "start_mage",
+        "start_ranger",
+        "start_assassin"
+      ]
+    },
+    "affinity": 66
+  },
+  "opusSameConditionExample": {
+    "index": 2,
+    "result": {
+      "ok": true
+    },
+    "state": {
+      "job": "tank",
+      "kit": "support",
+      "element": "plain",
+      "siphon": false,
+      "budget": 12,
+      "road": "hp",
+      "plan": [
+        "opening_templar_0_1",
+        "opening_templar_0_2",
+        "opening_templar_0_3",
+        "opening_templar_1_1",
+        "opening_templar_1_2",
+        "opening_templar_1_3",
+        "origin_templar",
+        "v9_tank_0_0",
+        "v9_tank_0_1",
+        "v9_tank_0_2",
+        "v9_tank_0_3",
+        "v9_tank_0_4",
+        "v9_tank_0_5"
+      ],
+      "spent": 12,
+      "selected": "v9_tank_0_5",
+      "renderRev": 1,
+      "committed": {
+        "schema": "opus55-tree-ledger-1",
+        "fixture": true,
+        "sig": "v9-ba50a84b",
+        "revision": 1,
+        "harbor": true,
+        "job": "warrior",
+        "budget": 12,
+        "ids": [
+          "origin_warrior"
+        ]
+      },
+      "inflight": false,
+      "gen": 1,
+      "patchOn": false,
+      "affinity": false
+    }
+  },
+  "captures": [
+    "Inspected_Opus_Tank_12pt.png",
+    "Inspected_V9_Tank_12pt.png",
+    "V10_warrior-direction-0-12.png",
+    "V10_tank-direction-0-12.png",
+    "V10_Affinity_Overview.png",
+    "V10_Same_Target_Audit.png",
+    "V10_Mobile_Map.png",
+    "V10_Mobile_Target.png",
+    "V10_Tank_1440.png"
+  ],
+  "runtimeErrors": []
+}

@@ -1,0 +1,35 @@
+{
+  "status": "INDEPENDENT_UI_REVIEW_COMPLETED_UNADOPTED",
+  "reviewedAtUtc": "2026-10-03T23:26:29Z",
+  "sources": [
+    {
+      "name": "Preserved V9",
+      "path": "../workshop-specialization-v9/ProjectS_Specialization_V9.html",
+      "seen": "HTML, embedded data, canvas and allocation code, actual Tank support 12-point browser state at 1920x1200",
+      "evidence": "Inspected_V9_Tank_12pt.png",
+      "adopted": ["entire exact payload", "approved central five starts and irregular exterior", "existing sprite and Japanese font", "source ownership and allocation rules"]
+    },
+    {
+      "name": "Preserved Opus55 handoff",
+      "path": "C:/Users/xgaiz/Documents/Codex/2026-10-04/task-4/candidates/ui-opus55-2bb983e8-c45d-4250-b962-bc2b41d35642/output/tree/index.html",
+      "url": "https://chatgpt.com/api/library/files/libfile_063f7d51f8b08191b4a4cd759d1565e7/download",
+      "seen": "Authored HTML/JS/CSS and prior full view, plus actual Tank support 12-point state at 1920x1200",
+      "evidence": "Inspected_Opus_Tank_12pt.png",
+      "sameComparisonInputs": ["tank:support:plain:standard", "12 spent points", "v9_tank_0_5 selected", "1920x1200 viewport"],
+      "cameraNote": "Each candidate uses its own normal build-focus control; camera bounds differ.",
+      "adoptedAsConceptOnly": ["five-start comparison for a selected identical target", "optional affinity view"],
+      "notAdopted": {
+        "fixtureLedger": "No native game connection; simulated commit would add a separate persistence contract.",
+        "automaticEdge": "Default-OFF candidate is unadopted, not baseline geometry; independent geometry proof would be needed.",
+        "regionAffinity": "Each class takes a minimum over different target IDs within a region; this does not compare the same target.",
+        "rendererAndStatFormatter": "V9 owns accepted sprite rendering and source-specific units; keep them. The Opus renderer uses different root lookup and its formatter prints percentages for all stats.",
+        "profileVocabulary": "Long technical flag vocabulary overflows the side panel and does not aid the player decision."
+      }
+    }
+  ],
+  "implementation": "Independent V9 extension. No Opus source copied, no further Opus invocation.",
+  "visualResult": "Selected point and five costs precede totals/configuration; one target name remains visible in mobile cost card. Existing sprite, font, graph and savings preserved.",
+  "largestRemainingGap": "Old exterior balancing and decision variety, including g6n0 Warrior30/Tank31, remain unchanged; this is not final native-game or player-feel approval.",
+  "newExternalVideosViewed": false,
+  "historicalPoeReferencesNotNewlyViewed": true
+}

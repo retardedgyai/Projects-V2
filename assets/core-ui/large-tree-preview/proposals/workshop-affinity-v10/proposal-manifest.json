@@ -1,0 +1,26 @@
+{
+  "status": "TECHNICAL_PASS_UNADOPTED_HTML",
+  "runtimeApplied": false,
+  "graphChanged": false,
+  "nativeFilesChanged": false,
+  "saveStudy": "specialization-v9",
+  "v9SaveCompatible": true,
+  "nodes": 850,
+  "edges": 1009,
+  "groups": 67,
+  "sourceHtml": "assets\\core-ui\\large-tree-preview\\proposals\\workshop-specialization-v9\\ProjectS_Specialization_V9.html",
+  "sourceSha256": "b42d999481383578330d433c359468ed3c2835b98371550cc782404ad3e118f4",
+  "htmlSha256": "72af8556bdd0f8e824b6201bd42a9bfbdd36309a3e041039fac6b5bf0c68d987",
+  "adoptedFromOpus": [
+    "same-target five-start cost presentation",
+    "optional start affinity view"
+  ],
+  "independentlyReimplemented": true,
+  "excludedFromOpus": [
+    "fixture commit ledger",
+    "automatic candidate edge",
+    "region minima across different target IDs",
+    "profile flag vocabulary in player-facing panel"
+  ],
+  "verification": "browser-verification.json"
+}
