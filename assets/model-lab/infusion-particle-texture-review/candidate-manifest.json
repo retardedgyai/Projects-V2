@@ -1,0 +1,62 @@
+{
+  "status": "Two isolated static sprite candidates, not applied or user-approved",
+  "reference": "https://jaguidesminecraft.com/wp-content/uploads/2026/07/Thaumcraft-6-Full-Tutorial-1.12.2_at_54-24.png.webp",
+  "reference_limits": "Single TC6 1.12.2 tutorial still: role and motion unknown, actual TC6 atlas unavailable. TC7 and shader lightning are not design evidence here.",
+  "approach": "Small bright asymmetric core, clustered semi-transparent body, faint irregular rim. Explicit 16x16 hand-pixel map; no Gaussian field, imagegen, noise or borrowed sprite.",
+  "source_smoke_sha256": "4902aa3ea76b4ca30b45f7a8f879ac29f4429bedebd0dd12658d39f5593fed53",
+  "source_alpha_sum": 9944,
+  "candidates": [
+    {
+      "name": "a-core-mote",
+      "size": [
+        16,
+        16
+      ],
+      "nontransparent_pixels": 79,
+      "max_alpha": 252,
+      "alpha_values": [
+        0,
+        20,
+        72,
+        152,
+        216,
+        252
+      ],
+      "alpha_sum": 6912,
+      "bright_core_pixels": 4,
+      "billboard_geometry_uv_tint_unchanged": true
+    },
+    {
+      "name": "b-lobed-mist",
+      "size": [
+        16,
+        16
+      ],
+      "nontransparent_pixels": 83,
+      "max_alpha": 252,
+      "alpha_values": [
+        0,
+        20,
+        72,
+        152,
+        216,
+        252
+      ],
+      "alpha_sum": 7688,
+      "bright_core_pixels": 3,
+      "billboard_geometry_uv_tint_unchanged": true
+    }
+  ],
+  "not_changed": [
+    "main core halo/mesh/brightness",
+    "world display/UV repairs",
+    "live pack",
+    "server/client",
+    "save",
+    "counts",
+    "paths",
+    "rhythm",
+    "aspect tints"
+  ],
+  "application_limits": "Do not overwrite shared infusion/smoke without deciding affected roles. Assets have distinct identifiers and no live pack index/atlas registration. No server mapping changes are included."
+}
