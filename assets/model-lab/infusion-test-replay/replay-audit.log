@@ -1,0 +1,14 @@
+SLF4J(W): No SLF4J providers were found.
+SLF4J(W): Defaulting to no-operation (NOP) logger implementation
+SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
+INFUSION_TEST_REPLAY_STARTED tick=0 repositoryWrite=false
+INFUSION_TEST_REPLAY_STOPPED reason=complete tick=235 repositoryWrite=false
+INFUSION_TEST_REPLAY_STARTED tick=235 repositoryWrite=false
+INFUSION_TEST_REPLAY_STOPPED reason=command tick=237 repositoryWrite=false
+INFUSION_TEST_REPLAY_STARTED tick=237 repositoryWrite=false
+INFUSION_TEST_REPLAY_STOPPED reason=command tick=273 repositoryWrite=false
+INFUSION_TEST_REPLAY_STARTED tick=273 repositoryWrite=false
+INFUSION_TEST_REPLAY_STOPPED reason=command tick=394 repositoryWrite=false
+INFUSION_TEST_REPLAY_STARTED tick=394 repositoryWrite=false
+INFUSION_TEST_REPLAY_STOPPED reason=close tick=424 repositoryWrite=false
+TEST_REPLAY_AUDIT_PASS emptyMaterials emptyJars noOutputNoRewardsNoSkill repositoryBytesUnchanged allPhases spam600NoOverlap cancelAt1_35_120 closeCleanup normalRulesUnchanged durationTicks=235

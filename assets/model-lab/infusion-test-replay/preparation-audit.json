@@ -1,0 +1,11 @@
+{
+  "testReplayOnly": true,
+  "newAudioOrBuildup": false,
+  "sourceSaveHashes": {
+    "65c89fa2-af6f-33c3-b89b-1fc3cdd8f718.infusion": "3436451d7244dca76e16fb7d8f0a29b7997a9d5fe345b573dd6b4acf941f087f"
+  },
+  "sourceSaveUnchanged": true,
+  "currentPlayerAndServerNotInterrupted": true,
+  "address": "127.0.0.1:25587",
+  "packPort": 25588
+}
