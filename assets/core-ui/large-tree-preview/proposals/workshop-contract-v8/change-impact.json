@@ -118,199 +118,6 @@
       "newPaidApproachPoints": 2
     }
   ],
-  "sameBudgetComparisons": [
-    {
-      "budget": 48,
-      "budgetAdopted": false,
-      "left": {
-        "id": "assassin-area-48",
-        "spent": 43,
-        "remaining": 5,
-        "targets": [
-          "g41n3",
-          "g42n0"
-        ],
-        "stats": {
-          "hp": 44,
-          "regen": 8,
-          "resource": 21,
-          "attackSpeed": 25.95,
-          "haste": 44,
-          "aoe": 13,
-          "damage": 30,
-          "efficiency": 3,
-          "physical": 6,
-          "resist": 5
-        }
-      },
-      "right": {
-        "id": "assassin-crit-48",
-        "spent": 46,
-        "remaining": 2,
-        "targets": [
-          "g17n0",
-          "g41n3"
-        ],
-        "stats": {
-          "hp": 50,
-          "regen": 8,
-          "resource": 20,
-          "attackSpeed": 12.95,
-          "haste": 44,
-          "move": 4.5,
-          "damage": 30,
-          "efficiency": 3,
-          "crit": 25,
-          "resist": 5
-        }
-      },
-      "leftMinusRight": {
-        "aoe": 13,
-        "attackSpeed": 13.0,
-        "crit": -25,
-        "hp": -6,
-        "move": -4.5,
-        "physical": 6,
-        "resource": 1
-      }
-    },
-    {
-      "budget": 64,
-      "budgetAdopted": false,
-      "left": {
-        "id": "assassin-area-64",
-        "spent": 49,
-        "remaining": 15,
-        "targets": [
-          "g41n3",
-          "g42n0",
-          "g41n6",
-          "g41n7",
-          "g42n1",
-          "g42n2",
-          "g42n6",
-          "g42n7"
-        ],
-        "stats": {
-          "hp": 44,
-          "regen": 8,
-          "resource": 25,
-          "attackSpeed": 28.95,
-          "haste": 44,
-          "physical": 10,
-          "aoe": 22,
-          "damage": 30,
-          "efficiency": 3,
-          "resist": 5
-        }
-      },
-      "right": {
-        "id": "assassin-crit-64",
-        "spent": 51,
-        "remaining": 13,
-        "targets": [
-          "g17n0",
-          "g41n3",
-          "g17n1",
-          "g41n0",
-          "g41n6",
-          "g41n7"
-        ],
-        "stats": {
-          "hp": 50,
-          "regen": 8,
-          "resource": 29,
-          "attackSpeed": 25.95,
-          "haste": 44,
-          "crit": 35,
-          "move": 4.5,
-          "damage": 30,
-          "efficiency": 3,
-          "resist": 5
-        }
-      },
-      "leftMinusRight": {
-        "aoe": 22,
-        "attackSpeed": 3.0,
-        "crit": -35,
-        "hp": -6,
-        "move": -4.5,
-        "physical": 10,
-        "resource": -4
-      }
-    },
-    {
-      "budget": 80,
-      "budgetAdopted": false,
-      "left": {
-        "id": "assassin-area-80",
-        "spent": 55,
-        "remaining": 25,
-        "targets": [
-          "g41n3",
-          "g42n0",
-          "g41n6",
-          "g41n7",
-          "g42n1",
-          "g42n2",
-          "g42n6",
-          "g42n7",
-          "v7g10n0",
-          "v7g10n2",
-          "v7g10n4"
-        ],
-        "stats": {
-          "hp": 50,
-          "regen": 8,
-          "resource": 25,
-          "attackSpeed": 28.95,
-          "haste": 44,
-          "physical": 15,
-          "aoe": 31,
-          "damage": 30,
-          "efficiency": 3,
-          "resist": 5
-        }
-      },
-      "right": {
-        "id": "assassin-crit-80",
-        "spent": 60,
-        "remaining": 20,
-        "targets": [
-          "g17n0",
-          "g41n3",
-          "g17n1",
-          "g41n0",
-          "g41n6",
-          "g41n7",
-          "v7g13n0",
-          "v7g13n2",
-          "v7g13n4"
-        ],
-        "stats": {
-          "hp": 62,
-          "regen": 8,
-          "resource": 41,
-          "attackSpeed": 29.95,
-          "haste": 44,
-          "crit": 35,
-          "move": 4.5,
-          "damage": 30,
-          "efficiency": 3,
-          "resist": 5
-        }
-      },
-      "leftMinusRight": {
-        "aoe": 31,
-        "attackSpeed": -1.0,
-        "crit": -35,
-        "hp": -12,
-        "move": -4.5,
-        "physical": 15,
-        "resource": -16
-      }
-    }
-  ],
   "life43": {
     "beforeStats": {
       "hp": 59,
@@ -388,10 +195,6 @@
         "sha256": "46652163bd97d4b126e298aa64b5a3a539b966caff5b31818d48fd39db1d343c"
       },
       {
-        "file": "ProjectS_Contract_V8_Overview_And_Choices.png",
-        "sha256": "0daaf624616797fcfba160a1c23d34e230d00d442cb4136d1c6b3491b3d38201"
-      },
-      {
         "file": "ProjectS_Contract_V8_Contract_key_09.png",
         "sha256": "73d12cdbcbfdbb2fdab345e4055f072195c739f5c919ce4fa649bdac59256a27"
       },
@@ -402,6 +205,18 @@
       {
         "file": "ProjectS_Contract_V8_Contract_key_15.png",
         "sha256": "758a95eb32efdfbc3465d8177e00ac17e95e461fdf11037a01104d24ff584750"
+      },
+      {
+        "file": "ProjectS_Contract_V8_Pair_assassin-equal-area-43.png",
+        "sha256": "bce953299cb326672b55d89a11e5a2445176f48d8c22094eb355bd02af221c33"
+      },
+      {
+        "file": "ProjectS_Contract_V8_Pair_assassin-equal-crit-43.png",
+        "sha256": "5bb67a16f57de6fad106c37f7082b30481c0c243e2a9d8c387e0d84d3100675c"
+      },
+      {
+        "file": "ProjectS_Contract_V8_Overview_And_Choices.png",
+        "sha256": "78b61e74c31178ade08da7cd7bf3bce2892fd335cda28aedefdadde4ae736927"
       }
     ],
     "findings": [
@@ -411,7 +226,9 @@
       "Local penetration leaf now connects to the mixed goal.",
       "Budget and life-reinvestment screenshots display costs, remaining points and supported vectors.",
       "All five effect contract details are readable after scrolling; unresolved adoption visible.",
-      "Synthetic non-MP screenshot explicitly labels input sensitivity, not a supplied ability."
+      "Synthetic non-MP screenshot explicitly labels input sensitivity, not a supplied ability.",
+      "Equal-consumption pair personally viewed: same 43pt / 48pt budget and same camera, different supported values.",
+      "Revised overview personally viewed: equal 43pt consumption and upper-budget unused examples are explicitly separated."
     ],
     "limitations": [
       "Some old long travel wires and uneven northern gaps remain.",
@@ -419,5 +236,260 @@
       "Key11 keeps the old terminal drawing while classification and cost remain candidate decisions."
     ]
   },
-  "canonicalSourceAndPriorV7Untouched": true
+  "canonicalSourceAndPriorV7Untouched": true,
+  "upperBudgetExamples": [
+    {
+      "budget": 48,
+      "budgetAdopted": false,
+      "left": {
+        "id": "assassin-area-48",
+        "spent": 43,
+        "remaining": 5,
+        "targets": [
+          "g41n3",
+          "g42n0"
+        ],
+        "stats": {
+          "hp": 44,
+          "damage": 30,
+          "attackSpeed": 25.95,
+          "efficiency": 3,
+          "haste": 44,
+          "aoe": 13,
+          "regen": 8,
+          "resist": 5,
+          "physical": 6,
+          "resource": 21
+        }
+      },
+      "right": {
+        "id": "assassin-crit-48",
+        "spent": 46,
+        "remaining": 2,
+        "targets": [
+          "g17n0",
+          "g41n3"
+        ],
+        "stats": {
+          "hp": 50,
+          "damage": 30,
+          "efficiency": 3,
+          "haste": 44,
+          "regen": 8,
+          "crit": 25,
+          "resist": 5,
+          "attackSpeed": 12.95,
+          "move": 4.5,
+          "resource": 20
+        }
+      },
+      "leftMinusRight": {
+        "aoe": 13,
+        "attackSpeed": 13.0,
+        "crit": -25,
+        "hp": -6,
+        "move": -4.5,
+        "physical": 6,
+        "resource": 1
+      }
+    },
+    {
+      "budget": 64,
+      "budgetAdopted": false,
+      "left": {
+        "id": "assassin-area-64",
+        "spent": 49,
+        "remaining": 15,
+        "targets": [
+          "g41n3",
+          "g42n0",
+          "g41n6",
+          "g41n7",
+          "g42n1",
+          "g42n2",
+          "g42n6",
+          "g42n7"
+        ],
+        "stats": {
+          "hp": 44,
+          "damage": 30,
+          "aoe": 22,
+          "attackSpeed": 28.95,
+          "efficiency": 3,
+          "haste": 44,
+          "regen": 8,
+          "resist": 5,
+          "physical": 10,
+          "resource": 25
+        }
+      },
+      "right": {
+        "id": "assassin-crit-64",
+        "spent": 51,
+        "remaining": 13,
+        "targets": [
+          "g17n0",
+          "g41n3",
+          "g17n1",
+          "g41n0",
+          "g41n6",
+          "g41n7"
+        ],
+        "stats": {
+          "hp": 50,
+          "damage": 30,
+          "efficiency": 3,
+          "crit": 35,
+          "haste": 44,
+          "regen": 8,
+          "attackSpeed": 25.95,
+          "resist": 5,
+          "resource": 29,
+          "move": 4.5
+        }
+      },
+      "leftMinusRight": {
+        "aoe": 22,
+        "attackSpeed": 3.0,
+        "crit": -35,
+        "hp": -6,
+        "move": -4.5,
+        "physical": 10,
+        "resource": -4
+      }
+    },
+    {
+      "budget": 80,
+      "budgetAdopted": false,
+      "left": {
+        "id": "assassin-area-80",
+        "spent": 55,
+        "remaining": 25,
+        "targets": [
+          "g41n3",
+          "g42n0",
+          "g41n6",
+          "g41n7",
+          "g42n1",
+          "g42n2",
+          "g42n6",
+          "g42n7",
+          "v7g10n0",
+          "v7g10n2",
+          "v7g10n4"
+        ],
+        "stats": {
+          "hp": 50,
+          "damage": 30,
+          "aoe": 31,
+          "attackSpeed": 28.95,
+          "efficiency": 3,
+          "haste": 44,
+          "regen": 8,
+          "resist": 5,
+          "physical": 15,
+          "resource": 25
+        }
+      },
+      "right": {
+        "id": "assassin-crit-80",
+        "spent": 60,
+        "remaining": 20,
+        "targets": [
+          "g17n0",
+          "g41n3",
+          "g17n1",
+          "g41n0",
+          "g41n6",
+          "g41n7",
+          "v7g13n0",
+          "v7g13n2",
+          "v7g13n4"
+        ],
+        "stats": {
+          "hp": 62,
+          "damage": 30,
+          "resource": 41,
+          "attackSpeed": 29.95,
+          "efficiency": 3,
+          "crit": 35,
+          "haste": 44,
+          "regen": 8,
+          "resist": 5,
+          "move": 4.5
+        }
+      },
+      "leftMinusRight": {
+        "aoe": 31,
+        "attackSpeed": -1.0,
+        "crit": -35,
+        "hp": -12,
+        "move": -4.5,
+        "physical": 15,
+        "resource": -16
+      }
+    }
+  ],
+  "upperBudgetExamplesMeaning": "Unused budget is explicit. The 80-budget examples are also feasible at 64 and do not demonstrate an 80-only unlock.",
+  "sameConsumptionComparisons": [
+    {
+      "usedPoints": 43,
+      "budget": 48,
+      "sameProfileAndModAndRoadChoice": true,
+      "left": {
+        "id": "assassin-equal-area-43",
+        "spent": 43,
+        "remaining": 5,
+        "targets": [
+          "g41n3",
+          "g42n0"
+        ],
+        "stats": {
+          "hp": 44,
+          "damage": 30,
+          "attackSpeed": 25.95,
+          "efficiency": 3,
+          "haste": 44,
+          "aoe": 13,
+          "regen": 8,
+          "resist": 5,
+          "physical": 6,
+          "resource": 21
+        }
+      },
+      "right": {
+        "id": "assassin-equal-crit-43",
+        "spent": 43,
+        "remaining": 5,
+        "targets": [
+          "g17n0",
+          "g17n1",
+          "g10n2"
+        ],
+        "stats": {
+          "hp": 46,
+          "damage": 30,
+          "efficiency": 3,
+          "crit": 35,
+          "attackSpeed": 7,
+          "haste": 44,
+          "regen": 8,
+          "resist": 5,
+          "move": 4.5,
+          "resource": 12
+        }
+      },
+      "leftMinusRight": {
+        "aoe": 13,
+        "attackSpeed": 18.95,
+        "crit": -35,
+        "hp": -2,
+        "move": -4.5,
+        "physical": 6,
+        "resource": 9
+      }
+    }
+  ],
+  "budgetFollowupBaseline": "0a851405",
+  "budgetFollowupActualJsCases": 8
 }

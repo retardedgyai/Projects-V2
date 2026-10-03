@@ -115,7 +115,7 @@
     },
     {
       "file": "ProjectS_Contract_V8_Overview.png",
-      "sha256": "706ebeaf98ed9581008ac667b0dd09bfc74c18f83309c9e3e32e221cbf359077",
+      "sha256": "aadd69d4cf89eceb0d989bf9261d3eddda5976a82d4f5e1bd1c5edc2a7caf8da",
       "originalSize": [
         1920,
         1200
@@ -128,8 +128,8 @@
       ]
     },
     {
-      "file": "ProjectS_Contract_V8_Pair_assassin-area-48.png",
-      "sha256": "4d51cf4644e54cadb33606bc3ed0a85396bdddc7a2267fdd3a3c88bbd1de7951",
+      "file": "ProjectS_Contract_V8_Pair_assassin-equal-area-43.png",
+      "sha256": "bce953299cb326672b55d89a11e5a2445176f48d8c22094eb355bd02af221c33",
       "originalSize": [
         1920,
         1200
@@ -142,8 +142,8 @@
       ]
     },
     {
-      "file": "ProjectS_Contract_V8_Pair_assassin-crit-48.png",
-      "sha256": "f58bf498457b4a2615a8bd6b0cd5f573271478ae416b541869fd510172a69611",
+      "file": "ProjectS_Contract_V8_Pair_assassin-equal-crit-43.png",
+      "sha256": "5bb67a16f57de6fad106c37f7082b30481c0c243e2a9d8c387e0d84d3100675c",
       "originalSize": [
         1920,
         1200

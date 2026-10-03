@@ -28,7 +28,9 @@ for budget in (48,64,80):
             targets=targets+(['g41n6','g41n7','g42n1','g42n2','g42n6','g42n7'] if arm=='area' else ['g17n1','g41n0','g41n6','g41n7'])
         if budget>=80:
             targets=targets+(['v7g10n0','v7g10n2','v7g10n4'] if arm=='area' else ['v7g13n0','v7g13n2','v7g13n4'])
-        specs.append(spec(f'assassin-{arm}-{budget}',f'暗殺者・{budget}pt / {label}','assassin:mark:plain:standard',targets,budget,note=f'同じ技能編成・MOD・通路HPで{budget}pt予算を比較。残りも表示する育成例で、最適解や採用済み上限ではない。弱点・出血の未実装入力は加算しない。'))
+        specs.append(spec(f'assassin-{arm}-{budget}',f'上限{budget}pt / {label}（未消費あり）','assassin:mark:plain:standard',targets,budget,note=f'比較予算の上限{budget}pt別・未消費ありの例。上限で固有の能力が解放される例ではなく、80pt例も64pt以内に収まる。同消費比較は別の43pt使用例で確認する。上限は未採用。弱点・出血の未実装入力は加算しない。'))
+specs.append(spec('assassin-equal-area-43','同消費43pt / 手数と範囲','assassin:mark:plain:standard',['g41n3','g42n0'],note='同じ編成・追加MOD・通路HP・48pt上限で43ptを使用。手数と範囲の目標を選ぶ。会心側43pt例と費用を揃えて追加値を比較する。'))
+specs.append(spec('assassin-equal-crit-43','同消費43pt / 会心と攻撃速度','assassin:mark:plain:standard',['g17n0','g17n1','g10n2'],note='同じ編成・追加MOD・通路HP・48pt上限で43ptを使用。会心目標に会心10と攻撃速度2を追加する。点埋めではなく、取得効果が有効な目標への投資。弱点値は未実装で加算しない。'))
 life=next(e for e in prior if e['id']=='tank-life')
 life_targets=life['targets']+['opening_templar_2_3','g28n2','g23n1','opening_templar_1_3','opening_warrior_1_3','g6n5','g23n2']
 specs.append(spec('tank-life-reinvest-43','生命・43ptへ防御再投資',life['profileId'],life_targets,note='短縮した31pt経路から12ptを防御へ再投資。旧43pt経路と同じ費用で比較。防御値を回収できる一方、旧経路の資源22・効率8は持たない。'))
@@ -46,7 +48,7 @@ for k,n in enumerate(GRAPH['nodes']):
     paint[n['id']]=dict(wire=float(np.min(dist)),pair=float(np.min(pair)))
 payload=dict(source=SOURCE,inputOverlay=OVERLAY,graph=GRAPH,icons=copy.deepcopy(old_payload['icons']),examples=examples,paintBounds=paint,centralCenter=old_payload['centralCenter'])
 template=(ROOT/'scripts/skill-tree-poe2-central-v6-template.html').read_text(encoding='utf8')
-template=template.replace('645点・47領域・5職業・15 Key','789点・62領域・5職業・14 Key候補＋1 Notable候補').replace('5起点を中央に集めた配分試作 / 採用前','入口・入力・同予算の比較 / 未採用').replace('poe2-central-v6','contract-v8')
+template=template.replace('645点・47領域・5職業・15 Key','789点・62領域・5職業・14 Key候補＋1 Notable候補').replace('5起点を中央に集めた配分試作 / 採用前','入口・入力・配分例の比較 / 未採用').replace('poe2-central-v6','contract-v8')
 template=template.replace('5職業の起点を中央の一まとまりへ置き、異なる47領域へ進む全体比較です。全645点の効果・費用・入力条件は保持。全Keyは任意の行き止まり。交差隠しやノードを跨ぐ接続は使っていません。','中央の5起点を保持した789点・62領域の比較案です。血の代価の独立入口、MP投資なしの障壁入口、会心を捨てた後の貫通、実際に持つ範囲攻撃を確認できます。終端15点のうち仲間の盾はNotable候補です。')
 template=template.replace('15 Keyの係数や代償は原案です。','Key・Notableの効果や係数は未採用の候補です。').replace('<label>予算<select','<label>比較予算（未採用）<select')
 template=template.replace('<div class="tiny" id="inactiveStats"></div>','<div class="tiny" id="inactiveStats"></div><div id="effectContract"></div>')

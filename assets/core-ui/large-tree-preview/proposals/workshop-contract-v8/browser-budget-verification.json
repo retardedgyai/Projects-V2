@@ -1,0 +1,177 @@
+{
+  "status": "PASS",
+  "applicationJsUnchanged": true,
+  "graphAndSourceAndContractsUnchanged": true,
+  "cases": [
+    {
+      "id": "assassin-area-48",
+      "used": 43,
+      "budget": 48,
+      "remaining": 5,
+      "stats": {
+        "damage": 30,
+        "hp": 44,
+        "attackSpeed": 25.95,
+        "resist": 5,
+        "regen": 8,
+        "efficiency": 3,
+        "haste": 44,
+        "resource": 21,
+        "aoe": 13,
+        "physical": 6
+      },
+      "actualJsRebuilt": true,
+      "saveRestore": true
+    },
+    {
+      "id": "assassin-crit-48",
+      "used": 46,
+      "budget": 48,
+      "remaining": 2,
+      "stats": {
+        "damage": 30,
+        "hp": 50,
+        "attackSpeed": 12.95,
+        "resist": 5,
+        "regen": 8,
+        "efficiency": 3,
+        "haste": 44,
+        "resource": 20,
+        "move": 4.5,
+        "crit": 25
+      },
+      "actualJsRebuilt": true,
+      "saveRestore": true
+    },
+    {
+      "id": "assassin-area-64",
+      "used": 49,
+      "budget": 64,
+      "remaining": 15,
+      "stats": {
+        "damage": 30,
+        "hp": 44,
+        "attackSpeed": 28.95,
+        "resist": 5,
+        "regen": 8,
+        "efficiency": 3,
+        "haste": 44,
+        "resource": 25,
+        "aoe": 22,
+        "physical": 10
+      },
+      "actualJsRebuilt": true,
+      "saveRestore": true
+    },
+    {
+      "id": "assassin-crit-64",
+      "used": 51,
+      "budget": 64,
+      "remaining": 13,
+      "stats": {
+        "damage": 30,
+        "hp": 50,
+        "attackSpeed": 25.95,
+        "resist": 5,
+        "regen": 8,
+        "efficiency": 3,
+        "haste": 44,
+        "resource": 29,
+        "move": 4.5,
+        "crit": 35
+      },
+      "actualJsRebuilt": true,
+      "saveRestore": true
+    },
+    {
+      "id": "assassin-area-80",
+      "used": 55,
+      "budget": 80,
+      "remaining": 25,
+      "stats": {
+        "damage": 30,
+        "hp": 50,
+        "attackSpeed": 28.95,
+        "resist": 5,
+        "regen": 8,
+        "efficiency": 3,
+        "haste": 44,
+        "resource": 25,
+        "aoe": 31,
+        "physical": 15
+      },
+      "actualJsRebuilt": true,
+      "saveRestore": true
+    },
+    {
+      "id": "assassin-crit-80",
+      "used": 60,
+      "budget": 80,
+      "remaining": 20,
+      "stats": {
+        "damage": 30,
+        "hp": 62,
+        "attackSpeed": 29.95,
+        "resist": 5,
+        "regen": 8,
+        "efficiency": 3,
+        "haste": 44,
+        "resource": 41,
+        "move": 4.5,
+        "crit": 35
+      },
+      "actualJsRebuilt": true,
+      "saveRestore": true
+    },
+    {
+      "id": "assassin-equal-area-43",
+      "used": 43,
+      "budget": 48,
+      "remaining": 5,
+      "stats": {
+        "damage": 30,
+        "hp": 44,
+        "attackSpeed": 25.95,
+        "resist": 5,
+        "regen": 8,
+        "efficiency": 3,
+        "haste": 44,
+        "resource": 21,
+        "aoe": 13,
+        "physical": 6
+      },
+      "actualJsRebuilt": true,
+      "saveRestore": true
+    },
+    {
+      "id": "assassin-equal-crit-43",
+      "used": 43,
+      "budget": 48,
+      "remaining": 5,
+      "stats": {
+        "damage": 30,
+        "hp": 46,
+        "attackSpeed": 7,
+        "resist": 5,
+        "regen": 8,
+        "efficiency": 3,
+        "haste": 44,
+        "resource": 12,
+        "move": 4.5,
+        "crit": 35
+      },
+      "actualJsRebuilt": true,
+      "saveRestore": true
+    }
+  ],
+  "equalSpend": 43,
+  "equalBudget": 48,
+  "equalCamera": {
+    "x": 4577.372985,
+    "y": 253.95530499999995,
+    "z": 0.09640376448816458
+  },
+  "eightyBudgetExamplesAlsoWithin64": true,
+  "noPaddingNodesAdded": true,
+  "runtimeErrors": []
+}

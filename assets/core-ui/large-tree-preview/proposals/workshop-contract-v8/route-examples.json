@@ -126,14 +126,14 @@
     ],
     "spent": 45,
     "stats": {
-      "hp": 77,
       "crit": 129,
-      "regen": 20,
-      "critMulti": 15,
+      "hp": 77,
       "physical": 24,
+      "leech": 1.0699999999999998,
+      "regen": 20,
       "armor": 3,
-      "attackSpeed": 9,
-      "leech": 1.0699999999999998
+      "critMulti": 15,
+      "attackSpeed": 9
     },
     "keys": [],
     "remaining": 3
@@ -255,10 +255,10 @@
     "stats": {
       "hp": 75,
       "physical": 36,
-      "regen": 20,
-      "armor": 3,
-      "penetration": 10.97,
       "leech": 1.0699999999999998,
+      "regen": 20,
+      "penetration": 10.97,
+      "armor": 3,
       "attackSpeed": 9
     },
     "keys": [
@@ -441,12 +441,12 @@
     ],
     "spent": 21,
     "stats": {
+      "barrier": 14,
       "resist": 29,
       "hp": 22,
-      "regen": 8,
+      "mana": 4,
       "physical": 24,
-      "barrier": 14,
-      "mana": 4
+      "regen": 8
     },
     "keys": [
       "key_11"
@@ -517,10 +517,10 @@
     ],
     "spent": 17,
     "stats": {
-      "mana": 59.9,
+      "hp": 12,
       "efficiency": 32,
-      "regen": 8,
-      "hp": 12
+      "mana": 59.9,
+      "regen": 8
     },
     "keys": [],
     "remaining": 31
@@ -604,14 +604,14 @@
     ],
     "spent": 30,
     "stats": {
+      "magic": 26,
       "barrier": 26,
       "hp": 47,
-      "attackSpeed": 7,
-      "resource": 4,
       "armor": 26,
       "resist": 11,
-      "magic": 26,
-      "physical": 24
+      "physical": 24,
+      "attackSpeed": 7,
+      "resource": 4
     },
     "keys": [
       "key_02"
@@ -701,12 +701,12 @@
     ],
     "spent": 25,
     "stats": {
-      "hp": 22,
-      "ice": 59.55,
       "barrier": 41,
+      "resist": 13,
+      "hp": 22,
       "efficiency": 13,
-      "mana": 10,
-      "resist": 13
+      "ice": 59.55,
+      "mana": 10
     },
     "keys": [
       "key_13"
@@ -830,17 +830,17 @@
     ],
     "spent": 42,
     "stats": {
-      "mana": 34,
-      "regen": 8,
       "hp": 32,
-      "resource": 22,
       "crit": 52,
+      "efficiency": 14,
+      "regen": 8,
+      "critMulti": 15,
+      "resist": 5,
       "move": 4,
       "attackSpeed": 15,
-      "efficiency": 14,
-      "critMulti": 15,
+      "mana": 34,
       "damage": 4,
-      "resist": 5
+      "resource": 22
     },
     "keys": [
       "key_10"
@@ -989,17 +989,17 @@
     "spent": 52,
     "stats": {
       "hp": 54,
-      "regen": 8,
-      "resource": 20,
+      "damage": 30,
       "attackSpeed": 15.95,
+      "efficiency": 3,
       "haste": 44,
       "aoe": 13,
-      "move": 4.5,
-      "damage": 30,
-      "efficiency": 3,
-      "physical": 6,
+      "regen": 8,
       "crit": 25,
-      "resist": 5
+      "resist": 5,
+      "physical": 6,
+      "move": 4.5,
+      "resource": 20
     },
     "keys": [],
     "remaining": 12
@@ -1082,12 +1082,12 @@
     ],
     "spent": 26,
     "stats": {
-      "hp": 20,
-      "regen": 8,
       "haste": 11,
-      "lightning": 28.55,
+      "efficiency": 25,
+      "hp": 20,
       "mana": 31.9,
-      "efficiency": 25
+      "lightning": 28.55,
+      "regen": 8
     },
     "keys": [
       "key_15"
@@ -1149,9 +1149,9 @@
     ],
     "spent": 9,
     "stats": {
+      "hp": 6,
       "efficiency": 16,
-      "mana": 26,
-      "hp": 6
+      "mana": 26
     },
     "keys": [],
     "remaining": 39
@@ -1212,8 +1212,8 @@
     "spent": 9,
     "stats": {
       "efficiency": 20,
-      "mana": 18,
-      "hp": 6
+      "hp": 6,
+      "mana": 18
     },
     "keys": [],
     "remaining": 39
@@ -1318,9 +1318,9 @@
     "spent": 31,
     "stats": {
       "hp": 86,
-      "physical": 13,
       "regen": 20,
       "armor": 11,
+      "physical": 13,
       "crit": 10
     },
     "keys": [],
@@ -1427,8 +1427,8 @@
     "stats": {
       "hp": 86,
       "regen": 20,
-      "armor": 11,
       "crit": 22,
+      "armor": 11,
       "physical": 7
     },
     "keys": [],
@@ -1566,14 +1566,14 @@
     "spent": 47,
     "stats": {
       "crit": 129,
-      "critMulti": 15,
-      "physical": 34,
-      "resource": 45,
       "hp": 33,
-      "attackSpeed": 12,
       "leech": 1.3199999999999998,
+      "resource": 45,
       "efficiency": 11,
-      "armor": 5
+      "attackSpeed": 12,
+      "physical": 34,
+      "armor": 5,
+      "critMulti": 15
     },
     "keys": [],
     "remaining": 1
@@ -1701,17 +1701,17 @@
     ],
     "spent": 43,
     "stats": {
+      "barrier": 14,
+      "resist": 39,
       "hp": 59,
       "armor": 41.55,
-      "resist": 39,
       "regen": 34,
       "resource": 22,
-      "physical": 24,
-      "attackSpeed": 7,
-      "parry": 45,
-      "barrier": 14,
       "mana": 4,
-      "efficiency": 8
+      "physical": 24,
+      "efficiency": 8,
+      "parry": 45,
+      "attackSpeed": 7
     },
     "keys": [],
     "remaining": 5
@@ -1914,15 +1914,15 @@
     ],
     "spent": 46,
     "stats": {
-      "hp": 63,
       "barrier": 73,
-      "ice": 35.55,
-      "attackSpeed": 7,
-      "resource": 4,
-      "armor": 28,
       "resist": 19,
+      "hp": 63,
       "magic": 26,
-      "physical": 24
+      "armor": 28,
+      "ice": 35.55,
+      "physical": 24,
+      "attackSpeed": 7,
+      "resource": 4
     },
     "keys": [
       "key_02"
@@ -1998,20 +1998,20 @@
     ],
     "spent": 23,
     "stats": {
-      "hp": 22,
-      "ice": 35.55,
       "barrier": 47,
+      "resist": 13,
+      "hp": 22,
       "efficiency": 13,
-      "armor": 2,
+      "ice": 35.55,
       "mana": 10,
-      "resist": 13
+      "armor": 2
     },
     "keys": [],
     "remaining": 25
   },
   {
     "id": "assassin-area-48",
-    "label": "暗殺者・48pt / 手数と範囲",
+    "label": "上限48pt / 手数と範囲（未消費あり）",
     "profileId": "assassin:mark:plain:standard",
     "siphon": false,
     "targets": [
@@ -2019,7 +2019,7 @@
       "g42n0"
     ],
     "budget": 48,
-    "note": "同じ技能編成・MOD・通路HPで48pt予算を比較。残りも表示する育成例で、最適解や採用済み上限ではない。弱点・出血の未実装入力は加算しない。",
+    "note": "比較予算の上限48pt別・未消費ありの例。上限で固有の能力が解放される例ではなく、80pt例も64pt以内に収まる。同消費比較は別の43pt使用例で確認する。上限は未採用。弱点・出血の未実装入力は加算しない。",
     "learned": [
       "g12n3",
       "g33n3",
@@ -2126,22 +2126,22 @@
     "spent": 43,
     "stats": {
       "hp": 44,
-      "regen": 8,
-      "resource": 21,
+      "damage": 30,
       "attackSpeed": 25.95,
+      "efficiency": 3,
       "haste": 44,
       "aoe": 13,
-      "damage": 30,
-      "efficiency": 3,
+      "regen": 8,
+      "resist": 5,
       "physical": 6,
-      "resist": 5
+      "resource": 21
     },
     "keys": [],
     "remaining": 5
   },
   {
     "id": "assassin-crit-48",
-    "label": "暗殺者・48pt / 会心と手数",
+    "label": "上限48pt / 会心と手数（未消費あり）",
     "profileId": "assassin:mark:plain:standard",
     "siphon": false,
     "targets": [
@@ -2149,7 +2149,7 @@
       "g41n3"
     ],
     "budget": 48,
-    "note": "同じ技能編成・MOD・通路HPで48pt予算を比較。残りも表示する育成例で、最適解や採用済み上限ではない。弱点・出血の未実装入力は加算しない。",
+    "note": "比較予算の上限48pt別・未消費ありの例。上限で固有の能力が解放される例ではなく、80pt例も64pt以内に収まる。同消費比較は別の43pt使用例で確認する。上限は未採用。弱点・出血の未実装入力は加算しない。",
     "learned": [
       "g10n0",
       "g10n1",
@@ -2262,22 +2262,22 @@
     "spent": 46,
     "stats": {
       "hp": 50,
-      "regen": 8,
-      "resource": 20,
-      "attackSpeed": 12.95,
-      "haste": 44,
-      "move": 4.5,
       "damage": 30,
       "efficiency": 3,
+      "haste": 44,
+      "regen": 8,
       "crit": 25,
-      "resist": 5
+      "resist": 5,
+      "attackSpeed": 12.95,
+      "move": 4.5,
+      "resource": 20
     },
     "keys": [],
     "remaining": 2
   },
   {
     "id": "assassin-area-64",
-    "label": "暗殺者・64pt / 手数と範囲",
+    "label": "上限64pt / 手数と範囲（未消費あり）",
     "profileId": "assassin:mark:plain:standard",
     "siphon": false,
     "targets": [
@@ -2291,7 +2291,7 @@
       "g42n7"
     ],
     "budget": 64,
-    "note": "同じ技能編成・MOD・通路HPで64pt予算を比較。残りも表示する育成例で、最適解や採用済み上限ではない。弱点・出血の未実装入力は加算しない。",
+    "note": "比較予算の上限64pt別・未消費ありの例。上限で固有の能力が解放される例ではなく、80pt例も64pt以内に収まる。同消費比較は別の43pt使用例で確認する。上限は未採用。弱点・出血の未実装入力は加算しない。",
     "learned": [
       "g12n3",
       "g33n3",
@@ -2446,22 +2446,22 @@
     "spent": 49,
     "stats": {
       "hp": 44,
-      "regen": 8,
-      "resource": 25,
-      "attackSpeed": 28.95,
-      "haste": 44,
-      "physical": 10,
-      "aoe": 22,
       "damage": 30,
+      "aoe": 22,
+      "attackSpeed": 28.95,
       "efficiency": 3,
-      "resist": 5
+      "haste": 44,
+      "regen": 8,
+      "resist": 5,
+      "physical": 10,
+      "resource": 25
     },
     "keys": [],
     "remaining": 15
   },
   {
     "id": "assassin-crit-64",
-    "label": "暗殺者・64pt / 会心と手数",
+    "label": "上限64pt / 会心と手数（未消費あり）",
     "profileId": "assassin:mark:plain:standard",
     "siphon": false,
     "targets": [
@@ -2473,7 +2473,7 @@
       "g41n7"
     ],
     "budget": 64,
-    "note": "同じ技能編成・MOD・通路HPで64pt予算を比較。残りも表示する育成例で、最適解や採用済み上限ではない。弱点・出血の未実装入力は加算しない。",
+    "note": "比較予算の上限64pt別・未消費ありの例。上限で固有の能力が解放される例ではなく、80pt例も64pt以内に収まる。同消費比較は別の43pt使用例で確認する。上限は未採用。弱点・出血の未実装入力は加算しない。",
     "learned": [
       "g10n0",
       "g10n1",
@@ -2620,22 +2620,22 @@
     "spent": 51,
     "stats": {
       "hp": 50,
-      "regen": 8,
-      "resource": 29,
-      "attackSpeed": 25.95,
-      "haste": 44,
-      "crit": 35,
-      "move": 4.5,
       "damage": 30,
       "efficiency": 3,
-      "resist": 5
+      "crit": 35,
+      "haste": 44,
+      "regen": 8,
+      "attackSpeed": 25.95,
+      "resist": 5,
+      "resource": 29,
+      "move": 4.5
     },
     "keys": [],
     "remaining": 13
   },
   {
     "id": "assassin-area-80",
-    "label": "暗殺者・80pt / 手数と範囲",
+    "label": "上限80pt / 手数と範囲（未消費あり）",
     "profileId": "assassin:mark:plain:standard",
     "siphon": false,
     "targets": [
@@ -2652,7 +2652,7 @@
       "v7g10n4"
     ],
     "budget": 80,
-    "note": "同じ技能編成・MOD・通路HPで80pt予算を比較。残りも表示する育成例で、最適解や採用済み上限ではない。弱点・出血の未実装入力は加算しない。",
+    "note": "比較予算の上限80pt別・未消費ありの例。上限で固有の能力が解放される例ではなく、80pt例も64pt以内に収まる。同消費比較は別の43pt使用例で確認する。上限は未採用。弱点・出血の未実装入力は加算しない。",
     "learned": [
       "g12n3",
       "g33n3",
@@ -2837,22 +2837,22 @@
     "spent": 55,
     "stats": {
       "hp": 50,
-      "regen": 8,
-      "resource": 25,
-      "attackSpeed": 28.95,
-      "haste": 44,
-      "physical": 15,
-      "aoe": 31,
       "damage": 30,
+      "aoe": 31,
+      "attackSpeed": 28.95,
       "efficiency": 3,
-      "resist": 5
+      "haste": 44,
+      "regen": 8,
+      "resist": 5,
+      "physical": 15,
+      "resource": 25
     },
     "keys": [],
     "remaining": 25
   },
   {
     "id": "assassin-crit-80",
-    "label": "暗殺者・80pt / 会心と手数",
+    "label": "上限80pt / 会心と手数（未消費あり）",
     "profileId": "assassin:mark:plain:standard",
     "siphon": false,
     "targets": [
@@ -2867,7 +2867,7 @@
       "v7g13n4"
     ],
     "budget": 80,
-    "note": "同じ技能編成・MOD・通路HPで80pt予算を比較。残りも表示する育成例で、最適解や採用済み上限ではない。弱点・出血の未実装入力は加算しない。",
+    "note": "比較予算の上限80pt別・未消費ありの例。上限で固有の能力が解放される例ではなく、80pt例も64pt以内に収まる。同消費比較は別の43pt使用例で確認する。上限は未採用。弱点・出血の未実装入力は加算しない。",
     "learned": [
       "g10n0",
       "g10n1",
@@ -3050,18 +3050,285 @@
     "spent": 60,
     "stats": {
       "hp": 62,
-      "regen": 8,
+      "damage": 30,
       "resource": 41,
       "attackSpeed": 29.95,
-      "haste": 44,
-      "crit": 35,
-      "move": 4.5,
-      "damage": 30,
       "efficiency": 3,
-      "resist": 5
+      "crit": 35,
+      "haste": 44,
+      "regen": 8,
+      "resist": 5,
+      "move": 4.5
     },
     "keys": [],
     "remaining": 20
+  },
+  {
+    "id": "assassin-equal-area-43",
+    "label": "同消費43pt / 手数と範囲",
+    "profileId": "assassin:mark:plain:standard",
+    "siphon": false,
+    "targets": [
+      "g41n3",
+      "g42n0"
+    ],
+    "budget": 48,
+    "note": "同じ編成・追加MOD・通路HP・48pt上限で43ptを使用。手数と範囲の目標を選ぶ。会心側43pt例と費用を揃えて追加値を比較する。",
+    "learned": [
+      "g12n3",
+      "g33n3",
+      "g41n0",
+      "g41n2",
+      "g41n3",
+      "g41n8",
+      "g41n9",
+      "g42n0",
+      "g42n4",
+      "g42n5",
+      "g4n0",
+      "g4n1",
+      "g4n2",
+      "g4n3",
+      "g4n6",
+      "g4n7",
+      "g51n6",
+      "g52n0",
+      "g52n4",
+      "j1",
+      "j36",
+      "join_mage_2",
+      "join_templar_2",
+      "link_assassin_1_2",
+      "link_assassin_1_4",
+      "link_assassin_2_8",
+      "link_warrior_2_1",
+      "opening_assassin_0_1",
+      "opening_assassin_0_2",
+      "opening_assassin_0_3",
+      "opening_ranger_1_3",
+      "origin_assassin",
+      "r12_19_2",
+      "r14_27_1",
+      "r15_43_2",
+      "r18_26_1",
+      "r18_26_2",
+      "r19_24_1",
+      "r25_44_2",
+      "r30_36_1",
+      "r35_38_1",
+      "r39_40_2",
+      "r9_20_2",
+      "v7road_east"
+    ],
+    "paths": [
+      {
+        "target": "g41n3",
+        "nodes": [
+          "origin_assassin",
+          "opening_assassin_0_1",
+          "opening_assassin_0_2",
+          "opening_assassin_0_3",
+          "j36",
+          "j1",
+          "opening_ranger_1_3",
+          "g51n6",
+          "link_assassin_2_8",
+          "link_assassin_1_4",
+          "r18_26_1",
+          "r14_27_1",
+          "g33n3",
+          "r19_24_1",
+          "link_warrior_2_1",
+          "g12n3",
+          "r15_43_2",
+          "r35_38_1",
+          "r9_20_2",
+          "v7road_east",
+          "r12_19_2",
+          "r18_26_2",
+          "g4n3",
+          "g4n0",
+          "g4n1",
+          "g4n2",
+          "g4n6",
+          "g4n7",
+          "link_assassin_1_2",
+          "r39_40_2",
+          "g52n0",
+          "g52n4",
+          "r30_36_1",
+          "join_mage_2",
+          "g41n8",
+          "g41n0",
+          "g41n9",
+          "g41n3"
+        ]
+      },
+      {
+        "target": "g42n0",
+        "nodes": [
+          "g41n3",
+          "g41n2",
+          "r25_44_2",
+          "join_templar_2",
+          "g42n4",
+          "g42n5",
+          "g42n0"
+        ]
+      }
+    ],
+    "spent": 43,
+    "stats": {
+      "hp": 44,
+      "damage": 30,
+      "attackSpeed": 25.95,
+      "efficiency": 3,
+      "haste": 44,
+      "aoe": 13,
+      "regen": 8,
+      "resist": 5,
+      "physical": 6,
+      "resource": 21
+    },
+    "keys": [],
+    "remaining": 5
+  },
+  {
+    "id": "assassin-equal-crit-43",
+    "label": "同消費43pt / 会心と攻撃速度",
+    "profileId": "assassin:mark:plain:standard",
+    "siphon": false,
+    "targets": [
+      "g17n0",
+      "g17n1",
+      "g10n2"
+    ],
+    "budget": 48,
+    "note": "同じ編成・追加MOD・通路HP・48pt上限で43ptを使用。会心目標に会心10と攻撃速度2を追加する。点埋めではなく、取得効果が有効な目標への投資。弱点値は未実装で加算しない。",
+    "learned": [
+      "g10n0",
+      "g10n1",
+      "g10n2",
+      "g10n6",
+      "g12n3",
+      "g17n0",
+      "g17n1",
+      "g17n4",
+      "g33n3",
+      "g4n0",
+      "g4n1",
+      "g4n2",
+      "g4n3",
+      "g4n6",
+      "g4n7",
+      "g51n6",
+      "g52n0",
+      "g52n4",
+      "j1",
+      "j36",
+      "join_mage_0",
+      "link_assassin_1_2",
+      "link_assassin_1_4",
+      "link_assassin_2_1",
+      "link_assassin_2_8",
+      "link_warrior_1_7",
+      "link_warrior_2_1",
+      "opening_assassin_0_1",
+      "opening_assassin_0_2",
+      "opening_assassin_0_3",
+      "opening_ranger_1_3",
+      "origin_assassin",
+      "r10_32_1",
+      "r12_19_2",
+      "r14_27_1",
+      "r15_43_2",
+      "r18_26_1",
+      "r18_26_2",
+      "r19_24_1",
+      "r26_28_2",
+      "r35_38_1",
+      "r39_40_2",
+      "r9_20_2",
+      "v7road_east"
+    ],
+    "paths": [
+      {
+        "target": "g17n0",
+        "nodes": [
+          "origin_assassin",
+          "opening_assassin_0_1",
+          "opening_assassin_0_2",
+          "opening_assassin_0_3",
+          "j36",
+          "j1",
+          "opening_ranger_1_3",
+          "g51n6",
+          "link_assassin_2_8",
+          "link_assassin_1_4",
+          "r18_26_1",
+          "r14_27_1",
+          "g33n3",
+          "r19_24_1",
+          "link_warrior_2_1",
+          "g12n3",
+          "r15_43_2",
+          "r35_38_1",
+          "r9_20_2",
+          "v7road_east",
+          "r12_19_2",
+          "r18_26_2",
+          "g4n3",
+          "g4n0",
+          "g4n1",
+          "g4n2",
+          "g4n6",
+          "g4n7",
+          "link_assassin_1_2",
+          "r39_40_2",
+          "g52n0",
+          "g52n4",
+          "link_warrior_1_7",
+          "r10_32_1",
+          "g10n1",
+          "g10n0",
+          "g10n6",
+          "join_mage_0",
+          "r26_28_2",
+          "g17n4",
+          "link_assassin_2_1",
+          "g17n0"
+        ]
+      },
+      {
+        "target": "g17n1",
+        "nodes": [
+          "g17n0",
+          "g17n1"
+        ]
+      },
+      {
+        "target": "g10n2",
+        "nodes": [
+          "g10n1",
+          "g10n2"
+        ]
+      }
+    ],
+    "spent": 43,
+    "stats": {
+      "hp": 46,
+      "damage": 30,
+      "efficiency": 3,
+      "crit": 35,
+      "attackSpeed": 7,
+      "haste": 44,
+      "regen": 8,
+      "resist": 5,
+      "move": 4.5,
+      "resource": 12
+    },
+    "keys": [],
+    "remaining": 5
   },
   {
     "id": "tank-life-reinvest-43",
@@ -3237,13 +3504,13 @@
     "stats": {
       "hp": 93,
       "armor": 77.55,
-      "resist": 36,
       "regen": 36,
+      "resist": 36,
       "barrier": 14,
       "physical": 24,
-      "attackSpeed": 7,
+      "mana": 6,
       "parry": 45,
-      "mana": 6
+      "attackSpeed": 7
     },
     "keys": [],
     "remaining": 5

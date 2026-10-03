@@ -375,9 +375,16 @@
   "actualImagesReviewed": true,
   "priorV7FilesUntouched": true,
   "nativeFilesUntouched": true,
+  "budgetExamplesMeaning": "upper-limit examples with unspent points; 80 examples also fit 64",
+  "sameConsumptionComparison": {
+    "used": 43,
+    "budget": 48,
+    "remaining": 5
+  },
+  "applicationAndGraphUnchangedFrom": "0a851405",
+  "ownBrowserClosed": true,
+  "ownCdpListeners": 0,
   "compileRuns": 0,
   "installRuns": 0,
-  "pushRuns": 0,
-  "ownBrowserClosed": true,
-  "ownCdpListeners": 0
+  "pushRuns": 0
 }

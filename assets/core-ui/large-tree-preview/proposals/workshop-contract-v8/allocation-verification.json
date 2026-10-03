@@ -749,7 +749,7 @@
       "reachable": 675
     }
   ],
-  "examplesChecked": 26,
+  "examplesChecked": 28,
   "bloodFresh": {
     "beforeCost": 20,
     "beforeDeadNodes": [
@@ -768,14 +768,14 @@
     "afterCost": 30,
     "afterDeadNodes": [],
     "effectiveStats": {
+      "magic": 26,
       "barrier": 26,
       "hp": 47,
-      "attackSpeed": 7,
-      "resource": 4,
       "armor": 26,
       "resist": 11,
-      "magic": 26,
-      "physical": 24
+      "physical": 24,
+      "attackSpeed": 7,
+      "resource": 4
     }
   },
   "voluntaryMpPreserved": {
@@ -1360,7 +1360,44 @@
       "physical": 5
     }
   },
-  "sameBudgetComparisons": [
+  "life43": {
+    "beforeStats": {
+      "barrier": 14,
+      "resist": 39,
+      "hp": 59,
+      "armor": 41.55,
+      "regen": 34,
+      "resource": 22,
+      "mana": 4,
+      "physical": 24,
+      "efficiency": 8,
+      "parry": 45,
+      "attackSpeed": 7
+    },
+    "afterStats": {
+      "hp": 93,
+      "armor": 77.55,
+      "regen": 36,
+      "resist": 36,
+      "barrier": 14,
+      "physical": 24,
+      "mana": 6,
+      "parry": 45,
+      "attackSpeed": 7
+    },
+    "delta": {
+      "armor": 36.0,
+      "efficiency": -8,
+      "hp": 34,
+      "mana": 2,
+      "regen": 2,
+      "resist": -3,
+      "resource": -22
+    },
+    "runtimeApplied": false
+  },
+  "effectContractsUnimplemented": true,
+  "upperBudgetExamples": [
     {
       "budget": 48,
       "budgetAdopted": false,
@@ -1374,15 +1411,15 @@
         ],
         "stats": {
           "hp": 44,
-          "regen": 8,
-          "resource": 21,
+          "damage": 30,
           "attackSpeed": 25.95,
+          "efficiency": 3,
           "haste": 44,
           "aoe": 13,
-          "damage": 30,
-          "efficiency": 3,
+          "regen": 8,
+          "resist": 5,
           "physical": 6,
-          "resist": 5
+          "resource": 21
         }
       },
       "right": {
@@ -1395,15 +1432,15 @@
         ],
         "stats": {
           "hp": 50,
-          "regen": 8,
-          "resource": 20,
-          "attackSpeed": 12.95,
-          "haste": 44,
-          "move": 4.5,
           "damage": 30,
           "efficiency": 3,
+          "haste": 44,
+          "regen": 8,
           "crit": 25,
-          "resist": 5
+          "resist": 5,
+          "attackSpeed": 12.95,
+          "move": 4.5,
+          "resource": 20
         }
       },
       "leftMinusRight": {
@@ -1435,15 +1472,15 @@
         ],
         "stats": {
           "hp": 44,
-          "regen": 8,
-          "resource": 25,
-          "attackSpeed": 28.95,
-          "haste": 44,
-          "physical": 10,
-          "aoe": 22,
           "damage": 30,
+          "aoe": 22,
+          "attackSpeed": 28.95,
           "efficiency": 3,
-          "resist": 5
+          "haste": 44,
+          "regen": 8,
+          "resist": 5,
+          "physical": 10,
+          "resource": 25
         }
       },
       "right": {
@@ -1460,15 +1497,15 @@
         ],
         "stats": {
           "hp": 50,
-          "regen": 8,
-          "resource": 29,
-          "attackSpeed": 25.95,
-          "haste": 44,
-          "crit": 35,
-          "move": 4.5,
           "damage": 30,
           "efficiency": 3,
-          "resist": 5
+          "crit": 35,
+          "haste": 44,
+          "regen": 8,
+          "attackSpeed": 25.95,
+          "resist": 5,
+          "resource": 29,
+          "move": 4.5
         }
       },
       "leftMinusRight": {
@@ -1503,15 +1540,15 @@
         ],
         "stats": {
           "hp": 50,
-          "regen": 8,
-          "resource": 25,
-          "attackSpeed": 28.95,
-          "haste": 44,
-          "physical": 15,
-          "aoe": 31,
           "damage": 30,
+          "aoe": 31,
+          "attackSpeed": 28.95,
           "efficiency": 3,
-          "resist": 5
+          "haste": 44,
+          "regen": 8,
+          "resist": 5,
+          "physical": 15,
+          "resource": 25
         }
       },
       "right": {
@@ -1531,15 +1568,15 @@
         ],
         "stats": {
           "hp": 62,
-          "regen": 8,
+          "damage": 30,
           "resource": 41,
           "attackSpeed": 29.95,
-          "haste": 44,
-          "crit": 35,
-          "move": 4.5,
-          "damage": 30,
           "efficiency": 3,
-          "resist": 5
+          "crit": 35,
+          "haste": 44,
+          "regen": 8,
+          "resist": 5,
+          "move": 4.5
         }
       },
       "leftMinusRight": {
@@ -1553,41 +1590,64 @@
       }
     }
   ],
-  "life43": {
-    "beforeStats": {
-      "hp": 59,
-      "armor": 41.55,
-      "resist": 39,
-      "regen": 34,
-      "resource": 22,
-      "physical": 24,
-      "attackSpeed": 7,
-      "parry": 45,
-      "barrier": 14,
-      "mana": 4,
-      "efficiency": 8
-    },
-    "afterStats": {
-      "hp": 93,
-      "armor": 77.55,
-      "resist": 36,
-      "regen": 36,
-      "barrier": 14,
-      "physical": 24,
-      "attackSpeed": 7,
-      "parry": 45,
-      "mana": 6
-    },
-    "delta": {
-      "armor": 36.0,
-      "efficiency": -8,
-      "hp": 34,
-      "mana": 2,
-      "regen": 2,
-      "resist": -3,
-      "resource": -22
-    },
-    "runtimeApplied": false
-  },
-  "effectContractsUnimplemented": true
+  "upperBudgetExamplesMeaning": "Unused budget is explicit. The 80-budget examples are also feasible at 64 and do not demonstrate an 80-only unlock.",
+  "sameConsumptionComparisons": [
+    {
+      "usedPoints": 43,
+      "budget": 48,
+      "sameProfileAndModAndRoadChoice": true,
+      "left": {
+        "id": "assassin-equal-area-43",
+        "spent": 43,
+        "remaining": 5,
+        "targets": [
+          "g41n3",
+          "g42n0"
+        ],
+        "stats": {
+          "hp": 44,
+          "damage": 30,
+          "attackSpeed": 25.95,
+          "efficiency": 3,
+          "haste": 44,
+          "aoe": 13,
+          "regen": 8,
+          "resist": 5,
+          "physical": 6,
+          "resource": 21
+        }
+      },
+      "right": {
+        "id": "assassin-equal-crit-43",
+        "spent": 43,
+        "remaining": 5,
+        "targets": [
+          "g17n0",
+          "g17n1",
+          "g10n2"
+        ],
+        "stats": {
+          "hp": 46,
+          "damage": 30,
+          "efficiency": 3,
+          "crit": 35,
+          "attackSpeed": 7,
+          "haste": 44,
+          "regen": 8,
+          "resist": 5,
+          "move": 4.5,
+          "resource": 12
+        }
+      },
+      "leftMinusRight": {
+        "aoe": 13,
+        "attackSpeed": 18.95,
+        "crit": -35,
+        "hp": -2,
+        "move": -4.5,
+        "physical": 6,
+        "resource": 9
+      }
+    }
+  ]
 }

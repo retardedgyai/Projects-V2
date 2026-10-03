@@ -1,5 +1,5 @@
 """Independent graph, input, allocation and targeted regression checks."""
-import collections,copy,heapq,json,re
+import collections,copy,heapq,json,re,sys
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1];BASE=ROOT/'assets/core-ui/large-tree-preview';OUT=BASE/'proposals/workshop-contract-v8';OLD=BASE/'proposals/workshop-middle-choice-v7'
 def read(p):return json.loads(p.read_text(encoding='utf8'))
@@ -100,11 +100,17 @@ for budget in (48,64,80):
  comparisons.append(dict(budget=budget,budgetAdopted=False,left={k:a[k] for k in ('id','spent','remaining','targets','stats')},right={k:b[k] for k in ('id','spent','remaining','targets','stats')},leftMinusRight=difference(a['stats'],b['stats'])))
 life_new=next(e for e in examples if e['id']=='tank-life-reinvest-43');life_old=next(e for e in examples if e['id']=='legacy-tank-life');assert life_new['spent']==life_old['spent']==43
 assert life_old['stats']['resource']==22 and life_old['stats']['efficiency']==8 and not life_new['stats'].get('resource') and not life_new['stats'].get('efficiency')
+equal_a,equal_b=[next(e for e in examples if e['id']==id) for id in ['assassin-equal-area-43','assassin-equal-crit-43']]
+assert equal_a['profileId']==equal_b['profileId'] and equal_a['spent']==equal_b['spent']==43 and equal_a['budget']==equal_b['budget']==48
+equal_pair=dict(usedPoints=43,budget=48,sameProfileAndModAndRoadChoice=True,left={k:equal_a[k] for k in ('id','spent','remaining','targets','stats')},right={k:equal_b[k] for k in ('id','spent','remaining','targets','stats')},leftMinusRight=difference(equal_a['stats'],equal_b['stats']))
 payload=json.loads(re.search(r'<script id="wholeTreeData" type="application/json">(.*?)</script>',(OUT/'ProjectS_Contract_V8.html').read_text(encoding='utf8'),re.S)[1]);assert payload['source']==s and payload['graph']==g
 report=dict(status='PASS',source645EmbeddedVerbatim=True,central60AndIncidentEdgesExact=True,changedNodeIds=sorted(changed),onlyMovedPriorNode='key_02',addedPaidRoads=ledger['addedRoads'],inputCases=cases,examplesChecked=len(examples),bloodFresh=dict(beforeCost=20,beforeDeadNodes=old_dead,afterCost=fresh['spent'],afterDeadNodes=[],effectiveStats=fresh['stats']),voluntaryMpPreserved=dict(beforeCost=mp['spent'],afterCost=owned['spent'],autoRefund=False,retainedIds=mp['learned']),shieldCases=shield_cases,noCritPenetration=dict(localCost=4,stats=values(physical,ff,no_crit),critOnlyArmOptional=True),areaInput=dict(requirements=inputs['aoe'],sourceProfiles=area_provenance,noAreaMixedStats={'physical':5}),sameBudgetComparisons=comparisons,life43=dict(beforeStats=life_old['stats'],afterStats=life_new['stats'],delta=difference(life_new['stats'],life_old['stats']),runtimeApplied=False),effectContractsUnimplemented=True)
+report['upperBudgetExamples']=report.pop('sameBudgetComparisons');report['upperBudgetExamplesMeaning']='Unused budget is explicit. The 80-budget examples are also feasible at 64 and do not demonstrate an 80-only unlock.';report['sameConsumptionComparisons']=[equal_pair]
 (OUT/'allocation-verification.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf8')
 print(json.dumps({'status':'PASS','inputCases':len(cases),'examples':len(examples),'bloodCost':fresh['spent'],'bloodDead':0,'shieldCases':3,'sameBudgetPairs':3,'life43Delta':report['life43']['delta']},ensure_ascii=False))
-# Exhaustive actual-polyline audit, not paintBounds or the browser QA cache.
-audit=ROOT/'scripts/audit-skill-tree-poe2-central-v6.py';code=audit.read_text(encoding='utf8').replace('workshop-poe2-central-v6','workshop-contract-v8').replace('nodes=645,placedNodes=645-len(unused)',"nodes=len(g['nodes']),placedNodes=len(g['nodes'])-len(unused)")
-exec(compile(code,str(audit),'exec'),{'__file__':str(audit)})
+# A fixture-only follow-up can reuse the unchanged graph's existing exhaustive
+# actual-polyline result, instead of rendering or checking geometry again.
+if '--allocation-only' not in sys.argv:
+ audit=ROOT/'scripts/audit-skill-tree-poe2-central-v6.py';code=audit.read_text(encoding='utf8').replace('workshop-poe2-central-v6','workshop-contract-v8').replace('nodes=645,placedNodes=645-len(unused)',"nodes=len(g['nodes']),placedNodes=len(g['nodes'])-len(unused)")
+ exec(compile(code,str(audit),'exec'),{'__file__':str(audit)})
 assert read(OUT/'geometry-verification.json')['status']=='PASS'
