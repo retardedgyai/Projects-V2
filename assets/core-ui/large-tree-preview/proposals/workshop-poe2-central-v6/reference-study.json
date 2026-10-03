@@ -1,0 +1,166 @@
+{
+  "status": "REFERENCE_PERSONALLY_VIEWED_AND_OPERATED",
+  "date": "2026-10-02",
+  "officialDataUrl": "https://raw.githubusercontent.com/grindinggear/poe2-skilltree-export/main/data.json",
+  "officialRepo": "https://github.com/grindinggear/poe2-skilltree-export",
+  "officialDataSha256": "b52be9c4f17e4114064255ef1b8c58292e9db0e395d95af235a8d3fef0d44642",
+  "viewer": "https://cvenzin.github.io/poe2-skilltree/",
+  "viewerVersion": "0.5.1",
+  "officialExportMayDifferInVersionFromViewer": true,
+  "officialStarts": [
+    {
+      "key": "50459",
+      "classes": [
+        "Ranger",
+        "Huntress"
+      ],
+      "x": 1274.68,
+      "y": 735.845,
+      "radius": 1471.8277638450093,
+      "angleDegrees": 29.99690376799944,
+      "normalFirstExits": [
+        {
+          "key": "13828",
+          "name": "Evasion"
+        },
+        {
+          "key": "56651",
+          "name": "Projectile Damage"
+        }
+      ]
+    },
+    {
+      "key": "47175",
+      "classes": [
+        "Marauder",
+        "Warrior"
+      ],
+      "x": -1271.19,
+      "y": 733.095,
+      "radius": 1467.4305077668926,
+      "angleDegrees": 150.02796036200516,
+      "normalFirstExits": [
+        {
+          "key": "3936",
+          "name": "Melee Damage"
+        },
+        {
+          "key": "38646",
+          "name": "Armour"
+        }
+      ]
+    },
+    {
+      "key": "50986",
+      "classes": [
+        "Duelist",
+        "Mercenary"
+      ],
+      "x": 1.945,
+      "y": 1469.82,
+      "radius": 1469.8212869002136,
+      "angleDegrees": 89.92418103842286,
+      "normalFirstExits": [
+        {
+          "key": "59779",
+          "name": "Armour and Evasion"
+        },
+        {
+          "key": "59915",
+          "name": "Projectile Damage"
+        }
+      ]
+    },
+    {
+      "key": "61525",
+      "classes": [
+        "Templar",
+        "Druid"
+      ],
+      "x": -1245.18,
+      "y": -728.895,
+      "radius": 1442.830951090598,
+      "angleDegrees": -149.65643766258736,
+      "normalFirstExits": [
+        {
+          "key": "50084",
+          "name": "Spell and Attack Damage"
+        },
+        {
+          "key": "13855",
+          "name": "Armour and Energy Shield"
+        }
+      ]
+    },
+    {
+      "key": "54447",
+      "classes": [
+        "Witch",
+        "Sorceress"
+      ],
+      "x": 0.005,
+      "y": -1490.58,
+      "radius": 1490.580000008386,
+      "angleDegrees": -89.99980780709686,
+      "normalFirstExits": [
+        {
+          "key": "44871",
+          "name": "Energy Shield"
+        },
+        {
+          "key": "4739",
+          "name": "Spell Damage"
+        }
+      ]
+    },
+    {
+      "key": "44683",
+      "classes": [
+        "Shadow",
+        "Monk"
+      ],
+      "x": 1270.43,
+      "y": -728.835,
+      "radius": 1464.6476853240167,
+      "angleDegrees": -29.842530540593962,
+      "normalFirstExits": [
+        {
+          "key": "10364",
+          "name": "Skill Speed"
+        },
+        {
+          "key": "52980",
+          "name": "Evasion and Energy Shield"
+        }
+      ]
+    }
+  ],
+  "personallyViewed": [
+    "whole tree",
+    "central start area for Warrior, Sorceress and Ranger",
+    "nearby outer closed loops, ladders, diamonds, triangles and fan-shaped branches"
+  ],
+  "actualViewerActions": [
+    "class switch",
+    "wheel zoom",
+    "pointer hover of first Projectile Damage",
+    "left click allocate: 0 to 1 passive",
+    "left click refund: 1 to 0 passive"
+  ],
+  "incorrectDraft": {
+    "V4": "starts distributed far apart",
+    "unsharedV5": "different start radii/angles and wires filled the central void"
+  },
+  "projectSAdaptation": {
+    "origins": 5,
+    "angleStepDegrees": 72,
+    "radius": 900,
+    "voidRadius": 858,
+    "firstExits": 2,
+    "openingThirdChoice": "branches after initial choices",
+    "outer": "47 unequal source regions retained, connected without five long dividing spokes",
+    "copiedPoeStats": false
+  },
+  "comparisonFraming": "actual captures sampled to equal apparent start ring radius; the irregular old draft uses its mean start distance",
+  "referenceAttribution": "Path of Exile 2 data and artwork by Grinding Gear Games; public cvenzin viewer used solely for comparison."
+}

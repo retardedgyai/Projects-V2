@@ -1,0 +1,5015 @@
+{
+  "status": "PASS",
+  "source645EmbeddedVerbatim": true,
+  "sourceNodeNonGeometryFieldsExact": true,
+  "keyLeaves": 15,
+  "frames": [
+    {
+      "name": "ProjectS_PoE2_V6_Overview",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 1.558989892846707,
+        "minClickGap": 1.692469304891948,
+        "minNodePairPaintGap": 3.1208315033014755,
+        "nearest": {
+          "node": "key_15",
+          "edge": [
+            "g9n6",
+            "r16_47_1"
+          ]
+        },
+        "labelLines": [],
+        "captions": 14,
+        "zoom": 0.0667397060226203,
+        "spent": 0,
+        "usable": true,
+        "connected": true
+      },
+      "cam": {
+        "x": 1230,
+        "y": -1245,
+        "z": 0.0667397060226203
+      },
+      "state": {
+        "version": "projects-large-tree-diff-v2",
+        "study": "poe2-central-v6",
+        "profileId": "warrior:support:plain:standard",
+        "origin": "warrior",
+        "budget": 48,
+        "roadChoice": "hp",
+        "siphon": false,
+        "learned": [
+          "origin_warrior"
+        ]
+      },
+      "rect": {
+        "x": 0,
+        "y": 76,
+        "w": 1570,
+        "h": 1124
+      }
+    },
+    {
+      "name": "ProjectS_PoE2_V6_Center",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 9.38498628528147,
+        "minClickGap": 9.892993762559575,
+        "minNodePairPaintGap": 11.861813375085768,
+        "nearest": {
+          "node": "g45n3",
+          "edge": [
+            "g45hub",
+            "g45n2"
+          ]
+        },
+        "labelLines": [],
+        "captions": 8,
+        "zoom": 0.25400373863905384,
+        "spent": 0,
+        "usable": true,
+        "connected": true
+      },
+      "cam": {
+        "x": 1230,
+        "y": -1098.240365,
+        "z": 0.25400373863905384
+      },
+      "state": {
+        "version": "projects-large-tree-diff-v2",
+        "study": "poe2-central-v6",
+        "profileId": "warrior:support:plain:standard",
+        "origin": "warrior",
+        "budget": 48,
+        "roadChoice": "hp",
+        "siphon": false,
+        "learned": [
+          "origin_warrior"
+        ]
+      },
+      "rect": {
+        "x": 0,
+        "y": 76,
+        "w": 1570,
+        "h": 1124
+      }
+    },
+    {
+      "name": "ProjectS_PoE2_V6_critical",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 4.9708171000123516,
+        "minClickGap": 5.257021017047062,
+        "minNodePairPaintGap": 6.682770634152847,
+        "nearest": {
+          "node": "g45n3",
+          "edge": [
+            "g45hub",
+            "g45n2"
+          ]
+        },
+        "labelLines": [],
+        "captions": 26,
+        "zoom": 0.14310195851735563,
+        "spent": 47,
+        "usable": true,
+        "connected": true
+      },
+      "cam": {
+        "x": -1447.707745,
+        "y": 2166.46288,
+        "z": 0.14310195851735563
+      },
+      "state": {
+        "version": "projects-large-tree-diff-v2",
+        "study": "poe2-central-v6",
+        "profileId": "warrior:support:plain:standard",
+        "origin": "warrior",
+        "budget": 48,
+        "roadChoice": "hp",
+        "siphon": true,
+        "learned": [
+          "g13n0",
+          "g13n1",
+          "g13n2",
+          "g13n3",
+          "g13n8",
+          "g13n9",
+          "g14n0",
+          "g14n1",
+          "g14n2",
+          "g14n3",
+          "g14n4",
+          "g14n5",
+          "g14n6",
+          "g14n7",
+          "g25n0",
+          "g25n1",
+          "g25n2",
+          "g25n6",
+          "g25n7",
+          "g30n0",
+          "g30n2",
+          "g30n6",
+          "g30n7",
+          "g35n0",
+          "g35n3",
+          "g35n4",
+          "g48n0",
+          "g48n3",
+          "g48n4",
+          "g48n6",
+          "g48n8",
+          "g48n9",
+          "g49n5",
+          "link_assassin_1_1",
+          "link_templar_0_1",
+          "link_warrior_0_4",
+          "link_warrior_1_4",
+          "link_warrior_2_6",
+          "opening_warrior_0_1",
+          "opening_warrior_0_2",
+          "opening_warrior_0_3",
+          "origin_warrior",
+          "r19_24_2",
+          "r2_22_2",
+          "r2_46_1",
+          "r2_51_1",
+          "r7_29_1",
+          "r7_29_2"
+        ]
+      },
+      "rect": {
+        "x": 0,
+        "y": 76,
+        "w": 1570,
+        "h": 1124
+      }
+    },
+    {
+      "name": "ProjectS_PoE2_V6_quiet",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 7.96405896408181,
+        "minClickGap": 8.40066756074135,
+        "minNodePairPaintGap": 10.194672171524793,
+        "nearest": {
+          "node": "g45n3",
+          "edge": [
+            "g45hub",
+            "g45n2"
+          ]
+        },
+        "labelLines": [],
+        "captions": 13,
+        "zoom": 0.21830429832976997,
+        "spent": 43,
+        "usable": true,
+        "connected": true
+      },
+      "cam": {
+        "x": -2503.26663,
+        "y": -239.44454000000007,
+        "z": 0.21830429832976997
+      },
+      "state": {
+        "version": "projects-large-tree-diff-v2",
+        "study": "poe2-central-v6",
+        "profileId": "warrior:support:plain:standard",
+        "origin": "warrior",
+        "budget": 48,
+        "roadChoice": "hp",
+        "siphon": true,
+        "learned": [
+          "g13n0",
+          "g13n1",
+          "g13n2",
+          "g13n3",
+          "g13n8",
+          "g13n9",
+          "g16n4",
+          "g16n5",
+          "g16n8",
+          "g18n1",
+          "g18n2",
+          "g18n4",
+          "g18n5",
+          "g37n0",
+          "g37n4",
+          "g37n6",
+          "g37n7",
+          "g44n2",
+          "g44n3",
+          "g44n6",
+          "g44n7",
+          "g45hub",
+          "g45n1",
+          "g45n2",
+          "g45n4",
+          "join_ranger_0",
+          "join_templar_1",
+          "key_04",
+          "link_templar_0_2",
+          "link_templar_1_1",
+          "link_warrior_2_8",
+          "opening_warrior_0_1",
+          "opening_warrior_0_2",
+          "opening_warrior_0_3",
+          "origin_warrior",
+          "r1_22_1",
+          "r1_29_4",
+          "r22_24_3",
+          "r23_37_3",
+          "r24_42_1",
+          "r31_51_1",
+          "r7_22_2"
+        ]
+      },
+      "rect": {
+        "x": 0,
+        "y": 76,
+        "w": 1570,
+        "h": 1124
+      }
+    },
+    {
+      "name": "ProjectS_PoE2_V6_tank-life",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 7.104229867770612,
+        "minClickGap": 7.497633696611301,
+        "minNodePairPaintGap": 9.18585455425833,
+        "nearest": {
+          "node": "g45n3",
+          "edge": [
+            "g45hub",
+            "g45n2"
+          ]
+        },
+        "labelLines": [],
+        "captions": 12,
+        "zoom": 0.19670191442034382,
+        "spent": 43,
+        "usable": true,
+        "connected": true
+      },
+      "cam": {
+        "x": -1301.6335750000003,
+        "y": -3796.983705,
+        "z": 0.19670191442034382
+      },
+      "state": {
+        "version": "projects-large-tree-diff-v2",
+        "study": "poe2-central-v6",
+        "profileId": "tank:support:plain:standard",
+        "origin": "tank",
+        "budget": 48,
+        "roadChoice": "hp",
+        "siphon": false,
+        "learned": [
+          "g18n1",
+          "g18n3",
+          "g18n6",
+          "g28n2",
+          "g28n5",
+          "g31n2",
+          "g31n4",
+          "g31n5",
+          "g33n0",
+          "g40n0",
+          "g40n3",
+          "g40n4",
+          "g40n5",
+          "g46n0",
+          "g46n1",
+          "g46n2",
+          "g46n7",
+          "g6n0",
+          "g6n4",
+          "g6n6",
+          "g6n7",
+          "g6n8",
+          "g6n9",
+          "join_assassin_1",
+          "join_templar_0",
+          "join_warrior_0",
+          "link_assassin_0_2",
+          "link_assassin_0_4",
+          "link_assassin_1_3",
+          "link_ranger_1_1",
+          "link_warrior_0_6",
+          "link_warrior_2_10",
+          "link_warrior_2_7",
+          "opening_templar_0_1",
+          "opening_templar_0_2",
+          "opening_templar_0_3",
+          "origin_templar",
+          "r10_14_2",
+          "r16_38_2",
+          "r21_26_1",
+          "r25_44_1",
+          "r33_37_2",
+          "r34_40_1",
+          "r6_35_1"
+        ]
+      },
+      "rect": {
+        "x": 0,
+        "y": 76,
+        "w": 1570,
+        "h": 1124
+      }
+    },
+    {
+      "name": "ProjectS_PoE2_V6_tank-shield",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 7.77836977892605,
+        "minClickGap": 8.205647849129173,
+        "minNodePairPaintGap": 9.976807339868062,
+        "nearest": {
+          "node": "g45n3",
+          "edge": [
+            "g45hub",
+            "g45n2"
+          ]
+        },
+        "labelLines": [],
+        "captions": 10,
+        "zoom": 0.21363903510156113,
+        "spent": 21,
+        "usable": true,
+        "connected": true
+      },
+      "cam": {
+        "x": 284.36848499999996,
+        "y": -3606.747845,
+        "z": 0.21363903510156113
+      },
+      "state": {
+        "version": "projects-large-tree-diff-v2",
+        "study": "poe2-central-v6",
+        "profileId": "tank:support:plain:standard",
+        "origin": "tank",
+        "budget": 48,
+        "roadChoice": "hp",
+        "siphon": false,
+        "learned": [
+          "g31n4",
+          "g33n0",
+          "g46n0",
+          "g46n1",
+          "g46n2",
+          "g46n7",
+          "key_11",
+          "link_assassin_0_2",
+          "link_assassin_1_3",
+          "link_ranger_1_1",
+          "link_warrior_2_10",
+          "link_warrior_2_7",
+          "opening_templar_0_1",
+          "opening_templar_0_2",
+          "opening_templar_0_3",
+          "origin_templar",
+          "r21_26_1",
+          "r25_44_1",
+          "r33_37_2",
+          "r6_35_1"
+        ]
+      },
+      "rect": {
+        "x": 0,
+        "y": 76,
+        "w": 1570,
+        "h": 1124
+      }
+    },
+    {
+      "name": "ProjectS_PoE2_V6_mage-mp",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 7.2491061818409435,
+        "minClickGap": 7.649789768413376,
+        "minNodePairPaintGap": 9.355834587017828,
+        "nearest": {
+          "node": "g45n3",
+          "edge": [
+            "g45hub",
+            "g45n2"
+          ]
+        },
+        "labelLines": [],
+        "captions": 13,
+        "zoom": 0.20034179328621712,
+        "spent": 17,
+        "usable": true,
+        "connected": true
+      },
+      "cam": {
+        "x": 2711.5340850000002,
+        "y": -4164.08901,
+        "z": 0.20034179328621712
+      },
+      "state": {
+        "version": "projects-large-tree-diff-v2",
+        "study": "poe2-central-v6",
+        "profileId": "mage:support:plain:standard",
+        "origin": "mage",
+        "budget": 48,
+        "roadChoice": "hp",
+        "siphon": false,
+        "learned": [
+          "g12n1",
+          "g12n2",
+          "g12n3",
+          "g20n1",
+          "g20n4",
+          "g20n5",
+          "g20n6",
+          "g33n3",
+          "link_templar_2_1",
+          "link_warrior_2_1",
+          "opening_mage_1_1",
+          "opening_mage_1_2",
+          "opening_mage_1_3",
+          "origin_mage",
+          "r14_27_1",
+          "r18_26_1",
+          "r19_24_1",
+          "r26_28_1"
+        ]
+      },
+      "rect": {
+        "x": 0,
+        "y": 76,
+        "w": 1570,
+        "h": 1124
+      }
+    },
+    {
+      "name": "ProjectS_PoE2_V6_mage-blood",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 6.435756556919094,
+        "minClickGap": 6.795570880226245,
+        "minNodePairPaintGap": 8.401550259890302,
+        "nearest": {
+          "node": "g45n3",
+          "edge": [
+            "g45hub",
+            "g45n2"
+          ]
+        },
+        "labelLines": [],
+        "captions": 19,
+        "zoom": 0.1799071616535752,
+        "spent": 20,
+        "usable": true,
+        "connected": true
+      },
+      "cam": {
+        "x": 2723.88546,
+        "y": -4431.69067,
+        "z": 0.1799071616535752
+      },
+      "state": {
+        "version": "projects-large-tree-diff-v2",
+        "study": "poe2-central-v6",
+        "profileId": "mage:support:plain:standard",
+        "origin": "mage",
+        "budget": 48,
+        "roadChoice": "hp",
+        "siphon": false,
+        "learned": [
+          "g12n1",
+          "g12n2",
+          "g12n3",
+          "g20n1",
+          "g20n4",
+          "g20n5",
+          "g20n6",
+          "g33n3",
+          "key_02",
+          "link_templar_2_1",
+          "link_warrior_2_1",
+          "opening_mage_1_1",
+          "opening_mage_1_2",
+          "opening_mage_1_3",
+          "origin_mage",
+          "r14_27_1",
+          "r18_26_1",
+          "r19_24_1",
+          "r26_28_1"
+        ]
+      },
+      "rect": {
+        "x": 0,
+        "y": 76,
+        "w": 1570,
+        "h": 1124
+      }
+    },
+    {
+      "name": "ProjectS_PoE2_V6_mage-ice",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 8.229390439233418,
+        "minClickGap": 8.679331435119902,
+        "minNodePairPaintGap": 10.50597946235334,
+        "nearest": {
+          "node": "g45n3",
+          "edge": [
+            "g45hub",
+            "g45n2"
+          ]
+        },
+        "labelLines": [],
+        "captions": 9,
+        "zoom": 0.22497049794324178,
+        "spent": 25,
+        "usable": true,
+        "connected": true
+      },
+      "cam": {
+        "x": 3979.2515750000002,
+        "y": -1858.127575,
+        "z": 0.22497049794324178
+      },
+      "state": {
+        "version": "projects-large-tree-diff-v2",
+        "study": "poe2-central-v6",
+        "profileId": "mage:support:plain:standard",
+        "origin": "mage",
+        "budget": 48,
+        "roadChoice": "hp",
+        "siphon": false,
+        "learned": [
+          "g27n1",
+          "g27n2",
+          "g27n4",
+          "g3n2",
+          "g3n5",
+          "g51n4",
+          "g51n5",
+          "g51n6",
+          "join_warrior_1",
+          "key_13",
+          "link_assassin_1_4",
+          "link_assassin_2_3",
+          "link_assassin_2_4",
+          "link_assassin_2_5",
+          "link_assassin_2_8",
+          "opening_mage_1_1",
+          "opening_mage_1_2",
+          "opening_mage_1_3",
+          "origin_mage",
+          "r10_14_3",
+          "r14_42_1",
+          "r18_26_1",
+          "r27_52_1",
+          "r9_20_2"
+        ]
+      },
+      "rect": {
+        "x": 0,
+        "y": 76,
+        "w": 1570,
+        "h": 1124
+      }
+    },
+    {
+      "name": "ProjectS_PoE2_V6_ranger",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 3.74148467620885,
+        "minClickGap": 3.9659169898278646,
+        "minNodePairPaintGap": 5.240423298002072,
+        "nearest": {
+          "node": "g45n3",
+          "edge": [
+            "g45hub",
+            "g45n2"
+          ]
+        },
+        "labelLines": [],
+        "captions": 11,
+        "zoom": 0.11221615680950714,
+        "spent": 42,
+        "usable": true,
+        "connected": true
+      },
+      "cam": {
+        "x": 5347.17835,
+        "y": -1779.76798,
+        "z": 0.11221615680950714
+      },
+      "state": {
+        "version": "projects-large-tree-diff-v2",
+        "study": "poe2-central-v6",
+        "profileId": "ranger:mark:plain:standard",
+        "origin": "ranger",
+        "budget": 48,
+        "roadChoice": "hp",
+        "siphon": false,
+        "learned": [
+          "g10n3",
+          "g12n0",
+          "g12n1",
+          "g12n3",
+          "g24n3",
+          "g24n4",
+          "g24n6",
+          "g2n0",
+          "g2n1",
+          "g2n4",
+          "g32n0",
+          "g32n1",
+          "g32n2",
+          "g32n6",
+          "g33n3",
+          "g39n0",
+          "g39n1",
+          "g39n6",
+          "g39n7",
+          "g51n6",
+          "join_warrior_2",
+          "key_10",
+          "link_assassin_1_4",
+          "link_assassin_2_8",
+          "link_mage_2_1",
+          "link_warrior_2_1",
+          "opening_ranger_1_1",
+          "opening_ranger_1_2",
+          "opening_ranger_1_3",
+          "origin_ranger",
+          "r10_36_1",
+          "r12_46_1",
+          "r14_27_1",
+          "r15_25_1",
+          "r18_26_1",
+          "r18_49_1",
+          "r19_24_1",
+          "r22_24_1",
+          "r28_39_1",
+          "r30_36_2",
+          "r39_40_1"
+        ]
+      },
+      "rect": {
+        "x": 0,
+        "y": 76,
+        "w": 1570,
+        "h": 1124
+      }
+    },
+    {
+      "name": "ProjectS_PoE2_V6_assassin",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 3.1622854251533186,
+        "minClickGap": 3.3550929541296477,
+        "minNodePairPaintGap": 4.501994612918936,
+        "nearest": {
+          "node": "g45n3",
+          "edge": [
+            "g45hub",
+            "g45n2"
+          ]
+        },
+        "labelLines": [],
+        "captions": 12,
+        "zoom": 0.09640376448816458,
+        "spent": 52,
+        "usable": true,
+        "connected": true
+      },
+      "cam": {
+        "x": 4577.372985,
+        "y": 253.95530499999995,
+        "z": 0.09640376448816458
+      },
+      "state": {
+        "version": "projects-large-tree-diff-v2",
+        "study": "poe2-central-v6",
+        "profileId": "assassin:mark:plain:standard",
+        "origin": "assassin",
+        "budget": 64,
+        "roadChoice": "hp",
+        "siphon": false,
+        "learned": [
+          "g10n0",
+          "g10n1",
+          "g10n6",
+          "g12n3",
+          "g17n0",
+          "g17n4",
+          "g33n3",
+          "g41n0",
+          "g41n2",
+          "g41n3",
+          "g41n8",
+          "g41n9",
+          "g42n0",
+          "g42n4",
+          "g42n5",
+          "g4n0",
+          "g4n1",
+          "g4n2",
+          "g4n3",
+          "g4n6",
+          "g4n7",
+          "g51n6",
+          "g52n0",
+          "g52n4",
+          "j1",
+          "j36",
+          "join_mage_0",
+          "join_mage_2",
+          "join_templar_2",
+          "link_assassin_1_2",
+          "link_assassin_1_4",
+          "link_assassin_2_1",
+          "link_assassin_2_8",
+          "link_warrior_1_7",
+          "link_warrior_2_1",
+          "opening_assassin_0_1",
+          "opening_assassin_0_2",
+          "opening_assassin_0_3",
+          "opening_ranger_1_3",
+          "origin_assassin",
+          "r10_32_1",
+          "r12_19_2",
+          "r14_27_1",
+          "r15_43_2",
+          "r18_26_1",
+          "r18_26_2",
+          "r19_24_1",
+          "r25_44_2",
+          "r26_28_2",
+          "r30_36_1",
+          "r35_38_1",
+          "r39_40_2",
+          "r9_20_2"
+        ]
+      },
+      "rect": {
+        "x": 0,
+        "y": 76,
+        "w": 1570,
+        "h": 1124
+      }
+    },
+    {
+      "name": "ProjectS_PoE2_V6_lightning",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 5.391115895707745,
+        "minClickGap": 5.698439023479177,
+        "minNodePairPaintGap": 7.175897502541445,
+        "nearest": {
+          "node": "g45n3",
+          "edge": [
+            "g45hub",
+            "g45n2"
+          ]
+        },
+        "labelLines": [],
+        "captions": 21,
+        "zoom": 0.1536615638857157,
+        "spent": 26,
+        "usable": true,
+        "connected": true
+      },
+      "cam": {
+        "x": 3812.979755,
+        "y": -4879.800805,
+        "z": 0.1536615638857157
+      },
+      "state": {
+        "version": "projects-large-tree-diff-v2",
+        "study": "poe2-central-v6",
+        "profileId": "mage:support:lightning:standard",
+        "origin": "mage",
+        "budget": 48,
+        "roadChoice": "hp",
+        "siphon": false,
+        "learned": [
+          "g12n0",
+          "g12n1",
+          "g12n3",
+          "g20n1",
+          "g20n3",
+          "g20n4",
+          "g33n3",
+          "g43n0",
+          "g9n0",
+          "g9n7",
+          "key_15",
+          "link_templar_2_1",
+          "link_warrior_2_1",
+          "opening_mage_1_1",
+          "opening_mage_1_2",
+          "opening_mage_1_3",
+          "origin_mage",
+          "r13_35_1",
+          "r14_27_1",
+          "r15_43_3",
+          "r18_26_1",
+          "r19_24_1",
+          "r22_24_2",
+          "r26_28_1",
+          "r36_48_1"
+        ]
+      },
+      "rect": {
+        "x": 0,
+        "y": 76,
+        "w": 1570,
+        "h": 1124
+      }
+    },
+    {
+      "name": "ProjectS_PoE2_V6_Pair_critical",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 4.0514785076231785,
+        "minClickGap": 4.291487418462486,
+        "minNodePairPaintGap": 5.604131899765133,
+        "nearest": {
+          "node": "g45n3",
+          "edge": [
+            "g45hub",
+            "g45n2"
+          ]
+        },
+        "labelLines": [],
+        "captions": 30,
+        "zoom": 0.12000445541965417,
+        "spent": 47,
+        "usable": true,
+        "connected": true
+      },
+      "cam": {
+        "x": -2164.813475,
+        "y": 1531.62317,
+        "z": 0.12000445541965417
+      },
+      "state": {
+        "version": "projects-large-tree-diff-v2",
+        "study": "poe2-central-v6",
+        "profileId": "warrior:support:plain:standard",
+        "origin": "warrior",
+        "budget": 48,
+        "roadChoice": "hp",
+        "siphon": true,
+        "learned": [
+          "g13n0",
+          "g13n1",
+          "g13n2",
+          "g13n3",
+          "g13n8",
+          "g13n9",
+          "g14n0",
+          "g14n1",
+          "g14n2",
+          "g14n3",
+          "g14n4",
+          "g14n5",
+          "g14n6",
+          "g14n7",
+          "g25n0",
+          "g25n1",
+          "g25n2",
+          "g25n6",
+          "g25n7",
+          "g30n0",
+          "g30n2",
+          "g30n6",
+          "g30n7",
+          "g35n0",
+          "g35n3",
+          "g35n4",
+          "g48n0",
+          "g48n3",
+          "g48n4",
+          "g48n6",
+          "g48n8",
+          "g48n9",
+          "g49n5",
+          "link_assassin_1_1",
+          "link_templar_0_1",
+          "link_warrior_0_4",
+          "link_warrior_1_4",
+          "link_warrior_2_6",
+          "opening_warrior_0_1",
+          "opening_warrior_0_2",
+          "opening_warrior_0_3",
+          "origin_warrior",
+          "r19_24_2",
+          "r2_22_2",
+          "r2_46_1",
+          "r2_51_1",
+          "r7_29_1",
+          "r7_29_2"
+        ]
+      },
+      "rect": {
+        "x": 0,
+        "y": 76,
+        "w": 1570,
+        "h": 1124
+      }
+    },
+    {
+      "name": "ProjectS_PoE2_V6_Pair_quiet",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 4.0514785076231785,
+        "minClickGap": 4.291487418462486,
+        "minNodePairPaintGap": 5.604131899765133,
+        "nearest": {
+          "node": "g45n3",
+          "edge": [
+            "g45hub",
+            "g45n2"
+          ]
+        },
+        "labelLines": [],
+        "captions": 30,
+        "zoom": 0.12000445541965417,
+        "spent": 43,
+        "usable": true,
+        "connected": true
+      },
+      "cam": {
+        "x": -2164.813475,
+        "y": 1531.62317,
+        "z": 0.12000445541965417
+      },
+      "state": {
+        "version": "projects-large-tree-diff-v2",
+        "study": "poe2-central-v6",
+        "profileId": "warrior:support:plain:standard",
+        "origin": "warrior",
+        "budget": 48,
+        "roadChoice": "hp",
+        "siphon": true,
+        "learned": [
+          "g13n0",
+          "g13n1",
+          "g13n2",
+          "g13n3",
+          "g13n8",
+          "g13n9",
+          "g16n4",
+          "g16n5",
+          "g16n8",
+          "g18n1",
+          "g18n2",
+          "g18n4",
+          "g18n5",
+          "g37n0",
+          "g37n4",
+          "g37n6",
+          "g37n7",
+          "g44n2",
+          "g44n3",
+          "g44n6",
+          "g44n7",
+          "g45hub",
+          "g45n1",
+          "g45n2",
+          "g45n4",
+          "join_ranger_0",
+          "join_templar_1",
+          "key_04",
+          "link_templar_0_2",
+          "link_templar_1_1",
+          "link_warrior_2_8",
+          "opening_warrior_0_1",
+          "opening_warrior_0_2",
+          "opening_warrior_0_3",
+          "origin_warrior",
+          "r1_22_1",
+          "r1_29_4",
+          "r22_24_3",
+          "r23_37_3",
+          "r24_42_1",
+          "r31_51_1",
+          "r7_22_2"
+        ]
+      },
+      "rect": {
+        "x": 0,
+        "y": 76,
+        "w": 1570,
+        "h": 1124
+      }
+    },
+    {
+      "name": "ProjectS_PoE2_V6_Pair_tank-life",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 7.104229867770612,
+        "minClickGap": 7.497633696611301,
+        "minNodePairPaintGap": 9.18585455425833,
+        "nearest": {
+          "node": "g45n3",
+          "edge": [
+            "g45hub",
+            "g45n2"
+          ]
+        },
+        "labelLines": [],
+        "captions": 12,
+        "zoom": 0.19670191442034382,
+        "spent": 43,
+        "usable": true,
+        "connected": true
+      },
+      "cam": {
+        "x": -1301.6335750000003,
+        "y": -3796.983705,
+        "z": 0.19670191442034382
+      },
+      "state": {
+        "version": "projects-large-tree-diff-v2",
+        "study": "poe2-central-v6",
+        "profileId": "tank:support:plain:standard",
+        "origin": "tank",
+        "budget": 48,
+        "roadChoice": "hp",
+        "siphon": false,
+        "learned": [
+          "g18n1",
+          "g18n3",
+          "g18n6",
+          "g28n2",
+          "g28n5",
+          "g31n2",
+          "g31n4",
+          "g31n5",
+          "g33n0",
+          "g40n0",
+          "g40n3",
+          "g40n4",
+          "g40n5",
+          "g46n0",
+          "g46n1",
+          "g46n2",
+          "g46n7",
+          "g6n0",
+          "g6n4",
+          "g6n6",
+          "g6n7",
+          "g6n8",
+          "g6n9",
+          "join_assassin_1",
+          "join_templar_0",
+          "join_warrior_0",
+          "link_assassin_0_2",
+          "link_assassin_0_4",
+          "link_assassin_1_3",
+          "link_ranger_1_1",
+          "link_warrior_0_6",
+          "link_warrior_2_10",
+          "link_warrior_2_7",
+          "opening_templar_0_1",
+          "opening_templar_0_2",
+          "opening_templar_0_3",
+          "origin_templar",
+          "r10_14_2",
+          "r16_38_2",
+          "r21_26_1",
+          "r25_44_1",
+          "r33_37_2",
+          "r34_40_1",
+          "r6_35_1"
+        ]
+      },
+      "rect": {
+        "x": 0,
+        "y": 76,
+        "w": 1570,
+        "h": 1124
+      }
+    },
+    {
+      "name": "ProjectS_PoE2_V6_Pair_tank-shield",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 7.104229867770612,
+        "minClickGap": 7.497633696611301,
+        "minNodePairPaintGap": 9.18585455425833,
+        "nearest": {
+          "node": "g45n3",
+          "edge": [
+            "g45hub",
+            "g45n2"
+          ]
+        },
+        "labelLines": [],
+        "captions": 12,
+        "zoom": 0.19670191442034382,
+        "spent": 21,
+        "usable": true,
+        "connected": true
+      },
+      "cam": {
+        "x": -1301.6335750000003,
+        "y": -3796.983705,
+        "z": 0.19670191442034382
+      },
+      "state": {
+        "version": "projects-large-tree-diff-v2",
+        "study": "poe2-central-v6",
+        "profileId": "tank:support:plain:standard",
+        "origin": "tank",
+        "budget": 48,
+        "roadChoice": "hp",
+        "siphon": false,
+        "learned": [
+          "g31n4",
+          "g33n0",
+          "g46n0",
+          "g46n1",
+          "g46n2",
+          "g46n7",
+          "key_11",
+          "link_assassin_0_2",
+          "link_assassin_1_3",
+          "link_ranger_1_1",
+          "link_warrior_2_10",
+          "link_warrior_2_7",
+          "opening_templar_0_1",
+          "opening_templar_0_2",
+          "opening_templar_0_3",
+          "origin_templar",
+          "r21_26_1",
+          "r25_44_1",
+          "r33_37_2",
+          "r6_35_1"
+        ]
+      },
+      "rect": {
+        "x": 0,
+        "y": 76,
+        "w": 1570,
+        "h": 1124
+      }
+    },
+    {
+      "name": "ProjectS_PoE2_V6_Pair_mage-mp",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 4.833230139323572,
+        "minClickGap": 5.112520574694357,
+        "minNodePairPaintGap": 6.521343031336955,
+        "nearest": {
+          "node": "g45n3",
+          "edge": [
+            "g45hub",
+            "g45n2"
+          ]
+        },
+        "labelLines": [],
+        "captions": 21,
+        "zoom": 0.13964521768539287,
+        "spent": 17,
+        "usable": true,
+        "connected": true
+      },
+      "cam": {
+        "x": 3979.2515750000002,
+        "y": -3140.068715,
+        "z": 0.13964521768539287
+      },
+      "state": {
+        "version": "projects-large-tree-diff-v2",
+        "study": "poe2-central-v6",
+        "profileId": "mage:support:plain:standard",
+        "origin": "mage",
+        "budget": 48,
+        "roadChoice": "hp",
+        "siphon": false,
+        "learned": [
+          "g12n1",
+          "g12n2",
+          "g12n3",
+          "g20n1",
+          "g20n4",
+          "g20n5",
+          "g20n6",
+          "g33n3",
+          "link_templar_2_1",
+          "link_warrior_2_1",
+          "opening_mage_1_1",
+          "opening_mage_1_2",
+          "opening_mage_1_3",
+          "origin_mage",
+          "r14_27_1",
+          "r18_26_1",
+          "r19_24_1",
+          "r26_28_1"
+        ]
+      },
+      "rect": {
+        "x": 0,
+        "y": 76,
+        "w": 1570,
+        "h": 1124
+      }
+    },
+    {
+      "name": "ProjectS_PoE2_V6_Pair_mage-ice",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 4.833230139323572,
+        "minClickGap": 5.112520574694357,
+        "minNodePairPaintGap": 6.521343031336955,
+        "nearest": {
+          "node": "g45n3",
+          "edge": [
+            "g45hub",
+            "g45n2"
+          ]
+        },
+        "labelLines": [],
+        "captions": 21,
+        "zoom": 0.13964521768539287,
+        "spent": 25,
+        "usable": true,
+        "connected": true
+      },
+      "cam": {
+        "x": 3979.2515750000002,
+        "y": -3140.068715,
+        "z": 0.13964521768539287
+      },
+      "state": {
+        "version": "projects-large-tree-diff-v2",
+        "study": "poe2-central-v6",
+        "profileId": "mage:support:plain:standard",
+        "origin": "mage",
+        "budget": 48,
+        "roadChoice": "hp",
+        "siphon": false,
+        "learned": [
+          "g27n1",
+          "g27n2",
+          "g27n4",
+          "g3n2",
+          "g3n5",
+          "g51n4",
+          "g51n5",
+          "g51n6",
+          "join_warrior_1",
+          "key_13",
+          "link_assassin_1_4",
+          "link_assassin_2_3",
+          "link_assassin_2_4",
+          "link_assassin_2_5",
+          "link_assassin_2_8",
+          "opening_mage_1_1",
+          "opening_mage_1_2",
+          "opening_mage_1_3",
+          "origin_mage",
+          "r10_14_3",
+          "r14_42_1",
+          "r18_26_1",
+          "r27_52_1",
+          "r9_20_2"
+        ]
+      },
+      "rect": {
+        "x": 0,
+        "y": 76,
+        "w": 1570,
+        "h": 1124
+      }
+    },
+    {
+      "name": "ProjectS_PoE2_V6_Full_Return",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 1.558989892846707,
+        "minClickGap": 1.692469304891948,
+        "minNodePairPaintGap": 3.1208315033014755,
+        "nearest": {
+          "node": "key_15",
+          "edge": [
+            "g9n6",
+            "r16_47_1"
+          ]
+        },
+        "labelLines": [],
+        "captions": 14,
+        "zoom": 0.0667397060226203,
+        "spent": 0,
+        "usable": true,
+        "connected": true
+      },
+      "cam": {
+        "x": 1230,
+        "y": -1245,
+        "z": 0.0667397060226203
+      },
+      "state": {
+        "version": "projects-large-tree-diff-v2",
+        "study": "poe2-central-v6",
+        "profileId": "tank:support:plain:standard",
+        "origin": "tank",
+        "budget": 48,
+        "roadChoice": "resource",
+        "siphon": false,
+        "learned": [
+          "origin_templar"
+        ]
+      },
+      "rect": {
+        "x": 0,
+        "y": 76,
+        "w": 1570,
+        "h": 1124
+      }
+    },
+    {
+      "name": "ProjectS_PoE2_V6_Mobile_Overview",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 0.9999999999999772,
+        "minClickGap": 1.0484496504617182,
+        "minNodePairPaintGap": 1.7002769717161235,
+        "nearest": {
+          "node": "g31n6",
+          "edge": [
+            "g31n4",
+            "key_11"
+          ]
+        },
+        "labelLines": [],
+        "captions": 6,
+        "zoom": 0.024224825230870464,
+        "spent": 0,
+        "usable": true,
+        "connected": true
+      },
+      "cam": {
+        "x": 1230,
+        "y": -1245,
+        "z": 0.024224825230870464
+      },
+      "state": {
+        "version": "projects-large-tree-diff-v2",
+        "study": "poe2-central-v6",
+        "profileId": "tank:support:plain:standard",
+        "origin": "tank",
+        "budget": 48,
+        "roadChoice": "resource",
+        "siphon": false,
+        "learned": [
+          "origin_templar"
+        ]
+      },
+      "rect": {
+        "x": 0,
+        "y": 62,
+        "w": 430,
+        "h": 577.828125
+      }
+    },
+    {
+      "name": "ProjectS_PoE2_V6_Mobile_Shield",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 2.9533245105963433,
+        "minClickGap": 3.133391495260037,
+        "minNodePairPaintGap": 4.20450694651058,
+        "nearest": {
+          "node": "g45n3",
+          "edge": [
+            "g45hub",
+            "g45n2"
+          ]
+        },
+        "labelLines": [],
+        "captions": 2,
+        "zoom": 0.09003349233184665,
+        "spent": 21,
+        "usable": true,
+        "connected": true
+      },
+      "cam": {
+        "x": 284.36848499999996,
+        "y": -3606.747845,
+        "z": 0.09003349233184665
+      },
+      "state": {
+        "version": "projects-large-tree-diff-v2",
+        "study": "poe2-central-v6",
+        "profileId": "tank:support:plain:standard",
+        "origin": "tank",
+        "budget": 48,
+        "roadChoice": "hp",
+        "siphon": false,
+        "learned": [
+          "g31n4",
+          "g33n0",
+          "g46n0",
+          "g46n1",
+          "g46n2",
+          "g46n7",
+          "key_11",
+          "link_assassin_0_2",
+          "link_assassin_1_3",
+          "link_ranger_1_1",
+          "link_warrior_2_10",
+          "link_warrior_2_7",
+          "opening_templar_0_1",
+          "opening_templar_0_2",
+          "opening_templar_0_3",
+          "origin_templar",
+          "r21_26_1",
+          "r25_44_1",
+          "r33_37_2",
+          "r6_35_1"
+        ]
+      },
+      "rect": {
+        "x": 0,
+        "y": 62,
+        "w": 430,
+        "h": 577.828125
+      }
+    },
+    {
+      "name": "ProjectS_PoE2_V6_Mobile_Center",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 3.083354806689874,
+        "minClickGap": 3.2713498613128555,
+        "minNodePairPaintGap": 4.389624864037125,
+        "nearest": {
+          "node": "g45n3",
+          "edge": [
+            "g45hub",
+            "g45n2"
+          ]
+        },
+        "labelLines": [],
+        "captions": 3,
+        "zoom": 0.0939975273114907,
+        "spent": 21,
+        "usable": true,
+        "connected": true
+      },
+      "cam": {
+        "x": 1230,
+        "y": -1098.240365,
+        "z": 0.0939975273114907
+      },
+      "state": {
+        "version": "projects-large-tree-diff-v2",
+        "study": "poe2-central-v6",
+        "profileId": "tank:support:plain:standard",
+        "origin": "tank",
+        "budget": 48,
+        "roadChoice": "hp",
+        "siphon": false,
+        "learned": [
+          "g31n4",
+          "g33n0",
+          "g46n0",
+          "g46n1",
+          "g46n2",
+          "g46n7",
+          "key_11",
+          "link_assassin_0_2",
+          "link_assassin_1_3",
+          "link_ranger_1_1",
+          "link_warrior_2_10",
+          "link_warrior_2_7",
+          "opening_templar_0_1",
+          "opening_templar_0_2",
+          "opening_templar_0_3",
+          "origin_templar",
+          "r21_26_1",
+          "r25_44_1",
+          "r33_37_2",
+          "r6_35_1"
+        ]
+      },
+      "rect": {
+        "x": 0,
+        "y": 62,
+        "w": 430,
+        "h": 577.828125
+      }
+    }
+  ],
+  "focusAudits": [
+    {
+      "size": "desktop",
+      "group": "g49",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 26.096631341502487,
+      "minClickGap": 28.94663134150249,
+      "minNodePairPaintGap": 32.25458743684875,
+      "nearest": {
+        "node": "g45n3",
+        "edge": [
+          "g45hub",
+          "g45n2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 3,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "g45",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 26.096631341502487,
+      "minClickGap": 28.94663134150249,
+      "minNodePairPaintGap": 32.25458743684891,
+      "nearest": {
+        "node": "g45n3",
+        "edge": [
+          "g45hub",
+          "g45n2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 2,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "g38",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 26.09663134150231,
+      "minClickGap": 28.94663134150231,
+      "minNodePairPaintGap": 32.25458743684875,
+      "nearest": {
+        "node": "g45n3",
+        "edge": [
+          "g45hub",
+          "g45n2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "g23",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 26.09663134150245,
+      "minClickGap": 28.946631341502453,
+      "minNodePairPaintGap": 32.254587436848354,
+      "nearest": {
+        "node": "g45n3",
+        "edge": [
+          "g45hub",
+          "g45n2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "g13",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 26.027513222241655,
+      "minClickGap": 28.862979890507305,
+      "minNodePairPaintGap": 32.1694877304142,
+      "nearest": {
+        "node": "g45n3",
+        "edge": [
+          "g45hub",
+          "g45n2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 2,
+      "zoom": 0.6483851853628501,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "g51",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 17.7172650235865,
+      "minClickGap": 18.805352058882495,
+      "minNodePairPaintGap": 21.937732444443302,
+      "nearest": {
+        "node": "g45n3",
+        "edge": [
+          "g45hub",
+          "g45n2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 2,
+      "zoom": 0.4542318928106659,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "g35",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 26.09663134150272,
+      "minClickGap": 28.946631341502723,
+      "minNodePairPaintGap": 32.25458743684881,
+      "nearest": {
+        "node": "g45n3",
+        "edge": [
+          "g45hub",
+          "g45n2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 2,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "g30",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 26.09663134150233,
+      "minClickGap": 28.946631341502332,
+      "minNodePairPaintGap": 32.254587436848865,
+      "nearest": {
+        "node": "g45n3",
+        "edge": [
+          "g45hub",
+          "g45n2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 2,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "g14",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 26.096631341502274,
+      "minClickGap": 28.946631341502275,
+      "minNodePairPaintGap": 32.25458743684878,
+      "nearest": {
+        "node": "g45n3",
+        "edge": [
+          "g45hub",
+          "g45n2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 2,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "g34",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 26.096631341502565,
+      "minClickGap": 28.946631341502567,
+      "minNodePairPaintGap": 32.254587436848766,
+      "nearest": {
+        "node": "g45n3",
+        "edge": [
+          "g45hub",
+          "g45n2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 2,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "g21",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 26.096631341502615,
+      "minClickGap": 28.946631341502616,
+      "minNodePairPaintGap": 32.254587436848865,
+      "nearest": {
+        "node": "g45n3",
+        "edge": [
+          "g45hub",
+          "g45n2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 2,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "g5",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 26.096631341502544,
+      "minClickGap": 28.946631341502545,
+      "minNodePairPaintGap": 32.25458743684881,
+      "nearest": {
+        "node": "g45n3",
+        "edge": [
+          "g45hub",
+          "g45n2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 3,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "g50",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 26.0966313415026,
+      "minClickGap": 28.946631341502602,
+      "minNodePairPaintGap": 32.254587436848865,
+      "nearest": {
+        "node": "g45n3",
+        "edge": [
+          "g45hub",
+          "g45n2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 3,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "g26",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 26.096631341502516,
+      "minClickGap": 28.946631341502517,
+      "minNodePairPaintGap": 32.25458743684875,
+      "nearest": {
+        "node": "g45n3",
+        "edge": [
+          "g45hub",
+          "g45n2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 2,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "g37",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 26.096631341502544,
+      "minClickGap": 28.946631341502545,
+      "minNodePairPaintGap": 32.25458743684881,
+      "nearest": {
+        "node": "g45n3",
+        "edge": [
+          "g45hub",
+          "g45n2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 3,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "g25",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 26.09663134150263,
+      "minClickGap": 28.94663134150263,
+      "minNodePairPaintGap": 32.25458743684875,
+      "nearest": {
+        "node": "g45n3",
+        "edge": [
+          "g45hub",
+          "g45n2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "g48",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 24.84919551928673,
+      "minClickGap": 27.436899629071384,
+      "minNodePairPaintGap": 30.71871777775349,
+      "nearest": {
+        "node": "g45n3",
+        "edge": [
+          "g45hub",
+          "g45n2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.6208560121982947,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "g6",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 26.09663134150263,
+      "minClickGap": 28.94663134150263,
+      "minNodePairPaintGap": 32.254587436848354,
+      "nearest": {
+        "node": "g45n3",
+        "edge": [
+          "g45hub",
+          "g45n2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "g18",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 26.0966313415026,
+      "minClickGap": 28.946631341502602,
+      "minNodePairPaintGap": 32.25458743684875,
+      "nearest": {
+        "node": "g45n3",
+        "edge": [
+          "g45hub",
+          "g45n2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "g31",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 26.096631341502352,
+      "minClickGap": 28.946631341502354,
+      "minNodePairPaintGap": 32.25458743684925,
+      "nearest": {
+        "node": "g45n3",
+        "edge": [
+          "g45hub",
+          "g45n2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 2,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "g46",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 26.0966313415025,
+      "minClickGap": 28.946631341502503,
+      "minNodePairPaintGap": 32.25458743684922,
+      "nearest": {
+        "node": "g45n3",
+        "edge": [
+          "g45hub",
+          "g45n2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 2,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "g33",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 26.096631341502267,
+      "minClickGap": 28.94663134150227,
+      "minNodePairPaintGap": 32.254587436849235,
+      "nearest": {
+        "node": "g45n3",
+        "edge": [
+          "g45hub",
+          "g45n2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 2,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "g40",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 26.096631341502373,
+      "minClickGap": 28.946631341502375,
+      "minNodePairPaintGap": 32.25458743684831,
+      "nearest": {
+        "node": "g45n3",
+        "edge": [
+          "g45hub",
+          "g45n2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "g20",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 26.096631341503006,
+      "minClickGap": 28.946631341503007,
+      "minNodePairPaintGap": 32.254587436847416,
+      "nearest": {
+        "node": "g45n3",
+        "edge": [
+          "g45hub",
+          "g45n2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 2,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "g12",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 26.09663134150216,
+      "minClickGap": 28.94663134150216,
+      "minNodePairPaintGap": 32.25458743684834,
+      "nearest": {
+        "node": "g45n3",
+        "edge": [
+          "g45hub",
+          "g45n2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 2,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "g19",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 26.096631341503034,
+      "minClickGap": 28.946631341503036,
+      "minNodePairPaintGap": 32.254587436849235,
+      "nearest": {
+        "node": "g45n3",
+        "edge": [
+          "g45hub",
+          "g45n2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 2,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "g28",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 26.09663134150209,
+      "minClickGap": 28.94663134150209,
+      "minNodePairPaintGap": 32.25458743684936,
+      "nearest": {
+        "node": "g45n3",
+        "edge": [
+          "g45hub",
+          "g45n2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "g11",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 26.09663134150228,
+      "minClickGap": 28.946631341502282,
+      "minNodePairPaintGap": 32.25458743684925,
+      "nearest": {
+        "node": "g45n3",
+        "edge": [
+          "g45hub",
+          "g45n2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "g16",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 26.09663134150209,
+      "minClickGap": 28.94663134150209,
+      "minNodePairPaintGap": 32.254587436848695,
+      "nearest": {
+        "node": "g45n3",
+        "edge": [
+          "g45hub",
+          "g45n2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 2,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "g44",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 26.096631341502622,
+      "minClickGap": 28.946631341502624,
+      "minNodePairPaintGap": 32.25458743684925,
+      "nearest": {
+        "node": "g45n3",
+        "edge": [
+          "g45hub",
+          "g45n2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "g2",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 26.096631341502544,
+      "minClickGap": 28.946631341502545,
+      "minNodePairPaintGap": 32.25458743684925,
+      "nearest": {
+        "node": "g45n3",
+        "edge": [
+          "g45hub",
+          "g45n2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 2,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "g24",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 26.096631341501954,
+      "minClickGap": 28.946631341501956,
+      "minNodePairPaintGap": 32.25458743684831,
+      "nearest": {
+        "node": "g45n3",
+        "edge": [
+          "g45hub",
+          "g45n2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "g27",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 21.050413941650334,
+      "minClickGap": 22.839355679940926,
+      "minNodePairPaintGap": 26.041576667393112,
+      "nearest": {
+        "node": "g45n3",
+        "edge": [
+          "g45hub",
+          "g45n2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.5321046375878434,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "g3",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 26.096631341502878,
+      "minClickGap": 28.94663134150288,
+      "minNodePairPaintGap": 32.25458743684875,
+      "nearest": {
+        "node": "g45n3",
+        "edge": [
+          "g45hub",
+          "g45n2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "g47",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 26.096631341502516,
+      "minClickGap": 28.946631341502517,
+      "minNodePairPaintGap": 32.25458743684746,
+      "nearest": {
+        "node": "g45n3",
+        "edge": [
+          "g45hub",
+          "g45n2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "g8",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 26.096631341502707,
+      "minClickGap": 28.94663134150271,
+      "minNodePairPaintGap": 32.254587436849135,
+      "nearest": {
+        "node": "g45n3",
+        "edge": [
+          "g45hub",
+          "g45n2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "g9",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 26.096631341502032,
+      "minClickGap": 28.946631341502034,
+      "minNodePairPaintGap": 32.2545874368501,
+      "nearest": {
+        "node": "g45n3",
+        "edge": [
+          "g45hub",
+          "g45n2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 2,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "g43",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 26.096631341502857,
+      "minClickGap": 28.946631341502858,
+      "minNodePairPaintGap": 32.254587436849235,
+      "nearest": {
+        "node": "g45n3",
+        "edge": [
+          "g45hub",
+          "g45n2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "g4",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 26.09663134150219,
+      "minClickGap": 28.94663134150219,
+      "minNodePairPaintGap": 32.25458743684875,
+      "nearest": {
+        "node": "g45n3",
+        "edge": [
+          "g45hub",
+          "g45n2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "g52",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 26.09663134150265,
+      "minClickGap": 28.946631341502652,
+      "minNodePairPaintGap": 32.25458743684875,
+      "nearest": {
+        "node": "g45n3",
+        "edge": [
+          "g45hub",
+          "g45n2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "g39",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 26.096631341502118,
+      "minClickGap": 28.94663134150212,
+      "minNodePairPaintGap": 32.25458743684881,
+      "nearest": {
+        "node": "g45n3",
+        "edge": [
+          "g45hub",
+          "g45n2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "g32",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 26.096631341502103,
+      "minClickGap": 28.946631341502105,
+      "minNodePairPaintGap": 32.25458743684881,
+      "nearest": {
+        "node": "g45n3",
+        "edge": [
+          "g45hub",
+          "g45n2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "g41",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 26.096631341502878,
+      "minClickGap": 28.94663134150288,
+      "minNodePairPaintGap": 32.25458743684875,
+      "nearest": {
+        "node": "g45n3",
+        "edge": [
+          "g45hub",
+          "g45n2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "g7",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 26.096631341502217,
+      "minClickGap": 28.94663134150222,
+      "minNodePairPaintGap": 32.25458743684881,
+      "nearest": {
+        "node": "g45n3",
+        "edge": [
+          "g45hub",
+          "g45n2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "g42",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 26.096631341502366,
+      "minClickGap": 28.946631341502368,
+      "minNodePairPaintGap": 32.25458743684875,
+      "nearest": {
+        "node": "g45n3",
+        "edge": [
+          "g45hub",
+          "g45n2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "g17",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 26.096631341502288,
+      "minClickGap": 28.94663134150229,
+      "minNodePairPaintGap": 32.25458743684881,
+      "nearest": {
+        "node": "g45n3",
+        "edge": [
+          "g45hub",
+          "g45n2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 2,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "g10",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 26.09663134150238,
+      "minClickGap": 28.946631341502382,
+      "minNodePairPaintGap": 32.25458743684892,
+      "nearest": {
+        "node": "g45n3",
+        "edge": [
+          "g45hub",
+          "g45n2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 2,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "g49",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 10.785095786922113,
+      "minClickGap": 11.36345608919634,
+      "minNodePairPaintGap": 13.504529511834848,
+      "nearest": {
+        "node": "g45n3",
+        "edge": [
+          "g45hub",
+          "g45n2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 2,
+      "zoom": 0.28918015113711415,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "g45",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 12.621993032634917,
+      "minClickGap": 13.286802570337997,
+      "minNodePairPaintGap": 15.6643246134579,
+      "nearest": {
+        "node": "g45n3",
+        "edge": [
+          "g45hub",
+          "g45n2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.33519046229692023,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "g38",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 13.926343601359958,
+      "minClickGap": 14.560679445437225,
+      "minNodePairPaintGap": 17.270268925502734,
+      "nearest": {
+        "node": "g45n3",
+        "edge": [
+          "g45hub",
+          "g45n2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.3656641559227325,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "g23",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 9.963980255701605,
+      "minClickGap": 10.501081072769955,
+      "minNodePairPaintGap": 12.541133626233835,
+      "nearest": {
+        "node": "g45n3",
+        "edge": [
+          "g45hub",
+          "g45n2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.26855040853417395,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "g13",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 8.126781922659626,
+      "minClickGap": 8.571567036808878,
+      "minNodePairPaintGap": 10.385591260040126,
+      "nearest": {
+        "node": "g45n3",
+        "edge": [
+          "g45hub",
+          "g45n2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.22239255707462507,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "g51",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 6.612468267292877,
+      "minClickGap": 6.981162016116482,
+      "minNodePairPaintGap": 8.608882027758227,
+      "nearest": {
+        "node": "g45n3",
+        "edge": [
+          "g45hub",
+          "g45n2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.18434687441180223,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "g35",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 10.65433621104345,
+      "minClickGap": 11.22612609468429,
+      "minNodePairPaintGap": 13.351112321908763,
+      "nearest": {
+        "node": "g45n3",
+        "edge": [
+          "g45hub",
+          "g45n2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 2,
+      "zoom": 0.2858949418204191,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "g30",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 11.15771674802355,
+      "minClickGap": 11.754800541021565,
+      "minNodePairPaintGap": 13.941717078218186,
+      "nearest": {
+        "node": "g45n3",
+        "edge": [
+          "g45hub",
+          "g45n2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.2985418964990075,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "g14",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 5.945565240297593,
+      "minClickGap": 6.280748387348547,
+      "minNodePairPaintGap": 7.826420111166415,
+      "nearest": {
+        "node": "g45n3",
+        "edge": [
+          "g45hub",
+          "g45n2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 3,
+      "zoom": 0.1675915735254772,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "g34",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 7.941706823394529,
+      "minClickGap": 8.377192267729036,
+      "minNodePairPaintGap": 10.168446921174475,
+      "nearest": {
+        "node": "g45n3",
+        "edge": [
+          "g45hub",
+          "g45n2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 3,
+      "zoom": 0.2177427221672543,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "g21",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 10.219105522064257,
+      "minClickGap": 10.769025895885463,
+      "minNodePairPaintGap": 12.840466208046408,
+      "nearest": {
+        "node": "g45n3",
+        "edge": [
+          "g45hub",
+          "g45n2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.2749601869106028,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "g5",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 13.495259957441872,
+      "minClickGap": 14.139667258692421,
+      "minNodePairPaintGap": 16.73950952495096,
+      "nearest": {
+        "node": "g45n3",
+        "edge": [
+          "g45hub",
+          "g45n2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.3555926987494516,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "g50",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 13.507199036213455,
+      "minClickGap": 14.151327403381877,
+      "minNodePairPaintGap": 16.754209174036042,
+      "nearest": {
+        "node": "g45n3",
+        "edge": [
+          "g45hub",
+          "g45n2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 2,
+      "zoom": 0.355871632831578,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "g26",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 20.460813416034128,
+      "minClickGap": 22.12578100512699,
+      "minNodePairPaintGap": 25.31564789241821,
+      "nearest": {
+        "node": "g45n3",
+        "edge": [
+          "g45hub",
+          "g45n2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.5183297321214292,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "g37",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 10.463979387992353,
+      "minClickGap": 11.026204205298571,
+      "minNodePairPaintGap": 13.127771058529056,
+      "nearest": {
+        "node": "g45n3",
+        "edge": [
+          "g45hub",
+          "g45n2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 2,
+      "zoom": 0.2811124086531085,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "g25",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 10.616456114428686,
+      "minClickGap": 11.186342595653606,
+      "minNodePairPaintGap": 13.306668479553782,
+      "nearest": {
+        "node": "g45n3",
+        "edge": [
+          "g45hub",
+          "g45n2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.28494324061245974,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "g48",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 9.689174181289887,
+      "minClickGap": 10.212466518636974,
+      "minNodePairPaintGap": 12.2187100069501,
+      "nearest": {
+        "node": "g45n3",
+        "edge": [
+          "g45hub",
+          "g45n2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.2616461686735431,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "g6",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 8.47280286010568,
+      "minClickGap": 8.93497486465787,
+      "minNodePairPaintGap": 10.791569633110248,
+      "nearest": {
+        "node": "g45n3",
+        "edge": [
+          "g45hub",
+          "g45n2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.23108600227609444,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "g18",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 10.219779706480923,
+      "minClickGap": 10.769733956779813,
+      "minNodePairPaintGap": 12.841257213049495,
+      "nearest": {
+        "node": "g45n3",
+        "edge": [
+          "g45hub",
+          "g45n2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.2749771251494453,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "g31",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 9.413360803742766,
+      "minClickGap": 9.922794046312314,
+      "minNodePairPaintGap": 11.895104542165035,
+      "nearest": {
+        "node": "g45n3",
+        "edge": [
+          "g45hub",
+          "g45n2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 2,
+      "zoom": 0.25471662128477324,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "g46",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 6.443061197484105,
+      "minClickGap": 6.803242565010816,
+      "minNodePairPaintGap": 8.41012062593335,
+      "nearest": {
+        "node": "g45n3",
+        "edge": [
+          "g45hub",
+          "g45n2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 2,
+      "zoom": 0.18009068376335563,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "g33",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 9.987017081851343,
+      "minClickGap": 10.525275455379868,
+      "minNodePairPaintGap": 12.56816220222064,
+      "nearest": {
+        "node": "g45n3",
+        "edge": [
+          "g45hub",
+          "g45n2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.26912918676426245,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "g40",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 10.02467190152238,
+      "minClickGap": 10.564822357731204,
+      "minNodePairPaintGap": 12.612341732342024,
+      "nearest": {
+        "node": "g45n3",
+        "edge": [
+          "g45hub",
+          "g45n2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.27007522810441237,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "g20",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 7.515401897048003,
+      "minClickGap": 7.929466334066239,
+      "minNodePairPaintGap": 9.66827319843007,
+      "nearest": {
+        "node": "g45n3",
+        "edge": [
+          "g45hub",
+          "g45n2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 2,
+      "zoom": 0.20703221850911854,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "g12",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 12.565668293034255,
+      "minClickGap": 13.231793752161598,
+      "minNodePairPaintGap": 15.594976389631142,
+      "nearest": {
+        "node": "g45n3",
+        "edge": [
+          "g45hub",
+          "g45n2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.33387454087265694,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "g19",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 10.96586363927391,
+      "minClickGap": 11.553307180442323,
+      "minNodePairPaintGap": 13.716620257391138,
+      "nearest": {
+        "node": "g45n3",
+        "edge": [
+          "g45hub",
+          "g45n2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.2937217705842053,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "g28",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 10.224328127628509,
+      "minClickGap": 10.774510927392015,
+      "minNodePairPaintGap": 12.84659377051632,
+      "nearest": {
+        "node": "g45n3",
+        "edge": [
+          "g45hub",
+          "g45n2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.27509139988175346,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "g11",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 10.01648106674462,
+      "minClickGap": 10.556219949169385,
+      "minNodePairPaintGap": 12.602731615099533,
+      "nearest": {
+        "node": "g45n3",
+        "edge": [
+          "g45hub",
+          "g45n2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.269869441212383,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "g16",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 10.126021216949942,
+      "minClickGap": 10.671264282446403,
+      "minNodePairPaintGap": 12.731252543036822,
+      "nearest": {
+        "node": "g45n3",
+        "edge": [
+          "g45hub",
+          "g45n2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 2,
+      "zoom": 0.2726215327482299,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "g44",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 10.38436869334527,
+      "minClickGap": 10.94259322548682,
+      "minNodePairPaintGap": 13.034365669449814,
+      "nearest": {
+        "node": "g45n3",
+        "edge": [
+          "g45hub",
+          "g45n2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.2791122660707763,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "g2",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 8.567364350227468,
+      "minClickGap": 9.034287888826183,
+      "minNodePairPaintGap": 10.902516445166745,
+      "nearest": {
+        "node": "g45n3",
+        "edge": [
+          "g45hub",
+          "g45n2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 2,
+      "zoom": 0.23346176929935714,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "g24",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 10.086269999223639,
+      "minClickGap": 10.62951564204651,
+      "minNodePairPaintGap": 12.68461335750294,
+      "nearest": {
+        "node": "g45n3",
+        "edge": [
+          "g45hub",
+          "g45n2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.2716228214114354,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "g27",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 8.200467853474027,
+      "minClickGap": 8.648955544735417,
+      "minNodePairPaintGap": 10.472045260572632,
+      "nearest": {
+        "node": "g45n3",
+        "edge": [
+          "g45hub",
+          "g45n2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.22424384563069522,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "g3",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 12.28676390522363,
+      "minClickGap": 12.940580158768336,
+      "minNodePairPaintGap": 15.26640202758136,
+      "nearest": {
+        "node": "g45n3",
+        "edge": [
+          "g45hub",
+          "g45n2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.3269081267723528,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "g47",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 10.229964427599487,
+      "minClickGap": 10.7804304406581,
+      "minNodePairPaintGap": 12.853206711077656,
+      "nearest": {
+        "node": "g45n3",
+        "edge": [
+          "g45hub",
+          "g45n2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.2752330065293068,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "g8",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 14.481528048272923,
+      "minClickGap": 15.102893053722374,
+      "minNodePairPaintGap": 17.953823888434826,
+      "nearest": {
+        "node": "g45n3",
+        "edge": [
+          "g45hub",
+          "g45n2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.3786349945505482,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "g9",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 10.659448257661426,
+      "minClickGap": 11.231495011868937,
+      "minNodePairPaintGap": 13.357110168121967,
+      "nearest": {
+        "node": "g45n3",
+        "edge": [
+          "g45hub",
+          "g45n2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 2,
+      "zoom": 0.28602337710375547,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "g43",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 13.57430206608973,
+      "minClickGap": 14.216862697388022,
+      "minNodePairPaintGap": 16.83682785933085,
+      "nearest": {
+        "node": "g45n3",
+        "edge": [
+          "g45hub",
+          "g45n2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.3574393687017074,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "g4",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 10.583412687201411,
+      "minClickGap": 11.151638799397878,
+      "minNodePairPaintGap": 13.267899389667853,
+      "nearest": {
+        "node": "g45n3",
+        "edge": [
+          "g45hub",
+          "g45n2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.2841130560982335,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "g52",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 11.021586260924238,
+      "minClickGap": 11.61182975727094,
+      "minNodePairPaintGap": 13.78199832222102,
+      "nearest": {
+        "node": "g45n3",
+        "edge": [
+          "g45hub",
+          "g45n2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.29512174817335013,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "g39",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 10.646775791146512,
+      "minClickGap": 11.218185778145505,
+      "minNodePairPaintGap": 13.342241855884415,
+      "nearest": {
+        "node": "g45n3",
+        "edge": [
+          "g45hub",
+          "g45n2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.28570499349949696,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "g32",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 12.042522689473994,
+      "minClickGap": 12.68406628899532,
+      "minNodePairPaintGap": 14.979839450939098,
+      "nearest": {
+        "node": "g45n3",
+        "edge": [
+          "g45hub",
+          "g45n2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.3207717997606633,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "g41",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 8.228211679191208,
+      "minClickGap": 8.678093444639726,
+      "minNodePairPaintGap": 10.504596450423787,
+      "nearest": {
+        "node": "g45n3",
+        "edge": [
+          "g45hub",
+          "g45n2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.224940882724259,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "g7",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 9.500809730916169,
+      "minClickGap": 10.014637114845613,
+      "minNodePairPaintGap": 11.997706348410455,
+      "nearest": {
+        "node": "g45n3",
+        "edge": [
+          "g45hub",
+          "g45n2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.2569136919647224,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "g42",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 9.776824831487497,
+      "minClickGap": 10.304521446390668,
+      "minNodePairPaintGap": 12.32154849015947,
+      "nearest": {
+        "node": "g45n3",
+        "edge": [
+          "g45hub",
+          "g45n2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.2638483074515855,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "g17",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 11.35283168665523,
+      "minClickGap": 11.959719632196746,
+      "minNodePairPaintGap": 14.170640928699587,
+      "nearest": {
+        "node": "g45n3",
+        "edge": [
+          "g45hub",
+          "g45n2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 2,
+      "zoom": 0.30344397277075846,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "g10",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 11.965172659526985,
+      "minClickGap": 12.60282956796171,
+      "minNodePairPaintGap": 14.889086447532707,
+      "nearest": {
+        "node": "g45n3",
+        "edge": [
+          "g45hub",
+          "g45n2"
+        ]
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.3188284542173631,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    }
+  ],
+  "inputCases": [
+    {
+      "profileId": "warrior:basic:plain:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 526
+    },
+    {
+      "profileId": "warrior:basic:plain:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 531
+    },
+    {
+      "profileId": "warrior:basic:ice:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 537
+    },
+    {
+      "profileId": "warrior:basic:ice:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 542
+    },
+    {
+      "profileId": "warrior:basic:fire:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 534
+    },
+    {
+      "profileId": "warrior:basic:fire:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 539
+    },
+    {
+      "profileId": "warrior:basic:lightning:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 532
+    },
+    {
+      "profileId": "warrior:basic:lightning:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 537
+    },
+    {
+      "profileId": "warrior:support:plain:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 547
+    },
+    {
+      "profileId": "warrior:support:plain:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 552
+    },
+    {
+      "profileId": "warrior:support:ice:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 555
+    },
+    {
+      "profileId": "warrior:support:ice:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 560
+    },
+    {
+      "profileId": "warrior:support:fire:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 555
+    },
+    {
+      "profileId": "warrior:support:fire:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 560
+    },
+    {
+      "profileId": "warrior:support:lightning:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 553
+    },
+    {
+      "profileId": "warrior:support:lightning:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 558
+    },
+    {
+      "profileId": "warrior:mark:plain:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 526
+    },
+    {
+      "profileId": "warrior:mark:plain:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 531
+    },
+    {
+      "profileId": "warrior:mark:ice:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 537
+    },
+    {
+      "profileId": "warrior:mark:ice:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 542
+    },
+    {
+      "profileId": "warrior:mark:fire:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 534
+    },
+    {
+      "profileId": "warrior:mark:fire:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 539
+    },
+    {
+      "profileId": "warrior:mark:lightning:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 532
+    },
+    {
+      "profileId": "warrior:mark:lightning:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 537
+    },
+    {
+      "profileId": "tank:basic:plain:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 560
+    },
+    {
+      "profileId": "tank:basic:plain:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 565
+    },
+    {
+      "profileId": "tank:basic:ice:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 568
+    },
+    {
+      "profileId": "tank:basic:ice:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 573
+    },
+    {
+      "profileId": "tank:basic:fire:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 568
+    },
+    {
+      "profileId": "tank:basic:fire:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 573
+    },
+    {
+      "profileId": "tank:basic:lightning:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 566
+    },
+    {
+      "profileId": "tank:basic:lightning:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 571
+    },
+    {
+      "profileId": "tank:support:plain:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 560
+    },
+    {
+      "profileId": "tank:support:plain:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 565
+    },
+    {
+      "profileId": "tank:support:ice:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 568
+    },
+    {
+      "profileId": "tank:support:ice:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 573
+    },
+    {
+      "profileId": "tank:support:fire:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 568
+    },
+    {
+      "profileId": "tank:support:fire:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 573
+    },
+    {
+      "profileId": "tank:support:lightning:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 566
+    },
+    {
+      "profileId": "tank:support:lightning:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 571
+    },
+    {
+      "profileId": "tank:mark:plain:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 560
+    },
+    {
+      "profileId": "tank:mark:plain:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 565
+    },
+    {
+      "profileId": "tank:mark:ice:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 568
+    },
+    {
+      "profileId": "tank:mark:ice:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 573
+    },
+    {
+      "profileId": "tank:mark:fire:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 568
+    },
+    {
+      "profileId": "tank:mark:fire:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 573
+    },
+    {
+      "profileId": "tank:mark:lightning:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 566
+    },
+    {
+      "profileId": "tank:mark:lightning:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 571
+    },
+    {
+      "profileId": "mage:basic:plain:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 563
+    },
+    {
+      "profileId": "mage:basic:plain:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 568
+    },
+    {
+      "profileId": "mage:basic:ice:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 563
+    },
+    {
+      "profileId": "mage:basic:ice:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 568
+    },
+    {
+      "profileId": "mage:basic:fire:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 563
+    },
+    {
+      "profileId": "mage:basic:fire:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 568
+    },
+    {
+      "profileId": "mage:basic:lightning:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 563
+    },
+    {
+      "profileId": "mage:basic:lightning:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 568
+    },
+    {
+      "profileId": "mage:support:plain:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 581
+    },
+    {
+      "profileId": "mage:support:plain:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 586
+    },
+    {
+      "profileId": "mage:support:ice:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 581
+    },
+    {
+      "profileId": "mage:support:ice:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 586
+    },
+    {
+      "profileId": "mage:support:fire:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 581
+    },
+    {
+      "profileId": "mage:support:fire:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 586
+    },
+    {
+      "profileId": "mage:support:lightning:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 581
+    },
+    {
+      "profileId": "mage:support:lightning:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 586
+    },
+    {
+      "profileId": "mage:mark:plain:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 563
+    },
+    {
+      "profileId": "mage:mark:plain:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 568
+    },
+    {
+      "profileId": "mage:mark:ice:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 563
+    },
+    {
+      "profileId": "mage:mark:ice:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 568
+    },
+    {
+      "profileId": "mage:mark:fire:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 563
+    },
+    {
+      "profileId": "mage:mark:fire:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 568
+    },
+    {
+      "profileId": "mage:mark:lightning:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 563
+    },
+    {
+      "profileId": "mage:mark:lightning:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 568
+    },
+    {
+      "profileId": "ranger:basic:plain:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 537
+    },
+    {
+      "profileId": "ranger:basic:plain:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 542
+    },
+    {
+      "profileId": "ranger:basic:ice:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 537
+    },
+    {
+      "profileId": "ranger:basic:ice:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 542
+    },
+    {
+      "profileId": "ranger:basic:fire:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 545
+    },
+    {
+      "profileId": "ranger:basic:fire:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 550
+    },
+    {
+      "profileId": "ranger:basic:lightning:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 543
+    },
+    {
+      "profileId": "ranger:basic:lightning:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 548
+    },
+    {
+      "profileId": "ranger:support:plain:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 537
+    },
+    {
+      "profileId": "ranger:support:plain:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 542
+    },
+    {
+      "profileId": "ranger:support:ice:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 537
+    },
+    {
+      "profileId": "ranger:support:ice:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 542
+    },
+    {
+      "profileId": "ranger:support:fire:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 545
+    },
+    {
+      "profileId": "ranger:support:fire:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 550
+    },
+    {
+      "profileId": "ranger:support:lightning:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 543
+    },
+    {
+      "profileId": "ranger:support:lightning:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 548
+    },
+    {
+      "profileId": "ranger:mark:plain:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 537
+    },
+    {
+      "profileId": "ranger:mark:plain:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 542
+    },
+    {
+      "profileId": "ranger:mark:ice:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 537
+    },
+    {
+      "profileId": "ranger:mark:ice:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 542
+    },
+    {
+      "profileId": "ranger:mark:fire:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 545
+    },
+    {
+      "profileId": "ranger:mark:fire:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 550
+    },
+    {
+      "profileId": "ranger:mark:lightning:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 543
+    },
+    {
+      "profileId": "ranger:mark:lightning:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 548
+    },
+    {
+      "profileId": "assassin:basic:plain:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 526
+    },
+    {
+      "profileId": "assassin:basic:plain:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 531
+    },
+    {
+      "profileId": "assassin:basic:ice:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 537
+    },
+    {
+      "profileId": "assassin:basic:ice:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 542
+    },
+    {
+      "profileId": "assassin:basic:fire:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 534
+    },
+    {
+      "profileId": "assassin:basic:fire:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 539
+    },
+    {
+      "profileId": "assassin:basic:lightning:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 532
+    },
+    {
+      "profileId": "assassin:basic:lightning:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 537
+    },
+    {
+      "profileId": "assassin:support:plain:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 539
+    },
+    {
+      "profileId": "assassin:support:plain:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 544
+    },
+    {
+      "profileId": "assassin:support:ice:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 550
+    },
+    {
+      "profileId": "assassin:support:ice:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 555
+    },
+    {
+      "profileId": "assassin:support:fire:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 547
+    },
+    {
+      "profileId": "assassin:support:fire:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 552
+    },
+    {
+      "profileId": "assassin:support:lightning:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 545
+    },
+    {
+      "profileId": "assassin:support:lightning:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 550
+    },
+    {
+      "profileId": "assassin:mark:plain:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 526
+    },
+    {
+      "profileId": "assassin:mark:plain:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 531
+    },
+    {
+      "profileId": "assassin:mark:ice:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 537
+    },
+    {
+      "profileId": "assassin:mark:ice:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 542
+    },
+    {
+      "profileId": "assassin:mark:fire:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 534
+    },
+    {
+      "profileId": "assassin:mark:fire:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 539
+    },
+    {
+      "profileId": "assassin:mark:lightning:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 532
+    },
+    {
+      "profileId": "assassin:mark:lightning:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 537
+    }
+  ],
+  "desktopAndMobile": true,
+  "mpAndNoCritSuppressionRestore": true,
+  "conflictsChecked": true,
+  "foreignWeaponRejected": true,
+  "realMouseAndTouch": true,
+  "networkRequests": 0,
+  "runtimeErrors": [],
+  "finalDisplayReview": {
+    "status": "PASS",
+    "centralVoidRadius": 858,
+    "graphAndEffectsUnchanged": true,
+    "focusLabelReviews": [
+      {
+        "group": "g49",
+        "size": "desktop",
+        "bad": [],
+        "captions": 3,
+        "centralLabelIntrusions": [],
+        "labelLines": []
+      },
+      {
+        "group": "g45",
+        "size": "desktop",
+        "bad": [],
+        "captions": 2,
+        "centralLabelIntrusions": [],
+        "labelLines": []
+      },
+      {
+        "group": "g38",
+        "size": "desktop",
+        "bad": [],
+        "captions": 1,
+        "centralLabelIntrusions": [],
+        "labelLines": []
+      },
+      {
+        "group": "g23",
+        "size": "desktop",
+        "bad": [],
+        "captions": 1,
+        "centralLabelIntrusions": [],
+        "labelLines": []
+      },
+      {
+        "group": "g13",
+        "size": "desktop",
+        "bad": [],
+        "captions": 2,
+        "centralLabelIntrusions": [],
+        "labelLines": []
+      },
+      {
+        "group": "g51",
+        "size": "desktop",
+        "bad": [],
+        "captions": 2,
+        "centralLabelIntrusions": [],
+        "labelLines": []
+      },
+      {
+        "group": "g35",
+        "size": "desktop",
+        "bad": [],
+        "captions": 2,
+        "centralLabelIntrusions": [],
+        "labelLines": []
+      },
+      {
+        "group": "g30",
+        "size": "desktop",
+        "bad": [],
+        "captions": 2,
+        "centralLabelIntrusions": [],
+        "labelLines": []
+      },
+      {
+        "group": "g14",
+        "size": "desktop",
+        "bad": [],
+        "captions": 2,
+        "centralLabelIntrusions": [],
+        "labelLines": []
+      },
+      {
+        "group": "g34",
+        "size": "desktop",
+        "bad": [],
+        "captions": 2,
+        "centralLabelIntrusions": [],
+        "labelLines": []
+      },
+      {
+        "group": "g21",
+        "size": "desktop",
+        "bad": [],
+        "captions": 2,
+        "centralLabelIntrusions": [],
+        "labelLines": []
+      },
+      {
+        "group": "g5",
+        "size": "desktop",
+        "bad": [],
+        "captions": 3,
+        "centralLabelIntrusions": [],
+        "labelLines": []
+      },
+      {
+        "group": "g50",
+        "size": "desktop",
+        "bad": [],
+        "captions": 3,
+        "centralLabelIntrusions": [],
+        "labelLines": []
+      },
+      {
+        "group": "g26",
+        "size": "desktop",
+        "bad": [],
+        "captions": 2,
+        "centralLabelIntrusions": [],
+        "labelLines": []
+      },
+      {
+        "group": "g37",
+        "size": "desktop",
+        "bad": [],
+        "captions": 3,
+        "centralLabelIntrusions": [],
+        "labelLines": []
+      },
+      {
+        "group": "g25",
+        "size": "desktop",
+        "bad": [],
+        "captions": 1,
+        "centralLabelIntrusions": [],
+        "labelLines": []
+      },
+      {
+        "group": "g48",
+        "size": "desktop",
+        "bad": [],
+        "captions": 1,
+        "centralLabelIntrusions": [],
+        "labelLines": []
+      },
+      {
+        "group": "g6",
+        "size": "desktop",
+        "bad": [],
+        "captions": 1,
+        "centralLabelIntrusions": [],
+        "labelLines": []
+      },
+      {
+        "group": "g18",
+        "size": "desktop",
+        "bad": [],
+        "captions": 1,
+        "centralLabelIntrusions": [],
+        "labelLines": []
+      },
+      {
+        "group": "g31",
+        "size": "desktop",
+        "bad": [],
+        "captions": 2,
+        "centralLabelIntrusions": [],
+        "labelLines": []
+      },
+      {
+        "group": "g46",
+        "size": "desktop",
+        "bad": [],
+        "captions": 2,
+        "centralLabelIntrusions": [],
+        "labelLines": []
+      },
+      {
+        "group": "g33",
+        "size": "desktop",
+        "bad": [],
+        "captions": 2,
+        "centralLabelIntrusions": [],
+        "labelLines": []
+      },
+      {
+        "group": "g40",
+        "size": "desktop",
+        "bad": [],
+        "captions": 1,
+        "centralLabelIntrusions": [],
+        "labelLines": []
+      },
+      {
+        "group": "g20",
+        "size": "desktop",
+        "bad": [],
+        "captions": 2,
+        "centralLabelIntrusions": [],
+        "labelLines": []
+      },
+      {
+        "group": "g12",
+        "size": "desktop",
+        "bad": [],
+        "captions": 2,
+        "centralLabelIntrusions": [],
+        "labelLines": []
+      },
+      {
+        "group": "g19",
+        "size": "desktop",
+        "bad": [],
+        "captions": 2,
+        "centralLabelIntrusions": [],
+        "labelLines": []
+      },
+      {
+        "group": "g28",
+        "size": "desktop",
+        "bad": [],
+        "captions": 1,
+        "centralLabelIntrusions": [],
+        "labelLines": []
+      },
+      {
+        "group": "g11",
+        "size": "desktop",
+        "bad": [],
+        "captions": 1,
+        "centralLabelIntrusions": [],
+        "labelLines": []
+      },
+      {
+        "group": "g16",
+        "size": "desktop",
+        "bad": [],
+        "captions": 2,
+        "centralLabelIntrusions": [],
+        "labelLines": []
+      },
+      {
+        "group": "g44",
+        "size": "desktop",
+        "bad": [],
+        "captions": 1,
+        "centralLabelIntrusions": [],
+        "labelLines": []
+      },
+      {
+        "group": "g2",
+        "size": "desktop",
+        "bad": [],
+        "captions": 2,
+        "centralLabelIntrusions": [],
+        "labelLines": []
+      },
+      {
+        "group": "g24",
+        "size": "desktop",
+        "bad": [],
+        "captions": 1,
+        "centralLabelIntrusions": [],
+        "labelLines": []
+      },
+      {
+        "group": "g27",
+        "size": "desktop",
+        "bad": [],
+        "captions": 1,
+        "centralLabelIntrusions": [],
+        "labelLines": []
+      },
+      {
+        "group": "g3",
+        "size": "desktop",
+        "bad": [],
+        "captions": 1,
+        "centralLabelIntrusions": [],
+        "labelLines": []
+      },
+      {
+        "group": "g47",
+        "size": "desktop",
+        "bad": [],
+        "captions": 1,
+        "centralLabelIntrusions": [],
+        "labelLines": []
+      },
+      {
+        "group": "g8",
+        "size": "desktop",
+        "bad": [],
+        "captions": 1,
+        "centralLabelIntrusions": [],
+        "labelLines": []
+      },
+      {
+        "group": "g9",
+        "size": "desktop",
+        "bad": [],
+        "captions": 2,
+        "centralLabelIntrusions": [],
+        "labelLines": []
+      },
+      {
+        "group": "g43",
+        "size": "desktop",
+        "bad": [],
+        "captions": 1,
+        "centralLabelIntrusions": [],
+        "labelLines": []
+      },
+      {
+        "group": "g4",
+        "size": "desktop",
+        "bad": [],
+        "captions": 1,
+        "centralLabelIntrusions": [],
+        "labelLines": []
+      },
+      {
+        "group": "g52",
+        "size": "desktop",
+        "bad": [],
+        "captions": 1,
+        "centralLabelIntrusions": [],
+        "labelLines": []
+      },
+      {
+        "group": "g39",
+        "size": "desktop",
+        "bad": [],
+        "captions": 1,
+        "centralLabelIntrusions": [],
+        "labelLines": []
+      },
+      {
+        "group": "g32",
+        "size": "desktop",
+        "bad": [],
+        "captions": 1,
+        "centralLabelIntrusions": [],
+        "labelLines": []
+      },
+      {
+        "group": "g41",
+        "size": "desktop",
+        "bad": [],
+        "captions": 1,
+        "centralLabelIntrusions": [],
+        "labelLines": []
+      },
+      {
+        "group": "g7",
+        "size": "desktop",
+        "bad": [],
+        "captions": 1,
+        "centralLabelIntrusions": [],
+        "labelLines": []
+      },
+      {
+        "group": "g42",
+        "size": "desktop",
+        "bad": [],
+        "captions": 1,
+        "centralLabelIntrusions": [],
+        "labelLines": []
+      },
+      {
+        "group": "g17",
+        "size": "desktop",
+        "bad": [],
+        "captions": 2,
+        "centralLabelIntrusions": [],
+        "labelLines": []
+      },
+      {
+        "group": "g10",
+        "size": "desktop",
+        "bad": [],
+        "captions": 2,
+        "centralLabelIntrusions": [],
+        "labelLines": []
+      },
+      {
+        "group": "g49",
+        "size": "mobile",
+        "bad": [],
+        "captions": 2,
+        "centralLabelIntrusions": [],
+        "labelLines": []
+      },
+      {
+        "group": "g45",
+        "size": "mobile",
+        "bad": [],
+        "captions": 1,
+        "centralLabelIntrusions": [],
+        "labelLines": []
+      },
+      {
+        "group": "g38",
+        "size": "mobile",
+        "bad": [],
+        "captions": 1,
+        "centralLabelIntrusions": [],
+        "labelLines": []
+      },
+      {
+        "group": "g23",
+        "size": "mobile",
+        "bad": [],
+        "captions": 1,
+        "centralLabelIntrusions": [],
+        "labelLines": []
+      },
+      {
+        "group": "g13",
+        "size": "mobile",
+        "bad": [],
+        "captions": 1,
+        "centralLabelIntrusions": [],
+        "labelLines": []
+      },
+      {
+        "group": "g51",
+        "size": "mobile",
+        "bad": [],
+        "captions": 1,
+        "centralLabelIntrusions": [],
+        "labelLines": []
+      },
+      {
+        "group": "g35",
+        "size": "mobile",
+        "bad": [],
+        "captions": 2,
+        "centralLabelIntrusions": [],
+        "labelLines": []
+      },
+      {
+        "group": "g30",
+        "size": "mobile",
+        "bad": [],
+        "captions": 1,
+        "centralLabelIntrusions": [],
+        "labelLines": []
+      },
+      {
+        "group": "g14",
+        "size": "mobile",
+        "bad": [],
+        "captions": 3,
+        "centralLabelIntrusions": [],
+        "labelLines": []
+      },
+      {
+        "group": "g34",
+        "size": "mobile",
+        "bad": [],
+        "captions": 3,
+        "centralLabelIntrusions": [],
+        "labelLines": []
+      },
+      {
+        "group": "g21",
+        "size": "mobile",
+        "bad": [],
+        "captions": 1,
+        "centralLabelIntrusions": [],
+        "labelLines": []
+      },
+      {
+        "group": "g5",
+        "size": "mobile",
+        "bad": [],
+        "captions": 1,
+        "centralLabelIntrusions": [],
+        "labelLines": []
+      },
+      {
+        "group": "g50",
+        "size": "mobile",
+        "bad": [],
+        "captions": 2,
+        "centralLabelIntrusions": [],
+        "labelLines": []
+      },
+      {
+        "group": "g26",
+        "size": "mobile",
+        "bad": [],
+        "captions": 1,
+        "centralLabelIntrusions": [],
+        "labelLines": []
+      },
+      {
+        "group": "g37",
+        "size": "mobile",
+        "bad": [],
+        "captions": 2,
+        "centralLabelIntrusions": [],
+        "labelLines": []
+      },
+      {
+        "group": "g25",
+        "size": "mobile",
+        "bad": [],
+        "captions": 1,
+        "centralLabelIntrusions": [],
+        "labelLines": []
+      },
+      {
+        "group": "g48",
+        "size": "mobile",
+        "bad": [],
+        "captions": 1,
+        "centralLabelIntrusions": [],
+        "labelLines": []
+      },
+      {
+        "group": "g6",
+        "size": "mobile",
+        "bad": [],
+        "captions": 1,
+        "centralLabelIntrusions": [],
+        "labelLines": []
+      },
+      {
+        "group": "g18",
+        "size": "mobile",
+        "bad": [],
+        "captions": 1,
+        "centralLabelIntrusions": [],
+        "labelLines": []
+      },
+      {
+        "group": "g31",
+        "size": "mobile",
+        "bad": [],
+        "captions": 2,
+        "centralLabelIntrusions": [],
+        "labelLines": []
+      },
+      {
+        "group": "g46",
+        "size": "mobile",
+        "bad": [],
+        "captions": 2,
+        "centralLabelIntrusions": [],
+        "labelLines": []
+      },
+      {
+        "group": "g33",
+        "size": "mobile",
+        "bad": [],
+        "captions": 1,
+        "centralLabelIntrusions": [],
+        "labelLines": []
+      },
+      {
+        "group": "g40",
+        "size": "mobile",
+        "bad": [],
+        "captions": 1,
+        "centralLabelIntrusions": [],
+        "labelLines": []
+      },
+      {
+        "group": "g20",
+        "size": "mobile",
+        "bad": [],
+        "captions": 2,
+        "centralLabelIntrusions": [],
+        "labelLines": []
+      },
+      {
+        "group": "g12",
+        "size": "mobile",
+        "bad": [],
+        "captions": 1,
+        "centralLabelIntrusions": [],
+        "labelLines": []
+      },
+      {
+        "group": "g19",
+        "size": "mobile",
+        "bad": [],
+        "captions": 1,
+        "centralLabelIntrusions": [],
+        "labelLines": []
+      },
+      {
+        "group": "g28",
+        "size": "mobile",
+        "bad": [],
+        "captions": 1,
+        "centralLabelIntrusions": [],
+        "labelLines": []
+      },
+      {
+        "group": "g11",
+        "size": "mobile",
+        "bad": [],
+        "captions": 1,
+        "centralLabelIntrusions": [],
+        "labelLines": []
+      },
+      {
+        "group": "g16",
+        "size": "mobile",
+        "bad": [],
+        "captions": 2,
+        "centralLabelIntrusions": [],
+        "labelLines": []
+      },
+      {
+        "group": "g44",
+        "size": "mobile",
+        "bad": [],
+        "captions": 1,
+        "centralLabelIntrusions": [],
+        "labelLines": []
+      },
+      {
+        "group": "g2",
+        "size": "mobile",
+        "bad": [],
+        "captions": 2,
+        "centralLabelIntrusions": [],
+        "labelLines": []
+      },
+      {
+        "group": "g24",
+        "size": "mobile",
+        "bad": [],
+        "captions": 1,
+        "centralLabelIntrusions": [],
+        "labelLines": []
+      },
+      {
+        "group": "g27",
+        "size": "mobile",
+        "bad": [],
+        "captions": 1,
+        "centralLabelIntrusions": [],
+        "labelLines": []
+      },
+      {
+        "group": "g3",
+        "size": "mobile",
+        "bad": [],
+        "captions": 1,
+        "centralLabelIntrusions": [],
+        "labelLines": []
+      },
+      {
+        "group": "g47",
+        "size": "mobile",
+        "bad": [],
+        "captions": 1,
+        "centralLabelIntrusions": [],
+        "labelLines": []
+      },
+      {
+        "group": "g8",
+        "size": "mobile",
+        "bad": [],
+        "captions": 1,
+        "centralLabelIntrusions": [],
+        "labelLines": []
+      },
+      {
+        "group": "g9",
+        "size": "mobile",
+        "bad": [],
+        "captions": 2,
+        "centralLabelIntrusions": [],
+        "labelLines": []
+      },
+      {
+        "group": "g43",
+        "size": "mobile",
+        "bad": [],
+        "captions": 1,
+        "centralLabelIntrusions": [],
+        "labelLines": []
+      },
+      {
+        "group": "g4",
+        "size": "mobile",
+        "bad": [],
+        "captions": 1,
+        "centralLabelIntrusions": [],
+        "labelLines": []
+      },
+      {
+        "group": "g52",
+        "size": "mobile",
+        "bad": [],
+        "captions": 1,
+        "centralLabelIntrusions": [],
+        "labelLines": []
+      },
+      {
+        "group": "g39",
+        "size": "mobile",
+        "bad": [],
+        "captions": 1,
+        "centralLabelIntrusions": [],
+        "labelLines": []
+      },
+      {
+        "group": "g32",
+        "size": "mobile",
+        "bad": [],
+        "captions": 1,
+        "centralLabelIntrusions": [],
+        "labelLines": []
+      },
+      {
+        "group": "g41",
+        "size": "mobile",
+        "bad": [],
+        "captions": 1,
+        "centralLabelIntrusions": [],
+        "labelLines": []
+      },
+      {
+        "group": "g7",
+        "size": "mobile",
+        "bad": [],
+        "captions": 1,
+        "centralLabelIntrusions": [],
+        "labelLines": []
+      },
+      {
+        "group": "g42",
+        "size": "mobile",
+        "bad": [],
+        "captions": 1,
+        "centralLabelIntrusions": [],
+        "labelLines": []
+      },
+      {
+        "group": "g17",
+        "size": "mobile",
+        "bad": [],
+        "captions": 2,
+        "centralLabelIntrusions": [],
+        "labelLines": []
+      },
+      {
+        "group": "g10",
+        "size": "mobile",
+        "bad": [],
+        "captions": 1,
+        "centralLabelIntrusions": [],
+        "labelLines": []
+      }
+    ],
+    "refreshedFrames": 22
+  }
+}

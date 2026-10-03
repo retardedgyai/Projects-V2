@@ -1,0 +1,11 @@
+{
+  "status": "PASS",
+  "date": "2026-10-03",
+  "sourceEmbeddedExact": true,
+  "realMouseSelectAllocateRefund": true,
+  "magePairSameInputAnd48Budget": true,
+  "saveRestore": true,
+  "mobileCenterNoLabelIntrusions": true,
+  "realTouchPanAndPinch": true,
+  "htmlSha256": "b9edef12dc91eda8983357df320d543d5aece9b3972d098b64dd2127b34d6c18"
+}

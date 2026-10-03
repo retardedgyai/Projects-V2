@@ -1,0 +1,36 @@
+{
+  "status": "CAPTURED_FROM_ACTUAL_BROWSER",
+  "sameZoom": 0.55,
+  "details": [
+    {
+      "group": "g12",
+      "profileId": "mage:support:plain:standard",
+      "cam": {
+        "x": 3068.5110050000003,
+        "y": -4797.323855000001,
+        "z": 0.55
+      },
+      "file": "ProjectS_PoE2_V6_Region_g12.png"
+    },
+    {
+      "group": "g34",
+      "profileId": "warrior:support:plain:standard",
+      "cam": {
+        "x": 2156.02504,
+        "y": 3326.8015050000004,
+        "z": 0.55
+      },
+      "file": "ProjectS_PoE2_V6_Region_g34.png"
+    },
+    {
+      "group": "g30",
+      "profileId": "assassin:support:plain:standard",
+      "cam": {
+        "x": -2085.94808,
+        "y": 2671.90897,
+        "z": 0.55
+      },
+      "file": "ProjectS_PoE2_V6_Region_g30.png"
+    }
+  ]
+}

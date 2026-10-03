@@ -1,0 +1,19 @@
+{
+  "cam": {
+    "x": 1285,
+    "y": -1220,
+    "z": 0.3548872180451128
+  },
+  "rect": {
+    "x": 0,
+    "y": 76,
+    "w": 1570,
+    "h": 1124
+  },
+  "status": "unshared_rejected_draft",
+  "sourceCenter": [
+    1230,
+    -1245
+  ],
+  "meanStartRadius": 385
+}

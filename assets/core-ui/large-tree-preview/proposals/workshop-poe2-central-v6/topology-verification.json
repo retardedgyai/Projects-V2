@@ -1,0 +1,22 @@
+{
+  "status": "PASS",
+  "nodes": 645,
+  "regions": 47,
+  "origins": 5,
+  "keyLeaves": 15,
+  "edges": 784,
+  "connectedNodes": 645,
+  "sourceFieldsExactExceptXY": true,
+  "startsCollectedAtMapCenter": true,
+  "center": [
+    1230.0,
+    -1245.0
+  ],
+  "centralStartMaxDistance": 900.0,
+  "uniqueRegionShapes": 47,
+  "centralSharedChoices": 10,
+  "maxDegreeTwoRoadRun": 2,
+  "leftPoints": 332,
+  "rightPoints": 313,
+  "outerEmbeddingPreservedThroughCurvedPaths": true
+}
