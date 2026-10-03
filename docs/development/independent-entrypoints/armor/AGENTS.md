@@ -2,6 +2,8 @@
 
 共通の制作品質・Git方針は [管理元AGENTS](C:/Users/xgaiz/Documents/Codex/2026-10-03/task-4/projects-agent-instructions/AGENTS.md)、指示範囲と再開は [管理元の起動・再開規則](C:/Users/xgaiz/Documents/Codex/2026-10-03/task-4/projects-agent-instructions/docs/development/agent-startup-and-resume.md) を読む。ここでは手順本体を複製しない。
 
+成果送付時は、実際に見た原参照URL・具体場面／時刻・採用特徴も短く添え、動画実見／静止画のみ／推測／未確認と後付け参照を区別する。原作品の丸ごと再公開やCreatorへの選定・品質判断の丸投げはしない。詳細は管理元AGENTSに従う。
+
 - 現行候補と証拠は `RESUME_CHECKPOINT_ProjectS_2026-10-03.txt` と担当の最新引継ぎ・親指示を照合する。担当が更新中の候補・画像・検証を旧版へ戻さない。
 - `RESUME_CHECKPOINT_ProjectS.txt` の停止と旧25版状態、2026-09-09の防具制作中止は履歴。再開・5件継続は最新の本人／親指示に従い、旧停止で全体を止め直さない。現在有効な負荷枠は別に守る。
 - このフォルダは独立制作場所。承認済み原画・原本・過去保存版を保持する。形の部分承認、前版比改善、技術検証だけで材質・可動・着用や全品質の合格を推測しない。
