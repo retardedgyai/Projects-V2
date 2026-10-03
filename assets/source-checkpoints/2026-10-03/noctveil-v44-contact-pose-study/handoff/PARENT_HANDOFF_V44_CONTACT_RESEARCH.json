@@ -1,0 +1,57 @@
+{
+  "current_reviewable_candidate": "outputs\\v44_contact_delivery\\projects_noctveil_v44_contact_pose_study.bbmodel",
+  "model_sha256": "3a78b98bbcf43382b9b5811956817c4d28e3d57e6021f0ce340fed2384c6812d",
+  "comparison_library": {
+    "operation": "create_library_file",
+    "status": "succeeded",
+    "path": "/noctveil_v44_contact_pose_comparison.png",
+    "file_id": "file_0000000009548209b6b67e5b4c18ba91",
+    "library_file_id": "libfile_65a082b256ac819189d499de991fe0d5",
+    "file_name": "noctveil_v44_contact_pose_comparison.png",
+    "current_version_number": 0,
+    "restored_from_version_number": null,
+    "xattrs": [
+      {
+        "name": "user.library-file-version",
+        "value": "0"
+      }
+    ],
+    "directory_id": "libdir_52e9179f65688191a2762f0040eefb2d",
+    "mime_type": "image/png",
+    "library_artifact_type": "image",
+    "file_size_bytes": 58089,
+    "local_path": "C:\\Users\\xgaiz\\Documents\\Codex\\2026-10-02\\task-4\\outputs\\v44_contact_delivery\\noctveil_v44_contact_pose_comparison.png",
+    "cloud_save_succeeded": true,
+    "local_metadata_supported": false,
+    "do_not_repeat_cloud_write": true,
+    "scope": "v44 single current contact pose actual before/after pixels; no motion/artistic pass"
+  },
+  "what_changed_visually": "Wrist from[4.9275,19.6478,-26.4979] to[8,18,-27.5]; shoulder roll270->315 puts elbow outside shoulder in both projections. Neck[10,4.8,0]->[0,-35,0] separates cheek from route. Existing right_folded_membrane rotates nativeZ-25 independently of physical forearm; original outer crease branch retained. Same fixed opponent guide. No changed vertex, hierarchy, texture, UV or source clips.",
+  "root_cause": "Previous controller omitted independent membrane bone and effectively moved three leading membrane panels with forearm. Existing rig supports separate membrane rotation; no shape redesign or additional bone needed for this contact pose.",
+  "largest_remaining_obstacle": "At opposite-side exit the hand still becomes hidden in oblique view; complete outside->inside->opposite-side interpolation and recovery to closed idle are not established.",
+  "scope": "Current one contact pose only; previous V43+V42 copies preserved. Native07 is not evidence for currentV44. Concept->real3Dmodel->partial static visual/surface QA->game not connected.",
+  "finite_contact_notes": "Existing two hooks intersect fixed target at front/right edge; palm/radius and membrane do not intersect target. Head/crown crossings0, minimum groundY+.003. No all-time collision proof. New unrelated/adjacent wing crossing pairs remain in evidence; segment length is not penetration depth.",
+  "new_contact_surface_pairs": [
+    [
+      "right_v2_wing_humerus",
+      "right_v24_mantle_panel_01",
+      0.20355942833816562
+    ],
+    [
+      "right_v24_tension_panel_15_0",
+      "right_v24_tension_panel_16_2",
+      10.24855886994311
+    ]
+  ],
+  "source_geometry_hierarchy_uv_textures_original3_clips_exact": true,
+  "geometry_redesign_needed": false,
+  "native_current_verified": false,
+  "full_body_pass": false,
+  "whole_body_gesture_pass": false,
+  "art_pass": false,
+  "game_connected": false,
+  "gui_used": false,
+  "minecraft_input_touched": false,
+  "next_authorized_work": "Expose hand past opposite shoulder in oblique view using existing membrane control; rebuild real connected arm/chest arc and idle recovery. Source changes not currently necessary or authorized. Rejected outer-fold knot not reused.",
+  "push_executor": "Parent task01a1022f-884a-7190-92a6-e08bb1289093; this worker has no Git repo/branch/commit and does not push. Previous v42/v43 delivery manifests remain unchanged."
+}

@@ -102,5 +102,35 @@
     "FileCount": 13,
     "Bytes": 9882694,
     "Manifest": "noctveil-v43-three-pose-study/source-snapshot.json"
+  },
+  {
+    "Snapshot": "noctveil-v44-contact-pose-study",
+    "Status": "FIX_FIRST_SINGLE_STATIC_CONTACT_POSE_SOURCE_SNAPSHOT",
+    "SourceType": "Fixed non-Git editable source checkpoint",
+    "LibraryFileId": "libfile_65a082b256ac819189d499de991fe0d5",
+    "LibraryVersion": 0,
+    "FileCount": 10,
+    "Bytes": 9371177,
+    "Manifest": "noctveil-v44-contact-pose-study/source-snapshot.json"
+  },
+  {
+    "Snapshot": "armor-cloth31c",
+    "Status": "ART_NOT_MET_EDITABLE_CLOTH31C_REPRESENTATIVE_CHECKPOINT",
+    "SourceType": "Fixed non-Git editable source checkpoint",
+    "LibraryFileId": null,
+    "LibraryVersion": null,
+    "FileCount": 28,
+    "Bytes": 6458697,
+    "Manifest": "armor-cloth31c/source-snapshot.json"
+  },
+  {
+    "Snapshot": "ice-garden13c",
+    "Status": "FIX_FIRST_CONTACT13C_EDITABLE_SOURCE_CHECKPOINT",
+    "SourceType": "Fixed non-Git editable source checkpoint",
+    "LibraryFileId": null,
+    "LibraryVersion": null,
+    "FileCount": 291,
+    "Bytes": 9920355,
+    "Manifest": "ice-garden13c/source-snapshot.json"
   }
 ]

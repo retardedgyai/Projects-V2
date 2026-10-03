@@ -1,0 +1,32 @@
+{
+  "CheckedUtc": "2026-10-03T17:38:33.043469+00:00",
+  "IsolatedCopy": true,
+  "OriginalProducerAndArchiveReadsRejected": true,
+  "NativeOrGameRuntimeLaunched": false,
+  "AestheticOrGamePass": false,
+  "SavedSourcePortableVerification": {
+    "status": "NEUTRAL_TECHNICAL_CHECK_ONLY",
+    "protected_source_files": 7,
+    "protected_source_files_changed": [],
+    "body_hardware_belt_boot_geometry_UV_exact30": true,
+    "BB_embedded_RGBA_exact_export": true,
+    "raster_UV_samples": 56662,
+    "transparent_used_texels": 0,
+    "textures": 4
+  },
+  "RebuiltModelFilesExact": {
+    "model.json": true,
+    "model.bbmodel": true,
+    "model.obj": true,
+    "material.mtl": true,
+    "native.png": true,
+    "new-cloth-boots.png": true,
+    "structure-paint.png": true,
+    "hood-shoulder.png": true
+  },
+  "AllEightRebuiltModelFilesByteExact": true,
+  "DeniedReadOrNetworkAttempts": {
+    "filesystem": 0,
+    "network": 0
+  }
+}

@@ -1,0 +1,15 @@
+test_11_protected_and_foundation_frozen (__main__.Contact13.test_11_protected_and_foundation_frozen) ... ok
+test_actual_native_corners_and_uv (__main__.Contact13.test_actual_native_corners_and_uv) ... ok
+test_contact_separates_from_one_low_origin (__main__.Contact13.test_contact_separates_from_one_low_origin) ... ok
+test_floor_collision_and_material_retirement (__main__.Contact13.test_floor_collision_and_material_retirement) ... ok
+test_holes_and_floor_cue_remain_local (__main__.Contact13.test_holes_and_floor_cue_remain_local) ... ok
+test_latest_only_and_outside_ignored (__main__.Contact13.test_latest_only_and_outside_ignored) ... ok
+test_low_split_pause_then_heavy_fall (__main__.Contact13.test_low_split_pause_then_heavy_fall) ... ok
+test_quiet_before_and_after_match_11_pixels (__main__.Contact13.test_quiet_before_and_after_match_11_pixels) ... ok
+test_rigid_and_fixed_contact_anchor (__main__.Contact13.test_rigid_and_fixed_contact_anchor) ... ok
+test_three_closed_positive_volume_pieces (__main__.Contact13.test_three_closed_positive_volume_pieces) ... ok
+
+----------------------------------------------------------------------
+Ran 10 tests in 3.703s
+
+OK

@@ -1,0 +1,3629 @@
+{
+  "model": "outputs\\v44_contact_delivery\\projects_noctveil_v44_contact_pose_study.bbmodel",
+  "sha256": "3a78b98bbcf43382b9b5811956817c4d28e3d57e6021f0ce340fed2384c6812d",
+  "comparison": "outputs\\v44_contact_delivery\\noctveil_v44_contact_pose_comparison.png",
+  "source_geometry_hierarchy_uv_textures_original3_clips_exact": true,
+  "actual_change": "Wrist from[4.9275,19.6478,-26.4979] to[8,18,-27.5]; shoulder roll270->315 puts elbow outside shoulder in both projections. Neck[10,4.8,0]->[0,-35,0] separates cheek from route. Existing right_folded_membrane rotates nativeZ-25 independently of physical forearm; original outer crease branch retained. Same fixed opponent guide. No changed vertex, hierarchy, texture, UV or source clips.",
+  "primary_cause": "Previous controller omitted independent membrane bone and effectively moved three leading membrane panels with forearm. Existing rig supports separate membrane rotation; no shape redesign or additional bone needed for this contact pose.",
+  "current_contact_quality": "The hand/claws are separated from the cheek in plain320x240 views, and existing two hooks visibly reach the fixed guide front/right edge. Still no whole-gesture artistic acceptance.",
+  "largest_remaining_obstacle": "At opposite-side exit the hand still becomes hidden in oblique view; complete outside->inside->opposite-side interpolation and recovery to closed idle are not established.",
+  "full_body_surface_check": {
+    "progress": 0,
+    "broad_phase_mesh_pairs": 653,
+    "crossings": [
+      {
+        "a": "pelvic_carapace_-1",
+        "b": "left_hind_haunch",
+        "owners": [
+          "thorax",
+          "left_hind_upper"
+        ],
+        "directly_adjacent_bones": true,
+        "attacking_wing_involved": false,
+        "crossing_triangle_pairs": 4,
+        "segment_length": 0.2863513104762312,
+        "points": [
+          [
+            -3.489453661926304,
+            14.19059508400876,
+            13.384885325444955
+          ],
+          [
+            -3.3554540815257416,
+            14.12884667628929,
+            13.630299912639845
+          ]
+        ]
+      },
+      {
+        "a": "pelvic_carapace_1",
+        "b": "right_hind_haunch",
+        "owners": [
+          "thorax",
+          "right_hind_upper"
+        ],
+        "directly_adjacent_bones": true,
+        "attacking_wing_involved": false,
+        "crossing_triangle_pairs": 4,
+        "segment_length": 1.0769011848957983,
+        "points": [
+          [
+            7.847906586463448,
+            13.437371656958714,
+            11.655597322061112
+          ],
+          [
+            7.23255216316107,
+            13.303378679057504,
+            12.529153832897897
+          ]
+        ]
+      },
+      {
+        "a": "left_fore_palm",
+        "b": "left_v2_raised_fore_radius",
+        "owners": [
+          "left_fore_foot",
+          "left_fore_lower"
+        ],
+        "directly_adjacent_bones": true,
+        "attacking_wing_involved": false,
+        "crossing_triangle_pairs": 18,
+        "segment_length": 1.23876375546563,
+        "points": [
+          [
+            -8.258738139291022,
+            3.4497840070436316,
+            -10.800000000000002
+          ],
+          [
+            -9.086886502738086,
+            2.5285316366394834,
+            -10.800000000000015
+          ]
+        ]
+      },
+      {
+        "a": "left_hind_haunch",
+        "b": "left_hind_shin",
+        "owners": [
+          "left_hind_upper",
+          "left_hind_lower"
+        ],
+        "directly_adjacent_bones": true,
+        "attacking_wing_involved": false,
+        "crossing_triangle_pairs": 19,
+        "segment_length": 1.7165191945109959,
+        "points": [
+          [
+            -7.34074876344696,
+            9.339630928251912,
+            15.311197864902729
+          ],
+          [
+            -6.200670008149909,
+            8.161420832156137,
+            14.802789027152057
+          ]
+        ]
+      },
+      {
+        "a": "left_hind_haunch",
+        "b": "v3_mantle_chest",
+        "owners": [
+          "left_hind_upper",
+          "thorax"
+        ],
+        "directly_adjacent_bones": true,
+        "attacking_wing_involved": false,
+        "crossing_triangle_pairs": 13,
+        "segment_length": 1.6646396774307,
+        "points": [
+          [
+            -0.9521130394985368,
+            10.097282488136694,
+            12.276857551878749
+          ],
+          [
+            -1.7213872049267849,
+            10.437786550225244,
+            10.840438567813704
+          ]
+        ]
+      },
+      {
+        "a": "left_hind_shin",
+        "b": "left_hind_ankle",
+        "owners": [
+          "left_hind_lower",
+          "left_hind_foot"
+        ],
+        "directly_adjacent_bones": true,
+        "attacking_wing_involved": false,
+        "crossing_triangle_pairs": 17,
+        "segment_length": 1.0905866818144385,
+        "points": [
+          [
+            -9.192277964705529,
+            3.6537698933877722,
+            17.224048780843727
+          ],
+          [
+            -8.975642906873448,
+            3.845597433007113,
+            18.275548071054
+          ]
+        ]
+      },
+      {
+        "a": "right_fore_palm",
+        "b": "right_v2_raised_fore_radius",
+        "owners": [
+          "right_fore_foot",
+          "right_fore_lower"
+        ],
+        "directly_adjacent_bones": true,
+        "attacking_wing_involved": false,
+        "crossing_triangle_pairs": 16,
+        "segment_length": 1.4678163121323946,
+        "points": [
+          [
+            8.510888050382565,
+            3.73925716291633,
+            -10.975292801980462
+          ],
+          [
+            8.41406002975559,
+            3.238733750968855,
+            -12.351732184836047
+          ]
+        ]
+      },
+      {
+        "a": "right_hind_haunch",
+        "b": "right_hind_shin",
+        "owners": [
+          "right_hind_upper",
+          "right_hind_lower"
+        ],
+        "directly_adjacent_bones": true,
+        "attacking_wing_involved": false,
+        "crossing_triangle_pairs": 19,
+        "segment_length": 1.6343241347855688,
+        "points": [
+          [
+            8.369496322844705,
+            5.9130439309061105,
+            12.385044123836076
+          ],
+          [
+            8.34661046175272,
+            6.897880682569475,
+            13.689110144970677
+          ]
+        ]
+      },
+      {
+        "a": "right_hind_haunch",
+        "b": "v3_mantle_chest",
+        "owners": [
+          "right_hind_upper",
+          "thorax"
+        ],
+        "directly_adjacent_bones": true,
+        "attacking_wing_involved": false,
+        "crossing_triangle_pairs": 12,
+        "segment_length": 1.822436115862709,
+        "points": [
+          [
+            5.2720796798395995,
+            10.39829084787619,
+            9.693054136285287
+          ],
+          [
+            6.373119031374343,
+            11.651213581893739,
+            10.427336347260535
+          ]
+        ]
+      },
+      {
+        "a": "right_hind_shin",
+        "b": "right_hind_ankle",
+        "owners": [
+          "right_hind_lower",
+          "right_hind_foot"
+        ],
+        "directly_adjacent_bones": true,
+        "attacking_wing_involved": false,
+        "crossing_triangle_pairs": 24,
+        "segment_length": 1.7396846323299877,
+        "points": [
+          [
+            7.021693917635475,
+            2.710359448938872,
+            17.33782825420969
+          ],
+          [
+            7.999152425793293,
+            3.027883772190399,
+            15.934170251369013
+          ]
+        ]
+      },
+      {
+        "a": "tail_volume_3",
+        "b": "tail_volume_2",
+        "owners": [
+          "tail_3",
+          "tail_2"
+        ],
+        "directly_adjacent_bones": true,
+        "attacking_wing_involved": false,
+        "crossing_triangle_pairs": 18,
+        "segment_length": 0.7974632796871188,
+        "points": [
+          [
+            8.362485842841583,
+            7.191540829830236,
+            33.05196803689327
+          ],
+          [
+            8.975067289354627,
+            7.630928404189273,
+            32.79190994081433
+          ]
+        ]
+      },
+      {
+        "a": "tail_volume_2",
+        "b": "tail_volume_1",
+        "owners": [
+          "tail_2",
+          "tail_1"
+        ],
+        "directly_adjacent_bones": true,
+        "attacking_wing_involved": false,
+        "crossing_triangle_pairs": 20,
+        "segment_length": 1.020046056831509,
+        "points": [
+          [
+            5.551356242693297,
+            8.90833212387211,
+            26.885435323421177
+          ],
+          [
+            5.1661592220225945,
+            9.76039630943166,
+            27.292993708208762
+          ]
+        ]
+      },
+      {
+        "a": "tail_volume_1",
+        "b": "tail_volume_0",
+        "owners": [
+          "tail_1",
+          "tail_0"
+        ],
+        "directly_adjacent_bones": true,
+        "attacking_wing_involved": false,
+        "crossing_triangle_pairs": 22,
+        "segment_length": 1.4752628118129187,
+        "points": [
+          [
+            4.820570311689822,
+            9.283558975100995,
+            19.79480315621059
+          ],
+          [
+            3.674624333247367,
+            8.719475061182983,
+            20.533056172776497
+          ]
+        ]
+      },
+      {
+        "a": "tail_volume_0",
+        "b": "v3_mantle_chest",
+        "owners": [
+          "tail_0",
+          "thorax"
+        ],
+        "directly_adjacent_bones": true,
+        "attacking_wing_involved": false,
+        "crossing_triangle_pairs": 24,
+        "segment_length": 2.6037162167491568,
+        "points": [
+          [
+            2.4791988546665893,
+            14.183371323219427,
+            15.481976309051351
+          ],
+          [
+            0.16566287833231577,
+            13.084963687075327,
+            15.951433536527817
+          ]
+        ]
+      },
+      {
+        "a": "left_v2_raised_fore_upper",
+        "b": "left_v2_raised_fore_radius",
+        "owners": [
+          "left_fore_upper",
+          "left_fore_lower"
+        ],
+        "directly_adjacent_bones": true,
+        "attacking_wing_involved": false,
+        "crossing_triangle_pairs": 18,
+        "segment_length": 1.8687409984404522,
+        "points": [
+          [
+            -11.103754799452375,
+            9.598983220609448,
+            -5.28727510040655
+          ],
+          [
+            -9.730725391008935,
+            10.167857387969896,
+            -6.420132260207216
+          ]
+        ]
+      },
+      {
+        "a": "left_v2_raised_fore_upper",
+        "b": "v3_mantle_chest",
+        "owners": [
+          "left_fore_upper",
+          "thorax"
+        ],
+        "directly_adjacent_bones": true,
+        "attacking_wing_involved": false,
+        "crossing_triangle_pairs": 21,
+        "segment_length": 2.5618926408776783,
+        "points": [
+          [
+            -6.84704630953176,
+            20.037921584240642,
+            -3.8028342259508436
+          ],
+          [
+            -7.00809356371401,
+            17.553220116986402,
+            -3.199828169656059
+          ]
+        ]
+      },
+      {
+        "a": "left_v2_raised_fore_upper",
+        "b": "v3_descending_throat",
+        "owners": [
+          "left_fore_upper",
+          "neck"
+        ],
+        "directly_adjacent_bones": false,
+        "attacking_wing_involved": false,
+        "crossing_triangle_pairs": 13,
+        "segment_length": 1.8163377189768979,
+        "points": [
+          [
+            -3.651644741237805,
+            18.66348018307868,
+            -5.407256673432478
+          ],
+          [
+            -4.152421902369065,
+            17.818718680200185,
+            -6.93522360616433
+          ]
+        ]
+      },
+      {
+        "a": "right_v2_raised_fore_upper",
+        "b": "right_v2_raised_fore_radius",
+        "owners": [
+          "right_fore_upper",
+          "right_fore_lower"
+        ],
+        "directly_adjacent_bones": true,
+        "attacking_wing_involved": false,
+        "crossing_triangle_pairs": 17,
+        "segment_length": 1.9203891892709546,
+        "points": [
+          [
+            12.15150195423483,
+            9.915770572275388,
+            -5.996626001652953
+          ],
+          [
+            10.468982479164648,
+            10.139847702112945,
+            -6.894853308163993
+          ]
+        ]
+      },
+      {
+        "a": "right_v2_raised_fore_upper",
+        "b": "v3_mantle_chest",
+        "owners": [
+          "right_fore_upper",
+          "thorax"
+        ],
+        "directly_adjacent_bones": true,
+        "attacking_wing_involved": false,
+        "crossing_triangle_pairs": 20,
+        "segment_length": 3.0017778824526533,
+        "points": [
+          [
+            7.038956307731582,
+            19.897831070309415,
+            -6.155340275500306
+          ],
+          [
+            7.38709536771481,
+            17.334259819499735,
+            -4.632982862631035
+          ]
+        ]
+      },
+      {
+        "a": "left_v2_wing_humerus",
+        "b": "left_v2_folded_radius",
+        "owners": [
+          "left_wing_shoulder",
+          "left_wing_forearm"
+        ],
+        "directly_adjacent_bones": true,
+        "attacking_wing_involved": false,
+        "crossing_triangle_pairs": 22,
+        "segment_length": 0.9825644540888496,
+        "points": [
+          [
+            -11.955074119887772,
+            23.701846182791293,
+            0.7765937768465008
+          ],
+          [
+            -11.596959082135806,
+            24.29023202490138,
+            1.4772995831441453
+          ]
+        ]
+      },
+      {
+        "a": "left_v2_wing_humerus",
+        "b": "left_v24_mantle_panel_00",
+        "owners": [
+          "left_wing_shoulder",
+          "left_mantle_hinge_00"
+        ],
+        "directly_adjacent_bones": false,
+        "attacking_wing_involved": false,
+        "crossing_triangle_pairs": 5,
+        "segment_length": 0.49674343110244834,
+        "points": [
+          [
+            -7.604979346062257,
+            28.244120337389027,
+            -2.448519481731185
+          ],
+          [
+            -7.2152443764467415,
+            27.94183322039028,
+            -2.3895009363508466
+          ]
+        ]
+      },
+      {
+        "a": "left_v2_wing_humerus",
+        "b": "left_v24_mantle_panel_02",
+        "owners": [
+          "left_wing_shoulder",
+          "left_mantle_hinge_02"
+        ],
+        "directly_adjacent_bones": false,
+        "attacking_wing_involved": false,
+        "crossing_triangle_pairs": 23,
+        "segment_length": 3.7640516838642886,
+        "points": [
+          [
+            -11.776527238983368,
+            24.845201440348827,
+            1.7681205324859623
+          ],
+          [
+            -9.595603859468635,
+            26.81785055438074,
+            -0.5814142649572962
+          ]
+        ]
+      },
+      {
+        "a": "left_v2_wing_humerus",
+        "b": "left_v24_mantle_panel_03",
+        "owners": [
+          "left_wing_shoulder",
+          "left_mantle_hinge_03"
+        ],
+        "directly_adjacent_bones": false,
+        "attacking_wing_involved": false,
+        "crossing_triangle_pairs": 15,
+        "segment_length": 2.273147126135373,
+        "points": [
+          [
+            -9.33152114042268,
+            27.166289617291845,
+            -1.0281257283245449
+          ],
+          [
+            -8.567896993304844,
+            28.40363769769086,
+            -2.775422425204881
+          ]
+        ]
+      },
+      {
+        "a": "left_v2_wing_humerus",
+        "b": "left_v24_mantle_panel_04",
+        "owners": [
+          "left_wing_shoulder",
+          "left_folded_membrane"
+        ],
+        "directly_adjacent_bones": false,
+        "attacking_wing_involved": false,
+        "crossing_triangle_pairs": 4,
+        "segment_length": 0.16596589606662507,
+        "points": [
+          [
+            -13.314773182768356,
+            24.50742806629003,
+            0.4125291323586103
+          ],
+          [
+            -13.37739751417345,
+            24.448717170556574,
+            0.27048722834631533
+          ]
+        ]
+      },
+      {
+        "a": "left_v2_wing_humerus",
+        "b": "left_v24_wing_digit_0_segment_0",
+        "owners": [
+          "left_wing_shoulder",
+          "left_mantle_hinge_00"
+        ],
+        "directly_adjacent_bones": false,
+        "attacking_wing_involved": false,
+        "crossing_triangle_pairs": 10,
+        "segment_length": 0.8963798673722724,
+        "points": [
+          [
+            -8.402299913054932,
+            28.66221780507354,
+            -3.797563031060958
+          ],
+          [
+            -8.10232404849901,
+            28.55886651327626,
+            -2.959213546777647
+          ]
+        ]
+      },
+      {
+        "a": "left_v2_wing_humerus",
+        "b": "v3_mantle_chest",
+        "owners": [
+          "left_wing_shoulder",
+          "thorax"
+        ],
+        "directly_adjacent_bones": true,
+        "attacking_wing_involved": false,
+        "crossing_triangle_pairs": 18,
+        "segment_length": 2.2722093789032023,
+        "points": [
+          [
+            -4.359218486712965,
+            25.58440299235152,
+            -6.621405468761143
+          ],
+          [
+            -4.770917623195331,
+            25.659647760525303,
+            -4.388072195947203
+          ]
+        ]
+      },
+      {
+        "a": "left_v2_wing_humerus",
+        "b": "v3_mantle_collar_left",
+        "owners": [
+          "left_wing_shoulder",
+          "thorax"
+        ],
+        "directly_adjacent_bones": true,
+        "attacking_wing_involved": false,
+        "crossing_triangle_pairs": 28,
+        "segment_length": 2.4116088370206517,
+        "points": [
+          [
+            -4.33471057126102,
+            25.5655865802537,
+            -6.6372184303085735
+          ],
+          [
+            -5.025239864792089,
+            25.869931416535067,
+            -4.346716149541219
+          ]
+        ]
+      },
+      {
+        "a": "left_v2_folded_radius",
+        "b": "left_v2_folded_knuckle",
+        "owners": [
+          "left_wing_forearm",
+          "left_wing_hand"
+        ],
+        "directly_adjacent_bones": true,
+        "attacking_wing_involved": false,
+        "crossing_triangle_pairs": 20,
+        "segment_length": 0.8320608876004387,
+        "points": [
+          [
+            -11.449861261840262,
+            14.886222848087804,
+            7.3011278742893815
+          ],
+          [
+            -11.82190231267079,
+            14.44744962576895,
+            6.69997162459445
+          ]
+        ]
+      },
+      {
+        "a": "left_v2_folded_radius",
+        "b": "left_v24_mantle_panel_02",
+        "owners": [
+          "left_wing_forearm",
+          "left_mantle_hinge_02"
+        ],
+        "directly_adjacent_bones": false,
+        "attacking_wing_involved": false,
+        "crossing_triangle_pairs": 14,
+        "segment_length": 1.4609203099323382,
+        "points": [
+          [
+            -12.081634029675845,
+            24.806379513158195,
+            1.9328116738747259
+          ],
+          [
+            -13.28005983136022,
+            24.36588505749965,
+            1.2228621092125267
+          ]
+        ]
+      },
+      {
+        "a": "left_v2_folded_radius",
+        "b": "left_v24_mantle_panel_04",
+        "owners": [
+          "left_wing_forearm",
+          "left_folded_membrane"
+        ],
+        "directly_adjacent_bones": true,
+        "attacking_wing_involved": false,
+        "crossing_triangle_pairs": 18,
+        "segment_length": 2.6771629419790743,
+        "points": [
+          [
+            -13.656759867029347,
+            22.083463104067494,
+            3.37164024271266
+          ],
+          [
+            -13.285818350660168,
+            24.051496050593844,
+            1.5950001185663543
+          ]
+        ]
+      },
+      {
+        "a": "left_v2_folded_hook_0",
+        "b": "left_v24_mantle_panel_05",
+        "owners": [
+          "left_wing_hand",
+          "left_folded_membrane"
+        ],
+        "directly_adjacent_bones": false,
+        "attacking_wing_involved": false,
+        "crossing_triangle_pairs": 23,
+        "segment_length": 0.49500768175195853,
+        "points": [
+          [
+            -13.292376211897343,
+            13.1399153615653,
+            9.348572921147674
+          ],
+          [
+            -13.191493635538993,
+            12.912116856869364,
+            9.776314843384723
+          ]
+        ]
+      },
+      {
+        "a": "right_v2_wing_humerus",
+        "b": "right_v2_folded_radius",
+        "owners": [
+          "right_wing_shoulder",
+          "right_wing_forearm"
+        ],
+        "directly_adjacent_bones": true,
+        "attacking_wing_involved": true,
+        "crossing_triangle_pairs": 22,
+        "segment_length": 1.3042235359898795,
+        "points": [
+          [
+            6.266525070280834,
+            27.38473319325557,
+            -21.830916883373302
+          ],
+          [
+            5.031813769612955,
+            26.97258398923477,
+            -21.91228069263762
+          ]
+        ]
+      },
+      {
+        "a": "right_v2_wing_humerus",
+        "b": "right_v24_mantle_panel_00",
+        "owners": [
+          "right_wing_shoulder",
+          "right_mantle_hinge_00"
+        ],
+        "directly_adjacent_bones": false,
+        "attacking_wing_involved": true,
+        "crossing_triangle_pairs": 32,
+        "segment_length": 2.7923195261643707,
+        "points": [
+          [
+            5.702019964481977,
+            27.73530562181412,
+            -15.824800263859672
+          ],
+          [
+            5.387258514038104,
+            26.253709394697793,
+            -13.478985653685212
+          ]
+        ]
+      },
+      {
+        "a": "right_v2_wing_humerus",
+        "b": "right_v24_mantle_panel_01",
+        "owners": [
+          "right_wing_shoulder",
+          "right_mantle_hinge_01"
+        ],
+        "directly_adjacent_bones": false,
+        "attacking_wing_involved": true,
+        "crossing_triangle_pairs": 4,
+        "segment_length": 0.20355942833816562,
+        "points": [
+          [
+            5.3906461976376185,
+            26.252936587432128,
+            -13.404965619699963
+          ],
+          [
+            5.25705367830971,
+            26.19269331584952,
+            -13.263684949139524
+          ]
+        ]
+      },
+      {
+        "a": "right_v2_wing_humerus",
+        "b": "right_v24_mantle_panel_02",
+        "owners": [
+          "right_wing_shoulder",
+          "right_mantle_hinge_02"
+        ],
+        "directly_adjacent_bones": false,
+        "attacking_wing_involved": true,
+        "crossing_triangle_pairs": 19,
+        "segment_length": 3.6516174291069508,
+        "points": [
+          [
+            1.9963863468653673,
+            29.07883344394738,
+            -16.402184066804455
+          ],
+          [
+            3.1420352173281905,
+            28.473843494448655,
+            -19.816241136504733
+          ]
+        ]
+      },
+      {
+        "a": "right_v2_wing_humerus",
+        "b": "right_v24_mantle_panel_03",
+        "owners": [
+          "right_wing_shoulder",
+          "right_mantle_hinge_03"
+        ],
+        "directly_adjacent_bones": false,
+        "attacking_wing_involved": true,
+        "crossing_triangle_pairs": 15,
+        "segment_length": 1.6382289044517357,
+        "points": [
+          [
+            6.546283877908287,
+            27.688045501489224,
+            -20.052485094459485
+          ],
+          [
+            5.789244734057613,
+            28.668752979304895,
+            -18.980618255241385
+          ]
+        ]
+      },
+      {
+        "a": "right_v2_wing_humerus",
+        "b": "right_v24_wing_digit_0_segment_0",
+        "owners": [
+          "right_wing_shoulder",
+          "right_mantle_hinge_00"
+        ],
+        "directly_adjacent_bones": false,
+        "attacking_wing_involved": true,
+        "crossing_triangle_pairs": 22,
+        "segment_length": 0.7114337991834894,
+        "points": [
+          [
+            5.268923322613344,
+            29.500267232180526,
+            -18.84212459946479
+          ],
+          [
+            5.209974281802035,
+            29.60323616942414,
+            -18.140654386860575
+          ]
+        ]
+      },
+      {
+        "a": "right_v2_folded_radius",
+        "b": "right_v2_folded_knuckle",
+        "owners": [
+          "right_wing_forearm",
+          "right_wing_hand"
+        ],
+        "directly_adjacent_bones": true,
+        "attacking_wing_involved": true,
+        "crossing_triangle_pairs": 17,
+        "segment_length": 0.9231685102604479,
+        "points": [
+          [
+            7.772114465282212,
+            17.94343110891484,
+            -26.437419094478095
+          ],
+          [
+            6.989398677703149,
+            18.312030792422487,
+            -26.75949108569907
+          ]
+        ]
+      },
+      {
+        "a": "right_v2_folded_radius",
+        "b": "right_v24_mantle_panel_02",
+        "owners": [
+          "right_wing_forearm",
+          "right_mantle_hinge_02"
+        ],
+        "directly_adjacent_bones": false,
+        "attacking_wing_involved": true,
+        "crossing_triangle_pairs": 25,
+        "segment_length": 1.5996105627028798,
+        "points": [
+          [
+            7.058289171055843,
+            25.92263039737926,
+            -24.15265124490351
+          ],
+          [
+            5.7513239415057615,
+            26.816644516643628,
+            -23.92607985303401
+          ]
+        ]
+      },
+      {
+        "a": "right_v2_folded_radius",
+        "b": "right_v24_mantle_panel_04",
+        "owners": [
+          "right_wing_forearm",
+          "right_folded_membrane"
+        ],
+        "directly_adjacent_bones": true,
+        "attacking_wing_involved": true,
+        "crossing_triangle_pairs": 18,
+        "segment_length": 3.387090962502534,
+        "points": [
+          [
+            7.638254931310035,
+            24.439448255373375,
+            -25.42968038621578
+          ],
+          [
+            5.751323941505683,
+            26.816644516643713,
+            -23.926079853033965
+          ]
+        ]
+      },
+      {
+        "a": "right_v2_folded_radius",
+        "b": "right_v24_mantle_panel_05",
+        "owners": [
+          "right_wing_forearm",
+          "right_folded_membrane"
+        ],
+        "directly_adjacent_bones": true,
+        "attacking_wing_involved": true,
+        "crossing_triangle_pairs": 9,
+        "segment_length": 0.36878002581286684,
+        "points": [
+          [
+            7.844249751456252,
+            19.69551978462042,
+            -25.99035994169092
+          ],
+          [
+            7.5266080463677,
+            19.823697758647853,
+            -25.853711262219807
+          ]
+        ]
+      },
+      {
+        "a": "right_v2_folded_radius",
+        "b": "right_v24_mantle_panel_06",
+        "owners": [
+          "right_wing_forearm",
+          "right_folded_membrane"
+        ],
+        "directly_adjacent_bones": true,
+        "attacking_wing_involved": true,
+        "crossing_triangle_pairs": 9,
+        "segment_length": 1.081194061421258,
+        "points": [
+          [
+            8.396649839446948,
+            19.98271885202236,
+            -26.17524310055055
+          ],
+          [
+            8.30538150999801,
+            21.054317501602018,
+            -26.286270235572786
+          ]
+        ]
+      },
+      {
+        "a": "right_v2_folded_radius",
+        "b": "right_v24_wing_digit_1_segment_0",
+        "owners": [
+          "right_wing_forearm",
+          "right_folded_membrane"
+        ],
+        "directly_adjacent_bones": true,
+        "attacking_wing_involved": true,
+        "crossing_triangle_pairs": 10,
+        "segment_length": 0.8820053420394125,
+        "points": [
+          [
+            8.112188140067735,
+            21.824360249098895,
+            -25.92611976315582
+          ],
+          [
+            8.223060714930078,
+            20.950048688273426,
+            -25.961048120351492
+          ]
+        ]
+      },
+      {
+        "a": "left_v24_mantle_panel_00",
+        "b": "left_v24_wing_digit_2_segment_0",
+        "owners": [
+          "left_mantle_hinge_00",
+          "left_mantle_hinge_01"
+        ],
+        "directly_adjacent_bones": true,
+        "attacking_wing_involved": false,
+        "crossing_triangle_pairs": 4,
+        "segment_length": 0.19439030288469167,
+        "points": [
+          [
+            -2.54436753929187,
+            25.537934121630723,
+            -8.27314726900322
+          ],
+          [
+            -2.5239184226297895,
+            25.50197957592757,
+            -8.083208610150887
+          ]
+        ]
+      },
+      {
+        "a": "left_v24_mantle_panel_00",
+        "b": "v3_mantle_chest",
+        "owners": [
+          "left_mantle_hinge_00",
+          "thorax"
+        ],
+        "directly_adjacent_bones": false,
+        "attacking_wing_involved": false,
+        "crossing_triangle_pairs": 11,
+        "segment_length": 3.4806068476617464,
+        "points": [
+          [
+            -2.4367295854237248,
+            25.468786999525463,
+            -8.33773096588035
+          ],
+          [
+            -4.058467582906577,
+            26.285314015131213,
+            -5.368240516611972
+          ]
+        ]
+      },
+      {
+        "a": "left_v24_mantle_panel_00",
+        "b": "v3_mantle_collar_left",
+        "owners": [
+          "left_mantle_hinge_00",
+          "thorax"
+        ],
+        "directly_adjacent_bones": false,
+        "attacking_wing_involved": false,
+        "crossing_triangle_pairs": 13,
+        "segment_length": 0.9204197050103659,
+        "points": [
+          [
+            -4.935035549215936,
+            26.149588603303602,
+            -1.9107221362659645
+          ],
+          [
+            -4.579467784114965,
+            26.032414788936336,
+            -2.7515635571171826
+          ]
+        ]
+      },
+      {
+        "a": "left_v24_mantle_panel_01",
+        "b": "left_v24_wing_digit_0_segment_0",
+        "owners": [
+          "left_mantle_hinge_01",
+          "left_mantle_hinge_00"
+        ],
+        "directly_adjacent_bones": true,
+        "attacking_wing_involved": false,
+        "crossing_triangle_pairs": 9,
+        "segment_length": 0.3352074808235218,
+        "points": [
+          [
+            -7.424742713699131,
+            26.52026547082798,
+            7.443493638568244
+          ],
+          [
+            -7.437517932114439,
+            26.558735247469873,
+            7.110746098713152
+          ]
+        ]
+      },
+      {
+        "a": "left_v24_mantle_panel_01",
+        "b": "left_v24_wing_digit_2_segment_1",
+        "owners": [
+          "left_mantle_hinge_01",
+          "left_mantle_hinge_13"
+        ],
+        "directly_adjacent_bones": false,
+        "attacking_wing_involved": false,
+        "crossing_triangle_pairs": 4,
+        "segment_length": 0.17212162593852307,
+        "points": [
+          [
+            -0.5347018659053195,
+            24.262463710711284,
+            3.7192440122114765
+          ],
+          [
+            -0.6963260520297374,
+            24.313309834229475,
+            3.7495449742178755
+          ]
+        ]
+      },
+      {
+        "a": "left_v24_mantle_panel_01",
+        "b": "v3_mantle_chest",
+        "owners": [
+          "left_mantle_hinge_01",
+          "thorax"
+        ],
+        "directly_adjacent_bones": false,
+        "attacking_wing_involved": false,
+        "crossing_triangle_pairs": 13,
+        "segment_length": 3.629854766929637,
+        "points": [
+          [
+            -3.22192190730593,
+            25.606075714846625,
+            -1.1376286840411458
+          ],
+          [
+            -0.9099245390345894,
+            24.49462159826472,
+            1.4304802592946597
+          ]
+        ]
+      },
+      {
+        "a": "left_v24_mantle_panel_01",
+        "b": "v3_mantle_collar_left",
+        "owners": [
+          "left_mantle_hinge_01",
+          "thorax"
+        ],
+        "directly_adjacent_bones": false,
+        "attacking_wing_involved": false,
+        "crossing_triangle_pairs": 6,
+        "segment_length": 0.24732294825084739,
+        "points": [
+          [
+            -4.620203069109012,
+            25.92589038153463,
+            -1.6939467891904805
+          ],
+          [
+            -4.563352369361944,
+            25.87008201867606,
+            -1.4598056665639616
+          ]
+        ]
+      },
+      {
+        "a": "left_v24_mantle_panel_02",
+        "b": "left_v24_wing_digit_0_segment_0",
+        "owners": [
+          "left_mantle_hinge_02",
+          "left_mantle_hinge_00"
+        ],
+        "directly_adjacent_bones": false,
+        "attacking_wing_involved": false,
+        "crossing_triangle_pairs": 8,
+        "segment_length": 0.4111133827399133,
+        "points": [
+          [
+            -8.593862999128316,
+            28.871102732889966,
+            -4.517983231265405
+          ],
+          [
+            -8.566928995833806,
+            28.751103027024843,
+            -4.125696545885096
+          ]
+        ]
+      },
+      {
+        "a": "left_v24_mantle_panel_02",
+        "b": "left_v24_wing_digit_1_segment_0",
+        "owners": [
+          "left_mantle_hinge_02",
+          "left_folded_membrane"
+        ],
+        "directly_adjacent_bones": true,
+        "attacking_wing_involved": false,
+        "crossing_triangle_pairs": 4,
+        "segment_length": 0.16621509471945986,
+        "points": [
+          [
+            -13.142526003045855,
+            20.485176466633185,
+            11.47797758419441
+          ],
+          [
+            -13.05161543238064,
+            20.485632766292035,
+            11.617126848096685
+          ]
+        ]
+      },
+      {
+        "a": "left_v24_mantle_panel_03",
+        "b": "left_v24_wing_digit_0_segment_0",
+        "owners": [
+          "left_mantle_hinge_03",
+          "left_mantle_hinge_00"
+        ],
+        "directly_adjacent_bones": true,
+        "attacking_wing_involved": false,
+        "crossing_triangle_pairs": 14,
+        "segment_length": 7.001299223251622,
+        "points": [
+          [
+            -8.445503170888633,
+            28.06118498112135,
+            -0.8715830494220036
+          ],
+          [
+            -8.092501797491195,
+            26.750491458652256,
+            5.996871167797534
+          ]
+        ]
+      },
+      {
+        "a": "left_v24_mantle_panel_03",
+        "b": "left_v24_wing_digit_0_segment_1",
+        "owners": [
+          "left_mantle_hinge_03",
+          "left_mantle_hinge_08"
+        ],
+        "directly_adjacent_bones": false,
+        "attacking_wing_involved": false,
+        "crossing_triangle_pairs": 7,
+        "segment_length": 0.32845809164138956,
+        "points": [
+          [
+            -8.019584266246273,
+            26.417651332629735,
+            7.598547273487186
+          ],
+          [
+            -7.776200262613055,
+            26.63543481308206,
+            7.633465755445035
+          ]
+        ]
+      },
+      {
+        "a": "left_v24_mantle_panel_03",
+        "b": "left_v24_wing_digit_1_segment_0",
+        "owners": [
+          "left_mantle_hinge_03",
+          "left_folded_membrane"
+        ],
+        "directly_adjacent_bones": false,
+        "attacking_wing_involved": false,
+        "crossing_triangle_pairs": 4,
+        "segment_length": 0.18159967424299148,
+        "points": [
+          [
+            -12.899796093048286,
+            20.51379526664302,
+            11.943940248558782
+          ],
+          [
+            -12.946738449126965,
+            20.48423482846854,
+            11.771021084248183
+          ]
+        ]
+      },
+      {
+        "a": "left_v24_mantle_panel_06",
+        "b": "left_v24_wing_digit_1_segment_1",
+        "owners": [
+          "left_folded_membrane",
+          "left_mantle_hinge_07"
+        ],
+        "directly_adjacent_bones": false,
+        "attacking_wing_involved": false,
+        "crossing_triangle_pairs": 8,
+        "segment_length": 0.4969827166377627,
+        "points": [
+          [
+            -13.159771249251246,
+            19.765167869271657,
+            11.97902896987317
+          ],
+          [
+            -13.133638454722057,
+            20.234401907715178,
+            12.140671522602117
+          ]
+        ]
+      },
+      {
+        "a": "left_v24_mantle_panel_07",
+        "b": "left_v24_wing_digit_0_segment_1",
+        "owners": [
+          "left_mantle_hinge_07",
+          "left_mantle_hinge_08"
+        ],
+        "directly_adjacent_bones": true,
+        "attacking_wing_involved": false,
+        "crossing_triangle_pairs": 7,
+        "segment_length": 0.15020807422189275,
+        "points": [
+          [
+            -8.016119548804445,
+            26.34878078358616,
+            7.835309538163195
+          ],
+          [
+            -7.943958269785156,
+            26.25851848120574,
+            7.931267508862536
+          ]
+        ]
+      },
+      {
+        "a": "left_v24_mantle_panel_07",
+        "b": "left_v24_wing_digit_1_segment_0",
+        "owners": [
+          "left_mantle_hinge_07",
+          "left_folded_membrane"
+        ],
+        "directly_adjacent_bones": false,
+        "attacking_wing_involved": false,
+        "crossing_triangle_pairs": 6,
+        "segment_length": 0.41841448701513556,
+        "points": [
+          [
+            -13.133638454722092,
+            20.234401907714982,
+            12.140671522602057
+          ],
+          [
+            -12.747106074400742,
+            20.38651573498017,
+            12.090424279274814
+          ]
+        ]
+      },
+      {
+        "a": "left_v24_mantle_panel_08",
+        "b": "left_v24_wing_digit_0_segment_2",
+        "owners": [
+          "left_mantle_hinge_08",
+          "left_mantle_hinge_11"
+        ],
+        "directly_adjacent_bones": false,
+        "attacking_wing_involved": false,
+        "crossing_triangle_pairs": 5,
+        "segment_length": 0.33296622260591563,
+        "points": [
+          [
+            -3.0840079932529263,
+            22.184432902852215,
+            14.564452275432417
+          ],
+          [
+            -3.366679167027422,
+            22.011459365144805,
+            14.532146421994005
+          ]
+        ]
+      },
+      {
+        "a": "left_v24_mantle_panel_08",
+        "b": "left_v24_wing_digit_1_segment_1",
+        "owners": [
+          "left_mantle_hinge_08",
+          "left_mantle_hinge_07"
+        ],
+        "directly_adjacent_bones": true,
+        "attacking_wing_involved": false,
+        "crossing_triangle_pairs": 5,
+        "segment_length": 0.23575714758955152,
+        "points": [
+          [
+            -10.50826097110867,
+            14.431267261715076,
+            17.297154206080187
+          ],
+          [
+            -10.550775692235193,
+            14.57878319181685,
+            17.118232487182496
+          ]
+        ]
+      },
+      {
+        "a": "left_v24_tension_panel_9_0",
+        "b": "left_v24_wing_digit_1_segment_1",
+        "owners": [
+          "left_mantle_hinge_09",
+          "left_mantle_hinge_07"
+        ],
+        "directly_adjacent_bones": true,
+        "attacking_wing_involved": false,
+        "crossing_triangle_pairs": 9,
+        "segment_length": 0.2080556020036306,
+        "points": [
+          [
+            -12.985296797541826,
+            19.435945174569028,
+            12.321153980770365
+          ],
+          [
+            -12.959017145712608,
+            19.263187339387326,
+            12.434075386217517
+          ]
+        ]
+      },
+      {
+        "a": "left_v24_tension_panel_9_1",
+        "b": "left_v24_wing_digit_1_segment_1",
+        "owners": [
+          "left_mantle_hinge_09",
+          "left_mantle_hinge_07"
+        ],
+        "directly_adjacent_bones": true,
+        "attacking_wing_involved": false,
+        "crossing_triangle_pairs": 10,
+        "segment_length": 1.1322738379023227,
+        "points": [
+          [
+            -12.838227468092041,
+            18.934949530611927,
+            12.782041283629209
+          ],
+          [
+            -12.49016576286701,
+            18.117245218332258,
+            13.483651396892359
+          ]
+        ]
+      },
+      {
+        "a": "left_v24_tension_panel_9_2",
+        "b": "left_v24_wing_digit_1_segment_1",
+        "owners": [
+          "left_mantle_hinge_09",
+          "left_mantle_hinge_07"
+        ],
+        "directly_adjacent_bones": true,
+        "attacking_wing_involved": false,
+        "crossing_triangle_pairs": 12,
+        "segment_length": 4.31444355961972,
+        "points": [
+          [
+            -12.454164590940835,
+            18.2142647905908,
+            13.47203095747248
+          ],
+          [
+            -11.152473062133465,
+            15.220187257783111,
+            16.29258447061692
+          ]
+        ]
+      },
+      {
+        "a": "left_v24_tension_panel_10_0",
+        "b": "left_v24_wing_digit_0_segment_2",
+        "owners": [
+          "left_mantle_hinge_10",
+          "left_mantle_hinge_11"
+        ],
+        "directly_adjacent_bones": true,
+        "attacking_wing_involved": false,
+        "crossing_triangle_pairs": 4,
+        "segment_length": 0.059644071368363354,
+        "points": [
+          [
+            -3.26029917533297,
+            21.948834439145216,
+            14.73203302046847
+          ],
+          [
+            -3.252592658628843,
+            21.96546431421185,
+            14.67527500689372
+          ]
+        ]
+      },
+      {
+        "a": "left_v24_tension_panel_10_0",
+        "b": "left_v24_wing_digit_1_segment_1",
+        "owners": [
+          "left_mantle_hinge_10",
+          "left_mantle_hinge_07"
+        ],
+        "directly_adjacent_bones": false,
+        "attacking_wing_involved": false,
+        "crossing_triangle_pairs": 6,
+        "segment_length": 0.24042636294580483,
+        "points": [
+          [
+            -10.458291830469381,
+            14.257414608504563,
+            17.508471790940153
+          ],
+          [
+            -10.655852605345826,
+            14.1245033591986,
+            17.475167496359802
+          ]
+        ]
+      },
+      {
+        "a": "left_v24_tension_panel_10_1",
+        "b": "left_v24_wing_digit_0_segment_2",
+        "owners": [
+          "left_mantle_hinge_10",
+          "left_mantle_hinge_11"
+        ],
+        "directly_adjacent_bones": true,
+        "attacking_wing_involved": false,
+        "crossing_triangle_pairs": 4,
+        "segment_length": 0.05651188166444819,
+        "points": [
+          [
+            -3.242743019687082,
+            21.92596516129229,
+            14.814968248624645
+          ],
+          [
+            -3.233451856450018,
+            21.941731537067078,
+            14.76150154450061
+          ]
+        ]
+      },
+      {
+        "a": "left_v24_tension_panel_10_2",
+        "b": "left_v24_wing_digit_0_segment_2",
+        "owners": [
+          "left_mantle_hinge_10",
+          "left_mantle_hinge_11"
+        ],
+        "directly_adjacent_bones": true,
+        "attacking_wing_involved": false,
+        "crossing_triangle_pairs": 2,
+        "segment_length": 0.03361042041064439,
+        "points": [
+          [
+            -3.236532128307181,
+            21.917490092502575,
+            14.845651819480043
+          ],
+          [
+            -3.223814372765459,
+            21.926633881556747,
+            14.815914466270753
+          ]
+        ]
+      },
+      {
+        "a": "left_v24_mantle_panel_11",
+        "b": "left_v24_wing_digit_0_segment_3",
+        "owners": [
+          "left_mantle_hinge_11",
+          "left_mantle_hinge_15"
+        ],
+        "directly_adjacent_bones": true,
+        "attacking_wing_involved": false,
+        "crossing_triangle_pairs": 4,
+        "segment_length": 0.16110534807709423,
+        "points": [
+          [
+            -5.090612934436923,
+            19.02517634183546,
+            24.398226084265012
+          ],
+          [
+            -5.037185167214314,
+            19.12910672760265,
+            24.28732576062738
+          ]
+        ]
+      },
+      {
+        "a": "left_v24_mantle_panel_11",
+        "b": "left_v24_wing_digit_1_segment_2",
+        "owners": [
+          "left_mantle_hinge_11",
+          "left_mantle_hinge_10"
+        ],
+        "directly_adjacent_bones": true,
+        "attacking_wing_involved": false,
+        "crossing_triangle_pairs": 4,
+        "segment_length": 0.03388754051912783,
+        "points": [
+          [
+            -9.450171327819463,
+            11.093597995507457,
+            26.372276614003997
+          ],
+          [
+            -9.447930945935417,
+            11.100168434372929,
+            26.339107721581062
+          ]
+        ]
+      },
+      {
+        "a": "left_v24_mantle_panel_12",
+        "b": "left_v24_wing_digit_0_segment_0",
+        "owners": [
+          "left_mantle_hinge_12",
+          "left_mantle_hinge_00"
+        ],
+        "directly_adjacent_bones": false,
+        "attacking_wing_involved": false,
+        "crossing_triangle_pairs": 3,
+        "segment_length": 0.407025306782258,
+        "points": [
+          [
+            -7.423713978461019,
+            26.504925051277954,
+            7.47729206393552
+          ],
+          [
+            -7.776200262613063,
+            26.635434813082064,
+            7.633465755445039
+          ]
+        ]
+      },
+      {
+        "a": "left_v24_mantle_panel_12",
+        "b": "left_v24_wing_digit_0_segment_1",
+        "owners": [
+          "left_mantle_hinge_12",
+          "left_mantle_hinge_08"
+        ],
+        "directly_adjacent_bones": true,
+        "attacking_wing_involved": false,
+        "crossing_triangle_pairs": 13,
+        "segment_length": 7.822465727168649,
+        "points": [
+          [
+            -7.236244240815161,
+            26.36757003285644,
+            7.775793875945004
+          ],
+          [
+            -3.416338775838092,
+            22.700933961567905,
+            13.533838006732145
+          ]
+        ]
+      },
+      {
+        "a": "left_v24_mantle_panel_12",
+        "b": "left_v24_wing_digit_2_segment_1",
+        "owners": [
+          "left_mantle_hinge_12",
+          "left_mantle_hinge_13"
+        ],
+        "directly_adjacent_bones": true,
+        "attacking_wing_involved": false,
+        "crossing_triangle_pairs": 5,
+        "segment_length": 0.2722458003325487,
+        "points": [
+          [
+            -0.6422326608606554,
+            24.174811505150846,
+            4.176699416837067
+          ],
+          [
+            -0.6643081924324297,
+            24.276491253484043,
+            3.9251210483642764
+          ]
+        ]
+      },
+      {
+        "a": "left_v24_mantle_panel_13",
+        "b": "left_v24_wing_digit_0_segment_1",
+        "owners": [
+          "left_mantle_hinge_13",
+          "left_mantle_hinge_08"
+        ],
+        "directly_adjacent_bones": false,
+        "attacking_wing_involved": false,
+        "crossing_triangle_pairs": 8,
+        "segment_length": 0.28472604450057576,
+        "points": [
+          [
+            -3.084007993252891,
+            22.18443290285225,
+            14.564452275432428
+          ],
+          [
+            -2.8571635694058566,
+            22.04612168606662,
+            14.462077790829433
+          ]
+        ]
+      },
+      {
+        "a": "left_v24_mantle_panel_13",
+        "b": "left_v24_wing_digit_0_segment_2",
+        "owners": [
+          "left_mantle_hinge_13",
+          "left_mantle_hinge_11"
+        ],
+        "directly_adjacent_bones": false,
+        "attacking_wing_involved": false,
+        "crossing_triangle_pairs": 4,
+        "segment_length": 0.28472604450056155,
+        "points": [
+          [
+            -2.8571635694058566,
+            22.04612168606662,
+            14.462077790829433
+          ],
+          [
+            -3.08400799325288,
+            22.184432902852244,
+            14.564452275432423
+          ]
+        ]
+      },
+      {
+        "a": "left_v24_mantle_panel_14",
+        "b": "left_v24_wing_digit_0_segment_2",
+        "owners": [
+          "left_mantle_hinge_14",
+          "left_mantle_hinge_11"
+        ],
+        "directly_adjacent_bones": false,
+        "attacking_wing_involved": false,
+        "crossing_triangle_pairs": 11,
+        "segment_length": 8.746940644950499,
+        "points": [
+          [
+            -4.674326926270524,
+            19.341222601294675,
+            23.633099233921786
+          ],
+          [
+            -2.9851535054551803,
+            21.771828413966663,
+            15.40219289354206
+          ]
+        ]
+      },
+      {
+        "a": "left_v24_mantle_panel_14",
+        "b": "left_v24_wing_digit_2_segment_1",
+        "owners": [
+          "left_mantle_hinge_14",
+          "left_mantle_hinge_13"
+        ],
+        "directly_adjacent_bones": true,
+        "attacking_wing_involved": false,
+        "crossing_triangle_pairs": 4,
+        "segment_length": 0.06612084300329879,
+        "points": [
+          [
+            0.2348092510658562,
+            18.637989767761702,
+            16.514136353486023
+          ],
+          [
+            0.17884935900960802,
+            18.669505985650737,
+            16.529858451644056
+          ]
+        ]
+      },
+      {
+        "a": "left_v24_tension_panel_15_0",
+        "b": "left_v24_wing_digit_1_segment_2",
+        "owners": [
+          "left_mantle_hinge_15",
+          "left_mantle_hinge_10"
+        ],
+        "directly_adjacent_bones": false,
+        "attacking_wing_involved": false,
+        "crossing_triangle_pairs": 4,
+        "segment_length": 0.0651060939415247,
+        "points": [
+          [
+            -9.444637608112448,
+            11.081510722368092,
+            26.39978822697159
+          ],
+          [
+            -9.48437906242854,
+            11.03136202970089,
+            26.387766209631096
+          ]
+        ]
+      },
+      {
+        "a": "left_v24_tension_panel_16_0",
+        "b": "left_v24_wing_digit_0_segment_3",
+        "owners": [
+          "left_mantle_hinge_16",
+          "left_mantle_hinge_15"
+        ],
+        "directly_adjacent_bones": false,
+        "attacking_wing_involved": false,
+        "crossing_triangle_pairs": 10,
+        "segment_length": 9.180928154598524,
+        "points": [
+          [
+            -5.160044046169402,
+            16.85228318585759,
+            26.929918547670898
+          ],
+          [
+            -5.829839320822274,
+            10.840916638585897,
+            33.83674765401886
+          ]
+        ]
+      },
+      {
+        "a": "left_v24_tension_panel_16_1",
+        "b": "left_v24_wing_digit_0_segment_3",
+        "owners": [
+          "left_mantle_hinge_16",
+          "left_mantle_hinge_15"
+        ],
+        "directly_adjacent_bones": false,
+        "attacking_wing_involved": false,
+        "crossing_triangle_pairs": 5,
+        "segment_length": 2.3413456905759933,
+        "points": [
+          [
+            -5.106660478372154,
+            17.27873596011624,
+            26.441134148477403
+          ],
+          [
+            -4.941657488851703,
+            18.811463682254498,
+            24.67891413212957
+          ]
+        ]
+      },
+      {
+        "a": "left_v24_tension_panel_16_2",
+        "b": "left_v24_wing_digit_0_segment_2",
+        "owners": [
+          "left_mantle_hinge_16",
+          "left_mantle_hinge_11"
+        ],
+        "directly_adjacent_bones": false,
+        "attacking_wing_involved": false,
+        "crossing_triangle_pairs": 6,
+        "segment_length": 0.156788938830398,
+        "points": [
+          [
+            -4.8005965175365395,
+            19.206694916537227,
+            24.07891008135383
+          ],
+          [
+            -4.860289735263847,
+            19.16325715575134,
+            24.217230911436758
+          ]
+        ]
+      },
+      {
+        "a": "left_v24_tension_panel_16_2",
+        "b": "left_v24_wing_digit_0_segment_3",
+        "owners": [
+          "left_mantle_hinge_16",
+          "left_mantle_hinge_15"
+        ],
+        "directly_adjacent_bones": false,
+        "attacking_wing_involved": false,
+        "crossing_triangle_pairs": 4,
+        "segment_length": 0.12825039870780713,
+        "points": [
+          [
+            -4.899895588220014,
+            19.13443663590116,
+            24.309005398817646
+          ],
+          [
+            -4.979722304260303,
+            19.226925611315288,
+            24.348013726156555
+          ]
+        ]
+      },
+      {
+        "a": "right_v24_mantle_panel_00",
+        "b": "right_v24_wing_digit_2_segment_0",
+        "owners": [
+          "right_mantle_hinge_00",
+          "right_mantle_hinge_01"
+        ],
+        "directly_adjacent_bones": true,
+        "attacking_wing_involved": true,
+        "crossing_triangle_pairs": 4,
+        "segment_length": 0.20859293703848344,
+        "points": [
+          [
+            2.5675380552171085,
+            25.129829547976886,
+            -9.13572446123625
+          ],
+          [
+            2.7459729982926504,
+            25.111498247796906,
+            -9.242194869827935
+          ]
+        ]
+      },
+      {
+        "a": "right_v24_mantle_panel_00",
+        "b": "v3_mantle_chest",
+        "owners": [
+          "right_mantle_hinge_00",
+          "thorax"
+        ],
+        "directly_adjacent_bones": false,
+        "attacking_wing_involved": true,
+        "crossing_triangle_pairs": 4,
+        "segment_length": 0.16460813963354412,
+        "points": [
+          [
+            2.5885888372911374,
+            25.10079162044203,
+            -9.110394860910361
+          ],
+          [
+            2.7184176872952546,
+            25.071553790008128,
+            -9.207273437550107
+          ]
+        ]
+      },
+      {
+        "a": "right_v24_mantle_panel_01",
+        "b": "right_v24_wing_digit_0_segment_0",
+        "owners": [
+          "right_mantle_hinge_01",
+          "right_mantle_hinge_00"
+        ],
+        "directly_adjacent_bones": true,
+        "attacking_wing_involved": true,
+        "crossing_triangle_pairs": 9,
+        "segment_length": 0.35090372387678914,
+        "points": [
+          [
+            11.229989795390782,
+            28.939550172959486,
+            -22.60768587372481
+          ],
+          [
+            10.959957422310495,
+            28.856445309494305,
+            -22.399576473197925
+          ]
+        ]
+      },
+      {
+        "a": "right_v24_mantle_panel_01",
+        "b": "right_v24_wing_digit_2_segment_1",
+        "owners": [
+          "right_mantle_hinge_01",
+          "right_mantle_hinge_13"
+        ],
+        "directly_adjacent_bones": false,
+        "attacking_wing_involved": true,
+        "crossing_triangle_pairs": 4,
+        "segment_length": 0.1094889577025287,
+        "points": [
+          [
+            12.793355165356783,
+            28.648058530958483,
+            -14.701677421230908
+          ],
+          [
+            12.862443815364628,
+            28.657648767427183,
+            -14.617281819074433
+          ]
+        ]
+      },
+      {
+        "a": "right_v24_mantle_panel_01",
+        "b": "v3_mantle_chest",
+        "owners": [
+          "right_mantle_hinge_01",
+          "thorax"
+        ],
+        "directly_adjacent_bones": false,
+        "attacking_wing_involved": true,
+        "crossing_triangle_pairs": 4,
+        "segment_length": 0.12881101184644403,
+        "points": [
+          [
+            2.9831005411653386,
+            25.088268130016974,
+            -9.107252852642423
+          ],
+          [
+            2.9183479753978534,
+            25.062657580301266,
+            -9.215620198935905
+          ]
+        ]
+      },
+      {
+        "a": "right_v24_mantle_panel_02",
+        "b": "right_v24_wing_digit_0_segment_0",
+        "owners": [
+          "right_mantle_hinge_02",
+          "right_mantle_hinge_00"
+        ],
+        "directly_adjacent_bones": false,
+        "attacking_wing_involved": true,
+        "crossing_triangle_pairs": 9,
+        "segment_length": 0.5094555070059773,
+        "points": [
+          [
+            1.4232375060900817,
+            29.430929952868777,
+            -15.782160240000374
+          ],
+          [
+            1.7966952086269874,
+            29.194669197347444,
+            -16.035646163544587
+          ]
+        ]
+      },
+      {
+        "a": "right_v24_mantle_panel_02",
+        "b": "right_v24_wing_digit_1_segment_0",
+        "owners": [
+          "right_mantle_hinge_02",
+          "right_folded_membrane"
+        ],
+        "directly_adjacent_bones": true,
+        "attacking_wing_involved": true,
+        "crossing_triangle_pairs": 4,
+        "segment_length": 0.14064998495275496,
+        "points": [
+          [
+            12.839492677469696,
+            21.91063701092881,
+            -28.12162709064615
+          ],
+          [
+            12.85592942953412,
+            21.8596063433708,
+            -27.991595854332076
+          ]
+        ]
+      },
+      {
+        "a": "right_v24_mantle_panel_03",
+        "b": "right_v24_wing_digit_0_segment_0",
+        "owners": [
+          "right_mantle_hinge_03",
+          "right_mantle_hinge_00"
+        ],
+        "directly_adjacent_bones": true,
+        "attacking_wing_involved": true,
+        "crossing_triangle_pairs": 11,
+        "segment_length": 8.34606021144397,
+        "points": [
+          [
+            10.900971630683724,
+            28.750335404288396,
+            -22.942286021467797
+          ],
+          [
+            4.358314876121375,
+            29.068578810733253,
+            -17.770334283556647
+          ]
+        ]
+      },
+      {
+        "a": "right_v24_mantle_panel_03",
+        "b": "right_v24_wing_digit_0_segment_1",
+        "owners": [
+          "right_mantle_hinge_03",
+          "right_mantle_hinge_08"
+        ],
+        "directly_adjacent_bones": false,
+        "attacking_wing_involved": true,
+        "crossing_triangle_pairs": 6,
+        "segment_length": 0.3243991969199894,
+        "points": [
+          [
+            10.99816532143037,
+            28.66984698791341,
+            -23.051308328735544
+          ],
+          [
+            11.148659885469717,
+            28.953594682393888,
+            -23.005772946515187
+          ]
+        ]
+      },
+      {
+        "a": "right_v24_mantle_panel_03",
+        "b": "right_v24_wing_digit_1_segment_0",
+        "owners": [
+          "right_mantle_hinge_03",
+          "right_folded_membrane"
+        ],
+        "directly_adjacent_bones": false,
+        "attacking_wing_involved": true,
+        "crossing_triangle_pairs": 5,
+        "segment_length": 0.24552546587399138,
+        "points": [
+          [
+            13.29602924714823,
+            21.86899156565791,
+            -28.199620761393675
+          ],
+          [
+            13.089996022062492,
+            21.851544279099866,
+            -28.06722492782943
+          ]
+        ]
+      },
+      {
+        "a": "right_v24_mantle_panel_06",
+        "b": "right_v24_wing_digit_1_segment_1",
+        "owners": [
+          "right_folded_membrane",
+          "right_mantle_hinge_07"
+        ],
+        "directly_adjacent_bones": false,
+        "attacking_wing_involved": true,
+        "crossing_triangle_pairs": 8,
+        "segment_length": 0.4186132611152385,
+        "points": [
+          [
+            13.218030011107428,
+            21.160504587714577,
+            -28.348697727223527
+          ],
+          [
+            13.40125960714278,
+            21.521815458268275,
+            -28.454141704472043
+          ]
+        ]
+      },
+      {
+        "a": "right_v24_mantle_panel_07",
+        "b": "right_v24_wing_digit_0_segment_1",
+        "owners": [
+          "right_mantle_hinge_07",
+          "right_mantle_hinge_08"
+        ],
+        "directly_adjacent_bones": true,
+        "attacking_wing_involved": true,
+        "crossing_triangle_pairs": 4,
+        "segment_length": 0.15538330278748091,
+        "points": [
+          [
+            11.246352525889142,
+            28.631287026786637,
+            -23.242062387841127
+          ],
+          [
+            11.34784076735307,
+            28.52539918480072,
+            -23.190760608639323
+          ]
+        ]
+      },
+      {
+        "a": "right_v24_mantle_panel_07",
+        "b": "right_v24_wing_digit_1_segment_0",
+        "owners": [
+          "right_mantle_hinge_07",
+          "right_folded_membrane"
+        ],
+        "directly_adjacent_bones": false,
+        "attacking_wing_involved": true,
+        "crossing_triangle_pairs": 8,
+        "segment_length": 0.3213066669413559,
+        "points": [
+          [
+            13.40125960714278,
+            21.52181545826827,
+            -28.454141704472047
+          ],
+          [
+            13.515780978415265,
+            21.58420489173415,
+            -28.160491592374946
+          ]
+        ]
+      },
+      {
+        "a": "right_v24_mantle_panel_08",
+        "b": "right_v24_wing_digit_0_segment_2",
+        "owners": [
+          "right_mantle_hinge_08",
+          "right_mantle_hinge_11"
+        ],
+        "directly_adjacent_bones": false,
+        "attacking_wing_involved": true,
+        "crossing_triangle_pairs": 4,
+        "segment_length": 0.2942547285796276,
+        "points": [
+          [
+            19.82745494818489,
+            25.44138818010031,
+            -22.96545367141549
+          ],
+          [
+            20.0261793186616,
+            25.631642305684764,
+            -22.861060963010157
+          ]
+        ]
+      },
+      {
+        "a": "right_v24_mantle_panel_08",
+        "b": "right_v24_wing_digit_1_segment_1",
+        "owners": [
+          "right_mantle_hinge_08",
+          "right_mantle_hinge_07"
+        ],
+        "directly_adjacent_bones": true,
+        "attacking_wing_involved": true,
+        "crossing_triangle_pairs": 4,
+        "segment_length": 0.2493277956581366,
+        "points": [
+          [
+            18.12001804833152,
+            15.466175403486154,
+            -26.42375311100432
+          ],
+          [
+            18.308191849345537,
+            15.302978522004576,
+            -26.43478706652219
+          ]
+        ]
+      },
+      {
+        "a": "right_v24_tension_panel_9_0",
+        "b": "right_v24_wing_digit_1_segment_1",
+        "owners": [
+          "right_mantle_hinge_09",
+          "right_mantle_hinge_07"
+        ],
+        "directly_adjacent_bones": true,
+        "attacking_wing_involved": true,
+        "crossing_triangle_pairs": 9,
+        "segment_length": 5.204141651979507,
+        "points": [
+          [
+            17.868041654751334,
+            15.303277568802397,
+            -26.670697635496825
+          ],
+          [
+            14.670467637417183,
+            19.238045515149928,
+            -27.843818237111833
+          ]
+        ]
+      },
+      {
+        "a": "right_v24_tension_panel_9_1",
+        "b": "right_v24_wing_digit_1_segment_1",
+        "owners": [
+          "right_mantle_hinge_09",
+          "right_mantle_hinge_07"
+        ],
+        "directly_adjacent_bones": true,
+        "attacking_wing_involved": true,
+        "crossing_triangle_pairs": 8,
+        "segment_length": 1.0537596005070942,
+        "points": [
+          [
+            14.548011370549734,
+            19.364496985911053,
+            -27.926388800936245
+          ],
+          [
+            13.923965115005084,
+            20.173971611441107,
+            -28.182760400815308
+          ]
+        ]
+      },
+      {
+        "a": "right_v24_tension_panel_9_2",
+        "b": "right_v24_wing_digit_1_segment_1",
+        "owners": [
+          "right_mantle_hinge_09",
+          "right_mantle_hinge_07"
+        ],
+        "directly_adjacent_bones": true,
+        "attacking_wing_involved": true,
+        "crossing_triangle_pairs": 5,
+        "segment_length": 0.2736328318966607,
+        "points": [
+          [
+            13.6471411643568,
+            20.51187184195122,
+            -28.262465681115458
+          ],
+          [
+            13.48798025480189,
+            20.722471267917644,
+            -28.334511592477952
+          ]
+        ]
+      },
+      {
+        "a": "right_v24_tension_panel_10_0",
+        "b": "right_v24_wing_digit_0_segment_2",
+        "owners": [
+          "right_mantle_hinge_10",
+          "right_mantle_hinge_11"
+        ],
+        "directly_adjacent_bones": true,
+        "attacking_wing_involved": true,
+        "crossing_triangle_pairs": 4,
+        "segment_length": 0.03601578168220855,
+        "points": [
+          [
+            20.107087493337122,
+            25.32794487259503,
+            -23.137205457198718
+          ],
+          [
+            20.103678927085745,
+            25.341064667258717,
+            -23.103837970115134
+          ]
+        ]
+      },
+      {
+        "a": "right_v24_tension_panel_10_1",
+        "b": "right_v24_wing_digit_0_segment_2",
+        "owners": [
+          "right_mantle_hinge_10",
+          "right_mantle_hinge_11"
+        ],
+        "directly_adjacent_bones": true,
+        "attacking_wing_involved": true,
+        "crossing_triangle_pairs": 4,
+        "segment_length": 0.058497892465561176,
+        "points": [
+          [
+            20.084164562413427,
+            25.347598607046525,
+            -23.095536663188753
+          ],
+          [
+            20.070530741102267,
+            25.369664805446224,
+            -23.043103799185793
+          ]
+        ]
+      },
+      {
+        "a": "right_v24_tension_panel_10_2",
+        "b": "right_v24_wing_digit_0_segment_2",
+        "owners": [
+          "right_mantle_hinge_10",
+          "right_mantle_hinge_11"
+        ],
+        "directly_adjacent_bones": true,
+        "attacking_wing_involved": true,
+        "crossing_triangle_pairs": 4,
+        "segment_length": 0.06342934135224884,
+        "points": [
+          [
+            20.041095507688972,
+            25.38452528834435,
+            -23.01724669339863
+          ],
+          [
+            20.023340741360308,
+            25.408623097755683,
+            -22.961324021801417
+          ]
+        ]
+      },
+      {
+        "a": "right_v24_tension_panel_10_2",
+        "b": "right_v24_wing_digit_1_segment_1",
+        "owners": [
+          "right_mantle_hinge_10",
+          "right_mantle_hinge_07"
+        ],
+        "directly_adjacent_bones": false,
+        "attacking_wing_involved": true,
+        "crossing_triangle_pairs": 6,
+        "segment_length": 0.25931532058806267,
+        "points": [
+          [
+            18.487467341969218,
+            15.012944716958922,
+            -26.642986288375106
+          ],
+          [
+            18.496912035848506,
+            15.251077552246816,
+            -26.540770898110406
+          ]
+        ]
+      },
+      {
+        "a": "right_v24_mantle_panel_11",
+        "b": "right_v24_wing_digit_0_segment_3",
+        "owners": [
+          "right_mantle_hinge_11",
+          "right_mantle_hinge_15"
+        ],
+        "directly_adjacent_bones": true,
+        "attacking_wing_involved": true,
+        "crossing_triangle_pairs": 4,
+        "segment_length": 0.16277806161409963,
+        "points": [
+          [
+            25.298948049750045,
+            21.412473893653164,
+            -30.930100485939548
+          ],
+          [
+            25.274010285554706,
+            21.527028591674892,
+            -30.817175615246985
+          ]
+        ]
+      },
+      {
+        "a": "right_v24_mantle_panel_11",
+        "b": "right_v24_wing_digit_1_segment_2",
+        "owners": [
+          "right_mantle_hinge_11",
+          "right_mantle_hinge_10"
+        ],
+        "directly_adjacent_bones": true,
+        "attacking_wing_involved": true,
+        "crossing_triangle_pairs": 4,
+        "segment_length": 0.03266343052585703,
+        "points": [
+          [
+            23.419274432221684,
+            13.017733867815487,
+            -34.363850656527404
+          ],
+          [
+            23.398117901108794,
+            13.025744773215388,
+            -34.34028953856453
+          ]
+        ]
+      },
+      {
+        "a": "right_v24_mantle_panel_12",
+        "b": "right_v24_wing_digit_0_segment_0",
+        "owners": [
+          "right_mantle_hinge_12",
+          "right_mantle_hinge_00"
+        ],
+        "directly_adjacent_bones": false,
+        "attacking_wing_involved": true,
+        "crossing_triangle_pairs": 4,
+        "segment_length": 0.3728044195367205,
+        "points": [
+          [
+            11.148659885446705,
+            28.953594682410614,
+            -23.00577294650123
+          ],
+          [
+            11.301802648044323,
+            28.899396980188786,
+            -22.670224084837308
+          ]
+        ]
+      },
+      {
+        "a": "right_v24_mantle_panel_12",
+        "b": "right_v24_wing_digit_0_segment_1",
+        "owners": [
+          "right_mantle_hinge_12",
+          "right_mantle_hinge_08"
+        ],
+        "directly_adjacent_bones": true,
+        "attacking_wing_involved": true,
+        "crossing_triangle_pairs": 13,
+        "segment_length": 6.163584481916561,
+        "points": [
+          [
+            17.309872286097047,
+            26.626450658903792,
+            -22.65340295580173
+          ],
+          [
+            11.535426691603764,
+            28.78161474810922,
+            -22.68202970132219
+          ]
+        ]
+      },
+      {
+        "a": "right_v24_mantle_panel_12",
+        "b": "right_v24_wing_digit_2_segment_1",
+        "owners": [
+          "right_mantle_hinge_12",
+          "right_mantle_hinge_13"
+        ],
+        "directly_adjacent_bones": true,
+        "attacking_wing_involved": true,
+        "crossing_triangle_pairs": 5,
+        "segment_length": 0.2388303254296156,
+        "points": [
+          [
+            13.165659182451641,
+            28.52956870919217,
+            -14.966211580404703
+          ],
+          [
+            12.9584407257904,
+            28.62515998896059,
+            -14.895764843106338
+          ]
+        ]
+      },
+      {
+        "a": "right_v24_mantle_panel_13",
+        "b": "right_v24_wing_digit_0_segment_1",
+        "owners": [
+          "right_mantle_hinge_13",
+          "right_mantle_hinge_08"
+        ],
+        "directly_adjacent_bones": false,
+        "attacking_wing_involved": true,
+        "crossing_triangle_pairs": 6,
+        "segment_length": 0.1979555364333676,
+        "points": [
+          [
+            19.800004453367375,
+            25.72717997643516,
+            -22.600786747618155
+          ],
+          [
+            19.91495940571849,
+            25.593036041840666,
+            -22.69010168559654
+          ]
+        ]
+      },
+      {
+        "a": "right_v24_mantle_panel_13",
+        "b": "right_v24_wing_digit_0_segment_2",
+        "owners": [
+          "right_mantle_hinge_13",
+          "right_mantle_hinge_11"
+        ],
+        "directly_adjacent_bones": false,
+        "attacking_wing_involved": true,
+        "crossing_triangle_pairs": 4,
+        "segment_length": 0.17609734346001374,
+        "points": [
+          [
+            19.994276609216268,
+            25.48720145766707,
+            -22.765513420248364
+          ],
+          [
+            20.026179318661896,
+            25.631642305684547,
+            -22.861060963009514
+          ]
+        ]
+      },
+      {
+        "a": "right_v24_mantle_panel_14",
+        "b": "right_v24_wing_digit_0_segment_2",
+        "owners": [
+          "right_mantle_hinge_14",
+          "right_mantle_hinge_11"
+        ],
+        "directly_adjacent_bones": false,
+        "attacking_wing_involved": true,
+        "crossing_triangle_pairs": 9,
+        "segment_length": 6.6589100326474675,
+        "points": [
+          [
+            20.277812255706674,
+            25.29968926664664,
+            -23.132804523377075
+          ],
+          [
+            23.682332416652745,
+            22.775719340626374,
+            -28.268941311776512
+          ]
+        ]
+      },
+      {
+        "a": "right_v24_mantle_panel_14",
+        "b": "right_v24_wing_digit_2_segment_1",
+        "owners": [
+          "right_mantle_hinge_14",
+          "right_mantle_hinge_13"
+        ],
+        "directly_adjacent_bones": true,
+        "attacking_wing_involved": true,
+        "crossing_triangle_pairs": 4,
+        "segment_length": 0.06703361492674882,
+        "points": [
+          [
+            21.055848863642975,
+            20.56100218102906,
+            -22.567202977250794
+          ],
+          [
+            21.04963822837042,
+            20.509907176829724,
+            -22.52425843061762
+          ]
+        ]
+      },
+      {
+        "a": "right_v24_tension_panel_15_0",
+        "b": "right_v24_tension_panel_16_2",
+        "owners": [
+          "right_mantle_hinge_15",
+          "right_mantle_hinge_16"
+        ],
+        "directly_adjacent_bones": false,
+        "attacking_wing_involved": true,
+        "crossing_triangle_pairs": 3,
+        "segment_length": 10.24855886994311,
+        "points": [
+          [
+            29.087059501536665,
+            15.580774827421767,
+            -35.82242230090287
+          ],
+          [
+            33.51100102472676,
+            8.450512979362111,
+            -41.70638918457829
+          ]
+        ]
+      },
+      {
+        "a": "right_v24_tension_panel_15_2",
+        "b": "right_v24_wing_digit_1_segment_2",
+        "owners": [
+          "right_mantle_hinge_15",
+          "right_mantle_hinge_10"
+        ],
+        "directly_adjacent_bones": false,
+        "attacking_wing_involved": true,
+        "crossing_triangle_pairs": 4,
+        "segment_length": 0.07195589145719816,
+        "points": [
+          [
+            23.404379098485467,
+            12.95121037503116,
+            -34.39106115429171
+          ],
+          [
+            23.44594463269485,
+            13.009009383160317,
+            -34.380609774451024
+          ]
+        ]
+      },
+      {
+        "a": "right_v24_tension_panel_16_0",
+        "b": "right_v24_wing_digit_0_segment_2",
+        "owners": [
+          "right_mantle_hinge_16",
+          "right_mantle_hinge_11"
+        ],
+        "directly_adjacent_bones": false,
+        "attacking_wing_involved": true,
+        "crossing_triangle_pairs": 6,
+        "segment_length": 0.1085358380706562,
+        "points": [
+          [
+            25.346806935044814,
+            21.62621467089645,
+            -30.842672831473095
+          ],
+          [
+            25.329026311386187,
+            21.538451493498695,
+            -30.781341744241086
+          ]
+        ]
+      },
+      {
+        "a": "right_v24_tension_panel_16_0",
+        "b": "right_v24_wing_digit_0_segment_3",
+        "owners": [
+          "right_mantle_hinge_16",
+          "right_mantle_hinge_15"
+        ],
+        "directly_adjacent_bones": false,
+        "attacking_wing_involved": true,
+        "crossing_triangle_pairs": 4,
+        "segment_length": 0.10802289043426172,
+        "points": [
+          [
+            25.34680693504422,
+            21.62621467089575,
+            -30.842672831471774
+          ],
+          [
+            25.332164152001916,
+            21.535335731970108,
+            -30.786143615819174
+          ]
+        ]
+      },
+      {
+        "a": "right_v24_tension_panel_16_1",
+        "b": "right_v24_wing_digit_0_segment_3",
+        "owners": [
+          "right_mantle_hinge_16",
+          "right_mantle_hinge_15"
+        ],
+        "directly_adjacent_bones": false,
+        "attacking_wing_involved": true,
+        "crossing_triangle_pairs": 5,
+        "segment_length": 5.579826959602647,
+        "points": [
+          [
+            27.928510659559397,
+            17.372119427918307,
+            -34.2462939405214
+          ],
+          [
+            25.515525276153845,
+            21.24131795761813,
+            -31.030508938947378
+          ]
+        ]
+      },
+      {
+        "a": "right_v24_tension_panel_16_2",
+        "b": "right_v24_wing_digit_0_segment_3",
+        "owners": [
+          "right_mantle_hinge_16",
+          "right_mantle_hinge_15"
+        ],
+        "directly_adjacent_bones": false,
+        "attacking_wing_involved": true,
+        "crossing_triangle_pairs": 9,
+        "segment_length": 8.753606752138422,
+        "points": [
+          [
+            28.206816158223415,
+            16.918213284482036,
+            -34.625362909376705
+          ],
+          [
+            31.992296478296694,
+            10.848232509064525,
+            -39.67027156102572
+          ]
+        ]
+      },
+      {
+        "a": "left_v24_wing_digit_2_segment_0",
+        "b": "v3_mantle_chest",
+        "owners": [
+          "left_mantle_hinge_01",
+          "thorax"
+        ],
+        "directly_adjacent_bones": false,
+        "attacking_wing_involved": false,
+        "crossing_triangle_pairs": 14,
+        "segment_length": 0.6885178572400934,
+        "points": [
+          [
+            -0.6638189909551029,
+            24.287037359810977,
+            1.9758484693011429
+          ],
+          [
+            -0.6795033483006258,
+            24.50333522604244,
+            1.3223761487420673
+          ]
+        ]
+      },
+      {
+        "a": "right_v24_wing_digit_0_segment_0",
+        "b": "right_v24_wing_digit_0_segment_1",
+        "owners": [
+          "right_mantle_hinge_00",
+          "right_mantle_hinge_08"
+        ],
+        "directly_adjacent_bones": false,
+        "attacking_wing_involved": true,
+        "crossing_triangle_pairs": 12,
+        "segment_length": 0.3338086794189541,
+        "points": [
+          [
+            11.124547979951254,
+            28.738412210669836,
+            -22.91481324630287
+          ],
+          [
+            11.297317189267318,
+            28.883012527987095,
+            -22.668500877552383
+          ]
+        ]
+      },
+      {
+        "a": "right_v24_wing_digit_0_segment_1",
+        "b": "right_v24_wing_digit_0_segment_2",
+        "owners": [
+          "right_mantle_hinge_08",
+          "right_mantle_hinge_11"
+        ],
+        "directly_adjacent_bones": false,
+        "attacking_wing_involved": true,
+        "crossing_triangle_pairs": 12,
+        "segment_length": 0.19536747120418263,
+        "points": [
+          [
+            19.888319596778807,
+            25.594327952069357,
+            -23.14729828781413
+          ],
+          [
+            19.805909015145737,
+            25.467888676868288,
+            -23.02324162928165
+          ]
+        ]
+      },
+      {
+        "a": "right_v24_wing_digit_0_segment_2",
+        "b": "right_v24_wing_digit_0_segment_3",
+        "owners": [
+          "right_mantle_hinge_11",
+          "right_mantle_hinge_15"
+        ],
+        "directly_adjacent_bones": true,
+        "attacking_wing_involved": true,
+        "crossing_triangle_pairs": 8,
+        "segment_length": 0.18992974230465529,
+        "points": [
+          [
+            25.380988767687562,
+            21.715959264935368,
+            -30.892919577615938
+          ],
+          [
+            25.22075621972408,
+            21.682737346162213,
+            -30.98933089281324
+          ]
+        ]
+      },
+      {
+        "a": "right_v24_wing_digit_1_segment_0",
+        "b": "right_v24_wing_digit_1_segment_1",
+        "owners": [
+          "right_folded_membrane",
+          "right_mantle_hinge_07"
+        ],
+        "directly_adjacent_bones": false,
+        "attacking_wing_involved": true,
+        "crossing_triangle_pairs": 11,
+        "segment_length": 0.5710938052245196,
+        "points": [
+          [
+            13.517745681197173,
+            21.75766297848155,
+            -28.046089657028276
+          ],
+          [
+            13.31337204861572,
+            21.272547491639312,
+            -28.26754510874961
+          ]
+        ]
+      },
+      {
+        "a": "right_v24_wing_digit_1_segment_1",
+        "b": "right_v24_wing_digit_1_segment_2",
+        "owners": [
+          "right_mantle_hinge_07",
+          "right_mantle_hinge_10"
+        ],
+        "directly_adjacent_bones": false,
+        "attacking_wing_involved": true,
+        "crossing_triangle_pairs": 9,
+        "segment_length": 0.3097416305728121,
+        "points": [
+          [
+            18.373549138460994,
+            14.849945826068305,
+            -26.81456767126779
+          ],
+          [
+            18.396164045362028,
+            15.129717716032134,
+            -26.683586247845117
+          ]
+        ]
+      },
+      {
+        "a": "right_v24_wing_digit_2_segment_0",
+        "b": "right_v24_wing_digit_2_segment_1",
+        "owners": [
+          "right_mantle_hinge_01",
+          "right_mantle_hinge_13"
+        ],
+        "directly_adjacent_bones": false,
+        "attacking_wing_involved": true,
+        "crossing_triangle_pairs": 11,
+        "segment_length": 0.13479103718385535,
+        "points": [
+          [
+            12.862443815275139,
+            28.65764876738212,
+            -14.61728181915118
+          ],
+          [
+            12.926969840261133,
+            28.63022732211507,
+            -14.50215979630554
+          ]
+        ]
+      },
+      {
+        "a": "right_v24_wing_digit_2_segment_0",
+        "b": "v3_mantle_chest",
+        "owners": [
+          "right_mantle_hinge_01",
+          "thorax"
+        ],
+        "directly_adjacent_bones": false,
+        "attacking_wing_involved": true,
+        "crossing_triangle_pairs": 5,
+        "segment_length": 0.6170201185712453,
+        "points": [
+          [
+            2.478634468496087,
+            25.11088593294698,
+            -9.085526390454339
+          ],
+          [
+            2.999677148024929,
+            25.01235738049426,
+            -9.40099505321286
+          ]
+        ]
+      },
+      {
+        "a": "v3_mantle_chest",
+        "b": "v3_descending_throat",
+        "owners": [
+          "thorax",
+          "neck"
+        ],
+        "directly_adjacent_bones": true,
+        "attacking_wing_involved": false,
+        "crossing_triangle_pairs": 24,
+        "segment_length": 3.8657139386376285,
+        "points": [
+          [
+            -0.32202074305222084,
+            16.07629664234918,
+            -8.734514367509004
+          ],
+          [
+            -4.145474372109313,
+            16.068598483049982,
+            -8.164525472730515
+          ]
+        ]
+      },
+      {
+        "a": "v3_mantle_chest",
+        "b": "v3_cranial_crown_left",
+        "owners": [
+          "thorax",
+          "left_crown"
+        ],
+        "directly_adjacent_bones": false,
+        "attacking_wing_involved": false,
+        "crossing_triangle_pairs": 8,
+        "segment_length": 0.8731369428209897,
+        "points": [
+          [
+            -1.917117169333033,
+            22.812167400793275,
+            -9.264206423301832
+          ],
+          [
+            -2.7805297104071065,
+            22.80265113189881,
+            -9.134605707790211
+          ]
+        ]
+      },
+      {
+        "a": "v3_mantle_chest",
+        "b": "v3_cranial_crown_right",
+        "owners": [
+          "thorax",
+          "right_crown"
+        ],
+        "directly_adjacent_bones": false,
+        "attacking_wing_involved": false,
+        "crossing_triangle_pairs": 8,
+        "segment_length": 0.42188978695691337,
+        "points": [
+          [
+            0.5615047100882586,
+            23.10875890472221,
+            -9.666921019993756
+          ],
+          [
+            0.5199096626888065,
+            22.69236186203554,
+            -9.613308081143316
+          ]
+        ]
+      },
+      {
+        "a": "v3_descending_throat",
+        "b": "v3_compact_blind_cranium",
+        "owners": [
+          "neck",
+          "head"
+        ],
+        "directly_adjacent_bones": true,
+        "attacking_wing_involved": false,
+        "crossing_triangle_pairs": 28,
+        "segment_length": 4.240743544646113,
+        "points": [
+          [
+            -4.298595900511235,
+            16.020634779554598,
+            -15.138019853902877
+          ],
+          [
+            -7.374363307108743,
+            16.532871091455284,
+            -12.263793935026543
+          ]
+        ]
+      },
+      {
+        "a": "v3_descending_throat",
+        "b": "v3_short_recessed_jaw",
+        "owners": [
+          "neck",
+          "jaw"
+        ],
+        "directly_adjacent_bones": false,
+        "attacking_wing_involved": false,
+        "crossing_triangle_pairs": 22,
+        "segment_length": 1.3394364884095638,
+        "points": [
+          [
+            -6.563420732951759,
+            17.16116351294751,
+            -13.076401757164152
+          ],
+          [
+            -5.591941309382572,
+            16.999373958916514,
+            -13.984224414003624
+          ]
+        ]
+      },
+      {
+        "a": "v3_descending_throat",
+        "b": "v3_skull_keel",
+        "owners": [
+          "neck",
+          "head"
+        ],
+        "directly_adjacent_bones": true,
+        "attacking_wing_involved": false,
+        "crossing_triangle_pairs": 11,
+        "segment_length": 0.5888009207736531,
+        "points": [
+          [
+            -3.4331248657239244,
+            22.424432327778852,
+            -12.621828956197156
+          ],
+          [
+            -3.994317560387713,
+            22.284978671973803,
+            -12.510914747718239
+          ]
+        ]
+      },
+      {
+        "a": "v3_descending_throat",
+        "b": "v3_integrated_brow_left",
+        "owners": [
+          "neck",
+          "head"
+        ],
+        "directly_adjacent_bones": true,
+        "attacking_wing_involved": false,
+        "crossing_triangle_pairs": 16,
+        "segment_length": 0.6343202551123068,
+        "points": [
+          [
+            -5.699715370400867,
+            21.760866649036984,
+            -10.245331810120025
+          ],
+          [
+            -5.939468457546801,
+            21.632727333724734,
+            -10.818446946127654
+          ]
+        ]
+      },
+      {
+        "a": "v3_descending_throat",
+        "b": "v3_deep_cheek_left",
+        "owners": [
+          "neck",
+          "head"
+        ],
+        "directly_adjacent_bones": true,
+        "attacking_wing_involved": false,
+        "crossing_triangle_pairs": 9,
+        "segment_length": 2.172925618495232,
+        "points": [
+          [
+            -7.8398755377361296,
+            17.081230373791136,
+            -11.862587087302574
+          ],
+          [
+            -6.78972320695394,
+            18.413639082962717,
+            -10.504841581918983
+          ]
+        ]
+      },
+      {
+        "a": "v3_descending_throat",
+        "b": "v3_cranial_crown_left",
+        "owners": [
+          "neck",
+          "left_crown"
+        ],
+        "directly_adjacent_bones": false,
+        "attacking_wing_involved": false,
+        "crossing_triangle_pairs": 20,
+        "segment_length": 1.438770229961049,
+        "points": [
+          [
+            -4.324132955875583,
+            22.845332917259604,
+            -11.305397494506833
+          ],
+          [
+            -5.276332634759484,
+            22.076569471623507,
+            -12.06195437327358
+          ]
+        ]
+      },
+      {
+        "a": "v3_descending_throat",
+        "b": "v3_mantle_collar_left",
+        "owners": [
+          "neck",
+          "thorax"
+        ],
+        "directly_adjacent_bones": true,
+        "attacking_wing_involved": false,
+        "crossing_triangle_pairs": 14,
+        "segment_length": 1.3489981518537455,
+        "points": [
+          [
+            -4.0866044640632975,
+            23.049280537613193,
+            -11.095052742109946
+          ],
+          [
+            -3.9310178702390806,
+            23.748972256424036,
+            -9.95224027973717
+          ]
+        ]
+      },
+      {
+        "a": "v3_descending_throat",
+        "b": "v3_integrated_brow_right",
+        "owners": [
+          "neck",
+          "head"
+        ],
+        "directly_adjacent_bones": true,
+        "attacking_wing_involved": false,
+        "crossing_triangle_pairs": 14,
+        "segment_length": 0.8158273984820253,
+        "points": [
+          [
+            -1.2555288515590795,
+            20.07242750101669,
+            -13.875842432160177
+          ],
+          [
+            -1.9113715421478803,
+            19.94074632571464,
+            -14.342859324131187
+          ]
+        ]
+      },
+      {
+        "a": "v3_descending_throat",
+        "b": "v3_deep_cheek_right",
+        "owners": [
+          "neck",
+          "head"
+        ],
+        "directly_adjacent_bones": true,
+        "attacking_wing_involved": false,
+        "crossing_triangle_pairs": 9,
+        "segment_length": 2.1283266611578826,
+        "points": [
+          [
+            -4.068911218093277,
+            16.442858769053352,
+            -15.385713123924624
+          ],
+          [
+            -2.589267890267181,
+            17.678093387789207,
+            -14.483147095485894
+          ]
+        ]
+      },
+      {
+        "a": "v3_descending_throat",
+        "b": "v3_cranial_crown_right",
+        "owners": [
+          "neck",
+          "right_crown"
+        ],
+        "directly_adjacent_bones": false,
+        "attacking_wing_involved": false,
+        "crossing_triangle_pairs": 18,
+        "segment_length": 1.3525059832819641,
+        "points": [
+          [
+            -2.6937494014711554,
+            22.573809896012847,
+            -12.82894919732002
+          ],
+          [
+            -1.9262812879883469,
+            23.317095307112638,
+            -11.999616979661218
+          ]
+        ]
+      },
+      {
+        "a": "v3_descending_throat",
+        "b": "v3_mantle_collar_right",
+        "owners": [
+          "neck",
+          "thorax"
+        ],
+        "directly_adjacent_bones": true,
+        "attacking_wing_involved": false,
+        "crossing_triangle_pairs": 12,
+        "segment_length": 3.5465770208167924,
+        "points": [
+          [
+            3.080340613114633,
+            23.809073561992385,
+            -10.272291882322461
+          ],
+          [
+            1.1557837603697427,
+            21.711423524110792,
+            -12.387511446271734
+          ]
+        ]
+      },
+      {
+        "a": "v3_descending_throat",
+        "b": "v3_sternal_keel",
+        "owners": [
+          "neck",
+          "thorax"
+        ],
+        "directly_adjacent_bones": true,
+        "attacking_wing_involved": false,
+        "crossing_triangle_pairs": 17,
+        "segment_length": 2.842627337456236,
+        "points": [
+          [
+            -0.950068373724744,
+            16.9624138115829,
+            -13.147652587709322
+          ],
+          [
+            -0.06779064038658777,
+            19.65542847666683,
+            -12.924519903971396
+          ]
+        ]
+      },
+      {
+        "a": "v3_compact_blind_cranium",
+        "b": "v3_short_recessed_jaw",
+        "owners": [
+          "head",
+          "jaw"
+        ],
+        "directly_adjacent_bones": true,
+        "attacking_wing_involved": false,
+        "crossing_triangle_pairs": 32,
+        "segment_length": 2.017250753004653,
+        "points": [
+          [
+            -7.406079556351697,
+            16.527190458239218,
+            -12.25912659963248
+          ],
+          [
+            -5.95028311595166,
+            17.370590851220907,
+            -11.14618765174057
+          ]
+        ]
+      },
+      {
+        "a": "v3_compact_blind_cranium",
+        "b": "v3_cranial_crown_left",
+        "owners": [
+          "head",
+          "left_crown"
+        ],
+        "directly_adjacent_bones": true,
+        "attacking_wing_involved": false,
+        "crossing_triangle_pairs": 27,
+        "segment_length": 1.8969444024633755,
+        "points": [
+          [
+            -8.43412637291687,
+            21.281083136159836,
+            -14.734668276256134
+          ],
+          [
+            -7.479636505955544,
+            22.769164609039624,
+            -14.046946901005077
+          ]
+        ]
+      },
+      {
+        "a": "v3_compact_blind_cranium",
+        "b": "v3_cranial_crown_right",
+        "owners": [
+          "head",
+          "right_crown"
+        ],
+        "directly_adjacent_bones": true,
+        "attacking_wing_involved": false,
+        "crossing_triangle_pairs": 23,
+        "segment_length": 2.259745266294767,
+        "points": [
+          [
+            -3.895317338574694,
+            22.273217302774622,
+            -16.6268898213158
+          ],
+          [
+            -4.726177521426946,
+            20.295574853964595,
+            -17.337558780647083
+          ]
+        ]
+      },
+      {
+        "a": "v3_short_recessed_jaw",
+        "b": "v3_dark_gape",
+        "owners": [
+          "jaw",
+          "head"
+        ],
+        "directly_adjacent_bones": true,
+        "attacking_wing_involved": false,
+        "crossing_triangle_pairs": 20,
+        "segment_length": 1.1387858619900078,
+        "points": [
+          [
+            -9.736389286980517,
+            14.63281874752961,
+            -15.997654291850278
+          ],
+          [
+            -9.412283496001232,
+            14.98422912540333,
+            -14.964068580820628
+          ]
+        ]
+      },
+      {
+        "a": "v3_integrated_brow_left",
+        "b": "v3_cranial_crown_left",
+        "owners": [
+          "head",
+          "left_crown"
+        ],
+        "directly_adjacent_bones": true,
+        "attacking_wing_involved": false,
+        "crossing_triangle_pairs": 12,
+        "segment_length": 1.0507498367443717,
+        "points": [
+          [
+            -8.449251674562833,
+            20.93020773065166,
+            -13.808947328121656
+          ],
+          [
+            -8.033135843938933,
+            21.267823192888205,
+            -12.905100751217528
+          ]
+        ]
+      },
+      {
+        "a": "v3_cranial_crown_left",
+        "b": "v3_mantle_collar_left",
+        "owners": [
+          "left_crown",
+          "thorax"
+        ],
+        "directly_adjacent_bones": false,
+        "attacking_wing_involved": false,
+        "crossing_triangle_pairs": 22,
+        "segment_length": 1.0785759476399297,
+        "points": [
+          [
+            -4.074507339025212,
+            23.033247552090096,
+            -11.112001428476585
+          ],
+          [
+            -3.250628450528561,
+            23.164794209725034,
+            -10.428448117620752
+          ]
+        ]
+      },
+      {
+        "a": "v3_integrated_brow_right",
+        "b": "v3_cranial_crown_right",
+        "owners": [
+          "head",
+          "right_crown"
+        ],
+        "directly_adjacent_bones": true,
+        "attacking_wing_involved": false,
+        "crossing_triangle_pairs": 11,
+        "segment_length": 1.747497546973978,
+        "points": [
+          [
+            -5.2786074564624155,
+            20.39977995479256,
+            -16.77563657116104
+          ],
+          [
+            -3.7602579195456474,
+            20.829746315212287,
+            -16.024976002506925
+          ]
+        ]
+      }
+    ]
+  },
+  "new_nonadjacent_wing_crossings": [
+    {
+      "a": "right_v2_wing_humerus",
+      "b": "right_v24_mantle_panel_01",
+      "owners": [
+        "right_wing_shoulder",
+        "right_mantle_hinge_01"
+      ],
+      "directly_adjacent_bones": false,
+      "attacking_wing_involved": true,
+      "crossing_triangle_pairs": 4,
+      "segment_length": 0.20355942833816562,
+      "points": [
+        [
+          5.3906461976376185,
+          26.252936587432128,
+          -13.404965619699963
+        ],
+        [
+          5.25705367830971,
+          26.19269331584952,
+          -13.263684949139524
+        ]
+      ]
+    },
+    {
+      "a": "right_v24_tension_panel_15_0",
+      "b": "right_v24_tension_panel_16_2",
+      "owners": [
+        "right_mantle_hinge_15",
+        "right_mantle_hinge_16"
+      ],
+      "directly_adjacent_bones": false,
+      "attacking_wing_involved": true,
+      "crossing_triangle_pairs": 3,
+      "segment_length": 10.24855886994311,
+      "points": [
+        [
+          29.087059501536665,
+          15.580774827421767,
+          -35.82242230090287
+        ],
+        [
+          33.51100102472676,
+          8.450512979362111,
+          -41.70638918457829
+        ]
+      ]
+    }
+  ],
+  "full_body_surface_limits": "All128 meshes at one actual static pose only; noncoplanar proper triangle crossings. Baseline presence is not harmlessness. Coplanar overlap, containment and all continuous/interpolated motion unproved.",
+  "rejected_outer_fold": "Alternate outer crease branch improved visibility but introduced26 new nonadjacent wing crossing pairs; rejected, not used in delivered model.",
+  "pose_only": true,
+  "native_current_verified": false,
+  "software_shading_differs_from_native": true,
+  "whole_body_gesture_pass": false,
+  "full_body_pass": false,
+  "art_pass": false,
+  "game_connected": false,
+  "gui_used": false,
+  "minecraft_windows_or_input_touched": false
+}

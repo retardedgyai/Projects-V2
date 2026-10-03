@@ -1,0 +1,143 @@
+{
+  "revision": "31c-representative",
+  "source_root": "C:\\Users\\xgaiz\\Documents\\Codex\\2026-10-02\\task-2\\cloth-supported-31\\delivery31c",
+  "local_git_repository": false,
+  "repo": null,
+  "branch": null,
+  "commit": null,
+  "push_owner_thread": "01a1022f-884a-7190-92a6-e08bb1289093",
+  "destination_requirement": "new isolated31c directory preserving relative topology; do not replace original, approved or old candidate files",
+  "art_status": "NOT_MET",
+  "files": [
+    {
+      "path": "cloth-layered-23/check23.py",
+      "bytes": 3854,
+      "sha256": "b6e2e14775a3cfb2f5cb538c2f82018aa6aa72b6ca9951ab40a63343a2136bec"
+    },
+    {
+      "path": "cloth-layered-23/check_geometry.py",
+      "bytes": 3808,
+      "sha256": "75ca73e1e2683441ccc3eb31c1647f4c70490843015146d11f3baa98cd300530"
+    },
+    {
+      "path": "cloth-layered-23/mesh_tools.py",
+      "bytes": 6944,
+      "sha256": "889a92617cd69b8828bafff0dbea3b581a13b33814f4b3558627173deb211ce4"
+    },
+    {
+      "path": "cloth-structure-30/model/model.json",
+      "bytes": 1845503,
+      "sha256": "9db1cb1fb4fd62e1485c77dc27795dd1584f5931c6a055d10033646b58ef1601"
+    },
+    {
+      "path": "cloth-structure-30/model/native.png",
+      "bytes": 8051,
+      "sha256": "cce9c1d4edc5c2388f6eb529e9387a7123bcb70c101f4d29df56f2e1f43c6afe"
+    },
+    {
+      "path": "cloth-structure-30/model/new-cloth-boots.png",
+      "bytes": 1707,
+      "sha256": "2c9212562bcbfa23bee22514b230c5137ef1bc3ebb59b57f3d1fd5ef012e4e23"
+    },
+    {
+      "path": "cloth-structure-30/model/structure-paint.png",
+      "bytes": 1589,
+      "sha256": "b1f1c1c4a0b606b5398be8fd1048482134c9f57eebc3bad2ae8c0c88b93a2726"
+    },
+    {
+      "path": "cloth-supported-31/authoring-provenance.json",
+      "bytes": 5808,
+      "sha256": "c66df0901d2d3deaa4ff13bcc650c18ec7864800355cf1c481336e4baa7da395"
+    },
+    {
+      "path": "cloth-supported-31/build31.py",
+      "bytes": 10561,
+      "sha256": "1506d46dbfaeb39bf9c43a27987ff7de01d09a3fc34b33e618438b4b83240de5"
+    },
+    {
+      "path": "cloth-supported-31/checkpoint.json",
+      "bytes": 7833,
+      "sha256": "44d7cc7bc1b0bd22a4a4936aca2d502e6aac49083e9aa2ca4df641d137ba5a4e"
+    },
+    {
+      "path": "cloth-supported-31/export31.py",
+      "bytes": 2108,
+      "sha256": "838cbdfcb0a7456277f4a6dd8b0f8f891f5de42a9761d6f8d449932b2e66c9ea"
+    },
+    {
+      "path": "cloth-supported-31/model/hood-shoulder.png",
+      "bytes": 1500,
+      "sha256": "8580a76235fb61813d7fd6563dca1fc846a2cf9cab981d34ebb14dbfe1460a3c"
+    },
+    {
+      "path": "cloth-supported-31/model/material.mtl",
+      "bytes": 335,
+      "sha256": "8a8a7b8c3daae8ed690c1b8da9689526c13dcc384239438c6c05b6285d12d10b"
+    },
+    {
+      "path": "cloth-supported-31/model/model.bbmodel",
+      "bytes": 1940743,
+      "sha256": "0ac5eb9734110e07052ae9d95ce04a74edb732078baee46b6bc2ad9aae78f64c"
+    },
+    {
+      "path": "cloth-supported-31/model/model.json",
+      "bytes": 1896660,
+      "sha256": "3d9d4c617ab8da8630900e86c0e4cf30e7a32785daed872ee5dc8fa6745573af"
+    },
+    {
+      "path": "cloth-supported-31/model/model.obj",
+      "bytes": 483243,
+      "sha256": "8b57682dfd3e11b2e9845534d5c40a35927b250ef2d1f8d8ba085944cbfe7ef7"
+    },
+    {
+      "path": "cloth-supported-31/model/native.png",
+      "bytes": 8051,
+      "sha256": "cce9c1d4edc5c2388f6eb529e9387a7123bcb70c101f4d29df56f2e1f43c6afe"
+    },
+    {
+      "path": "cloth-supported-31/model/new-cloth-boots.png",
+      "bytes": 1707,
+      "sha256": "2c9212562bcbfa23bee22514b230c5137ef1bc3ebb59b57f3d1fd5ef012e4e23"
+    },
+    {
+      "path": "cloth-supported-31/model/structure-paint.png",
+      "bytes": 1589,
+      "sha256": "b1f1c1c4a0b606b5398be8fd1048482134c9f57eebc3bad2ae8c0c88b93a2726"
+    },
+    {
+      "path": "cloth-supported-31/native-validation.json",
+      "bytes": 5129,
+      "sha256": "6b05d6cb8610f59dc5608eb397ed33017a53e9325b65b408d9bf4dc451b10397"
+    },
+    {
+      "path": "cloth-supported-31/ProjectS_cloth31_front_64px_comparison.png",
+      "bytes": 27969,
+      "sha256": "6d5659c10d11167b84db7390d17c05323d48387858b94aef10a9bb2cced71734"
+    },
+    {
+      "path": "cloth-supported-31/ProjectS_cloth31_upper_unlit_comparison.png",
+      "bytes": 181111,
+      "sha256": "49cef91bd05cf40c85c68b44d10fab29fe5f16092d4080e1c85eaff0b092be18"
+    },
+    {
+      "path": "cloth-supported-31/replay-inputs.json",
+      "bytes": 779,
+      "sha256": "5c6a4697345224a5dce0762111bb62878fefeac3a7a1ce0605850abd48fd460e"
+    },
+    {
+      "path": "cloth-supported-31/verification.json",
+      "bytes": 1634,
+      "sha256": "c48df2d269d0df3807f8e3662f66c26efce6b6dd4a0af57e255f1d5cf3945ead"
+    },
+    {
+      "path": "cloth-supported-31/verify31.py",
+      "bytes": 3647,
+      "sha256": "5cd03fe4aa73cf25989269b1d066147189a87fa79bfa8ca9a4fab4be53100f02"
+    },
+    {
+      "path": "README.txt",
+      "bytes": 751,
+      "sha256": "1dc58c48ab1d65872f60a04cb490ba4eae8f82c68c73c88fb4c634c2aa84652d"
+    }
+  ]
+}

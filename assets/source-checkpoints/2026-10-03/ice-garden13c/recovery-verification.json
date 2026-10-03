@@ -1,0 +1,33 @@
+{
+  "CheckedUtc": "2026-10-03T17:38:44.952433+00:00",
+  "IsolatedCopy": true,
+  "OriginalProducerAndArchiveReadsRejected": true,
+  "NativeOrGameRuntimeLaunched": false,
+  "AestheticOrGamePass": false,
+  "TechnicalTests": {
+    "Run": 8,
+    "Failures": 0,
+    "Errors": 0,
+    "Passed": true,
+    "Selected": [
+      "test_actual_native_corners_and_uv",
+      "test_contact_separates_from_one_low_origin",
+      "test_floor_collision_and_material_retirement",
+      "test_holes_and_floor_cue_remain_local",
+      "test_latest_only_and_outside_ignored",
+      "test_low_split_pause_then_heavy_fall",
+      "test_rigid_and_fixed_contact_anchor",
+      "test_three_closed_positive_volume_pieces"
+    ],
+    "Omitted": [
+      "test_11_protected_and_foundation_frozen",
+      "test_quiet_before_and_after_match_11_pixels"
+    ],
+    "OmissionReason": "The historical full sibling12/ZIP guard requires deliberately omitted historical files; repeated renderer image comparisons are outside this lightweight recovery check."
+  },
+  "SavedParserJsonUsed": true,
+  "DeniedReadOrNetworkAttempts": {
+    "filesystem": 0,
+    "network": 0
+  }
+}

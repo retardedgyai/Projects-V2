@@ -1,0 +1,346 @@
+{
+  "schema_version": 2,
+  "task": {
+    "id": "ice-garden",
+    "revision": "13c",
+    "interpretation_id": "contact-origin-fracture-13c",
+    "review_epoch": 15,
+    "request": "氷の庭のみ。接点からの力と破断面を修正し、代表接触が良くなったら全体動作も確認",
+    "source": "親の継続依頼、12b保持",
+    "intended_use": "静かな設置庭を敵に横切らせ、接点の局所反応を読みながら別の技を重ねる",
+    "phase": "representative",
+    "game_required": true,
+    "authority": {
+      "approved": [],
+      "rejected": [],
+      "preserve": [
+        {
+          "item": "11c main/floor and12b archive",
+          "reason": "原本保護、接触以外を再制作しない",
+          "source": "親の継続依頼",
+          "target": {
+            "kind": "constraint",
+            "id": "frozen-foundation"
+          },
+          "criterion_ids": [
+            "contact-origin",
+            "cut-face"
+          ]
+        }
+      ]
+    },
+    "representative": {
+      "scope": "接触前から460msの退場まで",
+      "stop_if": "足元の塊が敵を覆う、最初から離れた左右片が接点とつながらない"
+    },
+    "whole_quality": {
+      "features": "片側の主結晶、低い中央、静かな床、局所の侵入反応、同じ物質の退出が一巡でつながる",
+      "grounding": [
+        {
+          "reference_id": "landing-ice",
+          "criterion_id": "contact-origin"
+        },
+        {
+          "reference_id": "ice-cluster",
+          "criterion_id": "cut-face"
+        }
+      ],
+      "counterexample": "13aの高い核が脚を覆う塊に見えた。庭全体を毎回噴出させる形、敵を覆う氷壁は不適合"
+    },
+    "criteria": [
+      {
+        "id": "contact-origin",
+        "purpose": "motion",
+        "required_inspection": "full_timeline",
+        "target": "低い同一接点から主片と反対片が分かれ、短く止まってから落ちる",
+        "comparison": "候補12b/13bは同カメラ・サイズ・照明・接触時点の通常表示",
+        "failure": "左右の物体が別々に現れ、力の起点がない"
+      },
+      {
+        "id": "cut-face",
+        "purpose": "shape",
+        "required_inspection": "image",
+        "target": "色だけでなく段差と非対称な切り口を持つ厚い氷片",
+        "comparison": "通常表示、近距離・斜めを補助にする",
+        "failure": "均一な青い直方体、白い帯の追加だけ"
+      }
+    ],
+    "artifact": {
+      "evidence_id": "artifact",
+      "sha256": "3d874c6d3949233546e5bb545d7a72dd7cc236ed982d5a574fca2e02312d11aa"
+    },
+    "saved_diff_id": "preservation",
+    "latest_validation_id": "tests",
+    "next_action": "接点・破断面・全体動作の現在版を実見し、最大差だけ続けて修正",
+    "affected_criteria": [
+      "contact-origin",
+      "cut-face"
+    ]
+  },
+  "references": [
+    {
+      "id": "landing-ice",
+      "title": "MatE Cryomancer商品内 着地氷（Glacial Breaker相当は推定）",
+      "source_locator": "C:\\Users\\xgaiz\\Documents\\Codex\\2026-10-02\\task-5\\reference-reviews\\mate-cryomancer-01\\reference-private\\glacial-breaker.gif",
+      "original_url": "https://api.mcmodels.net/storage/product-images/17407/01M0T4TH5WTEXCAKZQNJ9EH2WK.gif",
+      "source": {
+        "kind": "external"
+      },
+      "author": {
+        "status": "unknown",
+        "name": null,
+        "note": "商品ブランドはMatE。個別制作者は未確認"
+      },
+      "poster": {
+        "status": "unknown",
+        "name": null,
+        "note": "個別投稿者は未確認"
+      },
+      "medium": "video",
+      "inspected": "unconfirmed",
+      "inspected_range": "Frames26-49 /0.52-0.98s observed; full source timeline not certified here; no real enemy-hit footage",
+      "source_version": "4513320d603c848b026540101ff4f1ff990998117fcd2ecb3ca60c1eabfb1b70",
+      "purposes": [
+        "shape",
+        "material",
+        "motion"
+      ],
+      "reason": "足元の低い核と外向きの大塊。敵ヒット・破片物理の証明ではない",
+      "selected": true,
+      "priority": 1,
+      "analysis_epoch": 15,
+      "observed_features": [
+        "足元の低い核と外向きの大塊。敵ヒット・破片物理の証明ではない"
+      ],
+      "role": "quality_target",
+      "required": true
+    },
+    {
+      "id": "ice-cluster",
+      "title": "MatE Cryomancer商品内 氷群（Winter’s Embrace相当は推定）",
+      "source_locator": "C:\\Users\\xgaiz\\Documents\\Codex\\2026-10-02\\task-5\\reference-reviews\\mate-cryomancer-01\\reference-private\\ice-cluster.gif",
+      "original_url": "https://api.mcmodels.net/storage/product-images/17407/01M0T4TS80WG25MNWWSQTXV86J.gif",
+      "source": {
+        "kind": "external"
+      },
+      "author": {
+        "status": "unknown",
+        "name": null,
+        "note": "商品ブランドはMatE。個別制作者は未確認"
+      },
+      "poster": {
+        "status": "unknown",
+        "name": null,
+        "note": "個別投稿者は未確認"
+      },
+      "medium": "image",
+      "inspected": "image",
+      "inspected_range": "ice-cluster-at-0.86s-frame-043.png",
+      "source_version": "99ed70827ff79a3dc66b83f185659ae9362e268d2a5fc1ae1205704c4ab68ca8",
+      "purposes": [
+        "shape",
+        "material"
+      ],
+      "reason": "太い主塊・副塊・青い根元・淡い先端の主従。保持材質の補助",
+      "selected": true,
+      "priority": 2,
+      "analysis_epoch": 15,
+      "observed_features": [
+        "太い主塊・副塊・青い根元・淡い先端の主従。保持材質の補助"
+      ],
+      "role": "support",
+      "required": false
+    }
+  ],
+  "evidence": [
+    {
+      "id": "ref-landing-ice",
+      "kind": "reference_view",
+      "path": "reference-private/glacial-breaker-at-0.92s-frame-046.png",
+      "sha256": "88f7f938209d85211b7b337eb66748e390bdedaca65fcb50f2230289c3108c12",
+      "revision": "4513320d603c848b026540101ff4f1ff990998117fcd2ecb3ca60c1eabfb1b70",
+      "captured_at": "2026-10-02T15:07:37.215922+00:00",
+      "medium": "image",
+      "inspected": "image",
+      "inspected_range": "glacial-breaker-at-0.92s-frame-046.png",
+      "artifact_sha256": "3d874c6d3949233546e5bb545d7a72dd7cc236ed982d5a574fca2e02312d11aa"
+    },
+    {
+      "id": "ref-ice-cluster",
+      "kind": "reference_view",
+      "path": "reference-private/ice-cluster-at-0.86s-frame-043.png",
+      "sha256": "17b3a819e596f4ba81a47a0e6619adcbbfae4b0b04d13c705be75befadc2dac1",
+      "revision": "99ed70827ff79a3dc66b83f185659ae9362e268d2a5fc1ae1205704c4ab68ca8",
+      "captured_at": "2026-10-02T15:07:32.990777+00:00",
+      "medium": "image",
+      "inspected": "image",
+      "inspected_range": "ice-cluster-at-0.86s-frame-043.png",
+      "artifact_sha256": "3d874c6d3949233546e5bb545d7a72dd7cc236ed982d5a574fca2e02312d11aa"
+    },
+    {
+      "id": "artifact",
+      "kind": "artifact",
+      "path": "artifact.json",
+      "sha256": "3d874c6d3949233546e5bb545d7a72dd7cc236ed982d5a574fca2e02312d11aa",
+      "revision": "13c",
+      "captured_at": "2026-10-03T16:30:54.540014+00:00",
+      "medium": "data",
+      "inspected": "data",
+      "inspected_range": "保存済みファイル"
+    },
+    {
+      "id": "preservation",
+      "kind": "saved_diff",
+      "path": "protected12.json",
+      "sha256": "51ed7d878385313eda49578f92b99008cf44c75d128be43ca577ebf6609c70fb",
+      "revision": "13c",
+      "captured_at": "2026-10-03T15:04:17.981719+00:00",
+      "medium": "data",
+      "inspected": "data",
+      "inspected_range": "保存済みファイル",
+      "artifact_sha256": "3d874c6d3949233546e5bb545d7a72dd7cc236ed982d5a574fca2e02312d11aa"
+    },
+    {
+      "id": "tests",
+      "kind": "technical",
+      "path": "test-result.txt",
+      "sha256": "5476a424e6fdf70d23e360b1de9a5b4ed3ce688a7fa7bce423392598a01a3956",
+      "revision": "13c",
+      "captured_at": "2026-10-03T16:07:44.780124+00:00",
+      "medium": "data",
+      "inspected": "data",
+      "inspected_range": "保存済みファイル",
+      "artifact_sha256": "3d874c6d3949233546e5bb545d7a72dd7cc236ed982d5a574fca2e02312d11aa"
+    },
+    {
+      "id": "contact",
+      "kind": "candidate_view",
+      "path": "preview/contact-13.gif",
+      "sha256": "86d1a2e308fa729dccc3eacb4dbdea4d7848168144079f293464a104cd34b14f",
+      "revision": "13c",
+      "captured_at": "2026-10-03T15:59:41.615372+00:00",
+      "medium": "video",
+      "inspected": "full_timeline",
+      "inspected_range": "接触前-0.22秒から退場後+0.555秒、32コマを実見",
+      "artifact_sha256": "3d874c6d3949233546e5bb545d7a72dd7cc236ed982d5a574fca2e02312d11aa"
+    },
+    {
+      "id": "cut",
+      "kind": "candidate_view",
+      "path": "preview/contact-70.png",
+      "sha256": "db0b7bcc51d35c215cf2571f116d4549b42d4d770b8f33ba6173ba7994d8996f",
+      "revision": "13c",
+      "captured_at": "2026-10-03T16:10:51.239226+00:00",
+      "medium": "image",
+      "inspected": "image",
+      "inspected_range": "同じ視点の12b/13b、接触+70ms",
+      "artifact_sha256": "3d874c6d3949233546e5bb545d7a72dd7cc236ed982d5a574fca2e02312d11aa"
+    },
+    {
+      "id": "whole",
+      "kind": "integration",
+      "path": "preview/whole-13.gif",
+      "sha256": "a39176829309ec0fe0608da75da4079ed667d91c8257c2d6b286b5c9caa27ecf",
+      "revision": "13c",
+      "captured_at": "2026-10-03T16:02:48.987479+00:00",
+      "medium": "video",
+      "inspected": "full_timeline",
+      "inspected_range": "0–7.6875秒、形成/保持/4接触/退場。ただし独立表示fixture",
+      "artifact_sha256": "3d874c6d3949233546e5bb545d7a72dd7cc236ed982d5a574fca2e02312d11aa",
+      "scope": "whole_in_use",
+      "coverage": "full_motion"
+    },
+    {
+      "id": "browser",
+      "kind": "technical",
+      "path": "browser-evidence.json",
+      "sha256": "a075b565a6ede312a21b1f273c877a5494225b75deca7a414ece712d458e6097",
+      "revision": "13c",
+      "captured_at": "2026-10-03T16:21:35.234257+00:00",
+      "medium": "data",
+      "inspected": "data",
+      "inspected_range": "保存済みファイル",
+      "artifact_sha256": "3d874c6d3949233546e5bb545d7a72dd7cc236ed982d5a574fca2e02312d11aa"
+    }
+  ],
+  "decision": {
+    "revision": "13c",
+    "states": {
+      "technical": {
+        "status": "passed",
+        "reviewer": "Codex",
+        "reason": "現在版10tests、実パーサー140面。技術範囲だけ",
+        "evidence_id": "tests"
+      },
+      "aesthetic": {
+        "status": "unverified",
+        "reviewer": "Codex",
+        "reason": "FIX-FIRST。MatE同等の合格なし",
+        "review_epoch": 15
+      },
+      "game": {
+        "status": "unverified",
+        "reviewer": null,
+        "reason": "本人は接続修正待ち。Minecraftを起動せず、操作・音・GPU描画・手触り未確認",
+        "evidence_id": null
+      },
+      "user": {
+        "status": "pending",
+        "source": null
+      }
+    },
+    "comparisons": [],
+    "holistic": {
+      "status": "unverified",
+      "revision": "13c",
+      "review_epoch": 15,
+      "reason": "全体の現在版を確認しても美的合格と実ゲーム合格を混同しない",
+      "counterexample_present": false,
+      "evidence_ids": [
+        "contact",
+        "whole"
+      ]
+    },
+    "integration": {
+      "status": "unverified",
+      "scope": "whole_in_use",
+      "revision": "13c",
+      "normal_display": true,
+      "reason": "独立表示の全体動作は確認対象。実ゲーム必須の引き渡しは未達",
+      "reviewer": "Codex",
+      "evidence_id": "whole"
+    },
+    "issues": [],
+    "biggest_gap": "同じ足元からの開き、非対称な欠け、重心回転と床停止を確認。残差は破断面の表面の単純さと着地のimpact。実ゲームの音・操作は未確認",
+    "next_action": "現在版の通常接触・全体動作を親の独立実見と合わせ、最大差だけ次に直す",
+    "failure": {
+      "count": 1,
+      "severe": false,
+      "cause": "implementation",
+      "response": "13aの高い核を保護し、低い断面へ変更。新参照探索や主結晶再制作を増やさない",
+      "source": "Codex onset review13a, separate from user rejection",
+      "rejected_revision": "13a",
+      "rejected_interpretation_id": "contact-origin-fracture-13a",
+      "invalidated_epoch": 13,
+      "independent_counterargument": null,
+      "independent_reviewer": null,
+      "status": "resolved",
+      "resolution_reason": "Lower13b root removed the high-root counterexample; not whole-quality acceptance",
+      "resolution_evidence_id": "contact",
+      "criterion_ids": [
+        "contact-origin"
+      ]
+    },
+    "constraint_checks": [
+      {
+        "constraint_id": "frozen-foundation",
+        "revision": "13c",
+        "status": "unchanged",
+        "evidence_id": "preservation"
+      }
+    ]
+  },
+  "waits": [],
+  "effort_minutes": null,
+  "simplification": "過去の参照分析を再利用し、比較・記録はこの1packetに集約。全体再制作・原参照再取得はしない"
+}

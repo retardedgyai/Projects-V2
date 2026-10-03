@@ -1,0 +1,772 @@
+{
+  "revision": "13c",
+  "affected_frames_rendered": 28,
+  "unchanged_frames_reused": 96,
+  "reuse_reason": "quiet renderer is unchanged;10tests include pixel identity; cached rawframe hashes checked",
+  "frames": 124,
+  "gif_duration_seconds": 7.75,
+  "source_fps": 16,
+  "priority": "BelowNormal",
+  "render_seconds": 22.266,
+  "whole_timeline": [
+    0,
+    7.6875
+  ],
+  "max_head_body_occluded": 0,
+  "minimum_leg_retention": 0.8729351969504447,
+  "samples": [
+    {
+      "time": 0.0,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0,
+      "effect_pixels": 0
+    },
+    {
+      "time": 0.0625,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0,
+      "effect_pixels": 0
+    },
+    {
+      "time": 0.125,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0,
+      "effect_pixels": 0
+    },
+    {
+      "time": 0.1875,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0,
+      "effect_pixels": 0
+    },
+    {
+      "time": 0.25,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0,
+      "effect_pixels": 0
+    },
+    {
+      "time": 0.3125,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0,
+      "effect_pixels": 0
+    },
+    {
+      "time": 0.375,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0,
+      "effect_pixels": 0
+    },
+    {
+      "time": 0.4375,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0,
+      "effect_pixels": 0
+    },
+    {
+      "time": 0.5,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0,
+      "effect_pixels": 0
+    },
+    {
+      "time": 0.5625,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0,
+      "effect_pixels": 0
+    },
+    {
+      "time": 0.625,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0,
+      "effect_pixels": 0
+    },
+    {
+      "time": 0.6875,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0,
+      "effect_pixels": 0
+    },
+    {
+      "time": 0.75,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0,
+      "effect_pixels": 0
+    },
+    {
+      "time": 0.8125,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0,
+      "effect_pixels": 0
+    },
+    {
+      "time": 0.875,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0,
+      "effect_pixels": 0
+    },
+    {
+      "time": 0.9375,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0,
+      "effect_pixels": 0
+    },
+    {
+      "time": 1.0,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0,
+      "effect_pixels": 0
+    },
+    {
+      "time": 1.0625,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0,
+      "effect_pixels": 0
+    },
+    {
+      "time": 1.125,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0,
+      "effect_pixels": 0
+    },
+    {
+      "time": 1.1875,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0,
+      "effect_pixels": 0
+    },
+    {
+      "time": 1.25,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0,
+      "effect_pixels": 0
+    },
+    {
+      "time": 1.3125,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0,
+      "effect_pixels": 0
+    },
+    {
+      "time": 1.375,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0,
+      "effect_pixels": 0
+    },
+    {
+      "time": 1.4375,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0,
+      "effect_pixels": 0
+    },
+    {
+      "time": 1.5,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0,
+      "effect_pixels": 0
+    },
+    {
+      "time": 1.5625,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0,
+      "effect_pixels": 0
+    },
+    {
+      "time": 1.625,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0,
+      "effect_pixels": 0
+    },
+    {
+      "time": 1.6875,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0,
+      "effect_pixels": 0
+    },
+    {
+      "time": 1.75,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0,
+      "effect_pixels": 0
+    },
+    {
+      "time": 1.8125,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0,
+      "effect_pixels": 0
+    },
+    {
+      "time": 1.875,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0,
+      "effect_pixels": 0
+    },
+    {
+      "time": 1.9375,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0,
+      "effect_pixels": 0
+    },
+    {
+      "time": 2.0,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0,
+      "effect_pixels": 0
+    },
+    {
+      "time": 2.0625,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0,
+      "effect_pixels": 0
+    },
+    {
+      "time": 2.125,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0,
+      "effect_pixels": 0
+    },
+    {
+      "time": 2.1875,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0,
+      "effect_pixels": 0
+    },
+    {
+      "time": 2.25,
+      "head_body_occluded": 0,
+      "leg_retention": 0.8921348314606742,
+      "effect_pixels": 1180
+    },
+    {
+      "time": 2.3125,
+      "head_body_occluded": 0,
+      "leg_retention": 0.9272326350606395,
+      "effect_pixels": 1272
+    },
+    {
+      "time": 2.375,
+      "head_body_occluded": 0,
+      "leg_retention": 0.9674157303370786,
+      "effect_pixels": 1242
+    },
+    {
+      "time": 2.4375,
+      "head_body_occluded": 0,
+      "leg_retention": 0.9918981481481481,
+      "effect_pixels": 1218
+    },
+    {
+      "time": 2.5,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0,
+      "effect_pixels": 1198
+    },
+    {
+      "time": 2.5625,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0,
+      "effect_pixels": 1170
+    },
+    {
+      "time": 2.625,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0,
+      "effect_pixels": 428
+    },
+    {
+      "time": 2.6875,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0,
+      "effect_pixels": 0
+    },
+    {
+      "time": 2.75,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0,
+      "effect_pixels": 0
+    },
+    {
+      "time": 2.8125,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0,
+      "effect_pixels": 0
+    },
+    {
+      "time": 2.875,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0,
+      "effect_pixels": 0
+    },
+    {
+      "time": 2.9375,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0,
+      "effect_pixels": 0
+    },
+    {
+      "time": 3.0,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0,
+      "effect_pixels": 0
+    },
+    {
+      "time": 3.0625,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0,
+      "effect_pixels": 0
+    },
+    {
+      "time": 3.125,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0,
+      "effect_pixels": 0
+    },
+    {
+      "time": 3.1875,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0,
+      "effect_pixels": 0
+    },
+    {
+      "time": 3.25,
+      "head_body_occluded": 0,
+      "leg_retention": 0.8871745419479267,
+      "effect_pixels": 1411
+    },
+    {
+      "time": 3.3125,
+      "head_body_occluded": 0,
+      "leg_retention": 0.9169847328244275,
+      "effect_pixels": 1520
+    },
+    {
+      "time": 3.375,
+      "head_body_occluded": 0,
+      "leg_retention": 0.9556840077071291,
+      "effect_pixels": 1494
+    },
+    {
+      "time": 3.4375,
+      "head_body_occluded": 0,
+      "leg_retention": 0.9767873723305478,
+      "effect_pixels": 1473
+    },
+    {
+      "time": 3.5,
+      "head_body_occluded": 0,
+      "leg_retention": 0.9807868252516011,
+      "effect_pixels": 1462
+    },
+    {
+      "time": 3.5625,
+      "head_body_occluded": 0,
+      "leg_retention": 0.9928952042628775,
+      "effect_pixels": 1457
+    },
+    {
+      "time": 3.625,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0,
+      "effect_pixels": 551
+    },
+    {
+      "time": 3.6875,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0,
+      "effect_pixels": 0
+    },
+    {
+      "time": 3.75,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0,
+      "effect_pixels": 0
+    },
+    {
+      "time": 3.8125,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0,
+      "effect_pixels": 0
+    },
+    {
+      "time": 3.875,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0,
+      "effect_pixels": 0
+    },
+    {
+      "time": 3.9375,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0,
+      "effect_pixels": 0
+    },
+    {
+      "time": 4.0,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0,
+      "effect_pixels": 0
+    },
+    {
+      "time": 4.0625,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0,
+      "effect_pixels": 0
+    },
+    {
+      "time": 4.125,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0,
+      "effect_pixels": 0
+    },
+    {
+      "time": 4.1875,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0,
+      "effect_pixels": 0
+    },
+    {
+      "time": 4.25,
+      "head_body_occluded": 0,
+      "leg_retention": 0.8796147672552167,
+      "effect_pixels": 1719
+    },
+    {
+      "time": 4.3125,
+      "head_body_occluded": 0,
+      "leg_retention": 0.9294026377036463,
+      "effect_pixels": 1874
+    },
+    {
+      "time": 4.375,
+      "head_body_occluded": 0,
+      "leg_retention": 0.9384615384615385,
+      "effect_pixels": 1850
+    },
+    {
+      "time": 4.4375,
+      "head_body_occluded": 0,
+      "leg_retention": 0.9440242057488654,
+      "effect_pixels": 1848
+    },
+    {
+      "time": 4.5,
+      "head_body_occluded": 0,
+      "leg_retention": 0.941747572815534,
+      "effect_pixels": 1844
+    },
+    {
+      "time": 4.5625,
+      "head_body_occluded": 0,
+      "leg_retention": 0.9462934947049925,
+      "effect_pixels": 1833
+    },
+    {
+      "time": 4.625,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0,
+      "effect_pixels": 618
+    },
+    {
+      "time": 4.6875,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0,
+      "effect_pixels": 0
+    },
+    {
+      "time": 4.75,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0,
+      "effect_pixels": 0
+    },
+    {
+      "time": 4.8125,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0,
+      "effect_pixels": 0
+    },
+    {
+      "time": 4.875,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0,
+      "effect_pixels": 0
+    },
+    {
+      "time": 4.9375,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0,
+      "effect_pixels": 0
+    },
+    {
+      "time": 5.0,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0,
+      "effect_pixels": 0
+    },
+    {
+      "time": 5.0625,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0,
+      "effect_pixels": 0
+    },
+    {
+      "time": 5.125,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0,
+      "effect_pixels": 0
+    },
+    {
+      "time": 5.1875,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0,
+      "effect_pixels": 0
+    },
+    {
+      "time": 5.25,
+      "head_body_occluded": 0,
+      "leg_retention": 0.8729351969504447,
+      "effect_pixels": 2173
+    },
+    {
+      "time": 5.3125,
+      "head_body_occluded": 0,
+      "leg_retention": 0.9210360075805433,
+      "effect_pixels": 2331
+    },
+    {
+      "time": 5.375,
+      "head_body_occluded": 0,
+      "leg_retention": 0.9415167095115681,
+      "effect_pixels": 2299
+    },
+    {
+      "time": 5.4375,
+      "head_body_occluded": 0,
+      "leg_retention": 0.9376574307304786,
+      "effect_pixels": 2314
+    },
+    {
+      "time": 5.5,
+      "head_body_occluded": 0,
+      "leg_retention": 0.9401343921808186,
+      "effect_pixels": 2316
+    },
+    {
+      "time": 5.5625,
+      "head_body_occluded": 0,
+      "leg_retention": 0.9752415458937198,
+      "effect_pixels": 2244
+    },
+    {
+      "time": 5.625,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0,
+      "effect_pixels": 800
+    },
+    {
+      "time": 5.6875,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0,
+      "effect_pixels": 0
+    },
+    {
+      "time": 5.75,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0,
+      "effect_pixels": 0
+    },
+    {
+      "time": 5.8125,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0,
+      "effect_pixels": 0
+    },
+    {
+      "time": 5.875,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0,
+      "effect_pixels": 0
+    },
+    {
+      "time": 5.9375,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0,
+      "effect_pixels": 0
+    },
+    {
+      "time": 6.0,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0,
+      "effect_pixels": 0
+    },
+    {
+      "time": 6.0625,
+      "head_body_occluded": 0,
+      "leg_retention": 0.9908993576017131,
+      "effect_pixels": 0
+    },
+    {
+      "time": 6.125,
+      "head_body_occluded": 0,
+      "leg_retention": 0.9818464730290456,
+      "effect_pixels": 0
+    },
+    {
+      "time": 6.1875,
+      "head_body_occluded": 0,
+      "leg_retention": 0.9906542056074766,
+      "effect_pixels": 0
+    },
+    {
+      "time": 6.25,
+      "head_body_occluded": 0,
+      "leg_retention": 0.9908116385911179,
+      "effect_pixels": 0
+    },
+    {
+      "time": 6.3125,
+      "head_body_occluded": 0,
+      "leg_retention": 0.9969635627530364,
+      "effect_pixels": 0
+    },
+    {
+      "time": 6.375,
+      "head_body_occluded": 0,
+      "leg_retention": 0.9965449160908193,
+      "effect_pixels": 0
+    },
+    {
+      "time": 6.4375,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0,
+      "effect_pixels": 0
+    },
+    {
+      "time": 6.5,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0,
+      "effect_pixels": 0
+    },
+    {
+      "time": 6.5625,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0,
+      "effect_pixels": 0
+    },
+    {
+      "time": 6.625,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0,
+      "effect_pixels": 0
+    },
+    {
+      "time": 6.6875,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0,
+      "effect_pixels": 0
+    },
+    {
+      "time": 6.75,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0,
+      "effect_pixels": 0
+    },
+    {
+      "time": 6.8125,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0,
+      "effect_pixels": 0
+    },
+    {
+      "time": 6.875,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0,
+      "effect_pixels": 0
+    },
+    {
+      "time": 6.9375,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0,
+      "effect_pixels": 0
+    },
+    {
+      "time": 7.0,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0,
+      "effect_pixels": 0
+    },
+    {
+      "time": 7.0625,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0,
+      "effect_pixels": 0
+    },
+    {
+      "time": 7.125,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0,
+      "effect_pixels": 0
+    },
+    {
+      "time": 7.1875,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0,
+      "effect_pixels": 0
+    },
+    {
+      "time": 7.25,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0,
+      "effect_pixels": 0
+    },
+    {
+      "time": 7.3125,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0,
+      "effect_pixels": 0
+    },
+    {
+      "time": 7.375,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0,
+      "effect_pixels": 0
+    },
+    {
+      "time": 7.4375,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0,
+      "effect_pixels": 0
+    },
+    {
+      "time": 7.5,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0,
+      "effect_pixels": 0
+    },
+    {
+      "time": 7.5625,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0,
+      "effect_pixels": 0
+    },
+    {
+      "time": 7.625,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0,
+      "effect_pixels": 0
+    },
+    {
+      "time": 7.6875,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0,
+      "effect_pixels": 0
+    }
+  ],
+  "fixture_contact_times": [
+    2.2,
+    3.2,
+    4.2,
+    5.2
+  ],
+  "game_capture": false,
+  "game_fps_measured": false,
+  "human_feel_verified": false
+}

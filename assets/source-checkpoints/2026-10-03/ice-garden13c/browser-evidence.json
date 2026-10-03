@@ -1,0 +1,187 @@
+{
+  "browser": "installed Edge headless, software rendering",
+  "browser_pid": 8272,
+  "game_capture": false,
+  "gpu_fps_measured": false,
+  "human_feel_verified": false,
+  "ordinary_gif_playback": [
+    {
+      "file": "contact-13.gif",
+      "normal_wall_clock": true,
+      "shots": [
+        {
+          "requested_seconds": 0.19,
+          "wall_seconds": 0.252,
+          "file": "contact-13-at-0.19s.png",
+          "sha256": "0d1d9048c8eb4ef3cb0242b1a0ac5816880290317b16514ae7df9735aaf2428f"
+        },
+        {
+          "requested_seconds": 0.25,
+          "wall_seconds": 0.33,
+          "file": "contact-13-at-0.25s.png",
+          "sha256": "eb1882061639681fab7ec8c439d98d2b76c90107676781a9c2f30e39fe1ecdee"
+        },
+        {
+          "requested_seconds": 0.32,
+          "wall_seconds": 0.397,
+          "file": "contact-13-at-0.32s.png",
+          "sha256": "f4b42e6bfebc483f19bad1f9ecafafb1ea1b655d99ff85494fc09bc87ccd1002"
+        },
+        {
+          "requested_seconds": 0.4,
+          "wall_seconds": 0.494,
+          "file": "contact-13-at-0.40s.png",
+          "sha256": "edc09bf9333ed7772d42086a6a3977295a24e3aa139264d2bf3542a6adb7935b"
+        },
+        {
+          "requested_seconds": 0.5,
+          "wall_seconds": 0.544,
+          "file": "contact-13-at-0.50s.png",
+          "sha256": "b735ef6118be3e66f8bc47f187ac46bb27e58787ea5832f9d43983900de89351"
+        },
+        {
+          "requested_seconds": 0.6,
+          "wall_seconds": 0.643,
+          "file": "contact-13-at-0.60s.png",
+          "sha256": "acd68954367ec405d970ec851821c5bba9ec65f9875651ceec276a91788c486a"
+        },
+        {
+          "requested_seconds": 0.72,
+          "wall_seconds": 0.777,
+          "file": "contact-13-at-0.72s.png",
+          "sha256": "f97c834b2cf35bf90133cd463f5086c04631e96c52c1dfacca133e31bd983af8"
+        }
+      ]
+    },
+    {
+      "file": "12b-to-13-contact.gif",
+      "normal_wall_clock": true,
+      "shots": [
+        {
+          "requested_seconds": 0.19,
+          "wall_seconds": 0.278,
+          "file": "12b-to-13-contact-at-0.19s.png",
+          "sha256": "5cc0a57dea6c3d5cf228ce3da5e9018290f90debbdda9dbd996545b11c05c499"
+        },
+        {
+          "requested_seconds": 0.32,
+          "wall_seconds": 0.376,
+          "file": "12b-to-13-contact-at-0.32s.png",
+          "sha256": "960ed50ec81994167d7d7dde025b281a7aed548162fe5d3f6e868765589ac494"
+        },
+        {
+          "requested_seconds": 0.6,
+          "wall_seconds": 0.644,
+          "file": "12b-to-13-contact-at-0.60s.png",
+          "sha256": "d2ac5c2998088cf3226b58d4d6525ef5020e6cf85544f93a7c1e05e2df73513f"
+        },
+        {
+          "requested_seconds": 0.99,
+          "wall_seconds": 1.049,
+          "file": "12b-to-13-contact-at-0.99s.png",
+          "sha256": "0d1d9048c8eb4ef3cb0242b1a0ac5816880290317b16514ae7df9735aaf2428f"
+        },
+        {
+          "requested_seconds": 1.12,
+          "wall_seconds": 1.197,
+          "file": "12b-to-13-contact-at-1.12s.png",
+          "sha256": "f4b42e6bfebc483f19bad1f9ecafafb1ea1b655d99ff85494fc09bc87ccd1002"
+        },
+        {
+          "requested_seconds": 1.4,
+          "wall_seconds": 1.478,
+          "file": "12b-to-13-contact-at-1.40s.png",
+          "sha256": "067fd3ca40aaabcb440a31e582e3fa423d8e6669786c10f96716d60d704ea89a"
+        },
+        {
+          "requested_seconds": 1.52,
+          "wall_seconds": 1.578,
+          "file": "12b-to-13-contact-at-1.52s.png",
+          "sha256": "f97c834b2cf35bf90133cd463f5086c04631e96c52c1dfacca133e31bd983af8"
+        }
+      ]
+    },
+    {
+      "file": "whole-13.gif",
+      "normal_wall_clock": true,
+      "shots": [
+        {
+          "requested_seconds": 0.35,
+          "wall_seconds": 0.407,
+          "file": "whole-13-at-0.35s.png",
+          "sha256": "9c07e62d7d3c103b160df41f4c5164215279267e66f027b51fb7f05cb8706efb"
+        },
+        {
+          "requested_seconds": 0.75,
+          "wall_seconds": 0.792,
+          "file": "whole-13-at-0.75s.png",
+          "sha256": "16165f35926eee3376101f032f9fcaf82af24967c0e8cc96ba01f67448c583d0"
+        },
+        {
+          "requested_seconds": 1.6,
+          "wall_seconds": 1.655,
+          "file": "whole-13-at-1.60s.png",
+          "sha256": "1aabcfd2b181b5ce1709e6f94ed01f35a96440f0f6fdc9811563e6b2615f70bd"
+        },
+        {
+          "requested_seconds": 2.35,
+          "wall_seconds": 2.409,
+          "file": "whole-13-at-2.35s.png",
+          "sha256": "b61345dd3fb1f5e2e2e6f971da0d9e330f75adaac3abe5277b7bd4936c6f9b7b"
+        },
+        {
+          "requested_seconds": 3.35,
+          "wall_seconds": 3.404,
+          "file": "whole-13-at-3.35s.png",
+          "sha256": "3d6c61282d5eab53b303aabe3cc0b7e8809389cbe2f741aba0f33b3c8a288f47"
+        },
+        {
+          "requested_seconds": 4.35,
+          "wall_seconds": 4.385,
+          "file": "whole-13-at-4.35s.png",
+          "sha256": "1a5e6abe4855d417f8808c9f80cfa2e42e1a4a7512451c16345e85da3abf0b7b"
+        },
+        {
+          "requested_seconds": 5.35,
+          "wall_seconds": 5.404,
+          "file": "whole-13-at-5.35s.png",
+          "sha256": "0baf77d8dcd27418043851434efbff99e7da657f2a9341c8a26a55560971f4a5"
+        },
+        {
+          "requested_seconds": 6.9,
+          "wall_seconds": 6.934,
+          "file": "whole-13-at-6.90s.png",
+          "sha256": "145013bba3a4f173186990dbeb265c1296d84c8160fc98d208479051b6de1740"
+        },
+        {
+          "requested_seconds": 7.65,
+          "wall_seconds": 7.716,
+          "file": "whole-13-at-7.65s.png",
+          "sha256": "77e61186c4cefd5dafa9a4abf69b8b6a42a5fe11e1d4f820e69ec908573104cc"
+        }
+      ]
+    }
+  ],
+  "viewer_buttons_verified": [
+    "12b-to-13-contact.gif",
+    "contact-13.gif",
+    "whole-13.gif",
+    "contact-phases.png",
+    "oblique.png",
+    "near.png",
+    "light.png",
+    "dark.png"
+  ],
+  "viewer_keyframes_verified": [
+    0,
+    8,
+    10,
+    12,
+    15,
+    20,
+    26,
+    31
+  ],
+  "success": true,
+  "own_browser_root_exited": true
+}

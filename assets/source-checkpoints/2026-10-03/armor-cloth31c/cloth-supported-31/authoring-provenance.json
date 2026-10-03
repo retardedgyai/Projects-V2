@@ -1,0 +1,279 @@
+{
+  "baseline30_preserved": true,
+  "removed_parts": [
+    "close sloping cloth crown",
+    "short folded nape cloth",
+    "left sewn hood cheek gusset",
+    "right sewn hood cheek gusset",
+    "supported falling shoulder cloth",
+    "folded hood to neck cowl",
+    "left turned front cheek return",
+    "right turned front cheek return"
+  ],
+  "new_parts": {
+    "continuous shallow folded hood crown": {
+      "kind": "curved thin shell",
+      "thickness": 0.065,
+      "surface_vertices": 55,
+      "surface_triangles": 80,
+      "front_back_pair_max_error": 3.3584246494910985e-15,
+      "bounds": [
+        [
+          3.05,
+          26.4,
+          3.63
+        ],
+        [
+          12.95,
+          34.05,
+          12.6
+        ]
+      ]
+    },
+    "folded crown to nape cloth": {
+      "kind": "curved thin shell",
+      "thickness": 0.065,
+      "surface_vertices": 28,
+      "surface_triangles": 36,
+      "front_back_pair_max_error": 1.1518563880486e-15,
+      "bounds": [
+        [
+          3.45,
+          25.85,
+          12.6
+        ],
+        [
+          12.55,
+          33.5,
+          13.05
+        ]
+      ]
+    },
+    "short gathered hood neck cowl": {
+      "kind": "curved thin shell",
+      "thickness": 0.055,
+      "surface_vertices": 40,
+      "surface_triangles": 60,
+      "front_back_pair_max_error": 1.817990202823694e-15,
+      "bounds": [
+        [
+          3.35,
+          23.6,
+          3.25
+        ],
+        [
+          12.65,
+          27.35,
+          12.7
+        ]
+      ]
+    },
+    "left continuous front hood return": {
+      "kind": "curved thin shell",
+      "thickness": 0.04,
+      "surface_vertices": 6,
+      "surface_triangles": 4,
+      "front_back_pair_max_error": 3.469446951953614e-17,
+      "bounds": [
+        [
+          3.4,
+          27.0,
+          3.1
+        ],
+        [
+          4.4,
+          31.2,
+          3.63
+        ]
+      ]
+    },
+    "right continuous front hood return": {
+      "kind": "curved thin shell",
+      "thickness": 0.04,
+      "surface_vertices": 6,
+      "surface_triangles": 4,
+      "front_back_pair_max_error": 8.534839501805891e-16,
+      "bounds": [
+        [
+          11.6,
+          27.0,
+          3.1
+        ],
+        [
+          12.6,
+          31.2,
+          3.63
+        ]
+      ]
+    },
+    "left shoulder to chest diagonal cloth": {
+      "kind": "curved thin shell",
+      "thickness": 0.055,
+      "surface_vertices": 24,
+      "surface_triangles": 28,
+      "front_back_pair_max_error": 1.5334955527634975e-15,
+      "bounds": [
+        [
+          -0.5,
+          17.75,
+          4.35
+        ],
+        [
+          11.5,
+          25.1,
+          12.95
+        ]
+      ]
+    },
+    "right shoulder overlapping cloth return": {
+      "kind": "curved thin shell",
+      "thickness": 0.055,
+      "surface_vertices": 21,
+      "surface_triangles": 24,
+      "front_back_pair_max_error": 1.3877787807814457e-15,
+      "bounds": [
+        [
+          7.95,
+          19.0,
+          4.0
+        ],
+        [
+          16.55,
+          25.1,
+          12.75
+        ]
+      ]
+    }
+  },
+  "new_texture_islands": [
+    {
+      "piece": "continuous shallow folded hood crown",
+      "logical_size": [
+        30,
+        10
+      ],
+      "outer": [
+        4,
+        4
+      ],
+      "inner": [
+        40,
+        4
+      ],
+      "thickness": 0.065,
+      "paint_follows_authored_surface": true
+    },
+    {
+      "piece": "folded crown to nape cloth",
+      "logical_size": [
+        10,
+        9
+      ],
+      "outer": [
+        84,
+        4
+      ],
+      "inner": [
+        100,
+        4
+      ],
+      "thickness": 0.065,
+      "paint_follows_authored_surface": true
+    },
+    {
+      "piece": "short gathered hood neck cowl",
+      "logical_size": [
+        40,
+        5
+      ],
+      "outer": [
+        124,
+        4
+      ],
+      "inner": [
+        170,
+        4
+      ],
+      "thickness": 0.055,
+      "paint_follows_authored_surface": true
+    },
+    {
+      "piece": "left continuous front hood return",
+      "logical_size": [
+        2,
+        5
+      ],
+      "outer": [
+        224,
+        4
+      ],
+      "inner": [
+        232,
+        4
+      ],
+      "thickness": 0.04,
+      "paint_follows_authored_surface": true
+    },
+    {
+      "piece": "right continuous front hood return",
+      "logical_size": [
+        2,
+        5
+      ],
+      "outer": [
+        248,
+        4
+      ],
+      "inner": [
+        256,
+        4
+      ],
+      "thickness": 0.04,
+      "paint_follows_authored_surface": true
+    },
+    {
+      "piece": "left shoulder to chest diagonal cloth",
+      "logical_size": [
+        25,
+        3
+      ],
+      "outer": [
+        272,
+        4
+      ],
+      "inner": [
+        303,
+        4
+      ],
+      "thickness": 0.055,
+      "paint_follows_authored_surface": true
+    },
+    {
+      "piece": "right shoulder overlapping cloth return",
+      "logical_size": [
+        20,
+        3
+      ],
+      "outer": [
+        342,
+        4
+      ],
+      "inner": [
+        368,
+        4
+      ],
+      "thickness": 0.055,
+      "paint_follows_authored_surface": true
+    }
+  ],
+  "copied_three_source_atlases_byte_exact": true,
+  "world_corresponding_pixel_fields": true,
+  "body_face_opening_chest_belt_lowerbody_unchanged": true,
+  "neck_cowl_lower_edge_shortened": true,
+  "no_simulation_or_external_AI": true,
+  "vertices": 1968,
+  "triangles": 3740,
+  "meshes": 63,
+  "native_inspection_complete": false,
+  "aesthetic_acceptance_claimed": false
+}

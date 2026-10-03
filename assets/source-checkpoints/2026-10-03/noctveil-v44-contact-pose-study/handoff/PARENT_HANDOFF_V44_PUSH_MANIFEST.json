@@ -1,0 +1,58 @@
+{
+  "workspace": "C:\\Users\\xgaiz\\Documents\\Codex\\2026-10-02\\task-4",
+  "is_git_repository": false,
+  "branch": null,
+  "commit": null,
+  "push_executor": "Parent task01a1022f-884a-7190-92a6-e08bb1289093; this worker has no Git repo/branch/commit and does not push. Previous v42/v43 delivery manifests remain unchanged.",
+  "files": [
+    {
+      "local_path": "C:\\Users\\xgaiz\\Documents\\Codex\\2026-10-02\\task-4\\outputs\\v44_contact_delivery\\projects_noctveil_v44_contact_pose_study.bbmodel",
+      "workspace_relative_path": "outputs/v44_contact_delivery/projects_noctveil_v44_contact_pose_study.bbmodel",
+      "bytes": 9185276,
+      "sha256": "3a78b98bbcf43382b9b5811956817c4d28e3d57e6021f0ce340fed2384c6812d"
+    },
+    {
+      "local_path": "C:\\Users\\xgaiz\\Documents\\Codex\\2026-10-02\\task-4\\outputs\\v44_contact_delivery\\noctveil_v44_contact_pose_comparison.png",
+      "workspace_relative_path": "outputs/v44_contact_delivery/noctveil_v44_contact_pose_comparison.png",
+      "bytes": 58089,
+      "sha256": "768ff0ebadd84a2dd1b3de770e006997f655a96bfa658c95b6d097fedf56ec53"
+    },
+    {
+      "local_path": "C:\\Users\\xgaiz\\Documents\\Codex\\2026-10-02\\task-4\\outputs\\v44_contact_delivery\\v44_contact_pose_evidence.json",
+      "workspace_relative_path": "outputs/v44_contact_delivery/v44_contact_pose_evidence.json",
+      "bytes": 99920,
+      "sha256": "f2e3edaac6d80097af604cdff7638644efab7274519b5b20313a394d535f0ed7"
+    },
+    {
+      "local_path": "C:\\Users\\xgaiz\\Documents\\Codex\\2026-10-02\\task-4\\work\\noctveil_v44_pose_tools.py",
+      "workspace_relative_path": "work/noctveil_v44_pose_tools.py",
+      "bytes": 2476,
+      "sha256": "ad0f8f9fc554eee3d82181c80f6d874b468f83340ae271130f41d400a6253725"
+    },
+    {
+      "local_path": "C:\\Users\\xgaiz\\Documents\\Codex\\2026-10-02\\task-4\\work\\probe_v44_contact_separation.py",
+      "workspace_relative_path": "work/probe_v44_contact_separation.py",
+      "bytes": 4552,
+      "sha256": "9b97f7bd18933f036e74dccc8d1017bffc7dd0423c2a5cbe727b19199e094e03"
+    },
+    {
+      "local_path": "C:\\Users\\xgaiz\\Documents\\Codex\\2026-10-02\\task-4\\work\\build_v44_readable_flanks_03.py",
+      "workspace_relative_path": "work/build_v44_readable_flanks_03.py",
+      "bytes": 5379,
+      "sha256": "0be9a88b055e9bb734f10e3fba94999122bda85ad0f4417e8eabd2bbe06317f6"
+    },
+    {
+      "local_path": "C:\\Users\\xgaiz\\Documents\\Codex\\2026-10-02\\task-4\\work\\save_v44_contact_delivery.py",
+      "workspace_relative_path": "work/save_v44_contact_delivery.py",
+      "bytes": 5043,
+      "sha256": "18d9ee7ee8175c3665b6140fbf595638e474f87257feda6d5863ab80d466e816"
+    },
+    {
+      "local_path": "C:\\Users\\xgaiz\\Documents\\Codex\\2026-10-02\\task-4\\work\\save_v44_contact_checkpoint.py",
+      "workspace_relative_path": "work/save_v44_contact_checkpoint.py",
+      "bytes": 3458,
+      "sha256": "18663c38985e0289cf1e316c11a6c8aa208cd743444a7120642c4a57dc7ea78f"
+    }
+  ],
+  "exclusions": "Reference originals, runtimes/profiles/Library metadata and helpers, trial outputs and superseded candidates. Authoring sources depend on existing Noctveil workspace helpers; delivered bbmodel self-contained."
+}

@@ -1,0 +1,99 @@
+{
+  "Schema": 1,
+  "Snapshot": "noctveil-v44-contact-pose-study",
+  "Status": "FIX_FIRST_SINGLE_STATIC_CONTACT_POSE_SOURCE_SNAPSHOT",
+  "CapturedUtc": "2026-10-03T17:37:05.548745+00:00",
+  "SourceType": "Fixed non-Git editable source checkpoint",
+  "FixedManifestSha256": "7d6f1659844c4e1345793f75b76cf2d1389004de48f96ff627b43ded6f03e161",
+  "FixedSourceMembersMatched": 8,
+  "OriginalUnchanged": true,
+  "EntryBytesVerified": true,
+  "OwnerReportedLimits": {
+    "scope": "Current one contact pose only; previous V43+V42 copies preserved. Native07 is not evidence for currentV44. Concept->real3Dmodel->partial static visual/surface QA->game not connected.",
+    "largest_remaining_obstacle": "At opposite-side exit the hand still becomes hidden in oblique view; complete outside->inside->opposite-side interpolation and recovery to closed idle are not established.",
+    "finite_contact_notes": "Existing two hooks intersect fixed target at front/right edge; palm/radius and membrane do not intersect target. Head/crown crossings0, minimum groundY+.003. No all-time collision proof. New unrelated/adjacent wing crossing pairs remain in evidence; segment length is not penetration depth.",
+    "native_current_verified": false,
+    "full_body_pass": false,
+    "whole_body_gesture_pass": false,
+    "art_pass": false,
+    "game_connected": false
+  },
+  "RecoveryInstructions": "Open the delivered self-contained bbmodel with its two embedded textures in an installed compatible Blockbench. One contact pose only; no connected arm/chest path, recovery, all-time collision, final native or game claim. The exact work/ scripts are historical authoring logic and use omitted producer helpers/intermediate inputs. Existing owned pose/preview helpers remain in sibling noctveil-v42-iteration09/recovery. Preserve V42/V43; never infer current verification from native07.",
+  "RelatedLibrary": {
+    "LibraryFileId": "libfile_65a082b256ac819189d499de991fe0d5",
+    "Version": 0
+  },
+  "Files": [
+    {
+      "Path": "outputs/v44_contact_delivery/projects_noctveil_v44_contact_pose_study.bbmodel",
+      "Bytes": 9185276,
+      "Sha256": "3a78b98bbcf43382b9b5811956817c4d28e3d57e6021f0ce340fed2384c6812d",
+      "Role": "fixed_owned_source_dependency_or_review_evidence"
+    },
+    {
+      "Path": "outputs/v44_contact_delivery/noctveil_v44_contact_pose_comparison.png",
+      "Bytes": 58089,
+      "Sha256": "768ff0ebadd84a2dd1b3de770e006997f655a96bfa658c95b6d097fedf56ec53",
+      "Role": "fixed_owned_source_dependency_or_review_evidence"
+    },
+    {
+      "Path": "outputs/v44_contact_delivery/v44_contact_pose_evidence.json",
+      "Bytes": 99920,
+      "Sha256": "f2e3edaac6d80097af604cdff7638644efab7274519b5b20313a394d535f0ed7",
+      "Role": "fixed_owned_source_dependency_or_review_evidence"
+    },
+    {
+      "Path": "work/noctveil_v44_pose_tools.py",
+      "Bytes": 2476,
+      "Sha256": "ad0f8f9fc554eee3d82181c80f6d874b468f83340ae271130f41d400a6253725",
+      "Role": "fixed_owned_source_dependency_or_review_evidence"
+    },
+    {
+      "Path": "work/probe_v44_contact_separation.py",
+      "Bytes": 4552,
+      "Sha256": "9b97f7bd18933f036e74dccc8d1017bffc7dd0423c2a5cbe727b19199e094e03",
+      "Role": "fixed_owned_source_dependency_or_review_evidence"
+    },
+    {
+      "Path": "work/build_v44_readable_flanks_03.py",
+      "Bytes": 5379,
+      "Sha256": "0be9a88b055e9bb734f10e3fba94999122bda85ad0f4417e8eabd2bbe06317f6",
+      "Role": "fixed_owned_source_dependency_or_review_evidence"
+    },
+    {
+      "Path": "work/save_v44_contact_delivery.py",
+      "Bytes": 5043,
+      "Sha256": "18d9ee7ee8175c3665b6140fbf595638e474f87257feda6d5863ab80d466e816",
+      "Role": "fixed_owned_source_dependency_or_review_evidence"
+    },
+    {
+      "Path": "work/save_v44_contact_checkpoint.py",
+      "Bytes": 3458,
+      "Sha256": "18663c38985e0289cf1e316c11a6c8aa208cd743444a7120642c4a57dc7ea78f",
+      "Role": "fixed_owned_source_dependency_or_review_evidence"
+    },
+    {
+      "Path": "handoff/PARENT_HANDOFF_V44_PUSH_MANIFEST.json",
+      "Bytes": 3271,
+      "Sha256": "7d6f1659844c4e1345793f75b76cf2d1389004de48f96ff627b43ded6f03e161",
+      "Role": "fixed_manifest_or_public_source_inventory"
+    },
+    {
+      "Path": "handoff/PARENT_HANDOFF_V44_CONTACT_RESEARCH.json",
+      "Bytes": 3713,
+      "Sha256": "accb51582e2e21a79c1615eb3f9f3bb29ff31952f6867f67d5140e3b5bea781f",
+      "Role": "fixed_manifest_or_public_source_inventory"
+    }
+  ],
+  "IndependentSourceChecks": {
+    "ProtectedGeometryHierarchyTexturesEqualSavedV43": {
+      "elements": true,
+      "outliner": true,
+      "textures": true
+    },
+    "OriginalThreeClipsExact": true,
+    "EmbeddedTextureCount": 2,
+    "ModelSha256": "3a78b98bbcf43382b9b5811956817c4d28e3d57e6021f0ce340fed2384c6812d",
+    "NativeOrGameRuntimeLaunched": false
+  }
+}

@@ -1,0 +1,204 @@
+{
+  "render_seconds": 39.091,
+  "priority": "BelowNormal",
+  "frames": 32,
+  "fps": 40,
+  "max_head_body_occluded": 0,
+  "minimum_leg_retention": 0.905829596412556,
+  "samples": [
+    {
+      "time": 1.98,
+      "age": -0.22,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0
+    },
+    {
+      "time": 2.005,
+      "age": -0.195,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0
+    },
+    {
+      "time": 2.03,
+      "age": -0.17,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0
+    },
+    {
+      "time": 2.055,
+      "age": -0.145,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0
+    },
+    {
+      "time": 2.08,
+      "age": -0.12,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0
+    },
+    {
+      "time": 2.105,
+      "age": -0.095,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0
+    },
+    {
+      "time": 2.13,
+      "age": -0.07,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0
+    },
+    {
+      "time": 2.155,
+      "age": -0.045,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0
+    },
+    {
+      "time": 2.18,
+      "age": -0.02,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0
+    },
+    {
+      "time": 2.205,
+      "age": 0.005,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0
+    },
+    {
+      "time": 2.23,
+      "age": 0.03,
+      "head_body_occluded": 0,
+      "leg_retention": 0.9141242937853107
+    },
+    {
+      "time": 2.255,
+      "age": 0.055,
+      "head_body_occluded": 0,
+      "leg_retention": 0.905829596412556
+    },
+    {
+      "time": 2.28,
+      "age": 0.08,
+      "head_body_occluded": 0,
+      "leg_retention": 0.92
+    },
+    {
+      "time": 2.305,
+      "age": 0.105,
+      "head_body_occluded": 0,
+      "leg_retention": 0.9218921892189219
+    },
+    {
+      "time": 2.33,
+      "age": 0.13,
+      "head_body_occluded": 0,
+      "leg_retention": 0.9368070953436807
+    },
+    {
+      "time": 2.355,
+      "age": 0.155,
+      "head_body_occluded": 0,
+      "leg_retention": 0.9553571428571429
+    },
+    {
+      "time": 2.38,
+      "age": 0.18,
+      "head_body_occluded": 0,
+      "leg_retention": 0.9695945945945946
+    },
+    {
+      "time": 2.405,
+      "age": 0.205,
+      "head_body_occluded": 0,
+      "leg_retention": 0.9829931972789115
+    },
+    {
+      "time": 2.43,
+      "age": 0.23,
+      "head_body_occluded": 0,
+      "leg_retention": 0.9918981481481481
+    },
+    {
+      "time": 2.455,
+      "age": 0.255,
+      "head_body_occluded": 0,
+      "leg_retention": 0.9954075774971297
+    },
+    {
+      "time": 2.48,
+      "age": 0.28,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0
+    },
+    {
+      "time": 2.505,
+      "age": 0.305,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0
+    },
+    {
+      "time": 2.53,
+      "age": 0.33,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0
+    },
+    {
+      "time": 2.555,
+      "age": 0.355,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0
+    },
+    {
+      "time": 2.58,
+      "age": 0.38,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0
+    },
+    {
+      "time": 2.605,
+      "age": 0.405,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0
+    },
+    {
+      "time": 2.63,
+      "age": 0.43,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0
+    },
+    {
+      "time": 2.655,
+      "age": 0.455,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0
+    },
+    {
+      "time": 2.68,
+      "age": 0.48,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0
+    },
+    {
+      "time": 2.705,
+      "age": 0.505,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0
+    },
+    {
+      "time": 2.73,
+      "age": 0.53,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0
+    },
+    {
+      "time": 2.755,
+      "age": 0.555,
+      "head_body_occluded": 0,
+      "leg_retention": 1.0
+    }
+  ],
+  "game_capture": false,
+  "gpu_performance_verified": false
+}

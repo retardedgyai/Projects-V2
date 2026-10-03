@@ -1,0 +1,179 @@
+{
+  "revision": "31c-representative",
+  "saved_UTC": "2026-10-03T16:56:28.119432+00:00",
+  "artifact": "real mesh, Blockbench free editable model; representative static native frames",
+  "primary_reference": {
+    "Library_id": "libfile_a09d9058fed88191a189833a23ae26dc",
+    "version": 1,
+    "approval_scope": "material only"
+  },
+  "maximum_gap_fixed": "horizontal shoulder shelf replaced by two thin cloth lengths which turn over shoulders and physically overlap diagonally at chest",
+  "additional_fix": "hood crown paint connected to actual fold; brown horizontal neck rim removed; side cheek gap physically closed with turned return",
+  "actual_inspection": "native unlit front/oblique/side plus full front 64px; latest oblique seen; isolated185px avatar-skin component disappears; main facial opening remains17477px",
+  "native_checks": {
+    "models": 3,
+    "frames": 12,
+    "same_condition_groups": 4,
+    "loaded_geometry_UV_exact": true,
+    "candidate_RGBA_exact": true,
+    "resaved_rounding_bound": 1e-05
+  },
+  "neutral_checks": {
+    "vertices": 1968,
+    "triangles": 3740,
+    "meshes": 63,
+    "closed_cloth_shells": 47,
+    "body_penetration_above0_10": 0,
+    "transparent_used_texels": 0,
+    "protected_files": 5372,
+    "protected_files_changed": 0,
+    "unchanged30_piece_geometry_UV_and_three_atlas_bytes_exact": true
+  },
+  "remaining_largest_gap": "side hood still forms a large continuous boxlike mass; lower cheek/nape transition must become visibly shaped falling cloth without exposing avatar or adding ornament",
+  "other_remaining": "inherited isolated sleeve squares and torso fields remain; no whole-result MatE equivalence established",
+  "current_process_state": "own Blockbench closed; own remaining0; no rendering/retrieval/approval wait; no technical blocker",
+  "next_work": "head-neck silhouette only: shorten/taper side lower edge into nape, preserve face opening/brow; compare representative unlit side/oblique at64 before full package",
+  "art_status": "NOT_MET; no aesthetic pass or user approval claimed",
+  "game_wear_status": "NOT_TESTED; static standalone mesh only",
+  "Library31_status": "not uploaded; local representative checkpoint only; previous30 seven new Library items unchanged",
+  "push_status": "not pushed by this worker; central push owner only; no original replacement",
+  "files": {
+    "build31.py": {
+      "sha256": "1506d46dbfaeb39bf9c43a27987ff7de01d09a3fc34b33e618438b4b83240de5",
+      "bytes": 10561
+    },
+    "export31.py": {
+      "sha256": "838cbdfcb0a7456277f4a6dd8b0f8f891f5de42a9761d6f8d449932b2e66c9ea",
+      "bytes": 2108
+    },
+    "verify31.py": {
+      "sha256": "5cd03fe4aa73cf25989269b1d066147189a87fa79bfa8ca9a4fab4be53100f02",
+      "bytes": 3647
+    },
+    "diagnose_skin.py": {
+      "sha256": "918768e1c90b2dce7b191addcc263182598b8a1ff926ccdc4c187d9c5103513e",
+      "bytes": 3077
+    },
+    "authoring-provenance.json": {
+      "sha256": "c66df0901d2d3deaa4ff13bcc650c18ec7864800355cf1c481336e4baa7da395",
+      "bytes": 5808
+    },
+    "verification.json": {
+      "sha256": "c48df2d269d0df3807f8e3662f66c26efce6b6dd4a0af57e255f1d5cf3945ead",
+      "bytes": 1634
+    },
+    "native-validation.json": {
+      "sha256": "6b05d6cb8610f59dc5608eb397ed33017a53e9325b65b408d9bf4dc451b10397",
+      "bytes": 5129
+    },
+    "skin-diagnostic.json": {
+      "sha256": "c42e6da14df76bd34f0480a2d8aff0a59dd9dfe8ebff4f145972232168d336b5",
+      "bytes": 1002
+    },
+    "ProjectS_cloth31_upper_unlit_comparison.png": {
+      "sha256": "49cef91bd05cf40c85c68b44d10fab29fe5f16092d4080e1c85eaff0b092be18",
+      "bytes": 181111
+    },
+    "ProjectS_cloth31_front_64px_comparison.png": {
+      "sha256": "6d5659c10d11167b84db7390d17c05323d48387858b94aef10a9bb2cced71734",
+      "bytes": 27969
+    },
+    "model/geometry-verification.json": {
+      "sha256": "587a2096cffc6e1db623eab2c6a4b96a1a4f6c287dc18be3622db7989f46e189",
+      "bytes": 49335
+    },
+    "model/hood-shoulder.png": {
+      "sha256": "8580a76235fb61813d7fd6563dca1fc846a2cf9cab981d34ebb14dbfe1460a3c",
+      "bytes": 1500
+    },
+    "model/material.mtl": {
+      "sha256": "8a8a7b8c3daae8ed690c1b8da9689526c13dcc384239438c6c05b6285d12d10b",
+      "bytes": 335
+    },
+    "model/model.bbmodel": {
+      "sha256": "0ac5eb9734110e07052ae9d95ce04a74edb732078baee46b6bc2ad9aae78f64c",
+      "bytes": 1940743
+    },
+    "model/model.json": {
+      "sha256": "3d9d4c617ab8da8630900e86c0e4cf30e7a32785daed872ee5dc8fa6745573af",
+      "bytes": 1896660
+    },
+    "model/model.obj": {
+      "sha256": "8b57682dfd3e11b2e9845534d5c40a35927b250ef2d1f8d8ba085944cbfe7ef7",
+      "bytes": 483243
+    },
+    "model/native.png": {
+      "sha256": "cce9c1d4edc5c2388f6eb529e9387a7123bcb70c101f4d29df56f2e1f43c6afe",
+      "bytes": 8051
+    },
+    "model/new-cloth-boots.png": {
+      "sha256": "2c9212562bcbfa23bee22514b230c5137ef1bc3ebb59b57f3d1fd5ef012e4e23",
+      "bytes": 1707
+    },
+    "model/structure-paint.png": {
+      "sha256": "b1f1c1c4a0b606b5398be8fd1048482134c9f57eebc3bad2ae8c0c88b93a2726",
+      "bytes": 1589
+    },
+    "native/approved-v1-front-unlit.png": {
+      "sha256": "e64abb25cbb59eace39bf3efe516a81ffc04fcd0d32681cb077080527eb0fb12",
+      "bytes": 25043
+    },
+    "native/approved-v1-full-front-unlit.png": {
+      "sha256": "c8374b4db8ef7613aa67054c1b83fe92248c3fa45d36891d788147a9ea587da3",
+      "bytes": 25024
+    },
+    "native/approved-v1-oblique-unlit.png": {
+      "sha256": "6ca93cbf1387edd7bc11edb40ac0be18ee170cbfc1de19bcf0a62fa80a89fd95",
+      "bytes": 30255
+    },
+    "native/approved-v1-side-unlit.png": {
+      "sha256": "bbc2c01ab3d0afdf48db974148fbde9efe07dbec965294b8bfbfaf3c3781c215",
+      "bytes": 9454
+    },
+    "native/baseline30-front-unlit.png": {
+      "sha256": "4573f5d95d41e5c47e0ded4f77a3c32b9dd326040d01121289376bfd1fae539d",
+      "bytes": 23998
+    },
+    "native/baseline30-full-front-unlit.png": {
+      "sha256": "6720be3763841ab6e68f9f66621e945703f86647192055cbec7073c1ae11d9fd",
+      "bytes": 25849
+    },
+    "native/baseline30-oblique-unlit.png": {
+      "sha256": "514b0788aceb3385f5546cc2d41ce089cf101525039b5f2c11c0255b846a36f9",
+      "bytes": 25072
+    },
+    "native/baseline30-side-unlit.png": {
+      "sha256": "6435adce02a538e6c59a0e99e2c1c9a2454a5952271db706a4f7976ece82d2a1",
+      "bytes": 16811
+    },
+    "native/candidate31-front-unlit.png": {
+      "sha256": "5d2ad34e88218d01efa37dc16391210308ec1aab2f9d10e874cced0956a04dcc",
+      "bytes": 25998
+    },
+    "native/candidate31-full-front-unlit.png": {
+      "sha256": "20e25d70d7aff74b9d9dd7ee4bc957a9b4693a0e555582a2b4201264d367b5be",
+      "bytes": 27459
+    },
+    "native/candidate31-oblique-unlit.png": {
+      "sha256": "fe9c94893b5e6a809bd221458e5c82db61cb75db7722ae602486fd47adc27c70",
+      "bytes": 27827
+    },
+    "native/candidate31-side-unlit.png": {
+      "sha256": "fa9b72ac42ed22569b09388c8dbbc23346cb666eb91a14b1200527606846e20e",
+      "bytes": 17090
+    },
+    "preview64/approved-v1-front-64px.png": {
+      "sha256": "32c24fa252defb447675c20d0a5be5348c47dbf484e6b3290bfbdf0540b3ab02",
+      "bytes": 1851
+    },
+    "preview64/baseline30-front-64px.png": {
+      "sha256": "be652cf7be84094f4e1a055c5d1bbe8cdd88aa1ad8cf3b0aab5a75c4b24a90dd",
+      "bytes": 1609
+    },
+    "preview64/candidate31-front-64px.png": {
+      "sha256": "4eb36b64c8fd17367c30d98c14c8242bec0c11e2d9ba4827d3b40db05827394c",
+      "bytes": 1717
+    }
+  },
+  "replay_note": "build31 requires unchanged ../cloth-structure-30 source model and ../cloth-layered-23 mesh_tools/check23. Standalone model/model.bbmodel embeds all four textures and can be edited directly in Blockbench."
+}

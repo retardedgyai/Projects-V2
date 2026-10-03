@@ -1,0 +1,62 @@
+{
+  "minecraft_version": "26.2",
+  "parsed_elements": 1,
+  "native_faces": 1,
+  "actual_parser": true,
+  "actual_rotation_transform": true,
+  "actual_FaceInfo_and_CuboidFace_uv": true,
+  "gpu_render_verified": false,
+  "faces": [
+    {
+      "element": 0,
+      "side": "up",
+      "texture": "#bed",
+      "points_m": [
+        [
+          -3.125,
+          0.016000122,
+          -1.8750001
+        ],
+        [
+          -3.125,
+          0.016000122,
+          -0.62499994
+        ],
+        [
+          -1.8750001,
+          0.016000122,
+          -0.62499994
+        ],
+        [
+          -1.8750001,
+          0.016000122,
+          -1.8750001
+        ]
+      ],
+      "uv": [
+        [
+          0.0,
+          1.0
+        ],
+        [
+          0.0,
+          0.0
+        ],
+        [
+          1.0,
+          0.0
+        ],
+        [
+          1.0,
+          1.0
+        ]
+      ],
+      "cube_corner_ids": [
+        2,
+        6,
+        7,
+        3
+      ]
+    }
+  ]
+}

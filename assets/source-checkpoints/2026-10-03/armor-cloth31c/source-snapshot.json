@@ -1,0 +1,229 @@
+{
+  "Schema": 1,
+  "Snapshot": "armor-cloth31c",
+  "Status": "ART_NOT_MET_EDITABLE_CLOTH31C_REPRESENTATIVE_CHECKPOINT",
+  "CapturedUtc": "2026-10-03T17:37:05.936810+00:00",
+  "SourceType": "Fixed non-Git editable source checkpoint",
+  "FixedManifestSha256": "4ceaeb79049d13484875ab33501fda240271db3258f39bfd86b22cd9ad07683c",
+  "FixedSourceMembersMatched": 26,
+  "OriginalUnchanged": true,
+  "EntryBytesVerified": true,
+  "OwnerReportedLimits": {
+    "Revision": "31c-representative",
+    "ArtStatus": "NOT_MET",
+    "GameWearCertified": false,
+    "MatEEquivalenceCertified": false
+  },
+  "RecoveryInstructions": "Open cloth-supported-31/model/model.bbmodel directly: four textures are embedded; OBJ/MTL and PNG sources are also present. Optional source replay: python cloth-supported-31/build31.py, then python cloth-supported-31/verify31.py --portable. The fixed manifest includes baseline30, replay-inputs.json and mesh/check helpers with the original relative topology. Run builders only in a copied working folder. Existing approved/original source and cloth29/30 snapshots are preserved. This representative revision is ART NOT MET; no game-wear or material/aesthetic equivalence approval is inferred.",
+  "RelatedLibrary": {
+    "LibraryFileId": null,
+    "Version": null
+  },
+  "Files": [
+    {
+      "Path": "cloth-layered-23/check23.py",
+      "Bytes": 3854,
+      "Sha256": "b6e2e14775a3cfb2f5cb538c2f82018aa6aa72b6ca9951ab40a63343a2136bec",
+      "Role": "fixed_owned_source_dependency_or_review_evidence"
+    },
+    {
+      "Path": "cloth-layered-23/check_geometry.py",
+      "Bytes": 3808,
+      "Sha256": "75ca73e1e2683441ccc3eb31c1647f4c70490843015146d11f3baa98cd300530",
+      "Role": "fixed_owned_source_dependency_or_review_evidence"
+    },
+    {
+      "Path": "cloth-layered-23/mesh_tools.py",
+      "Bytes": 6944,
+      "Sha256": "889a92617cd69b8828bafff0dbea3b581a13b33814f4b3558627173deb211ce4",
+      "Role": "fixed_owned_source_dependency_or_review_evidence"
+    },
+    {
+      "Path": "cloth-structure-30/model/model.json",
+      "Bytes": 1845503,
+      "Sha256": "9db1cb1fb4fd62e1485c77dc27795dd1584f5931c6a055d10033646b58ef1601",
+      "Role": "fixed_owned_source_dependency_or_review_evidence"
+    },
+    {
+      "Path": "cloth-structure-30/model/native.png",
+      "Bytes": 8051,
+      "Sha256": "cce9c1d4edc5c2388f6eb529e9387a7123bcb70c101f4d29df56f2e1f43c6afe",
+      "Role": "fixed_owned_source_dependency_or_review_evidence"
+    },
+    {
+      "Path": "cloth-structure-30/model/new-cloth-boots.png",
+      "Bytes": 1707,
+      "Sha256": "2c9212562bcbfa23bee22514b230c5137ef1bc3ebb59b57f3d1fd5ef012e4e23",
+      "Role": "fixed_owned_source_dependency_or_review_evidence"
+    },
+    {
+      "Path": "cloth-structure-30/model/structure-paint.png",
+      "Bytes": 1589,
+      "Sha256": "b1f1c1c4a0b606b5398be8fd1048482134c9f57eebc3bad2ae8c0c88b93a2726",
+      "Role": "fixed_owned_source_dependency_or_review_evidence"
+    },
+    {
+      "Path": "cloth-supported-31/authoring-provenance.json",
+      "Bytes": 5808,
+      "Sha256": "c66df0901d2d3deaa4ff13bcc650c18ec7864800355cf1c481336e4baa7da395",
+      "Role": "fixed_owned_source_dependency_or_review_evidence"
+    },
+    {
+      "Path": "cloth-supported-31/build31.py",
+      "Bytes": 10561,
+      "Sha256": "1506d46dbfaeb39bf9c43a27987ff7de01d09a3fc34b33e618438b4b83240de5",
+      "Role": "fixed_owned_source_dependency_or_review_evidence"
+    },
+    {
+      "Path": "cloth-supported-31/checkpoint.json",
+      "Bytes": 7833,
+      "Sha256": "44d7cc7bc1b0bd22a4a4936aca2d502e6aac49083e9aa2ca4df641d137ba5a4e",
+      "Role": "fixed_owned_source_dependency_or_review_evidence"
+    },
+    {
+      "Path": "cloth-supported-31/export31.py",
+      "Bytes": 2108,
+      "Sha256": "838cbdfcb0a7456277f4a6dd8b0f8f891f5de42a9761d6f8d449932b2e66c9ea",
+      "Role": "fixed_owned_source_dependency_or_review_evidence"
+    },
+    {
+      "Path": "cloth-supported-31/model/hood-shoulder.png",
+      "Bytes": 1500,
+      "Sha256": "8580a76235fb61813d7fd6563dca1fc846a2cf9cab981d34ebb14dbfe1460a3c",
+      "Role": "fixed_owned_source_dependency_or_review_evidence"
+    },
+    {
+      "Path": "cloth-supported-31/model/material.mtl",
+      "Bytes": 335,
+      "Sha256": "8a8a7b8c3daae8ed690c1b8da9689526c13dcc384239438c6c05b6285d12d10b",
+      "Role": "fixed_owned_source_dependency_or_review_evidence"
+    },
+    {
+      "Path": "cloth-supported-31/model/model.bbmodel",
+      "Bytes": 1940743,
+      "Sha256": "0ac5eb9734110e07052ae9d95ce04a74edb732078baee46b6bc2ad9aae78f64c",
+      "Role": "fixed_owned_source_dependency_or_review_evidence"
+    },
+    {
+      "Path": "cloth-supported-31/model/model.json",
+      "Bytes": 1896660,
+      "Sha256": "3d9d4c617ab8da8630900e86c0e4cf30e7a32785daed872ee5dc8fa6745573af",
+      "Role": "fixed_owned_source_dependency_or_review_evidence"
+    },
+    {
+      "Path": "cloth-supported-31/model/model.obj",
+      "Bytes": 483243,
+      "Sha256": "8b57682dfd3e11b2e9845534d5c40a35927b250ef2d1f8d8ba085944cbfe7ef7",
+      "Role": "fixed_owned_source_dependency_or_review_evidence"
+    },
+    {
+      "Path": "cloth-supported-31/model/native.png",
+      "Bytes": 8051,
+      "Sha256": "cce9c1d4edc5c2388f6eb529e9387a7123bcb70c101f4d29df56f2e1f43c6afe",
+      "Role": "fixed_owned_source_dependency_or_review_evidence"
+    },
+    {
+      "Path": "cloth-supported-31/model/new-cloth-boots.png",
+      "Bytes": 1707,
+      "Sha256": "2c9212562bcbfa23bee22514b230c5137ef1bc3ebb59b57f3d1fd5ef012e4e23",
+      "Role": "fixed_owned_source_dependency_or_review_evidence"
+    },
+    {
+      "Path": "cloth-supported-31/model/structure-paint.png",
+      "Bytes": 1589,
+      "Sha256": "b1f1c1c4a0b606b5398be8fd1048482134c9f57eebc3bad2ae8c0c88b93a2726",
+      "Role": "fixed_owned_source_dependency_or_review_evidence"
+    },
+    {
+      "Path": "cloth-supported-31/native-validation.json",
+      "Bytes": 5129,
+      "Sha256": "6b05d6cb8610f59dc5608eb397ed33017a53e9325b65b408d9bf4dc451b10397",
+      "Role": "fixed_owned_source_dependency_or_review_evidence"
+    },
+    {
+      "Path": "cloth-supported-31/ProjectS_cloth31_front_64px_comparison.png",
+      "Bytes": 27969,
+      "Sha256": "6d5659c10d11167b84db7390d17c05323d48387858b94aef10a9bb2cced71734",
+      "Role": "fixed_owned_source_dependency_or_review_evidence"
+    },
+    {
+      "Path": "cloth-supported-31/ProjectS_cloth31_upper_unlit_comparison.png",
+      "Bytes": 181111,
+      "Sha256": "49cef91bd05cf40c85c68b44d10fab29fe5f16092d4080e1c85eaff0b092be18",
+      "Role": "fixed_owned_source_dependency_or_review_evidence"
+    },
+    {
+      "Path": "cloth-supported-31/replay-inputs.json",
+      "Bytes": 779,
+      "Sha256": "5c6a4697345224a5dce0762111bb62878fefeac3a7a1ce0605850abd48fd460e",
+      "Role": "fixed_owned_source_dependency_or_review_evidence"
+    },
+    {
+      "Path": "cloth-supported-31/verification.json",
+      "Bytes": 1634,
+      "Sha256": "c48df2d269d0df3807f8e3662f66c26efce6b6dd4a0af57e255f1d5cf3945ead",
+      "Role": "fixed_owned_source_dependency_or_review_evidence"
+    },
+    {
+      "Path": "cloth-supported-31/verify31.py",
+      "Bytes": 3647,
+      "Sha256": "5cd03fe4aa73cf25989269b1d066147189a87fa79bfa8ca9a4fab4be53100f02",
+      "Role": "fixed_owned_source_dependency_or_review_evidence"
+    },
+    {
+      "Path": "README.txt",
+      "Bytes": 751,
+      "Sha256": "1dc58c48ab1d65872f60a04cb490ba4eae8f82c68c73c88fb4c634c2aa84652d",
+      "Role": "fixed_owned_source_dependency_or_review_evidence"
+    },
+    {
+      "Path": "handoff/push-savepoint-manifest31c.json",
+      "Bytes": 5121,
+      "Sha256": "4ceaeb79049d13484875ab33501fda240271db3258f39bfd86b22cd9ad07683c",
+      "Role": "fixed_manifest_or_public_source_inventory"
+    },
+    {
+      "Path": "recovery-verification.json",
+      "Bytes": 962,
+      "Sha256": "ff6472d2d95871d3bd1d41c0287fb3e2e10e4e43acdf082247380cb178ee6913",
+      "Role": "isolated_recovery_evidence_created_in_this_task"
+    }
+  ],
+  "IndependentSourceChecks": {
+    "EmbeddedTextureCount": 4,
+    "ModelJsonReadable": true,
+    "NativeOrGameRuntimeLaunched": false
+  },
+  "IndependentRecoveryVerification": {
+    "CheckedUtc": "2026-10-03T17:38:33.043469+00:00",
+    "IsolatedCopy": true,
+    "OriginalProducerAndArchiveReadsRejected": true,
+    "NativeOrGameRuntimeLaunched": false,
+    "AestheticOrGamePass": false,
+    "SavedSourcePortableVerification": {
+      "status": "NEUTRAL_TECHNICAL_CHECK_ONLY",
+      "protected_source_files": 7,
+      "protected_source_files_changed": [],
+      "body_hardware_belt_boot_geometry_UV_exact30": true,
+      "BB_embedded_RGBA_exact_export": true,
+      "raster_UV_samples": 56662,
+      "transparent_used_texels": 0,
+      "textures": 4
+    },
+    "RebuiltModelFilesExact": {
+      "model.json": true,
+      "model.bbmodel": true,
+      "model.obj": true,
+      "material.mtl": true,
+      "native.png": true,
+      "new-cloth-boots.png": true,
+      "structure-paint.png": true,
+      "hood-shoulder.png": true
+    },
+    "AllEightRebuiltModelFilesByteExact": true,
+    "DeniedReadOrNetworkAttempts": {
+      "filesystem": 0,
+      "network": 0
+    }
+  }
+}

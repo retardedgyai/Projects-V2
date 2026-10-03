@@ -1,0 +1,13 @@
+{
+  "revision": "13c",
+  "files": {
+    "author_contact13.py": "78774f99557fce43be4f741b33c743a09d551c288ca623bec5cf31520805f33e",
+    "scene13.py": "a5ad30a2d7f847fee066fa6745b38ce6ae13e4c3f393fe1681f11c4088dee260",
+    "native-study/contact-break-13.model.json": "9f63468f2341ed0d66802fe3d4d683eb67a460091cfea8c7732535961d37727a",
+    "native-study/contact-break-13.mesh.json": "dd7f00bdc4d26300be0f08b49b7aee5c27ffdeb0ddf8646de616121a7fa128bf",
+    "native-study/contact-break-13.png": "ad931420905206415d4bd563e081bb6c51f0f9df65e35903975372236694a00a",
+    "native-study/contact-break-13.native-faces.json": "4cc68944970b5e3b0448e47556ad565f08575e1a4b496f81e54ab66f65afabd3"
+  },
+  "main_floor_changed": false,
+  "game_changed": false
+}
