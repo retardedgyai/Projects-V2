@@ -1,0 +1,3915 @@
+{
+  "atlas": [
+    512,
+    512
+  ],
+  "same_atlas_UV_all_poses": true,
+  "islands": [
+    {
+      "piece": "avatar torso face0",
+      "material": "wool",
+      "island": [
+        0,
+        0,
+        19,
+        27
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "avatar torso face2",
+      "material": "wool",
+      "island": [
+        22,
+        0,
+        19,
+        27
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "avatar torso face4",
+      "material": "wool",
+      "island": [
+        44,
+        0,
+        11,
+        27
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "avatar torso face6",
+      "material": "wool",
+      "island": [
+        58,
+        0,
+        11,
+        27
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "avatar torso face8",
+      "material": "wool",
+      "island": [
+        72,
+        0,
+        19,
+        11
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "avatar torso face10",
+      "material": "wool",
+      "island": [
+        94,
+        0,
+        19,
+        11
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "avatar head face12",
+      "material": "skin",
+      "island": [
+        116,
+        0,
+        19,
+        19
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "avatar head face14",
+      "material": "skin",
+      "island": [
+        138,
+        0,
+        19,
+        19
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "avatar head face16",
+      "material": "skin",
+      "island": [
+        160,
+        0,
+        19,
+        19
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "avatar head face18",
+      "material": "skin",
+      "island": [
+        182,
+        0,
+        19,
+        19
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "avatar head face20",
+      "material": "skin",
+      "island": [
+        204,
+        0,
+        19,
+        19
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "avatar head face22",
+      "material": "skin",
+      "island": [
+        226,
+        0,
+        19,
+        19
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left avatar upper arm face24",
+      "material": "wool",
+      "island": [
+        248,
+        0,
+        14,
+        24
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left avatar upper arm face26",
+      "material": "wool",
+      "island": [
+        265,
+        0,
+        14,
+        24
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left avatar upper arm face28",
+      "material": "wool",
+      "island": [
+        282,
+        0,
+        11,
+        23
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left avatar upper arm face30",
+      "material": "wool",
+      "island": [
+        296,
+        0,
+        11,
+        23
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left avatar upper arm face32",
+      "material": "wool",
+      "island": [
+        310,
+        0,
+        12,
+        12
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left avatar upper arm face34",
+      "material": "wool",
+      "island": [
+        325,
+        0,
+        12,
+        11
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left avatar forearm face36",
+      "material": "wool",
+      "island": [
+        340,
+        0,
+        14,
+        24
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left avatar forearm face38",
+      "material": "wool",
+      "island": [
+        357,
+        0,
+        14,
+        24
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left avatar forearm face40",
+      "material": "wool",
+      "island": [
+        374,
+        0,
+        11,
+        23
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left avatar forearm face42",
+      "material": "wool",
+      "island": [
+        388,
+        0,
+        11,
+        23
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left avatar forearm face44",
+      "material": "wool",
+      "island": [
+        402,
+        0,
+        12,
+        12
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left avatar forearm face46",
+      "material": "wool",
+      "island": [
+        417,
+        0,
+        12,
+        11
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left visible hand face48",
+      "material": "skin",
+      "island": [
+        432,
+        0,
+        12,
+        9
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left visible hand face50",
+      "material": "skin",
+      "island": [
+        447,
+        0,
+        12,
+        9
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left visible hand face52",
+      "material": "skin",
+      "island": [
+        462,
+        0,
+        11,
+        8
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left visible hand face54",
+      "material": "skin",
+      "island": [
+        476,
+        0,
+        11,
+        8
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left visible hand face56",
+      "material": "skin",
+      "island": [
+        490,
+        0,
+        12,
+        11
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left visible hand face58",
+      "material": "skin",
+      "island": [
+        0,
+        30,
+        12,
+        12
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right avatar upper arm face60",
+      "material": "wool",
+      "island": [
+        15,
+        30,
+        14,
+        24
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right avatar upper arm face62",
+      "material": "wool",
+      "island": [
+        32,
+        30,
+        14,
+        24
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right avatar upper arm face64",
+      "material": "wool",
+      "island": [
+        49,
+        30,
+        11,
+        23
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right avatar upper arm face66",
+      "material": "wool",
+      "island": [
+        63,
+        30,
+        11,
+        23
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right avatar upper arm face68",
+      "material": "wool",
+      "island": [
+        77,
+        30,
+        12,
+        11
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right avatar upper arm face70",
+      "material": "wool",
+      "island": [
+        92,
+        30,
+        12,
+        11
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right avatar forearm face72",
+      "material": "wool",
+      "island": [
+        107,
+        30,
+        14,
+        24
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right avatar forearm face74",
+      "material": "wool",
+      "island": [
+        124,
+        30,
+        14,
+        24
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right avatar forearm face76",
+      "material": "wool",
+      "island": [
+        141,
+        30,
+        11,
+        23
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right avatar forearm face78",
+      "material": "wool",
+      "island": [
+        155,
+        30,
+        11,
+        23
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right avatar forearm face80",
+      "material": "wool",
+      "island": [
+        169,
+        30,
+        12,
+        11
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right avatar forearm face82",
+      "material": "wool",
+      "island": [
+        184,
+        30,
+        12,
+        11
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right visible hand face84",
+      "material": "skin",
+      "island": [
+        199,
+        30,
+        12,
+        9
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right visible hand face86",
+      "material": "skin",
+      "island": [
+        214,
+        30,
+        12,
+        9
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right visible hand face88",
+      "material": "skin",
+      "island": [
+        229,
+        30,
+        11,
+        8
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right visible hand face90",
+      "material": "skin",
+      "island": [
+        243,
+        30,
+        11,
+        8
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right visible hand face92",
+      "material": "skin",
+      "island": [
+        257,
+        30,
+        12,
+        11
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right visible hand face94",
+      "material": "skin",
+      "island": [
+        272,
+        30,
+        12,
+        11
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left avatar thigh face96",
+      "material": "wool",
+      "island": [
+        287,
+        30,
+        13,
+        16
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left avatar thigh face98",
+      "material": "wool",
+      "island": [
+        303,
+        30,
+        13,
+        16
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left avatar thigh face100",
+      "material": "wool",
+      "island": [
+        319,
+        30,
+        11,
+        16
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left avatar thigh face102",
+      "material": "wool",
+      "island": [
+        333,
+        30,
+        11,
+        15
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left avatar thigh face104",
+      "material": "wool",
+      "island": [
+        347,
+        30,
+        11,
+        11
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left avatar thigh face106",
+      "material": "wool",
+      "island": [
+        361,
+        30,
+        12,
+        11
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left avatar shin face108",
+      "material": "wool",
+      "island": [
+        376,
+        30,
+        12,
+        12
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left avatar shin face110",
+      "material": "wool",
+      "island": [
+        391,
+        30,
+        12,
+        12
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left avatar shin face112",
+      "material": "wool",
+      "island": [
+        406,
+        30,
+        11,
+        12
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left avatar shin face114",
+      "material": "wool",
+      "island": [
+        420,
+        30,
+        11,
+        12
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left avatar shin face116",
+      "material": "wool",
+      "island": [
+        434,
+        30,
+        11,
+        11
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left avatar shin face118",
+      "material": "wool",
+      "island": [
+        448,
+        30,
+        11,
+        11
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left avatar foot face120",
+      "material": "leather",
+      "island": [
+        462,
+        30,
+        12,
+        8
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left avatar foot face122",
+      "material": "leather",
+      "island": [
+        477,
+        30,
+        12,
+        8
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left avatar foot face124",
+      "material": "leather",
+      "island": [
+        492,
+        30,
+        11,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left avatar foot face126",
+      "material": "leather",
+      "island": [
+        0,
+        57,
+        11,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left avatar foot face128",
+      "material": "leather",
+      "island": [
+        14,
+        57,
+        11,
+        11
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left avatar foot face130",
+      "material": "leather",
+      "island": [
+        28,
+        57,
+        11,
+        11
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left leather boot face132",
+      "material": "leather",
+      "island": [
+        42,
+        57,
+        13,
+        11
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left leather boot face134",
+      "material": "leather",
+      "island": [
+        58,
+        57,
+        13,
+        11
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left leather boot face136",
+      "material": "leather",
+      "island": [
+        74,
+        57,
+        13,
+        10
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left leather boot face138",
+      "material": "leather",
+      "island": [
+        90,
+        57,
+        13,
+        10
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left leather boot face140",
+      "material": "leather",
+      "island": [
+        106,
+        57,
+        12,
+        13
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left leather boot face142",
+      "material": "leather",
+      "island": [
+        121,
+        57,
+        12,
+        13
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right avatar thigh face142",
+      "material": "wool",
+      "island": [
+        136,
+        57,
+        13,
+        16
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right avatar thigh face144",
+      "material": "wool",
+      "island": [
+        152,
+        57,
+        13,
+        16
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right avatar thigh face146",
+      "material": "wool",
+      "island": [
+        168,
+        57,
+        11,
+        15
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right avatar thigh face148",
+      "material": "wool",
+      "island": [
+        182,
+        57,
+        11,
+        16
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right avatar thigh face150",
+      "material": "wool",
+      "island": [
+        196,
+        57,
+        11,
+        11
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right avatar thigh face152",
+      "material": "wool",
+      "island": [
+        210,
+        57,
+        12,
+        11
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right avatar shin face154",
+      "material": "wool",
+      "island": [
+        225,
+        57,
+        12,
+        12
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right avatar shin face156",
+      "material": "wool",
+      "island": [
+        240,
+        57,
+        12,
+        12
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right avatar shin face158",
+      "material": "wool",
+      "island": [
+        255,
+        57,
+        11,
+        12
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right avatar shin face160",
+      "material": "wool",
+      "island": [
+        269,
+        57,
+        11,
+        12
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right avatar shin face162",
+      "material": "wool",
+      "island": [
+        283,
+        57,
+        11,
+        11
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right avatar shin face164",
+      "material": "wool",
+      "island": [
+        297,
+        57,
+        11,
+        11
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right avatar foot face166",
+      "material": "leather",
+      "island": [
+        311,
+        57,
+        12,
+        8
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right avatar foot face168",
+      "material": "leather",
+      "island": [
+        326,
+        57,
+        12,
+        8
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right avatar foot face170",
+      "material": "leather",
+      "island": [
+        341,
+        57,
+        11,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right avatar foot face172",
+      "material": "leather",
+      "island": [
+        355,
+        57,
+        11,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right avatar foot face174",
+      "material": "leather",
+      "island": [
+        369,
+        57,
+        11,
+        11
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right avatar foot face176",
+      "material": "leather",
+      "island": [
+        383,
+        57,
+        11,
+        11
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right leather boot face178",
+      "material": "leather",
+      "island": [
+        397,
+        57,
+        13,
+        11
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right leather boot face180",
+      "material": "leather",
+      "island": [
+        413,
+        57,
+        13,
+        11
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right leather boot face182",
+      "material": "leather",
+      "island": [
+        429,
+        57,
+        13,
+        10
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right leather boot face184",
+      "material": "leather",
+      "island": [
+        445,
+        57,
+        13,
+        10
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right leather boot face186",
+      "material": "leather",
+      "island": [
+        461,
+        57,
+        12,
+        13
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right leather boot face188",
+      "material": "leather",
+      "island": [
+        476,
+        57,
+        12,
+        13
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "close sloping cloth crown outside",
+      "material": "plum",
+      "island": [
+        0,
+        76,
+        69,
+        30
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "close sloping cloth crown inside",
+      "material": "lining",
+      "island": [
+        72,
+        76,
+        69,
+        30
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "close sloping cloth crown cut",
+      "material": "plum",
+      "island": [
+        144,
+        76,
+        7,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "short folded nape cloth outside",
+      "material": "plum",
+      "island": [
+        154,
+        76,
+        28,
+        30
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "short folded nape cloth inside",
+      "material": "lining",
+      "island": [
+        185,
+        76,
+        28,
+        30
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "turned canvas crown edge outside",
+      "material": "canvas",
+      "island": [
+        216,
+        76,
+        49,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "turned canvas crown edge inside",
+      "material": "lining",
+      "island": [
+        268,
+        76,
+        49,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "turned canvas crown edge cut",
+      "material": "canvas",
+      "island": [
+        320,
+        76,
+        7,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "folded cloth brow band outside",
+      "material": "plum",
+      "island": [
+        330,
+        76,
+        30,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "folded cloth brow band inside",
+      "material": "lining",
+      "island": [
+        363,
+        76,
+        30,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "folded cloth brow band cut",
+      "material": "plum",
+      "island": [
+        396,
+        76,
+        7,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "folded cloth jaw wrap outside",
+      "material": "plum",
+      "island": [
+        0,
+        109,
+        110,
+        13
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "folded cloth jaw wrap inside",
+      "material": "lining",
+      "island": [
+        113,
+        109,
+        110,
+        13
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "folded cloth jaw wrap cut",
+      "material": "plum",
+      "island": [
+        226,
+        109,
+        7,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left gathered cloth cheek fold outside",
+      "material": "plum",
+      "island": [
+        236,
+        109,
+        8,
+        18
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left gathered cloth cheek fold inside",
+      "material": "lining",
+      "island": [
+        247,
+        109,
+        8,
+        18
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left gathered cloth cheek fold cut",
+      "material": "plum",
+      "island": [
+        258,
+        109,
+        7,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right gathered cloth cheek fold outside",
+      "material": "plum",
+      "island": [
+        268,
+        109,
+        8,
+        18
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right gathered cloth cheek fold inside",
+      "material": "lining",
+      "island": [
+        279,
+        109,
+        8,
+        18
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right gathered cloth cheek fold cut",
+      "material": "plum",
+      "island": [
+        290,
+        109,
+        7,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left shaped dark sleeve outside",
+      "material": "plum",
+      "island": [
+        300,
+        109,
+        64,
+        34
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left shaped dark sleeve inside",
+      "material": "lining",
+      "island": [
+        367,
+        109,
+        64,
+        34
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left shaped dark sleeve cut",
+      "material": "plum",
+      "island": [
+        434,
+        109,
+        7,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left sewn sleeve top outside",
+      "material": "plum",
+      "island": [
+        444,
+        109,
+        17,
+        19
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left sewn sleeve top inside",
+      "material": "lining",
+      "island": [
+        464,
+        109,
+        17,
+        19
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left wrapped canvas forearm outside",
+      "material": "canvas",
+      "island": [
+        484,
+        109,
+        25,
+        10
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left wrapped canvas forearm inside",
+      "material": "lining",
+      "island": [
+        0,
+        146,
+        25,
+        10
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left wrapped canvas forearm cut",
+      "material": "canvas",
+      "island": [
+        28,
+        146,
+        7,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left forearm real turned edge outside",
+      "material": "canvas",
+      "island": [
+        38,
+        146,
+        25,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left forearm real turned edge inside",
+      "material": "lining",
+      "island": [
+        66,
+        146,
+        25,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left forearm real turned edge cut",
+      "material": "canvas",
+      "island": [
+        94,
+        146,
+        7,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left dark bound wrist cuff outside",
+      "material": "plum",
+      "island": [
+        104,
+        146,
+        58,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left dark bound wrist cuff inside",
+      "material": "lining",
+      "island": [
+        165,
+        146,
+        58,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left dark bound wrist cuff cut",
+      "material": "plum",
+      "island": [
+        226,
+        146,
+        7,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right shaped dark sleeve outside",
+      "material": "plum",
+      "island": [
+        236,
+        146,
+        64,
+        34
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right shaped dark sleeve inside",
+      "material": "lining",
+      "island": [
+        303,
+        146,
+        64,
+        34
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right shaped dark sleeve cut",
+      "material": "plum",
+      "island": [
+        370,
+        146,
+        7,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right sewn sleeve top outside",
+      "material": "plum",
+      "island": [
+        380,
+        146,
+        17,
+        19
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right sewn sleeve top inside",
+      "material": "lining",
+      "island": [
+        400,
+        146,
+        17,
+        19
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right wrapped canvas forearm outside",
+      "material": "canvas",
+      "island": [
+        420,
+        146,
+        25,
+        10
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right wrapped canvas forearm inside",
+      "material": "lining",
+      "island": [
+        448,
+        146,
+        25,
+        10
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right wrapped canvas forearm cut",
+      "material": "canvas",
+      "island": [
+        476,
+        146,
+        7,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right forearm real turned edge outside",
+      "material": "canvas",
+      "island": [
+        0,
+        183,
+        25,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right forearm real turned edge inside",
+      "material": "lining",
+      "island": [
+        28,
+        183,
+        25,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right forearm real turned edge cut",
+      "material": "canvas",
+      "island": [
+        56,
+        183,
+        7,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right dark bound wrist cuff outside",
+      "material": "plum",
+      "island": [
+        66,
+        183,
+        58,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right dark bound wrist cuff inside",
+      "material": "lining",
+      "island": [
+        127,
+        183,
+        58,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right dark bound wrist cuff cut",
+      "material": "plum",
+      "island": [
+        188,
+        183,
+        7,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "dark inner shirt front outside",
+      "material": "plum",
+      "island": [
+        198,
+        183,
+        28,
+        30
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "dark inner shirt front inside",
+      "material": "plum",
+      "island": [
+        229,
+        183,
+        28,
+        30
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "dark inner shirt front cut",
+      "material": "plum",
+      "island": [
+        260,
+        183,
+        7,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "dark inner shirt back outside",
+      "material": "plum",
+      "island": [
+        270,
+        183,
+        28,
+        30
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "dark inner shirt back inside",
+      "material": "plum",
+      "island": [
+        301,
+        183,
+        28,
+        30
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "dark inner shirt back cut",
+      "material": "plum",
+      "island": [
+        332,
+        183,
+        7,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "dark soft neck underlayer outside",
+      "material": "plum",
+      "island": [
+        342,
+        183,
+        81,
+        9
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "dark soft neck underlayer inside",
+      "material": "plum",
+      "island": [
+        426,
+        183,
+        81,
+        9
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "dark soft neck underlayer cut",
+      "material": "plum",
+      "island": [
+        0,
+        216,
+        7,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left fitted short wrap body outside",
+      "material": "plum",
+      "island": [
+        10,
+        216,
+        15,
+        29
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left fitted short wrap body inside",
+      "material": "lining",
+      "island": [
+        28,
+        216,
+        15,
+        29
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left fitted short wrap body cut",
+      "material": "plum",
+      "island": [
+        46,
+        216,
+        7,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right fitted short wrap body outside",
+      "material": "plum",
+      "island": [
+        56,
+        216,
+        15,
+        29
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right fitted short wrap body inside",
+      "material": "lining",
+      "island": [
+        74,
+        216,
+        15,
+        29
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right fitted short wrap body cut",
+      "material": "plum",
+      "island": [
+        92,
+        216,
+        7,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "fitted dark coat back outside",
+      "material": "plum",
+      "island": [
+        102,
+        216,
+        28,
+        30
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "fitted dark coat back inside",
+      "material": "lining",
+      "island": [
+        133,
+        216,
+        28,
+        30
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "fitted dark coat back cut",
+      "material": "plum",
+      "island": [
+        164,
+        216,
+        7,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left short body side seam outside",
+      "material": "plum",
+      "island": [
+        174,
+        216,
+        20,
+        24
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left short body side seam inside",
+      "material": "lining",
+      "island": [
+        197,
+        216,
+        20,
+        24
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left short body side seam cut",
+      "material": "plum",
+      "island": [
+        220,
+        216,
+        7,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left sewn body to sleeve shoulder outside",
+      "material": "plum",
+      "island": [
+        230,
+        216,
+        20,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left sewn body to sleeve shoulder inside",
+      "material": "lining",
+      "island": [
+        253,
+        216,
+        20,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left sewn body to sleeve shoulder cut",
+      "material": "plum",
+      "island": [
+        276,
+        216,
+        7,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right short body side seam outside",
+      "material": "plum",
+      "island": [
+        286,
+        216,
+        20,
+        24
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right short body side seam inside",
+      "material": "lining",
+      "island": [
+        309,
+        216,
+        20,
+        24
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right short body side seam cut",
+      "material": "plum",
+      "island": [
+        332,
+        216,
+        7,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right sewn body to sleeve shoulder outside",
+      "material": "plum",
+      "island": [
+        342,
+        216,
+        20,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right sewn body to sleeve shoulder inside",
+      "material": "lining",
+      "island": [
+        365,
+        216,
+        20,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right sewn body to sleeve shoulder cut",
+      "material": "plum",
+      "island": [
+        388,
+        216,
+        7,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "broad soft leather waist belt outside",
+      "material": "leather",
+      "island": [
+        398,
+        216,
+        93,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "broad soft leather waist belt inside",
+      "material": "leather",
+      "island": [
+        0,
+        249,
+        93,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "broad soft leather waist belt cut",
+      "material": "leather",
+      "island": [
+        96,
+        249,
+        7,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "small waist fastener face2000",
+      "material": "metal",
+      "island": [
+        106,
+        249,
+        5,
+        5
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "small waist fastener face2002",
+      "material": "metal",
+      "island": [
+        114,
+        249,
+        5,
+        5
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "small waist fastener face2004",
+      "material": "metal",
+      "island": [
+        122,
+        249,
+        5,
+        5
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "small waist fastener face2006",
+      "material": "metal",
+      "island": [
+        130,
+        249,
+        5,
+        5
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "small waist fastener face2008",
+      "material": "metal",
+      "island": [
+        138,
+        249,
+        5,
+        5
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "small waist fastener face2010",
+      "material": "metal",
+      "island": [
+        146,
+        249,
+        5,
+        5
+      ],
+      "authored_large_medium_small_cluster_roles": false,
+      "inspection_body_and_boot_legacy_pixels": true,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left sloping shoulder mantle outside",
+      "material": "canvas",
+      "island": [
+        154,
+        249,
+        31,
+        25
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left sloping shoulder mantle inside",
+      "material": "canvas_shadow",
+      "island": [
+        188,
+        249,
+        31,
+        25
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left sloping shoulder mantle cut",
+      "material": "canvas",
+      "island": [
+        222,
+        249,
+        7,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left shoulder mantle turned hem outside",
+      "material": "canvas",
+      "island": [
+        232,
+        249,
+        22,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left shoulder mantle turned hem inside",
+      "material": "canvas_shadow",
+      "island": [
+        257,
+        249,
+        22,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left shoulder mantle turned hem cut",
+      "material": "canvas",
+      "island": [
+        282,
+        249,
+        7,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left front hanging shoulder cloth outside",
+      "material": "canvas",
+      "island": [
+        292,
+        249,
+        29,
+        16
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left front hanging shoulder cloth inside",
+      "material": "canvas_shadow",
+      "island": [
+        324,
+        249,
+        29,
+        16
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left front hanging shoulder cloth cut",
+      "material": "canvas",
+      "island": [
+        356,
+        249,
+        7,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left back hanging shoulder cloth outside",
+      "material": "canvas",
+      "island": [
+        366,
+        249,
+        29,
+        16
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left back hanging shoulder cloth inside",
+      "material": "canvas_shadow",
+      "island": [
+        398,
+        249,
+        29,
+        16
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left back hanging shoulder cloth cut",
+      "material": "canvas",
+      "island": [
+        430,
+        249,
+        7,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right sloping shoulder mantle outside",
+      "material": "canvas",
+      "island": [
+        440,
+        249,
+        31,
+        23
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right sloping shoulder mantle inside",
+      "material": "canvas_shadow",
+      "island": [
+        474,
+        249,
+        31,
+        23
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right sloping shoulder mantle cut",
+      "material": "canvas",
+      "island": [
+        0,
+        277,
+        7,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right shoulder mantle turned hem outside",
+      "material": "canvas",
+      "island": [
+        10,
+        277,
+        22,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right shoulder mantle turned hem inside",
+      "material": "canvas_shadow",
+      "island": [
+        35,
+        277,
+        22,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right shoulder mantle turned hem cut",
+      "material": "canvas",
+      "island": [
+        60,
+        277,
+        7,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right front hanging shoulder cloth outside",
+      "material": "canvas",
+      "island": [
+        70,
+        277,
+        27,
+        15
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right front hanging shoulder cloth inside",
+      "material": "canvas_shadow",
+      "island": [
+        100,
+        277,
+        27,
+        15
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right front hanging shoulder cloth cut",
+      "material": "canvas",
+      "island": [
+        130,
+        277,
+        7,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right back hanging shoulder cloth outside",
+      "material": "canvas",
+      "island": [
+        140,
+        277,
+        27,
+        15
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right back hanging shoulder cloth inside",
+      "material": "canvas_shadow",
+      "island": [
+        170,
+        277,
+        27,
+        15
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right back hanging shoulder cloth cut",
+      "material": "canvas",
+      "island": [
+        200,
+        277,
+        7,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left overlapping chest mantle fold outside",
+      "material": "canvas",
+      "island": [
+        210,
+        277,
+        18,
+        13
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left overlapping chest mantle fold inside",
+      "material": "canvas_shadow",
+      "island": [
+        231,
+        277,
+        18,
+        13
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left overlapping chest mantle fold cut",
+      "material": "canvas",
+      "island": [
+        252,
+        277,
+        7,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right overlapping chest mantle fold outside",
+      "material": "canvas",
+      "island": [
+        262,
+        277,
+        18,
+        12
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right overlapping chest mantle fold inside",
+      "material": "canvas_shadow",
+      "island": [
+        283,
+        277,
+        18,
+        12
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right overlapping chest mantle fold cut",
+      "material": "canvas",
+      "island": [
+        304,
+        277,
+        7,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left chest fold bound edge outside",
+      "material": "canvas",
+      "island": [
+        314,
+        277,
+        17,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left chest fold bound edge inside",
+      "material": "canvas_shadow",
+      "island": [
+        334,
+        277,
+        17,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left chest fold bound edge cut",
+      "material": "canvas",
+      "island": [
+        354,
+        277,
+        7,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right chest fold bound edge outside",
+      "material": "canvas",
+      "island": [
+        364,
+        277,
+        18,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right chest fold bound edge inside",
+      "material": "canvas_shadow",
+      "island": [
+        385,
+        277,
+        18,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right chest fold bound edge cut",
+      "material": "canvas",
+      "island": [
+        406,
+        277,
+        7,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "broad folded rear shoulder cape outside",
+      "material": "canvas",
+      "island": [
+        416,
+        277,
+        33,
+        12
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "broad folded rear shoulder cape inside",
+      "material": "canvas_shadow",
+      "island": [
+        452,
+        277,
+        33,
+        12
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "broad folded rear shoulder cape cut",
+      "material": "canvas",
+      "island": [
+        488,
+        277,
+        7,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "rear cape turned edge outside",
+      "material": "canvas",
+      "island": [
+        0,
+        295,
+        33,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "rear cape turned edge inside",
+      "material": "canvas_shadow",
+      "island": [
+        36,
+        295,
+        33,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "rear cape turned edge cut",
+      "material": "canvas",
+      "island": [
+        72,
+        295,
+        7,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "small chest cloth clasp face2608",
+      "material": "metal",
+      "island": [
+        82,
+        295,
+        7,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "small chest cloth clasp face2610",
+      "material": "metal",
+      "island": [
+        92,
+        295,
+        7,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "small chest cloth clasp face2612",
+      "material": "metal",
+      "island": [
+        102,
+        295,
+        7,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "small chest cloth clasp face2614",
+      "material": "metal",
+      "island": [
+        112,
+        295,
+        7,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "small chest cloth clasp face2616",
+      "material": "metal",
+      "island": [
+        122,
+        295,
+        7,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "small chest cloth clasp face2618",
+      "material": "metal",
+      "island": [
+        132,
+        295,
+        7,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left short overlapping front cloth tab outside",
+      "material": "plum",
+      "island": [
+        142,
+        295,
+        16,
+        17
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left short overlapping front cloth tab inside",
+      "material": "canvas_shadow",
+      "island": [
+        161,
+        295,
+        16,
+        17
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left short overlapping front cloth tab cut",
+      "material": "plum",
+      "island": [
+        180,
+        295,
+        7,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left short divided rear cloth tab outside",
+      "material": "plum",
+      "island": [
+        190,
+        295,
+        16,
+        21
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left short divided rear cloth tab inside",
+      "material": "canvas_shadow",
+      "island": [
+        209,
+        295,
+        16,
+        21
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left short divided rear cloth tab cut",
+      "material": "plum",
+      "island": [
+        228,
+        295,
+        7,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left short hip cloth side fold outside",
+      "material": "plum",
+      "island": [
+        238,
+        295,
+        26,
+        19
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left short hip cloth side fold inside",
+      "material": "canvas_shadow",
+      "island": [
+        267,
+        295,
+        26,
+        19
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left short hip cloth side fold cut",
+      "material": "plum",
+      "island": [
+        296,
+        295,
+        7,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left front canvas hem facing outside",
+      "material": "canvas",
+      "island": [
+        306,
+        295,
+        16,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left front canvas hem facing inside",
+      "material": "canvas_shadow",
+      "island": [
+        325,
+        295,
+        16,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left front canvas hem facing cut",
+      "material": "canvas",
+      "island": [
+        344,
+        295,
+        7,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left rear canvas hem facing outside",
+      "material": "canvas",
+      "island": [
+        354,
+        295,
+        16,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left rear canvas hem facing inside",
+      "material": "canvas_shadow",
+      "island": [
+        373,
+        295,
+        16,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left rear canvas hem facing cut",
+      "material": "canvas",
+      "island": [
+        392,
+        295,
+        7,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right short overlapping front cloth tab outside",
+      "material": "plum",
+      "island": [
+        402,
+        295,
+        16,
+        17
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right short overlapping front cloth tab inside",
+      "material": "canvas_shadow",
+      "island": [
+        421,
+        295,
+        16,
+        17
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right short overlapping front cloth tab cut",
+      "material": "plum",
+      "island": [
+        440,
+        295,
+        7,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right short divided rear cloth tab outside",
+      "material": "plum",
+      "island": [
+        450,
+        295,
+        16,
+        21
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right short divided rear cloth tab inside",
+      "material": "canvas_shadow",
+      "island": [
+        469,
+        295,
+        16,
+        21
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right short divided rear cloth tab cut",
+      "material": "plum",
+      "island": [
+        488,
+        295,
+        7,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right short hip cloth side fold outside",
+      "material": "plum",
+      "island": [
+        0,
+        319,
+        26,
+        19
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right short hip cloth side fold inside",
+      "material": "canvas_shadow",
+      "island": [
+        29,
+        319,
+        26,
+        19
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right short hip cloth side fold cut",
+      "material": "plum",
+      "island": [
+        58,
+        319,
+        7,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right front canvas hem facing outside",
+      "material": "canvas",
+      "island": [
+        68,
+        319,
+        16,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right front canvas hem facing inside",
+      "material": "canvas_shadow",
+      "island": [
+        87,
+        319,
+        16,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right front canvas hem facing cut",
+      "material": "canvas",
+      "island": [
+        106,
+        319,
+        7,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right rear canvas hem facing outside",
+      "material": "canvas",
+      "island": [
+        116,
+        319,
+        16,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right rear canvas hem facing inside",
+      "material": "canvas_shadow",
+      "island": [
+        135,
+        319,
+        16,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right rear canvas hem facing cut",
+      "material": "canvas",
+      "island": [
+        154,
+        319,
+        7,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "short hanging belt tie outside",
+      "material": "canvas",
+      "island": [
+        164,
+        319,
+        7,
+        15
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "short hanging belt tie inside",
+      "material": "canvas_shadow",
+      "island": [
+        174,
+        319,
+        7,
+        15
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "short hanging belt tie cut",
+      "material": "canvas",
+      "island": [
+        184,
+        319,
+        7,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left real continuous joint wool leg garment outside",
+      "material": "wool",
+      "island": [
+        194,
+        319,
+        55,
+        29
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left real continuous joint wool leg garment inside",
+      "material": "wool",
+      "island": [
+        252,
+        319,
+        55,
+        29
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left real continuous joint wool leg garment cut",
+      "material": "wool",
+      "island": [
+        310,
+        319,
+        7,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right real continuous joint wool leg garment outside",
+      "material": "wool",
+      "island": [
+        320,
+        319,
+        55,
+        29
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right real continuous joint wool leg garment inside",
+      "material": "wool",
+      "island": [
+        378,
+        319,
+        55,
+        29
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right real continuous joint wool leg garment cut",
+      "material": "wool",
+      "island": [
+        436,
+        319,
+        7,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "real wool waist and crotch yoke outside",
+      "material": "wool",
+      "island": [
+        0,
+        351,
+        82,
+        11
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "real wool waist and crotch yoke inside",
+      "material": "wool",
+      "island": [
+        85,
+        351,
+        82,
+        11
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "real wool waist and crotch yoke cut",
+      "material": "wool",
+      "island": [
+        170,
+        351,
+        7,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left soft folded boot top outside",
+      "material": "canvas",
+      "island": [
+        180,
+        351,
+        58,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left soft folded boot top inside",
+      "material": "canvas_shadow",
+      "island": [
+        241,
+        351,
+        58,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "left soft folded boot top cut",
+      "material": "canvas",
+      "island": [
+        302,
+        351,
+        7,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right soft folded boot top outside",
+      "material": "canvas",
+      "island": [
+        312,
+        351,
+        58,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right soft folded boot top inside",
+      "material": "canvas_shadow",
+      "island": [
+        373,
+        351,
+        58,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    },
+    {
+      "piece": "right soft folded boot top cut",
+      "material": "canvas",
+      "island": [
+        434,
+        351,
+        7,
+        7
+      ],
+      "authored_large_medium_small_cluster_roles": true,
+      "inspection_body_and_boot_legacy_pixels": false,
+      "texel_density_policy": "same 3px/unit cloth, no resolution increase",
+      "border_dot_noise": false
+    }
+  ]
+}

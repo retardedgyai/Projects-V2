@@ -1,0 +1,229 @@
+{
+  "actual_models_checked": [
+    {
+      "label": "approved",
+      "loaded_vertices_max_error": 0,
+      "faces_UV_checked": 218,
+      "loaded_UV_exact": true,
+      "texture_checks": [
+        {
+          "texture": 0,
+          "loaded_and_resaved_visible_RGBA_and_alpha_exact": true,
+          "full_RGBA_exact": false,
+          "loaded_hidden_alpha0_RGB_normalized": 254,
+          "saved_hidden_alpha0_RGB_normalized": 0
+        },
+        {
+          "texture": 1,
+          "loaded_and_resaved_visible_RGBA_and_alpha_exact": true,
+          "full_RGBA_exact": true,
+          "loaded_hidden_alpha0_RGB_normalized": 0,
+          "saved_hidden_alpha0_RGB_normalized": 0
+        },
+        {
+          "texture": 2,
+          "loaded_and_resaved_visible_RGBA_and_alpha_exact": true,
+          "full_RGBA_exact": true,
+          "loaded_hidden_alpha0_RGB_normalized": 0,
+          "saved_hidden_alpha0_RGB_normalized": 0
+        }
+      ],
+      "resaved_max_vertex_rounding": 4.999646163739158e-06,
+      "resaved_max_UV_rounding": 0.0,
+      "nearest_filter": 1003,
+      "version": "5.2.1"
+    },
+    {
+      "label": "rejected27",
+      "loaded_vertices_max_error": 0,
+      "faces_UV_checked": 3632,
+      "loaded_UV_exact": true,
+      "texture_checks": [
+        {
+          "texture": 0,
+          "loaded_and_resaved_visible_RGBA_and_alpha_exact": true,
+          "full_RGBA_exact": true,
+          "loaded_hidden_alpha0_RGB_normalized": 0,
+          "saved_hidden_alpha0_RGB_normalized": 0
+        }
+      ],
+      "resaved_max_vertex_rounding": 5.00000000069889e-06,
+      "resaved_max_UV_rounding": 4.968944097072381e-06,
+      "nearest_filter": 1003,
+      "version": "5.2.1"
+    },
+    {
+      "label": "isles",
+      "loaded_vertices_max_error": 0,
+      "faces_UV_checked": 36,
+      "loaded_UV_exact": true,
+      "texture_checks": [
+        {
+          "texture": 0,
+          "loaded_and_resaved_visible_RGBA_and_alpha_exact": true,
+          "full_RGBA_exact": true,
+          "loaded_hidden_alpha0_RGB_normalized": 0,
+          "saved_hidden_alpha0_RGB_normalized": 0
+        }
+      ],
+      "resaved_max_vertex_rounding": 4.912003365831197e-06,
+      "resaved_max_UV_rounding": 0.0,
+      "nearest_filter": 1003,
+      "version": "5.2.1"
+    },
+    {
+      "label": "candidate29",
+      "loaded_vertices_max_error": 0,
+      "faces_UV_checked": 3464,
+      "loaded_UV_exact": true,
+      "texture_checks": [
+        {
+          "texture": 0,
+          "loaded_and_resaved_visible_RGBA_and_alpha_exact": true,
+          "full_RGBA_exact": true,
+          "loaded_hidden_alpha0_RGB_normalized": 0,
+          "saved_hidden_alpha0_RGB_normalized": 0
+        },
+        {
+          "texture": 1,
+          "loaded_and_resaved_visible_RGBA_and_alpha_exact": true,
+          "full_RGBA_exact": true,
+          "loaded_hidden_alpha0_RGB_normalized": 0,
+          "saved_hidden_alpha0_RGB_normalized": 0
+        }
+      ],
+      "resaved_max_vertex_rounding": 5.00000000069889e-06,
+      "resaved_max_UV_rounding": 4.968944097072381e-06,
+      "nearest_filter": 1003,
+      "version": "5.2.1"
+    }
+  ],
+  "same_conditions": [
+    {
+      "view": "front",
+      "shading": true,
+      "three_models_same_camera_light_clip_DPR": true
+    },
+    {
+      "view": "oblique",
+      "shading": true,
+      "three_models_same_camera_light_clip_DPR": true
+    },
+    {
+      "view": "chestoblique",
+      "shading": true,
+      "three_models_same_camera_light_clip_DPR": true
+    },
+    {
+      "view": "chestoblique",
+      "shading": false,
+      "three_models_same_camera_light_clip_DPR": true
+    }
+  ],
+  "frames": 16,
+  "actual_64px_crops": [
+    {
+      "label": "approved",
+      "view": "front",
+      "actual_mesh_crop": [
+        43,
+        73,
+        573,
+        795
+      ],
+      "native64_size": [
+        47,
+        64
+      ],
+      "enlargement": 4,
+      "filter": "nearest"
+    },
+    {
+      "label": "approved",
+      "view": "oblique",
+      "actual_mesh_crop": [
+        54,
+        60,
+        562,
+        808
+      ],
+      "native64_size": [
+        43,
+        64
+      ],
+      "enlargement": 4,
+      "filter": "nearest"
+    },
+    {
+      "label": "rejected27",
+      "view": "front",
+      "actual_mesh_crop": [
+        104,
+        73,
+        512,
+        795
+      ],
+      "native64_size": [
+        36,
+        64
+      ],
+      "enlargement": 4,
+      "filter": "nearest"
+    },
+    {
+      "label": "rejected27",
+      "view": "oblique",
+      "actual_mesh_crop": [
+        91,
+        67,
+        518,
+        801
+      ],
+      "native64_size": [
+        37,
+        64
+      ],
+      "enlargement": 4,
+      "filter": "nearest"
+    },
+    {
+      "label": "candidate29",
+      "view": "front",
+      "actual_mesh_crop": [
+        100,
+        73,
+        515,
+        795
+      ],
+      "native64_size": [
+        37,
+        64
+      ],
+      "enlargement": 4,
+      "filter": "nearest"
+    },
+    {
+      "label": "candidate29",
+      "view": "oblique",
+      "actual_mesh_crop": [
+        93,
+        67,
+        509,
+        801
+      ],
+      "native64_size": [
+        36,
+        64
+      ],
+      "enlargement": 4,
+      "filter": "nearest"
+    }
+  ],
+  "standard_Blockbench_renderer": true,
+  "custom_renderer_or_painted_preview": false,
+  "reference_29_source_geometry_UV_RGBA_unchanged": true,
+  "production29_elements_textures_culling_exact_captured_diagnostic": true,
+  "thirdparty_Isles_raw_materials_stay_private": true,
+  "aesthetic_acceptance_claimed": false,
+  "game_wear_complete": false
+}

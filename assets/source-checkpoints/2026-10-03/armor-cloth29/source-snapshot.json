@@ -1,0 +1,131 @@
+{
+  "Schema": 1,
+  "Snapshot": "armor-cloth29",
+  "Status": "INTERMEDIATE_SOURCE_SNAPSHOT",
+  "CapturedUtc": "2026-10-03T14:43:35.8736170Z",
+  "LibraryFileId": "libfile_a65b3c0e0bf88191a6b217daea244fce",
+  "LibraryVersion": 0,
+  "SourceZipName": "ProjectS_cloth29_intermediate_editable.zip",
+  "SourceZipSha256": "ea5d02773f9e7efb5ca6391aedddc61a83bde96895dbefbbd559c7da930b0499",
+  "SourceZipBytes": 1401950,
+  "OriginalUnchanged": true,
+  "EntryBytesVerified": true,
+  "Notes": "Cloth29 is an intermediate saved version. Cloth27 was rejected; cloth30 is being revised and is excluded. Open cloth-volume-29/model/model.bbmodel in Blockbench. Replay build29.py and verify29.py from the extracted source layout; original v27 baseline and approved own material v1 are included as dependencies. No full quality or in-game wear approval.",
+  "Files": [
+    {
+      "Path": "cloth-layered-23/check23.py",
+      "Bytes": 3854,
+      "Sha256": "b6e2e14775a3cfb2f5cb538c2f82018aa6aa72b6ca9951ab40a63343a2136bec"
+    },
+    {
+      "Path": "cloth-layered-23/check_geometry.py",
+      "Bytes": 3808,
+      "Sha256": "75ca73e1e2683441ccc3eb31c1647f4c70490843015146d11f3baa98cd300530"
+    },
+    {
+      "Path": "cloth-layered-23/mesh_tools.py",
+      "Bytes": 6944,
+      "Sha256": "889a92617cd69b8828bafff0dbea3b581a13b33814f4b3558627173deb211ce4"
+    },
+    {
+      "Path": "cloth-texture-25/baseline23/UV-provenance.json",
+      "Bytes": 111866,
+      "Sha256": "a9428e2bdc8e62b0a4ff2ef7f16d2822507e4994487a81b7fd6026af015a6599"
+    },
+    {
+      "Path": "cloth-texture-tune-27/model/model.json",
+      "Bytes": 1769681,
+      "Sha256": "2a64b2a15a8f0ec09315ef523ac59b199c52991ac0f49d8867e6c1ba7d9d3ae3"
+    },
+    {
+      "Path": "cloth-texture-tune-27/model/native.png",
+      "Bytes": 5990,
+      "Sha256": "ac97ae8bae79668c289ea849932db38908f41fc5aafb877ab20cf7c8fcb32ca7"
+    },
+    {
+      "Path": "cloth-volume-29/README.txt",
+      "Bytes": 4338,
+      "Sha256": "7b72cb45cbd55f7623762fb38e21523e9404a091ab60f49052998737d9770ec0"
+    },
+    {
+      "Path": "cloth-volume-29/authoring-provenance.json",
+      "Bytes": 3387,
+      "Sha256": "45eaa261f26799dec648a898b0642d7ebf3392a330949049928b043423e7b9ea"
+    },
+    {
+      "Path": "cloth-volume-29/build29.py",
+      "Bytes": 15931,
+      "Sha256": "ed48585dc13293fc95a515a700ebdad7baeea4194a52a8310e0c976a4b7c2b6b"
+    },
+    {
+      "Path": "cloth-volume-29/model/geometry-verification.json",
+      "Bytes": 41990,
+      "Sha256": "3f0caec061d48b592aea08196f5610a34721f9c0a50a3d622f3a65921d0af413"
+    },
+    {
+      "Path": "cloth-volume-29/model/material.mtl",
+      "Bytes": 163,
+      "Sha256": "ae7e839077abb6e9b8f3f5d0e4a24be2eb6ea9b11ccd76c5847faeae24549905"
+    },
+    {
+      "Path": "cloth-volume-29/model/model.bbmodel",
+      "Bytes": 1807728,
+      "Sha256": "80a6957f54b7243792d6509c5fa28b10a1bf776a83754149c260c9b8625fa6a2"
+    },
+    {
+      "Path": "cloth-volume-29/model/model.json",
+      "Bytes": 1769714,
+      "Sha256": "8dfae0c67f15e8fa449ba976361ab49dfc09f9b599782153eccdf70b48469322"
+    },
+    {
+      "Path": "cloth-volume-29/model/model.obj",
+      "Bytes": 446419,
+      "Sha256": "64b587cd68e17e2f4b9c42c6f29e17ce8f1910eb62770e19b10c90b0186b86bb"
+    },
+    {
+      "Path": "cloth-volume-29/model/native.png",
+      "Bytes": 8249,
+      "Sha256": "b52a4ee4ba659495a32120ba8336a94caa6c6ea2a856472c6e318de4a1517ede"
+    },
+    {
+      "Path": "cloth-volume-29/model/new-cloth-boots.png",
+      "Bytes": 1707,
+      "Sha256": "2c9212562bcbfa23bee22514b230c5137ef1bc3ebb59b57f3d1fd5ef012e4e23"
+    },
+    {
+      "Path": "cloth-volume-29/native-validation.json",
+      "Bytes": 5799,
+      "Sha256": "05cc48138bfbfe2a9eeb6a9b4ce50748e532c2ef35569c87cc26ea132341d0d7"
+    },
+    {
+      "Path": "cloth-volume-29/quality-state.json",
+      "Bytes": 1782,
+      "Sha256": "85aae5426830d0dbdceaede1235b3302b9ca491190f48d32790ce028dee6eb8c"
+    },
+    {
+      "Path": "cloth-volume-29/references/approved_material_v1.png",
+      "Bytes": 128524,
+      "Sha256": "ee452e39cfaaf8cb8a33ac83439e1929a44f367db2172dda0cab2587d3008adb"
+    },
+    {
+      "Path": "cloth-volume-29/references/source-identity.json",
+      "Bytes": 1264,
+      "Sha256": "02d78c95e26e8fe9646fa8462f87238ff3d5b2fd04abd54abeeeed5cd083d3e0"
+    },
+    {
+      "Path": "cloth-volume-29/replay-inputs.json",
+      "Bytes": 668,
+      "Sha256": "ce421f8ef23eb85d24dd202a6ce9d11cce0de7bb00776911ae5cc2f5bc71b4eb"
+    },
+    {
+      "Path": "cloth-volume-29/verification.json",
+      "Bytes": 1564,
+      "Sha256": "0c760b5c9528c1ab913adff45614a719af3a3640cfdae6356f6d850d3148de9d"
+    },
+    {
+      "Path": "cloth-volume-29/verify29.py",
+      "Bytes": 3173,
+      "Sha256": "db6efbea3b82530bcb0afb8299f0666caa1c168a2aedeb8a559dc3ffa7384f0a"
+    }
+  ]
+}

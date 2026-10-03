@@ -1,0 +1,41 @@
+{
+  "textures": {
+    "streak": "projects:study/impact-cut-08"
+  },
+  "elements": [
+    {
+      "from": [
+        8,
+        8,
+        8
+      ],
+      "to": [
+        12.864,
+        9.1776,
+        8
+      ],
+      "shade": false,
+      "faces": {
+        "south": {
+          "texture": "#streak",
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ]
+        },
+        "north": {
+          "texture": "#streak",
+          "uv": [
+            16,
+            0,
+            0,
+            16
+          ]
+        }
+      }
+    }
+  ],
+  "_status": "TWO-SIDED TRANSIENT DIRECTIONAL CREST; NO PHYSICS OR PRIMARY EDIT"
+}

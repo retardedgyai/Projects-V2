@@ -1,0 +1,37 @@
+{
+  "textures": {
+    "bed": "projects:study/return-crack"
+  },
+  "elements": [
+    {
+      "from": [
+        0.0,
+        8.04096,
+        3.2
+      ],
+      "to": [
+        3.2,
+        8.04096,
+        6.4
+      ],
+      "shade": false,
+      "faces": {
+        "up": {
+          "texture": "#bed",
+          "uv": [
+            0,
+            16,
+            16,
+            0
+          ]
+        }
+      }
+    }
+  ],
+  "_source_asset": "garden-bed",
+  "_source_element_ids": [
+    0
+  ],
+  "_transient_only": true,
+  "_status": "EXISTING CRACK SURFACE; AUXILIARY SIGNAL; NOT PRODUCTION BINDING"
+}

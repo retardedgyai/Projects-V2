@@ -1,0 +1,138 @@
+{
+  "schema_version": 1,
+  "task": {
+    "id": "new-task",
+    "revision": "prototype-1",
+    "interpretation_id": "interpretation-1",
+    "review_epoch": 1,
+    "request": "依頼の原文",
+    "source": "本人依頼の出典",
+    "intended_use": "用途・形・材質・動作・実使用制約",
+    "phase": "representative",
+    "game_required": true,
+    "authority": {
+      "approved": [],
+      "rejected": [],
+      "preserve": []
+    },
+    "representative": {
+      "scope": "品質を決める代表部分か短動作",
+      "stop_if": "大きい造形・材質・動作差が残る"
+    },
+    "whole_quality": {
+      "features": "全体として成立させる特徴",
+      "grounding": "該当実参照IDと対象要素。参照確認後に確定",
+      "counterexample": "見た目が似ていても成立していない反例"
+    },
+    "criteria": [
+      {
+        "id": "main-shape",
+        "purpose": "shape",
+        "required_inspection": "image",
+        "target": "実見した参照の質的な特徴を自分で基準にする",
+        "comparison": "同カメラ・大きさ・照明・状態の通常表示",
+        "failure": "全体の特徴が読めず部分的に似ているだけ"
+      }
+    ],
+    "artifact": {
+      "evidence_id": null,
+      "sha256": null
+    },
+    "saved_diff_id": null,
+    "latest_validation_id": null,
+    "next_action": "既存参照を再利用し代表部分を保存する"
+  },
+  "references": [
+    {
+      "id": "reference-1",
+      "title": "用途に合う実作品候補",
+      "source_locator": "元資料の識別子または取得元",
+      "original_url": null,
+      "author": {
+        "status": "unknown",
+        "name": null,
+        "note": "未確認。投稿者とは別に記録"
+      },
+      "poster": {
+        "status": "unknown",
+        "name": null,
+        "note": "未確認"
+      },
+      "medium": "image",
+      "inspected": "unconfirmed",
+      "inspected_range": null,
+      "source_version": null,
+      "purposes": [
+        "shape"
+      ],
+      "reason": "用途の造形に適合する候補。実見前なので基準未確定",
+      "selected": false,
+      "priority": 1,
+      "analysis_epoch": 1,
+      "observed_features": []
+    }
+  ],
+  "evidence": [],
+  "decision": {
+    "revision": null,
+    "states": {
+      "technical": {
+        "status": "unverified",
+        "reviewer": null,
+        "reason": null,
+        "evidence_id": null
+      },
+      "aesthetic": {
+        "status": "unverified",
+        "reviewer": null,
+        "reason": null,
+        "review_epoch": null
+      },
+      "game": {
+        "status": "unverified",
+        "reviewer": null,
+        "reason": null,
+        "evidence_id": null
+      },
+      "user": {
+        "status": "pending",
+        "source": null
+      }
+    },
+    "comparisons": [],
+    "holistic": {
+      "status": "unverified",
+      "revision": null,
+      "review_epoch": null,
+      "reason": null,
+      "counterexample_present": null
+    },
+    "integration": {
+      "status": "unverified",
+      "scope": "whole_in_use",
+      "revision": null,
+      "normal_display": true,
+      "reason": null,
+      "reviewer": null,
+      "evidence_id": null
+    },
+    "issues": [],
+    "biggest_gap": "未実見。合格判断はまだしない",
+    "next_action": "現物の代表部分と既存実参照を比較する",
+    "failure": {
+      "count": 0,
+      "severe": false,
+      "cause": null,
+      "response": null,
+      "source": null,
+      "rejected_revision": null,
+      "rejected_interpretation_id": null,
+      "invalidated_epoch": null,
+      "independent_counterargument": null,
+      "independent_reviewer": null
+    }
+  },
+  "waits": [],
+  "effort_minutes": null,
+  "simplification": "必要な差分だけ更新する"
+}

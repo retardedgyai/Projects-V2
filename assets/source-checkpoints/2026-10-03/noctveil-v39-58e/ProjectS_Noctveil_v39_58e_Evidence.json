@@ -1,0 +1,52 @@
+{
+  "model_sha256": "58e690975ee8a9db8a0ca14736187076398aebe75bfd9b5ad960adb2e1353417",
+  "native_version": "5.2.1",
+  "native_full_pose_count": 97,
+  "native_full_png_count": 164,
+  "native_closeup_png_count": 92,
+  "technical_checks_pass": true,
+  "coverage": "Old96 native full body/wing/crown/50-panel SAT/support QA reused only where new native world vertices exactly match; final17 native poses run through identical full checks on exit plus bind endpoints. All97 final native poses covered by these two routes.",
+  "current_native_palm_target_overlap_count": 0,
+  "native_exit_minimum_palm_section_clearance_units": 0.03850820904657937,
+  "cut_actual_shaft_minimum_downward_angle_degrees": 67.40117303261623,
+  "cut_all3_actual_mesh_contacts": true,
+  "cut_all3_centerlines_always_enter": false,
+  "protected_original_files_unchanged": 2758,
+  "gifs": [
+    {
+      "filename": "ProjectS_Noctveil_v39_58e_FullMotion.gif",
+      "sha256": "d5b37c21d03ae751c51592785819d1b318887d0210b149cbca99a7d9ae3d2346",
+      "frames": 41,
+      "duration_ms": 4600,
+      "loop": 0
+    },
+    {
+      "filename": "ProjectS_Noctveil_v39_58e_v38_Comparison.gif",
+      "sha256": "789f23fd8e1d25eff80a6904a804c80651f0cfdab58a8d77d3b8481e956c5624",
+      "frames": 41,
+      "duration_ms": 4600,
+      "loop": 0
+    },
+    {
+      "filename": "ProjectS_Noctveil_v39_58e_ClawDirection.gif",
+      "sha256": "dd26720b51d16d1dc45b2bb349d762d72cdac89a201a7dd2e57011a91db8ddfc",
+      "frames": 41,
+      "duration_ms": 4600,
+      "loop": 0
+    },
+    {
+      "filename": "ProjectS_Noctveil_v39_58e_ThreeClawContact.gif",
+      "sha256": "0ace7ea7144207a94b32c458145655b7fed200e20d908961cc8c3693b0f66380",
+      "frames": 41,
+      "duration_ms": 4600,
+      "loop": 0
+    }
+  ],
+  "all4_browser_replay_and_second_loop_observed": true,
+  "ordinary_native_timeline_reached_clip_end": true,
+  "physical_ios_device_tested": false,
+  "stage": "reference -> independently authored native model -> finite technical and actual-pixel evaluation -> user adoption pending -> game unconnected",
+  "old_previews_boundary": "Current58e filenames are separate from archived248 predecessor. v38 comparison uses actual v38 native files with same camera/crop/scale.",
+  "user_accepted": false,
+  "game_connected": false
+}

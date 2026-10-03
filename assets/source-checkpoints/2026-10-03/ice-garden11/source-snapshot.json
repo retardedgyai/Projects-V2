@@ -1,0 +1,1071 @@
+{
+  "Schema": 1,
+  "Snapshot": "ice-garden11",
+  "Status": "PROTOTYPE_SOURCE_SNAPSHOT_QUALITY_PENDING",
+  "CapturedUtc": "2026-10-03T14:43:38.6873307Z",
+  "LibraryFileId": "libfile_7bbd7d247ff881918296f04edb1bf7d3",
+  "LibraryVersion": 0,
+  "SourceZipName": "mage-ice-garden-11-prototype-review.zip",
+  "SourceZipSha256": "777143c6df995e7fb0edb5c2aecfd7c608c80ab55a71e941b9b4becef70bcbef",
+  "SourceZipBytes": 17636492,
+  "OriginalUnchanged": true,
+  "EntryBytesVerified": true,
+  "Notes": "Saved 11c prototype; MatE quality and spell feel remain unaccepted. Ice Garden12 ongoing work is excluded. Reproduce with Python, NumPy and Pillow: review11.py --clip. run_native_probe.py requires the existing Minecraft 26.2/JDK installation. Native-faces parser output and renders are retained in the Library ZIP, not duplicated here. No production integration.",
+  "Files": [
+    {
+      "Path": "asset-validation.json",
+      "Bytes": 206,
+      "Sha256": "87d91c412bc91407b66304debf8a189248c9e4ba08d98b1d81058f3142a20755"
+    },
+    {
+      "Path": "author11.py",
+      "Bytes": 5131,
+      "Sha256": "be1bff5073cf183be8b50a9ba3cf4bf45befbcc03dc933c49055df17054cec0a"
+    },
+    {
+      "Path": "baseline08.py",
+      "Bytes": 4201,
+      "Sha256": "eee384d026c4f8dbbab9f6bb7b2937a30c965de28b3dfed4bc9feabe18fcb966"
+    },
+    {
+      "Path": "baseline09.py",
+      "Bytes": 2971,
+      "Sha256": "9a3c1698815162c2bbb02c02d1ba9b1304fda21d7c1813d98e43bc73d15554a7"
+    },
+    {
+      "Path": "baseline10.py",
+      "Bytes": 3928,
+      "Sha256": "8a640c080c68bab1d3fef72e12d4b6618e351231d8cef9834348d36e4cd268b3"
+    },
+    {
+      "Path": "bootstrap11.py",
+      "Bytes": 1444,
+      "Sha256": "e31a7be88fb199f6553136ed5bdf2976390a8737f5c6c295c38f6f567389dcbf"
+    },
+    {
+      "Path": "effect_policy_base07.py",
+      "Bytes": 2581,
+      "Sha256": "34f526589d52d754db7500ee7143b172513e5650e718e4bc978d06f5f9512256"
+    },
+    {
+      "Path": "field_math08.py",
+      "Bytes": 4385,
+      "Sha256": "6ba56f393f5be34c94b2b202b089793a534b9da5c17546b45c35d02c04534135"
+    },
+    {
+      "Path": "field_math09.py",
+      "Bytes": 5538,
+      "Sha256": "704f4e556938eed544ee0c9b7ab29ef770cf732e197e83a8d69af8e009ee7a6f"
+    },
+    {
+      "Path": "field_math10.py",
+      "Bytes": 2856,
+      "Sha256": "33fa283dedf6c7c6c36ec714729009b2702075fa0d153ee0ee6798856fdb567d"
+    },
+    {
+      "Path": "field_math11.py",
+      "Bytes": 1966,
+      "Sha256": "25782a18e297828cfbcd68dd5ee096dfaa1e00d95a74cc88a19dc197e778e8e8"
+    },
+    {
+      "Path": "fixed07.py",
+      "Bytes": 7127,
+      "Sha256": "7ffc91bebe023d43e6c1842649874b1b064a4a54c536d271348158fdd1ae5582"
+    },
+    {
+      "Path": "geometry_export_helpers.py",
+      "Bytes": 7803,
+      "Sha256": "ece40babd956936d4e609670569b05b0a1daf92f58b235edb9142873de23a956"
+    },
+    {
+      "Path": "layout10.py",
+      "Bytes": 1500,
+      "Sha256": "e2eaf0f55763272b1b063a38b27ce69b3fb9f9e4ef45cacea4d3587220ccd09a"
+    },
+    {
+      "Path": "native-context/context.model.json",
+      "Bytes": 13579,
+      "Sha256": "7186b819149b2bd3d4164946bfee66d225523f41f2ba88cbc29aabb216c8e07e"
+    },
+    {
+      "Path": "native-context/stone.png",
+      "Bytes": 151,
+      "Sha256": "b5e10adc72442bfb257ce7ba0b9bbe36475a0c8cdfec89b80dc9517203ff3e9f"
+    },
+    {
+      "Path": "native-context/zombie.png",
+      "Bytes": 700,
+      "Sha256": "1b88eea9b63889c2c3399773f887af375defc3aad0e7a375adc84249da54cbbd"
+    },
+    {
+      "Path": "native-study/boundary-10-g0.model.json",
+      "Bytes": 65611,
+      "Sha256": "bc986d4d23cc411fd5219f472b488236e536cb0cf9effd7dc3fde8f5210ce8fa"
+    },
+    {
+      "Path": "native-study/boundary-10-g0.png",
+      "Bytes": 12740,
+      "Sha256": "bc3e19f176a122339476d6d5d03d29076e97b21d4e9b3ddb79523287ce6d0ddf"
+    },
+    {
+      "Path": "native-study/boundary-10-g1.model.json",
+      "Bytes": 65412,
+      "Sha256": "adbf498a011c24457b756ee26170f9908bbe1b4a01fcdccf9596cb7b63ec9d64"
+    },
+    {
+      "Path": "native-study/boundary-10-g1.png",
+      "Bytes": 13181,
+      "Sha256": "fc8e47412e360533e0b38f149a3d15e0f4ba9949b47e1534518c496b4e44ce92"
+    },
+    {
+      "Path": "native-study/boundary-10.mesh.json",
+      "Bytes": 23480,
+      "Sha256": "21a19b4e6f7e7eb896cc6f96a8defc8f03d78daf589ef284125059aa1099cb48"
+    },
+    {
+      "Path": "native-study/boundary-10.png",
+      "Bytes": 358,
+      "Sha256": "66069bcf811fd46a95d81e189574867f22d3b08b4afd3291bbecc297ab705a7b"
+    },
+    {
+      "Path": "native-study/boundary-chip-00.model.json",
+      "Bytes": 18816,
+      "Sha256": "6eef71d20705725362c84145776d7ad6b06f96ec9983a28d9b04ff4d14a1af21"
+    },
+    {
+      "Path": "native-study/boundary-chip-01.model.json",
+      "Bytes": 9526,
+      "Sha256": "42fd47c1ee4f4503679b7bfa8a327ecc7912357b8b6382b0040ac65767603e77"
+    },
+    {
+      "Path": "native-study/boundary-chip-02.model.json",
+      "Bytes": 9515,
+      "Sha256": "679cdfb5794c21e7a8bcaf0f5b25bf03ba301e08dfbf6a4dddd57f158fd9b727"
+    },
+    {
+      "Path": "native-study/boundary-chip-03.model.json",
+      "Bytes": 18874,
+      "Sha256": "a86c07fbc64ff33d456a54470933ece181baa2a979fa33eabe7283f5d2f7b523"
+    },
+    {
+      "Path": "native-study/boundary-chip-04.model.json",
+      "Bytes": 9535,
+      "Sha256": "bea211f54a7befd989c1e452c456b8897d75d1985c2c1cc42880362650006812"
+    },
+    {
+      "Path": "native-study/boundary-chip-05.model.json",
+      "Bytes": 9496,
+      "Sha256": "0e28325d9eeb6292c53ec90796754d4aec7aa8ce217872090acbe5a89c6eba0b"
+    },
+    {
+      "Path": "native-study/boundary-chip-06.model.json",
+      "Bytes": 18914,
+      "Sha256": "4a2d026fe753b501b897b07efbc595144732c43be466c767bc8e2684b06da6c7"
+    },
+    {
+      "Path": "native-study/boundary-chip-07.model.json",
+      "Bytes": 9489,
+      "Sha256": "828ef386478f206fd6e912338e60fdaf0295f9db9778494ae8f179e475cca4dd"
+    },
+    {
+      "Path": "native-study/boundary-chip-08.model.json",
+      "Bytes": 9579,
+      "Sha256": "3f8a856c22363e7d8f50011f7d877174962b6e3c6d822e2a883778ecab0195d5"
+    },
+    {
+      "Path": "native-study/boundary-chip-09.model.json",
+      "Bytes": 18775,
+      "Sha256": "5c2d592714fd91391b66e755169b78c843c55162939a8a7a1b9b94a2498d2f26"
+    },
+    {
+      "Path": "native-study/crest-left-08.model.json",
+      "Bytes": 712,
+      "Sha256": "d675945e659f46f19e9db3525ee4b1358ddee71789845d03170a536a686b1f26"
+    },
+    {
+      "Path": "native-study/crest-left-08.png",
+      "Bytes": 393,
+      "Sha256": "61fb701f6a820b5d4f09a5e7f028d835f5708954532a83f102b189e2de9506c8"
+    },
+    {
+      "Path": "native-study/crest-rear-08.model.json",
+      "Bytes": 699,
+      "Sha256": "972247cac843df5b6355dd7066eca68034c06bd449faf0ff40ebb24339f7b4bb"
+    },
+    {
+      "Path": "native-study/crest-rear-08.png",
+      "Bytes": 393,
+      "Sha256": "61fb701f6a820b5d4f09a5e7f028d835f5708954532a83f102b189e2de9506c8"
+    },
+    {
+      "Path": "native-study/crest-right-08.model.json",
+      "Bytes": 701,
+      "Sha256": "78b13d6cec76044ea56ce5f0af1d7c12e56e9cb1ee357fc2223b4c0bbc202746"
+    },
+    {
+      "Path": "native-study/crest-right-08.png",
+      "Bytes": 393,
+      "Sha256": "61fb701f6a820b5d4f09a5e7f028d835f5708954532a83f102b189e2de9506c8"
+    },
+    {
+      "Path": "native-study/field-08.model.json",
+      "Bytes": 8225,
+      "Sha256": "6a3053af290f6ccc8c3c5afdcebe97a3ec1e6508c70f5226c1c9983eafe6afc0"
+    },
+    {
+      "Path": "native-study/field-08.png",
+      "Bytes": 3132,
+      "Sha256": "f7b60df5cc543b0cf74f33bed8d4a71f32cb7c03071be2b701a21fd96eaa031b"
+    },
+    {
+      "Path": "native-study/fringe-09.model.json",
+      "Bytes": 8229,
+      "Sha256": "420272b821c5ec6a4c3a1ce579a1efc8c8b20f6560bd2266765a43caceac6f4e"
+    },
+    {
+      "Path": "native-study/fringe-09.png",
+      "Bytes": 3582,
+      "Sha256": "227caa85fa67a0c29f8f5b1eb0bd106088e86e5c2b8eb783a6149a3be262fa84"
+    },
+    {
+      "Path": "native-study/fringe-10.model.json",
+      "Bytes": 8176,
+      "Sha256": "879c39332888eba1706f77b91589aedd77208efb114598ddb1aaafecc86d4ae4"
+    },
+    {
+      "Path": "native-study/fringe-10.png",
+      "Bytes": 1614,
+      "Sha256": "782f084db37f74ba433d1eb1cb6297520654113bd828d546890b88377a00c26f"
+    },
+    {
+      "Path": "native-study/fringe-contact-fixture-0-0.png",
+      "Bytes": 3582,
+      "Sha256": "227caa85fa67a0c29f8f5b1eb0bd106088e86e5c2b8eb783a6149a3be262fa84"
+    },
+    {
+      "Path": "native-study/fringe-contact-fixture-0-1.png",
+      "Bytes": 3582,
+      "Sha256": "227caa85fa67a0c29f8f5b1eb0bd106088e86e5c2b8eb783a6149a3be262fa84"
+    },
+    {
+      "Path": "native-study/fringe-contact-fixture-0-2.png",
+      "Bytes": 3582,
+      "Sha256": "227caa85fa67a0c29f8f5b1eb0bd106088e86e5c2b8eb783a6149a3be262fa84"
+    },
+    {
+      "Path": "native-study/fringe-contact-fixture-0-3.png",
+      "Bytes": 3582,
+      "Sha256": "227caa85fa67a0c29f8f5b1eb0bd106088e86e5c2b8eb783a6149a3be262fa84"
+    },
+    {
+      "Path": "native-study/fringe-contact-fixture-0-4.png",
+      "Bytes": 3582,
+      "Sha256": "227caa85fa67a0c29f8f5b1eb0bd106088e86e5c2b8eb783a6149a3be262fa84"
+    },
+    {
+      "Path": "native-study/fringe-contact-fixture-0-5.png",
+      "Bytes": 3582,
+      "Sha256": "227caa85fa67a0c29f8f5b1eb0bd106088e86e5c2b8eb783a6149a3be262fa84"
+    },
+    {
+      "Path": "native-study/fringe-contact-fixture-0-6.png",
+      "Bytes": 3582,
+      "Sha256": "227caa85fa67a0c29f8f5b1eb0bd106088e86e5c2b8eb783a6149a3be262fa84"
+    },
+    {
+      "Path": "native-study/fringe-contact-fixture-0-7.png",
+      "Bytes": 3582,
+      "Sha256": "227caa85fa67a0c29f8f5b1eb0bd106088e86e5c2b8eb783a6149a3be262fa84"
+    },
+    {
+      "Path": "native-study/fringe-contact-fixture-1-0.png",
+      "Bytes": 3582,
+      "Sha256": "227caa85fa67a0c29f8f5b1eb0bd106088e86e5c2b8eb783a6149a3be262fa84"
+    },
+    {
+      "Path": "native-study/fringe-contact-fixture-1-1.png",
+      "Bytes": 3582,
+      "Sha256": "227caa85fa67a0c29f8f5b1eb0bd106088e86e5c2b8eb783a6149a3be262fa84"
+    },
+    {
+      "Path": "native-study/fringe-contact-fixture-1-2.png",
+      "Bytes": 3582,
+      "Sha256": "227caa85fa67a0c29f8f5b1eb0bd106088e86e5c2b8eb783a6149a3be262fa84"
+    },
+    {
+      "Path": "native-study/fringe-contact-fixture-1-3.png",
+      "Bytes": 3582,
+      "Sha256": "227caa85fa67a0c29f8f5b1eb0bd106088e86e5c2b8eb783a6149a3be262fa84"
+    },
+    {
+      "Path": "native-study/fringe-contact-fixture-1-4.png",
+      "Bytes": 3582,
+      "Sha256": "227caa85fa67a0c29f8f5b1eb0bd106088e86e5c2b8eb783a6149a3be262fa84"
+    },
+    {
+      "Path": "native-study/fringe-contact-fixture-1-5.png",
+      "Bytes": 3582,
+      "Sha256": "227caa85fa67a0c29f8f5b1eb0bd106088e86e5c2b8eb783a6149a3be262fa84"
+    },
+    {
+      "Path": "native-study/fringe-contact-fixture-1-6.png",
+      "Bytes": 3582,
+      "Sha256": "227caa85fa67a0c29f8f5b1eb0bd106088e86e5c2b8eb783a6149a3be262fa84"
+    },
+    {
+      "Path": "native-study/fringe-contact-fixture-1-7.png",
+      "Bytes": 3582,
+      "Sha256": "227caa85fa67a0c29f8f5b1eb0bd106088e86e5c2b8eb783a6149a3be262fa84"
+    },
+    {
+      "Path": "native-study/fringe-contact-fixture-2-0.png",
+      "Bytes": 3582,
+      "Sha256": "227caa85fa67a0c29f8f5b1eb0bd106088e86e5c2b8eb783a6149a3be262fa84"
+    },
+    {
+      "Path": "native-study/fringe-contact-fixture-2-1.png",
+      "Bytes": 3582,
+      "Sha256": "227caa85fa67a0c29f8f5b1eb0bd106088e86e5c2b8eb783a6149a3be262fa84"
+    },
+    {
+      "Path": "native-study/fringe-contact-fixture-2-2.png",
+      "Bytes": 3582,
+      "Sha256": "227caa85fa67a0c29f8f5b1eb0bd106088e86e5c2b8eb783a6149a3be262fa84"
+    },
+    {
+      "Path": "native-study/fringe-contact-fixture-2-3.png",
+      "Bytes": 3582,
+      "Sha256": "227caa85fa67a0c29f8f5b1eb0bd106088e86e5c2b8eb783a6149a3be262fa84"
+    },
+    {
+      "Path": "native-study/fringe-contact-fixture-2-4.png",
+      "Bytes": 3582,
+      "Sha256": "227caa85fa67a0c29f8f5b1eb0bd106088e86e5c2b8eb783a6149a3be262fa84"
+    },
+    {
+      "Path": "native-study/fringe-contact-fixture-2-5.png",
+      "Bytes": 3582,
+      "Sha256": "227caa85fa67a0c29f8f5b1eb0bd106088e86e5c2b8eb783a6149a3be262fa84"
+    },
+    {
+      "Path": "native-study/fringe-contact-fixture-2-6.png",
+      "Bytes": 3582,
+      "Sha256": "227caa85fa67a0c29f8f5b1eb0bd106088e86e5c2b8eb783a6149a3be262fa84"
+    },
+    {
+      "Path": "native-study/fringe-contact-fixture-2-7.png",
+      "Bytes": 3582,
+      "Sha256": "227caa85fa67a0c29f8f5b1eb0bd106088e86e5c2b8eb783a6149a3be262fa84"
+    },
+    {
+      "Path": "native-study/fringe-contact-fixture-3-0.png",
+      "Bytes": 3582,
+      "Sha256": "227caa85fa67a0c29f8f5b1eb0bd106088e86e5c2b8eb783a6149a3be262fa84"
+    },
+    {
+      "Path": "native-study/fringe-contact-fixture-3-1.png",
+      "Bytes": 3582,
+      "Sha256": "227caa85fa67a0c29f8f5b1eb0bd106088e86e5c2b8eb783a6149a3be262fa84"
+    },
+    {
+      "Path": "native-study/fringe-contact-fixture-3-2.png",
+      "Bytes": 3582,
+      "Sha256": "227caa85fa67a0c29f8f5b1eb0bd106088e86e5c2b8eb783a6149a3be262fa84"
+    },
+    {
+      "Path": "native-study/fringe-contact-fixture-3-3.png",
+      "Bytes": 3582,
+      "Sha256": "227caa85fa67a0c29f8f5b1eb0bd106088e86e5c2b8eb783a6149a3be262fa84"
+    },
+    {
+      "Path": "native-study/fringe-contact-fixture-3-4.png",
+      "Bytes": 3582,
+      "Sha256": "227caa85fa67a0c29f8f5b1eb0bd106088e86e5c2b8eb783a6149a3be262fa84"
+    },
+    {
+      "Path": "native-study/fringe-contact-fixture-3-5.png",
+      "Bytes": 3582,
+      "Sha256": "227caa85fa67a0c29f8f5b1eb0bd106088e86e5c2b8eb783a6149a3be262fa84"
+    },
+    {
+      "Path": "native-study/fringe-contact-fixture-3-6.png",
+      "Bytes": 3582,
+      "Sha256": "227caa85fa67a0c29f8f5b1eb0bd106088e86e5c2b8eb783a6149a3be262fa84"
+    },
+    {
+      "Path": "native-study/fringe-contact-fixture-3-7.png",
+      "Bytes": 3582,
+      "Sha256": "227caa85fa67a0c29f8f5b1eb0bd106088e86e5c2b8eb783a6149a3be262fa84"
+    },
+    {
+      "Path": "native-study/fringe-pose-00.png",
+      "Bytes": 932,
+      "Sha256": "41087decdfad41ec389b81ce8c4813cee90080edfada3b31e929a472162f874d"
+    },
+    {
+      "Path": "native-study/fringe-pose-01.png",
+      "Bytes": 932,
+      "Sha256": "41087decdfad41ec389b81ce8c4813cee90080edfada3b31e929a472162f874d"
+    },
+    {
+      "Path": "native-study/fringe-pose-02.png",
+      "Bytes": 932,
+      "Sha256": "41087decdfad41ec389b81ce8c4813cee90080edfada3b31e929a472162f874d"
+    },
+    {
+      "Path": "native-study/fringe-pose-03.png",
+      "Bytes": 2992,
+      "Sha256": "166b3cd408c3b564854132df1e321c023ec4142c97c0fde2949923b65a56400d"
+    },
+    {
+      "Path": "native-study/fringe-pose-04.png",
+      "Bytes": 2992,
+      "Sha256": "166b3cd408c3b564854132df1e321c023ec4142c97c0fde2949923b65a56400d"
+    },
+    {
+      "Path": "native-study/fringe-pose-05.png",
+      "Bytes": 3034,
+      "Sha256": "16d3fb1b88128d3b37135d324a880e0ff0d672512786f75bbc371df4f9181ad0"
+    },
+    {
+      "Path": "native-study/fringe-pose-06.png",
+      "Bytes": 3161,
+      "Sha256": "7629a9c76e6666c2d4a6041a1b72e0da1b0ba870074929fda909cc1d1dfc2168"
+    },
+    {
+      "Path": "native-study/fringe-pose-07.png",
+      "Bytes": 3356,
+      "Sha256": "f7a01ccc195eec534fc6cf62646e28a9e940e2d80a977fa9b795abda1cc3c93e"
+    },
+    {
+      "Path": "native-study/fringe-pose-08.png",
+      "Bytes": 3569,
+      "Sha256": "3b3fea90e4a5644ff336355d481abdf07c1d49a16ad73b7fec4c8374b8c4791f"
+    },
+    {
+      "Path": "native-study/fringe-pose-09.png",
+      "Bytes": 3582,
+      "Sha256": "227caa85fa67a0c29f8f5b1eb0bd106088e86e5c2b8eb783a6149a3be262fa84"
+    },
+    {
+      "Path": "native-study/fringe-pose-10.png",
+      "Bytes": 3582,
+      "Sha256": "227caa85fa67a0c29f8f5b1eb0bd106088e86e5c2b8eb783a6149a3be262fa84"
+    },
+    {
+      "Path": "native-study/fringe-pose-11.png",
+      "Bytes": 3620,
+      "Sha256": "4e42fd497c93e6302d5891bc4a178d8fbc56c4b58c49ec0bc0cd903640469a13"
+    },
+    {
+      "Path": "native-study/fringe-pose-12.png",
+      "Bytes": 3620,
+      "Sha256": "4e42fd497c93e6302d5891bc4a178d8fbc56c4b58c49ec0bc0cd903640469a13"
+    },
+    {
+      "Path": "native-study/fringe-pose-13.png",
+      "Bytes": 2936,
+      "Sha256": "89b0c3f974b7cf69ba6d749e1419888fb25a86ae40ec26f7f736011ca098c9b7"
+    },
+    {
+      "Path": "native-study/fringe-pose-14.png",
+      "Bytes": 2936,
+      "Sha256": "89b0c3f974b7cf69ba6d749e1419888fb25a86ae40ec26f7f736011ca098c9b7"
+    },
+    {
+      "Path": "native-study/fringe-pose-15.png",
+      "Bytes": 2936,
+      "Sha256": "89b0c3f974b7cf69ba6d749e1419888fb25a86ae40ec26f7f736011ca098c9b7"
+    },
+    {
+      "Path": "native-study/fringe-pose-16.png",
+      "Bytes": 2895,
+      "Sha256": "10d10481d8e01e0671df1b80206234917bc0e85591b1ed4706cad46ea2bf3ba4"
+    },
+    {
+      "Path": "native-study/frost-09.model.json",
+      "Bytes": 8228,
+      "Sha256": "7c29dbb2139ff66cf0e6f86760818b26dff7f61c5d346a5080042e034e6bcaf1"
+    },
+    {
+      "Path": "native-study/frost-09.png",
+      "Bytes": 3674,
+      "Sha256": "6ca2fecf5b64938e6ad6b4c630e109bd34862fa60fa6a81ed1523c66d7f6cf3e"
+    },
+    {
+      "Path": "native-study/frost-10.model.json",
+      "Bytes": 8175,
+      "Sha256": "a20e79a2f903d8feca5646c2aa554ca537cd75303fc2b5c65d7fbe030419cbf6"
+    },
+    {
+      "Path": "native-study/frost-10.png",
+      "Bytes": 3907,
+      "Sha256": "73f44d26b10d16f542ef759bbc808a68425ed9d5b7e1d1ad90c00fb3e56abe64"
+    },
+    {
+      "Path": "native-study/frost-contact-fixture-0-0.png",
+      "Bytes": 3674,
+      "Sha256": "6ca2fecf5b64938e6ad6b4c630e109bd34862fa60fa6a81ed1523c66d7f6cf3e"
+    },
+    {
+      "Path": "native-study/frost-contact-fixture-0-1.png",
+      "Bytes": 3774,
+      "Sha256": "c3d197120c535e2217866d768f15ee8b9c1825d717d1350033b4d369511778ee"
+    },
+    {
+      "Path": "native-study/frost-contact-fixture-0-2.png",
+      "Bytes": 3757,
+      "Sha256": "8c8ce322c22caeabc708fc8b864efc1005437419916da9f0fc04e5f07a23bfa8"
+    },
+    {
+      "Path": "native-study/frost-contact-fixture-0-3.png",
+      "Bytes": 3793,
+      "Sha256": "b08d4ac421475a09267fb9695da71193621758387452307a67a54834d33cacfd"
+    },
+    {
+      "Path": "native-study/frost-contact-fixture-0-4.png",
+      "Bytes": 3745,
+      "Sha256": "1396ece1d5a215fc98fd2d0814bb6afa48c5fd5f14796344ab98180adbd77716"
+    },
+    {
+      "Path": "native-study/frost-contact-fixture-0-5.png",
+      "Bytes": 3745,
+      "Sha256": "1396ece1d5a215fc98fd2d0814bb6afa48c5fd5f14796344ab98180adbd77716"
+    },
+    {
+      "Path": "native-study/frost-contact-fixture-0-6.png",
+      "Bytes": 3745,
+      "Sha256": "1396ece1d5a215fc98fd2d0814bb6afa48c5fd5f14796344ab98180adbd77716"
+    },
+    {
+      "Path": "native-study/frost-contact-fixture-0-7.png",
+      "Bytes": 3745,
+      "Sha256": "1396ece1d5a215fc98fd2d0814bb6afa48c5fd5f14796344ab98180adbd77716"
+    },
+    {
+      "Path": "native-study/frost-contact-fixture-1-0.png",
+      "Bytes": 3674,
+      "Sha256": "6ca2fecf5b64938e6ad6b4c630e109bd34862fa60fa6a81ed1523c66d7f6cf3e"
+    },
+    {
+      "Path": "native-study/frost-contact-fixture-1-1.png",
+      "Bytes": 3747,
+      "Sha256": "c8cf14eb9e4ed421b17cb2dabd74f333e6822d71c9b4f6ba8a6303c0da0e929e"
+    },
+    {
+      "Path": "native-study/frost-contact-fixture-1-2.png",
+      "Bytes": 3773,
+      "Sha256": "b3af5090735400747c79bdbb0a2421fd23a6d517eee7c5f4debc9ca4c3c1f25b"
+    },
+    {
+      "Path": "native-study/frost-contact-fixture-1-3.png",
+      "Bytes": 3773,
+      "Sha256": "1b7bd4b01a60bcd650537fe9bf75b36dc6ecf1f3485eec255d72d2962e8a021f"
+    },
+    {
+      "Path": "native-study/frost-contact-fixture-1-4.png",
+      "Bytes": 3753,
+      "Sha256": "eb642e9bdb0e45bafd4260a5bd7355e9b96d5aaa6041749ff27d6fd1e6b5a861"
+    },
+    {
+      "Path": "native-study/frost-contact-fixture-1-5.png",
+      "Bytes": 3753,
+      "Sha256": "eb642e9bdb0e45bafd4260a5bd7355e9b96d5aaa6041749ff27d6fd1e6b5a861"
+    },
+    {
+      "Path": "native-study/frost-contact-fixture-1-6.png",
+      "Bytes": 3753,
+      "Sha256": "eb642e9bdb0e45bafd4260a5bd7355e9b96d5aaa6041749ff27d6fd1e6b5a861"
+    },
+    {
+      "Path": "native-study/frost-contact-fixture-1-7.png",
+      "Bytes": 3753,
+      "Sha256": "eb642e9bdb0e45bafd4260a5bd7355e9b96d5aaa6041749ff27d6fd1e6b5a861"
+    },
+    {
+      "Path": "native-study/frost-contact-fixture-2-0.png",
+      "Bytes": 3674,
+      "Sha256": "6ca2fecf5b64938e6ad6b4c630e109bd34862fa60fa6a81ed1523c66d7f6cf3e"
+    },
+    {
+      "Path": "native-study/frost-contact-fixture-2-1.png",
+      "Bytes": 3744,
+      "Sha256": "873aeadaa6e5514f89fb0badf62c3ed420d12353874ea15335eac560eb901271"
+    },
+    {
+      "Path": "native-study/frost-contact-fixture-2-2.png",
+      "Bytes": 3768,
+      "Sha256": "a517ee6550238b81abd06c8e172d30c8c856dd7eeaf56d178e376d911a86fa97"
+    },
+    {
+      "Path": "native-study/frost-contact-fixture-2-3.png",
+      "Bytes": 3780,
+      "Sha256": "6a4bf62ea81a0df94b61ecfa90b163a7b46dcea0d073448f958d83d3fb91c0e0"
+    },
+    {
+      "Path": "native-study/frost-contact-fixture-2-4.png",
+      "Bytes": 3737,
+      "Sha256": "50f6bf44ac506af532eb7fc5166274446def8d9fee0e5baae869632babe622e5"
+    },
+    {
+      "Path": "native-study/frost-contact-fixture-2-5.png",
+      "Bytes": 3737,
+      "Sha256": "50f6bf44ac506af532eb7fc5166274446def8d9fee0e5baae869632babe622e5"
+    },
+    {
+      "Path": "native-study/frost-contact-fixture-2-6.png",
+      "Bytes": 3737,
+      "Sha256": "50f6bf44ac506af532eb7fc5166274446def8d9fee0e5baae869632babe622e5"
+    },
+    {
+      "Path": "native-study/frost-contact-fixture-2-7.png",
+      "Bytes": 3737,
+      "Sha256": "50f6bf44ac506af532eb7fc5166274446def8d9fee0e5baae869632babe622e5"
+    },
+    {
+      "Path": "native-study/frost-contact-fixture-3-0.png",
+      "Bytes": 3674,
+      "Sha256": "6ca2fecf5b64938e6ad6b4c630e109bd34862fa60fa6a81ed1523c66d7f6cf3e"
+    },
+    {
+      "Path": "native-study/frost-contact-fixture-3-1.png",
+      "Bytes": 3721,
+      "Sha256": "676b0736bafe934d187573a6a453f95088dd92ef3292665feb3228f98f765e3e"
+    },
+    {
+      "Path": "native-study/frost-contact-fixture-3-2.png",
+      "Bytes": 3749,
+      "Sha256": "0a76589964bf8adf35c0898baa782506d0adbef586b5f140d409f935da48fc96"
+    },
+    {
+      "Path": "native-study/frost-contact-fixture-3-3.png",
+      "Bytes": 3751,
+      "Sha256": "c93f5d2b41e92bcfc701f3b053dd2458f6f581be62346e7ed5a2e9b53c14f516"
+    },
+    {
+      "Path": "native-study/frost-contact-fixture-3-4.png",
+      "Bytes": 3728,
+      "Sha256": "2c45decbdba3ebd5817eea1e1fdab1100c9dd4aca85694877503d4dc5ae2e206"
+    },
+    {
+      "Path": "native-study/frost-contact-fixture-3-5.png",
+      "Bytes": 3728,
+      "Sha256": "2c45decbdba3ebd5817eea1e1fdab1100c9dd4aca85694877503d4dc5ae2e206"
+    },
+    {
+      "Path": "native-study/frost-contact-fixture-3-6.png",
+      "Bytes": 3728,
+      "Sha256": "2c45decbdba3ebd5817eea1e1fdab1100c9dd4aca85694877503d4dc5ae2e206"
+    },
+    {
+      "Path": "native-study/frost-contact-fixture-3-7.png",
+      "Bytes": 3728,
+      "Sha256": "2c45decbdba3ebd5817eea1e1fdab1100c9dd4aca85694877503d4dc5ae2e206"
+    },
+    {
+      "Path": "native-study/frost-pose-00.png",
+      "Bytes": 857,
+      "Sha256": "90091097f127b564cd9a6e87c6cbc5aa45a82222d91053c2b724d51e0522582c"
+    },
+    {
+      "Path": "native-study/frost-pose-01.png",
+      "Bytes": 1630,
+      "Sha256": "b9d66e5d3a175ba251030357d8587c164d3e9573eb1313ec879615a6a55cb1d3"
+    },
+    {
+      "Path": "native-study/frost-pose-02.png",
+      "Bytes": 1925,
+      "Sha256": "37527a2b68a65c7685b5cb2827f1a34404473959f3b7cffafc2889dcde1c3a81"
+    },
+    {
+      "Path": "native-study/frost-pose-03.png",
+      "Bytes": 3850,
+      "Sha256": "d1528568e7f9103e02f491054b2d83f9a9b0d197592e892411fd5df51e6ffb3c"
+    },
+    {
+      "Path": "native-study/frost-pose-04.png",
+      "Bytes": 3862,
+      "Sha256": "1e67a65e56f264333c31e005636265dff6eb796d7c1a3d32b52e677b4cb416bc"
+    },
+    {
+      "Path": "native-study/frost-pose-05.png",
+      "Bytes": 3986,
+      "Sha256": "6e66488e2c0c7449644cd26e95679eeba4b2a092678e6000efd6857bb9b8a675"
+    },
+    {
+      "Path": "native-study/frost-pose-06.png",
+      "Bytes": 3984,
+      "Sha256": "ae294dadb889f1d6c1900f1d884f17379cfe4103bff6c8ea0c1a40fba3582c5c"
+    },
+    {
+      "Path": "native-study/frost-pose-07.png",
+      "Bytes": 4009,
+      "Sha256": "85c74f40dc3bc74ee45c3064a90d68c2eea62473e5593c0baacb3c3547efc116"
+    },
+    {
+      "Path": "native-study/frost-pose-08.png",
+      "Bytes": 3731,
+      "Sha256": "ba07fb89302d1ed130b05f22ffbd1600893be1aba3d4e37297180bfa7e3f99e0"
+    },
+    {
+      "Path": "native-study/frost-pose-09.png",
+      "Bytes": 3674,
+      "Sha256": "6ca2fecf5b64938e6ad6b4c630e109bd34862fa60fa6a81ed1523c66d7f6cf3e"
+    },
+    {
+      "Path": "native-study/frost-pose-10.png",
+      "Bytes": 3674,
+      "Sha256": "6ca2fecf5b64938e6ad6b4c630e109bd34862fa60fa6a81ed1523c66d7f6cf3e"
+    },
+    {
+      "Path": "native-study/frost-pose-11.png",
+      "Bytes": 3683,
+      "Sha256": "595d0dbf690bd1205d18fa56cece6efd9ef15149664b2c57f5935b66530682c3"
+    },
+    {
+      "Path": "native-study/frost-pose-12.png",
+      "Bytes": 3702,
+      "Sha256": "446548ed999ae4738b722108265e1e6c5b959e2f58ece471c46e7506a0f99dc8"
+    },
+    {
+      "Path": "native-study/frost-pose-13.png",
+      "Bytes": 3819,
+      "Sha256": "30e66f885764ff01d2571a1f2cc3416c21fc07b4757d8c65be4691078f24e6c9"
+    },
+    {
+      "Path": "native-study/frost-pose-14.png",
+      "Bytes": 3790,
+      "Sha256": "87833ffb4dfb6fd5586834cec61ba1a8dcc7f4d71735c92d60b33401b4c7d01a"
+    },
+    {
+      "Path": "native-study/frost-pose-15.png",
+      "Bytes": 3866,
+      "Sha256": "cbf3859f9a454018969a810d538563fe71f62768d3cb24e8936fe85c55782d4c"
+    },
+    {
+      "Path": "native-study/frost-pose-16.png",
+      "Bytes": 2887,
+      "Sha256": "db63825e9568de1c032d90edb9fa087b243d2eaf05b36a03f545ba1a3f9a807b"
+    },
+    {
+      "Path": "native-study/garden-bed.model.json",
+      "Bytes": 8142,
+      "Sha256": "e023b197cddef3668c6ac85c5cf1ff9882960e8e509d0be4f08344e0caa3a8d0"
+    },
+    {
+      "Path": "native-study/garden-bed.png",
+      "Bytes": 1256,
+      "Sha256": "28d942ae74073e93e611ccbbe8dfd7eaf57dc04744151a6707aa1f25171d1872"
+    },
+    {
+      "Path": "native-study/garden-rear-g1.model.json",
+      "Bytes": 68627,
+      "Sha256": "9455f799aafffb14d4a0feb4682717f67b046eec13d4405821c9c19d139194c9"
+    },
+    {
+      "Path": "native-study/garden-rear-g2.model.json",
+      "Bytes": 23109,
+      "Sha256": "9391451ede273deab3ba06e88a3d39204c4f9889c1d5f0a297202b87e9cc542c"
+    },
+    {
+      "Path": "native-study/garden-rear-p00.model.json",
+      "Bytes": 45616,
+      "Sha256": "b1447a3d8331fa5e6532ed3ee8b645d6a527c8f35e663f9f69aafd95ccf43483"
+    },
+    {
+      "Path": "native-study/garden-rear-p01.model.json",
+      "Bytes": 23281,
+      "Sha256": "9b4101ecb76b33dee19762f2f2243fef634ef0d98b8b8efbfc0b4d0abd7de859"
+    },
+    {
+      "Path": "native-study/garden-rear-p02.model.json",
+      "Bytes": 23109,
+      "Sha256": "9391451ede273deab3ba06e88a3d39204c4f9889c1d5f0a297202b87e9cc542c"
+    },
+    {
+      "Path": "native-study/garden-rear.mesh.json",
+      "Bytes": 19497,
+      "Sha256": "70784ff80f78b3762e660be3eee6af18df67a74ba5003c472caed58787d0d08d"
+    },
+    {
+      "Path": "native-study/garden-rear.model.json",
+      "Bytes": 94552,
+      "Sha256": "bd615aab2001f96482e1b3d76e0ce4725b2b6f3df6619fe804a2c31f53510efd"
+    },
+    {
+      "Path": "native-study/garden-rear.png",
+      "Bytes": 24324,
+      "Sha256": "4321c0199ca783459d49b16751178c671e7e67a6a0cea5b9f599c05e61f7cea5"
+    },
+    {
+      "Path": "native-study/garden-right-g1.model.json",
+      "Bytes": 68632,
+      "Sha256": "8c525c0aa0dc59d7a87606d80c32cf16f3d0ca921a7b2ff1332521d0b2b8a9dc"
+    },
+    {
+      "Path": "native-study/garden-right-g2.model.json",
+      "Bytes": 22807,
+      "Sha256": "d895f81d55c88cb3649c2838a7a5c448ebed55355fec6267de575f5294ff2185"
+    },
+    {
+      "Path": "native-study/garden-right-p00.model.json",
+      "Bytes": 45636,
+      "Sha256": "bdf97d398c75c64e147705070d942f90a15cd523c56302820f49549a3a2bc8e0"
+    },
+    {
+      "Path": "native-study/garden-right-p01.model.json",
+      "Bytes": 23268,
+      "Sha256": "4c35dd37505bd07f930052c743b87d08f8a5af24e107ee82608fed685d74402e"
+    },
+    {
+      "Path": "native-study/garden-right-p02.model.json",
+      "Bytes": 22807,
+      "Sha256": "d895f81d55c88cb3649c2838a7a5c448ebed55355fec6267de575f5294ff2185"
+    },
+    {
+      "Path": "native-study/garden-right.mesh.json",
+      "Bytes": 19399,
+      "Sha256": "1e5a1980a95a3ff9e803d3db64af68fbf769f82fe40ebb29e66bf66e2ffa7ef0"
+    },
+    {
+      "Path": "native-study/garden-right.model.json",
+      "Bytes": 94250,
+      "Sha256": "774976115ac78b8fa30bade87570a06b295f87ef642449c32a8ac842011d5472"
+    },
+    {
+      "Path": "native-study/garden-right.png",
+      "Bytes": 26051,
+      "Sha256": "4fc14cb0e3c57eb5ff2c0adf2cf383fd3583b16fc455fbe47b4f89d153980753"
+    },
+    {
+      "Path": "native-study/hero-11-texture.png",
+      "Bytes": 79440,
+      "Sha256": "8261c44f010ce32590b39c936db13f7c9d78e13aca2f2efdda56e922be1bf6ef"
+    },
+    {
+      "Path": "native-study/hero-11.mesh.json",
+      "Bytes": 45691,
+      "Sha256": "21501fb5071eaf0819ff3e846af25e3db2eb6b6b68f49aaf5a5c2a95819b6141"
+    },
+    {
+      "Path": "native-study/hero-11.model.json",
+      "Bytes": 229853,
+      "Sha256": "19f0bf08b8652d0037536b3e204936a3b1568597412498d47f03f6f9bba83e9d"
+    },
+    {
+      "Path": "native-study/hero-11.png",
+      "Bytes": 79440,
+      "Sha256": "8261c44f010ce32590b39c936db13f7c9d78e13aca2f2efdda56e922be1bf6ef"
+    },
+    {
+      "Path": "native-study/impact-cut-08.model.json",
+      "Bytes": 699,
+      "Sha256": "617b0d465fadee3e03a0977e5e24aff54bafb7df0333cea0bc6c7b336c7418c9"
+    },
+    {
+      "Path": "native-study/impact-cut-08.png",
+      "Bytes": 304,
+      "Sha256": "0836d39570442232f2483a92f484f8bc7c4821aecbe0ecf6248c3449744f2a7f"
+    },
+    {
+      "Path": "native-study/primary-remake-g0.model.json",
+      "Bytes": 135343,
+      "Sha256": "c57ea9d3819b2171e536bc66f7673b5db14b1ec4e3c1a212698b25cc5823dbb0"
+    },
+    {
+      "Path": "native-study/primary-remake-g1.model.json",
+      "Bytes": 69546,
+      "Sha256": "713df06fb95da43f4ffccb37a47a50c7e8ce78f26f44a4513cd7d018b0fb3c7a"
+    },
+    {
+      "Path": "native-study/primary-remake-g2.model.json",
+      "Bytes": 55964,
+      "Sha256": "bd1ea5b99ae8adb8c6f0a1d9f7ee1b4f52530eb1cd2551f50d3aba250a518086"
+    },
+    {
+      "Path": "native-study/primary-remake-p00.model.json",
+      "Bytes": 56019,
+      "Sha256": "cc7227976ea72ed7de299e565276074c4501d955dc787c44ab6a1c4f54aeb643"
+    },
+    {
+      "Path": "native-study/primary-remake-p01.model.json",
+      "Bytes": 56699,
+      "Sha256": "6634a2dd293c3584fc0dd0457be845bb5bddc212d4700aba41477dfebed96cd0"
+    },
+    {
+      "Path": "native-study/primary-remake-p02.model.json",
+      "Bytes": 23177,
+      "Sha256": "c1c32fdebc6434941f2f3e889d17e2f87e0ee535f1e4c9d1677c4a1bb5a39bde"
+    },
+    {
+      "Path": "native-study/primary-remake-p03.model.json",
+      "Bytes": 46241,
+      "Sha256": "5557c60fcc9d5817d89ac2434a8e8a4533db179f3499a5e8f0c5226c30aa3942"
+    },
+    {
+      "Path": "native-study/primary-remake-p04.model.json",
+      "Bytes": 23581,
+      "Sha256": "1a37c596e37eafe68e348537863824271c2ea4bacee13132782ee134198dde27"
+    },
+    {
+      "Path": "native-study/primary-remake-p05.model.json",
+      "Bytes": 22951,
+      "Sha256": "843ecdf20d3ff1d7fb29de97e92d897462106de9346acac9a75245d96b52eba0"
+    },
+    {
+      "Path": "native-study/primary-remake-p06.model.json",
+      "Bytes": 16777,
+      "Sha256": "fe1c4bfcb6d2ee4252611ab646ae204fb7798d94438f4c23d2c5baaad2b473cd"
+    },
+    {
+      "Path": "native-study/primary-remake-p07.model.json",
+      "Bytes": 16788,
+      "Sha256": "3ca4eab34aa7d01e5ee53ab21e3b0d42b5459717ee5429f96211fdb4ef30392b"
+    },
+    {
+      "Path": "native-study/primary-remake.mesh.json",
+      "Bytes": 53893,
+      "Sha256": "6fb53c86f4c6d60a88c9e73cac6d7616cdb14dd8ade1a03eeac201a7e94a2538"
+    },
+    {
+      "Path": "native-study/primary-remake.model.json",
+      "Bytes": 268415,
+      "Sha256": "aad2127e3244ad95c40a7092d133a01b750fc053da4ef4c54c25332bc1ac8d7b"
+    },
+    {
+      "Path": "native-study/primary-remake.png",
+      "Bytes": 72871,
+      "Sha256": "08fb86a5bcf61cf72b361158418f9a2ea6004e5f99488eda71563b01f8d24f60"
+    },
+    {
+      "Path": "native-study/rear-11-texture.png",
+      "Bytes": 46370,
+      "Sha256": "1bfe4147ca5c58d9a26c3b806a069d350de27c9f7aa786d88130e9459ffd6afc"
+    },
+    {
+      "Path": "native-study/rear-11.mesh.json",
+      "Bytes": 28730,
+      "Sha256": "82083c4e2c2444158d73394afd771d809708eb148100c0a8f534b7144b3d70a9"
+    },
+    {
+      "Path": "native-study/rear-11.model.json",
+      "Bytes": 143927,
+      "Sha256": "5a69adfffa8789218784efe79241a045b558ea9e779526d3e947f4fec64920d0"
+    },
+    {
+      "Path": "native-study/rear-11.png",
+      "Bytes": 46370,
+      "Sha256": "1bfe4147ca5c58d9a26c3b806a069d350de27c9f7aa786d88130e9459ffd6afc"
+    },
+    {
+      "Path": "native-study/return-crack.model.json",
+      "Bytes": 639,
+      "Sha256": "aed44d534b42f9ab88652f1b4f9d16193ed4d4f29147e3bad6c7c2e3f2fb1887"
+    },
+    {
+      "Path": "native-study/return-crack.png",
+      "Bytes": 156,
+      "Sha256": "710aae1b8b53ee7167c86c10e59652aac43e5dce0f7c0de5a8cba6fcc7c09e2f"
+    },
+    {
+      "Path": "native-study/right-11-texture.png",
+      "Bytes": 62422,
+      "Sha256": "6ce7496a91c847c7033ace14d1ca04f6d8141ae74bf27098294da64bfb2814e2"
+    },
+    {
+      "Path": "native-study/right-11.mesh.json",
+      "Bytes": 36089,
+      "Sha256": "1b1ccbb11c5214bcd9954ed115f3157fb85f54c230f1b98dbbc420fc8f747e3f"
+    },
+    {
+      "Path": "native-study/right-11.model.json",
+      "Bytes": 181399,
+      "Sha256": "af30702bc3ac181051744b75f4c4a5d3c0bed9e512b853313e739c5d02e5df33"
+    },
+    {
+      "Path": "native-study/right-11.png",
+      "Bytes": 62422,
+      "Sha256": "6ce7496a91c847c7033ace14d1ca04f6d8141ae74bf27098294da64bfb2814e2"
+    },
+    {
+      "Path": "native-study/rim-08.model.json",
+      "Bytes": 61808,
+      "Sha256": "cab322db38d9e313a5b2943c2a2a8e6d5ae3ba645dcc96a8f086cbb66a9f7fa0"
+    },
+    {
+      "Path": "native-study/rim-shadow-08.png",
+      "Bytes": 94,
+      "Sha256": "8b7dd51efae9b1545d4e34681f5d3fb5c1cae8ef8cc8982b9d7ced904aec06a3"
+    },
+    {
+      "Path": "native-study/rim-side-08.png",
+      "Bytes": 94,
+      "Sha256": "3da6200a636911b3f5bef6c0dad43facef0e67d3f72f37b84ccf33b8ce070558"
+    },
+    {
+      "Path": "native-study/rim-top-08.png",
+      "Bytes": 153,
+      "Sha256": "aa1d05697294d76ad0f3b4c06f4f2b61fca8d65447453fbbee80bce4e0d1e581"
+    },
+    {
+      "Path": "native-study/warning-bed.model.json",
+      "Bytes": 4930,
+      "Sha256": "cce431de421fec444036864a9433abcd9acae96d2ffea38cdcb1552bc41e5d13"
+    },
+    {
+      "Path": "native-study/warning-bed.png",
+      "Bytes": 1400,
+      "Sha256": "4cb89ed10b5daf56aa764f3fd51d60214fd416a28d537efca409ebb1b4057e0e"
+    },
+    {
+      "Path": "NativeModelProbe.java",
+      "Bytes": 3806,
+      "Sha256": "f8c5058d8fb861accaca766050f5066db81bb111362c0e3452affafcf94c0bc3"
+    },
+    {
+      "Path": "package11.py",
+      "Bytes": 2721,
+      "Sha256": "aa764a918d3689389fa804584d672c56fd5463478bc7b9b02022a89d3a7b0dff"
+    },
+    {
+      "Path": "preview/viewer.html",
+      "Bytes": 4880,
+      "Sha256": "c24975926890aa787eff05cee6aff25bd8d2e2c4d53756202ffe5a07e5ec3ad4"
+    },
+    {
+      "Path": "raster_native.py",
+      "Bytes": 5426,
+      "Sha256": "a7a9bdb877c06d2fe86340c6da016ad14ab74226e44875cda32bfef202a0aa0e"
+    },
+    {
+      "Path": "README.md",
+      "Bytes": 3473,
+      "Sha256": "a180b3d0097e76cfe3f180b7990a9d68604c9e18a228d991c3a4b91ba28f8949"
+    },
+    {
+      "Path": "review11.py",
+      "Bytes": 5142,
+      "Sha256": "4daff88b8c1e96aa03b0c7b6a3f9dec423f201d1ef064e001499edc095eb415e"
+    },
+    {
+      "Path": "run_native_probe.py",
+      "Bytes": 1840,
+      "Sha256": "bfb8de514e48c8e7445d0f8973fde6e1303136faf187503c09ad15fd99ff7070"
+    },
+    {
+      "Path": "scene11.py",
+      "Bytes": 4815,
+      "Sha256": "2ada1f4eb58c84106c0b8058d356964e461eede40bcc6271582a168459eeb548"
+    },
+    {
+      "Path": "static-evidence.json",
+      "Bytes": 375,
+      "Sha256": "c7d7857c85fa1fd032473c5a6c101c36a06c7ec4318ba04b3d137511851f7dfb"
+    },
+    {
+      "Path": "test11.py",
+      "Bytes": 6221,
+      "Sha256": "bcb95ffe981069bd6a54815ddc764b3fa2e0ce06589e3aa07ed9e9d3082ab17f"
+    }
+  ]
+}

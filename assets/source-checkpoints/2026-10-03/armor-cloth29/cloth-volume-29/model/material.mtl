@@ -1,0 +1,13 @@
+newmtl material0
+Kd 1 1 1
+Ka 0 0 0
+Ks 0 0 0
+illum 1
+map_Kd native.png
+
+newmtl material1
+Kd 1 1 1
+Ka 0 0 0
+Ks 0 0 0
+illum 1
+map_Kd new-cloth-boots.png

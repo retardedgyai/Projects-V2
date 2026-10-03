@@ -1,0 +1,134 @@
+{
+  "status": "EDITABLE_CANDIDATE_NATIVE_UNCHECKED",
+  "primary_material_reference": "libfile_a09d9058fed88191a189833a23ae26dc version1",
+  "palettes_from_own_approved_material_source": {
+    "navy": [
+      "#192a42",
+      "#2b425f",
+      "#47637d",
+      "#728f9e",
+      "#a3bdbe"
+    ],
+    "linen": [
+      "#53594f",
+      "#827e6b",
+      "#b7aa8b",
+      "#e3d1a8",
+      "#f4e5bb"
+    ],
+    "hide": [
+      "#352a27",
+      "#574032",
+      "#805b40",
+      "#a67c53",
+      "#c59a65"
+    ],
+    "pants": [
+      "#1c2c3f",
+      "#2b4258",
+      "#456175",
+      "#6c8590",
+      "#9aafb0"
+    ]
+  },
+  "Isles_pixels_or_models_copied_to_candidate": false,
+  "26_adopted": false,
+  "old_head_geometry_restored": false,
+  "dropped_source27_pieces": [
+    "broad folded rear shoulder cape",
+    "left back hanging shoulder cloth",
+    "left chest fold bound edge",
+    "left front hanging shoulder cloth",
+    "left leather boot",
+    "left overlapping chest mantle fold",
+    "left shoulder mantle turned hem",
+    "left sloping shoulder mantle",
+    "rear cape turned edge",
+    "right back hanging shoulder cloth",
+    "right chest fold bound edge",
+    "right front hanging shoulder cloth",
+    "right leather boot",
+    "right overlapping chest mantle fold",
+    "right shoulder mantle turned hem",
+    "right sloping shoulder mantle"
+  ],
+  "adapted_navy_sleeve_roof_parts": [
+    "left shaped dark sleeve",
+    "left sewn sleeve top",
+    "right shaped dark sleeve",
+    "right sewn sleeve top"
+  ],
+  "new_parts": {
+    "new continuous folded shoulder cloth": {
+      "kind": "curved thin shell",
+      "thickness": 0.055,
+      "surface_vertices": 48,
+      "surface_triangles": 72,
+      "front_back_pair_max_error": 1.6514567491299204e-15,
+      "bounds": [
+        [
+          -1.85,
+          20.95,
+          3.75
+        ],
+        [
+          17.85,
+          25.35,
+          12.92
+        ]
+      ]
+    },
+    "left new shaped leather boot": {
+      "kind": "curved thin shell",
+      "thickness": 0.085,
+      "surface_vertices": 32,
+      "surface_triangles": 48,
+      "front_back_pair_max_error": 6.661338147750939e-16,
+      "bounds": [
+        [
+          2.719665475741487,
+          -0.07074122243583858,
+          4.55
+        ],
+        [
+          7.427769214053679,
+          3.5737869381237726,
+          10.3
+        ]
+      ]
+    },
+    "right new shaped leather boot": {
+      "kind": "curved thin shell",
+      "thickness": 0.085,
+      "surface_vertices": 32,
+      "surface_triangles": 48,
+      "front_back_pair_max_error": 9.853229343548264e-16,
+      "bounds": [
+        [
+          8.57223078594632,
+          -0.07074122243583858,
+          4.55
+        ],
+        [
+          13.280334524258514,
+          3.5737869381237726,
+          10.3
+        ]
+      ]
+    }
+  },
+  "protected_body_hardware_belt_RGBA_changed": 0,
+  "changed_old_atlas_RGBA_pixels": 41654,
+  "repainted_old_atlas_islands": 126,
+  "logical_colour_step_unit": 1,
+  "real_mesh": true,
+  "new_cape_thickness": 0.055,
+  "boot_shell_thickness": 0.085,
+  "vertices": 1828,
+  "triangles": 3464,
+  "meshes": 63,
+  "native_render_started": false,
+  "neutral_only": true,
+  "aesthetic_pass_claimed": false,
+  "game_wear_complete": false
+}

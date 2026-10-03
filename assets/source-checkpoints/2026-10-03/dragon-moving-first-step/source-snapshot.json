@@ -1,0 +1,151 @@
+{
+  "Schema": 1,
+  "Snapshot": "dragon-moving-first-step",
+  "Status": "SOURCE_SNAPSHOT_NATIVE_REVIEW_PENDING",
+  "CapturedUtc": "2026-10-03T14:43:35.3450274Z",
+  "LibraryFileId": "libfile_1851401a345c8191bc512089c46bed91",
+  "LibraryVersion": 0,
+  "SourceZipName": "dragon_MOVING_FIRST_STEP_REENTRY_PREPARATION_NATIVE_REVIEW_PENDING.zip",
+  "SourceZipSha256": "743fbe1f14c5f1629eed4b3d0f7d9f91a6e1e390fde60f1fdc9bb0b101937969",
+  "SourceZipBytes": 9035841,
+  "OriginalUnchanged": true,
+  "EntryBytesVerified": true,
+  "Notes": "Saved authored first-step transition and runtime probe. Native sequence review is pending. Approved walk26/claw33 remain unchanged; no game integration approval. Start with HANDOFF_MOVING_FIRST_STEP_PENDING_NATIVE_JA.txt and runtime_patch/compile_direct_first_step_runtime.ps1. Existing local baseline and JDK dependencies are required.",
+  "Files": [
+    {
+      "Path": "DIRECT_FIRST_STEP_VALIDATION.json",
+      "Bytes": 12564,
+      "Sha256": "6947ca5e4e6796280dba235c63d63b9c9c5b65959dbec2b8baf6399db8e49ddb"
+    },
+    {
+      "Path": "dragon_v8_MOVING_FIRST_STEP_TRANSITION_ONLY.bbmodel",
+      "Bytes": 3542073,
+      "Sha256": "c2ac32d25deeb32df069cd354974720d5d6ac50173819e8b221d7328d8b006e8"
+    },
+    {
+      "Path": "dragon_v8_REENTRY_BEFORE_AFTER_RUNTIME_PREVIEW_NOT_GAME_EXPORT.bbmodel",
+      "Bytes": 2635079,
+      "Sha256": "04188fe7acccf97608de9475761b8e9f142b8449dc668c453552b3cbfb58c3b1"
+    },
+    {
+      "Path": "dragon_v8_REENTRY_OLD_NEW_WALK26_3CLIPS.bbmodel",
+      "Bytes": 6609962,
+      "Sha256": "b89ef8c025e24be4faa6a0cdc5dbcc07bf8da3f18e3b87b6661ee97815b505bd"
+    },
+    {
+      "Path": "FIRST_STEP_BUILD.json",
+      "Bytes": 13935,
+      "Sha256": "7ece4e56ac5c93eae1a82d3fd74b1929e07e14da5de6265a538a93a6ce3fc7b8"
+    },
+    {
+      "Path": "HANDOFF_MOVING_FIRST_STEP_PENDING_NATIVE_JA.txt",
+      "Bytes": 4206,
+      "Sha256": "7137a7d1d8b70750a949a15575b9623323728f4a09012fd6303d58477a8bad64"
+    },
+    {
+      "Path": "NEW_MOVING_FIRST_STEP_TRANSITION_CLIP.json",
+      "Bytes": 2701332,
+      "Sha256": "dbbe020dcc7416e9e91b10c78b5692a88c73f7b364d11d0fb53cc9aba1438bae"
+    },
+    {
+      "Path": "projects_bundle/catalog.json",
+      "Bytes": 2010,
+      "Sha256": "6601844d637dca1c436f7cce76e0b0f39f73948438dfbf337ff0595ba7e15af8"
+    },
+    {
+      "Path": "projects_bundle/manifest.json",
+      "Bytes": 773,
+      "Sha256": "7574884d9ac2ecbdf916edc88ee406604cdf2c176bc2c0c22be91c6a422e9fe2"
+    },
+    {
+      "Path": "projects_bundle/mappings.json",
+      "Bytes": 4094,
+      "Sha256": "bd7690c24b972d34257cf7087278e1f5958041a815b8bdd1d54232a2854254b7"
+    },
+    {
+      "Path": "projects_bundle/models/dragon_v8_polish_shared_atlas_study.bbmodel/model.animation.json",
+      "Bytes": 9760731,
+      "Sha256": "2941f583c8d24e5b9d2cc52aeb6a0827f3b4b1276a3504eddd756a7275f59e04"
+    },
+    {
+      "Path": "projects_bundle/models/dragon_v8_polish_shared_atlas_study.bbmodel/model.geo.json",
+      "Bytes": 1428050,
+      "Sha256": "a2035dfd450362f7bf19c1e9e57e2dd20a3b1810a271b7610cf2310df49b5507"
+    },
+    {
+      "Path": "projects_bundle/motion_reference.json",
+      "Bytes": 5164,
+      "Sha256": "bc9f3c0f1ea8bbc454bd0385c5349e646577a5ad3251a6075d2f438e70724685"
+    },
+    {
+      "Path": "runtime_patch/audit_direct_first_step_runtime.py",
+      "Bytes": 8450,
+      "Sha256": "0355e6e21529063b6f90e5b4640d95bf971fa779076dc5dcfb99065465f5e957"
+    },
+    {
+      "Path": "runtime_patch/author_reentry_direct_first_step.py",
+      "Bytes": 11459,
+      "Sha256": "0f9a4fc49a965f38e8162109ddc18f5d3b9d893d386ed92abe97c338268c477d"
+    },
+    {
+      "Path": "runtime_patch/build_probe_direct_first_step.py",
+      "Bytes": 8591,
+      "Sha256": "72874621b25405b6f681f3f60c49d4cc664c1de261ef410f82fc0984cc71ce15"
+    },
+    {
+      "Path": "runtime_patch/compile_direct_first_step_runtime.ps1",
+      "Bytes": 2765,
+      "Sha256": "e305664b2d6996db8325999b8f4b6bbeb1990276d888b506036339d2dd2c3e84"
+    },
+    {
+      "Path": "runtime_patch/DragonActionController.kt",
+      "Bytes": 15783,
+      "Sha256": "d86a2a5fe39ad6f5ba38d2e2fb3e27145cc31926f36e476c2afb520fec6ba25c"
+    },
+    {
+      "Path": "runtime_patch/DragonNumericClip.kt",
+      "Bytes": 6541,
+      "Sha256": "ad672cf7db934e1894d1f9e1436e2455880be6c7f979009bbbd7501a822fe389"
+    },
+    {
+      "Path": "runtime_patch/finish_direct_first_step_bundle.py",
+      "Bytes": 2189,
+      "Sha256": "72309fef2e14e4ec6017ad8c623f60ef14a1123d14a8a08e4c29f80a19bda5e1"
+    },
+    {
+      "Path": "runtime_patch/native_direct_first_step_compare.cjs",
+      "Bytes": 4516,
+      "Sha256": "c84ebf0b33ed5f8e2c2e37121115f7036d5eb7f4739d407365a8589376452b8d"
+    },
+    {
+      "Path": "runtime_patch/prepare_direct_first_step_native_comparison.py",
+      "Bytes": 5496,
+      "Sha256": "8d51fb1aa32e2980b8ac1b7db1972b81302ec50b53be19349ad0c59632daa819"
+    },
+    {
+      "Path": "runtime_patch/prepare_direct_first_step_runtime.py",
+      "Bytes": 5353,
+      "Sha256": "547adbe327c4460f1de3a119a7f0c0a78746981389d3931cc4ecdfe297896646"
+    },
+    {
+      "Path": "runtime_patch/ProbeDirectFirstStep.java",
+      "Bytes": 11260,
+      "Sha256": "bdd3fef8ccc503eb071279fa85ccc31ee5a43d151ba15658f5153a9f24056f67"
+    },
+    {
+      "Path": "runtime_patch/render_direct_first_step_light_poses.py",
+      "Bytes": 2818,
+      "Sha256": "731ae6aa66d5833a0a4860f7a19948838f2b63e0df23c85505e8e4ef9f1a53ef"
+    },
+    {
+      "Path": "runtime_patch/run_direct_first_step_runtime.ps1",
+      "Bytes": 620,
+      "Sha256": "c8c61f7e717f9faf9eb36711b724c52161008bb66dcb721cdd743ac0a024ef59"
+    },
+    {
+      "Path": "WSEE_FIRST_STEP.json",
+      "Bytes": 1409817,
+      "Sha256": "d9ace97ce9e9700bdf70364ed821e4fd90e37f5c418da1a547721f68ee13f464"
+    }
+  ]
+}

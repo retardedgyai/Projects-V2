@@ -1,0 +1,47 @@
+[
+  {
+    "Snapshot": "dragon-moving-first-step",
+    "Status": "SOURCE_SNAPSHOT_NATIVE_REVIEW_PENDING",
+    "LibraryFileId": "libfile_1851401a345c8191bc512089c46bed91",
+    "LibraryVersion": 0,
+    "FileCount": 27,
+    "Bytes": 28215631.0,
+    "Manifest": "dragon-moving-first-step/source-snapshot.json"
+  },
+  {
+    "Snapshot": "armor-cloth29",
+    "Status": "INTERMEDIATE_SOURCE_SNAPSHOT",
+    "LibraryFileId": "libfile_a65b3c0e0bf88191a6b217daea244fce",
+    "LibraryVersion": 0,
+    "FileCount": 23,
+    "Bytes": 6144543.0,
+    "Manifest": "armor-cloth29/source-snapshot.json"
+  },
+  {
+    "Snapshot": "noctveil-v39-58e",
+    "Status": "SAVED_CANDIDATE_SOURCE_SNAPSHOT",
+    "LibraryFileId": "libfile_c69671efead88191b8f9bc68b65b5691",
+    "LibraryVersion": 0,
+    "FileCount": 5,
+    "Bytes": 16114817.0,
+    "Manifest": "noctveil-v39-58e/source-snapshot.json"
+  },
+  {
+    "Snapshot": "ice-garden11",
+    "Status": "PROTOTYPE_SOURCE_SNAPSHOT_QUALITY_PENDING",
+    "LibraryFileId": "libfile_7bbd7d247ff881918296f04edb1bf7d3",
+    "LibraryVersion": 0,
+    "FileCount": 211,
+    "Bytes": 3502596.0,
+    "Manifest": "ice-garden11/source-snapshot.json"
+  },
+  {
+    "Snapshot": "quality-review-framework-v1",
+    "Status": "FROZEN_V0_LIBRARY_SOURCE_SNAPSHOT_AUDIT_REVISION_PENDING",
+    "LibraryFileId": "libfile_21deb3cfc62c81919f46a7544395d229",
+    "LibraryVersion": 0,
+    "FileCount": 11,
+    "Bytes": 83168.0,
+    "Manifest": "quality-review-framework-v1/source-snapshot.json"
+  }
+]

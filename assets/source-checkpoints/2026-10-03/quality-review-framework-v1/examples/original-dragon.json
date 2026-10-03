@@ -1,0 +1,178 @@
+{
+  "schema_version": 1,
+  "task": {
+    "id": "original-dragon",
+    "revision": "existing-isolated-game-test",
+    "interpretation_id": "interpretation-1",
+    "review_epoch": 1,
+    "request": "そのまま進めて",
+    "source": "本人の今回の引継ぎ依頼。既存制作は未操作",
+    "intended_use": "現行ドラゴンの隔離実ゲーム試験",
+    "phase": "isolated_game",
+    "game_required": true,
+    "authority": {
+      "approved": [
+        {
+          "item": "現行制作の続行",
+          "reason": "本人『そのまま進めて』。全品質合格ではない",
+          "source": "本人の今回の引継ぎ依頼"
+        }
+      ],
+      "rejected": [],
+      "preserve": [
+        {
+          "item": "歩行26／爪33／復帰",
+          "reason": "維持",
+          "source": "本人の今回の引継ぎ依頼"
+        }
+      ]
+    },
+    "representative": {
+      "scope": "歩行26／爪33／復帰の変更差分",
+      "stop_if": "既存接地・接触・復帰を壊す"
+    },
+    "whole_quality": {
+      "features": "歩行26、爪33、復帰が実ゲームの接地と遷移で成立",
+      "grounding": "approved-current の現行実物と existing-motion の既存参照を再利用",
+      "counterexample": "新案で既存動作を置換、単独動作は成立してもゲームの接地・遷移が破綻"
+    },
+    "criteria": [
+      {
+        "id": "continuity",
+        "purpose": "motion",
+        "required_inspection": "full_timeline",
+        "target": "現在承認対象の接地・爪接触・復帰を同条件で確認",
+        "comparison": "同カメラ・大きさ・照明・状態・通常表示／同意味の動作時点",
+        "failure": "歩行26／爪33／復帰を変更"
+      }
+    ],
+    "artifact": {
+      "evidence_id": null,
+      "sha256": null
+    },
+    "saved_diff_id": null,
+    "latest_validation_id": null,
+    "next_action": "現在の隔離試験を続行し保存差分と最新ゲーム証拠を記録。新規起動しない"
+  },
+  "references": [
+    {
+      "id": "approved-current",
+      "title": "現行承認対象の実物動作",
+      "source_locator": "引継ぎ依頼中の名称。原資料未取得",
+      "original_url": null,
+      "author": {
+        "status": "unknown",
+        "name": null,
+        "note": "未確認。投稿者とは別に記録"
+      },
+      "poster": {
+        "status": "unknown",
+        "name": null,
+        "note": "未確認"
+      },
+      "medium": "gameplay",
+      "inspected": "unconfirmed",
+      "inspected_range": null,
+      "source_version": null,
+      "purposes": [
+        "motion"
+      ],
+      "reason": "既存証拠を再利用し保護",
+      "selected": true,
+      "priority": 1,
+      "analysis_epoch": 1,
+      "observed_features": []
+    },
+    {
+      "id": "existing-motion",
+      "title": "既存用途適合動作参照",
+      "source_locator": "引継ぎ依頼中の名称。原資料未取得",
+      "original_url": null,
+      "author": {
+        "status": "unknown",
+        "name": null,
+        "note": "未確認。投稿者とは別に記録"
+      },
+      "poster": {
+        "status": "unknown",
+        "name": null,
+        "note": "未確認"
+      },
+      "medium": "gameplay",
+      "inspected": "unconfirmed",
+      "inspected_range": null,
+      "source_version": null,
+      "purposes": [
+        "motion"
+      ],
+      "reason": "新たな参照探索待ちを挟まない",
+      "selected": true,
+      "priority": 2,
+      "analysis_epoch": 1,
+      "observed_features": []
+    }
+  ],
+  "evidence": [],
+  "decision": {
+    "revision": null,
+    "states": {
+      "technical": {
+        "status": "unverified",
+        "reviewer": null,
+        "reason": null,
+        "evidence_id": null
+      },
+      "aesthetic": {
+        "status": "unverified",
+        "reviewer": null,
+        "reason": null,
+        "review_epoch": null
+      },
+      "game": {
+        "status": "unverified",
+        "reviewer": null,
+        "reason": null,
+        "evidence_id": null
+      },
+      "user": {
+        "status": "continue",
+        "source": "本人『そのまま進めて』。歩行26／爪33／復帰維持"
+      }
+    },
+    "comparisons": [],
+    "holistic": {
+      "status": "unverified",
+      "revision": null,
+      "review_epoch": null,
+      "reason": null,
+      "counterexample_present": null
+    },
+    "integration": {
+      "status": "unverified",
+      "scope": "whole_in_use",
+      "revision": null,
+      "normal_display": true,
+      "reason": null,
+      "reviewer": null,
+      "evidence_id": null
+    },
+    "issues": [],
+    "biggest_gap": "新しい美的欠陥は未確認。隔離ゲーム結果の証拠待ち",
+    "next_action": "現在の隔離試験を続行し保存差分と最新ゲーム証拠を記録。新規起動しない",
+    "failure": {
+      "count": 0,
+      "severe": false,
+      "cause": null,
+      "response": null,
+      "source": null,
+      "rejected_revision": null,
+      "rejected_interpretation_id": null,
+      "invalidated_epoch": null,
+      "independent_counterargument": null,
+      "independent_reviewer": null
+    }
+  },
+  "waits": [],
+  "effort_minutes": null,
+  "simplification": "必要な差分だけ更新する"
+}

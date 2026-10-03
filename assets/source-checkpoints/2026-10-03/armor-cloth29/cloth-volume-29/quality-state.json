@@ -1,0 +1,28 @@
+{
+  "status": "INTERMEDIATE_NOT_COMPLETE",
+  "27": "USER_REJECTED",
+  "26": "HOLD_NOT_ADOPTED",
+  "29": "SAVED_REAL_MESH_NATIVE_COMPARISON_NOT_ACCEPTED",
+  "latest_requirement": "Continue until MatE quality; technical checks and previous-version improvement do not substitute for artistic quality.",
+  "primary_material_reference": "libfile_a09d9058fed88191a189833a23ae26dc version1",
+  "MatE_visuals_personally_seen_by_this_worker": false,
+  "MatE_access": {
+    "Lord_of_Night": "https://x.com/MatE312001/status/2091137786736738493",
+    "Dark_Sister": "https://x.com/MatE312001/status/2096478906299699459",
+    "Cryomancer_Armor_and_Weapon": "https://x.com/MatE312001/status/2084300020631679021",
+    "first_two_direct_open": "403 Forbidden; no media received",
+    "primary_indexed_text": "Lord of Night title found; text is not visual evidence",
+    "official_public_oembed": "No usable media returned",
+    "exact_primary_image_search": "No exact source images found",
+    "old_local_source_search": "No files named for these exact references"
+  },
+  "reported_parent_observation_not_personal_visual_claim": "Cryomancer: clear outer silhouette, localized head light, light shoulder/chest edge, dark torso hierarchy. Do not copy ice/horns or infer cloth motion from rotating renders.",
+  "next_quality_comparison": [
+    "Join parent-provided actual reference frames; compare role hierarchy and material volume against own approved paint v1.",
+    "Inspect 29 torso highlights and shoulder width for remaining generic block/pad appearance.",
+    "Improve the largest observed artistic difference; do not declare complete from neutral topology/SAT/RGBA checks."
+  ],
+  "no_game_wear_or_motion_certification": true,
+  "originals_preserved": true,
+  "own_renderer_closed": true
+}

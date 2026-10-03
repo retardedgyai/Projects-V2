@@ -1,0 +1,22 @@
+復帰のみの別版 / 全尺Blockbench描画の順番待ち
+
+旧版で実見した問題: Actorを止めたまま2.6秒かけて四脚を並べ直し、最後の前足を後ろに置いた直後に同じ足を回収。承認walk26のphase0.70はその前足の支持終了と一致していた。
+
+新案: 元の歩行26・爪33・原v8の形/UV/texture/34剛体骨を保護。新しい復帰clip1本だけを追加し、歩行はphase0の接地へ接続。前R足を地面に残したままActorが前進し、LH→LF→RHの順で一歩を作る。LFは前方へ12.8BB移動して接地、RHは末期支持で爪先を残して踵を上げ、回収途中で元のwalkへ継続。四脚を一旦全部並べ直す停止区間はない。
+
+標準速度scale3/1.5blocks/sec: 復帰2.1秒、前進11.4BB=2.1375blocks、加速1.35source秒。速度0.75では動きながら4.2秒、高速2.25では1.4秒。全速度で静止待ち時間が短くなるという主張ではない。実移動の受理距離を逆算してsource時計を進め、zero/rejected/partial移動なら対応する姿勢で保持。接続後に二重の加速はしない。歩行のcycle3.2秒/stride25.6BB自体は変更なし。
+
+確認: 既存ProjectS ModelBundle/BossModelActor/WSEEの隔離コピーで7ケース(2要求phase×3速度の爪6、ブレス1)とzero/blocked/partial/速度変更guardを実行。34骨・29ItemDisplay+1ArmorStand、終了後entity0。原9データhashと既存13runtime clipsを保護した14clip bundle。停止→攻撃→READYまで旧版と7ケースの同時刻・行列・root・時計が一致。詳細DIRECT_FIRST_STEP_VALIDATION.jsonとBEFORE_AFTER_STOP_ATTACK_READY_UNCHANGED.json。
+
+新復帰の実接地anchor誤差最大0.000100732blocks、全工程の接地累積最大0.001183943blocks、nativeキーと実Actor行列差2.365e-7BB、同じWSEEdegree精度で3.58e-14BB、34骨の切替最大3.42e-12BB。原本・旧版を上書きせず、pack/geo/atlasの再生成なし。
+
+少数姿勢の自分の確認: 側面/斜め8時点の実bbmodelキーをCPU描画し、LFの後ろ置き→即回収がなく前に踏む姿勢になったこと、支持足の上を胴が通る関係を確認。support/回収の数値合格は自然な巨体の映像合格ではない。フルBlockbench再生/比較GIFはまだ実行していない。新案を完成/本人合格/ゲーム実装済みとは扱わない。横の荷重移動が動映像で過剰でないか、RH回収の折れと加速が滑らかかを次の視覚gateにする。
+
+参照: https://www.animatornotebook.com/learn/quadrupeds-gaits の実写トラ歩行を見直し、支持胴が足を越え、回収脚を畳む関係を用いた。静止からの開始時刻やMH歩行phaseを測定したという主張ではない。新案の数値は制作キー。
+
+編集データ: dragon_v8_REENTRY_OLD_NEW_WALK26_3CLIPS.bbmodelは旧復帰/新復帰/保護walk26。game clipにはActor移動を焼いていないので単体BB再生はActorを動かさない。runtime_patch/DragonActionController.ktが移動とsource時計を所有する。
+表示用: dragon_v8_REENTRY_BEFORE_AFTER_RUNTIME_PREVIEW_NOT_GAME_EXPORT.bbmodelは標準速度・同じ3.6秒実時間の旧/新Actor traceを2本のonce previewへ落とし、root移動を一度だけ焼いたもの。ゲームへ書き出さない。NATIVE_COMPARISON_MAPPING.jsonに実clip/時計/Actorを記録。
+
+描画準備: work/native_direct_first_step_compare.cjsの構文チェック済み。親の順番連絡後、既存launch_stop_reentry_native.ps1で専用公式Blockbench profile/19493を1つだけ起動し、上記scriptで旧新side+3/4を合計144frame/3.6秒で比較する。まだ起動していない。プロセスを増やさず既存identity guardで自分のprofileだけ停止する。
+
+限界: native GUI全尺/実Minecraft client/AI/turns/slopes/world collision/damage/FX/MMO負荷は未検証。既存atlas82PNG(41page×2state)、base算術321MiB/fullmip428MiBの負担を保持しており、軽いとは主張しない。main/repo/push/merge/deploy未変更、Blender skin/new rig/new renderer/ソフト追加なし。

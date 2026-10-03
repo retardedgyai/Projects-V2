@@ -1,0 +1,17 @@
+{
+  "primary_material_reference": {
+    "library_file_id": "libfile_a09d9058fed88191a189833a23ae26dc",
+    "file_id": "file_00000000a79482099fa3797707c67f62",
+    "version": 1,
+    "bytes": 128524,
+    "sha256": "ee452e39cfaaf8cb8a33ac83439e1929a44f367db2172dda0cab2587d3008adb",
+    "current_Library_search_same_immutable_file_id_and_version": true,
+    "existing_local_bytes_match_historical_Library_verified_bytes": true
+  },
+  "source_editable_ZIP_sha256": "7421e3aa3b400c84bcabd12ad94fb01b215a9a124072dc655271223f4d550872",
+  "all28_approved_material_core_files_match_verified_ZIP": true,
+  "Storm_role": "Asymmetry and open silhouette; not the primary approved material painting.",
+  "Isles_role": "User-specified style reference, actual local pack; exact user-selected screenshot not established. Old direction memo names Elven helmet, not proof of original screenshot.",
+  "Mage_role": "Supplementary image selected in earlier work; not asserted user-selected. Single JPG cannot be rerendered under a shared camera/light.",
+  "new_download_helper_preflight": "prepare_materialize unavailable before transfer; no denial or unknown write; used explicitly permitted existing verified local original without URL/manual-transfer workaround."
+}

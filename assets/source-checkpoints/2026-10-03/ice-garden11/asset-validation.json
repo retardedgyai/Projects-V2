@@ -1,0 +1,9 @@
+{
+  "actual_parser": "Minecraft26.2",
+  "faces": 654,
+  "closed_parts": 16,
+  "max_corner_error_m": 1.0463829898895166e-06,
+  "max_heap_mb": 256,
+  "gpu_verified": false,
+  "game_started": false
+}

@@ -1,0 +1,41 @@
+{
+  "Schema": 1,
+  "Snapshot": "noctveil-v39-58e",
+  "Status": "SAVED_CANDIDATE_SOURCE_SNAPSHOT",
+  "CapturedUtc": "2026-10-03T14:43:36.2265879Z",
+  "LibraryFileId": "libfile_c69671efead88191b8f9bc68b65b5691",
+  "LibraryVersion": 0,
+  "SourceZipName": "ProjectS_Noctveil_v39_58e_bundle.zip",
+  "SourceZipSha256": "ea4c470ad60d8645b70d5623fbf656a7a66ae0d24e16e031e7aee87454bbf771",
+  "SourceZipBytes": 15303112,
+  "OriginalUnchanged": true,
+  "EntryBytesVerified": true,
+  "Notes": "Historical delivered v39 candidate, preserved as editable source. Latest v42 path/wing research is still in progress and is excluded. Open the bbmodel in Blockbench 5.2.1; animation downward_claw_lateral_rake_v39. See README for measured limits. Creator adoption and game integration are pending.",
+  "Files": [
+    {
+      "Path": "ProjectS_Noctveil_v39_58e.bbmodel",
+      "Bytes": 16086565,
+      "Sha256": "58e690975ee8a9db8a0ca14736187076398aebe75bfd9b5ad960adb2e1353417"
+    },
+    {
+      "Path": "ProjectS_Noctveil_v39_58e_Evidence.json",
+      "Bytes": 2341,
+      "Sha256": "c775ceed191328abab977ca5f04627c133f8ef3014efd90a8be5b4654ddd5410"
+    },
+    {
+      "Path": "projects_noctveil_v3_anatomy.png",
+      "Bytes": 2349,
+      "Sha256": "de5eac338655cf13134c008dda2684a910bfe4723df362fe7a24874af410b8d6"
+    },
+    {
+      "Path": "projects_noctveil_v3_mantle.png",
+      "Bytes": 20897,
+      "Sha256": "67a120ad0d4741d1b666fc02a584392d5237d3a8aa07bcc78cf49ac2af96aa03"
+    },
+    {
+      "Path": "README_Noctveil_v39_58e.txt",
+      "Bytes": 2665,
+      "Sha256": "32f45a0421eccc545d11132589d9609d10854f5bb9a358e5e40fb61141496c6c"
+    }
+  ]
+}
