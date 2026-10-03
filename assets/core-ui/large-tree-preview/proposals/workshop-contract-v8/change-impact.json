@@ -1,0 +1,423 @@
+{
+  "status": "VERIFIED_CANDIDATE_PENDING_CREATOR_REVIEW",
+  "runtimeApplied": false,
+  "adopted": false,
+  "changedNodeIds": [
+    "key_02",
+    "key_09",
+    "key_11",
+    "key_13",
+    "key_14",
+    "key_15",
+    "v7g04n5",
+    "v7g10n0",
+    "v7g10n2",
+    "v7g10n4",
+    "v7g12n0",
+    "v7g12n1",
+    "v7g12n2",
+    "v7g12n3",
+    "v7g12n4",
+    "v7g12n5",
+    "v7g12n6",
+    "v7g12n7"
+  ],
+  "onlyMovedPriorNode": "key_02",
+  "addedPaidRoads": [
+    "v8road_shield_1",
+    "v8road_shield_2"
+  ],
+  "blood": {
+    "beforeCost": 20,
+    "beforeDeadNodes": [
+      "g12n1",
+      "g12n2",
+      "g12n3",
+      "g20n1",
+      "g20n4",
+      "g20n5",
+      "g20n6",
+      "g33n3",
+      "opening_mage_1_1",
+      "opening_mage_1_2",
+      "opening_mage_1_3"
+    ],
+    "afterCost": 30,
+    "afterDeadNodes": [],
+    "effectiveStats": {
+      "barrier": 26,
+      "hp": 47,
+      "attackSpeed": 7,
+      "resource": 4,
+      "armor": 26,
+      "resist": 11,
+      "magic": 26,
+      "physical": 24
+    }
+  },
+  "voluntaryMp": {
+    "beforeCost": 17,
+    "afterCost": 20,
+    "autoRefund": false,
+    "retainedIds": [
+      "g12n1",
+      "g12n2",
+      "g12n3",
+      "g20n1",
+      "g20n4",
+      "g20n5",
+      "g20n6",
+      "g33n3",
+      "link_templar_2_1",
+      "link_warrior_2_1",
+      "opening_mage_1_1",
+      "opening_mage_1_2",
+      "opening_mage_1_3",
+      "origin_mage",
+      "r14_27_1",
+      "r18_26_1",
+      "r19_24_1",
+      "r26_28_1"
+    ]
+  },
+  "shield": [
+    {
+      "name": "MP+SHIELD",
+      "syntheticSensitivityCase": false,
+      "reachable": true,
+      "localCost": 4,
+      "localStats": {
+        "hp": 2,
+        "armor": 2,
+        "barrier": 14
+      },
+      "newPaidApproachPoints": 2
+    },
+    {
+      "name": "SHIELD without MP",
+      "syntheticSensitivityCase": true,
+      "reachable": true,
+      "localCost": 4,
+      "localStats": {
+        "hp": 2,
+        "armor": 2,
+        "barrier": 14
+      },
+      "newPaidApproachPoints": 2
+    },
+    {
+      "name": "bloodCost+SHIELD",
+      "syntheticSensitivityCase": false,
+      "reachable": true,
+      "localCost": 4,
+      "localStats": {
+        "hp": 2,
+        "armor": 2,
+        "barrier": 14
+      },
+      "newPaidApproachPoints": 2
+    }
+  ],
+  "sameBudgetComparisons": [
+    {
+      "budget": 48,
+      "budgetAdopted": false,
+      "left": {
+        "id": "assassin-area-48",
+        "spent": 43,
+        "remaining": 5,
+        "targets": [
+          "g41n3",
+          "g42n0"
+        ],
+        "stats": {
+          "hp": 44,
+          "regen": 8,
+          "resource": 21,
+          "attackSpeed": 25.95,
+          "haste": 44,
+          "aoe": 13,
+          "damage": 30,
+          "efficiency": 3,
+          "physical": 6,
+          "resist": 5
+        }
+      },
+      "right": {
+        "id": "assassin-crit-48",
+        "spent": 46,
+        "remaining": 2,
+        "targets": [
+          "g17n0",
+          "g41n3"
+        ],
+        "stats": {
+          "hp": 50,
+          "regen": 8,
+          "resource": 20,
+          "attackSpeed": 12.95,
+          "haste": 44,
+          "move": 4.5,
+          "damage": 30,
+          "efficiency": 3,
+          "crit": 25,
+          "resist": 5
+        }
+      },
+      "leftMinusRight": {
+        "aoe": 13,
+        "attackSpeed": 13.0,
+        "crit": -25,
+        "hp": -6,
+        "move": -4.5,
+        "physical": 6,
+        "resource": 1
+      }
+    },
+    {
+      "budget": 64,
+      "budgetAdopted": false,
+      "left": {
+        "id": "assassin-area-64",
+        "spent": 49,
+        "remaining": 15,
+        "targets": [
+          "g41n3",
+          "g42n0",
+          "g41n6",
+          "g41n7",
+          "g42n1",
+          "g42n2",
+          "g42n6",
+          "g42n7"
+        ],
+        "stats": {
+          "hp": 44,
+          "regen": 8,
+          "resource": 25,
+          "attackSpeed": 28.95,
+          "haste": 44,
+          "physical": 10,
+          "aoe": 22,
+          "damage": 30,
+          "efficiency": 3,
+          "resist": 5
+        }
+      },
+      "right": {
+        "id": "assassin-crit-64",
+        "spent": 51,
+        "remaining": 13,
+        "targets": [
+          "g17n0",
+          "g41n3",
+          "g17n1",
+          "g41n0",
+          "g41n6",
+          "g41n7"
+        ],
+        "stats": {
+          "hp": 50,
+          "regen": 8,
+          "resource": 29,
+          "attackSpeed": 25.95,
+          "haste": 44,
+          "crit": 35,
+          "move": 4.5,
+          "damage": 30,
+          "efficiency": 3,
+          "resist": 5
+        }
+      },
+      "leftMinusRight": {
+        "aoe": 22,
+        "attackSpeed": 3.0,
+        "crit": -35,
+        "hp": -6,
+        "move": -4.5,
+        "physical": 10,
+        "resource": -4
+      }
+    },
+    {
+      "budget": 80,
+      "budgetAdopted": false,
+      "left": {
+        "id": "assassin-area-80",
+        "spent": 55,
+        "remaining": 25,
+        "targets": [
+          "g41n3",
+          "g42n0",
+          "g41n6",
+          "g41n7",
+          "g42n1",
+          "g42n2",
+          "g42n6",
+          "g42n7",
+          "v7g10n0",
+          "v7g10n2",
+          "v7g10n4"
+        ],
+        "stats": {
+          "hp": 50,
+          "regen": 8,
+          "resource": 25,
+          "attackSpeed": 28.95,
+          "haste": 44,
+          "physical": 15,
+          "aoe": 31,
+          "damage": 30,
+          "efficiency": 3,
+          "resist": 5
+        }
+      },
+      "right": {
+        "id": "assassin-crit-80",
+        "spent": 60,
+        "remaining": 20,
+        "targets": [
+          "g17n0",
+          "g41n3",
+          "g17n1",
+          "g41n0",
+          "g41n6",
+          "g41n7",
+          "v7g13n0",
+          "v7g13n2",
+          "v7g13n4"
+        ],
+        "stats": {
+          "hp": 62,
+          "regen": 8,
+          "resource": 41,
+          "attackSpeed": 29.95,
+          "haste": 44,
+          "crit": 35,
+          "move": 4.5,
+          "damage": 30,
+          "efficiency": 3,
+          "resist": 5
+        }
+      },
+      "leftMinusRight": {
+        "aoe": 31,
+        "attackSpeed": -1.0,
+        "crit": -35,
+        "hp": -12,
+        "move": -4.5,
+        "physical": 15,
+        "resource": -16
+      }
+    }
+  ],
+  "life43": {
+    "beforeStats": {
+      "hp": 59,
+      "armor": 41.55,
+      "resist": 39,
+      "regen": 34,
+      "resource": 22,
+      "physical": 24,
+      "attackSpeed": 7,
+      "parry": 45,
+      "barrier": 14,
+      "mana": 4,
+      "efficiency": 8
+    },
+    "afterStats": {
+      "hp": 93,
+      "armor": 77.55,
+      "resist": 36,
+      "regen": 36,
+      "barrier": 14,
+      "physical": 24,
+      "attackSpeed": 7,
+      "parry": 45,
+      "mana": 6
+    },
+    "delta": {
+      "armor": 36.0,
+      "efficiency": -8,
+      "hp": 34,
+      "mana": 2,
+      "regen": 2,
+      "resist": -3,
+      "resource": -22
+    },
+    "runtimeApplied": false
+  },
+  "browser": {
+    "inputCases": 120,
+    "focusViews": 124,
+    "operationFrames": 50
+  },
+  "visualReview": {
+    "status": "VIEWED_ACTUAL_IMAGES",
+    "images": [
+      {
+        "file": "ProjectS_Contract_V8_mage-blood.png",
+        "sha256": "43ed455beb32092f65350458038eef11959d25098a6778ded9d8195441a6df41"
+      },
+      {
+        "file": "ProjectS_Contract_V8_After_Shield.png",
+        "sha256": "00ed52f214dafcfa2d3333ca6288fbfeb6f7a5a8ce339015028dcd36add1ebe9"
+      },
+      {
+        "file": "ProjectS_Contract_V8_Contract_key_11.png",
+        "sha256": "cf51aca0dbde790d3ee677383a49c7a6cf7df92a1999beb51141079cd0fafac7"
+      },
+      {
+        "file": "ProjectS_Contract_V8_Contract_key_14.png",
+        "sha256": "a5f41f147ae74888bfbedcc6cdcc4c850867852901cf9fce00a2eac588a275e2"
+      },
+      {
+        "file": "ProjectS_Contract_V8_Before_After.png",
+        "sha256": "2cd5669dc9dfbb3f0c0f78dc333e34cd4540b9c226c75c43f0546efd95a24f2f"
+      },
+      {
+        "file": "ProjectS_Contract_V8_Pair_assassin-area-48.png",
+        "sha256": "4d51cf4644e54cadb33606bc3ed0a85396bdddc7a2267fdd3a3c88bbd1de7951"
+      },
+      {
+        "file": "ProjectS_Contract_V8_Pair_tank-life-reinvest-43.png",
+        "sha256": "90c68a3f06e685498e035f48ad827d39a527158b0d1422da5bb0950de93f1d13"
+      },
+      {
+        "file": "ProjectS_Contract_V8_Sensitivity_Shield_NoMP.png",
+        "sha256": "46652163bd97d4b126e298aa64b5a3a539b966caff5b31818d48fd39db1d343c"
+      },
+      {
+        "file": "ProjectS_Contract_V8_Overview_And_Choices.png",
+        "sha256": "0daaf624616797fcfba160a1c23d34e230d00d442cb4136d1c6b3491b3d38201"
+      },
+      {
+        "file": "ProjectS_Contract_V8_Contract_key_09.png",
+        "sha256": "73d12cdbcbfdbb2fdab345e4055f072195c739f5c919ce4fa649bdac59256a27"
+      },
+      {
+        "file": "ProjectS_Contract_V8_Contract_key_13.png",
+        "sha256": "a6f6ecb83f2b8cfe78850cd03b8c1ca50279090e8c2d940f0ab2da40af7589a8"
+      },
+      {
+        "file": "ProjectS_Contract_V8_Contract_key_15.png",
+        "sha256": "758a95eb32efdfbc3465d8177e00ac17e95e461fdf11037a01104d24ff584750"
+      }
+    ],
+    "findings": [
+      "Accepted green/gold typography and pictorial pixels retained.",
+      "Blood leaf is separate from the mana ring; same-camera comparison exposes the changed entry.",
+      "Paid general shield approach and neutral common entry are visible.",
+      "Local penetration leaf now connects to the mixed goal.",
+      "Budget and life-reinvestment screenshots display costs, remaining points and supported vectors.",
+      "All five effect contract details are readable after scrolling; unresolved adoption visible.",
+      "Synthetic non-MP screenshot explicitly labels input sensitivity, not a supplied ability."
+    ],
+    "limitations": [
+      "Some old long travel wires and uneven northern gaps remain.",
+      "Displayed stats and route costs do not prove live combat balance.",
+      "Key11 keeps the old terminal drawing while classification and cost remain candidate decisions."
+    ]
+  },
+  "canonicalSourceAndPriorV7Untouched": true
+}

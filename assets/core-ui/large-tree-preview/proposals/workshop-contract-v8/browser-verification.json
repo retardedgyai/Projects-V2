@@ -1,0 +1,6506 @@
+{
+  "status": "PASS",
+  "source645EmbeddedVerbatim": true,
+  "priorNodesExactExceptExplicitLedger": true,
+  "keyLeaves": 15,
+  "frames": [
+    {
+      "name": "ProjectS_Contract_V8_Overview",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 0.9999999999999997,
+        "minClickGap": 1.1374443693374836,
+        "minNodePairPaintGap": 3.0005086876592766,
+        "nearest": {
+          "node": "key_05"
+        },
+        "labelLines": [],
+        "captions": 12,
+        "zoom": 0.06872218466874189,
+        "spent": 0,
+        "usable": true,
+        "connected": true
+      },
+      "cam": {
+        "x": 1359.9849900000004,
+        "y": -1461.17958,
+        "z": 0.06872218466874189
+      },
+      "state": {
+        "version": "projects-large-tree-diff-v2",
+        "study": "contract-v8",
+        "profileId": "warrior:support:plain:standard",
+        "origin": "warrior",
+        "budget": 48,
+        "roadChoice": "hp",
+        "siphon": false,
+        "learned": [
+          "origin_warrior"
+        ]
+      },
+      "rect": {
+        "x": 0,
+        "y": 76,
+        "w": 1570,
+        "h": 1124
+      }
+    },
+    {
+      "name": "ProjectS_Contract_V8_Center",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 1.751214792935198,
+        "minClickGap": 2.2592222702133054,
+        "minNodePairPaintGap": 9.083025870993568,
+        "nearest": {
+          "node": "key_02"
+        },
+        "labelLines": [],
+        "captions": 11,
+        "zoom": 0.25400373863905384,
+        "spent": 0,
+        "usable": true,
+        "connected": true
+      },
+      "cam": {
+        "x": 1230,
+        "y": -1098.240365,
+        "z": 0.25400373863905384
+      },
+      "state": {
+        "version": "projects-large-tree-diff-v2",
+        "study": "contract-v8",
+        "profileId": "warrior:support:plain:standard",
+        "origin": "warrior",
+        "budget": 48,
+        "roadChoice": "hp",
+        "siphon": false,
+        "learned": [
+          "origin_warrior"
+        ]
+      },
+      "rect": {
+        "x": 0,
+        "y": 76,
+        "w": 1570,
+        "h": 1124
+      }
+    },
+    {
+      "name": "ProjectS_Contract_V8_critical",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 0.9999999999999992,
+        "minClickGap": 1.2400089108393075,
+        "minNodePairPaintGap": 4.493339985945379,
+        "nearest": {
+          "node": "key_05"
+        },
+        "labelLines": [],
+        "captions": 32,
+        "zoom": 0.12000445541965417,
+        "spent": 45,
+        "usable": true,
+        "connected": true
+      },
+      "cam": {
+        "x": -1786.1608999999999,
+        "y": 1531.62317,
+        "z": 0.12000445541965417
+      },
+      "state": {
+        "version": "projects-large-tree-diff-v2",
+        "study": "contract-v8",
+        "profileId": "warrior:support:plain:standard",
+        "origin": "warrior",
+        "budget": 48,
+        "roadChoice": "hp",
+        "siphon": true,
+        "learned": [
+          "g13n0",
+          "g13n3",
+          "g13n8",
+          "g13n9",
+          "g18n1",
+          "g18n4",
+          "g18n5",
+          "g25n0",
+          "g25n1",
+          "g25n2",
+          "g25n6",
+          "g25n7",
+          "g30n2",
+          "g45hub",
+          "g45n1",
+          "g45n2",
+          "g45n4",
+          "g48n0",
+          "g48n3",
+          "g48n4",
+          "g48n6",
+          "g48n8",
+          "g48n9",
+          "link_templar_1_1",
+          "link_warrior_0_4",
+          "link_warrior_1_1",
+          "link_warrior_1_4",
+          "link_warrior_2_8",
+          "opening_warrior_0_1",
+          "opening_warrior_0_2",
+          "opening_warrior_0_3",
+          "origin_warrior",
+          "r17_44_1",
+          "r1_22_1",
+          "r1_29_1",
+          "r1_29_4",
+          "r24_42_1",
+          "r28_50_1",
+          "r7_29_1",
+          "r7_29_2",
+          "v7g04_entry",
+          "v7road_r6_1",
+          "v7road_r6_2",
+          "v7road_r6_3",
+          "v7road_r6_4",
+          "v7road_r6_5"
+        ]
+      },
+      "rect": {
+        "x": 0,
+        "y": 76,
+        "w": 1570,
+        "h": 1124
+      }
+    },
+    {
+      "name": "ProjectS_Contract_V8_quiet",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 1.3190475915214264,
+        "minClickGap": 1.738393870918428,
+        "minNodePairPaintGap": 7.497789451990031,
+        "nearest": {
+          "node": "key_02"
+        },
+        "labelLines": [],
+        "captions": 18,
+        "zoom": 0.20967313969850077,
+        "spent": 41,
+        "usable": true,
+        "connected": true
+      },
+      "cam": {
+        "x": -2480.771725,
+        "y": -150.44126000000006,
+        "z": 0.20967313969850077
+      },
+      "state": {
+        "version": "projects-large-tree-diff-v2",
+        "study": "contract-v8",
+        "profileId": "warrior:support:plain:standard",
+        "origin": "warrior",
+        "budget": 48,
+        "roadChoice": "hp",
+        "siphon": true,
+        "learned": [
+          "g13n0",
+          "g13n3",
+          "g13n8",
+          "g13n9",
+          "g18n1",
+          "g18n4",
+          "g18n5",
+          "g26n1",
+          "g26n3",
+          "g37n0",
+          "g37n1",
+          "g37n4",
+          "g37n6",
+          "g37n7",
+          "g45hub",
+          "g45n1",
+          "g45n2",
+          "g45n4",
+          "key_04",
+          "link_templar_1_1",
+          "link_warrior_0_2",
+          "link_warrior_2_8",
+          "opening_warrior_0_1",
+          "opening_warrior_0_2",
+          "opening_warrior_0_3",
+          "origin_warrior",
+          "r17_44_1",
+          "r1_22_1",
+          "r1_29_1",
+          "r1_29_4",
+          "r24_42_1",
+          "r28_50_1",
+          "r7_22_1",
+          "r7_22_2",
+          "v7g04_entry",
+          "v7road_r6_1",
+          "v7road_r6_2",
+          "v7road_r6_3",
+          "v7road_r6_4",
+          "v7road_r6_5"
+        ]
+      },
+      "rect": {
+        "x": 0,
+        "y": 76,
+        "w": 1570,
+        "h": 1124
+      }
+    },
+    {
+      "name": "ProjectS_Contract_V8_tank-life",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 1,
+        "minClickGap": 1.325301703201149,
+        "minNodePairPaintGap": 5.8162997952031175,
+        "nearest": {
+          "node": "key_02"
+        },
+        "labelLines": [],
+        "captions": 23,
+        "zoom": 0.16265085160057466,
+        "spent": 31,
+        "usable": true,
+        "connected": true
+      },
+      "cam": {
+        "x": -1781.0867050000002,
+        "y": -1444.7415,
+        "z": 0.16265085160057466
+      },
+      "state": {
+        "version": "projects-large-tree-diff-v2",
+        "study": "contract-v8",
+        "profileId": "tank:support:plain:standard",
+        "origin": "tank",
+        "budget": 48,
+        "roadChoice": "hp",
+        "siphon": false,
+        "learned": [
+          "g18n1",
+          "g18n3",
+          "g18n5",
+          "g18n6",
+          "g45hub",
+          "g45n1",
+          "g45n2",
+          "g45n4",
+          "g6n0",
+          "g6n4",
+          "g6n6",
+          "g6n7",
+          "g6n8",
+          "g6n9",
+          "link_assassin_0_2",
+          "link_assassin_0_4",
+          "link_assassin_1_3",
+          "link_ranger_2_2",
+          "link_templar_1_1",
+          "link_warrior_2_7",
+          "link_warrior_2_8",
+          "opening_templar_0_1",
+          "opening_templar_0_2",
+          "opening_templar_0_3",
+          "origin_templar",
+          "r1_22_1",
+          "r1_29_1",
+          "r1_29_4",
+          "r24_42_1",
+          "r34_40_1",
+          "v7road_r4_1",
+          "v7road_r4_2"
+        ]
+      },
+      "rect": {
+        "x": 0,
+        "y": 76,
+        "w": 1570,
+        "h": 1124
+      }
+    },
+    {
+      "name": "ProjectS_Contract_V8_tank-shield",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 1.3577100494714913,
+        "minClickGap": 1.7849881196746136,
+        "minNodePairPaintGap": 7.639607563568463,
+        "nearest": {
+          "node": "key_02"
+        },
+        "labelLines": [],
+        "captions": 18,
+        "zoom": 0.21363903510156113,
+        "spent": 21,
+        "usable": true,
+        "connected": true
+      },
+      "cam": {
+        "x": 284.36848499999996,
+        "y": -3606.747845,
+        "z": 0.21363903510156113
+      },
+      "state": {
+        "version": "projects-large-tree-diff-v2",
+        "study": "contract-v8",
+        "profileId": "tank:support:plain:standard",
+        "origin": "tank",
+        "budget": 48,
+        "roadChoice": "hp",
+        "siphon": false,
+        "learned": [
+          "g31n4",
+          "g33n0",
+          "g46n0",
+          "g46n1",
+          "g46n2",
+          "g46n7",
+          "key_11",
+          "link_assassin_0_2",
+          "link_assassin_1_3",
+          "link_ranger_1_1",
+          "link_warrior_2_10",
+          "link_warrior_2_7",
+          "opening_templar_0_1",
+          "opening_templar_0_2",
+          "opening_templar_0_3",
+          "origin_templar",
+          "r21_26_1",
+          "r25_44_1",
+          "r33_37_2",
+          "r6_35_1"
+        ]
+      },
+      "rect": {
+        "x": 0,
+        "y": 76,
+        "w": 1570,
+        "h": 1124
+      }
+    },
+    {
+      "name": "ProjectS_Contract_V8_mage-mp",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 1.228078780794848,
+        "minClickGap": 1.628762367367282,
+        "minNodePairPaintGap": 7.164105934857169,
+        "nearest": {
+          "node": "key_02"
+        },
+        "labelLines": [],
+        "captions": 18,
+        "zoom": 0.20034179328621712,
+        "spent": 17,
+        "usable": true,
+        "connected": true
+      },
+      "cam": {
+        "x": 2711.5340850000002,
+        "y": -4164.08901,
+        "z": 0.20034179328621712
+      },
+      "state": {
+        "version": "projects-large-tree-diff-v2",
+        "study": "contract-v8",
+        "profileId": "mage:support:plain:standard",
+        "origin": "mage",
+        "budget": 48,
+        "roadChoice": "hp",
+        "siphon": false,
+        "learned": [
+          "g12n1",
+          "g12n2",
+          "g12n3",
+          "g20n1",
+          "g20n4",
+          "g20n5",
+          "g20n6",
+          "g33n3",
+          "link_templar_2_1",
+          "link_warrior_2_1",
+          "opening_mage_1_1",
+          "opening_mage_1_2",
+          "opening_mage_1_3",
+          "origin_mage",
+          "r14_27_1",
+          "r18_26_1",
+          "r19_24_1",
+          "r26_28_1"
+        ]
+      },
+      "rect": {
+        "x": 0,
+        "y": 76,
+        "w": 1570,
+        "h": 1124
+      }
+    },
+    {
+      "name": "ProjectS_Contract_V8_mage-blood",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 0.999999999999999,
+        "minClickGap": 1.2987856889080334,
+        "minNodePairPaintGap": 5.348838510373041,
+        "nearest": {
+          "node": "key_02"
+        },
+        "labelLines": [],
+        "captions": 29,
+        "zoom": 0.14939284445401718,
+        "spent": 30,
+        "usable": true,
+        "connected": true
+      },
+      "cam": {
+        "x": 1355.509415,
+        "y": -1649.4552050000002,
+        "z": 0.14939284445401718
+      },
+      "state": {
+        "version": "projects-large-tree-diff-v2",
+        "study": "contract-v8",
+        "profileId": "mage:support:plain:standard",
+        "origin": "mage",
+        "budget": 48,
+        "roadChoice": "hp",
+        "siphon": false,
+        "learned": [
+          "g13n8",
+          "g51n6",
+          "g51n7",
+          "g51n8",
+          "key_02",
+          "link_assassin_0_2",
+          "link_assassin_1_3",
+          "link_assassin_1_4",
+          "link_assassin_2_7",
+          "link_assassin_2_8",
+          "link_mage_0_1",
+          "opening_mage_0_1",
+          "opening_mage_0_2",
+          "opening_mage_0_3",
+          "opening_templar_0_3",
+          "opening_templar_1_3",
+          "opening_templar_2_3",
+          "opening_warrior_0_3",
+          "opening_warrior_1_3",
+          "opening_warrior_2_3",
+          "origin_mage",
+          "r14_27_1",
+          "r18_26_1",
+          "r19_24_1",
+          "r1_29_2",
+          "r39_40_3",
+          "r6_35_2",
+          "v7road_r1_1",
+          "v7road_r1_2"
+        ]
+      },
+      "rect": {
+        "x": 0,
+        "y": 76,
+        "w": 1570,
+        "h": 1124
+      }
+    },
+    {
+      "name": "ProjectS_Contract_V8_mage-ice",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 1.4681774625281068,
+        "minClickGap": 1.9181184584145905,
+        "minNodePairPaintGap": 8.044814080207358,
+        "nearest": {
+          "node": "key_02"
+        },
+        "labelLines": [],
+        "captions": 13,
+        "zoom": 0.22497049794324178,
+        "spent": 25,
+        "usable": true,
+        "connected": true
+      },
+      "cam": {
+        "x": 3979.2515750000002,
+        "y": -1858.127575,
+        "z": 0.22497049794324178
+      },
+      "state": {
+        "version": "projects-large-tree-diff-v2",
+        "study": "contract-v8",
+        "profileId": "mage:support:plain:standard",
+        "origin": "mage",
+        "budget": 48,
+        "roadChoice": "hp",
+        "siphon": false,
+        "learned": [
+          "g27n1",
+          "g27n2",
+          "g27n4",
+          "g3n2",
+          "g3n5",
+          "g51n4",
+          "g51n5",
+          "g51n6",
+          "join_warrior_1",
+          "key_13",
+          "link_assassin_1_4",
+          "link_assassin_2_3",
+          "link_assassin_2_4",
+          "link_assassin_2_5",
+          "link_assassin_2_8",
+          "opening_mage_1_1",
+          "opening_mage_1_2",
+          "opening_mage_1_3",
+          "origin_mage",
+          "r10_14_3",
+          "r14_42_1",
+          "r18_26_1",
+          "r27_52_1",
+          "r9_20_2"
+        ]
+      },
+      "rect": {
+        "x": 0,
+        "y": 76,
+        "w": 1570,
+        "h": 1124
+      }
+    },
+    {
+      "name": "ProjectS_Contract_V8_ranger",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 0.9999999999999992,
+        "minClickGap": 1.2244323136190136,
+        "minNodePairPaintGap": 4.266621945667906,
+        "nearest": {
+          "node": "key_05"
+        },
+        "labelLines": [],
+        "captions": 10,
+        "zoom": 0.11221615680950714,
+        "spent": 42,
+        "usable": true,
+        "connected": true
+      },
+      "cam": {
+        "x": 5347.17835,
+        "y": -1779.76798,
+        "z": 0.11221615680950714
+      },
+      "state": {
+        "version": "projects-large-tree-diff-v2",
+        "study": "contract-v8",
+        "profileId": "ranger:mark:plain:standard",
+        "origin": "ranger",
+        "budget": 48,
+        "roadChoice": "hp",
+        "siphon": false,
+        "learned": [
+          "g10n3",
+          "g12n0",
+          "g12n1",
+          "g12n3",
+          "g24n3",
+          "g24n4",
+          "g24n6",
+          "g2n0",
+          "g2n1",
+          "g2n4",
+          "g32n0",
+          "g32n1",
+          "g32n2",
+          "g32n6",
+          "g33n3",
+          "g39n0",
+          "g39n1",
+          "g39n6",
+          "g39n7",
+          "g51n6",
+          "join_warrior_2",
+          "key_10",
+          "link_assassin_1_4",
+          "link_assassin_2_8",
+          "link_mage_2_1",
+          "link_warrior_2_1",
+          "opening_ranger_1_1",
+          "opening_ranger_1_2",
+          "opening_ranger_1_3",
+          "origin_ranger",
+          "r10_36_1",
+          "r12_46_1",
+          "r14_27_1",
+          "r15_25_1",
+          "r18_26_1",
+          "r18_49_1",
+          "r19_24_1",
+          "r22_24_1",
+          "r28_39_1",
+          "r30_36_2",
+          "r39_40_1"
+        ]
+      },
+      "rect": {
+        "x": 0,
+        "y": 76,
+        "w": 1570,
+        "h": 1124
+      }
+    },
+    {
+      "name": "ProjectS_Contract_V8_assassin",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 0.9999999999999994,
+        "minClickGap": 1.1928075289763287,
+        "minNodePairPaintGap": 3.8063218495053532,
+        "nearest": {
+          "node": "key_05"
+        },
+        "labelLines": [],
+        "captions": 10,
+        "zoom": 0.09640376448816458,
+        "spent": 52,
+        "usable": true,
+        "connected": true
+      },
+      "cam": {
+        "x": 4577.372985,
+        "y": 253.95530499999995,
+        "z": 0.09640376448816458
+      },
+      "state": {
+        "version": "projects-large-tree-diff-v2",
+        "study": "contract-v8",
+        "profileId": "assassin:mark:plain:standard",
+        "origin": "assassin",
+        "budget": 64,
+        "roadChoice": "hp",
+        "siphon": false,
+        "learned": [
+          "g10n0",
+          "g10n1",
+          "g10n6",
+          "g12n3",
+          "g17n0",
+          "g17n4",
+          "g33n3",
+          "g41n2",
+          "g41n3",
+          "g41n4",
+          "g41n5",
+          "g42n0",
+          "g42n4",
+          "g42n5",
+          "g4n0",
+          "g4n1",
+          "g4n2",
+          "g4n3",
+          "g4n6",
+          "g4n7",
+          "g51n6",
+          "g52n0",
+          "g52n4",
+          "j1",
+          "j36",
+          "join_mage_0",
+          "join_mage_1",
+          "join_templar_2",
+          "link_assassin_1_2",
+          "link_assassin_1_4",
+          "link_assassin_1_5",
+          "link_assassin_2_1",
+          "link_assassin_2_8",
+          "link_warrior_1_7",
+          "link_warrior_2_1",
+          "opening_assassin_0_1",
+          "opening_assassin_0_2",
+          "opening_assassin_0_3",
+          "opening_ranger_1_3",
+          "origin_assassin",
+          "r10_32_1",
+          "r12_19_2",
+          "r14_27_1",
+          "r15_43_2",
+          "r18_26_1",
+          "r18_26_2",
+          "r19_24_1",
+          "r25_44_2",
+          "r26_28_2",
+          "r35_38_1",
+          "r39_40_2",
+          "r9_20_2",
+          "v7road_east"
+        ]
+      },
+      "rect": {
+        "x": 0,
+        "y": 76,
+        "w": 1570,
+        "h": 1124
+      }
+    },
+    {
+      "name": "ProjectS_Contract_V8_lightning",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 0.9999999999999992,
+        "minClickGap": 1.3073231277714306,
+        "minNodePairPaintGap": 5.494848098022017,
+        "nearest": {
+          "node": "key_02"
+        },
+        "labelLines": [],
+        "captions": 25,
+        "zoom": 0.1536615638857157,
+        "spent": 26,
+        "usable": true,
+        "connected": true
+      },
+      "cam": {
+        "x": 3812.979755,
+        "y": -4879.800805,
+        "z": 0.1536615638857157
+      },
+      "state": {
+        "version": "projects-large-tree-diff-v2",
+        "study": "contract-v8",
+        "profileId": "mage:support:lightning:standard",
+        "origin": "mage",
+        "budget": 48,
+        "roadChoice": "hp",
+        "siphon": false,
+        "learned": [
+          "g12n0",
+          "g12n1",
+          "g12n3",
+          "g20n1",
+          "g20n3",
+          "g20n4",
+          "g33n3",
+          "g43n0",
+          "g9n0",
+          "g9n7",
+          "key_15",
+          "link_templar_2_1",
+          "link_warrior_2_1",
+          "opening_mage_1_1",
+          "opening_mage_1_2",
+          "opening_mage_1_3",
+          "origin_mage",
+          "r13_35_1",
+          "r14_27_1",
+          "r15_43_3",
+          "r18_26_1",
+          "r19_24_1",
+          "r22_24_2",
+          "r26_28_1",
+          "r36_48_1"
+        ]
+      },
+      "rect": {
+        "x": 0,
+        "y": 76,
+        "w": 1570,
+        "h": 1124
+      }
+    },
+    {
+      "name": "ProjectS_Contract_V8_v7g07-a",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 5.617217641046078,
+        "minClickGap": 7.800474316355897,
+        "minNodePairPaintGap": 22.049975806367982,
+        "nearest": {
+          "node": "key_02"
+        },
+        "labelLines": [],
+        "captions": 3,
+        "zoom": 0.5759174083677577,
+        "spent": 9,
+        "usable": true,
+        "connected": true
+      },
+      "cam": {
+        "x": 2628.0692950000002,
+        "y": -2627.67725,
+        "z": 0.5759174083677577
+      },
+      "state": {
+        "version": "projects-large-tree-diff-v2",
+        "study": "contract-v8",
+        "profileId": "mage:support:plain:standard",
+        "origin": "mage",
+        "budget": 48,
+        "roadChoice": "hp",
+        "siphon": false,
+        "learned": [
+          "opening_mage_1_1",
+          "opening_mage_1_2",
+          "opening_mage_1_3",
+          "origin_mage",
+          "r14_27_1",
+          "r18_26_1",
+          "v7g07_entry",
+          "v7g07n0",
+          "v7g07n2",
+          "v7g07n4"
+        ]
+      },
+      "rect": {
+        "x": 0,
+        "y": 76,
+        "w": 1570,
+        "h": 1124
+      }
+    },
+    {
+      "name": "ProjectS_Contract_V8_v7g07-b",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 5.617217641046078,
+        "minClickGap": 7.800474316355897,
+        "minNodePairPaintGap": 22.049975806367982,
+        "nearest": {
+          "node": "key_02"
+        },
+        "labelLines": [],
+        "captions": 3,
+        "zoom": 0.5759174083677577,
+        "spent": 9,
+        "usable": true,
+        "connected": true
+      },
+      "cam": {
+        "x": 2624.5337600000003,
+        "y": -2627.67725,
+        "z": 0.5759174083677577
+      },
+      "state": {
+        "version": "projects-large-tree-diff-v2",
+        "study": "contract-v8",
+        "profileId": "mage:support:plain:standard",
+        "origin": "mage",
+        "budget": 48,
+        "roadChoice": "hp",
+        "siphon": false,
+        "learned": [
+          "opening_mage_1_1",
+          "opening_mage_1_2",
+          "opening_mage_1_3",
+          "origin_mage",
+          "r14_27_1",
+          "r18_26_1",
+          "v7g07_entry",
+          "v7g07n1",
+          "v7g07n3",
+          "v7g07n4"
+        ]
+      },
+      "rect": {
+        "x": 0,
+        "y": 76,
+        "w": 1570,
+        "h": 1124
+      }
+    },
+    {
+      "name": "ProjectS_Contract_V8_v7g04-a",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 1.3794550607093057,
+        "minClickGap": 1.8111942254563353,
+        "minNodePairPaintGap": 7.719370635900329,
+        "nearest": {
+          "node": "key_02"
+        },
+        "labelLines": [],
+        "captions": 16,
+        "zoom": 0.215869582373515,
+        "spent": 31,
+        "usable": true,
+        "connected": true
+      },
+      "cam": {
+        "x": -1635.706715,
+        "y": -215.0587650000001,
+        "z": 0.215869582373515
+      },
+      "state": {
+        "version": "projects-large-tree-diff-v2",
+        "study": "contract-v8",
+        "profileId": "warrior:support:plain:standard",
+        "origin": "warrior",
+        "budget": 48,
+        "roadChoice": "hp",
+        "siphon": false,
+        "learned": [
+          "g18n1",
+          "g18n4",
+          "g18n5",
+          "g45hub",
+          "g45n1",
+          "g45n2",
+          "g45n4",
+          "link_assassin_0_2",
+          "link_ranger_2_2",
+          "link_templar_1_1",
+          "link_warrior_2_7",
+          "link_warrior_2_8",
+          "opening_warrior_1_1",
+          "opening_warrior_1_2",
+          "opening_warrior_1_3",
+          "origin_warrior",
+          "r1_22_1",
+          "r1_29_1",
+          "r1_29_4",
+          "r24_42_1",
+          "r28_50_1",
+          "v7g04_entry",
+          "v7g04n0",
+          "v7g04n2",
+          "v7g04n4",
+          "v7road_r4_1",
+          "v7road_r4_2",
+          "v7road_r6_1",
+          "v7road_r6_2",
+          "v7road_r6_3",
+          "v7road_r6_4",
+          "v7road_r6_5"
+        ]
+      },
+      "rect": {
+        "x": 0,
+        "y": 76,
+        "w": 1570,
+        "h": 1124
+      }
+    },
+    {
+      "name": "ProjectS_Contract_V8_v7g04-b",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 1.2810125200039795,
+        "minClickGap": 1.6925557199650623,
+        "minNodePairPaintGap": 7.358272662257692,
+        "nearest": {
+          "node": "key_02"
+        },
+        "labelLines": [],
+        "captions": 18,
+        "zoom": 0.20577159998054148,
+        "spent": 31,
+        "usable": true,
+        "connected": true
+      },
+      "cam": {
+        "x": -1635.706715,
+        "y": -107.75876500000015,
+        "z": 0.20577159998054148
+      },
+      "state": {
+        "version": "projects-large-tree-diff-v2",
+        "study": "contract-v8",
+        "profileId": "warrior:support:plain:standard",
+        "origin": "warrior",
+        "budget": 48,
+        "roadChoice": "hp",
+        "siphon": false,
+        "learned": [
+          "g18n1",
+          "g18n4",
+          "g18n5",
+          "g45hub",
+          "g45n1",
+          "g45n2",
+          "g45n4",
+          "link_assassin_0_2",
+          "link_ranger_2_2",
+          "link_templar_1_1",
+          "link_warrior_2_7",
+          "link_warrior_2_8",
+          "opening_warrior_1_1",
+          "opening_warrior_1_2",
+          "opening_warrior_1_3",
+          "origin_warrior",
+          "r1_22_1",
+          "r1_29_1",
+          "r1_29_4",
+          "r24_42_1",
+          "r28_50_1",
+          "v7g04_entry",
+          "v7g04n1",
+          "v7g04n3",
+          "v7g04n4",
+          "v7road_r4_1",
+          "v7road_r4_2",
+          "v7road_r6_1",
+          "v7road_r6_2",
+          "v7road_r6_3",
+          "v7road_r6_4",
+          "v7road_r6_5"
+        ]
+      },
+      "rect": {
+        "x": 0,
+        "y": 76,
+        "w": 1570,
+        "h": 1124
+      }
+    },
+    {
+      "name": "ProjectS_Contract_V8_legacy-critical",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 1.0000000000000004,
+        "minClickGap": 1.2862039170347117,
+        "minNodePairPaintGap": 5.165710281402616,
+        "nearest": {
+          "node": "key_02"
+        },
+        "labelLines": [],
+        "captions": 27,
+        "zoom": 0.14310195851735563,
+        "spent": 47,
+        "usable": true,
+        "connected": true
+      },
+      "cam": {
+        "x": -1447.707745,
+        "y": 2166.46288,
+        "z": 0.14310195851735563
+      },
+      "state": {
+        "version": "projects-large-tree-diff-v2",
+        "study": "contract-v8",
+        "profileId": "warrior:support:plain:standard",
+        "origin": "warrior",
+        "budget": 48,
+        "roadChoice": "hp",
+        "siphon": true,
+        "learned": [
+          "g13n0",
+          "g13n1",
+          "g13n2",
+          "g13n3",
+          "g13n8",
+          "g13n9",
+          "g14n0",
+          "g14n1",
+          "g14n2",
+          "g14n3",
+          "g14n4",
+          "g14n5",
+          "g14n6",
+          "g14n7",
+          "g25n0",
+          "g25n1",
+          "g25n2",
+          "g25n6",
+          "g25n7",
+          "g30n0",
+          "g30n2",
+          "g30n6",
+          "g30n7",
+          "g35n0",
+          "g35n3",
+          "g35n4",
+          "g48n0",
+          "g48n3",
+          "g48n4",
+          "g48n6",
+          "g48n8",
+          "g48n9",
+          "g49n5",
+          "link_assassin_1_1",
+          "link_templar_0_1",
+          "link_warrior_0_4",
+          "link_warrior_1_4",
+          "link_warrior_2_6",
+          "opening_warrior_0_1",
+          "opening_warrior_0_2",
+          "opening_warrior_0_3",
+          "origin_warrior",
+          "r19_24_2",
+          "r2_22_2",
+          "r2_46_1",
+          "r2_51_1",
+          "r7_29_1",
+          "r7_29_2"
+        ]
+      },
+      "rect": {
+        "x": 0,
+        "y": 76,
+        "w": 1570,
+        "h": 1124
+      }
+    },
+    {
+      "name": "ProjectS_Contract_V8_legacy-tank-life",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 1.1925945712298232,
+        "minClickGap": 1.5859984000705105,
+        "minNodePairPaintGap": 7.033945984916471,
+        "nearest": {
+          "node": "key_02"
+        },
+        "labelLines": [],
+        "captions": 18,
+        "zoom": 0.19670191442034382,
+        "spent": 43,
+        "usable": true,
+        "connected": true
+      },
+      "cam": {
+        "x": -1301.6335750000003,
+        "y": -3796.983705,
+        "z": 0.19670191442034382
+      },
+      "state": {
+        "version": "projects-large-tree-diff-v2",
+        "study": "contract-v8",
+        "profileId": "tank:support:plain:standard",
+        "origin": "tank",
+        "budget": 48,
+        "roadChoice": "hp",
+        "siphon": false,
+        "learned": [
+          "g18n1",
+          "g18n3",
+          "g18n6",
+          "g28n2",
+          "g28n5",
+          "g31n2",
+          "g31n4",
+          "g31n5",
+          "g33n0",
+          "g40n0",
+          "g40n3",
+          "g40n4",
+          "g40n5",
+          "g46n0",
+          "g46n1",
+          "g46n2",
+          "g46n7",
+          "g6n0",
+          "g6n4",
+          "g6n6",
+          "g6n7",
+          "g6n8",
+          "g6n9",
+          "join_assassin_1",
+          "join_templar_0",
+          "join_warrior_0",
+          "link_assassin_0_2",
+          "link_assassin_0_4",
+          "link_assassin_1_3",
+          "link_ranger_1_1",
+          "link_warrior_0_6",
+          "link_warrior_2_10",
+          "link_warrior_2_7",
+          "opening_templar_0_1",
+          "opening_templar_0_2",
+          "opening_templar_0_3",
+          "origin_templar",
+          "r10_14_2",
+          "r16_38_2",
+          "r21_26_1",
+          "r25_44_1",
+          "r33_37_2",
+          "r34_40_1",
+          "r6_35_1"
+        ]
+      },
+      "rect": {
+        "x": 0,
+        "y": 76,
+        "w": 1570,
+        "h": 1124
+      }
+    },
+    {
+      "name": "ProjectS_Contract_V8_mage-owned-mp-blood",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 1.228078780794848,
+        "minClickGap": 1.628762367367282,
+        "minNodePairPaintGap": 7.164105934857169,
+        "nearest": {
+          "node": "key_02"
+        },
+        "labelLines": [],
+        "captions": 18,
+        "zoom": 0.20034179328621712,
+        "spent": 20,
+        "usable": true,
+        "connected": true
+      },
+      "cam": {
+        "x": 2711.5340850000002,
+        "y": -4164.08901,
+        "z": 0.20034179328621712
+      },
+      "state": {
+        "version": "projects-large-tree-diff-v2",
+        "study": "contract-v8",
+        "profileId": "mage:support:plain:standard",
+        "origin": "mage",
+        "budget": 48,
+        "roadChoice": "hp",
+        "siphon": false,
+        "learned": [
+          "g12n1",
+          "g12n2",
+          "g12n3",
+          "g20n1",
+          "g20n4",
+          "g20n5",
+          "g20n6",
+          "g33n3",
+          "key_02",
+          "link_templar_2_1",
+          "link_warrior_2_1",
+          "opening_mage_1_1",
+          "opening_mage_1_2",
+          "opening_mage_1_3",
+          "origin_mage",
+          "r14_27_1",
+          "r18_26_1",
+          "r19_24_1",
+          "r26_28_1"
+        ]
+      },
+      "rect": {
+        "x": 0,
+        "y": 76,
+        "w": 1570,
+        "h": 1124
+      }
+    },
+    {
+      "name": "ProjectS_Contract_V8_mage-blood-shield",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 0.9999999999999997,
+        "minClickGap": 1.2875446891165283,
+        "minNodePairPaintGap": 5.1852252765295574,
+        "nearest": {
+          "node": "key_02"
+        },
+        "labelLines": [],
+        "captions": 27,
+        "zoom": 0.1437723445582642,
+        "spent": 46,
+        "usable": true,
+        "connected": true
+      },
+      "cam": {
+        "x": 2177.6888750000003,
+        "y": -1772.967955,
+        "z": 0.1437723445582642
+      },
+      "state": {
+        "version": "projects-large-tree-diff-v2",
+        "study": "contract-v8",
+        "profileId": "mage:support:plain:standard",
+        "origin": "mage",
+        "budget": 48,
+        "roadChoice": "hp",
+        "siphon": false,
+        "learned": [
+          "g13n8",
+          "g27n1",
+          "g27n2",
+          "g27n4",
+          "g51n4",
+          "g51n5",
+          "g51n6",
+          "g51n7",
+          "g51n8",
+          "join_warrior_1",
+          "key_02",
+          "link_assassin_0_2",
+          "link_assassin_0_3",
+          "link_assassin_1_3",
+          "link_assassin_1_4",
+          "link_assassin_2_5",
+          "link_assassin_2_7",
+          "link_assassin_2_8",
+          "link_mage_0_1",
+          "opening_mage_0_1",
+          "opening_mage_0_2",
+          "opening_mage_0_3",
+          "opening_templar_0_3",
+          "opening_templar_1_3",
+          "opening_templar_2_3",
+          "opening_warrior_0_3",
+          "opening_warrior_1_3",
+          "opening_warrior_2_3",
+          "origin_mage",
+          "r10_14_3",
+          "r14_27_1",
+          "r18_26_1",
+          "r19_24_1",
+          "r1_29_2",
+          "r39_40_3",
+          "r6_35_2",
+          "r9_20_2",
+          "v7g12n0",
+          "v7g12n1",
+          "v7g12n6",
+          "v7g12n7",
+          "v7road_r1_1",
+          "v7road_r1_2",
+          "v8road_shield_1",
+          "v8road_shield_2"
+        ]
+      },
+      "rect": {
+        "x": 0,
+        "y": 76,
+        "w": 1570,
+        "h": 1124
+      }
+    },
+    {
+      "name": "ProjectS_Contract_V8_mage-shield-entry",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 1.012735223103515,
+        "minClickGap": 1.3692400341501019,
+        "minNodePairPaintGap": 6.374202283831954,
+        "nearest": {
+          "node": "key_02"
+        },
+        "labelLines": [],
+        "captions": 21,
+        "zoom": 0.17825240552329355,
+        "spent": 23,
+        "usable": true,
+        "connected": true
+      },
+      "cam": {
+        "x": 3333.16762,
+        "y": -2408.005305,
+        "z": 0.17825240552329355
+      },
+      "state": {
+        "version": "projects-large-tree-diff-v2",
+        "study": "contract-v8",
+        "profileId": "mage:support:plain:standard",
+        "origin": "mage",
+        "budget": 48,
+        "roadChoice": "hp",
+        "siphon": false,
+        "learned": [
+          "g27n1",
+          "g27n2",
+          "g27n4",
+          "g51n4",
+          "g51n5",
+          "g51n6",
+          "join_warrior_1",
+          "link_assassin_0_3",
+          "link_assassin_1_4",
+          "link_assassin_2_5",
+          "link_assassin_2_8",
+          "opening_mage_1_1",
+          "opening_mage_1_2",
+          "opening_mage_1_3",
+          "origin_mage",
+          "r10_14_3",
+          "r18_26_1",
+          "r9_20_2",
+          "v7g12n0",
+          "v7g12n1",
+          "v7g12n6",
+          "v7g12n7",
+          "v8road_shield_1",
+          "v8road_shield_2"
+        ]
+      },
+      "rect": {
+        "x": 0,
+        "y": 76,
+        "w": 1570,
+        "h": 1124
+      }
+    },
+    {
+      "name": "ProjectS_Contract_V8_assassin-area-48",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 0.9999999999999994,
+        "minClickGap": 1.1928075289763287,
+        "minNodePairPaintGap": 3.8063218495053532,
+        "nearest": {
+          "node": "key_05"
+        },
+        "labelLines": [],
+        "captions": 10,
+        "zoom": 0.09640376448816458,
+        "spent": 43,
+        "usable": true,
+        "connected": true
+      },
+      "cam": {
+        "x": 3867.74726,
+        "y": 253.95530499999995,
+        "z": 0.09640376448816458
+      },
+      "state": {
+        "version": "projects-large-tree-diff-v2",
+        "study": "contract-v8",
+        "profileId": "assassin:mark:plain:standard",
+        "origin": "assassin",
+        "budget": 48,
+        "roadChoice": "hp",
+        "siphon": false,
+        "learned": [
+          "g12n3",
+          "g33n3",
+          "g41n0",
+          "g41n2",
+          "g41n3",
+          "g41n8",
+          "g41n9",
+          "g42n0",
+          "g42n4",
+          "g42n5",
+          "g4n0",
+          "g4n1",
+          "g4n2",
+          "g4n3",
+          "g4n6",
+          "g4n7",
+          "g51n6",
+          "g52n0",
+          "g52n4",
+          "j1",
+          "j36",
+          "join_mage_2",
+          "join_templar_2",
+          "link_assassin_1_2",
+          "link_assassin_1_4",
+          "link_assassin_2_8",
+          "link_warrior_2_1",
+          "opening_assassin_0_1",
+          "opening_assassin_0_2",
+          "opening_assassin_0_3",
+          "opening_ranger_1_3",
+          "origin_assassin",
+          "r12_19_2",
+          "r14_27_1",
+          "r15_43_2",
+          "r18_26_1",
+          "r18_26_2",
+          "r19_24_1",
+          "r25_44_2",
+          "r30_36_1",
+          "r35_38_1",
+          "r39_40_2",
+          "r9_20_2",
+          "v7road_east"
+        ]
+      },
+      "rect": {
+        "x": 0,
+        "y": 76,
+        "w": 1570,
+        "h": 1124
+      }
+    },
+    {
+      "name": "ProjectS_Contract_V8_assassin-crit-48",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 1.0000000000000004,
+        "minClickGap": 1.208625412594324,
+        "minNodePairPaintGap": 4.036551823644798,
+        "nearest": {
+          "node": "key_05"
+        },
+        "labelLines": [],
+        "captions": 9,
+        "zoom": 0.10431270629716183,
+        "spent": 46,
+        "usable": true,
+        "connected": true
+      },
+      "cam": {
+        "x": 4577.372985,
+        "y": -117.26281999999992,
+        "z": 0.10431270629716183
+      },
+      "state": {
+        "version": "projects-large-tree-diff-v2",
+        "study": "contract-v8",
+        "profileId": "assassin:mark:plain:standard",
+        "origin": "assassin",
+        "budget": 48,
+        "roadChoice": "hp",
+        "siphon": false,
+        "learned": [
+          "g10n0",
+          "g10n1",
+          "g10n6",
+          "g12n3",
+          "g17n0",
+          "g17n4",
+          "g33n3",
+          "g41n3",
+          "g41n4",
+          "g41n5",
+          "g4n0",
+          "g4n1",
+          "g4n2",
+          "g4n3",
+          "g4n6",
+          "g4n7",
+          "g51n6",
+          "g52n0",
+          "g52n4",
+          "j1",
+          "j36",
+          "join_mage_0",
+          "join_mage_1",
+          "link_assassin_1_2",
+          "link_assassin_1_4",
+          "link_assassin_1_5",
+          "link_assassin_2_1",
+          "link_assassin_2_8",
+          "link_warrior_1_7",
+          "link_warrior_2_1",
+          "opening_assassin_0_1",
+          "opening_assassin_0_2",
+          "opening_assassin_0_3",
+          "opening_ranger_1_3",
+          "origin_assassin",
+          "r10_32_1",
+          "r12_19_2",
+          "r14_27_1",
+          "r15_43_2",
+          "r18_26_1",
+          "r18_26_2",
+          "r19_24_1",
+          "r26_28_2",
+          "r35_38_1",
+          "r39_40_2",
+          "r9_20_2",
+          "v7road_east"
+        ]
+      },
+      "rect": {
+        "x": 0,
+        "y": 76,
+        "w": 1570,
+        "h": 1124
+      }
+    },
+    {
+      "name": "ProjectS_Contract_V8_assassin-area-64",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 1,
+        "minClickGap": 1.187613106767307,
+        "minNodePairPaintGap": 3.7307168115790357,
+        "nearest": {
+          "node": "key_05"
+        },
+        "labelLines": [],
+        "captions": 10,
+        "zoom": 0.0938065533836535,
+        "spent": 49,
+        "usable": true,
+        "connected": true
+      },
+      "cam": {
+        "x": 4019.165325,
+        "y": 389.5123450000001,
+        "z": 0.0938065533836535
+      },
+      "state": {
+        "version": "projects-large-tree-diff-v2",
+        "study": "contract-v8",
+        "profileId": "assassin:mark:plain:standard",
+        "origin": "assassin",
+        "budget": 64,
+        "roadChoice": "hp",
+        "siphon": false,
+        "learned": [
+          "g12n3",
+          "g33n3",
+          "g41n0",
+          "g41n2",
+          "g41n3",
+          "g41n6",
+          "g41n7",
+          "g41n8",
+          "g41n9",
+          "g42n0",
+          "g42n1",
+          "g42n2",
+          "g42n4",
+          "g42n5",
+          "g42n6",
+          "g42n7",
+          "g4n0",
+          "g4n1",
+          "g4n2",
+          "g4n3",
+          "g4n6",
+          "g4n7",
+          "g51n6",
+          "g52n0",
+          "g52n4",
+          "j1",
+          "j36",
+          "join_mage_2",
+          "join_templar_2",
+          "link_assassin_1_2",
+          "link_assassin_1_4",
+          "link_assassin_2_8",
+          "link_warrior_2_1",
+          "opening_assassin_0_1",
+          "opening_assassin_0_2",
+          "opening_assassin_0_3",
+          "opening_ranger_1_3",
+          "origin_assassin",
+          "r12_19_2",
+          "r14_27_1",
+          "r15_43_2",
+          "r18_26_1",
+          "r18_26_2",
+          "r19_24_1",
+          "r25_44_2",
+          "r30_36_1",
+          "r35_38_1",
+          "r39_40_2",
+          "r9_20_2",
+          "v7road_east"
+        ]
+      },
+      "rect": {
+        "x": 0,
+        "y": 76,
+        "w": 1570,
+        "h": 1124
+      }
+    },
+    {
+      "name": "ProjectS_Contract_V8_assassin-crit-64",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 0.9999999999999988,
+        "minClickGap": 1.2041905704147826,
+        "minNodePairPaintGap": 3.972002505609195,
+        "nearest": {
+          "node": "key_05"
+        },
+        "labelLines": [],
+        "captions": 8,
+        "zoom": 0.10209528520739174,
+        "spent": 51,
+        "usable": true,
+        "connected": true
+      },
+      "cam": {
+        "x": 4577.372985,
+        "y": -18.986864999999852,
+        "z": 0.10209528520739174
+      },
+      "state": {
+        "version": "projects-large-tree-diff-v2",
+        "study": "contract-v8",
+        "profileId": "assassin:mark:plain:standard",
+        "origin": "assassin",
+        "budget": 64,
+        "roadChoice": "hp",
+        "siphon": false,
+        "learned": [
+          "g10n0",
+          "g10n1",
+          "g10n6",
+          "g12n3",
+          "g17n0",
+          "g17n1",
+          "g17n4",
+          "g33n3",
+          "g41n0",
+          "g41n3",
+          "g41n4",
+          "g41n5",
+          "g41n6",
+          "g41n7",
+          "g41n9",
+          "g4n0",
+          "g4n1",
+          "g4n2",
+          "g4n3",
+          "g4n6",
+          "g4n7",
+          "g51n6",
+          "g52n0",
+          "g52n4",
+          "j1",
+          "j36",
+          "join_mage_0",
+          "join_mage_1",
+          "link_assassin_1_2",
+          "link_assassin_1_4",
+          "link_assassin_1_5",
+          "link_assassin_2_1",
+          "link_assassin_2_8",
+          "link_warrior_1_7",
+          "link_warrior_2_1",
+          "opening_assassin_0_1",
+          "opening_assassin_0_2",
+          "opening_assassin_0_3",
+          "opening_ranger_1_3",
+          "origin_assassin",
+          "r10_32_1",
+          "r12_19_2",
+          "r14_27_1",
+          "r15_43_2",
+          "r18_26_1",
+          "r18_26_2",
+          "r19_24_1",
+          "r26_28_2",
+          "r35_38_1",
+          "r39_40_2",
+          "r9_20_2",
+          "v7road_east"
+        ]
+      },
+      "rect": {
+        "x": 0,
+        "y": 76,
+        "w": 1570,
+        "h": 1124
+      }
+    },
+    {
+      "name": "ProjectS_Contract_V8_assassin-area-80",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 1,
+        "minClickGap": 1.187613106767307,
+        "minNodePairPaintGap": 3.7307168115790357,
+        "nearest": {
+          "node": "key_05"
+        },
+        "labelLines": [],
+        "captions": 10,
+        "zoom": 0.0938065533836535,
+        "spent": 55,
+        "usable": true,
+        "connected": true
+      },
+      "cam": {
+        "x": 4019.165325,
+        "y": 389.5123450000001,
+        "z": 0.0938065533836535
+      },
+      "state": {
+        "version": "projects-large-tree-diff-v2",
+        "study": "contract-v8",
+        "profileId": "assassin:mark:plain:standard",
+        "origin": "assassin",
+        "budget": 80,
+        "roadChoice": "hp",
+        "siphon": false,
+        "learned": [
+          "g12n3",
+          "g33n3",
+          "g41n0",
+          "g41n2",
+          "g41n3",
+          "g41n6",
+          "g41n7",
+          "g41n8",
+          "g41n9",
+          "g42n0",
+          "g42n1",
+          "g42n2",
+          "g42n4",
+          "g42n5",
+          "g42n6",
+          "g42n7",
+          "g4n0",
+          "g4n1",
+          "g4n2",
+          "g4n3",
+          "g4n6",
+          "g4n7",
+          "g51n6",
+          "g52n0",
+          "g52n4",
+          "j1",
+          "j36",
+          "join_mage_2",
+          "join_templar_2",
+          "link_assassin_1_2",
+          "link_assassin_1_4",
+          "link_assassin_2_8",
+          "link_warrior_2_1",
+          "opening_assassin_0_1",
+          "opening_assassin_0_2",
+          "opening_assassin_0_3",
+          "opening_ranger_1_3",
+          "origin_assassin",
+          "r12_19_2",
+          "r14_27_1",
+          "r15_43_2",
+          "r18_26_1",
+          "r18_26_2",
+          "r19_24_1",
+          "r25_44_2",
+          "r30_36_1",
+          "r35_38_1",
+          "r39_40_2",
+          "r9_20_2",
+          "v7g10_entry",
+          "v7g10n0",
+          "v7g10n2",
+          "v7g10n4",
+          "v7road_east",
+          "v7road_r9_4",
+          "v7road_r9_5"
+        ]
+      },
+      "rect": {
+        "x": 0,
+        "y": 76,
+        "w": 1570,
+        "h": 1124
+      }
+    },
+    {
+      "name": "ProjectS_Contract_V8_assassin-crit-80",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 0.9999999999999988,
+        "minClickGap": 1.2041905704147826,
+        "minNodePairPaintGap": 3.972002505609195,
+        "nearest": {
+          "node": "key_05"
+        },
+        "labelLines": [],
+        "captions": 8,
+        "zoom": 0.10209528520739174,
+        "spent": 60,
+        "usable": true,
+        "connected": true
+      },
+      "cam": {
+        "x": 4577.372985,
+        "y": -18.986864999999852,
+        "z": 0.10209528520739174
+      },
+      "state": {
+        "version": "projects-large-tree-diff-v2",
+        "study": "contract-v8",
+        "profileId": "assassin:mark:plain:standard",
+        "origin": "assassin",
+        "budget": 80,
+        "roadChoice": "hp",
+        "siphon": false,
+        "learned": [
+          "g10n0",
+          "g10n1",
+          "g10n6",
+          "g12n3",
+          "g17n0",
+          "g17n1",
+          "g17n4",
+          "g33n3",
+          "g41n0",
+          "g41n3",
+          "g41n4",
+          "g41n5",
+          "g41n6",
+          "g41n7",
+          "g41n9",
+          "g4n0",
+          "g4n1",
+          "g4n2",
+          "g4n3",
+          "g4n6",
+          "g4n7",
+          "g51n6",
+          "g52n0",
+          "g52n4",
+          "j1",
+          "j36",
+          "join_mage_0",
+          "join_mage_1",
+          "link_assassin_1_2",
+          "link_assassin_1_4",
+          "link_assassin_1_5",
+          "link_assassin_2_1",
+          "link_assassin_2_8",
+          "link_warrior_1_7",
+          "link_warrior_2_1",
+          "opening_assassin_0_1",
+          "opening_assassin_0_2",
+          "opening_assassin_0_3",
+          "opening_ranger_1_3",
+          "origin_assassin",
+          "r10_32_1",
+          "r10_36_2",
+          "r12_19_2",
+          "r14_27_1",
+          "r14_42_1",
+          "r15_43_2",
+          "r18_26_1",
+          "r18_26_2",
+          "r19_24_1",
+          "r24_42_2",
+          "r26_28_2",
+          "r27_52_1",
+          "r35_38_1",
+          "r39_40_2",
+          "r9_20_2",
+          "r9_20_3",
+          "v7g13_entry",
+          "v7g13n0",
+          "v7g13n2",
+          "v7g13n4",
+          "v7road_east"
+        ]
+      },
+      "rect": {
+        "x": 0,
+        "y": 76,
+        "w": 1570,
+        "h": 1124
+      }
+    },
+    {
+      "name": "ProjectS_Contract_V8_tank-life-reinvest-43",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 1,
+        "minClickGap": 1.2652474623671313,
+        "minNodePairPaintGap": 4.860688185356675,
+        "nearest": {
+          "node": "key_02"
+        },
+        "labelLines": [],
+        "captions": 28,
+        "zoom": 0.1326237311835656,
+        "spent": 43,
+        "usable": true,
+        "connected": true
+      },
+      "cam": {
+        "x": -1781.0867050000002,
+        "y": -2101.76076,
+        "z": 0.1326237311835656
+      },
+      "state": {
+        "version": "projects-large-tree-diff-v2",
+        "study": "contract-v8",
+        "profileId": "tank:support:plain:standard",
+        "origin": "tank",
+        "budget": 48,
+        "roadChoice": "hp",
+        "siphon": false,
+        "learned": [
+          "g18n1",
+          "g18n3",
+          "g18n5",
+          "g18n6",
+          "g23n0",
+          "g23n1",
+          "g23n2",
+          "g28n2",
+          "g28n5",
+          "g45hub",
+          "g45n1",
+          "g45n2",
+          "g45n4",
+          "g6n0",
+          "g6n4",
+          "g6n5",
+          "g6n6",
+          "g6n7",
+          "g6n8",
+          "g6n9",
+          "link_assassin_0_2",
+          "link_assassin_0_4",
+          "link_assassin_1_3",
+          "link_ranger_2_2",
+          "link_templar_1_1",
+          "link_warrior_0_6",
+          "link_warrior_2_7",
+          "link_warrior_2_8",
+          "opening_templar_0_1",
+          "opening_templar_0_2",
+          "opening_templar_0_3",
+          "opening_templar_1_3",
+          "opening_templar_2_3",
+          "opening_warrior_1_3",
+          "origin_templar",
+          "r16_38_2",
+          "r1_22_1",
+          "r1_22_4",
+          "r1_29_1",
+          "r1_29_4",
+          "r24_42_1",
+          "r34_40_1",
+          "v7road_r4_1",
+          "v7road_r4_2"
+        ]
+      },
+      "rect": {
+        "x": 0,
+        "y": 76,
+        "w": 1570,
+        "h": 1124
+      }
+    },
+    {
+      "name": "ProjectS_Contract_V8_Pair_critical",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 0.9999999999999992,
+        "minClickGap": 1.2400089108393075,
+        "minNodePairPaintGap": 4.493339985945379,
+        "nearest": {
+          "node": "key_05"
+        },
+        "labelLines": [],
+        "captions": 31,
+        "zoom": 0.12000445541965417,
+        "spent": 45,
+        "usable": true,
+        "connected": true
+      },
+      "cam": {
+        "x": -2480.771725,
+        "y": 1531.62317,
+        "z": 0.12000445541965417
+      },
+      "state": {
+        "version": "projects-large-tree-diff-v2",
+        "study": "contract-v8",
+        "profileId": "warrior:support:plain:standard",
+        "origin": "warrior",
+        "budget": 48,
+        "roadChoice": "hp",
+        "siphon": true,
+        "learned": [
+          "g13n0",
+          "g13n3",
+          "g13n8",
+          "g13n9",
+          "g18n1",
+          "g18n4",
+          "g18n5",
+          "g25n0",
+          "g25n1",
+          "g25n2",
+          "g25n6",
+          "g25n7",
+          "g30n2",
+          "g45hub",
+          "g45n1",
+          "g45n2",
+          "g45n4",
+          "g48n0",
+          "g48n3",
+          "g48n4",
+          "g48n6",
+          "g48n8",
+          "g48n9",
+          "link_templar_1_1",
+          "link_warrior_0_4",
+          "link_warrior_1_1",
+          "link_warrior_1_4",
+          "link_warrior_2_8",
+          "opening_warrior_0_1",
+          "opening_warrior_0_2",
+          "opening_warrior_0_3",
+          "origin_warrior",
+          "r17_44_1",
+          "r1_22_1",
+          "r1_29_1",
+          "r1_29_4",
+          "r24_42_1",
+          "r28_50_1",
+          "r7_29_1",
+          "r7_29_2",
+          "v7g04_entry",
+          "v7road_r6_1",
+          "v7road_r6_2",
+          "v7road_r6_3",
+          "v7road_r6_4",
+          "v7road_r6_5"
+        ]
+      },
+      "rect": {
+        "x": 0,
+        "y": 76,
+        "w": 1570,
+        "h": 1124
+      }
+    },
+    {
+      "name": "ProjectS_Contract_V8_Pair_quiet",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 0.9999999999999992,
+        "minClickGap": 1.2400089108393075,
+        "minNodePairPaintGap": 4.493339985945379,
+        "nearest": {
+          "node": "key_05"
+        },
+        "labelLines": [],
+        "captions": 31,
+        "zoom": 0.12000445541965417,
+        "spent": 41,
+        "usable": true,
+        "connected": true
+      },
+      "cam": {
+        "x": -2480.771725,
+        "y": 1531.62317,
+        "z": 0.12000445541965417
+      },
+      "state": {
+        "version": "projects-large-tree-diff-v2",
+        "study": "contract-v8",
+        "profileId": "warrior:support:plain:standard",
+        "origin": "warrior",
+        "budget": 48,
+        "roadChoice": "hp",
+        "siphon": true,
+        "learned": [
+          "g13n0",
+          "g13n3",
+          "g13n8",
+          "g13n9",
+          "g18n1",
+          "g18n4",
+          "g18n5",
+          "g26n1",
+          "g26n3",
+          "g37n0",
+          "g37n1",
+          "g37n4",
+          "g37n6",
+          "g37n7",
+          "g45hub",
+          "g45n1",
+          "g45n2",
+          "g45n4",
+          "key_04",
+          "link_templar_1_1",
+          "link_warrior_0_2",
+          "link_warrior_2_8",
+          "opening_warrior_0_1",
+          "opening_warrior_0_2",
+          "opening_warrior_0_3",
+          "origin_warrior",
+          "r17_44_1",
+          "r1_22_1",
+          "r1_29_1",
+          "r1_29_4",
+          "r24_42_1",
+          "r28_50_1",
+          "r7_22_1",
+          "r7_22_2",
+          "v7g04_entry",
+          "v7road_r6_1",
+          "v7road_r6_2",
+          "v7road_r6_3",
+          "v7road_r6_4",
+          "v7road_r6_5"
+        ]
+      },
+      "rect": {
+        "x": 0,
+        "y": 76,
+        "w": 1570,
+        "h": 1124
+      }
+    },
+    {
+      "name": "ProjectS_Contract_V8_Pair_tank-life",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 0.999999999999999,
+        "minClickGap": 1.259580917882249,
+        "minNodePairPaintGap": 4.778211387466344,
+        "nearest": {
+          "node": "key_05"
+        },
+        "labelLines": [],
+        "captions": 31,
+        "zoom": 0.12979045894112518,
+        "spent": 31,
+        "usable": true,
+        "connected": true
+      },
+      "cam": {
+        "x": -1301.6335750000003,
+        "y": -2179.45097,
+        "z": 0.12979045894112518
+      },
+      "state": {
+        "version": "projects-large-tree-diff-v2",
+        "study": "contract-v8",
+        "profileId": "tank:support:plain:standard",
+        "origin": "tank",
+        "budget": 48,
+        "roadChoice": "hp",
+        "siphon": false,
+        "learned": [
+          "g18n1",
+          "g18n3",
+          "g18n5",
+          "g18n6",
+          "g45hub",
+          "g45n1",
+          "g45n2",
+          "g45n4",
+          "g6n0",
+          "g6n4",
+          "g6n6",
+          "g6n7",
+          "g6n8",
+          "g6n9",
+          "link_assassin_0_2",
+          "link_assassin_0_4",
+          "link_assassin_1_3",
+          "link_ranger_2_2",
+          "link_templar_1_1",
+          "link_warrior_2_7",
+          "link_warrior_2_8",
+          "opening_templar_0_1",
+          "opening_templar_0_2",
+          "opening_templar_0_3",
+          "origin_templar",
+          "r1_22_1",
+          "r1_29_1",
+          "r1_29_4",
+          "r24_42_1",
+          "r34_40_1",
+          "v7road_r4_1",
+          "v7road_r4_2"
+        ]
+      },
+      "rect": {
+        "x": 0,
+        "y": 76,
+        "w": 1570,
+        "h": 1124
+      }
+    },
+    {
+      "name": "ProjectS_Contract_V8_Pair_tank-shield",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 0.999999999999999,
+        "minClickGap": 1.259580917882249,
+        "minNodePairPaintGap": 4.778211387466344,
+        "nearest": {
+          "node": "key_05"
+        },
+        "labelLines": [],
+        "captions": 31,
+        "zoom": 0.12979045894112518,
+        "spent": 21,
+        "usable": true,
+        "connected": true
+      },
+      "cam": {
+        "x": -1301.6335750000003,
+        "y": -2179.45097,
+        "z": 0.12979045894112518
+      },
+      "state": {
+        "version": "projects-large-tree-diff-v2",
+        "study": "contract-v8",
+        "profileId": "tank:support:plain:standard",
+        "origin": "tank",
+        "budget": 48,
+        "roadChoice": "hp",
+        "siphon": false,
+        "learned": [
+          "g31n4",
+          "g33n0",
+          "g46n0",
+          "g46n1",
+          "g46n2",
+          "g46n7",
+          "key_11",
+          "link_assassin_0_2",
+          "link_assassin_1_3",
+          "link_ranger_1_1",
+          "link_warrior_2_10",
+          "link_warrior_2_7",
+          "opening_templar_0_1",
+          "opening_templar_0_2",
+          "opening_templar_0_3",
+          "origin_templar",
+          "r21_26_1",
+          "r25_44_1",
+          "r33_37_2",
+          "r6_35_1"
+        ]
+      },
+      "rect": {
+        "x": 0,
+        "y": 76,
+        "w": 1570,
+        "h": 1124
+      }
+    },
+    {
+      "name": "ProjectS_Contract_V8_Pair_mage-mp",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 1.0000000000000004,
+        "minClickGap": 1.2351164696318633,
+        "minNodePairPaintGap": 4.422130294442305,
+        "nearest": {
+          "node": "key_05"
+        },
+        "labelLines": [],
+        "captions": 41,
+        "zoom": 0.11755823481593151,
+        "spent": 17,
+        "usable": true,
+        "connected": true
+      },
+      "cam": {
+        "x": 1556.05534,
+        "y": -2505.031365,
+        "z": 0.11755823481593151
+      },
+      "state": {
+        "version": "projects-large-tree-diff-v2",
+        "study": "contract-v8",
+        "profileId": "mage:support:plain:standard",
+        "origin": "mage",
+        "budget": 48,
+        "roadChoice": "hp",
+        "siphon": false,
+        "learned": [
+          "g12n1",
+          "g12n2",
+          "g12n3",
+          "g20n1",
+          "g20n4",
+          "g20n5",
+          "g20n6",
+          "g33n3",
+          "link_templar_2_1",
+          "link_warrior_2_1",
+          "opening_mage_1_1",
+          "opening_mage_1_2",
+          "opening_mage_1_3",
+          "origin_mage",
+          "r14_27_1",
+          "r18_26_1",
+          "r19_24_1",
+          "r26_28_1"
+        ]
+      },
+      "rect": {
+        "x": 0,
+        "y": 76,
+        "w": 1570,
+        "h": 1124
+      }
+    },
+    {
+      "name": "ProjectS_Contract_V8_Pair_mage-blood",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 1.0000000000000004,
+        "minClickGap": 1.2351164696318633,
+        "minNodePairPaintGap": 4.422130294442305,
+        "nearest": {
+          "node": "key_05"
+        },
+        "labelLines": [],
+        "captions": 41,
+        "zoom": 0.11755823481593151,
+        "spent": 30,
+        "usable": true,
+        "connected": true
+      },
+      "cam": {
+        "x": 1556.05534,
+        "y": -2505.031365,
+        "z": 0.11755823481593151
+      },
+      "state": {
+        "version": "projects-large-tree-diff-v2",
+        "study": "contract-v8",
+        "profileId": "mage:support:plain:standard",
+        "origin": "mage",
+        "budget": 48,
+        "roadChoice": "hp",
+        "siphon": false,
+        "learned": [
+          "g13n8",
+          "g51n6",
+          "g51n7",
+          "g51n8",
+          "key_02",
+          "link_assassin_0_2",
+          "link_assassin_1_3",
+          "link_assassin_1_4",
+          "link_assassin_2_7",
+          "link_assassin_2_8",
+          "link_mage_0_1",
+          "opening_mage_0_1",
+          "opening_mage_0_2",
+          "opening_mage_0_3",
+          "opening_templar_0_3",
+          "opening_templar_1_3",
+          "opening_templar_2_3",
+          "opening_warrior_0_3",
+          "opening_warrior_1_3",
+          "opening_warrior_2_3",
+          "origin_mage",
+          "r14_27_1",
+          "r18_26_1",
+          "r19_24_1",
+          "r1_29_2",
+          "r39_40_3",
+          "r6_35_2",
+          "v7road_r1_1",
+          "v7road_r1_2"
+        ]
+      },
+      "rect": {
+        "x": 0,
+        "y": 76,
+        "w": 1570,
+        "h": 1124
+      }
+    },
+    {
+      "name": "ProjectS_Contract_V8_Pair_v7g07-a",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 5.617217641046078,
+        "minClickGap": 7.800474316355897,
+        "minNodePairPaintGap": 22.049975806367982,
+        "nearest": {
+          "node": "key_02"
+        },
+        "labelLines": [],
+        "captions": 3,
+        "zoom": 0.5759174083677577,
+        "spent": 9,
+        "usable": true,
+        "connected": true
+      },
+      "cam": {
+        "x": 2628.0692950000002,
+        "y": -2627.67725,
+        "z": 0.5759174083677577
+      },
+      "state": {
+        "version": "projects-large-tree-diff-v2",
+        "study": "contract-v8",
+        "profileId": "mage:support:plain:standard",
+        "origin": "mage",
+        "budget": 48,
+        "roadChoice": "hp",
+        "siphon": false,
+        "learned": [
+          "opening_mage_1_1",
+          "opening_mage_1_2",
+          "opening_mage_1_3",
+          "origin_mage",
+          "r14_27_1",
+          "r18_26_1",
+          "v7g07_entry",
+          "v7g07n0",
+          "v7g07n2",
+          "v7g07n4"
+        ]
+      },
+      "rect": {
+        "x": 0,
+        "y": 76,
+        "w": 1570,
+        "h": 1124
+      }
+    },
+    {
+      "name": "ProjectS_Contract_V8_Pair_v7g07-b",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 5.617217641046078,
+        "minClickGap": 7.800474316355897,
+        "minNodePairPaintGap": 22.049975806367982,
+        "nearest": {
+          "node": "key_02"
+        },
+        "labelLines": [],
+        "captions": 3,
+        "zoom": 0.5759174083677577,
+        "spent": 9,
+        "usable": true,
+        "connected": true
+      },
+      "cam": {
+        "x": 2628.0692950000002,
+        "y": -2627.67725,
+        "z": 0.5759174083677577
+      },
+      "state": {
+        "version": "projects-large-tree-diff-v2",
+        "study": "contract-v8",
+        "profileId": "mage:support:plain:standard",
+        "origin": "mage",
+        "budget": 48,
+        "roadChoice": "hp",
+        "siphon": false,
+        "learned": [
+          "opening_mage_1_1",
+          "opening_mage_1_2",
+          "opening_mage_1_3",
+          "origin_mage",
+          "r14_27_1",
+          "r18_26_1",
+          "v7g07_entry",
+          "v7g07n1",
+          "v7g07n3",
+          "v7g07n4"
+        ]
+      },
+      "rect": {
+        "x": 0,
+        "y": 76,
+        "w": 1570,
+        "h": 1124
+      }
+    },
+    {
+      "name": "ProjectS_Contract_V8_Pair_v7g04-a",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 1.2810125200039795,
+        "minClickGap": 1.6925557199650623,
+        "minNodePairPaintGap": 7.358272662257692,
+        "nearest": {
+          "node": "key_02"
+        },
+        "labelLines": [],
+        "captions": 18,
+        "zoom": 0.20577159998054148,
+        "spent": 31,
+        "usable": true,
+        "connected": true
+      },
+      "cam": {
+        "x": -1635.706715,
+        "y": -107.75876500000015,
+        "z": 0.20577159998054148
+      },
+      "state": {
+        "version": "projects-large-tree-diff-v2",
+        "study": "contract-v8",
+        "profileId": "warrior:support:plain:standard",
+        "origin": "warrior",
+        "budget": 48,
+        "roadChoice": "hp",
+        "siphon": false,
+        "learned": [
+          "g18n1",
+          "g18n4",
+          "g18n5",
+          "g45hub",
+          "g45n1",
+          "g45n2",
+          "g45n4",
+          "link_assassin_0_2",
+          "link_ranger_2_2",
+          "link_templar_1_1",
+          "link_warrior_2_7",
+          "link_warrior_2_8",
+          "opening_warrior_1_1",
+          "opening_warrior_1_2",
+          "opening_warrior_1_3",
+          "origin_warrior",
+          "r1_22_1",
+          "r1_29_1",
+          "r1_29_4",
+          "r24_42_1",
+          "r28_50_1",
+          "v7g04_entry",
+          "v7g04n0",
+          "v7g04n2",
+          "v7g04n4",
+          "v7road_r4_1",
+          "v7road_r4_2",
+          "v7road_r6_1",
+          "v7road_r6_2",
+          "v7road_r6_3",
+          "v7road_r6_4",
+          "v7road_r6_5"
+        ]
+      },
+      "rect": {
+        "x": 0,
+        "y": 76,
+        "w": 1570,
+        "h": 1124
+      }
+    },
+    {
+      "name": "ProjectS_Contract_V8_Pair_v7g04-b",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 1.2810125200039795,
+        "minClickGap": 1.6925557199650623,
+        "minNodePairPaintGap": 7.358272662257692,
+        "nearest": {
+          "node": "key_02"
+        },
+        "labelLines": [],
+        "captions": 18,
+        "zoom": 0.20577159998054148,
+        "spent": 31,
+        "usable": true,
+        "connected": true
+      },
+      "cam": {
+        "x": -1635.706715,
+        "y": -107.75876500000015,
+        "z": 0.20577159998054148
+      },
+      "state": {
+        "version": "projects-large-tree-diff-v2",
+        "study": "contract-v8",
+        "profileId": "warrior:support:plain:standard",
+        "origin": "warrior",
+        "budget": 48,
+        "roadChoice": "hp",
+        "siphon": false,
+        "learned": [
+          "g18n1",
+          "g18n4",
+          "g18n5",
+          "g45hub",
+          "g45n1",
+          "g45n2",
+          "g45n4",
+          "link_assassin_0_2",
+          "link_ranger_2_2",
+          "link_templar_1_1",
+          "link_warrior_2_7",
+          "link_warrior_2_8",
+          "opening_warrior_1_1",
+          "opening_warrior_1_2",
+          "opening_warrior_1_3",
+          "origin_warrior",
+          "r1_22_1",
+          "r1_29_1",
+          "r1_29_4",
+          "r24_42_1",
+          "r28_50_1",
+          "v7g04_entry",
+          "v7g04n1",
+          "v7g04n3",
+          "v7g04n4",
+          "v7road_r4_1",
+          "v7road_r4_2",
+          "v7road_r6_1",
+          "v7road_r6_2",
+          "v7road_r6_3",
+          "v7road_r6_4",
+          "v7road_r6_5"
+        ]
+      },
+      "rect": {
+        "x": 0,
+        "y": 76,
+        "w": 1570,
+        "h": 1124
+      }
+    },
+    {
+      "name": "ProjectS_Contract_V8_Pair_tank-life-reinvest-43",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 1,
+        "minClickGap": 1.2466769937049365,
+        "minNodePairPaintGap": 4.59039421790134,
+        "nearest": {
+          "node": "key_05"
+        },
+        "labelLines": [],
+        "captions": 33,
+        "zoom": 0.1233384968524682,
+        "spent": 43,
+        "usable": true,
+        "connected": true
+      },
+      "cam": {
+        "x": -1301.6335750000003,
+        "y": -2369.68683,
+        "z": 0.1233384968524682
+      },
+      "state": {
+        "version": "projects-large-tree-diff-v2",
+        "study": "contract-v8",
+        "profileId": "tank:support:plain:standard",
+        "origin": "tank",
+        "budget": 48,
+        "roadChoice": "hp",
+        "siphon": false,
+        "learned": [
+          "g18n1",
+          "g18n3",
+          "g18n5",
+          "g18n6",
+          "g23n0",
+          "g23n1",
+          "g23n2",
+          "g28n2",
+          "g28n5",
+          "g45hub",
+          "g45n1",
+          "g45n2",
+          "g45n4",
+          "g6n0",
+          "g6n4",
+          "g6n5",
+          "g6n6",
+          "g6n7",
+          "g6n8",
+          "g6n9",
+          "link_assassin_0_2",
+          "link_assassin_0_4",
+          "link_assassin_1_3",
+          "link_ranger_2_2",
+          "link_templar_1_1",
+          "link_warrior_0_6",
+          "link_warrior_2_7",
+          "link_warrior_2_8",
+          "opening_templar_0_1",
+          "opening_templar_0_2",
+          "opening_templar_0_3",
+          "opening_templar_1_3",
+          "opening_templar_2_3",
+          "opening_warrior_1_3",
+          "origin_templar",
+          "r16_38_2",
+          "r1_22_1",
+          "r1_22_4",
+          "r1_29_1",
+          "r1_29_4",
+          "r24_42_1",
+          "r34_40_1",
+          "v7road_r4_1",
+          "v7road_r4_2"
+        ]
+      },
+      "rect": {
+        "x": 0,
+        "y": 76,
+        "w": 1570,
+        "h": 1124
+      }
+    },
+    {
+      "name": "ProjectS_Contract_V8_Pair_legacy-tank-life",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 1,
+        "minClickGap": 1.2466769937049365,
+        "minNodePairPaintGap": 4.59039421790134,
+        "nearest": {
+          "node": "key_05"
+        },
+        "labelLines": [],
+        "captions": 33,
+        "zoom": 0.1233384968524682,
+        "spent": 43,
+        "usable": true,
+        "connected": true
+      },
+      "cam": {
+        "x": -1301.6335750000003,
+        "y": -2369.68683,
+        "z": 0.1233384968524682
+      },
+      "state": {
+        "version": "projects-large-tree-diff-v2",
+        "study": "contract-v8",
+        "profileId": "tank:support:plain:standard",
+        "origin": "tank",
+        "budget": 48,
+        "roadChoice": "hp",
+        "siphon": false,
+        "learned": [
+          "g18n1",
+          "g18n3",
+          "g18n6",
+          "g28n2",
+          "g28n5",
+          "g31n2",
+          "g31n4",
+          "g31n5",
+          "g33n0",
+          "g40n0",
+          "g40n3",
+          "g40n4",
+          "g40n5",
+          "g46n0",
+          "g46n1",
+          "g46n2",
+          "g46n7",
+          "g6n0",
+          "g6n4",
+          "g6n6",
+          "g6n7",
+          "g6n8",
+          "g6n9",
+          "join_assassin_1",
+          "join_templar_0",
+          "join_warrior_0",
+          "link_assassin_0_2",
+          "link_assassin_0_4",
+          "link_assassin_1_3",
+          "link_ranger_1_1",
+          "link_warrior_0_6",
+          "link_warrior_2_10",
+          "link_warrior_2_7",
+          "opening_templar_0_1",
+          "opening_templar_0_2",
+          "opening_templar_0_3",
+          "origin_templar",
+          "r10_14_2",
+          "r16_38_2",
+          "r21_26_1",
+          "r25_44_1",
+          "r33_37_2",
+          "r34_40_1",
+          "r6_35_1"
+        ]
+      },
+      "rect": {
+        "x": 0,
+        "y": 76,
+        "w": 1570,
+        "h": 1124
+      }
+    },
+    {
+      "name": "ProjectS_Contract_V8_Pair_assassin-area-48",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 0.9999999999999994,
+        "minClickGap": 1.1928075289763287,
+        "minNodePairPaintGap": 3.8063218495053532,
+        "nearest": {
+          "node": "key_05"
+        },
+        "labelLines": [],
+        "captions": 10,
+        "zoom": 0.09640376448816458,
+        "spent": 43,
+        "usable": true,
+        "connected": true
+      },
+      "cam": {
+        "x": 4577.372985,
+        "y": 253.95530499999995,
+        "z": 0.09640376448816458
+      },
+      "state": {
+        "version": "projects-large-tree-diff-v2",
+        "study": "contract-v8",
+        "profileId": "assassin:mark:plain:standard",
+        "origin": "assassin",
+        "budget": 48,
+        "roadChoice": "hp",
+        "siphon": false,
+        "learned": [
+          "g12n3",
+          "g33n3",
+          "g41n0",
+          "g41n2",
+          "g41n3",
+          "g41n8",
+          "g41n9",
+          "g42n0",
+          "g42n4",
+          "g42n5",
+          "g4n0",
+          "g4n1",
+          "g4n2",
+          "g4n3",
+          "g4n6",
+          "g4n7",
+          "g51n6",
+          "g52n0",
+          "g52n4",
+          "j1",
+          "j36",
+          "join_mage_2",
+          "join_templar_2",
+          "link_assassin_1_2",
+          "link_assassin_1_4",
+          "link_assassin_2_8",
+          "link_warrior_2_1",
+          "opening_assassin_0_1",
+          "opening_assassin_0_2",
+          "opening_assassin_0_3",
+          "opening_ranger_1_3",
+          "origin_assassin",
+          "r12_19_2",
+          "r14_27_1",
+          "r15_43_2",
+          "r18_26_1",
+          "r18_26_2",
+          "r19_24_1",
+          "r25_44_2",
+          "r30_36_1",
+          "r35_38_1",
+          "r39_40_2",
+          "r9_20_2",
+          "v7road_east"
+        ]
+      },
+      "rect": {
+        "x": 0,
+        "y": 76,
+        "w": 1570,
+        "h": 1124
+      }
+    },
+    {
+      "name": "ProjectS_Contract_V8_Pair_assassin-crit-48",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 0.9999999999999994,
+        "minClickGap": 1.1928075289763287,
+        "minNodePairPaintGap": 3.8063218495053532,
+        "nearest": {
+          "node": "key_05"
+        },
+        "labelLines": [],
+        "captions": 10,
+        "zoom": 0.09640376448816458,
+        "spent": 46,
+        "usable": true,
+        "connected": true
+      },
+      "cam": {
+        "x": 4577.372985,
+        "y": 253.95530499999995,
+        "z": 0.09640376448816458
+      },
+      "state": {
+        "version": "projects-large-tree-diff-v2",
+        "study": "contract-v8",
+        "profileId": "assassin:mark:plain:standard",
+        "origin": "assassin",
+        "budget": 48,
+        "roadChoice": "hp",
+        "siphon": false,
+        "learned": [
+          "g10n0",
+          "g10n1",
+          "g10n6",
+          "g12n3",
+          "g17n0",
+          "g17n4",
+          "g33n3",
+          "g41n3",
+          "g41n4",
+          "g41n5",
+          "g4n0",
+          "g4n1",
+          "g4n2",
+          "g4n3",
+          "g4n6",
+          "g4n7",
+          "g51n6",
+          "g52n0",
+          "g52n4",
+          "j1",
+          "j36",
+          "join_mage_0",
+          "join_mage_1",
+          "link_assassin_1_2",
+          "link_assassin_1_4",
+          "link_assassin_1_5",
+          "link_assassin_2_1",
+          "link_assassin_2_8",
+          "link_warrior_1_7",
+          "link_warrior_2_1",
+          "opening_assassin_0_1",
+          "opening_assassin_0_2",
+          "opening_assassin_0_3",
+          "opening_ranger_1_3",
+          "origin_assassin",
+          "r10_32_1",
+          "r12_19_2",
+          "r14_27_1",
+          "r15_43_2",
+          "r18_26_1",
+          "r18_26_2",
+          "r19_24_1",
+          "r26_28_2",
+          "r35_38_1",
+          "r39_40_2",
+          "r9_20_2",
+          "v7road_east"
+        ]
+      },
+      "rect": {
+        "x": 0,
+        "y": 76,
+        "w": 1570,
+        "h": 1124
+      }
+    },
+    {
+      "name": "ProjectS_Contract_V8_Pair_assassin-area-64",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 1,
+        "minClickGap": 1.187613106767307,
+        "minNodePairPaintGap": 3.7307168115790357,
+        "nearest": {
+          "node": "key_05"
+        },
+        "labelLines": [],
+        "captions": 10,
+        "zoom": 0.0938065533836535,
+        "spent": 49,
+        "usable": true,
+        "connected": true
+      },
+      "cam": {
+        "x": 4577.372985,
+        "y": 389.5123450000001,
+        "z": 0.0938065533836535
+      },
+      "state": {
+        "version": "projects-large-tree-diff-v2",
+        "study": "contract-v8",
+        "profileId": "assassin:mark:plain:standard",
+        "origin": "assassin",
+        "budget": 64,
+        "roadChoice": "hp",
+        "siphon": false,
+        "learned": [
+          "g12n3",
+          "g33n3",
+          "g41n0",
+          "g41n2",
+          "g41n3",
+          "g41n6",
+          "g41n7",
+          "g41n8",
+          "g41n9",
+          "g42n0",
+          "g42n1",
+          "g42n2",
+          "g42n4",
+          "g42n5",
+          "g42n6",
+          "g42n7",
+          "g4n0",
+          "g4n1",
+          "g4n2",
+          "g4n3",
+          "g4n6",
+          "g4n7",
+          "g51n6",
+          "g52n0",
+          "g52n4",
+          "j1",
+          "j36",
+          "join_mage_2",
+          "join_templar_2",
+          "link_assassin_1_2",
+          "link_assassin_1_4",
+          "link_assassin_2_8",
+          "link_warrior_2_1",
+          "opening_assassin_0_1",
+          "opening_assassin_0_2",
+          "opening_assassin_0_3",
+          "opening_ranger_1_3",
+          "origin_assassin",
+          "r12_19_2",
+          "r14_27_1",
+          "r15_43_2",
+          "r18_26_1",
+          "r18_26_2",
+          "r19_24_1",
+          "r25_44_2",
+          "r30_36_1",
+          "r35_38_1",
+          "r39_40_2",
+          "r9_20_2",
+          "v7road_east"
+        ]
+      },
+      "rect": {
+        "x": 0,
+        "y": 76,
+        "w": 1570,
+        "h": 1124
+      }
+    },
+    {
+      "name": "ProjectS_Contract_V8_Pair_assassin-crit-64",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 1,
+        "minClickGap": 1.187613106767307,
+        "minNodePairPaintGap": 3.7307168115790357,
+        "nearest": {
+          "node": "key_05"
+        },
+        "labelLines": [],
+        "captions": 10,
+        "zoom": 0.0938065533836535,
+        "spent": 51,
+        "usable": true,
+        "connected": true
+      },
+      "cam": {
+        "x": 4577.372985,
+        "y": 389.5123450000001,
+        "z": 0.0938065533836535
+      },
+      "state": {
+        "version": "projects-large-tree-diff-v2",
+        "study": "contract-v8",
+        "profileId": "assassin:mark:plain:standard",
+        "origin": "assassin",
+        "budget": 64,
+        "roadChoice": "hp",
+        "siphon": false,
+        "learned": [
+          "g10n0",
+          "g10n1",
+          "g10n6",
+          "g12n3",
+          "g17n0",
+          "g17n1",
+          "g17n4",
+          "g33n3",
+          "g41n0",
+          "g41n3",
+          "g41n4",
+          "g41n5",
+          "g41n6",
+          "g41n7",
+          "g41n9",
+          "g4n0",
+          "g4n1",
+          "g4n2",
+          "g4n3",
+          "g4n6",
+          "g4n7",
+          "g51n6",
+          "g52n0",
+          "g52n4",
+          "j1",
+          "j36",
+          "join_mage_0",
+          "join_mage_1",
+          "link_assassin_1_2",
+          "link_assassin_1_4",
+          "link_assassin_1_5",
+          "link_assassin_2_1",
+          "link_assassin_2_8",
+          "link_warrior_1_7",
+          "link_warrior_2_1",
+          "opening_assassin_0_1",
+          "opening_assassin_0_2",
+          "opening_assassin_0_3",
+          "opening_ranger_1_3",
+          "origin_assassin",
+          "r10_32_1",
+          "r12_19_2",
+          "r14_27_1",
+          "r15_43_2",
+          "r18_26_1",
+          "r18_26_2",
+          "r19_24_1",
+          "r26_28_2",
+          "r35_38_1",
+          "r39_40_2",
+          "r9_20_2",
+          "v7road_east"
+        ]
+      },
+      "rect": {
+        "x": 0,
+        "y": 76,
+        "w": 1570,
+        "h": 1124
+      }
+    },
+    {
+      "name": "ProjectS_Contract_V8_Pair_assassin-area-80",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 1,
+        "minClickGap": 1.187613106767307,
+        "minNodePairPaintGap": 3.7307168115790357,
+        "nearest": {
+          "node": "key_05"
+        },
+        "labelLines": [],
+        "captions": 10,
+        "zoom": 0.0938065533836535,
+        "spent": 55,
+        "usable": true,
+        "connected": true
+      },
+      "cam": {
+        "x": 4577.372985,
+        "y": 389.5123450000001,
+        "z": 0.0938065533836535
+      },
+      "state": {
+        "version": "projects-large-tree-diff-v2",
+        "study": "contract-v8",
+        "profileId": "assassin:mark:plain:standard",
+        "origin": "assassin",
+        "budget": 80,
+        "roadChoice": "hp",
+        "siphon": false,
+        "learned": [
+          "g12n3",
+          "g33n3",
+          "g41n0",
+          "g41n2",
+          "g41n3",
+          "g41n6",
+          "g41n7",
+          "g41n8",
+          "g41n9",
+          "g42n0",
+          "g42n1",
+          "g42n2",
+          "g42n4",
+          "g42n5",
+          "g42n6",
+          "g42n7",
+          "g4n0",
+          "g4n1",
+          "g4n2",
+          "g4n3",
+          "g4n6",
+          "g4n7",
+          "g51n6",
+          "g52n0",
+          "g52n4",
+          "j1",
+          "j36",
+          "join_mage_2",
+          "join_templar_2",
+          "link_assassin_1_2",
+          "link_assassin_1_4",
+          "link_assassin_2_8",
+          "link_warrior_2_1",
+          "opening_assassin_0_1",
+          "opening_assassin_0_2",
+          "opening_assassin_0_3",
+          "opening_ranger_1_3",
+          "origin_assassin",
+          "r12_19_2",
+          "r14_27_1",
+          "r15_43_2",
+          "r18_26_1",
+          "r18_26_2",
+          "r19_24_1",
+          "r25_44_2",
+          "r30_36_1",
+          "r35_38_1",
+          "r39_40_2",
+          "r9_20_2",
+          "v7g10_entry",
+          "v7g10n0",
+          "v7g10n2",
+          "v7g10n4",
+          "v7road_east",
+          "v7road_r9_4",
+          "v7road_r9_5"
+        ]
+      },
+      "rect": {
+        "x": 0,
+        "y": 76,
+        "w": 1570,
+        "h": 1124
+      }
+    },
+    {
+      "name": "ProjectS_Contract_V8_Pair_assassin-crit-80",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 1,
+        "minClickGap": 1.187613106767307,
+        "minNodePairPaintGap": 3.7307168115790357,
+        "nearest": {
+          "node": "key_05"
+        },
+        "labelLines": [],
+        "captions": 10,
+        "zoom": 0.0938065533836535,
+        "spent": 60,
+        "usable": true,
+        "connected": true
+      },
+      "cam": {
+        "x": 4577.372985,
+        "y": 389.5123450000001,
+        "z": 0.0938065533836535
+      },
+      "state": {
+        "version": "projects-large-tree-diff-v2",
+        "study": "contract-v8",
+        "profileId": "assassin:mark:plain:standard",
+        "origin": "assassin",
+        "budget": 80,
+        "roadChoice": "hp",
+        "siphon": false,
+        "learned": [
+          "g10n0",
+          "g10n1",
+          "g10n6",
+          "g12n3",
+          "g17n0",
+          "g17n1",
+          "g17n4",
+          "g33n3",
+          "g41n0",
+          "g41n3",
+          "g41n4",
+          "g41n5",
+          "g41n6",
+          "g41n7",
+          "g41n9",
+          "g4n0",
+          "g4n1",
+          "g4n2",
+          "g4n3",
+          "g4n6",
+          "g4n7",
+          "g51n6",
+          "g52n0",
+          "g52n4",
+          "j1",
+          "j36",
+          "join_mage_0",
+          "join_mage_1",
+          "link_assassin_1_2",
+          "link_assassin_1_4",
+          "link_assassin_1_5",
+          "link_assassin_2_1",
+          "link_assassin_2_8",
+          "link_warrior_1_7",
+          "link_warrior_2_1",
+          "opening_assassin_0_1",
+          "opening_assassin_0_2",
+          "opening_assassin_0_3",
+          "opening_ranger_1_3",
+          "origin_assassin",
+          "r10_32_1",
+          "r10_36_2",
+          "r12_19_2",
+          "r14_27_1",
+          "r14_42_1",
+          "r15_43_2",
+          "r18_26_1",
+          "r18_26_2",
+          "r19_24_1",
+          "r24_42_2",
+          "r26_28_2",
+          "r27_52_1",
+          "r35_38_1",
+          "r39_40_2",
+          "r9_20_2",
+          "r9_20_3",
+          "v7g13_entry",
+          "v7g13n0",
+          "v7g13n2",
+          "v7g13n4",
+          "v7road_east"
+        ]
+      },
+      "rect": {
+        "x": 0,
+        "y": 76,
+        "w": 1570,
+        "h": 1124
+      }
+    },
+    {
+      "name": "ProjectS_Contract_V8_Full_Return",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 0.9999999999999997,
+        "minClickGap": 1.1374443693374836,
+        "minNodePairPaintGap": 3.0005086876592766,
+        "nearest": {
+          "node": "key_05"
+        },
+        "labelLines": [],
+        "captions": 12,
+        "zoom": 0.06872218466874189,
+        "spent": 0,
+        "usable": true,
+        "connected": true
+      },
+      "cam": {
+        "x": 1359.9849900000004,
+        "y": -1461.17958,
+        "z": 0.06872218466874189
+      },
+      "state": {
+        "version": "projects-large-tree-diff-v2",
+        "study": "contract-v8",
+        "profileId": "tank:support:plain:standard",
+        "origin": "tank",
+        "budget": 80,
+        "roadChoice": "hp",
+        "siphon": false,
+        "learned": [
+          "origin_templar"
+        ]
+      },
+      "rect": {
+        "x": 0,
+        "y": 76,
+        "w": 1570,
+        "h": 1124
+      }
+    },
+    {
+      "name": "ProjectS_Contract_V8_Mobile_Overview",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 1,
+        "minClickGap": 1.0492125407522326,
+        "minNodePairPaintGap": 1.6117943458223412,
+        "nearest": {
+          "node": "key_05"
+        },
+        "labelLines": [],
+        "captions": 6,
+        "zoom": 0.024606270376116214,
+        "spent": 0,
+        "usable": true,
+        "connected": true
+      },
+      "cam": {
+        "x": 1359.9849900000004,
+        "y": -1461.17958,
+        "z": 0.024606270376116214
+      },
+      "state": {
+        "version": "projects-large-tree-diff-v2",
+        "study": "contract-v8",
+        "profileId": "tank:support:plain:standard",
+        "origin": "tank",
+        "budget": 80,
+        "roadChoice": "hp",
+        "siphon": false,
+        "learned": [
+          "origin_templar"
+        ]
+      },
+      "rect": {
+        "x": 0,
+        "y": 62,
+        "w": 430,
+        "h": 577.828125
+      }
+    },
+    {
+      "name": "ProjectS_Contract_V8_Mobile_Shield",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 1.0000000000000002,
+        "minClickGap": 1.1800669846636935,
+        "minNodePairPaintGap": 3.6208826808744914,
+        "nearest": {
+          "node": "key_05"
+        },
+        "labelLines": [],
+        "captions": 2,
+        "zoom": 0.09003349233184665,
+        "spent": 21,
+        "usable": true,
+        "connected": true
+      },
+      "cam": {
+        "x": 284.36848499999996,
+        "y": -3606.747845,
+        "z": 0.09003349233184665
+      },
+      "state": {
+        "version": "projects-large-tree-diff-v2",
+        "study": "contract-v8",
+        "profileId": "tank:support:plain:standard",
+        "origin": "tank",
+        "budget": 48,
+        "roadChoice": "hp",
+        "siphon": false,
+        "learned": [
+          "g31n4",
+          "g33n0",
+          "g46n0",
+          "g46n1",
+          "g46n2",
+          "g46n7",
+          "key_11",
+          "link_assassin_0_2",
+          "link_assassin_1_3",
+          "link_ranger_1_1",
+          "link_warrior_2_10",
+          "link_warrior_2_7",
+          "opening_templar_0_1",
+          "opening_templar_0_2",
+          "opening_templar_0_3",
+          "origin_templar",
+          "r21_26_1",
+          "r25_44_1",
+          "r33_37_2",
+          "r6_35_1"
+        ]
+      },
+      "rect": {
+        "x": 0,
+        "y": 62,
+        "w": 430,
+        "h": 577.828125
+      }
+    },
+    {
+      "name": "ProjectS_Contract_V8_Mobile_Center",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 1.0000000000000004,
+        "minClickGap": 1.1879950546229818,
+        "minNodePairPaintGap": 3.7362760789916813,
+        "nearest": {
+          "node": "key_05"
+        },
+        "labelLines": [],
+        "captions": 3,
+        "zoom": 0.0939975273114907,
+        "spent": 21,
+        "usable": true,
+        "connected": true
+      },
+      "cam": {
+        "x": 1230,
+        "y": -1098.240365,
+        "z": 0.0939975273114907
+      },
+      "state": {
+        "version": "projects-large-tree-diff-v2",
+        "study": "contract-v8",
+        "profileId": "tank:support:plain:standard",
+        "origin": "tank",
+        "budget": 48,
+        "roadChoice": "hp",
+        "siphon": false,
+        "learned": [
+          "g31n4",
+          "g33n0",
+          "g46n0",
+          "g46n1",
+          "g46n2",
+          "g46n7",
+          "key_11",
+          "link_assassin_0_2",
+          "link_assassin_1_3",
+          "link_ranger_1_1",
+          "link_warrior_2_10",
+          "link_warrior_2_7",
+          "opening_templar_0_1",
+          "opening_templar_0_2",
+          "opening_templar_0_3",
+          "origin_templar",
+          "r21_26_1",
+          "r25_44_1",
+          "r33_37_2",
+          "r6_35_1"
+        ]
+      },
+      "rect": {
+        "x": 0,
+        "y": 62,
+        "w": 430,
+        "h": 577.828125
+      }
+    }
+  ],
+  "focusAudits": [
+    {
+      "size": "desktop",
+      "group": "g49",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 6.561676869528592,
+      "minClickGap": 9.411676869528593,
+      "minNodePairPaintGap": 25.143621719031138,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 3,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "g45",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 6.561676869528592,
+      "minClickGap": 9.411676869528593,
+      "minNodePairPaintGap": 25.143621719031138,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 2,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "g38",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 6.561676869528592,
+      "minClickGap": 9.411676869528593,
+      "minNodePairPaintGap": 25.143621719031138,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 2,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "g23",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 6.561676869528592,
+      "minClickGap": 9.411676869528593,
+      "minNodePairPaintGap": 25.143621719031138,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "g13",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 6.541090027832832,
+      "minClickGap": 9.376556696098481,
+      "minNodePairPaintGap": 25.07618799955859,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 2,
+      "zoom": 0.6483851853628501,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "g51",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 4.0658814147020585,
+      "minClickGap": 5.153968449998052,
+      "minNodePairPaintGap": 16.96845949411109,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 3,
+      "zoom": 0.4542318928106659,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "g35",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 6.561676869528592,
+      "minClickGap": 9.411676869528593,
+      "minNodePairPaintGap": 25.143621719031138,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 2,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "g30",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 6.561676869528592,
+      "minClickGap": 9.411676869528593,
+      "minNodePairPaintGap": 25.143621719031138,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 2,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "g14",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 6.561676869528592,
+      "minClickGap": 9.411676869528593,
+      "minNodePairPaintGap": 25.143621719031138,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 2,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "g34",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 6.561676869528592,
+      "minClickGap": 9.411676869528593,
+      "minNodePairPaintGap": 25.143621719031138,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 2,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "g21",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 6.561676869528592,
+      "minClickGap": 9.411676869528593,
+      "minNodePairPaintGap": 25.143621719031138,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 2,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "g5",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 6.561676869528592,
+      "minClickGap": 9.411676869528593,
+      "minNodePairPaintGap": 25.143621719031138,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 3,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "g50",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 6.561676869528592,
+      "minClickGap": 9.411676869528593,
+      "minNodePairPaintGap": 25.143621719031138,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 3,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "g26",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 6.561676869528592,
+      "minClickGap": 9.411676869528593,
+      "minNodePairPaintGap": 25.143621719031138,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 2,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "g37",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 6.561676869528592,
+      "minClickGap": 9.411676869528593,
+      "minNodePairPaintGap": 25.143621719031138,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 3,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "g25",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 6.561676869528592,
+      "minClickGap": 9.411676869528593,
+      "minNodePairPaintGap": 25.143621719031138,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "g48",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 6.190127931679032,
+      "minClickGap": 8.777832041463684,
+      "minNodePairPaintGap": 23.926585749379527,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.6208560121982947,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "g6",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 6.561676869528592,
+      "minClickGap": 9.411676869528593,
+      "minNodePairPaintGap": 25.143621719031138,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "g18",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 6.561676869528592,
+      "minClickGap": 9.411676869528593,
+      "minNodePairPaintGap": 25.143621719031138,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 2,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "g31",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 6.561676869528592,
+      "minClickGap": 9.411676869528593,
+      "minNodePairPaintGap": 25.143621719031138,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 2,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "g46",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 6.561676869528592,
+      "minClickGap": 9.411676869528593,
+      "minNodePairPaintGap": 25.143621719031138,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 2,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "g33",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 6.561676869528592,
+      "minClickGap": 9.411676869528593,
+      "minNodePairPaintGap": 25.143621719031138,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 4,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "g40",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 6.561676869528592,
+      "minClickGap": 9.411676869528593,
+      "minNodePairPaintGap": 25.143621719031138,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "g20",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 6.561676869528592,
+      "minClickGap": 9.411676869528593,
+      "minNodePairPaintGap": 25.143621719031138,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "g12",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 6.561676869528592,
+      "minClickGap": 9.411676869528593,
+      "minNodePairPaintGap": 25.143621719031138,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 3,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "g19",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 6.561676869528592,
+      "minClickGap": 9.411676869528593,
+      "minNodePairPaintGap": 25.143621719031138,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 2,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "g28",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 6.561676869528592,
+      "minClickGap": 9.411676869528593,
+      "minNodePairPaintGap": 25.143621719031138,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "g11",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 6.561676869528592,
+      "minClickGap": 9.411676869528593,
+      "minNodePairPaintGap": 25.143621719031138,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "g16",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 6.561676869528592,
+      "minClickGap": 9.411676869528593,
+      "minNodePairPaintGap": 25.143621719031138,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 2,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "g44",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 6.561676869528592,
+      "minClickGap": 9.411676869528593,
+      "minNodePairPaintGap": 25.143621719031138,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 2,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "g2",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 6.561676869528592,
+      "minClickGap": 9.411676869528593,
+      "minNodePairPaintGap": 25.143621719031138,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 2,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "g24",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 6.561676869528592,
+      "minClickGap": 9.411676869528593,
+      "minNodePairPaintGap": 25.143621719031138,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "g27",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 5.058660296104733,
+      "minClickGap": 6.847602034395324,
+      "minNodePairPaintGap": 20.22037999634858,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 2,
+      "zoom": 0.5321046375878434,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "g3",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 6.561676869528592,
+      "minClickGap": 9.411676869528593,
+      "minNodePairPaintGap": 25.143621719031138,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "g47",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 6.561676869528592,
+      "minClickGap": 9.411676869528593,
+      "minNodePairPaintGap": 25.143621719031138,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "g8",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 6.561676869528592,
+      "minClickGap": 9.411676869528593,
+      "minNodePairPaintGap": 25.143621719031138,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "g9",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 6.561676869528592,
+      "minClickGap": 9.411676869528593,
+      "minNodePairPaintGap": 25.143621719031138,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 2,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "g43",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 6.561676869528592,
+      "minClickGap": 9.411676869528593,
+      "minNodePairPaintGap": 25.143621719031138,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "g4",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 6.561676869528592,
+      "minClickGap": 9.411676869528593,
+      "minNodePairPaintGap": 25.143621719031138,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "g52",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 6.561676869528592,
+      "minClickGap": 9.411676869528593,
+      "minNodePairPaintGap": 25.143621719031138,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "g39",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 6.561676869528592,
+      "minClickGap": 9.411676869528593,
+      "minNodePairPaintGap": 25.143621719031138,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "g32",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 6.561676869528592,
+      "minClickGap": 9.411676869528593,
+      "minNodePairPaintGap": 25.143621719031138,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "g41",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 6.561676869528592,
+      "minClickGap": 9.411676869528593,
+      "minNodePairPaintGap": 25.143621719031138,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "g7",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 6.561676869528592,
+      "minClickGap": 9.411676869528593,
+      "minNodePairPaintGap": 25.143621719031138,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "g42",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 6.561676869528592,
+      "minClickGap": 9.411676869528593,
+      "minNodePairPaintGap": 25.143621719031138,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "g17",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 6.561676869528592,
+      "minClickGap": 9.411676869528593,
+      "minNodePairPaintGap": 25.143621719031138,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 2,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "g10",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 6.561676869528592,
+      "minClickGap": 9.411676869528593,
+      "minNodePairPaintGap": 25.143621719031138,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 2,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "v7g01",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 6.561676869528592,
+      "minClickGap": 9.411676869528593,
+      "minNodePairPaintGap": 25.143621719031138,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "v7g02",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 6.561676869528592,
+      "minClickGap": 9.411676869528593,
+      "minNodePairPaintGap": 25.143621719031138,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "v7g03",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 6.561676869528592,
+      "minClickGap": 9.411676869528593,
+      "minNodePairPaintGap": 25.143621719031138,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 3,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "v7g04",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 6.561676869528592,
+      "minClickGap": 9.411676869528593,
+      "minNodePairPaintGap": 25.143621719031138,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "v7g05",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 6.561676869528592,
+      "minClickGap": 9.411676869528593,
+      "minNodePairPaintGap": 25.143621719031138,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "v7g06",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 6.561676869528592,
+      "minClickGap": 9.411676869528593,
+      "minNodePairPaintGap": 25.143621719031138,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 2,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "v7g07",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 6.561676869528592,
+      "minClickGap": 9.411676869528593,
+      "minNodePairPaintGap": 25.143621719031138,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "v7g08",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 6.561676869528592,
+      "minClickGap": 9.411676869528593,
+      "minNodePairPaintGap": 25.143621719031138,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "v7g09",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 6.561676869528592,
+      "minClickGap": 9.411676869528593,
+      "minNodePairPaintGap": 25.143621719031138,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 2,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "v7g10",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 6.561676869528592,
+      "minClickGap": 9.411676869528593,
+      "minNodePairPaintGap": 25.143621719031138,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "v7g11",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 6.561676869528592,
+      "minClickGap": 9.411676869528593,
+      "minNodePairPaintGap": 25.143621719031138,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 2,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "v7g12",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 6.561676869528592,
+      "minClickGap": 9.411676869528593,
+      "minNodePairPaintGap": 25.143621719031138,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "v7g13",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 6.561676869528592,
+      "minClickGap": 9.411676869528593,
+      "minNodePairPaintGap": 25.143621719031138,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "v7g14",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 6.561676869528592,
+      "minClickGap": 9.411676869528593,
+      "minNodePairPaintGap": 25.143621719031138,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 2,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "desktop",
+      "group": "v7g15",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 6.561676869528592,
+      "minClickGap": 9.411676869528593,
+      "minNodePairPaintGap": 25.143621719031138,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 4,
+      "zoom": 0.65,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "g49",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 2.094140268980514,
+      "minClickGap": 2.6725005712547425,
+      "minNodePairPaintGap": 10.34091391028205,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 2,
+      "zoom": 0.28918015113711415,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "g45",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 2.5482539243115157,
+      "minClickGap": 3.2130634620145955,
+      "minNodePairPaintGap": 11.997358634484263,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.33519046229692023,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "g38",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 2.9367549275393903,
+      "minClickGap": 3.571090771616658,
+      "minNodePairPaintGap": 13.269922345500719,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.3656641559227325,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "g23",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 1.8930264031706963,
+      "minClickGap": 2.4301272202390445,
+      "minNodePairPaintGap": 9.60320632070709,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.26855040853417395,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "g13",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 1.4430458036462972,
+      "minClickGap": 1.8878309177955477,
+      "minNodePairPaintGap": 7.952628415031732,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.22239255707462507,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "g51",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 1.0721485770079382,
+      "minClickGap": 1.4408423258315426,
+      "minNodePairPaintGap": 6.592136944482569,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.18434687441180223,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "g35",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 2.0621136383825722,
+      "minClickGap": 2.6339035220234104,
+      "minNodePairPaintGap": 10.223436737012667,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 2,
+      "zoom": 0.2858949418204191,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "g30",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 2.185405430969936,
+      "minClickGap": 2.7824892239679513,
+      "minNodePairPaintGap": 10.675684476161653,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.2985418964990075,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "g14",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 0.999999999999999,
+      "minClickGap": 1.3351831470509534,
+      "minNodePairPaintGap": 5.99297713588213,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 3,
+      "zoom": 0.1675915735254772,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "g34",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 1.3977158016391225,
+      "minClickGap": 1.8332012459736315,
+      "minNodePairPaintGap": 7.786353024811927,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 3,
+      "zoom": 0.2177427221672543,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "g21",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 1.9555136252887304,
+      "minClickGap": 2.5054339991099357,
+      "minNodePairPaintGap": 9.832416265144843,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.2749601869106028,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "g5",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 2.808356602615889,
+      "minClickGap": 3.452763903866438,
+      "minNodePairPaintGap": 12.849344155237706,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.3555926987494516,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "g50",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 2.811912658933552,
+      "minClickGap": 3.4560410261019743,
+      "minNodePairPaintGap": 12.86099228017584,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 2,
+      "zoom": 0.355871632831578,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "g26",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 4.88304769532246,
+      "minClickGap": 6.548015284415323,
+      "minNodePairPaintGap": 19.645147960662786,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.5183297321214292,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "g37",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 2.015489996384033,
+      "minClickGap": 2.57771481369025,
+      "minNodePairPaintGap": 10.052416134243916,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 2,
+      "zoom": 0.2811124086531085,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "g25",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 2.0528357567961435,
+      "minClickGap": 2.6227222380210633,
+      "minNodePairPaintGap": 10.189404455678279,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.28494324061245974,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "g48",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 1.8257188077452589,
+      "minClickGap": 2.3490111450923448,
+      "minNodePairPaintGap": 9.356314721356384,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.2616461686735431,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "g6",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 1.5277958853765519,
+      "minClickGap": 1.989967889928741,
+      "minNodePairPaintGap": 8.263500956105705,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.23108600227609444,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "g18",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 1.955678751667628,
+      "minClickGap": 2.5056330019665185,
+      "minNodePairPaintGap": 9.833021966708287,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.2749771251494453,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "g31",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 1.7581644959687637,
+      "minClickGap": 2.2675977385383104,
+      "minNodePairPaintGap": 9.108518139527668,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 2,
+      "zoom": 0.25471662128477324,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "g46",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 1.0306561080320664,
+      "minClickGap": 1.3908374755587776,
+      "minNodePairPaintGap": 6.4399380438724645,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 2,
+      "zoom": 0.18009068376335563,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "g33",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 1.8986687579756034,
+      "minClickGap": 2.4369271315041283,
+      "minNodePairPaintGap": 9.623903093383072,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.26912918676426245,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "g40",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 1.9078914630182875,
+      "minClickGap": 2.4480419192271126,
+      "minNodePairPaintGap": 9.65773298113847,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.27007522810441237,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "g20",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 1.2933019542675708,
+      "minClickGap": 1.7073663912858077,
+      "minNodePairPaintGap": 7.4033516471965335,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.20703221850911854,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "g12",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 2.5314775925752664,
+      "minClickGap": 3.1976030517026097,
+      "minNodePairPaintGap": 11.942406521634771,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 2,
+      "zoom": 0.33387454087265694,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "g19",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 2.138415307289104,
+      "minClickGap": 2.725858848457515,
+      "minNodePairPaintGap": 10.50331957862048,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.2937217705842053,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "g28",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 1.9567927855953013,
+      "minClickGap": 2.5069755853588083,
+      "minNodePairPaintGap": 9.837108364631083,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.27509139988175346,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "g11",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 1.905885301420175,
+      "minClickGap": 2.445624183844941,
+      "minNodePairPaintGap": 9.650374161641444,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.269869441212383,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "g16",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 1.9327147087709862,
+      "minClickGap": 2.4779577742674457,
+      "minNodePairPaintGap": 9.748787353326636,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 2,
+      "zoom": 0.2726215327482299,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "g44",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 1.9959911390959992,
+      "minClickGap": 2.554215671237552,
+      "minNodePairPaintGap": 9.980892199524144,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.2791122660707763,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "g2",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 1.5509566052899322,
+      "minClickGap": 2.0178801438886462,
+      "minNodePairPaintGap": 8.34845700223073,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 2,
+      "zoom": 0.23346176929935714,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "g24",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 1.922978537959906,
+      "minClickGap": 2.466224180782777,
+      "minNodePairPaintGap": 9.713074017143626,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.2716228214114354,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "g27",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 1.461093522680256,
+      "minClickGap": 1.9095812139416464,
+      "minNodePairPaintGap": 8.018829416401065,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.22424384563069522,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "g3",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 2.4619402544296745,
+      "minClickGap": 3.11575650797438,
+      "minNodePairPaintGap": 11.690044362420986,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.3269081267723528,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "g47",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 1.958173271084724,
+      "minClickGap": 2.5086392841433374,
+      "minNodePairPaintGap": 9.842172135936666,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.2752330065293068,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "g8",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 3.1021166943632505,
+      "minClickGap": 3.723481699812702,
+      "minNodePairPaintGap": 13.811577017949988,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.3786349945505482,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "g9",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 2.063365719750491,
+      "minClickGap": 2.635412473958002,
+      "minNodePairPaintGap": 10.228029507999203,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 2,
+      "zoom": 0.28602337710375547,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "g43",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 2.8318993059682156,
+      "minClickGap": 3.474459937266508,
+      "minNodePairPaintGap": 12.926460017736066,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.3574393687017074,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "g4",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 2.04474250909039,
+      "minClickGap": 2.6129686212868575,
+      "minNodePairPaintGap": 10.159717540592634,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.2841130560982335,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "g52",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 2.1520633159152447,
+      "minClickGap": 2.742306812261945,
+      "minNodePairPaintGap": 10.55338196246233,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.29512174817335013,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "g39",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 2.0602618827955066,
+      "minClickGap": 2.6316718697945007,
+      "minNodePairPaintGap": 10.216644295600856,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.28570499349949696,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "g32",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 2.402118836831463,
+      "minClickGap": 3.0436624363527893,
+      "minNodePairPaintGap": 11.47061287964563,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.3207717997606633,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "g41",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 1.467888751646393,
+      "minClickGap": 1.9177705170949113,
+      "minNodePairPaintGap": 8.043755057211726,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.224940882724259,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "g7",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 1.7795831528277692,
+      "minClickGap": 2.2934105367572144,
+      "minNodePairPaintGap": 9.18708410841184,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.2569136919647224,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "g42",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 1.8471868721426628,
+      "minClickGap": 2.374883487045834,
+      "minNodePairPaintGap": 9.435061922478887,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.2638483074515855,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "g17",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 2.2331944668528148,
+      "minClickGap": 2.8400824123943313,
+      "minNodePairPaintGap": 10.850979870774601,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 2,
+      "zoom": 0.30344397277075846,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "g10",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 2.383173678748799,
+      "minClickGap": 3.020830587183525,
+      "minNodePairPaintGap": 11.401119973987422,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.3188284542173631,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "v7g01",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 2.5971926391212796,
+      "minClickGap": 3.258163464982786,
+      "minNodePairPaintGap": 12.15766100697044,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.33902917413849293,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "v7g02",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 2.7392171280605964,
+      "minClickGap": 3.3890476718447347,
+      "minNodePairPaintGap": 12.622872703203363,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.3501694562158618,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "v7g03",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 2.7927410338140937,
+      "minClickGap": 3.4383732072155637,
+      "minNodePairPaintGap": 12.798194207054962,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.35436782659853033,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "v7g04",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 4.320237239665829,
+      "minClickGap": 5.587887397726947,
+      "minNodePairPaintGap": 17.801620772576822,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.47418335089567976,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "v7g05",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 4.388453703903187,
+      "minClickGap": 5.704261443353291,
+      "minNodePairPaintGap": 18.02506883618812,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.4795341932722338,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "v7g06",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 3.6636862890152613,
+      "minClickGap": 4.4678426821114225,
+      "minNodePairPaintGap": 15.651039674228393,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.42268404367735124,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "v7g07",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 2.7392171280605946,
+      "minClickGap": 3.389047671844733,
+      "minNodePairPaintGap": 12.622872703203374,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.350169456215862,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "v7g08",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 3.0739954028944516,
+      "minClickGap": 3.6975662189170095,
+      "minNodePairPaintGap": 13.719463652134252,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.3764291839774422,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "v7g09",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 2.77455305132774,
+      "minClickGap": 3.421611874857152,
+      "minNodePairPaintGap": 12.738618127980702,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.35294117647058826,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "v7g10",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 2.8191030815389104,
+      "minClickGap": 3.4626674379745537,
+      "minNodePairPaintGap": 12.884545040138931,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.3564356435643564,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "v7g11",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 3.334021287868494,
+      "minClickGap": 3.9371958910430966,
+      "minNodePairPaintGap": 14.571197630666141,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 2,
+      "zoom": 0.3968253968253969,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "v7g12",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 2.4367514525714378,
+      "minClickGap": 3.0854001012200865,
+      "minNodePairPaintGap": 11.597649090576864,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.32432432432432434,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "v7g13",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 3.296588913153736,
+      "minClickGap": 3.902699680480469,
+      "minNodePairPaintGap": 14.448585124434778,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.3938892326732673,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "v7g14",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 4.435461895777582,
+      "minClickGap": 5.784455184368186,
+      "minNodePairPaintGap": 18.179047638309157,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.48322147651006714,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "size": "mobile",
+      "group": "v7g15",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 2.709342137540385,
+      "minClickGap": 3.3615160505838637,
+      "minNodePairPaintGap": 12.525014966705623,
+      "nearest": {
+        "node": "key_02"
+      },
+      "labelLines": [],
+      "captions": 1,
+      "zoom": 0.34782608695652184,
+      "spent": 0,
+      "usable": true,
+      "connected": true
+    }
+  ],
+  "inputCases": [
+    {
+      "profileId": "warrior:basic:plain:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 662
+    },
+    {
+      "profileId": "warrior:basic:plain:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 669
+    },
+    {
+      "profileId": "warrior:basic:ice:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 673
+    },
+    {
+      "profileId": "warrior:basic:ice:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 680
+    },
+    {
+      "profileId": "warrior:basic:fire:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 670
+    },
+    {
+      "profileId": "warrior:basic:fire:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 677
+    },
+    {
+      "profileId": "warrior:basic:lightning:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 668
+    },
+    {
+      "profileId": "warrior:basic:lightning:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 675
+    },
+    {
+      "profileId": "warrior:support:plain:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 685
+    },
+    {
+      "profileId": "warrior:support:plain:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 692
+    },
+    {
+      "profileId": "warrior:support:ice:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 693
+    },
+    {
+      "profileId": "warrior:support:ice:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 700
+    },
+    {
+      "profileId": "warrior:support:fire:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 693
+    },
+    {
+      "profileId": "warrior:support:fire:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 700
+    },
+    {
+      "profileId": "warrior:support:lightning:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 691
+    },
+    {
+      "profileId": "warrior:support:lightning:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 698
+    },
+    {
+      "profileId": "warrior:mark:plain:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 662
+    },
+    {
+      "profileId": "warrior:mark:plain:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 669
+    },
+    {
+      "profileId": "warrior:mark:ice:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 673
+    },
+    {
+      "profileId": "warrior:mark:ice:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 680
+    },
+    {
+      "profileId": "warrior:mark:fire:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 670
+    },
+    {
+      "profileId": "warrior:mark:fire:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 677
+    },
+    {
+      "profileId": "warrior:mark:lightning:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 668
+    },
+    {
+      "profileId": "warrior:mark:lightning:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 675
+    },
+    {
+      "profileId": "tank:basic:plain:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 700
+    },
+    {
+      "profileId": "tank:basic:plain:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 707
+    },
+    {
+      "profileId": "tank:basic:ice:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 708
+    },
+    {
+      "profileId": "tank:basic:ice:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 715
+    },
+    {
+      "profileId": "tank:basic:fire:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 708
+    },
+    {
+      "profileId": "tank:basic:fire:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 715
+    },
+    {
+      "profileId": "tank:basic:lightning:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 706
+    },
+    {
+      "profileId": "tank:basic:lightning:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 713
+    },
+    {
+      "profileId": "tank:support:plain:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 700
+    },
+    {
+      "profileId": "tank:support:plain:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 707
+    },
+    {
+      "profileId": "tank:support:ice:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 708
+    },
+    {
+      "profileId": "tank:support:ice:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 715
+    },
+    {
+      "profileId": "tank:support:fire:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 708
+    },
+    {
+      "profileId": "tank:support:fire:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 715
+    },
+    {
+      "profileId": "tank:support:lightning:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 706
+    },
+    {
+      "profileId": "tank:support:lightning:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 713
+    },
+    {
+      "profileId": "tank:mark:plain:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 700
+    },
+    {
+      "profileId": "tank:mark:plain:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 707
+    },
+    {
+      "profileId": "tank:mark:ice:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 708
+    },
+    {
+      "profileId": "tank:mark:ice:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 715
+    },
+    {
+      "profileId": "tank:mark:fire:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 708
+    },
+    {
+      "profileId": "tank:mark:fire:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 715
+    },
+    {
+      "profileId": "tank:mark:lightning:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 706
+    },
+    {
+      "profileId": "tank:mark:lightning:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 713
+    },
+    {
+      "profileId": "mage:basic:plain:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 701
+    },
+    {
+      "profileId": "mage:basic:plain:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 708
+    },
+    {
+      "profileId": "mage:basic:ice:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 701
+    },
+    {
+      "profileId": "mage:basic:ice:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 708
+    },
+    {
+      "profileId": "mage:basic:fire:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 701
+    },
+    {
+      "profileId": "mage:basic:fire:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 708
+    },
+    {
+      "profileId": "mage:basic:lightning:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 701
+    },
+    {
+      "profileId": "mage:basic:lightning:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 708
+    },
+    {
+      "profileId": "mage:support:plain:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 721
+    },
+    {
+      "profileId": "mage:support:plain:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 728
+    },
+    {
+      "profileId": "mage:support:ice:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 721
+    },
+    {
+      "profileId": "mage:support:ice:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 728
+    },
+    {
+      "profileId": "mage:support:fire:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 721
+    },
+    {
+      "profileId": "mage:support:fire:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 728
+    },
+    {
+      "profileId": "mage:support:lightning:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 721
+    },
+    {
+      "profileId": "mage:support:lightning:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 728
+    },
+    {
+      "profileId": "mage:mark:plain:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 701
+    },
+    {
+      "profileId": "mage:mark:plain:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 708
+    },
+    {
+      "profileId": "mage:mark:ice:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 701
+    },
+    {
+      "profileId": "mage:mark:ice:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 708
+    },
+    {
+      "profileId": "mage:mark:fire:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 701
+    },
+    {
+      "profileId": "mage:mark:fire:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 708
+    },
+    {
+      "profileId": "mage:mark:lightning:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 701
+    },
+    {
+      "profileId": "mage:mark:lightning:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 708
+    },
+    {
+      "profileId": "ranger:basic:plain:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 673
+    },
+    {
+      "profileId": "ranger:basic:plain:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 680
+    },
+    {
+      "profileId": "ranger:basic:ice:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 673
+    },
+    {
+      "profileId": "ranger:basic:ice:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 680
+    },
+    {
+      "profileId": "ranger:basic:fire:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 681
+    },
+    {
+      "profileId": "ranger:basic:fire:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 688
+    },
+    {
+      "profileId": "ranger:basic:lightning:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 679
+    },
+    {
+      "profileId": "ranger:basic:lightning:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 686
+    },
+    {
+      "profileId": "ranger:support:plain:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 673
+    },
+    {
+      "profileId": "ranger:support:plain:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 680
+    },
+    {
+      "profileId": "ranger:support:ice:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 673
+    },
+    {
+      "profileId": "ranger:support:ice:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 680
+    },
+    {
+      "profileId": "ranger:support:fire:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 681
+    },
+    {
+      "profileId": "ranger:support:fire:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 688
+    },
+    {
+      "profileId": "ranger:support:lightning:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 679
+    },
+    {
+      "profileId": "ranger:support:lightning:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 686
+    },
+    {
+      "profileId": "ranger:mark:plain:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 673
+    },
+    {
+      "profileId": "ranger:mark:plain:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 680
+    },
+    {
+      "profileId": "ranger:mark:ice:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 673
+    },
+    {
+      "profileId": "ranger:mark:ice:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 680
+    },
+    {
+      "profileId": "ranger:mark:fire:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 681
+    },
+    {
+      "profileId": "ranger:mark:fire:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 688
+    },
+    {
+      "profileId": "ranger:mark:lightning:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 679
+    },
+    {
+      "profileId": "ranger:mark:lightning:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 686
+    },
+    {
+      "profileId": "assassin:basic:plain:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 662
+    },
+    {
+      "profileId": "assassin:basic:plain:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 669
+    },
+    {
+      "profileId": "assassin:basic:ice:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 673
+    },
+    {
+      "profileId": "assassin:basic:ice:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 680
+    },
+    {
+      "profileId": "assassin:basic:fire:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 670
+    },
+    {
+      "profileId": "assassin:basic:fire:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 677
+    },
+    {
+      "profileId": "assassin:basic:lightning:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 668
+    },
+    {
+      "profileId": "assassin:basic:lightning:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 675
+    },
+    {
+      "profileId": "assassin:support:plain:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 677
+    },
+    {
+      "profileId": "assassin:support:plain:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 684
+    },
+    {
+      "profileId": "assassin:support:ice:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 688
+    },
+    {
+      "profileId": "assassin:support:ice:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 695
+    },
+    {
+      "profileId": "assassin:support:fire:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 685
+    },
+    {
+      "profileId": "assassin:support:fire:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 692
+    },
+    {
+      "profileId": "assassin:support:lightning:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 683
+    },
+    {
+      "profileId": "assassin:support:lightning:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 690
+    },
+    {
+      "profileId": "assassin:mark:plain:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 662
+    },
+    {
+      "profileId": "assassin:mark:plain:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 669
+    },
+    {
+      "profileId": "assassin:mark:ice:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 673
+    },
+    {
+      "profileId": "assassin:mark:ice:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 680
+    },
+    {
+      "profileId": "assassin:mark:fire:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 670
+    },
+    {
+      "profileId": "assassin:mark:fire:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 677
+    },
+    {
+      "profileId": "assassin:mark:lightning:standard",
+      "siphon": false,
+      "missing": [],
+      "eligible": 668
+    },
+    {
+      "profileId": "assassin:mark:lightning:standard",
+      "siphon": true,
+      "missing": [],
+      "eligible": 675
+    }
+  ],
+  "desktopAndMobile": true,
+  "mpAndNoCritSuppressionRestore": true,
+  "conflictsChecked": true,
+  "foreignWeaponRejected": true,
+  "realMouseAndTouch": true,
+  "contractRevision": true,
+  "clearanceCacheCrossCheckedAgainstExhaustive": true,
+  "networkRequests": 0,
+  "runtimeErrors": []
+}

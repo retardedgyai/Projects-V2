@@ -1,0 +1,333 @@
+{
+  "statInputs": {
+    "aoe": [
+      "DAMAGE",
+      "AREA_ATTACK"
+    ]
+  },
+  "requirements": {
+    "AREA_ATTACK": "手持ちの範囲攻撃技能（AREAタグ・正の半径・攻撃係数）"
+  },
+  "profileAreaSources": {
+    "warrior:basic:plain:standard": [
+      "踏み込み斬り",
+      "叩きつけ",
+      "薙ぎ払い",
+      "破城突き",
+      "天断"
+    ],
+    "warrior:basic:ice:standard": [
+      "踏み込み斬り",
+      "叩きつけ",
+      "薙ぎ払い",
+      "破城突き",
+      "天断"
+    ],
+    "warrior:basic:fire:standard": [
+      "踏み込み斬り",
+      "叩きつけ",
+      "薙ぎ払い",
+      "破城突き",
+      "天断"
+    ],
+    "warrior:basic:lightning:standard": [
+      "踏み込み斬り",
+      "叩きつけ",
+      "薙ぎ払い",
+      "破城突き",
+      "天断"
+    ],
+    "warrior:support:plain:standard": [
+      "踏み込み斬り",
+      "叩きつけ",
+      "薙ぎ払い",
+      "天断"
+    ],
+    "warrior:support:ice:standard": [
+      "踏み込み斬り",
+      "叩きつけ",
+      "薙ぎ払い",
+      "天断"
+    ],
+    "warrior:support:fire:standard": [
+      "踏み込み斬り",
+      "叩きつけ",
+      "薙ぎ払い",
+      "天断"
+    ],
+    "warrior:support:lightning:standard": [
+      "踏み込み斬り",
+      "叩きつけ",
+      "薙ぎ払い",
+      "天断"
+    ],
+    "warrior:mark:plain:standard": [
+      "踏み込み斬り",
+      "叩きつけ",
+      "薙ぎ払い",
+      "破城突き",
+      "天断"
+    ],
+    "warrior:mark:ice:standard": [
+      "踏み込み斬り",
+      "叩きつけ",
+      "薙ぎ払い",
+      "破城突き",
+      "天断"
+    ],
+    "warrior:mark:fire:standard": [
+      "踏み込み斬り",
+      "叩きつけ",
+      "薙ぎ払い",
+      "破城突き",
+      "天断"
+    ],
+    "warrior:mark:lightning:standard": [
+      "踏み込み斬り",
+      "叩きつけ",
+      "薙ぎ払い",
+      "破城突き",
+      "天断"
+    ],
+    "tank:basic:plain:standard": [
+      "裁きの槌",
+      "集束",
+      "空間圧縮"
+    ],
+    "tank:basic:ice:standard": [
+      "裁きの槌",
+      "集束",
+      "空間圧縮"
+    ],
+    "tank:basic:fire:standard": [
+      "裁きの槌",
+      "集束",
+      "空間圧縮"
+    ],
+    "tank:basic:lightning:standard": [
+      "裁きの槌",
+      "集束",
+      "空間圧縮"
+    ],
+    "tank:support:plain:standard": [
+      "裁きの槌",
+      "集束",
+      "空間圧縮"
+    ],
+    "tank:support:ice:standard": [
+      "裁きの槌",
+      "集束",
+      "空間圧縮"
+    ],
+    "tank:support:fire:standard": [
+      "裁きの槌",
+      "集束",
+      "空間圧縮"
+    ],
+    "tank:support:lightning:standard": [
+      "裁きの槌",
+      "集束",
+      "空間圧縮"
+    ],
+    "tank:mark:plain:standard": [
+      "集束",
+      "裁きの槌",
+      "空間圧縮"
+    ],
+    "tank:mark:ice:standard": [
+      "集束",
+      "裁きの槌",
+      "空間圧縮"
+    ],
+    "tank:mark:fire:standard": [
+      "集束",
+      "裁きの槌",
+      "空間圧縮"
+    ],
+    "tank:mark:lightning:standard": [
+      "集束",
+      "裁きの槌",
+      "空間圧縮"
+    ],
+    "mage:basic:plain:standard": [
+      "霜の波紋",
+      "流星雨",
+      "天火の大術式"
+    ],
+    "mage:basic:ice:standard": [
+      "霜の波紋",
+      "流星雨",
+      "天火の大術式"
+    ],
+    "mage:basic:fire:standard": [
+      "霜の波紋",
+      "流星雨",
+      "天火の大術式"
+    ],
+    "mage:basic:lightning:standard": [
+      "霜の波紋",
+      "流星雨",
+      "天火の大術式"
+    ],
+    "mage:support:plain:standard": [
+      "霜の波紋",
+      "流星雨",
+      "天火の大術式"
+    ],
+    "mage:support:ice:standard": [
+      "霜の波紋",
+      "流星雨",
+      "天火の大術式"
+    ],
+    "mage:support:fire:standard": [
+      "霜の波紋",
+      "流星雨",
+      "天火の大術式"
+    ],
+    "mage:support:lightning:standard": [
+      "霜の波紋",
+      "流星雨",
+      "天火の大術式"
+    ],
+    "mage:mark:plain:standard": [
+      "霜の波紋",
+      "流星雨",
+      "天火の大術式"
+    ],
+    "mage:mark:ice:standard": [
+      "霜の波紋",
+      "流星雨",
+      "天火の大術式"
+    ],
+    "mage:mark:fire:standard": [
+      "霜の波紋",
+      "流星雨",
+      "天火の大術式"
+    ],
+    "mage:mark:lightning:standard": [
+      "霜の波紋",
+      "流星雨",
+      "天火の大術式"
+    ],
+    "ranger:basic:plain:standard": [
+      "霜矢の扇",
+      "矢の嵐"
+    ],
+    "ranger:basic:ice:standard": [
+      "霜矢の扇",
+      "矢の嵐"
+    ],
+    "ranger:basic:fire:standard": [
+      "霜矢の扇",
+      "矢の嵐"
+    ],
+    "ranger:basic:lightning:standard": [
+      "霜矢の扇",
+      "矢の嵐"
+    ],
+    "ranger:support:plain:standard": [
+      "霜矢の扇",
+      "矢の嵐"
+    ],
+    "ranger:support:ice:standard": [
+      "霜矢の扇",
+      "矢の嵐"
+    ],
+    "ranger:support:fire:standard": [
+      "霜矢の扇",
+      "矢の嵐"
+    ],
+    "ranger:support:lightning:standard": [
+      "霜矢の扇",
+      "矢の嵐"
+    ],
+    "ranger:mark:plain:standard": [
+      "霜矢の扇",
+      "矢の嵐"
+    ],
+    "ranger:mark:ice:standard": [
+      "霜矢の扇",
+      "矢の嵐"
+    ],
+    "ranger:mark:fire:standard": [
+      "霜矢の扇",
+      "矢の嵐"
+    ],
+    "ranger:mark:lightning:standard": [
+      "霜矢の扇",
+      "矢の嵐"
+    ],
+    "assassin:basic:plain:standard": [
+      "影刺し",
+      "断命",
+      "刃の輪",
+      "無明連刃"
+    ],
+    "assassin:basic:ice:standard": [
+      "影刺し",
+      "断命",
+      "刃の輪",
+      "無明連刃"
+    ],
+    "assassin:basic:fire:standard": [
+      "影刺し",
+      "断命",
+      "刃の輪",
+      "無明連刃"
+    ],
+    "assassin:basic:lightning:standard": [
+      "影刺し",
+      "断命",
+      "刃の輪",
+      "無明連刃"
+    ],
+    "assassin:support:plain:standard": [
+      "影刺し",
+      "断命",
+      "刃の輪",
+      "無明連刃"
+    ],
+    "assassin:support:ice:standard": [
+      "影刺し",
+      "断命",
+      "刃の輪",
+      "無明連刃"
+    ],
+    "assassin:support:fire:standard": [
+      "影刺し",
+      "断命",
+      "刃の輪",
+      "無明連刃"
+    ],
+    "assassin:support:lightning:standard": [
+      "影刺し",
+      "断命",
+      "刃の輪",
+      "無明連刃"
+    ],
+    "assassin:mark:plain:standard": [
+      "断命",
+      "刃の輪",
+      "影刺し",
+      "無明連刃"
+    ],
+    "assassin:mark:ice:standard": [
+      "断命",
+      "刃の輪",
+      "影刺し",
+      "無明連刃"
+    ],
+    "assassin:mark:fire:standard": [
+      "断命",
+      "刃の輪",
+      "影刺し",
+      "無明連刃"
+    ],
+    "assassin:mark:lightning:standard": [
+      "断命",
+      "刃の輪",
+      "影刺し",
+      "無明連刃"
+    ]
+  }
+}

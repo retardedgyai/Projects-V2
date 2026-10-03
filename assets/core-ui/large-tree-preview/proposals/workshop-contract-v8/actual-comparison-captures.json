@@ -1,0 +1,364 @@
+{
+  "status": "PASS",
+  "viewport": [
+    1920,
+    1200
+  ],
+  "sameCameras": true,
+  "frames": [
+    {
+      "name": "ProjectS_Contract_V8_Before_Whole",
+      "cam": {
+        "x": 1230,
+        "y": -1245,
+        "z": 0.0667397060226203
+      },
+      "profile": "mage:support:plain:standard",
+      "example": null,
+      "selected": null,
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 1,
+        "minClickGap": 1.1334794120452407,
+        "minNodePairPaintGap": 2.9427985643012637,
+        "nearest": {
+          "node": "key_05"
+        },
+        "labelLines": [],
+        "captions": 13,
+        "zoom": 0.0667397060226203,
+        "spent": 0,
+        "usable": true,
+        "connected": true
+      },
+      "clip": true
+    },
+    {
+      "name": "ProjectS_Contract_V8_Before_Blood",
+      "cam": {
+        "x": 3250,
+        "y": -5600,
+        "z": 0.22
+      },
+      "profile": "mage:support:plain:standard",
+      "example": "mage-blood",
+      "selected": null,
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 2.0852890557614963,
+        "minClickGap": 2.525289055761496,
+        "minNodePairPaintGap": 7.867071966441305,
+        "nearest": {
+          "node": "key_05"
+        },
+        "labelLines": [],
+        "captions": 13,
+        "zoom": 0.22,
+        "spent": 20,
+        "usable": true,
+        "connected": true
+      },
+      "clip": true
+    },
+    {
+      "name": "ProjectS_Contract_V8_Before_Shield",
+      "cam": {
+        "x": 4850,
+        "y": -4100,
+        "z": 0.5
+      },
+      "profile": "mage:support:plain:standard",
+      "example": null,
+      "selected": "v7g12n7",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 6.162020581276126,
+        "minClickGap": 7.662020581276126,
+        "minNodePairPaintGap": 18.87970901463933,
+        "nearest": {
+          "node": "key_05"
+        },
+        "labelLines": [],
+        "captions": 3,
+        "zoom": 0.5,
+        "spent": 0,
+        "usable": true,
+        "connected": true
+      },
+      "clip": true
+    },
+    {
+      "name": "ProjectS_Contract_V8_Before_Pen",
+      "cam": {
+        "x": -2480,
+        "y": 1500,
+        "z": 0.35
+      },
+      "profile": "mage:support:plain:standard",
+      "example": "quiet",
+      "selected": "v7g04n5",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 3.795914406893288,
+        "minClickGap": 4.445914406893289,
+        "minNodePairPaintGap": 12.615796310247529,
+        "nearest": {
+          "node": "key_05"
+        },
+        "labelLines": [],
+        "captions": 8,
+        "zoom": 0.35,
+        "spent": 41,
+        "usable": true,
+        "connected": true
+      },
+      "clip": true
+    },
+    {
+      "name": "ProjectS_Contract_V8_After_Whole",
+      "cam": {
+        "x": 1230,
+        "y": -1245,
+        "z": 0.0667397060226203
+      },
+      "profile": "mage:support:plain:standard",
+      "example": null,
+      "selected": null,
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 1,
+        "minClickGap": 1.1334794120452407,
+        "minNodePairPaintGap": 2.9427985643012637,
+        "nearest": {
+          "node": "key_05"
+        },
+        "labelLines": [],
+        "captions": 13,
+        "zoom": 0.0667397060226203,
+        "spent": 0,
+        "usable": true,
+        "connected": true
+      },
+      "clip": true
+    },
+    {
+      "name": "ProjectS_Contract_V8_After_Blood",
+      "cam": {
+        "x": 3250,
+        "y": -5600,
+        "z": 0.22
+      },
+      "profile": "mage:support:plain:standard",
+      "example": "mage-blood",
+      "selected": null,
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 1.419721401994293,
+        "minClickGap": 1.859721401994293,
+        "minNodePairPaintGap": 7.867071966441305,
+        "nearest": {
+          "node": "key_02"
+        },
+        "labelLines": [],
+        "captions": 13,
+        "zoom": 0.22,
+        "spent": 30,
+        "usable": true,
+        "connected": true
+      },
+      "clip": true
+    },
+    {
+      "name": "ProjectS_Contract_V8_After_Shield",
+      "cam": {
+        "x": 4850,
+        "y": -4100,
+        "z": 0.5
+      },
+      "profile": "mage:support:plain:standard",
+      "example": null,
+      "selected": "v7g12n7",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 4.649366822714301,
+        "minClickGap": 6.149366822714301,
+        "minNodePairPaintGap": 18.87970901463933,
+        "nearest": {
+          "node": "key_02"
+        },
+        "labelLines": [],
+        "captions": 3,
+        "zoom": 0.5,
+        "spent": 0,
+        "usable": true,
+        "connected": true
+      },
+      "clip": true
+    },
+    {
+      "name": "ProjectS_Contract_V8_After_Pen",
+      "cam": {
+        "x": -2480,
+        "y": 1500,
+        "z": 0.35
+      },
+      "profile": "mage:support:plain:standard",
+      "example": "quiet",
+      "selected": "v7g04n5",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 2.7370567759000113,
+        "minClickGap": 3.3870567759000116,
+        "minNodePairPaintGap": 12.615796310247529,
+        "nearest": {
+          "node": "key_02"
+        },
+        "labelLines": [],
+        "captions": 8,
+        "zoom": 0.35,
+        "spent": 41,
+        "usable": true,
+        "connected": true
+      },
+      "clip": true
+    },
+    {
+      "name": "ProjectS_Contract_V8_Contract_key_09",
+      "cam": {
+        "x": 1313.81269,
+        "y": -7579.84248,
+        "z": 0.35
+      },
+      "profile": "warrior:support:plain:standard",
+      "example": null,
+      "selected": "key_09",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 2.7370567759000113,
+        "minClickGap": 3.3870567759000116,
+        "minNodePairPaintGap": 12.615796310247529,
+        "nearest": {
+          "node": "key_02"
+        },
+        "labelLines": [],
+        "captions": 3,
+        "zoom": 0.35,
+        "spent": 0,
+        "usable": true,
+        "connected": true
+      },
+      "clip": false
+    },
+    {
+      "name": "ProjectS_Contract_V8_Contract_key_11",
+      "cam": {
+        "x": -376.63761,
+        "y": -5651.08192,
+        "z": 0.35
+      },
+      "profile": "tank:support:plain:standard",
+      "example": null,
+      "selected": "key_11",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 2.7370567759000113,
+        "minClickGap": 3.3870567759000116,
+        "minNodePairPaintGap": 12.615796310247529,
+        "nearest": {
+          "node": "key_02"
+        },
+        "labelLines": [],
+        "captions": 4,
+        "zoom": 0.35,
+        "spent": 0,
+        "usable": true,
+        "connected": true
+      },
+      "clip": false
+    },
+    {
+      "name": "ProjectS_Contract_V8_Contract_key_13",
+      "cam": {
+        "x": 4619.11391,
+        "y": -3791.18045,
+        "z": 0.35
+      },
+      "profile": "mage:support:plain:standard",
+      "example": null,
+      "selected": "key_13",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 2.7370567759000113,
+        "minClickGap": 3.3870567759000116,
+        "minNodePairPaintGap": 12.615796310247529,
+        "nearest": {
+          "node": "key_02"
+        },
+        "labelLines": [],
+        "captions": 7,
+        "zoom": 0.35,
+        "spent": 0,
+        "usable": true,
+        "connected": true
+      },
+      "clip": false
+    },
+    {
+      "name": "ProjectS_Contract_V8_Contract_key_14",
+      "cam": {
+        "x": 6964.55096,
+        "y": -4760.82589,
+        "z": 0.35
+      },
+      "profile": "mage:support:fire:standard",
+      "example": null,
+      "selected": "key_14",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 2.7370567759000113,
+        "minClickGap": 3.3870567759000116,
+        "minNodePairPaintGap": 12.615796310247529,
+        "nearest": {
+          "node": "key_02"
+        },
+        "labelLines": [],
+        "captions": 5,
+        "zoom": 0.35,
+        "spent": 0,
+        "usable": true,
+        "connected": true
+      },
+      "clip": false
+    },
+    {
+      "name": "ProjectS_Contract_V8_Contract_key_15",
+      "cam": {
+        "x": 5866.95278,
+        "y": -6375.38945,
+        "z": 0.35
+      },
+      "profile": "mage:support:lightning:standard",
+      "example": null,
+      "selected": "key_15",
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 2.7370567759000113,
+        "minClickGap": 3.3870567759000116,
+        "minNodePairPaintGap": 12.615796310247529,
+        "nearest": {
+          "node": "key_02"
+        },
+        "labelLines": [],
+        "captions": 4,
+        "zoom": 0.35,
+        "spent": 0,
+        "usable": true,
+        "connected": true
+      },
+      "clip": false
+    }
+  ],
+  "contractDetailFrames": 5,
+  "syntheticScreenshotLabelled": true,
+  "runtimeErrors": []
+}

@@ -1,0 +1,215 @@
+{
+  "status": "COMPOSED_FROM_ACTUAL_BROWSER",
+  "sources": [
+    {
+      "file": "ProjectS_Contract_V8_Before_Whole.png",
+      "sha256": "3f11b6f0578df99e4d51503701802c8a531285276bd3d021a72c40df6636fa64",
+      "originalSize": [
+        1570,
+        1124
+      ],
+      "placedAt": [
+        24,
+        222,
+        1164,
+        833
+      ]
+    },
+    {
+      "file": "ProjectS_Contract_V8_After_Whole.png",
+      "sha256": "6b9477eb640c8682ae65b09da467577186af1151da399c36cfc9cdb4d8426b73",
+      "originalSize": [
+        1570,
+        1124
+      ],
+      "placedAt": [
+        1212,
+        222,
+        1164,
+        833
+      ]
+    },
+    {
+      "file": "ProjectS_Contract_V8_Before_Blood.png",
+      "sha256": "e5e64265f96a0d0c6be88cfba43e434e39d18ae071f872dcd5a6143450009bcc",
+      "originalSize": [
+        1570,
+        1124
+      ],
+      "placedAt": [
+        24,
+        1145,
+        1164,
+        833
+      ]
+    },
+    {
+      "file": "ProjectS_Contract_V8_After_Blood.png",
+      "sha256": "85e1dabd1d3a3d7e49f8ce511d5954434827e353720544dc582b2b764e92b34c",
+      "originalSize": [
+        1570,
+        1124
+      ],
+      "placedAt": [
+        1212,
+        1145,
+        1164,
+        833
+      ]
+    },
+    {
+      "file": "ProjectS_Contract_V8_Before_Shield.png",
+      "sha256": "757bf7c5ea18a2129a32bb7e154e063e0edbaf9e4c9c0a9f8a57ee6346430441",
+      "originalSize": [
+        1570,
+        1124
+      ],
+      "placedAt": [
+        24,
+        2068,
+        1164,
+        833
+      ]
+    },
+    {
+      "file": "ProjectS_Contract_V8_After_Shield.png",
+      "sha256": "00ed52f214dafcfa2d3333ca6288fbfeb6f7a5a8ce339015028dcd36add1ebe9",
+      "originalSize": [
+        1570,
+        1124
+      ],
+      "placedAt": [
+        1212,
+        2068,
+        1164,
+        833
+      ]
+    },
+    {
+      "file": "ProjectS_Contract_V8_Before_Pen.png",
+      "sha256": "5f26b2f2c143aaae54a39180a4203696405b29bdfc5dfe758f313036a1426aeb",
+      "originalSize": [
+        1570,
+        1124
+      ],
+      "placedAt": [
+        24,
+        2991,
+        1164,
+        833
+      ]
+    },
+    {
+      "file": "ProjectS_Contract_V8_After_Pen.png",
+      "sha256": "06366ad72cd4118c072677b71c4ccc1dc9c3e33e0e1a7fcd60bbf6f86dd88f5c",
+      "originalSize": [
+        1570,
+        1124
+      ],
+      "placedAt": [
+        1212,
+        2991,
+        1164,
+        833
+      ]
+    },
+    {
+      "file": "ProjectS_Contract_V8_Overview.png",
+      "sha256": "706ebeaf98ed9581008ac667b0dd09bfc74c18f83309c9e3e32e221cbf359077",
+      "originalSize": [
+        1920,
+        1200
+      ],
+      "placedAt": [
+        24,
+        116,
+        1920,
+        1200
+      ]
+    },
+    {
+      "file": "ProjectS_Contract_V8_Pair_assassin-area-48.png",
+      "sha256": "4d51cf4644e54cadb33606bc3ed0a85396bdddc7a2267fdd3a3c88bbd1de7951",
+      "originalSize": [
+        1920,
+        1200
+      ],
+      "placedAt": [
+        24,
+        1385,
+        948,
+        592
+      ]
+    },
+    {
+      "file": "ProjectS_Contract_V8_Pair_assassin-crit-48.png",
+      "sha256": "f58bf498457b4a2615a8bd6b0cd5f573271478ae416b541869fd510172a69611",
+      "originalSize": [
+        1920,
+        1200
+      ],
+      "placedAt": [
+        996,
+        1385,
+        948,
+        592
+      ]
+    },
+    {
+      "file": "ProjectS_Contract_V8_Pair_tank-life-reinvest-43.png",
+      "sha256": "90c68a3f06e685498e035f48ad827d39a527158b0d1422da5bb0950de93f1d13",
+      "originalSize": [
+        1920,
+        1200
+      ],
+      "placedAt": [
+        24,
+        2105,
+        948,
+        592
+      ]
+    },
+    {
+      "file": "ProjectS_Contract_V8_Pair_legacy-tank-life.png",
+      "sha256": "9e268f2ef2007fcf852c83ebb9cc6739d8d86b0223bea8ba3329dcfbe31c76a5",
+      "originalSize": [
+        1920,
+        1200
+      ],
+      "placedAt": [
+        996,
+        2105,
+        948,
+        592
+      ]
+    },
+    {
+      "file": "ProjectS_Contract_V8_mage-blood-shield.png",
+      "sha256": "ae2ad7d5b945f555ba28082c13d322d38f625677867c39ee7e34a86cca9e7f68",
+      "originalSize": [
+        1920,
+        1200
+      ],
+      "placedAt": [
+        24,
+        2835,
+        1920,
+        1200
+      ]
+    },
+    {
+      "file": "ProjectS_Contract_V8_Contract_key_11.png",
+      "sha256": "cf51aca0dbde790d3ee677383a49c7a6cf7df92a1999beb51141079cd0fafac7",
+      "originalSize": [
+        1920,
+        1200
+      ],
+      "placedAt": [
+        24,
+        4110,
+        1500,
+        938
+      ]
+    }
+  ]
+}

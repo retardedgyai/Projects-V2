@@ -1,0 +1,743 @@
+{
+  "status": "VERIFIED_CANDIDATE_PENDING_CREATOR_REVIEW",
+  "baselineCommit": "5cc611a06c8f06e3146942b104817992d6f6d063",
+  "nodeChanges": [
+    {
+      "id": "key_02",
+      "reason": "Separate the blood choice from the mana specialization.",
+      "before": {
+        "anchor": "g20n6",
+        "group": "g20",
+        "groupAnchor": "g20",
+        "theme": "mana",
+        "description": "技能のMP消費を同量のHP消費に置き換える。HPの自然回復が働かなくなる。",
+        "tradeoff": "HP消費を補える吸収・回復手段が必要。MP不足の代替は無条件の強化ではない。"
+      },
+      "after": {
+        "anchor": "r36_48_1",
+        "group": null,
+        "groupAnchor": null,
+        "theme": "life",
+        "description": "MPを消費する手持ちの技能を、同量のHP消費へ置き換える候補。一般経路から選び、MP輪への投資は必須にしない。",
+        "tradeoff": "MP容量・MP効率・HP自然再生の育成値を無効にする。以前に買った点の費用と接続は保持する。実戦の支払い・生存条件は未統合。"
+      }
+    },
+    {
+      "id": "key_02",
+      "reason": "The former mana pocket has no suppression-safe entrance; move only this optional terminal beside a reachable general Road.",
+      "before": {
+        "x": 3688.76419,
+        "y": -6890.26605,
+        "anchor": "r36_48_1"
+      },
+      "after": {
+        "x": 2989.72925,
+        "y": -4643.91041,
+        "anchor": "r19_24_1"
+      }
+    },
+    {
+      "id": "v7g12n0",
+      "reason": "Neutral paid entrance, usable without MP or AP.",
+      "before": {
+        "name": "消費の備え",
+        "stats": {
+          "mana": 3
+        },
+        "benefitInputs": {
+          "mana": [
+            "MP_CONSUMER"
+          ]
+        },
+        "description": "手持ちの魔法、MP消費効率、障壁へ別々に投資する。編成に応じて育てる力を選ぶ。"
+      },
+      "after": {
+        "name": "備える体",
+        "stats": {
+          "hp": 2
+        },
+        "benefitInputs": {
+          "hp": []
+        },
+        "description": "最大HPと装甲の共通の備えから、手持ちの魔法・MP運用・障壁を別々に育てる。"
+      }
+    },
+    {
+      "id": "v7g12n1",
+      "reason": "Neutral paid entrance, usable without MP or AP.",
+      "before": {
+        "name": "MPの余地",
+        "stats": {
+          "mana": 3
+        },
+        "benefitInputs": {
+          "mana": [
+            "MP_CONSUMER"
+          ]
+        },
+        "description": "手持ちの魔法、MP消費効率、障壁へ別々に投資する。編成に応じて育てる力を選ぶ。"
+      },
+      "after": {
+        "name": "備える装甲",
+        "stats": {
+          "armor": 2
+        },
+        "benefitInputs": {
+          "armor": []
+        },
+        "description": "MP容量への投資を前提にせず、使える力の枝を選ぶ。"
+      }
+    },
+    {
+      "id": "v7g12n4",
+      "reason": "Keep the prior MP capacity on the optional MP-efficiency arm.",
+      "before": {
+        "name": "効率の研鑽",
+        "stats": {
+          "efficiency": 2
+        },
+        "benefitInputs": {
+          "efficiency": [
+            "MP_CONSUMER"
+          ]
+        },
+        "description": "手持ちの魔法、MP消費効率、障壁へ別々に投資する。編成に応じて育てる力を選ぶ。"
+      },
+      "after": {
+        "name": "MP運用の研鑽",
+        "stats": {
+          "mana": 3,
+          "efficiency": 2
+        },
+        "benefitInputs": {
+          "mana": [
+            "MP_CONSUMER"
+          ],
+          "efficiency": [
+            "MP_CONSUMER"
+          ]
+        },
+        "description": "MPを使う編成だけが選ぶ、容量と消費効率への任意投資。"
+      }
+    },
+    {
+      "id": "v7g12n5",
+      "reason": "Keep the prior MP capacity on the optional MP-efficiency arm.",
+      "before": {
+        "name": "消費を抑える",
+        "stats": {
+          "efficiency": 5
+        },
+        "benefitInputs": {
+          "efficiency": [
+            "MP_CONSUMER"
+          ]
+        },
+        "description": "手持ちの魔法、MP消費効率、障壁へ別々に投資する。編成に応じて育てる力を選ぶ。"
+      },
+      "after": {
+        "name": "MP運用を育てる",
+        "stats": {
+          "mana": 3,
+          "efficiency": 5
+        },
+        "benefitInputs": {
+          "mana": [
+            "MP_CONSUMER"
+          ],
+          "efficiency": [
+            "MP_CONSUMER"
+          ]
+        },
+        "description": "MPを使う編成だけが選ぶ、容量と消費効率への任意投資。"
+      }
+    },
+    {
+      "id": "v7g12n2",
+      "reason": "Explain independent source-owned specialization after the neutral entrance.",
+      "before": {
+        "description": "手持ちの魔法、MP消費効率、障壁へ別々に投資する。編成に応じて育てる力を選ぶ。"
+      },
+      "after": {
+        "description": "共通の備えの先で、既に持つ魔法または障壁を育てる。MPへの投資は前提にしない。"
+      }
+    },
+    {
+      "id": "v7g12n3",
+      "reason": "Explain independent source-owned specialization after the neutral entrance.",
+      "before": {
+        "description": "手持ちの魔法、MP消費効率、障壁へ別々に投資する。編成に応じて育てる力を選ぶ。"
+      },
+      "after": {
+        "description": "共通の備えの先で、既に持つ魔法または障壁を育てる。MPへの投資は前提にしない。"
+      }
+    },
+    {
+      "id": "v7g12n6",
+      "reason": "Explain independent source-owned specialization after the neutral entrance.",
+      "before": {
+        "description": "手持ちの魔法、MP消費効率、障壁へ別々に投資する。編成に応じて育てる力を選ぶ。"
+      },
+      "after": {
+        "description": "共通の備えの先で、既に持つ魔法または障壁を育てる。MPへの投資は前提にしない。"
+      }
+    },
+    {
+      "id": "v7g12n7",
+      "reason": "Explain independent source-owned specialization after the neutral entrance.",
+      "before": {
+        "description": "手持ちの魔法、MP消費効率、障壁へ別々に投資する。編成に応じて育てる力を選ぶ。"
+      },
+      "after": {
+        "description": "共通の備えの先で、既に持つ魔法または障壁を育てる。MPへの投資は前提にしない。"
+      }
+    },
+    {
+      "id": "v7g04n5",
+      "reason": "Physical/common approach remains useful under noCrit.",
+      "before": {
+        "description": null
+      },
+      "after": {
+        "description": "物理と会心の共通目標から貫通へ進む。無会心でも物理側から育てられる。"
+      }
+    },
+    {
+      "id": "v7g10n0",
+      "reason": "Area applies only to owned attacking AREA geometry.",
+      "before": {
+        "benefitInputs": {
+          "aoe": [
+            "DAMAGE"
+          ]
+        },
+        "description": null
+      },
+      "after": {
+        "benefitInputs": {
+          "aoe": [
+            "DAMAGE",
+            "AREA_ATTACK"
+          ]
+        },
+        "description": "範囲攻撃の半径を育てる候補。手持ちのAREA攻撃技能にだけ範囲値を適用し、単体射線・障壁・回復に新しい範囲を与えない。混合した物理値は別に有効。"
+      }
+    },
+    {
+      "id": "v7g10n2",
+      "reason": "Area applies only to owned attacking AREA geometry.",
+      "before": {
+        "benefitInputs": {
+          "aoe": [
+            "DAMAGE"
+          ]
+        },
+        "description": null
+      },
+      "after": {
+        "benefitInputs": {
+          "aoe": [
+            "DAMAGE",
+            "AREA_ATTACK"
+          ]
+        },
+        "description": "範囲攻撃の半径を育てる候補。手持ちのAREA攻撃技能にだけ範囲値を適用し、単体射線・障壁・回復に新しい範囲を与えない。混合した物理値は別に有効。"
+      }
+    },
+    {
+      "id": "v7g10n4",
+      "reason": "Area applies only to owned attacking AREA geometry.",
+      "before": {
+        "benefitInputs": {
+          "aoe": [
+            "DAMAGE"
+          ],
+          "physical": [
+            "DAMAGE"
+          ]
+        },
+        "description": null
+      },
+      "after": {
+        "benefitInputs": {
+          "aoe": [
+            "DAMAGE",
+            "AREA_ATTACK"
+          ],
+          "physical": [
+            "DAMAGE"
+          ]
+        },
+        "description": "範囲攻撃の半径を育てる候補。手持ちのAREA攻撃技能にだけ範囲値を適用し、単体射線・障壁・回復に新しい範囲を与えない。混合した物理値は別に有効。"
+      }
+    },
+    {
+      "id": "key_09",
+      "reason": "Specify source-owned effect contract and unresolved adoption parameters.",
+      "before": {
+        "effectContract": null,
+        "description": "主力の追加発動",
+        "tradeoff": "1回の威力を下げる",
+        "risks": [
+          "Mage残響・Ranger追矢等のMODと重複",
+          "現行は発動8回上限。共通版の合算未決"
+        ]
+      },
+      "after": {
+        "effectContract": {
+          "classification": "keystone_candidate",
+          "trigger": "手持ちの主力技能を本人が発動する。",
+          "effect": "同じ発動に追加pulseを一つ予定する候補。新技能や別の再帰発動を作らない。",
+          "cost": "1pulseの威力を下げる候補。共通版の倍率は未採用。",
+          "stack": "残響・追矢・既存追加発動と同じpulse予算へ一度だけ合算する案。上限で追加分が消えた場合の代償適用は要採用判断。",
+          "cap": "既存の最終pulse上限8を超えない。追加pulseからこのKeyを再発動しない。",
+          "sourceRefs": [
+            "CoreSkillCatalog.kt:85",
+            "CoreSkillCatalog.kt:94",
+            "CoreSkillCatalog.kt:110",
+            "CoreSkillCatalog.kt:127"
+          ],
+          "pending": [
+            "共通威力倍率",
+            "上限飽和時の代償とMOD合算の採用"
+          ],
+          "proposal": {
+            "extraPulse": 1,
+            "sharedPulseCap": 8,
+            "recursive": false,
+            "powerMultiplier": null
+          },
+          "status": "UNIMPLEMENTED_PROPOSAL_PENDING_ADOPTION",
+          "approved": false,
+          "runtimeApplied": false
+        },
+        "description": "同じ発動に追加pulseを一つ予定する候補。新技能や別の再帰発動を作らない。",
+        "tradeoff": "1pulseの威力を下げる候補。共通版の倍率は未採用。",
+        "risks": [
+          "未実装・未採用の候補。共通威力倍率",
+          "未実装・未採用の候補。上限飽和時の代償とMOD合算の採用"
+        ]
+      }
+    },
+    {
+      "id": "key_11",
+      "reason": "Specify source-owned effect contract and unresolved adoption parameters.",
+      "before": {
+        "effectContract": null,
+        "description": "仲間への障壁を強める",
+        "tradeoff": "自分の攻撃を下げる",
+        "risks": [
+          "自己障壁だけでは仲間への効果を使えない",
+          "障壁量・変換・受け手倍率とHP75%上限の順序"
+        ],
+        "classificationCandidate": null,
+        "classificationReason": null
+      },
+      "after": {
+        "effectContract": {
+          "classification": "notable_candidate",
+          "trigger": "既に持つ仲間向け障壁が、本人以外へ届く。自己障壁だけでは起動しない。",
+          "effect": "その既存障壁の付与量を強める数値交換案。障壁技能そのものは与えない。",
+          "cost": "本人の直接攻撃を弱める数値交換案。量と倍率は未採用。3ptも比較用の仮費用。",
+          "stack": "既存の発生量・術者補正・受け手処理に一回だけ適用する案。受け手で強い障壁だけを保持し加算しない。",
+          "cap": "既存の最大HP75%と期間1〜200tickの受け取り上限を維持する。",
+          "sourceRefs": [
+            "CoreSkillCatalog.kt:28",
+            "CorePlayerCombat.kt:413",
+            "CorePlayerCombat.kt:418"
+          ],
+          "pending": [
+            "共通倍率・適用順序",
+            "Notable分類と仮費用の採用"
+          ],
+          "proposal": {
+            "grantsAbility": false,
+            "allyOnly": true,
+            "shieldMultiplier": null,
+            "ownDamageMultiplier": null,
+            "classificationCandidate": "notable"
+          },
+          "status": "UNIMPLEMENTED_PROPOSAL_PENDING_ADOPTION",
+          "approved": false,
+          "runtimeApplied": false
+        },
+        "description": "その既存障壁の付与量を強める数値交換案。障壁技能そのものは与えない。",
+        "tradeoff": "本人の直接攻撃を弱める数値交換案。量と倍率は未採用。3ptも比較用の仮費用。",
+        "risks": [
+          "未実装・未採用の候補。共通倍率・適用順序",
+          "未実装・未採用の候補。Notable分類と仮費用の採用"
+        ],
+        "classificationCandidate": "notable",
+        "classificationReason": "現在の案は既存の障壁量と本人火力の数値交換で、組み方・運用の転換をまだ定義していない。"
+      }
+    },
+    {
+      "id": "key_13",
+      "reason": "Specify source-owned effect contract and unresolved adoption parameters.",
+      "before": {
+        "effectContract": null,
+        "description": "既に使える氷で重撃等の攻撃機会を作る",
+        "tradeoff": "即時火力を下げる",
+        "risks": [
+          "現行は減速。凍結やボス停止を実装済みと扱わない",
+          "氷の入手や魔術加工を必須にしない"
+        ],
+        "requirements": [
+          "ICE"
+        ]
+      },
+      "after": {
+        "effectContract": {
+          "classification": "keystone_candidate",
+          "trigger": "本人の既存の氷源が、直撃により対象へ減速を適用する。",
+          "effect": "減速が有効な間、その対象への次の手持ち主力の命中を一度の攻撃機会として記録・消費する候補。追加発動や凍結は与えない。",
+          "cost": "機会を作った直撃の即時威力を下げる候補。機会の報酬倍率と代償倍率は未採用。",
+          "stack": "一つの対象に一つの機会。期間は実際の減速終了へ結び付け、足し算で延長しない。同じ主力発動の複数pulseで機会を重ねない。",
+          "cap": "本人・対象・主力発動ごとに報酬は一度。既存の減速強度・ボス補正を維持する。凍結・ボス停止の契約はない。",
+          "sourceRefs": [
+            "CorePlayerCombat.kt:493",
+            "CorePlayerCombat.kt:533",
+            "QuestEncounterCombat.kt:230"
+          ],
+          "pending": [
+            "主力命中の報酬倍率",
+            "直撃の代償倍率",
+            "機会の記録・消費処理の採用"
+          ],
+          "proposal": {
+            "window": "actual applied slow expiry",
+            "oneChargePerTarget": true,
+            "onePayoffPerSignatureActivation": true,
+            "grantsFreeze": false,
+            "payoffMultiplier": null,
+            "initialHitMultiplier": null
+          },
+          "status": "UNIMPLEMENTED_PROPOSAL_PENDING_ADOPTION",
+          "approved": false,
+          "runtimeApplied": false
+        },
+        "description": "減速が有効な間、その対象への次の手持ち主力の命中を一度の攻撃機会として記録・消費する候補。追加発動や凍結は与えない。",
+        "tradeoff": "機会を作った直撃の即時威力を下げる候補。機会の報酬倍率と代償倍率は未採用。",
+        "risks": [
+          "未実装・未採用の候補。主力命中の報酬倍率",
+          "未実装・未採用の候補。直撃の代償倍率",
+          "未実装・未採用の候補。機会の記録・消費処理の採用"
+        ],
+        "requirements": [
+          "ICE",
+          "SIGNATURE"
+        ]
+      }
+    },
+    {
+      "id": "key_14",
+      "reason": "Specify source-owned effect contract and unresolved adoption parameters.",
+      "before": {
+        "effectContract": null,
+        "description": "既に使える炎で攻撃の間を補う",
+        "tradeoff": "一撃効率を下げる",
+        "risks": [
+          "炎属性の技能名だけでは現行燃焼を起動しない",
+          "燃焼延長・上書き・再帰・ヒット資源の規則は未定"
+        ]
+      },
+      "after": {
+        "effectContract": {
+          "classification": "keystone_candidate",
+          "trigger": "所有する燃焼源MODを伴う本人の直撃が、生きている敵へ既存燃焼を作る。炎技能名・elementだけでは起動しない。",
+          "effect": "既存の炎の直撃加算分を、その既存燃焼の3tickへ配分する変換候補。燃焼源と新しい期間を与えない。",
+          "cost": "配分した炎の直撃加算は直撃から失う。元の技能のAD/AP部分と他元素は変換しない。",
+          "stack": "術者・対象ごとに一つの燃焼を保持。強いtick量を採り、弱い再命中で加算しない。再適用は3tickへ更新し、残期間を足さない。",
+          "cap": "既存の20tick間隔・3tickを維持。燃焼tickから再燃焼・連鎖・会心・吸収・命中資源を起動しない。",
+          "sourceRefs": [
+            "CorePlayerCombat.kt:237",
+            "CorePlayerCombat.kt:529",
+            "class-combat-formula-recovery.md"
+          ],
+          "pending": [
+            "直撃の炎加算分を取り出す計算層の照合",
+            "変換の採用と実戦計算"
+          ],
+          "proposal": {
+            "reuseExistingDirectFireBudget": true,
+            "newDamageMultiplier": null,
+            "tickCount": 3,
+            "tickInterval": 20,
+            "additiveDuration": false,
+            "recursive": false,
+            "grantsBurn": false
+          },
+          "status": "UNIMPLEMENTED_PROPOSAL_PENDING_ADOPTION",
+          "approved": false,
+          "runtimeApplied": false
+        },
+        "description": "既存の炎の直撃加算分を、その既存燃焼の3tickへ配分する変換候補。燃焼源と新しい期間を与えない。",
+        "tradeoff": "配分した炎の直撃加算は直撃から失う。元の技能のAD/AP部分と他元素は変換しない。",
+        "risks": [
+          "未実装・未採用の候補。直撃の炎加算分を取り出す計算層の照合",
+          "未実装・未採用の候補。変換の採用と実戦計算"
+        ]
+      }
+    },
+    {
+      "id": "key_15",
+      "reason": "Specify source-owned effect contract and unresolved adoption parameters.",
+      "before": {
+        "effectContract": null,
+        "description": "雷の集団処理を単体向けに寄せる",
+        "tradeoff": "連鎖対象を減らす",
+        "risks": [
+          "雷技能のelement=3だけでは連鎖しない",
+          "連鎖damageの再発動・単体変換・MODとの担当は未定"
+        ]
+      },
+      "after": {
+        "effectContract": {
+          "classification": "keystone_candidate",
+          "trigger": "所有する連鎖源MODを伴う本人の直撃。雷技能名・elementだけでは起動しない。",
+          "effect": "既存の一回の連鎖ダメージ予算を、隣の敵ではなく元の対象へ二次効果として向ける候補。対象が一体でも同じ一回分だけ使う。",
+          "cost": "その直撃から別対象へ飛ぶ既存連鎖を失う。通常の直接雷加算をもう一度作らない。",
+          "stack": "既存連鎖を置き換え、既存MODの連鎖と両方を発生させない。変換hitはeffect扱いで根の直撃へ戻さない。",
+          "cap": "元の直撃一回につき既存の二次hit一回まで。新しい対象数・連鎖段数を与えない。二次hitから会心・吸収・命中資源・再連鎖を起動しない。",
+          "sourceRefs": [
+            "CorePlayerCombat.kt:537",
+            "QuestEncounterCombat.kt:257"
+          ],
+          "pending": [
+            "単体への変換の採用",
+            "二次効果の計算層・同予算評価"
+          ],
+          "proposal": {
+            "reuseExistingChainFormula": true,
+            "existingChainFlatFactor": 0.8,
+            "secondaryHitsPerRoot": 1,
+            "replacesExistingChain": true,
+            "effectDamage": true,
+            "recursive": false,
+            "grantsChain": false
+          },
+          "status": "UNIMPLEMENTED_PROPOSAL_PENDING_ADOPTION",
+          "approved": false,
+          "runtimeApplied": false
+        },
+        "description": "既存の一回の連鎖ダメージ予算を、隣の敵ではなく元の対象へ二次効果として向ける候補。対象が一体でも同じ一回分だけ使う。",
+        "tradeoff": "その直撃から別対象へ飛ぶ既存連鎖を失う。通常の直接雷加算をもう一度作らない。",
+        "risks": [
+          "未実装・未採用の候補。単体への変換の採用",
+          "未実装・未採用の候補。二次効果の計算層・同予算評価"
+        ]
+      }
+    }
+  ],
+  "edgeChanges": [
+    {
+      "action": "remove",
+      "a": "g20n6",
+      "b": "key_02",
+      "reason": "Blood must not require a pure MP investment that its own rule disables."
+    },
+    {
+      "action": "add",
+      "a": "r19_24_1",
+      "b": "key_02",
+      "reason": "Independent optional blood entry from a suppression-safe general Road."
+    },
+    {
+      "action": "remove",
+      "a": "r10_36_1",
+      "b": "v7g12n0",
+      "reason": "Neutral local stats alone do not remove the outer MP gate."
+    },
+    {
+      "action": "add",
+      "a": "link_assassin_0_3",
+      "b": "v8road_shield_1",
+      "reason": "Paid general shield approach without an MP-only gate."
+    },
+    {
+      "action": "add",
+      "a": "v8road_shield_1",
+      "b": "v8road_shield_2",
+      "reason": "Paid general shield approach without an MP-only gate."
+    },
+    {
+      "action": "add",
+      "a": "v8road_shield_2",
+      "b": "v7g12n0",
+      "reason": "Paid general shield approach without an MP-only gate."
+    },
+    {
+      "action": "remove",
+      "a": "v7g04n3",
+      "b": "v7g04n5",
+      "reason": "Penetration must not require a crit-only point under noCrit."
+    },
+    {
+      "action": "add",
+      "a": "v7g04n4",
+      "b": "v7g04n5",
+      "reason": "Optional penetration from the common physical/crit goal."
+    }
+  ],
+  "contracts": [
+    {
+      "id": "key_09",
+      "classification": "keystone_candidate",
+      "trigger": "手持ちの主力技能を本人が発動する。",
+      "effect": "同じ発動に追加pulseを一つ予定する候補。新技能や別の再帰発動を作らない。",
+      "cost": "1pulseの威力を下げる候補。共通版の倍率は未採用。",
+      "stack": "残響・追矢・既存追加発動と同じpulse予算へ一度だけ合算する案。上限で追加分が消えた場合の代償適用は要採用判断。",
+      "cap": "既存の最終pulse上限8を超えない。追加pulseからこのKeyを再発動しない。",
+      "sourceRefs": [
+        "CoreSkillCatalog.kt:85",
+        "CoreSkillCatalog.kt:94",
+        "CoreSkillCatalog.kt:110",
+        "CoreSkillCatalog.kt:127"
+      ],
+      "pending": [
+        "共通威力倍率",
+        "上限飽和時の代償とMOD合算の採用"
+      ],
+      "proposal": {
+        "extraPulse": 1,
+        "sharedPulseCap": 8,
+        "recursive": false,
+        "powerMultiplier": null
+      },
+      "status": "UNIMPLEMENTED_PROPOSAL_PENDING_ADOPTION",
+      "approved": false,
+      "runtimeApplied": false
+    },
+    {
+      "id": "key_11",
+      "classification": "notable_candidate",
+      "trigger": "既に持つ仲間向け障壁が、本人以外へ届く。自己障壁だけでは起動しない。",
+      "effect": "その既存障壁の付与量を強める数値交換案。障壁技能そのものは与えない。",
+      "cost": "本人の直接攻撃を弱める数値交換案。量と倍率は未採用。3ptも比較用の仮費用。",
+      "stack": "既存の発生量・術者補正・受け手処理に一回だけ適用する案。受け手で強い障壁だけを保持し加算しない。",
+      "cap": "既存の最大HP75%と期間1〜200tickの受け取り上限を維持する。",
+      "sourceRefs": [
+        "CoreSkillCatalog.kt:28",
+        "CorePlayerCombat.kt:413",
+        "CorePlayerCombat.kt:418"
+      ],
+      "pending": [
+        "共通倍率・適用順序",
+        "Notable分類と仮費用の採用"
+      ],
+      "proposal": {
+        "grantsAbility": false,
+        "allyOnly": true,
+        "shieldMultiplier": null,
+        "ownDamageMultiplier": null,
+        "classificationCandidate": "notable"
+      },
+      "status": "UNIMPLEMENTED_PROPOSAL_PENDING_ADOPTION",
+      "approved": false,
+      "runtimeApplied": false
+    },
+    {
+      "id": "key_13",
+      "classification": "keystone_candidate",
+      "trigger": "本人の既存の氷源が、直撃により対象へ減速を適用する。",
+      "effect": "減速が有効な間、その対象への次の手持ち主力の命中を一度の攻撃機会として記録・消費する候補。追加発動や凍結は与えない。",
+      "cost": "機会を作った直撃の即時威力を下げる候補。機会の報酬倍率と代償倍率は未採用。",
+      "stack": "一つの対象に一つの機会。期間は実際の減速終了へ結び付け、足し算で延長しない。同じ主力発動の複数pulseで機会を重ねない。",
+      "cap": "本人・対象・主力発動ごとに報酬は一度。既存の減速強度・ボス補正を維持する。凍結・ボス停止の契約はない。",
+      "sourceRefs": [
+        "CorePlayerCombat.kt:493",
+        "CorePlayerCombat.kt:533",
+        "QuestEncounterCombat.kt:230"
+      ],
+      "pending": [
+        "主力命中の報酬倍率",
+        "直撃の代償倍率",
+        "機会の記録・消費処理の採用"
+      ],
+      "proposal": {
+        "window": "actual applied slow expiry",
+        "oneChargePerTarget": true,
+        "onePayoffPerSignatureActivation": true,
+        "grantsFreeze": false,
+        "payoffMultiplier": null,
+        "initialHitMultiplier": null
+      },
+      "status": "UNIMPLEMENTED_PROPOSAL_PENDING_ADOPTION",
+      "approved": false,
+      "runtimeApplied": false
+    },
+    {
+      "id": "key_14",
+      "classification": "keystone_candidate",
+      "trigger": "所有する燃焼源MODを伴う本人の直撃が、生きている敵へ既存燃焼を作る。炎技能名・elementだけでは起動しない。",
+      "effect": "既存の炎の直撃加算分を、その既存燃焼の3tickへ配分する変換候補。燃焼源と新しい期間を与えない。",
+      "cost": "配分した炎の直撃加算は直撃から失う。元の技能のAD/AP部分と他元素は変換しない。",
+      "stack": "術者・対象ごとに一つの燃焼を保持。強いtick量を採り、弱い再命中で加算しない。再適用は3tickへ更新し、残期間を足さない。",
+      "cap": "既存の20tick間隔・3tickを維持。燃焼tickから再燃焼・連鎖・会心・吸収・命中資源を起動しない。",
+      "sourceRefs": [
+        "CorePlayerCombat.kt:237",
+        "CorePlayerCombat.kt:529",
+        "class-combat-formula-recovery.md"
+      ],
+      "pending": [
+        "直撃の炎加算分を取り出す計算層の照合",
+        "変換の採用と実戦計算"
+      ],
+      "proposal": {
+        "reuseExistingDirectFireBudget": true,
+        "newDamageMultiplier": null,
+        "tickCount": 3,
+        "tickInterval": 20,
+        "additiveDuration": false,
+        "recursive": false,
+        "grantsBurn": false
+      },
+      "status": "UNIMPLEMENTED_PROPOSAL_PENDING_ADOPTION",
+      "approved": false,
+      "runtimeApplied": false
+    },
+    {
+      "id": "key_15",
+      "classification": "keystone_candidate",
+      "trigger": "所有する連鎖源MODを伴う本人の直撃。雷技能名・elementだけでは起動しない。",
+      "effect": "既存の一回の連鎖ダメージ予算を、隣の敵ではなく元の対象へ二次効果として向ける候補。対象が一体でも同じ一回分だけ使う。",
+      "cost": "その直撃から別対象へ飛ぶ既存連鎖を失う。通常の直接雷加算をもう一度作らない。",
+      "stack": "既存連鎖を置き換え、既存MODの連鎖と両方を発生させない。変換hitはeffect扱いで根の直撃へ戻さない。",
+      "cap": "元の直撃一回につき既存の二次hit一回まで。新しい対象数・連鎖段数を与えない。二次hitから会心・吸収・命中資源・再連鎖を起動しない。",
+      "sourceRefs": [
+        "CorePlayerCombat.kt:537",
+        "QuestEncounterCombat.kt:257"
+      ],
+      "pending": [
+        "単体への変換の採用",
+        "二次効果の計算層・同予算評価"
+      ],
+      "proposal": {
+        "reuseExistingChainFormula": true,
+        "existingChainFlatFactor": 0.8,
+        "secondaryHitsPerRoot": 1,
+        "replacesExistingChain": true,
+        "effectDamage": true,
+        "recursive": false,
+        "grantsChain": false
+      },
+      "status": "UNIMPLEMENTED_PROPOSAL_PENDING_ADOPTION",
+      "approved": false,
+      "runtimeApplied": false
+    }
+  ],
+  "sourceGraphUntouched": true,
+  "runtimeApplied": false,
+  "addedRoads": [
+    "v8road_shield_1",
+    "v8road_shield_2"
+  ],
+  "verificationFiles": [
+    "allocation-verification.json",
+    "geometry-verification.json",
+    "browser-verification.json",
+    "browser-targeted-verification.json",
+    "actual-comparison-captures.json",
+    "visual-review.json"
+  ]
+}

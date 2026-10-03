@@ -1,0 +1,33 @@
+{
+  "regularStarts": true,
+  "startRadii": [
+    899.9999940369576,
+    899.9999977317094,
+    899.9999977317094,
+    899.9999940369576,
+    900.0
+  ],
+  "angularSpacing": [
+    72.00000020715831,
+    72.00000020715831,
+    71.99999945682984,
+    72.0000006720237,
+    71.99999945682987
+  ],
+  "centralVoidClear": true,
+  "minWireRadiusFromCenter": 899.9999940369574,
+  "status": "PASS",
+  "nodes": 789,
+  "placedNodes": 789,
+  "edges": 947,
+  "actualSegments": 8410,
+  "crossings": [],
+  "overlaps": [],
+  "nodeNearWires": [],
+  "minNodeWireWorld": 70.4767916124497,
+  "centralStartRadius": 900.0,
+  "centralStartDiameterFraction": 0.1296644993749847,
+  "centralClusterOffsetFromMapCenter": 252.24929818391286,
+  "centralCenterWithinTwoPercent": true,
+  "remainingRoads": []
+}

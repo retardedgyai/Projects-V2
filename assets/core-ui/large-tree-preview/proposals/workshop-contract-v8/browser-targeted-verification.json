@@ -1,0 +1,48 @@
+{
+  "status": "PASS",
+  "regressions": [
+    {
+      "id": "mage-blood",
+      "spent": 30,
+      "newFullyDeadNodes": 0
+    },
+    {
+      "id": "mage-blood-shield",
+      "spent": 46,
+      "newFullyDeadNodes": 0
+    },
+    {
+      "id": "MP+SHIELD",
+      "syntheticSensitivityCase": false,
+      "spent": 23,
+      "barrier": 47
+    },
+    {
+      "id": "SHIELD without MP",
+      "syntheticSensitivityCase": true,
+      "spent": 33,
+      "barrier": 41
+    },
+    {
+      "id": "bloodCost+SHIELD",
+      "syntheticSensitivityCase": false,
+      "spent": 46,
+      "barrier": 73
+    },
+    {
+      "id": "noCrit penetration",
+      "spent": 46,
+      "critOnlyPointPurchased": false
+    },
+    {
+      "id": "No AREA attack",
+      "syntheticSensitivityCase": true,
+      "pureAreaBlocked": true,
+      "mixedPhysicalPreserved": true
+    }
+  ],
+  "ownedMpSaveValid": true,
+  "noAutoRefund": true,
+  "keyRefundRestoresMp": true,
+  "contractsVisible": true
+}

@@ -1,0 +1,437 @@
+{
+  "center": [
+    1230.0,
+    -1245.0
+  ],
+  "expansion": 1800.0,
+  "originalOpeningIds": [
+    "opening_assassin_0_1",
+    "opening_assassin_0_2",
+    "opening_assassin_0_3",
+    "opening_assassin_1_1",
+    "opening_assassin_1_2",
+    "opening_assassin_1_3",
+    "opening_assassin_2_1",
+    "opening_assassin_2_2",
+    "opening_assassin_2_3",
+    "opening_mage_0_1",
+    "opening_mage_0_2",
+    "opening_mage_0_3",
+    "opening_mage_1_1",
+    "opening_mage_1_2",
+    "opening_mage_1_3",
+    "opening_mage_2_1",
+    "opening_mage_2_2",
+    "opening_mage_2_3",
+    "opening_ranger_0_1",
+    "opening_ranger_0_2",
+    "opening_ranger_0_3",
+    "opening_ranger_1_1",
+    "opening_ranger_1_2",
+    "opening_ranger_1_3",
+    "opening_ranger_2_1",
+    "opening_ranger_2_2",
+    "opening_ranger_2_3",
+    "opening_templar_0_1",
+    "opening_templar_0_2",
+    "opening_templar_0_3",
+    "opening_templar_1_1",
+    "opening_templar_1_2",
+    "opening_templar_1_3",
+    "opening_templar_2_1",
+    "opening_templar_2_2",
+    "opening_templar_2_3",
+    "opening_warrior_0_1",
+    "opening_warrior_0_2",
+    "opening_warrior_0_3",
+    "opening_warrior_1_1",
+    "opening_warrior_1_2",
+    "opening_warrior_1_3",
+    "opening_warrior_2_1",
+    "opening_warrior_2_2",
+    "opening_warrior_2_3",
+    "origin_assassin",
+    "origin_mage",
+    "origin_ranger",
+    "origin_templar",
+    "origin_warrior"
+  ],
+  "reusedRoadIds": [
+    "j1",
+    "j36",
+    "join_assassin_0",
+    "join_healer_1",
+    "link_assassin_0_2",
+    "link_assassin_1_3",
+    "link_assassin_2_7",
+    "link_mage_0_1",
+    "link_warrior_0_1",
+    "link_warrior_1_6",
+    "link_warrior_2_7",
+    "r18_26_1",
+    "r1_51_2",
+    "r2_22_1",
+    "r6_35_1",
+    "link_assassin_1_4",
+    "link_ranger_2_2",
+    "link_warrior_1_10",
+    "r1_22_1",
+    "r6_35_2",
+    "r25_44_1",
+    "link_assassin_2_8",
+    "r39_40_3",
+    "r14_27_1",
+    "r16_37_2",
+    "r1_29_4",
+    "r1_29_3",
+    "r16_38_1"
+  ],
+  "remainingRoadPool": [],
+  "centralSharedPaths": [
+    {
+      "path": [
+        "opening_ranger_1_3",
+        "j1",
+        "j36",
+        "opening_assassin_0_3"
+      ],
+      "role": "shared-central-neighbor-route"
+    },
+    {
+      "path": [
+        "opening_assassin_1_3",
+        "join_assassin_0",
+        "join_healer_1",
+        "opening_warrior_0_3"
+      ],
+      "role": "shared-central-neighbor-route"
+    },
+    {
+      "path": [
+        "opening_warrior_1_3",
+        "link_assassin_0_2",
+        "link_assassin_1_3",
+        "opening_templar_0_3"
+      ],
+      "role": "shared-central-neighbor-route"
+    },
+    {
+      "path": [
+        "opening_templar_1_3",
+        "link_assassin_2_7",
+        "link_mage_0_1",
+        "opening_mage_0_3"
+      ],
+      "role": "shared-central-neighbor-route"
+    },
+    {
+      "path": [
+        "opening_mage_1_3",
+        "link_warrior_0_1",
+        "link_warrior_1_6",
+        "opening_ranger_0_3"
+      ],
+      "role": "shared-central-neighbor-route"
+    },
+    {
+      "path": [
+        "opening_warrior_0_3",
+        "g13n8"
+      ],
+      "role": "central-to-outer-goal"
+    },
+    {
+      "path": [
+        "link_assassin_0_2",
+        "link_warrior_2_7"
+      ],
+      "role": "central-to-outer-goal"
+    },
+    {
+      "path": [
+        "opening_mage_1_3",
+        "r18_26_1"
+      ],
+      "role": "central-to-outer-goal"
+    },
+    {
+      "path": [
+        "opening_ranger_1_3",
+        "g51n6"
+      ],
+      "role": "central-to-outer-goal"
+    },
+    {
+      "path": [
+        "opening_assassin_1_3",
+        "r1_51_2",
+        "r1_29_2"
+      ],
+      "role": "central-to-outer-goal"
+    }
+  ],
+  "centralOuterPaths": [],
+  "regularStartRadius": 900.0,
+  "centralVoidRadius": 858,
+  "regularAngles": {
+    "warrior": 162,
+    "tank": 234,
+    "mage": 306,
+    "ranger": 18,
+    "assassin": 90
+  },
+  "centralOpeningIds": [
+    "j1",
+    "j36",
+    "join_assassin_0",
+    "join_healer_1",
+    "link_assassin_0_2",
+    "link_assassin_1_3",
+    "link_assassin_2_7",
+    "link_mage_0_1",
+    "link_warrior_0_1",
+    "link_warrior_1_6",
+    "opening_assassin_0_1",
+    "opening_assassin_0_2",
+    "opening_assassin_0_3",
+    "opening_assassin_1_1",
+    "opening_assassin_1_2",
+    "opening_assassin_1_3",
+    "opening_assassin_2_1",
+    "opening_assassin_2_2",
+    "opening_assassin_2_3",
+    "opening_mage_0_1",
+    "opening_mage_0_2",
+    "opening_mage_0_3",
+    "opening_mage_1_1",
+    "opening_mage_1_2",
+    "opening_mage_1_3",
+    "opening_mage_2_1",
+    "opening_mage_2_2",
+    "opening_mage_2_3",
+    "opening_ranger_0_1",
+    "opening_ranger_0_2",
+    "opening_ranger_0_3",
+    "opening_ranger_1_1",
+    "opening_ranger_1_2",
+    "opening_ranger_1_3",
+    "opening_ranger_2_1",
+    "opening_ranger_2_2",
+    "opening_ranger_2_3",
+    "opening_templar_0_1",
+    "opening_templar_0_2",
+    "opening_templar_0_3",
+    "opening_templar_1_1",
+    "opening_templar_1_2",
+    "opening_templar_1_3",
+    "opening_templar_2_1",
+    "opening_templar_2_2",
+    "opening_templar_2_3",
+    "opening_warrior_0_1",
+    "opening_warrior_0_2",
+    "opening_warrior_0_3",
+    "opening_warrior_1_1",
+    "opening_warrior_1_2",
+    "opening_warrior_1_3",
+    "opening_warrior_2_1",
+    "opening_warrior_2_2",
+    "opening_warrior_2_3",
+    "origin_assassin",
+    "origin_mage",
+    "origin_ranger",
+    "origin_templar",
+    "origin_warrior"
+  ],
+  "neighborBelt": [
+    {
+      "fromClass": "ranger",
+      "toClass": "assassin",
+      "path": [
+        "opening_ranger_1_3",
+        "j1",
+        "j36",
+        "opening_assassin_0_3"
+      ]
+    },
+    {
+      "fromClass": "assassin",
+      "toClass": "warrior",
+      "path": [
+        "opening_assassin_1_3",
+        "join_assassin_0",
+        "join_healer_1",
+        "opening_warrior_0_3"
+      ]
+    },
+    {
+      "fromClass": "warrior",
+      "toClass": "tank",
+      "path": [
+        "opening_warrior_1_3",
+        "link_assassin_0_2",
+        "link_assassin_1_3",
+        "opening_templar_0_3"
+      ]
+    },
+    {
+      "fromClass": "tank",
+      "toClass": "mage",
+      "path": [
+        "opening_templar_1_3",
+        "link_assassin_2_7",
+        "link_mage_0_1",
+        "opening_mage_0_3"
+      ]
+    },
+    {
+      "fromClass": "mage",
+      "toClass": "ranger",
+      "path": [
+        "opening_mage_1_3",
+        "link_warrior_0_1",
+        "link_warrior_1_6",
+        "opening_ranger_0_3"
+      ]
+    }
+  ],
+  "outerTransform": "injective radial expansion of unequal V4 embedding with actual sampled polylines",
+  "oldV4Retained": true,
+  "reference": {
+    "data": "https://github.com/grindinggear/poe2-skilltree-export",
+    "viewer": "https://cvenzin.github.io/poe2-skilltree/",
+    "viewerVersion": "0.5.1",
+    "officialDataSha256": "b52be9c4f17e4114064255ef1b8c58292e9db0e395d95af235a8d3fef0d44642",
+    "adaptation": "PoE2 six shared positions become five ProjectS positions at 72 degrees; effects are not copied"
+  },
+  "roadRedistribution": [
+    {
+      "id": "r2_22_1",
+      "edge": [
+        "g23n5",
+        "r11_40_1"
+      ],
+      "fraction": 0.5
+    },
+    {
+      "id": "r6_35_1",
+      "edge": [
+        "link_warrior_2_7",
+        "g33n0"
+      ],
+      "fraction": 0.5
+    },
+    {
+      "id": "link_assassin_1_4",
+      "edge": [
+        "r18_26_1",
+        "g51n6"
+      ],
+      "fraction": 0.5
+    },
+    {
+      "id": "link_ranger_2_2",
+      "edge": [
+        "g13n8",
+        "link_warrior_2_7"
+      ],
+      "fraction": 0.5
+    },
+    {
+      "id": "link_warrior_1_10",
+      "edge": [
+        "g51n4",
+        "key_01"
+      ],
+      "fraction": 0.5
+    },
+    {
+      "id": "r1_22_1",
+      "edge": [
+        "g18n5",
+        "link_warrior_2_8"
+      ],
+      "fraction": 0.5
+    },
+    {
+      "id": "r6_35_2",
+      "edge": [
+        "g13n8",
+        "r1_29_2"
+      ],
+      "fraction": 0.5
+    },
+    {
+      "id": "r25_44_1",
+      "edge": [
+        "r6_35_1",
+        "g33n0"
+      ],
+      "fraction": 0.5
+    },
+    {
+      "id": "link_assassin_2_8",
+      "edge": [
+        "link_assassin_1_4",
+        "g51n6"
+      ],
+      "fraction": 0.5
+    },
+    {
+      "id": "r39_40_3",
+      "edge": [
+        "g51n6",
+        "g51n7"
+      ],
+      "fraction": 0.5
+    },
+    {
+      "id": "r14_27_1",
+      "edge": [
+        "g33n3",
+        "r18_26_1"
+      ],
+      "fraction": 0.5
+    },
+    {
+      "id": "r16_37_2",
+      "edge": [
+        "g13n8",
+        "link_ranger_2_2"
+      ],
+      "fraction": 0.5
+    },
+    {
+      "id": "r1_29_4",
+      "edge": [
+        "link_warrior_2_8",
+        "g45n1"
+      ],
+      "fraction": 0.4
+    },
+    {
+      "id": "r1_29_3",
+      "edge": [
+        "g51n1",
+        "g51n4"
+      ],
+      "fraction": 0.5
+    },
+    {
+      "id": "r16_38_1",
+      "edge": [
+        "g51n4",
+        "link_warrior_1_10"
+      ],
+      "fraction": 0.7
+    }
+  ],
+  "inputGateRepairs": [
+    {
+      "path": [
+        "link_assassin_2_3",
+        "r14_42_1"
+      ],
+      "role": "neutral-entrance-without-ice-or-shield"
+    }
+  ]
+}

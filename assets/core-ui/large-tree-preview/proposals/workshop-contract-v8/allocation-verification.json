@@ -1,0 +1,1593 @@
+{
+  "status": "PASS",
+  "source645EmbeddedVerbatim": true,
+  "central60AndIncidentEdgesExact": true,
+  "changedNodeIds": [
+    "key_02",
+    "key_09",
+    "key_11",
+    "key_13",
+    "key_14",
+    "key_15",
+    "v7g04n5",
+    "v7g10n0",
+    "v7g10n2",
+    "v7g10n4",
+    "v7g12n0",
+    "v7g12n1",
+    "v7g12n2",
+    "v7g12n3",
+    "v7g12n4",
+    "v7g12n5",
+    "v7g12n6",
+    "v7g12n7"
+  ],
+  "onlyMovedPriorNode": "key_02",
+  "addedPaidRoads": [
+    "v8road_shield_1",
+    "v8road_shield_2"
+  ],
+  "inputCases": [
+    {
+      "profile": "warrior:basic:plain:standard",
+      "siphon": false,
+      "eligible": 662,
+      "reachable": 662
+    },
+    {
+      "profile": "warrior:basic:plain:standard",
+      "siphon": true,
+      "eligible": 669,
+      "reachable": 669
+    },
+    {
+      "profile": "warrior:basic:ice:standard",
+      "siphon": false,
+      "eligible": 673,
+      "reachable": 673
+    },
+    {
+      "profile": "warrior:basic:ice:standard",
+      "siphon": true,
+      "eligible": 680,
+      "reachable": 680
+    },
+    {
+      "profile": "warrior:basic:fire:standard",
+      "siphon": false,
+      "eligible": 670,
+      "reachable": 670
+    },
+    {
+      "profile": "warrior:basic:fire:standard",
+      "siphon": true,
+      "eligible": 677,
+      "reachable": 677
+    },
+    {
+      "profile": "warrior:basic:lightning:standard",
+      "siphon": false,
+      "eligible": 668,
+      "reachable": 668
+    },
+    {
+      "profile": "warrior:basic:lightning:standard",
+      "siphon": true,
+      "eligible": 675,
+      "reachable": 675
+    },
+    {
+      "profile": "warrior:support:plain:standard",
+      "siphon": false,
+      "eligible": 685,
+      "reachable": 685
+    },
+    {
+      "profile": "warrior:support:plain:standard",
+      "siphon": true,
+      "eligible": 692,
+      "reachable": 692
+    },
+    {
+      "profile": "warrior:support:ice:standard",
+      "siphon": false,
+      "eligible": 693,
+      "reachable": 693
+    },
+    {
+      "profile": "warrior:support:ice:standard",
+      "siphon": true,
+      "eligible": 700,
+      "reachable": 700
+    },
+    {
+      "profile": "warrior:support:fire:standard",
+      "siphon": false,
+      "eligible": 693,
+      "reachable": 693
+    },
+    {
+      "profile": "warrior:support:fire:standard",
+      "siphon": true,
+      "eligible": 700,
+      "reachable": 700
+    },
+    {
+      "profile": "warrior:support:lightning:standard",
+      "siphon": false,
+      "eligible": 691,
+      "reachable": 691
+    },
+    {
+      "profile": "warrior:support:lightning:standard",
+      "siphon": true,
+      "eligible": 698,
+      "reachable": 698
+    },
+    {
+      "profile": "warrior:mark:plain:standard",
+      "siphon": false,
+      "eligible": 662,
+      "reachable": 662
+    },
+    {
+      "profile": "warrior:mark:plain:standard",
+      "siphon": true,
+      "eligible": 669,
+      "reachable": 669
+    },
+    {
+      "profile": "warrior:mark:ice:standard",
+      "siphon": false,
+      "eligible": 673,
+      "reachable": 673
+    },
+    {
+      "profile": "warrior:mark:ice:standard",
+      "siphon": true,
+      "eligible": 680,
+      "reachable": 680
+    },
+    {
+      "profile": "warrior:mark:fire:standard",
+      "siphon": false,
+      "eligible": 670,
+      "reachable": 670
+    },
+    {
+      "profile": "warrior:mark:fire:standard",
+      "siphon": true,
+      "eligible": 677,
+      "reachable": 677
+    },
+    {
+      "profile": "warrior:mark:lightning:standard",
+      "siphon": false,
+      "eligible": 668,
+      "reachable": 668
+    },
+    {
+      "profile": "warrior:mark:lightning:standard",
+      "siphon": true,
+      "eligible": 675,
+      "reachable": 675
+    },
+    {
+      "profile": "tank:basic:plain:standard",
+      "siphon": false,
+      "eligible": 700,
+      "reachable": 700
+    },
+    {
+      "profile": "tank:basic:plain:standard",
+      "siphon": true,
+      "eligible": 707,
+      "reachable": 707
+    },
+    {
+      "profile": "tank:basic:ice:standard",
+      "siphon": false,
+      "eligible": 708,
+      "reachable": 708
+    },
+    {
+      "profile": "tank:basic:ice:standard",
+      "siphon": true,
+      "eligible": 715,
+      "reachable": 715
+    },
+    {
+      "profile": "tank:basic:fire:standard",
+      "siphon": false,
+      "eligible": 708,
+      "reachable": 708
+    },
+    {
+      "profile": "tank:basic:fire:standard",
+      "siphon": true,
+      "eligible": 715,
+      "reachable": 715
+    },
+    {
+      "profile": "tank:basic:lightning:standard",
+      "siphon": false,
+      "eligible": 706,
+      "reachable": 706
+    },
+    {
+      "profile": "tank:basic:lightning:standard",
+      "siphon": true,
+      "eligible": 713,
+      "reachable": 713
+    },
+    {
+      "profile": "tank:support:plain:standard",
+      "siphon": false,
+      "eligible": 700,
+      "reachable": 700
+    },
+    {
+      "profile": "tank:support:plain:standard",
+      "siphon": true,
+      "eligible": 707,
+      "reachable": 707
+    },
+    {
+      "profile": "tank:support:ice:standard",
+      "siphon": false,
+      "eligible": 708,
+      "reachable": 708
+    },
+    {
+      "profile": "tank:support:ice:standard",
+      "siphon": true,
+      "eligible": 715,
+      "reachable": 715
+    },
+    {
+      "profile": "tank:support:fire:standard",
+      "siphon": false,
+      "eligible": 708,
+      "reachable": 708
+    },
+    {
+      "profile": "tank:support:fire:standard",
+      "siphon": true,
+      "eligible": 715,
+      "reachable": 715
+    },
+    {
+      "profile": "tank:support:lightning:standard",
+      "siphon": false,
+      "eligible": 706,
+      "reachable": 706
+    },
+    {
+      "profile": "tank:support:lightning:standard",
+      "siphon": true,
+      "eligible": 713,
+      "reachable": 713
+    },
+    {
+      "profile": "tank:mark:plain:standard",
+      "siphon": false,
+      "eligible": 700,
+      "reachable": 700
+    },
+    {
+      "profile": "tank:mark:plain:standard",
+      "siphon": true,
+      "eligible": 707,
+      "reachable": 707
+    },
+    {
+      "profile": "tank:mark:ice:standard",
+      "siphon": false,
+      "eligible": 708,
+      "reachable": 708
+    },
+    {
+      "profile": "tank:mark:ice:standard",
+      "siphon": true,
+      "eligible": 715,
+      "reachable": 715
+    },
+    {
+      "profile": "tank:mark:fire:standard",
+      "siphon": false,
+      "eligible": 708,
+      "reachable": 708
+    },
+    {
+      "profile": "tank:mark:fire:standard",
+      "siphon": true,
+      "eligible": 715,
+      "reachable": 715
+    },
+    {
+      "profile": "tank:mark:lightning:standard",
+      "siphon": false,
+      "eligible": 706,
+      "reachable": 706
+    },
+    {
+      "profile": "tank:mark:lightning:standard",
+      "siphon": true,
+      "eligible": 713,
+      "reachable": 713
+    },
+    {
+      "profile": "mage:basic:plain:standard",
+      "siphon": false,
+      "eligible": 701,
+      "reachable": 701
+    },
+    {
+      "profile": "mage:basic:plain:standard",
+      "siphon": true,
+      "eligible": 708,
+      "reachable": 708
+    },
+    {
+      "profile": "mage:basic:ice:standard",
+      "siphon": false,
+      "eligible": 701,
+      "reachable": 701
+    },
+    {
+      "profile": "mage:basic:ice:standard",
+      "siphon": true,
+      "eligible": 708,
+      "reachable": 708
+    },
+    {
+      "profile": "mage:basic:fire:standard",
+      "siphon": false,
+      "eligible": 701,
+      "reachable": 701
+    },
+    {
+      "profile": "mage:basic:fire:standard",
+      "siphon": true,
+      "eligible": 708,
+      "reachable": 708
+    },
+    {
+      "profile": "mage:basic:lightning:standard",
+      "siphon": false,
+      "eligible": 701,
+      "reachable": 701
+    },
+    {
+      "profile": "mage:basic:lightning:standard",
+      "siphon": true,
+      "eligible": 708,
+      "reachable": 708
+    },
+    {
+      "profile": "mage:support:plain:standard",
+      "siphon": false,
+      "eligible": 721,
+      "reachable": 721
+    },
+    {
+      "profile": "mage:support:plain:standard",
+      "siphon": true,
+      "eligible": 728,
+      "reachable": 728
+    },
+    {
+      "profile": "mage:support:ice:standard",
+      "siphon": false,
+      "eligible": 721,
+      "reachable": 721
+    },
+    {
+      "profile": "mage:support:ice:standard",
+      "siphon": true,
+      "eligible": 728,
+      "reachable": 728
+    },
+    {
+      "profile": "mage:support:fire:standard",
+      "siphon": false,
+      "eligible": 721,
+      "reachable": 721
+    },
+    {
+      "profile": "mage:support:fire:standard",
+      "siphon": true,
+      "eligible": 728,
+      "reachable": 728
+    },
+    {
+      "profile": "mage:support:lightning:standard",
+      "siphon": false,
+      "eligible": 721,
+      "reachable": 721
+    },
+    {
+      "profile": "mage:support:lightning:standard",
+      "siphon": true,
+      "eligible": 728,
+      "reachable": 728
+    },
+    {
+      "profile": "mage:mark:plain:standard",
+      "siphon": false,
+      "eligible": 701,
+      "reachable": 701
+    },
+    {
+      "profile": "mage:mark:plain:standard",
+      "siphon": true,
+      "eligible": 708,
+      "reachable": 708
+    },
+    {
+      "profile": "mage:mark:ice:standard",
+      "siphon": false,
+      "eligible": 701,
+      "reachable": 701
+    },
+    {
+      "profile": "mage:mark:ice:standard",
+      "siphon": true,
+      "eligible": 708,
+      "reachable": 708
+    },
+    {
+      "profile": "mage:mark:fire:standard",
+      "siphon": false,
+      "eligible": 701,
+      "reachable": 701
+    },
+    {
+      "profile": "mage:mark:fire:standard",
+      "siphon": true,
+      "eligible": 708,
+      "reachable": 708
+    },
+    {
+      "profile": "mage:mark:lightning:standard",
+      "siphon": false,
+      "eligible": 701,
+      "reachable": 701
+    },
+    {
+      "profile": "mage:mark:lightning:standard",
+      "siphon": true,
+      "eligible": 708,
+      "reachable": 708
+    },
+    {
+      "profile": "ranger:basic:plain:standard",
+      "siphon": false,
+      "eligible": 673,
+      "reachable": 673
+    },
+    {
+      "profile": "ranger:basic:plain:standard",
+      "siphon": true,
+      "eligible": 680,
+      "reachable": 680
+    },
+    {
+      "profile": "ranger:basic:ice:standard",
+      "siphon": false,
+      "eligible": 673,
+      "reachable": 673
+    },
+    {
+      "profile": "ranger:basic:ice:standard",
+      "siphon": true,
+      "eligible": 680,
+      "reachable": 680
+    },
+    {
+      "profile": "ranger:basic:fire:standard",
+      "siphon": false,
+      "eligible": 681,
+      "reachable": 681
+    },
+    {
+      "profile": "ranger:basic:fire:standard",
+      "siphon": true,
+      "eligible": 688,
+      "reachable": 688
+    },
+    {
+      "profile": "ranger:basic:lightning:standard",
+      "siphon": false,
+      "eligible": 679,
+      "reachable": 679
+    },
+    {
+      "profile": "ranger:basic:lightning:standard",
+      "siphon": true,
+      "eligible": 686,
+      "reachable": 686
+    },
+    {
+      "profile": "ranger:support:plain:standard",
+      "siphon": false,
+      "eligible": 673,
+      "reachable": 673
+    },
+    {
+      "profile": "ranger:support:plain:standard",
+      "siphon": true,
+      "eligible": 680,
+      "reachable": 680
+    },
+    {
+      "profile": "ranger:support:ice:standard",
+      "siphon": false,
+      "eligible": 673,
+      "reachable": 673
+    },
+    {
+      "profile": "ranger:support:ice:standard",
+      "siphon": true,
+      "eligible": 680,
+      "reachable": 680
+    },
+    {
+      "profile": "ranger:support:fire:standard",
+      "siphon": false,
+      "eligible": 681,
+      "reachable": 681
+    },
+    {
+      "profile": "ranger:support:fire:standard",
+      "siphon": true,
+      "eligible": 688,
+      "reachable": 688
+    },
+    {
+      "profile": "ranger:support:lightning:standard",
+      "siphon": false,
+      "eligible": 679,
+      "reachable": 679
+    },
+    {
+      "profile": "ranger:support:lightning:standard",
+      "siphon": true,
+      "eligible": 686,
+      "reachable": 686
+    },
+    {
+      "profile": "ranger:mark:plain:standard",
+      "siphon": false,
+      "eligible": 673,
+      "reachable": 673
+    },
+    {
+      "profile": "ranger:mark:plain:standard",
+      "siphon": true,
+      "eligible": 680,
+      "reachable": 680
+    },
+    {
+      "profile": "ranger:mark:ice:standard",
+      "siphon": false,
+      "eligible": 673,
+      "reachable": 673
+    },
+    {
+      "profile": "ranger:mark:ice:standard",
+      "siphon": true,
+      "eligible": 680,
+      "reachable": 680
+    },
+    {
+      "profile": "ranger:mark:fire:standard",
+      "siphon": false,
+      "eligible": 681,
+      "reachable": 681
+    },
+    {
+      "profile": "ranger:mark:fire:standard",
+      "siphon": true,
+      "eligible": 688,
+      "reachable": 688
+    },
+    {
+      "profile": "ranger:mark:lightning:standard",
+      "siphon": false,
+      "eligible": 679,
+      "reachable": 679
+    },
+    {
+      "profile": "ranger:mark:lightning:standard",
+      "siphon": true,
+      "eligible": 686,
+      "reachable": 686
+    },
+    {
+      "profile": "assassin:basic:plain:standard",
+      "siphon": false,
+      "eligible": 662,
+      "reachable": 662
+    },
+    {
+      "profile": "assassin:basic:plain:standard",
+      "siphon": true,
+      "eligible": 669,
+      "reachable": 669
+    },
+    {
+      "profile": "assassin:basic:ice:standard",
+      "siphon": false,
+      "eligible": 673,
+      "reachable": 673
+    },
+    {
+      "profile": "assassin:basic:ice:standard",
+      "siphon": true,
+      "eligible": 680,
+      "reachable": 680
+    },
+    {
+      "profile": "assassin:basic:fire:standard",
+      "siphon": false,
+      "eligible": 670,
+      "reachable": 670
+    },
+    {
+      "profile": "assassin:basic:fire:standard",
+      "siphon": true,
+      "eligible": 677,
+      "reachable": 677
+    },
+    {
+      "profile": "assassin:basic:lightning:standard",
+      "siphon": false,
+      "eligible": 668,
+      "reachable": 668
+    },
+    {
+      "profile": "assassin:basic:lightning:standard",
+      "siphon": true,
+      "eligible": 675,
+      "reachable": 675
+    },
+    {
+      "profile": "assassin:support:plain:standard",
+      "siphon": false,
+      "eligible": 677,
+      "reachable": 677
+    },
+    {
+      "profile": "assassin:support:plain:standard",
+      "siphon": true,
+      "eligible": 684,
+      "reachable": 684
+    },
+    {
+      "profile": "assassin:support:ice:standard",
+      "siphon": false,
+      "eligible": 688,
+      "reachable": 688
+    },
+    {
+      "profile": "assassin:support:ice:standard",
+      "siphon": true,
+      "eligible": 695,
+      "reachable": 695
+    },
+    {
+      "profile": "assassin:support:fire:standard",
+      "siphon": false,
+      "eligible": 685,
+      "reachable": 685
+    },
+    {
+      "profile": "assassin:support:fire:standard",
+      "siphon": true,
+      "eligible": 692,
+      "reachable": 692
+    },
+    {
+      "profile": "assassin:support:lightning:standard",
+      "siphon": false,
+      "eligible": 683,
+      "reachable": 683
+    },
+    {
+      "profile": "assassin:support:lightning:standard",
+      "siphon": true,
+      "eligible": 690,
+      "reachable": 690
+    },
+    {
+      "profile": "assassin:mark:plain:standard",
+      "siphon": false,
+      "eligible": 662,
+      "reachable": 662
+    },
+    {
+      "profile": "assassin:mark:plain:standard",
+      "siphon": true,
+      "eligible": 669,
+      "reachable": 669
+    },
+    {
+      "profile": "assassin:mark:ice:standard",
+      "siphon": false,
+      "eligible": 673,
+      "reachable": 673
+    },
+    {
+      "profile": "assassin:mark:ice:standard",
+      "siphon": true,
+      "eligible": 680,
+      "reachable": 680
+    },
+    {
+      "profile": "assassin:mark:fire:standard",
+      "siphon": false,
+      "eligible": 670,
+      "reachable": 670
+    },
+    {
+      "profile": "assassin:mark:fire:standard",
+      "siphon": true,
+      "eligible": 677,
+      "reachable": 677
+    },
+    {
+      "profile": "assassin:mark:lightning:standard",
+      "siphon": false,
+      "eligible": 668,
+      "reachable": 668
+    },
+    {
+      "profile": "assassin:mark:lightning:standard",
+      "siphon": true,
+      "eligible": 675,
+      "reachable": 675
+    }
+  ],
+  "examplesChecked": 26,
+  "bloodFresh": {
+    "beforeCost": 20,
+    "beforeDeadNodes": [
+      "g12n1",
+      "g12n2",
+      "g12n3",
+      "g20n1",
+      "g20n4",
+      "g20n5",
+      "g20n6",
+      "g33n3",
+      "opening_mage_1_1",
+      "opening_mage_1_2",
+      "opening_mage_1_3"
+    ],
+    "afterCost": 30,
+    "afterDeadNodes": [],
+    "effectiveStats": {
+      "barrier": 26,
+      "hp": 47,
+      "attackSpeed": 7,
+      "resource": 4,
+      "armor": 26,
+      "resist": 11,
+      "magic": 26,
+      "physical": 24
+    }
+  },
+  "voluntaryMpPreserved": {
+    "beforeCost": 17,
+    "afterCost": 20,
+    "autoRefund": false,
+    "retainedIds": [
+      "g12n1",
+      "g12n2",
+      "g12n3",
+      "g20n1",
+      "g20n4",
+      "g20n5",
+      "g20n6",
+      "g33n3",
+      "link_templar_2_1",
+      "link_warrior_2_1",
+      "opening_mage_1_1",
+      "opening_mage_1_2",
+      "opening_mage_1_3",
+      "origin_mage",
+      "r14_27_1",
+      "r18_26_1",
+      "r19_24_1",
+      "r26_28_1"
+    ]
+  },
+  "shieldCases": [
+    {
+      "name": "MP+SHIELD",
+      "syntheticSensitivityCase": false,
+      "reachable": true,
+      "localCost": 4,
+      "localStats": {
+        "hp": 2,
+        "armor": 2,
+        "barrier": 14
+      },
+      "newPaidApproachPoints": 2
+    },
+    {
+      "name": "SHIELD without MP",
+      "syntheticSensitivityCase": true,
+      "reachable": true,
+      "localCost": 4,
+      "localStats": {
+        "hp": 2,
+        "armor": 2,
+        "barrier": 14
+      },
+      "newPaidApproachPoints": 2
+    },
+    {
+      "name": "bloodCost+SHIELD",
+      "syntheticSensitivityCase": false,
+      "reachable": true,
+      "localCost": 4,
+      "localStats": {
+        "hp": 2,
+        "armor": 2,
+        "barrier": 14
+      },
+      "newPaidApproachPoints": 2
+    }
+  ],
+  "noCritPenetration": {
+    "localCost": 4,
+    "stats": {
+      "physical": 13,
+      "penetration": 3
+    },
+    "critOnlyArmOptional": true
+  },
+  "areaInput": {
+    "requirements": [
+      "DAMAGE",
+      "AREA_ATTACK"
+    ],
+    "sourceProfiles": [
+      {
+        "profile": "warrior:basic:plain:standard",
+        "actualOwnedAreaAttacks": [
+          "踏み込み斬り",
+          "叩きつけ",
+          "薙ぎ払い",
+          "破城突き",
+          "天断"
+        ]
+      },
+      {
+        "profile": "warrior:basic:ice:standard",
+        "actualOwnedAreaAttacks": [
+          "踏み込み斬り",
+          "叩きつけ",
+          "薙ぎ払い",
+          "破城突き",
+          "天断"
+        ]
+      },
+      {
+        "profile": "warrior:basic:fire:standard",
+        "actualOwnedAreaAttacks": [
+          "踏み込み斬り",
+          "叩きつけ",
+          "薙ぎ払い",
+          "破城突き",
+          "天断"
+        ]
+      },
+      {
+        "profile": "warrior:basic:lightning:standard",
+        "actualOwnedAreaAttacks": [
+          "踏み込み斬り",
+          "叩きつけ",
+          "薙ぎ払い",
+          "破城突き",
+          "天断"
+        ]
+      },
+      {
+        "profile": "warrior:support:plain:standard",
+        "actualOwnedAreaAttacks": [
+          "踏み込み斬り",
+          "叩きつけ",
+          "薙ぎ払い",
+          "天断"
+        ]
+      },
+      {
+        "profile": "warrior:support:ice:standard",
+        "actualOwnedAreaAttacks": [
+          "踏み込み斬り",
+          "叩きつけ",
+          "薙ぎ払い",
+          "天断"
+        ]
+      },
+      {
+        "profile": "warrior:support:fire:standard",
+        "actualOwnedAreaAttacks": [
+          "踏み込み斬り",
+          "叩きつけ",
+          "薙ぎ払い",
+          "天断"
+        ]
+      },
+      {
+        "profile": "warrior:support:lightning:standard",
+        "actualOwnedAreaAttacks": [
+          "踏み込み斬り",
+          "叩きつけ",
+          "薙ぎ払い",
+          "天断"
+        ]
+      },
+      {
+        "profile": "warrior:mark:plain:standard",
+        "actualOwnedAreaAttacks": [
+          "踏み込み斬り",
+          "叩きつけ",
+          "薙ぎ払い",
+          "破城突き",
+          "天断"
+        ]
+      },
+      {
+        "profile": "warrior:mark:ice:standard",
+        "actualOwnedAreaAttacks": [
+          "踏み込み斬り",
+          "叩きつけ",
+          "薙ぎ払い",
+          "破城突き",
+          "天断"
+        ]
+      },
+      {
+        "profile": "warrior:mark:fire:standard",
+        "actualOwnedAreaAttacks": [
+          "踏み込み斬り",
+          "叩きつけ",
+          "薙ぎ払い",
+          "破城突き",
+          "天断"
+        ]
+      },
+      {
+        "profile": "warrior:mark:lightning:standard",
+        "actualOwnedAreaAttacks": [
+          "踏み込み斬り",
+          "叩きつけ",
+          "薙ぎ払い",
+          "破城突き",
+          "天断"
+        ]
+      },
+      {
+        "profile": "tank:basic:plain:standard",
+        "actualOwnedAreaAttacks": [
+          "裁きの槌",
+          "集束",
+          "空間圧縮"
+        ]
+      },
+      {
+        "profile": "tank:basic:ice:standard",
+        "actualOwnedAreaAttacks": [
+          "裁きの槌",
+          "集束",
+          "空間圧縮"
+        ]
+      },
+      {
+        "profile": "tank:basic:fire:standard",
+        "actualOwnedAreaAttacks": [
+          "裁きの槌",
+          "集束",
+          "空間圧縮"
+        ]
+      },
+      {
+        "profile": "tank:basic:lightning:standard",
+        "actualOwnedAreaAttacks": [
+          "裁きの槌",
+          "集束",
+          "空間圧縮"
+        ]
+      },
+      {
+        "profile": "tank:support:plain:standard",
+        "actualOwnedAreaAttacks": [
+          "裁きの槌",
+          "集束",
+          "空間圧縮"
+        ]
+      },
+      {
+        "profile": "tank:support:ice:standard",
+        "actualOwnedAreaAttacks": [
+          "裁きの槌",
+          "集束",
+          "空間圧縮"
+        ]
+      },
+      {
+        "profile": "tank:support:fire:standard",
+        "actualOwnedAreaAttacks": [
+          "裁きの槌",
+          "集束",
+          "空間圧縮"
+        ]
+      },
+      {
+        "profile": "tank:support:lightning:standard",
+        "actualOwnedAreaAttacks": [
+          "裁きの槌",
+          "集束",
+          "空間圧縮"
+        ]
+      },
+      {
+        "profile": "tank:mark:plain:standard",
+        "actualOwnedAreaAttacks": [
+          "集束",
+          "裁きの槌",
+          "空間圧縮"
+        ]
+      },
+      {
+        "profile": "tank:mark:ice:standard",
+        "actualOwnedAreaAttacks": [
+          "集束",
+          "裁きの槌",
+          "空間圧縮"
+        ]
+      },
+      {
+        "profile": "tank:mark:fire:standard",
+        "actualOwnedAreaAttacks": [
+          "集束",
+          "裁きの槌",
+          "空間圧縮"
+        ]
+      },
+      {
+        "profile": "tank:mark:lightning:standard",
+        "actualOwnedAreaAttacks": [
+          "集束",
+          "裁きの槌",
+          "空間圧縮"
+        ]
+      },
+      {
+        "profile": "mage:basic:plain:standard",
+        "actualOwnedAreaAttacks": [
+          "霜の波紋",
+          "流星雨",
+          "天火の大術式"
+        ]
+      },
+      {
+        "profile": "mage:basic:ice:standard",
+        "actualOwnedAreaAttacks": [
+          "霜の波紋",
+          "流星雨",
+          "天火の大術式"
+        ]
+      },
+      {
+        "profile": "mage:basic:fire:standard",
+        "actualOwnedAreaAttacks": [
+          "霜の波紋",
+          "流星雨",
+          "天火の大術式"
+        ]
+      },
+      {
+        "profile": "mage:basic:lightning:standard",
+        "actualOwnedAreaAttacks": [
+          "霜の波紋",
+          "流星雨",
+          "天火の大術式"
+        ]
+      },
+      {
+        "profile": "mage:support:plain:standard",
+        "actualOwnedAreaAttacks": [
+          "霜の波紋",
+          "流星雨",
+          "天火の大術式"
+        ]
+      },
+      {
+        "profile": "mage:support:ice:standard",
+        "actualOwnedAreaAttacks": [
+          "霜の波紋",
+          "流星雨",
+          "天火の大術式"
+        ]
+      },
+      {
+        "profile": "mage:support:fire:standard",
+        "actualOwnedAreaAttacks": [
+          "霜の波紋",
+          "流星雨",
+          "天火の大術式"
+        ]
+      },
+      {
+        "profile": "mage:support:lightning:standard",
+        "actualOwnedAreaAttacks": [
+          "霜の波紋",
+          "流星雨",
+          "天火の大術式"
+        ]
+      },
+      {
+        "profile": "mage:mark:plain:standard",
+        "actualOwnedAreaAttacks": [
+          "霜の波紋",
+          "流星雨",
+          "天火の大術式"
+        ]
+      },
+      {
+        "profile": "mage:mark:ice:standard",
+        "actualOwnedAreaAttacks": [
+          "霜の波紋",
+          "流星雨",
+          "天火の大術式"
+        ]
+      },
+      {
+        "profile": "mage:mark:fire:standard",
+        "actualOwnedAreaAttacks": [
+          "霜の波紋",
+          "流星雨",
+          "天火の大術式"
+        ]
+      },
+      {
+        "profile": "mage:mark:lightning:standard",
+        "actualOwnedAreaAttacks": [
+          "霜の波紋",
+          "流星雨",
+          "天火の大術式"
+        ]
+      },
+      {
+        "profile": "ranger:basic:plain:standard",
+        "actualOwnedAreaAttacks": [
+          "霜矢の扇",
+          "矢の嵐"
+        ]
+      },
+      {
+        "profile": "ranger:basic:ice:standard",
+        "actualOwnedAreaAttacks": [
+          "霜矢の扇",
+          "矢の嵐"
+        ]
+      },
+      {
+        "profile": "ranger:basic:fire:standard",
+        "actualOwnedAreaAttacks": [
+          "霜矢の扇",
+          "矢の嵐"
+        ]
+      },
+      {
+        "profile": "ranger:basic:lightning:standard",
+        "actualOwnedAreaAttacks": [
+          "霜矢の扇",
+          "矢の嵐"
+        ]
+      },
+      {
+        "profile": "ranger:support:plain:standard",
+        "actualOwnedAreaAttacks": [
+          "霜矢の扇",
+          "矢の嵐"
+        ]
+      },
+      {
+        "profile": "ranger:support:ice:standard",
+        "actualOwnedAreaAttacks": [
+          "霜矢の扇",
+          "矢の嵐"
+        ]
+      },
+      {
+        "profile": "ranger:support:fire:standard",
+        "actualOwnedAreaAttacks": [
+          "霜矢の扇",
+          "矢の嵐"
+        ]
+      },
+      {
+        "profile": "ranger:support:lightning:standard",
+        "actualOwnedAreaAttacks": [
+          "霜矢の扇",
+          "矢の嵐"
+        ]
+      },
+      {
+        "profile": "ranger:mark:plain:standard",
+        "actualOwnedAreaAttacks": [
+          "霜矢の扇",
+          "矢の嵐"
+        ]
+      },
+      {
+        "profile": "ranger:mark:ice:standard",
+        "actualOwnedAreaAttacks": [
+          "霜矢の扇",
+          "矢の嵐"
+        ]
+      },
+      {
+        "profile": "ranger:mark:fire:standard",
+        "actualOwnedAreaAttacks": [
+          "霜矢の扇",
+          "矢の嵐"
+        ]
+      },
+      {
+        "profile": "ranger:mark:lightning:standard",
+        "actualOwnedAreaAttacks": [
+          "霜矢の扇",
+          "矢の嵐"
+        ]
+      },
+      {
+        "profile": "assassin:basic:plain:standard",
+        "actualOwnedAreaAttacks": [
+          "影刺し",
+          "断命",
+          "刃の輪",
+          "無明連刃"
+        ]
+      },
+      {
+        "profile": "assassin:basic:ice:standard",
+        "actualOwnedAreaAttacks": [
+          "影刺し",
+          "断命",
+          "刃の輪",
+          "無明連刃"
+        ]
+      },
+      {
+        "profile": "assassin:basic:fire:standard",
+        "actualOwnedAreaAttacks": [
+          "影刺し",
+          "断命",
+          "刃の輪",
+          "無明連刃"
+        ]
+      },
+      {
+        "profile": "assassin:basic:lightning:standard",
+        "actualOwnedAreaAttacks": [
+          "影刺し",
+          "断命",
+          "刃の輪",
+          "無明連刃"
+        ]
+      },
+      {
+        "profile": "assassin:support:plain:standard",
+        "actualOwnedAreaAttacks": [
+          "影刺し",
+          "断命",
+          "刃の輪",
+          "無明連刃"
+        ]
+      },
+      {
+        "profile": "assassin:support:ice:standard",
+        "actualOwnedAreaAttacks": [
+          "影刺し",
+          "断命",
+          "刃の輪",
+          "無明連刃"
+        ]
+      },
+      {
+        "profile": "assassin:support:fire:standard",
+        "actualOwnedAreaAttacks": [
+          "影刺し",
+          "断命",
+          "刃の輪",
+          "無明連刃"
+        ]
+      },
+      {
+        "profile": "assassin:support:lightning:standard",
+        "actualOwnedAreaAttacks": [
+          "影刺し",
+          "断命",
+          "刃の輪",
+          "無明連刃"
+        ]
+      },
+      {
+        "profile": "assassin:mark:plain:standard",
+        "actualOwnedAreaAttacks": [
+          "断命",
+          "刃の輪",
+          "影刺し",
+          "無明連刃"
+        ]
+      },
+      {
+        "profile": "assassin:mark:ice:standard",
+        "actualOwnedAreaAttacks": [
+          "断命",
+          "刃の輪",
+          "影刺し",
+          "無明連刃"
+        ]
+      },
+      {
+        "profile": "assassin:mark:fire:standard",
+        "actualOwnedAreaAttacks": [
+          "断命",
+          "刃の輪",
+          "影刺し",
+          "無明連刃"
+        ]
+      },
+      {
+        "profile": "assassin:mark:lightning:standard",
+        "actualOwnedAreaAttacks": [
+          "断命",
+          "刃の輪",
+          "影刺し",
+          "無明連刃"
+        ]
+      }
+    ],
+    "noAreaMixedStats": {
+      "physical": 5
+    }
+  },
+  "sameBudgetComparisons": [
+    {
+      "budget": 48,
+      "budgetAdopted": false,
+      "left": {
+        "id": "assassin-area-48",
+        "spent": 43,
+        "remaining": 5,
+        "targets": [
+          "g41n3",
+          "g42n0"
+        ],
+        "stats": {
+          "hp": 44,
+          "regen": 8,
+          "resource": 21,
+          "attackSpeed": 25.95,
+          "haste": 44,
+          "aoe": 13,
+          "damage": 30,
+          "efficiency": 3,
+          "physical": 6,
+          "resist": 5
+        }
+      },
+      "right": {
+        "id": "assassin-crit-48",
+        "spent": 46,
+        "remaining": 2,
+        "targets": [
+          "g17n0",
+          "g41n3"
+        ],
+        "stats": {
+          "hp": 50,
+          "regen": 8,
+          "resource": 20,
+          "attackSpeed": 12.95,
+          "haste": 44,
+          "move": 4.5,
+          "damage": 30,
+          "efficiency": 3,
+          "crit": 25,
+          "resist": 5
+        }
+      },
+      "leftMinusRight": {
+        "aoe": 13,
+        "attackSpeed": 13.0,
+        "crit": -25,
+        "hp": -6,
+        "move": -4.5,
+        "physical": 6,
+        "resource": 1
+      }
+    },
+    {
+      "budget": 64,
+      "budgetAdopted": false,
+      "left": {
+        "id": "assassin-area-64",
+        "spent": 49,
+        "remaining": 15,
+        "targets": [
+          "g41n3",
+          "g42n0",
+          "g41n6",
+          "g41n7",
+          "g42n1",
+          "g42n2",
+          "g42n6",
+          "g42n7"
+        ],
+        "stats": {
+          "hp": 44,
+          "regen": 8,
+          "resource": 25,
+          "attackSpeed": 28.95,
+          "haste": 44,
+          "physical": 10,
+          "aoe": 22,
+          "damage": 30,
+          "efficiency": 3,
+          "resist": 5
+        }
+      },
+      "right": {
+        "id": "assassin-crit-64",
+        "spent": 51,
+        "remaining": 13,
+        "targets": [
+          "g17n0",
+          "g41n3",
+          "g17n1",
+          "g41n0",
+          "g41n6",
+          "g41n7"
+        ],
+        "stats": {
+          "hp": 50,
+          "regen": 8,
+          "resource": 29,
+          "attackSpeed": 25.95,
+          "haste": 44,
+          "crit": 35,
+          "move": 4.5,
+          "damage": 30,
+          "efficiency": 3,
+          "resist": 5
+        }
+      },
+      "leftMinusRight": {
+        "aoe": 22,
+        "attackSpeed": 3.0,
+        "crit": -35,
+        "hp": -6,
+        "move": -4.5,
+        "physical": 10,
+        "resource": -4
+      }
+    },
+    {
+      "budget": 80,
+      "budgetAdopted": false,
+      "left": {
+        "id": "assassin-area-80",
+        "spent": 55,
+        "remaining": 25,
+        "targets": [
+          "g41n3",
+          "g42n0",
+          "g41n6",
+          "g41n7",
+          "g42n1",
+          "g42n2",
+          "g42n6",
+          "g42n7",
+          "v7g10n0",
+          "v7g10n2",
+          "v7g10n4"
+        ],
+        "stats": {
+          "hp": 50,
+          "regen": 8,
+          "resource": 25,
+          "attackSpeed": 28.95,
+          "haste": 44,
+          "physical": 15,
+          "aoe": 31,
+          "damage": 30,
+          "efficiency": 3,
+          "resist": 5
+        }
+      },
+      "right": {
+        "id": "assassin-crit-80",
+        "spent": 60,
+        "remaining": 20,
+        "targets": [
+          "g17n0",
+          "g41n3",
+          "g17n1",
+          "g41n0",
+          "g41n6",
+          "g41n7",
+          "v7g13n0",
+          "v7g13n2",
+          "v7g13n4"
+        ],
+        "stats": {
+          "hp": 62,
+          "regen": 8,
+          "resource": 41,
+          "attackSpeed": 29.95,
+          "haste": 44,
+          "crit": 35,
+          "move": 4.5,
+          "damage": 30,
+          "efficiency": 3,
+          "resist": 5
+        }
+      },
+      "leftMinusRight": {
+        "aoe": 31,
+        "attackSpeed": -1.0,
+        "crit": -35,
+        "hp": -12,
+        "move": -4.5,
+        "physical": 15,
+        "resource": -16
+      }
+    }
+  ],
+  "life43": {
+    "beforeStats": {
+      "hp": 59,
+      "armor": 41.55,
+      "resist": 39,
+      "regen": 34,
+      "resource": 22,
+      "physical": 24,
+      "attackSpeed": 7,
+      "parry": 45,
+      "barrier": 14,
+      "mana": 4,
+      "efficiency": 8
+    },
+    "afterStats": {
+      "hp": 93,
+      "armor": 77.55,
+      "resist": 36,
+      "regen": 36,
+      "barrier": 14,
+      "physical": 24,
+      "attackSpeed": 7,
+      "parry": 45,
+      "mana": 6
+    },
+    "delta": {
+      "armor": 36.0,
+      "efficiency": -8,
+      "hp": 34,
+      "mana": 2,
+      "regen": 2,
+      "resist": -3,
+      "resource": -22
+    },
+    "runtimeApplied": false
+  },
+  "effectContractsUnimplemented": true
+}

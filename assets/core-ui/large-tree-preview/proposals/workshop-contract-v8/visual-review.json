@@ -1,0 +1,67 @@
+{
+  "status": "VIEWED_ACTUAL_IMAGES",
+  "images": [
+    {
+      "file": "ProjectS_Contract_V8_mage-blood.png",
+      "sha256": "43ed455beb32092f65350458038eef11959d25098a6778ded9d8195441a6df41"
+    },
+    {
+      "file": "ProjectS_Contract_V8_After_Shield.png",
+      "sha256": "00ed52f214dafcfa2d3333ca6288fbfeb6f7a5a8ce339015028dcd36add1ebe9"
+    },
+    {
+      "file": "ProjectS_Contract_V8_Contract_key_11.png",
+      "sha256": "cf51aca0dbde790d3ee677383a49c7a6cf7df92a1999beb51141079cd0fafac7"
+    },
+    {
+      "file": "ProjectS_Contract_V8_Contract_key_14.png",
+      "sha256": "a5f41f147ae74888bfbedcc6cdcc4c850867852901cf9fce00a2eac588a275e2"
+    },
+    {
+      "file": "ProjectS_Contract_V8_Before_After.png",
+      "sha256": "2cd5669dc9dfbb3f0c0f78dc333e34cd4540b9c226c75c43f0546efd95a24f2f"
+    },
+    {
+      "file": "ProjectS_Contract_V8_Pair_assassin-area-48.png",
+      "sha256": "4d51cf4644e54cadb33606bc3ed0a85396bdddc7a2267fdd3a3c88bbd1de7951"
+    },
+    {
+      "file": "ProjectS_Contract_V8_Pair_tank-life-reinvest-43.png",
+      "sha256": "90c68a3f06e685498e035f48ad827d39a527158b0d1422da5bb0950de93f1d13"
+    },
+    {
+      "file": "ProjectS_Contract_V8_Sensitivity_Shield_NoMP.png",
+      "sha256": "46652163bd97d4b126e298aa64b5a3a539b966caff5b31818d48fd39db1d343c"
+    },
+    {
+      "file": "ProjectS_Contract_V8_Overview_And_Choices.png",
+      "sha256": "0daaf624616797fcfba160a1c23d34e230d00d442cb4136d1c6b3491b3d38201"
+    },
+    {
+      "file": "ProjectS_Contract_V8_Contract_key_09.png",
+      "sha256": "73d12cdbcbfdbb2fdab345e4055f072195c739f5c919ce4fa649bdac59256a27"
+    },
+    {
+      "file": "ProjectS_Contract_V8_Contract_key_13.png",
+      "sha256": "a6f6ecb83f2b8cfe78850cd03b8c1ca50279090e8c2d940f0ab2da40af7589a8"
+    },
+    {
+      "file": "ProjectS_Contract_V8_Contract_key_15.png",
+      "sha256": "758a95eb32efdfbc3465d8177e00ac17e95e461fdf11037a01104d24ff584750"
+    }
+  ],
+  "findings": [
+    "Accepted green/gold typography and pictorial pixels retained.",
+    "Blood leaf is separate from the mana ring; same-camera comparison exposes the changed entry.",
+    "Paid general shield approach and neutral common entry are visible.",
+    "Local penetration leaf now connects to the mixed goal.",
+    "Budget and life-reinvestment screenshots display costs, remaining points and supported vectors.",
+    "All five effect contract details are readable after scrolling; unresolved adoption visible.",
+    "Synthetic non-MP screenshot explicitly labels input sensitivity, not a supplied ability."
+  ],
+  "limitations": [
+    "Some old long travel wires and uneven northern gaps remain.",
+    "Displayed stats and route costs do not prove live combat balance.",
+    "Key11 keeps the old terminal drawing while classification and cost remain candidate decisions."
+  ]
+}
