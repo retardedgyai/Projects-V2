@@ -12,9 +12,10 @@
   "SourceRoleCounts": {
     "DeliveredReviewArtifacts": 8,
     "OwnedAuthoringSources": 14,
-    "SuppliedHandoffRecords": 2
+    "SuppliedHandoffRecords": 2,
+    "RecoveryFiles": 8
   },
-  "SourceDependencies": "These editing scripts use the existing Noctveil authoring workspace (v32 protected input and v35/v40/v41 helper/topology files). Delivered bbmodel is self-contained with embedded textures; those scripts are not a standalone runtime or game integration.",
+  "SourceDependencies": "Current-model editing and sampled GUI-free preview now resume independently using the embedded bbmodel, owned helper copies and recovery/review_saved_model.py; Python 3.12, NumPy and Pillow required. Byte-exact historical work/ authoring scripts still require the omitted legacy inputs mapped in recovery/README.md. Neither native/game parity nor historical full generation is claimed.",
   "RelatedLibrary": {
     "CurrentGuiFreeReview": {
       "library_file_id": "libfile_bda2900e6d188191adad3ebef78f337e",
@@ -89,7 +90,7 @@
       "ordinary_motion_preview": "Existing mesh_preview.py320x24025 frames,2.05s; GUI-free, no new renderer",
       "proven_parity": {
         "current_iteration_07_native_poses": 4,
-        "max_vertex_difference_units": 4.6048432255985435E-14,
+        "max_vertex_difference_units": 4.6048432255985435e-14,
         "native_textures_errors": 0,
         "scope": "Geometry/world transforms only, not image pixel/shading equivalence."
       },
@@ -245,6 +246,67 @@
       "Bytes": 6371,
       "Sha256": "d14e22ad047cfade0a80ea487d344600e798b443bc84d2e9cfbe63c2adee6eb0",
       "Role": "supplied_limits_and_reproduction_metadata"
+    },
+    {
+      "Path": ".gitignore",
+      "Bytes": 17,
+      "Sha256": "68df40880ebed69cca137a6f736cf2ed386d92a6e9bcd6a6bf7635aaa041a363",
+      "Role": "isolated_current_model_recovery_source_or_evidence"
+    },
+    {
+      "Path": "recovery-verification.json",
+      "Bytes": 6466,
+      "Sha256": "109c5803785df383acf63b91cab0de055c7684b60dcbdf68b64cc329733e1a21",
+      "Role": "isolated_current_model_recovery_source_or_evidence"
+    },
+    {
+      "Path": "recovery/.gitignore",
+      "Bytes": 13,
+      "Sha256": "32dae3052f331ee34d628ef535709b301259a45df7c7522c4d35dcf49873f00b",
+      "Role": "isolated_current_model_recovery_source_or_evidence"
+    },
+    {
+      "Path": "recovery/mesh_preview.py",
+      "Bytes": 3550,
+      "Sha256": "ba1b3a95931a9c25a66bc50e334f5274cbd23fc3c6446475682eff6e6143d459",
+      "Role": "isolated_current_model_recovery_source_or_evidence"
+    },
+    {
+      "Path": "recovery/preview_bbmodel.py",
+      "Bytes": 11168,
+      "Sha256": "b9ae0f77a7cb024f6e16058cbaacf318b15aebccdbaa10f4961909734a0e77f2",
+      "Role": "isolated_current_model_recovery_source_or_evidence"
+    },
+    {
+      "Path": "recovery/README.md",
+      "Bytes": 4193,
+      "Sha256": "4944aa6a0490a275b8a9c9dbb24191bfaa47e7b1f8426a61f248c8fc2773a9d2",
+      "Role": "isolated_current_model_recovery_source_or_evidence"
+    },
+    {
+      "Path": "recovery/requirements.txt",
+      "Bytes": 120,
+      "Sha256": "6153f23a86b7a397dbf0e917e19577fc25713db2edb556366a18df75ba486806",
+      "Role": "isolated_current_model_recovery_source_or_evidence"
+    },
+    {
+      "Path": "recovery/review_saved_model.py",
+      "Bytes": 5186,
+      "Sha256": "8269db91bd21ff8aaf22ba58a2f4a3916773db6a6d3e89445f3878cd4d085921",
+      "Role": "isolated_current_model_recovery_source_or_evidence"
     }
-  ]
+  ],
+  "RecoveryCheckedUtc": "2026-10-03T16:17:13.579765+00:00",
+  "RecoveryVerification": {
+    "Record": "recovery-verification.json",
+    "Instructions": "recovery/README.md",
+    "FrozenOriginalMembersUnchanged": 24,
+    "AllFourClipsReadable": true,
+    "FinitePoseSamples": 12,
+    "LightweightPreviewFrames": 3,
+    "EmbeddedAndSeparateTexturePixelsMatch": true,
+    "EditableCopyByteExact": true,
+    "HistoricalFullGenerationReproduced": false,
+    "OriginalWorkspaceRequiredForCurrentModelRecovery": false
+  }
 }

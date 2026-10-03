@@ -1,0 +1,253 @@
+{
+  "scope": "Source loading, texture pixel identity, finite sampled poses, and existing lightweight renderer only; no collision/art/native/game pass.",
+  "model_sha256": "8809b24da17f3ef7b8e8aeb8d8ad52c0da842ba14335e2d4f907f678bcb25e98",
+  "embedded_texture_count": 2,
+  "separate_texture_pixels_match": true,
+  "element_count": 128,
+  "animation_count": 4,
+  "pose_checks": [
+    {
+      "animation": "wing_arm_sweep_timing_review_v42",
+      "time": 0.0,
+      "triangles": 2156,
+      "minimum": [
+        -25.38293647577211,
+        0.0029999999999733534,
+        -18.838971969036038
+      ],
+      "maximum": [
+        56.2829746785895,
+        37.826072987529166,
+        41.714942366232144
+      ]
+    },
+    {
+      "animation": "wing_arm_sweep_timing_review_v42",
+      "time": 1.025,
+      "triangles": 2156,
+      "minimum": [
+        -15.408309561130384,
+        0.0026715266234643197,
+        -48.794103449150626
+      ],
+      "maximum": [
+        22.779826003867896,
+        30.60136309617426,
+        39.583596046885766
+      ]
+    },
+    {
+      "animation": "wing_arm_sweep_timing_review_v42",
+      "time": 2.05,
+      "triangles": 2156,
+      "minimum": [
+        -33.92918731678796,
+        0.0029999999997805103,
+        -45.62253682275843
+      ],
+      "maximum": [
+        23.936089040735883,
+        32.1465611091206,
+        38.45391024611132
+      ]
+    },
+    {
+      "animation": "idle_threat_store_review_v32",
+      "time": 0.0,
+      "triangles": 2156,
+      "minimum": [
+        -16.081988937918123,
+        0.0,
+        -21.4
+      ],
+      "maximum": [
+        16.081988937918123,
+        31.656159960339686,
+        40.07833030929042
+      ]
+    },
+    {
+      "animation": "idle_threat_store_review_v32",
+      "time": 6.1,
+      "triangles": 2156,
+      "minimum": [
+        -33.39087409881675,
+        0.0,
+        -21.62430939736394
+      ],
+      "maximum": [
+        33.390874097991784,
+        45.79651932915593,
+        40.07833030929042
+      ]
+    },
+    {
+      "animation": "idle_threat_store_review_v32",
+      "time": 12.2,
+      "triangles": 2156,
+      "minimum": [
+        -16.081988937918123,
+        0.0,
+        -21.4
+      ],
+      "maximum": [
+        16.081988937918123,
+        31.656159960339686,
+        40.07833030929042
+      ]
+    },
+    {
+      "animation": "closed_idle_breath_v32",
+      "time": 0.0,
+      "triangles": 2156,
+      "minimum": [
+        -16.081988937918123,
+        0.0,
+        -21.4
+      ],
+      "maximum": [
+        16.081988937918123,
+        31.656159960339686,
+        40.07833030929042
+      ]
+    },
+    {
+      "animation": "closed_idle_breath_v32",
+      "time": 1.6,
+      "triangles": 2156,
+      "minimum": [
+        -16.081988937918123,
+        0.0,
+        -21.345599603692943
+      ],
+      "maximum": [
+        16.081988937918123,
+        31.963920566841686,
+        40.12545820844216
+      ]
+    },
+    {
+      "animation": "closed_idle_breath_v32",
+      "time": 3.2,
+      "triangles": 2156,
+      "minimum": [
+        -16.081988937918123,
+        0.0,
+        -21.4
+      ],
+      "maximum": [
+        16.081988937918123,
+        31.656159960339686,
+        40.07833030929042
+      ]
+    },
+    {
+      "animation": "threat_then_tipfirst_storage_v32",
+      "time": 0.0,
+      "triangles": 2156,
+      "minimum": [
+        -16.081988937918123,
+        0.0,
+        -21.4
+      ],
+      "maximum": [
+        16.081988937918123,
+        31.656159960339686,
+        40.07833030929042
+      ]
+    },
+    {
+      "animation": "threat_then_tipfirst_storage_v32",
+      "time": 2.9,
+      "triangles": 2156,
+      "minimum": [
+        -33.39087409881675,
+        0.0,
+        -21.62430939736394
+      ],
+      "maximum": [
+        33.390874097991784,
+        45.79651932915593,
+        40.07833030929042
+      ]
+    },
+    {
+      "animation": "threat_then_tipfirst_storage_v32",
+      "time": 5.8,
+      "triangles": 2156,
+      "minimum": [
+        -16.081988937918123,
+        0.0,
+        -21.4
+      ],
+      "maximum": [
+        16.081988937918123,
+        31.656159960339686,
+        40.07833030929042
+      ]
+    }
+  ],
+  "preview": [
+    {
+      "file": "pose-0.png",
+      "time": 0.0,
+      "size": [
+        320,
+        240
+      ],
+      "sha256": "f912282de6779a123f2629c9fc18729c9d52ef540b77e8d916892ce48a24c55f"
+    },
+    {
+      "file": "pose-1.png",
+      "time": 1.025,
+      "size": [
+        320,
+        240
+      ],
+      "sha256": "df8bd196a680038d6f27757dfc56a87094523b2a33358123020818d8e286587f"
+    },
+    {
+      "file": "pose-2.png",
+      "time": 2.05,
+      "size": [
+        320,
+        240
+      ],
+      "sha256": "28622d0b1d1229b52c07bad27b9121771cb56ac3785a7488775822f189c530d2"
+    }
+  ],
+  "editable_copy_byte_exact": true,
+  "protected_source_unchanged": true,
+  "dependencies": {
+    "python": "3.12.14",
+    "numpy": "2.3.5",
+    "Pillow": "12.3.0"
+  },
+  "native_or_game_runtime_launched": false,
+  "verified_utc": "2026-10-03T16:17:13.579765+00:00",
+  "isolation": {
+    "fresh_temporary_copy": true,
+    "original_producer_workspace_reads_rejected_by_python_audit_hook": true,
+    "original_snapshot_reads_rejected_by_python_audit_hook": true,
+    "attempted_reads_to_either_blocked_root": 0,
+    "native_editor_game_network_not_used": true
+  },
+  "original_frozen_members_sha256_verified": 24,
+  "owned_helpers": [
+    {
+      "file": "recovery/preview_bbmodel.py",
+      "sha256": "b9ae0f77a7cb024f6e16058cbaacf318b15aebccdbaa10f4961909734a0e77f2",
+      "copied_exact_from_owned_existing_helper": true,
+      "original_unchanged_during_capture_and_verification": true
+    },
+    {
+      "file": "recovery/mesh_preview.py",
+      "sha256": "ba1b3a95931a9c25a66bc50e334f5274cbd23fc3c6446475682eff6e6143d459",
+      "copied_exact_from_owned_existing_helper": true,
+      "original_unchanged_during_capture_and_verification": true
+    }
+  ],
+  "historical_generation_chain_reproduced": false,
+  "historical_inputs_needed": "See recovery/README.md; legacy authoring scripts remain byte-exact and require omitted v21/v32/v41/intermediate models/reports. Current-model recovery does not require those historical inputs.",
+  "preview_images_visually_inspected": true
+}

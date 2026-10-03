@@ -87,8 +87,10 @@
     "SourceType": "Fixed hash-listed non-Git checkpoint",
     "LibraryFileId": null,
     "LibraryVersion": null,
-    "FileCount": 24,
-    "Bytes": 10768654.0,
-    "Manifest": "noctveil-v42-iteration09/source-snapshot.json"
+    "FileCount": 32,
+    "Bytes": 10799367,
+    "Manifest": "noctveil-v42-iteration09/source-snapshot.json",
+    "RecoveryInstructions": "noctveil-v42-iteration09/recovery/README.md",
+    "CurrentModelRecoveryIndependentOfOriginalWorkspace": true
   }
 ]
