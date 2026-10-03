@@ -1,0 +1,4130 @@
+{
+  "baseline": "V8 / 8d384a4b",
+  "runtimeApplied": false,
+  "adopted": false,
+  "nodeChanges": [
+    {
+      "id": "opening_warrior_0_1",
+      "before": {
+        "id": "opening_warrior_0_1",
+        "x": 243.03117,
+        "y": -787.6243,
+        "type": "small",
+        "name": "一撃の基礎 I",
+        "stats": {
+          "physical": 6
+        },
+        "icon": "sword",
+        "group": null,
+        "opening": true,
+        "origin": "warrior",
+        "primary": "physical",
+        "depth": 1,
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "diff_proposal",
+        "sourceRef": "v6:opening_warrior_0_1",
+        "requirements": [],
+        "desc": "起点近くで分岐・合流・横断する比較案。同じ目標へ進んでも途中の能力を選べる。",
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "physical": [
+            "DAMAGE"
+          ]
+        }
+      },
+      "after": {
+        "id": "opening_warrior_0_1",
+        "x": 243.03117,
+        "y": -787.6243,
+        "type": "small",
+        "name": "打撃と闘気 I",
+        "stats": {
+          "physical": 4,
+          "resource": 2
+        },
+        "icon": "sword",
+        "group": null,
+        "opening": true,
+        "origin": "warrior",
+        "primary": "physical",
+        "depth": 1,
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "specialization_v9_proposal",
+        "sourceRef": "v6:opening_warrior_0_1",
+        "requirements": [],
+        "desc": "起点近くで分岐・合流・横断する比較案。同じ目標へ進んでも途中の能力を選べる。",
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "physical": [
+            "DAMAGE"
+          ],
+          "resource": [
+            "RESOURCE"
+          ]
+        },
+        "description": "直外側の専門帯へ進む初期能力の比較案。中央の位置・線・費用は保持。隣職の終端だけで専門帯の主要効果を取り切れない。"
+      }
+    },
+    {
+      "id": "opening_warrior_0_2",
+      "before": {
+        "id": "opening_warrior_0_2",
+        "x": 24.87304,
+        "y": -585.30765,
+        "type": "small",
+        "name": "一撃の基礎 II",
+        "stats": {
+          "physical": 6
+        },
+        "icon": "sword",
+        "group": null,
+        "opening": true,
+        "origin": "warrior",
+        "primary": "physical",
+        "depth": 2,
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "diff_proposal",
+        "sourceRef": "v6:opening_warrior_0_2",
+        "requirements": [],
+        "desc": "起点近くで分岐・合流・横断する比較案。同じ目標へ進んでも途中の能力を選べる。",
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "physical": [
+            "DAMAGE"
+          ]
+        }
+      },
+      "after": {
+        "id": "opening_warrior_0_2",
+        "x": 24.87304,
+        "y": -585.30765,
+        "type": "small",
+        "name": "打撃と闘気 II",
+        "stats": {
+          "physical": 4,
+          "hp": 2
+        },
+        "icon": "sword",
+        "group": null,
+        "opening": true,
+        "origin": "warrior",
+        "primary": "physical",
+        "depth": 2,
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "specialization_v9_proposal",
+        "sourceRef": "v6:opening_warrior_0_2",
+        "requirements": [],
+        "desc": "起点近くで分岐・合流・横断する比較案。同じ目標へ進んでも途中の能力を選べる。",
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "physical": [
+            "DAMAGE"
+          ],
+          "hp": []
+        },
+        "description": "直外側の専門帯へ進む初期能力の比較案。中央の位置・線・費用は保持。隣職の終端だけで専門帯の主要効果を取り切れない。"
+      }
+    },
+    {
+      "id": "opening_warrior_0_3",
+      "before": {
+        "id": "opening_warrior_0_3",
+        "x": -227.99713,
+        "y": -392.74161,
+        "type": "notable",
+        "name": "鍛えた一撃",
+        "stats": {
+          "physical": 12,
+          "attackSpeed": 2
+        },
+        "icon": "sword",
+        "group": null,
+        "opening": true,
+        "origin": "warrior",
+        "primary": "physical",
+        "depth": 3,
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "diff_proposal",
+        "sourceRef": "v6:opening_warrior_0_3",
+        "requirements": [],
+        "desc": "起点近くで分岐・合流・横断する比較案。同じ目標へ進んでも途中の能力を選べる。",
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "physical": [
+            "DAMAGE"
+          ],
+          "attackSpeed": [
+            "DAMAGE"
+          ]
+        }
+      },
+      "after": {
+        "id": "opening_warrior_0_3",
+        "x": -227.99713,
+        "y": -392.74161,
+        "type": "notable",
+        "name": "打撃と闘気・入口",
+        "stats": {
+          "physical": 6,
+          "resource": 3
+        },
+        "icon": "sword",
+        "group": null,
+        "opening": true,
+        "origin": "warrior",
+        "primary": "physical",
+        "depth": 3,
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "specialization_v9_proposal",
+        "sourceRef": "v6:opening_warrior_0_3",
+        "requirements": [],
+        "desc": "起点近くで分岐・合流・横断する比較案。同じ目標へ進んでも途中の能力を選べる。",
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "physical": [
+            "DAMAGE"
+          ],
+          "resource": [
+            "RESOURCE"
+          ]
+        },
+        "description": "直外側の専門帯へ進む初期能力の比較案。中央の位置・線・費用は保持。隣職の終端だけで専門帯の主要効果を取り切れない。"
+      }
+    },
+    {
+      "id": "opening_warrior_1_1",
+      "before": {
+        "id": "opening_warrior_1_1",
+        "x": 162.68675,
+        "y": -1034.89899,
+        "type": "small",
+        "name": "生命の基礎 I",
+        "stats": {
+          "hp": 4
+        },
+        "icon": "heart",
+        "group": null,
+        "opening": true,
+        "origin": "warrior",
+        "primary": "hp",
+        "depth": 1,
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "diff_proposal",
+        "sourceRef": "v6:opening_warrior_1_1",
+        "requirements": [],
+        "desc": "起点近くで分岐・合流・横断する比較案。同じ目標へ進んでも途中の能力を選べる。",
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "hp": []
+        }
+      },
+      "after": {
+        "id": "opening_warrior_1_1",
+        "x": 162.68675,
+        "y": -1034.89899,
+        "type": "small",
+        "name": "前線の備え I",
+        "stats": {
+          "hp": 3,
+          "armor": 3
+        },
+        "icon": "heart",
+        "group": null,
+        "opening": true,
+        "origin": "warrior",
+        "primary": "hp",
+        "depth": 1,
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "specialization_v9_proposal",
+        "sourceRef": "v6:opening_warrior_1_1",
+        "requirements": [],
+        "desc": "起点近くで分岐・合流・横断する比較案。同じ目標へ進んでも途中の能力を選べる。",
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "hp": [],
+          "armor": []
+        },
+        "description": "直外側の専門帯へ進む初期能力の比較案。中央の位置・線・費用は保持。隣職の終端だけで専門帯の主要効果を取り切れない。"
+      }
+    },
+    {
+      "id": "opening_warrior_1_2",
+      "before": {
+        "id": "opening_warrior_1_2",
+        "x": -132.72563,
+        "y": -1070.34647,
+        "type": "small",
+        "name": "生命の基礎 II",
+        "stats": {
+          "hp": 4
+        },
+        "icon": "heart",
+        "group": null,
+        "opening": true,
+        "origin": "warrior",
+        "primary": "hp",
+        "depth": 2,
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "diff_proposal",
+        "sourceRef": "v6:opening_warrior_1_2",
+        "requirements": [],
+        "desc": "起点近くで分岐・合流・横断する比較案。同じ目標へ進んでも途中の能力を選べる。",
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "hp": []
+        }
+      },
+      "after": {
+        "id": "opening_warrior_1_2",
+        "x": -132.72563,
+        "y": -1070.34647,
+        "type": "small",
+        "name": "前線の備え II",
+        "stats": {
+          "hp": 3,
+          "armor": 3
+        },
+        "icon": "heart",
+        "group": null,
+        "opening": true,
+        "origin": "warrior",
+        "primary": "hp",
+        "depth": 2,
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "specialization_v9_proposal",
+        "sourceRef": "v6:opening_warrior_1_2",
+        "requirements": [],
+        "desc": "起点近くで分岐・合流・横断する比較案。同じ目標へ進んでも途中の能力を選べる。",
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "hp": [],
+          "armor": []
+        },
+        "description": "直外側の専門帯へ進む初期能力の比較案。中央の位置・線・費用は保持。隣職の終端だけで専門帯の主要効果を取り切れない。"
+      }
+    },
+    {
+      "id": "opening_warrior_1_3",
+      "before": {
+        "id": "opening_warrior_1_3",
+        "x": -450.48937,
+        "y": -1077.50231,
+        "type": "notable",
+        "name": "戦うための体力",
+        "stats": {
+          "hp": 8,
+          "armor": 8
+        },
+        "icon": "heart",
+        "group": null,
+        "opening": true,
+        "origin": "warrior",
+        "primary": "hp",
+        "depth": 3,
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "diff_proposal",
+        "sourceRef": "v6:opening_warrior_1_3",
+        "requirements": [],
+        "desc": "起点近くで分岐・合流・横断する比較案。同じ目標へ進んでも途中の能力を選べる。",
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "hp": [],
+          "armor": []
+        }
+      },
+      "after": {
+        "id": "opening_warrior_1_3",
+        "x": -450.48937,
+        "y": -1077.50231,
+        "type": "notable",
+        "name": "前線の備え・入口",
+        "stats": {
+          "hp": 5,
+          "armor": 4
+        },
+        "icon": "heart",
+        "group": null,
+        "opening": true,
+        "origin": "warrior",
+        "primary": "hp",
+        "depth": 3,
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "specialization_v9_proposal",
+        "sourceRef": "v6:opening_warrior_1_3",
+        "requirements": [],
+        "desc": "起点近くで分岐・合流・横断する比較案。同じ目標へ進んでも途中の能力を選べる。",
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "hp": [],
+          "armor": []
+        },
+        "description": "直外側の専門帯へ進む初期能力の比較案。中央の位置・線・費用は保持。隣職の終端だけで専門帯の主要効果を取り切れない。"
+      }
+    },
+    {
+      "id": "opening_warrior_2_1",
+      "before": {
+        "id": "opening_warrior_2_1",
+        "x": -34.90517,
+        "y": -834.0074,
+        "type": "small",
+        "name": "手数の基礎 I",
+        "stats": {
+          "attackSpeed": 3
+        },
+        "icon": "speed",
+        "group": null,
+        "opening": true,
+        "origin": "warrior",
+        "primary": "attackSpeed",
+        "depth": 1,
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "diff_proposal",
+        "sourceRef": "v6:opening_warrior_2_1",
+        "requirements": [],
+        "desc": "起点近くで分岐・合流・横断する比較案。同じ目標へ進んでも途中の能力を選べる。",
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "attackSpeed": [
+            "DAMAGE"
+          ]
+        }
+      },
+      "after": {
+        "id": "opening_warrior_2_1",
+        "x": -34.90517,
+        "y": -834.0074,
+        "type": "small",
+        "name": "通常攻撃の備え I",
+        "stats": {
+          "attackSpeed": 2,
+          "resource": 2
+        },
+        "icon": "speed",
+        "group": null,
+        "opening": true,
+        "origin": "warrior",
+        "primary": "attackSpeed",
+        "depth": 1,
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "specialization_v9_proposal",
+        "sourceRef": "v6:opening_warrior_2_1",
+        "requirements": [],
+        "desc": "起点近くで分岐・合流・横断する比較案。同じ目標へ進んでも途中の能力を選べる。",
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "attackSpeed": [
+            "DAMAGE"
+          ],
+          "resource": [
+            "RESOURCE"
+          ]
+        },
+        "description": "直外側の専門帯へ進む初期能力の比較案。中央の位置・線・費用は保持。隣職の終端だけで専門帯の主要効果を取り切れない。"
+      }
+    },
+    {
+      "id": "opening_warrior_2_2",
+      "before": {
+        "id": "opening_warrior_2_2",
+        "x": -277.42458,
+        "y": -755.20806,
+        "type": "small",
+        "name": "手数の基礎 II",
+        "stats": {
+          "attackSpeed": 3
+        },
+        "icon": "speed",
+        "group": null,
+        "opening": true,
+        "origin": "warrior",
+        "primary": "attackSpeed",
+        "depth": 2,
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "diff_proposal",
+        "sourceRef": "v6:opening_warrior_2_2",
+        "requirements": [],
+        "desc": "起点近くで分岐・合流・横断する比較案。同じ目標へ進んでも途中の能力を選べる。",
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "attackSpeed": [
+            "DAMAGE"
+          ]
+        }
+      },
+      "after": {
+        "id": "opening_warrior_2_2",
+        "x": -277.42458,
+        "y": -755.20806,
+        "type": "small",
+        "name": "通常攻撃の備え II",
+        "stats": {
+          "attackSpeed": 2,
+          "hp": 2
+        },
+        "icon": "speed",
+        "group": null,
+        "opening": true,
+        "origin": "warrior",
+        "primary": "attackSpeed",
+        "depth": 2,
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "specialization_v9_proposal",
+        "sourceRef": "v6:opening_warrior_2_2",
+        "requirements": [],
+        "desc": "起点近くで分岐・合流・横断する比較案。同じ目標へ進んでも途中の能力を選べる。",
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "attackSpeed": [
+            "DAMAGE"
+          ],
+          "hp": []
+        },
+        "description": "直外側の専門帯へ進む初期能力の比較案。中央の位置・線・費用は保持。隣職の終端だけで専門帯の主要効果を取り切れない。"
+      }
+    },
+    {
+      "id": "opening_warrior_2_3",
+      "before": {
+        "id": "opening_warrior_2_3",
+        "x": -519.94399,
+        "y": -676.40873,
+        "type": "notable",
+        "name": "軽やかな連撃",
+        "stats": {
+          "attackSpeed": 5,
+          "resource": 4
+        },
+        "icon": "speed",
+        "group": null,
+        "opening": true,
+        "origin": "warrior",
+        "primary": "attackSpeed",
+        "depth": 3,
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "diff_proposal",
+        "sourceRef": "v6:opening_warrior_2_3",
+        "requirements": [],
+        "desc": "起点近くで分岐・合流・横断する比較案。同じ目標へ進んでも途中の能力を選べる。",
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "attackSpeed": [
+            "DAMAGE"
+          ],
+          "resource": [
+            "RESOURCE"
+          ]
+        }
+      },
+      "after": {
+        "id": "opening_warrior_2_3",
+        "x": -519.94399,
+        "y": -676.40873,
+        "type": "notable",
+        "name": "通常攻撃の備え・入口",
+        "stats": {
+          "attackSpeed": 3,
+          "resource": 3
+        },
+        "icon": "speed",
+        "group": null,
+        "opening": true,
+        "origin": "warrior",
+        "primary": "attackSpeed",
+        "depth": 3,
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "specialization_v9_proposal",
+        "sourceRef": "v6:opening_warrior_2_3",
+        "requirements": [],
+        "desc": "起点近くで分岐・合流・横断する比較案。同じ目標へ進んでも途中の能力を選べる。",
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "attackSpeed": [
+            "DAMAGE"
+          ],
+          "resource": [
+            "RESOURCE"
+          ]
+        },
+        "description": "直外側の専門帯へ進む初期能力の比較案。中央の位置・線・費用は保持。隣職の終端だけで専門帯の主要効果を取り切れない。"
+      }
+    },
+    {
+      "id": "opening_templar_0_1",
+      "before": {
+        "id": "opening_templar_0_1",
+        "x": 490.01972,
+        "y": -2042.32627,
+        "type": "small",
+        "name": "打撃の基礎 I",
+        "stats": {
+          "physical": 6
+        },
+        "icon": "sword",
+        "group": null,
+        "opening": true,
+        "origin": "tank",
+        "primary": "physical",
+        "depth": 1,
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "diff_proposal",
+        "sourceRef": "v6:opening_templar_0_1",
+        "requirements": [],
+        "desc": "起点近くで分岐・合流・横断する比較案。同じ目標へ進んでも途中の能力を選べる。",
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "physical": [
+            "DAMAGE"
+          ]
+        }
+      },
+      "after": {
+        "id": "opening_templar_0_1",
+        "x": 490.01972,
+        "y": -2042.32627,
+        "type": "small",
+        "name": "継戦の備え I",
+        "stats": {
+          "hp": 3,
+          "resist": 2
+        },
+        "icon": "ward",
+        "group": null,
+        "opening": true,
+        "origin": "tank",
+        "primary": "hp",
+        "depth": 1,
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "specialization_v9_proposal",
+        "sourceRef": "v6:opening_templar_0_1",
+        "requirements": [],
+        "desc": "起点近くで分岐・合流・横断する比較案。同じ目標へ進んでも途中の能力を選べる。",
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "hp": [],
+          "resist": []
+        },
+        "description": "直外側の専門帯へ進む初期能力の比較案。中央の位置・線・費用は保持。隣職の終端だけで専門帯の主要効果を取り切れない。"
+      }
+    },
+    {
+      "id": "opening_templar_0_2",
+      "before": {
+        "id": "opening_templar_0_2",
+        "x": 230.19058,
+        "y": -2187.2877,
+        "type": "small",
+        "name": "打撃の基礎 II",
+        "stats": {
+          "physical": 6
+        },
+        "icon": "sword",
+        "group": null,
+        "opening": true,
+        "origin": "tank",
+        "primary": "physical",
+        "depth": 2,
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "diff_proposal",
+        "sourceRef": "v6:opening_templar_0_2",
+        "requirements": [],
+        "desc": "起点近くで分岐・合流・横断する比較案。同じ目標へ進んでも途中の能力を選べる。",
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "physical": [
+            "DAMAGE"
+          ]
+        }
+      },
+      "after": {
+        "id": "opening_templar_0_2",
+        "x": 230.19058,
+        "y": -2187.2877,
+        "type": "small",
+        "name": "継戦の備え II",
+        "stats": {
+          "hp": 3,
+          "armor": 2
+        },
+        "icon": "ward",
+        "group": null,
+        "opening": true,
+        "origin": "tank",
+        "primary": "hp",
+        "depth": 2,
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "specialization_v9_proposal",
+        "sourceRef": "v6:opening_templar_0_2",
+        "requirements": [],
+        "desc": "起点近くで分岐・合流・横断する比較案。同じ目標へ進んでも途中の能力を選べる。",
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "hp": [],
+          "armor": []
+        },
+        "description": "直外側の専門帯へ進む初期能力の比較案。中央の位置・線・費用は保持。隣職の終端だけで専門帯の主要効果を取り切れない。"
+      }
+    },
+    {
+      "id": "opening_templar_0_3",
+      "before": {
+        "id": "opening_templar_0_3",
+        "x": -31.09178,
+        "y": -2368.27535,
+        "type": "notable",
+        "name": "堅実な打撃",
+        "stats": {
+          "physical": 12,
+          "hp": 4
+        },
+        "icon": "sword",
+        "group": null,
+        "opening": true,
+        "origin": "tank",
+        "primary": "physical",
+        "depth": 3,
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "diff_proposal",
+        "sourceRef": "v6:opening_templar_0_3",
+        "requirements": [],
+        "desc": "起点近くで分岐・合流・横断する比較案。同じ目標へ進んでも途中の能力を選べる。",
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "physical": [
+            "DAMAGE"
+          ],
+          "hp": []
+        }
+      },
+      "after": {
+        "id": "opening_templar_0_3",
+        "x": -31.09178,
+        "y": -2368.27535,
+        "type": "notable",
+        "name": "継戦の備え・入口",
+        "stats": {
+          "hp": 5,
+          "resist": 4
+        },
+        "icon": "ward",
+        "group": null,
+        "opening": true,
+        "origin": "tank",
+        "primary": "hp",
+        "depth": 3,
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "specialization_v9_proposal",
+        "sourceRef": "v6:opening_templar_0_3",
+        "requirements": [],
+        "desc": "起点近くで分岐・合流・横断する比較案。同じ目標へ進んでも途中の能力を選べる。",
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "hp": [],
+          "resist": []
+        },
+        "description": "直外側の専門帯へ進む初期能力の比較案。中央の位置・線・費用は保持。隣職の終端だけで専門帯の主要効果を取り切れない。"
+      }
+    },
+    {
+      "id": "opening_templar_1_1",
+      "before": {
+        "id": "opening_templar_1_1",
+        "x": 700.36414,
+        "y": -2195.15044,
+        "type": "small",
+        "name": "装甲の基礎 I",
+        "stats": {
+          "armor": 8
+        },
+        "icon": "shield",
+        "group": null,
+        "opening": true,
+        "origin": "tank",
+        "primary": "armor",
+        "depth": 1,
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "diff_proposal",
+        "sourceRef": "v6:opening_templar_1_1",
+        "requirements": [],
+        "desc": "起点近くで分岐・合流・横断する比較案。同じ目標へ進んでも途中の能力を選べる。",
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "armor": []
+        }
+      },
+      "after": {
+        "id": "opening_templar_1_1",
+        "x": 700.36414,
+        "y": -2195.15044,
+        "type": "small",
+        "name": "装甲の備え I",
+        "stats": {
+          "armor": 5,
+          "hp": 2
+        },
+        "icon": "ward",
+        "group": null,
+        "opening": true,
+        "origin": "tank",
+        "primary": "armor",
+        "depth": 1,
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "specialization_v9_proposal",
+        "sourceRef": "v6:opening_templar_1_1",
+        "requirements": [],
+        "desc": "起点近くで分岐・合流・横断する比較案。同じ目標へ進んでも途中の能力を選べる。",
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "armor": [],
+          "hp": []
+        },
+        "description": "直外側の専門帯へ進む初期能力の比較案。中央の位置・線・費用は保持。隣職の終端だけで専門帯の主要効果を取り切れない。"
+      }
+    },
+    {
+      "id": "opening_templar_1_2",
+      "before": {
+        "id": "opening_templar_1_2",
+        "x": 642.78924,
+        "y": -2487.05818,
+        "type": "small",
+        "name": "装甲の基礎 II",
+        "stats": {
+          "armor": 8
+        },
+        "icon": "shield",
+        "group": null,
+        "opening": true,
+        "origin": "tank",
+        "primary": "armor",
+        "depth": 2,
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "diff_proposal",
+        "sourceRef": "v6:opening_templar_1_2",
+        "requirements": [],
+        "desc": "起点近くで分岐・合流・横断する比較案。同じ目標へ進んでも途中の能力を選べる。",
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "armor": []
+        }
+      },
+      "after": {
+        "id": "opening_templar_1_2",
+        "x": 642.78924,
+        "y": -2487.05818,
+        "type": "small",
+        "name": "装甲の備え II",
+        "stats": {
+          "armor": 5,
+          "hp": 2
+        },
+        "icon": "ward",
+        "group": null,
+        "opening": true,
+        "origin": "tank",
+        "primary": "armor",
+        "depth": 2,
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "specialization_v9_proposal",
+        "sourceRef": "v6:opening_templar_1_2",
+        "requirements": [],
+        "desc": "起点近くで分岐・合流・横断する比較案。同じ目標へ進んでも途中の能力を選べる。",
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "armor": [],
+          "hp": []
+        },
+        "description": "直外側の専門帯へ進む初期能力の比較案。中央の位置・線・費用は保持。隣職の終端だけで専門帯の主要効果を取り切れない。"
+      }
+    },
+    {
+      "id": "opening_templar_1_3",
+      "before": {
+        "id": "opening_templar_1_3",
+        "x": 551.40045,
+        "y": -2791.48073,
+        "type": "notable",
+        "name": "揺るがぬ装甲",
+        "stats": {
+          "armor": 18,
+          "hp": 4
+        },
+        "icon": "shield",
+        "group": null,
+        "opening": true,
+        "origin": "tank",
+        "primary": "armor",
+        "depth": 3,
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "diff_proposal",
+        "sourceRef": "v6:opening_templar_1_3",
+        "requirements": [],
+        "desc": "起点近くで分岐・合流・横断する比較案。同じ目標へ進んでも途中の能力を選べる。",
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "armor": [],
+          "hp": []
+        }
+      },
+      "after": {
+        "id": "opening_templar_1_3",
+        "x": 551.40045,
+        "y": -2791.48073,
+        "type": "notable",
+        "name": "装甲の備え・入口",
+        "stats": {
+          "armor": 7,
+          "hp": 3
+        },
+        "icon": "ward",
+        "group": null,
+        "opening": true,
+        "origin": "tank",
+        "primary": "armor",
+        "depth": 3,
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "specialization_v9_proposal",
+        "sourceRef": "v6:opening_templar_1_3",
+        "requirements": [],
+        "desc": "起点近くで分岐・合流・横断する比較案。同じ目標へ進んでも途中の能力を選べる。",
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "armor": [],
+          "hp": []
+        },
+        "description": "直外側の専門帯へ進む初期能力の比較案。中央の位置・線・費用は保持。隣職の終端だけで専門帯の主要効果を取り切れない。"
+      }
+    },
+    {
+      "id": "opening_templar_2_1",
+      "before": {
+        "id": "opening_templar_2_1",
+        "x": 448.24561,
+        "y": -2320.9926,
+        "type": "small",
+        "name": "障壁の基礎 I",
+        "stats": {
+          "barrier": 6
+        },
+        "icon": "ward",
+        "group": null,
+        "opening": true,
+        "origin": "tank",
+        "primary": "barrier",
+        "depth": 1,
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "diff_proposal",
+        "sourceRef": "v6:opening_templar_2_1",
+        "requirements": [],
+        "desc": "起点近くで分岐・合流・横断する比較案。同じ目標へ進んでも途中の能力を選べる。",
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "barrier": [
+            "SHIELD"
+          ]
+        }
+      },
+      "after": {
+        "id": "opening_templar_2_1",
+        "x": 448.24561,
+        "y": -2320.9926,
+        "type": "small",
+        "name": "守りの備え I",
+        "stats": {
+          "hp": 2,
+          "barrier": 3
+        },
+        "icon": "temp_sanctuary",
+        "group": null,
+        "opening": true,
+        "origin": "tank",
+        "primary": "hp",
+        "depth": 1,
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "specialization_v9_proposal",
+        "sourceRef": "v6:opening_templar_2_1",
+        "requirements": [],
+        "desc": "起点近くで分岐・合流・横断する比較案。同じ目標へ進んでも途中の能力を選べる。",
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "hp": [],
+          "barrier": [
+            "SHIELD"
+          ]
+        },
+        "description": "直外側の専門帯へ進む初期能力の比較案。中央の位置・線・費用は保持。隣職の終端だけで専門帯の主要効果を取り切れない。"
+      }
+    },
+    {
+      "id": "opening_templar_2_2",
+      "before": {
+        "id": "opening_templar_2_2",
+        "x": 298.36038,
+        "y": -2527.29194,
+        "type": "small",
+        "name": "障壁の基礎 II",
+        "stats": {
+          "barrier": 6
+        },
+        "icon": "ward",
+        "group": null,
+        "opening": true,
+        "origin": "tank",
+        "primary": "barrier",
+        "depth": 2,
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "diff_proposal",
+        "sourceRef": "v6:opening_templar_2_2",
+        "requirements": [],
+        "desc": "起点近くで分岐・合流・横断する比較案。同じ目標へ進んでも途中の能力を選べる。",
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "barrier": [
+            "SHIELD"
+          ]
+        }
+      },
+      "after": {
+        "id": "opening_templar_2_2",
+        "x": 298.36038,
+        "y": -2527.29194,
+        "type": "small",
+        "name": "守りの備え II",
+        "stats": {
+          "hp": 2,
+          "barrier": 3
+        },
+        "icon": "temp_sanctuary",
+        "group": null,
+        "opening": true,
+        "origin": "tank",
+        "primary": "hp",
+        "depth": 2,
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "specialization_v9_proposal",
+        "sourceRef": "v6:opening_templar_2_2",
+        "requirements": [],
+        "desc": "起点近くで分岐・合流・横断する比較案。同じ目標へ進んでも途中の能力を選べる。",
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "hp": [],
+          "barrier": [
+            "SHIELD"
+          ]
+        },
+        "description": "直外側の専門帯へ進む初期能力の比較案。中央の位置・線・費用は保持。隣職の終端だけで専門帯の主要効果を取り切れない。"
+      }
+    },
+    {
+      "id": "opening_templar_2_3",
+      "before": {
+        "id": "opening_templar_2_3",
+        "x": 148.47514,
+        "y": -2733.59127,
+        "type": "notable",
+        "name": "守護の厚み",
+        "stats": {
+          "barrier": 14,
+          "resist": 6
+        },
+        "icon": "ward",
+        "group": null,
+        "opening": true,
+        "origin": "tank",
+        "primary": "barrier",
+        "depth": 3,
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "diff_proposal",
+        "sourceRef": "v6:opening_templar_2_3",
+        "requirements": [],
+        "desc": "起点近くで分岐・合流・横断する比較案。同じ目標へ進んでも途中の能力を選べる。",
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "barrier": [
+            "SHIELD"
+          ],
+          "resist": []
+        }
+      },
+      "after": {
+        "id": "opening_templar_2_3",
+        "x": 148.47514,
+        "y": -2733.59127,
+        "type": "notable",
+        "name": "守りの備え・入口",
+        "stats": {
+          "hp": 4,
+          "haste": 3
+        },
+        "icon": "temp_sanctuary",
+        "group": null,
+        "opening": true,
+        "origin": "tank",
+        "primary": "hp",
+        "depth": 3,
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "specialization_v9_proposal",
+        "sourceRef": "v6:opening_templar_2_3",
+        "requirements": [],
+        "desc": "起点近くで分岐・合流・横断する比較案。同じ目標へ進んでも途中の能力を選べる。",
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "hp": [],
+          "haste": [
+            "RESOURCE"
+          ]
+        },
+        "description": "直外側の専門帯へ進む初期能力の比較案。中央の位置・線・費用は保持。隣職の終端だけで専門帯の主要効果を取り切れない。"
+      }
+    },
+    {
+      "id": "opening_mage_0_1",
+      "before": {
+        "id": "opening_mage_0_1",
+        "x": 1759.63586,
+        "y": -2195.15044,
+        "type": "small",
+        "name": "魔力の基礎 I",
+        "stats": {
+          "magic": 6
+        },
+        "icon": "star",
+        "group": null,
+        "opening": true,
+        "origin": "mage",
+        "primary": "magic",
+        "depth": 1,
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "diff_proposal",
+        "sourceRef": "v6:opening_mage_0_1",
+        "requirements": [],
+        "desc": "起点近くで分岐・合流・横断する比較案。同じ目標へ進んでも途中の能力を選べる。",
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "magic": [
+            "AP"
+          ]
+        }
+      },
+      "after": {
+        "id": "opening_mage_0_1",
+        "x": 1759.63586,
+        "y": -2195.15044,
+        "type": "small",
+        "name": "術とMPの器 I",
+        "stats": {
+          "magic": 3,
+          "mana": 2
+        },
+        "icon": "star",
+        "group": null,
+        "opening": true,
+        "origin": "mage",
+        "primary": "magic",
+        "depth": 1,
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "specialization_v9_proposal",
+        "sourceRef": "v6:opening_mage_0_1",
+        "requirements": [],
+        "desc": "起点近くで分岐・合流・横断する比較案。同じ目標へ進んでも途中の能力を選べる。",
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "magic": [
+            "AP"
+          ],
+          "mana": [
+            "MP_CONSUMER"
+          ]
+        },
+        "description": "直外側の専門帯へ進む初期能力の比較案。中央の位置・線・費用は保持。隣職の終端だけで専門帯の主要効果を取り切れない。"
+      }
+    },
+    {
+      "id": "opening_mage_0_2",
+      "before": {
+        "id": "opening_mage_0_2",
+        "x": 1817.21076,
+        "y": -2487.05818,
+        "type": "small",
+        "name": "魔力の基礎 II",
+        "stats": {
+          "magic": 6
+        },
+        "icon": "star",
+        "group": null,
+        "opening": true,
+        "origin": "mage",
+        "primary": "magic",
+        "depth": 2,
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "diff_proposal",
+        "sourceRef": "v6:opening_mage_0_2",
+        "requirements": [],
+        "desc": "起点近くで分岐・合流・横断する比較案。同じ目標へ進んでも途中の能力を選べる。",
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "magic": [
+            "AP"
+          ]
+        }
+      },
+      "after": {
+        "id": "opening_mage_0_2",
+        "x": 1817.21076,
+        "y": -2487.05818,
+        "type": "small",
+        "name": "術とMPの器 II",
+        "stats": {
+          "magic": 3,
+          "mana": 2
+        },
+        "icon": "star",
+        "group": null,
+        "opening": true,
+        "origin": "mage",
+        "primary": "magic",
+        "depth": 2,
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "specialization_v9_proposal",
+        "sourceRef": "v6:opening_mage_0_2",
+        "requirements": [],
+        "desc": "起点近くで分岐・合流・横断する比較案。同じ目標へ進んでも途中の能力を選べる。",
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "magic": [
+            "AP"
+          ],
+          "mana": [
+            "MP_CONSUMER"
+          ]
+        },
+        "description": "直外側の専門帯へ進む初期能力の比較案。中央の位置・線・費用は保持。隣職の終端だけで専門帯の主要効果を取り切れない。"
+      }
+    },
+    {
+      "id": "opening_mage_0_3",
+      "before": {
+        "id": "opening_mage_0_3",
+        "x": 1908.59955,
+        "y": -2791.48073,
+        "type": "notable",
+        "name": "研ぎ澄ます魔力",
+        "stats": {
+          "magic": 14,
+          "mana": 8
+        },
+        "icon": "star",
+        "group": null,
+        "opening": true,
+        "origin": "mage",
+        "primary": "magic",
+        "depth": 3,
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "diff_proposal",
+        "sourceRef": "v6:opening_mage_0_3",
+        "requirements": [],
+        "desc": "起点近くで分岐・合流・横断する比較案。同じ目標へ進んでも途中の能力を選べる。",
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "magic": [
+            "AP"
+          ],
+          "mana": [
+            "MP_CONSUMER"
+          ]
+        }
+      },
+      "after": {
+        "id": "opening_mage_0_3",
+        "x": 1908.59955,
+        "y": -2791.48073,
+        "type": "notable",
+        "name": "術とMPの器・入口",
+        "stats": {
+          "magic": 5,
+          "mana": 4
+        },
+        "icon": "star",
+        "group": null,
+        "opening": true,
+        "origin": "mage",
+        "primary": "magic",
+        "depth": 3,
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "specialization_v9_proposal",
+        "sourceRef": "v6:opening_mage_0_3",
+        "requirements": [],
+        "desc": "起点近くで分岐・合流・横断する比較案。同じ目標へ進んでも途中の能力を選べる。",
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "magic": [
+            "AP"
+          ],
+          "mana": [
+            "MP_CONSUMER"
+          ]
+        },
+        "description": "直外側の専門帯へ進む初期能力の比較案。中央の位置・線・費用は保持。隣職の終端だけで専門帯の主要効果を取り切れない。"
+      }
+    },
+    {
+      "id": "opening_mage_1_1",
+      "before": {
+        "id": "opening_mage_1_1",
+        "x": 1969.98028,
+        "y": -2042.32627,
+        "type": "small",
+        "name": "術の運用 I",
+        "stats": {
+          "efficiency": 3
+        },
+        "icon": "crystal",
+        "group": null,
+        "opening": true,
+        "origin": "mage",
+        "primary": "efficiency",
+        "depth": 1,
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "diff_proposal",
+        "sourceRef": "v6:opening_mage_1_1",
+        "requirements": [],
+        "desc": "起点近くで分岐・合流・横断する比較案。同じ目標へ進んでも途中の能力を選べる。",
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "efficiency": [
+            "MP_CONSUMER"
+          ]
+        }
+      },
+      "after": {
+        "id": "opening_mage_1_1",
+        "x": 1969.98028,
+        "y": -2042.32627,
+        "type": "small",
+        "name": "資源循環の備え I",
+        "stats": {
+          "mana": 3,
+          "resource": 2
+        },
+        "icon": "crystal",
+        "group": null,
+        "opening": true,
+        "origin": "mage",
+        "primary": "mana",
+        "depth": 1,
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "specialization_v9_proposal",
+        "sourceRef": "v6:opening_mage_1_1",
+        "requirements": [],
+        "desc": "起点近くで分岐・合流・横断する比較案。同じ目標へ進んでも途中の能力を選べる。",
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "mana": [
+            "MP_CONSUMER"
+          ],
+          "resource": [
+            "RESOURCE"
+          ]
+        },
+        "description": "直外側の専門帯へ進む初期能力の比較案。中央の位置・線・費用は保持。隣職の終端だけで専門帯の主要効果を取り切れない。"
+      }
+    },
+    {
+      "id": "opening_mage_1_2",
+      "before": {
+        "id": "opening_mage_1_2",
+        "x": 2229.80942,
+        "y": -2187.2877,
+        "type": "small",
+        "name": "術の運用 II",
+        "stats": {
+          "efficiency": 3
+        },
+        "icon": "crystal",
+        "group": null,
+        "opening": true,
+        "origin": "mage",
+        "primary": "efficiency",
+        "depth": 2,
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "diff_proposal",
+        "sourceRef": "v6:opening_mage_1_2",
+        "requirements": [],
+        "desc": "起点近くで分岐・合流・横断する比較案。同じ目標へ進んでも途中の能力を選べる。",
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "efficiency": [
+            "MP_CONSUMER"
+          ]
+        }
+      },
+      "after": {
+        "id": "opening_mage_1_2",
+        "x": 2229.80942,
+        "y": -2187.2877,
+        "type": "small",
+        "name": "資源循環の備え II",
+        "stats": {
+          "mana": 3,
+          "resource": 2
+        },
+        "icon": "crystal",
+        "group": null,
+        "opening": true,
+        "origin": "mage",
+        "primary": "mana",
+        "depth": 2,
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "specialization_v9_proposal",
+        "sourceRef": "v6:opening_mage_1_2",
+        "requirements": [],
+        "desc": "起点近くで分岐・合流・横断する比較案。同じ目標へ進んでも途中の能力を選べる。",
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "mana": [
+            "MP_CONSUMER"
+          ],
+          "resource": [
+            "RESOURCE"
+          ]
+        },
+        "description": "直外側の専門帯へ進む初期能力の比較案。中央の位置・線・費用は保持。隣職の終端だけで専門帯の主要効果を取り切れない。"
+      }
+    },
+    {
+      "id": "opening_mage_1_3",
+      "before": {
+        "id": "opening_mage_1_3",
+        "x": 2491.09178,
+        "y": -2368.27535,
+        "type": "notable",
+        "name": "無理のない詠唱",
+        "stats": {
+          "efficiency": 7,
+          "mana": 10
+        },
+        "icon": "crystal",
+        "group": null,
+        "opening": true,
+        "origin": "mage",
+        "primary": "efficiency",
+        "depth": 3,
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "diff_proposal",
+        "sourceRef": "v6:opening_mage_1_3",
+        "requirements": [],
+        "desc": "起点近くで分岐・合流・横断する比較案。同じ目標へ進んでも途中の能力を選べる。",
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "efficiency": [
+            "MP_CONSUMER"
+          ],
+          "mana": [
+            "MP_CONSUMER"
+          ]
+        }
+      },
+      "after": {
+        "id": "opening_mage_1_3",
+        "x": 2491.09178,
+        "y": -2368.27535,
+        "type": "notable",
+        "name": "資源循環の備え・入口",
+        "stats": {
+          "efficiency": 5,
+          "mana": 4
+        },
+        "icon": "crystal",
+        "group": null,
+        "opening": true,
+        "origin": "mage",
+        "primary": "efficiency",
+        "depth": 3,
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "specialization_v9_proposal",
+        "sourceRef": "v6:opening_mage_1_3",
+        "requirements": [],
+        "desc": "起点近くで分岐・合流・横断する比較案。同じ目標へ進んでも途中の能力を選べる。",
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "efficiency": [
+            "MP_CONSUMER"
+          ],
+          "mana": [
+            "MP_CONSUMER"
+          ]
+        },
+        "description": "直外側の専門帯へ進む初期能力の比較案。中央の位置・線・費用は保持。隣職の終端だけで専門帯の主要効果を取り切れない。"
+      }
+    },
+    {
+      "id": "opening_mage_2_1",
+      "before": {
+        "id": "opening_mage_2_1",
+        "x": 2011.75439,
+        "y": -2320.9926,
+        "type": "small",
+        "name": "術の備え I",
+        "stats": {
+          "barrier": 6,
+          "mana": 3
+        },
+        "icon": "ward",
+        "group": null,
+        "opening": true,
+        "origin": "mage",
+        "primary": "barrier",
+        "depth": 1,
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "review_diff_proposal",
+        "sourceRef": "v6:opening_mage_2_1",
+        "requirements": [],
+        "desc": "MPを使う基本編成の備え。障壁の増加は、障壁を発生させる入力を持つ場合のみ。",
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "barrier": [
+            "SHIELD"
+          ],
+          "mana": [
+            "MP_CONSUMER"
+          ]
+        }
+      },
+      "after": {
+        "id": "opening_mage_2_1",
+        "x": 2011.75439,
+        "y": -2320.9926,
+        "type": "small",
+        "name": "耐久の備え I",
+        "stats": {
+          "hp": 2,
+          "barrier": 3
+        },
+        "icon": "ward",
+        "group": null,
+        "opening": true,
+        "origin": "mage",
+        "primary": "hp",
+        "depth": 1,
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "specialization_v9_proposal",
+        "sourceRef": "v6:opening_mage_2_1",
+        "requirements": [],
+        "desc": "MPを使う基本編成の備え。障壁の増加は、障壁を発生させる入力を持つ場合のみ。",
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "hp": [],
+          "barrier": [
+            "SHIELD"
+          ]
+        },
+        "description": "直外側の専門帯へ進む初期能力の比較案。中央の位置・線・費用は保持。隣職の終端だけで専門帯の主要効果を取り切れない。"
+      }
+    },
+    {
+      "id": "opening_mage_2_2",
+      "before": {
+        "id": "opening_mage_2_2",
+        "x": 2161.63962,
+        "y": -2527.29194,
+        "type": "small",
+        "name": "術の備え II",
+        "stats": {
+          "barrier": 6,
+          "mana": 3
+        },
+        "icon": "ward",
+        "group": null,
+        "opening": true,
+        "origin": "mage",
+        "primary": "barrier",
+        "depth": 2,
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "review_diff_proposal",
+        "sourceRef": "v6:opening_mage_2_2",
+        "requirements": [],
+        "desc": "MPを使う基本編成の備え。障壁の増加は、障壁を発生させる入力を持つ場合のみ。",
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "barrier": [
+            "SHIELD"
+          ],
+          "mana": [
+            "MP_CONSUMER"
+          ]
+        }
+      },
+      "after": {
+        "id": "opening_mage_2_2",
+        "x": 2161.63962,
+        "y": -2527.29194,
+        "type": "small",
+        "name": "耐久の備え II",
+        "stats": {
+          "hp": 2,
+          "barrier": 3
+        },
+        "icon": "ward",
+        "group": null,
+        "opening": true,
+        "origin": "mage",
+        "primary": "hp",
+        "depth": 2,
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "specialization_v9_proposal",
+        "sourceRef": "v6:opening_mage_2_2",
+        "requirements": [],
+        "desc": "MPを使う基本編成の備え。障壁の増加は、障壁を発生させる入力を持つ場合のみ。",
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "hp": [],
+          "barrier": [
+            "SHIELD"
+          ]
+        },
+        "description": "直外側の専門帯へ進む初期能力の比較案。中央の位置・線・費用は保持。隣職の終端だけで専門帯の主要効果を取り切れない。"
+      }
+    },
+    {
+      "id": "opening_mage_2_3",
+      "before": {
+        "id": "opening_mage_2_3",
+        "x": 2311.52486,
+        "y": -2733.59127,
+        "type": "notable",
+        "name": "身を守る術",
+        "stats": {
+          "barrier": 14,
+          "resist": 6
+        },
+        "icon": "ward",
+        "group": null,
+        "opening": true,
+        "origin": "mage",
+        "primary": "barrier",
+        "depth": 3,
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "diff_proposal",
+        "sourceRef": "v6:opening_mage_2_3",
+        "requirements": [],
+        "desc": "起点近くで分岐・合流・横断する比較案。同じ目標へ進んでも途中の能力を選べる。",
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "barrier": [
+            "SHIELD"
+          ],
+          "resist": []
+        }
+      },
+      "after": {
+        "id": "opening_mage_2_3",
+        "x": 2311.52486,
+        "y": -2733.59127,
+        "type": "notable",
+        "name": "耐久の備え・入口",
+        "stats": {
+          "hp": 4,
+          "resist": 4
+        },
+        "icon": "ward",
+        "group": null,
+        "opening": true,
+        "origin": "mage",
+        "primary": "hp",
+        "depth": 3,
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "specialization_v9_proposal",
+        "sourceRef": "v6:opening_mage_2_3",
+        "requirements": [],
+        "desc": "起点近くで分岐・合流・横断する比較案。同じ目標へ進んでも途中の能力を選べる。",
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "hp": [],
+          "resist": []
+        },
+        "description": "直外側の専門帯へ進む初期能力の比較案。中央の位置・線・費用は保持。隣職の終端だけで専門帯の主要効果を取り切れない。"
+      }
+    },
+    {
+      "id": "opening_ranger_0_1",
+      "before": {
+        "id": "opening_ranger_0_1",
+        "x": 2297.31325,
+        "y": -1034.89899,
+        "type": "small",
+        "name": "狙撃の基礎 I",
+        "stats": {
+          "damage": 6
+        },
+        "icon": "sword",
+        "group": null,
+        "opening": true,
+        "origin": "ranger",
+        "primary": "damage",
+        "depth": 1,
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "diff_proposal",
+        "sourceRef": "v6:opening_ranger_0_1",
+        "requirements": [],
+        "desc": "起点近くで分岐・合流・横断する比較案。同じ目標へ進んでも途中の能力を選べる。",
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "damage": [
+            "DAMAGE"
+          ]
+        }
+      },
+      "after": {
+        "id": "opening_ranger_0_1",
+        "x": 2297.31325,
+        "y": -1034.89899,
+        "type": "small",
+        "name": "集中射撃の備え I",
+        "stats": {
+          "damage": 4,
+          "crit": 3
+        },
+        "icon": "sword",
+        "group": null,
+        "opening": true,
+        "origin": "ranger",
+        "primary": "damage",
+        "depth": 1,
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "specialization_v9_proposal",
+        "sourceRef": "v6:opening_ranger_0_1",
+        "requirements": [],
+        "desc": "起点近くで分岐・合流・横断する比較案。同じ目標へ進んでも途中の能力を選べる。",
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "damage": [
+            "DAMAGE"
+          ],
+          "crit": [
+            "DAMAGE"
+          ]
+        },
+        "description": "直外側の専門帯へ進む初期能力の比較案。中央の位置・線・費用は保持。隣職の終端だけで専門帯の主要効果を取り切れない。"
+      }
+    },
+    {
+      "id": "opening_ranger_0_2",
+      "before": {
+        "id": "opening_ranger_0_2",
+        "x": 2592.72563,
+        "y": -1070.34647,
+        "type": "small",
+        "name": "狙撃の基礎 II",
+        "stats": {
+          "damage": 6
+        },
+        "icon": "sword",
+        "group": null,
+        "opening": true,
+        "origin": "ranger",
+        "primary": "damage",
+        "depth": 2,
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "diff_proposal",
+        "sourceRef": "v6:opening_ranger_0_2",
+        "requirements": [],
+        "desc": "起点近くで分岐・合流・横断する比較案。同じ目標へ進んでも途中の能力を選べる。",
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "damage": [
+            "DAMAGE"
+          ]
+        }
+      },
+      "after": {
+        "id": "opening_ranger_0_2",
+        "x": 2592.72563,
+        "y": -1070.34647,
+        "type": "small",
+        "name": "集中射撃の備え II",
+        "stats": {
+          "damage": 4,
+          "resource": 2
+        },
+        "icon": "sword",
+        "group": null,
+        "opening": true,
+        "origin": "ranger",
+        "primary": "damage",
+        "depth": 2,
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "specialization_v9_proposal",
+        "sourceRef": "v6:opening_ranger_0_2",
+        "requirements": [],
+        "desc": "起点近くで分岐・合流・横断する比較案。同じ目標へ進んでも途中の能力を選べる。",
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "damage": [
+            "DAMAGE"
+          ],
+          "resource": [
+            "RESOURCE"
+          ]
+        },
+        "description": "直外側の専門帯へ進む初期能力の比較案。中央の位置・線・費用は保持。隣職の終端だけで専門帯の主要効果を取り切れない。"
+      }
+    },
+    {
+      "id": "opening_ranger_0_3",
+      "before": {
+        "id": "opening_ranger_0_3",
+        "x": 2910.48937,
+        "y": -1077.50231,
+        "type": "notable",
+        "name": "確かな射撃",
+        "stats": {
+          "damage": 12,
+          "move": 2
+        },
+        "icon": "sword",
+        "group": null,
+        "opening": true,
+        "origin": "ranger",
+        "primary": "damage",
+        "depth": 3,
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "diff_proposal",
+        "sourceRef": "v6:opening_ranger_0_3",
+        "requirements": [],
+        "desc": "起点近くで分岐・合流・横断する比較案。同じ目標へ進んでも途中の能力を選べる。",
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "damage": [
+            "DAMAGE"
+          ],
+          "move": []
+        }
+      },
+      "after": {
+        "id": "opening_ranger_0_3",
+        "x": 2910.48937,
+        "y": -1077.50231,
+        "type": "notable",
+        "name": "集中射撃の備え・入口",
+        "stats": {
+          "damage": 6,
+          "crit": 5
+        },
+        "icon": "sword",
+        "group": null,
+        "opening": true,
+        "origin": "ranger",
+        "primary": "damage",
+        "depth": 3,
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "specialization_v9_proposal",
+        "sourceRef": "v6:opening_ranger_0_3",
+        "requirements": [],
+        "desc": "起点近くで分岐・合流・横断する比較案。同じ目標へ進んでも途中の能力を選べる。",
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "damage": [
+            "DAMAGE"
+          ],
+          "crit": [
+            "DAMAGE"
+          ]
+        },
+        "description": "直外側の専門帯へ進む初期能力の比較案。中央の位置・線・費用は保持。隣職の終端だけで専門帯の主要効果を取り切れない。"
+      }
+    },
+    {
+      "id": "opening_ranger_1_1",
+      "before": {
+        "id": "opening_ranger_1_1",
+        "x": 2216.96883,
+        "y": -787.6243,
+        "type": "small",
+        "name": "速射の基礎 I",
+        "stats": {
+          "attackSpeed": 3
+        },
+        "icon": "speed",
+        "group": null,
+        "opening": true,
+        "origin": "ranger",
+        "primary": "attackSpeed",
+        "depth": 1,
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "diff_proposal",
+        "sourceRef": "v6:opening_ranger_1_1",
+        "requirements": [],
+        "desc": "起点近くで分岐・合流・横断する比較案。同じ目標へ進んでも途中の能力を選べる。",
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "attackSpeed": [
+            "DAMAGE"
+          ]
+        }
+      },
+      "after": {
+        "id": "opening_ranger_1_1",
+        "x": 2216.96883,
+        "y": -787.6243,
+        "type": "small",
+        "name": "位置取りの備え I",
+        "stats": {
+          "move": 2,
+          "resource": 2
+        },
+        "icon": "speed",
+        "group": null,
+        "opening": true,
+        "origin": "ranger",
+        "primary": "move",
+        "depth": 1,
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "specialization_v9_proposal",
+        "sourceRef": "v6:opening_ranger_1_1",
+        "requirements": [],
+        "desc": "起点近くで分岐・合流・横断する比較案。同じ目標へ進んでも途中の能力を選べる。",
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "move": [],
+          "resource": [
+            "RESOURCE"
+          ]
+        },
+        "description": "直外側の専門帯へ進む初期能力の比較案。中央の位置・線・費用は保持。隣職の終端だけで専門帯の主要効果を取り切れない。"
+      }
+    },
+    {
+      "id": "opening_ranger_1_2",
+      "before": {
+        "id": "opening_ranger_1_2",
+        "x": 2435.12696,
+        "y": -585.30765,
+        "type": "small",
+        "name": "速射の基礎 II",
+        "stats": {
+          "attackSpeed": 3
+        },
+        "icon": "speed",
+        "group": null,
+        "opening": true,
+        "origin": "ranger",
+        "primary": "attackSpeed",
+        "depth": 2,
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "diff_proposal",
+        "sourceRef": "v6:opening_ranger_1_2",
+        "requirements": [],
+        "desc": "起点近くで分岐・合流・横断する比較案。同じ目標へ進んでも途中の能力を選べる。",
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "attackSpeed": [
+            "DAMAGE"
+          ]
+        }
+      },
+      "after": {
+        "id": "opening_ranger_1_2",
+        "x": 2435.12696,
+        "y": -585.30765,
+        "type": "small",
+        "name": "位置取りの備え II",
+        "stats": {
+          "haste": 3,
+          "hp": 2
+        },
+        "icon": "speed",
+        "group": null,
+        "opening": true,
+        "origin": "ranger",
+        "primary": "haste",
+        "depth": 2,
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "specialization_v9_proposal",
+        "sourceRef": "v6:opening_ranger_1_2",
+        "requirements": [],
+        "desc": "起点近くで分岐・合流・横断する比較案。同じ目標へ進んでも途中の能力を選べる。",
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "haste": [
+            "RESOURCE"
+          ],
+          "hp": []
+        },
+        "description": "直外側の専門帯へ進む初期能力の比較案。中央の位置・線・費用は保持。隣職の終端だけで専門帯の主要効果を取り切れない。"
+      }
+    },
+    {
+      "id": "opening_ranger_1_3",
+      "before": {
+        "id": "opening_ranger_1_3",
+        "x": 2687.99713,
+        "y": -392.74161,
+        "type": "notable",
+        "name": "淀みない速射",
+        "stats": {
+          "attackSpeed": 5,
+          "damage": 4
+        },
+        "icon": "speed",
+        "group": null,
+        "opening": true,
+        "origin": "ranger",
+        "primary": "attackSpeed",
+        "depth": 3,
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "diff_proposal",
+        "sourceRef": "v6:opening_ranger_1_3",
+        "requirements": [],
+        "desc": "起点近くで分岐・合流・横断する比較案。同じ目標へ進んでも途中の能力を選べる。",
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "attackSpeed": [
+            "DAMAGE"
+          ],
+          "damage": [
+            "DAMAGE"
+          ]
+        }
+      },
+      "after": {
+        "id": "opening_ranger_1_3",
+        "x": 2687.99713,
+        "y": -392.74161,
+        "type": "notable",
+        "name": "位置取りの備え・入口",
+        "stats": {
+          "move": 3,
+          "haste": 4
+        },
+        "icon": "speed",
+        "group": null,
+        "opening": true,
+        "origin": "ranger",
+        "primary": "move",
+        "depth": 3,
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "specialization_v9_proposal",
+        "sourceRef": "v6:opening_ranger_1_3",
+        "requirements": [],
+        "desc": "起点近くで分岐・合流・横断する比較案。同じ目標へ進んでも途中の能力を選べる。",
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "move": [],
+          "haste": [
+            "RESOURCE"
+          ]
+        },
+        "description": "直外側の専門帯へ進む初期能力の比較案。中央の位置・線・費用は保持。隣職の終端だけで専門帯の主要効果を取り切れない。"
+      }
+    },
+    {
+      "id": "opening_ranger_2_1",
+      "before": {
+        "id": "opening_ranger_2_1",
+        "x": 2494.90517,
+        "y": -834.0074,
+        "type": "small",
+        "name": "会心の基礎 I",
+        "stats": {
+          "crit": 8
+        },
+        "icon": "target",
+        "group": null,
+        "opening": true,
+        "origin": "ranger",
+        "primary": "crit",
+        "depth": 1,
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "diff_proposal",
+        "sourceRef": "v6:opening_ranger_2_1",
+        "requirements": [],
+        "desc": "起点近くで分岐・合流・横断する比較案。同じ目標へ進んでも途中の能力を選べる。",
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "crit": [
+            "DAMAGE"
+          ]
+        }
+      },
+      "after": {
+        "id": "opening_ranger_2_1",
+        "x": 2494.90517,
+        "y": -834.0074,
+        "type": "small",
+        "name": "会心の備え I",
+        "stats": {
+          "crit": 4,
+          "hp": 1
+        },
+        "icon": "target",
+        "group": null,
+        "opening": true,
+        "origin": "ranger",
+        "primary": "crit",
+        "depth": 1,
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "specialization_v9_proposal",
+        "sourceRef": "v6:opening_ranger_2_1",
+        "requirements": [],
+        "desc": "起点近くで分岐・合流・横断する比較案。同じ目標へ進んでも途中の能力を選べる。",
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "crit": [
+            "DAMAGE"
+          ],
+          "hp": []
+        },
+        "description": "直外側の専門帯へ進む初期能力の比較案。中央の位置・線・費用は保持。隣職の終端だけで専門帯の主要効果を取り切れない。"
+      }
+    },
+    {
+      "id": "opening_ranger_2_2",
+      "before": {
+        "id": "opening_ranger_2_2",
+        "x": 2737.42458,
+        "y": -755.20806,
+        "type": "small",
+        "name": "会心の基礎 II",
+        "stats": {
+          "crit": 8
+        },
+        "icon": "target",
+        "group": null,
+        "opening": true,
+        "origin": "ranger",
+        "primary": "crit",
+        "depth": 2,
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "diff_proposal",
+        "sourceRef": "v6:opening_ranger_2_2",
+        "requirements": [],
+        "desc": "起点近くで分岐・合流・横断する比較案。同じ目標へ進んでも途中の能力を選べる。",
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "crit": [
+            "DAMAGE"
+          ]
+        }
+      },
+      "after": {
+        "id": "opening_ranger_2_2",
+        "x": 2737.42458,
+        "y": -755.20806,
+        "type": "small",
+        "name": "会心の備え II",
+        "stats": {
+          "crit": 4,
+          "resist": 2
+        },
+        "icon": "target",
+        "group": null,
+        "opening": true,
+        "origin": "ranger",
+        "primary": "crit",
+        "depth": 2,
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "specialization_v9_proposal",
+        "sourceRef": "v6:opening_ranger_2_2",
+        "requirements": [],
+        "desc": "起点近くで分岐・合流・横断する比較案。同じ目標へ進んでも途中の能力を選べる。",
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "crit": [
+            "DAMAGE"
+          ],
+          "resist": []
+        },
+        "description": "直外側の専門帯へ進む初期能力の比較案。中央の位置・線・費用は保持。隣職の終端だけで専門帯の主要効果を取り切れない。"
+      }
+    },
+    {
+      "id": "opening_ranger_2_3",
+      "before": {
+        "id": "opening_ranger_2_3",
+        "x": 2979.94399,
+        "y": -676.40873,
+        "type": "notable",
+        "name": "狙いを定める",
+        "stats": {
+          "crit": 16,
+          "weakpoint": 8
+        },
+        "icon": "target",
+        "group": null,
+        "opening": true,
+        "origin": "ranger",
+        "primary": "crit",
+        "depth": 3,
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "diff_proposal",
+        "sourceRef": "v6:opening_ranger_2_3",
+        "requirements": [],
+        "desc": "起点近くで分岐・合流・横断する比較案。同じ目標へ進んでも途中の能力を選べる。",
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "crit": [
+            "DAMAGE"
+          ],
+          "weakpoint": [
+            "WEAKPOINT"
+          ]
+        }
+      },
+      "after": {
+        "id": "opening_ranger_2_3",
+        "x": 2979.94399,
+        "y": -676.40873,
+        "type": "notable",
+        "name": "会心の備え・入口",
+        "stats": {
+          "crit": 6,
+          "critMulti": 3
+        },
+        "icon": "target",
+        "group": null,
+        "opening": true,
+        "origin": "ranger",
+        "primary": "crit",
+        "depth": 3,
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "specialization_v9_proposal",
+        "sourceRef": "v6:opening_ranger_2_3",
+        "requirements": [],
+        "desc": "起点近くで分岐・合流・横断する比較案。同じ目標へ進んでも途中の能力を選べる。",
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "crit": [
+            "DAMAGE"
+          ],
+          "critMulti": [
+            "DAMAGE"
+          ]
+        },
+        "description": "直外側の専門帯へ進む初期能力の比較案。中央の位置・線・費用は保持。隣職の終端だけで専門帯の主要効果を取り切れない。"
+      }
+    },
+    {
+      "id": "opening_assassin_0_1",
+      "before": {
+        "id": "opening_assassin_0_1",
+        "x": 1360.0,
+        "y": -165.0,
+        "type": "small",
+        "name": "刃の基礎 I",
+        "stats": {
+          "damage": 6
+        },
+        "icon": "sword",
+        "group": null,
+        "opening": true,
+        "origin": "assassin",
+        "primary": "damage",
+        "depth": 1,
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "diff_proposal",
+        "sourceRef": "v6:opening_assassin_0_1",
+        "requirements": [],
+        "desc": "起点近くで分岐・合流・横断する比較案。同じ目標へ進んでも途中の能力を選べる。",
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "damage": [
+            "DAMAGE"
+          ]
+        }
+      },
+      "after": {
+        "id": "opening_assassin_0_1",
+        "x": 1360.0,
+        "y": -165.0,
+        "type": "small",
+        "name": "決め手の備え I",
+        "stats": {
+          "physical": 4,
+          "resource": 2
+        },
+        "icon": "sword",
+        "group": null,
+        "opening": true,
+        "origin": "assassin",
+        "primary": "physical",
+        "depth": 1,
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "specialization_v9_proposal",
+        "sourceRef": "v6:opening_assassin_0_1",
+        "requirements": [],
+        "desc": "起点近くで分岐・合流・横断する比較案。同じ目標へ進んでも途中の能力を選べる。",
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "physical": [
+            "DAMAGE"
+          ],
+          "resource": [
+            "RESOURCE"
+          ]
+        },
+        "description": "直外側の専門帯へ進む初期能力の比較案。中央の位置・線・費用は保持。隣職の終端だけで専門帯の主要効果を取り切れない。"
+      }
+    },
+    {
+      "id": "opening_assassin_0_2",
+      "before": {
+        "id": "opening_assassin_0_2",
+        "x": 1485.0,
+        "y": 105.0,
+        "type": "small",
+        "name": "刃の基礎 II",
+        "stats": {
+          "damage": 6
+        },
+        "icon": "sword",
+        "group": null,
+        "opening": true,
+        "origin": "assassin",
+        "primary": "damage",
+        "depth": 2,
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "diff_proposal",
+        "sourceRef": "v6:opening_assassin_0_2",
+        "requirements": [],
+        "desc": "起点近くで分岐・合流・横断する比較案。同じ目標へ進んでも途中の能力を選べる。",
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "damage": [
+            "DAMAGE"
+          ]
+        }
+      },
+      "after": {
+        "id": "opening_assassin_0_2",
+        "x": 1485.0,
+        "y": 105.0,
+        "type": "small",
+        "name": "決め手の備え II",
+        "stats": {
+          "physical": 4,
+          "hp": 2
+        },
+        "icon": "sword",
+        "group": null,
+        "opening": true,
+        "origin": "assassin",
+        "primary": "physical",
+        "depth": 2,
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "specialization_v9_proposal",
+        "sourceRef": "v6:opening_assassin_0_2",
+        "requirements": [],
+        "desc": "起点近くで分岐・合流・横断する比較案。同じ目標へ進んでも途中の能力を選べる。",
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "physical": [
+            "DAMAGE"
+          ],
+          "hp": []
+        },
+        "description": "直外側の専門帯へ進む初期能力の比較案。中央の位置・線・費用は保持。隣職の終端だけで専門帯の主要効果を取り切れない。"
+      }
+    },
+    {
+      "id": "opening_assassin_0_3",
+      "before": {
+        "id": "opening_assassin_0_3",
+        "x": 1590.0,
+        "y": 405.0,
+        "type": "notable",
+        "name": "鋭い刃",
+        "stats": {
+          "damage": 14,
+          "hp": 4
+        },
+        "icon": "sword",
+        "group": null,
+        "opening": true,
+        "origin": "assassin",
+        "primary": "damage",
+        "depth": 3,
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "diff_proposal",
+        "sourceRef": "v6:opening_assassin_0_3",
+        "requirements": [],
+        "desc": "起点近くで分岐・合流・横断する比較案。同じ目標へ進んでも途中の能力を選べる。",
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "damage": [
+            "DAMAGE"
+          ],
+          "hp": []
+        }
+      },
+      "after": {
+        "id": "opening_assassin_0_3",
+        "x": 1590.0,
+        "y": 405.0,
+        "type": "notable",
+        "name": "決め手の備え・入口",
+        "stats": {
+          "physical": 6,
+          "critMulti": 3
+        },
+        "icon": "sword",
+        "group": null,
+        "opening": true,
+        "origin": "assassin",
+        "primary": "physical",
+        "depth": 3,
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "specialization_v9_proposal",
+        "sourceRef": "v6:opening_assassin_0_3",
+        "requirements": [],
+        "desc": "起点近くで分岐・合流・横断する比較案。同じ目標へ進んでも途中の能力を選べる。",
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "physical": [
+            "DAMAGE"
+          ],
+          "critMulti": [
+            "DAMAGE"
+          ]
+        },
+        "description": "直外側の専門帯へ進む初期能力の比較案。中央の位置・線・費用は保持。隣職の終端だけで専門帯の主要効果を取り切れない。"
+      }
+    },
+    {
+      "id": "opening_assassin_1_1",
+      "before": {
+        "id": "opening_assassin_1_1",
+        "x": 1100.0,
+        "y": -165.0,
+        "type": "small",
+        "name": "連撃の基礎 I",
+        "stats": {
+          "attackSpeed": 3
+        },
+        "icon": "speed",
+        "group": null,
+        "opening": true,
+        "origin": "assassin",
+        "primary": "attackSpeed",
+        "depth": 1,
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "diff_proposal",
+        "sourceRef": "v6:opening_assassin_1_1",
+        "requirements": [],
+        "desc": "起点近くで分岐・合流・横断する比較案。同じ目標へ進んでも途中の能力を選べる。",
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "attackSpeed": [
+            "DAMAGE"
+          ]
+        }
+      },
+      "after": {
+        "id": "opening_assassin_1_1",
+        "x": 1100.0,
+        "y": -165.0,
+        "type": "small",
+        "name": "接近回収の備え I",
+        "stats": {
+          "attackSpeed": 2,
+          "resource": 2
+        },
+        "icon": "speed",
+        "group": null,
+        "opening": true,
+        "origin": "assassin",
+        "primary": "attackSpeed",
+        "depth": 1,
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "specialization_v9_proposal",
+        "sourceRef": "v6:opening_assassin_1_1",
+        "requirements": [],
+        "desc": "起点近くで分岐・合流・横断する比較案。同じ目標へ進んでも途中の能力を選べる。",
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "attackSpeed": [
+            "DAMAGE"
+          ],
+          "resource": [
+            "RESOURCE"
+          ]
+        },
+        "description": "直外側の専門帯へ進む初期能力の比較案。中央の位置・線・費用は保持。隣職の終端だけで専門帯の主要効果を取り切れない。"
+      }
+    },
+    {
+      "id": "opening_assassin_1_2",
+      "before": {
+        "id": "opening_assassin_1_2",
+        "x": 975.0,
+        "y": 105.0,
+        "type": "small",
+        "name": "連撃の基礎 II",
+        "stats": {
+          "attackSpeed": 3
+        },
+        "icon": "speed",
+        "group": null,
+        "opening": true,
+        "origin": "assassin",
+        "primary": "attackSpeed",
+        "depth": 2,
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "diff_proposal",
+        "sourceRef": "v6:opening_assassin_1_2",
+        "requirements": [],
+        "desc": "起点近くで分岐・合流・横断する比較案。同じ目標へ進んでも途中の能力を選べる。",
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "attackSpeed": [
+            "DAMAGE"
+          ]
+        }
+      },
+      "after": {
+        "id": "opening_assassin_1_2",
+        "x": 975.0,
+        "y": 105.0,
+        "type": "small",
+        "name": "接近回収の備え II",
+        "stats": {
+          "attackSpeed": 2,
+          "move": 2
+        },
+        "icon": "speed",
+        "group": null,
+        "opening": true,
+        "origin": "assassin",
+        "primary": "attackSpeed",
+        "depth": 2,
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "specialization_v9_proposal",
+        "sourceRef": "v6:opening_assassin_1_2",
+        "requirements": [],
+        "desc": "起点近くで分岐・合流・横断する比較案。同じ目標へ進んでも途中の能力を選べる。",
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "attackSpeed": [
+            "DAMAGE"
+          ],
+          "move": []
+        },
+        "description": "直外側の専門帯へ進む初期能力の比較案。中央の位置・線・費用は保持。隣職の終端だけで専門帯の主要効果を取り切れない。"
+      }
+    },
+    {
+      "id": "opening_assassin_1_3",
+      "before": {
+        "id": "opening_assassin_1_3",
+        "x": 870.0,
+        "y": 405.0,
+        "type": "notable",
+        "name": "素早い刃",
+        "stats": {
+          "attackSpeed": 6,
+          "resource": 4
+        },
+        "icon": "speed",
+        "group": null,
+        "opening": true,
+        "origin": "assassin",
+        "primary": "attackSpeed",
+        "depth": 3,
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "diff_proposal",
+        "sourceRef": "v6:opening_assassin_1_3",
+        "requirements": [],
+        "desc": "起点近くで分岐・合流・横断する比較案。同じ目標へ進んでも途中の能力を選べる。",
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "attackSpeed": [
+            "DAMAGE"
+          ],
+          "resource": [
+            "RESOURCE"
+          ]
+        }
+      },
+      "after": {
+        "id": "opening_assassin_1_3",
+        "x": 870.0,
+        "y": 405.0,
+        "type": "notable",
+        "name": "接近回収の備え・入口",
+        "stats": {
+          "attackSpeed": 3,
+          "resource": 4
+        },
+        "icon": "speed",
+        "group": null,
+        "opening": true,
+        "origin": "assassin",
+        "primary": "attackSpeed",
+        "depth": 3,
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "specialization_v9_proposal",
+        "sourceRef": "v6:opening_assassin_1_3",
+        "requirements": [],
+        "desc": "起点近くで分岐・合流・横断する比較案。同じ目標へ進んでも途中の能力を選べる。",
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "attackSpeed": [
+            "DAMAGE"
+          ],
+          "resource": [
+            "RESOURCE"
+          ]
+        },
+        "description": "直外側の専門帯へ進む初期能力の比較案。中央の位置・線・費用は保持。隣職の終端だけで専門帯の主要効果を取り切れない。"
+      }
+    },
+    {
+      "id": "opening_assassin_2_1",
+      "before": {
+        "id": "opening_assassin_2_1",
+        "x": 1230.0,
+        "y": 85.0,
+        "type": "small",
+        "name": "足運びの基礎 I",
+        "stats": {
+          "move": 2
+        },
+        "icon": "boot",
+        "group": null,
+        "opening": true,
+        "origin": "assassin",
+        "primary": "move",
+        "depth": 1,
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "diff_proposal",
+        "sourceRef": "v6:opening_assassin_2_1",
+        "requirements": [],
+        "desc": "起点近くで分岐・合流・横断する比較案。同じ目標へ進んでも途中の能力を選べる。",
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "move": []
+        }
+      },
+      "after": {
+        "id": "opening_assassin_2_1",
+        "x": 1230.0,
+        "y": 85.0,
+        "type": "small",
+        "name": "離脱の備え I",
+        "stats": {
+          "move": 2,
+          "hp": 2
+        },
+        "icon": "boot",
+        "group": null,
+        "opening": true,
+        "origin": "assassin",
+        "primary": "move",
+        "depth": 1,
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "specialization_v9_proposal",
+        "sourceRef": "v6:opening_assassin_2_1",
+        "requirements": [],
+        "desc": "起点近くで分岐・合流・横断する比較案。同じ目標へ進んでも途中の能力を選べる。",
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "move": [],
+          "hp": []
+        },
+        "description": "直外側の専門帯へ進む初期能力の比較案。中央の位置・線・費用は保持。隣職の終端だけで専門帯の主要効果を取り切れない。"
+      }
+    },
+    {
+      "id": "opening_assassin_2_2",
+      "before": {
+        "id": "opening_assassin_2_2",
+        "x": 1230.0,
+        "y": 340.0,
+        "type": "small",
+        "name": "足運びの基礎 II",
+        "stats": {
+          "move": 2
+        },
+        "icon": "boot",
+        "group": null,
+        "opening": true,
+        "origin": "assassin",
+        "primary": "move",
+        "depth": 2,
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "diff_proposal",
+        "sourceRef": "v6:opening_assassin_2_2",
+        "requirements": [],
+        "desc": "起点近くで分岐・合流・横断する比較案。同じ目標へ進んでも途中の能力を選べる。",
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "move": []
+        }
+      },
+      "after": {
+        "id": "opening_assassin_2_2",
+        "x": 1230.0,
+        "y": 340.0,
+        "type": "small",
+        "name": "離脱の備え II",
+        "stats": {
+          "move": 2,
+          "resist": 2
+        },
+        "icon": "boot",
+        "group": null,
+        "opening": true,
+        "origin": "assassin",
+        "primary": "move",
+        "depth": 2,
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "specialization_v9_proposal",
+        "sourceRef": "v6:opening_assassin_2_2",
+        "requirements": [],
+        "desc": "起点近くで分岐・合流・横断する比較案。同じ目標へ進んでも途中の能力を選べる。",
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "move": [],
+          "resist": []
+        },
+        "description": "直外側の専門帯へ進む初期能力の比較案。中央の位置・線・費用は保持。隣職の終端だけで専門帯の主要効果を取り切れない。"
+      }
+    },
+    {
+      "id": "opening_assassin_2_3",
+      "before": {
+        "id": "opening_assassin_2_3",
+        "x": 1230.0,
+        "y": 595.0,
+        "type": "notable",
+        "name": "間合いを選ぶ",
+        "stats": {
+          "move": 4,
+          "hp": 4
+        },
+        "icon": "boot",
+        "group": null,
+        "opening": true,
+        "origin": "assassin",
+        "primary": "move",
+        "depth": 3,
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "diff_proposal",
+        "sourceRef": "v6:opening_assassin_2_3",
+        "requirements": [],
+        "desc": "起点近くで分岐・合流・横断する比較案。同じ目標へ進んでも途中の能力を選べる。",
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "move": [],
+          "hp": []
+        }
+      },
+      "after": {
+        "id": "opening_assassin_2_3",
+        "x": 1230.0,
+        "y": 595.0,
+        "type": "notable",
+        "name": "離脱の備え・入口",
+        "stats": {
+          "move": 3,
+          "hp": 3
+        },
+        "icon": "boot",
+        "group": null,
+        "opening": true,
+        "origin": "assassin",
+        "primary": "move",
+        "depth": 3,
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "specialization_v9_proposal",
+        "sourceRef": "v6:opening_assassin_2_3",
+        "requirements": [],
+        "desc": "起点近くで分岐・合流・横断する比較案。同じ目標へ進んでも途中の能力を選べる。",
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "move": [],
+          "hp": []
+        },
+        "description": "直外側の専門帯へ進む初期能力の比較案。中央の位置・線・費用は保持。隣職の終端だけで専門帯の主要効果を取り切れない。"
+      }
+    }
+  ],
+  "addedNodes": [
+    "v9road_tank_outlet",
+    "v9_warrior_0_0",
+    "v9_warrior_0_1",
+    "v9_warrior_0_2",
+    "v9_warrior_0_3",
+    "v9_warrior_0_4",
+    "v9_warrior_0_5",
+    "v9_warrior_1_0",
+    "v9_warrior_1_1",
+    "v9_warrior_1_2",
+    "v9_warrior_1_3",
+    "v9_warrior_1_4",
+    "v9_warrior_1_5",
+    "v9_tank_0_0",
+    "v9_tank_0_1",
+    "v9_tank_0_2",
+    "v9_tank_0_3",
+    "v9_tank_0_4",
+    "v9_tank_0_5",
+    "v9_tank_1_0",
+    "v9_tank_1_1",
+    "v9_tank_1_2",
+    "v9_tank_1_3",
+    "v9_tank_1_4",
+    "v9_tank_1_5",
+    "v9_mage_0_0",
+    "v9_mage_0_1",
+    "v9_mage_0_2",
+    "v9_mage_0_3",
+    "v9_mage_0_4",
+    "v9_mage_0_5",
+    "v9_mage_1_0",
+    "v9_mage_1_1",
+    "v9_mage_1_2",
+    "v9_mage_1_3",
+    "v9_mage_1_4",
+    "v9_mage_1_5",
+    "v9_ranger_0_0",
+    "v9_ranger_0_1",
+    "v9_ranger_0_2",
+    "v9_ranger_0_3",
+    "v9_ranger_0_4",
+    "v9_ranger_0_5",
+    "v9_ranger_1_0",
+    "v9_ranger_1_1",
+    "v9_ranger_1_2",
+    "v9_ranger_1_3",
+    "v9_ranger_1_4",
+    "v9_ranger_1_5",
+    "v9_assassin_0_0",
+    "v9_assassin_0_1",
+    "v9_assassin_0_2",
+    "v9_assassin_0_3",
+    "v9_assassin_0_4",
+    "v9_assassin_0_5",
+    "v9_assassin_1_0",
+    "v9_assassin_1_1",
+    "v9_assassin_1_2",
+    "v9_assassin_1_3",
+    "v9_assassin_1_4",
+    "v9_assassin_1_5"
+  ],
+  "addedEdges": [
+    {
+      "a": "opening_templar_1_3",
+      "b": "v9road_tank_outlet",
+      "road": true,
+      "proposalKind": "specialization-v9",
+      "role": "Independent armor-side outlet",
+      "points": [
+        [
+          551.40045,
+          -2791.48073
+        ],
+        [
+          449.07813,
+          -2981.22753
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "v9road_tank_outlet",
+      "b": "r6_35_1",
+      "road": true,
+      "proposalKind": "specialization-v9",
+      "role": "Useful paid exit to existing general network",
+      "points": [
+        [
+          449.07813,
+          -2981.22753
+        ],
+        [
+          346.75582,
+          -3170.97432
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "opening_warrior_0_3",
+      "b": "v9_warrior_0_0",
+      "road": false,
+      "proposalKind": "specialization-v9",
+      "role": "Owned-source local specialization",
+      "points": [
+        [
+          -227.99713,
+          -392.74161
+        ],
+        [
+          -325.32381,
+          147.25839
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "v9_warrior_0_0",
+      "b": "v9_warrior_0_1",
+      "road": false,
+      "proposalKind": "specialization-v9",
+      "role": "Owned-source local specialization",
+      "points": [
+        [
+          -325.32381,
+          147.25839
+        ],
+        [
+          -225.32381,
+          247.25839
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "v9_warrior_0_1",
+      "b": "v9_warrior_0_2",
+      "road": false,
+      "proposalKind": "specialization-v9",
+      "role": "Owned-source local specialization",
+      "points": [
+        [
+          -225.32381,
+          247.25839
+        ],
+        [
+          -175.32381,
+          97.25839
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "v9_warrior_0_2",
+      "b": "v9_warrior_0_3",
+      "road": false,
+      "proposalKind": "specialization-v9",
+      "role": "Owned-source local specialization",
+      "points": [
+        [
+          -175.32381,
+          97.25839
+        ],
+        [
+          -75.32381,
+          197.25839
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "v9_warrior_0_3",
+      "b": "v9_warrior_0_4",
+      "road": false,
+      "proposalKind": "specialization-v9",
+      "role": "Owned-source local specialization",
+      "points": [
+        [
+          -75.32381,
+          197.25839
+        ],
+        [
+          74.67619,
+          247.25839
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "v9_warrior_0_4",
+      "b": "v9_warrior_0_5",
+      "road": false,
+      "proposalKind": "specialization-v9",
+      "role": "Owned-source local specialization",
+      "points": [
+        [
+          74.67619,
+          247.25839
+        ],
+        [
+          174.67619,
+          347.25839
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "opening_warrior_1_3",
+      "b": "v9_warrior_1_0",
+      "road": false,
+      "proposalKind": "specialization-v9",
+      "role": "Owned-source local specialization",
+      "points": [
+        [
+          -450.48937,
+          -1077.50231
+        ],
+        [
+          -660.0,
+          -668.65322
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "v9_warrior_1_0",
+      "b": "v9_warrior_1_1",
+      "road": false,
+      "proposalKind": "specialization-v9",
+      "role": "Owned-source local specialization",
+      "points": [
+        [
+          -660.0,
+          -668.65322
+        ],
+        [
+          -660.0,
+          -518.65322
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "v9_warrior_1_1",
+      "b": "v9_warrior_1_2",
+      "road": false,
+      "proposalKind": "specialization-v9",
+      "role": "Owned-source local specialization",
+      "points": [
+        [
+          -660.0,
+          -518.65322
+        ],
+        [
+          -510.0,
+          -368.65322
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "v9_warrior_1_2",
+      "b": "v9_warrior_1_3",
+      "road": false,
+      "proposalKind": "specialization-v9",
+      "role": "Owned-source local specialization",
+      "points": [
+        [
+          -510.0,
+          -368.65322
+        ],
+        [
+          -510.0,
+          -518.65322
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "v9_warrior_1_3",
+      "b": "v9_warrior_1_4",
+      "road": false,
+      "proposalKind": "specialization-v9",
+      "role": "Owned-source local specialization",
+      "points": [
+        [
+          -510.0,
+          -518.65322
+        ],
+        [
+          -360.0,
+          -368.65322
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "v9_warrior_1_4",
+      "b": "v9_warrior_1_5",
+      "road": false,
+      "proposalKind": "specialization-v9",
+      "role": "Owned-source local specialization",
+      "points": [
+        [
+          -360.0,
+          -368.65322
+        ],
+        [
+          -560.0,
+          -218.65322
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "opening_templar_0_3",
+      "b": "v9_tank_0_0",
+      "road": false,
+      "proposalKind": "specialization-v9",
+      "role": "Owned-source local specialization",
+      "points": [
+        [
+          -31.09178,
+          -2368.27535
+        ],
+        [
+          -28.18283,
+          -2548.14806
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "v9_tank_0_0",
+      "b": "v9_tank_0_1",
+      "road": false,
+      "proposalKind": "specialization-v9",
+      "role": "Owned-source local specialization",
+      "points": [
+        [
+          -28.18283,
+          -2548.14806
+        ],
+        [
+          -28.18283,
+          -2698.14806
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "v9_tank_0_1",
+      "b": "v9_tank_0_2",
+      "road": false,
+      "proposalKind": "specialization-v9",
+      "role": "Owned-source local specialization",
+      "points": [
+        [
+          -28.18283,
+          -2698.14806
+        ],
+        [
+          121.81717,
+          -2848.14806
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "v9_tank_0_2",
+      "b": "v9_tank_0_3",
+      "road": false,
+      "proposalKind": "specialization-v9",
+      "role": "Owned-source local specialization",
+      "points": [
+        [
+          121.81717,
+          -2848.14806
+        ],
+        [
+          271.81717,
+          -2998.14806
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "v9_tank_0_3",
+      "b": "v9_tank_0_4",
+      "road": false,
+      "proposalKind": "specialization-v9",
+      "role": "Owned-source local specialization",
+      "points": [
+        [
+          271.81717,
+          -2998.14806
+        ],
+        [
+          271.81717,
+          -2848.14806
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "v9_tank_0_4",
+      "b": "v9_tank_0_5",
+      "road": false,
+      "proposalKind": "specialization-v9",
+      "role": "Owned-source local specialization",
+      "points": [
+        [
+          271.81717,
+          -2848.14806
+        ],
+        [
+          421.81717,
+          -2848.14806
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "opening_templar_1_3",
+      "b": "v9_tank_1_0",
+      "road": false,
+      "proposalKind": "specialization-v9",
+      "role": "Owned-source local specialization",
+      "points": [
+        [
+          551.40045,
+          -2791.48073
+        ],
+        [
+          571.81717,
+          -2948.14806
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "v9_tank_1_0",
+      "b": "v9_tank_1_1",
+      "road": false,
+      "proposalKind": "specialization-v9",
+      "role": "Owned-source local specialization",
+      "points": [
+        [
+          571.81717,
+          -2948.14806
+        ],
+        [
+          471.81717,
+          -3148.14806
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "v9_tank_1_1",
+      "b": "v9_tank_1_2",
+      "road": false,
+      "proposalKind": "specialization-v9",
+      "role": "Owned-source local specialization",
+      "points": [
+        [
+          471.81717,
+          -3148.14806
+        ],
+        [
+          621.81717,
+          -3198.14806
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "v9_tank_1_2",
+      "b": "v9_tank_1_3",
+      "road": false,
+      "proposalKind": "specialization-v9",
+      "role": "Owned-source local specialization",
+      "points": [
+        [
+          621.81717,
+          -3198.14806
+        ],
+        [
+          671.81717,
+          -3048.14806
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "v9_tank_1_3",
+      "b": "v9_tank_1_4",
+      "road": false,
+      "proposalKind": "specialization-v9",
+      "role": "Owned-source local specialization",
+      "points": [
+        [
+          671.81717,
+          -3048.14806
+        ],
+        [
+          771.81717,
+          -3148.14806
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "v9_tank_1_4",
+      "b": "v9_tank_1_5",
+      "road": false,
+      "proposalKind": "specialization-v9",
+      "role": "Owned-source local specialization",
+      "points": [
+        [
+          771.81717,
+          -3148.14806
+        ],
+        [
+          771.81717,
+          -3298.14806
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "opening_mage_0_3",
+      "b": "v9_mage_0_0",
+      "road": false,
+      "proposalKind": "specialization-v9",
+      "role": "Owned-source local specialization",
+      "points": [
+        [
+          1908.59955,
+          -2791.48073
+        ],
+        [
+          2021.81717,
+          -3248.14806
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "v9_mage_0_0",
+      "b": "v9_mage_0_1",
+      "road": false,
+      "proposalKind": "specialization-v9",
+      "role": "Owned-source local specialization",
+      "points": [
+        [
+          2021.81717,
+          -3248.14806
+        ],
+        [
+          2021.81717,
+          -3548.14806
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "v9_mage_0_1",
+      "b": "v9_mage_0_2",
+      "road": false,
+      "proposalKind": "specialization-v9",
+      "role": "Owned-source local specialization",
+      "points": [
+        [
+          2021.81717,
+          -3548.14806
+        ],
+        [
+          2021.81717,
+          -3698.14806
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "v9_mage_0_2",
+      "b": "v9_mage_0_3",
+      "road": false,
+      "proposalKind": "specialization-v9",
+      "role": "Owned-source local specialization",
+      "points": [
+        [
+          2021.81717,
+          -3698.14806
+        ],
+        [
+          2171.81717,
+          -3648.14806
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "v9_mage_0_3",
+      "b": "v9_mage_0_4",
+      "road": false,
+      "proposalKind": "specialization-v9",
+      "role": "Owned-source local specialization",
+      "points": [
+        [
+          2171.81717,
+          -3648.14806
+        ],
+        [
+          2171.81717,
+          -3448.14806
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "v9_mage_0_4",
+      "b": "v9_mage_0_5",
+      "road": false,
+      "proposalKind": "specialization-v9",
+      "role": "Owned-source local specialization",
+      "points": [
+        [
+          2171.81717,
+          -3448.14806
+        ],
+        [
+          2321.81717,
+          -3498.14806
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "opening_mage_1_3",
+      "b": "v9_mage_1_0",
+      "road": false,
+      "proposalKind": "specialization-v9",
+      "role": "Owned-source local specialization",
+      "points": [
+        [
+          2491.09178,
+          -2368.27535
+        ],
+        [
+          2731.09178,
+          -2304.62766
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "v9_mage_1_0",
+      "b": "v9_mage_1_1",
+      "road": false,
+      "proposalKind": "specialization-v9",
+      "role": "Owned-source local specialization",
+      "points": [
+        [
+          2731.09178,
+          -2304.62766
+        ],
+        [
+          2831.09178,
+          -2204.62766
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "v9_mage_1_1",
+      "b": "v9_mage_1_2",
+      "road": false,
+      "proposalKind": "specialization-v9",
+      "role": "Owned-source local specialization",
+      "points": [
+        [
+          2831.09178,
+          -2204.62766
+        ],
+        [
+          2931.09178,
+          -2304.62766
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "v9_mage_1_2",
+      "b": "v9_mage_1_3",
+      "road": false,
+      "proposalKind": "specialization-v9",
+      "role": "Owned-source local specialization",
+      "points": [
+        [
+          2931.09178,
+          -2304.62766
+        ],
+        [
+          2981.09178,
+          -2154.62766
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "v9_mage_1_3",
+      "b": "v9_mage_1_4",
+      "road": false,
+      "proposalKind": "specialization-v9",
+      "role": "Owned-source local specialization",
+      "points": [
+        [
+          2981.09178,
+          -2154.62766
+        ],
+        [
+          2981.09178,
+          -1954.62766
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "v9_mage_1_4",
+      "b": "v9_mage_1_5",
+      "road": false,
+      "proposalKind": "specialization-v9",
+      "role": "Owned-source local specialization",
+      "points": [
+        [
+          2981.09178,
+          -1954.62766
+        ],
+        [
+          3081.09178,
+          -1854.62766
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "opening_ranger_0_3",
+      "b": "v9_ranger_0_0",
+      "road": false,
+      "proposalKind": "specialization-v9",
+      "role": "Owned-source local specialization",
+      "points": [
+        [
+          2910.48937,
+          -1077.50231
+        ],
+        [
+          3031.09178,
+          -1104.62766
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "v9_ranger_0_0",
+      "b": "v9_ranger_0_1",
+      "road": false,
+      "proposalKind": "specialization-v9",
+      "role": "Owned-source local specialization",
+      "points": [
+        [
+          3031.09178,
+          -1104.62766
+        ],
+        [
+          3181.09178,
+          -1154.62766
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "v9_ranger_0_1",
+      "b": "v9_ranger_0_2",
+      "road": false,
+      "proposalKind": "specialization-v9",
+      "role": "Owned-source local specialization",
+      "points": [
+        [
+          3181.09178,
+          -1154.62766
+        ],
+        [
+          3131.09178,
+          -954.62766
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "v9_ranger_0_2",
+      "b": "v9_ranger_0_3",
+      "road": false,
+      "proposalKind": "specialization-v9",
+      "role": "Owned-source local specialization",
+      "points": [
+        [
+          3131.09178,
+          -954.62766
+        ],
+        [
+          3081.09178,
+          -804.62766
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "v9_ranger_0_3",
+      "b": "v9_ranger_0_4",
+      "road": false,
+      "proposalKind": "specialization-v9",
+      "role": "Owned-source local specialization",
+      "points": [
+        [
+          3081.09178,
+          -804.62766
+        ],
+        [
+          3031.09178,
+          -554.62766
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "v9_ranger_0_4",
+      "b": "v9_ranger_0_5",
+      "road": false,
+      "proposalKind": "specialization-v9",
+      "role": "Owned-source local specialization",
+      "points": [
+        [
+          3031.09178,
+          -554.62766
+        ],
+        [
+          2931.09178,
+          -354.62766
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "opening_ranger_1_3",
+      "b": "v9_ranger_1_0",
+      "road": false,
+      "proposalKind": "specialization-v9",
+      "role": "Owned-source local specialization",
+      "points": [
+        [
+          2687.99713,
+          -392.74161
+        ],
+        [
+          2660.0,
+          -102.74161
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "v9_ranger_1_0",
+      "b": "v9_ranger_1_1",
+      "road": false,
+      "proposalKind": "specialization-v9",
+      "role": "Owned-source local specialization",
+      "points": [
+        [
+          2660.0,
+          -102.74161
+        ],
+        [
+          2610.0,
+          147.25839
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "v9_ranger_1_1",
+      "b": "v9_ranger_1_2",
+      "road": false,
+      "proposalKind": "specialization-v9",
+      "role": "Owned-source local specialization",
+      "points": [
+        [
+          2610.0,
+          147.25839
+        ],
+        [
+          2460.0,
+          297.25839
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "v9_ranger_1_2",
+      "b": "v9_ranger_1_3",
+      "road": false,
+      "proposalKind": "specialization-v9",
+      "role": "Owned-source local specialization",
+      "points": [
+        [
+          2460.0,
+          297.25839
+        ],
+        [
+          2310.0,
+          297.25839
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "v9_ranger_1_3",
+      "b": "v9_ranger_1_4",
+      "road": false,
+      "proposalKind": "specialization-v9",
+      "role": "Owned-source local specialization",
+      "points": [
+        [
+          2310.0,
+          297.25839
+        ],
+        [
+          2210.0,
+          397.25839
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "v9_ranger_1_4",
+      "b": "v9_ranger_1_5",
+      "road": false,
+      "proposalKind": "specialization-v9",
+      "role": "Owned-source local specialization",
+      "points": [
+        [
+          2210.0,
+          397.25839
+        ],
+        [
+          2110.0,
+          497.25839
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "opening_assassin_0_3",
+      "b": "v9_assassin_0_0",
+      "road": false,
+      "proposalKind": "specialization-v9",
+      "role": "Owned-source local specialization",
+      "points": [
+        [
+          1590.0,
+          405.0
+        ],
+        [
+          1560.0,
+          697.25839
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "v9_assassin_0_0",
+      "b": "v9_assassin_0_1",
+      "road": false,
+      "proposalKind": "specialization-v9",
+      "role": "Owned-source local specialization",
+      "points": [
+        [
+          1560.0,
+          697.25839
+        ],
+        [
+          1460.0,
+          847.25839
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "v9_assassin_0_1",
+      "b": "v9_assassin_0_2",
+      "road": false,
+      "proposalKind": "specialization-v9",
+      "role": "Owned-source local specialization",
+      "points": [
+        [
+          1460.0,
+          847.25839
+        ],
+        [
+          1610.0,
+          897.25839
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "v9_assassin_0_2",
+      "b": "v9_assassin_0_3",
+      "road": false,
+      "proposalKind": "specialization-v9",
+      "role": "Owned-source local specialization",
+      "points": [
+        [
+          1610.0,
+          897.25839
+        ],
+        [
+          1510.0,
+          997.25839
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "v9_assassin_0_3",
+      "b": "v9_assassin_0_4",
+      "road": false,
+      "proposalKind": "specialization-v9",
+      "role": "Owned-source local specialization",
+      "points": [
+        [
+          1510.0,
+          997.25839
+        ],
+        [
+          1360.0,
+          997.25839
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "v9_assassin_0_4",
+      "b": "v9_assassin_0_5",
+      "road": false,
+      "proposalKind": "specialization-v9",
+      "role": "Owned-source local specialization",
+      "points": [
+        [
+          1360.0,
+          997.25839
+        ],
+        [
+          1310.0,
+          797.25839
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "opening_assassin_1_3",
+      "b": "v9_assassin_1_0",
+      "road": false,
+      "proposalKind": "specialization-v9",
+      "role": "Owned-source local specialization",
+      "points": [
+        [
+          870.0,
+          405.0
+        ],
+        [
+          674.67619,
+          497.25839
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "v9_assassin_1_0",
+      "b": "v9_assassin_1_1",
+      "road": false,
+      "proposalKind": "specialization-v9",
+      "role": "Owned-source local specialization",
+      "points": [
+        [
+          674.67619,
+          497.25839
+        ],
+        [
+          774.67619,
+          597.25839
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "v9_assassin_1_1",
+      "b": "v9_assassin_1_2",
+      "road": false,
+      "proposalKind": "specialization-v9",
+      "role": "Owned-source local specialization",
+      "points": [
+        [
+          774.67619,
+          597.25839
+        ],
+        [
+          924.67619,
+          747.25839
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "v9_assassin_1_2",
+      "b": "v9_assassin_1_3",
+      "road": false,
+      "proposalKind": "specialization-v9",
+      "role": "Owned-source local specialization",
+      "points": [
+        [
+          924.67619,
+          747.25839
+        ],
+        [
+          924.67619,
+          597.25839
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "v9_assassin_1_3",
+      "b": "v9_assassin_1_4",
+      "road": false,
+      "proposalKind": "specialization-v9",
+      "role": "Owned-source local specialization",
+      "points": [
+        [
+          924.67619,
+          597.25839
+        ],
+        [
+          1074.67619,
+          797.25839
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "v9_assassin_1_4",
+      "b": "v9_assassin_1_5",
+      "road": false,
+      "proposalKind": "specialization-v9",
+      "role": "Owned-source local specialization",
+      "points": [
+        [
+          1074.67619,
+          797.25839
+        ],
+        [
+          1124.67619,
+          947.25839
+        ]
+      ],
+      "crossingGaps": []
+    }
+  ],
+  "representativeGate": {
+    "status": "PASS_PYTHON_PENDING_ACTUAL_JS",
+    "warriorStrike": {
+      "warrior": 9,
+      "tank": 14,
+      "mage": 20,
+      "ranger": 17,
+      "assassin": 12
+    },
+    "tankDefense": {
+      "warrior": 12,
+      "tank": 9,
+      "mage": 16,
+      "ranger": 19,
+      "assassin": 17
+    },
+    "checkedBeforeOtherThree": true
+  }
+}

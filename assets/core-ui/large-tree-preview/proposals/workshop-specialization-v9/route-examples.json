@@ -1,0 +1,1268 @@
+[
+  {
+    "id": "warrior-direction-0-12",
+    "label": "warrior / 一撃と再使用 / 同消費12pt",
+    "profileId": "warrior:support:plain:standard",
+    "siphon": false,
+    "targets": [
+      "v9_warrior_0_5",
+      "opening_warrior_1_1",
+      "opening_warrior_1_2",
+      "opening_warrior_1_3"
+    ],
+    "budget": 12,
+    "note": "同じ職業・編成・追加MODなし・通路HPで12ptを使用。主力の一回を重くし、再使用の機会へ投資する。受け流し技能を使う編成では、反撃の一回も重くする。",
+    "learned": [
+      "opening_warrior_0_1",
+      "opening_warrior_0_2",
+      "opening_warrior_0_3",
+      "opening_warrior_1_1",
+      "opening_warrior_1_2",
+      "opening_warrior_1_3",
+      "origin_warrior",
+      "v9_warrior_0_0",
+      "v9_warrior_0_1",
+      "v9_warrior_0_2",
+      "v9_warrior_0_3",
+      "v9_warrior_0_4",
+      "v9_warrior_0_5"
+    ],
+    "paths": [
+      {
+        "target": "v9_warrior_0_5",
+        "nodes": [
+          "origin_warrior",
+          "opening_warrior_0_1",
+          "opening_warrior_0_2",
+          "opening_warrior_0_3",
+          "v9_warrior_0_0",
+          "v9_warrior_0_1",
+          "v9_warrior_0_2",
+          "v9_warrior_0_3",
+          "v9_warrior_0_4",
+          "v9_warrior_0_5"
+        ]
+      },
+      {
+        "target": "opening_warrior_1_1",
+        "nodes": [
+          "origin_warrior",
+          "opening_warrior_1_1"
+        ]
+      },
+      {
+        "target": "opening_warrior_1_2",
+        "nodes": [
+          "opening_warrior_1_1",
+          "opening_warrior_1_2"
+        ]
+      },
+      {
+        "target": "opening_warrior_1_3",
+        "nodes": [
+          "opening_warrior_1_2",
+          "opening_warrior_1_3"
+        ]
+      }
+    ],
+    "spent": 12,
+    "stats": {
+      "armor": 12,
+      "haste": 12,
+      "hp": 14,
+      "physical": 43,
+      "resource": 9
+    },
+    "keys": [],
+    "remaining": 0,
+    "direction": "一撃と再使用",
+    "play": "主力の一回を重くし、再使用の機会へ投資する。受け流し技能を使う編成では、反撃の一回も重くする。",
+    "gear": "攻撃力・スキルダメージ・再使用速度を優先候補にする。余波の範囲と威力の交換はMOD側に残す。",
+    "focusIds": [
+      "opening_warrior_0_1",
+      "opening_warrior_0_2",
+      "opening_warrior_0_3",
+      "opening_warrior_1_1",
+      "opening_warrior_1_2",
+      "opening_warrior_1_3",
+      "opening_warrior_2_1",
+      "opening_warrior_2_2",
+      "opening_warrior_2_3",
+      "origin_warrior",
+      "v9_warrior_0_0",
+      "v9_warrior_0_1",
+      "v9_warrior_0_2",
+      "v9_warrior_0_3",
+      "v9_warrior_0_4",
+      "v9_warrior_0_5",
+      "v9_warrior_1_0",
+      "v9_warrior_1_1",
+      "v9_warrior_1_2",
+      "v9_warrior_1_3",
+      "v9_warrior_1_4",
+      "v9_warrior_1_5"
+    ]
+  },
+  {
+    "id": "warrior-direction-1-12",
+    "label": "warrior / 通常攻撃と資源獲得 / 同消費12pt",
+    "profileId": "warrior:support:plain:standard",
+    "siphon": false,
+    "targets": [
+      "v9_warrior_1_5",
+      "opening_warrior_0_1",
+      "opening_warrior_0_2",
+      "opening_warrior_0_3"
+    ],
+    "budget": 12,
+    "note": "同じ職業・編成・追加MODなし・通路HPで12ptを使用。通常攻撃を挟んで固有資源を回収し、消費技へつなぐ。手数と資源獲得に配分して闘気をためる。",
+    "learned": [
+      "opening_warrior_0_1",
+      "opening_warrior_0_2",
+      "opening_warrior_0_3",
+      "opening_warrior_1_1",
+      "opening_warrior_1_2",
+      "opening_warrior_1_3",
+      "origin_warrior",
+      "v9_warrior_1_0",
+      "v9_warrior_1_1",
+      "v9_warrior_1_2",
+      "v9_warrior_1_3",
+      "v9_warrior_1_4",
+      "v9_warrior_1_5"
+    ],
+    "paths": [
+      {
+        "target": "v9_warrior_1_5",
+        "nodes": [
+          "origin_warrior",
+          "opening_warrior_1_1",
+          "opening_warrior_1_2",
+          "opening_warrior_1_3",
+          "v9_warrior_1_0",
+          "v9_warrior_1_1",
+          "v9_warrior_1_2",
+          "v9_warrior_1_3",
+          "v9_warrior_1_4",
+          "v9_warrior_1_5"
+        ]
+      },
+      {
+        "target": "opening_warrior_0_1",
+        "nodes": [
+          "origin_warrior",
+          "opening_warrior_0_1"
+        ]
+      },
+      {
+        "target": "opening_warrior_0_2",
+        "nodes": [
+          "opening_warrior_0_1",
+          "opening_warrior_0_2"
+        ]
+      },
+      {
+        "target": "opening_warrior_0_3",
+        "nodes": [
+          "opening_warrior_0_2",
+          "opening_warrior_0_3"
+        ]
+      }
+    ],
+    "spent": 12,
+    "stats": {
+      "armor": 12,
+      "attackSpeed": 16,
+      "hp": 16,
+      "physical": 16,
+      "resource": 25
+    },
+    "keys": [],
+    "remaining": 0,
+    "direction": "通常攻撃と資源獲得",
+    "play": "通常攻撃を挟んで固有資源を回収し、消費技へつなぐ。手数と資源獲得に配分して闘気をためる。",
+    "gear": "通常攻撃ダメージ・攻撃速度を優先候補にし、MPと耐久を補う。専用MODの追加pulseは増やさない。",
+    "focusIds": [
+      "opening_warrior_0_1",
+      "opening_warrior_0_2",
+      "opening_warrior_0_3",
+      "opening_warrior_1_1",
+      "opening_warrior_1_2",
+      "opening_warrior_1_3",
+      "opening_warrior_2_1",
+      "opening_warrior_2_2",
+      "opening_warrior_2_3",
+      "origin_warrior",
+      "v9_warrior_0_0",
+      "v9_warrior_0_1",
+      "v9_warrior_0_2",
+      "v9_warrior_0_3",
+      "v9_warrior_0_4",
+      "v9_warrior_0_5",
+      "v9_warrior_1_0",
+      "v9_warrior_1_1",
+      "v9_warrior_1_2",
+      "v9_warrior_1_3",
+      "v9_warrior_1_4",
+      "v9_warrior_1_5"
+    ]
+  },
+  {
+    "id": "tank-direction-0-12",
+    "label": "tank / 装甲と継戦 / 同消費12pt",
+    "profileId": "tank:support:plain:standard",
+    "siphon": false,
+    "targets": [
+      "v9_tank_0_5",
+      "opening_templar_1_1",
+      "opening_templar_1_2",
+      "opening_templar_1_3"
+    ],
+    "budget": 12,
+    "note": "同じ職業・編成・追加MODなし・通路HPで12ptを使用。装甲とHPへ投資し、敵の前で通常攻撃と既存の挑発を継続する。防具は部位ごとに自由に混ぜて補う。",
+    "learned": [
+      "opening_templar_0_1",
+      "opening_templar_0_2",
+      "opening_templar_0_3",
+      "opening_templar_1_1",
+      "opening_templar_1_2",
+      "opening_templar_1_3",
+      "origin_templar",
+      "v9_tank_0_0",
+      "v9_tank_0_1",
+      "v9_tank_0_2",
+      "v9_tank_0_3",
+      "v9_tank_0_4",
+      "v9_tank_0_5"
+    ],
+    "paths": [
+      {
+        "target": "v9_tank_0_5",
+        "nodes": [
+          "origin_templar",
+          "opening_templar_0_1",
+          "opening_templar_0_2",
+          "opening_templar_0_3",
+          "v9_tank_0_0",
+          "v9_tank_0_1",
+          "v9_tank_0_2",
+          "v9_tank_0_3",
+          "v9_tank_0_4",
+          "v9_tank_0_5"
+        ]
+      },
+      {
+        "target": "opening_templar_1_1",
+        "nodes": [
+          "origin_templar",
+          "opening_templar_1_1"
+        ]
+      },
+      {
+        "target": "opening_templar_1_2",
+        "nodes": [
+          "opening_templar_1_1",
+          "opening_templar_1_2"
+        ]
+      },
+      {
+        "target": "opening_templar_1_3",
+        "nodes": [
+          "opening_templar_1_2",
+          "opening_templar_1_3"
+        ]
+      }
+    ],
+    "spent": 12,
+    "stats": {
+      "armor": 45,
+      "hp": 38,
+      "regen": 4,
+      "resist": 8
+    },
+    "keys": [],
+    "remaining": 0,
+    "direction": "装甲と継戦",
+    "play": "装甲とHPへ投資し、敵の前で通常攻撃と既存の挑発を継続する。防具は部位ごとに自由に混ぜて補う。",
+    "gear": "HP・被ダメージ軽減・耐久を優先候補にする。防具は自由に混合し、既存障壁MODは任意に選ぶ。",
+    "focusIds": [
+      "opening_templar_0_1",
+      "opening_templar_0_2",
+      "opening_templar_0_3",
+      "opening_templar_1_1",
+      "opening_templar_1_2",
+      "opening_templar_1_3",
+      "opening_templar_2_1",
+      "opening_templar_2_2",
+      "opening_templar_2_3",
+      "origin_templar",
+      "v9_tank_0_0",
+      "v9_tank_0_1",
+      "v9_tank_0_2",
+      "v9_tank_0_3",
+      "v9_tank_0_4",
+      "v9_tank_0_5",
+      "v9_tank_1_0",
+      "v9_tank_1_1",
+      "v9_tank_1_2",
+      "v9_tank_1_3",
+      "v9_tank_1_4",
+      "v9_tank_1_5"
+    ]
+  },
+  {
+    "id": "tank-direction-1-12",
+    "label": "tank / 守りの再使用 / 同消費12pt",
+    "profileId": "tank:support:plain:standard",
+    "siphon": false,
+    "targets": [
+      "v9_tank_1_5",
+      "opening_templar_0_1",
+      "opening_templar_0_2",
+      "opening_templar_0_3"
+    ],
+    "budget": 12,
+    "note": "同じ職業・編成・追加MODなし・通路HPで12ptを使用。手持ちの守り・吸引・攻撃の再使用とMP負担を育てる。障壁を持つ編成は付与量も育ち、それ以外は装甲とHPの備えが残る。",
+    "learned": [
+      "opening_templar_0_1",
+      "opening_templar_0_2",
+      "opening_templar_0_3",
+      "opening_templar_1_1",
+      "opening_templar_1_2",
+      "opening_templar_1_3",
+      "origin_templar",
+      "v9_tank_1_0",
+      "v9_tank_1_1",
+      "v9_tank_1_2",
+      "v9_tank_1_3",
+      "v9_tank_1_4",
+      "v9_tank_1_5"
+    ],
+    "paths": [
+      {
+        "target": "v9_tank_1_5",
+        "nodes": [
+          "origin_templar",
+          "opening_templar_1_1",
+          "opening_templar_1_2",
+          "opening_templar_1_3",
+          "v9_tank_1_0",
+          "v9_tank_1_1",
+          "v9_tank_1_2",
+          "v9_tank_1_3",
+          "v9_tank_1_4",
+          "v9_tank_1_5"
+        ]
+      },
+      {
+        "target": "opening_templar_0_1",
+        "nodes": [
+          "origin_templar",
+          "opening_templar_0_1"
+        ]
+      },
+      {
+        "target": "opening_templar_0_2",
+        "nodes": [
+          "opening_templar_0_1",
+          "opening_templar_0_2"
+        ]
+      },
+      {
+        "target": "opening_templar_0_3",
+        "nodes": [
+          "opening_templar_0_2",
+          "opening_templar_0_3"
+        ]
+      }
+    ],
+    "spent": 12,
+    "stats": {
+      "armor": 26,
+      "barrier": 16,
+      "efficiency": 5,
+      "haste": 18,
+      "hp": 24,
+      "resist": 8
+    },
+    "keys": [],
+    "remaining": 0,
+    "direction": "守りの再使用",
+    "play": "手持ちの守り・吸引・攻撃の再使用とMP負担を育てる。障壁を持つ編成は付与量も育ち、それ以外は装甲とHPの備えが残る。",
+    "gear": "再使用速度・MP回復を優先候補にし、障壁を使う場合だけ庇護を検討する。吸引の変性は重力MOD側に残す。",
+    "focusIds": [
+      "opening_templar_0_1",
+      "opening_templar_0_2",
+      "opening_templar_0_3",
+      "opening_templar_1_1",
+      "opening_templar_1_2",
+      "opening_templar_1_3",
+      "opening_templar_2_1",
+      "opening_templar_2_2",
+      "opening_templar_2_3",
+      "origin_templar",
+      "v9_tank_0_0",
+      "v9_tank_0_1",
+      "v9_tank_0_2",
+      "v9_tank_0_3",
+      "v9_tank_0_4",
+      "v9_tank_0_5",
+      "v9_tank_1_0",
+      "v9_tank_1_1",
+      "v9_tank_1_2",
+      "v9_tank_1_3",
+      "v9_tank_1_4",
+      "v9_tank_1_5"
+    ]
+  },
+  {
+    "id": "mage-direction-0-12",
+    "label": "mage / MPを蓄え、術を重く / 同消費12pt",
+    "profileId": "mage:support:plain:standard",
+    "siphon": false,
+    "targets": [
+      "v9_mage_0_5",
+      "opening_mage_1_1",
+      "opening_mage_1_2",
+      "opening_mage_1_3"
+    ],
+    "budget": 12,
+    "note": "同じ職業・編成・追加MODなし・通路HPで12ptを使用。MPの器と手持ちの魔法攻撃へ投資する。消費の重い技能を使い続ける備えを優先する。",
+    "learned": [
+      "opening_mage_0_1",
+      "opening_mage_0_2",
+      "opening_mage_0_3",
+      "opening_mage_1_1",
+      "opening_mage_1_2",
+      "opening_mage_1_3",
+      "origin_mage",
+      "v9_mage_0_0",
+      "v9_mage_0_1",
+      "v9_mage_0_2",
+      "v9_mage_0_3",
+      "v9_mage_0_4",
+      "v9_mage_0_5"
+    ],
+    "paths": [
+      {
+        "target": "v9_mage_0_5",
+        "nodes": [
+          "origin_mage",
+          "opening_mage_0_1",
+          "opening_mage_0_2",
+          "opening_mage_0_3",
+          "v9_mage_0_0",
+          "v9_mage_0_1",
+          "v9_mage_0_2",
+          "v9_mage_0_3",
+          "v9_mage_0_4",
+          "v9_mage_0_5"
+        ]
+      },
+      {
+        "target": "opening_mage_1_1",
+        "nodes": [
+          "origin_mage",
+          "opening_mage_1_1"
+        ]
+      },
+      {
+        "target": "opening_mage_1_2",
+        "nodes": [
+          "opening_mage_1_1",
+          "opening_mage_1_2"
+        ]
+      },
+      {
+        "target": "opening_mage_1_3",
+        "nodes": [
+          "opening_mage_1_2",
+          "opening_mage_1_3"
+        ]
+      }
+    ],
+    "spent": 12,
+    "stats": {
+      "efficiency": 11,
+      "hp": 2,
+      "magic": 27,
+      "mana": 44,
+      "resist": 2,
+      "resource": 4
+    },
+    "keys": [],
+    "remaining": 0,
+    "direction": "MPを蓄え、術を重く",
+    "play": "MPの器と手持ちの魔法攻撃へ投資する。消費の重い技能を使い続ける備えを優先する。",
+    "gear": "スキルダメージ・最大MP・MP回復を優先候補にする。元素MODの所有は必須にしない。",
+    "focusIds": [
+      "opening_mage_0_1",
+      "opening_mage_0_2",
+      "opening_mage_0_3",
+      "opening_mage_1_1",
+      "opening_mage_1_2",
+      "opening_mage_1_3",
+      "opening_mage_2_1",
+      "opening_mage_2_2",
+      "opening_mage_2_3",
+      "origin_mage",
+      "v9_mage_0_0",
+      "v9_mage_0_1",
+      "v9_mage_0_2",
+      "v9_mage_0_3",
+      "v9_mage_0_4",
+      "v9_mage_0_5",
+      "v9_mage_1_0",
+      "v9_mage_1_1",
+      "v9_mage_1_2",
+      "v9_mage_1_3",
+      "v9_mage_1_4",
+      "v9_mage_1_5"
+    ]
+  },
+  {
+    "id": "mage-direction-1-12",
+    "label": "mage / 資源獲得と再使用 / 同消費12pt",
+    "profileId": "mage:support:plain:standard",
+    "siphon": false,
+    "targets": [
+      "v9_mage_1_5",
+      "opening_mage_0_1",
+      "opening_mage_0_2",
+      "opening_mage_0_3"
+    ],
+    "budget": 12,
+    "note": "同じ職業・編成・追加MODなし・通路HPで12ptを使用。固有資源の獲得と技の再使用へ投資する。異なる属性の技能を持つ編成では、命中で回収して消費技へつなぐ。",
+    "learned": [
+      "opening_mage_0_1",
+      "opening_mage_0_2",
+      "opening_mage_0_3",
+      "opening_mage_1_1",
+      "opening_mage_1_2",
+      "opening_mage_1_3",
+      "origin_mage",
+      "v9_mage_1_0",
+      "v9_mage_1_1",
+      "v9_mage_1_2",
+      "v9_mage_1_3",
+      "v9_mage_1_4",
+      "v9_mage_1_5"
+    ],
+    "paths": [
+      {
+        "target": "v9_mage_1_5",
+        "nodes": [
+          "origin_mage",
+          "opening_mage_1_1",
+          "opening_mage_1_2",
+          "opening_mage_1_3",
+          "v9_mage_1_0",
+          "v9_mage_1_1",
+          "v9_mage_1_2",
+          "v9_mage_1_3",
+          "v9_mage_1_4",
+          "v9_mage_1_5"
+        ]
+      },
+      {
+        "target": "opening_mage_0_1",
+        "nodes": [
+          "origin_mage",
+          "opening_mage_0_1"
+        ]
+      },
+      {
+        "target": "opening_mage_0_2",
+        "nodes": [
+          "opening_mage_0_1",
+          "opening_mage_0_2"
+        ]
+      },
+      {
+        "target": "opening_mage_0_3",
+        "nodes": [
+          "opening_mage_0_2",
+          "opening_mage_0_3"
+        ]
+      }
+    ],
+    "spent": 12,
+    "stats": {
+      "efficiency": 11,
+      "haste": 15,
+      "hp": 2,
+      "magic": 11,
+      "mana": 20,
+      "resist": 2,
+      "resource": 27
+    },
+    "keys": [],
+    "remaining": 0,
+    "direction": "資源獲得と再使用",
+    "play": "固有資源の獲得と技の再使用へ投資する。異なる属性の技能を持つ編成では、命中で回収して消費技へつなぐ。",
+    "gear": "再使用速度・キャスト短縮を優先候補にし、実際の所有技能に合わせて属性MODを任意で選ぶ。残響の追加発動はMOD側に残す。",
+    "focusIds": [
+      "opening_mage_0_1",
+      "opening_mage_0_2",
+      "opening_mage_0_3",
+      "opening_mage_1_1",
+      "opening_mage_1_2",
+      "opening_mage_1_3",
+      "opening_mage_2_1",
+      "opening_mage_2_2",
+      "opening_mage_2_3",
+      "origin_mage",
+      "v9_mage_0_0",
+      "v9_mage_0_1",
+      "v9_mage_0_2",
+      "v9_mage_0_3",
+      "v9_mage_0_4",
+      "v9_mage_0_5",
+      "v9_mage_1_0",
+      "v9_mage_1_1",
+      "v9_mage_1_2",
+      "v9_mage_1_3",
+      "v9_mage_1_4",
+      "v9_mage_1_5"
+    ]
+  },
+  {
+    "id": "ranger-direction-0-12",
+    "label": "ranger / 同じ標的への集中 / 同消費12pt",
+    "profileId": "ranger:support:plain:standard",
+    "siphon": false,
+    "targets": [
+      "v9_ranger_0_5",
+      "opening_ranger_1_1",
+      "opening_ranger_1_2",
+      "opening_ranger_1_3"
+    ],
+    "budget": 12,
+    "note": "同じ職業・編成・追加MODなし・通路HPで12ptを使用。会心と直撃へ投資し、同じ標的へ攻撃を続ける。移動よりも標的への継続命中を優先する。",
+    "learned": [
+      "opening_ranger_0_1",
+      "opening_ranger_0_2",
+      "opening_ranger_0_3",
+      "opening_ranger_1_1",
+      "opening_ranger_1_2",
+      "opening_ranger_1_3",
+      "origin_ranger",
+      "v9_ranger_0_0",
+      "v9_ranger_0_1",
+      "v9_ranger_0_2",
+      "v9_ranger_0_3",
+      "v9_ranger_0_4",
+      "v9_ranger_0_5"
+    ],
+    "paths": [
+      {
+        "target": "v9_ranger_0_5",
+        "nodes": [
+          "origin_ranger",
+          "opening_ranger_0_1",
+          "opening_ranger_0_2",
+          "opening_ranger_0_3",
+          "v9_ranger_0_0",
+          "v9_ranger_0_1",
+          "v9_ranger_0_2",
+          "v9_ranger_0_3",
+          "v9_ranger_0_4",
+          "v9_ranger_0_5"
+        ]
+      },
+      {
+        "target": "opening_ranger_1_1",
+        "nodes": [
+          "origin_ranger",
+          "opening_ranger_1_1"
+        ]
+      },
+      {
+        "target": "opening_ranger_1_2",
+        "nodes": [
+          "opening_ranger_1_1",
+          "opening_ranger_1_2"
+        ]
+      },
+      {
+        "target": "opening_ranger_1_3",
+        "nodes": [
+          "opening_ranger_1_2",
+          "opening_ranger_1_3"
+        ]
+      }
+    ],
+    "spent": 12,
+    "stats": {
+      "crit": 36,
+      "critMulti": 10,
+      "damage": 20,
+      "haste": 7,
+      "hp": 4,
+      "move": 5,
+      "resist": 2,
+      "resource": 6
+    },
+    "keys": [],
+    "remaining": 0,
+    "direction": "同じ標的への集中",
+    "play": "会心と直撃へ投資し、同じ標的へ攻撃を続ける。移動よりも標的への継続命中を優先する。",
+    "gear": "攻撃力・会心率・会心倍率を優先候補にする。追矢は任意のMODとして残す。",
+    "focusIds": [
+      "opening_ranger_0_1",
+      "opening_ranger_0_2",
+      "opening_ranger_0_3",
+      "opening_ranger_1_1",
+      "opening_ranger_1_2",
+      "opening_ranger_1_3",
+      "opening_ranger_2_1",
+      "opening_ranger_2_2",
+      "opening_ranger_2_3",
+      "origin_ranger",
+      "v9_ranger_0_0",
+      "v9_ranger_0_1",
+      "v9_ranger_0_2",
+      "v9_ranger_0_3",
+      "v9_ranger_0_4",
+      "v9_ranger_0_5",
+      "v9_ranger_1_0",
+      "v9_ranger_1_1",
+      "v9_ranger_1_2",
+      "v9_ranger_1_3",
+      "v9_ranger_1_4",
+      "v9_ranger_1_5"
+    ]
+  },
+  {
+    "id": "ranger-direction-1-12",
+    "label": "ranger / 移動と設置の回転 / 同消費12pt",
+    "profileId": "ranger:support:plain:standard",
+    "siphon": false,
+    "targets": [
+      "v9_ranger_1_5",
+      "opening_ranger_0_1",
+      "opening_ranger_0_2",
+      "opening_ranger_0_3"
+    ],
+    "budget": 12,
+    "note": "同じ職業・編成・追加MODなし・通路HPで12ptを使用。移動速度と再使用へ投資し、手持ちの回避・設置・射撃を組み合わせる。位置を変えて、次の射撃・設置の機会を作る。",
+    "learned": [
+      "opening_ranger_0_1",
+      "opening_ranger_0_2",
+      "opening_ranger_0_3",
+      "opening_ranger_1_1",
+      "opening_ranger_1_2",
+      "opening_ranger_1_3",
+      "origin_ranger",
+      "v9_ranger_1_0",
+      "v9_ranger_1_1",
+      "v9_ranger_1_2",
+      "v9_ranger_1_3",
+      "v9_ranger_1_4",
+      "v9_ranger_1_5"
+    ],
+    "paths": [
+      {
+        "target": "v9_ranger_1_5",
+        "nodes": [
+          "origin_ranger",
+          "opening_ranger_1_1",
+          "opening_ranger_1_2",
+          "opening_ranger_1_3",
+          "v9_ranger_1_0",
+          "v9_ranger_1_1",
+          "v9_ranger_1_2",
+          "v9_ranger_1_3",
+          "v9_ranger_1_4",
+          "v9_ranger_1_5"
+        ]
+      },
+      {
+        "target": "opening_ranger_0_1",
+        "nodes": [
+          "origin_ranger",
+          "opening_ranger_0_1"
+        ]
+      },
+      {
+        "target": "opening_ranger_0_2",
+        "nodes": [
+          "opening_ranger_0_1",
+          "opening_ranger_0_2"
+        ]
+      },
+      {
+        "target": "opening_ranger_0_3",
+        "nodes": [
+          "opening_ranger_0_2",
+          "opening_ranger_0_3"
+        ]
+      }
+    ],
+    "spent": 12,
+    "stats": {
+      "crit": 8,
+      "damage": 14,
+      "efficiency": 3,
+      "haste": 27,
+      "hp": 4,
+      "move": 14,
+      "resist": 2,
+      "resource": 10
+    },
+    "keys": [],
+    "remaining": 0,
+    "direction": "移動と設置の回転",
+    "play": "移動速度と再使用へ投資し、手持ちの回避・設置・射撃を組み合わせる。位置を変えて、次の射撃・設置の機会を作る。",
+    "gear": "移動速度・再使用速度・MP回復を優先候補にする。装備・技能で選ぶ設置効果を増やさない。",
+    "focusIds": [
+      "opening_ranger_0_1",
+      "opening_ranger_0_2",
+      "opening_ranger_0_3",
+      "opening_ranger_1_1",
+      "opening_ranger_1_2",
+      "opening_ranger_1_3",
+      "opening_ranger_2_1",
+      "opening_ranger_2_2",
+      "opening_ranger_2_3",
+      "origin_ranger",
+      "v9_ranger_0_0",
+      "v9_ranger_0_1",
+      "v9_ranger_0_2",
+      "v9_ranger_0_3",
+      "v9_ranger_0_4",
+      "v9_ranger_0_5",
+      "v9_ranger_1_0",
+      "v9_ranger_1_1",
+      "v9_ranger_1_2",
+      "v9_ranger_1_3",
+      "v9_ranger_1_4",
+      "v9_ranger_1_5"
+    ]
+  },
+  {
+    "id": "assassin-direction-0-12",
+    "label": "assassin / 印を消費する決め手 / 同消費12pt",
+    "profileId": "assassin:support:plain:standard",
+    "siphon": false,
+    "targets": [
+      "v9_assassin_0_5",
+      "opening_assassin_1_1",
+      "opening_assassin_1_2",
+      "opening_assassin_1_3"
+    ],
+    "budget": 12,
+    "note": "同じ職業・編成・追加MODなし・通路HPで12ptを使用。直撃と会心倍率へ投資し、印を付けて手持ちの消費技を当てる。短い攻撃機会の一回を重くする。",
+    "learned": [
+      "opening_assassin_0_1",
+      "opening_assassin_0_2",
+      "opening_assassin_0_3",
+      "opening_assassin_1_1",
+      "opening_assassin_1_2",
+      "opening_assassin_1_3",
+      "origin_assassin",
+      "v9_assassin_0_0",
+      "v9_assassin_0_1",
+      "v9_assassin_0_2",
+      "v9_assassin_0_3",
+      "v9_assassin_0_4",
+      "v9_assassin_0_5"
+    ],
+    "paths": [
+      {
+        "target": "v9_assassin_0_5",
+        "nodes": [
+          "origin_assassin",
+          "opening_assassin_0_1",
+          "opening_assassin_0_2",
+          "opening_assassin_0_3",
+          "v9_assassin_0_0",
+          "v9_assassin_0_1",
+          "v9_assassin_0_2",
+          "v9_assassin_0_3",
+          "v9_assassin_0_4",
+          "v9_assassin_0_5"
+        ]
+      },
+      {
+        "target": "opening_assassin_1_1",
+        "nodes": [
+          "origin_assassin",
+          "opening_assassin_1_1"
+        ]
+      },
+      {
+        "target": "opening_assassin_1_2",
+        "nodes": [
+          "opening_assassin_1_1",
+          "opening_assassin_1_2"
+        ]
+      },
+      {
+        "target": "opening_assassin_1_3",
+        "nodes": [
+          "opening_assassin_1_2",
+          "opening_assassin_1_3"
+        ]
+      }
+    ],
+    "spent": 12,
+    "stats": {
+      "attackSpeed": 7,
+      "crit": 4,
+      "critMulti": 16,
+      "hp": 4,
+      "move": 2,
+      "physical": 40,
+      "resist": 2,
+      "resource": 10
+    },
+    "keys": [],
+    "remaining": 0,
+    "direction": "印を消費する決め手",
+    "play": "直撃と会心倍率へ投資し、印を付けて手持ちの消費技を当てる。短い攻撃機会の一回を重くする。",
+    "gear": "攻撃力・スキルダメージ・会心倍率を優先候補にする。毒印は所有する場合だけ働き、ツリーから毒を与えない。",
+    "focusIds": [
+      "opening_assassin_0_1",
+      "opening_assassin_0_2",
+      "opening_assassin_0_3",
+      "opening_assassin_1_1",
+      "opening_assassin_1_2",
+      "opening_assassin_1_3",
+      "opening_assassin_2_1",
+      "opening_assassin_2_2",
+      "opening_assassin_2_3",
+      "origin_assassin",
+      "v9_assassin_0_0",
+      "v9_assassin_0_1",
+      "v9_assassin_0_2",
+      "v9_assassin_0_3",
+      "v9_assassin_0_4",
+      "v9_assassin_0_5",
+      "v9_assassin_1_0",
+      "v9_assassin_1_1",
+      "v9_assassin_1_2",
+      "v9_assassin_1_3",
+      "v9_assassin_1_4",
+      "v9_assassin_1_5"
+    ]
+  },
+  {
+    "id": "assassin-direction-1-12",
+    "label": "assassin / 接近離脱と資源回収 / 同消費12pt",
+    "profileId": "assassin:support:plain:standard",
+    "siphon": false,
+    "targets": [
+      "v9_assassin_1_5",
+      "opening_assassin_0_1",
+      "opening_assassin_0_2",
+      "opening_assassin_0_3"
+    ],
+    "budget": 12,
+    "note": "同じ職業・編成・追加MODなし・通路HPで12ptを使用。通常攻撃による資源獲得と移動へ投資し、次の接近機会を作る。離脱後の再接近と資源回収へ配分する。",
+    "learned": [
+      "opening_assassin_0_1",
+      "opening_assassin_0_2",
+      "opening_assassin_0_3",
+      "opening_assassin_1_1",
+      "opening_assassin_1_2",
+      "opening_assassin_1_3",
+      "origin_assassin",
+      "v9_assassin_1_0",
+      "v9_assassin_1_1",
+      "v9_assassin_1_2",
+      "v9_assassin_1_3",
+      "v9_assassin_1_4",
+      "v9_assassin_1_5"
+    ],
+    "paths": [
+      {
+        "target": "v9_assassin_1_5",
+        "nodes": [
+          "origin_assassin",
+          "opening_assassin_1_1",
+          "opening_assassin_1_2",
+          "opening_assassin_1_3",
+          "v9_assassin_1_0",
+          "v9_assassin_1_1",
+          "v9_assassin_1_2",
+          "v9_assassin_1_3",
+          "v9_assassin_1_4",
+          "v9_assassin_1_5"
+        ]
+      },
+      {
+        "target": "opening_assassin_0_1",
+        "nodes": [
+          "origin_assassin",
+          "opening_assassin_0_1"
+        ]
+      },
+      {
+        "target": "opening_assassin_0_2",
+        "nodes": [
+          "opening_assassin_0_1",
+          "opening_assassin_0_2"
+        ]
+      },
+      {
+        "target": "opening_assassin_0_3",
+        "nodes": [
+          "opening_assassin_0_2",
+          "opening_assassin_0_3"
+        ]
+      }
+    ],
+    "spent": 12,
+    "stats": {
+      "attackSpeed": 21,
+      "critMulti": 3,
+      "haste": 3,
+      "hp": 4,
+      "move": 8,
+      "physical": 14,
+      "resist": 2,
+      "resource": 24
+    },
+    "keys": [],
+    "remaining": 0,
+    "direction": "接近離脱と資源回収",
+    "play": "通常攻撃による資源獲得と移動へ投資し、次の接近機会を作る。離脱後の再接近と資源回収へ配分する。",
+    "gear": "攻撃速度・通常攻撃ダメージ・移動速度を優先候補にする。毒印や吸命を選ぶ場合も独立の所有MODとして扱う。",
+    "focusIds": [
+      "opening_assassin_0_1",
+      "opening_assassin_0_2",
+      "opening_assassin_0_3",
+      "opening_assassin_1_1",
+      "opening_assassin_1_2",
+      "opening_assassin_1_3",
+      "opening_assassin_2_1",
+      "opening_assassin_2_2",
+      "opening_assassin_2_3",
+      "origin_assassin",
+      "v9_assassin_0_0",
+      "v9_assassin_0_1",
+      "v9_assassin_0_2",
+      "v9_assassin_0_3",
+      "v9_assassin_0_4",
+      "v9_assassin_0_5",
+      "v9_assassin_1_0",
+      "v9_assassin_1_1",
+      "v9_assassin_1_2",
+      "v9_assassin_1_3",
+      "v9_assassin_1_4",
+      "v9_assassin_1_5"
+    ]
+  },
+  {
+    "id": "warrior-tank-fusion-24",
+    "label": "24pt以内の越境 / warrior-tank（未消費あり）",
+    "profileId": "warrior:support:plain:standard",
+    "siphon": false,
+    "targets": [
+      "v9_warrior_0_5",
+      "v9_tank_0_5"
+    ],
+    "budget": 24,
+    "note": "24ptは比較用の上限。使用値と未消費値を明示する越境例で、24ptを使い切る同消費比較ではない。技能やMODの新しい能力源は与えない。",
+    "learned": [
+      "link_assassin_0_2",
+      "link_assassin_1_3",
+      "opening_templar_0_3",
+      "opening_warrior_0_1",
+      "opening_warrior_0_2",
+      "opening_warrior_0_3",
+      "opening_warrior_1_3",
+      "opening_warrior_2_3",
+      "origin_warrior",
+      "v9_tank_0_0",
+      "v9_tank_0_1",
+      "v9_tank_0_2",
+      "v9_tank_0_3",
+      "v9_tank_0_4",
+      "v9_tank_0_5",
+      "v9_warrior_0_0",
+      "v9_warrior_0_1",
+      "v9_warrior_0_2",
+      "v9_warrior_0_3",
+      "v9_warrior_0_4",
+      "v9_warrior_0_5"
+    ],
+    "paths": [
+      {
+        "target": "v9_warrior_0_5",
+        "nodes": [
+          "origin_warrior",
+          "opening_warrior_0_1",
+          "opening_warrior_0_2",
+          "opening_warrior_0_3",
+          "v9_warrior_0_0",
+          "v9_warrior_0_1",
+          "v9_warrior_0_2",
+          "v9_warrior_0_3",
+          "v9_warrior_0_4",
+          "v9_warrior_0_5"
+        ]
+      },
+      {
+        "target": "v9_tank_0_5",
+        "nodes": [
+          "opening_warrior_0_3",
+          "opening_warrior_2_3",
+          "opening_warrior_1_3",
+          "link_assassin_0_2",
+          "link_assassin_1_3",
+          "opening_templar_0_3",
+          "v9_tank_0_0",
+          "v9_tank_0_1",
+          "v9_tank_0_2",
+          "v9_tank_0_3",
+          "v9_tank_0_4",
+          "v9_tank_0_5"
+        ]
+      }
+    ],
+    "spent": 20,
+    "stats": {
+      "armor": 32,
+      "attackSpeed": 3,
+      "haste": 12,
+      "hp": 37,
+      "physical": 43,
+      "regen": 4,
+      "resist": 6,
+      "resource": 12
+    },
+    "keys": [],
+    "remaining": 4,
+    "fusion": true,
+    "focusIds": [
+      "link_assassin_0_2",
+      "link_assassin_1_3",
+      "opening_templar_0_3",
+      "opening_warrior_0_1",
+      "opening_warrior_0_2",
+      "opening_warrior_0_3",
+      "opening_warrior_1_3",
+      "opening_warrior_2_3",
+      "origin_warrior",
+      "v9_tank_0_0",
+      "v9_tank_0_1",
+      "v9_tank_0_2",
+      "v9_tank_0_3",
+      "v9_tank_0_4",
+      "v9_tank_0_5",
+      "v9_warrior_0_0",
+      "v9_warrior_0_1",
+      "v9_warrior_0_2",
+      "v9_warrior_0_3",
+      "v9_warrior_0_4",
+      "v9_warrior_0_5"
+    ]
+  },
+  {
+    "id": "mage-ranger-fusion-24",
+    "label": "24pt以内の越境 / mage-ranger（未消費あり）",
+    "profileId": "mage:support:plain:standard",
+    "siphon": false,
+    "targets": [
+      "v9_mage_1_5",
+      "v9_ranger_1_5"
+    ],
+    "budget": 24,
+    "note": "24ptは比較用の上限。使用値と未消費値を明示する越境例で、24ptを使い切る同消費比較ではない。技能やMODの新しい能力源は与えない。",
+    "learned": [
+      "g51n6",
+      "link_assassin_1_4",
+      "link_assassin_2_8",
+      "opening_mage_1_1",
+      "opening_mage_1_2",
+      "opening_mage_1_3",
+      "opening_ranger_1_3",
+      "origin_mage",
+      "r18_26_1",
+      "v9_mage_1_0",
+      "v9_mage_1_1",
+      "v9_mage_1_2",
+      "v9_mage_1_3",
+      "v9_mage_1_4",
+      "v9_mage_1_5",
+      "v9_ranger_1_0",
+      "v9_ranger_1_1",
+      "v9_ranger_1_2",
+      "v9_ranger_1_3",
+      "v9_ranger_1_4",
+      "v9_ranger_1_5"
+    ],
+    "paths": [
+      {
+        "target": "v9_mage_1_5",
+        "nodes": [
+          "origin_mage",
+          "opening_mage_1_1",
+          "opening_mage_1_2",
+          "opening_mage_1_3",
+          "v9_mage_1_0",
+          "v9_mage_1_1",
+          "v9_mage_1_2",
+          "v9_mage_1_3",
+          "v9_mage_1_4",
+          "v9_mage_1_5"
+        ]
+      },
+      {
+        "target": "v9_ranger_1_5",
+        "nodes": [
+          "opening_mage_1_3",
+          "r18_26_1",
+          "link_assassin_1_4",
+          "link_assassin_2_8",
+          "g51n6",
+          "opening_ranger_1_3",
+          "v9_ranger_1_0",
+          "v9_ranger_1_1",
+          "v9_ranger_1_2",
+          "v9_ranger_1_3",
+          "v9_ranger_1_4",
+          "v9_ranger_1_5"
+        ]
+      }
+    ],
+    "spent": 20,
+    "stats": {
+      "efficiency": 14,
+      "haste": 39,
+      "hp": 10,
+      "mana": 12,
+      "move": 12,
+      "resist": 9,
+      "resource": 33
+    },
+    "keys": [],
+    "remaining": 4,
+    "fusion": true,
+    "focusIds": [
+      "g51n6",
+      "link_assassin_1_4",
+      "link_assassin_2_8",
+      "opening_mage_1_1",
+      "opening_mage_1_2",
+      "opening_mage_1_3",
+      "opening_ranger_1_3",
+      "origin_mage",
+      "r18_26_1",
+      "v9_mage_1_0",
+      "v9_mage_1_1",
+      "v9_mage_1_2",
+      "v9_mage_1_3",
+      "v9_mage_1_4",
+      "v9_mage_1_5",
+      "v9_ranger_1_0",
+      "v9_ranger_1_1",
+      "v9_ranger_1_2",
+      "v9_ranger_1_3",
+      "v9_ranger_1_4",
+      "v9_ranger_1_5"
+    ]
+  }
+]

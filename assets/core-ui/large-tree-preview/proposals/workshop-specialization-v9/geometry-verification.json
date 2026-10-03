@@ -1,0 +1,11 @@
+{
+  "status": "PASS",
+  "oldNodeCoordinatesExact": true,
+  "oldEdgesExact": true,
+  "central60CoordinatesExact": true,
+  "newNodes": 61,
+  "newEdges": 62,
+  "minNewNonIncidentWireDistance": 74.0625334694178,
+  "hiddenCrossings": 0,
+  "newEdgesCheckedByGeometryClear": true
+}

@@ -1,0 +1,30 @@
+{
+  "status": "TECHNICAL_PASS_UNADOPTED_PREVIEW",
+  "adopted": false,
+  "runtimeApplied": false,
+  "sourceEmbeddedVerbatim": true,
+  "sourceSha256": "b04169fcdb5f9f020d8f4e0e36d1a035e0b9fee359e118aa811195fdaced56d7",
+  "preservedV8Sha256": "8827af4e932399f8bd1bfcd7437f40b52596cf5555a659d9c14918a1c92cedf3",
+  "centralPositionsAndOldEdgesExact": true,
+  "changedInitialContents": true,
+  "nodes": 850,
+  "groups": 67,
+  "edges": 1009,
+  "newNodes": 61,
+  "newGroups": 5,
+  "examples": 12,
+  "equalConsumptionExamples": 10,
+  "equalConsumption": 12,
+  "fusionExamplesWithUnusedBudget": 2,
+  "saveStudy": "specialization-v9",
+  "budgetAdopted": false,
+  "nativeFilesChanged": false,
+  "gameSaveOrPacketChanged": false,
+  "notes": [
+    "Numeric passives remain unimplemented proposals; no combat DPS proof.",
+    "No new class abilities, MOD duplication, armor restriction, mandatory magic, bleed or own-low-HP build.",
+    "Some historic outer regions still favor Warrior; small candidate, not whole-tree rebalance."
+  ],
+  "actualJsVerification": "browser-verification.json",
+  "candidateSha256": "b42d999481383578330d433c359468ed3c2835b98371550cc782404ad3e118f4"
+}
